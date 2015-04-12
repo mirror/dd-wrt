@@ -29,6 +29,7 @@
 
 #include "asterisk/utils.h"
 #include "asterisk/threadstorage.h"
+#include "asterisk/astobj2.h"
 
 #if defined(DEBUG_OPAQUE)
 #define __AST_STR_USED used2
@@ -81,6 +82,60 @@ static force_inline int attribute_pure ast_strlen_zero(const char *s)
  * example: S_COR(usewidget, widget, "<no widget>")
  */
 #define S_COR(a, b, c) ({typeof(&((b)[0])) __x = (b); (a) && !ast_strlen_zero(__x) ? (__x) : (c);})
+
+/*
+  \brief Checks whether a string begins with another.
+  \since 12.0.0
+  \param str String to check.
+  \param prefix Prefix to look for.
+  \param 1 if \a str begins with \a prefix, 0 otherwise.
+ */
+static int force_inline attribute_pure ast_begins_with(const char *str, const char *prefix)
+{
+	ast_assert(str != NULL);
+	ast_assert(prefix != NULL);
+	while (*str == *prefix && *prefix != '\0') {
+		++str;
+		++prefix;
+	}
+	return *prefix == '\0';
+}
+
+/*
+  \brief Checks whether a string ends with another.
+  \since 12.0.0
+  \param str String to check.
+  \param suffix Suffix to look for.
+  \param 1 if \a str ends with \a suffix, 0 otherwise.
+ */
+static int force_inline attribute_pure ast_ends_with(const char *str, const char *suffix)
+{
+	size_t str_len;
+	size_t suffix_len;
+
+	ast_assert(str != NULL);
+	ast_assert(suffix != NULL);
+	str_len = strlen(str);
+	suffix_len = strlen(suffix);
+
+	if (suffix_len > str_len) {
+		return 0;
+	}
+
+	return strcmp(str + str_len - suffix_len, suffix) == 0;
+}
+
+/*!
+ * \brief return Yes or No depending on the argument.
+ *
+ * Note that this macro is used my AMI, where a literal "Yes" and "No" are
+ * expected, and translations would cause problems.
+ *
+ * \param x Boolean value
+ * \return "Yes" if x is true (non-zero)
+ * \return "No" if x is false (zero)
+ */
+#define AST_YESNO(x) ((x) ? "Yes" : "No")
 
 /*!
   \brief Gets a pointer to the first non-whitespace character in a string.
@@ -181,6 +236,66 @@ char *ast_strip(char *s),
 char *ast_strip_quoted(char *s, const char *beg_quotes, const char *end_quotes);
 
 /*!
+  \brief Flags for ast_strsep
+ */
+enum ast_strsep_flags {
+	AST_STRSEP_STRIP =    0x01, /*!< Trim, then strip quotes.  You may want to trim again */
+	AST_STRSEP_TRIM =     0x02, /*!< Trim leading and trailing whitespace */
+	AST_STRSEP_UNESCAPE = 0x04, /*!< Unescape '\' */
+	AST_STRSEP_ALL =      0x07, /*!< Trim, strip, unescape */
+};
+
+/*!
+  \brief Act like strsep but ignore separators inside quotes.
+  \param s Pointer to address of the the string to be processed.
+  Will be modified and can't be constant.
+  \param sep A single character delimiter.
+  \param flags Controls post-processing of the result.
+  AST_STRSEP_TRIM trims all leading and trailing whitespace from the result.
+  AST_STRSEP_STRIP does a trim then strips the outermost quotes.  You may want
+  to trim again after the strip.  Just OR both the TRIM and STRIP flags.
+  AST_STRSEP_UNESCAPE unescapes '\' sequences.
+  AST_STRSEP_ALL does all of the above processing.
+  \return The next token or NULL if done or if there are more than 8 levels of
+  nested quotes.
+
+  This function acts like strsep with three exceptions...
+  The separator is a single character instead of a string.
+  Separators inside quotes are treated literally instead of like separators.
+  You can elect to have leading and trailing whitespace and quotes
+  stripped from the result and have '\' sequences unescaped.
+
+  Like strsep, ast_strsep maintains no internal state and you can call it
+  recursively using different separators on the same storage.
+
+  Also like strsep, for consistent results, consecutive separators are not
+  collapsed so you may get an empty string as a valid result.
+
+  Examples:
+  \code
+	char *mystr = ast_strdupa("abc=def,ghi='zzz=yyy,456',jkl");
+	char *token, *token2, *token3;
+
+	while((token = ast_strsep(&mystr, ',', AST_SEP_STRIP))) {
+		// 1st token will be aaa=def
+		// 2nd token will be ghi='zzz=yyy,456'
+		while((token2 = ast_strsep(&token, '=', AST_SEP_STRIP))) {
+			// 1st token2 will be ghi
+			// 2nd token2 will be zzz=yyy,456
+			while((token3 = ast_strsep(&token2, ',', AST_SEP_STRIP))) {
+				// 1st token3 will be zzz=yyy
+				// 2nd token3 will be 456
+				// and so on
+			}
+		}
+		// 3rd token will be jkl
+	}
+
+  \endcode
+ */
+char *ast_strsep(char **s, const char sep, uint32_t flags);
+
+/*!
   \brief Strip backslash for "escaped" semicolons, 
 	the string to be stripped (will be modified).
   \return The stripped string.
@@ -277,7 +392,23 @@ int attribute_pure ast_true(const char *val);
 int attribute_pure ast_false(const char *val);
 
 /*
- *  \brief Join an array of strings into a single string.
+ * \brief Join an array of strings into a single string.
+ * \param s the resulting string buffer
+ * \param len the length of the result buffer, s
+ * \param w an array of strings to join.
+ * \param size the number of elements to join
+ * \param delim delimiter between elements
+ *
+ * This function will join all of the strings in the array 'w' into a single
+ * string.  It will also place 'delim' in the result buffer in between each
+ * string from 'w'.
+ * \since 12
+*/
+void ast_join_delim(char *s, size_t len, const char * const w[],
+		    unsigned int size, char delim);
+
+/*
+ * \brief Join an array of strings into a single string.
  * \param s the resulting string buffer
  * \param len the length of the result buffer, s
  * \param w an array of strings to join.
@@ -286,7 +417,33 @@ int attribute_pure ast_false(const char *val);
  * string.  It will also place a space in the result buffer in between each
  * string from 'w'.
 */
-void ast_join(char *s, size_t len, const char * const w[]);
+#define ast_join(s, len, w) ast_join_delim(s, len, w, -1, ' ')
+
+/*
+ * \brief Attempts to convert the given string to camel case using
+ *        the specified delimiter.
+ *
+ * note - returned string needs to be freed
+ *
+ * \param s the string to convert
+ * \param delim delimiter to parse out
+ *
+ * \retval The string converted to "CamelCase"
+ * \since 12
+*/
+char *ast_to_camel_case_delim(const char *s, const char *delim);
+
+/*
+ * \brief Attempts to convert the given string to camel case using
+ *        an underscore as the specified delimiter.
+ *
+ * note - returned string needs to be freed
+ *
+ * \param s the string to convert
+ *
+ * \retval The string converted to "CamelCase"
+*/
+#define ast_to_camel_case(s) ast_to_camel_case_delim(s, "_")
 
 /*
   \brief Parse a time (integer) string.
@@ -816,6 +973,7 @@ AST_INLINE_API(int __attribute__((format(printf, 3, 0))) ast_str_set_va(struct a
  * by value to a function that calls ast_str_append_va(), then the original ast_str
  * pointer may be invalidated due to a reallocation.
  *
+ * \param buf, max_len, fmt, ap
  */
 AST_INLINE_API(int __attribute__((format(printf, 3, 0))) ast_str_append_va(struct ast_str **buf, ssize_t max_len, const char *fmt, va_list ap),
 {
@@ -1012,4 +1170,106 @@ static force_inline int attribute_pure ast_str_case_hash(const char *str)
 	return abs(hash);
 }
 
+/*!
+ * \brief Convert a string to all lower-case
+ *
+ * \param str The string to be converted to lower case
+ *
+ * \retval str for convenience
+ */
+static force_inline char *attribute_pure ast_str_to_lower(char *str)
+{
+	char *str_orig = str;
+	if (!str) {
+		return str;
+	}
+
+	for (; *str; ++str) {
+		*str = tolower(*str);
+	}
+
+	return str_orig;
+}
+
+/*!
+ * \brief Convert a string to all upper-case
+ *
+ * \param str The string to be converted to upper case
+ *
+ * \retval str for convenience
+ */
+static force_inline char *attribute_pure ast_str_to_upper(char *str)
+{
+	char *str_orig = str;
+	if (!str) {
+		return str;
+	}
+
+	for (; *str; ++str) {
+		*str = toupper(*str);
+	}
+
+	return str_orig;
+}
+
+/*!
+ * \since 12
+ * \brief Allocates a hash container for bare strings
+ *
+ * \param buckets The number of buckets to use for the hash container
+ *
+ * \retval AO2 container for strings
+ * \retval NULL if allocation failed
+ */
+#define ast_str_container_alloc(buckets) ast_str_container_alloc_options(AO2_ALLOC_OPT_LOCK_MUTEX, buckets)
+
+/*!
+ * \since 12
+ * \brief Allocates a hash container for bare strings
+ *
+ * \param opts Options to be provided to the container
+ * \param buckets The number of buckets to use for the hash container
+ *
+ * \retval AO2 container for strings
+ * \retval NULL if allocation failed
+ */
+struct ao2_container *ast_str_container_alloc_options(enum ao2_container_opts opts, int buckets);
+
+/*!
+ * \since 12
+ * \brief Adds a string to a string container allocated by ast_str_container_alloc
+ *
+ * \param str_container The container to which to add a string
+ * \param add The string to add to the container
+ *
+ * \retval zero on success
+ * \retval non-zero if the operation failed
+ */
+int ast_str_container_add(struct ao2_container *str_container, const char *add);
+
+/*!
+ * \since 12
+ * \brief Removes a string from a string container allocated by ast_str_container_alloc
+ *
+ * \param str_container The container from which to remove a string
+ * \param remove The string to remove from the container
+ */
+void ast_str_container_remove(struct ao2_container *str_container, const char *remove);
+
+/*!
+ * \brief Create a pseudo-random string of a fixed length.
+ *
+ * This function is useful for generating a string whose randomness
+ * does not need to be across all time and space, does not need to
+ * be cryptographically secure, and needs to fit in a limited space.
+ *
+ * This function will write a null byte at the final position
+ * in the buffer (buf[size - 1]). So if you pass in a size of
+ * 10, then this will generate a random 9-character string.
+ *
+ * \param buf Buffer to write random string into.
+ * \param size The size of the buffer.
+ * \return A pointer to buf
+ */
+char *ast_generate_random_string(char *buf, size_t size);
 #endif /* _ASTERISK_STRINGS_H */

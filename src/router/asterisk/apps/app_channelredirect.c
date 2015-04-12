@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 358907 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 389378 $")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -94,10 +94,6 @@ static int asyncgoto_exec(struct ast_channel *chan, const char *data)
 		ast_log(LOG_WARNING, "No such channel: %s\n", args.channel);
 		pbx_builtin_setvar_helper(chan, "CHANNELREDIRECT_STATUS", "NOCHANNEL");
 		return 0;
-	}
-
-	if (ast_channel_pbx(chan2)) {
-		ast_set_flag(ast_channel_flags(chan2), AST_FLAG_BRIDGE_HANGUP_DONT); /* don't let the after-bridge code run the h-exten */
 	}
 
 	res = ast_async_parseable_goto(chan2, args.label);

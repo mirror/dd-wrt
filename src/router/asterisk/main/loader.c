@@ -33,13 +33,13 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 391507 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433247 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_MODULE_DIR */
 #include <dirent.h>
 
-#include "asterisk/linkedlists.h"
+#include "asterisk/dlinkedlists.h"
 #include "asterisk/module.h"
 #include "asterisk/config.h"
 #include "asterisk/channel.h"
@@ -50,12 +50,13 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 391507 $")
 #include "asterisk/enum.h"
 #include "asterisk/http.h"
 #include "asterisk/lock.h"
-#include "asterisk/features.h"
+#include "asterisk/features_config.h"
 #include "asterisk/dsp.h"
 #include "asterisk/udptl.h"
 #include "asterisk/heap.h"
 #include "asterisk/app.h"
 #include "asterisk/test.h"
+#include "asterisk/sounds_index.h"
 
 #include <dlfcn.h>
 
@@ -63,6 +64,30 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 391507 $")
 #include "asterisk/utils.h"
 
 /*** DOCUMENTATION
+	<managerEvent language="en_US" name="Reload">
+		<managerEventInstance class="EVENT_FLAG_SYSTEM">
+			<synopsis>Raised when a module has been reloaded in Asterisk.</synopsis>
+			<syntax>
+				<parameter name="Module">
+					<para>The name of the module that was reloaded, or
+					<literal>All</literal> if all modules were reloaded</para>
+				</parameter>
+				<parameter name="Status">
+					<para>The numeric status code denoting the success or failure
+					of the reload request.</para>
+					<enumlist>
+						<enum name="0"><para>Success</para></enum>
+						<enum name="1"><para>Request queued</para></enum>
+						<enum name="2"><para>Module not found</para></enum>
+						<enum name="3"><para>Error</para></enum>
+						<enum name="4"><para>Reload already in progress</para></enum>
+						<enum name="5"><para>Module uninitialized</para></enum>
+						<enum name="6"><para>Reload not supported</para></enum>
+					</enumlist>
+				</parameter>
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
  ***/
 
 #ifndef RTLD_NOW
@@ -78,7 +103,7 @@ struct ast_module_user {
 	AST_LIST_ENTRY(ast_module_user) entry;
 };
 
-AST_LIST_HEAD(module_user_list, ast_module_user);
+AST_DLLIST_HEAD(module_user_list, ast_module_user);
 
 static const unsigned char expected_key[] =
 { 0x87, 0x76, 0x79, 0x35, 0x23, 0xea, 0x3a, 0xd3,
@@ -92,18 +117,24 @@ static unsigned int embedding = 1; /* we always start out by registering embedde
 
 struct ast_module {
 	const struct ast_module_info *info;
+#ifdef REF_DEBUG
+	/* Used to get module references into REF_DEBUG logs */
+	void *ref_debug;
+#endif
 	void *lib;					/* the shared lib, or NULL if embedded */
 	int usecount;					/* the number of 'users' currently in this module */
 	struct module_user_list users;			/* the list of users in the module */
 	struct {
 		unsigned int running:1;
 		unsigned int declined:1;
+		unsigned int keepuntilshutdown:1;
 	} flags;
-	AST_LIST_ENTRY(ast_module) entry;
+	AST_LIST_ENTRY(ast_module) list_entry;
+	AST_DLLIST_ENTRY(ast_module) entry;
 	char resource[0];
 };
 
-static AST_LIST_HEAD_STATIC(module_list, ast_module);
+static AST_DLLIST_HEAD_STATIC(module_list, ast_module);
 
 const char *ast_module_name(const struct ast_module *mod)
 {
@@ -127,7 +158,7 @@ struct loadupdate {
 	AST_LIST_ENTRY(loadupdate) entry;
 };
 
-static AST_LIST_HEAD_STATIC(updaters, loadupdate);
+static AST_DLLIST_HEAD_STATIC(updaters, loadupdate);
 
 AST_MUTEX_DEFINE_STATIC(reloadlock);
 
@@ -138,7 +169,7 @@ struct reload_queue_item {
 
 static int do_full_reload = 0;
 
-static AST_LIST_HEAD_STATIC(reload_queue, reload_queue_item);
+static AST_DLLIST_HEAD_STATIC(reload_queue, reload_queue_item);
 
 /* when dynamic modules are being loaded, ast_module_register() will
    need to know what filename the module was loaded from while it
@@ -160,7 +191,12 @@ void ast_module_register(const struct ast_module_info *info)
 		mod = resource_being_loaded;
 	}
 
+	ast_debug(5, "Registering module %s\n", info->name);
+
 	mod->info = info;
+#ifdef REF_DEBUG
+	mod->ref_debug = ao2_t_alloc(0, NULL, info->name);
+#endif
 	AST_LIST_HEAD_INIT(&mod->users);
 
 	/* during startup, before the loader has been initialized,
@@ -170,16 +206,16 @@ void ast_module_register(const struct ast_module_info *info)
 	   let's avoid it altogether
 	*/
 	if (embedding) {
-		AST_LIST_INSERT_TAIL(&embedded_module_list, mod, entry);
+		AST_DLLIST_INSERT_TAIL(&embedded_module_list, mod, entry);
 	} else {
-		AST_LIST_LOCK(&module_list);
+		AST_DLLIST_LOCK(&module_list);
 		/* it is paramount that the new entry be placed at the tail of
 		   the list, otherwise the code that uses dlopen() to load
 		   dynamic modules won't be able to find out if the module it
 		   just opened was registered or failed to load
 		*/
-		AST_LIST_INSERT_TAIL(&module_list, mod, entry);
-		AST_LIST_UNLOCK(&module_list);
+		AST_DLLIST_INSERT_TAIL(&module_list, mod, entry);
+		AST_DLLIST_UNLOCK(&module_list);
 	}
 
 	/* give the module a copy of its own handle, for later use in registrations and the like */
@@ -194,18 +230,22 @@ void ast_module_unregister(const struct ast_module_info *info)
 	   will already be empty, or we cannot have gotten to this
 	   point
 	*/
-	AST_LIST_LOCK(&module_list);
-	AST_LIST_TRAVERSE_SAFE_BEGIN(&module_list, mod, entry) {
+	AST_DLLIST_LOCK(&module_list);
+	AST_DLLIST_TRAVERSE_BACKWARDS_SAFE_BEGIN(&module_list, mod, entry) {
 		if (mod->info == info) {
-			AST_LIST_REMOVE_CURRENT(entry);
+			AST_DLLIST_REMOVE_CURRENT(entry);
 			break;
 		}
 	}
-	AST_LIST_TRAVERSE_SAFE_END;
-	AST_LIST_UNLOCK(&module_list);
+	AST_DLLIST_TRAVERSE_BACKWARDS_SAFE_END;
+	AST_DLLIST_UNLOCK(&module_list);
 
 	if (mod) {
+		ast_debug(5, "Unregistering module %s\n", info->name);
 		AST_LIST_HEAD_DESTROY(&mod->users);
+#ifdef REF_DEBUG
+		ao2_cleanup(mod->ref_debug);
+#endif
 		ast_free(mod);
 	}
 }
@@ -224,6 +264,10 @@ struct ast_module_user *__ast_module_user_add(struct ast_module *mod, struct ast
 	AST_LIST_LOCK(&mod->users);
 	AST_LIST_INSERT_HEAD(&mod->users, u, entry);
 	AST_LIST_UNLOCK(&mod->users);
+
+#ifdef REF_DEBUG
+	ao2_ref(mod->ref_debug, +1);
+#endif
 
 	ast_atomic_fetchadd_int(&mod->usecount, +1);
 
@@ -249,6 +293,10 @@ void __ast_module_user_remove(struct ast_module *mod, struct ast_module_user *u)
 		return;
 	}
 
+#ifdef REF_DEBUG
+	ao2_ref(mod->ref_debug, -1);
+#endif
+
 	ast_atomic_fetchadd_int(&mod->usecount, -1);
 	ast_free(u);
 
@@ -264,6 +312,11 @@ void __ast_module_user_hangup_all(struct ast_module *mod)
 		if (u->chan) {
 			ast_softhangup(u->chan, AST_SOFTHANGUP_APPUNLOAD);
 		}
+
+#ifdef REF_DEBUG
+		ao2_ref(mod->ref_debug, -1);
+#endif
+
 		ast_atomic_fetchadd_int(&mod->usecount, -1);
 		ast_free(u);
 	}
@@ -281,21 +334,22 @@ static struct reload_classes {
 	const char *name;
 	int (*reload_fn)(void);
 } reload_classes[] = {	/* list in alpha order, longest match first for cli completion */
-	{ "cdr",	ast_cdr_engine_reload },
-	{ "dnsmgr",	dnsmgr_reload },
-	{ "extconfig",	read_config_maps },
-	{ "enum",	ast_enum_reload },
-	{ "acl",	ast_named_acl_reload },
-	{ "manager",	reload_manager },
-	{ "http",	ast_http_reload },
-	{ "logger",	logger_reload },
-	{ "features",	ast_features_reload },
-	{ "dsp",	ast_dsp_reload},
-	{ "udptl",	ast_udptl_reload },
+	{ "acl",         ast_named_acl_reload },
+	{ "cdr",         ast_cdr_engine_reload },
+	{ "cel",         ast_cel_engine_reload },
+	{ "dnsmgr",      dnsmgr_reload },
+	{ "dsp",         ast_dsp_reload},
+	{ "extconfig",   read_config_maps },
+	{ "enum",        ast_enum_reload },
+	{ "features",    ast_features_config_reload },
+	{ "http",        ast_http_reload },
 	{ "indications", ast_indications_reload },
-	{ "cel",        ast_cel_engine_reload },
-	{ "plc",        ast_plc_reload },
-	{ NULL, 	NULL }
+	{ "logger",      logger_reload },
+	{ "manager",     reload_manager },
+	{ "plc",         ast_plc_reload },
+	{ "sounds",      ast_sounds_reindex },
+	{ "udptl",       ast_udptl_reload },
+	{ NULL,          NULL }
 };
 
 static int printdigest(const unsigned char *d)
@@ -304,7 +358,7 @@ static int printdigest(const unsigned char *d)
 	char buf[256]; /* large enough so we don't have to worry */
 
 	for (pos = 0, x = 0; x < 16; x++)
-		pos += sprintf(buf + pos, " %02x", *d++);
+		pos += sprintf(buf + pos, " %02hhx", *d++);
 
 	ast_debug(1, "Unexpected signature:%s\n", buf);
 
@@ -362,31 +416,102 @@ static struct ast_module *find_resource(const char *resource, int do_lock)
 {
 	struct ast_module *cur;
 
-	if (do_lock)
-		AST_LIST_LOCK(&module_list);
+	if (do_lock) {
+		AST_DLLIST_LOCK(&module_list);
+	}
 
-	AST_LIST_TRAVERSE(&module_list, cur, entry) {
+	AST_DLLIST_TRAVERSE(&module_list, cur, entry) {
 		if (!resource_name_match(resource, cur->resource))
 			break;
 	}
 
-	if (do_lock)
-		AST_LIST_UNLOCK(&module_list);
+	if (do_lock) {
+		AST_DLLIST_UNLOCK(&module_list);
+	}
 
 	return cur;
 }
 
 #ifdef LOADABLE_MODULES
+
+/*!
+ * \brief dlclose(), with failure logging.
+ */
+static void logged_dlclose(const char *name, void *lib)
+{
+	char *error;
+
+	if (!lib) {
+		return;
+	}
+
+	/* Clear any existing error */
+	dlerror();
+	if (dlclose(lib)) {
+		error = dlerror();
+		ast_log(AST_LOG_ERROR, "Failure in dlclose for module '%s': %s\n",
+			S_OR(name, "unknown"), S_OR(error, "Unknown error"));
+	}
+}
+
+#if defined(HAVE_RTLD_NOLOAD)
+/*!
+ * \brief Check to see if the given resource is loaded.
+ *
+ * \param resource_name Name of the resource, including .so suffix.
+ * \return False (0) if module is not loaded.
+ * \return True (non-zero) if module is loaded.
+ */
+static int is_module_loaded(const char *resource_name)
+{
+	char fn[PATH_MAX] = "";
+	void *lib;
+
+	snprintf(fn, sizeof(fn), "%s/%s", ast_config_AST_MODULE_DIR,
+		resource_name);
+
+	lib = dlopen(fn, RTLD_LAZY | RTLD_NOLOAD);
+
+	if (lib) {
+		logged_dlclose(resource_name, lib);
+		return 1;
+	}
+
+	return 0;
+}
+#endif
+
 static void unload_dynamic_module(struct ast_module *mod)
 {
+#if defined(HAVE_RTLD_NOLOAD)
+	char *name = ast_strdupa(ast_module_name(mod));
+#endif
 	void *lib = mod->lib;
 
 	/* WARNING: the structure pointed to by mod is going to
 	   disappear when this operation succeeds, so we can't
 	   dereference it */
+	logged_dlclose(ast_module_name(mod), lib);
 
-	if (lib)
-		while (!dlclose(lib));
+	/* There are several situations where the module might still be resident
+	 * in memory.
+	 *
+	 * If somehow there was another dlopen() on the same module (unlikely,
+	 * since that all is supposed to happen in loader.c).
+	 *
+	 * Or the lazy resolution of a global symbol (very likely, since that is
+	 * how we load all of our modules that export global symbols).
+	 *
+	 * Avoid the temptation of repeating the dlclose(). The other code that
+	 * dlopened the module still has its module reference, and should close
+	 * it itself. In other situations, dlclose() will happily return success
+	 * for as many times as you wish to call it.
+	 */
+#if defined(HAVE_RTLD_NOLOAD)
+	if (is_module_loaded(name)) {
+		ast_log(LOG_WARNING, "Module '%s' could not be completely unloaded\n", name);
+	}
+#endif
 }
 
 static enum ast_module_load_result load_resource(const char *resource_name, unsigned int global_symbols_only, struct ast_heap *resource_heap, int required);
@@ -432,10 +557,10 @@ static struct ast_module *load_dynamic_module(const char *resource_in, unsigned 
 	   constructor) places the new module at the tail of the
 	   module_list
 	*/
-	if (resource_being_loaded != (mod = AST_LIST_LAST(&module_list))) {
+	if (resource_being_loaded != (mod = AST_DLLIST_LAST(&module_list))) {
 		ast_log(LOG_WARNING, "Module '%s' did not register itself during load\n", resource_in);
 		/* no, it did not, so close it and return */
-		while (!dlclose(lib));
+		logged_dlclose(resource_in, lib);
 		/* note that the module's destructor will call ast_module_unregister(),
 		   which will free the structure we allocated in resource_being_loaded */
 		return NULL;
@@ -446,32 +571,11 @@ static struct ast_module *load_dynamic_module(const char *resource_in, unsigned 
 	/* if we are being asked only to load modules that provide global symbols,
 	   and this one does not, then close it and return */
 	if (global_symbols_only && !wants_global) {
-		while (!dlclose(lib));
+		logged_dlclose(resource_in, lib);
 		return NULL;
 	}
 
-	/* This section is a workaround for a gcc 4.1 bug that has already been
-	 * fixed in later versions.  Unfortunately, some distributions, such as
-	 * RHEL/CentOS 5, distribute gcc 4.1, so we're stuck with having to deal
-	 * with this issue.  This basically ensures that optional_api modules are
-	 * loaded before any module which requires their functionality. */
-#if !defined(HAVE_ATTRIBUTE_weak_import) && !defined(HAVE_ATTRIBUTE_weakref)
-	if (!ast_strlen_zero(mod->info->nonoptreq)) {
-		/* Force any required dependencies to load */
-		char *each, *required_resource = ast_strdupa(mod->info->nonoptreq);
-		while ((each = strsep(&required_resource, ","))) {
-			struct ast_module *dependency;
-			each = ast_strip(each);
-			dependency = find_resource(each, 0);
-			/* Is it already loaded? */
-			if (!dependency) {
-				load_resource(each, global_symbols_only, resource_heap, 1);
-			}
-		}
-	}
-#endif
-
-	while (!dlclose(lib));
+	logged_dlclose(resource_in, lib);
 	resource_being_loaded = NULL;
 
 	/* start the load process again */
@@ -492,11 +596,12 @@ static struct ast_module *load_dynamic_module(const char *resource_in, unsigned 
 	   the previous time we did that, we're going to assume it worked this
 	   time too :) */
 
-	AST_LIST_LAST(&module_list)->lib = lib;
+	AST_DLLIST_LAST(&module_list)->lib = lib;
 	resource_being_loaded = NULL;
 
-	return AST_LIST_LAST(&module_list);
+	return AST_DLLIST_LAST(&module_list);
 }
+
 #endif
 
 void ast_module_shutdown(void)
@@ -504,7 +609,7 @@ void ast_module_shutdown(void)
 	struct ast_module *mod;
 	int somethingchanged = 1, final = 0;
 
-	AST_LIST_LOCK(&module_list);
+	AST_DLLIST_LOCK(&module_list);
 
 	/*!\note Some resources, like timers, are started up dynamically, and thus
 	 * may be still in use, even if all channels are dead.  We must therefore
@@ -519,22 +624,37 @@ void ast_module_shutdown(void)
 		/* Reset flag before traversing the list */
 		somethingchanged = 0;
 
-		AST_LIST_TRAVERSE_SAFE_BEGIN(&module_list, mod, entry) {
+		AST_DLLIST_TRAVERSE_BACKWARDS_SAFE_BEGIN(&module_list, mod, entry) {
 			if (!final && mod->usecount) {
+				ast_debug(1, "Passing on %s: its use count is %d\n",
+					mod->resource, mod->usecount);
 				continue;
 			}
-			AST_LIST_REMOVE_CURRENT(entry);
+			AST_DLLIST_REMOVE_CURRENT(entry);
 			if (mod->flags.running && !mod->flags.declined && mod->info->unload) {
+				ast_verb(1, "Unloading %s\n", mod->resource);
 				mod->info->unload();
 			}
 			AST_LIST_HEAD_DESTROY(&mod->users);
+#ifdef REF_DEBUG
+			ao2_cleanup(mod->ref_debug);
+#endif
 			free(mod);
 			somethingchanged = 1;
 		}
-		AST_LIST_TRAVERSE_SAFE_END;
+		AST_DLLIST_TRAVERSE_BACKWARDS_SAFE_END;
+		if (!somethingchanged) {
+			AST_DLLIST_TRAVERSE(&module_list, mod, entry) {
+				if (mod->flags.keepuntilshutdown) {
+					ast_module_unref(mod);
+					mod->flags.keepuntilshutdown = 0;
+					somethingchanged = 1;
+				}
+			}
+		}
 	} while (somethingchanged && !final);
 
-	AST_LIST_UNLOCK(&module_list);
+	AST_DLLIST_UNLOCK(&module_list);
 }
 
 int ast_unload_resource(const char *resource_name, enum ast_module_unload_mode force)
@@ -543,10 +663,10 @@ int ast_unload_resource(const char *resource_name, enum ast_module_unload_mode f
 	int res = -1;
 	int error = 0;
 
-	AST_LIST_LOCK(&module_list);
+	AST_DLLIST_LOCK(&module_list);
 
 	if (!(mod = find_resource(resource_name, 0))) {
-		AST_LIST_UNLOCK(&module_list);
+		AST_DLLIST_UNLOCK(&module_list);
 		ast_log(LOG_WARNING, "Unload failed, '%s' could not be found\n", resource_name);
 		return -1;
 	}
@@ -571,6 +691,7 @@ int ast_unload_resource(const char *resource_name, enum ast_module_unload_mode f
 		/* Request any channels attached to the module to hangup. */
 		__ast_module_user_hangup_all(mod);
 
+		ast_verb(1, "Unloading %s\n", mod->resource);
 		res = mod->info->unload();
 		if (res) {
 			ast_log(LOG_WARNING, "Firm unload failed for %s\n", resource_name);
@@ -594,7 +715,7 @@ int ast_unload_resource(const char *resource_name, enum ast_module_unload_mode f
 	if (!error)
 		mod->flags.running = mod->flags.declined = 0;
 
-	AST_LIST_UNLOCK(&module_list);
+	AST_DLLIST_UNLOCK(&module_list);
 
 	if (!error && !mod->lib && mod->info && mod->info->restore_globals)
 		mod->info->restore_globals();
@@ -621,8 +742,8 @@ char *ast_module_helper(const char *line, const char *word, int pos, int state, 
 	if (pos != rpos)
 		return NULL;
 
-	AST_LIST_LOCK(&module_list);
-	AST_LIST_TRAVERSE(&module_list, cur, entry) {
+	AST_DLLIST_LOCK(&module_list);
+	AST_DLLIST_TRAVERSE(&module_list, cur, entry) {
 		if (!strncasecmp(word, cur->resource, l) &&
 		    (cur->info->reload || !needsreload) &&
 		    ++which > state) {
@@ -630,7 +751,7 @@ char *ast_module_helper(const char *line, const char *word, int pos, int state, 
 			break;
 		}
 	}
-	AST_LIST_UNLOCK(&module_list);
+	AST_DLLIST_UNLOCK(&module_list);
 
 	if (!ret) {
 		for (i=0; !ret && reload_classes[i].name; i++) {
@@ -707,22 +828,67 @@ static void queue_reload_request(const char *module)
 	AST_LIST_UNLOCK(&reload_queue);
 }
 
-int ast_module_reload(const char *name)
+/*!
+ * \since 12
+ * \internal
+ * \brief Publish a \ref stasis message regarding the reload result
+ */
+static void publish_reload_message(const char *name, enum ast_module_reload_result result)
+{
+	RAII_VAR(struct stasis_message *, message, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_json_payload *, payload, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_json *, json_object, NULL, ast_json_unref);
+	RAII_VAR(struct ast_json *, event_object, NULL, ast_json_unref);
+	char res_buffer[8];
+
+	if (!ast_manager_get_generic_type()) {
+		return;
+	}
+
+	snprintf(res_buffer, sizeof(res_buffer), "%u", result);
+	event_object = ast_json_pack("{s: s, s: s}",
+			"Module", S_OR(name, "All"),
+			"Status", res_buffer);
+	json_object = ast_json_pack("{s: s, s: i, s: O}",
+			"type", "Reload",
+			"class_type", EVENT_FLAG_SYSTEM,
+			"event", event_object);
+
+	if (!json_object) {
+		return;
+	}
+
+	payload = ast_json_payload_create(json_object);
+	if (!payload) {
+		return;
+	}
+
+	message = stasis_message_create(ast_manager_get_generic_type(), payload);
+	if (!message) {
+		return;
+	}
+
+	stasis_publish(ast_manager_get_topic(), message);
+}
+
+enum ast_module_reload_result ast_module_reload(const char *name)
 {
 	struct ast_module *cur;
-	int res = 0; /* return value. 0 = not found, others, see below */
+	enum ast_module_reload_result res = AST_MODULE_RELOAD_NOT_FOUND;
 	int i;
 
 	/* If we aren't fully booted, we just pretend we reloaded but we queue this
 	   up to run once we are booted up. */
 	if (!ast_fully_booted) {
 		queue_reload_request(name);
-		return 0;
+		res = AST_MODULE_RELOAD_QUEUED;
+		goto module_reload_exit;
 	}
 
 	if (ast_mutex_trylock(&reloadlock)) {
-		ast_verbose("The previous reload command didn't finish yet\n");
-		return -1;	/* reload already in progress */
+		ast_verb(3, "The previous reload command didn't finish yet\n");
+		res = AST_MODULE_RELOAD_IN_PROGRESS;
+		goto module_reload_exit;
 	}
 	ast_lastreloadtime = ast_tvnow();
 
@@ -736,69 +902,73 @@ int ast_module_reload(const char *name)
 			}
 		}
 		if (res != AST_LOCK_SUCCESS) {
-			ast_verbose("Cannot grab lock on %s\n", ast_config_AST_CONFIG_DIR);
+			ast_log(AST_LOG_WARNING, "Cannot grab lock on %s\n", ast_config_AST_CONFIG_DIR);
 			ast_mutex_unlock(&reloadlock);
-			return -1;
+			res = AST_MODULE_RELOAD_ERROR;
+			goto module_reload_exit;
 		}
 	}
 
 	/* Call "predefined" reload here first */
 	for (i = 0; reload_classes[i].name; i++) {
 		if (!name || !strcasecmp(name, reload_classes[i].name)) {
-			if (!reload_classes[i].reload_fn()) {
-				ast_test_suite_event_notify("MODULE_RELOAD", "Message: %s", name);
+			if (reload_classes[i].reload_fn() == AST_MODULE_LOAD_SUCCESS) {
+				res = AST_MODULE_RELOAD_SUCCESS;
 			}
-			res = 2;	/* found and reloaded */
 		}
 	}
 
-	if (name && res) {
+	if (name && res == AST_MODULE_RELOAD_SUCCESS) {
 		if (ast_opt_lock_confdir) {
 			ast_unlock_path(ast_config_AST_CONFIG_DIR);
 		}
 		ast_mutex_unlock(&reloadlock);
-		return res;
+		goto module_reload_exit;
 	}
 
-	AST_LIST_LOCK(&module_list);
-	AST_LIST_TRAVERSE(&module_list, cur, entry) {
+	AST_DLLIST_LOCK(&module_list);
+	AST_DLLIST_TRAVERSE(&module_list, cur, entry) {
 		const struct ast_module_info *info = cur->info;
 
 		if (name && resource_name_match(name, cur->resource))
 			continue;
 
 		if (!cur->flags.running || cur->flags.declined) {
-			if (!name)
+			if (res == AST_MODULE_RELOAD_NOT_FOUND) {
+				res = AST_MODULE_RELOAD_UNINITIALIZED;
+			}
+			if (!name) {
 				continue;
-			ast_log(LOG_NOTICE, "The module '%s' was not properly initialized.  "
-				"Before reloading the module, you must run \"module load %s\" "
-				"and fix whatever is preventing the module from being initialized.\n",
-				name, name);
-			res = 2; /* Don't report that the module was not found */
+			}
 			break;
 		}
 
 		if (!info->reload) {	/* cannot be reloaded */
-			/* Nothing to reload, so reload is successful */
-			ast_test_suite_event_notify("MODULE_RELOAD", "Message: %s", cur->resource);
-			if (res < 1)	/* store result if possible */
-				res = 1;	/* 1 = no reload() method */
-			continue;
+			if (res == AST_MODULE_RELOAD_NOT_FOUND) {
+				res = AST_MODULE_RELOAD_NOT_IMPLEMENTED;
+			}
+			if (!name) {
+				continue;
+			}
+			break;
 		}
-
-		res = 2;
 		ast_verb(3, "Reloading module '%s' (%s)\n", cur->resource, info->description);
-		if (!info->reload()) {
-			ast_test_suite_event_notify("MODULE_RELOAD", "Message: %s", cur->resource);
+		if (info->reload() == AST_MODULE_LOAD_SUCCESS) {
+			res = AST_MODULE_RELOAD_SUCCESS;
+		}
+		if (name) {
+			break;
 		}
 	}
-	AST_LIST_UNLOCK(&module_list);
+	AST_DLLIST_UNLOCK(&module_list);
 
 	if (ast_opt_lock_confdir) {
 		ast_unlock_path(ast_config_AST_CONFIG_DIR);
 	}
 	ast_mutex_unlock(&reloadlock);
 
+module_reload_exit:
+	publish_reload_message(name, res);
 	return res;
 }
 
@@ -842,17 +1012,15 @@ static enum ast_module_load_result start_resource(struct ast_module *mod)
 		return AST_MODULE_LOAD_FAILURE;
 	}
 
+	if (!ast_fully_booted) {
+		ast_verb(1, "Loading %s.\n", mod->resource);
+	}
 	res = mod->info->load();
 
 	switch (res) {
 	case AST_MODULE_LOAD_SUCCESS:
 		if (!ast_fully_booted) {
-			ast_verb(1, "%s => (%s)\n", mod->resource, term_color(tmp, mod->info->description, COLOR_BROWN, COLOR_BLACK, sizeof(tmp)));
-			if (ast_opt_console && !option_verbose) {
-				/* This never looks good on anything but the root console, so
-				 * it's best not to try to funnel it through the logger. */
-				fprintf(stdout, ".");
-			}
+			ast_verb(2, "%s => (%s)\n", mod->resource, term_color(tmp, mod->info->description, COLOR_BROWN, COLOR_BLACK, sizeof(tmp)));
 		} else {
 			ast_verb(1, "Loaded %s => (%s)\n", mod->resource, mod->info->description);
 		}
@@ -869,6 +1037,12 @@ static enum ast_module_load_result start_resource(struct ast_module *mod)
 	case AST_MODULE_LOAD_PRIORITY:
 		break;
 	}
+
+	/* Make sure the newly started module is at the end of the list */
+	AST_DLLIST_LOCK(&module_list);
+	AST_DLLIST_REMOVE(&module_list, mod, entry);
+	AST_DLLIST_INSERT_TAIL(&module_list, mod, entry);
+	AST_DLLIST_UNLOCK(&module_list);
 
 	return res;
 }
@@ -933,24 +1107,18 @@ static enum ast_module_load_result load_resource(const char *resource_name, unsi
 		res = start_resource(mod);
 	}
 
-	/* Now make sure that the list is sorted */
-	AST_LIST_LOCK(&module_list);
-	AST_LIST_REMOVE(&module_list, mod, entry);
-	AST_LIST_INSERT_SORTALPHA(&module_list, mod, entry, resource);
-	AST_LIST_UNLOCK(&module_list);
-
 	return res;
 }
 
 int ast_load_resource(const char *resource_name)
 {
 	int res;
-	AST_LIST_LOCK(&module_list);
+	AST_DLLIST_LOCK(&module_list);
 	res = load_resource(resource_name, 0, NULL, 0);
 	if (!res) {
 		ast_test_suite_event_notify("MODULE_LOAD", "Message: %s", resource_name);
 	}
-	AST_LIST_UNLOCK(&module_list);
+	AST_DLLIST_UNLOCK(&module_list);
 
 	return res;
 }
@@ -990,16 +1158,17 @@ static int mod_load_cmp(void *a, void *b)
 {
 	struct ast_module *a_mod = (struct ast_module *) a;
 	struct ast_module *b_mod = (struct ast_module *) b;
-	int res = -1;
-	/* if load_pri is not set, default is 128.  Lower is better*/
-	unsigned char a_pri = ast_test_flag(a_mod->info, AST_MODFLAG_LOAD_ORDER) ? a_mod->info->load_pri : 128;
-	unsigned char b_pri = ast_test_flag(b_mod->info, AST_MODFLAG_LOAD_ORDER) ? b_mod->info->load_pri : 128;
-	if (a_pri == b_pri) {
-		res = 0;
-	} else if (a_pri < b_pri) {
-		res = 1;
-	}
-	return res;
+	/* if load_pri is not set, default is 128.  Lower is better */
+	int a_pri = ast_test_flag(a_mod->info, AST_MODFLAG_LOAD_ORDER) ? a_mod->info->load_pri : 128;
+	int b_pri = ast_test_flag(b_mod->info, AST_MODFLAG_LOAD_ORDER) ? b_mod->info->load_pri : 128;
+
+	/*
+	 * Returns comparison values for a min-heap
+	 * <0 a_pri > b_pri
+	 * =0 a_pri == b_pri
+	 * >0 a_pri < b_pri
+	 */
+	return b_pri - a_pri;
 }
 
 /*! loads modules in order by load_pri, updates mod_count
@@ -1091,7 +1260,7 @@ int load_modules(unsigned int preload_only)
 
 	AST_LIST_HEAD_INIT_NOLOCK(&load_order);
 
-	AST_LIST_LOCK(&module_list);
+	AST_DLLIST_LOCK(&module_list);
 
 	if (embedded_module_list.first) {
 		module_list.first = embedded_module_list.first;
@@ -1121,7 +1290,7 @@ int load_modules(unsigned int preload_only)
 	/* check if 'autoload' is on */
 	if (!preload_only && ast_true(ast_variable_retrieve(cfg, "modules", "autoload"))) {
 		/* if so, first add all the embedded modules that are not already running to the load order */
-		AST_LIST_TRAVERSE(&module_list, mod, entry) {
+		AST_DLLIST_TRAVERSE(&module_list, mod, entry) {
 			/* if it's not embedded, skip it */
 			if (mod->lib)
 				continue;
@@ -1189,7 +1358,7 @@ int load_modules(unsigned int preload_only)
 		load_count++;
 
 	if (load_count)
-		ast_log(LOG_NOTICE, "%d modules will be loaded.\n", load_count);
+		ast_log(LOG_NOTICE, "%u modules will be loaded.\n", load_count);
 
 	/* first, load only modules that provide global symbols */
 	if ((res = load_resource_list(&load_order, 1, &modulecount)) < 0) {
@@ -1207,26 +1376,7 @@ done:
 		ast_free(order);
 	}
 
-	AST_LIST_UNLOCK(&module_list);
-
-	/* Tell manager clients that are aggressive at logging in that we're done
-	   loading modules. If there's a DNS problem in chan_sip, we might not
-	   even reach this */
-	/*** DOCUMENTATION
-		<managerEventInstance>
-			<synopsis>Raised when all dynamic modules have finished their initial loading.</synopsis>
-			<syntax>
-				<parameter name="ModuleSelection">
-					<enumlist>
-						<enum name="Preload"/>
-						<enum name="All"/>
-					</enumlist>
-				</parameter>
-			</syntax>
-		</managerEventInstance>
-	***/
-	manager_event(EVENT_FLAG_SYSTEM, "ModuleLoadReport", "ModuleLoadStatus: Done\r\nModuleSelection: %s\r\nModuleCount: %d\r\n", preload_only ? "Preload" : "All", modulecount);
-
+	AST_DLLIST_UNLOCK(&module_list);
 	return res;
 }
 
@@ -1242,22 +1392,32 @@ void ast_update_use_count(void)
 	AST_LIST_UNLOCK(&updaters);
 }
 
-int ast_update_module_list(int (*modentry)(const char *module, const char *description, int usecnt, const char *like),
-			   const char *like)
+int ast_update_module_list(int (*modentry)(const char *module, const char *description,
+                                           int usecnt, const char *status, const char *like,
+										   enum ast_module_support_level support_level),
+                           const char *like)
 {
 	struct ast_module *cur;
 	int unlock = -1;
 	int total_mod_loaded = 0;
+	AST_LIST_HEAD_NOLOCK(, ast_module) alpha_module_list = AST_LIST_HEAD_NOLOCK_INIT_VALUE;
 
-	if (AST_LIST_TRYLOCK(&module_list))
+	if (AST_DLLIST_TRYLOCK(&module_list)) {
 		unlock = 0;
-
-	AST_LIST_TRAVERSE(&module_list, cur, entry) {
-		total_mod_loaded += modentry(cur->resource, cur->info->description, cur->usecount, like);
 	}
 
-	if (unlock)
-		AST_LIST_UNLOCK(&module_list);
+	AST_DLLIST_TRAVERSE(&module_list, cur, entry) {
+		AST_LIST_INSERT_SORTALPHA(&alpha_module_list, cur, list_entry, resource);
+	}
+
+	while ((cur = AST_LIST_REMOVE_HEAD(&alpha_module_list, list_entry))) {
+		total_mod_loaded += modentry(cur->resource, cur->info->description, cur->usecount,
+						cur->flags.running ? "Running" : "Not Running", like, cur->info->support_level);
+	}
+
+	if (unlock) {
+		AST_DLLIST_UNLOCK(&module_list);
+	}
 
 	return total_mod_loaded;
 }
@@ -1308,11 +1468,15 @@ int ast_loader_unregister(int (*v)(void))
 	return cur ? 0 : -1;
 }
 
-struct ast_module *ast_module_ref(struct ast_module *mod)
+struct ast_module *__ast_module_ref(struct ast_module *mod, const char *file, int line, const char *func)
 {
 	if (!mod) {
 		return NULL;
 	}
+
+#ifdef REF_DEBUG
+	__ao2_ref_debug(mod->ref_debug, +1, "", file, line, func);
+#endif
 
 	ast_atomic_fetchadd_int(&mod->usecount, +1);
 	ast_update_use_count();
@@ -1320,12 +1484,57 @@ struct ast_module *ast_module_ref(struct ast_module *mod)
 	return mod;
 }
 
-void ast_module_unref(struct ast_module *mod)
+void __ast_module_shutdown_ref(struct ast_module *mod, const char *file, int line, const char *func)
+{
+	if (!mod || mod->flags.keepuntilshutdown) {
+		return;
+	}
+
+	__ast_module_ref(mod, file, line, func);
+	mod->flags.keepuntilshutdown = 1;
+}
+
+void __ast_module_unref(struct ast_module *mod, const char *file, int line, const char *func)
 {
 	if (!mod) {
 		return;
 	}
 
+#ifdef REF_DEBUG
+	__ao2_ref_debug(mod->ref_debug, -1, "", file, line, func);
+#endif
+
 	ast_atomic_fetchadd_int(&mod->usecount, -1);
 	ast_update_use_count();
+}
+
+const char *support_level_map [] = {
+	[AST_MODULE_SUPPORT_UNKNOWN] = "unknown",
+	[AST_MODULE_SUPPORT_CORE] = "core",
+	[AST_MODULE_SUPPORT_EXTENDED] = "extended",
+	[AST_MODULE_SUPPORT_DEPRECATED] = "deprecated",
+};
+
+const char *ast_module_support_level_to_string(enum ast_module_support_level support_level)
+{
+	return support_level_map[support_level];
+}
+
+
+
+/* The following exists for ABI compatibility */
+#undef ast_module_ref
+#undef ast_module_unref
+
+struct ast_module *ast_module_ref(struct ast_module *mod);
+void ast_module_unref(struct ast_module *mod);
+
+struct ast_module *ast_module_ref(struct ast_module *mod)
+{
+	return __ast_module_ref(mod, __FILE__, __LINE__, __PRETTY_FUNCTION__);
+}
+
+void ast_module_unref(struct ast_module *mod)
+{
+	__ast_module_unref(mod, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 }

@@ -4,8 +4,8 @@
  * Copyright (C) 2008
  *
  * Steve Murphy - adapted to CEL, from:
- * Matthew D. Hardeman <mhardemn@papersoft.com> 
- * Adapted from the MySQL CDR logger originally by James Sharp 
+ * Matthew D. Hardeman <mhardemn@papersoft.com>
+ * Adapted from the MySQL CDR logger originally by James Sharp
  *
  * Modified April, 2007; Dec, 2008
  * Steve Murphy <murf@digium.com>
@@ -26,14 +26,14 @@
 
 /*! \file
  *
- * \brief PostgreSQL CEL logger 
- * 
+ * \brief PostgreSQL CEL logger
+ *
  * \author Steve Murphy <murf@digium.com>
- * \extref PostgreSQL http://www.postgresql.org/
+ * PostgreSQL http://www.postgresql.org/
  *
  * See also
  * \arg \ref Config_cel
- * \extref PostgreSQL http://www.postgresql.org/
+ * PostgreSQL http://www.postgresql.org/
  * \ingroup cel_drivers
  */
 
@@ -44,7 +44,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 372175 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <libpq-fe.h>
 
@@ -58,8 +58,18 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 372175 $")
 
 #define DATE_FORMAT "%Y-%m-%d %T.%6q"
 
+#define PGSQL_BACKEND_NAME "CEL PGSQL backend"
+
 static char *config = "cel_pgsql.conf";
-static char *pghostname = NULL, *pgdbname = NULL, *pgdbuser = NULL, *pgpassword = NULL, *pgdbport = NULL, *table = NULL;
+
+static char *pghostname;
+static char *pgdbname;
+static char *pgdbuser;
+static char *pgpassword;
+static char *pgappname;
+static char *pgdbport;
+static char *table;
+
 static int connected = 0;
 static int maxsize = 512, maxsize2 = 512;
 
@@ -73,7 +83,6 @@ AST_MUTEX_DEFINE_STATIC(pgsql_lock);
 
 static PGconn	*conn = NULL;
 static PGresult	*result = NULL;
-static struct ast_event_sub *event_sub = NULL;
 
 struct columns {
 	char *name;
@@ -113,7 +122,36 @@ static AST_RWLIST_HEAD_STATIC(psql_columns, columns);
 		} \
 	} while (0)
 
-static void pgsql_log(const struct ast_event *event, void *userdata)
+static void pgsql_reconnect(void)
+{
+	struct ast_str *conn_info = ast_str_create(128);
+	if (!conn_info) {
+		ast_log(LOG_ERROR, "Failed to allocate memory for connection string.\n");
+		return;
+	}
+
+	if (conn) {
+		PQfinish(conn);
+		conn = NULL;
+	}
+
+	ast_str_set(&conn_info, 0, "host=%s port=%s dbname=%s user=%s",
+		pghostname, pgdbport, pgdbname, pgdbuser);
+
+	if (!ast_strlen_zero(pgappname)) {
+		ast_str_append(&conn_info, 0, " application_name=%s", pgappname);
+	}
+
+	if (!ast_strlen_zero(pgpassword)) {
+		ast_str_append(&conn_info, 0, " password=%s", pgpassword);
+	}
+
+	conn = PQconnectdb(ast_str_buffer(conn_info));
+	ast_free(conn_info);
+}
+
+
+static void pgsql_log(struct ast_event *event)
 {
 	struct ast_tm tm;
 	char timestr[128];
@@ -132,7 +170,7 @@ static void pgsql_log(const struct ast_event *event, void *userdata)
 	ast_strftime(timestr, sizeof(timestr), DATE_FORMAT, &tm);
 
 	if ((!connected) && pghostname && pgdbuser && pgpassword && pgdbname) {
-		conn = PQsetdbLogin(pghostname, pgdbport, NULL, NULL, pgdbname, pgdbuser, pgpassword);
+		pgsql_reconnect();
 		if (PQstatus(conn) != CONNECTION_BAD) {
 			connected = 1;
 		} else {
@@ -203,11 +241,11 @@ static void pgsql_log(const struct ast_event *event, void *userdata)
 				if (strncmp(cur->type, "int", 3) == 0) {
 					/* Integer, no need to escape anything */
 					LENGTHEN_BUF2(13);
-					ast_str_append(&sql2, 0, "%s%d", SEP, record.amaflag);
+					ast_str_append(&sql2, 0, "%s%u", SEP, record.amaflag);
 				} else {
 					/* Although this is a char field, there are no special characters in the values for these fields */
 					LENGTHEN_BUF2(31);
-					ast_str_append(&sql2, 0, "%s'%d'", SEP, record.amaflag);
+					ast_str_append(&sql2, 0, "%s'%u'", SEP, record.amaflag);
 				}
 			} else {
 				/* Arbitrary field, could be anything */
@@ -287,9 +325,8 @@ static void pgsql_log(const struct ast_event *event, void *userdata)
 		AST_RWLIST_UNLOCK(&psql_columns);
 		LENGTHEN_BUF1(ast_str_strlen(sql2) + 2);
 		ast_str_append(&sql, 0, ")%s)", ast_str_buffer(sql2));
-		ast_verb(11, "[%s]\n", ast_str_buffer(sql));
 
-		ast_debug(2, "inserting a CEL record.\n");
+		ast_debug(3, "Inserting a CEL record: [%s].\n", ast_str_buffer(sql));
 		/* Test to be sure we're still connected... */
 		/* If we're connected, and connection is working, good. */
 		/* Otherwise, attempt reconnect.  If it fails... sorry... */
@@ -345,11 +382,9 @@ ast_log_cleanup:
 static int my_unload_module(void)
 {
 	struct columns *current;
+
+	ast_cel_backend_unregister(PGSQL_BACKEND_NAME);
 	AST_RWLIST_WRLOCK(&psql_columns);
-	if (event_sub) {
-		event_sub = ast_event_unsubscribe(event_sub);
-		event_sub = NULL;
-	}
 	if (conn) {
 		PQfinish(conn);
 		conn = NULL;
@@ -369,6 +404,10 @@ static int my_unload_module(void)
 	if (pgpassword) {
 		ast_free(pgpassword);
 		pgpassword = NULL;
+	}
+	if (pgappname) {
+		ast_free(pgappname);
+		pgappname = NULL;
 	}
 	if (pgdbport) {
 		ast_free(pgdbport);
@@ -442,6 +481,17 @@ static int process_my_load_module(struct ast_config *cfg)
 		ast_log(LOG_WARNING,"PostgreSQL Ran out of memory copying password info\n");
 		return AST_MODULE_LOAD_DECLINE;
 	}
+	if (!(tmp = ast_variable_retrieve(cfg, "global", "appname"))) {
+		tmp = "";
+	}
+	if (pgappname) {
+		ast_free(pgappname);
+	}
+	if (!(pgappname = ast_strdup(tmp))) {
+		ast_log(LOG_WARNING,"PostgreSQL Ran out of memory copying appname info\n");
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
 	if (!(tmp = ast_variable_retrieve(cfg,"global","port"))) {
 		ast_log(LOG_WARNING,"PostgreSQL database port not specified.  Using default 5432.\n");
 		tmp = "5432";
@@ -480,7 +530,7 @@ static int process_my_load_module(struct ast_config *cfg)
 			cel_show_user_def ? "Yes" : "No");
 	}
 
-	conn = PQsetdbLogin(pghostname, pgdbport, NULL, NULL, pgdbname, pgdbuser, pgpassword);
+	pgsql_reconnect();
 	if (PQstatus(conn) != CONNECTION_BAD) {
 		char sqlcmd[512];
 		char *fname, *ftype, *flen, *fnotnull, *fdef;
@@ -542,6 +592,8 @@ static int process_my_load_module(struct ast_config *cfg)
 		ast_log(LOG_ERROR, "cel_pgsql: Unable to connect to database server %s.  CALLS WILL NOT BE LOGGED!!\n", pghostname);
 		ast_log(LOG_ERROR, "cel_pgsql: Reason: %s\n", pgerror);
 		connected = 0;
+		PQfinish(conn);
+		conn = NULL;
 	}
 	return AST_MODULE_LOAD_SUCCESS;
 }
@@ -558,12 +610,14 @@ static int my_load_module(int reload)
 		return AST_MODULE_LOAD_SUCCESS;
 	}
 
+	if (reload) {
+		my_unload_module();
+	}
+
 	process_my_load_module(cfg);
 	ast_config_destroy(cfg);
 
-	event_sub = ast_event_subscribe(AST_EVENT_CEL, pgsql_log, "CEL PGSQL backend", NULL, AST_EVENT_IE_END);
-
-	if (!event_sub) {
+	if (ast_cel_backend_register(PGSQL_BACKEND_NAME, pgsql_log)) {
 		ast_log(LOG_WARNING, "Unable to subscribe to CEL events for pgsql\n");
 		return AST_MODULE_LOAD_DECLINE;
 	}
@@ -578,11 +632,11 @@ static int load_module(void)
 
 static int reload(void)
 {
-	my_unload_module();
 	return my_load_module(1);
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PostgreSQL CEL Backend",
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

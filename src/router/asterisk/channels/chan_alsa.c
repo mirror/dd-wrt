@@ -21,10 +21,15 @@
  *
  * \author Matthew Fredrickson <creslin@digium.com>
  *
- * \par See also
- * \arg Config_alsa
- *
  * \ingroup channel_drivers
+ */
+
+/*! \li \ref chan_alsa.c uses the configuration file \ref alsa.conf
+ * \addtogroup configuration_file
+ */
+
+/*! \page alsa.conf alsa.conf
+ * \verbinclude alsa.conf.sample
  */
 
 /*** MODULEINFO
@@ -34,7 +39,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385634 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -57,6 +62,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385634 $")
 #include "asterisk/abstract_jb.h"
 #include "asterisk/musiconhold.h"
 #include "asterisk/poll-compat.h"
+#include "asterisk/stasis_channels.h"
+#include "asterisk/format_cache.h"
 
 /*! Global jitterbuffer configuration - by default, jb is disabled
  *  \note Values shown here match the defaults shown in alsa.conf.sample */
@@ -135,7 +142,7 @@ static int autoanswer = 1;
 static int mute = 0;
 static int noaudiocapture = 0;
 
-static struct ast_channel *alsa_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause);
+static struct ast_channel *alsa_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause);
 static int alsa_digit(struct ast_channel *c, char digit, unsigned int duration);
 static int alsa_text(struct ast_channel *c, const char *text);
 static int alsa_hangup(struct ast_channel *c);
@@ -201,12 +208,12 @@ static snd_pcm_t *alsa_card_init(char *dev, snd_pcm_stream_t stream)
 	direction = 0;
 	err = snd_pcm_hw_params_set_rate_near(handle, hwparams, &rate, &direction);
 	if (rate != DESIRED_RATE)
-		ast_log(LOG_WARNING, "Rate not correct, requested %d, got %d\n", DESIRED_RATE, rate);
+		ast_log(LOG_WARNING, "Rate not correct, requested %d, got %u\n", DESIRED_RATE, rate);
 
 	direction = 0;
 	err = snd_pcm_hw_params_set_period_size_near(handle, hwparams, &period_size, &direction);
 	if (err < 0)
-		ast_log(LOG_ERROR, "period_size(%ld frames) is bad: %s\n", period_size, snd_strerror(err));
+		ast_log(LOG_ERROR, "period_size(%lu frames) is bad: %s\n", period_size, snd_strerror(err));
 	else {
 		ast_debug(1, "Period size is %d\n", err);
 	}
@@ -214,7 +221,7 @@ static snd_pcm_t *alsa_card_init(char *dev, snd_pcm_stream_t stream)
 	buffer_size = 4096 * 2;		/* period_size * 16; */
 	err = snd_pcm_hw_params_set_buffer_size_near(handle, hwparams, &buffer_size);
 	if (err < 0)
-		ast_log(LOG_WARNING, "Problem setting buffer size of %ld: %s\n", buffer_size, snd_strerror(err));
+		ast_log(LOG_WARNING, "Problem setting buffer size of %lu: %s\n", buffer_size, snd_strerror(err));
 	else {
 		ast_debug(1, "Buffer size is set to %d frames\n", err);
 	}
@@ -505,7 +512,7 @@ static struct ast_frame *alsa_read(struct ast_channel *chan)
 		}
 
 		f.frametype = AST_FRAME_VOICE;
-		ast_format_set(&f.subclass.format, AST_FORMAT_SLINEAR, 0);
+		f.subclass.format = ast_format_slin;
 		f.samples = FRAME_SIZE;
 		f.datalen = FRAME_SIZE * 2;
 		f.data.ptr = buf;
@@ -568,18 +575,20 @@ static int alsa_indicate(struct ast_channel *chan, int cond, const void *data, s
 	return res;
 }
 
-static struct ast_channel *alsa_new(struct chan_alsa_pvt *p, int state, const char *linkedid)
+static struct ast_channel *alsa_new(struct chan_alsa_pvt *p, int state, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor)
 {
 	struct ast_channel *tmp = NULL;
 
-	if (!(tmp = ast_channel_alloc(1, state, 0, 0, "", p->exten, p->context, linkedid, 0, "ALSA/%s", indevname)))
+	if (!(tmp = ast_channel_alloc(1, state, 0, 0, "", p->exten, p->context, assignedids, requestor, 0, "ALSA/%s", indevname)))
 		return NULL;
+
+	ast_channel_stage_snapshot(tmp);
 
 	ast_channel_tech_set(tmp, &alsa_tech);
 	ast_channel_set_fd(tmp, 0, readdev);
-	ast_format_set(ast_channel_readformat(tmp), AST_FORMAT_SLINEAR, 0);
-	ast_format_set(ast_channel_writeformat(tmp), AST_FORMAT_SLINEAR, 0);
-	ast_format_cap_add(ast_channel_nativeformats(tmp), ast_channel_writeformat(tmp));
+	ast_channel_set_readformat(tmp, ast_format_slin);
+	ast_channel_set_writeformat(tmp, ast_format_slin);
+	ast_channel_nativeformats_set(tmp, alsa_tech.capabilities);
 
 	ast_channel_tech_pvt_set(tmp, p);
 	if (!ast_strlen_zero(p->context))
@@ -591,6 +600,10 @@ static struct ast_channel *alsa_new(struct chan_alsa_pvt *p, int state, const ch
 	p->owner = tmp;
 	ast_module_ref(ast_module_info->self);
 	ast_jb_configure(tmp, &global_jbconf);
+
+	ast_channel_stage_snapshot_done(tmp);
+	ast_channel_unlock(tmp);
+
 	if (state != AST_STATE_DOWN) {
 		if (ast_pbx_start(tmp)) {
 			ast_log(LOG_WARNING, "Unable to start PBX on %s\n", ast_channel_name(tmp));
@@ -602,16 +615,13 @@ static struct ast_channel *alsa_new(struct chan_alsa_pvt *p, int state, const ch
 	return tmp;
 }
 
-static struct ast_channel *alsa_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause)
+static struct ast_channel *alsa_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause)
 {
-	struct ast_format tmpfmt;
-	char buf[256];
 	struct ast_channel *tmp = NULL;
 
-	ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0);
-
-	if (!(ast_format_cap_iscompatible(cap, &tmpfmt))) {
-		ast_log(LOG_NOTICE, "Asked to get a channel of format '%s'\n", ast_getformatname_multiple(buf, sizeof(buf), cap));
+	if (ast_format_cap_iscompatible_format(cap, ast_format_slin) == AST_FORMAT_CMP_NOT_EQUAL) {
+		struct ast_str *codec_buf = ast_str_alloca(64);
+		ast_log(LOG_NOTICE, "Asked to get a channel of format '%s'\n", ast_format_cap_get_names(cap, &codec_buf));
 		return NULL;
 	}
 
@@ -620,7 +630,7 @@ static struct ast_channel *alsa_request(const char *type, struct ast_format_cap 
 	if (alsa.owner) {
 		ast_log(LOG_NOTICE, "Already have a call on the ALSA channel\n");
 		*cause = AST_CAUSE_BUSY;
-	} else if (!(tmp = alsa_new(&alsa, AST_STATE_DOWN, requestor ? ast_channel_linkedid(requestor) : NULL))) {
+	} else if (!(tmp = alsa_new(&alsa, AST_STATE_DOWN, assignedids, requestor))) {
 		ast_log(LOG_WARNING, "Unable to create new ALSA channel\n");
 	}
 
@@ -869,7 +879,7 @@ static char *console_dial(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 			ast_copy_string(alsa.exten, mye, sizeof(alsa.exten));
 			ast_copy_string(alsa.context, myc, sizeof(alsa.context));
 			hookstate = 1;
-			alsa_new(&alsa, AST_STATE_RINGING, NULL);
+			alsa_new(&alsa, AST_STATE_RINGING, NULL, NULL);
 		} else
 			ast_cli(a->fd, "No such extension '%s' in context '%s'\n", mye, myc);
 	}
@@ -932,17 +942,26 @@ static struct ast_cli_entry cli_alsa[] = {
 	AST_CLI_DEFINE(console_mute, "Disable/Enable mic input"),
 };
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	struct ast_config *cfg;
 	struct ast_variable *v;
 	struct ast_flags config_flags = { 0 };
-	struct ast_format tmpfmt;
 
-	if (!(alsa_tech.capabilities = ast_format_cap_alloc())) {
+	if (!(alsa_tech.capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
-	ast_format_cap_add(alsa_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
+	ast_format_cap_append(alsa_tech.capabilities, ast_format_slin, 0);
 
 	/* Copy the default jb config over global_jbconf */
 	memcpy(&global_jbconf, &default_jbconf, sizeof(struct ast_jb_conf));
@@ -1020,11 +1039,14 @@ static int unload_module(void)
 	if (alsa.owner)
 		return -1;
 
-	alsa_tech.capabilities = ast_format_cap_destroy(alsa_tech.capabilities);
+	ao2_cleanup(alsa_tech.capabilities);
+	alsa_tech.capabilities = NULL;
+
 	return 0;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "ALSA Console Channel Driver",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_CHANNEL_DRIVER,

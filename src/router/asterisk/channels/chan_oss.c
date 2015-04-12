@@ -27,10 +27,15 @@
  * \author Mark Spencer <markster@digium.com>
  * \author Luigi Rizzo
  *
- * \par See also
- * \arg \ref Config_oss
- *
  * \ingroup channel_drivers
+ */
+
+/*! \li \ref chan_oss.c uses the configuration file \ref oss.conf
+ * \addtogroup configuration_file
+ */
+
+/*! \page oss.conf oss.conf
+ * \verbinclude oss.conf.sample
  */
 
 /*** MODULEINFO
@@ -40,7 +45,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 371592 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <ctype.h>		/* isalnum() used here */
 #include <math.h>
@@ -48,7 +53,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 371592 $")
 
 #ifdef __linux
 #include <linux/soundcard.h>
-#elif defined(__FreeBSD__) || defined(__CYGWIN__) || defined(__GLIBC__)
+#elif defined(__FreeBSD__) || defined(__CYGWIN__) || defined(__GLIBC__) || defined(__sun)
 #include <sys/soundcard.h>
 #else
 #include <soundcard.h>
@@ -63,6 +68,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 371592 $")
 #include "asterisk/causes.h"
 #include "asterisk/musiconhold.h"
 #include "asterisk/app.h"
+#include "asterisk/bridge.h"
+#include "asterisk/format_cache.h"
 
 #include "console_video.h"
 
@@ -328,7 +335,7 @@ static struct chan_oss_pvt oss_default = {
 
 static int setformat(struct chan_oss_pvt *o, int mode);
 
-static struct ast_channel *oss_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor,
+static struct ast_channel *oss_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor,
 									   const char *data, int *cause);
 static int oss_digit_begin(struct ast_channel *c, char digit);
 static int oss_digit_end(struct ast_channel *c, char digit, unsigned int duration);
@@ -720,7 +727,7 @@ static struct ast_frame *oss_read(struct ast_channel *c)
 		return f;
 	/* ok we can build and deliver the frame to the caller */
 	f->frametype = AST_FRAME_VOICE;
-	ast_format_set(&f->subclass.format, AST_FORMAT_SLINEAR, 0);
+	f->subclass.format = ao2_bump(ast_format_slin);
 	f->samples = FRAME_SIZE;
 	f->datalen = FRAME_SIZE * 2;
 	f->data.ptr = o->oss_read_buf + AST_FRIENDLY_OFFSET;
@@ -786,11 +793,11 @@ static int oss_indicate(struct ast_channel *c, int cond, const void *data, size_
 /*!
  * \brief allocate a new channel.
  */
-static struct ast_channel *oss_new(struct chan_oss_pvt *o, char *ext, char *ctx, int state, const char *linkedid)
+static struct ast_channel *oss_new(struct chan_oss_pvt *o, char *ext, char *ctx, int state, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor)
 {
 	struct ast_channel *c;
 
-	c = ast_channel_alloc(1, state, o->cid_num, o->cid_name, "", ext, ctx, linkedid, 0, "Console/%s", o->device + 5);
+	c = ast_channel_alloc(1, state, o->cid_num, o->cid_name, "", ext, ctx, assignedids, requestor, 0, "Console/%s", o->device + 5);
 	if (c == NULL)
 		return NULL;
 	ast_channel_tech_set(c, &oss_tech);
@@ -798,9 +805,9 @@ static struct ast_channel *oss_new(struct chan_oss_pvt *o, char *ext, char *ctx,
 		setformat(o, O_RDWR);
 	ast_channel_set_fd(c, 0, o->sounddev); /* -1 if device closed, override later */
 
-	ast_format_set(ast_channel_readformat(c), AST_FORMAT_SLINEAR, 0);
-	ast_format_set(ast_channel_writeformat(c), AST_FORMAT_SLINEAR, 0);
-	ast_format_cap_add(ast_channel_nativeformats(c), ast_channel_readformat(c));
+	ast_channel_set_readformat(c, ast_format_slin);
+	ast_channel_set_writeformat(c, ast_format_slin);
+	ast_channel_nativeformats_set(c, oss_tech.capabilities);
 
 	/* if the console makes the call, add video to the offer */
 	/* if (state == AST_STATE_RINGING) TODO XXX CONSOLE VIDEO IS DISABLED UNTIL IT GETS A MAINTAINER
@@ -823,6 +830,7 @@ static struct ast_channel *oss_new(struct chan_oss_pvt *o, char *ext, char *ctx,
 	o->owner = c;
 	ast_module_ref(ast_module_info->self);
 	ast_jb_configure(c, &global_jbconf);
+	ast_channel_unlock(c);
 	if (state != AST_STATE_DOWN) {
 		if (ast_pbx_start(c)) {
 			ast_log(LOG_WARNING, "Unable to start PBX on %s\n", ast_channel_name(c));
@@ -835,7 +843,7 @@ static struct ast_channel *oss_new(struct chan_oss_pvt *o, char *ext, char *ctx,
 	return c;
 }
 
-static struct ast_channel *oss_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause)
+static struct ast_channel *oss_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause)
 {
 	struct ast_channel *c;
 	struct chan_oss_pvt *o;
@@ -844,8 +852,6 @@ static struct ast_channel *oss_request(const char *type, struct ast_format_cap *
 		AST_APP_ARG(flags);
 	);
 	char *parse = ast_strdupa(data);
-	char buf[256];
-	struct ast_format tmpfmt;
 
 	AST_NONSTANDARD_APP_ARGS(args, parse, '/');
 	o = find_desc(args.name);
@@ -856,8 +862,9 @@ static struct ast_channel *oss_request(const char *type, struct ast_format_cap *
 		/* XXX we could default to 'dsp' perhaps ? */
 		return NULL;
 	}
-	if (!(ast_format_cap_iscompatible(cap, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0)))) {
-		ast_log(LOG_NOTICE, "Format %s unsupported\n", ast_getformatname_multiple(buf, sizeof(buf), cap));
+	if (ast_format_cap_iscompatible_format(cap, ast_format_slin) == AST_FORMAT_CMP_NOT_EQUAL) {
+		struct ast_str *codec_buf = ast_str_alloca(64);
+		ast_log(LOG_NOTICE, "Format %s unsupported\n", ast_format_cap_get_names(cap, &codec_buf));
 		return NULL;
 	}
 	if (o->owner) {
@@ -865,7 +872,7 @@ static struct ast_channel *oss_request(const char *type, struct ast_format_cap *
 		*cause = AST_CAUSE_BUSY;
 		return NULL;
 	}
-	c = oss_new(o, NULL, NULL, AST_STATE_DOWN, requestor ? ast_channel_linkedid(requestor) : NULL);
+	c = oss_new(o, NULL, NULL, AST_STATE_DOWN, assignedids, requestor);
 	if (c == NULL) {
 		ast_log(LOG_WARNING, "Unable to create new OSS channel\n");
 		return NULL;
@@ -1124,7 +1131,7 @@ static char *console_dial(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 		myc = o->ctx;
 	if (ast_exists_extension(NULL, myc, mye, 1, NULL)) {
 		o->hookstate = 1;
-		oss_new(o, mye, myc, AST_STATE_RINGING, NULL);
+		oss_new(o, mye, myc, AST_STATE_RINGING, NULL, NULL);
 	} else
 		ast_cli(a->fd, "No such extension '%s' in context '%s'\n", mye, myc);
 	if (s)
@@ -1168,7 +1175,6 @@ static char *console_mute(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 static char *console_transfer(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	struct chan_oss_pvt *o = find_desc(oss_active);
-	struct ast_channel *b = NULL;
 	char *tmp, *ext, *ctx;
 
 	switch (cmd) {
@@ -1187,24 +1193,19 @@ static char *console_transfer(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 		return CLI_SHOWUSAGE;
 	if (o == NULL)
 		return CLI_FAILURE;
-	if (o->owner == NULL || (b = ast_bridged_channel(o->owner)) == NULL) {
+	if (o->owner == NULL || !ast_channel_is_bridged(o->owner)) {
 		ast_cli(a->fd, "There is no call to transfer\n");
 		return CLI_SUCCESS;
 	}
 
 	tmp = ast_ext_ctx(a->argv[2], &ext, &ctx);
-	if (ctx == NULL)			/* supply default context if needed */
+	if (ctx == NULL) {			/* supply default context if needed */
 		ctx = ast_strdupa(ast_channel_context(o->owner));
-	if (!ast_exists_extension(b, ctx, ext, 1,
-		S_COR(ast_channel_caller(b)->id.number.valid, ast_channel_caller(b)->id.number.str, NULL))) {
-		ast_cli(a->fd, "No such extension exists\n");
-	} else {
-		ast_cli(a->fd, "Whee, transferring %s to %s@%s.\n", ast_channel_name(b), ext, ctx);
-		if (ast_async_goto(b, ctx, ext, 1))
-			ast_cli(a->fd, "Failed to transfer :(\n");
 	}
-	if (tmp)
-		ast_free(tmp);
+	if (ast_bridge_transfer_blind(1, o->owner, ext, ctx, NULL, NULL) != AST_BRIDGE_TRANSFER_SUCCESS) {
+		ast_log(LOG_WARNING, "Unable to transfer call from channel %s\n", ast_channel_name(o->owner));
+	}
+	ast_free(tmp);
 	return CLI_SUCCESS;
 }
 
@@ -1436,12 +1437,21 @@ error:
 #endif
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	struct ast_config *cfg = NULL;
 	char *ctg = NULL;
 	struct ast_flags config_flags = { 0 };
-	struct ast_format tmpfmt;
 
 	/* Copy the default jb config over global_jbconf */
 	memcpy(&global_jbconf, &default_jbconf, sizeof(struct ast_jb_conf));
@@ -1468,10 +1478,10 @@ static int load_module(void)
 		return AST_MODULE_LOAD_FAILURE;
 	}
 
-	if (!(oss_tech.capabilities = ast_format_cap_alloc())) {
+	if (!(oss_tech.capabilities = ast_format_cap_alloc(0))) {
 		return AST_MODULE_LOAD_FAILURE;
 	}
-	ast_format_cap_add(oss_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
+	ast_format_cap_append(oss_tech.capabilities, ast_format_slin, 0);
 
 	/* TODO XXX CONSOLE VIDEO IS DISABLE UNTIL IT HAS A MAINTAINER
 	 * add console_video_formats to oss_tech.capabilities once this occurs. */
@@ -1506,8 +1516,11 @@ static int unload_module(void)
 		ast_free(o);
 		o = next;
 	}
-	oss_tech.capabilities = ast_format_cap_destroy(oss_tech.capabilities);
+	ao2_cleanup(oss_tech.capabilities);
+	oss_tech.capabilities = NULL;
+
 	return 0;
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "OSS Console Channel Driver");
+AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "OSS Console Channel Driver");
+

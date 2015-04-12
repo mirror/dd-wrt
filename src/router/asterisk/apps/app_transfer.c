@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 361042 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 405830 $")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -54,7 +54,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 361042 $")
 		<description>
 			<para>Requests the remote caller be transferred
 			to a given destination. If TECH (SIP, IAX2, LOCAL etc) is used, only
-			an incoming call with the same channel technology will be transfered.
+			an incoming call with the same channel technology will be transferred.
 			Note that for SIP, if you transfer before call is setup, a 302 redirect
 			SIP message will be returned to the caller.</para>
 			<para>The result of the application will be reported in the <variable>TRANSFERSTATUS</variable>

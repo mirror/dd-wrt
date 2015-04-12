@@ -36,20 +36,6 @@ extern "C" {
 #include "asterisk/event.h"
 
 /*!
- * \brief AMA Flags
- *
- * \note This must much up with the AST_CDR_* defines for AMA flags.
- */
-enum ast_cel_ama_flag {
-	AST_CEL_AMA_FLAG_NONE,
-	AST_CEL_AMA_FLAG_OMIT,
-	AST_CEL_AMA_FLAG_BILLING,
-	AST_CEL_AMA_FLAG_DOCUMENTATION,
-	/*! \brief Must be final entry */
-	AST_CEL_AMA_FLAG_TOTAL,
-};
-
-/*!
  * \brief CEL event types
  */
 enum ast_cel_event_type {
@@ -65,44 +51,28 @@ enum ast_cel_event_type {
 	AST_CEL_APP_START = 5,
 	/*! \brief an app ends */
 	AST_CEL_APP_END = 6,
-	/*! \brief a bridge is established */
-	AST_CEL_BRIDGE_START = 7,
-	/*! \brief a bridge is torn down */
-	AST_CEL_BRIDGE_END = 8,
-	/*! \brief a conference is started */
-	AST_CEL_CONF_START = 9,
-	/*! \brief a conference is ended */
-	AST_CEL_CONF_END = 10,
+	/*! \brief channel enters a bridge */
+	AST_CEL_BRIDGE_ENTER = 7,
+	/*! \brief channel exits a bridge */
+	AST_CEL_BRIDGE_EXIT = 8,
 	/*! \brief a channel is parked */
-	AST_CEL_PARK_START = 11,
+	AST_CEL_PARK_START = 9,
 	/*! \brief channel out of the park */
-	AST_CEL_PARK_END = 12,
+	AST_CEL_PARK_END = 10,
 	/*! \brief a transfer occurs */
-	AST_CEL_BLINDTRANSFER = 13,
+	AST_CEL_BLINDTRANSFER = 11,
 	/*! \brief a transfer occurs */
-	AST_CEL_ATTENDEDTRANSFER = 14,
-	/*! \brief a transfer occurs */
-	AST_CEL_TRANSFER = 15,
-	/*! \brief a 3-way conference, usually part of a transfer */
-	AST_CEL_HOOKFLASH = 16,
-	/*! \brief a 3-way conference, usually part of a transfer */
-	AST_CEL_3WAY_START = 17,
-	/*! \brief a 3-way conference, usually part of a transfer */
-	AST_CEL_3WAY_END = 18,
-	/*! \brief channel enters a conference */
-	AST_CEL_CONF_ENTER = 19,
-	/*! \brief channel exits a conference */
-	AST_CEL_CONF_EXIT = 20,
+	AST_CEL_ATTENDEDTRANSFER = 12,
 	/*! \brief a user-defined event, the event name field should be set  */
-	AST_CEL_USER_DEFINED = 21,
+	AST_CEL_USER_DEFINED = 13,
 	/*! \brief the last channel with the given linkedid is retired  */
-	AST_CEL_LINKEDID_END = 22,
-	/*! \brief a masquerade happened to alter the participants on a bridge  */
-	AST_CEL_BRIDGE_UPDATE = 23,
+	AST_CEL_LINKEDID_END = 14,
 	/*! \brief a directed pickup was performed on this channel  */
-	AST_CEL_PICKUP = 24,
+	AST_CEL_PICKUP = 15,
 	/*! \brief this call was forwarded somewhere else  */
-	AST_CEL_FORWARD = 25,
+	AST_CEL_FORWARD = 16,
+	/*! \brief A local channel optimization occurred */
+	AST_CEL_LOCAL_OPTIMIZE = 17,
 };
 
 /*! 
@@ -161,42 +131,6 @@ const char *ast_cel_get_type_name(enum ast_cel_event_type type);
 enum ast_cel_event_type ast_cel_str_to_event_type(const char *name);
 
 /*!
- * \brief Convert AMA flag to printable string
- * 
- * \param[in] flag the flag to convert to a string
- *
- * \since 1.8
- *
- * \return the string representation of the flag
- */
-const char *ast_cel_get_ama_flag_name(enum ast_cel_ama_flag flag);
-
-/*! 
- * \brief Check and potentially retire a Linked ID
- *
- * \param chan channel that is being destroyed or its linkedid is changing
- *
- * \since 1.8
- *
- * If at least one CEL backend is looking for CEL_LINKEDID_END
- * events, this function will check if the given channel is the last
- * active channel with that linkedid, and if it is, emit a
- * CEL_LINKEDID_END event.
- *
- * \return nothing
- */
-void ast_cel_check_retire_linkedid(struct ast_channel *chan);
-
-/*!
- * \brief Inform CEL that a new linkedid is being used
- * \since 11
- *
- * \retval -1 error
- * \retval 0 success
- */
-int ast_cel_linkedid_ref(const char *linkedid);
-
-/*!
  * \brief Create a fake channel from data in a CEL event
  *
  * \note
@@ -216,31 +150,6 @@ int ast_cel_linkedid_ref(const char *linkedid);
  *       some point.
  */
 struct ast_channel *ast_cel_fabricate_channel_from_event(const struct ast_event *event);
-
-/*!
- * \brief Report a channel event
- *
- * \param chan This argument is required.  This is the primary channel associated with
- *        this channel event.
- * \param event_type This is the type of call event being reported.
- * \param userdefevname This is an optional custom name for the call event.
- * \param extra This is an optional opaque field that will go into the "CEL_EXTRA"
- *        information element of the call event.
- * \param peer2 All CEL events contain a "peer name" information element.  The first
- *        place the code will look to get a peer name is from the bridged channel to
- *        chan.  If chan has no bridged channel and peer2 is specified, then the name
- *        of peer2 will go into the "peer name" field.  If neither are available, the
- *        peer name field will be blank.
- *
- * \since 1.8
- *
- * \pre chan and peer2 are both unlocked
- *
- * \retval 0 success
- * \retval non-zero failure
- */
-int ast_cel_report_event(struct ast_channel *chan, enum ast_cel_event_type event_type,
-		const char *userdefevname, const char *extra, struct ast_channel *peer2);
 
 /*!
  * \brief Helper struct for getting the fields out of a CEL event
@@ -292,6 +201,117 @@ struct ast_cel_event_record {
  * \retval non-zero failure
  */
 int ast_cel_fill_record(const struct ast_event *event, struct ast_cel_event_record *r);
+
+/*!
+ * \brief Publish a CEL event
+ * \since 12
+ *
+ * \param chan This is the primary channel associated with this channel event.
+ * \param event_type This is the type of call event being reported.
+ * \param blob This contains any additional parameters that need to be conveyed for this event.
+ */
+void ast_cel_publish_event(struct ast_channel *chan,
+	enum ast_cel_event_type event_type,
+	struct ast_json *blob);
+
+/*!
+ * \brief Get the CEL topic
+ *
+ * \retval The CEL topic
+ * \retval NULL if not allocated
+ */
+struct stasis_topic *ast_cel_topic(void);
+
+/*! \brief A structure to hold CEL global configuration options */
+struct ast_cel_general_config {
+	AST_DECLARE_STRING_FIELDS(
+		AST_STRING_FIELD(date_format); /*!< The desired date format for logging */
+	);
+	int enable;			/*!< Whether CEL is enabled */
+	int64_t events;			/*!< The events to be logged */
+	/*! The apps for which to log app start and end events. This is
+	 * ast_str_container_alloc()ed and filled with ao2-allocated
+	 * char* which are all-lowercase application names. */
+	struct ao2_container *apps;
+};
+
+/*!
+ * \brief Allocate a CEL configuration object
+ *
+ * \retval NULL on error
+ * \retval The new CEL configuration object
+ */
+void *ast_cel_general_config_alloc(void);
+
+/*!
+ * \since 12
+ * \brief Obtain the current CEL configuration
+ *
+ * The configuration is a ref counted object. The caller of this function must
+ * decrement the ref count when finished with the configuration.
+ *
+ * \retval NULL on error
+ * \retval The current CEL configuration
+ */
+struct ast_cel_general_config *ast_cel_get_config(void);
+
+/*!
+ * \since 12
+ * \brief Set the current CEL configuration
+ *
+ * \param config The new CEL configuration
+ */
+void ast_cel_set_config(struct ast_cel_general_config *config);
+
+struct ast_channel_snapshot;
+/*!
+ * \brief Allocate and populate a CEL event structure
+ *
+ * \param snapshot An ast_channel_snapshot of the primary channel associated
+ *        with this channel event.
+ * \param event_type The type of call event being reported.
+ * \param userdefevname Custom name for the call event. (optional)
+ * \param extra An event-specific opaque JSON blob to be rendered and placed
+ *        in the "CEL_EXTRA" information element of the call event. (optional)
+ * \param peer_str A list of comma-separated peer channel names. (optional)
+ *
+ * \since 12
+ *
+ * \retval The created ast_event structure
+ * \retval NULL on failure
+ */
+struct ast_event *ast_cel_create_event(struct ast_channel_snapshot *snapshot,
+		enum ast_cel_event_type event_type, const char *userdefevname,
+		struct ast_json *extra, const char *peer_str);
+
+/*!
+ * \brief CEL backend callback
+ */
+/*typedef int (*ast_cel_backend_cb)(struct ast_cel_event_record *cel);*/
+typedef void (*ast_cel_backend_cb)(struct ast_event *event);
+
+/*!
+ * \brief Register a CEL backend
+ *
+ * \param name Name of backend to register
+ * \param backend_callback Callback to register
+ *
+ * \retval zero on success
+ * \retval non-zero on failure
+ * \since 12
+ */
+int ast_cel_backend_register(const char *name, ast_cel_backend_cb backend_callback);
+
+/*!
+ * \brief Unregister a CEL backend
+ *
+ * \param name Name of backend to unregister
+ *
+ * \retval zero on success
+ * \retval non-zero on failure
+ * \since 12
+ */
+int ast_cel_backend_unregister(const char *name);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

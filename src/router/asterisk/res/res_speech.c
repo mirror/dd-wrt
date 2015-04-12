@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368751 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $");
 
 #include "asterisk/channel.h"
 #include "asterisk/module.h"
@@ -38,7 +38,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368751 $");
 #include "asterisk/cli.h"
 #include "asterisk/term.h"
 #include "asterisk/speech.h"
-
+#include "asterisk/format_cache.h"
 
 static AST_RWLIST_HEAD_STATIC(engines, ast_speech_engine);
 static struct ast_speech_engine *default_engine = NULL;
@@ -172,31 +172,45 @@ int ast_speech_change(struct ast_speech *speech, const char *name, const char *v
 	return (speech->engine->change ? speech->engine->change(speech, name, value) : -1);
 }
 
+/*! \brief Get an engine specific attribute */
+int ast_speech_get_setting(struct ast_speech *speech, const char *name, char *buf, size_t len)
+{
+	return (speech->engine->get_setting ? speech->engine->get_setting(speech, name, buf, len) : -1);
+}
+
 /*! \brief Create a new speech structure using the engine specified */
 struct ast_speech *ast_speech_new(const char *engine_name, const struct ast_format_cap *cap)
 {
 	struct ast_speech_engine *engine = NULL;
 	struct ast_speech *new_speech = NULL;
-	struct ast_format_cap *joint = NULL;
-	struct ast_format best;
-
-	ast_format_set(&best, AST_FORMAT_SLINEAR, 0);
+	struct ast_format_cap *joint;
+	RAII_VAR(struct ast_format *, best, NULL, ao2_cleanup);
 
 	/* Try to find the speech recognition engine that was requested */
 	if (!(engine = find_engine(engine_name)))
 		return NULL;
 
-	/* Before even allocating the memory below do some codec negotiation, we choose the best codec possible and fall back to signed linear if possible */
-	if ((joint = ast_format_cap_joint(engine->formats, cap))) {
-		ast_best_codec(joint, &best);
-		joint = ast_format_cap_destroy(joint);
-	} else if (!ast_format_cap_iscompatible(engine->formats, &best)) {
+	joint = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!joint) {
 		return NULL;
 	}
 
+	ast_format_cap_get_compatible(engine->formats, cap, joint);
+	best = ast_format_cap_get_format(joint, 0);
+	ao2_ref(joint, -1);
+
+	if (!best) {
+		if (ast_format_cap_iscompatible_format(engine->formats, ast_format_slin) != AST_FORMAT_CMP_NOT_EQUAL) {
+			best = ao2_bump(ast_format_slin);
+		} else {
+			return NULL;
+		}
+	}
+
 	/* Allocate our own speech structure, and try to allocate a structure from the engine too */
-	if (!(new_speech = ast_calloc(1, sizeof(*new_speech))))
+	if (!(new_speech = ast_calloc(1, sizeof(*new_speech)))) {
 		return NULL;
+	}
 
 	/* Initialize the lock */
 	ast_mutex_init(&new_speech->lock);
@@ -208,13 +222,13 @@ struct ast_speech *ast_speech_new(const char *engine_name, const struct ast_form
 	new_speech->engine = engine;
 
 	/* Can't forget the format audio is going to be in */
-	ast_format_copy(&new_speech->format, &best);
+	new_speech->format = best;
 
 	/* We are not ready to accept audio yet */
 	ast_speech_change_state(new_speech, AST_SPEECH_STATE_NOT_READY);
 
 	/* Pass ourselves to the engine so they can set us up some more and if they error out then do not create a structure */
-	if (engine->create(new_speech, &best)) {
+	if (engine->create(new_speech, best)) {
 		ast_mutex_destroy(&new_speech->lock);
 		ast_free(new_speech);
 		new_speech = NULL;
@@ -241,6 +255,8 @@ int ast_speech_destroy(struct ast_speech *speech)
 	/* If a processing sound is set - free the memory used by it */
 	if (speech->processing_sound)
 		ast_free(speech->processing_sound);
+
+	ao2_ref(speech->format, -1);
 
 	/* Aloha we are done */
 	ast_free(speech);
@@ -346,6 +362,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Generic Speech Recognition API",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_APP_DEPEND,

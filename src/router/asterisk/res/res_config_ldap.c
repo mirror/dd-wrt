@@ -1,5 +1,5 @@
 /*
- * Asterisk -- A telephony toolkit for Linux.
+ * Asterisk -- An open source telephony toolkit.
  *
  * Copyright (C) 2005, Oxymium sarl
  * Manuel Guesdon <mguesdon@oxymium.net> - LDAP RealTime Driver Author/Adaptor
@@ -21,14 +21,23 @@
 
 /*! \file
  *
- * \brief ldap plugin for portable configuration engine (ARA)
+ * \brief LDAP plugin for portable configuration engine (ARA)
  *
  * \author Mark Spencer <markster@digium.com>
  * \author Manuel Guesdon
  * \author Carl-Einar Thorner <cthorner@voicerd.com>
  * \author Russell Bryant <russell@digium.com>
  *
- * \extref OpenLDAP http://www.openldap.org
+ * OpenLDAP http://www.openldap.org
+ */
+
+/*! \li \ref res_config_ldap.c uses the configuration file \ref res_ldap.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*! 
+ * \page res_ldap.conf res_ldap.conf
+ * \verbinclude res_ldap.conf.sample
  */
 
 /*** MODULEINFO
@@ -44,7 +53,7 @@
 #include <stdio.h>
 #include <ldap.h>
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385199 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/channel.h"
 #include "asterisk/logger.h"
@@ -83,7 +92,8 @@ struct category_and_metric {
 	int var_metric; /*!< For organizing variables (particularly includes and switch statments) within a context */
 };
 
-/*! \brief Table configuration */
+/*! \brief Table configuration 
+ */
 struct ldap_table_config {
 	char *table_name;		 /*!< table name */
 	char *additional_filter;	  /*!< additional filter	*/
@@ -93,7 +103,8 @@ struct ldap_table_config {
 	/* TODO: Make proxies work */
 };
 
-/*! \brief Should be locked before using it */
+/*! \brief Should be locked before using it 
+ */
 static AST_LIST_HEAD_NOLOCK_STATIC(table_configs, ldap_table_config);
 static struct ldap_table_config *base_table_config;
 static struct ldap_table_config *static_table_config;
@@ -102,7 +113,8 @@ static struct ast_cli_entry ldap_cli[] = {
 	AST_CLI_DEFINE(realtime_ldap_status, "Shows connection information for the LDAP RealTime driver"),
 };
 
-/*! \brief Create a new table_config */
+/*! \brief Create a new table_config
+ */
 static struct ldap_table_config *table_config_new(const char *table_name)
 {
 	struct ldap_table_config *p;
@@ -120,8 +132,12 @@ static struct ldap_table_config *table_config_new(const char *table_name)
 	return p;
 }
 
-/*! \brief Find a table_config - Should be locked before using it 
- *  \note This function assumes ldap_lock to be locked. */
+/*! \brief Find a table_config
+ *
+ * Should be locked before using it 
+ *
+ *  \note This function assumes ldap_lock to be locked.
+ */
 static struct ldap_table_config *table_config_for_table_name(const char *table_name)
 {
 	struct ldap_table_config *c = NULL;
@@ -134,7 +150,8 @@ static struct ldap_table_config *table_config_for_table_name(const char *table_n
 	return c;
 }
 
-/*! \brief Find variable by name */
+/*! \brief Find variable by name
+ */
 static struct ast_variable *variable_named(struct ast_variable *var, const char *name)
 {
 	for (; var; var = var->next) {
@@ -145,10 +162,10 @@ static struct ast_variable *variable_named(struct ast_variable *var, const char 
 	return var;
 }
 
-/*! \brief for the semicolon delimiter
-	\param somestr - pointer to a string
-
-	\return number of occurances of the delimiter(semicolon)
+/*! \brief Count  semicolons in string
+ * \param somestr - pointer to a string
+ *
+ * \return number of occurances of the delimiter(semicolon)
  */
 static int semicolon_count_str(const char *somestr)
 {
@@ -162,7 +179,9 @@ static int semicolon_count_str(const char *somestr)
 	return count;
 }
 
-/* takes a linked list of \a ast_variable variables, finds the one with the name variable_value
+/* \brief Count semicolons in variables
+ *  
+ * takes a linked list of \a ast_variable variables, finds the one with the name variable_value
  * and returns the number of semicolons in the value for that \a ast_variable
  */
 static int semicolon_count_var(struct ast_variable *var)
@@ -178,7 +197,10 @@ static int semicolon_count_var(struct ast_variable *var)
 	return semicolon_count_str(var_value->value);
 }
 
-/*! \brief add attribute to table config - Should be locked before using it */
+/*! \brief add attribute to table config
+ *
+ * Should be locked before using it
+ */
 static void ldap_table_config_add_attribute(struct ldap_table_config *table_config,
 	const char *attribute_name, const char *attribute_value)
 {
@@ -198,8 +220,10 @@ static void ldap_table_config_add_attribute(struct ldap_table_config *table_conf
 	table_config->attributes = var;
 }
 
-/*! \brief Free table_config 
- *  \note assumes ldap_lock to be locked */
+/*! \brief Free table_config
+ *
+ * \note assumes ldap_lock to be locked
+ */
 static void table_configs_free(void)
 {
 	struct ldap_table_config *c;
@@ -221,7 +245,10 @@ static void table_configs_free(void)
 	static_table_config = NULL;
 }
 
-/*! \brief Convert variable name to ldap attribute name - Should be locked before using it */
+/*! \brief Convert variable name to ldap attribute name
+ *
+ * \note Should be locked before using it
+ */
 static const char *convert_attribute_name_to_ldap(struct ldap_table_config *table_config,
 	const char *attribute_name)
 {
@@ -247,7 +274,9 @@ static const char *convert_attribute_name_to_ldap(struct ldap_table_config *tabl
 }
 
 /*! \brief Convert ldap attribute name to variable name 
-	\note Should be locked before using it */
+ *
+ * \note Should be locked before using it
+ */
 static const char *convert_attribute_name_from_ldap(struct ldap_table_config *table_config,
 						    const char *attribute_name)
 {
@@ -273,8 +302,8 @@ static const char *convert_attribute_name_from_ldap(struct ldap_table_config *ta
 }
 
 /*! \brief Get variables from ldap entry attributes 
-	\note Should be locked before using it
- 	\return a linked list of ast_variable variables.
+ * \note Should be locked before using it
+ * \return a linked list of ast_variable variables.
  */
 static struct ast_variable *realtime_ldap_entry_to_var(struct ldap_table_config *table_config,
 	LDAPMessage *ldap_entry)
@@ -357,7 +386,7 @@ static struct ast_variable *realtime_ldap_entry_to_var(struct ldap_table_config 
  * The results are freed outside this function so is the \a vars array.
  *	
  * \return \a vars - an array of ast_variable variables terminated with a null.
- **/
+ */
 static struct ast_variable **realtime_ldap_result_to_vars(struct ldap_table_config *table_config,
 	LDAPMessage *ldap_result_msg, unsigned int *entries_count_ptr)
 {
@@ -374,7 +403,8 @@ static struct ast_variable **realtime_ldap_result_to_vars(struct ldap_table_conf
 	int delim_tot_count = 0;
 	int delim_count = 0;
 
-	/* First find the total count */
+	/* \breif First find the total count
+	 */
 	ldap_entry = ldap_first_entry(ldapConn, ldap_result_msg);
 
 	for (tot_count = 0; ldap_entry; tot_count++) { 
@@ -388,18 +418,20 @@ static struct ast_variable **realtime_ldap_result_to_vars(struct ldap_table_conf
 		*entries_count_ptr = tot_count;
 	}
 
-	/* Now that we have the total count we allocate space and create the variables
+	/*! \note Now that we have the total count we allocate space and create the variables
 	 * Remember that each element in vars is a linked list that points to realtime variable.
 	 * If the we are dealing with a static realtime variable we create a new element in the \a vars array for each delimited
 	 * value in \a variable_value; otherwise, we keep \a vars static and increase the length of the linked list of variables in the array element.
-	 * This memory must be freed outside of this function. */
+	 * This memory must be freed outside of this function.
+	 */
 	vars = ast_calloc(sizeof(struct ast_variable *), tot_count + 1);
 
 	ldap_entry = ldap_first_entry(ldapConn, ldap_result_msg);
 
 	i = 0;
 
-	/* For each static realtime variable we may create several entries in the \a vars array if it's delimited */
+	/* \brief For each static realtime variable we may create several entries in the \a vars array if it's delimited
+	 */
 	for (entry_index = 0; ldap_entry; ) {
 		int pos = 0;
 		delim_value = NULL;
@@ -541,14 +573,19 @@ static struct ast_variable **realtime_ldap_result_to_vars(struct ldap_table_conf
 }
 
 
-/*! \brief Check if we have a connection error */
+/*! \brief Check if we have a connection error
+ */
 static int is_ldap_connect_error(int err)
 {
 	return (err == LDAP_SERVER_DOWN || err == LDAP_TIMEOUT || err == LDAP_CONNECT_ERROR);
 }
 
-/*! \brief Get LDAP entry by dn and return attributes as variables  - Should be locked before using it 
-	This is used for setting the default values of an object(i.e., with accountBaseDN)
+/*! \brief Get LDAP entry by dn and return attributes as variables
+ *
+ * Should be locked before using it 
+ *
+ * This is used for setting the default values of an object
+ * i.e., with accountBaseDN
 */
 static struct ast_variable *ldap_loadentry(struct ldap_table_config *table_config,
 					   const char *dn)
@@ -624,7 +661,8 @@ static struct ast_variable *ldap_loadentry(struct ldap_table_config *table_confi
 	}
 }
 
-/*! \note caller should free returned pointer */
+/*! \note caller should free returned pointer
+ */
 static char *substituted(struct ast_channel *channel, const char *string)
 {
 #define MAXRESULT	2048
@@ -638,7 +676,8 @@ static char *substituted(struct ast_channel *channel, const char *string)
 	return ret_string;
 }
 
-/*! \note caller should free returned pointer */
+/*! \note caller should free returned pointer
+ */
 static char *cleaned_basedn(struct ast_channel *channel, const char *basedn)
 {
 	char *cbasedn = NULL;
@@ -666,7 +705,8 @@ static char *cleaned_basedn(struct ast_channel *channel, const char *basedn)
 }
 
 /*! \brief Replace \<search\> by \<by\> in string. 
-	\note No check is done on string allocated size ! */
+ * \note No check is done on string allocated size !
+ */
 static int replace_string_in_string(char *string, const char *search, const char *by)
 {
 	int search_len = strlen(search);
@@ -689,7 +729,8 @@ static int replace_string_in_string(char *string, const char *search, const char
 	return replaced;
 }
 
-/*! \brief Append a name=value filter string. The filter string can grow. */
+/*! \brief Append a name=value filter string. The filter string can grow. 
+ */
 static void append_var_and_value_to_filter(struct ast_str **filter,
 	struct ldap_table_config *table_config,
 	const char *name, const char *value)
@@ -721,14 +762,13 @@ static void append_var_and_value_to_filter(struct ast_str **filter,
  * \param entries_count_ptr is a pointer to found entries count (can be NULL)
  * \param basedn is the base DN
  * \param table_name is the table_name (used dor attribute convertion and additional filter)
- * \param ap contains null terminated list of pairs name/value
+ * \param fields contains list of pairs name/value
 */
 static struct ast_variable **realtime_ldap_base_ap(unsigned int *entries_count_ptr,
-	const char *basedn, const char *table_name, va_list ap)
+	const char *basedn, const char *table_name, const struct ast_variable *fields)
 {
 	struct ast_variable **vars = NULL;
-	const char *newparam = NULL;
-	const char *newval = NULL;
+	const struct ast_variable *field = fields;
 	struct ldap_table_config *table_config = NULL;
 	char *clean_basedn = cleaned_basedn(NULL, basedn);
 	struct ast_str *filter = NULL;
@@ -748,11 +788,7 @@ static struct ast_variable **realtime_ldap_base_ap(unsigned int *entries_count_p
 		return NULL;
 	}
 
-	/* Get the first parameter and first value in our list of passed paramater/value pairs  */
-	newparam = va_arg(ap, const char *);
-	newval = va_arg(ap, const char *);
-
-	if (!newparam || !newval) {
+	if (!field) {
 		ast_log(LOG_ERROR, "Realtime retrieval requires at least 1 parameter"
 			" and 1 value to search on.\n");
 		ast_free(filter);
@@ -789,13 +825,13 @@ static struct ast_variable **realtime_ldap_base_ap(unsigned int *entries_count_p
 		ast_str_append(&filter, 0, "%s", base_table_config->additional_filter);
 	}
 
-	/* Create the first part of the query using the first parameter/value pairs we just extracted */
-	/*   If there is only 1 set, then we have our query. Otherwise, loop thru the list and concat */
+	/* Create the first part of the query using the first parameter/value pairs we just extracted.
+	 * If there is only 1 set, then we have our query. Otherwise, loop thru the list and concat
+	 */
 
-	append_var_and_value_to_filter(&filter, table_config, newparam, newval);
-	while ((newparam = va_arg(ap, const char *))) {
-		newval = va_arg(ap, const char *);
-		append_var_and_value_to_filter(&filter, table_config, newparam, newval);
+	append_var_and_value_to_filter(&filter, table_config, field->name, field->value);
+	while ((field = field->next)) {
+		append_var_and_value_to_filter(&filter, table_config, field->name, field->value);
 	}
 	ast_str_append(&filter, 0, ")");
 
@@ -834,7 +870,8 @@ static struct ast_variable **realtime_ldap_base_ap(unsigned int *entries_count_p
 
 		ldap_msgfree(ldap_result_msg);
 
-		/* TODO: get the default variables from the accountBaseDN, not implemented with delimited values */
+		/*! \TODO get the default variables from the accountBaseDN, not implemented with delimited values
+		 */
 		if (vars) {
 			struct ast_variable **p = vars;
 			while (*p) {
@@ -904,28 +941,53 @@ static struct ast_variable **realtime_ldap_base_ap(unsigned int *entries_count_p
 	return vars;
 }
 
-/*! \brief same as realtime_ldap_base_ap but take variable arguments count list */
+static struct ast_variable *realtime_arguments_to_fields(va_list ap)
+{
+	struct ast_variable *fields = NULL;
+	const char *newparam, *newval;
+
+	while ((newparam = va_arg(ap, const char *))) {
+		struct ast_variable *field;
+
+		newval = va_arg(ap, const char *);
+		if (!(field = ast_variable_new(newparam, newval, ""))) {
+			ast_variables_destroy(fields);
+			return NULL;
+		}
+
+		field->next = fields;
+		fields = field;
+	}
+
+	return fields;
+}
+
+/*! \brief same as realtime_ldap_base_ap but take variable arguments count list
+ */
 static struct ast_variable **realtime_ldap_base(unsigned int *entries_count_ptr,
 	const char *basedn, const char *table_name, ...)
 {
+	RAII_VAR(struct ast_variable *, fields, NULL, ast_variables_destroy);
 	struct ast_variable **vars = NULL;
 	va_list ap;
 
 	va_start(ap, table_name);
-	vars = realtime_ldap_base_ap(entries_count_ptr, basedn, table_name, ap);
+	fields = realtime_arguments_to_fields(ap);
 	va_end(ap);
+
+	vars = realtime_ldap_base_ap(entries_count_ptr, basedn, table_name, fields);
 
 	return vars;
 }
 
 /*! \brief See Asterisk doc
-*
-* For Realtime Dynamic(i.e., switch, queues, and directory) -- I think
-*/
+ *
+ * For Realtime Dynamic(i.e., switch, queues, and directory)
+ */
 static struct ast_variable *realtime_ldap(const char *basedn,
-					  const char *table_name, va_list ap)
+					  const char *table_name, const struct ast_variable *fields)
 {
-	struct ast_variable **vars = realtime_ldap_base_ap(NULL, basedn, table_name, ap);
+	struct ast_variable **vars = realtime_ldap_base_ap(NULL, basedn, table_name, fields);
 	struct ast_variable *var = NULL;
 
 	if (vars) {
@@ -951,29 +1013,26 @@ static struct ast_variable *realtime_ldap(const char *basedn,
 }
 
 /*! \brief See Asterisk doc
-*
-* this function will be called for the switch statment if no match is found with the realtime_ldap function(i.e. it is a failover);
-* however, the ast_load_realtime wil match on wildcharacters also depending on what the mode is set to
-* this is an area of asterisk that could do with a lot of modification
-* I think this function returns Realtime dynamic objects
-*/
+ *
+ * this function will be called for the switch statment if no match is found with the realtime_ldap function(i.e. it is a failover);
+ * however, the ast_load_realtime wil match on wildcharacters also depending on what the mode is set to
+ * this is an area of asterisk that could do with a lot of modification
+ * I think this function returns Realtime dynamic objects
+ */
 static struct ast_config *realtime_multi_ldap(const char *basedn,
-      const char *table_name, va_list ap)
+      const char *table_name, const struct ast_variable *fields)
 {
 	char *op;
 	const char *initfield = NULL;
-	const char *newparam, *newval;
 	struct ast_variable **vars =
-		realtime_ldap_base_ap(NULL, basedn, table_name, ap);
+		realtime_ldap_base_ap(NULL, basedn, table_name, fields);
 	struct ast_config *cfg = NULL;
 
-	newparam = va_arg(ap, const char *);
-	newval = va_arg(ap, const char *);
-	if (!newparam || !newval) {
+	if (!fields) {
 	    ast_log(LOG_WARNING, "realtime retrieval requires at least 1 parameter and 1 value to search on.\n");
 	    return NULL;
 	}
-	initfield = ast_strdupa(newparam);
+	initfield = ast_strdupa(fields->name);
 	if ((op = strchr(initfield, ' '))) {
 		*op = '\0';
 	}
@@ -1013,8 +1072,7 @@ static struct ast_config *realtime_multi_ldap(const char *basedn,
 
 }
 
-/*! 
- * \brief Sorting alogrithm for qsort to find the order of the variables \a a and \a b
+/*! \brief Sorting alogrithm for qsort to find the order of the variables \a a and \a b
  * \param a pointer to category_and_metric struct
  * \param b pointer to category_and_metric struct
  *
@@ -1044,13 +1102,13 @@ static int compare_categories(const void *a, const void *b)
 	return 0;
 }
 
-/*! \brief See Asterisk doc
+/*! \brief See Asterisk Realtime Documentation
  *
-*	This is for Static Realtime (again: I think...)
-*	
-*	load the configuration stuff for the .conf files
-*	called on a reload
-*/
+ * This is for Static Realtime
+ *	
+ * load the configuration stuff for the .conf files
+ * called on a reload
+ */
 static struct ast_config *config_ldap(const char *basedn, const char *table_name,
 	const char *file, struct ast_config *cfg, struct ast_flags config_flags, const char *sugg_incl, const char *who_asked)
 {
@@ -1076,7 +1134,7 @@ static struct ast_config *config_ldap(const char *basedn, const char *table_name
 		return NULL;
 	}
 
-	/*!\note Since the items come back in random order, they need to be sorted
+	/*! \note Since the items come back in random order, they need to be sorted
 	 * first, and since the data could easily exceed stack size, this is
 	 * allocated from the heap.
 	 */
@@ -1162,15 +1220,15 @@ static struct ast_config *config_ldap(const char *basedn, const char *table_name
 }
 
 /* \brief Function to update a set of values in ldap static mode
-*/
+ */
 static int update_ldap(const char *basedn, const char *table_name, const char *attribute,
-	const char *lookup, va_list ap)
+	const char *lookup, const struct ast_variable *fields)
 {
 	int error = 0;
 	LDAPMessage *ldap_entry = NULL;
 	LDAPMod **ldap_mods;
-	const char *newparam = NULL;
-	const char *newval = NULL;
+	const char *newparam;
+	const struct ast_variable *field = fields;
 	char *dn;
 	int num_entries = 0;
 	int i = 0;
@@ -1227,10 +1285,8 @@ static int update_ldap(const char *basedn, const char *table_name, const char *a
 	/* Create the modification array with the parameter/value pairs we were given, 
 	 * if there are several parameters with the same name, we collect them into 
 	 * one parameter/value pair and delimit them with a semicolon */
-	newparam = va_arg(ap, const char *);
-	newparam = convert_attribute_name_to_ldap(table_config, newparam);
-	newval = va_arg(ap, const char *);
-	if (!newparam || !newval) {
+	newparam = convert_attribute_name_to_ldap(table_config, field->name);
+	if (!newparam) {
 		ast_log(LOG_WARNING, "LINE(%d): need at least one parameter to modify.\n", __LINE__);
 		return -1;
 	}
@@ -1243,19 +1299,18 @@ static int update_ldap(const char *basedn, const char *table_name, const char *a
 	ldap_mods[0]->mod_type = ldap_strdup(newparam);
 
 	ldap_mods[0]->mod_values = ast_calloc(sizeof(char *), 2);
-	ldap_mods[0]->mod_values[0] = ldap_strdup(newval);
+	ldap_mods[0]->mod_values[0] = ldap_strdup(field->value);
 
-	while ((newparam = va_arg(ap, const char *))) {
-		newparam = convert_attribute_name_to_ldap(table_config, newparam);
-		newval = va_arg(ap, const char *);
+	while ((field = field->next)) {
+		newparam = convert_attribute_name_to_ldap(table_config, field->name);
 		mod_exists = 0;
 
 		for (i = 0; i < mods_size - 1; i++) {
 			if (ldap_mods[i]&& !strcmp(ldap_mods[i]->mod_type, newparam)) {
 				/* We have the parameter allready, adding the value as a semicolon delimited value */
-				ldap_mods[i]->mod_values[0] = ldap_memrealloc(ldap_mods[i]->mod_values[0], sizeof(char) * (strlen(ldap_mods[i]->mod_values[0]) + strlen(newval) + 2));
+				ldap_mods[i]->mod_values[0] = ldap_memrealloc(ldap_mods[i]->mod_values[0], sizeof(char) * (strlen(ldap_mods[i]->mod_values[0]) + strlen(field->value) + 2));
 				strcat(ldap_mods[i]->mod_values[0], ";");
-				strcat(ldap_mods[i]->mod_values[0], newval);
+				strcat(ldap_mods[i]->mod_values[0], field->value);
 				mod_exists = 1;	
 				break;
 			}
@@ -1272,14 +1327,14 @@ static int update_ldap(const char *basedn, const char *table_name, const char *a
 			ldap_mods[mods_size - 2]->mod_type = ldap_memcalloc(sizeof(char), strlen(newparam) + 1);
 			strcpy(ldap_mods[mods_size - 2]->mod_type, newparam);
 
-			if (strlen(newval) == 0) {
+			if (strlen(field->value) == 0) {
 				ldap_mods[mods_size - 2]->mod_op = LDAP_MOD_DELETE;
 			} else {
 				ldap_mods[mods_size - 2]->mod_op = LDAP_MOD_REPLACE;
 
 				ldap_mods[mods_size - 2]->mod_values = ldap_memcalloc(sizeof(char *), 2);
-				ldap_mods[mods_size - 2]->mod_values[0] = ldap_memcalloc(sizeof(char), strlen(newval) + 1);
-				strcpy(ldap_mods[mods_size - 2]->mod_values[0], newval);
+				ldap_mods[mods_size - 2]->mod_values[0] = ldap_memcalloc(sizeof(char), strlen(field->value) + 1);
+				strcpy(ldap_mods[mods_size - 2]->mod_values[0], field->value);
 			}
 		}
 	}
@@ -1347,13 +1402,13 @@ static int update_ldap(const char *basedn, const char *table_name, const char *a
 	return num_entries;
 }
 
-static int update2_ldap(const char *basedn, const char *table_name, va_list ap)
+static int update2_ldap(const char *basedn, const char *table_name, const struct ast_variable *lookup_fields, const struct ast_variable *update_fields)
 {
 	int error = 0;
 	LDAPMessage *ldap_entry = NULL;
 	LDAPMod **ldap_mods;
-	const char *newparam = NULL;
-	const char *newval = NULL;
+	const char *newparam;
+	const struct ast_variable *field;
 	char *dn;
 	int num_entries = 0;
 	int i = 0;
@@ -1405,19 +1460,17 @@ static int update2_ldap(const char *basedn, const char *table_name, va_list ap)
 	}
 
 	/* Get multiple lookup keyfields and values */
-	while ((newparam = va_arg(ap, const char *))) {
-		newval = va_arg(ap, const char *);
-		append_var_and_value_to_filter(&filter, table_config, newparam, newval);
+	for (field = lookup_fields; field; field = field->next) {
+		append_var_and_value_to_filter(&filter, table_config, field->name, field->value);
 	}
 	ast_str_append(&filter, 0, ")");
 
 	/* Create the modification array with the parameter/value pairs we were given, 
 	 * if there are several parameters with the same name, we collect them into 
 	 * one parameter/value pair and delimit them with a semicolon */
-	newparam = va_arg(ap, const char *);
-	newparam = convert_attribute_name_to_ldap(table_config, newparam);
-	newval = va_arg(ap, const char *);
-	if (!newparam || !newval) {
+	field = update_fields;
+	newparam = convert_attribute_name_to_ldap(table_config, field->name);
+	if (!newparam) {
 		ast_log(LOG_WARNING, "LINE(%d): need at least one parameter to modify.\n", __LINE__);
 		ast_free(filter);
 		ast_free(clean_basedn);
@@ -1433,20 +1486,19 @@ static int update2_ldap(const char *basedn, const char *table_name, va_list ap)
 	strcpy(ldap_mods[0]->mod_type, newparam);
 
 	ldap_mods[0]->mod_values = ast_calloc(sizeof(char), 2);
-	ldap_mods[0]->mod_values[0] = ast_calloc(sizeof(char), strlen(newval) + 1);
-	strcpy(ldap_mods[0]->mod_values[0], newval);
+	ldap_mods[0]->mod_values[0] = ast_calloc(sizeof(char), strlen(field->value) + 1);
+	strcpy(ldap_mods[0]->mod_values[0], field->value);
 
-	while ((newparam = va_arg(ap, const char *))) {
-		newparam = convert_attribute_name_to_ldap(table_config, newparam);
-		newval = va_arg(ap, const char *);
+	while ((field = field->next)) {
+		newparam = convert_attribute_name_to_ldap(table_config, field->name);
 		mod_exists = 0;
 
 		for (i = 0; i < mods_size - 1; i++) {
 			if (ldap_mods[i]&& !strcmp(ldap_mods[i]->mod_type, newparam)) {
 				/* We have the parameter allready, adding the value as a semicolon delimited value */
-				ldap_mods[i]->mod_values[0] = ast_realloc(ldap_mods[i]->mod_values[0], sizeof(char) * (strlen(ldap_mods[i]->mod_values[0]) + strlen(newval) + 2));
+				ldap_mods[i]->mod_values[0] = ast_realloc(ldap_mods[i]->mod_values[0], sizeof(char) * (strlen(ldap_mods[i]->mod_values[0]) + strlen(field->value) + 2));
 				strcat(ldap_mods[i]->mod_values[0], ";");
-				strcat(ldap_mods[i]->mod_values[0], newval);
+				strcat(ldap_mods[i]->mod_values[0], field->value);
 				mod_exists = 1;	
 				break;
 			}
@@ -1465,8 +1517,8 @@ static int update2_ldap(const char *basedn, const char *table_name, va_list ap)
 			strcpy(ldap_mods[mods_size - 2]->mod_type, newparam);
 
 			ldap_mods[mods_size - 2]->mod_values = ast_calloc(sizeof(char *), 2);
-			ldap_mods[mods_size - 2]->mod_values[0] = ast_calloc(sizeof(char), strlen(newval) + 1);
-			strcpy(ldap_mods[mods_size - 2]->mod_values[0], newval);
+			ldap_mods[mods_size - 2]->mod_values[0] = ast_calloc(sizeof(char), strlen(field->value) + 1);
+			strcpy(ldap_mods[mods_size - 2]->mod_values[0], field->value);
 		}
 	}
 	/* freeing ldap_mods further down */
@@ -1542,6 +1594,19 @@ static struct ast_config_engine ldap_engine = {
 	.update2_func = update2_ldap,
 };
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ *
+ * \todo Don't error or warn on a default install. If the config is
+ * default we should not attempt to connect to a server. -lathama
+ */
 static int load_module(void)
 {
 	if (parse_config() < 0) {
@@ -1564,6 +1629,9 @@ static int load_module(void)
 	return 0;
 }
 
+/*! \brief Unload Module
+ *
+ */
 static int unload_module(void)
 {
 	/* Aquire control before doing anything to the module itself. */
@@ -1585,6 +1653,8 @@ static int unload_module(void)
 	return 0;
 }
 
+/*! \breif Relod Module
+ */
 static int reload(void)
 {
 	/* Aquire control before doing anything to the module itself. */
@@ -1613,7 +1683,8 @@ static int reload(void)
 	return 0;
 }
 
-/*! \brief parse the configuration file */
+/*! \brief parse the configuration file
+ */
 static int parse_config(void)
 {
 	struct ast_config *config;
@@ -1761,6 +1832,9 @@ static int ldap_reconnect(void)
 	}
 }
 
+/*! \brief Realtime Status
+ *
+ */
 static char *realtime_ldap_status(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	char status[256], credentials[100] = "";
@@ -1809,7 +1883,11 @@ static char *realtime_ldap_status(struct ast_cli_entry *e, int cmd, struct ast_c
 	return CLI_SUCCESS;
 }
 
+/*! \brief Module Information
+ *
+ */
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "LDAP realtime interface",
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

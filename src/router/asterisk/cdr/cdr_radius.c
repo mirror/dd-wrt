@@ -21,10 +21,15 @@
  * \brief RADIUS CDR Support
  *
  * \author Philippe Sultan
- * \extref The Radius Client Library - http://developer.berlios.de/projects/radiusclient-ng/
+ * The Radius Client Library
+ * 	http://developer.berlios.de/projects/radiusclient-ng/
  *
  * \arg See also \ref AstCDR
  * \ingroup cdr_drivers
+ */
+
+/*! \li \ref cdr_radius.c uses the configuration file \ref cdr.conf
+ * \addtogroup configuration_file Configuration Files
  */
 
 /*** MODULEINFO
@@ -34,9 +39,13 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328259 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
+#ifdef FREERADIUS_CLIENT
+#include <freeradius-client.h>
+#else
 #include <radiusclient-ng.h>
+#endif
 
 #include "asterisk/channel.h"
 #include "asterisk/cdr.h"
@@ -82,7 +91,11 @@ static const char desc[] = "RADIUS CDR Backend";
 static const char name[] = "radius";
 static const char cdr_config[] = "cdr.conf";
 
+#ifdef FREERADIUS_CLIENT
+static char radiuscfg[PATH_MAX] = "/etc/radiusclient/radiusclient.conf";
+#else
 static char radiuscfg[PATH_MAX] = "/etc/radiusclient-ng/radiusclient.conf";
+#endif
 
 static struct ast_flags global_flags = { RADIUS_FLAG_USEGMTIME | RADIUS_FLAG_LOGUNIQUEID | RADIUS_FLAG_LOGUSERFIELD };
 
@@ -165,12 +178,12 @@ static int build_radius_record(VALUE_PAIR **tosend, struct ast_cdr *cdr)
 		return -1;
 
 	/* Disposition */
-	tmp = ast_cdr_disp2str(cdr->disposition);
+	tmp = ast_strdupa(ast_cdr_disp2str(cdr->disposition));
 	if (!rc_avpair_add(rh, tosend, PW_AST_DISPOSITION, tmp, strlen(tmp), VENDOR_CODE))
 		return -1;
 
 	/* AMA Flags */
-	tmp = ast_cdr_flags2str(cdr->amaflags);
+	tmp = ast_strdupa(ast_channel_amaflags2string(cdr->amaflags));
 	if (!rc_avpair_add(rh, tosend, PW_AST_AMA_FLAGS, tmp, strlen(tmp), VENDOR_CODE))
 		return -1;
 
@@ -187,7 +200,8 @@ static int build_radius_record(VALUE_PAIR **tosend, struct ast_cdr *cdr)
 	}
 
 	/* Setting Acct-Session-Id & User-Name attributes for proper generation
-	   of Acct-Unique-Session-Id on server side */
+	 * of Acct-Unique-Session-Id on server side 
+	 */
 	/* Channel */
 	if (!rc_avpair_add(rh, tosend, PW_USER_NAME, &cdr->channel, strlen(cdr->channel), 0))
 		return -1;
@@ -224,7 +238,10 @@ return_cleanup:
 
 static int unload_module(void)
 {
-	ast_cdr_unregister(name);
+	if (ast_cdr_unregister(name)) {
+		return -1;
+	}
+
 	if (rh) {
 		rc_destroy(rh);
 		rh = NULL;
@@ -284,6 +301,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "RADIUS CDR Backend",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_CDR_DRIVER,

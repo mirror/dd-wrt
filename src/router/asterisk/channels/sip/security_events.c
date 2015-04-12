@@ -25,36 +25,21 @@
  */
 
 /*** MODULEINFO
-	<support_level>core</support_level>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385689 $")
-
-/* #define  REF_DEBUG 1 */
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428246 $")
 
 #include "include/sip.h"
 #include "include/security_events.h"
 
 /*! \brief Determine transport type used to receive request*/
 
-static enum ast_security_event_transport_type security_event_get_transport(const struct sip_pvt *p)
+static enum ast_transport security_event_get_transport(const struct sip_pvt *p)
 {
-	int res = 0;
-
-	switch (p->socket.type) {
-	case SIP_TRANSPORT_UDP:
-		return AST_SECURITY_EVENT_TRANSPORT_UDP;
-	case SIP_TRANSPORT_TCP:
-	case SIP_TRANSPORT_WS:
-		return AST_SECURITY_EVENT_TRANSPORT_TCP;
-	case SIP_TRANSPORT_TLS:
-	case SIP_TRANSPORT_WSS:
-		return AST_SECURITY_EVENT_TRANSPORT_TLS;
-	}
-
-	return res;
+	return p->socket.type;
 }
 
 void sip_report_invalid_peer(const struct sip_pvt *p)
@@ -326,7 +311,7 @@ int sip_report_security_event(const struct sip_pvt *p, const struct sip_request 
 		authtoken = sip_get_header(req, reqheader);
 		buf = ast_str_thread_get(&check_auth_buf, CHECK_AUTH_BUF_INITLEN);
 		ast_str_set(&buf, 0, "%s", authtoken);
-		c = buf->str;
+		c = ast_str_buffer(buf);
 
 		sip_digest_parser(c, keys);
 

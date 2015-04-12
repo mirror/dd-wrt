@@ -1,9 +1,15 @@
-	<category name="MENUSELECT_CFLAGS" displayname="Compiler Flags" positive_output="yes" remove_on_change=".lastclean">
+<category name="MENUSELECT_CFLAGS" displayname="Compiler Flags" positive_output="yes" remove_on_change=".lastclean">
 		<member name="DONT_OPTIMIZE" displayname="Disable Optimizations by the Compiler">
 			<support_level>core</support_level>
 		</member>
 		<member name="DEBUG_THREADS" displayname="Enable Thread Debugging">
 			<support_level>core</support_level>
+		</member>
+		<member name="REF_DEBUG" displayname="Enable reference count debugging">
+			<support_level>extended</support_level>
+		</member>
+		<member name="AO2_DEBUG" displayname="Enable internal Astobj2 debugging">
+			<support_level>extended</support_level>
 		</member>
 		<member name="STATIC_BUILD" displayname="Build static binaries">
 			<support_level>extended</support_level>
@@ -22,6 +28,19 @@
 			<support_level>extended</support_level>
 		</member>
 		<member name="LOW_MEMORY" displayname="Optimize for Low Memory Usage">
+			<support_level>extended</support_level>
+		</member>
+		<member name="DISABLE_INLINE" displayname="Disable the inline API">
+			<!-- Added to work around GCC bug
+			     See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=47816
+			  -->
+			<support_level>extended</support_level>
+		</member>
+		<member name="OPTIONAL_API" displayname="Enable the optional API">
+			<!-- Added to manually disable the optional API, since
+			     it's now supported on all systems.
+			  -->
+			<defaultenabled>yes</defaultenabled>
 			<support_level>extended</support_level>
 		</member>
 		<member name="BETTER_BACKTRACES" displayname="Use libbfd (GPL) to generate better inline backtraces">
@@ -58,6 +77,10 @@
 			<support_level>extended</support_level>
 		</member>
 		<member name="MALLOC_DEBUG" displayname="Keep Track of Memory Allocations">
+			<support_level>core</support_level>
+		</member>
+		<member name="DEBUG_CHAOS" displayname="Randomly FAIL memory allocations or other operations">
+			<conflict>MALLOC_DEBUG</conflict>
 			<support_level>core</support_level>
 		</member>
 		<member name="BUSYDETECT_TONEONLY" displayname="Enable additional comparision of only the tone duration not the silence part">

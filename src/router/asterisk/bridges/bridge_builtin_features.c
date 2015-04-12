@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 361429 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431663 $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,224 +41,479 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 361429 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
-#include "asterisk/bridging.h"
-#include "asterisk/bridging_technology.h"
+#include "asterisk/bridge.h"
+#include "asterisk/bridge_technology.h"
 #include "asterisk/frame.h"
 #include "asterisk/file.h"
 #include "asterisk/app.h"
 #include "asterisk/astobj2.h"
+#include "asterisk/pbx.h"
+#include "asterisk/parking.h"
+#include "asterisk/features_config.h"
+#include "asterisk/monitor.h"
+#include "asterisk/mixmonitor.h"
+#include "asterisk/audiohook.h"
+#include "asterisk/causes.h"
 
-/*! \brief Helper function that presents dialtone and grabs extension */
-static int grab_transfer(struct ast_channel *chan, char *exten, size_t exten_len, const char *context)
+enum set_touch_variables_res {
+	SET_TOUCH_SUCCESS,
+	SET_TOUCH_UNSET,
+	SET_TOUCH_ALLOC_FAILURE,
+};
+
+static void set_touch_variable(enum set_touch_variables_res *res, struct ast_channel *chan, const char *var_name, char **touch)
 {
-	int res;
+	const char *c_touch;
 
-	/* Play the simple "transfer" prompt out and wait */
-	res = ast_stream_and_wait(chan, "pbx-transfer", AST_DIGIT_ANY);
-	ast_stopstream(chan);
-
-	/* If the person hit a DTMF digit while the above played back stick it into the buffer */
-	if (res) {
-		exten[0] = (char)res;
+	if (*res == SET_TOUCH_ALLOC_FAILURE) {
+		return;
 	}
+	c_touch = pbx_builtin_getvar_helper(chan, var_name);
+	if (!ast_strlen_zero(c_touch)) {
+		*touch = ast_strdup(c_touch);
+		if (!*touch) {
+			*res = SET_TOUCH_ALLOC_FAILURE;
+		} else {
+			*res = SET_TOUCH_SUCCESS;
+		}
+	}
+}
 
-	/* Drop to dialtone so they can enter the extension they want to transfer to */
-	res = ast_app_dtget(chan, context, exten, exten_len, 100, 1000);
+static enum set_touch_variables_res set_touch_variables(struct ast_channel *chan, int is_mixmonitor, char **touch_format, char **touch_monitor, char **touch_monitor_prefix)
+{
+	enum set_touch_variables_res res = SET_TOUCH_UNSET;
+	const char *var_format;
+	const char *var_monitor;
+	const char *var_prefix;
+
+	SCOPED_CHANNELLOCK(lock, chan);
+
+	if (is_mixmonitor) {
+		var_format = "TOUCH_MIXMONITOR_FORMAT";
+		var_monitor = "TOUCH_MIXMONITOR";
+		var_prefix = "TOUCH_MIXMONITOR_PREFIX";
+	} else {
+		var_format = "TOUCH_MONITOR_FORMAT";
+		var_monitor = "TOUCH_MONITOR";
+		var_prefix = "TOUCH_MONITOR_PREFIX";
+	}
+	set_touch_variable(&res, chan, var_format, touch_format);
+	set_touch_variable(&res, chan, var_monitor, touch_monitor);
+	set_touch_variable(&res, chan, var_prefix, touch_monitor_prefix);
 
 	return res;
 }
 
-/*! \brief Helper function that creates an outgoing channel and returns it immediately */
-static struct ast_channel *dial_transfer(struct ast_channel *caller, const char *exten, const char *context)
+static void stop_automonitor(struct ast_bridge_channel *bridge_channel, struct ast_channel *peer_chan, struct ast_features_general_config *features_cfg, const char *stop_message)
 {
-	char destination[AST_MAX_EXTENSION + AST_MAX_CONTEXT + 1];
-	struct ast_channel *chan;
-	int cause;
+	ast_verb(4, "AutoMonitor used to stop recording call.\n");
 
-	/* Fill the variable with the extension and context we want to call */
-	snprintf(destination, sizeof(destination), "%s@%s", exten, context);
-
-	/* Now we request that chan_local prepare to call the destination */
-	if (!(chan = ast_request("Local", ast_channel_nativeformats(caller), caller, destination, &cause))) {
-		return NULL;
-	}
-
-	/* Before we actually dial out let's inherit appropriate information. */
-	ast_channel_lock_both(caller, chan);
-	ast_connected_line_copy_from_caller(ast_channel_connected(chan), ast_channel_caller(caller));
-	ast_channel_inherit_variables(caller, chan);
-	ast_channel_datastore_inherit(caller, chan);
-	ast_channel_unlock(chan);
-	ast_channel_unlock(caller);
-
-	/* Since the above worked fine now we actually call it and return the channel */
-	if (ast_call(chan, destination, 0)) {
-		ast_hangup(chan);
-		return NULL;
-	}
-
-	return chan;
-}
-
-/*! \brief Internal built in feature for blind transfers */
-static int feature_blind_transfer(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, void *hook_pvt)
-{
-	char exten[AST_MAX_EXTENSION] = "";
-	struct ast_channel *chan = NULL;
-	struct ast_bridge_features_blind_transfer *blind_transfer = hook_pvt;
-	const char *context = (blind_transfer && !ast_strlen_zero(blind_transfer->context) ? blind_transfer->context : ast_channel_context(bridge_channel->chan));
-
-	/* Grab the extension to transfer to */
-	if (!grab_transfer(bridge_channel->chan, exten, sizeof(exten), context)) {
-		ast_stream_and_wait(bridge_channel->chan, "pbx-invalid", AST_DIGIT_ANY);
-		ast_bridge_change_state(bridge_channel, AST_BRIDGE_CHANNEL_STATE_WAIT);
-		return 0;
-	}
-
-	/* Get a channel that is the destination we wish to call */
-	if (!(chan = dial_transfer(bridge_channel->chan, exten, context))) {
-		ast_stream_and_wait(bridge_channel->chan, "beeperr", AST_DIGIT_ANY);
-		ast_bridge_change_state(bridge_channel, AST_BRIDGE_CHANNEL_STATE_WAIT);
-		return 0;
-	}
-
-	/* This is sort of the fun part. We impart the above channel onto the bridge, and have it take our place. */
-	ast_bridge_impart(bridge, chan, bridge_channel->chan, NULL, 1);
-
-	return 0;
-}
-
-/*! \brief Attended transfer feature to turn it into a threeway call */
-static int attended_threeway_transfer(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, void *hook_pvt)
-{
-	/* This is sort of abusing the depart state but in this instance it is only going to be handled in the below function so it is okay */
-	ast_bridge_change_state(bridge_channel, AST_BRIDGE_CHANNEL_STATE_DEPART);
-	return 0;
-}
-
-/*! \brief Attended transfer abort feature */
-static int attended_abort_transfer(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, void *hook_pvt)
-{
-	struct ast_bridge_channel *called_bridge_channel = NULL;
-
-	/* It is possible (albeit unlikely) that the bridge channels list may change, so we have to ensure we do all of our magic while locked */
-	ao2_lock(bridge);
-
-	if (AST_LIST_FIRST(&bridge->channels) != bridge_channel) {
-		called_bridge_channel = AST_LIST_FIRST(&bridge->channels);
-	} else {
-		called_bridge_channel = AST_LIST_LAST(&bridge->channels);
-	}
-
-	/* Now we basically eject the other channel from the bridge. This will cause their thread to hang them up, and our own code to consider the transfer failed. */
-	if (called_bridge_channel) {
-		ast_bridge_change_state(called_bridge_channel, AST_BRIDGE_CHANNEL_STATE_HANGUP);
-	}
-
-	ast_bridge_change_state(bridge_channel, AST_BRIDGE_CHANNEL_STATE_END);
-
-	ao2_unlock(bridge);
-
-	return 0;
-}
-
-/*! \brief Internal built in feature for attended transfers */
-static int feature_attended_transfer(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, void *hook_pvt)
-{
-	char exten[AST_MAX_EXTENSION] = "";
-	struct ast_channel *chan = NULL;
-	struct ast_bridge *attended_bridge = NULL;
-	struct ast_bridge_features caller_features, called_features;
-	enum ast_bridge_channel_state attended_bridge_result;
-	struct ast_bridge_features_attended_transfer *attended_transfer = hook_pvt;
-	const char *context = (attended_transfer && !ast_strlen_zero(attended_transfer->context) ? attended_transfer->context : ast_channel_context(bridge_channel->chan));
-
-	/* Grab the extension to transfer to */
-	if (!grab_transfer(bridge_channel->chan, exten, sizeof(exten), context)) {
-		ast_stream_and_wait(bridge_channel->chan, "pbx-invalid", AST_DIGIT_ANY);
-		ast_bridge_change_state(bridge_channel, AST_BRIDGE_CHANNEL_STATE_WAIT);
-		return 0;
-	}
-
-	/* Get a channel that is the destination we wish to call */
-	if (!(chan = dial_transfer(bridge_channel->chan, exten, context))) {
-		ast_stream_and_wait(bridge_channel->chan, "beeperr", AST_DIGIT_ANY);
-		ast_bridge_change_state(bridge_channel, AST_BRIDGE_CHANNEL_STATE_WAIT);
-		return 0;
-	}
-
-	/* Create a bridge to use to talk to the person we are calling */
-	if (!(attended_bridge = ast_bridge_new(AST_BRIDGE_CAPABILITY_1TO1MIX, 0))) {
-		ast_hangup(chan);
-		ast_stream_and_wait(bridge_channel->chan, "beeperr", AST_DIGIT_ANY);
-		ast_bridge_change_state(bridge_channel, AST_BRIDGE_CHANNEL_STATE_WAIT);
-		return 0;
-	}
-
-	/* Setup our called features structure so that if they hang up we immediately get thrown out of the bridge */
-	ast_bridge_features_init(&called_features);
-	ast_bridge_features_set_flag(&called_features, AST_BRIDGE_FLAG_DISSOLVE);
-
-	/* This is how this is going down, we are imparting the channel we called above into this bridge first */
-	ast_bridge_impart(attended_bridge, chan, NULL, &called_features, 1);
-
-	/* Before we join setup a features structure with the hangup option, just in case they want to use DTMF */
-	ast_bridge_features_init(&caller_features);
-	ast_bridge_features_enable(&caller_features, AST_BRIDGE_BUILTIN_HANGUP,
-				   (attended_transfer && !ast_strlen_zero(attended_transfer->complete) ? attended_transfer->complete : "*1"), NULL);
-	ast_bridge_features_hook(&caller_features, (attended_transfer && !ast_strlen_zero(attended_transfer->threeway) ? attended_transfer->threeway : "*2"),
-				 attended_threeway_transfer, NULL, NULL);
-	ast_bridge_features_hook(&caller_features, (attended_transfer && !ast_strlen_zero(attended_transfer->abort) ? attended_transfer->abort : "*3"),
-				 attended_abort_transfer, NULL, NULL);
-
-	/* But for the caller we want to join the bridge in a blocking fashion so we don't spin around in this function doing nothing while waiting */
-	attended_bridge_result = ast_bridge_join(attended_bridge, bridge_channel->chan, NULL, &caller_features, NULL);
-
-	/* Since the above returned the caller features structure is of no more use */
-	ast_bridge_features_cleanup(&caller_features);
-
-	/* Drop the channel we are transferring to out of the above bridge since it has ended */
-	if ((attended_bridge_result != AST_BRIDGE_CHANNEL_STATE_HANGUP) && !ast_bridge_depart(attended_bridge, chan)) {
-		/* If the user wants to turn this into a threeway transfer then do so, otherwise they take our place */
-		if (attended_bridge_result == AST_BRIDGE_CHANNEL_STATE_DEPART) {
-			/* We want to impart them upon the bridge and just have us return to it as normal */
-			ast_bridge_impart(bridge, chan, NULL, NULL, 1);
-		} else {
-			ast_bridge_impart(bridge, chan, bridge_channel->chan, NULL, 1);
+	ast_channel_lock(peer_chan);
+	if (ast_channel_monitor(peer_chan)) {
+		if (ast_channel_monitor(peer_chan)->stop(peer_chan, 1)) {
+			ast_verb(4, "Cannot stop AutoMonitor for %s\n", ast_channel_name(bridge_channel->chan));
+			if (features_cfg && !(ast_strlen_zero(features_cfg->recordingfailsound))) {
+				ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->recordingfailsound, NULL);
+			}
+			ast_channel_unlock(peer_chan);
+			return;
 		}
 	} else {
-		ast_stream_and_wait(bridge_channel->chan, "beeperr", AST_DIGIT_ANY);
-		ast_bridge_change_state(bridge_channel, AST_BRIDGE_CHANNEL_STATE_WAIT);
+		/* Something else removed the Monitor before we got to it. */
+		ast_channel_unlock(peer_chan);
+		return;
 	}
 
-	/* Now that all channels are out of it we can destroy the bridge and the called features structure */
-	ast_bridge_features_cleanup(&called_features);
-	ast_bridge_destroy(attended_bridge);
+	ast_channel_unlock(peer_chan);
 
+	if (features_cfg && !(ast_strlen_zero(features_cfg->courtesytone))) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+		ast_bridge_channel_write_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+	}
+
+	if (!ast_strlen_zero(stop_message)) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, stop_message, NULL);
+		ast_bridge_channel_write_playfile(bridge_channel, NULL, stop_message, NULL);
+	}
+}
+
+static void start_automonitor(struct ast_bridge_channel *bridge_channel, struct ast_channel *peer_chan, struct ast_features_general_config *features_cfg, const char *start_message)
+{
+	char *touch_filename;
+	size_t len;
+	int x;
+	enum set_touch_variables_res set_touch_res;
+
+	RAII_VAR(char *, touch_format, NULL, ast_free);
+	RAII_VAR(char *, touch_monitor, NULL, ast_free);
+	RAII_VAR(char *, touch_monitor_prefix, NULL, ast_free);
+
+	set_touch_res = set_touch_variables(bridge_channel->chan, 0, &touch_format,
+		&touch_monitor, &touch_monitor_prefix);
+	switch (set_touch_res) {
+	case SET_TOUCH_SUCCESS:
+		break;
+	case SET_TOUCH_UNSET:
+		set_touch_res = set_touch_variables(peer_chan, 0, &touch_format, &touch_monitor,
+			&touch_monitor_prefix);
+		if (set_touch_res == SET_TOUCH_ALLOC_FAILURE) {
+			return;
+		}
+		break;
+	case SET_TOUCH_ALLOC_FAILURE:
+		return;
+	}
+
+	if (!ast_strlen_zero(touch_monitor)) {
+		len = strlen(touch_monitor) + 50;
+		touch_filename = ast_alloca(len);
+		snprintf(touch_filename, len, "%s-%ld-%s",
+			S_OR(touch_monitor_prefix, "auto"),
+			(long) time(NULL),
+			touch_monitor);
+	} else {
+		char *caller_chan_id;
+		char *peer_chan_id;
+
+		caller_chan_id = ast_strdupa(S_COR(ast_channel_caller(bridge_channel->chan)->id.number.valid,
+			ast_channel_caller(bridge_channel->chan)->id.number.str, ast_channel_name(bridge_channel->chan)));
+		peer_chan_id = ast_strdupa(S_COR(ast_channel_caller(peer_chan)->id.number.valid,
+			ast_channel_caller(peer_chan)->id.number.str, ast_channel_name(peer_chan)));
+		len = strlen(caller_chan_id) + strlen(peer_chan_id) + 50;
+		touch_filename = ast_alloca(len);
+		snprintf(touch_filename, len, "%s-%ld-%s-%s",
+			S_OR(touch_monitor_prefix, "auto"),
+			(long) time(NULL),
+			caller_chan_id,
+			peer_chan_id);
+	}
+
+	for (x = 0; x < strlen(touch_filename); x++) {
+		if (touch_filename[x] == '/') {
+			touch_filename[x] = '-';
+		}
+	}
+
+	ast_verb(4, "AutoMonitor used to record call. Filename: %s\n", touch_filename);
+
+	if (ast_monitor_start(peer_chan, touch_format, touch_filename, 1, X_REC_IN | X_REC_OUT, NULL)) {
+		ast_verb(4, "AutoMonitor feature was tried by '%s' but monitor failed to start.\n",
+			ast_channel_name(bridge_channel->chan));
+		return;
+	}
+
+	if (features_cfg && !ast_strlen_zero(features_cfg->courtesytone)) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+		ast_bridge_channel_write_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+	}
+
+	if (!ast_strlen_zero(start_message)) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, start_message, NULL);
+		ast_bridge_channel_write_playfile(bridge_channel, NULL, start_message, NULL);
+	}
+
+	pbx_builtin_setvar_helper(peer_chan, "TOUCH_MONITOR_OUTPUT", touch_filename);
+}
+
+static int feature_automonitor(struct ast_bridge_channel *bridge_channel, void *hook_pvt)
+{
+	const char *start_message;
+	const char *stop_message;
+	struct ast_bridge_features_automonitor *options = hook_pvt;
+	enum ast_bridge_features_monitor start_stop = options ? options->start_stop : AUTO_MONITOR_TOGGLE;
+	int is_monitoring;
+
+	RAII_VAR(struct ast_channel *, peer_chan, NULL, ast_channel_cleanup);
+	RAII_VAR(struct ast_features_general_config *, features_cfg, NULL, ao2_cleanup);
+
+	ast_channel_lock(bridge_channel->chan);
+	features_cfg = ast_get_chan_features_general_config(bridge_channel->chan);
+	ast_channel_unlock(bridge_channel->chan);
+	ast_bridge_channel_lock_bridge(bridge_channel);
+	peer_chan = ast_bridge_peer_nolock(bridge_channel->bridge, bridge_channel->chan);
+	ast_bridge_unlock(bridge_channel->bridge);
+
+	if (!peer_chan) {
+		ast_verb(4, "Cannot start AutoMonitor for %s - can not determine peer in bridge.\n",
+			ast_channel_name(bridge_channel->chan));
+		if (features_cfg && !ast_strlen_zero(features_cfg->recordingfailsound)) {
+			ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->recordingfailsound, NULL);
+		}
+		return 0;
+	}
+
+	ast_channel_lock(bridge_channel->chan);
+	start_message = pbx_builtin_getvar_helper(bridge_channel->chan,
+		"TOUCH_MONITOR_MESSAGE_START");
+	start_message = ast_strdupa(S_OR(start_message, ""));
+	stop_message = pbx_builtin_getvar_helper(bridge_channel->chan,
+		"TOUCH_MONITOR_MESSAGE_STOP");
+	stop_message = ast_strdupa(S_OR(stop_message, ""));
+	ast_channel_unlock(bridge_channel->chan);
+
+	is_monitoring = ast_channel_monitor(peer_chan) != NULL;
+	switch (start_stop) {
+	case AUTO_MONITOR_TOGGLE:
+		if (is_monitoring) {
+			stop_automonitor(bridge_channel, peer_chan, features_cfg, stop_message);
+		} else {
+			start_automonitor(bridge_channel, peer_chan, features_cfg, start_message);
+		}
+		return 0;
+	case AUTO_MONITOR_START:
+		if (!is_monitoring) {
+			start_automonitor(bridge_channel, peer_chan, features_cfg, start_message);
+			return 0;
+		}
+		ast_verb(4, "AutoMonitor already recording call.\n");
+		break;
+	case AUTO_MONITOR_STOP:
+		if (is_monitoring) {
+			stop_automonitor(bridge_channel, peer_chan, features_cfg, stop_message);
+			return 0;
+		}
+		ast_verb(4, "AutoMonitor already stopped on call.\n");
+		break;
+	}
+
+	/*
+	 * Fake start/stop to invoker so will think it did something but
+	 * was already in that mode.
+	 */
+	if (features_cfg && !ast_strlen_zero(features_cfg->courtesytone)) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+	}
+	if (is_monitoring) {
+		if (!ast_strlen_zero(start_message)) {
+			ast_bridge_channel_queue_playfile(bridge_channel, NULL, start_message, NULL);
+		}
+	} else {
+		if (!ast_strlen_zero(stop_message)) {
+			ast_bridge_channel_queue_playfile(bridge_channel, NULL, stop_message, NULL);
+		}
+	}
+	return 0;
+}
+
+static void stop_automixmonitor(struct ast_bridge_channel *bridge_channel, struct ast_channel *peer_chan, struct ast_features_general_config *features_cfg, const char *stop_message)
+{
+	ast_verb(4, "AutoMixMonitor used to stop recording call.\n");
+
+	if (ast_stop_mixmonitor(peer_chan, NULL)) {
+		ast_verb(4, "Failed to stop AutoMixMonitor for %s.\n", ast_channel_name(bridge_channel->chan));
+		if (features_cfg && !(ast_strlen_zero(features_cfg->recordingfailsound))) {
+			ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->recordingfailsound, NULL);
+		}
+		return;
+	}
+
+	if (features_cfg && !ast_strlen_zero(features_cfg->courtesytone)) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+		ast_bridge_channel_write_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+	}
+
+	if (!ast_strlen_zero(stop_message)) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, stop_message, NULL);
+		ast_bridge_channel_write_playfile(bridge_channel, NULL, stop_message, NULL);
+	}
+}
+
+static void start_automixmonitor(struct ast_bridge_channel *bridge_channel, struct ast_channel *peer_chan, struct ast_features_general_config *features_cfg, const char *start_message)
+{
+	char *touch_filename;
+	size_t len;
+	int x;
+	enum set_touch_variables_res set_touch_res;
+
+	RAII_VAR(char *, touch_format, NULL, ast_free);
+	RAII_VAR(char *, touch_monitor, NULL, ast_free);
+	RAII_VAR(char *, touch_monitor_prefix, NULL, ast_free);
+
+	set_touch_res = set_touch_variables(bridge_channel->chan, 1, &touch_format,
+		&touch_monitor, &touch_monitor_prefix);
+	switch (set_touch_res) {
+	case SET_TOUCH_SUCCESS:
+		break;
+	case SET_TOUCH_UNSET:
+		set_touch_res = set_touch_variables(peer_chan, 1, &touch_format, &touch_monitor,
+			&touch_monitor_prefix);
+		if (set_touch_res == SET_TOUCH_ALLOC_FAILURE) {
+			return;
+		}
+		break;
+	case SET_TOUCH_ALLOC_FAILURE:
+		return;
+	}
+
+	if (!ast_strlen_zero(touch_monitor)) {
+		len = strlen(touch_monitor) + 50;
+		touch_filename = ast_alloca(len);
+		snprintf(touch_filename, len, "%s-%ld-%s.%s",
+			S_OR(touch_monitor_prefix, "auto"),
+			(long) time(NULL),
+			touch_monitor,
+			S_OR(touch_format, "wav"));
+	} else {
+		char *caller_chan_id;
+		char *peer_chan_id;
+
+		caller_chan_id = ast_strdupa(S_COR(ast_channel_caller(bridge_channel->chan)->id.number.valid,
+			ast_channel_caller(bridge_channel->chan)->id.number.str, ast_channel_name(bridge_channel->chan)));
+		peer_chan_id = ast_strdupa(S_COR(ast_channel_caller(peer_chan)->id.number.valid,
+			ast_channel_caller(peer_chan)->id.number.str, ast_channel_name(peer_chan)));
+		len = strlen(caller_chan_id) + strlen(peer_chan_id) + 50;
+		touch_filename = ast_alloca(len);
+		snprintf(touch_filename, len, "%s-%ld-%s-%s.%s",
+			S_OR(touch_monitor_prefix, "auto"),
+			(long) time(NULL),
+			caller_chan_id,
+			peer_chan_id,
+			S_OR(touch_format, "wav"));
+	}
+
+	for (x = 0; x < strlen(touch_filename); x++) {
+		if (touch_filename[x] == '/') {
+			touch_filename[x] = '-';
+		}
+	}
+
+	ast_verb(4, "AutoMixMonitor used to record call. Filename: %s\n", touch_filename);
+
+	if (ast_start_mixmonitor(peer_chan, touch_filename, "b")) {
+		ast_verb(4, "AutoMixMonitor feature was tried by '%s' but MixMonitor failed to start.\n",
+			ast_channel_name(bridge_channel->chan));
+
+		if (features_cfg && !ast_strlen_zero(features_cfg->recordingfailsound)) {
+			ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->recordingfailsound, NULL);
+		}
+		return;
+	}
+
+	if (features_cfg && !ast_strlen_zero(features_cfg->courtesytone)) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+		ast_bridge_channel_write_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+	}
+
+	if (!ast_strlen_zero(start_message)) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, start_message, NULL);
+		ast_bridge_channel_write_playfile(bridge_channel, NULL, start_message, NULL);
+	}
+
+	pbx_builtin_setvar_helper(peer_chan, "TOUCH_MIXMONITOR_OUTPUT", touch_filename);
+}
+
+static int feature_automixmonitor(struct ast_bridge_channel *bridge_channel, void *hook_pvt)
+{
+	static const char *mixmonitor_spy_type = "MixMonitor";
+	const char *stop_message;
+	const char *start_message;
+	struct ast_bridge_features_automixmonitor *options = hook_pvt;
+	enum ast_bridge_features_monitor start_stop = options ? options->start_stop : AUTO_MONITOR_TOGGLE;
+	int is_monitoring;
+
+	RAII_VAR(struct ast_channel *, peer_chan, NULL, ast_channel_cleanup);
+	RAII_VAR(struct ast_features_general_config *, features_cfg, NULL, ao2_cleanup);
+
+	ast_channel_lock(bridge_channel->chan);
+	features_cfg = ast_get_chan_features_general_config(bridge_channel->chan);
+	ast_channel_unlock(bridge_channel->chan);
+	ast_bridge_channel_lock_bridge(bridge_channel);
+	peer_chan = ast_bridge_peer_nolock(bridge_channel->bridge, bridge_channel->chan);
+	ast_bridge_unlock(bridge_channel->bridge);
+
+	if (!peer_chan) {
+		ast_verb(4, "Cannot start AutoMixMonitor for %s - cannot determine peer in bridge.\n",
+			ast_channel_name(bridge_channel->chan));
+		if (features_cfg && !ast_strlen_zero(features_cfg->recordingfailsound)) {
+			ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->recordingfailsound, NULL);
+		}
+		return 0;
+	}
+
+	ast_channel_lock(bridge_channel->chan);
+	start_message = pbx_builtin_getvar_helper(bridge_channel->chan,
+		"TOUCH_MIXMONITOR_MESSAGE_START");
+	start_message = ast_strdupa(S_OR(start_message, ""));
+	stop_message = pbx_builtin_getvar_helper(bridge_channel->chan,
+		"TOUCH_MIXMONITOR_MESSAGE_STOP");
+	stop_message = ast_strdupa(S_OR(stop_message, ""));
+	ast_channel_unlock(bridge_channel->chan);
+
+	is_monitoring =
+		0 < ast_channel_audiohook_count_by_source(peer_chan, mixmonitor_spy_type, AST_AUDIOHOOK_TYPE_SPY);
+	switch (start_stop) {
+	case AUTO_MONITOR_TOGGLE:
+		if (is_monitoring) {
+			stop_automixmonitor(bridge_channel, peer_chan, features_cfg, stop_message);
+		} else {
+			start_automixmonitor(bridge_channel, peer_chan, features_cfg, start_message);
+		}
+		return 0;
+	case AUTO_MONITOR_START:
+		if (!is_monitoring) {
+			start_automixmonitor(bridge_channel, peer_chan, features_cfg, start_message);
+			return 0;
+		}
+		ast_verb(4, "AutoMixMonitor already recording call.\n");
+		break;
+	case AUTO_MONITOR_STOP:
+		if (is_monitoring) {
+			stop_automixmonitor(bridge_channel, peer_chan, features_cfg, stop_message);
+			return 0;
+		}
+		ast_verb(4, "AutoMixMonitor already stopped on call.\n");
+		break;
+	}
+
+	/*
+	 * Fake start/stop to invoker so will think it did something but
+	 * was already in that mode.
+	 */
+	if (features_cfg && !ast_strlen_zero(features_cfg->courtesytone)) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, features_cfg->courtesytone, NULL);
+	}
+	if (is_monitoring) {
+		if (!ast_strlen_zero(start_message)) {
+			ast_bridge_channel_queue_playfile(bridge_channel, NULL, start_message, NULL);
+		}
+	} else {
+		if (!ast_strlen_zero(stop_message)) {
+			ast_bridge_channel_queue_playfile(bridge_channel, NULL, stop_message, NULL);
+		}
+	}
 	return 0;
 }
 
 /*! \brief Internal built in feature for hangup */
-static int feature_hangup(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, void *hook_pvt)
+static int feature_hangup(struct ast_bridge_channel *bridge_channel, void *hook_pvt)
 {
-	/* This is very simple, we basically change the state on the bridge channel to end and the core takes care of the rest */
-	ast_bridge_change_state(bridge_channel, AST_BRIDGE_CHANNEL_STATE_END);
+	/*
+	 * This is very simple, we simply change the state on the
+	 * bridge_channel to force the channel out of the bridge and the
+	 * core takes care of the rest.
+	 */
+	ast_bridge_channel_leave_bridge(bridge_channel, BRIDGE_CHANNEL_STATE_END,
+		AST_CAUSE_NORMAL_CLEARING);
 	return 0;
 }
 
 static int unload_module(void)
 {
+	ast_bridge_features_unregister(AST_BRIDGE_BUILTIN_HANGUP);
+	ast_bridge_features_unregister(AST_BRIDGE_BUILTIN_AUTOMON);
+	ast_bridge_features_unregister(AST_BRIDGE_BUILTIN_AUTOMIXMON);
+
 	return 0;
 }
 
 static int load_module(void)
 {
-	ast_bridge_features_register(AST_BRIDGE_BUILTIN_BLINDTRANSFER, feature_blind_transfer, NULL);
-	ast_bridge_features_register(AST_BRIDGE_BUILTIN_ATTENDEDTRANSFER, feature_attended_transfer, NULL);
 	ast_bridge_features_register(AST_BRIDGE_BUILTIN_HANGUP, feature_hangup, NULL);
+	ast_bridge_features_register(AST_BRIDGE_BUILTIN_AUTOMON, feature_automonitor, NULL);
+	ast_bridge_features_register(AST_BRIDGE_BUILTIN_AUTOMIXMON, feature_automixmonitor, NULL);
 
-	/* Bump up our reference count so we can't be unloaded */
-	ast_module_ref(ast_module_info->self);
+	/* This module cannot be unloaded until shutdown */
+	ast_module_shutdown_ref(ast_module_info->self);
 
 	return AST_MODULE_LOAD_SUCCESS;
 }

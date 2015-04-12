@@ -20,7 +20,7 @@
  *
  * \brief Debugging routines for file descriptor leaks
  *
- * \author Tilghman Lesher <tlesher@digium.com>
+ * \author Tilghman Lesher \verbatim <tlesher@digium.com> \endverbatim
  */
 
 /*** MODULEINFO
@@ -31,7 +31,7 @@
 
 #ifdef DEBUG_FD_LEAKS
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 397107 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 397110 $")
 
 #include <stdio.h>
 #include <string.h>

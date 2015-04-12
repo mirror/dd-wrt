@@ -27,11 +27,12 @@
 
 /*** MODULEINFO
 	<support_level>core</support_level>
+	<depend>res_speech</depend>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362817 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419688 $");
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -213,7 +214,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362817 $");
 	</function>
 	<function name="SPEECH_ENGINE" language="en_US">
 		<synopsis>
-			Change a speech engine specific attribute.
+			Get or change a speech engine specific attribute.
 		</synopsis>
 		<syntax>
 			<parameter name="name" required="true" />
@@ -284,14 +285,49 @@ static struct ast_speech *find_speech(struct ast_channel *chan)
 {
 	struct ast_speech *speech = NULL;
 	struct ast_datastore *datastore = NULL;
-	
+
+	if (!chan) {
+		return NULL;
+	}
+
+	ast_channel_lock(chan);
 	datastore = ast_channel_datastore_find(chan, &speech_datastore, NULL);
+	ast_channel_unlock(chan);
 	if (datastore == NULL) {
 		return NULL;
 	}
 	speech = datastore->data;
 
 	return speech;
+}
+
+/*!
+ * \internal
+ * \brief Destroy the speech datastore on the given channel.
+ *
+ * \param chan Channel to destroy speech datastore.
+ *
+ * \retval 0 on success.
+ * \retval -1 not found.
+ */
+static int speech_datastore_destroy(struct ast_channel *chan)
+{
+	struct ast_datastore *datastore;
+	int res;
+
+	ast_channel_lock(chan);
+	datastore = ast_channel_datastore_find(chan, &speech_datastore, NULL);
+	if (datastore) {
+		ast_channel_datastore_remove(chan, datastore);
+	}
+	ast_channel_unlock(chan);
+	if (datastore) {
+		ast_datastore_free(datastore);
+		res = 0;
+	} else {
+		res = -1;
+	}
+	return res;
 }
 
 /* Helper function to find a specific speech recognition result by number and nbest alternative */
@@ -401,7 +437,7 @@ static struct ast_custom_function speech_grammar_function = {
 	.write = NULL,
 };
 
-/*! \brief SPEECH_ENGINE() Dialplan Function */
+/*! \brief SPEECH_ENGINE() Dialplan Set Function */
 static int speech_engine_write(struct ast_channel *chan, const char *cmd, char *data, const char *value)
 {
 	struct ast_speech *speech = find_speech(chan);
@@ -415,9 +451,21 @@ static int speech_engine_write(struct ast_channel *chan, const char *cmd, char *
 	return 0;
 }
 
+/*! \brief SPEECH_ENGINE() Dialplan Get Function */
+static int speech_engine_read(struct ast_channel *chan, const char *cmd, char *data, char *buf, size_t len)
+{
+	struct ast_speech *speech = find_speech(chan);
+
+	if (!data || !speech) {
+		return -1;
+	}
+
+	return ast_speech_get_setting(speech, data, buf, len);
+}
+
 static struct ast_custom_function speech_engine_function = {
 	.name = "SPEECH_ENGINE",
-	.read = NULL,
+	.read = speech_engine_read,
 	.write = speech_engine_write,
 };
 
@@ -515,7 +563,9 @@ static int speech_create(struct ast_channel *chan, const char *data)
 	}
 	pbx_builtin_setvar_helper(chan, "ERROR", NULL);
 	datastore->data = speech;
+	ast_channel_lock(chan);
 	ast_channel_datastore_add(chan, datastore);
+	ast_channel_unlock(chan);
 
 	return 0;
 }
@@ -655,10 +705,9 @@ static int speech_background(struct ast_channel *chan, const char *data)
 	int res = 0, done = 0, started = 0, quieted = 0, max_dtmf_len = 0;
 	struct ast_speech *speech = find_speech(chan);
 	struct ast_frame *f = NULL;
-	struct ast_format oldreadformat;
+	RAII_VAR(struct ast_format *, oldreadformat, NULL, ao2_cleanup);
 	char dtmf[AST_MAX_EXTENSION] = "";
 	struct timeval start = { 0, 0 }, current;
-	struct ast_datastore *datastore = NULL;
 	char *parse, *filename_tmp = NULL, *filename = NULL, tmp[2] = "", dtmf_terminator = '#';
 	const char *tmp2 = NULL;
 	struct ast_flags options = { 0 };
@@ -671,7 +720,6 @@ static int speech_background(struct ast_channel *chan, const char *data)
 	parse = ast_strdupa(data);
 	AST_STANDARD_APP_ARGS(args, parse);
 
-	ast_format_clear(&oldreadformat);
 	if (speech == NULL)
 		return -1;
 
@@ -687,10 +735,10 @@ static int speech_background(struct ast_channel *chan, const char *data)
 	}
 
 	/* Record old read format */
-	ast_format_copy(&oldreadformat, ast_channel_readformat(chan));
+	oldreadformat = ao2_bump(ast_channel_readformat(chan));
 
 	/* Change read format to be signed linear */
-	if (ast_set_read_format(chan, &speech->format))
+	if (ast_set_read_format(chan, speech->format))
 		return -1;
 
 	if (!ast_strlen_zero(args.soundfile)) {
@@ -888,14 +936,10 @@ static int speech_background(struct ast_channel *chan, const char *data)
 
 	/* See if it was because they hung up */
 	if (done == 3) {
-		/* Destroy speech structure */
-		ast_speech_destroy(speech);
-		datastore = ast_channel_datastore_find(chan, &speech_datastore, NULL);
-		if (datastore != NULL)
-			ast_channel_datastore_remove(chan, datastore);
+		speech_datastore_destroy(chan);
 	} else {
 		/* Channel is okay so restore read format */
-		ast_set_read_format(chan, &oldreadformat);
+		ast_set_read_format(chan, oldreadformat);
 	}
 
 	return 0;
@@ -905,22 +949,10 @@ static int speech_background(struct ast_channel *chan, const char *data)
 /*! \brief SpeechDestroy() Dialplan Application */
 static int speech_destroy(struct ast_channel *chan, const char *data)
 {
-	int res = 0;
-	struct ast_speech *speech = find_speech(chan);
-	struct ast_datastore *datastore = NULL;
-
-	if (speech == NULL)
+	if (!chan) {
 		return -1;
-
-	/* Destroy speech structure */
-	ast_speech_destroy(speech);
-
-	datastore = ast_channel_datastore_find(chan, &speech_datastore, NULL);
-	if (datastore != NULL) {
-		ast_channel_datastore_remove(chan, datastore);
 	}
-
-	return res;
+	return speech_datastore_destroy(chan);
 }
 
 static int unload_module(void)
@@ -970,6 +1002,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Dialplan Speech Applications",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.nonoptreq = "res_speech",

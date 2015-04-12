@@ -1,5 +1,5 @@
 #
-# Asterisk -- A telephony toolkit for Linux.
+# Asterisk -- An open source telephony toolkit.
 #
 # Top level Makefile
 #
@@ -81,6 +81,8 @@ export STATIC_BUILD       # Additional cflags, set to -static
                           # should go directly to ASTLDFLAGS
 
 #--- paths to various commands
+# The makeopts include below tries to set these if they're found during
+# configure.
 export CC
 export CXX
 export AR
@@ -102,7 +104,7 @@ export PYTHON
 
 # start the primary CFLAGS and LDFLAGS with any that were provided
 # to the configure script
-_ASTCFLAGS:=$(CONFIG_CFLAGS)
+_ASTCFLAGS:=$(CONFIG_CFLAGS) $(CONFIG_SIGNED_CHAR)
 _ASTLDFLAGS:=$(CONFIG_LDFLAGS)
 
 # Some build systems, such as the one in openwrt, like to pass custom target
@@ -149,6 +151,9 @@ LINKER_SYMBOL_PREFIX=
 # Uncomment this to use the older DSP routines
 #_ASTCFLAGS+=-DOLD_DSP_ROUTINES
 
+# Default install directory for DAHDI hooks.
+DAHDI_UDEV_HOOK_DIR = /usr/share/dahdi/span_config.d
+
 # If the file .asterisk.makeopts is present in your home directory, you can
 # include all of your favorite menuselect options so that every time you download
 # a new version of Asterisk, you don't have to run menuselect to set them.
@@ -179,14 +184,13 @@ ifeq ($(findstring -Wall,$(_ASTCFLAGS) $(ASTCFLAGS)),)
   _ASTCFLAGS+=-Wall
 endif
 
-_ASTCFLAGS+=-Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations $(AST_NESTED_FUNCTIONS) $(DEBUG)
+_ASTCFLAGS+=-Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations $(AST_NESTED_FUNCTIONS) $(AST_CLANG_BLOCKS) $(DEBUG)
 ADDL_TARGETS=
 
 ifeq ($(AST_DEVMODE),yes)
   _ASTCFLAGS+=-Werror
   _ASTCFLAGS+=-Wunused
   _ASTCFLAGS+=$(AST_DECLARATION_AFTER_STATEMENT)
-  _ASTCFLAGS+=$(AST_FORTIFY_SOURCE)
   _ASTCFLAGS+=$(AST_TRAMPOLINES)
   _ASTCFLAGS+=-Wundef
   _ASTCFLAGS+=-Wmissing-format-attribute
@@ -221,10 +225,13 @@ ifeq ($(OSARCH),SunOS)
   _ASTCFLAGS+=-Wcast-align -DSOLARIS -I../include/solaris-compat -I/opt/ssl/include -I/usr/local/ssl/include -D_XPG4_2 -D__EXTENSIONS__
 endif
 
-ASTERISKVERSION:=$(shell GREP=$(GREP) AWK=$(AWK) GIT=$(GIT) build_tools/make_version .)
-
-ifneq ($(wildcard .version),)
-  ASTERISKVERSIONNUM:=$(shell $(AWK) -F. '{printf "%01d%02d%02d", $$1, $$2, $$3}' .version)
+ifneq ($(GREP),)
+  ASTERISKVERSION:=$(shell GREP=$(GREP) AWK=$(AWK) GIT=$(GIT) build_tools/make_version .)
+endif
+ifneq ($(AWK),)
+  ifneq ($(wildcard .version),)
+    ASTERISKVERSIONNUM:=$(shell $(AWK) -F. '{printf "%01d%02d%02d", $$1, $$2, $$3}' .version)
+  endif
 endif
 
 ifneq ($(wildcard .svn),)
@@ -234,7 +241,7 @@ endif
 _ASTCFLAGS+=$(OPTIONS)
 
 MOD_SUBDIRS:=channels pbx apps codecs formats cdr cel bridges funcs tests main res addons $(LOCAL_MOD_SUBDIRS)
-OTHER_SUBDIRS:=utils agi
+OTHER_SUBDIRS:=utils agi contrib
 SUBDIRS:=$(OTHER_SUBDIRS) $(MOD_SUBDIRS)
 SUBDIRS_INSTALL:=$(SUBDIRS:%=%-install)
 SUBDIRS_CLEAN:=$(SUBDIRS:%=%-clean)
@@ -246,11 +253,9 @@ MOD_SUBDIRS_EMBED_LIBS:=$(MOD_SUBDIRS:%=%-embed-libs)
 MOD_SUBDIRS_MENUSELECT_TREE:=$(MOD_SUBDIRS:%=%-menuselect-tree)
 
 ifneq ($(findstring darwin,$(OSARCH)),)
-  _ASTCFLAGS+=-D__Darwin__
-  _SOLINK=-Xlinker -macosx_version_min -Xlinker 10.4 -Xlinker -undefined -Xlinker dynamic_lookup
-  ifeq ($(shell if test `/usr/bin/sw_vers -productVersion | cut -c4` -gt 5; then echo 6; else echo 0; fi),6)
-    _SOLINK+=/usr/lib/bundle1.o
-  endif
+  _ASTCFLAGS+=-D__Darwin__ -mmacosx-version-min=10.6
+  _SOLINK=-mmacosx-version-min=10.6 -Xlinker -undefined -Xlinker dynamic_lookup
+  _SOLINK+=/usr/lib/bundle1.o
   SOLINK=-bundle $(_SOLINK)
   DYLINK=-Xlinker -dylib $(_SOLINK)
   _ASTLDFLAGS+=-L/usr/local/lib
@@ -288,13 +293,6 @@ ifneq ($(PRINT_DIR)$(NOISY_BUILD),)
 SUBMAKE:=$(MAKE)
 else
 SUBMAKE:=$(MAKE) --quiet --no-print-directory
-endif
-
-# This is used when generating the doxygen documentation
-ifneq ($(DOT),:)
-  HAVEDOT=yes
-else
-  HAVEDOT=no
 endif
 
 # $(MAKE) is printed in several places, and we want it to be a
@@ -363,12 +361,16 @@ makeopts.embed_rules: menuselect.makeopts
 $(SUBDIRS): makeopts .lastclean main/version.c include/asterisk/build.h include/asterisk/buildopts.h defaults.h makeopts.embed_rules
 
 ifeq ($(findstring $(OSARCH), mingw32 cygwin ),)
+  ifeq ($(shell grep ^MENUSELECT_EMBED=$$ menuselect.makeopts 2>/dev/null),)
     # Non-windows:
     # ensure that all module subdirectories are processed before 'main' during
     # a parallel build, since if there are modules selected to be embedded the
     # directories containing them must be completed before the main Asterisk
-    # binary can be built
+    # binary can be built.
+    # If MENUSELECT_EMBED is empty, we don't need this and allow 'main' to be
+    # be built without building all dependencies first.
 main: $(filter-out main,$(MOD_SUBDIRS))
+  endif
 else
     # Windows: we need to build main (i.e. the asterisk dll) first,
     # followed by res, followed by the other directories, because
@@ -420,6 +422,8 @@ _clean:
 	rm -f main/version.c
 	rm -f doc/core-en_US.xml
 	rm -f doc/full-en_US.xml
+	rm -f doc/rest-api/*.wiki
+	rm -f rest-api-templates/*.pyc
 	@$(MAKE) -C menuselect clean
 	cp -f .cleancount .lastclean
 
@@ -439,14 +443,18 @@ distclean: $(SUBDIRS_DIST_CLEAN) _clean
 
 datafiles: _all doc/core-en_US.xml
 	CFLAGS="$(_ASTCFLAGS) $(ASTCFLAGS)" build_tools/mkpkgconfig "$(DESTDIR)$(libdir)/pkgconfig";
-# Should static HTTP be installed during make samples or even with its own target ala
-# webvoicemail?  There are portions here that *could* be customized but might also be
-# improved a lot.  I'll put it here for now.
 
-	for x in static-http/*; do \
-		$(INSTALL) -m 644 $$x "$(DESTDIR)$(ASTDATADIR)/static-http" ; \
+#	# Recursively install contents of the static-http directory, in case
+#	# extra content is provided there. See contrib/scripts/get_swagger_ui.sh
+	find static-http | while read x; do \
+		if test -d $$x; then \
+			$(INSTALL) -m 755 -d "$(DESTDIR)$(ASTDATADIR)/$$x"; \
+		else \
+			$(INSTALL) -m 644 $$x "$(DESTDIR)$(ASTDATADIR)/$$x" ; \
+		fi \
 	done
 	$(INSTALL) -m 644 doc/core-en_US.xml "$(DESTDIR)$(ASTDATADIR)/static-http";
+	$(INSTALL) -m 644 doc/appdocsxml.xslt "$(DESTDIR)$(ASTDATADIR)/static-http";
 	if [ -d doc/tex/asterisk ] ; then \
 		$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/static-http/docs" ; \
 		for n in doc/tex/asterisk/* ; do \
@@ -457,22 +465,34 @@ datafiles: _all doc/core-en_US.xml
 		$(INSTALL) -m 644 $$x "$(DESTDIR)$(ASTDATADIR)/images" ; \
 	done
 	$(MAKE) -C sounds install
+	find rest-api -name "*.json" | while read x; do \
+		$(INSTALL) -m 644 $$x "$(DESTDIR)$(ASTDATADIR)/rest-api" ; \
+	done
 
-doc/core-en_US.xml: makeopts .lastclean $(foreach dir,$(MOD_SUBDIRS),$(shell $(GREP) -l "language=\"en_US\"" $(dir)/*.c $(dir)/*.cc 2>/dev/null))
+ifneq ($(GREP),)
+  XML_core_en_US = $(foreach dir,$(MOD_SUBDIRS),$(shell $(GREP) -l "language=\"en_US\"" $(dir)/*.c $(dir)/*.cc 2>/dev/null))
+endif
+
+doc/core-en_US.xml: makeopts .lastclean $(XML_core_en_US)
 	@printf "Building Documentation For: "
 	@echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $@
 	@echo "<!DOCTYPE docs SYSTEM \"appdocsxml.dtd\">" >> $@
+	@echo "<?xml-stylesheet type=\"text/xsl\" href=\"appdocsxml.xslt\"?>" > $@
 	@echo "<docs xmlns:xi=\"http://www.w3.org/2001/XInclude\">" >> $@
 	@for x in $(MOD_SUBDIRS); do \
 		printf "$$x " ; \
-		for i in $$x/*.c; do \
+		for i in `find $$x -name '*.c'`; do \
 			$(AWK) -f build_tools/get_documentation $$i >> $@ ; \
 		done ; \
 	done
 	@echo
 	@echo "</docs>" >> $@
 
-doc/full-en_US.xml: makeopts .lastclean $(foreach dir,$(MOD_SUBDIRS),$(shell $(GREP) -l "language=\"en_US\"" $(dir)/*.c $(dir)/*.cc 2>/dev/null))
+ifneq ($(GREP),)
+  XML_full_en_US = $(foreach dir,$(MOD_SUBDIRS),$(shell $(GREP) -l "language=\"en_US\"" $(dir)/*.c $(dir)/*.cc 2>/dev/null))
+endif
+
+doc/full-en_US.xml: makeopts .lastclean $(XML_full_en_US)
 ifeq ($(PYTHON),:)
 	@echo "--------------------------------------------------------------------------"
 	@echo "---        Please install python to build full documentation           ---"
@@ -481,10 +501,11 @@ else
 	@printf "Building Documentation For: "
 	@echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $@
 	@echo "<!DOCTYPE docs SYSTEM \"appdocsxml.dtd\">" >> $@
+	@echo "<?xml-stylesheet type=\"text/xsl\" href=\"appdocsxml.xslt\"?>" > $@
 	@echo "<docs xmlns:xi=\"http://www.w3.org/2001/XInclude\">" >> $@
 	@for x in $(MOD_SUBDIRS); do \
 		printf "$$x " ; \
-		for i in $$x/*.c; do \
+		for i in `find $$x -name '*.c'`; do \
 			$(PYTHON) build_tools/get_documentation.py < $$i >> $@ ; \
 		done ; \
 	done
@@ -528,13 +549,14 @@ OLDHEADERS=$(filter-out $(NEWHEADERS) $(notdir $(DESTDIR)$(ASTHEADERDIR)),$(notd
 INSTALLDIRS="$(ASTLIBDIR)" "$(ASTMODDIR)" "$(ASTSBINDIR)" "$(ASTETCDIR)" "$(ASTVARRUNDIR)" \
 	"$(ASTSPOOLDIR)" "$(ASTSPOOLDIR)/dictate" "$(ASTSPOOLDIR)/meetme" \
 	"$(ASTSPOOLDIR)/monitor" "$(ASTSPOOLDIR)/system" "$(ASTSPOOLDIR)/tmp" \
-	"$(ASTSPOOLDIR)/voicemail" "$(ASTHEADERDIR)" "$(ASTHEADERDIR)/doxygen" \
+	"$(ASTSPOOLDIR)/voicemail" "$(ASTSPOOLDIR)/recording" \
+	"$(ASTHEADERDIR)" "$(ASTHEADERDIR)/doxygen" \
 	"$(ASTLOGDIR)" "$(ASTLOGDIR)/cdr-csv" "$(ASTLOGDIR)/cdr-custom" \
 	"$(ASTLOGDIR)/cel-custom" "$(ASTDATADIR)" "$(ASTDATADIR)/documentation" \
 	"$(ASTDATADIR)/documentation/thirdparty" "$(ASTDATADIR)/firmware" \
 	"$(ASTDATADIR)/firmware/iax" "$(ASTDATADIR)/images" "$(ASTDATADIR)/keys" \
-	"$(ASTDATADIR)/phoneprov" "$(ASTDATADIR)/static-http" "$(ASTDATADIR)/sounds" \
-	"$(ASTDATADIR)/moh" "$(ASTMANDIR)/man8" "$(AGI_DIR)" "$(ASTDBDIR)"
+	"$(ASTDATADIR)/phoneprov" "$(ASTDATADIR)/rest-api" "$(ASTDATADIR)/static-http" \
+	"$(ASTDATADIR)/sounds" "$(ASTDATADIR)/moh" "$(ASTMANDIR)/man8" "$(AGI_DIR)" "$(ASTDBDIR)"
 
 installdirs:
 	@for i in $(INSTALLDIRS); do \
@@ -549,10 +571,8 @@ main-bininstall:
 bininstall: _all installdirs $(SUBDIRS_INSTALL) main-bininstall
 	$(INSTALL) -m 755 contrib/scripts/astgenkey "$(DESTDIR)$(ASTSBINDIR)/"
 	$(INSTALL) -m 755 contrib/scripts/autosupport "$(DESTDIR)$(ASTSBINDIR)/"
-	if [ ! -f "$(DESTDIR)$(ASTSBINDIR)/safe_asterisk" -a ! -f /sbin/launchd ]; then \
-		cat contrib/scripts/safe_asterisk | sed 's|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;s|__ASTERISK_VARRUN_DIR__|$(ASTVARRUNDIR)|;s|__ASTERISK_LOG_DIR__|$(ASTLOGDIR)|;' > contrib/scripts/safe.tmp ; \
-		$(INSTALL) -m 755 contrib/scripts/safe.tmp "$(DESTDIR)$(ASTSBINDIR)/safe_asterisk" ; \
-		rm -f contrib/scripts/safe.tmp ; \
+	if [ ! -f /sbin/launchd ]; then \
+		./build_tools/install_subst contrib/scripts/safe_asterisk "$(DESTDIR)$(ASTSBINDIR)/safe_asterisk"; \
 	fi
 	$(INSTALL) -m 644 include/asterisk.h "$(DESTDIR)$(includedir)"
 	$(INSTALL) -m 644 include/asterisk/*.h "$(DESTDIR)$(ASTHEADERDIR)"
@@ -562,6 +582,7 @@ bininstall: _all installdirs $(SUBDIRS_INSTALL) main-bininstall
 	fi
 
 	$(INSTALL) -m 644 doc/core-*.xml "$(DESTDIR)$(ASTDATADIR)/documentation"
+	$(INSTALL) -m 644 doc/appdocsxml.xslt "$(DESTDIR)$(ASTDATADIR)/documentation"
 	$(INSTALL) -m 644 doc/appdocsxml.dtd "$(DESTDIR)$(ASTDATADIR)/documentation"
 	$(INSTALL) -m 644 doc/asterisk.8 "$(DESTDIR)$(ASTMANDIR)/man8"
 	$(INSTALL) -m 644 doc/astdb*.8 "$(DESTDIR)$(ASTMANDIR)/man8"
@@ -571,6 +592,10 @@ bininstall: _all installdirs $(SUBDIRS_INSTALL) main-bininstall
 	if [ -f contrib/firmware/iax/iaxy.bin ] ; then \
 		$(INSTALL) -m 644 contrib/firmware/iax/iaxy.bin "$(DESTDIR)$(ASTDATADIR)/firmware/iax/iaxy.bin"; \
 	fi
+ifeq ($(HAVE_DAHDI),1)
+	$(INSTALL) -d $(DESTDIR)/$(DAHDI_UDEV_HOOK_DIR)
+	$(INSTALL) -m 644 contrib/scripts/dahdi_span_config_hook $(DESTDIR)$(DAHDI_UDEV_HOOK_DIR)/40-asterisk
+endif
 
 $(SUBDIRS_INSTALL):
 	+@DESTDIR="$(DESTDIR)" ASTSBINDIR="$(ASTSBINDIR)" $(SUBMAKE) -C $(@:-install=) install
@@ -597,7 +622,7 @@ oldmodcheck:
 	fi
 
 badshell:
-ifneq ($(findstring ~,$(DESTDIR)),)
+ifneq ($(filter ~%,$(DESTDIR)),)
 	@echo "Your shell doesn't do ~ expansion when expected (specifically, when doing \"make install DESTDIR=~/path\")."
 	@echo "Try replacing ~ with \$$HOME, as in \"make install DESTDIR=\$$HOME/path\"."
 	@exit 1
@@ -638,7 +663,7 @@ upgrade: bininstall
 adsi:
 	@echo Installing adsi config files...
 	$(INSTALL) -d "$(DESTDIR)$(ASTETCDIR)"
-	@for x in configs/*.adsi; do \
+	@for x in configs/samples/*.adsi; do \
 		dst="$(DESTDIR)$(ASTETCDIR)/`$(BASENAME) $$x`" ; \
 		if [ -f "$${dst}" ] ; then \
 			echo "Overwriting $$x" ; \
@@ -650,7 +675,7 @@ adsi:
 
 samples: adsi
 	@echo Installing other config files...
-	@for x in configs/*.sample; do \
+	@for x in configs/samples/*.sample; do \
 		dst="$(DESTDIR)$(ASTETCDIR)/`$(BASENAME) $$x .sample`" ;	\
 		if [ -f "$${dst}" ]; then \
 			if [ "$(OVERWRITE)" = "y" ]; then \
@@ -732,8 +757,29 @@ webvmail:
 	@echo " +-------------------------------------------+"
 
 progdocs:
-	(cat contrib/asterisk-ng-doxygen; echo "HAVE_DOT=$(HAVEDOT)"; \
-	echo "PROJECT_NUMBER=$(ASTERISKVERSION)") | doxygen -
+	# Note, Makefile conditionals must not be tabbed out. Wasted hours with that.
+ifeq ($(DOXYGEN),:)
+	@echo "Doxygen is not installed.  Please install and re-run the configuration script."
+else
+ifeq ($(DOT),:)
+	@echo "DOT is not installed. Doxygen will not produce any diagrams. Please install and re-run the configuration script."
+else
+	# Enable DOT
+	@echo "HAVE_DOT = YES" >> contrib/asterisk-ng-doxygen
+endif
+	# Set Doxygen PROJECT_NUMBER variable
+ifneq ($(ASTERISKVERSION),UNKNOWN__and_probably_unsupported)
+	@echo "PROJECT_NUMBER = $(ASTERISKVERSION)" >> contrib/asterisk-ng-doxygen
+else
+	echo "Asterisk Version is unknown, not configuring Doxygen PROJECT_NUMBER."
+endif
+	# Validate Doxygen Configuration
+	@doxygen -u contrib/asterisk-ng-doxygen
+	# Run Doxygen
+	@doxygen contrib/asterisk-ng-doxygen
+	# Remove configuration backup file
+	@rm -f contrib/asterisk-ng-doxygen.bak
+endif
 
 install-logrotate:
 	if [ ! -d "$(DESTDIR)$(ASTETCDIR)/../logrotate.d" ]; then \
@@ -744,11 +790,9 @@ install-logrotate:
 	rm -f contrib/scripts/asterisk.logrotate.tmp
 
 config:
-	@if [ "${OSARCH}" = "linux-gnu" ]; then \
+	@if [ "${OSARCH}" = "linux-gnu" -o "${OSARCH}" = "kfreebsd-gnu" ]; then \
 		if [ -f /etc/redhat-release -o -f /etc/fedora-release ]; then \
-			cat contrib/init.d/rc.redhat.asterisk | sed 's|__ASTERISK_ETC_DIR__|$(ASTETCDIR)|;s|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;s|__ASTERISK_VARRUN_DIR__|$(ASTVARRUNDIR)|;' > contrib/init.d/rc.asterisk.tmp ; \
-			$(INSTALL) -m 755 contrib/init.d/rc.asterisk.tmp "$(DESTDIR)/etc/rc.d/init.d/asterisk" ; \
-			rm -f contrib/init.d/rc.asterisk.tmp ; \
+			./build_tools/install_subst contrib/init.d/rc.redhat.asterisk  "$(DESTDIR)/etc/rc.d/init.d/asterisk"; \
 			if [ ! -f "$(DESTDIR)/etc/sysconfig/asterisk" ] ; then \
 				$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/sysconfig/asterisk" ; \
 			fi ; \
@@ -756,9 +800,7 @@ config:
 				/sbin/chkconfig --add asterisk ; \
 			fi ; \
 		elif [ -f /etc/debian_version ] ; then \
-			cat contrib/init.d/rc.debian.asterisk | sed 's|__ASTERISK_ETC_DIR__|$(ASTETCDIR)|;s|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;s|__ASTERISK_VARRUN_DIR__|$(ASTVARRUNDIR)|;' > contrib/init.d/rc.asterisk.tmp ; \
-			$(INSTALL) -m 755 contrib/init.d/rc.asterisk.tmp "$(DESTDIR)/etc/init.d/asterisk" ; \
-			rm -f contrib/init.d/rc.asterisk.tmp ; \
+			./build_tools/install_subst contrib/init.d/rc.debian.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
 			if [ ! -f "$(DESTDIR)/etc/default/asterisk" ] ; then \
 				$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/default/asterisk" ; \
 			fi ; \
@@ -766,16 +808,12 @@ config:
 				/usr/sbin/update-rc.d asterisk defaults 50 91 ; \
 			fi ; \
 		elif [ -f /etc/gentoo-release ] ; then \
-			cat contrib/init.d/rc.gentoo.asterisk | sed 's|__ASTERISK_ETC_DIR__|$(ASTETCDIR)|;s|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;s|__ASTERISK_VARRUN_DIR__|$(ASTVARRUNDIR)|;' > contrib/init.d/rc.asterisk.tmp ; \
-			$(INSTALL) -m 755 contrib/init.d/rc.asterisk.tmp "$(DESTDIR)/etc/init.d/asterisk" ; \
-			rm -f contrib/init.d/rc.asterisk.tmp ; \
+			./build_tools/install_subst contrib/init.d/rc.gentoo.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
 			if [ -z "$(DESTDIR)" ] ; then \
 				/sbin/rc-update add asterisk default ; \
 			fi ; \
 		elif [ -f /etc/mandrake-release -o -f /etc/mandriva-release ] ; then \
-			cat contrib/init.d/rc.mandriva.asterisk | sed 's|__ASTERISK_ETC_DIR__|$(ASTETCDIR)|;s|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;s|__ASTERISK_VARRUN_DIR__|$(ASTVARRUNDIR)|;' > contrib/init.d/rc.asterisk.tmp ; \
-			$(INSTALL) -m 755 contrib/init.d/rc.asterisk.tmp "$(DESTDIR)/etc/rc.d/init.d/asterisk" ; \
-			rm -f contrib/init.d/rc.asterisk.tmp ; \
+			./build_tools/install_subst contrib/init.d/rc.mandriva.asterisk  "$(DESTDIR)/etc/rc.d/init.d/asterisk"; \
 			if [ ! -f /etc/sysconfig/asterisk ] ; then \
 				$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/sysconfig/asterisk" ; \
 			fi ; \
@@ -783,9 +821,7 @@ config:
 				/sbin/chkconfig --add asterisk ; \
 			fi ; \
 		elif [ -f /etc/SuSE-release -o -f /etc/novell-release ] ; then \
-			cat contrib/init.d/rc.suse.asterisk | sed 's|__ASTERISK_ETC_DIR__|$(ASTETCDIR)|;s|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;s|__ASTERISK_VARRUN_DIR__|$(ASTVARRUNDIR)|;' > contrib/init.d/rc.asterisk.tmp ; \
-			$(INSTALL) -m 755 contrib/init.d/rc.asterisk.tmp "$(DESTDIR)/etc/init.d/asterisk" ;\
-			rm -f contrib/init.d/rc.asterisk.tmp ; \
+			./build_tools/install_subst contrib/init.d/rc.suse.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
 			if [ ! -f /etc/sysconfig/asterisk ] ; then \
 				$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/sysconfig/asterisk" ; \
 			fi ; \
@@ -793,19 +829,13 @@ config:
 				/sbin/chkconfig --add asterisk ; \
 			fi ; \
 		elif [ -f /etc/arch-release -o -f /etc/arch-release ] ; then \
-			cat contrib/init.d/rc.archlinux.asterisk | sed 's|__ASTERISK_ETC_DIR__|$(ASTETCDIR)|;s|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;s|__ASTERISK_VARRUN_DIR__|$(ASTVARRUNDIR)|;' > contrib/init.d/rc.asterisk.tmp ; \
-			$(INSTALL) -m 755 contrib/init.d/rc.asterisk.tmp "$(DESTDIR)/etc/rc.d/asterisk" ; \
-			rm -f contrib/init.d/rc.asterisk.tmp ; \
+			./build_tools/install_subst contrib/init.d/rc.archlinux.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
 		elif [ -d "$(DESTDIR)/Library/LaunchDaemons" ]; then \
 			if [ ! -f "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist" ]; then \
-				sed 's|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;' < contrib/init.d/org.asterisk.asterisk.plist > asterisk.plist ; \
-				$(INSTALL) -m 644 asterisk.plist "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist"; \
-				rm -f asterisk.plist; \
+				./build_tools/install_subst contrib/init.d/org.asterisk.asterisk.plist "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist"; \
 			fi; \
 			if [ ! -f "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.muted.plist" ]; then \
-				sed 's|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;' < contrib/init.d/org.asterisk.muted.plist > muted.plist ; \
-				$(INSTALL) -m 644 muted.plist "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.muted.plist"; \
-				rm -f muted.plist; \
+				./build_tools/install_subst contrib/init.d/org.asterisk.muted.plist "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.muted.plist"; \
 			fi; \
 		elif [ -f /etc/slackware-version ]; then \
 			echo "Slackware is not currently supported, although an init script does exist for it."; \
@@ -843,6 +873,9 @@ _uninstall: $(SUBDIRS_UNINSTALL) main-binuninstall
 	rm -f "$(DESTDIR)$(ASTMANDIR)/man8/astgenkey.8"
 	rm -f "$(DESTDIR)$(ASTMANDIR)/man8/autosupport.8"
 	rm -f "$(DESTDIR)$(ASTMANDIR)/man8/safe_asterisk.8"
+ifeq ($(HAVE_DAHDI),1)
+	rm -f $(DESTDIR)$(DAHDI_UDEV_HOOK_DIR)/40-asterisk
+endif
 	$(MAKE) -C sounds uninstall
 
 uninstall: _uninstall
@@ -898,7 +931,7 @@ nmenuselect: menuselect/nmenuselect menuselect-tree menuselect.makeopts
 	-@menuselect/nmenuselect menuselect.makeopts && (echo "menuselect changes saved!"; rm -f channels/h323/Makefile.ast main/asterisk) || echo "menuselect changes NOT saved!"
 
 # options for make in menuselect/
-MAKE_MENUSELECT=CC="$(BUILD_CC)" CXX="" LD="" AR="" RANLIB="" \
+MAKE_MENUSELECT=CC="$(CC)" CXX="$(CXX)" LD="" AR="" RANLIB="" \
 		CFLAGS="$(BUILD_CFLAGS)" LDFLAGS="$(BUILD_LDFLAGS)" \
 		$(MAKE) -C menuselect CONFIGURE_SILENT="--silent"
 
@@ -934,6 +967,19 @@ menuselect-tree: $(foreach dir,$(filter-out main,$(MOD_SUBDIRS)),$(wildcard $(di
 	@cat sounds/sounds.xml >> $@
 	@echo "</menu>" >> $@
 
+# We don't want to require Python or Pystache for every build, so this is its
+# own target.
+ari-stubs:
+ifeq ($(PYTHON),:)
+	@echo "--------------------------------------------------------------------------"
+	@echo "---        Please install python to build ARI stubs            ---"
+	@echo "--------------------------------------------------------------------------"
+	@false
+else
+	$(PYTHON) rest-api-templates/make_ari_stubs.py \
+		rest-api/resources.json .
+endif
+
 .PHONY: menuselect
 .PHONY: main
 .PHONY: sounds
@@ -953,6 +999,7 @@ menuselect-tree: $(foreach dir,$(filter-out main,$(MOD_SUBDIRS)),$(wildcard $(di
 .PHONY: installdirs
 .PHONY: validate-docs
 .PHONY: _clean
+.PHONY: ari-stubs
 .PHONY: $(SUBDIRS_INSTALL)
 .PHONY: $(SUBDIRS_DIST_CLEAN)
 .PHONY: $(SUBDIRS_CLEAN)

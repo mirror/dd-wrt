@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369013 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 373330 $")
 
 #include <time.h>
 #include <math.h>
@@ -281,8 +281,9 @@ static inline float tdd_getcarrier(float *cr, float *ci, int bit)
 } while(0);
 
 /*! Generate TDD hold tone
- * \param buf Result buffer
- * \todo How big should this be??? */
+ * \param outbuf, buf Result buffer
+ * \todo How big should this be?
+ */
 int tdd_gen_holdtone(unsigned char *buf)
 {
 	int bytes = 0;

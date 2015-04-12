@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366917 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <libical/ical.h>
 #include <ne_session.h>
@@ -40,10 +40,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366917 $")
 #include <iksemel.h>
 
 #include "asterisk/module.h"
+#include "asterisk/channel.h"
 #include "asterisk/calendar.h"
 #include "asterisk/lock.h"
 #include "asterisk/config.h"
 #include "asterisk/astobj2.h"
+#include "asterisk/uuid.h"
 
 static void *exchangecal_load_calendar(void *data);
 static void *unref_exchangecal(void *obj);
@@ -241,36 +243,23 @@ static void *unref_exchangecal(void *obj)
 /* It is very important to use the return value of this function as a realloc could occur */
 static struct ast_str *generate_exchange_uuid(struct ast_str *uid)
 {
-	unsigned short val[8];
-	int x;
+	char buffer[AST_UUID_STR_LEN];
 
-	for (x = 0; x < 8; x++) {
-		val[x] = ast_random();
-	}
-	ast_str_set(&uid, 0, "%04x%04x-%04x-%04x-%04x-%04x%04x%04x", val[0], val[1], val[2], val[3], val[4], val[5], val[6], val[7]);
-
+	ast_uuid_generate_str(buffer, sizeof(buffer));
+	ast_str_set(&uid, 0, "%s", buffer);
 	return uid;
 }
 
 static int is_valid_uuid(struct ast_str *uid)
 {
-	int i;
+	struct ast_uuid *uuid = ast_str_to_uuid(ast_str_buffer(uid));
 
-	if (ast_str_strlen(uid) != 36) {
-		return 0;
+	if (uuid) {
+		ast_free(uuid);
+		return 1;
 	}
 
-	for (i = 0; i < ast_str_strlen(uid); i++) {
-		if (i == 8 || i == 13 || i == 18 || i == 23) {
-			if (ast_str_buffer(uid)[i] != '-') {
-				return 0;
-			}
-		} else if (!((ast_str_buffer(uid)[i] > 47 && ast_str_buffer(uid)[i] < 58) || (ast_str_buffer(uid)[i] > 96 && ast_str_buffer(uid)[i] < 103))) {
-			return 0;
-		}
-	}
-
-	return 1;
+	return 0;
 }
 
 static struct ast_str *xml_encode_str(struct ast_str *dst, const char *src)
@@ -418,9 +407,17 @@ static struct ast_str *exchangecal_request(struct exchangecal_pvt *pvt, const ch
 
 static int exchangecal_write_event(struct ast_calendar_event *event)
 {
-	struct ast_str *body = NULL, *response = NULL, *subdir = NULL;
-	struct ast_str *uid = NULL, *summary = NULL, *description = NULL, *organizer = NULL,
-	               *location = NULL, *start = NULL, *end = NULL, *busystate = NULL;
+	struct ast_str *body = NULL;
+	struct ast_str *response = NULL;
+	struct ast_str *subdir = NULL;
+	struct ast_str *uid = NULL;
+	struct ast_str *summary = NULL;
+	struct ast_str *description = NULL;
+	struct ast_str *organizer = NULL;
+	struct ast_str *location = NULL;
+	struct ast_str *start = NULL;
+	struct ast_str *end = NULL;
+	struct ast_str *busystate = NULL;
 	int ret = -1;
 
 	if (!event) {
@@ -438,7 +435,7 @@ static int exchangecal_write_event(struct ast_calendar_event *event)
 		goto write_cleanup;
 	}
 
-	if (!(uid = ast_str_create(32)) ||
+	if (!(uid = ast_str_create(AST_UUID_STR_LEN)) ||
 		!(summary = ast_str_create(32)) ||
 		!(description = ast_str_create(32)) ||
 		!(organizer = ast_str_create(32)) ||
@@ -453,7 +450,7 @@ static int exchangecal_write_event(struct ast_calendar_event *event)
 	if (ast_strlen_zero(event->uid)) {
 		uid = generate_exchange_uuid(uid);
 	} else {
-		ast_str_set(&uid, 36, "%s", event->uid);
+		ast_str_set(&uid, AST_UUID_STR_LEN, "%s", event->uid);
 	}
 
 	if (!is_valid_uuid(uid)) {
@@ -500,7 +497,14 @@ static int exchangecal_write_event(struct ast_calendar_event *event)
 		"      </a:prop>\n"
 		"    </a:set>\n"
 		"</a:propertyupdate>\n",
-		ast_str_buffer(uid), ast_str_buffer(summary), ast_str_buffer(description), ast_str_buffer(organizer), ast_str_buffer(location), ast_str_buffer(start), ast_str_buffer(end), ast_str_buffer(busystate));
+		ast_str_buffer(uid),
+		ast_str_buffer(summary),
+		ast_str_buffer(description),
+		ast_str_buffer(organizer),
+		ast_str_buffer(location),
+		ast_str_buffer(start),
+		ast_str_buffer(end),
+		ast_str_buffer(busystate));
 	ast_verb(0, "\n\n%s\n\n", ast_str_buffer(body));
 	ast_str_set(&subdir, 0, "/Calendar/%s.eml", ast_str_buffer(uid));
 
@@ -509,39 +513,17 @@ static int exchangecal_write_event(struct ast_calendar_event *event)
 	}
 
 write_cleanup:
-	if (uid) {
-		ast_free(uid);
-	}
-	if (summary) {
-		ast_free(summary);
-	}
-	if (description) {
-		ast_free(description);
-	}
-	if (organizer) {
-		ast_free(organizer);
-	}
-	if (location) {
-		ast_free(location);
-	}
-	if (start) {
-		ast_free(start);
-	}
-	if (end) {
-		ast_free(end);
-	}
-	if (busystate) {
-		ast_free(busystate);
-	}
-	if (body) {
-		ast_free(body);
-	}
-	if (response) {
-		ast_free(response);
-	}
-	if (subdir) {
-		ast_free(subdir);
-	}
+	ast_free(uid);
+	ast_free(summary);
+	ast_free(description);
+	ast_free(organizer);
+	ast_free(location);
+	ast_free(start);
+	ast_free(end);
+	ast_free(busystate);
+	ast_free(body);
+	ast_free(response);
+	ast_free(subdir);
 
 	return ret;
 }
@@ -759,6 +741,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Asterisk MS Exchange Calendar Integration",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_DEVSTATE_PLUGIN,

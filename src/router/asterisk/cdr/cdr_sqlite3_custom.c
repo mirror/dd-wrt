@@ -39,7 +39,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362307 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <sqlite3.h>
 
@@ -197,7 +197,7 @@ static int load_config(int reload)
 		return -1;
 	}
 
-	ast_verb(3, "cdr_sqlite3_custom: Logging CDR records to table '%s' in 'master.db'\n", table);
+	ast_verb(4, "cdr_sqlite3_custom: Logging CDR records to table '%s' in 'master.db'\n", table);
 
 	ast_config_destroy(cfg);
 
@@ -228,7 +228,6 @@ static int write_cdr(struct ast_cdr *cdr)
 	int res = 0;
 	char *error = NULL;
 	char *sql = NULL;
-	int count = 0;
 
 	if (db == NULL) {
 		/* Should not have loaded, but be failsafe. */
@@ -264,16 +263,7 @@ static int write_cdr(struct ast_cdr *cdr)
 		ast_free(value_string);
 	}
 
-	/* XXX This seems awful arbitrary... */
-	for (count = 0; count < 5; count++) {
-		res = sqlite3_exec(db, sql, NULL, NULL, &error);
-		if (res != SQLITE_BUSY && res != SQLITE_LOCKED) {
-			break;
-		}
-		usleep(200);
-	}
-
-	if (error) {
+	if (sqlite3_exec(db, sql, NULL, NULL, &error) != SQLITE_OK) {
 		ast_log(LOG_ERROR, "%s. SQL: %s.\n", error, sql);
 		sqlite3_free(error);
 	}
@@ -289,7 +279,9 @@ static int write_cdr(struct ast_cdr *cdr)
 
 static int unload_module(void)
 {
-	ast_cdr_unregister(name);
+	if (ast_cdr_unregister(name)) {
+		return -1;
+	}
 
 	free_config(0);
 
@@ -315,7 +307,7 @@ static int load_module(void)
 		free_config(0);
 		return AST_MODULE_LOAD_DECLINE;
 	}
-
+	sqlite3_busy_timeout(db, 1000);
 	/* is the table there? */
 	sql = sqlite3_mprintf("SELECT COUNT(AcctId) FROM %q;", table);
 	res = sqlite3_exec(db, sql, NULL, NULL, NULL);
@@ -355,6 +347,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "SQLite3 Custom CDR Module",
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

@@ -21,13 +21,22 @@
  * \author Mark Michelson <mmichelson@digium.com>
  */
 
+/*! \li \ref ccss.c uses the configuration file \ref ccss.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page ccss.conf ccss.conf
+ * \verbinclude ccss.conf.sample
+ */
+
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 378321 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420124 $")
 
 #include "asterisk/astobj2.h"
 #include "asterisk/strings.h"
@@ -36,13 +45,14 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 378321 $")
 #include "asterisk/pbx.h"
 #include "asterisk/utils.h"
 #include "asterisk/taskprocessor.h"
-#include "asterisk/event.h"
 #include "asterisk/devicestate.h"
 #include "asterisk/module.h"
 #include "asterisk/app.h"
 #include "asterisk/cli.h"
 #include "asterisk/manager.h"
 #include "asterisk/causes.h"
+#include "asterisk/stasis_system.h"
+#include "asterisk/format_cache.h"
 
 /*** DOCUMENTATION
 	<application name="CallCompletionRequest" language="en_US">
@@ -565,8 +575,10 @@ static enum ast_device_state cc_state_to_devstate_map[] = {
 };
 
 /*!
- * \intenral
+ * \internal
  * \brief lookup the ast_device_state mapped to cc_state
+ *
+ * \param state
  *
  * \return the correponding DEVICE STATE from the cc_state_to_devstate_map
  * when passed an internal state.
@@ -1014,6 +1026,143 @@ void ast_set_cc_callback_sub(struct ast_cc_config_params *config, const char * c
 	}
 }
 
+static int cc_publish(struct stasis_message_type *message_type, int core_id, struct ast_json *extras)
+{
+	RAII_VAR(struct ast_json *, blob, NULL, ast_json_unref);
+	RAII_VAR(struct ast_json_payload *, payload, NULL, ao2_cleanup);
+	RAII_VAR(struct stasis_message *, message, NULL, ao2_cleanup);
+
+	if (!message_type) {
+		return -1;
+	}
+
+	blob = ast_json_pack("{s: i}",
+		"core_id", core_id);
+	if (!blob) {
+		return -1;
+	}
+
+	if (extras) {
+		ast_json_object_update(blob, extras);
+	}
+
+	if (!(payload = ast_json_payload_create(blob))) {
+		return -1;
+	}
+
+	if (!(message = stasis_message_create(message_type, payload))) {
+		return -1;
+	}
+
+	stasis_publish(ast_system_topic(), message);
+
+	return 0;
+}
+
+static void cc_publish_available(int core_id, const char *callee, const char *service)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s, s: s}",
+		"callee", callee,
+		"service", service);
+
+	cc_publish(ast_cc_available_type(), core_id, extras);
+}
+
+static void cc_publish_offertimerstart(int core_id, const char *caller, unsigned int expires)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s, s: i}",
+		"caller", caller,
+		"expires", expires);
+
+	cc_publish(ast_cc_offertimerstart_type(), core_id, extras);
+}
+
+static void cc_publish_requested(int core_id, const char *caller, const char *callee)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s, s: s}",
+		"caller", caller,
+		"callee", callee);
+
+	cc_publish(ast_cc_requested_type(), core_id, extras);
+}
+
+static void cc_publish_requestacknowledged(int core_id, const char *caller)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s}",
+		"caller", caller);
+
+	cc_publish(ast_cc_requestacknowledged_type(), core_id, extras);
+}
+
+static void cc_publish_callerstopmonitoring(int core_id, const char *caller)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s}",
+		"caller", caller);
+
+	cc_publish(ast_cc_callerstopmonitoring_type(), core_id, extras);
+}
+
+static void cc_publish_callerstartmonitoring(int core_id, const char *caller)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s}",
+		"caller", caller);
+
+	cc_publish(ast_cc_callerstartmonitoring_type(), core_id, extras);
+}
+
+static void cc_publish_callerrecalling(int core_id, const char *caller)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s}",
+		"caller", caller);
+
+	cc_publish(ast_cc_callerrecalling_type(), core_id, extras);
+}
+
+static void cc_publish_recallcomplete(int core_id, const char *caller)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s}",
+		"caller", caller);
+
+	cc_publish(ast_cc_recallcomplete_type(), core_id, extras);
+}
+
+static void cc_publish_failure(int core_id, const char *caller, const char *reason)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s, s: s}",
+		"caller", caller,
+		"reason", reason);
+
+	cc_publish(ast_cc_failure_type(), core_id, extras);
+}
+
+static void cc_publish_monitorfailed(int core_id, const char *callee)
+{
+	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+
+	extras = ast_json_pack("{s: s}",
+		"callee", callee);
+
+	cc_publish(ast_cc_monitorfailed_type(), core_id, extras);
+}
+
 struct cc_monitor_backend {
 	AST_LIST_ENTRY(cc_monitor_backend) next;
 	const struct ast_cc_monitor_callbacks *callbacks;
@@ -1198,7 +1347,7 @@ struct generic_monitor_instance_list {
 	 * recalled
 	 */
 	int fit_for_recall;
-	struct ast_event_sub *sub;
+	struct stasis_subscription *sub;
 	AST_LIST_HEAD_NOLOCK(, generic_monitor_instance) list;
 };
 
@@ -1249,19 +1398,20 @@ static void generic_monitor_instance_list_destructor(void *obj)
 	struct generic_monitor_instance_list *generic_list = obj;
 	struct generic_monitor_instance *generic_instance;
 
-	generic_list->sub = ast_event_unsubscribe(generic_list->sub);
+	generic_list->sub = stasis_unsubscribe(generic_list->sub);
 	while ((generic_instance = AST_LIST_REMOVE_HEAD(&generic_list->list, next))) {
 		ast_free(generic_instance);
 	}
 	ast_free((char *)generic_list->device_name);
 }
 
-static void generic_monitor_devstate_cb(const struct ast_event *event, void *userdata);
+static void generic_monitor_devstate_cb(void *userdata, struct stasis_subscription *sub, struct stasis_message *msg);
 static struct generic_monitor_instance_list *create_new_generic_list(struct ast_cc_monitor *monitor)
 {
 	struct generic_monitor_instance_list *generic_list = ao2_t_alloc(sizeof(*generic_list),
 			generic_monitor_instance_list_destructor, "allocate generic monitor instance list");
 	char * device_name;
+	struct stasis_topic *device_specific_topic;
 
 	if (!generic_list) {
 		return NULL;
@@ -1274,11 +1424,12 @@ static struct generic_monitor_instance_list *create_new_generic_list(struct ast_
 	ast_tech_to_upper(device_name);
 	generic_list->device_name = device_name;
 
-	if (!(generic_list->sub = ast_event_subscribe(AST_EVENT_DEVICE_STATE,
-		generic_monitor_devstate_cb, "Requesting CC", NULL,
-		AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, monitor->interface->device_name,
-		AST_EVENT_IE_STATE, AST_EVENT_IE_PLTYPE_EXISTS,
-		AST_EVENT_IE_END))) {
+	device_specific_topic = ast_device_state_topic(device_name);
+	if (!device_specific_topic) {
+		return NULL;
+	}
+
+	if (!(generic_list->sub = stasis_subscribe(device_specific_topic, generic_monitor_devstate_cb, NULL))) {
 		cc_unref(generic_list, "Failed to subscribe to device state");
 		return NULL;
 	}
@@ -1287,35 +1438,25 @@ static struct generic_monitor_instance_list *create_new_generic_list(struct ast_
 	return generic_list;
 }
 
-struct generic_tp_cb_data {
-	const char *device_name;
-	enum ast_device_state new_state;
-};
-
 static int generic_monitor_devstate_tp_cb(void *data)
 {
-	struct generic_tp_cb_data *gtcd = data;
-	enum ast_device_state new_state = gtcd->new_state;
-	enum ast_device_state previous_state = gtcd->new_state;
-	const char *monitor_name = gtcd->device_name;
+	RAII_VAR(struct ast_device_state_message *, dev_state, data, ao2_cleanup);
+	enum ast_device_state new_state = dev_state->state;
+	enum ast_device_state previous_state;
 	struct generic_monitor_instance_list *generic_list;
 	struct generic_monitor_instance *generic_instance;
 
-	if (!(generic_list = find_generic_monitor_instance_list(monitor_name))) {
+	if (!(generic_list = find_generic_monitor_instance_list(dev_state->device))) {
 		/* The most likely cause for this is that we destroyed the monitor in the
 		 * time between subscribing to its device state and the time this executes.
 		 * Not really a big deal.
 		 */
-		ast_free((char *) gtcd->device_name);
-		ast_free(gtcd);
 		return 0;
 	}
 
 	if (generic_list->current_state == new_state) {
 		/* The device state hasn't actually changed, so we don't really care */
 		cc_unref(generic_list, "Kill reference of generic list in devstate taskprocessor callback");
-		ast_free((char *) gtcd->device_name);
-		ast_free(gtcd);
 		return 0;
 	}
 
@@ -1335,33 +1476,31 @@ static int generic_monitor_devstate_tp_cb(void *data)
 		}
 	}
 	cc_unref(generic_list, "Kill reference of generic list in devstate taskprocessor callback");
-	ast_free((char *) gtcd->device_name);
-	ast_free(gtcd);
 	return 0;
 }
 
-static void generic_monitor_devstate_cb(const struct ast_event *event, void *userdata)
+static void generic_monitor_devstate_cb(void *userdata, struct stasis_subscription *sub, struct stasis_message *msg)
 {
 	/* Wow, it's cool that we've picked up on a state change, but we really want
 	 * the actual work to be done in the core's taskprocessor execution thread
 	 * so that all monitor operations can be serialized. Locks?! We don't need
 	 * no steenkin' locks!
 	 */
-	struct generic_tp_cb_data *gtcd = ast_calloc(1, sizeof(*gtcd));
-
-	if (!gtcd) {
+	struct ast_device_state_message *dev_state;
+	if (ast_device_state_message_type() != stasis_message_type(msg)) {
 		return;
 	}
 
-	if (!(gtcd->device_name = ast_strdup(ast_event_get_ie_str(event, AST_EVENT_IE_DEVICE)))) {
-		ast_free(gtcd);
+	dev_state = stasis_message_data(msg);
+	if (dev_state->eid) {
+		/* ignore non-aggregate states */
 		return;
 	}
-	gtcd->new_state = ast_event_get_ie_uint(event, AST_EVENT_IE_STATE);
 
-	if (ast_taskprocessor_push(cc_core_taskprocessor, generic_monitor_devstate_tp_cb, gtcd)) {
-		ast_free((char *)gtcd->device_name);
-		ast_free(gtcd);
+	ao2_t_ref(dev_state, +1, "Bumping dev_state ref for cc_core_taskprocessor");
+	if (ast_taskprocessor_push(cc_core_taskprocessor, generic_monitor_devstate_tp_cb, dev_state)) {
+		ao2_cleanup(dev_state);
+		return;
 	}
 }
 
@@ -1638,7 +1777,7 @@ struct extension_child_dialstring {
 	 *
 	 * \details
 	 * This serves mainly as a key when searching for a particular dialstring.
-	 * For instance, let's say that we have called device SIP/400@somepeer. This
+	 * For instance, let's say that we have called device SIP/400\@somepeer. This
 	 * device offers call completion, but then due to some unforeseen circumstance,
 	 * this device backs out and makes CC unavailable. When that happens, we need
 	 * to find the dialstring that corresponds to that device, and we use the
@@ -1974,7 +2113,7 @@ static struct ast_cc_monitor *cc_extension_monitor_init(const char * const exten
 	cc_interface->monitor_class = AST_CC_EXTENSION_MONITOR;
 	strcpy(cc_interface->device_name, ast_str_buffer(str));
 	monitor->interface = cc_interface;
-	ast_log_dynamic_level(cc_logger_level, "Created an extension cc interface for '%s' with id %d and parent %d\n", cc_interface->device_name, monitor->id, monitor->parent_id);
+	ast_log_dynamic_level(cc_logger_level, "Created an extension cc interface for '%s' with id %u and parent %u\n", cc_interface->device_name, monitor->id, monitor->parent_id);
 	return monitor;
 }
 
@@ -2153,7 +2292,7 @@ static struct ast_cc_monitor *cc_device_monitor_init(const char * const device_n
 	monitor->interface = cc_interface;
 	monitor->available_timer_id = -1;
 	ast_cc_copy_config_params(cc_interface->config_params, &cc_data->config_params);
-	ast_log_dynamic_level(cc_logger_level, "Core %d: Created a device cc interface for '%s' with id %d and parent %d\n",
+	ast_log_dynamic_level(cc_logger_level, "Core %d: Created a device cc interface for '%s' with id %u and parent %u\n",
 			monitor->core_id, cc_interface->device_name, monitor->id, monitor->parent_id);
 	return monitor;
 }
@@ -2261,12 +2400,7 @@ void ast_handle_cc_control_frame(struct ast_channel *inbound, struct ast_channel
 
 	cc_extension_monitor_change_is_valid(core_instance, monitor->parent_id, monitor->interface->device_name, 0);
 
-	manager_event(EVENT_FLAG_CC, "CCAvailable",
-		"CoreID: %d\r\n"
-		"Callee: %s\r\n"
-		"Service: %s\r\n",
-		cc_interfaces->core_id, device_name, cc_service_to_string(cc_data->service)
-	);
+	cc_publish_available(cc_interfaces->core_id, device_name, cc_service_to_string(cc_data->service));
 
 	cc_unref(core_instance, "Done with core_instance after handling CC control frame");
 	cc_unref(monitor, "Unref reference from allocating monitor");
@@ -2453,7 +2587,7 @@ static struct ast_cc_agent *cc_agent_init(struct ast_channel *caller_chan,
 		cc_unref(agent, "Agent init callback failed.");
 		return NULL;
 	}
-	ast_log_dynamic_level(cc_logger_level, "Core %d: Created an agent for caller %s\n",
+	ast_log_dynamic_level(cc_logger_level, "Core %u: Created an agent for caller %s\n",
 			agent->core_id, agent->device_name);
 	return agent;
 }
@@ -2491,7 +2625,7 @@ struct cc_generic_agent_pvt {
 	 * device state of the caller in order to
 	 * determine when we may move on
 	 */
-	struct ast_event_sub *sub;
+	struct stasis_subscription *sub;
 	/*!
 	 * Scheduler id of offer timer.
 	 */
@@ -2558,7 +2692,7 @@ static int offer_timer_expire(const void *data)
 {
 	struct ast_cc_agent *agent = (struct ast_cc_agent *) data;
 	struct cc_generic_agent_pvt *agent_pvt = agent->private_data;
-	ast_log_dynamic_level(cc_logger_level, "Core %d: Queuing change request because offer timer has expired.\n",
+	ast_log_dynamic_level(cc_logger_level, "Core %u: Queuing change request because offer timer has expired.\n",
 			agent->core_id);
 	agent_pvt->offer_timer_id = -1;
 	ast_cc_failed(agent->core_id, "Generic agent %s offer timer expired", agent->device_name);
@@ -2576,7 +2710,7 @@ static int cc_generic_agent_start_offer_timer(struct ast_cc_agent *agent)
 	ast_assert(agent->cc_params != NULL);
 
 	when = ast_get_cc_offer_timer(agent->cc_params) * 1000;
-	ast_log_dynamic_level(cc_logger_level, "Core %d: About to schedule offer timer expiration for %d ms\n",
+	ast_log_dynamic_level(cc_logger_level, "Core %u: About to schedule offer timer expiration for %d ms\n",
 			agent->core_id, when);
 	if ((sched_id = ast_sched_add(cc_sched_context, when, offer_timer_expire, cc_ref(agent, "Give scheduler an agent ref"))) == -1) {
 		return -1;
@@ -2624,34 +2758,33 @@ static int cc_generic_agent_stop_ringing(struct ast_cc_agent *agent)
 	return 0;
 }
 
-static int generic_agent_devstate_unsubscribe(void *data)
-{
-	struct ast_cc_agent *agent = data;
-	struct cc_generic_agent_pvt *generic_pvt = agent->private_data;
-
-	if (generic_pvt->sub != NULL) {
-		generic_pvt->sub = ast_event_unsubscribe(generic_pvt->sub);
-	}
-	cc_unref(agent, "Done unsubscribing from devstate");
-	return 0;
-}
-
-static void generic_agent_devstate_cb(const struct ast_event *event, void *userdata)
+static void generic_agent_devstate_cb(void *userdata, struct stasis_subscription *sub, struct stasis_message *msg)
 {
 	struct ast_cc_agent *agent = userdata;
 	enum ast_device_state new_state;
+	struct ast_device_state_message *dev_state;
+	struct cc_generic_agent_pvt *generic_pvt = agent->private_data;
 
-	new_state = ast_event_get_ie_uint(event, AST_EVENT_IE_STATE);
+	if (stasis_subscription_final_message(sub, msg)) {
+		cc_unref(agent, "Done holding ref for subscription");
+		return;
+	} else if (ast_device_state_message_type() != stasis_message_type(msg)) {
+		return;
+	}
+
+	dev_state = stasis_message_data(msg);
+	if (dev_state->eid) {
+		/* ignore non-aggregate states */
+		return;
+	}
+
+	new_state = dev_state->state;
 	if (!cc_generic_is_device_available(new_state)) {
 		/* Not interested in this new state of the device.  It is still busy. */
 		return;
 	}
 
-	/* We can't unsubscribe from device state events here because it causes a deadlock */
-	if (ast_taskprocessor_push(cc_core_taskprocessor, generic_agent_devstate_unsubscribe,
-			cc_ref(agent, "ref agent for device state unsubscription"))) {
-		cc_unref(agent, "Unref agent unsubscribing from devstate failed");
-	}
+	generic_pvt->sub = stasis_unsubscribe(sub);
 	ast_cc_agent_caller_available(agent->core_id, "%s is no longer busy", agent->device_name);
 }
 
@@ -2659,18 +2792,21 @@ static int cc_generic_agent_start_monitoring(struct ast_cc_agent *agent)
 {
 	struct cc_generic_agent_pvt *generic_pvt = agent->private_data;
 	struct ast_str *str = ast_str_alloca(128);
+	struct stasis_topic *device_specific_topic;
 
 	ast_assert(generic_pvt->sub == NULL);
 	ast_str_set(&str, 0, "Agent monitoring %s device state since it is busy\n",
 		agent->device_name);
 
-	if (!(generic_pvt->sub = ast_event_subscribe(AST_EVENT_DEVICE_STATE,
-		generic_agent_devstate_cb, ast_str_buffer(str), agent,
-		AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, agent->device_name,
-		AST_EVENT_IE_STATE, AST_EVENT_IE_PLTYPE_EXISTS,
-		AST_EVENT_IE_END))) {
+	device_specific_topic = ast_device_state_topic(agent->device_name);
+	if (!device_specific_topic) {
 		return -1;
 	}
+
+	if (!(generic_pvt->sub = stasis_subscribe(device_specific_topic, generic_agent_devstate_cb, agent))) {
+		return -1;
+	}
+	cc_ref(agent, "Ref agent for subscription");
 	return 0;
 }
 
@@ -2686,8 +2822,7 @@ static void *generic_recall(void *data)
 	const char *callback_macro = ast_get_cc_callback_macro(agent->cc_params);
 	const char *callback_sub = ast_get_cc_callback_sub(agent->cc_params);
 	unsigned int recall_timer = ast_get_cc_recall_timer(agent->cc_params) * 1000;
-	struct ast_format tmp_fmt;
-	struct ast_format_cap *tmp_cap = ast_format_cap_alloc_nolock();
+	struct ast_format_cap *tmp_cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 
 	if (!tmp_cap) {
 		return NULL;
@@ -2698,17 +2833,17 @@ static void *generic_recall(void *data)
 		*target++ = '\0';
 	}
 
-	ast_format_cap_add(tmp_cap, ast_format_set(&tmp_fmt, AST_FORMAT_SLINEAR, 0));
-	if (!(chan = ast_request_and_dial(tech, tmp_cap, NULL, target, recall_timer, &reason, generic_pvt->cid_num, generic_pvt->cid_name))) {
+	ast_format_cap_append(tmp_cap, ast_format_slin, 0);
+	if (!(chan = ast_request_and_dial(tech, tmp_cap, NULL, NULL, target, recall_timer, &reason, generic_pvt->cid_num, generic_pvt->cid_name))) {
 		/* Hmm, no channel. Sucks for you, bud.
 		 */
-		ast_log_dynamic_level(cc_logger_level, "Core %d: Failed to call back %s for reason %d\n",
+		ast_log_dynamic_level(cc_logger_level, "Core %u: Failed to call back %s for reason %d\n",
 				agent->core_id, agent->device_name, reason);
 		ast_cc_failed(agent->core_id, "Failed to call back device %s/%s", tech, target);
-		ast_format_cap_destroy(tmp_cap);
+		ao2_ref(tmp_cap, -1);
 		return NULL;
 	}
-	ast_format_cap_destroy(tmp_cap);
+	ao2_ref(tmp_cap, -1);
 	
 	/* We have a channel. It's time now to set up the datastore of recalled CC interfaces.
 	 * This will be a common task for all recall functions. If it were possible, I'd have
@@ -2726,7 +2861,7 @@ static void *generic_recall(void *data)
 	pbx_builtin_setvar_helper(chan, "CC_CONTEXT", generic_pvt->context);
 
 	if (!ast_strlen_zero(callback_macro)) {
-		ast_log_dynamic_level(cc_logger_level, "Core %d: There's a callback macro configured for agent %s\n",
+		ast_log_dynamic_level(cc_logger_level, "Core %u: There's a callback macro configured for agent %s\n",
 				agent->core_id, agent->device_name);
 		if (ast_app_exec_macro(NULL, chan, callback_macro)) {
 			ast_cc_failed(agent->core_id, "Callback macro to %s failed. Maybe a hangup?", agent->device_name);
@@ -2736,7 +2871,7 @@ static void *generic_recall(void *data)
 	}
 
 	if (!ast_strlen_zero(callback_sub)) {
-		ast_log_dynamic_level(cc_logger_level, "Core %d: There's a callback subroutine configured for agent %s\n",
+		ast_log_dynamic_level(cc_logger_level, "Core %u: There's a callback subroutine configured for agent %s\n",
 				agent->core_id, agent->device_name);
 		if (ast_app_exec_sub(NULL, chan, callback_sub, 0)) {
 			ast_cc_failed(agent->core_id, "Callback subroutine to %s failed. Maybe a hangup?", agent->device_name);
@@ -2781,7 +2916,7 @@ static void cc_generic_agent_destructor(struct ast_cc_agent *agent)
 
 	cc_generic_agent_stop_offer_timer(agent);
 	if (agent_pvt->sub) {
-		agent_pvt->sub = ast_event_unsubscribe(agent_pvt->sub);
+		agent_pvt->sub = stasis_unsubscribe(agent_pvt->sub);
 	}
 
 	ast_free(agent_pvt);
@@ -2865,7 +3000,7 @@ static int is_state_change_valid(enum cc_state current_state, const enum cc_stat
 	int is_valid = 0;
 	switch (new_state) {
 	case CC_AVAILABLE:
-		ast_log_dynamic_level(cc_logger_level, "Core %d: Asked to change to state %d? That should never happen.\n",
+		ast_log_dynamic_level(cc_logger_level, "Core %u: Asked to change to state %u? That should never happen.\n",
 				agent->core_id, new_state);
 		break;
 	case CC_CALLER_OFFERED:
@@ -2908,7 +3043,7 @@ static int is_state_change_valid(enum cc_state current_state, const enum cc_stat
 		is_valid = 1;
 		break;
 	default:
-		ast_log_dynamic_level(cc_logger_level, "Core %d: Asked to change to unknown state %d\n",
+		ast_log_dynamic_level(cc_logger_level, "Core %u: Asked to change to unknown state %u\n",
 				agent->core_id, new_state);
 		break;
 	}
@@ -2930,11 +3065,7 @@ static int cc_caller_offered(struct cc_core_instance *core_instance, struct cc_s
 				core_instance->agent->device_name);
 		return -1;
 	}
-	manager_event(EVENT_FLAG_CC, "CCOfferTimerStart",
-		"CoreID: %d\r\n"
-		"Caller: %s\r\n"
-		"Expires: %u\r\n",
-		core_instance->core_id, core_instance->agent->device_name, core_instance->agent->cc_params->cc_offer_timer);
+	cc_publish_offertimerstart(core_instance->core_id, core_instance->agent->device_name, core_instance->agent->cc_params->cc_offer_timer);
 	ast_log_dynamic_level(cc_logger_level, "Core %d: Started the offer timer for the agent %s!\n",
 			core_instance->core_id, core_instance->agent->device_name);
 	return 0;
@@ -2983,11 +3114,7 @@ static void request_cc(struct cc_core_instance *core_instance)
 						monitor_iter->interface->device_name, 1);
 				cc_unref(monitor_iter, "request_cc failed. Unref list's reference to monitor");
 			} else {
-				manager_event(EVENT_FLAG_CC, "CCRequested",
-					"CoreID: %d\r\n"
-					"Caller: %s\r\n"
-					"Callee: %s\r\n",
-					core_instance->core_id, core_instance->agent->device_name, monitor_iter->interface->device_name);
+				cc_publish_requested(core_instance->core_id, core_instance->agent->device_name, monitor_iter->interface->device_name);
 			}
 		}
 	}
@@ -3045,15 +3172,9 @@ static int cc_active(struct cc_core_instance *core_instance, struct cc_state_cha
 	if (previous_state == CC_CALLER_REQUESTED) {
 		core_instance->agent->callbacks->respond(core_instance->agent,
 			AST_CC_AGENT_RESPONSE_SUCCESS);
-		manager_event(EVENT_FLAG_CC, "CCRequestAcknowledged",
-			"CoreID: %d\r\n"
-			"Caller: %s\r\n",
-			core_instance->core_id, core_instance->agent->device_name);
+		cc_publish_requestacknowledged(core_instance->core_id, core_instance->agent->device_name);
 	} else if (previous_state == CC_CALLER_BUSY) {
-		manager_event(EVENT_FLAG_CC, "CCCallerStopMonitoring",
-			"CoreID: %d\r\n"
-			"Caller: %s\r\n",
-			core_instance->core_id, core_instance->agent->device_name);
+		cc_publish_callerstopmonitoring(core_instance->core_id, core_instance->agent->device_name);
 		unsuspend(core_instance);
 	}
 	/* Not possible for previous_state to be anything else due to the is_state_change_valid check at the beginning */
@@ -3095,10 +3216,7 @@ static int cc_caller_busy(struct cc_core_instance *core_instance, struct cc_stat
 	 */
 	suspend(core_instance);
 	core_instance->agent->callbacks->start_monitoring(core_instance->agent);
-	manager_event(EVENT_FLAG_CC, "CCCallerStartMonitoring",
-		"CoreID: %d\r\n"
-		"Caller: %s\r\n",
-		core_instance->core_id, core_instance->agent->device_name);
+	cc_publish_callerstartmonitoring(core_instance->core_id, core_instance->agent->device_name);
 	return 0;
 }
 
@@ -3129,10 +3247,7 @@ static int cc_recalling(struct cc_core_instance *core_instance, struct cc_state_
 	/* Both caller and callee are available, call agent's recall callback
 	 */
 	cancel_available_timer(core_instance);
-	manager_event(EVENT_FLAG_CC, "CCCallerRecalling",
-		"CoreID: %d\r\n"
-		"Caller: %s\r\n",
-		core_instance->core_id, core_instance->agent->device_name);
+	cc_publish_callerrecalling(core_instance->core_id, core_instance->agent->device_name);
 	return 0;
 }
 
@@ -3140,21 +3255,14 @@ static int cc_complete(struct cc_core_instance *core_instance, struct cc_state_c
 {
 	/* Recall has made progress, call agent and monitor destructor functions
 	 */
-	manager_event(EVENT_FLAG_CC, "CCRecallComplete",
-		"CoreID: %d\r\n"
-		"Caller: %s\r\n",
-		core_instance->core_id, core_instance->agent->device_name);
+	cc_publish_recallcomplete(core_instance->core_id, core_instance->agent->device_name);
 	ao2_t_unlink(cc_core_instances, core_instance, "Unlink core instance since CC recall has completed");
 	return 0;
 }
 
 static int cc_failed(struct cc_core_instance *core_instance, struct cc_state_change_args *args, enum cc_state previous_state)
 {
-	manager_event(EVENT_FLAG_CC, "CCFailure",
-		"CoreID: %d\r\n"
-		"Caller: %s\r\n"
-		"Reason: %s\r\n",
-		core_instance->core_id, core_instance->agent->device_name, args->debug);
+	cc_publish_failure(core_instance->core_id, core_instance->agent->device_name, args->debug);
 	ao2_t_unlink(cc_core_instances, core_instance, "Unlink core instance since CC failed");
 	return 0;
 }
@@ -3178,7 +3286,7 @@ static int cc_do_state_change(void *datap)
 	enum cc_state previous_state;
 	int res;
 
-	ast_log_dynamic_level(cc_logger_level, "Core %d: State change to %d requested. Reason: %s\n",
+	ast_log_dynamic_level(cc_logger_level, "Core %d: State change to %u requested. Reason: %s\n",
 			args->core_id, args->state, args->debug);
 
 	core_instance = args->core_instance;
@@ -3808,10 +3916,7 @@ static int cc_monitor_failed(void *data)
 				cc_extension_monitor_change_is_valid(core_instance, monitor_iter->parent_id,
 						monitor_iter->interface->device_name, 1);
 				monitor_iter->callbacks->cancel_available_timer(monitor_iter, &monitor_iter->available_timer_id);
-				manager_event(EVENT_FLAG_CC, "CCMonitorFailed",
-					"CoreID: %d\r\n"
-					"Callee: %s\r\n",
-					monitor_iter->core_id, monitor_iter->interface->device_name);
+				cc_publish_monitorfailed(monitor_iter->core_id, monitor_iter->interface->device_name);
 				cc_unref(monitor_iter, "Monitor reported failure. Unref list's reference.");
 			}
 		}

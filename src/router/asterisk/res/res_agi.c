@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398061 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429519 $")
 
 #include <math.h>
 #include <signal.h>
@@ -66,6 +66,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398061 $")
 #include "asterisk/srv.h"
 #include "asterisk/test.h"
 #include "asterisk/netsock2.h"
+#include "asterisk/stasis_channels.h"
+#include "asterisk/stasis_message_router.h"
+#include "asterisk/format_cache.h"
 
 #define AST_API_MODULE
 #include "asterisk/agi.h"
@@ -147,19 +150,43 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398061 $")
 			<parameter name="escape_digits" required="true" />
 			<parameter name="skipms" />
 			<parameter name="ffchar">
-				<para>Defaults to <literal>*</literal></para>
-			</parameter>
-			<parameter name="rewchr">
 				<para>Defaults to <literal>#</literal></para>
 			</parameter>
+			<parameter name="rewchr">
+				<para>Defaults to <literal>*</literal></para>
+			</parameter>
 			<parameter name="pausechr" />
+			<parameter name="offsetms">
+				<para>Offset, in milliseconds, to start the audio playback</para>
+			</parameter>
 		</syntax>
 		<description>
 			<para>Send the given file, allowing playback to be controlled by the given
 			digits, if any. Use double quotes for the digits if you wish none to be
-			permitted. Returns <literal>0</literal> if playback completes without a digit
+			permitted. If offsetms is provided then the audio will seek to offsetms
+			before play starts. Returns <literal>0</literal> if playback completes without a digit
 			being pressed, or the ASCII numerical value of the digit if one was pressed,
-			or <literal>-1</literal> on error or if the channel was disconnected.</para>
+			or <literal>-1</literal> on error or if the channel was disconnected. Returns the
+			position where playback was terminated as endpos.</para>
+
+			<para>It sets the following channel variables upon completion:</para>
+			<variablelist>
+				<variable name="CPLAYBACKSTATUS">
+					<para>Contains the status of the attempt as a text string</para>
+					<value name="SUCCESS" />
+					<value name="USERSTOPPED" />
+					<value name="REMOTESTOPPED" />
+					<value name="ERROR" />
+				</variable>
+				<variable name="CPLAYBACKOFFSET">
+					<para>Contains the offset in ms into the file where playback
+					was at when it stopped. <literal>-1</literal> is end of file.</para>
+				</variable>
+				<variable name="CPLAYBACKSTOPKEY">
+					<para>If the playback is stopped by the user this variable contains
+					the key that was pressed.</para>
+				</variable>
+			</variablelist>
 		</description>
 	</agi>
 	<agi name="database del" language="en_US">
@@ -348,9 +375,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398061 $")
 			</parameter>
 		</syntax>
 		<description>
-			<para>Receives a string of text on a channel. Most channels 
+			<para>Receives a string of text on a channel. Most channels
 			do not support the reception of text. Returns <literal>-1</literal> for failure
-			or <literal>1</literal> for success, and the string in parenthesis.</para> 
+			or <literal>1</literal> for success, and the string in parenthesis.</para>
 		</description>
 	</agi>
 	<agi name="record file" language="en_US">
@@ -652,6 +679,14 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398061 $")
 			or <literal>-1</literal> on error or if the channel was disconnected. If
 			musiconhold is playing before calling stream file it will be automatically
 			stopped and will not be restarted after completion.</para>
+			<para>It sets the following channel variables upon completion:</para>
+			<variablelist>
+				<variable name="PLAYBACKSTATUS">
+					<para>The status of the playback attempt as a text string.</para>
+					<value name="SUCCESS"/>
+					<value name="FAILED"/>
+				</variable>
+			</variablelist>
 		</description>
 		<see-also>
 			<ref type="agi">control stream file</ref>
@@ -902,6 +937,68 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398061 $")
 			<para>Add an AGI command to the execute queue of the channel in Async AGI.</para>
 		</description>
 	</manager>
+	<managerEvent language="en_US" name="AsyncAGIStart">
+		<managerEventInstance class="EVENT_FLAG_AGI">
+			<synopsis>Raised when a channel starts AsyncAGI command processing.</synopsis>
+			<syntax>
+				<channel_snapshot/>
+				<parameter name="Env">
+					<para>URL encoded string read from the AsyncAGI server.</para>
+				</parameter>
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="AsyncAGIEnd">
+		<managerEventInstance class="EVENT_FLAG_AGI">
+			<synopsis>Raised when a channel stops AsyncAGI command processing.</synopsis>
+			<syntax>
+				<channel_snapshot/>
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="AsyncAGIExec">
+		<managerEventInstance class="EVENT_FLAG_AGI">
+			<synopsis>Raised when AsyncAGI completes an AGI command.</synopsis>
+			<syntax>
+				<channel_snapshot/>
+				<parameter name="CommandID" required="false">
+					<para>Optional command ID sent by the AsyncAGI server to identify the command.</para>
+				</parameter>
+				<parameter name="Result">
+					<para>URL encoded result string from the executed AGI command.</para>
+				</parameter>
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="AGIExecStart">
+		<managerEventInstance class="EVENT_FLAG_AGI">
+			<synopsis>Raised when a received AGI command starts processing.</synopsis>
+			<syntax>
+				<channel_snapshot/>
+				<parameter name="Command">
+					<para>The AGI command as received from the external source.</para>
+				</parameter>
+				<parameter name="CommandId">
+					<para>Random identification number assigned to the execution of this command.</para>
+				</parameter>
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="AGIExecEnd">
+		<managerEventInstance class="EVENT_FLAG_AGI">
+			<synopsis>Raised when a received AGI command completes processing.</synopsis>
+			<syntax>
+				<channel_snapshot/>
+				<xi:include xpointer="xpointer(/docs/managerEvent[@name='AGIExecStart']/managerEventInstance/syntax/parameter)" />
+				<parameter name="ResultCode">
+					<para>The numeric result code from AGI</para>
+				</parameter>
+				<parameter name="Result">
+					<para>The text result reason from AGI</para>
+				</parameter>
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
  ***/
 
 #define MAX_ARGS 128
@@ -936,6 +1033,66 @@ enum agi_result {
 	AGI_RESULT_NOTFOUND,
 	AGI_RESULT_HANGUP,
 };
+
+static struct ast_manager_event_blob *agi_channel_to_ami(const char *type, struct stasis_message *message)
+{
+	struct ast_channel_blob *obj = stasis_message_data(message);
+	RAII_VAR(struct ast_str *, channel_string, NULL, ast_free);
+	RAII_VAR(struct ast_str *, event_string, NULL, ast_free);
+
+	channel_string = ast_manager_build_channel_state_string(obj->snapshot);
+	event_string = ast_manager_str_from_json_object(obj->blob, NULL);
+	if (!channel_string || !event_string) {
+		return NULL;
+	}
+
+	return ast_manager_event_blob_create(EVENT_FLAG_AGI, type,
+		"%s"
+		"%s",
+		ast_str_buffer(channel_string),
+		ast_str_buffer(event_string));
+}
+
+static struct ast_manager_event_blob *agi_exec_start_to_ami(struct stasis_message *message)
+{
+	return agi_channel_to_ami("AGIExecStart", message);
+}
+
+static struct ast_manager_event_blob *agi_exec_end_to_ami(struct stasis_message *message)
+{
+	return agi_channel_to_ami("AGIExecEnd", message);
+}
+
+static struct ast_manager_event_blob *agi_async_start_to_ami(struct stasis_message *message)
+{
+	return agi_channel_to_ami("AsyncAGIStart", message);
+}
+
+static struct ast_manager_event_blob *agi_async_exec_to_ami(struct stasis_message *message)
+{
+	return agi_channel_to_ami("AsyncAGIExec", message);
+}
+
+static struct ast_manager_event_blob *agi_async_end_to_ami(struct stasis_message *message)
+{
+	return agi_channel_to_ami("AsyncAGIEnd", message);
+}
+
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(agi_exec_start_type,
+	.to_ami = agi_exec_start_to_ami,
+	);
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(agi_exec_end_type,
+	.to_ami = agi_exec_end_to_ami,
+	);
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(agi_async_start_type,
+	.to_ami = agi_async_start_to_ami,
+	);
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(agi_async_exec_type,
+	.to_ami = agi_async_exec_to_ami,
+	);
+STASIS_MESSAGE_TYPE_DEFN_LOCAL(agi_async_end_type,
+	.to_ami = agi_async_end_to_ami,
+	);
 
 static agi_command *find_command(const char * const cmds[], int exact);
 
@@ -1005,10 +1162,18 @@ static const struct ast_datastore_info agi_commands_datastore_info = {
 	.destroy = agi_destroy_commands_cb
 };
 
-static struct agi_cmd *get_agi_cmd(struct ast_channel *chan)
+/*!
+ * \brief Retrieve the list head to the requested channel's AGI datastore
+ * \param chan Channel datastore is requested for
+ * \param cmd Pointer to the struct pointer which will reference the head of the agi command list.
+ *
+ * \retval 0 if the datastore was valid and the list head was retrieved appropriately (even if it's
+ *           NULL and the list is empty)
+ * \retval -1 if the datastore could not be retrieved causing an error
+*/
+static int get_agi_cmd(struct ast_channel *chan, struct agi_cmd **cmd)
 {
 	struct ast_datastore *store;
-	struct agi_cmd *cmd;
 	AST_LIST_HEAD(, agi_cmd) *agi_commands;
 
 	ast_channel_lock(chan);
@@ -1017,13 +1182,14 @@ static struct agi_cmd *get_agi_cmd(struct ast_channel *chan)
 	if (!store) {
 		ast_log(LOG_ERROR, "Huh? Async AGI datastore disappeared on Channel %s!\n",
 			ast_channel_name(chan));
-		return NULL;
+		*cmd = NULL;
+		return -1;
 	}
 	agi_commands = store->data;
 	AST_LIST_LOCK(agi_commands);
-	cmd = AST_LIST_REMOVE_HEAD(agi_commands, entry);
+	*cmd = AST_LIST_REMOVE_HEAD(agi_commands, entry);
 	AST_LIST_UNLOCK(agi_commands);
-	return cmd;
+	return 0;
 }
 
 /* channel is locked when calling this one either from the CLI or manager thread */
@@ -1234,7 +1400,7 @@ static enum agi_result async_agi_read_frame(struct ast_channel *chan)
 	return AGI_RESULT_SUCCESS;
 }
 
-static enum agi_result launch_asyncagi(struct ast_channel *chan, char *argv[], int *efd)
+static enum agi_result launch_asyncagi(struct ast_channel *chan, int argc, char *argv[], int *efd)
 {
 /* This buffer sizes might cause truncation if the AGI command writes more data
    than AGI_BUF_SIZE as result. But let's be serious, is there an AGI command
@@ -1265,6 +1431,7 @@ static enum agi_result launch_asyncagi(struct ast_channel *chan, char *argv[], i
 	char ami_buffer[AMI_BUF_SIZE];
 	enum agi_result returnstatus = AGI_RESULT_SUCCESS;
 	AGI async_agi;
+	RAII_VAR(struct ast_json *, startblob, NULL, ast_json_unref);
 
 	if (efd) {
 		ast_log(LOG_WARNING, "Async AGI does not support Enhanced AGI yet\n");
@@ -1300,7 +1467,7 @@ static enum agi_result launch_asyncagi(struct ast_channel *chan, char *argv[], i
 
 	/* notify possible manager users of a new channel ready to
 	   receive commands */
-	setup_env(chan, "async", fds[1], 0, 0, NULL);
+	setup_env(chan, "async", fds[1], 0, argc, argv);
 	/* read the environment */
 	res = read(fds[0], agi_buffer, AGI_BUF_SIZE);
 	if (res <= 0) {
@@ -1314,17 +1481,28 @@ static enum agi_result launch_asyncagi(struct ast_channel *chan, char *argv[], i
 	   care of AGI commands on this channel can decide which AGI commands
 	   to execute based on the setup info */
 	ast_uri_encode(agi_buffer, ami_buffer, AMI_BUF_SIZE, ast_uri_http);
-	manager_event(EVENT_FLAG_AGI, "AsyncAGI",
-		"SubEvent: Start\r\n"
-		"Channel: %s\r\n"
-		"Env: %s\r\n", ast_channel_name(chan), ami_buffer);
-	hungup = ast_check_hangup(chan);
+	startblob = ast_json_pack("{s: s}", "Env", ami_buffer);
+
+	ast_channel_publish_cached_blob(chan, agi_async_start_type(), startblob);
+
+	hungup = ast_check_hangup_locked(chan);
+
 	for (;;) {
 		/*
 		 * Process as many commands as we can.  Commands are added via
 		 * the manager or the cli threads.
 		 */
-		while (!hungup && (cmd = get_agi_cmd(chan))) {
+		while (!hungup) {
+			RAII_VAR(struct ast_json *, execblob, NULL, ast_json_unref);
+			res = get_agi_cmd(chan, &cmd);
+
+			if (res) {
+				returnstatus = AGI_RESULT_FAILURE;
+				goto async_agi_done;
+			} else if (!cmd) {
+				break;
+			}
+
 			/* OK, we have a command, let's call the command handler. */
 			cmd_status = agi_handle_command(chan, &async_agi, cmd->cmd_buffer, 0);
 
@@ -1347,18 +1525,13 @@ static enum agi_result launch_asyncagi(struct ast_channel *chan, char *argv[], i
 			 */
 			agi_buffer[res] = '\0';
 			ast_uri_encode(agi_buffer, ami_buffer, AMI_BUF_SIZE, ast_uri_http);
-			if (ast_strlen_zero(cmd->cmd_id)) {
-				manager_event(EVENT_FLAG_AGI, "AsyncAGI",
-					"SubEvent: Exec\r\n"
-					"Channel: %s\r\n"
-					"Result: %s\r\n", ast_channel_name(chan), ami_buffer);
-			} else {
-				manager_event(EVENT_FLAG_AGI, "AsyncAGI",
-					"SubEvent: Exec\r\n"
-					"Channel: %s\r\n"
-					"CommandID: %s\r\n"
-					"Result: %s\r\n", ast_channel_name(chan), cmd->cmd_id, ami_buffer);
+
+			execblob = ast_json_pack("{s: s}", "Result", ami_buffer);
+			if (execblob && !ast_strlen_zero(cmd->cmd_id)) {
+				ast_json_object_set(execblob, "CommandId", ast_json_string_create(cmd->cmd_id));
 			}
+			ast_channel_publish_cached_blob(chan, agi_async_exec_type(), execblob);
+
 			free_agi_cmd(cmd);
 
 			/*
@@ -1416,11 +1589,8 @@ async_agi_done:
 	if (async_agi.speech) {
 		ast_speech_destroy(async_agi.speech);
 	}
-	/* notify manager users this channel cannot be
-	   controlled anymore by Async AGI */
-	manager_event(EVENT_FLAG_AGI, "AsyncAGI",
-		"SubEvent: End\r\n"
-		"Channel: %s\r\n", ast_channel_name(chan));
+	/* notify manager users this channel cannot be controlled anymore by Async AGI */
+	ast_channel_publish_cached_blob(chan, agi_async_end_type(), NULL);
 
 async_agi_abort:
 	/* close the pipe */
@@ -1655,7 +1825,7 @@ static enum agi_result launch_ha_netscript(char *agiurl, char *argv[], int *fds)
 	return AGI_RESULT_FAILURE;
 }
 
-static enum agi_result launch_script(struct ast_channel *chan, char *script, char *argv[], int *fds, int *efd, int *opid)
+static enum agi_result launch_script(struct ast_channel *chan, char *script, int argc, char *argv[], int *fds, int *efd, int *opid)
 {
 	char tmp[256];
 	int pid, toast[2], fromast[2], audio[2], res;
@@ -1668,7 +1838,7 @@ static enum agi_result launch_script(struct ast_channel *chan, char *script, cha
 		return (efd == NULL) ? launch_ha_netscript(script, argv, fds) : AGI_RESULT_FAILURE;
 	}
 	if (!strncasecmp(script, "agi:async", sizeof("agi:async") - 1)) {
-		return launch_asyncagi(chan, argv, efd);
+		return launch_asyncagi(chan, argc, argv, efd);
 	}
 
 	if (script[0] != '/') {
@@ -1955,8 +2125,11 @@ static int handle_controlstreamfile(struct ast_channel *chan, AGI *agi, int argc
 {
 	int res = 0, skipms = 3000;
 	const char *fwd = "#", *rev = "*", *suspend = NULL, *stop = NULL;	/* Default values */
+	char stopkeybuf[2];
+	long offsetms = 0;
+	char offsetbuf[20];
 
-	if (argc < 5 || argc > 9) {
+	if (argc < 5 || argc > 10) {
 		return RESULT_SHOWUSAGE;
 	}
 
@@ -1980,9 +2153,32 @@ static int handle_controlstreamfile(struct ast_channel *chan, AGI *agi, int argc
 		suspend = argv[8];
 	}
 
-	res = ast_control_streamfile(chan, argv[3], fwd, rev, stop, suspend, NULL, skipms, NULL);
+	if (argc > 9 && (sscanf(argv[9], "%30ld", &offsetms) != 1)) {
+		return RESULT_SHOWUSAGE;
+	}
 
-	ast_agi_send(agi->fd, chan, "200 result=%d\n", res);
+	res = ast_control_streamfile(chan, argv[3], fwd, rev, stop, suspend, NULL, skipms, &offsetms);
+
+	/* If we stopped on one of our stop keys, return 0  */
+	if (res > 0 && stop && strchr(stop, res)) {
+		pbx_builtin_setvar_helper(chan, "CPLAYBACKSTATUS", "USERSTOPPED");
+		snprintf(stopkeybuf, sizeof(stopkeybuf), "%c", res);
+		pbx_builtin_setvar_helper(chan, "CPLAYBACKSTOPKEY", stopkeybuf);
+	} else if (res > 0 && res == AST_CONTROL_STREAM_STOP) {
+		pbx_builtin_setvar_helper(chan, "CPLAYBACKSTATUS", "REMOTESTOPPED");
+		res = 0;
+	} else {
+		if (res < 0) {
+			pbx_builtin_setvar_helper(chan, "CPLAYBACKSTATUS", "ERROR");
+		} else {
+			pbx_builtin_setvar_helper(chan, "CPLAYBACKSTATUS", "SUCCESS");
+		}
+	}
+
+	snprintf(offsetbuf, sizeof(offsetbuf), "%ld", offsetms);
+	pbx_builtin_setvar_helper(chan, "CPLAYBACKOFFSET", offsetbuf);
+
+	ast_agi_send(agi->fd, chan, "200 result=%d endpos=%ld\n", res, offsetms);
 
 	return (res >= 0) ? RESULT_SUCCESS : RESULT_FAILURE;
 }
@@ -2014,8 +2210,9 @@ static int handle_streamfile(struct ast_channel *chan, AGI *agi, int argc, const
 	if ((vfs = ast_openvstream(chan, argv[2], ast_channel_language(chan)))) {
 		ast_debug(1, "Ooh, found a video stream, too\n");
 	}
-
-	ast_verb(3, "Playing '%s' (escape_digits=%s) (sample_offset %ld)\n", argv[2], edigits, sample_offset);
+	ast_verb(3, "<%s> Playing '%s.%s' (escape_digits=%s) (sample_offset %ld) (language '%s')\n",
+		ast_channel_name(chan), argv[2], ast_format_get_name(ast_channel_writeformat(chan)),
+		edigits, sample_offset, S_OR(ast_channel_language(chan), "default"));
 
 	ast_seekstream(fs, 0, SEEK_END);
 	max_length = ast_tellstream(fs);
@@ -2039,6 +2236,8 @@ static int handle_streamfile(struct ast_channel *chan, AGI *agi, int argc, const
 		return RESULT_SUCCESS;
 	}
 	ast_agi_send(agi->fd, chan, "200 result=%d endpos=%ld\n", res, sample_offset);
+	pbx_builtin_setvar_helper(chan, "PLAYBACKSTATUS", res ? "FAILED" : "SUCCESS");
+
 	return (res >= 0) ? RESULT_SUCCESS : RESULT_FAILURE;
 }
 
@@ -2146,11 +2345,37 @@ static int handle_saydigits(struct ast_channel *chan, AGI *agi, int argc, const 
 static int handle_sayalpha(struct ast_channel *chan, AGI *agi, int argc, const char * const argv[])
 {
 	int res;
+	int sensitivity = AST_SAY_CASE_NONE;
 
-	if (argc != 4)
+	if (argc < 4 || argc > 5) {
 		return RESULT_SHOWUSAGE;
+	}
 
-	res = ast_say_character_str_full(chan, argv[2], argv[3], ast_channel_language(chan), agi->audio, agi->ctrl);
+	if (argc > 4) {
+		switch (argv[4][0]) {
+		case 'a':
+		case 'A':
+			sensitivity = AST_SAY_CASE_ALL;
+			break;
+		case 'l':
+		case 'L':
+			sensitivity = AST_SAY_CASE_LOWER;
+			break;
+		case 'n':
+		case 'N':
+			sensitivity = AST_SAY_CASE_NONE;
+			break;
+		case 'u':
+		case 'U':
+			sensitivity = AST_SAY_CASE_UPPER;
+			break;
+		case '\0':
+			break;
+		default:
+			return RESULT_SHOWUSAGE;
+		}
+	}
+	res = ast_say_character_str_full(chan, argv[2], argv[3], ast_channel_language(chan), sensitivity, agi->audio, agi->ctrl);
 	if (res == 1) /* New command */
 		return RESULT_SUCCESS;
 	ast_agi_send(agi->fd, chan, "200 result=%d\n", res);
@@ -2315,8 +2540,7 @@ static int handle_recordfile(struct ast_channel *chan, AGI *agi, int argc, const
 	int silence = 0;                /* amount of silence to allow */
 	int gotsilence = 0;             /* did we timeout for silence? */
 	char *silencestr = NULL;
-	struct ast_format rfmt;
-	ast_format_clear(&rfmt);
+	RAII_VAR(struct ast_format *, rfmt, NULL, ao2_cleanup);
 
 	/* XXX EAGI FIXME XXX */
 
@@ -2346,8 +2570,8 @@ static int handle_recordfile(struct ast_channel *chan, AGI *agi, int argc, const
 	}
 
 	if (silence > 0) {
-		ast_format_copy(&rfmt, ast_channel_readformat(chan));
-		res = ast_set_read_format_by_id(chan, AST_FORMAT_SLINEAR);
+		rfmt = ao2_bump(ast_channel_readformat(chan));
+		res = ast_set_read_format(chan, ast_format_slin);
 		if (res < 0) {
 			ast_log(LOG_WARNING, "Unable to set to linear mode, giving up\n");
 			ast_agi_send(agi->fd, chan, "200 result=%d\n", res);
@@ -2361,7 +2585,7 @@ static int handle_recordfile(struct ast_channel *chan, AGI *agi, int argc, const
 		}
 		ast_dsp_set_threshold(sildet, ast_dsp_get_threshold_from_settings(THRESHOLD_SILENCE));
 	}
-	
+
 	/* backward compatibility, if no offset given, arg[6] would have been
 	 * caught below and taken to be a beep, else if it is a digit then it is a
 	 * offset */
@@ -2471,7 +2695,7 @@ static int handle_recordfile(struct ast_channel *chan, AGI *agi, int argc, const
 	}
 
 	if (silence > 0) {
-		res = ast_set_read_format(chan, &rfmt);
+		res = ast_set_read_format(chan, rfmt);
 		if (res)
 			ast_log(LOG_WARNING, "Unable to restore read format on '%s'\n", ast_channel_name(chan));
 		ast_dsp_free(sildet);
@@ -2495,7 +2719,9 @@ static int handle_autohangup(struct ast_channel *chan, AGI *agi, int argc, const
 		whentohangup.tv_sec = timeout;
 		whentohangup.tv_usec = (timeout - whentohangup.tv_sec) * 1000000.0;
 	}
+	ast_channel_lock(chan);
 	ast_channel_setwhentohangup_tv(chan, whentohangup);
+	ast_channel_unlock(chan);
 	ast_agi_send(agi->fd, chan, "200 result=0\n");
 	return RESULT_SUCCESS;
 }
@@ -2542,24 +2768,7 @@ static int handle_exec(struct ast_channel *chan, AGI *agi, int argc, const char 
 		if (!(workaround = ast_test_flag(ast_channel_flags(chan), AST_FLAG_DISABLE_WORKAROUNDS))) {
 			ast_set_flag(ast_channel_flags(chan), AST_FLAG_DISABLE_WORKAROUNDS);
 		}
-		if (ast_compat_res_agi && argc >= 3 && !ast_strlen_zero(argv[2])) {
-			char *compat = ast_alloca(strlen(argv[2]) * 2 + 1), *cptr;
-			const char *vptr;
-			for (cptr = compat, vptr = argv[2]; *vptr; vptr++) {
-				if (*vptr == ',') {
-					*cptr++ = '\\';
-					*cptr++ = ',';
-				} else if (*vptr == '|') {
-					*cptr++ = ',';
-				} else {
-					*cptr++ = *vptr;
-				}
-			}
-			*cptr = '\0';
-			res = pbx_exec(chan, app_to_exec, compat);
-		} else {
-			res = pbx_exec(chan, app_to_exec, argc == 2 ? "" : argv[2]);
-		}
+		res = pbx_exec(chan, app_to_exec, argc == 2 ? "" : argv[2]);
 		if (!workaround) {
 			ast_clear_flag(ast_channel_flags(chan), AST_FLAG_DISABLE_WORKAROUNDS);
 		}
@@ -2596,16 +2805,18 @@ static int handle_setcallerid(struct ast_channel *chan, AGI *agi, int argc, cons
 
 static int handle_channelstatus(struct ast_channel *chan, AGI *agi, int argc, const char * const argv[])
 {
-	struct ast_channel *c;
 	if (argc == 2) {
 		/* no argument: supply info on the current channel */
-		ast_agi_send(agi->fd, chan, "200 result=%d\n", ast_channel_state(chan));
+		ast_agi_send(agi->fd, chan, "200 result=%u\n", ast_channel_state(chan));
 		return RESULT_SUCCESS;
 	} else if (argc == 3) {
+		RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
+
 		/* one argument: look for info on the specified channel */
-		if ((c = ast_channel_get_by_name(argv[2]))) {
-			ast_agi_send(agi->fd, chan, "200 result=%d\n", ast_channel_state(c));
-			c = ast_channel_unref(c);
+		if ((msg = stasis_cache_get(ast_channel_cache_by_name(), ast_channel_snapshot_type(), argv[2]))) {
+			struct ast_channel_snapshot *snapshot = stasis_message_data(msg);
+
+			ast_agi_send(agi->fd, chan, "200 result=%u\n", snapshot->state);
 			return RESULT_SUCCESS;
 		}
 		/* if we get this far no channel name matched the argument given */
@@ -2722,7 +2933,7 @@ static int handle_dbget(struct ast_channel *chan, AGI *agi, int argc, const char
 			break;
 		}
 	} while (1);
-	
+
 	if (res)
 		ast_agi_send(agi->fd, chan, "200 result=0\n");
 	else
@@ -2822,7 +3033,6 @@ static int handle_setmusic(struct ast_channel *chan, AGI *agi, int argc, const c
 static int handle_speechcreate(struct ast_channel *chan, AGI *agi, int argc, const char * const argv[])
 {
 	struct ast_format_cap *cap;
-	struct ast_format tmpfmt;
 
 	/* If a structure already exists, return an error */
 	if (agi->speech) {
@@ -2830,16 +3040,16 @@ static int handle_speechcreate(struct ast_channel *chan, AGI *agi, int argc, con
 		return RESULT_SUCCESS;
 	}
 
-	if (!(cap = ast_format_cap_alloc_nolock())) {
+	if (!(cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		return RESULT_FAILURE;
 	}
-	ast_format_cap_add(cap, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
+	ast_format_cap_append(cap, ast_format_slin, 0);
 	if ((agi->speech = ast_speech_new(argv[2], cap))) {
 		ast_agi_send(agi->fd, chan, "200 result=1\n");
 	} else {
 		ast_agi_send(agi->fd, chan, "200 result=0\n");
 	}
-	cap = ast_format_cap_destroy(cap);
+	ao2_ref(cap, -1);
 
 	return RESULT_SUCCESS;
 }
@@ -2972,7 +3182,6 @@ static int handle_speechrecognize(struct ast_channel *chan, AGI *agi, int argc, 
 	const char *prompt;
 	char dtmf = 0, tmp[4096] = "", *buf = tmp;
 	int timeout = 0, offset = 0, res = 0, i = 0;
-	struct ast_format old_read_format;
 	long current_offset = 0;
 	const char *reason = NULL;
 	struct ast_frame *fr = NULL;
@@ -2996,8 +3205,7 @@ static int handle_speechrecognize(struct ast_channel *chan, AGI *agi, int argc, 
 		offset = atoi(argv[4]);
 
 	/* We want frames coming in signed linear */
-	ast_format_copy(&old_read_format, ast_channel_readformat(chan));
-	if (ast_set_read_format_by_id(chan, AST_FORMAT_SLINEAR)) {
+	if (ast_set_read_format(chan, ast_format_slin)) {
 		ast_agi_send(agi->fd, chan, "200 result=0\n");
 		return RESULT_SUCCESS;
 	}
@@ -3135,15 +3343,15 @@ static struct agi_command commands[] = {
 	{ { "noop", NULL }, handle_noop, NULL, NULL, 1 },
 	{ { "receive", "char", NULL }, handle_recvchar, NULL, NULL, 0 },
 	{ { "receive", "text", NULL }, handle_recvtext, NULL, NULL, 0 },
-	{ { "record", "file", NULL }, handle_recordfile, NULL, NULL, 0 }, 
+	{ { "record", "file", NULL }, handle_recordfile, NULL, NULL, 0 },
 	{ { "say", "alpha", NULL }, handle_sayalpha, NULL, NULL, 0},
 	{ { "say", "digits", NULL }, handle_saydigits, NULL, NULL, 0 },
 	{ { "say", "number", NULL }, handle_saynumber, NULL, NULL, 0 },
-	{ { "say", "phonetic", NULL }, handle_sayphonetic, NULL, NULL, 0}, 
-	{ { "say", "date", NULL }, handle_saydate, NULL, NULL, 0}, 
-	{ { "say", "time", NULL }, handle_saytime, NULL, NULL, 0}, 
+	{ { "say", "phonetic", NULL }, handle_sayphonetic, NULL, NULL, 0},
+	{ { "say", "date", NULL }, handle_saydate, NULL, NULL, 0},
+	{ { "say", "time", NULL }, handle_saytime, NULL, NULL, 0},
 	{ { "say", "datetime", NULL }, handle_saydatetime, NULL, NULL, 0},
-	{ { "send", "image", NULL }, handle_sendimage, NULL, NULL, 0}, 
+	{ { "send", "image", NULL }, handle_sendimage, NULL, NULL, 0},
 	{ { "send", "text", NULL }, handle_sendtext, NULL, NULL, 0},
 	{ { "set", "autohangup", NULL }, handle_autohangup, NULL, NULL, 0},
 	{ { "set", "callerid", NULL }, handle_setcallerid, NULL, NULL, 0},
@@ -3273,10 +3481,9 @@ int AST_OPTIONAL_API_NAME(ast_agi_unregister)(struct ast_module *mod, agi_comman
 	}
 	AST_RWLIST_TRAVERSE_SAFE_END;
 	AST_RWLIST_UNLOCK(&agi_commands);
-	if (unregistered)
+	if (unregistered) {
 		ast_verb(2, "AGI Command '%s' unregistered\n",fullcmd);
-	else
-		ast_log(LOG_WARNING, "Unable to unregister command: '%s'!\n",fullcmd);
+	}
 	return unregistered;
 }
 
@@ -3427,22 +3634,34 @@ normal:
 	return 0;
 }
 
+static void publish_async_exec_end(struct ast_channel *chan, int command_id, const char *command, int result_code, const char *result)
+{
+	RAII_VAR(struct ast_json *, blob, NULL, ast_json_unref);
+	blob = ast_json_pack("{s: i, s: s, s: i, s: s}",
+			     "CommandId", command_id,
+			     "Command", command,
+			     "ResultCode", result_code,
+			     "Result", result);
+	ast_channel_publish_cached_blob(chan, agi_exec_end_type(), blob);
+}
+
 static enum agi_result agi_handle_command(struct ast_channel *chan, AGI *agi, char *buf, int dead)
 {
 	const char *argv[MAX_ARGS];
 	int argc = MAX_ARGS;
 	int res;
 	agi_command *c;
-	const char *ami_res;
 	char *ami_cmd = ast_strdupa(buf);
+	const char *ami_res;
 	int command_id = ast_random();
-	int resultcode;
+	int resultcode = 0;
+	RAII_VAR(struct ast_json *, startblob, NULL, ast_json_unref);
 
-	manager_event(EVENT_FLAG_AGI, "AGIExec",
-			"SubEvent: Start\r\n"
-			"Channel: %s\r\n"
-			"CommandId: %d\r\n"
-			"Command: %s\r\n", ast_channel_name(chan), command_id, ami_cmd);
+	startblob = ast_json_pack("{s: i, s: s}",
+			     "CommandId", command_id,
+			     "Command", ami_cmd);
+	ast_channel_publish_cached_blob(chan, agi_exec_start_type(), startblob);
+
 	parse_args(buf, &argc, argv);
 	c = find_command(argv, 0);
 	if (c && (!dead || (dead && c->dead))) {
@@ -3450,11 +3669,6 @@ static enum agi_result agi_handle_command(struct ast_channel *chan, AGI *agi, ch
 		the module we are using */
 		if (c->mod != ast_module_info->self)
 			ast_module_ref(c->mod);
-		/* If the AGI command being executed is an actual application (using agi exec)
-		the app field will be updated in pbx_exec via handle_exec */
-		if (ast_channel_cdr(chan) && !ast_check_hangup(chan) && strcasecmp(argv[0], "EXEC"))
-			ast_cdr_setapp(ast_channel_cdr(chan), "AGI", buf);
-
 		res = c->handler(chan, agi, argc, argv);
 		if (c->mod != ast_module_info->self)
 			ast_module_unref(c->mod);
@@ -3462,30 +3676,9 @@ static enum agi_result agi_handle_command(struct ast_channel *chan, AGI *agi, ch
 		case RESULT_SHOWUSAGE:
 			ami_res = "Usage";
 			resultcode = 520;
-			break;
-		case RESULT_FAILURE:
-			ami_res = "Failure";
-			resultcode = -1;
-			break;
-		case ASYNC_AGI_BREAK:
-		case RESULT_SUCCESS:
-			ami_res = "Success";
-			resultcode = 200;
-			break;
-		default:
-			ami_res = "Unknown Result";
-			resultcode = 200;
-			break;
-		}
-		manager_event(EVENT_FLAG_AGI, "AGIExec",
-				"SubEvent: End\r\n"
-				"Channel: %s\r\n"
-				"CommandId: %d\r\n"
-				"Command: %s\r\n"
-				"ResultCode: %d\r\n"
-				"Result: %s\r\n", ast_channel_name(chan), command_id, ami_cmd, resultcode, ami_res);
-		switch (res) {
-		case RESULT_SHOWUSAGE:
+
+			publish_async_exec_end(chan, command_id, ami_cmd, resultcode, ami_res);
+
 			if (ast_strlen_zero(c->usage)) {
 				ast_agi_send(agi->fd, chan, "520 Invalid command syntax.  Proper usage not available.\n");
 			} else {
@@ -3493,34 +3686,54 @@ static enum agi_result agi_handle_command(struct ast_channel *chan, AGI *agi, ch
 				ast_agi_send(agi->fd, chan, "%s", c->usage);
 				ast_agi_send(agi->fd, chan, "520 End of proper usage.\n");
 			}
+
 			break;
-		case ASYNC_AGI_BREAK:
-			return AGI_RESULT_SUCCESS_ASYNC;
 		case RESULT_FAILURE:
+			ami_res = "Failure";
+			resultcode = -1;
+
+			publish_async_exec_end(chan, command_id, ami_cmd, resultcode, ami_res);
+
 			/* The RESULT_FAILURE code is usually because the channel hungup. */
 			return AGI_RESULT_FAILURE;
+		case ASYNC_AGI_BREAK:
+			ami_res = "Success";
+			resultcode = 200;
+
+			publish_async_exec_end(chan, command_id, ami_cmd, resultcode, ami_res);
+
+			return AGI_RESULT_SUCCESS_ASYNC;
+		case RESULT_SUCCESS:
+			ami_res = "Success";
+			resultcode = 200;
+
+			publish_async_exec_end(chan, command_id, ami_cmd, resultcode, ami_res);
+
+			break;
 		default:
+			ami_res = "Unknown Result";
+			resultcode = 200;
+
+			publish_async_exec_end(chan, command_id, ami_cmd, resultcode, ami_res);
+
 			break;
 		}
 	} else if (c) {
-		ast_agi_send(agi->fd, chan, "511 Command Not Permitted on a dead channel\n");
-		manager_event(EVENT_FLAG_AGI, "AGIExec",
-				"SubEvent: End\r\n"
-				"Channel: %s\r\n"
-				"CommandId: %d\r\n"
-				"Command: %s\r\n"
-				"ResultCode: 511\r\n"
-				"Result: Command not permitted on a dead channel\r\n", ast_channel_name(chan), command_id, ami_cmd);
+		ami_res = "Command Not Permitted on a dead channel";
+		resultcode = 511;
+
+		ast_agi_send(agi->fd, chan, "%d %s\n", resultcode, ami_res);
+
+		publish_async_exec_end(chan, command_id, ami_cmd, resultcode, ami_res);
 	} else {
-		ast_agi_send(agi->fd, chan, "510 Invalid or unknown command\n");
-		manager_event(EVENT_FLAG_AGI, "AGIExec",
-				"SubEvent: End\r\n"
-				"Channel: %s\r\n"
-				"CommandId: %d\r\n"
-				"Command: %s\r\n"
-				"ResultCode: 510\r\n"
-				"Result: Invalid or unknown command\r\n", ast_channel_name(chan), command_id, ami_cmd);
+		ami_res = "Invalid or unknown command";
+		resultcode = 510;
+
+		ast_agi_send(agi->fd, chan, "%d %s\n", resultcode, ami_res);
+
+		publish_async_exec_end(chan, command_id, ami_cmd, resultcode, ami_res);
 	}
+
 	return AGI_RESULT_SUCCESS;
 }
 static enum agi_result run_agi(struct ast_channel *chan, char *request, AGI *agi, int pid, int *status, int dead, int argc, char *argv[])
@@ -3541,7 +3754,7 @@ static enum agi_result run_agi(struct ast_channel *chan, char *request, AGI *agi
 	const char *sighup_str;
 	const char *exit_on_hangup_str;
 	int exit_on_hangup;
-	
+
 	ast_channel_lock(chan);
 	sighup_str = pbx_builtin_getvar_helper(chan, "AGISIGHUP");
 	send_sighup = !ast_false(sighup_str);
@@ -3556,7 +3769,7 @@ static enum agi_result run_agi(struct ast_channel *chan, char *request, AGI *agi
 		close(agi->ctrl);
 		return AGI_RESULT_FAILURE;
 	}
-	
+
 	setlinebuf(readf);
 	setup_env(chan, request, agi->fd, (agi->audio > -1), argc, argv);
 	for (;;) {
@@ -3929,7 +4142,7 @@ static int agi_exec_full(struct ast_channel *chan, const char *data, int enhance
 			return -1;
 	}
 #endif
-	res = launch_script(chan, args.argv[0], args.argv, fds, enhanced ? &efd : NULL, &pid);
+	res = launch_script(chan, args.argv[0], args.argc, args.argv, fds, enhanced ? &efd : NULL, &pid);
 	/* Async AGI do not require run_agi(), so just proceed if normal AGI
 	   or Fast AGI are setup with success. */
 	if (res == AGI_RESULT_SUCCESS || res == AGI_RESULT_SUCCESS_FAST) {
@@ -3980,23 +4193,26 @@ static int agi_exec(struct ast_channel *chan, const char *data)
 static int eagi_exec(struct ast_channel *chan, const char *data)
 {
 	int res;
-	struct ast_format readformat;
+	struct ast_format *readformat;
 
 	if (ast_check_hangup(chan)) {
 		ast_log(LOG_ERROR, "EAGI cannot be run on a dead/hungup channel, please use AGI.\n");
 		return 0;
 	}
-	ast_format_copy(&readformat, ast_channel_readformat(chan));
-	if (ast_set_read_format_by_id(chan, AST_FORMAT_SLINEAR)) {
+	readformat = ao2_bump(ast_channel_readformat(chan));
+	if (ast_set_read_format(chan, ast_format_slin)) {
 		ast_log(LOG_WARNING, "Unable to set channel '%s' to linear mode\n", ast_channel_name(chan));
+		ao2_ref(readformat, -1);
 		return -1;
 	}
 	res = agi_exec_full(chan, data, 1, 0);
 	if (!res) {
-		if (ast_set_read_format(chan, &readformat)) {
-			ast_log(LOG_WARNING, "Unable to restore channel '%s' to format %s\n", ast_channel_name(chan), ast_getformatname(&readformat));
+		if (ast_set_read_format(chan, readformat)) {
+			ast_log(LOG_WARNING, "Unable to restore channel '%s' to format %s\n", ast_channel_name(chan),
+				ast_format_get_name(readformat));
 		}
 	}
+	ao2_ref(readformat, -1);
 	return res;
 }
 
@@ -4055,33 +4271,50 @@ AST_TEST_DEFINE(test_agi_null_docs)
 
 static int unload_module(void)
 {
+	STASIS_MESSAGE_TYPE_CLEANUP(agi_exec_start_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(agi_exec_end_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(agi_async_start_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(agi_async_exec_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(agi_async_end_type);
+
 	ast_cli_unregister_multiple(cli_agi, ARRAY_LEN(cli_agi));
-	/* we can safely ignore the result of ast_agi_unregister_multiple() here, since it cannot fail, as
-	   we know that these commands were registered by this module and are still registered
-	*/
-	(void) ast_agi_unregister_multiple(ast_module_info->self, commands, ARRAY_LEN(commands));
+	ast_agi_unregister_multiple(ast_module_info->self, commands, ARRAY_LEN(commands));
 	ast_unregister_application(eapp);
 	ast_unregister_application(deadapp);
 	ast_manager_unregister("AGI");
+	ast_unregister_application(app);
 	AST_TEST_UNREGISTER(test_agi_null_docs);
-	return ast_unregister_application(app);
+	return 0;
 }
 
 static int load_module(void)
 {
-	ast_cli_register_multiple(cli_agi, ARRAY_LEN(cli_agi));
-	/* we can safely ignore the result of ast_agi_register_multiple() here, since it cannot fail, as
-	   no other commands have been registered yet
-	*/
-	(void) ast_agi_register_multiple(ast_module_info->self, commands, ARRAY_LEN(commands));
-	ast_register_application_xml(deadapp, deadagi_exec);
-	ast_register_application_xml(eapp, eagi_exec);
-	ast_manager_register_xml("AGI", EVENT_FLAG_AGI, action_add_agi_cmd);
+	int err = 0;
+
+	err |= STASIS_MESSAGE_TYPE_INIT(agi_exec_start_type);
+	err |= STASIS_MESSAGE_TYPE_INIT(agi_exec_end_type);
+	err |= STASIS_MESSAGE_TYPE_INIT(agi_async_start_type);
+	err |= STASIS_MESSAGE_TYPE_INIT(agi_async_exec_type);
+	err |= STASIS_MESSAGE_TYPE_INIT(agi_async_end_type);
+
+	err |= ast_cli_register_multiple(cli_agi, ARRAY_LEN(cli_agi));
+	err |= ast_agi_register_multiple(ast_module_info->self, commands, ARRAY_LEN(commands));
+	err |= ast_register_application_xml(deadapp, deadagi_exec);
+	err |= ast_register_application_xml(eapp, eagi_exec);
+	err |= ast_manager_register_xml("AGI", EVENT_FLAG_AGI, action_add_agi_cmd);
+	err |= ast_register_application_xml(app, agi_exec);
+
 	AST_TEST_REGISTER(test_agi_null_docs);
-	return ast_register_application_xml(app, agi_exec);
+
+	if (err) {
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Asterisk Gateway Interface (AGI)",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_APP_DEPEND,

@@ -23,13 +23,19 @@
  * \author Mark Spencer <markster@digium.com>
  */
 
+/** \example
+ * \par This is an example of how to develop an app.
+ * Application Skeleton is an example of creating an application for Asterisk.
+ * \verbinclude app_skel.c
+ */
+
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401705 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432556 $")
 
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -60,6 +66,13 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401705 $")
 #include "asterisk/threadstorage.h"
 #include "asterisk/test.h"
 #include "asterisk/module.h"
+#include "asterisk/astobj2.h"
+#include "asterisk/stasis.h"
+#include "asterisk/stasis_channels.h"
+#include "asterisk/json.h"
+#include "asterisk/format_cache.h"
+
+#define MWI_TOPIC_BUCKETS 57
 
 AST_THREADSTORAGE_PUBLIC(ast_str_thread_global_buf);
 
@@ -71,6 +84,60 @@ struct zombie {
 };
 
 static AST_LIST_HEAD_STATIC(zombies, zombie);
+
+/*
+ * @{ \brief Define \ref stasis topic objects
+ */
+static struct stasis_topic *mwi_topic_all;
+static struct stasis_cache *mwi_state_cache;
+static struct stasis_caching_topic *mwi_topic_cached;
+static struct stasis_topic_pool *mwi_topic_pool;
+
+static struct stasis_topic *queue_topic_all;
+static struct stasis_topic_pool *queue_topic_pool;
+/* @} */
+
+/*! \brief Convert a MWI \ref stasis_message to a \ref ast_event */
+static struct ast_event *mwi_to_event(struct stasis_message *message)
+{
+	struct ast_event *event;
+	struct ast_mwi_state *mwi_state;
+	char *mailbox;
+	char *context;
+
+	if (!message) {
+		return NULL;
+	}
+
+	mwi_state = stasis_message_data(message);
+
+	/* Strip off @context */
+	context = mailbox = ast_strdupa(mwi_state->uniqueid);
+	strsep(&context, "@");
+	if (ast_strlen_zero(context)) {
+		context = "default";
+	}
+
+	event = ast_event_new(AST_EVENT_MWI,
+				AST_EVENT_IE_MAILBOX, AST_EVENT_IE_PLTYPE_STR, mailbox,
+				AST_EVENT_IE_CONTEXT, AST_EVENT_IE_PLTYPE_STR, context,
+				AST_EVENT_IE_NEWMSGS, AST_EVENT_IE_PLTYPE_UINT, mwi_state->new_msgs,
+				AST_EVENT_IE_OLDMSGS, AST_EVENT_IE_PLTYPE_UINT, mwi_state->old_msgs,
+				AST_EVENT_IE_EID, AST_EVENT_IE_PLTYPE_RAW, &mwi_state->eid, sizeof(mwi_state->eid),
+				AST_EVENT_IE_END);
+
+	return event;
+}
+
+/*
+ * @{ \brief Define \ref stasis message types for MWI
+ */
+STASIS_MESSAGE_TYPE_DEFN(ast_mwi_state_type,
+	.to_event = mwi_to_event, );
+STASIS_MESSAGE_TYPE_DEFN(ast_mwi_vm_app_type);
+/* @} */
+
+
 
 static void *shaun_of_the_dead(void *data)
 {
@@ -190,7 +257,6 @@ enum ast_getdata_result ast_app_getdata(struct ast_channel *c, const char *promp
 
 	filename = ast_strdupa(prompt);
 	while ((front = strsep(&filename, "&"))) {
-		ast_test_suite_event_notify("PLAYBACK", "Message: %s\r\nChannel: %s", front, ast_channel_name(c));
 		if (!ast_strlen_zero(front)) {
 			res = ast_streamfile(c, front, ast_channel_language(c));
 			if (res)
@@ -393,126 +459,183 @@ int ast_app_run_sub(struct ast_channel *autoservice_chan, struct ast_channel *su
 	return res;
 }
 
-static int (*ast_has_voicemail_func)(const char *mailbox, const char *folder) = NULL;
-static int (*ast_inboxcount_func)(const char *mailbox, int *newmsgs, int *oldmsgs) = NULL;
-static int (*ast_inboxcount2_func)(const char *mailbox, int *urgentmsgs, int *newmsgs, int *oldmsgs) = NULL;
-static int (*ast_sayname_func)(struct ast_channel *chan, const char *mailbox, const char *context) = NULL;
-static int (*ast_messagecount_func)(const char *context, const char *mailbox, const char *folder) = NULL;
-static int (*ast_copy_recording_to_vm_func)(struct ast_vm_recording_data *vm_rec_data) = NULL;
-static const char *(*ast_vm_index_to_foldername_func)(int id) = NULL;
-static struct ast_vm_mailbox_snapshot *(*ast_vm_mailbox_snapshot_create_func)(const char *mailbox,
-	const char *context,
-	const char *folder,
-	int descending,
-	enum ast_vm_snapshot_sort_val sort_val,
-	int combine_INBOX_and_OLD) = NULL;
-static struct ast_vm_mailbox_snapshot *(*ast_vm_mailbox_snapshot_destroy_func)(struct ast_vm_mailbox_snapshot *mailbox_snapshot) = NULL;
-static int (*ast_vm_msg_move_func)(const char *mailbox,
-	const char *context,
-	size_t num_msgs,
-	const char *oldfolder,
-	const char *old_msg_ids[],
-	const char *newfolder) = NULL;
-static int (*ast_vm_msg_remove_func)(const char *mailbox,
-	const char *context,
-	size_t num_msgs,
-	const char *folder,
-	const char *msgs[]) = NULL;
-static int (*ast_vm_msg_forward_func)(const char *from_mailbox,
-	const char *from_context,
-	const char *from_folder,
-	const char *to_mailbox,
-	const char *to_context,
-	const char *to_folder,
-	size_t num_msgs,
-	const char *msg_ids[],
-	int delete_old) = NULL;
-static int (*ast_vm_msg_play_func)(struct ast_channel *chan,
-	const char *mailbox,
-	const char *context,
-	const char *folder,
-	const char *msg_num,
-	ast_vm_msg_play_cb cb) = NULL;
+/*! \brief The container for the voicemail provider */
+static AO2_GLOBAL_OBJ_STATIC(vm_provider);
 
-void ast_install_vm_functions(int (*has_voicemail_func)(const char *mailbox, const char *folder),
-			      int (*inboxcount_func)(const char *mailbox, int *newmsgs, int *oldmsgs),
-			      int (*inboxcount2_func)(const char *mailbox, int *urgentmsgs, int *newmsgs, int *oldmsgs),
-			      int (*messagecount_func)(const char *context, const char *mailbox, const char *folder),
-			      int (*sayname_func)(struct ast_channel *chan, const char *mailbox, const char *context),
-			      int (*copy_recording_to_vm_func)(struct ast_vm_recording_data *vm_rec_data),
-			      const char *vm_index_to_foldername_func(int id),
-			      struct ast_vm_mailbox_snapshot *(*vm_mailbox_snapshot_create_func)(const char *mailbox,
-				const char *context,
-				const char *folder,
-				int descending,
-				enum ast_vm_snapshot_sort_val sort_val,
-				int combine_INBOX_and_OLD),
-			      struct ast_vm_mailbox_snapshot *(*vm_mailbox_snapshot_destroy_func)(struct ast_vm_mailbox_snapshot *mailbox_snapshot),
-			      int (*vm_msg_move_func)(const char *mailbox,
-				const char *context,
-				size_t num_msgs,
-				const char *oldfolder,
-				const char *old_msg_ids[],
-				const char *newfolder),
-			      int (*vm_msg_remove_func)(const char *mailbox,
-				const char *context,
-				size_t num_msgs,
-				const char *folder,
-				const char *msgs[]),
-			      int (*vm_msg_forward_func)(const char *from_mailbox,
-				const char *from_context,
-				const char *from_folder,
-				const char *to_mailbox,
-				const char *to_context,
-				const char *to_folder,
-				size_t num_msgs,
-				const char *msg_ids[],
-				int delete_old),
-			      int (*vm_msg_play_func)(struct ast_channel *chan,
-				const char *mailbox,
-				const char *context,
-				const char *folder,
-				const char *msg_num,
-				ast_vm_msg_play_cb cb))
+/*! Voicemail not registered warning */
+static int vm_warnings;
+
+int ast_vm_is_registered(void)
 {
-	ast_has_voicemail_func = has_voicemail_func;
-	ast_inboxcount_func = inboxcount_func;
-	ast_inboxcount2_func = inboxcount2_func;
-	ast_messagecount_func = messagecount_func;
-	ast_sayname_func = sayname_func;
-	ast_copy_recording_to_vm_func = copy_recording_to_vm_func;
-	ast_vm_index_to_foldername_func = vm_index_to_foldername_func;
-	ast_vm_mailbox_snapshot_create_func = vm_mailbox_snapshot_create_func;
-	ast_vm_mailbox_snapshot_destroy_func = vm_mailbox_snapshot_destroy_func;
-	ast_vm_msg_move_func = vm_msg_move_func;
-	ast_vm_msg_remove_func = vm_msg_remove_func;
-	ast_vm_msg_forward_func = vm_msg_forward_func;
-	ast_vm_msg_play_func = vm_msg_play_func;
+	struct ast_vm_functions *table;
+	int is_registered;
+
+	table = ao2_global_obj_ref(vm_provider);
+	is_registered = table ? 1 : 0;
+	ao2_cleanup(table);
+	return is_registered;
 }
 
-void ast_uninstall_vm_functions(void)
+int __ast_vm_register(const struct ast_vm_functions *vm_table, struct ast_module *module)
 {
-	ast_has_voicemail_func = NULL;
-	ast_inboxcount_func = NULL;
-	ast_inboxcount2_func = NULL;
-	ast_messagecount_func = NULL;
-	ast_sayname_func = NULL;
-	ast_copy_recording_to_vm_func = NULL;
-	ast_vm_index_to_foldername_func = NULL;
-	ast_vm_mailbox_snapshot_create_func = NULL;
-	ast_vm_mailbox_snapshot_destroy_func = NULL;
-	ast_vm_msg_move_func = NULL;
-	ast_vm_msg_remove_func = NULL;
-	ast_vm_msg_forward_func = NULL;
-	ast_vm_msg_play_func = NULL;
+	RAII_VAR(struct ast_vm_functions *, table, NULL, ao2_cleanup);
+
+	if (!vm_table->module_name) {
+		ast_log(LOG_ERROR, "Voicemail provider missing required information.\n");
+		return -1;
+	}
+	if (vm_table->module_version != VM_MODULE_VERSION) {
+		ast_log(LOG_ERROR, "Voicemail provider '%s' has incorrect version\n",
+			vm_table->module_name);
+		return -1;
+	}
+
+	table = ao2_global_obj_ref(vm_provider);
+	if (table) {
+		ast_log(LOG_WARNING, "Voicemail provider already registered by %s.\n",
+			table->module_name);
+		return -1;
+	}
+
+	table = ao2_alloc_options(sizeof(*table), NULL, AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!table) {
+		return -1;
+	}
+	*table = *vm_table;
+	table->module = module;
+
+	ao2_global_obj_replace_unref(vm_provider, table);
+	return 0;
+}
+
+void ast_vm_unregister(const char *module_name)
+{
+	struct ast_vm_functions *table;
+
+	table = ao2_global_obj_ref(vm_provider);
+	if (table && !strcmp(table->module_name, module_name)) {
+		ao2_global_obj_release(vm_provider);
+	}
+	ao2_cleanup(table);
 }
 
 #ifdef TEST_FRAMEWORK
-int (*ast_vm_test_create_user_func)(const char *context, const char *mailbox) = NULL;
-int (*ast_vm_test_destroy_user_func)(const char *context, const char *mailbox) = NULL;
+/*! \brief Holding container for the voicemail provider used while testing */
+static AO2_GLOBAL_OBJ_STATIC(vm_provider_holder);
+static int provider_is_swapped = 0;
 
-void ast_install_vm_test_functions(int (*vm_test_create_user_func)(const char *context, const char *mailbox),
-				   int (*vm_test_destroy_user_func)(const char *context, const char *mailbox))
+void ast_vm_test_swap_table_in(const struct ast_vm_functions *vm_table)
+{
+	RAII_VAR(struct ast_vm_functions *, holding_table, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_vm_functions *, new_table, NULL, ao2_cleanup);
+
+	if (provider_is_swapped) {
+		ast_log(LOG_ERROR, "Attempted to swap in test function table without swapping out old test table.\n");
+		return;
+	}
+
+	holding_table = ao2_global_obj_ref(vm_provider);
+
+	if (holding_table) {
+		ao2_global_obj_replace_unref(vm_provider_holder, holding_table);
+	}
+
+	new_table = ao2_alloc_options(sizeof(*new_table), NULL, AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!new_table) {
+		return;
+	}
+	*new_table = *vm_table;
+
+	ao2_global_obj_replace_unref(vm_provider, new_table);
+	provider_is_swapped = 1;
+}
+
+void ast_vm_test_swap_table_out(void)
+{
+	RAII_VAR(struct ast_vm_functions *, held_table, NULL, ao2_cleanup);
+
+	if (!provider_is_swapped) {
+		ast_log(LOG_ERROR, "Attempted to swap out test function table, but none is currently installed.\n");
+		return;
+	}
+
+	held_table = ao2_global_obj_ref(vm_provider_holder);
+	if (!held_table) {
+		return;
+	}
+
+	ao2_global_obj_replace_unref(vm_provider, held_table);
+	ao2_global_obj_release(vm_provider_holder);
+	provider_is_swapped = 0;
+}
+#endif
+
+/*! \brief The container for the voicemail greeter provider */
+static AO2_GLOBAL_OBJ_STATIC(vm_greeter_provider);
+
+/*! Voicemail greeter not registered warning */
+static int vm_greeter_warnings;
+
+int ast_vm_greeter_is_registered(void)
+{
+	struct ast_vm_greeter_functions *table;
+	int is_registered;
+
+	table = ao2_global_obj_ref(vm_greeter_provider);
+	is_registered = table ? 1 : 0;
+	ao2_cleanup(table);
+	return is_registered;
+}
+
+int __ast_vm_greeter_register(const struct ast_vm_greeter_functions *vm_table, struct ast_module *module)
+{
+	RAII_VAR(struct ast_vm_greeter_functions *, table, NULL, ao2_cleanup);
+
+	if (!vm_table->module_name) {
+		ast_log(LOG_ERROR, "Voicemail greeter provider missing required information.\n");
+		return -1;
+	}
+	if (vm_table->module_version != VM_GREETER_MODULE_VERSION) {
+		ast_log(LOG_ERROR, "Voicemail greeter provider '%s' has incorrect version\n",
+			vm_table->module_name);
+		return -1;
+	}
+
+	table = ao2_global_obj_ref(vm_greeter_provider);
+	if (table) {
+		ast_log(LOG_WARNING, "Voicemail greeter provider already registered by %s.\n",
+			table->module_name);
+		return -1;
+	}
+
+	table = ao2_alloc_options(sizeof(*table), NULL, AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!table) {
+		return -1;
+	}
+	*table = *vm_table;
+	table->module = module;
+
+	ao2_global_obj_replace_unref(vm_greeter_provider, table);
+	return 0;
+}
+
+void ast_vm_greeter_unregister(const char *module_name)
+{
+	struct ast_vm_greeter_functions *table;
+
+	table = ao2_global_obj_ref(vm_greeter_provider);
+	if (table && !strcmp(table->module_name, module_name)) {
+		ao2_global_obj_release(vm_greeter_provider);
+	}
+	ao2_cleanup(table);
+}
+
+#ifdef TEST_FRAMEWORK
+static ast_vm_test_create_user_fn *ast_vm_test_create_user_func = NULL;
+static ast_vm_test_destroy_user_fn *ast_vm_test_destroy_user_func = NULL;
+
+void ast_install_vm_test_functions(ast_vm_test_create_user_fn *vm_test_create_user_func,
+	ast_vm_test_destroy_user_fn *vm_test_destroy_user_func)
 {
 	ast_vm_test_create_user_func = vm_test_create_user_func;
 	ast_vm_test_destroy_user_func = vm_test_destroy_user_func;
@@ -525,17 +648,54 @@ void ast_uninstall_vm_test_functions(void)
 }
 #endif
 
-int ast_app_has_voicemail(const char *mailbox, const char *folder)
+static void vm_warn_no_provider(void)
 {
-	static int warned = 0;
-	if (ast_has_voicemail_func) {
-		return ast_has_voicemail_func(mailbox, folder);
+	if (vm_warnings++ % 10 == 0) {
+		ast_verb(3, "No voicemail provider registered.\n");
 	}
+}
 
-	if (warned++ % 10 == 0) {
-		ast_verb(3, "Message check requested for mailbox %s/folder %s but voicemail not loaded.\n", mailbox, folder ? folder : "INBOX");
+#define VM_API_CALL(res, api_call, api_parms)								\
+	do {																	\
+		struct ast_vm_functions *table;										\
+		table = ao2_global_obj_ref(vm_provider);							\
+		if (!table) {														\
+			vm_warn_no_provider();											\
+		} else if (table->api_call) {										\
+			ast_module_ref(table->module);									\
+			(res) = table->api_call api_parms;								\
+			ast_module_unref(table->module);								\
+		}																	\
+		ao2_cleanup(table);													\
+	} while (0)
+
+static void vm_greeter_warn_no_provider(void)
+{
+	if (vm_greeter_warnings++ % 10 == 0) {
+		ast_verb(3, "No voicemail greeter provider registered.\n");
 	}
-	return 0;
+}
+
+#define VM_GREETER_API_CALL(res, api_call, api_parms)						\
+	do {																	\
+		struct ast_vm_greeter_functions *table;								\
+		table = ao2_global_obj_ref(vm_greeter_provider);					\
+		if (!table) {														\
+			vm_greeter_warn_no_provider();									\
+		} else if (table->api_call) {										\
+			ast_module_ref(table->module);									\
+			(res) = table->api_call api_parms;								\
+			ast_module_unref(table->module);								\
+		}																	\
+		ao2_cleanup(table);													\
+	} while (0)
+
+int ast_app_has_voicemail(const char *mailboxes, const char *folder)
+{
+	int res = 0;
+
+	VM_API_CALL(res, has_voicemail, (mailboxes, folder));
+	return res;
 }
 
 /*!
@@ -546,44 +706,31 @@ int ast_app_has_voicemail(const char *mailbox, const char *folder)
  */
 int ast_app_copy_recording_to_vm(struct ast_vm_recording_data *vm_rec_data)
 {
-	static int warned = 0;
+	int res = -1;
 
-	if (ast_copy_recording_to_vm_func) {
-		return ast_copy_recording_to_vm_func(vm_rec_data);
-	}
-
-	if (warned++ % 10 == 0) {
-		ast_verb(3, "copy recording to voicemail called to copy %s.%s to %s@%s, but voicemail not loaded.\n",
-			vm_rec_data->recording_file, vm_rec_data->recording_ext,
-			vm_rec_data->mailbox, vm_rec_data->context);
-	}
-
-	return -1;
+	VM_API_CALL(res, copy_recording_to_vm, (vm_rec_data));
+	return res;
 }
 
-int ast_app_inboxcount(const char *mailbox, int *newmsgs, int *oldmsgs)
+int ast_app_inboxcount(const char *mailboxes, int *newmsgs, int *oldmsgs)
 {
-	static int warned = 0;
+	int res = 0;
+
 	if (newmsgs) {
 		*newmsgs = 0;
 	}
 	if (oldmsgs) {
 		*oldmsgs = 0;
 	}
-	if (ast_inboxcount_func) {
-		return ast_inboxcount_func(mailbox, newmsgs, oldmsgs);
-	}
 
-	if (warned++ % 10 == 0) {
-		ast_verb(3, "Message count requested for mailbox %s but voicemail not loaded.\n", mailbox);
-	}
-
-	return 0;
+	VM_API_CALL(res, inboxcount, (mailboxes, newmsgs, oldmsgs));
+	return res;
 }
 
-int ast_app_inboxcount2(const char *mailbox, int *urgentmsgs, int *newmsgs, int *oldmsgs)
+int ast_app_inboxcount2(const char *mailboxes, int *urgentmsgs, int *newmsgs, int *oldmsgs)
 {
-	static int warned = 0;
+	int res = 0;
+
 	if (newmsgs) {
 		*newmsgs = 0;
 	}
@@ -593,46 +740,33 @@ int ast_app_inboxcount2(const char *mailbox, int *urgentmsgs, int *newmsgs, int 
 	if (urgentmsgs) {
 		*urgentmsgs = 0;
 	}
-	if (ast_inboxcount2_func) {
-		return ast_inboxcount2_func(mailbox, urgentmsgs, newmsgs, oldmsgs);
-	}
 
-	if (warned++ % 10 == 0) {
-		ast_verb(3, "Message count requested for mailbox %s but voicemail not loaded.\n", mailbox);
-	}
-
-	return 0;
+	VM_API_CALL(res, inboxcount2, (mailboxes, urgentmsgs, newmsgs, oldmsgs));
+	return res;
 }
 
-int ast_app_sayname(struct ast_channel *chan, const char *mailbox, const char *context)
+int ast_app_sayname(struct ast_channel *chan, const char *mailbox_id)
 {
-	if (ast_sayname_func) {
-		return ast_sayname_func(chan, mailbox, context);
-	}
-	return -1;
+	int res = -1;
+
+	VM_GREETER_API_CALL(res, sayname, (chan, mailbox_id));
+	return res;
 }
 
-int ast_app_messagecount(const char *context, const char *mailbox, const char *folder)
+int ast_app_messagecount(const char *mailbox_id, const char *folder)
 {
-	static int warned = 0;
-	if (ast_messagecount_func) {
-		return ast_messagecount_func(context, mailbox, folder);
-	}
+	int res = 0;
 
-	if (!warned) {
-		warned++;
-		ast_verb(3, "Message count requested for mailbox %s@%s/%s but voicemail not loaded.\n", mailbox, context, folder);
-	}
-
-	return 0;
+	VM_API_CALL(res, messagecount, (mailbox_id, folder));
+	return res;
 }
 
 const char *ast_vm_index_to_foldername(int id)
 {
-	if (ast_vm_index_to_foldername_func) {
-		return ast_vm_index_to_foldername_func(id);
-	}
-	return NULL;
+	const char *res = NULL;
+
+	VM_API_CALL(res, index_to_foldername, (id));
+	return res;
 }
 
 struct ast_vm_mailbox_snapshot *ast_vm_mailbox_snapshot_create(const char *mailbox,
@@ -642,18 +776,19 @@ struct ast_vm_mailbox_snapshot *ast_vm_mailbox_snapshot_create(const char *mailb
 	enum ast_vm_snapshot_sort_val sort_val,
 	int combine_INBOX_and_OLD)
 {
-	if (ast_vm_mailbox_snapshot_create_func) {
-		return ast_vm_mailbox_snapshot_create_func(mailbox, context, folder, descending, sort_val, combine_INBOX_and_OLD);
-	}
-	return NULL;
+	struct ast_vm_mailbox_snapshot *res = NULL;
+
+	VM_API_CALL(res, mailbox_snapshot_create, (mailbox, context, folder, descending,
+		sort_val, combine_INBOX_and_OLD));
+	return res;
 }
 
 struct ast_vm_mailbox_snapshot *ast_vm_mailbox_snapshot_destroy(struct ast_vm_mailbox_snapshot *mailbox_snapshot)
 {
-	if (ast_vm_mailbox_snapshot_destroy_func) {
-		return ast_vm_mailbox_snapshot_destroy_func(mailbox_snapshot);
-	}
-	return NULL;
+	struct ast_vm_mailbox_snapshot *res = NULL;
+
+	VM_API_CALL(res, mailbox_snapshot_destroy, (mailbox_snapshot));
+	return res;
 }
 
 int ast_vm_msg_move(const char *mailbox,
@@ -663,10 +798,11 @@ int ast_vm_msg_move(const char *mailbox,
 	const char *old_msg_ids[],
 	const char *newfolder)
 {
-	if (ast_vm_msg_move_func) {
-		return ast_vm_msg_move_func(mailbox, context, num_msgs, oldfolder, old_msg_ids, newfolder);
-	}
-	return 0;
+	int res = 0;
+
+	VM_API_CALL(res, msg_move, (mailbox, context, num_msgs, oldfolder, old_msg_ids,
+		newfolder));
+	return res;
 }
 
 int ast_vm_msg_remove(const char *mailbox,
@@ -675,10 +811,10 @@ int ast_vm_msg_remove(const char *mailbox,
 	const char *folder,
 	const char *msgs[])
 {
-	if (ast_vm_msg_remove_func) {
-		return ast_vm_msg_remove_func(mailbox, context, num_msgs, folder, msgs);
-	}
-	return 0;
+	int res = 0;
+
+	VM_API_CALL(res, msg_remove, (mailbox, context, num_msgs, folder, msgs));
+	return res;
 }
 
 int ast_vm_msg_forward(const char *from_mailbox,
@@ -691,10 +827,11 @@ int ast_vm_msg_forward(const char *from_mailbox,
 	const char *msg_ids[],
 	int delete_old)
 {
-	if (ast_vm_msg_forward_func) {
-		return ast_vm_msg_forward_func(from_mailbox, from_context, from_folder, to_mailbox, to_context, to_folder, num_msgs, msg_ids, delete_old);
-	}
-	return 0;
+	int res = 0;
+
+	VM_API_CALL(res, msg_forward, (from_mailbox, from_context, from_folder, to_mailbox,
+		to_context, to_folder, num_msgs, msg_ids, delete_old));
+	return res;
 }
 
 int ast_vm_msg_play(struct ast_channel *chan,
@@ -702,12 +839,12 @@ int ast_vm_msg_play(struct ast_channel *chan,
 	const char *context,
 	const char *folder,
 	const char *msg_num,
-	ast_vm_msg_play_cb cb)
+	ast_vm_msg_play_cb *cb)
 {
-	if (ast_vm_msg_play_func) {
-		return ast_vm_msg_play_func(chan, mailbox, context, folder, msg_num, cb);
-	}
-	return 0;
+	int res = 0;
+
+	VM_API_CALL(res, msg_play, (chan, mailbox, context, folder, msg_num, cb));
+	return res;
 }
 
 #ifdef TEST_FRAMEWORK
@@ -731,31 +868,24 @@ int ast_vm_test_destroy_user(const char *context, const char *mailbox)
 int ast_dtmf_stream(struct ast_channel *chan, struct ast_channel *peer, const char *digits, int between, unsigned int duration)
 {
 	const char *ptr;
-	int res = 0;
+	int res;
 	struct ast_silence_generator *silgen = NULL;
 
 	if (!between) {
 		between = 100;
 	}
 
-	if (peer) {
-		res = ast_autoservice_start(peer);
+	if (peer && ast_autoservice_start(peer)) {
+		return -1;
 	}
 
-	if (!res) {
-		res = ast_waitfor(chan, 100);
-	}
-
-	/* ast_waitfor will return the number of remaining ms on success */
-	if (res < 0) {
-		if (peer) {
-			ast_autoservice_stop(peer);
-		}
-		return res;
-	}
-
+	/* Need a quiet time before sending digits. */
 	if (ast_opt_transmit_silence) {
 		silgen = ast_channel_start_silence_generator(chan);
+	}
+	res = ast_safe_sleep(chan, 100);
+	if (res) {
+		goto dtmf_stream_cleanup;
 	}
 
 	for (ptr = digits; *ptr; ptr++) {
@@ -764,12 +894,17 @@ int ast_dtmf_stream(struct ast_channel *chan, struct ast_channel *peer, const ch
 			if ((res = ast_safe_sleep(chan, 500))) {
 				break;
 			}
+		} else if (*ptr == 'W') {
+			/* 'W' -- wait a second */
+			if ((res = ast_safe_sleep(chan, 1000))) {
+				break;
+			}
 		} else if (strchr("0123456789*#abcdfABCDF", *ptr)) {
-			/* Character represents valid DTMF */
 			if (*ptr == 'f' || *ptr == 'F') {
 				/* ignore return values if not supported by channel */
 				ast_indicate(chan, AST_CONTROL_FLASH);
 			} else {
+				/* Character represents valid DTMF */
 				ast_senddigit(chan, *ptr, duration);
 			}
 			/* pause between digits */
@@ -781,16 +916,12 @@ int ast_dtmf_stream(struct ast_channel *chan, struct ast_channel *peer, const ch
 		}
 	}
 
-	if (peer) {
-		/* Stop autoservice on the peer channel, but don't overwrite any error condition
-		   that has occurred previously while acting on the primary channel */
-		if (ast_autoservice_stop(peer) && !res) {
-			res = -1;
-		}
-	}
-
+dtmf_stream_cleanup:
 	if (silgen) {
 		ast_channel_stop_silence_generator(chan, silgen);
+	}
+	if (peer && ast_autoservice_stop(peer)) {
+		res = -1;
 	}
 
 	return res;
@@ -800,16 +931,18 @@ struct linear_state {
 	int fd;
 	int autoclose;
 	int allowoverride;
-	struct ast_format origwfmt;
+	struct ast_format *origwfmt;
 };
 
 static void linear_release(struct ast_channel *chan, void *params)
 {
 	struct linear_state *ls = params;
 
-	if (ls->origwfmt.id && ast_set_write_format(chan, &ls->origwfmt)) {
-		ast_log(LOG_WARNING, "Unable to restore channel '%s' to format '%d'\n", ast_channel_name(chan), ls->origwfmt.id);
+	if (ls->origwfmt && ast_set_write_format(chan, ls->origwfmt)) {
+		ast_log(LOG_WARNING, "Unable to restore channel '%s' to format '%s'\n",
+			ast_channel_name(chan), ast_format_get_name(ls->origwfmt));
 	}
+	ao2_cleanup(ls->origwfmt);
 
 	if (ls->autoclose) {
 		close(ls->fd);
@@ -829,7 +962,7 @@ static int linear_generator(struct ast_channel *chan, void *data, int len, int s
 	};
 	int res;
 
-	ast_format_set(&f.subclass.format, AST_FORMAT_SLINEAR, 0);
+	f.subclass.format = ast_format_slin;
 
 	len = samples * 2;
 	if (len > sizeof(buf) - AST_FRIENDLY_OFFSET) {
@@ -863,10 +996,11 @@ static void *linear_alloc(struct ast_channel *chan, void *params)
 		ast_clear_flag(ast_channel_flags(chan), AST_FLAG_WRITE_INT);
 	}
 
-	ast_format_copy(&ls->origwfmt, ast_channel_writeformat(chan));
+	ls->origwfmt = ao2_bump(ast_channel_writeformat(chan));
 
-	if (ast_set_write_format_by_id(chan, AST_FORMAT_SLINEAR)) {
+	if (ast_set_write_format(chan, ast_format_slin)) {
 		ast_log(LOG_WARNING, "Unable to set '%s' to linear format (write)\n", ast_channel_name(chan));
+		ao2_cleanup(ls->origwfmt);
 		ast_free(ls);
 		ls = params = NULL;
 	}
@@ -920,6 +1054,7 @@ static int control_streamfile(struct ast_channel *chan,
 	const char *restart,
 	int skipms,
 	long *offsetms,
+	const char *lang,
 	ast_waitstream_fr_cb cb)
 {
 	char *breaks = NULL;
@@ -934,6 +1069,9 @@ static int control_streamfile(struct ast_channel *chan,
 	}
 	if (offsetms) {
 		offset = *offsetms * 8; /* XXX Assumes 8kHz */
+	}
+	if (lang == NULL) {
+		lang = ast_channel_language(chan);
 	}
 
 	if (stop) {
@@ -959,9 +1097,6 @@ static int control_streamfile(struct ast_channel *chan,
 			strcat(breaks, restart);
 		}
 	}
-	if (ast_channel_state(chan) != AST_STATE_UP) {
-		res = ast_answer(chan);
-	}
 
 	if ((end = strchr(file, ':'))) {
 		if (!strcasecmp(end, ":end")) {
@@ -972,7 +1107,7 @@ static int control_streamfile(struct ast_channel *chan,
 
 	for (;;) {
 		ast_stopstream(chan);
-		res = ast_streamfile(chan, file, ast_channel_language(chan));
+		res = ast_streamfile(chan, file, lang);
 		if (!res) {
 			if (pause_restart_point) {
 				ast_seekstream(ast_channel_stream(chan), pause_restart_point, SEEK_SET);
@@ -1004,24 +1139,37 @@ static int control_streamfile(struct ast_channel *chan,
 		}
 
 		/* We go at next loop if we got the restart char */
-		if (restart && strchr(restart, res)) {
+		if ((restart && strchr(restart, res)) || res == AST_CONTROL_STREAM_RESTART) {
 			ast_debug(1, "we'll restart the stream here at next loop\n");
 			pause_restart_point = 0;
+			ast_test_suite_event_notify("PLAYBACK","Channel: %s\r\n"
+				"Control: %s\r\n",
+				ast_channel_name(chan),
+				"Restart");
 			continue;
 		}
 
-		if (suspend && strchr(suspend, res)) {
+		if ((suspend && strchr(suspend, res)) || res == AST_CONTROL_STREAM_SUSPEND) {
 			pause_restart_point = ast_tellstream(ast_channel_stream(chan));
+			ast_test_suite_event_notify("PLAYBACK","Channel: %s\r\n"
+				"Control: %s\r\n",
+				ast_channel_name(chan),
+				"Pause");
 			for (;;) {
 				ast_stopstream(chan);
 				if (!(res = ast_waitfordigit(chan, 1000))) {
 					continue;
-				} else if (res == -1 || strchr(suspend, res) || (stop && strchr(stop, res))) {
+				} else if (res == -1 || (suspend && strchr(suspend, res)) || (stop && strchr(stop, res))
+						|| res == AST_CONTROL_STREAM_SUSPEND || res == AST_CONTROL_STREAM_STOP) {
 					break;
 				}
 			}
-			if (res == *suspend) {
+			if ((suspend && (res == *suspend)) || res == AST_CONTROL_STREAM_SUSPEND) {
 				res = 0;
+				ast_test_suite_event_notify("PLAYBACK","Channel: %s\r\n"
+					"Control: %s\r\n",
+					ast_channel_name(chan),
+					"Unpause");
 				continue;
 			}
 		}
@@ -1031,7 +1179,11 @@ static int control_streamfile(struct ast_channel *chan,
 		}
 
 		/* if we get one of our stop chars, return it to the calling function */
-		if (stop && strchr(stop, res)) {
+		if ((stop && strchr(stop, res)) || res == AST_CONTROL_STREAM_STOP) {
+			ast_test_suite_event_notify("PLAYBACK","Channel: %s\r\n"
+				"Control: %s\r\n",
+				ast_channel_name(chan),
+				"Stop");
 			break;
 		}
 	}
@@ -1050,11 +1202,6 @@ static int control_streamfile(struct ast_channel *chan,
 		*offsetms = offset / 8; /* samples --> ms ... XXX Assumes 8 kHz */
 	}
 
-	/* If we are returning a digit cast it as char */
-	if (res > 0 || ast_channel_stream(chan)) {
-		res = (char)res;
-	}
-
 	ast_stopstream(chan);
 
 	return res;
@@ -1071,7 +1218,7 @@ int ast_control_streamfile_w_cb(struct ast_channel *chan,
 	long *offsetms,
 	ast_waitstream_fr_cb cb)
 {
-	return control_streamfile(chan, file, fwd, rev, stop, suspend, restart, skipms, offsetms, cb);
+	return control_streamfile(chan, file, fwd, rev, stop, suspend, restart, skipms, offsetms, NULL, cb);
 }
 
 int ast_control_streamfile(struct ast_channel *chan, const char *file,
@@ -1079,14 +1226,156 @@ int ast_control_streamfile(struct ast_channel *chan, const char *file,
 			   const char *stop, const char *suspend,
 			   const char *restart, int skipms, long *offsetms)
 {
-	return control_streamfile(chan, file, fwd, rev, stop, suspend, restart, skipms, offsetms, NULL);
+	return control_streamfile(chan, file, fwd, rev, stop, suspend, restart, skipms, offsetms, NULL, NULL);
+}
+
+int ast_control_streamfile_lang(struct ast_channel *chan, const char *file,
+	const char *fwd, const char *rev, const char *stop, const char *suspend,
+	const char *restart, int skipms, const char *lang, long *offsetms)
+{
+	return control_streamfile(chan, file, fwd, rev, stop, suspend, restart, skipms, offsetms, lang, NULL);
+}
+
+enum control_tone_frame_response_result {
+	CONTROL_TONE_RESPONSE_FAILED = -1,
+	CONTROL_TONE_RESPONSE_NORMAL = 0,
+	CONTROL_TONE_RESPONSE_FINISHED = 1,
+};
+
+static enum control_tone_frame_response_result control_tone_frame_response(struct ast_channel *chan, struct ast_frame *fr, struct ast_tone_zone_sound *ts, const char *tone, int *paused)
+{
+	switch (fr->subclass.integer) {
+	case AST_CONTROL_STREAM_STOP:
+		ast_playtones_stop(chan);
+		return CONTROL_TONE_RESPONSE_FINISHED;
+	case AST_CONTROL_STREAM_SUSPEND:
+		if (*paused) {
+			*paused = 0;
+			if (ast_playtones_start(chan, 0, ts ? ts->data : tone, 0)) {
+				return CONTROL_TONE_RESPONSE_FAILED;
+			}
+		} else {
+			*paused = 1;
+			ast_playtones_stop(chan);
+		}
+		return CONTROL_TONE_RESPONSE_NORMAL;
+	case AST_CONTROL_STREAM_RESTART:
+		ast_playtones_stop(chan);
+		if (ast_playtones_start(chan, 0, ts ? ts->data : tone, 0)) {
+			return CONTROL_TONE_RESPONSE_FAILED;
+		}
+		return CONTROL_TONE_RESPONSE_NORMAL;
+	case AST_CONTROL_STREAM_REVERSE:
+		ast_log(LOG_NOTICE, "Media control operation 'reverse' not supported for media type 'tone'\n");
+		return CONTROL_TONE_RESPONSE_NORMAL;
+	case AST_CONTROL_STREAM_FORWARD:
+		ast_log(LOG_NOTICE, "Media control operation 'forward' not supported for media type 'tone'\n");
+		return CONTROL_TONE_RESPONSE_NORMAL;
+	case AST_CONTROL_HANGUP:
+	case AST_CONTROL_BUSY:
+	case AST_CONTROL_CONGESTION:
+		return CONTROL_TONE_RESPONSE_FINISHED;
+	}
+
+	return CONTROL_TONE_RESPONSE_NORMAL;
+}
+
+static int parse_tone_uri(char *tone_parser,
+	const char **tone_indication,
+	const char **tone_zone)
+{
+	*tone_indication = strsep(&tone_parser, ";");
+
+	if (ast_strlen_zero(tone_parser)) {
+		/* Only the indication is included */
+		return 0;
+	}
+
+	if (!(strncmp(tone_parser, "tonezone=", 9))) {
+		*tone_zone = tone_parser + 9;
+	} else {
+		ast_log(LOG_ERROR, "Unexpected Tone URI component: %s\n", tone_parser);
+		return -1;
+	}
+
+	return 0;
+}
+
+int ast_control_tone(struct ast_channel *chan, const char *tone)
+{
+	struct ast_tone_zone *zone = NULL;
+	struct ast_tone_zone_sound *ts;
+	int paused = 0;
+	int res = 0;
+
+	const char *tone_indication = NULL;
+	const char *tone_zone = NULL;
+	char *tone_uri_parser;
+
+	if (ast_strlen_zero(tone)) {
+		return -1;
+	}
+
+	tone_uri_parser = ast_strdupa(tone);
+
+	if (parse_tone_uri(tone_uri_parser, &tone_indication, &tone_zone)) {
+		return -1;
+	}
+
+	if (tone_zone) {
+		zone = ast_get_indication_zone(tone_zone);
+	}
+
+	ts = ast_get_indication_tone(zone ? zone : ast_channel_zone(chan), tone_indication);
+
+	if (ast_playtones_start(chan, 0, ts ? ts->data : tone_indication, 0)) {
+		return -1;
+	}
+
+	for (;;) {
+		struct ast_frame *fr;
+
+		if (ast_waitfor(chan, -1) < 0) {
+			res = -1;
+			break;
+		}
+
+		fr = ast_read_noaudio(chan);
+
+		if (!fr) {
+			res = -1;
+			break;
+		}
+
+		if (fr->frametype != AST_FRAME_CONTROL) {
+			continue;
+		}
+
+		res = control_tone_frame_response(chan, fr, ts, tone_indication, &paused);
+		if (res == CONTROL_TONE_RESPONSE_FINISHED) {
+			res = 0;
+			break;
+		} else if (res == CONTROL_TONE_RESPONSE_FAILED) {
+			res = -1;
+			break;
+		}
+	}
+
+	if (ts) {
+		ast_tone_zone_sound_unref(ts);
+	}
+
+	if (zone) {
+		ast_tone_zone_unref(zone);
+	}
+
+	return res;
 }
 
 int ast_play_and_wait(struct ast_channel *chan, const char *fn)
 {
 	int d = 0;
 
-	ast_test_suite_event_notify("PLAYBACK", "Message: %s\r\nChannel: %s", fn, ast_channel_name(chan));
 	if ((d = ast_streamfile(chan, fn, ast_channel_language(chan)))) {
 		return d;
 	}
@@ -1096,6 +1385,78 @@ int ast_play_and_wait(struct ast_channel *chan, const char *fn)
 	ast_stopstream(chan);
 
 	return d;
+}
+
+/*!
+ * \brief Construct a silence frame of the same duration as \a orig.
+ *
+ * The \a orig frame must be \ref AST_FORMAT_SLINEAR.
+ *
+ * \param orig Frame as basis for silence to generate.
+ * \return New frame of silence; free with ast_frfree().
+ * \return \c NULL on error.
+ */
+static struct ast_frame *make_silence(const struct ast_frame *orig)
+{
+	struct ast_frame *silence;
+	size_t size;
+	size_t datalen;
+	size_t samples = 0;
+	struct ast_frame *next;
+
+	if (!orig) {
+		return NULL;
+	}
+
+	if (ast_format_cmp(orig->subclass.format, ast_format_slin) == AST_FORMAT_CMP_NOT_EQUAL) {
+		ast_log(LOG_WARNING, "Attempting to silence non-slin frame\n");
+		return NULL;
+	}
+
+	for (next = AST_LIST_NEXT(orig, frame_list);
+		 orig;
+		 orig = next, next = orig ? AST_LIST_NEXT(orig, frame_list) : NULL) {
+		samples += orig->samples;
+	}
+
+	ast_verb(4, "Silencing %zu samples\n", samples);
+
+
+	datalen = sizeof(short) * samples;
+	size = sizeof(*silence) + datalen;
+	silence = ast_calloc(1, size);
+	if (!silence) {
+		return NULL;
+	}
+
+	silence->mallocd = AST_MALLOCD_HDR;
+	silence->frametype = AST_FRAME_VOICE;
+	silence->data.ptr = (void *)(silence + 1);
+	silence->samples = samples;
+	silence->datalen = datalen;
+
+	silence->subclass.format = ast_format_slin;
+
+	return silence;
+}
+
+/*!
+ * \brief Sets a channel's read format to \ref AST_FORMAT_SLINEAR, recording
+ * its original format.
+ *
+ * \param chan Channel to modify.
+ * \param[out] orig_format Output variable to store channel's original read
+ *                         format.
+ * \return 0 on success.
+ * \return -1 on error.
+ */
+static int set_read_to_slin(struct ast_channel *chan, struct ast_format **orig_format)
+{
+	if (!chan || !orig_format) {
+		return -1;
+	}
+	*orig_format = ao2_bump(ast_channel_readformat(chan));
+	return ast_set_read_format(chan, ast_format_slin);
 }
 
 static int global_silence_threshold = 128;
@@ -1123,7 +1484,7 @@ static int global_maxsilence = 0;
  * \retval 't' Recording ended from the message exceeding the maximum duration, or via DTMF in prepend mode
  * \retval dtmfchar Recording ended via the return value's DTMF character for either cancel or accept.
  */
-static int __ast_play_and_record(struct ast_channel *chan, const char *playfile, const char *recordfile, int maxtime, const char *fmt, int *duration, int *sound_duration, int beep, int silencethreshold, int maxsilence, const char *path, int prepend, const char *acceptdtmf, const char *canceldtmf, int skip_confirmation_sound)
+static int __ast_play_and_record(struct ast_channel *chan, const char *playfile, const char *recordfile, int maxtime, const char *fmt, int *duration, int *sound_duration, int beep, int silencethreshold, int maxsilence, const char *path, int prepend, const char *acceptdtmf, const char *canceldtmf, int skip_confirmation_sound, enum ast_record_if_exists if_exists)
 {
 	int d = 0;
 	char *fmts;
@@ -1137,11 +1498,25 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 	int totalsilence = 0;
 	int dspsilence = 0;
 	int olddspsilence = 0;
-	struct ast_format rfmt;
+	struct ast_format *rfmt = NULL;
 	struct ast_silence_generator *silgen = NULL;
 	char prependfile[PATH_MAX];
+	int ioflags;	/* IO flags for writing output file */
 
-	ast_format_clear(&rfmt);
+	ioflags = O_CREAT|O_WRONLY;
+
+	switch (if_exists) {
+	case AST_RECORD_IF_EXISTS_FAIL:
+		ioflags |= O_EXCL;
+		break;
+	case AST_RECORD_IF_EXISTS_OVERWRITE:
+		ioflags |= O_TRUNC;
+		break;
+	case AST_RECORD_IF_EXISTS_APPEND:
+		ioflags |= O_APPEND;
+		break;
+	}
+
 	if (silencethreshold < 0) {
 		silencethreshold = global_silence_threshold;
 	}
@@ -1193,7 +1568,7 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 
 	end = start = time(NULL);  /* pre-initialize end to be same as start in case we never get into loop */
 	for (x = 0; x < fmtcnt; x++) {
-		others[x] = ast_writefile(prepend ? prependfile : recordfile, sfmt[x], comment, O_TRUNC, 0, AST_FILE_MODE);
+		others[x] = ast_writefile(prepend ? prependfile : recordfile, sfmt[x], comment, ioflags, 0, AST_FILE_MODE);
 		ast_verb(3, "x=%d, open writing:  %s format: %s, %p\n", x, prepend ? prependfile : recordfile, sfmt[x], others[x]);
 
 		if (!others[x]) {
@@ -1212,11 +1587,11 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 			return -1;
 		}
 		ast_dsp_set_threshold(sildet, silencethreshold);
-		ast_format_copy(&rfmt, ast_channel_readformat(chan));
-		res = ast_set_read_format_by_id(chan, AST_FORMAT_SLINEAR);
+		res = set_read_to_slin(chan, &rfmt);
 		if (res < 0) {
 			ast_log(LOG_WARNING, "Unable to set to linear mode, giving up\n");
 			ast_dsp_free(sildet);
+			ao2_cleanup(rfmt);
 			return -1;
 		}
 	}
@@ -1231,9 +1606,15 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 	}
 
 	if (x == fmtcnt) {
-		/* Loop forever, writing the packets we read to the writer(s), until
-		   we read a digit or get a hangup */
+		/* Loop, writing the packets we read to the writer(s), until
+		 * we have reason to stop. */
 		struct ast_frame *f;
+		int paused = 0;
+		int muted = 0;
+		time_t pause_start = 0;
+		int paused_secs = 0;
+		int pausedsilence = 0;
+
 		for (;;) {
 			if (!(res = ast_waitfor(chan, 2000))) {
 				ast_debug(1, "One waitfor failed, trying another\n");
@@ -1253,11 +1634,29 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 			}
 			if (f->frametype == AST_FRAME_VOICE) {
 				/* write each format */
-				for (x = 0; x < fmtcnt; x++) {
-					if (prepend && !others[x]) {
-						break;
+				if (paused) {
+					/* It's all good */
+					res = 0;
+				} else {
+					RAII_VAR(struct ast_frame *, silence, NULL, ast_frame_dtor);
+					struct ast_frame *orig = f;
+
+					if (muted) {
+						silence = make_silence(orig);
+						if (!silence) {
+							ast_log(LOG_WARNING,
+								"Error creating silence\n");
+							break;
+						}
+						f = silence;
 					}
-					res = ast_writestream(others[x], f);
+					for (x = 0; x < fmtcnt; x++) {
+						if (prepend && !others[x]) {
+							break;
+						}
+						res = ast_writestream(others[x], f);
+					}
+					f = orig;
 				}
 
 				/* Silence Detection */
@@ -1268,6 +1667,17 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 						totalsilence += olddspsilence;
 					}
 					olddspsilence = dspsilence;
+
+					if (paused) {
+						/* record how much silence there was while we are paused */
+						pausedsilence = dspsilence;
+					} else if (dspsilence > pausedsilence) {
+						/* ignore the paused silence */
+						dspsilence -= pausedsilence;
+					} else {
+						/* dspsilence has reset, reset pausedsilence */
+						pausedsilence = 0;
+					}
 
 					if (dspsilence > maxsilence) {
 						/* Ended happily with silence */
@@ -1300,15 +1710,51 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 					break;
 				}
 				if (strchr(canceldtmf, f->subclass.integer)) {
-					ast_verb(3, "User cancelled message by pressing %c\n", f->subclass.integer);
+					ast_verb(3, "User canceled message by pressing %c\n", f->subclass.integer);
 					res = f->subclass.integer;
 					outmsg = 0;
 					break;
 				}
+			} else if (f->frametype == AST_FRAME_CONTROL) {
+				if (f->subclass.integer == AST_CONTROL_RECORD_CANCEL) {
+					ast_verb(3, "Message canceled by control\n");
+					outmsg = 0; /* cancels the recording */
+					res = 0;
+					break;
+				} else if (f->subclass.integer == AST_CONTROL_RECORD_STOP) {
+					ast_verb(3, "Message ended by control\n");
+					res = 0;
+					break;
+				} else if (f->subclass.integer == AST_CONTROL_RECORD_SUSPEND) {
+					paused = !paused;
+					ast_verb(3, "Message %spaused by control\n",
+						paused ? "" : "un");
+					if (paused) {
+						pause_start = time(NULL);
+					} else {
+						paused_secs += time(NULL) - pause_start;
+					}
+				} else if (f->subclass.integer == AST_CONTROL_RECORD_MUTE) {
+					muted = !muted;
+					ast_verb(3, "Message %smuted by control\n",
+						muted ? "" : "un");
+					/* We can only silence slin frames, so
+					 * set the mode, if we haven't already
+					 * for sildet
+					 */
+					if (muted && !rfmt) {
+						ast_verb(3, "Setting read format to linear mode\n");
+						res = set_read_to_slin(chan, &rfmt);
+						if (res < 0) {
+							ast_log(LOG_WARNING, "Unable to set to linear mode, giving up\n");
+							break;
+						}
+					}
+				}
 			}
-			if (maxtime) {
+			if (maxtime && !paused) {
 				end = time(NULL);
-				if (maxtime < (end - start)) {
+				if (maxtime < (end - start - paused_secs)) {
 					ast_verb(3, "Took too long, cutting it short...\n");
 					res = 't';
 					outmsg = 2;
@@ -1387,17 +1833,19 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 			ast_truncstream(others[x]);
 			ast_closestream(others[x]);
 		}
-	}
-
-	if (prepend && outmsg) {
+	} else if (prepend && outmsg) {
 		struct ast_filestream *realfiles[AST_MAX_FORMATS];
 		struct ast_frame *fr;
 
 		for (x = 0; x < fmtcnt; x++) {
 			snprintf(comment, sizeof(comment), "Opening the real file %s.%s\n", recordfile, sfmt[x]);
 			realfiles[x] = ast_readfile(recordfile, sfmt[x], comment, O_RDONLY, 0, 0);
-			if (!others[x] || !realfiles[x]) {
+			if (!others[x]) {
 				break;
+			}
+			if (!realfiles[x]) {
+				ast_closestream(others[x]);
+				continue;
 			}
 			/*!\note Same logic as above. */
 			if (dspsilence) {
@@ -1415,10 +1863,19 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 			ast_verb(4, "Recording Format: sfmts=%s, prependfile %s, recordfile %s\n", sfmt[x], prependfile, recordfile);
 			ast_filedelete(prependfile, sfmt[x]);
 		}
+	} else {
+		for (x = 0; x < fmtcnt; x++) {
+			if (!others[x]) {
+				break;
+			}
+			ast_closestream(others[x]);
+		}
 	}
-	if (rfmt.id && ast_set_read_format(chan, &rfmt)) {
-		ast_log(LOG_WARNING, "Unable to restore format %s to channel '%s'\n", ast_getformatname(&rfmt), ast_channel_name(chan));
+
+	if (rfmt && ast_set_read_format(chan, rfmt)) {
+		ast_log(LOG_WARNING, "Unable to restore format %s to channel '%s'\n", ast_format_get_name(rfmt), ast_channel_name(chan));
 	}
+	ao2_cleanup(rfmt);
 	if ((outmsg == 2) && (!skip_confirmation_sound)) {
 		ast_stream_and_wait(chan, "auth-thankyou", "");
 	}
@@ -1431,19 +1888,19 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 static const char default_acceptdtmf[] = "#";
 static const char default_canceldtmf[] = "";
 
-int ast_play_and_record_full(struct ast_channel *chan, const char *playfile, const char *recordfile, int maxtime, const char *fmt, int *duration, int *sound_duration, int silencethreshold, int maxsilence, const char *path, const char *acceptdtmf, const char *canceldtmf)
+int ast_play_and_record_full(struct ast_channel *chan, const char *playfile, const char *recordfile, int maxtime, const char *fmt, int *duration, int *sound_duration, int beep, int silencethreshold, int maxsilence, const char *path, const char *acceptdtmf, const char *canceldtmf, int skip_confirmation_sound, enum ast_record_if_exists if_exists)
 {
-	return __ast_play_and_record(chan, playfile, recordfile, maxtime, fmt, duration, sound_duration, 0, silencethreshold, maxsilence, path, 0, S_OR(acceptdtmf, default_acceptdtmf), S_OR(canceldtmf, default_canceldtmf), 0);
+	return __ast_play_and_record(chan, playfile, recordfile, maxtime, fmt, duration, sound_duration, beep, silencethreshold, maxsilence, path, 0, S_OR(acceptdtmf, ""), S_OR(canceldtmf, default_canceldtmf), skip_confirmation_sound, if_exists);
 }
 
 int ast_play_and_record(struct ast_channel *chan, const char *playfile, const char *recordfile, int maxtime, const char *fmt, int *duration, int *sound_duration, int silencethreshold, int maxsilence, const char *path)
 {
-	return __ast_play_and_record(chan, playfile, recordfile, maxtime, fmt, duration, sound_duration, 0, silencethreshold, maxsilence, path, 0, default_acceptdtmf, default_canceldtmf, 0);
+	return __ast_play_and_record(chan, playfile, recordfile, maxtime, fmt, duration, sound_duration, 0, silencethreshold, maxsilence, path, 0, default_acceptdtmf, default_canceldtmf, 0, AST_RECORD_IF_EXISTS_OVERWRITE);
 }
 
 int ast_play_and_prepend(struct ast_channel *chan, char *playfile, char *recordfile, int maxtime, char *fmt, int *duration, int *sound_duration, int beep, int silencethreshold, int maxsilence)
 {
-	return __ast_play_and_record(chan, playfile, recordfile, maxtime, fmt, duration, sound_duration, beep, silencethreshold, maxsilence, NULL, 1, default_acceptdtmf, default_canceldtmf, 1);
+	return __ast_play_and_record(chan, playfile, recordfile, maxtime, fmt, duration, sound_duration, beep, silencethreshold, maxsilence, NULL, 1, default_acceptdtmf, default_canceldtmf, 1, AST_RECORD_IF_EXISTS_OVERWRITE);
 }
 
 /* Channel group core functions */
@@ -1723,7 +2180,7 @@ static enum AST_LOCK_RESULT ast_lock_path_lockfile(const char *path)
 	s = ast_alloca(lp + 10);
 	fs = ast_alloca(lp + 20);
 
-	snprintf(fs, strlen(path) + 19, "%s/.lock-%08lx", path, ast_random());
+	snprintf(fs, strlen(path) + 19, "%s/.lock-%08lx", path, (unsigned long)ast_random());
 	fd = open(fs, O_WRONLY | O_CREAT | O_EXCL, AST_FILE_MODE);
 	if (fd < 0) {
 		ast_log(LOG_ERROR, "Unable to create lock file '%s': %s\n", path, strerror(errno));
@@ -2101,7 +2558,7 @@ static int ivr_dispatch(struct ast_channel *chan, struct ast_ivr_option *option,
 		ast_stopstream(chan);
 		return res;
 	default:
-		ast_log(LOG_NOTICE, "Unknown dispatch function %d, ignoring!\n", option->action);
+		ast_log(LOG_NOTICE, "Unknown dispatch function %u, ignoring!\n", option->action);
 		return 0;
 	}
 	return -1;
@@ -2505,7 +2962,9 @@ int ast_safe_fork(int stop_reaper)
 		ast_replace_sigchld();
 	}
 
-	sigfillset(&signal_set);
+	/* GCC 4.9 gives a bogus "right-hand operand of comma expression has
+	 * no effect" warning */
+	(void) sigfillset(&signal_set);
 	pthread_sigmask(SIG_BLOCK, &signal_set, &old_set);
 
 	pid = fork();
@@ -2619,6 +3078,321 @@ int ast_app_parse_timelen(const char *timestr, int *result, enum ast_timelen uni
 		;
 	}
 	*result = amount > INT_MAX ? INT_MAX : (int) amount;
+	return 0;
+}
+
+
+
+static void mwi_state_dtor(void *obj)
+{
+	struct ast_mwi_state *mwi_state = obj;
+	ast_string_field_free_memory(mwi_state);
+	ao2_cleanup(mwi_state->snapshot);
+	mwi_state->snapshot = NULL;
+}
+
+struct stasis_topic *ast_mwi_topic_all(void)
+{
+	return mwi_topic_all;
+}
+
+struct stasis_cache *ast_mwi_state_cache(void)
+{
+	return mwi_state_cache;
+}
+
+struct stasis_topic *ast_mwi_topic_cached(void)
+{
+	return stasis_caching_get_topic(mwi_topic_cached);
+}
+
+struct stasis_topic *ast_mwi_topic(const char *uniqueid)
+{
+	return stasis_topic_pool_get_topic(mwi_topic_pool, uniqueid);
+}
+
+struct ast_mwi_state *ast_mwi_create(const char *mailbox, const char *context)
+{
+	RAII_VAR(struct ast_mwi_state *, mwi_state, NULL, ao2_cleanup);
+
+	ast_assert(!ast_strlen_zero(mailbox));
+
+	mwi_state = ao2_alloc(sizeof(*mwi_state), mwi_state_dtor);
+	if (!mwi_state) {
+		return NULL;
+	}
+
+	if (ast_string_field_init(mwi_state, 256)) {
+		return NULL;
+	}
+	if (!ast_strlen_zero(context)) {
+		ast_string_field_build(mwi_state, uniqueid, "%s@%s", mailbox, context);
+	} else {
+		ast_string_field_set(mwi_state, uniqueid, mailbox);
+	}
+
+	ao2_ref(mwi_state, +1);
+	return mwi_state;
+}
+
+/*!
+ * \internal
+ * \brief Create a MWI state snapshot message.
+ * \since 12.2.0
+ *
+ * \param[in] mailbox The mailbox identifier string.
+ * \param[in] context The context this mailbox resides in (NULL or "" if only using mailbox)
+ * \param[in] new_msgs The number of new messages in this mailbox
+ * \param[in] old_msgs The number of old messages in this mailbox
+ * \param[in] channel_id A unique identifier for a channel associated with this
+ * change in mailbox state
+ * \param[in] eid The EID of the server that originally published the message
+ *
+ * \retval message on success.  Use ao2_cleanup() when done with it.
+ * \retval NULL on error.
+ */
+static struct stasis_message *mwi_state_create_message(
+	const char *mailbox,
+	const char *context,
+	int new_msgs,
+	int old_msgs,
+	const char *channel_id,
+	struct ast_eid *eid)
+{
+	struct ast_mwi_state *mwi_state;
+	struct stasis_message *message;
+
+	if (!ast_mwi_state_type()) {
+		return NULL;
+	}
+
+	mwi_state = ast_mwi_create(mailbox, context);
+	if (!mwi_state) {
+		return NULL;
+	}
+
+	mwi_state->new_msgs = new_msgs;
+	mwi_state->old_msgs = old_msgs;
+
+	if (!ast_strlen_zero(channel_id)) {
+		struct stasis_message *chan_message;
+
+		chan_message = stasis_cache_get(ast_channel_cache(), ast_channel_snapshot_type(),
+			channel_id);
+		if (chan_message) {
+			mwi_state->snapshot = stasis_message_data(chan_message);
+			ao2_ref(mwi_state->snapshot, +1);
+		}
+		ao2_cleanup(chan_message);
+	}
+
+	if (eid) {
+		mwi_state->eid = *eid;
+	} else {
+		mwi_state->eid = ast_eid_default;
+	}
+
+	/*
+	 * XXX As far as stasis is concerned, all MWI events are local.
+	 *
+	 * We may in the future want to make MWI aggregate local/remote
+	 * message counts similar to how device state aggregates state.
+	 */
+	message = stasis_message_create_full(ast_mwi_state_type(), mwi_state, &ast_eid_default);
+	ao2_cleanup(mwi_state);
+	return message;
+}
+
+int ast_publish_mwi_state_full(
+	const char *mailbox,
+	const char *context,
+	int new_msgs,
+	int old_msgs,
+	const char *channel_id,
+	struct ast_eid *eid)
+{
+	struct ast_mwi_state *mwi_state;
+	RAII_VAR(struct stasis_message *, message, NULL, ao2_cleanup);
+	struct stasis_topic *mailbox_specific_topic;
+
+	message = mwi_state_create_message(mailbox, context, new_msgs, old_msgs, channel_id, eid);
+	if (!message) {
+		return -1;
+	}
+
+	mwi_state = stasis_message_data(message);
+	mailbox_specific_topic = ast_mwi_topic(mwi_state->uniqueid);
+	if (!mailbox_specific_topic) {
+		return -1;
+	}
+
+	stasis_publish(mailbox_specific_topic, message);
+
+	return 0;
+}
+
+int ast_delete_mwi_state_full(const char *mailbox, const char *context, struct ast_eid *eid)
+{
+	RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
+	struct stasis_message *cached_msg;
+	struct stasis_message *clear_msg;
+	struct ast_mwi_state *mwi_state;
+	struct stasis_topic *mailbox_specific_topic;
+
+	msg = mwi_state_create_message(mailbox, context, 0, 0, NULL, eid);
+	if (!msg) {
+		return -1;
+	}
+
+	mwi_state = stasis_message_data(msg);
+
+	/*
+	 * XXX As far as stasis is concerned, all MWI events are local.
+	 *
+	 * For now, it is assumed that there is only one entity
+	 * maintaining the state of a particular mailbox.
+	 *
+	 * If we ever have multiple MWI event entities maintaining
+	 * the same mailbox that wish to delete their cached entry
+	 * we will need to do something about the race condition
+	 * potential between checking the cache and removing the
+	 * cache entry.
+	 */
+	cached_msg = stasis_cache_get_by_eid(ast_mwi_state_cache(),
+		ast_mwi_state_type(), mwi_state->uniqueid, &ast_eid_default);
+	if (!cached_msg) {
+		/* Nothing to clear */
+		return -1;
+	}
+	ao2_cleanup(cached_msg);
+
+	mailbox_specific_topic = ast_mwi_topic(mwi_state->uniqueid);
+	if (!mailbox_specific_topic) {
+		return -1;
+	}
+
+	clear_msg = stasis_cache_clear_create(msg);
+	if (clear_msg) {
+		stasis_publish(mailbox_specific_topic, clear_msg);
+	}
+	ao2_cleanup(clear_msg);
+	return 0;
+}
+
+static const char *mwi_state_get_id(struct stasis_message *message)
+{
+	if (ast_mwi_state_type() == stasis_message_type(message)) {
+		struct ast_mwi_state *mwi_state = stasis_message_data(message);
+		return mwi_state->uniqueid;
+	} else if (stasis_subscription_change_type() == stasis_message_type(message)) {
+		struct stasis_subscription_change *change = stasis_message_data(message);
+		return change->uniqueid;
+	}
+
+	return NULL;
+}
+
+static void mwi_blob_dtor(void *obj)
+{
+	struct ast_mwi_blob *mwi_blob = obj;
+
+	ao2_cleanup(mwi_blob->mwi_state);
+	ast_json_unref(mwi_blob->blob);
+}
+
+struct stasis_message *ast_mwi_blob_create(struct ast_mwi_state *mwi_state,
+					       struct stasis_message_type *message_type,
+					       struct ast_json *blob)
+{
+	RAII_VAR(struct ast_mwi_blob *, obj, NULL, ao2_cleanup);
+	RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
+
+	ast_assert(blob != NULL);
+
+	if (!message_type) {
+		return NULL;
+	}
+
+	obj = ao2_alloc(sizeof(*obj), mwi_blob_dtor);
+	if (!obj) {
+		return NULL;
+	}
+
+	obj->mwi_state = mwi_state;
+	ao2_ref(obj->mwi_state, +1);
+	obj->blob = ast_json_ref(blob);
+
+	/* This is not a normal MWI event.  Only used by the MinivmNotify app. */
+	msg = stasis_message_create(message_type, obj);
+	if (!msg) {
+		return NULL;
+	}
+
+	ao2_ref(msg, +1);
+	return msg;
+}
+
+struct stasis_topic *ast_queue_topic_all(void)
+{
+	return queue_topic_all;
+}
+
+struct stasis_topic *ast_queue_topic(const char *queuename)
+{
+	return stasis_topic_pool_get_topic(queue_topic_pool, queuename);
+}
+
+static void app_cleanup(void)
+{
+	ao2_cleanup(queue_topic_pool);
+	queue_topic_pool = NULL;
+	ao2_cleanup(queue_topic_all);
+	queue_topic_all = NULL;
+	ao2_cleanup(mwi_topic_pool);
+	mwi_topic_pool = NULL;
+	ao2_cleanup(mwi_topic_all);
+	mwi_topic_all = NULL;
+	ao2_cleanup(mwi_state_cache);
+	mwi_state_cache = NULL;
+	mwi_topic_cached = stasis_caching_unsubscribe_and_join(mwi_topic_cached);
+	STASIS_MESSAGE_TYPE_CLEANUP(ast_mwi_state_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(ast_mwi_vm_app_type);
+}
+
+int app_init(void)
+{
+	ast_register_cleanup(app_cleanup);
+
+	if (STASIS_MESSAGE_TYPE_INIT(ast_mwi_state_type) != 0) {
+		return -1;
+	}
+	if (STASIS_MESSAGE_TYPE_INIT(ast_mwi_vm_app_type) != 0) {
+		return -1;
+	}
+	mwi_topic_all = stasis_topic_create("stasis_mwi_topic");
+	if (!mwi_topic_all) {
+		return -1;
+	}
+	mwi_state_cache = stasis_cache_create(mwi_state_get_id);
+	if (!mwi_state_cache) {
+		return -1;
+	}
+	mwi_topic_cached = stasis_caching_topic_create(mwi_topic_all, mwi_state_cache);
+	if (!mwi_topic_cached) {
+		return -1;
+	}
+	mwi_topic_pool = stasis_topic_pool_create(mwi_topic_all);
+	if (!mwi_topic_pool) {
+		return -1;
+	}
+	queue_topic_all = stasis_topic_create("stasis_queue_topic");
+	if (!queue_topic_all) {
+		return -1;
+	}
+	queue_topic_pool = stasis_topic_pool_create(queue_topic_all);
+	if (!queue_topic_pool) {
+		return -1;
+	}
 	return 0;
 }
 

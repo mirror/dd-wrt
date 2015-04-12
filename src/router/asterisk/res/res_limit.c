@@ -1,5 +1,5 @@
 /*
- * Asterisk -- A telephony toolkit for Linux.
+ * Asterisk -- An open source telephony toolkit.
  *
  * Resource limits
  * 
@@ -24,7 +24,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328259 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 375003 $")
 
 #include <ctype.h>
 #include <sys/time.h>

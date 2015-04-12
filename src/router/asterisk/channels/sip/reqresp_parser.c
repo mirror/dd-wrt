@@ -20,12 +20,12 @@
  */
 
 /*** MODULEINFO
-	<support_level>core</support_level>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401661 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 426865 $")
 
 #include "include/sip.h"
 #include "include/sip_utils.h"
@@ -45,6 +45,7 @@ int parse_uri_full(char *uri, const char *scheme, char **user, char **pass,
 	char *endparams = NULL;
 	char *c = NULL;
 	int error = 0;
+	int teluri_scheme = 0;
 
 	/*
 	 * Initialize requested strings - some functions don't care if parse_uri fails
@@ -79,6 +80,7 @@ int parse_uri_full(char *uri, const char *scheme, char **user, char **pass,
 		for (; !ast_strlen_zero(cur); cur = strsep(&scheme2, ",")) {
 			l = strlen(cur);
 			if (!strncasecmp(uri, cur, l)) {
+				teluri_scheme = !strncasecmp(uri, "tel:", 4);	/* TEL URI */
 				uri += l;
 				break;
 			}
@@ -93,6 +95,42 @@ int parse_uri_full(char *uri, const char *scheme, char **user, char **pass,
 		/* if we don't want to split around hostport, keep everything as a
 		 * userinfo - cos thats how old parse_uri operated*/
 		userinfo = uri;
+	} else if (teluri_scheme) {
+		/*
+		 * tel: TEL URI INVITE RFC 3966 patch
+		 * See http://www.ietf.org/rfc/rfc3966.txt
+		 *
+		 * Once the full RFC 3966 parsing is implemented,
+		 * the ext= or isub= parameters would be extracted from userinfo.
+		 * When this kind of subaddressing would be implemented, the userinfo must be further parsed.
+		 * Those parameters would be used for ISDN or PSTN local extensions.
+		 *
+		 * Current restrictions:
+		 * We currently consider the ";isub=" or the ";ext=" as part of the userinfo (unparsed).
+		 */
+
+		if ((c = strstr(uri, ";phone-context="))) {
+			/*
+			 * Local number with context or domain.
+			 * ext= or isub= TEL URI parameters should be upfront.
+			 * All other parameters should come after the ";phone-context=" parameter.
+			 * If other parameters would occur before ";phone-context=" they will be ignored.
+			 */
+
+                        *c = '\0';
+                        userinfo = uri;
+                        uri = c + 15;
+			*hostport = uri;
+                } else if ('+' == uri[0]) {
+			/* Global number without context or domain; possibly followed by RFC 3966 and optional other parameters. */
+
+                        userinfo = uri;
+			*hostport = uri;
+		} else {
+			ast_debug(1, "No RFC 3966 global number or context found in '%s'; returning local number anyway\n", uri);
+                        userinfo = uri;		/* Return local number anyway */
+			error = -1;
+		}
 	} else {
 		char *dom = "";
 		if ((c = strchr(uri, '@'))) {
@@ -375,6 +413,51 @@ AST_TEST_DEFINE(sip_parse_uri_full_test)
 		.params.user = ""
 	};
 
+	/* RFC 3966 TEL URI INVITE */
+	struct testdata td11 = {
+		.desc = "tel local number",
+		.uri = "tel:0987654321;phone-context=+32987654321",
+		.user = "0987654321",
+		.pass = "",
+		.hostport = "+32987654321",
+		.headers = "",
+		.residue = "",
+		.params.transport = "",
+		.params.lr = 0,
+		.params.user = ""
+	};
+
+	struct testdata td12 = {
+		.desc = "tel global number",
+		.uri = "tel:+32987654321",
+		.user = "+32987654321",
+		.pass = "",
+		.hostport = "+32987654321",
+		.headers = "",
+		.residue = "",
+		.params.transport = "",
+		.params.lr = 0,
+		.params.user = ""
+	};
+
+	/*
+	 * Once the full RFC 3966 parsing is implemented,
+	 * only the ext= or isub= parameters would be extracted from .user
+	 * Then the ;param=discard would be ignored,
+	 * and the .user would only contain "0987654321"
+	 */
+	struct testdata td13 = {
+		.desc = "tel local number",
+		.uri = "tel:0987654321;ext=1234;param=discard;phone-context=+32987654321;transport=udp;param2=discard2?header=blah&header2=blah2;param3=residue",
+		.user = "0987654321;ext=1234;param=discard",
+		.pass = "",
+		.hostport = "+32987654321",
+		.headers = "header=blah&header2=blah2",
+		.residue = "param3=residue",
+		.params.transport = "udp",
+		.params.lr = 0,
+		.params.user = ""
+	};
 
 	AST_LIST_HEAD_SET_NOLOCK(&testdatalist, &td1);
 	AST_LIST_INSERT_TAIL(&testdatalist, &td2, list);
@@ -386,7 +469,9 @@ AST_TEST_DEFINE(sip_parse_uri_full_test)
 	AST_LIST_INSERT_TAIL(&testdatalist, &td8, list);
 	AST_LIST_INSERT_TAIL(&testdatalist, &td9, list);
 	AST_LIST_INSERT_TAIL(&testdatalist, &td10, list);
-
+	AST_LIST_INSERT_TAIL(&testdatalist, &td11, list);
+	AST_LIST_INSERT_TAIL(&testdatalist, &td12, list);
+	AST_LIST_INSERT_TAIL(&testdatalist, &td13, list);
 
 	switch (cmd) {
 	case TEST_INIT:
@@ -407,7 +492,7 @@ AST_TEST_DEFINE(sip_parse_uri_full_test)
 		params.lr = 0;
 
 		ast_copy_string(uri,testdataptr->uri,sizeof(uri));
-		if (parse_uri_full(uri, "sip:,sips:", &user,
+		if (parse_uri_full(uri, "sip:,sips:,tel:", &user,
 				   &pass, &hostport,
 				   &params,
 				   &headers,
@@ -460,6 +545,7 @@ AST_TEST_DEFINE(sip_parse_uri_test)
 	char uri9[] = "sip:host:port;transport=tcp?headers=%40%40testblah&headers2=blah%20blah";
 	char uri10[] = "host:port;transport=tcp?headers=%40%40testblah&headers2=blah%20blah";
 	char uri11[] = "host";
+	char uri12[] = "tel:911";	/* TEL URI Local number without context or global number */
 
 	switch (cmd) {
 	case TEST_INIT:
@@ -585,6 +671,17 @@ AST_TEST_DEFINE(sip_parse_uri_test)
 			strcmp(hostport, "host")      ||
 			!ast_strlen_zero(transport)) {
 		ast_test_status_update(test, "Test 11: simple uri with missing scheme failed. \n");
+		res = AST_TEST_FAIL;
+	}
+
+	/* Test 12, simple URI */
+	name = pass = hostport = transport = NULL;
+	if (!parse_uri(uri12, "sip:,sips:,tel:", &name, &pass, &hostport, &transport) ||
+			strcmp(name, "911")      ||	/* We return local number anyway */
+			!ast_strlen_zero(pass)      ||
+			!ast_strlen_zero(hostport)      ||	/* No global number nor context */
+			!ast_strlen_zero(transport)) {
+		ast_test_status_update(test, "Test 12: TEL URI INVITE failed.\n");
 		res = AST_TEST_FAIL;
 	}
 
@@ -1580,9 +1677,9 @@ AST_TEST_DEFINE(parse_contact_header_test)
  * item is found that is not supported, it is copied to the unsupported
  * out buffer.
  *
- * \param option list
+ * \param options list
  * \param unsupported out buffer (optional)
- * \param unsupported out buffer length (optional)
+ * \param unsupported_len out buffer length (optional)
  */
 unsigned int parse_sip_options(const char *options, char *unsupported, size_t unsupported_len)
 {
@@ -1595,17 +1692,12 @@ unsigned int parse_sip_options(const char *options, char *unsupported, size_t un
 	size_t outlen = unsupported_len;
 	char *cur_out = out;
 
-	if (out && (outlen > 0)) {
-		memset(out, 0, outlen);
-	}
-
 	if (ast_strlen_zero(options) )
 		return 0;
 
 	temp = ast_strdupa(options);
 
 	ast_debug(3, "Begin: parsing SIP \"Supported: %s\"\n", options);
-
 	for (next = temp; next; next = sep) {
 		found = FALSE;
 		supported = FALSE;
@@ -1765,6 +1857,7 @@ AST_TEST_DEFINE(sip_parse_options_test)
 
 	/* Test with unsupported char buffer */
 	AST_LIST_TRAVERSE(&testdatalist, testdataptr, list) {
+		memset(unsupported, 0, sizeof(unsupported));
 		option_profile = parse_sip_options(testdataptr->input_options, unsupported, ARRAY_LEN(unsupported));
 		if (option_profile != testdataptr->expected_profile ||
 			strcmp(unsupported, testdataptr->expected_unsupported)) {
@@ -2489,8 +2582,8 @@ AST_TEST_DEFINE(parse_via_test)
 
 		if (testdataptr->expected_port && testdataptr->expected_port != via->port) {
 			ast_test_status_update(test, "TEST#%d FAILED: VIA = \"%s\"\n"
-				"parsed port = \"%d\"\n"
-				"expected = \"%d\"\n"
+				"parsed port = \"%u\"\n"
+				"expected = \"%u\"\n"
 				"failed to parse port\n",
 			i, testdataptr->in, via->port, testdataptr->expected_port);
 			res = AST_TEST_FAIL;

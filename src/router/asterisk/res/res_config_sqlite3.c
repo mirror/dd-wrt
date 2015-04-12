@@ -29,6 +29,15 @@
  * \ingroup resources
  */
 
+/*! \li \ref res_config_sqlite3.c uses the configuration file \ref res_config_sqlite3.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*! 
+ * \page res_config_sqlite3.conf res_config_sqlite3.conf
+ * \verbinclude res_config_sqlite3.conf.sample
+ */
+
 /*** MODULEINFO
 	<depend>sqlite3</depend>
 	<support_level>core</support_level>
@@ -36,7 +45,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362307 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <sqlite3.h>
 
@@ -52,12 +61,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362307 $")
  ***/
 
 static struct ast_config *realtime_sqlite3_load(const char *database, const char *table, const char *configfile, struct ast_config *config, struct ast_flags flags, const char *suggested_include_file, const char *who_asked);
-static struct ast_variable *realtime_sqlite3(const char *database, const char *table, va_list ap);
-static struct ast_config *realtime_sqlite3_multi(const char *database, const char *table, va_list ap);
-static int realtime_sqlite3_update(const char *database, const char *table, const char *keyfield, const char *entity, va_list ap);
-static int realtime_sqlite3_update2(const char *database, const char *table, va_list ap);
-static int realtime_sqlite3_store(const char *database, const char *table, va_list ap);
-static int realtime_sqlite3_destroy(const char *database, const char *table, const char *keyfield, const char *entity, va_list ap);
+static struct ast_variable *realtime_sqlite3(const char *database, const char *table, const struct ast_variable *fields);
+static struct ast_config *realtime_sqlite3_multi(const char *database, const char *table, const struct ast_variable *fields);
+static int realtime_sqlite3_update(const char *database, const char *table, const char *keyfield, const char *entity, const struct ast_variable *fields);
+static int realtime_sqlite3_update2(const char *database, const char *table, const struct ast_variable *lookup_fields, const struct ast_variable *update_fields);
+static int realtime_sqlite3_store(const char *database, const char *table, const struct ast_variable *fields);
+static int realtime_sqlite3_destroy(const char *database, const char *table, const char *keyfield, const char *entity, const struct ast_variable *fields);
 static int realtime_sqlite3_require(const char *database, const char *table, va_list ap);
 static int realtime_sqlite3_unload(const char *database, const char *table);
 
@@ -315,6 +324,7 @@ static int db_open(struct realtime_sqlite3_db *db)
 		ao2_unlock(db);
 		return -1;
 	}
+	sqlite3_busy_timeout(db->handle, 1000);
 
 	if (db->debug) {
 		sqlite3_trace(db->handle, trace_cb, db);
@@ -639,10 +649,10 @@ static struct ast_config *realtime_sqlite3_load(const char *database, const char
 }
 
 /*! \brief Helper function for single and multi-row realtime load functions */
-static int realtime_sqlite3_helper(const char *database, const char *table, va_list ap, int is_multi, void *arg)
+static int realtime_sqlite3_helper(const char *database, const char *table, const struct ast_variable *fields, int is_multi, void *arg)
 {
 	struct ast_str *sql;
-	const char *param, *value;
+	const struct ast_variable *field;
 	int first = 1;
 
 	if (ast_strlen_zero(table)) {
@@ -654,14 +664,14 @@ static int realtime_sqlite3_helper(const char *database, const char *table, va_l
 		return -1;
 	}
 
-	while ((param = va_arg(ap, const char *)) && (value = va_arg(ap, const char *))) {
+	for (field = fields; field; field = field->next) {
 		if (first) {
 			ast_str_set(&sql, 0, "SELECT * FROM %s WHERE %s %s", sqlite3_escape_table(table),
-					sqlite3_escape_column_op(param), sqlite3_escape_value(value));
+				    sqlite3_escape_column_op(field->name), sqlite3_escape_value(field->value));
 			first = 0;
 		} else {
-			ast_str_append(&sql, 0, " AND %s %s", sqlite3_escape_column_op(param),
-					sqlite3_escape_value(value));
+			ast_str_append(&sql, 0, " AND %s %s", sqlite3_escape_column_op(field->name),
+					sqlite3_escape_value(field->value));
 		}
 	}
 
@@ -682,11 +692,11 @@ static int realtime_sqlite3_helper(const char *database, const char *table, va_l
 /*! \brief Realtime callback for a single row query
  * \return ast_variable list for single result on success, NULL on empty/failure
  */
-static struct ast_variable *realtime_sqlite3(const char *database, const char *table, va_list ap)
+static struct ast_variable *realtime_sqlite3(const char *database, const char *table, const struct ast_variable *fields)
 {
 	struct ast_variable *result_row = NULL;
 
-	realtime_sqlite3_helper(database, table, ap, 0, &result_row);
+	realtime_sqlite3_helper(database, table, fields, 0, &result_row);
 
 	return result_row;
 }
@@ -694,7 +704,7 @@ static struct ast_variable *realtime_sqlite3(const char *database, const char *t
 /*! \brief Realtime callback for a multi-row query
  * \return ast_config containing possibly many results on success, NULL on empty/failure
  */
-static struct ast_config *realtime_sqlite3_multi(const char *database, const char *table, va_list ap)
+static struct ast_config *realtime_sqlite3_multi(const char *database, const char *table, const struct ast_variable *fields)
 {
 	struct ast_config *cfg;
 
@@ -702,7 +712,7 @@ static struct ast_config *realtime_sqlite3_multi(const char *database, const cha
 		return NULL;
 	}
 
-	if (realtime_sqlite3_helper(database, table, ap, 1, cfg)) {
+	if (realtime_sqlite3_helper(database, table, fields, 1, cfg)) {
 		ast_config_destroy(cfg);
 		return NULL;
 	}
@@ -713,10 +723,10 @@ static struct ast_config *realtime_sqlite3_multi(const char *database, const cha
 /*! \brief Realtime callback for updating a row based on a single criteria
  * \return Number of rows affected or -1 on error
  */
-static int realtime_sqlite3_update(const char *database, const char *table, const char *keyfield, const char *entity, va_list ap)
+static int realtime_sqlite3_update(const char *database, const char *table, const char *keyfield, const char *entity, const struct ast_variable *fields)
 {
 	struct ast_str *sql;
-	const char *key, *value;
+	const struct ast_variable *field;
 	int first = 1, res;
 
 	if (ast_strlen_zero(table)) {
@@ -728,13 +738,13 @@ static int realtime_sqlite3_update(const char *database, const char *table, cons
 		return -1;
 	}
 
-	while ((key = va_arg(ap, const char *)) && (value = va_arg(ap, const char *))) {
+	for (field = fields; field; field = field->next) {
 		if (first) {
 			ast_str_set(&sql, 0, "UPDATE %s SET %s = %s",
-					sqlite3_escape_table(table), sqlite3_escape_column(key), sqlite3_escape_value(value));
+					sqlite3_escape_table(table), sqlite3_escape_column(field->name), sqlite3_escape_value(field->value));
 			first = 0;
 		} else {
-			ast_str_append(&sql, 0, ", %s = %s", sqlite3_escape_column(key), sqlite3_escape_value(value));
+			ast_str_append(&sql, 0, ", %s = %s", sqlite3_escape_column(field->name), sqlite3_escape_value(field->value));
 		}
 	}
 
@@ -749,11 +759,11 @@ static int realtime_sqlite3_update(const char *database, const char *table, cons
 /*! \brief Realtime callback for updating a row based on multiple criteria
  * \return Number of rows affected or -1 on error
  */
-static int realtime_sqlite3_update2(const char *database, const char *table, va_list ap)
+static int realtime_sqlite3_update2(const char *database, const char *table, const struct ast_variable *lookup_fields, const struct ast_variable *update_fields)
 {
 	struct ast_str *sql;
 	struct ast_str *where_clause;
-	const char *key, *value;
+	const struct ast_variable *field;
 	int first = 1, res;
 
 	if (ast_strlen_zero(table)) {
@@ -770,22 +780,22 @@ static int realtime_sqlite3_update2(const char *database, const char *table, va_
 		return -1;
 	}
 
-	while ((key = va_arg(ap, const char *)) && (value = va_arg(ap, const char *))) {
+	for (field = lookup_fields; field; field = field->next) {
 		if (first) {
-			ast_str_set(&where_clause, 0, " WHERE %s %s", sqlite3_escape_column_op(key), sqlite3_escape_value(value));
+			ast_str_set(&where_clause, 0, " WHERE %s %s", sqlite3_escape_column_op(field->name), sqlite3_escape_value(field->value));
 			first = 0;
 		} else {
-			ast_str_append(&where_clause, 0, " AND %s %s", sqlite3_escape_column_op(key), sqlite3_escape_value(value));
+			ast_str_append(&where_clause, 0, " AND %s %s", sqlite3_escape_column_op(field->name), sqlite3_escape_value(field->value));
 		}
 	}
 
 	first = 1;
-	while ((key = va_arg(ap, const char *)) && (value = va_arg(ap, const char *))) {
+	for (field = update_fields; field; field = field->next) {
 		if (first) {
-			ast_str_set(&sql, 0, "UPDATE %s SET %s = %s", sqlite3_escape_table(table), sqlite3_escape_column(key), sqlite3_escape_value(value));
+			ast_str_set(&sql, 0, "UPDATE %s SET %s = %s", sqlite3_escape_table(table), sqlite3_escape_column(field->name), sqlite3_escape_value(field->value));
 			first = 0;
 		} else {
-			ast_str_append(&sql, 0, ", %s = %s", sqlite3_escape_column(key), sqlite3_escape_value(value));
+			ast_str_append(&sql, 0, ", %s = %s", sqlite3_escape_column(field->name), sqlite3_escape_value(field->value));
 		}
 	}
 
@@ -802,10 +812,10 @@ static int realtime_sqlite3_update2(const char *database, const char *table, va_
 /*! \brief Realtime callback for inserting a row
  * \return Number of rows affected or -1 on error
  */
-static int realtime_sqlite3_store(const char *database, const char *table, va_list ap)
+static int realtime_sqlite3_store(const char *database, const char *table, const struct ast_variable *fields)
 {
 	struct ast_str *sql, *values;
-	const char *column, *value;
+	const struct ast_variable *field;
 	int first = 1, res;
 
 	if (ast_strlen_zero(table)) {
@@ -822,14 +832,14 @@ static int realtime_sqlite3_store(const char *database, const char *table, va_li
 		return -1;
 	}
 
-	while ((column = va_arg(ap, const char *)) && (value = va_arg(ap, const char *))) {
+	for (field = fields; field; field = field->next) {
 		if (first) {
-			ast_str_set(&sql, 0, "INSERT INTO %s (%s", sqlite3_escape_table(table), sqlite3_escape_column(column));
-			ast_str_set(&values, 0, ") VALUES (%s", sqlite3_escape_value(value));
+			ast_str_set(&sql, 0, "INSERT INTO %s (%s", sqlite3_escape_table(table), sqlite3_escape_column(field->name));
+			ast_str_set(&values, 0, ") VALUES (%s", sqlite3_escape_value(field->value));
 			first = 0;
 		} else {
-			ast_str_append(&sql, 0, ", %s", sqlite3_escape_column(column));
-			ast_str_append(&values, 0, ", %s", sqlite3_escape_value(value));
+			ast_str_append(&sql, 0, ", %s", sqlite3_escape_column(field->name));
+			ast_str_append(&values, 0, ", %s", sqlite3_escape_value(field->value));
 		}
 	}
 
@@ -846,10 +856,10 @@ static int realtime_sqlite3_store(const char *database, const char *table, va_li
 /*! \brief Realtime callback for deleting a row
  * \return Number of rows affected or -1 on error
  */
-static int realtime_sqlite3_destroy(const char *database, const char *table, const char *keyfield, const char *entity, va_list ap)
+static int realtime_sqlite3_destroy(const char *database, const char *table, const char *keyfield, const char *entity, const struct ast_variable *fields)
 {
 	struct ast_str *sql;
-	const char *param, *value;
+	const struct ast_variable *field;
 	int first = 1, res;
 
 	if (ast_strlen_zero(table)) {
@@ -861,13 +871,13 @@ static int realtime_sqlite3_destroy(const char *database, const char *table, con
 		return -1;
 	}
 
-	while ((param = va_arg(ap, const char *)) && (value = va_arg(ap, const char *))) {
+	for (field = fields; field; field = field->next) {
 		if (first) {
 			ast_str_set(&sql, 0, "DELETE FROM %s WHERE %s %s", sqlite3_escape_table(table),
-					sqlite3_escape_column_op(param), sqlite3_escape_value(value));
+					sqlite3_escape_column_op(field->name), sqlite3_escape_value(field->value));
 			first = 0;
 		} else {
-			ast_str_append(&sql, 0, " AND %s %s", sqlite3_escape_column_op(param), sqlite3_escape_value(value));
+			ast_str_append(&sql, 0, " AND %s %s", sqlite3_escape_column_op(field->name), sqlite3_escape_value(field->value));
 		}
 	}
 
@@ -1162,6 +1172,16 @@ static int unload_module(void)
 	return 0;
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	if (!((databases = ao2_container_alloc(DB_BUCKETS, db_hash_fn, db_cmp_fn)))) {
@@ -1183,6 +1203,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "SQLite 3 realtime config engine",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

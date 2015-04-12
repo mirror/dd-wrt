@@ -22,7 +22,7 @@
  *
  * \author Mark Spencer <markster@digium.com>
  *
- * \extref Uses the OpenSSL library, available at
+ * Uses the OpenSSL library, available at
  *	http://www.openssl.org/
  */
 
@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 359115 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429675 $")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_KEY_DIR */
 #include <openssl/ssl.h>
@@ -532,7 +532,7 @@ static void md52sum(char *sum, unsigned char *md5)
 {
 	int x;
 	for (x = 0; x < 16; x++) {
-		sum += sprintf(sum, "%02x", *(md5++));
+		sum += sprintf(sum, "%02hhx", *(md5++));
 	}
 }
 
@@ -663,6 +663,7 @@ static int unload_module(void)
 
 /* needs usecount semantics defined */
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Cryptographic Digital Signatures",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

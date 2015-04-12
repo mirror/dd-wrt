@@ -21,8 +21,6 @@
 /*!
  * \page ReleaseStatus Asterisk Release Status
  *
- * @AsteriskTrunkWarning
- *
  * \section warranty Warranty
  * The following warranty applies to all open source releases of Asterisk:
  *
@@ -124,8 +122,6 @@
 /*!
  * \page ReleasePolicies Asterisk Release and Commit Policies
  *
- * \AsteriskTrunkWarning
- *
  * \section releasestatus Asterisk Release Status
  *
  * For more information on the current status of each Asterisk release series,
@@ -133,7 +129,7 @@
  *
  * \arg \ref ReleaseStatus
  *
- * <hr/>
+ * <hr>
  *
  * \section commitmonitoring Commit Monitoring
  *
@@ -141,7 +137,7 @@
  * <a href="http://lists.digium.com/">http://lists.digium.com</a>.  The Digium
  * mailing list server hosts a %number of mailing lists for commits.
  *
- * <hr/>
+ * <hr>
  *
  * \section ast10policy Asterisk 1.0
  *
@@ -154,7 +150,7 @@
  *
  * No commits should be made to the Asterisk 1.0 branch.
  * 
- * <hr/>
+ * <hr>
  *
  * \section ast12policy Asterisk 1.2
  *
@@ -181,7 +177,7 @@
  *  - 1.2.X.Y - a release that contains fixes to the security patches released in
  *    version 1.2.X
  *
- * <hr/>
+ * <hr>
  *
  * \section ast14policy Asterisk 1.4
  *
@@ -208,7 +204,7 @@
  *  - 1.4.X.Y - a release that contains very few changes on top of 1.4.X.  This
  *    may be for a security patch, or for a regression introduced in 1.4.X.
  *
- * <hr/>
+ * <hr>
  *
  * \section ast16policy Asterisk 1.6
  *
@@ -244,7 +240,7 @@
  *  - 1.6.X.Y - a release that contains fixes for bugs or security issues identified
  *    in the 1.6.X release series.
  *
- * <hr/>
+ * <hr>
  *
  * \section asttrunk Asterisk Trunk
  *
@@ -269,7 +265,7 @@
  * tested and reviewed such that there is reasonable belief that the code
  * is ready to go.
  *
- * <hr/>
+ * <hr>
  *
  * \section astteam Asterisk Team Branches
  *

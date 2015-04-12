@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 357542 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -60,6 +60,11 @@ static int blacklist_read(struct ast_channel *chan, const char *cmd, char *data,
 {
 	char blacklist[1];
 	int bl = 0;
+
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
+		return -1;
+	}
 
 	if (ast_channel_caller(chan)->id.number.valid && ast_channel_caller(chan)->id.number.str) {
 		if (!ast_db_get("blacklist", ast_channel_caller(chan)->id.number.str, blacklist, sizeof (blacklist)))

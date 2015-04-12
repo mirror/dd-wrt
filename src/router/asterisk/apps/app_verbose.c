@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 397948 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 413589 $")
 
 #include "asterisk/module.h"
 #include "asterisk/app.h"
@@ -78,7 +78,7 @@ static char *app_log = "Log";
 
 static int verbose_exec(struct ast_channel *chan, const char *data)
 {
-	int vsize;
+	unsigned int vsize;
 	char *parse;
 	AST_DECLARE_APP_ARGS(args,
 		AST_APP_ARG(level);
@@ -96,9 +96,11 @@ static int verbose_exec(struct ast_channel *chan, const char *data)
 		args.level = "0";
 	}
 
-	if (sscanf(args.level, "%30d", &vsize) != 1) {
+	if (sscanf(args.level, "%30u", &vsize) != 1) {
 		vsize = 0;
 		ast_log(LOG_WARNING, "'%s' is not a verboser number\n", args.level);
+	} else if (4 < vsize) {
+		vsize = 4;
 	}
 
 	ast_verb(vsize, "%s\n", args.msg);

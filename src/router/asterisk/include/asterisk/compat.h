@@ -1,5 +1,5 @@
 /*
- * Asterisk -- A telephony toolkit for Linux.
+ * Asterisk -- An open source telephony toolkit.
  * 
  * Copyright (C) 1999-2006, Digium, Inc.
  *
@@ -222,6 +222,14 @@ typedef unsigned long long uint64_t;
 #else
 float roundf(float x);
 #endif
+#endif
+
+#ifndef INFINITY
+#define INFINITY (1.0/0.0)
+#endif
+
+#ifndef NAN
+#define NAN (0.0/0.0)
 #endif
 
 #endif

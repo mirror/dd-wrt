@@ -1,5 +1,5 @@
 #
-# Asterisk -- A telephony toolkit for Linux.
+# Asterisk -- An open source telephony toolkit.
 #
 # Makefile to build main Asterisk binary
 #
@@ -33,8 +33,14 @@ OBJS+=stdtime/localtime.o
 ASTSSL_LIBS:=$(OPENSSL_LIB)
 AST_LIBS+=$(BKTR_LIB)
 AST_LIBS+=$(LIBXML2_LIB)
+AST_LIBS+=$(LIBXSLT_LIB)
 AST_LIBS+=$(SQLITE3_LIB)
 AST_LIBS+=$(ASTSSL_LIBS)
+AST_LIBS+=$(JANSSON_LIB)
+AST_LIBS+=$(URIPARSER_LIB)
+AST_LIBS+=$(UUID_LIB)
+AST_LIBS+=$(CRYPT_LIB)
+AST_LIBS+=$(AST_CLANG_BLOCKS_LIBS)
 
 ifneq ($(findstring $(OSARCH), linux-gnu uclinux linux-uclibc kfreebsd-gnu),)
   ifneq ($(findstring LOADABLE_MODULES,$(MENUSELECT_CFLAGS)),)
@@ -54,10 +60,8 @@ endif
 
 ifneq ($(findstring darwin,$(OSARCH)),)
   AST_LIBS+=-lresolv
-  ASTLINK=-Xlinker -macosx_version_min -Xlinker 10.4 -Xlinker -undefined -Xlinker dynamic_lookup -force_flat_namespace
-  ifeq ($(shell if test `/usr/bin/sw_vers -productVersion | cut -c4` -gt 5; then echo 6; else echo 0; fi),6)
-    ASTLINK+=/usr/lib/bundle1.o
-  endif
+  ASTLINK=-mmacosx-version-min=10.6 -Xlinker -undefined -Xlinker dynamic_lookup -force_flat_namespace
+  ASTLINK+=/usr/lib/bundle1.o
 else
 # These are used for all but Darwin
   ifneq ($(findstring LOADABLE_MODULES,$(MENUSELECT_CFLAGS)),)
@@ -152,6 +156,10 @@ endif
 db.o: _ASTCFLAGS+=$(SQLITE3_INCLUDE)
 asterisk.o: _ASTCFLAGS+=$(LIBEDIT_INCLUDE)
 cli.o: _ASTCFLAGS+=$(LIBEDIT_INCLUDE)
+json.o: _ASTCFLAGS+=$(JANSSON_INCLUDE)
+bucket.o: _ASTCFLAGS+=$(URIPARSER_INCLUDE)
+crypt.o: _ASTCFLAGS+=$(CRYPT_INCLUDE)
+uuid.o: _ASTCFLAGS+=$(UUID_INCLUDE)
 
 ifneq ($(findstring ENABLE_UPLOADS,$(MENUSELECT_CFLAGS)),)
 http.o: _ASTCFLAGS+=$(GMIME_INCLUDE)
@@ -163,13 +171,6 @@ AST_EMBED_LDSCRIPTS:=$(sort $(EMBED_LDSCRIPTS))
 AST_EMBED_LDFLAGS:=$(foreach dep,$(EMBED_LDFLAGS),$(value $(dep)))
 AST_EMBED_LIBS:=$(foreach dep,$(EMBED_LIBS),$(value $(dep)))
 OBJS:=$(sort $(OBJS))
-
-ifneq ($(wildcard ../channels/h323/Makefile.ast),)
-  include ../channels/h323/Makefile.ast
-else
-  H323LDFLAGS=
-  H323LDLIBS=
-endif
 
 ifneq ($(findstring $(OSARCH), mingw32 cygwin ),)
 MAIN_TGT:=asterisk.dll
@@ -202,7 +203,9 @@ ASTSSL_LIB:=libasteriskssl.so
 $(ASTSSL_LIB).$(ASTSSL_SO_VERSION): _ASTLDFLAGS+=-Wl,-soname=$(ASTSSL_LIB).$(ASTSSL_SO_VERSION)
 $(ASTSSL_LIB).$(ASTSSL_SO_VERSION): _ASTCFLAGS+=-fPIC -DAST_MODULE=\"asteriskssl\"
 $(ASTSSL_LIB).$(ASTSSL_SO_VERSION): LIBS+=$(ASTSSL_LIBS)
-$(ASTSSL_LIB).$(ASTSSL_SO_VERSION): SO_SUPPRESS_SYMBOLS=-Wl,--version-script,libasteriskssl.exports,--warn-common
+ifeq ($(GNU_LD),1)
+    $(ASTSSL_LIB).$(ASTSSL_SO_VERSION): SO_SUPPRESS_SYMBOLS=-Wl,--version-script,libasteriskssl.exports,--warn-common
+endif
 $(ASTSSL_LIB).$(ASTSSL_SO_VERSION): SOLINK=$(DYLINK)
 
 # These rules are duplicated from $(ASTTOPDIR)/Makefile.rules because the library name
@@ -245,11 +248,7 @@ tcptls.o: _ASTCFLAGS+=$(OPENSSL_INCLUDE)
 $(MAIN_TGT): $(OBJS) $(ASTSSL_LIB) $(LIBEDIT_OBJ) $(AST_EMBED_LDSCRIPTS)
 	@$(CC) -c -o buildinfo.o $(_ASTCFLAGS) buildinfo.c $(ASTCFLAGS)
 	$(ECHO_PREFIX) echo "   [LD] $(OBJS) $(LIBEDIT_OBJ) $(AST_EMBED_LDSCRIPTS) -> $@"
-ifneq ($(findstring chan_h323,$(MENUSELECT_CHANNELS)),)
-	$(CMD_PREFIX) $(CC) $(STATIC_BUILD) -o $@ $(ASTLINK) $(AST_EMBED_LDFLAGS) $(_ASTLDFLAGS) $(ASTLDFLAGS) $(OBJS) $(ASTSSL_LDLIBS) $(LIBEDIT_OBJ) $(AST_EMBED_LDSCRIPTS) buildinfo.o $(AST_LIBS) $(AST_EMBED_LIBS) $(GMIMELDFLAGS) $(LIBEDIT_LIB)
-else
-	$(CMD_PREFIX) $(CXX) $(STATIC_BUILD) -o $@ $(ASTLINK) $(AST_EMBED_LDFLAGS) $(_ASTLDFLAGS) $(ASTLDFLAGS) $(H323LDFLAGS) $(OBJS) $(ASTSSL_LDLIBS) $(LIBEDIT_OBJ) $(AST_EMBED_LDSCRIPTS) buildinfo.o $(AST_LIBS) $(AST_EMBED_LIBS) $(H323LDLIBS) $(GMIMELDFLAGS) $(LIBEDIT_LIB)
-endif
+	$(CMD_PREFIX) $(CXX) $(STATIC_BUILD) -o $@ $(ASTLINK) $(AST_EMBED_LDFLAGS) $(_ASTLDFLAGS) $(ASTLDFLAGS) $(OBJS) $(ASTSSL_LDLIBS) $(LIBEDIT_OBJ) $(AST_EMBED_LDSCRIPTS) buildinfo.o $(AST_LIBS) $(AST_EMBED_LIBS) $(GMIMELDFLAGS) $(LIBEDIT_LIB)
 
 ifeq ($(GNU_LD),1)
 $(MAIN_TGT): asterisk.exports

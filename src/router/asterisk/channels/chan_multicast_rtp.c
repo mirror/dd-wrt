@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385689 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <fcntl.h>
 #include <sys/signal.h>
@@ -56,7 +56,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385689 $")
 static const char tdesc[] = "Multicast RTP Paging Channel Driver";
 
 /* Forward declarations */
-static struct ast_channel *multicast_rtp_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause);
+static struct ast_channel *multicast_rtp_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause);
 static int multicast_rtp_call(struct ast_channel *ast, const char *dest, int timeout);
 static int multicast_rtp_hangup(struct ast_channel *ast);
 static struct ast_frame *multicast_rtp_read(struct ast_channel *ast);
@@ -110,15 +110,17 @@ static int multicast_rtp_hangup(struct ast_channel *ast)
 }
 
 /*! \brief Function called when we should prepare to call the destination */
-static struct ast_channel *multicast_rtp_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause)
+static struct ast_channel *multicast_rtp_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause)
 {
 	char *tmp = ast_strdupa(data), *multicast_type = tmp, *destination, *control;
 	struct ast_rtp_instance *instance;
 	struct ast_sockaddr control_address;
 	struct ast_sockaddr destination_address;
 	struct ast_channel *chan;
-	struct ast_format fmt;
-	ast_best_codec(cap, &fmt);
+	struct ast_format_cap *caps = NULL;
+	struct ast_format *fmt = NULL;
+
+	fmt = ast_format_cap_get_format(cap, 0);
 
 	ast_sockaddr_setnull(&control_address);
 
@@ -145,30 +147,43 @@ static struct ast_channel *multicast_rtp_request(const char *type, struct ast_fo
 		goto failure;
 	}
 
+	caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!caps) {
+		goto failure;
+	}
+
 	if (!(instance = ast_rtp_instance_new("multicast", NULL, &control_address, multicast_type))) {
 		goto failure;
 	}
 
-	if (!(chan = ast_channel_alloc(1, AST_STATE_DOWN, "", "", "", "", "", requestor ? ast_channel_linkedid(requestor) : "", 0, "MulticastRTP/%p", instance))) {
+	if (!(chan = ast_channel_alloc(1, AST_STATE_DOWN, "", "", "", "", "", assignedids, requestor, 0, "MulticastRTP/%p", instance))) {
 		ast_rtp_instance_destroy(instance);
 		goto failure;
 	}
-
+	ast_rtp_instance_set_channel_id(instance, ast_channel_uniqueid(chan));
 	ast_rtp_instance_set_remote_address(instance, &destination_address);
 
 	ast_channel_tech_set(chan, &multicast_rtp_tech);
 
-	ast_format_cap_add(ast_channel_nativeformats(chan), &fmt);
-	ast_format_copy(ast_channel_writeformat(chan), &fmt);
-	ast_format_copy(ast_channel_rawwriteformat(chan), &fmt);
-	ast_format_copy(ast_channel_readformat(chan), &fmt);
-	ast_format_copy(ast_channel_rawreadformat(chan), &fmt);
+	ast_format_cap_append(caps, fmt, 0);
+	ast_channel_nativeformats_set(chan, caps);
+	ast_channel_set_writeformat(chan, fmt);
+	ast_channel_set_rawwriteformat(chan, fmt);
+	ast_channel_set_readformat(chan, fmt);
+	ast_channel_set_rawreadformat(chan, fmt);
 
 	ast_channel_tech_pvt_set(chan, instance);
+
+	ast_channel_unlock(chan);
+
+	ao2_ref(fmt, -1);
+	ao2_ref(caps, -1);
 
 	return chan;
 
 failure:
+	ao2_cleanup(fmt);
+	ao2_cleanup(caps);
 	*cause = AST_CAUSE_FAILURE;
 	return NULL;
 }
@@ -176,12 +191,14 @@ failure:
 /*! \brief Function called when our module is loaded */
 static int load_module(void)
 {
-	if (!(multicast_rtp_tech.capabilities = ast_format_cap_alloc())) {
+	if (!(multicast_rtp_tech.capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
-	ast_format_cap_add_all(multicast_rtp_tech.capabilities);
+	ast_format_cap_append_by_type(multicast_rtp_tech.capabilities, AST_MEDIA_TYPE_UNKNOWN);
 	if (ast_channel_register(&multicast_rtp_tech)) {
 		ast_log(LOG_ERROR, "Unable to register channel class 'MulticastRTP'\n");
+		ao2_ref(multicast_rtp_tech.capabilities, -1);
+		multicast_rtp_tech.capabilities = NULL;
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
@@ -192,12 +209,14 @@ static int load_module(void)
 static int unload_module(void)
 {
 	ast_channel_unregister(&multicast_rtp_tech);
-	multicast_rtp_tech.capabilities = ast_format_cap_destroy(multicast_rtp_tech.capabilities);
+	ao2_ref(multicast_rtp_tech.capabilities, -1);
+	multicast_rtp_tech.capabilities = NULL;
 
 	return 0;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Multicast RTP Paging Channel",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_CHANNEL_DRIVER,

@@ -24,6 +24,15 @@
  * \ingroup cdr_drivers
  */
 
+/*! \li \ref cdr_adaptive_odbc.c uses the configuration file \ref cdr_adaptive_odbc.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page cdr_adaptive_odbc.conf cdr_adaptive_odbc.conf
+ * \verbinclude cdr_adaptive_odbc.conf.sample
+ */
+
 /*** MODULEINFO
 	<depend>res_odbc</depend>
 	<support_level>core</support_level>
@@ -31,7 +40,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401579 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <sys/types.h>
 #include <time.h>
@@ -187,7 +196,7 @@ static int load_config(void)
 					ast_trim_blanks(cdrvar);
 				}
 
-				ast_verb(3, "Found filter %s'%s' for cdr variable %s in %s@%s\n", negate ? "!" : "", var->value, cdrvar, tableptr->table, tableptr->connection);
+				ast_verb(3, "Found filter %s'%s' for CDR variable %s in %s@%s\n", negate ? "!" : "", var->value, cdrvar, tableptr->table, tableptr->connection);
 
 				entry = ast_calloc(sizeof(char), sizeof(*entry) + strlen(cdrvar) + 1 + strlen(var->value) + 1);
 				if (!entry) {
@@ -272,7 +281,7 @@ static int load_config(void)
 			if (entry->octetlen == 0)
 				entry->octetlen = entry->size;
 
-			ast_verb(10, "Found %s column with type %hd with len %ld, octetlen %ld, and numlen (%hd,%hd)\n", entry->name, entry->type, (long) entry->size, (long) entry->octetlen, entry->decimals, entry->radix);
+			ast_verb(4, "Found %s column with type %hd with len %ld, octetlen %ld, and numlen (%hd,%hd)\n", entry->name, entry->type, (long) entry->size, (long) entry->octetlen, entry->decimals, entry->radix);
 			/* Insert column info into column list */
 			AST_LIST_INSERT_TAIL(&(tableptr->columns), entry, list);
 			res = 0;
@@ -424,7 +433,7 @@ static int odbc_log(struct ast_cdr *cdr)
 				ast_strftime(colbuf, sizeof(colbuf), "%Y-%m-%d %H:%M:%S", &tm);
 				colptr = colbuf;
 			} else {
-				ast_cdr_getvar(cdr, entry->cdrname, &colptr, colbuf, sizeof(colbuf), 0, datefield ? 0 : 1);
+				ast_cdr_format_var(cdr, entry->cdrname, &colptr, colbuf, sizeof(colbuf), datefield ? 0 : 1);
 			}
 
 			if (colptr) {
@@ -463,9 +472,9 @@ static int odbc_log(struct ast_cdr *cdr)
 					 * form (but only when we're dealing with a character-based field).
 					 */
 					if (strcasecmp(entry->name, "disposition") == 0) {
-						ast_cdr_getvar(cdr, entry->name, &colptr, colbuf, sizeof(colbuf), 0, 0);
+						ast_cdr_format_var(cdr, entry->name, &colptr, colbuf, sizeof(colbuf), 0);
 					} else if (strcasecmp(entry->name, "amaflags") == 0) {
-						ast_cdr_getvar(cdr, entry->name, &colptr, colbuf, sizeof(colbuf), 0, 0);
+						ast_cdr_format_var(cdr, entry->name, &colptr, colbuf, sizeof(colbuf), 0);
 					}
 
 					/* Truncate too-long fields */
@@ -611,7 +620,7 @@ static int odbc_log(struct ast_cdr *cdr)
 					if (ast_strlen_zero(colptr)) {
 						continue;
 					} else {
-						char integer = 0;
+						signed char integer = 0;
 						if (sscanf(colptr, "%30hhd", &integer) != 1) {
 							ast_log(LOG_WARNING, "CDR variable %s is not an integer.\n", entry->name);
 							continue;
@@ -626,7 +635,7 @@ static int odbc_log(struct ast_cdr *cdr)
 					if (ast_strlen_zero(colptr)) {
 						continue;
 					} else {
-						char integer = 0;
+						signed char integer = 0;
 						if (sscanf(colptr, "%30hhd", &integer) != 1) {
 							ast_log(LOG_WARNING, "CDR variable %s is not an integer.\n", entry->name);
 							continue;
@@ -714,7 +723,7 @@ static int odbc_log(struct ast_cdr *cdr)
 			} else if (entry->filtervalue
 				&& ((!entry->negatefiltervalue && entry->filtervalue[0] != '\0')
 					|| (entry->negatefiltervalue && entry->filtervalue[0] == '\0'))) {
-				ast_verb(4, "CDR column '%s' was not set and does not match filter of"
+				ast_log(AST_LOG_WARNING, "CDR column '%s' was not set and does not match filter of"
 					" %s'%s'.  Cancelling this CDR.\n",
 					entry->cdrname, entry->negatefiltervalue ? "!" : "",
 					entry->filtervalue);
@@ -728,7 +737,7 @@ static int odbc_log(struct ast_cdr *cdr)
 		ast_str_append(&sql2, 0, ")");
 		ast_str_append(&sql, 0, "%s", ast_str_buffer(sql2));
 
-		ast_verb(11, "[%s]\n", ast_str_buffer(sql));
+		ast_debug(3, "Executing [%s]\n", ast_str_buffer(sql));
 
 		stmt = ast_odbc_prepare_and_execute(obj, generic_prepare, ast_str_buffer(sql));
 		if (stmt) {
@@ -758,7 +767,10 @@ early_release:
 
 static int unload_module(void)
 {
-	ast_cdr_unregister(name);
+	if (ast_cdr_unregister(name)) {
+		return -1;
+	}
+
 	if (AST_RWLIST_WRLOCK(&odbc_tables)) {
 		ast_cdr_register(name, ast_module_info->description, odbc_log);
 		ast_log(LOG_ERROR, "Unable to lock column list.  Unload failed.\n");
@@ -797,6 +809,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Adaptive ODBC CDR backend",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

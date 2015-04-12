@@ -37,7 +37,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369013 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420384 $")
 
 #include "asterisk/strings.h"
 #include "asterisk/pbx.h"
@@ -70,7 +70,7 @@ int __ast_str_helper(struct ast_str **buf, ssize_t max_len,
 		}
 		/*
 		 * Ask vsnprintf how much space we need. Remember that vsnprintf
-		 * does not count the final <code>'\0'</code> so we must add 1.
+		 * does not count the final <code>'\\0'</code> so we must add 1.
 		 */
 		va_copy(aq, ap);
 		res = vsnprintf((*buf)->__AST_STR_STR + offset, (*buf)->__AST_STR_LEN - offset, fmt, aq);
@@ -160,3 +160,50 @@ char *__ast_str_helper2(struct ast_str **buf, ssize_t maxlen, const char *src, s
 	return (*buf)->__AST_STR_STR;
 }
 
+static int str_hash(const void *obj, const int flags)
+{
+	return ast_str_hash(obj);
+}
+
+static int str_cmp(void *lhs, void *rhs, int flags)
+{
+	return strcmp(lhs, rhs) ? 0 : CMP_MATCH;
+}
+
+struct ao2_container *ast_str_container_alloc_options(enum ao2_container_opts opts, int buckets)
+{
+	return ao2_container_alloc_options(opts, buckets, str_hash, str_cmp);
+}
+
+int ast_str_container_add(struct ao2_container *str_container, const char *add)
+{
+	char *ao2_add;
+
+	/* The ao2_add object is immutable so it doesn't need a lock of its own. */
+	ao2_add = ao2_alloc_options(strlen(add) + 1, NULL, AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!ao2_add) {
+		return -1;
+	}
+	strcpy(ao2_add, add);/* Safe */
+
+	ao2_link(str_container, ao2_add);
+	ao2_ref(ao2_add, -1);
+	return 0;
+}
+
+void ast_str_container_remove(struct ao2_container *str_container, const char *remove)
+{
+	ao2_find(str_container, remove, OBJ_SEARCH_KEY | OBJ_NODATA | OBJ_UNLINK);
+}
+
+char *ast_generate_random_string(char *buf, size_t size)
+{
+	int i;
+
+	for (i = 0; i < size - 1; ++i) {
+		buf[i] = 'a' + (ast_random() % 26);
+	}
+	buf[i] = '\0';
+
+	return buf;
+}
