@@ -29,6 +29,24 @@
  * \ingroup channel_drivers
  */
 
+/*! \li \ref chan_vpb.cc uses the configuration file \ref vpb.conf
+ * \addtogroup configuration_file
+ */
+
+/*! \page vpb.conf vpb.conf
+ * \verbinclude vpb.conf.sample
+ */
+
+/*
+ * XXX chan_vpb needs its native bridge code converted to the
+ * new bridge technology scheme.  The chan_dahdi native bridge
+ * code can be used as an example.  It is unlikely that this
+ * will ever get done.
+ *
+ * The existing native bridge code is marked with the
+ * VPB_NATIVE_BRIDGING conditional.
+ */
+
 /*** MODULEINFO
 	<depend>vpb</depend>
 	<defaultenabled>no</defaultenabled>
@@ -41,7 +59,7 @@ extern "C" {
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366408 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
 
 #include "asterisk/lock.h"
 #include "asterisk/utils.h"
@@ -53,6 +71,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366408 $")
 #include "asterisk/dsp.h"
 #include "asterisk/features.h"
 #include "asterisk/musiconhold.h"
+#include "asterisk/format_cache.h"
 }
 
 #include <sys/socket.h>
@@ -329,9 +348,9 @@ static struct vpb_pvt {
 
 } *iflist = NULL;
 
-static struct ast_channel *vpb_new(struct vpb_pvt *i, enum ast_channel_state state, const char *context, const char *linkedid);
+static struct ast_channel *vpb_new(struct vpb_pvt *i, enum ast_channel_state state, const char *context, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor);
 static void *do_chanreads(void *pvt);
-static struct ast_channel *vpb_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause);
+static struct ast_channel *vpb_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause);
 static int vpb_digit_begin(struct ast_channel *ast, char digit);
 static int vpb_digit_end(struct ast_channel *ast, char digit, unsigned int duration);
 static int vpb_call(struct ast_channel *ast, const char *dest, int timeout);
@@ -339,7 +358,6 @@ static int vpb_hangup(struct ast_channel *ast);
 static int vpb_answer(struct ast_channel *ast);
 static struct ast_frame *vpb_read(struct ast_channel *ast);
 static int vpb_write(struct ast_channel *ast, struct ast_frame *frame);
-static enum ast_bridge_result ast_vpb_bridge(struct ast_channel *c0, struct ast_channel *c1, int flags, struct ast_frame **fo, struct ast_channel **rc, int timeoutms);
 static int vpb_indicate(struct ast_channel *ast, int condition, const void *data, size_t datalen);
 static int vpb_fixup(struct ast_channel *oldchan, struct ast_channel *newchan);
 
@@ -361,7 +379,6 @@ static struct ast_channel_tech vpb_tech = {
 	send_image: NULL,
 	send_html: NULL,
 	exception: NULL,
-	bridge: ast_vpb_bridge,
 	early_bridge: NULL,
 	indicate: vpb_indicate,
 	fixup: vpb_fixup,
@@ -370,11 +387,8 @@ static struct ast_channel_tech vpb_tech = {
 	transfer: NULL,
 	write_video: NULL,
 	write_text: NULL,
-	bridged_channel: NULL,
 	func_channel_read: NULL,
 	func_channel_write: NULL,
-	get_base_channel: NULL,
-	set_base_channel: NULL
 };
 
 static struct ast_channel_tech vpb_tech_indicate = {
@@ -395,7 +409,6 @@ static struct ast_channel_tech vpb_tech_indicate = {
 	send_image: NULL,
 	send_html: NULL,
 	exception: NULL,
-	bridge: ast_vpb_bridge,
 	early_bridge: NULL,
 	indicate: NULL,
 	fixup: vpb_fixup,
@@ -404,13 +417,11 @@ static struct ast_channel_tech vpb_tech_indicate = {
 	transfer: NULL,
 	write_video: NULL,
 	write_text: NULL,
-	bridged_channel: NULL,
 	func_channel_read: NULL,
 	func_channel_write: NULL,
-	get_base_channel: NULL,
-	set_base_channel: NULL
 };
 
+#if defined(VPB_NATIVE_BRIDGING)
 /* Can't get ast_vpb_bridge() working on v4pci without either a horrible 
 *  high pitched feedback noise or bad hiss noise depending on gain settings
 *  Get asterisk to do the bridging
@@ -610,6 +621,7 @@ static enum ast_bridge_result ast_vpb_bridge(struct ast_channel *c0, struct ast_
 */
 	return (res == VPB_OK) ? AST_BRIDGE_COMPLETE : AST_BRIDGE_FAILED;
 }
+#endif	/* defined(VPB_NATIVE_BRIDGING) */
 
 /* Caller ID can be located in different positions between the rings depending on your Telco
  * Australian (Telstra) callerid starts 700ms after 1st ring and finishes 1.5s after first ring
@@ -755,11 +767,10 @@ static void get_callerid_ast(struct vpb_pvt *p)
 #endif
 		vpb_record_buf_start(p->handle, VPB_MULAW);
 		while ((rc == 0) && (sam_count < 8000 * 3)) {
-			struct ast_format tmpfmt;
 			vrc = vpb_record_buf_sync(p->handle, (char*)buf, sizeof(buf));
 			if (vrc != VPB_OK)
 				ast_log(LOG_ERROR, "%s: Caller ID couldn't read audio buffer!\n", p->dev);
-			rc = callerid_feed(cs, (unsigned char *)buf, sizeof(buf), ast_format_set(&tmpfmt, AST_FORMAT_ULAW, 0));
+			rc = callerid_feed(cs, (unsigned char *)buf, sizeof(buf), ast_format_ulaw);
 #ifdef ANALYSE_CID
 			vpb_wave_write(ws, (char *)buf, sizeof(buf)); 
 #endif
@@ -1022,15 +1033,7 @@ static inline int monitor_handle_owned(struct vpb_pvt *p, VPB_EVENT *e)
 			break;
 
 		case AST_FRAME_CONTROL:
-			if (!(p->bridge->flags & AST_BRIDGE_IGNORE_SIGS)) {
-			#if 0
-			if (f.subclass == AST_CONTROL_BUSY ||
-			f.subclass == AST_CONTROL_CONGESTION ||
-			f.subclass == AST_CONTROL_HANGUP ||
-			f.subclass == AST_CONTROL_FLASH)
-			#endif
-				endbridge = 1;
-			}
+			endbridge = 1;
 			break;
 
 		default:
@@ -1115,7 +1118,7 @@ static inline int monitor_handle_notowned(struct vpb_pvt *p, VPB_EVENT *e)
 		break;
 	case VPB_RING:
 		if (p->mode == MODE_FXO) /* FXO port ring, start * */ {
-			vpb_new(p, AST_STATE_RING, p->context, NULL);
+			vpb_new(p, AST_STATE_RING, p->context, NULL, NULL);
 			if (UsePolarityCID != 1) {
 				if (p->callerid_type == 1) {
 					ast_verb(4, "Using VPB Caller ID\n");
@@ -1139,7 +1142,7 @@ static inline int monitor_handle_notowned(struct vpb_pvt *p, VPB_EVENT *e)
 
 	case VPB_STATION_OFFHOOK:
 		if (p->mode == MODE_IMMEDIATE) {
-			vpb_new(p,AST_STATE_RING, p->context, NULL);
+			vpb_new(p,AST_STATE_RING, p->context, NULL, NULL);
 		} else {
 			ast_verb(4, "%s: handle_notowned: playing dialtone\n", p->dev);
 			playtone(p->handle, &Dialtone);
@@ -1184,7 +1187,7 @@ static inline int monitor_handle_notowned(struct vpb_pvt *p, VPB_EVENT *e)
 			if (ast_exists_extension(NULL, p->context, p->ext, 1, p->callerid)){
 				ast_verb(4, "%s: handle_notowned: DTMF IDD timer out, matching on [%s] in [%s]\n", p->dev, p->ext, p->context);
 
-				vpb_new(p, AST_STATE_RING, p->context, NULL);
+				vpb_new(p, AST_STATE_RING, p->context, NULL, NULL);
 			}
 		} else if (e->data == p->ring_timer_id) {
 			/* We didnt get another ring in time! */
@@ -1260,11 +1263,11 @@ static inline int monitor_handle_notowned(struct vpb_pvt *p, VPB_EVENT *e)
 				vpb_timer_start(p->dtmfidd_timer);
 			} else {
 				ast_verb(4, "%s: handle_notowned: Matched on [%s] in [%s]\n", p->dev, p->ext , p->context);
-				vpb_new(p, AST_STATE_UP, p->context, NULL);
+				vpb_new(p, AST_STATE_UP, p->context, NULL, NULL);
 			}
 		} else if (!ast_canmatch_extension(NULL, p->context, p->ext, 1, p->callerid)) {
 			if (ast_exists_extension(NULL, "default", p->ext, 1, p->callerid)) {
-				vpb_new(p, AST_STATE_UP, "default", NULL);
+				vpb_new(p, AST_STATE_UP, "default", NULL, NULL);
 			} else if (!ast_canmatch_extension(NULL, "default", p->ext, 1, p->callerid)) {
 				ast_verb(4, "%s: handle_notowned: can't match anything in %s or default\n", p->dev, p->context);
 				playtone(p->handle, &Busytone);
@@ -2067,46 +2070,41 @@ static struct ast_frame *vpb_read(struct ast_channel *ast)
 
 static inline AudioCompress ast2vpbformat(struct ast_format *format)
 {
-	switch (format->id) {
-	case AST_FORMAT_ALAW:
+	if (ast_format_cmp(format, ast_format_alaw) == AST_FORMAT_CMP_EQUAL) {
 		return VPB_ALAW;
-	case AST_FORMAT_SLINEAR:
+	} else if (ast_format_cmp(format, ast_format_slin) == AST_FORMAT_CMP_EQUAL) {
 		return VPB_LINEAR;
-	case AST_FORMAT_ULAW:
+	} else if (ast_format_cmp(format, ast_format_ulaw) == AST_FORMAT_CMP_EQUAL) {
 		return VPB_MULAW;
-	case AST_FORMAT_ADPCM:
+	} else if (ast_format_cmp(format, ast_format_adpcm) == AST_FORMAT_CMP_EQUAL) {
 		return VPB_OKIADPCM;
-	default:
+	} else {
 		return VPB_RAW;
 	}
 }
 
 static inline const char * ast2vpbformatname(struct ast_format *format)
 {
-	switch(format->id) {
-	case AST_FORMAT_ALAW:
+	if (ast_format_cmp(format, ast_format_alaw) == AST_FORMAT_CMP_EQUAL) {
 		return "AST_FORMAT_ALAW:VPB_ALAW";
-	case AST_FORMAT_SLINEAR:
+	} else if (ast_format_cmp(format, ast_format_slin) == AST_FORMAT_CMP_EQUAL) {
 		return "AST_FORMAT_SLINEAR:VPB_LINEAR";
-	case AST_FORMAT_ULAW:
+	} else if (ast_format_cmp(format, ast_format_ulaw) == AST_FORMAT_CMP_EQUAL) {
 		return "AST_FORMAT_ULAW:VPB_MULAW";
-	case AST_FORMAT_ADPCM:
+	} else if (ast_format_cmp(format, ast_format_adpcm) == AST_FORMAT_CMP_EQUAL) {
 		return "AST_FORMAT_ADPCM:VPB_OKIADPCM";
-	default:
+	} else {
 		return "UNKN:UNKN";
 	}
 }
 
 static inline int astformatbits(struct ast_format *format)
 {
-	switch (format->id) {
-	case AST_FORMAT_SLINEAR:
+	if (ast_format_cmp(format, ast_format_slin) == AST_FORMAT_CMP_EQUAL) {
 		return 16;
-	case AST_FORMAT_ADPCM:
+	} else if (ast_format_cmp(format, ast_format_adpcm) == AST_FORMAT_CMP_EQUAL) {
 		return 4;
-	case AST_FORMAT_ALAW:
-	case AST_FORMAT_ULAW:
-	default:
+	} else {
 		return 8;
 	}
 }
@@ -2143,7 +2141,8 @@ static int vpb_write(struct ast_channel *ast, struct ast_frame *frame)
 /*		ast_mutex_unlock(&p->lock); */
 		return 0;
 	} else if (ast_channel_state(ast) != AST_STATE_UP) {
-		ast_verb(4, "%s: vpb_write: Attempt to Write frame type[%d]subclass[%s] on not up chan(state[%d])\n", ast_channel_name(ast), frame->frametype, ast_getformatname(&frame->subclass.format), ast_channel_state(ast));
+		ast_verb(4, "%s: vpb_write: Attempt to Write frame type[%d]subclass[%s] on not up chan(state[%d])\n",
+			ast_channel_name(ast), frame->frametype, ast_format_get_name(frame->subclass.format), ast_channel_state(ast));
 		p->lastoutput = -1;
 /*		ast_mutex_unlock(&p->lock); */
 		return 0;
@@ -2151,9 +2150,10 @@ static int vpb_write(struct ast_channel *ast, struct ast_frame *frame)
 /*	ast_debug(1, "%s: vpb_write: Checked frame type..\n", p->dev); */
 
 
-	fmt = ast2vpbformat(&frame->subclass.format);
+	fmt = ast2vpbformat(frame->subclass.format);
 	if (fmt < 0) {
-		ast_log(LOG_WARNING, "%s: vpb_write: Cannot handle frames of %s format!\n", ast_channel_name(ast), ast_getformatname(&frame->subclass.format));
+		ast_log(LOG_WARNING, "%s: vpb_write: Cannot handle frames of %s format!\n", ast_channel_name(ast),
+			ast_format_get_name(frame->subclass.format));
 		return -1;
 	}
 
@@ -2177,7 +2177,7 @@ static int vpb_write(struct ast_channel *ast, struct ast_frame *frame)
 	/* Check if we have set up the play_buf */
 	if (p->lastoutput == -1) {
 		vpb_play_buf_start(p->handle, fmt);
-		ast_verb(2, "%s: vpb_write: Starting play mode (codec=%d)[%s]\n", p->dev, fmt, ast2vpbformatname(&frame->subclass.format));
+		ast_verb(2, "%s: vpb_write: Starting play mode (codec=%d)[%s]\n", p->dev, fmt, ast2vpbformatname(frame->subclass.format));
 		p->lastoutput = fmt;
 		ast_mutex_unlock(&p->play_lock);
 		return 0;
@@ -2227,7 +2227,7 @@ static void *do_chanreads(void *pvt)
 	struct ast_frame *fr = &p->fr;
 	char *readbuf = ((char *)p->buf) + AST_FRIENDLY_OFFSET;
 	int bridgerec = 0;
-	struct ast_format tmpfmt;
+	struct ast_format *tmpfmt;
 	int readlen, res, trycnt=0;
 	AudioCompress fmt;
 	int ignore_dtmf;
@@ -2252,20 +2252,9 @@ static void *do_chanreads(void *pvt)
 		ast_verb(5, "%s: chanreads: Starting cycle ...\n", p->dev);
 		ast_verb(5, "%s: chanreads: Checking bridge \n", p->dev);
 		if (p->bridge) {
-			if (p->bridge->c0 == p->owner && (p->bridge->flags & AST_BRIDGE_REC_CHANNEL_0))
-				bridgerec = 1;
-			else if (p->bridge->c1 == p->owner && (p->bridge->flags & AST_BRIDGE_REC_CHANNEL_1))
-				bridgerec = 1;
-			else 
-				bridgerec = 0;
+			bridgerec = 0;
 		} else {
-			ast_verb(5, "%s: chanreads: No native bridge.\n", p->dev);
-			if (ast_channel_internal_bridged_channel(p->owner)) {
-				ast_verb(5, "%s: chanreads: Got Asterisk bridge with [%s].\n", p->dev, ast_channel_name(ast_channel_internal_bridged_channel(p->owner)));
-				bridgerec = 1;
-			} else {
-				bridgerec = 0;
-			}
+			bridgerec = ast_channel_is_bridged(p->owner) ? 1 : 0;
 		}
 
 /*		if ((p->owner->_state != AST_STATE_UP) || !bridgerec) */
@@ -2323,22 +2312,22 @@ static void *do_chanreads(void *pvt)
 		ast_mutex_unlock(&p->play_dtmf_lock);
 
 		if (p->owner) {
-			ast_format_copy(&tmpfmt, ast_channel_rawreadformat(p->owner));
+			tmpfmt = ast_channel_rawreadformat(p->owner);
 		} else {
-			ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0);
+			tmpfmt = ast_format_slin;
 		}
-		fmt = ast2vpbformat(&tmpfmt);
+		fmt = ast2vpbformat(tmpfmt);
 		if (fmt < 0) {
-			ast_log(LOG_WARNING, "%s: Record failure (unsupported format %s)\n", p->dev, ast_getformatname(&tmpfmt));
+			ast_log(LOG_WARNING, "%s: Record failure (unsupported format %s)\n", p->dev, ast_format_get_name(tmpfmt));
 			return NULL;
 		}
-		readlen = VPB_SAMPLES * astformatbits(&tmpfmt) / 8;
+		readlen = VPB_SAMPLES * astformatbits(tmpfmt) / 8;
 
 		if (p->lastinput == -1) {
 			vpb_record_buf_start(p->handle, fmt);
 /*			vpb_reset_record_fifo_alarm(p->handle); */
 			p->lastinput = fmt;
-			ast_verb(2, "%s: Starting record mode (codec=%d)[%s]\n", p->dev, fmt, ast2vpbformatname(&tmpfmt));
+			ast_verb(2, "%s: Starting record mode (codec=%d)[%s]\n", p->dev, fmt, ast2vpbformatname(tmpfmt));
 			continue;
 		} else if (p->lastinput != fmt) {
 			vpb_record_buf_finish(p->handle);
@@ -2357,7 +2346,7 @@ static void *do_chanreads(void *pvt)
 				a_gain_vector(p->rxswgain - MAX_VPB_GAIN, (short *)readbuf, readlen / sizeof(short));
 			ast_verb(6, "%s: chanreads: applied gain\n", p->dev);
 
-			ast_format_copy(&fr->subclass.format, &tmpfmt);
+			fr->subclass.format = tmpfmt;
 			fr->data.ptr = readbuf;
 			fr->datalen = readlen;
 			fr->frametype = AST_FRAME_VOICE;
@@ -2432,20 +2421,19 @@ static void *do_chanreads(void *pvt)
 	return NULL;
 }
 
-static struct ast_channel *vpb_new(struct vpb_pvt *me, enum ast_channel_state state, const char *context, const char *linkedid)
+static struct ast_channel *vpb_new(struct vpb_pvt *me, enum ast_channel_state state, const char *context, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor)
 {
 	struct ast_channel *tmp; 
 	char cid_num[256];
 	char cid_name[256];
-	struct ast_format tmpfmt;
 
 	if (me->owner) {
 	    ast_log(LOG_WARNING, "Called vpb_new on owned channel (%s) ?!\n", me->dev);
 	    return NULL;
 	}
 	ast_verb(4, "%s: New call for context [%s]\n", me->dev, context);
-	    
-	tmp = ast_channel_alloc(1, state, 0, 0, "", me->ext, me->context, linkedid, 0, "%s", me->dev);
+
+	tmp = ast_channel_alloc(1, state, 0, 0, "", me->ext, me->context, assignedids, requestor, AST_AMA_NONE, "%s", me->dev);
 	if (tmp) {
 		if (use_ast_ind == 1){
 			ast_channel_tech_set(tmp, &vpb_tech_indicate);
@@ -2460,9 +2448,9 @@ static struct ast_channel *vpb_new(struct vpb_pvt *me, enum ast_channel_state st
 		 * they are all converted to/from linear in the vpb code. Best for us to use
 		 * linear since we can then adjust volume in this modules.
 		 */
-		ast_format_cap_add(ast_channel_nativeformats(tmp), ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
-		ast_format_copy(ast_channel_rawreadformat(tmp), &tmpfmt);
-		ast_format_copy(ast_channel_rawwriteformat(tmp), &tmpfmt);
+		ast_channel_nativeformats_set(tmp, vpb_tech.capabilities);
+		ast_channel_set_rawreadformat(tmp, ast_format_slin);
+		ast_channel_set_rawwriteformat(tmp, ast_format_slin);
 		if (state == AST_STATE_RING) {
 			ast_channel_rings_set(tmp, 1);
 			cid_name[0] = '\0';
@@ -2479,6 +2467,7 @@ static struct ast_channel *vpb_new(struct vpb_pvt *me, enum ast_channel_state st
 			ast_channel_exten_set(tmp, "s");
 		if (!ast_strlen_zero(me->language))
 			ast_channel_language_set(tmp, me->language);
+		ast_channel_unlock(tmp);
 
 		me->owner = tmp;
 
@@ -2508,20 +2497,24 @@ static struct ast_channel *vpb_new(struct vpb_pvt *me, enum ast_channel_state st
 	return tmp;
 }
 
-static struct ast_channel *vpb_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause) 
+static struct ast_channel *vpb_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause) 
 {
 	struct vpb_pvt *p;
 	struct ast_channel *tmp = NULL;
 	char *sepstr, *name;
 	const char *s;
 	int group = -1;
-	struct ast_format slin;
 
-	ast_format_set(&slin, AST_FORMAT_SLINEAR, 0);
+	if (!(ast_format_cap_iscompatible_format(cap, ast_format_slin))) {
+		struct ast_str *buf;
 
-	if (!(ast_format_cap_iscompatible(cap, &slin))) {
-		char tmp[256];
-		ast_log(LOG_NOTICE, "Asked to get a channel of unsupported format '%s'\n", ast_getformatname_multiple(tmp, sizeof(tmp), cap));
+		buf = ast_str_create(256);
+		if (!buf) {
+			return NULL;
+		}
+		ast_log(LOG_NOTICE, "Asked to create a channel for unsupported formats: %s\n",
+			ast_format_cap_get_names(cap, &buf));
+		ast_free(buf);
 		return NULL;
 	}
 
@@ -2541,13 +2534,13 @@ static struct ast_channel *vpb_request(const char *type, struct ast_format_cap *
 		if (group == -1) {
 			if (strncmp(s, p->dev + 4, sizeof p->dev) == 0) {
 				if (!p->owner) {
-					tmp = vpb_new(p, AST_STATE_DOWN, p->context, requestor ? ast_channel_linkedid(requestor) : NULL);
+					tmp = vpb_new(p, AST_STATE_DOWN, p->context, assignedids, requestor);
 					break;
 				}
 			}
 		} else {
 			if ((p->group == group) && (!p->owner)) {
-				tmp = vpb_new(p, AST_STATE_DOWN, p->context, requestor ? ast_channel_linkedid(requestor) : NULL);
+				tmp = vpb_new(p, AST_STATE_DOWN, p->context, assignedids, requestor);
 				break;
 			}
 		}
@@ -2643,11 +2636,23 @@ static int unload_module(void)
 		ast_free(bridges);
 	}
 
-	ast_format_cap_destroy(vpb_tech.capabilities);
-	ast_format_cap_destroy(vpb_tech_indicate.capabilities);
+	ao2_cleanup(vpb_tech.capabilities);
+	vpb_tech.capabilities = NULL;
+	ao2_cleanup(vpb_tech_indicate.capabilities);
+	vpb_tech_indicate.capabilities = NULL;
 	return 0;
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static enum ast_module_load_result load_module()
 {
 	struct ast_config *cfg;
@@ -2668,17 +2673,18 @@ static enum ast_module_load_result load_module()
 	int bal2 = -1; 
 	int bal3 = -1;
 	char * callerid = NULL;
-	struct ast_format tmpfmt;
 	int num_cards = 0;
 
-	if (!(vpb_tech.capabilities = ast_format_cap_alloc())) {
+	vpb_tech.capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!vpb_tech.capabilities) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
-	if (!(vpb_tech_indicate.capabilities = ast_format_cap_alloc())) {
+	vpb_tech_indicate.capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!vpb_tech_indicate.capabilities) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
-	ast_format_cap_add(vpb_tech.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
-	ast_format_cap_add(vpb_tech_indicate.capabilities, ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR, 0));
+	ast_format_cap_append(vpb_tech.capabilities, ast_format_slin, 0);
+	ast_format_cap_append(vpb_tech_indicate.capabilities, ast_format_slin, 0);
 	try {
 		num_cards = vpb_get_num_cards();
 	} catch (std::exception e) {

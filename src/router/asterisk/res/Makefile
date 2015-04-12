@@ -1,5 +1,5 @@
 #
-# Asterisk -- A telephony toolkit for Linux.
+# Asterisk -- An open source telephony toolkit.
 # 
 # Makefile for resource modules
 #
@@ -9,7 +9,7 @@
 # the GNU General Public License
 #
 
--include $(ASTTOPDIR)/menuselect.makeopts $(ASTTOPDIR)/menuselect.makedeps $(ASTTOPDIR)/build_tools/menuselect-deps
+-include $(ASTTOPDIR)/menuselect.makeopts $(ASTTOPDIR)/menuselect.makedeps
 
 MODULE_PREFIX=res
 MENUSELECT_CATEGORY=RES
@@ -42,6 +42,12 @@ snmp/agent.o: _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_snmp)
 
 $(if $(filter res_ael_share,$(EMBEDDED_MODS)),modules.link,res_ael_share.so): ael/ael_lex.o ael/ael.tab.o ael/pval.o
 ael/ael_lex.o ael/ael.tab.o ael/pval.o: _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_ael_share)
+
+$(if $(filter res_pjsip,$(EMBEDDED_MODS)),modules.link,res_pjsip.so): $(subst .c,.o,$(wildcard res_pjsip/*.c))
+$(subst .c,.o,$(wildcard res_pjsip/*.c)): _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_pjsip)
+
+$(if $(filter res_stasis,$(EMBEDDED_MODS)),modules.link,res_stasis.so): $(subst .c,.o,$(wildcard stasis/*.c))
+$(subst .c,.o,$(wildcard stasis/*.c)): _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_stasis)
 
 ifneq ($(findstring REBUILD_PARSERS,$(MENUSELECT_CFLAGS)),)
 ael/ael_lex.c: ael/ael.flex

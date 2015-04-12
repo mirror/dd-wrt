@@ -75,8 +75,8 @@
 /*! MWI MDMF format -- generate name, callerid, date and MWI fields */
 #define CID_MWI_TYPE_MDMF_FULL	0x02
 
-#define AST_LIN2X(a) ((codec->id == AST_FORMAT_ALAW) ? (AST_LIN2A(a)) : (AST_LIN2MU(a)))
-#define AST_XLAW(a) ((codec->id == AST_FORMAT_ALAW) ? (AST_ALAW(a)) : (AST_MULAW(a)))
+#define AST_LIN2X(a) ((ast_format_cmp(codec, ast_format_alaw) == AST_FORMAT_CMP_EQUAL) ? (AST_LIN2A(a)) : (AST_LIN2MU(a)))
+#define AST_XLAW(a) ((ast_format_cmp(codec, ast_format_alaw) == AST_FORMAT_CMP_EQUAL) ? (AST_ALAW(a)) : (AST_MULAW(a)))
 
 
 struct callerid_state;
@@ -424,15 +424,17 @@ int ast_redirecting_reason_parse(const char *data);
  */
 const char *ast_redirecting_reason_describe(int data);
 
+struct ast_party_redirecting_reason;
+
 /*!
  * \since 1.8
  * \brief Convert redirecting reason value to text code
  *
- * \param data Q931_REDIRECTING_REASON from callerid.h
+ * \param data ast_party_redirecting_reason structure from channel.h
  *
  * \return string for config file
  */
-const char *ast_redirecting_reason_name(int data);
+const char *ast_redirecting_reason_name(const struct ast_party_redirecting_reason *data);
 
 /*!
  * \brief Connected line update source code

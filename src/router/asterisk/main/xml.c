@@ -28,14 +28,21 @@
 #include "asterisk.h"
 #include "asterisk/xml.h"
 #include "asterisk/logger.h"
+#include "asterisk/utils.h"
+#include "asterisk/autoconfig.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369013 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 400385 $")
 
 #if defined(HAVE_LIBXML2)
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xinclude.h>
+#include <libxml/xpath.h>
 /* libxml2 ast_xml implementation. */
+#ifdef HAVE_LIBXSLT
+	#include <libxslt/xsltInternals.h>
+	#include <libxslt/transform.h>
+#endif /* HAVE_LIBXSLT */
 
 
 int ast_xml_init(void)
@@ -48,6 +55,9 @@ int ast_xml_init(void)
 int ast_xml_finish(void)
 {
 	xmlCleanupParser();
+#ifdef HAVE_LIBXSLT_CLEANUP
+	xsltCleanupGlobals();
+#endif
 
 	return 0;
 }
@@ -61,13 +71,32 @@ struct ast_xml_doc *ast_xml_open(char *filename)
 	}
 
 	doc = xmlReadFile(filename, NULL, XML_PARSE_RECOVER);
-	if (doc) {
-		/* process xinclude elements. */
-		if (xmlXIncludeProcess(doc) < 0) {
+	if (!doc) {
+		return NULL;
+	}
+
+	/* process xinclude elements. */
+	if (xmlXIncludeProcess(doc) < 0) {
+		xmlFreeDoc(doc);
+		return NULL;
+	}
+
+#ifdef HAVE_LIBXSLT
+	{
+		xsltStylesheetPtr xslt = xsltLoadStylesheetPI(doc);
+		if (xslt) {
+			xmlDocPtr tmpdoc = xsltApplyStylesheet(xslt, doc, NULL);
+			xsltFreeStylesheet(xslt);
 			xmlFreeDoc(doc);
-			return NULL;
+			if (!tmpdoc) {
+				return NULL;
+			}
+			doc = tmpdoc;
 		}
 	}
+#else /* no HAVE_LIBXSLT */
+	ast_log(LOG_NOTICE, "XSLT support not found. XML documentation may be incomplete.\n");
+#endif /* HAVE_LIBXSLT */
 
 	return (struct ast_xml_doc *) doc;
 }
@@ -314,6 +343,43 @@ struct ast_xml_node *ast_xml_node_get_prev(struct ast_xml_node *node)
 struct ast_xml_node *ast_xml_node_get_parent(struct ast_xml_node *node)
 {
 	return (struct ast_xml_node *) ((xmlNode *) node)->parent;
+}
+
+struct ast_xml_node *ast_xml_xpath_get_first_result(struct ast_xml_xpath_results *results)
+{
+	return (struct ast_xml_node *) ((xmlXPathObjectPtr) results)->nodesetval->nodeTab[0];
+}
+
+void ast_xml_xpath_results_free(struct ast_xml_xpath_results *results)
+{
+	xmlXPathFreeObject((xmlXPathObjectPtr) results);
+}
+
+int ast_xml_xpath_num_results(struct ast_xml_xpath_results *results)
+{
+	return ((xmlXPathObjectPtr) results)->nodesetval->nodeNr;
+}
+
+struct ast_xml_xpath_results *ast_xml_query(struct ast_xml_doc *doc, const char *xpath_str)
+{
+	xmlXPathContextPtr context;
+	xmlXPathObjectPtr result;
+	if (!(context = xmlXPathNewContext((xmlDoc *) doc))) {
+		ast_log(LOG_ERROR, "Could not create XPath context!\n");
+		return NULL;
+	}
+	result = xmlXPathEvalExpression((xmlChar *) xpath_str, context);
+	xmlXPathFreeContext(context);
+	if (!result) {
+		ast_log(LOG_WARNING, "Error for query: %s\n", xpath_str);
+		return NULL;
+	}
+	if (xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+		xmlXPathFreeObject(result);
+		ast_debug(5, "No results for query: %s\n", xpath_str);
+		return NULL;
+	}
+	return (struct ast_xml_xpath_results *) result;
 }
 
 #endif /* defined(HAVE_LIBXML2) */

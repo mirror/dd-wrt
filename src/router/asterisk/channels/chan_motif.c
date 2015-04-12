@@ -22,9 +22,17 @@
  *
  * \brief Motif Jingle Channel Driver
  *
- * \extref Iksemel http://iksemel.jabberstudio.org/
+ * Iksemel http://iksemel.jabberstudio.org/
  *
  * \ingroup channel_drivers
+ */
+
+/*! \li \ref chan_motif.c uses the configuration file \ref motif.conf
+ * \addtogroup configuration_file
+ */
+
+/*! \page motif.conf motif.conf
+ * \verbinclude motif.conf.sample
  */
 
 /*** MODULEINFO
@@ -36,7 +44,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 397744 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 427982 $")
 
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -65,9 +73,150 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 397744 $")
 #include "asterisk/stringfields.h"
 #include "asterisk/utils.h"
 #include "asterisk/causes.h"
-#include "asterisk/astobj.h"
 #include "asterisk/abstract_jb.h"
 #include "asterisk/xmpp.h"
+#include "asterisk/endpoints.h"
+#include "asterisk/stasis_channels.h"
+#include "asterisk/format_cache.h"
+
+/*** DOCUMENTATION
+	<configInfo name="chan_motif" language="en_US">
+		<synopsis>Jingle Channel Driver</synopsis>
+		<description>
+			<para><emphasis>Transports</emphasis></para>
+			<para>There are three different transports and protocol derivatives
+			supported by <literal>chan_motif</literal>. They are in order of
+			preference: Jingle using ICE-UDP, Google Jingle, and Google-V1.</para>
+			<para>Jingle as defined in XEP-0166 supports the widest range of
+			features. It is referred to as <literal>ice-udp</literal>. This is
+			the specification that Jingle clients implement.</para>
+			<para>Google Jingle follows the Jingle specification for signaling
+			but uses a custom transport for media. It is supported by the
+			Google Talk Plug-in in Gmail and by some other Jingle clients. It
+			is referred to as <literal>google</literal> in this file.</para>
+			<para>Google-V1 is the original Google Talk signaling protocol
+			which uses an initial preliminary version of Jingle. It also uses
+			the same custom transport as Google Jingle for media. It is
+			supported by Google Voice, some other Jingle clients, and the
+			Windows Google Talk client. It is referred to as <literal>google-v1</literal>
+			in this file.</para>
+			<para>Incoming sessions will automatically switch to the correct
+			transport once it has been determined.</para>
+			<para>Outgoing sessions are capable of determining if the target
+			is capable of Jingle or a Google transport if the target is in the
+			roster. Unfortunately it is not possible to differentiate between
+			a Google Jingle or Google-V1 capable resource until a session
+			initiate attempt occurs. If a resource is determined to use a
+			Google transport it will initially use Google Jingle but will fall
+			back to Google-V1 if required.</para>
+			<para>If an outgoing session attempt fails due to failure to
+			support the given transport <literal>chan_motif</literal> will
+			fall back in preference order listed previously until all
+			transports have been exhausted.</para>
+			<para><emphasis>Dialing and Resource Selection Strategy</emphasis></para>
+			<para>Placing a call through an endpoint can be accomplished using the
+			following dial string:</para>
+			<para><literal>Motif/[endpoint name]/[target]</literal></para>
+			<para>When placing an outgoing call through an endpoint the requested
+			target is searched for in the roster list. If present the first Jingle
+			or Google Jingle capable resource is specifically targeted. Since the
+			capabilities of the resource are known the outgoing session initiation
+			will disregard the configured transport and use the determined one.</para>
+			<para>If the target is not found in the roster the target will be used
+			as-is and a session will be initiated using the transport specified
+			in this configuration file. If no transport has been specified the
+			endpoint defaults to <literal>ice-udp</literal>.</para>
+			<para><emphasis>Video Support</emphasis></para>
+			<para>Support for video does not need to be explicitly enabled.
+			Configuring any video codec on your endpoint will automatically enable
+			it.</para>
+			<para><emphasis>DTMF</emphasis></para>
+			<para>The only supported method for DTMF is RFC2833. This is always
+			enabled on audio streams and negotiated if possible.</para>
+			<para><emphasis>Incoming Calls</emphasis></para>
+			<para>Incoming calls will first look for the extension matching the
+			name of the endpoint in the configured context. If no such extension
+			exists the call will automatically fall back to the <literal>s</literal> extension.</para>
+			<para><emphasis>CallerID</emphasis></para>
+			<para>The incoming caller id number is populated with the username of
+			the caller and the name is populated with the full identity of the
+			caller. If you would like to perform authentication or filtering
+			of incoming calls it is recommended that you use these fields to do so.</para>
+			<para>Outgoing caller id can <emphasis>not</emphasis> be set.</para>
+			<warning>
+				<para>Multiple endpoints using the
+				same connection is <emphasis>NOT</emphasis> supported. Doing so
+				may result in broken calls.</para>
+			</warning>
+		</description>
+		<configFile name="motif.conf">
+			<configObject name="endpoint">
+				<synopsis>The configuration for an endpoint.</synopsis>
+				<configOption name="context">
+					<synopsis>Default dialplan context that incoming sessions will be routed to</synopsis>
+				</configOption>
+				<configOption name="callgroup">
+					<synopsis>A callgroup to assign to this endpoint.</synopsis>
+				</configOption>
+				<configOption name="pickupgroup">
+					<synopsis>A pickup group to assign to this endpoint.</synopsis>
+				</configOption>
+				<configOption name="language">
+					<synopsis>The default language for this endpoint.</synopsis>
+				</configOption>
+				<configOption name="musicclass">
+					<synopsis>Default music on hold class for this endpoint.</synopsis>
+				</configOption>
+				<configOption name="parkinglot">
+					<synopsis>Default parking lot for this endpoint.</synopsis>
+				</configOption>
+				<configOption name="accountcode">
+					<synopsis>Accout code for CDR purposes</synopsis>
+				</configOption>
+				<configOption name="allow">
+					<synopsis>Codecs to allow</synopsis>
+				</configOption>
+				<configOption name="disallow">
+					<synopsis>Codecs to disallow</synopsis>
+				</configOption>
+				<configOption name="connection">
+					<synopsis>Connection to accept traffic on and on which to send traffic out</synopsis>
+				</configOption>
+				<configOption name="transport">
+					<synopsis>The transport to use for the endpoint.</synopsis>
+					<description>
+						<para>The default outbound transport for this endpoint. Inbound
+						messages are inferred. Allowed transports are <literal>ice-udp</literal>,
+						<literal>google</literal>, or <literal>google-v1</literal>. Note
+						that <literal>chan_motif</literal> will fall back to transport
+						preference order if the transport value chosen here fails.</para>
+						<enumlist>
+							<enum name="ice-udp">
+								<para>The Jingle protocol, as defined in XEP 0166.</para>
+							</enum>
+							<enum name="google">
+								<para>The Google Jingle protocol, which follows the Jingle
+								specification for signaling but uses a custom transport for
+								media.</para>
+							</enum>
+							<enum name="google-v1">
+								<para>Google-V1 is the original Google Talk signaling
+								protocol which uses an initial preliminary version of Jingle.
+								It also uses the same custom transport as <literal>google</literal> for media.</para>
+							</enum>
+						</enumlist>
+					</description>
+				</configOption>
+				<configOption name="maxicecandidates">
+					<synopsis>Maximum number of ICE candidates to offer</synopsis>
+				</configOption>
+				<configOption name="maxpayloads">
+					<synopsis>Maximum number of pyaloads to offer</synopsis>
+				</configOption>
+			</configObject>
+		</configFile>
+	</configInfo>
+***/
 
 /*! \brief Default maximum number of ICE candidates we will offer */
 #define DEFAULT_MAX_ICE_CANDIDATES "10"
@@ -138,7 +287,6 @@ struct jingle_endpoint {
 	iksrule *rule;                          /*!< Active matching rule */
 	unsigned int maxicecandidates;          /*!< Maximum number of ICE candidates we will offer */
 	unsigned int maxpayloads;               /*!< Maximum number of payloads we will offer */
-	struct ast_codec_pref prefs;            /*!< Codec preferences */
 	struct ast_format_cap *cap;             /*!< Formats to use */
 	ast_group_t callgroup;                  /*!< Call group */
 	ast_group_t pickupgroup;                /*!< Pickup group */
@@ -161,7 +309,6 @@ struct jingle_session {
 	char remote_original[XMPP_MAX_JIDLEN];/*!< Identifier of the original remote party (remote may have changed due to redirect) */
 	char remote[XMPP_MAX_JIDLEN];         /*!< Identifier of the remote party */
 	iksrule *rule;                        /*!< Session matching rule */
-	struct ast_codec_pref prefs;          /*!< Codec preferences */
 	struct ast_channel *owner;            /*!< Master Channel */
 	struct ast_rtp_instance *rtp;         /*!< RTP audio session */
 	struct ast_rtp_instance *vrtp;        /*!< RTP video session */
@@ -185,7 +332,7 @@ static AO2_GLOBAL_OBJ_STATIC(globals);
 static struct ast_sched_context *sched; /*!< Scheduling context for RTCP */
 
 /* \brief Asterisk core interaction functions */
-static struct ast_channel *jingle_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause);
+static struct ast_channel *jingle_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause);
 static int jingle_sendtext(struct ast_channel *ast, const char *text);
 static int jingle_digit_begin(struct ast_channel *ast, char digit);
 static int jingle_digit_end(struct ast_channel *ast, char digit, unsigned int duration);
@@ -213,7 +360,6 @@ static struct ast_channel_tech jingle_tech = {
 	.send_text = jingle_sendtext,
 	.send_digit_begin = jingle_digit_begin,
 	.send_digit_end = jingle_digit_end,
-	.bridge = ast_rtp_instance_bridge,
 	.call = jingle_call,
 	.hangup = jingle_hangup,
 	.answer = jingle_answer,
@@ -307,8 +453,7 @@ static void jingle_endpoint_destructor(void *obj)
 		ast_xmpp_client_unref(endpoint->connection);
 	}
 
-	ast_format_cap_destroy(endpoint->cap);
-
+	ao2_cleanup(endpoint->cap);
 	ao2_ref(endpoint->state, -1);
 
 	ast_string_field_free_memory(endpoint);
@@ -372,7 +517,7 @@ static void *jingle_endpoint_alloc(const char *cat)
 
 	ast_string_field_set(endpoint, name, cat);
 
-	endpoint->cap = ast_format_cap_alloc_nolock();
+	endpoint->cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 	endpoint->transport = JINGLE_TRANSPORT_ICE_UDP;
 
 	return endpoint;
@@ -398,6 +543,7 @@ static int jingle_endpoint_cmp(void *obj, void *arg, int flags)
 
 static struct aco_type endpoint_option = {
 	.type = ACO_ITEM,
+	.name = "endpoint",
 	.category_match = ACO_BLACKLIST,
 	.category = "^general$",
 	.item_alloc = jingle_endpoint_alloc,
@@ -435,9 +581,9 @@ static void jingle_session_destructor(void *obj)
 		ast_rtp_instance_destroy(session->vrtp);
 	}
 
-	ast_format_cap_destroy(session->cap);
-	ast_format_cap_destroy(session->jointcap);
-	ast_format_cap_destroy(session->peercap);
+	ao2_cleanup(session->cap);
+	ao2_cleanup(session->jointcap);
+	ao2_cleanup(session->peercap);
 
 	if (session->callid) {
 		ast_callid_unref(session->callid);
@@ -509,6 +655,18 @@ static struct ast_rtp_glue jingle_rtp_glue = {
 	.update_peer = jingle_set_rtp_peer,
 };
 
+/*! \brief Set the channel owner on the \ref jingle_session object and related objects */
+static void jingle_set_owner(struct jingle_session *session, struct ast_channel *chan)
+{
+	session->owner = chan;
+	if (session->rtp) {
+		ast_rtp_instance_set_channel_id(session->rtp, session->owner ? ast_channel_uniqueid(session->owner) : "");
+	}
+	if (session->vrtp) {
+		ast_rtp_instance_set_channel_id(session->vrtp, session->owner ? ast_channel_uniqueid(session->owner) : "");
+	}
+}
+
 /*! \brief Internal helper function which enables video support on a sesson if possible */
 static void jingle_enable_video(struct jingle_session *session)
 {
@@ -521,7 +679,7 @@ static void jingle_enable_video(struct jingle_session *session)
 	}
 
 	/* If there are no configured video codecs do not turn video support on, it just won't work */
-	if (!ast_format_cap_has_type(session->cap, AST_FORMAT_TYPE_VIDEO)) {
+	if (!ast_format_cap_has_type(session->cap, AST_MEDIA_TYPE_VIDEO)) {
 		return;
 	}
 
@@ -532,11 +690,11 @@ static void jingle_enable_video(struct jingle_session *session)
 	}
 
 	ast_rtp_instance_set_prop(session->vrtp, AST_RTP_PROPERTY_RTCP, 1);
-
+	ast_rtp_instance_set_channel_id(session->vrtp, ast_channel_uniqueid(session->owner));
 	ast_channel_set_fd(session->owner, 2, ast_rtp_instance_fd(session->vrtp, 0));
 	ast_channel_set_fd(session->owner, 3, ast_rtp_instance_fd(session->vrtp, 1));
-	ast_rtp_codecs_packetization_set(ast_rtp_instance_get_codecs(session->vrtp), session->vrtp, &session->prefs);
-
+	ast_rtp_codecs_set_framing(ast_rtp_instance_get_codecs(session->vrtp),
+		ast_format_cap_get_framing(session->cap));
 	if (session->transport == JINGLE_TRANSPORT_GOOGLE_V2 && (ice = ast_rtp_instance_get_ice(session->vrtp))) {
 		ice->stop(session->vrtp);
 	}
@@ -567,7 +725,7 @@ static struct jingle_session *jingle_alloc(struct jingle_endpoint *endpoint, con
 	}
 
 	if (ast_strlen_zero(sid)) {
-		ast_string_field_build(session, sid, "%08lx%08lx", ast_random(), ast_random());
+		ast_string_field_build(session, sid, "%08lx%08lx", (unsigned long)ast_random(), (unsigned long)ast_random());
 		session->outgoing = 1;
 		ast_string_field_set(session, audio_name, "audio");
 		ast_string_field_set(session, video_name, "video");
@@ -581,15 +739,15 @@ static struct jingle_session *jingle_alloc(struct jingle_endpoint *endpoint, con
 	session->connection = endpoint->connection;
 	session->transport = endpoint->transport;
 
-	if (!(session->cap = ast_format_cap_alloc_nolock()) ||
-	    !(session->jointcap = ast_format_cap_alloc_nolock()) ||
-	    !(session->peercap = ast_format_cap_alloc_nolock()) ||
+	if (!(session->cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT)) ||
+	    !(session->jointcap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT)) ||
+	    !(session->peercap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT)) ||
 	    !session->callid) {
 		ao2_ref(session, -1);
 		return NULL;
 	}
 
-	ast_format_cap_copy(session->cap, endpoint->cap);
+	ast_format_cap_append_from_cap(session->cap, endpoint->cap, AST_MEDIA_TYPE_UNKNOWN);
 
 	/* While we rely on res_xmpp for communication we still need a temporary ast_sockaddr to tell the RTP engine
 	 * that we want IPv4 */
@@ -603,8 +761,6 @@ static struct jingle_session *jingle_alloc(struct jingle_endpoint *endpoint, con
 	ast_rtp_instance_set_prop(session->rtp, AST_RTP_PROPERTY_RTCP, 1);
 	ast_rtp_instance_set_prop(session->rtp, AST_RTP_PROPERTY_DTMF, 1);
 
-	memcpy(&session->prefs, &endpoint->prefs, sizeof(session->prefs));
-
 	session->maxicecandidates = endpoint->maxicecandidates;
 	session->maxpayloads = endpoint->maxpayloads;
 
@@ -612,35 +768,46 @@ static struct jingle_session *jingle_alloc(struct jingle_endpoint *endpoint, con
 }
 
 /*! \brief Function called to create a new Jingle Asterisk channel */
-static struct ast_channel *jingle_new(struct jingle_endpoint *endpoint, struct jingle_session *session, int state, const char *title, const char *linkedid, const char *cid_name)
+static struct ast_channel *jingle_new(struct jingle_endpoint *endpoint, struct jingle_session *session, int state, const char *title, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *cid_name)
 {
 	struct ast_channel *chan;
 	const char *str = S_OR(title, session->remote);
-	struct ast_format tmpfmt;
+	struct ast_format_cap *caps;
+	struct ast_format *tmpfmt;
 
-	if (ast_format_cap_is_empty(session->cap)) {
+	if (!ast_format_cap_count(session->cap)) {
 		return NULL;
 	}
 
-	if (!(chan = ast_channel_alloc(1, state, S_OR(title, ""), S_OR(cid_name, ""), "", "", "", linkedid, 0, "Motif/%s-%04lx", str, ast_random() & 0xffff))) {
+	caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!caps) {
 		return NULL;
 	}
+
+	if (!(chan = ast_channel_alloc_with_endpoint(1, state, S_OR(title, ""), S_OR(cid_name, ""), "", "", "", assignedids, requestor, 0, endpoint->connection->endpoint, "Motif/%s-%04lx", str, (unsigned long)(ast_random() & 0xffff)))) {
+		ao2_ref(caps, -1);
+		return NULL;
+	}
+
+	ast_channel_stage_snapshot(chan);
 
 	ast_channel_tech_set(chan, &jingle_tech);
 	ast_channel_tech_pvt_set(chan, session);
-	session->owner = chan;
+	jingle_set_owner(session, chan);
 
 	ast_channel_callid_set(chan, session->callid);
 
-	ast_format_cap_copy(ast_channel_nativeformats(chan), session->cap);
-	ast_codec_choose(&session->prefs, session->cap, 1, &tmpfmt);
+	ast_format_cap_append_from_cap(caps, session->cap, AST_MEDIA_TYPE_UNKNOWN);
+	ast_channel_nativeformats_set(chan, caps);
+	ao2_ref(caps, -1);
 
 	if (session->rtp) {
 		struct ast_rtp_engine_ice *ice;
 
 		ast_channel_set_fd(chan, 0, ast_rtp_instance_fd(session->rtp, 0));
 		ast_channel_set_fd(chan, 1, ast_rtp_instance_fd(session->rtp, 1));
-		ast_rtp_codecs_packetization_set(ast_rtp_instance_get_codecs(session->rtp), session->rtp, &session->prefs);
+		ast_rtp_codecs_set_framing(ast_rtp_instance_get_codecs(session->rtp),
+			ast_format_cap_get_framing(session->cap));
 
 		if (((session->transport == JINGLE_TRANSPORT_GOOGLE_V2) ||
 		     (session->transport == JINGLE_TRANSPORT_GOOGLE_V1)) &&
@@ -656,11 +823,12 @@ static struct ast_channel *jingle_new(struct jingle_endpoint *endpoint, struct j
 
 	ast_channel_adsicpe_set(chan, AST_ADSI_UNAVAILABLE);
 
-	ast_best_codec(ast_channel_nativeformats(chan), &tmpfmt);
-	ast_format_copy(ast_channel_writeformat(chan), &tmpfmt);
-	ast_format_copy(ast_channel_rawwriteformat(chan), &tmpfmt);
-	ast_format_copy(ast_channel_readformat(chan), &tmpfmt);
-	ast_format_copy(ast_channel_rawreadformat(chan), &tmpfmt);
+	tmpfmt = ast_format_cap_get_format(session->cap, 0);
+	ast_channel_set_writeformat(chan, tmpfmt);
+	ast_channel_set_rawwriteformat(chan, tmpfmt);
+	ast_channel_set_readformat(chan, tmpfmt);
+	ast_channel_set_rawreadformat(chan, tmpfmt);
+	ao2_ref(tmpfmt, -1);
 
 	ao2_lock(endpoint);
 
@@ -688,6 +856,9 @@ static struct ast_channel *jingle_new(struct jingle_endpoint *endpoint, struct j
 	ast_channel_priority_set(chan, 1);
 
 	ao2_unlock(endpoint);
+
+	ast_channel_stage_snapshot_done(chan);
+	ast_channel_unlock(chan);
 
 	return chan;
 }
@@ -776,13 +947,13 @@ static int jingle_add_ice_udp_candidates_to_transport(struct ast_rtp_instance *r
 			break;
 		}
 
-		snprintf(tmp, sizeof(tmp), "%d", candidate->id);
+		snprintf(tmp, sizeof(tmp), "%u", candidate->id);
 		iks_insert_attrib(local_candidate, "component", tmp);
 		snprintf(tmp, sizeof(tmp), "%d", ast_str_hash(candidate->foundation));
 		iks_insert_attrib(local_candidate, "foundation", tmp);
 		iks_insert_attrib(local_candidate, "generation", "0");
 		iks_insert_attrib(local_candidate, "network", "0");
-		snprintf(tmp, sizeof(tmp), "%04lx", ast_random() & 0xffff);
+		snprintf(tmp, sizeof(tmp), "%04lx", (unsigned long)(ast_random() & 0xffff));
 		iks_insert_attrib(local_candidate, "id", tmp);
 		iks_insert_attrib(local_candidate, "ip", ast_sockaddr_stringify_host(&candidate->address));
 		iks_insert_attrib(local_candidate, "port", ast_sockaddr_stringify_port(&candidate->address));
@@ -1135,30 +1306,24 @@ static void jingle_send_transport_info(struct jingle_session *session, const cha
 }
 
 /*! \brief Internal helper function which adds payloads to a description */
-static int jingle_add_payloads_to_description(struct jingle_session *session, struct ast_rtp_instance *rtp, iks *description, iks **payloads, enum ast_format_type type)
+static int jingle_add_payloads_to_description(struct jingle_session *session, struct ast_rtp_instance *rtp, iks *description, iks **payloads, enum ast_media_type type)
 {
-	struct ast_format format;
 	int x = 0, i = 0, res = 0;
 
-	for (x = 0; (x < AST_CODEC_PREF_SIZE) && (i < (session->maxpayloads - 2)); x++) {
+	for (x = 0; (x < ast_format_cap_count(session->jointcap)) && (i < (session->maxpayloads - 2)); x++) {
+		struct ast_format *format = ast_format_cap_get_format(session->jointcap, x);
 		int rtp_code;
 		iks *payload;
 		char tmp[32];
 
-		if (!ast_codec_pref_index(&session->prefs, x, &format)) {
-			break;
-		}
-
-		if (AST_FORMAT_GET_TYPE(format.id) != type) {
+		if (ast_format_get_type(format) != type) {
+			ao2_ref(format, -1);
 			continue;
 		}
 
-		if (!ast_format_cap_iscompatible(session->jointcap, &format)) {
-			continue;
-		}
-
-		if (((rtp_code = ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(rtp), 1, &format, 0)) == -1) ||
+		if (((rtp_code = ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(rtp), 1, format, 0)) == -1) ||
 		    (!(payload = iks_new("payload-type")))) {
+			ao2_ref(format, -1);
 			return -1;
 		}
 
@@ -1168,17 +1333,18 @@ static int jingle_add_payloads_to_description(struct jingle_session *session, st
 
 		snprintf(tmp, sizeof(tmp), "%d", rtp_code);
 		iks_insert_attrib(payload, "id", tmp);
-		iks_insert_attrib(payload, "name", ast_rtp_lookup_mime_subtype2(1, &format, 0, 0));
+		iks_insert_attrib(payload, "name", ast_rtp_lookup_mime_subtype2(1, format, 0, 0));
 		iks_insert_attrib(payload, "channels", "1");
 
-		if ((format.id == AST_FORMAT_G722) && ((session->transport == JINGLE_TRANSPORT_GOOGLE_V1) || (session->transport == JINGLE_TRANSPORT_GOOGLE_V2))) {
+		if ((ast_format_cmp(format, ast_format_g722) == AST_FORMAT_CMP_EQUAL) &&
+			((session->transport == JINGLE_TRANSPORT_GOOGLE_V1) || (session->transport == JINGLE_TRANSPORT_GOOGLE_V2))) {
 			iks_insert_attrib(payload, "clockrate", "16000");
 		} else {
-			snprintf(tmp, sizeof(tmp), "%d", ast_rtp_lookup_sample_rate2(1, &format, 0));
+			snprintf(tmp, sizeof(tmp), "%u", ast_rtp_lookup_sample_rate2(1, format, 0));
 			iks_insert_attrib(payload, "clockrate", tmp);
 		}
 
-		if ((type == AST_FORMAT_TYPE_VIDEO) && (session->transport == JINGLE_TRANSPORT_GOOGLE_V2)) {
+		if ((type == AST_MEDIA_TYPE_VIDEO) && (session->transport == JINGLE_TRANSPORT_GOOGLE_V2)) {
 			iks *parameter;
 
 			/* Google requires these parameters to be set, but alas we can not give accurate values so use some safe defaults */
@@ -1201,9 +1367,11 @@ static int jingle_add_payloads_to_description(struct jingle_session *session, st
 
 		iks_insert_node(description, payload);
 		payloads[i++] = payload;
+
+		ao2_ref(format, -1);
 	}
 	/* If this is for audio and there is room for RFC2833 add it in */
-	if ((type == AST_FORMAT_TYPE_AUDIO) && (i < session->maxpayloads)) {
+	if ((type == AST_MEDIA_TYPE_AUDIO) && (i < session->maxpayloads)) {
 		iks *payload;
 
 		if ((payload = iks_new("payload-type"))) {
@@ -1225,7 +1393,7 @@ static int jingle_add_payloads_to_description(struct jingle_session *session, st
 
 /*! \brief Helper function which adds content to a description */
 static int jingle_add_content(struct jingle_session *session, iks *jingle, iks *content, iks *description, iks *transport,
-			      const char *name, enum ast_format_type type, struct ast_rtp_instance *rtp, iks **payloads)
+			      const char *name, enum ast_media_type type, struct ast_rtp_instance *rtp, iks **payloads)
 {
 	int res = 0;
 
@@ -1235,9 +1403,9 @@ static int jingle_add_content(struct jingle_session *session, iks *jingle, iks *
 		iks_insert_node(jingle, content);
 
 		iks_insert_attrib(description, "xmlns", JINGLE_RTP_NS);
-		if (type == AST_FORMAT_TYPE_AUDIO) {
+		if (type == AST_MEDIA_TYPE_AUDIO) {
 			iks_insert_attrib(description, "media", "audio");
-		} else if (type == AST_FORMAT_TYPE_VIDEO) {
+		} else if (type == AST_MEDIA_TYPE_VIDEO) {
 			iks_insert_attrib(description, "media", "video");
 		} else {
 			return -1;
@@ -1304,7 +1472,7 @@ static void jingle_send_session_action(struct jingle_session *session, const cha
 	if (session->rtp && (audio = iks_new("content")) && (audio_description = iks_new("description")) &&
 	    (audio_transport = iks_new("transport"))) {
 		res = jingle_add_content(session, jingle, audio, audio_description, audio_transport, session->audio_name,
-					 AST_FORMAT_TYPE_AUDIO, session->rtp, audio_payloads);
+					 AST_MEDIA_TYPE_AUDIO, session->rtp, audio_payloads);
 	} else {
 		ast_log(LOG_ERROR, "Failed to allocate audio content stanzas for session '%s', hanging up\n", session->sid);
 		res = -1;
@@ -1314,7 +1482,7 @@ static void jingle_send_session_action(struct jingle_session *session, const cha
 		if ((video = iks_new("content")) && (video_description = iks_new("description")) &&
 		    (video_transport = iks_new("transport"))) {
 			res = jingle_add_content(session, jingle, video, video_description, video_transport, session->video_name,
-						 AST_FORMAT_TYPE_VIDEO, session->vrtp, video_payloads);
+						 AST_MEDIA_TYPE_VIDEO, session->vrtp, video_payloads);
 		} else {
 			ast_log(LOG_ERROR, "Failed to allocate video content stanzas for session '%s', hanging up\n", session->sid);
 			res = -1;
@@ -1503,17 +1671,24 @@ static struct ast_frame *jingle_read(struct ast_channel *ast)
 	}
 
 	if (frame && frame->frametype == AST_FRAME_VOICE &&
-	    !ast_format_cap_iscompatible(ast_channel_nativeformats(ast), &frame->subclass.format)) {
-		if (!ast_format_cap_iscompatible(session->jointcap, &frame->subclass.format)) {
+	    ast_format_cap_iscompatible_format(ast_channel_nativeformats(ast), frame->subclass.format) == AST_FORMAT_CMP_NOT_EQUAL) {
+		if (ast_format_cap_iscompatible_format(session->jointcap, frame->subclass.format) == AST_FORMAT_CMP_NOT_EQUAL) {
 			ast_debug(1, "Bogus frame of format '%s' received from '%s'!\n",
-				  ast_getformatname(&frame->subclass.format), ast_channel_name(ast));
+				  ast_format_get_name(frame->subclass.format), ast_channel_name(ast));
 			ast_frfree(frame);
 			frame = &ast_null_frame;
 		} else {
+			struct ast_format_cap *caps;
+
 			ast_debug(1, "Oooh, format changed to %s\n",
-				  ast_getformatname(&frame->subclass.format));
-			ast_format_cap_remove_bytype(ast_channel_nativeformats(ast), AST_FORMAT_TYPE_AUDIO);
-			ast_format_cap_add(ast_channel_nativeformats(ast), &frame->subclass.format);
+				  ast_format_get_name(frame->subclass.format));
+
+			caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+			if (caps) {
+				ast_format_cap_append(caps, frame->subclass.format, 0);
+				ast_channel_nativeformats_set(ast, caps);
+				ao2_ref(caps, -1);
+			}
 			ast_set_read_format(ast, ast_channel_readformat(ast));
 			ast_set_write_format(ast, ast_channel_writeformat(ast));
 		}
@@ -1527,17 +1702,18 @@ static int jingle_write(struct ast_channel *ast, struct ast_frame *frame)
 {
 	struct jingle_session *session = ast_channel_tech_pvt(ast);
 	int res = 0;
-	char buf[256];
 
 	switch (frame->frametype) {
 	case AST_FRAME_VOICE:
-		if (!(ast_format_cap_iscompatible(ast_channel_nativeformats(ast), &frame->subclass.format))) {
+		if (ast_format_cap_iscompatible_format(ast_channel_nativeformats(ast), frame->subclass.format) == AST_FORMAT_CMP_NOT_EQUAL) {
+			struct ast_str *codec_buf = ast_str_alloca(64);
+
 			ast_log(LOG_WARNING,
 				"Asked to transmit frame type %s, while native formats is %s (read/write = %s/%s)\n",
-				ast_getformatname(&frame->subclass.format),
-				ast_getformatname_multiple(buf, sizeof(buf), ast_channel_nativeformats(ast)),
-				ast_getformatname(ast_channel_readformat(ast)),
-				ast_getformatname(ast_channel_writeformat(ast)));
+				ast_format_get_name(frame->subclass.format),
+				ast_format_cap_get_names(ast_channel_nativeformats(ast), &codec_buf),
+				ast_format_get_name(ast_channel_readformat(ast)),
+				ast_format_get_name(ast_channel_writeformat(ast)));
 			return 0;
 		}
 		if (session && session->rtp) {
@@ -1550,7 +1726,7 @@ static int jingle_write(struct ast_channel *ast, struct ast_frame *frame)
 		}
 		break;
 	default:
-		ast_log(LOG_WARNING, "Can't send %d type frames with Jingle write\n",
+		ast_log(LOG_WARNING, "Can't send %u type frames with Jingle write\n",
 			frame->frametype);
 		return 0;
 	}
@@ -1565,7 +1741,7 @@ static int jingle_fixup(struct ast_channel *oldchan, struct ast_channel *newchan
 
 	ao2_lock(session);
 
-	session->owner = newchan;
+	jingle_set_owner(session, newchan);
 
 	ao2_unlock(session);
 
@@ -1629,6 +1805,7 @@ static int jingle_indicate(struct ast_channel *ast, int condition, const void *d
 	case AST_CONTROL_CONNECTED_LINE:
 		break;
 	case AST_CONTROL_PVT_CAUSE_CODE:
+	case AST_CONTROL_MASQUERADE_NOTIFY:
 	case -1:
 		res = -1;
 		break;
@@ -1680,7 +1857,7 @@ static int jingle_call(struct ast_channel *ast, const char *dest, int timeout)
 	ast_setstate(ast, AST_STATE_RING);
 
 	/* Since we have no idea of the remote capabilities use ours for now */
-	ast_format_cap_copy(session->jointcap, session->cap);
+	ast_format_cap_append_from_cap(session->jointcap, session->cap, AST_MEDIA_TYPE_UNKNOWN);
 
 	/* We set up a hook so we can know when our session-initiate message was accepted or rejected */
 	session->rule = iks_filter_add_rule(session->connection->filter, jingle_outgoing_hook, session,
@@ -1715,7 +1892,7 @@ static int jingle_hangup(struct ast_channel *ast)
 	}
 
 	ast_channel_tech_pvt_set(ast, NULL);
-	session->owner = NULL;
+	jingle_set_owner(session, NULL);
 
 	ao2_unlink(session->state->sessions, session);
 	ao2_ref(session->state, -1);
@@ -1727,7 +1904,7 @@ static int jingle_hangup(struct ast_channel *ast)
 }
 
 /*! \brief Function called by core to create a new outgoing Jingle session */
-static struct ast_channel *jingle_request(const char *type, struct ast_format_cap *cap, const struct ast_channel *requestor, const char *data, int *cause)
+static struct ast_channel *jingle_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause)
 {
 	RAII_VAR(struct jingle_config *, cfg, ao2_global_obj_ref(globals), ao2_cleanup);
 	RAII_VAR(struct jingle_endpoint *, endpoint, NULL, ao2_cleanup);
@@ -1743,7 +1920,7 @@ static struct ast_channel *jingle_request(const char *type, struct ast_format_ca
 		);
 
 	/* We require at a minimum one audio format to be requested */
-	if (!ast_format_cap_has_type(cap, AST_FORMAT_TYPE_AUDIO)) {
+	if (!ast_format_cap_has_type(cap, AST_MEDIA_TYPE_AUDIO)) {
 		ast_log(LOG_ERROR, "Motif channel driver requires an audio format when dialing a destination\n");
 		*cause = AST_CAUSE_BEARERCAPABILITY_NOTAVAIL;
 		return NULL;
@@ -1828,7 +2005,7 @@ static struct ast_channel *jingle_request(const char *type, struct ast_format_ca
 		/* Note that for Google-V1 and Google-V2 we don't stop built-in ICE support, this will happen in jingle_new */
 	}
 
-	if (!(chan = jingle_new(endpoint, session, AST_STATE_DOWN, target, requestor ? ast_channel_linkedid(requestor) : NULL, NULL))) {
+	if (!(chan = jingle_new(endpoint, session, AST_STATE_DOWN, target, assignedids, requestor, NULL))) {
 		ast_log(LOG_ERROR, "Unable to create Jingle channel on endpoint '%s'\n", args.name);
 		*cause = AST_CAUSE_SWITCH_CONGESTION;
 		ao2_ref(session, -1);
@@ -1836,7 +2013,7 @@ static struct ast_channel *jingle_request(const char *type, struct ast_format_ca
 	}
 
 	/* If video was requested try to enable it on the session */
-	if (ast_format_cap_has_type(cap, AST_FORMAT_TYPE_VIDEO)) {
+	if (ast_format_cap_has_type(cap, AST_MEDIA_TYPE_VIDEO)) {
 		jingle_enable_video(session);
 	}
 
@@ -1878,8 +2055,8 @@ static int jingle_interpret_description(struct jingle_session *session, iks *des
 			ast_string_field_set(session, audio_name, name);
 		}
 		*rtp = session->rtp;
-		ast_format_cap_remove_bytype(session->peercap, AST_FORMAT_TYPE_AUDIO);
-		ast_format_cap_remove_bytype(session->jointcap, AST_FORMAT_TYPE_AUDIO);
+		ast_format_cap_remove_by_type(session->peercap, AST_MEDIA_TYPE_AUDIO);
+		ast_format_cap_remove_by_type(session->jointcap, AST_MEDIA_TYPE_AUDIO);
 	} else if (!strcasecmp(media, "video")) {
 		if (!ast_strlen_zero(name)) {
 			ast_string_field_set(session, video_name, name);
@@ -1895,8 +2072,8 @@ static int jingle_interpret_description(struct jingle_session *session, iks *des
 			return -1;
 		}
 
-		ast_format_cap_remove_bytype(session->peercap, AST_FORMAT_TYPE_VIDEO);
-		ast_format_cap_remove_bytype(session->jointcap, AST_FORMAT_TYPE_VIDEO);
+		ast_format_cap_remove_by_type(session->peercap, AST_MEDIA_TYPE_VIDEO);
+		ast_format_cap_remove_by_type(session->jointcap, AST_MEDIA_TYPE_VIDEO);
 	} else {
 		/* Unknown media type */
 		jingle_queue_hangup_with_cause(session, AST_CAUSE_BEARERCAPABILITY_NOTAVAIL);
@@ -1917,8 +2094,6 @@ static int jingle_interpret_description(struct jingle_session *session, iks *des
 		int rtp_id, rtp_clockrate;
 
 		if (!ast_strlen_zero(id) && !ast_strlen_zero(name) && (sscanf(id, "%30d", &rtp_id) == 1)) {
-			ast_rtp_codecs_payloads_set_m_type(&codecs, NULL, rtp_id);
-
 			if (!ast_strlen_zero(clockrate) && (sscanf(clockrate, "%30d", &rtp_clockrate) == 1)) {
 				ast_rtp_codecs_payloads_set_rtpmap_type_rate(&codecs, NULL, rtp_id, media, name, 0, rtp_clockrate);
 			} else {
@@ -1928,9 +2103,9 @@ static int jingle_interpret_description(struct jingle_session *session, iks *des
 	}
 
 	ast_rtp_codecs_payload_formats(&codecs, session->peercap, &othercapability);
-	ast_format_cap_joint_append(session->cap, session->peercap, session->jointcap);
+	ast_format_cap_get_compatible(session->cap, session->peercap, session->jointcap);
 
-	if (ast_format_cap_is_empty(session->jointcap)) {
+	if (!ast_format_cap_count(session->jointcap)) {
 		/* We have no compatible codecs, so terminate the session appropriately */
 		jingle_queue_hangup_with_cause(session, AST_CAUSE_BEARERCAPABILITY_NOTAVAIL);
 		ast_rtp_codecs_payloads_destroy(&codecs);
@@ -1980,7 +2155,7 @@ static int jingle_interpret_ice_udp_transport(struct jingle_session *session, ik
 		}
 
 		if ((sscanf(component, "%30u", &local_candidate.id) != 1) ||
-		    (sscanf(priority, "%30u", &local_candidate.priority) != 1) ||
+		    (sscanf(priority, "%30u", (unsigned *)&local_candidate.priority) != 1) ||
 		    (sscanf(port, "%30d", &real_port) != 1)) {
 			jingle_queue_hangup_with_cause(session, AST_CAUSE_PROTOCOL_ERROR);
 			ast_log(LOG_ERROR, "Invalid ICE-UDP candidate information received on session '%s'\n", session->sid);
@@ -2190,12 +2365,20 @@ static int jingle_interpret_content(struct jingle_session *session, ikspak *pak)
 	}
 
 	if ((chan = jingle_session_lock_full(session))) {
-		struct ast_format fmt;
+		struct ast_format_cap *caps;
+		struct ast_format *fmt;
 
-		ast_format_cap_copy(ast_channel_nativeformats(chan), session->jointcap);
-		ast_codec_choose(&session->prefs, session->jointcap, 1, &fmt);
-		ast_set_read_format(chan, &fmt);
-		ast_set_write_format(chan, &fmt);
+		caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+		if (caps) {
+			ast_format_cap_append_from_cap(caps, session->jointcap, AST_MEDIA_TYPE_UNKNOWN);
+			ast_channel_nativeformats_set(chan, caps);
+			ao2_ref(caps, -1);
+		}
+
+		fmt = ast_format_cap_get_format(session->jointcap, 0);
+		ast_set_read_format(chan, fmt);
+		ast_set_write_format(chan, fmt);
+		ao2_ref(fmt, -1);
 
 		ast_channel_unlock(chan);
 		ast_channel_unref(chan);
@@ -2240,7 +2423,7 @@ static void jingle_action_session_initiate(struct jingle_endpoint *endpoint, str
 	}
 
 	/* Create a new Asterisk channel using the above local session */
-	if (!(chan = jingle_new(endpoint, session, AST_STATE_DOWN, pak->from->user, NULL, pak->from->full))) {
+	if (!(chan = jingle_new(endpoint, session, AST_STATE_DOWN, pak->from->user, NULL, NULL, pak->from->full))) {
 		ao2_ref(session, -1);
 		jingle_send_error_response(endpoint->connection, pak, "cancel", "service-unavailable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'", NULL);
 		return;
@@ -2248,7 +2431,9 @@ static void jingle_action_session_initiate(struct jingle_endpoint *endpoint, str
 
 	ao2_link(endpoint->state->sessions, session);
 
+	ast_channel_lock(chan);
 	ast_setstate(chan, AST_STATE_RING);
+	ast_channel_unlock(chan);
 	res = ast_pbx_start(chan);
 
 	switch (res) {
@@ -2334,9 +2519,9 @@ static void jingle_action_session_info(struct jingle_endpoint *endpoint, struct 
 			ast_setstate(chan, AST_STATE_RINGING);
 		}
 	} else if (iks_find_with_attrib(pak->query, "hold", "xmlns", JINGLE_RTP_INFO_NS)) {
-		ast_queue_control(chan, AST_CONTROL_HOLD);
+		ast_queue_hold(chan, NULL);
 	} else if (iks_find_with_attrib(pak->query, "unhold", "xmlns", JINGLE_RTP_INFO_NS)) {
-		ast_queue_control(chan, AST_CONTROL_UNHOLD);
+		ast_queue_unhold(chan);
 	}
 
 	ast_channel_unlock(chan);
@@ -2531,10 +2716,19 @@ static int custom_transport_handler(const struct aco_option *opt, struct ast_var
 	return 0;
 }
 
-/*! \brief Load module into PBX, register channel */
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
-	if (!(jingle_tech.capabilities = ast_format_cap_alloc())) {
+	if (!(jingle_tech.capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
@@ -2550,8 +2744,8 @@ static int load_module(void)
 	aco_option_register(&cfg_info, "musicclass", ACO_EXACT, endpoint_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct jingle_endpoint, musicclass));
 	aco_option_register(&cfg_info, "parkinglot", ACO_EXACT, endpoint_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct jingle_endpoint, parkinglot));
 	aco_option_register(&cfg_info, "accountcode", ACO_EXACT, endpoint_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct jingle_endpoint, accountcode));
-	aco_option_register(&cfg_info, "allow", ACO_EXACT, endpoint_options, "ulaw,alaw", OPT_CODEC_T, 1, FLDSET(struct jingle_endpoint, prefs, cap));
-	aco_option_register(&cfg_info, "disallow", ACO_EXACT, endpoint_options, "all", OPT_CODEC_T, 0, FLDSET(struct jingle_endpoint, prefs, cap));
+	aco_option_register(&cfg_info, "allow", ACO_EXACT, endpoint_options, "ulaw,alaw", OPT_CODEC_T, 1, FLDSET(struct jingle_endpoint, cap));
+	aco_option_register(&cfg_info, "disallow", ACO_EXACT, endpoint_options, "all", OPT_CODEC_T, 0, FLDSET(struct jingle_endpoint, cap));
 	aco_option_register_custom(&cfg_info, "connection", ACO_EXACT, endpoint_options, NULL, custom_connection_handler, 0);
 	aco_option_register_custom(&cfg_info, "transport", ACO_EXACT, endpoint_options, NULL, custom_transport_handler, 0);
 	aco_option_register(&cfg_info, "maxicecandidates", ACO_EXACT, endpoint_options, DEFAULT_MAX_ICE_CANDIDATES, OPT_UINT_T, PARSE_DEFAULT,
@@ -2559,11 +2753,13 @@ static int load_module(void)
 	aco_option_register(&cfg_info, "maxpayloads", ACO_EXACT, endpoint_options, DEFAULT_MAX_PAYLOADS, OPT_UINT_T, PARSE_DEFAULT,
 			    FLDSET(struct jingle_endpoint, maxpayloads), DEFAULT_MAX_PAYLOADS);
 
-	ast_format_cap_add_all_by_type(jingle_tech.capabilities, AST_FORMAT_TYPE_AUDIO);
+	ast_format_cap_append_by_type(jingle_tech.capabilities, AST_MEDIA_TYPE_AUDIO);
 
 	if (aco_process_config(&cfg_info, 0)) {
-		ast_log(LOG_ERROR, "Unable to read config file motif.conf. Not loading module.\n");
+		ast_log(LOG_ERROR, "Unable to read config file motif.conf. Module loaded but not running.\n");
 		aco_info_destroy(&cfg_info);
+		ao2_cleanup(jingle_tech.capabilities);
+		jingle_tech.capabilities = NULL;
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
@@ -2594,6 +2790,10 @@ end:
 	}
 
 	aco_info_destroy(&cfg_info);
+	ao2_global_obj_release(globals);
+
+	ao2_cleanup(jingle_tech.capabilities);
+	jingle_tech.capabilities = NULL;
 
 	return AST_MODULE_LOAD_FAILURE;
 }
@@ -2601,14 +2801,18 @@ end:
 /*! \brief Reload module */
 static int reload(void)
 {
-	return aco_process_config(&cfg_info, 1);
+	if (aco_process_config(&cfg_info, 1) == ACO_PROCESS_ERROR) {
+		return -1;
+	}
+
+	return 0;
 }
 
 /*! \brief Unload the jingle channel from Asterisk */
 static int unload_module(void)
 {
 	ast_channel_unregister(&jingle_tech);
-	ast_format_cap_destroy(jingle_tech.capabilities);
+	ao2_cleanup(jingle_tech.capabilities);
 	jingle_tech.capabilities = NULL;
 	ast_rtp_glue_unregister(&jingle_rtp_glue);
 	ast_sched_context_destroy(sched);
@@ -2619,6 +2823,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Motif Jingle Channel Driver",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

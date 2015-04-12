@@ -1,5 +1,5 @@
 /*
- * Asterisk -- A telephony toolkit for Linux.
+ * Asterisk -- An open source telephony toolkit.
  *
  * A full-featured Find-Me/Follow-Me Application
  * 
@@ -23,19 +23,25 @@
  *
  * \author BJ Weschke <bweschke@btwtech.com>
  *
- * \arg See \ref Config_followme
- *
  * \ingroup applications
  */
 
+/*! \li \ref app_followme.c uses the configuration file \ref followme.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*! 
+ * \page followme.conf followme.conf
+ * \verbinclude followme.conf.sample
+ */
+
 /*** MODULEINFO
-	<depend>chan_local</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 372392 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <signal.h>
 
@@ -57,6 +63,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 372392 $")
 #include "asterisk/astdb.h"
 #include "asterisk/dsp.h"
 #include "asterisk/app.h"
+#include "asterisk/stasis_channels.h"
 
 /*** DOCUMENTATION
 	<application name="FollowMe" language="en_US">
@@ -550,6 +557,17 @@ static int reload_followme(int reload)
 	return 1;
 }
 
+static void publish_dial_end_event(struct ast_channel *in, struct findme_user_listptr *findme_user_list, struct ast_channel *exception, const char *status)
+{
+	struct findme_user *tmpuser;
+
+	AST_LIST_TRAVERSE(findme_user_list, tmpuser, entry) {
+		if (tmpuser->ochan && tmpuser->ochan != exception) {
+			ast_channel_publish_dial(in, tmpuser->ochan, NULL, status);
+		}
+	}
+}
+
 static void clear_caller(struct findme_user *tmpuser)
 {
 	struct ast_channel *outbound;
@@ -560,29 +578,6 @@ static void clear_caller(struct findme_user *tmpuser)
 	}
 
 	outbound = tmpuser->ochan;
-	ast_channel_lock(outbound);
-	if (!ast_channel_cdr(outbound)) {
-		ast_channel_cdr_set(outbound, ast_cdr_alloc());
-		if (ast_channel_cdr(outbound)) {
-			ast_cdr_init(ast_channel_cdr(outbound), outbound);
-		}
-	}
-	if (ast_channel_cdr(outbound)) {
-		char tmp[256];
-
-		snprintf(tmp, sizeof(tmp), "Local/%s", tmpuser->dialarg);
-		ast_cdr_setapp(ast_channel_cdr(outbound), "FollowMe", tmp);
-		ast_cdr_update(outbound);
-		ast_cdr_start(ast_channel_cdr(outbound));
-		ast_cdr_end(ast_channel_cdr(outbound));
-		/* If the cause wasn't handled properly */
-		if (ast_cdr_disposition(ast_channel_cdr(outbound), ast_channel_hangupcause(outbound))) {
-			ast_cdr_failed(ast_channel_cdr(outbound));
-		}
-	} else {
-		ast_log(LOG_WARNING, "Unable to create Call Detail Record\n");
-	}
-	ast_channel_unlock(outbound);
 	ast_hangup(outbound);
 	tmpuser->ochan = NULL;
 }
@@ -771,6 +766,7 @@ static struct ast_channel *wait_for_winner(struct findme_user_listptr *findme_us
 						}
 						if (!tmpuser) {
 							ast_verb(3, "The calling channel hungup. Need to drop everyone.\n");
+							publish_dial_end_event(caller, findme_user_list, NULL, "CANCEL");
 							ast_frfree(f);
 							return NULL;
 						}
@@ -782,6 +778,8 @@ static struct ast_channel *wait_for_winner(struct findme_user_listptr *findme_us
 							break;
 						}
 						ast_verb(3, "%s answered %s\n", ast_channel_name(winner), ast_channel_name(caller));
+						ast_channel_publish_dial(caller, winner, NULL, "ANSWER");
+						publish_dial_end_event(caller, findme_user_list, winner, "CANCEL");
 						tmpuser->answered = 1;
 						/* If call has been answered, then the eventual hangup is likely to be normal hangup */ 
 						ast_channel_hangupcause_set(winner, AST_CAUSE_NORMAL_CLEARING);
@@ -809,6 +807,7 @@ static struct ast_channel *wait_for_winner(struct findme_user_listptr *findme_us
 						ast_verb(3, "%s is busy\n", ast_channel_name(winner));
 						if (tmpuser) {
 							/* Outbound call was busy.  Drop it. */
+							ast_channel_publish_dial(caller, winner, NULL, "BUSY");
 							clear_caller(tmpuser);
 						}
 						break;
@@ -816,6 +815,7 @@ static struct ast_channel *wait_for_winner(struct findme_user_listptr *findme_us
 						ast_verb(3, "%s is circuit-busy\n", ast_channel_name(winner));
 						if (tmpuser) {
 							/* Outbound call was congested.  Drop it. */
+							ast_channel_publish_dial(caller, winner, NULL, "CONGESTION");
 							clear_caller(tmpuser);
 						}
 						break;
@@ -964,6 +964,7 @@ static struct ast_channel *wait_for_winner(struct findme_user_listptr *findme_us
 					return NULL;
 				}
 				/* Outgoing channel hung up. */
+				ast_channel_publish_dial(caller, winner, NULL, "NOANSWER");
 				clear_caller(tmpuser);
 			}
 		} else {
@@ -1055,7 +1056,7 @@ static struct ast_channel *findmeexec(struct fm_args *tpargs, struct ast_channel
 						? "/n" : "/m");
 			}
 
-			outbound = ast_request("Local", ast_channel_nativeformats(caller), caller,
+			outbound = ast_request("Local", ast_channel_nativeformats(caller), NULL, caller,
 				tmpuser->dialarg, &dg);
 			if (!outbound) {
 				ast_log(LOG_WARNING, "Unable to allocate a channel for Local/%s cause: %s\n",
@@ -1069,7 +1070,7 @@ static struct ast_channel *findmeexec(struct fm_args *tpargs, struct ast_channel
 			ast_channel_inherit_variables(caller, outbound);
 			ast_channel_datastore_inherit(caller, outbound);
 			ast_channel_language_set(outbound, ast_channel_language(caller));
-			ast_channel_accountcode_set(outbound, ast_channel_accountcode(caller));
+			ast_channel_req_accountcodes(outbound, caller, AST_CHANNEL_REQUESTOR_BRIDGE_PEER);
 			ast_channel_musicclass_set(outbound, ast_channel_musicclass(caller));
 			ast_channel_unlock(outbound);
 			ast_channel_unlock(caller);
@@ -1103,11 +1104,6 @@ static struct ast_channel *findmeexec(struct fm_args *tpargs, struct ast_channel
 				 * Destoy all new outgoing calls.
 				 */
 				while ((tmpuser = AST_LIST_REMOVE_HEAD(&new_user_list, entry))) {
-					ast_channel_lock(tmpuser->ochan);
-					if (ast_channel_cdr(tmpuser->ochan)) {
-						ast_cdr_init(ast_channel_cdr(tmpuser->ochan), tmpuser->ochan);
-					}
-					ast_channel_unlock(tmpuser->ochan);
 					destroy_calling_node(tmpuser);
 				}
 
@@ -1129,13 +1125,11 @@ static struct ast_channel *findmeexec(struct fm_args *tpargs, struct ast_channel
 				AST_LIST_REMOVE_CURRENT(entry);
 
 				/* Destroy this failed new outgoing call. */
-				ast_channel_lock(tmpuser->ochan);
-				if (ast_channel_cdr(tmpuser->ochan)) {
-					ast_cdr_init(ast_channel_cdr(tmpuser->ochan), tmpuser->ochan);
-				}
-				ast_channel_unlock(tmpuser->ochan);
 				destroy_calling_node(tmpuser);
+				continue;
 			}
+
+			ast_channel_publish_dial(caller, tmpuser->ochan, tmpuser->dialarg, NULL);
 		}
 		AST_LIST_TRAVERSE_SAFE_END;
 
@@ -1283,15 +1277,10 @@ static void end_bridge_callback(void *data)
 	time(&end);
 
 	ast_channel_lock(chan);
-	if (ast_channel_cdr(chan)->answer.tv_sec) {
-		snprintf(buf, sizeof(buf), "%ld", (long) end - ast_channel_cdr(chan)->answer.tv_sec);
-		pbx_builtin_setvar_helper(chan, "ANSWEREDTIME", buf);
-	}
-
-	if (ast_channel_cdr(chan)->start.tv_sec) {
-		snprintf(buf, sizeof(buf), "%ld", (long) end - ast_channel_cdr(chan)->start.tv_sec);
-		pbx_builtin_setvar_helper(chan, "DIALEDTIME", buf);
-	}
+	snprintf(buf, sizeof(buf), "%d", ast_channel_get_up_time(chan));
+	pbx_builtin_setvar_helper(chan, "ANSWEREDTIME", buf);
+	snprintf(buf, sizeof(buf), "%d", ast_channel_get_duration(chan));
+	pbx_builtin_setvar_helper(chan, "DIALEDTIME", buf);
 	ast_channel_unlock(chan);
 }
 
@@ -1435,7 +1424,7 @@ static int app_exec(struct ast_channel *chan, const char *data)
 			if (ast_waitstream(chan, "") < 0)
 				goto outrun;
 		}
-		ast_moh_start(chan, S_OR(targs->mohclass, NULL), NULL);
+		ast_moh_start(chan, targs->mohclass, NULL);
 	}
 
 	ast_channel_lock(chan);
@@ -1513,7 +1502,6 @@ static int app_exec(struct ast_channel *chan, const char *data)
 		}
 
 		res = ast_bridge_call(caller, outbound, &config);
-		ast_autoservice_chan_hangup_peer(caller, outbound);
 	}
 
 outrun:
@@ -1555,6 +1543,16 @@ static int unload_module(void)
 	return 0;
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	if(!reload_followme(0))
@@ -1571,6 +1569,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Find-Me/Follow-Me Application",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

@@ -17,11 +17,26 @@
  */
 
 
-/*
- *
+/*!
+ * \file extconf
  * A condensation of the pbx_config stuff, to read into exensions.conf, and provide an interface to the data there,
  * for operations outside of asterisk. A huge, awful hack.
  *
+ */
+
+/*!
+ * \li \ref extconf.c uses the configuration file \ref extconfig.conf and \ref extensions.conf and \ref asterisk.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page extconfig.conf extconfig.conf
+ * \verbinclude extconfig.conf.sample
+ */
+
+/*!
+ * \page extensions.conf extensions.conf
+ * \verbinclude extensions.conf.sample
  */
 
 /*** MODULEINFO
@@ -80,6 +95,7 @@ struct ast_channel
 #include "asterisk/inline_api.h"
 #include "asterisk/endian.h"
 #include "asterisk/ast_expr.h"
+#include "asterisk/extconf.h"
 
 /* logger.h */
 
@@ -95,7 +111,7 @@ struct ast_channel
 #define VERBOSE_PREFIX_3 "    -- "
 #define VERBOSE_PREFIX_4 "       > "
 
-void ast_backtrace(void);
+void ast_log_backtrace(void);
 
 void ast_queue_log(const char *queuename, const char *callid, const char *agent, const char *event, const char *fmt, ...)
 	__attribute__((format(printf, 5, 6)));
@@ -1315,7 +1331,6 @@ int ast_safe_system(const char *s)
 	int x;
 #endif
 	int res;
-	struct rusage rusage;
 	int status;
 
 #if defined(HAVE_WORKING_FORK) || defined(HAVE_WORKING_VFORK)
@@ -1337,7 +1352,7 @@ int ast_safe_system(const char *s)
 		_exit(1);
 	} else if (pid > 0) {
 		for(;;) {
-			res = wait4(pid, &status, 0, &rusage);
+			res = waitpid(pid, &status, 0);
 			if (res > -1) {
 				res = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 				break;
@@ -1826,8 +1841,6 @@ enum ast_option_flags {
 	AST_OPT_FLAG_DONT_WARN = (1 << 18),
 	/*! End CDRs before the 'h' extension */
 	AST_OPT_FLAG_END_CDR_BEFORE_H_EXTEN = (1 << 19),
-	/*! Use DAHDI Timing for generators if available */
-	AST_OPT_FLAG_INTERNAL_TIMING = (1 << 20),
 	/*! Always fork, even if verbose or debug settings are non-zero */
 	AST_OPT_FLAG_ALWAYS_FORK = (1 << 21),
 	/*! Disable log/verbose output to remote consoles */
@@ -1873,15 +1886,14 @@ struct ast_flags ast_options = { AST_DEFAULT_OPTIONS };
 #define ast_opt_transmit_silence	ast_test_flag(&ast_options, AST_OPT_FLAG_TRANSMIT_SILENCE)
 #define ast_opt_dont_warn		ast_test_flag(&ast_options, AST_OPT_FLAG_DONT_WARN)
 #define ast_opt_end_cdr_before_h_exten	ast_test_flag(&ast_options, AST_OPT_FLAG_END_CDR_BEFORE_H_EXTEN)
-#define ast_opt_internal_timing		ast_test_flag(&ast_options, AST_OPT_FLAG_INTERNAL_TIMING)
 #define ast_opt_always_fork		ast_test_flag(&ast_options, AST_OPT_FLAG_ALWAYS_FORK)
 #define ast_opt_mute			ast_test_flag(&ast_options, AST_OPT_FLAG_MUTE)
 
 extern int option_verbose;
 extern int option_debug;		/*!< Debugging */
-extern int option_maxcalls;		/*!< Maximum number of simultaneous channels */
-extern double option_maxload;
-extern char defaultlanguage[];
+extern int ast_option_maxcalls;		/*!< Maximum number of simultaneous channels */
+extern double ast_option_maxload;
+extern char ast_defaultlanguage[];
 
 extern pid_t ast_mainpid;
 
@@ -2677,8 +2689,6 @@ static int static_config = 0;
 static int write_protect_config = 1;
 static int autofallthrough_config = 0;
 static int clearglobalvars_config = 0;
-/*! Go no deeper than this through includes (not counting loops) */
-#define AST_PBX_MAX_STACK	128
 static void pbx_substitute_variables_helper(struct ast_channel *c,const char *cp1,char *cp2,int count);
 
 
@@ -4215,20 +4225,6 @@ struct ast_app;
 #else
 #define EXT_DATA_SIZE 8192
 #endif
-/*!
- * When looking up extensions, we can have different requests
- * identified by the 'action' argument, as follows.
- * Note that the coding is such that the low 4 bits are the
- * third argument to extension_match_core.
- */
-enum ext_match_t {
-	E_MATCHMORE = 	0x00,	/* extension can match but only with more 'digits' */
-	E_CANMATCH =	0x01,	/* extension can match with or without more 'digits' */
-	E_MATCH =	0x02,	/* extension is an exact match */
-	E_MATCH_MASK =	0x03,	/* mask for the argument to extension_match_core() */
-	E_SPAWN =	0x12,	/* want to spawn an extension. Requires exact match */
-	E_FINDLABEL =	0x22	/* returns the priority for a given label. Requires exact match */
-};
 
 #ifdef NOT_ANYMORE
 static AST_RWLIST_HEAD_STATIC(switches, ast_switch);
@@ -4435,6 +4431,8 @@ int ast_build_timing(struct ast_timing *i, const char *info_in)
 	char *info;
 	int j, num_fields, last_sep = -1;
 
+	i->timezone = NULL;
+
 	/* Check for empty just in case */
 	if (ast_strlen_zero(info_in)) {
 		return 0;
@@ -4454,8 +4452,6 @@ int ast_build_timing(struct ast_timing *i, const char *info_in)
 	/* save the timezone, if it is specified */
 	if (num_fields == 5) {
 		i->timezone = ast_strdup(info + last_sep + 1);
-	} else {
-		i->timezone = NULL;
 	}
 
 	/* Assume everything except time */
@@ -4754,22 +4750,6 @@ static struct ast_context *ast_context_find(const char *name)
 	}
 	return tmp;
 }
-
-/* request and result for pbx_find_extension */
-struct pbx_find_info {
-#if 0
-	const char *context;
-	const char *exten;
-	int priority;
-#endif
-
-	char *incstack[AST_PBX_MAX_STACK];      /* filled during the search */
-	int stacklen;                   /* modified during the search */
-	int status;                     /* set on return */
-	struct ast_switch *swo;         /* set on return */
-	const char *data;               /* set on return */
-	const char *foundcontext;       /* set on return */
-};
 
 /*
  * Internal function for ast_extension_{match|close}
@@ -6201,9 +6181,7 @@ static void ast_merge_contexts_and_delete(struct ast_context **extcontexts, cons
 	return;
 }
 
-void localized_merge_contexts_and_delete(struct ast_context **extcontexts, const char *registrar);
-
-void localized_merge_contexts_and_delete(struct ast_context **extcontexts, const char *registrar)
+void localized_merge_contexts_and_delete(struct ast_context **extcontexts, void *tab, const char *registrar)
 {
 	ast_merge_contexts_and_delete(extcontexts, registrar);
 }

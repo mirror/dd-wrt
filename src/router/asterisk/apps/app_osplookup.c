@@ -36,7 +36,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429675 $")
 
 #include <osp/osp.h>
 #include <osp/osputils.h>
@@ -1425,7 +1425,9 @@ static int osp_uuid2str(
 	int res;
 
 	if ((uuid != NULL) && (bufsize > OSP_SIZE_UUIDSTR)) {
-		snprintf(buffer, bufsize, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+		snprintf(buffer, bufsize, "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-"
+					  "%02hhx%02hhx-%02hhx%02hhx-"
+					  "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
 			uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7],
 			uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
 		res = OSP_OK;
@@ -2281,9 +2283,9 @@ static int ospauth_exec(
 
 	headp = ast_channel_varshead(chan);
 	AST_LIST_TRAVERSE(headp, current, entries) {
-		if (!strcasecmp(ast_var_name(current), "OSPINPEERIP")) {
+		if (!strcmp(ast_var_name(current), "OSPINPEERIP")) {
 			source = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINTOKEN")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINTOKEN")) {
 			token = ast_var_value(current);
 		}
 	}
@@ -2405,69 +2407,69 @@ static int osplookup_exec(
 
 	headp = ast_channel_varshead(chan);
 	AST_LIST_TRAVERSE(headp, current, entries) {
-		if (!strcasecmp(ast_var_name(current), "OSPINACTUALSRC")) {
+		if (!strcmp(ast_var_name(current), "OSPINACTUALSRC")) {
 			actualsrc = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINPEERIP")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINPEERIP")) {
 			srcdev = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINTECH")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINTECH")) {
 			ast_copy_string(results.intech, ast_var_value(current), sizeof(results.intech));
-		} else if (!strcasecmp(ast_var_name(current), "OSPINHANDLE")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINHANDLE")) {
 			if (sscanf(ast_var_value(current), "%30d", &results.inhandle) != 1) {
 				results.inhandle = OSP_INVALID_HANDLE;
 			}
-		} else if (!strcasecmp(ast_var_name(current), "OSPINTIMELIMIT")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINTIMELIMIT")) {
 			if (sscanf(ast_var_value(current), "%30d", &results.intimelimit) != 1) {
 				results.intimelimit = OSP_DEF_TIMELIMIT;
 			}
-		} else if (!strcasecmp(ast_var_name(current), "OSPINNETWORKID")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINNETWORKID")) {
 			snetid = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINNPRN")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINNPRN")) {
 			np.rn = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINNPCIC")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINNPCIC")) {
 			np.cic = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINNPDI")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINNPDI")) {
 			if (ast_true(ast_var_value(current))) {
 				np.npdi = 1;
 			}
-		} else if (!strcasecmp(ast_var_name(current), "OSPINSPID")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINSPID")) {
 			np.opname[OSPC_OPNAME_SPID] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINOCN")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINOCN")) {
 			np.opname[OSPC_OPNAME_OCN] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINSPN")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINSPN")) {
 			np.opname[OSPC_OPNAME_SPN] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINALTSPN")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINALTSPN")) {
 			np.opname[OSPC_OPNAME_ALTSPN] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINMCC")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINMCC")) {
 			np.opname[OSPC_OPNAME_MCC] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINMNC")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINMNC")) {
 			np.opname[OSPC_OPNAME_MNC] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINTOHOST")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINTOHOST")) {
 			ast_copy_string(results.dest, ast_var_value(current), sizeof(results.dest));
-		} else if (!strcasecmp(ast_var_name(current), "OSPINRPIDUSER")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINRPIDUSER")) {
 			headers.rpiduser = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINPAIUSER")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINPAIUSER")) {
 			headers.paiuser = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINDIVUSER")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINDIVUSER")) {
 			headers.divuser = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINDIVHOST")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINDIVHOST")) {
 			headers.divhost = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINPCIUSER")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINPCIUSER")) {
 			headers.pciuser = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINCUSTOMINFO1")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINCUSTOMINFO1")) {
 			cinfo[0] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINCUSTOMINFO2")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINCUSTOMINFO2")) {
 			cinfo[1] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINCUSTOMINFO3")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINCUSTOMINFO3")) {
 			cinfo[2] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINCUSTOMINFO4")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINCUSTOMINFO4")) {
 			cinfo[3] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINCUSTOMINFO5")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINCUSTOMINFO5")) {
 			cinfo[4] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINCUSTOMINFO6")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINCUSTOMINFO6")) {
 			cinfo[5] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINCUSTOMINFO7")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINCUSTOMINFO7")) {
 			cinfo[6] = ast_var_value(current);
-		} else if (!strcasecmp(ast_var_name(current), "OSPINCUSTOMINFO8")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINCUSTOMINFO8")) {
 			cinfo[7] = ast_var_value(current);
 		}
 	}
@@ -2669,23 +2671,23 @@ static int ospnext_exec(
 
 	headp = ast_channel_varshead(chan);
 	AST_LIST_TRAVERSE(headp, current, entries) {
-		if (!strcasecmp(ast_var_name(current), "OSPINHANDLE")) {
+		if (!strcmp(ast_var_name(current), "OSPINHANDLE")) {
 			if (sscanf(ast_var_value(current), "%30d", &results.inhandle) != 1) {
 				results.inhandle = OSP_INVALID_HANDLE;
 			}
-		} else if (!strcasecmp(ast_var_name(current), "OSPOUTHANDLE")) {
+		} else if (!strcmp(ast_var_name(current), "OSPOUTHANDLE")) {
 			if (sscanf(ast_var_value(current), "%30d", &results.outhandle) != 1) {
 				results.outhandle = OSP_INVALID_HANDLE;
 			}
-		} else if (!strcasecmp(ast_var_name(current), "OSPINTIMELIMIT")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINTIMELIMIT")) {
 			if (sscanf(ast_var_value(current), "%30d", &results.intimelimit) != 1) {
 				results.intimelimit = OSP_DEF_TIMELIMIT;
 			}
-		} else if (!strcasecmp(ast_var_name(current), "OSPOUTCALLIDTYPES")) {
+		} else if (!strcmp(ast_var_name(current), "OSPOUTCALLIDTYPES")) {
 			if (sscanf(ast_var_value(current), "%30d", &callidtypes) != 1) {
 				callidtypes = OSP_CALLID_UNDEF;
 			}
-		} else if (!strcasecmp(ast_var_name(current), "OSPDESTREMAILS")) {
+		} else if (!strcmp(ast_var_name(current), "OSPDESTREMAILS")) {
 			if (sscanf(ast_var_value(current), "%30d", &results.numdests) != 1) {
 				results.numdests = 0;
 			}
@@ -2814,7 +2816,7 @@ static int ospfinished_exec(
 	int inhandle = OSP_INVALID_HANDLE;
 	int outhandle = OSP_INVALID_HANDLE;
 	int recorded = 0;
-	time_t start, connect, end;
+	time_t start = 0, connect = 0, end = 0;
 	unsigned int release;
 	char buffer[OSP_SIZE_INTSTR];
 	char inqos[OSP_SIZE_QOSSTR] = { 0 };
@@ -2833,25 +2835,25 @@ static int ospfinished_exec(
 
 	headp = ast_channel_varshead(chan);
 	AST_LIST_TRAVERSE(headp, current, entries) {
-		if (!strcasecmp(ast_var_name(current), "OSPINHANDLE")) {
+		if (!strcmp(ast_var_name(current), "OSPINHANDLE")) {
 			if (sscanf(ast_var_value(current), "%30d", &inhandle) != 1) {
 				inhandle = OSP_INVALID_HANDLE;
 			}
-		} else if (!strcasecmp(ast_var_name(current), "OSPOUTHANDLE")) {
+		} else if (!strcmp(ast_var_name(current), "OSPOUTHANDLE")) {
 			if (sscanf(ast_var_value(current), "%30d", &outhandle) != 1) {
 				outhandle = OSP_INVALID_HANDLE;
 			}
 		} else if (!recorded &&
-			(!strcasecmp(ast_var_name(current), "OSPAUTHSTATUS") ||
-			!strcasecmp(ast_var_name(current), "OSPLOOKUPSTATUS") ||
-			!strcasecmp(ast_var_name(current), "OSPNEXTSTATUS")))
+			(!strcmp(ast_var_name(current), "OSPAUTHSTATUS") ||
+			!strcmp(ast_var_name(current), "OSPLOOKUPSTATUS") ||
+			!strcmp(ast_var_name(current), "OSPNEXTSTATUS")))
 		{
-			if (strcasecmp(ast_var_value(current), AST_OSP_SUCCESS)) {
+			if (strcmp(ast_var_value(current), AST_OSP_SUCCESS)) {
 				recorded = 1;
 			}
-		} else if (!strcasecmp(ast_var_name(current), "OSPINAUDIOQOS")) {
+		} else if (!strcmp(ast_var_name(current), "OSPINAUDIOQOS")) {
 			ast_copy_string(inqos, ast_var_value(current), sizeof(inqos));
-		} else if (!strcasecmp(ast_var_name(current), "OSPOUTAUDIOQOS")) {
+		} else if (!strcmp(ast_var_name(current), "OSPOUTAUDIOQOS")) {
 			ast_copy_string(outqos, ast_var_value(current), sizeof(outqos));
 		}
 	}
@@ -2866,19 +2868,18 @@ static int ospfinished_exec(
 	}
 	ast_debug(1, "OSPFinish: cause '%d'\n", cause);
 
-	if (ast_channel_cdr(chan)) {
-		start = ast_channel_cdr(chan)->start.tv_sec;
-		connect = ast_channel_cdr(chan)->answer.tv_sec;
-		if (connect) {
-			end = time(NULL);
-		} else {
-			end = connect;
-		}
-	} else {
-		start = 0;
-		connect = 0;
-		end = 0;
+	if (!ast_tvzero(ast_channel_creationtime(chan))) {
+		start = ast_channel_creationtime(chan).tv_sec;
 	}
+	if (!ast_tvzero(ast_channel_answertime(chan))) {
+		connect = ast_channel_answertime(chan).tv_sec;
+	}
+	if (connect) {
+		end = time(NULL);
+	} else {
+		end = connect;
+	}
+
 	ast_debug(1, "OSPFinish: start '%ld'\n", start);
 	ast_debug(1, "OSPFinish: connect '%ld'\n", connect);
 	ast_debug(1, "OSPFinish: end '%ld'\n", end);
@@ -3159,6 +3160,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Open Settlement Protocol Applications",
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

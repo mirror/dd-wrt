@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 356573 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,74 +41,54 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 356573 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
-#include "asterisk/bridging.h"
-#include "asterisk/bridging_technology.h"
+#include "asterisk/bridge.h"
+#include "asterisk/bridge_technology.h"
 #include "asterisk/frame.h"
 
 static int simple_bridge_join(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel)
 {
-	struct ast_channel *c0 = AST_LIST_FIRST(&bridge->channels)->chan, *c1 = AST_LIST_LAST(&bridge->channels)->chan;
+	struct ast_channel *c0 = AST_LIST_FIRST(&bridge->channels)->chan;
+	struct ast_channel *c1 = AST_LIST_LAST(&bridge->channels)->chan;
 
-	/* If this is the first channel we can't make it compatible... unless we make it compatible with itself O.o */
-	if (AST_LIST_FIRST(&bridge->channels) == AST_LIST_LAST(&bridge->channels)) {
+	/*
+	 * If this is the first channel we can't make it compatible...
+	 * unless we make it compatible with itself.  O.o
+	 */
+	if (c0 == c1) {
 		return 0;
 	}
 
-	/* See if we need to make these compatible */
-	if ((ast_format_cmp(ast_channel_writeformat(c0), ast_channel_readformat(c1)) == AST_FORMAT_CMP_EQUAL) &&
-		(ast_format_cmp(ast_channel_readformat(c0), ast_channel_writeformat(c1)) == AST_FORMAT_CMP_EQUAL) &&
-		(ast_format_cap_identical(ast_channel_nativeformats(c0), ast_channel_nativeformats(c1)))) {
-		return 0;
-	}
-
-	/* BOOM! We do. */
 	return ast_channel_make_compatible(c0, c1);
 }
 
-static enum ast_bridge_write_result simple_bridge_write(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, struct ast_frame *frame)
+static int simple_bridge_write(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, struct ast_frame *frame)
 {
-	struct ast_bridge_channel *other = NULL;
-
-	/* If this is the only channel in this bridge then immediately exit */
-	if (AST_LIST_FIRST(&bridge->channels) == AST_LIST_LAST(&bridge->channels)) {
-		return AST_BRIDGE_WRITE_FAILED;
-	}
-
-	/* Find the channel we actually want to write to */
-	if (!(other = (AST_LIST_FIRST(&bridge->channels) == bridge_channel ? AST_LIST_LAST(&bridge->channels) : AST_LIST_FIRST(&bridge->channels)))) {
-		return AST_BRIDGE_WRITE_FAILED;
-	}
-
-	/* Write the frame out if they are in the waiting state... don't worry about freeing it, the bridging core will take care of it */
-	if (other->state == AST_BRIDGE_CHANNEL_STATE_WAIT) {
-		ast_write(other->chan, frame);
-	}
-
-	return AST_BRIDGE_WRITE_SUCCESS;
+	return ast_bridge_queue_everyone_else(bridge, bridge_channel, frame);
 }
 
 static struct ast_bridge_technology simple_bridge = {
 	.name = "simple_bridge",
-	.capabilities = AST_BRIDGE_CAPABILITY_1TO1MIX | AST_BRIDGE_CAPABILITY_THREAD,
-	.preference = AST_BRIDGE_PREFERENCE_MEDIUM,
+	.capabilities = AST_BRIDGE_CAPABILITY_1TO1MIX,
+	.preference = AST_BRIDGE_PREFERENCE_BASE_1TO1MIX,
 	.join = simple_bridge_join,
 	.write = simple_bridge_write,
 };
 
 static int unload_module(void)
 {
-	ast_format_cap_destroy(simple_bridge.format_capabilities);
+	ao2_cleanup(simple_bridge.format_capabilities);
+	simple_bridge.format_capabilities = NULL;
 	return ast_bridge_technology_unregister(&simple_bridge);
 }
 
 static int load_module(void)
 {
-	if (!(simple_bridge.format_capabilities = ast_format_cap_alloc())) {
+	if (!(simple_bridge.format_capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
-	ast_format_cap_add_all_by_type(simple_bridge.format_capabilities, AST_FORMAT_TYPE_AUDIO);
-	ast_format_cap_add_all_by_type(simple_bridge.format_capabilities, AST_FORMAT_TYPE_VIDEO);
-	ast_format_cap_add_all_by_type(simple_bridge.format_capabilities, AST_FORMAT_TYPE_TEXT);
+	ast_format_cap_append_by_type(simple_bridge.format_capabilities, AST_MEDIA_TYPE_AUDIO);
+	ast_format_cap_append_by_type(simple_bridge.format_capabilities, AST_MEDIA_TYPE_VIDEO);
+	ast_format_cap_append_by_type(simple_bridge.format_capabilities, AST_MEDIA_TYPE_TEXT);
 
 	return ast_bridge_technology_register(&simple_bridge);
 }

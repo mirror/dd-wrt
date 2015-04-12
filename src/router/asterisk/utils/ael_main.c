@@ -18,8 +18,9 @@
 #include <regex.h>
 #include <limits.h>
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398749 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 418019 $")
 
+#include "asterisk/backtrace.h"
 #include "asterisk/channel.h"
 #include "asterisk/ast_expr.h"
 #include "asterisk/module.h"
@@ -35,8 +36,6 @@ int option_verbose = 0;
 void ast_register_file_version(const char *file, const char *version) { }
 void ast_unregister_file_version(const char *file) { }
 #endif
-
-struct ast_flags ast_compat = { 7 };
 
 /*** MODULEINFO
   	<depend>res_ael_share</depend>
@@ -621,12 +620,12 @@ void ast_store_lock_info(enum ast_lock_type type, const char *filename,
 {
 }
 
-int ast_bt_get_addresses(struct ast_bt *bt)
+int __ast_bt_get_addresses(struct ast_bt *bt)
 {
 	return 0;
 }
 
-char **ast_bt_get_symbols(void **addresses, size_t num_frames)
+char **__ast_bt_get_symbols(void **addresses, size_t num_frames)
 {
 	char **foo = calloc(num_frames, sizeof(char *) + 1);
 	if (foo) {

@@ -25,6 +25,7 @@
 
 #include "asterisk/network.h"
 
+#include <execinfo.h>
 #include <time.h>	/* we want to override localtime_r */
 #include <unistd.h>
 #include <string.h>
@@ -317,6 +318,25 @@ int ast_xml_escape(const char *string, char *outbuf, size_t buflen);
  */
 char *ast_escape_quoted(const char *string, char *outbuf, int buflen);
 
+/*!
+ * \brief Escape semicolons found in a string.
+ *
+ * \param string string to be escaped
+ * \param outbuf resulting escaped string
+ * \param buflen size of output buffer
+ * \return a pointer to the escaped string
+ */
+char *ast_escape_semicolons(const char *string, char *outbuf, int buflen);
+
+/*!
+ * \brief Unescape quotes in a string
+ *
+ * \param quote_str The string with quotes to be unescaped
+ *
+ * \note This function mutates the passed-in string.
+ */
+void ast_unescape_quoted(char *quote_str);
+
 static force_inline void ast_slinear_saturated_add(short *input, short *value)
 {
 	int res;
@@ -368,6 +388,7 @@ static force_inline void ast_slinear_saturated_divide(short *input, short *value
 
 int ast_utils_init(void);
 int ast_wait_for_input(int fd, int ms);
+int ast_wait_for_output(int fd, int ms);
 
 /*!
  * \brief Try to write string, but wait no more than ms milliseconds
@@ -458,6 +479,37 @@ char *ast_process_quotes_and_slashes(char *start, char find, char replace_with);
 
 long int ast_random(void);
 
+/*!
+ * \brief Returns a random number between 0.0 and 1.0, inclusive.
+ * \since 12
+ */
+#define ast_random_double() (((double)ast_random()) / RAND_MAX)
+
+/*!
+ * \brief DEBUG_CHAOS returns failure randomly
+ *
+ * DEBUG_CHAOS_RETURN(failure); can be used to fake
+ * failure of functions such as memory allocation,
+ * for the purposes of testing failure handling.
+ */
+#ifdef DEBUG_CHAOS
+#ifndef DEBUG_CHAOS_ALLOC_CHANCE
+#define DEBUG_CHAOS_ALLOC_CHANCE 100000
+#endif
+/* Could #define DEBUG_CHAOS_ENABLE ast_fully_booted */
+#ifndef DEBUG_CHAOS_ENABLE
+#define DEBUG_CHAOS_ENABLE 1
+#endif
+#define DEBUG_CHAOS_RETURN(CHANCE, FAILURE) \
+	do { \
+		if ((DEBUG_CHAOS_ENABLE) && (ast_random() % CHANCE == 0)) { \
+			return FAILURE; \
+		} \
+	} while (0)
+#else
+#define DEBUG_CHAOS_RETURN(c,f)
+#endif
+
 
 #ifndef __AST_DEBUG_MALLOC
 #define ast_std_malloc malloc
@@ -474,8 +526,27 @@ long int ast_random(void);
 #define ast_free free
 #define ast_free_ptr ast_free
 
+/*
+ * This buffer is in static memory. We never intend to read it,
+ * nor do we care about multiple threads writing to it at the
+ * same time. We only want to know if we're recursing too deep
+ * already. 60 entries should be more than enough.  Function
+ * call depth rarely exceeds 20 or so.
+ */
+#define _AST_MEM_BACKTRACE_BUFLEN 60
+extern void *_ast_mem_backtrace_buffer[_AST_MEM_BACKTRACE_BUFLEN];
+
+/*
+ * Ok, this sucks. But if we're already out of mem, we don't
+ * want the logger to create infinite recursion (and a crash).
+ */
 #define MALLOC_FAILURE_MSG \
-	ast_log(LOG_ERROR, "Memory Allocation Failure in function %s at line %d of %s\n", func, lineno, file);
+	do { \
+		if (backtrace(_ast_mem_backtrace_buffer, _AST_MEM_BACKTRACE_BUFLEN) < _AST_MEM_BACKTRACE_BUFLEN) { \
+			ast_log(LOG_ERROR, "Memory Allocation Failure in function %s at line %d of %s\n", func, lineno, file); \
+		} \
+	} while (0)
+
 /*!
  * \brief A wrapper for malloc()
  *
@@ -492,8 +563,11 @@ void * attribute_malloc _ast_malloc(size_t len, const char *file, int lineno, co
 {
 	void *p;
 
-	if (!(p = malloc(len)))
+	DEBUG_CHAOS_RETURN(DEBUG_CHAOS_ALLOC_CHANCE, NULL);
+
+	if (!(p = malloc(len))) {
 		MALLOC_FAILURE_MSG;
+	}
 
 	return p;
 }
@@ -515,8 +589,11 @@ void * attribute_malloc _ast_calloc(size_t num, size_t len, const char *file, in
 {
 	void *p;
 
-	if (!(p = calloc(num, len)))
+	DEBUG_CHAOS_RETURN(DEBUG_CHAOS_ALLOC_CHANCE, NULL);
+
+	if (!(p = calloc(num, len))) {
 		MALLOC_FAILURE_MSG;
+	}
 
 	return p;
 }
@@ -551,8 +628,11 @@ void * attribute_malloc _ast_realloc(void *p, size_t len, const char *file, int 
 {
 	void *newp;
 
-	if (!(newp = realloc(p, len)))
+	DEBUG_CHAOS_RETURN(DEBUG_CHAOS_ALLOC_CHANCE, NULL);
+
+	if (!(newp = realloc(p, len))) {
 		MALLOC_FAILURE_MSG;
+	}
 
 	return newp;
 }
@@ -578,9 +658,12 @@ char * attribute_malloc _ast_strdup(const char *str, const char *file, int linen
 {
 	char *newstr = NULL;
 
+	DEBUG_CHAOS_RETURN(DEBUG_CHAOS_ALLOC_CHANCE, NULL);
+
 	if (str) {
-		if (!(newstr = strdup(str)))
+		if (!(newstr = strdup(str))) {
 			MALLOC_FAILURE_MSG;
+		}
 	}
 
 	return newstr;
@@ -607,9 +690,12 @@ char * attribute_malloc _ast_strndup(const char *str, size_t len, const char *fi
 {
 	char *newstr = NULL;
 
+	DEBUG_CHAOS_RETURN(DEBUG_CHAOS_ALLOC_CHANCE, NULL);
+
 	if (str) {
-		if (!(newstr = strndup(str, len)))
+		if (!(newstr = strndup(str, len))) {
 			MALLOC_FAILURE_MSG;
+		}
 	}
 
 	return newstr;
@@ -647,8 +733,11 @@ int _ast_vasprintf(char **ret, const char *file, int lineno, const char *func, c
 {
 	int res;
 
-	if ((res = vasprintf(ret, fmt, ap)) == -1)
+	DEBUG_CHAOS_RETURN(DEBUG_CHAOS_ALLOC_CHANCE, -1);
+
+	if ((res = vasprintf(ret, fmt, ap)) == -1) {
 		MALLOC_FAILURE_MSG;
+	}
 
 	return res;
 }
@@ -709,8 +798,39 @@ void ast_enable_packet_fragmentation(int sock);
  */
 int ast_mkdir(const char *path, int mode);
 
+/*!
+ * \brief Recursively create directory path, but only if it resolves within
+ * the given \a base_path.
+ *
+ * If \a base_path does not exist, it will not be created and this function
+ * returns \c EPERM.
+ *
+ * \param path The directory path to create
+ * \param mode The permissions with which to try to create the directory
+ * \return 0 on success or an error code otherwise
+ */
+int ast_safe_mkdir(const char *base_path, const char *path, int mode);
+
 #define ARRAY_LEN(a) (size_t) (sizeof(a) / sizeof(0[a]))
 
+/*!
+ * \brief Checks to see if value is within the given bounds
+ *
+ * \param v the value to check
+ * \param min minimum lower bound (inclusive)
+ * \param max maximum upper bound (inclusive)
+ * \return 0 if value out of bounds, otherwise true (non-zero)
+ */
+#define IN_BOUNDS(v, min, max) ((v) >= (min)) && ((v) <= (max))
+
+/*!
+ * \brief Checks to see if value is within the bounds of the given array
+ *
+ * \param v the value to check
+ * \param a the array to bound check
+ * \return 0 if value out of bounds, otherwise true (non-zero)
+ */
+#define ARRAY_IN_BOUNDS(v, a) IN_BOUNDS(v, 0, ARRAY_LEN(a) - 1)
 
 /* Definition for Digest authorization */
 struct ast_http_digest {
@@ -863,7 +983,6 @@ int ast_eid_cmp(const struct ast_eid *eid1, const struct ast_eid *eid2);
 
 /*!
  * \brief Get current thread ID
- * \param None
  * \return the ID if platform is supported, else -1
  */
 int ast_get_tid(void);
@@ -902,12 +1021,14 @@ char *ast_utils_which(const char *binary, char *fullpath, size_t fullpath_size);
  *     RAII_VAR(struct mything *, thing, mything_alloc(name), mything_cleanup);
  *     ...
  * }
+ * \endcode
  *
  * \note This macro is especially useful for working with ao2 objects. A common idiom
  * would be a function that needed to look up an ao2 object and might have several error
  * conditions after the allocation that would normally need to unref the ao2 object.
  * With RAII_VAR, it is possible to just return and leave the cleanup to the destructor
  * function. For example:
+ *
  * \code
  * void do_stuff(const char *name)
  * {
@@ -920,12 +1041,72 @@ char *ast_utils_which(const char *binary, char *fullpath, size_t fullpath_size);
  *     }
  *     do_stuff_with_thing(thing);
  * }
- * \encode
+ * \endcode
  */
-#define RAII_VAR(vartype, varname, initval, dtor) \
-    /* Prototype needed due to http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36774 */ \
-    auto void _dtor_ ## varname (vartype * v); \
-    void _dtor_ ## varname (vartype * v) { dtor(*v); } \
+
+#if defined(__clang__)
+
+#if defined(__has_feature) && __has_feature(blocks)
+typedef void (^_raii_cleanup_block_t)(void);
+static inline void _raii_cleanup_block(_raii_cleanup_block_t *b) { (*b)(); }
+
+#define RAII_VAR(vartype, varname, initval, dtor)                                                                \
+    _raii_cleanup_block_t _raii_cleanup_ ## varname __attribute__((cleanup(_raii_cleanup_block),unused)) = NULL; \
+    vartype varname = initval;                                                                                   \
+    _raii_cleanup_ ## varname = ^{ dtor(varname); }
+
+#else
+	#error "CLANG must support the 'blocks' feature to compile Asterisk."
+#endif /* #if defined(__has_feature) && __has_feature(blocks) */
+
+#elif defined(__GNUC__)
+
+#define RAII_VAR(vartype, varname, initval, dtor)                              \
+    auto void _dtor_ ## varname (vartype * v);                                 \
+    void _dtor_ ## varname (vartype * v) { dtor(*v); }                         \
     vartype varname __attribute__((cleanup(_dtor_ ## varname))) = (initval)
+
+#else
+    #error "Cannot compile Asterisk: unknown and unsupported compiler."
+#endif /* #if __GNUC__ */
+
+/*!
+ * \brief Asterisk wrapper around crypt(3).
+ *
+ * The interpretation of the salt (which determines the password hashing
+ * algorithm) is system specific. Application code should prefer to use
+ * ast_crypt_encrypt() or ast_crypt_validate().
+ *
+ * The returned string is heap allocated, and should be freed with ast_free().
+ *
+ * \param key User's password to crypt.
+ * \param salt Salt to crypt with.
+ * \return Crypted password.
+ * \return \c NULL on error.
+ */
+char *ast_crypt(const char *key, const char *salt);
+
+/*
+ * \brief Asterisk wrapper around crypt(3) for encrypting passwords.
+ *
+ * This function will generate a random salt and encrypt the given password.
+ *
+ * The returned string is heap allocated, and should be freed with ast_free().
+ *
+ * \param key User's password to crypt.
+ * \return Crypted password.
+ * \return \c NULL on error.
+ */
+char *ast_crypt_encrypt(const char *key);
+
+/*
+ * \brief Asterisk wrapper around crypt(3) for validating passwords.
+ *
+ * \param key User's password to validate.
+ * \param expected Expected result from crypt.
+ * \return True (non-zero) if \a key matches \a expected.
+ * \return False (zero) if \a key doesn't match.
+ */
+int ast_crypt_validate(const char *key, const char *expected);
 
 #endif /* _ASTERISK_UTILS_H */

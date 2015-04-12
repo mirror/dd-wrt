@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429675 $")
 
 #include "asterisk/lock.h"
 #include "asterisk/file.h"
@@ -87,7 +87,8 @@ static int cpeid_exec(struct ast_channel *chan, const char *idata)
 		res = ast_adsi_get_cpeid(chan, cpeid, 0);
 		if (res > 0) {
 			gotcpeid = 1;
-			ast_verb(3, "Got CPEID of '%02x:%02x:%02x:%02x' on '%s'\n", cpeid[0], cpeid[1], cpeid[2], cpeid[3], ast_channel_name(chan));
+			ast_verb(3, "Got CPEID of '%02hhx:%02hhx:%02hhx:%02hhx' on '%s'\n",
+				cpeid[0], cpeid[1], cpeid[2], cpeid[3], ast_channel_name(chan));
 		}
 		if (res > -1) {
 			strcpy(data[1], "Measuring CPE...");
@@ -101,7 +102,8 @@ static int cpeid_exec(struct ast_channel *chan, const char *idata)
 		}
 		if (res > -1) {
 			if (gotcpeid)
-				snprintf(data[1], 80, "CPEID: %02x:%02x:%02x:%02x", cpeid[0], cpeid[1], cpeid[2], cpeid[3]);
+				snprintf(data[1], 80, "CPEID: %02hhx:%02hhx:%02hhx:%02hhx",
+					cpeid[0], cpeid[1], cpeid[2], cpeid[3]);
 			else
 				strcpy(data[1], "CPEID Unknown");
 			if (gotgeometry) 
@@ -137,6 +139,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Get ADSI CPE ID",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.nonoptreq = "res_adsi",

@@ -29,6 +29,15 @@
  * \ingroup applications
  */
 
+/*! \li \ref app_skel.c uses configuration file \ref app_skel.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*! 
+ * \page app_skel.conf app_skel.conf
+ * \verbinclude app_skel.conf.sample
+ */
+
 /*** MODULEINFO
 	<defaultenabled>no</defaultenabled>
 	<support_level>core</support_level>
@@ -36,7 +45,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368673 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <math.h> /* log10 */
 #include "asterisk/file.h"
@@ -77,6 +86,51 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368673 $")
 		from. It shows you the basic structure to create your own Asterisk applications.</para>
 		</description>
 	</application>
+
+	<configInfo name="app_skel" language="en_US">
+		<configFile name="app_skel.conf">
+			<configObject name="globals">
+				<synopsis>Options that apply globally to app_skel</synopsis>
+				<configOption name="games">
+					<synopsis>The number of games a single execution of SkelGuessNumber will play</synopsis>
+				</configOption>
+				<configOption name="cheat">
+					<synopsis>Should the computer cheat?</synopsis>
+					<description><para>If enabled, the computer will ignore winning guesses.</para></description>
+				</configOption>
+			</configObject>
+			<configObject name="sounds">
+				<synopsis>Prompts for SkelGuessNumber to play</synopsis>
+				<configOption name="prompt" default="please-enter-your&amp;number&amp;queue-less-than">
+					<synopsis>A prompt directing the user to enter a number less than the max number</synopsis>
+				</configOption>
+				<configOption name="wrong_guess" default="vm-pls-try-again">
+					<synopsis>The sound file to play when a wrong guess is made</synopsis>
+				</configOption>
+				<configOption name="right_guess" default="auth-thankyou">
+					<synopsis>The sound file to play when a correct guess is made</synopsis>
+				</configOption>
+				<configOption name="too_low">
+					<synopsis>The sound file to play when a guess is too low</synopsis>
+				</configOption>
+				<configOption name="too_high">
+					<synopsis>The sound file to play when a guess is too high</synopsis>
+				</configOption>
+				<configOption name="lose" default="vm-goodbye">
+					<synopsis>The sound file to play when a player loses</synopsis>
+				</configOption>
+			</configObject>
+			<configObject name="level">
+				<synopsis>Defined levels for the SkelGuessNumber game</synopsis>
+				<configOption name="max_number">
+					<synopsis>The maximum in the range of numbers to guess (1 is the implied minimum)</synopsis>
+				</configOption>
+				<configOption name="max_guesses">
+					<synopsis>The maximum number of guesses before a game is considered lost</synopsis>
+				</configOption>
+			</configObject>
+		</configFile>
+	</configInfo>
  ***/
 
 static char *app = "SkelGuessNumber";
@@ -178,7 +232,7 @@ static void *skel_level_alloc(const char *cat);
  * internally by the Config Options code to check if an level has already been added to the
  * container that will be swapped for the live container on a successul reload.
  *
- * \param container A non-active container to search for a level
+ * \param tmp_container A non-active container to search for a level
  * \param category The category associated with the level to check for
  * \retval non-NULL The level from the container
  * \retval NULL The level does not exist in the container
@@ -188,6 +242,7 @@ static void *skel_level_find(struct ao2_container *tmp_container, const char *ca
 /*! \brief An aco_type structure to link the "general" category to the skel_global_config type */
 static struct aco_type global_option = {
 	.type = ACO_GLOBAL,
+	.name = "globals",
 	.item_offset = offsetof(struct skel_config, global),
 	.category_match = ACO_WHITELIST,
 	.category = "^general$",
@@ -198,6 +253,7 @@ struct aco_type *global_options[] = ACO_TYPES(&global_option);
 /*! \brief An aco_type structure to link the "sounds" category to the skel_global_config type */
 static struct aco_type sound_option = {
 	.type = ACO_GLOBAL,
+	.name = "sounds",
 	.item_offset = offsetof(struct skel_config, global),
 	.category_match = ACO_WHITELIST,
 	.category = "^sounds$",
@@ -208,6 +264,7 @@ struct aco_type *sound_options[] = ACO_TYPES(&sound_option);
 /*! \brief An aco_type structure to link the everything but the "general" and "sounds" categories to the skel_level type */
 static struct aco_type level_option = {
 	.type = ACO_ITEM,
+	.name = "level",
 	.category_match = ACO_BLACKLIST,
 	.category = "^(general|sounds)$",
 	.item_alloc = skel_level_alloc,
@@ -645,9 +702,20 @@ static int unload_module(void)
 	ast_cli_unregister_multiple(skel_cli, ARRAY_LEN(skel_cli));
 	aco_info_destroy(&cfg_info);
 	ao2_global_obj_release(globals);
+	ao2_cleanup(games);
 	return ast_unregister_application(app);
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
+ * configuration file or other non-critical problem return 
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
 	if (aco_info_init(&cfg_info)) {
@@ -690,6 +758,7 @@ error:
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Skeleton (sample) Application",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload_module,

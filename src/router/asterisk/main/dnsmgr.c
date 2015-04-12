@@ -28,13 +28,24 @@
  * thread is in the middle of updating it to the new address.
  */
 
+
+/*! \li \ref dnsmgr.c uses the configuration file \ref dnsmgr.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page dnsmgr.conf dnsmgr.conf
+ * \verbinclude dnsmgr.conf.sample
+ */
+
+
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 377706 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 389733 $")
 
 #include "asterisk/_private.h"
 #include <regex.h>
@@ -503,7 +514,6 @@ static int do_reload(int loading)
 	}
 
 	ast_mutex_unlock(&refresh_lock);
-	manager_event(EVENT_FLAG_SYSTEM, "Reload", "Module: DNSmgr\r\nStatus: %s\r/nMessage: DNSmgr reload Requested\r\n", enabled ? "Enabled" : "Disabled");
 
 	return 0;
 }

@@ -36,13 +36,14 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370387 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419175 $")
 
 #include "asterisk/utils.h"
 #include "asterisk/module.h"
 #include "asterisk/test.h"
 #include "asterisk/abstract_jb.h"
 #include "asterisk/frame.h"
+#include "asterisk/format_cache.h"
 
 #define DEFAULT_FRAME_MS 160
 #define DEFAULT_CONFIG_FLAGS 0
@@ -50,8 +51,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370387 $")
 #define DEFAULT_CONFIG_RESYNC_THRESHOLD (DEFAULT_FRAME_MS) * 2
 #define DEFAULT_CONFIG_TARGET_EXTRA -1
 
-/*! \internal \brief Destructor for a jitter buffer
+/*!
+ * \internal
+ * \brief Destructor for a jitter buffer
+ *
  * \param jb The jitter buffer to destroy
+ *
  * \note This will destroy all frames still in the jitter buffer
  */
 static void dispose_jitterbuffer(struct ast_jb *jb)
@@ -67,20 +72,13 @@ static void dispose_jitterbuffer(struct ast_jb *jb)
 	jb->jbobj = NULL;
 }
 
-/*! \internal \brief Destructor for frames
- * \param f The frame to destroy
- */
-static void dispose_frame(struct ast_frame *f)
-{
-	if (!f) {
-		return;
-	}
-	ast_frfree(f);
-}
-
-/*! \internal \brief Create a test frame
+/*!
+ * \internal
+ * \brief Create a test frame
+ *
  * \param timestamp the time in ms of the frame
  * \param seqno the frame's sequence number
+ *
  * \returns a malloc'd frame
  */
 static struct ast_frame *create_test_frame(long timestamp,
@@ -88,7 +86,7 @@ static struct ast_frame *create_test_frame(long timestamp,
 {
 	struct ast_frame f = {0};
 
-	f.subclass.format.id = AST_FORMAT_SLINEAR;
+	f.subclass.format = ast_format_slin;
 	f.frametype = AST_FRAME_VOICE;
 	f.src = "TEST";
 	f.ts = timestamp;
@@ -117,6 +115,15 @@ static struct ast_frame *create_test_frame(long timestamp,
 	} } while (0)
 
 /*! \internal
+ * \brief Test two numeric (unsigned int) values.
+*/
+#define UINT_TEST(actual, expected) do { \
+	if ((actual) != (expected)) { \
+		ast_test_status_update(test, #actual ": expected [%u]; actual [%u]\n", (expected), (actual)); \
+		return AST_TEST_FAIL; \
+	} } while (0)
+
+/*! \internal
  * \brief Test two string values
 */
 #define STRING_TEST(actual, expected) do { \
@@ -129,7 +136,7 @@ static struct ast_frame *create_test_frame(long timestamp,
  * \brief Verify that two frames have the same properties
  */
 #define VERIFY_FRAME(actual, expected) do { \
-	INT_TEST((actual)->frametype, (expected)->frametype); \
+	UINT_TEST((actual)->frametype, (expected)->frametype); \
 	INT_TEST((actual)->seqno, (expected)->seqno); \
 	LONG_INT_TEST((actual)->ts, (expected)->ts); \
 	LONG_INT_TEST((actual)->len, (expected)->len); \
@@ -161,19 +168,28 @@ static struct ast_frame *create_test_frame(long timestamp,
 	(conf)->target_extra = DEFAULT_CONFIG_TARGET_EXTRA; \
 	} while (0)
 
-/*! \internal \brief A container object for the jitter buffers, used for all tests*/
+/*!
+ * \internal
+ * \brief A container object for the jitter buffers, used for all tests
+ */
 static struct ast_jb default_jb = {
 	.impl = NULL,
 	.jbobj = NULL
 };
 
-/*! \internal \brief Construct a test name */
+/*!
+ * \internal
+ * \brief Construct a test name
+ */
 #define TEST_NAME(type_name, specifier) type_name ## _  ## specifier
 
 #define TEST_NAME2(test_name) #test_name
 #define STRINGIFY_TESTNAME(test_name) TEST_NAME2(test_name)
 
-/*! \internal \brief Test nominal construction of a jitter buffer
+/*!
+ * \internal
+ * \brief Test nominal construction of a jitter buffer
+ *
  * \param type_name The enum type of the jitter buffer to create
  * \param literal_type_name The literal name of the type - "fixed" or "adaptive"
  */
@@ -209,7 +225,10 @@ static struct ast_jb default_jb = {
 	return AST_TEST_PASS; \
 }
 
-/*! \internal \brief Test putting the initial frame into a jitter buffer
+/*!
+ * \internal
+ * \brief Test putting the initial frame into a jitter buffer
+ *
  * \param type_name The enum type of the jitter buffer to create
  * \param literal_type_name The literal name of the type - "fixed" or "adaptive"
  */
@@ -217,8 +236,8 @@ static struct ast_jb default_jb = {
 	RAII_VAR(struct ast_jb *, jb, &default_jb, dispose_jitterbuffer); \
 	const struct ast_jb_impl *impl; \
 	struct ast_jb_conf conf; \
-	RAII_VAR(struct ast_frame *, expected_frame, NULL, dispose_frame); \
-	RAII_VAR(struct ast_frame *, actual_frame, NULL, dispose_frame); \
+	RAII_VAR(struct ast_frame *, expected_frame, NULL, ast_frame_dtor); \
+	RAII_VAR(struct ast_frame *, actual_frame, NULL, ast_frame_dtor); \
 	int res; \
 \
 	switch (cmd) { \
@@ -265,7 +284,10 @@ static struct ast_jb default_jb = {
 	return AST_TEST_PASS; \
 }
 
-/*! \internal \brief Test putting a voice frames into a jitter buffer
+/*!
+ * \internal
+ * \brief Test putting a voice frames into a jitter buffer
+ *
  * \param type_name The enum type of the jitter buffer to create
  * \param literal_type_name The literal name of the type - "fixed" or "adaptive"
  */
@@ -273,8 +295,8 @@ static struct ast_jb default_jb = {
 	RAII_VAR(struct ast_jb *, jb, &default_jb, dispose_jitterbuffer); \
 	const struct ast_jb_impl *impl; \
 	struct ast_jb_conf conf; \
-	RAII_VAR(struct ast_frame *, expected_frame, NULL, dispose_frame); \
-	RAII_VAR(struct ast_frame *, actual_frame, NULL, dispose_frame); \
+	RAII_VAR(struct ast_frame *, expected_frame, NULL, ast_frame_dtor); \
+	RAII_VAR(struct ast_frame *, actual_frame, NULL, ast_frame_dtor); \
 	int res; \
 	long next; \
 	int i; \
@@ -327,7 +349,10 @@ static struct ast_jb default_jb = {
 	return AST_TEST_PASS; \
 }
 
-/*! \internal \brief Test overflowing the limits of a jitter buffer
+/*!
+ * \internal
+ * \brief Test overflowing the limits of a jitter buffer
+ *
  * \param type_name The enum type of the jitter buffer to create
  * \param literal_type_name The literal name of the type - "fixed" or "adaptive"
  * \param overflow_limit The number of frames at which we expect the buffer to overflow
@@ -336,7 +361,7 @@ static struct ast_jb default_jb = {
 	RAII_VAR(struct ast_jb *, jb, &default_jb, dispose_jitterbuffer); \
 	const struct ast_jb_impl *impl; \
 	struct ast_jb_conf conf; \
-	RAII_VAR(struct ast_frame *, expected_frame, NULL, dispose_frame); \
+	RAII_VAR(struct ast_frame *, expected_frame, NULL, ast_frame_dtor); \
 	int res; \
 	int i; \
 \
@@ -392,7 +417,10 @@ static struct ast_jb default_jb = {
 	return AST_TEST_PASS; \
 }
 
-/*! \internal \brief Test putting voice frames into a jitter buffer out of order
+/*!
+ * \internal
+ * \brief Test putting voice frames into a jitter buffer out of order
+ *
  * \param type_name The enum type of the jitter buffer to create
  * \param literal_type_name The literal name of the type - "fixed" or "adaptive"
  * \param synch_limit The synchronization limit for this particular type of jitter buffer
@@ -401,8 +429,8 @@ static struct ast_jb default_jb = {
 	RAII_VAR(struct ast_jb *, jb, &default_jb, dispose_jitterbuffer); \
 	const struct ast_jb_impl *impl; \
 	struct ast_jb_conf conf; \
-	RAII_VAR(struct ast_frame *, actual_frame, NULL, dispose_frame); \
-	RAII_VAR(struct ast_frame *, expected_frame, NULL, dispose_frame); \
+	RAII_VAR(struct ast_frame *, actual_frame, NULL, ast_frame_dtor); \
+	RAII_VAR(struct ast_frame *, expected_frame, NULL, ast_frame_dtor); \
 	int res; \
 	long next; \
 	int i; \

@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 403978 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428413 $")
 
 #include <regex.h>
 
@@ -351,7 +351,7 @@ static int load_module(void)
 {
 	int res = 0;
 
-	res |= ast_custom_function_register(&db_function);
+	res |= ast_custom_function_register_escalating(&db_function, AST_CFE_BOTH);
 	res |= ast_custom_function_register(&db_exists_function);
 	res |= ast_custom_function_register_escalating(&db_delete_function, AST_CFE_READ);
 	res |= ast_custom_function_register(&db_keys_function);

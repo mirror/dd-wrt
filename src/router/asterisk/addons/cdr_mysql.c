@@ -42,7 +42,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 377505 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <mysql/mysql.h>
 #include <mysql/errmsg.h>
@@ -251,7 +251,7 @@ db_reconnect:
 					char timestr[128];
 					ast_localtime(&tv, &tm, ast_str_strlen(cdrzone) ? ast_str_buffer(cdrzone) : NULL);
 					ast_strftime(timestr, sizeof(timestr), "%Y-%m-%d %T", &tm);
-					ast_cdr_setvar(cdr, "calldate", timestr, 0);
+					value = ast_strdupa(timestr);
 					cdrname = "calldate";
 				} else {
 					cdrname = "start";
@@ -277,9 +277,11 @@ db_reconnect:
 				 strstr(entry->type, "real") ||
 				 strstr(entry->type, "numeric") ||
 				 strstr(entry->type, "fixed"))) {
-				ast_cdr_getvar(cdr, cdrname, &value, workspace, sizeof(workspace), 0, 1);
+				ast_cdr_format_var(cdr, cdrname, &value, workspace, sizeof(workspace), 1);
+			} else if (!strcmp(cdrname, "calldate")) {
+				/* Skip calldate - the value has already been dup'd */
 			} else {
-				ast_cdr_getvar(cdr, cdrname, &value, workspace, sizeof(workspace), 0, 0);
+				ast_cdr_format_var(cdr, cdrname, &value, workspace, sizeof(workspace), 0);
 			}
 
 			if (value) {
@@ -382,9 +384,11 @@ static int my_unload_module(int reload)
 	}
 
 	dbport = 0;
-	ast_cdr_unregister(name);
-	
-	return 0;
+	if (reload) {
+		return ast_cdr_backend_suspend(name);
+	} else {
+		return ast_cdr_unregister(name);
+	}
 }
 
 static int my_load_config_string(struct ast_config *cfg, const char *category, const char *variable, struct ast_str **field, const char *def)
@@ -658,7 +662,11 @@ static int my_load_module(int reload)
 		return AST_MODULE_LOAD_FAILURE;
 	}
 
-	res = ast_cdr_register(name, desc, mysql_log);
+	if (!reload) {
+		res = ast_cdr_register(name, desc, mysql_log);
+	} else {
+		res = ast_cdr_backend_unsuspend(name);
+	}
 	if (res) {
 		ast_log(LOG_ERROR, "Unable to register MySQL CDR handling\n");
 	} else {
@@ -690,6 +698,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "MySQL CDR Backend",
+	.support_level = AST_MODULE_SUPPORT_DEPRECATED,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload,

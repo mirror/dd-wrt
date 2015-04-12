@@ -25,12 +25,21 @@
  * \brief PostgreSQL CDR logger
  *
  * \author Matthew D. Hardeman <mhardemn@papersoft.com>
- * \extref PostgreSQL http://www.postgresql.org/
+ * PostgreSQL http://www.postgresql.org/
  *
  * See also
  * \arg \ref Config_cdr
- * \extref PostgreSQL http://www.postgresql.org/
+ * PostgreSQL http://www.postgresql.org/
  * \ingroup cdr_drivers
+ */
+
+/*! \li \ref cdr_pgsql.c uses the configuration file \ref cdr_pgsql.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page cdr_pgsql.conf cdr_pgsql.conf
+ * \verbinclude cdr_pgsql.conf.sample
  */
 
 /*** MODULEINFO
@@ -40,7 +49,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <libpq-fe.h>
 
@@ -54,7 +63,17 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
 
 static const char name[] = "pgsql";
 static const char config[] = "cdr_pgsql.conf";
-static char *pghostname = NULL, *pgdbname = NULL, *pgdbuser = NULL, *pgpassword = NULL, *pgdbport = NULL, *table = NULL, *encoding = NULL, *tz = NULL;
+
+static char *pghostname;
+static char *pgdbname;
+static char *pgdbuser;
+static char *pgpassword;
+static char *pgappname;
+static char *pgdbport;
+static char *table;
+static char *encoding;
+static char *tz;
+
 static int connected = 0;
 static int maxsize = 512, maxsize2 = 512;
 static time_t connect_time = 0;
@@ -165,6 +184,34 @@ static char *handle_cdr_pgsql_status(struct ast_cli_entry *e, int cmd, struct as
 	return CLI_SUCCESS;
 }
 
+static void pgsql_reconnect(void)
+{
+	struct ast_str *conn_info = ast_str_create(128);
+	if (!conn_info) {
+		ast_log(LOG_ERROR, "Failed to allocate memory for connection string.\n");
+		return;
+	}
+
+	if (conn) {
+		PQfinish(conn);
+		conn = NULL;
+	}
+
+	ast_str_set(&conn_info, 0, "host=%s port=%s dbname=%s user=%s",
+		pghostname, pgdbport, pgdbname, pgdbuser);
+
+	if (!ast_strlen_zero(pgappname)) {
+		ast_str_append(&conn_info, 0, " application_name=%s", pgappname);
+	}
+
+	if (!ast_strlen_zero(pgpassword)) {
+		ast_str_append(&conn_info, 0, " password=%s", pgpassword);
+	}
+
+	conn = PQconnectdb(ast_str_buffer(conn_info));
+	ast_free(conn_info);
+}
+
 static int pgsql_log(struct ast_cdr *cdr)
 {
 	struct ast_tm tm;
@@ -174,7 +221,8 @@ static int pgsql_log(struct ast_cdr *cdr)
 	ast_mutex_lock(&pgsql_lock);
 
 	if ((!connected) && pghostname && pgdbuser && pgpassword && pgdbname) {
-		conn = PQsetdbLogin(pghostname, pgdbport, NULL, NULL, pgdbname, pgdbuser, pgpassword);
+		pgsql_reconnect();
+
 		if (PQstatus(conn) != CONNECTION_BAD) {
 			connected = 1;
 			connect_time = time(NULL);
@@ -213,9 +261,9 @@ static int pgsql_log(struct ast_cdr *cdr)
 		AST_RWLIST_RDLOCK(&psql_columns);
 		AST_RWLIST_TRAVERSE(&psql_columns, cur, list) {
 			/* For fields not set, simply skip them */
-			ast_cdr_getvar(cdr, cur->name, &value, buf, sizeof(buf), 0, 0);
+			ast_cdr_format_var(cdr, cur->name, &value, buf, sizeof(buf), 0);
 			if (strcmp(cur->name, "calldate") == 0 && !value) {
-				ast_cdr_getvar(cdr, "start", &value, buf, sizeof(buf), 0, 0);
+				ast_cdr_format_var(cdr, "start", &value, buf, sizeof(buf), 0);
 			}
 			if (!value) {
 				if (cur->notnull && !cur->hasdefault) {
@@ -277,7 +325,7 @@ static int pgsql_log(struct ast_cdr *cdr)
 			} else if (strcmp(cur->name, "duration") == 0 || strcmp(cur->name, "billsec") == 0) {
 				if (cur->type[0] == 'i') {
 					/* Get integer, no need to escape anything */
-					ast_cdr_getvar(cdr, cur->name, &value, buf, sizeof(buf), 0, 0);
+					ast_cdr_format_var(cdr, cur->name, &value, buf, sizeof(buf), 0);
 					LENGTHEN_BUF2(13);
 					ast_str_append(&sql2, 0, "%s%s", first ? "" : ",", value);
 				} else if (strncmp(cur->type, "float", 5) == 0) {
@@ -293,18 +341,18 @@ static int pgsql_log(struct ast_cdr *cdr)
 			} else if (strcmp(cur->name, "disposition") == 0 || strcmp(cur->name, "amaflags") == 0) {
 				if (strncmp(cur->type, "int", 3) == 0) {
 					/* Integer, no need to escape anything */
-					ast_cdr_getvar(cdr, cur->name, &value, buf, sizeof(buf), 0, 1);
+					ast_cdr_format_var(cdr, cur->name, &value, buf, sizeof(buf), 1);
 					LENGTHEN_BUF2(13);
 					ast_str_append(&sql2, 0, "%s%s", first ? "" : ",", value);
 				} else {
 					/* Although this is a char field, there are no special characters in the values for these fields */
-					ast_cdr_getvar(cdr, cur->name, &value, buf, sizeof(buf), 0, 0);
+					ast_cdr_format_var(cdr, cur->name, &value, buf, sizeof(buf), 0);
 					LENGTHEN_BUF2(31);
 					ast_str_append(&sql2, 0, "%s'%s'", first ? "" : ",", value);
 				}
 			} else {
 				/* Arbitrary field, could be anything */
-				ast_cdr_getvar(cdr, cur->name, &value, buf, sizeof(buf), 0, 0);
+				ast_cdr_format_var(cdr, cur->name, &value, buf, sizeof(buf), 0);
 				if (strncmp(cur->type, "int", 3) == 0) {
 					long long whatever;
 					if (value && sscanf(value, "%30lld", &whatever) == 1) {
@@ -339,9 +387,8 @@ static int pgsql_log(struct ast_cdr *cdr)
 		LENGTHEN_BUF1(ast_str_strlen(sql2) + 2);
 		AST_RWLIST_UNLOCK(&psql_columns);
 		ast_str_append(&sql, 0, ")%s)", ast_str_buffer(sql2));
-		ast_verb(11, "[%s]\n", ast_str_buffer(sql));
 
-		ast_debug(2, "inserting a CDR record.\n");
+		ast_debug(3, "Inserting a CDR record: [%s]\n", ast_str_buffer(sql));
 
 		/* Test to be sure we're still connected... */
 		/* If we're connected, and connection is working, good. */
@@ -427,15 +474,21 @@ static void empty_columns(void)
 
 static int unload_module(void)
 {
-	ast_cdr_unregister(name);
+	if (ast_cdr_unregister(name)) {
+		return -1;
+	}
+
 	ast_cli_unregister_multiple(cdr_pgsql_status_cli, ARRAY_LEN(cdr_pgsql_status_cli));
 
-	PQfinish(conn);
-
+	if (conn) {
+		PQfinish(conn);
+		conn = NULL;
+	}
 	ast_free(pghostname);
 	ast_free(pgdbname);
 	ast_free(pgdbuser);
 	ast_free(pgpassword);
+	ast_free(pgappname);
 	ast_free(pgdbport);
 	ast_free(table);
 	ast_free(encoding);
@@ -508,6 +561,18 @@ static int config_module(int reload)
 		return -1;
 	}
 
+	if (!(tmp = ast_variable_retrieve(cfg, "global", "appname"))) {
+		tmp = "";
+	}
+
+	ast_free(pgappname);
+	if (!(pgappname = ast_strdup(tmp))) {
+		ast_config_destroy(cfg);
+		ast_mutex_unlock(&pgsql_lock);
+		return -1;
+	}
+
+
 	if (!(tmp = ast_variable_retrieve(cfg, "global", "password"))) {
 		ast_log(LOG_WARNING, "PostgreSQL database password not specified.  Assuming blank\n");
 		tmp = "";
@@ -579,12 +644,14 @@ static int config_module(int reload)
 		ast_debug(1, "got user of %s\n", pgdbuser);
 		ast_debug(1, "got dbname of %s\n", pgdbname);
 		ast_debug(1, "got password of %s\n", pgpassword);
+		ast_debug(1, "got application name of %s\n", pgappname);
 		ast_debug(1, "got sql table name of %s\n", table);
 		ast_debug(1, "got encoding of %s\n", encoding);
 		ast_debug(1, "got timezone of %s\n", tz);
 	}
 
-	conn = PQsetdbLogin(pghostname, pgdbport, NULL, NULL, pgdbname, pgdbuser, pgpassword);
+	pgsql_reconnect();
+
 	if (PQstatus(conn) != CONNECTION_BAD) {
 		char sqlcmd[768];
 		char *fname, *ftype, *flen, *fnotnull, *fdef;
@@ -679,7 +746,7 @@ static int config_module(int reload)
 				/* For varchar columns, the maximum length is encoded in a different field */
 				flen = PQgetvalue(result, i, 5);
 			}
-			ast_verb(4, "Found column '%s' of type '%s'\n", fname, ftype);
+
 			cur = ast_calloc(1, sizeof(*cur) + strlen(fname) + strlen(ftype) + 2);
 			if (cur) {
 				sscanf(flen, "%30d", &cur->len);
@@ -708,6 +775,8 @@ static int config_module(int reload)
 		ast_log(LOG_ERROR, "Unable to connect to database server %s.  CALLS WILL NOT BE LOGGED!!\n", pghostname);
 		ast_log(LOG_ERROR, "Reason: %s\n", pgerror);
 		connected = 0;
+		PQfinish(conn);
+		conn = NULL;
 	}
 
 	ast_config_destroy(cfg);
@@ -732,6 +801,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PostgreSQL CDR Backend",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

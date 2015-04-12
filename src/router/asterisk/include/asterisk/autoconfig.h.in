@@ -29,6 +29,12 @@
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
+/* Use the FreeRADIUS-client library */
+#undef FREERADIUS_CLIENT
+
+/* Define to 1 if anonymous semaphores work. */
+#undef HAS_WORKING_SEMAPHORE
+
 /* Define to 1 if you have the `acos' function. */
 #undef HAVE_ACOS
 
@@ -82,11 +88,20 @@
 /* Define to 1 if your GCC C compiler supports the 'const' attribute. */
 #undef HAVE_ATTRIBUTE_const
 
+/* Define to 1 if your GCC C compiler supports the 'constructor' attribute. */
+#undef HAVE_ATTRIBUTE_constructor
+
 /* Define to 1 if your GCC C compiler supports the 'deprecated' attribute. */
 #undef HAVE_ATTRIBUTE_deprecated
 
+/* Define to 1 if your GCC C compiler supports the 'destructor' attribute. */
+#undef HAVE_ATTRIBUTE_destructor
+
 /* Define to 1 if your GCC C compiler supports the 'malloc' attribute. */
 #undef HAVE_ATTRIBUTE_malloc
+
+/* Define to 1 if your GCC C compiler supports the 'may_alias' attribute. */
+#undef HAVE_ATTRIBUTE_may_alias
 
 /* Define to 1 if your GCC C compiler supports the 'pure' attribute. */
 #undef HAVE_ATTRIBUTE_pure
@@ -100,15 +115,6 @@
 /* Define to 1 if your GCC C compiler supports the 'warn_unused_result'
    attribute. */
 #undef HAVE_ATTRIBUTE_warn_unused_result
-
-/* Define to 1 if your GCC C compiler supports the 'weak' attribute. */
-#undef HAVE_ATTRIBUTE_weak
-
-/* Define to 1 if your GCC C compiler supports the 'weak_import' attribute. */
-#undef HAVE_ATTRIBUTE_weak_import
-
-/* Define to 1 if your GCC C compiler supports the 'weakref' attribute. */
-#undef HAVE_ATTRIBUTE_weakref
 
 /* Define to 1 if you have the Debug symbol decoding library. */
 #undef HAVE_BFD
@@ -149,8 +155,14 @@
 /* Define to 1 if you have the `cosl' function. */
 #undef HAVE_COSL
 
+/* Define to 1 if you have the `crypt' function. */
+#undef HAVE_CRYPT
+
 /* Define to 1 if you have the OpenSSL Cryptography library. */
 #undef HAVE_CRYPTO
+
+/* Define to 1 if you have the `crypt_r' function. */
+#undef HAVE_CRYPT_R
 
 /* Define to 1 if you have a functional curl library. */
 #undef HAVE_CURL
@@ -172,9 +184,6 @@
 
 /* Define DAHDI headers version */
 #undef HAVE_DAHDI_VERSION
-
-/* Define to 1 if your system has /dev/urandom. */
-#undef HAVE_DEV_URANDOM
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -315,7 +324,7 @@
 /* Define to 1 if you have the Hoard Memory Allocator library. */
 #undef HAVE_HOARD
 
-/* Define to 1 if you have the `htonll' function. */
+/* Define to 1 if arpa/inet.h includes a htonll definition. */
 #undef HAVE_HTONLL
 
 /* Define to 1 if you have the iCal library. */
@@ -367,6 +376,9 @@
 /* Define to 1 if you have the Jack Audio Connection Kit library. */
 #undef HAVE_JACK
 
+/* Define to 1 if you have the Jansson JSON library library. */
+#undef HAVE_JANSSON
+
 /* Define to 1 if you have the `kevent64' function. */
 #undef HAVE_KEVENT64
 
@@ -387,6 +399,12 @@
 
 /* Define if your system has the LIBXML2 libraries. */
 #undef HAVE_LIBXML2
+
+/* Define to 1 if you have the LibXSLT library. */
+#undef HAVE_LIBXSLT
+
+/* Define to 1 if LIBXSLT has the LibXSLT Library Cleanup Function feature. */
+#undef HAVE_LIBXSLT_CLEANUP
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
@@ -506,7 +524,7 @@
 /* Define to 1 if you have the newt library. */
 #undef HAVE_NEWT
 
-/* Define to 1 if you have the `ntohll' function. */
+/* Define to 1 if arpa/inet.h includes a ntohll definition. */
 #undef HAVE_NTOHLL
 
 /* Define to 1 if your C library can safely print NULL to string formats. */
@@ -527,8 +545,14 @@
 /* Define to 1 if you have the OpenSSL Secure Sockets Layer library. */
 #undef HAVE_OPENSSL
 
+/* Define to 1 if CRYPTO has the OpenSSL Elliptic Curve Support feature. */
+#undef HAVE_OPENSSL_EC
+
 /* Define to 1 if CRYPTO has the OpenSSL SRTP Extension Support feature. */
 #undef HAVE_OPENSSL_SRTP
+
+/* Define to 1 if you have the Opus library. */
+#undef HAVE_OPUS
 
 /* Define this to indicate the ${OSPTK_DESCRIP} library */
 #undef HAVE_OSPTK
@@ -550,6 +574,23 @@
 
 /* Define to indicate presence of the pg_encoding_to_char API. */
 #undef HAVE_PGSQL_pg_encoding_to_char
+
+/* Define if your system has the PJPROJECT libraries. */
+#undef HAVE_PJPROJECT
+
+/* Define to 1 if PJPROJECT has the pjsip_get_dest_info support feature. */
+#undef HAVE_PJSIP_GET_DEST_INFO
+
+/* Define if your system has the PJSIP_REPLACE_MEDIA_STREAM headers. */
+#undef HAVE_PJSIP_REPLACE_MEDIA_STREAM
+
+/* Define to 1 if PJPROJECT has the pj_ssl_cert_load_from_files2 support
+   feature. */
+#undef HAVE_PJ_SSL_CERT_LOAD_FROM_FILES2
+
+/* Define to 1 if PJPROJECT has the PJSIP Transaction Group Lock Support
+   feature. */
+#undef HAVE_PJ_TRANSACTION_GRP_LOCK
 
 /* Define to 1 if your system defines IP_PKTINFO. */
 #undef HAVE_PKTINFO
@@ -626,6 +667,10 @@
 /* Define to 1 if PRI has the ISDN service messages feature. */
 #undef HAVE_PRI_SERVICE_MESSAGES
 
+/* Define to 1 if PRI has the ISDN PRI progress inband ie in SETUP ACK
+   feature. */
+#undef HAVE_PRI_SETUP_ACK_INBAND
+
 /* Define to 1 if PRI has the ISDN PRI keypad facility in SETUP feature. */
 #undef HAVE_PRI_SETUP_KEYPAD
 
@@ -638,6 +683,10 @@
 
 /* Define if you have POSIX threads libraries and header files. */
 #undef HAVE_PTHREAD
+
+/* Define to 1 if your system defines PTHREAD_MUTEX_ADAPTIVE_NP in pthread.h
+   */
+#undef HAVE_PTHREAD_MUTEX_ADAPTIVE_NP
 
 /* Define to 1 if your system defines PTHREAD_MUTEX_RECURSIVE_NP in pthread.h
    */
@@ -656,6 +705,9 @@
 
 /* Define if your system has pthread_rwlock_timedwrlock() */
 #undef HAVE_PTHREAD_RWLOCK_TIMEDWRLOCK
+
+/* Define to 1 if your system has pthread_spinlock_t in pthread.h */
+#undef HAVE_PTHREAD_SPINLOCK
 
 /* Define to 1 if the system has the type `ptrdiff_t'. */
 #undef HAVE_PTRDIFF_T
@@ -707,6 +759,9 @@
 
 /* Define to 1 if you have the `roundl' function. */
 #undef HAVE_ROUNDL
+
+/* Define if your system has the RTLD_NOLOAD headers. */
+#undef HAVE_RTLD_NOLOAD
 
 /* Define to 1 if your system has /sbin/launchd. */
 #undef HAVE_SBIN_LAUNCHD
@@ -863,6 +918,15 @@
 /* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 
+/* Define to 1 if `st_mtim' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_MTIM
+
+/* Define to 1 if `st_mtimensec' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_MTIMENSEC
+
+/* Define to 1 if `st_mtimespec' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_MTIMESPEC
+
 /* Define to 1 if `cr_uid' is a member of `struct ucred'. */
 #undef HAVE_STRUCT_UCRED_CR_UID
 
@@ -1010,6 +1074,9 @@
 /* Define to 1 if you have the `unsetenv' function. */
 #undef HAVE_UNSETENV
 
+/* Define to 1 if you have the uriparser library library. */
+#undef HAVE_URIPARSER
+
 /* Define to 1 if you have the `utime' function. */
 #undef HAVE_UTIME
 
@@ -1019,8 +1086,8 @@
 /* Define to 1 if `utime(file, NULL)' sets file's timestamp to the present. */
 #undef HAVE_UTIME_NULL
 
-/* Define to 1 if you have the UUID library. */
-#undef HAVE_UUID
+/* Define to 1 if you have the `uuid_generate_random' function. */
+#undef HAVE_UUID_GENERATE_RANDOM
 
 /* Define to 1 if your system can support larger than default select bitmasks.
    */

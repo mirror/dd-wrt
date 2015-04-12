@@ -31,7 +31,7 @@
  
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 339778 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -179,4 +179,5 @@ static int load_module(void)
 	return ast_register_application_xml(app, sendurl_exec);
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Send URL Applications");
+AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "Send URL Applications");
+

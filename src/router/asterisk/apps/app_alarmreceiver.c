@@ -17,6 +17,7 @@
  */
 
 /*! \file
+ *
  * \brief Central Station Alarm receiver for Ademco Contact ID
  * \author Steve Rodgers <hwstar@rodgers.sdcoxmail.com>
  *
@@ -29,13 +30,22 @@
  * \ingroup applications
  */
 
+/*! \li \ref app_alarmreceiver.c uses the configuration file \ref alarmreceiver.conf
+ * \addtogroup configuration_file Configuration Files
+ */
+
+/*!
+ * \page alarmreceiver.conf alarmreceiver.conf
+ * \verbinclude alarmreceiver.conf.sample
+ */
+
 /*** MODULEINFO
 	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362635 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430998 $")
 
 #include <math.h>
 #include <sys/wait.h>
@@ -47,7 +57,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362635 $")
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
 #include "asterisk/translate.h"
-#include "asterisk/ulaw.h"
 #include "asterisk/app.h"
 #include "asterisk/dsp.h"
 #include "asterisk/config.h"
@@ -55,9 +64,77 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362635 $")
 #include "asterisk/callerid.h"
 #include "asterisk/astdb.h"
 #include "asterisk/utils.h"
+#include "asterisk/indications.h"
+#include "asterisk/format_cache.h"
 
 #define ALMRCV_CONFIG "alarmreceiver.conf"
+#define UNKNOWN_FORMAT "UNKNOWN_FORMAT"
+
 #define ADEMCO_CONTACT_ID "ADEMCO_CONTACT_ID"
+/*
+	AAAA _ID_ P CCC XX ZZZ S
+
+where AAAA is the account number, _ID_ is 18 or 98, P is the pin status (alarm or restore), CCC
+is the alarm code which is pre-defined by Ademco (but you may be able to reprogram it in the panel), XX
+is the dialer group, partition or area number, ZZZ is the zone or user number and S is the checksum
+*/
+
+#define ADEMCO_EXPRESS_4_1 "ADEMCO_EXPRESS_4_1"
+/*
+	AAAA _ID_ C S
+
+where AAAA is the account number, _ID_ is 17, C is the alarm code and S is the checksum.
+*/
+
+#define ADEMCO_EXPRESS_4_2 "ADEMCO_EXPRESS_4_2"
+/*
+	AAAA _ID_ C Z S
+
+where AAAA is the account number, _ID_ is 27, C is the alarm code, Z is the zone or user number and S is the checksum.
+*/
+
+#define ADEMCO_HIGH_SPEED "ADEMCO_HIGH_SPEED"
+/*
+	AAAA _ID_ PPPP PPPP X S
+
+where AAAA is the account number, _ID_ is 55, PPPP PPPP is the status of each zone, X
+is a special digit which describes the type of information in the PPPP PPPP fields and S is checksum.
+Each P field contains one of the following values:
+        1  new alarm           3  new restore           5  normal
+        2  new opening         4  new closing           6  outstanding
+The X field contains one of the following values:
+        0  AlarmNet messages
+        1  ambush or duress
+        2  opening by user (the first P field contains the user number)
+        3  bypass (the P fields indicate which zones are bypassed)
+        4  closing by user (the first P field contain the user number)
+        5  trouble (the P fields contain which zones are in trouble)
+        6  system trouble
+        7  normal message (the P fields indicate zone status)
+        8  low battery (the P fields indicate zone status)
+        9  test (the P fields indicate zone status)
+*/
+#define ADEMCO_SUPER_FAST "ADEMCO_SUPER_FAST"
+/*
+	AAAA _ID_ PPPP PPPP X
+where AAA is the account number, _ID_ is 56
+*/
+
+#define ADEMCO_MSG_TYPE_1 "18"
+#define ADEMCO_MSG_TYPE_2 "98"
+#define ADEMCO_MSG_TYPE_3 "17"
+#define ADEMCO_MSG_TYPE_4 "27"
+#define ADEMCO_MSG_TYPE_5 "55"
+#define ADEMCO_MSG_TYPE_6 "56"
+
+#define ADEMCO_AUDIO_CALL_NEXT "606"
+
+struct {
+  char digit;
+  char weight;
+} digits_mapping[] = { {'0', 10}, {'1', 1} , {'2', 2}, {'3', 3}, {'4', 4}, {'5', 5},
+	{'6', 6}, {'7', 7}, {'8', 8}, {'9', 9}, {'*', 11}, {'#', 12},
+	{'A', 13}, {'B', 14}, {'C', 15} };
 
 struct event_node{
 	char data[17];
@@ -65,6 +142,8 @@ struct event_node{
 };
 
 typedef struct event_node event_node_t;
+
+struct timeval call_start_time;
 
 static const char app[] = "AlarmReceiver";
 /*** DOCUMENTATION
@@ -81,7 +160,19 @@ static const char app[] = "AlarmReceiver";
 			events to the standard input of the application.
 			The configuration file also contains settings for DTMF timing, and for the loudness of the
 			acknowledgement tones.</para>
-			<note><para>Only 1 signalling format is supported at this time: Ademco Contact ID.</para></note>
+			<note><para>Few Ademco DTMF signalling formats are detected automaticaly: Contact ID, Express 4+1,
+			Express 4+2, High Speed and Super Fast.</para></note>
+			<para>The application is affected by the following variables:</para>
+			<variablelist>
+				<variable name="ALARMRECEIVER_CALL_LIMIT">
+					<para>Maximum call time, in milliseconds.</para>
+					<para>If set, this variable causes application to exit after the specified time.</para>
+				</variable>
+				<variable name="ALARMRECEIVER_RETRIES_LIMIT">
+					<para>Maximum number of retries per call.</para>
+					<para>If set, this variable causes application to exit after the specified number of messages.</para>
+				</variable>
+			</variablelist>
 		</description>
 		<see-also>
 			<ref type="filename">alarmreceiver.conf</ref>
@@ -92,8 +183,10 @@ static const char app[] = "AlarmReceiver";
 /* Config Variables */
 static int fdtimeout = 2000;
 static int sdtimeout = 200;
+static int answait = 1250;
 static int toneloudness = 4096;
 static int log_individual_events = 0;
+static int no_group_meta = 0;
 static char event_spool_dir[128] = {'\0'};
 static char event_app[128] = {'\0'};
 static char db_family[128] = {'\0'};
@@ -102,152 +195,77 @@ static char time_stamp_format[128] = {"%a %b %d, %Y @ %H:%M:%S %Z"};
 /* Misc variables */
 static char event_file[14] = "/event-XXXXXX";
 
-/*
-* Attempt to access a database variable and increment it,
-* provided that the user defined db-family in alarmreceiver.conf
-* The alarmreceiver app will write statistics to a few variables
-* in this family if it is defined. If the new key doesn't exist in the
-* family, then create it and set its value to 1.
-*/
-static void database_increment( char *key )
+/*!
+ * \brief Attempt to access a database variable and increment it
+ *
+ * \note Only if the user defined db-family in alarmreceiver.conf
+ *
+ * The alarmreceiver app will write statistics to a few variables
+ * in this family if it is defined. If the new key doesn't exist in the
+ * family, then create it and set its value to 1.
+ *
+ * \param key A database key to increment
+ * \return Nothing
+ */
+static void database_increment(char *key)
 {
-	int res = 0;
 	unsigned v;
 	char value[16];
-	
-	
-	if (ast_strlen_zero(db_family))
-		return; /* If not defined, don't do anything */
-	
-	res = ast_db_get(db_family, key, value, sizeof(value) - 1);
-	
-	if (res) {
+
+	if (ast_strlen_zero(db_family)) {
+		return;	/* If not defined, don't do anything */
+	}
+
+	if (ast_db_get(db_family, key, value, sizeof(value) - 1)) {
 		ast_verb(4, "AlarmReceiver: Creating database entry %s and setting to 1\n", key);
 		/* Guess we have to create it */
-		res = ast_db_put(db_family, key, "1");
+		ast_db_put(db_family, key, "1");
 		return;
 	}
-	
+
 	sscanf(value, "%30u", &v);
 	v++;
 
 	ast_verb(4, "AlarmReceiver: New value for %s: %u\n", key, v);
-
 	snprintf(value, sizeof(value), "%u", v);
 
-	res = ast_db_put(db_family, key, value);
-
-	if (res)
+	if (ast_db_put(db_family, key, value)) {
 		ast_verb(4, "AlarmReceiver: database_increment write error\n");
+	}
 
 	return;
 }
 
-
-/*
-* Build a MuLaw data block for a single frequency tone
-*/
-static void make_tone_burst(unsigned char *data, float freq, float loudness, int len, int *x)
+/*!
+ * \brief Receive a fixed length DTMF string.
+ *
+ * \note Doesn't give preferential treatment to any digit,
+ * \note allow different timeout values for the first and all subsequent digits
+ *
+ * \param chan Asterisk Channel
+ * \param digit_string Digits String
+ * \param buf_size The size of the Digits String buffer
+ * \param expected Digits expected for this message type
+ * \param received Pointer to number of digits received so far
+ *
+ * \retval 0 if all digits were successfully received
+ * \retval 1 if a timeout occurred
+ * \retval -1 if the caller hung up or on channel errors
+ */
+static int receive_dtmf_digits(struct ast_channel *chan, char *digit_string, int buf_size, int expected, int *received)
 {
-	int     i;
-	float   val;
-
-	for (i = 0; i < len; i++) {
-		val = loudness * sin((freq * 2.0 * M_PI * (*x)++)/8000.0);
-		data[i] = AST_LIN2MU((int)val);
-	}
-
-	/* wrap back around from 8000 */
-
-	if (*x >= 8000)
-		*x = 0;
-	return;
-}
-
-/*
-* Send a single tone burst for a specifed duration and frequency.
-* Returns 0 if successful
-*/
-static int send_tone_burst(struct ast_channel *chan, float freq, int duration, int tldn)
-{
-	int res = 0;
-	int i = 0;
-	int x = 0;
-	struct ast_frame *f, wf;
-	
-	struct {
-		unsigned char offset[AST_FRIENDLY_OFFSET];
-		unsigned char buf[640];
-	} tone_block;
-
-	for (;;) {
-
-		if (ast_waitfor(chan, -1) < 0) {
-			res = -1;
-			break;
-		}
-
-		f = ast_read(chan);
-		if (!f) {
-			res = -1;
-			break;
-		}
-
-		if (f->frametype == AST_FRAME_VOICE) {
-			wf.frametype = AST_FRAME_VOICE;
-			ast_format_set(&wf.subclass.format, AST_FORMAT_ULAW, 0);
-			wf.offset = AST_FRIENDLY_OFFSET;
-			wf.mallocd = 0;
-			wf.data.ptr = tone_block.buf;
-			wf.datalen = f->datalen;
-			wf.samples = wf.datalen;
-			
-			make_tone_burst(tone_block.buf, freq, (float) tldn, wf.datalen, &x);
-
-			i += wf.datalen / 8;
-			if (i > duration) {
-				ast_frfree(f);
-				break;
-			}
-			if (ast_write(chan, &wf)) {
-				ast_verb(4, "AlarmReceiver: Failed to write frame on %s\n", ast_channel_name(chan));
-				ast_log(LOG_WARNING, "AlarmReceiver Failed to write frame on %s\n",ast_channel_name(chan));
-				res = -1;
-				ast_frfree(f);
-				break;
-			}
-		}
-
-		ast_frfree(f);
-	}
-	return res;
-}
-
-/*
-* Receive a string of DTMF digits where the length of the digit string is known in advance. Do not give preferential
-* treatment to any digit value, and allow separate time out values to be specified for the first digit and all subsequent
-* digits.
-*
-* Returns 0 if all digits successfully received.
-* Returns 1 if a digit time out occurred
-* Returns -1 if the caller hung up or there was a channel error.
-*
-*/
-static int receive_dtmf_digits(struct ast_channel *chan, char *digit_string, int length, int fdto, int sdto)
-{
-	int res = 0;
-	int i = 0;
+	int rtn = 0;
 	int r;
 	struct ast_frame *f;
 	struct timeval lastdigittime;
 
 	lastdigittime = ast_tvnow();
-	for (;;) {
-		/* if outa time, leave */
-		if (ast_tvdiff_ms(ast_tvnow(), lastdigittime) > ((i > 0) ? sdto : fdto)) {
+	while (*received < expected && *received < buf_size - 1) {
+		/* If timed out, leave */
+		if (ast_tvdiff_ms(ast_tvnow(), lastdigittime) > ((*received > 0) ? sdtimeout : fdtimeout)) {
 			ast_verb(4, "AlarmReceiver: DTMF Digit Timeout on %s\n", ast_channel_name(chan));
-			ast_debug(1,"AlarmReceiver: DTMF timeout on chan %s\n",ast_channel_name(chan));
-			res = 1;
+			ast_debug(1, "AlarmReceiver: DTMF timeout on chan %s\n", ast_channel_name(chan));
+			rtn = 1;
 			break;
 		}
 
@@ -256,68 +274,73 @@ static int receive_dtmf_digits(struct ast_channel *chan, char *digit_string, int
 			continue;
 		}
 
-		f = ast_read(chan);
-
-		if (f == NULL) {
-			res = -1;
+		if ((f = ast_read(chan)) == NULL) {
+			rtn = -1;
 			break;
 		}
 
 		/* If they hung up, leave */
-		if ((f->frametype == AST_FRAME_CONTROL) && (f->subclass.integer == AST_CONTROL_HANGUP)) {
+		if ((f->frametype == AST_FRAME_CONTROL)
+			&& (f->subclass.integer == AST_CONTROL_HANGUP)) {
 			if (f->data.uint32) {
 				ast_channel_hangupcause_set(chan, f->data.uint32);
 			}
 			ast_frfree(f);
-			res = -1;
+			rtn = -1;
 			break;
 		}
 
-		/* if not DTMF, just do it again */
+		/* If not DTMF, just do it again */
 		if (f->frametype != AST_FRAME_DTMF) {
 			ast_frfree(f);
 			continue;
 		}
 
-		digit_string[i++] = f->subclass.integer;  /* save digit */
-
+		/* Save digit */
+		digit_string[(*received)++] = f->subclass.integer;
 		ast_frfree(f);
-
-		/* If we have all the digits we expect, leave */
-		if(i >= length)
-			break;
 
 		lastdigittime = ast_tvnow();
 	}
 
-	digit_string[i] = '\0'; /* Nul terminate the end of the digit string */
-	return res;
+	/* Null terminate the end of the digit_string */
+	digit_string[*received] = '\0';
+
+	return rtn;
 }
 
-/*
-* Write the metadata to the log file
-*/
-static int write_metadata( FILE *logfile, char *signalling_type, struct ast_channel *chan)
+/*!
+ * \brief Write metadata to log file
+ *
+ * \param logfile Log File Pointer
+ * \param signalling_type Signaling Type
+ * \param chan Asterisk Channel
+ * \param no_checksum Expecting messages without checksum
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
+static int write_metadata(FILE *logfile, char *signalling_type, struct ast_channel *chan, int no_checksum)
 {
-	int res = 0;
 	struct timeval t;
 	struct ast_tm now;
 	char *cl;
 	char *cn;
 	char workstring[80];
 	char timestamp[80];
-	
+
 	/* Extract the caller ID location */
 	ast_copy_string(workstring,
-		S_COR(ast_channel_caller(chan)->id.number.valid, ast_channel_caller(chan)->id.number.str, ""),
-		sizeof(workstring));
+		S_COR(ast_channel_caller(chan)->id.number.valid,
+		ast_channel_caller(chan)->id.number.str, ""), sizeof(workstring));
 	ast_shrink_phone_number(workstring);
 	if (ast_strlen_zero(workstring)) {
 		cl = "<unknown>";
 	} else {
 		cl = workstring;
 	}
-	cn = S_COR(ast_channel_caller(chan)->id.name.valid, ast_channel_caller(chan)->id.name.str, "<unknown>");
+	cn = S_COR(ast_channel_caller(chan)->id.name.valid,
+		ast_channel_caller(chan)->id.name.str, "<unknown>");
 
 	/* Get the current time */
 	t = ast_tvnow();
@@ -326,155 +349,369 @@ static int write_metadata( FILE *logfile, char *signalling_type, struct ast_chan
 	/* Format the time */
 	ast_strftime(timestamp, sizeof(timestamp), time_stamp_format, &now);
 
-	res = fprintf(logfile, "\n\n[metadata]\n\n");
-	if (res >= 0) {
-		res = fprintf(logfile, "PROTOCOL=%s\n", signalling_type);
-	}
-	if (res >= 0) {
-		res = fprintf(logfile, "CALLINGFROM=%s\n", cl);
-	}
-	if (res >= 0) {
-		res = fprintf(logfile, "CALLERNAME=%s\n", cn);
-	}
-	if (res >= 0) {
-		res = fprintf(logfile, "TIMESTAMP=%s\n\n", timestamp);
-	}
-	if (res >= 0) {
-		res = fprintf(logfile, "[events]\n\n");
-	}
-	if (res < 0) {
-		ast_verb(3, "AlarmReceiver: can't write metadata\n");
-		ast_debug(1,"AlarmReceiver: can't write metadata\n");
-	} else {
-		res = 0;
+	if (no_group_meta && fprintf(logfile, "PROTOCOL=%s\n"
+			"CHECKSUM=%s\n"
+			"CALLINGFROM=%s\n"
+			"CALLERNAME=%s\n"
+			"TIMESTAMP=%s\n\n",
+			signalling_type, (!no_checksum) ? "yes" : "no", cl, cn, timestamp) > -1) {
+		return 0;
+	} else if (fprintf(logfile, "\n\n[metadata]\n\n"
+			"PROTOCOL=%s\n"
+			"CHECKSUM=%s\n"
+			"CALLINGFROM=%s\n"
+			"CALLERNAME=%s\n"
+			"TIMESTAMP=%s\n\n"
+			"[events]\n\n",
+			signalling_type, (!no_checksum) ? "yes" : "no", cl, cn, timestamp) > -1) {
+		return 0;
 	}
 
-	return res;
+	ast_verb(3, "AlarmReceiver: can't write metadata\n");
+	ast_debug(1, "AlarmReceiver: can't write metadata\n");
+	return -1;
 }
 
-/*
-* Write a single event to the log file
-*/
-static int write_event( FILE *logfile,  event_node_t *event)
+/*!
+ * \brief Log a single event
+ *
+ * \param logfile Log File Pointer
+ * \param event Event Structure
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
+static int write_event(FILE *logfile, event_node_t *event)
 {
-	int res = 0;
+	if (fprintf(logfile, "%s%s\n", no_group_meta ? "event=" : "", event->data) < 0) {
+		return -1;
+	}
 
-	if (fprintf(logfile, "%s\n", event->data) < 0)
-		res = -1;
-
-	return res;
+	return 0;
 }
 
-/*
-* If we are configured to log events, do so here.
-*
-*/
-static int log_events(struct ast_channel *chan,  char *signalling_type, event_node_t *event)
+/*!
+ * \brief Log events if configuration key logindividualevents is enabled or on exit
+ *
+ * \param chan Asterisk Channel
+ * \param signalling_type Signaling Type
+ * \param event Event Structure
+ * \param no_checksum Expecting messages without checksum
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
+static int log_events(struct ast_channel *chan, char *signalling_type, event_node_t *event, int no_checksum)
 {
-
-	int res = 0;
-	char workstring[sizeof(event_spool_dir)+sizeof(event_file)] = "";
+	char workstring[sizeof(event_spool_dir) + sizeof(event_file)] = "";
 	int fd;
 	FILE *logfile;
 	event_node_t *elp = event;
-	
+
 	if (!ast_strlen_zero(event_spool_dir)) {
-		
+
 		/* Make a template */
 		ast_copy_string(workstring, event_spool_dir, sizeof(workstring));
 		strncat(workstring, event_file, sizeof(workstring) - strlen(workstring) - 1);
-		
+
 		/* Make the temporary file */
 		fd = mkstemp(workstring);
-		
+
 		if (fd == -1) {
 			ast_verb(3, "AlarmReceiver: can't make temporary file\n");
-			ast_debug(1,"AlarmReceiver: can't make temporary file\n");
-			res = -1;
+			ast_debug(1, "AlarmReceiver: can't make temporary file\n");
+			return -1;
 		}
 
-		if (!res) {
-			logfile = fdopen(fd, "w");
-			if (logfile) {
-				/* Write the file */
-				res = write_metadata(logfile, signalling_type, chan);
-				if (!res)
-					while ((!res) && (elp != NULL)) {
-						res = write_event(logfile, elp);
-						elp = elp->next;
-					}
-				if (!res) {
-					if (fflush(logfile) == EOF)
-						res = -1;
-					if (!res) {
-						if (fclose(logfile) == EOF)
-							res = -1;
-					}
-				}
-			} else
-				res = -1;
+		if ((logfile = fdopen(fd, "w")) == NULL) {
+			return -1;
 		}
+
+		/* Write the file */
+		if (write_metadata(logfile, signalling_type, chan, no_checksum)) {
+			fflush(logfile);
+			fclose(logfile);
+			return -1;
+		}
+
+		while ((elp != NULL) && (write_event(logfile, elp) == 0)) {
+			elp = elp->next;
+		}
+
+		fflush(logfile);
+		fclose(logfile);
+	}
+
+	return 0;
+}
+
+/*!
+ * \brief Verify Ademco checksum
+ * \since 11.0
+ *
+ * \param event Received DTMF String
+ * \param expected Number of Digits expected
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
+static int ademco_verify_checksum(char *event, int expected)
+{
+	int checksum = 0;
+	int i, j;
+
+	for (j = 0; j < expected; j++) {
+		for (i = 0; i < ARRAY_LEN(digits_mapping); i++) {
+			if (digits_mapping[i].digit == event[j]) {
+				break;
+			}
+		}
+
+		if (i >= ARRAY_LEN(digits_mapping)) {
+			ast_verb(2, "AlarmReceiver: Bad DTMF character %c, trying again\n", event[j]);
+			return -1;
+		}
+
+		checksum += digits_mapping[i].weight;
+	}
+
+	/* Checksum is mod(15) of the total */
+	if (!(checksum % 15)) {
+		return 0;
+	}
+
+	return -1;
+}
+
+/*!
+ * \brief Send a single tone burst for a specified duration and frequency.
+ * \since 11.0
+ *
+ * \param chan Asterisk Channel
+ * \param tone_freq Frequency of the tone to send
+ * \param tone_duration Tone duration in ms
+ * \param delay Delay before sending the tone
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
+static int send_tone_burst(struct ast_channel *chan, const char *tone_freq, int tone_duration, int delay)
+{
+	if (delay && ast_safe_sleep(chan, delay)) {
+		return -1;
+	}
+
+	if (ast_playtones_start(chan, toneloudness, tone_freq, 0)) {
+		return -1;
+	}
+
+	if (ast_safe_sleep(chan, tone_duration)) {
+		return -1;
+	}
+
+	ast_playtones_stop(chan);
+	return 0;
+}
+
+/*!
+ * \brief Check if the message is in known and valid Ademco format
+ *
+ * \param signalling_type Expected signalling type for the message
+ * \param event event received
+ *
+ * \retval 0 The event is valid
+ * \retval -1 The event is not valid
+ */
+static int ademco_check_valid(char *signalling_type, char *event)
+{
+	if (!strcmp(signalling_type, UNKNOWN_FORMAT)) {
+		return 1;
+	}
+
+	if (!strcmp(signalling_type, ADEMCO_CONTACT_ID)
+		&& strncmp(event + 4, ADEMCO_MSG_TYPE_1, 2)
+		&& strncmp(event + 4, ADEMCO_MSG_TYPE_2, 2)) {
+		return -1;
+	}
+
+	if (!strcmp(signalling_type, ADEMCO_EXPRESS_4_1) && strncmp(event + 4, ADEMCO_MSG_TYPE_3, 2)) {
+		return -1;
+	}
+
+	if (!strcmp(signalling_type, ADEMCO_EXPRESS_4_2) && strncmp(event + 4, ADEMCO_MSG_TYPE_4, 2)) {
+		return -1;
+	}
+
+	if (!strcmp(signalling_type, ADEMCO_HIGH_SPEED) && strncmp(event + 4, ADEMCO_MSG_TYPE_5, 2)) {
+		return -1;
+	}
+
+	if (!strcmp(signalling_type, ADEMCO_SUPER_FAST) && strncmp(event + 4, ADEMCO_MSG_TYPE_6, 2)) {
+		return -1;
+	}
+
+	return 0;
+}
+
+/*!
+ * \brief Detect the message format of an event
+ *
+ * \param signalling_type Expected signalling type for the message
+ * \param event event received
+ * \param no_checksum Should we calculate checksum for the message
+ *
+ * \returns The expected digits for the detected event type
+ */
+static int ademco_detect_format(char *signalling_type, char *event, int *no_checksum)
+{
+	int res = 16;
+
+	if (!strncmp(event + 4, ADEMCO_MSG_TYPE_1, 2)
+		|| !strncmp(event + 4, ADEMCO_MSG_TYPE_2, 2)) {
+		sprintf(signalling_type, "%s", ADEMCO_CONTACT_ID);
+	}
+
+	if (!strncmp(event + 4, ADEMCO_MSG_TYPE_3, 2)) {
+		sprintf(signalling_type, "%s", ADEMCO_EXPRESS_4_1);
+		res = 8;
+	}
+
+	if (!strncmp(event + 4, ADEMCO_MSG_TYPE_4, 2)) {
+		sprintf(signalling_type, "%s", ADEMCO_EXPRESS_4_2);
+		res = 9;
+	}
+
+	if (!strncmp(event + 4, ADEMCO_MSG_TYPE_5, 2)) {
+		sprintf(signalling_type, "%s", ADEMCO_HIGH_SPEED);
+	}
+
+	if (!strncmp(event + 4, ADEMCO_MSG_TYPE_6, 2)) {
+		sprintf(signalling_type, "%s", ADEMCO_SUPER_FAST);
+		*no_checksum = 1;
+		res = 15;
+	}
+
+	if (strcmp(signalling_type, UNKNOWN_FORMAT)) {
+		ast_verb(4, "AlarmMonitoring: Detected format %s.\n", signalling_type);
+		ast_debug(1, "AlarmMonitoring: Autodetected format %s.\n", signalling_type);
 	}
 
 	return res;
 }
 
-/*
-* This function implements the logic to receive the Ademco contact ID  format.
-*
-* The function will return 0 when the caller hangs up, else a -1 if there was a problem.
-*/
-static int receive_ademco_contact_id(struct ast_channel *chan, const void *data, int fdto, int sdto, int tldn, event_node_t **ehead)
+/*!
+ * \brief Receive Ademco ContactID or other format Data String
+ *
+ * \param chan Asterisk Channel
+ * \param ehead Pointer to events list
+ * \param signalling_type Expected signalling type for the message
+ * \param no_checksum Should we calculate checksum for the message
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
+static int receive_ademco_event(struct ast_channel *chan, event_node_t **ehead, char *signalling_type, int *no_checksum)
 {
-	int i, j;
 	int res = 0;
-	int checksum;
+	const char *limit;
 	char event[17];
 	event_node_t *enew, *elp;
 	int got_some_digits = 0;
 	int events_received = 0;
 	int ack_retries = 0;
-	
-	static char digit_map[15] = "0123456789*#ABC";
-	static unsigned char digit_weights[15] = {10,1,2,3,4,5,6,7,8,9,11,12,13,14,15};
+	int limit_retries = 0;
+	int expected_length = sizeof(event) - 1;
 
 	database_increment("calls-received");
 
 	/* Wait for first event */
-	ast_verb(4, "AlarmReceiver: Waiting for first event from panel\n");
+	ast_verb(4, "AlarmReceiver: Waiting for first event from panel...\n");
 
 	while (res >= 0) {
+		int digits_received = 0;
+
+		res = 0;
+
+		if (log_individual_events) {
+			sprintf(signalling_type, "%s", UNKNOWN_FORMAT);
+			expected_length = 16;
+			*no_checksum = 0;
+		}
+
 		if (got_some_digits == 0) {
 			/* Send ACK tone sequence */
 			ast_verb(4, "AlarmReceiver: Sending 1400Hz 100ms burst (ACK)\n");
-			res = send_tone_burst(chan, 1400.0, 100, tldn);
-			if (!res)
-				res = ast_safe_sleep(chan, 100);
+			res = send_tone_burst(chan, "1400", 100, 0);
 			if (!res) {
 				ast_verb(4, "AlarmReceiver: Sending 2300Hz 100ms burst (ACK)\n");
-				res = send_tone_burst(chan, 2300.0, 100, tldn);
+				res = send_tone_burst(chan, "2300", 100, 100);
 			}
 		}
-		if ( res >= 0)
-			res = receive_dtmf_digits(chan, event, sizeof(event) - 1, fdto, sdto);
+		if (res) {
+			return -1;
+		}
+
+		res = receive_dtmf_digits(chan, event, sizeof(event), expected_length, &digits_received);
 		if (res < 0) {
 			if (events_received == 0) {
 				/* Hangup with no events received should be logged in the DB */
 				database_increment("no-events-received");
+				ast_verb(4, "AlarmReceiver: No events received!\n");
 			} else {
 				if (ack_retries) {
-					ast_verb(4, "AlarmReceiver: ACK retries during this call: %d\n", ack_retries);
 					database_increment("ack-retries");
+					ast_verb(4, "AlarmReceiver: ACK retries during this call: %d\n", ack_retries);
 				}
 			}
 			ast_verb(4, "AlarmReceiver: App exiting...\n");
-			res = -1;
 			break;
 		}
 
-		if (res != 0) {
+		if (!strcmp(signalling_type, UNKNOWN_FORMAT) && digits_received > 5) {
+			expected_length = ademco_detect_format(signalling_type, event, no_checksum);
+
+			if (res > 0) {
+				if (digits_received == expected_length) {
+					res = limit_retries = 0;
+				} else if (digits_received == expected_length - 1
+					&& (!strcmp(signalling_type, ADEMCO_EXPRESS_4_2)
+					|| !strcmp(signalling_type, ADEMCO_EXPRESS_4_1))) {
+					/* ADEMCO EXPRESS without checksum */
+					res = limit_retries = 0;
+					expected_length--;
+					*no_checksum = 1;
+					ast_verb(4, "AlarmMonitoring: Skipping checksum for format %s.\n", signalling_type);
+					ast_debug(1, "AlarmMonitoring: Skipping checksum for format %s.\n", signalling_type);
+				}
+			}
+		}
+
+		ast_channel_lock(chan);
+		limit = pbx_builtin_getvar_helper(chan, "ALARMRECEIVER_CALL_LIMIT");
+		if (!ast_strlen_zero(limit)) {
+			if (ast_tvdiff_ms(ast_tvnow(), call_start_time) > atoi(limit)) {
+				ast_channel_unlock(chan);
+				return -1;
+			}
+		}
+		limit = pbx_builtin_getvar_helper(chan, "ALARMRECEIVER_RETRIES_LIMIT");
+		ast_channel_unlock(chan);
+		if (!ast_strlen_zero(limit)) {
+			if (limit_retries + 1 >= atoi(limit)) {
+				return -1;
+			}
+		}
+
+		if (res) {
 			/* Didn't get all of the digits */
 			ast_verb(2, "AlarmReceiver: Incomplete string: %s, trying again...\n", event);
+			limit_retries++;
+
+			if (!events_received && strcmp(signalling_type, UNKNOWN_FORMAT))
+			{
+				sprintf(signalling_type, "%s", UNKNOWN_FORMAT);
+				expected_length = sizeof(event) - 1;
+			}
 
 			if (!got_some_digits) {
 				got_some_digits = (!ast_strlen_zero(event)) ? 1 : 0;
@@ -489,28 +726,7 @@ static int receive_ademco_contact_id(struct ast_channel *chan, const void *data,
 		ast_debug(1, "AlarmReceiver: Received event: %s\n", event);
 
 		/* Calculate checksum */
-
-		for (j = 0, checksum = 0; j < 16; j++) {
-			for (i = 0; i < sizeof(digit_map); i++) {
-				if (digit_map[i] == event[j])
-					break;
-			}
-
-			if (i == 16)
-				break;
-
-			checksum += digit_weights[i];
-		}
-		if (i == 16) {
-			ast_verb(2, "AlarmReceiver: Bad DTMF character %c, trying again\n", event[j]);
-			continue; /* Bad character */
-		}
-
-		/* Checksum is mod(15) of the total */
-
-		checksum = checksum % 15;
-
-		if (checksum) {
+		if (!(*no_checksum) && ademco_verify_checksum(event, expected_length)) {
 			database_increment("checksum-errors");
 			ast_verb(2, "AlarmReceiver: Nonzero checksum\n");
 			ast_debug(1, "AlarmReceiver: Nonzero checksum\n");
@@ -518,120 +734,122 @@ static int receive_ademco_contact_id(struct ast_channel *chan, const void *data,
 		}
 
 		/* Check the message type for correctness */
-
-		if (strncmp(event + 4, "18", 2)) {
-			if (strncmp(event + 4, "98", 2)) {
-				database_increment("format-errors");
-				ast_verb(2, "AlarmReceiver: Wrong message type\n");
-				ast_debug(1, "AlarmReceiver: Wrong message type\n");
+		if (ademco_check_valid(signalling_type, event)) {
+			database_increment("format-errors");
+			ast_verb(2, "AlarmReceiver: Wrong message type\n");
+			ast_debug(1, "AlarmReceiver: Wrong message type\n");
 			continue;
-			}
 		}
 
 		events_received++;
 
 		/* Queue the Event */
 		if (!(enew = ast_calloc(1, sizeof(*enew)))) {
-			res = -1;
-			break;
+			return -1;
 		}
 
 		enew->next = NULL;
 		ast_copy_string(enew->data, event, sizeof(enew->data));
 
-		/*
-		* Insert event onto end of list
-		*/
-		if (*ehead == NULL)
+		/* Insert event onto end of list */
+		if (*ehead == NULL) {
 			*ehead = enew;
-		else {
-			for(elp = *ehead; elp->next != NULL; elp = elp->next)
-			;
+		} else {
+			for (elp = *ehead; elp->next != NULL; elp = elp->next) {
+				;
+			}
 			elp->next = enew;
 		}
 
-		if (res > 0)
-			res = 0;
-
 		/* Let the user have the option of logging the single event before sending the kissoff tone */
-		if ((res == 0) && (log_individual_events))
-			res = log_events(chan, ADEMCO_CONTACT_ID, enew);
-		/* Wait 200 msec before sending kissoff */
-		if (res == 0)
-			res = ast_safe_sleep(chan, 200);
+		if (log_individual_events && log_events(chan, signalling_type, enew, *no_checksum)) {
+			return -1;
+		}
 
-		/* Send the kissoff tone */
-		if (res == 0)
-			res = send_tone_burst(chan, 1400.0, 900, tldn);
+		/* Send the kissoff tone (1400 Hz, 900 ms, after 200ms delay) */
+		if (send_tone_burst(chan, "1400", 900, 200)) {
+			return -1;
+		}
+
+		/* If audio call follows, exit alarm receiver app */
+		if (!strcmp(signalling_type, ADEMCO_CONTACT_ID)
+			&& !strncmp(event + 7, ADEMCO_AUDIO_CALL_NEXT, 3)) {
+			ast_verb(4, "AlarmReceiver: App exiting... Audio call next!\n");
+			return 0;
+		}
 	}
 
 	return res;
 }
 
-/*
-* This is the main function called by Asterisk Core whenever the App is invoked in the extension logic.
-* This function will always return 0.
-*/
+/*!
+ * \brief This is the main function called by Asterisk Core whenever the App is invoked in the extension logic.
+ *
+ * \param chan Asterisk Channel
+ * \param data Application data
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
 static int alarmreceiver_exec(struct ast_channel *chan, const char *data)
 {
 	int res = 0;
+	int no_checksum = 0;
 	event_node_t *elp, *efree;
 	char signalling_type[64] = "";
 	event_node_t *event_head = NULL;
 
-	/* Set write and read formats to ULAW */
-	ast_verb(4, "AlarmReceiver: Setting read and write formats to ULAW\n");
-
-	if (ast_set_write_format_by_id(chan,AST_FORMAT_ULAW)) {
-		ast_log(LOG_WARNING, "AlarmReceiver: Unable to set write format to Mu-law on %s\n",ast_channel_name(chan));
-		return -1;
+	if ((ast_format_cmp(ast_channel_writeformat(chan), ast_format_ulaw) == AST_FORMAT_CMP_NOT_EQUAL) &&
+		(ast_format_cmp(ast_channel_writeformat(chan), ast_format_alaw) == AST_FORMAT_CMP_NOT_EQUAL)) {
+		ast_verb(4, "AlarmReceiver: Setting write format to Mu-law\n");
+		if (ast_set_write_format(chan, ast_format_ulaw)) {
+			ast_log(LOG_WARNING, "AlarmReceiver: Unable to set write format to Mu-law on %s\n",ast_channel_name(chan));
+			return -1;
+		}
 	}
 
-	if (ast_set_read_format_by_id(chan,AST_FORMAT_ULAW)) {
-		ast_log(LOG_WARNING, "AlarmReceiver: Unable to set read format to Mu-law on %s\n",ast_channel_name(chan));
-		return -1;
+	if ((ast_format_cmp(ast_channel_readformat(chan), ast_format_ulaw) == AST_FORMAT_CMP_NOT_EQUAL) &&
+		(ast_format_cmp(ast_channel_readformat(chan), ast_format_alaw) == AST_FORMAT_CMP_NOT_EQUAL)) {
+		ast_verb(4, "AlarmReceiver: Setting read format to Mu-law\n");
+		if (ast_set_read_format(chan, ast_format_ulaw)) {
+			ast_log(LOG_WARNING, "AlarmReceiver: Unable to set read format to Mu-law on %s\n",ast_channel_name(chan));
+			return -1;
+		}
 	}
 
 	/* Set default values for this invocation of the application */
-	ast_copy_string(signalling_type, ADEMCO_CONTACT_ID, sizeof(signalling_type));
+	ast_copy_string(signalling_type, UNKNOWN_FORMAT, sizeof(signalling_type));
+	call_start_time = ast_tvnow();
 
 	/* Answer the channel if it is not already */
-	ast_verb(4, "AlarmReceiver: Answering channel\n");
 	if (ast_channel_state(chan) != AST_STATE_UP) {
-		if ((res = ast_answer(chan)))
+		ast_verb(4, "AlarmReceiver: Answering channel\n");
+		if (ast_answer(chan)) {
 			return -1;
+		}
 	}
 
 	/* Wait for the connection to settle post-answer */
 	ast_verb(4, "AlarmReceiver: Waiting for connection to stabilize\n");
-	res = ast_safe_sleep(chan, 1250);
-
-	/* Attempt to receive the events */
-	if (!res) {
-		/* Determine the protocol to receive in advance */
-		/* Note: Ademco contact is the only one supported at this time */
-		/* Others may be added later */
-		if(!strcmp(signalling_type, ADEMCO_CONTACT_ID))
-			receive_ademco_contact_id(chan, data, fdtimeout, sdtimeout, toneloudness, &event_head);
-		else
-			res = -1;
+	if (ast_safe_sleep(chan, answait)) {
+		return -1;
 	}
 
-	/* Events queued by receiver, write them all out here if so configured */
-	if ((!res) && (log_individual_events == 0))
-		res = log_events(chan, signalling_type, event_head);
+	/* Attempt to receive the events */
+	receive_ademco_event(chan, &event_head, signalling_type, &no_checksum);
 
-	/*
-	* Do we exec a command line at the end?
-	*/
+	/* Events queued by receiver, write them all out here if so configured */
+	if (!log_individual_events) {
+		res = log_events(chan, signalling_type, event_head, no_checksum);
+	}
+
+	/* Do we exec a command line at the end? */
 	if ((!res) && (!ast_strlen_zero(event_app)) && (event_head)) {
 		ast_debug(1,"Alarmreceiver: executing: %s\n", event_app);
 		ast_safe_system(event_app);
 	}
 
-	/*
-	* Free up the data allocated in our linked list
-	*/
+	/* Free up the data allocated in our linked list */
 	for (elp = event_head; (elp != NULL);) {
 		efree = elp;
 		elp = elp->next;
@@ -641,14 +859,19 @@ static int alarmreceiver_exec(struct ast_channel *chan, const char *data)
 	return 0;
 }
 
-/*
-* Load the configuration from the configuration file
-*/
-static int load_config(void)
+/*!
+ * \brief Load the configuration from the configuration file
+ *
+ * \param reload True on reload
+ *
+ * \retval 1 success
+ * \retval 0 failure
+ */
+static int load_config(int reload)
 {
 	struct ast_config *cfg;
-	const char *p;
-	struct ast_flags config_flags = { 0 };
+	const char *value;
+	struct ast_flags config_flags = { reload ? CONFIG_FLAG_FILEUNCHANGED : 0 };
 
 	/* Read in the config file */
 	cfg = ast_config_load(ALMRCV_CONFIG, config_flags);
@@ -656,79 +879,124 @@ static int load_config(void)
 	if (!cfg) {
 		ast_verb(4, "AlarmReceiver: No config file\n");
 		return 0;
+	} else if (cfg == CONFIG_STATUS_FILEUNCHANGED) {
+		return 1;
 	} else if (cfg == CONFIG_STATUS_FILEINVALID) {
-		ast_log(LOG_ERROR, "Config file %s is in an invalid format.  Aborting.\n", ALMRCV_CONFIG);
+		ast_log(LOG_ERROR, "Config file %s is in an invalid format.  Aborting.\n",
+			ALMRCV_CONFIG);
 		return 0;
-	} else {
-		p = ast_variable_retrieve(cfg, "general", "eventcmd");
-		if (p) {
-			ast_copy_string(event_app, p, sizeof(event_app));
-		}
-		p = ast_variable_retrieve(cfg, "general", "loudness");
-		if (p) {
-			toneloudness = atoi(p);
-			if(toneloudness < 100)
-				toneloudness = 100;
-			if(toneloudness > 8192)
-				toneloudness = 8192;
-		}
-		p = ast_variable_retrieve(cfg, "general", "fdtimeout");
-		if (p) {
-			fdtimeout = atoi(p);
-			if(fdtimeout < 1000)
-				fdtimeout = 1000;
-			if(fdtimeout > 10000)
-				fdtimeout = 10000;
-		}
-
-		p = ast_variable_retrieve(cfg, "general", "sdtimeout");
-		if (p) {
-			sdtimeout = atoi(p);
-			if(sdtimeout < 110)
-				sdtimeout = 110;
-			if(sdtimeout > 4000)
-				sdtimeout = 4000;
-		}
-
-		p = ast_variable_retrieve(cfg, "general", "logindividualevents");
-		if (p)
-			log_individual_events = ast_true(p);
-
-		p = ast_variable_retrieve(cfg, "general", "eventspooldir");
-		if (p) {
-			ast_copy_string(event_spool_dir, p, sizeof(event_spool_dir));
-		}
-
-		p = ast_variable_retrieve(cfg, "general", "timestampformat");
-		if (p) {
-			ast_copy_string(time_stamp_format, p, sizeof(time_stamp_format));
-		}
-
-		p = ast_variable_retrieve(cfg, "general", "db-family");
-		if (p) {
-			ast_copy_string(db_family, p, sizeof(db_family));
-		}
-		ast_config_destroy(cfg);
 	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "eventcmd")) != NULL) {
+		ast_copy_string(event_app, value, sizeof(event_app));
+	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "loudness")) != NULL) {
+		toneloudness = atoi(value);
+		if (toneloudness < 100) {
+			toneloudness = 100;
+		} else if (toneloudness > 8192) {
+			toneloudness = 8192;
+		}
+	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "fdtimeout")) != NULL) {
+		fdtimeout = atoi(value);
+		if (fdtimeout < 1000) {
+			fdtimeout = 1000;
+		} else if (fdtimeout > 10000) {
+			fdtimeout = 10000;
+		}
+	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "sdtimeout")) != NULL) {
+		sdtimeout = atoi(value);
+		if (sdtimeout < 110) {
+			sdtimeout = 110;
+		} else if (sdtimeout > 4000) {
+			sdtimeout = 4000;
+		}
+	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "answait")) != NULL) {
+		answait = atoi(value);
+		if (answait < 500) {
+			answait = 500;
+		} else if (answait > 10000) {
+			answait = 10000;
+		}
+	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "no_group_meta")) != NULL) {
+		no_group_meta = ast_true(value);
+	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "logindividualevents")) != NULL) {
+		log_individual_events = ast_true(value);
+	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "eventspooldir")) != NULL) {
+		ast_copy_string(event_spool_dir, value, sizeof(event_spool_dir));
+	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "timestampformat")) != NULL) {
+		ast_copy_string(time_stamp_format, value, sizeof(time_stamp_format));
+	}
+
+	if ((value = ast_variable_retrieve(cfg, "general", "db-family")) != NULL) {
+		ast_copy_string(db_family, value, sizeof(db_family));
+	}
+
+	ast_config_destroy(cfg);
+
 	return 1;
 }
 
-/*
-* These functions are required to implement an Asterisk App.
-*/
+/*!
+ * \brief Unregister Alarm Receiver App
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
 static int unload_module(void)
 {
 	return ast_unregister_application(app);
 }
 
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
 static int load_module(void)
 {
-	if (load_config()) {
-		if (ast_register_application_xml(app, alarmreceiver_exec))
+	if (load_config(0)) {
+		if (ast_register_application_xml(app, alarmreceiver_exec)) {
 			return AST_MODULE_LOAD_FAILURE;
+		}
 		return AST_MODULE_LOAD_SUCCESS;
-	} else
-		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	return AST_MODULE_LOAD_DECLINE;
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Alarm Receiver for Asterisk");
+static int reload(void)
+{
+	if (load_config(1)) {
+		return AST_MODULE_LOAD_SUCCESS;
+	}
+
+	return AST_MODULE_LOAD_DECLINE;
+}
+
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Alarm Receiver for Asterisk",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
+		.load = load_module,
+		.unload = unload_module,
+		.reload = reload,
+);

@@ -165,10 +165,21 @@ void ast_sched_context_destroy(struct ast_sched_context *c);
  * A scheduler callback takes a pointer with callback data and
  *
  * \retval 0 if the callback should not be rescheduled
- * \retval non-zero if the callback should be scheduled agai
+ * \retval non-zero if the callback should be scheduled again
  */
 typedef int (*ast_sched_cb)(const void *data);
 #define AST_SCHED_CB(a) ((ast_sched_cb)(a))
+
+/*!
+ * \brief Clean all scheduled events with matching callback.
+ *
+ * \param con Scheduler Context
+ * \param match Callback to match
+ * \param cleanup_cb Callback to run
+ *
+ * \note The return of cleanup_cb is ignored. No events are rescheduled.
+ */
+void ast_sched_clean_by_callback(struct ast_sched_context *con, ast_sched_cb match, ast_sched_cb cleanup_cb);
 
 struct ast_cb_names {
 	int numassocs;

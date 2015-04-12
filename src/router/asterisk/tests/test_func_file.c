@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385689 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433174 $")
 
 #include "asterisk/utils.h"
 #include "asterisk/app.h"
@@ -63,6 +63,12 @@ static struct {
 	/* No length */
 	{ "123456789", "-5", "56789" },
 	{ "123456789", "4", "56789" },
+	/* Passed file length */
+	{ "123456789", "8,10", "9" },
+	{ "123456789", "10,1", "" },
+	/* Middle of file */
+	{ "123456789", "2,5", "34567" },
+	{ "123456789", "-7,5", "34567" },
 	/* Line mode, 4 ways of specifying the first character */
 	{ "123\n456\n789\n", "0,1,l", "123\n" },
 	{ "123\n456\n789\n", "-3,1,l", "123\n" },

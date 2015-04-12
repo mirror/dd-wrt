@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398758 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
 
 #include <math.h>
 
@@ -37,6 +37,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398758 $")
 #include "asterisk/linkedlists.h"
 #include "asterisk/indications.h"
 #include "asterisk/frame.h"
+#include "asterisk/format_cache.h"
 #include "asterisk/channel.h"
 #include "asterisk/utils.h"
 #include "asterisk/cli.h"
@@ -120,7 +121,7 @@ struct playtones_state {
 	int npos;
 	int oldnpos;
 	int pos;
-	struct ast_format origwfmt;
+	struct ast_format *origwfmt;
 	struct ast_frame f;
 	unsigned char offset[AST_FRIENDLY_OFFSET];
 	short data[4000];
@@ -131,13 +132,11 @@ static void playtones_release(struct ast_channel *chan, void *params)
 	struct playtones_state *ps = params;
 
 	if (chan) {
-		ast_set_write_format(chan, &ps->origwfmt);
+		ast_set_write_format(chan, ps->origwfmt);
 	}
 
-	if (ps->items) {
-		ast_free(ps->items);
-		ps->items = NULL;
-	}
+	ao2_cleanup(ps->origwfmt);
+	ast_free(ps->items);
 
 	ast_free(ps);
 }
@@ -151,9 +150,9 @@ static void *playtones_alloc(struct ast_channel *chan, void *params)
 		return NULL;
 	}
 
-	ast_format_copy(&ps->origwfmt, ast_channel_writeformat(chan));
+	ps->origwfmt = ao2_bump(ast_channel_writeformat(chan));
 
-	if (ast_set_write_format_by_id(chan, AST_FORMAT_SLINEAR)) {
+	if (ast_set_write_format(chan, ast_format_slin)) {
 		ast_log(LOG_WARNING, "Unable to set '%s' to signed linear format (write)\n", ast_channel_name(chan));
 		playtones_release(NULL, ps);
 		ps = NULL;
@@ -227,7 +226,7 @@ static int playtones_generator(struct ast_channel *chan, void *data, int len, in
 	}
 
 	ps->f.frametype = AST_FRAME_VOICE;
-	ast_format_set(&ps->f.subclass.format, AST_FORMAT_SLINEAR, 0);
+	ps->f.subclass.format = ast_format_slin;
 	ps->f.datalen = len;
 	ps->f.samples = samples;
 	ps->f.offset = AST_FRIENDLY_OFFSET;
@@ -1155,7 +1154,10 @@ int ast_tone_zone_data_add_structure(struct ast_data *tree, struct ast_tone_zone
 	return 0;
 }
 
-/*! \internal \brief Clean up resources on Asterisk shutdown */
+/*!
+ * \internal
+ * \brief Clean up resources on Asterisk shutdown
+ */
 static void indications_shutdown(void)
 {
 	ast_cli_unregister_multiple(cli_indications, ARRAY_LEN(cli_indications));

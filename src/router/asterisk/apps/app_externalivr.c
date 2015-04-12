@@ -37,7 +37,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369142 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433057 $")
 
 #include <signal.h>
 
@@ -519,6 +519,8 @@ static int app_exec(struct ast_channel *chan, const char *data)
 			break;
 		}
 
+		ast_free(addrs);
+
 		if (i == num_addrs) {
 			ast_chan_log(LOG_ERROR, chan, "Could not connect to any host.  ExternalIVR failed.\n");
 			goto exit;
@@ -915,4 +917,5 @@ static int load_module(void)
 	return ast_register_application_xml(app, app_exec);
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "External IVR Interface Application");
+AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "External IVR Interface Application");
+

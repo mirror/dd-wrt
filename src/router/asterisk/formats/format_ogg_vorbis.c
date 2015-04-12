@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368668 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
@@ -45,6 +45,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368668 $")
 
 #include "asterisk/mod_format.h"
 #include "asterisk/module.h"
+#include "asterisk/format_cache.h"
 
 /*
  * this is the number of samples we deal with. Samples are converted
@@ -242,16 +243,6 @@ static int ogg_vorbis_write(struct ast_filestream *fs, struct ast_frame *f)
 		ast_log(LOG_ERROR, "This stream is not set up for writing!\n");
 		return -1;
 	}
-
-	if (f->frametype != AST_FRAME_VOICE) {
-		ast_log(LOG_WARNING, "Asked to write non-voice frame!\n");
-		return -1;
-	}
-	if (f->subclass.format.id != AST_FORMAT_SLINEAR) {
-		ast_log(LOG_WARNING, "Asked to write non-SLINEAR frame (%s)!\n",
-			ast_getformatname(&f->subclass.format));
-		return -1;
-	}
 	if (!f->datalen)
 		return -1;
 
@@ -310,9 +301,6 @@ static struct ast_frame *ogg_vorbis_read(struct ast_filestream *fs,
 	}
 
 	/* initialize frame */
-	fs->fr.frametype = AST_FRAME_VOICE;
-	ast_format_set(&fs->fr.subclass.format, AST_FORMAT_SLINEAR, 0);
-	fs->fr.mallocd = 0;
 	AST_FRAME_SET_BUFFER(&fs->fr, fs->buf, AST_FRIENDLY_OFFSET, BUF_SIZE);
 	out_buf = (char *) (fs->fr.data.ptr);	/* SLIN data buffer */
 
@@ -342,7 +330,7 @@ static struct ast_frame *ogg_vorbis_read(struct ast_filestream *fs,
 
 /*!
  * \brief Trucate an OGG/Vorbis filestream.
- * \param s The filestream to truncate.
+ * \param fs The filestream to truncate.
  * \return 0 on success, -1 on failure.
  */
 
@@ -354,7 +342,7 @@ static int ogg_vorbis_trunc(struct ast_filestream *fs)
 
 /*!
  * \brief Tell the current position in OGG/Vorbis filestream measured in pcms.
- * \param s The filestream to take action on.
+ * \param fs The filestream to take action on.
  * \return 0 or greater with the position measured in samples, or -1 for false.
  */
 static off_t ogg_vorbis_tell(struct ast_filestream *fs)
@@ -374,7 +362,7 @@ static off_t ogg_vorbis_tell(struct ast_filestream *fs)
 
 /*!
  * \brief Seek to a specific position in an OGG/Vorbis filestream.
- * \param s The filestream to take action on.
+ * \param fs The filestream to take action on.
  * \param sample_offset New position for the filestream, measured in 8KHz samples.
  * \param whence Location to measure 
  * \return 0 on success, -1 on failure.
@@ -435,7 +423,7 @@ static struct ast_format_def vorbis_f = {
 
 static int load_module(void)
 {
-	ast_format_set(&vorbis_f.format, AST_FORMAT_SLINEAR, 0);
+	vorbis_f.format = ast_format_slin;
 	if (ast_format_def_register(&vorbis_f))
 		return AST_MODULE_LOAD_FAILURE;
 	return AST_MODULE_LOAD_SUCCESS;
@@ -447,6 +435,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "OGG/Vorbis audio",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_APP_DEPEND

@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 398019 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 410158 $")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -243,7 +243,8 @@ AST_TEST_DEFINE(test_substitution)
 
 	ast_test_status_update(test, "Testing variable substitution ...\n");
 
-	c = ast_channel_alloc(0, 0, "", "", "", "", "", "", 0, "Test/substitution");
+	c = ast_channel_alloc(0, 0, "", "", "", "", "", NULL, NULL, 0, "Test/substitution");
+	ast_channel_unlock(c);
 
 #define TEST(t) if (t == AST_TEST_FAIL) { res = AST_TEST_FAIL; }
 #if 0

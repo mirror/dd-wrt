@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 370655 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420149 $")
 
 #include "asterisk/logger.h"
 #include "asterisk/channel.h"
@@ -422,7 +422,6 @@ static void lua_update_registry(lua_State *L, const char *context, const char *e
  * The value on the top of the stack is popped and used as the name.
  *
  * \param L the lua_State to use
- * \param name the name of the variable
  */
 static void lua_push_variable_table(lua_State *L)
 {
@@ -873,8 +872,11 @@ static int lua_sort_extensions(lua_State *L)
 		 * table in the extensions_order table */
 		for (lua_pushnil(L); lua_next(L, context); lua_pop(L, 1)) {
 			int exten = lua_gettop(L) - 1;
-
+#if LUA_VERSION_NUM < 502
 			lua_pushinteger(L, lua_objlen(L, context_order) + 1);
+#else
+			lua_pushinteger(L, lua_rawlen(L, context_order) + 1);
+#endif
 			lua_pushvalue(L, exten);
 			lua_settable(L, context_order);
 		}
@@ -1506,9 +1508,13 @@ static int lua_find_extension(lua_State *L, const char *context, const char *ext
 	lua_remove(L, -2);  /* remove the extensions order table */
 
 	context_order_table = lua_gettop(L);
-	
+
 	/* step through the extensions looking for a match */
+#if LUA_VERSION_NUM < 502
 	for (i = 1; i < lua_objlen(L, context_order_table) + 1; i++) {
+#else
+	for (i = 1; i < lua_rawlen(L, context_order_table) + 1; i++) {
+#endif
 		int e_index_copy, match = 0;
 		const char *e;
 
@@ -1630,6 +1636,9 @@ static int load_or_reload_lua_stuff(void)
 		res = AST_MODULE_LOAD_DECLINE;
 	}
 
+	if (!res) {
+		ast_log(LOG_NOTICE, "Lua PBX Switch loaded.\n");
+	}
 	lua_close(L);
 	return res;
 }
@@ -1639,6 +1648,7 @@ static int unload_module(void)
 	ast_context_destroy(NULL, registrar);
 	ast_unregister_switch(&lua_switch);
 	lua_free_extensions();
+	ast_log(LOG_NOTICE, "Lua PBX Switch unloaded.\n");
 	return 0;
 }
 
@@ -1663,6 +1673,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS, "Lua PBX Switch",
+		.support_level = AST_MODULE_SUPPORT_EXTENDED,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

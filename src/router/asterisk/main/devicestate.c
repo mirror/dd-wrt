@@ -117,9 +117,33 @@
 	<support_level>core</support_level>
  ***/
 
+/*** DOCUMENTATION
+	<managerEvent language="en_US" name="DeviceStateChange">
+		<managerEventInstance class="EVENT_FLAG_CALL">
+			<synopsis>Raised when a device state changes</synopsis>
+			<syntax>
+				<parameter name="Device">
+					<para>The device whose state has changed</para>
+				</parameter>
+				<parameter name="State">
+					<para>The new state of the device</para>
+				</parameter>
+			</syntax>
+			<description>
+				<para>This differs from the <literal>ExtensionStatus</literal>
+				event because this event is raised for all device state changes,
+				not only for changes that affect dialplan hints.</para>
+			</description>
+			<see-also>
+				<ref type="managerEvent">ExtensionStatus</ref>
+			</see-also>
+		</managerEventInstance>
+	</managerEvent>
+***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385917 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 422661 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/channel.h"
@@ -129,7 +153,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385917 $")
 #include "asterisk/devicestate.h"
 #include "asterisk/pbx.h"
 #include "asterisk/app.h"
-#include "asterisk/event.h"
+#include "asterisk/astobj2.h"
+#include "asterisk/stasis.h"
+#include "asterisk/devicestate.h"
+
+#define DEVSTATE_TOPIC_BUCKETS 57
 
 /*! \brief Device state strings for printing */
 static const char * const devstatestring[][2] = {
@@ -141,7 +169,7 @@ static const char * const devstatestring[][2] = {
 	{ /* 5 AST_DEVICE_UNAVAILABLE */ "Unavailable", "UNAVAILABLE" }, /*!< Unavailable (not registered) */
 	{ /* 6 AST_DEVICE_RINGING */     "Ringing",     "RINGING"     }, /*!< Ring, ring, ring */
 	{ /* 7 AST_DEVICE_RINGINUSE */   "Ring+Inuse",  "RINGINUSE"   }, /*!< Ring and in use */
-	{ /* 8 AST_DEVICE_ONHOLD */      "On Hold",      "ONHOLD"      }, /*!< On Hold */
+	{ /* 8 AST_DEVICE_ONHOLD */      "On Hold",     "ONHOLD"      }, /*!< On Hold */
 };
 
 /*!\brief Mapping for channel states to device states */
@@ -159,7 +187,6 @@ static const struct chan2dev {
 	{ AST_STATE_BUSY,            AST_DEVICE_BUSY },
 	{ AST_STATE_DIALING_OFFHOOK, AST_DEVICE_INUSE },
 	{ AST_STATE_PRERING,         AST_DEVICE_RINGING },
-	{ -100,                      -100 },
 };
 
 /*! \brief  A device state provider (not a channel) */
@@ -188,25 +215,21 @@ static pthread_t change_thread = AST_PTHREADT_NULL;
 /*! \brief Flag for the queue */
 static ast_cond_t change_pending;
 
-struct devstate_change {
-	AST_LIST_ENTRY(devstate_change) entry;
-	uint32_t state;
-	struct ast_eid eid;
-	enum ast_devstate_cache cachable;
-	char device[1];
-};
+struct stasis_subscription *devstate_message_sub;
 
-static struct {
-	pthread_t thread;
-	struct ast_event_sub *event_sub;
-	ast_cond_t cond;
-	ast_mutex_t lock;
-	AST_LIST_HEAD_NOLOCK(, devstate_change) devstate_change_q;
-	unsigned int enabled:1;
-} devstate_collector = {
-	.thread = AST_PTHREADT_NULL,
-	.enabled = 0,
-};
+static struct stasis_topic *device_state_topic_all;
+static struct stasis_cache *device_state_cache;
+static struct stasis_caching_topic *device_state_topic_cached;
+static struct stasis_topic_pool *device_state_topic_pool;
+
+static struct ast_manager_event_blob *devstate_to_ami(struct stasis_message *msg);
+static struct ast_event *devstate_to_event(struct stasis_message *msg);
+
+
+STASIS_MESSAGE_TYPE_DEFN(ast_device_state_message_type,
+	.to_ami = devstate_to_ami,
+	.to_event = devstate_to_event,
+);
 
 /* Forward declarations */
 static int getproviderstate(const char *provider, const char *address);
@@ -227,7 +250,7 @@ enum ast_device_state ast_state_chan2dev(enum ast_channel_state chanstate)
 {
 	int i;
 	chanstate &= 0xFFFF;
-	for (i = 0; chan2dev[i].chan != -100; i++) {
+	for (i = 0; i < ARRAY_LEN(chan2dev); i++) {
 		if (chan2dev[i].chan == chanstate) {
 			return chan2dev[i].dev;
 		}
@@ -280,43 +303,42 @@ enum ast_device_state ast_parse_device_state(const char *device)
 		return AST_DEVICE_UNKNOWN;
 	}
 
-	res = (ast_channel_state(chan) == AST_STATE_RINGING) ? AST_DEVICE_RINGING : AST_DEVICE_INUSE;
-
-	chan = ast_channel_unref(chan);
+	if (ast_channel_hold_state(chan) == AST_CONTROL_HOLD) {
+		res = AST_DEVICE_ONHOLD;
+	} else {
+		res = ast_state_chan2dev(ast_channel_state(chan));
+	}
+	ast_channel_unref(chan);
 
 	return res;
 }
 
 static enum ast_device_state devstate_cached(const char *device)
 {
-	enum ast_device_state res = AST_DEVICE_UNKNOWN;
-	struct ast_event *event;
+	struct stasis_message *cached_msg;
+	struct ast_device_state_message *device_state;
+	enum ast_device_state state;
 
-	event = ast_event_get_cached(AST_EVENT_DEVICE_STATE,
-		AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, device,
-		AST_EVENT_IE_END);
+	cached_msg = stasis_cache_get_by_eid(ast_device_state_cache(),
+		ast_device_state_message_type(), device, NULL);
+	if (!cached_msg) {
+		return AST_DEVICE_UNKNOWN;
+	}
+	device_state = stasis_message_data(cached_msg);
+	state = device_state->state;
+	ao2_cleanup(cached_msg);
 
-	if (!event)
-		return res;
-
-	res = ast_event_get_ie_uint(event, AST_EVENT_IE_STATE);
-
-	ast_event_destroy(event);
-
-	return res;
+	return state;
 }
 
 /*! \brief Check device state through channel specific function or generic function */
 static enum ast_device_state _ast_device_state(const char *device, int check_cache)
 {
-	char *buf;
 	char *number;
 	const struct ast_channel_tech *chan_tech;
 	enum ast_device_state res;
 	/*! \brief Channel driver that provides device state */
 	char *tech;
-	/*! \brief Another provider of device state */
-	char *provider = NULL;
 
 	/* If the last known state is cached, just return that */
 	if (check_cache) {
@@ -326,16 +348,18 @@ static enum ast_device_state _ast_device_state(const char *device, int check_cac
 		}
 	}
 
-	buf = ast_strdupa(device);
-	tech = strsep(&buf, "/");
-	if (!(number = buf)) {
+	number = ast_strdupa(device);
+	tech = strsep(&number, "/");
+	if (!number) {
+		/*! \brief Another provider of device state */
+		char *provider;
+
 		provider = strsep(&tech, ":");
 		if (!tech) {
 			return AST_DEVICE_INVALID;
 		}
 		/* We have a provider */
 		number = tech;
-		tech = NULL;
 
 		ast_debug(3, "Checking if I can find provider for \"%s\" - number: %s\n", provider, number);
 		return getproviderstate(provider, number);
@@ -343,18 +367,21 @@ static enum ast_device_state _ast_device_state(const char *device, int check_cac
 
 	ast_debug(4, "No provider found, checking channel drivers for %s - %s\n", tech, number);
 
-	if (!(chan_tech = ast_get_channel_tech(tech)))
+	chan_tech = ast_get_channel_tech(tech);
+	if (!chan_tech) {
 		return AST_DEVICE_INVALID;
+	}
 
-	if (!(chan_tech->devicestate)) /* Does the channel driver support device state notification? */
-		return ast_parse_device_state(device); /* No, try the generic function */
+	/* Does the channel driver support device state notification? */
+	if (!chan_tech->devicestate) {
+		/* No, try the generic function */
+		return ast_parse_device_state(device);
+	}
 
 	res = chan_tech->devicestate(number);
-
-	if (res != AST_DEVICE_UNKNOWN)
-		return res;
-
-	res = ast_parse_device_state(device);
+	if (res == AST_DEVICE_UNKNOWN) {
+		res = ast_parse_device_state(device);
+	}
 
 	return res;
 }
@@ -426,47 +453,17 @@ static int getproviderstate(const char *provider, const char *address)
 	return res;
 }
 
-static void devstate_event(const char *device, enum ast_device_state state, int cachable)
-{
-	struct ast_event *event;
-	enum ast_event_type event_type;
-
-	if (devstate_collector.enabled) {
-		/* Distributed device state is enabled, so this state change is a change
-		 * for a single server, not the real state. */
-		event_type = AST_EVENT_DEVICE_STATE_CHANGE;
-	} else {
-		event_type = AST_EVENT_DEVICE_STATE;
-	}
-
-	ast_debug(3, "device '%s' state '%d'\n", device, state);
-
-	if (!(event = ast_event_new(event_type,
-				    AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, device,
-				    AST_EVENT_IE_STATE, AST_EVENT_IE_PLTYPE_UINT, state,
-				    AST_EVENT_IE_CACHABLE, AST_EVENT_IE_PLTYPE_UINT, cachable,
-				    AST_EVENT_IE_END))) {
-		return;
-	}
-
-	if (cachable) {
-		ast_event_queue_and_cache(event);
-	} else {
-		ast_event_queue(event);
-	}
-}
-
 /*! Called by the state change thread to find out what the state is, and then
  *  to queue up the state change event */
-static void do_state_change(const char *device, int cachable)
+static void do_state_change(const char *device, enum ast_devstate_cache cachable)
 {
 	enum ast_device_state state;
 
 	state = _ast_device_state(device, 0);
 
-	ast_debug(3, "Changing state for %s - state %d (%s)\n", device, state, ast_devstate2str(state));
+	ast_debug(3, "Changing state for %s - state %u (%s)\n", device, state, ast_devstate2str(state));
 
-	devstate_event(device, state, cachable);
+	ast_publish_device_state(device, state, cachable);
 }
 
 int ast_devstate_changed_literal(enum ast_device_state state, enum ast_devstate_cache cachable, const char *device)
@@ -490,7 +487,7 @@ int ast_devstate_changed_literal(enum ast_device_state state, enum ast_devstate_
 	 */
 
 	if (state != AST_DEVICE_UNKNOWN) {
-		devstate_event(device, state, cachable);
+		ast_publish_device_state(device, state, cachable);
 	} else if (change_thread == AST_PTHREADT_NULL || !(change = ast_calloc(1, sizeof(*change) + strlen(device)))) {
 		/* we could not allocate a change struct, or */
 		/* there is no background thread, so process the change now */
@@ -505,7 +502,7 @@ int ast_devstate_changed_literal(enum ast_device_state state, enum ast_devstate_
 		AST_LIST_UNLOCK(&state_changes);
 	}
 
-	return 1;
+	return 0;
 }
 
 int ast_device_state_changed_literal(const char *dev)
@@ -562,185 +559,62 @@ static void *do_devstate_changes(void *data)
 	return NULL;
 }
 
-static void destroy_devstate_change(struct devstate_change *sc)
+static struct ast_device_state_message *device_state_alloc(const char *device, enum ast_device_state state, enum ast_devstate_cache cachable, const struct ast_eid *eid)
 {
-	ast_free(sc);
-}
+	struct ast_device_state_message *new_device_state;
+	char *pos;
+	size_t stuff_len;
 
-#define MAX_SERVERS 64
-struct change_collection {
-	struct devstate_change states[MAX_SERVERS];
-	size_t num_states;
-};
+	ast_assert(!ast_strlen_zero(device));
 
-static void devstate_cache_cb(const struct ast_event *event, void *data)
-{
-	struct change_collection *collection = data;
-	int i;
-	const struct ast_eid *eid;
-
-	if (collection->num_states == ARRAY_LEN(collection->states)) {
-		ast_log(LOG_ERROR, "More per-server state values than we have room for (MAX_SERVERS is %d)\n",
-			MAX_SERVERS);
-		return;
+	stuff_len = strlen(device) + 1;
+	if (eid) {
+		stuff_len += sizeof(*eid);
+	}
+	new_device_state = ao2_alloc_options(sizeof(*new_device_state) + stuff_len, NULL,
+		AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!new_device_state) {
+		return NULL;
 	}
 
-	if (!(eid = ast_event_get_ie_raw(event, AST_EVENT_IE_EID))) {
-		ast_log(LOG_ERROR, "Device state change event with no EID\n");
-		return;
-	}
-
-	i = collection->num_states;
-
-	collection->states[i].state = ast_event_get_ie_uint(event, AST_EVENT_IE_STATE);
-	collection->states[i].eid = *eid;
-
-	collection->num_states++;
-}
-
-static void process_collection(const char *device, enum ast_devstate_cache cachable, struct change_collection *collection)
-{
-	int i;
-	struct ast_devstate_aggregate agg;
-	enum ast_device_state state;
-	struct ast_event *event;
-
-	ast_devstate_aggregate_init(&agg);
-
-	for (i = 0; i < collection->num_states; i++) {
-		ast_debug(1, "Adding per-server state of '%s' for '%s'\n",
-			ast_devstate2str(collection->states[i].state), device);
-		ast_devstate_aggregate_add(&agg, collection->states[i].state);
-	}
-
-	state = ast_devstate_aggregate_result(&agg);
-
-	ast_debug(1, "Aggregate devstate result is '%s' for '%s'\n",
-		ast_devstate2str(state), device);
-
-	event = ast_event_get_cached(AST_EVENT_DEVICE_STATE,
-		AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, device,
-		AST_EVENT_IE_END);
-
-	if (event) {
-		enum ast_device_state old_state;
-
-		old_state = ast_event_get_ie_uint(event, AST_EVENT_IE_STATE);
-
-		ast_event_destroy(event);
-
-		if (state == old_state) {
-			/* No change since last reported device state */
-			ast_debug(1, "Aggregate state for device '%s' has not changed from '%s'\n",
-				device, ast_devstate2str(state));
-			return;
-		}
-	}
-
-	ast_debug(1, "Aggregate state for device '%s' has changed to '%s'\n",
-		device, ast_devstate2str(state));
-
-	event = ast_event_new(AST_EVENT_DEVICE_STATE,
-		AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, device,
-		AST_EVENT_IE_STATE, AST_EVENT_IE_PLTYPE_UINT, state,
-		AST_EVENT_IE_END);
-
-	if (!event) {
-		return;
-	}
-
-	if (cachable) {
-		ast_event_queue_and_cache(event);
+	if (eid) {
+		/* non-aggregate device state. */
+		new_device_state->stuff[0] = *eid;
+		new_device_state->eid = &new_device_state->stuff[0];
+		pos = (char *) &new_device_state->stuff[1];
 	} else {
-		ast_event_queue(event);
+		pos = (char *) &new_device_state->stuff[0];
 	}
+
+	strcpy(pos, device);/* Safe */
+	new_device_state->device = pos;
+
+	new_device_state->state = state;
+	new_device_state->cachable = cachable;
+
+	return new_device_state;
 }
 
-static void handle_devstate_change(struct devstate_change *sc)
+static void devstate_change_cb(void *data, struct stasis_subscription *sub, struct stasis_message *msg)
 {
-	struct ast_event_sub *tmp_sub;
-	struct change_collection collection = {
-		.num_states = 0,
-	};
+	struct ast_device_state_message *device_state;
 
-	ast_debug(1, "Processing device state change for '%s'\n", sc->device);
-
-	if (!(tmp_sub = ast_event_subscribe_new(AST_EVENT_DEVICE_STATE_CHANGE, devstate_cache_cb, &collection))) {
-		ast_log(LOG_ERROR, "Failed to create subscription\n");
+	if (ast_device_state_message_type() != stasis_message_type(msg)) {
 		return;
 	}
 
-	if (ast_event_sub_append_ie_str(tmp_sub, AST_EVENT_IE_DEVICE, sc->device)) {
-		ast_log(LOG_ERROR, "Failed to append device IE\n");
-		ast_event_sub_destroy(tmp_sub);
+	device_state = stasis_message_data(msg);
+	if (device_state->cachable == AST_DEVSTATE_CACHABLE || !device_state->eid) {
+		/* Ignore cacheable and aggregate messages. */
 		return;
 	}
 
-	/* Populate the collection of device states from the cache */
-	ast_event_dump_cache(tmp_sub);
-
-	process_collection(sc->device, sc->cachable, &collection);
-
-	ast_event_sub_destroy(tmp_sub);
-}
-
-static void *run_devstate_collector(void *data)
-{
-	for (;;) {
-		struct devstate_change *sc;
-
-		ast_mutex_lock(&devstate_collector.lock);
-		while (!(sc = AST_LIST_REMOVE_HEAD(&devstate_collector.devstate_change_q, entry)))
-			ast_cond_wait(&devstate_collector.cond, &devstate_collector.lock);
-		ast_mutex_unlock(&devstate_collector.lock);
-
-		handle_devstate_change(sc);
-
-		destroy_devstate_change(sc);
-	}
-
-	return NULL;
-}
-
-static void devstate_change_collector_cb(const struct ast_event *event, void *data)
-{
-	struct devstate_change *sc;
-	const char *device, *cachable_str;
-	const struct ast_eid *eid;
-	uint32_t state;
-	enum ast_devstate_cache cachable = AST_DEVSTATE_CACHABLE;
-
-	device = ast_event_get_ie_str(event, AST_EVENT_IE_DEVICE);
-	eid = ast_event_get_ie_raw(event, AST_EVENT_IE_EID);
-	state = ast_event_get_ie_uint(event, AST_EVENT_IE_STATE);
-
-	if (ast_strlen_zero(device) || !eid) {
-		ast_log(LOG_ERROR, "Invalid device state change event received\n");
-		return;
-	}
-
-	if (!(sc = ast_calloc(1, sizeof(*sc) + strlen(device))))
-		return;
-
-	strcpy(sc->device, device);
-	sc->eid = *eid;
-	sc->state = state;
-
-	/* For 'cachable' we cannot use ast_event_get_ie_uint(), it overwrites the default of AST_DEVSTATE_CACHABLE we
-	 * have already setup for 'cachable', if for whatever reason the AST_EVENT_IE_CACHABLE wasn't
-	 * posted in the event ast_event_get_ie_uint() is going will return 0,
-	 * which equates to AST_DEVSTATE_NOT_CACHABLE the first enumeration in 'ast_devstate_cache'.
+	/*
+	 * Non-cacheable device state aggregates are just the
+	 * device state republished as the aggregate.
 	 */
-
-	if ((cachable_str = ast_event_get_ie_str(event, AST_EVENT_IE_CACHABLE))) {
-		sscanf(cachable_str, "%30u", &cachable);
-	}
-	sc->cachable = cachable;
-
-	ast_mutex_lock(&devstate_collector.lock);
-	AST_LIST_INSERT_TAIL(&devstate_collector.devstate_change_q, sc, entry);
-	ast_cond_signal(&devstate_collector.cond);
-	ast_mutex_unlock(&devstate_collector.lock);
+	ast_publish_device_state_full(device_state->device, device_state->state,
+		device_state->cachable, NULL);
 }
 
 /*! \brief Initialize the device state engine in separate thread */
@@ -793,28 +667,304 @@ enum ast_device_state ast_devstate_aggregate_result(struct ast_devstate_aggregat
 	return agg->state;
 }
 
-int ast_enable_distributed_devstate(void)
+struct stasis_topic *ast_device_state_topic_all(void)
 {
-	if (devstate_collector.enabled) {
-		return 0;
-	}
+	return device_state_topic_all;
+}
 
-	devstate_collector.event_sub = ast_event_subscribe(AST_EVENT_DEVICE_STATE_CHANGE,
-		devstate_change_collector_cb, "devicestate_engine_enable_distributed", NULL, AST_EVENT_IE_END);
+struct stasis_cache *ast_device_state_cache(void)
+{
+	return device_state_cache;
+}
 
-	if (!devstate_collector.event_sub) {
-		ast_log(LOG_ERROR, "Failed to create subscription for the device state change collector\n");
+struct stasis_topic *ast_device_state_topic_cached(void)
+{
+	return stasis_caching_get_topic(device_state_topic_cached);
+}
+
+struct stasis_topic *ast_device_state_topic(const char *device)
+{
+	return stasis_topic_pool_get_topic(device_state_topic_pool, device);
+}
+
+int ast_device_state_clear_cache(const char *device)
+{
+	struct stasis_message *cached_msg;
+	struct stasis_message *msg;
+
+	cached_msg = stasis_cache_get_by_eid(ast_device_state_cache(),
+		ast_device_state_message_type(), device, &ast_eid_default);
+	if (!cached_msg) {
+		/* nothing to clear */
 		return -1;
 	}
 
-	ast_mutex_init(&devstate_collector.lock);
-	ast_cond_init(&devstate_collector.cond, NULL);
-	if (ast_pthread_create_background(&devstate_collector.thread, NULL, run_devstate_collector, NULL) < 0) {
-		ast_log(LOG_ERROR, "Unable to start device state collector thread.\n");
+	msg = stasis_cache_clear_create(cached_msg);
+	if (msg) {
+		stasis_publish(ast_device_state_topic(device), msg);
+	}
+	ao2_cleanup(msg);
+	ao2_cleanup(cached_msg);
+	return 0;
+}
+
+int ast_publish_device_state_full(
+	const char *device,
+	enum ast_device_state state,
+	enum ast_devstate_cache cachable,
+	struct ast_eid *eid)
+{
+	RAII_VAR(struct ast_device_state_message *, device_state, NULL, ao2_cleanup);
+	RAII_VAR(struct stasis_message *, message, NULL, ao2_cleanup);
+	struct stasis_topic *device_specific_topic;
+
+	ast_assert(!ast_strlen_zero(device));
+
+	if (!ast_device_state_message_type()) {
 		return -1;
 	}
 
-	devstate_collector.enabled = 1;
+	device_state = device_state_alloc(device, state, cachable, eid);
+	if (!device_state) {
+		return -1;
+	}
+
+	message = stasis_message_create_full(ast_device_state_message_type(), device_state,
+		eid);
+	if (!message) {
+		return -1;
+	}
+
+	device_specific_topic = ast_device_state_topic(device);
+	if (!device_specific_topic) {
+		return -1;
+	}
+
+	stasis_publish(device_specific_topic, message);
+	return 0;
+}
+
+static const char *device_state_get_id(struct stasis_message *message)
+{
+	struct ast_device_state_message *device_state;
+
+	if (ast_device_state_message_type() != stasis_message_type(message)) {
+		return NULL;
+	}
+
+	device_state = stasis_message_data(message);
+	if (device_state->cachable == AST_DEVSTATE_NOT_CACHABLE) {
+		return NULL;
+	}
+
+	return device_state->device;
+}
+
+/*!
+ * \internal
+ * \brief Callback to publish the aggregate device state cache entry message.
+ * \since 12.2.0
+ *
+ * \param cache_topic Caching topic the aggregate message may be published over.
+ * \param aggregate The aggregate shapshot message to publish.
+ *
+ * \return Nothing
+ */
+static void device_state_aggregate_publish(struct stasis_topic *cache_topic, struct stasis_message *aggregate)
+{
+	const char *device;
+	struct stasis_topic *device_specific_topic;
+
+	device = device_state_get_id(aggregate);
+	if (!device) {
+		return;
+	}
+	device_specific_topic = ast_device_state_topic(device);
+	if (!device_specific_topic) {
+		return;
+	}
+
+	stasis_publish(device_specific_topic, aggregate);
+}
+
+/*!
+ * \internal
+ * \brief Callback to calculate the aggregate device state cache entry.
+ * \since 12.2.0
+ *
+ * \param entry Cache entry to calculate a new aggregate snapshot.
+ * \param new_snapshot The shapshot that is being updated.
+ *
+ * \note Return a ref bumped pointer from stasis_cache_entry_get_aggregate()
+ * if a new aggregate could not be calculated because of error.
+ *
+ * \return New aggregate-snapshot calculated on success.
+ * Caller has a reference on return.
+ */
+static struct stasis_message *device_state_aggregate_calc(struct stasis_cache_entry *entry, struct stasis_message *new_snapshot)
+{
+	struct stasis_message *aggregate_snapshot;
+	struct stasis_message *snapshot;
+	struct ast_device_state_message *device_state;
+	const char *device = NULL;
+	struct ast_devstate_aggregate aggregate;
+	int idx;
+
+	if (!ast_device_state_message_type()) {
+		return NULL;
+	}
+
+	/* Determine the new aggregate device state. */
+	ast_devstate_aggregate_init(&aggregate);
+	snapshot = stasis_cache_entry_get_local(entry);
+	if (snapshot) {
+		device_state = stasis_message_data(snapshot);
+		device = device_state->device;
+		ast_devstate_aggregate_add(&aggregate, device_state->state);
+	}
+	for (idx = 0; ; ++idx) {
+		snapshot = stasis_cache_entry_get_remote(entry, idx);
+		if (!snapshot) {
+			break;
+		}
+
+		device_state = stasis_message_data(snapshot);
+		device = device_state->device;
+		ast_devstate_aggregate_add(&aggregate, device_state->state);
+	}
+
+	if (!device) {
+		/* There are no device states cached.  Delete the aggregate. */
+		return NULL;
+	}
+
+	snapshot = stasis_cache_entry_get_aggregate(entry);
+	if (snapshot) {
+		device_state = stasis_message_data(snapshot);
+		if (device_state->state == ast_devstate_aggregate_result(&aggregate)) {
+			/* Aggregate device state did not change. */
+			return ao2_bump(snapshot);
+		}
+	}
+
+	device_state = device_state_alloc(device, ast_devstate_aggregate_result(&aggregate),
+		AST_DEVSTATE_CACHABLE, NULL);
+	if (!device_state) {
+		/* Bummer.  We have to keep the old aggregate snapshot. */
+		return ao2_bump(snapshot);
+	}
+	aggregate_snapshot = stasis_message_create_full(ast_device_state_message_type(),
+		device_state, NULL);
+	ao2_cleanup(device_state);
+	if (!aggregate_snapshot) {
+		/* Bummer.  We have to keep the old aggregate snapshot. */
+		return ao2_bump(snapshot);
+	}
+
+	return aggregate_snapshot;
+}
+
+static void devstate_cleanup(void)
+{
+	devstate_message_sub = stasis_unsubscribe_and_join(devstate_message_sub);
+	device_state_topic_cached = stasis_caching_unsubscribe_and_join(device_state_topic_cached);
+
+	ao2_cleanup(device_state_cache);
+	device_state_cache = NULL;
+
+	ao2_cleanup(device_state_topic_pool);
+	device_state_topic_pool = NULL;
+
+	ao2_cleanup(device_state_topic_all);
+	device_state_topic_all = NULL;
+
+	STASIS_MESSAGE_TYPE_CLEANUP(ast_device_state_message_type);
+}
+
+int devstate_init(void)
+{
+	ast_register_cleanup(devstate_cleanup);
+
+	if (STASIS_MESSAGE_TYPE_INIT(ast_device_state_message_type) != 0) {
+		return -1;
+	}
+	device_state_topic_all = stasis_topic_create("ast_device_state_topic");
+	if (!device_state_topic_all) {
+		devstate_cleanup();
+		return -1;
+	}
+	device_state_topic_pool = stasis_topic_pool_create(ast_device_state_topic_all());
+	if (!device_state_topic_pool) {
+		devstate_cleanup();
+		return -1;
+	}
+	device_state_cache = stasis_cache_create_full(device_state_get_id,
+		device_state_aggregate_calc, device_state_aggregate_publish);
+	if (!device_state_cache) {
+		devstate_cleanup();
+		return -1;
+	}
+	device_state_topic_cached = stasis_caching_topic_create(ast_device_state_topic_all(),
+		device_state_cache);
+	if (!device_state_topic_cached) {
+		devstate_cleanup();
+		return -1;
+	}
+
+	devstate_message_sub = stasis_subscribe(ast_device_state_topic_all(),
+		devstate_change_cb, NULL);
+	if (!devstate_message_sub) {
+		ast_log(LOG_ERROR, "Failed to create subscription creating uncached device state aggregate events.\n");
+		devstate_cleanup();
+		return -1;
+	}
 
 	return 0;
+}
+
+static struct ast_manager_event_blob *devstate_to_ami(struct stasis_message *msg)
+{
+	struct ast_device_state_message *dev_state;
+
+	dev_state = stasis_message_data(msg);
+
+	/* Ignore non-aggregate states */
+	if (dev_state->eid) {
+		return NULL;
+	}
+
+	return ast_manager_event_blob_create(EVENT_FLAG_CALL, "DeviceStateChange",
+		"Device: %s\r\n"
+		"State: %s\r\n",
+		dev_state->device, ast_devstate_str(dev_state->state));
+}
+
+/*! \brief Convert a \ref stasis_message to a \ref ast_event */
+static struct ast_event *devstate_to_event(struct stasis_message *message)
+{
+	struct ast_event *event;
+	struct ast_device_state_message *device_state;
+
+	if (!message) {
+		return NULL;
+	}
+
+	device_state = stasis_message_data(message);
+
+	if (device_state->eid) {
+		event = ast_event_new(AST_EVENT_DEVICE_STATE_CHANGE,
+					    AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, device_state->device,
+					    AST_EVENT_IE_STATE, AST_EVENT_IE_PLTYPE_UINT, device_state->state,
+					    AST_EVENT_IE_CACHABLE, AST_EVENT_IE_PLTYPE_UINT, device_state->cachable,
+					    AST_EVENT_IE_EID, AST_EVENT_IE_PLTYPE_RAW, device_state->eid, sizeof(*device_state->eid),
+					    AST_EVENT_IE_END);
+	} else {
+		event = ast_event_new(AST_EVENT_DEVICE_STATE,
+					    AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, device_state->device,
+					    AST_EVENT_IE_STATE, AST_EVENT_IE_PLTYPE_UINT, device_state->state,
+					    AST_EVENT_IE_CACHABLE, AST_EVENT_IE_PLTYPE_UINT, device_state->cachable,
+					    AST_EVENT_IE_END);
+	}
+
+	return event;
 }

@@ -47,6 +47,14 @@ enum {
 	CONFIG_FLAG_NOREALTIME    = (1 << 3),
 };
 
+/*! Flags for ast_config_text_file_save2()
+ */
+enum config_save_flags {
+	CONFIG_SAVE_FLAG_NONE = (0),
+	/*! Insure a context doesn't effectively change if a template changes (pre 13.2 behavior) */
+	CONFIG_SAVE_FLAG_PRESERVE_EFFECTIVE_CONTEXT = (1 << 0),
+};
+
 #define	CONFIG_STATUS_FILEMISSING	(void *)0
 #define	CONFIG_STATUS_FILEUNCHANGED	(void *)-1
 #define	CONFIG_STATUS_FILEINVALID	(void *)-2
@@ -86,7 +94,8 @@ struct ast_variable {
 
 	int lineno;
 	int object;		/*!< 0 for variable, 1 for object */
-	int blanklines; 	/*!< Number of blanklines following entry */
+	int blanklines;		/*!< Number of blanklines following entry */
+	int inherited;		/*!< 1 for inherited from template or other base */
 	struct ast_comment *precomments;
 	struct ast_comment *sameline;
 	struct ast_comment *trailing; /*!< the last object in the list will get assigned any trailing comments when EOF is hit */
@@ -98,12 +107,12 @@ struct ast_variable {
 };
 
 typedef struct ast_config *config_load_func(const char *database, const char *table, const char *configfile, struct ast_config *config, struct ast_flags flags, const char *suggested_include_file, const char *who_asked);
-typedef struct ast_variable *realtime_var_get(const char *database, const char *table, va_list ap);
-typedef struct ast_config *realtime_multi_get(const char *database, const char *table, va_list ap);
-typedef int realtime_update(const char *database, const char *table, const char *keyfield, const char *entity, va_list ap);
-typedef int realtime_update2(const char *database, const char *table, va_list ap);
-typedef int realtime_store(const char *database, const char *table, va_list ap);
-typedef int realtime_destroy(const char *database, const char *table, const char *keyfield, const char *entity, va_list ap);
+typedef struct ast_variable *realtime_var_get(const char *database, const char *table, const struct ast_variable *fields);
+typedef struct ast_config *realtime_multi_get(const char *database, const char *table, const struct ast_variable *fields);
+typedef int realtime_update(const char *database, const char *table, const char *keyfield, const char *entity, const struct ast_variable *fields);
+typedef int realtime_update2(const char *database, const char *table, const struct ast_variable *lookup_fields, const struct ast_variable *update_fields);
+typedef int realtime_store(const char *database, const char *table, const struct ast_variable *fields);
+typedef int realtime_destroy(const char *database, const char *table, const char *keyfield, const char *entity, const struct ast_variable *fields);
 
 /*!
  * \brief Function pointer called to ensure database schema is properly configured for realtime use
@@ -193,7 +202,7 @@ struct ast_variable *ast_category_root(struct ast_config *config, char *cat);
  * \brief Sorts categories in a config in the order of a numerical value contained within them.
  *
  * \param config The config structure you wish to sort
- * \param variable Which numerical value you wish to sort by
+ * \param comparator variable Which numerical value you wish to sort by
  * \param descending If true, we sort highest to lowest instead of lowest to highest
  *
  * \details
@@ -203,10 +212,30 @@ void ast_config_sort_categories(struct ast_config *config, int descending,
 								int (*comparator)(struct ast_category *p, struct ast_category *q));
 
 /*!
- * \brief Goes through categories
+ * \brief Browse categories with filters
  *
  * \param config Which config structure you wish to "browse"
- * \param prev A pointer to a previous category.
+ * \param category_name An optional category name.
+ * Pass NULL to not restrict by category name.
+ * \param prev A pointer to the starting category structure.
+ * Pass NULL to start at the beginning.
+ * \param filter An optional comma-separated list of <name_regex>=<value_regex>
+ * pairs.  Only categories with matching variables will be returned.
+ * The special name 'TEMPLATES' can be used with the special values
+ * 'include' or 'restrict' to include templates in the result or
+ * restrict the result to only templates.
+ *
+ * \retval a category on success
+ * \retval NULL on failure/no-more-categories
+ */
+struct ast_category *ast_category_browse_filtered(struct ast_config *config,
+	const char *category_name, struct ast_category *prev, const char *filter);
+
+/*!
+ * \brief Browse categories
+ *
+ * \param config Which config structure you wish to "browse"
+ * \param prev_name A pointer to a previous category name.
  *
  * \details
  * This function is kind of non-intuitive in it's use.
@@ -216,13 +245,25 @@ void ast_config_sort_categories(struct ast_config *config, int descending,
  * as the second pointer, and it will return a pointer to the category name
  * afterwards.
  *
- * \retval a category on success
+ * \retval a category name on success
  * \retval NULL on failure/no-more-categories
+ *
+ * \note ast_category_browse maintains internal state.  Therefore is not thread
+ * safe, cannot be called recursively, and it is not safe to add or remove
+ * categories while browsing.
+ * ast_category_browse_filtered does not have these restrictions.
  */
-char *ast_category_browse(struct ast_config *config, const char *prev);
+char *ast_category_browse(struct ast_config *config, const char *prev_name);
 
 /*!
- * \brief Goes through variables
+ * \brief Browse variables
+ * \param config Which config structure you wish to "browse"
+ * \param category_name Which category to "browse"
+ * \param filter an optional comma-separated list of <name_regex>=<value_regex>
+ * pairs.  Only categories with matching variables will be browsed.
+ * The special name 'TEMPLATES' can be used with the special values
+ * 'include' or 'restrict' to include templates in the result or
+ * restrict the result to only templates.
  *
  * \details
  * Somewhat similar in intent as the ast_category_browse.
@@ -231,7 +272,10 @@ char *ast_category_browse(struct ast_config *config, const char *prev);
  * \retval ast_variable list on success
  * \retval NULL on failure
  */
-struct ast_variable *ast_variable_browse(const struct ast_config *config, const char *category);
+struct ast_variable *ast_variable_browse_filtered(const struct ast_config *config,
+	const char *category_name, const char *filter);
+struct ast_variable *ast_variable_browse(const struct ast_config *config,
+	const char *category_name);
 
 /*!
  * \brief given a pointer to a category, return the root variable.
@@ -243,25 +287,64 @@ struct ast_variable *ast_variable_browse(const struct ast_config *config, const 
 struct ast_variable *ast_category_first(struct ast_category *cat);
 
 /*!
- * \brief Gets a variable
+ * \brief Gets a variable by context and variable names
  *
  * \param config which (opened) config to use
  * \param category category under which the variable lies
  * \param variable which variable you wish to get the data for
- *
- * \details
- * Goes through a given config file in the given category and searches for the given variable
+ * \param filter an optional comma-separated list of <name_regex>=<value_regex>
+ * pairs.  Only categories with matching variables will be searched.
+ * The special name 'TEMPLATES' can be used with the special values
+ * 'include' or 'restrict' to include templates in the result or
+ * restrict the result to only templates.
  *
  * \retval The variable value on success
  * \retval NULL if unable to find it.
  */
-const char *ast_variable_retrieve(const struct ast_config *config, const char *category, const char *variable);
+const char *ast_variable_retrieve_filtered(struct ast_config *config,
+	const char *category, const char *variable, const char *filter);
+const char *ast_variable_retrieve(struct ast_config *config,
+	const char *category, const char *variable);
+
+/*!
+ * \brief Gets a variable from a specific category structure
+ *
+ * \param category category structure under which the variable lies
+ * \param variable which variable you wish to get the data for
+ *
+ * \details
+ * Goes through a given category and searches for the given variable
+ *
+ * \retval The variable value on success
+ * \retval NULL if unable to find it.
+ */
+const char *ast_variable_find(const struct ast_category *category, const char *variable);
+
+/*!
+ * \brief Gets a variable from a variable list
+ *
+ * \param list variable list to search
+ * \param variable which variable you wish to get the data for
+ *
+ * \details
+ * Goes through a given variable list and searches for the given variable
+ *
+ * \retval The variable value on success
+ * \retval NULL if unable to find it.
+ */
+const char *ast_variable_find_in_list(const struct ast_variable *list, const char *variable);
 
 /*!
  * \brief Retrieve a category if it exists
  *
  * \param config which config to use
  * \param category_name name of the category you're looking for
+ * \param filter If a config contains more than 1 category with the same name,
+ * you can specify a filter to narrow the search.  The filter is a comma-separated
+ * list of <name_regex>=<value_regex> pairs.  Only a category with matching
+ * variables will be returned. The special name 'TEMPLATES' can be used with the
+ * special values 'include' or 'restrict' to include templates in the result or
+ * restrict the result to only templates.
  *
  * \details
  * This will search through the categories within a given config file for a match.
@@ -269,20 +352,57 @@ const char *ast_variable_retrieve(const struct ast_config *config, const char *c
  * \retval pointer to category if found
  * \retval NULL if not.
  */
-struct ast_category *ast_category_get(const struct ast_config *config, const char *category_name);
+struct ast_category *ast_category_get(const struct ast_config *config,
+	const char *category_name, const char *filter);
+
+/*!
+ * \brief Return the name of the category
+ *
+ * \param category category structure
+ *
+ * \retval pointer to category name if found
+ * \retval NULL if not.
+ */
+const char *ast_category_get_name(const struct ast_category *category);
+
+/*!
+ * \brief Check if category is a template
+ *
+ * \param category category structure
+ *
+ * \retval 1 if a template.
+ * \retval 0 if not.
+ */
+int ast_category_is_template(const struct ast_category *category);
+
+/*!
+ * \brief Return the template names this category inherits from
+ *
+ * \param category category structure
+ *
+ * \return an ast_str (which must be freed after use) with a comma
+ * separated list of templates names or NULL if there were no templates.
+ */
+struct ast_str *ast_category_get_templates(const struct ast_category *category);
 
 /*!
  * \brief Check for category duplicates
  *
  * \param config which config to use
  * \param category_name name of the category you're looking for
+ * \param filter an optional comma-separated list of <name_regex>=<value_regex>
+ * pairs.  Only categories with matching variables will be returned.
+ * The special name 'TEMPLATES' can be used with the special values
+ * 'include' or 'restrict' to include templates in the result or
+ * restrict the result to only templates.
  *
  * \details
  * This will search through the categories within a given config file for a match.
  *
  * \return non-zero if found
  */
-int ast_category_exist(const struct ast_config *config, const char *category_name);
+int ast_category_exist(const struct ast_config *config, const char *category_name,
+	const char *filter);
 
 /*!
  * \brief Retrieve realtime configuration
@@ -305,7 +425,9 @@ int ast_category_exist(const struct ast_config *config, const char *category_nam
  * You should use the constant SENTINEL to terminate arguments, in
  * order to preserve cross-platform compatibility.
  */
+struct ast_variable *ast_load_realtime_fields(const char *family, const struct ast_variable *fields);
 struct ast_variable *ast_load_realtime(const char *family, ...) attribute_sentinel;
+struct ast_variable *ast_load_realtime_all_fields(const char *family, const struct ast_variable *fields);
 struct ast_variable *ast_load_realtime_all(const char *family, ...) attribute_sentinel;
 
 /*!
@@ -363,6 +485,24 @@ int ast_realtime_require_field(const char *family, ...) attribute_sentinel;
  * \brief Retrieve realtime configuration
  *
  * \param family which family/config to lookup
+ * \param fields list of fields
+ *
+ * \details
+ * This will use builtin configuration backends to look up a particular
+ * entity in realtime and return a variable list of its parameters. Unlike
+ * the ast_load_realtime, this function can return more than one entry and
+ * is thus stored inside a traditional ast_config structure rather than
+ * just returning a linked list of variables.
+ *
+ * \return An ast_config with one or more results
+ * \retval NULL Error or no results returned
+ */
+struct ast_config *ast_load_realtime_multientry_fields(const char *family, const struct ast_variable *fields);
+
+/*!
+ * \brief Retrieve realtime configuration
+ *
+ * \param family which family/config to lookup
  *
  * \details
  * This will use builtin configuration backends to look up a particular
@@ -385,6 +525,21 @@ struct ast_config *ast_load_realtime_multientry(const char *family, ...) attribu
  * \param family which family/config to be updated
  * \param keyfield which field to use as the key
  * \param lookup which value to look for in the key field to match the entry.
+ * \param fields fields to update
+ *
+ * \details
+ * This function is used to update a parameter in realtime configuration space.
+ *
+ * \return Number of rows affected, or -1 on error.
+ */
+int ast_update_realtime_fields(const char *family, const char *keyfield, const char *lookup, const struct ast_variable *fields);
+
+/*!
+ * \brief Update realtime configuration
+ *
+ * \param family which family/config to be updated
+ * \param keyfield which field to use as the key
+ * \param lookup which value to look for in the key field to match the entry.
  *
  * \details
  * This function is used to update a parameter in realtime configuration space.
@@ -395,6 +550,23 @@ struct ast_config *ast_load_realtime_multientry(const char *family, ...) attribu
  * order to preserve cross-platform compatibility.
  */
 int ast_update_realtime(const char *family, const char *keyfield, const char *lookup, ...) attribute_sentinel;
+
+/*!
+ * \brief Update realtime configuration
+ *
+ * \param family which family/config to be updated
+ * \param lookup_fields fields used to look up entries
+ * \param update_fields fields to update
+ *
+ * \details
+ * This function is used to update a parameter in realtime configuration space.
+ * It includes the ability to lookup a row based upon multiple key criteria.
+ * As a result, this function includes two sentinel values, one to terminate
+ * lookup values and the other to terminate the listing of fields to update.
+ *
+ * \return Number of rows affected, or -1 on error.
+ */
+int ast_update2_realtime_fields(const char *family, const struct ast_variable *lookup_fields, const struct ast_variable *update_fields);
 
 /*!
  * \brief Update realtime configuration
@@ -418,6 +590,24 @@ int ast_update2_realtime(const char *family, ...) attribute_sentinel;
  * \brief Create realtime configuration
  *
  * \param family which family/config to be created
+ * \param fields fields themselves
+ *
+ * \details
+ * This function is used to create a parameter in realtime configuration space.
+ *
+ * \return Number of rows affected, or -1 on error.
+ *
+ * \note
+ * On the MySQL engine only, for reasons of backwards compatibility, the return
+ * value is the insert ID.  This value is nonportable and may be changed in a
+ * future version to match the other engines.
+ */
+int ast_store_realtime_fields(const char *family, const struct ast_variable *fields);
+
+/*!
+ * \brief Create realtime configuration
+ *
+ * \param family which family/config to be created
  *
  * \details
  * This function is used to create a parameter in realtime configuration space.
@@ -433,6 +623,22 @@ int ast_update2_realtime(const char *family, ...) attribute_sentinel;
  * order to preserve cross-platform compatibility.
  */
 int ast_store_realtime(const char *family, ...) attribute_sentinel;
+
+/*!
+ * \brief Destroy realtime configuration
+ *
+ * \param family which family/config to be destroyed
+ * \param keyfield which field to use as the key
+ * \param lookup which value to look for in the key field to match the entry.
+ * \param fields fields themselves
+ *
+ * \details
+ * This function is used to destroy an entry in realtime configuration space.
+ * Additional params are used as keys.
+ *
+ * \return Number of rows affected, or -1 on error.
+ */
+int ast_destroy_realtime_fields(const char *family, const char *keyfield, const char *lookup, const struct ast_variable *fields);
 
 /*!
  * \brief Destroy realtime configuration
@@ -474,6 +680,16 @@ int ast_realtime_enabled(void);
 struct ast_variable *ast_variables_dup(struct ast_variable *var);
 
 /*!
+ * \brief Reverse a variable list
+ * \param var the linked list of variables to reverse
+ * \return The head of the reversed variable list
+ *
+ * \note The variable list var is not preserved in this function and should
+ * not be used after reversing it.
+ */
+struct ast_variable *ast_variables_reverse(struct ast_variable *var);
+
+/*!
  * \brief Free variable list
  * \param var the linked list of variables to free
  *
@@ -502,6 +718,19 @@ int ast_config_engine_deregister(struct ast_config_engine *del);
  * \retval 0 if it is not
  */
 int ast_realtime_is_mapping_defined(const char *family);
+
+#ifdef TEST_FRAMEWORK
+/*!
+ * \brief Add an explicit mapping for a family
+ *
+ * \param name Family name
+ * \param driver Driver to use
+ * \param database Database to access
+ * \param table Table to use
+ * \param priority Priority of this mapping
+ */
+int ast_realtime_append_mapping(const char *name, const char *driver, const char *database, const char *table, int priority);
+#endif
 
 /*!
  * \brief Exposed initialization method for core process
@@ -552,9 +781,23 @@ void ast_config_set_current_category(struct ast_config *cfg, const struct ast_ca
  */
 const char *ast_config_option(struct ast_config *cfg, const char *cat, const char *var);
 
-/*! \brief Create a category structure */
+/*!
+ * \brief Create a category
+ *
+ * \param name name of new category
+ * \param in_file filename which contained the new config
+ * \param lineno line number
+ */
 struct ast_category *ast_category_new(const char *name, const char *in_file, int lineno);
-void ast_category_append(struct ast_config *config, struct ast_category *cat);
+
+/*!
+ * \brief Create a category making it a template
+ *
+ * \param name name of new template
+ * \param in_file filename which contained the new config
+ * \param lineno line number
+ */
+struct ast_category *ast_category_new_template(const char *name, const char *in_file, int lineno);
 
 /*!
  * \brief Inserts new category
@@ -566,16 +809,57 @@ void ast_category_append(struct ast_config *config, struct ast_category *cat);
  * \details
  * This function is used to insert a new category above another category
  * matching the match parameter.
+ *
+ * \retval 0 if succeeded
+ * \retval -1 if the specified match category wasn't found
  */
-void ast_category_insert(struct ast_config *config, struct ast_category *cat, const char *match);
-int ast_category_delete(struct ast_config *cfg, const char *category);
+int ast_category_insert(struct ast_config *config, struct ast_category *cat, const char *match);
 
 /*!
- * \brief Removes and destroys all variables within a category
- * \retval 0 if the category was found and emptied
- * \retval -1 if the category was not found
+ * \brief Delete a category
+ *
+ * \param config which config to use
+ * \param category category to delete
+ *
+ * \return the category after the deleted one which could be NULL.
+ *
+ * \note It is not safe to call ast_category_delete while browsing with
+ * ast_category_browse.  It is safe with ast_category_browse_filtered.
  */
-int ast_category_empty(struct ast_config *cfg, const char *category);
+struct ast_category *ast_category_delete(struct ast_config *cfg, struct ast_category *category);
+
+/*!
+ * \brief Appends a category to a config
+ *
+ * \param config which config to use
+ * \param cat category to insert
+ */
+void ast_category_append(struct ast_config *config, struct ast_category *cat);
+
+/*!
+ * \brief Applies base (template) to category.
+ *
+ * \param existing existing category
+ * \param base base category
+ *
+ * \details
+ * This function is used to apply a base (template) to an existing category
+ *
+ * \retval 0 if succeeded
+ * \retval -1 if the memory allocation failed
+ */
+int ast_category_inherit(struct ast_category *existing, const struct ast_category *base);
+
+/*!
+ * \brief Removes and destroys all variables in a category
+ *
+ * \param category category to empty
+ *
+ * \retval 0 if succeeded
+ * \retval -1 if categopry is NULL
+ */
+int ast_category_empty(struct ast_category *category);
+
 void ast_category_destroy(struct ast_category *cat);
 struct ast_variable *ast_category_detach_variables(struct ast_category *cat);
 void ast_category_rename(struct ast_category *cat, const char *name);
@@ -594,6 +878,34 @@ void ast_variable_insert(struct ast_category *category, struct ast_variable *var
 int ast_variable_delete(struct ast_category *category, const char *variable, const char *match, const char *line);
 
 /*!
+ * \brief Performs an in-place sort on the variable list by ascending name
+ *
+ * \param head The variable list head
+ *
+ * \return The new list head
+ */
+struct ast_variable *ast_variable_list_sort(struct ast_variable *head);
+
+/*!
+ * \brief Appends a variable list to the end of another list
+ *
+ * \param head A pointer to an ast_variable * of the existing variable list head. May NOT be NULL
+ * but the content may be to initialize a new list.  If so, upon return, this parameter will be updated
+ * with a pointer to the new list head.
+ * \param search_hint The place in the current list to start searching for the end of the list.
+ * Might help performance on longer lists.  If NULL, it defaults to head.
+ * \param new_var The head of the new variable list to be appended
+ *
+ * \return The tail of the resulting list.
+ *
+ * \note If the existing *head is NULL, it will be updated to new_var.  This allows you to call
+ * ast_variable_list_append in a loop or callback without initializing the list first.
+ */
+struct ast_variable *ast_variable_list_append_hint(struct ast_variable **head, struct ast_variable *search_hint,
+	struct ast_variable *new_var);
+#define ast_variable_list_append(head, new_var) ast_variable_list_append_hint(head, NULL, new_var)
+
+/*!
  * \brief Update variable value within a config
  *
  * \param category Category element within the config
@@ -607,6 +919,28 @@ int ast_variable_delete(struct ast_category *category, const char *variable, con
 int ast_variable_update(struct ast_category *category, const char *variable,
 						const char *value, const char *match, unsigned int object);
 
+/*!
+ * \brief Save a config text file
+ * \since 13.2.0
+ *
+ * \param filename Filename
+ * \param cfg ast_config
+ * \param generator generator
+ * \param flags List of config_save_flags
+ *
+ * \return 0 on success or -1 on failure.
+ */
+int ast_config_text_file_save2(const char *filename, const struct ast_config *cfg, const char *generator, uint32_t flags);
+
+/*!
+ * \brief Save a config text file preserving the pre 13.2 behavior
+ *
+ * \param filename Filename
+ * \param cfg ast_config
+ * \param generator generator
+ *
+ * \return 0 on success or -1 on failure.
+ */
 int ast_config_text_file_save(const char *filename, const struct ast_config *cfg, const char *generator);
 int config_text_file_save(const char *filename, const struct ast_config *cfg, const char *generator) __attribute__((deprecated));
 
@@ -741,9 +1075,9 @@ enum ast_parse_flags {
  *
  * \param arg the string to parse. It is not modified.
  * \param flags combination of ast_parse_flags to specify the
- * return type and additional checks.
+ * 	return type and additional checks.
  * \param result pointer to the result. NULL is valid here, and can
- * be used to perform only the validity checks.
+ * 	be used to perform only the validity checks.
  * \param ... extra arguments are required according to flags.
  *
  * \retval 0 in case of success, != 0 otherwise.
@@ -841,7 +1175,7 @@ int ast_rq_is_int(require_type type),
  * \param chunk Data to be decoded
  * \return The decoded data, in the original buffer
  * \since 1.8
- * \warn This function modifies the original buffer
+ * \warning This function modifies the original buffer
  */
 char *ast_realtime_decode_chunk(char *chunk);
 

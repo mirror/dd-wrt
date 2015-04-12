@@ -27,7 +27,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 375532 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 425289 $")
 
 #include <ne_request.h>
 #include <ne_session.h>
@@ -40,6 +40,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 375532 $")
 #include <ne_redirect.h>
 
 #include "asterisk/module.h"
+#include "asterisk/channel.h"
 #include "asterisk/calendar.h"
 #include "asterisk/lock.h"
 #include "asterisk/config.h"
@@ -456,7 +457,7 @@ static int endelm(void *userdata, int state, const char *nspace, const char *nam
 		}
 	} else if (!strcmp(name, "Envelope")) {
 		/* Events end */
-		ast_debug(3, "EWS: XML: %d of %d event(s) has been parsed…\n", ao2_container_count(ctx->pvt->events), ctx->pvt->items);
+		ast_debug(3, "EWS: XML: %d of %u event(s) has been parsed…\n", ao2_container_count(ctx->pvt->events), ctx->pvt->items);
 		if (ao2_container_count(ctx->pvt->events) >= ctx->pvt->items) {
 			ast_debug(3, "EWS: XML: All events has been parsed, merging…\n");
 			ast_calendar_merge_events(ctx->pvt->owner, ctx->pvt->events);
@@ -906,8 +907,17 @@ static void *ewscal_load_calendar(void *void_data)
 static int load_module(void)
 {
 	/* Actualy, 0.29.1 is required (because of NTLM authentication), but this
-	 * function does not support matching patch version. */
-	if (ne_version_match(0, 29)) {
+	 * function does not support matching patch version.
+	 *
+	 * The ne_version_match function returns non-zero if the library
+	 * version is not of major version major, or the minor version
+	 * is less than minor. For neon versions 0.x, every minor
+	 * version is assumed to be incompatible with every other minor
+	 * version.
+	 *
+	 * I.e. for version 1.2..1.9 we would do ne_version_match(1, 2)
+	 * but for version 0.29 and 0.30 we need two checks. */
+	if (ne_version_match(0, 29) && ne_version_match(0, 30)) {
 		ast_log(LOG_ERROR, "Exchange Web Service calendar module require neon >= 0.29.1, but %s is installed.\n", ne_version_string());
 		return AST_MODULE_LOAD_DECLINE;
 	}
@@ -928,6 +938,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Asterisk MS Exchange Web Service Calendar Integration",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_DEVSTATE_PLUGIN,

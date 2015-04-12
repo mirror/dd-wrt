@@ -22,6 +22,30 @@
 #ifndef _SIP_REQRESP_H
 #define _SIP_REQRESP_H
 
+/*! \brief uri parameters */
+struct uriparams {
+	char *transport;
+	char *user;
+	char *method;
+	char *ttl;
+	char *maddr;
+	int lr;
+};
+
+struct contact {
+	AST_LIST_ENTRY(contact) list;
+	char *name;
+	char *user;
+	char *pass;
+	char *hostport;
+	struct uriparams params;
+	char *headers;
+	char *expires;
+	char *q;
+};
+
+AST_LIST_HEAD_NOLOCK(contactliststruct, contact);
+
 /*!
  * \brief parses a URI in its components.
  *
@@ -152,6 +176,11 @@ void sip_request_parser_unregister_tests(void);
  * \param option list
  * \param unsupported out buffer (optional)
  * \param unsupported out buffer length (optional)
+ *
+ * \note Because this function can be called multiple times, it will append
+ * whatever options are specified in \c options to \c unsupported. Callers
+ * of this function should make sure the unsupported buffer is clear before
+ * calling this function.
  */
 unsigned int parse_sip_options(const char *options, char *unsupported, size_t unsupported_len);
 

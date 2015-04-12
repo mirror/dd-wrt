@@ -28,6 +28,7 @@
 #define __AST_SECURITY_EVENTS_DEFS_H__
 
 #include "asterisk/network.h"
+#include "asterisk/netsock2.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -35,11 +36,6 @@ extern "C" {
 
 /*!
  * \brief Security event types
- *
- * AST_EVENT_SECURITY is the event type of an ast_event generated as a security
- * event.  The event will have an information element of type
- * AST_EVENT_IE_SECURITY_EVENT which identifies the security event sub-type.
- * This enum defines the possible values for this sub-type.
  */
 enum ast_security_event_type {
 	/*!
@@ -140,20 +136,11 @@ enum ast_security_event_severity {
 	AST_SECURITY_EVENT_SEVERITY_ERROR = (1 << 1),
 };
 
-/*!
- * \brief Transport types
- */
-enum ast_security_event_transport_type {
-	AST_SECURITY_EVENT_TRANSPORT_UDP,
-	AST_SECURITY_EVENT_TRANSPORT_TCP,
-	AST_SECURITY_EVENT_TRANSPORT_TLS,
-};
-
 #define AST_SEC_EVT(e) ((struct ast_security_event_common *) e)
 
 struct ast_security_event_ip_addr {
 	const struct ast_sockaddr *addr;
-	enum ast_security_event_transport_type transport;
+	enum ast_transport transport;
 };
 
 /*!

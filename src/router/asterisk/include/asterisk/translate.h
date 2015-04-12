@@ -32,6 +32,8 @@ extern "C" {
 #include "asterisk/frame.h"
 #include "asterisk/plc.h"
 #include "asterisk/linkedlists.h"
+#include "asterisk/format_cap.h"
+#include "asterisk/format_cache.h"
 #endif
 
 struct ast_trans_pvt;	/* declared below */
@@ -134,8 +136,11 @@ enum ast_trans_cost_table {
  */
 struct ast_translator {
 	char name[80];                         /*!< Name of translator */
-	struct ast_format src_format;          /*!< Source format */
-	struct ast_format dst_format;          /*!< Destination format */
+	struct ast_codec src_codec;		       /*!< Source codec */
+	struct ast_codec dst_codec;		   	   /*!< Destination codec */
+	struct ast_codec *core_src_codec;	   /*!< Core registered source codec */
+	struct ast_codec *core_dst_codec;      /*!< Core registered destination codec */
+	const char *format;					   /*!< Optional name of a cached format this translator produces */
 
 	int table_cost;                        /*!< Cost value associated with this translator based
 	                                        *   on translation cost table. */
@@ -204,12 +209,6 @@ struct ast_translator {
 struct ast_trans_pvt {
 	struct ast_translator *t;
 	struct ast_frame f;         /*!< used in frameout */
-	/*! If a translation path using a format with attributes requires the output
-	 * to be a specific set of attributes, this variable will be set describing those
-	 * attributes to the translator.  Otherwise, the translator must choose a set
-	 * of format attributes for the destination that preserves the quality of the
-	 * audio in the best way possible. */
-	struct ast_format explicit_dst;
 	int samples;                /*!< samples available in outbuf */
 	/*! \brief actual space used in outbuf */
 	int datalen;
@@ -236,7 +235,7 @@ struct ast_trans_pvt;
  * \brief Register a translator
  * This registers a codec translator with asterisk
  * \param t populated ast_translator structure
- * \param module handle to the module that owns this translator
+ * \param mod module handle to the module that owns this translator
  * \return 0 on success, -1 on failure
  */
 int __ast_register_translator(struct ast_translator *t, struct ast_module *module);
@@ -276,24 +275,24 @@ void ast_translator_deactivate(struct ast_translator *t);
  * Given a list of sources, and a designed destination format, which should
  * I choose?
  *
- * \param destination capabilities
- * \param source capabilities
- * \param destination format chosen out of destination capabilities
- * \param source format chosen out of source capabilities
+ * \param dst_cap destination capabilities
+ * \param src_cap source capabilities
+ * \param dst_fmt_out destination format chosen out of destination capabilities
+ * \param src_fmt_out source format chosen out of source capabilities
  * \return Returns 0 on success, -1 if no path could be found.
  *
  * \note dst_cap and src_cap are not mondified.
  */
 int ast_translator_best_choice(struct ast_format_cap *dst_cap,
 	struct ast_format_cap *src_cap,
-	struct ast_format *dst_fmt_out,
-	struct ast_format *src_fmt_out);
+	struct ast_format **dst_fmt_out,
+	struct ast_format **src_fmt_out);
 
 /*! 
  * \brief Builds a translator path
  * Build a path (possibly NULL) from source to dest 
- * \param dest destination format
- * \param source source format
+ * \param dst dest destination format
+ * \param src source source format
  * \return ast_trans_pvt on success, NULL on failure
  * */
 struct ast_trans_pvt *ast_translator_build_path(struct ast_format *dest, struct ast_format *source);
@@ -309,7 +308,7 @@ void ast_translator_free_path(struct ast_trans_pvt *tr);
  * \brief translates one or more frames
  * Apply an input frame into the translator and receive zero or one output frames.  Consume
  * determines whether the original frame should be freed
- * \param tr translator structure to use for translation
+ * \param path tr translator structure to use for translation
  * \param f frame to translate
  * \param consume Whether or not to free the original frame
  * \return an ast_frame of the new translation format on success, NULL on failure
@@ -342,8 +341,8 @@ void ast_translate_available_formats(struct ast_format_cap *dest, struct ast_for
 
 /*!
  * \brief Puts a string representation of the translation path into outbuf
- * \param translator structure containing the translation path
- * \param ast_str output buffer
+ * \param t translator structure containing the translation path
+ * \param str ast_str output buffer
  * \retval on success pointer to beginning of outbuf. on failure "".
  */
 const char *ast_translate_path_to_str(struct ast_trans_pvt *t, struct ast_str **str);

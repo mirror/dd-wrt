@@ -30,13 +30,14 @@
  
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 364580 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 
 #include "asterisk/mod_format.h"
 #include "asterisk/module.h"
 #include "asterisk/endian.h"
 #include "asterisk/ulaw.h"
 #include "asterisk/alaw.h"
+#include "asterisk/format_cache.h"
 
 #define BUF_SIZE 160		/* 160 bytes, and same number of samples */
 
@@ -66,7 +67,7 @@ static unsigned long get_time(void)
 
 static int pcma_open(struct ast_filestream *s)
 {
-	if (s->fmt->format == AST_FORMAT_ALAW)
+	if (ast_format_cmp(s->fmt->format, ast_format_alaw) == AST_FORMAT_CMP_EQUAL)
 		pd->starttime = get_time();
 	return 0;
 }
@@ -83,9 +84,6 @@ static struct ast_frame *pcm_read(struct ast_filestream *s, int *whennext)
 	
 	/* Send a frame from the file to the appropriate channel */
 
-	s->fr.frametype = AST_FRAME_VOICE;
-	ast_format_copy(&s->fr.subclass.format, &s->fmt->format);
-	s->fr.mallocd = 0;
 	AST_FRAME_SET_BUFFER(&s->fr, s->buf, AST_FRIENDLY_OFFSET, BUF_SIZE);
 	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) < 1) {
 		if (res)
@@ -93,7 +91,7 @@ static struct ast_frame *pcm_read(struct ast_filestream *s, int *whennext)
 		return NULL;
 	}
 	s->fr.datalen = res;
-	if (s->fmt->format.id == AST_FORMAT_G722)
+	if (ast_format_cmp(s->fmt->format, ast_format_g722) == AST_FORMAT_CMP_EQUAL)
 		*whennext = s->fr.samples = res * 2;
 	else
 		*whennext = s->fr.samples = res;
@@ -141,7 +139,7 @@ static int pcm_seek(struct ast_filestream *fs, off_t sample_offset, int whence)
 	}
 	if (whence == SEEK_FORCECUR && offset > max) { /* extend the file */
 		size_t left = offset - max;
-		const char *src = (fs->fmt->format.id == AST_FORMAT_ALAW) ? alaw_silence : ulaw_silence;
+		const char *src = (ast_format_cmp(fs->fmt->format, ast_format_alaw) == AST_FORMAT_CMP_EQUAL) ? alaw_silence : ulaw_silence;
 
 		while (left) {
 			size_t written = fwrite(src, 1, (left > BUF_SIZE) ? BUF_SIZE : left, fs->f);
@@ -185,17 +183,8 @@ static int pcm_write(struct ast_filestream *fs, struct ast_frame *f)
 {
 	int res;
 
-	if (f->frametype != AST_FRAME_VOICE) {
-		ast_log(LOG_WARNING, "Asked to write non-voice frame!\n");
-		return -1;
-	}
-	if (ast_format_cmp(&f->subclass.format, &fs->fmt->format) == AST_FORMAT_CMP_NOT_EQUAL) {
-		ast_log(LOG_WARNING, "Asked to write incompatible format frame (%s)!\n", ast_getformatname(&f->subclass.format));
-		return -1;
-	}
-
 #ifdef REALTIME_WRITE
-	if (s->fmt->format == AST_FORMAT_ALAW) {
+	if (ast_format_cmp(s->fmt->format, ast_format_alaw) == AST_FORMAT_CMP_EQUAL) {
 		struct pcm_desc *pd = (struct pcm_desc *)fs->_private;
 		struct stat stat_buf;
 		unsigned long cur_time = get_time();
@@ -304,24 +293,24 @@ static int check_header(FILE *f)
 /*	data_size = ltohl(header[AU_HDR_DATA_SIZE_OFF]); */
 	encoding = ltohl(header[AU_HDR_ENCODING_OFF]);
 	if (encoding != AU_ENC_8BIT_ULAW) {
-		ast_log(LOG_WARNING, "Unexpected format: %d. Only 8bit ULAW allowed (%d)\n", encoding, AU_ENC_8BIT_ULAW);
+		ast_log(LOG_WARNING, "Unexpected format: %u. Only 8bit ULAW allowed (%d)\n", encoding, AU_ENC_8BIT_ULAW);
 		return -1;
 	}
 	sample_rate = ltohl(header[AU_HDR_SAMPLE_RATE_OFF]);
 	if (sample_rate != DEFAULT_SAMPLE_RATE) {
-		ast_log(LOG_WARNING, "Sample rate can only be 8000 not %d\n", sample_rate);
+		ast_log(LOG_WARNING, "Sample rate can only be 8000 not %u\n", sample_rate);
 		return -1;
 	}
 	channels = ltohl(header[AU_HDR_CHANNELS_OFF]);
 	if (channels != 1) {
-		ast_log(LOG_WARNING, "Not in mono: channels=%d\n", channels);
+		ast_log(LOG_WARNING, "Not in mono: channels=%u\n", channels);
 		return -1;
 	}
 	/* Skip to data */
 	fseek(f, 0, SEEK_END);
 	data_size = ftell(f) - hdr_size;
 	if (fseek(f, hdr_size, SEEK_SET) == -1 ) {
-		ast_log(LOG_WARNING, "Failed to skip to data: %d\n", hdr_size);
+		ast_log(LOG_WARNING, "Failed to skip to data: %u\n", hdr_size);
 		return -1;
 	}
 	return data_size;
@@ -399,7 +388,7 @@ static int au_seek(struct ast_filestream *fs, off_t sample_offset, int whence)
 	off_t min = AU_HEADER_SIZE, max, cur;
 	long offset = 0, bytes;
 
-	if (fs->fmt->format.id == AST_FORMAT_G722)
+	if (ast_format_cmp(fs->fmt->format, ast_format_g722) == AST_FORMAT_CMP_EQUAL)
 		bytes = sample_offset / 2;
 	else
 		bytes = sample_offset;
@@ -523,10 +512,10 @@ static int load_module(void)
 	for (i = 0; i < ARRAY_LEN(alaw_silence); i++)
 		alaw_silence[i] = AST_LIN2A(0);
 
-	ast_format_set(&pcm_f.format, AST_FORMAT_ULAW, 0);
-	ast_format_set(&alaw_f.format, AST_FORMAT_ALAW, 0);
-	ast_format_set(&au_f.format, AST_FORMAT_ULAW, 0);
-	ast_format_set(&g722_f.format, AST_FORMAT_G722, 0);
+	pcm_f.format = ast_format_ulaw;
+	alaw_f.format = ast_format_alaw;
+	au_f.format = ast_format_ulaw;
+	g722_f.format = ast_format_g722;
 	if ( ast_format_def_register(&pcm_f)
 		|| ast_format_def_register(&alaw_f)
 		|| ast_format_def_register(&au_f)
@@ -544,6 +533,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Raw/Sun uLaw/ALaw 8KHz (PCM,PCMA,AU), G.722 16Khz",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_APP_DEPEND

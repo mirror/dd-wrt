@@ -34,7 +34,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 401661 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 
 #include <math.h>
 
@@ -389,6 +389,11 @@ static int crement_function_read(struct ast_channel *chan, const char *cmd,
 
 	if (ast_strlen_zero(data)) {
 		ast_log(LOG_WARNING, "Syntax: %s(<data>) - missing argument!\n", cmd);
+		return -1;
+	}
+
+	if (!chan) {
+		ast_log(LOG_WARNING, "No channel was provided to %s function.\n", cmd);
 		return -1;
 	}
 
