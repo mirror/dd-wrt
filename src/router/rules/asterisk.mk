@@ -61,9 +61,9 @@ asterisk-configure: util-linux-configure util-linux-install
 	--without-iksemel \
 	--with-uuid=$(INSTALLDIR)/util-linux/usr \
 	ac_cv_header_locale_h=yes \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -DLOW_MEMORY" \
-	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -DLOW_MEMORY" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -DLOW_MEMORY" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -DLOW_MEMORY -DNEED_PRINTF" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -DLOW_MEMORY -DNEED_PRINTF" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -DLOW_MEMORY -DNEED_PRINTF" \
 	SQLITE3_LIB="-L$(TOP)/minidlna/lib -lsqlite3" \
 	SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" \
 	LIBUUID_LIB="-L$(TOP)/util-linux/.libs -luuid" \
@@ -84,8 +84,8 @@ asterisk: util-linux util-linux-install
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
-	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
+	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	make -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -98,8 +98,8 @@ asterisk: util-linux util-linux-install
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
-	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
+	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	make -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -112,8 +112,8 @@ asterisk: util-linux util-linux-install
 
 asterisk-install:
 	chmod 700 asterisk/build_tools/install_subst
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
-	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
+	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -121,8 +121,8 @@ asterisk-install:
 		OPTIMIZE="" \
 		DESTDIR=$(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk \
 		install samples
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
-	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
+	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -143,7 +143,7 @@ asterisk-install:
 		codec_ulaw codec_gsm \
 		format_gsm format_pcm format_wav format_wav_gsm \
 		pbx_config \
-		func_strings func_timeout func_callerid; do \
+		func_strings func_timeout func_callerid func_periodic_hook; do \
 		$(CP) $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk/usr/lib/asterisk/modules/$$f.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/ ; \
 	done
 	rm -rf $(INSTALLDIR)/asterisk/usr/sbin
