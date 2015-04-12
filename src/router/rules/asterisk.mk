@@ -12,23 +12,10 @@ util-linux-configure:
 util-linux:
 	make -C util-linux
 
-util-linux-stageinstall:
+util-linux-install:
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 
-util-linux-install: util-linux-stageinstall
-	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
-	rm -rf $(INSTALLDIR)/util-linux/usr/bin
-	rm -rf $(INSTALLDIR)/util-linux/usr/share
-	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
-	rm -rf $(INSTALLDIR)/util-linux/usr/include
-	rm -rf $(INSTALLDIR)/util-linux/bin
-	rm -rf $(INSTALLDIR)/util-linux/sbin
-	rm -f $(INSTALLDIR)/util-linux/lib/libmount.so*
-	rm -f $(INSTALLDIR)/util-linux/lib/libblkid.so*
-	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
-	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
-
-asterisk-configure: util-linux-configure
+asterisk-configure: util-linux-configure util-linux-install
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--libdir=/usr/lib \
@@ -92,7 +79,7 @@ asterisk-clean:
 	$(MAKE) -C asterisk clean
 #	$(MAKE) -C chan_dongle clean
 
-asterisk: util-linux util-linux-stageinstall
+asterisk: util-linux util-linux-install
 	-make -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
@@ -120,7 +107,6 @@ asterisk: util-linux util-linux-stageinstall
 		OPTIMIZE="" \
 		all
 	-make -C asterisk
-
 
 #	make -C chan_dongle
 
@@ -201,4 +187,16 @@ asterisk-install:
 	$(INSTALL_BIN) $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk/usr/lib/asterisk/modules/res* $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
 	rm -rf $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk
 #	make -C chan_dongle install
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/usr/share
+	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/util-linux/usr/include
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
+	rm -f $(INSTALLDIR)/util-linux/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libblkid.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
+
 
