@@ -256,6 +256,9 @@
 /* Define to 1 if you have the `mempcpy' function. */
 #undef HAVE_MEMPCPY
 
+/* Define to 1 if you have the `mkostemp' function. */
+#undef HAVE_MKOSTEMP
+
 /* Define to 1 if you have the <mntent.h> header file. */
 #undef HAVE_MNTENT_H
 
