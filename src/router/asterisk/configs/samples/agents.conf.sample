@@ -1,0 +1,70 @@
+;
+; Agent pool configuration
+;
+
+[general]
+; The general section of this config is not currently used, but reserved
+; for future use.
+
+;[agent-id]
+; Define ackcall to require the agent to give a DTMF acknowledgement
+; when the agent receives a call.
+; The channel variable AGENTACKCALL overrides on agent login.
+; Default is "no".
+;ackcall=no
+;
+; Set what DTMF key sequence the agent should use to acknowledge a call.
+; The channel variable AGENTACCEPTDTMF overrides on agent login.
+; This option is ignored unless ackcall is enabled.
+; Default is "#".
+;acceptdtmf=##
+;
+; Set how many seconds a call for the agent has to wait for the agent to
+; acknowledge the call before the agent is automatically logged off.  If
+; set to zero then the call will wait forever for the agent to acknowledge.
+; The channel variable AGENTAUTOLOGOFF overrides on agent login.
+; This option is ignored unless ackcall is enabled.
+; Default is 0.
+;autologoff=15
+;
+; Set the minimum amount of time after disconnecting a call before
+; the agent can receive a new call in milliseconds.
+; The channel variable AGENTWRAPUPTIME overrides on agent login.
+; Default is 0.
+;wrapuptime=5000
+;
+; Set the musiconhold class for the agent.
+; Default is "default".
+;musiconhold=default
+;
+; Enable recording calls the agent takes automatically by invoking the
+; DTMF automixmon feature when the agent connects to a caller.
+; See features.conf.sample for information about the automixmon feature.
+; Default is "no".
+;recordagentcalls=yes
+;
+; The sound file played to alert the agent when a call is present.
+; Default is "beep".
+;custom_beep=beep
+;
+; A friendly name for the agent used in log messages.
+; Default is "".
+;fullname=Mark Spencer
+;
+; --------------------------------------------------
+;
+; This section contains example agent definitions:
+;
+; Define a template called my-agents:
+;[my-agents](!)
+;autologoff=15
+;ackcall=yes
+;acceptdtmf=##
+;
+; Define agent 1001 using the my-agents template:
+;[1001](my-agents)
+;fullname=Mark Spencer
+;
+; Define agent 1002 using the my-agents template:
+;[1002](my-agents)
+;fullname=Will Meadows
