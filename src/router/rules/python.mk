@@ -7,7 +7,7 @@ libffi:
 libffi-install:
 	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
 
-python-configure: libffi libffi-install
+python-configure: libffi-configure libffi libffi-install
 	cd python && ./configure --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
 		--enable-shared \
 		--enable-static \
