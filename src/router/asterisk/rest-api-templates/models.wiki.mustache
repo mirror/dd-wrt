@@ -1,0 +1,22 @@
+{toc}
+
+{{#apis}}
+{{#api_declaration}}
+{{#models}}
+h1. {{id}}
+{{#extends}}Base type: [{{extends}}|#{{extends}}]{{/extends}}
+{{#has_subtypes}}Subtypes:{{#all_subtypes}} [{{id}}|#{{id}}]{{/all_subtypes}}{{/has_subtypes}}
+{{#wiki_description}}
+
+{{{wiki_description}}}
+{{/wiki_description}}
+{code:language=javascript|collapse=true}
+{{{model_json}}}
+{code}
+{{#properties}}
+* {{name}}: {{#type}}{{#is_primitive}}{{wiki_name}}{{/is_primitive}}{{^is_primitive}}[{{wiki_name}}|#{{singular_name}}]{{/is_primitive}}{{/type}}{{^required}} _(optional)_{{/required}}{{#wiki_description}} - {{{wiki_description}}}{{/wiki_description}}
+{{/properties}}
+
+{{/models}}
+{{/api_declaration}}
+{{/apis}}
