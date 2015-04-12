@@ -25,7 +25,9 @@
 
 #include "asterisk/network.h"
 
+#ifndef __UCLIBC__
 #include <execinfo.h>
+#endif
 #include <time.h>	/* we want to override localtime_r */
 #include <unistd.h>
 #include <string.h>
@@ -540,13 +542,17 @@ extern void *_ast_mem_backtrace_buffer[_AST_MEM_BACKTRACE_BUFLEN];
  * Ok, this sucks. But if we're already out of mem, we don't
  * want the logger to create infinite recursion (and a crash).
  */
+#ifndef __UCLIBC__
 #define MALLOC_FAILURE_MSG \
 	do { \
 		if (backtrace(_ast_mem_backtrace_buffer, _AST_MEM_BACKTRACE_BUFLEN) < _AST_MEM_BACKTRACE_BUFLEN) { \
 			ast_log(LOG_ERROR, "Memory Allocation Failure in function %s at line %d of %s\n", func, lineno, file); \
 		} \
 	} while (0)
-
+#else
+#define MALLOC_FAILURE_MSG \
+	ast_log(LOG_ERROR, "Memory Allocation Failure (compiled without backtrace support)");
+#endif
 /*!
  * \brief A wrapper for malloc()
  *
