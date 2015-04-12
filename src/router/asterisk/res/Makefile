@@ -73,29 +73,21 @@ endif
 ael/pval.o: ael/pval.c
 
 clean::
-	@if [ -f pjproject/build.mak ]; then $(MAKE) -C pjproject realclean; fi
-	rm -f snmp/*.o snmp/*.i ael/*.o ael/*.i ais/*.o ais/*.i
+	rm -f snmp/*.[oi] ael/*.[oi] ais/*.[oi] ari/*.[oi]
+	rm -f res_pjsip/*.[oi] stasis/*.[oi]
+	rm -f parking/*.o parking/*.i stasis_recording/*.[oi]
 
-dist-clean::
-	rm -f pjproject/build.mak
+$(if $(filter res_parking,$(EMBEDDED_MODS)),modules.link,res_parking.so): $(subst .c,.o,$(wildcard parking/*.c))
+$(subst .c,.o,$(wildcard parking/*.c)): _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_parking)
 
-pjproject/build.mak: pjproject/aconfigure
-	(cd pjproject && CFLAGS="-fPIC" ./configure --build=$(BUILD_PLATFORM) --host=$(HOST_PLATFORM) --disable-floating-point --disable-sound	--disable-oss --disable-speex-aec --disable-l16-codec --disable-gsm-codec --disable-g722-codec --disable-g7221-codec --disable-speex-codec --disable-ilbc-codec --disable-g711-codec --disable-opencore-amrnb --disable-video --disable-sdl --disable-ffmpeg --disable-v4l2)
+res_ari.so: ari/cli.o ari/config.o ari/ari_websockets.o
+ari/cli.o ari/config.o ari/ari_websockets.o: _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_ari)
 
-ifneq ($(findstring $(MAKECMDGOALS),all),)
--include pjproject/build.mak
-endif
+res_ari_model.so: ari/ari_model_validators.o
+ari/ari_model_validators.o: _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_ari_model)
 
-.PHONY: FORCE
-FORCE:
+res_stasis_recording.so: stasis_recording/stored.o
+stasis_recording/stored.o:  _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_stasis_recording)
 
-$(PJ_LIB_FILES): FORCE
-	$(MAKE) -C $(patsubst %/lib/,%,$(dir $@))/build/ ../lib/$(notdir $@)
-
-ifeq ($(subst 1:0,1,$(UUID)), 1)
-res_rtp_asterisk.o: $(PJ_LIB_FILES)
-res_rtp_asterisk.o: _ASTCFLAGS+=-DUSE_PJPROJECT
-res_rtp_asterisk.o: _ASTCFLAGS+=$(PJ_CFLAGS)
-res_rtp_asterisk.so: _ASTLDFLAGS+=$(PJ_LDFLAGS)
-res_rtp_asterisk.so: LIBS+=$(PJ_LDLIBS)
-endif
+# Dependencies for res_ari_*.so are generated, so they're in this file
+include ari.make
