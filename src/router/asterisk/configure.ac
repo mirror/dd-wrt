@@ -572,17 +572,17 @@ if test "x$JANSSON_LIB" == "x"; then
   AC_MSG_ERROR([*** JSON support not found (this typically means the libjansson development package is missing)])
 fi
 
-AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
-        [#include <libxml/tree.h>
-        #include <libxml/parser.h>],
-        [LIBXML_TEST_VERSION])
-
-if test "${PBX_LIBXML2}" != 1; then
-	AC_MSG_NOTICE(*** The Asterisk menuselect tool requires the 'libxml2' development package.)
-	AC_MSG_NOTICE(*** Please install the 'libxml2' development package.)
-	exit 1
-fi
-
+#AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
+#        [#include <libxml/tree.h>
+#        #include <libxml/parser.h>],
+#        [LIBXML_TEST_VERSION])
+#
+#if test "${PBX_LIBXML2}" != 1; then
+#	AC_MSG_NOTICE(*** The Asterisk menuselect tool requires the 'libxml2' development package.)
+#	AC_MSG_NOTICE(*** Please install the 'libxml2' development package.)
+#	exit 1
+#fi
+#
 AST_EXT_LIB_CHECK([URIPARSER], [uriparser], [uriParseUriA], [uriparser/Uri.h])
 
 # Another mandatory item (unless it's explicitly disabled)

@@ -51,7 +51,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <sys/param.h>
-#ifndef __UCLIBC__
+#if 0//ndef __UCLIBC__
 #ifdef HAVE_BKTR
 #include <execinfo.h>
 #endif
@@ -88,7 +88,7 @@
 #define __AST_RWLOCK_INIT_VALUE		{0}
 #endif /* HAVE_PTHREAD_RWLOCK_INITIALIZER */
 
-#ifndef __UCLIBC__
+#if 0//ndef __UCLIBC__
 #ifdef HAVE_BKTR
 #define AST_LOCK_TRACK_INIT_VALUE { { NULL }, { 0 }, 0, { NULL }, { 0 }, {{{ 0 }}}, PTHREAD_MUTEX_INIT_VALUE }
 #else
@@ -120,7 +120,7 @@ struct ast_lock_track {
 	int reentrancy;
 	const char *func[AST_MAX_REENTRANCY];
 	pthread_t thread[AST_MAX_REENTRANCY];
-#ifndef __UCLIBC__
+#if 0 //ndef __UCLIBC__
 #ifdef HAVE_BKTR
 	struct ast_bt backtrace[AST_MAX_REENTRANCY];
 #endif
@@ -264,7 +264,7 @@ void ast_store_lock_info(enum ast_lock_type type, const char *filename,
 
 #else
 
-#ifndef __UCLIBC__
+#if 0//ndef __UCLIBC__
 #ifdef HAVE_BKTR
 #define ast_store_lock_info(I,DONT,CARE,ABOUT,THE,PARAMETERS,BUD)
 #else
@@ -300,7 +300,7 @@ void ast_mark_lock_failed(void *lock_addr);
  * be removed from the current thread's lock info struct.
  */
 #if !defined(LOW_MEMORY)
-#ifndef __UCLIBC__
+#if 0//ndef __UCLIBC__
 #ifdef HAVE_BKTR
 void ast_remove_lock_info(void *lock_addr, struct ast_bt *bt);
 #else
