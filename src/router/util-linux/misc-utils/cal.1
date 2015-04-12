@@ -1,0 +1,132 @@
+.\" Copyright (c) 1989, 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Kim Letkeman.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)cal.1	8.1 (Berkeley) 6/6/93
+.\"
+.TH CAL 1 "June 2011" "util-linux" "User Commands"
+.SH NAME
+cal \- display a calendar
+.SH SYNOPSIS
+.B cal
+[options]
+.RI [[[ day ] " month" ] " year" ]
+.SH DESCRIPTION
+.B cal
+displays a simple calendar.  If no arguments are specified, the current
+month is displayed.
+.SH OPTIONS
+.TP
+\fB\-1\fR, \fB\-\-one\fR
+Display single month output.
+(This is the default.)
+.TP
+\fB\-3\fR, \fB\-\-three\fR
+Display three months spanning the date.
+.TP
+\fB\-s\fR, \fB\-\-sunday\fR
+Display Sunday as the first day of the week.
+.TP
+\fB\-m\fR, \fB\-\-monday\fR
+Display Monday as the first day of the week.
+.TP
+\fB\-j\fR, \fB\-\-julian\fR
+Display Julian dates (days one-based, numbered from January 1).
+.TP
+\fB\-y\fR, \fB\-\-year\fR
+Display a calendar for the whole year.
+.TP
+\fB\-w\fR, \fB\-\-week\fR[\fI=number\fR]
+Display week numbers in the calendar (US or ISO-8601).
+.TP
+\fB\-\-color\fR[\fI=when\fR]
+Colorize the output.  The optional argument \fIwhen\fP
+can be \fBauto\fR, \fBnever\fR or \fBalways\fR.  If the \fIwhen\fR argument is omitted,
+it defaults to \fBauto\fR.  The colors can be disabled, for the current built-in default 
+see \fB\-\-help\fR output. See also the COLORS section.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Display version information and exit.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display help text and exit.
+.SH PARAMETERS
+A single parameter specifies the year to be displayed; note the
+year must be fully specified:
+.B "cal 89"
+will not display a calendar for 1989.
+.PP
+Two parameters denote the month (1 - 12) and year.
+.PP
+Three parameters denote the day (1-31), month and year, and the day will be
+highlighted if the calendar is displayed on a terminal. If no parameters are
+specified, the current month's calendar is displayed.
+.PP
+A year starts on Jan 1. The first day of the week is determined by the
+locale.
+.PP
+The week numbering depends on the choice of the first day of the week.  If Sunday
+(the default) is used for the first day of the week, then the customary North
+American numbering will be used, i.e. the first Sunday of the year starts the
+first week.  If Monday is selected, then the ISO-8601 standard week numbering
+is used, where the first Thursday of the year is in week number 1.
+.SH COLORS
+Implicit coloring can be disabled as follows:
+.RS
+
+.br
+.BI "touch /etc/terminal-colors.d/cal.disable"
+.br
+
+.RE
+See
+.BR terminal-colors.d (5)
+for more details about colorization configuration.
+.SH BUGS
+.PP
+The
+.B cal
+program uses the 3rd of September 1752 as the date of the Gregorian calendar
+reformation -- that is when it happened in Great Britain and its colonies
+(including what is now the USA).  Ten days following that date were eliminated
+by this reformation, so the calendar for that month is rather unusual.
+The actual historical dates at which the calendar reform happened in all the
+different countries (locales) are ignored.
+.PP
+Alternative calendars, such as the Umm al-Qura, the Solar Hijri, the Ge'ez,
+or the lunisolar Hindu, are not supported.
+.SH HISTORY
+A cal command appeared in Version 6 AT&T UNIX.
+.SH AVAILABILITY
+The cal command is part of the util-linux package and is available from
+ftp://ftp.kernel.org/pub/linux/utils/util-linux/.

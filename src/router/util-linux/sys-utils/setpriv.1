@@ -1,0 +1,157 @@
+.TH SETPRIV 1 "July 2014" "util-linux" "User Commands"
+.SH NAME
+setpriv \- run a program with different Linux privilege settings
+.SH SYNOPSIS
+.B setpriv
+[options]
+.I program
+.RI [ arguments ]
+.SH DESCRIPTION
+Sets or queries various Linux privilege settings that are inherited across
+.BR execve (2).
+.SH OPTION
+.TP
+.B \-\-clear\-groups
+Clear supplementary groups.
+.TP
+.BR \-d , " \-\-dump"
+Dump current privilege state.  Can be specified more than once to show extra,
+mostly useless, information.  Incompatible with all other options.
+.TP
+.B \-\-groups \fIgroup\fR...
+Set supplementary groups.  The argument is a comma-separated list.
+.TP
+.BR \-\-inh\-caps " (" + | \- ) \fIcap "...  or  " \-\-bounding\-set " (" + | \- ) \fIcap ...
+Set the inheritable capabilities or the capability bounding set.  See
+.BR capabilities (7).
+The argument is a comma-separated list of
+.BI + cap
+and
+.BI \- cap
+entries, which add or remove an entry respectively.
+.B +all
+and
+.B \-all
+can be used to add or remove all caps.  The set of capabilities starts out as
+the current inheritable set for
+.B \-\-inh\-caps
+and the current bounding set for
+.BR \-\-bounding\-set .
+If you drop something from the bounding set without also dropping it from the
+inheritable set, you are likely to become confused.  Do not do that.
+.TP
+.B \-\-keep\-groups
+Preserve supplementary groups.  Only useful in conjunction with
+.BR \-\-rgid ,
+.BR \-\-egid ", or"
+.BR \-\-regid .
+.TP
+.BR \-\-list\-caps
+List all known capabilities.  This option must be specified alone.
+.TP
+.B \-\-no\-new\-privs
+Set the
+.I no_new_privs
+bit.  With this bit set,
+.BR execve (2)
+will not grant new privileges.  For example, the setuid and setgid bits as well
+as file capabilities will be disabled.  (Executing binaries with these bits set
+will still work, but they will not gain privileges.  Certain LSMs, especially
+AppArmor, may result in failures to execute certain programs.)  This bit is
+inherited by child processes and cannot be unset.  See
+.BR prctl (2)
+and
+.IR Documentation/\:prctl/\:no_\:new_\:privs.txt
+in the Linux kernel source.
+.sp
+The no_new_privs bit is supported since Linux 3.5.
+.TP
+.BI \-\-rgid " gid\fR, " \-\-egid " gid\fR, " \-\-regid " gid"
+Set the real, effective, or both gids.  The \fIgid\fR argument can be
+given as textual group name.
+.sp
+For safety, you must specify one of
+.BR \-\-clear\-groups ,
+.BR \-\-groups ", or"
+.BR \-\-keep\-groups
+if you set any primary
+.IR gid .
+.TP
+.BI \-\-ruid " uid\fR, " \-\-euid " uid\fR, " \-\-reuid " uid"
+Set the real, effective, or both uids.  The \fIuid\fR argument can be
+given as textual login name.
+.sp
+Setting a
+.I uid
+or
+.I gid
+does not change capabilities, although the exec call at the end might change
+capabilities.  This means that, if you are root, you probably want to do
+something like:
+.sp
+.B "        setpriv \-\-reuid=1000 \-\-regid=1000 \-\-caps=\-all"
+.TP
+.BR \-\-securebits " (" + | \- ) \fIsecurebit ...
+Set or clear securebits.  The argument is a comma-separated list.
+The valid securebits are
+.IR noroot ,
+.IR noroot_locked ,
+.IR no_setuid_fixup ,
+.IR no_setuid_fixup_locked ,
+and
+.IR keep_caps_locked .
+.I keep_caps
+is cleared by
+.BR execve (2)
+and is therefore not allowed.
+.TP
+.BI \-\-selinux\-label " label"
+Request a particular SELinux transition (using a transition on exec, not
+dyntrans).  This will fail and cause
+.BR setpriv (1)
+to abort if SELinux is not in use, and the transition may be ignored or cause
+.BR execve (2)
+to fail at SELinux's whim.  (In particular, this is unlikely to work in
+conjunction with
+.IR no_new_privs .)
+This is similar to
+.BR runcon (1).
+.TP
+.BI \-\-apparmor\-profile " profile"
+Request a particular AppArmor profile (using a transition on exec).  This will
+fail and cause
+.BR setpriv (1)
+to abort if AppArmor is not in use, and the transition may be ignored or cause
+.BR execve (2)
+to fail at AppArmor's whim.
+.TP
+.BR \-V , " \-\-version"
+Display version information and exit.
+.TP
+.BR \-h , " \-\-help"
+Display help text and exit.
+.SH NOTES
+If applying any specified option fails,
+.I program
+will not be run and
+.B setpriv
+will return with exit code 127.
+.PP
+Be careful with this tool \-\- it may have unexpected security consequences.
+For example, setting no_new_privs and then execing a program that is
+SELinux\-confined (as this tool would do) may prevent the SELinux
+restrictions from taking effect.
+.SH SEE ALSO
+.BR prctl (2),
+.BR capability (7)
+.SH AUTHOR
+.MT luto@amacapital.net
+Andy Lutomirski
+.ME
+.SH AVAILABILITY
+The
+.B setpriv
+command is part of the util-linux package and is available from
+.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
+Linux Kernel Archive
+.UE .

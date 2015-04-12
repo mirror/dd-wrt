@@ -1,0 +1,158 @@
+.\" chrt(1) manpage
+.\"
+.\" Copyright (C) 2004 Robert Love
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License,
+.\" version 2, as published by the Free Software Foundation.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write to the Free Software Foundation, Inc.,
+.\" 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.TH CHRT 1 "August 2014" "util-linux" "User Commands"
+.SH NAME
+chrt \- manipulate the real-time attributes of a process
+.SH SYNOPSIS
+.B chrt
+[options]
+.IR priority\ command\  [ argument ...]
+.br
+.B chrt
+[options]
+.B \-p
+.RI [ priority ]\  pid
+.SH DESCRIPTION
+.PP
+.B chrt
+sets or retrieves the real-time scheduling attributes of an existing \fIpid\fR,
+or runs \fIcommand\fR with the given attributes.  Both the policy (one of
+.BR SCHED_OTHER ,
+.BR SCHED_FIFO ,
+.BR SCHED_RR ,
+.BR SCHED_BATCH ,
+or
+.BR SCHED_IDLE )
+and the priority can be set and retrieved.
+.PP
+The
+.BR SCHED_BATCH
+policy is supported since Linux 2.6.16.  The
+.BR SCHED_IDLE
+policy is supported since Linux 2.6.23.
+.PP
+The
+.BR SCHED_RESET_ON_FORK
+flag for policies SCHED_RR and SCHED_FIFO is supported
+since Linux 2.6.31.
+.SH OPTIONS
+.TP
+.BR -a ,\  --all-tasks
+Set or retrieve the scheduling attributes of all the tasks (threads) for a
+given PID.
+.TP
+.BR -b ,\  --batch
+Set scheduling policy to
+.B SCHED_BATCH
+(Linux-specific). The priority argument has to be set to zero.
+.TP
+.BR -f ,\  --fifo
+Set scheduling policy to
+.BR SCHED_FIFO .
+.TP
+.BR -i ,\  --idle
+Set scheduling policy to
+.B SCHED_IDLE
+(Linux-specific). The priority argument has to be set to zero.
+.TP
+.BR -m ,\  --max
+Show minimum and maximum valid priorities, then exit.
+.TP
+.BR -o ,\  --other
+Set policy scheduling policy to
+.BR SCHED_OTHER .
+.TP
+.BR -p ,\  --pid
+Operate on an existing PID and do not launch a new task.
+.TP
+.BR -R ,\  --reset-on-fork
+Add
+.B SCHED_RESET_ON_FORK
+flag to the
+.B SCHED_FIFO
+or
+.B SCHED_RR
+scheduling policy (Linux-specific).
+.TP
+.BR -r ,\  --rr
+Set scheduling policy to
+.BR SCHED_RR .
+When policy is not defined the
+.B SCHED_RR
+is used as default.
+.TP
+.BR -v ,\  --verbose
+Show status information.
+.TP
+.BR -V ,\  --version
+Display version information and exit.
+.TP
+.BR -h ,\  --help
+Display help text and exit.
+.SH USAGE
+.TP
+The default behavior is to run a new command:
+.B chrt
+.I priority
+.IR command\  [ arguments ]
+.TP
+You can also retrieve the real-time attributes of an existing task:
+.B chrt \-p
+.I pid
+.TP
+Or set them:
+.B chrt \-r \-p
+.I priority pid
+.SH PERMISSIONS
+A user must possess
+.BR CAP_SYS_NICE
+to change the scheduling attributes of a process.  Any user can retrieve the
+scheduling information.
+.SH NOTES
+Only
+.BR SCHED_FIFO ,
+.BR SCHED_OTHER
+and
+.BR SCHED_RR
+are part of POSIX 1003.1b Process Scheduling. The other scheduling attributes
+may be ignored on some systems.
+.P
+Linux default scheduling policy is
+.BR SCHED_OTHER .
+.SH SEE ALSO
+.BR taskset (1),
+.BR nice (1),
+.BR renice (1)
+.sp
+See
+.BR sched_setscheduler (2)
+for a description of the Linux scheduling scheme.
+.SH AUTHOR
+Written by Robert M. Love.
+.SH COPYRIGHT
+Copyright \(co 2004 Robert M. Love.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH AVAILABILITY
+The chrt command is part of the util-linux package and is available from
+ftp://ftp.kernel.org/pub/linux/utils/util-linux/.

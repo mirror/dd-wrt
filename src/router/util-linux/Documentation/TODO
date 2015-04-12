@@ -1,0 +1,165 @@
+
+ Note that items with (!) have high priority.
+
+libblkid
+--------
+  - (!) don't use fixed set of the static buffers for TAGs in blkid_probe,
+    allocate all on the fly. It seems that for example btrfs is crazy enough
+    to have LABELs longer than we have bufferes in libblkid
+    https://bugzilla.redhat.com/show_bug.cgi?id=1164708
+
+cfdisk
+------
+  - provide additional information about the current partitions (LABEL=, UUID=,
+    filesystem type, size, usage, mountpoint, ...) just optionally add extra
+    table between main menu and list of partitions.
+
+  - (!) add auto-sort support (sort partitions automatically) and
+    --sort={auto,never,always} command line option. This feature should be
+    enabled by default for logical partitions if we created all container (extended
+    partition) in the current session.
+      
+
+agetty
+-----
+  - support default issue (/etc/issue) output for agetty to make it agetty
+    usable on systems with empty /etc. 
+
+    This change is little bit controversial, because now agetty prints nothing 
+    by default and it's probably used by admins to hide information about the 
+    system to unauthorized users. We already have --noissue to disable issue 
+    output. The question is if admins use this option, "rm /etc/issue" is 
+    probably easer than modify inittab (or systemd unit file).
+
+    Maybe we can implement it by --enable-agetty-default-issue compile option and 
+    move the decision to downstream maintainers ;-)
+
+nsenter(1)
+----------
+ - read the default UID and GID from the target process.
+   http://thread.gmane.org/gmane.linux.utilities.util-linux-ng/9553/focus=9585
+
+hwlock
+------
+ - use /var/lib/hwclock/drift to store hw-clock drift numbers.
+ - use /etc/adjtime as read-only for UTC/LOCAL information only
+ - the /var/lib/hwclock/drift should be implemented backwardly compatible,
+   it means use the file only if exists, otherwise follow /etc/adjtime 
+
+bash completion
+---------------
+- Optional argument handling requires user to press backspace to get
+  argument completion.
+- Comma separated value, e.g., --output 'value1,value2', are not
+  completed for users.
+
+libmount (mount/umount)
+-----------------------
+
+ - add options to control fstab/mtab mount options usage, something like:
+
+   --options-mode={ignore,append,prepend,replace}      MNT_OMODE_{IGNORE, ...}
+   --options-source={fstab,mtab,disable}               MNT_OMODE_{FSTAB,MTAB,NOTAB}
+   --options-source-force                              MNT_OMODE_FORCE
+
+   (all this already supported by libmount)
+
+libsmartcols
+-----------
+
+ - (!) add SCOLS_FL_HIDDEN flag to make it possible to hide a column. Then we 
+   can use such column in lsblk(8) to only sort lines, but do not print the column.
+
+     lsblk -o NAME --sort SIZE
+
+partx
+-----
+
+ - support mapping by device-mapper if argv[0] is "kpartx" or --dm option is used.
+     
+
+docs
+----
+
+ - (!) use something better than gtk-doc for libmount and libblkid (doxyden?)
+
+ - (!) add API documentation to libuuid
+
+
+login-utils:
+-----------
+
+  - consolidate newgrp(1)
+    * we have "su --group/--supp-group" to switch between groups, newgrp(1) in
+      util-linux and shadow-utils (and sg(1) alias in shadow-utils)
+    * the unique functionality provided by newgpr(1) is support for group
+      passwords [/etc/gshadow] -- do we really need this functionality?
+    * maybe we can mark group-passwords as deprecated, and replace sg(1) and
+      newgpr(1) with su(1) code. The another way is to ask fro group password in
+      su --group too.
+    * note that shadow-utils newgpr(1) provides support for syslog and audit log.
+
+libblkid
+--------
+
+ - (!) don't use internally blkid_loff_t, rather use off_t, size_t, ssize_t,
+       stdint.h types and so on...
+
+ - add FSSIZE value  -- filesystem size (klibc requirement)
+
+ - (!) add support for dasd PT (used for example on s390)
+
+libfdisk
+--------
+
+   [always check libfdisk branch at github!]
+
+ - (!) add 'I'nfo fommand to print all details about specified partition
+   (like offset, size, name, uuid, type, C/H/S, fstype)
+
+ - (!) add to "First sector" dialog a line with information about available
+   gaps (free areas) to make it more user friendly if you want to skip
+   any useless (small) areas between existing partitions. 
+   See https://bugzilla.redhat.com/show_bug.cgi?id=715114
+
+   (Note that libfdisk already supports freespace lists.)
+
+ - (!) add to fdisk "free space" command to print all available gaps
+
+ - add support for Apple Partition Map (see libblkid/src/partitions/mac.c)
+   http://en.wikipedia.org/wiki/Apple_Partition_Map
+
+ - add "move end" command to move end of the last primary/extended partition.
+   This feature seems very attractive to users who resizing their disks 
+   (for example in virtual machines).
+
+ - use off_t instead "long long"
+
+ - catch SIGINT (Ctrl-C) and return to main menu.
+   From Red Hat bugzilla #545488:
+
+   While using fdisk normally, if you accidentally pressed the wrong button (to
+   start a sequence of questions for some operation, e.g. 'c' to create
+   partition).  The tool tries too hard to keep asking you for valid input.  You
+   can't provide a blank or invalid input to get it to break out of the current
+   dialog sequence and get back to the main menu.
+
+misc
+----
+
+ - add mllockall() and SCHED_FIFO to hwclock,
+   see http://lkml.org/lkml/2008/10/12/132
+ 
+
+---------------
+exotic requests
+---------------
+
+ - add SELinux security contexts support to the 'ipcs' utility
+   http://bugzilla.redhat.com/show_bug.cgi?id=225342
+
+   Would be great to list the current system IPC Objects with their respective
+   security labels (where allowed) with something like 'ipcs -Z' - following the
+   way other tools reports those.
+
+
