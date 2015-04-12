@@ -1,6 +1,34 @@
+util-linux-configure:
+	cd util-linux && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" PKG_CONFIG="/tmp" NCURSES_CFLAGS="-I$(TOP)/ncurses/include" NCURSES_LIBS="-L$(TOP)/ncurses/lib -lncurses" \
+	--disable-rpath \
+	--enable-new-mount	\
+	--disable-tls		\
+	--disable-sulogin	\
+	--without-python	\
+	--without-udev		\
+	--with-ncurses
+	make -C util-linux
 
+util-linux:
+	make -C util-linux
 
-asterisk-configure:
+util-linux-stageinstall:
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+
+util-linux-install: util-linux-stageinstall
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/usr/share
+	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/util-linux/usr/include
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
+	rm -f $(INSTALLDIR)/util-linux/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libblkid.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
+
+asterisk-configure: util-linux-configure
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--libdir=/usr/lib \
@@ -25,7 +53,6 @@ asterisk-configure:
 	--without-pri \
 	--without-qt \
 	--without-pwlib \
-	--with-sqlite3="$(TOP)/minidlna/sqlite-3.6.22" \
 	--without-sqlite \
 	--without-mysql \
 	--without-mysqlclient \
@@ -45,17 +72,27 @@ asterisk-configure:
 	--without-dahdi \
 	--without-gnutls \
 	--without-iksemel \
+	--with-uuid=$(INSTALLDIR)/util-linux/usr \
 	ac_cv_header_locale_h=yes \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" SQLITE3_LIB="-L$(TOP)/minidlna/lib" SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl"
-
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -DLOW_MEMORY" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -DLOW_MEMORY" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -DLOW_MEMORY" \
+	SQLITE3_LIB="-L$(TOP)/minidlna/lib -lsqlite3" \
+	SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" \
+	LIBUUID_LIB="-L$(TOP)/util-linux/.libs -luuid" \
+	LIBUUID_INCLUDE="-I $(INSTALLDIR)/util-linux/usr/include" \
+	NCURSES_CFLAGS="-I$(TOP)/ncurses/include" \
+	NCURSES_LIB="-L$(TOP)/ncurses/lib -lncurses" \
+	JANSSON_INCLUDE="-I$(TOP)/jansson/src" \
+	JANSSON_LIB="-L$(TOP)/jansson/src/.libs -ljansson"
 	-cd chan_dongle && aclocal && autoconf && automake -a && cd ..
-	cd chan_dongle && ./configure  ac_cv_header_locale_h=yes --host=$(ARCH)-linux-uclibc --libdir=/usr/lib --with-asterisk=$(TOP)/asterisk/include DESTDIR=$(INSTALLDIR)/asterisk/usr/lib/asterisk/modules CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/glib20/libiconv/include -DASTERISK_VERSION_NUM=110000 -DLOW_MEMORY -D_XOPEN_SOURCE=600"
+	cd chan_dongle && ./configure  ac_cv_header_locale_h=yes --host=$(ARCH)-linux-uclibc --libdir=/usr/lib --with-asterisk=$(TOP)/asterisk/include DESTDIR=$(INSTALLDIR)/asterisk/usr/lib/asterisk/modules CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/glib20/libiconv/include -DASTERISK_VERSION_NUM=13000 -DLOW_MEMORY -D_XOPEN_SOURCE=600"
 
 asterisk-clean:
 	$(MAKE) -C asterisk clean
 	$(MAKE) -C chan_dongle clean
 
-asterisk:
+asterisk: util-linux util-linux-stageinstall
 	-make -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
