@@ -1,0 +1,99 @@
+blkid:  libblkid 
+eject:  libblkid libmount 
+findfs:  libblkid 
+findmnt:  libblkid libmount libsmartcols libudev 
+fsck:  libblkid libmount 
+fstrim:  libblkid libmount 
+libblkid.so.1.1.0:  
+libmount.so.1.1.0:  libblkid 
+libsmartcols.so.1.1.0:  
+losetup:  libsmartcols 
+lsblk:  libblkid libmount libsmartcols libudev 
+lscpu:  libsmartcols 
+lslocks:  libblkid libmount libsmartcols 
+lslogins:  libsmartcols libsystemd 
+mkswap:  libblkid 
+mount:  libblkid libmount 
+mountpoint:  libblkid libmount 
+partx:  libblkid libsmartcols 
+prlimit:  libsmartcols 
+pylibmount.so:  libblkid libmount libpython2 
+swaplabel:  libblkid 
+swapoff:  libblkid libmount 
+swapon:  libblkid libmount libsmartcols 
+umount:  libblkid libmount 
+wdctl:  libsmartcols 
+wipefs:  libblkid 
+zramctl:  libsmartcols 
+addpart:  
+agetty:  
+blkdiscard:  
+blockdev:  
+cal:  libncursesw libtinfo 
+chcpu:  
+chfn:  libpam libpam_misc libpthread libuser 
+chrt:  
+chsh:  libpam libpam_misc libpthread libuser 
+col:  
+colcrt:  
+colrm:  
+column:  
+ctrlaltdel:  
+delpart:  
+dmesg:  
+fallocate:  
+fdformat:  
+flock:  
+fsck.cramfs:  libz 
+fsck.minix:  
+fsfreeze:  
+getopt:  
+hexdump:  
+hwclock:  libm 
+ionice:  
+ipcmk:  
+ipcrm:  
+ipcs:  
+isosize:  
+kill:  
+last:  
+ldattach:  
+logger:  libsystemd 
+login:  libpam libpam_misc 
+look:  
+mcookie:  
+mesg:  
+mkfs:  
+mkfs.bfs:  
+mkfs.cramfs:  libz 
+mkfs.minix:  
+more:  libtinfo 
+namei:  
+nologin:  
+nsenter:  
+pg:  libncursesw libtinfo 
+pivot_root:  
+raw:  
+readprofile:  
+rename:  
+renice:  
+resizepart:  
+rev:  
+rtcwake:  
+runuser:  libpam libpam_misc 
+script:  libutil 
+scriptreplay:  
+setarch:  
+setpriv:  ap-ng 
+setsid:  
+setterm:  libtinfo 
+su:  libpam libpam_misc 
+sulogin:  rypt 
+switch_root:  
+tailf:  
+taskset:  
+ul:  libtinfo 
+unshare:  
+utmpdump:  
+wall:  
+whereis:  

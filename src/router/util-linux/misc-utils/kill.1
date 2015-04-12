@@ -1,0 +1,170 @@
+.\" Copyright 1994 Salvatore Valente (svalente@mit.edu)
+.\" Copyright 1992 Rickard E. Faith (faith@cs.unc.edu)
+.\" May be distributed under the GNU General Public License
+.TH KILL 1 "July 2014" "util-linux" "User Commands"
+.SH NAME
+kill \- terminate a process
+.SH SYNOPSIS
+.B kill
+.RB [ \- \fIsignal\fR| \-s
+.IR signal | \fB-p\fP ]
+.RB [ \-q
+.IR value ]
+.RB [ \-a ]
+.RB [ \-\- ]
+.IR pid | name ...
+.br
+.B kill \-l
+.RI [ number ]
+.RB "| " \-L
+.SH DESCRIPTION
+The command
+.B kill
+sends the specified \fIsignal\fR to the specified processes or process groups.
+If no signal is specified, the TERM signal is sent.  This TERM signal will kill
+processes that do not catch it; for other processes it may be necessary to use
+the KILL signal (number 9), since this signal cannot be caught.
+.PP
+Most modern shells have a builtin kill function, with a usage rather similar to
+that of the command described here.  The
+.BR \-\-all ,
+.BR \-\-pid ", and"
+.BR \-\-queue
+options, and the possibility to specify processes by command name, are local extensions.
+.PP
+If \fIsignal\fR is 0, then no actual signal is sent, but error checking is still performed.
+
+.SH ARGUMENTS
+The list of processes to be signaled can be a mixture of names and pids.
+.TP
+.I pid
+Each
+.I pid
+can be one of four things:
+.RS
+.TP
+.I n
+where
+.I n
+is larger than 0.  The process with pid
+.I n
+is signaled.
+.TP
+.B 0
+All processes in the current process group are signaled.
+.TP
+.B -1
+All processes with a pid larger than 1 are signaled.
+.TP
+.BI - n
+where
+.I n
+is larger than 1.  All processes in process group
+.I n
+are signaled.  When an argument of the form '-n' is given, and it is meant to
+denote a process group, either a signal must be specified first, or the
+argument must be preceded by a '--' option, otherwise it will be taken as the
+signal to send.
+.RE
+.TP
+.I name
+All processes invoked using this \fIname\fR will be signaled.
+
+.SH OPTIONS
+.TP
+\fB\-s\fR, \fB\-\-signal\fR \fIsignal\fR
+The signal to send.  It may be given as a name or a number.
+.TP
+\fB\-l\fR, \fB\-\-list\fR [\fInumber\fR]
+Print a list of signal names, or convert the given signal number to a name.
+The signals can be found in
+.I /usr/\:include/\:linux/\:signal.h
+.TP
+\fB\-L\fR, \fB\-\-table\fR
+Similar to \fB\-l\fR, but it will print signal names and their corresponding
+numbers.
+.TP
+\fB\-a\fR, \fB\-\-all\fR
+Do not restrict the commandname-to-pid conversion to processes with the same
+uid as the present process.
+.TP
+\fB\-p\fR, \fB\-\-pid\fR
+Only print the process id (pid) of the named processes, do not send any
+signals.
+.IP
+The \fB\-\-pid\fR option is automatically enabled when the \fBkill\fR command
+is invoked with the name of
+.BR pid .
+This functionality is deprecated, and will be removed in March 2016.
+.TP
+\fB\-q\fR, \fB\-\-queue\fR \fIvalue\fR
+Use
+.BR sigqueue (2)
+rather than
+.BR kill (2).
+The
+.I value
+argument is an integer that is sent along with the signal.  If the
+receiving process has installed a handler for this signal using the SA_SIGINFO
+flag to
+.BR sigaction (2),
+then it can obtain this data via the si_sigval field of the siginfo_t structure.
+
+.SH NOTES
+It is not possible to send a signal to an explicitly selected thread in a
+multithreaded process using the
+.BR kill (2)
+syscall.  If
+.BR kill(2)
+is used to send a signal to a thread group, then the kernel selects an arbitrary
+member of the thread group that has not blocked the signal.  For more details
+see
+.BR clone (2),
+the CLONE_THREAD description.
+.PP
+The command
+.BR kill (1)
+as well as syscall
+.BR kill (2)
+accept a TID (thread ID, see
+.BR gettid (2))
+as an argument.  In this case the kill behavior is not changed and the signal is
+also delivered to the thread group rather than to the specified thread.
+
+.SH RETURN CODES
+.B kill
+has the following return codes:
+.TP
+.BR 0
+success
+.TP
+.BR 1
+failure
+.TP
+.BR 64
+partial success (when more than one process specified)
+
+.SH SEE ALSO
+.BR bash (1),
+.BR tcsh (1),
+.BR kill (2),
+.BR sigvec (2),
+.BR signal (7)
+
+.SH AUTHORS
+.MT svalente@mit.edu
+Salvatore Valente
+.ME
+.br
+.MT kzak@redhat.com
+Karel Zak
+.ME
+.br
+.PP
+The original version was taken from BSD 4.4.
+
+.SH AVAILABILITY
+The kill command is part of the util-linux package and is available from
+.UR ftp://\:ftp.kernel.org\:/pub\:/linux\:/utils\:/util-linux/
+Linux Kernel Archive
+.UE .

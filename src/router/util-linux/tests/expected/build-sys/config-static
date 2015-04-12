@@ -1,0 +1,113 @@
+blkid:  libblkid libuuid 
+cfdisk:  libblkid libfdisk libncursesw libsmartcols libtinfo libuuid 
+eject:  libblkid libmount libuuid 
+fdisk:  libblkid libfdisk libsmartcols libuuid 
+findfs:  libblkid libuuid 
+findmnt:  libblkid libmount libsmartcols libudev libuuid 
+fsck:  libblkid libmount libuuid 
+fstrim:  libblkid libmount libuuid 
+libblkid.so.1.1.0:  libuuid 
+libfdisk.so.1.1.0:  libblkid libuuid 
+libmount.so.1.1.0:  libblkid libuuid 
+libsmartcols.so.1.1.0:  
+libuuid.so.1.3.0:  
+losetup:  libsmartcols 
+lsblk:  libblkid libmount libsmartcols libudev libuuid 
+lscpu:  libsmartcols 
+lslocks:  libblkid libmount libsmartcols libuuid 
+lslogins:  libsmartcols libsystemd 
+mkswap:  libblkid libuuid 
+mount:  libblkid libmount libuuid 
+mountpoint:  libblkid libmount libuuid 
+partx:  libblkid libsmartcols libuuid 
+prlimit:  libsmartcols 
+pylibmount.so:  libblkid libmount libpython2 libuuid 
+sfdisk:  libblkid libfdisk libsmartcols libuuid 
+swaplabel:  libblkid libuuid 
+swapoff:  libblkid libmount libuuid 
+swapon:  libblkid libmount libsmartcols libuuid 
+umount:  libblkid libmount libuuid 
+uuidd:  libsystemd libuuid 
+uuidgen:  libuuid 
+wdctl:  libsmartcols 
+wipefs:  libblkid libuuid 
+zramctl:  libsmartcols 
+addpart:  
+agetty:  
+blkdiscard:  
+blkid.static: STATIC
+blockdev:  
+cal:  libncursesw libtinfo 
+chcpu:  
+chfn:  libpam libpam_misc libpthread libuser 
+chrt:  
+chsh:  libpam libpam_misc libpthread libuser 
+col:  
+colcrt:  
+colrm:  
+column:  
+ctrlaltdel:  
+delpart:  
+dmesg:  
+fallocate:  
+fdformat:  
+fdisk.static: STATIC
+flock:  
+fsck.cramfs:  libz 
+fsck.minix:  
+fsfreeze:  
+getopt:  
+hexdump:  
+hwclock:  libm 
+ionice:  
+ipcmk:  
+ipcrm:  
+ipcs:  
+isosize:  
+kill:  
+last:  
+ldattach:  
+logger:  libsystemd 
+login:  libpam libpam_misc 
+look:  
+losetup.static: STATIC
+mcookie:  
+mesg:  
+mkfs:  
+mkfs.bfs:  
+mkfs.cramfs:  libz 
+mkfs.minix:  
+more:  libtinfo 
+mount.static: STATIC
+namei:  
+nologin:  
+nsenter:  
+nsenter.static: STATIC
+pg:  libncursesw libtinfo 
+pivot_root:  
+raw:  
+readprofile:  
+rename:  
+renice:  
+resizepart:  
+rev:  
+rtcwake:  
+runuser:  libpam libpam_misc 
+script:  libutil 
+scriptreplay:  
+setarch:  
+setpriv:  ap-ng 
+setsid:  
+setterm:  libtinfo 
+sfdisk.static: STATIC
+su:  libpam libpam_misc 
+sulogin:  rypt 
+switch_root:  
+tailf:  
+taskset:  
+ul:  libtinfo 
+umount.static: STATIC
+unshare:  
+utmpdump:  
+wall:  
+whereis:  

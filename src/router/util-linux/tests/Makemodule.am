@@ -1,0 +1,24 @@
+
+include tests/helpers/Makemodule.am
+
+EXTRA_DIST += \
+	tests/expected \
+	tests/functions.sh \
+	tests/commands.sh \
+	tests/run.sh \
+	tests/ts
+
+clean-local-tests:
+	rm -rf $(top_builddir)/tests/output $(top_builddir)/tests/diff
+
+CLEAN_LOCALS += clean-local-tests
+
+TS_OPTS = --nonroot
+TS_COMMAND = $(top_srcdir)/tests/run.sh \
+	--srcdir=$(abs_top_srcdir) --builddir=$(abs_top_builddir) \
+	--parallel $(TS_OPTS)
+
+check-local-tests: $(check_PROGRAMS)
+	$(AM_V_GEN) $(TS_COMMAND)
+
+CHECK_LOCALS += check-local-tests

@@ -1,0 +1,106 @@
+#!/bin/bash
+
+TS_TOPDIR="${0%/*}/../.."
+TS_DESC="umount"
+
+. $TS_TOPDIR/functions.sh
+ts_init "$*"
+
+ts_check_test_command "$TS_CMD_FDISK"
+ts_check_test_command "$TS_CMD_EJECT"
+ts_check_prog "mkfs.ext2"
+
+ts_skip_nonroot
+
+#
+# Note that eject --force is required because scsi_debug is
+# not removable device.
+#
+
+# set global variable TS_DEVICE
+function init_device {
+	ts_scsi_debug_init dev_size_mb=100
+}
+
+function init_partitions {
+	local dev=$1
+
+	ts_log "Create partitions"
+	$TS_CMD_FDISK $dev >> /dev/null 2>&1 <<EOF
+n
+p
+1
+
++50M
+n
+p
+2
+
+
+p
+w
+EOF
+	udevadm settle
+	mkfs.ext2 -q ${dev}1
+	mkfs.ext2 -q ${dev}2
+	udevadm settle
+}
+
+function deinit_device {
+	udevadm settle
+	sleep 1
+	rmmod scsi_debug
+}
+
+
+ts_init_subtest "by-disk"
+init_device
+$TS_CMD_EJECT --force $TS_DEVICE && ts_log "Success"
+deinit_device
+ts_finalize_subtest
+
+
+ts_init_subtest "by-disk-mounted"
+init_device
+mkfs.ext2 -q -F $TS_DEVICE
+udevadm settle
+mkdir -p $TS_MOUNTPOINT
+mount $TS_DEVICE $TS_MOUNTPOINT
+$TS_CMD_EJECT --force $TS_DEVICE && ts_log "Success"
+deinit_device
+ts_finalize_subtest
+
+
+ts_init_subtest "by-disk-mounted-partition"
+init_device
+init_partitions $TS_DEVICE
+mkdir -p ${TS_MOUNTPOINT}1
+mkdir -p ${TS_MOUNTPOINT}2
+mount ${TS_DEVICE}1 ${TS_MOUNTPOINT}1
+mount ${TS_DEVICE}2 ${TS_MOUNTPOINT}2
+$TS_CMD_EJECT --force $TS_DEVICE && ts_log "Success"
+deinit_device
+ts_finalize_subtest
+
+
+ts_init_subtest "by-partition"
+init_device
+init_partitions $TS_DEVICE
+$TS_CMD_EJECT --force ${TS_DEVICE}1 && ts_log "Success"
+deinit_device
+ts_finalize_subtest
+
+
+ts_init_subtest "by-partition-mounted"
+init_device
+init_partitions $TS_DEVICE
+mkdir -p ${TS_MOUNTPOINT}1
+mkdir -p ${TS_MOUNTPOINT}2
+mount ${TS_DEVICE}1 ${TS_MOUNTPOINT}1
+mount ${TS_DEVICE}2 ${TS_MOUNTPOINT}2
+$TS_CMD_EJECT --force ${TS_DEVICE}1 && ts_log "Success"
+deinit_device
+ts_finalize_subtest
+
+
+ts_finalize

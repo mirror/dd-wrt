@@ -1,0 +1,130 @@
+.TH UNSHARE 1 "July 2014" "util-linux" "User Commands"
+.SH NAME
+unshare \- run program with some namespaces unshared from parent
+.SH SYNOPSIS
+.B unshare
+[options]
+.I program
+.RI [ arguments ]
+.SH DESCRIPTION
+Unshares the indicated namespaces from the parent process and then executes
+the specified \fIprogram\fR.  The namespaces to be unshared are indicated via
+options.  Unshareable namespaces are:
+.TP
+.BR "mount namespace"
+Mounting and unmounting filesystems will not affect the rest of the system
+(\fBCLONE_NEWNS\fP flag), except for filesystems which are explicitly marked as
+shared (with \fBmount --make-shared\fP; see \fI/proc/self/mountinfo\fP for the
+\fBshared\fP flags).
+.sp
+It's recommended to use \fBmount --make-rprivate\fP or \fBmount --make-rslave\fP
+after \fBunshare --mount\fP to make sure that mountpoints in the new namespace
+are really unshared from the parental namespace.
+.TP
+.BR "UTS namespace"
+Setting hostname or domainname will not affect the rest of the system.
+(\fBCLONE_NEWUTS\fP flag)
+.TP
+.BR "IPC namespace"
+The process will have an independent namespace for System V message queues,
+semaphore sets and shared memory segments.  (\fBCLONE_NEWIPC\fP flag)
+.TP
+.BR "network namespace"
+The process will have independent IPv4 and IPv6 stacks, IP routing tables,
+firewall rules, the \fI/proc/net\fP and \fI/sys/class/net\fP directory trees,
+sockets, etc.  (\fBCLONE_NEWNET\fP flag)
+.TP
+.BR "pid namespace"
+Children will have a distinct set of PID to process mappings from their parent.
+(\fBCLONE_NEWPID\fP flag)
+.TP
+.BR "user namespace"
+The process will have a distinct set of UIDs, GIDs and capabilities.
+(\fBCLONE_NEWUSER\fP flag)
+.PP
+See \fBclone\fR(2) for the exact semantics of the flags.
+.SH OPTIONS
+.TP
+.BR \-i , " \-\-ipc"
+Unshare the IPC namespace.
+.TP
+.BR \-m , " \-\-mount"
+Unshare the mount namespace.
+.TP
+.BR \-n , " \-\-net"
+Unshare the network namespace.
+.TP
+.BR \-p , " \-\-pid"
+Unshare the pid namespace.
+See also the \fB--fork\fP and \fB--mount-proc\fP options.
+.TP
+.BR \-u , " \-\-uts"
+Unshare the UTS namespace.
+.TP
+.BR \-U , " \-\-user"
+Unshare the user namespace.
+.TP
+.BR \-f , " \-\-fork"
+Fork the specified \fIprogram\fR as a child process of \fBunshare\fR rather than
+running it directly.  This is useful when creating a new pid namespace.
+.TP
+.BR \-\-mount\-proc "[=\fImountpoint\fP]"
+Just before running the program, mount the proc filesystem at \fImountpoint\fP
+(default is /proc).  This is useful when creating a new pid namespace.  It also
+implies creating a new mount namespace since the /proc mount would otherwise
+mess up existing programs on the system.  The new proc filesystem is explicitly
+mounted as private (by MS_PRIVATE|MS_REC).
+.TP
+.BR \-r , " \-\-map\-root\-user"
+Run the program only after the current effective user and group IDs have been mapped to
+the superuser UID and GID in the newly created user namespace.  This makes it possible to
+conveniently gain capabilities needed to manage various aspects of the newly created
+namespaces (such as configuring interfaces in the network namespace or mounting filesystems in
+the mount namespace) even when run unprivileged.  As a mere convenience feature, it does not support
+more sophisticated use cases, such as mapping multiple ranges of UIDs and GIDs.
+This option implies --setgroups=deny.
+.TP
+.BR \-s , " \-\-setgroups \fIallow|deny\fP"
+Allow or deny
+.BR setgroups (2)
+syscall in user namespaces.
+
+.BR setgroups(2)
+is only callable with CAP_SETGID and CAP_SETGID in a user
+namespace (since Linux 3.19) does not give you permission to call setgroups(2)
+until after GID map has been set. The GID map is writable by root when
+.BR setgroups(2)
+is enabled and GID map becomes writable by unprivileged processes when
+.BR setgroups(2)
+is permanently disabled.
+.TP
+.BR \-V , " \-\-version"
+Display version information and exit.
+.TP
+.BR \-h , " \-\-help"
+Display help text and exit.
+.SH EXAMPLES
+.TP
+.B # unshare --fork --pid --mount-proc readlink /proc/self
+.TQ
+1
+.br
+Establish a PID namespace, ensure we're PID 1 in it against newly mounted
+procfs instance.
+.TP
+.B $ unshare --map-root-user --user sh -c whoami
+.TQ
+root
+.br
+Establish a user namespace as an unprivileged user with a root user within it.
+.SH SEE ALSO
+.BR unshare (2),
+.BR clone (2),
+.BR mount (8)
+.SH BUGS
+None known so far.
+.SH AUTHOR
+Mikhail Gusarov <dottedmag@dottedmag.net>
+.SH AVAILABILITY
+The unshare command is part of the util-linux package and is available from
+ftp://ftp.kernel.org/pub/linux/utils/util-linux/.
