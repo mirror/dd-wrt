@@ -15,7 +15,7 @@ util-linux:
 util-linux-install:
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 
-asterisk-configure: util-linux-configure util-linux-install
+asterisk-configure: util-linux-configure util-linux-install jansson
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--libdir=/usr/lib \
@@ -79,7 +79,7 @@ asterisk-clean:
 	$(MAKE) -C asterisk clean
 #	$(MAKE) -C chan_dongle clean
 
-asterisk: util-linux util-linux-install
+asterisk: util-linux util-linux-install jansson
 	-make -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
