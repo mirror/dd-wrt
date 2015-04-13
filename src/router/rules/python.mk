@@ -42,8 +42,8 @@ python-install:
 #18M...
 	rm -rf $(INSTALLDIR)/python/usr/lib/python3.4/test
 
-	rm -rf $(INSTALLDIR)/libffi/usr/pkgconfig
-	rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include
+	rm -rf $(INSTALLDIR)/libffi/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
 	rm -rf $(INSTALLDIR)/libffi/usr/share
 	rm -f $(INSTALLDIR)/libffi/usr/lib/*.a
 	rm -f $(INSTALLDIR)/libffi/usr/lib/*.la
