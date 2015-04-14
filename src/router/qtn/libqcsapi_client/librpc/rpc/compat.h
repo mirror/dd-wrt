@@ -15,7 +15,7 @@
 
 #include <sys/poll.h>
 #include <pthread.h>
-#include <sys/cdefs.h>
+//#include <sys/cdefs.h>
 
 #ifdef __UCLIBC__
 #include <bits/libc-lock.h>
