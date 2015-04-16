@@ -233,6 +233,11 @@ static void detect_wireless_devices(void)
 		if (loadath9k || loadath5k) {
 			fprintf(stderr, "load ATH9K 802.11n Driver\n");
 			// some are just for future use and not (yet) there
+#ifdef HAVE_ATH10K
+			insmod("hwmon");
+			insmod("thermal_sys");
+#endif
+
 			insmod("/lib/ath9k/compat.ko");
 			insmod("/lib/ath9k/compat_firmware_class.ko");
 			insmod("/lib/ath9k/cfg80211.ko");
@@ -276,8 +281,6 @@ static void detect_wireless_devices(void)
 #endif
 #ifdef HAVE_ATH10K
 	fprintf(stderr, "load ATH/QCA 802.11ac Driver\n");
-	insmod("hwmon");
-	insmod("thermal_sys");
 	insmod("/lib/ath9k/ath10k_core.ko");
 	insmod("/lib/ath9k/ath10k_pci.ko");
 #endif
