@@ -227,8 +227,8 @@ void start_sysinit(void)
 #elif !defined(HAVE_UNIWIP)
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "switch0", "vlan", "1", "set ports", "0t 2 3 4 5");
-	eval("swconfig", "dev", "switch0", "vlan", "2", "set ports", "0t 1");
+	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
+	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 1");
 	eval("swconfig", "dev", "switch0", "set", "apply");
 
 	eval("ifconfig", "eth0", "up");

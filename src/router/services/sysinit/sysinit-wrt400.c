@@ -116,7 +116,7 @@ void start_sysinit(void)
 #elif HAVE_WZRHPAG300NH
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 4");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth0", "set", "apply");
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
@@ -209,7 +209,7 @@ void start_sysinit(void)
 #else
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 4");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth0", "set", "apply");
 		fseek(fp, 0x7f120c, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
