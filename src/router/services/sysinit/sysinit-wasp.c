@@ -79,38 +79,35 @@ void start_sysinit(void)
 #ifdef HAVE_WDR3500
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth0", "vlan", "0", "set ports", "0 1 2 3 4");
+	eval("swconfig", "dev", "eth0", "vlan", "0", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "set", "apply");
 #else
 #ifdef HAVE_WDR4300
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 2 3 4 5");
-	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0t 1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
 #elif defined (HAVE_MMS344)
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 0");
-	system("swconfig dev eth0 vlan 1 set ports \"2 3 6\"");
-//	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-//	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-//	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "2 3 6");
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "2 3 6");
 #elif defined (HAVE_ARCHERC7)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 2 3 4 5");
-	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "1 6");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "1 6");
 
 #elif defined (HAVE_WZR450HP2) || defined(HAVE_WR1043V2)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 4");
-	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "5 6");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6");
 
 #else
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0t 1 2 3 4");
-	eval("swconfig", "dev", "eth0", "vlan", "2", "set ports", "0t 5");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
 #endif
 #endif
 	eval("swconfig", "dev", "eth0", "set", "apply");

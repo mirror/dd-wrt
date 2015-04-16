@@ -346,7 +346,7 @@ void start_sysinit(void)
 	writeproc("/proc/sys/dev/wifi0/softled", "1");
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set ports", "0 1 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "set", "apply");
 #elif HAVE_WZRG300NH
 	setWirelessLed(0, 6);
