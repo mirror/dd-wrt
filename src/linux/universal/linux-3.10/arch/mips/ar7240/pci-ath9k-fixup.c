@@ -90,7 +90,8 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 		break;
 
 	default:
-		BUG();
+		iounmap(mem);
+		return;
 	}
 
 	pci_read_config_word(dev, PCI_COMMAND, &cmd);
