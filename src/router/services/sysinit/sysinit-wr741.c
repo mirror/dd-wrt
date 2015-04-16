@@ -108,8 +108,8 @@ void start_sysinit(void)
 
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "switch0", "vlan", "1", "set ports", "1 2 3 4 9t");
-	eval("swconfig", "dev", "switch0", "vlan", "2", "set ports", "0 9t");
+	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "1 2 3 4 9t");
+	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 9t");
 	eval("swconfig", "dev", "switch0", "set", "apply");
 
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
@@ -119,7 +119,7 @@ void start_sysinit(void)
 #else
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth1", "vlan", "1", "set ports", "0 1 2 3 4");
+	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
 	setEthLED(17, "eth0");
