@@ -8961,6 +8961,21 @@ parse_command_args(char **argv, const char **path)
 }
 #endif
 
+static bool
+findlocal(struct var *vp)
+{
+	struct localvar *lvp = localvars;
+
+	while (lvp) {
+		if (lvp->vp == vp)
+			return true;
+
+		lvp = lvp->next;
+	}
+
+	return false;
+}
+
 /*
  * Make a variable a local variable.  When a variable is made local, it's
  * value and flags are saved in a localvar structure.  The saved values
@@ -9000,7 +9015,7 @@ mklocal(char *name)
 			vp->flags |= VSTRFIXED|VTEXTFIXED;
 			if (eq)
 				setvareq(name, 0);
-			else
+			else if (!findlocal(vp))
 				/* "local VAR" unsets VAR: */
 				setvar(name, NULL, 0);
 		}
