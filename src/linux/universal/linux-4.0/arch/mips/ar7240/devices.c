@@ -334,14 +334,12 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 		mdio_data->is_ar934x = 1;
 		break;
 	case AR71XX_SOC_QCA9533:
-	case AR71XX_SOC_QCA9563:
-	case AR71XX_SOC_TP9343:
-		mdio_data->is_ar934x = 1;
-//		mdio_data->builtin_switch = 1;
+		mdio_data->builtin_switch = 1;
 		break;
-
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
+	case AR71XX_SOC_QCA9563:
+	case AR71XX_SOC_TP9343:
 		mdio_data->is_ar934x = 1;
 		break;
 
