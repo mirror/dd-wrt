@@ -5,7 +5,7 @@
  * Copyright (c) 2002-2005 Anton Altaparmakov
  * Copyright (c) 2002-2003 Richard Russon
  * Copyright (c) 2007      Yura Pakhuchiy
- * Copyright (c) 2011-2013 Jean-Pierre Andre
+ * Copyright (c) 2011-2014 Jean-Pierre Andre
  *
  * This utility will resize an NTFS volume without data loss.
  *
@@ -333,7 +333,7 @@ static void perr_exit(const char *fmt, ...)
  * Return:  none
  */
 __attribute__((noreturn))
-static void usage(void)
+static void usage(int ret)
 {
 
 	printf("\nUsage: %s [OPTIONS] DEVICE\n"
@@ -364,7 +364,7 @@ static void usage(void)
 		"\n", EXEC_NAME);
 	printf("%s%s", ntfs_bugs, ntfs_home);
 	printf("Ntfsresize FAQ: http://linux-ntfs.sourceforge.net/info/ntfsresize.html\n");
-	exit(1);
+	exit(ret);
 }
 
 /**
@@ -404,7 +404,7 @@ static void version(void)
 	printf("Copyright (c) 2002-2005  Anton Altaparmakov\n");
 	printf("Copyright (c) 2002-2003  Richard Russon\n");
 	printf("Copyright (c) 2007       Yura Pakhuchiy\n");
-	printf("Copyright (c) 2011-2012  Jean-Pierre Andre\n");
+	printf("Copyright (c) 2011-2014  Jean-Pierre Andre\n");
 	printf("\n%s\n%s%s", ntfs_gpl, ntfs_bugs, ntfs_home);
 }
 
@@ -433,7 +433,7 @@ static s64 get_new_volume_size(char *s)
 	if (strlen(suffix) == 2 && suffix[1] == 'i')
 		prefix_kind = 1024;
 	else if (strlen(suffix) > 1)
-		usage();
+		usage(1);
 
 	/* We follow the SI prefixes:
 	   http://physics.nist.gov/cuu/Units/prefixes.html
@@ -457,7 +457,7 @@ static s64 get_new_volume_size(char *s)
 		size *= prefix_kind;
 		break;
 	default:
-		usage();
+		usage(1);
 	}
 
 	return size;
@@ -523,7 +523,6 @@ static int parse_options(int argc, char **argv)
 			opt.force++;
 			break;
 		case 'h':
-		case '?':
 			help++;
 			break;
 		case 'i':
@@ -554,6 +553,7 @@ static int parse_options(int argc, char **argv)
 		case 'x':
 			opt.expand++;
 			break;
+		case '?':
 		default:
 			if (optopt == 's') {
 				printf("Option '%s' requires an argument.\n", argv[optind-1]);
@@ -578,12 +578,12 @@ static int parse_options(int argc, char **argv)
 		    && (opt.expand || opt.info || opt.infombonly)) {
 			printf(NERR_PREFIX "Options --info(-mb-only) and --expand "
 					"cannot be used with --size.\n");
-			usage();
+			usage(1);
 		}
 		if (opt.expand && opt.infombonly) {
 			printf(NERR_PREFIX "Options --info-mb-only "
 					"cannot be used with --expand.\n");
-			usage();
+			usage(1);
 		}
 	}
 
@@ -604,9 +604,10 @@ static int parse_options(int argc, char **argv)
 	if (ver)
 		version();
 	if (help || err)
-		usage();
+		usage(err > 0);
 
-	return (!err && !help && !ver);
+		/* tri-state 0 : done, 1 : error, -1 : proceed */
+	return (err ? 1 : (help || ver ? 0 : -1));
 }
 
 static void print_advise(ntfs_volume *vol, s64 supp_lcn)
@@ -1360,6 +1361,9 @@ static void expand_attribute_runlist(ntfs_volume *vol, struct DELAYED *delayed)
 static void delayed_updates(ntfs_resize_t *resize)
 {
 	struct DELAYED *delayed;
+
+	if (ntfs_volume_get_free_space(resize->vol))
+		err_exit("Failed to determine free space\n");
 
 	while (resize->delayed_runlists) {
 		delayed = resize->delayed_runlists;
@@ -2324,6 +2328,7 @@ static void truncate_bitmap_data_attr(ntfs_resize_t *resize)
 {
 	ATTR_RECORD *a;
 	runlist *rl;
+	ntfs_attr *lcnbmp_na;
 	s64 bm_bsize, size;
 	s64 nr_bm_clusters;
 	int truncated;
@@ -2344,7 +2349,17 @@ static void truncate_bitmap_data_attr(ntfs_resize_t *resize)
 		realloc_lcn_bitmap(resize, bm_bsize);
 		realloc_bitmap_data_attr(resize, &rl, nr_bm_clusters);
 	}
-
+		/*
+		 * Delayed relocations may require cluster allocations
+		 * through the library, to hold added attribute lists,
+		 * be sure they will be within the new limits.
+		 */
+	lcnbmp_na = resize->vol->lcnbmp_na;
+	lcnbmp_na->data_size = bm_bsize;
+	lcnbmp_na->initialized_size = bm_bsize;
+	lcnbmp_na->allocated_size = nr_bm_clusters << vol->cluster_size_bits;
+	vol->lcnbmp_ni->data_size = bm_bsize;
+	vol->lcnbmp_ni->allocated_size = lcnbmp_na->allocated_size;
 	a->highest_vcn = cpu_to_sle64(nr_bm_clusters - 1LL);
 	a->allocated_size = cpu_to_sle64(nr_bm_clusters * vol->cluster_size);
 	a->data_size = cpu_to_sle64(bm_bsize);
@@ -2365,8 +2380,11 @@ static void truncate_bitmap_data_attr(ntfs_resize_t *resize)
 				(long long)size, (long long)bm_bsize);
 	}
 
-	if (truncated)
-		free(rl);
+	if (truncated) {
+			/* switch to the new bitmap runlist */
+		free(lcnbmp_na->rl);
+		lcnbmp_na->rl = rl;
+	}
 }
 
 /**
@@ -2538,6 +2556,12 @@ static void truncate_bitmap_file(ntfs_resize_t *resize)
 			     resize->ctx->mrec))
 			perr_exit("Couldn't update $Bitmap");
 	}
+
+		/* If successful, update cache and sync $Bitmap */
+	memcpy(vol->lcnbmp_ni->mrec,resize->ctx->mrec,vol->mft_record_size);
+	ntfs_inode_mark_dirty(vol->lcnbmp_ni);
+	NInoFileNameSetDirty(vol->lcnbmp_ni);
+	ntfs_inode_sync(vol->lcnbmp_ni);
 
 #if CLEAN_EXIT
 	close_inode_and_context(resize->ctx);
@@ -2761,6 +2785,9 @@ static ntfs_volume *mount_volume(void)
 	if (NTFS_MAX_CLUSTER_SIZE < vol->cluster_size)
 		err_exit("Cluster size %u is too large!\n",
 			(unsigned int)vol->cluster_size);
+
+	if (ntfs_volume_get_free_space(vol))
+		err_exit("Failed to update the free space\n");
 
 	if (!opt.infombonly) {
 		printf("Device name        : %s\n", opt.volume);
@@ -3078,7 +3105,8 @@ static u8 *get_mft_bitmap(expand_t *expand)
 			for (prl=rl; prl->length && ok; prl++) {
 				lseek_to_cluster(vol,
 					prl->lcn + expand->cluster_increment);
-				ok = !read_all(vol->dev, expand->mft_bitmap,
+				ok = !read_all(vol->dev, expand->mft_bitmap
+					+ (prl->vcn << vol->cluster_size_bits),
 					prl->length << vol->cluster_size_bits);
 			}
 			if (!ok) {
@@ -4344,14 +4372,16 @@ int main(int argc, char **argv)
 	s64 new_size = 0;	/* in clusters; 0 = --info w/o --size */
 	s64 device_size;        /* in bytes */
 	ntfs_volume *vol = NULL;
+	int res;
 
 #ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
 #endif
 	printf("%s v%s (libntfs-3g)\n", EXEC_NAME, VERSION);
 
-	if (!parse_options(argc, argv))
-		return 1;
+	res = parse_options(argc, argv);
+	if (res >= 0)
+		return (res);
 
 	utils_set_locale();
 

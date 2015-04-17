@@ -27,9 +27,11 @@ libntfs_3g_la_SOURCES =	\
 	debug.c 	\
 	device.c 	\
 	dir.c 		\
+	ea.c 		\
 	efs.c 		\
 	index.c 	\
 	inode.c 	\
+	ioctl.c 	\
 	lcnalloc.c 	\
 	logfile.c 	\
 	logging.c 	\

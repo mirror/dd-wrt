@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2003-2006 Szabolcs Szakacsits
  * Copyright (c) 2004-2006 Anton Altaparmakov
- * Copyright (c) 2010-2013 Jean-Pierre Andre
+ * Copyright (c) 2010-2014 Jean-Pierre Andre
  * Special image format support copyright (c) 2004 Per Olofsson
  *
  * Clone NTFS data and/or metadata to a sparse file, image, device or stdout.
@@ -61,6 +61,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
 
 /*
  * FIXME: ntfsclone do bad things about endians handling. Fix it and remove
@@ -115,7 +118,7 @@ int setmode(int, int); /* from msvcrt.dll */
 #define srandom(seed) srand(seed)
 #define random() rand()
 #define fsync(fd) (0)
-#define ioctl(fd,code,buf) (0)
+#define ioctl(fd,code,buf) (-1)
 #define ftruncate(fd, size) ntfs_device_win32_ftruncate(dev_out, size)
 #define BINWMODE "wb"
 #else
@@ -347,7 +350,7 @@ static void perr_exit(const char *fmt, ...)
 
 
 __attribute__((noreturn))
-static void usage(void)
+static void usage(int ret)
 {
 	fprintf(stderr, "\nUsage: %s [OPTIONS] SOURCE\n"
 		"    Efficiently clone NTFS to a sparse file, image, device or standard output.\n"
@@ -369,17 +372,33 @@ static void usage(void)
 #ifdef DEBUG
 		"    -d, --debug            Show debug information\n"
 #endif
+		"    -V, --version           Display version information\n"
 		"\n"
 		"    If FILE is '-' then send the image to the standard output. If SOURCE is '-'\n"
 		"    and --restore-image is used then read the image from the standard input.\n"
 		"\n", EXEC_NAME);
 	fprintf(stderr, "%s%s", ntfs_bugs, ntfs_home);
-	exit(1);
+	exit(ret);
+}
+
+/**
+ * version
+ */
+__attribute__((noreturn))
+static void version(void)
+{
+	fprintf(stderr,
+		   "Efficiently clone, image, restore or rescue an NTFS Volume.\n\n"
+		   "Copyright (c) 2003-2006 Szabolcs Szakacsits\n"
+		   "Copyright (c) 2004-2006 Anton Altaparmakov\n"
+		   "Copyright (c) 2010-2014 Jean-Pierre Andre\n\n");
+	fprintf(stderr, "%s\n%s%s", ntfs_gpl, ntfs_bugs, ntfs_home);
+	exit(0);
 }
 
 static void parse_options(int argc, char **argv)
 {
-	static const char *sopt = "-dfhmno:O:qrst";
+	static const char *sopt = "-dfhmno:O:qrstV";
 	static const struct option lopt[] = {
 #ifdef DEBUG
 		{ "debug",	      no_argument,	 NULL, 'd' },
@@ -398,6 +417,7 @@ static void parse_options(int argc, char **argv)
 		{ "new-half-serial",  no_argument,	 NULL, 'i' },
 		{ "save-image",	      no_argument,	 NULL, 's' },
 		{ "preserve-timestamps",   no_argument,  NULL, 't' },
+		{ "version",	      no_argument,	 NULL, 'V' },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -409,7 +429,7 @@ static void parse_options(int argc, char **argv)
 		switch (c) {
 		case 1:	/* A non-option argument */
 			if (opt.volume)
-				usage();
+				usage(1);
 			opt.volume = argv[optind-1];
 			break;
 		case 'd':
@@ -422,8 +442,9 @@ static void parse_options(int argc, char **argv)
 			opt.force++;
 			break;
 		case 'h':
+			usage(0);
 		case '?':
-			usage();
+			usage(1);
 		case 'i':	/* not proposed as a short option */
 			opt.new_serial |= 1;
 			break;
@@ -440,7 +461,7 @@ static void parse_options(int argc, char **argv)
 			opt.overwrite++;
 		case 'o':
 			if (opt.output)
-				usage();
+				usage(1);
 			opt.output = optarg;
 			break;
 		case 'r':
@@ -458,15 +479,18 @@ static void parse_options(int argc, char **argv)
 		case 't':
 			opt.preserve_timestamps++;
 			break;
+		case 'V':
+			version();
+			break;
 		default:
 			err_printf("Unknown option '%s'.\n", argv[optind-1]);
-			usage();
+			usage(1);
 		}
 	}
 
 	if (!opt.no_action && (opt.output == NULL)) {
 		err_printf("You must specify an output file.\n");
-		usage();
+		usage(1);
 	}
 
 	if (!opt.no_action && (strcmp(opt.output, "-") == 0))
@@ -474,12 +498,12 @@ static void parse_options(int argc, char **argv)
 
 	if (opt.volume == NULL) {
 		err_printf("You must specify a device file.\n");
-		usage();
+		usage(1);
 	}
 
 	if (!opt.restore_image && !strcmp(opt.volume, "-")) {
 		err_printf("Only special images can be read from standard input\n");
-		usage();
+		usage(1);
 	}
 
 	if (opt.metadata && opt.save_image) {
@@ -2282,6 +2306,27 @@ static void set_filesize(s64 filesize)
 			       "option to restore the image.\n");
 		}
 		exit(1);
+	}
+		/*
+		 * If truncate just created a sparse file, the ability
+		 * to generically store big files has been checked, but no
+		 * space has been reserved and available space has probably
+		 * not been checked. Better reset the file so that we write
+		 * sequentially to the end.
+		 */
+	if (!opt.no_action) {
+#ifdef HAVE_WINDOWS_H
+		if (ftruncate(fd_out, 0))
+			Printf("Failed to reset the output file.\n");
+#else
+		struct stat st;
+		int s;
+
+		s = fstat(fd_out, &st);
+		if (s || (!st.st_blocks && ftruncate(fd_out, 0)))
+			Printf("Failed to reset the output file.\n");
+#endif
+			/* Proceed even if ftruncate failed */
 	}
 }
 
