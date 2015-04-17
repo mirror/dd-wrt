@@ -5,7 +5,7 @@
  * Copyright (c) 2002-2005 Richard Russon
  * Copyright (c) 2002-2008 Szabolcs Szakacsits
  * Copyright (c) 2004-2007 Yura Pakhuchiy
- * Copyright (c) 2007-2013 Jean-Pierre Andre
+ * Copyright (c) 2007-2014 Jean-Pierre Andre
  * Copyright (c) 2010      Erik Larsson
  *
  * This program/include file is free software; you can redistribute it and/or
@@ -601,21 +601,18 @@ int ntfs_attr_map_runlist(ntfs_attr *na, VCN vcn)
 
 static int ntfs_attr_map_partial_runlist(ntfs_attr *na, VCN vcn)
 {
-	LCN lcn;
 	VCN last_vcn;
 	VCN highest_vcn;
 	VCN needed;
-	VCN existing_vcn;
 	runlist_element *rl;
 	ATTR_RECORD *a;
 	BOOL startseen;
 	ntfs_attr_search_ctx *ctx;
+	BOOL done;
+	BOOL newrunlist;
 
-	lcn = ntfs_rl_vcn_to_lcn(na->rl, vcn);
-	if (lcn >= 0 || lcn == LCN_HOLE || lcn == LCN_ENOENT)
+	if (NAttrFullyMapped(na))
 		return 0;
-
-	existing_vcn = (na->rl ? na->rl->vcn : -1);
 
 	ctx = ntfs_attr_get_search_ctx(na->ni, NULL);
 	if (!ctx)
@@ -627,37 +624,56 @@ static int ntfs_attr_map_partial_runlist(ntfs_attr *na, VCN vcn)
 	needed = vcn;
 	highest_vcn = 0;
 	startseen = FALSE;
+	done = FALSE;
+	rl = (runlist_element*)NULL;
 	do {
+		newrunlist = FALSE;
 		/* Find the attribute in the mft record. */
 		if (!ntfs_attr_lookup(na->type, na->name, na->name_len, CASE_SENSITIVE,
 				needed, NULL, 0, ctx)) {
 
 			a = ctx->attr;
-			/* Decode and merge the runlist. */
-			rl = ntfs_mapping_pairs_decompress(na->ni->vol, a,
-					na->rl);
+				/* Decode and merge the runlist. */
+			if (ntfs_rl_vcn_to_lcn(na->rl, needed)
+						== LCN_RL_NOT_MAPPED) {
+				rl = ntfs_mapping_pairs_decompress(na->ni->vol,
+					a, na->rl);
+				newrunlist = TRUE;
+			} else
+				rl = na->rl;
 			if (rl) {
 				na->rl = rl;
 				highest_vcn = le64_to_cpu(a->highest_vcn);
-				/* corruption detection */
-				if (((highest_vcn + 1) < last_vcn)
-				    && ((highest_vcn + 1) <= needed)) {
-					ntfs_log_error("Corrupt attribute list\n");
-					rl = (runlist_element*)NULL;
+				if (highest_vcn < needed) {
+				/* corruption detection on unchanged runlists */
+					if (newrunlist
+					    && ((highest_vcn + 1) < last_vcn)) {
+						ntfs_log_error("Corrupt attribute list\n");
+						rl = (runlist_element*)NULL;
+						errno = EIO;
+					}
+					done = TRUE;
 				}
 				needed = highest_vcn + 1;
 				if (!a->lowest_vcn)
 					startseen = TRUE;
-				/* reaching a previously allocated part ? */
-				if ((existing_vcn >= 0)
-				    && (needed >= existing_vcn)) {
-					needed = last_vcn;
-				}
 			}
-		} else
-			rl = (runlist_element*)NULL;
-	} while (rl && (needed < last_vcn));
+		} else {
+			done = TRUE;
+		}
+	} while (rl && !done && (needed < last_vcn));
 	ntfs_attr_put_search_ctx(ctx);
+		/*
+		 * Make sure we reached the end, unless the last
+		 * runlist was modified earlier (using HOLES_DELAY
+		 * leads to have a visibility over attributes which
+		 * have not yet been fully updated)
+		 */
+	if (done && newrunlist && (needed < last_vcn)) {
+		ntfs_log_error("End of runlist not reached\n");
+		rl = (runlist_element*)NULL;
+		errno = EIO;
+	}
 		/* mark fully mapped if we did so */
 	if (rl && startseen)
 		NAttrSetFullyMapped(na);
@@ -685,6 +701,7 @@ int ntfs_attr_map_whole_runlist(ntfs_attr *na)
 	ntfs_volume *vol = na->ni->vol;
 	ATTR_RECORD *a;
 	int ret = -1;
+	int not_mapped;
 
 	ntfs_log_enter("Entering for inode %llu, attr 0x%x.\n",
 		       (unsigned long long)na->ni->mft_no, na->type);
@@ -704,7 +721,7 @@ int ntfs_attr_map_whole_runlist(ntfs_attr *na)
 	while (1) {
 		runlist_element *rl;
 
-		int not_mapped = 0;
+		not_mapped = 0;
 		if (ntfs_rl_vcn_to_lcn(na->rl, next_vcn) == LCN_RL_NOT_MAPPED)
 			not_mapped = 1;
 
@@ -759,7 +776,13 @@ int ntfs_attr_map_whole_runlist(ntfs_attr *na)
 		ntfs_log_perror("Couldn't find attribute for runlist mapping");
 		goto err_out;
 	}
-	if (highest_vcn && highest_vcn != last_vcn - 1) {
+		/*
+		 * Cannot check highest_vcn when the last runlist has
+		 * been modified earlier, as runlists and sizes may be
+		 * updated without highest_vcn being in sync, when
+		 * HOLES_DELAY is used
+		 */
+	if (not_mapped && highest_vcn && highest_vcn != last_vcn - 1) {
 		errno = EIO;
 		ntfs_log_perror("Failed to load full runlist: inode: %llu "
 				"highest_vcn: 0x%llx last_vcn: 0x%llx",
@@ -1244,19 +1267,15 @@ static int ntfs_attr_fill_hole(ntfs_attr *na, s64 count, s64 *ofs,
 	 
 	/* Map the runlist to be able to update mapping pairs later. */
 #if PARTIAL_RUNLIST_UPDATING
-	if ((!na->rl
-	    || !NAttrDataAppending(na))) {
+	if (!na->rl) {
 		if (ntfs_attr_map_whole_runlist(na))
 			goto err_out;
 	} else {
-		/* make sure the previous non-hole is mapped */
-		rlc = *rl;
-		rlc--;
-		if (((*rl)->lcn == LCN_HOLE)
-		    && cur_vcn
-		    && (rlc->vcn < 0)) {
-			if (ntfs_attr_map_partial_runlist(na, cur_vcn - 1))
-				goto err_out;
+		/* make sure the run ahead of hole is mapped */
+		if ((*rl)->lcn == LCN_HOLE) {
+			if (ntfs_attr_map_partial_runlist(na,
+				(cur_vcn ? cur_vcn - 1 : cur_vcn)))
+					goto err_out;
 		}
 	}
 #else
@@ -1343,6 +1362,7 @@ static int ntfs_attr_fill_hole(ntfs_attr *na, s64 count, s64 *ofs,
 		na->compressed_size += need << vol->cluster_size_bits;
 	
 	*rl = ntfs_runlists_merge(na->rl, rlc);
+	NAttrSetRunlistDirty(na);
 		/*
 		 * For a compressed attribute, we must be sure there are two
 		 * available entries, so reserve them before it gets too late.
@@ -1572,6 +1592,7 @@ ntfs_log_error("No free run, case 4\n");
 				rl = ++(*prl);
 			}
 		}
+	NAttrSetRunlistDirty(na);
 	if ((*update_from == -1) || ((*prl)->vcn < *update_from))
 		*update_from = (*prl)->vcn;
 	}
@@ -1708,6 +1729,7 @@ static int borrow_from_hole(ntfs_attr *na, runlist_element **prl,
 				zrl->length = endblock - allocated;
 				zrl[1].length -= zrl->length;
 				zrl[1].vcn = zrl->vcn + zrl->length;
+				NAttrSetRunlistDirty(na);
 			}
 		}
 		if (*prl) {
@@ -1776,7 +1798,6 @@ s64 ntfs_attr_pwrite(ntfs_attr *na, const s64 pos, s64 count, const void *b)
 	} need_to = { 0, 0 };
 	BOOL wasnonresident = FALSE;
 	BOOL compressed;
-	BOOL updatemap;
 
 	ntfs_log_enter("Entering for inode %lld, attr 0x%x, pos 0x%llx, count "
 		       "0x%llx.\n", (long long)na->ni->mft_no, na->type,
@@ -1931,8 +1952,17 @@ s64 ntfs_attr_pwrite(ntfs_attr *na, const s64 pos, s64 count, const void *b)
 		 * However, for compressed file, we need the full compression
 		 * block, which may be split in several extents.
 		 */
-		if (NAttrDataAppending(na)) {
-			VCN block_begin = pos >> vol->cluster_size_bits;
+		if (compressed && !NAttrDataAppending(na)) {
+			if (ntfs_attr_map_whole_runlist(na))
+				goto err_out;
+		} else {
+			VCN block_begin;
+
+			if (NAttrDataAppending(na)
+			    || (pos < na->initialized_size))
+				block_begin = pos >> vol->cluster_size_bits;
+			else
+				block_begin = na->initialized_size >> vol->cluster_size_bits;
 
 			if (compressed)
 				block_begin &= -na->compression_block_clusters;
@@ -1942,10 +1972,11 @@ s64 ntfs_attr_pwrite(ntfs_attr *na, const s64 pos, s64 count, const void *b)
 				goto err_out;
 			if ((update_from == -1) || (block_begin < update_from))
 				update_from = block_begin;
-		} else
-#endif
+		}
+#else
 			if (ntfs_attr_map_whole_runlist(na))
 				goto err_out;
+#endif
 		/*
 		 * For a compressed attribute, we must be sure there is an
 		 * available entry, and, when reopening a compressed file,
@@ -2222,13 +2253,7 @@ done:
 		 * of the mapping list. This makes a difference only if
 		 * inode extents were needed.
 		 */
-#if PARTIAL_RUNLIST_UPDATING
-	updatemap = NAttrFullyMapped(na) || NAttrDataAppending(na);
-#else
-	updatemap = (compressed
-			? NAttrFullyMapped(na) != 0 : update_from != -1);
-#endif
-	if (updatemap) {
+	if (NAttrRunlistDirty(na)) {
 		if (ntfs_attr_update_mapping_pairs(na,
 				(update_from < 0 ? 0 : update_from))) {
 			/*
@@ -2298,9 +2323,7 @@ err_out:
 	if (ctx)
 		ntfs_attr_put_search_ctx(ctx);
 	/* Update mapping pairs if needed. */
-	updatemap = (compressed
-			? NAttrFullyMapped(na) != 0 : update_from != -1);
-	if (updatemap)
+	if (NAttrRunlistDirty(na))
 		ntfs_attr_update_mapping_pairs(na, 0);
 	/* Restore original data_size if needed. */
 	if (need_to.undo_data_size
@@ -5847,8 +5870,12 @@ retry:
 			ntfs_log_perror("%s: get mp size failed", __FUNCTION__);
 			goto put_err_out;
 		}
-		/* Allocate new mft record. */
-		ni = ntfs_mft_record_alloc(na->ni->vol, base_ni);
+		/* Allocate new mft record, with special case for mft itself */
+		if (!na->ni->mft_no)
+			ni = ntfs_mft_rec_alloc(na->ni->vol,
+				na->type == AT_DATA);
+		else
+			ni = ntfs_mft_record_alloc(na->ni->vol, base_ni);
 		if (!ni) {
 			ntfs_log_perror("Could not allocate new MFT record");
 			goto put_err_out;
@@ -5903,6 +5930,7 @@ retry:
 			break;
 	}
 ok:
+	NAttrClearRunlistDirty(na);
 	ret = 0;
 out:
 	return ret;
@@ -6030,6 +6058,7 @@ static int ntfs_non_resident_attr_shrink(ntfs_attr *na, const s64 newsize)
 			ntfs_log_trace("Eeek! Run list truncation failed.\n");
 			return -1;
 		}
+		NAttrSetRunlistDirty(na);
 
 		/* Prepare to mapping pairs update. */
 		na->allocated_size = first_free_vcn << vol->cluster_size_bits;
@@ -6080,7 +6109,8 @@ static int ntfs_non_resident_attr_shrink(ntfs_attr *na, const s64 newsize)
 
 	/* If the attribute now has zero size, make it resident. */
 	if (!newsize) {
-		if (ntfs_attr_make_resident(na, ctx)) {
+		if (!(na->data_flags & ATTR_IS_ENCRYPTED)
+		    && ntfs_attr_make_resident(na, ctx)) {
 			/* If couldn't make resident, just continue. */
 			if (errno != EPERM)
 				ntfs_log_error("Failed to make attribute "
@@ -6245,6 +6275,7 @@ static int ntfs_non_resident_attr_expand_i(ntfs_attr *na, const s64 newsize,
 			return -1;
 		}
 		na->rl = rln;
+		NAttrSetRunlistDirty(na);
 
 		/* Prepare to mapping pairs update. */
 		na->allocated_size = first_free_vcn << vol->cluster_size_bits;
@@ -6330,6 +6361,7 @@ rollback:
 		na->rl = NULL;
 		ntfs_log_perror("Couldn't truncate runlist. Rollback failed");
 	} else {
+		NAttrSetRunlistDirty(na);
 		/* Prepare to mapping pairs update. */
 		na->allocated_size = org_alloc_size;
 		/* Restore mapping pairs. */
@@ -6406,7 +6438,7 @@ static int ntfs_attr_truncate_i(ntfs_attr *na, const s64 newsize,
 	 * Encrypted attributes are not supported. We return access denied,
 	 * which is what Windows NT4 does, too.
 	 */
-	if (na->data_flags & ATTR_IS_ENCRYPTED) {
+	if ((na->data_flags & ATTR_IS_ENCRYPTED) && !na->ni->vol->efs_raw) {
 		errno = EACCES;
 		ntfs_log_trace("Cannot truncate encrypted attribute\n");
 		goto out;
@@ -6703,6 +6735,42 @@ exit:
 	return res;
 }
 
+/*
+ *		Shrink the size of a data attribute if needed
+ *
+ *	For non-resident attributes only.
+ *	The space remains allocated.
+ *
+ *	Returns 0 if successful
+ *		-1 if failed, with errno telling why
+ */
+
+
+int ntfs_attr_shrink_size(ntfs_inode *ni, ntfschar *stream_name,
+		int stream_name_len, off_t offset)
+{
+	ntfs_attr_search_ctx *ctx;
+	ATTR_RECORD *a;
+	int res;
+
+	res = -1;
+	ctx = ntfs_attr_get_search_ctx(ni, NULL);
+	if (ctx) {
+		if (!ntfs_attr_lookup(AT_DATA, stream_name, stream_name_len,
+			CASE_SENSITIVE, 0, NULL, 0, ctx)) {
+			a = ctx->attr;
+
+			if (a->non_resident
+			    && (sle64_to_cpu(a->initialized_size) > offset)) {
+				a->initialized_size = cpu_to_le64(offset);
+				a->data_size = a->initialized_size;
+			}
+			res = 0;
+		}
+		ntfs_attr_put_search_ctx(ctx);
+	}
+	return (res);
+}
 
 int ntfs_attr_exist(ntfs_inode *ni, const ATTR_TYPES type, const ntfschar *name,
 		    u32 name_len)

@@ -5,7 +5,7 @@
  * Copyright (c) 2004-2005 Holger Ohmacht
  * Copyright (c) 2005      Anton Altaparmakov
  * Copyright (c) 2007      Yura Pakhuchiy
- * Copyright (c) 2013      Jean-Pierre Andre
+ * Copyright (c) 2013-2014 Jean-Pierre Andre
  *
  * This utility will recover deleted files from an NTFS volume.
  *
@@ -176,7 +176,7 @@ static BOOL patmatch(regex_t *re, const ntfschar *f, int flen,
 		    && ((*f == *p)
 			|| (*p == const_cpu_to_le16('?'))
 			|| ((c = le16_to_cpu(*f)) < pre->upcase_len
-				? pre->upcase[c] : c) == *p)) {
+				? pre->upcase[c] : *f) == *p)) {
 			flen--;
 			if (*f++ == const_cpu_to_le16('.'))
 				dot = TRUE;
@@ -392,7 +392,7 @@ static void version(void)
 			"Copyright (c) 2004-2005 Holger Ohmacht\n"
 			"Copyright (c) 2005      Anton Altaparmakov\n"
 			"Copyright (c) 2007      Yura Pakhuchiy\n"
-			"Copyright (c) 2013      Jean-Pierre Andre\n");
+			"Copyright (c) 2013-2014 Jean-Pierre Andre\n");
 	ntfs_log_info("\n%s\n%s%s\n", ntfs_gpl, ntfs_bugs, ntfs_home);
 }
 
@@ -680,10 +680,13 @@ static int parse_options(int argc, char *argv[])
 			opts.force++;
 			break;
 		case 'h':
+			help++;
+			break;
 		case '?':
 			if (ntfs_log_parse_option (argv[optind-1]))
 				break;
-			help++;
+			ntfs_log_error("Unknown option '%s'.\n", argv[optind-1]);
+			err++;
 			break;
 		case 'i':
 			end = NULL;
@@ -878,7 +881,8 @@ static int parse_options(int argc, char *argv[])
 	if (help || err)
 		usage();
 
-	return (!err && !help && !ver);
+		/* tri-state 0 : done, 1 : error, -1 : proceed */
+	return (err ? 1 : (help || ver ? 0 : -1));
 }
 
 /**
@@ -2447,7 +2451,8 @@ int main(int argc, char *argv[])
 	with_regex = 0;
 	avoid_duplicate_printing = 0;
 
-	if (!parse_options(argc, argv))
+	result = parse_options(argc, argv);
+	if (result >= 0)
 		goto free;
 
 	utils_set_locale();
