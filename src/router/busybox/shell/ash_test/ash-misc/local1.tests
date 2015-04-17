@@ -3,9 +3,12 @@ f() {
 	local a
 	# the above line unsets $a
 	echo "A2:'$a'"
-	unset a
+	a=B
+	local a
 	echo "A3:'$a'"
+	unset a
+	echo "A4:'$a'"
 }
 echo "A1:'$a'"
 f
-echo "A4:'$a'"
+echo "A5:'$a'"
