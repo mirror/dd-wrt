@@ -4,7 +4,7 @@
  *	This module is part of ntfs-3g library, but may also be
  *	integrated in tools running over Linux or Windows
  *
- * Copyright (c) 2007-2012 Jean-Pierre Andre
+ * Copyright (c) 2007-2014 Jean-Pierre Andre
  *
  * This program/include file is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
@@ -136,6 +136,8 @@ static const char worldsidbytes[] = {
 		0, 0, 0, 0	/* 1st level */
 } ;
 
+const SID *worldsid = (const SID*)worldsidbytes;
+
 /*
  *		SID for authenticated user (S-1-5-11)
  */
@@ -148,8 +150,6 @@ static const char authsidbytes[] = {
 };
 	        
 static const SID *authsid = (const SID*)authsidbytes;
-
-const SID *worldsid = (const SID*)worldsidbytes;
 
 /*
  *		SID for administrator
@@ -230,7 +230,11 @@ BOOL ntfs_same_sid(const SID *first, const SID *second)
 
 /*
  *		Test whether a SID means "world user"
- *	Local users group also recognized as world
+ *	Local users group recognized as world
+ *	Also interactive users so that /Users/Public is world accessible,
+ *	but only if Posix ACLs are not enabled (if Posix ACLs are enabled,
+ *	access to /Users/Public should be done by defining interactive users
+ *	as a mapped group.)
  */
 
 static int is_world_sid(const SID * usid)
@@ -254,6 +258,14 @@ static int is_world_sid(const SID * usid)
 	    && (usid->identifier_authority.high_part ==  const_cpu_to_be16(0))
 	    && (usid->identifier_authority.low_part ==  const_cpu_to_be32(5))
 	    && (usid->sub_authority[0] == const_cpu_to_le32(11)))
+
+#if !POSIXACLS
+	     /* check whether S-1-5-4 : interactive user */
+	  ||   ((usid->sub_authority_count == 1)
+	    && (usid->identifier_authority.high_part ==  const_cpu_to_be16(0))
+	    && (usid->identifier_authority.low_part ==  const_cpu_to_be32(5))
+	    && (usid->sub_authority[0] == const_cpu_to_le32(4)))
+#endif /* !POSIXACLS */
 		);
 }
 
@@ -269,6 +281,25 @@ BOOL ntfs_is_user_sid(const SID *usid)
 	    && (usid->identifier_authority.high_part ==  const_cpu_to_be16(0))
 	    && (usid->identifier_authority.low_part ==  const_cpu_to_be32(5))
 	    && (usid->sub_authority[0] ==  const_cpu_to_le32(21)));
+}
+
+/*
+ *		Test whether a SID means "some special group"
+ *	Currently we only check for a few S-1-5-n but we should
+ *	probably test for other configurations.
+ *
+ *	This is useful for granting access to /Users/Public for
+ *	specific users when the Posix ACLs are enabled.
+ */
+
+static BOOL ntfs_known_group_sid(const SID *usid)
+{
+			/* count == 1 excludes S-1-5-5-X-Y (logon) */
+	return ((usid->sub_authority_count == 1)
+	    && (usid->identifier_authority.high_part ==  const_cpu_to_be16(0))
+	    && (usid->identifier_authority.low_part ==  const_cpu_to_be32(5))
+	    && (le32_to_cpu(usid->sub_authority[0]) >=  1)
+	    && (le32_to_cpu(usid->sub_authority[0]) <=  6));
 }
 
 /*
@@ -698,8 +729,10 @@ int ntfs_inherit_acl(const ACL *oldacl, ACL *newacl,
 	const ACCESS_ALLOWED_ACE *poldace;
 	ACCESS_ALLOWED_ACE *pnewace;
 	ACCESS_ALLOWED_ACE *pauthace;
+	ACCESS_ALLOWED_ACE *pownerace;
 
 	pauthace = (ACCESS_ALLOWED_ACE*)NULL;
+	pownerace = (ACCESS_ALLOWED_ACE*)NULL;
 	usidsz = ntfs_sid_size(usid);
 	gsidsz = ntfs_sid_size(gsid);
 
@@ -717,12 +750,24 @@ int ntfs_inherit_acl(const ACL *oldacl, ACL *newacl,
 		poldace = (const ACCESS_ALLOWED_ACE*)((const char*)oldacl + src);
 		acesz = le16_to_cpu(poldace->size);
 		src += acesz;
-			/*
-			 * Inheritance for access, unless this is inheriting
-			 * an inherited ACL to a directory.
-			 */
+		/*
+		 * Extract inheritance for access, including inheritance for
+		 * access from an ACE with is both applied and inheritable.
+		 *
+		 * must not output OBJECT_INHERIT_ACE or CONTAINER_INHERIT_ACE
+		 *
+		 *	According to MSDN :
+		 * "For a case in which a container object inherits an ACE
+		 * "that is both effective on the container and inheritable
+		 * "by its descendants, the container may inherit two ACEs.
+		 * "This occurs if the inheritable ACE contains generic
+		 * "information."
+		 */
 		if ((poldace->flags & selection)
-		    && !(fordir && inherited)
+		    && (!fordir
+			|| (poldace->flags & NO_PROPAGATE_INHERIT_ACE)
+			|| (poldace->mask & (GENERIC_ALL | GENERIC_READ
+					| GENERIC_WRITE | GENERIC_EXECUTE)))
 		    && !ntfs_same_sid(&poldace->sid, ownersid)
 		    && !ntfs_same_sid(&poldace->sid, groupsid)) {
 			pnewace = (ACCESS_ALLOWED_ACE*)
@@ -785,8 +830,7 @@ int ntfs_inherit_acl(const ACL *oldacl, ACL *newacl,
 			 * Group similar ACE for authenticated users
 			 * (should probably be done for other SIDs)
 			 */
-			if (!fordir
-			    && (poldace->type == ACCESS_ALLOWED_ACE_TYPE)
+			if ((poldace->type == ACCESS_ALLOWED_ACE_TYPE)
 			    && ntfs_same_sid(&poldace->sid, authsid)) {
 				if (pauthace) {
 					pauthace->flags |= pnewace->flags;
@@ -829,8 +873,14 @@ int ntfs_inherit_acl(const ACL *oldacl, ACL *newacl,
 						| INHERIT_ONLY_ACE);
 				if (inherited)
 					pnewace->flags |= INHERITED_ACE;
-				dst += usidsz + 8;
-				newcnt++;
+				if ((pnewace->type == ACCESS_ALLOWED_ACE_TYPE)
+				    && pownerace
+				    && !(pnewace->flags & ~pownerace->flags)) {
+					pownerace->mask |= pnewace->mask;
+				} else {
+					dst += usidsz + 8;
+					newcnt++;
+				}
 			}
 			if (ntfs_same_sid(&pnewace->sid, groupsid)) {
 				memcpy(&pnewace->sid, gsid, gsidsz);
@@ -846,15 +896,52 @@ int ntfs_inherit_acl(const ACL *oldacl, ACL *newacl,
 			}
 		}
 
-			/* inheritance for further inheritance */
+			/*
+			 * inheritance for further inheritance
+			 *
+			 * Situations leading to output CONTAINER_INHERIT_ACE
+			 * 	or OBJECT_INHERIT_ACE
+			 */
 		if (fordir
 		   && (poldace->flags
 			   & (CONTAINER_INHERIT_ACE | OBJECT_INHERIT_ACE))) {
 			pnewace = (ACCESS_ALLOWED_ACE*)
 					((char*)newacl + dst);
 			memcpy(pnewace,poldace,acesz);
+			if ((poldace->flags & OBJECT_INHERIT_ACE)
+			   && !(poldace->flags & (CONTAINER_INHERIT_ACE
+					| NO_PROPAGATE_INHERIT_ACE)))
+				pnewace->flags |= INHERIT_ONLY_ACE;
+			if ((poldace->flags & CONTAINER_INHERIT_ACE)
+			    && !(poldace->flags & NO_PROPAGATE_INHERIT_ACE)
+			    && !ntfs_same_sid(&poldace->sid, ownersid)
+			    && !ntfs_same_sid(&poldace->sid, groupsid)) {
+				if ((poldace->mask & (GENERIC_ALL | GENERIC_READ
+					| GENERIC_WRITE | GENERIC_EXECUTE)))
+					pnewace->flags |= INHERIT_ONLY_ACE;
+				else
+					pnewace->flags &= ~INHERIT_ONLY_ACE;
+			}
 			if (inherited)
 				pnewace->flags |= INHERITED_ACE;
+			/*
+			 * Prepare grouping similar ACE for authenticated users
+			 */
+			if ((poldace->type == ACCESS_ALLOWED_ACE_TYPE)
+			    && !pauthace
+			    && !(pnewace->flags & INHERIT_ONLY_ACE)
+			    && ntfs_same_sid(&poldace->sid, authsid)) {
+				pauthace = pnewace;
+			}
+			/*
+			 * Prepare grouping similar ACE for owner
+			 */
+			if ((poldace->type == ACCESS_ALLOWED_ACE_TYPE)
+			    && !pownerace
+			    && !(pnewace->flags & INHERIT_ONLY_ACE)
+			    && ntfs_same_sid(&poldace->sid, usid)) {
+				pownerace = pnewace;
+			}
 			dst += acesz;
 			newcnt++;
 		}
@@ -1214,6 +1301,45 @@ struct POSIX_SECURITY *ntfs_replace_acl(const struct POSIX_SECURITY *oldpxdesc,
 	} else
 		errno = ENOMEM;
 	return (newpxdesc);
+}
+
+/*
+ *		Build a basic Posix ACL from a mode and umask,
+ *	ignoring inheritance from the parent directory
+ */
+
+struct POSIX_SECURITY *ntfs_build_basic_posix(
+		const struct POSIX_SECURITY *pxdesc __attribute__((unused)),
+		mode_t mode, mode_t mask, BOOL isdir __attribute__((unused)))
+{
+	struct POSIX_SECURITY *pydesc;
+	struct POSIX_ACE *pyace;
+
+	pydesc = (struct POSIX_SECURITY*)malloc(
+		sizeof(struct POSIX_SECURITY) + 3*sizeof(struct POSIX_ACE));
+	if (pydesc) {
+		pyace = &pydesc->acl.ace[0];
+		pyace->tag = POSIX_ACL_USER_OBJ;
+		pyace->perms = ((mode & ~mask) >> 6) & 7;
+		pyace->id = -1;
+		pyace = &pydesc->acl.ace[1];
+		pyace->tag = POSIX_ACL_GROUP_OBJ;
+		pyace->perms = ((mode & ~mask) >> 3) & 7;
+		pyace->id = -1;
+		pyace = &pydesc->acl.ace[2];
+		pyace->tag = POSIX_ACL_OTHER;
+		pyace->perms = (mode & ~mask) & 7;
+		pyace->id = -1;
+		pydesc->mode = mode;
+		pydesc->tagsset = POSIX_ACL_USER_OBJ
+				| POSIX_ACL_GROUP_OBJ
+				| POSIX_ACL_OTHER;
+		pydesc->acccnt = 3;
+		pydesc->defcnt = 0;
+		pydesc->firstdef = 6;
+	} else
+		errno = ENOMEM;
+	return (pydesc);
 }
 
 /*
@@ -4044,7 +4170,8 @@ static SID *encodesid(const char *sidstr)
 			cnt++;
 		}
 		bsid->sub_authority_count = cnt;
-		if ((cnt > 0) && ntfs_valid_sid(bsid) && ntfs_is_user_sid(bsid)) {
+		if ((cnt > 0) && ntfs_valid_sid(bsid)
+		    && (ntfs_is_user_sid(bsid) || ntfs_known_group_sid(bsid))) {
 			sid = (SID*) ntfs_malloc(4 * cnt + 8);
 			if (sid)
 				memcpy(sid, bsid, 4 * cnt + 8);
@@ -4257,6 +4384,12 @@ struct MAPPING *ntfs_do_user_mapping(struct MAPLIST *firstitem)
 		if (uid
 		   || (!item->uidstr[0] && !item->gidstr[0])) {
 			sid = encodesid(item->sidstr);
+			if (sid && ntfs_known_group_sid(sid)) {
+				ntfs_log_error("Bad user SID %s\n",
+					item->sidstr);
+				free(sid);
+				sid = (SID*)NULL;
+			}
 			if (sid && !item->uidstr[0] && !item->gidstr[0]
 			    && !ntfs_valid_pattern(sid)) {
 				ntfs_log_error("Bad implicit SID pattern %s\n",
@@ -4351,7 +4484,15 @@ struct MAPPING *ntfs_do_group_mapping(struct MAPLIST *firstitem)
 					if (mapping) {
 						mapping->sid = sid;
 						mapping->xid = gid;
-						mapping->grcnt = 0;
+					/* special groups point to themselves */
+						if (ntfs_known_group_sid(sid)) {
+							mapping->groups =
+							  (gid_t*)&mapping->xid;
+							mapping->grcnt = 1;
+						} else
+							mapping->grcnt = 0;
+
+
 						mapping->next = (struct MAPPING*)NULL;
 						if (lastmapping)
 							lastmapping->next = mapping;
