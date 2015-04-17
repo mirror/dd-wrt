@@ -24,8 +24,8 @@
 
 # Autoconf
 AC_PREREQ(2.59)
-AC_INIT([ntfs-3g],[2014.2.15],[ntfs-3g-devel@lists.sf.net])
-LIBNTFS_3G_VERSION="85"
+AC_INIT([ntfs-3g],[2015.3.14],[ntfs-3g-devel@lists.sf.net])
+LIBNTFS_3G_VERSION="86"
 AC_CONFIG_SRCDIR([src/ntfs-3g.c])
 
 # Environment
@@ -155,6 +155,14 @@ AC_ARG_ENABLE(
 		       (default=no)])],
 	,
 	[enable_extras="no"]
+)
+
+AC_ARG_ENABLE(
+	[quarantined],
+	[AS_HELP_STRING([--enable-quarantined],[enable quarantined ntfsprogs utilities
+		       (default=no)])],
+	,
+	[enable_quarantined="no"]
 )
 
 AC_ARG_ENABLE(
@@ -463,7 +471,8 @@ AC_CHECK_HEADERS([ctype.h fcntl.h libgen.h libintl.h limits.h locale.h \
 	regex.h endian.h byteswap.h sys/byteorder.h sys/disk.h sys/endian.h \
 	sys/param.h sys/ioctl.h sys/mkdev.h sys/mount.h sys/stat.h sys/types.h \
 	sys/vfs.h sys/statvfs.h sys/sysmacros.h linux/major.h linux/fd.h \
-	linux/hdreg.h machine/endian.h windows.h syslog.h pwd.h malloc.h])
+	linux/fs.h inttypes.h linux/hdreg.h \
+	machine/endian.h windows.h syslog.h pwd.h malloc.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -607,6 +616,7 @@ AM_CONDITIONAL([ENABLE_MOUNT_HELPER], [test "${enable_mount_helper}" = "yes"])
 AM_CONDITIONAL([ENABLE_NTFS_3G], [test "${enable_ntfs_3g}" = "yes"])
 AM_CONDITIONAL([ENABLE_NTFSPROGS], [test "${enable_ntfsprogs}" = "yes"])
 AM_CONDITIONAL([ENABLE_EXTRAS], [test "${enable_extras}" = "yes"])
+AM_CONDITIONAL([ENABLE_QUARANTINED], [test "${enable_quarantined}" = "yes"])
 
 # workaround for <autoconf-2.60
 if test -z "${docdir}"; then
@@ -643,6 +653,10 @@ AC_CONFIG_FILES([
 	ntfsprogs/ntfsprogs.8
 	ntfsprogs/ntfsresize.8
 	ntfsprogs/ntfsundelete.8
+	ntfsprogs/ntfsdecrypt.8
+	ntfsprogs/ntfswipe.8
+	ntfsprogs/ntfstruncate.8
+	ntfsprogs/ntfsfallocate.8
 	src/Makefile
 	src/ntfs-3g.8
 	src/ntfs-3g.probe.8

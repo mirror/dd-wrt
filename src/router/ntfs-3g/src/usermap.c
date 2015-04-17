@@ -2,7 +2,7 @@
  *               Windows to Linux user mapping for ntfs-3g
  *
  * 
- * Copyright (c) 2007-2008 Jean-Pierre Andre
+ * Copyright (c) 2007-2014 Jean-Pierre Andre
  *
  *    A quick'n dirty program scanning owners of files in
  *      "c:\Documents and Settings" (and "c:\Users")
@@ -41,10 +41,16 @@
  *     - avoided selecting DOS names on Linux
  *
  *  Nov 2009 Version 1.1.3
- *     - shutdown compiler warnings for unused parameters
+ *     - silenced compiler warnings for unused parameters
  *
  *  Jan 2010 Version 1.1.4
  *     - fixed compilation problems for Mac OSX (Erik Larsson)
+ *
+ *  Apr 2014 Version 1.1.5
+ *     - displayed the parent directory of selected files
+ *
+ *  May 2014 Version 1.1.6
+ *     - fixed a wrong function header
  */
 
 /*
@@ -83,7 +89,7 @@
 #define INIT_FILE_SECURITY "ntfs_initialize_file_security"
 #define LEAVE_FILE_SECURITY "ntfs_leave_file_security"
 
-#define VERSION "1.1.4"
+#define VERSION "1.1.6"
 #define MAPDIR ".NTFS-3G"
 #define MAPFILE "UserMapping"
 #define MAXATTRSZ 2048
@@ -169,7 +175,7 @@ BOOL ntfs_set_file_security(void *scapi,
 BOOL ntfs_read_directory(void *scapi,
 		const char *path, dircallback callback, void *context);
 void *ntfs_initialize_file_security(const char *device,
-                                int flags);
+                                unsigned long flags);
 BOOL ntfs_leave_file_security(void *scapi);
 
 #else
@@ -184,7 +190,7 @@ BOOL (*ntfs_set_file_security)(void *scapi,
 BOOL (*ntfs_read_directory)(void *scapi,
 		const char *path, dircallback callback, void *context);
 void *(*ntfs_initialize_file_security)(const char *device,
-                                int flags);
+                                unsigned long flags);
 BOOL (*ntfs_leave_file_security)(void *scapi);
 
 #endif
@@ -472,7 +478,7 @@ STATIC unsigned char *makegroupsid(const unsigned char *sid)
 }
 
 STATIC void domapping(const char *accname, const char *filename,
-		const unsigned char *sid, int type)
+		const char *dir, const unsigned char *sid, int type)
 {
 	char buf[81];
 	char *sidstr;
@@ -499,6 +505,8 @@ STATIC void domapping(const char *accname, const char *filename,
 				printf("\n");
 				if (accname)
 					printf("Under Windows login \"%s\"\n", accname);
+				if (dir)
+					printf("   in directory \"%s\"\n",dir);
 				printf("   file \"%s\" has no mapped %s\n",
 					       filename,(type ? "group" : "owner"));
 				printf("By which Linux login should this file be owned ?\n");
@@ -578,7 +586,8 @@ STATIC void listaclusers(const char *accname, const unsigned char *attr, int off
 	cnt = get2l(attr, off + 4);
 	x = 8;
 	for (i = 0; i < cnt; i++) {
-		domapping(accname, (char *)NULL, &attr[off + x + 8], 2);
+		domapping(accname, (char *)NULL, (char*)NULL, 
+                                       &attr[off + x + 8], 2);
 		x += get2l(attr, off + x + 2);
 	}
 }
@@ -602,12 +611,12 @@ STATIC void account(const char *accname, const char *dir, const char *name, int 
 			if (GetFileSecurity
 			    (fullname, OWNER_SECURITY_INFORMATION, attr, MAXATTRSZ,
 			     &attrsz)) {
-				domapping(accname, name, &attr[20], 0);
+				domapping(accname, name, dir, &attr[20], 0);
 				attrsz = 0;
 				if (GetFileSecurity
 				    (fullname, GROUP_SECURITY_INFORMATION, attr,
 				     MAXATTRSZ, &attrsz))
-					domapping(accname, name, &attr[20], 1);
+					domapping(accname, name, dir, &attr[20], 1);
 				else
 					printf("   No group SID\n");
 				attrsz = 0;
@@ -641,12 +650,12 @@ STATIC void account(const char *accname, const char *dir, const char *name, int 
 		if (ntfs_get_file_security(ntfs_context,
 			fullname, OWNER_SECURITY_INFORMATION,
 			(char*)attr, MAXATTRSZ, &attrsz)) {
-			domapping(accname, name, &attr[20], 0);
+			domapping(accname, name, dir, &attr[20], 0);
 			attrsz = 0;
 			if (ntfs_get_file_security(ntfs_context,
 			     fullname, GROUP_SECURITY_INFORMATION,
 			     (char*)attr, MAXATTRSZ, &attrsz))
-				domapping(accname, name, &attr[20], 1);
+				domapping(accname, name, dir, &attr[20], 1);
 			else
 				printf("   No group SID\n");
 			attrsz = 0;
@@ -1343,6 +1352,9 @@ int main(int argc, char *argv[])
 		if (open_security_api()) {
 			ok = process(argc,argv);
 			if (!close_security_api()) ok = DENIED;
+		}
+		else {
+			ok = DENIED;
 		}
 #endif
 	} else
