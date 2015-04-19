@@ -230,7 +230,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
-		in = fopen(drive, "r+b");
+		int fd = open(drive, O_DIRECT | O_CREAT | O_SYNC | O_LARGEFILE | O_RDWR);
+		FILE *in = fdopen(fd, "r+b");
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
@@ -242,7 +243,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	}
 #endif
 	fprintf(stderr, "write system\n");
-	FILE *out = fopen(drive, "r+b");
+	int fd = open(drive, O_DIRECT | O_CREAT | O_SYNC | O_LARGEFILE | O_RDWR);
+	FILE *out = fdopen(fd, "r+b");
 	if (!out) {
 		return -1;
 	}
