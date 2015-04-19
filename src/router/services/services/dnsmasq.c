@@ -98,7 +98,7 @@ static int hasmdhcp(void)
 {
 	if (nvram_get("mdhcpd_count") != NULL) {
 		int mdhcpcount = atoi(nvram_safe_get("mdhcpd_count"));
-		return mdhcpcount>0?1:0;
+		return mdhcpcount > 0 ? 1 : 0;
 	}
 	return 0;
 }
