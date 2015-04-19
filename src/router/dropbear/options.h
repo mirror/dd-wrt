@@ -81,7 +81,7 @@ much traffic. */
 
 /* Enable "Netcat mode" option. This will forward standard input/output
  * to a remote TCP-forwarded connection */
-#define ENABLE_CLI_NETCAT
+// #define ENABLE_CLI_NETCAT
 
 /* Whether to support "-c" and "-m" flags to choose ciphers/MACs at runtime */
 //#define ENABLE_USER_ALGO_LIST
@@ -127,8 +127,8 @@ much traffic. */
  * which are not the standard form. */
 #define DROPBEAR_SHA1_HMAC
 /*#define DROPBEAR_SHA1_96_HMAC*/
-#define DROPBEAR_SHA2_256_HMAC
-#define DROPBEAR_SHA2_512_HMAC
+/*#define DROPBEAR_SHA2_256_HMAC*/
+/*#define DROPBEAR_SHA2_512_HMAC*/
 #define DROPBEAR_MD5_HMAC
 
 /* You can also disable integrity. Don't bother disabling this if you're
@@ -226,7 +226,7 @@ much traffic. */
  * note that it will be provided for all "hidden" client-interactive
  * style prompts - if you want something more sophisticated, use 
  * SSH_ASKPASS instead. Comment out this var to remove this functionality.*/
-#define DROPBEAR_PASSWORD_ENV "DROPBEAR_PASSWORD"
+/*#define DROPBEAR_PASSWORD_ENV "DROPBEAR_PASSWORD"*/
 
 /* Define this (as well as ENABLE_CLI_PASSWORD_AUTH) to allow the use of
  * a helper program for the ssh client. The helper program should be
