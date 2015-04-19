@@ -337,8 +337,6 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 	}
 	sysprintf("/usr/sbin/disktype %s > %s", path, &part_file);
 
-	sysprintf("echo usb_process_path partfile %s  by path %s>> /tmp/hotplugs", &part_file, path);
-
 	/* determine fs */
 	fs = "";
 	if ((fp = fopen(part_file, "r"))) {
@@ -506,17 +504,16 @@ static void usb_unmount(char *devpath)
 
 	usb_stop_services();
 
-	system("echo 1 > /proc/sys/vm/drop_caches");	// flush fs cache
+	writeproc("/proc/sys/vm/drop_caches", "3");	// flush fs cache
 
 	//K3 code
-	sysprintf("umount %s", devpath);
+	eval("umount", devpath);
 
 	//K2.6 code
 	sprintf(dev_dir, "/tmp/%s", devpath);
 	// /tmp/devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1:1.0/
 	dir = opendir(dev_dir);
 	if (dir != NULL) {
-		sysprintf("echo  Starting umount %s >> /tmp/hotplugs", devpath);
 		while ((entry = readdir(dir)) != NULL) {
 			if (strncmp(entry->d_name, ".", 1)) {	//skip . and ..
 				/* use the symlinks we created under /tmp to umount the devices partitions */
@@ -546,15 +543,12 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode)
 
 	//create directory to store disktype dumps
 
-	//sysprintf("echo usb_add_ufd host %d devname %s >> /tmp/hotplugs", host, devpath);
-
 	if (mode == 1) {	//K3
 		usb_process_path(devpath, -1, NULL, NULL);	//use -1 to signal K3          
 	} else {		//K2.6
 		usb_stop_services();	//K3 will start/stop only for a drive not partition
 		dir = opendir(link);
 		if (dir != NULL) {
-			sysprintf("echo  Reading %s >> /tmp/hotplugs", link);
 			while ((entry = readdir(dir)) != NULL) {
 				sprintf(part_link, "%s/%s", link, entry->d_name);
 				if (!strncmp(entry->d_name, "disc", 4)) {
@@ -564,17 +558,11 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode)
 				}
 
 				if (strncmp(entry->d_name, "disc", 4) && strncmp(entry->d_name, ".", 1)) {	//only get partitions
-					sysprintf("echo  Processing  %s >> /tmp/hotplugs", entry->d_name);
 					usb_process_path(part_link, host, entry->d_name, devpath);
-				} else {
-					//sysprintf("echo  Skipping %s >> /tmp/hotplugs", entry->d_name);
 				}
 
 			}
-			//sysprintf("echo  Done reading %s >> /tmp/hotplugs", link);
 			closedir(dir);
-		} else {
-			sysprintf("echo  Cannot read %s >> /tmp/hotplugs", link);
 		}
 		run_on_mount();
 		usb_start_services();
