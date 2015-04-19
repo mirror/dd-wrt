@@ -266,7 +266,7 @@ ifneq ($(CONFIG_NOOPT),y)
 	rm -rf $(ARCH)-uclibc/tmp/mklibs-out
 	rm -f $(ARCH)-uclibc/tmp/mklibs-progs
 	mkdir -p $(ARCH)-uclibc/tmp/mklibs-out
-	find $(TARGETDIR) -type f -perm +100 -exec \
+	find $(TARGETDIR) -type f -perm /100 -exec \
 		file -r -N -F '' {} + | \
 		awk ' /executable.*dynamically/ { print $$1 }' > $(ARCH)-uclibc/tmp/mklibs-progs
 
