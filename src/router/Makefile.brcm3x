@@ -187,6 +187,8 @@ endif
 
 #	-$(MAKE) -f Makefile.brcm3x ath9k
 #	-$(MAKE) -f Makefile.brcm3x ath9k-install
+	-$(MAKE) -f Makefile.brcm3x emf
+	-$(MAKE) -f Makefile.brcm3x emf-install
 	-$(MAKE) -f Makefile.brcm3x libutils
 #	-$(MAKE) -f Makefile.brcm3x madwifi
 #	-$(MAKE) -f Makefile.brcm3x madwifi-install
@@ -382,7 +384,7 @@ ifneq ($(CONFIG_NOOPT),y)
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
 	-mkdir -p /tmp/$(ARCHITECTURE)/
-	find $(TARGETDIR) -type f -perm +100 -exec \
+	find $(TARGETDIR) -type f -perm /100 -exec \
 		file -r -N -F '' {} + | \
 		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
 
