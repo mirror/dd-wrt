@@ -14,7 +14,7 @@ mc-configure: ncurses
 	make -C mc2/slang clean
 	make -C mc2/slang
 
-	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux CC="ccache $(CC)" \
+	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" CC="ccache $(CC)" \
 		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/mc2/slang/src" \
 		LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -lncurses" \
 		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
