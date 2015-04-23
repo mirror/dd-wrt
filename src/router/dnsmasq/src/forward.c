@@ -1014,7 +1014,7 @@ void reply_query(int fd, int family, time_t now)
 	    header->hb3 |= HB3_TC;
 	  else
 	    {
-	      char *result;
+	      char *result, *domain = "result";
 	      
 	      if (forward->work_counter == 0)
 		{
@@ -1024,7 +1024,10 @@ void reply_query(int fd, int family, time_t now)
 	      else
 		result = (status == STAT_SECURE ? "SECURE" : (status == STAT_INSECURE ? "INSECURE" : "BOGUS"));
 	      
-	      log_query(F_KEYTAG | F_SECSTAT, "result", NULL, result);
+	      if (status == STAT_BOGUS && extract_request(header, n, daemon->namebuff, NULL))
+		domain = daemon->namebuff;
+
+	      log_query(F_KEYTAG | F_SECSTAT, domain, NULL, result);
 	    }
 	  
 	  if (status == STAT_SECURE)
@@ -1975,7 +1978,7 @@ unsigned char *tcp_request(int confd, time_t now,
 			{
 			  int keycount = DNSSEC_WORK; /* Limit to number of DNSSEC questions, to catch loops and avoid filling cache. */
 			  int status = tcp_key_recurse(now, STAT_TRUNCATED, header, m, 0, daemon->namebuff, daemon->keyname, last_server, &keycount);
-			  char *result;
+			  char *result, *domain = "result";
 
 			  if (status == STAT_INSECURE_DS)
 			    {
@@ -1993,8 +1996,10 @@ unsigned char *tcp_request(int confd, time_t now,
 			    }
 			  else
 			    result = (status == STAT_SECURE ? "SECURE" : (status == STAT_INSECURE ? "INSECURE" : "BOGUS"));
-			  
-			  log_query(F_KEYTAG | F_SECSTAT, "result", NULL, result);
+			   if (status == STAT_BOGUS && extract_request(header, m, daemon->namebuff, NULL))
+			     domain = daemon->namebuff;
+
+			  log_query(F_KEYTAG | F_SECSTAT, domain, NULL, result);
 			  
 			  if (status == STAT_BOGUS)
 			    {
