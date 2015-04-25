@@ -330,6 +330,9 @@ endif
 ifeq ($(CONFIG_WNDR3700V4),y)
 	cp $(LINUXDIR)/.config_wndr3700v4 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WR710),y)
+	sed -i 's/\# CONFIG_AG7240_GE0_IS_CONNECTED is not set/CONFIG_AG7240_GE0_IS_CONNECTED=y/g' $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_ALFANX),y)
 	echo CONFIG_ALFANX=y >> $(LINUXDIR)/.config
 else
