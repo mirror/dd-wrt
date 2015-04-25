@@ -144,11 +144,19 @@ void start_sysinit(void)
 
 #ifdef HAVE_WR741V4
 #ifdef HAVE_SWCONFIG
+#ifdef HAVE_WR710
+	eval("swconfig", "dev", "eth1", "set", "reset", "1");
+	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0t 3");
+	eval("swconfig", "dev", "eth1", "vlan", "2", "set", "ports", "0t 1");
+	eval("swconfig", "dev", "eth1", "set", "apply");
+
+#else
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
-
+#emdif
 #endif
 #ifndef HAVE_WR703
 	setEthLED(13, "eth0");
