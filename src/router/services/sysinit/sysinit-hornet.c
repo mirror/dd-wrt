@@ -150,7 +150,9 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0t 3");
 	eval("swconfig", "dev", "eth1", "vlan", "2", "set", "ports", "0t 1");
 	eval("swconfig", "dev", "eth1", "set", "apply");
-
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth1", "1");
+	eval("vconfig", "add", "eth1", "2");
 #else
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
