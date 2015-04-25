@@ -1419,9 +1419,9 @@ void start_lan(void)
 		PORTSETUPWAN("");
 	} else {
 		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
-		PORTSETUPWAN("eth1");
+		PORTSETUPWAN("eth0");
 	}
-	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
