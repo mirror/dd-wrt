@@ -1395,10 +1395,10 @@ void start_restore_defaults(void)
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
 		{"lan_ifnames", "eth0 eth1 ath0"},
-		{"wan_ifname", "eth1"},
-		{"wan_ifname2", "eth1"},
-		{"wan_ifnames", "eth1"},
-		{"wan_default", "eth1"},
+		{"wan_ifname", "eth0"},
+		{"wan_ifname2", "eth0"},
+		{"wan_ifnames", "eth0"},
+		{"wan_default", "eth0"},
 		{0, 0}
 	};
 #elif HAVE_WR703
