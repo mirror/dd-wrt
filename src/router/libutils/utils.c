@@ -5003,6 +5003,10 @@ int led_control(int type, int act)
 		connected_gpio = 0x11b;
 		diag_gpio = 0x11a;
 		usb_power = 0x008;
+#elif HAVE_WR710
+		power_gpio = 0x11b;
+		diag_gpio = 0x01b;
+		usb_power = 0x008;
 #elif HAVE_WR703
 		diag_gpio = 0x11b;
 		ses_gpio = 0x001;

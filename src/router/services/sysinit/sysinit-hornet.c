@@ -158,7 +158,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
-#emdif
+#endif
 #endif
 #ifndef HAVE_WR703
 	setEthLED(13, "eth0");
