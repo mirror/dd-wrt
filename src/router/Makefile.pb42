@@ -332,6 +332,11 @@ ifeq ($(CONFIG_WNDR3700V4),y)
 endif
 ifeq ($(CONFIG_WR710),y)
 	sed -i 's/\# CONFIG_AG7240_GE0_IS_CONNECTED is not set/CONFIG_AG7240_GE0_IS_CONNECTED=y/g' $(LINUXDIR)/.config
+	echo "# CONFIG_WZRG450 is not set" >> $(LINUXDIR)/.config
+	echo "# CONFIG_AR7242_RTL8309G_PHY is not set" >> $(LINUXDIR)/.config
+	echo "# CONFIG_AR7242_VIR_PHY is not set" >> $(LINUXDIR)/.config
+	echo "# CONFIG_AR7242_RGMII_PHY is not set" >> $(LINUXDIR)/.config
+	echo "CONFIG_AR7242_S16_PHY=y" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_ALFANX),y)
 	echo CONFIG_ALFANX=y >> $(LINUXDIR)/.config
