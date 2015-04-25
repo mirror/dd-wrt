@@ -335,6 +335,11 @@ ifeq ($(CONFIG_ALFANX),y)
 else
 	echo "# CONFIG_ALFANX is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_DIR859),y)
+	echo CONFIG_DIR859=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_DIR859 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_AP135),y)
 	echo CONFIG_AP135=y >> $(LINUXDIR)/.config
 ifneq ($(CONFIG_MMS344),y)
@@ -1630,6 +1635,12 @@ ifeq ($(CONFIG_WR741),y)
 	-./tools/tplink/mktplinkfw -B TL-WR703Nv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR703Nv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR703Nv1-firmware.bin mips-uclibc/tplink-WR703Nv1-firmware.bin
 
+	-./tools/tplink/mktplinkfw -B TL-WR710Nv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv1-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR710Nv1-firmware.bin mips-uclibc/tplink-WR710Nv1-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B TL-WR710Nv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv2-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR710Nv2-firmware.bin mips-uclibc/tplink-WR710Nv2-firmware.bin
+
 	-./tools/tplink/mktplinkfw -B TL-MR3020 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3020-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3020-firmware.bin mips-uclibc/tplink-MR3020-firmware.bin
 
@@ -1726,6 +1737,21 @@ ifeq ($(CONFIG_RB2011),y)
 	rm -f $(LINUXDIR)/vmlinux.o
 	make -f Makefile.pb42 kernel
 endif
+	make -C lzma-loader/relocate
+	cp $(ARCH)-uclibc/vmlinus lzma-loader/relocate/vmlinus.bin.new
+	rm -f lzma-loader/relocate/vmlinus.bin
+	make -C lzma-loader/relocate vmlinus.bin
+
+	lzma e -lc1 -lp2 -pb2 -d25 lzma-loader/relocate/vmlinus.bin $(ARCH)-uclibc/vmlinux.seama
+	
+	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir859.img -i $(ARCH)-uclibc/vmlinux.seama -i $(ARCH)-uclibc/root.fs  
+	./tools/seama/seama -i $(ARCH)-uclibc/raw-dir859.img -m dev=/dev/mtdblock/1 -m type=firmware 
+	./tools/seama/seama -s $(ARCH)-uclibc/web-dir859.img -i $(ARCH)-uclibc/raw-dir859.img.seama -m signature=wrgac37_dlink.2013gui_dir859
+	./tools/seama/seama -d $(ARCH)-uclibc/web-dir859.img
+	dd if=$(ARCH)-uclibc/web-dir859.img of=$(ARCH)-uclibc/webflash-dir859.img skip=52 iflag=skip_bytes 
+	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dir859.trx $(ARCH)-uclibc/webflash-dir859.img
+
+
 include rules/all.mk
 
 .PHONY: all clean distclean mrproper install package

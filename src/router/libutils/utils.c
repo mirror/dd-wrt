@@ -2619,6 +2619,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "1");
 	setRouter("TP-Link TL-MR3020");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WR710
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	setRouter("TP-Link TL-WR710N v1");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR703
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
