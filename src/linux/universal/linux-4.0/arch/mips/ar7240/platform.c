@@ -537,7 +537,7 @@ extern void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
 void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
 
-static void __init ath79_setup_ar933x_phy4_switch(bool mac, bool mdio)
+static __init ath79_setup_ar933x_phy4_switch(bool mac, bool mdio)
 {
 	void __iomem *base;
 	u32 t;
@@ -706,10 +706,13 @@ int __init ar7240_platform_init(void)
 	}
 #endif
 	enable_uart();
+#ifdef CONFIG_MACH_HORNET
 #ifdef CONFIG_WR710
        ath79_setup_ar933x_phy4_switch(false, false);
+#else
+       ath79_setup_ar933x_phy4_switch(true, true);
 #endif
-
+#endif
 
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
