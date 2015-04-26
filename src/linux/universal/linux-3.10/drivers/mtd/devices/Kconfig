@@ -342,6 +342,9 @@ config UBNTXW
 config DAP3310
 	bool "support for Dlink DAP3310"
 	depends on UBNTXW
+config WR710
+	bool "support for TPLink WR710"
+	depends on MACH_HORNET && WR741
 config WR841V9
 	bool "support for TPLink WR841V9"
 	depends on WR841V8
