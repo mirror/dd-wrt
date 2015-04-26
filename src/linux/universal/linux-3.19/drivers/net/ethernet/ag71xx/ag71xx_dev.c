@@ -1163,31 +1163,11 @@ static inline void phy_dev_init(void)
 
 #endif
 
-static void __init tl_wr741ndv4_gmac_setup(void)
-{
-	void __iomem *base;
-	u32 t;
-
-	base = ioremap(AR933X_GMAC_BASE, AR933X_GMAC_SIZE);
-
-	t = __raw_readl(base + AR933X_GMAC_REG_ETH_CFG);
-	t |= (AR933X_ETH_CFG_SW_PHY_SWAP | AR933X_ETH_CFG_SW_PHY_ADDR_SWAP);
-	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
-
-	iounmap(base);
-}
-
-
 static int __init ar71xx_eth_dev_register(void)
 {
 	ar71xx_soc = ar71xx_get_soc_type();
 
 	ar71xx_eth0_data.speed = SPEED_1000;
-#ifdef CONFIG_MACH_HORNET
-#ifdef CONFIG_WR741
-	tl_wr741ndv4_gmac_setup();
-#endif
-#endif
 #if defined(CONFIG_AG7100_GE0_MII)
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
