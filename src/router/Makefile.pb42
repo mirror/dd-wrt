@@ -215,6 +215,9 @@ ifeq ($(CONFIG_WR741V4),y)
 endif
 ifeq ($(CONFIG_WR703),y)
 	cp $(LINUXDIR)/.config_wr703 $(LINUXDIR)/.config
+ifneq ($(CONFIG_WR710),y)
+	echo "# CONFIG_WR710 is not set" >> $(LINUXDIR)/.config
+endif
 endif
 ifeq ($(CONFIG_WRT400),y)
 	cp $(LINUXDIR)/.config_wrt400 $(LINUXDIR)/.config
@@ -341,6 +344,7 @@ endif
 	echo "# CONFIG_AR7242_VIR_PHY is not set" >> $(LINUXDIR)/.config
 	echo "# CONFIG_AR7242_RGMII_PHY is not set" >> $(LINUXDIR)/.config
 	echo "CONFIG_AR7242_S16_PHY=y" >> $(LINUXDIR)/.config
+	echo "CONFIG_WR710=y" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_ALFANX),y)
 	echo CONFIG_ALFANX=y >> $(LINUXDIR)/.config
