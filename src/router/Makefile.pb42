@@ -331,7 +331,9 @@ ifeq ($(CONFIG_WNDR3700V4),y)
 	cp $(LINUXDIR)/.config_wndr3700v4 $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WR710),y)
+ifeq ($(CONFIG_WR710V1),y)
 	cp $(LINUXDIR)/.config_carambola $(LINUXDIR)/.config
+endif
 	sed -i 's/\# CONFIG_AG7240_GE0_IS_CONNECTED is not set/CONFIG_AG7240_GE0_IS_CONNECTED=y/g' $(LINUXDIR)/.config
 	sed -i 's/\# CONFIG_WR741 is not set/CONFIG_WR741=y/g' $(LINUXDIR)/.config
 	echo "# CONFIG_WZRG450 is not set" >> $(LINUXDIR)/.config
