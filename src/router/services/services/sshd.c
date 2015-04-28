@@ -169,7 +169,7 @@ static int write_key_file(char *keyname, char *keyfile, int chmodval)
 static int generate_dropbear_rsa_host_key(void)
 {
 	FILE *fp = (void *)0;
-	char *buf = malloc(4096)
+	char *buf = malloc(4096);
 	int ret = -1;
 
 	eval("dropbearkey", "-t", "rsa", "-f", RSA_HOST_KEY_FILE);
@@ -200,7 +200,7 @@ static int generate_dropbear_rsa_host_key(void)
 static int generate_dropbear_dss_host_key(void)
 {
 	FILE *fp = (void *)0;
-	char *buf = malloc(4096)
+	char *buf = malloc(4096);
 	int ret = -1;
 
 	eval("dropbearkey", "-t", "dss", "-f", DSS_HOST_KEY_FILE);
