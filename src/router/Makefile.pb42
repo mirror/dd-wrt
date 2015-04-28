@@ -1357,6 +1357,14 @@ ifeq ($(CONFIG_DIR825),y)
 	cat tools/dir825tw.tag >> $(ARCH)-uclibc/dir825tw-uimage.bin
 	
 endif
+ifeq ($(CONFIG_DIR866),y)
+	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/dir866-uimage.bin
+	cat tools/dir866a1.tag >> $(ARCH)-uclibc/dir866-uimage.bin
+endif
+ifeq ($(CONFIG_DIR862),y)
+	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/dir862-uimage.bin
+	cat tools/dir862a1.tag >> $(ARCH)-uclibc/dir862-uimage.bin
+endif
 ifeq ($(CONFIG_DIR825C1),y)
 	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/dir825c1-uimage.bin
 	cat tools/dir825c1.tag >> $(ARCH)-uclibc/dir825c1-uimage.bin	
