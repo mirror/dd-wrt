@@ -2026,6 +2026,20 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_rxantenna", "3");
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_DIR866
+	setRouter("Dlink DIR866-A1");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_DIR862
+	setRouter("Dlink DIR862-A1");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_MMS344
 	setRouter("Compex MMS344");
 	nvram_default_get("ath0_rxantenna", "3");
