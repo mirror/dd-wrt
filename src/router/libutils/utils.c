@@ -5460,6 +5460,14 @@ int led_control(int type, int act)
 		usb_gpio = 0x10d;
 		ses_gpio = 0x110;
 		break;
+#elif HAVE_DIR862
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x10e; // orange
+		diag_gpio_disabled = 0x113; // 
+		power_gpio = 0x113; // green
+		connected_gpio = 0x116; // green
+		disconnected_gpio = 0x117; // orange
+		break;
 #elif HAVE_MMS344
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x10e;
