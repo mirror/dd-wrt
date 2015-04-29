@@ -1,0 +1,60 @@
+#
+# PRE: update if
+#
+update reply {
+	Filter-Id := "filter"
+}
+
+update {
+       control:Cleartext-Password := 'hello'
+       request:Tmp-String-0 := "This is a string\n"
+       request:Tmp-Octets-0 := 0x000504030201
+       request:Tmp-String-1 := "what do ya want for nothing?"
+       request:Tmp-String-2 := "Jefe"
+}
+
+#
+#  Put "This is a string" into a file and call "md5sum" on it.
+#  You should get this string.
+#
+if ("%{md5:This is a string\n}" != '9ac4dbbc3c0ad2429e61d0df5dc28add') {
+	update reply {
+		Filter-Id += 'fail 1'
+	}
+}
+
+if ("%{md5:&Tmp-String-0}" != '9ac4dbbc3c0ad2429e61d0df5dc28add') {
+	update reply {
+		Filter-Id += 'fail 2'
+	}
+}
+
+if ("%{md5:&request:Tmp-String-0}" != '9ac4dbbc3c0ad2429e61d0df5dc28add') {
+	update reply {
+		Filter-Id += 'fail 3'
+	}
+}
+
+if ("%{md5:%{request:Tmp-String-0}}" != '9ac4dbbc3c0ad2429e61d0df5dc28add') {
+	update reply {
+		Filter-Id += 'fail 4'
+	}
+}
+
+#
+#  MD5 should also be able to cope with references to octet attributes
+#
+if ("%{md5:&request:Tmp-Octets-0}" != 'c1e7fa505b2fc1fd0da6cac3db6f6f44') {
+	update reply {
+		Filter-Id += 'fail 5'
+	}
+}
+
+#
+#  MD5 HMAC with attribute references
+#
+if ("%{hmacmd5:&Tmp-String-1 &Tmp-String-2}" != '750c783e6ab0b503eaa86e310a5db738') {
+	update reply {
+		Filter-Id += 'fail 6'
+	}
+}
