@@ -1,0 +1,100 @@
+AC_PREREQ([2.53])
+AC_INIT(rlm_ruby.c)
+AC_REVISION($Revision: 1.9 $)
+AC_DEFUN(modname,[rlm_ruby])
+
+if test x$with_[]modname != xno; then
+
+	AC_PROG_CC
+	AC_PROG_CPP
+
+	dnl extra argument: --with-rlm-ruby-bin
+	RUBYBIN=
+	AC_ARG_WITH(rlm-ruby-bin,
+	[  --with-rlm-ruby-bin=DIR       Path to the ruby binary []],
+	[ case "$withval" in
+	    no)
+		AC_MSG_ERROR(Need rlm-ruby-bin-dir)
+		;;
+	    yes)
+		;;
+	    *)
+		RUBYBIN="$withval"
+		;;
+	  esac ]
+	)
+
+	if test "x$RUBYBIN" = "x"; then
+		AC_CHECK_PROGS(RUBYBIN, [ ruby ruby1.8 ], not-found, [${PATH}:/usr/bin:/usr/local/bin])
+
+		if test x$RUBYBIN = xnot-found; then
+			fail="ruby-binary"
+		fi
+	fi
+
+	if test x$fail = x; then
+		#We use fetch, cause [] are disapearing somewere
+		RB_PREFIX=`${RUBYBIN} -e "require 'rbconfig'; puts RbConfig::CONFIG.fetch('prefix')"`
+		RB_EXEC_PREFIX=`${RUBYBIN} -e "require 'rbconfig'; puts RbConfig::CONFIG.fetch('exec_prefix')"`
+		changequote(<<, >>)dnl
+		RB_VERSION=`${RUBYBIN} -e 'puts RUBY_VERSION'`
+		changequote([, ])dnl
+
+		AC_MSG_NOTICE([version: $RB_VERSION])
+
+#		RB_LIBS=`${RUBYBIN} -e "require 'rbconfig'; puts Config::CONFIG.fetch('LIBRUBY')"`
+#		RB_LIB_DIR=`${RUBYBIN} -e "require 'rbconfig'; puts Config::CONFIG.fetch('libdir')"`
+#		RB_EXTRA_LIBS=`${RUBYBIN} -e "require 'rbconfig'; puts Config::CONFIG.fetch('LIBS')"`
+		RB_LIBS=`${RUBYBIN} -e "require 'rbconfig'; puts RbConfig::CONFIG.fetch('LIBRUBYARG_SHARED')"`
+		AC_MSG_NOTICE([libs: $RB_LIBS])
+
+		RB_INC_DIR=`${RUBYBIN} -e "require 'rbconfig'; puts RbConfig::CONFIG.fetch('includedir')"`
+		AC_MSG_NOTICE([include: $RB_INC_DIR])
+
+		RB_CFLAGS=`${RUBYBIN} -e "require 'rbconfig'; puts RbConfig::CONFIG.fetch('CFLAGS')"`
+		AC_MSG_NOTICE([cflags: $RB_FLAGS])
+
+		RB_ARCH_DIR=`${RUBYBIN} -e "require 'rbconfig'; puts RbConfig::CONFIG.fetch('archdir')"`
+		AC_MSG_NOTICE([arch: $RB_ARCH_DIR])
+
+		old_CFLAGS=$CFLAGS
+		CFLAGS="$CFLAGS $RB_CFLAGS -I${RB_ARCH_DIR} -I${RB_INC_DIR} -I${RB_INC_DIR}/ruby-${RB_VERSION}"
+		AC_MSG_NOTICE("$CFLAGS");
+		FR_SMART_CHECK_INCLUDE(ruby.h)
+		if test "x$ac_cv_header_ruby_h" != "xyes"; then
+			fail="$fail ruby.h"
+			targetname=
+		fi
+		ruby_cflags=$CFLAGS
+		CFLAGS=$old_CFLAGS
+
+		old_LIBS=$LIBS
+#		LIBS="$RB_LIBS $RB_LIB_DIR $RB_EXTRA_LIBS -lm"
+		LIBS="$RB_LIBS"
+#		smart_try_dir=$RB_LIB_DIR
+		ruby_ldflags=$LIBS
+		LIBS=$old_LIBS
+		targetname=modname
+#		ruby_headers="${RB_INC_DIR} ${RB_ARCH_DIR}"
+	fi
+
+else
+	targetname=
+	echo \*\*\* module modname is disabled.
+fi
+
+if test x"$fail" != x""; then
+	if test x"${enable_strict_dependencies}" = x"yes"; then
+		AC_MSG_ERROR([set --without-]modname[ to disable it explicitly.])
+	else
+		AC_MSG_WARN([silently not building ]modname[.])
+		AC_MSG_WARN([FAILURE: ]modname[ requires: $fail.]);
+		targetname=""
+	fi
+fi
+
+AC_SUBST(ruby_ldflags)
+AC_SUBST(ruby_cflags)
+AC_SUBST(ruby_headers)
+AC_SUBST(targetname)
+AC_OUTPUT(Makefile)
