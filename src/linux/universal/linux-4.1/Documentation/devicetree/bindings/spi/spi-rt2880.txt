@@ -1,0 +1,28 @@
+Ralink SoC RT2880 SPI master controller.
+
+This SPI controller is found on most wireless SoCs made by ralink.
+
+Required properties:
+- compatible : "ralink,rt2880-spi"
+- reg : The register base for the controller.
+- #address-cells : <1>, as required by generic SPI binding.
+- #size-cells : <0>, also as required by generic SPI binding.
+
+Child nodes as per the generic SPI binding.
+
+Example:
+
+	spi@b00 {
+		compatible = "ralink,rt2880-spi";
+		reg = <0xb00 0x100>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		m25p80@0 {
+			compatible = "m25p80";
+			reg = <0>;
+			spi-max-frequency = <10000000>;
+		};
+	};
+
