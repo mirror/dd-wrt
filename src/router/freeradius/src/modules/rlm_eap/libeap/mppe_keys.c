@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: c724937ba8afe24c15e16083b58a6ecb696ff4ad $
+ * Version:     $Id: 0a4174fb731868ca01b2297c1eb05bc8ba1797e1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: c724937ba8afe24c15e16083b58a6ecb696ff4ad $")
+RCSID("$Id: 0a4174fb731868ca01b2297c1eb05bc8ba1797e1 $")
 
 #include <openssl/hmac.h>
 #include "eap_tls.h"
@@ -127,9 +127,8 @@ static void PRF(const unsigned char *secret, unsigned int secret_len,
 void eaptls_gen_mppe_keys(VALUE_PAIR **reply_vps, SSL *s,
 			  const char *prf_label)
 {
-	unsigned char out[4*EAPTLS_MPPE_KEY_LEN], buf[4*EAPTLS_MPPE_KEY_LEN];
-	unsigned char seed[64 + 2*SSL3_RANDOM_SIZE];
-	unsigned char *p = seed;
+	unsigned char out[4*EAPTLS_MPPE_KEY_LEN];
+	unsigned char *p;
 	size_t prf_size;
 
 	if (!s->s3) {
@@ -139,18 +138,31 @@ void eaptls_gen_mppe_keys(VALUE_PAIR **reply_vps, SSL *s,
 
 	prf_size = strlen(prf_label);
 
-	memcpy(p, prf_label, prf_size);
-	p += prf_size;
+#if OPENSSL_VERSION_NUMBER >= 0x10001000L
+	if (SSL_export_keying_material(s, out, sizeof(out), prf_label, prf_size, NULL, 0, 0) != 1) {
+		DEBUG("Failed generating keying material");
+		return;
+	}
+#else
+	{
+		unsigned char buf[4*EAPTLS_MPPE_KEY_LEN];
+		unsigned char seed[64 + 2*SSL3_RANDOM_SIZE];
 
-	memcpy(p, s->s3->client_random, SSL3_RANDOM_SIZE);
-	p += SSL3_RANDOM_SIZE;
-	prf_size += SSL3_RANDOM_SIZE;
+		p = seed;
+		memcpy(p, prf_label, prf_size);
+		p += prf_size;
 
-	memcpy(p, s->s3->server_random, SSL3_RANDOM_SIZE);
-	prf_size += SSL3_RANDOM_SIZE;
+		memcpy(p, s->s3->client_random, SSL3_RANDOM_SIZE);
+		p += SSL3_RANDOM_SIZE;
+		prf_size += SSL3_RANDOM_SIZE;
 
-	PRF(s->session->master_key, s->session->master_key_length,
-	    seed, prf_size, out, buf, sizeof(out));
+		memcpy(p, s->s3->server_random, SSL3_RANDOM_SIZE);
+		prf_size += SSL3_RANDOM_SIZE;
+
+		PRF(s->session->master_key, s->session->master_key_length,
+		    seed, prf_size, out, buf, sizeof(out));
+	}
+#endif
 
 	p = out;
 	add_reply(reply_vps, "MS-MPPE-Recv-Key", p, EAPTLS_MPPE_KEY_LEN);

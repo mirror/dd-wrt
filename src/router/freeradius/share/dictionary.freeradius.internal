@@ -3,7 +3,7 @@
 #
 #	Non Protocol Attributes used by FreeRADIUS
 #
-#	$Id: c05105c30ea52b9c1a58a48fc7ad47cf99ff555a $
+#	$Id: ecdf7f8fce80f504822f4d04f568d757063c656d $
 #
 
 #	The attributes number ranges are allocates as follows:
@@ -538,6 +538,7 @@ VALUE	Session-Type			Local			0
 #
 #	And Post-Auth
 VALUE	Post-Auth-Type			Local			0
+VALUE	Post-Auth-Type			Reject			2
 
 #
 #	Experimental Non-Protocol Integer Translations for FreeRADIUS

@@ -2,7 +2,7 @@
  * rlm_sql.c		SQL Module
  * 		Main SQL module file. Most ICRADIUS code is located in sql.c
  *
- * Version:	$Id: 056ca05b067d895c6b1288401ff0d7a4d6d57499 $
+ * Version:	$Id: dc4b9c672b738e725ebb1a8757c9a890d044080b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 056ca05b067d895c6b1288401ff0d7a4d6d57499 $")
+RCSID("$Id: dc4b9c672b738e725ebb1a8757c9a890d044080b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -821,8 +821,6 @@ static int rlm_sql_detach(void *instance)
 	paircompare_unregister(PW_SQL_GROUP, sql_groupcmp);
 
 	if (inst->config) {
-		int i;
-
 		if (inst->sqlpool) {
 			sql_poolfree(inst);
 		}

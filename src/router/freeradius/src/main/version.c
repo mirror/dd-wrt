@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: d9bf53e40e77c0a09fa542c133b657c38747c2ca $
+ * Version:	$Id: c1134676814f6b2b9d3254bcf0c17672dcaa89de $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: d9bf53e40e77c0a09fa542c133b657c38747c2ca $")
+RCSID("$Id: c1134676814f6b2b9d3254bcf0c17672dcaa89de $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -33,6 +33,22 @@ RCSID("$Id: d9bf53e40e77c0a09fa542c133b657c38747c2ca $")
 #include <openssl/opensslv.h>
 
 static long ssl_built = OPENSSL_VERSION_NUMBER;
+
+/** Print the current linked version of Openssl
+ *
+ * Print the currently linked version of the OpenSSL library.
+ */
+const char *ssl_version(void)
+{
+	return SSLeay_version(SSLEAY_VERSION);
+}
+#else
+const char *ssl_version()
+{
+	return "not linked";
+}
+#endif
+
 
 /** Check built and linked versions of OpenSSL match
  *
@@ -46,16 +62,10 @@ static long ssl_built = OPENSSL_VERSION_NUMBER;
  *
  * @return 0 if ok, else -1
  */
+#if defined(HAVE_OPENSSL_CRYPTO_H) && defined(ENABLE_OPENSSL_VERSION_CHECK)
 int ssl_check_version(int allow_vulnerable)
 {
 	long ssl_linked;
-
-	/*
-	 *	Initialize the library before calling any library
-	 *	functions.
-	 */
-	SSL_library_init();
-	SSL_load_error_strings();
 
 	ssl_linked = SSLeay();
 
@@ -97,25 +107,6 @@ int ssl_check_version(int allow_vulnerable)
 	}
 
 	return 0;
-}
-
-/** Print the current linked version of Openssl
- *
- * Print the currently linked version of the OpenSSL library.
- */
-const char *ssl_version(void)
-{
-	return SSLeay_version(SSLEAY_VERSION);
-}
-#else
-int ssl_check_version(UNUSED int allow_vulnerable)
-{
-	return 0;
-}
-
-const char *ssl_version()
-{
-	return "not linked";
 }
 #endif
 
@@ -172,7 +163,7 @@ void version(void)
 	DEBUG3("Server core libs:");
 	DEBUG3("  ssl: %s", ssl_version());
 
-	radlog(L_INFO, "Copyright (C) 1999-2013 The FreeRADIUS server project and contributors.");
+	radlog(L_INFO, "Copyright (C) 1999-2015 The FreeRADIUS server project and contributors.");
 	radlog(L_INFO, "There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A");
 	radlog(L_INFO, "PARTICULAR PURPOSE.");
 	radlog(L_INFO, "You may redistribute copies of FreeRADIUS under the terms of the");

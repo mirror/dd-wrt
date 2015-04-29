@@ -4,7 +4,7 @@
  * radiusd.h	Structures, prototypes and global variables
  *		for the FreeRADIUS server.
  *
- * Version:	$Id: 2bf51737f841f133313a4daaef44182f178fde80 $
+ * Version:	$Id: db05e25cb8a0194e11c453129f2ee235ad7e9ce5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(radiusd_h, "$Id: 2bf51737f841f133313a4daaef44182f178fde80 $")
+RCSIDH(radiusd_h, "$Id: db05e25cb8a0194e11c453129f2ee235ad7e9ce5 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -363,7 +363,9 @@ typedef struct main_config_t {
 	int		proxy_requests;
 	int		reject_delay;
 	int		status_server;
+#ifdef ENABLE_OPENSSL_VERSION_CHECK
 	int		allow_vulnerable_openssl;
+#endif
 	int		max_request_time;
 	int		cleanup_delay;
 	int		max_requests;
@@ -491,6 +493,8 @@ int		log_err (char *);
 void (*reset_signal(int signo, void (*func)(int)))(int);
 void		request_free(REQUEST **request);
 int		rad_mkdir(char *directory, int mode);
+size_t		rad_filename_escape(char *out, size_t outlen,
+				    char const *in);
 int		rad_checkfilename(const char *filename);
 void		*rad_malloc(size_t size); /* calls exit(1) on error! */
 REQUEST		*request_alloc(void);

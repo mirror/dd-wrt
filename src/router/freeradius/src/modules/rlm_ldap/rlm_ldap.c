@@ -19,7 +19,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 481a680f4231941e4f73e13a8e5c90e8dc6a80a4 $")
+RCSID("$Id: cb871bde9bd6fc0531d5591a5762c2e52897bd0c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -2562,7 +2562,7 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 			DEBUG("  [%s] Bind failed with invalid credentials", inst->xlat_name);
 			*result = RLM_MODULE_REJECT;
 		} else {
-			radlog(L_ERR, "  [%s] LDAP login failed: check identity, password settings in ldap section of radiusd.conf", inst->xlat_name);
+			radlog(L_ERR, "  [%s] LDAP login failed: check identity, password settings in ldap module configuration", inst->xlat_name);
 			*result = RLM_MODULE_FAIL;
 		}
 		if(err != NULL){
