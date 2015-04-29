@@ -1,4 +1,0 @@
-User-Name = 'test'
-
-Response-Packet-Type == Access-Accept
-Reply-Message == 'pass'
