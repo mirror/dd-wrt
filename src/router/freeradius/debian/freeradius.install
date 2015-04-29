@@ -1,6 +1,0 @@
-usr/lib/freeradius/rlm*.so
-usr/sbin/checkrad
-usr/sbin/freeradius
-usr/sbin/raddebug
-usr/sbin/radmin
-usr/sbin/freeradius
