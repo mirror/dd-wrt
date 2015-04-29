@@ -14,7 +14,7 @@ freeradius-configure: openssl
 	ac_cv_func_getaddrinfo=yes \
 	ac_cv_func_setlinebuf=yes \
 	ac_cv_host=$(ARCH)-uclibc-linux \
-	./configure  --target=$(ARCH)-linux --host=$(ARCH) CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" --enable-shared \
+	./configure  --target=$(ARCH)-linux --host=$(ARCH) CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -I$(TOP)/openssl/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" --enable-shared \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=/usr \
