@@ -1,0 +1,209 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+#
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+#
+# Modified to make a template file for a multi-binary package with separated
+# build-arch and build-indep targets  by Bill Allombert 2001
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+.NOTPARALLEL:
+
+SHELL           =/bin/bash
+
+package         = freeradius
+freeradius_dir  = $(CURDIR)/debian/tmp/
+
+mandir          = /usr/share/man
+libdir          = /usr/lib/$(package)
+logdir          = /var/log/$(package)
+pkgdocdir       = /usr/share/doc/$(package)
+raddbdir        = /etc/$(package)
+
+modulelist=krb5 ldap sql_mysql sql_iodbc sql_postgresql
+pkgs=$(shell dh_listpackages)
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+# These are used for cross-compiling and for saving the configure script
+# from having to guess our platform (since we know it already)
+export DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+export DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+
+ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
+	confflags += --build $(DEB_HOST_GNU_TYPE)
+else
+	confflags += --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
+endif
+
+include /usr/share/quilt/quilt.make
+
+config.status: configure
+	dh_testdir
+
+ifeq (config.sub.dist,$(wildcard config.sub.dist))
+	rm config.sub
+else
+	mv config.sub config.sub.dist
+endif
+ifeq (config.guess.dist,$(wildcard config.guess.dist))
+	rm config.guess
+else
+	mv config.guess config.guess.dist
+endif
+	ln -s /usr/share/misc/config.sub config.sub
+	ln -s /usr/share/misc/config.guess config.guess
+	
+
+	./configure $(confflags) \
+		--prefix=/usr \
+		--exec-prefix=/usr \
+		--mandir=$(mandir) \
+		--sysconfdir=/etc \
+		--libdir=$(libdir) \
+		--datadir=/usr/share \
+		--localstatedir=/var \
+		--with-raddbdir=$(raddbdir) \
+		--with-logdir=/var/log/$(package) \
+		--enable-ltdl-install=no --enable-strict-dependencies \
+		--with-large-files --with-udpfromto --with-edir \
+		--enable-developer \
+		--config-cache \
+		--without-rlm_eap_tnc \
+		--with-rlm_sql_postgresql_lib_dir=`pg_config --libdir` \
+		--with-rlm_sql_postgresql_include_dir=`pg_config --includedir` \
+		--without-rlm_eap_ikev2 \
+		--without-rlm_sql_oracle \
+		--without-rlm_sql_unixodbc \
+		--with-system-libtool \
+		--with-system-libltdl
+
+#Architecture 
+build: patch build-arch build-indep
+
+build-arch: build-arch-stamp
+build-arch-stamp: config.status
+	$(MAKE) 
+	touch $@
+
+build-indep: build-indep-stamp
+build-indep-stamp: config.status
+	touch $@
+
+clean: unpatch
+	dh_testdir
+	dh_testroot
+	rm -f build-arch-stamp build-indep-stamp 
+	rm -f config.cache config.log
+	rm -f src/freeradius-devel
+	
+	[ ! -d src/modules/lib ] || rm -fr src/modules/lib || true
+	[ ! -d src/binary ] || rm -fr src/binary || true
+
+	# Add here commands to clean up after the build process.
+ifeq (Make.inc,$(wildcard Make.inc))
+	$(MAKE) distclean
+endif
+ifeq (config.sub.dist,$(wildcard config.sub.dist))
+	rm -f config.sub
+	mv config.sub.dist config.sub
+endif
+ifeq (config.guess.dist,$(wildcard config.guess.dist))
+	rm -f config.guess
+	mv config.guess.dist config.guess
+endif
+	dh_clean 
+
+install: install-indep install-arch
+install-indep: build-indep-stamp
+	dh_testdir
+	dh_testroot
+	dh_installdirs -i
+
+	$(MAKE) -C dialup_admin DIALUP_PREFIX=/usr/share/freeradius-dialupadmin \
+	                        DIALUP_DOCDIR=/usr/share/doc/freeradius-dialupadmin \
+	                        DIALUP_CONFDIR=/etc/freeradius-dialupadmin \
+	                        R=$(freeradius_dir) install
+
+	mv $(freeradius_dir)/usr/share/freeradius-dialupadmin/bin/dialup_admin.cron \
+	       $(freeradius_dir)/usr/share/freeradius-dialupadmin/bin/freeradius-dialupadmin.cron
+	mv $(freeradius_dir)/usr/share/doc/freeradius-dialupadmin/Changelog \
+	       $(freeradius_dir)/usr/share/doc/freeradius-dialupadmin/changelog
+
+	install -m0644 debian/apache2.conf $(freeradius_dir)/etc/freeradius-dialupadmin/
+
+	dh_install -i --sourcedir=$(freeradius_dir)
+	dh_installdocs -p freeradius-dialupadmin dialup_admin/README
+
+install-arch: build-arch-stamp
+	dh_testdir
+	dh_testroot
+	dh_installdirs -s
+	test -d $(freeradius_dir)/usr/lib/freeradius || mkdir -p $(freeradius_dir)/usr/lib/freeradius
+	ln -fs rlm_sql.so $(freeradius_dir)/usr/lib/freeradius/librlm_sql.so
+	$(MAKE) install R=$(freeradius_dir)
+	
+	# rename radius binary to play nicely with others
+	mv $(freeradius_dir)/usr/sbin/radiusd $(freeradius_dir)/usr/sbin/$(package)
+	mv $(freeradius_dir)/$(mandir)/man8/radiusd.8 $(freeradius_dir)/$(mandir)/man8/$(package).8
+	
+	dh_install --sourcedir=$(freeradius_dir) -p libfreeradius2
+	dh_install --sourcedir=$(freeradius_dir) -p libfreeradius-dev
+
+	for mod in ${modulelist}; do \
+	  pkg=$${mod##sql_} ; \
+	  dh_install --sourcedir=$(freeradius_dir) -p freeradius-$$pkg ; \
+	  rm -f $(freeradius_dir)/usr/lib/freeradius/rlm_$$mod*.so ; \
+	done
+
+	dh_install --sourcedir=$(freeradius_dir) -p freeradius-utils
+	dh_install --sourcedir=$(freeradius_dir) -p freeradius
+	
+	dh_strip -a --dbg-package=freeradius-dbg
+
+	dh_makeshlibs -a -n
+	dh_shlibdeps
+
+binary-common:
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs doc/ChangeLog
+	dh_installdocs
+	dh_installexamples
+	chmod a-x debian/freeradius/usr/share/doc/freeradius/examples/example.pl
+	dh_installlogrotate	
+	dh_installpam --name=radiusd 
+	dh_installinit --noscripts
+	dh_installman
+	dh_lintian
+	dh_link
+	dh_compress -Xexamples
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+# Build architecture independant packages using the common target.
+binary-indep: build-indep install-indep
+	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
+
+# Build architecture dependant packages using the common target.
+binary-arch: build-arch install-arch
+	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
+
+binary: binary-arch binary-indep
+.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch 

@@ -1,0 +1,51 @@
+#! /bin/sh
+
+set -e
+
+case "$1" in
+  remove)
+        if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+		invoke-rc.d freeradius stop
+	else
+		/etc/init.d/freeradius stop
+	fi
+
+        for file in /etc/freeradius/preproxy_users \
+          /etc/freeradius/policy.conf \
+          /etc/freeradius/eap.conf \
+          /etc/freeradius/experimental.conf \
+          /etc/freeradius/huntgroups \
+          /etc/freeradius/proxy.conf \
+          /etc/freeradius/attrs.pre-proxy \
+          /etc/freeradius/hints \
+          /etc/freeradius/sql.conf \
+          /etc/freeradius/ldap.attrmap \
+          /etc/freeradius/attrs \
+          /etc/freeradius/policy.txt \
+          /etc/freeradius/attrs.accounting_response \
+          /etc/freeradius/attrs.access_reject \
+          /etc/freeradius/attrs.access_challenge \
+          /etc/freeradius/clients.conf \
+          /etc/freeradius/acct_users
+        do
+          if dpkg-statoverride --list $file >/dev/null; then
+            dpkg-statoverride --remove $file
+          fi
+        done
+
+        for dir in /etc/freeradius/certs \
+          /etc/freeradius/sites-available \
+          /etc/freeradius/sites-enabled \
+          /var/run/freeradius \
+          /var/log/freeradius
+        do
+          if dpkg-statoverride --list $dir >/dev/null; then
+            dpkg-statoverride --remove $dir
+          fi
+        done
+	;;
+esac
+
+#DEBHELPER#
+
+exit 0

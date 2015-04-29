@@ -1,0 +1,15 @@
+# -*- text -*-
+# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+#
+#	GSS-EAP VSAs
+#
+#	$Id: c390b5b4066752097ea5b7fa5798e70dd6eae2b0 $
+#
+
+VENDOR		UKERNA				25622
+
+BEGIN-VENDOR	UKERNA
+
+ATTRIBUTE	SAML-AAA-Assertion			132	string
+
+END-VENDOR UKERNA

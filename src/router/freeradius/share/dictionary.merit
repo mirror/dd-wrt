@@ -1,0 +1,16 @@
+# -*- text -*-
+# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+#
+#	For Merit.
+#
+#	$Id: 5e16f6a9ea1815ddf7277d3c9a1dbc20a8a41b57 $
+#
+VENDOR		Merit				61
+
+BEGIN-VENDOR	Merit
+
+ATTRIBUTE	Merit-Proxy-Action			211	string
+ATTRIBUTE	Merit-User-Id				222	string
+ATTRIBUTE	Merit-User-Realm			223	string
+
+END-VENDOR	Merit
