@@ -1,11 +1,4 @@
-#ifndef RADIUSD_H
-#define RADIUSD_H
 /*
- * radiusd.h	Structures, prototypes and global variables
- *		for the FreeRADIUS server.
- *
- * Version:	$Id: 2bf51737f841f133313a4daaef44182f178fde80 $
- *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -19,93 +12,64 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ */
+#ifndef RADIUSD_H
+#define RADIUSD_H
+/**
+ * $Id: 41ee02ae0fbb81432d57b211d4a92ab7aa2f32ef $
  *
- * Copyright 1999,2000,2002,2003,2004,2005,2006,2007,2008  The FreeRADIUS server project
+ * @file radiusd.h
+ * @brief Structures, prototypes and global variables for the FreeRADIUS server.
  *
+ * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSIDH(radiusd_h, "$Id: 2bf51737f841f133313a4daaef44182f178fde80 $")
+RCSIDH(radiusd_h, "$Id: 41ee02ae0fbb81432d57b211d4a92ab7aa2f32ef $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
 #include <freeradius-devel/conf.h>
 #include <freeradius-devel/conffile.h>
 #include <freeradius-devel/event.h>
+#include <freeradius-devel/connection.h>
 
-typedef struct auth_req REQUEST;
+typedef struct rad_request REQUEST;
+
+#include <freeradius-devel/log.h>
 
 #ifdef HAVE_PTHREAD_H
-#include	<pthread.h>
+#  include <pthread.h>
+#else
+#  include <sys/wait.h>
 #endif
 
-#include <pwd.h>
-#include <grp.h>
-
 #ifndef NDEBUG
-#define REQUEST_MAGIC (0xdeadbeef)
+#  define REQUEST_MAGIC (0xdeadbeef)
 #endif
 
 /*
- *	New defines for minimizing the size of the server, to strip
- *	out functionality.  In order to ensure that people don't have
- *	to re-run "configure", after "cvs update", we play some
- *	special games with the defines.  i.e. any top-level "configure"
- *	option should set both WITH_FOO and WITHOUT_FOO.  After a few
- *	weeks, the WITHOUT_FOO can be deleted from the configure script.
+ *	WITH_VMPS is handled by src/include/features.h
  */
-#ifndef WITHOUT_PROXY
-#define WITH_PROXY (1)
+#ifdef WITHOUT_VMPS
+#  undef WITH_VMPS
 #endif
 
-#ifndef WITHOUT_DETAIL
-#define WITH_DETAIL (1)
-#endif
-
-#ifndef WITHOUT_SESSION_MGMT
-#define WITH_SESSION_MGMT (1)
-#endif
-
-#ifndef WITHOUT_UNLANG
-#define WITH_UNLANG (1)
-#endif
-
-#ifndef WITHOUT_ACCOUNTING
-#define WITH_ACCOUNTING (1)
-#else
-#ifdef WITH_SESSION_MGMT
-#error WITH_SESSION_MGMT is defined, but WITH_ACCOUNTING is not.  Session management requires accounting.
-#endif
-#ifdef WITH_DETAIL
-#error WITH_DETAIL is defined, but WITH_ACCOUNTING is not.  Detail file reading requires accounting.
-#endif
-#endif
-
-#ifndef WITHOUT_DYNAMIC_CLIENTS
-#define WITH_DYNAMIC_CLIENTS (1)
-#endif
-
-#ifndef WITHOUT_STATS
-#define WITH_STATS
-#endif
-
-#ifndef WITHOUT_COMMAND_SOCKET
-#ifdef HAVE_SYS_UN_H
-#define WITH_COMMAND_SOCKET (1)
-#else
-#define WITHOUT_COMMAND_SOCKET (1)
-#endif
-#endif
-
-#ifndef WITHOUT_COA
-#define WITH_COA (1)
-#ifndef WITH_PROXY
-#error WITH_COA requires WITH_PROXY
-#endif
+#ifdef WITH_TLS
+#  include <freeradius-devel/tls.h>
 #endif
 
 #include <freeradius-devel/stats.h>
 #include <freeradius-devel/realms.h>
+#include <freeradius-devel/xlat.h>
+#include <freeradius-devel/tmpl.h>
+#include <freeradius-devel/map.h>
+#include <freeradius-devel/clients.h>
+#include <freeradius-devel/process.h>
+/*
+ *	All POSIX systems should have these headers
+ */
+#include <pwd.h>
+#include <grp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -116,327 +80,230 @@ extern "C" {
  */
 typedef struct request_data_t request_data_t;
 
-typedef struct radclient {
-	fr_ipaddr_t		ipaddr;
-	int			prefix;
-	char			*longname;
-	char			*secret;
-	char			*shortname;
-	int			message_authenticator;
-	char			*nastype;
-	char			*login;
-	char			*password;
-	char			*server;
-	int			number;	/* internal use only */
-	const CONF_SECTION	*cs;
-#ifdef WITH_STATS
-	fr_stats_t		*auth;
-#ifdef WITH_ACCOUNTING
-	fr_stats_t		*acct;
-#endif
-#endif
-
-#ifdef WITH_DYNAMIC_CLIENTS
-	int			lifetime;
-	int			dynamic; /* was dynamically defined */
-	time_t			created;
-	time_t			last_new_client;
-	char			*client_server;
-	int			rate_limit;
-#endif
-
-#ifdef WITH_COA
-	char			*coa_name;
-	home_server		*coa_server;
-	home_pool_t		*coa_pool;
-#endif
-} RADCLIENT;
-
-/*
- *	Types of listeners.
+/** Return codes indicating the result of the module call
  *
- *	Ordered by priority!
+ * All module functions must return one of the codes listed below (apart from
+ * RLM_MODULE_NUMCODES, which is used to check for validity).
  */
-typedef enum RAD_LISTEN_TYPE {
-	RAD_LISTEN_NONE = 0,
-#ifdef WITH_PROXY
-	RAD_LISTEN_PROXY,
-#endif
-	RAD_LISTEN_AUTH,
-#ifdef WITH_ACCOUNTING
-	RAD_LISTEN_ACCT,
-#endif
-#ifdef WITH_DETAIL
-	RAD_LISTEN_DETAIL,
-#endif
-#ifdef WITH_VMPS
-	RAD_LISTEN_VQP,
-#endif
-#ifdef WITH_DHCP
-	RAD_LISTEN_DHCP,
-#endif
-#ifdef WITH_COMMAND_SOCKET
-	RAD_LISTEN_COMMAND,
-#endif
-#ifdef WITH_COA
-	RAD_LISTEN_COA,
-#endif
-	RAD_LISTEN_MAX
-} RAD_LISTEN_TYPE;
+typedef enum rlm_rcodes {
+	RLM_MODULE_REJECT = 0,	//!< Immediately reject the request.
+	RLM_MODULE_FAIL,	//!< Module failed, don't reply.
+	RLM_MODULE_OK,		//!< The module is OK, continue.
+	RLM_MODULE_HANDLED,	//!< The module handled the request, so stop.
+	RLM_MODULE_INVALID,	//!< The module considers the request invalid.
+	RLM_MODULE_USERLOCK,	//!< Reject the request (user is locked out).
+	RLM_MODULE_NOTFOUND,	//!< User not found.
+	RLM_MODULE_NOOP,	//!< Module succeeded without doing anything.
+	RLM_MODULE_UPDATED,	//!< OK (pairs modified).
+	RLM_MODULE_NUMCODES,	//!< How many valid return codes there are.
+	RLM_MODULE_UNKNOWN	//!< Error resolving rcode (should not be
+				//!< returned by modules).
+} rlm_rcode_t;
+extern const FR_NAME_NUMBER modreturn_table[];
 
 
+#if defined(WITH_VERIFY_PTR)
+#  define VERIFY_REQUEST(_x) verify_request(__FILE__, __LINE__, _x)
+#else
 /*
- *	For listening on multiple IP's and ports.
+ *  Even if were building without WITH_VERIFY_PTR
+ *  the pointer must not be NULL when these various macros are used
+ *  so we can add some sneaky asserts.
  */
-typedef struct rad_listen_t rad_listen_t;
-typedef		void (*radlog_func_t)(int, int, REQUEST *, const char *, ...);
+#  define VERIFY_REQUEST(_x) rad_assert(_x)
+#endif
 
-#define REQUEST_DATA_REGEX (0xadbeef00)
-#define REQUEST_MAX_REGEX (8)
+typedef enum {
+	REQUEST_ACTIVE = 1,
+	REQUEST_STOP_PROCESSING,
+	REQUEST_COUNTED
+} rad_master_state_t;
+#define REQUEST_MASTER_NUM_STATES (REQUEST_COUNTED + 1)
 
-struct auth_req {
+typedef enum {
+	REQUEST_QUEUED = 1,
+	REQUEST_RUNNING,
+	REQUEST_PROXIED,
+	REQUEST_RESPONSE_DELAY,
+	REQUEST_CLEANUP_DELAY,
+	REQUEST_DONE
+} rad_child_state_t;
+#define REQUEST_CHILD_NUM_STATES (REQUEST_DONE + 1)
+
+struct rad_request {
 #ifndef NDEBUG
-	uint32_t		magic; /* for debugging only */
+	uint32_t		magic; 		//!< Magic number used to detect memory corruption,
+						//!< or request structs that have not been properly initialised.
 #endif
-	RADIUS_PACKET		*packet;
+	unsigned int	       	number; 	//!< Monotonically increasing request number. Reset on server restart.
+	time_t			timestamp;	//!< When the request was received.
+
+	request_data_t		*data;		//!< Request metadata.
+
+	rad_listen_t		*listener;	//!< The listener that received the request.
+	RADCLIENT		*client;	//!< The client that originally sent us the request.
+
+	RADIUS_PACKET		*packet;	//!< Incoming request.
+	VALUE_PAIR		*username;	//!< Cached username #VALUE_PAIR from request #RADIUS_PACKET.
+	VALUE_PAIR		*password;	//!< Cached password #VALUE_PAIR from request #RADIUS_PACKET.
+
+	RADIUS_PACKET		*reply;		//!< Outgoing response.
+
+	VALUE_PAIR		*config;	//!< #VALUE_PAIR (s) used to set per request parameters
+						//!< for modules and the server core at runtime.
+	VALUE_PAIR		*state;		//!< #VALUE_PAIR (s) available over the lifetime of the authentication
+						//!< attempt. Useful where the attempt involves a sequence of
+						//!< many request/challenge packets, like OTP, and EAP.
+
 #ifdef WITH_PROXY
-	RADIUS_PACKET		*proxy;
-#endif
-	RADIUS_PACKET		*reply;
-#ifdef WITH_PROXY
-	RADIUS_PACKET		*proxy_reply;
-#endif
-	VALUE_PAIR		*config_items;
-	VALUE_PAIR		*username;
-	VALUE_PAIR		*password;
+	rad_listen_t		*proxy_listener;//!< Listener for outgoing requests.
+	RADIUS_PACKET		*proxy;		//!< Outgoing request to proxy server.
+	RADIUS_PACKET		*proxy_reply;	//!< Incoming response from proxy server.
 
-	struct main_config_t	*root;
-
-	request_data_t		*data;
-	RADCLIENT		*client;
-#ifdef HAVE_PTHREAD_H
-	int			thread_id;
-#endif
-	time_t			timestamp;
-	unsigned int	       	number; /* internal server number */
-
-	rad_listen_t		*listener;
-#ifdef WITH_PROXY
-	rad_listen_t		*proxy_listener;
+	home_server_t	       	*home_server;
+	home_pool_t		*home_pool;	//!< For dynamic failover
 #endif
 
+	fr_request_process_t	process;	//!< The function to call to move the request through the state machine.
 
-	int                     simul_max; /* see modcall.c && xlat.c */
-#ifdef WITH_SESSION_MGMT
-	int                     simul_count;
-	int                     simul_mpp; /* WEIRD: 1 is false, 2 is true */
-#endif
+	struct timeval		response_delay;	//!< How long to wait before sending Access-Rejects.
+	fr_state_action_t	timer_action;	//!< What action to perform when the timer event fires.
+	fr_event_t		*ev;		//!< Event in event loop tied to this request.
 
-	int			options; /* miscellanous options */
-	const char		*module; /* for debugging unresponsive children */
-	const char		*component; /* ditto */
+	RAD_REQUEST_FUNP	handle;		//!< The function to call to move the request through the
+						//!< various server configuration sections.
+	rlm_rcode_t		rcode;		//!< Last rcode returned by a module
+	char const		*module;	//!< Module the request is currently being processed by.
+	char const		*component; 	//!< Section the request is in.
 
-	struct timeval		received;
-	struct timeval		when; 		/* to wake up */
 	int			delay;
 
-	int			master_state;
-	int			child_state;
-	RAD_LISTEN_TYPE		priority;
+	rad_master_state_t	master_state;	//!< Set by the master thread to signal the child that's currently
+						//!< working with the request, to do something.
+	rad_child_state_t	child_state;
 
-	fr_event_t		*ev;
-	struct timeval		next_when;
-	fr_event_callback_t	next_callback;
-
-	int			in_request_hash;
-#ifdef WITH_PROXY
-	int			in_proxy_hash;
-
-	home_server	       	*home_server;
-	home_pool_t		*home_pool; /* for dynamic failover */
-
-	struct timeval		proxy_when;
-
-	int			num_proxied_requests;
-	int			num_proxied_responses;
+#ifdef HAVE_PTHREAD_H
+	pthread_t    		child_pid;	//!< Current thread handling the request.
 #endif
 
-	const char		*server;
+	struct main_config_t	*root;		//!< Pointer to the main config hack to try and deal with hup.
+
+
+	int			simul_max;	//!< Maximum number of concurrent sessions for this user.
+#ifdef WITH_SESSION_MGMT
+	int			simul_count;	//!< The current number of sessions for this user.
+	int			simul_mpp; 	//!< WEIRD: 1 is false, 2 is true.
+#endif
+
+	RAD_LISTEN_TYPE		priority;
+
+	bool			in_request_hash;
+#ifdef WITH_PROXY
+	bool			in_proxy_hash;
+
+	struct timeval		proxy_retransmit;
+
+	uint32_t		num_proxied_requests;	//!< How many times this request was proxied.
+							//!< Retransmissions are driven by requests from the NAS.
+	uint32_t		num_proxied_responses;
+#endif
+
+	char const		*server;
 	REQUEST			*parent;
-	radlog_func_t		radlog;	/* logging function, if set */
+
+	struct {
+		radlog_func_t	func;		//!< Function to call to output log messages about this
+						//!< request.
+
+		log_lvl_t	lvl;		//!< Controls the verbosity of debug statements regarding
+						//!< the request.
+
+		uint8_t		indent;		//!< By how much to indent log messages. uin8_t so it's obvious
+						//!< when a request has been exdented too much.
+	} log;
+
+	uint32_t		options;	//!< mainly for proxying EAP-MSCHAPv2.
+
 #ifdef WITH_COA
-	REQUEST			*coa;
-	int			num_coa_requests;
+	REQUEST			*coa;		//!< CoA request originated by this request.
+	uint32_t		num_coa_requests;//!< Counter for number of requests sent including
+						//!< retransmits.
 #endif
 };				/* REQUEST typedef */
 
-#define RAD_REQUEST_OPTION_NONE            (0)
-#define RAD_REQUEST_OPTION_DEBUG           (1)
-#define RAD_REQUEST_OPTION_DEBUG2          (2)
-#define RAD_REQUEST_OPTION_DEBUG3          (3)
-#define RAD_REQUEST_OPTION_DEBUG4          (4)
+#define RAD_REQUEST_LVL_NONE	(0)		//!< No debug messages should be printed.
+#define RAD_REQUEST_LVL_DEBUG	(1)
+#define RAD_REQUEST_LVL_DEBUG2	(2)
+#define RAD_REQUEST_LVL_DEBUG3	(3)
+#define RAD_REQUEST_LVL_DEBUG4	(4)
 
-#define REQUEST_ACTIVE 		(1)
-#define REQUEST_STOP_PROCESSING (2)
-#define REQUEST_COUNTED	        (3)
-
-#define REQUEST_QUEUED		(1)
-#define REQUEST_RUNNING		(2)
-#define REQUEST_PROXIED		(3)
-#define REQUEST_REJECT_DELAY	(4)
-#define REQUEST_CLEANUP_DELAY	(5)
-#define REQUEST_DONE		(6)
-
-/*
- *  Function handler for requests.
- */
-typedef		int (*RAD_REQUEST_FUNP)(REQUEST *);
-
-typedef struct radclient_list RADCLIENT_LIST;
-
-typedef struct pair_list {
-	const char		*name;
-	VALUE_PAIR		*check;
-	VALUE_PAIR		*reply;
-	int			lineno;
-	int			order;
-	struct pair_list	*next;
-	struct pair_list	*lastdefault;
-} PAIR_LIST;
-
-
-typedef int (*rad_listen_recv_t)(rad_listen_t *, RAD_REQUEST_FUNP *, REQUEST **);
-typedef int (*rad_listen_send_t)(rad_listen_t *, REQUEST *);
-typedef int (*rad_listen_print_t)(const rad_listen_t *, char *, size_t);
-typedef int (*rad_listen_encode_t)(rad_listen_t *, REQUEST *);
-typedef int (*rad_listen_decode_t)(rad_listen_t *, REQUEST *);
-
-struct rad_listen_t {
-	struct rad_listen_t *next; /* should be rbtree stuff */
-
-	/*
-	 *	For normal sockets.
-	 */
-	RAD_LISTEN_TYPE	type;
-	int		fd;
-	const char	*server;
-	int		status;
-
-	rad_listen_recv_t recv;
-	rad_listen_send_t send;
-	rad_listen_encode_t encode;
-	rad_listen_decode_t decode;
-	rad_listen_print_t print;
-
-	const CONF_SECTION *cs;
-	void		*data;
-
-#ifdef WITH_STATS
-	fr_stats_t	stats;
-#endif
-};
-
-#define RAD_LISTEN_STATUS_INIT   (0)
-#define RAD_LISTEN_STATUS_KNOWN  (1)
-#define RAD_LISTEN_STATUS_CLOSED (2)
-#define RAD_LISTEN_STATUS_FINISH (3)
-
-typedef enum radlog_dest_t {
-  RADLOG_STDOUT = 0,
-  RADLOG_FILES,
-  RADLOG_SYSLOG,
-  RADLOG_STDERR,
-  RADLOG_NULL,
-  RADLOG_NUM_DEST
-} radlog_dest_t;
+#define RAD_REQUEST_OPTION_COA	(1 << 0)
+#define RAD_REQUEST_OPTION_CTX	(1 << 1)
 
 typedef struct main_config_t {
 	struct main_config *next;
-	int		refcount;
 	fr_ipaddr_t	myip;	/* from the command-line only */
-	int		port;	/* from the command-line only */
-	int		log_auth;
-	int		log_auth_badpass;
-	int		log_auth_goodpass;
-	int		allow_core_dumps;
-	int		debug_level;
-	int		proxy_requests;
-	int		reject_delay;
-	int		status_server;
-	int		allow_vulnerable_openssl;
-	int		max_request_time;
-	int		cleanup_delay;
-	int		max_requests;
-#ifdef DELETE_BLOCKED_REQUESTS
-	int		kill_unresponsive_children;
+	uint16_t	port;	/* from the command-line only */
+	bool		log_auth;
+	bool		log_auth_badpass;
+	bool		log_auth_goodpass;
+	bool		allow_core_dumps;
+	uint32_t	debug_level;
+	bool		daemonize;
+#ifdef WITH_PROXY
+	bool		proxy_requests;
 #endif
-	char		*log_file;
-	char		*checkrad;
-	const char      *pid_file;
+	struct timeval	reject_delay;
+	bool		status_server;
+#ifdef ENABLE_OPENSSL_VERSION_CHECK
+	char const	*allow_vulnerable_openssl;
+#endif
+
+	uint32_t	max_request_time;
+	uint32_t	cleanup_delay;
+	uint32_t	max_requests;
+	char const	*log_file;
+	char const	*dictionary_dir;
+	char const	*checkrad;
+	char const      *pid_file;
 	rad_listen_t	*listen;
 	int		syslog_facility;
-	int		radlog_fd;
-	radlog_dest_t	radlog_dest;
 	CONF_SECTION	*config;
-	const char	*name;
-	const char	*auth_badpass_msg;
-	const char	*auth_goodpass_msg;
-#ifdef WITH_POST_PROXY_AUTHORIZE
-	int		post_proxy_authorize;
-#endif
-	int		debug_memory;
-	const char	*panic_action;
+	char const	*name;
+	char const	*auth_badpass_msg;
+	char const	*auth_goodpass_msg;
+	bool		debug_memory;
+	bool		memory_report;
+	char const	*panic_action;
+	char const	*denied_msg;
+	uint32_t       	talloc_pool_size;
+	struct timeval	init_delay; /* initial request processing delay */
 } MAIN_CONFIG_T;
-
-#define DEBUG	if(debug_flag)log_debug
-#define DEBUG2  if (debug_flag > 1)log_debug
-#define DEBUG3  if (debug_flag > 2)log_debug
-#define DEBUG4  if (debug_flag > 3)log_debug
-
-#if __GNUC__ >= 3
-#define RDEBUG(fmt, ...)   if(request && request->radlog) request->radlog(L_DBG, 1, request, fmt, ## __VA_ARGS__)
-#define RDEBUG2(fmt, ...)  if(request && request->radlog) request->radlog(L_DBG, 2, request, fmt, ## __VA_ARGS__)
-#define RDEBUG3(fmt, ...)  if(request && request->radlog) request->radlog(L_DBG, 3, request, fmt, ## __VA_ARGS__)
-#define RDEBUG4(fmt, ...)  if(request && request->radlog) request->radlog(L_DBG, 4, request, fmt, ## __VA_ARGS__)
-#else
-#define RDEBUG  DEBUG
-#define RDEBUG2 DEBUG2
-#define RDEBUG3 DEBUG3
-#define RDEBUG4 DEBUG4
-#endif
 
 #define SECONDS_PER_DAY		86400
 #define MAX_REQUEST_TIME	30
 #define CLEANUP_DELAY		5
 #define MAX_REQUESTS		256
-#define RETRY_DELAY             5
-#define RETRY_COUNT             3
-#define DEAD_TIME               120
-#define EXEC_TIMEOUT	       10
-
-#define L_DBG			1
-#define L_AUTH			2
-#define L_INFO			3
-#define L_ERR			4
-#define L_PROXY			5
-#define L_ACCT			6
-#define L_CONS			128
+#define RETRY_DELAY		5
+#define RETRY_COUNT		3
+#define DEAD_TIME		120
+#define EXEC_TIMEOUT		10
 
 /* for paircompare_register */
 typedef int (*RAD_COMPARE_FUNC)(void *instance, REQUEST *,VALUE_PAIR *, VALUE_PAIR *, VALUE_PAIR *, VALUE_PAIR **);
 
-typedef enum request_fail_t {
-  REQUEST_FAIL_UNKNOWN = 0,
-  REQUEST_FAIL_NO_THREADS,	/* no threads to handle it */
-  REQUEST_FAIL_DECODE,		/* rad_decode didn't like it */
-  REQUEST_FAIL_PROXY,		/* call to proxy modules failed */
-  REQUEST_FAIL_PROXY_SEND,	/* proxy_send didn't like it */
-  REQUEST_FAIL_NO_RESPONSE,	/* we weren't told to respond, so we reject */
-  REQUEST_FAIL_HOME_SERVER,	/* the home server didn't respond */
-  REQUEST_FAIL_HOME_SERVER2,	/* another case of the above */
-  REQUEST_FAIL_HOME_SERVER3,	/* another case of the above */
-  REQUEST_FAIL_NORMAL_REJECT,	/* authentication failure */
-  REQUEST_FAIL_SERVER_TIMEOUT	/* the server took too long to process the request */
+typedef enum request_fail {
+	REQUEST_FAIL_UNKNOWN = 0,
+	REQUEST_FAIL_NO_THREADS,	//!< No threads to handle it.
+	REQUEST_FAIL_DECODE,		//!< Rad_decode didn't like it.
+	REQUEST_FAIL_PROXY,		//!< Call to proxy modules failed.
+	REQUEST_FAIL_PROXY_SEND,	//!< Proxy_send didn't like it.
+	REQUEST_FAIL_NO_RESPONSE,	//!< We weren't told to respond, so we reject.
+	REQUEST_FAIL_HOME_SERVER,	//!< The home server didn't respond.
+	REQUEST_FAIL_HOME_SERVER2,	//!< Another case of the above.
+	REQUEST_FAIL_HOME_SERVER3,	//!< Another case of the above.
+	REQUEST_FAIL_NORMAL_REJECT,	//!< Authentication failure.
+	REQUEST_FAIL_SERVER_TIMEOUT	//!< The server took too long to process the request.
 } request_fail_t;
 
 /*
@@ -444,28 +311,25 @@ typedef enum request_fail_t {
  *
  *	We really shouldn't have this many.
  */
-extern const char	*progname;
-extern int		debug_flag;
-extern const char	*radacct_dir;
-extern const char	*radlog_dir;
-extern const char	*radlib_dir;
-extern const char	*radius_dir;
-extern const char	*radius_libdir;
-extern uint32_t		expiration_seconds;
-extern int		log_stripped_names;
-extern int		log_auth_detail;
-extern const char      *radiusd_version;
+extern char const	*progname;
+extern log_lvl_t	debug_flag;
+extern char const	*radacct_dir;
+extern char const	*radlog_dir;
+extern char const	*radlib_dir;
+extern bool		log_stripped_names;
+extern char const	*radiusd_version;
+extern char const	*radiusd_version_short;
 void			radius_signal_self(int flag);
 
-#define RADIUS_SIGNAL_SELF_NONE		(0)
-#define RADIUS_SIGNAL_SELF_HUP		(1 << 0)
-#define RADIUS_SIGNAL_SELF_TERM		(1 << 1)
-#define RADIUS_SIGNAL_SELF_EXIT		(1 << 2)
-#define RADIUS_SIGNAL_SELF_DETAIL	(1 << 3)
-#define RADIUS_SIGNAL_SELF_NEW_FD	(1 << 4)
-#define RADIUS_SIGNAL_SELF_MAX		(1 << 5)
-
-
+typedef enum {
+	RADIUS_SIGNAL_SELF_NONE		= (0),
+	RADIUS_SIGNAL_SELF_HUP		= (1 << 0),
+	RADIUS_SIGNAL_SELF_TERM		= (1 << 1),
+	RADIUS_SIGNAL_SELF_EXIT		= (1 << 2),
+	RADIUS_SIGNAL_SELF_DETAIL	= (1 << 3),
+	RADIUS_SIGNAL_SELF_NEW_FD	= (1 << 4),
+	RADIUS_SIGNAL_SELF_MAX		= (1 << 5)
+} radius_signal_t;
 /*
  *	Function prototypes.
  */
@@ -473,198 +337,242 @@ void			radius_signal_self(int flag);
 /* acct.c */
 int		rad_accounting(REQUEST *);
 
+int		rad_coa_recv(REQUEST *request);
+
 /* session.c */
-int		rad_check_ts(uint32_t nasaddr, unsigned int port, const char *user,
-			     const char *sessionid);
+int		rad_check_ts(uint32_t nasaddr, uint32_t nas_port, char const *user, char const *sessionid);
 int		session_zap(REQUEST *request, uint32_t nasaddr,
-			    unsigned int port, const char *user,
-			    const char *sessionid, uint32_t cliaddr,
-			    char proto,int session_time);
+			    uint32_t nas_port, char const *user,
+			    char const *sessionid, uint32_t cliaddr,
+			    char proto, int session_time);
 
 /* radiusd.c */
 #undef debug_pair
 void		debug_pair(VALUE_PAIR *);
-void		debug_pair_list(VALUE_PAIR *);
+void		rdebug_pair(log_lvl_t level, REQUEST *, VALUE_PAIR *, char const *);
+void 		rdebug_pair_list(log_lvl_t level, REQUEST *, VALUE_PAIR *, char const *);
+void		rdebug_proto_pair_list(log_lvl_t level, REQUEST *, VALUE_PAIR *);
 int		log_err (char *);
 
 /* util.c */
+#define MEM(x) if (!(x)) { ERROR("%s[%u] OUT OF MEMORY", __FILE__, __LINE__); _fr_exit_now(__FILE__, __LINE__, 1); }
 void (*reset_signal(int signo, void (*func)(int)))(int);
-void		request_free(REQUEST **request);
-int		rad_mkdir(char *directory, int mode);
-int		rad_checkfilename(const char *filename);
+int		rad_mkdir(char *directory, mode_t mode, uid_t uid, gid_t gid);
+size_t		rad_filename_make_safe(UNUSED REQUEST *request, char *out, size_t outlen,
+				       char const *in, UNUSED void *arg);
+size_t		rad_filename_escape(UNUSED REQUEST *request, char *out, size_t outlen,
+				    char const *in, UNUSED void *arg);
+ssize_t		rad_filename_unescape(char *out, size_t outlen, char const *in, size_t inlen);
 void		*rad_malloc(size_t size); /* calls exit(1) on error! */
-REQUEST		*request_alloc(void);
+void		rad_const_free(void const *ptr);
+REQUEST		*request_alloc(TALLOC_CTX *ctx);
 REQUEST		*request_alloc_fake(REQUEST *oldreq);
 REQUEST		*request_alloc_coa(REQUEST *request);
 int		request_data_add(REQUEST *request,
 				 void *unique_ptr, int unique_int,
-				 void *opaque, void (*free_opaque)(void *));
+				 void *opaque, bool free_opaque);
 void		*request_data_get(REQUEST *request,
 				  void *unique_ptr, int unique_int);
 void		*request_data_reference(REQUEST *request,
 				  void *unique_ptr, int unique_int);
-int		rad_copy_string(char *dst, const char *src);
-int		rad_copy_string_bare(char *dst, const char *src);
-int		rad_copy_variable(char *dst, const char *from);
-int		rad_expand_xlat(REQUEST *request, const char *cmd,
-				int max_argc, const char *argv[], int can_fail,
+int		rad_copy_string(char *dst, char const *src);
+int		rad_copy_string_bare(char *dst, char const *src);
+int		rad_copy_variable(char *dst, char const *from);
+uint32_t	rad_pps(uint32_t *past, uint32_t *present, time_t *then, struct timeval *now);
+int		rad_expand_xlat(REQUEST *request, char const *cmd,
+				int max_argc, char *argv[], bool can_fail,
 				size_t argv_buflen, char *argv_buf);
-struct passwd	*rad_getpwnam(const char *name);
-struct group	*rad_getgrnam(const char *name);
 
-/* client.c */
-RADCLIENT_LIST	*clients_init(void);
-void		clients_free(RADCLIENT_LIST *clients);
-RADCLIENT_LIST	*clients_parse_section(CONF_SECTION *section);
-void		client_free(RADCLIENT *client);
-int		client_add(RADCLIENT_LIST *clients, RADCLIENT *client);
-#ifdef WITH_DYNAMIC_CLIENTS
-void		client_delete(RADCLIENT_LIST *clients, RADCLIENT *client);
-RADCLIENT	*client_create(RADCLIENT_LIST *clients, REQUEST *request);
+void		verify_request(char const *file, int line, REQUEST *request);	/* only for special debug builds */
+void		rad_mode_to_str(char out[10], mode_t mode);
+void		rad_mode_to_oct(char out[5], mode_t mode);
+int		rad_getpwuid(TALLOC_CTX *ctx, struct passwd **out, uid_t uid);
+int		rad_getpwnam(TALLOC_CTX *ctx, struct passwd **out, char const *name);
+int		rad_getgrgid(TALLOC_CTX *ctx, struct group **out, gid_t gid);
+int		rad_getgrnam(TALLOC_CTX *ctx, struct group **out, char const *name);
+int		rad_getgid(TALLOC_CTX *ctx, gid_t *out, char const *name);
+int		rad_prints_uid(TALLOC_CTX *ctx, char *out, size_t outlen, uid_t uid);
+int		rad_prints_gid(TALLOC_CTX *ctx, char *out, size_t outlen, gid_t gid);
+int		rad_seuid(uid_t uid);
+int		rad_segid(gid_t gid);
+
+void		rad_suid_set_down_uid(uid_t uid);
+void		rad_suid_down(void);
+void		rad_suid_up(void);
+void		rad_suid_down_permanent(void);
+/* regex.c */
+
+#ifdef HAVE_REGEX
+/*
+ *	Increasing this is essentially free
+ *	It just increases memory usage. 12-16 bytes for each additional subcapture.
+ */
+#  define REQUEST_MAX_REGEX 32
+
+void	regex_sub_to_request(REQUEST *request, regex_t **preg, char const *value,
+			     size_t len, regmatch_t rxmatch[], size_t nmatch);
+
+int	regex_request_to_sub(TALLOC_CTX *ctx, char **out, REQUEST *request, uint32_t num);
+
+/*
+ *	Named capture groups only supported by PCRE.
+ */
+#  ifdef HAVE_PCRE
+int	regex_request_to_sub_named(TALLOC_CTX *ctx, char **out, REQUEST *request, char const *name);
+#  endif
 #endif
-RADCLIENT	*client_find(const RADCLIENT_LIST *clients,
-			     const fr_ipaddr_t *ipaddr);
-RADCLIENT	*client_findbynumber(const RADCLIENT_LIST *clients,
-				     int number);
-RADCLIENT	*client_find_old(const fr_ipaddr_t *ipaddr);
-int		client_validate(RADCLIENT_LIST *clients, RADCLIENT *master,
-				RADCLIENT *c);
-RADCLIENT	*client_read(const char *filename, int in_server, int flag);
-
 
 /* files.c */
-int		pairlist_read(const char *file, PAIR_LIST **list, int complain);
+int		pairlist_read(TALLOC_CTX *ctx, char const *file, PAIR_LIST **list, int complain);
 void		pairlist_free(PAIR_LIST **);
 
 /* version.c */
-int 		ssl_check_version(int allow_vulnerable);
-const char	*ssl_version(void);
-void		version(void);
-
-/* log.c */
-int		vradlog(int, const char *, va_list ap);
-int		radlog(int, const char *, ...)
-#ifdef __GNUC__
-		__attribute__ ((format (printf, 2, 3)))
-#endif
-;
-int		log_debug(const char *, ...)
-#ifdef __GNUC__
-		__attribute__ ((format (printf, 1, 2)))
-#endif
-;
-void 		vp_listdebug(VALUE_PAIR *vp);
-void radlog_request(int lvl, int priority, REQUEST *request, const char *msg, ...)
-#ifdef __GNUC__
-		__attribute__ ((format (printf, 4, 5)))
-#endif
-;
+int		rad_check_lib_magic(uint64_t magic);
+int 		ssl_check_consistency(void);
+char const	*ssl_version_by_num(uint32_t version);
+char const	*ssl_version_num(void);
+char const	*ssl_version_range(uint32_t low, uint32_t high);
+char const	*ssl_version(void);
+int		version_add_feature(CONF_SECTION *cs, char const *name, bool enabled);
+int		version_add_number(CONF_SECTION *cs, char const *name, char const *version);
+void		version_init_features(CONF_SECTION *cs);
+void		version_init_numbers(CONF_SECTION *cs);
+void		version_print(void);
 
 /* auth.c */
-char	*auth_name(char *buf, size_t buflen, REQUEST *request, int do_cli);
+char	*auth_name(char *buf, size_t buflen, REQUEST *request, bool do_cli);
 int		rad_authenticate (REQUEST *);
 int		rad_postauth(REQUEST *);
 int		rad_virtual_server(REQUEST *);
 
 /* exec.c */
-int		radius_exec_program(const char *,  REQUEST *, int,
-				    char *user_msg, int msg_len,
-				    int timeout,
-				    VALUE_PAIR *input_pairs,
-				    VALUE_PAIR **output_pairs,
-				    int shell_escape);
-
-/* timestr.c */
-int		timestr_match(char *, time_t);
+pid_t radius_start_program(char const *cmd, REQUEST *request, bool exec_wait,
+			   int *input_fd, int *output_fd,
+			   VALUE_PAIR *input_pairs, bool shell_escape);
+int radius_readfrom_program(int fd, pid_t pid, int timeout,
+			    char *answer, int left);
+int radius_exec_program(char *out, size_t outlen, VALUE_PAIR **output_pairs,
+			REQUEST *request, char const *cmd, VALUE_PAIR *input_pairs,
+			bool exec_wait, bool shell_escape, int timeout) CC_HINT(nonnull (4, 5));
+void exec_trigger(REQUEST *request, CONF_SECTION *cs, char const *name, int quench)
+     CC_HINT(nonnull (3));
 
 /* valuepair.c */
-int		paircompare_register(int attr, int otherattr,
-				     RAD_COMPARE_FUNC func,
-				     void *instance);
-void		paircompare_unregister(int attr, RAD_COMPARE_FUNC func);
-int		paircompare(REQUEST *req, VALUE_PAIR *request, VALUE_PAIR *check,
-			    VALUE_PAIR **reply);
-void		pairxlatmove(REQUEST *, VALUE_PAIR **to, VALUE_PAIR **from);
+int paircompare_register(DICT_ATTR const *attribute, DICT_ATTR const *from,
+	  bool first_only, RAD_COMPARE_FUNC func, void *instance);
+void		paircompare_unregister(DICT_ATTR const *attr, RAD_COMPARE_FUNC func);
+void		paircompare_unregister_instance(void *instance);
+int		paircompare(REQUEST *request, VALUE_PAIR *req_list,
+			    VALUE_PAIR *check, VALUE_PAIR **rep_list);
+vp_tmpl_t	*xlat_to_tmpl_attr(TALLOC_CTX *ctx, xlat_exp_t *xlat);
+xlat_exp_t		*xlat_from_tmpl_attr(TALLOC_CTX *ctx, vp_tmpl_t *vpt);
+int		radius_xlat_do(REQUEST *request, VALUE_PAIR *vp);
 int radius_compare_vps(REQUEST *request, VALUE_PAIR *check, VALUE_PAIR *vp);
-int radius_callback_compare(REQUEST *req, VALUE_PAIR *request,
+int radius_callback_compare(REQUEST *request, VALUE_PAIR *req,
 			    VALUE_PAIR *check, VALUE_PAIR *check_pairs,
 			    VALUE_PAIR **reply_pairs);
-int radius_find_compare(int attribute);
-VALUE_PAIR	*radius_paircreate(REQUEST *request, VALUE_PAIR **vps,
-				  int attribute, int type);
-VALUE_PAIR *radius_pairmake(REQUEST *request, VALUE_PAIR **vps,
-			    const char *attribute, const char *value,
-			    int operator);
+int radius_find_compare(DICT_ATTR const *attribute);
+VALUE_PAIR	*radius_paircreate(TALLOC_CTX *ctx, VALUE_PAIR **vps, unsigned int attribute, unsigned int vendor);
 
-/* xlat.c */
-typedef size_t (*RADIUS_ESCAPE_STRING)(char *out, size_t outlen, const char *in);
+void module_failure_msg(REQUEST *request, char const *fmt, ...) CC_HINT(format (printf, 2, 3));
+void vmodule_failure_msg(REQUEST *request, char const *fmt, va_list ap) CC_HINT(format (printf, 2, 0));
 
-int            radius_xlat(char * out, int outlen, const char *fmt,
-			   REQUEST * request, RADIUS_ESCAPE_STRING func);
-typedef size_t (*RAD_XLAT_FUNC)(void *instance, REQUEST *, char *, char *, size_t, RADIUS_ESCAPE_STRING func);
-int		xlat_register(const char *module, RAD_XLAT_FUNC func,
-			      void *instance);
-void		xlat_unregister(const char *module, RAD_XLAT_FUNC func,
-				void *instance);
-void		xlat_free(void);
+int radius_get_vp(VALUE_PAIR **out, REQUEST *request, char const *name);
+int radius_copy_vp(TALLOC_CTX *ctx, VALUE_PAIR **out, REQUEST *request, char const *name);
+
+
+/*
+ *	Less code == fewer bugs
+ *
+ * @param _a attribute
+ * @param _b value
+ * @param _c op
+ */
+#define pairmake_packet(_a, _b, _c) pairmake(request->packet, &request->packet->vps, _a, _b, _c)
+#define pairmake_reply(_a, _b, _c) pairmake(request->reply, &request->reply->vps, _a, _b, _c)
+#define pairmake_config(_a, _b, _c) pairmake(request, &request->config, _a, _b, _c)
 
 /* threads.c */
-extern		int thread_pool_init(CONF_SECTION *cs, int *spawn_flag);
-extern		void thread_pool_stop(void);
-extern		int thread_pool_addrequest(REQUEST *, RAD_REQUEST_FUNP);
-extern		pid_t rad_fork(void);
-extern		pid_t rad_waitpid(pid_t pid, int *status);
-extern          int total_active_threads(void);
-extern          void thread_pool_lock(void);
-extern          void thread_pool_unlock(void);
-extern		void thread_pool_queue_stats(int *array);
+int	thread_pool_init(CONF_SECTION *cs, bool *spawn_flag);
+void	thread_pool_stop(void);
+int	thread_pool_addrequest(REQUEST *, RAD_REQUEST_FUNP);
+pid_t	rad_fork(void);
+pid_t	rad_waitpid(pid_t pid, int *status);
+int	total_active_threads(void);
+void	thread_pool_lock(void);
+void	thread_pool_unlock(void);
+void	thread_pool_queue_stats(int array[RAD_LISTEN_MAX], int pps[2]);
 
 #ifndef HAVE_PTHREAD_H
-#define rad_fork(n) fork()
-#define rad_waitpid(a,b) waitpid(a,b, 0)
+#  define rad_fork(n) fork()
+#  define rad_waitpid(a,b) waitpid(a,b, 0)
 #endif
 
-/* mainconfig.c */
+/* main_config.c */
 /* Define a global config structure */
-extern struct main_config_t mainconfig;
+extern bool			log_dates_utc;
+extern bool 			check_config;
+extern struct main_config_t	main_config;
+extern bool			event_loop_started;
 
-int read_mainconfig(int reload);
-int free_mainconfig(void);
-void hup_mainconfig(void);
+void set_radius_dir(TALLOC_CTX *ctx, char const *path);
+char const *get_radius_dir(void);
+int main_config_init(void);
+int main_config_free(void);
+void main_config_hup(void);
 void hup_logfile(void);
-void fr_suid_down(void);
-void fr_suid_up(void);
-void fr_suid_down_permanent(void);
 
 /* listen.c */
 void listen_free(rad_listen_t **head);
-int listen_init(CONF_SECTION *cs, rad_listen_t **head);
-rad_listen_t *proxy_new_listener(fr_ipaddr_t *ipaddr, int exists);
-RADCLIENT *client_listener_find(const rad_listen_t *listener,
-				const fr_ipaddr_t *ipaddr, int src_port);
+int listen_init(CONF_SECTION *cs, rad_listen_t **head, bool spawn_flag);
+rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t src_port);
+RADCLIENT *client_listener_find(rad_listen_t *listener, fr_ipaddr_t const *ipaddr, uint16_t src_port);
+
 #ifdef WITH_STATS
-RADCLIENT_LIST *listener_find_client_list(const fr_ipaddr_t *ipaddr,
-					  int port);
-rad_listen_t *listener_find_byipaddr(const fr_ipaddr_t *ipaddr, int port);
+RADCLIENT_LIST *listener_find_client_list(fr_ipaddr_t const *ipaddr, uint16_t port, int proto);
 #endif
+rad_listen_t *listener_find_byipaddr(fr_ipaddr_t const *ipaddr, uint16_t port, int proto);
+int rad_status_server(REQUEST *request);
 
 /* event.c */
-int radius_event_init(CONF_SECTION *cs, int spawn_flag);
+typedef enum event_corral_t {
+	EVENT_CORRAL_MAIN = 0,	//!< Always main thread event list
+	EVENT_CORRAL_AUX	//!< Maybe main thread or one shared by modules
+} event_corral_t;
+
+fr_event_list_t *radius_event_list_corral(event_corral_t hint);
+int radius_event_init(TALLOC_CTX *ctx);
+int radius_event_start(CONF_SECTION *cs, bool spawn_flag);
 void radius_event_free(void);
 int radius_event_process(void);
-void radius_handle_request(REQUEST *request, RAD_REQUEST_FUNP fun);
-int received_request(rad_listen_t *listener,
-		     RADIUS_PACKET *packet, REQUEST **prequest,
-		     RADCLIENT *client);
-REQUEST *received_proxy_response(RADIUS_PACKET *packet);
-void event_new_fd(rad_listen_t *listener);
+void radius_update_listener(rad_listen_t *listener);
+void revive_home_server(void *ctx);
+void mark_home_server_dead(home_server_t *home, struct timeval *when);
 
 /* evaluate.c */
-int radius_evaluate_condition(REQUEST *request, int modreturn, int depth,
-			      const char **ptr, int evaluate_it, int *presult);
-int radius_update_attrlist(REQUEST *request, CONF_SECTION *cs,
-			   VALUE_PAIR *input_vps, const char *name);
-void radius_pairmove(REQUEST *request, VALUE_PAIR **to, VALUE_PAIR *from);
+typedef struct fr_cond_t fr_cond_t;
+int radius_evaluate_tmpl(REQUEST *request, int modreturn, int depth,
+			 vp_tmpl_t const *vpt);
+int radius_evaluate_map(REQUEST *request, int modreturn, int depth,
+			fr_cond_t const *c);
+int radius_evaluate_cond(REQUEST *request, int modreturn, int depth,
+			 fr_cond_t const *c);
+void radius_pairmove(REQUEST *request, VALUE_PAIR **to, VALUE_PAIR *from, bool do_xlat) CC_HINT(nonnull);
+
+#ifdef WITH_TLS
+/*
+ *	For run-time patching of which function handles which socket.
+ */
+int dual_tls_recv(rad_listen_t *listener);
+int dual_tls_send(rad_listen_t *listener, REQUEST *request);
+int proxy_tls_recv(rad_listen_t *listener);
+int proxy_tls_send(rad_listen_t *listener, REQUEST *request);
+#endif
+
+/*
+ *	For radmin over TCP.
+ */
+#define PW_RADMIN_PORT 18120
 
 #ifdef __cplusplus
 }

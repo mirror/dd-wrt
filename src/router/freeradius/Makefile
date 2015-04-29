@@ -4,27 +4,67 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-# Version:	$Id: 7be6a2763fad17395b113b06b4924ae515ef46a0 $
+# Version:	$Id: bc0150f6e0b26f3797412c21e220537d7101220a $
 #
+
+$(if $(wildcard Make.inc),,$(error Missing 'Make.inc' Run './configure [options]' and retry))
 
 include Make.inc
 
-.PHONY: all clean install
+MFLAGS += --no-print-directory
 
-SUBDIRS		= $(LTDL_SUBDIRS) $(wildcard src raddb scripts doc)
-WHAT_TO_MAKE	= all
+# The version of GNU Make is too old, don't use it (.FEATURES variable was
+# wad added in 3.81)
+ifndef .FEATURES
+$(error The build system requires GNU Make 3.81 or later.)
+endif
 
-all:
-	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=$@ common
+export DESTDIR := $(R)
 
-clean:
-	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=$@ common
-	@rm -f *~
+# And over-ride all of the other magic.
+include scripts/boiler.mk
 
-.PHONY: test
-test:
+#
+#  To work around OpenSSL issues with travis.
+#
+.PHONY:
+raddb/test.conf:
+	@echo 'security {' >> $@
+	@echo '        allow_vulnerable_openssl = yes' >> $@
+	@echo '}' >> $@
+	@echo '$$INCLUDE radiusd.conf' >> $@
+
+#
+#  Run "radiusd -C", looking for errors.
+#
+# Only redirect STDOUT, which should contain details of why the test failed.
+# Don't molest STDERR as this may be used to receive output from a debugger.
+$(BUILD_DIR)/tests/radiusd-c: raddb/test.conf ${BUILD_DIR}/bin/radiusd | build.raddb
 	@$(MAKE) -C raddb/certs
+	@printf "radiusd -C... "
+	@if ! ./build/make/jlibtool --mode=execute ./build/bin/radiusd -XCMd ./raddb -D ./share -n test > $(BUILD_DIR)/tests/radiusd.config.log; then \
+		rm -f raddb/test.conf; \
+		cat $(BUILD_DIR)/tests/radiusd.config.log; \
+		echo "fail"; \
+		exit 1; \
+	fi
+	@rm -f raddb/test.conf
+	@echo "ok"
+	@touch $@
+
+test: ${BUILD_DIR}/bin/radiusd ${BUILD_DIR}/bin/radclient tests.unit tests.xlat tests.keywords tests.auth tests.modules $(BUILD_DIR)/tests/radiusd-c | build.raddb
 	@$(MAKE) -C src/tests tests
+
+#  Tests specifically for Travis.  We do a LOT more than just
+#  the above tests
+ifneq "$(findstring travis,${prefix})" ""
+travis-test: raddb/test.conf test
+	@./build/make/jlibtool --mode=execute ./build/bin/radiusd -xxxv -n test
+	@rm -f raddb/test.conf
+	@$(MAKE) install
+	@perl -p -i -e 's/allow_vulnerable_openssl = no/allow_vulnerable_openssl = yes/' ${raddbdir}/radiusd.conf
+	@${sbindir}/radiusd -XC
+endif
 
 #
 # The $(R) is a magic variable not defined anywhere in this source.
@@ -44,29 +84,44 @@ test:
 # we make sure DESTDIR is defined.
 #
 export DESTDIR := $(R)
-install:
-	$(INSTALL) -d -m 755	$(R)$(sbindir)
-	$(INSTALL) -d -m 755	$(R)$(bindir)
-	$(INSTALL) -d -m 755	$(R)$(raddbdir)
-	$(INSTALL) -d -m 755	$(R)$(mandir)
-	$(INSTALL) -d -m 755	$(R)$(RUNDIR)
-	$(INSTALL) -d -m 700	$(R)$(logdir)
-	$(INSTALL) -d -m 700	$(R)$(radacctdir)
-	$(INSTALL) -d -m 755	$(R)$(datadir)
-	$(INSTALL) -d -m 755	$(R)$(dictdir)
-	for i in 1 5 8; do \
-		$(INSTALL) -d -m 755	$(R)$(mandir)/man$$i; \
-		for p in man/man$$i/*.$$i; do \
-			$(INSTALL) -m 644 $$p $(R)$(mandir)/man$$i; \
-		done \
-	done
-	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=$@ common
-	@echo "Installing dictionary files in $(R)$(dictdir)"; \
-	cd share; \
-	for i in dictionary*; do \
-		$(INSTALL) -m 644 $$i $(R)$(dictdir); \
-	done
-	$(LIBTOOL) --finish $(R)$(libdir)
+
+.PHONY: install.bindir
+install.bindir:
+	@[ -d $(R)$(bindir) ] || $(INSTALL) -d -m 755 $(R)$(bindir)
+
+.PHONY: install.sbindir
+install.sbindir:
+	@[ -d $(R)$(sbindir) ] || $(INSTALL) -d -m 755 $(R)$(sbindir)
+
+.PHONY: install.dirs
+install.dirs: install.bindir install.sbindir
+	@$(INSTALL) -d -m 755	$(R)$(mandir)
+	@$(INSTALL) -d -m 755	$(R)$(RUNDIR)
+	@$(INSTALL) -d -m 700	$(R)$(logdir)
+	@$(INSTALL) -d -m 700	$(R)$(radacctdir)
+	@$(INSTALL) -d -m 755	$(R)$(datadir)
+	@$(INSTALL) -d -m 755	$(R)$(dictdir)
+
+DICTIONARIES := $(wildcard share/dictionary*)
+install.share: $(addprefix $(R)$(dictdir)/,$(notdir $(DICTIONARIES)))
+
+$(R)$(dictdir)/%: share/%
+	@echo INSTALL $(notdir $<)
+	@$(INSTALL) -m 644 $< $@
+
+MANFILES := $(wildcard man/man*/*.?)
+install.man: $(subst man/,$(R)$(mandir)/,$(MANFILES))
+
+$(R)$(mandir)/%: man/%
+	@echo INSTALL $(notdir $<)
+	@$(INSTALL) -m 644 $< $@
+
+#
+#  Don't install rlm_test
+#
+ALL_INSTALL := $(patsubst %rlm_test.la,,$(ALL_INSTALL))
+
+install: install.dirs install.share install.man
 
 ifneq ($(RADMIN),)
 ifneq ($(RGROUP),)
@@ -89,26 +144,15 @@ install-chown:
 endif
 endif
 
-.PHONY: common $(SUBDIRS)
-
-common: $(SUBDIRS)
-
-$(SUBDIRS):
-	@echo "Making $(WHAT_TO_MAKE) in $@..."
-	@$(MAKE) $(MFLAGS) -C $@ $(WHAT_TO_MAKE)
-
 distclean: clean
-	rm -f config.cache config.log config.status libtool \
+	@-find src/modules -regex .\*/config[.][^.]*\$$ -delete
+	@-find src/modules -name autom4te.cache -exec rm -rf '{}' \;
+	@rm -rf config.cache config.log config.status libtool \
 		src/include/radpaths.h src/include/stamp-h \
-		libltdl/config.cache libltdl/config.log \
-		libltdl/config.status \
-		libltdl/libtool
-	-find . ! -name configure.in -name \*.in -print | \
+		libltdl/config.log libltdl/config.status \
+		libltdl/libtool autom4te.cache build
+	@-find . ! -name configure.ac -name \*.in -print | \
 		sed 's/\.in$$//' | \
-		while read file; do rm -f $$file; done
-	-find src/modules -name config.mak | \
-		while read file; do rm -f $$file; done
-	-find src/modules -name config.h | \
 		while read file; do rm -f $$file; done
 
 ######################################################################
@@ -116,37 +160,81 @@ distclean: clean
 #  Automatic remaking rules suggested by info:autoconf#Automatic_Remaking
 #
 ######################################################################
-.PHONY: reconfig
-reconfig:
-	@$(MAKE) $(MFLAGS) -C src reconfig
-	@$(MAKE) configure
-	@$(MAKE) src/include/autoconf.h.in
+#
+#  Do these checks ONLY if we're re-building the "configure"
+#  scripts, and ONLY the "configure" scripts.  If we leave
+#  these rules enabled by default, then they're run too often.
+#
+ifeq "$(MAKECMDGOALS)" "reconfig"
 
-configure: configure.in aclocal.m4
-	$(AUTOCONF)
+CONFIGURE_AC_FILES := $(shell find . -name configure.ac -print)
+CONFIGURE_FILES	   := $(patsubst %.ac,%,$(CONFIGURE_AC_FILES))
 
-.PHONY: src/include/autoconf.h.in
-src/include/autoconf.h.in:
-	$(AUTOHEADER)
+#
+#  The GNU tools make autoconf=="missing autoconf", which then returns
+#  0, even when autoconf doesn't exist.  This check is to ensure that
+#  we run AUTOCONF only when it exists.
+#
+AUTOCONF_EXISTS := $(shell autoconf --version 2>/dev/null)
+
+ifeq "$(AUTOCONF_EXISTS)" ""
+$(error You need to install autoconf to re-build the "configure" scripts)
+endif
+
+# Configure files depend on "in" files, and on the top-level macro files
+# If there are headers, run auto-header, too.
+src/%configure: src/%configure.ac acinclude.m4 aclocal.m4 $(wildcard $(dir $@)m4/*m4) | src/freeradius-devel
+	@echo AUTOCONF $(dir $@)
+	cd $(dir $@) && $(AUTOCONF) -I $(top_builddir) -I $(top_builddir)/m4 -I $(top_builddir)/$(dir $@)m4
+	@if grep AC_CONFIG_HEADERS $@ >/dev/null; then\
+		echo AUTOHEADER $@ \
+		cd $(dir $@) && $(AUTOHEADER); \
+	 fi
+
+# "%configure" doesn't match "configure"
+configure: configure.ac $(wildcard ac*.m4) $(wildcard m4/*.m4)
+	@echo AUTOCONF $@
+	@$(AUTOCONF)
+
+src/include/autoconf.h.in: configure.ac
+	@echo AUTOHEADER $@
+	@$(AUTOHEADER)
+
+reconfig: $(CONFIGURE_FILES) src/include/autoconf.h.in
 
 config.status: configure
 	./config.status --recheck
 
-configure.in:
+# target is "configure"
+endif
+
+#  If we've already run configure, then add rules which cause the
+#  module-specific "all.mk" files to depend on the mk.in files, and on
+#  the configure script.
+#
+ifneq "$(wildcard config.log)" ""
+CONFIGURE_ARGS	   := $(shell head -10 config.log | grep '^  \$$' | sed 's/^....//;s:.*configure ::')
+
+src/%all.mk: src/%all.mk.in src/%configure
+	@echo CONFIGURE $(dir $@)
+	@rm -f ./config.cache $(dir $<)/config.cache
+	@cd $(dir $<) && ./configure $(CONFIGURE_ARGS)
+endif
 
 .PHONY: check-includes
 check-includes:
 	scripts/min-includes.pl `find . -name "*.c" -print`
 
+.PHONY: TAGS
 TAGS:
-	etags `find src -type f -name '*.[ch]' -print`
+	etags `find src -type f -name '*.[ch]' -print` > $@
 
 #
 #  Make test certificates.
 #
 .PHONY: certs
 certs:
-	@cd raddb/certs && $(MAKE)
+	@$(MAKE) -C raddb/certs
 
 ######################################################################
 #
@@ -156,14 +244,16 @@ certs:
 #  BEFORE running this command!
 #
 ######################################################################
+BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
+
 freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz: .git
-	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION_STRING)/ v2.x.x | gzip > $@
+	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION_STRING)/ $(BRANCH) | gzip > $@
 
 freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz
 	gpg --default-key aland@freeradius.org -b $<
 
 freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2: .git
-	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION_STRING)/ v2.x.x | bzip2 > $@
+	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION_STRING)/ $(BRANCH) | bzip2 > $@
 
 freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2.sig: freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2
 	gpg --default-key aland@freeradius.org -b $<
@@ -183,7 +273,7 @@ dist-check: redhat/freeradius.spec suse/freeradius.spec debian/changelog
 		echo suse/freeradius.spec 'Version' needs to be updated; \
 		exit 1; \
 	fi
-	@if [ `head -n 1 debian/changelog | sed 's/.*(//;s/\+.*).*//;s/-1).*//;'`  != "$(RADIUSD_VERSION_STRING)" ]; then \
+	@if [ `head -n 1 debian/changelog | sed 's/.*(//;s/-0).*//;s/-1).*//;s/\+.*//'`  != "$(RADIUSD_VERSION_STRING)" ]; then \
 		echo debian/changelog needs to be updated; \
 		exit 1; \
 	fi
@@ -194,7 +284,6 @@ dist-sign: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig freeradius-ser
 
 dist-publish: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2 freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2.sig
 	scp $^ freeradius.org@ftp.freeradius.org:public_ftp
-#	scp $^ freeradius.org@www.tr.freeradius.org:public_ftp
 
 #
 #  Note that we do NOT do the tagging here!  We just print out what
@@ -209,3 +298,18 @@ dist-tag: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz freeradius-server-$
 .PHONY: deb
 deb:
 	fakeroot dpkg-buildpackage -b -uc
+
+# Developer checks
+.PHONY: warnings
+warnings:
+	@(make clean all 2>&1) | egrep -v '^/|deprecated|^In file included|: In function|   from |^HEADER|^CC|^LINK' > warnings.txt
+	@wc -l warnings.txt
+
+#
+#  Ensure we're using tabs in the configuration files,
+#  and remove trailing whitespace in source files.
+#
+.PHONY: whitespace
+whitespace:
+	@for x in $$(git ls-files raddb/ src/); do unexpand $$x > $$x.bak; cp $$x.bak $$x; rm -f $$x.bak;done
+	@perl -p -i -e 'trim' $$(git ls-files src/)

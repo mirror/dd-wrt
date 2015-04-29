@@ -1,7 +1,7 @@
 /*
  * eap_ttls.h
  *
- * Version:     $Id: 1525092cdea045da956274437a0efd02e7d94798 $
+ * Version:     $Id: ff9a814669deb6c3bc2a8b328eadcc17a7fb78bc $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,8 +23,7 @@
 #ifndef _EAP_TTLS_H
 #define _EAP_TTLS_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(eap_ttls_h, "$Id: 1525092cdea045da956274437a0efd02e7d94798 $")
+RCSIDH(eap_ttls_h, "$Id: ff9a814669deb6c3bc2a8b328eadcc17a7fb78bc $")
 
 #include "eap_tls.h"
 
@@ -32,16 +31,16 @@ typedef struct ttls_tunnel_t {
 	VALUE_PAIR	*username;
 	VALUE_PAIR	*state;
 	VALUE_PAIR	*accept_vps;
-	int		authenticated;
-	int		default_eap_type;
-	int		copy_request_to_tunnel;
-	int		use_tunneled_reply;
-	const char	*virtual_server;
+	bool		authenticated;
+	int		default_method;
+	bool		copy_request_to_tunnel;
+	bool		use_tunneled_reply;
+	char const	*virtual_server;
 } ttls_tunnel_t;
 
 /*
  *	Process the TTLS portion of an EAP-TTLS request.
  */
-int eapttls_process(EAP_HANDLER *handler, tls_session_t *tls_session);
+int eapttls_process(eap_handler_t *handler, tls_session_t *tls_session) CC_HINT(nonnull);
 
 #endif /* _EAP_TTLS_H */

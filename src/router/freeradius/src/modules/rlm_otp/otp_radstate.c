@@ -1,5 +1,5 @@
 /*
- * $Id: 9e60f0024bd6d025435cf8492802d9cf7d4accea $
+ * $Id: e842a5393811e8752bcf95850ab9c5347e35c5dd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
  * Copyright 2005,2006 TRI-D Systems, Inc.
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 9e60f0024bd6d025435cf8492802d9cf7d4accea $")
+RCSID("$Id: e842a5393811e8752bcf95850ab9c5347e35c5dd $")
+USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 /* avoid inclusion of these FR headers which conflict w/ OpenSSL */
 #define _FR_MD4_H
@@ -29,6 +29,7 @@ RCSID("$Id: 9e60f0024bd6d025435cf8492802d9cf7d4accea $")
 #include "extern.h"
 
 #include <string.h>
+
 #include <openssl/des.h> /* des_cblock */
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
@@ -62,7 +63,7 @@ RCSID("$Id: 9e60f0024bd6d025435cf8492802d9cf7d4accea $")
  * where '+' denotes concatentation, 'challenge' is ... the challenge,
  * 'flags' is a 32-bit value that can be used to record additional info,
  * 'time' is the 32-bit time (LSB if time_t is 64 bits), and 'key' is a
- * random key, generated in otp_instantiate().  'flags' and 'time' are
+ * random key, generated in mod_instantiate().  'flags' and 'time' are
  * in network byte order.
  *
  * As the signing key is unique to each server, only the server which
@@ -80,73 +81,68 @@ RCSID("$Id: 9e60f0024bd6d025435cf8492802d9cf7d4accea $")
  * as an ASCII string (they only return data up to the first NUL byte).
  * So we must handle state as an ASCII string (0x00 -> 0x3030).
  */
-int
-otp_gen_state(char rad_state[OTP_MAX_RADSTATE_LEN],
-              unsigned char raw_state[OTP_MAX_RADSTATE_LEN],
-              const unsigned char challenge[OTP_MAX_CHALLENGE_LEN],
-              size_t clen,
-              int32_t flags, int32_t when, const unsigned char key[16])
+
+/*
+ * OTP_MAX_RADSTATE_LEN is composed of:
+ *
+ *   clen * 2 +			challenge
+ *   8 +			flags
+ *   8 +			time
+ *   sizeof(hmac) * 2 +		hmac
+ *   1				\0'
+ */
+
+/** Generate an OTP state value
+ *
+ * Generates an OTP state value (an string of ASCII hexits in an opaque binary
+ * string).
+ *
+ * @param[out] state buffer in which to write the generated state value.
+ * @param[in] challenge The challenge value.
+ * @param[in] clen The length of the challenge data.
+ * @param[in] flags to remember.
+ * @param[in] when the challenge was originally generated.
+ * @param[in] key HMAC key.
+ * @return the amount of data written into the state buffer.
+ */
+size_t otp_gen_state(char state[OTP_MAX_RADSTATE_LEN],
+		     char const challenge[OTP_MAX_CHALLENGE_LEN],
+		     size_t clen,
+		     int32_t flags, int32_t when, uint8_t const key[16])
 {
-  HMAC_CTX hmac_ctx;
-  unsigned char hmac[MD5_DIGEST_LENGTH];
-  char *p;
-  char state[OTP_MAX_RADSTATE_LEN];
+	HMAC_CTX hmac_ctx;
+	uint8_t hmac[MD5_DIGEST_LENGTH];
+	char *p;
 
-  /*
-   * Generate the hmac.  We already have a dependency on openssl for
-   * DES, so we'll use it's hmac functionality also -- saves us from
-   * having to collect the data to be signed into one contiguous piece.
-   */
-  HMAC_Init(&hmac_ctx, key, sizeof(key[0] * 16), EVP_md5());
-  HMAC_Update(&hmac_ctx, challenge, clen);
-  HMAC_Update(&hmac_ctx, (unsigned char *) &flags, 4);
-  HMAC_Update(&hmac_ctx, (unsigned char *) &when, 4);
-  HMAC_Final(&hmac_ctx, hmac, NULL);
-  HMAC_cleanup(&hmac_ctx);
+	/*
+	 *	Generate the hmac.  We already have a dependency on openssl for
+	 *	DES, so we'll use it's hmac functionality also -- saves us from
+	 *	having to collect the data to be signed into one
+	 *	contiguous piece.
+	 */
+	HMAC_Init(&hmac_ctx, key, sizeof(key[0]) * 16, EVP_md5());
+	HMAC_Update(&hmac_ctx, (uint8_t const *) challenge, clen);
+	HMAC_Update(&hmac_ctx, (uint8_t *) &flags, 4);
+	HMAC_Update(&hmac_ctx, (uint8_t *) &when, 4);
+	HMAC_Final(&hmac_ctx, hmac, NULL);
+	HMAC_cleanup(&hmac_ctx);
 
-  /*
-   * Generate the state.  Note that it is in ASCII.  The challenge
-   * value doesn't have to be ASCII encoded, as it is already
-   * ASCII, but we do it anyway, for consistency.
-   */
-#if 0
-  /*
-   * We used to malloc() state (here and in callers).  We leave this
-   * here to show how OTP_MAX_RADSTATE_LEN is composed.  Note that
-   * it has to be double all the values below to account for an
-   * extra ASCII expansion (see Cisco notes, below).
-   */
-  state = rad_malloc(clen * 2 +			/* challenge */
-                     8 +			/* flags     */
-                     8 +			/* time      */
-                     sizeof(hmac) * 2 +		/* hmac      */
-                     1);			/* '\0'      */
-#endif
-  p = state;
-  /* Add the challenge. */
-  otp_x2a(challenge, clen, p);
-  p += clen * 2;
-  /* Add the flags and time. */
-  otp_x2a((unsigned char *) &flags, 4, p);
-  p += 8;
-  otp_x2a((unsigned char *) &when, 4, p);
-  p += 8;
-  /* Add the hmac. */
-  otp_x2a(hmac, 16, p);
+	/*
+	 *	Generate the state.
+	 */
+	p = state;
 
-  /*
-   * Expand state (already ASCII) into ASCII again (0x31 -> 0x3331).
-   * pairmake() forces us to do this (it will reduce it back to binary),
-   * and to include a leading "0x".
-   */
-  if (rad_state) {
-    (void) sprintf(rad_state, "0x");
-    p = rad_state + 2;
-    otp_x2a(state, strlen(state), p);
-  }
+	/*
+	 *	Add the challenge (which is already ASCII encoded)
+	 */
+	p += fr_bin2hex(p, (uint8_t const *) challenge, clen);
 
-  if (raw_state)
-    (void) memcpy(raw_state, state, sizeof(state));
+	/* Add the flags and time. */
+	p += fr_bin2hex(p, (uint8_t *) &flags, 4);
+	p += fr_bin2hex(p, (uint8_t *) &when, 4);
 
-  return 0;
+	/* Add the hmac. */
+	p += fr_bin2hex(p, hmac, 16);
+
+	return p - state;
 }

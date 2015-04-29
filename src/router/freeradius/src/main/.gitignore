@@ -1,10 +1,11 @@
 Makefile
-checkrad.pl
+radsniff.mk
+checkrad
 radclient
 radiusd
 radlast
-radsniff
 radtest
+radsniff
 radwho
 radmin
 radconf2xml

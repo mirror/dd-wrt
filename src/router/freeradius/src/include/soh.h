@@ -1,11 +1,4 @@
-#ifndef FR_SOH_H
-#define FR_SOH_H
-
 /*
- * soh.h        Microsoft SoH support
- *
- * Version:     $Id: 27b6ad3cc1a18d18f527d89179f0fbd1e20c08f7 $
- *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -19,21 +12,28 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ */
+#ifndef FR_SOH_H
+#define FR_SOH_H
+/**
+ * $Id: c1187cc9b2d0af4eec56bd1304b98b57bfe4bc22 $
  *
- * Copyright 2010 Phil Mayers <p.mayers@imperial.ac.uk>
+ * @file soh.h
+ * @brief Microsoft SoH support
+ *
+ * @copyright 2010 Phil Mayers <p.mayers@imperial.ac.uk>
  */
 
-#include <freeradius-devel/ident.h>
-RCSIDH(soh_h, "$Id: 27b6ad3cc1a18d18f527d89179f0fbd1e20c08f7 $")
+RCSIDH(soh_h, "$Id: c1187cc9b2d0af4eec56bd1304b98b57bfe4bc22 $")
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-  int soh_verify(REQUEST *request, VALUE_PAIR *sohvp, const uint8_t *data, unsigned int data_len);
-uint16_t soh_pull_be_16(const uint8_t *p);
-uint32_t soh_pull_be_24(const uint8_t *p);
-uint32_t soh_pull_be_32(const uint8_t *p);
+int soh_verify(REQUEST *request, uint8_t const *data, unsigned int data_len) CC_HINT(nonnull);
+uint16_t soh_pull_be_16(uint8_t const *p);
+uint32_t soh_pull_be_24(uint8_t const *p);
+uint32_t soh_pull_be_32(uint8_t const *p);
 
 #ifdef __cplusplus
 }

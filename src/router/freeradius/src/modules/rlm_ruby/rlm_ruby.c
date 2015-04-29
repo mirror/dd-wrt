@@ -1,11 +1,8 @@
 /*
- * rlm_ruby.c
- *
- *
- *   This program is free software; you can redistribute it and/or modify
+ *   This program is is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,17 +12,37 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- *  Copyright 2008 Andriy Dmytrenko aka Antti, BuzhNET
  */
 
-#include <freeradius-devel/ident.h>
+/**
+ * $Id: 1a8f70d3e32ab52c62c790bec286933f512ead44 $
+ * @file rlm_ruby.c
+ * @brief Translates requests between the server an a ruby interpreter.
+ *
+ * @note Maintainers note
+ * @note Please don't use this module, Matz ruby was never designed for embedding.
+ * @note This module leaks memory, and the ruby code installs signal handlers
+ * @note which interfere with normal operation of the server. It's all bad...
+ * @note mruby shows some promise, feel free to rewrite the module to use that.
+ * @note https://github.com/mruby/mruby
+ *
+ * @copyright 2008 Andriy Dmytrenko aka Antti, BuzhNET
+ */
 
-RCSID("$Id: 6f9814094e26e8d64eaee463e933fa6337fec107 $")
+
+RCSID("$Id: 1a8f70d3e32ab52c62c790bec286933f512ead44 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 
+/*
+ *	Undefine any HAVE_* flags which may conflict
+ *	ruby.h *REALLY* shouldn't #include its config.h file,
+ *	but it does *sigh*.
+ */
+#undef HAVE_CRYPT
+
+DIAG_OFF(disabled-macro-expansion)
 #include <ruby.h>
 
 /*
@@ -36,29 +53,28 @@ RCSID("$Id: 6f9814094e26e8d64eaee463e933fa6337fec107 $")
  *	be used as the instance handle.
  */
 typedef struct rlm_ruby_t {
-#define RLM_RUBY_STRUCT(foo) int func_##foo
+#define RLM_RUBY_STRUCT(foo) unsigned long func_##foo
 
-    RLM_RUBY_STRUCT(instantiate);
-    RLM_RUBY_STRUCT(authorize);
-    RLM_RUBY_STRUCT(authenticate);
-    RLM_RUBY_STRUCT(preacct);
-    RLM_RUBY_STRUCT(accounting);
-    RLM_RUBY_STRUCT(checksimul);
-    RLM_RUBY_STRUCT(preproxy);
-    RLM_RUBY_STRUCT(postproxy);
-    RLM_RUBY_STRUCT(postauth);
+	RLM_RUBY_STRUCT(instantiate);
+	RLM_RUBY_STRUCT(authorize);
+	RLM_RUBY_STRUCT(authenticate);
+	RLM_RUBY_STRUCT(preacct);
+	RLM_RUBY_STRUCT(accounting);
+	RLM_RUBY_STRUCT(checksimul);
+	RLM_RUBY_STRUCT(pre_proxy);
+	RLM_RUBY_STRUCT(post_proxy);
+	RLM_RUBY_STRUCT(post_auth);
 #ifdef WITH_COA
-    RLM_RUBY_STRUCT(recvcoa);
-    RLM_RUBY_STRUCT(sendcoa);
+	RLM_RUBY_STRUCT(recv_coa);
+	RLM_RUBY_STRUCT(send_coa);
 #endif
-    RLM_RUBY_STRUCT(detach);
+	RLM_RUBY_STRUCT(detach);
 
-    char *scriptFile;
-    char *moduleName;
-    VALUE pModule_builtin;
+	char const *filename;
+	char const *module_name;
+	VALUE module;
 
 } rlm_ruby_t;
-
 
 /*
  *	A mapping of configuration file names to internal variables.
@@ -69,14 +85,10 @@ typedef struct rlm_ruby_t {
  *	to the strdup'd string into 'config.string'.  This gets around
  *	buffer over-flows.
  */
-
-
 static const CONF_PARSER module_config[] = {
-    { "scriptfile", PW_TYPE_FILENAME,
-        offsetof(struct rlm_ruby_t, scriptFile), NULL, NULL},
-    { "modulename", PW_TYPE_STRING_PTR,
-        offsetof(struct rlm_ruby_t, moduleName), NULL, "Radiusd"},
-    { NULL, -1, 0, NULL, NULL} /* end of module_config */
+	{ "filename", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT | PW_TYPE_REQUIRED, struct rlm_ruby_t, filename), NULL },
+	{ "module", FR_CONF_OFFSET(PW_TYPE_STRING, struct rlm_ruby_t, module_name), "Radiusd" },
+	{ NULL, -1, 0, NULL, NULL } /* end of module_config */
 };
 
 
@@ -86,96 +98,93 @@ static const CONF_PARSER module_config[] = {
 
 /* radlog wrapper */
 
-static VALUE radlog_rb(VALUE self, VALUE msg_type, VALUE rb_msg) {
-    int status;
-    char *msg;
-    status = FIX2INT(msg_type);
-    msg = STR2CSTR(rb_msg);
-    radlog(status, msg);
-    return Qnil;
+static VALUE radlog_rb(UNUSED VALUE self, VALUE msg_type, VALUE rb_msg) {
+	int status;
+	char *msg;
+	status = FIX2INT(msg_type);
+	msg = StringValuePtr(rb_msg);
+	radlog(status, "%s", msg);
+	return Qnil;
 }
 
 /* Tuple to value pair conversion */
 
-static void add_vp_tuple(VALUE_PAIR **vpp, VALUE rb_value,
-        const char *function_name) {
-    int i, outertuplesize;
-    VALUE_PAIR *vp;
+static void add_vp_tuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vpp, VALUE rb_value,
+			 char const *function_name) {
+	int i;
+	long outertuplesize;
+	VALUE_PAIR *vp;
 
-    /* If the Ruby function gave us nil for the tuple, then just return. */
-    if (NIL_P(rb_value)) {
-        return;
-    }
+	/* If the Ruby function gave us nil for the tuple, then just return. */
+	if (NIL_P(rb_value)) {
+		return;
+	}
 
-    if (TYPE(rb_value) != T_ARRAY) {
-        radlog(L_ERR, "add_vp_tuple, %s: non-array passed", function_name);
-        return;
-    }
+	if (TYPE(rb_value) != T_ARRAY) {
+		REDEBUG("add_vp_tuple, %s: non-array passed", function_name);
+		return;
+	}
 
-    /* Get the array size. */
-    outertuplesize = RARRAY(rb_value)->len;
+	/* Get the array size. */
+	outertuplesize = RARRAY_LEN(rb_value);
 
-    for (i = 0; i < outertuplesize; i++) {
-        VALUE pTupleElement = rb_ary_entry(rb_value, i);
+	for (i = 0; i < outertuplesize; i++) {
+		VALUE pTupleElement = rb_ary_entry(rb_value, i);
 
-        if ((pTupleElement != 0) &&
-                (TYPE(pTupleElement) == T_ARRAY)) {
+		if ((pTupleElement != 0) &&
+		    (TYPE(pTupleElement) == T_ARRAY)) {
 
-            /* Check if it's a pair */
-            int tuplesize;
+			/* Check if it's a pair */
+			long tuplesize;
 
-            if ((tuplesize = RARRAY(pTupleElement)->len) != 2) {
-                radlog(L_ERR, "%s: tuple element %d is a tuple "
-                        " of size %d. must be 2\n", function_name,
-                        i, tuplesize);
-            } else {
-                VALUE pString1, pString2;
+			if ((tuplesize = RARRAY_LEN(pTupleElement)) != 2) {
+				REDEBUG("%s: tuple element %i is a tuple "
+					" of size %li. must be 2\n", function_name,
+					i, tuplesize);
+			} else {
+				VALUE pString1, pString2;
 
-                pString1 = rb_ary_entry(pTupleElement, 0);
-                pString2 = rb_ary_entry(pTupleElement, 1);
+				pString1 = rb_ary_entry(pTupleElement, 0);
+				pString2 = rb_ary_entry(pTupleElement, 1);
 
-                if ((TYPE(pString1) == T_STRING) &&
-                        (TYPE(pString2) == T_STRING)) {
+				if ((TYPE(pString1) == T_STRING) &&
+				    (TYPE(pString2) == T_STRING)) {
 
 
-                    const char *s1, *s2;
+					char const *s1, *s2;
 
-                    /* pairmake() will convert and find any
-                     * errors in the pair.
-                     */
+					/* pairmake() will convert and find any
+					 * errors in the pair.
+					 */
 
-                    s1 = STR2CSTR(pString1);
-                    s2 = STR2CSTR(pString2);
+					s1 = StringValuePtr(pString1);
+					s2 = StringValuePtr(pString2);
 
-                    if ((s1 != NULL) && (s2 != NULL)) {
-                        radlog(L_DBG, "%s: %s = %s ",
-                                function_name, s1, s2);
+					if ((s1 != NULL) && (s2 != NULL)) {
+						DEBUG("%s: %s = %s ",
+						       function_name, s1, s2);
 
-                        /* xxx Might need to support other T_OP */
-                        vp = pairmake(s1, s2, T_OP_EQ);
-                        if (vp != NULL) {
-                            pairadd(vpp, vp);
-                            radlog(L_DBG, "%s: s1, s2 OK\n",
-                                    function_name);
-                        } else {
-                            radlog(L_DBG, "%s: s1, s2 FAILED\n",
-                                    function_name);
-                        }
-                    } else {
-                        radlog(L_ERR, "%s: string conv failed\n",
-                                function_name);
-                    }
+						/* xxx Might need to support other T_OP */
+						vp = pairmake(ctx, vpp, s1, s2, T_OP_EQ);
+						if (vp != NULL) {
+							DEBUG("%s: s1, s2 OK", function_name);
+						} else {
+							DEBUG("%s: s1, s2 FAILED", function_name);
+						}
+					} else {
+						REDEBUG("%s: string conv failed", function_name);
+					}
 
-                } else {
-                    radlog(L_ERR, "%s: tuple element %d must be "
-                            "(string, string)", function_name, i);
-                }
-            }
-        } else {
-            radlog(L_ERR, "%s: tuple element %d is not a tuple\n",
-                    function_name, i);
-        }
-    }
+				} else {
+					REDEBUG("%s: tuple element %d must be "
+						"(string, string)", function_name, i);
+				}
+			}
+		} else {
+			REDEBUG("%s: tuple element %d is not a tuple\n",
+				function_name, i);
+		}
+	}
 
 }
 
@@ -184,121 +193,142 @@ static void add_vp_tuple(VALUE_PAIR **vpp, VALUE rb_value,
  * xxx We're not checking the errors. If we have errors, what do we do?
  */
 
-static int ruby_function(REQUEST *request, int func, VALUE module, const char *function_name) {
 #define BUF_SIZE 1024
+static rlm_rcode_t CC_HINT(nonnull (4)) do_ruby(REQUEST *request, unsigned long func,
+						VALUE module, char const *function_name)
+{
+	rlm_rcode_t rcode = RLM_MODULE_OK;
+	vp_cursor_t cursor;
 
-    char buf[BUF_SIZE]; /* same size as vp_print buffer */
+	char buf[BUF_SIZE]; /* same size as vp_print buffer */
 
-    VALUE_PAIR *vp;
-    VALUE rb_request, rb_result, rb_reply_items, rb_config_items;
+	VALUE_PAIR *vp;
+	VALUE rb_request, rb_result, rb_reply_items, rb_config, rbString1, rbString2;
 
-    int n_tuple, return_value;
-    radlog(L_DBG, "Calling ruby function %s which has id: %d\n", function_name, func);
+	int n_tuple;
+	DEBUG("Calling ruby function %s which has id: %lu\n", function_name, func);
 
-    /* Return with "OK, continue" if the function is not defined. 
-     * TODO: Should check with rb_respond_to each time, just because ruby can define function dynamicly?
-     */
-    if (func == 0) {
-        return RLM_MODULE_OK;
-    }
+	/* Return with "OK, continue" if the function is not defined.
+	 * TODO: Should check with rb_respond_to each time, just because ruby can define function dynamicly?
+	 */
+	if (func == 0) {
+		return rcode;
+	}
 
-    /* Default return value is "OK, continue" */
-    return_value = RLM_MODULE_OK;
+	n_tuple = 0;
+	if (request) {
+		for (vp = fr_cursor_init(&cursor, &request->packet->vps);
+		     vp;
+		     vp = fr_cursor_next(&cursor)) {
+			 n_tuple++;
+		}
+	}
 
-    n_tuple = 0;
+	/*
+	  Creating ruby array, that contains arrays of [name,value]
+	  Maybe we should use hash instead? Can this names repeat?
+	*/
+	rb_request = rb_ary_new2(n_tuple);
 
-    if (request != NULL) {
-        for (vp = request->packet->vps; vp; vp = vp->next) {
-            n_tuple++;
-        }
-    }
-    /*
-        Creating ruby array, that contains arrays of [name,value]
-        Maybe we should use hash instead? Can this names repeat?
-     */
-    rb_request = rb_ary_new2(n_tuple);
-    if (request != NULL) {
-        for (vp = request->packet->vps; vp; vp = vp->next) {
-            VALUE tmp = rb_ary_new2(2);
+	if (request) {
+		for (vp = fr_cursor_init(&cursor, &request->packet->vps);
+		     vp;
+		     vp = fr_cursor_next(&cursor)) {
+			VALUE tmp = rb_ary_new2(2);
 
-            /* The name. logic from vp_prints, lib/print.c */
-            if (vp->flags.has_tag) {
-                snprintf(buf, BUF_SIZE, "%s:%d", vp->name, vp->flags.tag);
-            } else {
-                strcpy(buf, vp->name);
-            }
-            VALUE rbString1 = rb_str_new2(buf);
-            /* The value. Use delimiter - don't know what that means */
-            vp_prints_value(buf, sizeof (buf), vp, 1);
-            VALUE rbString2 = rb_str_new2(buf);
+			/* The name. logic from vp_prints, lib/print.c */
+			if (vp->da->flags.has_tag) {
+				snprintf(buf, BUF_SIZE, "%s:%d", vp->da->name, vp->tag);
+			} else {
+				strlcpy(buf, vp->da->name, sizeof(buf));
+			}
+			rbString1 = rb_str_new2(buf);
+			vp_prints_value(buf, sizeof (buf), vp, '"');
+			rbString2 = rb_str_new2(buf);
 
-            rb_ary_push(tmp, rbString1);
-            rb_ary_push(tmp, rbString2);
-            rb_ary_push(rb_request, tmp);
-        }
-    }
+			rb_ary_push(tmp, rbString1);
+			rb_ary_push(tmp, rbString2);
+			rb_ary_push(rb_request, tmp);
+		}
+	}
 
-    /* Calling corresponding ruby function, passing request and catching result */
-    rb_result = rb_funcall(module, func, 1, rb_request);
+	/* Calling corresponding ruby function, passing request and catching result */
+	rb_result = rb_funcall(module, func, 1, rb_request);
 
-    /* Checking result, it can be array of type [result, [array of reply pairs],[array of config pairs]],
-     * It can also be just a fixnum, which is a result itself.
-     */
-    if (TYPE(rb_result) == T_ARRAY) {
-        if (!FIXNUM_P(rb_ary_entry(rb_result, 0))) {
-            radlog(L_ERR, "First element of an array was not a FIXNUM(Which has to be a return_value)");
-        } else
-            return_value = FIX2INT(rb_ary_entry(rb_result, 0));
-        rb_reply_items = rb_ary_entry(rb_result, 1);
-        rb_config_items = rb_ary_entry(rb_result, 2);
-        add_vp_tuple(&request->reply->vps, rb_reply_items, function_name);
-        add_vp_tuple(&request->config_items, rb_config_items, function_name);
-    } else if (FIXNUM_P(rb_result)) {
-        return_value = FIX2INT(rb_result);
-    }
-    return return_value;
+	/*
+	 *	Checking result, it can be array of type [result,
+	 *	[array of reply pairs],[array of config pairs]],
+	 *	It can also be just a fixnum, which is a result itself.
+	 */
+	if (TYPE(rb_result) == T_ARRAY) {
+		if (!FIXNUM_P(rb_ary_entry(rb_result, 0))) {
+			ERROR("First element of an array was not a FIXNUM (Which has to be a return_value)");
+
+			rcode = RLM_MODULE_FAIL;
+			goto finish;
+		}
+
+		rcode = FIX2INT(rb_ary_entry(rb_result, 0));
+
+		/*
+		 *	Only process the results if we were passed a request.
+		 */
+		if (request) {
+			rb_reply_items = rb_ary_entry(rb_result, 1);
+			rb_config = rb_ary_entry(rb_result, 2);
+
+			add_vp_tuple(request->reply, request, &request->reply->vps,
+				     rb_reply_items, function_name);
+			add_vp_tuple(request, request, &request->config,
+				     rb_config, function_name);
+		}
+	} else if (FIXNUM_P(rb_result)) {
+		rcode = FIX2INT(rb_result);
+	}
+
+finish:
+	return rcode;
 }
 
 static struct varlookup {
-    const char* name;
-    int value;
+	char const* name;
+	int value;
 } constants[] = {
-    { "L_DBG", L_DBG},
-    { "L_AUTH", L_AUTH},
-    { "L_INFO", L_INFO},
-    { "L_ERR", L_ERR},
-    { "L_PROXY", L_PROXY},
-    { "L_CONS", L_CONS},
-    { "RLM_MODULE_REJECT", RLM_MODULE_REJECT},
-    { "RLM_MODULE_FAIL", RLM_MODULE_FAIL},
-    { "RLM_MODULE_OK", RLM_MODULE_OK},
-    { "RLM_MODULE_HANDLED", RLM_MODULE_HANDLED},
-    { "RLM_MODULE_INVALID", RLM_MODULE_INVALID},
-    { "RLM_MODULE_USERLOCK", RLM_MODULE_USERLOCK},
-    { "RLM_MODULE_NOTFOUND", RLM_MODULE_NOTFOUND},
-    { "RLM_MODULE_NOOP", RLM_MODULE_NOOP},
-    { "RLM_MODULE_UPDATED", RLM_MODULE_UPDATED},
-    { "RLM_MODULE_NUMCODES", RLM_MODULE_NUMCODES},
-    { NULL, 0},
+	{ "L_DBG", L_DBG},
+	{ "L_AUTH", L_AUTH},
+	{ "L_INFO", L_INFO},
+	{ "L_ERR", L_ERR},
+	{ "L_PROXY", L_PROXY},
+	{ "RLM_MODULE_REJECT", RLM_MODULE_REJECT},
+	{ "RLM_MODULE_FAIL", RLM_MODULE_FAIL},
+	{ "RLM_MODULE_OK", RLM_MODULE_OK},
+	{ "RLM_MODULE_HANDLED", RLM_MODULE_HANDLED},
+	{ "RLM_MODULE_INVALID", RLM_MODULE_INVALID},
+	{ "RLM_MODULE_USERLOCK", RLM_MODULE_USERLOCK},
+	{ "RLM_MODULE_NOTFOUND", RLM_MODULE_NOTFOUND},
+	{ "RLM_MODULE_NOOP", RLM_MODULE_NOOP},
+	{ "RLM_MODULE_UPDATED", RLM_MODULE_UPDATED},
+	{ "RLM_MODULE_NUMCODES", RLM_MODULE_NUMCODES},
+	{ NULL, 0},
 };
 
 /*
  * Import a user module and load a function from it
  */
-static int load_ruby_function(const char *f_name, int *func, VALUE module) {
-    if (f_name == NULL) {
-        *func = 0;
-    } else {
-        *func = rb_intern(f_name);
-        /* rb_intern returns a symbol of a function, not a function itself
-            it can be aplied to any recipient,
-            so we should check it for our module recipient
-         */
-        if (!rb_respond_to(module, *func))
-            *func = 0;
-    }
-    radlog(L_DBG, "load_ruby_function %s, result: %d", f_name, *func);
-    return 0;
+static int load_function(char const *f_name, unsigned long *func, VALUE module) {
+	if (!f_name) {
+		*func = 0;
+	} else {
+		*func = rb_intern(f_name);
+		/* rb_intern returns a symbol of a function, not a function itself
+		   it can be aplied to any recipient,
+		   so we should check it for our module recipient
+		*/
+		if (!rb_respond_to(module, *func))
+			*func = 0;
+	}
+	DEBUG("load_function %s, result: %lu", f_name, *func);
+	return 0;
 }
 
 /*
@@ -310,137 +340,109 @@ static int load_ruby_function(const char *f_name, int *func, VALUE module) {
  *	If configuration information is given in the config section
  *	that must be referenced in later calls, store a handle to it
  *	in *instance otherwise put a null pointer there.
- *
  */
-static int ruby_instantiate(CONF_SECTION *conf, void **instance) {
-    rlm_ruby_t *data;
-    VALUE module;
-    int idx;
+static int mod_instantiate(UNUSED CONF_SECTION *conf, void *instance)
+{
+	rlm_ruby_t *inst = instance;
+	VALUE module;
 
-    /*
-     * Initialize Ruby interpreter. Fatal error if this fails.
-     */
+	int idx;
+	int status;
 
-    radlog(L_DBG, "[rlm_ruby]: ruby_instantiate");
-    ruby_init();
-    ruby_init_loadpath();
-    ruby_script("radiusd");
-#warning FIXME: Disabling GC, it will eat your memory, but at least it will be stable.
-    rb_gc_disable();
-    int status;
-    /*
-     *	Set up a storage area for instance data
-     */
-    data = rad_malloc(sizeof (*data));
-    if (!data) {
-        return -1;
-    }
-    memset(data, 0, sizeof (*data));
+	/*
+	 *	Initialize Ruby interpreter. Fatal error if this fails.
+	 */
+	ruby_init();
+	ruby_init_loadpath();
+	ruby_script("radiusd");
 
-    /*
-     *	If the configuration parameters can't be parsed, then
-     *	fail.
-     */
-    if (cf_section_parse(conf, data, module_config) < 0) {
-        free(data);
-        return -1;
-    }
+	/* disabling GC, it will eat your memory, but at least it will be stable. */
+	rb_gc_disable();
 
-    /*
-     * Setup our 'radiusd' module.
-     */
+	/*
+	 *	Setup our 'radiusd' module.
+	 */
+	module = inst->module = rb_define_module(inst->module_name);
+	if (!module) {
+		ERROR("Ruby rb_define_module failed");
 
-    if ((module = data->pModule_builtin = rb_define_module(data->moduleName)) == 0) {
-        radlog(L_ERR, "Ruby rb_define_module failed");
-        free(data);
-        return -1;
-    }
-    /*
-     * Load constants into module
-     */
-    for (idx = 0; constants[idx].name; idx++)
-        rb_define_const(module, constants[idx].name, INT2NUM(constants[idx].value));
+		return -1;
+	}
 
-    /* Add functions into module */
-    rb_define_module_function(module, "radlog", radlog_rb, 2);
+	/*
+	 *	Load constants into module
+	 */
+	for (idx = 0; constants[idx].name; idx++) {
+		rb_define_const(module, constants[idx].name, INT2NUM(constants[idx].value));
+	}
 
-    if (data->scriptFile == NULL) {
-        /* TODO: What actualy should we do? Exit with module fail? Or continue... but what the point then? */
-        radlog(L_ERR, "Script File was not set");
-    } else {
-        radlog(L_DBG, "Loading file %s...", data->scriptFile);
-        rb_load_protect(rb_str_new2(data->scriptFile), 0, &status);
-        if (!status)
-            radlog(L_DBG, "Loaded file %s", data->scriptFile);
-        else
-            radlog(L_ERR, "Error loading file %s status: %d", data->scriptFile, status);
-    }
-    /*
-     * Import user modules.
-     */
-#define RLM_RUBY_LOAD(foo) if (load_ruby_function(#foo, &data->func_##foo, data->pModule_builtin)==-1) { \
-	/* TODO: check if we need to cleanup data */ \
-	return -1; \
-    }
+	/*
+	 *	Expose some FreeRADIUS API functions as ruby functions
+	 */
+	rb_define_module_function(module, "radlog", radlog_rb, 2);
 
-    RLM_RUBY_LOAD(instantiate);
-    RLM_RUBY_LOAD(authenticate);
-    RLM_RUBY_LOAD(authorize);
-    RLM_RUBY_LOAD(preacct);
-    RLM_RUBY_LOAD(accounting);
-    RLM_RUBY_LOAD(checksimul);
-    RLM_RUBY_LOAD(preproxy);
-    RLM_RUBY_LOAD(postproxy);
-    RLM_RUBY_LOAD(postauth);
+	DEBUG("Loading file %s...", inst->filename);
+	rb_load_protect(rb_str_new2(inst->filename), 0, &status);
+	if (status) {
+		ERROR("Error loading file %s status: %d", inst->filename, status);
+
+		return -1;
+	}
+	DEBUG("Loaded file %s", inst->filename);
+
+	/*
+	 *	Import user modules.
+	 */
+#define RLM_RUBY_LOAD(foo) if (load_function(#foo, &inst->func_##foo, inst->module)==-1) { \
+		return -1; \
+	}
+
+	RLM_RUBY_LOAD(instantiate);
+	RLM_RUBY_LOAD(authenticate);
+	RLM_RUBY_LOAD(authorize);
+	RLM_RUBY_LOAD(preacct);
+	RLM_RUBY_LOAD(accounting);
+	RLM_RUBY_LOAD(checksimul);
+	RLM_RUBY_LOAD(pre_proxy);
+	RLM_RUBY_LOAD(post_proxy);
+	RLM_RUBY_LOAD(post_auth);
 #ifdef WITH_COA
-    RLM_RUBY_LOAD(recvcoa);
-    RLM_RUBY_LOAD(sendcoa);
+	RLM_RUBY_LOAD(recv_coa);
+	RLM_RUBY_LOAD(send_coa);
 #endif
-    RLM_RUBY_LOAD(detach);
+	RLM_RUBY_LOAD(detach);
 
-    *instance = data;
-
-    /* Call the instantiate function.  No request.  Use the return value. */
-    return ruby_function(NULL, data->func_instantiate, data->pModule_builtin, "instantiate");
+	/* Call the instantiate function.  No request.  Use the return value. */
+	return do_ruby(NULL, inst->func_instantiate, inst->module, "instantiate");
 }
 
-#define RLM_RUBY_FUNC(foo) static int ruby_##foo(void *instance, REQUEST *request) \
-{ \
-    return ruby_function(request, \
-			   ((struct rlm_ruby_t *)instance)->func_##foo,((struct rlm_ruby_t *)instance)->pModule_builtin, \
-			   #foo); \
-}
+#define RLM_RUBY_FUNC(foo) static rlm_rcode_t CC_HINT(nonnull) mod_##foo(void *instance, REQUEST *request) \
+	{ \
+		return do_ruby(request,	\
+			       ((struct rlm_ruby_t *)instance)->func_##foo,((struct rlm_ruby_t *)instance)->module, \
+			       #foo); \
+	}
 
 RLM_RUBY_FUNC(authorize)
 RLM_RUBY_FUNC(authenticate)
 RLM_RUBY_FUNC(preacct)
 RLM_RUBY_FUNC(accounting)
 RLM_RUBY_FUNC(checksimul)
-RLM_RUBY_FUNC(preproxy)
-RLM_RUBY_FUNC(postproxy)
-RLM_RUBY_FUNC(postauth)
+RLM_RUBY_FUNC(pre_proxy)
+RLM_RUBY_FUNC(post_proxy)
+RLM_RUBY_FUNC(post_auth)
 #ifdef WITH_COA
-RLM_RUBY_FUNC(recvcoa)
-RLM_RUBY_FUNC(sendcoa)
+RLM_RUBY_FUNC(recv_coa)
+RLM_RUBY_FUNC(send_coa)
 #endif
 
-static int ruby_detach(void *instance) {
-    int return_value;
+static int mod_detach(UNUSED void *instance)
+{
+	ruby_finalize();
+	ruby_cleanup(0);
 
-    /* Default return value is failure */
-    return_value = -1;
-    free(instance);
-    ruby_finalize();
-    ruby_cleanup(0);
-    radlog(L_DBG, "ruby_detach done");
-
-    //Ok, we cheat, and returon ok value for now :)
-    return_value = RLM_MODULE_OK;
-
-    /* Return the specified by the Ruby module */
-    return return_value;
+	return 0;
 }
-
 
 /*
  *	The module name should be the only globally exported symbol.
@@ -451,25 +453,27 @@ static int ruby_detach(void *instance) {
  *	The server will then take care of ensuring that the module
  *	is single-threaded.
  */
+extern module_t rlm_ruby;
 module_t rlm_ruby = {
-    RLM_MODULE_INIT,
-    "ruby",
-    //	RLM_TYPE_THREAD_SAFE,		/* type */
-    RLM_TYPE_THREAD_UNSAFE, /* type, ok, let's be honest, MRI is not yet treadsafe */
-    ruby_instantiate, /* instantiation */
-    ruby_detach, /* detach */
-    {
-        ruby_authenticate, /* authentication */
-        ruby_authorize, /* authorization */
-        ruby_preacct, /* preaccounting */
-        ruby_accounting, /* accounting */
-        ruby_checksimul, /* checksimul */
-        ruby_preproxy, /* pre-proxy */
-        ruby_postproxy, /* post-proxy */
-        ruby_postauth /* post-auth */
+	RLM_MODULE_INIT,
+	"ruby",
+	RLM_TYPE_THREAD_UNSAFE, /* type, ok, let's be honest, MRI is not yet treadsafe */
+	sizeof(rlm_ruby_t),
+	module_config,
+	mod_instantiate,		/* instantiation */
+	mod_detach,			/* detach */
+	{
+		mod_authenticate,	/* authentication */
+		mod_authorize,		/* authorization */
+		mod_preacct,		/* preaccounting */
+		mod_accounting,		/* accounting */
+		mod_checksimul,		/* checksimul */
+		mod_pre_proxy,		/* pre-proxy */
+		mod_post_proxy,		/* post-proxy */
+		mod_post_auth		/* post-auth */
 #ifdef WITH_COA
-	, ruby_recvcoa,
-	ruby_sendcoa
+		, mod_recv_coa,
+		mod_send_coa
 #endif
-    },
+	},
 };

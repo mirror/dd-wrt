@@ -1,9 +1,9 @@
 # -*- text -*-
-# Copyright (C) 2014 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 #
 #       For ZTE.
 #
-#       $Id: b4eae0addea41dce5d9dbc2f968e9e29fd8abd45 $
+#       $Id: df5eb024d616d68f45ddef1842194b6416887955 $
 #
 # QoS attributes Mostly derived from:
 # http://wwwen.zte.com.cn/en/products/bearer/201308/P020130828522349526032.pdf

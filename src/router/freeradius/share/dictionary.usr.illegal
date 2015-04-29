@@ -1,10 +1,10 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 ##############################################################################
 #
 #	USE dictionary that illegally uses the RFC space.
 #
-#	$Id: f9ba647744523e1be60148dd3e4837f72f05b911 $
+#	$Id: 5f2b19b31a627fb61988b83e943219d42f844ddc $
 #
 ##############################################################################
 #

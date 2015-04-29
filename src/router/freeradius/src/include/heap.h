@@ -3,7 +3,7 @@
 
 /*
  * heap.h	Structures and prototypes for binary heaps.
- * Version:	$Id: 1f47449adb860e972a0b8a3b802c257e0c0ddca2 $
+ * Version:	$Id: d980adb5292ba3d19c81e5d774db32b81bc398b0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,14 +22,13 @@
  * Copyright 2007 Alan DeKok
  */
 
-#include <freeradius-devel/ident.h>
-RCSIDH(heap_h, "$Id: 1f47449adb860e972a0b8a3b802c257e0c0ddca2 $")
+RCSIDH(heap_h, "$Id: d980adb5292ba3d19c81e5d774db32b81bc398b0 $")
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef int (*fr_heap_cmp_t)(const void *, const void *);
+typedef int (*fr_heap_cmp_t)(void const *, void const *);
 
 typedef struct fr_heap_t fr_heap_t;
 fr_heap_t *fr_heap_create(fr_heap_cmp_t cmp, size_t offset);

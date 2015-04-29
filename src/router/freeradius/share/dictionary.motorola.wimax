@@ -1,10 +1,10 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 ##############################################################################
 #
 #	Motorola WiMAX attributes.
 #
-#	$Id: 857c24cf546b4b42b52adf0f0939adbf641248c5 $
+#	$Id: 9948cdc1d706b3683b149b30835753e60dd010f4 $
 #
 ##############################################################################
 
@@ -29,5 +29,7 @@ ATTRIBUTE	Motorola-WiMAX-Maximum-Commit-Bandwidth	61	octets
 ATTRIBUTE	Motorola-WiMAX-Convergence-Sublayer	63	octets
 ATTRIBUTE	Motorola-WiMAX-Service-Flows		64	string
 ATTRIBUTE	Motorola-WiMAX-VLAN-ID			65	octets
+
+ATTRIBUTE	Motorola-Accounting-Message		80	string
 
 END-VENDOR    Motorola

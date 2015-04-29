@@ -54,7 +54,7 @@ do
   t)	timeout="$OPTARG"
 	[ "$timeout" = "0" ] && timeout=1000000
 	;;
-  u)	condition="(User-Name == $OPTARG)"
+  u)	condition="(User-Name == '$OPTARG')"
 	;;
   ?)	usage
 	;;
@@ -77,7 +77,7 @@ fi
 #  Debug to a file, and then tell us where the file is.
 #
 outfile=`$radmin -e "debug file radmin.debug.$$" -e "show debug file"`
-group=`$radmin -e "debug file radmin.debug.$$" -e "show config group"`
+group=`$radmin -e "debug file radmin.debug.$$" -e "show config security.group"`
 
 #
 #  If there was an error setting the debug output, re-set the
@@ -107,7 +107,10 @@ trap '$radmin -e "debug condition" -e "debug file"; rm -f $outfile;kill -TERM $T
 #
 #  Set the debug condition
 #
-$radmin -e "debug condition \"$condition\""
+$radmin -e "debug condition \"$condition\"" | grep -I 'error'
+if [ $? -eq 0 ]; then
+    exit 1
+fi
 
 #
 #  Print the output, and wait for "timeout".  Then, stop printing.

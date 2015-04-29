@@ -1,20 +1,19 @@
 /*
  * sysutmp.h	Compatibility stuff for the different UTMP systems.
  *
- * Version:	$Id: e28fa2c31f83b9b9ea11d78669a5f0a0667d548f $
+ * Version:	$Id: 13a47b582aa721a8a560e5f9df63eb0975e6f0cb $
  */
 
 #ifndef SYSUTMP_H_INCLUDED
 #define SYSUTMP_H_INCLUDED
 
-#include <freeradius-devel/ident.h>
-RCSIDH(sysutmp_h, "$Id: e28fa2c31f83b9b9ea11d78669a5f0a0667d548f $")
+RCSIDH(sysutmp_h, "$Id: 13a47b582aa721a8a560e5f9df63eb0975e6f0cb $")
 
 /*
  *  If we have BOTH utmp.h and utmpx.h, then
  *  we prefer to use utmp.h, but only on systems other than Solaris.
  */
-#if !defined(_sun) && !defined(sgi) && !defined(hpux)
+#if !defined(__sun) && !defined(sgi) && !defined(hpux)
 #  ifdef HAVE_UTMP_H
 #    undef HAVE_UTMPX_H
 #  endif

@@ -1,7 +1,7 @@
 /*
  *  strlcpy.c	Copy strings.
  *
- *  Version:	$Id: 549f138036e3494d7c18fdd52a153cc6919f15f8 $
+ *  Version:	$Id: 689df5da2dd1f56db684a1f8ffb40b6386d68ce1 $
  *
  */
 
@@ -23,10 +23,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 549f138036e3494d7c18fdd52a153cc6919f15f8 $")
-
-#include <freeradius-devel/autoconf.h>
+RCSID("$Id: 689df5da2dd1f56db684a1f8ffb40b6386d68ce1 $")
 
 #ifndef HAVE_STRLCPY
 
@@ -38,10 +35,10 @@ RCSID("$Id: 549f138036e3494d7c18fdd52a153cc6919f15f8 $")
  * Returns strlen(src); if retval >= siz, truncation occurred.
  */
 size_t
-strlcpy(char *dst, const char *src, size_t siz)
+strlcpy(char *dst, char const *src, size_t siz)
 {
 	char *d = dst;
-	const char *s = src;
+	char const *s = src;
 	size_t n = siz;
 
 	/* Copy as many bytes as will fit */

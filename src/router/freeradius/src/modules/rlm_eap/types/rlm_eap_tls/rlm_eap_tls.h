@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.h
  *
- * Version:     $Id: b8dbd865777cba8b6a0ebc6897a51acbe4d56672 $
+ * Version:     $Id: cebcb92f57fcdf7399b6e34e8860578bfc0fca53 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,83 +24,24 @@
 #ifndef _RLM_EAP_TLS_H
 #define _RLM_EAP_TLS_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(rlm_eap_tls_h, "$Id: b8dbd865777cba8b6a0ebc6897a51acbe4d56672 $")
-
-#include "eap_tls.h"
+RCSIDH(rlm_eap_tls_h, "$Id: cebcb92f57fcdf7399b6e34e8860578bfc0fca53 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 
-/* configured values goes right here */
-typedef struct eap_tls_conf {
-	char		*private_key_password;
-	char		*private_key_file;
-	char		*certificate_file;
-	char		*random_file;
-	char		*ca_path;
-	char		*ca_file;
-	char		*dh_file;
-	char		*rsa_file;
-	char		*make_cert_command;
-	char		*virtual_server;
-	int		rsa_key;
-	int		dh_key;
-	int		rsa_key_length;
-	int		dh_key_length;
-	int		verify_depth;
-	int		file_type;
-	int		include_length;
-	int		disable_tlsv1_1;
-	int		disable_tlsv1_2;
+#include "eap_tls.h"
+
+typedef struct rlm_eap_tls_t {
+	/*
+	 *	TLS configuration
+	 */
+	char const *tls_conf_name;
+	fr_tls_server_conf_t *tls_conf;
 
 	/*
-	 *	Always < 4096 (due to radius limit), 0 by default = 2048
+	 *	Virtual server for checking certificates
 	 */
-	int		fragment_size;
-	int		check_crl;
-	int		allow_expired_crl;
-	char		*check_cert_cn;
-	char		*cipher_list;
-	char		*check_cert_issuer;
-
-        int     	session_cache_enable;
-        int     	session_timeout;
-        int     	session_cache_size;
-	char		*session_id_name;
-	char		session_context_id[SSL_MAX_SSL_SESSION_ID_LENGTH];
-	time_t		session_last_flushed;
-
-	char		*verify_tmp_dir;
-	char		*verify_client_cert_cmd;
-
-#ifdef HAVE_OPENSSL_OCSP_H
-	/*
-	 * OCSP Configuration
-	 */
-	int		ocsp_enable;
-	int		ocsp_override_url;
-	char		*ocsp_url;
-	int		ocsp_use_nonce;
-	int		ocsp_timeout;
-	int		ocsp_softfail;
-#endif
-
-#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
-#ifndef OPENSSL_NO_ECDH
-	char		*ecdh_curve;
-#endif
-#endif
-} EAP_TLS_CONF;
-
-/* This structure gets stored in arg */
-typedef struct _eap_tls_t {
-	EAP_TLS_CONF 	conf;
-	SSL_CTX		*ctx;
-#ifdef HAVE_OPENSSL_OCSP_H
-	X509_STORE	*store; /* OCSP Revocation Store */
-#endif
-} eap_tls_t;
-
+	char const *virtual_server;
+} rlm_eap_tls_t;
 
 #endif /* _RLM_EAP_TLS_H */

@@ -1,14 +1,16 @@
-.TH RADCLIENT 1 "2 April 2009" "" "FreeRADIUS Daemon"
+.TH RADCLIENT 1 "28 March 2014" "" "FreeRADIUS Daemon"
 .SH NAME
 radclient - send packets to a RADIUS server, show reply
 .SH SYNOPSIS
 .B radclient
 .RB [ \-4 ]
 .RB [ \-6 ]
-.RB [ \-d
-.IR raddb_directory ]
 .RB [ \-c
 .IR count ]
+.RB [ \-d
+.IR raddb_directory ]
+.RB [ \-D
+.IR dictionary_directory ]
 .RB [ \-f
 .IR file ]
 .RB [ \-F ]
@@ -53,14 +55,21 @@ Use IPv6
 .IP \-c\ \fIcount\fP
 Send each packet \fIcount\fP times.
 .IP \-d\ \fIraddb_directory\fP
-The directory that contains the RADIUS dictionary files. Defaults to
+The directory that contains the user dictionary file. Defaults to
 \fI/etc/raddb\fP.
-.IP \-f\ \fIfile\fP
+.IP \-D\ \fIdictionary_directory\fP
+The directory that contains the main dictionary file. Defaults to
+\fI/usr/share/freeradius\fP.
+.IP \-f\ \fIfile[:file]\fP
 File to read the attribute/value pairs from. If this is not specified,
 they are read from stdin.  This option can be specified multiple
 times, in which case packets are sent in order by file, and within
 each file, by first packet to last packet.  A blank line separates
-logical packets within a file.
+logical packets within a file.  If a pair of files separated by a
+colon is specified, the second file will be used to filter the
+responses to requests from the first. The number of requests and
+filters must be the same.  A summary of filter results will be displayed
+if -s is passed.
 .IP \-F
 Print the file name, packet number and reply code.
 .IP \-h
@@ -86,6 +95,9 @@ requests to time out), before sending any more packets.
 
 This option permits you to discover the maximum load accepted by a
 RADIUS server.
+.IP "\-P\ \fIproto\fP"
+Use \fIproto\fP transport protocol ("tcp" or "udp").
+Only available if FreeRADIUS is compiled with TCP transport support.
 .IP \-q
 Go to quiet mode, and do not print out anything.
 .IP \-r\ \fInum_retries\fP
@@ -158,9 +170,9 @@ configurable support for it).
 .sp
 .nf
 .ne 3
-$ echo "Message-Authenticator = 0x00" | radclient 192.168.1.42 status s3cr3t
-Sending request to server 192.168.1.42, port 1812.
-radrecv: Packet from host 192.168.1.42 code=2, id=140, length=54
+$ echo "Message-Authenticator = 0x00" | radclient 192.0.2.42 status s3cr3t
+Sending request to server 192.0.2.42, port 1812.
+radrecv: Packet from host 192.0.2.42 code=2, id=140, length=54
     Reply-Message = "FreeRADIUS up 21 days, 02:05"
 .fi
 .sp

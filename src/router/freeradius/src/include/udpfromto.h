@@ -1,14 +1,13 @@
 #ifndef UDPFROMTO_H
 #define UDPFROMTO_H
 /*
- * Version:	$Id: 525df38c64cceff0c48850c49bb4ca5c98c58549 $
+ * $Id: 7b029cd6227d60281bbf36f9e165f47dc1894c31 $
  *
+ * @file udpfromto.h
  */
 
-#include <freeradius-devel/ident.h>
-RCSIDH(udpfromtoh, "$Id: 525df38c64cceff0c48850c49bb4ca5c98c58549 $")
+RCSIDH(udpfromtoh, "$Id: 7b029cd6227d60281bbf36f9e165f47dc1894c31 $")
 
-#include <freeradius-devel/autoconf.h>
 #include <freeradius-devel/libradius.h>
 
 #ifdef __cplusplus

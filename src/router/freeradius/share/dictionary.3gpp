@@ -1,11 +1,11 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 #
 #	3GPP stuff.
 #
 #	ftp://ftp.3gpp.org/specs/2002-06/R1999/29_series/29061-3a0.zip
 #
-#	$Id: 7d172a30ab29d6a43da10b5e4bda2202db798dbb $
+#	$Id: b13612761b96cf276acc2fac7279b43e89c6bfd2 $
 #
 VENDOR		3GPP				10415
 
@@ -43,7 +43,7 @@ ATTRIBUTE	3GPP-Teardown-Indicator			19	byte
 ATTRIBUTE	3GPP-IMEISV				20	string
 ATTRIBUTE	3GPP-RAT-Type				21	byte
 ATTRIBUTE	3GPP-Location-Info			22	octets
-ATTRIBUTE	3GPP-MS-Time-Zone			23	octets
+ATTRIBUTE	3GPP-MS-Time-Zone			23	octets[2]
 ATTRIBUTE	3GPP-Camel-Charging-Info		24	octets
 ATTRIBUTE	3GPP-Packet-Filter			25	octets
 ATTRIBUTE	3GPP-Negotiated-DSCP			26	byte

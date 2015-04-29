@@ -2,7 +2,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file.
 ##
 ##	http://www.freeradius.org/
-##	$Id: 2e0a40213f6079481931c90131ccee8b5e014872 $
+##	$Id: a0f0258a63b7b309803aa2e0f08b85d4c204a47a $
 ##
 
 # This is the radiusd.conf file used for testing EAP-SIM stuff.
@@ -220,17 +220,6 @@ hostname_lookups = no
 #
 allow_core_dumps = yes
 
-#  Regular expressions
-#
-#  These items are set at configure time.  If they're set to "yes",
-#  then setting them to "no" turns off regular expression support.
-#
-#  If they're set to "no" at configure time, then setting them to "yes"
-#  WILL NOT WORK.  It will give you an error.
-#
-regular_expressions	= yes
-extended_expressions	= yes
-
 #  Log the full User-Name attribute, as it was found in the request.
 #
 # allowed values: {no, yes}
@@ -257,9 +246,9 @@ log_auth_goodpass = no
 #
 usercollide = no
 
-# lower_user / lower_pass:  
+# lower_user / lower_pass:
 # Lower case the username/password "before" or "after"
-# attempting to authenticate.  
+# attempting to authenticate.
 #
 #  If "before", the server will first modify the request and then try
 #  to auth the user.  If "after", the server will first auth using the
@@ -335,7 +324,7 @@ security {
 	#  Normally this should be set to "no", because they're useless.
 	#  See: http://www.freeradius.org/rfc/rfc2865.html#Keep-Alives
 	#
-	#  However, certain NAS boxes may require them.	
+	#  However, certain NAS boxes may require them.
 	#
 	#  When sent a Status-Server message, the server responds with
 	#  and Access-Accept packet, containing a Reply-Message attribute,
@@ -367,7 +356,7 @@ $INCLUDE  ${confdir}/proxy.conf
 
 # CLIENTS CONFIGURATION
 #
-#  Client configuration is defined in "clients.conf".  
+#  Client configuration is defined in "clients.conf".
 #
 
 #  The 'clients.conf' file contains all of the information from the old
@@ -587,7 +576,7 @@ modules {
 
 	#  Extensible Authentication Protocol
 	#
-	#  For all EAP related authentications 
+	#  For all EAP related authentications
 	eap {
 		#  Invoke the default supported EAP type when
 		#  EAP-Identity response is received.
@@ -608,8 +597,8 @@ modules {
 		md5 {
 		}
 
-	        sim {
-	 	}
+		sim {
+		}
 
 		# Cisco LEAP
 		#
@@ -623,7 +612,7 @@ modules {
 		leap {
 		}
 
-		## EAP-TLS is highly experimental EAP-Type at the moment.  
+		## EAP-TLS is highly experimental EAP-Type at the moment.
 		#	Please give feedback on the mailing list.
 		#tls {
 		#	private_key_password = password
@@ -635,7 +624,7 @@ modules {
 		#	certificate_file = /path/filename
 
 		#	Trusted Root CA list
-			#CA_file = /path/filename
+			#ca_file = /path/filename
 
 		#	dh_file = /path/filename
 			#random_file = /path/filename
@@ -676,7 +665,7 @@ modules {
 		# to overwrite (or add) Auth-Type during
 		# authorization. Normally should be MS-CHAP
 		authtype = MS-CHAP
-		
+
 		# if use_mppe is not set to no mschap will
 		# add MS-CHAP-MPPE-Keys for MS-CHAPv1 and
 		# MS-MPPE-Recv-Key/MS-MPPE-Send-Key for MS-CHAPv2
@@ -696,20 +685,20 @@ modules {
 	#  This module definition allows you to use LDAP for
 	#  authorization and authentication (Auth-Type := LDAP)
 	#
-	#  See doc/rlm_ldap for description of configuration options 
-	#  and sample authorize{} and authenticate{} blocks 
+	#  See doc/rlm_ldap for description of configuration options
+	#  and sample authorize{} and authenticate{} blocks
 	ldap {
 		server = "ldap.your.domain"
 		# identity = "cn=admin,o=My Org,c=UA"
 		# password = mypass
 		basedn = "o=My Org,c=UA"
-		filter = "(uid=%{Stripped-User-Name:-%{User-Name}})"
+		filter = "(uid=%{%{Stripped-User-Name}:-%{User-Name}})"
 
 		# set this to 'yes' to use TLS encrypted connections
 		# to the LDAP database by using the StartTLS extended
 		# operation.
 		# The StartTLS operation is supposed to be used with normal
-		# ldap connections instead of using ldaps (port 689) connections
+		# ldap connections instead of using ldaps (port 636) connections
 		start_tls = no
 
 		# default_profile = "cn=radprofile,ou=dialup,o=My Org,c=UA"
@@ -753,13 +742,13 @@ modules {
 	#            of attributes.
 	#   authtype - if record found this Auth-Type is used to authenticate
 	#            user
-	#   hashsize - hashtable size. If 0 or not specified records are not
+	#   hash_size - hashtable size. If 0 or not specified records are not
 	#            stored in memory and file is red on every request.
-	#   allowmultiplekeys - if few records for every key are allowed
-	#   ignorenislike - ignore NIS-related records
+	#   allow_multiple_keys - if few records for every key are allowed
+	#   ignore_nislike - ignore NIS-related records
 	#   delimiter - symbol to use as a field separator in passwd file,
 	#            for format ':' symbol is always used. '\0', '\n' are
-        #	     not allowed 
+	#	     not allowed
 	#
 
 	#  An example configuration for using /etc/smbpasswd.
@@ -768,9 +757,9 @@ modules {
 	#	filename = /etc/smbpasswd
 	#	format = "*User-Name::LM-Password:NT-Password:SMB-Account-CTRL-TEXT::"
 	#	authtype = MS-CHAP
-	#	hashsize = 100
-	#	ignorenislike = no
-	#	allowmultiplekeys = no
+	#	hash_size = 100
+	#	ignore_nislike = no
+	#	allow_multiple_keys = no
 	#}
 
 	#  Similar configuration, for the /etc/group file. Adds a Group-Name
@@ -779,9 +768,9 @@ modules {
 	#passwd etc_group {
 	#	filename = /etc/group
 	#	format = "=Group-Name:::*,User-Name"
-	#	hashsize = 50
-	#	ignorenislike = yes
-	#	allowmultiplekeys = yes
+	#	hash_size = 50
+	#	ignore_nislike = yes
+	#	allow_multiple_keys = yes
 	#	delimiter = ":"
 	#}
 
@@ -817,34 +806,6 @@ modules {
 		format = suffix
 		delimiter = "%"
 	}
-	
-	#  rewrite arbitrary packets.  Useful in accounting and authorization.
-	#
-	## This module is highly experimental at the moment.  Please give 
-	## feedback to the mailing list.
-	#
-	#  The module can also use the Rewrite-Rule attribute. If it
-	#  is set and matches the name of the module instance, then
-	#  that module instance will be the only one which runs.
-	#
-	#  Also if new_attribute is set to yes then a new attribute
-	#  will be created containing the value replacewith and it
-	#  will be added to searchin (packet, reply or config).
-	# searchfor,ignore_case and max_matches will be ignored in that case.
-
-	#
-	#attr_rewrite sanecallerid {
-	#	attribute = Called-Station-Id
-		# may be "packet", "reply", or "config"
-	#	searchin = packet
-	#	searchfor = "[+ ]"
-	#	replacewith = ""
-	#	ignore_case = no
-	#	new_attribute = no
-	#	max_matches = 10
-	#	## If set to yes then the replace string will be appended to the original string
-	#	append = no
-	#}
 
 	# Preprocess the incoming RADIUS request, before handing it off
 	# to other modules.
@@ -946,20 +907,6 @@ modules {
 		detailperm = 0600
 	}
 
-	# Create a unique accounting session Id.  Many NASes re-use or
-	# repeat values for Acct-Session-Id, causing no end of
-	# confusion.
-	#
-	#  This module will add a (probably) unique session id 
-	#  to an accounting packet based on the attributes listed
-	#  below found in the packet.  See doc/rlm_acct_unique for
-	#  more information.
-	#
-	acct_unique {
-		key = "User-Name, Acct-Session-Id, NAS-IP-Address, Client-IP-Address, NAS-Port-Id"
-	}
-
-
 	#  Include another file that has the SQL-related configuration.
 	#  This is another file only because it tends to be big.
 	#
@@ -1010,13 +957,13 @@ modules {
 		#  If we want to believe the 'utmp' file, then this
 		#  configuration entry can be set to 'no'.
 		#
-		check_with_nas = yes		
+		check_with_nas = yes
 
 		# Set the file permissions, as the contents of this file
 		# are usually private.
 		perm = 0600
 
-		callerid = "yes"
+		caller_id = "yes"
 	}
 
 	# "Safe" radutmp - does not contain caller ID, so it can be
@@ -1029,7 +976,7 @@ modules {
 	radutmp sradutmp {
 		filename = ${logdir}/sradutmp
 		perm = 0644
-		callerid = "no"
+		caller_id = "no"
 	}
 
 	# attr_filter - filters the attributes received in replies from
@@ -1040,7 +987,7 @@ modules {
 	}
 
 	#  counter module:
-	#  This module takes an attribute (count-attribute).
+	#  This module takes an attribute (count_attribute).
 	#  It also takes a key, and creates a counter for each unique
 	#  key.  The count is incremented when accounting packets are
 	#  received by the server.  The value of the increment depends
@@ -1065,7 +1012,7 @@ modules {
 	#  reset = 12  (reset every 12 days)
 	#
 	#
-	#  The check-name attribute defines an attribute which will be
+	#  The check_name attribute defines an attribute which will be
 	#  registered by the counter module and can be used to set the
 	#  maximum allowed value for the counter after which the user
 	#  is rejected.
@@ -1075,16 +1022,16 @@ modules {
 	#          Fall-Through = 1
 	#
 	#  You should add the counter module in the instantiate
-	#  section so that it registers check-name before the files
+	#  section so that it registers check_name before the files
 	#  module reads the users file.
 	#
-	#  If check-name is set and the user is to be rejected then we
+	#  If check_name is set and the user is to be rejected then we
 	#  send back a Reply-Message and we log a Failure-Message in
 	#  the radius.log
 	#  If the count attribute is Acct-Session-Time then on each login
 	#  we send back the remaining online time as a Session-Timeout attribute
 	#
-	#  The counter-name can also be used instead of using the check-name
+	#  The counter-name can also be used instead of using the check_name
 	#  like below:
 	#
 	#  DEFAULT  Daily-Session-Time > 3600, Auth-Type = Reject
@@ -1099,17 +1046,17 @@ modules {
 	#  The module should be added in the instantiate, authorize and
 	#  accounting sections.  Make sure that in the authorize
 	#  section it comes after any module which sets the
-	#  'check-name' attribute.
+	#  'check_name' attribute.
 	#
 	counter daily {
 		filename = ${raddbdir}/db.daily
 		key = User-Name
-		count-attribute = Acct-Session-Time
+		count_attribute = Acct-Session-Time
 		reset = daily
-		counter-name = Daily-Session-Time
-		check-name = Max-Daily-Session
-		allowed-servicetype = Framed-User
-		cache-size = 5000
+		counter_name = Daily-Session-Time
+		check_name = Max-Daily-Session
+		allowed_service_type = Framed-User
+		cache_size = 5000
 	}
 
 	# The "always" module is here for debugging purposes. Each
@@ -1170,8 +1117,8 @@ modules {
 	#  If you wish to execute an external program in more than
 	#  one section (e.g. 'authorize', 'pre_proxy', etc), then it
 	#  is probably best to define a different instance of the
-	#  'exec' module for every section.	
-	#	
+	#  'exec' module for every section.
+	#
 	exec echo {
 		#
 		#  Wait for the program to finish.
@@ -1241,7 +1188,7 @@ modules {
 	#  Do server side ip pool management. Should be added in post-auth and
 	#  accounting sections.
 	#
-	#  The module also requires the existance of the Pool-Name
+	#  The module also requires the existence of the Pool-Name
 	#  attribute. That way the administrator can add the Pool-Name
 	#  attribute in the user profiles and use different pools
 	#  for different users. The Pool-Name attribute is a *check* item not
@@ -1257,16 +1204,16 @@ modules {
 
 		#  range-start,range-stop: The start and end ip
 		#  addresses for the ip pool
-		range-start = 192.168.1.1
-		range-stop = 192.168.3.254
+		range-start = 192.0.2.1
+		range-stop = 192.0.2.254
 
 		#  netmask: The network mask used for the ip's
 		netmask = 255.255.255.0
 
-		#  cache-size: The gdbm cache size for the db
+		#  cache_size: The gdbm cache size for the db
 		#  files. Should be equal to the number of ip's
 		#  available in the ip pool
-		cache-size = 800
+		cache_size = 800
 
 		# session-db: The main db file used to allocate ip's to clients
 		session-db = ${raddbdir}/db.ippool
@@ -1315,7 +1262,7 @@ instantiate {
 
 	#
 	# We add the counter module here so that it registers
-	# the check-name attribute before any module which sets
+	# the check_name attribute before any module which sets
 	# it
 #	daily
 }
@@ -1326,7 +1273,7 @@ instantiate {
 #  The order of the realm modules will determine the order that
 #  we try to find a matching realm.
 #
-#  Make *sure* that 'preprocess' comes before any realm if you 
+#  Make *sure* that 'preprocess' comes before any realm if you
 #  need to setup hints for the remote radius server
 authorize {
 	#
@@ -1339,7 +1286,7 @@ authorize {
 	#
 	#  It also adds a Client-IP-Address attribute to the request.
 	preprocess
-	
+
 	#
 	#  The chap module will set 'Auth-Type := CHAP' if we are
 	#  handling a CHAP request and Auth-Type has not already been set
@@ -1395,7 +1342,7 @@ authorize {
 #  Note that it does NOT mean 'try each module in order'.  It means
 #  that you have to have a module from the 'authorize' section add
 #  a configuration attribute 'Auth-Type := FOO'.  That authentication type
-#  is then used to pick the apropriate module from the list below.
+#  is then used to pick the appropriate module from the list below.
 #
 #  The default Auth-Type is Local.  That is, whatever is not included inside
 # an authtype section will be called only if Auth-Type is set to Local.
@@ -1443,7 +1390,7 @@ authenticate {
 	#  module checks the users password.  Note that packets
 	#  containing CHAP-Password attributes CANNOT be authenticated
 	#  against /etc/passwd!  See the FAQ for details.
-	#  
+	#
 	unix
 
 	# Uncomment it if you want to use ldap for authentication
@@ -1510,7 +1457,7 @@ accounting {
 }
 
 
-#  Session database, used for checking Simultaneous-Use. Either the radutmp 
+#  Session database, used for checking Simultaneous-Use. Either the radutmp
 #  or rlm_sql module can handle this.
 #  The rlm_sql module is *much* faster
 session {
@@ -1536,7 +1483,6 @@ post-auth {
 #  Only a few modules currently have this method.
 #
 pre-proxy {
-	# attr_rewrite
 }
 
 #
@@ -1545,8 +1491,6 @@ pre-proxy {
 #  post-proxy stage.
 #
 post-proxy {
-	# attr_rewrite
-
 	#
 	#  If you are proxing LEAP, you MUST configure the EAP
 	#  module, and you MUST list it here, in the post-proxy

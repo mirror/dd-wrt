@@ -1,101 +1,71 @@
 The FreeRADIUS server
 =====================
-|BuildStatus|_
 
-1. INTRODUCTION
----------------
+|BuildStatus|_ |CoverityStatus|_
+
+.. contents::
+   :local:
+
+Introduction
+------------
 
 The FreeRADIUS Server Project is a high performance and highly
-configurable AAA server.  Is available under the terms of the GNU
-GPLv2.  It has been in steady development for over a decade.  It is
-the most widely used RADIUS server in the world, by quite a large
-margin.
-
-AAA stands for "Authentication, Authorization, and Accounting".  The
-server can do any or all of the AAA functions, across three protocols:
-RADIUS, DHCP, and VMPS.  The reason is that at its core, it is a
-policy engine.  The policy engine connects network protocols to
-back-end systems such as SQL, LDAP, Active Directory, etc.
-
-FreeRADIUS started out as a RADIUS server, of course.  We then added
-VMPS and DHCP when it became clear that doing so was both easy and
-useful.
-
-It supports all popular authentication methods for RADIUS.  This
-includes PAP, CHAP, MS-CHAP, EAP, etc.  It works with all known
-networking equipment.  The authors of FreeRADIUS have written the
-official specifications for how RADIUS works (RFC 5080 and RFC 6158,
-among others).  It is compliant with all RADIUS standards.  This means
-that if a NAS does not inter-operate with FreeRADIUS, the most likely
-reason is that the NAS is wrong.
+configurable multi-protocol policy server, supporting RADIUS, DHCPv4
+and VMPS. It is available under the terms of the GNU GPLv2.
+Using RADIUS allows authentication and authorization for a network
+to be centralized, and minimizes the number of changes that have to
+be done when adding or deleting new users to a network.
 
 FreeRADIUS can authenticate users on systems such as 802.1x (WiFi),
 dialup, PPPoE, VPN's, VoIP, and many others.  It supports back-end
 databases such as MySQL, PostgreSQL, Oracle, Microsoft Active
-Directory, OpenLDAP, and many more.  It is used daily to authenticate
-the Internet access for hundreds of millions of people, in sites
-ranging from 10 users, to 10 million and more users.  It is used in
-appliances, WiFi boxes, ISPs, enterprises, and large
-telecommunications providers.
+Directory, Redis, OpenLDAP, and many more.  It is used daily to
+authenticate the Internet access for hundreds of millions of people,
+in sites ranging from 10 to 10 million+ users.
 
-Version 2.2 of the server is intended to be backwards compatible with
-previous versions.  It has features not available in Version 1, many
-of which are also not available in any commercial server.
+Version 3.0 of the server is largely compatible with version 2.x, but
+we highly recommend that you recreate your configuration, rather than
+trying to get the older configuration to work.
 
-* simple policy language (see ``man unlang``)
-* virtual servers (raddb/sites-available/README)
-* DHCP support (server and relay)
-* VMPS support
-* IPv6 support
-* better proxy support (raddb/proxy.conf)
-* More EAP types
-* verbose and descriptive Debugging output
-* Almost 50 "stable" modules, and many more experimental ones.
-* Sample SQL configuration for all major SQL databases.
-* Some support for on-the-fly changing of configuration (HUP)
-* check configuration test (``radiusd -C``)
-* Event-based server core.
+For a list of changes in version 3.0, please see ``doc/ChangeLog``.
+
+See ``raddb/README.rst`` for information on what to do to update your
+configuration.
+
+Administrators upgrading from a previous version should install this
+version in a different location from their existing systems.  Any
+existing configuration should be carefully migrated to the new
+version, in order to take advantage of the new features which can
+greatly simply configuration.
 
 Please see http://freeradius.org and http://wiki.freeradius.org for
 more information.
 
 
-2. INSTALLATION
----------------
+Installation
+------------
 
 To install the server, please see the INSTALL file in this directory.
-In general, we recommend using a pre-packaged installation for your
-operating system.
 
 
-3. DEBUGGING THE SERVER
------------------------
+Debugging the Server
+--------------------
 
-RADIUS systems can be complicated to configure.  Unlike a simple
-"query-response" protocol such as DNS, RADIUS systems need to juggle
-large amounts of information.  There may be dozens of attributes in
-the request.  Processing the request may involve querying any or all
-of LDAP, SQL, flat files, external scripts, etc.
-
-There is no easy solution to creating a working RADIUS configuration.
-The only method that works is to run the server in debugging mode,
-(``radiusd -X``) and READ the output.  We cannot emphasize this point
-strongly enough.  The vast majority of problems can be solved by
-carefully reading the debugging output, which includes WARNINGs about
-common issues, and suggestions for how they may be fixed.
+Run the server in debugging mode, (``radiusd -X``) and READ the output.
+We cannot emphasize this point strongly enough.  The vast majority of
+problems can be solved by carefully reading the debugging output,
+which includes WARNINGs about common issues, and suggestions for how
+they may be fixed.
 
 Read the FAQ.  Many questions are answered there.  See the Wiki
 
 http://wiki.freeradius.org
 
 Read the configuration files.  Many parts of the server have NO
-documentation, other than comments in the configuration file.  That
-being said, there are dozens of examples in the configuration files.
-The configuration items are extensively commented, with all of their
-behavior documented.
+documentation, other than comments in the configuration file.
 
-Search the mailing lists.  Many questions come up repeatedly, and are
-answered there.  There is a Google link on the bottom of the page:
+Search the mailing lists.  There is a Google link on the bottom of
+the page:
 
 http://www.freeradius.org/list/users.html
 
@@ -103,15 +73,19 @@ Type some key words into the search box, and you should find
 discussions about common problems and solution.
 
 
-4. ADDITIONAL INFORMATION
--------------------------
+Additional Information
+----------------------
 
-See 'doc/README' for more information about FreeRADIUS.
+See ``doc/README`` for more information about FreeRADIUS.
 
-See raddb/sites-available/README for documentation on virtual servers.
+There is an O'Reilly book available.  It serves as a good
+introduction for anyone new to RADIUS.  However, it is almost 12 years
+old, and is not much more than a basic introduction to the subject.
 
-5. PROBLEMS AND CONCERNS
-------------------------
+http://www.amazon.com/exec/obidos/ASIN/0596003226/freeradiusorg-20/
+
+Problems and Concerns
+---------------------
 
 We understand that the server may be difficult to configure,
 install, or administer.  It is, after all, a complex system with many
@@ -124,13 +98,13 @@ following:
 
 1. Start off with the default configuration files.
 2. Save a copy of the default configuration: It WORKS.  Don't change it!
-3. Run the server in debugging mode. (radiusd -X)
+3. Verify that the server starts.  (You ARE using debugging mode, right?)
 4. Send it test packets using "radclient", or a NAS or AP.
-5. Verify that the server does what you expect.
-      - If it does not work, change the configuration, and go to step (3) 
-        If you're stuck, revert to using the "last working" configuration.
-      - If it works, proceed to step (6).
-6. Save a copy of the working configuration, along with a note of what 
+5. Verify that the server does what you expect
+    - If it does not work, change the configuration, and go to step (3)
+    - If you're stuck, revert to using the "last working" configuration.
+    - If it works, proceed to step (6).
+6. Save a copy of the working configuration, along with a note of what
    you changed, and why.
 7. Make a SMALL change to the configuration.
 8. Repeat from step (3).
@@ -142,8 +116,8 @@ will always take more time.  The "fast and loose" way will be MORE
 frustrating than quickly making forward progress!
 
 
-6. FEEDBACK
------------
+Feedback
+--------
 
 If you have any comments, bug reports, problems, or concerns, please
 send them to the 'freeradius-users' list (see the URL above).  We will
@@ -156,35 +130,32 @@ enough.  Please do NOT complain if you're told to go read
 documentation.  We recognize that the documentation isn't perfect, but
 it *does* exist, and reading it can solve most common questions.
 
-The list policy changed in mid 2012, due to the high volume of
-inappropriate posts from a subset of users.  These users would refuse
-to read the documentation, even when asked to.  They would ask
-questions, and then refuse to follow the instructions given them on
-the list.  They would argue over the answers given on the list, even
-when it was clear that they understood less about RADIUS than the
-people trying to help them.
-
-The new policy is to warn people engaging in this asocial behavior.
-If they continue after a warning, they are unsubscribed and banned
-permanently from the list.
-
-The decision to enforce etiquette came after over 10 years of having a
-more open policy.  Sadly, a small subset of users abused the help
-given by the volunteers on the list.  This behavior is unacceptable,
-and will not be tolerated.
-
 FreeRADIUS is the cumulative effort of many years of work by many
 people, and you've gotten it for free.  No one gets paid to work on
-FreeRADIUS, and no one is getting paid to answer your questions.
+FreeRADIUS, and no one is getting paid to answer your questions.  This
+is free software, and the only way it gets better is if you make a
+contribution back to the project ($$, code, or documentation).
 
-If you want the community to help you, you need to make it easy for
-the community to help you.
+We will note that the people who get most upset about any answers to
+their questions usually do not have any intention of contributing to
+the project.  We will repeat the comments above: no one is getting
+paid to answer your questions or to fix your bugs.  If you don't like
+the responses you are getting, then fix the bug yourself, or pay
+someone to address your concerns.  Either way, make sure that any fix
+is contributed back to the project so that no one else runs into the
+same issue.
 
-Support is available.  See http://networkradius.com/.
+Support is available.  See the "support" link at the top of the main
+web page:
+
+http://freeradius.org
 
 Please submit bug reports, suggestions, or patches.  That feedback
 gives the developers a guide as to where they should focus their work.
 If you like the server, feel free to mail the list and say so.
 
-.. |BuildStatus| image:: https://travis-ci.org/FreeRADIUS/freeradius-server.png?branch=v2.x.x
+.. |CoverityStatus| image:: https://scan.coverity.com/projects/58/badge.svg?
+.. _CoverityStatus: https://scan.coverity.com/projects/58
+
+.. |BuildStatus| image:: https://travis-ci.org/FreeRADIUS/freeradius-server.png?branch=v3.0.x
 .. _BuildStatus: https://travis-ci.org/FreeRADIUS/freeradius-server

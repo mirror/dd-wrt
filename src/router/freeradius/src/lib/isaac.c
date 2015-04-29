@@ -10,8 +10,7 @@ MODIFIED:
 ------------------------------------------------------------------------------
 */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 9d73c82b65a6d1a844bef540a255bba111425887 $")
+RCSID("$Id: fff1a35d89a7d1bcf98c34bd1e44f85eda2388c6 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -73,7 +72,7 @@ void fr_randinit(fr_randctx *ctx, int flag)
   r=ctx->randrsl;
   a=b=c=d=e=f=g=h=0x9e3779b9;  /* the golden ratio */
 
-  for (i=0; i<4; ++i) {        /* scramble it */
+  for (i=0; i<4; ++i) {	/* scramble it */
     mix(a,b,c,d,e,f,g,h);
   }
 

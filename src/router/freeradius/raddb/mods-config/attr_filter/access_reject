@@ -1,0 +1,19 @@
+#
+#	Configuration file for the rlm_attr_filter module.
+#	Please see rlm_attr_filter(5) manpage for more information.
+#
+#	$Id: 50414d04f6532bdaef99fb64ec0f1fca0de7c7de $
+#
+#	This configuration file is used to remove almost all of the attributes
+#	From an Access-Reject message.  The RFCs say that an Access-Reject
+#	packet can contain only a few attributes.  We enforce that here.
+#
+DEFAULT
+	EAP-Message =* ANY,
+	State =* ANY,
+	Message-Authenticator =* ANY,
+	Error-Cause =* ANY,
+	Reply-Message =* ANY,
+	MS-CHAP-Error =* ANY,
+	Proxy-State =* ANY,
+	Error-Cause =* ANY

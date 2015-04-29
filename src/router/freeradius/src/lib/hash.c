@@ -11,11 +11,12 @@
  *  rather than being able to move 1/2 of the entries in the chain with
  *  one update.
  *
- * Version:	$Id: 20d5ccff4219cb7d62091b3afe2064e7f8577b9e $
+ * Version:	$Id: 7d91e078213580386661b7e83d5ceb45feba82c3 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
- *   License as published by the Free Software Foundation; either
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version. either
  *   version 2.1 of the License, or (at your option) any later version.
  *
  *   This library is distributed in the hope that it will be useful,
@@ -30,11 +31,9 @@
  *  Copyright 2005,2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 20d5ccff4219cb7d62091b3afe2064e7f8577b9e $")
+RCSID("$Id: 7d91e078213580386661b7e83d5ceb45feba82c3 $")
 
 #include <freeradius-devel/libradius.h>
-#include <freeradius-devel/hash.h>
 
 /*
  *	A reasonable number of buckets to start off with.
@@ -46,7 +45,7 @@ typedef struct fr_hash_entry_t {
 	struct fr_hash_entry_t *next;
 	uint32_t	reversed;
 	uint32_t	key;
- 	void		*data;
+	void const 	*data;
 } fr_hash_entry_t;
 
 
@@ -66,8 +65,6 @@ struct fr_hash_table_t {
 };
 
 #ifdef TESTING
-#include <stdio.h>
-
 static int grow = 0;
 #endif
 
@@ -181,7 +178,7 @@ static uint32_t parent_of(uint32_t key)
 static fr_hash_entry_t *list_find(fr_hash_table_t *ht,
 				    fr_hash_entry_t *head,
 				    uint32_t reversed,
-				    const void *data)
+				    void const *data)
 {
 	fr_hash_entry_t *cur;
 
@@ -386,7 +383,7 @@ static void fr_hash_table_grow(fr_hash_table_t *ht)
 /*
  *	Insert data.
  */
-int fr_hash_table_insert(fr_hash_table_t *ht, void *data)
+int fr_hash_table_insert(fr_hash_table_t *ht, void const *data)
 {
 	uint32_t key;
 	uint32_t entry;
@@ -436,8 +433,7 @@ int fr_hash_table_insert(fr_hash_table_t *ht, void *data)
 /*
  *	Internal find a node routine.
  */
-static fr_hash_entry_t *fr_hash_table_find(fr_hash_table_t *ht,
-					       const void *data)
+static fr_hash_entry_t *fr_hash_table_find(fr_hash_table_t *ht, void const *data)
 {
 	uint32_t key;
 	uint32_t entry;
@@ -458,16 +454,22 @@ static fr_hash_entry_t *fr_hash_table_find(fr_hash_table_t *ht,
 /*
  *	Replace old data with new data, OR insert if there is no old.
  */
-int fr_hash_table_replace(fr_hash_table_t *ht, void *data)
+int fr_hash_table_replace(fr_hash_table_t *ht, void const *data)
 {
 	fr_hash_entry_t *node;
+	void *tofree;
 
 	if (!ht || !data) return 0;
 
 	node = fr_hash_table_find(ht, data);
-	if (!node) return fr_hash_table_insert(ht, data);
+	if (!node) {
+		return fr_hash_table_insert(ht, data);
+	}
 
-	if (ht->free) ht->free(node->data);
+	if (ht->free) {
+		memcpy(&tofree, &node->data, sizeof(tofree));
+		ht->free(tofree);
+	}
 	node->data = data;
 
 	return 1;
@@ -477,14 +479,17 @@ int fr_hash_table_replace(fr_hash_table_t *ht, void *data)
 /*
  *	Find data from a template
  */
-void *fr_hash_table_finddata(fr_hash_table_t *ht, const void *data)
+void *fr_hash_table_finddata(fr_hash_table_t *ht, void const *data)
 {
 	fr_hash_entry_t *node;
+	void *out;
 
 	node = fr_hash_table_find(ht, data);
 	if (!node) return NULL;
 
-	return node->data;
+	memcpy(&out, &node->data, sizeof(out));
+
+	return out;
 }
 
 
@@ -492,7 +497,7 @@ void *fr_hash_table_finddata(fr_hash_table_t *ht, const void *data)
 /*
  *	Yank an entry from the hash table, without freeing the data.
  */
-void *fr_hash_table_yank(fr_hash_table_t *ht, const void *data)
+void *fr_hash_table_yank(fr_hash_table_t *ht, void const *data)
 {
 	uint32_t key;
 	uint32_t entry;
@@ -514,7 +519,7 @@ void *fr_hash_table_yank(fr_hash_table_t *ht, const void *data)
 	list_delete(ht, &ht->buckets[entry], node);
 	ht->num_elements--;
 
-	old = node->data;
+	memcpy(&old, &node->data, sizeof(old));
 	free(node);
 
 	return old;
@@ -524,7 +529,7 @@ void *fr_hash_table_yank(fr_hash_table_t *ht, const void *data)
 /*
  *	Delete a piece of data from the hash table.
  */
-int fr_hash_table_delete(fr_hash_table_t *ht, const void *data)
+int fr_hash_table_delete(fr_hash_table_t *ht, void const *data)
 {
 	void *old;
 
@@ -558,7 +563,13 @@ void fr_hash_table_free(fr_hash_table_t *ht)
 
 			if (!node->data) continue; /* dummy entry */
 
-			if (ht->free) ht->free(node->data);
+
+			if (ht->free) {
+				void *tofree;
+				memcpy(&tofree, &node->data, sizeof(tofree));
+				ht->free(tofree);
+			}
+
 			free(node);
 		}
 	}
@@ -586,7 +597,7 @@ int fr_hash_table_walk(fr_hash_table_t *ht,
 			 fr_hash_table_walk_t callback,
 			 void *context)
 {
-	int i, rcode;;
+	int i, rcode;
 
 	if (!ht || !callback) return 0;
 
@@ -599,9 +610,13 @@ int fr_hash_table_walk(fr_hash_table_t *ht,
 		if (!ht->buckets[i]) fr_hash_table_fixup(ht, i);
 
 		for (node = ht->buckets[i]; node != &ht->null; node = next) {
+			void *arg;
+
 			next = node->next;
 
-			rcode = callback(context, node->data);
+			memcpy(&arg, &node->data, sizeof(arg));
+			rcode = callback(context, arg);
+
 			if (rcode != 0) return rcode;
 		}
 	}
@@ -696,10 +711,10 @@ int fr_hash_table_info(fr_hash_table_t *ht)
  *	Which also includes public domain source.  We've re-written
  *	it here for our purposes.
  */
-uint32_t fr_hash(const void *data, size_t size)
+uint32_t fr_hash(void const *data, size_t size)
 {
-	const uint8_t *p = data;
-	const uint8_t *q = p + size;
+	uint8_t const *p = data;
+	uint8_t const *q = p + size;
 	uint32_t      hash = FNV_MAGIC_INIT;
 
 	/*
@@ -730,10 +745,10 @@ uint32_t fr_hash(const void *data, size_t size)
 /*
  *	Continue hashing data.
  */
-uint32_t fr_hash_update(const void *data, size_t size, uint32_t hash)
+uint32_t fr_hash_update(void const *data, size_t size, uint32_t hash)
 {
-	const uint8_t *p = data;
-	const uint8_t *q = p + size;
+	uint8_t const *p = data;
+	uint8_t const *q = p + size;
 
 	while (p != q) {
 		hash *= FNV_MAGIC_PRIME;
@@ -745,36 +760,9 @@ uint32_t fr_hash_update(const void *data, size_t size, uint32_t hash)
 }
 
 /*
- *	Return a "folded" hash, where the lower "bits" are the
- *	hash, and the upper bits are zero.
- *
- *	If you need a non-power-of-two hash, cope.
- */
-uint32_t fr_hash_fold(uint32_t hash, int bits)
-{
-	int count;
-	uint32_t result;
-
-	if ((bits <= 0) || (bits >= 32)) return hash;
-
-	result = hash;
-
-	/*
-	 *	Never use the same bits twice in an xor.
-	 */
-	for (count = 0; count < 32; count += bits) {
-		hash >>= bits;
-		result ^= hash;
-	}
-
-	return result & (((uint32_t) (1 << bits)) - 1);
-}
-
-
-/*
  *	Hash a C string, so we loop over it once.
  */
-uint32_t fr_hash_string(const char *p)
+uint32_t fr_hash_string(char const *p)
 {
 	uint32_t      hash = FNV_MAGIC_INIT;
 
@@ -793,11 +781,7 @@ uint32_t fr_hash_string(const char *p)
  *
  *  ./hash
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-
-static uint32_t hash_int(const void *data)
+static uint32_t hash_int(void const *data)
 {
 	return fr_hash((int *) data, sizeof(int));
 }
@@ -812,11 +796,11 @@ int main(int argc, char **argv)
 	ht = fr_hash_table_create(hash_int, NULL, NULL);
 	if (!ht) {
 		fprintf(stderr, "Hash create failed\n");
-		exit(1);
+		fr_exit(1);
 	}
 
 	array = malloc(sizeof(int) * MAX);
-	if (!array) exit(1);
+	if (!array) fr_exit(1);
 
 	for (i = 0; i < MAX; i++) {
 		p = array + i;
@@ -824,13 +808,13 @@ int main(int argc, char **argv)
 
 		if (!fr_hash_table_insert(ht, p)) {
 			fprintf(stderr, "Failed insert %08x\n", i);
-			exit(1);
+			fr_exit(1);
 		}
 #ifdef TEST_INSERT
 		q = fr_hash_table_finddata(ht, p);
 		if (q != p) {
 			fprintf(stderr, "Bad data %d\n", i);
-			exit(1);
+			fr_exit(1);
 		}
 #endif
 	}
@@ -846,18 +830,18 @@ int main(int argc, char **argv)
 			q = fr_hash_table_finddata(ht, &i);
 			if (!q || *q != i) {
 				fprintf(stderr, "Failed finding %d\n", i);
-				exit(1);
+				fr_exit(1);
 			}
 
 #if 0
 			if (!fr_hash_table_delete(ht, &i)) {
 				fprintf(stderr, "Failed deleting %d\n", i);
-				exit(1);
+				fr_exit(1);
 			}
 			q = fr_hash_table_finddata(ht, &i);
 			if (q) {
 				fprintf(stderr, "Failed to delete %08x\n", i);
-				exit(1);
+				fr_exit(1);
 			}
 #endif
 		}
@@ -868,6 +852,6 @@ int main(int argc, char **argv)
 	fr_hash_table_free(ht);
 	free(array);
 
-	exit(0);
+	fr_exit(0);
 }
 #endif

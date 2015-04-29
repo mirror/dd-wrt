@@ -1,7 +1,7 @@
 /*
  * acct.c	Accounting routines.
  *
- * Version:	$Id: 8b64471d314c05eb74a2e851e0e1bfb97c5f219b $
+ * Version:	$Id: c059484bfcfc07fce97270a1605018a718fb29b9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,8 +23,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 8b64471d314c05eb74a2e851e0e1bfb97c5f219b $")
+RCSID("$Id: c059484bfcfc07fce97270a1605018a718fb29b9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -56,74 +55,74 @@ int rad_accounting(REQUEST *request)
 
 		result = module_preacct(request);
 		switch (result) {
-			/*
-			 *	The module has a number of OK return codes.
-			 */
-			case RLM_MODULE_NOOP:
-			case RLM_MODULE_OK:
-			case RLM_MODULE_UPDATED:
-				break;
-			/*
-			 *	The module handled the request, stop here.
-			 */
-			case RLM_MODULE_HANDLED:
-				return result;
-			/*
-			 *	The module failed, or said the request is
-			 *	invalid, therefore we stop here.
-			 */
-			case RLM_MODULE_FAIL:
-			case RLM_MODULE_INVALID:
-			case RLM_MODULE_NOTFOUND:
-			case RLM_MODULE_REJECT:
-			case RLM_MODULE_USERLOCK:
-			default:
-				return result;
+		/*
+		 *	The module has a number of OK return codes.
+		 */
+		case RLM_MODULE_NOOP:
+		case RLM_MODULE_OK:
+		case RLM_MODULE_UPDATED:
+			break;
+		/*
+		 *	The module handled the request, stop here.
+		 */
+		case RLM_MODULE_HANDLED:
+			return result;
+		/*
+		 *	The module failed, or said the request is
+		 *	invalid, therefore we stop here.
+		 */
+		case RLM_MODULE_FAIL:
+		case RLM_MODULE_INVALID:
+		case RLM_MODULE_NOTFOUND:
+		case RLM_MODULE_REJECT:
+		case RLM_MODULE_USERLOCK:
+		default:
+			return result;
 		}
 
 		/*
 		 *	Do the data storage before proxying. This is to ensure
 		 *	that we log the packet, even if the proxy never does.
 		 */
-		vp = pairfind(request->config_items, PW_ACCT_TYPE);
+		vp = pairfind(request->config, PW_ACCT_TYPE, 0, TAG_ANY);
 		if (vp) {
 			acct_type = vp->vp_integer;
 			DEBUG2("  Found Acct-Type %s",
-			       dict_valnamebyattr(PW_ACCT_TYPE, acct_type));
+			       dict_valnamebyattr(PW_ACCT_TYPE, 0, acct_type));
 		}
-		result = module_accounting(acct_type, request);
+		result = process_accounting(acct_type, request);
 		switch (result) {
-			/*
-			 *	In case the accounting module returns FAIL,
-			 *	it's still useful to send the data to the
-			 *	proxy.
-			 */
-			case RLM_MODULE_FAIL:
-			case RLM_MODULE_NOOP:
-			case RLM_MODULE_OK:
-			case RLM_MODULE_UPDATED:
-				break;
-			/*
-			 *	The module handled the request, don't reply.
-			 */
-			case RLM_MODULE_HANDLED:
-				return result;
-			/*
-			 *	Neither proxy, nor reply to invalid requests.
-			 */
-			case RLM_MODULE_INVALID:
-			case RLM_MODULE_NOTFOUND:
-			case RLM_MODULE_REJECT:
-			case RLM_MODULE_USERLOCK:
-			default:
-				return result;
+		/*
+		 *	In case the accounting module returns FAIL,
+		 *	it's still useful to send the data to the
+		 *	proxy.
+		 */
+		case RLM_MODULE_FAIL:
+		case RLM_MODULE_NOOP:
+		case RLM_MODULE_OK:
+		case RLM_MODULE_UPDATED:
+			break;
+		/*
+		 *	The module handled the request, don't reply.
+		 */
+		case RLM_MODULE_HANDLED:
+			return result;
+		/*
+		 *	Neither proxy, nor reply to invalid requests.
+		 */
+		case RLM_MODULE_INVALID:
+		case RLM_MODULE_NOTFOUND:
+		case RLM_MODULE_REJECT:
+		case RLM_MODULE_USERLOCK:
+		default:
+			return result;
 		}
 
 		/*
 		 *	Maybe one of the preacct modules has decided
 		 *	that a proxy should be used.
 		 */
-		if ((vp = pairfind(request->config_items, PW_PROXY_TO_REALM))) {
+		if ((vp = pairfind(request->config, PW_PROXY_TO_REALM, 0, TAG_ANY))) {
 			REALM *realm;
 
 			/*
@@ -133,7 +132,7 @@ int rad_accounting(REQUEST *request)
 			realm = realm_find2(vp->vp_strvalue);
 			if (realm && !realm->acct_pool) {
 				DEBUG("rad_accounting: Cancelling proxy to realm %s, as it is a LOCAL realm.", realm->name);
-				pairdelete(&request->config_items, PW_PROXY_TO_REALM);
+				pairdelete(&request->config, PW_PROXY_TO_REALM, 0, TAG_ANY);
 			} else {
 				/*
 				 *	Don't reply to the NAS now because
@@ -154,30 +153,26 @@ int rad_accounting(REQUEST *request)
 	 *      Accounting-Response.
 	 */
 	switch (result) {
-		/*
-		 *	Send back an ACK to the NAS.
-		 */
-		case RLM_MODULE_OK:
-		case RLM_MODULE_UPDATED:
-			request->reply->code = PW_ACCOUNTING_RESPONSE;
-			break;
-		/*
-		 *	The module handled the request, don't reply.
-		 */
-		case RLM_MODULE_HANDLED:
-			break;
-		/*
-		 *	Failed to log or to proxy the accounting data,
-		 *	therefore don't reply to the NAS.
-		 */
-		case RLM_MODULE_FAIL:
-		case RLM_MODULE_INVALID:
-		case RLM_MODULE_NOOP:
-		case RLM_MODULE_NOTFOUND:
-		case RLM_MODULE_REJECT:
-		case RLM_MODULE_USERLOCK:
-		default:
-			break;
+	/*
+	 *	Send back an ACK to the NAS.
+	 */
+	case RLM_MODULE_OK:
+	case RLM_MODULE_UPDATED:
+		request->reply->code = PW_CODE_ACCOUNTING_RESPONSE;
+		break;
+
+	/*
+	 *	Failed to log or to proxy the accounting data,
+	 *	therefore don't reply to the NAS.
+	 */
+	case RLM_MODULE_FAIL:
+	case RLM_MODULE_INVALID:
+	case RLM_MODULE_NOOP:
+	case RLM_MODULE_NOTFOUND:
+	case RLM_MODULE_REJECT:
+	case RLM_MODULE_USERLOCK:
+	default:
+		break;
 	}
 	return result;
 }

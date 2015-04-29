@@ -1,7 +1,7 @@
 /*
  * eap_peap.h
  *
- * Version:     $Id: 3ad3a33ca652f76629932604e28fcce33bf6dea3 $
+ * Version:     $Id: b456befa55f0701617faf23babbecf50a18bad30 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,41 +23,45 @@
 #ifndef _EAP_PEAP_H
 #define _EAP_PEAP_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(eap_peap_h, "$Id: 3ad3a33ca652f76629932604e28fcce33bf6dea3 $")
+RCSIDH(eap_peap_h, "$Id: b456befa55f0701617faf23babbecf50a18bad30 $")
 
 #include "eap_tls.h"
 #include <freeradius-devel/soh.h>
+
+typedef enum {
+	PEAP_STATUS_INVALID,
+	PEAP_STATUS_SENT_TLV_SUCCESS,
+	PEAP_STATUS_SENT_TLV_FAILURE,
+	PEAP_STATUS_TUNNEL_ESTABLISHED,
+	PEAP_STATUS_INNER_IDENTITY_REQ_SENT,
+	PEAP_STATUS_PHASE2_INIT,
+	PEAP_STATUS_PHASE2,
+	PEAP_STATUS_WAIT_FOR_SOH_RESPONSE
+} peap_status;
+
+typedef enum {
+	PEAP_RESUMPTION_NO,
+	PEAP_RESUMPTION_YES,
+	PEAP_RESUMPTION_MAYBE
+} peap_resumption;
 
 typedef struct peap_tunnel_t {
 	VALUE_PAIR	*username;
 	VALUE_PAIR	*state;
 	VALUE_PAIR	*accept_vps;
-	int		status;
-	int		home_access_accept;
-	int		default_eap_type;
-	int		copy_request_to_tunnel;
-	int		use_tunneled_reply;
-	int		proxy_tunneled_request_as_eap;
-	const char	*virtual_server;
-	int		soh;
-	const char	*soh_virtual_server;
+	peap_status	status;
+	bool		home_access_accept;
+	int		default_method;
+	bool		copy_request_to_tunnel;
+	bool		use_tunneled_reply;
+	bool		proxy_tunneled_request_as_eap;
+	char const	*virtual_server;
+	bool		soh;
+	char const	*soh_virtual_server;
 	VALUE_PAIR	*soh_reply_vps;
-	int		session_resumption_state;
+	peap_resumption	session_resumption_state;
 } peap_tunnel_t;
 
-#define PEAP_STATUS_INVALID 0
-#define PEAP_STATUS_SENT_TLV_SUCCESS 1
-#define PEAP_STATUS_SENT_TLV_FAILURE 2
-#define PEAP_STATUS_TUNNEL_ESTABLISHED 3
-#define PEAP_STATUS_INNER_IDENTITY_REQ_SENT 4
-#define PEAP_STATUS_PHASE2_INIT 5
-#define PEAP_STATUS_PHASE2 6
-#define PEAP_STATUS_WAIT_FOR_SOH_RESPONSE 7
-
-#define PEAP_RESUMPTION_NO	(0)
-#define PEAP_RESUMPTION_YES	(1)
-#define PEAP_RESUMPTION_MAYBE	(2)
 
 #define EAP_TLV_SUCCESS (1)
 #define EAP_TLV_FAILURE (2)
@@ -68,5 +72,5 @@ typedef struct peap_tunnel_t {
 /*
  *	Process the PEAP portion of an EAP-PEAP request.
  */
-int eappeap_process(EAP_HANDLER *handler, tls_session_t *tls_session);
+rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session) CC_HINT(nonnull);
 #endif /* _EAP_PEAP_H */
