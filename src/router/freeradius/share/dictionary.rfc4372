@@ -1,9 +1,0 @@
-# -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
-#
-#	Attributes and values defined in RFC 4372.
-#	http://www.ietf.org/rfc/4372.txt
-#
-#	$Id: 3e6e523df35abcbcceded411ad82790bdf6c4806 $
-#
-ATTRIBUTE	Chargeable-User-Identity		89	octets
