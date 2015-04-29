@@ -47,10 +47,10 @@ conf_rollback () {
 	# Use stable tag if it exists...
 	if $GIT_EXEC show-ref $STABLE_TAG > /dev/null 2>&1; then
 		echo -n "Attempting to roll config back to tag: \"$STABLE_TAG\"... "
-		$GIT_EXEC reset -q --hard $STABLE_TAG; ret=$?
+		$GIT_EXEC reset --hard $STABLE_TAG; ret=$?
 	else
 		echo -n "Attempting to roll config back to commit: \"$oldrev\"... "
-		$GIT_EXEC reset -q --hard $oldrev; ret=$?
+		$GIT_EXEC reset --hard $oldrev; ret=$?
 	fi
 
 	status $ret
@@ -67,11 +67,11 @@ conf_check () {
 
 daemon_restart () {
 	echo -n "Restarting server... "
-	
+
 	$DAEMON_REST > /dev/null 2>&1; ret=$?
 
 	status $ret
-	return $ret 
+	return $ret
 }
 
 # Reset the current working directory state
@@ -85,8 +85,8 @@ if $ABORT_UNTRACKED && [ `$GIT_EXEC status --porcelain | wc -l` -gt 0 ]; then
 	echo "committed or added to .gitignore and $DAEMON_DESC restarted manually."
 	$GIT_EXEC status --short
 
-	if ! conf_check
-		then exit 64
+	if ! conf_check; then
+		exit 64
 	fi
 
 	echo "WARNING: $DAEMON_DESC found errors in the configuration,"
@@ -106,7 +106,7 @@ if ! $GIT_EXEC reset --hard
 fi
 
 # Check if the server finds any errors in the new config
-if ! conf_check then
+if ! conf_check; then
 	echo "WARNING: $DAEMON_DESC found errors in the configuration,"
 	echo "please fix the errors and push the corrected configuration."
 
@@ -121,20 +121,20 @@ else
 
 		if ! daemon_restart; then
 			echo "WARNING: Manually verify $DAEMON_DESC status immediately!"
-			exit 64	
+			exit 64
 		fi
 
 		exit 64
 	fi
-	
+
 	$GIT_EXEC tag -f $STABLE_TAG $newrev
 fi
 
 if $PUSH_TO_REMOTES; then
-	echo "Pushing to remote repositories"
-	for remote in `$GIT_EXEC remote`; do
-		$GIT_EXEC push "$remote"
-	done
+        echo "Pushing to remote repositories"
+        for remote in `$GIT_EXEC remote`; do
+                $GIT_EXEC push "$remote"
+        done
 fi
 
 exit 0

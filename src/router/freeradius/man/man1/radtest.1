@@ -5,8 +5,10 @@ radtest - send packets to a RADIUS server, show reply
 .B radtest
 .RB [ \-d
 .IR raddb_directory ]
+.RB [ \-P
+.IR tcp/udp ]
 .RB [ \-t
-.IR pap/chap/mschap ]
+.IR pap/chap/mschap/eap-md5 ]
 .RB [ \-x
 .IR ]
 .RB [ \-4
@@ -27,6 +29,10 @@ way to test a radius server.
 .IP "\-d \fIraddb_directory\fP"
 The directory that contains the RADIUS dictionary files. Defaults to
 \fI/etc/raddb\fP.
+
+.IP "\-P\ \fIproto\fP"
+Use \fIproto\fP transport protocol ("tcp" or "udp").
+Only available if FreeRADIUS is compiled with TCP transport support.
 
 .IP "\-t \fIpap/chap/mschap/eap-md5\fP"
 Choose the authentiction method to use.  e.g. "-t pap", "-t chap", "-t

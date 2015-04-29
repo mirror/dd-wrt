@@ -4,7 +4,7 @@
 /*
  * event.h	Simple event queue
  *
- * Version:	$Id: a62dc0144f54c46a65637969450765285f4ec3b1 $
+ * Version:	$Id: a29c9562a99cdfebff6040821df8ce90a38c0849 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@
  * Copyright 2007 Alan DeKok <aland@deployingradius.com>
  */
 
-#include <freeradius-devel/ident.h>
-RCSIDH(event_h, "$Id: a62dc0144f54c46a65637969450765285f4ec3b1 $")
+RCSIDH(event_h, "$Id: a29c9562a99cdfebff6040821df8ce90a38c0849 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,15 +37,15 @@ typedef	void (*fr_event_callback_t)(void *);
 typedef	void (*fr_event_status_t)(struct timeval *);
 typedef void (*fr_event_fd_handler_t)(fr_event_list_t *el, int sock, void *ctx);
 
-fr_event_list_t *fr_event_list_create(fr_event_status_t status);
-void fr_event_list_free(fr_event_list_t *el);
+fr_event_list_t *fr_event_list_create(TALLOC_CTX *ctx, fr_event_status_t status);
 
+int fr_event_list_num_fds(fr_event_list_t *el);
 int fr_event_list_num_elements(fr_event_list_t *el);
 
 int fr_event_insert(fr_event_list_t *el,
-		      fr_event_callback_t callback,
-		      void *ctx, struct timeval *when, fr_event_t **ev_p);
-int fr_event_delete(fr_event_list_t *el, fr_event_t **ev_p);
+		    fr_event_callback_t callback,
+		    void *ctx, struct timeval *when, fr_event_t **parent);
+int fr_event_delete(fr_event_list_t *el, fr_event_t **parent);
 
 int fr_event_run(fr_event_list_t *el, struct timeval *when);
 
@@ -57,6 +56,7 @@ int fr_event_fd_insert(fr_event_list_t *el, int type, int fd,
 int fr_event_fd_delete(fr_event_list_t *el, int type, int fd);
 int fr_event_loop(fr_event_list_t *el);
 void fr_event_loop_exit(fr_event_list_t *el, int code);
+bool fr_event_loop_exiting(fr_event_list_t *el);
 
 #ifdef __cplusplus
 }

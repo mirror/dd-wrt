@@ -5,9 +5,10 @@
  * functions to build the tree from the config file, and to call it by
  * feeding it REQUESTs.
  *
- * Version: $Id: 9a95565d538c4bc3025d13894efef3104fae0a43 $ */
+ * Version: $Id: 3ca6442c12dd23866f62754a15c530200e813df8 $ */
 
 #include <freeradius-devel/conffile.h> /* Need CONF_* definitions */
+#include <freeradius-devel/modules.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,25 +21,30 @@ extern "C" {
  */
 typedef struct modcallable modcallable;
 
-int modcall(int component, modcallable *c, REQUEST *request);
+int modcall_fixup_update(value_pair_map_t *map, void *ctx);
+
+int modcall(rlm_components_t component, modcallable *c, REQUEST *request);
 
 /* Parse a module-method's config section (e.g. authorize{}) into a tree that
  * may be called with modcall() */
 modcallable *compile_modgroup(modcallable *parent,
-			      int component, CONF_SECTION *cs);
+			      rlm_components_t component, CONF_SECTION *cs);
 
 /* Create a single modcallable node that references a module instance. This
  * may be a CONF_SECTION containing action specifiers like "notfound = return"
  * or a simple CONF_PAIR, in which case the default actions are used. */
-modcallable *compile_modsingle(modcallable *parent, int component, CONF_ITEM *ci,
-			       const char **modname);
+modcallable *compile_modsingle(TALLOC_CTX *ctx, modcallable **parent, rlm_components_t component, CONF_ITEM *ci,
+			       char const **modname);
 
-/* Add an entry to the end of a modgroup, creating it first if necessary */
-void add_to_modcallable(modcallable **parent, modcallable *this,
-			int component, const char *name);
+/*
+ *	Do the second pass on compiling the modules.
+ */
+bool modcall_pass2(modcallable *mc);
 
-/* Free a tree returned by compile_modgroup or compile_modsingle */
-void modcallable_free(modcallable **pc);
+/* Add an entry to the end of a modgroup */
+void add_to_modcallable(modcallable *parent, modcallable *this);
+
+void modcall_debug(modcallable *mc, int depth);
 
 #ifdef __cplusplus
 }

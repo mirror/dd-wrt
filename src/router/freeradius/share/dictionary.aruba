@@ -1,7 +1,7 @@
 # -*- text -*-
-# Copyright (C) 2013 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 #
-#	Version: $Id: 54f2a04987e08fcee3083ef61fa31b7081f6cbe8 $
+#	Version: $Id: e56c90d1e9b57cdd66e37db698bfdba1ef1f0f47 $
 #
 VENDOR		Aruba				14823
 BEGIN-VENDOR	Aruba
@@ -41,5 +41,18 @@ ATTRIBUTE	Aruba-AS-Credential-Hash		30	string
 ATTRIBUTE	Aruba-WorkSpace-App-Name		31	string
 ATTRIBUTE	Aruba-Mdps-Provisioning-Settings	32	string
 ATTRIBUTE	Aruba-Mdps-Device-Profile		33	string
+
+ATTRIBUTE	Aruba-AP-IP-Address			34	ipaddr
+
+ATTRIBUTE	Aruba-AirGroup-Shared-Group		35	string
+ATTRIBUTE	Aruba-User-Group			36	string
+ATTRIBUTE	Aruba-Network-SSO-Token			37	string
+ATTRIBUTE	Aruba-AirGroup-Version			38	integer
+
+VALUE 		Aruba-AirGroup-Device-Type	Personal-Device	1
+VALUE		Aruba-AirGroup-Device-Type	Shared-Device	2
+
+VALUE		Aruba-AirGroup-Version		AirGroup-v1	1
+VALUE		Aruba-AirGroup-Version		AirGroup-v2	2
 
 END-VENDOR Aruba

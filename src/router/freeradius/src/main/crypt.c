@@ -18,8 +18,7 @@
  * Copyright 2000-2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 608b8270bdb44c8f4308a4055baf488abf322ee1 $")
+RCSID("$Id: 99c66d8a806364f04346e1d86d3d5d4e853f32b1 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -33,7 +32,7 @@ RCSID("$Id: 608b8270bdb44c8f4308a4055baf488abf322ee1 $")
 /*
  *  No pthreads, no mutex.
  */
-static int fr_crypt_init = 0;
+static bool fr_crypt_init = false;
 static pthread_mutex_t fr_crypt_mutex;
 #endif
 
@@ -42,10 +41,10 @@ static pthread_mutex_t fr_crypt_mutex;
  * performs a crypt password check in an thread-safe way.
  *
  * returns:  0 -- check succeeded
- *          -1 -- failed to crypt
- *           1 -- check failed
+ *	  -1 -- failed to crypt
+ *	   1 -- check failed
  */
-int fr_crypt_check(const char *key, const char *crypted)
+int fr_crypt_check(char const *key, char const *crypted)
 {
 	char *passwd;
 	int cmp = 0;
@@ -54,9 +53,9 @@ int fr_crypt_check(const char *key, const char *crypted)
 	/*
 	 *	Ensure we're thread-safe, as crypt() isn't.
 	 */
-	if (fr_crypt_init == 0) {
+	if (fr_crypt_init == false) {
 		pthread_mutex_init(&fr_crypt_mutex, NULL);
-		fr_crypt_init = 1;
+		fr_crypt_init = true;
 	}
 
 	pthread_mutex_lock(&fr_crypt_mutex);

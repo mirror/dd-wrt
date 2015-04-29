@@ -3,7 +3,7 @@
 # radtest	Emulate the user interface of the old
 #		radtest that used to be part of FreeRADIUS.
 #
-# Version:	$Id: a721fa01dcbbf02302683e28f4582078c1ea953b $
+# Version:	$Id: 7f009ae6845928c4bdef82f261249f805736e06f $
 #
 
 prefix="@prefix@"
@@ -15,6 +15,7 @@ usage() {
 	echo "        -d RADIUS_DIR       Set radius directory" >&2
 	echo "        -t <type>           Set authentication method" >&2
 	echo "                            type can be pap, chap, mschap, or eap-md5" >&2
+	echo "        -P protocol         Select udp (default) or tcp" >&2
 	echo "        -x                  Enable debug output" >&2
 	echo "        -4                  Use IPv4 for the NAS address (default)" >&2
 	echo "        -6                  Use IPv6 for the NAS address" >&2
@@ -56,7 +57,11 @@ do
 		;;
 	-d) 
 		OPTIONS="$OPTIONS -d $2"
-    		shift;shift
+		shift;shift
+		;;
+	-P) 
+		OPTIONS="$OPTIONS -P $2"
+		shift;shift
 		;;
 	-x)
 		OPTIONS="$OPTIONS -x"
@@ -91,7 +96,7 @@ do
 		shift
 		;;
 
-        *)
+	*)
 		usage
 		;;
   esac

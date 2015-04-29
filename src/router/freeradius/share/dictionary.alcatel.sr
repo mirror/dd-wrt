@@ -1,10 +1,10 @@
 # -*- text -*-
-# Copyright (C) 2012 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 ##############################################################################
 #
 #	Alcatel-Lucent Service Router dictionary.
 #
-#	$Id: dbab7487cc4cb09d7838ca9a3a250d835ff69f9a $
+#	$Id: c75b31280ffc146e43ae79665982943de7ca5e72 $
 #
 ##############################################################################
 
@@ -74,6 +74,13 @@ ATTRIBUTE	Alc-PPPoE-Service-Name			35	string
 ATTRIBUTE	Alc-DHCP-Vendor-Class-Id		36	string
 
 # RADIUS subscriber accounting VSAs (HSMDA override counters)
+#
+#  In a stupid format.  These attributes are 10 octets long, in the
+#  following format:
+#
+#	2 octets - Queue ID
+#	8 octets - 64-bit counter.
+#
 ATTRIBUTE	Alc-Acct-OC-I-Inprof-Octets-64		37	octets
 ATTRIBUTE	Alc-Acct-OC-I-Outprof-Octets-64		38	octets
 ATTRIBUTE	Alc-Acct-OC-O-Inprof-Octets-64		39	octets

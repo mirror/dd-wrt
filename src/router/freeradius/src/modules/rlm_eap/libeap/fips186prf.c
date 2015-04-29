@@ -7,7 +7,7 @@
  * This code was written from scratch by Michael Richardson, and it is
  * dual licensed under both GPL and BSD.
  *
- * Version:     $Id: 559754ccaa864e107d2f417377296c07a7746ae2 $
+ * Version:     $Id: 4e17171754f0ae7ad8cb3fffb3de374e90a80664 $
  *
  * GPL notice:
  *
@@ -44,10 +44,7 @@
  *
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 559754ccaa864e107d2f417377296c07a7746ae2 $")
-
-#include <freeradius-devel/autoconf.h>
+RCSID("$Id: 4e17171754f0ae7ad8cb3fffb3de374e90a80664 $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,13 +109,13 @@ void fips186_2prf(uint8_t mk[20], uint8_t finalkey[160])
 	 * let XKEY := MK,
 	 *
 	 * Step 3: For j = 0 to 3 do
-         *   a. XVAL = XKEY
-         *   b. w_0 = SHA1(XVAL)
-         *   c. XKEY = (1 + XKEY + w_0) mod 2^160
-         *   d. XVAL = XKEY
-         *   e. w_1 = SHA1(XVAL)
-         *   f. XKEY = (1 + XKEY + w_1) mod 2^160
-         * 3.3 x_j = w_0|w_1
+	 *   a. XVAL = XKEY
+	 *   b. w_0 = SHA1(XVAL)
+	 *   c. XKEY = (1 + XKEY + w_0) mod 2^160
+	 *   d. XVAL = XKEY
+	 *   e. w_1 = SHA1(XVAL)
+	 *   f. XKEY = (1 + XKEY + w_1) mod 2^160
+	 * 3.3 x_j = w_0|w_1
 	 *
 	 */
 	memcpy(&xkey, mk, sizeof(xkey));
@@ -134,16 +131,16 @@ void fips186_2prf(uint8_t mk[20], uint8_t finalkey[160])
 		xval = xkey;
 
 		/*   b. w_0 = SHA1(XVAL)  */
-		fr_SHA1Init(&context);
+		fr_sha1_init(&context);
 
-		memset(zeros, 0, sizeof(zeros));
+		memset(zeros + 20, 0, sizeof(zeros) - 20);
 		memcpy(zeros, xval.p, 20);
 #ifndef WITH_OPENSSL_SHA1
-		fr_SHA1Transform(context.state, zeros);
+		fr_sha1_transform(context.state, zeros);
 #else
-		fr_SHA1Transform(&context, zeros);
+		fr_sha1_transform(&context, zeros);
 #endif
-		fr_SHA1FinalNoLen(w_0.p, &context);
+		fr_sha1_final_no_len(w_0.p, &context);
 
 		/*   c. XKEY = (1 + XKEY + w_0) mod 2^160 */
 		onesixty_add_mod(&sum,  &xkey, &w_0);
@@ -153,16 +150,16 @@ void fips186_2prf(uint8_t mk[20], uint8_t finalkey[160])
 		xval = xkey;
 
 		/*   e. w_1 = SHA1(XVAL)  */
-		fr_SHA1Init(&context);
+		fr_sha1_init(&context);
 
-		memset(zeros, 0, sizeof(zeros));
+		memset(zeros + 20, 0, sizeof(zeros) - 20);
 		memcpy(zeros, xval.p, 20);
 #ifndef WITH_OPENSSL_SHA1
-		fr_SHA1Transform(context.state, zeros);
+		fr_sha1_transform(context.state, zeros);
 #else
-		fr_SHA1Transform(&context, zeros);
+		fr_sha1_transform(&context, zeros);
 #endif
-		fr_SHA1FinalNoLen(w_1.p, &context);
+		fr_sha1_final_no_len(w_1.p, &context);
 
 		/*   f. XKEY = (1 + XKEY + w_1) mod 2^160 */
 		onesixty_add_mod(&sum,  &xkey, &w_1);
@@ -220,7 +217,7 @@ void fips186_2prf(uint8_t mk[20], uint8_t finalkey[160])
  * Step 3.3 provides the following values:
  *
  * w[0] || w[1]=  2070b322 3dba372f de1c0ffc 7b2e3b49 8b260614
- *                3c6c18ba cb0f6c55 babb1378 8e20d737 a3275116
+ *		3c6c18ba cb0f6c55 babb1378 8e20d737 a3275116
  *
  */
 
@@ -255,7 +252,7 @@ main(int argc, char *argv[])
 	j=0; k=0;
 	for (i = 0; i < 160; i++) {
 		if(k==20) {
-			printf("\n            ");
+			printf("\n	    ");
 			k=0;
 			j=0;
 		}

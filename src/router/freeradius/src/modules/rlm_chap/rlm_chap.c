@@ -1,12 +1,8 @@
 /*
- * rlm_chap.c
- *
- * Version:  $Id: 213a5c6c84a2733d33274b0a28e60aaa4977ff16 $
- *
- *   This program is free software; you can redistribute it and/or modify
+ *   This program is is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,40 +12,37 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- * Copyright 2001,2006  The FreeRADIUS server project
- * Copyright 2001  Kostas Kalevras <kkalev@noc.ntua.gr>
- *
- * Nov 03 2001, Kostas Kalevras <kkalev@noc.ntua.gr>
- * - Added authorize() function to set Auth-Type if Chap-Password exists
- * - Added module messages when rejecting user
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 213a5c6c84a2733d33274b0a28e60aaa4977ff16 $")
+/**
+ * $Id: 8ff4a3753fdf637600a661392d45511b1009c94d $
+ * @file rlm_chap.c
+ * @brief Process chap authentication requests.
+ *
+ * @copyright 2001,2006  The FreeRADIUS server project
+ * @copyright 2001  Kostas Kalevras <kkalev@noc.ntua.gr>
+ */
+RCSID("$Id: 8ff4a3753fdf637600a661392d45511b1009c94d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 
-static int chap_authorize(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST *request)
 {
-
-	/* quiet the compiler */
-	instance = instance;
-	request = request;
-
-	if (!pairfind(request->packet->vps, PW_CHAP_PASSWORD)) {
+	if (!pairfind(request->packet->vps, PW_CHAP_PASSWORD, 0, TAG_ANY)) {
 		return RLM_MODULE_NOOP;
 	}
 
-	if (pairfind(request->config_items, PW_AUTHTYPE) != NULL) {
-		RDEBUG2("WARNING: Auth-Type already set.  Not setting to CHAP");
+	if (pairfind(request->config, PW_AUTHTYPE, 0, TAG_ANY) != NULL) {
+		RWDEBUG2("&control:Auth-Type already set.  Not setting to CHAP");
 		return RLM_MODULE_NOOP;
 	}
 
-	RDEBUG("Setting 'Auth-Type := CHAP'");
-	pairadd(&request->config_items,
-		pairmake("Auth-Type", "CHAP", T_OP_EQ));
+	RINDENT();
+	RDEBUG("&control:Auth-Type := CHAP");
+	REXDENT();
+	pairmake_config("Auth-Type", "CHAP", T_OP_EQ);
+
 	return RLM_MODULE_OK;
 }
 
@@ -60,73 +53,91 @@ static int chap_authorize(void *instance, REQUEST *request)
  *	from the database. The authentication code only needs to check
  *	the password, the rest is done here.
  */
-static int chap_authenticate(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(UNUSED void *instance, REQUEST *request)
 {
-	VALUE_PAIR *passwd_item, *chap;
+	VALUE_PAIR *password, *chap;
 	uint8_t pass_str[MAX_STRING_LEN];
-	VALUE_PAIR *module_fmsg_vp;
-	char module_fmsg[MAX_STRING_LEN];
-
-	/* quiet the compiler */
-	instance = instance;
-	request = request;
 
 	if (!request->username) {
-		radlog_request(L_AUTH, 0, request, "rlm_chap: Attribute \"User-Name\" is required for authentication.\n");
+		RWDEBUG("&request:User-Name attribute is required for authentication");
 		return RLM_MODULE_INVALID;
 	}
 
-	chap = pairfind(request->packet->vps, PW_CHAP_PASSWORD);
+	chap = pairfind(request->packet->vps, PW_CHAP_PASSWORD, 0, TAG_ANY);
 	if (!chap) {
-		RDEBUG("ERROR: You set 'Auth-Type = CHAP' for a request that does not contain a CHAP-Password attribute!");
+		REDEBUG("You set '&control:Auth-Type = CHAP' for a request that "
+			"does not contain a CHAP-Password attribute!");
 		return RLM_MODULE_INVALID;
 	}
 
-	if (chap->length == 0) {
-		RDEBUG("ERROR: CHAP-Password is empty");
+	if (chap->vp_length == 0) {
+		REDEBUG("&request:CHAP-Password is empty");
 		return RLM_MODULE_INVALID;
 	}
 
-	if (chap->length != CHAP_VALUE_LENGTH + 1) {
-		RDEBUG("ERROR: CHAP-Password has invalid length");
+	if (chap->vp_length != CHAP_VALUE_LENGTH + 1) {
+		REDEBUG("&request:CHAP-Password has invalid length");
 		return RLM_MODULE_INVALID;
 	}
 
-	/*
-	 *	Don't print out the CHAP password here.  It's binary crap.
-	 */
-	RDEBUG("login attempt by \"%s\" with CHAP password",
-		request->username->vp_strvalue);
+	password = pairfind(request->config, PW_CLEARTEXT_PASSWORD, 0, TAG_ANY);
+	if (password == NULL) {
+		if (pairfind(request->config, PW_USER_PASSWORD, 0, TAG_ANY) != NULL){
+			REDEBUG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+			REDEBUG("!!! Please update your configuration so that the \"known !!!");
+			REDEBUG("!!! good\" cleartext password is in Cleartext-Password,  !!!");
+			REDEBUG("!!! and NOT in User-Password.                            !!!");
+			REDEBUG("!!!						          !!!");
+			REDEBUG("!!! Authentication will fail because of this.	          !!!");
+			REDEBUG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		}
 
-	if ((passwd_item = pairfind(request->config_items, PW_CLEARTEXT_PASSWORD)) == NULL){
-	  RDEBUG("Cleartext-Password is required for authentication");
-		snprintf(module_fmsg, sizeof(module_fmsg),
-			 "rlm_chap: Clear text password not available");
-		module_fmsg_vp = pairmake("Module-Failure-Message",
-					  module_fmsg, T_OP_EQ);
-		pairadd(&request->packet->vps, module_fmsg_vp);
-		return RLM_MODULE_INVALID;
+		REDEBUG("&control:Cleartext-Password is required for authentication");
+		return RLM_MODULE_FAIL;
 	}
 
-	RDEBUG("Using clear text password \"%s\" for user %s authentication.",
-	      passwd_item->vp_strvalue, request->username->vp_strvalue);
+	rad_chap_encode(request->packet, pass_str, chap->vp_octets[0], password);
 
-	rad_chap_encode(request->packet,pass_str,
-			chap->vp_octets[0],passwd_item);
+	if (RDEBUG_ENABLED3) {
+		uint8_t const *p;
+		size_t length;
+		VALUE_PAIR *vp;
+		char buffer[CHAP_VALUE_LENGTH * 2 + 1];
 
-	if (rad_digest_cmp(pass_str + 1, chap->vp_octets + 1,
-			   CHAP_VALUE_LENGTH) != 0) {
-		RDEBUG("Password check failed");
-		snprintf(module_fmsg, sizeof(module_fmsg),
-			 "rlm_chap: Wrong user password");
-		module_fmsg_vp = pairmake("Module-Failure-Message",
-					  module_fmsg, T_OP_EQ);
-		pairadd(&request->packet->vps, module_fmsg_vp);
+		RDEBUG3("Comparing with \"known good\" &control:Cleartext-Password value \"%s\"",
+			password->vp_strvalue);
+
+		vp = pairfind(request->packet->vps, PW_CHAP_CHALLENGE, 0, TAG_ANY);
+		if (vp) {
+			RDEBUG2("Using challenge from &request:CHAP-Challenge");
+			p = vp->vp_octets;
+			length = vp->vp_length;
+		} else {
+			RDEBUG2("Using challenge from authenticator field");
+			p = request->packet->vector;
+			length = sizeof(request->packet->vector);
+		}
+
+		fr_bin2hex(buffer, p, length);
+		RINDENT();
+		RDEBUG3("CHAP challenge : %s", buffer);
+
+		fr_bin2hex(buffer, chap->vp_octets + 1, CHAP_VALUE_LENGTH);
+		RDEBUG3("Client sent    : %s", buffer);
+
+		fr_bin2hex(buffer, pass_str + 1, CHAP_VALUE_LENGTH);
+		RDEBUG3("We calculated  : %s", buffer);
+		REXDENT();
+	} else {
+		RDEBUG2("Comparing with \"known good\" Cleartext-Password");
+	}
+
+	if (rad_digest_cmp(pass_str + 1, chap->vp_octets + 1, CHAP_VALUE_LENGTH) != 0) {
+		REDEBUG("Password comparison failed: password is incorrect");
 		return RLM_MODULE_REJECT;
 	}
 
-	RDEBUG("chap user %s authenticated succesfully",
-	      request->username->vp_strvalue);
+	RDEBUG("CHAP user \"%s\" authenticated successfully", request->username->vp_strvalue);
 
 	return RLM_MODULE_OK;
 }
@@ -140,15 +151,18 @@ static int chap_authenticate(void *instance, REQUEST *request)
  *	The server will then take care of ensuring that the module
  *	is single-threaded.
  */
+extern module_t rlm_chap;
 module_t rlm_chap = {
-	 RLM_MODULE_INIT,
+	RLM_MODULE_INIT,
 	"CHAP",
-	RLM_TYPE_CHECK_CONFIG_SAFE,   	/* type */
+	0,   	/* type */
+	0,
+	NULL,				/* CONF_PARSER */
 	NULL,				/* instantiation */
 	NULL,				/* detach */
 	{
-		chap_authenticate,	/* authentication */
-		chap_authorize,	 	/* authorization */
+		mod_authenticate,	/* authentication */
+		mod_authorize,	 	/* authorization */
 		NULL,			/* preaccounting */
 		NULL,			/* accounting */
 		NULL,			/* checksimul */

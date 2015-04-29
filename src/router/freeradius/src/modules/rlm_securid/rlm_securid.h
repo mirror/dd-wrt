@@ -1,7 +1,6 @@
 #ifndef _RLM_SECURID_H
 #define _RLM_SECURID_H
 
-#include <freeradius-devel/ident.h>
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 #include <freeradius-devel/rad_assert.h>
@@ -10,27 +9,26 @@
 
 #define SAFE_STR(s) s==NULL?"EMPTY":s
 
-typedef enum { 
+typedef enum {
 	INITIAL_STATE = 0,
-	NEXT_CODE_REQUIRED_STATE = 100, 
+	NEXT_CODE_REQUIRED_STATE = 100,
 	NEW_PIN_REQUIRED_STATE = 200,
 	NEW_PIN_USER_CONFIRM_STATE = 201,
 	NEW_PIN_AUTH_VALIDATE_STATE = 202,
 	NEW_PIN_SYSTEM_ACCEPT_STATE = 203,
 	NEW_PIN_SYSTEM_CONFIRM_STATE = 204,
-	NEW_PIN_USER_SELECT_STATE = 205
-} 
-SECURID_SESSION_STATE;
+	NEW_PIN_USER_SELECT_STATE = 205,
+} SECURID_SESSION_STATE;
 
 /*
- * SECURID_SESSION is used to identify existing securID sessions 
+ * SECURID_SESSION is used to identify existing securID sessions
  * to continue Next-Token code and New-Pin conversations with a client
  *
  * next = pointer to next
  * state = state attribute from the reply we sent
  * state_len = length of data in the state attribute.
  * src_ipaddr = client which sent us the RADIUS request containing
- *              this SecurID conversation.
+ *	      this SecurID conversation.
  * timestamp  = timestamp when this handler was last used.
  * trips = number of trips
  * identity = Identity of the user
@@ -43,15 +41,15 @@ typedef struct _securid_session_t {
 	SDI_HANDLE		  sdiHandle;
 	SECURID_SESSION_STATE	  securidSessionState;
 
-	uint8_t			  state[SECURID_STATE_LEN];
+	char			  state[SECURID_STATE_LEN];
 
 	fr_ipaddr_t		  src_ipaddr;
 	time_t			  timestamp;
 	unsigned int		  session_id;
-	int			  trips; 
-	
+	uint32_t		  trips;
+
 	char			  *pin;	     /* previous pin if user entered it during NEW-PIN mode process */
-	char			  *identity; /* save user's identity name for future use */ 
+	char			  *identity; /* save user's identity name for future use */
 
 } SECURID_SESSION;
 
@@ -75,19 +73,21 @@ typedef struct rlm_securid_t {
 	/*
 	 *	Configuration items.
 	 */
-	int		timer_limit;
-	int		max_sessions;
-	int		max_trips_per_session;
+	uint32_t	timer_limit;
+	uint32_t	max_sessions;
+	uint32_t	max_trips_per_session;
 } rlm_securid_t;
 
 /* Memory Management */
 SECURID_SESSION*     securid_session_alloc(void);
-void		     securid_session_free(rlm_securid_t *inst, REQUEST *request,SECURID_SESSION *session);
+void		     securid_session_free(rlm_securid_t *inst, REQUEST *request,SECURID_SESSION *session)
+		     CC_HINT(nonnull);
 
-void		     securid_sessionlist_free(rlm_securid_t *inst,REQUEST *request);
+void		     securid_sessionlist_free(rlm_securid_t *inst,REQUEST *request) CC_HINT(nonnull);
 
-int		     securid_sessionlist_add(rlm_securid_t *inst, REQUEST *request, SECURID_SESSION *session);
-SECURID_SESSION*     securid_sessionlist_find(rlm_securid_t *inst, REQUEST *request);
+int		     securid_sessionlist_add(rlm_securid_t *inst, REQUEST *request, SECURID_SESSION *session)
+		     CC_HINT(nonnull);
+SECURID_SESSION	     *securid_sessionlist_find(rlm_securid_t *inst, REQUEST *request) CC_HINT(nonnull);
 
 
 #endif

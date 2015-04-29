@@ -1,5 +1,5 @@
 /*
- * $Id: 0d9ba6ba421709613e733d2fe40c0303a12eff26 $
+ * $Id: 25df9032dfc012a03e3d61045e5f9adf9ff2a8ad $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,28 +21,27 @@
 #ifndef OTP_PW_VALID_H
 #define OTP_PW_VALID_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(otp_pw_valid_h, "$Id: 0d9ba6ba421709613e733d2fe40c0303a12eff26 $")
+RCSIDH(otp_pw_valid_h, "$Id: 25df9032dfc012a03e3d61045e5f9adf9ff2a8ad $")
 
 #include <pthread.h>
 #include <sys/types.h>
-#include "extern.h"	/* otp_option_t */
+#include "extern.h"	/* rlm_otp_t */
 #include "otp.h"	/* otp_request_t, otp_reply_t */
 
 typedef struct otp_fd_t {
   pthread_mutex_t	mutex;
-  const char		*path;	/* allows diff instances to use diff otpds */
+  char const		*path;	/* allows diff instances to use diff otpds */
   int			fd;
   struct otp_fd_t	*next;
 } otp_fd_t;
 
 static int otprc2rlmrc(int);
-static int otp_verify(const otp_option_t *,
-                      const otp_request_t *, otp_reply_t *);
+static int otp_verify(rlm_otp_t const *,
+		      otp_request_t const *, otp_reply_t *);
 static int otp_read(otp_fd_t *, char *, size_t);
-static int otp_write(otp_fd_t *, const char *, size_t);
-static int otp_connect(const char *);
-static otp_fd_t *otp_getfd(const otp_option_t *);
+static int otp_write(otp_fd_t *, char const *, size_t);
+static int otp_connect(char const *);
+static otp_fd_t *otp_getfd(rlm_otp_t const *);
 static void otp_putfd(otp_fd_t *, int);
 
 #endif /* OTP_PW_VALID_H */

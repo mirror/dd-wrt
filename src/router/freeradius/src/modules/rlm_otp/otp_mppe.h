@@ -1,5 +1,5 @@
 /*
- * $Id: e1f8452af215c40dbc893316c07a939eef2d1462 $
+ * $Id: d1da9afa87ee202328b3cfb533b9aef45085ed8f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,13 +22,7 @@
 #ifndef OTP_MPPE_H
 #define OTP_MPPE_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(otp_mppe_h, "$Id: e1f8452af215c40dbc893316c07a939eef2d1462 $")
-
-/* Some hardcoding here ... because not all types have #defines */
-#define PW_MS_CHAP_CHALLENGE  ((311 << 16) | 11)
-#define PW_MS_CHAP_RESPONSE   ((311 << 16) | 1)
-#define PW_MS_CHAP2_RESPONSE  ((311 << 16) | 25)
+RCSIDH(otp_mppe_h, "$Id: d1da9afa87ee202328b3cfb533b9aef45085ed8f $")
 
 /* MPPE encryption policy */
 #define MPPE_ENC_POL_ENCRYPTION_FORBIDDEN "0x00000000"
@@ -41,12 +35,12 @@ RCSIDH(otp_mppe_h, "$Id: e1f8452af215c40dbc893316c07a939eef2d1462 $")
 #define MPPE_ENC_TYPES_RC4_40_128 "0x00000006"
 
 /* Translate the above into something easily usable. */
-static const char *otp_mppe_policy[3] = {
+static char const *otp_mppe_policy[3] = {
   MPPE_ENC_POL_ENCRYPTION_FORBIDDEN,
   MPPE_ENC_POL_ENCRYPTION_ALLOWED,
   MPPE_ENC_POL_ENCRYPTION_REQUIRED };
 
-static const char *otp_mppe_types[3] = {
+static char const *otp_mppe_types[3] = {
   MPPE_ENC_TYPES_RC4_40,
   MPPE_ENC_TYPES_RC4_128,
   MPPE_ENC_TYPES_RC4_40_128 };

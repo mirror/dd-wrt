@@ -1,8 +1,7 @@
 #ifndef _EAP_MSCHAPV2_H
 #define _EAP_MSCHAPV2_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(eap_mschapv2_h, "$Id: cc027bd846d73177644c4e74ca063dcfabecdcdb $")
+RCSIDH(eap_mschapv2_h, "$Id: 1ce2470ed9a36def1abe5a601a83f6d8769e7d61 $")
 
 #include "eap.h"
 
@@ -28,7 +27,8 @@ RCSIDH(eap_mschapv2_h, "$Id: cc027bd846d73177644c4e74ca063dcfabecdcdb $")
 #define PW_EAP_MSCHAPV2_RESPONSE	2
 #define PW_EAP_MSCHAPV2_SUCCESS		3
 #define PW_EAP_MSCHAPV2_FAILURE		4
-#define PW_EAP_MSCHAPV2_MAX_CODES	4
+#define PW_EAP_MSCHAPV2_CHGPASSWD	7
+#define PW_EAP_MSCHAPV2_MAX_CODES	7
 
 #define MSCHAPV2_HEADER_LEN 	5
 #define MSCHAPV2_CHALLENGE_LEN  16

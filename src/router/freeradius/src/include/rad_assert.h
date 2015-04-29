@@ -3,7 +3,7 @@
 /*
  * rad_assert.h	  Debug assertions, with logging.
  *
- * Version:	$Id: a0b513b299c8f468dd976d35bad0f61a347ae8b9 $
+ * Version:	$Id: 0c16e5923b65cc9123b72eb3b43cf48435c18541 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,19 +22,18 @@
  * Copyright 2000,2001,2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSIDH(rad_assert_h, "$Id: a0b513b299c8f468dd976d35bad0f61a347ae8b9 $")
+RCSIDH(rad_assert_h, "$Id: 0c16e5923b65cc9123b72eb3b43cf48435c18541 $")
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern void rad_assert_fail (const char *file, unsigned int line, const char *expr);
+void rad_assert_fail(char const *file, unsigned int line, char const *expr) CC_HINT(noreturn);
 
 #ifdef NDEBUG
 	#define rad_assert(expr) ((void) (0))
 
-#elif !defined(FR_SCAN_BUILD)
+#elif !defined(__clang_analyzer__)
 	#define rad_assert(expr) \
 		((void) ((expr) ? (void) 0 : \
 			(void) rad_assert_fail (__FILE__, __LINE__, #expr)))

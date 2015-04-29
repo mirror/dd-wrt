@@ -14,10 +14,10 @@
 .SH NAME
 users \- user authorization file for the FreeRADIUS server
 .SH DESCRIPTION
-The \fBusers\fP file resides in the RADIUS database directory, by
-default \fB/etc/raddb\fP.  It contains a series of configuration
-directives which are used by the \fIfiles\fP module to decide how to
-authorize and authenticate each user request.
+The \fBusers\fP files reside in the files module configuration directory,
+by default \fB/etc/raddb/mods-config/files/\fP.  It contains a series
+of configuration directives which are used by the \fIfiles\fP 
+module to decide how to authorize and authenticate each user request.
 
 Every line starting with a hash sign
 .RB (' # ')
@@ -42,7 +42,7 @@ If the incoming request matches NO entry, then the request is
 rejected.
 
 .SH CAVEATS
-The special username \fBDEFAULT\fP matches any usernames.
+The special keyword \fBDEFAULT\fP matches any usernames.
 
 The entries are processed in order, from the top of the \fBusers\fP file,
 on down.  If an entry contains the special item \fBFall-Through =
@@ -143,22 +143,6 @@ a value less than, or equal to the one given.
 Not allowed as a reply item.
 
 .TP 0.5i
-.B "Attribute =~ Expression"
-As a check item, it matches if the request contains an attribute which
-matches the given regular expression.  This operator may only be
-applied to string attributes.
-.br
-Not allowed as a reply item.
-
-.TP 0.5i
-.B "Attribute !~ Expression"
-As a check item, it matches if the request contains an attribute which
-does not match the given regular expression.  This operator may only be
-applied to string attributes.
-.br
-Not allowed as a reply item.
-
-.TP 0.5i
 .B "Attribute =* Value"
 As a check item, it matches if the request contains the named
 attribute, no matter what the value is.
@@ -238,12 +222,11 @@ next.  Any DEFAULT entries should usually come last, except as fall-through
 entries that set reply attributes.
 
 .SH FILES
-/etc/raddb/users
+/etc/raddb/mods-config/files/
 .SH "SEE ALSO"
 .BR radclient (1),
 .BR radiusd (8),
 .BR dictionary (5),
-.BR naslist (5)
 
 .SH AUTHOR
 The FreeRADIUS team.

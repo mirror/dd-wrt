@@ -1,54 +1,48 @@
-/*
- * md4.h        Structures and prototypes for md4.
+/**
+ * $Id: b7bdd6a15ee28497d05d8ac8991e0feaac63a3a8 $
  *
- * Version:     $Id: 348d7bb4e999e8f96fc66b24111efd586a811468 $
- * License:		LGPL, but largely derived from a public domain source.
+ * @note license is LGPL, but largely derived from a public domain source.
  *
+ * @file md4.h
+ * @brief Structures and prototypes for md4.
  */
 
 #ifndef _FR_MD4_H
 #define _FR_MD4_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(md4_h, "$Id: 348d7bb4e999e8f96fc66b24111efd586a811468 $")
+RCSIDH(md4_h, "$Id: b7bdd6a15ee28497d05d8ac8991e0feaac63a3a8 $")
 
 #ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #endif
 
 #include <string.h>
 
-#ifdef WITH_OPENSSL_MD4
-#include <openssl/md4.h>
+#ifdef HAVE_OPENSSL_MD4_H
+#  include <openssl/md4.h>
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void fr_md4_calc (unsigned char *, const unsigned char *, unsigned int);
+#ifndef MD4_DIGEST_LENGTH
+#  define MD4_DIGEST_LENGTH 16
+#endif
 
-#ifndef WITH_OPENSSL_MD4
-/*  The below was retrieved from
- *  http://www.openbsd.org/cgi-bin/cvsweb/src/include/md4.h?rev=1.12
- *  With the following changes: uint64_t => uint32_t[2]
- *  Commented out #include <sys/cdefs.h>
- *  Commented out the __BEGIN and __END _DECLS, and the __attributes.
- *  Commented out MD4End, MD4File, MD4Data
- *  Commented out header file protection #ifndef,#define,#endif
- */
-
-/*	$OpenBSD: md4.h,v 1.12 2004/04/28 16:54:00 millert Exp $	*/
-
+#ifndef HAVE_OPENSSL_MD4_H
 /*
+ * The MD5 code used here and in md4.c was originally retrieved from:
+ *   http://www.openbsd.org/cgi-bin/cvsweb/src/include/md4.h?rev=1.12
+ *
  * This code implements the MD4 message-digest algorithm.
  * The algorithm is due to Ron Rivest.  This code was
  * written by Colin Plumb in 1993, no copyright is claimed.
@@ -60,41 +54,36 @@ void fr_md4_calc (unsigned char *, const unsigned char *, unsigned int);
  * except that you don't need to include two pages of legalese
  * with every copy.
  */
-
-/*#ifndef _MD4_H_*/
-/*#define _MD4_H_*/
-
-#define	MD4_BLOCK_LENGTH		64
-#define	MD4_DIGEST_LENGTH		16
-#define	MD4_DIGEST_STRING_LENGTH	(MD4_DIGEST_LENGTH * 2 + 1)
+#  define MD4_BLOCK_LENGTH 64
+#  define MD4_DIGEST_STRING_LENGTH (MD4_DIGEST_LENGTH * 2 + 1)
 
 typedef struct FR_MD4Context {
-	uint32_t state[4];			/* state */
-	uint32_t count[2];			/* number of bits, mod 2^64 */
-	uint8_t buffer[MD4_BLOCK_LENGTH];	/* input buffer */
+	uint32_t state[4];			//!< State.
+	uint32_t count[2];			//!< Number of bits, mod 2^64.
+	uint8_t buffer[MD4_BLOCK_LENGTH];	//!< Input buffer.
 } FR_MD4_CTX;
 
-/*__BEGIN_DECLS*/
-void	 fr_MD4Init(FR_MD4_CTX *);
-void	 fr_MD4Update(FR_MD4_CTX *, const uint8_t *, size_t)
-/*		__attribute__((__bounded__(__string__,2,3)))*/;
-void	 fr_MD4Final(uint8_t [MD4_DIGEST_LENGTH], FR_MD4_CTX *)
-/*		__attribute__((__bounded__(__minbytes__,1,MD4_DIGEST_LENGTH)))*/;
-void	 fr_MD4Transform(uint32_t [4], const uint8_t [MD4_BLOCK_LENGTH])
-/*		__attribute__((__bounded__(__minbytes__,1,4)))
-		__attribute__((__bounded__(__minbytes__,2,MD4_BLOCK_LENGTH)))*/;
-/*__END_DECLS*/
-#else  /* WITH_OPENSSL_MD4 */
-
-#define FR_MD4_CTX	MD4_CTX
-#define fr_MD4Init	MD4_Init
-#define fr_MD4Update	MD4_Update
-#define fr_MD4Final	MD4_Final
-#define fr_MD4Transform MD4_Transform
+void	fr_md4_init(FR_MD4_CTX *ctx);
+void	fr_md4_update(FR_MD4_CTX *ctx, uint8_t const *in, size_t inlen)
+	CC_BOUNDED(__string__, 2, 3);
+void	fr_md4_final(uint8_t out[MD4_DIGEST_LENGTH], FR_MD4_CTX *ctx)
+	CC_BOUNDED(__minbytes__, 1, MD4_DIGEST_LENGTH);
+void	fr_md4_transform(uint32_t buf[4], uint8_t const inc[MD4_BLOCK_LENGTH])
+	CC_BOUNDED(__size__, 1, 4, 4)
+	CC_BOUNDED(__minbytes__, 2, MD4_BLOCK_LENGTH);
+#else  /* HAVE_OPENSSL_MD4_H */
+USES_APPLE_DEPRECATED_API
+#  define FR_MD4_CTX		MD4_CTX
+#  define fr_md4_init		MD4_Init
+#  define fr_md4_update		MD4_Update
+#  define fr_md4_final		MD4_Final
+#  define fr_md4_transform	MD4_Transform
 #endif
+
+/* md4.c */
+void fr_md4_calc(uint8_t out[MD4_DIGEST_LENGTH], uint8_t const *in, size_t inlen);
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* _FR_MD4_H */

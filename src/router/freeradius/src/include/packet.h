@@ -5,7 +5,7 @@
  * packet.h	Structures and prototypes
  *		for packet manipulation
  *
- * Version:	$Id: 9982a5e19e4c2975d1ea01a90b84bf445e085509 $
+ * Version:	$Id: 7e41a8dec6630a42738f38cf4f940eb8014d75d2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,48 +24,49 @@
  * Copyright 2001,2002,2003,2004,2005,2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSIDH(packet_h, "$Id: 9982a5e19e4c2975d1ea01a90b84bf445e085509 $")
+RCSIDH(packet_h, "$Id: 7e41a8dec6630a42738f38cf4f940eb8014d75d2 $")
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-uint32_t fr_request_packet_hash(const RADIUS_PACKET *packet);
-uint32_t fr_reply_packet_hash(const RADIUS_PACKET *packet);
-int fr_packet_cmp(const RADIUS_PACKET *a, const RADIUS_PACKET *b);
+int fr_packet_cmp(RADIUS_PACKET const *a, RADIUS_PACKET const *b);
 int fr_inaddr_any(fr_ipaddr_t *ipaddr);
 void fr_request_from_reply(RADIUS_PACKET *request,
-			     const RADIUS_PACKET *reply);
-int fr_socket(fr_ipaddr_t *ipaddr, int port);
+			     RADIUS_PACKET const *reply);
+int fr_socket(fr_ipaddr_t *ipaddr, uint16_t port);
 
 typedef struct fr_packet_list_t fr_packet_list_t;
 
 fr_packet_list_t *fr_packet_list_create(int alloc_id);
 void fr_packet_list_free(fr_packet_list_t *pl);
-int fr_packet_list_insert(fr_packet_list_t *pl,
+bool fr_packet_list_insert(fr_packet_list_t *pl,
 			    RADIUS_PACKET **request_p);
 
 RADIUS_PACKET **fr_packet_list_find(fr_packet_list_t *pl,
 				      RADIUS_PACKET *request);
 RADIUS_PACKET **fr_packet_list_find_byreply(fr_packet_list_t *pl,
 					      RADIUS_PACKET *reply);
-RADIUS_PACKET **fr_packet_list_yank(fr_packet_list_t *pl,
-				      RADIUS_PACKET *request);
-int fr_packet_list_num_elements(fr_packet_list_t *pl);
-int fr_packet_list_id_alloc(fr_packet_list_t *pl,
-			      RADIUS_PACKET *request);
-int fr_packet_list_id_free(fr_packet_list_t *pl,
-			     RADIUS_PACKET *request);
-int fr_packet_list_socket_add(fr_packet_list_t *pl, int sockfd);
-int fr_packet_list_socket_remove(fr_packet_list_t *pl, int sockfd);
-int fr_packet_list_walk(fr_packet_list_t *pl, void *ctx,
-			  fr_hash_table_walk_t callback);
+bool fr_packet_list_yank(fr_packet_list_t *pl,
+			 RADIUS_PACKET *request);
+uint32_t fr_packet_list_num_elements(fr_packet_list_t *pl);
+bool fr_packet_list_id_alloc(fr_packet_list_t *pl, int proto,
+			    RADIUS_PACKET **request_p, void **pctx);
+bool fr_packet_list_id_free(fr_packet_list_t *pl,
+			    RADIUS_PACKET *request, bool yank);
+bool fr_packet_list_socket_add(fr_packet_list_t *pl, int sockfd, int proto,
+			      fr_ipaddr_t *dst_ipaddr, uint16_t dst_port,
+			      void *ctx);
+bool fr_packet_list_socket_del(fr_packet_list_t *pl, int sockfd);
+bool fr_packet_list_socket_freeze(fr_packet_list_t *pl, int sockfd);
+bool fr_packet_list_socket_thaw(fr_packet_list_t *pl, int sockfd);
+int fr_packet_list_walk(fr_packet_list_t *pl, void *ctx, rb_walker_t callback);
 int fr_packet_list_fd_set(fr_packet_list_t *pl, fd_set *set);
 RADIUS_PACKET *fr_packet_list_recv(fr_packet_list_t *pl, fd_set *set);
 
-int fr_packet_list_num_incoming(fr_packet_list_t *pl);
-int fr_packet_list_num_outgoing(fr_packet_list_t *pl);
+uint32_t fr_packet_list_num_incoming(fr_packet_list_t *pl);
+uint32_t fr_packet_list_num_outgoing(fr_packet_list_t *pl);
+void fr_packet_header_print(FILE *fp, RADIUS_PACKET *packet, bool received);
 
 /*
  *	"find" returns a pointer to the RADIUS_PACKET* member in the

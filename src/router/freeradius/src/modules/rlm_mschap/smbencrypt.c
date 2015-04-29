@@ -20,24 +20,23 @@
    Copyright 2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 30342ec4b1b5925b7e11bc60ffaa898e795c5d20 $")
+RCSID("$Id: d6a20dccf25084ec877e38e59b2daf185cb4bbbb $")
 
 #include	<freeradius-devel/libradius.h>
-#include        <freeradius-devel/md4.h>
-#include        <freeradius-devel/md5.h>
-#include        <freeradius-devel/sha1.h>
-#include        <ctype.h>
+#include	<freeradius-devel/md4.h>
+#include	<freeradius-devel/md5.h>
+#include	<freeradius-devel/sha1.h>
+#include	<ctype.h>
 
 
 #include	"smbdes.h"
 
-static const char * hex = "0123456789ABCDEF";
+static char const hex[] = "0123456789ABCDEF";
 
 /*
  *	FIXME: use functions in freeradius
  */
-static void tohex (const unsigned char * src, size_t len, char *dst)
+static void tohex (unsigned char const  *src, size_t len, char *dst)
 {
 	size_t i;
 	for (i=0; i<len; i++) {
@@ -47,27 +46,18 @@ static void tohex (const unsigned char * src, size_t len, char *dst)
 	dst[(i*2)] = 0;
 }
 
-static void ntpwdhash (uint8_t *szHash, const char *szPassword)
+static void ntpwdhash(uint8_t *out, char const *password)
 {
-	char szUnicodePass[513];
-	char nPasswordLen;
-	int i;
+	ssize_t len;
+	uint8_t ucs2_password[512];
 
-	/*
-	 *	NT passwords are unicode.  Convert plain text password
-	 *	to unicode by inserting a zero every other byte
-	 */
-	nPasswordLen = strlen(szPassword);
-	for (i = 0; i < nPasswordLen; i++) {
-		szUnicodePass[i << 1] = szPassword[i];
-		szUnicodePass[(i << 1) + 1] = 0;
+	len = fr_utf8_to_ucs2(ucs2_password, sizeof(ucs2_password), password, strlen(password));
+	if (len < 0) {
+		*out = '\0';
+		return;
 	}
-
-	/* Encrypt Unicode password to a 16-byte MD4 hash */
-	fr_md4_calc(szHash, (uint8_t *) szUnicodePass, (nPasswordLen<<1) );
+	fr_md4_calc(out, (uint8_t *) ucs2_password, len);
 }
-
-
 
 int main (int argc, char *argv[])
 {
@@ -77,15 +67,16 @@ int main (int argc, char *argv[])
 	char ntpass[33];
 	char lmpass[33];
 
-	fprintf(stderr, "LM Hash                         \tNT Hash\n");
+	fprintf(stderr, "LM Hash			 \tNT Hash\n");
 	fprintf(stderr, "--------------------------------\t--------------------------------\n");
 	fflush(stderr);
 	for (i = 1; i < argc; i++ ) {
+		strlcpy(password, argv[i], sizeof(password));
 		l = strlen(password);
 		if (l && password[l-1] == '\n') password [l-1] = 0;
-		smbdes_lmpwdhash(argv[i], hash);
+		smbdes_lmpwdhash(password, hash);
 		tohex (hash, 16, lmpass);
-		ntpwdhash (hash, argv[i]);
+		ntpwdhash (hash, password);
 		tohex (hash, 16, ntpass);
 		printf("%s\t%s\n", lmpass, ntpass);
 	}

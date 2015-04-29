@@ -6,7 +6,7 @@
  *		Why DHCP in a RADIUS server?
  *		Why not?
  *
- * Version:	$Id: 5ee38eb93004ec16a76de58189f14f23632b84a4 $
+ * Version:	$Id: de48a2ffdfde98c2846ef252c37d99baa456260b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,8 +25,7 @@
  * Copyright 2008 The FreeRADIUS server project
  * Copyright 2008 Alan DeKok <aland@deployingradius.com>
  */
-#include <freeradius-devel/ident.h>
-RCSIDH(dhcp_h, "$Id: 5ee38eb93004ec16a76de58189f14f23632b84a4 $")
+RCSIDH(dhcp_h, "$Id: de48a2ffdfde98c2846ef252c37d99baa456260b $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,11 +37,20 @@ extern "C" {
 RADIUS_PACKET *fr_dhcp_recv(int sockfd);
 int fr_dhcp_send(RADIUS_PACKET *packet);
 
-int fr_dhcp_add_arp_entry(int fd, const char *interface, VALUE_PAIR *hwvp, VALUE_PAIR *clvp);
+int fr_dhcp_add_arp_entry(int fd, char const *interface, VALUE_PAIR *hwvp, VALUE_PAIR *clvp);
 
+int8_t fr_dhcp_attr_cmp(void const *a, void const *b);
+ssize_t fr_dhcp_encode_option(TALLOC_CTX *ctx, uint8_t *out, size_t outlen, vp_cursor_t *cursor);
 int fr_dhcp_encode(RADIUS_PACKET *packet);
-ssize_t fr_dhcp_decode_options(uint8_t *data, size_t len, VALUE_PAIR **head);
+ssize_t fr_dhcp_decode_options(TALLOC_CTX *ctx, VALUE_PAIR **out, uint8_t const *data, size_t len);
 int fr_dhcp_decode(RADIUS_PACKET *packet);
+
+#ifdef HAVE_LINUX_IF_PACKET_H
+#include <linux/if_packet.h>
+int fr_socket_packet(int iface_index, struct sockaddr_ll *p_ll);
+int fr_dhcp_send_raw_packet(int sockfd, struct sockaddr_ll *p_ll, RADIUS_PACKET *packet);
+RADIUS_PACKET *fr_dhcp_recv_raw_packet(int sockfd, struct sockaddr_ll *p_ll, RADIUS_PACKET *request);
+#endif
 
 /*
  *	This is a horrible hack.
@@ -58,14 +66,16 @@ int fr_dhcp_decode(RADIUS_PACKET *packet);
 #define PW_DHCP_INFORM		(1024 + 8)
 
 #define DHCP_MAGIC_VENDOR (54)
-#define DHCP2ATTR(x) ((DHCP_MAGIC_VENDOR << 16) | (x))
-#define ATTR2DHCP(x) ((x) & 0xff)
-#define IS_DHCP_ATTR(x) (VENDOR((x)->attribute) == DHCP_MAGIC_VENDOR)
 
 #define PW_DHCP_OPTION_82 (82)
 #define DHCP_PACK_OPTION1(x,y) ((x) | ((y) << 8))
 #define DHCP_BASE_ATTR(x) (x & 0xff)
 #define DHCP_UNPACK_OPTION1(x) (((x) & 0xff00) >> 8)
+
+#define PW_DHCP_MESSAGE_TYPE   (53)
+#define PW_DHCP_YOUR_IP_ADDRESS (264)
+#define PW_DHCP_SUBNET_MASK    (1)
+#define PW_DHCP_IP_ADDRESS_LEASE_TIME (51)
 
 #ifdef __cplusplus
 }

@@ -1,12 +1,8 @@
 /*
- * rlm_example.c
- *
- * Version:	$Id: 8b804f4d061af672fac87c3e2cfca1da93b6d8b7 $
- *
- *   This program is free software; you can redistribute it and/or modify
+ *   This program is is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,16 +12,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- * Copyright 2000,2006  The FreeRADIUS server project
- * Copyright 2000  your name <your address>
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 8b804f4d061af672fac87c3e2cfca1da93b6d8b7 $")
+/**
+ * $Id: 283fc77eb5a6fdd47e310e03843ac9de6f4fa7fc $
+ * @file rlm_example.c
+ * @brief Example module code.
+ *
+ * @copyright 2013 The FreeRADIUS server project
+ * @copyright 2013 your name \<your address\>
+ */
+RCSID("$Id: 283fc77eb5a6fdd47e310e03843ac9de6f4fa7fc $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
+#include <freeradius-devel/rad_assert.h>
 
 /*
  *	Define a structure for our module configuration.
@@ -35,30 +36,34 @@ RCSID("$Id: 8b804f4d061af672fac87c3e2cfca1da93b6d8b7 $")
  *	be used as the instance handle.
  */
 typedef struct rlm_example_t {
-	int		boolean;
-	int		value;
-	char		*string;
-	uint32_t	ipaddr;
+	bool		boolean;
+	uint32_t	value;
+	char const	*string;
+	fr_ipaddr_t	ipaddr;
 } rlm_example_t;
 
 /*
  *	A mapping of configuration file names to internal variables.
- *
- *	Note that the string is dynamically allocated, so it MUST
- *	be freed.  When the configuration file parse re-reads the string,
- *	it free's the old one, and strdup's the new one, placing the pointer
- *	to the strdup'd string into 'config.string'.  This gets around
- *	buffer over-flows.
  */
 static const CONF_PARSER module_config[] = {
-  { "integer", PW_TYPE_INTEGER,    offsetof(rlm_example_t,value), NULL,   "1" },
-  { "boolean", PW_TYPE_BOOLEAN,    offsetof(rlm_example_t,boolean), NULL, "no"},
-  { "string",  PW_TYPE_STRING_PTR, offsetof(rlm_example_t,string), NULL,  NULL},
-  { "ipaddr",  PW_TYPE_IPADDR,     offsetof(rlm_example_t,ipaddr), NULL,  "*" },
+	{ "integer", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_example_t, value), "1" },
+	{ "boolean", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_example_t, boolean), "no" },
+	{ "string", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_example_t, string), NULL },
+	{ "ipaddr", FR_CONF_OFFSET(PW_TYPE_IPV4_ADDR, rlm_example_t, ipaddr), "*" },
 
-  { NULL, -1, 0, NULL, NULL }		/* end the list */
+	{ NULL, -1, 0, NULL, NULL }		/* end the list */
 };
 
+static int rlm_example_cmp(UNUSED void *instance, REQUEST *request, UNUSED VALUE_PAIR *thing, VALUE_PAIR *check,
+			   UNUSED VALUE_PAIR *check_pairs, UNUSED VALUE_PAIR **reply_pairs)
+{
+	rad_assert(check->da->type == PW_TYPE_STRING);
+
+	RINFO("Example-Paircmp called with \"%s\"", check->vp_strvalue);
+
+	if (strcmp(check->vp_strvalue, "yes") == 0) return 0;
+	return 1;
+}
 
 /*
  *	Do any per-module initialization that is separate to each
@@ -70,29 +75,28 @@ static const CONF_PARSER module_config[] = {
  *	that must be referenced in later calls, store a handle to it
  *	in *instance otherwise put a null pointer there.
  */
-static int example_instantiate(CONF_SECTION *conf, void **instance)
+static int mod_instantiate(CONF_SECTION *conf, void *instance)
 {
-	rlm_example_t *data;
+	rlm_example_t *inst = instance;
+	ATTR_FLAGS flags;
 
+	memset(&flags, 0, sizeof(flags));
 	/*
-	 *	Set up a storage area for instance data
+	 *	Do more work here
 	 */
-	data = rad_malloc(sizeof(*data));
-	if (!data) {
-		return -1;
-	}
-	memset(data, 0, sizeof(*data));
-
-	/*
-	 *	If the configuration parameters can't be parsed, then
-	 *	fail.
-	 */
-	if (cf_section_parse(conf, data, module_config) < 0) {
-		free(data);
+	if (!inst->boolean) {
+		cf_log_err_cs(conf, "Boolean is false: forcing error!");
 		return -1;
 	}
 
-	*instance = data;
+	if (dict_addattr("Example-Paircmp", -1, 0, PW_TYPE_STRING, flags) < 0) {
+		ERROR("Failed creating paircmp attribute: %s", fr_strerror());
+
+		return -1;
+	}
+
+	paircompare_register(dict_attrbyname("Example-Paircmp"), dict_attrbyvalue(PW_USER_NAME, 0), false,
+			     rlm_example_cmp, inst);
 
 	return 0;
 }
@@ -103,19 +107,14 @@ static int example_instantiate(CONF_SECTION *conf, void **instance)
  *	from the database. The authentication code only needs to check
  *	the password, the rest is done here.
  */
-static int example_authorize(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST *request)
 {
 	VALUE_PAIR *state;
-	VALUE_PAIR *reply;
-
-	/* quiet the compiler */
-	instance = instance;
-	request = request;
 
 	/*
 	 *  Look for the 'state' attribute.
 	 */
-	state =  pairfind(request->packet->vps, PW_STATE);
+	state = pairfind(request->packet->vps, PW_STATE, 0, TAG_ANY);
 	if (state != NULL) {
 		RDEBUG("Found reply to access challenge");
 		return RLM_MODULE_OK;
@@ -124,18 +123,16 @@ static int example_authorize(void *instance, REQUEST *request)
 	/*
 	 *  Create the challenge, and add it to the reply.
 	 */
-       	reply = pairmake("Reply-Message", "This is a challenge", T_OP_EQ);
-	pairadd(&request->reply->vps, reply);
-	state = pairmake("State", "0", T_OP_EQ);
-	pairadd(&request->reply->vps, state);
+	pairmake_reply("Reply-Message", "This is a challenge", T_OP_EQ);
+	pairmake_reply("State", "0", T_OP_EQ);
 
 	/*
 	 *  Mark the packet as an Access-Challenge packet.
 	 *
 	 *  The server will take care of sending it to the user.
 	 */
-	request->reply->code = PW_ACCESS_CHALLENGE;
-	RDEBUG("Sending Access-Challenge.");
+	request->reply->code = PW_CODE_ACCESS_CHALLENGE;
+	RDEBUG("Sending Access-Challenge");
 
 	return RLM_MODULE_HANDLED;
 }
@@ -143,36 +140,25 @@ static int example_authorize(void *instance, REQUEST *request)
 /*
  *	Authenticate the user with the given password.
  */
-static int example_authenticate(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(UNUSED void *instance, UNUSED REQUEST *request)
 {
-	/* quiet the compiler */
-	instance = instance;
-	request = request;
-
 	return RLM_MODULE_OK;
 }
 
+#ifdef WITH_ACCOUNTING
 /*
  *	Massage the request before recording it or proxying it
  */
-static int example_preacct(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_preacct(UNUSED void *instance, UNUSED REQUEST *request)
 {
-	/* quiet the compiler */
-	instance = instance;
-	request = request;
-
 	return RLM_MODULE_OK;
 }
 
 /*
  *	Write accounting information to this modules database.
  */
-static int example_accounting(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_accounting(UNUSED void *instance, UNUSED REQUEST *request)
 {
-	/* quiet the compiler */
-	instance = instance;
-	request = request;
-
 	return RLM_MODULE_OK;
 }
 
@@ -186,23 +172,22 @@ static int example_accounting(void *instance, REQUEST *request)
  *	max. number of logins, do a second pass and validate all
  *	logins by querying the terminal server (using eg. SNMP).
  */
-static int example_checksimul(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_checksimul(UNUSED void *instance, REQUEST *request)
 {
-  instance = instance;
+	request->simul_count=0;
 
-  request->simul_count=0;
-
-  return RLM_MODULE_OK;
+	return RLM_MODULE_OK;
 }
+#endif
 
 
 /*
  *	Only free memory we allocated.  The strings allocated via
  *	cf_section_parse() do not need to be freed.
  */
-static int example_detach(void *instance)
+static int mod_detach(UNUSED void *instance)
 {
-	free(instance);
+	/* free things here */
 	return 0;
 }
 
@@ -215,18 +200,25 @@ static int example_detach(void *instance)
  *	The server will then take care of ensuring that the module
  *	is single-threaded.
  */
+extern module_t rlm_example;
 module_t rlm_example = {
 	RLM_MODULE_INIT,
 	"example",
 	RLM_TYPE_THREAD_SAFE,		/* type */
-	example_instantiate,		/* instantiation */
-	example_detach,			/* detach */
+	sizeof(rlm_example_t),
+	module_config,
+	mod_instantiate,		/* instantiation */
+	mod_detach,			/* detach */
 	{
-		example_authenticate,	/* authentication */
-		example_authorize,	/* authorization */
-		example_preacct,	/* preaccounting */
-		example_accounting,	/* accounting */
-		example_checksimul,	/* checksimul */
+		mod_authenticate,	/* authentication */
+		mod_authorize,		/* authorization */
+#ifdef WITH_ACCOUNTING
+		mod_preacct,		/* preaccounting */
+		mod_accounting,		/* accounting */
+		mod_checksimul,		/* checksimul */
+#else
+		NULL, NULL, NULL,
+#endif
 		NULL,			/* pre-proxy */
 		NULL,			/* post-proxy */
 		NULL			/* post-auth */

@@ -1,7 +1,7 @@
 /*
  *  strlcat.c	Concatenate strings.
  *
- *  Version:	$Id: 563a14c474e5a4b24b0ae3df7eed9668b7834e4b $
+ *  Version:	$Id: b44720604df4f7798242b7f25067b33fdbaa57fb $
  *
  */
 
@@ -23,10 +23,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 563a14c474e5a4b24b0ae3df7eed9668b7834e4b $")
-
-#include <freeradius-devel/autoconf.h>
+RCSID("$Id: b44720604df4f7798242b7f25067b33fdbaa57fb $")
 
 #ifndef HAVE_STRLCAT
 
@@ -40,10 +37,10 @@ RCSID("$Id: 563a14c474e5a4b24b0ae3df7eed9668b7834e4b $")
  * If retval >= siz, truncation occurred.
  */
 size_t
-strlcat(char *dst, const char *src, size_t siz)
+strlcat(char *dst, char const *src, size_t siz)
 {
 	char *d = dst;
-	const char *s = src;
+	char const *s = src;
 	size_t n = siz;
 	size_t dlen;
 

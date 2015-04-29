@@ -1,15 +1,15 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 #
 #	Attributes and values defined in RFC 5904.
 #	http://www.ietf.org/rfc/rfc5904.txt
 #
-#	$Id: df6986ecadbbfeb22934a5758298e6063a0607c8 $
+#	$Id: ca523c53943a6c3cdacbf64641350bfa32270f5e $
 #
 
-# The next two attributes are continued, like EAP-Message/
-ATTRIBUTE	PKM-SS-Cert				137	octets
-ATTRIBUTE	PKM-CA-Cert				138	octets
+# The next two attributes are continued, like EAP-Message
+ATTRIBUTE	PKM-SS-Cert				137	octets concat
+ATTRIBUTE	PKM-CA-Cert				138	octets concat
 
 # 28 bytes of data, 7 integers
 ATTRIBUTE	PKM-Config-Settings			139	octets

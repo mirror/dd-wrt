@@ -1,11 +1,12 @@
 #!/usr/bin/perl
 #
-#	$Id: b0f9ab8113e83580e7b17bcfaed87af0bfff7320 $
+#	$Id: 1beef293abcd7e9228bbf1cb8f51849fca68cbad $
 #
 use warnings ;
 use GDBM_File ;
 use Fcntl ;
 use Getopt::Long;
+use File::Basename;
 
 my $user = '';
 my $divisor = 1;
@@ -19,15 +20,23 @@ my $help = 0;
 $filename = '';
 
 sub show_help {
-    print "Usage: $0 --file=<counter filename> [--reset=<seconds>] [--match=<regexp>]\n";
-    print "[--user=<username>] [--help] [--hours|--minutes|--seconds]\n\n";
-    print "--user=<username>", "\t\t", "Information for specific user\n";
-    print "--file=<filename>", "\t\t", "Counter db filename\n";
-    print "--match=<regexp>", "\t\t", "Information for matching users\n";
-    print "--reset=<number>", "\t\t", "Reset counter to <number>.\n";
-    print "\t\t\t\t", "If divisor is set use it, else <number> means seconds\n";
-    print "--help", "\t\t\t\t", "Show this help screen\n";
-    print "--(hours|minutes|seconds)", "\t", "Specify information divisor\n";
+    my $progname = basename($0);
+    print <<EOF;
+Usage: $progname --file=<counter filename> [OPTION...]
+Query and maintain FreeRADIUS rlm_counter DB file.
+
+Arguments:
+--file=<filename>               Counter DB filename.
+
+Options:
+--user=<username>               Information for specific user.
+--match=<regexp>                Information for matching users.
+--reset=<number>                Reset counter to <number>.
+                                If divisor is set use it,
+                                else <number> means seconds.
+--help                          Show this help screen.
+--(hours|minutes|seconds)       Specify information divisor.
+EOF
     exit 0;
 }
 
@@ -39,8 +48,8 @@ sub show_help {
 GetOptions ('user=s'  => \$user,
 	    'match=s' => \$match,
 	    'file=s'  => \$filename,
-            'reset=i' => \$reset,
-            'help'    => \$help,
+	    'reset=i' => \$reset,
+	    'help'    => \$help,
 	    'hours'   => sub { $divisor = 3600 },
 	    'minutes' => sub { $divisor = 60 },
 	    'seconds' => sub { $divisor = 1 } );
@@ -61,14 +70,14 @@ if ($reset){
 #
 if ($user ne '') {
     if (defined($hash{$user})){
-        print $user, "\t\t", int ( unpack('L',$hash{$user}) / $divisor), "\n";
+	print $user, "\t\t", int ( unpack('L',$hash{$user}) / $divisor), "\n";
 	if ($reset){
-            my $uniqueid = (unpack('L A32',$hash{$user}))[1];
-            $hash{$user} = pack('L A32',$reset * $divisor,$uniqueid);
-            print $user, "\t\t", "Counter reset to ", $reset * $divisor, "\n";
-        }
+	    my $uniqueid = (unpack('L A32',$hash{$user}))[1];
+	    $hash{$user} = pack('L A32',$reset * $divisor,$uniqueid);
+	    print $user, "\t\t", "Counter reset to ", $reset * $divisor, "\n";
+	}
     }else{
-        print $user, "\t\t", "Not found\n";
+	print $user, "\t\t", "Not found\n";
     }
 
     undef $db;
@@ -95,9 +104,9 @@ foreach $key (sort keys %hash) {
     #  Print out the names...
     print $key, "\t\t", int ( unpack('L',$hash{$key}) / $divisor), "\n";
     if ($reset){
-        my $uniqueid = (unpack('L A32',$hash{$key}))[1];
-        $hash{$key} = pack('L A32',$reset * $divisor,$uniqueid);
-        print $key, "\t\t", "Counter reset to ", $reset * $divisor, "\n";
+	my $uniqueid = (unpack('L A32',$hash{$key}))[1];
+	$hash{$key} = pack('L A32',$reset * $divisor,$uniqueid);
+	print $key, "\t\t", "Counter reset to ", $reset * $divisor, "\n";
     }
 }
 undef $db;

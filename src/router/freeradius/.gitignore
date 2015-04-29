@@ -1,8 +1,8 @@
 *~
 *.o
 *.a
-*.d
 *.lo
+*.loT
 *.la
 *.so
 *.lai
@@ -11,18 +11,54 @@
 *.sig
 *.orig
 *.rej
-*.dSYM
 .libs
 .depends
-config.log
+*.log
+*.substvars
+*-stamp
+*.swp
+*.cache
+*.dist
+*.dylib
+*.rej
+*.orig
+*.dSYM
+*.patch
+.pc
+
+# Editor projects
+*.kdev4
+*.cproject
+*.project
+*.bbprojectd
+
+# Local icon files
+icon.png
+
+# OS specific cruft
+.DS_Store
+
+# Certificates and signing requests
+*.pem
+*.der
+*.csr
+*.key
+
+# Autoconf and libtool output
+build
 config.status
+*confdefs.h
+*conftest*
+*confcache
 Make.inc
 libtool
-src/include/autoconf.h
-src/include/build-radpaths-h
-src/include/radpaths.h
-src/include/stamp-h
 autom4te.cache
+config.guess
+config.sub
+config.h
+src/main/radattr
+src/modules/lib/
+warnings.txt
 
-config.cache
-/libltdl/Makefile
+# Analyzer output
+/*.plist

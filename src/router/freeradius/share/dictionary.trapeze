@@ -1,5 +1,5 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 #
 #	dictionary.trapeze
 #
@@ -8,7 +8,7 @@
 #
 #	Trapeze Networks has been acquired by Juniper in 2010.
 #
-#	$Id: ba7d7983b5a86e497b6a9dd3e88de2afa1ee41ec $
+#	$Id: b5632f3bf6e99b6e1f92cdbd4735eb9f2bffc82b $
 #
 #
 VENDOR		Trapeze				14525

@@ -1,12 +1,8 @@
 /*
- * rlm_detail.c	accounting:    Write the "detail" files.
- *
- * Version:	$Id: 712a9d0c9c076c497ed70da1f15ef9bab4da4125 $
- *
- *   This program is free software; you can redistribute it and/or modify
+ *   This program is is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,76 +12,75 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-#include	<freeradius-devel/ident.h>
-RCSID("$Id: 712a9d0c9c076c497ed70da1f15ef9bab4da4125 $")
+/**
+ * $Id: 78f0cec8e69acde971817f6539ca558386171349 $
+ * @file rlm_detail.c
+ * @brief Write plaintext versions of packets to flatfiles.
+ *
+ * @copyright 2000,2006  The FreeRADIUS server project
+ */
+RCSID("$Id: 78f0cec8e69acde971817f6539ca558386171349 $")
 
-#include	<freeradius-devel/radiusd.h>
-#include	<freeradius-devel/modules.h>
-#include	<freeradius-devel/rad_assert.h>
-#include	<freeradius-devel/detail.h>
+#include <freeradius-devel/radiusd.h>
+#include <freeradius-devel/modules.h>
+#include <freeradius-devel/rad_assert.h>
+#include <freeradius-devel/detail.h>
+#include <freeradius-devel/exfile.h>
 
-#include	<ctype.h>
-#include	<fcntl.h>
-#include	<sys/stat.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #ifdef HAVE_FNMATCH_H
-#include	<fnmatch.h>
+#  include <fnmatch.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 #ifdef HAVE_GRP_H
-#include <grp.h>
+#  include <grp.h>
 #endif
 
-#define 	DIRLEN	8192
+#define DIRLEN	8192		//!< Maximum path length.
 
-struct detail_instance {
-	/* detail file */
-	char *detailfile;
+/** Instance configuration for rlm_detail
+ *
+ * Holds the configuration and preparsed data for a instance of rlm_detail.
+ */
+typedef struct detail_instance {
+	char const	*name;		//!< Instance name.
+	char const	*filename;	//!< File/path to write to.
+	uint32_t	perm;		//!< Permissions to use for new files.
+	char const	*group;		//!< Group to use for new files.
 
-	/* detail file permissions */
-	int detailperm;
+	char const	*header;	//!< Header format.
+	bool		locking;	//!< Whether the file should be locked.
 
-	/* detail file group */
-	char *group;
+	bool		log_srcdst;	//!< Add IP src/dst attributes to entries.
 
-	/* directory permissions */
-	int dirperm;
+	bool		escape;		//!< do filename escaping, yes / no
 
-	/* timestamp & stuff */
-	char *header;
+	RADIUS_ESCAPE_STRING escape_func; //!< escape function
 
-	/* if we want file locking */
-	int locking;
+	exfile_t    	*ef;		//!< Log file handler
 
-	/* log src/dst information */
-	int log_srcdst;
-
-	fr_hash_table_t *ht;
-};
+	fr_hash_table_t *ht;		//!< Holds suppressed attributes.
+} detail_instance_t;
 
 static const CONF_PARSER module_config[] = {
-	{ "detailfile",    PW_TYPE_STRING_PTR,
-	  offsetof(struct detail_instance,detailfile), NULL, "%A/%{Client-IP-Address}/detail" },
-	{ "header",    PW_TYPE_STRING_PTR,
-	  offsetof(struct detail_instance,header), NULL, "%t" },
-	{ "detailperm",    PW_TYPE_INTEGER,
-	  offsetof(struct detail_instance,detailperm), NULL, "0600" },
-	{ "group",         PW_TYPE_STRING_PTR,
-	  offsetof(struct detail_instance,group), NULL,  NULL},
-	{ "dirperm",       PW_TYPE_INTEGER,
-	  offsetof(struct detail_instance,dirperm),    NULL, "0755" },
-	{ "locking",       PW_TYPE_BOOLEAN,
-	  offsetof(struct detail_instance,locking),    NULL, "no" },
-	{ "log_packet_header",       PW_TYPE_BOOLEAN,
-	  offsetof(struct detail_instance,log_srcdst),    NULL, "no" },
+	{ "detailfile", FR_CONF_OFFSET(PW_TYPE_FILE_OUTPUT | PW_TYPE_DEPRECATED, detail_instance_t, filename), NULL },
+	{ "filename", FR_CONF_OFFSET(PW_TYPE_FILE_OUTPUT | PW_TYPE_REQUIRED | PW_TYPE_XLAT, detail_instance_t, filename), "%A/%{Client-IP-Address}/detail" },
+	{ "header", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, detail_instance_t, header), "%t" },
+	{ "detailperm", FR_CONF_OFFSET(PW_TYPE_INTEGER | PW_TYPE_DEPRECATED, detail_instance_t, perm), NULL },
+	{ "permissions", FR_CONF_OFFSET(PW_TYPE_INTEGER, detail_instance_t, perm), "0600" },
+	{ "group", FR_CONF_OFFSET(PW_TYPE_STRING, detail_instance_t, group), NULL },
+	{ "locking", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, detail_instance_t, locking), "no" },
+	{ "escape_filenames", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, detail_instance_t, escape), "no" },
+	{ "log_packet_header", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, detail_instance_t, log_srcdst), "no" },
 	{ NULL, -1, 0, NULL, NULL }
 };
 
@@ -93,44 +88,53 @@ static const CONF_PARSER module_config[] = {
 /*
  *	Clean up.
  */
-static int detail_detach(void *instance)
+static int mod_detach(void *instance)
 {
-        struct detail_instance *inst = instance;
+	detail_instance_t *inst = instance;
 	if (inst->ht) fr_hash_table_free(inst->ht);
-
-        free(inst);
 	return 0;
 }
 
 
-static uint32_t detail_hash(const void *data)
+static uint32_t detail_hash(void const *data)
 {
-	const DICT_ATTR *da = data;
-	return fr_hash(&(da->attr), sizeof(da->attr));
+	DICT_ATTR const *da = data;
+	return fr_hash(&da, sizeof(da));
 }
 
-static int detail_cmp(const void *a, const void *b)
+static int detail_cmp(void const *a, void const *b)
 {
-	return ((const DICT_ATTR *)a)->attr - ((const DICT_ATTR *)b)->attr;
-}
+	DICT_ATTR const *one = a;
+	DICT_ATTR const *two = b;
 
+	return one - two;
+}
 
 /*
  *	(Re-)read radiusd.conf into memory.
  */
-static int detail_instantiate(CONF_SECTION *conf, void **instance)
+static int mod_instantiate(CONF_SECTION *conf, void *instance)
 {
-	struct detail_instance *inst;
+	detail_instance_t *inst = instance;
 	CONF_SECTION	*cs;
 
-	inst = rad_malloc(sizeof(*inst));
-	if (!inst) {
-		return -1;
+	inst->name = cf_section_name2(conf);
+	if (!inst->name) {
+		inst->name = cf_section_name1(conf);
 	}
-	memset(inst, 0, sizeof(*inst));
 
-	if (cf_section_parse(conf, inst, module_config) < 0) {
-		detail_detach(inst);
+	/*
+	 *	Escape filenames only if asked.
+	 */
+	if (inst->escape) {
+		inst->escape_func = rad_filename_escape;
+	} else {
+		inst->escape_func = rad_filename_make_safe;
+	}
+
+	inst->ef = exfile_init(inst, 64, 30);
+	if (!inst->ef) {
+		cf_log_err_cs(conf, "Failed creating log file context");
 		return -1;
 	}
 
@@ -141,251 +145,97 @@ static int detail_instantiate(CONF_SECTION *conf, void **instance)
 	if (cs) {
 		CONF_ITEM	*ci;
 
-		inst->ht = fr_hash_table_create(detail_hash, detail_cmp,
-						  NULL);
+		inst->ht = fr_hash_table_create(detail_hash, detail_cmp, NULL);
 
 		for (ci = cf_item_find_next(cs, NULL);
 		     ci != NULL;
 		     ci = cf_item_find_next(cs, ci)) {
-			const char	*attr;
-			DICT_ATTR	*da;
+			char const	*attr;
+			DICT_ATTR const	*da;
 
 			if (!cf_item_is_pair(ci)) continue;
 
-			attr = cf_pair_attr(cf_itemtopair(ci));
+			attr = cf_pair_attr(cf_item_to_pair(ci));
 			if (!attr) continue; /* pair-anoia */
 
 			da = dict_attrbyname(attr);
 			if (!da) {
-				radlog(L_INFO, "rlm_detail: WARNING: No such attribute %s: Cannot suppress printing it.", attr);
-				continue;
+				cf_log_err_cs(conf, "No such attribute '%s'", attr);
+				return -1;
 			}
 
 			/*
-			 *	For better distribution we should really
-			 *	hash the attribute number or name.  But
-			 *	since the suppression list will usually
-			 *	be small, it doesn't matter.
+			 *	Be kind to minor mistakes.
 			 */
+			if (fr_hash_table_finddata(inst->ht, da)) {
+				WARN("rlm_detail (%s): Ignoring duplicate entry '%s'", inst->name, attr);
+				continue;
+			}
+
+
 			if (!fr_hash_table_insert(inst->ht, da)) {
-				radlog(L_ERR, "rlm_detail: Failed trying to remember %s", attr);
-				detail_detach(inst);
+				ERROR("rlm_detail (%s): Failed inserting '%s' into suppression table",
+				      inst->name, attr);
 				return -1;
 			}
+
+			DEBUG("rlm_detail (%s): '%s' suppressed, will not appear in detail output", inst->name, attr);
+		}
+
+		/*
+		 *	If we didn't suppress anything, delete the hash table.
+		 */
+		if (fr_hash_table_num_elements(inst->ht) == 0) {
+			fr_hash_table_free(inst->ht);
+			inst->ht = NULL;
 		}
 	}
 
-
-	*instance = inst;
 	return 0;
 }
 
 /*
- *	Do detail, compatible with old accounting
+ *	Wrapper for VPs allocated on the stack.
  */
-static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
-		     int compat)
+static void detail_vp_print(TALLOC_CTX *ctx, FILE *out, VALUE_PAIR const *stacked)
 {
-	int		outfd;
-	char		timestamp[256];
-	char		buffer[DIRLEN];
-	char		*p;
-	struct stat	st;
-	int		locked;
-	int		lock_count;
-	struct timeval	tv;
-	VALUE_PAIR	*pair;
-	off_t		fsize;
-	FILE		*fp;
+	VALUE_PAIR *vp;
 
-#ifdef HAVE_GRP_H
-	gid_t		gid;
-	struct group	*grp;
-	char		*endptr;
-#endif
+	vp = talloc(ctx, VALUE_PAIR);
+	if (!vp) return;
 
-	struct detail_instance *inst = instance;
+	memcpy(vp, stacked, sizeof(*vp));
+	vp->op = T_OP_EQ;
+	vp_print(out, vp);
+	talloc_free(vp);
+}
 
-	rad_assert(request != NULL);
 
-	/*
-	 *	Nothing to log: don't do anything.
-	 */
-	if (!packet) {
-		return RLM_MODULE_NOOP;
+/** Write a single detail entry to file pointer
+ *
+ * @param[in] out Where to write entry.
+ * @param[in] inst Instance of rlm_detail.
+ * @param[in] request The current request.
+ * @param[in] packet associated with the request (request, reply, proxy-request, proxy-reply...).
+ * @param[in] compat Write out entry in compatibility mode.
+ */
+static int detail_write(FILE *out, detail_instance_t *inst, REQUEST *request, RADIUS_PACKET *packet, bool compat)
+{
+	VALUE_PAIR *vp;
+	char timestamp[256];
+
+	if (radius_xlat(timestamp, sizeof(timestamp), request, inst->header, NULL, NULL) < 0) {
+		return -1;
 	}
 
-	/*
-	 *	Create a directory for this nas.
-	 *
-	 *	Generate the path for the detail file.  Use the
-	 *	same format, but truncate at the last /.  Then
-	 *	feed it through radius_xlat() to expand the
-	 *	variables.
-	 */
-	if (radius_xlat(buffer, sizeof(buffer), inst->detailfile, request, NULL) == 0) {
-		radlog_request(L_ERR, 0, request, "rlm_detail: Failed to expand detail file %s",
-		    inst->detailfile);
-	    return RLM_MODULE_FAIL;
-	}
-	RDEBUG2("%s expands to %s", inst->detailfile, buffer);
+#define WRITE(fmt, ...) do {\
+	if (fprintf(out, fmt, ## __VA_ARGS__) < 0) {\
+		RERROR("Failed writing to detail file: %s", fr_syserror(errno));\
+		return -1;\
+	}\
+} while(0)
 
-#ifdef HAVE_FNMATCH_H
-#ifdef FNM_FILE_NAME
-	/*
-	 *	If we read it from a detail file, and we're about to
-	 *	write it back to the SAME detail file directory, then
-	 *	suppress the write.  This check prevents an infinite
-	 *	loop.
-	 */
-	if ((request->listener->type == RAD_LISTEN_DETAIL) &&
-	    (fnmatch(((listen_detail_t *)request->listener->data)->filename,
-		     buffer, FNM_FILE_NAME | FNM_PERIOD ) == 0)) {
-		RDEBUG2("WARNING: Suppressing infinite loop.");
-		return RLM_MODULE_NOOP;
-	}
-#endif
-#endif
-
-	/*
-	 *	Grab the last directory delimiter.
-	 */
-	p = strrchr(buffer,'/');
-
-	/*
-	 *	There WAS a directory delimiter there, and the file
-	 *	doesn't exist, so we must create it the directories..
-	 */
-	if (p) {
-		*p = '\0';
-
-		/*
-		 *	Always try to create the directory.  If it
-		 *	exists, rad_mkdir() will check via stat(), and
-		 *	return immediately.
-		 *
-		 *	This catches the case where some idiot deleted
-		 *	a directory that the server was using.
-		 */
-		if (rad_mkdir(buffer, inst->dirperm) < 0) {
-			radlog_request(L_ERR, 0, request, "rlm_detail: Failed to create directory %s: %s", buffer, strerror(errno));
-			return RLM_MODULE_FAIL;
-		}
-		
-		*p = '/';
-	} /* else there was no directory delimiter. */
-
-	locked = 0;
-	lock_count = 0;
-	do {
-		/*
-		 *	Open & create the file, with the given
-		 *	permissions.
-		 */
-		if ((outfd = open(buffer, O_WRONLY | O_APPEND | O_CREAT,
-				  inst->detailperm)) < 0) {
-			radlog_request(L_ERR, 0, request, "rlm_detail: Couldn't open file %s: %s",
-			       buffer, strerror(errno));
-			return RLM_MODULE_FAIL;
-		}
-
-		/*
-		 *	If we fail to aquire the filelock in 80 tries
-		 *	(approximately two seconds) we bail out.
-		 */
-		if (inst->locking) {
-			lseek(outfd, 0L, SEEK_SET);
-			if (rad_lockfd_nonblock(outfd, 0) < 0) {
-				close(outfd);
-				tv.tv_sec = 0;
-				tv.tv_usec = 25000;
-				select(0, NULL, NULL, NULL, &tv);
-				lock_count++;
-				continue;
-			}
-
-			/*
-			 *	The file might have been deleted by
-			 *	radrelay while we tried to acquire
-			 *	the lock (race condition)
-			 */
-			if (fstat(outfd, &st) != 0) {
-				radlog_request(L_ERR, 0, request, "rlm_detail: Couldn't stat file %s: %s",
-				       buffer, strerror(errno));
-				close(outfd);
-				return RLM_MODULE_FAIL;
-			}
-			if (st.st_nlink == 0) {
-				RDEBUG2("File %s removed by another program, retrying",
-				      buffer);
-				close(outfd);
-				lock_count = 0;
-				continue;
-			}
-
-			RDEBUG2("Acquired filelock, tried %d time(s)",
-			      lock_count + 1);
-			locked = 1;
-		}
-	} while (inst->locking && !locked && lock_count < 80);
-
-	if (inst->locking && !locked) {
-		close(outfd);
-		radlog_request(L_ERR, 0, request, "rlm_detail: Failed to acquire filelock for %s, giving up",
-		       buffer);
-		return RLM_MODULE_FAIL;
-	}
-
-
-#ifdef HAVE_GRP_H
-	if (inst->group != NULL) {
-		gid = strtol(inst->group, &endptr, 10);
-		if (*endptr != '\0') {
-			grp = rad_getgrnam(inst->group);
-			if (grp == NULL) {
-				RDEBUG2("rlm_detail: Unable to find system group \"%s\"", inst->group);
-				goto skip_group;
-			}
-			gid = grp->gr_gid;
-		}
-
-		if (chown(buffer, -1, gid) == -1) {
-			RDEBUG2("rlm_detail: Unable to change system group of \"%s\"", buffer);
-		}
-	}
-
- skip_group:
-#endif
-
-	/*
-	 *	Post a timestamp
-	 */
-	fsize = lseek(outfd, 0L, SEEK_END);
-	if (fsize < 0) {
-		radlog_request(L_ERR, 0, request, "rlm_detail: Failed to seek to the end of detail file %s",
-			buffer);
-		close(outfd);
-		return RLM_MODULE_FAIL;
-	}
-
-	if (radius_xlat(timestamp, sizeof(timestamp), inst->header, request, NULL) == 0) {
-		radlog_request(L_ERR, 0, request, "rlm_detail: Unable to expand detail header format %s",
-			inst->header);
-		close(outfd);
-		return RLM_MODULE_FAIL;
-	}
-
-	/*
-	 *	Open the FP for buffering.
-	 */
-	if ((fp = fdopen(outfd, "a")) == NULL) {
-		radlog_request(L_ERR, 0, request, "rlm_detail: Couldn't open file %s: %s",
-			       buffer, strerror(errno));
-		close(outfd);
-		return RLM_MODULE_FAIL;
-	}
-
-	fprintf(fp, "%s\n", timestamp);
+	WRITE("%s\n", timestamp);
 
 	/*
 	 *	Write the information to the file.
@@ -395,12 +245,10 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 		 *	Print out names, if they're OK.
 		 *	Numbers, if not.
 		 */
-		if ((packet->code > 0) &&
-		    (packet->code < FR_MAX_PACKET_CODE)) {
-			fprintf(fp, "\tPacket-Type = %s\n",
-				fr_packet_codes[packet->code]);
+		if (is_radius_code(packet->code)) {
+			WRITE("\tPacket-Type = %s\n", fr_packet_codes[packet->code]);
 		} else {
-			fprintf(fp, "\tPacket-Type = %d\n", packet->code);
+			WRITE("\tPacket-Type = %u\n", packet->code);
 		}
 	}
 
@@ -409,105 +257,171 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 
 		memset(&src_vp, 0, sizeof(src_vp));
 		memset(&dst_vp, 0, sizeof(dst_vp));
-		src_vp.operator = dst_vp.operator = T_OP_EQ;
 
 		switch (packet->src_ipaddr.af) {
 		case AF_INET:
-			src_vp.name = "Packet-Src-IP-Address";
-			src_vp.type = PW_TYPE_IPADDR;
-			src_vp.attribute = PW_PACKET_SRC_IP_ADDRESS;
+			src_vp.da = dict_attrbyvalue(PW_PACKET_SRC_IP_ADDRESS, 0);
 			src_vp.vp_ipaddr = packet->src_ipaddr.ipaddr.ip4addr.s_addr;
-			dst_vp.name = "Packet-Dst-IP-Address";
-			dst_vp.type = PW_TYPE_IPADDR;
-			dst_vp.attribute = PW_PACKET_DST_IP_ADDRESS;
+
+			dst_vp.da = dict_attrbyvalue(PW_PACKET_DST_IP_ADDRESS, 0);
 			dst_vp.vp_ipaddr = packet->dst_ipaddr.ipaddr.ip4addr.s_addr;
 			break;
+
 		case AF_INET6:
-			src_vp.name = "Packet-Src-IPv6-Address";
-			src_vp.type = PW_TYPE_IPV6ADDR;
-			src_vp.attribute = PW_PACKET_SRC_IPV6_ADDRESS;
-			memcpy(src_vp.vp_strvalue,
-			       &packet->src_ipaddr.ipaddr.ip6addr,
+			src_vp.da = dict_attrbyvalue(PW_PACKET_SRC_IPV6_ADDRESS, 0);
+			memcpy(&src_vp.vp_ipv6addr, &packet->src_ipaddr.ipaddr.ip6addr,
 			       sizeof(packet->src_ipaddr.ipaddr.ip6addr));
-			dst_vp.name = "Packet-Dst-IPv6-Address";
-			dst_vp.type = PW_TYPE_IPV6ADDR;
-			dst_vp.attribute = PW_PACKET_DST_IPV6_ADDRESS;
-			memcpy(dst_vp.vp_strvalue,
-			       &packet->dst_ipaddr.ipaddr.ip6addr,
+			dst_vp.da = dict_attrbyvalue(PW_PACKET_DST_IPV6_ADDRESS, 0);
+			memcpy(&dst_vp.vp_ipv6addr, &packet->dst_ipaddr.ipaddr.ip6addr,
 			       sizeof(packet->dst_ipaddr.ipaddr.ip6addr));
 			break;
+
 		default:
 			break;
 		}
 
-		vp_print(fp, &src_vp);
-		vp_print(fp, &dst_vp);
+		detail_vp_print(request, out, &src_vp);
+		detail_vp_print(request, out, &dst_vp);
 
-		src_vp.name = "Packet-Src-IP-Port";
-		src_vp.attribute = PW_PACKET_SRC_PORT;
-		src_vp.type = PW_TYPE_INTEGER;
+		src_vp.da = dict_attrbyvalue(PW_PACKET_SRC_PORT, 0);
 		src_vp.vp_integer = packet->src_port;
-		dst_vp.name = "Packet-Dst-IP-Port";
-		dst_vp.attribute = PW_PACKET_DST_PORT;
-		dst_vp.type = PW_TYPE_INTEGER;
+		dst_vp.da = dict_attrbyvalue(PW_PACKET_DST_PORT, 0);
 		dst_vp.vp_integer = packet->dst_port;
 
-		vp_print(fp, &src_vp);
-		vp_print(fp, &dst_vp);
+		detail_vp_print(request, out, &src_vp);
+		detail_vp_print(request, out, &dst_vp);
 	}
 
-	/* Write each attribute/value to the log file */
-	for (pair = packet->vps; pair != NULL; pair = pair->next) {
-		DICT_ATTR da;
-		da.attr = pair->attribute;
+	{
+		vp_cursor_t cursor;
+		/* Write each attribute/value to the log file */
+		for (vp = fr_cursor_init(&cursor, &packet->vps);
+		     vp;
+		     vp = fr_cursor_next(&cursor)) {
+			FR_TOKEN op;
 
-		if (inst->ht &&
-		    fr_hash_table_finddata(inst->ht, &da)) continue;
+			if (inst->ht && fr_hash_table_finddata(inst->ht, vp->da)) continue;
 
-		/*
-		 *	Don't print passwords in old format...
-		 */
-		if (compat && (pair->attribute == PW_USER_PASSWORD)) continue;
+			/*
+			 *	Don't print passwords in old format...
+			 */
+			if (compat && !vp->da->vendor && (vp->da->attr == PW_USER_PASSWORD)) continue;
 
-		/*
-		 *	Print all of the attributes.
-		 */
-		vp_print(fp, pair);
+			/*
+			 *	Print all of the attributes, operator should always be '='.
+			 */
+			op = vp->op;
+			vp->op = T_OP_EQ;
+			vp_print(out, vp);
+			vp->op = op;
+		}
 	}
 
 	/*
-	 *	Add non-protocol attibutes.
+	 *	Add non-protocol attributes.
 	 */
 	if (compat) {
+#ifdef WITH_PROXY
 		if (request->proxy) {
 			char proxy_buffer[128];
 
-			inet_ntop(request->proxy->dst_ipaddr.af,
-				  &request->proxy->dst_ipaddr.ipaddr,
+			inet_ntop(request->proxy->dst_ipaddr.af, &request->proxy->dst_ipaddr.ipaddr,
 				  proxy_buffer, sizeof(proxy_buffer));
-			fprintf(fp, "\tFreeradius-Proxied-To = %s\n",
-				proxy_buffer);
-			RDEBUG("Freeradius-Proxied-To = %s",
-				proxy_buffer);
+			WRITE("\tFreeradius-Proxied-To = %s\n", proxy_buffer);
 		}
-
-		fprintf(fp, "\tTimestamp = %ld\n",
-			(unsigned long) request->timestamp);
+#endif
 	}
+	WRITE("\tTimestamp = %ld\n", (unsigned long) request->timestamp);
 
-	fprintf(fp, "\n");
+	WRITE("\n");
+
+	return 0;
+}
+
+/*
+ *	Do detail, compatible with old accounting
+ */
+static rlm_rcode_t CC_HINT(nonnull) detail_do(void *instance, REQUEST *request, RADIUS_PACKET *packet, bool compat)
+{
+	int		outfd;
+	char		buffer[DIRLEN];
+
+	FILE		*outfp;
+
+#ifdef HAVE_GRP_H
+	gid_t		gid;
+	char		*endptr;
+#endif
+
+	detail_instance_t *inst = instance;
 
 	/*
-	 *	If we can't flush it to disk, truncate the file and
-	 *	return an error.
+	 *	Generate the path for the detail file.  Use the same
+	 *	format, but truncate at the last /.  Then feed it
+	 *	through radius_xlat() to expand the variables.
 	 */
-	if (fflush(fp) != 0) {
-		ftruncate(outfd, fsize); /* ignore errors! */
-		fclose(fp);
+	if (radius_xlat(buffer, sizeof(buffer), request, inst->filename, inst->escape_func, NULL) < 0) {
 		return RLM_MODULE_FAIL;
 	}
 
-	fclose(fp);
+	RDEBUG2("%s expands to %s", inst->filename, buffer);
+
+#ifdef WITH_ACCOUNTING
+#if defined(HAVE_FNMATCH_H) && defined(FNM_FILE_NAME)
+	/*
+	 *	If we read it from a detail file, and we're about to
+	 *	write it back to the SAME detail file directory, then
+	 *	suppress the write.  This check prevents an infinite
+	 *	loop.
+	 */
+	if ((request->listener->type == RAD_LISTEN_DETAIL) &&
+	    (fnmatch(((listen_detail_t *)request->listener->data)->filename,
+		     buffer, FNM_FILE_NAME | FNM_PERIOD ) == 0)) {
+		RWDEBUG2("Suppressing infinite loop");
+		return RLM_MODULE_NOOP;
+	}
+#endif
+#endif
+
+	outfd = exfile_open(inst->ef, buffer, inst->perm, true);
+	if (outfd < 0) {
+		RERROR("Couldn't open file %s: %s", buffer, fr_strerror());
+		return RLM_MODULE_FAIL;
+	}
+
+	if (inst->group != NULL) {
+		gid = strtol(inst->group, &endptr, 10);
+		if (*endptr != '\0') {
+			if (rad_getgid(request, &gid, inst->group) < 0) {
+				RDEBUG2("Unable to find system group '%s'", inst->group);
+				goto skip_group;
+			}
+		}
+
+		if (chown(buffer, -1, gid) == -1) {
+			RDEBUG2("Unable to change system group of '%s'", buffer);
+		}
+	}
+
+skip_group:
+	/*
+	 *	Open the output fp for buffering.
+	 */
+	if ((outfp = fdopen(outfd, "a")) == NULL) {
+		RERROR("Couldn't open file %s: %s", buffer, fr_syserror(errno));
+	fail:
+		if (outfp) fclose(outfp);
+		exfile_unlock(inst->ef, outfd);
+		return RLM_MODULE_FAIL;
+	}
+
+	if (detail_write(outfp, inst, request, packet, compat) < 0) goto fail;
+
+	/*
+	 *	Flush everything
+	 */
+	fclose(outfp);
+	exfile_unlock(inst->ef, outfd); /* do NOT close outfp */
 
 	/*
 	 *	And everything is fine.
@@ -518,60 +432,62 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 /*
  *	Accounting - write the detail files.
  */
-static int detail_accounting(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *request)
 {
+#ifdef WITH_DETAIL
 	if (request->listener->type == RAD_LISTEN_DETAIL &&
-	    strcmp(((struct detail_instance *)instance)->detailfile,
-	           ((listen_detail_t *)request->listener->data)->filename) == 0) {
-		RDEBUG("Suppressing writes to detail file as the request was just read from a detail file.");
+	    strcmp(((detail_instance_t *)instance)->filename,
+		   ((listen_detail_t *)request->listener->data)->filename) == 0) {
+		RDEBUG("Suppressing writes to detail file as the request was just read from a detail file");
 		return RLM_MODULE_NOOP;
 	}
+#endif
 
-	return do_detail(instance,request,request->packet, TRUE);
+	return detail_do(instance, request, request->packet, true);
 }
 
 /*
  *	Incoming Access Request - write the detail files.
  */
-static int detail_authorize(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *request)
 {
-	return do_detail(instance,request,request->packet, FALSE);
+	return detail_do(instance, request, request->packet, false);
 }
 
 /*
  *	Outgoing Access-Request Reply - write the detail files.
  */
-static int detail_postauth(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *request)
 {
-	return do_detail(instance,request,request->reply, FALSE);
+	return detail_do(instance, request, request->reply, false);
 }
 
 #ifdef WITH_COA
 /*
  *	Incoming CoA - write the detail files.
  */
-static int detail_recv_coa(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_recv_coa(void *instance, REQUEST *request)
 {
-	return do_detail(instance,request,request->packet, FALSE);
+	return detail_do(instance, request, request->packet, false);
 }
 
 /*
  *	Outgoing CoA - write the detail files.
  */
-static int detail_send_coa(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_send_coa(void *instance, REQUEST *request)
 {
-	return do_detail(instance,request,request->reply, FALSE);
+	return detail_do(instance, request, request->reply, false);
 }
 #endif
 
 /*
  *	Outgoing Access-Request to home server - write the detail files.
  */
-static int detail_pre_proxy(void *instance, REQUEST *request)
+#ifdef WITH_PROXY
+static rlm_rcode_t CC_HINT(nonnull) mod_pre_proxy(void *instance, REQUEST *request)
 {
-	if (request->proxy &&
-	    request->proxy->vps) {
-		return do_detail(instance,request,request->proxy, FALSE);
+	if (request->proxy && request->proxy->vps) {
+		return detail_do(instance, request, request->proxy, false);
 	}
 
 	return RLM_MODULE_NOOP;
@@ -581,11 +497,10 @@ static int detail_pre_proxy(void *instance, REQUEST *request)
 /*
  *	Outgoing Access-Request Reply - write the detail files.
  */
-static int detail_post_proxy(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_post_proxy(void *instance, REQUEST *request)
 {
-	if (request->proxy_reply &&
-	    request->proxy_reply->vps) {
-		return do_detail(instance,request,request->proxy_reply, FALSE);
+	if (request->proxy_reply && request->proxy_reply->vps) {
+		return detail_do(instance, request, request->proxy_reply, false);
 	}
 
 	/*
@@ -596,38 +511,45 @@ static int detail_post_proxy(void *instance, REQUEST *request)
 	 *	it's doing normal accounting.
 	 */
 	if (!request->proxy_reply) {
-		int rcode;
+		rlm_rcode_t rcode;
 
-		rcode = detail_accounting(instance, request);
+		rcode = mod_accounting(instance, request);
 		if (rcode == RLM_MODULE_OK) {
-			request->reply->code = PW_ACCOUNTING_RESPONSE;
+			request->reply->code = PW_CODE_ACCOUNTING_RESPONSE;
 		}
 		return rcode;
 	}
 
 	return RLM_MODULE_NOOP;
 }
-
+#endif
 
 /* globally exported name */
+extern module_t rlm_detail;
 module_t rlm_detail = {
 	RLM_MODULE_INIT,
 	"detail",
-	RLM_TYPE_THREAD_UNSAFE | RLM_TYPE_CHECK_CONFIG_SAFE | RLM_TYPE_HUP_SAFE,
-	detail_instantiate,		/* instantiation */
-	detail_detach,			/* detach */
+	RLM_TYPE_HUP_SAFE,
+	sizeof(detail_instance_t),
+	module_config,
+	mod_instantiate,		/* instantiation */
+	mod_detach,			/* detach */
 	{
 		NULL,			/* authentication */
-		detail_authorize, 	/* authorization */
+		mod_authorize,		/* authorization */
 		NULL,			/* preaccounting */
-		detail_accounting,	/* accounting */
+		mod_accounting,		/* accounting */
 		NULL,			/* checksimul */
-		detail_pre_proxy,      	/* pre-proxy */
-		detail_post_proxy,	/* post-proxy */
-		detail_postauth		/* post-auth */
+#ifdef WITH_PROXY
+		mod_pre_proxy,      	/* pre-proxy */
+		mod_post_proxy,		/* post-proxy */
+#else
+		NULL, NULL,
+#endif
+		mod_post_auth		/* post-auth */
 #ifdef WITH_COA
-		, detail_recv_coa,
-		detail_send_coa
+		, mod_recv_coa,
+		mod_send_coa
 #endif
 	},
 };

@@ -7,7 +7,7 @@
 #	If it does exist, it will be over-written.
 #
 #
-#	$Id: 819887c6ca2f4f50d2d47474c230908512aa227e $
+#	$Id: 40ed5eebd5d04c015b38bb1bdd2e9be8e0a65e4e $
 #
 if (($#ARGV < 1) || ($#ARGV > 2)) {
     print "Usage: clients.pl clients [naslist] new-clients.conf\n";
@@ -51,7 +51,7 @@ if (defined $naslist) {
 	}
 
 	$clients{$_[0]}{"shortname"} = $_[1];
-	$clients{$_[0]}{"nastype"} = $_[2];
+	$clients{$_[0]}{"nas_type"} = $_[2];
     }
 }
 
@@ -61,7 +61,7 @@ foreach $client (keys %clients) {
     print NEW "\tsecret = ", $clients{$client}{"secret"}, "\n";
     if (defined $clients{$client}{"shortname"}) {
 	print NEW "\tshortname = ", $clients{$client}{"shortname"}, "\n";
-	print NEW "\tnastype = ", $clients{$client}{"nastype"}, "\n";
+	print NEW "\tnas_type = ", $clients{$client}{"nas_type"}, "\n";
     }
     print NEW "}\n";
     print NEW "\n";

@@ -1,12 +1,8 @@
 /*
- * rlm_expiration.c
- *
- * Version:  $Id: a76ffb3e8a95cbbfc4e76c3a24f60ac5bc442d2b $
- *
- *   This program is free software; you can redistribute it and/or modify
+ *   This program is is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,13 +12,17 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- * Copyright 2001,2006  The FreeRADIUS server project
- * Copyright 2004  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: a76ffb3e8a95cbbfc4e76c3a24f60ac5bc442d2b $")
+/**
+ * $Id: 6e41e5c96166b59b68b0f29eabcde43cc7270d3a $
+ * @file rlm_expiration.c
+ * @brief Lockout user accounts based on control attributes.
+ *
+ * @copyright 2001,2006  The FreeRADIUS server project
+ * @copyright 2004  Kostas Kalevras <kkalev@noc.ntua.gr>
+ */
+RCSID("$Id: 6e41e5c96166b59b68b0f29eabcde43cc7270d3a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -30,88 +30,46 @@ RCSID("$Id: a76ffb3e8a95cbbfc4e76c3a24f60ac5bc442d2b $")
 #include <ctype.h>
 
 /*
- *	Define a structure for our module configuration.
- *
- *	These variables do not need to be in a structure, but it's
- *	a lot cleaner to do so, and a pointer to the structure can
- *	be used as the instance handle.
- */
-typedef struct rlm_expiration_t {
-	char *msg;		/* The Reply-Message passed back to the user if the account is expired */
-} rlm_expiration_t;
-
-/*
- *	A mapping of configuration file names to internal variables.
- *
- *	Note that the string is dynamically allocated, so it MUST
- *	be freed.  When the configuration file parse re-reads the string,
- *	it free's the old one, and strdup's the new one, placing the pointer
- *	to the strdup'd string into 'config.string'.  This gets around
- *	buffer over-flows.
- */
-static const CONF_PARSER module_config[] = {
-  { "reply-message", PW_TYPE_STRING_PTR, offsetof(rlm_expiration_t,msg),
-    NULL, "Password Has Expired\r\n"},
-  { NULL, -1, 0, NULL, NULL }
-};
-
-/*
  *      Check if account has expired, and if user may login now.
  */
-static int expiration_authorize(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST *request)
 {
-	rlm_expiration_t *data = (rlm_expiration_t *)instance;
-	VALUE_PAIR *vp, *check_item = NULL;
-	char msg[MAX_STRING_LEN];
+	VALUE_PAIR *vp, *check_item;
+	char date[50];
 
-	if ((check_item = pairfind(request->config_items, PW_EXPIRATION)) != NULL){
-		/*
-		*      Has this user's password expired?
-		*
-		*      If so, remove ALL reply attributes,
-		*      and add our own Reply-Message, saying
-		*      why they're being rejected.
-		*/
-		RDEBUG("Checking Expiration time: '%s'",check_item->vp_strvalue);
-		if (((time_t) check_item->vp_date) <= request->timestamp) {
-			char logstr[MAX_STRING_LEN];
-			VALUE_PAIR *module_fmsg_vp;
+	check_item = pairfind(request->config, PW_EXPIRATION, 0, TAG_ANY);
+	if (!check_item) return RLM_MODULE_NOOP;
 
-			RDEBUG("Account has expired");
-
-			if (data->msg && data->msg[0]){
-				if (!radius_xlat(msg, sizeof(msg), data->msg, request, NULL)) {
-					radlog(L_ERR, "rlm_expiration: xlat failed.");
-					return RLM_MODULE_FAIL;
-				}
-
-				vp = pairmake("Reply-Message", msg, T_OP_ADD);
-				pairfree(&request->reply->vps);
-				request->reply->vps = vp;
-			}
-                        snprintf(logstr, sizeof(logstr), "Account has expired [Expiration %s]",check_item->vp_strvalue);
-                        module_fmsg_vp = pairmake("Module-Failure-Message", logstr, T_OP_EQ);
-                        pairadd(&request->packet->vps, module_fmsg_vp);
-
-			return RLM_MODULE_USERLOCK;
-		}
-		/*
-		 *	Else the account hasn't expired, but it may do so
-		 *	in the future.  Set Session-Timeout.
-		 */
-		vp = pairfind(request->reply->vps, PW_SESSION_TIMEOUT);
-		if (!vp) {
-			vp = radius_paircreate(request, &request->reply->vps,
-					       PW_SESSION_TIMEOUT,
-					       PW_TYPE_INTEGER);
-			vp->vp_date = (uint32_t) (((time_t) check_item->vp_date) - request->timestamp);
-
-		} else if (vp->vp_date > ((uint32_t) (((time_t) check_item->vp_date) - request->timestamp))) {
-			vp->vp_date = (uint32_t) (((time_t) check_item->vp_date) - request->timestamp);
+	/*
+	 *      Has this user's password expired?
+	 *
+	 *      If so, remove ALL reply attributes,
+	 *      and add our own Reply-Message, saying
+	 *      why they're being rejected.
+	 */
+	if (((time_t) check_item->vp_date) <= request->timestamp) {
+		vp_prints_value(date, sizeof(date), check_item, 0);
+		REDEBUG("Account expired at '%s'", date);
+		
+		return RLM_MODULE_USERLOCK;
+	} else {
+		if (RDEBUG_ENABLED) {
+			vp_prints_value(date, sizeof(date), check_item, 0);
+			RDEBUG("Account will expire at '%s'", date);
 		}
 	}
-	else
-		return RLM_MODULE_NOOP;
+
+	/*
+	 *	Else the account hasn't expired, but it may do so
+	 *	in the future.  Set Session-Timeout.
+	 */
+	vp = pairfind(request->reply->vps, PW_SESSION_TIMEOUT, 0, TAG_ANY);
+	if (!vp) {
+		vp = radius_paircreate(request->reply, &request->reply->vps, PW_SESSION_TIMEOUT, 0);
+		vp->vp_date = (uint32_t) (((time_t) check_item->vp_date) - request->timestamp);
+	} else if (vp->vp_date > ((uint32_t) (((time_t) check_item->vp_date) - request->timestamp))) {
+		vp->vp_date = (uint32_t) (((time_t) check_item->vp_date) - request->timestamp);
+	}
 
 	return RLM_MODULE_OK;
 }
@@ -119,15 +77,10 @@ static int expiration_authorize(void *instance, REQUEST *request)
 /*
  *      Compare the expiration date.
  */
-static int expirecmp(void *instance, REQUEST *req,
-		VALUE_PAIR *request, VALUE_PAIR *check,
-		VALUE_PAIR *check_pairs, VALUE_PAIR **reply_pairs)
+static int expirecmp(UNUSED void *instance, REQUEST *req, UNUSED VALUE_PAIR *request, VALUE_PAIR *check,
+		     UNUSED VALUE_PAIR *check_pairs, UNUSED VALUE_PAIR **reply_pairs)
 {
 	time_t now = 0;
-	instance = instance;
-	request = request;      /* shut the compiler up */
-	check_pairs = check_pairs;
-	reply_pairs = reply_pairs;
 
 	now = (req) ? req->timestamp : time(NULL);
 
@@ -136,13 +89,6 @@ static int expirecmp(void *instance, REQUEST *req,
 	return +1;
 }
 
-
-static int expiration_detach(void *instance)
-{
-	paircompare_unregister(PW_EXPIRATION, expirecmp);
-	free(instance);
-	return 0;
-}
 
 /*
  *	Do any per-module initialization that is separate to each
@@ -154,37 +100,12 @@ static int expiration_detach(void *instance)
  *	that must be referenced in later calls, store a handle to it
  *	in *instance otherwise put a null pointer there.
  */
-static int expiration_instantiate(CONF_SECTION *conf, void **instance)
+static int mod_instantiate(UNUSED CONF_SECTION *conf, void *instance)
 {
-	rlm_expiration_t *data;
-
 	/*
-	 *	Set up a storage area for instance data
+	 *	Register the expiration comparison operation.
 	 */
-	data = rad_malloc(sizeof(*data));
-	if (!data) {
-		radlog(L_ERR, "rlm_expiration: rad_malloc() failed.");
-		return -1;
-	}
-	memset(data, 0, sizeof(*data));
-
-	/*
-	 *	If the configuration parameters can't be parsed, then
-	 *	fail.
-	 */
-	if (cf_section_parse(conf, data, module_config) < 0) {
-		free(data);
-		radlog(L_ERR, "rlm_expiration: Configuration parsing failed.");
-		return -1;
-	}
-
-	/*
-	 * Register the expiration comparison operation.
-	 */
-	paircompare_register(PW_EXPIRATION, 0, expirecmp, data);
-
-	*instance = data;
-
+	paircompare_register(dict_attrbyvalue(PW_EXPIRATION, 0), NULL, false, expirecmp, instance);
 	return 0;
 }
 
@@ -197,20 +118,23 @@ static int expiration_instantiate(CONF_SECTION *conf, void **instance)
  *	The server will then take care of ensuring that the module
  *	is single-threaded.
  */
+extern module_t rlm_expiration;
 module_t rlm_expiration = {
 	RLM_MODULE_INIT,
 	"expiration",
 	RLM_TYPE_THREAD_SAFE,		/* type */
-	expiration_instantiate,		/* instantiation */
-	expiration_detach,		/* detach */
+	0,
+	NULL,
+	mod_instantiate,		/* instantiation */
+	NULL,				/* detach */
 	{
 		NULL,			/* authentication */
-		expiration_authorize, 	/* authorization */
+		mod_authorize,		/* authorization */
 		NULL,			/* preaccounting */
 		NULL,			/* accounting */
 		NULL,			/* checksimul */
 		NULL,			/* pre-proxy */
 		NULL,			/* post-proxy */
-		expiration_authorize   	/* post-auth */
+		mod_authorize  		/* post-auth */
 	},
 };
