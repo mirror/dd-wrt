@@ -27,7 +27,7 @@ eap {
 	#  then that EAP type takes precedence over the
 	#  default type configured here.
 	#
-	default_eap_type = md5
+	default_eap_type = peap
 
 	#  A list is maintained to correlate EAP-Response
 	#  packets with EAP-Request packets.  After a
@@ -72,8 +72,8 @@ eap {
 	#  for wireless connections.  It is insecure, and does
 	#  not provide for dynamic WEP keys.
 	#
-	md5 {
-	}
+#	md5 {
+#	}
 
 	#
 	# EAP-pwd -- secure password-based authentication
@@ -108,8 +108,8 @@ eap {
 	#  User-Password, or the NT-Password attributes.
 	#  'System' authentication is impossible with LEAP.
 	#
-	leap {
-	}
+#	leap {
+#	}
 
 	#  Generic Token Card.
 	#
@@ -122,7 +122,7 @@ eap {
 	#  the users password will go over the wire in plain-text,
 	#  for anyone to see.
 	#
-	gtc {
+#	gtc {
 		#  The default challenge, which many clients
 		#  ignore..
 		#challenge = "Password: "
@@ -139,8 +139,8 @@ eap {
 		#  configured for the request, and do the
 		#  authentication itself.
 		#
-		auth_type = PAP
-	}
+#		auth_type = PAP
+#	}
 
 	## Common TLS configuration for TLS-based EAP types
 	#
@@ -252,7 +252,7 @@ eap {
 		#  In these cases, fragment size should be
 		#  1024 or less.
 		#
-	#	fragment_size = 1024
+		fragment_size = 1024
 
 		#  include_length is a flag which is
 		#  by default set to yes If set to
@@ -262,7 +262,7 @@ eap {
 		#  message is included ONLY in the
 		#  First packet of a fragment series.
 		#
-	#	include_length = yes
+		include_length = yes
 
 		#  Check the Certificate Revocation List
 		#
@@ -346,7 +346,7 @@ eap {
 		#  You probably also want "use_tunneled_reply = yes"
 		#  when using fast session resumption.
 		#
-		cache {
+#		cache {
 			#
 			#  Enable it.  The default is "no". Deleting the entire "cache"
 			#  subsection also disables caching.
@@ -359,7 +359,7 @@ eap {
 			#  If "enable = no" below, you CANNOT enable resumption for just one
 			#  user by setting the above attribute to "yes".
 			#
-			enable = yes
+#			enable = yes
 
 			#
 			#  Internal "name" of the session cache. Used to distinguish which
@@ -375,7 +375,7 @@ eap {
 			#  Lifetime of the cached entries, in hours. The sessions will be
 			#  deleted/invalidated after this time.
 			#
-			lifetime = 24 # hours
+#			lifetime = 24 # hours
 
 			#
 			#  The maximum number of entries in the
@@ -384,7 +384,7 @@ eap {
 			#  This could be set to the number of users
 			#  who are logged in... which can be a LOT.
 			#
-			max_entries = 255
+#			max_entries = 255
 
 			#
 			#  Internal "name" of the session cache.
@@ -413,7 +413,7 @@ eap {
 			#  This feature REQUIRES "name" option be set above.
 			#
 			#persist_dir = "${logdir}/tlscache"
-		}
+#		}
 
 		#
 		#  As of version 2.1.10, client certificates can be
@@ -549,7 +549,7 @@ eap {
 	#
 	#  Surprisingly, it works quite well.
 	#
-	ttls {
+#	ttls {
 		#  Which tls-config section the TLS negotiation parameters
 		#  are in - see EAP-TLS above for an explanation.
 		#
@@ -559,7 +559,7 @@ eap {
 		#  above. If that is done, the tls= option here (and in
 		#  tls above) MUST be commented out.
 		#
-		tls = tls-common
+#		tls = tls-common
 
 		#  The tunneled EAP session needs a default EAP type
 		#  which is separate from the one for the non-tunneled
@@ -568,7 +568,7 @@ eap {
 		#  EAP conversation, then this configuration entry is
 		#  ignored.
 		#
-		default_eap_type = md5
+#		default_eap_type = md5
 
 		#  The tunneled authentication request does not usually
 		#  contain useful attributes like 'Calling-Station-Id',
@@ -584,7 +584,7 @@ eap {
 		#
 		#  allowed values: {no, yes}
 		#
-		copy_request_to_tunnel = no
+#		copy_request_to_tunnel = no
 
 		#
 		#  As of version 3.0.5, this configuration item
@@ -607,7 +607,7 @@ eap {
 		#
 		#  allowed values: {no, yes}
 		#
-		use_tunneled_reply = no
+#		use_tunneled_reply = no
 
 		#
 		#  The inner tunneled request can be sent
@@ -619,7 +619,7 @@ eap {
 		#  the virtual server that processed the
 		#  outer requests.
 		#
-		virtual_server = "inner-tunnel"
+#		virtual_server = "inner-tunnel"
 
 		#  This has the same meaning, and overwrites, the
 		#  same field in the "tls" configuration, above.
@@ -708,7 +708,7 @@ eap {
 		#  The PEAP module also has these configuration
 		#  items, which are the same as for TTLS.
 		#
-		copy_request_to_tunnel = no
+		copy_request_to_tunnel = yes
 
 		#
 		#  As of version 3.0.5, this configuration item
@@ -721,14 +721,14 @@ eap {
 		#
 		#  This will cache attributes for the final Access-Accept.
 		#
-		use_tunneled_reply = no
+		use_tunneled_reply = yes
 
 		#  When the tunneled session is proxied, the
 		#  home server may not understand EAP-MSCHAP-V2.
 		#  Set this entry to "no" to proxy the tunneled
 		#  EAP-MSCHAP-V2 as normal MSCHAPv2.
 		#
-	#	proxy_tunneled_request_as_eap = yes
+		proxy_tunneled_request_as_eap = no
 
 		#
 		#  The inner tunneled request can be sent
@@ -763,6 +763,7 @@ eap {
 		#
 		# in the control items for a request.
 		#
+		EAP-TLS-Require-Client-Cert = no
 	#	require_client_cert = yes
 	}
 

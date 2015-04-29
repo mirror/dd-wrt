@@ -68,7 +68,7 @@ confdir = ${raddbdir}
 modconfdir = ${confdir}/mods-config
 certdir = ${confdir}/certs
 cadir   = ${confdir}/certs
-run_dir = ${localstatedir}/run/${name}
+run_dir = ${localstatedir}/run
 
 # Should likely be ${localstatedir}/lib/radiusd
 db_dir = ${raddbdir}
