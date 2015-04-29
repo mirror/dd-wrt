@@ -1,5 +1,5 @@
 /*
- * $Id: 9e60f0024bd6d025435cf8492802d9cf7d4accea $
+ * $Id: 1d36cd2ae1214912f29b57eb97967b207d21429e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 9e60f0024bd6d025435cf8492802d9cf7d4accea $")
+RCSID("$Id: 1d36cd2ae1214912f29b57eb97967b207d21429e $")
 
 /* avoid inclusion of these FR headers which conflict w/ OpenSSL */
 #define _FR_MD4_H
@@ -97,7 +97,7 @@ otp_gen_state(char rad_state[OTP_MAX_RADSTATE_LEN],
    * DES, so we'll use it's hmac functionality also -- saves us from
    * having to collect the data to be signed into one contiguous piece.
    */
-  HMAC_Init(&hmac_ctx, key, sizeof(key[0] * 16), EVP_md5());
+  HMAC_Init(&hmac_ctx, key, sizeof(key[0]) * 16, EVP_md5());
   HMAC_Update(&hmac_ctx, challenge, clen);
   HMAC_Update(&hmac_ctx, (unsigned char *) &flags, 4);
   HMAC_Update(&hmac_ctx, (unsigned char *) &when, 4);

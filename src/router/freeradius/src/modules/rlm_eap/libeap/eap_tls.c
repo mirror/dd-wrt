@@ -1,7 +1,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id: ff008f672062eb915dec9825f7136b7c8eca2f2b $
+ * Version:     $Id: 5c47513e62724cb621aeb55f65e0f6083294aafe $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: ff008f672062eb915dec9825f7136b7c8eca2f2b $")
+RCSID("$Id: 5c47513e62724cb621aeb55f65e0f6083294aafe $")
 
 #include <freeradius-devel/autoconf.h>
 #include <assert.h>
@@ -162,6 +162,8 @@ int eaptls_success(EAP_HANDLER *handler, int peap_flag)
 
 		if (handler->certs) {
 			pairadd(&vps, paircopy(handler->certs));
+
+			pairadd(&request->packet->vps, paircopy(handler->certs));
 		}
 
 		if (vps) {

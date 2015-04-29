@@ -1,7 +1,7 @@
 /*
  * rlm_linelog.c
  *
- * Version:	$Id: 16b553c7e9c5d24e3d41ddfcc0f5657711ce7654 $
+ * Version:	$Id: 24675df21f95b41fcc70a97873970dda77f6dbbd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 16b553c7e9c5d24e3d41ddfcc0f5657711ce7654 $")
+RCSID("$Id: 24675df21f95b41fcc70a97873970dda77f6dbbd $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -280,9 +280,8 @@ static int do_linelog(void *instance, REQUEST *request)
 	 *	FIXME: Check length.
 	 */
 	if (strcmp(inst->filename, "syslog") != 0) {
-		radius_xlat(buffer, sizeof(buffer), inst->filename, request,
-			    NULL);
-		
+		radius_xlat(buffer, sizeof(buffer), inst->filename, request, rad_filename_escape);
+
 		/* check path and eventually create subdirs */
 		p = strrchr(buffer,'/');
 		if (p) {
@@ -330,7 +329,7 @@ static int do_linelog(void *instance, REQUEST *request)
 
 	if (fd >= 0) {
 		strcat(line, "\n");
-		
+
 		write(fd, line, strlen(line));
 		close(fd);
 

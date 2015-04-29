@@ -1,7 +1,7 @@
 /*
  * rlm_securid.c
  *
- * Version:  $Id: 17ee8239d1bebc24e9d5cda12d770d2a2e6f520e $
+ * Version:  $Id: 682864ba2f2735b6af778deed1ff7733193ffdc7 $
  *
  * supports "next-token code" and "new-pin" modes
  *
@@ -135,7 +135,7 @@ static SECURID_AUTH_RC securidAuth(void *instance, REQUEST *request,
 			return RC_SECURID_AUTH_INVALID_SERVER_FAILURE;
 
 		case ACM_NEW_PIN_REQUIRED:
-			RDEBUG2("SeecurID new pin required for %s",
+			RDEBUG2("SecurID new pin required for %s",
 				username);
 
 			/* create a new session */

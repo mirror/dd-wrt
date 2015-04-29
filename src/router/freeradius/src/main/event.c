@@ -1,7 +1,7 @@
 /*
  * event.c	Server event handling
  *
- * Version:	$Id: c889bf23b14dbaeccb01566b31e44c19cd4b8181 $
+ * Version:	$Id: ca3edf0ed99ab7444714fae46d734c41b563537b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: c889bf23b14dbaeccb01566b31e44c19cd4b8181 $")
+RCSID("$Id: ca3edf0ed99ab7444714fae46d734c41b563537b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -508,7 +508,7 @@ static void wait_for_child_to_die(void *ctx)
 	 *	up) OR there's still a child thread handling it, THEN
 	 *	delay some more.
 	 */
-	if ((request->child_state = REQUEST_QUEUED) ||
+	if ((request->child_state == REQUEST_QUEUED) ||
 	    (request->thread_id != NO_CHILD_THREAD)) {
 		/*
 		 *	Cap delay at max_request_time
@@ -1103,8 +1103,22 @@ static void no_response_to_proxied_request(void *ctx)
 
 		post_proxy_fail_handler(request);
 	} else {
+		struct timeval when;
+
+		/*
+		 *	Do nothing, and let the request time out.
+		 */
 		rad_assert(request->ev == NULL);
-		request->child_state = REQUEST_RUNNING;
+
+		when = request->received;
+		when.tv_sec += request->root->max_request_time;
+
+		request->child_state = REQUEST_DONE;
+		request->next_when = when;
+		request->next_callback = cleanup_delay;
+
+		if (request->in_proxy_hash) remove_from_proxy_hash(request);
+
 		wait_a_bit(request);
 	}
 
@@ -3230,9 +3244,6 @@ REQUEST *received_proxy_response(RADIUS_PACKET *packet)
 	switch (request->child_state) {
 	case REQUEST_QUEUED:
 	case REQUEST_RUNNING:
-		radlog(L_ERR, "Internal sanity check failed for child state");
-		/* FALL-THROUGH */
-
 	case REQUEST_REJECT_DELAY:
 	case REQUEST_CLEANUP_DELAY:
 	case REQUEST_DONE:

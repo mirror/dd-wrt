@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: bd993e3701f73a070ef1efb9ee8afbf1d9a7f6ad $
+ * Version:	$Id: 974e092cf5486159bf2796cc4dc0a63e2dcbd0cf $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: bd993e3701f73a070ef1efb9ee8afbf1d9a7f6ad $")
+RCSID("$Id: 974e092cf5486159bf2796cc4dc0a63e2dcbd0cf $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -598,6 +598,9 @@ CONF_ITEM *cf_reference_item(const CONF_SECTION *parentcs,
 	char name[8192];
 	char *p;
 
+	if (cs == NULL)
+		goto no_such_item;
+
 	strlcpy(name, ptr, sizeof(name));
 	p = name;
 
@@ -895,9 +898,16 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 	const char *value;
 	fr_ipaddr_t ipaddr;
 	const CONF_PAIR *cp = NULL;
+	int depth;
 	char ipbuf[128];
 
-	if (cs) cp = cf_pair_find(cs, name);
+	if (cs) {
+		depth = cs->depth;
+		cp = cf_pair_find(cs, name);
+	} else {
+		depth = 0;
+	}
+
 	if (cp) {
 		value = cp->value;
 
@@ -930,13 +940,13 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 			return -1;
 		}
 		cf_log_info(cs, "%.*s\t%s = %s",
-			    cs->depth, parse_spaces, name, value);
+			    depth, parse_spaces, name, value);
 		break;
 
 	case PW_TYPE_INTEGER:
 		*(int *)data = strtol(value, 0, 0);
 		cf_log_info(cs, "%.*s\t%s = %d",
-			    cs->depth, parse_spaces, name, *(int *)data);
+			    depth, parse_spaces, name, *(int *)data);
 		break;
 
 	case PW_TYPE_STRING_PTR:
@@ -971,7 +981,7 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 		}
 
 		cf_log_info(cs, "%.*s\t%s = \"%s\"",
-			    cs->depth, parse_spaces, name, value ? value : "(null)");
+			    depth, parse_spaces, name, value ? value : "(null)");
 		*q = value ? strdup(value) : NULL;
 		break;
 
@@ -1007,7 +1017,7 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 		}
 
 		cf_log_info(cs, "%.*s\t%s = \"%s\"",
-			    cs->depth, parse_spaces, name, value ? value : "(null)");
+			    depth, parse_spaces, name, value ? value : "(null)");
 		*q = value ? strdup(value) : NULL;
 
 		/*
@@ -1039,7 +1049,7 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 		if (strcmp(value, "*") == 0) {
 			*(uint32_t *) data = htonl(INADDR_ANY);
 			cf_log_info(cs, "%.*s\t%s = *",
-				    cs->depth, parse_spaces, name);
+				    depth, parse_spaces, name);
 			break;
 		}
 		if (ip_hton(value, AF_INET, &ipaddr) < 0) {
@@ -1049,10 +1059,10 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 		
 		if (strspn(value, "0123456789.") == strlen(value)) {
 			cf_log_info(cs, "%.*s\t%s = %s",
-				    cs->depth, parse_spaces, name, value);
+				    depth, parse_spaces, name, value);
 		} else {
 			cf_log_info(cs, "%.*s\t%s = %s IP address [%s]",
-				    cs->depth, parse_spaces, name, value,
+				    depth, parse_spaces, name, value,
 			       ip_ntoh(&ipaddr, ipbuf, sizeof(ipbuf)));
 		}
 		*(uint32_t *) data = ipaddr.ipaddr.ip4addr.s_addr;
@@ -1064,7 +1074,7 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 			return -1;
 		}
 		cf_log_info(cs, "%.*s\t%s = %s IPv6 address [%s]",
-			    cs->depth, parse_spaces, name, value,
+			    depth, parse_spaces, name, value,
 			    ip_ntoh(&ipaddr, ipbuf, sizeof(ipbuf)));
 		memcpy(data, &ipaddr.ipaddr.ip6addr,
 		       sizeof(ipaddr.ipaddr.ip6addr));

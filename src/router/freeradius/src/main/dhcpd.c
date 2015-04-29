@@ -1,7 +1,7 @@
 /*
  * dhcp.c	DHCP processing.
  *
- * Version:	$Id: 350c647449a94d7a20ec8637dabcce337b39556a $
+ * Version:	$Id: 55114ab6455f2a60e8e32144c4cfea6da162ff1a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -298,7 +298,7 @@ static int dhcp_process(REQUEST *request)
 	if (vp) {
 		DICT_VALUE *dv = dict_valbyattr(DHCP2ATTR(53), vp->vp_integer);
 		DEBUG("Trying sub-section dhcp %s {...}",
-		      dv->name ? dv->name : "<unknown>");
+		      dv ? dv->name : "<unknown>");
 		rcode = module_post_auth(vp->vp_integer, request);
 	} else {
 		DEBUG("DHCP: Failed to find DHCP-Message-Type in packet!");
@@ -443,6 +443,7 @@ static int dhcp_process(REQUEST *request)
 	if (vp) {
 		RDEBUG("DHCP: Reply will be unicast to giaddr from original packet");
 		request->reply->dst_ipaddr.ipaddr.ip4addr.s_addr = vp->vp_ipaddr;
+		request->reply->dst_port = request->packet->dst_port;
 
 		vp = pairfind(request->reply->vps, PW_PACKET_DST_PORT);
 		if (vp) request->reply->dst_port = vp->vp_integer;
@@ -615,14 +616,16 @@ static int dhcp_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 	sock->suppress_responses = FALSE;
 	cp = cf_pair_find(cs, "suppress_responses");
 	if (cp) {
-		cf_item_parse(cs, "suppress_responses", PW_TYPE_BOOLEAN,
-			      &sock->suppress_responses, NULL);
+		rcode = cf_item_parse(cs, "suppress_responses", PW_TYPE_BOOLEAN,
+					&sock->suppress_responses, NULL);
+		if (rcode < 0) return -1;
 	}
 	
 	cp = cf_pair_find(cs, "src_interface");
 	if (cp) {
-		cf_item_parse(cs, "src_interface", PW_TYPE_STRING_PTR,
-			      &sock->src_interface, NULL);
+		rcode = cf_item_parse(cs, "src_interface", PW_TYPE_STRING_PTR,
+					&sock->src_interface, NULL);
+		if (rcode < 0) return -1;
 	} else {
                 sock->src_interface = sock->lsock.interface;
         }
