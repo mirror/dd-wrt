@@ -1,7 +1,7 @@
 /*
  * rlm_eap_gtc.c    Handles that are called from eap
  *
- * Version:     $Id: b600f8da8d8321e02a19e813573c4501595963a0 $
+ * Version:     $Id: 187b49bc128a7bde8031a6dd0490dfde9431e98f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,10 +20,7 @@
  * Copyright 2003,2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: b600f8da8d8321e02a19e813573c4501595963a0 $")
-
-#include <freeradius-devel/autoconf.h>
+RCSID("$Id: 187b49bc128a7bde8031a6dd0490dfde9431e98f $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,85 +35,65 @@ RCSID("$Id: b600f8da8d8321e02a19e813573c4501595963a0 $")
  *	protocol.
  */
 typedef struct rlm_eap_gtc_t {
-	const char	*challenge;
-	const char	*auth_type_name;
+	char const	*challenge;
+	char const	*auth_type_name;
 	int		auth_type;
 } rlm_eap_gtc_t;
 
 static CONF_PARSER module_config[] = {
-	{ "challenge", PW_TYPE_STRING_PTR,
-	  offsetof(rlm_eap_gtc_t, challenge), NULL, "Password: " },
+	{ "challenge", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_eap_gtc_t, challenge), "Password: " },
 
-	{ "auth_type", PW_TYPE_STRING_PTR,
-	  offsetof(rlm_eap_gtc_t, auth_type_name), NULL, "PAP" },
+	{ "auth_type", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_eap_gtc_t, auth_type_name), "PAP" },
 
- 	{ NULL, -1, 0, NULL, NULL }           /* end the list */
+	{ NULL, -1, 0, NULL, NULL }	   /* end the list */
 };
 
 
-/*
- *	Detach the module.
- */
-static int gtc_detach(void *arg)
-{
-	rlm_eap_gtc_t *inst = (rlm_eap_gtc_t *) arg;
-
-
-	free(inst);
-
-	return 0;
-}
 
 /*
  *	Attach the module.
  */
-static int gtc_attach(CONF_SECTION *cs, void **instance)
+static int mod_instantiate(CONF_SECTION *cs, void **instance)
 {
 	rlm_eap_gtc_t	*inst;
 	DICT_VALUE	*dval;
 
-	inst = malloc(sizeof(*inst));
-	if (!inst) {
-		radlog(L_ERR, "rlm_eap_gtc: out of memory");
-		return -1;
-	}
-	memset(inst, 0, sizeof(*inst));
+	*instance = inst = talloc_zero(cs, rlm_eap_gtc_t);
+	if (!inst) return -1;
 
 	/*
 	 *	Parse the configuration attributes.
 	 */
 	if (cf_section_parse(cs, inst, module_config) < 0) {
-		gtc_detach(inst);
 		return -1;
 	}
 
-	dval = dict_valbyname(PW_AUTH_TYPE, inst->auth_type_name);
-	if (!dval) {
-		radlog(L_ERR, "rlm_eap_gtc: Unknown Auth-Type %s",
-		       inst->auth_type_name);
-		gtc_detach(inst);
-		return -1;
+	if (inst->auth_type_name && *inst->auth_type_name) {
+		dval = dict_valbyname(PW_AUTH_TYPE, 0, inst->auth_type_name);
+		if (!dval) {
+			ERROR("rlm_eap_gtc: Unknown Auth-Type %s",
+			      inst->auth_type_name);
+			return -1;
+		}
+
+		inst->auth_type = dval->value;
+	} else {
+		inst->auth_type = PW_AUTHTYPE_LOCAL;
 	}
-
-	inst->auth_type = dval->value;
-
-	*instance = inst;
-
 	return 0;
 }
 
 /*
  *	Initiate the EAP-GTC session by sending a challenge to the peer.
  */
-static int gtc_initiate(void *type_data, EAP_HANDLER *handler)
+static int mod_session_init(void *instance, eap_handler_t *handler)
 {
 	char challenge_str[1024];
 	int length;
 	EAP_DS *eap_ds = handler->eap_ds;
-	rlm_eap_gtc_t *inst = (rlm_eap_gtc_t *) type_data;
+	rlm_eap_gtc_t *inst = (rlm_eap_gtc_t *) instance;
 
-	if (!radius_xlat(challenge_str, sizeof(challenge_str), inst->challenge, handler->request, NULL)) {
-		radlog(L_ERR, "rlm_eap_gtc: xlat of \"%s\" failed", inst->challenge);
+	if (radius_xlat(challenge_str, sizeof(challenge_str), handler->request, inst->challenge, NULL, NULL) < 0) {
 		return 0;
 	}
 
@@ -127,9 +104,9 @@ static int gtc_initiate(void *type_data, EAP_HANDLER *handler)
 	 */
 	eap_ds->request->code = PW_EAP_REQUEST;
 
-	eap_ds->request->type.data = malloc(length);
-	if (eap_ds->request->type.data == NULL) {
-		radlog(L_ERR, "rlm_eap_gtc: out of memory");
+	eap_ds->request->type.data = talloc_array(eap_ds->request,
+						  uint8_t, length);
+	if (!eap_ds->request->type.data) {
 		return 0;
 	}
 
@@ -143,7 +120,7 @@ static int gtc_initiate(void *type_data, EAP_HANDLER *handler)
 	 *	stored in 'handler->eap_ds', which will be given back
 	 *	to us...
 	 */
-	handler->stage = AUTHENTICATE;
+	handler->stage = PROCESS;
 
 	return 1;
 }
@@ -152,24 +129,24 @@ static int gtc_initiate(void *type_data, EAP_HANDLER *handler)
 /*
  *	Authenticate a previously sent challenge.
  */
-static int gtc_authenticate(void *type_data, EAP_HANDLER *handler)
+static int CC_HINT(nonnull) mod_process(void *instance, eap_handler_t *handler)
 {
 	VALUE_PAIR *vp;
 	EAP_DS *eap_ds = handler->eap_ds;
-	rlm_eap_gtc_t *inst = (rlm_eap_gtc_t *) type_data;
+	rlm_eap_gtc_t *inst = (rlm_eap_gtc_t *) instance;
+	REQUEST *request = handler->request;
 
 	/*
 	 *	Get the Cleartext-Password for this user.
 	 */
-	rad_assert(handler->request != NULL);
-	rad_assert(handler->stage == AUTHENTICATE);
+	rad_assert(handler->stage == PROCESS);
 
 	/*
 	 *	Sanity check the response.  We need at least one byte
 	 *	of data.
 	 */
 	if (eap_ds->response->length <= 4) {
-		radlog(L_ERR, "rlm_eap_gtc: corrupted data");
+		ERROR("rlm_eap_gtc: corrupted data");
 		eap_ds->request->code = PW_EAP_FAILURE;
 		return 0;
 	}
@@ -193,24 +170,24 @@ static int gtc_authenticate(void *type_data, EAP_HANDLER *handler)
 	 */
 	if (inst->auth_type == PW_AUTHTYPE_LOCAL) {
 		/*
-		 *	For now, do clear-text password authentication.
+		 *	For now, do cleartext password authentication.
 		 */
-		vp = pairfind(handler->request->config_items, PW_CLEARTEXT_PASSWORD);
+		vp = pairfind(request->config, PW_CLEARTEXT_PASSWORD, 0, TAG_ANY);
 		if (!vp) {
-			DEBUG2("  rlm_eap_gtc: ERROR: Cleartext-Password is required for authentication.");
+			REDEBUG2("Cleartext-Password is required for authentication");
 			eap_ds->request->code = PW_EAP_FAILURE;
 			return 0;
 		}
 
-		if (eap_ds->response->type.length != vp->length) {
-		  DEBUG2("  rlm_eap_gtc: ERROR: Passwords are of different length. %u %u", (unsigned) eap_ds->response->type.length, (unsigned) vp->length);
+		if (eap_ds->response->type.length != vp->vp_length) {
+			REDEBUG2("Passwords are of different length. %u %u", (unsigned) eap_ds->response->type.length, (unsigned) vp->vp_length);
 			eap_ds->request->code = PW_EAP_FAILURE;
 			return 0;
 		}
 
 		if (memcmp(eap_ds->response->type.data,
-			   vp->vp_strvalue, vp->length) != 0) {
-			DEBUG2("  rlm_eap_gtc: ERROR: Passwords are different");
+			   vp->vp_strvalue, vp->vp_length) != 0) {
+			REDEBUG2("Passwords are different");
 			eap_ds->request->code = PW_EAP_FAILURE;
 			return 0;
 		}
@@ -221,46 +198,45 @@ static int gtc_authenticate(void *type_data, EAP_HANDLER *handler)
 		 */
 	} else if (eap_ds->response->type.length <= 128) {
 		int rcode;
+		char *p;
 
 		/*
 		 *	If there was a User-Password in the request,
 		 *	why the heck are they using EAP-GTC?
 		 */
-		pairdelete(&handler->request->packet->vps, PW_USER_PASSWORD);
+		pairdelete(&request->packet->vps, PW_USER_PASSWORD, 0, TAG_ANY);
 
-		vp = pairmake("User-Password", "", T_OP_EQ);
+		vp = pairmake_packet("User-Password", NULL, T_OP_EQ);
 		if (!vp) {
-			radlog(L_ERR, "rlm_eap_gtc: out of memory");
 			return 0;
 		}
-		vp->length = eap_ds->response->type.length;
-		memcpy(vp->vp_strvalue, eap_ds->response->type.data, vp->length);
-		vp->vp_strvalue[vp->length] = 0;
+		vp->vp_length = eap_ds->response->type.length;
+		vp->vp_strvalue = p = talloc_array(vp, char, vp->vp_length + 1);
+		vp->type = VT_DATA;
+		memcpy(p, eap_ds->response->type.data, vp->vp_length);
+		p[vp->vp_length] = 0;
 
 		/*
 		 *	Add the password to the request, and allow
 		 *	another module to do the work of authenticating it.
 		 */
-		pairadd(&handler->request->packet->vps, vp);
-		handler->request->password = vp;
+		request->password = vp;
 
 		/*
 		 *	This is a wild & crazy hack.
 		 */
-		rcode = module_authenticate(inst->auth_type, handler->request);
+		rcode = process_authenticate(inst->auth_type, request);
 		if (rcode != RLM_MODULE_OK) {
 			eap_ds->request->code = PW_EAP_FAILURE;
 			return 0;
 		}
 
 	} else {
-		radlog(L_ERR, "rlm_eap_gtc: Response is too large to understand");
+		ERROR("rlm_eap_gtc: Response is too large to understand");
 		eap_ds->request->code = PW_EAP_FAILURE;
 		return 0;
 
 	}
-
-	DEBUG2("  rlm_eap_gtc: Everything is OK.");
 
 	eap_ds->request->code = PW_EAP_SUCCESS;
 
@@ -271,11 +247,10 @@ static int gtc_authenticate(void *type_data, EAP_HANDLER *handler)
  *	The module name should be the only globally exported symbol.
  *	That is, everything else should be 'static'.
  */
-EAP_TYPE rlm_eap_gtc = {
-	"eap_gtc",
-	gtc_attach,	      		/* attach */
-	gtc_initiate,			/* Start the initial request */
-	NULL,				/* authorization */
-	gtc_authenticate,		/* authentication */
-	gtc_detach     			/* detach */
+extern rlm_eap_module_t rlm_eap_gtc;
+rlm_eap_module_t rlm_eap_gtc = {
+	.name		= "eap_gtc",
+	.instantiate	= mod_instantiate,	/* Create new submodule instance */
+	.session_init	= mod_session_init,	/* Initialise a new EAP session */
+	.process	= mod_process		/* Process next round of EAP method */
 };

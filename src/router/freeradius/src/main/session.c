@@ -1,7 +1,7 @@
 /*
  * session.c	session management
  *
- * Version:	$Id: 5d4986199852f4f8f4ba8f64b1fd7ec0124fadb0 $
+ * Version:	$Id: 2e708c167bb00bfafac13c6b21ae35e43306e4e5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,8 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-#include	<freeradius-devel/ident.h>
-RCSID("$Id: 5d4986199852f4f8f4ba8f64b1fd7ec0124fadb0 $")
+RCSID("$Id: 2e708c167bb00bfafac13c6b21ae35e43306e4e5 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>
@@ -35,9 +34,9 @@ RCSID("$Id: 5d4986199852f4f8f4ba8f64b1fd7ec0124fadb0 $")
 /*
  *	End a session by faking a Stop packet to all accounting modules.
  */
-int session_zap(REQUEST *request, uint32_t nasaddr, unsigned int port,
-		const char *user,
-		const char *sessionid, uint32_t cliaddr, char proto,
+int session_zap(REQUEST *request, uint32_t nasaddr, uint32_t nas_port,
+		char const *user,
+		char const *sessionid, uint32_t cliaddr, char proto,
 		int session_time)
 {
 	REQUEST *stopreq;
@@ -45,32 +44,35 @@ int session_zap(REQUEST *request, uint32_t nasaddr, unsigned int port,
 	int ret;
 
 	stopreq = request_alloc_fake(request);
-	stopreq->packet->code = PW_ACCOUNTING_REQUEST; /* just to be safe */
-	stopreq->listener = request->listener;
 	rad_assert(stopreq != NULL);
+	rad_assert(stopreq->packet != NULL);
+	stopreq->packet->code = PW_CODE_ACCOUNTING_REQUEST; /* just to be safe */
+	stopreq->listener = request->listener;
 
 	/* Hold your breath */
-#define PAIR(n,v,t,e) do { \
-		if(!(vp = paircreate(n, t))) { \
-			request_free(&stopreq); \
-			radlog(L_ERR|L_CONS, "no memory"); \
+#define PAIR(n,v,e) do { \
+		if(!(vp = paircreate(stopreq->packet,n, 0))) {	\
+			talloc_free(stopreq); \
+			ERROR("no memory"); \
 			pairfree(&(stopreq->packet->vps)); \
 			return 0; \
 		} \
 		vp->e = v; \
 		pairadd(&(stopreq->packet->vps), vp); \
 	} while(0)
-#define INTPAIR(n,v) PAIR(n,v,PW_TYPE_INTEGER,vp_integer)
-#define IPPAIR(n,v) PAIR(n,v,PW_TYPE_IPADDR,vp_ipaddr)
+
+#define INTPAIR(n,v) PAIR(n,v,vp_integer)
+
+#define IPPAIR(n,v) PAIR(n,v,vp_ipaddr)
+
 #define STRINGPAIR(n,v) do { \
-	if(!(vp = paircreate(n, PW_TYPE_STRING))) { \
-		request_free(&stopreq); \
-		radlog(L_ERR|L_CONS, "no memory"); \
+	  if(!(vp = paircreate(stopreq->packet,n, 0))) {	\
+		talloc_free(stopreq); \
+		ERROR("no memory"); \
 		pairfree(&(stopreq->packet->vps)); \
 		return 0; \
 	} \
-	strlcpy((char *)vp->vp_strvalue, v, sizeof vp->vp_strvalue); \
-	vp->length = strlen(v); \
+	pairstrcpy(vp, v);	\
 	pairadd(&(stopreq->packet->vps), vp); \
 	} while(0)
 
@@ -79,7 +81,7 @@ int session_zap(REQUEST *request, uint32_t nasaddr, unsigned int port,
 	INTPAIR(PW_ACCT_DELAY_TIME, 0);
 	STRINGPAIR(PW_USER_NAME, user);
 	userpair = vp;
-	INTPAIR(PW_NAS_PORT, port);
+	INTPAIR(PW_NAS_PORT, nas_port);
 	STRINGPAIR(PW_ACCT_SESSION_ID, sessionid);
 	if(proto == 'P') {
 		INTPAIR(PW_SERVICE_TYPE, PW_FRAMED_USER);
@@ -106,7 +108,7 @@ int session_zap(REQUEST *request, uint32_t nasaddr, unsigned int port,
 	/*
 	 *  We've got to clean it up by hand, because no one else will.
 	 */
-	request_free(&stopreq);
+	talloc_free(stopreq);
 
 	return ret;
 }
@@ -121,8 +123,8 @@ int session_zap(REQUEST *request, uint32_t nasaddr, unsigned int port,
  *		1 The user is logged in.
  *		2 Some error occured.
  */
-int rad_check_ts(uint32_t nasaddr, unsigned int portnum, const char *user,
-		 const char *session_id)
+int rad_check_ts(uint32_t nasaddr, uint32_t nas_port, char const *user,
+		 char const *session_id)
 {
 	pid_t	pid, child_pid;
 	int	status;
@@ -148,10 +150,10 @@ int rad_check_ts(uint32_t nasaddr, unsigned int portnum, const char *user,
 	}
 
 	/*
-	 *  No nastype, or nas type 'other', trust radutmp.
+	 *  No nas_type, or nas type 'other', trust radutmp.
 	 */
-	if (!cl->nastype || (cl->nastype[0] == '\0') ||
-	    (strcmp(cl->nastype, "other") == 0)) {
+	if (!cl->nas_type || (cl->nas_type[0] == '\0') ||
+	    (strcmp(cl->nas_type, "other") == 0)) {
 		DEBUG2("checkrad: No NAS type, or type \"other\" not checking");
 		return 1;
 	}
@@ -160,7 +162,7 @@ int rad_check_ts(uint32_t nasaddr, unsigned int portnum, const char *user,
 	 *	Fork.
 	 */
 	if ((pid = rad_fork()) < 0) { /* do wait for the fork'd result */
-		radlog(L_ERR, "Accounting: Failed in fork(): Cannot run checkrad\n");
+		ERROR("Accounting: Failed in fork(): Cannot run checkrad\n");
 		return 2;
 	}
 
@@ -174,12 +176,12 @@ int rad_check_ts(uint32_t nasaddr, unsigned int portnum, const char *user,
 		 *	happens to it now.
 		 */
 		if (child_pid == 0) {
-			radlog(L_ERR, "Check-TS: timeout waiting for checkrad");
+			ERROR("Check-TS: timeout waiting for checkrad");
 			return 2;
 		}
 
 		if (child_pid < 0) {
-			radlog(L_ERR, "Check-TS: unknown error in waitpid()");
+			ERROR("Check-TS: unknown error in waitpid()");
 			return 2;
 		}
 
@@ -197,31 +199,30 @@ int rad_check_ts(uint32_t nasaddr, unsigned int portnum, const char *user,
 	closefrom(3);
 
 	ip_ntoa(address, nasaddr);
-	snprintf(port, 11, "%u", portnum);
+	snprintf(port, 11, "%u", nas_port);
 
 #ifdef __EMX__
 	/* OS/2 can't directly execute scripts then we call the command
 	   processor to execute checkrad
 	*/
-	execl(getenv("COMSPEC"), "", "/C","checkrad", cl->nastype, address, port,
+	execl(getenv("COMSPEC"), "", "/C","checkrad", cl->nas_type, address, port,
 		user, session_id, NULL);
 #else
-	execl(mainconfig.checkrad, "checkrad", cl->nastype, address, port,
+	execl(main_config.checkrad, "checkrad", cl->nas_type, address, port,
 		user, session_id, NULL);
 #endif
-	radlog(L_ERR, "Check-TS: exec %s: %s", mainconfig.checkrad, strerror(errno));
+	ERROR("Check-TS: exec %s: %s", main_config.checkrad, fr_syserror(errno));
 
 	/*
 	 *	Exit - 2 means "some error occured".
 	 */
 	exit(2);
-	return 2;
 }
 #else
-int rad_check_ts(UNUSED uint32_t nasaddr, UNUSED unsigned int portnum,
-		 UNUSED const char *user, UNUSED const char *session_id)
+int rad_check_ts(UNUSED uint32_t nasaddr, UNUSED unsigned int nas_port,
+		 UNUSED char const *user, UNUSED char const *session_id)
 {
-	radlog(L_ERR, "Simultaneous-Use is not supported");
+	ERROR("Simultaneous-Use is not supported");
 	return 2;
 }
 #endif
@@ -229,18 +230,18 @@ int rad_check_ts(UNUSED uint32_t nasaddr, UNUSED unsigned int portnum,
 #else
 /* WITH_SESSION_MGMT */
 
-int session_zap(UNUSED REQUEST *request, UNUSED uint32_t nasaddr, UNUSED unsigned int port,
-		UNUSED const char *user,
-		UNUSED const char *sessionid, UNUSED uint32_t cliaddr, UNUSED char proto,
+int session_zap(UNUSED REQUEST *request, UNUSED uint32_t nasaddr, UNUSED uint32_t nas_port,
+		UNUSED char const *user,
+		UNUSED char const *sessionid, UNUSED uint32_t cliaddr, UNUSED char proto,
 		UNUSED int session_time)
 {
 	return RLM_MODULE_FAIL;
 }
 
-int rad_check_ts(UNUSED uint32_t nasaddr, UNUSED unsigned int portnum,
-		 UNUSED const char *user, UNUSED const char *session_id)
+int rad_check_ts(UNUSED uint32_t nasaddr, UNUSED unsigned int nas_port,
+		 UNUSED char const *user, UNUSED char const *session_id)
 {
-	radlog(L_ERR, "Simultaneous-Use is not supported");
+	ERROR("Simultaneous-Use is not supported");
 	return 2;
 }
 #endif

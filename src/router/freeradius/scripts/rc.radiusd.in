@@ -90,8 +90,7 @@ case "$1" in
 	sh $0 start
 	;;
   check)
-	$RADIUSD -CX $ARGS
-	exit $?
+  	$RADIUSD -C $ARGS
 	;;
   *)
         echo "Usage: /etc/init.d/$RADIUS {start|stop|reload|restart|check}"

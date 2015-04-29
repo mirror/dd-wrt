@@ -1,31 +1,34 @@
 /*
- * rlm_opendirectory.c
- *		authentication: Apple Open Directory authentication
- *		authorization:  enforces ACLs
- *
- * Version:	$Id: a160b810301652d3b4cd2dd787b2cf5efec307fc $
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2 only, as published by
- *   the Free Software Foundation.
+ *   This program is is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License, version 2 of the
+ *   License as published by the Free Software Foundation.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License version 2
+ *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ */
+
+/**
+ * $Id: 90a570fc932217da1531a5ca377ef7d0d81319c5 $
+ * @file rlm_opendirectory.c
+ * @brief Allows authentication against OpenDirectory and enforces ACLS.
  *
- * Copyright 2007 Apple Inc.
+ * authentication: Apple Open Directory authentication
+ * authorization:  enforces ACLs
+ *
+ * @copyright 2007 Apple Inc.
  */
 
 /*
  * 	For a typical Makefile, add linker flag like this:
  *	LDFLAGS = -framework DirectoryService
  */
-
+USES_APPLE_DEPRECATED_API
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 #include <freeradius-devel/rad_assert.h>
@@ -41,18 +44,18 @@
 #include <DirectoryService/DirectoryService.h>
 #include <membership.h>
 
-#if HAVE_APPLE_SPI
-#include <membershipPriv.h>
-#else
-int mbr_check_service_membership(const uuid_t user, const char *servicename, int *ismember);
-int mbr_check_membership_refresh(const uuid_t user, uuid_t group, int *ismember);
+#ifndef HAVE_DECL_MBR_CHECK_SERVICE_MEMBERSHIP
+int mbr_check_service_membership(uuid_t const user, char const *servicename, int *ismember);
+#endif
+#ifndef HAVE_DECL_MBR_CHECK_MEMBERSHIP_REFRESH
+int mbr_check_membership_refresh(uuid_t const user, uuid_t group, int *ismember);
 #endif
 
 /* RADIUS service ACL constants */
 #define kRadiusSACLName		"com.apple.access_radius"
 #define kRadiusServiceName	"radius"
 
-#define kAuthType           "opendirectory"
+#define kAuthType		   "opendirectory"
 
 /*
  *	od_check_passwd
@@ -60,59 +63,59 @@ int mbr_check_membership_refresh(const uuid_t user, uuid_t group, int *ismember)
  *  Returns: ds err
  */
 
-static long od_check_passwd(const char *uname, const char *password)
+static long od_check_passwd(REQUEST *request, char const *uname, char const *password)
 {
-	long						result				= eDSAuthFailed;
-	tDirReference				dsRef				= 0;
-    tDataBuffer				   *tDataBuff			= NULL;
-    tDirNodeReference			nodeRef				= 0;
-    long						status				= eDSNoErr;
-    tContextData				context				= 0;
-	unsigned long				nodeCount			= 0;
-	uint32_t			    	attrIndex			= 0;
-	tDataList				   *nodeName			= NULL;
-    tAttributeEntryPtr			pAttrEntry			= NULL;
-	tDataList				   *pRecName			= NULL;
-	tDataList				   *pRecType			= NULL;
-	tDataList				   *pAttrType			= NULL;
-	unsigned long				recCount			= 0;
-	tRecordEntry		  	 	*pRecEntry			= NULL;
-	tAttributeListRef			attrListRef			= 0;
-	char					   *pUserLocation		= NULL;
-	char					   *pUserName			= NULL;
-	tAttributeValueListRef		valueRef			= 0;
-	tAttributeValueEntry  	 	*pValueEntry		= NULL;
-	tDataList				   *pUserNode			= NULL;
-	tDirNodeReference			userNodeRef			= 0;
-	tDataBuffer					*pStepBuff			= NULL;
-	tDataNode				   *pAuthType			= NULL;
-	tAttributeValueEntry	   *pRecordType			= NULL;
-	uint32_t    				uiCurr				= 0;
-	uint32_t    				uiLen				= 0;
-	uint32_t    				pwLen				= 0;
-	
-	if (uname == NULL || password == NULL)
+	long			result 		= eDSAuthFailed;
+	tDirReference		dsRef 		= 0;
+	tDataBuffer		*tDataBuff;
+	tDirNodeReference	nodeRef 	= 0;
+	long			status 		= eDSNoErr;
+	tContextData		context		= 0;
+	uint32_t		nodeCount 	= 0;
+	uint32_t		attrIndex 	= 0;
+	tDataList		*nodeName 	= NULL;
+	tAttributeEntryPtr	pAttrEntry 	= NULL;
+	tDataList		*pRecName 	= NULL;
+	tDataList		*pRecType 	= NULL;
+	tDataList		*pAttrType 	= NULL;
+	uint32_t		recCount 	= 0;
+	tRecordEntry		*pRecEntry 	= NULL;
+	tAttributeListRef	attrListRef 	= 0;
+	char			*pUserLocation 	= NULL;
+	char			*pUserName 	= NULL;
+	tAttributeValueListRef	valueRef 	= 0;
+	tAttributeValueEntry	*pValueEntry 	= NULL;
+	tDataList		*pUserNode 	= NULL;
+	tDirNodeReference	userNodeRef 	= 0;
+	tDataBuffer		*pStepBuff 	= NULL;
+	tDataNode		*pAuthType 	= NULL;
+	tAttributeValueEntry	*pRecordType 	= NULL;
+	uint32_t		uiCurr 		= 0;
+	uint32_t		uiLen 		= 0;
+	uint32_t		pwLen 		= 0;
+
+	if (!uname || !password)
 		return result;
-	
+
 	do
-	{		
+	{
 		status = dsOpenDirService( &dsRef );
 		if ( status != eDSNoErr )
 			return result;
-		
+
 		tDataBuff = dsDataBufferAllocate( dsRef, 4096 );
-		if (tDataBuff == NULL)
+		if (!tDataBuff)
 			break;
-		
+
 		/* find user on search node */
 		status = dsFindDirNodes( dsRef, tDataBuff, NULL, eDSSearchNodeName, &nodeCount, &context );
 		if (status != eDSNoErr || nodeCount < 1)
 			break;
-		
+
 		status = dsGetDirNodeName( dsRef, tDataBuff, 1, &nodeName );
 		if (status != eDSNoErr)
 			break;
-		
+
 		status = dsOpenDirNode( dsRef, nodeName, &nodeRef );
 		dsDataListDeallocate( dsRef, nodeName );
 		free( nodeName );
@@ -123,17 +126,17 @@ static long od_check_passwd(const char *uname, const char *password)
 		pRecName = dsBuildListFromStrings( dsRef, uname, NULL );
 		pRecType = dsBuildListFromStrings( dsRef, kDSStdRecordTypeUsers, kDSStdRecordTypeComputers, kDSStdRecordTypeMachines, NULL );
 		pAttrType = dsBuildListFromStrings( dsRef, kDSNAttrMetaNodeLocation, kDSNAttrRecordName, kDSNAttrRecordType, NULL );
-		
+
 		recCount = 1;
 		status = dsGetRecordList( nodeRef, tDataBuff, pRecName, eDSExact, pRecType,
 													pAttrType, 0, &recCount, &context );
 		if ( status != eDSNoErr || recCount == 0 )
 			break;
-				
+
 		status = dsGetRecordEntry( nodeRef, tDataBuff, 1, &attrListRef, &pRecEntry );
 		if ( status != eDSNoErr )
 			break;
-		
+
 		for ( attrIndex = 1; (attrIndex <= pRecEntry->fRecordAttributeCount) && (status == eDSNoErr); attrIndex++ )
 		{
 			status = dsGetAttributeEntry( nodeRef, tDataBuff, attrListRef, attrIndex, &valueRef, &pAttrEntry );
@@ -144,7 +147,7 @@ static long od_check_passwd(const char *uname, const char *password)
 					status = dsGetAttributeValue( nodeRef, tDataBuff, 1, valueRef, &pValueEntry );
 					if ( status == eDSNoErr && pValueEntry != NULL )
 					{
-						pUserLocation = (char *) calloc( pValueEntry->fAttributeValueData.fBufferLength + 1, sizeof(char) );
+						pUserLocation = talloc_zero_array(request, char, pValueEntry->fAttributeValueData.fBufferLength + 1);
 						memcpy( pUserLocation, pValueEntry->fAttributeValueData.fBufferData, pValueEntry->fAttributeValueData.fBufferLength );
 					}
 				}
@@ -154,7 +157,7 @@ static long od_check_passwd(const char *uname, const char *password)
 					status = dsGetAttributeValue( nodeRef, tDataBuff, 1, valueRef, &pValueEntry );
 					if ( status == eDSNoErr && pValueEntry != NULL )
 					{
-						pUserName = (char *) calloc( pValueEntry->fAttributeValueData.fBufferLength + 1, sizeof(char) );
+						pUserName = talloc_zero_array(request, char, pValueEntry->fAttributeValueData.fBufferLength + 1);
 						memcpy( pUserName, pValueEntry->fAttributeValueData.fBufferData, pValueEntry->fAttributeValueData.fBufferLength );
 					}
 				}
@@ -168,7 +171,7 @@ static long od_check_passwd(const char *uname, const char *password)
 						pValueEntry = NULL;
 					}
 				}
-				
+
 				if ( pValueEntry != NULL ) {
 					dsDeallocAttributeValueEntry( dsRef, pValueEntry );
 					pValueEntry = NULL;
@@ -181,7 +184,7 @@ static long od_check_passwd(const char *uname, const char *password)
 				valueRef = 0;
 			}
 		}
-		
+
 		pUserNode = dsBuildFromPath( dsRef, pUserLocation, "/" );
 		status = dsOpenDirNode( dsRef, pUserNode, &userNodeRef );
 		dsDataListDeallocate( dsRef, pUserNode );
@@ -189,32 +192,37 @@ static long od_check_passwd(const char *uname, const char *password)
 		pUserNode = NULL;
 		if ( status != eDSNoErr )
 			break;
-		
+
 		pStepBuff = dsDataBufferAllocate( dsRef, 128 );
-		
+
 		pAuthType = dsDataNodeAllocateString( dsRef, kDSStdAuthNodeNativeClearTextOK );
 		uiCurr = 0;
-		
+
+		if (!pUserName) {
+			RDEBUG("Failed to find user name");
+			break;
+		}
+
 		/* User name */
 		uiLen = (uint32_t)strlen( pUserName );
 		memcpy( &(tDataBuff->fBufferData[ uiCurr ]), &uiLen, sizeof(uiLen) );
 		uiCurr += (uint32_t)sizeof( uiLen );
 		memcpy( &(tDataBuff->fBufferData[ uiCurr ]), pUserName, uiLen );
 		uiCurr += uiLen;
-		
+
 		/* pw */
 		pwLen = (uint32_t)strlen( password );
 		memcpy( &(tDataBuff->fBufferData[ uiCurr ]), &pwLen, sizeof(pwLen) );
 		uiCurr += (uint32_t)sizeof( pwLen );
 		memcpy( &(tDataBuff->fBufferData[ uiCurr ]), password, pwLen );
 		uiCurr += pwLen;
-		
+
 		tDataBuff->fBufferLength = uiCurr;
-		
+
 		result = dsDoDirNodeAuthOnRecordType( userNodeRef, pAuthType, 1, tDataBuff, pStepBuff, NULL, &pRecordType->fAttributeValueData );
 	}
 	while ( 0 );
-	
+
 	/* clean up */
 	if (pAuthType != NULL) {
 		dsDataNodeDeAllocate( dsRef, pAuthType );
@@ -234,8 +242,12 @@ static long od_check_passwd(const char *uname, const char *password)
 		pStepBuff = NULL;
 	}
 	if (pUserLocation != NULL) {
-		free(pUserLocation);
+		talloc_free(pUserLocation);
 		pUserLocation = NULL;
+	}
+	if (pUserName != NULL) {
+		talloc_free(pUserName);
+		pUserName = NULL;
 	}
 	if (pRecName != NULL) {
 		dsDataListDeallocate( dsRef, pRecName );
@@ -260,7 +272,7 @@ static long od_check_passwd(const char *uname, const char *password)
 		dsCloseDirService(dsRef);
 		dsRef = 0;
 	}
-	
+
 	return result;
 }
 
@@ -269,18 +281,17 @@ static long od_check_passwd(const char *uname, const char *password)
  *	Check the users password against the standard UNIX
  *	password table.
  */
-static int od_authenticate(UNUSED void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(UNUSED void *instance, REQUEST *request)
 {
-	char *name, *passwd;
 	int		ret;
 	long odResult = eDSAuthFailed;
-	
+
 	/*
 	 *	We can only authenticate user requests which HAVE
 	 *	a User-Name attribute.
 	 */
 	if (!request->username) {
-		RDEBUG("ERROR: You set 'Auth-Type = OpenDirectory' for a request that does not contain a User-Name attribute!");
+		REDEBUG("You set 'Auth-Type = OpenDirectory' for a request that does not contain a User-Name attribute!");
 		return RLM_MODULE_INVALID;
 	}
 
@@ -288,21 +299,18 @@ static int od_authenticate(UNUSED void *instance, REQUEST *request)
 	 *	Can't do OpenDirectory if there's no password.
 	 */
 	if (!request->password ||
-	    (request->password->attribute != PW_PASSWORD)) {
-		RDEBUG("ERROR: You set 'Auth-Type = OpenDirectory' for a request that does not contain a User-Password attribute!");
+		(request->password->da->attr != PW_USER_PASSWORD)) {
+		REDEBUG("You set 'Auth-Type = OpenDirectory' for a request that does not contain a User-Password attribute!");
 		return RLM_MODULE_INVALID;
 	}
-	
-	name = (char *)request->username->vp_strvalue;
-	passwd = (char *)request->password->vp_strvalue;
-	
-	odResult = od_check_passwd(name, passwd);
-	switch(odResult)
-	{
+
+	odResult = od_check_passwd(request, request->username->vp_strvalue,
+				   request->password->vp_strvalue);
+	switch (odResult) {
 		case eDSNoErr:
 			ret = RLM_MODULE_OK;
 			break;
-			
+
 		case eDSAuthUnknownUser:
 		case eDSAuthInvalidUserName:
 		case eDSAuthNewPasswordRequired:
@@ -314,17 +322,17 @@ static int od_authenticate(UNUSED void *instance, REQUEST *request)
 		case eDSAuthInvalidComputer:
 			ret = RLM_MODULE_USERLOCK;
 			break;
-		
+
 		default:
 			ret = RLM_MODULE_REJECT;
 			break;
 	}
-	
+
 	if (ret != RLM_MODULE_OK) {
-		RDEBUG("[%s]: Invalid password", name);
- 		return ret;
+		RDEBUG("[%s]: Invalid password", request->username->vp_strvalue);
+		return ret;
 	}
-		
+
 	return RLM_MODULE_OK;
 }
 
@@ -332,11 +340,9 @@ static int od_authenticate(UNUSED void *instance, REQUEST *request)
 /*
  *	member of the radius group?
  */
-static int od_authorize(UNUSED void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST *request)
 {
-	char *name = NULL;
 	struct passwd *userdata = NULL;
-	struct group *groupdata = NULL;
 	int ismember = 0;
 	RADCLIENT *rad_client = NULL;
 	uuid_t uuid;
@@ -344,26 +350,27 @@ static int od_authorize(UNUSED void *instance, REQUEST *request)
 	uuid_t guid_nasgroup;
 	int err;
 	char host_ipaddr[128] = {0};
-	
-	if (!request || !request->username) {
-		RDEBUG("OpenDirectory requires a User-Name attribute.");
+	gid_t gid;
+
+	if (!request->username) {
+		RDEBUG("OpenDirectory requires a User-Name attribute");
 		return RLM_MODULE_NOOP;
 	}
-	
+
 	/* resolve SACL */
 	uuid_clear(guid_sacl);
-	groupdata = rad_getgrnam(kRadiusSACLName);
-	if (groupdata != NULL) {
-		err = mbr_gid_to_uuid(groupdata->gr_gid, guid_sacl);
+
+	if (rad_getgid(request, &gid, kRadiusSACLName) < 0) {
+		err = mbr_gid_to_uuid(gid, guid_sacl);
 		if (err != 0) {
-			radlog(L_ERR, "rlm_opendirectory: The group \"%s\" does not have a GUID.", kRadiusSACLName);
+			ERROR("rlm_opendirectory: The group \"%s\" does not have a GUID.", kRadiusSACLName);
 			return RLM_MODULE_FAIL;
-		}		
+		}
 	}
 	else {
 		RDEBUG("The SACL group \"%s\" does not exist on this system.", kRadiusSACLName);
 	}
-	
+
 	/* resolve client access list */
 	uuid_clear(guid_nasgroup);
 
@@ -377,14 +384,14 @@ static int od_authorize(UNUSED void *instance, REQUEST *request)
 		 */
 		if (uuid_parse(rad_client->community, guid_nasgroup) != 0) {
 			/* attempt to resolve the name */
-			groupdata = rad_getgrnam(rad_client->community);
-			if (groupdata == NULL) {
-				radlog(L_AUTH, "rlm_opendirectory: The group \"%s\" does not exist on this system.", rad_client->community);
+			groupdata = getgrnam(rad_client->community);
+			if (!groupdata) {
+				AUTH("rlm_opendirectory: The group \"%s\" does not exist on this system.", rad_client->community);
 				return RLM_MODULE_FAIL;
 			}
 			err = mbr_gid_to_uuid(groupdata->gr_gid, guid_nasgroup);
 			if (err != 0) {
-				radlog(L_AUTH, "rlm_opendirectory: The group \"%s\" does not have a GUID.", rad_client->community);
+				AUTH("rlm_opendirectory: The group \"%s\" does not have a GUID.", rad_client->community);
 				return RLM_MODULE_FAIL;
 			}
 		}
@@ -392,7 +399,7 @@ static int od_authorize(UNUSED void *instance, REQUEST *request)
 	else
 #endif
 	{
-		if (rad_client == NULL) {
+		if (!rad_client) {
 			RDEBUG("The client record could not be found for host %s.",
 					ip_ntoh(&request->packet->src_ipaddr,
 						host_ipaddr, sizeof(host_ipaddr)));
@@ -403,66 +410,60 @@ static int od_authorize(UNUSED void *instance, REQUEST *request)
 						host_ipaddr, sizeof(host_ipaddr)));
 		}
 	}
-	
+
 	if (uuid_is_null(guid_sacl) && uuid_is_null(guid_nasgroup)) {
-		RDEBUG("no access control groups, all users allowed.");
-    	if (pairfind(request->config_items, PW_AUTH_TYPE) == NULL) {
-    		pairadd(&request->config_items, pairmake("Auth-Type", kAuthType, T_OP_EQ));
-    		RDEBUG("Setting Auth-Type = %s", kAuthType);
+		RDEBUG("no access control groups, all users allowed");
+		if (pairfind(request->config, PW_AUTH_TYPE, 0, TAG_ANY) == NULL) {
+			pairmake_config("Auth-Type", kAuthType, T_OP_EQ);
+			RDEBUG("Setting Auth-Type = %s", kAuthType);
 		}
 		return RLM_MODULE_OK;
 	}
 
 	/* resolve user */
 	uuid_clear(uuid);
-	name = (char *)request->username->vp_strvalue;
-	rad_assert(name != NULL);
 
-	userdata = rad_getpwnam(name);
+	rad_getpwnam(request, &userdata, request->username->vp_strvalue);
 	if (userdata != NULL) {
 		err = mbr_uid_to_uuid(userdata->pw_uid, uuid);
 		if (err != 0)
 			uuid_clear(uuid);
 	}
-	
+	talloc_free(userdata);
+
 	if (uuid_is_null(uuid)) {
-		radius_pairmake(request, &request->packet->vps,
-				"Module-Failure-Message", "Could not get the user's uuid", T_OP_EQ);
+		REDEBUG("Could not get the user's uuid");
 		return RLM_MODULE_NOTFOUND;
 	}
-	
+
 	if (!uuid_is_null(guid_sacl)) {
 		err = mbr_check_service_membership(uuid, kRadiusServiceName, &ismember);
 		if (err != 0) {
-			radius_pairmake(request, &request->packet->vps,
-					"Module-Failure-Message", "Failed to check group membership", T_OP_EQ);
+			REDEBUG("Failed to check group membership");
 			return RLM_MODULE_FAIL;
 		}
-		
+
 		if (ismember == 0) {
-			radius_pairmake(request, &request->packet->vps,
-					"Module-Failure-Message", "User is not authorized", T_OP_EQ);
+			REDEBUG("User is not authorized");
 			return RLM_MODULE_USERLOCK;
 		}
 	}
-	
+
 	if (!uuid_is_null(guid_nasgroup)) {
 		err = mbr_check_membership_refresh(uuid, guid_nasgroup, &ismember);
 		if (err != 0) {
-			radius_pairmake(request, &request->packet->vps,
-					"Module-Failure-Message", "Failed to check group membership", T_OP_EQ);
+			REDEBUG("Failed to check group membership");
 			return RLM_MODULE_FAIL;
 		}
-		
+
 		if (ismember == 0) {
-			radius_pairmake(request, &request->packet->vps,
-					"Module-Failure-Message", "User is not authorized", T_OP_EQ);
+			REDEBUG("User is not authorized");
 			return RLM_MODULE_USERLOCK;
 		}
 	}
-	
-	if (pairfind(request->config_items, PW_AUTH_TYPE) == NULL) {
-		pairadd(&request->config_items, pairmake("Auth-Type", kAuthType, T_OP_EQ));
+
+	if (pairfind(request->config, PW_AUTH_TYPE, 0, TAG_ANY) == NULL) {
+		pairmake_config("Auth-Type", kAuthType, T_OP_EQ);
 		RDEBUG("Setting Auth-Type = %s", kAuthType);
 	}
 
@@ -471,15 +472,18 @@ static int od_authorize(UNUSED void *instance, REQUEST *request)
 
 
 /* globally exported name */
+extern module_t rlm_opendirectory;
 module_t rlm_opendirectory = {
 	RLM_MODULE_INIT,
 	"opendirectory",
 	RLM_TYPE_THREAD_SAFE,	/* type */
+	0,
+	NULL,			/* CONF_PARSER */
 	NULL,			/* instantiation */
-	NULL,               	/* detach */
+	NULL,			   	/* detach */
 	{
-		od_authenticate, /* authentication */
-		od_authorize,	/* authorization */
+		mod_authenticate, /* authentication */
+		mod_authorize,	/* authorization */
 		NULL,		/* preaccounting */
 		NULL,		/* accounting */
 		NULL,		/* checksimul */

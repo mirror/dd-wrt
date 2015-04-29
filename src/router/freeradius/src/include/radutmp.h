@@ -1,14 +1,13 @@
 /*
  * radutmp.h	Definitions for the Radius UTMP file.
  *
- * Version:	$Id: 165a6206a615c1195ad8b9cce582c9d6f76af64b $
+ * Version:	$Id: 77b7551ccbde912378703d3de637df0f4eeb924d $
  */
 
 #ifndef _RADUTMP_H
 #define _RADUTMP_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(radutmp_h, "$Id: 165a6206a615c1195ad8b9cce582c9d6f76af64b $")
+RCSIDH(radutmp_h, "$Id: 77b7551ccbde912378703d3de637df0f4eeb924d $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,17 +18,17 @@ extern "C" {
  */
 #ifndef P_UNKNOWN
 #  define P_UNKNOWN       0
-#  define P_LOCAL         'L'
-#  define P_RLOGIN        'R'
-#  define P_SLIP          'S'
-#  define P_CSLIP         'C'
-#  define P_PPP           'P'
+#  define P_LOCAL	 'L'
+#  define P_RLOGIN	'R'
+#  define P_SLIP	  'S'
+#  define P_CSLIP	 'C'
+#  define P_PPP	   'P'
 #  define P_AUTOPPP       'A'
-#  define P_TELNET        'E'
+#  define P_TELNET	'E'
 #  define P_TCPCLEAR      'T'
 #  define P_TCPLOGIN      'U'
 #  define P_CONSOLE       '!'
-#  define P_SHELL         'X'
+#  define P_SHELL	 'X'
 #endif
 
 #define P_IDLE		0

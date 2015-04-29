@@ -1,10 +1,10 @@
 # -*- text -*-
-# Copyright (C) 2014 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 ##############################################################################
 #
 #	F5 VSAs
 #
-#	$Id: f6e99a76ae8feb51424f638449bcbc523aa87d06 $
+#	$Id: 2425a40216fda54fdeb57dfa5037ff63569a229f $
 #
 ##############################################################################
 
@@ -25,6 +25,7 @@ ATTRIBUTE	F5-LTM-Audit-Msg			14	string
 VALUE	F5-LTM-User-Role		Administrator		0
 VALUE	F5-LTM-User-Role		Resource-Admin		20
 VALUE	F5-LTM-User-Role		User-Manager		40
+VALUE	F5-LTM-User-Role		Auditor			80
 VALUE	F5-LTM-User-Role		Manager			100
 VALUE	F5-LTM-User-Role		App-Editor		300
 VALUE	F5-LTM-User-Role		Advanced-Operator	350

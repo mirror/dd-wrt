@@ -1,77 +1,3 @@
-dnl See whether we need a declaration for a function.
-dnl RADIUSD_NEED_DECLARATION(FUNCTION [, EXTRA-HEADER-FILES])
-AC_DEFUN([RADIUSD_NEED_DECLARATION],
-[AC_MSG_CHECKING([whether $1 must be declared])
-AC_CACHE_VAL(radius_cv_decl_needed_$1,
-[AC_TRY_COMPILE([
-#include <stdio.h>
-#include <string.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_CRYPT_H
-#include <crypt.h>
-#endif
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
-#ifdef HAVE_RESOURCE_H
-#include <resource.h>
-#endif
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-#ifdef HAVE_UTMP_H
-#include <utmp.h>
-#endif
-#ifdef HAVE_UTMPX_H
-#include <utmpx.h>
-#endif
-#ifdef HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
-#ifdef HAVE_DLFCN_H
-#include <dlfcn.h>
-#endif
-#ifdef HAVE_REGEX_H
-#include <regex.h>
-#endif
-#ifdef HAVE_SYSLOG_H
-#include <syslog.h>
-#endif
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#ifdef HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-$2],
-[char *(*pfn) = (char *(*)) $1],
-eval "radius_cv_decl_needed_$1=no", eval "radius_cv_decl_needed_$1=yes")])
-if eval "test \"`echo '$radius_cv_decl_needed_'$1`\" = yes"; then
-  AC_MSG_RESULT(yes)
-  radius_tr_decl=NEED_DECLARATION_`echo $1 | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
-  AC_DEFINE_UNQUOTED($radius_tr_decl)
-else
-  AC_MSG_RESULT(no)
-fi
-])dnl
-
-dnl Check multiple functions to see whether each needs a declaration.
-dnl RADIUSD_NEED_DECLARATIONS(FUNCTION... [, EXTRA-HEADER-FILES])
-AC_DEFUN([RADIUSD_NEED_DECLARATIONS],
-[for ac_func in $1
-do
-RADIUSD_NEED_DECLARATION($ac_func, $2)
-done
-])
-
 dnl Checks to see if this is SUNPro we're building with
 dnl Usage:
 dnl AC_PROG_CC_SUNPRO
@@ -188,10 +114,22 @@ AC_DEFUN([FR_SMART_CHECK_LIB], [
 
 sm_lib_safe=`echo "$1" | sed 'y%./+-%__p_%'`
 sm_func_safe=`echo "$2" | sed 'y%./+-%__p_%'`
-AC_MSG_CHECKING([for $2 in -l$1])
 
+dnl #
+dnl #  We pass all arguments for linker testing in CCPFLAGS as these
+dnl #  will be passed to the compiler (then linker) first.
+dnl #
+dnl #  The linker will search through -L directories in the order they
+dnl #  appear on the command line.  Unfortunately the same rules appear
+dnl #  to apply to directories specified with --sysroot, so we must
+dnl #  pass the user specified directory first.
+dnl #
+dnl #  Really we should be using LDFLAGS (-L<dir>) for this.
+dnl #
 old_LIBS="$LIBS"
+old_CPPFLAGS="$CPPFLAGS"
 smart_lib=
+smart_ldflags=
 smart_lib_dir=
 
 dnl #
@@ -200,25 +138,36 @@ dnl #  the wrong version.
 dnl #
 if test "x$smart_try_dir" != "x"; then
   for try in $smart_try_dir; do
-    LIBS="-L$try -l$1 $old_LIBS"
+    AC_MSG_CHECKING([for $2 in -l$1 in $try])
+    LIBS="-l$1 $old_LIBS"
+    CPPFLAGS="-L$try -Wl,-rpath,$try $old_CPPFLAGS"
     AC_TRY_LINK([extern char $2();],
-		[ $2()],
-		smart_lib="-L$try -l$1")
-    if test "x$smart_lib" != "x"; then
-      break;
-    fi
+		[$2()],
+		[
+		 smart_lib="-l$1"
+		 smart_ldflags="-L$try -Wl,-rpath,$try"
+		 AC_MSG_RESULT(yes)
+		 break
+		],
+		[AC_MSG_RESULT(no)])
   done
   LIBS="$old_LIBS"
+  CPPFLAGS="$old_CPPFLAGS"
 fi
 
 dnl #
 dnl #  Try using the default library path
 dnl #
 if test "x$smart_lib" = "x"; then
+  AC_MSG_CHECKING([for $2 in -l$1])
   LIBS="-l$1 $old_LIBS"
   AC_TRY_LINK([extern char $2();],
-	      [ $2()],
-	      smart_lib="-l$1")
+	      [$2()],
+	      [
+	        smart_lib="-l$1"
+	        AC_MSG_RESULT(yes)
+	      ],
+	      [AC_MSG_RESULT(no)])
   LIBS="$old_LIBS"
 fi
 
@@ -230,27 +179,30 @@ if test "x$smart_lib" = "x"; then
   FR_LOCATE_DIR(smart_lib_dir,[lib$1.a])
 
   for try in $smart_lib_dir /usr/local/lib /opt/lib; do
-    LIBS="-L$try -l$1 $old_LIBS"
+    AC_MSG_CHECKING([for $2 in -l$1 in $try])
+    LIBS="-l$1 $old_LIBS"
+    CPPFLAGS="-L$try -Wl,-rpath,$try $old_CPPFLAGS"
     AC_TRY_LINK([extern char $2();],
-		[ $2()],
-		smart_lib="-L$try -l$1")
-    if test "x$smart_lib" != "x"; then
-      break;
-    fi
+		[$2()],
+		[
+		  smart_lib="-l$1"
+		  smart_ldflags="-L$try -Wl,-rpath,$try"
+		  AC_MSG_RESULT(yes)
+		  break
+		],
+		[AC_MSG_RESULT(no)])
   done
   LIBS="$old_LIBS"
+  CPPFLAGS="$old_CPPFLAGS"
 fi
 
 dnl #
 dnl #  Found it, set the appropriate variable.
 dnl #
 if test "x$smart_lib" != "x"; then
-  AC_MSG_RESULT(yes)
   eval "ac_cv_lib_${sm_lib_safe}_${sm_func_safe}=yes"
-  LIBS="$smart_lib $old_LIBS"
-  SMART_LIBS="$smart_lib $SMART_LIBS"
-else
-  AC_MSG_RESULT(no)
+  LIBS="$smart_ldflags $smart_lib $old_LIBS"
+  SMART_LIBS="$smart_ldflags $smart_lib $SMART_LIBS"
 fi
 ])
 
@@ -263,73 +215,135 @@ dnl #
 AC_DEFUN([FR_SMART_CHECK_INCLUDE], [
 
 ac_safe=`echo "$1" | sed 'y%./+-%__pm%'`
-AC_MSG_CHECKING([for $1])
-
-old_CFLAGS="$CFLAGS"
+old_CPPFLAGS="$CPPFLAGS"
 smart_include=
-smart_include_dir=
+dnl #  The default directories we search in (in addition to the compilers search path)
+smart_include_dir="/usr/local/include /opt/include"
+
+dnl #  Our local versions
+_smart_try_dir=
+_smart_include_dir=
+
+dnl #  Add variants with the different prefixes and one with no prefix
+for _prefix in $smart_prefix ""; do
+  for _dir in $smart_try_dir; do
+    _smart_try_dir="${_smart_try_dir} ${_dir}/${_prefix}"
+  done
+
+  for _dir in $smart_include_dir; do
+    _smart_include_dir="${_smart_include_dir} ${_dir}/${_prefix}"
+  done
+done
 
 dnl #
-dnl #  Try first any user-specified directory, otherwise we may pick up
+dnl #  Try any user-specified directory first otherwise we may pick up
 dnl #  the wrong version.
 dnl #
-if test "x$smart_try_dir" != "x"; then
-  for try in $smart_try_dir; do
-    CFLAGS="$old_CFLAGS -I$try"
+if test "x$_smart_try_dir" != "x"; then
+  for try in $_smart_try_dir; do
+    AC_MSG_CHECKING([for $1 in $try])
+    CPPFLAGS="-isystem $try $old_CPPFLAGS"
     AC_TRY_COMPILE([$2
 		    #include <$1>],
-		   [ int a = 1;],
-		   smart_include="-I$try",
-		   smart_include=)
-    if test "x$smart_include" != "x"; then
-      break;
-    fi
+		   [int a = 1;],
+		   [
+		     smart_include="-isystem $try"
+		     AC_MSG_RESULT(yes)
+		     break
+		   ],
+		   [
+		     smart_include=
+		     AC_MSG_RESULT(no)
+		   ])
   done
-  CFLAGS="$old_CFLAGS"
+  CPPFLAGS="$old_CPPFLAGS"
 fi
 
 dnl #
-dnl #  Try using the default includes.
+dnl #  Try using the default includes (with prefixes).
 dnl #
 if test "x$smart_include" = "x"; then
-  AC_TRY_COMPILE([$2
-		  #include <$1>],
-		 [ int a = 1;],
-		 smart_include=" ",
-		 smart_include=)
+  for _prefix in $smart_prefix; do
+    AC_MSG_CHECKING([for ${_prefix}/$1])
+
+    AC_TRY_COMPILE([$2
+		    #include <$1>],
+		   [int a = 1;],
+		   [
+		     smart_include="-isystem ${_prefix}/"
+		     AC_MSG_RESULT(yes)
+		     break
+		   ],
+		   [
+		     smart_include=
+		     AC_MSG_RESULT(no)
+		   ])
+  done
+fi
+
+dnl #
+dnl #  Try using the default includes (without prefixes).
+dnl #
+if test "x$smart_include" = "x"; then
+    AC_MSG_CHECKING([for $1])
+
+    AC_TRY_COMPILE([$2
+		    #include <$1>],
+		   [int a = 1;],
+		   [
+		     smart_include=" "
+		     AC_MSG_RESULT(yes)
+		     break
+		   ],
+		   [
+		     smart_include=
+		     AC_MSG_RESULT(no)
+		   ])
 fi
 
 dnl #
 dnl #  Try to guess possible locations.
 dnl #
 if test "x$smart_include" = "x"; then
-  FR_LOCATE_DIR(smart_include_dir,$1)
 
-  for try in $smart_include_dir /usr/local/include /opt/include; do
-    CFLAGS="$old_CFLAGS -I$try"
+  for prefix in $smart_prefix; do
+    FR_LOCATE_DIR(_smart_include_dir,"${_prefix}/${1}")
+  done
+  FR_LOCATE_DIR(_smart_include_dir, $1)
+
+  for try in $_smart_include_dir; do
+    AC_MSG_CHECKING([for $1 in $try])
+    CPPFLAGS="-isystem $try $old_CPPFLAGS"
     AC_TRY_COMPILE([$2
 		    #include <$1>],
-		   [ int a = 1;],
-		   smart_include="-I$try",
-		   smart_include=)
-    if test "x$smart_include" != "x"; then
-      break;
-    fi
+		   [int a = 1;],
+		   [
+		     smart_include="-isystem $try"
+		     AC_MSG_RESULT(yes)
+		     break
+		   ],
+		   [
+		     smart_include=
+		     AC_MSG_RESULT(no)
+		   ])
   done
-  CFLAGS="$old_CFLAGS"
+  CPPFLAGS="$old_CPPFLAGS"
 fi
 
 dnl #
 dnl #  Found it, set the appropriate variable.
 dnl #
 if test "x$smart_include" != "x"; then
-  AC_MSG_RESULT(yes)
   eval "ac_cv_header_$ac_safe=yes"
-  CFLAGS="$old_CFLAGS $smart_include"
-  SMART_CFLAGS="$SMART_CFLAGS $smart_include"
-else
-  AC_MSG_RESULT(no)
+  CPPFLAGS="$smart_include $old_CPPFLAGS"
+  SMART_CPPFLAGS="$smart_include $SMART_CPPFLAGS"
 fi
+
+dnl #
+dnl #  Consume prefix, it's not likely to be used
+dnl #  between multiple calls.
+dnl #
+smart_prefix=
 ])
 
 dnl #######################################################################
@@ -365,7 +379,7 @@ $1
     AC_MSG_RESULT(yes)
     eval "ac_cv_type_${ac_safe_type}_has_$3=yes"
   else
-    AC_MSG_RESULT(no) 
+    AC_MSG_RESULT(no)
     eval "ac_cv_type_${ac_safe_type}_has_$3="
  fi
 ])
@@ -380,11 +394,14 @@ m4_pushdef([AC_OUTPUT],
   AC_OUTPUT([$1],[$2],[$3])
 ])
 
-
-#  See if the compilation works with __thread, for thread-local storage
-#
+dnl #
+dnl #  Figure out which storage class specifier for Thread Local Storage is supported by the compiler
+dnl #
 AC_DEFUN([FR_TLS],
 [
+dnl #
+dnl #  See if the compilation works with __thread, for thread-local storage
+dnl #
   AC_MSG_CHECKING(for __thread support in compiler)
   AC_RUN_IFELSE(
     [AC_LANG_SOURCE(
@@ -398,15 +415,57 @@ AC_DEFUN([FR_TLS],
     ],[have_tls=yes],[have_tls=no],[have_tls=no])
   AC_MSG_RESULT($have_tls)
   if test "x$have_tls" = "xyes"; then
-    AC_DEFINE([HAVE_THREAD_TLS],[1],[Define if the compiler supports __thread])
+    AC_DEFINE([TLS_STORAGE_CLASS],[__thread],[Define if the compiler supports a thread local storage class])
+  fi
+
+dnl #
+dnl #  __declspec(thread) does exactly the same thing as __thread, but is supported by MSVS
+dnl #
+  if test "x$have_tls" = "xno"; then
+    AC_MSG_CHECKING(for __declspec(thread) support in compiler)
+    AC_RUN_IFELSE(
+      [AC_LANG_SOURCE(
+        [[
+          static _Thread_local int val;
+          int main(int argc, char **argv) {
+            val = 0;
+            return val;
+          }
+        ]])
+      ],[have_tls=yes],[have_tls=no],[have_tls=no])
+    AC_MSG_RESULT($have_tls)
+    if test "x$have_tls" = "xyes"; then
+      AC_DEFINE([TLS_STORAGE_CLASS],[__declspec(thread)],[Define if the compiler supports a thread local storage class])
+    fi
+  fi
+dnl #
+dnl #  _Thread_local does exactly the same thing as __thread, but it's standards compliant with C11.
+dnl #  we, however, state we are only compliant with C99, so the compiler will probably emit warnings
+dnl #  if we use it.  So save it as a last resort.
+dnl #
+  if test "x$have_tls" = "xno"; then
+    AC_MSG_CHECKING(for _Thread_local support in compiler)
+    AC_RUN_IFELSE(
+      [AC_LANG_SOURCE(
+        [[
+          static _Thread_local int val;
+          int main(int argc, char **argv) {
+            val = 0;
+            return val;
+          }
+        ]])
+      ],[have_tls=yes],[have_tls=no],[have_tls=no])
+    AC_MSG_RESULT($have_tls)
+    if test "x$have_tls" = "xyes"; then
+      AC_DEFINE([TLS_STORAGE_CLASS],[_Thread_local],[Define if the compiler supports a thread local storage class])
+    fi
   fi
 ])
 
-
-AC_DEFUN([AC_LIB_READLINE], [
+AC_DEFUN([VL_LIB_READLINE], [
   AC_CACHE_CHECK([for a readline compatible library],
-                 ac_cv_lib_readline, [
-    ORIG_LIBS=$LIBS
+                 vl_cv_lib_readline, [
+    ORIG_LIBS="$LIBS"
     for readline_lib in readline edit editline; do
       for termcap_lib in "" termcap curses ncurses; do
         if test -z "$termcap_lib"; then
@@ -415,38 +474,139 @@ AC_DEFUN([AC_LIB_READLINE], [
           TRY_LIB="-l$readline_lib -l$termcap_lib"
         fi
         LIBS="$ORIG_LIBS $TRY_LIB"
-        AC_TRY_LINK_FUNC(readline, ac_cv_lib_readline="$TRY_LIB")
-        if test -n "$ac_cv_lib_readline"; then
+        AC_TRY_LINK_FUNC(readline, vl_cv_lib_readline="$TRY_LIB")
+        if test -n "$vl_cv_lib_readline"; then
           break
         fi
       done
-      if test -n "$ac_cv_lib_readline"; then
+      if test -n "$vl_cv_lib_readline"; then
         break
       fi
     done
-    if test -z "$ac_cv_lib_readline"; then
-      ac_cv_lib_readline="no"
+    if test -z "$vl_cv_lib_readline"; then
+      vl_cv_lib_readline="no"
+      LIBS="$ORIG_LIBS"
     fi
-    LIBS=$ORIG_LIBS
   ])
 
-  if test "$ac_cv_lib_readline" != "no"; then
-    LIBREADLINE="$ac_cv_lib_readline"
+  if test "$vl_cv_lib_readline" != "no"; then
+    LIBREADLINE="$vl_cv_lib_readline"
     AC_DEFINE(HAVE_LIBREADLINE, 1,
               [Define if you have a readline compatible library])
     AC_CHECK_HEADERS(readline.h readline/readline.h)
     AC_CACHE_CHECK([whether readline supports history],
-                   ac_cv_lib_readline_history, [
-      ac_cv_lib_readline_history="no"
-      AC_TRY_LINK_FUNC(add_history, ac_cv_lib_readline_history="yes")
+                   [vl_cv_lib_readline_history], [
+      vl_cv_lib_readline_history="no"
+      AC_TRY_LINK_FUNC([add_history], [vl_cv_lib_readline_history="yes"])
     ])
-    if test "$ac_cv_lib_readline_history" = "yes"; then
+    if test "$vl_cv_lib_readline_history" = "yes"; then
       AC_DEFINE(HAVE_READLINE_HISTORY, 1,
                 [Define if your readline library has \`add_history'])
       AC_CHECK_HEADERS(history.h readline/history.h)
     fi
   fi
   AC_SUBST(LIBREADLINE)
+])dnl
+
+dnl #
+dnl #  Check if we have the choose expr builtin
+dnl #
+AC_DEFUN([FR_HAVE_BUILTIN_CHOOSE_EXPR],
+[
+  AC_CACHE_CHECK([for __builtin_choose_expr support in compiler], [ax_cv_cc_builtin_choose_expr],[
+    AC_RUN_IFELSE(
+      [
+        AC_LANG_SOURCE(
+        [
+          int main(int argc, char **argv) {
+            if ((argc < 0) || !argv) return 1; /* -Werror=unused-parameter */
+            return __builtin_choose_expr(0, 1, 0);
+          }
+        ])
+      ],
+      [ax_cv_cc_builtin_choose_expr=yes],
+      [ax_cv_cc_builtin_choose_expr=no]
+    )
+  ])
+  if test "x$ax_cv_cc_builtin_choose_expr" = "xyes"; then
+    AC_DEFINE([HAVE_BUILTIN_CHOOSE_EXPR],1,[Define if the compiler supports __builtin_choose_expr])
+  fi
+])
+
+dnl #
+dnl #  Check if we have the types compatible p builtin
+dnl #
+AC_DEFUN([FR_HAVE_BUILTIN_TYPES_COMPATIBLE_P],
+[
+  AC_CACHE_CHECK([for __builtin_types_compatible_p support in compiler], [ax_cv_cc_builtin_types_compatible_p],[
+    AC_RUN_IFELSE(
+      [
+        AC_LANG_SOURCE(
+        [
+          int main(int argc, char **argv) {
+            if ((argc < 0) || !argv) return 1; /* -Werror=unused-parameter */
+            return !(__builtin_types_compatible_p(char *, char *));
+          }
+        ])
+      ],
+      [ax_cv_cc_builtin_types_compatible_p=yes],
+      [ax_cv_cc_builtin_types_compatible_p=no]
+    )
+  ])
+  if test "x$ax_cv_cc_builtin_types_compatible_p" = "xyes"; then
+    AC_DEFINE([HAVE_BUILTIN_TYPES_COMPATIBLE_P],1,[Define if the compiler supports __builtin_types_compatible_p])
+  fi
+])
+
+dnl #
+dnl #  Check if we have the bwsap64 builtin
+dnl #
+AC_DEFUN([FR_HAVE_BUILTIN_BSWAP64],
+[
+  AC_CACHE_CHECK([for __builtin_bswap64 support in compiler], [ax_cv_cc_builtin_bswap64],[
+    AC_RUN_IFELSE(
+      [
+        AC_LANG_SOURCE([
+          int main(int argc, char **argv) {
+            if ((argc < 0) || !argv) return 1; /* -Werror=unused-parameter */
+            return (__builtin_bswap64(0));
+          }
+        ])
+      ],
+      [ax_cv_cc_builtin_bswap64=yes],
+      [ax_cv_cc_builtin_bswap64=no]
+    )
+  ])
+  if test "x$ax_cv_cc_builtin_bswap64" = "xyes"; then
+    AC_DEFINE([HAVE_BUILTIN_BSWAP_64],1,[Define if the compiler supports __builtin_bswap64])
+  fi
+])
+
+dnl #
+dnl #  Check if we have __attribute__((__bounded__)) (usually only OpenBSD with GCC)
+dnl #
+AC_DEFUN([FR_HAVE_BOUNDED_ATTRIBUTE],[
+  AC_CACHE_CHECK([for __attribute__((__bounded__)) support in compiler], [ax_cv_cc_bounded_attribute],[
+    CFLAGS_SAVED=$CFLAGS
+    CFLAGS="$CFLAGS -Werror"
+    AC_RUN_IFELSE(
+      [
+        AC_LANG_SOURCE([
+          void test(char *buff) __attribute__ ((__bounded__ (__string__, 1, 1)));
+          int main(int argc, char **argv) {
+            if ((argc < 0) || !argv) return 1; /* -Werror=unused-parameter */
+            return 0;
+          }
+        ])
+      ],
+      [ax_cv_cc_bounded_attribute=yes],
+      [ax_cv_cc_bounded_attribute=no]
+    )
+    CFLAGS="$CFLAGS_SAVED"
+  ])
+  if test "x$ax_cv_cc_bounded_attribute" = "xyes"; then
+    AC_DEFINE(HAVE_ATTRIBUTE_BOUNDED, 1, [Define if your compiler supports the __bounded__ attribute (usually OpenBSD gcc).])
+  fi
 ])
 
 AC_INCLUDE(aclocal.m4)

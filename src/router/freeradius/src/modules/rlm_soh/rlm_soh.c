@@ -1,12 +1,8 @@
 /*
- * rlm_soh.c
- *
- * Version:	$Id: 92dd867176e8452003b88e2515e275e63bf91ba3 $
- *
- *   This program is free software; you can redistribute it and/or modify
+ *   This program is is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,69 +12,74 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- * Copyright 2010 Phil Mayers <p.mayers@imperial.ac.uk>
  */
 
-#include	<freeradius-devel/ident.h>
-RCSID("$Id: 92dd867176e8452003b88e2515e275e63bf91ba3 $")
+/**
+ * $Id: d7321d682a64e786ac8cbdbdb4b7f0f6a0f5d718 $
+ * @file rlm_soh.c
+ * @brief Decodes Microsoft's Statement of Health sub-protocol.
+ *
+ * @copyright 2010 Phil Mayers <p.mayers@imperial.ac.uk>
+ */
+RCSID("$Id: d7321d682a64e786ac8cbdbdb4b7f0f6a0f5d718 $")
 
-#include        <freeradius-devel/radiusd.h>
-#include        <freeradius-devel/modules.h>
+#include	<freeradius-devel/radiusd.h>
+#include	<freeradius-devel/modules.h>
 #include	<freeradius-devel/dhcp.h>
 #include	<freeradius-devel/soh.h>
 
 
 typedef struct rlm_soh_t {
-	const char *xlat_name;
-	int dhcp;
+	char const *xlat_name;
+	bool dhcp;
 } rlm_soh_t;
 
 
 /*
  * Not sure how to make this useful yet...
  */
-static size_t soh_xlat(UNUSED void *instance, REQUEST *request, char *fmt, char *out, size_t outlen, UNUSED RADIUS_ESCAPE_STRING func) {
+static ssize_t soh_xlat(UNUSED void *instance, REQUEST *request, char const *fmt, char *out, size_t outlen) {
 
 	VALUE_PAIR* vp[6];
-	const char *osname;
+	char const *osname;
 
-	/* there will be no point unless SoH-Supported = yes
-	 *
-	 * FIXME: should have a #define for the attribute...
-	 * SoH-Supported == 2119 in dictionary.freeradius.internal
+	/*
+	 * There will be no point unless SoH-Supported = yes
 	 */
-	vp[0] = pairfind(request->packet->vps, 2119);
+	vp[0] = pairfind(request->packet->vps, PW_SOH_SUPPORTED, 0, TAG_ANY);
 	if (!vp[0])
 		return 0;
 
 
 	if (strncasecmp(fmt, "OS", 2) == 0) {
 		/* OS vendor */
-		vp[0] = pairfind(request->packet->vps, 2100);
-		vp[1] = pairfind(request->packet->vps, 2101);
-		vp[2] = pairfind(request->packet->vps, 2102);
-		vp[3] = pairfind(request->packet->vps, 2103);
-		vp[4] = pairfind(request->packet->vps, 2104);
-		vp[5] = pairfind(request->packet->vps, 2105);
+		vp[0] = pairfind(request->packet->vps, PW_SOH_MS_MACHINE_OS_VENDOR,  0, TAG_ANY);
+		vp[1] = pairfind(request->packet->vps, PW_SOH_MS_MACHINE_OS_VERSION, 0, TAG_ANY);
+		vp[2] = pairfind(request->packet->vps, PW_SOH_MS_MACHINE_OS_RELEASE, 0, TAG_ANY);
+		vp[3] = pairfind(request->packet->vps, PW_SOH_MS_MACHINE_OS_BUILD,   0, TAG_ANY);
+		vp[4] = pairfind(request->packet->vps, PW_SOH_MS_MACHINE_SP_VERSION, 0, TAG_ANY);
+		vp[5] = pairfind(request->packet->vps, PW_SOH_MS_MACHINE_SP_RELEASE, 0, TAG_ANY);
 
-		if (vp[0] && vp[0]->vp_integer == 311) {
+		if (vp[0] && vp[0]->vp_integer == VENDORPEC_MICROSOFT) {
 			if (!vp[1]) {
 				snprintf(out, outlen, "Windows unknown");
 			} else {
 				switch (vp[1]->vp_integer) {
-					case 7:
-						osname = "7";
-						break;
-					case 6:
-						osname = "Vista";
-						break;
-					case 5:
-						osname = "XP";
-						break;
-					default:
-						osname = "Other";
-						break;
+				case 7:
+					osname = "7";
+					break;
+
+				case 6:
+					osname = "Vista";
+					break;
+
+				case 5:
+					osname = "XP";
+					break;
+
+				default:
+					osname = "Other";
+					break;
 				}
 				snprintf(out, outlen, "Windows %s %d.%d.%d sp %d.%d", osname, vp[1]->vp_integer,
 						vp[2] ? vp[2]->vp_integer : 0,
@@ -97,53 +98,38 @@ static size_t soh_xlat(UNUSED void *instance, REQUEST *request, char *fmt, char 
 
 static const CONF_PARSER module_config[] = {
 	/*
-	 * Do SoH over DHCP? 
+	 * Do SoH over DHCP?
 	 */
-	{ "dhcp",    PW_TYPE_BOOLEAN, offsetof(rlm_soh_t,dhcp), NULL, "no" },
+	{ "dhcp", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_soh_t, dhcp), "no" },
 
 	{ NULL, -1, 0, NULL, NULL }		/* end the list */
 };
 
-static int soh_detach(void *instance) {
-	rlm_soh_t	*inst = instance;
 
-	if (inst->xlat_name) {
-		xlat_unregister(inst->xlat_name, soh_xlat, instance);
-		free(inst->xlat_name);
-	}
-	free(instance);
-	return 0;
-}
+static int mod_instantiate(CONF_SECTION *conf, void *instance)
+{
+	char const *name;
+	rlm_soh_t *inst = instance;
 
-static int soh_instantiate(CONF_SECTION *conf, void **instance) {
-	rlm_soh_t *inst;
-
-	inst = *instance = rad_malloc(sizeof(*inst));
-	if (!inst) {
-		return -1;
-	}
-	memset(inst, 0, sizeof(*inst));
-
-	if (cf_section_parse(conf, inst, module_config) < 0) {
-		free(inst);
-		return -1;
-	}
-
-	inst->xlat_name = cf_section_name2(conf);
-	if (!inst->xlat_name) inst->xlat_name = cf_section_name1(conf);
-	inst->xlat_name = strdup(inst->xlat_name);
-	xlat_register(inst->xlat_name, soh_xlat, inst);
+	name = cf_section_name2(conf);
+	if (!name) name = cf_section_name1(conf);
+	inst->xlat_name = name;
+	if (!inst->xlat_name) return -1;
+	xlat_register(inst->xlat_name, soh_xlat, NULL, inst);
 
 	return 0;
 }
 
-static int soh_postauth(UNUSED void * instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *request)
 {
 #ifdef WITH_DHCP
 	int rcode;
 	VALUE_PAIR *vp;
+	rlm_soh_t *inst = instance;
 
-	vp = pairfind(request->packet->vps, DHCP2ATTR(43));
+	if (!inst->dhcp) return RLM_MODULE_NOOP;
+
+	vp = pairfind(request->packet->vps, 43, DHCP_MAGIC_VENDOR, TAG_ANY);
 	if (vp) {
 		/*
 		 * vendor-specific options contain
@@ -153,39 +139,45 @@ static int soh_postauth(UNUSED void * instance, REQUEST *request)
 		 *
 		 * vendor opt 222/0xde - SoH correlation ID as utf-16 string, yuck...
 		 */
-		uint8_t vopt, vlen, *data;
+		uint8_t vopt, vlen;
+		uint8_t const *data;
 
 		data = vp->vp_octets;
-		while (data < vp->vp_octets + vp->length) {
+		while (data < vp->vp_octets + vp->vp_length) {
 			vopt = *data++;
 			vlen = *data++;
 			switch (vopt) {
-				case 220:
-					if (vlen <= 1) {
-						RDEBUG("SoH adding NAP marker to DHCP reply");
-						/* client probe; send "NAP" in the reply */
-						vp = paircreate(DHCP2ATTR(43), PW_TYPE_OCTETS);
-						vp->vp_octets[0] = 220;
-						vp->vp_octets[1] = 3;
-						vp->vp_octets[4] = 'N';
-						vp->vp_octets[3] = 'A';
-						vp->vp_octets[2] = 'P';
-						vp->length = 5;
+			case 220:
+				if (vlen <= 1) {
+					uint8_t *p;
 
-						pairadd(&request->reply->vps, vp);
+					RDEBUG("SoH adding NAP marker to DHCP reply");
+					/* client probe; send "NAP" in the reply */
+					vp = paircreate(request->reply, 43, DHCP_MAGIC_VENDOR);
+					vp->vp_length = 5;
+					vp->vp_octets = p = talloc_array(vp, uint8_t, vp->vp_length);
 
-					} else {
-						RDEBUG("SoH decoding NAP from DHCP request");
-						/* SoH payload */
-						rcode = soh_verify(request, request->packet->vps, data, vlen);
-						if (rcode < 0) {
-							return RLM_MODULE_FAIL;
-						}
+					p[0] = 220;
+					p[1] = 3;
+					p[4] = 'N';
+					p[3] = 'A';
+					p[2] = 'P';
+
+					pairadd(&request->reply->vps, vp);
+
+				} else {
+					RDEBUG("SoH decoding NAP from DHCP request");
+					/* SoH payload */
+					rcode = soh_verify(request, data, vlen);
+					if (rcode < 0) {
+						return RLM_MODULE_FAIL;
 					}
-					break;
-				default:
-					/* nothing to do */
-					break;
+				}
+				break;
+
+			default:
+				/* nothing to do */
+				break;
 			}
 			data += vlen;
 		}
@@ -195,13 +187,13 @@ static int soh_postauth(UNUSED void * instance, REQUEST *request)
 	return RLM_MODULE_NOOP;
 }
 
-static int soh_authorize(UNUSED void * instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void * instance, REQUEST *request)
 {
 	VALUE_PAIR *vp;
 	int rv;
 
 	/* try to find the MS-SoH payload */
-	vp = pairfind(request->packet->vps, (311 << 16) | 55);
+	vp = pairfind(request->packet->vps, 55, VENDORPEC_MICROSOFT, TAG_ANY);
 	if (!vp) {
 		RDEBUG("SoH radius VP not found");
 		return RLM_MODULE_NOOP;
@@ -209,7 +201,7 @@ static int soh_authorize(UNUSED void * instance, REQUEST *request)
 
 	RDEBUG("SoH radius VP found");
 	/* decode it */
-	rv = soh_verify(request, request->packet->vps, vp->vp_octets, vp->length);
+	rv = soh_verify(request, vp->vp_octets, vp->vp_length);
 	if (rv < 0) {
 		return RLM_MODULE_FAIL;
 	}
@@ -217,20 +209,23 @@ static int soh_authorize(UNUSED void * instance, REQUEST *request)
 	return RLM_MODULE_OK;
 }
 
+extern module_t rlm_soh;
 module_t rlm_soh = {
 	RLM_MODULE_INIT,
 	"SoH",
 	RLM_TYPE_THREAD_SAFE,		/* type */
-	soh_instantiate,		/* instantiation */
-	soh_detach,		/* detach */
+	sizeof(rlm_soh_t),
+	module_config,
+	mod_instantiate,		/* instantiation */
+	NULL,			/* detach */
 	{
 		NULL,			/* authenticate */
-		soh_authorize,		/* authorize */
+		mod_authorize,		/* authorize */
 		NULL,			/* pre-accounting */
 		NULL,			/* accounting */
 		NULL,			/* checksimul */
 		NULL,			/* pre-proxy */
 		NULL,			/* post-proxy */
-		soh_postauth		/* post-auth */
+		mod_post_auth		/* post-auth */
 	},
 };

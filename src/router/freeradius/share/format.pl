@@ -31,7 +31,7 @@
 #
 ######################################################################
 #
-#  $Id: 4f08b2314f2288ca47267e40801ba73a0e0e2f62 $
+#  $Id: 81055119e8c8a678f2e7da2908b529ec99be152b $
 #
 
 $begin_vendor = 0;
@@ -106,7 +106,7 @@ while (@ARGV) {
 	#
 	#  Get attribute.
 	#
-	if (/^ATTRIBUTE\s+([\w-]+)\s+(\w+)\s+(\w+)(.*)/) {
+	if (/^ATTRIBUTE\s+([\w-]+)\s+([\w.]+)\s+(\w+)(.*)/) {
 	    $name=$1;
 	    $len = length $name;
 	    if ($len < 40) {

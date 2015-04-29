@@ -1,7 +1,7 @@
 /*
  * timestr.c	See if a string like 'Su2300-0700' matches (UUCP style).
  *
- * Version:	$Id: c90e47125fcbb4d07e1b1e2869ae99caa6921b56 $
+ * Version:	$Id: a1fffc6674ef528a639418b6b61c3681724b25b8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,14 +21,15 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: c90e47125fcbb4d07e1b1e2869ae99caa6921b56 $")
+RCSID("$Id: a1fffc6674ef528a639418b6b61c3681724b25b8 $")
 
 #include	<freeradius-devel/radiusd.h>
 
 #include <ctype.h>
 
-static const char *days[] =
+int		timestr_match(char const *, time_t);
+
+static char const *days[] =
 	{ "su", "mo", "tu", "we", "th", "fr", "sa", "wk", "any", "al" };
 
 #define DAYMIN		(24*60)
@@ -45,7 +46,7 @@ static const char *days[] =
 /*
  *	String code.
  */
-static int strcode (const char **str)
+static int strcode (char const **str)
 {
 	int i;
 	size_t l;
@@ -70,7 +71,7 @@ static int strcode (const char **str)
 /*
  *	Fill bitmap with hours/mins.
  */
-static int hour_fill(char *bitmap, const char *tm)
+static int hour_fill(char *bitmap, char const *tm)
 {
 	char *p;
 	int start, end;
@@ -124,9 +125,9 @@ static int hour_fill(char *bitmap, const char *tm)
 /*
  *	Call the fill bitmap function for every day listed.
  */
-static int day_fill(char *bitmap, const char *tm)
+static int day_fill(char *bitmap, char const *tm)
 {
-	const char *hr;
+	char const *hr;
 	int n;
 	int start, end;
 
@@ -173,13 +174,12 @@ static int day_fill(char *bitmap, const char *tm)
 /*
  *	Fill the week bitmap with allowed times.
  */
-static int week_fill(char *bitmap, char *tm)
+static int week_fill(char *bitmap, char const *tm)
 {
 	char *s;
-	char tmp[128];
+	char tmp[256];
 
-	strlcpy(tmp, tm, 128);
-	tmp[127] = 0;
+	strlcpy(tmp, tm, sizeof(tmp));
 	for (s = tmp; *s; s++)
 		if (isupper(*s)) *s = tolower(*s);
 
@@ -196,7 +196,7 @@ static int week_fill(char *bitmap, char *tm)
  *	Match a timestring and return seconds left.
  *	-1 for no match, 0 for unlimited.
  */
-int timestr_match(char *tmstr, time_t t)
+int timestr_match(char const *tmstr, time_t t)
 {
 	struct tm *tm, s_tm;
 	char bitmap[WEEKMIN / 8];

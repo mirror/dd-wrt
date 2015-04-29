@@ -1,6 +1,6 @@
---- old/Make.inc.in
-+++ new/Make.inc.in
-@@ -48,7 +48,7 @@
+--- a/Make.inc.in
++++ b/Make.inc.in
+@@ -94,7 +94,7 @@
  
  LOGDIR		= ${logdir}
  RADDBDIR	= ${raddbdir}
@@ -8,31 +8,31 @@
 +RUNDIR		= ${localstatedir}/run/freeradius
  SBINDIR		= ${sbindir}
  RADIR		= ${radacctdir}
+ LIBRADIUS	= $(top_builddir)/src/lib/$(LIBPREFIX)freeradius-radius.la $(TALLOC_LIBS)
+--- a/raddb/radiusd.conf.in
++++ b/raddb/radiusd.conf.in
+@@ -61,7 +61,7 @@
  
---- old/raddb/radiusd.conf.in
-+++ new/raddb/radiusd.conf.in
-@@ -62,7 +62,7 @@
-
  #
  #  name of the running server.  See also the "-n" command-line option.
 -name = radiusd
 +name = freeradius
-
+ 
  #  Location of config and logfiles.
  confdir = ${raddbdir}
-@@ -164,8 +164,8 @@
- #  It will join all groups where "user" is a member.  This can allow
- #  for some finer-grained access controls.
- #
--#user = radius
--#group = radius
-+user = freerad
-+group = freerad
-
- #  max_request_time: The maximum time (in seconds) to handle a request.
- #
---- a/scripts/freeradius.monitrc
-+++ b/scripts/freeradius.monitrc
+@@ -415,8 +415,8 @@
+ 	#  member.  This can allow for some finer-grained access
+ 	#  controls.
+ 	#
+-#	user = radius
+-#	group = radius
++	user = freerad
++	group = freerad
+ 
+ 	#  Core dumps are a bad thing.  This should only be set to
+ 	#  'yes' if you're debugging a problem with the server.
+--- a/scripts/monit/freeradius.monitrc
++++ b/scripts/monit/freeradius.monitrc
 @@ -8,9 +8,9 @@
  #  Totalmem limit should be lowered to 200.0 if none of the 
  #  interpreted language modules or rlm_cache are being used.
@@ -46,5 +46,3 @@
     if failed host 127.0.0.1 port 1812 type udp protocol radius secret testing123 then alert
     if failed host 127.0.0.1 port 1813 type udp protocol radius secret testing123 then alert
     if cpu > 95% for 2 cycles then alert
-
-

@@ -18,11 +18,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  Copyright (C) 2005-2006 Krzysztof Rzecki <krzysztof.rzecki@ccns.pl>      
- *  Copyright (C) 2005-2006 Rafal Mijal <rafal.mijal@ccns.pl>                
- *  Copyright (C) 2005-2006 Piotr Marnik <piotr.marnik@ccns.pl>              
- *  Copyright (C) 2005-2006 Pawel Matejski <pawel.matejski@ccns.pl>          
- * 
+ *  Copyright (C) 2005-2006 Krzysztof Rzecki <krzysztof.rzecki@ccns.pl>
+ *  Copyright (C) 2005-2006 Rafal Mijal <rafal.mijal@ccns.pl>
+ *  Copyright (C) 2005-2006 Piotr Marnik <piotr.marnik@ccns.pl>
+ *  Copyright (C) 2005-2006 Pawel Matejski <pawel.matejski@ccns.pl>
+ *
  */
 
 #ifndef LOGGING_IMPL_H
@@ -31,6 +31,5 @@
 
 #define IKEv2_LOG_PREFIX "    rlm_eap_ikev2: "
 
-void vxlogf(int iklevel, const char * fmt,va_list ap);
-
+void CC_HINT(format (printf, 2, 0)) vxlogf(int iklevel, char const * fmt, va_list ap);
 #endif //LOGGING_IMPL_H

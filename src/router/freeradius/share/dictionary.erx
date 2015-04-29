@@ -1,12 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 #
 #  dictionary.erx
 #
 #	Juniper's (was Unisphere's) broadband RAS
 #	From Terje Krogdahl <tekr@nextra.com>
 #
-# Version:	$Id: c2ab9a3fcf0115b847d4355c5095976448cca8a7 $
+# Version:	$Id: 965702c3ace57fb4c3e6d75436f7e3bcd708e034 $
 #
 
 # This dictionary applies to access services on Juniper JUNOS (M/MX)
@@ -218,13 +218,13 @@ ATTRIBUTE	ERX-PppoE-Padn				158	string
 ATTRIBUTE	ERX-Dhcp-Option-82			159	octets
 ATTRIBUTE	ERX-Vlan-Map-Id				160	integer
 ATTRIBUTE	ERX-IPv6-Delegated-Pool-Name		161	string
-ATTRIBUTE	Juniper-Tx-Connect-Speed		162	integer
-ATTRIBUTE	Juniper-Rx-Connect-Speed		163	integer
+ATTRIBUTE	ERX-Tx-Connect-Speed			162	integer
+ATTRIBUTE	ERX-Rx-Connect-Speed			163	integer
 
 # ATTRIBUTE 164 - 173 RESERVED
-ATTRIBUTE	Unisphere-Client-Profile-Name		174	string
-ATTRIBUTE	Juniper-Redirect-GW-Address		175	ipaddr
-ATTRIBUTE	Juniper-APN-Name			176	string
+ATTRIBUTE	ERX-Client-Profile-Name			174	string
+ATTRIBUTE	ERX-Redirect-GW-Address			175	ipaddr
+ATTRIBUTE	ERX-APN-Name				176	string
 
 #
 #  Values	Attribute		Name			Number

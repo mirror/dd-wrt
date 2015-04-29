@@ -1,7 +1,7 @@
 /*
  * rlm_redis.h
  *
- * Version:	$Id: 2859efaeb92c0ba304803dc76eb44519bfe0fb84 $
+ * Version:	$Id: 27de8f645b60e41b94ff566f276c1a5168fc307e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@
 #ifndef RLM_REDIS_H
 #define	RLM_REDIS_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(rlm_redis_h, "$Id: 2859efaeb92c0ba304803dc76eb44519bfe0fb84 $")
+RCSIDH(rlm_redis_h, "$Id: 27de8f645b60e41b94ff566f276c1a5168fc307e $")
 
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
@@ -34,58 +33,33 @@ RCSIDH(rlm_redis_h, "$Id: 2859efaeb92c0ba304803dc76eb44519bfe0fb84 $")
 #include <freeradius-devel/modpriv.h>
 #include <hiredis/hiredis.h>
 
-typedef struct redis_socket {
-	int     id;
-
-#ifdef HAVE_PTHREAD_H
-	pthread_mutex_t mutex;
-#endif
-	struct redis_socket *next;
-	enum { sockconnected, sockunconnected } state;
-
+typedef struct redis_socket_t {
 	redisContext	*conn;
-        redisReply      *reply;
-
-	time_t  connected;
-	int	queries;
+	redisReply      *reply;
 } REDISSOCK;
 
 typedef struct rlm_redis_t REDIS_INST;
 
 typedef struct rlm_redis_t {
-	time_t		connect_after;
-	REDISSOCK	*redispool;
-	REDISSOCK	*last_used;
+	char const		*xlat_name;
 
-        char            *xlat_name;
+	char const		*hostname;
+	uint16_t		port;
+	uint32_t		database;
+	char const		*password;
+	fr_connection_pool_t	*pool;
 
-        int             numconnections;
-        int             connect_failure_retry_delay;
-	int             lifetime;
-	int             max_queries;
-
-        char            *hostname;
-        int             port;
-	int		database;
-	char		*password;
-
-	REDISSOCK *(*redis_get_socket)(REDIS_INST * inst);
-	int (*redis_release_socket)(REDIS_INST * inst, REDISSOCK *dissocket);
-        int (*redis_query)(REDISSOCK *dissocket, REDIS_INST *inst,
-                           const char *query, REQUEST *request);
-        int (*redis_finish_query)(REDISSOCK *dissocket);
+	int (*redis_query)(REDISSOCK **dissocket_p, REDIS_INST *inst, char const *query, REQUEST *request);
+	int (*redis_finish_query)(REDISSOCK *dissocket);
 
 } rlm_redis_t;
 
 #define MAX_QUERY_LEN			4096
 #define MAX_REDIS_ARGS			16
 
-int rlm_redis_query(REDISSOCK *dissocket, REDIS_INST *inst, const char *query,
-                    REQUEST *request);
+int rlm_redis_query(REDISSOCK **dissocket_p, REDIS_INST *inst,
+		    char const *query, REQUEST *request);
 int rlm_redis_finish_query(REDISSOCK *dissocket);
-
-REDISSOCK * redis_get_socket(REDIS_INST * inst);
-int redis_release_socket(REDIS_INST * inst, REDISSOCK *dissocket);
 
 #endif	/* RLM_REDIS_H */
 

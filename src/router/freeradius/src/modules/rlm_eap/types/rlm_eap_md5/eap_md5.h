@@ -1,8 +1,7 @@
 #ifndef _EAP_MD5_H
 #define _EAP_MD5_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(eap_md5_h, "$Id: a7936eb3b9b2ba4668fd0ef342dfa126edbfbdf2 $")
+RCSIDH(eap_md5_h, "$Id: 5fc46972ee61513f468840dc8ebbfb0b6a83970b $")
 
 #include "eap.h"
 
@@ -46,9 +45,6 @@ typedef struct md5_packet {
 } MD5_PACKET;
 
 /* function declarations here */
-
-MD5_PACKET 	*eapmd5_alloc(void);
-void 		eapmd5_free(MD5_PACKET **md5_packet_ptr);
 
 int 		eapmd5_compose(EAP_DS *auth, MD5_PACKET *reply);
 MD5_PACKET 	*eapmd5_extract(EAP_DS *auth);
