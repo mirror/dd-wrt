@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id: 4d8fd43c23064d1fa06ef5b84f25e18603dcb0e0 $
+# Version:	$Id: d999cc5e233d076a38e2d1e487c59a23e5a1f9e9 $
 #
 
 include ../../Make.inc
@@ -26,12 +26,6 @@ refs: $(RFC)
 	@echo 'rfc2865 State' >> refs
 
 clean:
-	rm -f refs *rfc*.html *~ .rewrite index.html
+	@rm -f refs *rfc*.html *~ .rewrite index.html
 
-install:
-	$(INSTALL) -d -m 755 $(R)$(docdir)/rfc
-	for file in `ls -1 *.txt *.html`; do \
-		$(INSTALL) -m 644 $$file $(R)$(docdir)/rfc; \
-	done
-
-.PHONY: all clean install html
+.PHONY: all clean html

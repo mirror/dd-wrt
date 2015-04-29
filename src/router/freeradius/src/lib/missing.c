@@ -2,11 +2,12 @@
  * missing.c	Replacements for functions that are or can be
  *		missing on some platforms.
  *
- * Version:	$Id: afd0252e033b552ba3b2139af534edf4de201777 $
+ * Version:	$Id: 7f8cebda34b6b70eecd761c3d3e35340e360e276 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
- *   License as published by the Free Software Foundation; either
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version. either
  *   version 2.1 of the License, or (at your option) any later version.
  *
  *   This library is distributed in the hope that it will be useful,
@@ -21,8 +22,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-#include	<freeradius-devel/ident.h>
-RCSID("$Id: afd0252e033b552ba3b2139af534edf4de201777 $")
+RCSID("$Id: 7f8cebda34b6b70eecd761c3d3e35340e360e276 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -80,7 +80,7 @@ int strcasecmp(char *s1, char *s2)
 #endif
 
 #ifndef HAVE_INET_ATON
-int inet_aton(const char *cp, struct in_addr *inp)
+int inet_aton(char const *cp, struct in_addr *inp)
 {
 	int	a1, a2, a3, a4;
 
@@ -106,10 +106,10 @@ int inet_aton(const char *cp, struct in_addr *inp)
  *	If *stringp is NULL, strsep returns NULL.
  */
 char *
-strsep(char **stringp, const char *delim)
+strsep(char **stringp, char const *delim)
 {
 	char *s;
-	const char *spanp;
+	char const *spanp;
 	int c, sc;
 	char *tok;
 
@@ -146,7 +146,7 @@ strsep(char **stringp, const char *delim)
  *	Even if localtime is NOT re-entrant, this function will
  *	lower the possibility of race conditions.
  */
-struct tm *localtime_r(const time_t *l_clock, struct tm *result)
+struct tm *localtime_r(time_t const *l_clock, struct tm *result)
 {
   memcpy(result, localtime(l_clock), sizeof(*result));
 
@@ -165,7 +165,7 @@ struct tm *localtime_r(const time_t *l_clock, struct tm *result)
  *	Even if ctime is NOT re-entrant, this function will
  *	lower the possibility of race conditions.
  */
-char *ctime_r(const time_t *l_clock, char *l_buf)
+char *ctime_r(time_t const *l_clock, char *l_buf)
 {
   strcpy(l_buf, ctime(l_clock));
 
@@ -184,7 +184,7 @@ char *ctime_r(const time_t *l_clock, char *l_buf)
  *	Even if gmtime is NOT re-entrant, this function will
  *	lower the possibility of race conditions.
  */
-struct tm *gmtime_r(const time_t *l_clock, struct tm *result)
+struct tm *gmtime_r(time_t const *l_clock, struct tm *result)
 {
   memcpy(result, gmtime(l_clock), sizeof(*result));
 
@@ -206,12 +206,12 @@ struct tm *gmtime_r(const time_t *l_clock, struct tm *result)
 #define DELTA_EPOCH_IN_USEC  11644473600000000ULL
 #endif
 
-static uint64_t filetime_to_unix_epoch (const FILETIME *ft)
+static uint64_t filetime_to_unix_epoch (FILETIME const *ft)
 {
 	uint64_t res = (uint64_t) ft->dwHighDateTime << 32;
 
 	res |= ft->dwLowDateTime;
-	res /= 10;                   /* from 100 nano-sec periods to usec */
+	res /= 10;		   /* from 100 nano-sec periods to usec */
 	res -= DELTA_EPOCH_IN_USEC;  /* from Win epoch to Unix epoch */
 	return (res);
 }
@@ -225,11 +225,11 @@ int gettimeofday (struct timeval *tv, UNUSED void *tz)
 		errno = EINVAL;
 		return (-1);
 	}
-        GetSystemTimeAsFileTime (&ft);
-        tim = filetime_to_unix_epoch (&ft);
-        tv->tv_sec  = (long) (tim / 1000000L);
-        tv->tv_usec = (long) (tim % 1000000L);
-        return (0);
+	GetSystemTimeAsFileTime (&ft);
+	tim = filetime_to_unix_epoch (&ft);
+	tv->tv_sec  = (long) (tim / 1000000L);
+	tv->tv_usec = (long) (tim % 1000000L);
+	return (0);
 }
 #endif
 #endif
@@ -241,7 +241,7 @@ int gettimeofday (struct timeval *tv, UNUSED void *tz)
  *	of seconds, 32-bit integer of fractional seconds)
  */
 void
-timeval2ntp(const struct timeval *tv, uint8_t *ntp)
+timeval2ntp(struct timeval const *tv, uint8_t *ntp)
 {
 	uint32_t sec, usec;
 
@@ -260,7 +260,7 @@ timeval2ntp(const struct timeval *tv, uint8_t *ntp)
  *	Inverse of timeval2ntp
  */
 void
-ntp2timeval(struct timeval *tv, const char *ntp)
+ntp2timeval(struct timeval *tv, char const *ntp)
 {
 	uint32_t sec, usec;
 
@@ -273,3 +273,87 @@ ntp2timeval(struct timeval *tv, const char *ntp)
 	tv->tv_sec = sec - NTP_EPOCH_OFFSET;
 	tv->tv_usec = usec / 4295; /* close enough */
 }
+
+#if !defined(HAVE_128BIT_INTEGERS) && defined(FR_LITTLE_ENDIAN)
+/** Swap byte order of 128 bit integer
+ *
+ * @param num 128bit integer to swap.
+ * @return 128bit integer reversed.
+ */
+uint128_t ntohlll(uint128_t const num)
+{
+	uint64_t const *p = (uint64_t const *) &num;
+	uint64_t ret[2];
+
+	/* swapsies */
+	ret[1] = ntohll(p[0]);
+	ret[0] = ntohll(p[1]);
+
+	return *(uint128_t *)ret;
+}
+#endif
+
+/** Call talloc strdup, setting the type on the new chunk correctly
+ *
+ * For some bizarre reason the talloc string functions don't set the
+ * memory chunk type to char, which causes all kinds of issues with
+ * verifying VALUE_PAIRs.
+ *
+ * @param[in] t The talloc context to hang the result off.
+ * @param[in] p The string you want to duplicate.
+ * @return The duplicated string, NULL on error.
+ */
+char *talloc_typed_strdup(void const *t, char const *p)
+{
+	char *n;
+
+	n = talloc_strdup(t, p);
+	if (!n) return NULL;
+	talloc_set_type(n, char);
+
+	return n;
+}
+
+/** Call talloc vasprintf, setting the type on the new chunk correctly
+ *
+ * For some bizarre reason the talloc string functions don't set the
+ * memory chunk type to char, which causes all kinds of issues with
+ * verifying VALUE_PAIRs.
+ *
+ * @param[in] t The talloc context to hang the result off.
+ * @param[in] fmt The format string.
+ * @return The formatted string, NULL on error.
+ */
+char *talloc_typed_asprintf(void const *t, char const *fmt, ...)
+{
+	char *n;
+	va_list ap;
+
+	va_start(ap, fmt);
+	n = talloc_vasprintf(t, fmt, ap);
+	va_end(ap);
+	if (!n) return NULL;
+	talloc_set_type(n, char);
+
+	return n;
+}
+
+/** Binary safe strndup function
+ *
+ * @param[in] t The talloc context o allocate new buffer in.
+ * @param[in] in String to dup, may contain embedded '\0'.
+ * @param[in] inlen Number of bytes to dup.
+ * @return duped string.
+ */
+char *talloc_bstrndup(void const *t, char const *in, size_t inlen)
+{
+	char *p;
+
+	p = talloc_array(t, char, inlen + 1);
+	if (!p) return NULL;
+	memcpy(p, in, inlen);
+	p[inlen] = '\0';
+
+	return p;
+}
+

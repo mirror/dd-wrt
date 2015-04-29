@@ -23,10 +23,7 @@
 #ifndef _SQL_FBAPI_H_
 #define _SQL_FBAPI_H_
 
-#include <freeradius-devel/ident.h>
-RCSIDH(sql_fbapi_h, "$Id: dfee7f279bf846cc7bb62c414ffd4b39ca39b86d $")
-
-#include <freeradius-devel/autoconf.h>
+RCSIDH(sql_fbapi_h, "$Id: f3e272cf555f9c2be7db983188034acc92ace67e $")
 
 #include <stdlib.h>
 #include <string.h>
@@ -35,16 +32,27 @@ RCSIDH(sql_fbapi_h, "$Id: dfee7f279bf846cc7bb62c414ffd4b39ca39b86d $")
 #include <freeradius-devel/radiusd.h>
 #include "rlm_sql.h"
 
-#define IS_ISC_ERROR(status)  (status[0] == 1 && status[1])
+#define IS_ISC_ERROR(status)  ((status[0] == 1) && (status[1] > 0))
 
 #define DEADLOCK_SQL_CODE	-913
 #define DOWN_SQL_CODE		-902
 
-typedef struct rlm_sql_firebird_sock {
+#if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
+#define ISC_LONG_FMT "d"
+#define ISC_ULONG_FMT "u"
+#else
+#define ISC_LONG_FMT "l"
+#define ISC_ULONG_FMT "ul"
+#endif
+
+typedef struct rlm_sql_firebird_conn {
 	isc_db_handle dbh;
 	isc_stmt_handle stmt;
 	isc_tr_handle trh;
-	ISC_STATUS status[20];
+
+	ISC_STATUS status[20];		//!< Magic interbase status code array (holds multiple error codes used
+					//!< to construct more detailed error messages.
+
 	ISC_LONG sql_code;
 	XSQLDA *sqlda_out;
 	int sql_dialect;
@@ -53,33 +61,31 @@ typedef struct rlm_sql_firebird_sock {
 	int tpb_len;
 	char *dpb;
 	int dpb_len;
-	char *lasterror;
+	char *error;
 
-	SQL_ROW row;
+	rlm_sql_row_t row;
 	int *row_sizes;
 	int row_fcount;
 
 #ifdef _PTHREAD_H
 	pthread_mutex_t mut;
 #endif
+} rlm_sql_firebird_conn_t;
 
 
-} rlm_sql_firebird_sock;
-
-
-int fb_free_result(rlm_sql_firebird_sock *sock);
-int fb_lasterror(rlm_sql_firebird_sock *);
-int fb_init_socket(rlm_sql_firebird_sock *sock);
-int fb_connect(rlm_sql_firebird_sock * sock,SQL_CONFIG *config);
-int fb_disconnect(rlm_sql_firebird_sock * sock);
-int fb_sql_query(rlm_sql_firebird_sock * sock,char *sqlstr);
-int fb_affected_rows(rlm_sql_firebird_sock * sock);
-int fb_fetch(rlm_sql_firebird_sock * sock);
-void fb_free_statement(rlm_sql_firebird_sock *sock);
-int fb_close_cursor(rlm_sql_firebird_sock *sock);
-int fb_rollback(rlm_sql_firebird_sock * sock);
-int fb_commit(rlm_sql_firebird_sock * sock);
-void fb_destroy_socket(rlm_sql_firebird_sock *);
-void fb_store_row(rlm_sql_firebird_sock *sock);
+int fb_free_result(rlm_sql_firebird_conn_t *conn);
+int fb_error(rlm_sql_firebird_conn_t *conn);
+int fb_init_socket(rlm_sql_firebird_conn_t *conn);
+int fb_connect(rlm_sql_firebird_conn_t *conn, rlm_sql_config_t *config);
+int fb_disconnect(rlm_sql_firebird_conn_t *conn);
+int fb_sql_query(rlm_sql_firebird_conn_t *conn, char const *query);
+int fb_affected_rows(rlm_sql_firebird_conn_t *conn);
+int fb_fetch(rlm_sql_firebird_conn_t *conn);
+void fb_free_sqlda(XSQLDA *sqlda);
+void fb_free_statement(rlm_sql_firebird_conn_t *conn);
+int fb_close_cursor(rlm_sql_firebird_conn_t *conn);
+int fb_rollback(rlm_sql_firebird_conn_t *conn);
+int fb_commit(rlm_sql_firebird_conn_t *conn);
+void fb_store_row(rlm_sql_firebird_conn_t *conn);
 
 #endif

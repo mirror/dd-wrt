@@ -1,9 +1,9 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 #
 #	Non Protocol Attributes used by FreeRADIUS
 #
-#	$Id: c05105c30ea52b9c1a58a48fc7ad47cf99ff555a $
+#	$Id: 66a73f296b45be810c0ecb7eb539837c3845d456 $
 #
 
 #	The attributes number ranges are allocates as follows:
@@ -58,10 +58,9 @@ ATTRIBUTE	EAP-Type				1018	integer
 ATTRIBUTE	EAP-TLS-Require-Client-Cert		1019	integer
 ATTRIBUTE	EAP-Id					1020	integer
 ATTRIBUTE	EAP-Code				1021	integer
-# Attribute 1022 unused, was EAP-MD5-Password, which was
-# used only be radeapclient.  It's been replaced by Cleartext-Password
+ATTRIBUTE	EAP-MD5-Password			1022	string
 ATTRIBUTE	PEAP-Version				1023	integer
-ATTRIBUTE	Client-Shortname			1024	string
+ATTRIBUTE	Client-Shortname			1024	string virtual
 ATTRIBUTE	Load-Balance-Key			1025	string
 ATTRIBUTE	Raw-Attribute				1026	octets
 ATTRIBUTE	TNC-VLAN-Access				1027	string
@@ -78,12 +77,12 @@ ATTRIBUTE	Stripped-User-Name			1043	string
 ATTRIBUTE	Current-Time				1044	string
 ATTRIBUTE	Realm					1045	string
 ATTRIBUTE	No-Such-Attribute			1046	string
-ATTRIBUTE	Packet-Type				1047	integer
+ATTRIBUTE	Packet-Type				1047	integer virtual
 ATTRIBUTE	Proxy-To-Realm				1048	string
 ATTRIBUTE	Replicate-To-Realm			1049	string
 ATTRIBUTE	Acct-Session-Start-Time			1050	date
 ATTRIBUTE	Acct-Unique-Session-Id			1051	string
-ATTRIBUTE	Client-IP-Address			1052	ipaddr
+ATTRIBUTE	Client-IP-Address			1052	ipaddr virtual
 ATTRIBUTE	Ldap-UserDn				1053	string
 ATTRIBUTE	NS-MTA-MD5-Password			1054	string
 ATTRIBUTE	SQL-User-Name				1055	string
@@ -109,33 +108,31 @@ ATTRIBUTE	Module-Failure-Message			1076	string
 #		X99-Fast		1077	integer
 ATTRIBUTE	Rewrite-Rule				1078	string
 ATTRIBUTE	Sql-Group				1079	string
-ATTRIBUTE	Response-Packet-Type			1080	integer
+ATTRIBUTE	Response-Packet-Type			1080	integer virtual
 ATTRIBUTE	Digest-HA1				1081	string
 ATTRIBUTE	MS-CHAP-Use-NTLM-Auth			1082	integer
 ATTRIBUTE	NTLM-User-Name				1083	string
 ATTRIBUTE	MS-CHAP-User-Name			1083	string
-ATTRIBUTE	Packet-Src-IP-Address			1084	ipaddr
-ATTRIBUTE	Packet-Dst-IP-Address			1085	ipaddr
-ATTRIBUTE	Packet-Src-Port				1086	integer
-ATTRIBUTE	Packet-Dst-Port				1087	integer
-ATTRIBUTE	Packet-Authentication-Vector		1088	octets
+ATTRIBUTE	Packet-Src-IP-Address			1084	ipaddr virtual
+ATTRIBUTE	Packet-Dst-IP-Address			1085	ipaddr virtual
+ATTRIBUTE	Packet-Src-Port				1086	integer virtual
+ATTRIBUTE	Packet-Dst-Port				1087	integer virtual
+ATTRIBUTE	Packet-Authentication-Vector		1088	octets virtual
 ATTRIBUTE	Time-Of-Day				1089	string
-ATTRIBUTE	Request-Processing-Stage		1090	string
-ATTRIBUTE	Cache-No-Caching			1091	string
-ATTRIBUTE	Cache-Delete-Cache			1092	string
+ATTRIBUTE	Request-Processing-Stage		1090	string virtual
+ATTRIBUTE	SHA2-Password				1092	octets
 ATTRIBUTE	SHA-Password				1093	octets
 ATTRIBUTE	SSHA-Password				1094	octets
 ATTRIBUTE	SHA1-Password				1093	octets
 ATTRIBUTE	SSHA1-Password				1094	octets
 ATTRIBUTE	MD5-Password				1095	octets
 ATTRIBUTE	SMD5-Password				1096	octets
-ATTRIBUTE	Packet-Src-IPv6-Address			1097	ipv6addr
-ATTRIBUTE	Packet-Dst-IPv6-Address			1098	ipv6addr
-ATTRIBUTE	Virtual-Server				1099	string
+ATTRIBUTE	Packet-Src-IPv6-Address			1097	ipv6addr virtual
+ATTRIBUTE	Packet-Dst-IPv6-Address			1098	ipv6addr virtual
+ATTRIBUTE	Virtual-Server				1099	string virtual
 ATTRIBUTE	Cleartext-Password			1100	string
 ATTRIBUTE	Password-With-Header			1101	string
 ATTRIBUTE	Inner-Tunnel-User-Name			1102	string
-
 #
 #	EAP-IKEv2 is experimental.
 #
@@ -164,7 +161,7 @@ ATTRIBUTE	Send-CoA-Request			1107	integer
 VALUE	Send-CoA-Request		No			0
 VALUE	Send-CoA-Request		Yes			1
 
-ATTRIBUTE	Module-Return-Code			1108	integer
+ATTRIBUTE	Module-Return-Code			1108	integer virtual
 
 VALUE	Module-Return-Code		reject			0
 VALUE	Module-Return-Code		fail			1
@@ -182,6 +179,8 @@ ATTRIBUTE	Home-Server-Pool			1111	string
 
 ATTRIBUTE	FreeRADIUS-Client-IP-Address		1120	ipaddr
 ATTRIBUTE	FreeRADIUS-Client-IPv6-Address		1121	ipv6addr
+# The rest of the FreeRADIUS-Client-* attributes are at 1150...
+
 ATTRIBUTE	FreeRADIUS-Client-Require-MA		1122	integer
 
 VALUE	FreeRADIUS-Client-Require-MA	no			0
@@ -218,15 +217,57 @@ ATTRIBUTE	Send-CoA-Type				1132	integer
 ATTRIBUTE	MS-CHAP-Password			1133	string
 ATTRIBUTE	Packet-Transmit-Counter			1134	integer
 ATTRIBUTE	Cached-Session-Policy			1135	string
+ATTRIBUTE	MS-CHAP-New-Cleartext-Password		1136	string
+ATTRIBUTE	MS-CHAP-New-NT-Password			1137	octets
 
-ATTRIBUTE	Cache-TTL				1140	integer
-ATTRIBUTE	Cache-Status-Only			1141	integer
-ATTRIBUTE	Cache-Entry-Hits			1142	integer
+#	For default policies
+
+ATTRIBUTE	Stripped-User-Domain			1138	string
+ATTRIBUTE	Called-Station-SSID			1139	string
+
+ATTRIBUTE	OTP-Challenge				1145	string
+ATTRIBUTE	EAP-Session-Id				1146	octets
+ATTRIBUTE	Chbind-Response-Code			1147	integer
+
+ATTRIBUTE	Chbind-Response-Code			1147	integer
+
+VALUE	Chbind-Response-Code		success			2
+VALUE	Chbind-Response-Code		failure			3
+
+ATTRIBUTE	Acct-Input-Octets64			1148	integer64
+ATTRIBUTE	Acct-Output-Octets64			1149	integer64
+
+ATTRIBUTE	FreeRADIUS-Client-IP-Prefix		1150	ipv4prefix
+ATTRIBUTE	FreeRADIUS-Client-IPv6-Prefix		1151	ipv6prefix
+ATTRIBUTE	FreeRADIUS-Response-Delay		1152	integer
+ATTRIBUTE	FreeRADIUS-Client-Src-IP-Address	1153	ipaddr
+ATTRIBUTE	FreeRADIUS-Client-Src-IPv6-Address	1154	ipv6addr
+ATTRIBUTE	FreeRADIUS-Response-Delay-USec		1155	integer
+
+ATTRIBUTE	REST-HTTP-Header			1160	string
+ATTRIBUTE	REST-HTTP-Body				1161	string
+
+ATTRIBUTE	Cache-Expires				1170	date
+ATTRIBUTE	Cache-Created				1171	date
+ATTRIBUTE	Cache-TTL				1172	signed
+ATTRIBUTE	Cache-Status-Only			1173	integer
+ATTRIBUTE	Cache-Merge				1174	integer
+ATTRIBUTE	Cache-Entry-Hits			1175	integer
+ATTRIBUTE	Cache-Read-Only				1176	integer
 
 VALUE	Cache-Status-Only		no			0
 VALUE	Cache-Status-Only		yes			1
 
-ATTRIBUTE	EAP-Session-Id				1146	octets
+VALUE	Cache-Merge			no			0
+VALUE	Cache-Merge			yes			1
+
+VALUE	Cache-Read-Only			no			0
+VALUE	Cache-Read-Only			yes			1
+
+ATTRIBUTE	SSHA2-224-Password			1177	octets
+ATTRIBUTE	SSHA2-256-Password			1178	octets
+ATTRIBUTE	SSHA2-384-Password			1179	octets
+ATTRIBUTE	SSHA2-512-Password			1180	octets
 
 #
 #	Range:	1200-1279
@@ -261,6 +302,9 @@ ATTRIBUTE	EAP-Sim-KC1				1212	octets
 ATTRIBUTE	EAP-Sim-KC2				1213	octets
 ATTRIBUTE	EAP-Sim-KC3				1214	octets
 
+ATTRIBUTE	EAP-Sim-Ki				1215	octets
+ATTRIBUTE	EAP-Sim-Algo-Version			1216	integer
+
 #
 #	Range:	1280 - 1535
 #		EAP-type specific attributes
@@ -270,6 +314,7 @@ ATTRIBUTE	EAP-Sim-KC3				1214	octets
 #
 #  egrep VALUE dictionary.freeradius.internal  | grep EAP-Type | awk '{print "ATTRIBUTE EAP-Type-" $3 " " 1280+$4 " octets"}' > foo;./format.pl foo
 #
+ATTRIBUTE	EAP-Type-Base				1280	octets
 ATTRIBUTE	EAP-Type-VALUE				1280	octets
 ATTRIBUTE	EAP-Type-None				1280	octets
 ATTRIBUTE	EAP-Type-Identity			1281	octets
@@ -334,6 +379,7 @@ ATTRIBUTE	EAP-Type-MS-CHAP-V2			1306	octets
 #
 
 # these are PW_EAP_SIM_X + 1536
+ATTRIBUTE	EAP_Sim-Base				1536	octets
 ATTRIBUTE	EAP-Sim-RAND				1537	octets
 ATTRIBUTE	EAP-Sim-PADDING				1542	octets
 ATTRIBUTE	EAP-Sim-NONCE_MT			1543	octets
@@ -402,6 +448,52 @@ ATTRIBUTE	Tmp-Octets-7				1837	octets
 ATTRIBUTE	Tmp-Octets-8				1838	octets
 ATTRIBUTE	Tmp-Octets-9				1839	octets
 
+ATTRIBUTE	Tmp-Date-0				1840	date
+ATTRIBUTE	Tmp-Date-1				1841	date
+ATTRIBUTE	Tmp-Date-2				1842	date
+ATTRIBUTE	Tmp-Date-3				1843	date
+ATTRIBUTE	Tmp-Date-4				1844	date
+ATTRIBUTE	Tmp-Date-5				1845	date
+ATTRIBUTE	Tmp-Date-6				1846	date
+ATTRIBUTE	Tmp-Date-7				1847	date
+ATTRIBUTE	Tmp-Date-8				1848	date
+ATTRIBUTE	Tmp-Date-9				1849	date
+
+ATTRIBUTE	Tmp-Integer64-0				1871	integer64
+ATTRIBUTE	Tmp-Integer64-1				1872	integer64
+ATTRIBUTE	Tmp-Integer64-2				1873	integer64
+ATTRIBUTE	Tmp-Integer64-3				1874	integer64
+ATTRIBUTE	Tmp-Integer64-4				1875	integer64
+ATTRIBUTE	Tmp-Integer64-5				1876	integer64
+ATTRIBUTE	Tmp-Integer64-6				1877	integer64
+ATTRIBUTE	Tmp-Integer64-7				1878	integer64
+ATTRIBUTE	Tmp-Integer64-8				1879	integer64
+ATTRIBUTE	Tmp-Integer64-9				1880	integer64
+#
+#  These attributes shouldn't be used anywhere.  They are defined here
+#  only for casting of values in conditional expressions.
+#
+#  The order and number need to be consistent with the typedefs used
+#  in the server source.
+#
+ATTRIBUTE	Tmp-Cast-String				1851	string
+ATTRIBUTE	Tmp-Cast-Integer			1852	integer
+ATTRIBUTE	Tmp-Cast-Ipaddr				1853	ipaddr
+ATTRIBUTE	Tmp-Cast-Date				1854	date
+ATTRIBUTE	Tmp-Cast-Abinary			1855	abinary
+ATTRIBUTE	Tmp-Cast-Octets				1856	octets
+ATTRIBUTE	Tmp-Cast-Ifid				1857	ifid
+ATTRIBUTE	Tmp-Cast-IPv6Addr			1858	ipv6addr
+ATTRIBUTE	Tmp-Cast-IPv6Prefix			1859	ipv6prefix
+ATTRIBUTE	Tmp-Cast-Byte				1860	byte
+ATTRIBUTE	Tmp-Cast-Short				1861	short
+ATTRIBUTE	Tmp-Cast-Ethernet			1862	ether
+ATTRIBUTE	Tmp-Cast-Signed				1863	signed
+# don't use or define these
+ATTRIBUTE	Tmp-Cast-Integer64			1869	integer64
+ATTRIBUTE	Tmp-Cast-IPv4Prefix			1870	ipv4prefix
+# don't use or define VSA or MAX
+
 #	Range:	1900-1909
 #	WiMAX server-side attributes.
 #
@@ -412,17 +504,15 @@ ATTRIBUTE	Tmp-Octets-9				1839	octets
 #
 ATTRIBUTE	WiMAX-MN-NAI				1900	string
 
-#	Range:  1910-1930
-#	Certificate attributes
-#
-#
 ATTRIBUTE	TLS-Cert-Serial				1910	string
 ATTRIBUTE	TLS-Cert-Expiration			1911	string
 ATTRIBUTE	TLS-Cert-Issuer				1912	string
 ATTRIBUTE	TLS-Cert-Subject			1913	string
 ATTRIBUTE	TLS-Cert-Common-Name			1914	string
 ATTRIBUTE	TLS-Cert-Subject-Alt-Name-Email		1915	string
-# 1916 - 1919: reserved for future cert attributes
+ATTRIBUTE	TLS-Cert-Subject-Alt-Name-Dns		1916	string
+ATTRIBUTE	TLS-Cert-Subject-Alt-Name-Upn		1917	string
+# 1918 - 1919: reserved for future cert attributes
 ATTRIBUTE	TLS-Client-Cert-Serial			1920	string
 ATTRIBUTE	TLS-Client-Cert-Expiration		1921	string
 ATTRIBUTE	TLS-Client-Cert-Issuer			1922	string
@@ -434,10 +524,14 @@ ATTRIBUTE	TLS-Client-Cert-X509v3-Extended-Key-Usage 1927	string
 ATTRIBUTE	TLS-Client-Cert-X509v3-Subject-Key-Identifier 1928	string
 ATTRIBUTE	TLS-Client-Cert-X509v3-Authority-Key-Identifier 1929	string
 ATTRIBUTE	TLS-Client-Cert-X509v3-Basic-Constraints 1930	string
+ATTRIBUTE	TLS-Client-Cert-Subject-Alt-Name-Dns	1931	string
+ATTRIBUTE	TLS-Client-Cert-Subject-Alt-Name-Upn	1932	string
+ATTRIBUTE	TLS-PSK-Identity			1933	string
 
-# 1931 - 1939: reserved for future cert attributes
+# 1934 - 1939: reserved for future cert attributes
 
-#	Range:	1930-2099
+#
+#	Range:	1940-2099
 #		Free
 #
 #	Range:	2100-2199
@@ -474,7 +568,13 @@ ATTRIBUTE	SoH-MS-Windows-Health-Status		2120	string
 ATTRIBUTE	SoH-MS-Health-Other			2129	string
 
 #
-#	Range:	2200-2999
+#	Range:	2200-2219
+#		Utilities bundled with the server
+#
+ATTRIBUTE	Radclient-Test-Name			2200	string
+
+#
+#	Range:	2220-2999
 #		Free
 #
 #	Range:	3000-3999
@@ -492,14 +592,13 @@ ATTRIBUTE	SoH-MS-Health-Other			2129	string
 #	Non-Protocol Integer Translations
 #
 
-VALUE	Auth-Type			Local			0
-VALUE	Auth-Type			System			1
-VALUE	Auth-Type			SecurID			2
-VALUE	Auth-Type			Crypt-Local		3
-VALUE	Auth-Type			Reject			4
-VALUE	Auth-Type			ActivCard		5
-VALUE	Auth-Type			EAP			6
-VALUE	Auth-Type			ARAP			7
+VALUE	Auth-Type			Local			1
+VALUE	Auth-Type			System			2
+VALUE	Auth-Type			SecurID			3
+VALUE	Auth-Type			Crypt-Local		4
+VALUE	Auth-Type			Reject			5
+VALUE	Auth-Type			ActivCard		6
+VALUE	Auth-Type			EAP			7
 
 #
 #	FreeRADIUS extensions (most originally from Cistron)
@@ -523,21 +622,31 @@ VALUE	Auth-Type			MS-CHAP-V2		1034
 #
 #	Authorization type, too.
 #
-VALUE	Autz-Type			Local			0
+VALUE	Autz-Type			Local			1
 
 #
 #	And accounting
 #
-VALUE	Acct-Type			Local			0
+VALUE	Acct-Type			Local			1
 
 #
 #	And Session handling
 #
-VALUE	Session-Type			Local			0
+VALUE	Session-Type			Local			1
 
 #
 #	And Post-Auth
-VALUE	Post-Auth-Type			Local			0
+VALUE	Post-Auth-Type			Local			1
+VALUE	Post-Auth-Type			Reject			2
+VALUE	Post-Auth-Type			Challenge		3
+
+#
+#	And Post-Proxy
+VALUE	Post-Proxy-Type			Fail			1
+VALUE	Post-Proxy-Type			Fail-Authentication	2
+VALUE	Post-Proxy-Type			Fail-Accounting		3
+VALUE	Post-Proxy-Type			Fail-CoA		4
+VALUE	Post-Proxy-Type			Fail-Disconnect		5
 
 #
 #	Experimental Non-Protocol Integer Translations for FreeRADIUS
@@ -636,66 +745,64 @@ VALUE	EAP-Type			Identity		1
 VALUE	EAP-Type			Notification		2
 VALUE	EAP-Type			NAK			3
 VALUE	EAP-Type			MD5-Challenge		4
+VALUE	EAP-Type			MD5			4
 VALUE	EAP-Type			One-Time-Password	5
+VALUE	EAP-Type			OTP			5
 VALUE	EAP-Type			Generic-Token-Card	6
+VALUE	EAP-Type			GTC			6
 VALUE	EAP-Type			RSA-Public-Key		9
 VALUE	EAP-Type			DSS-Unilateral		10
 VALUE	EAP-Type			KEA			11
 VALUE	EAP-Type			KEA-Validate		12
-VALUE	EAP-Type			EAP-TLS			13
+VALUE	EAP-Type			TLS			13
 VALUE	EAP-Type			Defender-Token		14
 VALUE	EAP-Type			RSA-SecurID-EAP		15
 VALUE	EAP-Type			Arcot-Systems-EAP	16
 VALUE	EAP-Type			Cisco-LEAP		17
+VALUE	EAP-Type			LEAP			17
 VALUE	EAP-Type			Nokia-IP-Smart-Card	18
 VALUE	EAP-Type			SIM			18
 VALUE	EAP-Type			SRP-SHA1		19
 # 20 is unassigned
-VALUE	EAP-Type			EAP-TTLS		21
+VALUE	EAP-Type			TTLS			21
 VALUE	EAP-Type			Remote-Access-Service	22
 VALUE	EAP-Type			AKA			23
-VALUE	EAP-Type			EAP-3Com-Wireless	24
+VALUE	EAP-Type			3Com-Wireless		24
 VALUE	EAP-Type			PEAP			25
-VALUE	EAP-Type			MS-EAP-Authentication	26
+VALUE	EAP-Type			Microsoft-MS-CHAPv2	26
 VALUE	EAP-Type			MAKE			27
 VALUE	EAP-Type			CRYPTOCard		28
-VALUE	EAP-Type			EAP-MSCHAP-V2		29
+VALUE	EAP-Type			Cisco-MS-CHAPv2		29
 VALUE	EAP-Type			DynamID			30
 VALUE	EAP-Type			Rob-EAP			31
 VALUE	EAP-Type			SecurID-EAP		32
 VALUE	EAP-Type			MS-Authentication-TLV	33
 VALUE	EAP-Type			SentriNET		34
-VALUE	EAP-Type			EAP-Actiontec-Wireless	35
+VALUE	EAP-Type			Actiontec-Wireless	35
 VALUE	EAP-Type			Cogent-Biomentric-EAP	36
 VALUE	EAP-Type			AirFortress-EAP		37
-VALUE	EAP-Type			EAP-HTTP-Digest		38
+VALUE	EAP-Type			HTTP-Digest		38
+VALUE	EAP-Type			TNC			38
 VALUE	EAP-Type			SecuriSuite-EAP		39
 VALUE	EAP-Type			DeviceConnect-EAP	40
-VALUE	EAP-Type			EAP-SPEKE		41
-VALUE	EAP-Type			EAP-MOBAC		42
-VALUE	EAP-Type			EAP-FAST		43
+VALUE	EAP-Type			SPEKE			41
+VALUE	EAP-Type			MOBAC			42
+VALUE	EAP-Type			FAST			43
 VALUE	EAP-Type			Zonelabs		44
-VALUE	EAP-Type			EAP-Link		45
-VALUE	EAP-Type			EAP-PAX			46
-VALUE	EAP-Type			EAP-PSK			47
-VALUE	EAP-Type			EAP-SAKE		48
-VALUE	EAP-Type			EAP-IKEv2		49
-VALUE	EAP-Type			EAP-AKA2		50
-VALUE	EAP-Type			EAP-GPSK		51
-VALUE	EAP-Type			EAP-PWD			52
-VALUE	EAP-Type			EAP-EVEv1		53
-
-#
-#	These are duplicate values, to get around the problem of
-#	having two MS-CHAPv2 EAP types.
-#
-VALUE	EAP-Type			Microsoft-MS-CHAPv2	26
-VALUE	EAP-Type			Cisco-MS-CHAPv2		29
+VALUE	EAP-Type			Link			45
+VALUE	EAP-Type			PAX			46
+VALUE	EAP-Type			PSK			47
+VALUE	EAP-Type			SAKE			48
+VALUE	EAP-Type			IKEv2			49
+VALUE	EAP-Type			AKA2			50
+VALUE	EAP-Type			GPSK			51
+VALUE	EAP-Type			PWD			52
+VALUE	EAP-Type			EVEv1			53
 
 #
 #	And this is what most people mean by MS-CHAPv2
 #
-VALUE	EAP-Type			MS-CHAP-V2		26
+VALUE	EAP-Type			MSCHAPv2		26
 
 #
 #	This says TLS, but it's only valid for TTLS & PEAP.

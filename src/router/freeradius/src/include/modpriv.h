@@ -1,45 +1,36 @@
 /* modpriv.h: Stuff needed by both modules.c and modcall.c, but should not be
  * accessed from anywhere else.
  *
- * Version: $Id: a27bedbf2b5798c9e2b13521f9638a96d0cdd33b $ */
+ * Version: $Id: 94d320e2f55541130ce504edf098fff7c964208f $ */
 #ifndef FR_MODPRIV_H
 #define FR_MODPRIV_H
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 
-#ifndef WITHOUT_LIBLTDL
-#ifdef WITH_SYSTEM_LTDL
-#include <ltdl.h>
+#ifndef HAVE_DLFCN_H
+#error FreeRADIUS needs either libltdl, or a working dlopen()
 #else
-#include "libltdl/ltdl.h"
-#endif
+#include <dlfcn.h>
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef WITHOUT_LIBLTDL
 typedef void *lt_dlhandle;
 
-lt_dlhandle lt_dlopenext(const char *name);
-void *lt_dlsym(lt_dlhandle handle, const char *symbol);
+lt_dlhandle lt_dlopenext(char const *name);
+void *lt_dlsym(lt_dlhandle handle, char const *symbol);
 int lt_dlclose(lt_dlhandle handle);
-const char *lt_dlerror(void);
-
-#define LTDL_SET_PRELOADED_SYMBOLS(_x)
-#define lt_dlinit(_x) (0)
-#define lt_dlexit(_x)
-#define lt_dlsetsearchpath(_x)
-#endif
+char const *lt_dlerror(void);
 
 /*
  *	Keep track of which modules we've loaded.
  */
 typedef struct module_entry_t {
 	char			name[MAX_STRING_LEN];
-	const module_t		*module;
+	module_t const		*module;
 	lt_dlhandle		handle;
 } module_entry_t;
 
@@ -53,19 +44,19 @@ typedef struct fr_module_hup_t fr_module_hup_t;
 typedef struct module_instance_t {
 	char			name[MAX_STRING_LEN];
 	module_entry_t		*entry;
-	void                    *insthandle;
+	void			*insthandle;
 #ifdef HAVE_PTHREAD_H
 	pthread_mutex_t		*mutex;
 #endif
 	CONF_SECTION		*cs;
-	int			force;
-	int			code;
+	bool			force;
+	rlm_rcode_t		code;
 	fr_module_hup_t	       	*mh;
 } module_instance_t;
 
-module_instance_t *find_module_instance(CONF_SECTION *, const char *instname,
-					int do_link);
-int module_hup_module(CONF_SECTION *cs, module_instance_t *node, time_t when);
+module_instance_t	*find_module_instance(CONF_SECTION *modules, char const *askedname, bool do_link);
+int			find_module_sibling_section(CONF_SECTION **out, CONF_SECTION *module, char const *name);
+int			module_hup_module(CONF_SECTION *cs, module_instance_t *node, time_t when);
 
 #ifdef __cplusplus
 }

@@ -2,11 +2,12 @@
  * log.c	Functions in the library call radlib_log() which
  *		does internal logging.
  *
- * Version:	$Id: 73c46d7d3d460adfb424ef70ee4b15cdeb8b050a $
+ * Version:	$Id: 46f7a1317215e023a31823ad5c1a03db8bf922c7 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
- *   License as published by the Free Software Foundation; either
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version. either
  *   version 2.1 of the License, or (at your option) any later version.
  *
  *   This library is distributed in the hope that it will be useful,
@@ -21,117 +22,180 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 73c46d7d3d460adfb424ef70ee4b15cdeb8b050a $")
+RCSID("$Id: 46f7a1317215e023a31823ad5c1a03db8bf922c7 $")
 
 #include <freeradius-devel/libradius.h>
 
-
-#define FR_STRERROR_BUFSIZE (1024)
-
-#ifdef HAVE_THREAD_TLS
 /*
- *	GCC on most Linux systems
+ *	Are we using glibc or a close relative?
  */
-#define THREAD_TLS __thread
-
-#elif defined(HAVE_DECLSPEC_THREAD)
-/*
- *	Visual C++, Borland
- */
-#define THREAD_TLS __declspec(thread)
-#else
-
-/*
- *	We don't have thread-local storage.  Ensure we don't
- *	ask for it.
- */
-#define THREAD_TLS
-
-/*
- *	Use pthread keys if we have pthreads.  For MAC, which should
- *	be very fast.
- */
-#ifdef HAVE_PTHREAD_H
-#define USE_PTHREAD_FOR_TLS (1)
-#endif
+#ifdef HAVE_FEATURES_H
+#  include <features.h>
 #endif
 
-#ifndef USE_PTHREAD_FOR_TLS
+#define FR_STRERROR_BUFSIZE (2048)
+
+fr_thread_local_setup(char *, fr_strerror_buffer)	/* macro */
+fr_thread_local_setup(char *, fr_syserror_buffer)	/* macro */
+
+
 /*
- *	Try to create a thread-local-storage version of this buffer.
+ *	Explicitly cleanup the memory allocated to the error buffer,
+ *	just in case valgrind complains about it.
  */
-static THREAD_TLS char fr_strerror_buffer[FR_STRERROR_BUFSIZE];
-
-#else
-#include <pthread.h>
-
-static pthread_key_t  fr_strerror_key;
-static pthread_once_t fr_strerror_once = PTHREAD_ONCE_INIT;
-
-/* Create Key */
-static void fr_strerror_make_key(void)
+static void _fr_logging_free(void *arg)
 {
-	pthread_key_create(&fr_strerror_key, NULL);
+	free(arg);
 }
-#endif
 
-/*
- *	Log to a buffer, trying to be thread-safe.
+/** Log to thread local error buffer
+ *
+ * @param fmt printf style format string. If NULL sets the 'new' byte to false,
+ *	  effectively clearing the last message.
  */
-void fr_strerror_printf(const char *fmt, ...)
+void fr_strerror_printf(char const *fmt, ...)
 {
 	va_list ap;
 
-#ifdef USE_PTHREAD_FOR_TLS
 	char *buffer;
 
-	pthread_once(&fr_strerror_once, fr_strerror_make_key);
-	
-	buffer = pthread_getspecific(fr_strerror_key);
+	buffer = fr_thread_local_init(fr_strerror_buffer, _fr_logging_free);
 	if (!buffer) {
-		buffer = malloc(FR_STRERROR_BUFSIZE);
-		if (!buffer) return; /* panic and die! */
+		int ret;
 
-		pthread_setspecific(fr_strerror_key, buffer);
+		/*
+		 *	malloc is thread safe, talloc is not
+		 */
+		buffer = malloc(sizeof(char) * (FR_STRERROR_BUFSIZE + 1));	/* One byte extra for status */
+		if (!buffer) {
+			fr_perror("Failed allocating memory for libradius error buffer");
+			return;
+		}
+
+		ret = fr_thread_local_set(fr_strerror_buffer, buffer);
+		if (ret != 0) {
+			fr_perror("Failed setting up TLS for libradius error buffer: %s", fr_syserror(ret));
+			free(buffer);
+			return;
+		}
+	}
+
+	/*
+	 *	NULL has a special meaning, setting the new byte to false.
+	 */
+	if (!fmt) {
+		buffer[FR_STRERROR_BUFSIZE] = '\0';
+		return;
 	}
 
 	va_start(ap, fmt);
 	vsnprintf(buffer, FR_STRERROR_BUFSIZE, fmt, ap);
-
-#else
-	va_start(ap, fmt);
-	vsnprintf(fr_strerror_buffer, sizeof(fr_strerror_buffer), fmt, ap);
-#endif
-
+	buffer[FR_STRERROR_BUFSIZE] = '\1';			/* Flip the 'new' byte to true */
 	va_end(ap);
 }
 
-const char *fr_strerror(void)
+/** Get the last library error
+ *
+ * Will only return the last library error once, after which it will return a zero length string.
+ *
+ * @return library error or zero length string
+ */
+char const *fr_strerror(void)
 {
-#ifndef USE_PTHREAD_FOR_TLS
-	return fr_strerror_buffer;
+	char *buffer;
 
-#else
-	const char *msg;
+	buffer = fr_thread_local_get(fr_strerror_buffer);
+	if (buffer && (buffer[FR_STRERROR_BUFSIZE] != '\0')) {
+		buffer[FR_STRERROR_BUFSIZE] = '\0';		/* Flip the 'new' byte to false */
+		return buffer;
+	}
 
-	pthread_once(&fr_strerror_once, fr_strerror_make_key);
-
-	msg = pthread_getspecific(fr_strerror_key);
-	if (msg) return msg;
-
-	return "(unknown error)"; /* DON'T return NULL! */
-#endif
+	return "";
 }
 
-void fr_perror(const char *fmt, ...)
+/** Guaranteed to be thread-safe version of strerror
+ *
+ * @param num errno as returned by function or from global errno.
+ * @return local specific error string relating to errno.
+ */
+char const *fr_syserror(int num)
 {
+	char *buffer;
+	int ret;
+
+	buffer = fr_thread_local_init(fr_syserror_buffer, _fr_logging_free);
+	if (!buffer) {
+		/*
+		 *	malloc is thread safe, talloc is not
+		 */
+		buffer = malloc(sizeof(char) * FR_STRERROR_BUFSIZE);
+		if (!buffer) {
+			fr_perror("Failed allocating memory for system error buffer");
+			return NULL;
+		}
+
+		ret = fr_thread_local_set(fr_syserror_buffer, buffer);
+		if (ret != 0) {
+			fr_perror("Failed setting up TLS for system error buffer: %s", fr_syserror(ret));
+			free(buffer);
+			return NULL;
+		}
+	}
+
+	if (!num) {
+		return "No error";
+	}
+
+	/*
+	 *	XSI-Compliant version
+	 */
+#if !defined(HAVE_FEATURES_H) || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 500) && ! _GNU_SOURCE)
+	if ((ret = strerror_r(num, buffer, (size_t) FR_STRERROR_BUFSIZE) != 0)) {
+#  ifndef NDEBUG
+		fprintf(stderr, "strerror_r() failed to write error for errno %i to buffer %p (%zu bytes), "
+			"returned %i: %s\n", num, buffer, (size_t) FR_STRERROR_BUFSIZE, ret, strerror(ret));
+#  endif
+		buffer[0] = '\0';
+	}
+	return buffer;
+	/*
+	 *	GNU Specific version
+	 *
+	 *	The GNU Specific version returns a char pointer. That pointer may point
+	 *	the buffer you just passed in, or to an immutable static string.
+	 */
+#else
+	{
+		char const *p;
+		p = strerror_r(num, buffer, (size_t) FR_STRERROR_BUFSIZE);
+		if (!p) {
+#  ifndef NDEBUG
+			fprintf(stderr, "strerror_r() failed to write error for errno %i to buffer %p "
+				"(%zu bytes): %s\n", num, buffer, (size_t) FR_STRERROR_BUFSIZE, strerror(errno));
+#  endif
+			buffer[0] = '\0';
+			return buffer;
+		}
+		return p;
+	}
+#endif
+
+}
+
+void fr_perror(char const *fmt, ...)
+{
+	char const *error;
 	va_list ap;
 
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
-	if (strchr(fmt, ':') == NULL)
-		fprintf(stderr, ": ");
-	fprintf(stderr, "%s\n", fr_strerror());
+
+	error = fr_strerror();
+	if (error && (error[0] != '\0')) {
+		fprintf(stderr, ": %s\n", error);
+	} else {
+		fputs("\n", stderr);
+	}
+
 	va_end(ap);
 }

@@ -3,11 +3,11 @@
 #ifndef _SMBDES_H
 #define _SMBDES_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(smbdes_h, "$Id: 615de87d984a87ee2ccd4555f8cf11be3fddd6ec $")
+RCSIDH(smbdes_h, "$Id: aa06d761d421d997cfdc6f54af581545f691179e $")
 
-void smbdes_lmpwdhash(const char *password, uint8_t *lmhash);
-void smbdes_mschap(const char *win_password,
-		 const uint8_t *challenge, uint8_t *response);
+void smbhash(unsigned char *out, unsigned char const *in, unsigned char *key);
+void smbdes_lmpwdhash(char const *password, uint8_t *lmhash);
+void smbdes_mschap(uint8_t const win_password[16],
+		 uint8_t const *challenge, uint8_t *response);
 
 #endif /*_SMBDES_H*/

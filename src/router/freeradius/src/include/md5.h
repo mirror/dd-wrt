@@ -1,48 +1,48 @@
-/*
- * md5.h        Structures and prototypes for md5.
+/**
+ * $Id: a44584564f15ffe4073334a090c33334798fe901 $
  *
- * Version:     $Id: fec196e64a6fdc503181d2f495bcc30a7b9aad53 $
- * License:		LGPL, but largely derived from a public domain source.
+ * @note license is LGPL, but largely derived from a public domain source.
  *
+ * @file md5.h
+ * @brief Structures and prototypes for md5.
  */
 
 #ifndef _FR_MD5_H
 #define _FR_MD5_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(md5_h, "$Id: fec196e64a6fdc503181d2f495bcc30a7b9aad53 $")
+RCSIDH(md5_h, "$Id: a44584564f15ffe4073334a090c33334798fe901 $")
 
 #ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #endif
 
-#include <string.h>
+#  include <string.h>
 
-#ifdef WITH_OPENSSL_MD5
-#include <openssl/md5.h>
+#ifdef HAVE_OPENSSL_MD5_H
+#  include <openssl/md5.h>
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef WITH_OPENSSL_MD5
-/*  The below was retrieved from
- *  http://www.openbsd.org/cgi-bin/cvsweb/~checkout~/src/sys/crypto/md5.h?rev=1.1
- *  With the following changes: uint64_t => uint32_t[2]
- *  Commented out #include <sys/cdefs.h>
- *  Commented out the __BEGIN and __END _DECLS, and the __attributes.
- */
+#ifndef MD5_DIGEST_LENGTH
+#  define MD5_DIGEST_LENGTH 16
+#endif
 
+#ifndef HAVE_OPENSSL_MD5_H
 /*
+ * The MD5 code used here and in md5.c was originally retrieved from:
+ *   http://www.openbsd.org/cgi-bin/cvsweb/~checkout~/src/sys/crypto/md5.h?rev=1.1
+ *
  * This code implements the MD5 message-digest algorithm.
  * The algorithm is due to Ron Rivest.  This code was
  * written by Colin Plumb in 1993, no copyright is claimed.
@@ -53,37 +53,37 @@ extern "C" {
  * except that you don't need to include two pages of legalese
  * with every copy.
  */
-
-#define	MD5_BLOCK_LENGTH		64
-#define	MD5_DIGEST_LENGTH		16
-
+#  define MD5_BLOCK_LENGTH 64
 typedef struct FR_MD5Context {
-	uint32_t state[4];			/* state */
-	uint32_t count[2];			/* number of bits, mod 2^64 */
-	uint8_t buffer[MD5_BLOCK_LENGTH];	/* input buffer */
+	uint32_t state[4];			//!< State.
+	uint32_t count[2];			//!< Number of bits, mod 2^64.
+	uint8_t buffer[MD5_BLOCK_LENGTH];	//!< Input buffer.
 } FR_MD5_CTX;
 
-/* include <sys/cdefs.h> */
-
-/* __BEGIN_DECLS */
-void	 fr_MD5Init(FR_MD5_CTX *);
-void	 fr_MD5Update(FR_MD5_CTX *, const uint8_t *, size_t)
-/*		__attribute__((__bounded__(__string__,2,3)))*/;
-void	 fr_MD5Final(uint8_t [MD5_DIGEST_LENGTH], FR_MD5_CTX *)
-/*		__attribute__((__bounded__(__minbytes__,1,MD5_DIGEST_LENGTH)))*/;
-void	 fr_MD5Transform(uint32_t [4], const uint8_t [MD5_BLOCK_LENGTH])
-/*		__attribute__((__bounded__(__minbytes__,1,4)))*/
-/*		__attribute__((__bounded__(__minbytes__,2,MD5_BLOCK_LENGTH)))*/;
-/* __END_DECLS */
-
-#else  /* WITH_OPENSSL_HASH */
-
-#define FR_MD5_CTX	MD5_CTX
-#define fr_MD5Init	MD5_Init
-#define fr_MD5Update	MD5_Update
-#define fr_MD5Final	MD5_Final
-#define fr_MD5Transform MD5_Transform
+void 	fr_md5_init(FR_MD5_CTX *ctx);
+void	fr_md5_update(FR_MD5_CTX *ctx, uint8_t const *in, size_t inlen)
+	CC_BOUNDED(__string__, 2, 3);
+void	fr_md5_final(uint8_t out[MD5_DIGEST_LENGTH], FR_MD5_CTX *ctx)
+	CC_BOUNDED(__minbytes__, 1, MD5_DIGEST_LENGTH);
+void	fr_md5_transform(uint32_t state[4], uint8_t const block[MD5_BLOCK_LENGTH])
+	CC_BOUNDED(__size__, 1, 4, 4)
+	CC_BOUNDED(__minbytes__, 2, MD5_BLOCK_LENGTH);
+#else  /* HAVE_OPENSSL_MD5_H */
+USES_APPLE_DEPRECATED_API
+#  define FR_MD5_CTX		MD5_CTX
+#  define fr_md5_init		MD5_Init
+#  define fr_md5_update		MD5_Update
+#  define fr_md5_final		MD5_Final
+#  define fr_md5_transform	MD5_Transform
 #endif
+
+/* hmac.c */
+void	fr_hmac_md5(uint8_t digest[MD5_DIGEST_LENGTH], uint8_t const *text, size_t text_len,
+		    uint8_t const *key, size_t key_len)
+	CC_BOUNDED(__minbytes__, 1, MD5_DIGEST_LENGTH);
+
+/* md5.c */
+void	fr_md5_calc(uint8_t *out, uint8_t const *in, size_t inlen);
 
 #ifdef __cplusplus
 }

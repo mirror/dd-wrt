@@ -1,12 +1,8 @@
 /*
- * rlm_dynamic_clients.c
- *
- * Version:	$Id: 163d7d71d4edb7114f5e42fab4524430cec51e5e $
- *
- *   This program is free software; you can redistribute it and/or modify
+ *   This program is is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,24 +12,30 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- * Copyright 2008  The FreeRADIUS server project
- * Copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 163d7d71d4edb7114f5e42fab4524430cec51e5e $")
+/**
+ * $Id: 5ef10707980bba79621596b61dbbee094fdd0ce2 $
+ * @file rlm_dynamic_clients.c
+ * @brief Reads client definitions from flat files as required.
+ *
+ * @copyright 2008  The FreeRADIUS server project
+ * @copyright 2008  Alan DeKok <aland@deployingradius.com>
+ */
+RCSID("$Id: 5ef10707980bba79621596b61dbbee094fdd0ce2 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 
+#ifdef WITH_DYNAMIC_CLIENTS
 /*
  *	Find the client definition.
  */
-static int dynamic_client_authorize(UNUSED void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance,
+				 REQUEST *request)
 {
 	size_t length;
-	const char *value;
+	char const *value;
 	CONF_PAIR *cp;
 	RADCLIENT *c;
 	char buffer[2048];
@@ -61,7 +63,7 @@ static int dynamic_client_authorize(UNUSED void *instance, REQUEST *request)
 
 	value = cf_pair_value(cp);
 	if (!value) {
-		RDEBUG("No value given for the directory entry in the client.");
+		RDEBUG("No value given for the directory entry in the client");
 		return RLM_MODULE_NOOP;
 	}
 
@@ -78,7 +80,7 @@ static int dynamic_client_authorize(UNUSED void *instance, REQUEST *request)
 	/*
 	 *	Read the buffer and generate the client.
 	 */
-	c = client_read(buffer, (request->client->server != NULL), TRUE);
+	c = client_read(buffer, (request->client->server != NULL), true);
 	if (!c) return RLM_MODULE_FAIL;
 
 	/*
@@ -89,6 +91,13 @@ static int dynamic_client_authorize(UNUSED void *instance, REQUEST *request)
 
 	return RLM_MODULE_OK;
 }
+#else
+static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance, REQUEST *request)
+{
+	RDEBUG("Dynamic clients are unsupported in this build");
+	return RLM_MODULE_FAIL;
+}
+#endif
 
 /*
  *	The module name should be the only globally exported symbol.
@@ -99,15 +108,18 @@ static int dynamic_client_authorize(UNUSED void *instance, REQUEST *request)
  *	The server will then take care of ensuring that the module
  *	is single-threaded.
  */
+extern module_t rlm_dynamic_clients;
 module_t rlm_dynamic_clients = {
 	RLM_MODULE_INIT,
 	"dynamic_clients",
 	RLM_TYPE_THREAD_SAFE,		/* type */
+	0,
+	NULL,				/* CONF_PARSER */
 	NULL,				/* instantiation */
 	NULL,				/* detach */
 	{
 		NULL,			/* authentication */
-		dynamic_client_authorize,	/* authorization */
+		mod_authorize,	/* authorization */
 		NULL,			/* preaccounting */
 		NULL,			/* accounting */
 		NULL,			/* checksimul */

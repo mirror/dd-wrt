@@ -1,10 +1,10 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 #
 #	Attributes and values defined in RFC 2866.
 #	http://www.ietf.org/rfc/rfc2866.txt
 #
-#	$Id: 05c4156c6cbc8df9d4a442d4a4e60a81d1c09262 $
+#	$Id: 32158051df0baf0ed565de61706b6c3adac931d1 $
 #
 ATTRIBUTE	Acct-Status-Type			40	integer
 ATTRIBUTE	Acct-Delay-Time				41	integer

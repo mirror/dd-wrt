@@ -1,10 +1,10 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 ##############################################################################
 #
 #	Xylan dictionary
 #
-#	$Id: b2190488c4f83c2f8f3844abe3cc1082ddd73c80 $
+#	$Id: 8a45a1fb26b16d2eafcd800efc79643e9fb3082f $
 #
 ##############################################################################
 
@@ -21,7 +21,12 @@ ATTRIBUTE	Xylan-Port-Desc				6	string
 ATTRIBUTE	Xylan-Profil-Numb			7	integer
 ATTRIBUTE	Xylan-Auth-Group-Protocol		8	string
 ATTRIBUTE	Xylan-Asa-Access			9	string
+ATTRIBUTE	Xylan-End-User-Profile			10	integer
 ATTRIBUTE	Xylan-Access-Priv			16	integer
+ATTRIBUTE	Xylan-Nms-Group				20	string
+ATTRIBUTE	Xylan-Nms-First-Name			21	string
+ATTRIBUTE	Xylan-Nms-Last-Name			22	string
+ATTRIBUTE	Xylan-Nms-Description			23	string
 ATTRIBUTE	Xylan-Acce-Priv-R1			33	octets
 ATTRIBUTE	Xylan-Acce-Priv-R2			34	octets
 ATTRIBUTE	Xylan-Acce-Priv-W1			35	octets

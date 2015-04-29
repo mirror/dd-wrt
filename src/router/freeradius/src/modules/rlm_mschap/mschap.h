@@ -3,19 +3,23 @@
 #ifndef _MSCHAP_H
 #define _MSCHAP_H
 
-#include <freeradius-devel/ident.h>
-RCSIDH(mschap_h, "$Id: cdb74b861026431332d3d48656f331a20e0d154b $")
+RCSIDH(mschap_h, "$Id: 6fcc485925772b5ebac5d5d35f1194759eb535b9 $")
 
-void mschap_ntpwdhash (uint8_t *szHash, const char *szPassword);
-void mschap_challenge_hash( const uint8_t *peer_challenge,
-			    const uint8_t *auth_challenge,
-			    const char *user_name, uint8_t *challenge );
+#define NT_DIGEST_LENGTH 16
+#define LM_DIGEST_LENGTH 16
 
-void mschap_auth_response(const char *username,
-			  const uint8_t *nt_hash_hash,
-			  uint8_t *ntresponse,
-			  uint8_t *peer_challenge, uint8_t *auth_challenge,
+int mschap_ntpwdhash(uint8_t *out, char const *password);
+void mschap_challenge_hash(uint8_t const *peer_challenge,
+			    uint8_t const *auth_challenge,
+			    char const *user_name, uint8_t *challenge );
+
+void mschap_auth_response(char const *username,
+			  uint8_t const *nt_hash_hash,
+			  uint8_t const *ntresponse,
+			  uint8_t const *peer_challenge, uint8_t const *auth_challenge,
 			  char *response);
+void mschap_add_reply(REQUEST *request, unsigned char ident,
+		      char const *name, char const *value, size_t len);
 
 
 #endif /*_MSCHAP_H*/

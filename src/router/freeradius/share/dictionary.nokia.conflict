@@ -1,10 +1,10 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 ##############################################################################
 #
 #	Nokia dictionary for attributes that conflict with other dictionaries.
 #
-#	$Id: 7b3980e7c1f7fee28131201a457005528fcee3ec $
+#	$Id: 5a34a137f14a01216f1c89ff3709ad2763f0286c $
 #
 ##############################################################################
 

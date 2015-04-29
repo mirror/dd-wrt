@@ -1,12 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
 ##############################################################################
 #
 #       Telkom SA - RADIUS dictionary
 #       Used to convey Telkom Specific Information in proxied requests
 #       EDS 20031007 eddie@saix.net
 #
-#	$Id: 4cfb6e9640c37ba90a987114dd93ced333bd0831 $
+#	$Id: 687677cbbf9eb3d9cfa1ca955d92bfb027ad7f51 $
 #
 ##############################################################################
 

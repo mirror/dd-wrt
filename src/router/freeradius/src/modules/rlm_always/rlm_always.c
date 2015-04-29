@@ -1,6 +1,4 @@
 /*
- * rlm_always.c
- *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -15,161 +13,143 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  *
- * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 5e688f63b63d3b5883576f6efd54274f4156134f $")
+/**
+ * $Id: 07e0fe231a8dfc508d842174ea7429f85266e4b4 $
+ * @file rlm_always.c
+ * @brief Return preconfigured fixed rcodes.
+ *
+ * @copyright 2000,2006  The FreeRADIUS server project
+ */
+RCSID("$Id: 07e0fe231a8dfc508d842174ea7429f85266e4b4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
+#include <freeradius-devel/modcall.h>
 
 /*
  *	The instance data for rlm_always is the list of fake values we are
  *	going to return.
  */
 typedef struct rlm_always_t {
-	char	*rcode_str;
-	int	rcode;
-	int	simulcount;
-	int	mpp;
+	char const	*name;		//!< Name of this instance of the always module.
+	char const	*rcode_str;	//!< The base value.
+	char const	*rcode_old;	//!< Make changing the rcode work with %{poke:} and radmin.
+
+	rlm_rcode_t	rcode;		//!< The integer constant representing rcode_str.
+	uint32_t	simulcount;
+	bool		mpp;
 } rlm_always_t;
 
 /*
  *	A mapping of configuration file names to internal variables.
- *
- *	Note that the string is dynamically allocated, so it MUST
- *	be freed.  When the configuration file parse re-reads the string,
- *	it free's the old one, and strdup's the new one, placing the pointer
- *	to the strdup'd string into 'config.string'.  This gets around
- *	buffer over-flows.
  */
 static const CONF_PARSER module_config[] = {
-  { "rcode",      PW_TYPE_STRING_PTR, offsetof(rlm_always_t,rcode_str),
-    NULL, "fail" },
-  { "simulcount", PW_TYPE_INTEGER,    offsetof(rlm_always_t,simulcount),
-    NULL, "0" },
-  { "mpp",        PW_TYPE_BOOLEAN,    offsetof(rlm_always_t,mpp),
-    NULL, "no" },
+	{ "rcode", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_always_t, rcode_str), "fail" },
+	{ "simulcount", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_always_t, simulcount), "0" },
+	{ "mpp", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_always_t, mpp), "no" },
 
-  { NULL, -1, 0, NULL, NULL }		/* end the list */
+	{ NULL, -1, 0, NULL, NULL }		/* end the list */
 };
 
-static int str2rcode(const char *s)
+static int mod_instantiate(CONF_SECTION *conf, void *instance)
 {
-	if(!strcasecmp(s, "reject"))
-		return RLM_MODULE_REJECT;
-	else if(!strcasecmp(s, "fail"))
-		return RLM_MODULE_FAIL;
-	else if(!strcasecmp(s, "ok"))
-		return RLM_MODULE_OK;
-	else if(!strcasecmp(s, "handled"))
-		return RLM_MODULE_HANDLED;
-	else if(!strcasecmp(s, "invalid"))
-		return RLM_MODULE_INVALID;
-	else if(!strcasecmp(s, "userlock"))
-		return RLM_MODULE_USERLOCK;
-	else if(!strcasecmp(s, "notfound"))
-		return RLM_MODULE_NOTFOUND;
-	else if(!strcasecmp(s, "noop"))
-		return RLM_MODULE_NOOP;
-	else if(!strcasecmp(s, "updated"))
-		return RLM_MODULE_UPDATED;
-	else {
-		radlog(L_ERR|L_CONS,
-			"rlm_always: Unknown module rcode '%s'.\n", s);
-		return -1;
-	}
-}
+	rlm_always_t *inst = instance;
 
-static int always_instantiate(CONF_SECTION *conf, void **instance)
-{
-	rlm_always_t *data;
-
+	inst->name = cf_section_name1(conf);
+	if (!inst->name) inst->name = cf_section_name2(conf);
 	/*
-	 *	Set up a storage area for instance data
+	 *	Convert the rcode string to an int
 	 */
-	data = rad_malloc(sizeof(*data));
-	if (!data) {
+	inst->rcode = fr_str2int(mod_rcode_table, inst->rcode_str, RLM_MODULE_UNKNOWN);
+	if (inst->rcode == RLM_MODULE_UNKNOWN) {
+		cf_log_err_cs(conf, "rcode value \"%s\" is invalid", inst->rcode_str);
 		return -1;
 	}
-	memset(data, 0, sizeof(*data));
-
-	/*
-	 *	If the configuration parameters can't be parsed, then
-	 *	fail.
-	 */
-	if (cf_section_parse(conf, data, module_config) < 0) {
-		free(data);
-		return -1;
-	}
-
-	/*
-	 *	Convert the rcode string to an int, and get rid of it
-	 */
-	data->rcode = str2rcode(data->rcode_str);
-	if (data->rcode == -1) {
-		free(data);
-		return -1;
-	}
-
-	*instance = data;
+	inst->rcode_old = NULL;	/* Hack - forces the compiler not to optimise away rcode_old */
 
 	return 0;
+}
+
+/** Reparse the rcode if it changed
+ *
+ * @note Look ma, no locks...
+ *
+ * @param inst Module instance.
+ */
+static void reparse_rcode(rlm_always_t *inst)
+{
+	rlm_rcode_t rcode;
+
+	rcode = fr_str2int(mod_rcode_table, inst->rcode_str, RLM_MODULE_UNKNOWN);
+	if (rcode == RLM_MODULE_UNKNOWN) {
+		WARN("rlm_always (%s): Ignoring rcode change.  rcode value \"%s\" is invalid ", inst->name,
+		     inst->rcode_str);
+		return;
+	}
+
+	inst->rcode = rcode;
+	inst->rcode_old = inst->rcode_str;
 }
 
 /*
  *	Just return the rcode ... this function is autz, auth, acct, and
  *	preacct!
  */
-static int always_return(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_always_return(void *instance, UNUSED REQUEST *request)
 {
-	/* quiet the compiler */
-	request = request;
+	rlm_always_t *inst = instance;
 
-	return ((struct rlm_always_t *)instance)->rcode;
-}
-
-/*
- *	checksimul fakes some other variables besides the rcode...
- */
-static int always_checksimul(void *instance, REQUEST *request)
-{
-	struct rlm_always_t *inst = instance;
-
-	request->simul_count = inst->simulcount;
-
-	if (inst->mpp)
-		request->simul_mpp = 2;
+	if (inst->rcode_old != inst->rcode_str) reparse_rcode(inst);
 
 	return inst->rcode;
 }
 
-static int always_detach(void *instance)
+#ifdef WITH_SESSION_MGMT
+/*
+ *	checksimul fakes some other variables besides the rcode...
+ */
+static rlm_rcode_t CC_HINT(nonnull) mod_checksimul(void *instance, REQUEST *request)
 {
-	free(instance);
-	return 0;
-}
+	struct rlm_always_t *inst = instance;
 
+	if (inst->rcode_old != inst->rcode_str) reparse_rcode(inst);
+
+	request->simul_count = inst->simulcount;
+
+	if (inst->mpp) request->simul_mpp = 2;
+
+	return inst->rcode;
+}
+#endif
+
+extern module_t rlm_always;
 module_t rlm_always = {
 	RLM_MODULE_INIT,
 	"always",
-	RLM_TYPE_CHECK_CONFIG_SAFE,   	/* type */
-	always_instantiate,		/* instantiation */
-	always_detach,			/* detach */
+	RLM_TYPE_HUP_SAFE,	   	/* needed for radmin */
+	sizeof(rlm_always_t),		/* config size */
+	module_config,			/* configuration */
+	mod_instantiate,		/* instantiation */
+	NULL,				/* detach */
 	{
-		always_return,		/* authentication */
-		always_return,		/* authorization */
-		always_return,		/* preaccounting */
-		always_return,		/* accounting */
-		always_checksimul,	/* checksimul */
-		always_return,	       	/* pre-proxy */
-		always_return,		/* post-proxy */
-		always_return		/* post-auth */
+		mod_always_return,		/* authentication */
+		mod_always_return,		/* authorization */
+		mod_always_return,		/* preaccounting */
+		mod_always_return,		/* accounting */
+#ifdef WITH_SESSION_MGMT
+		mod_checksimul,	/* checksimul */
+#else
+		NULL,
+#endif
+		mod_always_return,	       	/* pre-proxy */
+		mod_always_return,		/* post-proxy */
+		mod_always_return		/* post-auth */
 #ifdef WITH_COA
 		,
-		always_return,		/* recv-coa */
-		always_return		/* send-coa */
+		mod_always_return,		/* recv-coa */
+		mod_always_return		/* send-coa */
 #endif
 	},
 };

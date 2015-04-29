@@ -1,12 +1,8 @@
 /*
- * rlm_eap_tnc.c    Handles that are called from eap
- *
- *   This software is Copyright (C) 2006,2007 FH Hannover
- *
  *   Portions of this code unrelated to FreeRADIUS are available
  *   separately under a commercial license.  If you require an
  *   implementation of EAP-TNC that is not under the GPLv2, please
- *   contact tnc@inform.fh-hannover.de for details.
+ *   contact trust@f4-i.fh-hannover.de for details.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,100 +18,218 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  *
- *   Modifications to integrate with FreeRADIUS configuration
- *   Copyright (C) 2007 Alan DeKok <aland@deployingradius.com>
  */
 
-#include <freeradius-devel/ident.h>
-RCSID("$Id: 985ac01f384110b9a46ec8e84592351c21b3f09a $")
+/**
+ * $Id: 5e330828cc78acc074e90d2cc75d37dec3e11a4b $
+ * @file rlm_eap_tnc.c
+ * @brief Interfaces with the naeap library to provide EAP-TNC inner method.
+ *
+ * @copyright 2013 The FreeRADIUS project
+ * @copyright 2007 Alan DeKok <aland@deployingradius.com>
+ * @copyright 2006-2009 FH Hannover
+ */
 
-#include <freeradius-devel/autoconf.h>
+/*
+ * EAP-TNC Packet with EAP Header, general structure
+ *
+ *  0		   1		   2		   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |      Code     |   Identifier  |	    Length	     |
+ * |	       |	       |			       |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |      Type     |  Flags  | Ver |	  Data Length	  |
+ * |	       |L M S R R| =1  |			       |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |	  Data Length	  |	   Data ...
+ * |			       |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tncs_connect.h"
-#include "eap_tnc.h"
-#include "tncs.h"
 #include <freeradius-devel/rad_assert.h>
 
-typedef struct rlm_eap_tnc_t {
-	char	*vlan_access;
-	char	*vlan_isolate;
-	char	*tnc_path;
+#include "eap.h"
+#include <naaeap/naaeap.h>
+#include <netinet/in.h>
+
+#define VERSION "0.7.0"
+#define SET_START(x) 		((x) | (0x20))
+
+typedef struct rlm_eap_tnc {
+	char const	*connection_string;
 } rlm_eap_tnc_t;
 
-static int sessionCounter=0;
+static CONF_PARSER module_config[] = {
+	{ "connection_string", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_eap_tnc_t, connection_string), "NAS Port: %{NAS-Port} NAS IP: %{NAS-IP-Address} NAS_PORT_TYPE: %{NAS-Port-Type}" },
+
+	{ NULL, -1, 0, NULL, NULL }	   /* end the list */
+};
+
+static int mod_instantiate(CONF_SECTION *cs, void **instance)
+{
+	rlm_eap_tnc_t *inst;
+	TNC_Result result;
+
+	*instance = inst = talloc_zero(cs, rlm_eap_tnc_t);
+	if (!inst) return -1;
+
+	/*
+	 *	Parse the configuration attributes.
+	 */
+	if (cf_section_parse(cs, inst, module_config) < 0) {
+		return -1;
+	}
+
+	result = initializeDefault();
+	if (result != TNC_RESULT_SUCCESS) {
+		ERROR("rlm_eap_tnc: NAA-EAP initializeDefault returned an "
+		      "error code");
+
+		return -1;
+	}
+
+	return 0;
+}
+
+static int mod_detach(void *instance)
+{
+	TNC_Result result;
+
+	talloc_free(instance);
+
+	result = terminate();
+	if (result != TNC_RESULT_SUCCESS) {
+		ERROR("rlm_eap_tnc: NAA-EAP terminate returned an "
+		      "error code whilst detaching");
+		return -1;
+	}
+
+	return 0;
+}
 
 /*
- *	Initiate the EAP-MD5 session by sending a challenge to the peer.
- *  Initiate the EAP-TNC session by sending a EAP Request witch Start Bit set 
- *  and with no data
+ * This function is called when the first EAP_IDENTITY_RESPONSE message
+ * was received.
+ *
+ * Initiates the EPA_TNC session by sending the first EAP_TNC_RESPONSE
+ * to the peer. The packet has the Start-Bit set and contains no data.
+ *
+ *  0		   1		   2		   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |      Code     |   Identifier  |	    Length	     |
+ * |	       |	       |			       |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |      Type     |  Flags  | Ver |
+ * |	       |0 0 1 0 0|0 0 1|
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *
+ * For this package, only 'Identifier' has to be set dynamically. Any
+ * other information is static.
  */
-static int tnc_initiate(void *type_data, EAP_HANDLER *handler)
+static int mod_session_init(void *instance, eap_handler_t *handler)
 {
-	uint8_t flags_ver = 1; //set version to 1
-	rlm_eap_tnc_t *inst = type_data;
-	TNC_PACKET *reply;
+	rlm_eap_tnc_t *inst = instance;
+	REQUEST *request = NULL;
 
+	char buff[71];
+	ssize_t len = 0;
+
+	TNC_Result result;
+	TNC_ConnectionID conn_id;
+
+	TNC_BufferReference eap_tnc_request;
+	TNC_BufferReference eap_tnc_user;
+
+	VALUE_PAIR *username;
+
+	/*
+	 *	Check if we run inside a secure EAP method.
+	 *	FIXME check concrete outer EAP method.
+	 */
 	if (!handler->request || !handler->request->parent) {
-		DEBUG("rlm_eap_tnc: EAP-TNC can only be run inside of a TLS-based method.");
+		ERROR("rlm_eap_tnc: EAP_TNC must only be used as an "
+		      "inner method within a protected tunneled EAP created "
+		      "by an outer EAP method");
+
+		return 0;
+	}
+
+	request = handler->request->parent;
+
+	/*
+	 *	Build the connection string
+	 */
+	len = radius_xlat(buff, sizeof(buff), request, inst->connection_string, NULL, NULL);
+	if (len < 0){
+		return 0;
+	}
+
+	RDEBUG("Getting connection from NAA-EAP");
+
+	/*
+	 *	Get connection (uses a function from the NAA-EAP-library)
+	 */
+	result = getConnection(buff, &conn_id);
+	if (result != TNC_RESULT_SUCCESS) {
+		ERROR("rlm_eap_tnc: NAA-EAP getConnection returned an "
+		      "error code");
+
 		return 0;
 	}
 
 	/*
-	 *	FIXME: Update this when the TTLS and PEAP methods can
-	 *	run EAP-TLC *after* the user has been authenticated.
-	 *	This likely means moving the phase2 handlers to a
-	 *	common code base.
+	 *	Previous code manually parsed the EAP identity response
+	 *	this was wrong. rlm_eap will *always* create the Username
+	 *	from the EAP Identity response.
+	 *
+	 *	Something has gone very wrong if the User-Name doesn't exist.
 	 */
-	if (1) {
-		DEBUG("rlm-eap_tnc: EAP-TNC can only be run after the user has been authenticated.");
+	username = pairfind(request->packet->vps, PW_USER_NAME, 0, TAG_ANY);
+
+	RDEBUG("Username for TNC connection: %s", username->vp_strvalue);
+
+	/*
+	 *	Stores the username associated with the connection
+	 *
+	 *	What becomes of username? Who knows... but we don't free it
+	 *	so not safe to use talloc.
+	 */
+	MEM(eap_tnc_user = (TNC_BufferReference) strdup(username->vp_strvalue));
+
+	result = storeUsername(conn_id, eap_tnc_user, username->vp_length);
+	if (result != TNC_RESULT_SUCCESS) {
+		ERROR("rlm_eap_tnc: NAA-EAP storeUsername returned an "
+		      "error code");
+
 		return 0;
 	}
 
-	DEBUG("tnc_initiate: %ld", handler->timestamp);
-
-	if(connectToTncs(inst->tnc_path)==-1){
-		DEBUG("Could not connect to TNCS");
-	}
+	/*
+	 *	Set connection ID
+	 */
+	handler->opaque = talloc(handler, TNC_ConnectionID);
+	memcpy(handler->opaque, &conn_id, sizeof(TNC_ConnectionID));
 
 	/*
-	 *	Allocate an EAP-MD5 packet.
+	 *	Bild first EAP TNC request
 	 */
-	reply = eaptnc_alloc();
-	if (reply == NULL)  {
-		radlog(L_ERR, "rlm_eap_tnc: out of memory");
-		return 0;
-	}
 
-	/*
-	 *	Fill it with data.
-	 */
-	reply->code = PW_TNC_REQUEST;
-	flags_ver = SET_START(flags_ver); //set start-flag
-	DEBUG("$$$$$$$$$$$$$$$$Flags: %d", flags_ver);
-	reply->flags_ver = flags_ver;
-	reply->length = 1+1; /* one byte of flags_ver */
+	MEM(eap_tnc_request = talloc_array(handler->eap_ds->request, uint8_t, 1));
+	*eap_tnc_request = SET_START(1);
 
+	handler->eap_ds->request->code = PW_EAP_REQUEST;
+	handler->eap_ds->request->type.num = PW_EAP_TNC;
 
-	/*
-	 *	Compose the EAP-TNC packet out of the data structure,
-	 *	and free it.
-	 */
-	eaptnc_compose(handler->eap_ds, reply);
-	eaptnc_free(&reply);
+	handler->eap_ds->request->type.length = 1;
 
-    //put sessionAttribute to Handler and increase sessionCounter
-    handler->opaque = calloc(sizeof(TNC_ConnectionID), 1);
-    if (handler->opaque == NULL)  {
-	radlog(L_ERR, "rlm_eap_tnc: out of memory");
-	return 0;
-    }
-    handler->free_opaque = free;
-    memcpy(handler->opaque, &sessionCounter, sizeof(int));
-    sessionCounter++;
-    
+	talloc_free(handler->eap_ds->request->type.data);
+	handler->eap_ds->request->type.data = eap_tnc_request;
+
 	/*
 	 *	We don't need to authorize the user at this point.
 	 *
@@ -123,258 +237,122 @@ static int tnc_initiate(void *type_data, EAP_HANDLER *handler)
 	 *	stored in 'handler->eap_ds', which will be given back
 	 *	to us...
 	 */
-	handler->stage = AUTHENTICATE;
-    
+	handler->stage = PROCESS;
+
 	return 1;
 }
 
-static void setVlanAttribute(rlm_eap_tnc_t *inst, EAP_HANDLER *handler,
-			     VlanAccessMode mode){
-	VALUE_PAIR *vp;
-    char *vlanNumber = NULL;
-    switch(mode){
-        case VLAN_ISOLATE:
-            vlanNumber = inst->vlan_isolate;
-	    vp = pairfind(handler->request->config_items,
-			  PW_TNC_VLAN_ISOLATE);
-	    if (vp) vlanNumber = vp->vp_strvalue;
-            break;
-        case VLAN_ACCESS:
-            vlanNumber = inst->vlan_access;
-	    vp = pairfind(handler->request->config_items,
-			  PW_TNC_VLAN_ACCESS);
-	    if (vp) vlanNumber = vp->vp_strvalue;
-            break;
-
-    default:
-	    DEBUG2("  rlm_eap_tnc: Internal error.  Not setting vlan number");
-	    return;
-    }
-    pairadd(&handler->request->reply->vps,
-	    pairmake("Tunnel-Type", "VLAN", T_OP_SET));
-    
-    pairadd(&handler->request->reply->vps,
-	    pairmake("Tunnel-Medium-Type", "IEEE-802", T_OP_SET));
-    
-    pairadd(&handler->request->reply->vps,
-	    pairmake("Tunnel-Private-Group-ID", vlanNumber, T_OP_SET));
-    
-}
-
-/*
- *	Authenticate a previously sent challenge.
+/**
+ * This function is called when a EAP_TNC_RESPONSE was received.
+ * It basically forwards the EAP_TNC data to NAA-TNCS and forms
+ * and appropriate EAP_RESPONSE. Furthermore, it sets the VlanID
+ * based on the TNC_ConnectionState determined by NAA-TNCS.
+ *
+ * @param instance The configuration data.
+ * @param handler The eap_handler_t.
+ * @return True, if successfully, else false.
  */
-static int tnc_authenticate(void *type_arg, EAP_HANDLER *handler)
+static int mod_process(UNUSED void *instance, eap_handler_t *handler)
 {
-    TNC_PACKET	*packet;
-    TNC_PACKET	*reply;
-    TNC_ConnectionID connId = *((TNC_ConnectionID *) (handler->opaque));
-    TNC_ConnectionState state;
-    rlm_eap_tnc_t *inst = type_arg;
-    int isAcknowledgement = 0;
-    TNC_UInt32 tnccsMsgLength = 0;
-    int isLengthIncluded;
-    int moreFragments;
-    TNC_UInt32 overallLength;
-    TNC_BufferReference outMessage;
-    TNC_UInt32 outMessageLength = 2;
-    int outIsLengthIncluded=0;
-    int outMoreFragments=0;
-    TNC_UInt32 outOverallLength=0;
+	TNC_ConnectionID conn_id;
+	TNC_Result result;
 
-    DEBUG2("HANDLER_OPAQUE: %d", (int) *((TNC_ConnectionID *) (handler->opaque)));
-    DEBUG2("TNC-AUTHENTICATE is starting now for %d..........", (int) connId);
+	TNC_BufferReference data = NULL;
+	TNC_UInt32 datalen = 0;
 
-	/*
-	 *	Get the User-Password for this user.
-	 */
-    rad_assert(handler->request != NULL);
-	rad_assert(handler->stage == AUTHENTICATE);
-    
-	/*
-	 *	Extract the EAP-TNC packet.
-	 */
-    if (!(packet = eaptnc_extract(handler->eap_ds)))
-		return 0;
+	TNC_ConnectionState connection_state;
+	uint8_t code = 0;
+	REQUEST *request = handler->request;
 
-	/*
-	 *	Create a reply, and initialize it.
-	 */
-	reply = eaptnc_alloc();
-	if (!reply) {
-		eaptnc_free(&packet);
+	if (handler->eap_ds->response->type.num != PW_EAP_TNC) {
+		ERROR("rlm_eap_tnc: Incorrect response type");
+
 		return 0;
 	}
-    
-	reply->id = handler->eap_ds->request->id;
-	reply->length = 0;
-    if(packet->data_length==0){
-        tnccsMsgLength = packet->length-TNC_PACKET_LENGTH_WITHOUT_DATA_LENGTH;
-    }else{
-        tnccsMsgLength = packet->length-TNC_PACKET_LENGTH;
-    }
-    isLengthIncluded = TNC_LENGTH_INCLUDED(packet->flags_ver);
-    moreFragments = TNC_MORE_FRAGMENTS(packet->flags_ver);
-    overallLength = packet->data_length;
-    if(isLengthIncluded == 0 
-        && moreFragments == 0 
-        && overallLength == 0 
-        && tnccsMsgLength == 0
-        && TNC_START(packet->flags_ver)==0){
-        
-        isAcknowledgement = 1;
-    }
-    
-    DEBUG("Data received: (%d)", (int) tnccsMsgLength);
-/*    int i;
-    for(i=0;i<tnccsMsgLength;i++){
-        DEBUG2("%c", (packet->data)[i]);
-    }
-    DEBUG2("\n");
-   */
-    state = exchangeTNCCSMessages(inst->tnc_path,
-                                  connId,
-                                  isAcknowledgement,
-                                  packet->data, 
-                                  tnccsMsgLength, 
-                                  isLengthIncluded, 
-                                  moreFragments, 
-                                  overallLength, 
-                                  &outMessage, 
-                                  &outMessageLength,
-                                  &outIsLengthIncluded,
-                                  &outMoreFragments,
-                                  &outOverallLength);
-    DEBUG("GOT State %08x from TNCS", (unsigned int) state);
-    if(state == TNC_CONNECTION_EAP_ACKNOWLEDGEMENT){ //send back acknoledgement
-        reply->code = PW_TNC_REQUEST;
-        reply->data = NULL;
-        reply->data_length = 0;
-        reply->flags_ver = 1;
-        reply->length =TNC_PACKET_LENGTH_WITHOUT_DATA_LENGTH; 
-    }else{ //send back normal message
-        DEBUG("GOT Message from TNCS (length: %d)", (int) outMessageLength);
-        
- /*       for(i=0;i<outMessageLength;i++){
-            DEBUG2("%c", outMessage[i]);
-        }
-        DEBUG2("\n");
- */
-        DEBUG("outIsLengthIncluded: %d, outMoreFragments: %d, outOverallLength: %d", 
-                outIsLengthIncluded, outMoreFragments, (int) outOverallLength);
-        DEBUG("NEW STATE: %08x", (unsigned int) state);
-        switch(state){
-            case TNC_CONNECTION_STATE_HANDSHAKE:
-                reply->code = PW_TNC_REQUEST;
-                DEBUG2("Set Reply->Code to EAP-REQUEST\n");
-                break;
-            case TNC_CONNECTION_STATE_ACCESS_ALLOWED:
-                reply->code = PW_TNC_SUCCESS;
-                setVlanAttribute(inst, handler,VLAN_ACCESS);
-                break;
-            case TNC_CONNECTION_STATE_ACCESS_NONE:
-                reply->code = PW_TNC_FAILURE;
-                //setVlanAttribute(inst, handler, VLAN_ISOLATE);
-                break;
-            case TNC_CONNECTION_STATE_ACCESS_ISOLATED:
-                reply->code = PW_TNC_SUCCESS;
-                setVlanAttribute(inst, handler, VLAN_ISOLATE);
-                break;
-            default:
-                reply->code= PW_TNC_FAILURE;
-                
-        }
-        if(outMessage!=NULL && outMessageLength!=0){
-            reply->data = outMessage;
-        }
-        reply->flags_ver = 1;
-        if(outIsLengthIncluded){
-            reply->flags_ver = SET_LENGTH_INCLUDED(reply->flags_ver);
-            reply->data_length = outOverallLength;
-            reply->length = TNC_PACKET_LENGTH + outMessageLength;
-            DEBUG("SET LENGTH: %d", reply->length);
-            DEBUG("SET DATALENGTH: %d", (int) outOverallLength);
-        }else{
-            reply->data_length = 0;
-            reply->length = TNC_PACKET_LENGTH_WITHOUT_DATA_LENGTH + outMessageLength;        
-            DEBUG("SET LENGTH: %d", reply->length);
-        }
-        if(outMoreFragments){
-            reply->flags_ver = SET_MORE_FRAGMENTS(reply->flags_ver);
-        }
-    }
-    
-	/*
-	 *	Compose the EAP-MD5 packet out of the data structure,
-	 *	and free it.
-	 */
-	eaptnc_compose(handler->eap_ds, reply);
-    	eaptnc_free(&reply);
 
-    handler->stage = AUTHENTICATE;
-    
-	eaptnc_free(&packet);
+	/*
+	 *	Retrieve connection ID
+	 */
+	conn_id = *((TNC_ConnectionID *) (handler->opaque));
+
+	RDEBUG2("Starting authentication for connection ID %lX",
+	       conn_id);
+
+	/*
+	 * 	Pass EAP_TNC data to NAA-EAP and get answer data
+	 */
+	connection_state = TNC_CONNECTION_STATE_CREATE;
+
+	/*
+	 * 	Forwards the eap_tnc data to NAA-EAP and gets the response
+	 */
+	result = processEAPTNCData(conn_id, handler->eap_ds->response->type.data,
+				   handler->eap_ds->response->type.length,
+				   &data, &datalen, &connection_state);
+	if (result != TNC_RESULT_SUCCESS) {
+		RDEBUG("NAA-EAP processEAPTNCData returned "
+		       "an error code");
+
+		return 0;
+	}
+	/*
+	 *	Determine eap code for the response
+	 */
+	switch (connection_state) {
+	case TNC_CONNECTION_STATE_HANDSHAKE:
+		code = PW_EAP_REQUEST;
+		break;
+
+	case TNC_CONNECTION_STATE_ACCESS_NONE:
+		code = PW_EAP_FAILURE;
+		pairmake_config("TNC-Status", "None", T_OP_SET);
+		break;
+
+	case TNC_CONNECTION_STATE_ACCESS_ALLOWED:
+		code = PW_EAP_SUCCESS;
+		pairmake_config("TNC-Status", "Access", T_OP_SET);
+		break;
+
+	case TNC_CONNECTION_STATE_ACCESS_ISOLATED:
+		code = PW_EAP_SUCCESS;
+		pairmake_config("TNC-Status", "Isolate", T_OP_SET);
+		break;
+
+	default:
+		ERROR("rlm_eap_tnc: Invalid connection state");
+		return 0;
+	}
+
+	/*
+	 *	Build the TNC EAP request
+	 */
+	handler->eap_ds->request->code = code;
+	handler->eap_ds->request->type.num = PW_EAP_TNC;
+
+	handler->eap_ds->request->type.length = datalen;
+
+	talloc_free(handler->eap_ds->request->type.data);
+
+	/*
+	 *	"data" is not talloc'd memory.
+	 */
+	handler->eap_ds->request->type.data = talloc_array(handler->eap_ds->request,
+							   uint8_t, datalen);
+	memcpy(handler->eap_ds->request->type.data, data, datalen);
+	free(data);
+
 	return 1;
-}
-
-/*
- *	Detach the EAP-TNC module.
- */
-static int tnc_detach(void *arg)
-{
-	free(arg);
-	return 0;
-}
-
-
-static CONF_PARSER module_config[] = {
-	{ "vlan_access", PW_TYPE_STRING_PTR,
-	  offsetof(rlm_eap_tnc_t, vlan_access), NULL, NULL },
-	{ "vlan_isolate", PW_TYPE_STRING_PTR,
-	  offsetof(rlm_eap_tnc_t, vlan_isolate), NULL, NULL },
-	{ "tnc_path", PW_TYPE_STRING_PTR,
-	  offsetof(rlm_eap_tnc_t, tnc_path), NULL,
-	"/usr/local/lib/libTNCS.so"},
-
- 	{ NULL, -1, 0, NULL, NULL }           /* end the list */
-};
-
-/*
- *	Attach the EAP-TNC module.
- */
-static int tnc_attach(CONF_SECTION *cs, void **instance)
-{
-	rlm_eap_tnc_t *inst;
-
-	inst = malloc(sizeof(*inst));
-	if (!inst) return -1;
-	memset(inst, 0, sizeof(*inst));
-
-	if (cf_section_parse(cs, inst, module_config) < 0) {
-		tnc_detach(inst);
-		return -1;
-	}
-
-	
-	if (!inst->vlan_access || !inst->vlan_isolate) {
-		radlog(L_ERR, "rlm_eap_tnc: Must set both vlan_access and vlan_isolate");
-		tnc_detach(inst);
-		return -1;
-	}
-
-	*instance = inst;
-	return 0;
 }
 
 /*
  *	The module name should be the only globally exported symbol.
  *	That is, everything else should be 'static'.
  */
-EAP_TYPE rlm_eap_tnc = {
-	"eap_tnc",
-	tnc_attach,			/* attach */
-	tnc_initiate,			/* Start the initial request */
-	NULL,				/* authorization */
-	tnc_authenticate,		/* authentication */
-	tnc_detach		      	/* detach */
+extern rlm_eap_module_t rlm_eap_tnc;
+rlm_eap_module_t rlm_eap_tnc = {
+	.name		= "eap_tnc",
+	.instantiate	= mod_instantiate,	/* Create new submodule instance */
+	.session_init	= mod_session_init,	/* Initialise a new EAP session */
+	.process	= mod_process,		/* Process next round of EAP method */
+	.detach		= mod_detach		/* detach */
 };
