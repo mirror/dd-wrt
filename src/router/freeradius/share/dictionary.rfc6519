@@ -1,0 +1,10 @@
+# -*- text -*-
+# Copyright (C) 2012 The FreeRADIUS Server project and contributors
+#
+#	Attributes and values defined in RFC 6519.
+#	http://www.ietf.org/rfc/rfc6519.txt
+#
+#	$Id: 00bba31c4759482a3b51dcec37b99d48bc9407c0 $
+#
+
+ATTRIBUTE	DS-Lite-Tunnel-Name			144	string

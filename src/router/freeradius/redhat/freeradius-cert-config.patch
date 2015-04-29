@@ -1,0 +1,17 @@
+diff --git a/raddb/eap.conf b/raddb/eap.conf
+index d2c2b65..8d47925 100644
+--- a/raddb/eap.conf
++++ b/raddb/eap.conf
+@@ -297,7 +297,11 @@
+ 			# for the server to print out an error message,
+ 			# and refuse to start.
+ 			#
+-			make_cert_command = "${certdir}/bootstrap"
++			# Redhat RPM's run the bootstrap certificate creation
++			# as part of the RPM install (not upgrade), therefore
++			# the make_cert_command is commented out.
++			#
++			#make_cert_command = "${certdir}/bootstrap"
+ 
+ 			#
+ 			#  Elliptical cryptography configuration

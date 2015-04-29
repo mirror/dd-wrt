@@ -1,0 +1,21 @@
+# -*- text -*-
+# Copyright (C) 2011 The FreeRADIUS Server project and contributors
+##############################################################################
+#
+#	Packeteer VSAs, who followed the Cisco way of putting everything
+#	into one text string.
+#
+#	$Id: 8b67fbfc5645f3019e69ed2575e1a4ffc555b44b $
+#
+##############################################################################
+
+VENDOR		Packeteer			2334
+
+#
+#	Standard attribute
+#
+BEGIN-VENDOR	Packeteer
+
+ATTRIBUTE	Packeteer-AVPair			1	string
+
+END-VENDOR	Packeteer
