@@ -178,22 +178,22 @@
 #	by the terminal server in which case there may not be a "P" suffix.
 #	The terminal server sends "Framed-Protocol = PPP" for auto PPP.
 #
-DEFAULT	Framed-Protocol == PPP
-	Framed-Protocol = PPP,
-	Framed-Compression = Van-Jacobson-TCP-IP
+#DEFAULT	Framed-Protocol == PPP
+#	Framed-Protocol = PPP,
+#	Framed-Compression = Van-Jacobson-TCP-IP
 
 #
 # Default for CSLIP: dynamic IP address, SLIP mode, VJ-compression.
 #
-DEFAULT	Hint == "CSLIP"
-	Framed-Protocol = SLIP,
-	Framed-Compression = Van-Jacobson-TCP-IP
+#DEFAULT	Hint == "CSLIP"
+#	Framed-Protocol = SLIP,
+#	Framed-Compression = Van-Jacobson-TCP-IP
 
 #
 # Default for SLIP: dynamic IP address, SLIP mode.
 #
-DEFAULT	Hint == "SLIP"
-	Framed-Protocol = SLIP
+#DEFAULT	Hint == "SLIP"
+#	Framed-Protocol = SLIP
 
 #
 # Last default: rlogin to our main server.
