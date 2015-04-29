@@ -2,7 +2,7 @@
  * xlat.c	Translate strings.  This is the first version of xlat
  * 		incorporated to RADIUS
  *
- * Version:	$Id: 0d46327d5d2e58821f36dd05ed7894d9da7e9667 $
+ * Version:	$Id: 756271d3f3b65f173c1e5bf6c629a8f231a98d6c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 0d46327d5d2e58821f36dd05ed7894d9da7e9667 $")
+RCSID("$Id: 756271d3f3b65f173c1e5bf6c629a8f231a98d6c $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/rad_assert.h>
@@ -651,10 +651,10 @@ static size_t xlat_dhcp_options(UNUSED void *instance, REQUEST *request,
 
 	pairmove(&(request->packet->vps), &head);
 
+	fail:
+
 	/* Free any unmoved pairs */
 	pairfree(&head);
-
-	fail:
 
 	snprintf(out, outlen, "%i", decoded);
 

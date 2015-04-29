@@ -1,7 +1,7 @@
 /*
  * rlm_pap.c
  *
- * Version:  $Id: 6ac2f9ac22660c9dd6b123e0d80a7e003f12c7fb $
+ * Version:  $Id: 6d958b3ee43e2e356195a54446b395528be5aff2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 6ac2f9ac22660c9dd6b123e0d80a7e003f12c7fb $")
+RCSID("$Id: 6d958b3ee43e2e356195a54446b395528be5aff2 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -104,6 +104,7 @@ static const FR_NAME_NUMBER header_names[] = {
 	{ "{sha}",	PW_SHA_PASSWORD },
 	{ "{ssha}",	PW_SSHA_PASSWORD },
 	{ "{nt}",	PW_NT_PASSWORD },
+	{ "{md4}",	PW_NT_PASSWORD },
 	{ "{nthash}",	PW_NT_PASSWORD },
 	{ "{x-nthash}",	PW_NT_PASSWORD },
 	{ "{ns-mta-md5}", PW_NS_MTA_MD5_PASSWORD },
@@ -257,7 +258,7 @@ static void normify(REQUEST *request, VALUE_PAIR *vp, size_t min_length)
 	 *	\0 terminated buffers.
 	 */
 	if (vp->type == PW_TYPE_OCTETS) {
-		if (vp->length > sizeof(raw)) return;
+		if (vp->length >= sizeof(raw)) return;
 
 		memcpy(raw, vp->vp_octets, vp->length);
 		raw[vp->length] = '\0';
@@ -508,7 +509,7 @@ static int pap_authorize(void *instance, REQUEST *request)
 			return RLM_MODULE_NOOP;
 		}
 
-		RDEBUG2("No clear-text password in the request.  Not performing PAP.");
+		RDEBUG2("No User-Password attribute in the request.   Cannot do PAP.");
 		return RLM_MODULE_NOOP;
 	}
 

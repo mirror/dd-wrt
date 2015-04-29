@@ -1,7 +1,7 @@
 /*
  * threads.c	request threading support
  *
- * Version:	$Id: d4de4ff436e4b485aeed76fc3c76a5daf966a143 $
+ * Version:	$Id: f1514d177e207168e794ede0fdaeda2763497206 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: d4de4ff436e4b485aeed76fc3c76a5daf966a143 $")
+RCSID("$Id: f1514d177e207168e794ede0fdaeda2763497206 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -828,6 +828,12 @@ int thread_pool_init(CONF_SECTION *cs, int *spawn_flag)
 		thread_pool.max_spare_threads = thread_pool.min_spare_threads;
 	if ((thread_pool.max_queue_size < 2) || (thread_pool.max_queue_size > 1048576)) {
 		radlog(L_ERR, "FATAL: max_queue_size value must be in range 2-1048576");
+		return -1;
+	}
+
+	if (thread_pool.start_threads > thread_pool.max_threads) {
+		radlog(L_ERR, "FATAL: start_servers (%i) must be <= max_servers (%i)",
+		       thread_pool.start_threads, thread_pool.max_threads);
 		return -1;
 	}
 

@@ -2,7 +2,7 @@
  *  rlm_sql_log.c	Append the SQL queries in a log file which
  *			is read later by the radsqlrelay program
  *
- *  Version:    $Id: ffa41a96a67a2522cad05fad6e5ba26489c04d0f $
+ *  Version:    $Id: 6a6538e7878383dc4c446ea70bab505799e36c2c $
  *
  *  Author:     Nicolas Baradakis <nicolas.baradakis@cegetel.net>
  *
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: ffa41a96a67a2522cad05fad6e5ba26489c04d0f $")
+RCSID("$Id: 6a6538e7878383dc4c446ea70bab505799e36c2c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -371,7 +371,11 @@ static int sql_log_write(rlm_sql_log_t *inst, REQUEST *request, const char *line
 	p = strrchr(path, '/');
 	if (p) {
 		*p = '\0';
-		rad_mkdir(path, 0755);
+		if (rad_mkdir(path, 0755) < 0) {
+			radlog_request(L_ERR, 0, request, "Failed creating %s: %s",
+				       path, strerror(errno));
+			return RLM_MODULE_FAIL;
+		}
 		*p = '/';
 	}
 

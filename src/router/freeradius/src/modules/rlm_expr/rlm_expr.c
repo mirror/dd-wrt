@@ -1,7 +1,7 @@
 /*
  * rlm_expr.c
  *
- * Version:	$Id: 3aa2a499595688e2bbd0e1092ed53c93fe224bb4 $
+ * Version:	$Id: c4476cc97abe2c0ea4d977157f5c71f0bba7ccfb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 3aa2a499595688e2bbd0e1092ed53c93fe224bb4 $")
+RCSID("$Id: c4476cc97abe2c0ea4d977157f5c71f0bba7ccfb $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/md5.h>
@@ -675,7 +675,7 @@ static size_t base64_to_hex_xlat(UNUSED void *instance, REQUEST *request,
 		       "have %zd bytes", (declen * 2) + 1, outlen);
 	}
 
-	fr_bin2hex(decbuf, out, declen);
+	fr_bin2hex((uint8_t *)decbuf, out, declen);
 
 	return declen * 2;
 }
