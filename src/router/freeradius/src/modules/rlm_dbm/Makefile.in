@@ -1,11 +1,11 @@
 #
-# $Id: 473f0ae10685cee05d7f2e262870944f622409b9 $
+# $Id: ddc3f4cb9884c01c8c27eaf77311b6fe71f28119 $
 #
 
 TARGET      = @targetname@
 SRCS        = rlm_dbm.c
 HEADERS     =
-RLM_UTILS   = @dbm_utils@
+RLM_UTILS   = $(addsuffix $(EXEEXT),@dbm_utils@)
 RLM_CFLAGS  = @dbm_cflags@
 RLM_LIBS    = @dbm_ldflags@
 RLM_INSTALL = @dbm_install@

@@ -1,7 +1,7 @@
 /*
  * radconf2xml.c	Converts radiusd.conf to XML.
  *
- * Version:	$Id: 718fd99ec517007b004428ba7959f4e3dcbf06d0 $
+ * Version:	$Id: afb696c38a7aac130dbc448f22c51568607d7fc3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 718fd99ec517007b004428ba7959f4e3dcbf06d0 $")
+RCSID("$Id: afb696c38a7aac130dbc448f22c51568607d7fc3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/radpaths.h>
@@ -49,7 +49,7 @@ char *debug_log_file = NULL;
 int radius_xlat(UNUSED char *out, UNUSED int outlen, UNUSED const char *fmt,
 		UNUSED REQUEST *request, UNUSED RADIUS_ESCAPE_STRING func)
 {
-	return -1;
+	return 0;
 }
 
 static int usage(void)

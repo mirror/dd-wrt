@@ -1,11 +1,11 @@
 #
-# $Id: 6c1f00261aef711a78c6a2e5b3f5cb3d18340774 $
+# $Id: ffe5806d6d4d68e19afd693ea95ef8a471034635 $
 #
 
 TARGET      = @targetname@
 SRCS        = rlm_ippool.c
 HEADERS     =
-RLM_UTILS   = @ippool_utils@
+RLM_UTILS   = $(addsuffix $(EXEEXT),@ippool_utils@)
 RLM_CFLAGS  = @ippool_cflags@
 RLM_LIBS    = @ippool_ldflags@
 RLM_INSTALL = @ippool_install@

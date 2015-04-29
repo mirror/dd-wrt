@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: 40541c83f6809ef0c6aeabd7b4ca87a636c8d3c9 $
+ * Version:	$Id: f29c92809ab0cd50eda54315ae7220d8312b6101 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 40541c83f6809ef0c6aeabd7b4ca87a636c8d3c9 $")
+RCSID("$Id: f29c92809ab0cd50eda54315ae7220d8312b6101 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -51,6 +51,10 @@ RCSID("$Id: 40541c83f6809ef0c6aeabd7b4ca87a636c8d3c9 $")
 #endif
 #ifndef WIFEXITED
 #	define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
+#endif
+
+#ifdef HAVE_OPENSSL_CRYPTO_H
+#include <openssl/ssl.h>
 #endif
 
 /*
@@ -277,13 +281,24 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+#ifdef HAVE_OPENSSL_CRYPTO_H
+	/*
+	 *	Initialize the OpenSSL library before calling any of its
+	 *	functions.
+	 */
+	SSL_library_init();
+	SSL_load_error_strings();
+
 	/*
 	 *	Mismatch between build time OpenSSL and linked SSL,
 	 *	better to die here than segfault later.
 	 */
+#ifdef ENABLE_OPENSSL_VERSION_CHECK
 	if (ssl_check_version(mainconfig.allow_vulnerable_openssl) < 0) {
 		exit(1);
 	}
+#endif
+#endif
 
 	/*  Load the modules AFTER doing SSL checks */
 	if (setup_modules(FALSE, mainconfig.config) < 0) {

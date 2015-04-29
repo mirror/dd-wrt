@@ -1,3 +1,21 @@
+FreeRADIUS 2.2.7 Wednesday 22 Apr 2014 14:00:00 EST, urgency=medium
+	Feature improvements
+	* Allow "eap" to be listed in Post-Auth-Type Reject
+	  so that it sends EAP-Fail and Message-Authenticator.
+
+	Bug fixes
+	* Fix typo in code checking for blocked threads.
+	  Closes #880.
+	* Added more $(EXEEXT) to module utilities so that it
+	  builds on Cygwin.  Closes #875.
+	* Note that we don't need to generate ephemeral RSA keys.
+	* Port detail file fixes from v3.
+	* Use correct destination port for replies to DHCP relay.
+	* rlm_perl can store multiple tagged attributes of the
+	  same name.
+	* Update EAP-TLS methods for TLSv1.2
+	* Fix load-balance sections.  Closes #945
+
 FreeRADIUS 2.2.6 Tuesday 18 Nov 2014 15:00:00 EST, urgency=medium
 	Feature improvements
 	* When supported by OpenSSL, allow TLS 1.1 and TLS 1.2

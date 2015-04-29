@@ -1,7 +1,7 @@
 /*
  * log.c	Logging module.
  *
- * Version:	$Id: ed6baf3e2c7a6e92f49de7335bb9747aea2e7ca2 $
+ * Version:	$Id: 16d3fafd7fa4b49624fa45459db6907182c4ce27 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: ed6baf3e2c7a6e92f49de7335bb9747aea2e7ca2 $")
+RCSID("$Id: 16d3fafd7fa4b49624fa45459db6907182c4ce27 $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -307,8 +307,13 @@ void radlog_request(int lvl, int priority, REQUEST *request, const char *msg, ..
 			s[1] = '\0';
 		}
 		
-		strcat(buffer, fr_int2str(levels, (lvl & ~L_CONS), ": "));
 		len = strlen(buffer);
+
+		if (len < sizeof(buffer)) {
+			len += strlcpy(buffer + len, fr_int2str(levels, (lvl & ~L_CONS), ": "), sizeof(buffer) - len);
+			if (len >= sizeof(buffer))
+				len = sizeof(buffer) - 1;
+		}
 	}
 	
 	if (request && request->module[0]) {

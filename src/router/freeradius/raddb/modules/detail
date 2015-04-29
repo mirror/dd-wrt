@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 2e68d065ec93d0644cf7e931d97fdfac4e2be552 $
+#  $Id: ecfaeb4e79a617a1b46bd29593bac75cf6c39425 $
 
 # Write a detailed log of all accounting records received.
 #
@@ -38,6 +38,13 @@ detail {
 	#  and use this one instead:
 	#
 #	detailfile = ${radacctdir}/detail
+
+	#
+	#  Most file systems can handly nearly the full range of UTF-8
+	#  characters.  Ones that can deal with a limited range should
+	#  set this to "yes".
+	#
+	escape_filenames = no
 
 	#
 	#  The Unix-style permissions on the 'detail' file.

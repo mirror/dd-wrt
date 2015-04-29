@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 784fc42248393d7614674326d412c4c42e1d513e $
+ * Version:     $Id: a958d048ac2cd5d3d02d40f02b9411e15064dcb5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 784fc42248393d7614674326d412c4c42e1d513e $")
+RCSID("$Id: a958d048ac2cd5d3d02d40f02b9411e15064dcb5 $")
 
 #include <freeradius-devel/autoconf.h>
 
@@ -201,6 +201,8 @@ static int load_dh_params(SSL_CTX *ctx, char *file)
 static int generate_eph_rsa_key(SSL_CTX *ctx)
 {
 	RSA *rsa;
+
+	if (!SSL_CTX_need_tmp_RSA(ctx)) return 0;
 
 	rsa = RSA_generate_key(512, RSA_F4, NULL, NULL);
 
@@ -708,7 +710,7 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 
 					pairadd(&handler->certs,
 						pairmake(cert_attr_names[EAPTLS_SAN_EMAIL][lookup],
-							 ASN1_STRING_data(name->d.rfc822Name), T_OP_SET));
+							 (char *)ASN1_STRING_data(name->d.rfc822Name), T_OP_SET));
 					break;
 				default:
 					/* XXX TODO handle other SAN types */

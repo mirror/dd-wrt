@@ -1,7 +1,7 @@
 /*
  * timestr.c	See if a string like 'Su2300-0700' matches (UUCP style).
  *
- * Version:	$Id: c90e47125fcbb4d07e1b1e2869ae99caa6921b56 $
+ * Version:	$Id: 5c85f2991c018863ca8fd3e342aab050737cc8d4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: c90e47125fcbb4d07e1b1e2869ae99caa6921b56 $")
+RCSID("$Id: 5c85f2991c018863ca8fd3e342aab050737cc8d4 $")
 
 #include	<freeradius-devel/radiusd.h>
 
@@ -176,10 +176,9 @@ static int day_fill(char *bitmap, const char *tm)
 static int week_fill(char *bitmap, char *tm)
 {
 	char *s;
-	char tmp[128];
+	char tmp[256];
 
-	strlcpy(tmp, tm, 128);
-	tmp[127] = 0;
+	strlcpy(tmp, tm, sizeof(tmp));
 	for (s = tmp; *s; s++)
 		if (isupper(*s)) *s = tolower(*s);
 

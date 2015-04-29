@@ -1,7 +1,7 @@
 /*
  * dhcp.c	Functions to send/receive dhcp packets.
  *
- * Version:	$Id: 9af6a5fc85caa45db793d1acf4e66873667a384b $
+ * Version:	$Id: 040648017d9f5368ee02e268972bb7608c29922b $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id: 9af6a5fc85caa45db793d1acf4e66873667a384b $")
+RCSID("$Id: 040648017d9f5368ee02e268972bb7608c29922b $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/udpfromto.h>
@@ -141,7 +141,7 @@ static uint8_t *dhcp_get_option(dhcp_packet_t *packet, size_t packet_size,
 	int overload = 0;
 	int field = DHCP_OPTION_FIELD;
 	size_t where, size;
-	uint8_t *data = packet->options;
+	uint8_t *data;
 
 	where = 0;
 	size = packet_size - offsetof(dhcp_packet_t, options);
@@ -1530,8 +1530,8 @@ int fr_dhcp_add_arp_entry(int fd, const char *interface,
 	}
 
 	if (macaddr->length > sizeof (req.arp_ha.sa_data)) {
-		fr_strerror_printf("ERROR: DHCP only supports up to %d octets for "
-				   "Client Hardware Address (got %d octets)\n",
+		fr_strerror_printf("ERROR: DHCP only supports up to %zu octets for "
+				   "Client Hardware Address (got %zu octets)\n",
 				   sizeof(req.arp_ha.sa_data),
 				   macaddr->length);
 		return -1;

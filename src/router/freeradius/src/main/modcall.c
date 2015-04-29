@@ -1,7 +1,7 @@
 /*
  * modcall.c
  *
- * Version:	$Id: 51b977ab7a2de4418bb355bbb85ca917a4a1f9c0 $
+ * Version:	$Id: f2e15ee118617f0cf27bea190087523fe8f74d34 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 51b977ab7a2de4418bb355bbb85ca917a4a1f9c0 $")
+RCSID("$Id: f2e15ee118617f0cf27bea190087523fe8f74d34 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -396,14 +396,14 @@ typedef struct modcall_stack_entry_t {
 
 
 static int modcall_recurse(REQUEST *request, int component, int depth,
-			    modcall_stack_entry_t *entry);
+			   modcall_stack_entry_t *entry, int do_next_sibling);
 
 /*
  *	Call a child of a block.
  */
 static void modcall_child(REQUEST *request, int component, int depth,
 			  modcall_stack_entry_t *entry, modcallable *c,
-			  int *result)
+			  int *result, int do_next_sibling)
 {
 	modcall_stack_entry_t *next;
 
@@ -421,7 +421,7 @@ static void modcall_child(REQUEST *request, int component, int depth,
 	next->priority = 0;
 
 	if (!modcall_recurse(request, component,
-			     depth, next)) {
+			     depth, next, do_next_sibling)) {
 		*result = RLM_MODULE_FAIL;
 		 return;
 	}
@@ -435,7 +435,7 @@ static void modcall_child(REQUEST *request, int component, int depth,
  *	Interpret the various types of blocks.
  */
 static int modcall_recurse(REQUEST *request, int component, int depth,
-			    modcall_stack_entry_t *entry)
+			   modcall_stack_entry_t *entry, int do_next_sibling)
 {
 	int if_taken, was_if;
 	modcallable *c;
@@ -627,7 +627,7 @@ redo:
 		MOD_LOG_OPEN_BRACE(group_name[c->type]);
 		modcall_child(request, component,
 			      depth + 1, entry, g->children,
-			      &result);
+			      &result, TRUE);
 		MOD_LOG_CLOSE_BRACE();
 		goto calculate_result;
 	} /* MOD_GROUP */
@@ -646,8 +646,7 @@ redo:
 		if (!strchr(c->name, '%')) {
 			VALUE_PAIR *vp = NULL;
 
-			radius_get_vp(request, c->name, &vp);
-			if (vp) {
+			if (radius_get_vp(request, c->name, &vp) && vp) {
 				vp_prints_value(buffer,
 						sizeof(buffer),
 						vp, 0);
@@ -681,14 +680,14 @@ redo:
 		MOD_LOG_OPEN_BRACE(group_name[c->type]);
 		modcall_child(request, component,
 			      depth + 1, entry, found,
-			      &result);
+			      &result, TRUE);
 		MOD_LOG_CLOSE_BRACE();
 		goto calculate_result;
 	} /* MOD_SWITCH */
 
 	if ((c->type == MOD_LOAD_BALANCE) ||
 	    (c->type == MOD_REDUNDANT_LOAD_BALANCE)) {
-		int count;
+		int count = 0;
 		modcallable *this, *found;
 		modgroup *g;
 
@@ -714,28 +713,23 @@ redo:
 		if (c->type == MOD_LOAD_BALANCE) {
 			modcall_child(request, component,
 				      depth + 1, entry, found,
-				      &result);
+				      &result, FALSE);
 					       
 		} else {
-			int i;
+			this = found;
 
-			/*
-			 *	Loop over all children in this
-			 *	section.  If we get FAIL, then
-			 *	continue.  Otherwise, stop.
-			 */
-			for (i = 1; i < count; i++) {
+			do {
 				modcall_child(request, component,
 					      depth + 1, entry, found,
-					      &result);
+					      &result, FALSE);
 				if (found->actions[result] == MOD_ACTION_RETURN) {
 					priority = -1;
 					break;
 				}
 
-				found = found->next;
-				if (!found) found = g->children;
-			}
+				this = this->next;
+				if (!this) this = g->children;
+			} while (this != found);
 		}
 		MOD_LOG_CLOSE_BRACE();
 		goto calculate_result;
@@ -844,9 +838,11 @@ calculate_result:
 	if (c->type == MOD_CASE) return TRUE;
 
 next_sibling:
-	entry->c = entry->c->next;
+	if (do_next_sibling) {
+		entry->c = entry->c->next;
 
-	if (entry->c) goto redo;
+		if (entry->c) goto redo;
+	}
 
 	/*
 	 *	And we're done!
@@ -877,7 +873,7 @@ int modcall(int component, modcallable *c, REQUEST *request)
 	/*
 	 *	Call the main handler.
 	 */
-	if (!modcall_recurse(request, component, 0, &stack[0])) {
+	if (!modcall_recurse(request, component, 0, &stack[0], TRUE)) {
 		return RLM_MODULE_FAIL;
 	}
 

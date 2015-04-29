@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: bce7e9a0a0193c1c0a5e48332bef64faf9dec1e4 $
+ * Version:	$Id: 7838c2a55bea2fe27d973fd73b36133fd68bd9dd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -586,7 +586,6 @@ static int command_show_module_status(rad_listen_t *listener, int argc, char *ar
 {
 	CONF_SECTION *cs;
 	const module_instance_t *mi;
-	const module_t *mod;
 
 	if (argc != 1) {
 		cprintf(listener, "ERROR: No module name was given\n");

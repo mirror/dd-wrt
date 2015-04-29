@@ -5,7 +5,7 @@
 #
 #	See the README file in this directory for more information.
 #	
-#	$Id: de56a19f2f8b0b764c076cd825d8375f9c7e0c85 $
+#	$Id: 6665790d3f8490210c07afeb6d7b0f39023dafb6 $
 #
 ######################################################################
 
@@ -14,12 +14,7 @@ DH_KEY_SIZE	= 1024
 #
 #  Set the passwords
 #
-PASSWORD_SERVER	= `grep output_password server.cnf | sed 's/.*=//;s/^ *//'`
-PASSWORD_CA	= `grep output_password ca.cnf | sed 's/.*=//;s/^ *//'`
-PASSWORD_CLIENT	= `grep output_password client.cnf | sed 's/.*=//;s/^ *//'`
-
-USER_NAME	= `grep emailAddress client.cnf | grep '@' | sed 's/.*=//;s/^ *//'`
-CA_DEFAULT_DAYS = `grep default_days ca.cnf | sed 's/.*=//;s/^ *//'`
+-include passwords.mk
 
 ######################################################################
 #
@@ -37,6 +32,13 @@ ca: ca.der
 
 .PHONY: server
 server: server.pem server.vrfy
+
+passwords.mk: server.cnf ca.cnf client.cnf
+	@echo "PASSWORD_SERVER	= '$(shell grep output_password server.cnf | sed 's/.*=//;s/^ *//')'"		> $@
+	@echo "PASSWORD_CA	= '$(shell grep output_password ca.cnf | sed 's/.*=//;s/^ *//')'"		>> $@
+	@echo "PASSWORD_CLIENT	= '$(shell grep output_password client.cnf | sed 's/.*=//;s/^ *//')'"		>> $@
+	@echo "USER_NAME	= '$(shell grep emailAddress client.cnf | grep '@' | sed 's/.*=//;s/^ *//')'"	>> $@
+	@echo "CA_DEFAULT_DAYS  = '$(shell grep default_days ca.cnf | sed 's/.*=//;s/^ *//')'"			>> $@
 
 ######################################################################
 #
