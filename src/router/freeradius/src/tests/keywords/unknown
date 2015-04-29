@@ -1,0 +1,84 @@
+#
+#  PRE: wimax
+#
+update control {
+       Cleartext-Password := 'hello'
+}
+
+update reply {
+	Filter-Id := "filter"
+}
+
+update request {
+	FreeRADIUS-Proxied-To  := 127.0.0.2
+}
+
+#
+#  Check that a known but malformed attr is malformed
+#
+update request {
+	Attr-26.24757.84.9.5.7 = 0xab
+}
+
+if (&Attr-26.24757.84.9.5.7 != 0xab) {
+	update reply {
+		Filter-Id += 'Fail 1'
+	}
+}
+
+#
+#  Check that an unknown attr is OK
+#
+update request {
+       Attr-26.24757.84.9.5.15 = 0xabcdef
+}
+
+if (&Attr-26.24757.84.9.5.15 != 0xabcdef) {
+	update reply {
+		Filter-Id += 'Fail 2'
+	}
+}
+
+#
+#  Check that unknown attributes which are defined
+#  get automatically resolved to the real attribute.
+#
+if (&Vendor-11344-Attr-1 == 127.0.0.1) {
+	update reply {
+		Filter-Id += 'Fail 3'
+	}
+}
+
+if (&Vendor-11344-Attr-1 != 127.0.0.2) {
+	update reply {
+		Filter-Id += 'Fail 4'
+	}
+}
+
+update request {
+	&Vendor-11344-Attr-1 := 127.0.0.1
+}
+
+if (&FreeRADIUS-Proxied-To == 127.0.0.2) {
+	update reply {
+		Filter-Id += 'Fail 5'
+	}
+}
+
+if (&FreeRADIUS-Proxied-To != 127.0.0.1) {
+	update reply {
+		Filter-Id += 'Fail 6'
+	}
+}
+
+if (&Vendor-11344-Attr-1 == 127.0.0.2) {
+	update reply {
+		Filter-Id += 'Fail 7'
+	}
+}
+
+if (&Vendor-11344-Attr-1 != 127.0.0.1) {
+	update reply {
+		Filter-Id += 'Fail 8'
+	}
+}

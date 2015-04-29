@@ -1,0 +1,19 @@
+# -*- text -*-
+# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+##############################################################################
+#
+#	Arbor networks.
+#
+#	$Id: 7841bee53cca11d274d8cfbd7dff1e3677a30b47 $
+#
+##############################################################################
+
+VENDOR		Arbor				9694
+
+BEGIN-VENDOR	Arbor
+
+# Arbor-Privilege-Level = "sytem_admin or system_analyst or system_user"
+
+ATTRIBUTE	Arbor-Privilege-Level			1	string
+
+END-VENDOR Arbor

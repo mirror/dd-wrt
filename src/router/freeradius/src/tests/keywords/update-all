@@ -1,0 +1,9 @@
+#
+# PRE: update
+#
+#  A more generic "update" mechanism
+#
+update {
+       control:Cleartext-Password := 'hello'
+       reply:Filter-Id := "filter"
+}
