@@ -1,0 +1,69 @@
+#! /bin/sh
+
+set -e
+
+update_fs_from_statoverride() {
+  # I wish a simple dpkg-statoverride --update $file just did
+  # the right thing, but it doesn't, so we have to do it manually.
+  type=$1
+  user=$2
+  group=$3
+  mode=$4
+  file=$5
+  if [ -n "$type" -a -n "$group" -a -n "$mode" -a -n "$file" ]; then
+    if [ "$(find $file -maxdepth 0 -type $type -group $group -perm $mode)" = "" -a -$type $file ]; then
+      chgrp $group $file
+      chmod $mode $file
+    fi
+  fi
+}
+
+case "$1" in
+  configure)
+        for file in /etc/freeradius/sql/mysql/counter.conf \
+          /etc/freeradius/sql/mysql/dialup.conf \
+          /etc/freeradius/sql/mysql/ippool.conf \
+          /etc/freeradius/sql/mysql/ippool.sql \
+          /etc/freeradius/sql/mysql/nas.sql \
+          /etc/freeradius/sql/mysql/schema.sql
+        do
+          set +e
+          so=$(dpkg-statoverride --list $file)
+          ret=$?
+          set -e
+          if [ -z "$2" ]; then
+            if [ $ret != 0 ]; then
+              dpkg-statoverride --add --update root freerad 0640 $file
+            fi
+          else
+            update_fs_from_statoverride f $so
+          fi
+        done
+
+        for dir in /etc/freeradius/sql \
+          /etc/freeradius/sql/mysql
+        do
+          set +e
+          so=$(dpkg-statoverride --list $dir)
+          ret=$?
+          set -e
+          if [ -z "$2" ]; then
+            if [ $ret != 0 ]; then
+              dpkg-statoverride --add --update root freerad 2751 $dir
+            fi
+          else
+            update_fs_from_statoverride d $so
+          fi
+        done
+
+        if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+          invoke-rc.d freeradius force-reload
+        else
+          /etc/init.d/freeradius force-reload
+        fi
+	;;
+esac
+
+#DEBHELPER#
+
+exit 0
