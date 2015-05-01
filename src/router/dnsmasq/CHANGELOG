@@ -103,7 +103,11 @@ version 2.73
 	    Previously we provided correct answers to PTR queries
 	    in such zones (including NS and SOA) but not direct
 	    NS and SOA queries. Thanks to Johnny S. Lee for 
-	    pointing out the problem.
+ 	    pointing out the problem.
+
+	    Fix logging of DHCPREPLY which should be suppressed 
+	    by quiet-dhcp6. Thanks to J. Pablo Abonia for 
+	    spotting the problem.
 
 	
 version 2.72
