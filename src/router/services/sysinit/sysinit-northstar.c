@@ -3201,6 +3201,21 @@ void start_sysinit(void)
 		nvram_set("1:ledbh10", "7");
 		set_gpio(12, 1);	// fixup ses button
 		break;
+	case ROUTER_TRENDNET_TEW828:
+		if (!nvram_match("et0macaddr", "00:00:00:00:00:00")) {
+			nvram_set("et2macaddr", nvram_safe_get("et0macaddr"));
+			nvram_set("et2mdcport", nvram_safe_get("et0mdcport"));
+			nvram_set("et2phyaddr", nvram_safe_get("et0phyaddr"));
+			nvram_set("et_txq_thresh", "1024");
+			nvram_set("et0macaddr", "00:00:00:00:00:00");
+			nvram_set("et0mdcport", "0");
+			nvram_set("et0phyaddr", "30");
+			nvram_set("et1macaddr", "00:00:00:00:00:00");
+			nvram_set("et1mdcport", "0");
+			nvram_set("et1phyaddr", "30");
+			nvram_commit();
+		}
+		break;
 	case ROUTER_BUFFALO_WXR1900DHP:
 		nvram_set("0:ledbh12", "7");
 		nvram_set("1:ledbh12", "7");
