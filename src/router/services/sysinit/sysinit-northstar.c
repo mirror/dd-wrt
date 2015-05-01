@@ -3202,7 +3202,7 @@ void start_sysinit(void)
 		set_gpio(12, 1);	// fixup ses button
 		break;
 	case ROUTER_TRENDNET_TEW828:
-		if (!nvram_match("et0macaddr", "00:00:00:00:00:00")) {
+		if (!nvram_match("et0macaddr", "00:00:00:00:00:00") || !nvram_match("image_second_offset","16777216")) {
 			nvram_set("et2macaddr", nvram_safe_get("et0macaddr"));
 			nvram_set("et2mdcport", nvram_safe_get("et0mdcport"));
 			nvram_set("et2phyaddr", nvram_safe_get("et0phyaddr"));
@@ -3217,6 +3217,7 @@ void start_sysinit(void)
 			nvram_set("vlan1ports","0 1 2 3 5 7 8*");
 			nvram_set("vlan2hwname","et2");
 			nvram_set("vlan2ports","4 8");
+			nvram_set("image_second_offset","16777216");
 			nvram_commit();
 		}
 		break;
