@@ -698,6 +698,8 @@
 
 #define ROUTER_DLINK_DIR860 0xe81b
 
+#define ROUTER_TRENDNET_TEW828 0xe91b
+
 #define NVROUTER "DD_BOARD"
 
 
