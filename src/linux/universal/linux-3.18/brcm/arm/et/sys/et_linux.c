@@ -830,7 +830,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	/* map chip registers (47xx: and sprom) */
 	dev->base_addr = pci_resource_start(pdev, 0);
 	if ((et->regsva = ioremap_nocache(dev->base_addr, PCI_BAR0_WINSZ)) == NULL) {
-		ET_ERROR(("et%d: ioremap() failed\n", unit));
+		printk(KERN_EMERG "et%d: ioremap() failed\n", unit);
 		goto fail;
 	}
 
@@ -845,7 +845,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	/* common load-time initialization */
 	et->etc = etc_attach((void *)et, pdev->vendor, pdev->device, coreunit, osh, et->regsva);
 	if (et->etc == NULL) {
-		ET_ERROR(("et%d: etc_attach() failed\n", unit));
+		printk(KERN_EMERG "et%d: etc_attach() failed\n", unit);
 		goto fail;
 	}
 
@@ -985,7 +985,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	/* register our interrupt handler */
 	if (request_irq(pdev->irq, et_isr, IRQF_SHARED, dev->name, et)) {
-		ET_ERROR(("et%d: request_irq() failed\n", unit));
+		printk(KERN_EMERG "et%d: request_irq() failed\n", unit);
 		goto fail;
 	}
 	dev->irq = pdev->irq;
@@ -1039,7 +1039,8 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 #endif
 
 	if (register_netdev(dev)) {
-		ET_ERROR(("et%d: register_netdev() failed\n", unit));
+		printk(KERN_EMERG "et%d: register_netdev() failed\n", unit);
+		dev->netdev_ops = NULL;
 		goto fail;
 	}
 
@@ -1275,7 +1276,8 @@ et_free(et_info_t *et)
 #endif /* HNDCTF */
 
 	if (et->dev) {
-		unregister_netdev(et->dev);
+		if (et->dev->netdev_ops)
+			unregister_netdev(et->dev);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 
