@@ -600,13 +600,8 @@ KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 endif
 
 ifdef CONFIG_BCM47XX
-ifeq ($(CONFIG_MIPS),y)
 KBUILD_CFLAGS += -DBCMDRIVER -Dlinux
 KBUILD_AFLAGS += -DBCMDRIVER -Dlinux
-else
-KBUILD_CFLAGS += -DBCMDRIVER -Dlinux
-KBUILD_AFLAGS += -DBCMDRIVER -Dlinux
-endif
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
