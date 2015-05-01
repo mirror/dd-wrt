@@ -790,7 +790,7 @@ static uint lookup_nflash_rootfs_offset(hndnand_t * nfl, struct mtd_info *mtd, i
 		blocksize = 65536;
 	}
 
-	printk("lookup_nflash_rootfs_offset: offset = 0x%x, 0x%x\n", offset, blocksize);
+	printk("lookup_nflash_rootfs_offset: offset = 0x%x size = 0x%x, 0x%x\n", offset, size, blocksize);
 	for (off = offset; off < offset + size; off += blocksize) {
 		mask = rbsize - 1;
 		blk_offset = off & ~mask;
@@ -861,6 +861,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 	uint32 bootossz = NFL_BOOT_OS_SIZE;
 	int isbufdual = 0;
 	int isbufvxdual = 0;
+	int istew = 0;
 	uint boardnum = bcm_strtoul(nvram_safe_get("boardnum"), NULL, 0);
 	if ((!strncmp(nvram_safe_get("boardnum"),"2013",4) || !strncmp(nvram_safe_get("boardnum"),"2014",4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")) {
@@ -875,7 +876,8 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 	}
 
 	if (nvram_match("boardnum", "1234") && nvram_match("boardtype", "0x072F")) {
-		bootossz = 0x4000000;
+		bootossz = 0x2000000;
+		istew = 1;
 	}
 
 	if (boardnum == 00 && nvram_match("boardtype", "0x0665")
@@ -921,6 +923,8 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 	if (imag_2nd_offset == NULL)
 		imag_2nd_offset = "50331648";
 	}
+	if (istew)
+		imag_2nd_offset = "16777216";
 	dual_image_on = (img_boot != NULL && imag_1st_offset != NULL && imag_2nd_offset != NULL);
 
 	if (dual_image_on) {
