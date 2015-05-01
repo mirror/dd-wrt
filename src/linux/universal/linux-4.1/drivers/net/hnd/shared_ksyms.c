@@ -188,6 +188,8 @@ extern void si_pmu_wait_for_steady_state; EXPORT_SYMBOL(si_pmu_wait_for_steady_s
 extern void si_pmu_waitforclk_on_backplane; EXPORT_SYMBOL(si_pmu_waitforclk_on_backplane);
 extern void si_sdiod_drive_strength_init; EXPORT_SYMBOL(si_sdiod_drive_strength_init);
 extern void g_assert_type; EXPORT_SYMBOL(g_assert_type);
+extern void osl_acp_war_enab; EXPORT_SYMBOL(osl_acp_war_enab);
+extern void osl_arch_is_coherent; EXPORT_SYMBOL(osl_arch_is_coherent);
 extern void osl_attach; EXPORT_SYMBOL(osl_attach);
 extern void osl_delay; EXPORT_SYMBOL(osl_delay);
 extern void osl_detach; EXPORT_SYMBOL(osl_detach);
