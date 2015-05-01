@@ -2404,6 +2404,7 @@ void start_restore_defaults(void)
 	case ROUTER_DLINK_DIR890:
 	case ROUTER_DLINK_DIR860:
 	case ROUTER_ASUS_AC56U:
+	case ROUTER_TRENDNET_TEW828:
 	case ROUTER_TRENDNET_TEW812:
 	case ROUTER_TRENDNET_TEW811:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
