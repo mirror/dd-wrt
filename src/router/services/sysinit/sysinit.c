@@ -2404,7 +2404,6 @@ void start_restore_defaults(void)
 	case ROUTER_DLINK_DIR890:
 	case ROUTER_DLINK_DIR860:
 	case ROUTER_ASUS_AC56U:
-	case ROUTER_TRENDNET_TEW828:
 	case ROUTER_TRENDNET_TEW812:
 	case ROUTER_TRENDNET_TEW811:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
@@ -2412,6 +2411,14 @@ void start_restore_defaults(void)
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 1 2 3 5*");
 			nvram_set("vlan2ports", "4 5u");
+		}
+		break;
+	case ROUTER_TRENDNET_TEW828:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "0 1 2 3 5 6 7 8*");
+			nvram_set("vlan2ports", "4 8u");
 		}
 		break;
 	case ROUTER_LINKSYS_EA6900:
