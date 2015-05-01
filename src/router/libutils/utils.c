@@ -5990,7 +5990,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_TRENDNET_TEW828:
 		usb_gpio = 0x104;
-		power_gpio = 0x106
+		power_gpio = 0x106;
 		diag_gpio = 0x006;
 		break;
 	case ROUTER_TRENDNET_TEW812:
