@@ -1996,8 +1996,9 @@ unsigned char *tcp_request(int confd, time_t now,
 			    }
 			  else
 			    result = (status == STAT_SECURE ? "SECURE" : (status == STAT_INSECURE ? "INSECURE" : "BOGUS"));
-			   if (status == STAT_BOGUS && extract_request(header, m, daemon->namebuff, NULL))
-			     domain = daemon->namebuff;
+			  
+			  if (status == STAT_BOGUS && extract_request(header, m, daemon->namebuff, NULL))
+			    domain = daemon->namebuff;
 
 			  log_query(F_KEYTAG | F_SECSTAT, domain, NULL, result);
 			  
@@ -2040,8 +2041,8 @@ unsigned char *tcp_request(int confd, time_t now,
 #endif
 
 		      m = process_reply(header, now, last_server, (unsigned int)m, 
-					option_bool(OPT_NO_REBIND) && !norebind, no_cache_dnssec, bogusanswer,
-					cache_secure, ad_question, do_bit, added_pheader, check_subnet, &peer_addr); 
+					option_bool(OPT_NO_REBIND) && !norebind, no_cache_dnssec, cache_secure, bogusanswer,
+					ad_question, do_bit, added_pheader, check_subnet, &peer_addr); 
 		      
 		      break;
 		    }
