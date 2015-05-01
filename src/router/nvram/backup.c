@@ -283,6 +283,9 @@ static char *filter[] = { "lan_ifnames",
 	"modelDescription",
 	"loader_version",
 	"gs_sku_id",
+	"et_txq_thresh",
+	"sn",
+	"um_board_id",
 	NULL
 };
 
