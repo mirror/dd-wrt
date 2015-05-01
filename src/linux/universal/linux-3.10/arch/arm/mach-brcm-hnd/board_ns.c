@@ -484,6 +484,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	uint32 bootsz;
 	uint32 maxsize = 0;
 	int is_ex6200 = 0;
+	int nobackup = 0;
 #ifdef CONFIG_FAILSAFE_UPGRADE
 	char *img_boot = nvram_get(BOOTPARTITION);
 	char *imag_1st_offset = nvram_get(IMAGE_FIRST_OFFSET);
@@ -523,6 +524,10 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	    && nvram_match("boardrev", "0x1101")
 	    && nvram_match("gpio7", "wps_button")) {
 		bootsz = 0x200000;
+	}
+
+	if (nvram_match("boardnum", "1234") && nvram_match("boardtype", "0x072F")) {
+		nobackup = 1;
 	}
 
 	if (nvram_match("boardnum","679") && nvram_match("boardtype", "0x0646") 
@@ -646,7 +651,10 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 #endif				/* CONFIG_FAILSAFE_UPGRADE */
 
 	} else {
-		root_dev_setup("1f04");
+		if (nobackup)
+			root_dev_setup("1f03");
+		else
+			root_dev_setup("1f04");
 		if (!bootsz)
 			bootsz = boot_partition_size(sfl_info->base);
 		printk("Boot partition size = %d(0x%x)\n", bootsz, bootsz);
@@ -700,7 +708,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
 	else
 		bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
-	if(!is_ex6200)//skip on ex6200
+	if(!is_ex6200 && !nobackup)//skip on ex6200
 		nparts++;
 	
 
@@ -708,7 +716,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	if (maxsize)
 		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
-		if(is_ex6200)
+		if(is_ex6200 || nobackup)
 			bcm947xx_flash_parts[nparts].offset = size + 0x10000 - bcm947xx_flash_parts[nparts].size;
 	else
 		bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
@@ -850,6 +858,10 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 
 	if (nvram_match("model","RT-AC87U")) {
 		printk(KERN_EMERG "Asus AC87U\n");
+		bootossz = 0x4000000;
+	}
+
+	if (nvram_match("boardnum", "1234") && nvram_match("boardtype", "0x072F")) {
 		bootossz = 0x4000000;
 	}
 
