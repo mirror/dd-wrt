@@ -6,16 +6,18 @@
 #######################################################################
 
 RESP=0
-PPTPSERVER=$(nvram get pptpd_client_srvip)
 
 case $1 in
  "start" )
   echo "Launching VPN process"
-  $0 go &
+  ./$0 go &
   echo "Process launched"
 ;;
 
  "go"  )
+  PPTPSERVER=$(nvram get pptpd_client_srvip)
+  PPTPSRVUSER=$(nvram get pptpd_client_srvuser)
+  PPTPSRVPASS=$(nvram get pptpd_client_srvpass)
   echo "Waiting......."
   startservice pppmodules
   sleep 10
@@ -34,9 +36,7 @@ case $1 in
   echo -n $$ > "${PIDFILE}"
   echo "PID file created"
   echo "Attempting initial connect"
-  pptp $PPTPSERVER file /tmp/pptpd_client/options.vpn
-  echo "Initial connection dropped"
-
+  pppd pty "pptp $PPTPSERVER --nolaunchpppd" file /tmp/pptpd_client/options.vpn user $PPTPSRVUSER password $PPTPSRVPASS
   while [ 1 ];
   do
    echo "Attempting connect... "
@@ -44,13 +44,16 @@ case $1 in
    sleep 2
    killall -9 pptp 2>/dev/null
    sleep 1
-   pptp $PPTPSERVER file /tmp/pptpd_client/options.vpn
+   pppd pty "pptp $PPTPSERVER --nolaunchpppd" file /tmp/pptpd_client/options.vpn user $PPTPSRVUSER password $PPTPSRVPASS
    echo "Connection dropped... "
    sleep 2
   done;
  ;;
 
  "debug"  )
+  PPTPSERVER=$(nvram get pptpd_client_srvip)
+  PPTPSRVUSER=$(nvram get pptpd_client_srvuser)
+  PPTPSRVPASS=$(nvram get pptpd_client_srvpass)
   echo "Waiting......."
   sleep 10
   PIDFILE="/var/run/vpn.pid"
@@ -68,7 +71,7 @@ case $1 in
   echo -n $$ > "${PIDFILE}"
   echo "PID file created"
   echo "Attempting initial connect"
-  pptp $PPTPSERVER file /tmp/pptpd_client/options.vpn debug nodetach
+  pppd pty "pptp $PPTPSERVER --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user $PPTPSRVUSER password $PPTPSRVPASS
   echo "Initial connection dropped"
 
   while [ 1 ];
@@ -78,7 +81,7 @@ case $1 in
    sleep 2
    killall -9 pptp 2>/dev/null
    sleep 1
-   pptp $PPTPSERVER file /tmp/pptpd_client/options.vpn debug nodetach
+   pppd pty "pptp $PPTPSERVER --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user $PPTPSRVUSER password $PPTPSRVPASS
    echo "Connection dropped... "
    sleep 2
   done;
