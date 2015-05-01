@@ -1330,6 +1330,13 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC56U;
 	}
 
+	if (boardnum == 1234 && nvram_match("boardtype", "0x072F")
+	    && nvram_match("boardrev", "0x1202")
+	    && nvram_match("gpio7", "wps_button")) {
+		setRouter("Dlink-DIR890L");
+		return ROUTER_TRENDNET_TEW828;
+	}
+
 	if (boardnum == 1234 && nvram_match("boardtype", "0x0646") && nvram_match("1:devid", "0x43A2")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("gpio7", "wps_button")) {
