@@ -1333,7 +1333,7 @@ int internal_getRouterBrand()
 	if (boardnum == 1234 && nvram_match("boardtype", "0x072F")
 	    && nvram_match("boardrev", "0x1202")
 	    && nvram_match("gpio7", "wps_button")) {
-		setRouter("Dlink-DIR890L");
+		setRouter("Trendnet TEW828DRU");
 		return ROUTER_TRENDNET_TEW828;
 	}
 
