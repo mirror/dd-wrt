@@ -199,7 +199,7 @@ void start_sysinit(void)
 	}
 #endif
 #if defined(HAVE_DIR862)
-	FILE *fp = fopen("/lib/ath10k/board.bin", "rb");
+	fp = fopen("/lib/ath10k/board.bin", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
 		int i;
