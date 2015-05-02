@@ -643,6 +643,9 @@ endif
 	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin  $(ARCH)-uclibc/tnet818.trx
 	./tools/trendnet/auto_add_header_818 $(ARCH)-uclibc/tnet818.trx
 
+	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin  $(ARCH)-uclibc/tnet828.trx
+	./tools/trendnet/auto_add_header_828 $(ARCH)-uclibc/tnet828.trx
+
 	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin  $(ARCH)-uclibc/tnet812.trx
 	./tools/trendnet/auto_add_header_812 $(ARCH)-uclibc/tnet812.trx
 
