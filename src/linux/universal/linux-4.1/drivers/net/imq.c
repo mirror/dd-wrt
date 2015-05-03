@@ -630,7 +630,7 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num)
 
 	skb = entry->skb;
 
-	switch (entry->pf) {
+	switch (entry->state.pf) {
 	case NFPROTO_IPV4:
 		skb->protocol = htons(ETH_P_IP);
 		break;
@@ -785,10 +785,9 @@ out:
 	return retval;
 }
 
-static unsigned int imq_nf_hook(const struct nf_hook_ops *ops, struct sk_buff *pskb,
-				const struct net_device *indev,
-				const struct net_device *outdev,
-				int (*okfn)(struct sk_buff *))
+static unsigned int imq_nf_hook(const struct nf_hook_ops *ops,
+			       struct sk_buff *pskb,
+			       const struct nf_hook_state *state)
 {
 	return (pskb->imq_flags & IMQ_F_ENQUEUE) ? NF_IMQ_QUEUE : NF_ACCEPT;
 }
