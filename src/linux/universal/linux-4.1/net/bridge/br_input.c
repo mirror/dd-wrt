@@ -56,7 +56,7 @@ static int br_pass_frame_up(struct sk_buff *skb)
 		return NET_RX_DROP;
 
 	return BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, NULL, skb, indev, NULL,
-		       netif_receive_skb);
+		       netif_receive_skb_sk);
 }
 
 static void br_do_proxy_arp(struct sk_buff *skb, struct net_bridge *br,
