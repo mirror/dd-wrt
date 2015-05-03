@@ -126,10 +126,8 @@ static void nf_conn_rtcache_dst_obsolete(struct nf_conn_rtcache *rtc,
 }
 
 static unsigned int nf_rtcache_in(const struct nf_hook_ops *ops,
-				  struct sk_buff *skb,
-				  const struct net_device *in,
-				  const struct net_device *out,
-				  int (*okfn)(struct sk_buff *))
+			       struct sk_buff *skb,
+			       const struct nf_hook_state *state)
 {
 	struct nf_conn_rtcache *rtc;
 	enum ip_conntrack_info ctinfo;
@@ -138,6 +136,7 @@ static unsigned int nf_rtcache_in(const struct nf_hook_ops *ops,
 	struct nf_conn *ct;
 	int iif;
 	u32 cookie;
+	struct net_device *in = state->in;
 
 	if (skb_dst(skb) || skb->sk)
 		return NF_ACCEPT;
@@ -180,16 +179,15 @@ static unsigned int nf_rtcache_in(const struct nf_hook_ops *ops,
 }
 
 static unsigned int nf_rtcache_forward(const struct nf_hook_ops *ops,
-				       struct sk_buff *skb,
-				       const struct net_device *in,
-				       const struct net_device *out,
-				       int (*okfn)(struct sk_buff *))
+			       struct sk_buff *skb,
+			       const struct nf_hook_state *state)
 {
 	struct nf_conn_rtcache *rtc;
 	enum ip_conntrack_info ctinfo;
 	enum ip_conntrack_dir dir;
 	struct nf_conn *ct;
 	int iif;
+	struct net_device *in = state->in;
 
 	ct = nf_ct_get(skb, &ctinfo);
 	if (!ct)

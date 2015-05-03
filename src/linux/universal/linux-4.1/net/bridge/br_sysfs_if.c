@@ -178,7 +178,7 @@ static ssize_t show_isolate_mode(struct net_bridge_port *p, char *buf)
 	int isolate_mode = (p->flags & BR_ISOLATE_MODE) ? 1 : 0;
 	return sprintf(buf, "%d\n", isolate_mode);
 }
-static ssize_t store_isolate_mode(struct net_bridge_port *p, unsigned long v)
+static int store_isolate_mode(struct net_bridge_port *p, unsigned long v)
 {
 	if (v)
 		p->flags |= BR_ISOLATE_MODE;
@@ -186,8 +186,8 @@ static ssize_t store_isolate_mode(struct net_bridge_port *p, unsigned long v)
 		p->flags &= ~BR_ISOLATE_MODE;
 	return 0;
 }
-static BRPORT_ATTR(isolate_mode, S_IRUGO | S_IWUSR,
-		   show_isolate_mode, store_isolate_mode);
+
+static BRPORT_ATTR(isolate_mode, S_IRUGO | S_IWUSR, show_isolate_mode, store_isolate_mode);
 
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 static ssize_t show_multicast_router(struct net_bridge_port *p, char *buf)
