@@ -219,7 +219,7 @@ typedef struct {
     "WhatsApp","Radius","WindowsUpdate","TeamViewer","Lotus Notes","SAP","GTP","UPNP","LLMNR","Remote Scan","Dropbox", "Viber", "MegaCo","Redis","ZeroMQ","VHUA","TOR","OpenVPN","NOE","CiscoVPN","TeamSpeak"
 
 
-#define NDPI_PROTOCOL_SHORT_STRING "ukn","ftp","pop","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp", \
+#define NDPI_PROTOCOL_SHORT_STRING "ukn","ftp","pop3","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp", \
     "bgp","snmp","xdmcp","smb","syslog","dhcp","postgres","mysql","tds","ddl","i23v5","apple","directconnect","socrates","winmx", \
     "manolito","pando","filetopia","imesh","kontiki","openft","fasttrack","gnutella","edonkey","bittorrent","off","avi", \
     "flash","ogg","mpeg","quicktime","realmedia","windowsmedia","mms","xbox","qq","move","rtsp","feidian","icecast","pplive", \
