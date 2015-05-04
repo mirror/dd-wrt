@@ -1,19 +1,14 @@
 /*
+ * net/sched/act_connmark.c  netfilter connmark retriever action
+ * skb mark is over-written
+ *
  * Copyright (c) 2011 Felix Fietkau <nbd@openwrt.org>
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms and conditions of the GNU General Public License,
- * version 2, as published by the Free Software Foundation.
- *
- * This program is distributed in the hope it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place - Suite 330, Boston, MA 02111-1307 USA.
- */
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+*/
 
 #include <linux/module.h>
 #include <linux/init.h>
@@ -26,102 +21,156 @@
 #include <net/netlink.h>
 #include <net/pkt_sched.h>
 #include <net/act_api.h>
+#include <uapi/linux/tc_act/tc_connmark.h>
+#include <net/tc_act/tc_connmark.h>
 
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_core.h>
-
-#define TCA_ACT_CONNMARK	20
+#include <net/netfilter/nf_conntrack_zones.h>
 
 #define CONNMARK_TAB_MASK     3
 
-static struct tcf_hashinfo connmark_hash_info;
-
 static int tcf_connmark(struct sk_buff *skb, const struct tc_action *a,
-		       struct tcf_result *res)
+			struct tcf_result *res)
 {
-	struct nf_conn *c;
+	const struct nf_conntrack_tuple_hash *thash;
+	struct nf_conntrack_tuple tuple;
 	enum ip_conntrack_info ctinfo;
+	struct tcf_connmark_info *ca = a->priv;
+	struct nf_conn *c;
 	int proto;
-	int r;
+
+	spin_lock(&ca->tcf_lock);
+	ca->tcf_tm.lastuse = jiffies;
+	bstats_update(&ca->tcf_bstats, skb);
 
 	if (skb->protocol == htons(ETH_P_IP)) {
 		if (skb->len < sizeof(struct iphdr))
 			goto out;
-		proto = PF_INET;
+
+		proto = NFPROTO_IPV4;
 	} else if (skb->protocol == htons(ETH_P_IPV6)) {
 		if (skb->len < sizeof(struct ipv6hdr))
 			goto out;
-		proto = PF_INET6;
-	} else
-		goto out;
 
-	r = nf_conntrack_in(dev_net(skb->dev), proto, NF_INET_PRE_ROUTING, skb);
-	if (r != NF_ACCEPT)
+		proto = NFPROTO_IPV6;
+	} else {
 		goto out;
+	}
 
 	c = nf_ct_get(skb, &ctinfo);
-	if (!c)
+	if (c) {
+		skb->mark = c->mark;
+		/* using overlimits stats to count how many packets marked */
+		ca->tcf_qstats.overlimits++;
+		goto out;
+	}
+
+	if (!nf_ct_get_tuplepr(skb, skb_network_offset(skb),
+			       proto, &tuple))
 		goto out;
 
+	thash = nf_conntrack_find_get(dev_net(skb->dev), ca->zone, &tuple);
+	if (!thash)
+		goto out;
+
+	c = nf_ct_tuplehash_to_ctrack(thash);
+	/* using overlimits stats to count how many packets marked */
+	ca->tcf_qstats.overlimits++;
 	skb->mark = c->mark;
-	nf_conntrack_put(skb->nfct);
-	skb->nfct = NULL;
+	nf_ct_put(c);
 
 out:
-	return TC_ACT_PIPE;
+	spin_unlock(&ca->tcf_lock);
+	return ca->tcf_action;
 }
+
+static const struct nla_policy connmark_policy[TCA_CONNMARK_MAX + 1] = {
+	[TCA_CONNMARK_PARMS] = { .len = sizeof(struct tc_connmark) },
+};
 
 static int tcf_connmark_init(struct net *net, struct nlattr *nla,
 			     struct nlattr *est, struct tc_action *a,
 			     int ovr, int bind)
 {
-	struct tcf_common *pc;
+	struct nlattr *tb[TCA_CONNMARK_MAX + 1];
+	struct tcf_connmark_info *ci;
+	struct tc_connmark *parm;
 	int ret = 0;
 
-	if (tcf_hash_check(0, a, bind)) {
-		ret = tcf_hash_create(0, est, a, sizeof(*pc), bind);
+	if (!nla)
+		return -EINVAL;
+
+	ret = nla_parse_nested(tb, TCA_CONNMARK_MAX, nla, connmark_policy);
+	if (ret < 0)
+		return ret;
+
+	parm = nla_data(tb[TCA_CONNMARK_PARMS]);
+
+	if (!tcf_hash_check(parm->index, a, bind)) {
+		ret = tcf_hash_create(parm->index, est, a, sizeof(*ci), bind);
 		if (ret)
-		    return ret;
+			return ret;
+
+		ci = to_connmark(a);
+		ci->tcf_action = parm->action;
+		ci->zone = parm->zone;
 
 		tcf_hash_insert(a);
 		ret = ACT_P_CREATED;
 	} else {
-		if (!ovr) {
-			tcf_hash_release(a, bind);
+		ci = to_connmark(a);
+		if (bind)
+			return 0;
+		tcf_hash_release(a, bind);
+		if (!ovr)
 			return -EEXIST;
-		}
+		/* replacing action and zone */
+		ci->tcf_action = parm->action;
+		ci->zone = parm->zone;
 	}
- 
 
 	return ret;
 }
 
-static void tcf_connmark_cleanup(struct tc_action *a, int bind)
-{
-	if (a->priv)
-		tcf_hash_release(a, bind);
-}
-
 static inline int tcf_connmark_dump(struct sk_buff *skb, struct tc_action *a,
-				int bind, int ref)
+				    int bind, int ref)
 {
+	unsigned char *b = skb_tail_pointer(skb);
+	struct tcf_connmark_info *ci = a->priv;
+
+	struct tc_connmark opt = {
+		.index   = ci->tcf_index,
+		.refcnt  = ci->tcf_refcnt - ref,
+		.bindcnt = ci->tcf_bindcnt - bind,
+		.action  = ci->tcf_action,
+		.zone   = ci->zone,
+	};
+	struct tcf_t t;
+
+	if (nla_put(skb, TCA_CONNMARK_PARMS, sizeof(opt), &opt))
+		goto nla_put_failure;
+
+	t.install = jiffies_to_clock_t(jiffies - ci->tcf_tm.install);
+	t.lastuse = jiffies_to_clock_t(jiffies - ci->tcf_tm.lastuse);
+	t.expires = jiffies_to_clock_t(ci->tcf_tm.expires);
+	if (nla_put(skb, TCA_CONNMARK_TM, sizeof(t), &t))
+		goto nla_put_failure;
+
 	return skb->len;
+nla_put_failure:
+	nlmsg_trim(skb, b);
+	return -1;
 }
 
 static struct tc_action_ops act_connmark_ops = {
 	.kind		=	"connmark",
-	.hinfo		=	&connmark_hash_info,
 	.type		=	TCA_ACT_CONNMARK,
 	.owner		=	THIS_MODULE,
 	.act		=	tcf_connmark,
 	.dump		=	tcf_connmark_dump,
-	.cleanup	=	tcf_connmark_cleanup,
 	.init		=	tcf_connmark_init,
 };
-
-MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
-MODULE_DESCRIPTION("Connection tracking mark restoring");
-MODULE_LICENSE("GPL");
 
 static int __init connmark_init_module(void)
 {
@@ -135,3 +184,7 @@ static void __exit connmark_cleanup_module(void)
 
 module_init(connmark_init_module);
 module_exit(connmark_cleanup_module);
+MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
+MODULE_DESCRIPTION("Connection tracking mark restoring");
+MODULE_LICENSE("GPL");
+
