@@ -856,50 +856,6 @@ void add_client_classes(unsigned int base, unsigned int level)
 }
 
 #ifdef HAVE_AQOS
-void add_userdev(char *dev, int base, char *upstream, char *downstream, char *lanstream)
-{
-	unsigned int uprate = atoi(upstream);
-	unsigned int downrate = atoi(downstream);
-	unsigned int lanrate = atoi(lanstream);
-
-	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
-	char *qos_svcs = nvram_safe_get("svqos_svcs");
-	char *qos_svcs_dev = nvram_nget("%s_svcs", dev);
-
-	char *svcs = malloc(strlen(qos_svcs) + strlen(qos_svcs_dev) + 2);
-	char *m = svcs;
-	if (strlen(qos_svcs_dev))
-		sprintf(svcs, "%s|%s", qos_svcs, qos_svcs_dev);
-	else
-		strcpy(svcs, qos_svcs);
-
-	char nullmask[24];
-	strcpy(nullmask, qos_nfmark(0));
-
-	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "CONNMARK", "--save");
-	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "RETURN");
-	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "CONNMARK", "--save");
-	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "RETURN");
-
-	add_client_classes(base, uprate, downrate, lanrate, 0);
-
-	do {
-		if (sscanf(svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
-			break;
-
-		add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, dev);
-	} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
-	free(m);
-
-	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", dev, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", dev, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
-
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
-
-}
 
 void add_usermac(char *mac, int base, char *upstream, char *downstream, char *lanstream)
 {

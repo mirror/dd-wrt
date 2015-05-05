@@ -6417,7 +6417,7 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_ips = nvram_safe_get("svqos_devs");
-	char ip[32], level[32], level2[32], lanlevel[32], prio[32];
+	char ip[32], level[32], level2[32], lanlevel[32], prio[32], proto[32];
 	int no_ips = 0, i = 0;
 
 	// calc # of ips
@@ -6431,6 +6431,7 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
+		  "<th><script type=\"text/javascript\">Capture(qos.service)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
 		  "</tr>\n");	//
 
@@ -6449,13 +6450,15 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < no_ips && qos_ips && qos_ips[0]; i++) {
 		if (sscanf(qos_ips, "%31s %31s %31s", ip, level, level2) < 3)
 			break;
-		if (sscanf(qos_ips, "%31s %31s %31s %31s %31s", ip, level, level2, lanlevel, prio)) {
+		if (sscanf(qos_ips, "%31s %31s %31s %31s %31s %31s", ip, level, level2, lanlevel, prio, proto)) {
 			if (!strcmp(lanlevel, "|")) {
 				strcpy(lanlevel, "0");
 				strcpy(prio, "0");
 			}
 			if (!strcmp(prio, "|"))
 				strcpy(prio, "0");
+			if (!strcmp(proto, "|"))
+				strcpy(proto, "none");
 		}
 
 		websWrite(wp, "<tr>\n" "<td align=\"center\">\n"	//
@@ -6472,6 +6475,19 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "	<td nowrap>\n"	//
 			  "<input name=\"svqos_devlanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"	//
 			  "</td>\n", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");	//
+		/* service */
+		filters *services = get_filters_list();
+		int count = 0;
+		websWrite(wp, "	<td nowrap>\n");
+		websWrite(wp, "<select name=\"svqos_devservice%d\"> size=\"1\"\n", i);
+		websWrite(wp, "<option value=\"none\" %s >None</option>\n", nvram_match(proto, "none") ? "selected=\"selected\"" : "");
+		while (services[count].name != NULL) {
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", services[count].name, nvram_match(proto, services[count].name) ? "selected=\"selected\"" : "", services[count].name);
+			free(services[count].name);
+			count++;
+		}
+		websWrite(wp, "</select>\n");
+		free(services);
 
 		websWrite(wp, "	<td>\n"	//
 			  "<select name=\"svqos_devprio%d\" onChange=\"iplvl_grey(%d,this,this.form,false)\"> \n"	//
