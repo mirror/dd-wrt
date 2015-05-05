@@ -6457,6 +6457,7 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			}
 			if (!strcmp(prio, "|"))
 				strcpy(prio, "0");
+		
 			if (!strcmp(proto, "|"))
 				strcpy(proto, "none");
 		}
@@ -6480,9 +6481,9 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		int count = 0;
 		websWrite(wp, "	<td nowrap>\n");
 		websWrite(wp, "<select name=\"svqos_devservice%d\"> size=\"1\"\n", i);
-		websWrite(wp, "<option value=\"none\" %s >None</option>\n", nvram_match(proto, "none") ? "selected=\"selected\"" : "");
+		websWrite(wp, "<option value=\"none\" %s >None</option>\n", !strcmp(proto, "none") ? "selected=\"selected\"" : "");
 		while (services[count].name != NULL) {
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", services[count].name, nvram_match(proto, services[count].name) ? "selected=\"selected\"" : "", services[count].name);
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", services[count].name, !strcmp(proto, services[count].name) ? "selected=\"selected\"" : "", services[count].name);
 			free(services[count].name);
 			count++;
 		}
