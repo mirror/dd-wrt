@@ -1424,7 +1424,7 @@ void qos_save(webs_t wp)
 	char svqos_var[4096] = { 0 };
 	char svqos_pktstr[30] = { 0 };
 	char field[32] = { 0 };
-	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt;
+	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt, *proto;
 	int no_svcs = atoi(websGetVar(wp, "svqos_nosvcs", "0"));
 	int no_ips = atoi(websGetVar(wp, "svqos_noips", "0"));
 	int no_devs = atoi(websGetVar(wp, "svqos_nodevs", "0"));
@@ -1575,13 +1575,19 @@ void qos_save(webs_t wp)
 		level2 = websGetVar(wp, field, NULL);
 		if (!level2)
 			continue;
+
+		snprintf(field, 31, "svqos_devservice%d", i);
+		proto = websGetVar(wp, field, NULL);
+		if (!proto)
+			continue;
+
 		snprintf(field, 31, "svqos_devlanlvl%d", i);
 		lanlevel = websGetVar(wp, field, NULL);
 		if (!lanlevel)
 			continue;
 
 		if (strlen(svqos_var) > 0)
-			sprintf(svqos_var, "%s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio);
+			sprintf(svqos_var, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio,proto);
 		else
 			sprintf(svqos_var, "%s %s %s %s %s |", data, level, level2, lanlevel, prio);
 
