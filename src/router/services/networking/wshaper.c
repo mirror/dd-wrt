@@ -35,6 +35,7 @@
 #include <code_pattern.h>
 #include <rc.h>
 #include <services.h>
+#include <broadcom.h>
 
 static char *get_wanface(void)
 {
@@ -257,7 +258,7 @@ void aqos_tables(void)
 	char *qos_mac = nvram_safe_get("svqos_macs");
 	char *qos_svcs = NULL;
 
-	char level[32], level2[32], level3[32], data[32], type[32], prio[32];
+	char level[32], level2[32], level3[32], data[32], type[32], prio[32], proto1[32], proto2[32], proto3[32], proto4[32], proto[32];
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
 
 	char nullmask[24];
@@ -317,20 +318,50 @@ void aqos_tables(void)
 	while ((qos_ipaddr = strpbrk(++qos_ipaddr, "|")) && qos_ipaddr++);
 
 	do {
-		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s |", data, level, level2, level3, prio);
+		memset(proto, 0, sizeof(proto));
+		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s %31s |", data, level, level2, level3, prio, proto);
 		if (ret < 5)
 			break;
+		if (!strcmp(proto,"|") || !strcmp(proto,"none")) {
+		    memset(proto, 0, sizeof(proto));
+		}
+
+		memset(proto1, 0, sizeof(proto1));
+		memset(proto2, 0, sizeof(proto2));
+		memset(proto3, 0, sizeof(proto3));
+		memset(proto4, 0, sizeof(proto4));
 
 		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
-		char *qos_svcs_dev = nvram_nget("%s_svcs", data);
-
-		char *svcs = malloc(strlen(qos_svcs) + strlen(qos_svcs_dev) + 2);
+		char *svcs = malloc(strlen(qos_svcs) + 128 + 2);
 		char *m = svcs;
-		if (strlen(qos_svcs_dev))
-			sprintf(svcs, "%s|%s", qos_svcs, qos_svcs_dev);
-		else
+		if (strlen(proto)) {
+			filters *s_filters = get_filters_list();
+			int count = 0;
+			while (s_filters[count].name != NULL) {
+				if (!strcmp(s_filters[count].name, proto)) {
+					if (s_filters[count].proto == 1)
+						sprintf(proto2, "tcp");
+					if (s_filters[count].proto == 2)
+						sprintf(proto2, "udp");
+					if (s_filters[count].proto == 3)
+						sprintf(proto2, "both");
+					if (s_filters[count].proto == 4)
+						sprintf(proto2, "l7");
+					if (s_filters[count].proto == 5)
+						sprintf(proto2, "dpi");
+					if (s_filters[count].proto == 6)
+						sprintf(proto2, "p2p");
+					strcpy(proto1, s_filters[count].name);
+					sprintf(proto3, "%d:%d", s_filters[count].portfrom, s_filters[count].portto);
+					strcpy(proto4, prio);
+				}
+				free(s_filters[count++].name);
+			}
+			free(s_filters);
+			sprintf(svcs, "%s|%s %s %s %s", qos_svcs, proto1, proto2, proto3, proto4);
+		} else
 			strcpy(svcs, qos_svcs);
 
 		do {
@@ -345,7 +376,6 @@ void aqos_tables(void)
 		// not service-prioritized, then default class          
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-
 		base += 10;
 	}
 	while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
