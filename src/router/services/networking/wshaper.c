@@ -324,7 +324,7 @@ void aqos_tables(void)
 		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
-		char *qos_svcs_dev = nvram_nget("%s_svcs", dev);
+		char *qos_svcs_dev = nvram_nget("%s_svcs", data);
 
 		char *svcs = malloc(strlen(qos_svcs) + strlen(qos_svcs_dev) + 2);
 		char *m = svcs;
@@ -638,7 +638,7 @@ int svqos_iptables(void)
 		add_client_classes(base, atoi(level));
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
-		char *qos_svcs_dev = nvram_nget("%s_svcs", dev);
+		char *qos_svcs_dev = nvram_nget("%s_svcs", data);
 
 		char *svcs = malloc(strlen(qos_svcs) + strlen(qos_svcs_dev) + 2);
 		char *m = svcs;
