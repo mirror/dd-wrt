@@ -316,8 +316,6 @@ void aqos_tables(void)
 	}
 	while ((qos_ipaddr = strpbrk(++qos_ipaddr, "|")) && qos_ipaddr++);
 
-
-
 	do {
 		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s |", data, level, level2, level3, prio);
 		if (ret < 5)
@@ -326,12 +324,23 @@ void aqos_tables(void)
 		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
+		char *qos_svcs_dev = nvram_nget("%s_svcs", dev);
+
+		char *svcs = malloc(strlen(qos_svcs) + strlen(qos_svcs_dev) + 2);
+		char *m = svcs;
+		if (strlen(qos_svcs_dev))
+			sprintf(svcs, "%s|%s", qos_svcs, qos_svcs_dev);
+		else
+			strcpy(svcs, qos_svcs);
+
 		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+			if (sscanf(svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
 				break;
 
 			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
-		} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
+		} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
+
+		free(m);
 
 		// not service-prioritized, then default class          
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
@@ -621,7 +630,6 @@ int svqos_iptables(void)
 	}
 	while ((qos_ipaddr = strpbrk(++qos_ipaddr, "|")) && qos_ipaddr++);
 
-
 	do {
 
 		if (sscanf(qos_devs, "%31s %31s |", data, level) < 2)
@@ -630,13 +638,21 @@ int svqos_iptables(void)
 		add_client_classes(base, atoi(level));
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
+		char *qos_svcs_dev = nvram_nget("%s_svcs", dev);
+
+		char *svcs = malloc(strlen(qos_svcs) + strlen(qos_svcs_dev) + 2);
+		char *m = svcs;
+		if (strlen(qos_svcs_dev))
+			sprintf(svcs, "%s|%s", qos_svcs, qos_svcs_dev);
+		else
+			strcpy(svcs, qos_svcs);
 		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+			if (sscanf(svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
 				break;
 
 			add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
-		} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
-
+		} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
+		free(m);
 		// not service-prioritized, then default class          
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", data, "-m", "mark", "--mark", "0", "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
