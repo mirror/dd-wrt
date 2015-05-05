@@ -1323,12 +1323,8 @@ void qos_add_dev(webs_t wp)
 	/*
 	 * if this ip exists, return an error 
 	 */
-	char devcheck[64];
-	sprintf(devcheck, "%s ", add_dev);
-	if (strstr(svqos_ips, devcheck))
-		return;
 #ifdef HAVE_AQOS
-	snprintf(new_ip, 4095, "%s %s 100 100 0 0 |", svqos_ips, add_dev);
+	snprintf(new_ip, 4095, "%s %s 100 100 0 0 none |", svqos_ips, add_dev);
 #else
 	snprintf(new_ip, 4095, "%s %s 30 |", svqos_ips, add_dev);
 #endif
@@ -1589,7 +1585,7 @@ void qos_save(webs_t wp)
 		if (strlen(svqos_var) > 0)
 			sprintf(svqos_var, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio,proto);
 		else
-			sprintf(svqos_var, "%s %s %s %s %s |", data, level, level2, lanlevel, prio);
+			sprintf(svqos_var, "%s %s %s %s %s %s |", data, level, level2, lanlevel, prio, proto);
 
 #endif
 
