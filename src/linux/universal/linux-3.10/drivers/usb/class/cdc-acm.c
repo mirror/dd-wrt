@@ -115,6 +115,29 @@ static void acm_release_minor(struct acm *acm)
 	mutex_unlock(&acm_table_lock);
 }
 
+static int interay_serial_ctrl_msg(struct acm *acm, int request, int value,	void *buf, int len)
+{
+	int retval;
+
+	retval = usb_autopm_get_interface(acm->control);
+	if (retval)
+		return retval;
+
+	retval = usb_control_msg(acm->dev, usb_sndctrlpipe(acm->dev, 0),
+		request, USB_TYPE_VENDOR | USB_RECIP_INTERFACE,
+		value,
+		acm->control->altsetting[0].desc.bInterfaceNumber,
+		buf, len, 5000);
+
+	dev_dbg(&acm->control->dev,
+			"%s - rq 0x%02x, val %#x, len %#x, result %d\n",
+			__func__, request, value, len, retval);
+
+	usb_autopm_put_interface(acm->control);
+
+	return retval < 0 ? retval : 0;
+}
+
 /*
  * Functions for ACM control messages.
  */
@@ -840,12 +863,23 @@ static int acm_tty_ioctl(struct tty_struct *tty,
 	struct acm *acm = tty->driver_data;
 	int rv = -ENOIOCTLCMD;
 
+	#define SET_MODE_RS232 0x54ED
+	#define SET_MODE_RS485 0x54EE
+	#define SET_MODE_RS422 0x54EF
+
+	#define SET_ACTIVE_PROTOCOL_CMD 0
+
 	switch (cmd) {
 	case TIOCGSERIAL: /* gets serial port data */
 		rv = get_serial_info(acm, (struct serial_struct __user *) arg);
 		break;
 	case TIOCSSERIAL:
 		rv = set_serial_info(acm, (struct serial_struct __user *) arg);
+		break;
+	case SET_MODE_RS232:
+	case SET_MODE_RS485:
+	case SET_MODE_RS422:
+		return interay_serial_ctrl_msg(acm, SET_ACTIVE_PROTOCOL_CMD, cmd - SET_MODE_RS232, NULL, 0);
 		break;
 	}
 
