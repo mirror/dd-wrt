@@ -360,7 +360,7 @@ void aqos_tables(void)
 				free(s_filters[count++].name);
 			}
 			free(s_filters);
-			sprintf(svcs, "%s|%s %s %s %s", qos_svcs, proto1, proto2, proto3, proto4);
+			sprintf(svcs, "%s |%s %s %s %s", qos_svcs, proto1, proto2, proto3, proto4);
 		} else
 			strcpy(svcs, qos_svcs);
 
