@@ -74,12 +74,14 @@ function devs_grey(sw_disabled,F,overwrite) {
 			eval("F.svqos_devup" + i).disabled = sw_disabled;
 			eval("F.svqos_devdown" + i).disabled = sw_disabled;
 			eval("F.svqos_devlanlvl" + i).disabled = sw_disabled;
+			eval("F.svqos_devservice" + i).disabled = sw_disabled;
 			eval("F.svqos_devprio" + i).disabled = sw_disabled;
 		}
 	} else {
 		for (i=0; i<F.svqos_nodevs.value; i++) {
 			eval("F.svqos_devdel" + i).disabled = sw_disabled;
 			eval("F.svqos_devprio" + i).disabled = sw_disabled;
+			eval("F.svqos_devservice" + i).disabled = sw_disabled;
 			if (eval("F.svqos_devup" + i))
 				devlvl_grey(i, eval("F.svqos_devprio" + i), F, overwrite);
 		}
