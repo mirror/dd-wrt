@@ -129,7 +129,7 @@ share.rule="Regel";
 share.lan="LAN";
 share.point2point="Punkt zu Punkt";
 share.nat="NAT";
-share.subnet="Subnetz-Maske";
+share.subnet="Netzmaske";
 share.unmask="Klartext";
 share.deflt="Std";  //don't use share.default!!!
 share.all="Alles";
@@ -138,8 +138,8 @@ share.right="Rechts";
 share.left="Links";
 share.share_key="Shared Key";
 share.inter="Intervall (in Sekunden)";
-share.srv="Service-Name";
-share.port_range="Port-Bereich";
+share.srv="Dienstname";
+share.port_range="Portbereich";
 share.priority="Priorität";
 share.gateway="Gateway";
 share.intrface="Schnittstelle";  //don't use share.interface, Mozilla problem!!!
@@ -186,7 +186,7 @@ share.logout="Ausloggen";
 share.nmounted="Nicht gemounted";
 share.fssize="Total / Freier Speicher";
 share.src="Lokale Addresse";
-share.dst="Ziel-Addresse";
+share.dst="Zieladdresse";
 share.name_resolution="Namens Auflösung";
 share.timeout="Verfall (s)";
 share.detail="Klicke um mehr zu sehen";
@@ -251,17 +251,17 @@ sbutton.add_wol="Host hinzufügen";
 sbutton.manual_wol="Manuelles Aufwecken";
 sbutton.summary="Zusammenfassung";
 sbutton.filterIP="Liste der PCs editieren";
-sbutton.filterMac="MAC-Filter-Liste editieren";
+sbutton.filterMac="MAC-Filterliste editieren";
 sbutton.filterSer="Service hinzufügen/editieren";
 sbutton.reboot="Router neu starten";
 sbutton.help="   Hilfe  ";
 sbutton.wl_client_mac="MAC-Liste WLAN-Clients";
-sbutton.update_filter="Filter-Liste updaten";
+sbutton.update_filter="Filterliste updaten";
 sbutton.join="Beitreten";
 sbutton.log_in="Eingehendes Log";
 sbutton.log_out="Ausgehendes Log";
 sbutton.edit_srv="Service hinzufügen/editieren";
-sbutton.routingtab="Routen-Tabelle anzeigen";
+sbutton.routingtab="Routentabelle anzeigen";
 sbutton.wanmac="Zeige aktuelle PC-MAC-Adresse";
 sbutton.dhcprel="DHCP freigeben";
 sbutton.dhcpren="DHCP erneuern";
@@ -309,7 +309,7 @@ errmsg.err23="Ungültiger HEX Wert ";
 errmsg.err24=" in MAC-Adresse gefunden ";
 errmsg.err25="Der Schlüsselwert ist nicht korrekt.";
 errmsg.err26="Die Schlüssellänge ist nicht korrekt.";
-errmsg.err27="Ungültige Subnetz-Maske.";
+errmsg.err27="Ungültige Netzmaske.";
 errmsg.err28=" enthält ungültige Werte, diese müssen [ 0 - 9 ] sein.";
 errmsg.err29=" enthält einen ungültigen ASCII-Wert.";
 errmsg.err30=" enthält ungültige hexadezimale Werte.";
@@ -359,10 +359,10 @@ errmsg.err52="Eingegebene Passwörter stimmen nicht überein.";
 // Port_Services.asp error messages
 errmsg.err53="Klicken Sie nach dem Abschluss aller Aktionen den Anwenden-Button um die Einstellungen zu übernehmen.";
 errmsg.err54="Sie müssen einen Service-Namen angeben.";
-errmsg.err55="Der Service-Name existiert bereits.";
+errmsg.err55="Der Dienstname existiert bereits.";
 
 // QoS.asp error messages
-errmsg.err56="Port-Wert ist außerhalb des gültigen Bereichs [0 - 65535]";
+errmsg.err56="Portwert ist außerhalb des gültigen Bereichs [0 - 65535]";
 
 // Routing.asp error messages
 errmsg.err57="Eintrag löschen?";
@@ -539,7 +539,7 @@ ddns.wanip="Externer IP Check";
 
 ddnsm.all_closed="DDNS-Server ist aktuell geschlossen";
 ddnsm.all_resolving="Domainnamen auflösen";
-ddnsm.all_errresolv="Domainnamen-Auflösung fehlgeschlagen";
+ddnsm.all_errresolv="Namensauflösung fehlgeschlagen";
 ddnsm.all_connecting="Mit Server verbinden";
 ddnsm.all_connectfail="Verbindung mit Server fehlgeschlagen";
 ddnsm.all_disabled="DDNS-Funktion ist abgeschaltet";
@@ -718,7 +718,7 @@ hpforward.right2="Um gewisse Programme auf Ihren Rechner nutzen zu können, kann 
 
 usb.titl="USB";
 usb.usb_legend="USB Unterstützung";
-usb.usb_core="USB Kern-Unterstützung";
+usb.usb_core="USB Unterstützung";
 usb.usb_uhci="USB 1.1 Unterstützung (UHCI)";
 usb.usb_ohci="USB 1.1 Unterstützung (OHCI)";
 usb.usb_ehci="USB 2.0 Unterstützung";
@@ -796,7 +796,7 @@ hotspot.macauth="MAC Authentifizierung";
 hotspot.macpasswd="MAC Kennwort";
 hotspot.sec8021Xauth="802.1X Authentifizierung (EAP)";
 hotspot.option="Zusätzliche Chillispot-Optionen";
-hotspot.fon_chilli="Chillispot lokales Benutzer-Management";
+hotspot.fon_chilli="Chillispot lokales Benutzermanagement";
 hotspot.fon_user="Benutzerliste";
 hotspot.http_legend="HTTP-Umleitung";
 hotspot.http_srv="HTTP-Umleitung";
@@ -1017,7 +1017,7 @@ hidx.right2="Diese Einstellung wird von fast allen Providern genutzt.";
 hidx.right4="Geben Sie hier den Hostnamen ein, der Ihnen vom Provider zugewiesen wurde.";
 hidx.right6="Geben Sie hier den Domainnamen ein, der Ihnen vom Provider zugewiesen wurde.";
 hidx.right8="Dies ist die lokale IP-Adresse Ihres Routers im LAN.";
-hidx.right10="Dies ist die Subnetz-Maske Ihres Routers.";
+hidx.right10="Dies ist die Netzmaske Ihres Routers.";
 hidx.right12="Erlaubt dem Router, Ihre IP-Adressen zu verwalten.";
 hidx.right14="Die erste IP-Adresse die vergeben werden soll.";
 hidx.right16="Sie können hier die Anzahl der IP-Adressen einschränken, die der Router maximal vergeben kann. 0 bedeutet das nur vordefinierte statische Leases zur Vergabe verwendet werden.";
@@ -1073,7 +1073,7 @@ log.accept="Akzeptiert";
 management.titl="Administration";
 management.h2="Router Management";
 management.changepassword="Ihr Router ist derzeit nicht gegen unbefugten Zugriff geschützt, bitte ändern Sie ihren Benutzernamen und ihr Kennwort mit Hilfe des folgenden Dialogs!";
-management.psswd_legend="Router-Kennword";
+management.psswd_legend="Router-Kennwort";
 management.psswd_user="Router-Benutzername";
 management.psswd_pass="Router-Kennwort";
 management.pass_conf="Zum Bestätigen erneut eingeben";
@@ -1101,8 +1101,8 @@ management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
-management.rst_legend="Reset-Knopf";
-management.rst_srv="Reset-Knopf";
+management.rst_legend="Resetknopf";
+management.rst_srv="Resetknopf";
 management.routing_legend="Routing";
 management.routing_srv="Routing";
 management.ipv6_legend="IPv6-Unterstützung";
@@ -1167,8 +1167,8 @@ hmanagement.right2="Steuert das automatische Auffrischen diverser GUI-Elemente. 
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
 
-portserv.titl="Port-Services";
-portserv.h2="Port-Services";
+portserv.titl="Port-Dienste";
+portserv.h2="Port-Dienste";
 
 
 // ** Networking.asp **//
@@ -1208,8 +1208,8 @@ hnetworking.right2="Um Multi-DHCPD zu verwenden, aktiviere DNSMasq als DHCP-Serv
 
 // ** QoS.asp **//
 
-qos.titl="Service-Qualität";
-qos.h2="Service-Qualität (QoS)";
+qos.titl="Dienstqualität";
+qos.h2="Dienstqualität (QoS)";
 qos.legend="QoS-Einstellungen";
 qos.srv="QoS starten";
 qos.type="Packet Scheduler";
@@ -1219,7 +1219,7 @@ qos.aqd_codel="CODEL";
 qos.aqd_fqcodel="FQ_CODEL";
 qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
-qos.legend2="Service-Priorität";
+qos.legend2="Dienst-Priorität";
 qos.prio_m="Manuell";
 qos.prio_x="Maximal";
 qos.prio_p="Premium";
@@ -1244,6 +1244,7 @@ qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Benutzer Bandbreiten Management";
 qos.bandwidth="Bandbreite in kbits";
+qos.service="Dienst";
 
 //help container
 
@@ -1259,8 +1260,8 @@ hqos.right12="Hier können Sie die Datenrate der physischen LAN-Ports an Ihrem Ro
 
 // ** RouteTable.asp **//
 
-routetbl.titl="Routen-Tabelle";
-routetbl.h2="Routen-Tabelle";
+routetbl.titl="Routentabelle";
+routetbl.h2="Routentabelle";
 routetbl.th1="Ziel-LAN-Netz";
 
 
@@ -1306,7 +1307,7 @@ route.copt_vtysh="Vtysh";
 route.gateway_legend="Dynamisches Routing";
 route.static_legend="Statisches Routing";
 route.static_setno="Wähle Set-Nummer";
-route.static_name="Routen-Name";
+route.static_name="Routenname";
 route.static_ip="Ziel-LAN-Netz";
 
 //help container
@@ -1329,8 +1330,8 @@ survey.thjoin="Netz beitreten";
 
 // ** Services.asp **//
 
-service.titl="Services";
-service.h2="Service-Management";
+service.titl="Dienste";
+service.h2="Dienst-Management";
 
 service.apserv_legend="APServ Fernwartung";
 service.apserv="APServ";
@@ -1381,8 +1382,8 @@ service.telnet_srv="Telnet";
 service.pptpd_legend="PPTP-Client";
 service.pptpd_option="PPTP-Client-Optionen";
 service.pptpd_ipdns="Server-IP oder DNS-Name";
-service.pptpd_subnet="Entferntes Subnetz";
-service.pptpd_subnetmask="Entfernte Subnetz-Maske";
+service.pptpd_subnet="Entferntes Netz";
+service.pptpd_subnetmask="Entfernte Netzmaske";
 service.pptpd_encry="MPPE-Verschlüsselung";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
@@ -1663,7 +1664,7 @@ status_lan.conratio="Verhältnis";
 
 hstatus_lan.right2="Dies ist die Router-MAC-Adresse wie sie in Ihrem lokalen Ethernet-Netzwerk sichtbar ist.";
 hstatus_lan.right4="Dies zeigt die Router-IP-Adresse wie sie in Ihrem lokalen Ethernet-Netzwerk sichtbar ist.";
-hstatus_lan.right6="Wenn der Router eine Subnetz-Maske nutzt, wird diese hier angezeigt.";
+hstatus_lan.right6="Wenn der Router eine Netzmaske nutzt, wird diese hier angezeigt.";
 hstatus_lan.right8="Wenn Sie den Router als DHCP-Server nutzen, wird dies hier angezeigt.";
 hstatus_lan.right10="Indem Sie auf irgendeine MAC-Adresse klicken, erhalten Sie die OUI ID, welche auf den Hersteller des Geräts rückschließen lässt.";
 
@@ -1838,7 +1839,7 @@ upgrad.resetOff="Kein Zurücksetzen";
 upgrad.resetOn="Standardeinstellungen";
 upgrad.file="Firmware-Aktualisierungs-Datei";
 upgrad.warning="W A R N U N G";
-upgrad.mess1="Das Aktualisieren der Firmware kann einige Minuten dauern.<br />Bitte schalten Sie das Gerät nicht ab und drücken Sie auch nicht den Reset-Knopf!";
+upgrad.mess1="Das Aktualisieren der Firmware kann einige Minuten dauern.<br />Bitte schalten Sie das Gerät nicht ab und drücken Sie auch nicht den Resetknopf!";
 
 //help container
 
@@ -2038,12 +2039,12 @@ wds.titl="WDS";
 wds.h2="Wireless Distribution System";
 wds.legend="WDS-Einstellungen";
 wds.label="Lazy WDS";
-wds.label2="WDS-Subnetz";
+wds.label2="WDS-Netz";
 wds.wl_mac="WLAN-MAC";
 wds.lazy_default="Standardwert: Deaktiviert";
 wds.nat1="WLAN->WDS";
 wds.nat2="WDS->WLAN";
-wds.subnet="Subnetz";
+wds.subnet="Netz";
 wds.legend2="Erweiterte Optionen";
 
 

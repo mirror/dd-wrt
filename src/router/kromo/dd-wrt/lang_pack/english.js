@@ -1443,6 +1443,7 @@ qos.enabledefaultlvls="Enable Per User Default Limits";
 qos.bandwidth="Bandwidth in kbits";
 qos.up="Up";
 qos.down="Down";
+qos.service="Service";
 
 //help container
 var hqos=new Object();
