@@ -322,8 +322,18 @@ void aqos_tables(void)
 		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s %31s |", data, level, level2, level3, prio, proto);
 		if (ret < 5)
 			break;
-		if (!strcmp(proto,"|") || !strcmp(proto,"none")) {
-		    memset(proto, 0, sizeof(proto));
+		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
+			memset(proto, 0, sizeof(proto));
+		}
+
+		if (nvram_match("wshaper_dev", "LAN")) {
+			if (nvram_nmatch("1", "%s_bridged", data)) {
+				eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-m", "physdev", "--physdev-in", data, "-j", "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-I", "FORWARD", "1", "-m", "physdev", "--physdev-in", data, "-j", "IMQ", "--todev", "0");
+			} else {
+				eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-i", data, "-j", "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-I", "FORWARD", "1", "-i", data, "-j", "IMQ", "--todev", "0");
+			}
 		}
 
 		memset(proto1, 0, sizeof(proto1));
@@ -667,22 +677,13 @@ int svqos_iptables(void)
 
 		add_client_classes(base, atoi(level));
 
-		qos_svcs = nvram_safe_get("svqos_svcs");
-		char *qos_svcs_dev = nvram_nget("%s_svcs", data);
-
-		char *svcs = malloc(strlen(qos_svcs) + strlen(qos_svcs_dev) + 2);
-		char *m = svcs;
-		if (strlen(qos_svcs_dev))
-			sprintf(svcs, "%s|%s", qos_svcs, qos_svcs_dev);
-		else
-			strcpy(svcs, qos_svcs);
+		svcs = nvram_safe_get("svqos_svcs");
 		do {
 			if (sscanf(svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
 				break;
 
 			add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
 		} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
-		free(m);
 		// not service-prioritized, then default class          
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", data, "-m", "mark", "--mark", "0", "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
