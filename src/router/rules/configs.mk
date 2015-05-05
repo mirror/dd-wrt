@@ -255,6 +255,7 @@ obj-$(CONFIG_CLOUD4WI) += curl
 obj-$(CONFIG_UNIWIP) += uniwip_gpio
 obj-$(CONFIG_MACTELNET) += mactelnet
 obj-$(CONFIG_FIRMWARES) += firmwares
+obj-$(CONFIG_SERVICEGATE) += servicegate
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
