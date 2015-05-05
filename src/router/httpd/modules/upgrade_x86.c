@@ -242,7 +242,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 	fprintf(stderr, "write system\n");
 	int fd = open(drive, O_DIRECT | O_CREAT | O_SYNC | O_LARGEFILE | O_RDWR);
-	FILE *out = fdopen(fd, "r+b");
+	FILE *out = fdopen(fd, "w+b");
 	if (!out) {
 		ret = ENOMEM;
 		goto err;
