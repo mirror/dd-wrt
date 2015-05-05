@@ -670,6 +670,17 @@ extern void ej_show_registrations(webs_t wp, int argc, char_t ** argv);
 
 extern char *get_filter_services(void);
 
+typedef struct filters	// l7 and p2p filters
+{
+
+	char *name;
+	int portfrom;
+	int portto;
+	int proto;		// 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
+} filters;
+
+extern filters *get_filters_list(void);
+
 #ifdef HAVE_RFLOW
 extern void ej_show_rflowif(webs_t wp, int argc, char_t ** argv);
 #endif
