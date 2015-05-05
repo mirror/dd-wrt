@@ -864,6 +864,14 @@ void add_userdev(char *dev, int base, char *upstream, char *downstream, char *la
 
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
+	char *qos_svcs_dev = nvram_nget("%s_svcs", dev);
+
+	char *svcs = malloc(strlen(qos_svcs) + strlen(qos_svcs_dev) + 2);
+	char *m = svcs;
+	if (strlen(qos_svcs_dev))
+		sprintf(svcs, "%s|%s", qos_svcs, qos_svcs_dev);
+	else
+		strcpy(svcs, qos_svcs);
 
 	char nullmask[24];
 	strcpy(nullmask, qos_nfmark(0));
@@ -876,19 +884,20 @@ void add_userdev(char *dev, int base, char *upstream, char *downstream, char *la
 	add_client_classes(base, uprate, downrate, lanrate, 0);
 
 	do {
-		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+		if (sscanf(svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
 			break;
 
 		add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, dev);
-	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
+	} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
+	free(m);
 
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", dev, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", dev, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
 
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
-	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "CONNMARK", "--save");
-	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "RETURN");
 
 }
 
@@ -5469,11 +5478,11 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_DIR862
 	case ROUTER_BOARD_WHRHPGN:
-		diag_gpio = 0x10e; // orange
-		diag_gpio_disabled = 0x113; // 
-		power_gpio = 0x113; // green
-		connected_gpio = 0x116; // green
-		disconnected_gpio = 0x117; // orange
+		diag_gpio = 0x10e;	// orange
+		diag_gpio_disabled = 0x113;	// 
+		power_gpio = 0x113;	// green
+		connected_gpio = 0x116;	// green
+		disconnected_gpio = 0x117;	// orange
 		break;
 #elif HAVE_MMS344
 	case ROUTER_BOARD_WHRHPGN:
