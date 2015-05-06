@@ -6484,11 +6484,10 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<option value=\"none\" %s >None</option>\n", !strcmp(proto, "none") ? "selected=\"selected\"" : "");
 		while (services[count].name != NULL) {
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", services[count].name, !strcmp(proto, services[count].name) ? "selected=\"selected\"" : "", services[count].name);
-			free(services[count].name);
 			count++;
 		}
 		websWrite(wp, "</select>\n");
-		free(services);
+		free_filters(services);
 
 		websWrite(wp, "	<td>\n"	//
 			  "<select name=\"svqos_devprio%d\" onChange=\"iplvl_grey(%d,this,this.form,false)\"> \n"	//
