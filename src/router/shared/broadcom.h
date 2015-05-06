@@ -674,9 +674,9 @@ typedef struct filters	// l7 and p2p filters
 {
 
 	char *name;
-	int portfrom;
-	int portto;
-	int proto;		// 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
+	unsigned short portfrom;
+	unsigned short portto;
+	unsigned char proto;		// 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
 } filters;
 
 extern filters *get_filters_list(void);
