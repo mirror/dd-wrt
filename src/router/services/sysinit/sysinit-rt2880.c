@@ -401,44 +401,44 @@ char *enable_dtag_vlan(int enable)
 	if (getRouterBrand() != ROUTER_BOARD_ECB9750 && getRouterBrand() != ROUTER_BOARD_TECHNAXX3G) {
 		if (enable) {
 #if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
-			eval("switch", "reg", "w", "14 405555");
-			eval("switch", "reg", "w", "50 7001");
-			eval("switch", "reg", "w", "90 7f7f");
-			eval("switch", "reg", "w", "98 7f2f");
-			eval("switch", "reg", "w", "e4 2f");
+			eval("switch", "reg", "w", "14", "405555");
+			eval("switch", "reg", "w", "50", "7001");
+			eval("switch", "reg", "w", "90", "7f7f");
+			eval("switch", "reg", "w", "98", "7f2f");
+			eval("switch", "reg", "w", "e4", "2f");
 #if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
     defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
-			eval("switch", "reg", "w", "40 1007");
-			eval("switch", "reg", "w", "44 1001");
-			eval("switch", "reg", "w", "48 1001");
-			eval("switch", "reg", "w", "70 ffff417e");
+			eval("switch", "reg", "w", "40", "1007");
+			eval("switch", "reg", "w", "44", "1001");
+			eval("switch", "reg", "w", "48", "1001");
+			eval("switch", "reg", "w", "70", "ffff417e");
 #ifdef HAVE_ESR9752
-			eval("switch", "reg", "w", "c8 3f502b28");
+			eval("switch", "reg", "w", "c8", "3f502b28");
 #endif
 #else
-			eval("switch", "reg", "w", "40 1001");
-			eval("switch", "reg", "w", "44 1001");
-			eval("switch", "reg", "w", "48 1007");
-			eval("switch", "reg", "w", "70 ffff506f");
+			eval("switch", "reg", "w", "40", "1001");
+			eval("switch", "reg", "w", "44", "1001");
+			eval("switch", "reg", "w", "48", "1007");
+			eval("switch", "reg", "w", "70", "ffff506f");
 #endif
 #endif
 			// now we got vlan7, how do we trunk now. lets find out
 			return "eth2";
 		} else {
 #if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
-			eval("switch", "reg", "w", "14 405555");
-			eval("switch", "reg", "w", "50 2001");
-			eval("switch", "reg", "w", "90 7f7f");
-			eval("switch", "reg", "w", "98 7f3f");
-			eval("switch", "reg", "w", "e4 3f");
+			eval("switch", "reg", "w", "14", "405555");
+			eval("switch", "reg", "w", "50", "2001");
+			eval("switch", "reg", "w", "90", "7f7f");
+			eval("switch", "reg", "w", "98", "7f3f");
+			eval("switch", "reg", "w", "e4", "3f");
 #if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
     defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
-			eval("switch", "reg", "w", "40 1002");
-			eval("switch", "reg", "w", "44 1001");
-			eval("switch", "reg", "w", "48 1001");
-			eval("switch", "reg", "w", "70 ffff417e");
+			eval("switch", "reg", "w", "40", "1002");
+			eval("switch", "reg", "w", "44", "1001");
+			eval("switch", "reg", "w", "48", "1001");
+			eval("switch", "reg", "w", "70", "ffff417e");
 #ifdef HAVE_ESR9752
-			eval("switch", "reg", "w", "c8 3f502b28");
+			eval("switch", "reg", "w", "c8", "3f502b28");
 #endif
 #elif HAVE_BR6574N
 #elif HAVE_AR690W
@@ -446,10 +446,10 @@ char *enable_dtag_vlan(int enable)
 #elif HAVE_AR670W
 #elif HAVE_F5D8235
 #else
-			eval("switch", "reg", "w", "40 1001");
-			eval("switch", "reg", "w", "44 1001");
-			eval("switch", "reg", "w", "48 1002");
-			eval("switch", "reg", "w", "70 ffff506f");
+			eval("switch", "reg", "w", "40", "1001");
+			eval("switch", "reg", "w", "44", "1001");
+			eval("switch", "reg", "w", "48", "1002");
+			eval("switch", "reg", "w", "70", "ffff506f");
 #endif
 			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "add", "eth2", "2");	//WAN
