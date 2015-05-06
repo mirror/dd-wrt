@@ -242,6 +242,11 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 	fprintf(stderr, "write system\n");
 	int fd = open(drive, O_DIRECT | O_SYNC | O_LARGEFILE | O_RDWR);
+	if (fd == -1) {
+		ret = ENOMEM;
+		fprintf(stderr, "cannot open file descriptor for %s\n", drive);
+		goto err;
+	}
 	FILE *out = fdopen(fd, "r+b");
 	if (!out) {
 		ret = ENOMEM;
@@ -250,6 +255,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	char *flashbuf = (char *)malloc(linuxsize);
 	if (!flashbuf)		// not enough memory, use direct way
 	{
+		fprintf(stderr, "writing %d bytes without caching\n", linuxsize);
 		for (i = 0; i < linuxsize; i++)
 			putc(getc(fifo), out);
 	} else {
@@ -261,9 +267,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			ret = ENOMEM;
 			goto err;
 		}
-		fwrite(flashbuf, 1, linuxsize, out);
+		fprintf(stderr, "writing %d bytes\n", linuxsize);
+		int written = fwrite(flashbuf, 1, linuxsize, out);
+		fprintf(stderr, "%s bytes written\n", written);
 		free(flashbuf);
 	}
+	fprintf(stderr, "flush and sync descriptor\n");
 	fflush(out);
 	fsync(fileno(out));
 	fclose(out);
