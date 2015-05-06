@@ -679,6 +679,8 @@ typedef struct filters	// l7 and p2p filters
 	unsigned char proto;		// 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
 } filters;
 
+extern void free_filters(filters *filter);
+
 extern filters *get_filters_list(void);
 
 #ifdef HAVE_RFLOW
