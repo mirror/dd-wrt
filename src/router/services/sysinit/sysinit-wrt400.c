@@ -84,9 +84,9 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "rtl8366s", "set", "reset", "1");
 		eval("swconfig", "dev", "rtl8366s", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "rtl8366s", "set", "blinkrate", "2");
-		eval("swconfig", "dev", "rtl8366s", "port", "1", "set", "led 9");
-		eval("swconfig", "dev", "rtl8366s", "port", "2", "set", "led 6");
-		eval("swconfig", "dev", "rtl8366s", "port", "5", "set", "led 2");
+		eval("swconfig", "dev", "rtl8366s", "port", "1", "set", "led", "9");
+		eval("swconfig", "dev", "rtl8366s", "port", "2", "set", "led", "6");
+		eval("swconfig", "dev", "rtl8366s", "port", "5", "set", "led", "2");
 		eval("swconfig", "dev", "rtl8366s", "set", "apply");
 
 #ifdef HAVE_WNDR3700V2
