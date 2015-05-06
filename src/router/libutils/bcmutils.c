@@ -1793,6 +1793,17 @@ char *get_filter_services(void)
 	return services;
 }
 
+void free_filters(filters * filter)
+{
+	if (!filter)
+		return;
+	int count = 0;
+	while (filter[count].name != NULL) {
+		free(filter[count++].name);
+	}
+	free(filter);
+}
+
 filters *get_filters_list(void)
 {
 	char word[1024], *next;
@@ -1811,7 +1822,7 @@ filters *get_filters_list(void)
 		int len = 0;
 		char *name, *prot, *port;
 		int from = 0, to = 0;
-
+		s_filters[count].name = NULL;
 		if ((name = strstr(word, "$NAME:")) == NULL || (prot = strstr(word, "$PROT:")) == NULL || (port = strstr(word, "$PORT:")) == NULL)
 			continue;
 
@@ -1820,7 +1831,7 @@ filters *get_filters_list(void)
 		 */
 		if (sscanf(name, "$NAME:%3d:", &len) != 1) {
 			free(services);
-			free(s_filters);
+			free_filters(s_filters);
 			return NULL;
 		}
 
@@ -1833,7 +1844,7 @@ filters *get_filters_list(void)
 		 */
 		if (sscanf(prot, "$PROT:%3d:", &len) != 1) {
 			free(services);
-			free(s_filters);
+			free_filters(s_filters);
 			return NULL;
 		}
 
@@ -1857,7 +1868,7 @@ filters *get_filters_list(void)
 		 */
 		if (sscanf(port, "$PORT:%3d:", &len) != 1) {
 			free(services);
-			free(s_filters);
+			free_filters(s_filters);
 			return NULL;
 		}
 
@@ -1866,7 +1877,7 @@ filters *get_filters_list(void)
 
 		if (sscanf(ports, "%d:%d", &from, &to) != 2) {
 			free(services);
-			free(s_filters);
+			free_filters(s_filters);
 			return NULL;
 		}
 		s_filters[count].portfrom = from;
