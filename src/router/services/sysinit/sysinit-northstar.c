@@ -3216,7 +3216,7 @@ void start_sysinit(void)
 			nvram_set("vlan1hwname","et2");
 			nvram_set("vlan1ports","0 1 2 3 5 7 8*");
 			nvram_set("vlan2hwname","et2");
-			nvram_set("vlan2ports","4 8");
+			nvram_set("vlan2ports","4 8u");
 			nvram_set("image_second_offset","16777216");
 			nvram_commit();
 		}
