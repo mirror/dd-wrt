@@ -356,10 +356,10 @@ void aqos_tables(void)
 					strcpy(proto1, s_filters[count].name);
 					sprintf(proto3, "%d:%d", s_filters[count].portfrom, s_filters[count].portto);
 					strcpy(proto4, prio);
+					break;
 				}
-				free(s_filters[count++].name);
 			}
-			free(s_filters);
+			free_filters(s_filters);
 			if (strlen(qos_svcs) == 0)
 				sprintf(svcs, "%s %s %s %s", proto1, proto2, proto3, proto4);
 			else
