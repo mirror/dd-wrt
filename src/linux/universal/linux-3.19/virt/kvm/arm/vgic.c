@@ -1219,6 +1219,11 @@ static inline u64 vgic_get_eisr(struct kvm_vcpu *vcpu)
 	return vgic_ops->get_eisr(vcpu);
 }
 
+static inline void vgic_clear_eisr(struct kvm_vcpu *vcpu)
+{
+	vgic_ops->clear_eisr(vcpu);
+}
+
 static inline u32 vgic_get_interrupt_status(struct kvm_vcpu *vcpu)
 {
 	return vgic_ops->get_interrupt_status(vcpu);
@@ -1258,6 +1263,7 @@ static void vgic_retire_lr(int lr_nr, int irq, struct kvm_vcpu *vcpu)
 	vgic_set_lr(vcpu, lr_nr, vlr);
 	clear_bit(lr_nr, vgic_cpu->lr_used);
 	vgic_cpu->vgic_irq_lr_map[irq] = LR_EMPTY;
+	vgic_sync_lr_elrsr(vcpu, lr_nr, vlr);
 }
 
 /*
@@ -1313,6 +1319,7 @@ static bool vgic_queue_irq(struct kvm_vcpu *vcpu, u8 sgi_source_id, int irq)
 			BUG_ON(!test_bit(lr, vgic_cpu->lr_used));
 			vlr.state |= LR_STATE_PENDING;
 			vgic_set_lr(vcpu, lr, vlr);
+			vgic_sync_lr_elrsr(vcpu, lr, vlr);
 			return true;
 		}
 	}
@@ -1334,6 +1341,7 @@ static bool vgic_queue_irq(struct kvm_vcpu *vcpu, u8 sgi_source_id, int irq)
 		vlr.state |= LR_EOI_INT;
 
 	vgic_set_lr(vcpu, lr, vlr);
+	vgic_sync_lr_elrsr(vcpu, lr, vlr);
 
 	return true;
 }
@@ -1501,6 +1509,14 @@ static bool vgic_process_maintenance(struct kvm_vcpu *vcpu)
 
 	if (status & INT_STATUS_UNDERFLOW)
 		vgic_disable_underflow(vcpu);
+
+	/*
+	 * In the next iterations of the vcpu loop, if we sync the vgic state
+	 * after flushing it, but before entering the guest (this happens for
+	 * pending signals and vmid rollovers), then make sure we don't pick
+	 * up any old maintenance interrupts here.
+	 */
+	vgic_clear_eisr(vcpu);
 
 	return level_pending;
 }
@@ -1706,6 +1722,9 @@ int kvm_vgic_inject_irq(struct kvm *kvm, int cpuid, unsigned int irq_num,
 			goto out;
 	}
 
+	if (irq_num >= kvm->arch.vgic.nr_irqs)
+		return -EINVAL;
+
 	vcpu_id = vgic_update_irq_pending(kvm, cpuid, irq_num, level);
 	if (vcpu_id >= 0) {
 		/* kick the specified vcpu */
@@ -1809,7 +1828,7 @@ static int vgic_init(struct kvm *kvm)
 
 	nr_cpus = dist->nr_cpus = atomic_read(&kvm->online_vcpus);
 	if (!nr_cpus)		/* No vcpus? Can't be good... */
-		return -EINVAL;
+		return -ENODEV;
 
 	/*
 	 * If nobody configured the number of interrupts, use the
