@@ -445,6 +445,12 @@ ifeq ($(CONFIG_DIR862),y)
 else
 	echo "# CONFIG_DIR862 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_ERC),y)
+	sed -i 's/\# CONFIG_ERC is not set/CONFIG_ERC=y/g' $(LINUXDIR)/.config
+	echo CONFIG_ERC=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_ERC is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_EHCI),y)
 	sed -i 's/\# CONFIG_USB_EHCI_HCD is not set/CONFIG_USB_EHCI_HCD=m/g' $(LINUXDIR)/.config
 	echo "CONFIG_USB_EHCI_ROOT_HUB_TT=y" >> $(LINUXDIR)/.config
