@@ -270,6 +270,9 @@ config DIR825C1
 config MMS344
 	bool "support for MMS344"
 	depends on DIR825C1
+config DIR862
+	bool "support for DIR862"
+	depends on DIR825C1
 config DIR859
 	bool "support for MMS344"
 	depends on DIR825C1
@@ -288,6 +291,12 @@ config UBNTXW
 config DAP3310
 	bool "support for Dlink DAP3310"
 	depends on UBNTXW
+config WR710
+	bool "support for TPLink WR710"
+	depends on MACH_HORNET && WR741
+config ERC
+	bool "support for ERC Device"
+	depends on MACH_HORNET && !WR741
 config WR841V9
 	bool "support for TPLink WR841V9"
 	depends on WR841V8

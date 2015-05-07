@@ -536,6 +536,26 @@ static struct mdio_board_info ap152_mdio0_info[] = {
 extern void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
 void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
+
+static __init ath79_setup_ar933x_phy4_switch(bool mac, bool mdio)
+{
+	void __iomem *base;
+	u32 t;
+
+	base = ioremap(AR933X_GMAC_BASE, AR933X_GMAC_SIZE);
+
+	t = __raw_readl(base + AR933X_GMAC_REG_ETH_CFG);
+	t &= ~(AR933X_ETH_CFG_SW_PHY_SWAP | AR933X_ETH_CFG_SW_PHY_ADDR_SWAP);
+	if (mac)
+		t |= AR933X_ETH_CFG_SW_PHY_SWAP;
+	if (mdio)
+		t |= AR933X_ETH_CFG_SW_PHY_ADDR_SWAP;
+	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+}
+
+
 #if !defined(CONFIG_MACH_HORNET) && !defined(CONFIG_WASP_SUPPORT)
 static void *getCalData(int slot)
 {
@@ -686,6 +706,13 @@ int __init ar7240_platform_init(void)
 	}
 #endif
 	enable_uart();
+#ifdef CONFIG_MACH_HORNET
+#ifdef defined(CONFIG_WR710) || defined(CONFIG_ERC)
+       ath79_setup_ar933x_phy4_switch(false, false);
+#else
+       ath79_setup_ar933x_phy4_switch(true, true);
+#endif
+#endif
 
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
@@ -741,18 +768,7 @@ int __init ar7240_platform_init(void)
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
     #elif CONFIG_WR841V9
-
-	base = ioremap(AR933X_GMAC_BASE, AR933X_GMAC_SIZE);
-
-	t = __raw_readl(base + AR933X_GMAC_REG_ETH_CFG);
-	t &= ~(AR933X_ETH_CFG_SW_PHY_SWAP | AR933X_ETH_CFG_SW_PHY_ADDR_SWAP);
-//	if (mac)
-//		t |= AR933X_ETH_CFG_SW_PHY_SWAP;
-//	if (mdio)
-//		t |= AR933X_ETH_CFG_SW_PHY_ADDR_SWAP;
-	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
-
-	iounmap(base);
+       ath79_setup_ar933x_phy4_switch(false, false);
 
     #elif CONFIG_WR841V8
 	//swap phy
