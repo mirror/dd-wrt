@@ -269,7 +269,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		}
 		fprintf(stderr, "writing %d bytes\n", linuxsize);
 		int written = fwrite(flashbuf, 1, linuxsize, out);
-		fprintf(stderr, "%s bytes written\n", written);
+		fprintf(stderr, "%d bytes written\n", written);
 		free(flashbuf);
 	}
 	fprintf(stderr, "flush and sync descriptor\n");
