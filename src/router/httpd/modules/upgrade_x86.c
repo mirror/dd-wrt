@@ -228,8 +228,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
-		int fd = open(drive, O_DIRECT | O_CREAT | O_SYNC | O_LARGEFILE | O_RDWR);
-		FILE *in = fdopen(fd, "r+b");
+		FILE *in = fopen(drive, "r+b");
+		int flags = fcntl(fileno(in), F_GETFL);
+		flags |= O_DIRECT | O_SYNC;
+		fcntl(fileno(in), F_SETFL, flags);
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
@@ -241,15 +243,14 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	}
 #endif
 	fprintf(stderr, "write system\n");
-	int fd = open(drive, O_DIRECT | O_SYNC | O_LARGEFILE | O_RDWR);
-	if (fd == -1) {
+	FILE *out = fopen(drive, "r+b");
+	int flags = fcntl(fileno(out), F_GETFL);
+	flags |= O_DIRECT | O_SYNC;
+	fcntl(fileno(out), F_SETFL, flags);
+	fprintf(stderr, "new file flags %X\n", flags);
+	if (out == -1) {
 		ret = ENOMEM;
 		fprintf(stderr, "cannot open file descriptor for %s\n", drive);
-		goto err;
-	}
-	FILE *out = fdopen(fd, "r+b");
-	if (!out) {
-		ret = ENOMEM;
 		goto err;
 	}
 	char *flashbuf = (char *)malloc(linuxsize);
