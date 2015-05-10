@@ -390,9 +390,9 @@ static void put_child(struct key_vector *tn, unsigned long i,
 	BUG_ON(i >= child_length(tn));
 
 	/* update emptyChildren, overflow into fullChildren */
-	if (n == NULL && chi != NULL)
+	if (!n && chi)
 		empty_child_inc(tn);
-	if (n != NULL && chi == NULL)
+	if (n && !chi)
 		empty_child_dec(tn);
 
 	/* update fullChildren */
@@ -527,7 +527,7 @@ static struct key_vector *inflate(struct trie *t,
 		unsigned long j, k;
 
 		/* An empty child */
-		if (inode == NULL)
+		if (!inode)
 			continue;
 
 		/* A leaf or an internal node with skipped bits */
@@ -842,9 +842,12 @@ static struct key_vector *resize(struct trie *t, struct key_vector *tn)
 		tn = get_child(tp, cindex);
 	}
 
+	/* update parent in case inflate failed */
+	tp = node_parent(tn);
+
 	/* Return if at least one inflate is run */
 	if (max_work != MAX_WORK)
-		return node_parent(tn);
+		return tp;
 
 	/* Halve as long as the number of empty children in this
 	 * node is above threshold.
@@ -1143,7 +1146,7 @@ int fib_table_insert(struct fib_table *tb, struct fib_config *cfg)
 			}
 			err = -ENOBUFS;
 			new_fa = kmem_cache_alloc(fn_alias_kmem, GFP_KERNEL);
-			if (new_fa == NULL)
+			if (!new_fa)
 				goto out;
 
 			fi_drop = fa->fa_info;
@@ -1182,7 +1185,7 @@ int fib_table_insert(struct fib_table *tb, struct fib_config *cfg)
 
 	err = -ENOBUFS;
 	new_fa = kmem_cache_alloc(fn_alias_kmem, GFP_KERNEL);
-	if (new_fa == NULL)
+	if (!new_fa)
 		goto out;
 
 	new_fa->fa_info = fi;
@@ -1305,7 +1308,7 @@ int fib_table_lookup(struct fib_table *tb, const struct flowi4 *flp,
 		 * we started this traversal anyway
 		 */
 
-		while ((n = rcu_dereference(*cptr)) == NULL) {
+		while (!(n = rcu_dereference(*cptr))) {
 backtrace:
 #ifdef CONFIG_IP_FIB_TRIE_STATS
 			if (!n)
@@ -1510,7 +1513,7 @@ static struct key_vector *leaf_walk_rcu(struct key_vector **tn, t_key key)
 	do {
 		/* record parent and next child index */
 		pn = n;
-		cindex = get_index(key, pn);
+		cindex = key ? get_index(key, pn) : 0;
 
 		if (cindex >> pn->bits)
 			break;
@@ -1859,7 +1862,7 @@ struct fib_table *fib_trie_table(u32 id, struct fib_table *alias)
 		sz += sizeof(struct trie);
 
 	tb = kzalloc(sz, GFP_KERNEL);
-	if (tb == NULL)
+	if (!tb)
 		return NULL;
 
 	tb->tb_id = id;
