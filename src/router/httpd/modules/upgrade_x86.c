@@ -229,9 +229,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		fread(mem, 65536, 1, in);
 		fclose(in);
 		FILE *in = fopen(drive, "r+b");
-		int flags = fcntl(fileno(in), F_GETFL);
-		flags |= O_DIRECT | O_SYNC;
-		fcntl(fileno(in), F_SETFL, flags);
+		int f_flags = fcntl(fileno(in), F_GETFL);
+		f_flags |= O_DIRECT | O_SYNC;
+		fcntl(fileno(in), F_SETFL, f_flags);
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
@@ -244,9 +244,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 	fprintf(stderr, "write system\n");
 	FILE *out = fopen(drive, "r+b");
-	int flags = fcntl(fileno(out), F_GETFL);
-	flags |= O_DIRECT | O_SYNC;
-	fcntl(fileno(out), F_SETFL, flags);
+	int f_flags = fcntl(fileno(out), F_GETFL);
+	f_flags |= O_DIRECT | O_SYNC;
+	fcntl(fileno(out), F_SETFL, f_flags);
 	fprintf(stderr, "new file flags %X\n", flags);
 	if (out == -1) {
 		ret = ENOMEM;
