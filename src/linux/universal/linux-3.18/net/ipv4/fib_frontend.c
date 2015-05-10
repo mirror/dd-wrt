@@ -52,13 +52,13 @@ static int __net_init fib4_rules_init(struct net *net)
 {
 	struct fib_table *local_table, *main_table;
 
-	local_table = fib_trie_table(RT_TABLE_LOCAL);
-	if (local_table == NULL)
-		return -ENOMEM;
-
-	main_table  = fib_trie_table(RT_TABLE_MAIN);
+	main_table  = fib_trie_table(RT_TABLE_MAIN, NULL);
 	if (main_table == NULL)
 		goto fail;
+
+	local_table = fib_trie_table(RT_TABLE_LOCAL, main_table);
+	if (local_table == NULL)
+		return -ENOMEM;
 
 	hlist_add_head_rcu(&local_table->tb_hlist,
 				&net->ipv4.fib_table_hash[TABLE_LOCAL_INDEX]);
@@ -74,7 +74,7 @@ fail:
 
 struct fib_table *fib_new_table(struct net *net, u32 id)
 {
-	struct fib_table *tb;
+	struct fib_table *tb, *alias = NULL;
 	unsigned int h;
 
 	if (id == 0)
@@ -83,23 +83,23 @@ struct fib_table *fib_new_table(struct net *net, u32 id)
 	if (tb)
 		return tb;
 
-	tb = fib_trie_table(id);
+	if (id == RT_TABLE_LOCAL)
+		alias = fib_new_table(net, RT_TABLE_MAIN);
+
+	tb = fib_trie_table(id, alias);
 	if (!tb)
 		return NULL;
 
 	switch (id) {
 	case RT_TABLE_LOCAL:
-		net->ipv4.fib_local = tb;
+		rcu_assign_pointer(net->ipv4.fib_local, tb);
 		break;
-
 	case RT_TABLE_MAIN:
-		net->ipv4.fib_main = tb;
+		rcu_assign_pointer(net->ipv4.fib_main, tb);
 		break;
-
 	case RT_TABLE_DEFAULT:
-		net->ipv4.fib_default = tb;
+		rcu_assign_pointer(net->ipv4.fib_default, tb);
 		break;
-
 	default:
 		break;
 	}
@@ -129,16 +129,59 @@ struct fib_table *fib_get_table(struct net *net, u32 id)
 }
 #endif /* CONFIG_IP_MULTIPLE_TABLES */
 
+static void fib_replace_table(struct net *net, struct fib_table *old,
+			      struct fib_table *new)
+{
+#ifdef CONFIG_IP_MULTIPLE_TABLES
+	switch (new->tb_id) {
+	case RT_TABLE_LOCAL:
+		rcu_assign_pointer(net->ipv4.fib_local, new);
+		break;
+	case RT_TABLE_MAIN:
+		rcu_assign_pointer(net->ipv4.fib_main, new);
+		break;
+	case RT_TABLE_DEFAULT:
+		rcu_assign_pointer(net->ipv4.fib_default, new);
+		break;
+	default:
+		break;
+	}
+
+#endif
+	/* replace the old table in the hlist */
+	hlist_replace_rcu(&old->tb_hlist, &new->tb_hlist);
+}
+
+int fib_unmerge(struct net *net)
+{
+	struct fib_table *old, *new;
+
+	old = fib_get_table(net, RT_TABLE_LOCAL);
+	new = fib_trie_unmerge(old);
+
+	if (!new)
+		return -ENOMEM;
+
+	/* replace merged table with clean table */
+	if (new != old) {
+		fib_replace_table(net, old, new);
+		fib_free_table(old);
+	}
+
+	return 0;
+}
+
 static void fib_flush(struct net *net)
 {
 	int flushed = 0;
-	struct fib_table *tb;
-	struct hlist_head *head;
 	unsigned int h;
 
 	for (h = 0; h < FIB_TABLE_HASHSZ; h++) {
-		head = &net->ipv4.fib_table_hash[h];
-		hlist_for_each_entry(tb, head, tb_hlist)
+		struct hlist_head *head = &net->ipv4.fib_table_hash[h];
+		struct hlist_node *tmp;
+		struct fib_table *tb;
+
+		hlist_for_each_entry_safe(tb, tmp, head, tb_hlist)
 			flushed += fib_table_flush(tb);
 	}
 
@@ -665,10 +708,12 @@ static int inet_dump_fib(struct sk_buff *skb, struct netlink_callback *cb)
 	s_h = cb->args[0];
 	s_e = cb->args[1];
 
+	rcu_read_lock();
+
 	for (h = s_h; h < FIB_TABLE_HASHSZ; h++, s_e = 0) {
 		e = 0;
 		head = &net->ipv4.fib_table_hash[h];
-		hlist_for_each_entry(tb, head, tb_hlist) {
+		hlist_for_each_entry_rcu(tb, head, tb_hlist) {
 			if (e < s_e)
 				goto next;
 			if (dumped)
@@ -682,6 +727,8 @@ next:
 		}
 	}
 out:
+	rcu_read_unlock();
+
 	cb->args[1] = e;
 	cb->args[0] = h;
 
@@ -1117,14 +1164,34 @@ static void ip_fib_net_exit(struct net *net)
 
 	rtnl_lock();
 	for (i = 0; i < FIB_TABLE_HASHSZ; i++) {
-		struct fib_table *tb;
-		struct hlist_head *head;
+		struct hlist_head *head = &net->ipv4.fib_table_hash[i];
 		struct hlist_node *tmp;
+		struct fib_table *tb;
 
-		head = &net->ipv4.fib_table_hash[i];
-		hlist_for_each_entry_safe(tb, tmp, head, tb_hlist) {
-			hlist_del(&tb->tb_hlist);
+		/* this is done in two passes as flushing the table could
+		 * cause it to be reallocated in order to accommodate new
+		 * tnodes at the root as the table shrinks.
+		 */
+		hlist_for_each_entry_safe(tb, tmp, head, tb_hlist)
 			fib_table_flush(tb);
+
+		hlist_for_each_entry_safe(tb, tmp, head, tb_hlist) {
+#ifdef CONFIG_IP_MULTIPLE_TABLES
+			switch (tb->tb_id) {
+			case RT_TABLE_LOCAL:
+				RCU_INIT_POINTER(net->ipv4.fib_local, NULL);
+				break;
+			case RT_TABLE_MAIN:
+				RCU_INIT_POINTER(net->ipv4.fib_main, NULL);
+				break;
+			case RT_TABLE_DEFAULT:
+				RCU_INIT_POINTER(net->ipv4.fib_default, NULL);
+				break;
+			default:
+				break;
+			}
+#endif
+			hlist_del(&tb->tb_hlist);
 			fib_free_table(tb);
 		}
 	}
