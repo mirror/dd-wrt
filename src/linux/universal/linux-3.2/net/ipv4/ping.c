@@ -139,6 +139,7 @@ static void ping_v4_unhash(struct sock *sk)
 	if (sk_hashed(sk)) {
 		write_lock_bh(&ping_table.lock);
 		hlist_nulls_del(&sk->sk_nulls_node);
+		sk_nulls_node_init(&sk->sk_nulls_node);
 		sock_put(sk);
 		isk->inet_num = isk->inet_sport = 0;
 		sock_prot_inuse_add(sock_net(sk), sk->sk_prot, -1);
@@ -256,6 +257,11 @@ static int ping_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 
 	if (addr_len < sizeof(struct sockaddr_in))
 		return -EINVAL;
+
+	if (addr->sin_family != AF_INET &&
+	    !(addr->sin_family == AF_UNSPEC &&
+	      addr->sin_addr.s_addr == htonl(INADDR_ANY)))
+		return -EAFNOSUPPORT;
 
 	pr_debug("ping_v4_bind(sk=%p,sa_addr=%08x,sa_port=%d)\n",
 		sk, addr->sin_addr.s_addr, ntohs(addr->sin_port));
@@ -504,7 +510,7 @@ static int ping_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 		if (msg->msg_namelen < sizeof(*usin))
 			return -EINVAL;
 		if (usin->sin_family != AF_INET)
-			return -EINVAL;
+			return -EAFNOSUPPORT;
 		daddr = usin->sin_addr.s_addr;
 		/* no remote port */
 	} else {
@@ -716,8 +722,11 @@ void ping_rcv(struct sk_buff *skb)
 	sk = ping_v4_lookup(net, saddr, daddr, ntohs(icmph->un.echo.id),
 			    skb->dev->ifindex);
 	if (sk != NULL) {
+		struct sk_buff *skb2 = skb_clone(skb, GFP_ATOMIC);
+
 		pr_debug("rcv on socket %p\n", sk);
-		ping_queue_rcv_skb(sk, skb_get(skb));
+		if (skb2)
+			ping_queue_rcv_skb(sk, skb2);
 		sock_put(sk);
 		return;
 	}
