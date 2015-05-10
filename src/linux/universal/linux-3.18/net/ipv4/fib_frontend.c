@@ -53,12 +53,12 @@ static int __net_init fib4_rules_init(struct net *net)
 	struct fib_table *local_table, *main_table;
 
 	main_table  = fib_trie_table(RT_TABLE_MAIN, NULL);
-	if (main_table == NULL)
-		goto fail;
+	if (!main_table)
+		return -ENOMEM;
 
 	local_table = fib_trie_table(RT_TABLE_LOCAL, main_table);
-	if (local_table == NULL)
-		return -ENOMEM;
+	if (!local_table)
+		goto fail;
 
 	hlist_add_head_rcu(&local_table->tb_hlist,
 				&net->ipv4.fib_table_hash[TABLE_LOCAL_INDEX]);
@@ -67,7 +67,7 @@ static int __net_init fib4_rules_init(struct net *net)
 	return 0;
 
 fail:
-	fib_free_table(local_table);
+	fib_free_table(main_table);
 	return -ENOMEM;
 }
 #else
@@ -156,7 +156,11 @@ int fib_unmerge(struct net *net)
 {
 	struct fib_table *old, *new;
 
+	/* attempt to fetch local table if it has been allocated */
 	old = fib_get_table(net, RT_TABLE_LOCAL);
+	if (!old)
+		return 0;
+
 	new = fib_trie_unmerge(old);
 
 	if (!new)
@@ -470,7 +474,7 @@ static int rtentry_to_fib_config(struct net *net, int cmd, struct rtentry *rt,
 			for (ifa = in_dev->ifa_list; ifa; ifa = ifa->ifa_next)
 				if (strcmp(ifa->ifa_label, devname) == 0)
 					break;
-			if (ifa == NULL)
+			if (!ifa)
 				return -ENODEV;
 			cfg->fc_prefsrc = ifa->ifa_local;
 		}
@@ -498,7 +502,7 @@ static int rtentry_to_fib_config(struct net *net, int cmd, struct rtentry *rt,
 		int len = 0;
 
 		mx = kzalloc(3 * nla_total_size(4), GFP_KERNEL);
-		if (mx == NULL)
+		if (!mx)
 			return -ENOMEM;
 
 		if (rt->rt_flags & RTF_MTU)
@@ -660,7 +664,7 @@ static int inet_rtm_delroute(struct sk_buff *skb, struct nlmsghdr *nlh)
 		goto errout;
 
 	tb = fib_get_table(net, cfg.fc_table);
-	if (tb == NULL) {
+	if (!tb) {
 		err = -ESRCH;
 		goto errout;
 	}
@@ -682,7 +686,7 @@ static int inet_rtm_newroute(struct sk_buff *skb, struct nlmsghdr *nlh)
 		goto errout;
 
 	tb = fib_new_table(net, cfg.fc_table);
-	if (tb == NULL) {
+	if (!tb) {
 		err = -ENOBUFS;
 		goto errout;
 	}
@@ -763,7 +767,7 @@ static void fib_magic(int cmd, int type, __be32 dst, int dst_len, struct in_ifad
 	else
 		tb = fib_new_table(net, RT_TABLE_LOCAL);
 
-	if (tb == NULL)
+	if (!tb)
 		return;
 
 	cfg.fc_table = tb->tb_id;
@@ -790,7 +794,7 @@ void fib_add_ifaddr(struct in_ifaddr *ifa)
 
 	if (ifa->ifa_flags & IFA_F_SECONDARY) {
 		prim = inet_ifa_byprefix(in_dev, prefix, mask);
-		if (prim == NULL) {
+		if (!prim) {
 			pr_warn("%s: bug: prim == NULL\n", __func__);
 			return;
 		}
@@ -844,7 +848,7 @@ void fib_del_ifaddr(struct in_ifaddr *ifa, struct in_ifaddr *iprim)
 
 	if (ifa->ifa_flags & IFA_F_SECONDARY) {
 		prim = inet_ifa_byprefix(in_dev, any, ifa->ifa_mask);
-		if (prim == NULL) {
+		if (!prim) {
 			pr_warn("%s: bug: prim == NULL\n", __func__);
 			return;
 		}
@@ -1014,7 +1018,7 @@ static void nl_fib_input(struct sk_buff *skb)
 		return;
 
 	skb = netlink_skb_clone(skb, GFP_KERNEL);
-	if (skb == NULL)
+	if (!skb)
 		return;
 	nlh = nlmsg_hdr(skb);
 
@@ -1035,7 +1039,7 @@ static int __net_init nl_fib_lookup_init(struct net *net)
 	};
 
 	sk = netlink_kernel_create(net, NETLINK_FIB_LOOKUP, &cfg);
-	if (sk == NULL)
+	if (!sk)
 		return -EAFNOSUPPORT;
 	net->ipv4.fibnl = sk;
 	return 0;
@@ -1073,7 +1077,7 @@ static int fib_inetaddr_event(struct notifier_block *this, unsigned long event, 
 	case NETDEV_DOWN:
 		fib_del_ifaddr(ifa, NULL);
 		atomic_inc(&net->ipv4.dev_addr_genid);
-		if (ifa->ifa_dev->ifa_list == NULL) {
+		if (!ifa->ifa_dev->ifa_list) {
 			/* Last address was deleted from this interface.
 			 * Disable IP.
 			 */
@@ -1141,7 +1145,7 @@ static int __net_init ip_fib_net_init(struct net *net)
 	size = max_t(size_t, size, L1_CACHE_BYTES);
 
 	net->ipv4.fib_table_hash = kzalloc(size, GFP_KERNEL);
-	if (net->ipv4.fib_table_hash == NULL)
+	if (!net->ipv4.fib_table_hash)
 		return -ENOMEM;
 
 	err = fib4_rules_init(net);
