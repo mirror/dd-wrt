@@ -66,7 +66,7 @@ out:
 }
 device_initcall(octeon_rng_device_init);
 
-#ifdef CONFIG_USB
+#if defined(CONFIG_USB) || defined(CONFIG_USB_MODULE)
 
 static int __init octeon_ehci_device_init(void)
 {

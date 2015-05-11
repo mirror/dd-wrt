@@ -71,7 +71,7 @@ out:
 }
 device_initcall(octeon_rng_device_init);
 
-#ifdef CONFIG_USB
+#if defined(CONFIG_USB) || defined(CONFIG_USB_MODULE)
 
 static DEFINE_MUTEX(octeon2_usb_clocks_mutex);
 
