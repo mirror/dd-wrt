@@ -85,9 +85,6 @@ static int __init octeon_ehci_device_init(void)
 	if (!OCTEON_IS_MODEL(OCTEON_CN6XXX))
 		return 0;
 
-	if (octeon_is_simulation() || usb_disabled())
-		return 0; /* No USB in the simulator. */
-
 	pd = platform_device_alloc("octeon-ehci", 0);
 	if (!pd) {
 		ret = -ENOMEM;
@@ -133,9 +130,6 @@ static int __init octeon_ohci_device_init(void)
 	/* Only Octeon2 has ehci/ohci */
 	if (!OCTEON_IS_MODEL(OCTEON_CN6XXX))
 		return 0;
-
-	if (octeon_is_simulation() || usb_disabled())
-		return 0; /* No USB in the simulator. */
 
 	pd = platform_device_alloc("octeon-ohci", 0);
 	if (!pd) {
