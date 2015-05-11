@@ -175,7 +175,7 @@ kernel:
 ifeq ($(CONFIG_E200),y)
 	cp $(LINUXDIR)/.config_e200 $(LINUXDIR)/.config
 ifneq ($(CONFIG_USBBOOT),y)
-	sed -i 's/\# CONFIG_USB=y/CONFIG_USB=m/g' $(LINUXDIR)/.config
+	sed -i 's/CONFIG_USB=y/CONFIG_USB=m/g' $(LINUXDIR)/.config
 endif
 else
 	cp $(LINUXDIR)/.config_octeon $(LINUXDIR)/.config
