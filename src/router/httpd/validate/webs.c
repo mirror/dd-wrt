@@ -1583,7 +1583,7 @@ void qos_save(webs_t wp)
 			continue;
 
 		if (strlen(svqos_var) > 0)
-			sprintf(svqos_var, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio,proto);
+			sprintf(svqos_var, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio, proto);
 		else
 			sprintf(svqos_var, "%s %s %s %s %s %s |", data, level, level2, lanlevel, prio, proto);
 

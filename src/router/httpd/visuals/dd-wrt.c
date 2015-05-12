@@ -6457,7 +6457,7 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			}
 			if (!strcmp(prio, "|"))
 				strcpy(prio, "0");
-		
+
 			if (!strcmp(proto, "|"))
 				strcpy(proto, "none");
 		}
