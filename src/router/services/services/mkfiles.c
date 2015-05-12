@@ -114,10 +114,6 @@ void start_mkfiles(void)
 		return;
 	}
 	cprintf("%s:%d", __func__, __LINE__);
-#ifdef HAVE_REGISTER
-	if (isregistered_real())
-#endif
-	{
 #ifdef HAVE_ERC
 		// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 		//      http_passwd);
@@ -135,7 +131,6 @@ void start_mkfiles(void)
 		fprintf(fp, "nobody:x:99:99:Nobody:/:/bin/false\n");
 #endif
 		fclose(fp);
-	}
 	cprintf("%s:%d", __func__, __LINE__);
 	/*
 	 * Write group file with group 'root' 
