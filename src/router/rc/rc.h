@@ -43,7 +43,7 @@ extern int disconnected_pppoe_main(int argc, char **argv);	// by tallest
 extern int http_get(const char *server, char *buf, size_t count, off_t offset);
 extern int http_post(const char *server, char *buf, size_t count);
 extern int http_stats(const char *url);
-extern void addHost(char *host, char *ip,int withdomain);
+extern void addHost(char *host, char *ip, int withdomain);
 
 /*
  * init 
