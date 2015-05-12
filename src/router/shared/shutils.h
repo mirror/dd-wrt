@@ -59,8 +59,6 @@ extern int eval_va(const char *cmd, ...);
 #define eval(cmd, args...) eval_va(cmd, ## args, NULL)
 #define eval_silence(cmd, args...) eval_va_silence(cmd, ## args, NULL)
 
-
-
 /*
  * Concatenates NULL-terminated list of arguments into a single
  * commmand and executes it
@@ -94,8 +92,7 @@ extern int safe_fread(void *ptr, size_t size, size_t nmemb, FILE * stream);
  * @param       stream  file stream
  * @return      number of items successfully written
  */
-extern int safe_fwrite(const void *ptr, size_t size, size_t nmemb,
-		       FILE * stream);
+extern int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE * stream);
 
 /*
  * Convert Ethernet address string representation to binary data
@@ -115,10 +112,8 @@ int indexof(char *str, char c);
  */
 extern char *ether_etoa(const unsigned char *e, char *a);
 
-extern int nvifname_to_osifname(const char *nvifname, char *osifname_buf,
-				int osifname_buf_len);
-extern int osifname_to_nvifname(const char *osifname, char *nvifname_buf,
-				int nvifname_buf_len);
+extern int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_buf_len);
+extern int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_buf_len);
 
 extern int system2(char *command);
 extern int sysprintf(const char *fmt, ...);
@@ -135,11 +130,9 @@ extern int get_ifname_unit(const char *ifname, int *unit, int *subunit);
  */
 char *strcat_r(const char *s1, const char *s2, char *buf);
 
-
-
 #ifdef MEMDEBUG
 
-void *mymalloc(int size,char *func);
+void *mymalloc(int size, char *func);
 void myfree(void *mem);
 void showmemdebugstat();
 
@@ -150,7 +143,7 @@ void showmemdebugstat();
 #define memdebug_enter()  \
 	struct sysinfo memdebuginfo; \
 	sysinfo(&memdebuginfo); \
-	long before = memdebuginfo.freeram; 
+	long before = memdebuginfo.freeram;
 
 #define memdebug_leave()  \
 	sysinfo(&memdebuginfo); \

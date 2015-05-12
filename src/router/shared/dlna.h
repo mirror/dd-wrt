@@ -13,7 +13,6 @@ struct dlna_share {
 	struct dlna_share *next;
 };
 
-
 struct dlna_share *getdlnashares(void);
 struct dlna_share *getdlnashare(char *mp, char *sd, int types);
 
