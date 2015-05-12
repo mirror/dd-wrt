@@ -13,13 +13,12 @@ typedef struct _l7filters	// l7 and p2p filters
 
 } l7filters;
 
-
 #ifdef HAVE_OPENDPI
-#define DPI 2 //open dpi based
-#define PDPI 2 //open dpi based
+#define DPI 2			//open dpi based
+#define PDPI 2			//open dpi based
 #else
-#define DPI 0 //default l7
-#define PDPI 1 //default l7
+#define DPI 0			//default l7
+#define PDPI 1			//default l7
 #endif
 //Added ,  (in extra), dazhihui, .
 
@@ -93,10 +92,10 @@ l7filters filters_list[] = {
 	 "ciscovpn", DPI},	// Cisco VPN - VPN client software to a Cisco 
 	// VPN server
 	{
-	 "citrix", DPI},		// Citrix ICA - proprietary remote desktop
+	 "citrix", DPI},	// Citrix ICA - proprietary remote desktop
 #ifdef HAVE_OPENDPI
 	{
-	 "citrixonline", 2},		// Citrix ICA - proprietary remote desktop
+	 "citrixonline", 2},	// Citrix ICA - proprietary remote desktop
 #endif
 	// application - http://citrix.com
 	{
@@ -121,15 +120,15 @@ l7filters filters_list[] = {
 	 "dazhihui", 0},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 #ifdef HAVE_OPENDPI
 	{
-	 "dcerpc", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+	 "dcerpc", 2},		// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 	{
-	 "ddl", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+	 "ddl", 2},		// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 #endif
 	{
 	 "dhcp", DPI},		// DHCP - Dynamic Host Configuration Protocol 
 #ifdef HAVE_OPENDPI
 	{
-	 "dhcpv6", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+	 "dhcpv6", 2},		// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 #endif
 	// - RFC 1541
 	{
@@ -139,16 +138,16 @@ l7filters filters_list[] = {
 	 "dns", DPI},		// DNS - Domain Name System - RFC 1035
 #ifdef HAVE_OPENDPI
 	{
-	 "dofus", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+	 "dofus", 2},		// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 #endif
 	{
 	 "doom3", 0},		// Doom 3 - computer game
 #ifdef HAVE_OPENDPI
 	{
-	 "dropbox", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+	 "dropbox", 2},		// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 #endif
 	{
-	 "edonkey", PDPI},		// eDonkey2000 - P2P filesharing -
+	 "edonkey", PDPI},	// eDonkey2000 - P2P filesharing -
 #ifdef HAVE_OPENDPI
 	{
 	 "egp", 2},
@@ -163,7 +162,7 @@ l7filters filters_list[] = {
 	{
 	 "feidian", 2},
 	{
-	 "fiesta", 2},	// FastTrack - P2P filesharing (Kazaa,
+	 "fiesta", 2},		// FastTrack - P2P filesharing (Kazaa,
 #endif
 	{
 	 "filetopia", DPI},	// FastTrack - P2P filesharing (Kazaa,
@@ -257,9 +256,9 @@ l7filters filters_list[] = {
 	// Language - http://w3.org
 #ifdef HAVE_OPENDPI
 	{
-	 "http_connect", 2},		// HTTP - HyperText Transfer Protocol - RFC
+	 "http_connect", 2},	// HTTP - HyperText Transfer Protocol - RFC
 	{
-	 "http_proxy", 2},		// HTTP - HyperText Transfer Protocol - RFC
+	 "http_proxy", 2},	// HTTP - HyperText Transfer Protocol - RFC
 	// 2616
 #endif
 	{
@@ -268,7 +267,7 @@ l7filters filters_list[] = {
 	 "http", DPI},		// HTTP - HyperText Transfer Protocol - RFC
 #ifdef HAVE_OPENDPI
 	{
-	 "httpactivesync", 2},		// HTTP - HyperText Transfer Protocol - RFC
+	 "httpactivesync", 2},	// HTTP - HyperText Transfer Protocol - RFC
 	// 2616
 #endif
 	{
@@ -341,7 +340,7 @@ l7filters filters_list[] = {
 	{
 	 "irc", DPI},		// IRC - Internet Relay Chat - RFC 1459
 	{
-	 "jabber", DPI},		// Jabber (XMPP) - open instant messenger
+	 "jabber", DPI},	// Jabber (XMPP) - open instant messenger
 	// protocol - RFC 3920 - http://jabber.org
 	{
 	 "jpeg", 0},		// JPEG - Joint Picture Expert Group image
@@ -366,7 +365,7 @@ l7filters filters_list[] = {
 	 "liveforspeed", 0},	// Live For Speed - A racing game.
 #ifdef HAVE_OPENDPI
 	{
-	 "lotus_notes", 2},		// LPD - Line Printer Daemon Protocol
+	 "lotus_notes", 2},	// LPD - Line Printer Daemon Protocol
 #endif
 
 #ifdef HAVE_OPENDPI
@@ -378,9 +377,9 @@ l7filters filters_list[] = {
 	// (old-style UNIX printing) - RFC 1179
 #ifdef HAVE_OPENDPI
 	{
-	 "manolito", 2},		// Medal of Honor Allied Assault - an
+	 "manolito", 2},	// Medal of Honor Allied Assault - an
 	{
-	 "maplestory", 2},		// Medal of Honor Allied Assault - an
+	 "maplestory", 2},	// Medal of Honor Allied Assault - an
 	{
 	 "mdns", 2},		// Medal of Honor Allied Assault - an
 	{
@@ -425,7 +424,7 @@ l7filters filters_list[] = {
 	// http://mute-net.sourceforge.net
 #ifdef HAVE_OPENDPI
 	{
-	 "mysql", 2},	// Subversion - a version control system
+	 "mysql", 2},		// Subversion - a version control system
 #endif
 	{
 	 "napster", 0},		// Napster - P2P filesharing
@@ -434,7 +433,7 @@ l7filters filters_list[] = {
 	{
 	 "ncp", 0},		// NCP - Novell Core Protocol
 	{
-	 "netbios", DPI},		// NetBIOS - Network Basic Input Output
+	 "netbios", DPI},	// NetBIOS - Network Basic Input Output
 #ifdef HAVE_OPENDPI
 	{
 	 "netflix", 2},		// Medal of Honor Allied Assault - an
@@ -461,13 +460,13 @@ l7filters filters_list[] = {
 	// RFCs 1305 and 2030
 #ifdef HAVE_OPENDPI
 	{
-	 "off", 2},	// Subversion - a version control system
+	 "off", 2},		// Subversion - a version control system
 #endif
 	{
 	 "ogg", DPI},		// Ogg - Ogg Vorbis music format (not any ogg 
 	// file, just vorbis)
 	{
-	 "openft", DPI},		// OpenFT - P2P filesharing (implemented in
+	 "openft", DPI},	// OpenFT - P2P filesharing (implemented in
 #ifdef HAVE_OPENDPI
 	{
 	 "openvpn", 2},
@@ -479,7 +478,7 @@ l7filters filters_list[] = {
 	// giFT library)
 #ifdef HAVE_OPENDPI
 	{
-	 "pando", 2},	// Subversion - a version control system
+	 "pando", 2},		// Subversion - a version control system
 #endif
 	{
 	 "pcanywhere", DPI},	// pcAnywhere - Symantec remote access
@@ -507,7 +506,7 @@ l7filters filters_list[] = {
 	{
 	 "postscript", 0},	// Postscript - Printing Language
 	{
-	 "pplive", DPI},		// PPLive - Chinese P2P streaming video - http://pplive.com
+	 "pplive", DPI},	// PPLive - Chinese P2P streaming video - http://pplive.com
 #ifdef HAVE_OPENDPI
 	{
 	 "ppstream", 2},
@@ -678,7 +677,7 @@ l7filters filters_list[] = {
 	 "subversion", 0},	// Subversion - a version control system
 #ifdef HAVE_OPENDPI
 	{
-	 "steam", 2},	// Subversion - a version control system
+	 "steam", 2},		// Subversion - a version control system
 	{
 	 "stealthnet", 2},	// Subversion - a version control system
 	{
@@ -688,13 +687,13 @@ l7filters filters_list[] = {
 	 "sopcast", 2},
 #endif
 	{
-	 "syslog", 2},	// Subversion - a version control system
+	 "syslog", 2},		// Subversion - a version control system
 #endif
 	{
 	 "tar", 0},		// Tar - tape archive. Standard UNIX file
 #ifdef HAVE_OPENDPI
 	{
-	 "tds", 2},	// Subversion - a version control system
+	 "tds", 2},		// Subversion - a version control system
 #endif
 
 	// archiver, not just for tapes.
@@ -708,7 +707,7 @@ l7filters filters_list[] = {
 	{
 	 "teamviewer1", 0},
 	{
-	 "telnet", DPI},		// Telnet - Insecure remote login - RFC 854
+	 "telnet", DPI},	// Telnet - Insecure remote login - RFC 854
 	{
 	 "tesla", 0},		// Tesla Advanced Communication - P2P
 	// filesharing (?)
@@ -821,7 +820,7 @@ l7filters filters_list[] = {
 	 "windowsmedia", 2},
 #endif
 	{
-	 "winmx", PDPI},		// Whois - query/response system, usually
+	 "winmx", PDPI},	// Whois - query/response system, usually
 #ifdef HAVE_OPENDPI
 	{
 	 "winupdate", 2},

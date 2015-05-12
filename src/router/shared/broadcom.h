@@ -36,8 +36,7 @@ char *GOZILA_GET(webs_t wp, char *name);
 	BB = CC; \
 }
 
-extern void do_vsp_info_page(struct mime_handler *handler, char *url, webs_t stream,
-                 char *query);
+extern void do_vsp_info_page(struct mime_handler *handler, char *url, webs_t stream, char *query);
 /*
  * for dhcp 
  */
@@ -253,15 +252,13 @@ extern void filtersummary_onload(webs_t wp, char *arg);
  * for upgrade 
  */
 extern void do_upgrade_post(char *url, webs_t stream, int len, char *boundary);
-extern void do_upgrade_cgi(struct mime_handler *handler, char *url,
-			   webs_t stream, char *query);
+extern void do_upgrade_cgi(struct mime_handler *handler, char *url, webs_t stream, char *query);
 extern int sys_restore(char *url, webs_t stream, int *total);
 extern void do_restore_post(char *url, webs_t stream, int len, char *boundary);
 extern void do_restore_cgi(char *url, webs_t stream);
 extern void macclone_onload(webs_t wp, char *arg);
 extern void do_olupgrade_post(char *url, webs_t stream, int len, char *boundary);
-extern void do_olupgrade_cgi(struct mime_handler *handler, char *url,
-			   webs_t stream, char *query);
+extern void do_olupgrade_cgi(struct mime_handler *handler, char *url, webs_t stream, char *query);
 /*
  * for filter 
  */
@@ -279,12 +276,10 @@ extern void filter_port_services_get(webs_t wp, char *type, int which);
 extern void validate_filter_policy(webs_t wp, char *value, struct variable *v);
 extern void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v);
 extern void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v);
-extern void validate_filter_dport_grp(webs_t wp, char *value,
-				      struct variable *v);
+extern void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v);
 extern void validate_filter_port(webs_t wp, char *value, struct variable *v);
 extern void validate_filter_web(webs_t wp, char *value, struct variable *v);
-extern void validate_blocked_service(webs_t wp, char *value,
-				     struct variable *v);
+extern void validate_blocked_service(webs_t wp, char *value, struct variable *v);
 extern void filter_onload(webs_t wp);
 extern void save_policy(webs_t wp);
 extern void summary_delete_policy(webs_t wp);
@@ -343,8 +338,7 @@ extern void ej_get_wl_active_mac(webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wl_value(webs_t wp, int argc, char_t ** argv);
 
 extern void security_save(webs_t wp);
-extern void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv,
-				char *prefix);
+extern void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix);
 extern void wl_unit(webs_t wp, char *value, struct variable *v);
 extern void validate_wpa_psk(webs_t wp, char *value, struct variable *v);
 extern void validate_auth_mode(webs_t wp, char *value, struct variable *v);
@@ -357,18 +351,15 @@ extern void validate_wl_net_mode(webs_t wp, char *value, struct variable *v);
  * for nvram save-restore 
  */
 extern void nv_file_in(char *url, webs_t stream, int len, char *boundary);
-extern void nv_file_out(struct mime_handler *handler, char *path, webs_t wp,
-			char *query);
-extern void sr_config_cgi(struct mime_handler *handler, char *path, webs_t wp,
-			  char *query);
+extern void nv_file_out(struct mime_handler *handler, char *path, webs_t wp, char *query);
+extern void sr_config_cgi(struct mime_handler *handler, char *path, webs_t wp, char *query);
 
 /*
  * for traff data save-restore 
  */
 extern void ttraff_erase(webs_t wp);
 extern void td_file_in(char *url, webs_t stream, int len, char *boundary);
-extern void td_config_cgi(struct mime_handler *handler, char *path, webs_t wp,
-			  char *query);
+extern void td_config_cgi(struct mime_handler *handler, char *path, webs_t wp, char *query);
 
 /*
  * for ddns 
@@ -547,17 +538,13 @@ extern int legal_ipaddr(char *value);
 extern int legal_hwaddr(char *value);
 extern int legal_netmask(char *value);
 extern int legal_ip_netmask(char *sip, char *smask, char *dip);
-extern int find_pattern(const char *data, size_t dlen,
-			const char *pattern, size_t plen,
-			char term, unsigned int *numoff, unsigned int *numlen);
+extern int find_pattern(const char *data, size_t dlen, const char *pattern, size_t plen, char term, unsigned int *numoff, unsigned int *numlen);
 extern int tf_webWriteESCNV(webs_t wp, const char *nvname);
 extern int tf_webWriteESC(webs_t wp, const char *value);
 
-extern int find_match_pattern(char *name, size_t mlen,
-			      const char *data, const char *pattern, char *def);
+extern int find_match_pattern(char *name, size_t mlen, const char *data, const char *pattern, char *def);
 
-extern int find_each(char *name, int len,
-		     char *data, char *token, int which, char *def);
+extern int find_each(char *name, int len, char *data, char *token, int which, char *def);
 
 /*
  * set type to 1 to replace ' ' with "&nbsp;" and ':' with "&semi;"
@@ -567,8 +554,7 @@ extern int find_each(char *name, int len,
 #ifndef VISUALSOURCE
 extern int generate_key;
 extern int clone_wan_mac;
-extern int httpd_filter_name(char *old_name, char *new_name, size_t size,
-			     int type);
+extern int httpd_filter_name(char *old_name, char *new_name, size_t size, int type);
 #else
 extern int *generate_key;
 extern int *clone_wan_mac;
@@ -642,8 +628,7 @@ int sv_valid_range(char *value, int low, int high);
 int sv_valid_statics(char *value);
 void get_network(char *ipaddr, char *netmask);
 void get_broadcast(char *ipaddr, char *netmask);
-int route_manip(int cmd, char *name, int metric, char *dst, char *gateway,
-		char *genmask);
+int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 
@@ -670,16 +655,16 @@ extern void ej_show_registrations(webs_t wp, int argc, char_t ** argv);
 
 extern char *get_filter_services(void);
 
-typedef struct filters	// l7 and p2p filters
+typedef struct filters		// l7 and p2p filters
 {
 
 	char *name;
 	unsigned short portfrom;
 	unsigned short portto;
-	unsigned char proto;		// 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
+	unsigned char proto;	// 1 = tcp, 2 = udp, 3 = both, 4 = l7, 5 = dpi
 } filters;
 
-extern void free_filters(filters *filter);
+extern void free_filters(filters * filter);
 
 extern filters *get_filters_list(void);
 
@@ -689,8 +674,7 @@ extern void ej_show_rflowif(webs_t wp, int argc, char_t ** argv);
 
 void ej_showbridgesettings(webs_t wp, int argc, char_t ** argv);
 
-void *start_validator_nofree(char *name, void *handle, webs_t wp,
-			     char *value, struct variable *v);
+void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v);
 int start_validator(char *name, webs_t wp, char *value, struct variable *v);
 void start_gozila(char *name, webs_t wp);
 
@@ -698,8 +682,7 @@ void start_gozila(char *name, webs_t wp);
 extern void (*do_ej_buffer) (char *buffer, webs_t stream);
 
 #define do_ej_buffer Udo_ej_buffer
-extern int (*Uhttpd_filter_name) (char *old_name, char *new_name,
-				  size_t size, int type);
+extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
 #define httpd_filter_name Uhttpd_filter_name
 extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
 
@@ -741,8 +724,7 @@ extern char *(*UGOZILA_GET) (webs_t wp, char *name);
 extern void (*Udo_ej_buffer) (char *buffer, webs_t stream);
 
 #define do_ej_buffer Udo_ej_buffer
-extern int (*Uhttpd_filter_name) (char *old_name, char *new_name,
-				  size_t size, int type);
+extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
 #define httpd_filter_name Uhttpd_filter_name
 extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
 
