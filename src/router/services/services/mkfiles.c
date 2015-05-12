@@ -115,22 +115,22 @@ void start_mkfiles(void)
 	}
 	cprintf("%s:%d", __func__, __LINE__);
 #ifdef HAVE_ERC
-		// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		//      http_passwd);
-		fprintf(fp, "root:*NOLOGIN*:0:0:Root User,,,:/tmp/root:/bin/sh\n");
-		fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
-		fprintf(fp, "reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
-		fprintf(fp, "nobody:x:99:99:Nobody:/:/bin/false\n");
+	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+	//      http_passwd);
+	fprintf(fp, "root:*NOLOGIN*:0:0:Root User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "reeapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reeapi User,,,:/tmp/root:/bin/sh\n");
+	fprintf(fp, "nobody:x:99:99:Nobody:/:/bin/false\n");
 #elif HAVE_WIKINGS
-		// default username and password for Excel Networks
-		fprintf(fp, "ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
+	// default username and password for Excel Networks
+	fprintf(fp, "ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_IPR
-		fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 #else
-		fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n" "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n", http_passwd, http_passwd);
-		fprintf(fp, "nobody:x:99:99:Nobody:/:/bin/false\n");
+	fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n" "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n", http_passwd, http_passwd);
+	fprintf(fp, "nobody:x:99:99:Nobody:/:/bin/false\n");
 #endif
-		fclose(fp);
+	fclose(fp);
 	cprintf("%s:%d", __func__, __LINE__);
 	/*
 	 * Write group file with group 'root' 
