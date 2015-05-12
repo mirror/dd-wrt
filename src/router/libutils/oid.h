@@ -15,7 +15,7 @@
 #define RTPRIV_IOCTL_BBP			(SIOCIWFIRSTPRIV + 0x03)
 #define RTPRIV_IOCTL_MAC			(SIOCIWFIRSTPRIV + 0x05)
 #define RTPRIV_IOCTL_E2P			(SIOCIWFIRSTPRIV + 0x07)
-#endif	/*  */
+#endif				/*  */
     
 #define RTPRIV_IOCTL_STATISTICS			(SIOCIWFIRSTPRIV + 0x09)
 #define RTPRIV_IOCTL_ADD_PMKID_CACHE	(SIOCIWFIRSTPRIV + 0x0A)
@@ -70,7 +70,7 @@
 #define RT_OID_802_11_EXTRA_INFO                    0x0524
 #ifdef DBG
 #define RT_OID_802_11_HARDWARE_REGISTER             0x0525
-#endif	/*  */
+#endif				/*  */
 #define OID_802_11_ENCRYPTION_STATUS                OID_802_11_WEP_STATUS
     
 #define RT_OID_DEVICE_NAME                          0x0607
