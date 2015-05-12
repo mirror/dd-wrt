@@ -118,8 +118,8 @@ static const struct ie_print ieprinters[] = {
 	[48] = {"RSN", print_rsn, 2, 255, BIT(PRINT_SCAN),},
 	[50] = {"Extended supported rates", print_supprates, 0, 255,
 		BIT(PRINT_SCAN),},
-	[191] = { "VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN), },
-	[192] = { "VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN), },
+	[191] = {"VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN),},
+	[192] = {"VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN),},
 	[127] = {"Extended capabilities", print_capabilities, 0, 255,
 		 BIT(PRINT_SCAN),},
 };
@@ -1185,17 +1185,31 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 
 	printf("\t\t\tMax MPDU length: ");
 	switch (capa & 3) {
-	case 0: printf("3895\n"); break;
-	case 1: printf("7991\n"); break;
-	case 2: printf("11454\n"); break;
-	case 3: printf("(reserved)\n");
+	case 0:
+		printf("3895\n");
+		break;
+	case 1:
+		printf("7991\n");
+		break;
+	case 2:
+		printf("11454\n");
+		break;
+	case 3:
+		printf("(reserved)\n");
 	}
 	printf("\t\t\tSupported Channel Width: ");
 	switch ((capa >> 2) & 3) {
-	case 0: printf("neither 160 nor 80+80\n"); break;
-	case 1: printf("160 MHz\n"); break;
-	case 2: printf("160 MHz, 80+80 MHz\n"); break;
-	case 3: printf("(reserved)\n");
+	case 0:
+		printf("neither 160 nor 80+80\n");
+		break;
+	case 1:
+		printf("160 MHz\n");
+		break;
+	case 2:
+		printf("160 MHz, 80+80 MHz\n");
+		break;
+	case 3:
+		printf("(reserved)\n");
 	}
 	PRINT_VHT_CAPA(4, "RX LDPC");
 	PRINT_VHT_CAPA(5, "short GI (80 MHz)");
@@ -1225,11 +1239,19 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	tmp = mcs[0] | (mcs[1] << 8);
 	for (i = 1; i <= 8; i++) {
 		printf("\t\t\t%d streams: ", i);
-		switch ((tmp >> ((i-1)*2) ) & 3) {
-		case 0: printf("MCS 0-7\n"); break;
-		case 1: printf("MCS 0-8\n"); break;
-		case 2: printf("MCS 0-9\n"); break;
-		case 3: printf("not supported\n"); break;
+		switch ((tmp >> ((i - 1) * 2)) & 3) {
+		case 0:
+			printf("MCS 0-7\n");
+			break;
+		case 1:
+			printf("MCS 0-8\n");
+			break;
+		case 2:
+			printf("MCS 0-9\n");
+			break;
+		case 3:
+			printf("not supported\n");
+			break;
 		}
 	}
 	tmp = mcs[2] | (mcs[3] << 8);
@@ -1239,26 +1261,32 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	tmp = mcs[4] | (mcs[5] << 8);
 	for (i = 1; i <= 8; i++) {
 		printf("\t\t\t%d streams: ", i);
-		switch ((tmp >> ((i-1)*2) ) & 3) {
-		case 0: printf("MCS 0-7\n"); break;
-		case 1: printf("MCS 0-8\n"); break;
-		case 2: printf("MCS 0-9\n"); break;
-		case 3: printf("not supported\n"); break;
+		switch ((tmp >> ((i - 1) * 2)) & 3) {
+		case 0:
+			printf("MCS 0-7\n");
+			break;
+		case 1:
+			printf("MCS 0-8\n");
+			break;
+		case 2:
+			printf("MCS 0-9\n");
+			break;
+		case 3:
+			printf("not supported\n");
+			break;
 		}
 	}
 	tmp = mcs[6] | (mcs[7] << 8);
 	printf("\t\tVHT TX highest supported: %d Mbps\n", tmp & 0x1fff);
 }
 
-static void print_vht_capa(const uint8_t type, uint8_t len, const uint8_t *data)
+static void print_vht_capa(const uint8_t type, uint8_t len, const uint8_t * data)
 {
 	printf("\n");
-	print_vht_info(data[0] | (data[1] << 8) |
-		       (data[2] << 16) | (data[3] << 24),
-		       data + 4);
+	print_vht_info(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24), data + 4);
 }
 
-static void print_vht_oper(const uint8_t type, uint8_t len, const uint8_t *data)
+static void print_vht_oper(const uint8_t type, uint8_t len, const uint8_t * data)
 {
 	const char *chandwidths[] = {
 		[0] = "20 or 40 MHz",
@@ -1268,8 +1296,7 @@ static void print_vht_oper(const uint8_t type, uint8_t len, const uint8_t *data)
 	};
 
 	printf("\n");
-	printf("\t\t * channel width: %d (%s)\n", data[0],
-		data[0] < ARRAY_SIZE(chandwidths) ? chandwidths[data[0]] : "unknown");
+	printf("\t\t * channel width: %d (%s)\n", data[0], data[0] < ARRAY_SIZE(chandwidths) ? chandwidths[data[0]] : "unknown");
 	printf("\t\t * center freq segment 1: %d\n", data[1]);
 	printf("\t\t * center freq segment 2: %d\n", data[2]);
 	printf("\t\t * VHT basic MCS set: 0x%.2x%.2x\n", data[4], data[3]);

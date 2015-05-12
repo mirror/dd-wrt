@@ -361,7 +361,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		} else {
 			fprintf(fp, "dynamic_ht40=0\n");
 		}
-		
+
 		if (nvram_default_match(bw, "20", "20")) {
 			sprintf(ht, "HT20");
 		} else if (nvram_match(bw, "80") || nvram_match(bw, "40") || nvram_match(bw, "2040")) {
@@ -841,10 +841,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
 #endif
-	char *v = nvram_nget("%s_config",ifname);
+	char *v = nvram_nget("%s_config", ifname);
 	fprintf(fp, "\n");
-	if (v && strlen(v)>0)
-	    fprintf(fp,"%s",v);	
+	if (v && strlen(v) > 0)
+		fprintf(fp, "%s", v);
 	fprintf(fp, "\n");
 
 	fclose(fp);

@@ -42,7 +42,7 @@ void getLANMac(char *newmac)
 {
 	if (getRouterBrand() == ROUTER_ASUS_AC87U) {
 		strcpy(newmac, nvram_safe_get("et1macaddr"));
-	}else if (getRouterBrand() == ROUTER_NETGEAR_R8000) {
+	} else if (getRouterBrand() == ROUTER_NETGEAR_R8000) {
 		strcpy(newmac, nvram_safe_get("et2macaddr"));
 	} else {
 		strcpy(newmac, nvram_safe_get("et0macaddr"));
@@ -106,7 +106,7 @@ void getWirelessMac(char *newmac, int instance)
 					MAC_ADD(newmac);
 			} else if (getRouterBrand() == ROUTER_NETGEAR_R8000) {
 				strcpy(newmac, nvram_safe_get("et2macaddr"));
-				MAC_ADD(newmac);	
+				MAC_ADD(newmac);
 				MAC_ADD(newmac);
 				if (instance)
 					MAC_ADD(newmac);

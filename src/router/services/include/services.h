@@ -207,7 +207,7 @@ int br_set_bridge_prio(const char *br, char *prio);
 void reset_hwaddr(char *ifname);
 void start_force_to_dial(void);
 
-int stop_process(char *name,char *desc);
+int stop_process(char *name, char *desc);
 
 char *getMacAddr(char *ifname, char *mac);
 
@@ -217,7 +217,6 @@ void configure_single_ath9k(int count);
 void ath9k_start_supplicant(int count);
 #endif
 int ifconfig(char *name, int flags, char *addr, char *netmask);
-
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
