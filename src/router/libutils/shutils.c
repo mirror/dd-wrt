@@ -180,8 +180,6 @@ int eval_va_silence(const char *cmd, ...)
 	}
 	return _evalpid(s_args, NULL, 0, NULL);
 
-
-
 }
 
 // FILE *debugfp=NULL;
