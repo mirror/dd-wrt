@@ -64,10 +64,8 @@ extern bool del_forward_port(const netconf_nat_t * nat);
  *      bool get_wds_wsec(int unit, int which, char *mac, char *role,
  *              char *crypto, char *auth, char *ssid, char *passphrase);
  */
-extern bool get_wds_wsec(int unit, int which, char *mac, char *role,
-			 char *crypto, char *auth, ...);
-extern bool set_wds_wsec(int unit, int which, char *mac, char *role,
-			 char *crypto, char *auth, ...);
+extern bool get_wds_wsec(int unit, int which, char *mac, char *role, char *crypto, char *auth, ...);
+extern bool set_wds_wsec(int unit, int which, char *mac, char *role, char *crypto, char *auth, ...);
 extern bool del_wds_wsec(int unit, int which);
 
 /*
