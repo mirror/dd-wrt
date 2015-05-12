@@ -2091,7 +2091,6 @@ void vlan_set(int argc, char *argv[])
 		stag = strtoul(argv[6], NULL, 16);
 		printf("STAG index is 0x%x\n", stag);
 	}
-
 #endif
 
 	//set vlan member
