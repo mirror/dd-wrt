@@ -640,23 +640,18 @@ MakeRNAServiceValidationPrototype(ssl_validate)
     /* Start off with a Client Hello from client to server. */
     if (ss->state == SSL_STATE_INITIATE)
     {
+        ss->state = SSL_STATE_CONNECTION;
+        
         if (dir == APP_ID_FROM_INITIATOR)
         {
             parse_client_initiation(data, size, ss);
-            ss->state = SSL_STATE_CONNECTION;
             goto inprocess;
-        }
-        else
-        {
-            goto fail;
         }
     }
-    else
+
+    if (dir != APP_ID_FROM_RESPONDER)
     {
-        if (dir != APP_ID_FROM_RESPONDER)
-        {
             goto inprocess;
-        }
     }
 
     switch (ss->state)

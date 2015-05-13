@@ -1797,6 +1797,7 @@ static UserGroupIdGetFunc userGroupIdGetFnPtr;
 static GeoIpAddressLookupFunc geoIpAddressLookupFnPtr;
 static UpdateSSLSSnLogDataFunc updateSSLSSnLogDataFnPtr;
 static EndSSLSSnLogDataFunc endSSLSSnLogDataFnPtr;
+static GetSSLActualActionFunc getSSLActualActionFnPtr;
 static GetIntfDataFunc getIntfDataFnPtr;
 
 void registerUrlQuery(UrlQueryCreateFunc createFn, UrlQueryDestroyFunc destroyFn, UrlQueryMatchFunc matchFn)
@@ -1868,7 +1869,7 @@ static void registerUpdateSSLSSnLogData(UpdateSSLSSnLogDataFunc fn)
 }
 
 static void updateSSLSSnLogData(void *ssnptr, uint8_t logging_on, uint8_t action_is_block, const char *ssl_cert_fingerprint,
-    uint32_t ssl_cert_fingerprint_len, uint16_t ssl_cert_status, uint8_t *ssl_policy_id,
+    uint32_t ssl_cert_fingerprint_len, uint32_t ssl_cert_status, uint8_t *ssl_policy_id,
     uint32_t ssl_policy_id_len, uint32_t ssl_rule_id, uint16_t ssl_cipher_suite, uint8_t ssl_version,
     uint16_t ssl_actual_action, uint16_t ssl_expected_action, uint32_t ssl_url_category,
     uint16_t ssl_flow_status, uint32_t ssl_flow_error, uint32_t ssl_flow_messages,
@@ -1884,6 +1885,21 @@ static void updateSSLSSnLogData(void *ssnptr, uint8_t logging_on, uint8_t action
                 ssl_flow_status, ssl_flow_error, ssl_flow_messages,
                 ssl_flow_flags, ssl_server_name, ssl_session_id, session_id_len, ssl_ticket_id, ticket_id_len);
     }
+}
+
+static void registerGetSSLActualAction(GetSSLActualActionFunc fn)
+{
+    getSSLActualActionFnPtr = fn;
+}
+
+static int getSSLActualAction(void *ssnptr, uint16_t *action)
+{
+    if (getSSLActualActionFnPtr)
+    {
+        return (getSSLActualActionFnPtr)(ssnptr, action);
+    }
+    
+    return -1;
 }
 
 
@@ -2138,6 +2154,8 @@ int InitDynamicPreprocessors(void)
     preprocData.registerUpdateSSLSSnLogData = &registerUpdateSSLSSnLogData;
     preprocData.endSSLSSnLogData = &endSSLSSnLogData;
     preprocData.registerEndSSLSSnLogData = &registerEndSSLSSnLogData;
+    preprocData.registerGetSSLActualAction = &registerGetSSLActualAction;
+    preprocData.getSSLActualAction = &getSSLActualAction;
     preprocData.getIntfData = &getIntfData;
     preprocData.registerGetIntfData = &registerGetIntfData;
     preprocData.isSSLPolicyEnabled = &DynamicIsSSLPolicyEnabled;

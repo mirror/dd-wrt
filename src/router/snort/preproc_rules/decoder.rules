@@ -150,3 +150,4 @@ alert ( msg:"DECODE_ERSPAN2_DGRAM_LT_HDR_STR"; sid:463; gid:116; rev:1; metadata
 alert ( msg:"DECODE_ERSPAN3_DGRAM_LT_HDR_STR"; sid:464; gid:116; rev:1; metadata:rule-type decode; classtype:protocol-command-decode; )
 alert ( msg:"DECODE_AUTH_HDR_TRUNC"; sid:465; gid:116; rev:1; metadata:rule-type decode; classtype:misc-activity; )
 alert ( msg:"DECODE_AUTH_HDR_BAD_LEN"; sid:466; gid:116; rev:1; metadata:rule-type decode; classtype:misc-activity; )
+alert ( msg:"DECODE_FPATH_HDR_TRUNC"; sid:467; gid:116; rev:1; metadata:rule-type decode; classtype:misc-activity; )

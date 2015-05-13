@@ -40,12 +40,6 @@
 #include "sfrt.h"
 #include "sfrt_dir.h"
 
-#if SIZEOF_UNSIGNED_LONG_INT == 8
-#define ARCH_WIDTH 64
-#else
-#define ARCH_WIDTH 32
-#endif
-
 typedef struct {
     IP ip;
     int bits;
@@ -310,14 +304,14 @@ static inline void _dir_fill_less_specific(int index, int fill,
     }
 }
 
-/*Remove entries all this level and discard any more specific entries. 
+/*Remove entries all this level and discard any more specific entries.
  *
- * @note RT_FAVOR_TIME behavior can cause hung or crosslinked entries if part of a subnet 
+ * @note RT_FAVOR_TIME behavior can cause hung or crosslinked entries if part of a subnet
  * (which was added) are deleted. Same issue is there when a more general subnet overwrites
  * a specific subnet. table->data[] entry for more specific subnet is not cleared.
  *
  * @note RT_FAVOR_TIME can cause orphaned table->data[] entries if the entire subnet
- * is replaced by more specific sudnets.  
+ * is replaced by more specific sudnets.
  */
 static inline uint32_t _dir_remove_all(uint32_t *allocated, uint32_t index, uint32_t fill,
                                  word length, dir_sub_table_t *table)
@@ -354,7 +348,7 @@ static inline uint32_t _dir_remove_all(uint32_t *allocated, uint32_t index, uint
 
 /**Remove entries which match in address/length in all subtables.
  * @note RT_FAVOR_SPECIFIC can cause orphaned table->data[] entries if the entire subnet
- * is replaced by more specific subnets. 
+ * is replaced by more specific subnets.
  */
 static inline uint32_t _dir_remove_less_specific(uint32_t *allocated, int index, int fill,
                                            word length, dir_sub_table_t *table)
@@ -443,7 +437,7 @@ static int _dir_sub_insert(IPLOOKUP *ip, int length, int cur_len, GENERIC ptr,
             return RT_INSERT_FAILURE;
         }
         local_index = ip->ip->ip32[i] << (ip->bits %32);
-        index = local_index >> (ARCH_WIDTH - sub_table->width);
+        index = local_index >> (sizeof(local_index)*8 - sub_table->width);
     }
 
     /* Check if this is the last table to traverse to */
@@ -527,14 +521,36 @@ int sfrt_dir_insert(IP ip, int len, word data_index,
                     int behavior, void *table)
 {
     dir_table_t *root = (dir_table_t*)table;
+    sfip_t h_ip;
     IPLOOKUP iplu;
-    iplu.ip = ip;
+    iplu.ip = &h_ip;
     iplu.bits = 0;
 
     /* Validate arguments */
     if(!root || !root->sub_table)
     {
         return DIR_INSERT_FAILURE;
+    }
+
+    h_ip.family = ip->family;
+    h_ip.ip32[0] = ntohl(ip->ip32[0]);
+    if (ip->family != AF_INET)
+    {
+        if (len > 96)
+        {
+            h_ip.ip32[1] = ntohl(ip->ip32[1]);
+            h_ip.ip32[2] = ntohl(ip->ip32[2]);
+            h_ip.ip32[3] = ntohl(ip->ip32[3]);
+        }
+        else if (len > 64)
+        {
+            h_ip.ip32[1] = ntohl(ip->ip32[1]);
+            h_ip.ip32[2] = ntohl(ip->ip32[2]);
+        }
+        else if (len > 32)
+        {
+            h_ip.ip32[1] = ntohl(ip->ip32[1]);
+        }
     }
 
     /* Find the sub table in which to insert */
@@ -579,7 +595,7 @@ static tuple_t _dir_sub_lookup(IPLOOKUP *ip, dir_sub_table_t *table)
             return ret;
         }
         local_index = ip->ip->ip32[i] << (ip->bits %32);
-        index = local_index >> (ARCH_WIDTH - table->width);
+        index = local_index >> (sizeof(local_index)*8 - table->width);
     }
 
     if( !table->entries[index] || table->lengths[index] )
@@ -599,8 +615,9 @@ static tuple_t _dir_sub_lookup(IPLOOKUP *ip, dir_sub_table_t *table)
 tuple_t sfrt_dir_lookup(IP ip, void *tbl)
 {
     dir_table_t *root = (dir_table_t*)tbl;
+    sfip_t h_ip;
     IPLOOKUP iplu;
-    iplu.ip = ip;
+    iplu.ip = &h_ip;
     iplu.bits = 0;
 
     if(!root || !root->sub_table)
@@ -608,6 +625,15 @@ tuple_t sfrt_dir_lookup(IP ip, void *tbl)
         tuple_t ret = { 0, 0 };
 
         return ret;
+    }
+
+    h_ip.family = ip->family;
+    h_ip.ip32[0] = ntohl(ip->ip32[0]);
+    if (ip->family != AF_INET)
+    {
+        h_ip.ip32[1] = ntohl(ip->ip32[1]);
+        h_ip.ip32[2] = ntohl(ip->ip32[2]);
+        h_ip.ip32[3] = ntohl(ip->ip32[3]);
     }
 
     return _dir_sub_lookup(&iplu, root->sub_table);
@@ -633,10 +659,10 @@ static void _sub_table_print(dir_sub_table_t *sub, uint32_t level, dir_table_t *
     label[level*5] = '\0';
 
     printf("%sCurrent Nodes: %d, Filled Entries: %d, table Width: %d\n", label, sub->cur_num, sub->filledEntries, sub->width);
-    for(index=0; index < sub->num_entries; index++) 
+    for(index=0; index < sub->num_entries; index++)
     {
         if (sub->lengths[index] || sub->entries[index])
-            printf("%sIndex: %d, Length: %d, dataIndex: %d\n", label, index, sub->lengths[index], 
+            printf("%sIndex: %d, Length: %d, dataIndex: %d\n", label, index, sub->lengths[index],
                     (uint32_t)sub->entries[index]);
 
         if( !sub->lengths[index] && sub->entries[index] ) {
@@ -647,7 +673,7 @@ static void _sub_table_print(dir_sub_table_t *sub, uint32_t level, dir_table_t *
 
 /* Print a table.
  * Prints a table and its subtable. This is used for debugging purpose only.
- * @param table The table that describes all, returned by dir_new 
+ * @param table The table that describes all, returned by dir_new
  */
 void sfrt_dir_print(void *tbl) {
     dir_table_t *table = (dir_table_t*)tbl;
@@ -669,11 +695,11 @@ void sfrt_dir_print(void *tbl) {
  * @param cur_len   Number of bits of the IP left at this depth
  * @param current_depth Number of levels down from root_table.
  * @param behavior  RT_FAVOR_SPECIFIC or RT_FAVOR_TIME
- * @param root_table  The table that describes all, returned by dir_new 
- * @returns index of entry removed. Returns 0, which is a valid index, as failure code. 
+ * @param root_table  The table that describes all, returned by dir_new
+ * @returns index of entry removed. Returns 0, which is a valid index, as failure code.
  * Calling function should treat 0 index as failure case.*/
 
-static int _dir_sub_remove(IPLOOKUP *ip, int length, int cur_len, 
+static int _dir_sub_remove(IPLOOKUP *ip, int length, int cur_len,
                            int current_depth, int behavior,
                            dir_sub_table_t *sub_table, dir_table_t *root_table)
 {
@@ -713,7 +739,7 @@ static int _dir_sub_remove(IPLOOKUP *ip, int length, int cur_len,
             return 0;
         }
         local_index = ip->ip->ip32[i] << (ip->bits %32);
-        index = local_index >> (ARCH_WIDTH - sub_table->width);
+        index = local_index >> (sizeof(local_index)*8 - sub_table->width);
     }
 
     /* Check if this is the last table to traverse to */
@@ -763,7 +789,7 @@ static int _dir_sub_remove(IPLOOKUP *ip, int length, int cur_len,
             _sub_table_free(&root_table->allocated, next_sub);
             sub_table->entries[index] = 0;
             sub_table->lengths[index] = 0;
-            sub_table->filledEntries--; 
+            sub_table->filledEntries--;
             root_table->cur_num--;
         }
     }
@@ -775,21 +801,52 @@ static int _dir_sub_remove(IPLOOKUP *ip, int length, int cur_len,
  * @param ip    IP address structure
  * @param len   Number of bits of the IP used for lookup
  * @param behavior  RT_FAVOR_SPECIFIC or RT_FAVOR_TIME
- * @param table The table that describes all, returned by dir_new 
+ * @param table The table that describes all, returned by dir_new
  * @return index to data or 0 on failure. Calling function should check for 0 since
  * this is valid index for failed operation.
  */
 word sfrt_dir_remove(IP ip, int len, int behavior, void *table)
 {
     dir_table_t *root = (dir_table_t*)table;
+    sfip_t h_ip;
     IPLOOKUP iplu;
-    iplu.ip = ip;
+    iplu.ip = &h_ip;
     iplu.bits = 0;
 
     /* Validate arguments */
     if(!root || !root->sub_table)
     {
         return 0;
+    }
+
+    h_ip.family = ip->family;
+    h_ip.ip32[0] = ntohl(ip->ip32[0]);
+    if (ip->family != AF_INET)
+    {
+        if (len > 96)
+        {
+            h_ip.ip32[1] = ntohl(ip->ip32[1]);
+            h_ip.ip32[2] = ntohl(ip->ip32[2]);
+            h_ip.ip32[3] = ntohl(ip->ip32[3]);
+        }
+        else if (len > 64)
+        {
+            h_ip.ip32[1] = ntohl(ip->ip32[1]);
+            h_ip.ip32[2] = ntohl(ip->ip32[2]);
+            h_ip.ip32[3] = 0;
+        }
+        else if (len > 32)
+        {
+            h_ip.ip32[1] = ntohl(ip->ip32[1]);
+            h_ip.ip32[2] = 0;
+            h_ip.ip32[3] = 0;
+        }
+        else
+        {
+            h_ip.ip32[1] = 0;
+            h_ip.ip32[2] = 0;
+            h_ip.ip32[3] = 0;
+        }
     }
 
     /* Find the sub table in which to remove */

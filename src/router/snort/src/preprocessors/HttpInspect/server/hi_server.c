@@ -1083,7 +1083,7 @@ int uncompress_gzip ( u_char *dest, int destLen, const u_char *source,
    {
 
        /* If some of the compressed data is decompressed we need to provide that for detection */
-       if( stream.total_out > 0)
+       if (( stream.total_out > 0) && (err != Z_DATA_ERROR))
        {
            *total_bytes_read = stream.total_out;
            iRet = HI_NONFATAL_ERR;

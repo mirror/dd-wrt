@@ -3240,7 +3240,6 @@ static DCE2_Ret DCE2_ScAddToRoutingTable(DCE2_Config *config,
                                          DCE2_ServerConfig *sc, DCE2_Queue *ip_queue)
 {
     sfip_t *ip;
-    sfip_t tmp_ip;
 
     if ((config == NULL) || (sc == NULL) || (ip_queue == NULL))
         return DCE2_RET__ERROR;
@@ -3250,23 +3249,6 @@ static DCE2_Ret DCE2_ScAddToRoutingTable(DCE2_Config *config,
          ip = (sfip_t *)DCE2_QueueNext(ip_queue))
     {
         int rt_status;
-
-        /* For IPv4, need to pass the address in host order */
-        if (ip->family == AF_INET)
-        {
-            if (sfip_set_ip(&tmp_ip, ip) != SFIP_SUCCESS)
-            {
-                DCE2_Log(DCE2_LOG_TYPE__ERROR,
-                        "%s(%d) Failed to copy IPv4 address.",
-                        __FILE__, __LINE__);
-                return DCE2_RET__ERROR;
-            }
-
-            tmp_ip.ip32[0] = ntohl(tmp_ip.ip32[0]);
-
-            /* Just set ip to tmp_ip since we don't need to modify ip */
-            ip = &tmp_ip;
-        }
 
         if (config->sconfigs == NULL)
         {
@@ -3283,8 +3265,7 @@ static DCE2_Ret DCE2_ScAddToRoutingTable(DCE2_Config *config,
         {
             DCE2_ServerConfig *conf;
 
-            conf = (DCE2_ServerConfig *)sfrt_search((void *)ip,
-                                                    (unsigned char)ip->bits, config->sconfigs);
+            conf = (DCE2_ServerConfig *)sfrt_search(ip, (unsigned char)ip->bits, config->sconfigs);
 
             if (conf != NULL)
             {
@@ -3294,7 +3275,7 @@ static DCE2_Ret DCE2_ScAddToRoutingTable(DCE2_Config *config,
             }
         }
 
-        rt_status = sfrt_insert((void *)ip, (unsigned char)ip->bits,
+        rt_status = sfrt_insert(ip, (unsigned char)ip->bits,
                                 (void *)sc, RT_FAVOR_SPECIFIC, config->sconfigs);
 
         if (rt_status != RT_SUCCESS)
@@ -3356,7 +3337,6 @@ const DCE2_ServerConfig * DCE2_ScGetConfig(const SFSnortPacket *p)
 {
     const DCE2_ServerConfig *sc = NULL;
     snort_ip_p ip;
-    sfip_t tmp_ip;
 
     if (dce2_eval_config == NULL)
         return NULL;
@@ -3367,27 +3347,7 @@ const DCE2_ServerConfig * DCE2_ScGetConfig(const SFSnortPacket *p)
         ip = GET_SRC_IP(((SFSnortPacket *)p));
 
     if (dce2_eval_config->sconfigs != NULL)
-    {
-        if (ip->family == AF_INET)
-        {
-            if (sfip_set_ip(&tmp_ip, ip) != SFIP_SUCCESS)
-            {
-                DCE2_Log(DCE2_LOG_TYPE__ERROR,
-                         "%s(%d) Failed to set IPv4 address for lookup in "
-                         "routing table", __FILE__, __LINE__);
-
-                /* Just return default configuration */
-                return dce2_eval_config->dconfig;
-            }
-
-            tmp_ip.ip32[0] = ntohl(tmp_ip.ip32[0]);
-
-            /* Just set ip to tmp_ip since we don't need to modify ip */
-            ip = &tmp_ip;
-        }
-
-        sc = sfrt_lookup((void *)ip, dce2_eval_config->sconfigs);
-    }
+        sc = sfrt_lookup(ip, dce2_eval_config->sconfigs);
 
     if (sc == NULL)
         return dce2_eval_config->dconfig;
@@ -4047,7 +4007,7 @@ void DCE2_RegisterPortsWithSession( struct _SnortConfig *sc, DCE2_ServerConfig *
     for( port = 0; port < DCE2_PORTS__MAX_INDEX; port++ )
         ports[ port ] = policy->smb_ports[ port ] | policy->tcp_ports[ port ] |
                         policy->udp_ports[ port ] | policy->http_proxy_ports[ port ] |
-                        policy->http_server_ports[ port ] | policy->auto_smb_ports[ port ] | 
+                        policy->http_server_ports[ port ] | policy->auto_smb_ports[ port ] |
                         policy->auto_tcp_ports[ port ] | policy->auto_udp_ports[ port ] |
                         policy->auto_http_proxy_ports[ port ] | policy->auto_http_server_ports[ port ];
 
@@ -4057,7 +4017,7 @@ void DCE2_RegisterPortsWithSession( struct _SnortConfig *sc, DCE2_ServerConfig *
             _dpd.sessionAPI->enable_preproc_for_port( sc,
                                                       PP_DCE2,
                                                       PROTO_BIT__TCP | PROTO_BIT__UDP,
-                                                      port ); 
+                                                      port );
 }
 
 /*********************************************************************
