@@ -695,13 +695,6 @@ static int process_file_context(FileContext *context, void *p, uint8_t *file_dat
         return 0;
     }
 
-    if(check_http_partial_content(p))
-    {
-        context->file_type_enabled = false;
-        context->file_signature_enabled = false;
-        return 0;
-    }
-
     /* if file config is changed, update it*/
     if ((context->file_config != snort_conf->file_config) ||
             (context->file_config_version != file_config_version))
@@ -712,6 +705,13 @@ static int process_file_context(FileContext *context, void *p, uint8_t *file_dat
          * File type id will become UNKNOWN after file_type_id()
          * if in the middle of file and file type is CONTINUE (undecided) */
         context->file_type_context = NULL;
+    }
+
+    if(check_http_partial_content(p))
+    {
+        context->file_type_enabled = false;
+        context->file_signature_enabled = false;
+        return 0;
     }
 
     /*file type id*/

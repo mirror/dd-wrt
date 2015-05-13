@@ -232,6 +232,7 @@
 116 || 462 || snort_decoder: WARNING: ERSpan Header version mismatch
 116 || 463 || snort_decoder: WARNING: captured < ERSpan Type2 Header Length
 116 || 464 || snort_decoder: WARNING: captured < ERSpan Type3 Header Length
+116 || 467 || snort_decoder: WARNING: truncated FabricPath header
 117 || 1 || spp_portscan2: Portscan detected
 118 || 1 || spp_conversation: Bad IP protocol
 119 || 1 || http_inspect: ASCII ENCODING

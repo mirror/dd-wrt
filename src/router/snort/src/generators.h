@@ -226,6 +226,7 @@ enum {
     DECODE_ERSPAN3_DGRAM_LT_HDR,
     DECODE_AUTH_HDR_TRUNC,
     DECODE_AUTH_HDR_BAD_LEN,
+    DECODE_FPATH_HDR_TRUNC,
     DECODE_INDEX_MAX
 };
 
@@ -758,6 +759,7 @@ enum {
 #define DECODE_ERSPAN3_DGRAM_LT_HDR_STR "(snort_decoder) WARNING: captured < ERSpan Type3 Header Length"
 #define DECODE_AUTH_HDR_TRUNC_STR "(snort_decoder) WARNING: truncated authentication header"
 #define DECODE_AUTH_HDR_BAD_LEN_STR "(snort_decoder) WARNING: authentication header bad length"
+#define DECODE_FPATH_HDR_TRUNC_STR "(snort_decoder) WARNING: truncated FabricPath header"
 
 /*  RPC decode preprocessor strings */
 #define RPC_FRAG_TRAFFIC_STR "(spp_rpc_decode) Fragmented RPC Records"

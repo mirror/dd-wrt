@@ -266,6 +266,9 @@ int Encode_Format (EncodeFlags f, const Packet* p, Packet* c, PseudoPacketType t
     pkth->flags = phdr->flags & (~DAQ_PKT_FLAG_HW_TCP_CS_GOOD);
     pkth->address_space_id = phdr->address_space_id;
     pkth->opaque = opaque;
+#ifdef HAVE_DAQ_FLOW_ID
+    pkth->flow_id = phdr->flow_id;
+#endif
 #elif defined(HAVE_DAQ_ACQUIRE_WITH_META)
     pkth->opaque = opaque;
 #endif
@@ -332,10 +335,6 @@ int Encode_Format (EncodeFlags f, const Packet* p, Packet* c, PseudoPacketType t
     // setup pkt capture header
     pkth->caplen = pkth->pktlen = len;
     pkth->ts = p->pkth->ts;
-
-#ifdef HAVE_DAQ_FLOW_ID
-    pkth->flow_id = p->pkth->flow_id;
-#endif
 
     // cooked packet gets same policy as raw
     c->configPolicyId = p->configPolicyId;
@@ -664,6 +663,70 @@ static void Eth_Format (EncodeFlags f, const Packet* p, Packet* c, Layer* lyr)
 
         memcpy(ch->ether_dst, ph->ether_src, sizeof(ch->ether_dst));
         memcpy(ch->ether_src, ph->ether_dst, sizeof(ch->ether_src));
+    }
+}
+
+//-------------------------------------------------------------------------
+// FabricPath
+//-------------------------------------------------------------------------
+
+static ENC_STATUS FPath_Encode (EncState* enc, Buffer* in, Buffer* out)
+{
+    // not raw ip -> encode layer 2
+    int raw = ( enc->flags & ENC_FLAG_RAW );
+
+    FPathHdr* hi = (FPathHdr*)enc->p->layers[enc->layer-1].start;
+    PROTO_ID next = NextEncoder(enc);
+
+    // if not raw ip AND out buf is empty
+    if ( !raw && (out->off == out->end) )
+    {
+        // for alignment
+        out->off = out->end = 0;
+    }
+    // if not raw ip OR out buf is not empty
+    if ( !raw || (out->off != out->end) )
+    {
+        // we get here for outer-most layer when not raw ip
+        // we also get here for any encapsulated ethernet layer.
+        FPathHdr* ho = (FPathHdr*)(out->base + out->end);
+        UPDATE_BOUND(out, sizeof(*ho));
+
+        ho->fpath_type = hi->fpath_type;
+        if ( FORWARD(enc) )
+        {
+            memcpy(ho->fpath_src, hi->fpath_src, sizeof(ho->fpath_src));
+            memcpy(ho->fpath_dst, hi->fpath_dst, sizeof(ho->fpath_dst));
+        }
+        else
+        {
+            memcpy(ho->fpath_src, hi->fpath_dst, sizeof(ho->fpath_src));
+            memcpy(ho->fpath_dst, hi->fpath_src, sizeof(ho->fpath_dst));
+        }
+    }
+    if ( next < PROTO_MAX )
+        return encoders[next].fencode(enc, in, out);
+
+    return ENC_OK;
+}
+
+static ENC_STATUS FPath_Update (Packet* p, Layer* lyr, uint32_t* len)
+{
+    *len += lyr->length;
+    return ENC_OK;
+}
+
+static void FPath_Format (EncodeFlags f, const Packet* p, Packet* c, Layer* lyr)
+{
+    FPathHdr* ch = (FPathHdr*)lyr->start;
+
+    if ( REVERSE(f) )
+    {
+        int i = lyr - c->layers;
+        FPathHdr* ph = (FPathHdr*)p->layers[i].start;
+
+        memcpy(ch->fpath_dst, ph->fpath_src, sizeof(ch->fpath_dst));
+        memcpy(ch->fpath_src, ph->fpath_dst, sizeof(ch->fpath_src));
     }
 }
 
@@ -1569,6 +1632,7 @@ static void XXX_Format (EncodeFlags f, const Packet* p, Packet* c, Layer* lyr)
 
 static EncoderFunctions encoders[PROTO_MAX] = {
     { Eth_Encode,  Eth_Update,   Eth_Format   },
+    { FPath_Encode, FPath_Update, FPath_Format }, // FabricPath
     { IP4_Encode,  IP4_Update,   IP4_Format   },
     { UN4_Encode,  ICMP4_Update, ICMP4_Format },
     { XXX_Encode,  XXX_Update,   XXX_Format,  },  // ICMP_IP4

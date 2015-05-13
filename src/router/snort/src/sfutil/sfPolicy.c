@@ -270,7 +270,7 @@ tSfPolicyId sfVlanGetBinding(tSfPolicyConfig *config, int vlanId)
         //invalid policyid will never be bound. return default
         return config->defaultPolicyId;
     }
-    
+
     policyId = config->vlanBindings[vlanId];
 
     if ( NotBound(policyId) )
@@ -410,7 +410,6 @@ int sfNetworkAddBinding(
 {
     tSfPolicyId *policyId;
     int iRet;
-    sfip_t tmp_ip;
 
     if ((config == NULL) || (Ip == NULL) || (fileName == NULL))
         return -1;
@@ -428,19 +427,7 @@ int sfNetworkAddBinding(
         return -1;
     }
 
-    /* For IPv4, need to pass the address in host order */
-    if (Ip->family == AF_INET)
-    {
-        if (sfip_set_ip(&tmp_ip, Ip) != SFIP_SUCCESS)
-            return -1;
-
-        tmp_ip.ip32[0] = ntohl(tmp_ip.ip32[0]);
-
-        /* Just set ip to tmp_ip since we don't need to modify ip */
-        Ip = &tmp_ip;
-    }
-
-    iRet = sfrt_insert((void *)Ip, (unsigned char)Ip->bits,
+    iRet = sfrt_insert(Ip, (unsigned char)Ip->bits,
                        (void *)policyId, RT_FAVOR_SPECIFIC, config->netBindTable);
 
     //DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES,"Added  vlandId  %d, file %s, policyId: %d\n", vlanId, fileName, policyId););
@@ -459,26 +446,11 @@ unsigned int sfNetworkGetBinding(
         )
 {
     tSfPolicyId *policyId = NULL;
-    sfip_t tmp_ip;
 
     if ((void *)ip == NULL)
         return config->defaultPolicyId;
 
-    if (ip->family == AF_INET)
-    {
-        if (sfip_set_ip(&tmp_ip, ip) != SFIP_SUCCESS)
-        {
-            /* Just return default configuration */
-            return config->defaultPolicyId;
-        }
-
-        tmp_ip.ip32[0] = ntohl(tmp_ip.ip32[0]);
-
-        /* Just set ip to tmp_ip since we don't need to modify ip */
-        ip = &tmp_ip;
-    }
-
-    policyId = (tSfPolicyId *)sfrt_lookup((void *)ip, config->netBindTable);
+    policyId = (tSfPolicyId *)sfrt_lookup(ip, config->netBindTable);
 
     if (!policyId)
     {
@@ -494,23 +466,11 @@ void sfNetworkDeleteBinding(
         )
 {
     tSfPolicyId *policyId;
-    sfip_t tmp_ip;
 
     if ((void *)ip == NULL)
         return;
 
-    if (ip->family == AF_INET)
-    {
-        if (sfip_set_ip(&tmp_ip, ip) != SFIP_SUCCESS)
-            return;
-
-        tmp_ip.ip32[0] = ntohl(tmp_ip.ip32[0]);
-
-        /* Just set ip to tmp_ip since we don't need to modify ip */
-        ip = &tmp_ip;
-    }
-
-    policyId = (tSfPolicyId *)sfrt_lookup((void *)ip, config->netBindTable);
+    policyId = (tSfPolicyId *)sfrt_lookup(ip, config->netBindTable);
 
     if (!policyId)
         return;

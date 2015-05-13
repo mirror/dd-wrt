@@ -63,6 +63,7 @@ extern tSfActionQueueId decoderActionQ;
 extern MemPool decoderAlertMemPool;
 
 static IpAddrSet *SynToMulticastDstIp = NULL;
+static IpAddrSet *MulticastReservedIp = NULL;
 #ifdef PERF_PROFILING
 PreprocStats decodePerfStats;
 #endif
@@ -388,7 +389,8 @@ uint32_t EXTRACT_32BITS (u_char *p)
 
 void InitSynToMulticastDstIp( struct _SnortConfig *sc )
 {
-    SynToMulticastDstIp = IpAddrSetParse(sc, "[232.0.0.0/8,233.0.0.0/8,239.0.0.0/8]");
+    // Multicast addresses pursuant to RFC 5771
+    SynToMulticastDstIp = IpAddrSetParse(sc, "[224.0.0.0/4]");
 
     if( SynToMulticastDstIp == NULL )
     {
@@ -396,12 +398,33 @@ void InitSynToMulticastDstIp( struct _SnortConfig *sc )
     }
 }
 
+void InitMulticastReservedIp( struct _SnortConfig *sc )
+{
+    // Reserved addresses within multicast address space (See RFC 5771)
+    MulticastReservedIp = IpAddrSetParse(sc,
+            "[224.1.0.0/16,224.5.0.0/16,224.6.0.0/15,224.8.0.0/13,224.16.0.0/12,"
+             "224.32.0.0/11,224.64.0.0/10,224.128.0.0/9,225.0.0.0/8,226.0.0.0/7,"
+             "228.0.0.0/6,234.0.0.0/7,236.0.0.0/7,238.0.0.0/8]");
+
+    if( MulticastReservedIp == NULL )
+    {
+        FatalError("Could not initialize MulticastReservedIp\n");
+    }
+}
+
 void SynToMulticastDstIpDestroy( void )
 {
-
     if( SynToMulticastDstIp )
     {
         IpAddrSetDestroy(SynToMulticastDstIp);
+    }
+}
+
+void MulticastReservedIpDestroy( void )
+{
+    if( MulticastReservedIp )
+    {
+        IpAddrSetDestroy(MulticastReservedIp);
     }
 }
 
@@ -649,6 +672,8 @@ void DecodeEthLoopback(const uint8_t *pkt, uint32_t len, Packet *p)
 void DecodeEthPkt(Packet * p, const DAQ_PktHdr_t * pkthdr, const uint8_t * pkt)
 {
     uint32_t cap_len = pkthdr->caplen;
+    uint32_t rem_len = cap_len;
+    uint8_t linklen = ETHERNET_HEADER_LEN;
     PROFILE_VARS;
 
     PREPROC_PROFILE_START(decodePerfStats);
@@ -665,23 +690,51 @@ void DecodeEthPkt(Packet * p, const DAQ_PktHdr_t * pkthdr, const uint8_t * pkt)
                 (unsigned long)cap_len, (unsigned long)pkthdr->pktlen);
             );
 
-    /* do a little validation */
-    if(cap_len < ETHERNET_HEADER_LEN)
+    while(true)
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_DECODE,
-            "WARNING: Truncated eth header (%d bytes).\n", cap_len););
+        /* do a little validation */
+        if(rem_len < ETHERNET_HEADER_LEN)
+        {
+            DEBUG_WRAP(DebugMessage(DEBUG_DECODE,
+                "WARNING: Truncated eth header (%d bytes).\n", rem_len););
 
-        if ( Event_Enabled(DECODE_ETH_HDR_TRUNC) )
-            DecoderEvent(p, EVARGS(ETH_HDR_TRUNC), 1, 1);
+            if ( Event_Enabled(DECODE_ETH_HDR_TRUNC) )
+                DecoderEvent(p, EVARGS(ETH_HDR_TRUNC), 1, 1);
 
-        pc.discards++;
-        pc.ethdisc++;
-        PREPROC_PROFILE_END(decodePerfStats);
-        return;
-    }
+            pc.discards++;
+            pc.ethdisc++;
+            PREPROC_PROFILE_END(decodePerfStats);
+            return;
+        }
 
-    /* lay the ethernet structure over the packet data */
-    p->eh = (EtherHdr *) pkt;
+        /* lay the ethernet structure over the packet data */
+        p->eh = (EtherHdr *) pkt;
+
+        /* check if this is a FabricPath header */
+        if(ntohs(p->eh->ether_type) == ETHERNET_TYPE_FPATH)
+        {
+            /* do a little validation */
+            if(rem_len < FABRICPATH_HEADER_LEN)
+            {
+                DEBUG_WRAP(DebugMessage(DEBUG_DECODE,
+                    "WARNING: Truncated FabricPath header (%d bytes).\n", rem_len););
+                
+                if ( Event_Enabled(DECODE_FPATH_HDR_TRUNC) )
+                    DecoderEvent(p, EVARGS(FPATH_HDR_TRUNC), 1, 1);
+
+                pc.discards++;
+                PREPROC_PROFILE_END(decodePerfStats);
+                return;
+            }
+            /* strip FabricPath header*/
+            PushLayer(PROTO_FPATH, p, pkt, FABRICPATH_HEADER_LEN);
+            pkt += FABRICPATH_HEADER_LEN;
+            linklen += FABRICPATH_HEADER_LEN;
+            rem_len -= FABRICPATH_HEADER_LEN;
+        }
+        else
+            break;
+    } 
     PushLayer(PROTO_ETH, p, pkt, sizeof(*p->eh));
 
     DEBUG_WRAP(
@@ -704,52 +757,52 @@ void DecodeEthPkt(Packet * p, const DAQ_PktHdr_t * pkthdr, const uint8_t * pkt)
             DEBUG_WRAP(
                     DebugMessage(DEBUG_DECODE,
                         "IP datagram size calculated to be %lu bytes\n",
-                        (unsigned long)(cap_len - ETHERNET_HEADER_LEN));
+                        (unsigned long)(cap_len - linklen));
                     );
 
-            DecodeIP(p->pkt + ETHERNET_HEADER_LEN,
-                    cap_len - ETHERNET_HEADER_LEN, p);
+            DecodeIP(p->pkt + linklen,
+                    cap_len - linklen, p);
 
             PREPROC_PROFILE_END(decodePerfStats);
             return;
 
         case ETHERNET_TYPE_ARP:
         case ETHERNET_TYPE_REVARP:
-            DecodeARP(p->pkt + ETHERNET_HEADER_LEN,
-                    cap_len - ETHERNET_HEADER_LEN, p);
+            DecodeARP(p->pkt + linklen,
+                    cap_len - linklen, p);
             PREPROC_PROFILE_END(decodePerfStats);
             return;
 
         case ETHERNET_TYPE_IPV6:
-            DecodeIPV6(p->pkt + ETHERNET_HEADER_LEN,
-                    (cap_len - ETHERNET_HEADER_LEN), p);
+            DecodeIPV6(p->pkt + linklen,
+                    (cap_len - linklen), p);
             PREPROC_PROFILE_END(decodePerfStats);
             return;
 
         case ETHERNET_TYPE_PPPoE_DISC:
         case ETHERNET_TYPE_PPPoE_SESS:
-            DecodePPPoEPkt(p->pkt + ETHERNET_HEADER_LEN,
-                    (cap_len - ETHERNET_HEADER_LEN), p);
+            DecodePPPoEPkt(p->pkt + linklen,
+                    (cap_len - linklen), p);
             PREPROC_PROFILE_END(decodePerfStats);
             return;
 
 #ifndef NO_NON_ETHER_DECODER
         case ETHERNET_TYPE_IPX:
-            DecodeIPX(p->pkt + ETHERNET_HEADER_LEN,
-                    (cap_len - ETHERNET_HEADER_LEN), p);
+            DecodeIPX(p->pkt + linklen,
+                    (cap_len - linklen), p);
             PREPROC_PROFILE_END(decodePerfStats);
             return;
 #endif
 
         case ETHERNET_TYPE_LOOP:
-            DecodeEthLoopback(p->pkt + ETHERNET_HEADER_LEN,
-                    (cap_len - ETHERNET_HEADER_LEN), p);
+            DecodeEthLoopback(p->pkt + linklen,
+                    (cap_len - linklen), p);
             PREPROC_PROFILE_END(decodePerfStats);
             return;
 
         case ETHERNET_TYPE_8021Q:
-            DecodeVlan(p->pkt + ETHERNET_HEADER_LEN,
-                    cap_len - ETHERNET_HEADER_LEN, p);
+            DecodeVlan(p->pkt + linklen,
+                    cap_len - linklen, p);
             PREPROC_PROFILE_END(decodePerfStats);
             return;
 #ifdef MPLS
@@ -760,8 +813,8 @@ void DecodeEthPkt(Packet * p, const DAQ_PktHdr_t * pkthdr, const uint8_t * pkt)
             	DecoderEvent(p, DECODE_BAD_MPLS, DECODE_MULTICAST_MPLS_STR, 1, 1);
             }
         case ETHERNET_TYPE_MPLS_UNICAST:
-                DecodeMPLS(p->pkt + ETHERNET_HEADER_LEN,
-                    cap_len - ETHERNET_HEADER_LEN, p);
+                DecodeMPLS(p->pkt + linklen,
+                    cap_len - linklen, p);
                 PREPROC_PROFILE_END(decodePerfStats);
                 return;
 #endif
@@ -1891,12 +1944,22 @@ void IP4AddrTests (Packet* p)
             DecoderEvent(p, EVARGS(IP4_SRC_MULTICAST), 1, 1);
 
     if ( Event_Enabled(DECODE_IP4_SRC_RESERVED) )
-        if ( msb_src == IP4_RESERVED )
+    {
+        if ( msb_src == IP4_RESERVED ||
+             IpAddrSetContains(MulticastReservedIp, GET_SRC_ADDR(p)) )
+        {
             DecoderEvent(p, EVARGS(IP4_SRC_RESERVED), 1, 1);
+        }
+    }
 
     if ( Event_Enabled(DECODE_IP4_DST_RESERVED) )
-        if ( msb_dst == IP4_RESERVED )
+    {
+        if ( msb_dst == IP4_RESERVED ||
+             IpAddrSetContains(MulticastReservedIp, GET_DST_ADDR(p)) )
+        {
             DecoderEvent(p, EVARGS(IP4_DST_RESERVED), 1, 1);
+        }
+    }
 }
 
 static inline void ICMP4AddrTests (Packet* p)

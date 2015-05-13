@@ -438,9 +438,6 @@ void ErrorMessage(const char *format,...)
     if (snort_conf == NULL)
         return;
 
-    if (!ScCheckInternalLogLevel(INTERNAL_LOG_LEVEL__ERROR))
-        return;
-
     va_start(ap, format);
 
     if (ScDaemonMode() || ScLogSyslog())
@@ -527,7 +524,7 @@ void LogMessage(const char *format,...)
     if (snort_conf == NULL)
         return;
 
-    if (!ScCheckInternalLogLevel(INTERNAL_LOG_LEVEL__MESSAGE) && !ScDaemonMode() && !ScLogSyslog())
+    if (!ScCheckInternalLogLevel(INTERNAL_LOG_LEVEL__MESSAGE))
         return;
 
     va_start(ap, format);
@@ -564,7 +561,7 @@ void WarningMessage(const char *format,...)
     if (snort_conf == NULL)
         return;
 
-    if (!ScCheckInternalLogLevel(INTERNAL_LOG_LEVEL__WARNING) && !ScDaemonMode() && !ScLogSyslog())
+    if (!ScCheckInternalLogLevel(INTERNAL_LOG_LEVEL__WARNING))
         return;
 
     va_start(ap, format);

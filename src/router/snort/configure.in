@@ -6,7 +6,7 @@ AC_PREREQ(2.50)
 AM_CONFIG_HEADER(config.h)
 # When changing the snort version, please also update the VERSION
 # definition in "src/win32/WIN32-Includes/config.h"
-AM_INIT_AUTOMAKE(snort,2.9.7.0)
+AM_INIT_AUTOMAKE(snort,2.9.7.2)
 
 NO_OPTIMIZE="no"
 ADD_WERROR="no"
@@ -970,6 +970,15 @@ if test "x$enable_profile" = "xyes"; then
         CPPFLAGS="$CPPFLAGS -DPROFILE"
     fi
 fi
+
+AC_ARG_ENABLE(test-coverage,
+[  --enable-test-coverage   Enable gcov test coverage tracking (developers only)],
+        enable_test_coverage="$enableval", enable_test_coverage="no")
+
+if test "x$enable_test_coverage" = "xyes"; then
+    CFLAGS=`echo $CFLAGS | sed 's/-O\d/-O0/g'`
+    CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage -O0"
+fi    
 
 AC_ARG_ENABLE(ppm-test,
 [  --disable-ppm-test       Disable packet/rule performance monitor],
