@@ -161,8 +161,13 @@ static void PerfMonitorInit(struct _SnortConfig *sc, char *args)
     //configuration file.
     if( ( perfmon_config != NULL ) || getParserPolicy( sc ) != 0 )
     {
-        ParseError("Perfmonitor can only be configured in default policy and only once.");
-        return;
+#if 0
+        // TBD-EDM
+         ParseError("Perfmonitor can only be configured in default policy and only once.\n");
+#else
+        WarningMessage( "Perfmonitor can only be configured in default policy and only once.\n");
+#endif
+         return;
     }
 
     perfmon_config = (SFPERF *)SnortAlloc(sizeof(SFPERF));
@@ -803,7 +808,12 @@ static void PerfMonitorReload(struct _SnortConfig *sc, char *args, void **new_co
     // Perf monitor configuration must be defined in the default configuration file only.
     if( ( perfmon_swap_config != NULL ) || getParserPolicy( sc ) != 0 )
     {
-        ParseError("Perfmonitor can only be configured in default policy and only once.");
+#if 0
+        // TBD-EDM
+         ParseError("Perfmonitor can only be configured in default policy and only once.\n");
+#else
+        WarningMessage( "Perfmonitor can only be configured in default policy and only once.\n");
+#endif
         return;
     }
 

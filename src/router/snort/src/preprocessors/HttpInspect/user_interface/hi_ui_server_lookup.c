@@ -116,7 +116,7 @@ int hi_ui_server_lookup_add(SERVER_LOOKUP *ServerLookup, sfip_t *Ip,
         return HI_INVALID_ARG;
     }
 
-    iRet = sfrt_insert((void *)Ip, (unsigned char)Ip->bits, (void *)ServerConf, RT_FAVOR_SPECIFIC, ServerLookup);
+    iRet = sfrt_insert(Ip, (unsigned char)Ip->bits, (void *)ServerConf, RT_FAVOR_SPECIFIC, ServerLookup);
     if (iRet)
     {
         return HI_MEM_ALLOC_FAIL;
@@ -163,7 +163,7 @@ HTTPINSPECT_CONF  *hi_ui_server_lookup_find(SERVER_LOOKUP *ServerLookup,
 
     *iError = HI_SUCCESS;
 
-    ServerConf = (HTTPINSPECT_CONF *)sfrt_lookup((void *)Ip, ServerLookup);
+    ServerConf = (HTTPINSPECT_CONF *)sfrt_lookup(Ip, ServerLookup);
     if (!ServerConf)
     {
         *iError = HI_NOT_FOUND;

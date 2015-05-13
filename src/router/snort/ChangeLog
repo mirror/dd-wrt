@@ -1,3 +1,30 @@
+2014-24-12 Victor Roemer <viroemer@cisco.com>
+Snort 2.9.7.2
+    * src/build.h:
+      updating build number to 177
+
+    * src/preprocessors/Stream6/snort_stream_tcp.c:
+      Documentation: Fixed issue in which TCP trim normalization would
+      occur when it was not necessary.
+
+    * src/decode.c, src/encode.c:
+      Added support for Cisco FabricPath decoding/encoding.
+      Ensure flow_id is copied into the DAQ_PktHdr_t.
+
+    * src/snort.h, src/sfutil/sfrt.c, src/sfutil/sfrt.h
+      src/target-based/sftarget_reader.c:
+      Moved ntohl conversion inside of the sfrt api for both IPv4 and IPv6.
+
+    * src/target-based/sftarget_protocol_reference.c
+      Lookup application protocol id only after the session is established.
+      Assign application protocol id to the session when using host attribute table.
+
+    * src/util.c:
+      Changes for suppressing configuration logging.
+
+    * src/file-process/file_service.c:
+      Assign the file config to a file context prior to checking if HTTP continuation.
+
 2014-10-10 Carter Waxman <cwaxman@cisco.com>
 Snort 2.9.7.0
     * src/build.h: updating build number to 149

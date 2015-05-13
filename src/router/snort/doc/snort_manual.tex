@@ -2753,9 +2753,8 @@ Global settings for the Session preprocessor.
         [track_icmp <yes|no>], [max_icmp <number>], \
         [track_ip <yes|no>], [max_ip <number>], \
         [flush_on_alert], [show_rebuilt_packets], \
-        [prune_log_max <bytes>], [disabled], \
-        [flush_on_alert], [show_rebuilt_packets], \
-        [prune_log_max <num bytes>], [enable_ha]
+        [prune_log_max <number bytes>], [disabled], \
+        [enable_ha]
 \end{verbatim}
 
 \begin{center}
@@ -12522,6 +12521,7 @@ Packet Configuration Options
 
 \texttt{debug-pkts}
 \begin{itemize}
+\item must build with the --enable-debug option to configure
 \item enables per packet timing stats to be printed after each packet
 \item default is off
 \end{itemize}
@@ -12593,7 +12593,7 @@ used to generate the sample output that follows.
 \begin{verbatim}
     config ppm: \
         max-pkt-time 50, fastpath-expensive-packets, \
-        pkt-log, debug-pkt
+        pkt-log, debug-pkts
     
     config ppm: \
         max-rule-time 50, threshold 5, suspend-expensive-rules, \
@@ -15690,11 +15690,11 @@ field and not on http buffer type field.
 \label{sub:FastPattern}
 
 The \texttt{fast\_pattern} keyword is a content modifier that sets the content
-within a rule to be used with the fast pattern matcher.  Since the default
-behavior of fast pattern determination is to use the longest content in the
-rule, it is useful if a shorter content is more "unique" than the longer content,
-meaning the shorter content is less likely to be found in a packet than the
-longer content.
+within a rule to be used with the fast pattern matcher. The default behavior of
+fast pattern determination is to use the longest HTTP buffer content. If no HTTP
+buffer is present, then the fast pattern is the longest content. Given this behavior,
+it is useful if a shorter content is more "unique" than the longer content, 
+meaning the shorter content is less likely to be found in a packet than the longer content.
 
 The fast pattern matcher is used to select only those rules that have a
 chance of matching by using a content in the rule for selection and only

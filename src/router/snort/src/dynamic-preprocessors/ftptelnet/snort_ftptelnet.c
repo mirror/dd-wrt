@@ -2731,11 +2731,6 @@ int ProcessFTPClientConf(struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *GlobalC
                 goto _return;
             }
 
-            if (ipAddr.family == AF_INET)
-            {
-                ipAddr.ip.u6_addr32[0] = ntohl(ipAddr.ip.u6_addr32[0]);
-            }
-
             /*
              **  allocate the memory for the client configuration
              */
@@ -3151,7 +3146,7 @@ int ProcessFTPServerOptions(FTP_SERVER_PROTO_CONF *ServerConf,
     return FTPP_SUCCESS;
 }
 
-int parseFtpServerConfigStr( FTP_SERVER_PROTO_CONF *ftp_conf, char *ConfigParseResumePtr, 
+int parseFtpServerConfigStr( FTP_SERVER_PROTO_CONF *ftp_conf, char *ConfigParseResumePtr,
                              char ip_list, char *ErrorString, int ErrStrLen )
 {
     int iRet = 0;
@@ -3204,7 +3199,7 @@ void enableFtpTelnetPortStreamServices( struct _SnortConfig *sc, PROTO_CONF *pc,
         if( pc->ports[ port ] )
         {
             _dpd.streamAPI->register_reassembly_port( network, port, direction );
-            _dpd.sessionAPI->enable_preproc_for_port( sc, PP_FTPTELNET, PROTO_BIT__TCP, port ); 
+            _dpd.sessionAPI->enable_preproc_for_port( sc, PP_FTPTELNET, PROTO_BIT__TCP, port );
         }
     }
 }
@@ -3319,11 +3314,6 @@ int ProcessFTPServerConf( struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *Global
                 goto _return;
             }
 
-            if (ipAddr.family == AF_INET)
-            {
-                ipAddr.ip.u6_addr32[0] = ntohl(ipAddr.ip.u6_addr32[0]);
-            }
-
             if (firstIpAddress)
             {
                 /* Write this IP into the buffer for printing */
@@ -3345,7 +3335,7 @@ int ProcessFTPServerConf( struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *Global
                 }
 
                 ftp_conf = new_server_conf;
-                iRet = parseFtpServerConfigStr( ftp_conf, ConfigParseResumePtr, ip_list, ErrorString, ErrStrLen ); 
+                iRet = parseFtpServerConfigStr( ftp_conf, ConfigParseResumePtr, ip_list, ErrorString, ErrStrLen );
                 if (iRet)
                 {
                     retVal = iRet;
@@ -3364,8 +3354,8 @@ int ProcessFTPServerConf( struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *Global
             }
 
             ftpp_ui_config_add_ftp_server(GlobalConf, &ipAddr, new_server_conf);
-            enableFtpTelnetPortStreamServices( sc, &ftp_conf->proto_ports, server, 
-                                               SSN_DIR_FROM_SERVER | SSN_DIR_FROM_CLIENT ); 
+            enableFtpTelnetPortStreamServices( sc, &ftp_conf->proto_ports, server,
+                                               SSN_DIR_FROM_SERVER | SSN_DIR_FROM_CLIENT );
 
             //create a reference
             new_server_conf->referenceCount++;
@@ -3404,15 +3394,15 @@ int ProcessFTPServerConf( struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *Global
         ftp_conf = GlobalConf->default_ftp_server;
         ConfigParseResumePtr = server+strlen(server);
         GlobalConf->default_ftp_server->serverAddr = strdup("default");
-        iRet = parseFtpServerConfigStr( ftp_conf, ConfigParseResumePtr, ip_list, ErrorString, ErrStrLen ); 
+        iRet = parseFtpServerConfigStr( ftp_conf, ConfigParseResumePtr, ip_list, ErrorString, ErrStrLen );
         if (iRet)
         {
             retVal = iRet;
             goto _return;
         }
 
-        enableFtpTelnetPortStreamServices( sc, &ftp_conf->proto_ports, NULL, 
-                                           SSN_DIR_FROM_SERVER | SSN_DIR_FROM_CLIENT ); 
+        enableFtpTelnetPortStreamServices( sc, &ftp_conf->proto_ports, NULL,
+                                           SSN_DIR_FROM_SERVER | SSN_DIR_FROM_CLIENT );
     }
 
     /*
@@ -4412,8 +4402,8 @@ int SnortFTPData(SFSnortPacket *p)
 
     if (data_ssn->flags & FTPDATA_FLG_STOP)
         return 0;
-    
-    //  bail if we have not rebuilt the stream yet. 
+
+    //  bail if we have not rebuilt the stream yet.
     if (!(p->flags & FLAG_REBUILT_STREAM))
         return 0;
 
@@ -4431,7 +4421,7 @@ int SnortFTPData(SFSnortPacket *p)
                         "FTP-DATA Invalid FTP_SESSION retrieved durring lookup\n"););
 
             if (data_ssn->data_chan)
-                _dpd.sessionAPI->set_ignore_direction(p->stream_session, SSN_DIR_BOTH); 
+                _dpd.sessionAPI->set_ignore_direction(p->stream_session, SSN_DIR_BOTH);
 
             return -2;
         }

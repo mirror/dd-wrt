@@ -51,6 +51,7 @@ pkt-log [log] [alert]
       upon snort configuration
 
 debug-pkts
+    - must build with the --enable-debug option to configure
     - enables per packet timing stats to be printed after each packet
     - default is off
 
@@ -105,7 +106,7 @@ The following suspends rules and aborts packet inspection.  These rules
 were used to generate the sample output that follows.
 
 config ppm: max-pkt-time 50, fastpath-expensive-packets, pkt-log, \
-            debug-pkt
+            debug-pkts
 
 config ppm: max-rule-time 50, threshold 5, suspend-expensive-rules, \
             suspend-timeout 300, rule-log log alert

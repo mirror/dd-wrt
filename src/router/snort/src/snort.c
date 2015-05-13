@@ -3889,6 +3889,7 @@ static void SnortCleanup(int exit_val)
 #endif
 
     SynToMulticastDstIpDestroy();
+    MulticastReservedIpDestroy();
 
     FreeVarList(cmd_line_var_list);
 
@@ -5016,6 +5017,7 @@ void SnortInit(int argc, char **argv)
         snort_conf = MergeSnortConfs(snort_cmd_line_conf, sc);
 
         InitSynToMulticastDstIp(snort_conf);
+        InitMulticastReservedIp(snort_conf);
 
 #ifdef TARGET_BASED
         /* Parse attribute table stuff here since config max_attribute_hosts
@@ -5636,13 +5638,9 @@ static void * ReloadConfigThread(void *data)
                 LogMessage("        --== Reloading Snort ==--\n");
                 LogMessage("\n");
 
-                if (ScSuppressConfigLog())
-                    ScSetInternalLogLevel(INTERNAL_LOG_LEVEL__ERROR);
-
                 snort_conf_new = ReloadConfig();
 
                 // Restore Log level if we suppressed it earlier
-                ScRestoreInternalLogLevel();
 
                 if (snort_conf_new == NULL)
                     reload_failed = 1;
@@ -5703,6 +5701,9 @@ static void * ReloadConfigThread(void *data)
 static SnortConfig * ReloadConfig(void)
 {
     SnortConfig *sc;
+
+    if (ScSuppressConfigLog())
+        ScSetInternalLogLevel(INTERNAL_LOG_LEVEL__ERROR);
 
 #ifdef HAVE_MALLOC_TRIM
     malloc_trim(0);
@@ -5834,6 +5835,9 @@ static SnortConfig * ReloadConfig(void)
 #ifdef PPM_MGR
     PPM_PRINT_CFG(&sc->ppm_cfg);
 #endif
+
+    // Restores the configured logging level, if it was suppressed earlier
+    ScRestoreInternalLogLevel();
 
     return sc;
 }

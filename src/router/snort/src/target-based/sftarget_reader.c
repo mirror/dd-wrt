@@ -278,11 +278,6 @@ int SFAT_SetHostIp(char *ip)
         return SFAT_ERROR;
     }
 
-    if (ipAddr.family == AF_INET)
-    {
-        ipAddr.ip32[0] = ntohl(ipAddr.ip32[0]);
-    }
-
     tmp_host = sfrt_lookup(&ipAddr, pConfig->next.lookupTable);
 
     if (tmp_host &&
@@ -352,12 +347,9 @@ int SFAT_AddApplicationData(void)
                           APPLICATION_ENTRY_PROTO);
         if ((current_app->fields & required_fields) != required_fields)
         {
-            sfip_t host_addr;
-            sfip_set_ip(&host_addr, &current_host->ipAddr);
-            host_addr.ip32[0] = ntohl(host_addr.ip32[0]);
             FatalError("%s(%d): Missing required field in Service attribute table for host %s\n",
                 file_name, file_line,
-                inet_ntoa(&host_addr)
+                sfip_to_str(&current_host->ipAddr)
                 );
         }
 
@@ -369,12 +361,9 @@ int SFAT_AddApplicationData(void)
         /* Currently, client data only includes PROTO, not IPPROTO */
         if ((current_app->fields & required_fields) != required_fields)
         {
-            sfip_t host_addr;
-            sfip_set_ip(&host_addr, &current_host->ipAddr);
-            host_addr.ip32[0] = ntohl(host_addr.ip32[0]);
             FatalError("%s(%d): Missing required field in Client attribute table for host %s\n",
                 file_name, file_line,
-                inet_ntoa(&host_addr)
+                sfip_to_str(&current_host->ipAddr)
                 );
         }
 
@@ -437,16 +426,12 @@ void PrintHostAttributeEntry(HostAttributeEntry *host)
 {
     ApplicationEntry *app;
     int i = 0;
-    sfip_t host_addr;
 
     if (!host)
         return;
 
-    sfip_set_ip(&host_addr, &host->ipAddr);
-    host_addr.ip32[0] = ntohl(host_addr.ip32[0]);
-
     DebugMessage(DEBUG_ATTRIBUTE, "Host IP: %s/%d\n",
-            inet_ntoa(&host_addr),
+            sfip_to_str(&host->ipAddr),
             host->ipAddr.bits
             );
     DebugMessage(DEBUG_ATTRIBUTE, "\tPolicy Information: frag:%s (%s %u) stream: %s (%s %u)\n",
@@ -535,7 +520,6 @@ HostAttributeEntry *SFAT_LookupHostEntryByIP(sfip_t *ipAddr)
     tTargetBasedPolicyConfig *pConfig = NULL;
     tSfPolicyId policyId = getNapRuntimePolicy();
     HostAttributeEntry *host = NULL;
-    sfip_t local_ipAddr;
 
     TargetBasedConfig *tbc = &snort_conf->targeted_policies[policyId]->target_based_config;
 
@@ -547,13 +531,7 @@ HostAttributeEntry *SFAT_LookupHostEntryByIP(sfip_t *ipAddr)
 
     pConfig = &targetBasedPolicyConfig;
 
-    sfip_set_ip(&local_ipAddr, ipAddr);
-    if (local_ipAddr.family == AF_INET)
-    {
-        local_ipAddr.ip32[0] = ntohl(local_ipAddr.ip32[0]);
-    }
-
-    host = sfrt_lookup(&local_ipAddr, pConfig->curr.lookupTable);
+    host = sfrt_lookup(ipAddr, pConfig->curr.lookupTable);
 
     if (host)
     {
@@ -1043,7 +1021,7 @@ void SFAT_StartReloadThread(void)
 int IsAdaptiveConfigured( void )
 {
     SnortConfig *sc = snort_conf;
-    tSfPolicyId id = getDefaultPolicy( ); 
+    tSfPolicyId id = getDefaultPolicy( );
 
     if (id >= sc->num_policies_allocated)
     {
@@ -1063,7 +1041,7 @@ int IsAdaptiveConfigured( void )
 
 int IsAdaptiveConfiguredForSnortConfig(struct _SnortConfig *sc)
 {
-    tSfPolicyId id = getDefaultPolicy( ); 
+    tSfPolicyId id = getDefaultPolicy( );
 
     if (sc == NULL)
     {
@@ -1092,17 +1070,12 @@ void SFAT_UpdateApplicationProtocol(sfip_t *ipAddr, uint16_t port, uint16_t prot
     HostAttributeEntry *host_entry;
     ApplicationEntry *service;
     tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
-    sfip_t local_ipAddr;
     unsigned service_count = 0;
     int rval;
 
     pConfig = &targetBasedPolicyConfig;
 
-    sfip_set_ip(&local_ipAddr, ipAddr);
-    if (local_ipAddr.family == AF_INET)
-        local_ipAddr.ip32[0] = ntohl(local_ipAddr.ip32[0]);
-
-    host_entry = sfrt_lookup(&local_ipAddr, pConfig->curr.lookupTable);
+    host_entry = sfrt_lookup(ipAddr, pConfig->curr.lookupTable);
 
     if (!host_entry)
     {
@@ -1112,8 +1085,8 @@ void SFAT_UpdateApplicationProtocol(sfip_t *ipAddr, uint16_t port, uint16_t prot
             return;
 
         host_entry = SnortAlloc(sizeof(*host_entry));
-        sfip_set_ip(&host_entry->ipAddr, &local_ipAddr);
-        if ((rval = sfrt_insert(&local_ipAddr, (unsigned char)local_ipAddr.bits, host_entry,
+        sfip_set_ip(&host_entry->ipAddr, ipAddr);
+        if ((rval = sfrt_insert(&host_entry->ipAddr, (unsigned char)host_entry->ipAddr.bits, host_entry,
                                 RT_FAVOR_SPECIFIC, pConfig->curr.lookupTable)) != RT_SUCCESS)
         {
             FreeHostEntry(host_entry);
