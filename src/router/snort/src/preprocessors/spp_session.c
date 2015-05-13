@@ -417,7 +417,14 @@ void initializeSessionPreproc(struct _SnortConfig *sc, char *args)
         sc->run_flags |= RUN_FLAG__STATEFUL;
     }
     else
+    {
+#if 0
+        // EDM-TBD
         FatalError("stream5_global must only be configured once.\n");
+#else
+        WarningMessage("stream5_global must only be configured once. Ignoring this configuration element\n");
+#endif
+    }
 }
 
 static void parseSessionConfiguration( SessionConfiguration *config, char *args )
@@ -3466,7 +3473,15 @@ static void reloadSessionConfiguration( struct _SnortConfig *sc, char *args, voi
         sc->run_flags |= RUN_FLAG__STATEFUL;
     }
     else
+    {
+#if 0
+        // EDM-TBD
         FatalError("stream5_global must only be configured once.\n");
+#else
+        WarningMessage("stream5_global must only be configured once. Ignoring this configuration element\n");
+        *new_config = NULL;
+#endif
+    }
 }
 
 static bool verifyConfigOptionUnchanged( uint32_t new, uint32_t old, char *name, SessionConfiguration *config )

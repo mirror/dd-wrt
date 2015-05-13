@@ -447,6 +447,9 @@ typedef struct _TcpSession
     int32_t egress_group;   /* Index of the outbound group. */
     uint32_t daq_flags;     /* Flags for the packet (DAQ_PKT_FLAG_*) */
     uint16_t address_space_id;
+#ifdef HAVE_DAQ_FLOW_ID
+    uint32_t daq_flow_id;
+#endif
 #endif
 
     uint8_t ecn;
@@ -3126,7 +3129,7 @@ static inline bool NormalStripTimeStamp (Packet* p, int i)
     return false;
 }
 
-static inline void NormalTrimPayload (Packet* p, uint16_t max, TcpDataBlock* tdb)
+static inline void NormalTrimPayload (Packet* p, uint32_t max, TcpDataBlock* tdb)
 {
     uint16_t fat = p->dsize - max;
     p->dsize = max;
@@ -3134,7 +3137,7 @@ static inline void NormalTrimPayload (Packet* p, uint16_t max, TcpDataBlock* tdb
     tdb->end_seq -= fat;
 }
 
-static inline bool NormalTrimPayloadIfSyn ( Packet *p, uint16_t max, TcpDataBlock *tdb )
+static inline bool NormalTrimPayloadIfSyn ( Packet *p, uint32_t max, TcpDataBlock *tdb )
 {
     NormMode mode = Normalize_GetMode(snort_conf, NORM_TCP_TRIM_SYN);
     if ( mode != NORM_MODE_OFF && p->dsize > max )
@@ -3150,7 +3153,7 @@ static inline bool NormalTrimPayloadIfSyn ( Packet *p, uint16_t max, TcpDataBloc
     return false;
 }
 
-static inline bool NormalTrimPayloadIfRst ( Packet *p, uint16_t max, TcpDataBlock *tdb )
+static inline bool NormalTrimPayloadIfRst ( Packet *p, uint32_t max, TcpDataBlock *tdb )
 {
     NormMode mode = Normalize_GetMode(snort_conf, NORM_TCP_TRIM_RST);
     if ( mode != NORM_MODE_OFF && p->dsize > max )
@@ -3166,7 +3169,7 @@ static inline bool NormalTrimPayloadIfRst ( Packet *p, uint16_t max, TcpDataBloc
     return false;
 }
 
-static inline bool NormalTrimPayloadIfWin ( Packet *p, uint16_t max, TcpDataBlock *tdb )
+static inline bool NormalTrimPayloadIfWin ( Packet *p, uint32_t max, TcpDataBlock *tdb )
 {
     NormMode mode = Normalize_GetMode(snort_conf, NORM_TCP_TRIM_WIN);
     if ( mode != NORM_MODE_OFF && p->dsize > max )
@@ -3182,7 +3185,7 @@ static inline bool NormalTrimPayloadIfWin ( Packet *p, uint16_t max, TcpDataBloc
     return false;
 }
 
-static inline bool NormalTrimPayloadIfMss ( Packet *p, uint16_t max, TcpDataBlock *tdb )
+static inline bool NormalTrimPayloadIfMss ( Packet *p, uint32_t max, TcpDataBlock *tdb )
 {
     NormMode mode = Normalize_GetMode(snort_conf, NORM_TCP_TRIM_MSS);
     if ( mode != NORM_MODE_OFF && p->dsize > max )
@@ -3341,6 +3344,9 @@ static inline void SetPacketHeaderFoo (TcpSession* tcpssn, const Packet* p)
         tcpssn->egress_index = p->pkth->ingress_index;
         tcpssn->egress_group = p->pkth->ingress_group;
     }
+#ifdef HAVE_DAQ_FLOW_ID
+    tcpssn->daq_flow_id = p->pkth->flow_id;
+#endif
     tcpssn->daq_flags = p->pkth->flags;
     tcpssn->address_space_id = p->pkth->address_space_id;
 }
@@ -3362,6 +3368,9 @@ static inline void GetPacketHeaderFoo (
         pkth->egress_index = tcpssn->ingress_index;
         pkth->egress_group = tcpssn->ingress_group;
     }
+#ifdef HAVE_DAQ_FLOW_ID
+    pkth->flow_id = tcpssn->daq_flow_id;
+#endif
     pkth->flags = tcpssn->daq_flags;
     pkth->address_space_id = tcpssn->address_space_id;
 }
@@ -4189,10 +4198,12 @@ static inline int _flush_to_seq (
         TcpSession *tcpssn, StreamTracker *st, uint32_t bytes, Packet *p,
         snort_ip_p sip, snort_ip_p dip, uint16_t sp, uint16_t dp, uint32_t dir)
 {
+    uint32_t start_seq;
     uint32_t stop_seq;
     uint32_t footprint = 0;
     uint32_t bytes_processed = 0;
     int32_t flushed_bytes;
+
 #ifdef HAVE_DAQ_ADDRESS_SPACE_ID
     DAQ_PktHdr_t pkth;
 #endif
@@ -4259,6 +4270,9 @@ static inline int _flush_to_seq (
         STREAM_DEBUG_WRAP(DebugMessage(DEBUG_STREAM_STATE,
                     "Attempting to flush %lu bytes\n", footprint););
 
+        /* Capture the seq of the first octet before flush changes the sequence numbers */
+        start_seq = htonl(st->seglist_next->seq);
+
         /* setup the pseudopacket payload */
         flushed_bytes = FlushStream(p, st, stop_seq, (uint8_t *)s5_pkt->data, s5_pkt_end);
 
@@ -4288,7 +4302,7 @@ static inline int _flush_to_seq (
             break;
         }
 
-        ((TCPHdr *)s5_pkt->tcph)->th_seq = htonl(st->seglist_next->seq);
+        ((TCPHdr *)s5_pkt->tcph)->th_seq = start_seq;
         s5_pkt->packet_flags |= (PKT_REBUILT_STREAM|PKT_STREAM_EST);
         s5_pkt->dsize = (uint16_t)flushed_bytes;
 
@@ -9081,6 +9095,11 @@ static int ProcessTcp(SessionControlBlock *scb, Packet *p, TcpDataBlock *tdb,
 
                 case TCP_STATE_CLOSE_WAIT:
                     talker->s_mgr.state = TCP_STATE_LAST_ACK;
+                    break;
+
+                case TCP_STATE_FIN_WAIT_1:
+                    if (!p->dsize)
+                        RetransmitHandle(p, tcpssn);
                     break;
 
                 default:

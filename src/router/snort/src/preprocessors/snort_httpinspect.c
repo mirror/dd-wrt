@@ -278,7 +278,7 @@ HISearchInfo hi_search_info;
 
 typedef enum {
     CONFIG_MAX_SPACES = 0,
-    CONFIG_MAX_JS_WS 
+    CONFIG_MAX_JS_WS
 } SpaceType;
 
 
@@ -1738,7 +1738,7 @@ static int Add_XFF_Field( HTTPINSPECT_CONF *ServerConf, uint8_t *Prec_Array, uin
     while( *cp != '\0' )
     {
         *cp = (uint8_t)toupper(*cp);  // Fold to upper case for runtime comparisons
-        if( (isalnum( *cp ) == 0) && (strchr( Special_Chars, (int)(*cp) ) == NULL) ) 
+        if( (isalnum( *cp ) == 0) && (strchr( Special_Chars, (int)(*cp) ) == NULL) )
         {
             SnortSnprintf(ErrorString, ErrStrLen,
                           "Invalid xff field name: %s ", Field_Name);
@@ -2102,12 +2102,12 @@ static int ProcessDecompressionTypeList(HTTPINSPECT_CONF *ServerConf,
                 ServerConf->file_decomp_modes |= (FILE_SWF_LZMA_BIT | FILE_REVERT_BIT);
             }
 #endif
-            else 
+            else
             {
                 snprintf(ErrorString, ErrStrLen,
                          "Bad cmd element passed to ProcessDecompressionTypeList(): %s", cmd);
                 return( -1 );
- 
+
             }
         }
         else if( 0 == strcmp(ConfigType, INSPECT_PDF) )
@@ -2121,7 +2121,7 @@ static int ProcessDecompressionTypeList(HTTPINSPECT_CONF *ServerConf,
             snprintf(ErrorString, ErrStrLen,
                      "Bad cmd passed to ProcessDecompressionTypeList(): %s", cmd);
             return( -1 );
- 
+
             }
         }
         else
@@ -2541,7 +2541,7 @@ INSPECT_SWF,
 #ifdef FILE_DECOMP_PDF
 INSPECT_PDF,
 #endif
-                              NORMALIZE_HEADERS, NORMALIZE_UTF, UNLIMIT_DECOMPRESS, HTTP_METHODS, 
+                              NORMALIZE_HEADERS, NORMALIZE_UTF, UNLIMIT_DECOMPRESS, HTTP_METHODS,
                               LOG_URI, LOG_HOSTNAME, MAX_SPACES, NORMALIZE_JS, MAX_JS_WS);
 
                 return -1;
@@ -2992,7 +2992,7 @@ INSPECT_PDF,
         else if(!strcmp(LOG_URI, pcToken))
         {
             ServerConf->log_uri = 1;
-        }   
+        }
         else if(!strcmp(LOG_HOSTNAME, pcToken))
         {
             ServerConf->log_hostname = 1;
@@ -3231,7 +3231,7 @@ static void enableHiForConfiguredPorts( struct _SnortConfig *sc, HTTPINSPECT_CON
     for ( port = 0; port < MAXPORTS; port++ )
     {
         if( isPortEnabled( policy->ports, port ) )
-            session_api->enable_preproc_for_port( sc, PP_HTTPINSPECT, PROTO_BIT__TCP, port ); 
+            session_api->enable_preproc_for_port( sc, PP_HTTPINSPECT, PROTO_BIT__TCP, port );
     }
 }
 
@@ -3293,7 +3293,7 @@ int ProcessUniqueServerConf(struct _SnortConfig *sc, HTTPINSPECT_GLOBAL_CONF *Gl
         }
 
         // register enabled ports for reassembly with Stream for the default
-        registerPortsWithStream( ServerConf, NULL ); 
+        registerPortsWithStream( ServerConf, NULL );
         enableHiForConfiguredPorts( sc, ServerConf );
 
         /*
@@ -3349,11 +3349,6 @@ int ProcessUniqueServerConf(struct _SnortConfig *sc, HTTPINSPECT_GLOBAL_CONF *Gl
                 goto _return;
             }
 
-            if (Ip.family == AF_INET)
-            {
-                Ip.ip.u6_addr32[0] = ntohl(Ip.ip.u6_addr32[0]);
-            }
-
             /*
              **  allocate the memory for the server configuration
              */
@@ -3399,7 +3394,7 @@ int ProcessUniqueServerConf(struct _SnortConfig *sc, HTTPINSPECT_GLOBAL_CONF *Gl
             }
 
             // register enabled ports for reassembly with Stream for the current netowrk
-            registerPortsWithStream( ServerConf, pcToken ); 
+            registerPortsWithStream( ServerConf, pcToken );
             enableHiForConfiguredPorts( sc, ServerConf );
 
             if (firstIpAddress)
@@ -3700,7 +3695,7 @@ static inline void ApplyClientFlowDepth (Packet* p, int flow_depth)
 }
 
 // FIXTHIS extra data masks should only be updated as extra data changes state
-// eg just once when captured; this function is called on every packet and 
+// eg just once when captured; this function is called on every packet and
 // repeatedly sets the flags on session
 static inline void HttpLogFuncs(HTTPINSPECT_GLOBAL_CONF *GlobalConf, HttpSessionData *hsd, Packet *p, int iCallDetect )
 {
@@ -3986,7 +3981,7 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
             if ( Session->client.request.uri_norm )
             {
                 SetHttpBufferEncoding(
-                    HTTP_BUFFER_URI, 
+                    HTTP_BUFFER_URI,
                     Session->client.request.uri_norm,
                     Session->client.request.uri_norm_size,
                     Session->client.request.uri_encode_type);
@@ -4014,7 +4009,7 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
                 p->packet_flags |= PKT_HTTP_DECODE;
             }
 
-            if ( Session->client.request.header_norm || 
+            if ( Session->client.request.header_norm ||
                  Session->client.request.header_raw )
             {
                 if ( Session->client.request.header_norm )
@@ -4081,6 +4076,10 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
                                 return 0;
                             }
                         }
+                        else
+                        {
+                            file_api->reset_mime_paf_state(&(hsd->mime_ssn->mime_boundary));
+                        }
 
                         end = (uint8_t *)(Session->client.request.post_raw + Session->client.request.post_raw_size);
                         file_api->process_mime_data(p, start, end, hsd->mime_ssn, 1, false);
@@ -4128,7 +4127,7 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
                 p->packet_flags |= PKT_HTTP_DECODE;
             }
 
-            if ( Session->client.request.cookie_norm || 
+            if ( Session->client.request.cookie_norm ||
                  Session->client.request.cookie.cookie )
             {
                 if ( Session->client.request.cookie_norm )
@@ -4142,7 +4141,7 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
                     SetHttpBuffer(
                         HTTP_BUFFER_RAW_COOKIE,
                         Session->client.request.cookie.cookie,
-                        Session->client.request.cookie.cookie_end - 
+                        Session->client.request.cookie.cookie_end -
                             Session->client.request.cookie.cookie);
 
                     p->packet_flags |= PKT_HTTP_DECODE;
@@ -4152,20 +4151,20 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
                     SetHttpBufferEncoding(
                         HTTP_BUFFER_COOKIE,
                         Session->client.request.cookie.cookie,
-                        Session->client.request.cookie.cookie_end - 
+                        Session->client.request.cookie.cookie_end -
                             Session->client.request.cookie.cookie,
                         Session->client.request.cookie_encode_type);
 
                     SetHttpBuffer(
                         HTTP_BUFFER_RAW_COOKIE,
                         Session->client.request.cookie.cookie,
-                        Session->client.request.cookie.cookie_end - 
+                        Session->client.request.cookie.cookie_end -
                             Session->client.request.cookie.cookie);
 
                     p->packet_flags |= PKT_HTTP_DECODE;
                 }
             }
-            else if ( !Session->server_conf->enable_cookie && 
+            else if ( !Session->server_conf->enable_cookie &&
                 (hb = GetHttpBuffer(HTTP_BUFFER_HEADER)) )
             {
                 SetHttpBufferEncoding(
@@ -4218,7 +4217,7 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
             }
             ClearHttpBuffers();
 
-             if ( Session->server.response.header_norm || 
+             if ( Session->server.response.header_norm ||
                   Session->server.response.header_raw )
              {
                  if ( Session->server.response.header_norm )
@@ -4248,7 +4247,7 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
                  }
              }
 
-             if ( Session->server.response.cookie_norm || 
+             if ( Session->server.response.cookie_norm ||
                   Session->server.response.cookie.cookie )
              {
                  if(Session->server.response.cookie_norm )
@@ -4270,7 +4269,7 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
                      SetHttpBuffer(
                          HTTP_BUFFER_COOKIE,
                          Session->server.response.cookie.cookie,
-                         Session->server.response.cookie.cookie_end - 
+                         Session->server.response.cookie.cookie_end -
                              Session->server.response.cookie.cookie);
 
                      SetHttpBuffer(
@@ -4280,7 +4279,7 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
                              Session->server.response.cookie.cookie);
                  }
              }
-             else if ( !Session->server_conf->enable_cookie && 
+             else if ( !Session->server_conf->enable_cookie &&
                  (hb = GetHttpBuffer(HTTP_BUFFER_HEADER)) )
              {
                  SetHttpBufferEncoding(
@@ -4366,14 +4365,14 @@ int SnortHttpInspect(HTTPINSPECT_GLOBAL_CONF *GlobalConf, Packet *p)
                      }
 
                      setFileDataPtr((uint8_t *)Session->server.response.body, (uint16_t)Session->server.response.body_size);
-                 } 
+                 }
                  else
                  {
                      setFileDataPtr((uint8_t *)Session->server.response.body, (uint16_t)detect_data_size);
                  }
 
                  if( ScPafEnabled() && PacketHasPAFPayload( p )
-                     && file_api->file_process( p, (uint8_t *)Session->server.response.body, 
+                     && file_api->file_process( p, (uint8_t *)Session->server.response.body,
                                                 (uint16_t)Session->server.response.body_size,
                                                 file_api->get_file_position( p ), false, false ) )
                  {
@@ -4622,11 +4621,11 @@ int GetHttpJSNormData(void *data, uint8_t **buf, uint32_t *len, uint32_t *type)
 int GetHttpUriData(void *data, uint8_t **buf, uint32_t *len, uint32_t *type)
 {
     HttpSessionData *hsd = NULL;
-        
+
     if (data == NULL)
         return 0;
     hsd = (HttpSessionData *)session_api->get_application_data(data, PP_HTTPINSPECT);
-            
+
     if(hsd == NULL)
         return 0;
 
@@ -4645,11 +4644,11 @@ int GetHttpUriData(void *data, uint8_t **buf, uint32_t *len, uint32_t *type)
 int GetHttpHostnameData(void *data, uint8_t **buf, uint32_t *len, uint32_t *type)
 {
     HttpSessionData *hsd = NULL;
-        
+
     if (data == NULL)
         return 0;
     hsd = (HttpSessionData *)session_api->get_application_data(data, PP_HTTPINSPECT);
-            
+
     if(hsd == NULL)
         return 0;
 
@@ -4660,7 +4659,7 @@ int GetHttpHostnameData(void *data, uint8_t **buf, uint32_t *len, uint32_t *type
         *type = EVENT_INFO_HTTP_HOSTNAME;
         return 1;
     }
-        
+
     return 0;
 }
 
@@ -4672,7 +4671,7 @@ void HI_SearchInit(void)
     {
         FatalError("%s(%d) Could not allocate memory for HTTP <script> tag search.\n",
                                __FILE__, __LINE__);
-    } 
+    }
     for (tmp = &hi_patterns[0]; tmp->name != NULL; tmp++)
     {
         hi_js_search[tmp->search_id].name = tmp->name;
@@ -4686,7 +4685,7 @@ void HI_SearchInit(void)
     {
         FatalError("%s(%d) Could not allocate memory for HTTP <script> type search.\n",
                                    __FILE__, __LINE__);
-    } 
+    }
     for (tmp = &html_patterns[0]; tmp->name != NULL; tmp++)
     {
         hi_html_search[tmp->search_id].name = tmp->name;

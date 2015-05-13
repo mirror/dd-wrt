@@ -28,6 +28,7 @@ typedef uint8_t IpProto;
 
 typedef enum {
     PROTO_ETH,        /* DecodeEthPkt */
+    PROTO_FPATH,      /* FabricPath - handled by DecodeEthPkt */
 
     PROTO_IP4,        /* DecodeIP */
                       /* DecodeIPOptions - handled with IP4 */

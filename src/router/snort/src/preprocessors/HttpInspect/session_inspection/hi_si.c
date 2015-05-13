@@ -135,15 +135,6 @@ static int InitServerConf(HTTPINSPECT_GLOBAL_CONF *GlobalConf,
     sip = SiInput->sip;
     dip = SiInput->dip;
 
-    if (sip.family == AF_INET)
-    {
-        sip.ip.u6_addr32[0] = ntohl(sip.ip.u6_addr32[0]);
-    }
-    if (dip.family == AF_INET)
-    {
-        dip.ip.u6_addr32[0] = ntohl(dip.ip.u6_addr32[0]);
-    }
-
     /*
     **  We find the server configurations for both the source and dest. IPs.
     **  There should be a check on the global configuration to see if there

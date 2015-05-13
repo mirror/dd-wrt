@@ -226,7 +226,7 @@ typedef int (*GeoIpAddressLookupFunc)(const snort_ip *snortIp, uint16_t *geo);
 typedef void (*RegisterGeoIpAddressLookupFunc)(GeoIpAddressLookupFunc);
 
 typedef void (*UpdateSSLSSnLogDataFunc)(void *ssnptr, uint8_t logging_on, uint8_t action_is_block, const char *ssl_cert_fingerprint,
-            uint32_t ssl_cert_fingerprint_len, uint16_t ssl_cert_status, uint8_t *ssl_policy_id,
+            uint32_t ssl_cert_fingerprint_len, uint32_t ssl_cert_status, uint8_t *ssl_policy_id,
             uint32_t ssl_policy_id_len, uint32_t ssl_rule_id, uint16_t ssl_cipher_suite, uint8_t ssl_version,
             uint16_t ssl_actual_action, uint16_t ssl_expected_action, uint32_t ssl_url_category,
             uint16_t ssl_flow_status, uint32_t ssl_flow_error, uint32_t ssl_flow_messages,
@@ -236,6 +236,9 @@ typedef void (*RegisterUpdateSSLSSnLogDataFunc)(UpdateSSLSSnLogDataFunc);
 
 typedef void (*EndSSLSSnLogDataFunc)(void *ssnptr, uint32_t ssl_flow_messages, uint64_t ssl_flow_flags) ;
 typedef void (*RegisterEndSSLSSnLogDataFunc)(EndSSLSSnLogDataFunc);
+
+typedef int (*GetSSLActualActionFunc)(void *ssnptr, uint16_t *action);
+typedef void (*RegisterGetSSLActualActionFunc)(GetSSLActualActionFunc);
 
 typedef void (*GetIntfDataFunc)(void *ssnptr,int32_t *ingressIntfIndex, int32_t *egressIntfIndex,
                 int32_t *ingressZoneIndex, int32_t *egressZoneIndex) ;
@@ -450,6 +453,9 @@ typedef struct _DynamicPreprocessorData
 
     EndSSLSSnLogDataFunc endSSLSSnLogData;
     RegisterEndSSLSSnLogDataFunc registerEndSSLSSnLogData;
+
+    GetSSLActualActionFunc getSSLActualAction;
+    RegisterGetSSLActualActionFunc registerGetSSLActualAction;
 
     GetIntfDataFunc getIntfData;
     RegisterGetIntfDataFunc registerGetIntfData;

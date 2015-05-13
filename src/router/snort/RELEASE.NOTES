@@ -1,82 +1,67 @@
-2014-06-04 - Snort 2.9.7.0 rc
+2014-11-24 - Snort 2.9.7.2
 [*] New additions
 * Application Identification Preprocessor, when used in conjunction with
   open app ID detector content, that will identify application protocol,
   client, server, and web applications (including those using SSL) and
   include the info in Snort alert data. In addition, a new rule option
   keyword 'appid' that can be used to constrain Snort rules based on one
-  or more applications that are identified for the connection.  Separate
-  prepackaged RPMs with App Open ID are available.  See README.appid
-  for further details.
+  or more applications that are identified for the connection.
+  See README.appid for details.
 
-* A new protected_content rule option that is used to match against a
-  content that is hashed.  It can be used to obscure the full context
-  of the rule from the administrator.
+* A new protected_content rule option that is used to match against a content
+  that is hashed.  It can be used to obscure the full context of the rule from
+  the administrator.
 
 * Protocol Aware Flushing (PAF) improvements for SMTP, POP, and IMAP to
   more accurately process different portions of email messages and file
   attachments.
 
-* Added ability to test normalization behavior without modifying
-  network traffic.  When configured using na_policy_mode:inline-test,
-  statistics will be gathered on packet normalizations that would have
-  occurred, allowing less disruptive testing of inline deployments.
+* Added ability to test normalization behavior without modifying network traffic.
+  When configured using na_policy_mode:inline-test, statistics will be gathered
+  on packet normalizations that would have occurred, allowing less disruptive
+  testing of inline deployments.
 
 * The HTTP Inspection preprocessor now has the ability to decompress
   DEFLATE and LZMA compressed flash content and DEFLATE compressed PDF
-  content from http responses when configured with the new
-  decompress_swf and decompress_pdf options. This enhancement can be
-  used with existing rule options that already match against
-  decompressed equivalents.
+  content from http responses when configured with the new decompress_swf
+  and decompress_pdf options. This enhancement can be used with existing rule
+  options that already match against decompressed equivalents.
 
-* Added improved XFF support to HttpInspect. It is now possible to
-  specify custom HTTP headers to use in place of 'X-Forwarded-For'. In
-  situations where traffic may contain multiple XFF-like headers, it is
-  possible to specify which headers hold precedence.
+* Added improved XFF support to HttpInspect. It is now possible to specify custom
+  HTTP headers to use in place of 'X-Fowarded-For'. In situations where traffic may
+  contain multiple XFF-like headers, it is possible to specify which headers hold
+  precedence.
 
-* Added additional support for Heartbleed detection within the SSL
-  preprocessor to improve performance.
+* Added control socket command to dump packets.
 
-* Added control socket command to dump packets to a file.  See
-  README.snort_dump_packets_control for details.
+* The Stream5 preprocessor functionality is now split between the new Session and Stream preprocessors.
 
-* Added an option to suppress configuration information logging to
-  output.
-
-* The Stream5 preprocessor functionality is now split between the new
-  Session and Stream6 preprocessors.
+* Added decoding capaiblity for Cisco FabricPath
 
 [*] Improvements
-* Maximum IP6 extensions decoded is now configurable.
-
 * Update active response to allow for responses of 1500+ bytes that span
   multiple TCP packets.
 
-* Check limits of multiple configurations to not exceed a maximum ID of
-  4095.
+* Check limits of multiple configurations to not exceed a maximum ID of 4095.
 
 * Updated the error output of byte_test, byte_jump, byte_extract to
   including details on offending options for a given rule.
 
-* Update build and install scripts to install preprocessor and engine
-  libraries into user specified libdir.
+* Update build and install scripts to install preprocessor and engine libraries
+  into user specified libdir.
 
 * Improved performance of IP Reputation preprocessor.
 
-* The control socket will now report success when reloading empty IP
-  Reputation whitelists/blacklists.
+* The control socket will now report success when reloading empty IP Reputation whitelists/blacklists.
 
-* All TCP normalizations can now be enabled individually. See
-  README.normalize for details on using the new options. For
-  consistency with other options, the "urp" tcp normalization keyword
-  now enables the normalization instead of disabling it.
+* All TCP normalizations can now be enabled individually. See README.normalize for details on using
+  the new options. For consistency with other options, the "urp" tcp normalization keyword now
+  enables the normalization instead of disabling it.
 
 * Lowered memory demand of Unicode -> ASCII mapping in HttpInspect.
 
-* Updated profiler output to remove duplicate results when using
-  multiple configurations.
+* Updated profiler output to remove duplicate results when using multiple configurations.
 
 * Improved performance of FTP reassembly.
 
-* Improved compatibility with Mac OSX 10.9 (Mavericks), OpenBSD,
-  FreeBSD, and DragonFlyBSD
+* Improved compatibility with Mac OSX 10.9 (Mavericks), OpenBSD, FreeBSD, and DragonFlyBSD

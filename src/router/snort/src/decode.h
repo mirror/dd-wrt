@@ -75,6 +75,7 @@ struct _SnortConfig;
 #define ETHERNET_TYPE_MPLS_MULTICAST  0x8848
 #define ETHERNET_TYPE_ERSPAN_TYPE2    0x88be
 #define ETHERNET_TYPE_ERSPAN_TYPE3    0x22eb
+#define ETHERNET_TYPE_FPATH           0x8903
 
 #define ETH_DSAP_SNA                  0x08    /* SNA */
 #define ETH_SSAP_SNA                  0x00    /* SNA */
@@ -86,6 +87,7 @@ struct _SnortConfig;
 #define ETH_ORG_CODE_ETHR              0x000000    /* Encapsulated Ethernet */
 #define ETH_ORG_CODE_CDP               0x00000c    /* Cisco Discovery Proto */
 
+#define FABRICPATH_HEADER_LEN           16
 #define ETHERNET_HEADER_LEN             14
 #define ETHERNET_MAX_LEN_ENCAP          1518    /* 802.3 (+LLC) or ether II ? */
 #define PPPOE_HEADER_LEN                6
@@ -973,6 +975,18 @@ typedef struct _EthLlcOther
 #define SPARC_TWIDDLE       0
 #endif
 
+/*
+ * Cisco FabricPath / Data Center Ethernet header
+ */
+ 
+ typedef struct _FPathHdr
+ {
+     uint8_t fpath_dst[6];
+     uint8_t fpath_src[6];
+     uint16_t fpath_type;
+     uint16_t fptag_extra; /* 10-bit FTag + 6-bit TTL */
+ } FPathHdr;
+ 
 /*
  * Ethernet header
  */
