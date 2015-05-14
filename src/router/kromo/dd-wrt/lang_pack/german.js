@@ -996,6 +996,7 @@ idx.dhcp_dnsmasq="Nutze DNSMasq für DHCP";
 idx.dns_dnsmasq="Nutze DNSMasq für DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Erzwungene DNS Umleitung";
+idx.recursive_dns="Rekursive DNS Auflösung";
 idx.dns_redirect="Optionales DNS Ziel";
 idx.summt_opt1="keine";
 idx.summt_opt2="erster Son Apr - letzter Son Okt";
