@@ -1004,6 +1004,9 @@ endif
 ifeq ($(CONFIG_JWAP003),y)
   CFLAGS += -DHAVE_JWAP003
 endif
+ifeq ($(CONFIG_UNBOUND),y)
+  CFLAGS += -DHAVE_UNBOUND
+endif
 ifeq ($(CONFIG_LSX),y)
 CFLAGS += -DHAVE_LSX
 endif
