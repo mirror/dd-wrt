@@ -334,6 +334,9 @@ endif
 ifeq ($(CONFIG_WPE53G),y)
   CFLAGS_EXTRA += -DHAVE_WPE53G
 endif
+ifeq ($(CONFIG_UNBOUND),y)
+  CFLAGS_EXTRA += -DHAVE_UNBOUND
+endif
 ifeq ($(CONFIG_GWMF54G2),y)
   CFLAGS_EXTRA += -DHAVE_GWMF54G2
 endif
