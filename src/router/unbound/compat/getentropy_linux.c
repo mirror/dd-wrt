@@ -359,7 +359,7 @@ getentropy_fallback(void *buf, size_t len)
 			HF(main);		/* an addr in program */
 #endif
 			HF(getentropy);	/* an addr in this library */
-			HF(printf);		/* an addr in libc */
+			HF(fprintf);		/* an addr in libc */
 			p = (char *)&p;
 			HD(p);		/* an addr on stack */
 			p = (char *)&errno;
