@@ -189,7 +189,6 @@ include rules/pcmcia.mk
 include rules/gcom.mk
 include rules/comgt.mk
 include rules/setserial.mk
-include rules/comgt.mk
 include rules/microcom.mk
 include rules/nvtlstatus.mk
 include rules/ctorrent.mk
