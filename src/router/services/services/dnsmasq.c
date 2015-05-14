@@ -392,7 +392,7 @@ void stop_dnsmasq(void)
 		unlink("/tmp/resolv.dnsmasq");
 	}
 #ifdef HAVE_UNBOUND
-	stop_process("unbound", "unbound daemon")
+	stop_process("unbound", "unbound daemon");
 #endif
 }
 #endif
