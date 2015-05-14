@@ -221,10 +221,12 @@ function setDNSMasq(F) {
 		if(F._dhcp_dnsmasq.checked == true) {
 			setElementActive("_auth_dnsmasq", true);
 			setElementActive("_dns_redirect", true);
+			setElementActive("_recursive_dns", true);
 		} else {
 			F._auth_dnsmasq.checked=false;		
 			setElementActive("_auth_dnsmasq", false);
 			setElementActive("_dns_redirect", false);
+			setElementActive("_recursive_dns", false);
 		}
 	}
 }
@@ -260,6 +262,10 @@ function submitcheck(F) {
 
 		if(F._dns_redirect) {
 			F.dns_redirect.value = F._dns_redirect.checked ? 1 : 0;
+		}
+
+		if(F._recursive_dns) {
+			F.recursive_dns.value = F._recursive_dns.checked ? 1 : 0;
 		}
 		
 		if(F._fullswitch) {
@@ -357,6 +363,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="dns_dnsmasq" value="0" />
 							<input type="hidden" name="auth_dnsmasq" value="0" />
 							<input type="hidden" name="dns_redirect" value="0" />
+							<input type="hidden" name="recursive_dns" value="0" />
 							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="ppp_mlppp" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
