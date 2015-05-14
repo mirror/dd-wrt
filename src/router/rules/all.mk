@@ -189,6 +189,7 @@ include rules/pcmcia.mk
 include rules/gcom.mk
 include rules/comgt.mk
 include rules/setserial.mk
+include rules/comgt.mk
 include rules/microcom.mk
 include rules/nvtlstatus.mk
 include rules/ctorrent.mk
@@ -221,6 +222,7 @@ include rules/mtr.mk
 include rules/snoop.mk
 include rules/aoss.mk
 include rules/ap-serv.mk
+include rules/tolapai.mk
 include rules/buffalo-flash.mk
 include rules/relayd.mk
 include $(TOP)/private/ath9k-rules/ath9k.mk
@@ -271,6 +273,7 @@ include rules/softflowd.mk
 include rules/python.mk
 include rules/nmap.mk
 include rules/arpalert.mk
+include rules/unbound.mk
 
 #
 # Generic rules
