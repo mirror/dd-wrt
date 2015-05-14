@@ -5,6 +5,8 @@ unbound-configure:
 		--with-ssl="$(TOP)/openssl" \
 		--without-pthreads \
 		--prefix=/usr \
+		--libdir=/usr/lib \
+		--sysconfdir=/etc \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl" \
@@ -18,3 +20,10 @@ unbound-clean:
 
 unbound-install: 
 	$(MAKE) -C unbound install DESTDIR=$(INSTALLDIR)/unbound
+	mkdir -p $(INSTALLDIR)/unbound/etc/unbound
+	cp unbound/config/* $(INSTALLDIR)/unbound/etc/unbound
+	rm -rf $(INSTALLDIR)/unbound/usr/include
+	rm -rf $(INSTALLDIR)/unbound/usr/share
+	rm -f $(INSTALLDIR)/unbound/usr/lib/*.a
+	rm -f $(INSTALLDIR)/unbound/usr/lib/*.la
+	
