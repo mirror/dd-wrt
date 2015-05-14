@@ -164,6 +164,11 @@ void start_dnsmasq(void)
 		else
 			fprintf(fp, "interface=");
 	}
+#ifdef HAVE_UNBOUND
+	if (nvram_match("recusive_dns", "1")) {
+		fprintf(fp, "port=0");
+	}
+#endif
 	int mdhcpcount = 0;
 
 	if (nvram_get("mdhcpd_count") != NULL) {
@@ -370,6 +375,12 @@ void start_dnsmasq(void)
 	chmod("/etc/lease_update.sh", 0700);
 	ret = eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf");
 	dd_syslog(LOG_INFO, "dnsmasq : dnsmasq daemon successfully started\n");
+#ifdef HAVE_UNBOUND
+	if (nvram_match("recusive_dns", "1")) {
+		ret = eval("unbound");
+		dd_syslog(LOG_INFO, "unbound : recursive dns resolver daemon successfully started\n");
+	}
+#endif
 
 	cprintf("done\n");
 	return;
@@ -380,5 +391,8 @@ void stop_dnsmasq(void)
 	if (stop_process("dnsmasq", "dnsmasq daemon")) {
 		unlink("/tmp/resolv.dnsmasq");
 	}
+#ifdef HAVE_UNBOUND
+	stop_process("unbound", "unbound daemon")
+#endif
 }
 #endif
