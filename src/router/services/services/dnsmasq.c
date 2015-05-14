@@ -165,7 +165,7 @@ void start_dnsmasq(void)
 			fprintf(fp, "interface=");
 	}
 #ifdef HAVE_UNBOUND
-	if (nvram_match("recusive_dns", "1")) {
+	if (nvram_match("recursive_dns", "1")) {
 		fprintf(fp, "port=0");
 	}
 #endif
@@ -376,7 +376,7 @@ void start_dnsmasq(void)
 	ret = eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf");
 	dd_syslog(LOG_INFO, "dnsmasq : dnsmasq daemon successfully started\n");
 #ifdef HAVE_UNBOUND
-	if (nvram_match("recusive_dns", "1")) {
+	if (nvram_match("recursive_dns", "1")) {
 		ret = eval("unbound");
 		dd_syslog(LOG_INFO, "unbound : recursive dns resolver daemon successfully started\n");
 	}
