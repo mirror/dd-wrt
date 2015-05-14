@@ -164,11 +164,6 @@ void start_dnsmasq(void)
 		else
 			fprintf(fp, "interface=");
 	}
-#ifdef HAVE_UNBOUND
-	if (nvram_match("recursive_dns", "1")) {
-		fprintf(fp, "port=0");
-	}
-#endif
 	int mdhcpcount = 0;
 
 	if (nvram_get("mdhcpd_count") != NULL) {
@@ -197,6 +192,11 @@ void start_dnsmasq(void)
 	if (nvram_match("dnsmasq_strict", "1"))
 		fprintf(fp, "strict-order\n");
 
+#ifdef HAVE_UNBOUND
+	if (nvram_match("recursive_dns", "1")) {
+		fprintf(fp, "port=0\n");
+	}
+#endif
 	/*
 	 * Domain 
 	 */
