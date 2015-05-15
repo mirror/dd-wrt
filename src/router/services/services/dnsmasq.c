@@ -110,6 +110,51 @@ static int canlan(void)
 	return 0;
 }
 
+#ifdef HAVE_UNBOUND
+static void unbound_config(void)
+{
+	FILE *fp = fopen("/etc/unbound.conf", "wb");
+	fprintf(fp, "server:\n"
+		"verbosity: 1\n"
+		"interface: 0.0.0.0\n"
+		"interface: ::0\n"
+		"outgoing-range: 60\n"
+		"outgoing-num-tcp: 1\n"
+		"incoming-num-tcp: 1\n"
+		"msg-buffer-size: 8192\n"
+		"msg-cache-size: 100k\n"
+		"msg-cache-slabs: 1\n"
+		"num-queries-per-thread: 30\n"
+		"rrset-cache-size: 100k\n"
+		"rrset-cache-slabs: 1\n"
+		"infra-cache-slabs: 1\n"
+		"infra-cache-numhosts: 200\n"
+		"access-control: 0.0.0.0/0 allow\n"
+		"access-control: ::0/0 allow\n"
+		"username: \"\"\n"
+		"pidfile: \"/var/run/unbound.pid\"\n"
+		"root-hints: \"/etc/unbound/named.cache\"\n"
+		"target-fetch-policy: \"2 1 0 0 0 0\"\n"
+		"harden-short-bufsize: yes\n" 
+		"harden-large-queries: yes\n" 
+		"auto-trust-anchor-file: \"/etc/unbound/root.key\"\n" 
+		"key-cache-size: 100k\n" 
+		"key-cache-slabs: 1\n" 
+		"neg-cache-size: 10k\n");
+
+	FILE *in = fopen("/etc/hosts", "rb");
+	char ip[32];
+	char name[128];
+	while (fscanf(in, "%s %s", &ip[0], &name[0]) == 2) {
+		fprintf(fp, "local-data: %s A %s\n", name, ip);
+	}
+	fclose(in);
+	fprintf(fp, "python:\n");
+	fprintf(fp, "remote-control:\n");
+	fclose(fp);
+}
+#endif
+
 void start_dnsmasq(void)
 {
 	FILE *fp;
@@ -377,7 +422,8 @@ void start_dnsmasq(void)
 	dd_syslog(LOG_INFO, "dnsmasq : dnsmasq daemon successfully started\n");
 #ifdef HAVE_UNBOUND
 	if (nvram_match("recursive_dns", "1")) {
-		ret = eval("unbound");
+		unbound_config();
+		ret = eval("unbound", "-c", "/etc/unbound.conf");
 		dd_syslog(LOG_INFO, "unbound : recursive dns resolver daemon successfully started\n");
 	}
 #endif
