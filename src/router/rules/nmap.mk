@@ -7,13 +7,13 @@ nmap-configure:
 		--prefix=/usr \
 		--with-libdnet=included \
 		--with-libpcre=included \
-		--with-libpcap="../libpcap_noring" \
+		--with-libpcap="../libpcap" \
 		--without-liblua \
 		--without-zenmap \
-		CPPFLAGS="-I$(TOP)/libpcap_noring -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CFLAGS="-I$(TOP)/libpcap_noring -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CXXFLAGS="-I$(TOP)/libpcap_noring -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="-L$(TOP)/libpcap_noring -L$(TOP)/openssl  $(COPTS)" PCAP_ROOT="$(TOP)/libpcap_noring  -ffunction-sections -fdata-sections -Wl,--gc-sections"
+		CPPFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CXXFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LDFLAGS="-L$(TOP)/libpcap -L$(TOP)/openssl  $(COPTS)" PCAP_ROOT="$(TOP)/libpcap  -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 nmap:
 	make -C nmap $(NMAP_EXTRAFLAGS) clean
