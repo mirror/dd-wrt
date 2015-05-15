@@ -1189,7 +1189,7 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<input type=\"checkbox\" name=\"_recursive_dns\" value=\"1\" %s />\n", nvram_match("recursive_dns", "1") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 #endif
-		webswrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.force_dnsmasq)</script></div>\n");
 		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_redirect\" value=\"1\" %s />\n", nvram_match("dns_redirect", "1") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
