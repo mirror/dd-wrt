@@ -105,7 +105,10 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	struct ifreq ifr;
 	int ret = 0;
 	int s;
-
+#ifdef HAVE_DIR862
+	if (!strcmp(name,"ath1"))
+	    name = "ath0";
+#endif
 	/*
 	 * open socket to kernel 
 	 */
