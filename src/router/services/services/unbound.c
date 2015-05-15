@@ -75,7 +75,7 @@ void start_unbound(void)
 {
 	if (nvram_match("recursive_dns", "1")) {
 		unbound_config();
-		ret = eval("unbound", "-c", "/tmp/unbound.conf");
+		eval("unbound", "-c", "/tmp/unbound.conf");
 		dd_syslog(LOG_INFO, "unbound : recursive dns resolver daemon successfully started\n");
 	}
 	return;
