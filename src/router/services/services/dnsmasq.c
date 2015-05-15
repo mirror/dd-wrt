@@ -115,7 +115,6 @@ void start_dnsmasq(void)
 {
 	FILE *fp;
 	struct dns_lists *dns_list = NULL;
-	int ret;
 	int i;
 
 	if (nvram_match("dhcp_dnsmasq", "1")
@@ -387,7 +386,7 @@ void start_dnsmasq(void)
 	dns_to_resolv();
 
 	chmod("/etc/lease_update.sh", 0700);
-	ret = eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf");
+	eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf");
 	dd_syslog(LOG_INFO, "dnsmasq : dnsmasq daemon successfully started\n");
 
 	cprintf("done\n");
