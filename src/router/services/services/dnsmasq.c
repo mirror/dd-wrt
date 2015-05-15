@@ -363,6 +363,9 @@ void start_dnsmasq(void)
 				else
 					fprintf(fp, "dhcp-host=%s,%s,%s,%sm\n", mac, host, ip, time);
 
+#ifdef HAVE_UNBOUND
+			if (!nvram_match("recursive_dns", "1"))
+#endif
 				addHost(host, ip, 1);
 			}
 			free(cp);

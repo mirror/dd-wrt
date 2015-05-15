@@ -69,6 +69,30 @@ static void unbound_config(void)
 	fprintf(fp, "python:\n");
 	fprintf(fp, "remote-control:\n");
 	fclose(fp);
+
+	int leasenum = atoi(nvram_safe_get("static_leasenum"));
+
+	if (leasenum > 0) {
+		char *lease = nvram_safe_get("static_leases");
+		char *leasebuf = (char *)malloc(strlen(lease) + 1);
+		char *cp = leasebuf;
+
+		strcpy(leasebuf, lease);
+		int i;
+		for (i = 0; i < leasenum; i++) {
+			char *mac = strsep(&leasebuf, "=");
+			char *host = strsep(&leasebuf, "=");
+			char *ip = strsep(&leasebuf, "=");
+			char *time = strsep(&leasebuf, " ");
+
+			if (mac == NULL || host == NULL || ip == NULL)
+				continue;
+
+			addHost(host, ip, 1);
+		}
+		free(cp);
+	}
+
 }
 
 void start_unbound(void)
