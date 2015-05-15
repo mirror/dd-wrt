@@ -881,7 +881,9 @@ endif
 ifeq ($(CONFIG_UPNP),y)
 CFLAGS += -DHAVE_UPNP
 endif
-
+ifeq ($(CONFIG_UNBOUND),y)
+CFLAGS += -DHAVE_UNBOUND
+endif
 ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFORWARD
 endif
