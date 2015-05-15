@@ -71,6 +71,8 @@ extern enum verbosity_value verbosity;
  *	verbosity setting.
  * @param format: printf-style format string. Arguments follow.
  */
+#ifdef NEED_PRINTF
+
 void verbose(enum verbosity_value level, 
 	const char* format, ...) ATTR_FORMAT(printf, 2, 3);
 
@@ -172,7 +174,24 @@ void fatal_exit(const char* format, ...) ATTR_FORMAT(printf, 1, 2);
  * @param args: arguments for format string.
  */
 void log_vmsg(int pri, const char* type, const char* format, va_list args);
+#else
 
+#define verbose(level,fmt,...) do { } while(0)
+#define log_init(file,use_syslog,chrootdir) do { } while(0)
+#define log_file(f) do { } while(0)
+#define log_thread_set(num)  do { } while(0)
+#define log_ident_set(id) do { } while(0)
+#define log_set_time(t)  do { } while(0)
+#define log_set_time_asc(use_asc)  do { } while(0)
+#define log_info(format, ...) do { } while(0)
+#define log_err(format, ...) do { } while(0)
+#define log_warn(format, ...)  do { } while(0)
+#define log_hex(msg, data, length) do { } while(0)
+#define log_buf(level, msg, buf) do { } while(0)
+#define fatal_exit(format, ...) exit(-1)
+#define log_vmsg(pri, type,format, args) do { } while(0)
+
+#endif
 /**
  * an assertion that is thrown to the logfile.
  */

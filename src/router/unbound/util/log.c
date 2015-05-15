@@ -36,7 +36,6 @@
  * \file
  * Implementation of log.h.
  */
-
 #include "config.h"
 #include "util/log.h"
 #include "util/locks.h"
@@ -62,6 +61,7 @@
 
 /* default verbosity */
 enum verbosity_value verbosity = 0;
+#ifdef NEED_PRINTF
 /** the file logged to. */
 static FILE* logfile = 0;
 /** if key has been created */
@@ -483,3 +483,4 @@ char* wsa_strerror(DWORD err)
 	}
 }
 #endif /* USE_WINSOCK */
+#endif
