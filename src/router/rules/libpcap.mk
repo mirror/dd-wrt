@@ -1,5 +1,5 @@
 libpcap-configure:
-	cd libpcap_noring ; ac_cv_linux_vers=2 ./configure \
+	cd libpcap ; ac_cv_linux_vers=2 ./configure \
 		--target=$(ARCH)-openwrt-linux \
 		--host=$(ARCH)-linux-uclibc  \
 		--program-prefix= --program-suffix= --prefix=/usr \
@@ -13,23 +13,23 @@ libpcap-configure:
 		CC="$(CC)" CFLAGS="$(COPTS) -fPIC"
 libpcap:
 #	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
-	$(MAKE) -C libpcap_noring CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) version.h
+	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) version.h
 ifeq ($(CONFIG_LIBPCAP_SHARED),y)
-	$(MAKE) -C libpcap_noring CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
-	-cd libpcap_noring ; ln -s libpcap.so.1.6.1 libpcap.so
+	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
+	-cd libpcap ; ln -s libpcap.so.1.6.1 libpcap.so
 else
-	$(MAKE) -C libpcap_noring CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.a 
+	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.a 
 endif
 
 libpcap-install:
 	@true
 ifeq ($(CONFIG_LIBPCAP_SHARED),y)
 	install -d $(INSTALLDIR)/libpcap/usr/lib
-	install libpcap_noring/libpcap.so $(INSTALLDIR)/libpcap/usr/lib
+	install libpcap/libpcap.so $(INSTALLDIR)/libpcap/usr/lib
 	-cd $(INSTALLDIR)/libpcap/usr/lib ; ln -s libpcap.so libpcap.so.1 
 	-cd $(INSTALLDIR)/libpcap/usr/lib ; ln -s libpcap.so libpcap.so.1.0.0
 endif
 
 libpcap-clean:
-	$(MAKE) -C libpcap_noring clean
+	$(MAKE) -C libpcap clean
 
