@@ -146,7 +146,7 @@ static void unbound_config(void)
 	char ip[32];
 	char name[128];
 	while (fscanf(in, "%s %s", &ip[0], &name[0]) == 2) {
-		fprintf(fp, "local-data: %s A %s\n", name, ip);
+		fprintf(fp, "local-data: \"%s A %s\"\n", name, ip);
 	}
 	fclose(in);
 	fprintf(fp, "python:\n");
