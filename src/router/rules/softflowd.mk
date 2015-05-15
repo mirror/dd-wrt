@@ -1,7 +1,7 @@
 softflowd-configure:
 	#export CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" CPPFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" ; \
 	#export CXXFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" ; 
-	cd softflowd && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr CPPFLAGS="-I../libpcap_noring $(COPTS) -DNEED_PRINTF" CFLAGS="-I../libpcap_noring $(COPTS) -DNEED_PRINTF" LDFLAGS="-L../libpcap_noring" PCAP_ROOT="$(TOP)/libpcap_noring"
+	cd softflowd && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr CPPFLAGS="-I../libpcap $(COPTS) -DNEED_PRINTF" CFLAGS="-I../libpcap $(COPTS) -DNEED_PRINTF" LDFLAGS="-L../libpcap" PCAP_ROOT="$(TOP)/libpcap"
 
 softflowd:
 	make -C softflowd
