@@ -336,6 +336,7 @@ ifeq ($(CONFIG_WPE53G),y)
 endif
 ifeq ($(CONFIG_UNBOUND),y)
   CFLAGS_EXTRA += -DHAVE_UNBOUND
+  OBJS += unbound.o
 endif
 ifeq ($(CONFIG_GWMF54G2),y)
   CFLAGS_EXTRA += -DHAVE_GWMF54G2
