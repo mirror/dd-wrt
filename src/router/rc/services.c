@@ -130,6 +130,9 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_DNSMASQ
 	start_service_f("dnsmasq");
 #endif
+#ifdef HAVE_UNBOUND
+	start_service_f("unbound");
+#endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
 #endif
@@ -253,6 +256,9 @@ int stop_services_main(int argc, char **argv)
 
 #ifdef HAVE_UPNP
 	stop_service_f("upnp");
+#endif
+#ifdef HAVE_UNBOUND
+	stop_service_f("unbound");
 #endif
 #ifdef HAVE_DNSMASQ
 	stop_service_f("dnsmasq");
@@ -422,6 +428,9 @@ static void handle_index(void)
 #ifdef HAVE_DNSMASQ
 	startstop_f("dnsmasq");
 #endif
+#ifdef HAVE_UNBOUND
+	startstop_f("unbound");
+#endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	startstop_f("zebra");
 #endif
@@ -551,6 +560,9 @@ static void handle_hotspot(void)
 #ifdef HAVE_DNSMASQ
 	startstop_f("dnsmasq");
 #endif
+#ifdef HAVE_UNBOUND
+	startstop_f("unbound");
+#endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service("zebra");
 #endif
@@ -595,6 +607,9 @@ static void handle_services(void)
 #endif
 #ifdef HAVE_DNSMASQ
 	startstop_f("dnsmasq");
+#endif
+#ifdef HAVE_UNBOUND
+	startstop_f("unbound");
 #endif
 	startstop_f("udhcpd");
 #ifdef HAVE_CPUTEMP
@@ -1066,6 +1081,9 @@ static void handle_wireless(void)
 	startstop_f("udhcpd");
 #ifdef HAVE_DNSMASQ
 	startstop_f("dnsmasq");
+#endif
+#ifdef HAVE_UNBOUND
+	startstop_f("unbound");
 #endif
 	if (getSTA() || getWET() || wanchanged
 #ifdef HAVE_MADWIFI
