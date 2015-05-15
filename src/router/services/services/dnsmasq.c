@@ -135,12 +135,7 @@ static void unbound_config(void)
 		"pidfile: \"/var/run/unbound.pid\"\n"
 		"root-hints: \"/etc/unbound/named.cache\"\n"
 		"target-fetch-policy: \"2 1 0 0 0 0\"\n"
-		"harden-short-bufsize: yes\n" 
-		"harden-large-queries: yes\n" 
-		"auto-trust-anchor-file: \"/etc/unbound/root.key\"\n" 
-		"key-cache-size: 100k\n" 
-		"key-cache-slabs: 1\n" 
-		"neg-cache-size: 10k\n");
+		"harden-short-bufsize: yes\n" "harden-large-queries: yes\n" "auto-trust-anchor-file: \"/etc/unbound/root.key\"\n" "key-cache-size: 100k\n" "key-cache-slabs: 1\n" "neg-cache-size: 10k\n");
 
 	FILE *in = fopen("/etc/hosts", "rb");
 	char ip[32];
@@ -319,6 +314,19 @@ void start_dnsmasq(void)
 
 			if (dns_list)
 				free(dns_list);
+		} else {
+#ifdef HAVE_UNBOUND
+			if (nvram_match("recursive_dns", "1")) {
+				fprintf(fp, "dhcp-option=lan,6,%s\n", nvram_safe_get("lan_ipaddr"));
+				for (i = 0; i < mdhcpcount; i++) {
+					if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i)))
+					    == 0)
+						continue;
+					fprintf(fp, "dhcp-option=%s,6,", getmdhcp(0, i));
+					fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", getmdhcp(0, i)));
+				}
+			}
+#endif
 		}
 
 		if (nvram_match("auth_dnsmasq", "1"))
