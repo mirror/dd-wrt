@@ -113,7 +113,7 @@ static int canlan(void)
 #ifdef HAVE_UNBOUND
 static void unbound_config(void)
 {
-	FILE *fp = fopen("/etc/unbound.conf", "wb");
+	FILE *fp = fopen("/tmp/unbound.conf", "wb");
 	fprintf(fp, "server:\n"
 		"verbosity: 1\n"
 		"interface: 0.0.0.0\n"
@@ -431,7 +431,7 @@ void start_dnsmasq(void)
 #ifdef HAVE_UNBOUND
 	if (nvram_match("recursive_dns", "1")) {
 		unbound_config();
-		ret = eval("unbound", "-c", "/etc/unbound.conf");
+		ret = eval("unbound", "-c", "/tmp/unbound.conf");
 		dd_syslog(LOG_INFO, "unbound : recursive dns resolver daemon successfully started\n");
 	}
 #endif
