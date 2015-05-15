@@ -9,7 +9,7 @@ unbound-configure:
 		--sysconfdir=/etc \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl"
 
 unbound: 
