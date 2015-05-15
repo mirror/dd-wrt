@@ -112,6 +112,11 @@ extern void start_igmprt(void);
 extern void stop_igmprt(void);
 #endif
 
+#ifdef HAVE_UNBOUND
+extern void start_unbound(void);
+extern void stop_unbound(void);
+#endif
+
 #ifdef HAVE_UDPXY
 extern void start_udpxy(void);
 extern void stop_udpxy(void);
