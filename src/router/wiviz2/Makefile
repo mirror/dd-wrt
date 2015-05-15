@@ -4,13 +4,13 @@
 #CC=~/buildroot/staging_dir_mipsel/bin/mipsel-linux-gcc
 include $(TOP)/.config
 
-LIBS=-L../libpcap_noring -lpcap -lcrypt -lnvram -lutils -lwireless
+LIBS=-L../libpcap -lpcap -lcrypt -lnvram -lutils -lwireless
 ifeq ($(CONFIG_ATH9K),y)
 LIBS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
 CCOPTS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -lgcc_s
-INCLUDE=../libpcap_noring
+INCLUDE=../libpcap
 SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
 TARGET=wiviz
