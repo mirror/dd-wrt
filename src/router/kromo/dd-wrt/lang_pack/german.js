@@ -1717,7 +1717,7 @@ status_router.net_maxports="IP-Filter: maximale Ports";
 status_router.net_conntrack="Aktive IP-Verbindungen";
 status_router.notavail="Nicht verfügbar";
 status_router.legend6="Verwendung";
-status_router.inpvolt="Spannung am Boardeingang";
+status_router.inpvolt="Spannung am Platineneingang";
 status_router.cputemp="CPU Temperatur";
 
 //help container
