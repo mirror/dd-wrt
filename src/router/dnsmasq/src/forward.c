@@ -253,6 +253,7 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
   void *hash = &crc;
 #endif
  unsigned int gotname = extract_request(header, plen, daemon->namebuff, NULL);
+ unsigned char *pheader;
 
  (void)do_bit;
 
@@ -261,19 +262,32 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
     forward = NULL;
   else if (forward || (hash && (forward = lookup_frec_by_sender(ntohs(header->id), udpaddr, hash))))
     {
+      /* If we didn't get an answer advertising a maximal packet in EDNS,
+	 fall back to 1280, which should work everywhere on IPv6.
+	 If that generates an answer, it will become the new default
+	 for this server */
+      forward->flags |= FREC_TEST_PKTSZ;
+      
 #ifdef HAVE_DNSSEC
       /* If we've already got an answer to this query, but we're awaiting keys for validation,
 	 there's no point retrying the query, retry the key query instead...... */
       if (forward->blocking_query)
 	{
 	  int fd;
-
+	  
+	  forward->flags &= ~FREC_TEST_PKTSZ;
+	  
 	  while (forward->blocking_query)
 	    forward = forward->blocking_query;
+	   
+	  forward->flags |= FREC_TEST_PKTSZ;
 	  
 	  blockdata_retrieve(forward->stash, forward->stash_len, (void *)header);
 	  plen = forward->stash_len;
 	  
+	  if (find_pseudoheader(header, plen, NULL, &pheader, NULL))
+	    PUTSHORT((forward->flags & FREC_TEST_PKTSZ) ? SAFE_PKTSZ : forward->sentto->edns_pktsz, pheader);
+
 	  if (forward->sentto->addr.sa.sa_family == AF_INET) 
 	    log_query(F_NOEXTRA | F_DNSSEC | F_IPV4, "retry", (struct all_addr *)&forward->sentto->addr.in.sin_addr, "dnssec");
 #ifdef HAVE_IPV6
@@ -417,7 +431,7 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 	  plen = new_plen;
 	}
 #endif
-
+      
       while (1)
 	{ 
 	  /* only send to servers dealing with our domain.
@@ -464,6 +478,9 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 		    }
 #endif
 		}
+
+	      if (find_pseudoheader(header, plen, NULL, &pheader, NULL))
+		PUTSHORT((forward->flags & FREC_TEST_PKTSZ) ? SAFE_PKTSZ : start->edns_pktsz, pheader);
 	      
 	      if (retry_send(sendto(fd, (char *)header, plen, 0,
 				    &start->addr.sa,
@@ -760,7 +777,6 @@ void reply_query(int fd, int family, time_t now)
     }   
    
   server = forward->sentto;
-  
   if ((forward->sentto->flags & SERV_TYPE) == 0)
     {
       if (RCODE(header) == REFUSED)
@@ -781,7 +797,14 @@ void reply_query(int fd, int family, time_t now)
       if (!option_bool(OPT_ALL_SERVERS))
 	daemon->last_server = server;
     }
-
+ 
+  /* We tried resending to this server with a smaller maximum size and got an answer.
+     Make that permanent. To avoid reduxing the packet size for an single dropped packet,
+     only do this when we get a truncated answer, or one larger than the safe size. */
+  if (server && (forward->flags & FREC_TEST_PKTSZ) && 
+      ((header->hb3 & HB3_TC) || n >= SAFE_PKTSZ))
+    server->edns_pktsz = SAFE_PKTSZ;
+  
   /* If the answer is an error, keep the forward record in place in case
      we get a good reply from another server. Kill it when we've
      had replies from all to avoid filling the forwarding table when
@@ -890,7 +913,7 @@ void reply_query(int fd, int family, time_t now)
 		    {
 		      new->flags |= FREC_DNSKEY_QUERY; 
 		      nn = dnssec_generate_query(header, ((char *) header) + daemon->packet_buff_sz,
-						 daemon->keyname, forward->class, T_DNSKEY, &server->addr);
+						 daemon->keyname, forward->class, T_DNSKEY, &server->addr, server->edns_pktsz);
 		    }
 		  else 
 		    {
@@ -899,7 +922,7 @@ void reply_query(int fd, int family, time_t now)
 		      else
 			new->flags |= FREC_DS_QUERY;
 		      nn = dnssec_generate_query(header,((char *) header) + daemon->packet_buff_sz,
-						 daemon->keyname, forward->class, T_DS, &server->addr);
+						 daemon->keyname, forward->class, T_DS, &server->addr, server->edns_pktsz);
 		    }
 		  if ((hash = hash_questions(header, nn, daemon->namebuff)))
 		    memcpy(new->hash, hash, HASH_SIZE);
@@ -1526,7 +1549,7 @@ static int  tcp_check_for_unsigned_zone(time_t now, struct dns_header *header, s
       
       /* Can't find it in the cache, have to send a query */
 
-      m = dnssec_generate_query(header, ((char *) header) + 65536, name_start, class, T_DS, &server->addr);
+      m = dnssec_generate_query(header, ((char *) header) + 65536, name_start, class, T_DS, &server->addr, server->edns_pktsz);
       
       *length = htons(m);
       
@@ -1638,7 +1661,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 
     another_tcp_key:
       m = dnssec_generate_query(new_header, ((char *) new_header) + 65536, keyname, class, 
-				new_status == STAT_NEED_KEY ? T_DNSKEY : T_DS, &server->addr);
+				new_status == STAT_NEED_KEY ? T_DNSKEY : T_DS, &server->addr, server->edns_pktsz);
       
       *length = htons(m);
       
