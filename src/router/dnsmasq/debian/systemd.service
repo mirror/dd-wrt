@@ -1,5 +1,6 @@
 [Unit]
 Description=dnsmasq - A lightweight DHCP and caching DNS server
+Requires=network.target
 
 [Service]
 Type=forking
