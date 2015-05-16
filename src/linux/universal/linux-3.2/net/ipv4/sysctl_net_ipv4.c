@@ -24,6 +24,7 @@
 #include <net/inet_frag.h>
 #include <net/ping.h>
 
+static int zero = 0;
 static int one = 1;
 static int two = 2;
 static int tcp_retr1_max = 255;
