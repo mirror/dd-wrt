@@ -94,8 +94,8 @@ int extract_name(struct dns_header *header, size_t plen, unsigned char **pp,
 	    count = 256;
 	  digs = ((count-1)>>2)+1;
 	  
-	  /* output is \[x<hex>/siz]. which is digs+6/7/8 chars */
-	  namelen += digs+6;
+	  /* output is \[x<hex>/siz]. which is digs+7/8/9 chars */
+	  namelen += digs+7;
 	  if (count > 9)
 	    namelen++;
 	  if (count > 99)
@@ -125,8 +125,8 @@ int extract_name(struct dns_header *header, size_t plen, unsigned char **pp,
 	}
       else 
 	{ /* label_type = 0 -> label. */
-	  namelen += l;
-	  if (namelen+1 >= MAXDNAME)
+	  namelen += l + 1; /* include period */
+	  if (namelen >= MAXDNAME)
 	    return 0;
 	  if (!CHECK_LEN(header, p, plen, l))
 	    return 0;
@@ -552,7 +552,7 @@ static size_t add_pseudoheader(struct dns_header *header, size_t plen, unsigned 
 	return plen;
       *p++ = 0; /* empty name */
       PUTSHORT(T_OPT, p);
-      PUTSHORT(daemon->edns_pktsz, p); /* max packet length */
+      PUTSHORT(SAFE_PKTSZ, p); /* max packet length, this will be overwritten */
       PUTSHORT(0, p);    /* extended RCODE and version */
       PUTSHORT(set_do ? 0x8000 : 0, p); /* DO flag */
       lenp = p;
@@ -1117,10 +1117,23 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 		      memcpy(&addr, p1, addrlen);
 		      
 		      /* check for returned address in private space */
-		      if (check_rebind &&
-			  (flags & F_IPV4) &&
-			  private_net(addr.addr.addr4, !option_bool(OPT_LOCAL_REBIND)))
-			return 1;
+		      if (check_rebind)
+			{
+			  if ((flags & F_IPV4) &&
+			      private_net(addr.addr.addr4, !option_bool(OPT_LOCAL_REBIND)))
+			    return 1;
+			  
+#ifdef HAVE_IPV6
+			  if ((flags & F_IPV6) &&
+			      IN6_IS_ADDR_V4MAPPED(&addr.addr.addr6))
+			    {
+			      struct in_addr v4;
+			      v4.s_addr = ((const uint32_t *) (&addr.addr.addr6))[3];
+			      if (private_net(v4, !option_bool(OPT_LOCAL_REBIND)))
+				return 1;
+			    }
+#endif
+			}
 		      
 #ifdef HAVE_IPSET
 		      if (ipsets && (flags & (F_IPV4 | F_IPV6)))
@@ -1537,7 +1550,6 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
   unsigned short flag;
   int q, ans, anscount = 0, addncount = 0;
   int dryrun = 0, sec_reqd = 0, have_pseudoheader = 0;
-  int is_sign;
   struct crec *crecp;
   int nxdomain = 0, auth = 1, trunc = 0, sec_data = 1;
   struct mx_srv_record *rec;
@@ -1557,28 +1569,19 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
      forward rather than answering from the cache, which doesn't include
      security information, unless we're in DNSSEC validation mode. */
 
-  if (find_pseudoheader(header, qlen, NULL, &pheader, &is_sign))
+  if (find_pseudoheader(header, qlen, NULL, &pheader, NULL))
     { 
-      unsigned short udpsz, flags;
-      unsigned char *psave = pheader;
-
+      unsigned short flags;
+      
       have_pseudoheader = 1;
 
-      GETSHORT(udpsz, pheader);
-      pheader += 2; /* ext_rcode */
+      pheader += 4; /* udp size, ext_rcode */
       GETSHORT(flags, pheader);
       
       if ((sec_reqd = flags & 0x8000))
 	*do_bit = 1;/* do bit */ 
+
       *ad_reqd = 1;
-
-      /* If our client is advertising a larger UDP packet size
-	 than we allow, trim it so that we don't get an overlarge
-	 response from upstream */
-
-      if (!is_sign && (udpsz > daemon->edns_pktsz))
-	PUTSHORT(daemon->edns_pktsz, psave); 
-
       dryrun = 1;
     }
 
@@ -1607,6 +1610,11 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
             
       GETSHORT(qtype, p); 
       GETSHORT(qclass, p);
+
+      /* Don't filter RRSIGS from answers to ANY queries, even if do-bit
+	 not set. */
+      if (qtype == T_ANY)
+	*do_bit = 1;
 
       ans = 0; /* have we answered this question */
       

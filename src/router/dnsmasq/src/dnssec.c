@@ -2169,10 +2169,12 @@ int dnskey_keytag(int alg, int flags, unsigned char *key, int keylen)
     }
 }
 
-size_t dnssec_generate_query(struct dns_header *header, char *end, char *name, int class, int type, union mysockaddr *addr)
+size_t dnssec_generate_query(struct dns_header *header, char *end, char *name, int class, 
+			     int type, union mysockaddr *addr, int edns_pktsz)
 {
   unsigned char *p;
   char *types = querystr("dnssec-query", type);
+  size_t ret;
 
   if (addr->sa.sa_family == AF_INET) 
     log_query(F_NOEXTRA | F_DNSSEC | F_IPV4, name, (struct all_addr *)&addr->in.sin_addr, types);
@@ -2201,7 +2203,12 @@ size_t dnssec_generate_query(struct dns_header *header, char *end, char *name, i
   PUTSHORT(type, p);
   PUTSHORT(class, p);
 
-  return add_do_bit(header, p - (unsigned char *)header, end);
+  ret = add_do_bit(header, p - (unsigned char *)header, end);
+
+  if (find_pseudoheader(header, ret, NULL, &p, NULL))
+    PUTSHORT(edns_pktsz, p);
+
+  return ret;
 }
 
 /* Go through a domain name, find "pointers" and fix them up based on how many bytes

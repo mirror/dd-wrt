@@ -5,6 +5,7 @@ dnsmasq (2.73-1) unstable; urgency=low
      addresses. (closes: #771557)
    * Add newline at the end of example config file. (LP: #1416895)
    * Make Debian package build reproducible. (closes: #777323)
+   * Add Requires=network.target to systemd unit.
 
  -- Simon Kelley <simon@thekelleys.org.uk>  Wed, 11 Feb 2015 21:59:42 +0000
 
