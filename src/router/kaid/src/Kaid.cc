@@ -10,6 +10,7 @@
 #else
 #include <unistd.h>
 #endif
+#include <unistd.h>
 
 #include "Kaid.h"
 #include "KaiDaemon.h"
