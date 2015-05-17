@@ -7,7 +7,7 @@ VERSION		= 7.0.0.7
 PLATFORM    	= linux
 IPKG		= /home/luis/devel/Kai/ipkg
 PRE_CFLAGS     += -D_REENTRANT -DPLATFORM_$(PLATFORM) -DVERSION=\"$(VERSION)\" $(STATIC)
-CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -Wall -Ipthreadcc/src -Isocketcc/src -I../../libpcap_noring $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" $(COPTS) -DNEED_PRINTF
+CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -Wall -Ipthreadcc/src -Isocketcc/src -I../../libpcap $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" $(COPTS) -DNEED_PRINTF
 
 #PRE_CFLAGS	+= -nostdinc
 PRE_CFLAGS	+= -DOPENWRT
@@ -21,29 +21,29 @@ DISTHOST	= root@adm.zbit.pt:/var/www/html/www.zbit.pt/xbox/
 CXXFLAGS	+= $(CFLAGS)
 PWD			= /home/luis/devel/Kai/kaid
 
-PCAP		= ../../libpcap_noring/pcap.o \
-../../libpcap_noring/inet.o \
-../../libpcap_noring/gencode.o \
-../../libpcap_noring/savefile.o \
-../../libpcap_noring/bpf_filter.o \
-../../libpcap_noring/optimize.o \
-../../libpcap_noring/nametoaddr.o \
-../../libpcap_noring/etherent.o \
-../../libpcap_noring/grammar.o \
-../../libpcap_noring/pcap-usb-linux.o \
-../../libpcap_noring/sf-pcap.o \
-../../libpcap_noring/sf-pcap-ng.o \
-../../libpcap_noring/pcap-common.o \
-../../libpcap_noring/scanner.o
+PCAP		= ../../libpcap/pcap.o \
+../../libpcap/inet.o \
+../../libpcap/gencode.o \
+../../libpcap/savefile.o \
+../../libpcap/bpf_filter.o \
+../../libpcap/optimize.o \
+../../libpcap/nametoaddr.o \
+../../libpcap/etherent.o \
+../../libpcap/grammar.o \
+../../libpcap/pcap-usb-linux.o \
+../../libpcap/sf-pcap.o \
+../../libpcap/sf-pcap-ng.o \
+../../libpcap/pcap-common.o \
+../../libpcap/scanner.o
 
 ifdef BSD
-PCAP	+= ../../libpcap_noring/pcap-bpf.o
+PCAP	+= ../../libpcap/pcap-bpf.o
 else
-PCAP	+= ../../libpcap_noring/pcap-linux.o
+PCAP	+= ../../libpcap/pcap-linux.o
 endif
 
-#PCAP		+= ../../libpcap_noring/fad-gifc.o
-PCAP		+= ../../libpcap_noring/fad-getad.o
+#PCAP		+= ../../libpcap/fad-gifc.o
+PCAP		+= ../../libpcap/fad-getad.o
 PRE_CFLAGS	+= -DOPENWRT
 
 # Uneeded obj, cutting down size for OPENWRT static bin
