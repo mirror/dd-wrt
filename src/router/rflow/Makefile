@@ -8,11 +8,11 @@ datadir= ${prefix}/share
 #CC=mipsel-linux-uclibc-gcc -pipe
 #CC= gcc -pipe
 LDFLAGS+=-s -ffunction-sections -fdata-sections -Wl,--gc-sections
-LIBS+= -lpthread -L$(TOP)/libpcap_noring -lpcap
-CFLAGS+= $(COPTS) -I$(LINUXDIR)  -DHAVE_CONFIG_H -W -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections 
+LIBS+= -lpthread -L$(TOP)/libpcap -lpcap
+CFLAGS+= $(COPTS) -I$(LINUXDIR)  -DHAVE_CONFIG_H -W -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
 CPPFLAGS+=-DIPCAD_VERSION=\"3.6.2\"
 CPPFLAGS+=-DCONFIG_FILE=\"${sysconfdir}/ipcad.conf\"
-CPPFLAGS+=-DHAVE_CONFIG_H -D_REENTRANT -D_THREAD_SAFE -I$(TOP)/libpcap_noring
+CPPFLAGS+=-DHAVE_CONFIG_H -D_REENTRANT -D_THREAD_SAFE -I$(TOP)/libpcap
 CPPFLAGS+=-DIFST_linux -DPSRC_pcap 
 #-DIPCAD_IFLIST_USE_GETIFADDRS
 
@@ -41,7 +41,7 @@ IPCAD_OBJS+= psrc.o psrc-pcap.o	# Initialize capturers
 #IPCAD_OBJS+= psrc-dynamic.o		# Initialize capturers
 #IPCAD_OBJS+= wrap_oclose.o		# Special file descriptors cache
 IPCAD_OBJS+= genhash.o			# General hashing
-IPCAD_OBJS+= sigintr.o
+#IPCAD_OBJS+= sigintr.o
 
 all: ${TARGETS}
 
