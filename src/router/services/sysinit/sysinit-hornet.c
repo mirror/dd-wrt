@@ -170,8 +170,13 @@ void start_sysinit(void)
 #elif HAVE_CARAMBOLA
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+#ifdef HAVE_ERC
+	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 2");
+	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 1");
+#else
 	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 1");
 	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 2");
+#endif
 	eval("swconfig", "dev", "switch0", "set", "apply");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth1", "1");
