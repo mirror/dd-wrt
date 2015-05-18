@@ -12,6 +12,8 @@
 #ifndef _ASM_R4KCACHE_H
 #define _ASM_R4KCACHE_H
 
+#include <linux/stringify.h>
+
 #include <asm/asm.h>
 #include <asm/cacheops.h>
 #include <asm/compiler.h>
@@ -422,7 +424,7 @@ static inline void blast_dcache_page_indexed(unsigned long page)
 	"	cache %1, 0x0a0(%0); cache %1, 0x0b0(%0)\n"	\
 	"	cache %1, 0x0c0(%0); cache %1, 0x0d0(%0)\n"	\
 	"	cache %1, 0x0e0(%0); cache %1, 0x0f0(%0)\n"	\
-	"	addiu $1, $0, 0x100			\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, %0, 0x100	\n"	\
 	"	cache %1, 0x000($1); cache %1, 0x010($1)\n"	\
 	"	cache %1, 0x020($1); cache %1, 0x030($1)\n"	\
 	"	cache %1, 0x040($1); cache %1, 0x050($1)\n"	\
@@ -446,17 +448,17 @@ static inline void blast_dcache_page_indexed(unsigned long page)
 	"	cache %1, 0x040(%0); cache %1, 0x060(%0)\n"	\
 	"	cache %1, 0x080(%0); cache %1, 0x0a0(%0)\n"	\
 	"	cache %1, 0x0c0(%0); cache %1, 0x0e0(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, %0, 0x100 \n"	\
 	"	cache %1, 0x000($1); cache %1, 0x020($1)\n"	\
 	"	cache %1, 0x040($1); cache %1, 0x060($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0a0($1)\n"	\
 	"	cache %1, 0x0c0($1); cache %1, 0x0e0($1)\n"	\
-	"	addiu $1, $1, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
 	"	cache %1, 0x000($1); cache %1, 0x020($1)\n"	\
 	"	cache %1, 0x040($1); cache %1, 0x060($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0a0($1)\n"	\
 	"	cache %1, 0x0c0($1); cache %1, 0x0e0($1)\n"	\
-	"	addiu $1, $1, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100\n"	\
 	"	cache %1, 0x000($1); cache %1, 0x020($1)\n"	\
 	"	cache %1, 0x040($1); cache %1, 0x060($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0a0($1)\n"	\
@@ -474,25 +476,25 @@ static inline void blast_dcache_page_indexed(unsigned long page)
 	"	.set noat\n"					\
 	"	cache %1, 0x000(%0); cache %1, 0x040(%0)\n"	\
 	"	cache %1, 0x080(%0); cache %1, 0x0c0(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, %0, 0x100 \n"	\
 	"	cache %1, 0x000($1); cache %1, 0x040($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0c0($1)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
 	"	cache %1, 0x000($1); cache %1, 0x040($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0c0($1)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
 	"	cache %1, 0x000($1); cache %1, 0x040($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0c0($1)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
 	"	cache %1, 0x000($1); cache %1, 0x040($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0c0($1)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
 	"	cache %1, 0x000($1); cache %1, 0x040($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0c0($1)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
 	"	cache %1, 0x000($1); cache %1, 0x040($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0c0($1)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
 	"	cache %1, 0x000($1); cache %1, 0x040($1)\n"	\
 	"	cache %1, 0x080($1); cache %1, 0x0c0($1)\n"	\
 	"	.set pop\n"					\
@@ -507,39 +509,38 @@ static inline void blast_dcache_page_indexed(unsigned long page)
 	"	.set mips64r6\n"				\
 	"	.set noat\n"					\
 	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
-	"	cache %1, 0x000(%0); cache %1, 0x080(%0)\n"	\
-	"	addiu $1, %0, 0x100\n"				\
+	"	"__stringify(LONG_ADDIU)" $1, %0, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
+	"	"__stringify(LONG_ADDIU)" $1, $1, 0x100 \n"	\
+	"	cache %1, 0x000($1); cache %1, 0x080($1)\n"	\
 	"	.set pop\n"					\
 		:						\
 		: "r" (base),					\
