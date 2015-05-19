@@ -518,7 +518,7 @@ static void usb_unmount(char *devpath)
 			if (strncmp(entry->d_name, ".", 1)) {	//skip . and ..
 				/* use the symlinks we created under /tmp to umount the devices partitions */
 				sprintf(sym_link, "%s/%s", dev_dir, entry->d_name);
-				sysprintf("umount %s", sym_link);
+				eval("umount", sym_link);
 			}
 		}
 	}
