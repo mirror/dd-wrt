@@ -30,7 +30,7 @@
 
 void start_gps(void)
 {
-	sysprintf("/etc/config/gpsi.startup");
+	eval("/etc/config/gpsi.startup");
 	return;
 }
 

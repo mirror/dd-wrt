@@ -1087,14 +1087,14 @@ void start_lan(void)
 	system("swconfig dev eth0 set enable_vlan 1");
 	if (nvram_match("wan_proto", "disabled")
 	    && nvram_match("fullswitch", "1")) {
-		eval("swconfig","dev","eth0","vlan","1","set","ports","0t 1 2 3 4 5");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4 5");
 	} else {
 #ifdef HAVE_WZRG300NH2
-		eval("swconfig","dev","eth0","vlan","1","set","ports","0t 1 3 4 5");
-		eval("swconfig","dev","eth0","vlan","1","set","ports","0t 2");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 3 4 5");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 #else
-		eval("swconfig","dev","eth0","vlan","1","set","ports","0t 2 3 4 5");
-		eval("swconfig","dev","eth0","vlan","1","set","ports","0t 1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1");
 #endif
 	}
 	system("swconfig dev eth0 set apply");
@@ -3220,8 +3220,8 @@ void start_wan(int status)
 				fscanf(fp, "%d", &clientid);
 				fclose(fp);
 				char wdsid[32];
-				sprintf(wdsid,"wds,%d",clientid);
-				eval("uqmi","-d","/dev/cdc-wdm0","--set-client-id",wdsid,"--release-client-id","wds");
+				sprintf(wdsid, "wds,%d", clientid);
+				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-client-id", wdsid, "--release-client-id", "wds");
 			}
 			clientid = 0;
 			if (nvram_match("wan_conmode", "6"))
@@ -3240,7 +3240,7 @@ void start_wan(int status)
 				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "all");
 
 			//set pin
-			eval("uqmi","-d","/dev/cdc-wdm0","--verify-pin1",nvram_safe_get("wan_pin"));
+			eval("uqmi", "-d", "/dev/cdc-wdm0", "--verify-pin1", nvram_safe_get("wan_pin"));
 			//set apn and dial
 			fp = popen("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds", "r");
 			fscanf(fp, "%d", &clientid);
@@ -4179,8 +4179,8 @@ static void start_ipv6_tunnel(char *wan_ifname)
 		mtu = atoi(nvram_safe_get("ipv6_mtu"));
 	eval("ip", "tunnel", "add", "ip6tun", "mode", "sit", "ttl", "64", "local", get_wan_ipaddr(), "remote", remote_endpoint);
 	char s_mtu[32];
-	sprintf(s_mtu,"%d",mtu);
-	eval("ip","link","set","ip6tun","mtu", s_mtu);
+	sprintf(s_mtu, "%d", mtu);
+	eval("ip", "link", "set", "ip6tun", "mtu", s_mtu);
 	eval("ip", "link", "set", "ip6tun", "up");
 	char clientip[64];
 	char prefix[64];

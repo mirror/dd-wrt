@@ -907,6 +907,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
+		char scanlist[32];
+		sprintf(scanlist, "%s_scanlist", prefix);
+		char *sl = nvram_default_get(scanlist, "default");
+		if (strcmp(sl, "default")) {
+			fprintf(fp, "\tscan_freq=%s\n", sl);
+		}
 #ifdef HAVE_UNIWIP
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
