@@ -194,7 +194,7 @@ int get_gpio(int gpio)
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
 		in = fopen(buf, "wb");
 		if (in == NULL)
-			return;
+			return -1;
 		fprintf(in, "0");
 		fclose(in);
 		sprintf(buf, "/proc/gpio/%d_in", gpio);
