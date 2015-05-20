@@ -78,7 +78,7 @@ struct samba3_user *getsamba3users(void)
 			// reset
 			username[0] = 0;
 			password[0] = 0;
-
+			type = -1;
 			while (iterator) {
 				key = json_object_iter_key(iterator);
 				value = json_object_iter_value(iterator);
@@ -92,7 +92,7 @@ struct samba3_user *getsamba3users(void)
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
-			if (username[0] != 0) {
+			if (username[0] != 0 && type != -1) {
 				current->next = getsamba3user(username, password, type);
 				current = current->next;
 			}
