@@ -48,12 +48,16 @@ static int __init cambria_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 		return IRQ_CAMBRIA_PCI_INTC;
 	else if (slot == 4)
 		return IRQ_CAMBRIA_PCI_INTD;
+	else if (slot == 6)
+		return IRQ_CAMBRIA_PCI_INTB;
+	else if (slot == 15)
+		return IRQ_CAMBRIA_PCI_INTD;
 	else return -1;
 }
 
 struct hw_pci cambria_pci __initdata = {
 	.nr_controllers = 1,
-	.ops = &ixp4xx_ops,
+	.ops 		= &ixp4xx_ops,
 	.preinit	= cambria_pci_preinit,
 	.setup		= ixp4xx_setup,
 	.map_irq	= cambria_map_irq,
