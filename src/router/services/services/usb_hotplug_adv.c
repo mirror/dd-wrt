@@ -34,7 +34,7 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode);
 #define PARTFILE	"/tmp/part.dump"
 #define MOUNTSTAT	"/tmp/mounting"
 
-static bool run_on_mount()
+static void run_on_mount(void)
 {
 	struct stat tmp_stat;
 	char path[128];
@@ -48,6 +48,7 @@ static bool run_on_mount()
 			system(path);
 		}
 	}
+	return;
 }
 
 /* TODO improvement: use procfs to identify pids that have openfiles on externel discs and then stop them before umount*/
