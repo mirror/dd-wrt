@@ -62,7 +62,7 @@ void start_process_monitor(void)
 	pid_t pid;
 
 	char *argv[] = { "process_monitor", NULL };
-	int ret = _evalpid(argv, NULL, 0, &pid);
+	_evalpid(argv, NULL, 0, &pid);
 
 	dd_syslog(LOG_INFO, "process_monitor successfully started\n");
 
