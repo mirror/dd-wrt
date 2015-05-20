@@ -56,6 +56,7 @@
 #include <sys/wait.h>
 #include <ctype.h>
 #include <bcmnvram.h>
+#include <shutils.h>
 
 #include "linux/nl80211.h"
 
