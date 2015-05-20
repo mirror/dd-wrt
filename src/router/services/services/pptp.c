@@ -34,7 +34,7 @@ static int jffs = 0;
 
 void start_pptpd(void)
 {
-	int ret = 0, mss = 0;
+	int mss = 0;
 	char *lpTemp;
 	FILE *fp;
 
@@ -253,7 +253,7 @@ void start_pptpd(void)
 
 	start_pppmodules();
 	// Execute pptpd daemon
-	ret = eval("pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o", "/tmp/pptpd/options.pptpd");
+	eval("pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o", "/tmp/pptpd/options.pptpd");
 
 	dd_syslog(LOG_INFO, "pptpd : pptp daemon successfully started\n");
 	return;

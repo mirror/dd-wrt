@@ -59,7 +59,6 @@ static int generate_dropbear_dss_host_key(void);
 
 void start_sshd(void)
 {
-	int ret = 0;
 
 	// pid_t pid;
 	// char buf[255] = { 0 };
@@ -101,12 +100,11 @@ void start_sshd(void)
 	char *forwarding_ok = nvram_match("sshd_forwarding", "1") ? "-a" : "";
 
 #ifdef HAVE_MAKSAT
-	ret = eval("dropbear", "-r", RSA_HOST_KEY_FILE, "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok);
+	eval("dropbear", "-r", RSA_HOST_KEY_FILE, "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok);
 #else
-	ret = eval("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE, "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok, forwarding_ok);
+	eval("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE, "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok, forwarding_ok);
 #endif
 	dd_syslog(LOG_INFO, "dropbear : ssh daemon successfully started\n");
-	// ret = _eval (sshd_argv, NULL, 0, &pid);
 
 	return;
 }

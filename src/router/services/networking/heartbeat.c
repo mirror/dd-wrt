@@ -49,7 +49,6 @@
 static void start_heartbeat(int status)
 {
 	FILE *fp;
-	int ret;
 	char authserver[20];
 	char authdomain[80];
 	char buf[254];
@@ -113,10 +112,10 @@ static void start_heartbeat(int status)
 
 	mkdir("/tmp/ppp", 0777);
 	if ((fp = fopen("/tmp/hb_connect_success", "r"))) {
-		ret = eval("bpalogin", "-c", "/tmp/bpalogin.conf", "-t");
+		eval("bpalogin", "-c", "/tmp/bpalogin.conf", "-t");
 		fclose(fp);
 	} else
-		ret = eval("bpalogin", "-c", "/tmp/bpalogin.conf");
+		eval("bpalogin", "-c", "/tmp/bpalogin.conf");
 
 	if (nvram_invmatch("ppp_demand", "1")) {
 		if (status != REDIAL)
@@ -128,8 +127,6 @@ static void start_heartbeat(int status)
 
 void stop_heartbeat(void)
 {
-	int ret;
-
 	stop_process("bpalogin", "bpalogin");
 	unlink("/tmp/ppp/link");
 

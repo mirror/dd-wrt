@@ -30,7 +30,6 @@
 
 void start_telnetd(void)
 {
-	int ret = 0;
 	pid_t pid;
 
 	char *telnetd_argv[] = { "telnetd", NULL };
@@ -45,11 +44,10 @@ void start_telnetd(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		ret = _evalpid(telnetd_argv, NULL, 0, &pid);
+		_evalpid(telnetd_argv, NULL, 0, &pid);
 #ifdef HAVE_REGISTER
 	else
 		return;
-	// ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
 #endif
 	dd_syslog(LOG_INFO, "telnetd : telnet daemon successfully started\n");
 
