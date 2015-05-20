@@ -62,7 +62,6 @@ void stop_wland(void)
 
 void start_wland(void)
 {
-	int ret;
 	pid_t pid;
 	char *wland_argv[] = { "wland",
 		NULL
@@ -73,7 +72,7 @@ void start_wland(void)
 	// if( nvram_match("apwatchdog_enable", "0") )
 	// return 0;
 
-	ret = _evalpid(wland_argv, NULL, 0, &pid);
+	_evalpid(wland_argv, NULL, 0, &pid);
 	dd_syslog(LOG_INFO, "wland : WLAN daemon successfully started\n");
 	cprintf("done\n");
 	return;

@@ -80,11 +80,11 @@ int ledtracking_main(int argc, char **argv)
 			snr = 0;
 
 		if (snr >= snr_max - snr_min) {
-			fprintf(stderr, "snr >= snr_max - snr_min\n", gpio, toggle);
+			fprintf(stderr, "snr >= snr_max - snr_min\n");
 			toggle = polarity;
 			delay = 100;
 		} else {
-			fprintf(stderr, "else\n", gpio, toggle);
+			fprintf(stderr, "else\n");
 			toggle = !toggle;
 			delay = 1000 - snr * (1000 - 125) / (snr_max - snr_min);
 		}
