@@ -102,11 +102,18 @@ enum EnumRd {
 	APL11_FCCA = 0xaA,	/* India */
 	APL9_FCCA = 0xae,	/* Korea 5GHz */
 
+#ifdef HAVE_RAIEXTRA
 	RAI_WORLD = 0xa0,
 	RAIIT_WORLD = 0xa1,
 	IT_WORLD = 0xa2,
 	RAI = 0x01a0,
 	RAIIT = 0x01a1,
+#endif
+#ifdef HAVE_TESTEM
+	TESTEM_CLIENT_WORLD = 0xa0,
+	TESTEM_AP_WORLD = 0xa1,
+
+#endif
 	IT = 0x01a2,
 
 	/*
@@ -287,8 +294,14 @@ enum CountryCode {
 	CTRY_IRELAND = 372,	/* Ireland */
 	CTRY_ISRAEL = 376,	/* Israel */
 	CTRY_ITALY = 380,	/* Italy */
+#ifdef HAVE_RAIEXTRA
 	CTRY_ITALYRAI = 381,	/* Italy */
 	CTRY_RAI = 382,		/* Italy */
+#endif
+#ifdef HAVE_TESTEM
+	CTRY_TESTEM_CLIENT = 381,	/* Testem */
+	CTRY_TESTEM_AP = 382,	/* Testem */
+#endif
 	CTRY_JAMAICA = 388,	/* Jamaica */
 	CTRY_JAPAN = 392,	/* Japan */
 	CTRY_JORDAN = 400,	/* Jordan */
@@ -542,6 +555,11 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 #else
 	{CTRY_ITALY, ETSI1_WORLD, "IT", "ITALY", YES, NO, YES, 7000},
 #endif
+#ifdef HAVE_TESTEM
+	{CTRY_TESTEM_AP, TESTEM_AP_WORLD, "IY", "TESTEM_AP", YES, NO, YES, 7000},
+	{CTRY_TESTEM_CLIENT, TESTEM_CLIENT_WORLD, "IZ", "TESTEM_CLIENT", YES, NO, YES, 7000},
+#endif
+	{CTRY_JAPAN, MKK1_MKKA, "JP", "JAPAN", YES, NO, NO, 7000},
 	{CTRY_JAPAN, MKK1_MKKA, "JP", "JAPAN", YES, NO, NO, 7000},
 	{CTRY_JORDAN, APL4_WORLD, "JO", "JORDAN", YES, NO, YES, 7000},
 	{CTRY_KAZAKHSTAN, NULL1_WORLD, "KZ", "KAZAKHSTAN", YES, NO, YES, 7000},
