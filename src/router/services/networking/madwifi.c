@@ -1819,7 +1819,7 @@ static void configure_single(int count)
 			} else {
 				char s_ch[32];
 				sprintf(s_ch, "%sM", ch);
-				eval("iwconfig", var, "freq", ch);
+				eval("iwconfig", var, "freq", s_ch);
 			}
 		}
 #ifdef HAVE_MAKSAT
@@ -2048,7 +2048,7 @@ static void configure_single(int count)
 		} else {
 			char s_ch[32];
 			sprintf(s_ch, "%sM", ch);
-			eval("iwconfig", dev, "freq", ch);
+			eval("iwconfig", dev, "freq", s_ch);
 		}
 	}
 	// set inact inact tick (order is important!)
@@ -2130,7 +2130,7 @@ static void configure_single(int count)
 					sprintf(mask, "%s_netmask", var);
 					eval("ifconfig", var, "mtu", getMTU(var));
 					eval("ifconfig", var, "txqueuelen", getTXQ(var));
-					eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask", nvram_nget("%s_netmask", var), "up");
+					eval("ifconfig", var, nvram_safe_get(ip), "netmask", nvram_safe_get(mask), "up");
 				}
 			}
 		}
