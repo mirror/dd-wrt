@@ -230,7 +230,7 @@ int ipdown_main(int argc, char **argv)
 		eval("route", "del", "default");
 		nvram_set("wan_gateway", nvram_safe_get("wan_gateway_buf"));
 		eval("route", "add", "default", "gw", nvram_safe_get("wan_gateway"));
-		eval("iptables","-t","nat","-A","POSTROUTING","-o",nvram_safe_get("pptp_ifname"),"-j","MASQUERADE");
+		eval("iptables", "-t", "nat", "-A", "POSTROUTING", "-o", nvram_safe_get("pptp_ifname"), "-j", "MASQUERADE");
 	}
 #ifdef HAVE_3G
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
