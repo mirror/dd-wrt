@@ -37,6 +37,7 @@ POSSIBILITY OF SUCH DAMAGE.
 	viewBox='0 0 600 300'
 	preserveAspectRatio='none'
 	onload='init(evt)'
+	encoding='UTF-8'
 >
 <g id='graph'>
 	<rect id='bg' x1='0' y1='0' width='600' height='300' fill='white' />
