@@ -1091,10 +1091,10 @@ void start_lan(void)
 	} else {
 #ifdef HAVE_WZRG300NH2
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 3 4 5");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 2");
 #else
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
-		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
 #endif
 	}
 	system("swconfig dev eth0 set apply");
