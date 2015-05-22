@@ -6487,7 +6487,7 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		filters *services = get_filters_list();
 		int count = 0;
 		websWrite(wp, "	<td nowrap>\n");
-		websWrite(wp, "<select name=\"svqos_devservice%d\"> size=\"1\"\n", i);
+		websWrite(wp, "<select name=\"svqos_devservice%d\" style=\"overflow:hidden; max-width:100px;\"> size=\"1\"\n", i);
 		websWrite(wp, "<option value=\"none\" %s >None</option>\n", !strcmp(proto, "none") ? "selected=\"selected\"" : "");
 		while (services[count].name != NULL) {
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", services[count].name, !strcmp(proto, services[count].name) ? "selected=\"selected\"" : "", services[count].name);
