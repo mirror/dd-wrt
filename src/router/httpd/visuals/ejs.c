@@ -1347,7 +1347,9 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	websWrite(wp, "</iframe>\n");
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<br />\n");
-} void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
+} 
+
+void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 {
 	char name[32];
 	char *next, *bnext;
@@ -1474,7 +1476,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 
 #else
 	for (c = 0; c < cnt; c++) {
-		sprintf(name, "%s (wl%d)", live_translate("share.wireless"), getNetworkLabel(get_wl_instance_name(c)));
+		sprintf(name, "%s (wl%d)", live_translate("share.wireless"), c);
 		show_bwif(wp, get_wl_instance_name(c), name);
 	}
 #endif
