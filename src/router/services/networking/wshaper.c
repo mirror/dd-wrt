@@ -254,7 +254,6 @@ void aqos_tables(void)
 	FILE *outmacs = fopen("/tmp/aqos_macs", "wb");
 
 	char *qos_ipaddr = nvram_safe_get("svqos_ips");
-	char *qos_devs = nvram_safe_get("svqos_devs");
 	char *qos_mac = nvram_safe_get("svqos_macs");
 	char *qos_svcs = NULL;
 
@@ -368,7 +367,7 @@ void aqos_tables(void)
 
 	} while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
 
-	char *qos_devs = nvram_safe_get("svqos_devs");
+	qos_devs = nvram_safe_get("svqos_devs");
 
 	do {
 		memset(proto, 0, sizeof(proto));
@@ -432,7 +431,7 @@ void aqos_tables(void)
 	}
 	while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
 
-	char *qos_devs = nvram_safe_get("svqos_devs");
+	qos_devs = nvram_safe_get("svqos_devs");
 
 	do {
 		memset(proto, 0, sizeof(proto));
