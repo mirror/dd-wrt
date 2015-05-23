@@ -1412,12 +1412,12 @@ void start_sysinit(void)
 		else if (nvram_match("wl0_country_code", "CN"))
 			set_regulation(0, "CN", "1");
 		else
-			set_regulation(0, "DE", "0");
+			set_regulation(0, "EU", "66");
 
 		if (nvram_match("wl1_country_code", "Q2"))
 			set_regulation(1, "US", "0");
 		else if (nvram_match("wl1_country_code", "EU"))
-			set_regulation(1, "EU", "13");
+			set_regulation(1, "EU", "38");
 		else if (nvram_match("wl1_country_code", "TW"))
 			set_regulation(1, "TW", "13");
 		else if (nvram_match("wl1_country_code", "CN"))
@@ -1956,7 +1956,7 @@ void start_sysinit(void)
 		else if (nvram_match("regulation_domain", "Q2"))
 			set_regulation(0, "US", "0");
 		else if (nvram_match("regulation_domain", "EU"))
-			set_regulation(0, "DE", "0");
+			set_regulation(0, "EU", "66");
 		else if (nvram_match("regulation_domain", "TW"))
 			set_regulation(0, "TW", "13");
 		else if (nvram_match("regulation_domain", "CN"))
@@ -1969,7 +1969,7 @@ void start_sysinit(void)
 		else if (nvram_match("regulation_domain_5G", "Q2"))
 			set_regulation(1, "US", "0");
 		else if (nvram_match("regulation_domain_5G", "EU"))
-			set_regulation(1, "EU", "13");
+			set_regulation(1, "EU", "38");
 		else if (nvram_match("regulation_domain_5G", "TW"))
 			set_regulation(1, "TW", "13");
 		else if (nvram_match("regulation_domain_5G", "CN"))
@@ -2092,7 +2092,7 @@ void start_sysinit(void)
 		else if (nvram_match("regulation_domain", "Q2"))
 			set_regulation(0, "US", "0");
 		else if (nvram_match("regulation_domain", "EU"))
-			set_regulation(0, "DE", "0");
+			set_regulation(0, "EU", "66");
 		else if (nvram_match("regulation_domain", "TW"))
 			set_regulation(0, "TW", "13");
 		else if (nvram_match("regulation_domain", "CN"))
@@ -2105,7 +2105,7 @@ void start_sysinit(void)
 		else if (nvram_match("regulation_domain_5G", "Q2"))
 			set_regulation(1, "US", "0");
 		else if (nvram_match("regulation_domain_5G", "EU"))
-			set_regulation(1, "DE", "0");
+			set_regulation(1, "EU", "38");
 		else if (nvram_match("regulation_domain_5G", "TW"))
 			set_regulation(1, "TW", "13");
 		else if (nvram_match("regulation_domain_5G", "CN"))
