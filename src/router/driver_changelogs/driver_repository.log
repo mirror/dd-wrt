@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2504 | BrainSlayer | 2015-05-23 21:30:54 +0200 (Sat, 23 May 2015) | 1 line
+
+HT and VHT override configurations were ignored during association
+------------------------------------------------------------------------
 r2503 | BrainSlayer | 2015-05-22 08:59:26 +0200 (Fri, 22 May 2015) | 1 line
 
 fix backport
