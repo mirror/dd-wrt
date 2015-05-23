@@ -337,6 +337,7 @@ void aqos_tables(void)
 		sprintf(chainname_in, "FILTER_%s_IN", data);
 		char chainname_out[32];
 		sprintf(chainname_out, "FILTER_%s_OUT", data);
+		
 		eval("iptables", "-t", "mangle", "-F", chainname_in);
 		eval("iptables", "-t", "mangle", "-X", chainname_in);
 		eval("iptables", "-t", "mangle", "-N", chainname_in);
@@ -346,7 +347,6 @@ void aqos_tables(void)
 		eval("iptables", "-t", "mangle", "-N", chainname_out);
 
 		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "CONNMARK", "--restore-mark");
-		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "RETURN");
 		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "CONNMARK", "--restore-mark");
 
 		if (nvram_match("wshaper_dev", "LAN")) {
@@ -381,6 +381,7 @@ void aqos_tables(void)
 					strcpy(proto4, prio);
 					break;
 				}
+				count++;
 			}
 			free_filters(s_filters);
 			if (strlen(qos_svcs) == 0)
