@@ -296,7 +296,7 @@ char
 		return getBridgeMTU(get_wshaper_dev());
 }
 
-void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *dev)
+void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *chain)
 {
 	int idx = atoi(level) / 10;
 
@@ -304,31 +304,24 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, i
 		idx = 0;
 
 	if (strstr(type, "udp") || strstr(type, "both")) {
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "udp", "-m", "udp", "--dport", data, "-i", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "udp", "-m", "udp", "--sport", data, "-i", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "udp", "-m", "udp", "--dport", data, "-o", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "udp", "-m", "udp", "--sport", data, "-o", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-p", "udp", "-m", "udp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-p", "udp", "-m", "udp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--dport", data, "-i", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--sport", data, "-i", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "udp", "--dport", data, "-o", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "udp", "--sport", data, "-o", dev, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "udp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "udp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "l7")) {
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
 		char ndpi[32];
 		snprintf(ndpi, 32, "--%s", name);
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #endif
 
@@ -367,24 +360,17 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, i
 			char ipp2p[32];
 			snprintf(ipp2p, 32, "--%s", proto);
 
-			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-i", dev, "-m", "ipp2p", ipp2p, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-o", dev, "-m", "ipp2p", ipp2p, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "ipp2p", ipp2p, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 
 			if (!strcmp(proto, "bit")) {
 				// bittorrent detection enhanced 
 #ifdef HAVE_MICRO
-				eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-				eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				eval("iptables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 #else
-				eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK",
-				     "--set-mark", qos_nfmark(base + idx));
-				eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK",
-				     "--set-mark", qos_nfmark(base + idx));
+				eval("iptables", "-t", "mangle", "-A", chain, "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 #endif
-				eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-				eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", dev, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-				eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-				eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", dev, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				eval("iptables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				eval("iptables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 			}
 		}
 	}
