@@ -2405,7 +2405,7 @@ static void mangle_table(void)
 
 		save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s\n", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
 
-		save2file("-A PREROUTING -j CONNMARK --save\n");
+		save2file("-A PREROUTING -j CONNMARK --save-mark\n");
 	}
 
 	/*
