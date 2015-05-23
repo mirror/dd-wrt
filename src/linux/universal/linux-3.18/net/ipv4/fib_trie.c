@@ -1163,6 +1163,7 @@ int fib_table_insert(struct fib_table *tb, struct fib_config *cfg)
 			state = fa->fa_state;
 			new_fa->fa_state = state & ~FA_S_ACCESSED;
 			new_fa->fa_slen = fa->fa_slen;
+			new_fa->tb_id = tb->tb_id;
 
 			hlist_replace_rcu(&fa->fa_list, &new_fa->fa_list);
 
