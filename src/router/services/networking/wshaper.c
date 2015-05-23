@@ -263,6 +263,7 @@ void aqos_tables(void)
 
 	char nullmask[24];
 	strcpy(nullmask, qos_nfmark(0));
+	insmod("xt_physdev");
 
 	int base = 210;
 	int ret = 0;
@@ -360,8 +361,8 @@ void aqos_tables(void)
 		}
 
 		if (nvram_nmatch("1", "%s_bridged", data)) {
-			eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "3", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "3", "-m", "physdev", "--physdev-out", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-m", "physdev", "--physdev-out", data, "-j", chainname_out);
 		} else {
 			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", data, "-j", chainname_in);
 			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", data, "-j", chainname_out);
@@ -578,13 +579,13 @@ int svqos_iptables(void)
 			eval("iptables", "-t", "mangle", "-I", "FORWARD", "1", "-i", "tun+", "-j", "IMQ", "--todev", "0");
 			eval("iptables", "-t", "mangle", "-I", "POSTROUTING", "1", "-o", "tun+", "-j", "VPN_OUT");
 		}
+		insmod("xt_physdev");
 		// look for present tap-devices
 		if (getifcount("tap")) {
 			writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "1");
 			writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "1");
 			writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "1");
 
-			insmod("xt_physdev");
 			insmod("ebtables");
 
 			getIfList(iflist, "tap");
@@ -1190,9 +1191,6 @@ void stop_wshaper(void)
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "0");
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "0");
 
-#ifdef HAVE_OPENVPN
-	rmmod("xt_physdev");
-#endif
 	rmmod("xt_IMQ");
 	rmmod("ipt_IMQ");
 	rmmod("imq");
