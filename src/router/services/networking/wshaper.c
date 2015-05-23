@@ -337,7 +337,7 @@ void aqos_tables(void)
 		sprintf(chainname_in, "FILTER_%s_IN", data);
 		char chainname_out[32];
 		sprintf(chainname_out, "FILTER_%s_OUT", data);
-		
+
 		eval("iptables", "-t", "mangle", "-F", chainname_in);
 		eval("iptables", "-t", "mangle", "-X", chainname_in);
 		eval("iptables", "-t", "mangle", "-N", chainname_in);
@@ -353,17 +353,18 @@ void aqos_tables(void)
 			if (nvram_nmatch("1", "%s_bridged", data)) {
 				eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-m", "physdev", "--physdev-in", data, "-j", "IMQ", "--todev", "0");
 				eval("iptables", "-t", "mangle", "-I", "FORWARD", "1", "-m", "physdev", "--physdev-in", data, "-j", "IMQ", "--todev", "0");
-
-				eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "3", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "3", "-m", "physdev", "--physdev-out", data, "-j", chainname_out);
-
 			} else {
 				eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-i", data, "-j", "IMQ", "--todev", "0");
 				eval("iptables", "-t", "mangle", "-I", "FORWARD", "1", "-i", data, "-j", "IMQ", "--todev", "0");
-
-				eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", data, "-j", chainname_in);
-				eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", data, "-j", chainname_out);
 			}
+		}
+
+		if (nvram_nmatch("1", "%s_bridged", data)) {
+			eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "3", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "3", "-m", "physdev", "--physdev-out", data, "-j", chainname_out);
+		} else {
+			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-i", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-o", data, "-j", chainname_out);
 		}
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
