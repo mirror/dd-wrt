@@ -186,6 +186,7 @@
 #define NDPI_SOULSEEK_CONNECTION_IP_TICK_TIMEOUT               600
 #define NDPI_MANOLITO_SUBSCRIBER_TIMEOUT                       120
 #define NDPI_FTP_CONNECTION_TIMEOUT                            10
+#define NDPI_GADGADU_PEER_CONNECTION_TIMEOUT        	       120
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
 

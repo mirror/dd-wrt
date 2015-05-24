@@ -135,3 +135,7 @@
 //#include "protocols/attic/flash.c"
 #include "protocols/attic/ftp.c"
 #include "protocols/attic/popo.c"
+#include "protocols/feidian.c"
+#include "protocols/gadu_gadu.c"
+#include "protocols/i23v5.c"
+#include "protocols/secondlife.c"
