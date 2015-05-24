@@ -67,7 +67,7 @@ int debug_value = 0;
 
 // tofu
 
-char *live_translate(char *tran);
+char *live_translate(const char *tran);
 #ifdef HAVE_BUFFALO
 void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream, char *query);
 #endif
@@ -1873,12 +1873,13 @@ static char *getLanguageName()
 	return l;
 }
 
-static char *scanfile(char *buf, char *tran)
+static char *scanfile(char *buf, const char *tran)
 {
-	char temp[256], temp1[256];
+	char *temp = malloc(256);
 	char *temp2;
 	FILE *fp = getWebsFile(buf);
 	if (fp) {
+		char *temp1 = malloc(strlen(tran) + 3);
 		strcpy(temp1, tran);
 		strcat(temp1, "=\"");
 		int len = strlen(temp1);
@@ -1890,11 +1891,14 @@ static char *scanfile(char *buf, char *tran)
 		int prev = 0;
 		for (i = 0; i < filelen; i++) {
 		      again:;
-			if (count < sizeof(temp)) {
+			if (count < 256) {
 				prev = val;
 				val = getc(fp);
-				if (val == EOF)
+				if (val == EOF) {
+					free(temp);
+					free(temp1);
 					return NULL;
+				}
 				if (!count && (val == ' ' || val == '\r' || val == '\t' || val == '\n'))
 					continue;
 			} else {
@@ -1902,8 +1906,11 @@ static char *scanfile(char *buf, char *tran)
 				for (a = 0; a < filelen - i; a++) {
 					prev = v;
 					v = getc(fp);
-					if (v == EOF)
+					if (v == EOF) {
+						free(temp);
+						free(temp1);
 						return NULL;
+					}
 					if (v == '"' && prev != '\\') {
 						if (!ign)
 							ign = 1;
@@ -1916,8 +1923,12 @@ static char *scanfile(char *buf, char *tran)
 						goto again;
 					}
 				}
+				free(temp);
+				free(temp1);
 				return NULL;
 			}
+			if (count == 255)
+				temp = realloc(temp, 512);
 			temp[count++] = val;
 			switch (val) {
 			case '\r':
@@ -1939,7 +1950,9 @@ static char *scanfile(char *buf, char *tran)
 					count = 0;
 					if ((memcmp(temp, temp1, len)) == 0) {
 						temp2 = strtok(temp, "\"");
-						temp2 = strtok(NULL, "\"");
+						temp2 = strdup(strtok(NULL, "\""));
+						free(temp);
+						free(temp1);
 						fclose(fp);
 						return temp2;
 					}
@@ -1950,6 +1963,8 @@ static char *scanfile(char *buf, char *tran)
 
 		fclose(fp);
 	}
+	free(temp);
+	free(temp1);
 	return NULL;
 }
 
@@ -1959,7 +1974,7 @@ struct cacheentry {
 };
 static int cachecount = 0;
 static struct cacheentry *translationcache;
-static char *private_live_translate(char *tran)
+static char *private_live_translate(const char *tran)
 {
 
 	if (tran == NULL || !strlen(tran))
@@ -1977,11 +1992,11 @@ static char *private_live_translate(char *tran)
 	result = scanfile(buf, tran);
 	if (result)
 		return result;
-	return "Error";
+	return NULL;
 
 }
 
-char *live_translate(char *tran)
+char *live_translate(const char *tran)
 {
 	if (translationcache) {
 		int i;
@@ -1993,7 +2008,10 @@ char *live_translate(char *tran)
 	char *ret = private_live_translate(tran);
 	translationcache = (struct cacheentry *)realloc(translationcache, sizeof(struct cacheentry) * (cachecount + 1));
 	translationcache[cachecount].request = strdup(tran);
-	translationcache[cachecount].translation = strdup(ret);
+	if (ret)
+		translationcache[cachecount].translation = ret;
+	else
+		translationcache[cachecount].translation = strdup("Error");
 	return translationcache[cachecount++].translation;
 }
 
@@ -2137,14 +2155,12 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 		  "//<![CDATA[\n"
 		  "function Show(label) {\n"
 		  "document.getElementById(\"label\").innerHTML = label;\n" "}\n" "//]]>\n" "</script>\n" "<style type=\"text/css\">\n\n" "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
-	websWrite(stream, "  margin: 1.1em 0 3.5em; padding: 0;\n"
-		  "  border: 1px solid gray; list-style: none;\n"
-		  "  font: 9px Tahoma, Arial, sans-serif;}\n" "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n" "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
-	websWrite(stream, "  margin: 0; padding: 0;\n"
-		  "  text-align: center; list-style: none;}\n"
-		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"
-		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n"
-		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"
+	websWrite(stream,
+		  "  margin: 1.1em 0 3.5em; padding: 0;\n" "  border: 1px solid gray; list-style: none;\n" "  font: 9px Tahoma, Arial, sans-serif;}\n" "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n"
+		  "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
+	websWrite(stream,
+		  "  margin: 0; padding: 0;\n" "  text-align: center; list-style: none;}\n" "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"
+		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n" "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"
 		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n" "#t-graph li.rcvd {left: 3px; background: #228B22;}\n" "#t-graph li.sent {left: 8px; background: #CD0000;}\n");
 
 	for (i = 0; i < days - 1; i++) {
@@ -2216,8 +2232,8 @@ extern int getdevicecount(void);
 
 #ifdef HAVE_LANGUAGE
 static void do_language(struct mime_handler *handler, char *path, webs_t stream, char *query)	// jimmy, 
-									// https, 
-									// 8/4/2003
+	    // https, 
+	    // 8/4/2003
 {
 	char *langname = getLanguageName();
 	char *prefix, *lang;
