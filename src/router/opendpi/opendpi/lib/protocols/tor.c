@@ -1,6 +1,7 @@
 /*
  * tor.c
  *
+ * Copyright (C) 2015 ntop.org
  * Copyright (C) 2013 Remy Mudingay <mudingay@ill.fr>
  *
  */
@@ -10,11 +11,76 @@
 
 
 #ifdef NDPI_PROTOCOL_TOR
+
 static void ndpi_int_tor_add_connection(struct ndpi_detection_module_struct
-					*ndpi_struct, struct ndpi_flow_struct *flow)
-{
+					*ndpi_struct, struct ndpi_flow_struct *flow) {
   ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_TOR, NDPI_CORRELATED_PROTOCOL);
 }
+
+
+int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct,
+		    struct ndpi_flow_struct *flow, char *certificate) {
+  int prev_num = 0, numbers_found = 0, num_found = 0, i;
+  char dummy[48], *dot, *name;
+
+  if((certificate == NULL)
+     || (strlen(certificate) < 6)
+     || strncmp(certificate, "www.", 4))
+    return(0);
+
+  // printf("***** [SSL] %s(): %s\n", __FUNCTION__, certificate);
+
+  snprintf(dummy, sizeof(dummy), "%s", certificate);
+
+  if((dot = strrchr(dummy, '.')) == NULL) return(0);
+  dot[0] = '\0';
+
+  if((dot = strrchr(dummy, '.')) == NULL) return(0);
+  name = &dot[1];
+
+  for(i = 0; name[i+1] != '\0'; i++) {
+    if((name[i] >= '0') && (name[i] <= '9')) {
+
+      if(prev_num != 1) {
+	numbers_found++;
+
+	if(numbers_found == 2) {
+	  ndpi_int_tor_add_connection(ndpi_struct, flow);
+	  return(1);
+	}
+	prev_num = 1;
+      }
+    } else
+      prev_num = 0;
+
+    if(ndpi_match_bigram(ndpi_struct, &ndpi_struct->impossible_bigrams_automa, &name[i])) {
+      ndpi_int_tor_add_connection(ndpi_struct, flow);
+      return(1);
+    }
+
+    if(ndpi_match_bigram(ndpi_struct, &ndpi_struct->bigrams_automa, &name[i])) {
+      num_found++;
+    }
+  }
+
+  if(num_found == 0) {
+    ndpi_int_tor_add_connection(ndpi_struct, flow);
+    return(1);
+  } else {
+#ifndef __KERNEL__
+#ifdef PENDANTIC_TOR_CHECK
+    if(gethostbyname(certificate) == NULL) {
+      ndpi_int_tor_add_connection(ndpi_struct, flow);
+      return(1);
+    }
+#endif
+#endif
+  }
+
+  return(0);
+}
+
+/* ******************************************* */
 
 static void ndpi_search_tor(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {

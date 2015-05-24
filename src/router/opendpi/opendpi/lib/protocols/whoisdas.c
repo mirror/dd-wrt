@@ -22,15 +22,16 @@
 #include "ndpi_protocols.h"
 #ifdef NDPI_PROTOCOL_WHOIS_DAS
 
-void ndpi_search_whois_das(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_whois_das(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
+  u_int16_t sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);
 
   if ((packet->tcp != NULL)
       && (
-	  ((ntohs(packet->tcp->source) == 43) || (ntohs(packet->tcp->dest) == 43))
+	  ((sport == 43) || (dport == 43))
 	  ||
-	  ((ntohs(packet->tcp->source) == 4343) || (ntohs(packet->tcp->dest) == 4343))
+	  ((sport == 4343) || (dport == 4343))
 	  )
       ) {
     if(packet->payload_packet_len > 0) {
@@ -43,9 +44,10 @@ void ndpi_search_whois_das(struct ndpi_detection_module_struct *ndpi_struct, str
 	flow->host_server_name[i] = packet->payload[j];
       }
 
-      flow->host_server_name[i] = '\0';
+      flow->host_server_name[i] = '\0';      
+      flow->server_id = ((sport == 43) || (sport == 4343)) ? flow->src : flow->dst;
 
-      NDPI_LOG(NDPI_PROTOCOL_WHOIS_DAS, ndpi_struct, NDPI_LOG_DEBUG, "{WHOIS/DAS] %s\n", flow->host_server_name);
+      NDPI_LOG(NDPI_PROTOCOL_WHOIS_DAS, ndpi_struct, NDPI_LOG_DEBUG, "[WHOIS/DAS] %s\n", flow->host_server_name);
     }
 
     ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_WHOIS_DAS, NDPI_REAL_PROTOCOL);

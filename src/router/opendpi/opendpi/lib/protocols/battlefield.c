@@ -2,7 +2,7 @@
  * battlefield.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -98,14 +98,14 @@ static void ndpi_search_battlefield(struct ndpi_detection_module_struct *ndpi_st
     }
   }
 
-  if (packet->payload_packet_len == 18 && ndpi_mem_cmp(&packet->payload[5], "battlefield2\x00", 13) == 0) {
+  if (packet->payload_packet_len == 18 && memcmp(&packet->payload[5], "battlefield2\x00", 13) == 0) {
     NDPI_LOG(NDPI_PROTOCOL_BATTLEFIELD, ndpi_struct, NDPI_LOG_DEBUG, "Battlefield 2 hello packet detected.\n");
     ndpi_int_battlefield_add_connection(ndpi_struct, flow);
     return;
   } else if (packet->payload_packet_len > 10 &&
-	     (ndpi_mem_cmp(packet->payload, "\x11\x20\x00\x01\x00\x00\x50\xb9\x10\x11", 10) == 0
-	      || ndpi_mem_cmp(packet->payload, "\x11\x20\x00\x01\x00\x00\x30\xb9\x10\x11", 10) == 0
-	      || ndpi_mem_cmp(packet->payload, "\x11\x20\x00\x01\x00\x00\xa0\x98\x00\x11", 10) == 0)) {
+	     (memcmp(packet->payload, "\x11\x20\x00\x01\x00\x00\x50\xb9\x10\x11", 10) == 0
+	      || memcmp(packet->payload, "\x11\x20\x00\x01\x00\x00\x30\xb9\x10\x11", 10) == 0
+	      || memcmp(packet->payload, "\x11\x20\x00\x01\x00\x00\xa0\x98\x00\x11", 10) == 0)) {
     NDPI_LOG(NDPI_PROTOCOL_BATTLEFIELD, ndpi_struct, NDPI_LOG_DEBUG, "Battlefield safe pattern detected.\n");
     ndpi_int_battlefield_add_connection(ndpi_struct, flow);
     return;

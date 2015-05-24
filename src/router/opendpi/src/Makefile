@@ -5,7 +5,7 @@ OPENDPI_PATH2 := ${TOP}/opendpi/opendpi
 OPENDPI_SRC := opendpi
 OPENDPI_PRO := ${OPENDPI_SRC}/lib/protocols
 
-ccflags-y += -I${src}/${OPENDPI_SRC}/include -I${src}/${OPENDPI_SRC}/lib -DOPENDPI_NETFILTER_MODULE -DHAVE_NTOP
+ccflags-y += -I${src}/${OPENDPI_SRC}/include -I${src}/${OPENDPI_SRC}/lib -I${src}/${OPENDPI_SRC}/lib/third_party/include -DOPENDPI_NETFILTER_MODULE -I$(TOP)/opendpi
 
 EXTRA_CFLAGS := $(ccflags-y)
 MODULES_DIR := $(INSTALLDIR)/opendpi/lib/opendpi
@@ -67,10 +67,10 @@ all:
 	rm -r ${OPENDPI_SRC}
 modules:
 	make -C ${KERNEL_DIR} M=$$PWD $@;
+
 modules_install:
 	install -D xt_opendpi.ko $(INSTALLDIR)/lib/opendpi/xt_opendpi.ko
-#	make -C ${KERNEL_DIR} M=$$PWD $@;
-#	depmod -a;
+
 clean:
 	make -C ${KERNEL_DIR} M=$$PWD $@;
 	rm -rf modules.order ${OPENDPI_SRC}

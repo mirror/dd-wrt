@@ -2,7 +2,7 @@
  * fasttrack.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -64,8 +64,8 @@ static void ndpi_search_fasttrack_tcp(struct ndpi_detection_module_struct *ndpi_
 			NDPI_LOG(NDPI_PROTOCOL_FASTTRACK, ndpi_struct, NDPI_LOG_TRACE, "detected GET /. \n");
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			for (a = 0; a < packet->parsed_lines; a++) {
-				if ((packet->line[a].len > 17 && memcmp(packet->line[a].ptr, "X-Kazaa-Username: ", 18) == 0)
-					|| (packet->line[a].len > 23 && memcmp(packet->line[a].ptr, "User-Agent: PeerEnabler/", 24) == 0)) {
+				if ((packet->line[a].len > 17 && memcmp(packet_line(a), "X-Kazaa-Username: ", 18) == 0)
+					|| (packet->line[a].len > 23 && memcmp(packet_line(a), "User-Agent: PeerEnabler/", 24) == 0)) {
 					NDPI_LOG(NDPI_PROTOCOL_FASTTRACK, ndpi_struct, NDPI_LOG_TRACE,
 							"detected X-Kazaa-Username: || User-Agent: PeerEnabler/\n");
 					ndpi_int_fasttrack_add_connection(ndpi_struct, flow);

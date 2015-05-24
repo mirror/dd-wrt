@@ -2,7 +2,7 @@
  * zattoo.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -23,8 +23,7 @@
  */
 
 
-#include "ndpi_protocols.h"
-#include "ndpi_utils.h"
+#include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_ZATTOO
 
@@ -56,9 +55,10 @@ __forceinline static
 #endif
 u_int8_t ndpi_int_zattoo_user_agent_set(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  if (flow->packet.user_agent_line.ptr != NULL && flow->packet.user_agent_line.len == 111) {
-    if (memcmp(flow->packet.user_agent_line.ptr +
-	       flow->packet.user_agent_line.len - 25, "Zattoo/4", sizeof("Zattoo/4") - 1) == 0) {
+  ndpi_int_one_line_struct_t *pu = &flow->packet.user_agent_line;
+
+  if (pu->offs != 0xffff && pu->len == 111) {
+    if (memcmp(flow->packet.payload + pu->offs + pu->len - 25, "Zattoo/4", sizeof("Zattoo/4") - 1) == 0) {
       NDPI_LOG(NDPI_PROTOCOL_ZATTOO, ndpi_struct, NDPI_LOG_DEBUG, "found zattoo useragent\n");
       return 1;
     }
@@ -73,8 +73,6 @@ static void ndpi_search_zattoo(struct ndpi_detection_module_struct *ndpi_struct,
 
   struct ndpi_id_struct *src = flow->src;
   struct ndpi_id_struct *dst = flow->dst;
-
-  u_int16_t i;
 
   if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_ZATTOO) {
     if (src != NULL && ((u_int32_t)
@@ -105,16 +103,20 @@ static void ndpi_search_zattoo(struct ndpi_detection_module_struct *ndpi_struct,
     if (packet->payload_packet_len > 50
 	&& (memcmp(packet->payload, "POST /channelserver/player/channel/update HTTP/1.1", 50) == 0
 	    || memcmp(packet->payload, "GET /epg/query", 14) == 0)) {
+      const u_int8_t *pu;
       ndpi_parse_packet_line_info(ndpi_struct, flow);
-      for (i = 0; i < packet->parsed_lines; i++) {
-	if (packet->line[i].len >= 18 && (ndpi_mem_cmp(packet->line[i].ptr, "User-Agent: Zattoo", 18) == 0)) {
-	  NDPI_LOG(NDPI_PROTOCOL_ZATTOO, ndpi_struct,
+
+      pu = packet_hdr_c(user_agent_line);
+
+      if(pu != NULL && packet->user_agent_line.len >= 18 &&
+		      !memcmp(pu,"Zattoo",6)) {
+      	  NDPI_LOG(NDPI_PROTOCOL_ZATTOO, ndpi_struct,
 		   NDPI_LOG_DEBUG,
 		   "add connection over tcp with pattern POST /channelserver/player/channel/update HTTP/1.1\n");
 	  ndpi_int_zattoo_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 	  return;
-	}
       }
+	      
     } else if (packet->payload_packet_len > 50
 	       && (memcmp(packet->payload, "GET /", 5) == 0
 		   || memcmp(packet->payload, "POST /", NDPI_STATICSTRING_LEN("POST /")) == 0)) {
@@ -128,7 +130,7 @@ static void ndpi_search_zattoo(struct ndpi_detection_module_struct *ndpi_struct,
     } else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "POST http://", 12) == 0) {
       ndpi_parse_packet_line_info(ndpi_struct, flow);
       // test for unique character of the zattoo header
-      if (packet->parsed_lines == 4 && packet->host_line.ptr != NULL) {
+      if (packet->parsed_lines == 4 && packet->host_line.offs != 0xffff) {
 	u_int32_t ip;
 	u_int16_t bytes_read = 0;
 
@@ -138,16 +140,12 @@ static void ndpi_search_zattoo(struct ndpi_detection_module_struct *ndpi_struct,
 	if (ip == packet->iph->daddr
 	    && packet->empty_line_position_set != 0
 	    && ((packet->payload_packet_len - packet->empty_line_position) > 10)
-	    && packet->payload[packet->empty_line_position + 2] ==
-	    0x03
-	    && packet->payload[packet->empty_line_position + 3] ==
-	    0x04
-	    && packet->payload[packet->empty_line_position + 4] ==
-	    0x00
-	    && packet->payload[packet->empty_line_position + 5] ==
-	    0x04
-	    && packet->payload[packet->empty_line_position + 6] ==
-	    0x0a && packet->payload[packet->empty_line_position + 7] == 0x00) {
+	    && packet->payload[packet->empty_line_position + 2] == 0x03
+	    && packet->payload[packet->empty_line_position + 3] == 0x04
+	    && packet->payload[packet->empty_line_position + 4] == 0x00
+	    && packet->payload[packet->empty_line_position + 5] == 0x04
+	    && packet->payload[packet->empty_line_position + 6] == 0x0a 
+	    && packet->payload[packet->empty_line_position + 7] == 0x00) {
 	  NDPI_LOG(NDPI_PROTOCOL_ZATTOO, ndpi_struct,
 		   NDPI_LOG_DEBUG, "add connection over tcp with pattern POST http://\n");
 	  ndpi_int_zattoo_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
