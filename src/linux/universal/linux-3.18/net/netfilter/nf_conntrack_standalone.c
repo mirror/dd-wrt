@@ -206,7 +206,7 @@ static int ct_seq_show(struct seq_file *s, void *v)
 			l3proto, l4proto))
 		goto release;
 
-	if (seq_print_acct(s, ct, IP_CT_DIR_ORIGINAL))
+	if (nf_ct_ext_seq_print(s,ct,IP_CT_DIR_ORIGINAL))
 		goto release;
 
 	if (!(test_bit(IPS_SEEN_REPLY_BIT, &ct->status)))
@@ -217,7 +217,7 @@ static int ct_seq_show(struct seq_file *s, void *v)
 			l3proto, l4proto))
 		goto release;
 
-	if (seq_print_acct(s, ct, IP_CT_DIR_REPLY))
+	if (nf_ct_ext_seq_print(s,ct,IP_CT_DIR_REPLY))
 		goto release;
 
 	if (test_bit(IPS_ASSURED_BIT, &ct->status))
