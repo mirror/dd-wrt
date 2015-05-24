@@ -72,7 +72,7 @@ extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *l
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 extern char *get_NFServiceMark(char *service, uint32 mark);
 
-#if !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#if !(defined(ARCH_broadcom) || defined(HAVE_BCMMODERN))
 extern char *get_tcfmark(uint32 mark);
 #endif
 
@@ -484,7 +484,7 @@ int svqos_iptables(void)
 	insmod("ipt_mac");
 	insmod("xt_mac");
 
-#if !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#if !(defined(ARCH_broadcom) || defined(HAVE_BCMMODERN))
 	// if kernel version later then 2.4, overwrite all old tc filter
 	eval("tc", "filter", "del", "dev", wan_dev, "pref", "1");
 	eval("tc", "filter", "del", "dev", wan_dev, "pref", "3");
