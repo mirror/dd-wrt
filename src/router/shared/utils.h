@@ -970,6 +970,7 @@ extern char *get_tcfmark(uint32 mark);
 
 extern char *get_wshaper_dev(void);
 extern char *get_mtu_val(void);
+extern void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *chain)
 extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 #ifdef HAVE_AQOS
