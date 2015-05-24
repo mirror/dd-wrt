@@ -23,7 +23,8 @@ enum nf_ct_ext_id {
 #ifdef CONFIG_NF_CONNTRACK_TIMEOUT
 	NF_CT_EXT_TIMEOUT,
 #endif
-	NF_CT_EXT_NUM,
+	NF_CT_EXT_CUSTOM,
+	NF_CT_EXT_NUM=NF_CT_EXT_CUSTOM+CONFIG_NF_CONNTRACK_CUSTOM,
 };
 
 #define NF_CT_EXT_HELPER_TYPE struct nf_conn_help
@@ -87,12 +88,16 @@ __nf_ct_ext_add(struct nf_conn *ct, enum nf_ct_ext_id id, gfp_t gfp);
 
 #define NF_CT_EXT_F_PREALLOC	0x0001
 
+struct seq_file;
+
 struct nf_ct_ext_type {
 	/* Destroys relationships (can be NULL). */
 	void (*destroy)(struct nf_conn *ct);
 	/* Called when realloacted (can be NULL).
 	   Contents has already been moved. */
 	void (*move)(void *new, void *old);
+	/* Print custom info (can be NULL) */
+	unsigned int (*seq_print)(struct seq_file *s, const struct nf_conn *ct, int dir);
 
 	enum nf_ct_ext_id id;
 
@@ -105,6 +110,8 @@ struct nf_ct_ext_type {
 	u8 alloc_size;
 };
 
+unsigned int nf_ct_ext_seq_print(struct seq_file *s, const struct nf_conn *ct, int dir);
 int nf_ct_extend_register(struct nf_ct_ext_type *type);
+int nf_ct_extend_custom_register(struct nf_ct_ext_type *type,unsigned long int cid);
 void nf_ct_extend_unregister(struct nf_ct_ext_type *type);
 #endif /* _NF_CONNTRACK_EXTEND_H */
