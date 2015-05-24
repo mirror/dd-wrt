@@ -81,7 +81,7 @@ struct xt_ndpi_tginfo {
 "wikipedia",       "zmq",                  "amazon",           "ebay",          "cnn",\
 "megaco",          "redis",                "pando",            "vhua",          "telegram", \
 "vevo",            "pandora",              "quic", "popo",             "ftp",           "manolito", "feidian", "gadugadu", "i23v5", "secondlife"
-#define NDPI_PROTOCOL_MAXNUM 194
+#define NDPI_PROTOCOL_MAXNUM 195
 #endif
 
 #endif /* _LINUX_NETFILTER_XT_NDPI_H */

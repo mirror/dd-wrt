@@ -281,7 +281,7 @@
 #include <asm/unaligned.h>
 #include <linux/unaligned/packed_struct.h>
 
-#define get_u_int8_t(X, O)	__get_unaligned_cpu8(((const u8 *) (X)) + O)
+#define get_u_int8_t(X,O)  (*(u_int8_t *)(((const u8 *)X) + O))
 #define get_u_int16_t(X, O)	__get_unaligned_cpu16(((const u8 *) (X)) + O)
 #define get_u_int32_t(X, O)	__get_unaligned_cpu32(((const u8 *) (X)) + O)
 #define get_u_int64_t(X, O)	__get_unaligned_cpu64(((const u8 *) (X)) + O)
@@ -291,12 +291,6 @@
 
 /* new definitions to get little endian from network bytes */
 #define get_ul8(X,O) get_u_int8_t(X,O)
-
-
-#define get_u_int8_t(X,O)  (*(u_int8_t *)(((u_int8_t *)X) + O))
-#define get_u_int16_t(X,O)  (*(u_int16_t *)(((u_int8_t *)X) + O))
-#define get_u_int32_t(X,O)  (*(u_int32_t *)(((u_int8_t *)X) + O))
-#define get_u_int64_t(X,O)  (*(u_int64_t *)(((u_int8_t *)X) + O))
 
 
 
