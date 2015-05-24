@@ -906,11 +906,37 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
 
+
+  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_FEIDIAN, 
+			    no_master,
+			    no_master, "FEIDIAN",
+			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */, 
+			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+
+  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_GADUGADU, 
+			    no_master,
+			    no_master, "GADUGADU",
+			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */, 
+			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+
+  ndpi_set_proto_defaults(ndpi_mod,NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_I23V5 ,
+			    no_master,
+			    no_master, "I23V5",
+			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */, 
+			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+
+  ndpi_set_proto_defaults(ndpi_mod,NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_SECONDLIFE, 
+			    no_master, 
+			    no_master, "SECONDLIFE",
+			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */, 
+			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_POPO, 
 			    no_master,
 			    no_master, "POPO",
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */, 
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+
 
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_SOCRATES,
 			    no_master,
@@ -1829,6 +1855,7 @@ struct ndpi_detection_module_struct *ndpi_init_detection_module(u_int32_t ticks_
   ndpi_str->directconnect_connection_ip_tick_timeout =
     NDPI_DIRECTCONNECT_CONNECTION_IP_TICK_TIMEOUT * ticks_per_second;
 
+  ndpi_str->gadugadu_peer_connection_timeout = NDPI_GADGADU_PEER_CONNECTION_TIMEOUT * ticks_per_second;
   ndpi_str->rtsp_connection_timeout = NDPI_RTSP_CONNECTION_TIMEOUT * ticks_per_second;
   ndpi_str->tvants_connection_timeout = NDPI_TVANTS_CONNECTION_TIMEOUT * ticks_per_second;
   ndpi_str->ftp_connection_timeout = NDPI_FTP_CONNECTION_TIMEOUT * ticks_per_second;
@@ -2475,6 +2502,53 @@ void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *n
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
+#endif
+
+#ifdef NDPI_PROTOCOL_FEIDIAN
+  ndpi_set_bitmask_protocol_detection("FEIDIAN", ndpi_struct, detection_bitmask,a++,
+				      NDPI_PROTOCOL_FEIDIAN,
+				      ndpi_search_feidian,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
+				      ADD_TO_DETECTION_BITMASK);
+#endif
+
+#ifdef NDPI_PROTOCOL_GADUGADU
+  ndpi_set_bitmask_protocol_detection("GADUGADU", ndpi_struct, detection_bitmask,a++,
+				      NDPI_PROTOCOL_GADUGADU,
+				      ndpi_search_gadugadu,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD,
+				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
+				      ADD_TO_DETECTION_BITMASK);
+#ifdef NDPI_PROTOCOL_HTTP
+    NDPI_ADD_PROTOCOL_TO_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_HTTP);
+#endif
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].excluded_protocol_bitmask, NDPI_PROTOCOL_GADUGADU);
+    a++;
+#endif
+
+#ifdef NDPI_PROTOCOL_I23V5
+  ndpi_set_bitmask_protocol_detection("I23V5", ndpi_struct, detection_bitmask,a++,
+				      NDPI_PROTOCOL_I23V5,
+				      ndpi_search_i23v5,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
+				      ADD_TO_DETECTION_BITMASK);
+#endif
+
+#ifdef NDPI_PROTOCOL_SECONDLIFE
+  ndpi_set_bitmask_protocol_detection("SECONDLIFE", ndpi_struct, detection_bitmask,a++,
+				      NDPI_PROTOCOL_SECONDLIFE,
+				      ndpi_search_secondlife,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
+				      ADD_TO_DETECTION_BITMASK);
+
+#ifdef NDPI_PROTOCOL_SSL
+  NDPI_ADD_PROTOCOL_TO_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_SSL);
+#endif
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].excluded_protocol_bitmask, NDPI_PROTOCOL_SECONDLIFE);
+a++;
 #endif
 
 #ifdef NDPI_PROTOCOL_WINMX

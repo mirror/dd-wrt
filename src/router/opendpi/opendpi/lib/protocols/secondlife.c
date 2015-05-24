@@ -23,7 +23,7 @@
  */
 
 
-#include "ndpi_utils.h"
+#include "ndpi_api.h"
 #ifdef NDPI_PROTOCOL_SECONDLIFE
 
 static void ndpi_int_secondlife_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
@@ -57,11 +57,11 @@ static void ndpi_search_secondlife(struct ndpi_detection_module_struct
 	&& memcmp(packet->payload, "GET /", NDPI_STATICSTRING_LEN("GET /")) == 0) {
       NDPI_LOG(NDPI_PROTOCOL_SECONDLIFE, ndpi_struct, NDPI_LOG_DEBUG, "Second Life HTTP 'GET /'' found.\n");
       ndpi_parse_packet_line_info(ndpi_struct, flow);
-      if (packet->user_agent_line.ptr != NULL
+      if (packet->user_agent_line.offs != 0xffff
 	  && packet->user_agent_line.len >
 	  NDPI_STATICSTRING_LEN
 	  ("Mozilla/5.0 (Windows; U; Windows NT 6.1; de-DE) AppleWebKit/532.4 (KHTML, like Gecko) SecondLife/")
-	  && memcmp(&packet->user_agent_line.ptr[NDPI_STATICSTRING_LEN
+	  && memcmp(&packet_hdr(user_agent_line)[NDPI_STATICSTRING_LEN
 						 ("Mozilla/5.0 (Windows; U; Windows NT 6.1; de-DE) AppleWebKit/532.4 (KHTML, like Gecko) ")],
 		    "SecondLife/", NDPI_STATICSTRING_LEN("SecondLife/")) == 0) {
 	NDPI_LOG(NDPI_PROTOCOL_SECONDLIFE, ndpi_struct, NDPI_LOG_DEBUG,
@@ -69,12 +69,12 @@ static void ndpi_search_secondlife(struct ndpi_detection_module_struct
 	ndpi_int_secondlife_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 	return;
       }
-      if (packet->host_line.ptr != NULL && packet->host_line.len > NDPI_STATICSTRING_LEN(".agni.lindenlab.com:")) {
+      if (packet->host_line.offs != 0xffff && packet->host_line.len > NDPI_STATICSTRING_LEN(".agni.lindenlab.com:")) {
 	u_int8_t x;
 	for (x = 2; x < 6; x++) {
-	  if (packet->host_line.ptr[packet->host_line.len - (1 + x)] == ':') {
+	  if (packet_hdr(host_line)[packet->host_line.len - (1 + x)] == ':' ) {
 	    if ((1 + x + NDPI_STATICSTRING_LEN(".agni.lindenlab.com")) < packet->host_line.len
-		&& memcmp(&packet->host_line.ptr[packet->host_line.len -
+		&& memcmp(&packet_hdr(host_line)[packet->host_line.len -
 						 (1 + x + NDPI_STATICSTRING_LEN(".agni.lindenlab.com"))],
 			  ".agni.lindenlab.com", NDPI_STATICSTRING_LEN(".agni.lindenlab.com")) == 0) {
 	      NDPI_LOG(NDPI_PROTOCOL_SECONDLIFE, ndpi_struct, NDPI_LOG_DEBUG,
