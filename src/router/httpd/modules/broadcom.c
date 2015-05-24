@@ -1877,9 +1877,10 @@ static char *scanfile(char *buf, const char *tran)
 {
 	char *temp = malloc(256);
 	char *temp2;
+	char *temp1;
 	FILE *fp = getWebsFile(buf);
 	if (fp) {
-		char *temp1 = malloc(strlen(tran) + 3);
+		temp1 = malloc(strlen(tran) + 3);
 		strcpy(temp1, tran);
 		strcat(temp1, "=\"");
 		int len = strlen(temp1);
