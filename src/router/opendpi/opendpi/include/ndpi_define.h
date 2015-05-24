@@ -278,33 +278,27 @@
 #define NDPI_ICMPV6_PROTOCOL_TYPE  0x3a
 
 /* the get_uXX will return raw network packet bytes !! */
-#define get_u_int8_t(X,O)  (*(u_int8_t *)(((u_int8_t *)X) + O))
-#define get_u_int16_t(X,O)  (*(u_int16_t *)(((u_int8_t *)X) + O))
-#define get_u_int32_t(X,O)  (*(u_int32_t *)(((u_int8_t *)X) + O))
-#define get_u_int64_t(X,O)  (*(u_int64_t *)(((u_int8_t *)X) + O))
+#include <asm/unaligned.h>
+#include <linux/unaligned/packed_struct.h>
+
+#define get_u_int8_t(X, O)	__get_unaligned_cpu8(((const u8 *) (X)) + O)
+#define get_u_int16_t(X, O)	__get_unaligned_cpu16(((const u8 *) (X)) + O)
+#define get_u_int32_t(X, O)	__get_unaligned_cpu32(((const u8 *) (X)) + O)
+#define get_u_int64_t(X, O)	__get_unaligned_cpu64(((const u8 *) (X)) + O)
+
+#define get_l16(X, O)	get_unaligned_le16(((const u8 *) (X)) + O)
+#define get_l32(X, O)	get_unaligned_le32(((const u8 *) (X)) + O)
 
 /* new definitions to get little endian from network bytes */
 #define get_ul8(X,O) get_u_int8_t(X,O)
 
 
-#if defined(__LITTLE_ENDIAN__) || defined(_LITTLE_ENDIAN)
-#define get_l16(X,O)  get_u_int16_t(X,O)
-#define get_l32(X,O)  get_u_int32_t(X,O)
-#elif defined(__BIG_ENDIAN__) || defined(__BIG_ENDIAN)
-/* convert the bytes from big to little endian */
-#ifndef __KERNEL__
-# define get_l16(X,O) bswap_16(get_u_int16_t(X,O))
-# define get_l32(X,O) bswap_32(get_u_int32_t(X,O))
-#else
-# define get_l16(X,O) __cpu_to_le16(get_u_int16_t(X,O))
-# define get_l32(X,O) __cpu_to_le32(get_u_int32_t(X,O))
-#endif
+#define get_u_int8_t(X,O)  (*(u_int8_t *)(((u_int8_t *)X) + O))
+#define get_u_int16_t(X,O)  (*(u_int16_t *)(((u_int8_t *)X) + O))
+#define get_u_int32_t(X,O)  (*(u_int32_t *)(((u_int8_t *)X) + O))
+#define get_u_int64_t(X,O)  (*(u_int64_t *)(((u_int8_t *)X) + O))
 
-#else
 
-#error "__BYTE_ORDER MUST BE DEFINED !"
-
-#endif							/* __BYTE_ORDER */
 
 /* define memory callback function */
 #define match_first_bytes(payload,st) (memcmp((payload),(st),(sizeof(st)-1))==0)
