@@ -123,7 +123,7 @@ struct Webenvironment {
 	FILE *(*PgetWebsFile) (char *path);
 	int (*Pwfputs) (char *buf, webs_t fp);
 	char *(*PGOZILA_GET) (webs_t wp, char *name);
-	char *(*Plive_translate) (char *tran);
+	char *(*Plive_translate) (const char *tran);
 	void (*Pvalidate_cgi) (webs_t fp);
 	websRomPageIndexType *PwebsRomPageIndex;
 	char *Prequest_url;

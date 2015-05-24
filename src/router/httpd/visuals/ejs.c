@@ -65,7 +65,7 @@ void (*do_ej) (struct mime_handler * handler, char *path, webs_t stream, char *q
 int (*ejArgs) (int argc, char_t ** argv, char_t * fmt, ...) = NULL;
 FILE *(*getWebsFile) (char *path) = NULL;
 int (*wfputs) (char *buf, webs_t fp) = NULL;
-char *(*live_translate) (char *tran) = NULL;
+char *(*live_translate) (const char *tran) = NULL;
 websRomPageIndexType *PwebsRomPageIndex = NULL;
 char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
 void (*validate_cgi) (webs_t fp) = NULL;

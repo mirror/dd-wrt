@@ -150,7 +150,7 @@ struct wl_client_mac wl_client_macs[MAX_LEASES];
 
 // extern struct wl_client_mac *wl_client_macs;
 
-extern char *live_translate(char *tran);
+extern char *live_translate(const char *tran);
 extern void validate_cgi(webs_t wp);
 
 static int initWeb(void *handle)
