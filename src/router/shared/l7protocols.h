@@ -43,9 +43,7 @@ l7filters filters_list[] = {
 #endif
 	{"applejuice", PDPI},
 	{"ares", PDPI_ONLY},
-#ifdef HAVE_OPENDPI
-	{"armagetron", NDPI_ONLY},
-#endif
+	{"armagetron", DPI},
 	{"audiogalaxy", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"avi", NDPI_ONLY},
@@ -56,18 +54,19 @@ l7filters filters_list[] = {
 	{"battlefield2", L7_ONLY},
 	{"battlefield2142", L7_ONLY},
 	{"bearshare", PDPI_ONLY},
-#ifdef HAVE_OPENDPI
-	{"bgp", NDPI_ONLY},
-#endif
+	{"bgp", DPI},
 	{"biff", L7_ONLY},
 	{"bittorrent", PDPI},
+	{"bt", L7_ONLY},
+	{"bt1", L7_ONLY},
+	{"bt2", L7_ONLY},
+	{"bt3", L7_ONLY},
 	{"chikka", L7_ONLY},
 	{"cimd", L7_ONLY},
+	{"ciscovpn", DPI},
+	{"citrix", DPI},
 #ifdef HAVE_OPENDPI
-	{"ciscovpn", NDPI_ONLY},
-	{"citrix", NDPI_ONLY},
 	{"citrix_online", NDPI_ONLY},
-	{"citrixonline", NDPI_ONLY},
 #endif
 	{"clubbox", L7_ONLY},
 #ifdef HAVE_OPENDPI
@@ -87,13 +86,15 @@ l7filters filters_list[] = {
 	{"dazhihui", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"dcerpc", NDPI_ONLY},
-	{"dhcp", NDPI_ONLY},
+#endif
+	{"dhcp", DPI},
+#ifdef HAVE_OPENDPI
 	{"dhcpv6", NDPI_ONLY},
 	{"direct_download_link", NDPI_ONLY},
 #endif
 	{"directconnect", PDPI},
+	{"dns", DPI},
 #ifdef HAVE_OPENDPI
-	{"dns", NDPI_ONLY},
 	{"dofus", NDPI_ONLY},
 #endif
 	{"doom3", L7_ONLY},
@@ -109,21 +110,23 @@ l7filters filters_list[] = {
 	{"exe", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"facebook", NDPI_ONLY},
-	{"fasttrack", NDPI_ONLY},
+#endif
+	{"fasttrack", DPI},
+#ifdef HAVE_OPENDPI
 	{"feidian", NDPI_ONLY},
 	{"fiesta", NDPI_ONLY},
-	{"filetopia", NDPI_ONLY},
 #endif
+	{"filetopia", DPI},
 	{"finger", L7_ONLY},
+	{"flash", DPI},
 #ifdef HAVE_OPENDPI
-	{"flash", NDPI_ONLY},
 	{"florensia", NDPI_ONLY},
 #endif
 	{"freegate_dns", L7_ONLY},
 	{"freegate_http", L7_ONLY},
 	{"freenet", L7_ONLY},
+	{"ftp", DPI},
 #ifdef HAVE_OPENDPI
-	{"ftp", NDPI_ONLY},
 	{"ftp_control", NDPI_ONLY},
 	{"ftp_data", NDPI_ONLY},
 	{"gadugadu", NDPI_ONLY},
@@ -145,7 +148,6 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{"gre", NDPI_ONLY},
 	{"grooveshark", NDPI_ONLY},
-	{"groveshark", NDPI_ONLY},
 #endif
 	{"gtalk", L7_ONLY},
 	{"gtalk1", L7_ONLY},
@@ -155,8 +157,10 @@ l7filters filters_list[] = {
 	{"gtalk_vista", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"gtp", NDPI_ONLY},
-	{"guildwars", NDPI_ONLY},
-	{"h323", NDPI_ONLY},
+#endif
+	{"guildwars", DPI},
+	{"h323", DPI},
+#ifdef HAVE_OPENDPI
 	{"halflife2", NDPI_ONLY},
 #endif
 	{"halflife2-deathmatch", L7_ONLY},
@@ -168,9 +172,7 @@ l7filters filters_list[] = {
 	{"hotline", L7_ONLY},
 	{"hotspot-shield", L7_ONLY},
 	{"html", L7_ONLY},
-#ifdef HAVE_OPENDPI
-	{"http", NDPI_ONLY},
-#endif
+	{"http", DPI},
 	{"http-dap", L7_ONLY},
 	{"http-freshdownload", L7_ONLY},
 	{"http-itunes", L7_ONLY},
@@ -199,9 +201,13 @@ l7filters filters_list[] = {
 	{"ident", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"igmp", NDPI_ONLY},
-	{"imap", NDPI_ONLY},
+#endif
+	{"imap", DPI},
+#ifdef HAVE_OPENDPI
 	{"imap_ssl", NDPI_ONLY},
-	{"imesh", NDPI_ONLY},
+#endif
+	{"imesh", DPI},
+#ifdef HAVE_OPENDPI
 	{"imessage_facetime", NDPI_ONLY},
 	{"ip_egp", NDPI_ONLY},
 	{"ip_gre", NDPI_ONLY},
@@ -214,11 +220,13 @@ l7filters filters_list[] = {
 	{"ip_sctp", NDPI_ONLY},
 	{"ip_vrrp", NDPI_ONLY},
 	{"ipip", NDPI_ONLY},
-	{"ipp", NDPI_ONLY},
-	{"ipsec", NDPI_ONLY},
-	{"irc", NDPI_ONLY},
-	{"jabber", NDPI_ONLY},
 #endif
+	{"ipp", DPI},
+#ifdef HAVE_OPENDPI
+	{"ipsec", NDPI_ONLY},
+#endif
+	{"irc", DPI},
+	{"jabber", DPI},
 	{"jpeg", L7_ONLY},
 	{"kazaa", PDPI_ONLY},
 #ifdef HAVE_OPENDPI
@@ -267,8 +275,8 @@ l7filters filters_list[] = {
 	{"napster", L7_ONLY},
 	{"nbns", L7_ONLY},
 	{"ncp", L7_ONLY},
+	{"netbios", DPI},
 #ifdef HAVE_OPENDPI
-	{"netbios", NDPI_ONLY},
 	{"netflix", NDPI_ONLY},
 	{"netflow", NDPI_ONLY},
 	{"nfs", NDPI_ONLY},
@@ -277,31 +285,37 @@ l7filters filters_list[] = {
 	{"nntp", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"noe", NDPI_ONLY},
-	{"ntp", NDPI_ONLY},
+#endif
+	{"ntp", DPI},
+#ifdef HAVE_OPENDPI
 	{"off", NDPI_ONLY},
-	{"ogg", NDPI_ONLY},
-	{"openft", NDPI_ONLY},
+#endif
+	{"ogg", DPI},
+	{"openft", DPI},
+#ifdef HAVE_OPENDPI
 	{"openvpn", NDPI_ONLY},
 	{"oracle", NDPI_ONLY},
 	{"oscar", NDPI_ONLY},
 	{"pando", NDPI_ONLY},
 	{"pandora", NDPI_ONLY},
-	{"pcanywhere", NDPI_ONLY},
 #endif
+	{"pcanywhere", DPI},
 	{"pdf", L7_ONLY},
 	{"perl", L7_ONLY},
 	{"png", L7_ONLY},
 	{"poco", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"pop", NDPI_ONLY},
-	{"pop3", NDPI_ONLY},
+#endif
+	{"pop3", DPI},
+#ifdef HAVE_OPENDPI
 	{"pop3_ssl", NDPI_ONLY},
 	{"popo", NDPI_ONLY},
 	{"postgres", NDPI_ONLY},
 #endif
 	{"postscript", L7_ONLY},
+	{"pplive", DPI},
 #ifdef HAVE_OPENDPI
-	{"pplive", NDPI_ONLY},
 	{"ppstream", NDPI_ONLY},
 	{"pptp", NDPI_ONLY},
 #endif
@@ -311,9 +325,7 @@ l7filters filters_list[] = {
 	{"pre_yahoo_login", L7_ONLY},
 	{"pressplay", L7_ONLY},
 	{"qianlong", L7_ONLY},
-#ifdef HAVE_OPENDPI
-	{"qq", NDPI_ONLY},
-#endif
+	{"qq", DPI},
 	{"qq_login", L7_ONLY},
 	{"qq_login_1", L7_ONLY},
 	{"qq_tcp_file", L7_ONLY},
@@ -323,23 +335,21 @@ l7filters filters_list[] = {
 	{"qqdownload_3", L7_ONLY},
 	{"qqfile", L7_ONLY},
 	{"qqgame", L7_ONLY},
-#ifdef HAVE_OPENDPI
-	{"qqlive", NDPI_ONLY},
-#endif
+	{"qqlive", DPI},
 	{"qqlive2", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"quake", NDPI_ONLY},
 #endif
 	{"quake-halflife", L7_ONLY},
 	{"quake1", L7_ONLY},
+	{"quicktime", DPI},
 #ifdef HAVE_OPENDPI
-	{"quicktime", NDPI_ONLY},
 	{"radius", NDPI_ONLY},
 #endif
 	{"radmin", L7_ONLY},
 	{"rar", L7_ONLY},
+	{"rdp", DPI},
 #ifdef HAVE_OPENDPI
-	{"rdp", NDPI_ONLY},
 	{"realmedia", NDPI_ONLY},
 	{"redis", NDPI_ONLY},
 	{"remote_scan", NDPI_ONLY},
@@ -353,19 +363,19 @@ l7filters filters_list[] = {
 	{"rtcp", NDPI_ONLY},
 #endif
 	{"rtf", L7_ONLY},
-#ifdef HAVE_OPENDPI
-	{"rtmp", NDPI_ONLY},
-	{"rtp", NDPI_ONLY},
-	{"rtsp", NDPI_ONLY},
-#endif
+	{"rtmp", DPI},
+	{"rtp", DPI},
+	{"rtsp", DPI},
 	{"runesofmagic", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"sap", NDPI_ONLY},
 	{"sctp", NDPI_ONLY},
 	{"secondlife", NDPI_ONLY},
 	{"sflow", NDPI_ONLY},
-	{"shoutcast", NDPI_ONLY},
-	{"sip", NDPI_ONLY},
+#endif
+	{"shoutcast", DPI},
+	{"sip", DPI},
+#ifdef HAVE_OPENDPI
 	{"skinny", NDPI_ONLY},
 	{"skyfile_post", NDPI_ONLY},
 	{"skyfile_postpaid", NDPI_ONLY},
@@ -377,12 +387,12 @@ l7filters filters_list[] = {
 #endif
 	{"skypeout", L7_ONLY},
 	{"skypetoskype", L7_ONLY},
+	{"smb", DPI},
+	{"smtp", DPI},
 #ifdef HAVE_OPENDPI
-	{"smb", NDPI_ONLY},
-	{"smtp", NDPI_ONLY},
 	{"smtp_ssl", NDPI_ONLY},
-	{"snmp", NDPI_ONLY},
 #endif
+	{"snmp", DPI},
 	{"snmp-mon", L7_ONLY},
 	{"snmp-trap", L7_ONLY},
 	{"socks", L7_ONLY},
@@ -396,14 +406,16 @@ l7filters filters_list[] = {
 	{"soulseek", PDPI},
 #ifdef HAVE_OPENDPI
 	{"spotify", NDPI_ONLY},
-	{"ssdp", NDPI_ONLY},
-	{"ssh", NDPI_ONLY},
-	{"ssl", NDPI_ONLY},
+#endif
+	{"ssdp", DPI},
+	{"ssh", DPI},
+	{"ssl", DPI},
+#ifdef HAVE_OPENDPI
 	{"ssl_no_cert", NDPI_ONLY},
 	{"stealthnet", NDPI_ONLY},
 	{"steam", NDPI_ONLY},
-	{"stun", NDPI_ONLY},
 #endif
+	{"stun", DPI},
 	{"subspace", L7_ONLY},
 	{"subversion", L7_ONLY},
 #ifdef HAVE_OPENDPI
@@ -414,19 +426,15 @@ l7filters filters_list[] = {
 	{"tds", NDPI_ONLY},
 #endif
 	{"teamfortress2", L7_ONLY},
-#ifdef HAVE_OPENDPI
-	{"teamspeak", NDPI_ONLY},
-	{"teamviewer", NDPI_ONLY},
-#endif
+	{"teamspeak", DPI},
+	{"teamviewer", DPI},
 	{"teamviewer1", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"telegram", NDPI_ONLY},
-	{"telnet", NDPI_ONLY},
 #endif
+	{"telnet", DPI},
 	{"tesla", L7_ONLY},
-#ifdef HAVE_OPENDPI
-	{"tftp", NDPI_ONLY},
-#endif
+	{"tftp", DPI},
 	{"thecircle", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"thunder", NDPI_ONLY},
@@ -434,8 +442,8 @@ l7filters filters_list[] = {
 	{"thunder5_see", L7_ONLY},
 	{"thunder5_tcp", L7_ONLY},
 	{"tonghuashun", L7_ONLY},
+	{"tor", DPI},
 #ifdef HAVE_OPENDPI
-	{"tor", NDPI_ONLY},
 	{"truphone", NDPI_ONLY},
 #endif
 	{"tsp", L7_ONLY},
@@ -461,7 +469,9 @@ l7filters filters_list[] = {
 	{"vhua", NDPI_ONLY},
 	{"viber", NDPI_ONLY},
 	{"vmware", NDPI_ONLY},
-	{"vnc", NDPI_ONLY},
+#endif
+	{"vnc", DPI},
+#ifdef HAVE_OPENDPI
 	{"warcraft3", NDPI_ONLY},
 #endif
 	{"waste", PDPI_ONLY},
@@ -498,8 +508,8 @@ l7filters filters_list[] = {
 	{"winupdate", NDPI_ONLY},
 	{"wokf", NDPI_ONLY},
 	{"world_of_kung_fu", NDPI_ONLY},
-	{"worldofwarcraft", NDPI_ONLY},
 #endif
+	{"worldofwarcraft", DPI},
 	{"x11", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"xbox", NDPI_ONLY},
@@ -510,15 +520,13 @@ l7filters filters_list[] = {
 	{"xdmcp", NDPI_ONLY},
 #endif
 	{"xunlei", L7_ONLY},
-#ifdef HAVE_OPENDPI
-	{"yahoo", NDPI_ONLY},
-#endif
+	{"yahoo", DPI},
 	{"yahoo_camera", L7_ONLY},
 	{"yahoo_file", L7_ONLY},
 	{"yahoo_login", L7_ONLY},
 	{"yahoo_voice", L7_ONLY},
+	{"youtube", DPI},
 #ifdef HAVE_OPENDPI
-	{"youtube", NDPI_ONLY},
 	{"zattoo", NDPI_ONLY},
 	{"zeromq", NDPI_ONLY},
 #endif
