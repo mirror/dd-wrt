@@ -43,11 +43,11 @@ struct xt_ndpi_tginfo {
 };
 
 #ifndef NDPI_PROTOCOL_SHORT_STRING
-#define NDPI_PROTOCOL_SHORT_STRING "unknown",	"ftp_control",     "mail_pop",             "mail_smtp",        "mail_imap",     "dns",\
+#define NDPI_PROTOCOL_SHORT_STRING "unknown",	"ftp_control",     "pop3",             "smtp",        "imap",     "dns",\
 "ipp",             "http",                 "mdns",             "ntp",           "netbios",\
 "nfs",             "ssdp",                 "bgp",              "snmp",          "xdmcp",\
 "smb",             "syslog",               "dhcp",             "postgres",      "mysql",\
-"tds",             "direct_download_link", "mail_pops",        "applejuice",    "directconnect",\
+"tds",             "direct_download_link", "pop3_ssl",        "applejuice",    "directconnect",\
 "socrates",        "winmx",                "vmware",           "mail_smtps",    "filetopia",\
 "imesh",           "kontiki",              "openft",           "fasttrack",     "gnutella",\
 "edonkey",         "bittorrent",           "epp",              "avi",           "flash",\
@@ -80,7 +80,7 @@ struct xt_ndpi_tginfo {
 "collectd",        "socks5",               "socks4",           "rtmp",          "ftp_data",\
 "wikipedia",       "zmq",                  "amazon",           "ebay",          "cnn",\
 "megaco",          "redis",                "pando",            "vhua",          "telegram", \
-"vevo",            "pandora",              "popo",             "ftp",           "manolito", "feidian", "gadu_gadu", "i23v5", "secondlife"
+"vevo",            "pandora",              "quic", "popo",             "ftp",           "manolito", "feidian", "gadugadu", "i23v5", "secondlife"
 #define NDPI_PROTOCOL_MAXNUM 194
 #endif
 
