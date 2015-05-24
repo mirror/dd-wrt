@@ -930,7 +930,7 @@ ndpi_tg(struct sk_buff *skb, const struct xt_action_param *par)
 
 static struct xt_match
 ndpi_mt_reg __read_mostly = {
-	.name = "ndpi",
+	.name = "opendpi",
 	.revision = 0,
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
         .family = NFPROTO_UNSPEC,
