@@ -121,11 +121,12 @@ l7filters filters_list[] = {
 	{"freegate_dns", L7_ONLY},
 	{"freegate_http", L7_ONLY},
 	{"freenet", L7_ONLY},
-	{"ftp", DPI},
 #ifdef HAVE_OPENDPI
 	{"ftp_control", NDPI_ONLY},
 	{"ftp_data", NDPI_ONLY},
 	{"gadugadu", NDPI_ONLY},
+#else
+	{"ftp", DPI},
 #endif
 	{"gif", L7_ONLY},
 	{"gkrellm", L7_ONLY},
