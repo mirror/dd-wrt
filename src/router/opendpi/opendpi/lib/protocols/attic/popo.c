@@ -2,7 +2,7 @@
  * popo.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -32,7 +32,7 @@ static void ndpi_int_popo_add_connection(struct ndpi_detection_module_struct
 	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_POPO, NDPI_REAL_PROTOCOL);
 }
 
-static void ndpi_search_popo_tcp_udp(struct ndpi_detection_module_struct
+void ndpi_search_popo_tcp_udp(struct ndpi_detection_module_struct
 								*ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;

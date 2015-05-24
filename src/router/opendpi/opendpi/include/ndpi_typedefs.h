@@ -1,8 +1,8 @@
 /*
- * ndpi_structs.h
+ * ndpi_typedefs.h
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
+ * Copyright (C) 2009-11 - ipoque GmbH
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -22,13 +22,38 @@
  *
  */
 
+#ifndef __NDPI_TYPEDEFS_FILE__
+#define __NDPI_TYPEDEFS_FILE__
 
-#ifndef __NDPI_STRUCTS_INCLUDE_FILE__
-#define __NDPI_STRUCTS_INCLUDE_FILE__
+#define BT_ANNOUNCE
 
-#include "linux_compat.h"
+typedef enum {
+  NDPI_LOG_ERROR,
+  NDPI_LOG_TRACE,
+  NDPI_LOG_DEBUG
+} ndpi_log_level_t;
 
-#include "ndpi_define.h"
+typedef void (*ndpi_debug_function_ptr) (u_int32_t protocol,
+              void *module_struct, ndpi_log_level_t log_level,
+              const char *format, ...);
+
+typedef enum {
+  ndpi_preorder,
+  ndpi_postorder,
+  ndpi_endorder,
+  ndpi_leaf
+} ndpi_VISIT;
+
+typedef struct node_t {
+  char	  *key;
+  struct node_t *left, *right;
+} ndpi_node;
+
+typedef u_int32_t ndpi_ndpi_mask;
+
+typedef struct ndpi_protocol_bitmask_struct {
+  ndpi_ndpi_mask  fds_bits[NDPI_NUM_FDS_BITS];
+} ndpi_protocol_bitmask_struct_t;
 
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 struct ndpi_ip6_addr {
@@ -75,7 +100,60 @@ typedef union {
 } ndpi_ip_addr_t;
 
 
-# define MAX_PACKET_COUNTER 65000
+#ifdef NDPI_PROTOCOL_BITTORRENT
+#ifndef __KERNEL__
+typedef struct spinlock {
+        volatile int    val;
+} spinlock_t;
+typedef struct atomic {
+	volatile int counter;
+} atomic_t;
+
+#endif
+
+struct hash_ip4p_node {
+        struct hash_ip4p_node   *next,*prev;
+        time_t                  lchg;
+        u_int16_t               port,count:12,flag:4;
+        u_int32_t               ip;
+	// + 12 bytes for ipv6
+};
+
+struct hash_ip4p {
+        struct hash_ip4p_node   *top;
+        spinlock_t              lock;
+        size_t                  len;
+};
+
+struct hash_ip4p_table {
+        size_t                  size;
+	int			ipv6;
+        spinlock_t              lock;
+        atomic_t                count;
+        struct hash_ip4p        tbl[0];
+};
+
+struct bt_announce { // 192 bytes
+	u_int32_t		hash[5];
+	u_int32_t		ip[4];
+	u_int32_t		time;
+	u_int16_t		port;
+	u_int8_t		name_len,
+				name[192 - 4*10 - 2 - 1]; // 149 bytes
+};
+#endif
+
+typedef enum {
+  HTTP_METHOD_UNKNOWN = 0,
+  HTTP_METHOD_OPTIONS,
+  HTTP_METHOD_GET,
+  HTTP_METHOD_HEAD,
+  HTTP_METHOD_POST,
+  HTTP_METHOD_PUT,
+  HTTP_METHOD_DELETE,
+  HTTP_METHOD_TRACE,
+  HTTP_METHOD_CONNECT
+} ndpi_http_method;
 
 typedef struct ndpi_id_struct {
   /* detected_protocol_bitmask:
@@ -89,27 +167,19 @@ typedef struct ndpi_id_struct {
    * }
    */
   NDPI_PROTOCOL_BITMASK detected_protocol_bitmask;
-#ifdef NDPI_PROTOCOL_FTP
-  ndpi_ip_addr_t ftp_ip;
-#endif
 #ifdef NDPI_PROTOCOL_RTSP
   ndpi_ip_addr_t rtsp_ip_address;
-#endif
-#ifdef NDPI_PROTOCOL_PPLIVE
-  u_int32_t pplive_last_packet_time;
 #endif
 #ifdef NDPI_PROTOCOL_SIP
 #ifdef NDPI_PROTOCOL_YAHOO
   u_int32_t yahoo_video_lan_timer;
 #endif
 #endif
+/* NDPI_PROTOCOL_IRC_MAXPORT % 2 must be 0 */
 #ifdef NDPI_PROTOCOL_IRC
-  u_int32_t last_time_port_used[16];
-#endif
-#ifdef NDPI_PROTOCOL_FTP
-  u_int32_t ftp_timer;
-#endif
-#ifdef NDPI_PROTOCOL_IRC
+#define NDPI_PROTOCOL_IRC_MAXPORT 8
+  u_int16_t irc_port[NDPI_PROTOCOL_IRC_MAXPORT];
+  u_int32_t last_time_port_used[NDPI_PROTOCOL_IRC_MAXPORT];
   u_int32_t irc_ts;
 #endif
 #ifdef NDPI_PROTOCOL_GNUTELLA
@@ -127,18 +197,11 @@ typedef struct ndpi_id_struct {
 #ifdef NDPI_PROTOCOL_OSCAR
   u_int32_t oscar_last_safe_access_time;
 #endif
-#ifdef NDPI_PROTOCOL_GADUGADU
-  u_int32_t gg_ft_ip_address;
-  u_int32_t gg_timeout;
-#endif
 #ifdef NDPI_PROTOCOL_ZATTOO
   u_int32_t zattoo_ts;
 #endif
 #ifdef NDPI_PROTOCOL_UNENCRYPED_JABBER
   u_int32_t jabber_stun_or_ft_ts;
-#endif
-#ifdef NDPI_PROTOCOL_MANOLITO
-  u_int32_t manolito_last_pkt_arrival_time;
 #endif
 #ifdef NDPI_PROTOCOL_DIRECTCONNECT
   u_int32_t directconnect_last_safe_access_time;
@@ -151,14 +214,10 @@ typedef struct ndpi_id_struct {
   u_int16_t detected_directconnect_udp_port;
   u_int16_t detected_directconnect_ssl_port;
 #endif
-#ifdef NDPI_PROTOCOL_PPLIVE
-  u_int16_t pplive_vod_cli_port;
-#endif
-#ifdef NDPI_PROTOCOL_IRC
-  u_int16_t irc_port[16];
-#endif
-#ifdef NDPI_PROTOCOL_GADUGADU
-  u_int16_t gg_ft_port;
+#ifdef NDPI_PROTOCOL_BITTORRENT
+#define NDPI_BT_PORTS 8
+  u_int16_t bt_port_t[NDPI_BT_PORTS];
+  u_int16_t bt_port_u[NDPI_BT_PORTS];
 #endif
 #ifdef NDPI_PROTOCOL_UNENCRYPED_JABBER
 #define JABBER_MAX_STUN_PORTS 6
@@ -181,10 +240,6 @@ typedef struct ndpi_id_struct {
 #ifdef NDPI_PROTOCOL_OSCAR
   u_int8_t oscar_ssl_session_id[33];
 #endif
-#ifdef NDPI_PROTOCOL_GADUGADU
-  u_int8_t gg_call_id[2][7];
-  u_int8_t gg_fmnumber[8];
-#endif
 #ifdef NDPI_PROTOCOL_UNENCRYPED_JABBER
   u_int8_t jabber_voice_stun_used_ports;
 #endif
@@ -197,28 +252,26 @@ typedef struct ndpi_id_struct {
   u_int32_t yahoo_conf_logged_in:1;
   u_int32_t yahoo_voice_conf_logged_in:1;
 #endif
-#ifdef NDPI_PROTOCOL_FTP
-  u_int32_t ftp_timer_set:1;
-#endif
-#ifdef NDPI_PROTOCOL_GADUGADU
-  u_int32_t gadu_gadu_ft_direction:1;
-  u_int32_t gadu_gadu_voice:1;
-  u_int32_t gg_next_id:1;
-#endif
 #ifdef NDPI_PROTOCOL_RTSP
   u_int32_t rtsp_ts_set:1;
 #endif
-#ifdef NDPI_PROTOCOL_PPLIVE
-  u_int32_t pplive_last_packet_time_set:1;
+#ifdef NDPI_PROTOCOL_FTP
+  u_int32_t ftp_timer_set:1;
+#endif
+#ifdef NDPI_PROTOCOL_MANOLITO
+  u_int32_t manolito_last_pkt_arrival_time;
+#endif
+#ifdef NDPI_PROTOCOL_FTP
+  ndpi_ip_addr_t ftp_ip;
+#endif
+#ifdef NDPI_PROTOCOL_FTP
+  u_int32_t ftp_timer;
 #endif
 } ndpi_id_struct;
 
-/* ************************************************** */ 
+/* ************************************************** */
 
 struct ndpi_flow_tcp_struct {
-#ifdef NDPI_PROTOCOL_FLASH
-  u_int16_t flash_bytes;
-#endif
 #ifdef NDPI_PROTOCOL_MAIL_SMTP
   u_int16_t smtp_command_bitmask;
 #endif
@@ -231,18 +284,15 @@ struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_TDS
   u_int8_t tds_login_version;
 #endif
-#ifdef NDPI_PROTOCOL_PPLIVE
-  u_int8_t pplive_next_packet_size[2];
-#endif
 #ifdef NDPI_PROTOCOL_IRC
   u_int8_t irc_stage;
   u_int8_t irc_port;
 #endif
+#ifdef NDPI_PROTOCOL_H323
+  u_int8_t h323_valid_packets;
+#endif
 #ifdef NDPI_PROTOCOL_GNUTELLA
   u_int8_t gnutella_msg_id[3];
-#endif
-#ifdef NDPI_PROTOCOL_EDONKEY
-  u_int32_t edk_ext:1;
 #endif
 #ifdef NDPI_PROTOCOL_IRC
   u_int32_t irc_3a_counter:3;
@@ -259,14 +309,8 @@ struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_FILETOPIA
   u_int32_t filetopia_stage:2;
 #endif
-#ifdef NDPI_PROTOCOL_MANOLITO
-  u_int32_t manolito_stage:4;
-#endif
 #ifdef NDPI_PROTOCOL_TDS
   u_int32_t tds_stage:3;
-#endif
-#ifdef NDPI_PROTOCOL_GADUGADU
-  u_int32_t gadugadu_stage:2;
 #endif
 #ifdef NDPI_PROTOCOL_USENET
   u_int32_t usenet_stage:2;
@@ -274,24 +318,16 @@ struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_IMESH
   u_int32_t imesh_stage:4;
 #endif
-#ifdef NDPI_PROTOCOL_FTP
-  u_int32_t ftp_codes_seen:5;
-  u_int32_t ftp_client_direction:1;
-#endif
 #ifdef NDPI_PROTOCOL_HTTP
   u_int32_t http_setup_dir:2;
   u_int32_t http_stage:2;
   u_int32_t http_empty_line_seen:1;
   u_int32_t http_wait_for_retransmission:1;
-  u_char    host_server_name[64];
 #endif							// NDPI_PROTOCOL_HTTP
-#ifdef NDPI_PROTOCOL_FLASH
-  u_int32_t flash_stage:3;
-#endif
 #ifdef NDPI_PROTOCOL_GNUTELLA
   u_int32_t gnutella_stage:2;		//0-2
 #endif
-#ifdef NDPI_PROTOCOL_MMS
+#ifdef NDPI_CONTENT_MMS
   u_int32_t mms_stage:2;
 #endif
 #ifdef NDPI_PROTOCOL_YAHOO
@@ -312,7 +348,7 @@ struct ndpi_flow_tcp_struct {
   u_int32_t telnet_stage:2;			// 0 - 2
 #endif
 #ifdef NDPI_PROTOCOL_SSL
-  u_int32_t ssl_stage:2;			// 0 - 3
+  u_int8_t ssl_stage:2, ssl_seen_client_cert:1, ssl_seen_server_cert:1; // 0 - 5
 #endif
 #ifdef NDPI_PROTOCOL_POSTGRES
   u_int32_t postgres_stage:3;
@@ -366,18 +402,25 @@ struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_TEAMVIEWER
   u_int8_t teamviewer_stage;
 #endif
+
 #ifdef NDPI_PROTOCOL_ZMQ
   u_int8_t prev_zmq_pkt_len;
   u_char prev_zmq_pkt[10];
 #endif
+#ifdef NDPI_PROTOCOL_MANOLITO
+  u_int32_t manolito_stage:4;
+#endif
+#ifdef NDPI_PROTOCOL_FTP
+  u_int32_t ftp_codes_seen:5;
+  u_int32_t ftp_client_direction:1;
+#endif
 }
-
-/* ************************************************** */ 
-
 #if !defined(WIN32)
   __attribute__ ((__packed__))
 #endif
   ;
+
+/* ************************************************** */
 
 struct ndpi_flow_udp_struct {
 #ifdef NDPI_PROTOCOL_BATTLEFIELD
@@ -394,9 +437,6 @@ struct ndpi_flow_udp_struct {
 #endif
 #ifdef NDPI_PROTOCOL_PPSTREAM
   u_int32_t ppstream_stage:3;		// 0-7
-#endif
-#ifdef NDPI_PROTOCOL_FEIDIAN
-  u_int32_t feidian_stage:1;		// 0-7
 #endif
 #ifdef NDPI_PROTOCOL_HALFLIFE2
   u_int32_t halflife2_stage:2;		// 0 - 2
@@ -420,16 +460,15 @@ struct ndpi_flow_udp_struct {
   u_int8_t teamviewer_stage;
 #endif
 }
-
-/* ************************************************** */ 
-
 #if !defined(WIN32)
   __attribute__ ((__packed__))
 #endif
   ;
 
+/* ************************************************** */
+
 typedef struct ndpi_int_one_line_struct {
-  const u_int8_t *ptr;
+  u_int16_t offs;
   u_int16_t len;
 } ndpi_int_one_line_struct_t;
 
@@ -444,11 +483,12 @@ typedef struct ndpi_packet_struct {
   const u_int8_t *payload;
 
   u_int32_t tick_timestamp;
+  u_int64_t tick_timestamp_l;
 
   u_int16_t detected_protocol_stack[NDPI_PROTOCOL_HISTORY_SIZE];
   u_int8_t detected_subprotocol_stack[NDPI_PROTOCOL_HISTORY_SIZE];
 
-  /* this is for simple read-only access to the real protocol 
+  /* this is for simple read-only access to the real protocol
    * used for the main loop */
   u_int16_t real_protocol_read_only;
 
@@ -460,7 +500,7 @@ typedef struct ndpi_packet_struct {
   struct {
     u_int8_t entry_is_real_protocol:5;
     u_int8_t current_stack_size_minus_one:3;
-  } 
+  }
 #if !defined(WIN32)
     __attribute__ ((__packed__))
 #endif
@@ -468,8 +508,8 @@ typedef struct ndpi_packet_struct {
 #endif
 
   struct ndpi_int_one_line_struct line[NDPI_MAX_PARSE_LINES_PER_PACKET];
-  struct ndpi_int_one_line_struct unix_line[NDPI_MAX_PARSE_LINES_PER_PACKET];
   struct ndpi_int_one_line_struct host_line;
+  struct ndpi_int_one_line_struct forwarded_line;
   struct ndpi_int_one_line_struct referer_line;
   struct ndpi_int_one_line_struct content_line;
   struct ndpi_int_one_line_struct accept_line;
@@ -479,11 +519,11 @@ typedef struct ndpi_packet_struct {
   struct ndpi_int_one_line_struct http_transfer_encoding;
   struct ndpi_int_one_line_struct http_contentlen;
   struct ndpi_int_one_line_struct http_cookie;
+  struct ndpi_int_one_line_struct http_origin;
   struct ndpi_int_one_line_struct http_x_session_type;
   struct ndpi_int_one_line_struct server_line;
   struct ndpi_int_one_line_struct http_method;
   struct ndpi_int_one_line_struct http_response;
-
 
   u_int16_t l3_packet_len;
   u_int16_t l4_packet_len;
@@ -496,11 +536,15 @@ typedef struct ndpi_packet_struct {
   u_int8_t tcp_retransmission;
   u_int8_t l4_protocol;
 
-  u_int8_t packet_lines_parsed_complete;
-  u_int8_t packet_unix_lines_parsed_complete;
-  u_int8_t empty_line_position_set;
-  u_int8_t packet_direction:1;
+  u_int8_t ssl_certificate_detected:4, ssl_certificate_num_checks:4;
+  u_int8_t packet_lines_parsed_complete:1,
+	   packet_direction:1,
+	   empty_line_position_set:1;
 } ndpi_packet_struct_t;
+
+#define packet_line(l) (packet->payload + packet->line[l].offs)
+#define packet_hdr_c(l) (packet->l.offs != 0xffff ? packet->payload + packet->l.offs:NULL)
+#define packet_hdr(l) (packet->payload + packet->l.offs)
 
 struct ndpi_detection_module_struct;
 struct ndpi_flow_struct;
@@ -517,16 +561,29 @@ typedef struct ndpi_subprotocol_conf_struct {
   void (*func) (struct ndpi_detection_module_struct *, char *attr, char *value, int protocol_id);
 } ndpi_subprotocol_conf_struct_t;
 
-#define MAX_DEFAULT_PORTS        5
 
 typedef struct {
   u_int16_t port_low, port_high;
 } ndpi_port_range;
 
+typedef enum {
+  NDPI_PROTOCOL_SAFE = 0, /* Safe protocol with encryption */
+  NDPI_PROTOCOL_ACCEPTABLE, /* Ok but not encrypted */
+  NDPI_PROTOCOL_FUN, /* Pure fun protocol */
+  NDPI_PROTOCOL_UNSAFE, /* Protocol with a safe version existing  what should be used instead */
+  NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, /* Be prepared to troubles */
+  NDPI_PROTOCOL_UNRATED /* No idea */
+} ndpi_protocol_breed_t;
+
+#define NUM_BREEDS (NDPI_PROTOCOL_UNRATED+1)
+
 /* ntop extensions */
 typedef struct ndpi_proto_defaults {
   char *protoName;
-  u_int16_t protoId;
+  u_int16_t protoId, protoIdx;
+  u_int16_t master_tcp_protoId[2], master_udp_protoId[2]; /* The main protocols on which this sub-protocol sits on */
+  ndpi_protocol_breed_t protoBreed;
+  void (*func) (struct ndpi_detection_module_struct *, struct ndpi_flow_struct *flow);
 } ndpi_proto_defaults_t;
 
 typedef struct ndpi_default_ports_tree_node {
@@ -534,10 +591,15 @@ typedef struct ndpi_default_ports_tree_node {
   u_int16_t default_port;
 } ndpi_default_ports_tree_node_t;
 
+typedef struct _ndpi_automa {
+  void *ac_automa; /* Real type is AC_AUTOMATA_t */
+  u_int8_t ac_automa_finalized;
+} ndpi_automa;
+
 typedef struct ndpi_detection_module_struct {
   NDPI_PROTOCOL_BITMASK detection_bitmask;
   NDPI_PROTOCOL_BITMASK generic_http_packet_bitmask;
-  
+
   u_int32_t current_ts;
   u_int32_t ticks_per_second;
 
@@ -560,6 +622,8 @@ typedef struct ndpi_detection_module_struct {
   struct ndpi_call_function_struct callback_buffer_non_tcp_udp[NDPI_MAX_SUPPORTED_PROTOCOLS + 1];
   u_int32_t callback_buffer_size_non_tcp_udp;
 
+  ndpi_default_ports_tree_node_t *tcpRoot, *udpRoot;
+
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
   /* debug callback, only set when debug is used */
   ndpi_debug_function_ptr ndpi_debug_printf;
@@ -570,18 +634,19 @@ typedef struct ndpi_detection_module_struct {
   /* misc parameters */
   u_int32_t tcp_max_retransmission_window_size;
 
-  u_int32_t edonkey_upper_ports_only:1;
-  u_int32_t edonkey_safe_mode:1;
   u_int32_t directconnect_connection_ip_tick_timeout;
 
   /* subprotocol registration handler */
   struct ndpi_subprotocol_conf_struct subprotocol_conf[NDPI_MAX_SUPPORTED_PROTOCOLS + 1];
 
-  /*gadu gadu*/
-  u_int32_t gadugadu_peer_connection_timeout;
-  /* pplive params */
-  u_int32_t pplive_connection_timeout;
-  /* ftp parameters */
+  u_int ndpi_num_supported_protocols;
+  u_int ndpi_num_custom_protocols;
+
+  /* HTTP/DNS/HTTPS host matching */
+  ndpi_automa host_automa, content_automa, bigrams_automa, impossible_bigrams_automa;
+
+  /* IP-based protocol detection */
+  void *protocols_ptree;
   u_int32_t ftp_connection_timeout;
   /* irc parameters */
   u_int32_t irc_timeout;
@@ -611,9 +676,22 @@ typedef struct ndpi_detection_module_struct {
   char ip_string[NDPI_IP_STRING_SIZE];
 #endif
   u_int8_t ip_version_limit;
-
   /* ********************* */
+#ifdef NDPI_PROTOCOL_BITTORRENT
+  struct hash_ip4p_table *bt_ht;
+#ifdef NDPI_DETECTION_SUPPORT_IPV6
+  struct hash_ip4p_table *bt6_ht;
+#endif
+#ifdef BT_ANNOUNCE
+  struct bt_announce *bt_ann;
+  int    bt_ann_len;
+#endif
+#endif
+
   ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
+
+  u_int8_t match_dns_host_names:1, http_dissect_response:1;
+  u_int8_t direction_detect_disable:1; /* disable internal detection of packet direction */
 } ndpi_detection_module_struct_t;
 
 typedef struct ndpi_flow_struct {
@@ -622,22 +700,26 @@ typedef struct ndpi_flow_struct {
 #  if NDPI_PROTOCOL_HISTORY_SIZE > 5
 #    error protocol stack size not supported
 #  endif
-  
+
   struct {
     u_int8_t entry_is_real_protocol:5;
     u_int8_t current_stack_size_minus_one:3;
-  } 
-    
+  }
+
 #if !defined(WIN32)
     __attribute__ ((__packed__))
 #endif
     protocol_stack_info;
 #endif
-  
-  
+
   /* init parameter, internal used to set up timestamp,... */
+  u_int16_t guessed_protocol_id;
+
+  u_int8_t protocol_id_already_guessed:1;
+  u_int8_t no_cache_protocol:1;
   u_int8_t init_finished:1;
   u_int8_t setup_packet_direction:1;
+  u_int8_t packet_direction:1; /* if ndpi_struct->direction_detect_disable == 1 */
   /* tcp sequence number connection tracking */
   u_int32_t next_tcp_seq_nr[2];
 
@@ -649,44 +731,68 @@ typedef struct ndpi_flow_struct {
     struct ndpi_flow_udp_struct udp;
   } l4;
 
+  struct ndpi_id_struct *server_id; /* 
+				       Pointer to src or dst
+				       that identifies the 
+				       server of this connection
+				     */
+#ifndef __KERNEL__
+  u_char host_server_name[256]; /* HTTP host or DNS query   */ 
+#else
+  u_char host_server_name[160]; 
+#endif
+  u_char detected_os[32];       /* Via HTTP User-Agent      */
+  u_char nat_ip[24];            /* Via HTTP X-Forwarded-For */
 
+  /* 
+     This structure below will not not stay inside the protos
+     structure below as HTTP is used by many subprotocols
+     such as FaceBook, Google... so it is hard to know
+     when to use it or not. Thus we leave it outside for the
+     time being.
+  */
+  struct {
+    ndpi_http_method method;      
+    char *url, *content_type;
+  } http;
+
+  union {
+    struct {
+      u_int8_t num_queries, num_answers, ret_code;
+      u_int8_t bad_packet /* the received packet looks bad */;
+      u_int16_t query_type, query_class, rsp_type;
+    } dns;
+    
+    struct {
+      char client_certificate[48], server_certificate[48];
+    } ssl;
+  } protos;
   /* ALL protocol specific 64 bit variables here */
 
   /* protocols which have marked a connection as this connection cannot be protocol XXX, multiple u_int64_t */
   NDPI_PROTOCOL_BITMASK excluded_protocol_bitmask;
 
+#if 0
 #ifdef NDPI_PROTOCOL_RTP
   u_int32_t rtp_ssid[2];
-#endif
-#ifdef NDPI_PROTOCOL_I23V5
-  u_int32_t i23v5_len1;
-  u_int32_t i23v5_len2;
-  u_int32_t i23v5_len3;
-#endif
-  u_int16_t packet_counter;			// can be 0-65000
-  u_int16_t packet_direction_counter[2];
-  u_int16_t byte_counter[2];
-#ifdef NDPI_PROTOCOL_RTP
   u_int16_t rtp_seqnum[2];			/* current highest sequence number (only goes forwards, is not decreased by retransmissions) */
-#endif
-#ifdef NDPI_PROTOCOL_RTP
   /* tcp and udp */
   u_int8_t rtp_payload_type[2];
+  u_int32_t rtp_stage1:2;			//0-3
+  u_int32_t rtp_stage2:2;
+#endif
 #endif
 
 #ifdef NDPI_PROTOCOL_REDIS
   u_int8_t redis_s2d_first_char, redis_d2s_first_char;
 #endif
 
+  u_int16_t packet_counter;			// can be 0-65000
+  u_int16_t packet_direction_counter[2];
+  u_int16_t byte_counter[2];
+
 #ifdef NDPI_PROTOCOL_BITTORRENT
   u_int8_t bittorrent_stage;		// can be 0-255
-#endif
-#ifdef NDPI_PROTOCOL_RTP
-  u_int32_t rtp_stage1:2;			//0-3
-  u_int32_t rtp_stage2:2;
-#endif
-#ifdef NDPI_PROTOCOL_EDONKEY
-  u_int32_t edk_stage:5;			// 0-17
 #endif
 #ifdef NDPI_PROTOCOL_DIRECTCONNECT
   u_int32_t directconnect_stage:2;	// 0-1
@@ -707,10 +813,6 @@ typedef struct ndpi_flow_struct {
 #ifdef NDPI_PROTOCOL_YAHOO
   u_int32_t yahoo_detection_finished:2;
 #endif
-#ifdef NDPI_PROTOCOL_PPLIVE
-  u_int32_t pplive_stage:3;			// 0-7
-#endif
-
 #ifdef NDPI_PROTOCOL_ZATTOO
   u_int32_t zattoo_stage:3;
 #endif
@@ -727,11 +829,37 @@ typedef struct ndpi_flow_struct {
 #ifdef NDPI_PROTOCOL_FLORENSIA
   u_int32_t florensia_stage:1;
 #endif
+#ifdef NDPI_PROTOCOL_SOCKS5
+  u_int32_t socks5_stage:2;	// 0-3
+#endif
+#ifdef NDPI_PROTOCOL_SOCKS4
+  u_int32_t socks4_stage:2;	// 0-3
+#endif
+#ifdef NDPI_PROTOCOL_EDONKEY
+  u_int32_t edonkey_stage:2;	// 0-3
+#endif
+#ifdef NDPI_PROTOCOL_FTP_CONTROL
+  u_int32_t ftp_control_stage:2;
+#endif
+#ifdef NDPI_PROTOCOL_FTP_DATA
+  u_int32_t ftp_data_stage:2;
+#endif
+#ifdef NDPI_PROTOCOL_RTMP
+  u_int32_t rtmp_stage:2;
+#endif
+#ifdef NDPI_PROTOCOL_PANDO
+  u_int32_t pando_stage:3;
+#endif
 #ifdef NDPI_PROTOCOL_STEAM
   u_int32_t steam_stage:3;
   u_int32_t steam_stage1:3;			// 0 - 4
   u_int32_t steam_stage2:2;			// 0 - 2
   u_int32_t steam_stage3:2;			// 0 - 2
+#endif
+#ifdef NDPI_PROTOCOL_PPLIVE
+  u_int32_t pplive_stage1:3;			// 0-6
+  u_int32_t pplive_stage2:2;			// 0-2
+  u_int32_t pplive_stage3:2;			// 0-2
 #endif
 
   /* internal structures to save functions calls */
@@ -740,5 +868,10 @@ typedef struct ndpi_flow_struct {
   struct ndpi_id_struct *src;
   struct ndpi_id_struct *dst;
 } ndpi_flow_struct_t;
-		     
-#endif							/* __NDPI_STRUCTS_INCLUDE_FILE__ */
+
+typedef enum {
+  NDPI_REAL_PROTOCOL = 0,
+  NDPI_CORRELATED_PROTOCOL = 1
+} ndpi_protocol_type_t;
+
+#endif/* __NDPI_TYPEDEFS_FILE__ */

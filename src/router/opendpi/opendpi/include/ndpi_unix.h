@@ -1,8 +1,8 @@
 /*
- * ndpi_utils.h
+ * ndpi_unix.h
  *
+ * Copyright (C) 2011-15 - ntop.org
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -22,15 +22,32 @@
  *
  */
 
+#ifndef __NDPI_UNIX_INCLUDE_FILE__
+#define __NDPI_UNIX_INCLUDE_FILE__
 
+#include "linux_compat.h"
 
-#ifndef _NDPI_UTILS_H_
-#define _NDPI_UTILS_H_
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <netinet/in.h>
+#if defined(__NetBSD__) || defined(__OpenBSD__)
+#include <netinet/in_systm.h>
+#if defined(__OpenBSD__)
+#include <pthread.h>
+#endif
+#endif
+#endif
 
-#include "ndpi_protocols.h"
+#ifndef WIN32
+#ifndef __KERNEL__
 
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+#else
+#include <linux/ip.h>
+#include <linux/tcp.h>
+#include <linux/udp.h>
+#endif
+#endif
 
-extern char* ndpi_strnstr(const char *s, const char *find, size_t slen);
-
-#endif							/* _NDPI_UTILS_H_ */
-
+#endif /* __NDPI_UNIX_INCLUDE_FILE__ */
