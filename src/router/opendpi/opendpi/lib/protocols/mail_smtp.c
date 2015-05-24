@@ -2,7 +2,7 @@
  * mail_smtp.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -66,80 +66,81 @@ static void ndpi_search_mail_smtp_tcp(struct ndpi_detection_module_struct
 
     NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct, flow,packet);
     for (a = 0; a < packet->parsed_lines; a++) {
+	const char *s = packet_line(a);
 
       // expected server responses
       if (packet->line[a].len >= 3) {
-	if (memcmp(packet->line[a].ptr, "220", 3) == 0) {
+	if (memcmp(s, "220", 3) == 0) {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_220;
-	} else if (memcmp(packet->line[a].ptr, "250", 3) == 0) {
+	} else if (memcmp(s, "250", 3) == 0) {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_250;
-	} else if (memcmp(packet->line[a].ptr, "235", 3) == 0) {
+	} else if (memcmp(s, "235", 3) == 0) {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_235;
-	} else if (memcmp(packet->line[a].ptr, "334", 3) == 0) {
+	} else if (memcmp(s, "334", 3) == 0) {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_334;
-	} else if (memcmp(packet->line[a].ptr, "354", 3) == 0) {
+	} else if (memcmp(s, "354", 3) == 0) {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_354;
 	}
       }
       // expected client requests
       if (packet->line[a].len >= 5) {
-	if ((((packet->line[a].ptr[0] == 'H' || packet->line[a].ptr[0] == 'h')
-	      && (packet->line[a].ptr[1] == 'E' || packet->line[a].ptr[1] == 'e'))
-	     || ((packet->line[a].ptr[0] == 'E' || packet->line[a].ptr[0] == 'e')
-		 && (packet->line[a].ptr[1] == 'H' || packet->line[a].ptr[1] == 'h')))
-	    && (packet->line[a].ptr[2] == 'L' || packet->line[a].ptr[2] == 'l')
-	    && (packet->line[a].ptr[3] == 'O' || packet->line[a].ptr[3] == 'o')
-	    && packet->line[a].ptr[4] == ' ') {
+	if ((((s[0] == 'H' || s[0] == 'h')
+	      && (s[1] == 'E' || s[1] == 'e'))
+	     || ((s[0] == 'E' || s[0] == 'e')
+		 && (s[1] == 'H' || s[1] == 'h')))
+	    && (s[2] == 'L' || s[2] == 'l')
+	    && (s[3] == 'O' || s[3] == 'o')
+	    && s[4] == ' ') {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_HELO_EHLO;
-	} else if ((packet->line[a].ptr[0] == 'M' || packet->line[a].ptr[0] == 'm')
-		   && (packet->line[a].ptr[1] == 'A' || packet->line[a].ptr[1] == 'a')
-		   && (packet->line[a].ptr[2] == 'I' || packet->line[a].ptr[2] == 'i')
-		   && (packet->line[a].ptr[3] == 'L' || packet->line[a].ptr[3] == 'l')
-		   && packet->line[a].ptr[4] == ' ') {
+	} else if ((s[0] == 'M' || s[0] == 'm')
+		   && (s[1] == 'A' || s[1] == 'a')
+		   && (s[2] == 'I' || s[2] == 'i')
+		   && (s[3] == 'L' || s[3] == 'l')
+		   && s[4] == ' ') {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_MAIL;
-	} else if ((packet->line[a].ptr[0] == 'R' || packet->line[a].ptr[0] == 'r')
-		   && (packet->line[a].ptr[1] == 'C' || packet->line[a].ptr[1] == 'c')
-		   && (packet->line[a].ptr[2] == 'P' || packet->line[a].ptr[2] == 'p')
-		   && (packet->line[a].ptr[3] == 'T' || packet->line[a].ptr[3] == 't')
-		   && packet->line[a].ptr[4] == ' ') {
+	} else if ((s[0] == 'R' || s[0] == 'r')
+		   && (s[1] == 'C' || s[1] == 'c')
+		   && (s[2] == 'P' || s[2] == 'p')
+		   && (s[3] == 'T' || s[3] == 't')
+		   && s[4] == ' ') {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_RCPT;
-	} else if ((packet->line[a].ptr[0] == 'A' || packet->line[a].ptr[0] == 'a')
-		   && (packet->line[a].ptr[1] == 'U' || packet->line[a].ptr[1] == 'u')
-		   && (packet->line[a].ptr[2] == 'T' || packet->line[a].ptr[2] == 't')
-		   && (packet->line[a].ptr[3] == 'H' || packet->line[a].ptr[3] == 'h')
-		   && packet->line[a].ptr[4] == ' ') {
+	} else if ((s[0] == 'A' || s[0] == 'a')
+		   && (s[1] == 'U' || s[1] == 'u')
+		   && (s[2] == 'T' || s[2] == 't')
+		   && (s[3] == 'H' || s[3] == 'h')
+		   && s[4] == ' ') {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_AUTH;
 	}
       }
 
       if (packet->line[a].len >= 8) {
-	if ((packet->line[a].ptr[0] == 'S' || packet->line[a].ptr[0] == 's')
-	    && (packet->line[a].ptr[1] == 'T' || packet->line[a].ptr[1] == 't')
-	    && (packet->line[a].ptr[2] == 'A' || packet->line[a].ptr[2] == 'a')
-	    && (packet->line[a].ptr[3] == 'R' || packet->line[a].ptr[3] == 'r')
-	    && (packet->line[a].ptr[4] == 'T' || packet->line[a].ptr[0] == 't')
-	    && (packet->line[a].ptr[5] == 'T' || packet->line[a].ptr[1] == 't')
-	    && (packet->line[a].ptr[6] == 'L' || packet->line[a].ptr[2] == 'l')
-	    && (packet->line[a].ptr[7] == 'S' || packet->line[a].ptr[3] == 's')) {
+	if ((s[0] == 'S' || s[0] == 's')
+	    && (s[1] == 'T' || s[1] == 't')
+	    && (s[2] == 'A' || s[2] == 'a')
+	    && (s[3] == 'R' || s[3] == 'r')
+	    && (s[4] == 'T' || s[4] == 't')
+	    && (s[5] == 'T' || s[5] == 't')
+	    && (s[6] == 'L' || s[6] == 'l')
+	    && (s[7] == 'S' || s[7] == 's')) {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_STARTTLS;
 	}
       }
 
       if (packet->line[a].len >= 4) {
-	if ((packet->line[a].ptr[0] == 'D' || packet->line[a].ptr[0] == 'd')
-	    && (packet->line[a].ptr[1] == 'A' || packet->line[a].ptr[1] == 'a')
-	    && (packet->line[a].ptr[2] == 'T' || packet->line[a].ptr[2] == 't')
-	    && (packet->line[a].ptr[3] == 'A' || packet->line[a].ptr[3] == 'a')) {
+	if ((s[0] == 'D' || s[0] == 'd')
+	    && (s[1] == 'A' || s[1] == 'a')
+	    && (s[2] == 'T' || s[2] == 't')
+	    && (s[3] == 'A' || s[3] == 'a')) {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_DATA;
-	} else if ((packet->line[a].ptr[0] == 'N' || packet->line[a].ptr[0] == 'n')
-		   && (packet->line[a].ptr[1] == 'O' || packet->line[a].ptr[1] == 'o')
-		   && (packet->line[a].ptr[2] == 'O' || packet->line[a].ptr[2] == 'o')
-		   && (packet->line[a].ptr[3] == 'P' || packet->line[a].ptr[3] == 'p')) {
+	} else if ((s[0] == 'N' || s[0] == 'n')
+		   && (s[1] == 'O' || s[1] == 'o')
+		   && (s[2] == 'O' || s[2] == 'o')
+		   && (s[3] == 'P' || s[3] == 'p')) {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_NOOP;
-	} else if ((packet->line[a].ptr[0] == 'R' || packet->line[a].ptr[0] == 'r')
-		   && (packet->line[a].ptr[1] == 'S' || packet->line[a].ptr[1] == 's')
-		   && (packet->line[a].ptr[2] == 'E' || packet->line[a].ptr[2] == 'e')
-		   && (packet->line[a].ptr[3] == 'T' || packet->line[a].ptr[3] == 't')) {
+	} else if ((s[0] == 'R' || s[0] == 'r')
+		   && (s[1] == 'S' || s[1] == 's')
+		   && (s[2] == 'E' || s[2] == 'e')
+		   && (s[3] == 'T' || s[3] == 't')) {
 	  flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_RSET;
 	}
       }

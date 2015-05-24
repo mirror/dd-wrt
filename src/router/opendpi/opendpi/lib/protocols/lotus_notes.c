@@ -1,7 +1,7 @@
 /*
  * lotus_notes.c
  *
- * Copyright (C) 2012-13 - ntop.org
+ * Copyright (C) 2012-15 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@
  */
 
 
-#include "ndpi_utils.h"
+#include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_LOTUS_NOTES
 

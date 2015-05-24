@@ -1,7 +1,7 @@
 /*
  * vmware.c
  *
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,7 @@
 #ifdef NDPI_PROTOCOL_VMWARE
 
 
-void ndpi_search_vmware(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_vmware(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
     

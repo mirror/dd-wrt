@@ -1,7 +1,7 @@
 /*
  * crossfire.c
  *
- * Copyright (C) 2012-13 - ntop.org
+ * Copyright (C) 2012-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -60,13 +60,13 @@ static void ndpi_search_crossfire_tcp_udp(struct ndpi_detection_module_struct *n
 		if (packet->payload_packet_len > 4 && memcmp(packet->payload, "GET /", 5) == 0) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			if (packet->parsed_lines == 8
-				&& (packet->line[0].ptr != NULL && packet->line[0].len >= 30
+				&& (packet->line[0].offs != 0xffff && packet->line[0].len >= 30
 					&& (memcmp(&packet->payload[5], "notice/login_big", 16) == 0
 						|| memcmp(&packet->payload[5], "notice/login_small", 18) == 0))
 				&& memcmp(&packet->payload[packet->line[0].len - 19], "/index.asp HTTP/1.", 18) == 0
-				&& (packet->host_line.ptr != NULL && packet->host_line.len >= 13
-					&& (memcmp(packet->host_line.ptr, "crossfire", 9) == 0
-						|| memcmp(packet->host_line.ptr, "www.crossfire", 13) == 0))
+				&& (packet->host_line.offs != 0xffff && packet->host_line.len >= 13
+					&& (memcmp(packet_hdr(host_line), "crossfire", 9) == 0
+						|| memcmp(packet_hdr(host_line), "www.crossfire", 13) == 0))
 				) {
 				NDPI_LOG(NDPI_PROTOCOL_CROSSFIRE, ndpi_struct, NDPI_LOG_DEBUG, "Crossfire: found HTTP request.\n");
 				ndpi_int_crossfire_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);

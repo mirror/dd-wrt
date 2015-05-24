@@ -24,12 +24,12 @@
 
 #include "ndpi_protocols.h"
 
-#ifdef NDPI_PROTOCOL_TWITTER
+#ifdef NDPI_SERVICE_TWITTER
 
 static void ndpi_int_twitter_add_connection(struct ndpi_detection_module_struct
                                              *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_TWITTER, NDPI_REAL_PROTOCOL);
+  ndpi_int_add_connection(ndpi_struct, flow, NDPI_SERVICE_TWITTER, NDPI_REAL_PROTOCOL);
 }
 
 
@@ -58,6 +58,6 @@ static void ndpi_search_twitter(struct ndpi_detection_module_struct *ndpi_struct
 
   }
 
-  NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_TWITTER);
+  NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_SERVICE_TWITTER);
 }
 #endif

@@ -2,7 +2,7 @@
  * pcanywhere.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -42,7 +42,7 @@ static void ndpi_search_pcanywhere(struct ndpi_detection_module_struct
 
 	if (packet->udp != NULL && packet->udp->dest == htons(5632)
 		&& packet->payload_packet_len == 2
-		&& (ndpi_mem_cmp(packet->payload, "NQ", 2) == 0 || ndpi_mem_cmp(packet->payload, "ST", 2) == 0)) {
+		&& (memcmp(packet->payload, "NQ", 2) == 0 || memcmp(packet->payload, "ST", 2) == 0)) {
 		NDPI_LOG(NDPI_PROTOCOL_PCANYWHERE, ndpi_struct, NDPI_LOG_DEBUG,
 				"PC Anywhere name or status query detected.\n");
 		ndpi_int_pcanywhere_add_connection(ndpi_struct, flow);

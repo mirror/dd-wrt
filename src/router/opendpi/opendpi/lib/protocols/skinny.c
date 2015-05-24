@@ -29,7 +29,7 @@ static void ndpi_int_skinny_add_connection(struct ndpi_detection_module_struct
   ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SKINNY, NDPI_CORRELATED_PROTOCOL);
 }
 
-void ndpi_search_skinny(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_skinny(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
   u_int16_t dport = 0, sport = 0;

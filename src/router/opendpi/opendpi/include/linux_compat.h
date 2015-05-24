@@ -2,7 +2,7 @@
  * linux_compat.h
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -28,14 +28,38 @@
 
 #include "ndpi_define.h"
 
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <machine/endian.h>
+
+#if _BYTE_ORDER == _LITTLE_ENDIAN
+#ifndef __LITTLE_ENDIAN__
+#define __LITTLE_ENDIAN__ 1
+#endif
+#else
+#ifndef __BIG_ENDIAN__
+#define __BIG_ENDIAN__ 1
+#endif
+#endif
+#endif
+
+#pragma pack(push, 1)  /* push current alignment to stack */
+#pragma pack(1)     /* set alignment to 1 byte boundary */
+
+#pragma pack(pop)   /* restore original alignment from stack */
+
 struct ndpi_ethhdr {
   u_char h_dest[6];       /* destination eth addr */
   u_char h_source[6];     /* source ether addr    */
   u_int16_t h_proto;      /* packet type ID field */
-} __attribute__((packed));
+};
+
+struct ndpi_80211q {
+  u_int16_t vlanId;
+  u_int16_t protoType;
+};
 
 struct ndpi_iphdr {
-#if defined(__LITTLE_ENDIAN__)
+#if defined(__LITTLE_ENDIAN__) 
   u_int8_t ihl:4, version:4;
 #elif defined(__BIG_ENDIAN__)
   u_int8_t version:4, ihl:4;
