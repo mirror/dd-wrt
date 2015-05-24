@@ -964,7 +964,7 @@ char *get_NFServiceMark(char *service, uint32 mark);
 #ifdef HAVE_SVQOS
 #define qos_nfmark(x) get_NFServiceMark("QOS", (uint32)(x))
 
-#if !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 extern char *get_tcfmark(uint32 mark);
 #endif
 
