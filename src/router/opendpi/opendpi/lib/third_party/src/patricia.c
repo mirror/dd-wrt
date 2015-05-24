@@ -446,7 +446,7 @@ ndpi_New_Patricia (int maxbits)
  * before deleting the node
  */
 
-void
+static void
 ndpi_Clear_Patricia (patricia_tree_t *patricia, void_fn_t func)
 {
   assert (patricia);
@@ -486,7 +486,6 @@ ndpi_Clear_Patricia (patricia_tree_t *patricia, void_fn_t func)
     }
   }
   assert (patricia->num_active_node == 0);
-  /* ndpi_DeleteEntry (patricia); */
 }
 
 
@@ -503,7 +502,7 @@ ndpi_Destroy_Patricia (patricia_tree_t *patricia, void_fn_t func)
  * if func is supplied, it will be called as func(node->prefix, node->data)
  */
 
-void
+/*void
 ndpi_patricia_process (patricia_tree_t *patricia, void_fn2_t func)
 {
   patricia_node_t *node;
@@ -513,7 +512,7 @@ ndpi_patricia_process (patricia_tree_t *patricia, void_fn2_t func)
     func (node->prefix, node->data);
   } PATRICIA_WALK_END;
 }
-
+*/
 size_t
 ndpi_patricia_walk_inorder(patricia_node_t *node, void_fn2_t func)
 {
