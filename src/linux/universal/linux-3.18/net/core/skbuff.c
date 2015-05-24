@@ -338,6 +338,11 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	skb->end = skb->tail + size;
 	skb->mac_header = (typeof(skb->mac_header))~0U;
 	skb->transport_header = (typeof(skb->transport_header))~0U;
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	skb->cb_next = NULL;
+	skb->nf_queue_entry = NULL;
+	skb->imq_flags = 0;
+#endif
 
 	/* make sure we initialize shinfo sequentially */
 	shinfo = skb_shinfo(skb);
@@ -842,13 +847,13 @@ static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct
 	/* We do not copy old->sk */
 	new->dev		= old->dev;
 	memcpy(new->cb, old->cb, sizeof(old->cb));
-	skb_dst_copy(new, old);
-#ifdef CONFIG_XFRM
-	new->sp			= secpath_get(old->sp);
-#endif
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	new->cb_next = NULL;
 	/*skb_copy_stored_cb(new, old);*/
+#endif
+	skb_dst_copy(new, old);
+#ifdef CONFIG_XFRM
+	new->sp			= secpath_get(old->sp);
 #endif
 	__nf_copy(new, old, false);
 
