@@ -2254,7 +2254,9 @@ void start_restore_defaults(void)
 				if (!u || !u->name) {
 					nvcnt++;
 					nvram_set(t->name, t->value);
-					if (icnt == 1 && startswith(t->name, "wl1_"))	//unset wl1_xx if we have single radio only
+					if (icnt < 2 && startswith(t->name, "wl1_"))	//unset wl1_xx if we have only one radio
+						nvram_unset(t->name);
+					if (icnt < 3 && startswith(t->name, "wl2_"))	//unset wl2_xx if we have only one or two radios
 						nvram_unset(t->name);
 				}
 			}
