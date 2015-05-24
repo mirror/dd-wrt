@@ -141,26 +141,6 @@ int skb_restore_cb(struct sk_buff *skb)
 }
 EXPORT_SYMBOL(skb_restore_cb);
 
-static void skb_copy_stored_cb(struct sk_buff *new, const struct sk_buff *__old)
-{
-	struct skb_cb_table *next;
-	struct sk_buff *old;
-
-	if (!__old->cb_next) {
-		new->cb_next = NULL;
-		return;
-	}
-
-	spin_lock(&skb_cb_store_lock);
-
-	old = (struct sk_buff *)__old;
-
-	next = old->cb_next;
-	atomic_inc(&next->refcnt);
-	new->cb_next = next;
-
-	spin_unlock(&skb_cb_store_lock);
-}
 #endif
 
 /**
@@ -849,7 +829,6 @@ static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct
 	memcpy(new->cb, old->cb, sizeof(old->cb));
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	new->cb_next = NULL;
-	/*skb_copy_stored_cb(new, old);*/
 #endif
 	skb_dst_copy(new, old);
 #ifdef CONFIG_XFRM
