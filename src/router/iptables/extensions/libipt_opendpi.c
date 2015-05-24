@@ -26,11 +26,9 @@
 #include <arpa/inet.h>
 #include <iptables.h>
 #include "ndpi_define.h"
-#include "ndpi_macros.h"
-#include "ndpi_protocols_osdpi.h"
+#include "ndpi_protocol_ids.h"
+#include "ndpi_typedefs.h"
 #include "ndpi_api.h"
-#include "ndpi_protocol_history.h"
-#include "ndpi_structs.h"
 
 //#include <linux/version.h>
 
@@ -40,18 +38,35 @@
 #define true 1
 #define false 0
 
-static char *prot_long_str[] = { NDPI_PROTOCOL_LONG_STRING };
 static char *prot_short_str[] = { NDPI_PROTOCOL_SHORT_STRING };
 
 static void 
 ndpi_mt4_save(const struct ipt_ip *entry, const struct ipt_entry_match *match)
 {
 	const struct xt_ndpi_mtinfo *info = (const void *)match->data;
-        int i;
+        int i,c,l,t;
 
-        for (i = 1; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
-                if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0){
-                        printf("--%s ", prot_short_str[i]);
+        for (t = l = c = i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
+		if(!strncmp(prot_short_str[i],"badproto_",9)) continue;
+		if(i) t++; // skip unknown
+		if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) {
+			if(!l) l = i; c++;
+		}
+	}
+	if(!c) return; // BUG?
+	if( c == 1) {
+		printf(" %s --%s ",info->invert ? "! ":"", prot_short_str[l]);
+		return;
+	}
+	if( c == t ) { // all
+		printf(" %s --all ",info->invert ? "! ":"");
+		return;
+	}
+	printf(" %s --proto ",info->invert ? "! ":"" );
+        for (l = i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
+                if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) {
+			printf("%s%s",l++ ? ",":"", prot_short_str[i]);
+			
                 }
         }
 }
@@ -62,11 +77,24 @@ ndpi_mt4_print(const struct ipt_ip *entry, const struct ipt_entry_match *match,
                   int numeric)
 {
 	const struct xt_ndpi_mtinfo *info = (const void *)match->data;
-	int i;
+        int i,c,l,t;
 
-        for (i = 1; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
-                if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0){
-                        printf("protocol %s ", prot_long_str[i]);
+        for (t = c = i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
+		if(!strncmp(prot_short_str[i],"badproto_",9)) continue;
+		if(i) t++; // skip unknown
+		if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) c++;
+	}
+	if(!c) return;
+	if( c == t ) {
+		printf(" %sprotocol all",info->invert ? "! ":"");
+		return;
+	}
+
+	printf(" %sprotocol%s ",info->invert ? "! ":"",c > 1 ? "s":"");
+
+        for (l = i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
+                if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) {
+                        printf("%s%s",l++ ? ",":"", prot_short_str[i]);
                 }
         }
 }
@@ -80,11 +108,43 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
         int i;
 
         *flags = 0;
-        for (i = 1; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
+	info->invert = invert;
+	if(c == NDPI_LAST_IMPLEMENTED_PROTOCOL+1) {
+		char *np = optarg,*n;
+		int num;
+		while((n = strtok(np,",")) != NULL) {
+			num = -1;
+			for (i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
+			    if(!strcmp(prot_short_str[i],n)) {
+				    num = i;
+				    break; 
+			    }
+			}
+			if(num < 0) {
+				printf("Unknown proto '%s'\n",n);
+				return false;
+			}
+			NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,num);
+        		*flags |= 1;
+			np = NULL;
+		}
+		return *flags != 0;
+	}
+	if(c == NDPI_LAST_IMPLEMENTED_PROTOCOL+2) { // all
+		for (i = 1; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
+	    	    if(strncmp(prot_short_str[i],"badproto_",9))
+			NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,i);
+		}
+        	*flags |= 1;
+		return true;
+	}
+	if(c > NDPI_LAST_IMPLEMENTED_PROTOCOL+2) {
+		printf("BUG! c > NDPI_LAST_IMPLEMENTED_PROTOCOL+1\n");
+		return false;
+	}
+        for (i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
                 if (c == i){
                         NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags, i);
-                        /*printf("Parameter detected as protocol %s.\n",
-                          prot_long_str[i]);*/
                         *flags = 1;
                         return true;
                 }
@@ -112,10 +172,11 @@ ndpi_mt_help(void)
 {
         int i;
 
-	printf("ndpi match options:\n");
-        for (i = 1; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
-                printf("--%s Match for %s protocol packets.\n",
-                       prot_short_str[i], prot_long_str[i]);
+	printf("ndpi match options:\n--all Match any known protocol\n");
+        for (i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
+	    if(strncmp(prot_short_str[i],"badproto_",9))
+                printf("--%-16s (0x%x) Match for %s protocol packets.\n",
+                       prot_short_str[i],i, prot_short_str[i]);
         }
 }
 
@@ -123,15 +184,14 @@ ndpi_mt_help(void)
 static void 
 ndpi_mt_init(struct ipt_entry_match *m, unsigned int *nfcache)
 {
-	struct xt_ndpi_mtinfo *info = (void *)m->data;
+	//struct xt_ndpi_mtinfo *info = (void *)m->data;
 	/* inet_pton(PF_INET, "192.0.2.137", &info->dst.in); */
 }
 
 
-static struct option ndpi_mt_opts[NDPI_LAST_IMPLEMENTED_PROTOCOL+1];
+static struct option ndpi_mt_opts[NDPI_LAST_IMPLEMENTED_PROTOCOL+4];
 
-static struct iptables_match
-ndpi_mt4_reg = {
+static struct iptables_match ndpi_mt4_reg = {
 	.version = IPTABLES_VERSION,
 	.name = "ndpi",
 	.revision = 0,
@@ -151,19 +211,33 @@ ndpi_mt4_reg = {
 	.extra_opts = ndpi_mt_opts,
 };
 
+
+
+
 void _init(void)
 {
         int i;
 
         for (i = 0; i < NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
                 ndpi_mt_opts[i].name = prot_short_str[i+1];
+                ndpi_mt_opts[i].flag = NULL;
                 ndpi_mt_opts[i].has_arg = false;
                 ndpi_mt_opts[i].val = i+1;
         }
-        ndpi_mt_opts[i].name = NULL;
-        ndpi_mt_opts[i].flag = NULL;
-        ndpi_mt_opts[i].has_arg = 0;
-        ndpi_mt_opts[i].val = 0;
 
+	ndpi_mt_opts[i].name = "proto";
+	ndpi_mt_opts[i].flag = NULL;
+	ndpi_mt_opts[i].has_arg = 1;
+	ndpi_mt_opts[i].val = i;
+	i++;
+	ndpi_mt_opts[i].name = "all";
+	ndpi_mt_opts[i].flag = NULL;
+	ndpi_mt_opts[i].has_arg = 0;
+	ndpi_mt_opts[i].val = i;
+	i++;
+	ndpi_mt_opts[i].name = NULL;
+	ndpi_mt_opts[i].flag = NULL;
+	ndpi_mt_opts[i].has_arg = 0;
+	ndpi_mt_opts[i].val = 0;
 	register_match(&ndpi_mt4_reg);
 }
