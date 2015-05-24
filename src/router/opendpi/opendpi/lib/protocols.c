@@ -133,7 +133,7 @@
 #include "third_party/src/node.c"
 #include "protocols/attic/manolito.c"
 //#include "protocols/attic/flash.c"
-#include "protocols/attic/ftp.c"
+//#include "protocols/attic/ftp.c"
 #include "protocols/attic/popo.c"
 #include "protocols/feidian.c"
 #include "protocols/gadu_gadu.c"
