@@ -15,7 +15,7 @@ endif
 endif
 ifeq ($(CONFIG_OPENDPI),y)
 PF_EXT_SLIB += opendpi
-CFLAGS += -DOPENDPI_NETFILTER_MODULE -DHAVE_NTOP -D__NDPI_MAIN_INCLUDE_FILE__ -I$(TOP)/opendpi/opendpi/include -I$(TOP)/opendpi/src
+CFLAGS += -DOPENDPI_NETFILTER_MODULE -D__NDPI_MAIN_INCLUDE_FILE__ -I$(TOP)/opendpi/opendpi/include -I$(TOP)/opendpi/src
 endif
 
 ifeq ($(CONFIG_HOTPLUG2),y)
