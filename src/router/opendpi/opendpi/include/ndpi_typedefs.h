@@ -182,6 +182,9 @@ typedef struct ndpi_id_struct {
   u_int32_t last_time_port_used[NDPI_PROTOCOL_IRC_MAXPORT];
   u_int32_t irc_ts;
 #endif
+#ifdef NDPI_PROTOCOL_GADUGADU
+  u_int16_t gg_ft_port;
+#endif
 #ifdef NDPI_PROTOCOL_GNUTELLA
   u_int32_t gnutella_ts;
 #endif
@@ -196,6 +199,10 @@ typedef struct ndpi_id_struct {
 #endif
 #ifdef NDPI_PROTOCOL_OSCAR
   u_int32_t oscar_last_safe_access_time;
+#endif
+#ifdef NDPI_PROTOCOL_GADUGADU
+  u_int32_t gg_ft_ip_address;
+  u_int32_t gg_timeout;
 #endif
 #ifdef NDPI_PROTOCOL_ZATTOO
   u_int32_t zattoo_ts;
@@ -240,6 +247,10 @@ typedef struct ndpi_id_struct {
 #ifdef NDPI_PROTOCOL_OSCAR
   u_int8_t oscar_ssl_session_id[33];
 #endif
+#ifdef NDPI_PROTOCOL_GADUGADU
+  u_int8_t gg_call_id[2][7];
+  u_int8_t gg_fmnumber[8];
+#endif
 #ifdef NDPI_PROTOCOL_UNENCRYPED_JABBER
   u_int8_t jabber_voice_stun_used_ports;
 #endif
@@ -254,6 +265,11 @@ typedef struct ndpi_id_struct {
 #endif
 #ifdef NDPI_PROTOCOL_RTSP
   u_int32_t rtsp_ts_set:1;
+#endif
+#ifdef NDPI_PROTOCOL_GADUGADU
+  u_int32_t gadu_gadu_ft_direction:1;
+  u_int32_t gadu_gadu_voice:1;
+  u_int32_t gg_next_id:1;
 #endif
 #ifdef NDPI_PROTOCOL_FTP
   u_int32_t ftp_timer_set:1;
@@ -283,6 +299,9 @@ struct ndpi_flow_tcp_struct {
 #endif
 #ifdef NDPI_PROTOCOL_TDS
   u_int8_t tds_login_version;
+#endif
+#ifdef NDPI_PROTOCOL_GADUGADU
+  u_int32_t gadugadu_stage:2;
 #endif
 #ifdef NDPI_PROTOCOL_IRC
   u_int8_t irc_stage;
@@ -443,6 +462,9 @@ struct ndpi_flow_udp_struct {
 #endif
 #ifdef NDPI_PROTOCOL_TFTP
   u_int32_t tftp_stage:1;
+#endif
+#ifdef NDPI_PROTOCOL_FEIDIAN
+  u_int32_t feidian_stage:1;		// 0-7
 #endif
 #ifdef NDPI_PROTOCOL_AIMINI
   u_int32_t aimini_stage:5;
@@ -647,6 +669,9 @@ typedef struct ndpi_detection_module_struct {
 
   /* IP-based protocol detection */
   void *protocols_ptree;
+  /*gadu gadu*/
+  u_int32_t gadugadu_peer_connection_timeout;
+
   u_int32_t ftp_connection_timeout;
   /* irc parameters */
   u_int32_t irc_timeout;
@@ -771,6 +796,11 @@ typedef struct ndpi_flow_struct {
 
   /* protocols which have marked a connection as this connection cannot be protocol XXX, multiple u_int64_t */
   NDPI_PROTOCOL_BITMASK excluded_protocol_bitmask;
+#ifdef NDPI_PROTOCOL_I23V5
+  u_int32_t i23v5_len1;
+  u_int32_t i23v5_len2;
+  u_int32_t i23v5_len3;
+#endif
 
 #if 0
 #ifdef NDPI_PROTOCOL_RTP
