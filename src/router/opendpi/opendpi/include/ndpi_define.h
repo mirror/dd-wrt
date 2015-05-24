@@ -221,12 +221,12 @@
 #define NDPI_COMPARE_IPV6_ADDRESS_STRUCTS(x,y)  \
   ((((u_int64_t *)(x))[0]) < (((u_int64_t *)(y))[0]) || ( (((u_int64_t *)(x))[0]) == (((u_int64_t *)(y))[0]) && (((u_int64_t *)(x))[1]) < (((u_int64_t *)(y))[1])) )
 
-#if !defined(__KERNEL__) && !defined(NDPI_IPTABLES_EXT)
+//#if !defined(__KERNEL__) && !defined(NDPI_IPTABLES_EXT)
 #define NDPI_NUM_BITS              256
-#else
+//#else
 /* custom protocols not supported */
-#define NDPI_NUM_BITS              192
-#endif
+//#define NDPI_NUM_BITS              192
+//#endif
 
 #define NDPI_BITS /* 32 */ (sizeof(ndpi_ndpi_mask) * 8 /* number of bits in a byte */)        /* bits per mask */
 #define howmanybits(x, y)   (((x)+((y)-1))/(y))

@@ -758,6 +758,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master, "Unknown",
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_FTP_CONTROL,
 			    no_master,
 			    no_master, "FTP_CONTROL",
@@ -767,7 +768,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master,
 			    no_master, "FTP_DATA",
 			    ndpi_build_default_ports(ports_a, 20, 0, 0, 0, 0) /* TCP */,
-			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0)  /* UDP */);
+
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_MAIL_POP,
 			    no_master,
 			    no_master, "POP3",
@@ -813,12 +815,6 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master, "HTTP",
 			    ndpi_build_default_ports(ports_a, 80, 0 /* ntop */, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
-
-    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_FTP, 
-			    no_master,
-			    no_master, "FTP",
-			  ndpi_build_default_ports(ports_a, 20, 21, 0, 0, 0) /* TCP */, 
-			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
 
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_MDNS,
 			    no_master,
@@ -3578,15 +3574,6 @@ a++;
   ndpi_set_bitmask_protocol_detection("FTP_DATA", ndpi_struct, detection_bitmask, a++,
 				      NDPI_PROTOCOL_FTP_DATA,
 				      ndpi_search_ftp_data,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION,
-				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
-				      ADD_TO_DETECTION_BITMASK);
-#endif
-
-#ifdef NDPI_PROTOCOL_FTP
-  ndpi_set_bitmask_protocol_detection("FTP", ndpi_struct, detection_bitmask, a++,
-				      NDPI_PROTOCOL_FTP,
-				      ndpi_search_ftp_tcp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
