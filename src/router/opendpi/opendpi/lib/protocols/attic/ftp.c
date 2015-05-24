@@ -2,7 +2,7 @@
  * ftp.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -24,7 +24,7 @@
 
 
 #include "ndpi_protocols.h"
-#include "ndpi_utils.h"
+#include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_FTP
 
@@ -270,7 +270,7 @@ static void search_passive_ftp_mode(struct ndpi_detection_module_struct *ndpi_st
 
 
   // TODO check if normal passive mode also needs adaption for ipv6
-  if (packet->payload_packet_len > 3 && ndpi_mem_cmp(packet->payload, "227 ", 4) == 0) {
+  if (packet->payload_packet_len > 3 && memcmp(packet->payload, "227 ", 4) == 0) {
     NDPI_LOG(NDPI_PROTOCOL_FTP, ndpi_struct, NDPI_LOG_DEBUG, "FTP passive mode initial string\n");
 
     plen = 4;				//=4 for "227 "
@@ -337,7 +337,7 @@ static void search_passive_ftp_mode(struct ndpi_detection_module_struct *ndpi_st
     return;
   }
 
-  if (packet->payload_packet_len > 34 && ndpi_mem_cmp(packet->payload, "229 Entering Extended Passive Mode", 34) == 0) {
+  if (packet->payload_packet_len > 34 && memcmp(packet->payload, "229 Entering Extended Passive Mode", 34) == 0) {
     if (dst != NULL) {
       ndpi_packet_src_ip_get(packet, &dst->ftp_ip);
       dst->ftp_timer = packet->tick_timestamp;
@@ -366,7 +366,7 @@ static void search_active_ftp_mode(struct ndpi_detection_module_struct *ndpi_str
   struct ndpi_id_struct *dst = flow->dst;
 
   if (packet->payload_packet_len > 5
-      && (ndpi_mem_cmp(packet->payload, "PORT ", 5) == 0 || ndpi_mem_cmp(packet->payload, "EPRT ", 5) == 0)) {
+      && (memcmp(packet->payload, "PORT ", 5) == 0 || memcmp(packet->payload, "EPRT ", 5) == 0)) {
 
     //src->local_ftp_data_port = htons(data_port_number);
     if (src != NULL) {

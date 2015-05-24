@@ -2,7 +2,7 @@
  * manolito.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -65,7 +65,7 @@ u_int8_t search_manolito_tcp(struct ndpi_detection_module_struct *ndpi_struct, s
   NDPI_LOG(NDPI_PROTOCOL_MANOLITO, ndpi_struct, NDPI_LOG_DEBUG, "MANOLITO TCP DETECTION\n");
 
   if (flow->l4.tcp.manolito_stage == 0 && packet->payload_packet_len > 6) {
-    if (ndpi_mem_cmp(packet->payload, "SIZ ", 4) != 0)
+    if (memcmp(packet->payload, "SIZ ", 4) != 0)
       goto end_manolito_nothing_found;
 
     flow->l4.tcp.manolito_stage = 1 + packet->packet_direction;
@@ -74,14 +74,14 @@ u_int8_t search_manolito_tcp(struct ndpi_detection_module_struct *ndpi_struct, s
 
   } else if ((flow->l4.tcp.manolito_stage == 2 - packet->packet_direction)
 	     && packet->payload_packet_len > 4) {
-    if (ndpi_mem_cmp(packet->payload, "STR ", 4) != 0)
+    if (memcmp(packet->payload, "STR ", 4) != 0)
       goto end_manolito_nothing_found;
     NDPI_LOG(NDPI_PROTOCOL_MANOLITO, ndpi_struct, NDPI_LOG_DEBUG, "MANOLITO Stage 2.\n");
     flow->l4.tcp.manolito_stage = 3 + packet->packet_direction;
     goto end_manolito_maybe_hit;
 
   } else if ((flow->l4.tcp.manolito_stage == 4 - packet->packet_direction) && packet->payload_packet_len > 5) {
-    if (ndpi_mem_cmp(packet->payload, "MD5 ", 4) != 0)
+    if (memcmp(packet->payload, "MD5 ", 4) != 0)
       goto end_manolito_nothing_found;
     NDPI_LOG(NDPI_PROTOCOL_MANOLITO, ndpi_struct, NDPI_LOG_DEBUG, "MANOLITO Stage 3.\n");
     flow->l4.tcp.manolito_stage = 5 + packet->packet_direction;
@@ -89,7 +89,7 @@ u_int8_t search_manolito_tcp(struct ndpi_detection_module_struct *ndpi_struct, s
 
   } else if ((flow->l4.tcp.manolito_stage == 6 - packet->packet_direction) && packet->payload_packet_len == 4) {
 
-    if (ndpi_mem_cmp(packet->payload, "GO!!", 4) != 0)
+    if (memcmp(packet->payload, "GO!!", 4) != 0)
       goto end_manolito_nothing_found;
     NDPI_LOG(NDPI_PROTOCOL_MANOLITO, ndpi_struct, NDPI_LOG_DEBUG, "MANOLITO Stage 4.\n");
     goto end_manolito_found;
@@ -111,7 +111,7 @@ u_int8_t search_manolito_tcp(struct ndpi_detection_module_struct *ndpi_struct, s
   return 0;
 }
 
-static void ndpi_search_manolito_tcp_udp(struct
+void ndpi_search_manolito_tcp_udp(struct
 				  ndpi_detection_module_struct
 				  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
