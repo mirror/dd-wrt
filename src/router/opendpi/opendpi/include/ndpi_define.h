@@ -277,6 +277,7 @@
 #define NDPI_IPIP_PROTOCOL_TYPE    0x04
 #define NDPI_ICMPV6_PROTOCOL_TYPE  0x3a
 
+#ifdef __KERNEL__
 /* the get_uXX will return raw network packet bytes !! */
 #include <asm/unaligned.h>
 #include <linux/unaligned/packed_struct.h>
@@ -292,7 +293,7 @@
 /* new definitions to get little endian from network bytes */
 #define get_ul8(X,O) get_u_int8_t(X,O)
 
-
+#endif
 
 /* define memory callback function */
 #define match_first_bytes(payload,st) (memcmp((payload),(st),(sizeof(st)-1))==0)
