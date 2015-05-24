@@ -574,7 +574,7 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, in
 	}
 }
 
-#if !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 char *get_tcfmark(uint32 mark)
 {
 	static char tcfmark[24];
