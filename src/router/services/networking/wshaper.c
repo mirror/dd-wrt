@@ -998,235 +998,39 @@ void stop_wshaper(void)
 
 	eval(script_name, "stop", "XX", wan_dev, "XX", "imq0", "imq1");
 
-#ifdef HAVE_RB500
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_EROUTER
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "eth2");
-#elif HAVE_XSCALE
-	ret = eval(script_name, "stop", "XX", "ixp0");
-	ret = eval(script_name, "stop", "XX", "ixp1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-#elif HAVE_NORTHSTAR
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-#elif HAVE_LAGUNA
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-#elif HAVE_VENTANA
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-#elif HAVE_MAGICBOX
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_DAP3310
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_DAP3410
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_UNIWIP
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-#elif HAVE_WDR4900
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-#elif HAVE_RB600
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "eth2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-	ret = eval(script_name, "stop", "XX", "ath2");
-	ret = eval(script_name, "stop", "XX", "ath3");
-	ret = eval(script_name, "stop", "XX", "ath4");
-	ret = eval(script_name, "stop", "XX", "ath5");
-	ret = eval(script_name, "stop", "XX", "ath6");
-	ret = eval(script_name, "stop", "XX", "ath7");
-#elif HAVE_NS2
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_LC2
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_BS2
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_PICO2
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_PICO5
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_MS2
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_BS2HP
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_LS2
-	ret = eval(script_name, "stop", "XX", "vlan0");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_SOLO51
-	ret = eval(script_name, "stop", "XX", "vlan0");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_LS5
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_WRT54G2
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_RTG32
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_DIR300
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_MR3202A
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_RT2880
-	ret = eval(script_name, "stop", "XX", "eth2");
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-	ret = eval(script_name, "stop", "XX", "ra0");
-	ret = eval(script_name, "stop", "XX", "ba0");
-	ret = eval(script_name, "stop", "XX", "apcli0");
-	ret = eval(script_name, "stop", "XX", "apcli1");
-#elif HAVE_FONERA
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "vlan0");
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_WHRAG108
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-#elif HAVE_PB42
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-#elif HAVE_WA901
-	ret = eval(script_name, "stop", "XX", "eth0");
-#elif HAVE_CARAMBOLA
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-#elif HAVE_WR941
-	ret = eval(script_name, "stop", "XX", "vlan0");
-	ret = eval(script_name, "stop", "XX", "vlan1");
-#elif HAVE_WA901v1
-	ret = eval(script_name, "stop", "XX", "eth1");
-#elif HAVE_WDR2543
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-#elif HAVE_WR703
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-#elif HAVE_WR741V4
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-#elif HAVE_WR741
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-#elif HAVE_WR1043
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-#elif HAVE_WDR3500
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-#elif HAVE_WZR450HP2
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-#elif HAVE_WASP
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-#elif HAVE_WZRG450
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "vlan2");
-#elif HAVE_DIR632
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-#elif HAVE_WNR2000
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_WHRHPGN
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_LSX
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-	ret = eval(script_name, "stop", "XX", "ath2");
-#elif HAVE_DANUBE
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_WBD222
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "eth2");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-	ret = eval(script_name, "stop", "XX", "ath2");
-#elif HAVE_STORM
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_OPENRISC
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "eth2");
-	ret = eval(script_name, "stop", "XX", "eth3");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_ADM5120
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "eth1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_TW6600
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-#elif HAVE_RDAT81
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-#elif HAVE_RCAA01
-	ret = eval(script_name, "stop", "XX", "vlan0");
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-	ret = eval(script_name, "stop", "XX", "ath1");
-#elif HAVE_CA8PRO
-	ret = eval(script_name, "stop", "XX", "vlan0");
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_CA8
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#elif HAVE_X86
-	ret = eval(script_name, "stop", "XX", "eth0");
-	ret = eval(script_name, "stop", "XX", "ath0");
-#else
-	ret = eval(script_name, "stop", "XX", "vlan1");
-	ret = eval(script_name, "stop", "XX", "eth1");
-#endif
-//      ret = eval(script_name, "stop", "XX", "ppp0");
+	char eths2[256];
+	char eths[256];
+	memset(eths, 0, 512);
+	memset(eths2, 0, 512);
+	getIfList(eths, "ixp");
+	getIfList(eths2, "eth");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+	getIfList(eths2, "imq");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+	getIfList(eths2, "ppp");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+	getIfList(eths2, "tun");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+	getIfList(eths2, "tap");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+	getIfList(eths2, "vlan");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+	getIfList(eths2, "ath");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+	getIfList(eths2, "wl");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+	getIfList(eths2, "ra");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+	getIfList(eths2, "rb");
+	snprintf(eths, 512, "%s %s", eths, eths2);
+
+	char *next;
+	char var[80];
+	char *vifs = eths;
+	foreach(var, vifs, next) {
+		eval("tc", "qdisc", "del", "dev", var, "root");
+	}
+
 	stop_firewall();
 	start_firewall();
 
