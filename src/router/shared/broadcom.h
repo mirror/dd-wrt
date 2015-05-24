@@ -706,7 +706,7 @@ extern FILE *(*UgetWebsFile) (char *path);
 extern int (*Uwfputs) (char *buf, webs_t fp);
 
 #define wfputs Uwfputs
-extern char *(*Ulive_translate) (char *tran);
+extern char *(*Ulive_translate) (const char *tran);
 
 #define live_translate Ulive_translate
 extern void (*Uvalidate_cgi) (webs_t wp);
