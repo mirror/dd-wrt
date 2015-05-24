@@ -2,7 +2,7 @@
  * ipp.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -84,7 +84,7 @@ static void ndpi_search_ipp(struct ndpi_detection_module_struct *ndpi_struct, st
 			}
 		}
 
-		if (ndpi_mem_cmp(&packet->payload[i], " ipp://", 7) != 0) {
+		if (memcmp(&packet->payload[i], " ipp://", 7) != 0) {
 			NDPI_LOG(NDPI_PROTOCOL_IPP, ndpi_struct, NDPI_LOG_DEBUG, "the string ' ipp://' does not follow.\n");
 			goto search_for_next_pattern;
 		}
@@ -98,8 +98,8 @@ static void ndpi_search_ipp(struct ndpi_detection_module_struct *ndpi_struct, st
 
 	if (packet->payload_packet_len > 3 && memcmp(packet->payload, "POST", 4) == 0) {
 		ndpi_parse_packet_line_info(ndpi_struct, flow);
-		if (packet->content_line.ptr != NULL && packet->content_line.len > 14
-			&& memcmp(packet->content_line.ptr, "application/ipp", 15) == 0) {
+		if (packet->content_line.offs != 0xffff && packet->content_line.len > 14
+			&& memcmp(packet_hdr(content_line), "application/ipp", 15) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_IPP, ndpi_struct, NDPI_LOG_DEBUG, "found ipp via POST ... application/ipp.\n");
 			ndpi_int_ipp_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 			return;

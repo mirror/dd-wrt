@@ -2,7 +2,7 @@
  * quake.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -23,7 +23,8 @@
  */
 
 
-#include "ndpi_utils.h"
+#include "ndpi_api.h"
+
 #ifdef NDPI_PROTOCOL_QUAKE
 
 static void ndpi_int_quake_add_connection(struct ndpi_detection_module_struct
@@ -40,12 +41,12 @@ static void ndpi_search_quake(struct ndpi_detection_module_struct *ndpi_struct, 
 //      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if ((packet->payload_packet_len == 14
-		 && get_u_int16_t(packet->payload, 0) == 0xffff && ndpi_mem_cmp(&packet->payload[2], "getInfo", 7) == 0)
+		 && get_u_int16_t(packet->payload, 0) == 0xffff && memcmp(&packet->payload[2], "getInfo", 7) == 0)
 		|| (packet->payload_packet_len == 17
-			&& get_u_int16_t(packet->payload, 0) == 0xffff && ndpi_mem_cmp(&packet->payload[2], "challenge", 9) == 0)
+			&& get_u_int16_t(packet->payload, 0) == 0xffff && memcmp(&packet->payload[2], "challenge", 9) == 0)
 		|| (packet->payload_packet_len > 20
 			&& packet->payload_packet_len < 30
-			&& get_u_int16_t(packet->payload, 0) == 0xffff && ndpi_mem_cmp(&packet->payload[2], "getServers", 10) == 0)) {
+			&& get_u_int16_t(packet->payload, 0) == 0xffff && memcmp(&packet->payload[2], "getServers", 10) == 0)) {
 		NDPI_LOG(NDPI_PROTOCOL_QUAKE, ndpi_struct, NDPI_LOG_DEBUG, "Quake IV detected.\n");
 		ndpi_int_quake_add_connection(ndpi_struct, flow);
 		return;

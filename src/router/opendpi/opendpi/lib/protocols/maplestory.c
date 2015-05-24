@@ -2,7 +2,7 @@
  * maplestory.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -24,7 +24,7 @@
 
 
 
-#include "ndpi_utils.h"
+#include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_MAPLESTORY
 
@@ -59,21 +59,21 @@ static void ndpi_search_maplestory(struct ndpi_detection_module_struct *ndpi_str
 		/* Maplestory update */
 		if (packet->payload_packet_len > NDPI_STATICSTRING_LEN("GET /maple/patch")
 			&& packet->payload[NDPI_STATICSTRING_LEN("GET /maple")] == '/') {
-			if (packet->user_agent_line.ptr != NULL && packet->host_line.ptr != NULL
+			if (packet->user_agent_line.offs != 0xffff && packet->host_line.offs != 0xffff
 				&& packet->user_agent_line.len == NDPI_STATICSTRING_LEN("Patcher")
 				&& packet->host_line.len > NDPI_STATICSTRING_LEN("patch.")
 				&& memcmp(&packet->payload[NDPI_STATICSTRING_LEN("GET /maple/")], "patch",
 						  NDPI_STATICSTRING_LEN("patch")) == 0
-				&& memcmp(packet->user_agent_line.ptr, "Patcher", NDPI_STATICSTRING_LEN("Patcher")) == 0
-				&& memcmp(packet->host_line.ptr, "patch.", NDPI_STATICSTRING_LEN("patch.")) == 0) {
+				&& memcmp(packet_hdr(user_agent_line), "Patcher", NDPI_STATICSTRING_LEN("Patcher")) == 0
+				&& memcmp(packet_hdr(host_line), "patch.", NDPI_STATICSTRING_LEN("patch.")) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_MAPLESTORY, ndpi_struct, NDPI_LOG_DEBUG, "found maplestory update.\n");
 				ndpi_int_maplestory_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 				return;
 			}
-		} else if (packet->user_agent_line.ptr != NULL && packet->user_agent_line.len == NDPI_STATICSTRING_LEN("AspINet")
+		} else if (packet->user_agent_line.offs != 0xffff && packet->user_agent_line.len == NDPI_STATICSTRING_LEN("AspINet")
 				   && memcmp(&packet->payload[NDPI_STATICSTRING_LEN("GET /maple")], "story/",
 							 NDPI_STATICSTRING_LEN("story/")) == 0
-				   && memcmp(packet->user_agent_line.ptr, "AspINet", NDPI_STATICSTRING_LEN("AspINet")) == 0) {
+				   && memcmp(packet_hdr(user_agent_line), "AspINet", NDPI_STATICSTRING_LEN("AspINet")) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_MAPLESTORY, ndpi_struct, NDPI_LOG_DEBUG, "found maplestory update.\n");
 			ndpi_int_maplestory_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 			return;

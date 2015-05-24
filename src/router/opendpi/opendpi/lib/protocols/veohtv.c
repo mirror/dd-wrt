@@ -2,7 +2,7 @@
  * veohtv.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -23,8 +23,9 @@
  */
 
 
-#include "ndpi_protocols.h"
-#include "ndpi_utils.h"
+#include "ndpi_api.h"
+
+
 #ifdef NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV
 
 static void ndpi_int_veohtv_add_connection(struct ndpi_detection_module_struct *ndpi_struct, 
@@ -51,12 +52,12 @@ static void ndpi_search_veohtv_tcp(struct ndpi_detection_module_struct *ndpi_str
 			 packet->payload[NDPI_STATICSTRING_LEN("HTTP/1.1 ")] == '3' ||
 			 packet->payload[NDPI_STATICSTRING_LEN("HTTP/1.1 ")] == '4' ||
 			 packet->payload[NDPI_STATICSTRING_LEN("HTTP/1.1 ")] == '5')) {
-#ifdef NDPI_PROTOCOL_FLASH
+#ifdef NDPI_CONTENT_FLASH
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
-			if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_FLASH &&
-				packet->server_line.ptr != NULL &&
+			if (packet->detected_protocol_stack[0] == NDPI_CONTENT_FLASH &&
+				packet->server_line.offs != 0xffff &&
 				packet->server_line.len > NDPI_STATICSTRING_LEN("Veoh-") &&
-				memcmp(packet->server_line.ptr, "Veoh-", NDPI_STATICSTRING_LEN("Veoh-")) == 0) {
+				memcmp(packet_hdr(server_line), "Veoh-", NDPI_STATICSTRING_LEN("Veoh-")) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV, ndpi_struct, NDPI_LOG_DEBUG, "VeohTV detected.\n");
 				ndpi_int_veohtv_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 				return;
