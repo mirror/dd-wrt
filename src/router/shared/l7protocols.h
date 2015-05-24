@@ -57,10 +57,6 @@ l7filters filters_list[] = {
 	{"bgp", DPI},
 	{"biff", L7_ONLY},
 	{"bittorrent", PDPI},
-	{"bt", L7_ONLY},
-	{"bt1", L7_ONLY},
-	{"bt2", L7_ONLY},
-	{"bt3", L7_ONLY},
 	{"chikka", L7_ONLY},
 	{"cimd", L7_ONLY},
 	{"ciscovpn", DPI},
@@ -342,6 +338,9 @@ l7filters filters_list[] = {
 #endif
 	{"quake-halflife", L7_ONLY},
 	{"quake1", L7_ONLY},
+#ifdef HAVE_OPENDPI
+	{"quic", NDPI_ONLY},
+#endif
 	{"quicktime", DPI},
 #ifdef HAVE_OPENDPI
 	{"radius", NDPI_ONLY},
