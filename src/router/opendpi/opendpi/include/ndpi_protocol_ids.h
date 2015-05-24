@@ -197,6 +197,7 @@
 #define NDPI_PROTOCOL_PANDO					183 /* Tomasz Bujlow <tomasz@skatnet.dk> */
 #define NDPI_PROTOCOL_VHUA                                      184
 #define NDPI_PROTOCOL_TELEGRAM				        185 /* Gianluca Costa <g.costa@xplico.org> */
+#define NDPI_PROTOCOL_QUIC				        188 /* Andrea Buscarinu <andrea.buscarinu@gmail.com> - Michele Campus <michelecampus5@gmail.com> */
 
 
 #define NDPI_CONTENT_AVI				39
@@ -235,17 +236,17 @@
 #define NDPI_SERVICE_YAHOO				NDPI_PROTOCOL_YAHOO /* Tomasz Bujlow <tomasz@skatnet.dk> */
 #define NDPI_SERVICE_PANDORA     			187
 
-#define NDPI_PROTOCOL_POPO				188
-#define NDPI_PROTOCOL_FTP				189
-#define NDPI_PROTOCOL_MANOLITO				190
-#define NDPI_PROTOCOL_FEIDIAN				191
-#define NDPI_PROTOCOL_GADUGADU				192
-#define NDPI_PROTOCOL_I23V5				193
-#define NDPI_PROTOCOL_SECONDLIFE				194
+#define NDPI_PROTOCOL_POPO				189
+#define NDPI_PROTOCOL_FTP				190
+#define NDPI_PROTOCOL_MANOLITO				191
+#define NDPI_PROTOCOL_FEIDIAN				192
+#define NDPI_PROTOCOL_GADUGADU				193
+#define NDPI_PROTOCOL_I23V5				194
+#define NDPI_PROTOCOL_SECONDLIFE				195
 
 
 /* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_SERVICE_PANDORA) */
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL			194
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL			195
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                   (NDPI_NUM_BITS-NDPI_LAST_IMPLEMENTED_PROTOCOL)
