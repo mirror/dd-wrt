@@ -27,7 +27,7 @@ static void ndpi_int_corba_add_connection(struct ndpi_detection_module_struct
 {
   ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_CORBA, NDPI_CORRELATED_PROTOCOL);
 }
-void ndpi_search_corba(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_corba(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 

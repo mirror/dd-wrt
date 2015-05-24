@@ -2,7 +2,7 @@
  * teamviewer.c
  *
  * Copyright (C) 2012 by Gianluca Costa xplico.org
- * Copyright (C) 2012-14 - ntop.org
+ * Copyright (C) 2012-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH

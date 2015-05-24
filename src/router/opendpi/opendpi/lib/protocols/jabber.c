@@ -2,7 +2,7 @@
  * jabber.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -19,44 +19,47 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 
-#include "ndpi_protocols.h"
-#include "ndpi_utils.h"
+#include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_UNENCRYPED_JABBER
+struct jabber_string {
+  char *string;
+  u_int ndpi_protocol;
+};
 
-static void ndpi_int_jabber_add_connection(struct ndpi_detection_module_struct *ndpi_struct, 
+static struct jabber_string jabber_strings[] = {
+#ifdef NDPI_PROTOCOL_TRUPHONE
+  { "='im.truphone.com'",     NDPI_PROTOCOL_TRUPHONE },
+  { "=\"im.truphone.com\"",   NDPI_PROTOCOL_TRUPHONE },
+#endif
+  { NULL, 0 }
+};
+
+static void ndpi_int_jabber_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 					   struct ndpi_flow_struct *flow,
 					   u_int32_t protocol, ndpi_protocol_type_t protocol_type)
 {
   ndpi_int_add_connection(ndpi_struct, flow, protocol, protocol_type);
 }
 
-static void check_content_type_and_change_protocol2(struct ndpi_detection_module_struct *ndpi_struct, 
+static void jabber_check_content_type_and_change_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 						   struct ndpi_flow_struct *flow, u_int16_t x)
 {
-#if defined( NDPI_PROTOCOL_TANGO ) || defined( NDPI_PROTOCOL_TRUPHONE ) || defined( NDPI_PROTOCOL_WHATSAPP )
   struct ndpi_packet_struct *packet = &flow->packet;
-#endif
+  int i, left = packet->payload_packet_len-x;
 
-#ifdef NDPI_PROTOCOL_TRUPHONE
-  if (packet->payload_packet_len > x + 18 && packet->payload_packet_len > x && packet->payload_packet_len > 18) {
-    const u_int16_t lastlen = packet->payload_packet_len - 18;
-    for (x = 0; x < lastlen; x++) {
-      if (ndpi_mem_cmp(&packet->payload[x], "=\"im.truphone.com\"", 18) == 0 ||
-	  ndpi_mem_cmp(&packet->payload[x], "='im.truphone.com'", 18) == 0) {
-	NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct, NDPI_LOG_TRACE, "changed to TRUPHONE.\n");
+  if(left <= 0) return;
 
-	ndpi_int_jabber_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_TRUPHONE, NDPI_CORRELATED_PROTOCOL);
-      }
+  for(i=0; jabber_strings[i].string != NULL; i++) {
+    if(ndpi_strnstr((const char*)&packet->payload[x], jabber_strings[i].string, left) != NULL) {    
+      ndpi_int_jabber_add_connection(ndpi_struct, flow, jabber_strings[i].ndpi_protocol, NDPI_CORRELATED_PROTOCOL);
+      return;
     }
-  }
-#endif
-
-  return;
+  }  
 }
 
 static void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
@@ -67,7 +70,7 @@ static void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_str
 
   u_int16_t x;
 
-  NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct, NDPI_LOG_DEBUG, "search jabber.\n");
+  NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct, NDPI_LOG_TRACE, "JABBER detection....\n");
 
   /* search for jabber file transfer */
   /* this part is working asymmetrically */
@@ -141,7 +144,7 @@ static void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_str
       lastlen = packet->payload_packet_len - 11;
       for (x = 10; x < lastlen; x++) {
 	if (packet->payload[x] == 'p') {
-	  if (ndpi_mem_cmp(&packet->payload[x], "port=", 5) == 0) {
+	  if (memcmp(&packet->payload[x], "port=", 5) == 0) {
 	    NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct, NDPI_LOG_DEBUG, "port=\n");
 	    if (src != NULL) {
 	      src->jabber_stun_or_ft_ts = packet->tick_timestamp;
@@ -207,7 +210,7 @@ static void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_str
       lastlen = packet->payload_packet_len - 10;
       for (; x < lastlen; x++) {
 	if (packet->payload[x] == 'p') {
-	  if (ndpi_mem_cmp(&packet->payload[x], "port=", 5) == 0) {
+	  if (memcmp(&packet->payload[x], "port=", 5) == 0) {
 	    NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct, NDPI_LOG_DEBUG, "port=\n");
 	    if (src != NULL) {
 	      src->jabber_stun_or_ft_ts = packet->tick_timestamp;
@@ -273,36 +276,27 @@ static void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_str
   if ((packet->payload_packet_len > 13 && memcmp(packet->payload, "<?xml version=", 14) == 0)
       || (packet->payload_packet_len >= NDPI_STATICSTRING_LEN("<stream:stream ")
 	  && memcmp(packet->payload, "<stream:stream ", NDPI_STATICSTRING_LEN("<stream:stream ")) == 0)) {
+    int start = packet->payload_packet_len-13;
 
-    if (packet->payload_packet_len > 47) {
-      const u_int16_t lastlen = packet->payload_packet_len - 47;
-      for (x = 0; x < lastlen; x++) {
-	if (ndpi_mem_cmp
-	    (&packet->payload[x],
-	     "xmlns:stream='http://etherx.jabber.org/streams'", 47) == 0
-	    || ndpi_mem_cmp(&packet->payload[x], "xmlns:stream=\"http://etherx.jabber.org/streams\"", 47) == 0) {
-	  NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct, NDPI_LOG_TRACE, "found JABBER.\n");
-	  x += 47;
+    if(ndpi_strnstr((const char *)&packet->payload[13], "xmlns:stream='http://etherx.jabber.org/streams'", start)
+       || ndpi_strnstr((const char *)&packet->payload[13], "xmlns:stream=\"http://etherx.jabber.org/streams\"", start)) {
+  
+      /* Protocol family */
+      ndpi_int_jabber_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_UNENCRYPED_JABBER, NDPI_REAL_PROTOCOL);
 
-	  ndpi_int_jabber_add_connection(ndpi_struct, flow,
-					 NDPI_PROTOCOL_UNENCRYPED_JABBER, NDPI_REAL_PROTOCOL);
-
-
-
-	  /* search for other protocols: Truphone */
-	  check_content_type_and_change_protocol2(ndpi_struct, flow, x);
-	  return;
-	}
-      }
+      /* search for subprotocols */
+      jabber_check_content_type_and_change_protocol(ndpi_struct, flow, 13);
+      return;
     }
   }
+  
   if (flow->packet_counter < 3) {
     NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct,
-	     NDPI_LOG_TRACE, "packet_counter: %u\n", flow->packet_counter);
+	     NDPI_LOG_DEBUG, "packet_counter: %u\n", flow->packet_counter);
     return;
   }
 
-  NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct, NDPI_LOG_DEBUG, "Excluding jabber connection\n");
+  NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct, NDPI_LOG_TRACE, "JABBER Excluded.\n");
   NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_UNENCRYPED_JABBER);
 
 #ifdef NDPI_PROTOCOL_TRUPHONE

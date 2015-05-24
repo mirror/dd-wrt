@@ -2,7 +2,7 @@
  * oscar.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -23,8 +23,8 @@
  */
 
 
-#include "ndpi_protocols.h"
-#include "ndpi_utils.h"
+#include "ndpi_api.h"
+
 
 #ifdef NDPI_PROTOCOL_OSCAR
 
@@ -96,8 +96,8 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
   if (packet->payload_packet_len >= 18) {
     if ((packet->payload[0] == 'P') && (memcmp(packet->payload, "POST /photo/upload", 18) == 0)) {
       NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct, flow, packet);
-      if (packet->host_line.len >= 18 && packet->host_line.ptr != NULL) {
-	if (memcmp(packet->host_line.ptr, "lifestream.aol.com", 18) == 0) {
+      if (packet->host_line.len >= 18 && packet->host_line.offs != 0xffff) {
+	if (memcmp(packet_hdr(host_line), "lifestream.aol.com", 18) == 0) {
 	  NDPI_LOG(NDPI_PROTOCOL_OSCAR, ndpi_struct, NDPI_LOG_DEBUG,
 		   "OSCAR over HTTP found, POST method\n");
 	  ndpi_int_oscar_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
@@ -119,27 +119,30 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
       }
 
       if ((memcmp(&packet->payload[5], "aim", 3) == 0) || (memcmp(&packet->payload[5], "im", 2) == 0)) {
+	const char *pu;
 	NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct, flow, packet);
-	if (packet->user_agent_line.len > 15 && packet->user_agent_line.ptr != NULL &&
-	    ((memcmp(packet->user_agent_line.ptr, "mobileAIM/", 10) == 0) ||
-	     (memcmp(packet->user_agent_line.ptr, "ICQ/", 4) == 0) ||
-	     (memcmp(packet->user_agent_line.ptr, "mobileICQ/", 10) == 0) ||
-	     (memcmp(packet->user_agent_line.ptr, "AIM%20Free/", NDPI_STATICSTRING_LEN("AIM%20Free/")) == 0) ||
-	     (memcmp(packet->user_agent_line.ptr, "AIM/", 4) == 0))) {
+	pu = packet_hdr_c(user_agent_line);
+	if (packet->user_agent_line.len > 15 && pu != NULL &&
+	    ((memcmp(pu, "mobileAIM/", 10) == 0) ||
+	     (memcmp(pu, "ICQ/", 4) == 0) ||
+	     (memcmp(pu, "mobileICQ/", 10) == 0) ||
+	     (memcmp(pu, "AIM%20Free/", NDPI_STATICSTRING_LEN("AIM%20Free/")) == 0) ||
+	     (memcmp(pu , "AIM/", 4) == 0))) {
 	  NDPI_LOG(NDPI_PROTOCOL_OSCAR, ndpi_struct, NDPI_LOG_DEBUG, "OSCAR over HTTP found\n");
 	  ndpi_int_oscar_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 	  return;
 	}
       }
       NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct, flow, packet);
-      if (packet->referer_line.ptr != NULL && packet->referer_line.len >= 22) {
+      if (packet->referer_line.offs != 0xffff && packet->referer_line.len >= 22) {
+	const char *pu = packet_hdr(referer_line);
 
-	if (memcmp(&packet->referer_line.ptr[packet->referer_line.len - NDPI_STATICSTRING_LEN("WidgetMain.swf")],
+	if (memcmp(&pu[packet->referer_line.len - NDPI_STATICSTRING_LEN("WidgetMain.swf")],
 		   "WidgetMain.swf", NDPI_STATICSTRING_LEN("WidgetMain.swf")) == 0) {
 	  u_int16_t i;
 	  for (i = 0; i < (packet->referer_line.len - 22); i++) {
-	    if (packet->referer_line.ptr[i] == 'a') {
-	      if (memcmp(&packet->referer_line.ptr[i + 1], "im/gromit/aim_express", 21) == 0) {
+	    if (pu[i] == 'a') {
+	      if (memcmp(&pu[i + 1], "im/gromit/aim_express", 21) == 0) {
 		NDPI_LOG(NDPI_PROTOCOL_OSCAR, ndpi_struct, NDPI_LOG_DEBUG,
 			 "OSCAR over HTTP found : aim/gromit/aim_express\n");
 		ndpi_int_oscar_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);

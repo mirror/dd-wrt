@@ -2,7 +2,7 @@
  * tvuplayer.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -60,8 +60,8 @@ static void ndpi_search_tvuplayer(struct ndpi_detection_module_struct *ndpi_stru
 
       if (memcmp(packet->payload, "POST", 4) || memcmp(packet->payload, "GET", 3)) {
 	NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct, flow, packet);
-	if (packet->user_agent_line.ptr != NULL &&
-	    packet->user_agent_line.len >= 8 && (memcmp(packet->user_agent_line.ptr, "MacTVUP", 7) == 0)) {
+	if (packet->user_agent_line.offs != 0xffff &&
+	    packet->user_agent_line.len >= 8 && (memcmp(packet_hdr(user_agent_line), "MacTVUP", 7) == 0)) {
 	  NDPI_LOG(NDPI_PROTOCOL_TVUPLAYER, ndpi_struct, NDPI_LOG_DEBUG, "Found user agent as MacTVUP.\n");
 	  ndpi_int_tvuplayer_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 	  return;

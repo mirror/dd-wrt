@@ -2,7 +2,7 @@
  * syslog.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-13 - ntop.org
+ * Copyright (C) 2011-15 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -92,17 +92,17 @@ static void ndpi_search_syslog(struct ndpi_detection_module_struct
 			return;
 		}
 
-		if (ndpi_mem_cmp(&packet->payload[i], "Jan", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "Feb", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "Mar", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "Apr", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "May", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "Jun", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "Jul", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "Aug", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "Sep", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "Oct", 3) != 0
-			&& ndpi_mem_cmp(&packet->payload[i], "Nov", 3) != 0 && ndpi_mem_cmp(&packet->payload[i], "Dec", 3) != 0) {
+		if (memcmp(&packet->payload[i], "Jan", 3) != 0
+			&& memcmp(&packet->payload[i], "Feb", 3) != 0
+			&& memcmp(&packet->payload[i], "Mar", 3) != 0
+			&& memcmp(&packet->payload[i], "Apr", 3) != 0
+			&& memcmp(&packet->payload[i], "May", 3) != 0
+			&& memcmp(&packet->payload[i], "Jun", 3) != 0
+			&& memcmp(&packet->payload[i], "Jul", 3) != 0
+			&& memcmp(&packet->payload[i], "Aug", 3) != 0
+			&& memcmp(&packet->payload[i], "Sep", 3) != 0
+			&& memcmp(&packet->payload[i], "Oct", 3) != 0
+			&& memcmp(&packet->payload[i], "Nov", 3) != 0 && memcmp(&packet->payload[i], "Dec", 3) != 0) {
 
 
 			NDPI_LOG(NDPI_PROTOCOL_SYSLOG, ndpi_struct, NDPI_LOG_DEBUG,
