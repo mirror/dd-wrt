@@ -217,18 +217,50 @@ nla_put_failure:
 	return (-199);
 }
 
+#ifdef HAVE_ATH10K
+unsigned int get_ath10kreg(char *ifname, unsigned int reg)
+{
+
+	char file[64];
+	int phy = get_ath9k_phy_ifname(ifname);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
+	FILE *fp = fopen(file, "wb");
+	fprintf(fp, "0x%x", reg);
+	fclose(fp);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
+	FILE *fp = fopen(file, "rb");
+	int value;
+	fscanf(value, "0x%08x:0x%08x", &reg, &value);
+	fclose(fp);
+	return value;
+}
+
+void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
+{
+	char file[64];
+	int phy = get_ath9k_phy_ifname(ifname);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
+	FILE *fp = fopen(file, "wb");
+	fprintf(fp, "0x%x", reg);
+	fclose(fp);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
+	FILE *fp = fopen(file, "wb");
+	fprintf(value, "0x%x", value);
+
+	fclose(fp);
+}
+#endif
+
 int getFrequency_mac80211(char *interface)
 {
 	struct nl_msg *msg;
 	struct mac80211_info mac80211_info;
 	int wdev = if_nametoindex(interface);
 	memset(&mac80211_info, 0, sizeof(mac80211_info));
-
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
 	return mac80211_info.frequency;
-
 nla_put_failure:
 	nlmsg_free(msg);
 	return (0);
@@ -241,11 +273,9 @@ int mac80211_get_coverageclass(char *interface)
 	struct genlmsghdr *gnlh;
 	int phy;
 	unsigned char coverage = 0;
-
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return 0;
-
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
@@ -279,25 +309,30 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	mac80211_info->wci = add_to_wifi_clients(mac80211_info->wci);
 	// struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
 	static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
-		[NL80211_STA_INFO_INACTIVE_TIME] = {.type = NLA_U32},
-		[NL80211_STA_INFO_RX_BYTES] = {.type = NLA_U32},
-		[NL80211_STA_INFO_TX_BYTES] = {.type = NLA_U32},
-		[NL80211_STA_INFO_RX_PACKETS] = {.type = NLA_U32},
-		[NL80211_STA_INFO_TX_PACKETS] = {.type = NLA_U32},
-		[NL80211_STA_INFO_SIGNAL] = {.type = NLA_U8},
-		[NL80211_STA_INFO_TX_BITRATE] = {.type = NLA_NESTED},
-		[NL80211_STA_INFO_RX_BITRATE] = {.type = NLA_NESTED},
-		[NL80211_STA_INFO_LLID] = {.type = NLA_U16},
-		[NL80211_STA_INFO_PLID] = {.type = NLA_U16},
-		[NL80211_STA_INFO_PLINK_STATE] = {.type = NLA_U8},
-		[NL80211_STA_INFO_CONNECTED_TIME] = {.type = NLA_U32},
+		[NL80211_STA_INFO_INACTIVE_TIME] = {
+						    .type = NLA_U32},[NL80211_STA_INFO_RX_BYTES] = {
+												    .type = NLA_U32},[NL80211_STA_INFO_TX_BYTES] = {
+																		    .type = NLA_U32},[NL80211_STA_INFO_RX_PACKETS] = {
+																								      .type =
+																								      NLA_U32},
+		    [NL80211_STA_INFO_TX_PACKETS] = {
+						     .type = NLA_U32},[NL80211_STA_INFO_SIGNAL] = {
+												   .type = NLA_U8},[NL80211_STA_INFO_TX_BITRATE] = {
+																		    .type = NLA_NESTED},[NL80211_STA_INFO_RX_BITRATE] = {
+																									 .type =
+																									 NLA_NESTED},
+		    [NL80211_STA_INFO_LLID] = {
+					       .type = NLA_U16},[NL80211_STA_INFO_PLID] = {
+											   .type = NLA_U16},[NL80211_STA_INFO_PLINK_STATE] = {
+																	      .type = NLA_U8},[NL80211_STA_INFO_CONNECTED_TIME] = {
+																								   .type = NLA_U32},
 	};
-
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
-		[NL80211_RATE_INFO_BITRATE] = {.type = NLA_U16},
-		[NL80211_RATE_INFO_MCS] = {.type = NLA_U8},
-		[NL80211_RATE_INFO_40_MHZ_WIDTH] = {.type = NLA_FLAG},
-		[NL80211_RATE_INFO_SHORT_GI] = {.type = NLA_FLAG},
+		[NL80211_RATE_INFO_BITRATE] = {
+					       .type = NLA_U16},[NL80211_RATE_INFO_MCS] = {
+											   .type = NLA_U8},[NL80211_RATE_INFO_40_MHZ_WIDTH] = {
+																	       .type = NLA_FLAG},[NL80211_RATE_INFO_SHORT_GI] = {
+																								 .type = NLA_FLAG},
 	};
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (!tb[NL80211_ATTR_STA_INFO]) {
@@ -314,10 +349,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	strcpy(mac80211_info->wci->mac, mac_addr);
 	strcpy(mac80211_info->wci->ifname, dev);
 	mac80211_info->wci->noise = mac80211_info->noise;
-
 	if (strstr(dev, ".sta"))
 		mac80211_info->wci->is_wds = 1;
-
 	if (sinfo[NL80211_STA_INFO_INACTIVE_TIME]) {
 		mac80211_info->wci->inactive_time = nla_get_u32(sinfo[NL80211_STA_INFO_INACTIVE_TIME]);
 		printf("\n\tinactive time:\t%u ms", nla_get_u32(sinfo[NL80211_STA_INFO_INACTIVE_TIME]));
@@ -423,7 +456,6 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 	char globstring[1024];
 	int globresult;
 	struct mac80211_info *mac80211_info = calloc(1, sizeof(struct mac80211_info));
-
 	if (interface)
 		sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/%s*", interface);
 	else
@@ -444,7 +476,6 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 	// print_wifi_clients(mac80211_info->wci);
 	// free_wifi_clients(mac80211_info->wci);
 	globfree(&globbuf);
-
 	return (mac80211_info);
 nla_put_failure:
 	nlmsg_free(msg);
@@ -470,7 +501,6 @@ char *mac80211_get_caps(char *interface)
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
-
 	nla_for_each_nested(band, bands, rem) {
 		caps = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_HT_CAPA);
 		if (!caps)
@@ -515,7 +545,6 @@ char *mac80211_get_vhtcaps(char *interface)
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
-
 	nla_for_each_nested(band, bands, rem) {
 		caps = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_VHT_CAPA);
 		if (!caps)
@@ -555,11 +584,13 @@ nla_put_failure:
 }
 #endif
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
-	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32},
+	[NL80211_FREQUENCY_ATTR_FREQ] = {
+					 .type = NLA_U32},
 };
 
 int mac80211_check_band(char *interface, int checkband)
 {
+
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct nlattr *bands, *band, *freqlist, *freq;
@@ -578,7 +609,6 @@ int mac80211_check_band(char *interface, int checkband)
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
-
 	nla_for_each_nested(band, bands, rem) {
 		freqlist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_FREQS);
 		if (!freqlist)
@@ -587,10 +617,8 @@ int mac80211_check_band(char *interface, int checkband)
 			nla_parse_nested(tb, NL80211_FREQUENCY_ATTR_MAX, freq, freq_policy);
 			if (!tb[NL80211_FREQUENCY_ATTR_FREQ])
 				continue;
-
 			if (tb[NL80211_FREQUENCY_ATTR_DISABLED])
 				continue;
-
 			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
 			if (checkband == 2 && freq_mhz < 3000)
 				bandfound = 1;
@@ -626,18 +654,16 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return NULL;
-
 #ifdef HAVE_SUPERCHANNEL
 	sprintf(sc, "%s_regulatory", interface);
-	if (issuperchannel() && atoi(nvram_default_get(sc, "1")) == 0)
+	if (issuperchannel()
+	    && atoi(nvram_default_get(sc, "1")) == 0)
 		skip = 0;
 #endif
-
 	rd = mac80211_get_regdomain(country);
 	// for now just leave 
 	if (rd == NULL)
 		return list;
-
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
@@ -645,7 +671,6 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
-
 	for (run = 0; run < 2; run++) {
 		if (run == 1) {
 			list = (struct wifi_channels *)malloc(sizeof(struct wifi_channels) * (chancount + 1));
@@ -659,7 +684,6 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 				nla_parse_nested(tb, NL80211_FREQUENCY_ATTR_MAX, freq, freq_policy);
 				if (!tb[NL80211_FREQUENCY_ATTR_FREQ])
 					continue;
-
 				if (skip && tb[NL80211_FREQUENCY_ATTR_DISABLED])
 					continue;
 				regfound = 0;
@@ -682,12 +706,12 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 						regmaxbw = 40;
 					else
 						regmaxbw = (int)((float)(regfreq.max_bandwidth_khz) / 1000.0);
-
 					if (!skip || ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq)) {
 						if (run == 1) {
 							regpower = rd->reg_rules[rrc].power_rule;
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
-							if ((!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US"))
+							if ((!strcmp(getUEnv("region"), "AP")
+							     || !strcmp(getUEnv("region"), "US"))
 							    && ieee80211_mhz2ieee(freq_mhz) > 11 && ieee80211_mhz2ieee(freq_mhz) < 14 && nvram_default_match("region", "SA", ""))
 								continue;
 #endif
@@ -749,13 +773,10 @@ int has_ht40(char *interface)
 	int i = 0;
 	char regdomain[32];
 	char *country;
-
 	if (is_ath5k(interface))
 		return (0);
-
 	sprintf(regdomain, "%s_regdomain", interface);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
-
 	chan = mac80211_get_channels(interface, getIsoName(country), 40, 0xff);
 	if (chan != NULL) {
 		while (chan[i].freq != -1) {
@@ -789,7 +810,9 @@ int mac80211_check_valid_frequency(char *interface, char *country, int freq)
 	return (0);
 }
 
-static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *list_root)
+static struct wifi_client_info *add_to_wifi_clients(struct
+						    wifi_client_info
+						    *list_root)
 {
 	struct wifi_client_info *new = calloc(1, sizeof(struct wifi_client_info));
 	if (new == NULL) {
@@ -813,17 +836,13 @@ void free_wifi_clients(struct wifi_client_info *wci)
 static int get_max_mcs_index(const __u8 *mcs)
 {
 	unsigned int mcs_bit, prev_bit = -2, prev_cont = 0;
-
 	for (mcs_bit = 0; mcs_bit <= 76; mcs_bit++) {
 		unsigned int mcs_octet = mcs_bit / 8;
 		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
 		bool mcs_rate_idx_set;
-
 		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
-
 		if (!mcs_rate_idx_set)
 			continue;
-
 		if (prev_bit != mcs_bit - 1) {
 			/* if (prev_bit != -2)
 			   printf("%d, ", prev_bit);
@@ -851,17 +870,14 @@ static int get_ht_mcs(const __u8 *mcs)
 	/* As defined in 7.3.2.57.4 Supported MCS Set field */
 	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
-
 	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
 	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
 	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
-
 	// if (max_rx_supp_data_rate)
 	//      printf("\t\tHT Max RX data rate: %d Mbps\n", max_rx_supp_data_rate);
 	/* XXX: else see 9.6.0e.5.3 how to get this I think */
-
 	if (tx_mcs_set_defined) {
 		if (tx_mcs_set_equal) {
 			// printf("\t\tHT TX/RX MCS rate indexes supported:");
@@ -869,15 +885,12 @@ static int get_ht_mcs(const __u8 *mcs)
 		} else {
 			// printf("\t\tHT RX MCS rate indexes supported:");
 			return (get_max_mcs_index(mcs));
-
 			// if (tx_unequal_modulation)
 			// printf("\t\tTX unequal modulation supported\n");
 			// else
 			// printf("\t\tTX unequal modulation not supported\n");
-
 			// printf("\t\tHT TX Max spatial streams: %d\n",
 			//      tx_max_num_spatial_streams);
-
 			// printf("\t\tHT TX MCS rate indexes supported may differ\n");
 		}
 	} else {
@@ -896,13 +909,13 @@ int mac80211_get_maxrate(char *interface)
 	int phy;
 	int maxrate = 0;
 	static struct nla_policy rate_policy[NL80211_BITRATE_ATTR_MAX + 1] = {
-		[NL80211_BITRATE_ATTR_RATE] = {.type = NLA_U32},
-		[NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE] = {.type = NLA_FLAG},
+		[NL80211_BITRATE_ATTR_RATE] = {
+					       .type = NLA_U32},[NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE] = {
+													     .type = NLA_FLAG},
 	};
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return 0;
-
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
@@ -910,7 +923,6 @@ int mac80211_get_maxrate(char *interface)
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
-
 	nla_for_each_nested(band, bands, rem) {
 		ratelist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_RATES);
 		if (!ratelist)
@@ -939,11 +951,9 @@ int mac80211_get_maxmcs(char *interface)
 	int rem;
 	int phy;
 	int maxmcs = 0;
-
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return 0;
-
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
@@ -951,10 +961,10 @@ int mac80211_get_maxmcs(char *interface)
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
-
 	nla_for_each_nested(band, bands, rem) {
 		nla_parse(tb, NL80211_BAND_ATTR_MAX, nla_data(band), nla_len(band), NULL);
-		if (tb[NL80211_BAND_ATTR_HT_MCS_SET] && nla_len(tb[NL80211_BAND_ATTR_HT_MCS_SET]) == 16)
+		if (tb[NL80211_BAND_ATTR_HT_MCS_SET]
+		    && nla_len(tb[NL80211_BAND_ATTR_HT_MCS_SET]) == 16)
 			maxmcs = get_ht_mcs(nla_data(tb[NL80211_BAND_ATTR_HT_MCS_SET]));
 	}
 	printf("maxmcs: %d\n", maxmcs);
@@ -970,7 +980,6 @@ nla_put_failure:
 void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 {
 	struct nl_msg *msg;
-
 	if (tx_ant == 0 || rx_ant == 0)
 		return;
 	msg = unl_genl_msg(&unl, NL80211_CMD_SET_WIPHY, false);
@@ -985,7 +994,6 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_RX, rx_ant);
 	unl_genl_request(&unl, msg, NULL, NULL);
 	return;
-
 nla_put_failure:
 	nlmsg_free(msg);
 	return;
@@ -997,19 +1005,14 @@ static int mac80211_get_antennas(int phy, int which, int direction)
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
 	int ret = 0;
-
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	if (!msg)
 		return 0;
-
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
 		return 0;
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
-
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
-
 	if (which == 0 && direction == 0) {
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX])
 			ret = ((int)nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX]));

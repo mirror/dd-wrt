@@ -56,6 +56,9 @@ extern double HTTxRate40_400(unsigned int index);
  * @return      >= 0 if successful or < 0 otherwise
  */
 extern int wl_ioctl(char *name, int cmd, void *buf, int len);
+#ifdef HAVE_DHDAP
+extern int dhd_ioctl(char *name, int cmd, void *buf, int len);
+#endif
 
 /*
  * Get the MAC (hardware) address of the specified interface.
@@ -71,7 +74,9 @@ extern int wl_hwaddr(char *name, unsigned char *hwaddr);
  * @return      >= 0 if a Broadcom wireless device or < 0 otherwise
  */
 extern int wl_probe(char *name);
-
+#ifdef HAVE_DHDAP
+extern int dhd_probe(char *name);
+#endif
 /*
  * Returns the list of associated stations in the pre-existing buffer list 
  */
@@ -133,11 +138,15 @@ struct site_survey_list {
 extern struct wifi_channels *list_channels_11n(char *devnr);
 extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country, int max_bandwidth_khz, unsigned char band);
 extern int getdevicecount(void);
+
+
 extern int mac80211_get_coverageclass(char *interface);
 extern struct mac80211_info *mac80211_assoclist(char *interface);
 extern char *mac80211_get_caps(char *interface);
 #ifdef HAVE_ATH10K
 extern char *mac80211_get_vhtcaps(char *interface);
+extern unsigned int get_ath10kreg(char *ifname, unsigned int reg);
+extern void set_ath10kreg(char *ifname, unsigned int reg,unsigned int value);
 #endif
 extern int mac80211_check_band(char *interface, int checkband);
 struct wifi_channels *mac80211_get_channels(char *interface, char *country, int max_bandwidth_khz, unsigned char checkband);
