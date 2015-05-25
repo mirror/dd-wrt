@@ -770,7 +770,7 @@ static int jffs2_rename (struct inode *old_dir_i, struct dentry *old_dentry,
 	 * the VFS can't check whether the victim is empty. The filesystem
 	 * needs to do that for itself.
 	 */
-	if (d_really_is_positive(new_dentry)) {
+	if (d_really_is_positive(new_dentry) && !(flags & RENAME_EXCHANGE)) {
 		victim_f = JFFS2_INODE_INFO(d_inode(new_dentry));
 		if (d_is_dir(new_dentry)) {
 			struct jffs2_full_dirent *fd;
