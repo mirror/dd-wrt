@@ -192,6 +192,8 @@ void start_dnsmasq(void)
 	if (nvram_match("dnsmasq_strict", "1"))
 		fprintf(fp, "strict-order\n");
 
+	fprintf(fp, "cache-size=1500\n");
+
 #ifdef HAVE_UNBOUND
 	if (nvram_match("recursive_dns", "1")) {
 		fprintf(fp, "port=0\n");
