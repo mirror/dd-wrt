@@ -689,7 +689,7 @@ int main(int argc, char **argv)
 			char dst[32];
 			sprintf(dst, "%s_distance", dev);
 			if (is_ath10k(dev)) {	// evil hack for QCA 
-				set_ath10kdistance(dev, atoi(dst));
+				set_ath10kdistance(dev, atoi(nvram_safe_get(dst)));
 			}
 		}
 #endif
