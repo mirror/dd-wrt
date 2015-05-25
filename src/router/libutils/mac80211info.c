@@ -257,11 +257,19 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	unsigned int sifs = 16;
 	unsigned int ack = slot + sifs;
 	unsigned int cts = ack;
+	if ((int)distance == -1)
+	    return;
+	if (slot == 0) // too low value. 
+	    return;
 
 	ack *= 88;		// 88Mhz is the core clock of AR9880
 	cts *= 88;
 	sifs *= 88;
 	slot *= 88;
+	if (ack>0x3fff) {
+	    fprintf(stderr,"invalid ack 0x%08x, max is 0x3fff. truncate it\n",ack);
+	    ack = 0x3fff;
+	}
 	unsigned int oldack = get_ath10kreg(dev, 0x28014);
 	if (oldack != ack) {
 		set_ath10kreg(dev, 0x21070, slot);
