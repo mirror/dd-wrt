@@ -92,7 +92,7 @@ static char *print_id_ip6_p(char *s,const struct bt_nodes6_data *b) {
 }
 
 
-void dump_bt_proto_struct(struct bt_parse_protocol *p) {
+static void dump_bt_proto_struct(struct bt_parse_protocol *p) {
   char b20h[128];
   int i;
 
@@ -191,7 +191,7 @@ static void print_safe_str(char *msg,bt_parse_data_cb_t *cbd) {
 #define STREQ(a,b) !strcmp(a,b)
 
 
-void cb_data(bt_parse_data_cb_t *cbd,int *ret) {
+static void cb_data(bt_parse_data_cb_t *cbd,int *ret) {
   struct bt_parse_protocol *p = &(cbd->p);
   const u_int8_t *s;
   const char *ss;
@@ -410,7 +410,7 @@ void cb_data(bt_parse_data_cb_t *cbd,int *ret) {
 }
 
 
-const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t *cbd) {
+static const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t *cbd) {
 
   unsigned int n=0,neg=0;
   i_int64_t d = 0;

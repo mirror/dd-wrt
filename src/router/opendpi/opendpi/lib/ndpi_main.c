@@ -164,7 +164,7 @@ int kstrtoint(const char *s, unsigned int base, int *res)
 }
 #endif
 
-int atoi(const char *str) {
+static int atoi(const char *str) {
   int rc;
 
   if(kstrtoint(str, 0, &rc) == 0 /* Success */)
@@ -380,7 +380,7 @@ static const u_char charmap[] = {
   '\370', '\371', '\372', '\373', '\374', '\375', '\376', '\377',
 };
 
-int
+static int
 strcasecmp(s1, s2)
      const char *s1, *s2;
 {
@@ -394,7 +394,7 @@ strcasecmp(s1, s2)
   return (cm[*us1] - cm[*--us2]);
 }
 
-int
+static int
 strncasecmp(s1, s2, n)
      const char *s1, *s2;
      register size_t n;
@@ -426,11 +426,11 @@ static int removeDefaultPort(ndpi_port_range *range,
 
 /* ****************************************** */
 
-void* ndpi_malloc(unsigned long size) { return(_ndpi_malloc(size)); }
+static void* ndpi_malloc(unsigned long size) { return(_ndpi_malloc(size)); }
 
 /* ****************************************** */
 
-void* ndpi_calloc(unsigned long count, unsigned long size) {
+static void* ndpi_calloc(unsigned long count, unsigned long size) {
   unsigned long len = count*size;
   void *p = ndpi_malloc(len);
 
@@ -442,11 +442,11 @@ void* ndpi_calloc(unsigned long count, unsigned long size) {
 
 /* ****************************************** */
 
-void  ndpi_free(void *ptr)            { _ndpi_free(ptr); }
+static void  ndpi_free(void *ptr)            { _ndpi_free(ptr); }
 
 /* ****************************************** */
 
-void *ndpi_realloc(void *ptr, size_t old_size, size_t new_size) {
+static void *ndpi_realloc(void *ptr, size_t old_size, size_t new_size) {
   void *ret = ndpi_malloc(new_size);
 
   if(!ret)
@@ -459,7 +459,7 @@ void *ndpi_realloc(void *ptr, size_t old_size, size_t new_size) {
 }
 /* ****************************************** */
 
-char *ndpi_strdup(const char *s) {
+static char *ndpi_strdup(const char *s) {
   int len = strlen(s);
   char *m = ndpi_malloc(len+1);
 
@@ -473,27 +473,27 @@ char *ndpi_strdup(const char *s) {
 
 /* ****************************************** */
 
-u_int32_t ndpi_detection_get_sizeof_ndpi_flow_struct(void)
+static u_int32_t ndpi_detection_get_sizeof_ndpi_flow_struct(void)
 {
   return sizeof(struct ndpi_flow_struct);
 }
 
 /* ****************************************** */
 
-u_int32_t ndpi_detection_get_sizeof_ndpi_id_struct(void)
+static u_int32_t ndpi_detection_get_sizeof_ndpi_id_struct(void)
 {
   return sizeof(struct ndpi_id_struct);
 }
 
 /* ******************************************************************** */
 
-char* ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id) {
+static char* ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id) {
   return((id >= ndpi_mod->ndpi_num_supported_protocols) ? NULL : ndpi_mod->proto_defaults[id].protoName);
 }
 
 /* ******************************************************************** */
 
-ndpi_port_range* ndpi_build_default_ports_range(ndpi_port_range *ports,
+static ndpi_port_range* ndpi_build_default_ports_range(ndpi_port_range *ports,
 						u_int16_t portA_low, u_int16_t portA_high,
 						u_int16_t portB_low, u_int16_t portB_high,
 						u_int16_t portC_low, u_int16_t portC_high,
@@ -512,7 +512,7 @@ ndpi_port_range* ndpi_build_default_ports_range(ndpi_port_range *ports,
 
 /* ******************************************************************** */
 
-ndpi_port_range* ndpi_build_default_ports(ndpi_port_range *ports,
+static ndpi_port_range* ndpi_build_default_ports(ndpi_port_range *ports,
 					  u_int16_t portA,
 					  u_int16_t portB,
 					  u_int16_t portC,
@@ -531,7 +531,7 @@ ndpi_port_range* ndpi_build_default_ports(ndpi_port_range *ports,
 
 /* ******************************************************************** */
 
-void ndpi_set_proto_defaults(struct ndpi_detection_module_struct *ndpi_mod,
+static void ndpi_set_proto_defaults(struct ndpi_detection_module_struct *ndpi_mod,
 			     ndpi_protocol_breed_t breed, u_int16_t protoId,
 			     u_int16_t tcp_master_protoId[2], u_int16_t udp_master_protoId[2],
 			     char *protoName,
@@ -580,7 +580,7 @@ static int ndpi_default_ports_tree_node_t_cmp(const void *a, const void *b) {
 
 /* ******************************************************************** */
 
-void ndpi_default_ports_tree_node_t_walker(const void *node, const ndpi_VISIT which, const int depth) {
+static void ndpi_default_ports_tree_node_t_walker(const void *node, const ndpi_VISIT which, const int depth) {
   ndpi_default_ports_tree_node_t *f = *(ndpi_default_ports_tree_node_t **)node;
 
 
@@ -684,7 +684,7 @@ static int ndpi_add_host_url_subprotocol(struct ndpi_detection_module_struct *nd
 
 /* ****************************************************** */
 
-int ndpi_add_content_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_add_content_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
 				 char *value, int protocol_id,
 				 ndpi_protocol_breed_t breed) {
   return(ndpi_string_to_automa(ndpi_struct, &ndpi_struct->content_automa, value, protocol_id, breed));
@@ -764,6 +764,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master, "FTP_CONTROL",
 			    ndpi_build_default_ports(ports_a, 21, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_FTP_DATA,
 			    no_master,
 			    no_master, "FTP_DATA",
@@ -1745,7 +1746,7 @@ static int fill_prefix_v4(prefix_t *p, struct in_addr *a, int b, int mb) {
 
 /* ******************************************* */
 
-u_int16_t ndpi_network_ptree_match(struct ndpi_detection_module_struct *ndpi_struct, struct in_addr *pin) {
+static u_int16_t ndpi_network_ptree_match(struct ndpi_detection_module_struct *ndpi_struct, struct in_addr *pin) {
   prefix_t prefix;
   patricia_node_t *node;
 
@@ -1773,7 +1774,7 @@ static u_int8_t tor_ptree_match(struct ndpi_detection_module_struct *ndpi_struct
 
 /* ******************************************* */
 
-u_int8_t ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct,
+static u_int8_t ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct,
 			  struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -1894,7 +1895,7 @@ static void free_ptree_data(void *data) { ; }
 
 /* ****************************************************** */
 
-void ndpi_exit_detection_module(struct ndpi_detection_module_struct
+static void ndpi_exit_detection_module(struct ndpi_detection_module_struct
 				*ndpi_struct, void (*ndpi_free) (void *ptr)) {
   if(ndpi_struct != NULL) {
     int i;
@@ -1931,7 +1932,7 @@ void ndpi_exit_detection_module(struct ndpi_detection_module_struct
 
 /* ****************************************************** */
 
-int ndpi_get_protocol_id_master_proto(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_get_protocol_id_master_proto(struct ndpi_detection_module_struct *ndpi_struct,
 				      u_int16_t protocol_id,
 				      u_int16_t** tcp_master_proto,
 				      u_int16_t** udp_master_proto) {
@@ -1948,7 +1949,7 @@ int ndpi_get_protocol_id_master_proto(struct ndpi_detection_module_struct *ndpi_
 
 /* ****************************************************** */
 
-u_int16_t ndpi_guess_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
+static u_int16_t ndpi_guess_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
 				 u_int8_t proto, u_int16_t sport, u_int16_t dport) {
   const void *ret;
   ndpi_default_ports_tree_node_t node;
@@ -2062,13 +2063,13 @@ static int add_proto_default_port(u_int16_t **ports, u_int16_t new_port,
 
 /* ******************************************************************** */
 
-u_int ndpi_get_num_supported_protocols(struct ndpi_detection_module_struct *ndpi_mod) {
+static u_int ndpi_get_num_supported_protocols(struct ndpi_detection_module_struct *ndpi_mod) {
   return(ndpi_mod->ndpi_num_supported_protocols);
 }
 
 /* ******************************************************************** */
 
-int ndpi_handle_rule(struct ndpi_detection_module_struct *ndpi_mod, char* rule, u_int8_t do_add) {
+static int ndpi_handle_rule(struct ndpi_detection_module_struct *ndpi_mod, char* rule, u_int8_t do_add) {
   char *at, *proto, *elem;
   ndpi_proto_defaults_t *def;
   int subprotocol_id, i;
@@ -2161,7 +2162,7 @@ int ndpi_handle_rule(struct ndpi_detection_module_struct *ndpi_mod, char* rule, 
   udp:139@NETBIOS
 
 */
-int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_mod, char* path) {
+static int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_mod, char* path) {
 #ifdef __KERNEL__
   return(0);
 #else
@@ -2201,7 +2202,7 @@ int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_mod, char
 }
 
 /* ntop */
-void ndpi_set_bitmask_protocol_detection( char * label,
+static void ndpi_set_bitmask_protocol_detection( char * label,
 					  struct ndpi_detection_module_struct *ndpi_struct,
 					  const NDPI_PROTOCOL_BITMASK * detection_bitmask,
 					  const u_int32_t idx,
@@ -2244,7 +2245,7 @@ void ndpi_set_bitmask_protocol_detection( char * label,
 
 /* ******************************************************************** */
 
-void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *ndpi_struct,
 					  const NDPI_PROTOCOL_BITMASK * dbm)
 {
   NDPI_PROTOCOL_BITMASK detection_bitmask_local;
@@ -3871,7 +3872,7 @@ static u_int8_t ndpi_detection_get_l4_internal(struct ndpi_detection_module_stru
 #else
 __forceinline static
 #endif
-void ndpi_apply_flow_protocol_to_packet(struct ndpi_flow_struct *flow,
+static void ndpi_apply_flow_protocol_to_packet(struct ndpi_flow_struct *flow,
 					struct ndpi_packet_struct *packet)
 {
   memcpy(&packet->detected_protocol_stack[0],
@@ -4002,12 +4003,7 @@ static int ndpi_init_packet_header(struct ndpi_detection_module_struct *ndpi_str
 }
 
 
-#if !defined(WIN32)
-static inline
-#else
-__forceinline static
-#endif
-void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_struct,
 			      struct ndpi_flow_struct *flow)
 {
   /* const for gcc code optimisation and cleaner code */
@@ -4135,7 +4131,7 @@ void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
+static void check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 				struct ndpi_flow_struct *flow,
 				NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet) {
   void *func = NULL;
@@ -4181,7 +4177,7 @@ void check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_struct
 }
 
 
-void check_ndpi_udp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
+static void check_ndpi_udp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 			      struct ndpi_flow_struct *flow,
 			      NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet) {
   void *func = NULL;
@@ -4224,7 +4220,7 @@ void check_ndpi_udp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 
-void check_ndpi_tcp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
+static void check_ndpi_tcp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 			      struct ndpi_flow_struct *flow,
 			      NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet) {
   void *func = NULL;
@@ -4299,7 +4295,7 @@ void check_ndpi_tcp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void check_ndpi_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
+static void check_ndpi_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 			  struct ndpi_flow_struct *flow,
 			  NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet) {
   if(flow->packet.tcp != NULL)
@@ -4310,7 +4306,7 @@ void check_ndpi_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
     check_ndpi_other_flow_func(ndpi_struct, flow, ndpi_selection_packet);
 }
 
-unsigned int ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_struct,
+static unsigned int ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_struct,
 					   struct ndpi_flow_struct *flow,
 					   const unsigned char *packet,
 					   const unsigned short packetlen,
@@ -4444,7 +4440,7 @@ unsigned int ndpi_detection_process_packet(struct ndpi_detection_module_struct *
 }
 
 
-u_int32_t ndpi_bytestream_to_number(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
+static u_int32_t ndpi_bytestream_to_number(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
 {
   u_int32_t val;
   val = 0;
@@ -4459,7 +4455,7 @@ u_int32_t ndpi_bytestream_to_number(const u_int8_t * str, u_int16_t max_chars_to
   return (val);
 }
 
-u_int32_t ndpi_bytestream_dec_or_hex_to_number(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
+static u_int32_t ndpi_bytestream_dec_or_hex_to_number(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
 {
   u_int32_t val;
   val = 0;
@@ -4493,7 +4489,7 @@ u_int32_t ndpi_bytestream_dec_or_hex_to_number(const u_int8_t * str, u_int16_t m
 }
 
 
-u_int64_t ndpi_bytestream_to_number64(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
+static u_int64_t ndpi_bytestream_to_number64(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
 {
   u_int64_t val;
   val = 0;
@@ -4508,7 +4504,7 @@ u_int64_t ndpi_bytestream_to_number64(const u_int8_t * str, u_int16_t max_chars_
   return (val);
 }
 
-u_int64_t ndpi_bytestream_dec_or_hex_to_number64(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
+static u_int64_t ndpi_bytestream_dec_or_hex_to_number64(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
 {
   u_int64_t val;
   val = 0;
@@ -4542,7 +4538,7 @@ u_int64_t ndpi_bytestream_dec_or_hex_to_number64(const u_int8_t * str, u_int16_t
 }
 
 
-u_int32_t ndpi_bytestream_to_ipv4(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
+static u_int32_t ndpi_bytestream_to_ipv4(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
 {
   u_int32_t val;
   u_int16_t read = 0;
@@ -4601,7 +4597,7 @@ static size_t http_hdr_offs[]= { 0,
 
 
 /* internal function for every detection to parse one packet and to increase the info buffer */
-void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow)
 {
   u_int16_t a;
@@ -4699,7 +4695,7 @@ void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struc
   }
 }
 
-void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct,
 				     struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -4742,7 +4738,7 @@ void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_s
 }
 
 
-u_int16_t ndpi_check_for_email_address(struct ndpi_detection_module_struct *ndpi_struct,
+static u_int16_t ndpi_check_for_email_address(struct ndpi_detection_module_struct *ndpi_struct,
 				       struct ndpi_flow_struct *flow, u_int16_t counter)
 {
 
@@ -4823,7 +4819,7 @@ u_int16_t ndpi_check_for_email_address(struct ndpi_detection_module_struct *ndpi
 }
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
-void ndpi_debug_get_last_log_function_line(struct ndpi_detection_module_struct
+static void ndpi_debug_get_last_log_function_line(struct ndpi_detection_module_struct
 					   *ndpi_struct, const char **file, const char **func, u_int32_t * line)
 {
   *file = "";
@@ -4838,13 +4834,13 @@ void ndpi_debug_get_last_log_function_line(struct ndpi_detection_module_struct
   *line = ndpi_struct->ndpi_debug_print_line;
 }
 #endif
-u_int8_t ndpi_detection_get_l4(const u_int8_t * l3, u_int16_t l3_len, const u_int8_t ** l4_return, u_int16_t * l4_len_return,
+static u_int8_t ndpi_detection_get_l4(const u_int8_t * l3, u_int16_t l3_len, const u_int8_t ** l4_return, u_int16_t * l4_len_return,
 			       u_int8_t * l4_protocol_return, u_int32_t flags)
 {
   return ndpi_detection_get_l4_internal(NULL, l3, l3_len, l4_return, l4_len_return, l4_protocol_return, flags);
 }
 
-void ndpi_int_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_int_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow,
 			     u_int16_t detected_protocol, ndpi_protocol_type_t protocol_type)
 {
@@ -4861,7 +4857,7 @@ void ndpi_int_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void ndpi_int_change_flow_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_int_change_flow_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 				   struct ndpi_flow_struct *flow,
 				   u_int16_t detected_protocol, ndpi_protocol_type_t protocol_type)
 {
@@ -4978,7 +4974,7 @@ void ndpi_int_change_flow_protocol(struct ndpi_detection_module_struct *ndpi_str
 #endif
 }
 
-void ndpi_int_change_packet_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_int_change_packet_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 				     struct ndpi_flow_struct *flow,
 				     u_int16_t detected_protocol, ndpi_protocol_type_t protocol_type)
 {
@@ -5106,7 +5102,7 @@ void ndpi_int_change_packet_protocol(struct ndpi_detection_module_struct *ndpi_s
  * accesses the packet stack since this is what leaves the library but
  * it could also use the flow stack.
  */
-u_int16_t ndpi_detection_get_real_protocol_of_flow(struct ndpi_detection_module_struct * ndpi_struct,
+static u_int16_t ndpi_detection_get_real_protocol_of_flow(struct ndpi_detection_module_struct * ndpi_struct,
 						   struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -5140,7 +5136,7 @@ u_int16_t ndpi_detection_get_real_protocol_of_flow(struct ndpi_detection_module_
  * history. Actually it accesses the packet stack since this is what
  * leaves the library but it could also use the flow stack.
  */
-u_int8_t ndpi_detection_flow_protocol_history_contains_protocol(struct ndpi_detection_module_struct * ndpi_struct,
+static u_int8_t ndpi_detection_flow_protocol_history_contains_protocol(struct ndpi_detection_module_struct * ndpi_struct,
 								struct ndpi_flow_struct *flow,
 								u_int16_t protocol_id)
 {
@@ -5171,7 +5167,7 @@ u_int8_t ndpi_detection_flow_protocol_history_contains_protocol(struct ndpi_dete
  * 1.call ndpi_int_change_protocol
  * 2.set protocol in detected bitmask for src and dst
  */
-void ndpi_int_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_int_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow,
 			     u_int16_t detected_protocol, ndpi_protocol_type_t protocol_type);
 
@@ -5180,7 +5176,7 @@ void ndpi_int_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
  * what it does is:
  * 1.update the flow protocol stack with the new protocol
  */
-void ndpi_int_change_flow_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_int_change_flow_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 				   struct ndpi_flow_struct *flow,
 				   u_int16_t detected_protocol, ndpi_protocol_type_t protocol_type);
 
@@ -5189,7 +5185,7 @@ void ndpi_int_change_flow_protocol(struct ndpi_detection_module_struct *ndpi_str
  * what it does is:
  * 1.update the packet protocol stack with the new protocol
  */
-void ndpi_int_change_packet_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_int_change_packet_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 				     struct ndpi_flow_struct *flow,
 				     u_int16_t detected_protocol, ndpi_protocol_type_t protocol_type);
 
@@ -5199,7 +5195,7 @@ void ndpi_int_change_packet_protocol(struct ndpi_detection_module_struct *ndpi_s
  * 1.update the flow protocol stack with the new protocol
  * 2.update the packet protocol stack with the new protocol
  */
-void ndpi_int_change_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_int_change_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 			      struct ndpi_flow_struct *flow,
 			      u_int16_t detected_protocol,
 			      ndpi_protocol_type_t protocol_type)
@@ -5210,7 +5206,7 @@ void ndpi_int_change_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 
 
 /* turns a packet back to unknown */
-void ndpi_int_reset_packet_protocol(struct ndpi_packet_struct *packet) {
+static void ndpi_int_reset_packet_protocol(struct ndpi_packet_struct *packet) {
   packet->detected_protocol_stack[0] = NDPI_PROTOCOL_UNKNOWN;
 
 #if NDPI_PROTOCOL_HISTORY_SIZE > 1
@@ -5219,7 +5215,7 @@ void ndpi_int_reset_packet_protocol(struct ndpi_packet_struct *packet) {
 #endif
 }
 
-void ndpi_int_reset_protocol(struct ndpi_flow_struct *flow)
+static void ndpi_int_reset_protocol(struct ndpi_flow_struct *flow)
 {
   if(flow) {
     flow->detected_protocol_stack[0] = NDPI_PROTOCOL_UNKNOWN;
@@ -5231,20 +5227,20 @@ void ndpi_int_reset_protocol(struct ndpi_flow_struct *flow)
   }
 }
 
-void NDPI_PROTOCOL_IP_clear(ndpi_ip_addr_t * ip)
+static void NDPI_PROTOCOL_IP_clear(ndpi_ip_addr_t * ip)
 {
   memset(ip, 0, sizeof(ndpi_ip_addr_t));
 }
 
 /* NTOP */
-int NDPI_PROTOCOL_IP_is_set(const ndpi_ip_addr_t * ip)
+static int NDPI_PROTOCOL_IP_is_set(const ndpi_ip_addr_t * ip)
 {
   return memcmp(ip, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", sizeof(ndpi_ip_addr_t)) != 0;
 }
 
 /* check if the source ip address in packet and ip are equal */
 /* NTOP */
-int ndpi_packet_src_ip_eql(const struct ndpi_packet_struct *packet, const ndpi_ip_addr_t * ip)
+static int ndpi_packet_src_ip_eql(const struct ndpi_packet_struct *packet, const ndpi_ip_addr_t * ip)
 {
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
   if(packet->iphv6 != NULL) {
@@ -5264,7 +5260,7 @@ int ndpi_packet_src_ip_eql(const struct ndpi_packet_struct *packet, const ndpi_i
 }
 
 /* check if the destination ip address in packet and ip are equal */
-int ndpi_packet_dst_ip_eql(const struct ndpi_packet_struct *packet, const ndpi_ip_addr_t * ip)
+static int ndpi_packet_dst_ip_eql(const struct ndpi_packet_struct *packet, const ndpi_ip_addr_t * ip)
 {
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
   if(packet->iphv6 != NULL) {
@@ -5284,7 +5280,7 @@ int ndpi_packet_dst_ip_eql(const struct ndpi_packet_struct *packet, const ndpi_i
 
 /* get the source ip address from packet and put it into ip */
 /* NTOP */
-void ndpi_packet_src_ip_get(const struct ndpi_packet_struct *packet, ndpi_ip_addr_t * ip)
+static void ndpi_packet_src_ip_get(const struct ndpi_packet_struct *packet, ndpi_ip_addr_t * ip)
 {
   NDPI_PROTOCOL_IP_clear(ip);
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
@@ -5298,7 +5294,7 @@ void ndpi_packet_src_ip_get(const struct ndpi_packet_struct *packet, ndpi_ip_add
 
 /* get the destination ip address from packet and put it into ip */
 /* NTOP */
-void ndpi_packet_dst_ip_get(const struct ndpi_packet_struct *packet, ndpi_ip_addr_t * ip)
+static void ndpi_packet_dst_ip_get(const struct ndpi_packet_struct *packet, ndpi_ip_addr_t * ip)
 {
   NDPI_PROTOCOL_IP_clear(ip);
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
@@ -5314,7 +5310,7 @@ void ndpi_packet_dst_ip_get(const struct ndpi_packet_struct *packet, ndpi_ip_add
 /* get the string representation of ip
  * returns a pointer to a static string
  * only valid until the next call of this function */
-char *ndpi_get_ip_string(struct ndpi_detection_module_struct *ndpi_struct,
+static char *ndpi_get_ip_string(struct ndpi_detection_module_struct *ndpi_struct,
 			 const ndpi_ip_addr_t * ip)
 {
   const u_int8_t *a = (const u_int8_t *) &ip->ipv4;
@@ -5335,7 +5331,7 @@ char *ndpi_get_ip_string(struct ndpi_detection_module_struct *ndpi_struct,
 
 
 /* get the string representation of the source ip address from packet */
-char *ndpi_get_packet_src_ip_string(struct ndpi_detection_module_struct *ndpi_struct,
+static char *ndpi_get_packet_src_ip_string(struct ndpi_detection_module_struct *ndpi_struct,
 				    const struct ndpi_packet_struct *packet)
 {
   ndpi_ip_addr_t ip;
@@ -5344,7 +5340,7 @@ char *ndpi_get_packet_src_ip_string(struct ndpi_detection_module_struct *ndpi_st
 }
 
 /* get the string representation of the destination ip address from packet */
-char *ndpi_get_packet_dst_ip_string(struct ndpi_detection_module_struct *ndpi_struct,
+static char *ndpi_get_packet_dst_ip_string(struct ndpi_detection_module_struct *ndpi_struct,
 				    const struct ndpi_packet_struct *packet)
 {
   ndpi_ip_addr_t ip;
@@ -5355,7 +5351,7 @@ char *ndpi_get_packet_dst_ip_string(struct ndpi_detection_module_struct *ndpi_st
 
 /* ****************************************************** */
 
-u_int16_t ntohs_ndpi_bytestream_to_number(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
+static u_int16_t ntohs_ndpi_bytestream_to_number(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read)
 {
   u_int16_t val = ndpi_bytestream_to_number(str, max_chars_to_read, bytes_read);
   return ntohs(val);
@@ -5373,7 +5369,7 @@ static u_int is_port(u_int16_t sport, u_int16_t dport, u_int16_t match_port) {
 
 /* ****************************************************** */
 
-unsigned int ndpi_find_port_based_protocol(struct ndpi_detection_module_struct *ndpi_struct /* NOTUSED */,
+static unsigned int ndpi_find_port_based_protocol(struct ndpi_detection_module_struct *ndpi_struct /* NOTUSED */,
 					   u_int8_t proto,
 					   u_int32_t shost, u_int16_t sport,
 					   u_int32_t dhost, u_int16_t dport) {
@@ -5390,7 +5386,7 @@ unsigned int ndpi_find_port_based_protocol(struct ndpi_detection_module_struct *
 
 /* ****************************************************** */
 
-unsigned int ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static unsigned int ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 					    u_int8_t proto,
 					    u_int32_t shost /* host byte order */, u_int16_t sport,
 					    u_int32_t dhost /* host byte order */, u_int16_t dport) {
@@ -5427,7 +5423,7 @@ unsigned int ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct 
 
 /* ****************************************************** */
 
-char* ndpi_get_proto_name(struct ndpi_detection_module_struct *ndpi_mod, u_int16_t proto_id) {
+static char* ndpi_get_proto_name(struct ndpi_detection_module_struct *ndpi_mod, u_int16_t proto_id) {
   if((proto_id >= ndpi_mod->ndpi_num_supported_protocols)
      || ((proto_id < (NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS))
 	 && (ndpi_mod->proto_defaults[proto_id].protoName == NULL)))
@@ -5438,7 +5434,7 @@ char* ndpi_get_proto_name(struct ndpi_detection_module_struct *ndpi_mod, u_int16
 
 /* ****************************************************** */
 
-ndpi_protocol_breed_t ndpi_get_proto_breed(struct ndpi_detection_module_struct *ndpi_mod,
+static ndpi_protocol_breed_t ndpi_get_proto_breed(struct ndpi_detection_module_struct *ndpi_mod,
 					   u_int16_t proto_id) {
   if((proto_id >= ndpi_mod->ndpi_num_supported_protocols)
      || ((proto_id < (NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS))
@@ -5450,7 +5446,7 @@ ndpi_protocol_breed_t ndpi_get_proto_breed(struct ndpi_detection_module_struct *
 
 /* ****************************************************** */
 
-char* ndpi_get_proto_breed_name(struct ndpi_detection_module_struct *ndpi_mod,
+static char* ndpi_get_proto_breed_name(struct ndpi_detection_module_struct *ndpi_mod,
 				ndpi_protocol_breed_t breed_id) {
   switch(breed_id) {
   case NDPI_PROTOCOL_SAFE:
@@ -5478,7 +5474,7 @@ char* ndpi_get_proto_breed_name(struct ndpi_detection_module_struct *ndpi_mod,
 
 /* ****************************************************** */
 
-int ndpi_get_protocol_id(struct ndpi_detection_module_struct *ndpi_mod, char *proto) {
+static int ndpi_get_protocol_id(struct ndpi_detection_module_struct *ndpi_mod, char *proto) {
   int i;
 
   for(i=0; i<(int)ndpi_mod->ndpi_num_supported_protocols; i++)
@@ -5490,7 +5486,7 @@ int ndpi_get_protocol_id(struct ndpi_detection_module_struct *ndpi_mod, char *pr
 
 /* ****************************************************** */
 
-void ndpi_dump_protocols(struct ndpi_detection_module_struct *ndpi_mod) {
+static void ndpi_dump_protocols(struct ndpi_detection_module_struct *ndpi_mod) {
   int i;
 
   for(i=0; i<(int)ndpi_mod->ndpi_num_supported_protocols; i++)
@@ -5503,7 +5499,7 @@ void ndpi_dump_protocols(struct ndpi_detection_module_struct *ndpi_mod) {
  * Find the first occurrence of find in s, where the search is limited to the
  * first slen characters of s.
  */
-char* ndpi_strnstr(const char *s, const char *find, size_t slen) {
+static char* ndpi_strnstr(const char *s, const char *find, size_t slen) {
   char c, sc;
   size_t len;
 
@@ -5577,7 +5573,7 @@ static int ndpi_automa_match_string_subprotocol(struct ndpi_detection_module_str
 
 /* ****************************************************** */
 
-int ndpi_match_string_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_match_string_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
 				  struct ndpi_flow_struct *flow,
 				  char *string_to_match, u_int string_to_match_len) {
   return(ndpi_automa_match_string_subprotocol(ndpi_struct, &ndpi_struct->host_automa,
@@ -5586,7 +5582,7 @@ int ndpi_match_string_subprotocol(struct ndpi_detection_module_struct *ndpi_stru
 
 /* ****************************************************** */
 
-int ndpi_match_content_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_match_content_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
 				   struct ndpi_flow_struct *flow,
 				   char *string_to_match, u_int string_to_match_len) {
   return(ndpi_automa_match_string_subprotocol(ndpi_struct, &ndpi_struct->content_automa,
@@ -5595,7 +5591,7 @@ int ndpi_match_content_subprotocol(struct ndpi_detection_module_struct *ndpi_str
 
 /* ****************************************************** */
 
-int ndpi_match_bigram(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_match_bigram(struct ndpi_detection_module_struct *ndpi_struct,
 		      ndpi_automa *automa, char *bigram_to_match) {
   AC_TEXT_t ac_input_text;
   int ret = 0;
@@ -5617,7 +5613,7 @@ int ndpi_match_bigram(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* ****************************************************** */
 
-void ndpi_free_flow(struct ndpi_flow_struct *flow) {
+static void ndpi_free_flow(struct ndpi_flow_struct *flow) {
   if(flow) {
     if(flow->http.url)          ndpi_free(flow->http.url);
     if(flow->http.content_type) ndpi_free(flow->http.content_type);
@@ -5630,7 +5626,7 @@ void ndpi_free_flow(struct ndpi_flow_struct *flow) {
 /* ****************************************************** */
 
 #ifndef __KERNEL__
-char* ndpi_revision() {
+static char* ndpi_revision() {
   return(NDPI_GIT_RELEASE);
 }
 #endif
@@ -5659,7 +5655,7 @@ char* ndpi_revision() {
   }
 */
 /*  http://git.postgresql.org/gitweb/?p=postgresql.git;a=blob;f=src/port/gettimeofday.c;h=75a91993b74414c0a1c13a2a09ce739cb8aa8a08;hb=HEAD */
-int gettimeofday(struct timeval * tp, struct timezone * tzp) {
+static int gettimeofday(struct timeval * tp, struct timezone * tzp) {
   /* FILETIME of Jan 1 1970 00:00:00. */
   const unsigned __int64 epoch = (__int64)(116444736000000000);
 
@@ -5679,7 +5675,7 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp) {
 }
 #endif
 
-int NDPI_BITMASK_COMPARE(NDPI_PROTOCOL_BITMASK a, NDPI_PROTOCOL_BITMASK b) {
+static int NDPI_BITMASK_COMPARE(NDPI_PROTOCOL_BITMASK a, NDPI_PROTOCOL_BITMASK b) {
   int i;
 
   for(i=0; i<NDPI_NUM_FDS_BITS; i++) {
@@ -5690,7 +5686,7 @@ int NDPI_BITMASK_COMPARE(NDPI_PROTOCOL_BITMASK a, NDPI_PROTOCOL_BITMASK b) {
   return(0);
 }
 
-int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
+static int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
   int i;
 
   for(i=0; i<NDPI_NUM_FDS_BITS; i++)
@@ -5700,7 +5696,7 @@ int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
   return(1);
 }
 
-void NDPI_DUMP_BITMASK(NDPI_PROTOCOL_BITMASK a) {
+static void NDPI_DUMP_BITMASK(NDPI_PROTOCOL_BITMASK a) {
   int i;
 
   for(i=0; i<NDPI_NUM_FDS_BITS; i++)
@@ -5724,7 +5720,7 @@ void NDPI_DUMP_BITMASK(NDPI_PROTOCOL_BITMASK a) {
  *
  * If *stringp is NULL, strsep returns NULL.
  */
-char* strsep(char **stringp, const char *delim) {
+static char* strsep(char **stringp, const char *delim) {
   char *s;
   const char *spanp;
   int c, sc;
