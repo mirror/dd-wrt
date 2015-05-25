@@ -1,24 +1,17 @@
-#debug stuff
-logfd 2
-debug
-dump
-#
 defaultroute
 lock
 noauth
 nodetach
-#refuse-eap
 refuse-pap
 refuse-chap
 refuse-mschap
 nobsdcomp
 nodeflate
 mppc
-#lcp-echo-adaptive	#
-lcp-echo-failure 30
-lcp-echo-interval 2
-persist	#dont close session try to reconnect
-maxfail 0	#forever try to connect
+lcp-echo-failure 4
+lcp-echo-interval 30
+persist
+maxfail 0
 usepeerdns
 idle 0
 ip-up-script /tmp/pptpd_client/ip-up
