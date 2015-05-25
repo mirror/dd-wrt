@@ -20,7 +20,7 @@ struct mstring_exec {
 	u_int16_t	*soffs;		/* start offset in sbuf */
 	struct mstring_node *N;
 };
-int mstring_find(struct mstring_exec *s,char *str,int l) {
+static int mstring_find(struct mstring_exec *s,char *str,int l) {
 	int c,i,n,x;
 	char *cs;
 	struct mstring_node *p;
@@ -99,7 +99,7 @@ static struct mstring_node mstring_node_http_hdr[18] = {
 	{ .n = 5, .s = 38, .l = 13, .r = 0, .e = 21 },
 	{ .n = 9, .s = 69, .l = 0, .r = 0, .e = 24 } 
 };
-struct mstring_exec mstring_data_http_hdr = {
+static struct mstring_exec mstring_data_http_hdr = {
 	.smin = 5,
 	.start = 5, .last = 17,
 	.sbuf_len = 147,

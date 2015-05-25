@@ -32,7 +32,7 @@ static u_int8_t is_skype_host(struct ndpi_detection_module_struct *ndpi_struct, 
   return((ndpi_network_ptree_match(ndpi_struct, &pin) == NDPI_PROTOCOL_SKYPE) ? 1 : 0);
 }
 
-u_int8_t is_skype_flow(struct ndpi_detection_module_struct *ndpi_struct,
+static u_int8_t is_skype_flow(struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 	

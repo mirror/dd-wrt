@@ -144,6 +144,6 @@ typedef struct bt_parse_data_cb {
 extern int bt_parse_debug;
 void dump_bt_proto_struct(struct bt_parse_protocol *p);
 #endif
-const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t *cbd);
+static const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t *cbd);
 
 #endif

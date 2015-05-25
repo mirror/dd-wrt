@@ -39,16 +39,16 @@
    different depths */
 
 /* Private function prototype */
-void node_init         (AC_NODE_t * thiz);
-int  node_edge_compare (const void * l, const void * r);
-int  node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr);
+static void node_init         (AC_NODE_t * thiz);
+static int  node_edge_compare (const void * l, const void * r);
+static int  node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr);
 
 
 /******************************************************************************
  * FUNCTION: node_create
  * Create the node
  ******************************************************************************/
-AC_NODE_t * node_create(void)
+static AC_NODE_t * node_create(void)
 {
   AC_NODE_t * thiz =  (AC_NODE_t *) ndpi_malloc (sizeof(AC_NODE_t));
   node_init(thiz);
@@ -60,7 +60,7 @@ AC_NODE_t * node_create(void)
  * FUNCTION: node_init
  * Initialize node
  ******************************************************************************/
-void node_init(AC_NODE_t * thiz)
+static void node_init(AC_NODE_t * thiz)
 {
   memset(thiz, 0, sizeof(AC_NODE_t));
 
@@ -77,7 +77,7 @@ void node_init(AC_NODE_t * thiz)
  * FUNCTION: node_release
  * Release node
  ******************************************************************************/
-void node_release(AC_NODE_t * thiz)
+static void node_release(AC_NODE_t * thiz)
 {
   ndpi_free(thiz->matched_patterns);
   ndpi_free(thiz->outgoing);
@@ -90,7 +90,7 @@ void node_release(AC_NODE_t * thiz)
  * the pre-processing stage in which edge array is not sorted. so it uses
  * linear search.
  ******************************************************************************/
-AC_NODE_t * node_find_next(AC_NODE_t * thiz, AC_ALPHABET_t alpha)
+static AC_NODE_t * node_find_next(AC_NODE_t * thiz, AC_ALPHABET_t alpha)
 {
   int i;
 
@@ -107,7 +107,7 @@ AC_NODE_t * node_find_next(AC_NODE_t * thiz, AC_ALPHABET_t alpha)
  * Find out the next node for a given Alpha. this function is used after the
  * pre-processing stage in which we sort edges. so it uses Binary Search.
  ******************************************************************************/
-AC_NODE_t * node_findbs_next (AC_NODE_t * thiz, AC_ALPHABET_t alpha)
+static AC_NODE_t * node_findbs_next (AC_NODE_t * thiz, AC_ALPHABET_t alpha)
 {
   int min, max, mid;
   AC_ALPHABET_t amid;
@@ -134,7 +134,7 @@ AC_NODE_t * node_findbs_next (AC_NODE_t * thiz, AC_ALPHABET_t alpha)
  * Determine if a final node contains a pattern in its accepted pattern list
  * or not. return values: 1 = it has, 0 = it hasn't
  ******************************************************************************/
-int node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr)
+static int node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr)
 {
   int i, j;
   AC_PATTERN_t * str;
@@ -160,7 +160,7 @@ int node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr)
  * FUNCTION: node_create_next
  * Create the next node for the given alpha.
  ******************************************************************************/
-AC_NODE_t * node_create_next (AC_NODE_t * thiz, AC_ALPHABET_t alpha)
+static AC_NODE_t * node_create_next (AC_NODE_t * thiz, AC_ALPHABET_t alpha)
 {
   AC_NODE_t * next;
   next = node_find_next (thiz, alpha);
@@ -178,7 +178,7 @@ AC_NODE_t * node_create_next (AC_NODE_t * thiz, AC_ALPHABET_t alpha)
  * FUNCTION: node_register_matchstr
  * Adds the pattern to the list of accepted pattern.
  ******************************************************************************/
-void node_register_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * str)
+static void node_register_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * str)
 {
   /* Check if the new pattern already exists in the node list */
   if (node_has_matchstr(thiz, str))
@@ -204,7 +204,7 @@ void node_register_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * str)
  * FUNCTION: node_register_outgoing
  * Establish an edge between two nodes
  ******************************************************************************/
-void node_register_outgoing
+static void node_register_outgoing
 (AC_NODE_t * thiz, AC_NODE_t * next, AC_ALPHABET_t alpha)
 {
   if(thiz->outgoing_degree >= thiz->outgoing_max)
@@ -223,7 +223,7 @@ void node_register_outgoing
  * FUNCTION: node_assign_id
  * assign a unique ID to the node (used for debugging purpose).
  ******************************************************************************/
-void node_assign_id (AC_NODE_t * thiz)
+static void node_assign_id (AC_NODE_t * thiz)
 {
   static int unique_id = 1;
   thiz->id = unique_id ++;
@@ -233,7 +233,7 @@ void node_assign_id (AC_NODE_t * thiz)
  * FUNCTION: node_edge_compare
  * Comparison function for qsort. see man qsort.
  ******************************************************************************/
-int node_edge_compare (const void * l, const void * r)
+static int node_edge_compare (const void * l, const void * r)
 {
   /* According to man page:
    * The comparison function must return an integer less than, equal to, or
@@ -254,7 +254,7 @@ int node_edge_compare (const void * l, const void * r)
  * FUNCTION: node_sort_edges
  * sorts edges alphabets.
  ******************************************************************************/
-void node_sort_edges (AC_NODE_t * thiz)
+static void node_sort_edges (AC_NODE_t * thiz)
 {
   sort ((void *)thiz->outgoing, thiz->outgoing_degree, sizeof(struct edge), node_edge_compare, NULL);
 }
