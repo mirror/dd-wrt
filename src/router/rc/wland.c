@@ -680,6 +680,19 @@ int main(int argc, char **argv)
 	while (1) {
 		sleep(WLAND_INTERVAL);
 		do_wlan_check();
+#ifdef HAVE_ATH10K
+		int c = getdevicecount();
+		char dev[32];
+		int i;
+		for (i = 0; i < c; i++) {
+			sprintf(dev, "ath%d", i);
+			char dst[32];
+			sprintf(dst, "%s_distance", dev);
+			if (is_ath10k(dev)) {	// evil hack for QCA 
+				set_ath10kdistance(dev, atoi(dst));
+			}
+		}
+#endif
 
 	}
 
