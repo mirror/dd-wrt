@@ -355,6 +355,19 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("share.acktiming"));
 
 	char *ifname = nvram_safe_get("wifi_display");
+#ifdef HAVE_ATH10K
+	if (is_ath10k(ifname)) {
+		/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
+		unsigned int slot = get_ath10kreg(ifname,0x21070) / 88;		
+		unsigned int sifs = get_ath10kreg(ifname,0x21030) / 88;		
+		unsigned int eifs = get_ath10kreg(ifname,0x210b0) / 88;		
+		unsigned int ack = (get_ath10kreg(ifname,0x28014) & 0x3fff) / 88;		
+
+		distance = ack;
+		distance /= 3;
+		distance *= 450;
+	} else
+#endif
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
