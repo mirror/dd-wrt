@@ -213,7 +213,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				goto write_data;
 			}
 #endif
-#ifdef HAVE_DIR860
+#if defined(HAVE_DIR860) || defined(HAVE_DIR859)
 #define SEAMA_MAGIC		0x5EA3A417
 
 			typedef struct seama_hdr seamahdr_t;
@@ -248,6 +248,26 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				goto write_data;
 
 			}
+#endif
+#if defined(HAVE_DIR862)
+			unsigned int *uboot_magic = (unsigned int *)buf;
+			if (*uboot_magic == HOST_TO_BE32(0x27051956)) {
+				char *write_argv_buf[8];
+				write_argv_buf[0] = "mtd";
+				write_argv_buf[1] = "-f";
+				write_argv_buf[2] = "write";
+				write_argv_buf[3] = upload_fifo;
+				write_argv_buf[4] = "linux";
+				write_argv_buf[5] = NULL;
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
+				    || !(fifo = fopen(upload_fifo, "w"))) {
+					if (!ret)
+						ret = errno;
+					goto err;
+				}
+				goto write_data;
+			}
+			
 #endif
 #ifdef HAVE_BUFFALO
 			ralink_firmware_header fh;
