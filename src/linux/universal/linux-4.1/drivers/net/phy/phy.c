@@ -786,6 +786,9 @@ EXPORT_SYMBOL(phy_stop);
  */
 void phy_start(struct phy_device *phydev)
 {
+	bool do_resume = false;
+	int err = 0;
+
 	mutex_lock(&phydev->lock);
 
 	switch (phydev->state) {
@@ -796,11 +799,22 @@ void phy_start(struct phy_device *phydev)
 		phydev->state = PHY_UP;
 		break;
 	case PHY_HALTED:
+		/* make sure interrupts are re-enabled for the PHY */
+		err = phy_enable_interrupts(phydev);
+		if (err < 0)
+			break;
+
 		phydev->state = PHY_RESUMING;
+		do_resume = true;
+		break;
 	default:
 		break;
 	}
 	mutex_unlock(&phydev->lock);
+
+	/* if phy was suspended, bring the physical link up again */
+	if (do_resume)
+		phy_resume(phydev);
 }
 EXPORT_SYMBOL(phy_start);
 
@@ -813,7 +827,7 @@ void phy_state_machine(struct work_struct *work)
 	struct delayed_work *dwork = to_delayed_work(work);
 	struct phy_device *phydev =
 			container_of(dwork, struct phy_device, state_queue);
-	bool needs_aneg = false, do_suspend = false, do_resume = false;
+	bool needs_aneg = false, do_suspend = false;
 	int err = 0;
 
 	mutex_lock(&phydev->lock);
@@ -932,12 +946,6 @@ void phy_state_machine(struct work_struct *work)
 		}
 		break;
 	case PHY_RESUMING:
-		err = phy_clear_interrupt(phydev);
-		if (err)
-			break;
-		err = phy_config_interrupt(phydev, PHY_INTERRUPT_ENABLED);
-		if (err)
-			break;
 
 		if (AUTONEG_ENABLE == phydev->autoneg) {
 			err = phy_aneg_done(phydev);
@@ -976,7 +984,6 @@ void phy_state_machine(struct work_struct *work)
 			}
 			phydev->adjust_link(phydev->attached_dev);
 		}
-		do_resume = true;
 		break;
 	}
 
@@ -986,8 +993,6 @@ void phy_state_machine(struct work_struct *work)
 		err = phy_start_aneg(phydev);
 	else if (do_suspend)
 		phy_suspend(phydev);
-	else if (do_resume)
-		phy_resume(phydev);
 
 	if (err < 0)
 		phy_error(phydev);
@@ -1096,13 +1101,14 @@ int phy_init_eee(struct phy_device *phydev, bool clk_stop_enable)
 {
 	/* According to 802.3az,the EEE is supported only in full duplex-mode.
 	 * Also EEE feature is active when core is operating with MII, GMII
-	 * or RGMII. Internal PHYs are also allowed to proceed and should
-	 * return an error if they do not support EEE.
+	 * or RGMII (all kinds). Internal PHYs are also allowed to proceed and
+	 * should return an error if they do not support EEE.
 	 */
 	if ((phydev->duplex == DUPLEX_FULL) &&
 	    ((phydev->interface == PHY_INTERFACE_MODE_MII) ||
 	    (phydev->interface == PHY_INTERFACE_MODE_GMII) ||
-	    (phydev->interface == PHY_INTERFACE_MODE_RGMII) ||
+	    (phydev->interface >= PHY_INTERFACE_MODE_RGMII &&
+	     phydev->interface <= PHY_INTERFACE_MODE_RGMII_TXID) ||
 	     phy_is_internal(phydev))) {
 		int eee_lp, eee_cap, eee_adv;
 		u32 lp, cap, adv;
