@@ -262,11 +262,11 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	cts *= 88;
 	sifs *= 88;
 	slot *= 88;
-	unsigned int oldack = get_ath10kreg(dev(0x28014));
+	unsigned int oldack = get_ath10kreg(dev, 0x28014);
 	if (oldack != ack) {
 		set_ath10kreg(dev, 0x21070, slot);
 		set_ath10kreg(dev, 0x21030, sifs);
-		set_ath10kreg(dev, 0x28014, (cts <<16 & 0x3fff0000) | (ack & 0x3fff));
+		set_ath10kreg(dev, 0x28014, (cts << 16 & 0x3fff0000) | (ack & 0x3fff));
 	}
 }
 
@@ -283,7 +283,7 @@ unsigned int get_ath10kack(char *ifname)
 
 unsigned int get_ath10kdistance(char *ifname)
 {
-	unsigned int distance;
+	unsigned int distance, ack;
 	ack = get_ath10kack(ifname);
 	distance = ack;
 	distance /= 3;
@@ -355,19 +355,17 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 						    .type = NLA_U32},[NL80211_STA_INFO_RX_BYTES] = {
 												    .type = NLA_U32},[NL80211_STA_INFO_TX_BYTES] = {
 																		    .type = NLA_U32},[NL80211_STA_INFO_RX_PACKETS] = {
-																								      .type =
-																								      NLA_U32},
-		    [NL80211_STA_INFO_TX_PACKETS] = {
-						     .type = NLA_U32},[NL80211_STA_INFO_SIGNAL] = {
-												   .type = NLA_U8},[NL80211_STA_INFO_TX_BITRATE] = {
-																		    .type = NLA_NESTED},[NL80211_STA_INFO_RX_BITRATE] = {
-																									 .type =
-																									 NLA_NESTED},
-		    [NL80211_STA_INFO_LLID] = {
-					       .type = NLA_U16},[NL80211_STA_INFO_PLID] = {
-											   .type = NLA_U16},[NL80211_STA_INFO_PLINK_STATE] = {
-																	      .type = NLA_U8},[NL80211_STA_INFO_CONNECTED_TIME] = {
-																								   .type = NLA_U32},
+																								      .type = NLA_U32},
+		[NL80211_STA_INFO_TX_PACKETS] = {
+						 .type = NLA_U32},[NL80211_STA_INFO_SIGNAL] = {
+											       .type = NLA_U8},[NL80211_STA_INFO_TX_BITRATE] = {
+																		.type = NLA_NESTED},[NL80211_STA_INFO_RX_BITRATE] = {
+																								     .type = NLA_NESTED},
+		[NL80211_STA_INFO_LLID] = {
+					   .type = NLA_U16},[NL80211_STA_INFO_PLID] = {
+										       .type = NLA_U16},[NL80211_STA_INFO_PLINK_STATE] = {
+																	  .type = NLA_U8},[NL80211_STA_INFO_CONNECTED_TIME] = {
+																							       .type = NLA_U32},
 	};
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
 		[NL80211_RATE_INFO_BITRATE] = {
