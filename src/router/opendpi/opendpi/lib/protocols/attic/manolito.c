@@ -54,8 +54,7 @@ static void ndpi_int_manolito_add_connection(struct
   return 0 if nothing has been detected
   return 1 if it is a megaupload packet
 */
-u_int8_t search_manolito_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
-u_int8_t search_manolito_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static u_int8_t search_manolito_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 	
@@ -111,7 +110,7 @@ u_int8_t search_manolito_tcp(struct ndpi_detection_module_struct *ndpi_struct, s
   return 0;
 }
 
-void ndpi_search_manolito_tcp_udp(struct
+static void ndpi_search_manolito_tcp_udp(struct
 				  ndpi_detection_module_struct
 				  *ndpi_struct, struct ndpi_flow_struct *flow)
 {

@@ -35,7 +35,7 @@
 
 #ifdef __KERNEL__
 
-extern struct kmem_cache *bt_port_cache;
+static struct kmem_cache *bt_port_cache = NULL; 
 #define BT_MALLOC(a) ndpi_malloc(a)
 #define BT_N_MALLOC(a)         kmem_cache_zalloc (bt_port_cache, GFP_ATOMIC)
 #define BT_FREE(a) ndpi_free(a)
@@ -60,7 +60,7 @@ static void spin_unlock(spinlock_t *a) { a->val--; };
 
 #endif
 
-time_t ndpi_bt_node_expire = 1200; /* time in seconds */
+static time_t ndpi_bt_node_expire = 1200; /* time in seconds */
 
 #ifndef __KERNEL__
 
@@ -69,20 +69,19 @@ typedef int bool;
 #define false 0
 
 #else
-extern unsigned long 
-	ndpi_pto,
-	ndpi_ptss,ndpi_ptsd,
-	ndpi_ptds,ndpi_ptdd;
-extern unsigned long 
-	ndpi_puo,
-	ndpi_pusf, ndpi_pusr,
-	ndpi_pudf, ndpi_pudr,
-	ndpi_ptussf, ndpi_ptusdr,
-	ndpi_ptussr, ndpi_ptusdf,
-	ndpi_ptudsf, ndpi_ptuddr,
-	ndpi_ptudsr, ndpi_ptuddf;
-extern unsigned long
-	ndpi_btp_tm[20]; /* 3600/ 3m */
+static unsigned long  ndpi_pto=0,
+	       ndpi_ptss=0, ndpi_ptsd=0,
+	       ndpi_ptds=0, ndpi_ptdd=0,
+	       ndpi_ptussf=0,ndpi_ptusdr=0,
+	       ndpi_ptussr=0,ndpi_ptusdf=0,
+	       ndpi_ptudsf=0,ndpi_ptuddr=0,
+	       ndpi_ptudsr=0,ndpi_ptuddf=0 ;
+static unsigned long 
+	       ndpi_pusf=0,ndpi_pusr=0,
+	       ndpi_pudf=0,ndpi_pudr=0,
+	       ndpi_puo=0;
+
+static unsigned long  ndpi_btp_tm[20]={0,};
 
 static void diagram(unsigned long *d,size_t n,int var) {
 int i = 3600/n;
@@ -309,7 +308,7 @@ return n;
 
 }
 
-int ndpi_bittorrent_gc(struct hash_ip4p_table *ht,int key,time_t now) {
+static int ndpi_bittorrent_gc(struct hash_ip4p_table *ht,int key,time_t now) {
 
 struct hash_ip4p_node *n=NULL;
 int ret = 0;
@@ -1408,7 +1407,7 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
     }
 }
 
-void ndpi_bittorrent_init(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_bittorrent_init(struct ndpi_detection_module_struct *ndpi_struct,
 		u_int32_t size,u_int32_t tmo,int logsize) {
 	ndpi_struct->bt_ht = hash_ip4p_init(size);
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
@@ -1426,7 +1425,7 @@ void ndpi_bittorrent_init(struct ndpi_detection_module_struct *ndpi_struct,
 #endif
 }
 
-void ndpi_bittorrent_done(struct ndpi_detection_module_struct *ndpi_struct) {
+static void ndpi_bittorrent_done(struct ndpi_detection_module_struct *ndpi_struct) {
 #ifdef BT_ANNOUNCE
 	if(ndpi_struct->bt_ann) {
 		ndpi_free(ndpi_struct->bt_ann);

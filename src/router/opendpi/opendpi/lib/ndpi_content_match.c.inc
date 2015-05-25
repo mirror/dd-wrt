@@ -7224,7 +7224,7 @@ static ndpi_network host_protocol_list[] = {
   HTTPS: Server certificate name
  */
 
-ndpi_protocol_match host_match[] = {
+static ndpi_protocol_match host_match[] = {
   { "amazon.",  			"Amazon",		NDPI_SERVICE_AMAZON, NDPI_PROTOCOL_ACCEPTABLE },
   { "amazon.com",  			"Amazon",		NDPI_SERVICE_AMAZON, NDPI_PROTOCOL_ACCEPTABLE },
   { "images-amazon.com", 		"Amazon",		NDPI_SERVICE_AMAZON, NDPI_PROTOCOL_ACCEPTABLE },
@@ -7300,7 +7300,7 @@ ndpi_protocol_match host_match[] = {
 /*
   Mime-type content match match
 */
-ndpi_protocol_match content_match[] = {
+static ndpi_protocol_match content_match[] = {
   { "audio/mpeg",			NULL,		        NDPI_CONTENT_MPEG, NDPI_PROTOCOL_FUN },
   { "audio/x-mpeg",			NULL,		        NDPI_CONTENT_MPEG, NDPI_PROTOCOL_FUN },
   { "audio/mpeg3",			NULL,		        NDPI_CONTENT_MPEG, NDPI_PROTOCOL_FUN },

@@ -49,7 +49,7 @@ static void ac_automata_traverse_setfailure
  * MATCH_CALBACK mc: call-back function
  * the call-back function will be used to reach the caller on match occurrence
  ******************************************************************************/
-AC_AUTOMATA_t * ac_automata_init (MATCH_CALBACK_f mc)
+static AC_AUTOMATA_t * ac_automata_init (MATCH_CALBACK_f mc)
 {
   AC_AUTOMATA_t * thiz = (AC_AUTOMATA_t *)ndpi_malloc(sizeof(AC_AUTOMATA_t));
   memset (thiz, 0, sizeof(AC_AUTOMATA_t));
@@ -125,7 +125,7 @@ AC_ERROR_t ac_automata_add (AC_AUTOMATA_t * thiz, AC_PATTERN_t * patt)
  * PARAMS:
  * AC_AUTOMATA_t * thiz: the pointer to the automata
  ******************************************************************************/
-void ac_automata_finalize (AC_AUTOMATA_t * thiz)
+static void ac_automata_finalize (AC_AUTOMATA_t * thiz)
 {
   unsigned int i;
   AC_ALPHABET_t *alphas;
@@ -161,7 +161,7 @@ void ac_automata_finalize (AC_AUTOMATA_t * thiz)
  *  0: success; continue searching; call-back sent me a 0 value
  *  1: success; stop searching; call-back sent me a non-0 value
  ******************************************************************************/
-int ac_automata_search (AC_AUTOMATA_t * thiz, AC_TEXT_t * txt, void * param)
+static int ac_automata_search (AC_AUTOMATA_t * thiz, AC_TEXT_t * txt, void * param)
 {
   unsigned long position;
   AC_NODE_t *curr;
@@ -219,7 +219,7 @@ int ac_automata_search (AC_AUTOMATA_t * thiz, AC_TEXT_t * txt, void * param)
  * PARAMS:
  * AC_AUTOMATA_t * thiz: the pointer to the automata
  ******************************************************************************/
-void ac_automata_reset (AC_AUTOMATA_t * thiz)
+static void ac_automata_reset (AC_AUTOMATA_t * thiz)
 {
   thiz->current_node = thiz->root;
   thiz->base_position = 0;
@@ -231,7 +231,7 @@ void ac_automata_reset (AC_AUTOMATA_t * thiz)
  * PARAMS:
  * AC_AUTOMATA_t * thiz: the pointer to the automata
  ******************************************************************************/
-void ac_automata_release (AC_AUTOMATA_t * thiz)
+static void ac_automata_release (AC_AUTOMATA_t * thiz)
 {
   unsigned int i;
   AC_NODE_t * n;
@@ -254,7 +254,7 @@ void ac_automata_release (AC_AUTOMATA_t * thiz)
  * AC_AUTOMATA_t * thiz: the pointer to the automata
  * char repcast: 'n': print AC_REP_t as number, 's': print AC_REP_t as string
  ******************************************************************************/
-void ac_automata_display (AC_AUTOMATA_t * thiz, char repcast)
+static void ac_automata_display (AC_AUTOMATA_t * thiz, char repcast)
 {
   unsigned int i, j;
   AC_NODE_t * n;
