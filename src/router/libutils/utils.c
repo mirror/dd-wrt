@@ -309,8 +309,8 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, i
 	}
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
-		eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "udp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "udp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "tcp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "tcp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "l7")) {
@@ -391,8 +391,8 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, i
 	}
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--dport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--sport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "tcp", "--dport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "tcp", "--sport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "l7")) {
@@ -482,15 +482,15 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, in
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
 
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "udp", "--dport", data, "-s", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "udp", "--sport", data, "-s", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "udp", "--dport", data, "-d", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "udp", "--sport", data, "-d", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "tcp", "--dport", data, "-s", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "tcp", "--sport", data, "-s", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "tcp", "--dport", data, "-d", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-p", "tcp", "-m", "tcp", "--sport", data, "-d", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--dport", data, "-s", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--sport", data, "-s", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--dport", data, "-d", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "udp", "--sport", data, "-d", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "tcp", "--dport", data, "-s", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "tcp", "--sport", data, "-s", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "tcp", "--dport", data, "-d", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-p", "tcp", "-m", "tcp", "--sport", data, "-d", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "l7")) {
