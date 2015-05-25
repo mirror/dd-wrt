@@ -358,14 +358,8 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
 		/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
-		unsigned int slot = get_ath10kreg(ifname,0x21070) / 88;		
-		unsigned int sifs = get_ath10kreg(ifname,0x21030) / 88;		
-		unsigned int eifs = get_ath10kreg(ifname,0x210b0) / 88;		
-		ack = (get_ath10kreg(ifname,0x28014) & 0x3fff) / 88;		
-
-		distance = ack;
-		distance /= 3;
-		distance *= 450;
+		ack = get_athkack(ifname);
+		distance = get_athkdistance(ifname);
 	} else
 #endif
 #ifdef HAVE_ATH9K
@@ -392,15 +386,8 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 	char *ifname = nvram_safe_get("wifi_display");
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
-		/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
-		unsigned int slot = get_ath10kreg(ifname,0x21070) / 88;		
-		unsigned int sifs = get_ath10kreg(ifname,0x21030) / 88;		
-		unsigned int eifs = get_ath10kreg(ifname,0x210b0) / 88;		
-		ack = (get_ath10kreg(ifname,0x28014) & 0x3fff) / 88;		
-
-		distance = ack;
-		distance /= 3;
-		distance *= 450;
+		ack = get_athkack(ifname);
+		distance = get_athkdistance(ifname);
 	} else
 #endif
 #ifdef HAVE_ATH9K

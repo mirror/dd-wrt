@@ -232,14 +232,13 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 	int value;
 	fscanf(fp, "0x%08x:0x%08x", &reg, &value);
 	fclose(fp);
-	fprintf(stderr,"register %X returns %X\n",reg,value);
 	return value;
 }
 
 void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 {
 	char file[64];
-	fprintf(stderr,"write reg %X value %X\n",reg,value);
+	fprintf(stderr, "write reg %X value %X\n", reg, value);
 	int phy = get_ath9k_phy_ifname(ifname);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
@@ -250,6 +249,48 @@ void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 	fprintf(fp, "0x%x", value);
 	fclose(fp);
 }
+
+void set_ath10kdistance(char *dev, unsigned int distance)
+{
+	unsigned int slot = ((distance + 449) / 450) * 3;
+	slot += 9;		// base time
+	unsigned int sifs = 16;
+	unsigned int ack = slot + sifs;
+	unsigned int cts = ack;
+
+	ack *= 88;		// 88Mhz is the core clock of AR9880
+	cts *= 88;
+	sifs *= 88;
+	slot *= 88;
+	unsigned int oldack = get_ath10kreg(dev(0x28014));
+	if (oldack != ack) {
+		set_ath10kreg(dev, 0x21070, slot);
+		set_ath10kreg(dev, 0x21030, sifs);
+		set_ath10kreg(dev, 0x28014, (cts <<16 & 0x3fff0000) | (ack & 0x3fff));
+	}
+}
+
+unsigned int get_ath10kack(char *ifname)
+{
+	unsigned int distance, ack;
+	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
+	unsigned int slot = get_ath10kreg(ifname, 0x21070) / 88;
+	unsigned int sifs = get_ath10kreg(ifname, 0x21030) / 88;
+	unsigned int eifs = get_ath10kreg(ifname, 0x210b0) / 88;
+	ack = (get_ath10kreg(ifname, 0x28014) & 0x3fff) / 88;
+	return ack;
+}
+
+unsigned int get_ath10kdistance(char *ifname)
+{
+	unsigned int distance;
+	ack = get_ath10kack(ifname);
+	distance = ack;
+	distance /= 3;
+	distance *= 450;
+	return distance;
+}
+
 #endif
 
 int getFrequency_mac80211(char *interface)
