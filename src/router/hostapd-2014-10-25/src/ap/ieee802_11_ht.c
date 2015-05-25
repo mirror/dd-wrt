@@ -220,6 +220,9 @@ void hostapd_2040_coex_action(struct hostapd_data *hapd,
 		       HOSTAPD_LEVEL_DEBUG, "hostapd_public_action - action=%d",
 		       mgmt->u.action.u.public_action.action);
 
+	if (iface->conf->dynamic_ht40)
+		return;
+		
 	if (!(iface->conf->ht_capab & HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET))
 		return;
 
@@ -234,7 +237,7 @@ void hostapd_2040_coex_action(struct hostapd_data *hapd,
 	ic_report = (struct ieee80211_2040_intol_chan_report *)
 		(&data[0] + sizeof(*bc_ie));
 
-	if ((bc_ie->coex_param & WLAN_20_40_BSS_COEX_20MHZ_WIDTH_REQ) && iface->conf->dynamic_ht40) {
+	if (bc_ie->coex_param & WLAN_20_40_BSS_COEX_20MHZ_WIDTH_REQ) {
 		hostapd_logger(hapd, mgmt->sa,
 			       HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_DEBUG,
@@ -242,7 +245,7 @@ void hostapd_2040_coex_action(struct hostapd_data *hapd,
 		is_ht_allowed = 0;
 	}
 
-	if ((bc_ie->coex_param & WLAN_20_40_BSS_COEX_40MHZ_INTOL) && iface->conf->dynamic_ht40) {
+	if (bc_ie->coex_param & WLAN_20_40_BSS_COEX_40MHZ_INTOL) {
 		hostapd_logger(hapd, mgmt->sa,
 			       HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_DEBUG,
