@@ -228,7 +228,21 @@ void configure_single_ath9k(int count)
 	else
 		sprintf(dist, "auto", distance);
 	eval("iw", "phy", wif, "set", "distance", dist);
+	if (is_ath10k(dev)) {	// evil hack for QCA 
+		unsigned int slot = ((distance + 449) / 450) * 3;
+		slot += 9;	// base time
+		unsigned int sifs = 16;
+		unsigned int ack = slot + sifs;
+		unsigned int cts = ack;
 
+		ack *= 88;	// 88Mhz is the core clock of AR9880
+		cts *= 88;
+		sifs *= 88;
+		slot *= 88;
+		set_ath10kreg(dev,0x21070, slot);
+		set_ath10kreg(dev,0x21030, sifs);
+		set_ath10kreg(dev,0x28014, ((cts << 16) & 0x3fff) | (ack & 0x3fff));
+	}
 // das scheint noch aerger zu machen
 	eval("iw", "dev", dev, "set", "power_save", "off");
 
