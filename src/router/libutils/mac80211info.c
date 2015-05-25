@@ -232,12 +232,14 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 	int value;
 	fscanf(value, "0x%08x:0x%08x", &reg, &value);
 	fclose(fp);
+	fprintf(stderr,"register %X returns %X\n",reg,value);
 	return value;
 }
 
 void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 {
 	char file[64];
+	fprintf(stderr,"write reg %X value %X\n",reg,value);
 	int phy = get_ath9k_phy_ifname(ifname);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
