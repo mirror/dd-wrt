@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2505 | BrainSlayer | 2015-05-25 18:00:22 +0200 (Mon, 25 May 2015) | 1 line
+
+for k31 this change might be required
+------------------------------------------------------------------------
 r2504 | BrainSlayer | 2015-05-23 21:30:54 +0200 (Sat, 23 May 2015) | 1 line
 
 HT and VHT override configurations were ignored during association
