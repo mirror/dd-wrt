@@ -308,6 +308,11 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 							sprintf(rxrate, "%dM", rx / 1000);
 						strcpy(time, UPTIME(sta3->in));
 					}
+					sprintf(info, "LEGACY");
+					if (sta->flags & WL_STA_N_CAP)
+						sprintf(info, "HT20");
+					if (sta->flags & WL_STA_PS)
+						sprintf(info, "%sPS", info);	//sta is in powersave mode.
 					break;
 #ifdef WL_STA_ANT_MAX
 				case 4:
@@ -322,30 +327,39 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 							sprintf(rxrate, "%dM", rx / 1000);
 						strcpy(time, UPTIME(sta4->in));
 					}
-					if (sta4->ht_capabilities || sta4->flags & WL_STA_VHT_CAP)
-						info[0] = 0;
+					info[0] = 0;
 					int ht = 0;
 					int sgi = 0;
 					int vht = 0;
-					if (sta4->ht_capabilities) {
-						if (sta4->ht_capabilities & WL_STA_CAP_40MHZ)
-							ht = 1;
-						if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_20)
-							sgi = 1;
-						if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_40) {
-							sgi = 1;
-							ht = 1;
+					int i40 = 0;
+					if (sta4->flags & WL_STA_N_CAP) {
+						ht = 1;
+						if (sta4->ht_capabilities) {
+							if (sta4->ht_capabilities & WL_STA_CAP_40MHZ)
+								ht = 2;
+							if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_20)
+								sgi = 1;
+							if (sta4->ht_capabilities & WL_STA_CAP_SHORT_GI_40) {
+								sgi = 1;
+								ht = 2;
+							}
+							if (sta4->ht_capabilities & WL_STA_CAP_40MHZ_INTOLERANT) {
+								i40 = 1;
+							}
 						}
+					} else {
+						ht = 0;
 					}
+
 					if (sta4->flags & WL_STA_VHT_CAP) {
 						vht = 1;
 						if (sta4->vht_flags & WL_STA_SGI80) {
 							sgi = 1;
-							ht = 2;
+							ht = 3;
 						}
 						if (sta4->vht_flags & WL_STA_SGI160) {
 							sgi = 1;
-							ht = 3;
+							ht = 4;
 						}
 					}
 					if (sgi)
@@ -355,15 +369,27 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 					else
 						sprintf(info, "HT");
 
-					if (ht == 0)
+					switch (ht) {
+					case 0:
+						sprintf(info, "LEGACY");
+						break;
+					case 1:
 						sprintf(info, "%s20", info);
-					if (ht == 1)
+						break;
+					case 2:
 						sprintf(info, "%s40", info);
-					if (ht == 2)
+						break;
+					case 3:
 						sprintf(info, "%s80", info);
-					if (ht == 3)
+						break;
+					case 4:
 						sprintf(info, "%s160", info);
-
+						break;
+					}
+					if (i40)
+						sprintf(info, "i", info);	//ht40 intolerant. EVIL Device!!!!
+					if (sta4->flags & WL_STA_PS)
+						sprintf(info, "%sPS", info);	//sta is in powersave mode.
 					break;
 #endif
 				}
