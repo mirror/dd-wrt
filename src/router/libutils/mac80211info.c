@@ -230,7 +230,7 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	FILE *fp = fopen(file, "rb");
 	int value;
-	fscanf(value, "0x%08x:0x%08x", &reg, &value);
+	fscanf(fp, "0x%08x:0x%08x", &reg, &value);
 	fclose(fp);
 	fprintf(stderr,"register %X returns %X\n",reg,value);
 	return value;
@@ -247,8 +247,7 @@ void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 	fclose(fp);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	FILE *fp = fopen(file, "wb");
-	fprintf(value, "0x%x", value);
-
+	fprintf(fp, "0x%x", value);
 	fclose(fp);
 }
 #endif
