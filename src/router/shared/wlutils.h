@@ -147,6 +147,9 @@ extern char *mac80211_get_caps(char *interface);
 extern char *mac80211_get_vhtcaps(char *interface);
 extern unsigned int get_ath10kreg(char *ifname, unsigned int reg);
 extern void set_ath10kreg(char *ifname, unsigned int reg,unsigned int value);
+extern void set_ath10kdistance(char *ifname, unsigned int distance);
+extern unsigned int get_ath10kack(char *ifname);
+extern unsigned int get_ath10kdistance(char *ifname);
 #endif
 extern int mac80211_check_band(char *interface, int checkband);
 struct wifi_channels *mac80211_get_channels(char *interface, char *country, int max_bandwidth_khz, unsigned char checkband);
