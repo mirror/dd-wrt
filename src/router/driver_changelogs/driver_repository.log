@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r2511 | BrainSlayer | 2015-05-25 19:19:06 +0200 (Mon, 25 May 2015) | 1 line
+
+compile debugfs without spectral and relay
+------------------------------------------------------------------------
+r2510 | BrainSlayer | 2015-05-25 19:18:56 +0200 (Mon, 25 May 2015) | 1 line
+
+compile debugfs without spectral and relay
+------------------------------------------------------------------------
 r2509 | BrainSlayer | 2015-05-25 18:53:27 +0200 (Mon, 25 May 2015) | 1 line
 
 ath10k: reduce power consumption when idle
