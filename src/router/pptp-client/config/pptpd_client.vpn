@@ -7,18 +7,10 @@
 
 RESP=0
 
-case $1 in
- "start" )
-  echo "Launching VPN process"
-  ./$0 go &
-  echo "Process launched"
-;;
-
- "go"  )
-  PPTPSERVER=$(nvram get pptpd_client_srvip)
-  PPTPSRVUSER=$(nvram get pptpd_client_srvuser)
-  PPTPSRVPASS=$(nvram get pptpd_client_srvpass)
-  echo "Waiting......."
+case $1 in 
+ "start"  )
+  echo "Launching VPN process" 
+  echo "Waiting..."
   startservice pppmodules
   sleep 10
   PIDFILE="/var/run/vpn.pid"
@@ -36,25 +28,24 @@ case $1 in
   echo -n $$ > "${PIDFILE}"
   echo "PID file created"
   echo "Attempting initial connect"
-  pppd pty "pptp $PPTPSERVER --nolaunchpppd" file /tmp/pptpd_client/options.vpn user $PPTPSRVUSER password $PPTPSRVPASS
+  pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user $(nvram get pptpd_client_srvuser) password $(nvram get pptpd_client_srvpass)
+  echo "Initial connection dropped" 
   while [ 1 ];
   do
-   echo "Attempting connect... "
-   killall pptp 2>/dev/null
+   echo "Attempting connect..."
+   killall pppd 2>/dev/null
    sleep 2
-   killall -9 pptp 2>/dev/null
+   killall -9 pppd 2>/dev/null
    sleep 1
-   pppd pty "pptp $PPTPSERVER --nolaunchpppd" file /tmp/pptpd_client/options.vpn user $PPTPSRVUSER password $PPTPSRVPASS
-   echo "Connection dropped... "
+   pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user $(nvram get pptpd_client_srvuser) password $(nvram get pptpd_client_srvpass)
+   echo "Connection dropped..."
    sleep 2
   done;
  ;;
 
  "debug"  )
-  PPTPSERVER=$(nvram get pptpd_client_srvip)
-  PPTPSRVUSER=$(nvram get pptpd_client_srvuser)
-  PPTPSRVPASS=$(nvram get pptpd_client_srvpass)
-  echo "Waiting......."
+  echo "Launching VPN process in full debug mode" 
+  echo "Waiting..."
   sleep 10
   PIDFILE="/var/run/vpn.pid"
   if [ -f "${PIDFILE}" ];
@@ -71,31 +62,29 @@ case $1 in
   echo -n $$ > "${PIDFILE}"
   echo "PID file created"
   echo "Attempting initial connect"
-  pppd pty "pptp $PPTPSERVER --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user $PPTPSRVUSER password $PPTPSRVPASS
+  pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user $(nvram get pptpd_client_srvuser) password $(nvram get pptpd_client_srvpass)
   echo "Initial connection dropped"
-
   while [ 1 ];
   do
-   echo "Attempting connect... "
-   killall pptp 2>/dev/null
+   echo "Attempting connect..."
+   killall pppd 2>/dev/null
    sleep 2
-   killall -9 pptp 2>/dev/null
+   killall -9 pppd 2>/dev/null
    sleep 1
-   pppd pty "pptp $PPTPSERVER --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user $PPTPSRVUSER password $PPTPSRVPASS
-   echo "Connection dropped... "
+   pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user $(nvram get pptpd_client_srvuser) password $(nvram get pptpd_client_srvpass)
+   echo "Connection dropped..."
    sleep 2
   done;
  ;;
 
 "stop"   )
-
   VPNPID=`cat /var/run/vpn.pid`
   echo "Killing VPN PID $VPNPID"
   kill $VPNPID
   sleep 2
   kill -9 $VPNPID 2>/dev/null
 
-  PPTPPID=`pidof -s pptp`
+  PPTPPID=`pidof -s pppd`
   echo "Killing PPTP PID $PPTPPID"
   kill $PPTPPID
   sleep 2
@@ -112,7 +101,6 @@ case $1 in
   echo " " 
   echo "   start  -  Starts the Client" 
   echo "   stop   -  Stops the Client" 
-  echo "   go     -  Run the Client interactively (for debugging)" 
   echo "   debug  -  Run the Client interactively (in full debug mode)" 
   echo " " 
  ;; 
