@@ -526,12 +526,6 @@ int svqos_iptables(void)
 	}
 #endif
 
-#ifdef HAVE_OPENDPI
-	insmod("xt_opendpi.ko");
-#endif
-	insmod("ipt_layer7");
-	insmod("xt_layer7");
-
 	// set-up mark/filter tables
 
 	eval("iptables", "-t", "mangle", "-F", "SVQOS_SVCS");
@@ -798,12 +792,15 @@ int svqos_iptables(void)
 		}
 
 		if (strstr(type, "l7")) {
+			insmod("ipt_layer7");
+			insmod("xt_layer7");
 			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
 		}
 #ifdef HAVE_OPENDPI
 		if (strstr(type, "dpi")) {
 			char dpi[32];
 			sprintf(dpi, "--%s", name);
+			eval("insmod", "xt_opendpi", "bt_hash_size=2", "bt_hash_timeout=3600");
 			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", dpi, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
 		}
 #endif
