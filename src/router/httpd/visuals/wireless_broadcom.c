@@ -309,9 +309,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 						strcpy(time, UPTIME(sta3->in));
 					}
 					sprintf(info, "LEGACY");
-					if (sta->flags & WL_STA_N_CAP)
+					if (sta3->flags & WL_STA_N_CAP)
 						sprintf(info, "HT20");
-					if (sta->flags & WL_STA_PS)
+					if (sta3->flags & WL_STA_PS)
 						sprintf(info, "%sPS", info);	//sta is in powersave mode.
 					break;
 #ifdef WL_STA_ANT_MAX
