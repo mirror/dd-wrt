@@ -358,8 +358,8 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
 		/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
-		ack = get_athkack(ifname);
-		distance = get_athkdistance(ifname);
+		ack = get_ath10kack(ifname);
+		distance = get_ath10kdistance(ifname);
 	} else
 #endif
 #ifdef HAVE_ATH9K
