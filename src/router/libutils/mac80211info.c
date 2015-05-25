@@ -280,9 +280,13 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 
 unsigned int get_ath10kack(char *ifname)
 {
-	unsigned int ack;
+	unsigned int ack,slot,sifs;
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
+	slot = (get_ath10kreg(ifname, 0x21070)) / 88;
+	sifs = (get_ath10kreg(ifname, 0x21030)) / 88;
 	ack = (get_ath10kreg(ifname, 0x28014) & 0x3fff) / 88;
+	ack -= sifs;
+	ack -= 9;
 	return ack;
 }
 
