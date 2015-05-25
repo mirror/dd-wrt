@@ -936,6 +936,9 @@ ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 CFLAGS += -DHAVE_ATH9K
 endif
+ifeq ($(CONFIG_ATH10K),y)
+CFLAGS += -DHAVE_ATH10K
+endif
 
 include $(TOP)/rules/generic.mk
 CFLAGS += $(DD_CFLAGS)
