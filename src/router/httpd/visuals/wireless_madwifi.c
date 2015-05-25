@@ -386,8 +386,8 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 	char *ifname = nvram_safe_get("wifi_display");
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
-		ack = get_athkack(ifname);
-		distance = get_athkdistance(ifname);
+		ack = get_ath10kack(ifname);
+		distance = get_ath10kdistance(ifname);
 	} else
 #endif
 #ifdef HAVE_ATH9K
