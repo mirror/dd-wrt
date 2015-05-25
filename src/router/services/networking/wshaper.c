@@ -527,7 +527,7 @@ int svqos_iptables(void)
 #endif
 
 #ifdef HAVE_OPENDPI
-	insmod("/lib/opendpi/xt_opendpi.ko");
+	insmod("xt_opendpi.ko");
 #endif
 	insmod("ipt_layer7");
 	insmod("xt_layer7");
