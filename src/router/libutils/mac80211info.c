@@ -270,7 +270,7 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	    fprintf(stderr,"invalid ack 0x%08x, max is 0x3fff. truncate it\n",ack);
 	    ack = 0x3fff;
 	}
-	unsigned int oldack = get_ath10kreg(dev, 0x28014);
+	unsigned int oldack = get_ath10kreg(dev, 0x28014) & 0x3fff;
 	if (oldack != ack) {
 		set_ath10kreg(dev, 0x21070, slot);
 		set_ath10kreg(dev, 0x21030, sifs);
@@ -280,11 +280,8 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 
 unsigned int get_ath10kack(char *ifname)
 {
-	unsigned int distance, ack;
+	unsigned int ack;
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
-	unsigned int slot = get_ath10kreg(ifname, 0x21070) / 88;
-	unsigned int sifs = get_ath10kreg(ifname, 0x21030) / 88;
-	unsigned int eifs = get_ath10kreg(ifname, 0x210b0) / 88;
 	ack = (get_ath10kreg(ifname, 0x28014) & 0x3fff) / 88;
 	return ack;
 }
