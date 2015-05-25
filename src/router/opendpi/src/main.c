@@ -41,7 +41,7 @@
 
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_extend.h>
-
+#include "opendpi/lib/ndpi_main.c"
 #define BT_ANNOUNCE 
 
 #include "ndpi_main.h"
@@ -173,7 +173,6 @@ static unsigned long  ndpi_pc=0;
 static unsigned long  ndpi_pd=0;
 
 static unsigned long  ndpi_pl[11]={0,};
-unsigned long  ndpi_btp_tm[20]={0,};
 
 module_param_named(log_debug, ndpi_log_debug, ulong, 0600);
 module_param_named(log_trace, ndpi_log_trace, ulong, 0600);
@@ -205,13 +204,6 @@ module_param_named(id_num,	 ndpi_pc, ulong, 0400);
 module_param_named(noncached,	 ndpi_pd, ulong, 0400);
 
 
-unsigned long  ndpi_pto=0,
-	       ndpi_ptss=0, ndpi_ptsd=0,
-	       ndpi_ptds=0, ndpi_ptdd=0,
-	       ndpi_ptussf=0,ndpi_ptusdr=0,
-	       ndpi_ptussr=0,ndpi_ptusdf=0,
-	       ndpi_ptudsf=0,ndpi_ptuddr=0,
-	       ndpi_ptudsr=0,ndpi_ptuddf=0 ;
 
 module_param_named(bt_pto, ndpi_pto, ulong, 0400);
 module_param_named(bt_ptss, ndpi_ptss, ulong, 0400);
@@ -226,11 +218,6 @@ module_param_named(bt_ptudsf, ndpi_ptudsf, ulong, 0400);
 module_param_named(bt_ptudsr, ndpi_ptudsr, ulong, 0400);
 module_param_named(bt_ptuddf, ndpi_ptuddf, ulong, 0400);
 module_param_named(bt_ptuddr, ndpi_ptuddr, ulong, 0400);
-
-unsigned long 
-	       ndpi_pusf=0,ndpi_pusr=0,
-	       ndpi_pudf=0,ndpi_pudr=0,
-	       ndpi_puo=0;
 
 module_param_named(bt_pusr, ndpi_pusr, ulong, 0400);
 module_param_named(bt_pusf, ndpi_pusf, ulong, 0400);
@@ -282,7 +269,6 @@ static u32 detection_tick_resolution = 1000;
 static	enum nf_ct_ext_id nf_ct_ext_id_ndpi = 0;
 static	struct kmem_cache *osdpi_flow_cache = NULL;
 static	struct kmem_cache *osdpi_id_cache = NULL;
-struct kmem_cache *bt_port_cache = NULL;
 
 static	size_t size_id_struct = 0;
 static	size_t size_flow_struct = 0;

@@ -29,8 +29,4 @@
 #include "ndpi_main.h"
 
 
-void ndpi_bittorrent_init(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t size,u_int32_t timeout,int logsize);
-void ndpi_bittorrent_done(struct ndpi_detection_module_struct *ndpi_struct);
-int ndpi_bittorrent_gc(struct hash_ip4p_table *ht,int key,time_t now);
-
 #endif /* __NDPI_PROTOCOLS_INCLUDE_FILE__ */
