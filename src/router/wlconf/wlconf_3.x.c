@@ -2053,6 +2053,7 @@ cprintf("get core rev %s\n",name);
 	snprintf(buf, sizeof(buf), "%d", rev.corerev);
 	nvram_set(strcat_r(prefix, "corerev", tmp), buf);
 
+	/* this does not work for newer AC radios if in nmode (ac does not support GF, but nmode does). blame broadcom for this */
 	if ((rev.chipnum == BCM4716_CHIP_ID) || (rev.chipnum == BCM47162_CHIP_ID) ||
 		(rev.chipnum == BCM4748_CHIP_ID) || (rev.chipnum == BCM4331_CHIP_ID) ||
  		(rev.chipnum == BCM43431_CHIP_ID) || (rev.chipnum == BCM5357_CHIP_ID) ||
@@ -2060,10 +2061,12 @@ cprintf("get core rev %s\n",name);
 		int pam_mode = WLC_N_PREAMBLE_GF_BRCM; /* default GF-BRCM */
 
 		strcat_r(prefix, "mimo_preamble", tmp);
-		if (nvram_match(tmp, "mm"))
+		if (nvram_default_match(tmp, "mm", "mm"))
 			pam_mode = WLC_N_PREAMBLE_MIXEDMODE;
 		else if (nvram_match(tmp, "gf"))
 			pam_mode = WLC_N_PREAMBLE_GF;
+		else if (nvram_match(tmp, "gfbrcm"))
+			pam_mode = WLC_N_PREAMBLE_GF_BRCM;
 		else if (nvram_match(tmp, "auto"))
 			pam_mode = -1;
 		WL_IOVAR_SETINT(name, "mimo_preamble", pam_mode);
@@ -2284,17 +2287,47 @@ cprintf("set n prot mode %s\n",name);
 	if (WLCONF_PHYTYPE_11N(phytype)) {
 		int override = WLC_PROTECTION_OFF;
 		int control = WLC_PROTECTION_CTL_OFF;
-
 		/* Set n protection override and control algorithm */
 		str = nvram_get(strcat_r(prefix, "nmode_protection", tmp));
 		if (!str || !strcmp(str, "auto")) {
 			override = WLC_PROTECTION_AUTO;
+			control = WLC_PROTECTION_CTL_OVERLAP;
+		}else
+		if (!strcmp(tmp, "on")) {
+			override = WLC_PROTECTION_ON;
+			control = WLC_PROTECTION_CTL_OVERLAP;
+		}else
+		if (!strcmp(tmp, "off")) {
+			override = WLC_PROTECTION_OFF;
+			control = WLC_PROTECTION_CTL_OVERLAP;
+		}else
+		if (!strcmp(tmp, "cts")) {
+			override = WLC_PROTECTION_CTS_ONLY;
+			control = WLC_PROTECTION_CTL_OVERLAP;
+		}else
+		if (!strcmp(tmp, "mmhdr")) {
+			override = WLC_PROTECTION_MMHDR_ONLY;
 			control = WLC_PROTECTION_CTL_OVERLAP;
 		}
 
 		WL_IOVAR_SETINT(name, "nmode_protection_override",
 		                (uint32)override);
 		WL_IOCTL(name, WLC_SET_PROTECTION_CONTROL, &control, sizeof(control));
+
+
+		str = nvram_get(strcat_r(prefix, "gf_protection", tmp));
+		if (!str || !strcmp(str, "auto")) {
+			override = WLC_PROTECTION_AUTO;
+		}else
+		if (!strcmp(tmp, "on")) {
+			override = WLC_PROTECTION_ON;
+		}else
+		if (!strcmp(tmp, "off")) {
+			override = WLC_PROTECTION_OFF;
+		}
+		WL_IOVAR_SETINT(name, "gf_protection_override",
+		                (uint32)override);
+
 	}
 
 	/* Set WME mode */
@@ -2632,6 +2665,8 @@ cprintf("set wds %s\n",name);
 		} else if (!strcmp(nvram_str, "off")) {
 			WL_IOVAR_SETINT(name, "stbc_tx", OFF);
 		}
+		val = atoi(nvram_safe_get(strcat_r(prefix, "stbc_rx", tmp)));
+		WL_IOVAR_SETINT(name, "stbc_rx", val);
 	}
 
 	/* Set RIFS mode based on framebursting */
@@ -2805,7 +2840,7 @@ cprintf("set obss_coex %s\n",name);
 			str = nvram_safe_get(strcat_r(prefix, "obss_coex", tmp));
 			if (!str) {
 				/* No nvram variable found, use the default */
-				str = nvram_default_get(strcat_r(prefix, "obss_coex", tmp),"0");
+				str = nvram_default_get(strcat_r(prefix, "obss_coex", tmp), "0");
 			}
 			obss_coex = atoi(str);
 		} else {
