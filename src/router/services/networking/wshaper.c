@@ -49,7 +49,7 @@ static char *get_wanface(void)
 static int client_bridged_enabled(void)
 {
 	// enumerate all possible interfaces
-	char iflist[256];
+	char iflist[512];
 	iflist[0] = 0;		// workaround for bug in getIfList()
 	getIfList(iflist, NULL);
 
