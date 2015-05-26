@@ -491,21 +491,21 @@ int svqos_iptables(void)
 
 		insmod("ebtables");
 	}
-
-#if !(defined(ARCH_broadcom) || defined(HAVE_BCMMODERN))
+#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 	// if kernel version later then 2.4, overwrite all old tc filter
-	eval("tc", "filter", "del", "dev", wan_dev, "pref", "1");
-	eval("tc", "filter", "del", "dev", wan_dev, "pref", "3");
-	eval("tc", "filter", "del", "dev", wan_dev, "pref", "5");
-	eval("tc", "filter", "del", "dev", wan_dev, "pref", "8");
-	eval("tc", "filter", "del", "dev", wan_dev, "pref", "9");
+	if (nvram_match("wshaper_dev", "WAN") && wan_dev != NULL) {
+		eval("tc", "filter", "del", "dev", wan_dev, "pref", "1");
+		eval("tc", "filter", "del", "dev", wan_dev, "pref", "3");
+		eval("tc", "filter", "del", "dev", wan_dev, "pref", "5");
+		eval("tc", "filter", "del", "dev", wan_dev, "pref", "8");
+		eval("tc", "filter", "del", "dev", wan_dev, "pref", "9");
 
-	eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(100), "flowid", "1:100");
-	eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(10), "flowid", "1:10");
-	eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(20), "flowid", "1:20");
-	eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(30), "flowid", "1:30");
-	eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(40), "flowid", "1:40");
-
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(100), "flowid", "1:100");
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(10), "flowid", "1:10");
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(20), "flowid", "1:20");
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(30), "flowid", "1:30");
+		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(40), "flowid", "1:40");
+	}
 	eval("tc", "filter", "del", "dev", "imq0", "pref", "1");
 	eval("tc", "filter", "del", "dev", "imq0", "pref", "3");
 	eval("tc", "filter", "del", "dev", "imq0", "pref", "5");
@@ -559,7 +559,7 @@ int svqos_iptables(void)
 
 	eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "dscp", "--dscp", "!", "0", "-j", "DSCP", "--set-dscp", "0");
 
-	if (!strcmp(wshaper_dev, "WAN")) {
+	if (!strcmp(wshaper_dev, "WAN") && wan_dev != NULL) {
 		eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 		eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 		eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
@@ -568,16 +568,18 @@ int svqos_iptables(void)
 	if (!strcmp(wshaper_dev, "LAN")) {
 		if (!client_bridged_enabled()
 		    && nvram_invmatch("wan_proto", "disabled")) {
-			eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
-			eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
-			eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
-			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+			if (wan_dev != NULL) {
+				eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 
-			eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
-			eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
 
-			eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
-			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+			}
 		} else {
 			eval("iptables", "-t", "mangle", "-D", "INPUT", "-j", "IMQ", "--todev", "1");
 			eval("iptables", "-t", "mangle", "-A", "INPUT", "-j", "IMQ", "--todev", "1");
@@ -768,7 +770,6 @@ int svqos_iptables(void)
 	// if OSPF is active put it into the Express bucket for outgoing QoS
 	if (nvram_match("wk_mode", "ospf"))
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "ospf", "-j", "MARK", "--set-mark", nullmask);
-
 
 	qos_svcs = nvram_safe_get("svqos_svcs");
 
