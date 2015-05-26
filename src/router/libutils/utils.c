@@ -1929,7 +1929,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_CARAMBOLA
+#ifdef HAVE_ERC
+	setRouter("ERC ServiceGate");
+#else
 	setRouter("8Devices Carambola 2");
+#endif
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
 	return ROUTER_BOARD_WHRHPGN;
@@ -5379,11 +5383,18 @@ int led_control(int type, int act)
 		sec0_gpio = 0x10e;
 		break;
 #elif HAVE_CARAMBOLA
+#ifdef HAVE_ERC
+	case ROUTER_BOARD_WHRHPGN:
+		vpn_gpio = 0x11B;
+		wlan_gpio = 0x017;
+		break;
+#else
 	case ROUTER_BOARD_WHRHPGN:
 //              usb_power = 0x01a;
 //              usb_gpio = 0x001;
 //              ses_gpio = 0x11b;
 		break;
+#endif
 #elif HAVE_HORNET
 	case ROUTER_BOARD_WHRHPGN:
 		usb_power = 0x01a;
