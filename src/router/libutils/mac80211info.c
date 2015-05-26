@@ -135,14 +135,21 @@ int mac80211_parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
 
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
-	if (!tb[NL80211_ATTR_SURVEY_INFO])
+	if (!tb[NL80211_ATTR_SURVEY_INFO]) {
+		fprintf(stderr,"no survey info\n");
 		return -1;
+	}
 
-	if (nla_parse_nested(sinfo, NL80211_SURVEY_INFO_MAX, tb[NL80211_ATTR_SURVEY_INFO], survey_policy))
-		return -1;
+	if (nla_parse_nested(sinfo, NL80211_SURVEY_INFO_MAX, tb[NL80211_ATTR_SURVEY_INFO], survey_policy)) {
+		fprintf(stderr,"error survey\n");
 
-	if (!sinfo[NL80211_SURVEY_INFO_FREQUENCY])
 		return -1;
+	}
+
+	if (!sinfo[NL80211_SURVEY_INFO_FREQUENCY]) {
+		fprintf(stderr,"no frequency info\n");
+		return -1;
+	}
 
 	return 0;
 }
@@ -179,6 +186,9 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 
 		if (sinfo[NL80211_SURVEY_INFO_FREQUENCY])
 			mac80211_info->frequency = freq;
+	}else {
+			fprintf(stderr,"in use not set\n");
+
 	}
 
 out:

@@ -5385,8 +5385,8 @@ int led_control(int type, int act)
 #elif HAVE_CARAMBOLA
 #ifdef HAVE_ERC
 	case ROUTER_BOARD_WHRHPGN:
-		vpn_gpio = 0x11B;
-		wlan_gpio = 0x017;
+		vpn_gpio = 0x01B;
+		wlan0_gpio = 0x000;
 		break;
 #else
 	case ROUTER_BOARD_WHRHPGN:
