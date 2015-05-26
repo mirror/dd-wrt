@@ -221,7 +221,7 @@ void hostapd_2040_coex_action(struct hostapd_data *hapd,
 		       HOSTAPD_LEVEL_DEBUG, "hostapd_public_action - action=%d",
 		       mgmt->u.action.u.public_action.action);
 
-	if (iface->conf->dynamic_ht40)
+	if (!iface->conf->dynamic_ht40)
 		return;
 		
 	if (!(iface->conf->ht_capab & HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET))
