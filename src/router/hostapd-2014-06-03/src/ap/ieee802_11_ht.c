@@ -400,7 +400,7 @@ static void update_sta_ht(struct hostapd_data *hapd, struct sta_info *sta)
 			   hapd->iface->num_sta_ht_20mhz);
 	}
 
-	if (ht_capab & HT_CAP_INFO_40MHZ_INTOLERANT)
+	if (ht_capab & HT_CAP_INFO_40MHZ_INTOLERANT && iface->conf->dynamic_ht40)
 		ht40_intolerant_add(hapd->iface, sta);
 }
 
