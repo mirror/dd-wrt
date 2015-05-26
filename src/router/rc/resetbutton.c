@@ -277,6 +277,14 @@ int getbuttonstate()
 	return 0;
 }
 #elif defined(HAVE_CARAMBOLA)
+#ifdef HAVE_ERC
+int getbuttonstate()
+{
+	int ret = get_gpio(12);
+
+	return ret;
+}
+#else
 int getbuttonstate()
 {
 	int ret = get_gpio(11);
@@ -285,6 +293,7 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#endif
 #elif defined(HAVE_HORNET)
 int getbuttonstate()
 {
