@@ -942,8 +942,10 @@ void period_check(int sig)
 	sesgpio = 0x105;
 	val |= get_gpio(5) << 5;	//aoss pushbutton
 #elif defined(HAVE_CARAMBOLA)
-	sesgpio = 0xfff;
-
+#if defined(HAVE_ERC)
+	wifigpio = 0x117;
+	val |= get_gpio(23) << 23;	
+#endif
 #elif defined(HAVE_HORNET)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
