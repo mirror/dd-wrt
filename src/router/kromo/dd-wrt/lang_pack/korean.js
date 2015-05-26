@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//                Korean translation file - DD-WRT V24 SP2        2015-05-19                //
-//              This translation file is based on R26906 English language file              //
+//                Korean translation file - DD-WRT V24 SP2        2015-05-27                //
+//              This translation file is based on R27045 English language file              //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -154,11 +154,11 @@ share.localdns="로컬 DNS";
 share.minutes="분";
 share.oui="OUI 검색";
 share.sttic="고정";
-share.connecting="연결중";
+share.connecting="연결 중";
 share.connect="연결";
 share.connected="연결됨";
-share.disconnect="연결끊기";
-share.disconnected="연결끊김";
+share.disconnect="연결 끊기";
+share.disconnected="연결 끊김";
 share.info="정보";
 share.state="상태";
 share.mode="모드";
@@ -180,7 +180,7 @@ share.half="Half (10 MHz)";
 share.quarter="Quarter (5 MHz)";
 share.subquarter="Eighth (2.5 MHz)";
 share.seealso="참조";
-share.never="하지않음";
+share.never="하지 않음";
 share.unknown="알 수 없음";
 share.expired="기간 만료";
 share.logout="로그아웃";
@@ -190,7 +190,7 @@ share.src="송신측 주소";
 share.dst="수신측 주소";
 share.name_resolution="이름 확인";
 share.timeout="타임아웃 (초)";
-share.detail="클릭하면 자세한 내용을 보실수 있습니다";
+share.detail="클릭하면 자세한 내용을 보실 수 있습니다";
 share.tmpmem="임시 메모리";
 share._1h="1시간마다";
 share._2h="2시간마다";
@@ -223,7 +223,7 @@ share.change="사용자 비밀번호 변경";
 sbutton.save="저장";
 sbutton.savetitle="설정을 저장합니다";
 sbutton.apply="설정 적용";
-sbutton.applytitle="설정울 즉시 적용합니다";
+sbutton.applytitle="설정을 즉시 적용합니다";
 sbutton.saving="저장됨";
 sbutton.cmd="실행중";
 sbutton.cancel="변경 취소";
@@ -281,14 +281,14 @@ errmsg.err0="사용자 이름을 입력해 주세요.";
 errmsg.err1="공유기 이름을 입력해 주세요.";
 errmsg.err2="입력하신 값이 사용 가능한 범위를 초과 하였습니다. 시작 IP 주소 또는 최대 DHCP 사용자 수를 변경해 주세요.";
 errmsg.err3="최소 하루이상의 유효기간을 지정해 주세요.";
-errmsg.err4="종료시간은 시작 시간보다 빨라서는 안됩니다.";
+errmsg.err4="종료시간은 시작 시간보다 빨라서는 안 됩니다.";
 errmsg.err5="MAC 주소의 길이가 맞지 않습니다.";
 errmsg.err6="비밀번호를 입력해 주세요.";
 errmsg.err7="호스트 이름을 입력해 주세요.";
 errmsg.err8="IP 주소 또는 도메인 이름을 입력해 주세요.";
-errmsg.err9="사용할 수 없는 DMZ IP 주소 입니다.";
+errmsg.err9="사용할 수 없는 DMZ IP 주소입니다.";
 errmsg.err10="확인된 비밀번호가 입력된 비밀번호와 일치하지 않습니다. 비밀번호를 다시 입력해 주세요.";
-errmsg.err11="비밀번호에는 공백이 있어선 안됩니다";
+errmsg.err11="비밀번호에는 공백이 있어선 안 됩니다";
 errmsg.err12="실행을 위해서 명령을 입력해 주세요.";
 errmsg.err13="업그레이드를 실패하였습니다.";
 errmsg.err45="HTTPS를 지원하지 않습니다! HTTP 모드로 연결해 주세요.";
@@ -297,7 +297,7 @@ errmsg.err46="HTTPS를 지원하지 않습니다";
 //common.js error messages
 errmsg.err14=" 입력한 값이 범위를 넘었습니다 [";
 errmsg.err15="WAN MAC 주소가 범위를 벗어났습니다 [00 - ff].";
-errmsg.err16="MAC의 두번째 문자는 짝수여야 합니다. : [0, 2, 4, 6, 8, A, C, E]";
+errmsg.err16="MAC의 두 번째 문자는 짝수여야 합니다. : [0, 2, 4, 6, 8, A, C, E]";
 errmsg.err17="MAC 주소가 맞지 않습니다.";
 errmsg.err18="MAC 주소의 길이가 맞지 않습니다.";
 errmsg.err19="해당 MAC 주소를 브로트캐스트 주소로 사용할 수 없습니다.";
@@ -314,9 +314,9 @@ errmsg.err29=" 허용되지 않은 아스키 코드가 포함되어 있습니다
 errmsg.err30=" 허용되지 않은 16진수 숫자가 포함되어 있습니다.";
 errmsg.err31=" 허용되지 않은 값입니다.";
 errmsg.err32="IP 주소와 게이트웨이가 같은 서브넷 마스크에 있지 않습니다.";
-errmsg.err33="IP 주소와 게이트웨이가 같아서는 안됩니다.";
-errmsg.err34=" 은/는 공백을 포함해서는 안됩니다.";
-errmsg.err110="종료 넘버는 시작 넘버보다 커야 합니다";
+errmsg.err33="IP 주소와 게이트웨이가 같아서는 안 됩니다.";
+errmsg.err34=" 은/는 공백을 포함해서는 안 됩니다.";
+errmsg.err110="종료 번호는 시작 번호보다 커야 합니다";
 errmsg.err111="유효하지 않은 IP 주소입니다";
 errmsg.err112="유효하지 않은 입력 문자입니다 \"<invchars>\" in field \"<fieldname>\"";
 
@@ -509,12 +509,12 @@ halive.page2="<dd></dd><dd>Check all values and click <em>Save Settings</em> to 
 config.titl="백업 & 복원";
 config.h2="설정 백업";
 config.legend="설정 백업";
-config.mess1="\"" + sbutton.backup + "\" 버튼을 클릭하면 설정을 백업한 파일이 컴퓨터에 다운로드됩니다.";
+config.mess1="\"" + sbutton.backup + "\" 버튼을 클릭하면 설정을 백업한 파일이 컴퓨터에 다운로드 됩니다.";
 config.h22="설정 복원";
 config.legend2="설정 복원";
 config.mess2="복원을 위한 파일 선택";
 config.mess3="경 고";
-config.mess4="같은 펌웨어와 같은 모델의 공유기에서 백업된 파일만을 업로드해 주세요.<br />현재와 다른 인터페이스에서 작성된 파일을 업로드하면 안됩니다!";
+config.mess4="같은 펌웨어와 같은 모델의 공유기에서 백업된 파일만을 업로드 해 주세요.<br />현재와 다른 인터페이스에서 작성된 파일을 업로드하면 안 됩니다!";
 
 //help container
 hconfig.right2="초기화가 필요한 경우 또는 공장 초기 설정으로 되돌려야 할 경우를 대비해, 현재의 환경 설정을 백업해 주세요.<br /><br /> <em>백업</em> 버튼을 클릭하면 현재 설정을 백업합니다";
@@ -759,7 +759,7 @@ usb.usb_ip="USB Over IP";
 usb.usb_printer="USB 프린터 지원";
 usb.usb_automnt="드라이브 자동 마운트";
 usb.usb_mntpoint="디스크 마운트 포인트";
-usb.usb_runonmount="마운트시 실행할 스크립트 경로";
+usb.usb_runonmount="마운트 시 실행할 스크립트 경로";
 usb.usb_diskinfo="디스크 정보";
 usb.usb_diskspace="디스크 공간";
 usb.usb_mntjffs="이 파티션을 /jffs로 마운트";
@@ -916,7 +916,7 @@ hotspot.wifidog_authsrvsslport="인증서버 SSL 포트";
 hotspot.wifidog_authsrvhttpport="인증서버 HTTP 포트";
 hotspot.wifidog_authsrvpath="인증서버 경로";
 hotspot.wifidog_config="방화벽 룰셋";
-hotspot.wifidog_messagefile="Wifidog을 위한 HTML 메세지 파일";
+hotspot.wifidog_messagefile="Wifidog을 위한 HTML 메시지 파일";
 hotspot.wifidog_realm="HTTP 서버 Realm";
 hotspot.wifidog_username="HTTP 서버 사용자 이름";
 hotspot.wifidog_password="HTTP 서버 비밀번호";
@@ -990,12 +990,12 @@ hotspotsys.customsplash="커스텀 Splash 페이지 (Walled Garden)";
 //anchorfree.serviceid="서비스 ID";
 //anchorfree.servicestatus="서비스 상태";
 //anchorfree.agreement="이용 약관";
-//anchorfree.agree="이용 약관을 이해하며 동의 합니다";
+//anchorfree.agree="이용 약관을 이해하며 동의합니다";
 //anchorfree.validaddr="Wifi 핫스팟 맵에 공개되기 위해서는 유효한 어드레스 필드가 제공되어야 합니다!";
 //anchorfree.validcity="Wifi 핫스팟 맵에 공개되기 위해서는 유효한 도시 또는 우편번호가 제공되어야 합니다!";
 //anchorfree.validcat="핫스팟에 사용할 광고 카테고리를 선택해 주세요";
 //anchorfree.validcountry="핫스팟에 사용할 국가를 선택해 주세요";
-//anchorfree.validterms="이용 약관에 반드시 동의 해야 합니다!";
+//anchorfree.validterms="이용 약관에 반드시 동의해야 합니다!";
 //
 //hanchorfree.right1="AnchorFree의 핫스팟 광고 네트워크에 참가합니다";
 //hanchorfree.right2="AnchorFree 은 DD-WRT 의 고객들이 핫스팟 광고 네트워크에 참가할 수 있는 기회를 제공해 드립니다";
@@ -1003,7 +1003,7 @@ hotspotsys.customsplash="커스텀 Splash 페이지 (Walled Garden)";
 //hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
 //hanchorfree.right5="더 자세한 정보를 위해서, 다음의 웹사이트를 방문해 주세요 www.anchorfree.com";
 //hanchorfree.right6="활성화 시키는 것은 어렵지 않습니다";
-//hanchorfree.right7="일단 활성화를 시키면 AnchorFree에서 등록하신 계정으로 (지정할)핫스팟의 최적화에 관한 간단한 설치 안내, FAQ, 그외 관련 정보에 관한 email을 발송합니다. 이 설정화면을 통해, AnchorFree 에서 이 공유기의 인터넷 회선을 통해 웹브라우저에 간단한 광고프레임을 직접 삽입합니다.";
+//hanchorfree.right7="일단 활성화를 시키면 AnchorFree에서 등록하신 계정으로 (지정할)핫스팟의 최적화에 관한 간단한 설치 안내, FAQ, 그 외 관련 정보에 관한 email을 발송합니다. 이 설정화면을 통해, AnchorFree 에서 이 공유기의 인터넷 회선을 통해 웹브라우저에 간단한 광고프레임을 직접 삽입합니다.";
 //hanchorfree.right8="고객지원";
 //hanchorfree.right9="궁금한 점이 있으면 다음의 주소로 문의하시길 바랍니다 boxhelp@anchorfree.com";
 
@@ -1019,7 +1019,7 @@ idx_h.srv="Heart Beat 서버";
 idx_h.con_strgy="연결 확인 방법";
 idx_h.max_idle="온디맨드 연결: 최대 대기 시간";
 idx_h.alive="상태 유지: 재다이얼 주기";
-idx_h.reconnect="강제 재연결";
+idx_h.reconnect="강제 재 연결";
 
 // ** index_l2tp.asp **//
 idx_l.srv="게이트웨이 (L2TP 서버)";
@@ -1187,8 +1187,8 @@ management.remote_telnetport="텔넷 원격 포트";
 management.remote_allowanyip="모든 원격 IP를 허가";
 management.remote_ip="허가된 원격 IP 범위";
 management.web_legend="웹 관리 인터페이스";
-management.web_refresh="자동 재표시 간격 (초)";
-management.web_authlimit="재인증 제한 (초)";
+management.web_refresh="자동 재 표시 간격 (초)";
+management.web_authlimit="재 인증 제한 (초)";
 management.web_sysinfo="시스템 정보 표시";
 management.web_sysinfopass="시스템 정보 페이지 비밀번호 보호";
 management.web_sysinfomasq="시스템 정보 페이지의 MAC을 감추기";
@@ -1235,7 +1235,7 @@ management.lang_chinese_simplified="Chinese Simplified 중국어 간체";
 management.lang_catalan="Catalan 카탈로니아어";
 management.lang_croatian="Croatian 크로아티아어";
 management.lang_czech="Czech 체코어";
-management.lang_dutch="Dutch 네델란드어";
+management.lang_dutch="Dutch 네덜란드어";
 management.lang_portuguese_braz="Portuguese (brazilian) 브라질 포르투갈어";
 management.lang_english="English 영어";
 management.lang_polish="Polish 폴란드어";
@@ -1329,7 +1329,7 @@ networking.leasetime="할당 시간";
 
 //help container
 hnetworking.right1="멀티 DHCPD";
-hnetworking.right2="멀티 DHCPD를 사용하기위해서는, DNSMasq를 DHCP 서버로 설정 해야 합니다.";
+hnetworking.right2="멀티 DHCPD를 사용하기 위해서는, DNSMasq를 DHCP 서버로 설정해야 합니다.";
 
 //help page
 hnetworking.page1="<dd>Allows you to transfer different independent network streams by using just one interface. This is done by inserting a small TAG within the ethernet header. By identifying this tag these ethernet packets can be split up again on the other side to create new interface out of it. Using this option together with the bridging option allows you to create different transfer networks which can be bridged to a Wireless Interface to separate the Router Management network from the network accessible by the User. This is useful for large ISP networks.</dd>";
@@ -1385,8 +1385,8 @@ hqos.right3="";
 hqos.right4="사용자별 기본 제한을 사용합니다.:<br>사용자별 또는 모든 사용자를 대상으로 기본 레벨을 사용합니다.";
 hqos.right6="어플리케이션에서 사용하는 대역폭을 지정할 수 있습니다.";
 hqos.right8="부여받은 IP 주소 또는 IP 범위에서 모든 트래픽의 우선순위를 지정할 수 있습니다.";
-hqos.right10="장치에 장치명을 부여하거나 MAC 주소를 입력함으로서 모든 트래픽의 우선순위를 지정할 수 있습니다.";
-hqos.right12="장치가 연결되어 있는 물리적 LAN 포트에 따라 통신속도를 제어할 수 있습니다. LAN 포트 1~4번 포트에 연결되어 있는 장치에 따라 우선 순위를 부여할 수 있습니다.";
+hqos.right10="장치에 장치 명을 부여하거나 MAC 주소를 입력함으로서 모든 트래픽의 우선순위를 지정할 수 있습니다.";
+hqos.right12="장치가 연결되어 있는 물리적 LAN 포트에 따라 통신 속도를 제어할 수 있습니다. LAN 포트 1~4번 포트에 연결되어 있는 장치에 따라 우선순위를 부여할 수 있습니다.";
 
 //help page
 hqos.page1="<dd>Bandwidth management prioritizes the traffic on your router. Interactive traffic (telephony, browsing, telnet, etc.) gets priority and bulk traffic (file transfer, P2P) gets low priority. The main goal is to allow both types to live side-by side without unimportant trafic disturbing more critical things. All of this is more or less automatic.<br /><br />QoS allows control of the bandwidth allocation to different services, netmasks, MAC addresses and the four LAN ports, LAN port availability will vary by router, if its not displayed, your hardware does not support it. QoS is divided into five bandwidth classes called Maximum, Premium, Express, Standard, and Bulk. Unclassified services will use the Standard bandwidth class.</dd>";
@@ -1446,7 +1446,7 @@ route.static_name="라우터 이름";
 route.static_ip="목적지 LAN NET";
 
 //help container
-hroute.right2="만일 이 공유기가 인터넷 연결을 호스팅하고 있는 경우, <em>게이트웨이</em> 모드를 선택해 주세요. 만일 다른 공유기가 네트워크 상에 존재하고 있는 경우 <em>공유기</em> 모드를 선택해 주세요.";
+hroute.right2="만일 이 공유기가 인터넷 연결을 호스팅하고 있는 경우, <em>게이트웨이</em> 모드를 선택해 주세요. 만일 다른 공유기가 네트워크상에 존재하고 있는 경우 <em>공유기</em> 모드를 선택해 주세요.";
 hroute.right4="고유 라우터 번호입니다. 50가지의 라우트까지 설정할 수 있습니다.";
 hroute.right6="이 라우트에 할당할 이름을 입력해 주세요.";
 hroute.right8="고정 라우트 할당에 사용할 호스트의 네트워크 주소를 입력해 주세요.";
@@ -1656,13 +1656,13 @@ hservice.page8="<dd>Enable Syslogd to capture system messages. By default they w
 hservice.page9="<dd>Enable a telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the router password.<br/><br/><div class=\"note\"><h4>Note</h4><div>If you using the router in an untrusted environment (for example as a public hotspot), it is strongly recommended to use SSHd and deactivate telnet.</div></div></dd><dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>";
 
 //help container
-hstatus_vpn.right1="정의 기반 라우팅:<br><i>0.0.0.0/0 형식의 IPs/NETs를 추가해 강제로 클라이언트가 터널을 기본 게이트웨이로써 사용하게 합니다. IP/NET 당 한 줄.<br><i>IP 주소/넷마스크:</i><br>DHCP-Proxy 모드를 사용할 경우 반드시 설정이 되어야 하며, local TAP은 브리지되어 있어서는 안됩니다.</i>";
-hstatus_vpn.right2="추가설정:<br><i>클라이언트에 라우트를 푸시하기 위해 \'push \"route IP mask gateway\"\'를 추가하고, DNS/WINS를 푸시하기 위해 \'push \"dhcp-option DNS (또는 WINS) IP\"\'를 설정에 추가합니다.</i><br>디렉터리에 클라이언트 연결:<br><i>USB 또는 JFFS가 /jffs에 마운드되어 있을 경우, 스크립트는 /jffs/etc/openvpn/ccd/에서 호출되어야 합니다</i>";
-hstatus_vpn.right3="일반적:<br><i> pkcs12 (+dh on server), 고정, 표준 인증등의 세가지 인증방법을 지원합니다, 링크의 한쪽만에서 MSS를 사용 해 주시고, 프래그먼트는 링크 양쪽에서 사용 해 주세요.</i>";
+hstatus_vpn.right1="정의 기반 라우팅:<br><i>0.0.0.0/0 형식의 IPs/NETs를 추가해 강제로 클라이언트가 터널을 기본 게이트웨이로써 사용하게 합니다. IP/NET 당 한 줄.<br><i>IP 주소/넷마스크:</i><br>DHCP-Proxy 모드를 사용할 경우 반드시 설정이 되어야 하며, local TAP은 브리지 되어 있어서는 안 됩니다.</i>";
+hstatus_vpn.right2="추가설정:<br><i>클라이언트에 라우트를 푸시하기 위해 \'push \"route IP mask gateway\"\'를 추가하고, DNS/WINS를 푸시하기 위해 \'push \"dhcp-option DNS (또는 WINS) IP\"\'를 설정에 추가합니다.</i><br>디렉터리에 클라이언트 연결:<br><i>USB 또는 JFFS가 /jffs에 마운트 되어 있을 경우, 스크립트는 /jffs/etc/openvpn/ccd/에서 호출되어야 합니다</i>";
+hstatus_vpn.right3="일반적:<br><i> pkcs12 (+dh on server), 고정, 표준 인증 등의 세 가지 인증방법을 지원합니다, 링크의 한쪽 만에서 MSS를 사용 해 주시고, 프래그먼트는 링크 양쪽에서 사용 해 주세요.</i>";
 
 //help page
 hstatus_vpn.page1="<dd>A VPN technology by Microsoft and remote access vendors, it is implemented in multiple OS's both desktop and mobile. Configuring this allows you to access your LAN at home remotely.<ul class=\"wide\"><li>Server IP &ndash; The IP address of your router</li><li>Client IP &ndash; A list or range of IP addresses for remotely connected machines. This range should not overlap with the DHCP range (for example 192.168.0.2,192.168.0.3), a range (192.168.0.1-254 or 192.168.0-255.2) or some combination (192.168.0.2,192.168.0.5-8).</li><li>CHAP-Secrets &ndash; A list of usernames and passwords for the VPN login, one user per line (Example: joe * joespassword *). For more details look up the pppd main page.</li></ul></dd>";
-hstatus_vpn.page2="<dd>A VPN Client that enables you to connect to VPN servers by Microsoft and remote access vendors. Configuring this allows the router to VPN into a remote network.<ul class=\"wide\"><li>Server IP or DNS Name &ndash; The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li><li>Remote Subnet &ndash; Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li><li>Remote Subnet Mask &ndash; Remote Subnet Mask of the network you are connecting to (Example: 255.255.255.0). </li><li>MPPE Encryption  &ndash; The type of security to use for the connection. If you are connecting to another DD-WRT router you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li><li>MTU &ndash; Maximum Transmission Unit (Default: 1450) </li><li>MRU &ndash; Maximum Receiving Unit (Default: 1450) </li><li>User Name &ndash; Enter the username that you will use to connect to the VPN server. If you are connecting to another Linux based PPTP server you just need to enter the username. But if you are connecting to a Windows VPN server you need to enter the servername and username (Example: DOMAIN\\\\username). </li><li>Password &ndash; Enter the password of the for the username </li></ul></dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
+hstatus_vpn.page2="<dd>A VPN Client that enables you to connect to VPN servers by Microsoft and remote access vendors. Configuring this allows the router to VPN into a remote network.<ul class=\"wide\"><li>Server IP or DNS Name &ndash; The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li><li>Remote Subnet &ndash; Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li><li>Remote Subnet Mask &ndash; Remote Subnet Mask of the network you are connecting to (Example: 255.255.255.0). </li><li>MPPE Encryption  &ndash; The type of security to use for the connection. If you are connecting to another DD-WRT router you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li><li>MTU &ndash; Maximum Transmission Unit (Default: 1436) </li><li>MRU &ndash; Maximum Receiving Unit (Default: 1436) </li><li>User Name &ndash; Enter the username that you will use to connect to the VPN server. If you are connecting to another Linux based PPTP server you just need to enter the username. But if you are connecting to a Windows VPN server you need to enter the servername and username (Example: DOMAIN\\username). </li><li>Password &ndash; Enter the password of the for the username </li></ul></dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1681,7 +1681,7 @@ service.radiooff_legend_aoss="AOSS 버튼 기능";
 service.radiooff_srv="무선 끄기";
 service.radiooff_srv_aoss="AOSS";
 service.radiooff_srv_disabled="사용안함";
-service.radiooff_bootoff="부트시 무선 끄기";
+service.radiooff_bootoff="부트 시 무선 끄기";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="SES / AOSS / EZ-SETUP / WPS 버튼";
@@ -1705,7 +1705,7 @@ service.rstats_usrdir="사용자 디렉터리";
 service.nstx_legend="IP over DNS 터널링";
 service.nstx_srv="nstx 데몬";
 service.nstx_ipenable="이 IP에만 바인드";
-service.nstx_log="디버그 메세지 교환";
+service.nstx_log="디버그 메시지 교환";
 
 //ttraff.webservices
 service.ttraff_legend="WAN 트래픽 카운터";
@@ -1739,13 +1739,13 @@ service.milkfish_aliases="로컬 별명";
 service.milkfish_dynsip="다이나믹 SIP";
 service.milkfish_status="SIP 상태";
 service.milkfish_database="SIP 데이터베이스";
-service.milkfish_messaging="SIP 메세지";
+service.milkfish_messaging="SIP 메시지";
 service.milkfish_phonebook="SIP 전화번호부";
 service.milkfish_dynsipdomain="DynSIP 도메인";
 service.milkfish_dynsipurl="DynSIP 업데이트 URL";
 service.milkfish_dsusername="DynSIP 사용자 이름";
 service.milkfish_dspassword="DynSIP 비밀번호";
-service.milkfish_sipmessage="SIP 메세지";
+service.milkfish_sipmessage="SIP 메시지";
 service.milkfish_destination="SIP 목적지";
 service.milkfish_contact="연락처";
 service.milkfish_agent="사용자 에이전트";
@@ -1758,14 +1758,14 @@ service.milkfish_advdynsip="고급 DynSIP 설정";
 service.milkfish_answers="문제, 질문, 제안이 있나요? - <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Milkfish-dd User Forum</a>에서 답을 찾으세요";
 //service.milkfish_="";//
 service.hmilkfish_right2="Milkfish SIP 라우터를 활성화 또는 비활성화 합니다.";
-service.hmilkfish_right4="다음으로부터 활성화 또는 비활성화 합니다:-발신 SIP 메세지의 WAN IP 주소의 헤더필드 대체. 만일 WAN IP 주소가 변경되었을 시, 피호출자로부터의 회신을 허락할 경우 이 설정을 활성화 시켜야 합니다.";
+service.hmilkfish_right4="다음으로부터 활성화 또는 비활성화 합니다:-발신 SIP 메시지의 WAN IP 주소의 헤더필드 대체. 만일 WAN IP 주소가 변경되었을 시, 피 호출자로부터의 회신을 허락할 경우 이 설정을 활성화 시켜야 합니다.";
 service.hmilkfish_right6="피호출자가 도메인으로 발신을 할 경우 (현재 사용자의 WAN IP 주소를 대신해), From-Substitution은 이 설정이 유효하도록 활성화 시켜야 합니다.";
 service.hmilkfish_right8="Milkfish 커뮤니티 포럼의 사용자 이름을 이곳에 입력하세요. yourname.homesip.net에 등록하세요.";
 service.hmilkfish_right10="Milkfish 커뮤니티 포럼의 비밀번호를 이곳에 입력하세요. yourname.homesip.net에 등록해 주세요.";
 service.hmilkfish_right12="공유기에 기본적인 SIP 추적을 활성화 또는 비활성화 합니다.";
 service.hmilkfish_right14="로컬 SIP 신청자는 로컬로 SIP 계정이 관리되어집니다.";
-service.hmilkfish_right16="로컬 SIP 별명은 이메일 포워드와 비슷한 SIP 포워드 입니다. 알파벳&숫자 조합을 숫자로 변환하는 또는 거꾸로인 전화 사용자 계정 포워드를 사용할 수 있습니다.";
-service.hmilkfish_right18="동적 SIP를 활성화 또는 비활성화시킵니다 (예. Homesip.net 서비스). 사용자 이름과 비밀번호 설정이 필요합니다.";
+service.hmilkfish_right16="로컬 SIP 별명은 이메일 포워드와 비슷한 SIP 포워드 입니다. 알파벳&숫자 조합을 숫자로 변환하는 또는 거꾸로 인 전화 사용자 계정 포워드를 사용할 수 있습니다.";
+service.hmilkfish_right18="동적 SIP를 활성화 또는 비활성화 시킵니다 (예. Homesip.net 서비스). 사용자 이름과 비밀번호 설정이 필요합니다.";
 service.hmilkfish_right20="정의되지 않은 영역입니다 - 비워두시길 바랍니다";
 service.hmilkfish_right22="정의되지 않은 영역입니다 - 비워두시길 바랍니다";
 service.hmilkfish_right24="정의되지 않은 영역입니다 - 비워두시길 바랍니다";
@@ -1902,7 +1902,7 @@ status_router.mem_inactive="비활성";
 status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus (BrainSlayer)
 status_router.legend4="네트워크";
 status_router.net_maxports="IP 필터 최대 포트 수";
-status_router.net_conntrack="사용중인 IP 연결 수";
+status_router.net_conntrack="사용 중인 IP 연결 수";
 status_router.notavail="사용할 수 없습니다";
 status_router.legend6="공간 사용량";
 status_router.inpvolt="입력 전압";
@@ -1938,7 +1938,7 @@ status_inet.delete_confirm="경고! 모든 트래픽 데이터가 삭제됩니�
 
 
 //help container
-hstatus_inet.right2="인터넷에 연결하는 방법을 표시합니다. 이 정보는 설정 탭에서 설정할 수 있습니다. <em>연결</em>, <em>연결끊기</em> 버튼을 클릭해 연결을 시작 또는 끊을 수 있습니다.";
+hstatus_inet.right2="인터넷에 연결하는 방법을 표시합니다. 이 정보는 설정 탭에서 설정할 수 있습니다. <em>연결</em>, <em>연결 끊기</em> 버튼을 클릭해 연결을 시작 또는 끊을 수 있습니다.";
 hstatus_inet.right4="공유기의 마지막 재부팅부터의 인터넷 트래픽을 표시합니다.";
 hstatus_inet.right6="공유기의 월별 인터넷 트래픽을 표시합니다. 마우스를 그래프 위로 드래그하면 일별 데이터를 볼 수 있습니다. 데이터는 nvram에 저장됩니다.";
 
@@ -2008,16 +2008,16 @@ status_cwmp.titl="CWMP (TR-069) 상태";
 trforward.titl="포트 트리거";
 trforward.h2="포트 트리거";
 trforward.legend="포워드 리스트";
-trforward.trrange="트리거된 포트 범위";
-trforward.fwdrange="포워드된 포트 범위";
+trforward.trrange="트리거 된 포트 범위";
+trforward.fwdrange="포워드 된 포트 범위";
 trforward.app="어플리케이션";
 
 //help container
 htrforward.right2="트리거 할 어플리케이션의 이름을 입력해 주세요.";
-htrforward.right4="트리거되는 포트 범위를 지정합니다. 어떤 포트를 지정해야 하는가에 대해서는 사용하는 어플리케이션의 설명서 등을 참조하세요.";
-htrforward.right6="포워드되는 포트 범위를 지정합니다. 어떤 포트를 지정해야 하는가에 대해서는 사용하는 어플리케이션의 설명서 등을 참조하세요.";
-htrforward.right8="트리거와 포워드된 포트 범위의 시작을 지정해 주세요.";
-htrforward.right10="트리거와 포워드된 포트 범위의 끝을 지정해 주세요.";
+htrforward.right4="트리거 되는 포트 범위를 지정합니다. 어떤 포트를 지정해야 하는가에 대해서는 사용하는 어플리케이션의 설명서 등을 참조하세요.";
+htrforward.right6="포워드 되는 포트 범위를 지정합니다. 어떤 포트를 지정해야 하는가에 대해서는 사용하는 어플리케이션의 설명서 등을 참조하세요.";
+htrforward.right8="트리거와 포워드 된 포트 범위의 시작을 지정해 주세요.";
+htrforward.right10="트리거와 포워드 된 포트 범위의 끝을 지정해 주세요.";
 
 //help page
 htrforward.page1="<dd>Port Triggering allows you to do port forwarding without setting a fixed PC. By setting Port Triggering rules, you can allow inbound traffic to arrive at a specific LAN host, using ports different than those used for the outbound traffic. This is called port triggering since the outbound traffic triggers to which ports inbound traffic is directed.<br /><br />If you want to forward ports to a PC with a static IP address, see <a href=\"HForwardSpec.asp\">";
@@ -2035,7 +2035,7 @@ upgrad.warning="경 고";
 upgrad.mess1="펌웨어 업그레이드는 보통 몇 분 정도 걸립니다.<br />업그레이드 중 전원을 끄거나 리셋 버튼을 누르지 마세요!";
 
 //help container
-hupgrad.right2="펌웨어를 업그레이드 합니다. <em>찾아보기...</em> 버튼을 클릭해 공유기에 업로드할 펌웨어 파일을 선택하세요.<br /><br /> <em>업그레이드</em> 버튼을 클릭하면 업그레이트가 시작됩니다. 업그레이트는 도중에 중단 할 수 없습니다.";
+hupgrad.right2="펌웨어를 업그레이드 합니다. <em>찾아보기...</em> 버튼을 클릭해 공유기에 업로드 할 펌웨어 파일을 선택하세요.<br /><br /> <em>업그레이드</em> 버튼을 클릭하면 업그레이드가 시작됩니다. 업그레이드는 도중에 중단 할 수 없습니다.";
 
 //help page
 hupgrad.page1="<dd>New firmware versions are posted at <a href=\"http:\/\/www.dd-wrt.com\" target=\"_new\">www.dd-wrt.com</a> and can be downloaded for free. If the Router is not experiencing difficulties, then there is no need to download a more recent firmware version, unless that version has a new feature that you want to use.<br/><br/><div class=\"note\"><h4>Note</h4><div>When you upgrade the Router's firmware, you lose its configuration settings, so make sure you write down the Router settings before you upgrade its firmware.</div></div></dd><dd>To upgrade the Router's firmware:<ol class=\"wide\"><li>Download the firmware upgrade file from the website.</li><li>Click the <i>Browse...</i> button and chose the firmware upgrade file.</li><li>Click the <i>Upgrade</i> button and wait until the upgrade is finished.</li></ol><br /><div class=\"note\"><h4>Note</h4><div>DO NOT POWER OFF THE ROUTER OR PRESS THE RESET BUTTON WHILE THE FIRMWARE IS BEING UPGRADED.</div></div></dd><dt>Reset Options</dt><dd>If you want to reset the router to the default settings for the firmware version you are upgrading to, click the <i>Firmware Defaults</i> option.<br /><br /></dd>";
@@ -2071,7 +2071,7 @@ vpn.pptp="PPTP 패스 스루";
 vpn.l2tp="L2TP 패스 스루";
 
 //help container
-hvpn.right1="IPSec, PPTP, L2TP 패스 스루의 사용를 선택하면, 네트워크 장비가 VPN을 통해 통신 할 수 있습니다.";
+hvpn.right1="IPSec, PPTP, L2TP 패스 스루의 사용을 선택하면, 네트워크 장비가 VPN을 통해 통신 할 수 있습니다.";
 
 //help page
 hvpn.page1="<dd>Virtual Private Networking (VPN) is typically used for work-related networking. For VPN tunnels, the router supports IPSec, PPTP and L2TP Passthrough.</dd>";
@@ -2120,7 +2120,7 @@ wol.pass="SecureOn 비밀번호";
 //help container
 hwol.right2="Wake-On-Lan은 로컬 네트워크에 존재하는 호스트를 공유기에서 기동시키는 기능입니다. <em>"+sbutton.wol+"</em>를 클릭하면 수동으로 지정된 장치를 기동시킬 수 있습니다. 또는 "+wol.srv+"을 사용해 자동으로 클라이언트가 기동되도록 프로그램 할 수 있습니다.";
 hwol.right4="MAC 주소는 xx:xx:xx:xx:xx:xx의 형식으로 지정되어야 합니다 (예 : 01:23:45:67:89:AB). 또한 여러 MAC 주소를 지정하는 경우, 주소 사이에 공백을 넣어주세요.";
-hwol.right6="IP 주소는 일반적으로 로컬 네트워크를 위한 브로드캐스트 주소를 사용합니다. 그러나, 타겟 호스트가 공유기의 로컬 네트워크에 연결되어 있지 않은 경우는 원격 주소를 사용할 수 도 있습니다.";
+hwol.right6="IP 주소는 일반적으로 로컬 네트워크를 위한 브로드캐스트 주소를 사용합니다. 그러나 타겟 호스트가 공유기의 로컬 네트워크에 연결되어 있지 않은 경우는 원격 주소를 사용할 수 도 있습니다.";
 
 //help page
 hwol.page1="<dd>This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your WRT).</dd><dt class=\"term\">Available Hosts:</dt><dd class=\"definition\">The Available Hosts section provides a list of hosts to add/remove from the WOL Addresses list. The list is a combination of any defined static hosts or automatically discovered DHCP clients.<div class=\"note\"><h4>Note</h4><div>This table uses the MAC address, &quot;guesses&quot; the network broadcast address by assuming the host's IP address has the same netmask as the local router (lan_netmask), and uses the UDP port specified in the UDP Port box (in the Manual WOL section -- default is 7 if nothing is specified).</div></div></dd>";
@@ -2176,7 +2176,7 @@ aoss.security="보안";
 aoss.connectivity="연결성";
 aoss.clients="AOSS 클라이언트";
 aoss.notice="알림";
-aoss.ap_mode_notice="알림: AOSS는 기본 무선이 AP 또는 WDS AP의 상태일때만 사용이 가능합니다.";
+aoss.ap_mode_notice="알림: AOSS는 기본 무선이 AP 또는 WDS AP의 상태일 때만 사용이 가능합니다.";
 aoss.wep_notice="WEP 보안모드는 안전하지 않기 때문에 WEP를 사용하는 것을 권하지 않습니다.";
 aoss.wep_info="(AOSS를 지원하는 대부분의 게임 콘솔을 위해 필요)";
 aoss.wps="WPS 설정";
@@ -2197,7 +2197,7 @@ olupgrade.version="버전";
 olupgrade.release="날짜";
 olupgrade.readme="정보";
 olupgrade.choose="선택";
-olupgrade.retrieve_error="업데이트 정보를 검색하는중 에러가 발생했습니다";
+olupgrade.retrieve_error="업데이트 정보를 검색하는 중 에러가 발생했습니다";
 
 nintendo.titl="닌텐도";
 nintendo.spotpass.titl="닌텐도 SpotPass";
@@ -2342,7 +2342,7 @@ freeradius.cert_status="증명서 상태";
 freeradius.port="Radius 포트";
 
 //help container
-hfreeradius.right2="FreeRadius를 시작하기 전에 JFFS를 반드시 활성화 해야 합니다.";
+hfreeradius.right2="FreeRadius를 시작하기 전에 JFFS를 반드시 활성화해야 합니다.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="고급 무선 설정";
@@ -2471,7 +2471,7 @@ wl_basic.wdsap="WDS AP";
 wl_basic.mixed="Mixed";
 wl_basic.bft="명시적 빔포밍";
 wl_basic.bfr="암시적 빔포밍";
-wl_basic.greenfield="그린필드";
+wl_basic.greenfield="그린 필드";
 wl_basic.preamble="짧은 프리앰블";
 wl_basic.clientRelaydDefaultGwMode="기본 GW 모드";
 wl_basic.b="B-Only";
@@ -2488,7 +2488,7 @@ wl_basic.n="N-Only";
 wl_basic.rts="RTS 임계값";
 wl_basic.rtsvalue="임계값";
 wl_basic.protmode="보호 모드";
-wl_basic.legend2="무선 시간 제한";
+wl_basic.legend2="무선 시간제한";
 wl_basic.radio="무선";
 wl_basic.radiotimer="무선 스케줄링";
 wl_basic.radio_on="켜짐";
@@ -2552,10 +2552,10 @@ wl_basic.upper="상위";
 wl_basic.lower="하위";
 
 //help container
-hwl_basic.right2="만일 G모드의 클라이언트를 제외하고자 할 경우, <em>B-Only</em> 모드를 선택해 주세요. 만일 무선 연결을 사용하지 않으려는 경우, <em>사용안함</em>을 선택해 주세요.<br/><b>알림 :</b> 무선 모드을 변경할경우, 일부 고급 파라미터가 수정에 민감해질 수 있습니다. (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="만일 G모드의 클라이언트를 제외하고자 할 경우, <em>B-Only</em> 모드를 선택해 주세요. 만일 무선 연결을 사용하지 않으려는 경우, <em>사용안함</em>을 선택해 주세요.<br/><b>알림 :</b> 무선 모드을 변경할 경우, 일부 고급 파라미터가 수정에 민감해질 수 있습니다. (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="감도 범위: ";
 hwl_basic.right4="ACK 타이밍을 조정할 수 있습니다. 0은 브로드컴 펌웨어의 ack timing을 비활성화 시킵니다. Atheros 기반의 펌웨어에서는, 0 은 자동 ACK 타이밍 모드를 활성화 시킵니다.";
-hwl_basic.right6="임의의 시간을 클릭하면 무선 신호를 비활성화 또는 활성화합니다. (<em>green</em>은 무선 연결이 허락된것을 나타내고, <em>red</em>는 무선 연결이 차단된것을 나타냅니다.)";
+hwl_basic.right6="임의의 시간을 클릭하면 무선 신호를 비활성화 또는 활성화합니다. (<em>green</em>은 무선 연결이 허락된 것을 나타내고, <em>red</em>는 무선 연결이 차단된 것을 나타냅니다.)";
 
 //help page
 hwl_basic.page1="<dd>The wireless part of your router can run in different modes:<ul class=\"wide\"><li>AP mode &ndash; This is the default mode, also called Infrastructure mode. Your router acts as an central connection point, which wireless clients can connect to.</li><li>Client mode &ndash; The radio interface is used to connect the internet-facing side of the router (i.e., the WAN) as a client to a remote accesspoint. NAT or routing are performed between WAN and LAN, like in \"normal\" gateway or router mode. Use this mode, e.g., if your internet connection is provided by a remote accesspoint, and you want to connect a subnet of your own to it. </li><li>Client Bridged (Routed) mode &ndash; The radio interface is used to connect the LAN side of the router to a remote accesspoint. The LAN and the remote AP will be in the same subnet (This is called a \"bridge\" between two network segments). The WAN side of the router is unused and can be disabled. Use this mode, e.g., to make the router act as a \"WLAN adapter\" for a device connected to one of its LAN ethernet ports.</li><li>Ad-Hoc mode &ndash; This is for peer to peer wireless connections. Clients running in Ad-Hoc mode can connect to each other as required without involving central access points.</li></ul><br /><br /><div class=\"note\"><h4>Note</h4><div>Note that <a href=\"HWDS.asp\">WDS</a> is only available in AP mode.</div></div></dd>";
@@ -2567,19 +2567,19 @@ hwl_basic.page6="<dd>Adjusts the ACK timing based on the maximum distance in met
 hwl_basic.page7="<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
-fail.mess1="입력하신 값이 유효하지 않습니다, 다시한번 입력해 주세요.";
+fail.mess1="입력하신 값이 유효하지 않습니다, 다시 한 번 입력해 주세요.";
 fail.mess2="업그레이드 실패.";
 
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="설정이 저장되었습니다.";
 success.restore="설정이 복원되었습니다.<br/>장치가 재부팅 됩니다. 잠시만 기다려 주세요...";
-success.upgrade="성공적으로 업그레이드 되었습니다.<br/>장치가 재부팅 됩니다. 잠시만 기다려 주세요...";
+success.upgrade="성공적으로 업그레이드되었습니다.<br/>장치가 재부팅 됩니다. 잠시만 기다려 주세요...";
 success.success_noreboot="설정이 완료되었습니다.";
 success.success_reboot=success.success_noreboot + "<br />장치가 재부팅 됩니다. 잠시만 기다려 주세요...";
 
-success.alert_reset="모든 설정이 기본값으로 복원되었습니다.<br /><br />";
-success.alert1="연결을 다시 시도하기전 다음 항목을 확인해주세요.:";
+success.alert_reset="모든 설정이 기본 값으로 복원되었습니다.<br /><br />";
+success.alert1="연결을 다시 시도하기 전 다음 항목을 확인해주세요.:";
 success.alert2="공유기의 IP 주소가 변경되었을 경우, 네트워크상의 클라이언트 주소를 반드시 해제/갱신해야합니다 .";
 success.alert3="무선랜을 통해서 연결이 되었을 경우, 네트워크에 접속하고 <em>계속</em>을 클릭해 주세요.";
 
@@ -2596,11 +2596,11 @@ sas.hwan="인터넷 (WAN) 설정";
 
 hsas.wan="WAN 인터페이스는 공유기를 인터넷 또는 다른 네트워크에 연결시켜 줍니다. 이미 네트워크가 인터넷에 연결되어있고 액세스 포인트로서 사용하고자 할 경우 WAN 모드를 \사용안함\"으로 설정해주세요.";
 hsas.h_routerip="공유기 IP";
-hsas.routerip="내부 네트워크에서 할당된 IP 주소 입니다. 만일 주소를 변경하신 경우, 변경을 적용한 후에 새 주소를 이용해 공유기 관리 기능에 접속하여야 합니다";
+hsas.routerip="내부 네트워크에서 할당된 IP 주소입니다. 만일 주소를 변경하신 경우, 변경을 적용한 후에 새 주소를 이용해 공유기 관리 기능에 접속하여야 합니다";
 hsas.h_dhcp="DHCP";
-hsas.dhcp="DHCP를 사용하면 수동 설정이 필요없이 컴퓨터 또는 기타 네트워크 장치에 IP 주소를 자동으로 설정할 수 있습니다. DHCP 서버가 이미 로컬 네트워크상에 존재하는 경우 충돌을 피하기 위해 이 설정을 사용하지 마세요.";
+hsas.dhcp="DHCP를 사용하면 수동 설정이 필요 없이 컴퓨터 또는 기타 네트워크 장치에 IP 주소를 자동으로 설정할 수 있습니다. DHCP 서버가 이미 로컬 네트워크상에 존재하는 경우 충돌을 피하기 위해 이 설정을 사용하지 마세요.";
 hsas.h_wireless_physical="무선랜 인터페이스";
-hsas.wireless_physical="인터페이스 설정은 공유기의 무선 동작 정의를 할 수 있게 합니다. 메인 동작 모드(액세스 포인트, 클라이언트, 리피터)등으로 설정이 가능하며, 무선 네트워크 이름을 변경하거나 채널 폭 변경등의 고급 설정을 할 수 있습니다. 채널 폭을 표준 20MHz에서 변경한다면 무선 클라이언트가 해당 채널 폭을 지원해야하며 또한 올바른 설정이 되어 있는지 주의하세요.";
+hsas.wireless_physical="인터페이스 설정은 공유기의 무선 동작 정의를 할 수 있게 합니다. 메인 동작 모드(액세스 포인트, 클라이언트, 리피터)등으로 설정이 가능하며, 무선 네트워크 이름을 변경하거나 채널 폭 변경 등의 고급 설정을 할 수 있습니다. 채널 폭을 표준 20MHz에서 변경한다면 무선 클라이언트가 해당 채널 폭을 지원해야하며 또한 올바른 설정이 되어 있는지 주의하세요.";
 hsas.h_wireless_security="무선 보안";
 hsas.wireless_security="보다 쉬운 클라이언트 장치 설정을 위해 무선 네트워크 비밀번호를 변경할 수 있습니다. 암호화를 사용하지 않거나 WEP로 변경하는 것은 보안상 권하지 않습니다.";
 hsas.h_routername="공유기 이름";
@@ -2610,7 +2610,7 @@ hsas.wireless="무선 설정 도움말";
 hsas.other="기타 설정 도움말";
 
 // ** AOSS **//
-haoss.basic="에어스테이션 원터치 시큐어 시스템 (AOSS) 기능을 사용하면 자동으로 AOSS 대응 클라이언트가 액세스포인트에 연결할 수 있게 합니다.";
+haoss.basic="에어스테이션 원터치 시큐어 시스템 (AOSS) 기능을 사용하면 자동으로 AOSS 대응 클라이언트가 액세스 포인트에 연결할 수 있게 합니다.";
 haoss.securitymodes="AOSS 보안 모드는 어떠한 타입의 보안모드를 AOSS에 사용할 것인지를 설정합니다. 만일 클라이언트에서 지원하는 보안방식이 유효하지 않을 경우 연결할 수 없습니다.";
 haoss.wps="라우터의 버튼 또는 사용자 단말의 PIN을 사용해 WPS에서 Wi-Fi 보호 설정을 지원합니다.";
 
