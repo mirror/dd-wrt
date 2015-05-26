@@ -355,26 +355,25 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	struct nlattr *rinfo[NL80211_RATE_INFO_MAX + 1];
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct nl80211_sta_flag_update *sta_flags;
 	char mac_addr[20], dev[20];
 	struct mac80211_info *mac80211_info = data;
 	mac80211_info->wci = add_to_wifi_clients(mac80211_info->wci);
 	// struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
 	static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
-		[NL80211_STA_INFO_INACTIVE_TIME] = {
-						    .type = NLA_U32},[NL80211_STA_INFO_RX_BYTES] = {
-												    .type = NLA_U32},[NL80211_STA_INFO_TX_BYTES] = {
-																		    .type = NLA_U32},[NL80211_STA_INFO_RX_PACKETS] = {
-																								      .type = NLA_U32},
-		[NL80211_STA_INFO_TX_PACKETS] = {
-						 .type = NLA_U32},[NL80211_STA_INFO_SIGNAL] = {
-											       .type = NLA_U8},[NL80211_STA_INFO_TX_BITRATE] = {
-																		.type = NLA_NESTED},[NL80211_STA_INFO_RX_BITRATE] = {
-																								     .type = NLA_NESTED},
-		[NL80211_STA_INFO_LLID] = {
-					   .type = NLA_U16},[NL80211_STA_INFO_PLID] = {
-										       .type = NLA_U16},[NL80211_STA_INFO_PLINK_STATE] = {
-																	  .type = NLA_U8},[NL80211_STA_INFO_CONNECTED_TIME] = {
-																							       .type = NLA_U32},
+		[NL80211_STA_INFO_INACTIVE_TIME] = {.type = NLA_U32},
+		[NL80211_STA_INFO_RX_BYTES] = {.type = NLA_U32},
+		[NL80211_STA_INFO_TX_BYTES] = {.type = NLA_U32},
+		[NL80211_STA_INFO_RX_PACKETS] = {.type = NLA_U32},
+		[NL80211_STA_INFO_TX_PACKETS] = {.type = NLA_U32},
+		[NL80211_STA_INFO_SIGNAL] = {.type = NLA_U8},
+		[NL80211_STA_INFO_TX_BITRATE] = {.type = NLA_NESTED},
+		[NL80211_STA_INFO_RX_BITRATE] = {.type = NLA_NESTED}, 
+		[NL80211_STA_INFO_LLID] = { .type = NLA_U16},
+		[NL80211_STA_INFO_PLID] = { .type = NLA_U16},
+		[NL80211_STA_INFO_PLINK_STATE] = {.type = NLA_U8},
+		[NL80211_STA_INFO_CONNECTED_TIME] = {.type = NLA_U32},
+		[NL80211_STA_INFO_STA_FLAGS] ={ .minlen = sizeof(struct nl80211_sta_flag_update) },
 	};
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
 		[NL80211_RATE_INFO_BITRATE] = {
@@ -461,6 +460,15 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 				mac80211_info->wci->is_short_gi = 1;
 			}
 		}
+	}
+	if (sinfo[NL80211_STA_INFO_STA_FLAGS]) {
+		sta_flags = (struct nl80211_sta_flag_update *)
+			    nla_data(sinfo[NL80211_STA_INFO_STA_FLAGS]);
+		fprintf(stderr, "sta flags %X\n");
+		if (sta_flags->mask & BIT(8))
+				mac80211_info->wci->ht40intol = 1;
+		
+
 	}
 	if (sinfo[NL80211_STA_INFO_RX_BITRATE]) {
 		if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, sinfo[NL80211_STA_INFO_RX_BITRATE], rate_policy)) {
