@@ -483,6 +483,14 @@ int svqos_iptables(void)
 	insmod("xt_CONNMARK");
 	insmod("ipt_mac");
 	insmod("xt_mac");
+	if (!strcmp(wshaper_dev, "LAN")) {
+		// don't let packages pass to iptables without ebtables loaded
+		writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "1");
+		writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "1");
+		writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "1");
+
+		insmod("ebtables");
+	}
 
 #if !(defined(ARCH_broadcom) || defined(HAVE_BCMMODERN))
 	// if kernel version later then 2.4, overwrite all old tc filter
@@ -761,14 +769,6 @@ int svqos_iptables(void)
 	if (nvram_match("wk_mode", "ospf"))
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "ospf", "-j", "MARK", "--set-mark", nullmask);
 
-	if (!strcmp(wshaper_dev, "LAN")) {
-		// don't let packages pass to iptables without ebtables loaded
-		writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "1");
-		writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "1");
-		writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "1");
-
-		insmod("ebtables");
-	}
 
 	qos_svcs = nvram_safe_get("svqos_svcs");
 
