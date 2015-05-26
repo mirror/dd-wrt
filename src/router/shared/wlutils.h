@@ -215,6 +215,7 @@ struct wifi_client_info {
 	char rx_is_ht;
 	char rx_is_vht;
 	char rx_is_short_gi;
+	char ht40intol;
 	uint32_t inactive_time;
 	uint32_t rx_packets;
 	uint32_t tx_packets;
