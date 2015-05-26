@@ -1388,15 +1388,17 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 	foreach(var, eths, next) {
+		if (!strcmp(get_wan_face(), var))
+			continue;
+		if (!strcmp(nvram_safe_get("wan_ifname2"), var))
+			continue;
 		if (!strcmp("etherip0", var))
 			continue;
 		if (!strncmp("ath", var, 3))
 			continue;
+		if (!strcmp(nvram_safe_get("lan_ifname"), var))
+			continue;
 		if (strchr(var, '.') == NULL) {
-			if (!strcmp(get_wan_face(), var))
-				continue;
-			if (!strcmp(nvram_safe_get("lan_ifname"), var))
-				continue;
 			foreach(bword, bufferif, bnext) {
 				if (!strcmp(bword, var)) {
 					goto skip;
