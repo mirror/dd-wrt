@@ -387,7 +387,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 						break;
 					}
 					if (i40)
-						sprintf(info, "i", info);	//ht40 intolerant. EVIL Device!!!!
+						sprintf(info, "%si", info);	//ht40 intolerant. EVIL Device!!!!
 					if (sta4->flags & WL_STA_PS)
 						sprintf(info, "%sPS", info);	//sta is in powersave mode.
 					break;
