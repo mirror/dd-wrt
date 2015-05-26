@@ -376,11 +376,10 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_STA_INFO_STA_FLAGS] ={ .minlen = sizeof(struct nl80211_sta_flag_update) },
 	};
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
-		[NL80211_RATE_INFO_BITRATE] = {
-					       .type = NLA_U16},[NL80211_RATE_INFO_MCS] = {
-											   .type = NLA_U8},[NL80211_RATE_INFO_40_MHZ_WIDTH] = {
-																	       .type = NLA_FLAG},[NL80211_RATE_INFO_SHORT_GI] = {
-																								 .type = NLA_FLAG},
+		[NL80211_RATE_INFO_BITRATE] = {.type = NLA_U16},
+		[NL80211_RATE_INFO_MCS] = {.type = NLA_U8},
+		[NL80211_RATE_INFO_40_MHZ_WIDTH] = {.type = NLA_FLAG},
+		[NL80211_RATE_INFO_SHORT_GI] = {.type = NLA_FLAG},
 	};
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (!tb[NL80211_ATTR_STA_INFO]) {
@@ -464,8 +463,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_STA_INFO_STA_FLAGS]) {
 		sta_flags = (struct nl80211_sta_flag_update *)
 			    nla_data(sinfo[NL80211_STA_INFO_STA_FLAGS]);
-		fprintf(stderr, "sta flags %X\n");
-		if (sta_flags->mask & BIT(8))
+		if (sta_flags->mask & BIT(8)) // may work later. but not yet
 				mac80211_info->wci->ht40intol = 1;
 		
 
