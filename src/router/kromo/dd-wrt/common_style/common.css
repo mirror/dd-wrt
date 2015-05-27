@@ -416,3 +416,10 @@ td.bulle {
 .status_yellow {
 	background: #ff0;
 }
+/* Moved from inline HTML */
+.off {
+	background: #e0e0e0;
+}
+.odd {
+	background: #ccc;
+}

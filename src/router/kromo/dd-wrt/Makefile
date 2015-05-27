@@ -272,6 +272,7 @@ ifneq ($(CONFIG_ROUTERSTYLE),y)
 	cp elegant/style_ie.css $(INSTALLDIR)/www/style/elegant
 else
 	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/fresh-dark.css $(INSTALLDIR)/www/style/elegant
 	touch $(INSTALLDIR)/www/style/elegant/style.css
 endif
 	cp common_style/common.css $(INSTALLDIR)/www/style
