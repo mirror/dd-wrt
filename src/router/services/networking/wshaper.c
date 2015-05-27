@@ -353,9 +353,9 @@ void aqos_tables(void)
 
 		if (nvram_nmatch("1", "%s_bridged", data)) {
 			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "physdev", "--physdev-out", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
 			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-m", "physdev", "--physdev-out", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
 		} else {
 
 			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-i", data, "-j", chainname_in);
@@ -640,9 +640,9 @@ int svqos_iptables(void)
 			foreach(word, iflist, next) {
 				if (is_in_bridge(word)) {
 					eval("iptables", "-t", "mangle", "-I", "PREROUTING", "2", "-m", "physdev", "--physdev-in", word, "-j", "VPN_IN");
-					eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-m", "physdev", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
+					eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-m", "physdev", "--physdev-is-bridged", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
 					eval("iptables", "-t", "mangle", "-I", "FORWARD", "1", "-m", "physdev", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
-					eval("iptables", "-t", "mangle", "-I", "POSTROUTING", "-m", "physdev", "--physdev-out", word, "-j", "VPN_OUT");
+					eval("iptables", "-t", "mangle", "-I", "POSTROUTING", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", word, "-j", "VPN_OUT");
 				} else
 					unbridged_tap = 1;
 			}
@@ -671,7 +671,7 @@ int svqos_iptables(void)
 			sprintf(s_level, "%d", atoi(level) / 10);
 			/* outgoing data */
 			if (is_in_bridge(data))
-				eval("iptables", "-t", "mangle", "-I", "VPN_OUT", "1", "-m", "physdev", "--physdev-out", data, "-j", "DSCP", "--set-dscp", s_level);
+				eval("iptables", "-t", "mangle", "-I", "VPN_OUT", "1", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", "DSCP", "--set-dscp", s_level);
 			else
 				eval("iptables", "-t", "mangle", "-I", "VPN_OUT", "1", "-o", data, "-j", "DSCP", "--set-dscp", s_level);
 
