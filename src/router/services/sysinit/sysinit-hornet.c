@@ -167,6 +167,12 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
+
+	setSwitchLED(13, 0x02);
+	setSwitchLED(14, 0x04);
+	setSwitchLED(15, 0x08);
+	setSwitchLED(16, 0x10);
+	setSwitchLED(17, 0x01);
 #elif HAVE_CARAMBOLA
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
