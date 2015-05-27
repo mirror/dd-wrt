@@ -996,8 +996,8 @@ void stop_wshaper(void)
 
 	eval(script_name, "stop", "XX", wan_dev, "XX", "imq0", "imq1");
 
-	char eths2[256];
-	char eths[256];
+	char eths2[512];
+	char eths[512];
 	memset(eths, 0, 512);
 	memset(eths2, 0, 512);
 	getIfList(eths, "ixp");
