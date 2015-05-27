@@ -3520,6 +3520,9 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_MACTELNET
 	{"mactelnetd_enable", "0"},
 #endif
+#ifdef HAVE_ROUTERSTYLE
+	{"router_style_dark", "0"},
+#endif
 	{"ptoken", "0"},
 	{0, 0}
 };
