@@ -6190,7 +6190,8 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td");
 
 			if (j % 2 == 0)
-				websWrite(wp, " bgcolor=\"#CCCCCC\"");
+				// websWrite(wp, " bgcolor=\"#CCCCCC\"");
+				websWrite(wp, " class=\"odd\"");
 
 			websWrite(wp, " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" name=");
 			websWrite(wp, buff);

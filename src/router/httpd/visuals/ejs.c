@@ -1938,6 +1938,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *style = nvram_get("router_style");
+	char *style_dark = nvram_get("router_style_dark");
 
 	/*
 	 * websWrite (wp, "<\?xml version=\"1.0\" encoding=\"%s\"\?>\n",
@@ -1964,6 +1965,9 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n", style);
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 		websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
+		if (style_dark != NULL && !strcmp(style_dark, "1")) {
+			websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
+		}
 	}
 #ifdef HAVE_PWC
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n");
