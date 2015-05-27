@@ -186,9 +186,6 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 
 		if (sinfo[NL80211_SURVEY_INFO_FREQUENCY])
 			mac80211_info->frequency = freq;
-	}else {
-			fprintf(stderr,"in use not set\n");
-
 	}
 
 out:
