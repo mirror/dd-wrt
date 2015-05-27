@@ -16,12 +16,45 @@ var BCST_OK = 32;
 var SPACE_NO = 1;
 var SPACE_OK = 2;
 
+function addClass(element, classToAdd) {
+    var currentClassValue = element.className;
+      
+    if (currentClassValue.indexOf(classToAdd) == -1) {
+        if ((currentClassValue == null) || (currentClassValue === "")) {
+            element.className = classToAdd;
+        } else {
+            element.className += " " + classToAdd;
+        }
+    }
+}
+ 
+function removeClass(element, classToRemove) {
+    var currentClassValue = element.className;
+ 
+    if (currentClassValue == classToRemove) {
+        element.className = "";
+        return;
+    }
+ 
+    var classValues = currentClassValue.split(" ");
+    var filteredList = [];
+ 
+    for (var i = 0 ; i < classValues.length; i++) {
+        if (classToRemove != classValues[i]) {
+            filteredList.push(classValues[i]);
+        }
+    }
+ 
+    element.className = filteredList.join(" ");
+}
+
 function choose_enable(en_object) {
 	if(!en_object)	return;
 	en_object.disabled = false;
 
 	if(!ns4)
-		en_object.style.backgroundColor = "";
+		removeClass(en_object, "off");
+		// en_object.style.backgroundColor = "";
 }
 
 function choose_disable(dis_object) {
@@ -29,7 +62,8 @@ function choose_disable(dis_object) {
 	dis_object.disabled = true;
 
 	if(!ns4)
-		dis_object.style.backgroundColor = "#e0e0e0";
+		addClass(dis_object, "off");
+		// dis_object.style.backgroundColor = "#e0e0e0";
 }
 
 function check_action(I,N) {

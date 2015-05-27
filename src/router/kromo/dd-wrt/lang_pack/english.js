@@ -168,6 +168,7 @@ share.key="Key";
 share.wireless="Wireless";
 share.dhcp="DHCP";
 share.styl="Style";
+share.styl_dark="Use Dark Styles";
 share.err="error";
 share.errs="errors";
 share.meters="meters";
