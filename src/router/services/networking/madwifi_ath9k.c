@@ -625,6 +625,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	unsigned char hwbuff[16];
 	char macaddr[32];
 	char *types;
+	char *debug;
 	if (isfirst && vapid == 0) {
 		sprintf(ifname, "%s", maininterface);
 	} else {
@@ -718,7 +719,17 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				led_control(LED_SEC1, LED_ON);
 		}
 		fprintf(fp, "logger_syslog=-1\n");
-		fprintf(fp, "logger_syslog_level=2\n");
+		debug = nvram_nget("%s_wpa_debug", ifname);
+		if (debug != NULL) {
+			if (!strcmp(debug, "1"))
+				fprintf(fp, "logger_syslog_level=1\n");
+			else if (!strcmp(debug, "2"))
+				fprintf(fp, "logger_syslog_level=0\n");
+			else if (!strcmp(debug, "3"))
+				fprintf(fp, "logger_syslog_level=0\n");
+		}
+		else
+			fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
 		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
@@ -759,6 +770,16 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_nmatch("1", "%s_bridged", ifname))
 			fprintf(fp, "bridge=%s\n", getBridge(ifname));
 		fprintf(fp, "logger_syslog=-1\n");
+		debug = nvram_nget("%s_wpa_debug", ifname);
+		if (debug != NULL) {
+			if (!strcmp(debug, "1"))
+				fprintf(fp, "logger_syslog_level=1\n");
+			else if (!strcmp(debug, "2"))
+				fprintf(fp, "logger_syslog_level=0\n");
+			else if (!strcmp(debug, "3"))
+				fprintf(fp, "logger_syslog_level=0\n");
+		}
+		else
 		fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
@@ -1187,7 +1208,11 @@ void ath9k_start_supplicant(int count)
 	static char wl[16];
 	static char ctrliface[32] = "";
 	static char wifivifs[16];
+#ifdef HAVE_CONFIG_DEBUG_SYSLOG
+	char *background = "-Bs";
+#else
 	char *background = "-B";
+#endif
 	char *debug;
 	char psk[16];
 	char wmode[16];
@@ -1204,6 +1229,16 @@ void ath9k_start_supplicant(int count)
 	sprintf(wmode, "%s_mode", dev);
 	sprintf(bridged, "%s_bridged", dev);
 	debug = nvram_nget("%s_wpa_debug", dev);
+#ifdef HAVE_CONFIG_DEBUG_SYSLOG
+	if (debug != NULL) {
+		if (!strcmp(debug, "1"))
+			background = "-Bds";
+		else if (!strcmp(debug, "2"))
+			background = "-Bdds";
+		else if (!strcmp(debug, "3"))
+			background = "-Bddds";
+	}
+#else
 	if (debug != NULL) {
 		if (!strcmp(debug, "1"))
 			background = "-Bd";
@@ -1212,6 +1247,7 @@ void ath9k_start_supplicant(int count)
 		else if (!strcmp(debug, "3"))
 			background = "-Bddd";
 	}
+#endif
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
 	    && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
