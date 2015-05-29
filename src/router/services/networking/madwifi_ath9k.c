@@ -821,7 +821,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 
 			char local_ip[32];
-			sprintf(local_ip, "%s_local_ip", prefix);
+			sprintf(local_ip, "%s_local_ip", ifname;
 			char *lip = nvram_default_get(local_ip, "0.0.0.0");
 			if (strcmp(lip, "0.0.0.0")) {
 				fprintf(fp, "radius_client_addr=%s\n", lip);
