@@ -53,6 +53,7 @@ int (*websWrite) (webs_t wp, char *fmt, ...);
 struct wl_client_mac *wl_client_macs;
 void (*validate_cgi) (webs_t fp) = NULL;
 char *copytonv(webs_t wp, const char *fmt, ...);
+char *copymergetonv(webs_t wp, const char *fmt, ...);
 
 void initWeb(struct Webenvironment *env)
 {
@@ -749,11 +750,8 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		copytonv(wp, "%s_nat", var);
 		copytonv(wp, "%s_isolation", var);
 		copytonv(wp, "%s_dns_redirect", var);
+		copymergetonv(wp, "%s_dns_ipaddr", var);
 		char val[64];
-		sprintf(val, "%s_dns_ipaddr", var);
-		char redirect_ip[64];
-		if (get_merge_ipaddr(wp, val, redirect_ip))
-			nvram_set(val, redirect_ip);
 
 		sprintf(val, "%s_mtu", var);
 		char *mtu = websGetVar(wp, val, NULL);
@@ -770,16 +768,8 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 			nvram_set(val, "1000");
 
 		if (bridged && strcmp(bridged, "0") == 0) {
-			sprintf(val, "%s_ipaddr", var);
-			char ipaddr[64];
-
-			if (get_merge_ipaddr(wp, val, ipaddr))
-				nvram_set(val, ipaddr);
-			sprintf(val, "%s_netmask", var);
-			char netmask[64];
-
-			if (get_merge_ipaddr(wp, val, netmask))
-				nvram_set(val, netmask);
+			copymergetonv(wp, "%s_ipaddr", var);
+			copymergetonv(wp, "%s_netmask", var);
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
 			if (1) {
 				copytonv(wp, "nld_%s_enable", var);
