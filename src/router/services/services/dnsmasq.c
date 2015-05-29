@@ -110,7 +110,6 @@ static int canlan(void)
 	return 0;
 }
 
-
 void start_dnsmasq(void)
 {
 	FILE *fp;
@@ -366,9 +365,9 @@ void start_dnsmasq(void)
 					fprintf(fp, "dhcp-host=%s,%s,%s,%sm\n", mac, host, ip, time);
 
 #ifdef HAVE_UNBOUND
-			if (!nvram_match("recursive_dns", "1"))
+				if (!nvram_match("recursive_dns", "1"))
 #endif
-				addHost(host, ip, 1);
+					addHost(host, ip, 1);
 			}
 			free(cp);
 		}
