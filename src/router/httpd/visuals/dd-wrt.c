@@ -5253,10 +5253,10 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.local_ip)</script></div>\n");
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_local_ip\" value=\"4\" />\n", prefix);
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 0));
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 1));
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 2));
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,0,254,radius.label3)\" class=\"num\" value=\"%d\" />\n", prefix, get_single_ip(rad, 3));
+	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_local_ip_0\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 0));
+	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_local_ip_1\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 1));
+	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_local_ip_2\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 2));
+	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_local_ip_3\" onblur=\"valid_range(this,0,254,radius.label3)\" class=\"num\" value=\"%d\" />\n", prefix, get_single_ip(rad, 3));
 	websWrite(wp, "</div>\n");
 
 #endif
