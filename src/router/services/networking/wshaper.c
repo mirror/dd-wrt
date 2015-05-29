@@ -557,6 +557,8 @@ int svqos_iptables(void)
 	eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-j", "FILTER_OUT");
 	eval("iptables", "-t", "mangle", "-I", "POSTROUTING", "-j", "FILTER_OUT");
 
+		insmod("xt_dscp");
+		insmod("xt_DSCP");
 	eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "dscp", "--dscp", "!", "0", "-j", "DSCP", "--set-dscp", "0");
 
 	if (!strcmp(wshaper_dev, "WAN") && wan_dev != NULL) {
@@ -657,6 +659,8 @@ int svqos_iptables(void)
 		//system2("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
 
 		char *qos_vpn = nvram_safe_get("svqos_vpns");
+		insmod("xt_dscp");
+		insmod("xt_DSCP");
 
 		/*
 		 *  vpn format is "interface level | interface level |" ..etc 

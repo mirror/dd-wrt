@@ -2663,10 +2663,10 @@ void start_loadfwmodules(void)
 {
 	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG"
 	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS"
-	       " xt_connbytes xt_connlimit xt_physdev"
+	       " xt_connbytes xt_connlimit"
 	       " xt_CLASSIFY xt_recent"
-	       " xt_DSCP xt_conntrack xt_state"
-	       " xt_IMQ xt_string" " xt_LOG xt_iprange xt_tcpmss" " xt_NETMAP compat_xtables" " ipt_MASQUERADE iptable_filter nf_reject_ipv4" " ipt_REJECT nf_nat_h323" " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
+	       " xt_conntrack xt_state"
+	       " xt_string" " xt_LOG xt_iprange xt_tcpmss" " xt_NETMAP compat_xtables" " ipt_MASQUERADE iptable_filter nf_reject_ipv4" " ipt_REJECT nf_nat_h323" " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 
 }
 
