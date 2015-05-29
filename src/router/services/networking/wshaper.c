@@ -557,8 +557,8 @@ int svqos_iptables(void)
 	eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-j", "FILTER_OUT");
 	eval("iptables", "-t", "mangle", "-I", "POSTROUTING", "-j", "FILTER_OUT");
 
-		insmod("xt_dscp");
-		insmod("xt_DSCP");
+	insmod("xt_dscp");
+	insmod("xt_DSCP");
 	eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "dscp", "--dscp", "!", "0", "-j", "DSCP", "--set-dscp", "0");
 
 	if (!strcmp(wshaper_dev, "WAN") && wan_dev != NULL) {
@@ -964,6 +964,10 @@ void start_wshaper(void)
 		eval("ifconfig", "imq1", "down");
 		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd);
 	} else {
+		eval("ifconfig", "imq1", "down");
+		eval("ifconfig", "imq1", "mtu", "1500");
+		eval("ifconfig", "imq1", "txqueuelen", "30");
+		eval("ifconfig", "imq1", "up");
 		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd, "imq1");
 	}
 	svqos_iptables();
