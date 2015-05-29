@@ -43,6 +43,7 @@
 #endif
 
 extern char *(*websGetVar) (webs_t wp, char *var, char *d);
+extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr);
 
 void wan_proto(webs_t wp)
 {
@@ -690,6 +691,21 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	return wl;
 }
 
+void copymergetonv(webs_t wp, const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	char ipaddr[32];
+
+	if (get_merge_ipaddr(wp, varbuf, ipaddr))
+		nvram_set(varbuf, ipaddr);
+
+}
+
 void copytonv2(webs_t wp, char *prefix_get, char *prefix_set, char *name)
 {
 	char tmpname[64];
@@ -725,8 +741,6 @@ void copytonv2_wme(webs_t wp, char *prefix_get, char *prefix_set, char *name, in
 	strtrim_right(tmpvalue, ' ');
 	nvram_set(tmpname, tmpvalue);
 }
-
-extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr);
 
 static void save_secprefix(webs_t wp, char *prefix)
 {
@@ -781,23 +795,19 @@ _8021xprv
 	copytonv(wp, "%s_wpa_psk", prefix);
 	copytonv(wp, "%s_wpa_gtk_rekey", prefix);
 	sprintf(n, "%s_radius_ipaddr", prefix);
-	if (get_merge_ipaddr(wp, n, radius))
-		nvram_set(n, radius);
+	copymergetonv("%s_radius_ipaddr", prefix);
 	copytonv(wp, "%s_radius_port", prefix);
 	copytonv(wp, "%s_radius_key", prefix);
-	copytonv(wp, "%s_local_ip", prefix);
 
-	sprintf(n, "%s_radius2_ipaddr", prefix);
-	if (get_merge_ipaddr(wp, n, radius))
-		nvram_set(n, radius);
+	copymergetonv("%s_local_ip", prefix);
+
+	copymergetonv("%s_radius2_ipaddr", prefix);
 	copytonv(wp, "%s_radius2_port", prefix);
 	copytonv(wp, "%s_radius2_key", prefix);
 #ifdef HAVE_MADWIFI
 	copytonv(wp, "%s_radius_retry", prefix);
 	copytonv(wp, "%s_acct", prefix);
-	sprintf(n, "%s_acct_ipaddr", prefix);
-	if (get_merge_ipaddr(wp, n, radius))
-		nvram_set(n, radius);
+	copymergetonv("%s_acct_ipaddr", prefix);
 	copytonv(wp, "%s_acct_port", prefix);
 	copytonv(wp, "%s_acct_key", prefix);
 #endif
@@ -2651,12 +2661,9 @@ void save_networking(webs_t wp)
 		if (strlen(prio) == 0)
 			mtu = "1500";
 
-		sprintf(n, "%s_ipaddr", ifname);
-		if (get_merge_ipaddr(wp, n, ipaddr))
-			nvram_set(n, ipaddr);
-		sprintf(n, "%s_netmask", ifname);
-		if (get_merge_ipaddr(wp, n, netmask))
-			nvram_set(n, netmask);
+		copymergetonv("%s_ipaddr", ifname);
+
+		copymergetonv("%s_netmask", ifname);
 
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
@@ -3031,9 +3038,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_RELAYD
 	char gwaddr[32];
 	copytonv(wp, "%s_relayd_gw_auto", prefix);
-	sprintf(n, "%s_relayd_gw_ipaddr", prefix);
-	if (get_merge_ipaddr(wp, n, gwaddr))
-		nvram_set(n, gwaddr);
+	copymergetonv("%s_relayd_gw_ipaddr", prefix);
 #endif
 #ifdef HAVE_IFL
 	copytonv(wp, "%s_note", prefix);
@@ -3219,19 +3224,10 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_isolation", ifname);
 	copytonv(wp, "%s_dns_redirect", ifname);
 
-	sprintf(n, "%s_dns_ipaddr", ifname);
-	char redirect_ip[64];
-	if (get_merge_ipaddr(wp, n, redirect_ip))
-		nvram_set(n, redirect_ip);
+	copymergetonv("%s_dns_ipaddr", ifname);
+	copymergetonv("%s_ipaddr", ifname);
+	copymergetonv("%s_netmask", ifname);
 
-	char addr[32];
-	sprintf(n, "%s_ipaddr", ifname);
-	if (get_merge_ipaddr(wp, n, addr))
-		nvram_set(n, addr);
-
-	sprintf(n, "%s_netmask", ifname);
-	if (get_merge_ipaddr(wp, n, addr))
-		nvram_set(n, addr);
 #else
 
 	copytonv(wp, "%s_multicast", prefix);
@@ -3239,25 +3235,13 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_nat", prefix);
 	copytonv(wp, "%s_isolation", prefix);
 	copytonv(wp, "%s_dns_redirect", prefix);
-	sprintf(n, "%s_dns_ipaddr", prefix);
-	char redirect_ip[64];
-	if (get_merge_ipaddr(wp, n, redirect_ip))
-		nvram_set(n, redirect_ip);
-
-	char addr[32];
-
-	sprintf(n, "%s_ipaddr", prefix);
-	if (get_merge_ipaddr(wp, n, addr))
-		nvram_set(n, addr);
-
-	sprintf(n, "%s_netmask", prefix);
-	if (get_merge_ipaddr(wp, n, addr))
-		nvram_set(n, addr);
+	copymergetonv("%s_dns_ipaddr", prefix);
+	copymergetonv("%s_ipaddr", prefix);
+	copymergetonv("%s_netmask", prefix);
 
 	copytonv(wp, "%s_duallink", prefix);
-	sprintf(n, "%s_duallink_parent", prefix);
-	if (get_merge_ipaddr(wp, n, addr))
-		nvram_set(n, addr);
+
+	copymergetonv("%s_duallink_parent", prefix);
 
 #endif
 
