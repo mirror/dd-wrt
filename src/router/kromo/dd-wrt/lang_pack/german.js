@@ -2072,6 +2072,7 @@ radius.label13="Radius Acct Server IP";
 radius.label14="Radius Acct Server Port";
 radius.label17="Gemeinsames Kennwort";
 radius.label18="Radius Accounting";
+radius.local_ip="Erzwinge Client IP";
 
 // ** Wireless_MAC.asp **//
 
