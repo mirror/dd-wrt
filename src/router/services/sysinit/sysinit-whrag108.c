@@ -201,14 +201,10 @@ void start_sysinit(void)
 
 	insmod("xt_state");
 	insmod("xt_recent");
-	insmod("xt_physdev");
 	insmod("xt_mac");
 	insmod("xt_limit");
-	insmod("xt_layer7");
-	insmod("xt_dscp");
 	insmod("xt_connlimit");
 	insmod("xt_multiport");
-	insmod("xt_DSCP");
 
 	/*
 	 * network drivers 
