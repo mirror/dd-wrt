@@ -230,7 +230,7 @@ void configure_single_ath9k(int count)
 	eval("iw", "phy", wif, "set", "distance", dist);
 #ifdef HAVE_ATH10K
 	if (is_ath10k(dev)) {	// evil hack for QCA 
-		set_ath10kdistance(dev,distance);
+		set_ath10kdistance(dev, distance);
 	}
 #endif
 // das scheint noch aerger zu machen
@@ -727,8 +727,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "logger_syslog_level=0\n");
 			else if (!strcmp(debug, "3"))
 				fprintf(fp, "logger_syslog_level=0\n");
-		}
-		else
+		} else
 			fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
@@ -778,9 +777,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "logger_syslog_level=0\n");
 			else if (!strcmp(debug, "3"))
 				fprintf(fp, "logger_syslog_level=0\n");
-		}
-		else
-		fprintf(fp, "logger_syslog_level=2\n");
+		} else
+			fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
 		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
@@ -821,6 +819,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				else
 					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 			}
+
+			char local_ip[32];
+			sprintf(local_ip, "%s_local_ip", prefix);
+			char *lip = nvram_default_get(local_ip, "0.0.0.0");
+			if (strcmp(lip, "0.0.0.0")) {
+				fprintf(fp, "radius_client_addr=%s\n", lip);
+			}
+
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			char retry[32];
