@@ -700,9 +700,11 @@ void copymergetonv(webs_t wp, const char *fmt, ...)
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
 	char ipaddr[32];
-
-	if (get_merge_ipaddr(wp, varbuf, ipaddr))
+	fprintf(stderr,"get merge %s\n",varbuf);
+	if (get_merge_ipaddr(wp, varbuf, ipaddr)) {
+		fprintf(stderr,"write %s to %s\n",ipaddr,varbuf);
 		nvram_set(varbuf, ipaddr);
+	}
 
 }
 
@@ -794,7 +796,6 @@ _8021xprv
 	copytonv(wp, "%s_crypto", prefix);
 	copytonv(wp, "%s_wpa_psk", prefix);
 	copytonv(wp, "%s_wpa_gtk_rekey", prefix);
-	sprintf(n, "%s_radius_ipaddr", prefix);
 	copymergetonv("%s_radius_ipaddr", prefix);
 	copytonv(wp, "%s_radius_port", prefix);
 	copytonv(wp, "%s_radius_key", prefix);
