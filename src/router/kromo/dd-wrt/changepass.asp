@@ -88,15 +88,15 @@ if (valid_password(F))
 		<legend><% tran("management.psswd_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("management.psswd_user"); %></div>
-			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_username" onblur="valid_name(this,management.psswd_user,SPACE_NO)" />
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_username" onclick="this.select();" onblur="valid_name(this,management.psswd_user,SPACE_NO)" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.psswd_pass"); %></div>
-			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwd" onblur="valid_name(this,management.psswd_pass,SPACE_NO)" />
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwd" onclick="this.select();" onblur="valid_name(this,management.psswd_pass,SPACE_NO)" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.pass_conf"); %></div>
-			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onblur="valid_name(this,management.pass_conf,SPACE_NO)" />
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onclick="this.select();" onblur="valid_name(this,management.pass_conf,SPACE_NO)" />
 		</div>
 	</fieldset><br />
 						<div class="submitFooter">
