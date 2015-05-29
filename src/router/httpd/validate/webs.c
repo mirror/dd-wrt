@@ -700,9 +700,7 @@ void copymergetonv(webs_t wp, const char *fmt, ...)
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
 	char ipaddr[32];
-	fprintf(stderr,"get merge %s\n",varbuf);
 	if (get_merge_ipaddr(wp, varbuf, ipaddr)) {
-		fprintf(stderr,"write %s to %s\n",ipaddr,varbuf);
 		nvram_set(varbuf, ipaddr);
 	}
 
@@ -796,19 +794,19 @@ _8021xprv
 	copytonv(wp, "%s_crypto", prefix);
 	copytonv(wp, "%s_wpa_psk", prefix);
 	copytonv(wp, "%s_wpa_gtk_rekey", prefix);
-	copymergetonv("%s_radius_ipaddr", prefix);
+	copymergetonv(wp, "%s_radius_ipaddr", prefix);
 	copytonv(wp, "%s_radius_port", prefix);
 	copytonv(wp, "%s_radius_key", prefix);
 
-	copymergetonv("%s_local_ip", prefix);
+	copymergetonv(wp, "%s_local_ip", prefix);
 
-	copymergetonv("%s_radius2_ipaddr", prefix);
+	copymergetonv(wp, "%s_radius2_ipaddr", prefix);
 	copytonv(wp, "%s_radius2_port", prefix);
 	copytonv(wp, "%s_radius2_key", prefix);
 #ifdef HAVE_MADWIFI
 	copytonv(wp, "%s_radius_retry", prefix);
 	copytonv(wp, "%s_acct", prefix);
-	copymergetonv("%s_acct_ipaddr", prefix);
+	copymergetonv(wp, "%s_acct_ipaddr", prefix);
 	copytonv(wp, "%s_acct_port", prefix);
 	copytonv(wp, "%s_acct_key", prefix);
 #endif
@@ -2662,9 +2660,9 @@ void save_networking(webs_t wp)
 		if (strlen(prio) == 0)
 			mtu = "1500";
 
-		copymergetonv("%s_ipaddr", ifname);
+		copymergetonv(wp, "%s_ipaddr", ifname);
 
-		copymergetonv("%s_netmask", ifname);
+		copymergetonv(wp, "%s_netmask", ifname);
 
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
@@ -3039,7 +3037,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_RELAYD
 	char gwaddr[32];
 	copytonv(wp, "%s_relayd_gw_auto", prefix);
-	copymergetonv("%s_relayd_gw_ipaddr", prefix);
+	copymergetonv(wp, "%s_relayd_gw_ipaddr", prefix);
 #endif
 #ifdef HAVE_IFL
 	copytonv(wp, "%s_note", prefix);
@@ -3225,9 +3223,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_isolation", ifname);
 	copytonv(wp, "%s_dns_redirect", ifname);
 
-	copymergetonv("%s_dns_ipaddr", ifname);
-	copymergetonv("%s_ipaddr", ifname);
-	copymergetonv("%s_netmask", ifname);
+	copymergetonv(wp, "%s_dns_ipaddr", ifname);
+	copymergetonv(wp, "%s_ipaddr", ifname);
+	copymergetonv(wp, "%s_netmask", ifname);
 
 #else
 
@@ -3236,13 +3234,13 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_nat", prefix);
 	copytonv(wp, "%s_isolation", prefix);
 	copytonv(wp, "%s_dns_redirect", prefix);
-	copymergetonv("%s_dns_ipaddr", prefix);
-	copymergetonv("%s_ipaddr", prefix);
-	copymergetonv("%s_netmask", prefix);
+	copymergetonv(wp, "%s_dns_ipaddr", prefix);
+	copymergetonv(wp, "%s_ipaddr", prefix);
+	copymergetonv(wp, "%s_netmask", prefix);
 
 	copytonv(wp, "%s_duallink", prefix);
 
-	copymergetonv("%s_duallink_parent", prefix);
+	copymergetonv(wp, "%s_duallink_parent", prefix);
 
 #endif
 
