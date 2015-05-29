@@ -2273,7 +2273,6 @@ wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
 
-
 var aoss=new Object();
 aoss.titl="AOSS Security";
 aoss.aoss="AOSS";
@@ -2398,6 +2397,7 @@ radius.label13="Radius Acct Server Address";
 radius.label14="Radius Acct Server Port";
 radius.label17="Radius Acct Shared Secret";
 radius.label18="Radius Accounting";
+radius.local_ip="Force Client IP";
 
 // help page
 var hradauth=new Object();
