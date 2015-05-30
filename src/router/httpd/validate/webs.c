@@ -846,8 +846,7 @@ _8021xprv
 	} else {
 		copytonv(wp, n);
 	}
-	sprintf(n, "%s_wep_bit", prefix);
-	copytonv(wp, n);
+	copytonv(wp, "%s_wep_bit", prefix);
 	char buf[128];
 
 	snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", pass, key1, key2, key3, key4, tx);
