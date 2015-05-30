@@ -1250,7 +1250,7 @@ endif
 endif
 endif
 	
-httpd: cgi.o ej.o httpd.o broadcom.o \
+httpd: cgi.o ej.o httpd.o base.o \
        $(ADDOBJ) nvramsr.o callvalidate.o $(OBJS)
 #	gcc -o write_web write_web.c
 #	./write_web www 
