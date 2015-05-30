@@ -1253,7 +1253,7 @@ static char *getdisc(void)	// works only for squashfs
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[] = {
+	char *disks[] = {
 		"sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
 		"sdi2"
 	};
@@ -1980,6 +1980,7 @@ static char *scanfile(char *buf, const char *tran)
 struct cacheentry {
 	char *request;
 	char *translation;
+	time_t time;
 };
 static int cachecount = 0;
 static struct cacheentry *translationcache;
@@ -2009,19 +2010,42 @@ char *live_translate(const char *tran)
 {
 	if (translationcache) {
 		int i;
+		time_t cur = time(NULL);
 		for (i = 0; i < cachecount; i++) {
-			if (!strcmp(translationcache[i].request, tran))
+			if (translationcache[i].request && !strcmp(translationcache[i].request, tran))
 				return translationcache[i].translation;
+			if (translationcache[i].time > cur + 120) {	// free translation if not used for 2 minutes
+				free(translationcache[i].request);
+				free(translationcache[i].translation);
+				translationcache[i].request = NULL;
+				translationcache[i].translation = NULL;
+			}
 		}
 	}
 	char *ret = private_live_translate(tran);
-	translationcache = (struct cacheentry *)realloc(translationcache, sizeof(struct cacheentry) * (cachecount + 1));
-	translationcache[cachecount].request = strdup(tran);
+	struct cacheentry *entry = NULL;
+	/* fill hole if there is any */
+	int i;
+	for (i = 0; i < cachecount; i++) {
+		if (translationcache[i].request == NULL) {
+			entry = &translationcache[i];
+			break;
+		}
+
+	}
+	if (!entry) {
+		/* no hole has been found, alloc a new one */
+		translationcache = (struct cacheentry *)realloc(translationcache, sizeof(struct cacheentry) * (cachecount + 1));
+		entry = &translationcache[cachecount++];
+	}
+
+	entry->request = strdup(tran);
+	entry->time = time(NULL);
 	if (ret)
-		translationcache[cachecount].translation = ret;
+		entry->translation = ret;
 	else
-		translationcache[cachecount].translation = strdup("Error");
-	return translationcache[cachecount++].translation;
+		entry->translation = strdup("Error");
+	return entry->translation;
 }
 
 static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, char *query)
@@ -2165,9 +2189,8 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 		  "function Show(label) {\n"
 		  "document.getElementById(\"label\").innerHTML = label;\n" "}\n" "//]]>\n" "</script>\n" "<style type=\"text/css\">\n\n" "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
 	websWrite(stream,
-		  "  margin: 1.1em 0 3.5em; padding: 0;\n" "  border: 1px solid gray; list-style: none;\n" 
-		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" 
-		  "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n" "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
+		  "  margin: 1.1em 0 3.5em; padding: 0;\n" "  border: 1px solid gray; list-style: none;\n"
+		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n" "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
 	websWrite(stream,
 		  "  margin: 0; padding: 0;\n" "  text-align: center; list-style: none;}\n" "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"
 		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n" "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"
