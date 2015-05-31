@@ -2023,9 +2023,9 @@ char *live_translate(const char *tran)
 			if (!translation && translationcache[i].request && !strcmp(translationcache[i].request, tran)) {
 				translation = translationcache[i].translation;
 				translationcache[i].time = cur;
-				fprintf(stderr,"create %s time = %ld\n",translationcache[i].request,translationcache[i].time);
+				fprintf(stderr,"update %s time = %ld\n",translationcache[i].request,translationcache[i].time);
 			}
-				fprintf(stderr,"check %s time = %ld. delta = %ld\n",translationcache[i].request,translationcache[i].time,cur-translationcache[i].time);
+			fprintf(stderr,"check %s time = %ld. delta = %ld\n",translationcache[i].request,translationcache[i].time,cur-translationcache[i].time);
 			if (translationcache[i].time > cur + 120) {	// free translation if not used for 2 minutes
 				free(translationcache[i].request);
 				free(translationcache[i].translation);
@@ -2054,7 +2054,8 @@ char *live_translate(const char *tran)
 	}
 
 	entry->request = strdup(tran);
-	entry->time = time(NULL);
+	entry->time = cur;
+	fprintf(stderr,"create %s time = %ld\n",entry->request,entry->time);
 	if (ret)
 		entry->translation = ret;
 	else
