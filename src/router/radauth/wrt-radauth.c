@@ -58,25 +58,6 @@ int internal = 0;
 #include <shutils.h>
 
 
-#define tou(a) if (a>('a'-1) && a<('z'+1) ){ a-='a'; a+='A';}
-int
-stricmp (unsigned char *c1, unsigned char *c2)
-{
-  if (c1 == NULL && c2 == NULL)
-    return 0;
-  if (c1 == NULL)
-    return -1;
-  if (c2 == NULL)
-    return -1;
-  int i;
-  for (i = 0; i < strlen (c1); i++)
-    tou (c1[i]);
-
-  for (i = 0; i < strlen (c2); i++)
-    tou (c2[i]);
-  return strcmp (c1, c2);
-}
-
 int
 authmac (unsigned char *mac)
 {
@@ -120,7 +101,7 @@ authmac (unsigned char *mac)
 #ifdef DEBUG
       printf ("mac %s %s %s\n", smac,enabled,time);
 #endif
-		    if (!stricmp (smac, macstr))
+		    if (!strcasecmp (smac, macstr))
 		      {
 			if (strcmp (enabled, "1") == 0)
 			  {
