@@ -989,7 +989,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Indian/Reunion", "RET-4"}
 	,
-	{"Iran", "IRDT"}
+	{"Iran", "UTC-3:30,M3.5.0,M9.5.0"}
 	,
 	{"Israel", "IST-2IDT,M3.4.4/26,M10.5.0"}
 	,
