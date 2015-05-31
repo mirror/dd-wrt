@@ -114,25 +114,6 @@ int sys_commit(void)
 #include <dirent.h>
 #include <stdlib.h>
 
-char *toUP(char *a)
-{
-	int i;
-	int slen = strlen(a);
-
-	for (i = 0; i < slen; i++) {
-		if (a[i] > 'a' - 1 && a[i] < 'z' + 1)
-			a[i] -= 'a' + 'A';
-	}
-	return a;
-}
-
-int stricmp(char *a, char *b)
-{
-	if (strlen(a) != strlen(b))
-		return -1;
-	return strcmp(toUP(a), toUP(b));
-}
-
 void StringStart(FILE * in)
 {
 	while (getc(in) != '"') {
@@ -295,10 +276,10 @@ void Initnvramtab()
 					skipFileString(in);	// long string
 					tmpstr = getFileString(in);
 					tmp->argv = NULL;
-					if (!stricmp(tmpstr, "NULL")) {
+					if (!strcasecmp(tmpstr, "NULL")) {
 					}
 #ifdef HAVE_SPUTNIK_APD
-					if (!stricmp(tmpstr, "MJIDTYPE")) {
+					if (!strcasecmp(tmpstr, "MJIDTYPE")) {
 						tmp->validatename = "validate_choice";
 						free(tmpstr);
 						tmpstr = getFileString(in);
@@ -316,7 +297,7 @@ void Initnvramtab()
 					if (tmp->validatename == NULL) {
 						int scount = 0;
 						while (simpleval[scount].name != NULL) {	//
-							if (!stricmp(tmpstr, simpleval[scount].name)) {	//
+							if (!strcasecmp(tmpstr, simpleval[scount].name)) {	//
 //                                                              fprintf(stderr,"match %s %s\n",tmpstr,tmp->name);
 								tmp->validatename = simpleval[scount].validator;	//
 								int arglen = 0;
@@ -349,7 +330,7 @@ void Initnvramtab()
 					}
 					free(tmpstr);
 					tmpstr = getFileString(in);
-					if (!stricmp(tmpstr, "TRUE")) {
+					if (!strcasecmp(tmpstr, "TRUE")) {
 						tmp->nullok = TRUE;
 					} else {
 						tmp->nullok = FALSE;
