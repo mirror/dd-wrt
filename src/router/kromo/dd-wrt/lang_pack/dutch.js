@@ -113,7 +113,7 @@ share.point2point="Punt naar Punt";
 share.nat="NAT";
 share.subnet="Subnetmasker";
 share.unmask="Zichtbaar Maken";
-share.deflt="Standaard";  //don't use share.default!!!
+share.deflt="Standaard";  //don&apos;t use share.default!!!
 share.all="Alles";
 share.auto="Automatisch";
 share.right="Rechts";
@@ -124,7 +124,7 @@ share.srv="Servicenaam";
 share.port_range="Poortbereik";
 share.priority="Prioriteit";
 share.gateway="Gateway";
-share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
+share.intrface="Interface";  //don&apos;t use share.interface, Mozilla problem!!!
 share.ccq="CCQ";
 share.pintrface="Fysieke Interface";
 share.vintrface="Virtuele Interface";
@@ -229,12 +229,12 @@ sbutton.wol="Wekken";
 sbutton.add_wol="Host Toevoegen";
 sbutton.manual_wol="Handmatig Wekken";
 sbutton.summary="Samenvatting";
-sbutton.filterIP="Cliënten Lijst Bewerken";
+sbutton.filterIP="Cli&euml;nten Lijst Bewerken";
 sbutton.filterMac="MAC Filter Lijst Bewerken";
 sbutton.filterSer="Service Toevoegen/Bewerken";
 sbutton.reboot="Router Herstarten";
 sbutton.help="   Help  ";
-sbutton.wl_client_mac="Draadloze Cliënt MAC Lijst";
+sbutton.wl_client_mac="Draadloze Cli&euml;nt MAC Lijst";
 sbutton.update_filter="Filter Lijst vernieuwen";
 sbutton.join="Join";
 sbutton.log_in="Ingaande Log";
@@ -418,7 +418,7 @@ bmenu.admin="Administratie";
 bmenu.adminManagement="Beheer";
 bmenu.adminAlive="Keep Alive";
 bmenu.adminLog="Log";
-bmenu.adminDiag="Commando's";
+bmenu.adminDiag="Commando&apos;s";
 bmenu.adminWol="WOL";
 bmenu.adminFactory="Fabrieks Instellingen";
 bmenu.adminUpgrade="Firmware";
@@ -465,13 +465,13 @@ alive.port="Proxy Poort";
 //help container
 
 halive.right2="Selecteer uit de opties, wanneer u de router wilt laten herstarten. Cron dient geactiveerd te zijn op de Beheer pagina.";
-halive.right4="Maximaal drie verschillende IP's scheiden door een <em>SPATIE</em> is toegestaan.<br/>Het IP's Formaat is xxx.xxx.xxx.xxx.";
+halive.right4="Maximaal drie verschillende IP&apos;s scheiden door een <em>SPATIE</em> is toegestaan.<br/>Het IP&apos;s Formaat is xxx.xxx.xxx.xxx.";
 
 
 
 // ******************************************* config.asp *******************************************//
 
-config.titl="Backup & Herstellen";
+config.titl="Backup &amp; Herstellen";
 config.h2="Backup Configuratie";
 config.legend="Backup Instellingen";
 config.mess1="Klik op de \"" + sbutton.backup + "\" knop om de huidige configuratie op te slaan op je computer.";
@@ -479,7 +479,7 @@ config.h22="Herstel Configuratie";
 config.legend2="Herstel Instellingen";
 config.mess2="Selecteer het herstel bestand";
 config.mess3="O P G E L E T !";
-config.mess4="Alleen bestanden uploaden die met deze firmware of het zelfde model router zijn gemaakt.<br />Upload geen bestanden die niet gecreëerd zijn door deze interface!";
+config.mess4="Alleen bestanden uploaden die met deze firmware of het zelfde model router zijn gemaakt.<br />Upload geen bestanden die niet gecre&euml;erd zijn door deze interface!";
 
 //help container
 
@@ -516,7 +516,7 @@ ddnsm.all_noip="Geen WAN verbinding";
 
 //help container
 
-hddns.right2="DDNS biedt toegang tot uw netwerk via host en domeinnaam in plaats van een IP-adres. Dit is een handige optie wanneer u de hoster van uw eigen website, FTP-server of een andere server achter de router bent. Deze service houdt uw domein informatie dynamisch up-to-date. U dient zich wel hiervoor te registreren op één van de volgende site's: DynDNS.org, TZO.com of ZoneEdit.com.";
+hddns.right2="DDNS biedt toegang tot uw netwerk via host en domeinnaam in plaats van een IP-adres. Dit is een handige optie wanneer u de hoster van uw eigen website, FTP-server of een andere server achter de router bent. Deze service houdt uw domein informatie dynamisch up-to-date. U dient zich wel hiervoor te registreren op &eacute;&eacute;n van de volgende site&apos;s: DynDNS.org, TZO.com of ZoneEdit.com.";
 hddns.right4="Typ een integer nummer in het veld voor een geforceerde update interval (in dagen). Updates zouden alleen automatisch plaats moeten vinden indien uw IP-adres is veranderd. Let op uw DDNS provider voor hun update abuse policy om te voorkomen dat uw hostnaam of domeinnaam wordt geblokkeerd.";
 
 
@@ -525,7 +525,7 @@ hddns.right4="Typ een integer nummer in het veld voor een geforceerde update int
 diag.titl="Diagnose";
 diag.h2="Diagnose";
 diag.legend="Command Shell";
-diag.cmd="Commando's";
+diag.cmd="Commando&apos;s";
 diag.startup="Opstarten";
 diag.shutdown="Uitschakelen";
 diag.firewall="Firewall";
@@ -533,7 +533,7 @@ diag.custom="Aangepast Script";
 
 //help container
 
-hdiag.right2="U kunt commando's uitvoeren via de webinterface. Vul uw commando in het tekstveld en klik <em>" + sbutton.runcmd + "</em> om uit te voeren.";
+hdiag.right2="U kunt commando&apos;s uitvoeren via de webinterface. Vul uw commando in het tekstveld en klik <em>" + sbutton.runcmd + "</em> om uit te voeren.";
 
 
 // ******************************************* DMZ.asp *******************************************//
@@ -547,7 +547,7 @@ dmz.host="DMZ Host IP-Adres";
 
 //help container
 
-hdmz.right2="Met de DMZ-functie kan een netwerkcomputer verbinding met internet maken en bepaalde services gebruiken, zoals onlinegames of videoconferenties etc. DMZ-hosting wijst alle poorten op hetzelfde moment aan één computer toe. De functie voor het forwarden van poortbereiken is veiliger, omdat hierbij alleen poorten worden geopend die u wilt openen, terwijl bij DMZ-hosting alle poorten op een computer worden geopend, zodat via het internet verbinding met deze bepaalde computer kan worden gemaakt.";
+hdmz.right2="Met de DMZ-functie kan een netwerkcomputer verbinding met internet maken en bepaalde services gebruiken, zoals onlinegames of videoconferenties etc. DMZ-hosting wijst alle poorten op hetzelfde moment aan &eacute;&eacute;n computer toe. De functie voor het forwarden van poortbereiken is veiliger, omdat hierbij alleen poorten worden geopend die u wilt openen, terwijl bij DMZ-hosting alle poorten op een computer worden geopend, zodat via het internet verbinding met deze bepaalde computer kan worden gemaakt.";
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
@@ -565,11 +565,11 @@ hfactdef.right1="Dit zal alle instellingen terug zetten naar de fabrieksinstelli
 
 // ******************************************* FilterIPMAC.asp *******************************************//
 
-filterIP.titl="Cliënten lijst";
-filterIP.h2="Cliënten lijst";
-filterIP.h3="Vul het MAC-Adres van cliënten in, formaat: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Vul het IP-Adres van de cliënten in";
-filterIP.h33="Vul het IP-Bereik van de cliënten in";
+filterIP.titl="Cli&euml;nten lijst";
+filterIP.h2="Cli&euml;nten lijst";
+filterIP.h3="Vul het MAC-Adres van cli&euml;nten in, formaat: xx:xx:xx:xx:xx:xx";
+filterIP.h32="Vul het IP-Adres van de cli&euml;nten in";
+filterIP.h33="Vul het IP-Bereik van de cli&euml;nten in";
 filterIP.ip_range="IP-Bereik"; 
 
 
@@ -588,10 +588,10 @@ filter.time="Tijden";
 filter.h24="24 Uur";
 filter.legend3="Geblokkeerde Diensten";
 filter.catchall="Blokkeer alle P2P Protocollen";
-filter.legend4="Website's Verbieden Per URL";
-filter.legend5="Website's Verbieden Per Sleutelwoorden";
+filter.legend4="Website&apos;s Verbieden Per URL";
+filter.legend5="Website&apos;s Verbieden Per Sleutelwoorden";
 filter.mess1="Verwijder het Beleid?";
-filter.mess2="U dient tenminste één dag te selecteren.";
+filter.mess2="U dient tenminste &eacute;&eacute;n dag te selecteren.";
 filter.mess3="De eindtijd dient later te zijn dan de starttijd."; 
 
 //help container
@@ -603,7 +603,7 @@ hfilter.right8="Selecteer een dag van de week waarop het beleid van toepassing i
 hfilter.right10="Selecteer het uur van de dag waarop het beleid van toepassing is.";
 hfilter.right12="U kunt de toegang tot een bepaalde dienst verbieden. Klik op<em>" + sbutton.filterSer + "</em> om deze instelling te bewerken.";
 hfilter.right14="U kunt de toegang tot een bepaalde website verbieden door hun URL hier in te voeren.";
-hfilter.right16="U kunt de toegang tot bepaalde website's verbieden aan de hand van sleutelwoorden, vermeld op een webpagina."; 
+hfilter.right16="U kunt de toegang tot bepaalde website&apos;s verbieden aan de hand van sleutelwoorden, vermeld op een webpagina."; 
 
 
 
@@ -648,13 +648,13 @@ prforward.app="Applicatie";
 
 //help container
 
-hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten, zodat deze correct kunnen functioneren. Voorbeelden van gebruik van deze applicatie's zijn: webservers, e-mailservers en bepaalde online games. Wanneer een aanvraag voor een bepaalde poort afkomstig is van het internet, zal de router de data doorsturen naar de juiste computer. Uit veiligheids-overwegingen zou u het gebruik van poort-forwarding moeten beperken.Indien u niet langer gebruik maakt van één van deze ingestelde poorten, vink deze dan ook weer uit.";
+hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten, zodat deze correct kunnen functioneren. Voorbeelden van gebruik van deze applicatie&apos;s zijn: webservers, e-mailservers en bepaalde online games. Wanneer een aanvraag voor een bepaalde poort afkomstig is van het internet, zal de router de data doorsturen naar de juiste computer. Uit veiligheids-overwegingen zou u het gebruik van poort-forwarding moeten beperken.Indien u niet langer gebruik maakt van &eacute;&eacute;n van deze ingestelde poorten, vink deze dan ook weer uit.";
 
 
 // ******************************************* P2P.asp *******************************************//
 
 p2p.titl="Peer-to-Peer Apps";
-p2p.h2="BitTorrent Cliënt";
+p2p.h2="BitTorrent Cli&euml;nt";
 p2p.legend="CTorrent";
 p2p.ctorrent_srv="Ctorrent Service";
 
@@ -708,7 +708,7 @@ nas.proftpd_anon="Anonieme Inlog (Alleen-Lezen)";
 nas.proftpd_anon_subdir="Anonieme Home Sub-directory";
 
 
-hnas.right2="Gebruikerswachtwoorden Lijst: Gebruik één Gebruikerswachtwoord per regel. Wachtwoorden mogen gewoon platte text zijn of met MD5 encryptie."; 
+hnas.right2="Gebruikerswachtwoorden Lijst: Gebruik &eacute;&eacute;n Gebruikerswachtwoord per regel. Wachtwoorden mogen gewoon platte text zijn of met MD5 encryptie."; 
 
 
 // ******************************************* Hotspot.asp *******************************************//
@@ -775,7 +775,7 @@ hotspot.wifidog_port="Poort";
 hotspot.wifidog_httpdname="Webserver naam";
 hotspot.wifidog_httpdconn="Max Gebruikers";
 hotspot.wifidog_checkinter="Controle Interval (sec.)";
-hotspot.wifidog_checktimeout="Cliënt Tijdsoverschrijding";
+hotspot.wifidog_checktimeout="Cli&euml;nt Tijdsoverschrijding";
 hotspot.wifidog_tmaclist="Vertrouwde MAC Lijst";
 hotspot.wifidog_authsrv="AuthServer Hostnaam";
 hotspot.wifidog_authsrvssl="AuthServer SSL Beschikbaar";
@@ -811,10 +811,10 @@ hotspot.wifidog_config="Firewall Regelset";
 //anchorfree.validterms="U moet akkoord gaan met de algemene voorwaarden!";
 //
 //
-//hanchorfree.right1="Join AnchorFree's hotspot reclame netwerk";
+//hanchorfree.right1="Join AnchorFree&apos;s hotspot reclame netwerk";
 //hanchorfree.right2="AnchorFree exploiteert een hotspot reclame netwerk dat DD-WRT gebruikers toestaat incrementele inkomsten te genereren.";
 //hanchorfree.right3="Genereer incrementele inkomsten met advertenties van AnchorFree";
-//hanchorfree.right4="Door het activeren van deze functie en het creëren van een account bij AnchorFree (Het is Gratis en makkelijk), een hardnekkig reclameframe wordt direct geintregeerd in de gebruikers webbrowsers, dat voor u elke maand een uitbetaling verdient.  Verdien met een minimale maandelijkse drempel van $25 en AnchorFree zal automatisch credit storten op uw account met fondsen.";
+//hanchorfree.right4="Door het activeren van deze functie en het cre&euml;ren van een account bij AnchorFree (Het is Gratis en makkelijk), een hardnekkig reclameframe wordt direct geintregeerd in de gebruikers webbrowsers, dat voor u elke maand een uitbetaling verdient.  Verdien met een minimale maandelijkse drempel van $25 en AnchorFree zal automatisch credit storten op uw account met fondsen.";
 //hanchorfree.right5="Voor meer informatie bezoekt u www.anchorfree.com";
 //hanchorfree.right6="Activatie is heel erg gemakkelijk";
 //hanchorfree.right7="Zodra u heeft geactiveerd, stuurt AnchorFree u een email naar de geregistreerde accounteigenaar met eenvoudige instructies over het optimaliseren van uw hotspot, FAQs en andere relevante informatie over het verdienen van geld met uw router. Door dit configuratie scherm, voegt AnchorFree een dunne, niet-opdringerige reclameframe rechtstreeks aan de webbrowsers die toegang tot het internet maken via deze router.";
@@ -913,7 +913,7 @@ idx.summt_opt9="eerste Zon Okt - eerste Zon Apr";
 idx.summt_opt10="derde Zon Okt - derde Zon Feb";
 idx.portsetup="Poort Instellen";
 idx.wanport="WAN Poort Toewijzing";
-idx.ntp_client="NTP Cliënt";
+idx.ntp_client="NTP Cli&euml;nt";
 
 //help container
 
@@ -934,7 +934,7 @@ hidx.right18="Selecteer de juiste tijdzone en zomertijd periode van de locatie w
 
 //sshd.webservices
 join.titl="Join";
-join.mess1="Succesvol als cliënt met het volgende netwerk verbonden: ";
+join.mess1="Succesvol als cli&euml;nt met het volgende netwerk verbonden: ";
 
 
 
@@ -1073,7 +1073,7 @@ portserv.h2="Poort Services";
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
-networking.legend2="Creëer Bridge";
+networking.legend2="Cre&euml;er Bridge";
 networking.legend3="Toewijzen aan Bridge";
 networking.legend4="Huidige Bridging Tabel";
 networking.brname="Bridge Naam";
@@ -1205,13 +1205,13 @@ service.kaid_orbport="ORB Poort";
 service.kaid_orbdeepport="ORB Diepe Poort";
 
 //DHCPd
-service.dhcp_legend="DHCP Cliënt";
+service.dhcp_legend="DHCP Cli&euml;nt";
 service.dhcp_vendor="Vendorclass";
 service.dhcp_reqip="IP Aanvragen";
 service.dhcp_legend2="DHCP Server";
 service.dhcp_srv="DHCP Daemon";
-service.dhcp_jffs2="Gebruik JFFS2 voor de cliënt lease DB";
-service.dhcp_nvramlease="Gebruik NVRAM voor de cliënt lease DB";
+service.dhcp_jffs2="Gebruik JFFS2 voor de cli&euml;nt lease DB";
+service.dhcp_nvramlease="Gebruik NVRAM voor de cli&euml;nt lease DB";
 service.dhcp_domain="Domein Gebruik";
 service.dhcp_landomain="LAN Domein";
 service.dhcp_option="Extra DHCPd Opties";
@@ -1224,7 +1224,7 @@ service.dnsmasq_opt="Extra DNSMasq Opties";
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP Server";
 service.pptp_forcemppe="Forceer MPPE Encryptie";
-service.pptp_client="Cliënt IP(s)";
+service.pptp_client="Cli&euml;nt IP(s)";
 service.pptp_chap="CHAP-Geheimen";
 
 //syslog.webservices
@@ -1237,8 +1237,8 @@ service.telnet_legend="Telnet";
 service.telnet_srv="Telnet"; 
 
 //pptpd_client.webservices
-service.pptpd_legend="PPTP Cliënt";
-service.pptpd_option="PPTP Cliënt Opties";
+service.pptpd_legend="PPTP Cli&euml;nt";
+service.pptpd_option="PPTP Cli&euml;nt Opties";
 service.pptpd_ipdns="Server IP / DNS Naam";
 service.pptpd_subnet="Remote Subnet";
 service.pptpd_subnetmask="Remote Subnetmasker";
@@ -1284,7 +1284,7 @@ service.snmp_read="RO Gemeenschap";
 service.snmp_write="RW Gemeenschap";
 
 //openvpn.webservices
-service.vpn_legend="OpenVPN Cliënt";
+service.vpn_legend="OpenVPN Cli&euml;nt";
 service.vpn_srv="OpenVPN Starten";
 service.vpn_ipname="Server IP/Naam";
 service.vpn_mtu="TUN MTU Instelling";
@@ -1294,9 +1294,9 @@ service.vpn_compress="LZO Compressie";
 service.vpn_tunnel="Tunnel Protocol";
 service.vpn_tuntap="Tunnel Apparaat";
 service.vpn_srvcert="Publieke Server Cert";
-service.vpn_clicert="Publieke Cliënt Cert";
+service.vpn_clicert="Publieke Cli&euml;nt Cert";
 service.vpn_certtype="nsCertType";
-service.vpn_clikey="Prive Sleutel Cliënt";
+service.vpn_clikey="Prive Sleutel Cli&euml;nt";
 
 service.vncrepeater_legend="VNC";
 service.vncrepeater="VNC Repeater";
@@ -1429,8 +1429,8 @@ status_lan.h2="Lokaal Netwerk";
 status_lan.legend="LAN Status";
 status_lan.h22="Dynamische Host Configuratie Protocol";
 status_lan.legend2="DHCP Status";
-status_lan.legend3="DHCP Cliënten";
-status_lan.legend4="Actieve Cliënten";
+status_lan.legend3="DHCP Cli&euml;nten";
+status_lan.legend4="Actieve Cli&euml;nten";
 status_lan.concount="\Verb. Teller";
 status_lan.conratio="Ratio";
 
@@ -1450,7 +1450,7 @@ status_band.h2="Bandbreedte Monitor";
 status_band.chg_unit="Weergave ";
 status_band.chg_scale="Autoscale";
 status_band.chg_error="Kan geen data van de interface krijgen";
-status_band.chg_collect_initial="Initiële data aan het verzamelen, wacht a.u.b...";  
+status_band.chg_collect_initial="Initi&euml;le data aan het verzamelen, wacht a.u.b...";  
 status_band.strin="In";
 status_band.strout="Uit";
 status_band.follow="volgen";
@@ -1500,7 +1500,7 @@ hstatus_router.right4="Dit is het MAC-Adres van de router, zoals uw internetprov
 hstatus_router.right6="Dit is de huidige firmware van de router.";
 hstatus_router.right8="Dit is de tijd verkregen van de ntp server ingesteld op de <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> pagina.";
 hstatus_router.right10="Dit is een berekening van de tijd dat de router \"Aan en in Werking\" is.";
-hstatus_router.right12="Dit is een gegeven van drie nummers dat de belasting van het systeem voorstelt gedurende de laatste één, vijf of vijftien minuten."; 
+hstatus_router.right12="Dit is een gegeven van drie nummers dat de belasting van het systeem voorstelt gedurende de laatste &eacute;&eacute;n, vijf of vijftien minuten."; 
 
 // ** Status_Internet.asp **//
 
@@ -1523,8 +1523,8 @@ status_inet.delete_confirm="WAARSCHUWING! Dit zal alle verkeersdata wissen. Wilt
 //help container
 
 hstatus_inet.right2="Dit geeft de informatie die vereist is door uw internetprovider weer. Deze informatie werd ingegeven op de Setup pagina. U kunt uw connectie <em>Verbinden</em> of <em>Verbreken</em> door op de knop te klikken.";
-hstatus_inet.right4="Dit geeft uw router's internetverkeer weer vanaf de routers laatste herstart.";
-hstatus_inet.right6="Dit geeft uw router's internetverkeer weer per maand. Sleep uw muis over de grafiek om de dagelijkse data weer te geven. Dat is opgeslagen in nvram."; 
+hstatus_inet.right4="Dit geeft uw router&apos;s internetverkeer weer vanaf de routers laatste herstart.";
+hstatus_inet.right6="Dit geeft uw router&apos;s internetverkeer weer per maand. Sleep uw muis over de grafiek om de dagelijkse data weer te geven. Dat is opgeslagen in nvram."; 
 
 
 // ******************************************* Status_Conntrack.asp *******************************************//
@@ -1562,7 +1562,7 @@ status_wireless.legend2="Draadloos Pakket Informatie";
 status_wireless.rx="Ontvangen (RX)";
 status_wireless.tx="Verzonden (TX)";
 status_wireless.h22="Draadloos Nodes";
-status_wireless.legend3="Cliënten";
+status_wireless.legend3="Cli&euml;nten";
 status_wireless.signal_qual="Kwaliteit Signaal";
 status_wireless.wds="WDS Nodes";
 
@@ -1665,7 +1665,7 @@ vlan.legend="VLAN";
 vlan.bridge="Toegewezen aan<br />Bridge";
 vlan.tagged="Gelabeld";
 vlan.negociate="Automatisch Onderhandelen";
-vlan.aggregation="Link Aggregatie<br>op Poorten 3 & 4";
+vlan.aggregation="Link Aggregatie<br>op Poorten 3 &amp; 4";
 vlan.trunk="Trunk";
 
 
@@ -1735,7 +1735,7 @@ wpa.shared_key="WPA Gedeelde Sleutel";
 
 sec80211x.xsuptype="XSupplicant Type";
 sec80211x.servercertif="Publieke Server Certificaat";
-sec80211x.clientcertif="Cliënt Certificaat";
+sec80211x.clientcertif="Cli&euml;nt Certificaat";
 sec80211x.phase2="Phase2";
 sec80211x.anon="Anoniem Identiteit";
 sec80211x.options="Extra Netwerk Opties";
@@ -1750,17 +1750,17 @@ hwpa.right2="U heeft de keuze uit Deactiveren, WEP, WPA Personal, WPA Enterprise
 
 wl_filter.titl="MAC-Adres Filter Lijst";
 wl_filter.h2="MAC-Adres Filter Lijst";
-wl_filter.h3="Vul het MAC-Adres in dit formaat&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx in"; 
+wl_filter.h3="Vul het MAC-Adres in dit formaat&amp;nbsp;:&amp;nbsp;&amp;nbsp;&amp;nbsp;xx:xx:xx:xx:xx:xx in"; 
 
 
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
-wl_active.titl="Draadloze Actieve Cliënt MAC Lijst";
-wl_active.h2="Draadloze Cliënt MAC Lijst";
+wl_active.titl="Draadloze Actieve Cli&euml;nt MAC Lijst";
+wl_active.h2="Draadloze Cli&euml;nt MAC Lijst";
 wl_active.h3="Activeer MAC Filter";
-wl_active.active="Actieve cliënten";
-wl_active.inactive="Inactieve cliënten"; 
+wl_active.active="Actieve cli&euml;nten";
+wl_active.inactive="Inactieve cli&euml;nten"; 
 
 
 
@@ -1785,7 +1785,7 @@ wds.legend2="Extra Opties";
 radius.titl="Radius";
 radius.h2="Remote Authenticatie Dial-In Gebruikers Dienst";
 radius.legend="Radius";
-radius.label="MAC Radius Cliënt";
+radius.label="MAC Radius Cli&euml;nt";
 radius.label2="MAC Formaat";
 radius.label3="Radius Auth Server Adres";
 radius.label4="Radius Auth Server Poort";
@@ -1812,8 +1812,8 @@ wl_mac.h2="Draadloos MAC Filter";
 wl_mac.legend="MAC Filter";
 wl_mac.label="Gebruik Filter";
 wl_mac.label2="Filter Mode";
-wl_mac.deny="Verbied toegang tot het draadloos netwerk voor cliënten toegevoegd aan de lijst";
-wl_mac.allow="Alleen toegang toestaan aan cliënten die zijn toegevoegd aan de lijst";
+wl_mac.deny="Verbied toegang tot het draadloos netwerk voor cli&euml;nten toegevoegd aan de lijst";
+wl_mac.allow="Alleen toegang toestaan aan cli&euml;nten die zijn toegevoegd aan de lijst";
 
 // ** WiMAX
 
@@ -1832,10 +1832,10 @@ freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
 freeradius.certificate="Server Certificaat";
 freeradius.cert="Certificaat Maken";
-freeradius.clientcert="Cliënt Certificaten";
+freeradius.clientcert="Cli&euml;nt Certificaten";
 freeradius.settings="Instellingen";
 freeradius.users="Gebruikers";
-freeradius.clients="Cliënten";
+freeradius.clients="Cli&euml;nten";
 freeradius.username="Gebruikersnaam";
 freeradius.password="Wachtwoord";
 freeradius.downstream="Downstream";
@@ -1871,7 +1871,7 @@ wl_adv.label6="Baken Interval";
 wl_adv.label7="DTIM Interval";
 wl_adv.label8="Fragmentatie Drempel";
 wl_adv.label9="RTS Drempel";
-wl_adv.label10="Max Toegewezen Cliënten";
+wl_adv.label10="Max Toegewezen Cli&euml;nten";
 wl_adv.label11="AP Isolatie";
 wl_adv.label12="TX Antenne";
 wl_adv.label13="RX Antenne";
@@ -1887,7 +1887,7 @@ wl_adv.label23="Minimum Overdrachtsnelheid";
 wl_adv.label22="Bluetooth Coexistence Mode";
 wl_adv.label24="Antenne Opstelling";
 wl_adv.label25="Antenne Uitvoer";
-wl_adv.table1="EDCA AP Parameters (AP naar Cliënt)";
+wl_adv.table1="EDCA AP Parameters (AP naar Cli&euml;nt)";
 
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
@@ -1911,9 +1911,9 @@ wl_adv.row1="Achtergrond";
 wl_adv.row2="Naar Beste Kunnen";
 wl_adv.row3="Video";
 wl_adv.row4="Spraak";
-wl_adv.table2="EDCA STA Parameters (Cliënt naar AP)";
-wl_adv.lng="Lang"; 					//************* don't use .long! *************
-wl_adv.shrt="Kort"; 				//************* don't use .short! **************
+wl_adv.table2="EDCA STA Parameters (Cli&euml;nt naar AP)";
+wl_adv.lng="Lang"; 					//************* don&apos;t use .long! *************
+wl_adv.shrt="Kort"; 				//************* don&apos;t use .short! **************
 
 //help container
 
@@ -1940,10 +1940,10 @@ wl_basic.duallink="Dual Link";
 wl_basic.parent="Parent IP";
 wl_basic.masquerade="Masquerade / NAT";
 wl_basic.ap="AP";
-wl_basic.client="Cliënt";
+wl_basic.client="Cli&euml;nt";
 wl_basic.repeater="Repeater";
 wl_basic.repeaterbridge="Repeater Bridge";
-wl_basic.clientBridge="Cliënt Bridge";
+wl_basic.clientBridge="Cli&euml;nt Bridge";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Station";
 wl_basic.wdsap="WDS AP";
@@ -2012,7 +2012,7 @@ wl_basic.csma="Carrier Sense";
 
 hwl_basic.right2="Indien u Draadloos-G clienten wilt verbieden, selecteer dan de <em>alleen-B</em> modus. Indien u de draadloze toegang in zijn geheel wilt verbieden, kies dan voor de keuze <em>Gedeactiveerd</em>.<br/><b>Noteer :</b> bij het wisselen van de draadloze mode, enkele geavanceerd parameters zullen worden gewijzigd (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Gevoeligheids Bereik: ";
-hwl_basic.right4="De(ACK Timing)past het gevoeligheidsbereik aan. Een 0 ingevuld schakelt het gevoeligheidsbereik volledig uit voor broadcom firmware's. Op Atheros gebasseerde firmware's zal het naar de automatische ack timing mode worden gezet";
+hwl_basic.right4="De(ACK Timing)past het gevoeligheidsbereik aan. Een 0 ingevuld schakelt het gevoeligheidsbereik volledig uit voor broadcom firmware&apos;s. Op Atheros gebasseerde firmware&apos;s zal het naar de automatische ack timing mode worden gezet";
 hwl_basic.right6="Klik op een uur om het radio signaal in of uit te schakelen. (<em>groen</em> geeft de toegestane draadloze toegang aan, <em>rood</em> de geblokkeerde draadloze toegang)"; 
 
 
@@ -2033,7 +2033,7 @@ success.success_reboot=success.success_noreboot + "<br />De router is nu aan het
 
 success.alert_reset="Alle configuratie instellingen zijn naar hun oorspronkelijke waarden hersteld.<br /><br />";
 success.alert1="Gelieve het volgende te controleren alvorens opnieuw te verbinden:";
-success.alert2="Indien u uw routers IP-adres heeft veranderd, moet u het netwerkadres van uw cliënt(en) vernieuwen.";
+success.alert2="Indien u uw routers IP-adres heeft veranderd, moet u het netwerkadres van uw cli&euml;nt(en) vernieuwen.";
 success.alert3="Indien u verbonden bent via WLAN, sluit u dan aan bij het netwerk en klik op <em>Activeer</em>."; 
 
 
@@ -2048,7 +2048,7 @@ logout.message="U bent met succes uitgelogd.<br />Bedankt voor het gebruik van D
 dhcp.titl="DHCP Actieve IP Tabel";
 dhcp.h2="DHCP Actieve IP Tabel";
 dhcp.server="DHCP Server IP Adres :";
-dhcp.tclient="Hostnaam Cliënt"; 
+dhcp.tclient="Hostnaam Cli&euml;nt"; 
 
 
-donate.mb="U kunt ook doneren via het Moneybookers acount mb@dd-wrt.com"; 
+donate.mb="U kunt ook doneren via het Moneybookers acount mb@dd-wrt.com";  
