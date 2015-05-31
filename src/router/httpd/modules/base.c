@@ -2026,7 +2026,7 @@ char *live_translate(const char *tran)
 				fprintf(stderr,"update %s time = %ld\n",translationcache[i].request,translationcache[i].time);
 			}
 			fprintf(stderr,"check %s time = %ld. delta = %ld\n",translationcache[i].request,translationcache[i].time,cur-translationcache[i].time);
-			if (translationcache[i].time > cur + 120) {	// free translation if not used for 2 minutes
+			if (translationcache[i].time + 120 > cur) {	// free translation if not used for 2 minutes
 				free(translationcache[i].request);
 				free(translationcache[i].translation);
 				translationcache[i].request = NULL;
