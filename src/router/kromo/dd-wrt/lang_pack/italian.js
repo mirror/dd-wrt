@@ -4,7 +4,7 @@
 
 // ** COMMON SHARE LABEL **//
 //var lang_charset=new Object();
-lang_charset.set="UTF-8";
+lang_charset.set="iso-8859-1";
 
 //var share=new Object();
 share.annex="Annex Type";
