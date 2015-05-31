@@ -591,6 +591,14 @@ endif
 
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 
+
+validate: $(eval FILE_SIZE = $(shell stat -c %s $(EX_PATH)))
+	@if [ ${FILE_SIZE} -gt ${MAXIMUM_SIZE} ] ; then \
+		echo "Image is to large. Maximum size ${MAXIMUM_SIZE} current size  ${FILE_SIZE}." ; \
+		rm -f $(EX_PATH) ; \
+	fi
+
+
 install_headers:
 # important step, required for new kernels
 	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
