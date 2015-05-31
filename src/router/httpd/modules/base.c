@@ -19,7 +19,7 @@
  *
  * $Id:
  */
- 
+
 #ifdef WEBS
 #include <webs.h>
 #include <uemf.h>
@@ -2023,10 +2023,7 @@ char *live_translate(const char *tran)
 			if (!translation && translationcache[i].request && !strcmp(translationcache[i].request, tran)) {
 				translation = translationcache[i].translation;
 				translationcache[i].time = cur;
-				fprintf(stderr,"update %s time = %ld\n",translationcache[i].request,translationcache[i].time);
 			}
-			if (translationcache[i].request)
-				fprintf(stderr,"check %s time = %ld. delta = %ld\n",translationcache[i].request,translationcache[i].time,cur-translationcache[i].time);
 			if (cur > translationcache[i].time + 120) {	// free translation if not used for 2 minutes
 				free(translationcache[i].request);
 				free(translationcache[i].translation);
@@ -2056,7 +2053,6 @@ char *live_translate(const char *tran)
 
 	entry->request = strdup(tran);
 	entry->time = cur;
-	fprintf(stderr,"create %s time = %ld\n",entry->request,entry->time);
 	if (ret)
 		entry->translation = ret;
 	else
