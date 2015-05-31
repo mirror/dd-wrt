@@ -317,6 +317,9 @@ mvswitch_config_init(struct phy_device *pdev)
 
 #ifdef HEADER_MODE
 	dev->priv_flags |= IFF_NO_IP_ALIGN;
+	dev->features |= NETIF_F_HW_VLAN_CTAG_RX_BIT | NETIF_F_HW_VLAN_CTAG_TX_BIT;
+#else
+	dev->features |= NETIF_F_HW_VLAN_CTAG_RX_BIT;
 #endif
 
 	return 0;
