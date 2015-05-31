@@ -2018,16 +2018,21 @@ char *live_translate(const char *tran)
 	if (translationcache) {
 		int i;
 		time_t cur = time(NULL);
+		char *translation = NULL;
 		for (i = 0; i < cachecount; i++) {
-			if (translationcache[i].request && !strcmp(translationcache[i].request, tran))
-				return translationcache[i].translation;
+			if (!translation && translationcache[i].request && !strcmp(translationcache[i].request, tran)) {
+				translation = translationcache[i].translation;
+			}
 			if (translationcache[i].time > cur + 120) {	// free translation if not used for 2 minutes
+				fprintf(stderr, "free: %s\n",translationcache[i].request);
 				free(translationcache[i].request);
 				free(translationcache[i].translation);
 				translationcache[i].request = NULL;
 				translationcache[i].translation = NULL;
 			}
 		}
+		if (translation)
+			return translation;
 	}
 	char *ret = private_live_translate(tran);
 	struct cacheentry *entry = NULL;
