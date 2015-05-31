@@ -2031,8 +2031,10 @@ char *live_translate(const char *tran)
 	if (!cur_language) {
 		cur_language = nvram_safe_get("language");
 	} else {
-		if (!nvram_match("language", cur_language))
+		if (!nvram_match("language", cur_language)) {
 			clear_translationcache();
+			cur_language = nvram_safe_get("language");
+		}
 	}
 
 	time_t cur = time(NULL);
