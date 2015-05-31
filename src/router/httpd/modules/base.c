@@ -2024,7 +2024,6 @@ char *live_translate(const char *tran)
 				translation = translationcache[i].translation;
 			}
 			if (translationcache[i].time > cur + 120) {	// free translation if not used for 2 minutes
-				fprintf(stderr, "free: %s\n",translationcache[i].request);
 				free(translationcache[i].request);
 				free(translationcache[i].translation);
 				translationcache[i].request = NULL;
