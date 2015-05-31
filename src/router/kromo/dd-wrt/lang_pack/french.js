@@ -3,7 +3,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
-lang_charset.set="UTF-8";
+lang_charset.set="iso-8859-1";
 
 share.firmware="Micrologiciel";
 share.time="Heure";

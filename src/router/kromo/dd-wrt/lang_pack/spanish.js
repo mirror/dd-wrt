@@ -4,7 +4,7 @@
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
 
-lang_charset.set="UTF-8";
+lang_charset.set="iso-8859-1";
 
 share.apn="APN";
 share.pin="PIN";
