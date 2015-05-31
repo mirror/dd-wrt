@@ -1991,6 +1991,7 @@ struct cacheentry {
 };
 static int cachecount = 0;
 static struct cacheentry *translationcache;
+static char *cur_language = NULL;
 static char *private_live_translate(const char *tran)
 {
 
@@ -2013,8 +2014,27 @@ static char *private_live_translate(const char *tran)
 
 }
 
+static void clear_translationcache(void)
+{
+	int i;
+	for (i = 0; i < cachecount; i++) {
+		free(translationcache[i].request);
+		free(translationcache[i].translation);
+		translationcache[i].request = NULL;
+		translationcache[i].translation = NULL;
+	}
+
+}
+
 char *live_translate(const char *tran)
 {
+	if (!cur_language) {
+		cur_language = nvram_safe_get("language");
+	} else {
+		if (!nvram_match("language", cur_language))
+			clear_translationcache();
+	}
+
 	time_t cur = time(NULL);
 	if (translationcache) {
 		int i;
