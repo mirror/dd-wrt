@@ -2015,9 +2015,9 @@ static char *private_live_translate(const char *tran)
 
 char *live_translate(const char *tran)
 {
+	time_t cur = time(NULL);
 	if (translationcache) {
 		int i;
-		time_t cur = time(NULL);
 		char *translation = NULL;
 		for (i = 0; i < cachecount; i++) {
 			if (!translation && translationcache[i].request && !strcmp(translationcache[i].request, tran)) {
