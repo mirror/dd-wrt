@@ -59,6 +59,7 @@ do
 	    echo CONFIG_MMS344=y >> .config
 	    echo CONFIG_DIR862=y >> .config
 	    echo CONFIG_ERC=y >> .config
+	    echo CONFIG_DAP3662=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR841V9=y/ /g' .config	    
@@ -79,6 +80,7 @@ do
 	    sed -i 's/\CONFIG_MMS344=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DIR862=y/ /g' .config	    
 	    sed -i 's/\CONFIG_ERC=y/ /g' .config	    
+	    sed -i 's/\CONFIG_DAP3662=y/ /g' .config	    
 	    cp .config $i
     fi
 done
