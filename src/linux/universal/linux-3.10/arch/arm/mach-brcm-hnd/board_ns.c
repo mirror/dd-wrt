@@ -528,6 +528,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 
 	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1101")) {
+		size = 0x200000;
 		bootsz = 0x200000;
 	}
 
