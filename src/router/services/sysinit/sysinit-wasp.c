@@ -198,7 +198,34 @@ void start_sysinit(void)
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 #endif
-#if defined(HAVE_DIR862)
+#if defined(HAVE_DAP3662)
+	FILE *fp = fopen("/dev/mtdblock/5", "rb");
+	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+	if (fp) {
+		fseek(fp, 20480, SEEK_SET);
+		int i;
+		for (i = 0; i < 6; i++)
+			putc(getc(fp), out);
+		char *mac = "\x00\x01\x02\x03\x04\x05";
+		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+			char eabuf[32];
+
+			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+			ioctl(s, SIOCGIFHWADDR, &ifr);
+			mac = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			close(s);
+		}
+		for (i = 0; i < 6; i++)
+			putc(mac[i], out);
+		fseek(fp, 20492, SEEK_SET);
+		for (i = 0; i < 2104; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+		fclose(out);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+	}
+#elif defined(HAVE_DIR862)
 	fp = fopen("/lib/ath10k/board.bin", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
