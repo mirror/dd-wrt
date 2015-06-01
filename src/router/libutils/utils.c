@@ -2519,6 +2519,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "3");
 	setRouter("TP-Link TL-WR842ND v2");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_DAP2230
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	setRouter("Dlink DAP-2230");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V9
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
