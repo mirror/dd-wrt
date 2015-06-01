@@ -644,6 +644,9 @@ static void __init ath79_gpio_output_select(unsigned gpio, u8 val)
 #define DIR859_MAC_LOCATION_0			0x1f050051
 #define DIR859_MAC_LOCATION_1			0x1f05006c
 
+#define DIR862_MAC_LOCATION_0			0x1ffe0004
+#define DIR862_MAC_LOCATION_1			0x1ffe0018
+
 #define DHP1565A1_MAC_LOCATION_0			0x1ffeffa0
 #define DHP1565A1_MAC_LOCATION_1			0x1ffeffb4
 
@@ -743,16 +746,32 @@ int __init ar7240_platform_init(void)
     #endif
 
     #else
-
-    #ifdef CONFIG_WR1043V2
-	mac = (u8 *)KSEG1ADDR(0x1f01fc00);
-    #elif CONFIG_UBNTXW
+    
+    #ifdef CONFIG_DAP3662
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
-    #elif CONFIG_AP135
-	mac = (u8 *)KSEG1ADDR(0x1fff0000);
-    #endif
+	if (!memcmp(mac,"\x0\x0\x0\x0\x0\x0",6)) {
+	ath79_init_mac(mac0, "\x0\x1\x2\x3\x4\x5", -1);
+	ath79_init_mac(mac1, "\x0\x1\x2\x3\x4\x5", 0);
+	}else {
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
+	}
+    #elif CONFIG_DIR862
+	dir825b1_read_ascii_mac(mac0, DIR862_MAC_LOCATION_0);
+	dir825b1_read_ascii_mac(mac1, DIR862_MAC_LOCATION_1);
+    #elif CONFIG_WR1043V2
+	mac = (u8 *)KSEG1ADDR(0x1f01fc00);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);
+    #elif CONFIG_UBNTXW
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);
+    #elif CONFIG_AP135
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);
+    #endif
     #endif
 
     #ifdef CONFIG_DIR615I
@@ -922,7 +941,12 @@ int __init ar7240_platform_init(void)
 	mdiobus_register_board_info(ap136_mdio0_info,
 				    ARRAY_SIZE(ap136_mdio0_info));
 
-	    #ifdef CONFIG_WR1043V2
+
+
+	    #ifdef CONFIG_DIR862
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
+	    #elif CONFIG_WR1043V2
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
 	    #else
@@ -979,7 +1003,6 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_mdio(1, 0x0);
 	#endif
 	ar71xx_add_device_mdio(0, 0x0);
-
 		#ifdef CONFIG_MMS344
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);		
 		#elif CONFIG_DIR825C1
@@ -1050,7 +1073,9 @@ int __init ar7240_platform_init(void)
 #elif CONFIG_WASP_SUPPORT
 #if !defined(CONFIG_MTD_NAND_ATH)
 	ee = (u8 *)KSEG1ADDR(0x1fff1000);
-#if defined(CONFIG_MMS344)
+#if defined(CONFIG_DIR862)
+	ar9xxx_add_device_wmac(ee, mac0);
+#elif defined(CONFIG_MMS344)
 	ar9xxx_add_device_wmac(ee, art + 2);
 #elif defined(CONFIG_DIR825C1)
 	ar9xxx_add_device_wmac(ee, mac0);

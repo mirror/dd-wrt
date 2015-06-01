@@ -123,6 +123,10 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
+		if (ofs[i] == 0x77617061) {
+			printk(KERN_EMERG "DAP3662 bootloader\n");
+			return 0x70000;	// uboot, lzma image
+		}
 		if (ofs[i] == 0x32303033) {
 			printk(KERN_EMERG "WNR2000 uboot detected\n");
 			return 0x50000;	// uboot, lzma image
@@ -378,12 +382,17 @@ static int __init ar7240_flash_init(void)
 		while ((offset + mtd->erasesize) < mtd->size) {
 //                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
 			__u32 *check2 = (__u32 *)&buf[0x60];	
-			if (*((__u32 *)buf) == SQUASHFS_MAGIC || *check2 == SQUASHFS_MAGIC) {
+			__u32 *check3 = (__u32 *)&buf[0xc0];	
+			if (*((__u32 *)buf) == SQUASHFS_MAGIC || *check2 == SQUASHFS_MAGIC || *check3 == SQUASHFS_MAGIC) {
 				printk(KERN_EMERG "\nfound squashfs at %X\n",
 				       offset);
 				if (*check2 == SQUASHFS_MAGIC) {
 				    buf+=0x60;
 				    offset +=0x60;
+				}
+				if (*check3 == SQUASHFS_MAGIC) {
+				    buf+=0xC0;
+				    offset +=0xC0;
 				}
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
