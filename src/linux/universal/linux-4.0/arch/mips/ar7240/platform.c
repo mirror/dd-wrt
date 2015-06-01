@@ -603,7 +603,7 @@ void __init ath79_init_mac(unsigned char *dst, const unsigned char *src, int off
 	dst[5] = t & 0xff;
 }
 
-#if defined(CONFIG_DIR825C1) || defined(CONFIG_DIR615I)
+#if defined(CONFIG_DIR825C1) || defined(CONFIG_DIR615I) || defined(CONFIG_DAP2230)
 
 
 #define AR934X_GPIO_REG_OUT_FUNC0	0x2c
@@ -686,7 +686,26 @@ static void enable_uart(void)
 #endif
 
 }
+static char *dap_scanmac(char *dest, char *base)
+{
+int i;
+printk(KERN_INFO "scan mac from %p\n",base);
+for (i=0;i<0x100;i++) {
+    if (!memcmp(&base[i],"lanmac=",7)) {
+	    printk(KERN_INFO "found @%p\n",&base[i+7]);
+	    char *src = &base[i+7];
+	    int ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx", &dest[0], &dest[1], &dest[2], &dest[3], &dest[4], &dest[5]);
+	    if (ret!=6) {
+		printk(KERN_INFO "parse fail\n");
+		return NULL;
+	    }
+	    return dest;
+    }
+}
+printk(KERN_INFO "found nothing\n");
+return NULL;
 
+}
 int __init ar7240_platform_init(void)
 {
 	int ret;
@@ -730,7 +749,7 @@ int __init ar7240_platform_init(void)
 	void __iomem *base;
 	u32 t;
 
-    #if !defined(CONFIG_WDR4300) && !defined(CONFIG_AP135) && !defined(CONFIG_UBNTXW)
+    #if !defined(CONFIG_WDR4300) && !defined(CONFIG_AP135) && !defined(CONFIG_UBNTXW) && !defined(CONFIG_DAP2230)
     #ifdef CONFIG_DIR825C1
 	#ifdef CONFIG_DIR859
 	dir825b1_read_ascii_mac(mac0, DIR859_MAC_LOCATION_0);
@@ -747,16 +766,27 @@ int __init ar7240_platform_init(void)
 
     #else
     
-    #ifdef CONFIG_DAP3662
-	mac = (u8 *)KSEG1ADDR(0x1fff0000);
-	printk(KERN_INFO "mac = %02X:%02X:%02X:%02X:%02X:%02X\n",mac[0]&0xff,mac[1]&0xff,mac[2]&0xff,mac[3]&0xff,mac[4]&0xff,mac[5]&0xff);
-	if (mac[0]==0xff) {
+    #ifdef CONFIG_DAP2230
+	char tempmac[6];
+	if (!dap_scanmac(tempmac, (u8 *)KSEG1ADDR(0x1f042000))) {
 	printk(KERN_INFO "mac is dead, use fake mac\n");
 	ath79_init_mac(mac0, "\x0\x1\x2\x3\x4\x5", -1);
 	ath79_init_mac(mac1, "\x0\x1\x2\x3\x4\x5", 0);
 	}else {
-	ath79_init_mac(mac0, mac, -1);
-	ath79_init_mac(mac1, mac, 0);
+	ath79_init_mac(mac0, tempmac, -1);
+	ath79_init_mac(mac1, tempmac, 0);
+	}
+	printk(KERN_INFO "mac0 mac %02X:%02X:%02X:%02X:%02X:%02X\n",mac0[0]&0xff,mac0[1]&0xff,mac0[2]&0xff,mac0[3]&0xff,mac0[4]&0xff,mac0[5]&0xff);
+	printk(KERN_INFO "mac1 mac %02X:%02X:%02X:%02X:%02X:%02X\n",mac1[0]&0xff,mac1[1]&0xff,mac1[2]&0xff,mac1[3]&0xff,mac1[4]&0xff,mac1[5]&0xff);
+    #elif CONFIG_DAP3662
+	char tempmac[6];
+	if (!dap_scanmac(tempmac, (u8 *)KSEG1ADDR(0x1f042000))) {
+	printk(KERN_INFO "mac is dead, use fake mac\n");
+	ath79_init_mac(mac0, "\x0\x1\x2\x3\x4\x5", -1);
+	ath79_init_mac(mac1, "\x0\x1\x2\x3\x4\x5", 0);
+	}else {
+	ath79_init_mac(mac0, tempmac, -1);
+	ath79_init_mac(mac1, tempmac, 0);
 	}
     #elif CONFIG_DIR862
 	dir825b1_read_ascii_mac(mac0, DIR862_MAC_LOCATION_0);
@@ -788,6 +818,8 @@ int __init ar7240_platform_init(void)
 	/* flush write */
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
+    #elif CONFIG_DAP2230
+       ath79_setup_ar933x_phy4_switch(false, false);
     #elif CONFIG_WR841V9
        ath79_setup_ar933x_phy4_switch(false, false);
 
@@ -892,6 +924,17 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_add_device_eth(0);
+    #elif CONFIG_DAP2230
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
+
+	/* LAN */
+	ar71xx_add_device_eth(1);
+	/* WAN */
+	ar71xx_switch_data.phy4_mii_en = 1;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_add_device_eth(0);
     #elif CONFIG_WR841V9
 	ar71xx_add_device_mdio(0, 0x0);
@@ -1082,6 +1125,9 @@ int __init ar7240_platform_init(void)
 #elif defined(CONFIG_DIR825C1)
 	ar9xxx_add_device_wmac(ee, mac0);
 #elif defined(CONFIG_DIR615I)
+	ar9xxx_add_device_wmac(ee, mac0);
+#elif defined(CONFIG_DAP2230)
+	printk(KERN_INFO "wmac mac %02X:%02X:%02X:%02X:%02X:%02X\n",mac0[0]&0xff,mac0[1]&0xff,mac0[2]&0xff,mac0[3]&0xff,mac0[4]&0xff,mac0[5]&0xff);
 	ar9xxx_add_device_wmac(ee, mac0);
 #elif defined(CONFIG_WR841V9)
 	ar9xxx_add_device_wmac(ee, mac);

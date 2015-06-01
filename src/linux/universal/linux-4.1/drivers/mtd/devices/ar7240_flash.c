@@ -127,6 +127,10 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "DAP3662 bootloader\n");
 			return 0x70000;	// uboot, lzma image
 		}
+		if (ofs[i] == 0x7761706e) {
+			printk(KERN_EMERG "DAP2230 bootloader\n");
+			return 0x70000;	// uboot, lzma image
+		}
 		if (ofs[i] == 0x32303033) {
 			printk(KERN_EMERG "WNR2000 uboot detected\n");
 			return 0x50000;	// uboot, lzma image
