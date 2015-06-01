@@ -1041,6 +1041,9 @@ endif
 ifeq ($(CONFIG_DAP2230),y)
 CFLAGS += -DHAVE_DAP2230
 endif
+ifeq ($(CONFIG_DAP2330),y)
+CFLAGS += -DHAVE_DAP2330
+endif
 ifeq ($(CONFIG_WR841V8),y)
 CFLAGS += -DHAVE_WR841V8
 endif
