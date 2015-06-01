@@ -5934,6 +5934,7 @@ int led_control(int type, int act)
 		ses2_gpio = 0x107;	// WLAN led green - inverse
 		break;
 	case ROUTER_DLINK_DIR868:
+	case ROUTER_DLINK_DIR868C:
 		usb_power = 0x00a;
 		connected_gpio = 0x103;
 		disconnected_gpio = 0x101;
