@@ -396,6 +396,18 @@ static struct mdio_board_info ap136_mdio0_info[] = {
 	},
 };
 
+#include <linux/platform_data/phy-at803x.h>
+static struct at803x_platform_data rb922gs_at803x_data = {
+	.disable_smarteee = 1,
+};
+static struct mdio_board_info dap2330_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 4,
+		.platform_data = &rb922gs_at803x_data,
+	},
+};
+
 static void __init ap136_gmac_setup(void)
 {
 	void __iomem *base;
@@ -878,6 +890,7 @@ int __init ar7240_platform_init(void)
 	    #else
 	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
 	    #endif
+
 	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
 #endif
@@ -966,6 +979,23 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_eth(1);
     #else
 	#ifdef CONFIG_AP135
+	#ifdef CONFIG_DAP2330
+	mdiobus_register_board_info(dap2330_mdio0_info,
+				    ARRAY_SIZE(dap2330_mdio0_info));
+
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(4);
+	ar71xx_eth0_pll_data.pll_10 = 0x81001313;
+	ar71xx_eth0_pll_data.pll_100 = 0x81000101;
+	ar71xx_eth0_pll_data.pll_1000 = 0x8f000000;
+	ar71xx_add_device_eth(0);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
+	#else
+	
+	
 
 	ar71xx_add_device_mdio(0, 0x0);
 
@@ -986,7 +1016,7 @@ int __init ar7240_platform_init(void)
 	mdiobus_register_board_info(ap136_mdio0_info,
 				    ARRAY_SIZE(ap136_mdio0_info));
 
-
+	    
 
 	    #ifdef CONFIG_DIR862
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
@@ -1013,6 +1043,7 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
 	ar71xx_add_device_eth(1);
+	#endif
 	#else
 	    #ifdef CONFIG_WDR3500
 	ar71xx_add_device_mdio(1, 0x0);
