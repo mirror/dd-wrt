@@ -2374,6 +2374,29 @@ void start_sysinit(void)
 		set_gpio(8, 1);	// fixup ses button
 
 		break;
+	case ROUTER_DLINK_DIR868C:
+		if (nvram_match("0:macaddr","00:90:4C:0D:C0:18")) {
+			char buf[64];
+			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
+			fread(buf, 1, 24, fp);
+			pclose(fp);
+			buf[24] = 0;
+			fprintf(stderr, "set main mac %s\n", &buf[7]);
+			nvram_set("et0macaddr", &buf[7]);
+			fp = popen("cat /dev/mtdblock0|grep wlan5mac", "r");
+			fread(buf, 1, 26, fp);
+			pclose(fp);
+			buf[26] = 0;
+			fprintf(stderr, "set 5g mac %s\n", &buf[9]);
+			nvram_set("1:macaddr", &buf[9]);
+			nvram_set("pci/2/1/macaddr", &buf[9]);
+			fread(buf, 1, 27, fp);
+			pclose(fp);
+			buf[27] = 0;
+			fprintf(stderr, "set 2.4g mac %s\n", &buf[10]);
+			nvram_set("0:macaddr", &buf[10]);		
+		}
+		break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR865:
 
