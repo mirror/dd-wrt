@@ -531,6 +531,11 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		bootsz = 0x200000;
 	}
 
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1101") {
+		bootsz = 0x200000;
+	}
+
 	if (nvram_match("boardnum", "1234") && nvram_match("boardtype", "0x072F")) {
 		nobackup = 1;
 	}
@@ -775,6 +780,11 @@ static uint lookup_nflash_rootfs_offset(hndnand_t * nfl, struct mtd_info *mtd, i
 		blocksize = 65536;
 	}
 
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1101")) {
+		printk(KERN_INFO "DIR-868LC Hack for detecting filesystems\n");
+		blocksize = 65536;
+	}
 
 	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1100")
