@@ -309,6 +309,9 @@ config ARCHERC7
 config DAP3662
 	bool "support for DAP3662"
 	depends on WR1043V2
+config DAP2330
+	bool "support for DAP2330"
+	depends on WR1043V2
 config DAP2230
 	bool "support for DAP2230"
 	depends on WR841V8
