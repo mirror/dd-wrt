@@ -6647,7 +6647,7 @@ int getath9kdevicecount(void)
 			count = (int)globbuf.gl_pathc;
 		globfree(&globbuf);
 	}
-#if defined(HAVE_MMS344) || defined(HAVE_ARCHERC7) && !defined(HAVE_DAP2330)
+#if (defined(HAVE_MMS344) || defined(HAVE_ARCHERC7)) && !defined(HAVE_DAP2330)
 	return 2;
 #else
 	return (count);
