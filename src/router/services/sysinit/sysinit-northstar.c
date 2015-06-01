@@ -2389,7 +2389,7 @@ void start_sysinit(void)
 			buf[26] = 0;
 			fprintf(stderr, "set 5g mac %s\n", &buf[9]);
 			nvram_set("1:macaddr", &buf[9]);
-			nvram_set("pci/2/1/macaddr", &buf[9]);
+			fp = popen("cat /dev/mtdblock0|grep wlan24mac", "r");
 			fread(buf, 1, 27, fp);
 			pclose(fp);
 			buf[27] = 0;
