@@ -747,9 +747,18 @@ int __init ar7240_platform_init(void)
 
     #else
     
-    #ifdef CONFIG_DIR862
-    dir825b1_read_ascii_mac(mac0, DIR862_MAC_LOCATION_0);
-    dir825b1_read_ascii_mac(mac1, DIR862_MAC_LOCATION_1);
+    #ifdef CONFIG_DAP3662
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+	if (!memcmp(mac,"\x0\x0\x0\x0\x0\x0",6)) {
+	ath79_init_mac(mac0, "\x0\x1\x2\x3\x4\x5", -1);
+	ath79_init_mac(mac1, "\x0\x1\x2\x3\x4\x5", 0);
+	}else {
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);
+	}
+    #elif CONFIG_DIR862
+	dir825b1_read_ascii_mac(mac0, DIR862_MAC_LOCATION_0);
+	dir825b1_read_ascii_mac(mac1, DIR862_MAC_LOCATION_1);
     #elif CONFIG_WR1043V2
 	mac = (u8 *)KSEG1ADDR(0x1f01fc00);
 	ath79_init_mac(mac0, mac, -1);
