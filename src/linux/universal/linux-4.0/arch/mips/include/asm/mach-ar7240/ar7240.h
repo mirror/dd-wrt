@@ -836,6 +836,7 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 
 
 #define QCA9533_REV_1_0			0x0140
+#define QCA9533_V2			0x0160
 #define QCA9556_REV_1_0			0x0130
 #define QCA9558_REV_1_0			0x1130
 
@@ -869,6 +870,7 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 
 
 
+
 #define is_ar7240()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_2) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_1) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_0))
@@ -883,6 +885,7 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define is_qca9533()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_REV_1_3) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_REV_1_2) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_REV_1_1) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_V2) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_REV_1_0))
 
 #define is_qca9556()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9556_REV_1_3) || \

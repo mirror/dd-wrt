@@ -129,6 +129,7 @@ const char
 	u32 qca=0;
 	u32 tp = 0;
 	u32 rev = 0;
+	u32 ver = 1;
 	static char str[64];
 	id = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
 
@@ -238,6 +239,12 @@ const char
 		rev = 0;
 		qca = 1;
 		break;
+	case QCA9533_V2:
+		chip = "9533";
+		ver = 2;
+		rev = 0;
+		qca = 1;
+		break;
 	case QCA9533_REV_1_1:
 		chip = "9533";
 		rev = 1;
@@ -341,9 +348,9 @@ const char
 		chip = "724x";
 	}
 	if (tp)
-		sprintf(str, "%s %s%s rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", "TP", chip, rev, id);
+		sprintf(str, "%s %s%s ver %u rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", "TP", chip, ver, rev, id);
 	else 
-		sprintf(str, "%s %s%s rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", qca ? "QCA" : "AR",chip, rev, id);
+		sprintf(str, "%s %s%s ver %u rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", qca ? "QCA" : "AR",chip, ver, rev, id);
 	return str;
 }
 
