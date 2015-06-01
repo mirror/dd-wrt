@@ -5133,7 +5133,9 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x007;
 		ses_gpio = 0x100;
 #endif
-#ifdef HAVE_WR841V9
+#ifdef HAVE_DAP2230
+
+#elif HAVE_WR841V9
 		diag_gpio = 0x103;
 #elif HAVE_WR842V2
 		connected_gpio = 0x10e;
