@@ -2010,6 +2010,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_rxantenna", "3");
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_DAP3662
+	setRouter("Dlink DAP3662");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR862
 	setRouter("Dlink DIR862-A1");
 	nvram_default_get("ath0_rxantenna", "3");
@@ -5443,6 +5450,12 @@ int led_control(int type, int act)
 		usb_power = 0x020;
 		usb_gpio = 0x10d;
 		ses_gpio = 0x110;
+		break;
+#elif HAVE_DAP3662
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x10e;	// red
+		diag_gpio_disabled = 0x117;	//
+		power_gpio = 0x117;	// green
 		break;
 #elif HAVE_DIR862
 	case ROUTER_BOARD_WHRHPGN:
