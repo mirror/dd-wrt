@@ -1009,6 +1009,11 @@ endif
 ifeq ($(CONFIG_AP94),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+ifeq ($(CONFIG_DIR825),y)
+ifneq ($(CONFIG_TEW673GRU),y)
+	-$(MAKE) -f Makefile.pb42 validate MAXIMUM_SIZE=6356992 EX_PATH=$(ARCH)-uclibc/aligned.uimage
+endif
+endif
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ap94-firmware.bin $(ARCH)-uclibc/aligned.uimage
 endif
 ifeq ($(CONFIG_ALFAAP94),y)
