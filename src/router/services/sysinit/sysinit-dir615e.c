@@ -188,12 +188,14 @@ void start_sysinit(void)
 		free(lanmac);
 	}
 #endif
+#ifndef HAVE_DAP3320
 #ifdef HAVE_DAP2230
 	setWirelessLedGeneric(0, 11);
 #elif HAVE_DIR632
 	setWirelessLedPhy0(0);
 #elif HAVE_DIR615I
 	setWirelessLedGeneric(0, 13);
+#endif
 #endif
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
