@@ -388,6 +388,13 @@ ifeq ($(CONFIG_DAP3662),y)
 else
 	echo "# CONFIG_DAP3662 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_DAP2330),y)
+	sed -i 's/\# CONFIG_AT803X_PHY is not set/CONFIG_AT803X_PHY=y/g' $(LINUXDIR)/.config
+	echo CONFIG_DAP2330=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_DAP2330 is not set" >> $(LINUXDIR)/.config
+
+endif
 ifeq ($(CONFIG_DAP2230),y)
 	echo CONFIG_DAP2230=y >> $(LINUXDIR)/.config
 else
@@ -1825,6 +1832,11 @@ ifeq ($(CONFIG_DAP3320),y)
 	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap3320.img -d /dev/mtdblock/1 -s wapn29_dkbs_dap3320 -c -b
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap3320.trx $(ARCH)-uclibc/web-dap3320.img
+endif
+ifeq ($(CONFIG_DAP2330),y)
+	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
+	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2330.img -d /dev/mtdblock/1 -s wapn24_dkbs_dap2330 -c -b
+	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap2330.trx $(ARCH)-uclibc/web-dap2330.img
 endif
 
 include rules/all.mk
