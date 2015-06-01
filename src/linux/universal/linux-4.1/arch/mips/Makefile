@@ -286,7 +286,11 @@ core-$(CONFIG_MACH_AR7240)		+=	arch/mips/ar7240/
 ifdef CONFIG_DAP3662
 load-$(CONFIG_MACH_AR7240)		+=	0xffffffff80002000
 else
+ifdef CONFIG_DAP2230
+load-$(CONFIG_MACH_AR7240)		+=	0xffffffff80002000
+else
 load-$(CONFIG_MACH_AR7240)		+=	0xffffffff80060000
+endif
 endif
 cflags-$(CONFIG_MACH_AR7240)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7240
 #
