@@ -143,6 +143,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
+#ifndef HAVE_DAP2230
 #ifndef HAVE_DIR615I
 #ifndef HAVE_DIR632
 	setEthLED(17, "eth0");
@@ -165,7 +166,7 @@ void start_sysinit(void)
 	setSwitchLED(21, 0x10);
 	setSwitchLED(12, 0x02);
 #endif
-
+#endif
 #endif
 	struct ifreq ifr;
 	int s;
@@ -187,10 +188,11 @@ void start_sysinit(void)
 		free(lanmac);
 	}
 #endif
-#ifdef HAVE_DIR632
+#ifdef HAVE_DAP2230
+	setWirelessLedGeneric(0, 11);
+#elif HAVE_DIR632
 	setWirelessLedPhy0(0);
-#endif
-#ifdef HAVE_DIR615I
+#elif HAVE_DIR615I
 	setWirelessLedGeneric(0, 13);
 #endif
 	led_control(LED_POWER, LED_ON);
