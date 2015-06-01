@@ -749,7 +749,9 @@ int __init ar7240_platform_init(void)
     
     #ifdef CONFIG_DAP3662
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
-	if (!memcmp(mac,"\x0\x0\x0\x0\x0\x0",6)) {
+	printk(KERN_INFO "mac = %02X:%02X:%02X:%02X:%02X:%02X\n",mac[0]&0xff,mac[1]&0xff,mac[2]&0xff,mac[3]&0xff,mac[4]&0xff,mac[5]&0xff);
+	if (mac[0]==0xff) {
+	printk(KERN_INFO "mac is dead, use fake mac\n");
 	ath79_init_mac(mac0, "\x0\x1\x2\x3\x4\x5", -1);
 	ath79_init_mac(mac1, "\x0\x1\x2\x3\x4\x5", 0);
 	}else {
