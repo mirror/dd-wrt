@@ -1652,6 +1652,9 @@ struct nvram_param srouter_defaults[] = {
 #elif  HAVE_ERC
 	{"router_name", "RemoteEngineer"},
 	{"ree_resetme", "1"},
+#ifdef HAVE_CARAMBOLA
+	{"erc_reset", "1"},
+#endif
 #elif  HAVE_CARLSONWIRELESS
 	{"router_name", "CWT"},	/* Router name) */
 #elif HAVE_IPR
