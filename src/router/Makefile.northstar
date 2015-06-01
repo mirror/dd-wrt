@@ -1,4 +1,4 @@
-#
+    #
 # Broadcom Linux Router Makefile
 #
 # Copyright 2001-2003, Broadcom Corporation
@@ -587,6 +587,13 @@ endif
 	./tools/seama/seama -d $(ARCH)-uclibc/web-dir868b.img
 	dd if=$(ARCH)-uclibc/web-dir868b.img of=$(ARCH)-uclibc/webflash-dir868b.img skip=48 iflag=skip_bytes 
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dir868b.trx $(ARCH)-uclibc/webflash-dir868b.img
+
+	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir868c.img -i $(ARCH)-uclibc/vmlinuz.lzma -i $(ARCH)-uclibc/root.fs
+	./tools/seama/seama -i $(ARCH)-uclibc/raw-dir868c.img -m dev=/dev/mtdblock/7 -m type=firmware 
+	./tools/seama/seama -s $(ARCH)-uclibc/web-dir868c.img -i $(ARCH)-uclibc/raw-dir868c.img.seama -m signature=wrgac35_dlink.2013gui_dir868lc
+	./tools/seama/seama -d $(ARCH)-uclibc/web-dir868c.img
+	dd if=$(ARCH)-uclibc/web-dir868c.img of=$(ARCH)-uclibc/webflash-dir868c.img skip=48 iflag=skip_bytes 
+	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dir868c.trx $(ARCH)-uclibc/webflash-dir868c.img
 
 
 	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir860.img -i $(ARCH)-uclibc/vmlinuz.lzma -i $(ARCH)-uclibc/root.fs
