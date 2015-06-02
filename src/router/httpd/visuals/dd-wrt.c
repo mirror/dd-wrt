@@ -5260,7 +5260,6 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 	websWrite(wp, "</div>\n");
 
 #endif
-	show_addconfig(wp, prefix);
 }
 
 #ifdef HAVE_WPA_SUPPLICANT
@@ -5572,7 +5571,9 @@ void show_wparadius(webs_t wp, char *prefix)
 	websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
+#ifdef HAVE_MADWIFI
 	show_addconfig(wp, prefix);
+#endif
 }
 
 void show_wep(webs_t wp, char *prefix)
