@@ -121,7 +121,7 @@ code-to-errno.h: Makefile mkerrnos.awk errnos.in
 # It is correct to use $(CPP).  We want the host's idea of the error codes.
 mkerrcodes.h: Makefile mkerrcodes.awk
 	$(AWK) -f $(srcdir)/mkerrcodes1.awk $(srcdir)/errnos.in >_$@
-	$(CPP) _$@ | grep GPG_ERR_ | $(AWK) -f $(srcdir)/mkerrcodes.awk >$@
+	$(CPP) -std=gnu89 _$@ | grep GPG_ERR_ | $(AWK) -f $(srcdir)/mkerrcodes.awk >$@
 	-rm _$@
 
 # It is correct to use $(CC_FOR_BUILD) here.  We want to run the
