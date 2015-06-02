@@ -8,7 +8,7 @@
  *
  * Returns: Pointer to freshly allocated memory
  */
-inline void *xmalloc(size_t size) {
+void *xmalloc(size_t size) {
 	void *ptr;
 	ptr = malloc(size);
 	if (ptr == NULL) {
@@ -26,7 +26,7 @@ inline void *xmalloc(size_t size) {
  *
  * Returns: Pointer to reallocated memory
  */
-inline void *xrealloc(void *inptr, size_t size) {
+void *xrealloc(void *inptr, size_t size) {
 	void *ptr;
 	ptr = realloc(inptr, size);
 	if (ptr == NULL) {
