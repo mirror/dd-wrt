@@ -285,7 +285,7 @@ void aqos_tables(void)
 
 		// not service-prioritized, then default class
 
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + (prio / 10)));
 
 		base += 10;
 	}
@@ -308,10 +308,10 @@ void aqos_tables(void)
 		} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
 		// not service-prioritized, then default class          
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-s", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-d", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-s", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + (prio / 10)));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-d", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + (prio / 10)));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + (prio / 10)));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + (prio / 10)));
 
 		base += 10;
 	}
@@ -425,10 +425,10 @@ void aqos_tables(void)
 
 		free(m);
 
-		eval("iptables", "-t", "mangle", "-D", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-D", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+		eval("iptables", "-t", "mangle", "-D", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + (prio / 10)));
+		eval("iptables", "-t", "mangle", "-D", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + (prio / 10)));
+		eval("iptables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + (prio / 10)));
+		eval("iptables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + (prio / 10)));
 
 		// not service-prioritized, then default class          
 
