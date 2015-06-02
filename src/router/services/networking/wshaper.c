@@ -336,8 +336,8 @@ void aqos_tables(void)
 		eval("iptables", "-t", "mangle", "-X", chainname_out);
 		eval("iptables", "-t", "mangle", "-N", chainname_out);
 
-		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "CONNMARK", "--restore-mark");
-		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "CONNMARK", "--restore-mark");
+//		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "CONNMARK", "--restore-mark");
+//		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "CONNMARK", "--restore-mark");
 
 		if (nvram_match("wshaper_dev", "LAN")) {
 			if (nvram_nmatch("1", "%s_bridged", data)) {
@@ -453,15 +453,15 @@ void aqos_tables(void)
 		}
 
 
-		eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "CONNMARK", "--save-mark");
-		eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "RETURN");
-		eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "CONNMARK", "--save-mark");
-		eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "RETURN");
+//		eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "CONNMARK", "--save-mark");
+//		eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "RETURN");
+//		eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "CONNMARK", "--save-mark");
+//		eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "RETURN");
 
-		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "CONNMARK", "--save-mark");
-		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "RETURN");
-		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "CONNMARK", "--save-mark");
-		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "RETURN");
+//		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "CONNMARK", "--save-mark");
+//		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "RETURN");
+//		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "CONNMARK", "--save-mark");
+//		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "RETURN");
 		base += 10;
 
 	} while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
