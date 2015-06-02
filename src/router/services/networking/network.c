@@ -4289,6 +4289,11 @@ void start_wan_done(char *wan_ifname)
 	if ((nvram_match("wan_proto", "pppoe")) && check_wan_link(1)) {
 		while (route_del(nvram_safe_get("wan_ifname_1"), 0, NULL, NULL, NULL) == 0) ;
 	}
+#ifdef HAVE_PPPOEDUAL
+	if ((nvram_match("wan_proto", "pppoe_dual")) && check_wan_link(1)) {
+		while (route_del(nvram_safe_get("wan_ifname_1"), 0, NULL, NULL, NULL) == 0) ;
+	}
+#endif
 #ifdef HAVE_PPPOATM
 	if ((nvram_match("wan_proto", "pppoa")) && check_wan_link(1)) {
 		while (route_del(nvram_safe_get("wan_ifname_1"), 0, NULL, NULL, NULL) == 0) ;
@@ -4309,7 +4314,8 @@ void start_wan_done(char *wan_ifname)
 			while (route_add(wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
 			       && timeout--) {
 				if ((nvram_match("wan_proto", "pppoe")
-				     || nvram_match("wan_proto", "pppoa"))
+				     || nvram_match("wan_proto", "pppoa")
+				     || nvram_match("wan_proto", "pppoe_dual"))
 				    && nvram_match("ppp_demand", "1")) {
 					printf("Wait ppp interface to init (3) ...\n");
 					sleep(1);
