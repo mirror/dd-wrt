@@ -368,7 +368,7 @@ void aqos_tables(void)
 	} while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
 
 	qos_devs = nvram_safe_get("svqos_devs");
-
+	int oldbase = base;
 	do {
 		memset(proto, 0, sizeof(proto));
 		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s %31s |", data, level, level2, level3, prio, proto);
@@ -419,16 +419,11 @@ void aqos_tables(void)
 			if (sscanf(svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
 				break;
 
-			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_in);
-			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_out);
+			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base + 3, chainname_in);
+			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base + 3, chainname_out);
 		} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
 
 		free(m);
-
-//		eval("iptables", "-t", "mangle", "-D", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-//		eval("iptables", "-t", "mangle", "-D", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-//		eval("iptables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-//		eval("iptables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 
 		// not service-prioritized, then default class          
 
@@ -437,12 +432,21 @@ void aqos_tables(void)
 	while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
 
 	qos_devs = nvram_safe_get("svqos_devs");
-
+	base = oldbase;
 	do {
 		memset(proto, 0, sizeof(proto));
 		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s %31s |", data, level, level2, level3, prio, proto);
 		if (ret < 5)
 			break;
+
+		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
+			memset(proto, 0, sizeof(proto));
+			eval("iptables", "-t", "mangle", "-D", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+			eval("iptables", "-t", "mangle", "-D", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+			eval("iptables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+			eval("iptables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
+		}
+
 		char chainname_in[32];
 		sprintf(chainname_in, "FILTER_%s_IN", data);
 		char chainname_out[32];
@@ -457,6 +461,7 @@ void aqos_tables(void)
 		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "RETURN");
 		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "CONNMARK", "--save-mark");
 		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "RETURN");
+		base += 10;
 
 	} while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
 
