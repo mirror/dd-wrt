@@ -6,7 +6,7 @@
  *
  *	$Id: oid.h,v 1.5 2008-09-22 06:20:13 chhung Exp $
  */ 
-    
+    
 #define RT_PRIV_IOCTL				(SIOCIWFIRSTPRIV + 0x01)
     
 #define RTPRIV_IOCTL_SET			(SIOCIWFIRSTPRIV + 0x02)
@@ -124,7 +124,7 @@
 // mesh extension OID
 #define OID_802_11_MESH_LINK_STATUS             0x0654
 #define OID_802_11_MESH_LIST                    0x0655
-    
+    
 // Ralink defined OIDs
 // Dennis Lee move to platform specific 
     
@@ -152,7 +152,7 @@
 #define RT_OID_802_11_DESIRED_RATES           (OID_GET_SET_TOGGLE | OID_802_11_DESIRED_RATES)
 #define RT_OID_802_11_CONFIGURATION           (OID_GET_SET_TOGGLE | OID_802_11_CONFIGURATION)
 #define RT_OID_802_11_POWER_MODE              (OID_GET_SET_TOGGLE | OID_802_11_POWER_MODE)
-    
+    
 /* for WPS --YY  */ 
 #define RT_OID_SYNC_RT61                            0x0D010750
 #define RT_OID_WSC_QUERY_STATUS                     ((RT_OID_SYNC_RT61 + 0x01) & 0xffff)

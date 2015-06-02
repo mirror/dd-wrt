@@ -959,12 +959,10 @@ void lcdmessaged(char *dual, char *message);
 extern char *getBridgeMTU(char *);
 extern char *getMTU(char *);
 extern int getBridgeSTP(char *br);
-
-/* NF packet marks */
-char *get_NFServiceMark(char *service, uint32 mark);
+extern char *get_NFServiceMark(char *service, uint32 mark);
 
 #ifdef HAVE_SVQOS
-#define qos_nfmark(x) get_NFServiceMark("QOS", (uint32)(x))
+char *qos_nfmark(uint32 x);
 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 extern char *get_tcfmark(uint32 mark);
