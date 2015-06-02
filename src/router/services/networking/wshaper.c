@@ -439,6 +439,11 @@ void aqos_tables(void)
 		if (ret < 5)
 			break;
 
+		char chainname_in[32];
+		sprintf(chainname_in, "FILTER_%s_IN", data);
+		char chainname_out[32];
+		sprintf(chainname_out, "FILTER_%s_OUT", data);
+
 		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
 			memset(proto, 0, sizeof(proto));
 			eval("iptables", "-t", "mangle", "-D", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
@@ -447,10 +452,6 @@ void aqos_tables(void)
 			eval("iptables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 		}
 
-		char chainname_in[32];
-		sprintf(chainname_in, "FILTER_%s_IN", data);
-		char chainname_out[32];
-		sprintf(chainname_out, "FILTER_%s_OUT", data);
 
 		eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "CONNMARK", "--save-mark");
 		eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "RETURN");
