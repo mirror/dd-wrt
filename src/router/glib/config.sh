@@ -13,7 +13,7 @@ if [[ ${1} = "-r" ]]; then
 fi
 
 
-CC="mipsel-linux-uclibc-gcc" CFLAGS="-pipe -Os -fomit-frame-pointer -mips32 -mtune=mips32 -funit-at-a-time" \
+CC="${ARCH}-linux-uclibc-gcc" CFLAGS="${2}" \
 	glib_cv_prog_cc_ansi_proto=no \
 	ac_cv_sizeof_char=1 \
 	ac_cv_sizeof_short=2 \
