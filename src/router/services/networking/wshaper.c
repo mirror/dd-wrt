@@ -72,7 +72,7 @@ extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *l
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 extern char *get_NFServiceMark(char *service, uint32 mark);
 
-#if !(defined(ARCH_broadcom) || defined(HAVE_BCMMODERN))
+#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 extern char *get_tcfmark(uint32 mark);
 #endif
 
