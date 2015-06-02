@@ -1944,7 +1944,7 @@ void addAction(char *action)
 		memset(actionstack, 0, strlen(services) + strlen(action) + 2);
 		strcpy(actionstack, action);
 		strcat(actionstack, " ");
-		strcat(actionstack, nvram_safe_get("action_service"));
+		strcat(actionstack, services);
 		nvram_set("action_service", actionstack);
 		free(actionstack);
 	} else {
