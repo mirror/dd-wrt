@@ -1,5 +1,5 @@
 e2fsprogs-configure:
-	cd e2fsprogs && ./configure --host=$(ARCH)-linux CC="$(CC) $(COPTS) -D_GNU_SOURCE  -DNEED_PRINTF" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-elf-shlibs --enable-compression --enable-htree --enable-symlink-install --disable-tls --libdir=/lib root_prefix=$(INSTALLDIR)/e2fsprogs
+	cd e2fsprogs && ./configure --host=$(ARCH)-linux CC="$(CC) $(COPTS) -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-elf-shlibs --enable-compression --enable-htree --enable-symlink-install --disable-tls --libdir=/lib root_prefix=$(INSTALLDIR)/e2fsprogs
 	make -C e2fsprogs
 	cd xfsprogs && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)  -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid" CC="$(CC) $(COPTS)" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-gettext=no --enable-lib64=no root_prefix=$(INSTALLDIR)/e2fsprogs
 
