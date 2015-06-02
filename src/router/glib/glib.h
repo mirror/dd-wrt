@@ -184,7 +184,7 @@ extern "C" {
 #ifdef G_HAVE_INLINE
 #  if defined (__GNUC__) && defined (__STRICT_ANSI__)
 #    undef inline
-#    define inline __inline__
+#    define inline static __inline__
 #  endif
 #else /* !G_HAVE_INLINE */
 #  undef inline
@@ -204,7 +204,7 @@ extern "C" {
 #ifndef G_INLINE_FUNC
 #  ifdef __GNUC__
 #    ifdef __OPTIMIZE__
-#      define G_INLINE_FUNC extern inline
+#      define G_INLINE_FUNC inline
 #    else
 #      undef G_CAN_INLINE
 #      define G_INLINE_FUNC extern
