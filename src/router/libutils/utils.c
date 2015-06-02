@@ -7039,6 +7039,11 @@ char *get_NFServiceMark(char *service, uint32 mark)
 #endif
 }
 
+char *qos_nfmark(uint32 x)
+{
+	return get_NFServiceMark("QOS", x);
+}
+
 void getPortMapping(int *vlanmap)
 {
 	if (nvram_match("vlan1ports", "0 5")) {
