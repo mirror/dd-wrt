@@ -5,15 +5,19 @@ WRT_BUILDROOT=/opt/
 #CC=mipsel-linux-uclibc-gcc
 #STRIP=mipsel-linux-uclibc-strip
 
+ifeq ($(CONFIG_80211AC),y)
+CFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+
+endif
 
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
-CFLAGS=$(COPTS) -fomit-frame-pointer -I. -I../shared -I../services -I../../include.bcm -DNEW_RSSI
+CFLAGS+=$(COPTS) -fomit-frame-pointer -I. -I../shared -I../services -I../../include.bcm -DNEW_RSSI
 else
-CFLAGS=$(COPTS) -fomit-frame-pointer -I. -I../shared -I../services -I../../include.v24 -DNEW_RSSI
+CFLAGS+=$(COPTS) -fomit-frame-pointer -I. -I../shared -I../services -I../../include.v24 -DNEW_RSSI
 endif
 else
-CFLAGS=$(COPTS) -fomit-frame-pointer -Wall -I. -I../shared -I../services -I../../include.v23
+CFLAGS+=$(COPTS) -fomit-frame-pointer -Wall -I. -I../shared -I../services -I../../include.v23
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
