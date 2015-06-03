@@ -387,17 +387,28 @@ void aqos_tables(void)
 		}
 
 		if (nvram_nmatch("1", "%s_bridged", data)) {
-			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
-			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+//			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+//			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+//			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+//			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+
+			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT",  "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2",  "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2",  "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
 		} else {
 
-			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
+//			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
+//			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
 
-			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
+//			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
+//			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
+
+			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-i", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-o", data, "-j", chainname_out);
+
+			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-i", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-o", data, "-j", chainname_out);
 		}
 
 	} while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
