@@ -419,8 +419,8 @@ void aqos_tables(void)
 			if (sscanf(svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
 				break;
 
-			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base + 3, chainname_in);
-			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base + 3, chainname_out);
+			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_in);
+			add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_out);
 		} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
 
 		free(m);
