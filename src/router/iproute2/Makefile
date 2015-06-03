@@ -54,7 +54,7 @@ CCOPTS = -D_GNU_SOURCE $(COPTS) -Wstrict-prototypes -Wall
 CFLAGS = -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 
 CFLAGS += $(CCOPTS) $(MIPS16_OPT) -I$(KERNEL_INCLUDE) $(ASM_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
-#-ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 LDLIBS += -L../lib -lnetlink -lutil 
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
