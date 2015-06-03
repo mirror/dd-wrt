@@ -678,9 +678,12 @@ void add_client_classes(unsigned int base, unsigned int level)
 		parent = 6;
 		break;
 	default:
-		uplimit = uprate;
-		downlimit = downrate;
-		lanlimit = lanrate;
+		if (uprate)
+			uplimit = uprate;
+		if (downrate)
+			downlimit = downrate;
+		if (lanrate)
+			lanlimit = lanrate;
 		prio = 3;
 		parent = 1;
 		break;
