@@ -352,17 +352,17 @@ void aqos_tables(void)
 		}
 
 		if (nvram_nmatch("1", "%s_bridged", data)) {
-			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
-			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "-m", "mark", "--mark", nullmask, "2", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "2", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
 		} else {
 
-			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-i", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-o", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
 
-			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-i", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-o", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "-m", "mark", "--mark", nullmask, "2", "-i", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "2", "-o", data, "-j", chainname_out);
 		}
 
 	} while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
@@ -432,7 +432,6 @@ void aqos_tables(void)
 			} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 		}
 		// not service-prioritized, then default class          
-
 		base += 10;
 
 	}
@@ -458,6 +457,10 @@ void aqos_tables(void)
 			eval("iptables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 			eval("iptables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 		}
+		eval("iptables", "-D", chainname_in, "-j", "RETURN");
+		eval("iptables", "-D", chainname_out, "-j", "RETURN");
+		eval("iptables", "-A", chainname_in, "-j", "RETURN");
+		eval("iptables", "-A", chainname_out, "-j", "RETURN");
 //              eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "CONNMARK", "--save-mark");
 //              eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "RETURN");
 //              eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "CONNMARK", "--save-mark");
@@ -872,7 +875,10 @@ int svqos_iptables(void)
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
-
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
+	if (nvram_invmatch("openvpn_enable", "0") || nvram_invmatch("openvpncl_enable", "0")) {
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
+	}
 #ifndef HAVE_80211AC
 	// seems to crash northstar
 
@@ -884,13 +890,6 @@ int svqos_iptables(void)
 
 	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 #endif
-// obsolete
-//      system2
-//          ("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
-	if (nvram_invmatch("openvpn_enable", "0") || nvram_invmatch("openvpncl_enable", "0")) {
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
-	}
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 
