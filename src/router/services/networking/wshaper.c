@@ -248,6 +248,36 @@ static inline int is_in_bridge(char *interface)
 }
 #endif
 
+static char *s_iflist = NULL;
+static void addIF(char *ifname)
+{
+	if (!s_iflist) {
+		s_iflist = strdup(ifname);
+	} else {
+		s_iflist = realloc(s_iflist, strlen(s_iflist) + strlen(ifname) + 2);
+	}
+	sprintf(s_iflist, "%s %s", s_iflist, ifname);
+}
+
+static int hasIF(char *ifname)
+{
+	char word[256];
+	char *next;
+	if (!s_iflist)
+	    return 0;
+	foreach(word, s_iflist, next) {
+		if (!strcmp(word, ifname))
+			return 1;
+	}
+	return 0;
+}
+
+static void clearIF(void)
+{
+	free(s_iflist);
+	s_iflist =  NULL;
+}
+
 void aqos_tables(void)
 {
 	FILE *outips = fopen("/tmp/aqos_ips", "wb");
@@ -323,6 +353,11 @@ void aqos_tables(void)
 		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s %31s |", data, level, level2, level3, prio, proto);
 		if (ret < 5)
 			break;
+		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
+			/* mark interface interface as priority / bandwidth limits based without any service filter */
+			if (!hasIF(data))
+			    addIF(data);
+		}
 		char chainname_in[32];
 		sprintf(chainname_in, "FILTER_%s_IN", data);
 		char chainname_out[32];
@@ -421,13 +456,17 @@ void aqos_tables(void)
 
 			free(m);
 		}
-		if (strlen(qos_svcs)) {
+		/* 
+		 * check if interface has a none entry for interface based bandwidth limits or priorities. 
+		 * in this case global level based services must take care if these limits 
+	         */
+		if (hasIF(data) && !strlen(proto) && strlen(qos_svcs)) {
 			do {
 				if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
 					break;
 
-				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, 0, chainname_in);
-				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, 0, chainname_out);
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_in);
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_out);
 
 			} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 		}
@@ -436,6 +475,7 @@ void aqos_tables(void)
 
 	}
 	while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
+	clearIF();
 
 	qos_devs = nvram_safe_get("svqos_devs");
 	base = oldbase;
@@ -457,19 +497,10 @@ void aqos_tables(void)
 			eval("iptables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 			eval("iptables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 		}
-		eval("iptables", "-t", "mangle","-D", chainname_in, "-j", "RETURN");
-		eval("iptables", "-t", "mangle","-D", chainname_out, "-j", "RETURN");
-		eval("iptables", "-t", "mangle","-A", chainname_in, "-j", "RETURN");
-		eval("iptables", "-t", "mangle","-A", chainname_out, "-j", "RETURN");
-//              eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "CONNMARK", "--save-mark");
-//              eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "RETURN");
-//              eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "CONNMARK", "--save-mark");
-//              eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "RETURN");
-
-//              eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "CONNMARK", "--save-mark");
-//              eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "RETURN");
-//              eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "CONNMARK", "--save-mark");
-//              eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "RETURN");
+		eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "RETURN");
+		eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "RETURN");
+		eval("iptables", "-t", "mangle", "-A", chainname_in, "-j", "RETURN");
+		eval("iptables", "-t", "mangle", "-A", chainname_out, "-j", "RETURN");
 		base += 10;
 
 	} while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
