@@ -1058,7 +1058,7 @@ void start_wshaper(void)
 
 #endif
 
-	char *vifs = eths;
+	vifs = eths;
 	foreach(var, vifs, next) {
 		eval("ifconfig", var, "up");
 	}
