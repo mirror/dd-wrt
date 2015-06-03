@@ -577,6 +577,8 @@ int svqos_iptables(void)
 		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(40), "flowid", "1:40");
 
 	}
+	eval("tc","filter","show","dev","imq0");
+	eval("tc","filter","show","dev","imq1");
 #endif
 
 	// set-up mark/filter tables
@@ -631,6 +633,8 @@ int svqos_iptables(void)
 			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-j", "IMQ", "--todev", "1");
 		}
 	}
+	eval("tc","filter","show","dev","imq0");
+	eval("tc","filter","show","dev","imq1");
 
 	/* add openvpn filter rules */
 #ifdef HAVE_AQOS
@@ -724,8 +728,12 @@ int svqos_iptables(void)
 		} while ((qos_vpn = strpbrk(++qos_vpn, "|")) && qos_vpn++);
 	}
 #endif
+	eval("tc","filter","show","dev","imq0");
+	eval("tc","filter","show","dev","imq1");
 
 	aqos_tables();
+	eval("tc","filter","show","dev","imq0");
+	eval("tc","filter","show","dev","imq1");
 #endif
 
 #ifndef HAVE_AQOS
@@ -901,6 +909,8 @@ int svqos_iptables(void)
 			}
 		}
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
+	eval("tc","filter","show","dev","imq0");
+	eval("tc","filter","show","dev","imq1");
 
 	// close mark-tables 
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
@@ -921,6 +931,8 @@ int svqos_iptables(void)
 
 	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 #endif
+	eval("tc","filter","show","dev","imq0");
+	eval("tc","filter","show","dev","imq1");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 
@@ -928,6 +940,8 @@ int svqos_iptables(void)
 
 	// set port priority and port bandwidth
 	svqos_set_ports();
+	eval("tc","filter","show","dev","imq0");
+	eval("tc","filter","show","dev","imq1");
 
 	return 0;
 }
@@ -1100,3 +1114,11 @@ void stop_wshaper(void)
 
 	return;
 }
+
+#ifdef TEST
+int main(int argc,char *argv[])
+{
+start_wshaper();
+
+}
+#endif
