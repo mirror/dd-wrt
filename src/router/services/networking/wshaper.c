@@ -457,10 +457,10 @@ void aqos_tables(void)
 			eval("iptables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 			eval("iptables", "-t", "mangle", "-A", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 		}
-		eval("iptables", "-D", chainname_in, "-j", "RETURN");
-		eval("iptables", "-D", chainname_out, "-j", "RETURN");
-		eval("iptables", "-A", chainname_in, "-j", "RETURN");
-		eval("iptables", "-A", chainname_out, "-j", "RETURN");
+		eval("iptables", "-t", "mangle","-D", chainname_in, "-j", "RETURN");
+		eval("iptables", "-t", "mangle","-D", chainname_out, "-j", "RETURN");
+		eval("iptables", "-t", "mangle","-A", chainname_in, "-j", "RETURN");
+		eval("iptables", "-t", "mangle","-A", chainname_out, "-j", "RETURN");
 //              eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "CONNMARK", "--save-mark");
 //              eval("iptables", "-t", "mangle", "-D", chainname_in, "-j", "RETURN");
 //              eval("iptables", "-t", "mangle", "-D", chainname_out, "-j", "CONNMARK", "--save-mark");
