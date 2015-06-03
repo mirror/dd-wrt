@@ -386,12 +386,11 @@ void aqos_tables(void)
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
 
+		char chainname_in[32];
+		sprintf(chainname_in, "FILTER_%s_IN", data);
+		char chainname_out[32];
+		sprintf(chainname_out, "FILTER_%s_OUT", data);
 		if (strlen(proto)) {
-
-			char chainname_in[32];
-			sprintf(chainname_in, "FILTER_%s_IN", data);
-			char chainname_out[32];
-			sprintf(chainname_out, "FILTER_%s_OUT", data);
 
 			char *svcs = malloc(strlen(qos_svcs) + 128 + 2);
 			char *m = svcs;
@@ -420,20 +419,18 @@ void aqos_tables(void)
 				} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
 			}
 
-			if (strlen(qos_svcs)) {
-				do {
-					if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
-						break;
-
-					add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, 0, chainname_in);
-					add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, 0, chainname_out);
-
-				} while ((svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
-			}
+			free(m);
 		}
+		if (strlen(qos_svcs)) {
+			do {
+				if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+					break;
 
-		free(m);
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, 0, chainname_in);
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, 0, chainname_out);
 
+			} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
+		}
 		// not service-prioritized, then default class          
 
 		base += 10;
@@ -557,14 +554,11 @@ int svqos_iptables(void)
 	eval("iptables", "-t", "mangle", "-F", "FILTER_OUT");
 	eval("iptables", "-t", "mangle", "-X", "FILTER_OUT");
 	eval("iptables", "-t", "mangle", "-N", "FILTER_OUT");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--restore-mark");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
-
 	eval("iptables", "-t", "mangle", "-F", "FILTER_IN");
 	eval("iptables", "-t", "mangle", "-X", "FILTER_IN");
 	eval("iptables", "-t", "mangle", "-N", "FILTER_IN");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--restore-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--restore-mark");
-	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 
 	eval("iptables", "-t", "mangle", "-D", "PREROUTING", "-j", "FILTER_IN");
 	eval("iptables", "-t", "mangle", "-I", "PREROUTING", "-j", "FILTER_IN");
@@ -875,6 +869,7 @@ int svqos_iptables(void)
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
 	// close mark-tables 
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
 
@@ -895,6 +890,7 @@ int svqos_iptables(void)
 	if (nvram_invmatch("openvpn_enable", "0") || nvram_invmatch("openvpncl_enable", "0")) {
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
 	}
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 
