@@ -983,6 +983,7 @@ void start_wshaper(void)
 	char eths[512];
 	char *next;
 	char var[80];
+	char *vifs;
 	if (nvram_invmatch("wshaper_enable", "0")) {
 		memset(eths, 0, 512);
 		getIfList(eths, "ixp");
@@ -1016,7 +1017,7 @@ void start_wshaper(void)
 		memset(eths2, 0, 512);
 		getIfList(eths2, "rb");
 		snprintf(eths, 512, "%s %s", eths, eths2);
-		char *vifs = eths;
+		vifs = eths;
 
 		foreach(var, vifs, next) {
 			eval("ifconfig", var, "down");
