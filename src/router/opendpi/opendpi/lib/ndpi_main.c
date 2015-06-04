@@ -1200,7 +1200,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_STUN,
 			    no_master, custom_master, "STUN",
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
-			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+			    ndpi_build_default_ports(ports_b, 3478, 0, 0, 0, 0) /* UDP */);
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_IP_IPSEC,
 			    no_master,
 			    no_master, "IPsec",
@@ -1259,6 +1259,11 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_PCANYWHERE,
 			    no_master,
 			    no_master, "PcAnywhere",
+			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_WHATSAPP_VOICE,
+			    no_master,
+			    no_master, "Whatsapp Voice",
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
 
@@ -1577,8 +1582,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master,
 			    no_master,
 			    "H323",
-			    ndpi_build_default_ports(ports_a, 1719, 1720, 3478, 0, 0) /* TCP */,
-			    ndpi_build_default_ports(ports_b, 1719, 1720, 3478, 0, 0) /* UDP */);
+			    ndpi_build_default_ports(ports_a, 1719, 1720, 0, 0, 0) /* TCP */,
+			    ndpi_build_default_ports(ports_b, 1719, 1720, 0, 0, 0) /* UDP */);
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_OPENVPN,
 			    no_master,
 			    no_master, "OpenVPN",
