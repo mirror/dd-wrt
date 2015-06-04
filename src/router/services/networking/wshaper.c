@@ -82,7 +82,7 @@ extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned 
 extern void add_client_classes(unsigned int base, unsigned int level);
 #endif
 
-void svqos_reset_ports(void)
+static void svqos_reset_ports(void)
 {
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
@@ -149,7 +149,7 @@ void svqos_reset_ports(void)
 #endif
 }
 
-int svqos_set_ports(void)
+static int svqos_set_ports(void)
 {
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
@@ -248,37 +248,57 @@ static inline int is_in_bridge(char *interface)
 }
 #endif
 
+static char *s_downlist = NULL;
 static char *s_iflist = NULL;
-static void addIF(char *ifname)
+static void s_addIF(char *list, char *ifname)
 {
 	if (!s_iflist) {
-		s_iflist = strdup(ifname);
+		list = strdup(ifname);
 	} else {
-		s_iflist = realloc(s_iflist, strlen(s_iflist) + strlen(ifname) + 2);
+		list = realloc(list, strlen(list) + strlen(ifname) + 2);
 	}
-	sprintf(s_iflist, "%s %s", s_iflist, ifname);
+	sprintf(list, "%s %s", list, ifname);
 }
 
-static int hasIF(char *ifname)
+static int s_hasIF(char *list, char *ifname)
 {
 	char word[256];
 	char *next;
-	if (!s_iflist)
+	if (!list)
 		return 0;
-	foreach(word, s_iflist, next) {
+	foreach(word, list, next) {
 		if (!strcmp(word, ifname))
 			return 1;
 	}
 	return 0;
 }
 
-static void clearIF(void)
+static void s_clearIF(char **list)
 {
-	free(s_iflist);
-	s_iflist = NULL;
+	if (*list)
+		free(*list);
+	*list = NULL;
 }
 
-void aqos_tables(void)
+#define addIF(ifname) s_addIF(s_iflist,ifname)
+#define hasIF(ifname) s_hasIF(s_iflist,ifname)
+#define clearIF() s_clearIF(&s_iflist)
+
+#define down_addIF(ifname) s_addIF(s_downlist,ifname)
+#define down_hasIF(ifname) s_hasIF(s_downlist,ifname)
+#define down_clearIF() s_clearIF(&s_downlist)
+static void down_upIF(void)
+{
+	char word[256];
+	char *next;
+	if (!s_downlist)
+		return;
+	foreach(word, s_downlist, next) {
+		eval("ifconfig", word, "up");
+	}
+}
+
+static void aqos_tables(void)
 {
 	FILE *outips = fopen("/tmp/aqos_ips", "wb");
 	FILE *outmacs = fopen("/tmp/aqos_macs", "wb");
@@ -376,6 +396,8 @@ void aqos_tables(void)
 
 		if (nvram_match("wshaper_dev", "LAN")) {
 			if (nvram_nmatch("1", "%s_bridged", data)) {
+				eval("ifconfig", data, "down");
+				down_addIF(data);
 				eval("iptables", "-t", "mangle", "-D", "INPUT", "-m", "physdev", "--physdev-in", data, "-j", "IMQ", "--todev", "0");
 				eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-m", "physdev", "--physdev-in", data, "-j", "IMQ", "--todev", "0");
 				eval("iptables", "-t", "mangle", "-D", "FORWARD", "-m", "physdev", "--physdev-in", data, "-j", "IMQ", "--todev", "0");
@@ -387,22 +409,24 @@ void aqos_tables(void)
 		}
 
 		if (nvram_nmatch("1", "%s_bridged", data)) {
-//			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-//			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
-//			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-//			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+//                      eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+//                      eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+//                      eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+//                      eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
 
+			eval("ifconfig", data, "down");
+			down_addIF(data);
 			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT",  "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
-			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2",  "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
-			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2",  "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
+			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
 		} else {
 
-//			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
-//			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
+//                      eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
+//                      eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
 
-//			eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
-//			eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
+//                      eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "mark", "--mark", nullmask, "-i", data, "-j", chainname_in);
+//                      eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "mark", "--mark", nullmask, "-o", data, "-j", chainname_out);
 
 			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-i", data, "-j", chainname_in);
 			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-o", data, "-j", chainname_out);
@@ -521,7 +545,7 @@ void aqos_tables(void)
 }
 #endif
 
-int svqos_iptables(void)
+static int svqos_iptables(void)
 {
 	char *qos_pkts = nvram_safe_get("svqos_pkts");
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
@@ -705,6 +729,8 @@ int svqos_iptables(void)
 			getIfList(iflist, "tap");
 			foreach(word, iflist, next) {
 				if (is_in_bridge(word)) {
+					eval("ifconfig", word, "down");
+					down_addIF(word);
 					eval("iptables", "-t", "mangle", "-I", "PREROUTING", "2", "-m", "physdev", "--physdev-in", word, "-j", "VPN_IN");
 					eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-m", "physdev", "--physdev-is-bridged", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
 					eval("iptables", "-t", "mangle", "-I", "FORWARD", "1", "-m", "physdev", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
@@ -738,9 +764,11 @@ int svqos_iptables(void)
 			char s_level[32];
 			sprintf(s_level, "%d", atoi(level) / 10);
 			/* outgoing data */
-			if (is_in_bridge(data))
+			if (is_in_bridge(data)) {
+				eval("ifconfig", data, "down");
+				down_addIF(data);
 				eval("iptables", "-t", "mangle", "-I", "VPN_OUT", "1", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", "DSCP", "--set-dscp", s_level);
-			else
+			} else
 				eval("iptables", "-t", "mangle", "-I", "VPN_OUT", "1", "-o", data, "-j", "DSCP", "--set-dscp", s_level);
 
 		} while ((qos_vpn = strpbrk(++qos_vpn, "|")) && qos_vpn++);
@@ -1033,14 +1061,15 @@ void start_wshaper(void)
 		eval("ifconfig", "imq1", "up");
 		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd, "imq1");
 	}
-	eval("ifconfig","imq0","down");
-	eval("ifconfig","imq1","down");
+	eval("ifconfig", "imq0", "down");
+	eval("ifconfig", "imq1", "down");
 	svqos_iptables();
-	eval("ifconfig","imq0","up");
-	eval("ifconfig","imq1","up");
+	eval("ifconfig", "imq0", "up");
+	eval("ifconfig", "imq1", "up");
 
 #endif
-
+	down_upIF();
+	down_clearIF();
 	nvram_set("qos_done", "1");
 
 	return;
