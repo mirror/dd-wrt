@@ -389,7 +389,7 @@ struct compat_xt_conntrack_info
 	u_int8_t			invflags;
 };
 
-static void conntrack_mt_compat_from_user_v0(void *dst, void *src)
+static void conntrack_mt_compat_from_user_v0(void *dst, const void *src)
 {
 	const struct compat_xt_conntrack_info *cm = src;
 	struct xt_conntrack_info m = {
@@ -406,7 +406,7 @@ static void conntrack_mt_compat_from_user_v0(void *dst, void *src)
 	memcpy(dst, &m, sizeof(m));
 }
 
-static int conntrack_mt_compat_to_user_v0(void __user *dst, void *src)
+static int conntrack_mt_compat_to_user_v0(void __user *dst, const void *src)
 {
 	const struct xt_conntrack_info *m = src;
 	struct compat_xt_conntrack_info cm = {
