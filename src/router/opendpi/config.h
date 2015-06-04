@@ -48,7 +48,7 @@
 #define LT_OBJDIR ".libs/"
 
 /* SVN Release */
-#define NDPI_GIT_RELEASE "r1.5.2"
+#define NDPI_GIT_RELEASE "r1.6.0"
 
 /* Last SVN change */
 #define NDPI_SVN_DATE "Sun May 24 11:52:21 CEST 2015"
@@ -63,7 +63,7 @@
 #define PACKAGE_NAME "libndpi"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "libndpi 1.5.2"
+#define PACKAGE_STRING "libndpi 1.6.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "libndpi"
@@ -72,7 +72,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.5.2"
+#define PACKAGE_VERSION "1.6.0"
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */
@@ -82,4 +82,4 @@
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "1.5.2"
+#define VERSION "1.6.0"
