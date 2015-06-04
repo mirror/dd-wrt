@@ -979,50 +979,6 @@ void start_wshaper(void)
 	else
 		script_name = "svqos2";
 
-	char eths2[512];
-	char eths[512];
-	char *next;
-	char var[80];
-	char *vifs;
-	if (nvram_invmatch("wshaper_enable", "0")) {
-		memset(eths, 0, 512);
-		getIfList(eths, "ixp");
-		memset(eths2, 0, 512);
-		getIfList(eths2, "eth");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		memset(eths2, 0, 512);
-		getIfList(eths2, "imq");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		memset(eths2, 0, 512);
-		getIfList(eths2, "ppp");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		memset(eths2, 0, 512);
-		getIfList(eths2, "tun");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		memset(eths2, 0, 512);
-		getIfList(eths2, "tap");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		memset(eths2, 0, 512);
-		getIfList(eths2, "vlan");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		memset(eths2, 0, 512);
-		getIfList(eths2, "ath");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		memset(eths2, 0, 512);
-		getIfList(eths2, "wl");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		memset(eths2, 0, 512);
-		getIfList(eths2, "ra");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		memset(eths2, 0, 512);
-		getIfList(eths2, "rb");
-		snprintf(eths, 512, "%s %s", eths, eths2);
-		vifs = eths;
-
-		foreach(var, vifs, next) {
-			eval("ifconfig", var, "down");
-		}
-	}
 	stop_wshaper();
 	if (!nvram_invmatch("wshaper_enable", "0"))
 		return;
@@ -1077,14 +1033,14 @@ void start_wshaper(void)
 		eval("ifconfig", "imq1", "up");
 		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd, "imq1");
 	}
+	eval("ifconfig","imq0","down");
+	eval("ifconfig","imq1","down");
 	svqos_iptables();
+	eval("ifconfig","imq0","up");
+	eval("ifconfig","imq1","up");
 
 #endif
 
-	vifs = eths;
-	foreach(var, vifs, next) {
-		eval("ifconfig", var, "up");
-	}
 	nvram_set("qos_done", "1");
 
 	return;
