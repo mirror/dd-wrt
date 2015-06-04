@@ -316,13 +316,26 @@ config IMQ_NUM_DEVS
 	depends on IMQ
 	default "16"
 	help
-	  This setting defines how many IMQ devices will be created.
+	  This setting defines how many IMQ devices may be use.
 
 	  The default value is 16.
 
 	  More information can be found at: www.linuximq.net
 
 	  If not sure leave the default settings alone.
+
+config IMQ_ALLOC_DEVS
+	int "Number of created IMQ devices"
+	range 2 16
+	depends on IMQ
+	default "1"
+	help
+	  This setting defines how many IMQ devices will be created on startup.
+
+	  The default value is 1.
+
+	  Other devices can be created later using the command "ip link add imqX type imq"
+
 
 config TUN
 	tristate "Universal TUN/TAP device driver support"
