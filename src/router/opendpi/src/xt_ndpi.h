@@ -80,8 +80,8 @@ struct xt_ndpi_tginfo {
 "collectd",        "socks5",               "socks4",           "rtmp",          "ftp_data",\
 "wikipedia",       "zmq",                  "amazon",           "ebay",          "cnn",\
 "megaco",          "redis",                "pando",            "vhua",          "telegram", \
-"vevo",            "pandora",              "quic",    "popo",           "manolito", "feidian", "gadugadu", "i23v5", "secondlife"
-#define NDPI_PROTOCOL_MAXNUM 194
+"vevo",            "pandora",              "quic",    "popo",           "manolito", "feidian", "gadugadu", "i23v5", "secondlife", "whatsapp_voice"
+#define NDPI_PROTOCOL_MAXNUM 195
 #endif
 
 #endif /* _LINUX_NETFILTER_XT_NDPI_H */
