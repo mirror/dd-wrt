@@ -250,16 +250,6 @@ static inline int is_in_bridge(char *interface)
 
 static char *s_downlist = NULL;
 static char *s_iflist = NULL;
-static void s_addIF(char *list, char *ifname)
-{
-	if (!s_iflist) {
-		list = strdup(ifname);
-	} else {
-		list = realloc(list, strlen(list) + strlen(ifname) + 2);
-	}
-	sprintf(list, "%s %s", list, ifname);
-}
-
 static int s_hasIF(char *list, char *ifname)
 {
 	char word[256];
@@ -273,6 +263,19 @@ static int s_hasIF(char *list, char *ifname)
 	return 0;
 }
 
+static void s_addIF(char **list, char *ifname)
+{
+	if (s_hasIF(*list, ifname))
+		return;
+
+	if (!*list) {
+		*list = strdup(ifname);
+	} else {
+		*list = realloc(*list, strlen(*list) + strlen(ifname) + 2);
+	}
+	sprintf(*list, "%s %s", *list, ifname);
+}
+
 static void s_clearIF(char **list)
 {
 	if (*list)
@@ -280,11 +283,11 @@ static void s_clearIF(char **list)
 	*list = NULL;
 }
 
-#define addIF(ifname) s_addIF(s_iflist,ifname)
+#define addIF(ifname) s_addIF(&s_iflist,ifname)
 #define hasIF(ifname) s_hasIF(s_iflist,ifname)
 #define clearIF() s_clearIF(&s_iflist)
 
-#define down_addIF(ifname) s_addIF(s_downlist,ifname)
+#define down_addIF(ifname) s_addIF(&s_downlist,ifname)
 #define down_hasIF(ifname) s_hasIF(s_downlist,ifname)
 #define down_clearIF() s_clearIF(&s_downlist)
 static void down_upIF(void)
@@ -375,8 +378,7 @@ static void aqos_tables(void)
 			break;
 		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
 			/* mark interface interface as priority / bandwidth limits based without any service filter */
-			if (!hasIF(data))
-				addIF(data);
+			    addIF(data);
 		}
 		char chainname_in[32];
 		sprintf(chainname_in, "FILTER_%s_IN", data);
