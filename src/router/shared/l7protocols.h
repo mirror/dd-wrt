@@ -26,6 +26,9 @@ typedef struct _l7filters	// l7 and p2p filters
 //Added ,  (in extra), dazhihui, .
 
 l7filters filters_list[] = {
+#ifdef HAVE_OPENDPI
+	{"unknown", NDPI_ONLY},
+#endif
 	{"100bao", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"afp", NDPI_ONLY},
