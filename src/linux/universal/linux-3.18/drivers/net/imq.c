@@ -135,6 +135,23 @@
  *              - Fixed GSO handling for 3.10, see imq_nf_queue() for comments.
  *              - Don't copy skb->cb_next when copying or cloning skbuffs.
  *
+ *             2013/09/16 - Jussi Kivilinna <jussi.kivilinna@iki.fi>
+ *              - Port to 3.11
+ *
+ *             2013/11/12 - Jussi Kivilinna <jussi.kivilinna@iki.fi>
+ *              - Port to 3.12
+ *
+ *             2014/02/07 - Jussi Kivilinna <jussi.kivilinna@iki.fi>
+ *              - Port to 3.13
+ *
+ *             2014/02/16 - Jussi Kivilinna <jussi.kivilinna@iki.fi>
+ *              - Port to 3.13.3
+ *
+ *             2015/01/24 - Vitaly Lavrov
+ *              - Rewritten to work with the network namespace.
+ *                Each namespace has its own set of "IMQ" devices.
+ *                Port to 3.18
+ *
  *	       Also, many thanks to pablo Sebastian Greco for making the initial
  *	       patch and to those who helped the testing.
  *
@@ -166,9 +183,45 @@
 #include <net/ip.h>
 #include <net/ipv6.h>
 
+#include <net/net_namespace.h>
+#include <net/netns/generic.h>
+
+static int numdevs = 
+#if defined(CONFIG_IMQ_NUM_DEVS)
+	CONFIG_IMQ_NUM_DEVS;
+#else
+	IMQ_MAX_DEVS;
+#endif
+
+static int allocdevs = 
+#if defined(CONFIG_IMQ_ALLOC_DEVS)
+	CONFIG_IMQ_ALLOC_DEVS;
+#else
+	1;
+#endif
+
+#define IMQ_MAX_QUEUES 32
+static int numqueues = 1;
+static u32 imq_hashrnd;
+
+struct imq_net {
+	struct net_device *imq_devs_cache[IMQ_MAX_DEVS];
+};
+
+static int imq_net_id __read_mostly;
+
+static inline struct imq_net *imq_pernet(struct net *net)
+{
+        return net_generic(net, imq_net_id);
+}
+
 static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num);
 
-static nf_hookfn imq_nf_hook;
+static unsigned int imq_nf_hook(const struct nf_hook_ops *hook_ops,
+				struct sk_buff *pskb,
+				const struct net_device *indev,
+				const struct net_device *outdev,
+				int (*okfn)(struct sk_buff *));
 
 static struct nf_hook_ops imq_ops[] = {
 	{
@@ -223,17 +276,6 @@ static struct nf_hook_ops imq_ops[] = {
 #endif
 };
 
-#if defined(CONFIG_IMQ_NUM_DEVS)
-static int numdevs = CONFIG_IMQ_NUM_DEVS;
-#else
-static int numdevs = IMQ_MAX_DEVS;
-#endif
-
-static struct net_device *imq_devs_cache[IMQ_MAX_DEVS];
-
-#define IMQ_MAX_QUEUES 32
-static int numqueues = 1;
-static u32 imq_hashrnd;
 
 static inline __be16 pppoe_proto(const struct sk_buff *skb)
 {
@@ -489,33 +531,6 @@ static netdev_tx_t imq_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 	return NETDEV_TX_OK;
 }
 
-static struct net_device *get_imq_device_by_index(int index)
-{
-	struct net_device *dev = NULL;
-	struct net *net;
-	char buf[8];
-
-	/* get device by name and cache result */
-	snprintf(buf, sizeof(buf), "imq%d", index);
-
-	/* Search device from all namespaces. */
-	for_each_net(net) {
-		dev = dev_get_by_name(net, buf);
-		if (dev)
-			break;
-	}
-
-	if (WARN_ON_ONCE(dev == NULL)) {
-		/* IMQ device not found. Exotic config? */
-		return ERR_PTR(-ENODEV);
-	}
-
-	imq_devs_cache[index] = dev;
-	dev_put(dev);
-
-	return dev;
-}
-
 static struct nf_queue_entry *nf_queue_entry_dup(struct nf_queue_entry *e)
 {
 	struct nf_queue_entry *entry = kmemdup(e, e->size, GFP_ATOMIC);
@@ -589,11 +604,14 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num)
 {
 	struct sk_buff *skb, *segs;
 	struct net_device *dev;
+	struct imq_net *inst;
 	unsigned int queued;
 	int index, retval, err;
 
+	inst = imq_pernet(dev_net(entry->skb->dev));
+
 	index = entry->skb->imq_flags & IMQ_F_IFMASK;
-	if (unlikely(index > numdevs - 1)) {
+	if (unlikely(index >= numdevs)) {
 		if (net_ratelimit())
 			pr_warn("IMQ: invalid device specified, highest is %u\n",
 				numdevs - 1);
@@ -602,13 +620,10 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num)
 	}
 
 	/* check for imq device by index from cache */
-	dev = imq_devs_cache[index];
+	dev = inst->imq_devs_cache[index];
 	if (unlikely(!dev)) {
-		dev = get_imq_device_by_index(index);
-		if (IS_ERR(dev)) {
-			retval = PTR_ERR(dev);
-			goto out_no_dev;
-		}
+		retval = PTR_ERR(dev);
+		goto out_no_dev;
 	}
 
 	if (unlikely(!(dev->flags & IFF_UP))) {
@@ -684,7 +699,6 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 	struct netdev_queue *txq;
 	spinlock_t *root_lock;
 	int users;
-	int retval = -EINVAL;
 	unsigned int orig_queue_index;
 
 	dev->last_rx = jiffies;
@@ -696,10 +710,9 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 	if (unlikely(skb->destructor)) {
 		skb_orig = skb;
 		skb = skb_clone(skb, GFP_ATOMIC);
-		if (unlikely(!skb)) {
-			retval = -ENOMEM;
-			goto out;
-		}
+		if (unlikely(!skb))
+			return -ENOMEM;
+
 		skb->cb_next = NULL;
 		entry->skb = skb;
 	}
@@ -757,19 +770,17 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 		/* schedule qdisc dequeue */
 		__netif_schedule(q);
 
-		retval = 0;
-		goto out;
-	} else {
-		skb_restore_cb(skb_shared); /* restore skb->cb */
-		skb->nf_queue_entry = NULL;
-		/*
-		 * qdisc dropped packet and decreased skb reference count of
-		 * skb, so we don't really want to and try refree as that would
-		 * actually destroy the skb.
-		 */
-		spin_unlock(root_lock);
-		goto packet_not_eaten_by_imq_dev;
+		return 0;
 	}
+
+	skb_restore_cb(skb_shared); /* restore skb->cb */
+	skb->nf_queue_entry = NULL;
+	/*
+	 * qdisc dropped packet and decreased skb reference count of
+	 * skb, so we don't really want to and try refree as that would
+	 * actually destroy the skb.
+	 */
+	spin_unlock(root_lock);
 
 packet_not_eaten_by_imq_dev:
 	skb_set_queue_mapping(skb, orig_queue_index);
@@ -780,12 +791,11 @@ packet_not_eaten_by_imq_dev:
 		kfree_skb(skb);
 		entry->skb = skb_orig;
 	}
-	retval = -1;
-out:
-	return retval;
+	return -1;
 }
 
-static unsigned int imq_nf_hook(const struct nf_hook_ops *ops, struct sk_buff *pskb,
+static unsigned int imq_nf_hook(const struct nf_hook_ops *hook_ops,
+				struct sk_buff *pskb,
 				const struct net_device *indev,
 				const struct net_device *outdev,
 				int (*okfn)(struct sk_buff *))
@@ -824,6 +834,53 @@ static void imq_setup(struct net_device *dev)
 				  NETIF_F_HIGHDMA;
 	dev->priv_flags		&= ~(IFF_XMIT_DST_RELEASE |
 				     IFF_TX_SKB_SHARING);
+
+}
+
+static int imq_newlink(struct net *src_net, struct net_device *dev,
+                        struct nlattr *tb[], struct nlattr *data[])
+{
+	int err;
+	unsigned int index=numdevs;
+
+	if(!strncmp(dev->name,"imq",3)) {
+	    char *endp;
+	    index = simple_strtoul(&dev->name[3],&endp,10);
+	    if(endp && !*endp) {
+		if(index >= numdevs) {
+		    printk("IMQ: invalid index %u! Allowed only 0-%d \n",index,numdevs-1);
+		} else {
+		    struct imq_net *inst = imq_pernet(dev_net(dev));
+		    inst->imq_devs_cache[index] = dev;
+		    printk("IMQ: create device imq%d\n",index);
+		    err = register_netdevice(dev);
+		    if (err < 0) {
+			printk("IMQ: error create new device %s\n",dev->name);
+			free_netdev(dev);
+			return err;
+		    }
+		    return 0;
+		}
+	    } else 
+		printk("IMQ: invalid device name '%s'\n",dev->name);
+	} else 
+	   printk("IMQ: invalid device name '%s'\n",dev->name);
+
+	return -EINVAL;
+
+}
+void imq_dellink(struct net_device *dev, struct list_head *head)
+{
+	struct imq_net *inst = imq_pernet(dev_net(dev));
+	int i;
+	for (i = 0; i < numdevs; i++) {
+		if(dev == inst->imq_devs_cache[i]) {
+			inst->imq_devs_cache[i] = NULL;
+			printk("IMQ: remove dev imq%d\n",i);
+			break;
+		}
+	}
+	unregister_netdevice_queue(dev, head);
 }
 
 static int imq_validate(struct nlattr *tb[], struct nlattr *data[])
@@ -850,89 +907,97 @@ static struct rtnl_link_ops imq_link_ops __read_mostly = {
 	.kind		= "imq",
 	.priv_size	= 0,
 	.setup		= imq_setup,
+	.newlink	= imq_newlink,
 	.validate	= imq_validate,
+	.dellink	= imq_dellink,
 };
 
 static const struct nf_queue_handler imq_nfqh = {
 	.outfn = imq_nf_queue,
 };
 
-static int __init imq_init_hooks(void)
-{
-	int ret;
 
-	nf_register_queue_imq_handler(&imq_nfqh);
-
-	ret = nf_register_hooks(imq_ops, ARRAY_SIZE(imq_ops));
-	if (ret < 0)
-		nf_unregister_queue_imq_handler();
-
-	return ret;
-}
-
-static int __init imq_init_one(int index)
+static struct net_device * imq_init_one(int index, struct net *net)
 {
 	struct net_device *dev;
 	int ret;
 
 	dev = alloc_netdev_mq(0, "imq%d", NET_NAME_UNKNOWN, imq_setup, numqueues);
 	if (!dev)
-		return -ENOMEM;
+		return NULL;
 
+	dev_net_set(dev, net);
 	ret = dev_alloc_name(dev, dev->name);
-	if (ret < 0)
-		goto fail;
-
-	dev->rtnl_link_ops = &imq_link_ops;
-	ret = register_netdevice(dev);
-	if (ret < 0)
-		goto fail;
-
-	return 0;
-fail:
+	if ( ret >= 0 ) {
+	    dev->rtnl_link_ops = &imq_link_ops;
+	    ret = register_netdevice(dev);
+	    if ( ret >= 0 )
+		    return dev;
+	}
 	free_netdev(dev);
-	return ret;
+	return NULL;
 }
 
-static int __init imq_init_devs(void)
+
+static void __net_exit
+imq_net_exit(struct net *net)
 {
-	int err, i;
 
-	if (numdevs < 1 || numdevs > IMQ_MAX_DEVS) {
-		pr_err("IMQ: numdevs has to be betweed 1 and %u\n",
-		       IMQ_MAX_DEVS);
-		return -EINVAL;
-	}
-
-	if (numqueues < 1 || numqueues > IMQ_MAX_QUEUES) {
-		pr_err("IMQ: numqueues has to be betweed 1 and %u\n",
-		       IMQ_MAX_QUEUES);
-		return -EINVAL;
-	}
-
-	get_random_bytes(&imq_hashrnd, sizeof(imq_hashrnd));
+        struct imq_net *inst = imq_pernet(net);
+	struct net_device *dev;
+	int i;
 
 	rtnl_lock();
-	err = __rtnl_link_register(&imq_link_ops);
-
-	for (i = 0; i < numdevs && !err; i++)
-		err = imq_init_one(i);
-
-	if (err) {
-		__rtnl_link_unregister(&imq_link_ops);
-		memset(imq_devs_cache, 0, sizeof(imq_devs_cache));
+	for (i = 0; i < numdevs; i++) {
+		dev = inst->imq_devs_cache[i];
+		if(dev) {
+			inst->imq_devs_cache[i] = NULL;
+			free_netdev(dev);
+			printk("IMQ: delete dev %s index %d\n",dev->name,i);
+		}
 	}
 	rtnl_unlock();
-
-	return err;
 }
 
-#ifdef CONFIG_ARCH_CNS3XXX
-extern unsigned int numcpucores;
-#else
-static unsigned int numcpucores=1;
-#endif
+static int __net_init
+imq_net_init(struct net *net)
+{
+        struct imq_net *inst = imq_pernet(net);
 
+	memset((char *)&inst->imq_devs_cache[0],0,sizeof(inst->imq_devs_cache));
+
+	if (net_eq(net, &init_net) && allocdevs > 0) {
+	    struct net_device *dev;
+	    int i;
+	    rtnl_lock();
+	    dev = NULL;
+	    for (i = 0; i < allocdevs; i++) {
+		dev = imq_init_one(i,net);
+		if(!dev)
+			break;
+		inst->imq_devs_cache[i] = dev;
+		printk("IMQ: autocreate imq%d  NS %pK\n",i,net);
+	    }
+
+	    if (!dev && i) {
+		while(--i > 0) {
+			free_netdev(inst->imq_devs_cache[i]);
+			inst->imq_devs_cache[i] = NULL;
+		}
+	    }
+	    rtnl_unlock();
+	
+	    return dev ? 0 : -ENOMEM;
+	}
+	return 0;
+}
+
+static struct pernet_operations imq_net_ops = {
+        .init   = imq_net_init,
+        .exit   = imq_net_exit,
+        .id     = &imq_net_id,
+        .size   = sizeof(struct imq_net)
+};
 
 static int __init imq_init_module(void)
 {
@@ -943,20 +1008,37 @@ static int __init imq_init_module(void)
 	BUILD_BUG_ON(CONFIG_IMQ_NUM_DEVS < 2);
 	BUILD_BUG_ON(CONFIG_IMQ_NUM_DEVS - 1 > IMQ_F_IFMASK);
 #endif
-	numqueues = numcpucores;
-
-	err = imq_init_devs();
-	if (err) {
-		pr_err("IMQ: Error trying imq_init_devs(net)\n");
-		return err;
+	if (numdevs < 1 || numdevs > IMQ_MAX_DEVS) {
+		pr_err("IMQ: numdevs has to be betweed 1 and %u\n",
+		       IMQ_MAX_DEVS);
+		return -EINVAL;
+	}
+	if(allocdevs > numdevs) {
+		pr_err("IMQ: allocdevs has to be betweed 0 and %u\n",numdevs);
+		return -EINVAL;
+	}
+	if (numqueues < 1 || numqueues > IMQ_MAX_QUEUES) {
+		pr_err("IMQ: numqueues has to be betweed 1 and %u\n",
+		       IMQ_MAX_QUEUES);
+		return -EINVAL;
 	}
 
-	err = imq_init_hooks();
-	if (err) {
-		pr_err(KERN_ERR "IMQ: Error trying imq_init_hooks()\n");
-		rtnl_link_unregister(&imq_link_ops);
-		memset(imq_devs_cache, 0, sizeof(imq_devs_cache));
+	get_random_bytes(&imq_hashrnd, sizeof(imq_hashrnd));
+
+	err = register_pernet_subsys(&imq_net_ops);
+	if(err)
 		return err;
+
+	err = rtnl_link_register(&imq_link_ops);
+	if(err)
+		goto unreg_pernet;
+
+	nf_register_queue_imq_handler(&imq_nfqh);
+
+	err = nf_register_hooks(imq_ops, ARRAY_SIZE(imq_ops));
+	if (err < 0) {
+		nf_unregister_queue_imq_handler();
+		goto unreg_nl;
 	}
 
 	pr_info("IMQ driver loaded successfully. (numdevs = %d, numqueues = %d)\n",
@@ -974,24 +1056,20 @@ static int __init imq_init_module(void)
 #endif
 
 	return 0;
-}
 
-static void __exit imq_unhook(void)
-{
-	nf_unregister_hooks(imq_ops, ARRAY_SIZE(imq_ops));
-	nf_unregister_queue_imq_handler();
-}
-
-static void __exit imq_cleanup_devs(void)
-{
+unreg_nl:
 	rtnl_link_unregister(&imq_link_ops);
-	memset(imq_devs_cache, 0, sizeof(imq_devs_cache));
+unreg_pernet:
+	unregister_pernet_subsys(&imq_net_ops);
+	return err;
 }
 
 static void __exit imq_exit_module(void)
 {
-	imq_unhook();
-	imq_cleanup_devs();
+	nf_unregister_hooks(imq_ops, ARRAY_SIZE(imq_ops));
+	nf_unregister_queue_imq_handler();
+	rtnl_link_unregister(&imq_link_ops);
+	unregister_pernet_subsys(&imq_net_ops);
 	pr_info("IMQ driver unloaded successfully.\n");
 }
 
@@ -999,8 +1077,10 @@ module_init(imq_init_module);
 module_exit(imq_exit_module);
 
 module_param(numdevs, int, 0);
+module_param(allocdevs, int, 0);
 module_param(numqueues, int, 0);
-MODULE_PARM_DESC(numdevs, "number of IMQ devices (how many imq* devices will be created)");
+MODULE_PARM_DESC(numdevs, "Maximum number of IMQ devices");
+MODULE_PARM_DESC(allocevs, "number of IMQ devices will be created on startup");
 MODULE_PARM_DESC(numqueues, "number of queues per IMQ device");
 MODULE_AUTHOR("http://www.linuximq.net");
 MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
