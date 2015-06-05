@@ -222,7 +222,7 @@ static int __init bcm87xx_init(void)
 		ARRAY_SIZE(bcm87xx_driver));
 }
 module_init(bcm87xx_init);
-
+ 
 static void __exit bcm87xx_exit(void)
 {
 	phy_drivers_unregister(bcm87xx_driver,
