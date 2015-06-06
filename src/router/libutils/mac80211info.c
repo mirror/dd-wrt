@@ -387,6 +387,11 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_RATE_INFO_MCS] = {.type = NLA_U8},
 		[NL80211_RATE_INFO_40_MHZ_WIDTH] = {.type = NLA_FLAG},
 		[NL80211_RATE_INFO_SHORT_GI] = {.type = NLA_FLAG},
+#ifdef NL80211_VHT_CAPABILITY_LEN
+		[NL80211_RATE_INFO_80_MHZ_WIDTH] = {.type = NLA_FLAG},
+		[NL80211_RATE_INFO_160_MHZ_WIDTH] = {.type = NLA_FLAG},
+		[NL80211_RATE_INFO_VHT_MCS] = {.type = NLA_FLAG},
+#endif
 	};
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (!tb[NL80211_ATTR_STA_INFO]) {
