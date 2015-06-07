@@ -24,6 +24,7 @@ DEB_COPTS = $(COPTS)
 TARGET = install-i18n
 
 DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
+BUILD_DATE := $(shell dpkg-parsechangelog --show-field Date)
 
 # Force package version based on git tags.
 ifneq (,$(filter gitversion,$(DEB_BUILD_OPTIONS)))
@@ -118,8 +119,9 @@ binary-indep:	checkroot
 	install -m 644 debian/systemd.service debian/daemon/lib/systemd/system/dnsmasq.service
 	install -m 644 debian/insserv debian/daemon/etc/insserv.conf.d/dnsmasq
 	ln -s $(package) debian/daemon/usr/share/doc/dnsmasq
-	cd debian/daemon && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | xargs -r0 md5sum > DEBIAN/md5sums	
+	cd debian/daemon && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums	
 	dpkg-gencontrol $(PACKAGE_VERSION) -T -pdnsmasq -Pdebian/daemon
+	find debian/daemon -depth -newermt '$(BUILD_DATE)' -print0 | xargs -0r touch --no-dereference --date='$(BUILD_DATE)'
 	chown -R root.root debian/daemon
 	chmod -R g-ws debian/daemon
 	dpkg --build debian/daemon ..
@@ -169,9 +171,10 @@ endif
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	strip -R .note -R .comment debian/base/usr/sbin/dnsmasq
 endif
-	cd debian/base && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | xargs -r0 md5sum > DEBIAN/md5sums
+	cd debian/base && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums
 	dpkg-shlibdeps --warnings=1 debian/base/usr/sbin/dnsmasq
 	dpkg-gencontrol $(PACKAGE_VERSION) -pdnsmasq-base -Pdebian/base
+	find debian/base -depth -newermt '$(BUILD_DATE)' -print0 | xargs -0r touch --no-dereference --date='$(BUILD_DATE)'
 	chown -R root.root debian/base
 	chmod -R g-ws debian/base 
 	dpkg --build debian/base ..
@@ -196,9 +199,10 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	strip -R .note -R .comment debian/utils/usr/bin/dhcp_release
 	strip -R .note -R .comment debian/utils/usr/bin/dhcp_lease_time
 endif	
-	cd debian/utils && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | xargs -r0 md5sum > DEBIAN/md5sums
+	cd debian/utils && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums
 	dpkg-shlibdeps -Tdebian/utils-substvars debian/utils/usr/bin/dhcp_release debian/utils/usr/bin/dhcp_lease_time
 	dpkg-gencontrol $(PACKAGE_VERSION) -Tdebian/utils-substvars -pdnsmasq-utils -Pdebian/utils
+	find debian/utils -depth -newermt '$(BUILD_DATE)' -print0 | xargs -0r touch --no-dereference --date='$(BUILD_DATE)'
 	chown -R root.root debian/utils
 	chmod -R g-ws debian/utils 
 	dpkg --build debian/utils ..

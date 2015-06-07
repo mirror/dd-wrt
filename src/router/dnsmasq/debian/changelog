@@ -1,13 +1,13 @@
 dnsmasq (2.73-1) unstable; urgency=low
 
-   * New upstream.
+   * New upstream. (closes: #786996)
    * Tweak field width in cache dump to avoid truncating IPv6
      addresses. (closes: #771557)
    * Add newline at the end of example config file. (LP: #1416895)
    * Make Debian package build reproducible. (closes: #777323)
    * Add Requires=network.target to systemd unit.
 
- -- Simon Kelley <simon@thekelleys.org.uk>  Wed, 11 Feb 2015 21:59:42 +0000
+ -- Simon Kelley <simon@thekelleys.org.uk>  Thu, 4 Jun 2015 22:31:42 +0000
 
 dnsmasq (2.72-3) unstable; urgency=medium
 
