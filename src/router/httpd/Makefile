@@ -1058,6 +1058,23 @@ endif
 ifeq ($(CONFIG_JJAP93),y)
 CFLAGS += -DHAVE_JJAP93
 endif
+ifeq ($(CONFIG_DAP2230),y)
+CFLAGS += -DHAVE_DAP2230
+endif
+ifeq ($(CONFIG_DAP3320),y)
+CFLAGS += -DHAVE_DAP2230
+endif
+ifeq ($(CONFIG_DAP2330),y)
+CFLAGS += -DHAVE_DAP2330
+endif
+ifeq ($(CONFIG_DAP2660),y)
+CFLAGS += -DHAVE_DAP2660
+endif
+ifeq ($(CONFIG_DAP3662),y)
+  CFLAGS += -DHAVE_DAP3662
+endif
+
+
 ifeq ($(CONFIG_TIEXTRA1),y)
 CFLAGS += -DHAVE_TIEXTRA1 -Wl,-rpath,$(TOP)/jansson/src/.libs
 LDFLAGS +=   -Wl,-rpath,$(TOP)/jansson/src/.libs
