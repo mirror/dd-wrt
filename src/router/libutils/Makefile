@@ -242,9 +242,6 @@ endif
 ifeq ($(CONFIG_GLAUCO),y)
 CFLAGS += -DHAVE_GLAUCO
 endif
-ifeq ($(CONFIG_HOBBIT),y)
-CFLAGS += -DHAVE_HOBBIT
-endif
 ifeq ($(CONFIG_VLANTAGGING),y)
 CFLAGS += -DHAVE_VLANTAGGING
 endif
@@ -517,6 +514,9 @@ endif
 ifeq ($(CONFIG_POKER),y)
   CFLAGS += -DHAVE_POKER
   OBJS += poker.o
+endif
+ifeq ($(CONFIG_HOBBIT),y)
+  CFLAGS += -DHAVE_HOBBIT
 endif
 ifeq ($(CONFIG_MR3202A),y)
   CFLAGS += -DHAVE_MR3202A
