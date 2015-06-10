@@ -21,6 +21,8 @@ endif
 #
 OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
 OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
+CONFIG_MUSL=y
+CONFIG_NOOPT=y
 
 # Source bases
 export PLATFORM LINUXDIR LIBDIR USRLIBDIR
@@ -111,6 +113,7 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+	echo "CONFIG_MUSL=y" >> .config 
 
 drop-sections	= .comment
 strip-flags	= $(addprefix --remove-section=,$(drop-sections))
@@ -348,10 +351,19 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+else
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so} $(ARCH)-uclibc/target/lib/libc.so 
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.a} $(ARCH)-uclibc/target/lib/libc_pic.a 
+endif
+ifneq ($(CONFIG_MUSL),y)
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+else
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-mipsel-sf.so.1
+endif
 ifeq ($(CONFIG_LIBDL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
 endif
 ifeq ($(CONFIG_LIBRT),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
@@ -360,24 +372,25 @@ ifeq ($(CONFIG_LIBNSL),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
 endif
 ifeq ($(CONFIG_LIBUTIL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
 endif
 ifeq ($(CONFIG_LIBCPP),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
 endif
 ifeq ($(CONFIG_LIBCRYPT),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
 endif
 ifeq ($(CONFIG_LIBM),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
 endif
 ifeq ($(CONFIG_LIBRESOLV),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
 endif
 ifeq ($(CONFIG_LIBPTHREAD),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
 endif
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 
 ifneq ($(CONFIG_NOOPT),y)
 
@@ -393,6 +406,7 @@ ifneq ($(CONFIG_NOOPT),y)
 		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
 
 	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+ifneq ($(CONFIG_MUSL),y)
 	mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
@@ -401,6 +415,17 @@ ifneq ($(CONFIG_NOOPT),y)
 		--ldlib /lib/ld-uClibc.so.0 \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+else
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-musl-mips-sf.so.1 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+
+endif
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 endif
 
