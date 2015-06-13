@@ -6053,6 +6053,13 @@ int led_control(int type, int act)
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
 		break;
+	case ROUTER_ASUS_AC3200:
+		usb_power = 0x009;
+		power_gpio = 0x103;
+		connected_gpio = 0x105;
+		diag_gpio = 0x003;
+		// wps gpio = 14
+		break;
 	case ROUTER_ASUS_AC87U:
 		usb_power = 0x009;
 		power_gpio = 0x103;
