@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 26e3f3b2a614c7fef88059b9e69137f694a0de42 $ */
+/* $Id: 74ffeec7a87ce266bcc728dbacc340f302d7d17e $ */
 
 #ifndef PHP_ICONV_H
 #define PHP_ICONV_H
@@ -35,7 +35,6 @@
 #endif
 
 #ifdef PHP_ATOM_INC
-#undef LIBICONV_PLUG
 #include "ext/iconv/php_have_iconv.h"
 #include "ext/iconv/php_have_libiconv.h"
 #include "ext/iconv/php_iconv_aliased_libiconv.h"
