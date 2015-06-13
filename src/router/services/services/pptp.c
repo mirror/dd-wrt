@@ -232,7 +232,19 @@ void start_pptpd(void)
 	fclose(fp);
 
 	fp = fopen("/tmp/pptpd/ip-down", "w");
-	fprintf(fp, "#!/bin/sh\n" "sed -i \"/^$PPPD_PID /d\" /tmp/pptp_connected\n" "[ -e /tmp/pptp_peer.db ] || touch /tmp/pptp_peer.db\n" "pv() { awk -v pn=\"$1\" '$1 == pn { m=1; printf \"c=%%i; s=%%i; r=%%i; m=1\", $2, $3, $4 } END { if (!m) print \"c=0; s=0; r=0;\n" "m=0\" }' /tmp/pptp_peer.db; }\n" "eval $(pv $PEERNAME)\n" "CONTIME=$(($CONNECT_TIME+$c))\n" "SENT=$(($BYTES_SENT+$s))\n" "RCVD=$(($BYTES_RCVD+$r))\n" "[ $m -eq 1 ] && sed -i \"/^$PEERNAME /d\" /tmp/pptp_peer.db\n" "echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pptp_peer.db\n" "iptables -D INPUT -i $1 -j ACCEPT\n" "iptables -D FORWARD -i $1 -j ACCEPT\n" "iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n"	// rule for wake on lan over pptp tunnel
+	fprintf(fp, "#!/bin/sh\n"
+		"sed -i \"/^$PPPD_PID /d\" /tmp/pptp_connected\n"
+		"[ -e /tmp/pptp_peer.db ] || touch /tmp/pptp_peer.db\n"
+		"pv() { awk -v pn=\"$1\" '$1 == pn { m=1; printf \"c=%%i; s=%%i; r=%%i; m=1\", $2, $3, $4 } END { if (!m) print \"c=0; s=0; r=0; m=0\" }' /tmp/pptp_peer.db; }\n"
+		"eval $(pv $PEERNAME)\n"
+		"CONTIME=$(($CONNECT_TIME+$c))\n"
+		"SENT=$(($BYTES_SENT/1024+$s))\n"
+		"RCVD=$(($BYTES_RCVD/1024+$r))\n"
+		"[ $m -eq 1 ] && sed -i \"/^$PEERNAME /d\" /tmp/pptp_peer.db\n"
+		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pptp_peer.db\n"
+		"iptables -D INPUT -i $1 -j ACCEPT\n"
+		"iptables -D FORWARD -i $1 -j ACCEPT\n"
+		"iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n"	// rule for wake on lan over pptp tunnel
 		"%s\n", bcast, nvram_get("pptpd_ipdown_script") ? nvram_get("pptpd_ipdown_script") : "");
 	if (nvram_match("pptpd_radius", "1"))
 		fprintf(fp, "tc qdisc del root dev $1\n" "tc qdisc del ingress dev $1\n");
