@@ -50,13 +50,10 @@ void start_dhcp6c(void)
 		return;
 
 	fprintf(stderr, "dhcp6c start\n");
-	char *mac;
-	if (getRouterBrand() == ROUTER_ASUS_AC87U)
-		mac = nvram_safe_get("et1macaddr");
-	else
-		mac = nvram_safe_get("et0macaddr");
+	char mac[18];
+	getLANMac(mac);
 	if (strlen(mac) == 0)
-		mac = nvram_safe_get("et0macaddr_safe");
+		strcpy(mac,nvram_safe_get("et0macaddr_safe"));
 
 	if (ether_atoe(mac, ea)) {
 		/* Generate IAID from the last 7 digits of WAN MAC */
