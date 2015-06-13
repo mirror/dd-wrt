@@ -1232,9 +1232,14 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("productid", "RT-AC87U")) {
+	if (nvram_match("productid", "RT-AC87U") || nvram_match("model", "RT-AC87U")) {
 		setRouter("Asus RT-AC87U");
 		return ROUTER_ASUS_AC87U;
+	}
+
+	if (nvram_match("productid", "RT-AC3200") || nvram_match("model", "RT-AC3200")) {
+		setRouter("Asus RT-AC3200");
+		return ROUTER_ASUS_AC3200;
 	}
 
 	if (nvram_match("boardtype", "0x0665")
@@ -1244,10 +1249,6 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC87U;
 	}
 
-	if (nvram_match("model", "RT-AC87U")) {
-		setRouter("Asus RT-AC87U");
-		return ROUTER_ASUS_AC87U;
-	}
 
 	if (nvram_match("odmpid", "RT-AC87U")) {
 		setRouter("Asus RT-AC87U");
