@@ -1934,7 +1934,52 @@ void start_sysinit(void)
 				extra_params++;
 			}
 
+			nvram_set("0:maxp2ga0", "102");
+			nvram_set("0:maxp2ga1", "102");
+			nvram_set("0:maxp2ga2", "102");
+			nvram_set("0:cckbw202gpo", "0");
+			nvram_set("0:cckbw20ul2gpo", "0");
+			nvram_set("0:mcsbw202gpo", "0x87542000");
+			nvram_set("0:mcsbw402gpo", "0x87542000");
+			nvram_set("0:dot11agofdmhrbw202gpo", "0x2000");
+			nvram_set("0:ofdmlrbw202gpo", "0");
+			nvram_set("0:dot11agduphrpo", "0");
+			nvram_set("0:dot11agduplrpo", "0");
+
+			nvram_set("1:maxp5ga0", "94,94,90,90");
+			nvram_set("1:maxp5ga1", "94,94,90,90");
+			nvram_set("1:maxp5ga2", "94,94,90,90");
+			nvram_set("1:mcsbw205glpo", "0x66664200");
+			nvram_set("1:mcsbw405glpo", "0x66643200");
+			nvram_set("1:mcsbw805glpo", "0xA8643200");
+			nvram_set("1:mcsbw1605glpo", "0");
+			nvram_set("1:mcsbw205gmpo", "0x66664200");
+			nvram_set("1:mcsbw405gmpo", "0x66663200");
+			nvram_set("1:mcsbw805gmpo", "0x66663200");
+			nvram_set("1:mcsbw1605gmpo", "0");
+			nvram_set("1:mcsbw205ghpo", "0xfffda844");
+			nvram_set("1:mcsbw405ghpo", "0xfffda844");
+			nvram_set("1:mcsbw805ghpo", "0xfffda844");
+			nvram_set("1:mcsbw1605ghpo", "0");
+
+			nvram_set("2:maxp5ga0", "90,90,106,106");
+			nvram_set("2:maxp5ga1", "90,90,106,106");
+			nvram_set("2:maxp5ga2", "90,90,106,106");
+			nvram_set("2:mcsbw205glpo", "0");
+			nvram_set("2:mcsbw405glpo", "0");
+			nvram_set("2:mcsbw805glpo", "0");
+			nvram_set("2:mcsbw1605glpo", "0");
+			nvram_set("2:mcsbw205gmpo", "0xAA975420");
+			nvram_set("2:mcsbw405gmpo", "0xAA975420");
+			nvram_set("2:mcsbw805gmpo", "0xAA975420");
+			nvram_set("2:mcsbw1605gmpo", "0");
+			nvram_set("2:mcsbw205ghpo", "0xAA975420");
+			nvram_set("2:mcsbw405ghpo", "0xAA975420");
+			nvram_set("2:mcsbw805ghpo", "0xAA975420");
+			nvram_set("2:mcsbw1605ghpo", "0");
+
 			nvram_commit();
+
 		}
 		break;
 	case ROUTER_ASUS_AC67U:
