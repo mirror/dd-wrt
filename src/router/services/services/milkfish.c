@@ -58,13 +58,10 @@ void start_milkfish_boot(void)
 
 	if (strlen(nvram_safe_get("milkfish_routerid")) != 32) {
 		unsigned char hash[32];
-		char *et0;
-		if (getRouterBrand() == ROUTER_ASUS_AC87U)
-			et0 = nvram_safe_get("et1macaddr");
-		else
-			et0 = nvram_safe_get("et0macaddr");
+		char et0[18];
+		getLANMac(et0);
 		if (strlen(et0) == 0)
-			et0 = nvram_safe_get("et0macaddr_safe");
+			strcpy(et0,nvram_safe_get("et0macaddr_safe"));
 
 		md5_begin(&MD);
 		md5_hash(et0, 17, &MD);

@@ -133,13 +133,10 @@ int mk_nocat_conf(void)
 	fprintf(fp, "InternalDevice\t%s\n", nvram_default_get("NC_ifname", nvram_safe_get("lan_ifname")));
 	fprintf(fp, "GatewayPort\t%s\n", nvram_safe_get("NC_GatewayPort"));
 
-	char *mac;
-	if (getRouterBrand() == ROUTER_ASUS_AC87U)
-		mac = nvram_safe_get("et1macaddr");
-	else
-		mac = nvram_safe_get("et0macaddr");
+	char mac[18];
+	getLANMac(mac);
 	if (strlen(mac) == 0)
-		mac = nvram_safe_get("et0macaddr_safe");
+		strcpy(mac,nvram_safe_get("et0macaddr_safe"));
 
 	if (nvram_match("port_swap", "1"))
 		fprintf(fp, "GatewayMAC\t%s\n", nvram_safe_get("et1macaddr"));

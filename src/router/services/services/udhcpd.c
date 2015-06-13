@@ -281,13 +281,10 @@ void start_udhcpd(void)
 		perror("/tmp/udhcpd.statics");
 		return;
 	}
-	char *mac;
-	if (getRouterBrand() == ROUTER_ASUS_AC87U)
-		mac = nvram_safe_get("et1macaddr");
-	else
-		mac = nvram_safe_get("et0macaddr");
+	char mac[18];
+	getLANMac(mac);
 	if (strlen(mac) == 0)
-		mac = nvram_safe_get("et0macaddr_safe");
+		strcpy(mac,nvram_safe_get("et0macaddr_safe"));
 
 	if (nvram_match("local_dns", "1")) {
 		if (nvram_match("port_swap", "1"))
