@@ -1,5 +1,4 @@
-/*
- * sysinit-northstar.c
+/* sysinit-northstar.c
  *
  * Copyright (C) 2012 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
@@ -1682,6 +1681,13 @@ void start_sysinit(void)
 		set_gpio(2, 1);	// fixup ses button
 		break;
 	case ROUTER_ASUS_AC3200:
+		if (nvram_match("bl_version", "1.0.1.3")) {
+			nvram_set("0:mcsbw205glpo", "0x66644200");
+			nvram_set("0:mcsbw405glpo", "0x66643200");
+			nvram_set("bl_version", "1.0.1.5");
+			nvram_commit();
+		}
+
 		if (nvram_get("0:venid") == NULL) {
 
 			struct nvram_param ac3200_0_params[] = {
