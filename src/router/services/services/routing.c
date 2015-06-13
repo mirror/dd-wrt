@@ -32,12 +32,12 @@
 
 #ifdef HAVE_QUAGGA
 
-int zebra_ospf_init(void);
-int zebra_ospf6_init(void);
-int zebra_bgp_init(void);
-int zebra_ripd_init(void);
+static int zebra_ospf_init(void);
+static int zebra_ospf6_init(void);
+static int zebra_bgp_init(void);
+static int zebra_ripd_init(void);
 
-int zebra_init(void)
+static int zebra_init(void)
 {
 	char *sub;
 	char var[32], *next;
@@ -176,7 +176,7 @@ void start_quagga_writememory(void)
 	nvram_commit();
 }
 
-int zebra_ospf_init(void)
+static int zebra_ospf_init(void)
 {
 	char *lf = nvram_safe_get("lan_ifname");
 	char *wf = get_wan_face();
@@ -287,7 +287,7 @@ int zebra_ospf_init(void)
 	return 1;
 }
 
-int zebra_ospf6_init(void)
+static int zebra_ospf6_init(void)
 {
 	char *lf = nvram_safe_get("lan_ifname");
 	char *wf = get_wan_face();
@@ -400,7 +400,7 @@ int zebra_ospf6_init(void)
 	return 1;
 }
 
-int zebra_ripd_init(void)
+static int zebra_ripd_init(void)
 {
 
 	char *lt = nvram_safe_get("dr_lan_tx");
@@ -495,7 +495,7 @@ int zebra_ripd_init(void)
 	return 1;
 }
 
-int zebra_bgp_init(void)
+static int zebra_bgp_init(void)
 {
 
 	char *lt = nvram_safe_get("dr_lan_tx");
@@ -563,7 +563,7 @@ int zebra_bgp_init(void)
 #endif
 
 #ifdef HAVE_BIRD
-int bird_init(void)
+static int bird_init(void)
 {
 	FILE *fp;
 	int ret1;
