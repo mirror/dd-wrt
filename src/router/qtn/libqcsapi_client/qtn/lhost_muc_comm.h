@@ -16,6 +16,7 @@
 #include "net80211/ieee80211_crypto.h"
 #include "muc_txrx_stats.h"
 #include "qtn/qvsp_common.h"
+#include "qtn/shared_defs.h"
 
 /* packed definitions for each compiler */
 #if defined(MUC_BUILD) || defined(DSP_BUILD) || defined(AUC_BUILD)
@@ -154,13 +155,6 @@ struct host_txdesc {
 
 #define IEEE80211_CHAN_SEC_SHIFT	4
 
-#define QVP_VLAN_PTRU   0       /* VLAN passthrough */
-#define QVP_VLAN_MBSS   1       /* MBSS VLAN  */
-#define QVP_VLAN_TERMINATION	2 /* VLAN termination */
-#define QVP_VLANMODE_SHIFT 16
-#define QVP_VLANMODE_MASK 0xffff0000
-#define QVP_VID_MASK 0x00000fff
-
 struct host_ioctl_hifinfo {
 	uint32_t	hi_mboxstart;			/* Start address for mbox */
 	uint32_t	hi_rxdoneirq;			/* IRQ map for rx done */
@@ -171,6 +165,7 @@ struct host_ioctl_hifinfo {
 	uint32_t	hi_dspgpios;
 	uint32_t	hi_vsp_stats_phys;
 	uint32_t	hi_vapnode_idx;			/* node_idx of the vap node for tx */
+	uint8_t		hi_vapid;
 	char		hi_name[NAMESIZE];		/* Device name */
 	char		hi_version[VERSION_SIZE];	/* basic firmware version */
 	char		hi_algover[VERSION_SIZE];	/* calibration algorithm version */
@@ -198,7 +193,6 @@ struct host_rxdesc {
 	struct host_rxdesc	*rd_next;
 	struct host_rxdesc	*rd_pa;
 	struct host_rxdesc	*rd_va;
-	uint32_t		vlan_cfg; /* VLAN requirement on this frame */
 	void			*node;		/* Where the frame was from */
 	uint8_t			gain_db;
 };
@@ -246,6 +240,7 @@ struct host_ioctl {
 
 struct qtn_vap_args {
 	char vap_name[17];
+	uint8_t vap_id;
 	uint8_t vap_macaddr[IEEE80211_ADDR_LEN];
 };
 
@@ -314,6 +309,7 @@ struct qtn_baparams_args {
 #define IOCTL_DEV_SET_OCAC		46
 #define IOCTL_DEV_MEAS_CHANNEL		47	/* notify MUC to execute measurement */
 #define IOCTL_DEV_GET_LINK_MARGIN_INFO	48	/* get rssi info */
+#define IOCTL_DEV_SET_RX_GAIN_PARAMS	56	/* Set RX gain params */
 
 #define IOCTL_DEV_CMD_MEMDBG_DUMP	1	/* Dump MuC memory */
 #define IOCTL_DEV_CMD_MEMDBG_DUMPCFG	2	/* Configuration for dumping MuC memory */
@@ -369,6 +365,8 @@ struct qtn_baparams_args {
 #define IOCTL_HLINK_DISASSOC_STA	13	/* disassociate station with a given aid */
 #define IOCTL_HLINK_RFIC_CAUSED_REBOOT  14      /* detected RFIC abnormal reset, reboot the system */
 #define IOCTL_HLINK_BA_ADD_START	15	/* start Tx ADDBA REQ sequence */
+#define IOCTL_HLINK_PEER_RTS		16	/* Peer RTS enable or disable */
+#define IOCTL_HLINK_DYN_WMM		17	/* Dynamic WMM enable or disable */
 
 enum {
 	BW_INVALID = 0,
@@ -458,19 +456,6 @@ struct qtn_meas_chan_info {
 		int32_t basic_radar_num;
 		uint8_t basic;
 	} inter_data;
-};
-
-#define VLAN_ID_MAX 4096
-struct qtn_vlan_table {
-#define VID_MODE_SHIFT	0
-#define VID_MODE_MASK	0x07
-#define VID_BSS_SHIFT	3
-#define VID_BSS_MASK	0xf8
-/* [5b,3b]:
-* 5b: Which BSS is this VID assigned to
-* 3b: Which mode is this VID in
-*/
-	uint8_t vlan_entry[VLAN_ID_MAX];
 };
 
 enum scs_lot_tsf_pos {
@@ -678,6 +663,14 @@ struct qtn_ocac_info {
 	uint64_t		tsf_log[OCAC_TSF_LOG_NUM];	/* event tsf log, written by MuC */
 };
 
+struct qtn_rf_rxgain_params
+{
+	uint8_t *gain_entry_tbl;
+	uint8_t lna_on_indx;
+	uint8_t max_gain_idx;
+	uint16_t cs_threshold_value;
+};
+
 /* MuC fops requst */
 #define MUC_FOPS_MAX_FNAME_SIZE (50)
 enum {
@@ -804,6 +797,7 @@ struct qtn_node_args
 	uint8_t	ni_qtn_ie_flags;
 	uint8_t ni_vendor;
 	uint8_t ni_bbf_disallowed;      /* flag to disallow BBF */
+	uint8_t ni_std_bf_disallowed;      /* flag to disallow standard BF */
 	uint8_t	ni_htcap[sizeof(struct ieee80211_htcap)];	/* Processed HT capabilities */
 	uint8_t	ni_htinfo[sizeof(struct ieee80211_htinfo)];	/* Processed HT info */
 	uint8_t	ni_vhtcap[sizeof(struct ieee80211_vhtcap)];	/* Processed VHT capabilities */
