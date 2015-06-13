@@ -2699,6 +2699,8 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		  new->flags |= CONTEXT_RA_ROUTER | CONTEXT_RA;
 		else if (strcmp(a[leasepos], "ra-stateless") == 0)
 		  new->flags |= CONTEXT_RA_STATELESS | CONTEXT_DHCP | CONTEXT_RA;
+		else if (strcmp(a[leasepos], "off-link") == 0)
+		  new->flags |= CONTEXT_RA_OFF_LINK;
 		else if (leasepos == 1 && inet_pton(AF_INET6, a[leasepos], &new->end6))
 		  new->flags |= CONTEXT_DHCP; 
 		else if (strstr(a[leasepos], "constructor:") == a[leasepos])
