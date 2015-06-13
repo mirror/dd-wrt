@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2014 The PHP Group                                |
+  | Copyright (c) 1997-2015 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -418,18 +418,14 @@ static void json_escape_string(smart_str *buf, char *s, int len, int options TSR
 		if ((type = is_numeric_string(s, len, &p, &d, 0)) != 0) {
 			if (type == IS_LONG) {
 				smart_str_append_long(buf, p);
-			} else if (type == IS_DOUBLE) {
-				if (!zend_isinf(d) && !zend_isnan(d)) {
-					char *tmp;
-					int l = spprintf(&tmp, 0, "%.*k", (int) EG(precision), d);
-					smart_str_appendl(buf, tmp, l);
-					efree(tmp);
-				} else {
-					JSON_G(error_code) = PHP_JSON_ERROR_INF_OR_NAN;
-					smart_str_appendc(buf, '0');
-				}
+				return;
+			} else if (type == IS_DOUBLE && !zend_isinf(d) && !zend_isnan(d)) {
+				char *tmp;
+				int l = spprintf(&tmp, 0, "%.*k", (int) EG(precision), d);
+				smart_str_appendl(buf, tmp, l);
+				efree(tmp);
+				return;
 			}
-			return;
 		}
 
 	}

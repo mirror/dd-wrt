@@ -397,7 +397,7 @@ class PharCommand extends CLICommand
 	 */
 	static function cli_arg_typ_privkey($arg, $cfg, $key)
 	{
-		$arg = self::cli_arg_typ_string($arg, $cfg, $key);
+		$arg = self::cli_arg_typ_filecont($arg, $cfg, $key);
 
 		$hash_avail = Phar::getSupportedSignatures();
 		if ($arg && !in_array('OpenSSL', $hash_avail))
@@ -1566,7 +1566,7 @@ class PharCommand extends CLICommand
 		$use_ext = extension_loaded('phar');
 		$version = array(
 			'PHP Version' => phpversion(),
-			'phar.phar version' => '$Id: cb343675b557b02dd09d0f1902d0ec50f5f482ee $',
+			'phar.phar version' => '$Id: a58a9f060a207c567585aa4858b862d9278df83d $',
 			'Phar EXT version' => $use_ext ? phpversion('phar') : 'Not available',
 			'Phar API version' => Phar::apiVersion(),
 			'Phar-based phar archives' => true,
