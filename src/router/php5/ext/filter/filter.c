@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2014 The PHP Group                                |
+  | Copyright (c) 1997-2015 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -19,7 +19,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 4d3899e089e6e45b157975ceef2ac7deb6e9d762 $ */
+/* $Id: fbeb8bbbf6cc97f568996dac46e13e48e2907326 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -320,7 +320,7 @@ PHP_MINFO_FUNCTION(filter)
 {
 	php_info_print_table_start();
 	php_info_print_table_row( 2, "Input Validation and Filtering", "enabled" );
-	php_info_print_table_row( 2, "Revision", "$Id: 4d3899e089e6e45b157975ceef2ac7deb6e9d762 $");
+	php_info_print_table_row( 2, "Revision", "$Id: fbeb8bbbf6cc97f568996dac46e13e48e2907326 $");
 	php_info_print_table_end();
 
 	DISPLAY_INI_ENTRIES();

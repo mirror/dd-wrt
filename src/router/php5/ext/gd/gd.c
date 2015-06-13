@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -1417,7 +1417,7 @@ PHP_FUNCTION(imageloadfont)
 	gdFontPtr font;
 	php_stream *stream;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &file, &file_name) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "p", &file, &file_name) == FAILURE) {
 		return;
 	}
 
@@ -1735,7 +1735,7 @@ PHP_FUNCTION(imagefilledarc)
 	long cx, cy, w, h, ST, E, col, style;
 	gdImagePtr im;
 	int e, st;
-	
+
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllllllll", &IM, &cx, &cy, &w, &h, &ST, &E, &col, &style) == FAILURE) {
 		return;
 	}
@@ -1976,7 +1976,7 @@ PHP_FUNCTION(imagegrabwindow)
 	if ( handle == 0 ) {
 		goto clean;
 	}
-	pPrintWindow = (tPrintWindow) GetProcAddress(handle, "PrintWindow");  
+	pPrintWindow = (tPrintWindow) GetProcAddress(handle, "PrintWindow");
 
 	if ( pPrintWindow )  {
 		pPrintWindow(window, memDC, (UINT) client_area);
@@ -2354,7 +2354,7 @@ static void _php_image_create_from(INTERNAL_FUNCTION_PARAMETERS, int image_type,
 	long ignore_warning;
 
 	if (image_type == PHP_GDIMG_TYPE_GD2PART) {
-		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sllll", &file, &file_len, &srcx, &srcy, &width, &height) == FAILURE) {
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "pllll", &file, &file_len, &srcx, &srcy, &width, &height) == FAILURE) {
 			return;
 		}
 		if (width < 1 || height < 1) {
@@ -2362,7 +2362,7 @@ static void _php_image_create_from(INTERNAL_FUNCTION_PARAMETERS, int image_type,
 			RETURN_FALSE;
 		}
 	} else {
-		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &file, &file_len) == FAILURE) {
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "p", &file, &file_len) == FAILURE) {
 			return;
 		}
 	}
@@ -3845,7 +3845,7 @@ static void php_imagettftext_common(INTERNAL_FUNCTION_PARAMETERS, int mode, int 
 			if (zend_hash_get_current_data_ex(HASH_OF(EXT), (void **) &item, &pos) == FAILURE) {
 				continue;
 			}
-		
+
 			if (strcmp("linespacing", key) == 0) {
 				convert_to_double_ex(item);
 				strex.flags |= gdFTEX_LINESPACE;
@@ -3924,7 +3924,7 @@ PHP_FUNCTION(imagepsloadfont)
 	struct stat st;
 #endif
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &file, &file_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "p", &file, &file_len) == FAILURE) {
 		return;
 	}
 
@@ -4031,7 +4031,7 @@ PHP_FUNCTION(imagepsencodefont)
 	char *enc, **enc_vector;
 	int enc_len, *f_ind;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs", &fnt, &enc, &enc_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rp", &fnt, &enc, &enc_len) == FAILURE) {
 		return;
 	}
 
@@ -4264,11 +4264,11 @@ PHP_FUNCTION(imagepsbbox)
 	if (argc != 3 && argc != 6) {
 		ZEND_WRONG_PARAM_COUNT();
 	}
-	
+
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "srl|lld", &str, &str_len, &fnt, &sz, &sp, &wd, &angle) == FAILURE) {
 		return;
 	}
-	
+
 	if (argc == 6) {
 		space = sp;
 		add_width = wd;
@@ -5110,10 +5110,22 @@ PHP_FUNCTION(imagescale)
 		return;
 	}
 	method = tmp_m;
-	new_width = tmp_w;
-	new_height = tmp_h;
 
 	ZEND_FETCH_RESOURCE(im, gdImagePtr, &IM, -1, "Image", le_gd);
+
+	if (tmp_h < 0) {
+		/* preserve ratio */
+		long src_x, src_y;
+
+		src_x = gdImageSX(im);
+		src_y = gdImageSY(im);
+		if (src_x) {
+			tmp_h = tmp_w * src_y / src_x;
+		}
+	}
+
+	new_width = tmp_w;
+	new_height = tmp_h;
 
 	if (gdImageSetInterpolationMethod(im, method)) {
 		im_scaled = gdImageScale(im, new_width, new_height);

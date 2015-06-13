@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 8c771beba4c19d8d610cee34342a0ee22806914c $ */
+/* $Id: 1b985fa0072f7886f787255ae90c7e50d76f9539 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -42,7 +42,7 @@
 /* {{{ inifile_version */
 char *inifile_version() 
 {
-	return "1.0, $Id: 8c771beba4c19d8d610cee34342a0ee22806914c $";
+	return "1.0, $Id: 1b985fa0072f7886f787255ae90c7e50d76f9539 $";
 }
 /* }}} */ 
 

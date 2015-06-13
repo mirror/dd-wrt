@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -115,6 +115,7 @@ static inline void php_rshutdown_session_globals(TSRMLS_D) /* {{{ */
 	}
 	if (PS(id)) {
 		efree(PS(id));
+		PS(id) = NULL;
 	}
 }
 /* }}} */
@@ -2053,6 +2054,11 @@ static PHP_FUNCTION(session_decode)
 static PHP_FUNCTION(session_start)
 {
 	/* skipping check for non-zero args for performance reasons here ?*/
+	if (PS(id) && !strlen(PS(id))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot start session with empty session ID");
+		RETURN_FALSE;
+	}
+
 	php_session_start(TSRMLS_C);
 
 	if (PS(session_status) != php_session_active) {

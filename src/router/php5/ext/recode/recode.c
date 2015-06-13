@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
    +----------------------------------------------------------------------+
  */
  
-/* $Id: 3fff0a7f7f38d14822c458730319d132d602a061 $ */
+/* $Id: d95ffdf43fdab6078875dc99d333da459d8d8cd6 $ */
 
 /* {{{ includes & prototypes */
 
@@ -135,7 +135,7 @@ PHP_MINFO_FUNCTION(recode)
 {
 	php_info_print_table_start();
 	php_info_print_table_row(2, "Recode Support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: 3fff0a7f7f38d14822c458730319d132d602a061 $");
+	php_info_print_table_row(2, "Revision", "$Id: d95ffdf43fdab6078875dc99d333da459d8d8cd6 $");
 	php_info_print_table_end();
 }
 
