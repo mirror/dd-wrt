@@ -52,14 +52,6 @@
 #define __force
 #endif
 
-#ifndef __UCLIBC__
-typedef uint16_t u_int16_t;
-typedef uint8_t u_int8_t;
-typedef uint32_t u_int32_t;
-typedef uint64_t u_int64_t;
-typedef unsigned int u_int;
-#endif
-
 #ifndef container_of
 #define container_of(ptr, type, member) ({			\
         const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
