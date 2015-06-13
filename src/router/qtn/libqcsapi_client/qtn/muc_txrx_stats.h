@@ -158,6 +158,7 @@ struct muc_tx_stats {
 	u_int32_t	txalert_tasklet;
 	u_int32_t	txalert_bcn_update;
 	u_int32_t	txalert_ndp_update;
+	u_int32_t	tx_ndp_q_occupied;
 	u_int32_t	tx_ndp_start;
 	u_int32_t	txdone_mgmt;
 	u_int32_t	txdone_data;
@@ -205,9 +206,11 @@ struct muc_tx_stats {
 	u_int32_t	tx_sample_bytes;
 	u_int32_t	tx_underflow;
 	u_int32_t	tx_hal_enqueued;
+	u_int32_t	txbf_mode;
 	u_int32_t	psel_matrix;
 	u_int32_t	sample_rate;
 	u_int32_t	sample_bw;
+	uint32_t	ra_flags;
 	u_int32_t	fd_balance;
 	uint32_t	halt_tx;
 	uint32_t	resume_tx;
@@ -229,25 +232,18 @@ struct muc_tx_stats {
 	uint32_t	gi_cnt;			/* times GI has been set for any node */
 	uint32_t	gi_ncidx;		/* last node to have GI set */
 	uint32_t	gi_val;			/* SGI enabled state for this node */
-	uint32_t	select_state_cnt;	/* times qn_select state has changed for any node */
 	uint32_t	select_state_ncidx;	/* last node to have qn_select state set */
 	uint32_t	select_state_val;	/* PPPC state for this node */
 	uint32_t	pppc_scale_cnt;		/* times Tx gain scaling has been set for any node */
 	uint32_t	pppc_scale_ncidx;	/* last node to have Tx gain scaling set */
 	uint32_t	pppc_scale_val;		/* Tx gain scaling for this node (0 is max) */
-	uint32_t	pppc_scale_base_cnt;	/* times Tx gain scaling base has been set for any node */
-	uint32_t	pppc_scale_base_1ss_20m;	/* times Tx gain scaling base for 20MHz and 1SS */
-	uint32_t	pppc_scale_base_1ss_40m;	/* times Tx gain scaling base for 40MHz and 1SS */
-	uint32_t	pppc_scale_base_1ss_80m;	/* times Tx gain scaling base for 80MHz and 1SS */
-	uint32_t	pppc_scale_base_2ss_20m;	/* times Tx gain scaling base for 20MHz and 2SS */
-	uint32_t	pppc_scale_base_2ss_40m;	/* times Tx gain scaling base for 40MHz and 2SS */
-	uint32_t	pppc_scale_base_2ss_80m;	/* times Tx gain scaling base for 80MHz and 2SS */
-	uint32_t	pppc_scale_base_3ss_20m;	/* times Tx gain scaling base for 20MHz and 3SS */
-	uint32_t	pppc_scale_base_3ss_40m;	/* times Tx gain scaling base for 40MHz and 3SS */
-	uint32_t	pppc_scale_base_3ss_80m;	/* times Tx gain scaling base for 80MHz and 3SS */
-	uint32_t	pppc_scale_base_4ss_20m;	/* times Tx gain scaling base for 20MHz and 4SS */
-	uint32_t	pppc_scale_base_4ss_40m;	/* times Tx gain scaling base for 40MHz and 4SS */
-	uint32_t	pppc_scale_base_4ss_80m;	/* times Tx gain scaling base for 80MHz and 4SS */
+	uint32_t	pppc_scale_last_gput;		/* The last goodput used by PPPC */
+	uint32_t	pppc_scale_last_gput_idx;	/* The PPPC index of the last goodput value */
+	uint32_t	pppc_scale_base_cnt;		/* times Tx gain scaling base has been set for any node */
+	uint32_t	pppc_scale_base_20m;	/* Combined tx scale bases for different bf/nss cases in 20MHz */
+	uint32_t	pppc_scale_base_40m;	/* Combined tx scale bases for different bf/nss cases in 40MHz */
+	uint32_t	pppc_scale_base_80m;	/* Combined tx scale bases for different bf/nss cases in 80MHz */
+	uint32_t	pppc_scale_base_copy;	/* combined the flags indicating the tx scale bases are copied bfoff 1ss cases */
 	uint32_t	pppc_scale_overstep;	/* tx scale exceed the maximum scale indices */
 	uint32_t	pppc_scale_rollback;	/* tx scale roll back because scale index over step */
 	uint32_t	pppc_0_gput;		/* times pppc comparing goodput and both are zero */
@@ -258,6 +254,12 @@ struct muc_tx_stats {
 	uint32_t	nc_csr_watermark_count; /* Number of times read retries reached max */
 	uint32_t	auc_dtim_notify;
 	uint32_t	tx_beacon_done;
+	uint32_t	sfs_peer_rts;
+	uint32_t	sfs_peer_rts_flags;
+	uint32_t	sfs_local_rts;
+	uint32_t	sfs_local_rts_flags;
+	uint32_t	sfs_dyn_wmm;
+	uint32_t	sfs_dyn_wmm_flags;
 };
 
 /**
@@ -297,6 +299,7 @@ struct muc_rx_stats {
 	u_int32_t	rxdesc_status_crc_err;
 	u_int32_t	rxdesc_status_cmic_err;
 	u_int32_t	rxdesc_status_cmic_no_crc_err;
+	u_int32_t	rxdesc_status_retry;
 	u_int32_t	agg_stored;
 	u_int32_t	agg_duplicate;
 
@@ -304,7 +307,12 @@ struct muc_rx_stats {
 	u_int32_t	accel_msdu;
 	u_int32_t	accel_no_buffer;
 	u_int32_t	accel_fwt_lu_timeout;
-	u_int32_t	accel_mcast_err;
+	u_int32_t	accel_mcast_send;
+	u_int32_t	accel_mcast_drop;
+	u_int32_t	accel_no_match;
+	u_int32_t	accel_drop;
+	u_int32_t	accel_err;
+	u_int32_t	accel_train;
 
 	/**
 	 * This counter shows the number of MPDUs within an AMPDU that have been
@@ -431,6 +439,8 @@ struct muc_rx_stats {
 	 * not count the number of subframes within the AMSDU.
 	 */
 	u_int32_t	rx_amsdu;
+	u_int32_t	rx_data;
+	u_int32_t	prev_rx_data;
 	u_int32_t	rx_recv_qnull;
 	u_int32_t	rx_recv_act;
 	u_int32_t	rx_recv_bcn;
@@ -513,6 +523,7 @@ struct muc_rx_stats {
 	 */
 	u_int32_t	bb_irq_dleaf_oflow;
 	u_int32_t	bb_irq_leaf_uflow;
+	u_int32_t	bb_irq_leaf_ldpc_uflow;
 	u_int32_t	bb_irq_tx_td_oflow_intr;
 	u_int32_t	bb_irq_tx_td_uflow_intr;
 	u_int32_t	bb_irq_rx_sm_wdg_intr;
@@ -686,6 +697,24 @@ struct muc_rx_stats {
 	u_int32_t	soft_ring_add_continue;
 	u_int32_t	mimo_ps_mode_switch;	/* times STA switch MIMO power-save mode by HT action */
 
+	u_int32_t	rx_vlan_drop;
+	u_int32_t	auto_cca_state;
+	u_int32_t	auto_cca_th;
+	u_int32_t	auto_cca_spre;
+	u_int32_t	auto_cca_intf;
+
+	/**
+	 * \internal
+	 *
+	 * These counters are monitor memory allocation.
+	 */
+	u_int32_t	total_dmem_alloc;
+	u_int32_t	total_dram_alloc;
+	u_int32_t	dmem_alloc_fails;
+	u_int32_t	dram_alloc_fails;
+	u_int32_t	total_dmem_free;
+	u_int32_t	total_dram_free;
+
 	/* RX frames BW mode*/
 	u_int32_t	rx_bw_80;
 	u_int32_t	rx_bw_40;
@@ -699,9 +728,10 @@ struct muc_rx_rates {
 	u_int32_t rx_mcs_11ac[MUC_VHT_NUM_RATES];
 };
 
-#define QTN_STATS_NUM_BF_SLOTS	6
+#define QTN_STATS_NUM_BF_SLOTS	10
 struct muc_rx_bf_stats {
 	u_int32_t	rx_bf_aid[QTN_STATS_NUM_BF_SLOTS];
+	u_int32_t	rx_bf_ng[QTN_STATS_NUM_BF_SLOTS];
 	u_int32_t	rx_bf_11n_ndp[QTN_STATS_NUM_BF_SLOTS];
 	u_int32_t	rx_bf_11ac_ndp[QTN_STATS_NUM_BF_SLOTS];
 	u_int32_t	rx_bf_11n_act[QTN_STATS_NUM_BF_SLOTS];
@@ -731,21 +761,23 @@ extern uint32_t uc_rate_stats_read;
  */
 /* @{ */
 struct qtn_rate_stats_mcs_data {
-	u_int16_t       mcs_rate;
-	u_int16_t       rate_index;
-	u_int16_t       pkt_total;
-	u_int16_t       pkt_error;
-	u_int16_t       pkt_hw_retry;
-	u_int16_t       pkt_sample;
-	u_int16_t       avg_per;
+	uint16_t	mcs_rate;
+	uint16_t	rate_index;
+	uint16_t	state;
+	uint16_t	pkt_total;
+	uint16_t	pkt_error;
+	uint16_t	pkt_hw_retry;
+	uint16_t	pkt_sample;
+	uint16_t	avg_per;
 } __attribute__((packed));
 
 struct qtn_rate_tx_stats {
-	u_int32_t                       seq_no;
-	u_int32_t                       timestamp;
-	u_int16_t                       sampling_index;
-	u_int16_t                       sampling_rate;
-	struct qtn_rate_stats_mcs_data  mcs_data[RATES_STATS_NUM_TX_RATES];
+	uint32_t			seq_no;
+	uint32_t			timestamp;
+	uint32_t			flags;
+	uint16_t			sampling_index;
+	uint16_t			sampling_rate;
+	struct qtn_rate_stats_mcs_data	mcs_data[RATES_STATS_NUM_TX_RATES];
 } __attribute__((packed));
 
 struct qtn_rate_gen_stats {
