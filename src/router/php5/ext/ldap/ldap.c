@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -23,7 +23,7 @@
    +----------------------------------------------------------------------+
  */
  
-/* $Id: 6de334df54b2b9be6a633c353cfcc7412b9a37cd $ */
+/* $Id: 4db15e5bb92af06390fd31ab784837ab21a3d2ce $ */
 #define IS_EXT_MODULE
 
 #ifdef HAVE_CONFIG_H
@@ -235,7 +235,7 @@ PHP_MINFO_FUNCTION(ldap)
 
 	php_info_print_table_start();
 	php_info_print_table_row(2, "LDAP Support", "enabled");
-	php_info_print_table_row(2, "RCS Version", "$Id: 6de334df54b2b9be6a633c353cfcc7412b9a37cd $");
+	php_info_print_table_row(2, "RCS Version", "$Id: 4db15e5bb92af06390fd31ab784837ab21a3d2ce $");
 
 	if (LDAPG(max_links) == -1) {
 		snprintf(tmp, 31, "%ld/unlimited", LDAPG(num_links));

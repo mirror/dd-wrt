@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2014 The PHP Group                                |
+  | Copyright (c) 1997-2015 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 05dd1ecc211075107543b0ef8cee488dd229fccf $ */
+/* $Id: c268059b54296d6ea21e8b1178f40a28a88f0024 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -417,7 +417,7 @@ static int php_zip_parse_options(zval *options, long *remove_all_path,
 		ze_zip_object *obj = (ze_zip_object*) zend_object_store_get_object(object TSRMLS_CC); \
 		intern = obj->za; \
 		if (!intern) { \
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid or unitialized Zip object"); \
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid or uninitialized Zip object"); \
 			RETURN_FALSE; \
 		} \
 	}
@@ -2874,7 +2874,7 @@ static PHP_MINFO_FUNCTION(zip)
 	php_info_print_table_start();
 
 	php_info_print_table_row(2, "Zip", "enabled");
-	php_info_print_table_row(2, "Extension Version","$Id: 05dd1ecc211075107543b0ef8cee488dd229fccf $");
+	php_info_print_table_row(2, "Extension Version","$Id: c268059b54296d6ea21e8b1178f40a28a88f0024 $");
 	php_info_print_table_row(2, "Zip version", PHP_ZIP_VERSION_STRING);
 	php_info_print_table_row(2, "Libzip version", LIBZIP_VERSION);
 
