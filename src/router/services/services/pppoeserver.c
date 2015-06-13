@@ -39,12 +39,12 @@ static char *getifip(void)
 		return nvram_nget("%s_ipaddr", nvram_safe_get("pppoeserver_interface"));
 }
 
-void add_pppoe_natrule(void)
+static void add_pppoe_natrule(void)
 {
 
 }
 
-void del_pppoe_natrule(void)
+static void del_pppoe_natrule(void)
 {
 }
 
