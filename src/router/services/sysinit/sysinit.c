@@ -85,8 +85,6 @@ extern struct nvram_param *srouter_defaults;
 extern void load_defaults(void);
 extern void free_defaults(void);
 
-extern int usb_add_ufd(void);
-
 extern int f_exists(const char *path);
 
 int endswith(char *str, char *cmp)
@@ -2841,11 +2839,6 @@ void start_drivers(void)
 		insmod("libata libahci ahci ahci_platforms ahci_imx mmc_core mmc_block sdhci sdhci-pltfm sdhci-esdhc-imx");
 
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-//   Mounting is done by hotplug event!         
-//              if( nvram_match("usb_automnt", "1") && nvram_match("usb_storage", "1")) {
-//                      printf(stderr, "[USB] check for drives....\n");
-//                      usb_add_ufd();
-//              }
 	} else {
 		eval("stopservice", "samba3");
 		eval("stopservice", "ftpsrv");

@@ -56,7 +56,7 @@
 
 #ifdef HAVE_RADVD
 
-int write_ipv6_dns_servers(FILE * f, const char *prefix, char *dns, const char *suffix, int once)
+static int write_ipv6_dns_servers(FILE * f, const char *prefix, char *dns, const char *suffix, int once)
 {
 	char p[INET6_ADDRSTRLEN + 1], *next = NULL;
 	struct in6_addr addr;

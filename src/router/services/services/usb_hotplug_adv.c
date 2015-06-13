@@ -26,9 +26,9 @@
 #include <shutils.h>
 #include <bcmnvram.h>
 
-int usb_process_path(char *path, int host, char *part, char *devpath);
+static int usb_process_path(char *path, int host, char *part, char *devpath);
 static void usb_unmount(char *dev);
-int usb_add_ufd(char *link, int host, char *devpath, int mode);
+static int usb_add_ufd(char *link, int host, char *devpath, int mode);
 
 #define DUMPFILE	"/tmp/disktype.dump"
 #define PARTFILE	"/tmp/part.dump"
@@ -312,7 +312,7 @@ static bool usb_load_modules(char *fs)
  /* 
   *   Mount partition 
   */
-int usb_process_path(char *path, int host, char *part, char *devpath)
+static int usb_process_path(char *path, int host, char *part, char *devpath)
 {
 	int ret = ENOENT;
 	FILE *fp = NULL;
@@ -532,7 +532,7 @@ static void usb_unmount(char *devpath)
 /* 
 * Handle hotplugging of UFD 
 */
-int usb_add_ufd(char *link, int host, char *devpath, int mode)
+static int usb_add_ufd(char *link, int host, char *devpath, int mode)
 {
 	DIR *dir = NULL;
 
