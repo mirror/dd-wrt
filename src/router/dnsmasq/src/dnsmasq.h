@@ -868,6 +868,7 @@ struct dhcp_context {
 #define CONTEXT_USED           (1u<<15)
 #define CONTEXT_OLD            (1u<<16)
 #define CONTEXT_V6             (1u<<17)
+#define CONTEXT_RA_OFF_LINK    (1u<<18)
 
 struct ping_result {
   struct in_addr addr;

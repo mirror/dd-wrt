@@ -117,7 +117,7 @@ install-i18n : all-i18n install-common
 	cd $(MAN); ../bld/install-man $(DESTDIR)$(MANDIR) $(INSTALL)
 
 merge : 
-	@cd $(BUILDDIR) && $(MAKE) -f $(top)/Makefile dnsmasq.pot
+	@cd $(BUILDDIR) && $(MAKE) top="$(top)" -f $(top)/Makefile dnsmasq.pot
 	for f in `cd $(PO); echo *.po`; do \
 		echo -n msgmerge $(PO)/$$f && $(MSGMERGE) --no-wrap -U $(PO)/$$f $(BUILDDIR)/dnsmasq.pot; \
 	done
