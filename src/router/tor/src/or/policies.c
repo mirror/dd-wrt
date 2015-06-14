@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2013, The Tor Project, Inc. */
+ * Copyright (c) 2007-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -28,9 +28,6 @@ static smartlist_t *authdir_reject_policy = NULL;
 /** Policy that addresses for incoming router descriptors must match in order
  * to be marked as valid in our networkstatus. */
 static smartlist_t *authdir_invalid_policy = NULL;
-/** Policy that addresses for incoming router descriptors must <b>not</b>
- * match in order to not be marked as BadDirectory. */
-static smartlist_t *authdir_baddir_policy = NULL;
 /** Policy that addresses for incoming router descriptors must <b>not</b>
  * match in order to not be marked as BadExit. */
 static smartlist_t *authdir_badexit_policy = NULL;
@@ -64,6 +61,13 @@ static const char *private_nets[] = {
   "[fc00::]/7", "[fe80::]/10", "[fec0::]/10", "[ff00::]/8", "[::]/127",
   NULL
 };
+
+static int policies_parse_exit_policy_internal(config_line_t *cfg,
+                                               smartlist_t **dest,
+                                               int ipv6_exit,
+                                               int rejectprivate,
+                                               uint32_t local_address,
+                                               int add_default_policy);
 
 /** Replace all "private" entries in *<b>policy</b> with their expanded
  * equivalents. */
@@ -400,17 +404,6 @@ authdir_policy_valid_address(uint32_t addr, uint16_t port)
   return !addr_is_in_cc_list(addr, get_options()->AuthDirInvalidCCs);
 }
 
-/** Return 1 if <b>addr</b>:<b>port</b> should be marked as a bad dir,
- * based on <b>authdir_baddir_policy</b>. Else return 0.
- */
-int
-authdir_policy_baddir_address(uint32_t addr, uint16_t port)
-{
-  if (! addr_policy_permits_address(addr, port, authdir_baddir_policy))
-    return 1;
-  return addr_is_in_cc_list(addr, get_options()->AuthDirBadDirCCs);
-}
-
 /** Return 1 if <b>addr</b>:<b>port</b> should be marked as a bad exit,
  * based on <b>authdir_badexit_policy</b>. Else return 0.
  */
@@ -437,11 +430,36 @@ validate_addr_policies(const or_options_t *options, char **msg)
   smartlist_t *addr_policy=NULL;
   *msg = NULL;
 
-  if (policies_parse_exit_policy(options->ExitPolicy, &addr_policy,
-                                 options->IPv6Exit,
-                                 options->ExitPolicyRejectPrivate, 0,
-                                 !options->BridgeRelay))
+  if (policies_parse_exit_policy_from_options(options,0,&addr_policy)) {
     REJECT("Error in ExitPolicy entry.");
+  }
+
+  static int warned_about_exitrelay = 0;
+
+  const int exitrelay_setting_is_auto = options->ExitRelay == -1;
+  const int policy_accepts_something =
+    ! (policy_is_reject_star(addr_policy, AF_INET) &&
+       policy_is_reject_star(addr_policy, AF_INET6));
+
+  if (server_mode(options) &&
+      ! warned_about_exitrelay &&
+      exitrelay_setting_is_auto &&
+      policy_accepts_something) {
+      /* Policy accepts something */
+    warned_about_exitrelay = 1;
+    log_warn(LD_CONFIG,
+             "Tor is running as an exit relay%s. If you did not want this "
+             "behavior, please set the ExitRelay option to 0. If you do "
+             "want to run an exit Relay, please set the ExitRelay option "
+             "to 1 to disable this warning, and for forward compatibility.",
+             options->ExitPolicy == NULL ?
+                 " with the default exit policy" : "");
+    if (options->ExitPolicy == NULL) {
+      log_warn(LD_CONFIG,
+               "In a future version of Tor, ExitRelay 0 may become the "
+               "default when no ExitPolicy is given.");
+    }
+  }
 
   /* The rest of these calls *append* to addr_policy. So don't actually
    * use the results for anything other than checking if they parse! */
@@ -455,9 +473,6 @@ validate_addr_policies(const or_options_t *options, char **msg)
   if (parse_addr_policy(options->AuthDirInvalid, &addr_policy,
                         ADDR_POLICY_REJECT))
     REJECT("Error in AuthDirInvalid entry.");
-  if (parse_addr_policy(options->AuthDirBadDir, &addr_policy,
-                        ADDR_POLICY_REJECT))
-    REJECT("Error in AuthDirBadDir entry.");
   if (parse_addr_policy(options->AuthDirBadExit, &addr_policy,
                         ADDR_POLICY_REJECT))
     REJECT("Error in AuthDirBadExit entry.");
@@ -534,9 +549,6 @@ policies_parse_from_options(const or_options_t *options)
     ret = -1;
   if (load_policy_from_option(options->AuthDirInvalid, "AuthDirInvalid",
                               &authdir_invalid_policy, ADDR_POLICY_REJECT) < 0)
-    ret = -1;
-  if (load_policy_from_option(options->AuthDirBadDir, "AuthDirBadDir",
-                              &authdir_baddir_policy, ADDR_POLICY_REJECT) < 0)
     ret = -1;
   if (load_policy_from_option(options->AuthDirBadExit, "AuthDirBadExit",
                               &authdir_badexit_policy, ADDR_POLICY_REJECT) < 0)
@@ -629,8 +641,8 @@ policy_hash(const policy_map_ent_t *ent)
 
 HT_PROTOTYPE(policy_map, policy_map_ent_t, node, policy_hash,
              policy_eq)
-HT_GENERATE(policy_map, policy_map_ent_t, node, policy_hash,
-            policy_eq, 0.6, malloc, realloc, free)
+HT_GENERATE2(policy_map, policy_map_ent_t, node, policy_hash,
+             policy_eq, 0.6, tor_reallocarray_, tor_free_)
 
 /** Given a pointer to an addr_policy_t, return a copy of the pointer to the
  * "canonical" copy of that addr_policy_t; the canonical copy is a single
@@ -769,9 +781,9 @@ compare_unknown_tor_addr_to_addr_policy(uint16_t port,
  * We could do better by assuming that some ranges never match typical
  * addresses (127.0.0.1, and so on).  But we'll try this for now.
  */
-addr_policy_result_t
-compare_tor_addr_to_addr_policy(const tor_addr_t *addr, uint16_t port,
-                                const smartlist_t *policy)
+MOCK_IMPL(addr_policy_result_t,
+compare_tor_addr_to_addr_policy,(const tor_addr_t *addr, uint16_t port,
+                                 const smartlist_t *policy))
 {
   if (!policy) {
     /* no policy? accept all. */
@@ -968,11 +980,12 @@ exit_policy_remove_redundancies(smartlist_t *dest)
  * the functions used to parse the exit policy from a router descriptor,
  * see router_add_exit_policy.
  */
-int
-policies_parse_exit_policy(config_line_t *cfg, smartlist_t **dest,
-                           int ipv6_exit,
-                           int rejectprivate, uint32_t local_address,
-                           int add_default_policy)
+static int
+policies_parse_exit_policy_internal(config_line_t *cfg, smartlist_t **dest,
+                                    int ipv6_exit,
+                                    int rejectprivate,
+                                    uint32_t local_address,
+                                    int add_default_policy)
 {
   if (!ipv6_exit) {
     append_exit_policy_string(dest, "reject *6:*");
@@ -996,6 +1009,77 @@ policies_parse_exit_policy(config_line_t *cfg, smartlist_t **dest,
   exit_policy_remove_redundancies(*dest);
 
   return 0;
+}
+
+/** Parse exit policy in <b>cfg</b> into <b>dest</b> smartlist.
+ *
+ * Add entry that rejects all IPv6 destinations unless
+ * <b>EXIT_POLICY_IPV6_ENABLED</b> bit is set in <b>options</b> bitmask.
+ *
+ * If <b>EXIT_POLICY_REJECT_PRIVATE</b> bit is set in <b>options</b>,
+ * do add entry that rejects all destinations in private subnetwork
+ * Tor is running in.
+ *
+ * Respectively, if <b>EXIT_POLICY_ADD_DEFAULT</b> bit is set, add
+ * default exit policy entries to <b>result</b> smartlist.
+ */
+int
+policies_parse_exit_policy(config_line_t *cfg, smartlist_t **dest,
+                           exit_policy_parser_cfg_t options,
+                           uint32_t local_address)
+{
+  int ipv6_enabled = (options & EXIT_POLICY_IPV6_ENABLED) ? 1 : 0;
+  int reject_private = (options & EXIT_POLICY_REJECT_PRIVATE) ? 1 : 0;
+  int add_default = (options & EXIT_POLICY_ADD_DEFAULT) ? 1 : 0;
+
+  return policies_parse_exit_policy_internal(cfg,dest,ipv6_enabled,
+                                             reject_private,
+                                             local_address,
+                                             add_default);
+}
+
+/** Parse <b>ExitPolicy</b> member of <b>or_options</b> into <b>result</b>
+ * smartlist.
+ * If <b>or_options->IPv6Exit</b> is false, add an entry that
+ * rejects all IPv6 destinations.
+ *
+ * If <b>or_options->ExitPolicyRejectPrivate</b> is true, add entry that
+ * rejects all destinations in the private subnetwork of machine Tor
+ * instance is running in.
+ *
+ * If <b>or_options->BridgeRelay</b> is false, add entries of default
+ * Tor exit policy into <b>result</b> smartlist.
+ *
+ * If or_options->ExitRelay is false, then make our exit policy into
+ * "reject *:*" regardless.
+ */
+int
+policies_parse_exit_policy_from_options(const or_options_t *or_options,
+                                        uint32_t local_address,
+                                        smartlist_t **result)
+{
+  exit_policy_parser_cfg_t parser_cfg = 0;
+
+  if (or_options->ExitRelay == 0) {
+    append_exit_policy_string(result, "reject *4:*");
+    append_exit_policy_string(result, "reject *6:*");
+    return 0;
+  }
+
+  if (or_options->IPv6Exit) {
+    parser_cfg |= EXIT_POLICY_IPV6_ENABLED;
+  }
+
+  if (or_options->ExitPolicyRejectPrivate) {
+    parser_cfg |= EXIT_POLICY_REJECT_PRIVATE;
+  }
+
+  if (!or_options->BridgeRelay) {
+    parser_cfg |= EXIT_POLICY_ADD_DEFAULT;
+  }
+
+  return policies_parse_exit_policy(or_options->ExitPolicy,result,
+                                    parser_cfg,local_address);
 }
 
 /** Add "reject *:*" to the end of the policy in *<b>dest</b>, allocating
@@ -1334,9 +1418,9 @@ policy_summary_add_item(smartlist_t *summary, addr_policy_t *p)
  * The summary will either be an "accept" plus a comma-separated list of port
  * ranges or a "reject" plus port-ranges, depending on which is shorter.
  *
- * If no exits are allowed at all then NULL is returned, if no ports
- * are blocked instead of "reject " we return "accept 1-65535" (this
- * is an exception to the shorter-representation-wins rule).
+ * If no exits are allowed at all then "reject 1-65535" is returned. If no
+ * ports are blocked instead of "reject " we return "accept 1-65535". (These
+ * are an exception to the shorter-representation-wins rule).
  */
 char *
 policy_summarize(smartlist_t *policy, sa_family_t family)
@@ -1766,8 +1850,6 @@ policies_free_all(void)
   authdir_reject_policy = NULL;
   addr_policy_list_free(authdir_invalid_policy);
   authdir_invalid_policy = NULL;
-  addr_policy_list_free(authdir_baddir_policy);
-  authdir_baddir_policy = NULL;
   addr_policy_list_free(authdir_badexit_policy);
   authdir_badexit_policy = NULL;
 

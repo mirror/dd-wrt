@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2013, The Tor Project, Inc. */
+ * Copyright (c) 2007-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -47,6 +47,7 @@
 #include <sys/resource.h>
 #endif
 
+#include "crypto_s2k.h"
 #include "procmon.h"
 
 /** Yield true iff <b>s</b> is the state of a control_connection_t that has
@@ -194,14 +195,14 @@ log_severity_to_event(int severity)
 static void
 clear_circ_bw_fields(void)
 {
-  circuit_t *circ;
   origin_circuit_t *ocirc;
-  TOR_LIST_FOREACH(circ, circuit_get_global_list(), head) {
+  SMARTLIST_FOREACH_BEGIN(circuit_get_global_list(), circuit_t *, circ) {
     if (!CIRCUIT_IS_ORIGIN(circ))
       continue;
     ocirc = TO_ORIGIN_CIRCUIT(circ);
     ocirc->n_written_circ_bw = ocirc->n_read_circ_bw = 0;
   }
+  SMARTLIST_FOREACH_END(circ);
 }
 
 /** Set <b>global_event_mask*</b> to the bitwise OR of each live control
@@ -949,7 +950,7 @@ static int
 handle_control_setevents(control_connection_t *conn, uint32_t len,
                          const char *body)
 {
-  int event_code = -1;
+  int event_code;
   event_mask_t event_mask = 0;
   smartlist_t *events = smartlist_new();
 
@@ -963,6 +964,8 @@ handle_control_setevents(control_connection_t *conn, uint32_t len,
         continue;
       } else {
         int i;
+        event_code = -1;
+
         for (i = 0; control_event_table[i].event_name != NULL; ++i) {
           if (!strcasecmp(ev, control_event_table[i].event_name)) {
             event_code = control_event_table[i].event_code;
@@ -993,7 +996,8 @@ handle_control_setevents(control_connection_t *conn, uint32_t len,
 
 /** Decode the hashed, base64'd passwords stored in <b>passwords</b>.
  * Return a smartlist of acceptable passwords (unterminated strings of
- * length S2K_SPECIFIER_LEN+DIGEST_LEN) on success, or NULL on failure.
+ * length S2K_RFC2440_SPECIFIER_LEN+DIGEST_LEN) on success, or NULL on
+ * failure.
  */
 smartlist_t *
 decode_hashed_passwords(config_line_t *passwords)
@@ -1009,16 +1013,17 @@ decode_hashed_passwords(config_line_t *passwords)
 
     if (!strcmpstart(hashed, "16:")) {
       if (base16_decode(decoded, sizeof(decoded), hashed+3, strlen(hashed+3))<0
-          || strlen(hashed+3) != (S2K_SPECIFIER_LEN+DIGEST_LEN)*2) {
+          || strlen(hashed+3) != (S2K_RFC2440_SPECIFIER_LEN+DIGEST_LEN)*2) {
         goto err;
       }
     } else {
         if (base64_decode(decoded, sizeof(decoded), hashed, strlen(hashed))
-            != S2K_SPECIFIER_LEN+DIGEST_LEN) {
+            != S2K_RFC2440_SPECIFIER_LEN+DIGEST_LEN) {
           goto err;
         }
     }
-    smartlist_add(sl, tor_memdup(decoded, S2K_SPECIFIER_LEN+DIGEST_LEN));
+    smartlist_add(sl,
+                  tor_memdup(decoded, S2K_RFC2440_SPECIFIER_LEN+DIGEST_LEN));
   }
 
   return sl;
@@ -1039,7 +1044,7 @@ handle_control_authenticate(control_connection_t *conn, uint32_t len,
 {
   int used_quoted_string = 0;
   const or_options_t *options = get_options();
-  const char *errstr = NULL;
+  const char *errstr = "Unknown error";
   char *password;
   size_t password_len;
   const char *cp;
@@ -1160,22 +1165,27 @@ handle_control_authenticate(control_connection_t *conn, uint32_t len,
     }
     if (bad) {
       if (!also_cookie) {
-        log_warn(LD_CONTROL,
+        log_warn(LD_BUG,
                  "Couldn't decode HashedControlPassword: invalid base16");
         errstr="Couldn't decode HashedControlPassword value in configuration.";
+        goto err;
       }
       bad_password = 1;
       SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
       smartlist_free(sl);
+      sl = NULL;
     } else {
       SMARTLIST_FOREACH(sl, char *, expected,
       {
-        secret_to_key(received,DIGEST_LEN,password,password_len,expected);
-        if (tor_memeq(expected+S2K_SPECIFIER_LEN, received, DIGEST_LEN))
+        secret_to_key_rfc2440(received,DIGEST_LEN,
+                              password,password_len,expected);
+        if (tor_memeq(expected + S2K_RFC2440_SPECIFIER_LEN,
+                      received, DIGEST_LEN))
           goto ok;
       });
       SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
       smartlist_free(sl);
+      sl = NULL;
 
       if (used_quoted_string)
         errstr = "Password did not match HashedControlPassword value from "
@@ -1198,9 +1208,12 @@ handle_control_authenticate(control_connection_t *conn, uint32_t len,
 
  err:
   tor_free(password);
-  connection_printf_to_buf(conn, "515 Authentication failed: %s\r\n",
-                           errstr ? errstr : "Unknown reason.");
+  connection_printf_to_buf(conn, "515 Authentication failed: %s\r\n", errstr);
   connection_mark_for_close(TO_CONN(conn));
+  if (sl) { /* clean up */
+    SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
+    smartlist_free(sl);
+  }
   return 0;
  ok:
   log_info(LD_CONTROL, "Authenticated control connection ("TOR_SOCKET_T_FORMAT
@@ -1250,6 +1263,7 @@ static const struct signal_t signal_table[] = {
   { SIGTERM, "INT" },
   { SIGNEWNYM, "NEWNYM" },
   { SIGCLEARDNSCACHE, "CLEARDNSCACHE"},
+  { SIGHEARTBEAT, "HEARTBEAT"},
   { 0, NULL },
 };
 
@@ -1424,10 +1438,16 @@ getinfo_helper_misc(control_connection_t *conn, const char *question,
   (void) conn;
   if (!strcmp(question, "version")) {
     *answer = tor_strdup(get_version());
+  } else if (!strcmp(question, "bw-event-cache")) {
+    *answer = get_bw_samples();
   } else if (!strcmp(question, "config-file")) {
-    *answer = tor_strdup(get_torrc_fname(0));
+    const char *a = get_torrc_fname(0);
+    if (a)
+      *answer = tor_strdup(a);
   } else if (!strcmp(question, "config-defaults-file")) {
-    *answer = tor_strdup(get_torrc_fname(1));
+    const char *a = get_torrc_fname(1);
+    if (a)
+      *answer = tor_strdup(a);
   } else if (!strcmp(question, "config-text")) {
     *answer = options_dump(get_options(), OPTIONS_DUMP_MINIMAL);
   } else if (!strcmp(question, "info/names")) {
@@ -1862,6 +1882,22 @@ circuit_describe_status_for_controller(origin_circuit_t *circ)
     smartlist_add_asprintf(descparts, "TIME_CREATED=%s", tbuf);
   }
 
+  // Show username and/or password if available.
+  if (circ->socks_username_len > 0) {
+    char* socks_username_escaped = esc_for_log_len(circ->socks_username,
+                                     (size_t) circ->socks_username_len);
+    smartlist_add_asprintf(descparts, "SOCKS_USERNAME=%s",
+                           socks_username_escaped);
+    tor_free(socks_username_escaped);
+  }
+  if (circ->socks_password_len > 0) {
+    char* socks_password_escaped = esc_for_log_len(circ->socks_password,
+                                     (size_t) circ->socks_password_len);
+    smartlist_add_asprintf(descparts, "SOCKS_PASSWORD=%s",
+                           socks_password_escaped);
+    tor_free(socks_password_escaped);
+  }
+
   rv = smartlist_join_strings(descparts, " ", 0, NULL);
 
   SMARTLIST_FOREACH(descparts, char *, cp, tor_free(cp));
@@ -1879,9 +1915,8 @@ getinfo_helper_events(control_connection_t *control_conn,
 {
   (void) control_conn;
   if (!strcmp(question, "circuit-status")) {
-    circuit_t *circ_;
     smartlist_t *status = smartlist_new();
-    TOR_LIST_FOREACH(circ_, circuit_get_global_list(), head) {
+    SMARTLIST_FOREACH_BEGIN(circuit_get_global_list(), circuit_t *, circ_) {
       origin_circuit_t *circ;
       char *circdesc;
       const char *state;
@@ -1903,6 +1938,7 @@ getinfo_helper_events(control_connection_t *control_conn,
                    state, *circdesc ? " " : "", circdesc);
       tor_free(circdesc);
     }
+    SMARTLIST_FOREACH_END(circ_);
     *answer = smartlist_join_strings(status, "\r\n", 0, NULL);
     SMARTLIST_FOREACH(status, char *, cp, tor_free(cp));
     smartlist_free(status);
@@ -2002,7 +2038,7 @@ getinfo_helper_events(control_connection_t *control_conn,
     /* Note that status/ is not a catch-all for events; there's only supposed
      * to be a status GETINFO if there's a corresponding STATUS event. */
     if (!strcmp(question, "status/circuit-established")) {
-      *answer = tor_strdup(can_complete_circuit ? "1" : "0");
+      *answer = tor_strdup(have_completed_a_circuit() ? "1" : "0");
     } else if (!strcmp(question, "status/enough-dir-info")) {
       *answer = tor_strdup(router_have_minimum_dir_info() ? "1" : "0");
     } else if (!strcmp(question, "status/good-server-descriptor") ||
@@ -2099,6 +2135,7 @@ typedef struct getinfo_item_t {
  * to answer them. */
 static const getinfo_item_t getinfo_items[] = {
   ITEM("version", misc, "The current version of Tor."),
+  ITEM("bw-event-cache", misc, "Cached BW events for a short interval."),
   ITEM("config-file", misc, "Current location of the \"torrc\" file."),
   ITEM("config-defaults-file", misc, "Current location of the defaults file."),
   ITEM("config-text", misc,
@@ -2148,6 +2185,8 @@ static const getinfo_item_t getinfo_items[] = {
          "Brief summary of router status by nickname (v2 directory format)."),
   PREFIX("ns/purpose/", networkstatus,
          "Brief summary of router status by purpose (v2 directory format)."),
+  PREFIX("consensus/", networkstatus,
+         "Information about and from the ns consensus."),
   ITEM("network-status", dir,
        "Brief summary of router status (v1 directory format)"),
   ITEM("circuit-status", events, "List of current circuits originating here."),
@@ -2446,6 +2485,14 @@ handle_control_extendcircuit(control_connection_t *conn, uint32_t len,
   if (!zero_circ && !(circ = get_circ(smartlist_get(args,0)))) {
     connection_printf_to_buf(conn, "552 Unknown circuit \"%s\"\r\n",
                              (char*)smartlist_get(args, 0));
+    SMARTLIST_FOREACH(args, char *, cp, tor_free(cp));
+    smartlist_free(args);
+    goto done;
+  }
+
+  if (smartlist_len(args) < 2) {
+    connection_printf_to_buf(conn,
+                             "512 syntax error: not enough arguments.\r\n");
     SMARTLIST_FOREACH(args, char *, cp, tor_free(cp));
     smartlist_free(args);
     goto done;
@@ -3909,12 +3956,11 @@ control_event_stream_bandwidth_used(void)
 int
 control_event_circ_bandwidth_used(void)
 {
-  circuit_t *circ;
   origin_circuit_t *ocirc;
   if (!EVENT_IS_INTERESTING(EVENT_CIRC_BANDWIDTH_USED))
     return 0;
 
-  TOR_LIST_FOREACH(circ, circuit_get_global_list(), head) {
+  SMARTLIST_FOREACH_BEGIN(circuit_get_global_list(), circuit_t *, circ) {
     if (!CIRCUIT_IS_ORIGIN(circ))
       continue;
     ocirc = TO_ORIGIN_CIRCUIT(circ);
@@ -3927,6 +3973,7 @@ control_event_circ_bandwidth_used(void)
                        (unsigned long)ocirc->n_written_circ_bw);
     ocirc->n_written_circ_bw = ocirc->n_read_circ_bw = 0;
   }
+  SMARTLIST_FOREACH_END(circ);
 
   return 0;
 }
@@ -4091,14 +4138,13 @@ format_cell_stats(char **event_string, circuit_t *circ,
 int
 control_event_circuit_cell_stats(void)
 {
-  circuit_t *circ;
   cell_stats_t *cell_stats;
   char *event_string;
   if (!get_options()->TestingEnableCellStatsEvent ||
       !EVENT_IS_INTERESTING(EVENT_CELL_STATS))
     return 0;
   cell_stats = tor_malloc(sizeof(cell_stats_t));;
-  TOR_LIST_FOREACH(circ, circuit_get_global_list(), head) {
+  SMARTLIST_FOREACH_BEGIN(circuit_get_global_list(), circuit_t *, circ) {
     if (!circ->testing_cell_stats)
       continue;
     sum_up_cell_stats_by_command(circ, cell_stats);
@@ -4107,6 +4153,7 @@ control_event_circuit_cell_stats(void)
                        "650 CELL_STATS %s\r\n", event_string);
     tor_free(event_string);
   }
+  SMARTLIST_FOREACH_END(circ);
   tor_free(cell_stats);
   return 0;
 }
@@ -4133,11 +4180,29 @@ control_event_tb_empty(const char *bucket, uint32_t read_empty_time,
   return 0;
 }
 
+/* about 5 minutes worth. */
+#define N_BW_EVENTS_TO_CACHE 300
+/* Index into cached_bw_events to next write. */
+static int next_measurement_idx = 0;
+/* number of entries set in n_measurements */
+static int n_measurements = 0;
+static struct cached_bw_event_s {
+  uint32_t n_read;
+  uint32_t n_written;
+} cached_bw_events[N_BW_EVENTS_TO_CACHE];
+
 /** A second or more has elapsed: tell any interested control
  * connections how much bandwidth we used. */
 int
 control_event_bandwidth_used(uint32_t n_read, uint32_t n_written)
 {
+  cached_bw_events[next_measurement_idx].n_read = n_read;
+  cached_bw_events[next_measurement_idx].n_written = n_written;
+  if (++next_measurement_idx == N_BW_EVENTS_TO_CACHE)
+    next_measurement_idx = 0;
+  if (n_measurements < N_BW_EVENTS_TO_CACHE)
+    ++n_measurements;
+
   if (EVENT_IS_INTERESTING(EVENT_BANDWIDTH_USED)) {
     send_control_event(EVENT_BANDWIDTH_USED, ALL_FORMATS,
                        "650 BW %lu %lu\r\n",
@@ -4146,6 +4211,35 @@ control_event_bandwidth_used(uint32_t n_read, uint32_t n_written)
   }
 
   return 0;
+}
+
+STATIC char *
+get_bw_samples(void)
+{
+  int i;
+  int idx = (next_measurement_idx + N_BW_EVENTS_TO_CACHE - n_measurements)
+    % N_BW_EVENTS_TO_CACHE;
+  tor_assert(0 <= idx && idx < N_BW_EVENTS_TO_CACHE);
+
+  smartlist_t *elements = smartlist_new();
+
+  for (i = 0; i < n_measurements; ++i) {
+    tor_assert(0 <= idx && idx < N_BW_EVENTS_TO_CACHE);
+    const struct cached_bw_event_s *bwe = &cached_bw_events[idx];
+
+    smartlist_add_asprintf(elements, "%u,%u",
+                           (unsigned)bwe->n_read,
+                           (unsigned)bwe->n_written);
+
+    idx = (idx + 1) % N_BW_EVENTS_TO_CACHE;
+  }
+
+  char *result = smartlist_join_strings(elements, " ", 0, NULL);
+
+  SMARTLIST_FOREACH(elements, char *, cp, tor_free(cp));
+  smartlist_free(elements);
+
+  return result;
 }
 
 /** Called when we are sending a log message to the controllers: suspend
@@ -4440,6 +4534,9 @@ control_event_signal(uintptr_t signal)
       break;
     case SIGCLEARDNSCACHE:
       signal_string = "CLEARDNSCACHE";
+      break;
+    case SIGHEARTBEAT:
+      signal_string = "HEARTBEAT";
       break;
     default:
       log_warn(LD_BUG, "Unrecognized signal %lu in control_event_signal",
@@ -4790,23 +4887,43 @@ bootstrap_status_to_string(bootstrap_status_t s, const char **tag,
       break;
     case BOOTSTRAP_STATUS_REQUESTING_DESCRIPTORS:
       *tag = "requesting_descriptors";
-      *summary = "Asking for relay descriptors";
+      /* XXXX this appears to incorrectly report internal on most loads */
+      *summary = router_have_consensus_path() == CONSENSUS_PATH_INTERNAL ?
+        "Asking for relay descriptors for internal paths" :
+        "Asking for relay descriptors";
       break;
+    /* If we're sure there are no exits in the consensus,
+     * inform the controller by adding "internal"
+     * to the status summaries.
+     * (We only check this while loading descriptors,
+     * so we may not know in the earlier stages.)
+     * But if there are exits, we can't be sure whether
+     * we're creating internal or exit paths/circuits.
+     * XXXX Or should be use different tags or statuses
+     * for internal and exit/all? */
     case BOOTSTRAP_STATUS_LOADING_DESCRIPTORS:
       *tag = "loading_descriptors";
-      *summary = "Loading relay descriptors";
+      *summary = router_have_consensus_path() == CONSENSUS_PATH_INTERNAL ?
+        "Loading relay descriptors for internal paths" :
+        "Loading relay descriptors";
       break;
     case BOOTSTRAP_STATUS_CONN_OR:
       *tag = "conn_or";
-      *summary = "Connecting to the Tor network";
+      *summary = router_have_consensus_path() == CONSENSUS_PATH_INTERNAL ?
+        "Connecting to the Tor network internally" :
+        "Connecting to the Tor network";
       break;
     case BOOTSTRAP_STATUS_HANDSHAKE_OR:
       *tag = "handshake_or";
-      *summary = "Finishing handshake with first hop";
+      *summary = router_have_consensus_path() == CONSENSUS_PATH_INTERNAL ?
+        "Finishing handshake with first hop of internal circuit" :
+        "Finishing handshake with first hop";
       break;
     case BOOTSTRAP_STATUS_CIRCUIT_CREATE:
       *tag = "circuit_create";
-      *summary = "Establishing a Tor circuit";
+      *summary = router_have_consensus_path() == CONSENSUS_PATH_INTERNAL ?
+        "Establishing an internal Tor circuit" :
+        "Establishing a Tor circuit";
       break;
     case BOOTSTRAP_STATUS_DONE:
       *tag = "done";
@@ -4854,15 +4971,18 @@ static int bootstrap_problems = 0;
  *
  * <b>status</b> is the new status, that is, what task we will be doing
  * next. <b>progress</b> is zero if we just started this task, else it
- * represents progress on the task. */
-void
+ * represents progress on the task.
+ *
+ * Return true if we logged a message at level NOTICE, and false otherwise.
+ */
+int
 control_event_bootstrap(bootstrap_status_t status, int progress)
 {
   const char *tag, *summary;
   char buf[BOOTSTRAP_MSG_LEN];
 
   if (bootstrap_percent == BOOTSTRAP_STATUS_DONE)
-    return; /* already bootstrapped; nothing to be done here. */
+    return 0; /* already bootstrapped; nothing to be done here. */
 
   /* special case for handshaking status, since our TLS handshaking code
    * can't distinguish what the connection is going to be for. */
@@ -4909,7 +5029,10 @@ control_event_bootstrap(bootstrap_status_t status, int progress)
       /* Remember that we gave a notice at this level. */
       notice_bootstrap_percent = bootstrap_percent;
     }
+    return loglevel == LOG_NOTICE;
   }
+
+  return 0;
 }
 
 /** Called when Tor has failed to make bootstrapping progress in a way
@@ -4963,19 +5086,26 @@ MOCK_IMPL(void,
 
   log_fn(severity,
          LD_CONTROL, "Problem bootstrapping. Stuck at %d%%: %s. (%s; %s; "
-         "count %d; recommendation %s)",
+         "count %d; recommendation %s; host %s at %s:%d)",
          status, summary, warn,
          orconn_end_reason_to_control_string(reason),
-         bootstrap_problems, recommendation);
+         bootstrap_problems, recommendation,
+         hex_str(or_conn->identity_digest, DIGEST_LEN),
+         or_conn->base_.address,
+         or_conn->base_.port);
 
   connection_or_report_broken_states(severity, LD_HANDSHAKE);
 
   tor_snprintf(buf, sizeof(buf),
       "BOOTSTRAP PROGRESS=%d TAG=%s SUMMARY=\"%s\" WARNING=\"%s\" REASON=%s "
-      "COUNT=%d RECOMMENDATION=%s",
+      "COUNT=%d RECOMMENDATION=%s HOSTID=\"%s\" HOSTADDR=\"%s:%d\"",
       bootstrap_percent, tag, summary, warn,
       orconn_end_reason_to_control_string(reason), bootstrap_problems,
-      recommendation);
+      recommendation,
+      hex_str(or_conn->identity_digest, DIGEST_LEN),
+      or_conn->base_.address,
+      (int)or_conn->base_.port);
+
   tor_snprintf(last_sent_bootstrap_message,
                sizeof(last_sent_bootstrap_message),
                "WARN %s", buf);
@@ -5083,20 +5213,30 @@ control_event_hs_descriptor_requested(const rend_data_t *rend_query,
 void
 control_event_hs_descriptor_receive_end(const char *action,
                                         const rend_data_t *rend_query,
-                                        const char *id_digest)
+                                        const char *id_digest,
+                                        const char *reason)
 {
+  char *reason_field = NULL;
+
   if (!action || !rend_query || !id_digest) {
     log_warn(LD_BUG, "Called with action==%p, rend_query==%p, "
              "id_digest==%p", action, rend_query, id_digest);
     return;
   }
 
+  if (reason) {
+    tor_asprintf(&reason_field, " REASON=%s", reason);
+  }
+
   send_control_event(EVENT_HS_DESC, ALL_FORMATS,
-                     "650 HS_DESC %s %s %s %s\r\n",
+                     "650 HS_DESC %s %s %s %s%s\r\n",
                      action,
                      rend_query->onion_address,
                      rend_auth_type_to_string(rend_query->auth_type),
-                     node_describe_longname_by_id(id_digest));
+                     node_describe_longname_by_id(id_digest),
+                     reason_field ? reason_field : "");
+
+  tor_free(reason_field);
 }
 
 /** send HS_DESC RECEIVED event
@@ -5112,23 +5252,27 @@ control_event_hs_descriptor_received(const rend_data_t *rend_query,
              rend_query, id_digest);
     return;
   }
-  control_event_hs_descriptor_receive_end("RECEIVED", rend_query, id_digest);
+  control_event_hs_descriptor_receive_end("RECEIVED", rend_query,
+                                          id_digest, NULL);
 }
 
-/** send HS_DESC FAILED event
- *
- * called when request for hidden service descriptor returned failure.
+/** Send HS_DESC event to inform controller that query <b>rend_query</b>
+ * failed to retrieve hidden service descriptor identified by
+ * <b>id_digest</b>. If <b>reason</b> is not NULL, add it to REASON=
+ * field.
  */
 void
 control_event_hs_descriptor_failed(const rend_data_t *rend_query,
-                                   const char *id_digest)
+                                   const char *id_digest,
+                                   const char *reason)
 {
   if (!rend_query || !id_digest) {
     log_warn(LD_BUG, "Called with rend_query==%p, id_digest==%p",
              rend_query, id_digest);
     return;
   }
-  control_event_hs_descriptor_receive_end("FAILED", rend_query, id_digest);
+  control_event_hs_descriptor_receive_end("FAILED", rend_query,
+                                          id_digest, reason);
 }
 
 /** Free any leftover allocated memory of the control.c subsystem. */
