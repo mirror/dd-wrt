@@ -99,6 +99,7 @@ l7filters filters_list[] = {
 	{"doom3", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"dropbox", NDPI_ONLY},
+	{"eaq", NDPI_ONLY},
 	{"ebay", NDPI_ONLY},
 #endif
 	{"edonkey", PDPI},
@@ -228,6 +229,10 @@ l7filters filters_list[] = {
 	{"irc", DPI},
 	{"jabber", DPI},
 	{"jpeg", L7_ONLY},
+#ifdef HAVE_OPENDPI
+	{"kakaotalk", NDPI_ONLY},
+	{"kakaotalk_voice", NDPI_ONLY},
+#endif
 	{"kazaa", PDPI_ONLY},
 #ifdef HAVE_OPENDPI
 	{"kerberos", NDPI_ONLY},
@@ -251,6 +256,7 @@ l7filters filters_list[] = {
 	{"mdns", NDPI_ONLY},
 	{"meebo", NDPI_ONLY},
 	{"megaco", NDPI_ONLY},
+	{"meu", NDPI_ONLY},
 	{"mgcp", NDPI_ONLY},
 	{"mms", NDPI_ONLY},
 #endif
@@ -447,6 +453,7 @@ l7filters filters_list[] = {
 	{"tonghuashun", L7_ONLY},
 	{"tor", DPI},
 #ifdef HAVE_OPENDPI
+	{"torcedor", NDPI_ONLY},
 	{"truphone", NDPI_ONLY},
 #endif
 	{"tsp", L7_ONLY},
