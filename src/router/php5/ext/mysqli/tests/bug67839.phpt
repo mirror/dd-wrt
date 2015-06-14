@@ -36,27 +36,19 @@ mysqli_float_handling - ensure 4 byte float is handled correctly
 		die();
 	}
 
-	$id = null;
-	$fp4 = null;
-	$fp8 = null;
-
-	if (!mysqli_stmt_bind_result($stmt, $id, $fp4, $fp8)) {
+	if (!mysqli_stmt_execute($stmt)) {
 		printf("[006] [%d] %s\n", mysqli_errno($link), mysqli_error($link));
 		die();
 	}
 
-	if (!mysqli_stmt_execute($stmt)) {
+
+	if (!($result = mysqli_stmt_get_result($stmt))) {
 		printf("[007] [%d] %s\n", mysqli_errno($link), mysqli_error($link));
 		die();
 	}
 
-
-	if (!(mysqli_stmt_fetch($stmt))) {
-		printf("[008] [%d] %s\n", mysqli_errno($link), mysqli_error($link));
-		die();
-	}
-
-	print $id . ": " . $fp4 . ": " . $fp8 . "\n";
+	$data = mysqli_fetch_assoc($result);
+	print $data['id'] . ": " . $data['fp4'] . ": " . $data['fp8'] . "\n";
 ?>
 --CLEAN--
 <?php

@@ -117,15 +117,7 @@ int cflags;
 							(NC-1)*sizeof(cat_t));
 	if (g == NULL)
 		return(REG_ESPACE);
-	{
-		/* Patched for CERT Vulnerability Note VU#695940, Feb 2015. */
-		size_t new_ssize = len/(size_t)2*(size_t)3 + (size_t)1; /* ugh */
-		if (new_ssize < len || new_ssize > LONG_MAX / sizeof(sop)) {
-			free((char *) g);
-			return REG_INVARG;
-		}
-		p->ssize = new_ssize;
-	}
+	p->ssize = len/(size_t)2*(size_t)3 + (size_t)1;	/* ugh */
 	p->strip = (sop *)malloc(p->ssize * sizeof(sop));
 	p->slen = 0;
 	if (p->strip == NULL) {
@@ -1283,10 +1275,6 @@ int c;
 	register int i;
 	register int ncols = (g->ncsets+(CHAR_BIT-1)) / CHAR_BIT;
 	register unsigned uc = (unsigned char)c;
-
-	if (!g->setbits) {
-		return(0);
-	}
 
 	for (i = 0, col = g->setbits; i < ncols; i++, col += g->csetsize)
 		if (col[uc] != 0)

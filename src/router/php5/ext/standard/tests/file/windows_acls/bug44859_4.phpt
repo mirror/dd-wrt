@@ -39,7 +39,7 @@ echo "Testing directory with relative path:\n";
 $path = 'adir';
 $i = 1;
 foreach ($iteration as $perms => $exp) {
-	create_dir($path, $perms);
+	create_file($path, $perms);
 	clearstatcache(true, $path);
 	echo 'Iteration #' . $i++ . ': ';
 	if (is_readable($path) == $exp) {
@@ -48,7 +48,7 @@ foreach ($iteration as $perms => $exp) {
 		var_dump(is_readable($path), $exp);
 		echo "failed.\n";
 	}
-	delete_dir($path);
+	delete_file($path);
 }
 
 ?>

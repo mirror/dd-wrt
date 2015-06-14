@@ -1,9 +1,5 @@
 --TEST--
 Testing null byte injection in imagegd2
---SKIPIF--
-<?php
-        if(!extension_loaded('gd')){ die('skip gd extension not available'); }
-?>
 --CLEAN--
 $tempdir = sys_get_temp_dir(). '/php-gdtest';
 foreach (glob($tempdir . "/test*") as $file ) { unlink($file); }

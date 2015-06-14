@@ -3,7 +3,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2015 The PHP Group                                |
+   | Copyright (c) 1997-2014 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -96,8 +96,6 @@ void _crypt_extended_init_r(void)
 		InterlockedIncrement(&initialized);
 #elif defined(HAVE_SYNC_FETCH_AND_ADD)
 		__sync_fetch_and_add(&initialized, 1);
-#elif (defined(__GNUC__) && (__GNUC__ == 3))
-		initialized = 1;
 #elif defined(HAVE_ATOMIC_H) /* Solaris 10 defines atomic API within */
 		membar_producer();
 		atomic_add_int(&initialized, 1);

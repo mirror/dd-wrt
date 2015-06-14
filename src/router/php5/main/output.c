@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2015 The PHP Group                                |
+   | Copyright (c) 1997-2014 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -172,22 +172,21 @@ PHPAPI void php_output_deactivate(TSRMLS_D)
 {
 	php_output_handler **handler = NULL;
 
-	if ((OG(flags) & PHP_OUTPUT_ACTIVATED)) {
-		php_output_header(TSRMLS_C);
+	php_output_header(TSRMLS_C);
 
-		OG(flags) ^= PHP_OUTPUT_ACTIVATED;
-		OG(active) = NULL;
-		OG(running) = NULL;
+	OG(flags) ^= PHP_OUTPUT_ACTIVATED;
+	OG(active) = NULL;
+	OG(running) = NULL;
 
-		/* release all output handlers */
-		if (OG(handlers).elements) {
-			while (SUCCESS == zend_stack_top(&OG(handlers), (void *) &handler)) {
-				php_output_handler_free(handler TSRMLS_CC);
-				zend_stack_del_top(&OG(handlers));
-			}
-			zend_stack_destroy(&OG(handlers));
+	/* release all output handlers */
+	if (OG(handlers).elements) {
+		while (SUCCESS == zend_stack_top(&OG(handlers), (void *) &handler)) {
+			php_output_handler_free(handler TSRMLS_CC);
+			zend_stack_del_top(&OG(handlers));
 		}
+		zend_stack_destroy(&OG(handlers));
 	}
+
 }
 /* }}} */
 

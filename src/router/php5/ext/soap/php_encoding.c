@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2015 The PHP Group                                |
+  | Copyright (c) 1997-2014 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -404,15 +404,12 @@ static xmlNodePtr master_to_xml_int(encodePtr encode, zval *data, int style, xml
 		encodePtr enc = NULL;
 		HashTable *ht = Z_OBJPROP_P(data);
 
-		if (zend_hash_find(ht, "enc_type", sizeof("enc_type"), (void **)&ztype) == FAILURE ||
-		    Z_TYPE_PP(ztype) != IS_LONG) {
+		if (zend_hash_find(ht, "enc_type", sizeof("enc_type"), (void **)&ztype) == FAILURE) {
 			soap_error0(E_ERROR, "Encoding: SoapVar has no 'enc_type' property");
 		}
 
-		if (zend_hash_find(ht, "enc_stype", sizeof("enc_stype"), (void **)&zstype) == SUCCESS &&
-		    Z_TYPE_PP(zstype) == IS_STRING) {
-			if (zend_hash_find(ht, "enc_ns", sizeof("enc_ns"), (void **)&zns) == SUCCESS &&
-			    Z_TYPE_PP(zns) == IS_STRING) {
+		if (zend_hash_find(ht, "enc_stype", sizeof("enc_stype"), (void **)&zstype) == SUCCESS) {
+			if (zend_hash_find(ht, "enc_ns", sizeof("enc_ns"), (void **)&zns) == SUCCESS) {
 				enc = get_encoder(SOAP_GLOBAL(sdl), Z_STRVAL_PP(zns), Z_STRVAL_PP(zstype));
 			} else {
 				zns = NULL;
@@ -448,10 +445,8 @@ static xmlNodePtr master_to_xml_int(encodePtr encode, zval *data, int style, xml
 		}
 
 		if (style == SOAP_ENCODED || (SOAP_GLOBAL(sdl) && encode != enc)) {
-			if (zend_hash_find(ht, "enc_stype", sizeof("enc_stype"), (void **)&zstype) == SUCCESS &&
-			    Z_TYPE_PP(zstype) == IS_STRING) {
-				if (zend_hash_find(ht, "enc_ns", sizeof("enc_ns"), (void **)&zns) == SUCCESS &&
-				    Z_TYPE_PP(zns) == IS_STRING) {
+			if (zend_hash_find(ht, "enc_stype", sizeof("enc_stype"), (void **)&zstype) == SUCCESS) {
+				if (zend_hash_find(ht, "enc_ns", sizeof("enc_ns"), (void **)&zns) == SUCCESS) {
 					set_ns_and_type_ex(node, Z_STRVAL_PP(zns), Z_STRVAL_PP(zstype));
 				} else {
 					set_ns_and_type_ex(node, NULL, Z_STRVAL_PP(zstype));
@@ -459,12 +454,10 @@ static xmlNodePtr master_to_xml_int(encodePtr encode, zval *data, int style, xml
 			}
 		}
 
-		if (zend_hash_find(ht, "enc_name", sizeof("enc_name"), (void **)&zname) == SUCCESS &&
-		    Z_TYPE_PP(zname) == IS_STRING) {
+		if (zend_hash_find(ht, "enc_name", sizeof("enc_name"), (void **)&zname) == SUCCESS) {
 			xmlNodeSetName(node, BAD_CAST(Z_STRVAL_PP(zname)));
 		}
-		if (zend_hash_find(ht, "enc_namens", sizeof("enc_namens"), (void **)&znamens) == SUCCESS &&
-		    Z_TYPE_PP(znamens) == IS_STRING) {
+		if (zend_hash_find(ht, "enc_namens", sizeof("enc_namens"), (void **)&znamens) == SUCCESS) {
 			xmlNsPtr nsp = encode_add_ns(node, Z_STRVAL_PP(znamens));
 			xmlSetNs(node, nsp);
 		}
@@ -3647,21 +3640,18 @@ static encodePtr get_array_type(xmlNodePtr node, zval *array, smart_str *type TS
 		    Z_OBJCE_PP(tmp) == soap_var_class_entry) {
 			zval **ztype;
 
-			if (zend_hash_find(Z_OBJPROP_PP(tmp), "enc_type", sizeof("enc_type"), (void **)&ztype) == FAILURE ||
-			    Z_TYPE_PP(ztype) != IS_LONG) {
+			if (zend_hash_find(Z_OBJPROP_PP(tmp), "enc_type", sizeof("enc_type"), (void **)&ztype) == FAILURE) {
 				soap_error0(E_ERROR,  "Encoding: SoapVar has no 'enc_type' property");
 			}
 			cur_type = Z_LVAL_PP(ztype);
 
-			if (zend_hash_find(Z_OBJPROP_PP(tmp), "enc_stype", sizeof("enc_stype"), (void **)&ztype) == SUCCESS &&
-			    Z_TYPE_PP(ztype) == IS_STRING) {
+			if (zend_hash_find(Z_OBJPROP_PP(tmp), "enc_stype", sizeof("enc_stype"), (void **)&ztype) == SUCCESS) {
 				cur_stype = Z_STRVAL_PP(ztype);
 			} else {
 				cur_stype = NULL;
 			}
 
-			if (zend_hash_find(Z_OBJPROP_PP(tmp), "enc_ns", sizeof("enc_ns"), (void **)&ztype) == SUCCESS &&
-			    Z_TYPE_PP(ztype) == IS_STRING) {
+			if (zend_hash_find(Z_OBJPROP_PP(tmp), "enc_ns", sizeof("enc_ns"), (void **)&ztype) == SUCCESS) {
 				cur_ns = Z_STRVAL_PP(ztype);
 			} else {
 				cur_ns = NULL;

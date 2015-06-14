@@ -3,7 +3,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2015 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) 1998-2014 Zend Technologies Ltd. (http://www.zend.com) |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -28,10 +28,6 @@
 #include "zend_constants.h"
 #include "zend_ini_scanner.h"
 #include "zend_extensions.h"
-
-#ifdef PHP_WIN32
-#include "win32/syslog.h"
-#endif
 
 #define YYERROR_VERBOSE
 #define YYSTYPE zval
@@ -183,9 +179,10 @@ static void ini_error(char *msg)
 
 	if (CG(ini_parser_unbuffered_errors)) {
 #ifdef PHP_WIN32
-		syslog(LOG_ALERT, "PHP: %s (%s)", error_buf, GetCommandLine());
-#endif
+		MessageBox(NULL, error_buf, "PHP Error", MB_OK|MB_TOPMOST|0x00200000L);
+#else
 		fprintf(stderr, "PHP:  %s", error_buf);
+#endif
 	} else {
 		zend_error(E_WARNING, "%s", error_buf);
 	}

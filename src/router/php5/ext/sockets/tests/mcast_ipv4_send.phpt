@@ -5,8 +5,7 @@ Multicast support: IPv4 send options
 if (!extension_loaded('sockets')) {
     die('skip sockets extension not available.');
 }
-$s = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP) or die("err");
-if (socket_set_option($s, IPPROTO_IP, IP_MULTICAST_IF, 1) === false) {
+if (socket_set_option($s, $level, IP_MULTICAST_IF, 1) === false) {
 	die("skip interface 1 either doesn't exist or has no ipv4 address");
 }
 --FILE--

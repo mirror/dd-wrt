@@ -20,10 +20,10 @@ array(5) {
   ["time"]=>
   string(%d) "%s"
   ["offset"]=>
-  int(%s)
+  int(3600)
   ["isdst"]=>
-  bool(%s)
+  bool(true)
   ["abbr"]=>
-  string(%d) "%s"
+  string(3) "BST"
 }
 10000002008-02-28T12:00:00+0000
