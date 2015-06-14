@@ -481,6 +481,10 @@ struct ndpi_flow_udp_struct {
 #ifdef NDPI_PROTOCOL_TEAMVIEWER
   u_int8_t teamviewer_stage;
 #endif
+#ifdef NDPI_PROTOCOL_EAQ
+  u_int8_t eaq_pkt_id;
+  u_int32_t eaq_sequence;
+#endif
 }
 #if !defined(WIN32)
   __attribute__ ((__packed__))
