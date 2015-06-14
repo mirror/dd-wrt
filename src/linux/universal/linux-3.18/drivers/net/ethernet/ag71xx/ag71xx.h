@@ -60,7 +60,7 @@
 #define AG71XX_TX_RING_SIZE_MAX		48
 #define AG71XX_RX_RING_SIZE_MAX		128
 
-#ifdef CONFIG_AG71XX_DEBUG
+#ifdef CONFIG_AG934X_DEBUG
 #define DBG(fmt, args...)	pr_debug(fmt, ## args)
 #else
 #define DBG(fmt, args...)	do {} while (0)
@@ -89,7 +89,6 @@ struct ag71xx_buf {
 		struct sk_buff	*skb;
 		void		*rx_buf;
 	};
-	struct ag71xx_desc	*desc;
 	union {
 		dma_addr_t	dma_addr;
 		unsigned long	timestamp;
@@ -200,6 +199,12 @@ static inline struct ag71xx_platform_data *ag71xx_get_pdata(struct ag71xx *ag)
 static inline int ag71xx_desc_empty(struct ag71xx_desc *desc)
 {
 	return (desc->ctrl & DESC_EMPTY) != 0;
+}
+
+static inline struct ag71xx_desc *
+ag71xx_ring_desc(struct ag71xx_ring *ring, int idx)
+{
+	return (struct ag71xx_desc *) &ring->descs_cpu[idx * ring->desc_size];
 }
 
 /* Register offsets */
@@ -461,7 +466,7 @@ static inline void ag71xx_debugfs_update_int_stats(struct ag71xx *ag,
 						   u32 status) {}
 static inline void ag71xx_debugfs_update_napi_stats(struct ag71xx *ag,
 						    int rx, int tx) {}
-#endif /* CONFIG_AG71XX_DEBUG_FS */
+#endif /* CONFIG_AG934X_DEBUG_FS */
 
 void ag71xx_ar7240_start(struct ag71xx *ag);
 void ag71xx_ar7240_stop(struct ag71xx *ag);
