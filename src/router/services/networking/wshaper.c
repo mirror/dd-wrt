@@ -297,7 +297,8 @@ static void down_upIF(void)
 	if (!s_downlist)
 		return;
 	foreach(word, s_downlist, next) {
-		eval("ifconfig", word, "up");
+		if (!is_ath9k(word))
+			eval("ifconfig", word, "up");
 	}
 }
 
@@ -398,7 +399,8 @@ static void aqos_tables(void)
 
 		if (nvram_match("wshaper_dev", "LAN")) {
 			if (nvram_nmatch("1", "%s_bridged", data)) {
-				eval("ifconfig", data, "down");
+				if (!is_ath9k(word))
+					eval("ifconfig", data, "down");
 				down_addIF(data);
 				eval("iptables", "-t", "mangle", "-D", "INPUT", "-m", "physdev", "--physdev-in", data, "-j", "IMQ", "--todev", "0");
 				eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-m", "physdev", "--physdev-in", data, "-j", "IMQ", "--todev", "0");
@@ -416,7 +418,8 @@ static void aqos_tables(void)
 //                      eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
 //                      eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "2", "-m", "mark", "--mark", nullmask, "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
 
-			eval("ifconfig", data, "down");
+			if (!is_ath9k(word))
+				eval("ifconfig", data, "down");
 			down_addIF(data);
 			eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-m", "physdev", "--physdev-in", data, "-j", chainname_in);
 			eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", chainname_out);
@@ -731,7 +734,8 @@ static int svqos_iptables(void)
 			getIfList(iflist, "tap");
 			foreach(word, iflist, next) {
 				if (is_in_bridge(word)) {
-					eval("ifconfig", word, "down");
+					if (!is_ath9k(word))
+						eval("ifconfig", word, "down");
 					down_addIF(word);
 					eval("iptables", "-t", "mangle", "-I", "PREROUTING", "2", "-m", "physdev", "--physdev-in", word, "-j", "VPN_IN");
 					eval("iptables", "-t", "mangle", "-I", "INPUT", "1", "-m", "physdev", "--physdev-is-bridged", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
@@ -767,7 +771,8 @@ static int svqos_iptables(void)
 			sprintf(s_level, "%d", atoi(level) / 10);
 			/* outgoing data */
 			if (is_in_bridge(data)) {
-				eval("ifconfig", data, "down");
+				if (!is_ath9k(word))
+					eval("ifconfig", data, "down");
 				down_addIF(data);
 				eval("iptables", "-t", "mangle", "-I", "VPN_OUT", "1", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", "DSCP", "--set-dscp", s_level);
 			} else
