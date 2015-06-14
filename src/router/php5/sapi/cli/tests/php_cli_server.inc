@@ -3,12 +3,13 @@ define ("PHP_CLI_SERVER_HOSTNAME", "localhost");
 define ("PHP_CLI_SERVER_PORT", 8964);
 define ("PHP_CLI_SERVER_ADDRESS", PHP_CLI_SERVER_HOSTNAME.":".PHP_CLI_SERVER_PORT);
 
-function php_cli_server_start($code = 'echo "Hello world";', $router = 'index.php') {
+function php_cli_server_start($code = 'echo "Hello world";', $no_router = FALSE) {
 	$php_executable = getenv('TEST_PHP_EXECUTABLE');
 	$doc_root = __DIR__;
+	$router = "index.php";
 
 	if ($code) {
-		file_put_contents($doc_root . '/' . ($router ?: 'index.php'), '<?php ' . $code . ' ?>');
+		file_put_contents($doc_root . '/' . $router, '<?php ' . $code . ' ?>');
 	}
 
 	$descriptorspec = array(
@@ -19,14 +20,14 @@ function php_cli_server_start($code = 'echo "Hello world";', $router = 'index.ph
 
 	if (substr(PHP_OS, 0, 3) == 'WIN') {
 		$cmd = "{$php_executable} -t {$doc_root} -n -S " . PHP_CLI_SERVER_ADDRESS;
-		if (!is_null($router)) {
+		if (!$no_router) {
 			$cmd .= " {$router}";
 		}
 
 		$handle = proc_open(addslashes($cmd), $descriptorspec, $pipes, $doc_root, NULL, array("bypass_shell" => true,  "suppress_errors" => true));
 	} else {
 		$cmd = "exec {$php_executable} -t {$doc_root} -n -S " . PHP_CLI_SERVER_ADDRESS;
-		if (!is_null($router)) {
+		if (!$no_router) {
 			$cmd .= " {$router}";
 		}
 		$cmd .= " 2>/dev/null";
