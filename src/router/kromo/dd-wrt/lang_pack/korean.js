@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//                Korean translation file - DD-WRT V24 SP2        2015-05-27                //
-//              This translation file is based on R27045 English language file              //
+//                Korean translation file - DD-WRT V24 SP2        2015-06-06                //
+//              This translation file is based on R27102 English language file              //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -167,6 +167,7 @@ share.key="키";
 share.wireless="무선";
 share.dhcp="DHCP";
 share.styl="스타일";
+share.styl_dark="다크 스타일 사용";
 share.err="에러";
 share.errs="에러";
 share.meters="미터";
@@ -2161,7 +2162,6 @@ wpa.radius_key="RADIUS 키";
 wpa.algorithms="WPA 알고리즘";
 wpa.shared_key="WPA 공유 키";
 
-
 aoss.titl="AOSS 보안";
 aoss.aoss="AOSS";
 aoss.service="AOSS 서비스";
@@ -2275,6 +2275,7 @@ radius.label13="Radius 계정 서버 주소";
 radius.label14="Radius 계정 서버 포트";
 radius.label17="Radius 계정 공유 암호";
 radius.label18="Radius 어카운팅";
+radius.local_ip="클라이언트 IP 강제";
 
 // help page
 hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
