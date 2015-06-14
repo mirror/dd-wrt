@@ -42,22 +42,30 @@ echo "\nDone.\n";
 --EXPECTF--
 temp stream (close after):
 About to rewind!
-* %ATrying 127.0.0.1...%AConnection refused%A
-* Closing connection%A%d
+* About to connect() to 127.0.0.1 port 37349%r.*%r
+*   Trying 127.0.0.1...%A* Connection refused
+* couldn't connect to host%S
+* Closing connection #0
 
 memory stream (close after):
 About to rewind!
-* %ATrying 127.0.0.1...%AConnection refused%A
-* Closing connection%A%d
+* About to connect() to 127.0.0.1 port 37349%r.*%r
+*   Trying 127.0.0.1...%A* Connection refused
+* couldn't connect to host%S
+* Closing connection #0
 
 temp stream (leak):
 About to rewind!
-* %ATrying 127.0.0.1...%AConnection refused%A
-* Closing connection%A%d
+* About to connect() to 127.0.0.1 port 37349%r.*%r
+*   Trying 127.0.0.1...%A* Connection refused
+* couldn't connect to host%S
+* Closing connection #0
 
 memory stream (leak):
 About to rewind!
-* %ATrying 127.0.0.1...%AConnection refused%A
-* Closing connection%A%d
+* About to connect() to 127.0.0.1 port 37349%r.*%r
+*   Trying 127.0.0.1...%A* Connection refused
+* couldn't connect to host%S
+* Closing connection #0
 
 Done.

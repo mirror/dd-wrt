@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2015 The PHP Group                                |
+   | Copyright (c) 1997-2014 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -125,12 +125,8 @@ PHPAPI int php_flock(int fd, int operation)
     DWORD low = 1, high = 0;
     OVERLAPPED offset =
     {0, 0, 0, 0, NULL};
-	DWORD err;
-
-    if (hdl < 0) {
-		_set_errno(EBADF);
+    if (hdl < 0)
         return -1;              /* error in file descriptor */
-	}
     /* bug for bug compatible with Unix */
     UnlockFileEx(hdl, 0, low, high, &offset);
     switch (operation & ~LOCK_NB) {    /* translate to LockFileEx() op */
@@ -150,14 +146,12 @@ PHPAPI int php_flock(int fd, int operation)
         default:                /* default */
             break;
     }
-
-	err = GetLastError();
-	if (ERROR_LOCK_VIOLATION == err || ERROR_SHARING_VIOLATION == err) {
-		_set_errno(EWOULDBLOCK);
-	} else {
-		_set_errno(EINVAL);             /* bad call */
-	}
-
+	/* Under Win32 MT library, errno is not a variable but a function call,
+	 * which cannot be assigned to.
+	 */
+#if !defined(PHP_WIN32)
+    errno = EINVAL;             /* bad call */
+#endif
     return -1;
 }
 /* }}} */

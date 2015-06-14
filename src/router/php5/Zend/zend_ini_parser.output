@@ -17,12 +17,12 @@ Terminals unused in grammar
    '{'
 
 
-Grammaire
+Grammar
 
     0 $accept: statement_list $end
 
     1 statement_list: statement_list statement
-    2               | /* vide */
+    2               | /* empty */
 
     3 statement: TC_SECTION section_string_or_value ']'
     4          | TC_LABEL '=' string_or_value
@@ -31,7 +31,7 @@ Grammaire
     7          | END_OF_LINE
 
     8 section_string_or_value: var_string_list_section
-    9                        | /* vide */
+    9                        | /* empty */
 
    10 string_or_value: expr
    11                | BOOL_TRUE
@@ -39,11 +39,11 @@ Grammaire
    13                | END_OF_LINE
 
    14 option_offset: var_string_list
-   15              | /* vide */
+   15              | /* empty */
 
    16 encapsed_list: encapsed_list cfg_var_ref
    17              | encapsed_list TC_QUOTED_STRING
-   18              | /* vide */
+   18              | /* empty */
 
    19 var_string_list_section: cfg_var_ref
    20                        | constant_literal
@@ -82,7 +82,7 @@ Grammaire
    48                | TC_WHITESPACE
 
 
-Terminaux, suivis des règles où ils apparaissent
+Terminals, with rules where they appear
 
 $end (0) 0
 '!' (33) 36
@@ -128,788 +128,788 @@ BOOL_FALSE (270) 12
 END_OF_LINE (271) 7 13
 
 
-Non-terminaux, suivis des règles où ils apparaissent
+Nonterminals, with rules where they appear
 
 $accept (43)
-    à gauche: 0
+    on left: 0
 statement_list (44)
-    à gauche: 1 2, à droite: 0 1
+    on left: 1 2, on right: 0 1
 statement (45)
-    à gauche: 3 4 5 6 7, à droite: 1
+    on left: 3 4 5 6 7, on right: 1
 section_string_or_value (46)
-    à gauche: 8 9, à droite: 3
+    on left: 8 9, on right: 3
 string_or_value (47)
-    à gauche: 10 11 12 13, à droite: 4 5
+    on left: 10 11 12 13, on right: 4 5
 option_offset (48)
-    à gauche: 14 15, à droite: 5
+    on left: 14 15, on right: 5
 encapsed_list (49)
-    à gauche: 16 17 18, à droite: 16 17 21 24 27 30
+    on left: 16 17 18, on right: 16 17 21 24 27 30
 var_string_list_section (50)
-    à gauche: 19 20 21 22 23 24, à droite: 8 22 23 24
+    on left: 19 20 21 22 23 24, on right: 8 22 23 24
 var_string_list (51)
-    à gauche: 25 26 27 28 29 30, à droite: 14 28 29 30 31
+    on left: 25 26 27 28 29 30, on right: 14 28 29 30 31
 expr (52)
-    à gauche: 31 32 33 34 35 36 37, à droite: 10 32 33 34 35 36 37
+    on left: 31 32 33 34 35 36 37, on right: 10 32 33 34 35 36 37
 cfg_var_ref (53)
-    à gauche: 38, à droite: 16 19 22 25 28
+    on left: 38, on right: 16 19 22 25 28
 constant_literal (54)
-    à gauche: 39 40 41 42 43, à droite: 20 23
+    on left: 39 40 41 42 43, on right: 20 23
 constant_string (55)
-    à gauche: 44 45 46 47 48, à droite: 26 29
+    on left: 44 45 46 47 48, on right: 26 29
 
 
-état 0
+state 0
 
     0 $accept: . statement_list $end
 
-    $défaut  réduction par utilisation de la règle 2 (statement_list)
+    $default  reduce using rule 2 (statement_list)
 
-    statement_list  aller à l'état 1
+    statement_list  go to state 1
 
 
-état 1
+state 1
 
     0 $accept: statement_list . $end
     1 statement_list: statement_list . statement
 
-    $end         décalage et aller à l'état 2
-    TC_SECTION   décalage et aller à l'état 3
-    TC_LABEL     décalage et aller à l'état 4
-    TC_OFFSET    décalage et aller à l'état 5
-    END_OF_LINE  décalage et aller à l'état 6
+    $end         shift, and go to state 2
+    TC_SECTION   shift, and go to state 3
+    TC_LABEL     shift, and go to state 4
+    TC_OFFSET    shift, and go to state 5
+    END_OF_LINE  shift, and go to state 6
 
-    statement  aller à l'état 7
+    statement  go to state 7
 
 
-état 2
+state 2
 
     0 $accept: statement_list $end .
 
-    $défaut  accepter
+    $default  accept
 
 
-état 3
+state 3
 
     3 statement: TC_SECTION . section_string_or_value ']'
 
-    TC_RAW           décalage et aller à l'état 8
-    TC_CONSTANT      décalage et aller à l'état 9
-    TC_NUMBER        décalage et aller à l'état 10
-    TC_STRING        décalage et aller à l'état 11
-    TC_WHITESPACE    décalage et aller à l'état 12
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 14
+    TC_RAW           shift, and go to state 8
+    TC_CONSTANT      shift, and go to state 9
+    TC_NUMBER        shift, and go to state 10
+    TC_STRING        shift, and go to state 11
+    TC_WHITESPACE    shift, and go to state 12
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 14
 
-    $défaut  réduction par utilisation de la règle 9 (section_string_or_value)
+    $default  reduce using rule 9 (section_string_or_value)
 
-    section_string_or_value  aller à l'état 15
-    var_string_list_section  aller à l'état 16
-    cfg_var_ref              aller à l'état 17
-    constant_literal         aller à l'état 18
+    section_string_or_value  go to state 15
+    var_string_list_section  go to state 16
+    cfg_var_ref              go to state 17
+    constant_literal         go to state 18
 
 
-état 4
+state 4
 
     4 statement: TC_LABEL . '=' string_or_value
     6          | TC_LABEL .
 
-    '='  décalage et aller à l'état 19
+    '='  shift, and go to state 19
 
-    $défaut  réduction par utilisation de la règle 6 (statement)
+    $default  reduce using rule 6 (statement)
 
 
-état 5
+state 5
 
     5 statement: TC_OFFSET . option_offset ']' '=' string_or_value
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 25
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 25
 
-    $défaut  réduction par utilisation de la règle 15 (option_offset)
+    $default  reduce using rule 15 (option_offset)
 
-    option_offset    aller à l'état 26
-    var_string_list  aller à l'état 27
-    cfg_var_ref      aller à l'état 28
-    constant_string  aller à l'état 29
+    option_offset    go to state 26
+    var_string_list  go to state 27
+    cfg_var_ref      go to state 28
+    constant_string  go to state 29
 
 
-état 6
+state 6
 
     7 statement: END_OF_LINE .
 
-    $défaut  réduction par utilisation de la règle 7 (statement)
+    $default  reduce using rule 7 (statement)
 
 
-état 7
+state 7
 
     1 statement_list: statement_list statement .
 
-    $défaut  réduction par utilisation de la règle 1 (statement_list)
+    $default  reduce using rule 1 (statement_list)
 
 
-état 8
+state 8
 
    40 constant_literal: TC_RAW .
 
-    $défaut  réduction par utilisation de la règle 40 (constant_literal)
+    $default  reduce using rule 40 (constant_literal)
 
 
-état 9
+state 9
 
    39 constant_literal: TC_CONSTANT .
 
-    $défaut  réduction par utilisation de la règle 39 (constant_literal)
+    $default  reduce using rule 39 (constant_literal)
 
 
-état 10
+state 10
 
    41 constant_literal: TC_NUMBER .
 
-    $défaut  réduction par utilisation de la règle 41 (constant_literal)
+    $default  reduce using rule 41 (constant_literal)
 
 
-état 11
+state 11
 
    42 constant_literal: TC_STRING .
 
-    $défaut  réduction par utilisation de la règle 42 (constant_literal)
+    $default  reduce using rule 42 (constant_literal)
 
 
-état 12
+state 12
 
    43 constant_literal: TC_WHITESPACE .
 
-    $défaut  réduction par utilisation de la règle 43 (constant_literal)
+    $default  reduce using rule 43 (constant_literal)
 
 
-état 13
+state 13
 
    38 cfg_var_ref: TC_DOLLAR_CURLY . TC_VARNAME '}'
 
-    TC_VARNAME  décalage et aller à l'état 30
+    TC_VARNAME  shift, and go to state 30
 
 
-état 14
+state 14
 
    21 var_string_list_section: '"' . encapsed_list '"'
 
-    $défaut  réduction par utilisation de la règle 18 (encapsed_list)
+    $default  reduce using rule 18 (encapsed_list)
 
-    encapsed_list  aller à l'état 31
+    encapsed_list  go to state 31
 
 
-état 15
+state 15
 
     3 statement: TC_SECTION section_string_or_value . ']'
 
-    ']'  décalage et aller à l'état 32
+    ']'  shift, and go to state 32
 
 
-état 16
+state 16
 
     8 section_string_or_value: var_string_list_section .
    22 var_string_list_section: var_string_list_section . cfg_var_ref
    23                        | var_string_list_section . constant_literal
    24                        | var_string_list_section . '"' encapsed_list '"'
 
-    TC_RAW           décalage et aller à l'état 8
-    TC_CONSTANT      décalage et aller à l'état 9
-    TC_NUMBER        décalage et aller à l'état 10
-    TC_STRING        décalage et aller à l'état 11
-    TC_WHITESPACE    décalage et aller à l'état 12
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 33
+    TC_RAW           shift, and go to state 8
+    TC_CONSTANT      shift, and go to state 9
+    TC_NUMBER        shift, and go to state 10
+    TC_STRING        shift, and go to state 11
+    TC_WHITESPACE    shift, and go to state 12
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 33
 
-    $défaut  réduction par utilisation de la règle 8 (section_string_or_value)
+    $default  reduce using rule 8 (section_string_or_value)
 
-    cfg_var_ref       aller à l'état 34
-    constant_literal  aller à l'état 35
+    cfg_var_ref       go to state 34
+    constant_literal  go to state 35
 
 
-état 17
+state 17
 
    19 var_string_list_section: cfg_var_ref .
 
-    $défaut  réduction par utilisation de la règle 19 (var_string_list_section)
+    $default  reduce using rule 19 (var_string_list_section)
 
 
-état 18
+state 18
 
    20 var_string_list_section: constant_literal .
 
-    $défaut  réduction par utilisation de la règle 20 (var_string_list_section)
+    $default  reduce using rule 20 (var_string_list_section)
 
 
-état 19
+state 19
 
     4 statement: TC_LABEL '=' . string_or_value
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    BOOL_TRUE        décalage et aller à l'état 36
-    BOOL_FALSE       décalage et aller à l'état 37
-    END_OF_LINE      décalage et aller à l'état 38
-    '"'              décalage et aller à l'état 25
-    '~'              décalage et aller à l'état 39
-    '!'              décalage et aller à l'état 40
-    '('              décalage et aller à l'état 41
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    BOOL_TRUE        shift, and go to state 36
+    BOOL_FALSE       shift, and go to state 37
+    END_OF_LINE      shift, and go to state 38
+    '"'              shift, and go to state 25
+    '~'              shift, and go to state 39
+    '!'              shift, and go to state 40
+    '('              shift, and go to state 41
 
-    string_or_value  aller à l'état 42
-    var_string_list  aller à l'état 43
-    expr             aller à l'état 44
-    cfg_var_ref      aller à l'état 28
-    constant_string  aller à l'état 29
+    string_or_value  go to state 42
+    var_string_list  go to state 43
+    expr             go to state 44
+    cfg_var_ref      go to state 28
+    constant_string  go to state 29
 
 
-état 20
+state 20
 
    45 constant_string: TC_RAW .
 
-    $défaut  réduction par utilisation de la règle 45 (constant_string)
+    $default  reduce using rule 45 (constant_string)
 
 
-état 21
+state 21
 
    44 constant_string: TC_CONSTANT .
 
-    $défaut  réduction par utilisation de la règle 44 (constant_string)
+    $default  reduce using rule 44 (constant_string)
 
 
-état 22
+state 22
 
    46 constant_string: TC_NUMBER .
 
-    $défaut  réduction par utilisation de la règle 46 (constant_string)
+    $default  reduce using rule 46 (constant_string)
 
 
-état 23
+state 23
 
    47 constant_string: TC_STRING .
 
-    $défaut  réduction par utilisation de la règle 47 (constant_string)
+    $default  reduce using rule 47 (constant_string)
 
 
-état 24
+state 24
 
    48 constant_string: TC_WHITESPACE .
 
-    $défaut  réduction par utilisation de la règle 48 (constant_string)
+    $default  reduce using rule 48 (constant_string)
 
 
-état 25
+state 25
 
    27 var_string_list: '"' . encapsed_list '"'
 
-    $défaut  réduction par utilisation de la règle 18 (encapsed_list)
+    $default  reduce using rule 18 (encapsed_list)
 
-    encapsed_list  aller à l'état 45
+    encapsed_list  go to state 45
 
 
-état 26
+state 26
 
     5 statement: TC_OFFSET option_offset . ']' '=' string_or_value
 
-    ']'  décalage et aller à l'état 46
+    ']'  shift, and go to state 46
 
 
-état 27
+state 27
 
    14 option_offset: var_string_list .
    28 var_string_list: var_string_list . cfg_var_ref
    29                | var_string_list . constant_string
    30                | var_string_list . '"' encapsed_list '"'
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 47
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 47
 
-    $défaut  réduction par utilisation de la règle 14 (option_offset)
+    $default  reduce using rule 14 (option_offset)
 
-    cfg_var_ref      aller à l'état 48
-    constant_string  aller à l'état 49
+    cfg_var_ref      go to state 48
+    constant_string  go to state 49
 
 
-état 28
+state 28
 
    25 var_string_list: cfg_var_ref .
 
-    $défaut  réduction par utilisation de la règle 25 (var_string_list)
+    $default  reduce using rule 25 (var_string_list)
 
 
-état 29
+state 29
 
    26 var_string_list: constant_string .
 
-    $défaut  réduction par utilisation de la règle 26 (var_string_list)
+    $default  reduce using rule 26 (var_string_list)
 
 
-état 30
+state 30
 
    38 cfg_var_ref: TC_DOLLAR_CURLY TC_VARNAME . '}'
 
-    '}'  décalage et aller à l'état 50
+    '}'  shift, and go to state 50
 
 
-état 31
+state 31
 
    16 encapsed_list: encapsed_list . cfg_var_ref
    17              | encapsed_list . TC_QUOTED_STRING
    21 var_string_list_section: '"' encapsed_list . '"'
 
-    TC_DOLLAR_CURLY   décalage et aller à l'état 13
-    TC_QUOTED_STRING  décalage et aller à l'état 51
-    '"'               décalage et aller à l'état 52
+    TC_DOLLAR_CURLY   shift, and go to state 13
+    TC_QUOTED_STRING  shift, and go to state 51
+    '"'               shift, and go to state 52
 
-    cfg_var_ref  aller à l'état 53
+    cfg_var_ref  go to state 53
 
 
-état 32
+state 32
 
     3 statement: TC_SECTION section_string_or_value ']' .
 
-    $défaut  réduction par utilisation de la règle 3 (statement)
+    $default  reduce using rule 3 (statement)
 
 
-état 33
+state 33
 
    24 var_string_list_section: var_string_list_section '"' . encapsed_list '"'
 
-    $défaut  réduction par utilisation de la règle 18 (encapsed_list)
+    $default  reduce using rule 18 (encapsed_list)
 
-    encapsed_list  aller à l'état 54
+    encapsed_list  go to state 54
 
 
-état 34
+state 34
 
    22 var_string_list_section: var_string_list_section cfg_var_ref .
 
-    $défaut  réduction par utilisation de la règle 22 (var_string_list_section)
+    $default  reduce using rule 22 (var_string_list_section)
 
 
-état 35
+state 35
 
    23 var_string_list_section: var_string_list_section constant_literal .
 
-    $défaut  réduction par utilisation de la règle 23 (var_string_list_section)
+    $default  reduce using rule 23 (var_string_list_section)
 
 
-état 36
+state 36
 
    11 string_or_value: BOOL_TRUE .
 
-    $défaut  réduction par utilisation de la règle 11 (string_or_value)
+    $default  reduce using rule 11 (string_or_value)
 
 
-état 37
+state 37
 
    12 string_or_value: BOOL_FALSE .
 
-    $défaut  réduction par utilisation de la règle 12 (string_or_value)
+    $default  reduce using rule 12 (string_or_value)
 
 
-état 38
+state 38
 
    13 string_or_value: END_OF_LINE .
 
-    $défaut  réduction par utilisation de la règle 13 (string_or_value)
+    $default  reduce using rule 13 (string_or_value)
 
 
-état 39
+state 39
 
    35 expr: '~' . expr
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 25
-    '~'              décalage et aller à l'état 39
-    '!'              décalage et aller à l'état 40
-    '('              décalage et aller à l'état 41
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 25
+    '~'              shift, and go to state 39
+    '!'              shift, and go to state 40
+    '('              shift, and go to state 41
 
-    var_string_list  aller à l'état 43
-    expr             aller à l'état 55
-    cfg_var_ref      aller à l'état 28
-    constant_string  aller à l'état 29
+    var_string_list  go to state 43
+    expr             go to state 55
+    cfg_var_ref      go to state 28
+    constant_string  go to state 29
 
 
-état 40
+state 40
 
    36 expr: '!' . expr
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 25
-    '~'              décalage et aller à l'état 39
-    '!'              décalage et aller à l'état 40
-    '('              décalage et aller à l'état 41
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 25
+    '~'              shift, and go to state 39
+    '!'              shift, and go to state 40
+    '('              shift, and go to state 41
 
-    var_string_list  aller à l'état 43
-    expr             aller à l'état 56
-    cfg_var_ref      aller à l'état 28
-    constant_string  aller à l'état 29
+    var_string_list  go to state 43
+    expr             go to state 56
+    cfg_var_ref      go to state 28
+    constant_string  go to state 29
 
 
-état 41
+state 41
 
    37 expr: '(' . expr ')'
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 25
-    '~'              décalage et aller à l'état 39
-    '!'              décalage et aller à l'état 40
-    '('              décalage et aller à l'état 41
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 25
+    '~'              shift, and go to state 39
+    '!'              shift, and go to state 40
+    '('              shift, and go to state 41
 
-    var_string_list  aller à l'état 43
-    expr             aller à l'état 57
-    cfg_var_ref      aller à l'état 28
-    constant_string  aller à l'état 29
+    var_string_list  go to state 43
+    expr             go to state 57
+    cfg_var_ref      go to state 28
+    constant_string  go to state 29
 
 
-état 42
+state 42
 
     4 statement: TC_LABEL '=' string_or_value .
 
-    $défaut  réduction par utilisation de la règle 4 (statement)
+    $default  reduce using rule 4 (statement)
 
 
-état 43
+state 43
 
    28 var_string_list: var_string_list . cfg_var_ref
    29                | var_string_list . constant_string
    30                | var_string_list . '"' encapsed_list '"'
    31 expr: var_string_list .
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 47
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 47
 
-    $défaut  réduction par utilisation de la règle 31 (expr)
+    $default  reduce using rule 31 (expr)
 
-    cfg_var_ref      aller à l'état 48
-    constant_string  aller à l'état 49
+    cfg_var_ref      go to state 48
+    constant_string  go to state 49
 
 
-état 44
+state 44
 
    10 string_or_value: expr .
    32 expr: expr . '|' expr
    33     | expr . '&' expr
    34     | expr . '^' expr
 
-    '^'  décalage et aller à l'état 58
-    '|'  décalage et aller à l'état 59
-    '&'  décalage et aller à l'état 60
+    '^'  shift, and go to state 58
+    '|'  shift, and go to state 59
+    '&'  shift, and go to state 60
 
-    $défaut  réduction par utilisation de la règle 10 (string_or_value)
+    $default  reduce using rule 10 (string_or_value)
 
 
-état 45
+state 45
 
    16 encapsed_list: encapsed_list . cfg_var_ref
    17              | encapsed_list . TC_QUOTED_STRING
    27 var_string_list: '"' encapsed_list . '"'
 
-    TC_DOLLAR_CURLY   décalage et aller à l'état 13
-    TC_QUOTED_STRING  décalage et aller à l'état 51
-    '"'               décalage et aller à l'état 61
+    TC_DOLLAR_CURLY   shift, and go to state 13
+    TC_QUOTED_STRING  shift, and go to state 51
+    '"'               shift, and go to state 61
 
-    cfg_var_ref  aller à l'état 53
+    cfg_var_ref  go to state 53
 
 
-état 46
+state 46
 
     5 statement: TC_OFFSET option_offset ']' . '=' string_or_value
 
-    '='  décalage et aller à l'état 62
+    '='  shift, and go to state 62
 
 
-état 47
+state 47
 
    30 var_string_list: var_string_list '"' . encapsed_list '"'
 
-    $défaut  réduction par utilisation de la règle 18 (encapsed_list)
+    $default  reduce using rule 18 (encapsed_list)
 
-    encapsed_list  aller à l'état 63
+    encapsed_list  go to state 63
 
 
-état 48
+state 48
 
    28 var_string_list: var_string_list cfg_var_ref .
 
-    $défaut  réduction par utilisation de la règle 28 (var_string_list)
+    $default  reduce using rule 28 (var_string_list)
 
 
-état 49
+state 49
 
    29 var_string_list: var_string_list constant_string .
 
-    $défaut  réduction par utilisation de la règle 29 (var_string_list)
+    $default  reduce using rule 29 (var_string_list)
 
 
-état 50
+state 50
 
    38 cfg_var_ref: TC_DOLLAR_CURLY TC_VARNAME '}' .
 
-    $défaut  réduction par utilisation de la règle 38 (cfg_var_ref)
+    $default  reduce using rule 38 (cfg_var_ref)
 
 
-état 51
+state 51
 
    17 encapsed_list: encapsed_list TC_QUOTED_STRING .
 
-    $défaut  réduction par utilisation de la règle 17 (encapsed_list)
+    $default  reduce using rule 17 (encapsed_list)
 
 
-état 52
+state 52
 
    21 var_string_list_section: '"' encapsed_list '"' .
 
-    $défaut  réduction par utilisation de la règle 21 (var_string_list_section)
+    $default  reduce using rule 21 (var_string_list_section)
 
 
-état 53
+state 53
 
    16 encapsed_list: encapsed_list cfg_var_ref .
 
-    $défaut  réduction par utilisation de la règle 16 (encapsed_list)
+    $default  reduce using rule 16 (encapsed_list)
 
 
-état 54
+state 54
 
    16 encapsed_list: encapsed_list . cfg_var_ref
    17              | encapsed_list . TC_QUOTED_STRING
    24 var_string_list_section: var_string_list_section '"' encapsed_list . '"'
 
-    TC_DOLLAR_CURLY   décalage et aller à l'état 13
-    TC_QUOTED_STRING  décalage et aller à l'état 51
-    '"'               décalage et aller à l'état 64
+    TC_DOLLAR_CURLY   shift, and go to state 13
+    TC_QUOTED_STRING  shift, and go to state 51
+    '"'               shift, and go to state 64
 
-    cfg_var_ref  aller à l'état 53
+    cfg_var_ref  go to state 53
 
 
-état 55
+state 55
 
    32 expr: expr . '|' expr
    33     | expr . '&' expr
    34     | expr . '^' expr
    35     | '~' expr .
 
-    $défaut  réduction par utilisation de la règle 35 (expr)
+    $default  reduce using rule 35 (expr)
 
 
-état 56
+state 56
 
    32 expr: expr . '|' expr
    33     | expr . '&' expr
    34     | expr . '^' expr
    36     | '!' expr .
 
-    $défaut  réduction par utilisation de la règle 36 (expr)
+    $default  reduce using rule 36 (expr)
 
 
-état 57
+state 57
 
    32 expr: expr . '|' expr
    33     | expr . '&' expr
    34     | expr . '^' expr
    37     | '(' expr . ')'
 
-    '^'  décalage et aller à l'état 58
-    '|'  décalage et aller à l'état 59
-    '&'  décalage et aller à l'état 60
-    ')'  décalage et aller à l'état 65
+    '^'  shift, and go to state 58
+    '|'  shift, and go to state 59
+    '&'  shift, and go to state 60
+    ')'  shift, and go to state 65
 
 
-état 58
+state 58
 
    34 expr: expr '^' . expr
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 25
-    '~'              décalage et aller à l'état 39
-    '!'              décalage et aller à l'état 40
-    '('              décalage et aller à l'état 41
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 25
+    '~'              shift, and go to state 39
+    '!'              shift, and go to state 40
+    '('              shift, and go to state 41
 
-    var_string_list  aller à l'état 43
-    expr             aller à l'état 66
-    cfg_var_ref      aller à l'état 28
-    constant_string  aller à l'état 29
+    var_string_list  go to state 43
+    expr             go to state 66
+    cfg_var_ref      go to state 28
+    constant_string  go to state 29
 
 
-état 59
+state 59
 
    32 expr: expr '|' . expr
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 25
-    '~'              décalage et aller à l'état 39
-    '!'              décalage et aller à l'état 40
-    '('              décalage et aller à l'état 41
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 25
+    '~'              shift, and go to state 39
+    '!'              shift, and go to state 40
+    '('              shift, and go to state 41
 
-    var_string_list  aller à l'état 43
-    expr             aller à l'état 67
-    cfg_var_ref      aller à l'état 28
-    constant_string  aller à l'état 29
+    var_string_list  go to state 43
+    expr             go to state 67
+    cfg_var_ref      go to state 28
+    constant_string  go to state 29
 
 
-état 60
+state 60
 
    33 expr: expr '&' . expr
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    '"'              décalage et aller à l'état 25
-    '~'              décalage et aller à l'état 39
-    '!'              décalage et aller à l'état 40
-    '('              décalage et aller à l'état 41
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    '"'              shift, and go to state 25
+    '~'              shift, and go to state 39
+    '!'              shift, and go to state 40
+    '('              shift, and go to state 41
 
-    var_string_list  aller à l'état 43
-    expr             aller à l'état 68
-    cfg_var_ref      aller à l'état 28
-    constant_string  aller à l'état 29
+    var_string_list  go to state 43
+    expr             go to state 68
+    cfg_var_ref      go to state 28
+    constant_string  go to state 29
 
 
-état 61
+state 61
 
    27 var_string_list: '"' encapsed_list '"' .
 
-    $défaut  réduction par utilisation de la règle 27 (var_string_list)
+    $default  reduce using rule 27 (var_string_list)
 
 
-état 62
+state 62
 
     5 statement: TC_OFFSET option_offset ']' '=' . string_or_value
 
-    TC_RAW           décalage et aller à l'état 20
-    TC_CONSTANT      décalage et aller à l'état 21
-    TC_NUMBER        décalage et aller à l'état 22
-    TC_STRING        décalage et aller à l'état 23
-    TC_WHITESPACE    décalage et aller à l'état 24
-    TC_DOLLAR_CURLY  décalage et aller à l'état 13
-    BOOL_TRUE        décalage et aller à l'état 36
-    BOOL_FALSE       décalage et aller à l'état 37
-    END_OF_LINE      décalage et aller à l'état 38
-    '"'              décalage et aller à l'état 25
-    '~'              décalage et aller à l'état 39
-    '!'              décalage et aller à l'état 40
-    '('              décalage et aller à l'état 41
+    TC_RAW           shift, and go to state 20
+    TC_CONSTANT      shift, and go to state 21
+    TC_NUMBER        shift, and go to state 22
+    TC_STRING        shift, and go to state 23
+    TC_WHITESPACE    shift, and go to state 24
+    TC_DOLLAR_CURLY  shift, and go to state 13
+    BOOL_TRUE        shift, and go to state 36
+    BOOL_FALSE       shift, and go to state 37
+    END_OF_LINE      shift, and go to state 38
+    '"'              shift, and go to state 25
+    '~'              shift, and go to state 39
+    '!'              shift, and go to state 40
+    '('              shift, and go to state 41
 
-    string_or_value  aller à l'état 69
-    var_string_list  aller à l'état 43
-    expr             aller à l'état 44
-    cfg_var_ref      aller à l'état 28
-    constant_string  aller à l'état 29
+    string_or_value  go to state 69
+    var_string_list  go to state 43
+    expr             go to state 44
+    cfg_var_ref      go to state 28
+    constant_string  go to state 29
 
 
-état 63
+state 63
 
    16 encapsed_list: encapsed_list . cfg_var_ref
    17              | encapsed_list . TC_QUOTED_STRING
    30 var_string_list: var_string_list '"' encapsed_list . '"'
 
-    TC_DOLLAR_CURLY   décalage et aller à l'état 13
-    TC_QUOTED_STRING  décalage et aller à l'état 51
-    '"'               décalage et aller à l'état 70
+    TC_DOLLAR_CURLY   shift, and go to state 13
+    TC_QUOTED_STRING  shift, and go to state 51
+    '"'               shift, and go to state 70
 
-    cfg_var_ref  aller à l'état 53
+    cfg_var_ref  go to state 53
 
 
-état 64
+state 64
 
    24 var_string_list_section: var_string_list_section '"' encapsed_list '"' .
 
-    $défaut  réduction par utilisation de la règle 24 (var_string_list_section)
+    $default  reduce using rule 24 (var_string_list_section)
 
 
-état 65
+state 65
 
    37 expr: '(' expr ')' .
 
-    $défaut  réduction par utilisation de la règle 37 (expr)
+    $default  reduce using rule 37 (expr)
 
 
-état 66
+state 66
 
    32 expr: expr . '|' expr
    33     | expr . '&' expr
    34     | expr . '^' expr
    34     | expr '^' expr .
 
-    $défaut  réduction par utilisation de la règle 34 (expr)
+    $default  reduce using rule 34 (expr)
 
 
-état 67
+state 67
 
    32 expr: expr . '|' expr
    32     | expr '|' expr .
    33     | expr . '&' expr
    34     | expr . '^' expr
 
-    $défaut  réduction par utilisation de la règle 32 (expr)
+    $default  reduce using rule 32 (expr)
 
 
-état 68
+state 68
 
    32 expr: expr . '|' expr
    33     | expr . '&' expr
    33     | expr '&' expr .
    34     | expr . '^' expr
 
-    $défaut  réduction par utilisation de la règle 33 (expr)
+    $default  reduce using rule 33 (expr)
 
 
-état 69
+state 69
 
     5 statement: TC_OFFSET option_offset ']' '=' string_or_value .
 
-    $défaut  réduction par utilisation de la règle 5 (statement)
+    $default  reduce using rule 5 (statement)
 
 
-état 70
+state 70
 
    30 var_string_list: var_string_list '"' encapsed_list '"' .
 
-    $défaut  réduction par utilisation de la règle 30 (var_string_list)
+    $default  reduce using rule 30 (var_string_list)

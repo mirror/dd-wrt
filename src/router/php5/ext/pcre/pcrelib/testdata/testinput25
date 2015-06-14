@@ -1,6 +1,6 @@
 /-- Tests for the 32-bit library only */
 
-< forbid 8W
+< forbid 8w
 
 /-- Check maximum character size --/
 

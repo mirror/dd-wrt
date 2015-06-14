@@ -46,6 +46,18 @@ var_dump($ar);
 <?php exit(0); ?>
 --EXPECTF--
 bool(true)
+int(0)
+array(3) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+  [2]=>
+  array(0) {
+  }
+}
 bool(true)
 int(1)
 array(3) {
@@ -85,11 +97,85 @@ array(3) {
   }
 }
 bool(true)
+int(3)
+array(3) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+  [2]=>
+  array(0) {
+  }
+}
 bool(true)
-bool(false)
+int(4)
+array(3) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+  [2]=>
+  array(0) {
+  }
+}
+
+Notice: Array to string conversion in %siterator_052.php on line %d
 bool(true)
+int(5)
+array(3) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+  [2]=>
+  array(0) {
+  }
+}
 bool(true)
+int(6)
+array(3) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+  [2]=>
+  array(0) {
+  }
+}
 bool(true)
+int(7)
+array(3) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+  [2]=>
+  array(0) {
+  }
+}
+bool(true)
+int(8)
+array(3) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+  [2]=>
+  array(0) {
+  }
+}
 bool(true)
 int(0)
 array(2) {
@@ -145,11 +231,67 @@ array(2) {
   }
 }
 bool(true)
+int(3)
+array(2) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+}
 bool(true)
-bool(false)
+int(4)
+array(2) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+}
+
+Notice: Array to string conversion in %siterator_052.php on line %d
 bool(true)
+int(5)
+array(2) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+}
 bool(true)
+int(6)
+array(2) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+}
 bool(true)
+int(7)
+array(2) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+}
+bool(true)
+int(8)
+array(2) {
+  [0]=>
+  array(0) {
+  }
+  [1]=>
+  array(0) {
+  }
+}
 object(ArrayIterator)#%d (1) {
   ["storage":"ArrayIterator":private]=>
   array(9) {
