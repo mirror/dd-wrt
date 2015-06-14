@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -20,7 +20,7 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id: 4294ceac810976c9475c20ece8986c7aa2fc41b9 $ */
+/* $Id: dc76d2fe0f3e9c327c1d4ca617d94e26c7fae98d $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -6061,7 +6061,7 @@ ZEND_END_ARG_INFO()
 static const zend_function_entry reflection_zend_extension_functions[] = {
 	ZEND_ME(reflection, __clone, arginfo_reflection__void, ZEND_ACC_PRIVATE|ZEND_ACC_FINAL)
 	ZEND_ME(reflection_zend_extension, export, arginfo_reflection_extension_export, ZEND_ACC_STATIC|ZEND_ACC_PUBLIC)
-	ZEND_ME(reflection_zend_extension, __construct, arginfo_reflection_extension___construct, 0)
+	ZEND_ME(reflection_zend_extension, __construct, arginfo_reflection_zend_extension___construct, 0)
 	ZEND_ME(reflection_zend_extension, __toString, arginfo_reflection__void, 0)
 	ZEND_ME(reflection_zend_extension, getName, arginfo_reflection__void, 0)
 	ZEND_ME(reflection_zend_extension, getVersion, arginfo_reflection__void, 0)
@@ -6192,7 +6192,7 @@ PHP_MINFO_FUNCTION(reflection) /* {{{ */
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Reflection", "enabled");
 
-	php_info_print_table_row(2, "Version", "$Id: 4294ceac810976c9475c20ece8986c7aa2fc41b9 $");
+	php_info_print_table_row(2, "Version", "$Id: dc76d2fe0f3e9c327c1d4ca617d94e26c7fae98d $");
 
 	php_info_print_table_end();
 } /* }}} */
@@ -6206,7 +6206,7 @@ zend_module_entry reflection_module_entry = { /* {{{ */
 	NULL,
 	NULL,
 	PHP_MINFO(reflection),
-	"$Id: 4294ceac810976c9475c20ece8986c7aa2fc41b9 $",
+	"$Id: dc76d2fe0f3e9c327c1d4ca617d94e26c7fae98d $",
 	STANDARD_MODULE_PROPERTIES
 }; /* }}} */
 

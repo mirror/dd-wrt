@@ -76,7 +76,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2014 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) 1998-2015 Zend Technologies Ltd. (http://www.zend.com) |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -101,6 +101,10 @@
 #include "zend_constants.h"
 #include "zend_ini_scanner.h"
 #include "zend_extensions.h"
+
+#ifdef PHP_WIN32
+#include "win32/syslog.h"
+#endif
 
 #define YYERROR_VERBOSE
 #define YYSTYPE zval
@@ -252,10 +256,9 @@ static void ini_error(char *msg)
 
 	if (CG(ini_parser_unbuffered_errors)) {
 #ifdef PHP_WIN32
-		MessageBox(NULL, error_buf, "PHP Error", MB_OK|MB_TOPMOST|0x00200000L);
-#else
-		fprintf(stderr, "PHP:  %s", error_buf);
+		syslog(LOG_ALERT, "PHP: %s (%s)", error_buf, GetCommandLine());
 #endif
+		fprintf(stderr, "PHP:  %s", error_buf);
 	} else {
 		zend_error(E_WARNING, "%s", error_buf);
 	}
@@ -724,11 +727,11 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   276,   276,   277,   281,   288,   296,   305,   306,   310,
-     311,   315,   316,   317,   318,   322,   323,   327,   328,   329,
-     333,   334,   335,   336,   337,   338,   342,   343,   344,   345,
-     346,   347,   351,   352,   353,   354,   355,   356,   357,   361,
-     365,   366,   367,   368,   369,   373,   374,   375,   376,   377
+       0,   279,   279,   280,   284,   291,   299,   308,   309,   313,
+     314,   318,   319,   320,   321,   325,   326,   330,   331,   332,
+     336,   337,   338,   339,   340,   341,   345,   346,   347,   348,
+     349,   350,   354,   355,   356,   357,   358,   359,   360,   364,
+     368,   369,   370,   371,   372,   376,   377,   378,   379,   380
 };
 #endif
 
