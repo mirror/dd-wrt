@@ -140,3 +140,5 @@
 #include "protocols/i23v5.c"
 #include "protocols/secondlife.c"
 #include "protocols/quic.c"
+#include "protocols/eaq.c"
+#include "protocols/kakaotalk_voice.c"
