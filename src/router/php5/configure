@@ -23593,7 +23593,7 @@ done
 
   found_openssl=no
   unset OPENSSL_INCDIR
- # unset OPENSSL_LIBDIR
+  unset OPENSSL_LIBDIR
 
     test -z "$PHP_OPENSSL" && PHP_OPENSSL=no
   test -z "$PHP_IMAP_SSL" && PHP_IMAP_SSL=no
@@ -45429,8 +45429,7 @@ if test "$PHP_ICONV" != "no"; then
 
 
   found_iconv=no
-#  unset ICONV_DIR
-  iconv_lib_name=iconv
+  unset ICONV_DIR
 
   # Create the directories for a VPATH build:
   $php_shtool mkdir -p ext/iconv
@@ -45482,11 +45481,11 @@ fi
 
 $as_echo "#define HAVE_GICONV_H 1" >>confdefs.h
 
-        ICONV_DIR=$PHP_ICONV
+        ICONV_DIR=$i
         iconv_lib_name=giconv
         break
       elif test -r $i/include/iconv.h; then
-        ICONV_DIR=$PHP_ICONV
+        ICONV_DIR=$i
         iconv_lib_name=iconv
         break
       fi
@@ -65473,7 +65472,10 @@ flock_type=unknown
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"whether flock struct is linux ordered\"" >&5
 $as_echo_n "checking \"whether flock struct is linux ordered\"... " >&6; }
 if test "$cross_compiling" = yes; then :
-
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -65509,12 +65511,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"whether flock struct is BSD ordered\"" >&5
 $as_echo_n "checking \"whether flock struct is BSD ordered\"... " >&6; }
 if test "$cross_compiling" = yes; then :
-	flock_type=linux
-
-#  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-#$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-#as_fn_error $? "cannot run test program while cross compiling
-#See \`config.log' for more details" "$LINENO" 5; }
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */

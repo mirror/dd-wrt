@@ -39,8 +39,6 @@
 
 #include "php_iconv.h"
 
-#undef LIBICONV_PLUG
-
 #ifdef HAVE_ICONV
 
 #ifdef PHP_ICONV_H_PATH
@@ -54,7 +52,7 @@
 #endif
 
 #ifdef HAVE_LIBICONV
-//#undef iconv
+#undef iconv
 #endif
 
 #include "ext/standard/php_smart_str.h"
