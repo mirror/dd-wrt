@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2013, The Tor Project, Inc. */
+ * Copyright (c) 2007-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -12,7 +12,9 @@
 #ifndef TOR_MAIN_H
 #define TOR_MAIN_H
 
-extern int can_complete_circuit;
+int have_completed_a_circuit(void);
+void note_that_we_completed_a_circuit(void);
+void note_that_we_maybe_cant_complete_circuits(void);
 
 int connection_add_impl(connection_t *conn, int is_connecting);
 #define connection_add(conn) connection_add_impl((conn), 0)

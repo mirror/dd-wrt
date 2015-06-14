@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 8.6.9" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
 <title>tor-resolve(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -94,9 +94,7 @@ ul > li > * { color: black; }
   padding: 0;
   margin: 0;
 }
-pre {
-  white-space: pre-wrap;
-}
+
 
 #author {
   color: #527bbd;
@@ -225,7 +223,7 @@ div.exampleblock > div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; vertical-align: text-bottom; }
+span.image img { border-style: none; }
 a.image:visited { color: white; }
 
 dl {
@@ -747,7 +745,7 @@ tor-resolve(1) Manual Page
 <div class="sect1">
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><strong>tor-resolve</strong> [-4|-5] [-v] [-x] <em>hostname</em> [<em>sockshost</em>[:<em>socksport</em>]]</p></div>
+<div class="paragraph"><p><strong>tor-resolve</strong> [-4|-5] [-v] [-x] [-p <em>socksport</em>] <em>hostname</em> [<em>sockshost</em>[:<em>socksport</em>]]</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -797,6 +795,14 @@ port 9050.  If this isn&#8217;t what you want, you should specify an explicit
     support reverse DNS.
 </p>
 </dd>
+<dt class="hdlist1">
+<strong>-p</strong> <em>socksport</em>
+</dt>
+<dd>
+<p>
+    Override the default SOCKS port without setting the hostname.
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -817,7 +823,7 @@ port 9050.  If this isn&#8217;t what you want, you should specify an explicit
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2014-06-27 23:45:19 CEST
+Last updated 2015-03-10 10:26:37 EDT
 </div>
 </div>
 </body>

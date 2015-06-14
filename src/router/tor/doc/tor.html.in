@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 8.6.9" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
 <title>TOR(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -94,9 +94,7 @@ ul > li > * { color: black; }
   padding: 0;
   margin: 0;
 }
-pre {
-  white-space: pre-wrap;
-}
+
 
 #author {
   color: #527bbd;
@@ -225,7 +223,7 @@ div.exampleblock > div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; vertical-align: text-bottom; }
+span.image img { border-style: none; }
 a.image:visited { color: white; }
 
 dl {
@@ -787,7 +785,8 @@ Project&#8217;s website.</p></div>
 <dd>
 <p>
     Specify a new configuration file to contain further Tor configuration
-    options. (Default: @CONFDIR@/torrc, or $HOME/.torrc if that file is not
+    options OR pass <strong>-</strong> to make Tor read its configuration from standard
+    input. (Default: @CONFDIR@/torrc, or $HOME/.torrc if that file is not
     found)
 </p>
 </dd>
@@ -852,7 +851,7 @@ Project&#8217;s website.</p></div>
 <p>
     Install an instance of Tor as a Windows service, with the provided
     command-line options. Current instructions can be found at
-    <a href="https://trac.torproject.org/projects/tor/wiki/doc/TorFAQ#HowdoIrunmyTorrelayasanNTservice">https://trac.torproject.org/projects/tor/wiki/doc/TorFAQ#HowdoIrunmyTorrelayasanNTservice</a>
+    <a href="https://www.torproject.org/docs/faq#NTService">https://www.torproject.org/docs/faq#NTService</a>
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1168,7 +1167,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="ControlPort"></a> <strong>ControlPort</strong> <em>PORT</em>|<strong>auto</strong>
+<a id="ControlPort"></a> <strong>ControlPort</strong> <em>PORT</em>|<strong>unix:</strong><em>path</em>|<strong>auto</strong>
 </dt>
 <dd>
 <p>
@@ -1202,7 +1201,7 @@ option name with a forward slash.</p></div>
 <dd>
 <p>
     Like ControlPort, but listens on a Unix domain socket, rather than a TCP
-    socket. (Unix and Unix-like systems only.)
+    socket. <em>0</em> disables ControlSocket (Unix and Unix-like systems only.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1535,6 +1534,16 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="SocksSocketsGroupWritable"></a> <strong>SocksSocketsGroupWritable</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to 0, don&#8217;t allow the filesystem group to read and
+    write unix sockets (e.g. SocksSocket). If the option is set to 1, make
+    the SocksSocket socket readable and writable by the default GID. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="KeepalivePeriod"></a> <strong>KeepalivePeriod</strong> <em>NUM</em>
 </dt>
 <dd>
@@ -1646,7 +1655,7 @@ option name with a forward slash.</p></div>
 </dt>
 <dd>
 <p>
-    Set how long, after the client has mad an anonymized connection to a
+    Set how long, after the client has made an anonymized connection to a
     given port, we will try to make sure that we build circuits to
     exits that support that port. The maximum value for this option is 1
     hour. (Default: 1 hour)
@@ -1673,6 +1682,15 @@ option name with a forward slash.</p></div>
     a file or console log.  Tor does not (for example) "batch up" log
     messages to affect times logged by a controller, times attached to
     syslog messages, or the mtime fields on log files.  (Default: 1 second)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TruncateLogFile"></a> <strong>TruncateLogFile</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If 1, Tor will overwrite logs at startup and in response to a HUP signal,
+    instead of appending to them. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1915,10 +1933,11 @@ option name with a forward slash.</p></div>
 </dt>
 <dd>
 <p>
-    A list of identity fingerprints, nicknames, country codes and address
-    patterns of nodes to avoid when building a circuit.
+    A list of identity fingerprints, country codes, and address
+    patterns of nodes to avoid when building a circuit. Country codes must
+    be wrapped in braces; fingerprints may be preceded by a dollar sign.
     (Example:
-    ExcludeNodes SlowServer, ABCD1234CDEF5678ABCD1234CDEF5678ABCD1234, {cc}, 255.254.0.0/8)<br />
+    ExcludeNodes ABCD1234CDEF5678ABCD1234CDEF5678ABCD1234, {cc}, 255.254.0.0/8)<br />
 <br />
     By default, this option is treated as a preference that Tor is allowed
     to override in order to keep working.
@@ -1942,11 +1961,13 @@ option name with a forward slash.</p></div>
 </dt>
 <dd>
 <p>
-    A list of identity fingerprints, nicknames, country codes and address
+    A list of identity fingerprints, country codes, and address
     patterns of nodes to never use when picking an exit node---that is, a
     node that delivers traffic for you outside the Tor network.   Note that any
     node listed in ExcludeNodes is automatically considered to be part of this
-    list too.  See also the caveats on the "ExitNodes" option below.
+    list too.  See
+    the <strong>ExcludeNodes</strong> option for more information on how to specify
+    nodes. See also the caveats on the "ExitNodes" option below.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1967,9 +1988,10 @@ option name with a forward slash.</p></div>
 </dt>
 <dd>
 <p>
-    A list of identity fingerprints, nicknames, country codes and address
+    A list of identity fingerprints, country codes, and address
     patterns of nodes to use as exit node---that is, a
-    node that delivers traffic for you outside the Tor network.<br />
+    node that delivers traffic for you outside the Tor network.  See
+    the <strong>ExcludeNodes</strong> option for more information on how to specify nodes.<br />
 <br />
     Note that if you list too few nodes here, or if you exclude too many exit
     nodes with ExcludeExitNodes, you can degrade functionality.  For example,
@@ -1995,7 +2017,7 @@ option name with a forward slash.</p></div>
 </dt>
 <dd>
 <p>
-    A list of identity fingerprints, nicknames, and country codes of nodes
+    A list of identity fingerprints and country codes of nodes
     to use for the first hop in your normal circuits.
     Normal circuits include all
     circuits except for direct connections to directory servers.  The Bridge
@@ -2003,7 +2025,8 @@ option name with a forward slash.</p></div>
     UseBridges is 1, the Bridges are used as your entry nodes.<br />
 <br />
     The ExcludeNodes option overrides this option: any node listed in both
-    EntryNodes and ExcludeNodes is treated as excluded.
+    EntryNodes and ExcludeNodes is treated as excluded. See
+    the <strong>ExcludeNodes</strong> option for more information on how to specify nodes.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2247,12 +2270,14 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </dt>
 <dd>
 <p>
-    The Tor servers, defined by their identity fingerprints or nicknames,
+    The Tor servers, defined by their identity fingerprints,
     constitute a "family" of similar or co-administered servers, so never use
     any two of them in the same circuit. Defining a NodeFamily is only needed
     when a server doesn&#8217;t list the family itself (with MyFamily). This option
-    can be used multiple times.  In addition to nodes, you can also list
-    IP address and ranges and country codes in {curly braces}.
+    can be used multiple times; each instance defines a separate family.  In
+    addition to nodes, you can also list IP address and ranges and country
+    codes in {curly braces}. See the <strong>ExcludeNodes</strong> option for more
+    information on how to specify nodes.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2266,7 +2291,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="SOCKSPort"></a> <strong>SOCKSPort</strong> [<em>address</em>:]<em>port</em>|<strong>auto</strong> [<em>flags</em>] [<em>isolation flags</em>]
+<a id="SOCKSPort"></a> <strong>SOCKSPort</strong> [<em>address</em>:]<em>port</em>|<strong>unix:</strong><em>path</em>|<strong>auto</strong> [<em>flags</em>] [<em>isolation flags</em>]
 </dt>
 <dd>
 <p>
@@ -2316,7 +2341,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </dt>
 <dd>
 <p>
-        Don&#8217;t share circuits with streams targetting a different
+        Don&#8217;t share circuits with streams targeting a different
         destination port.
 </p>
 </dd>
@@ -2325,7 +2350,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </dt>
 <dd>
 <p>
-        Don&#8217;t share circuits with streams targetting a different
+        Don&#8217;t share circuits with streams targeting a different
         destination address.
 </p>
 </dd>
@@ -2449,7 +2474,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 <dd>
 <p>
         When serving a hostname lookup request on this port that
-        should get automapped (according to AutomapHostsOnResove),
+        should get automapped (according to AutomapHostsOnResolve),
         if we could return either an IPv4 or an IPv6 answer, prefer
         an IPv6 answer. (On by default.)
 </p>
@@ -2589,6 +2614,27 @@ Using a wildcard to match only part of a string (as in *ample.com) is
     available for clients (non-relay, non-bridge) that aren&#8217;t configured to
     download any non-default directory material.  It doesn&#8217;t currently
     do anything when we lack a live consensus. (Default: 1)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="GuardfractionFile"></a> <strong>GuardfractionFile</strong> <em>FILENAME</em>
+</dt>
+<dd>
+<p>
+    V3 authoritative directories only. Configures the location of the
+    guardfraction file which contains information about how long relays
+    have been guards. (Default: unset)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="UseGuardFraction"></a> <strong>UseGuardFraction</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+</dt>
+<dd>
+<p>
+    This torrc option specifies whether clients should use the
+    guardfraction information found in the consensus during path
+    selection. If it&#8217;s set to <em>auto</em>, clients will do what the
+    UseGuardFraction consensus parameter tells them to do. (Default: auto)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2949,6 +2995,27 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="Tor2webRendezvousPoints"></a> <strong>Tor2webRendezvousPoints</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+</dt>
+<dd>
+<p>
+    A list of identity fingerprints, nicknames, country codes and
+    address patterns of nodes that are allowed to be used as RPs
+    in HS circuits; any other nodes will not be used as RPs.
+    (Example:
+    Tor2webRendezvousPoints Fastyfasty, ABCD1234CDEF5678ABCD1234CDEF5678ABCD1234, {cc}, 255.254.0.0/8)<br />
+<br />
+    This feature can only be used if Tor2webMode is also enabled.
+<br />
+    ExcludeNodes have higher priority than Tor2webRendezvousPoints,
+    which means that nodes specified in ExcludeNodes will not be
+    picked as RPs.
+<br />
+    If no nodes in Tor2webRendezvousPoints are currently available for
+    use, Tor will choose a random node when building HS circuits.
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="UseMicrodescriptors"></a> <strong>UseMicrodescriptors</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
 </dt>
 <dd>
@@ -3076,20 +3143,6 @@ Using a wildcard to match only part of a string (as in *ample.com) is
     authorities. (Default: -1.)
 </p>
 </dd>
-<dt class="hdlist1">
-<a id="Support022HiddenServices"></a> <strong>Support022HiddenServices</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
-</dt>
-<dd>
-<p>
-    Tor hidden services running versions before 0.2.3.x required clients to
-    send timestamps, which can potentially be used to distinguish clients
-    whose view of the current time is skewed. If this option is set to 0, we
-    do not send this timestamp, and hidden services on obsolete Tor versions
-    will not work.  If this option is set to 1, we send the timestamp.  If
-    this optoin is "auto", we take a recommendation from the latest consensus
-    document. (Default: auto)
-</p>
-</dd>
 </dl></div>
 </div>
 </div>
@@ -3159,6 +3212,24 @@ is non-zero):</p></div>
     spammers might also collect them. You may want to obscure the fact
     that it&#8217;s an email address and/or generate a new address for this
     purpose.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="ExitRelay"></a> <strong>ExitRelay</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+</dt>
+<dd>
+<p>
+    Tells Tor whether to run as an exit relay.  If Tor is running as a
+    non-bridge server, and ExitRelay is set to 1, then Tor allows traffic to
+    exit according to the ExitPolicy option (or the default ExitPolicy if
+    none is specified).
+<br />
+    If ExitRelay is set to 0, no traffic is allowed to
+    exit, and the ExitPolicy option is ignored.<br />
+<br />
+    If ExitRelay is set to "auto", then Tor behaves as if it were set to 1, but
+    warns the user if this would cause traffic to exit.  In a future version,
+    the default value will be 0. (Default: auto)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3253,7 +3324,7 @@ accept *:*</code></pre>
 <p>
     Declare that this Tor server is controlled or administered by a group or
     organization identical or similar to that of the other servers, defined by
-    their identity fingerprints or nicknames. When two servers both declare
+    their identity fingerprints. When two servers both declare
     that they are in the same 'family', Tor clients will not use them in the
     same circuit. (Each server only needs to list the other servers in its
     family; it doesn&#8217;t need to list itself, but it won&#8217;t hurt.) Do not list
@@ -3411,19 +3482,36 @@ that it supports NoAdvertise and explicit addresses.</code></pre>
 </dt>
 <dd>
 <p>
-    Never send more than the specified number of bytes in a given accounting
-    period, or receive more than that number in the period. For example, with
-    AccountingMax set to 1 GByte, a server could send 900 MBytes and
-    receive 800 MBytes and continue running. It will only hibernate once
-    one of the two reaches 1 GByte. When the number of bytes gets low,
-    Tor will stop accepting new connections and circuits.  When the
-    number of bytes is exhausted, Tor will hibernate until some
-    time in the next accounting period. To prevent all servers from waking at
-    the same time, Tor will also wait until a random point in each period
-    before waking up. If you have bandwidth cost issues, enabling hibernation
-    is preferable to setting a low bandwidth, since it provides users with a
-    collection of fast servers that are up some of the time, which is more
-    useful than a set of slow servers that are always "available".
+    Limits the max number of bytes sent and received within a set time period
+    using a given calculation rule (see: AccountingStart, AccountingRule).
+    Useful if you need to stay under a specific bandwidth. By default, the
+    number used for calculation is the max of either the bytes sent or
+    received. For example, with AccountingMax set to 1 GByte, a server
+    could send 900 MBytes and receive 800 MBytes and continue running.
+    It will only hibernate once one of the two reaches 1 GByte. This can
+    be changed to use the sum of the both bytes received and sent by setting
+    the AccountingRule option to "sum" (total bandwidth in/out). When the
+    number of bytes remaining gets low, Tor will stop accepting new connections
+    and circuits. When the number of bytes is exhausted, Tor will hibernate
+    until some time in the next accounting period. To prevent all servers
+    from waking at the same time, Tor will also wait until a random point
+    in each period before waking up. If you have bandwidth cost issues,
+    enabling hibernation is preferable to setting a low bandwidth, since
+    it provides users with a collection of fast servers that are up some
+    of the time, which is more useful than a set of slow servers that are
+    always "available".
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AccountingRule"></a> <strong>AccountingRule</strong> <strong>sum</strong>|<strong>max</strong>
+</dt>
+<dd>
+<p>
+    How we determine when our AccountingMax has been reached (when we
+    should hibernate) during a time interval. Set to "max" to calculate
+    using the higher of either the sent or received bytes (this is the
+    default functionality). Set to "sum" to calculate using the sent
+    plus received bytes. (Default: max)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3623,6 +3711,18 @@ that it supports NoAdvertise and explicit addresses.</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="HiddenServiceStatistics"></a> <strong>HiddenServiceStatistics</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    When this option is enabled, a Tor relay writes obfuscated
+    statistics on its role as hidden-service directory, introduction
+    point, or rendezvous point to disk every 24 hours. If
+    ExtraInfoStatistics is also enabled, these statistics are further
+    published to the directory authorities. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="ExtraInfoStatistics"></a> <strong>ExtraInfoStatistics</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
@@ -3777,20 +3877,6 @@ on the public Tor network.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="NamingAuthoritativeDirectory"></a> <strong>NamingAuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    When this option is set to 1, then the server advertises that it has
-    opinions about nickname-to-fingerprint bindings. It will include these
-    opinions in its published network-status pages, by listing servers with
-    the flag "Named" if a correct binding between that nickname and fingerprint
-    has been registered with the dirserver. Naming dirservers will refuse to
-    accept or publish descriptors that contradict a registered binding. See
-    <strong>approved-routers</strong> in the <strong>FILES</strong> section below.
-</p>
-</dd>
-<dt class="hdlist1">
 <a id="RecommendedVersions"></a> <strong>RecommendedVersions</strong> <em>STRING</em>
 </dt>
 <dd>
@@ -3800,6 +3886,17 @@ on the public Tor network.</p></div>
     directory learn whether they need to upgrade. This option can appear
     multiple times: the values from multiple lines are spliced together. When
     this is set then <strong>VersioningAuthoritativeDirectory</strong> should be set too.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="RecommendedPackageVersions"></a> <strong>RecommendedPackageVersions</strong> <em>PACKAGENAME</em> <em>VERSION</em> <em>URL</em> <em>DIGESTTYPE</em><strong>=</strong><em>DIGEST</em> 
+</dt>
+<dd>
+<p>
+    Adds "package" line to the directory authority&#8217;s vote.  This information
+    is used to vote on the correct URL and digest for the released versions
+    of different Tor-related packages, so that the consensus can certify
+    them.  This line may appear any number of times.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3865,20 +3962,6 @@ on the public Tor network.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="AuthDirBadDir"></a> <strong>AuthDirBadDir</strong> <em>AddressPattern&#8230;</em>
-</dt>
-<dd>
-<p>
-    Authoritative directories only. A set of address patterns for servers that
-    will be listed as bad directories in any network status document this
-    authority publishes, if <strong>AuthDirListBadDirs</strong> is set.<br />
-<br />
-    (The address pattern syntax here and in the options below
-    is the same as for exit policies, except that you don&#8217;t need to say
-    "accept" or "reject", and ports are not needed.)
-</p>
-</dd>
-<dt class="hdlist1">
 <a id="AuthDirBadExit"></a> <strong>AuthDirBadExit</strong> <em>AddressPattern&#8230;</em>
 </dt>
 <dd>
@@ -3886,6 +3969,10 @@ on the public Tor network.</p></div>
     Authoritative directories only. A set of address patterns for servers that
     will be listed as bad exits in any network status document this authority
     publishes, if <strong>AuthDirListBadExits</strong> is set.
+<br />
+    (The address pattern syntax here and in the options below
+    is the same as for exit policies, except that you don&#8217;t need to say
+    "accept" or "reject", and ports are not needed.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3910,7 +3997,6 @@ on the public Tor network.</p></div>
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p><a id="AuthDirBadDirCCs"></a> <strong>AuthDirBadDirCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
 <div class="paragraph"><p><a id="AuthDirBadExitCCs"></a> <strong>AuthDirBadExitCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
 <div class="paragraph"><p><a id="AuthDirInvalidCCs"></a> <strong>AuthDirInvalidCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
 <div class="dlist"><dl>
@@ -3921,20 +4007,8 @@ on the public Tor network.</p></div>
 <p>
     Authoritative directories only. These options contain a comma-separated
     list of country codes such that any server in one of those country codes
-    will be marked as a bad directory/bad exit/invalid for use, or rejected
+    will be marked as a bad exit/invalid for use, or rejected
     entirely.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="AuthDirListBadDirs"></a> <strong>AuthDirListBadDirs</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    Authoritative directories only. If set to 1, this directory has some
-    opinion about which nodes are unsuitable as directory caches. (Do not set
-    this to 1 unless you plan to list non-functioning directories as bad;
-    otherwise, you are effectively voting in favor  of every declared
-    directory.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3946,17 +4020,6 @@ on the public Tor network.</p></div>
     opinion about which nodes are unsuitable as exit nodes. (Do not set this to
     1 unless you plan to list non-functioning exits as bad; otherwise, you are
     effectively voting in favor of every declared exit as an exit.)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="AuthDirRejectUnlisted"></a> <strong>AuthDirRejectUnlisted</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    Authoritative directories only. If set to 1, the directory server rejects
-    all uploaded server descriptors that aren&#8217;t explicitly listed in the
-    fingerprints file. This acts as a "panic button" if we get hit with a Sybil
-    attack. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4137,6 +4200,11 @@ on the public Tor network.</p></div>
     Store data files for a hidden service in DIRECTORY. Every hidden service
     must have a separate directory. You may use this option  multiple times to
     specify multiple services. DIRECTORY must be an existing directory.
+    (Note: in current versions of Tor, if DIRECTORY is a relative path,
+    it will be relative to current
+    working directory of Tor instance, not to its DataDirectory.  Do not
+    rely on this behavior; it is not guaranteed to remain the same in future
+    versions.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4146,9 +4214,10 @@ on the public Tor network.</p></div>
 <p>
     Configure a virtual port VIRTPORT for a hidden service. You may use this
     option multiple times; each time applies to the service using the most
-    recent hiddenservicedir. By default, this option maps the virtual port to
+    recent HiddenServiceDir. By default, this option maps the virtual port to
     the same port on 127.0.0.1 over TCP. You may override the target port,
     address, or both by specifying a target of addr, port, or addr:port.
+    (You can specify an IPv6 target as [addr]:port.)
     You may also have multiple lines with  the same VIRTPORT: when a user
     connects to that VIRTPORT, one of the TARGETs from those lines will be
     chosen at random.
@@ -4192,6 +4261,17 @@ on the public Tor network.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="HiddenServiceAllowUnknownPorts"></a> <strong>HiddenServiceAllowUnknownPorts</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+   If set to 1, then connections to unrecognized ports do not cause the
+   current hidden service to close rendezvous circuits. (Setting this to 0 is
+   not an authorization mechanism; it is instead meant to be a mild
+   inconvenience to port-scanners.) (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="RendPostPeriod"></a> <strong>RendPostPeriod</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
 </dt>
 <dd>
@@ -4199,6 +4279,17 @@ on the public Tor network.</p></div>
     Every time the specified period elapses, Tor uploads any rendezvous
     service descriptors to the directory servers. This information  is also
     uploaded whenever it changes. (Default: 1 hour)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HiddenServiceDirGroupReadable"></a> <strong>HiddenServiceDirGroupReadable</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to 1, allow the filesystem group to read the
+    hidden service directory and hostname file. If the option is set to 0,
+    only owner is able to read the hidden service directory. (Default: 0)
+    Has no effect on Windows.
 </p>
 </dd>
 </dl></div>
@@ -4433,17 +4524,46 @@ TestingEnableTbEmptyEvent 1</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="TestingDirAuthVoteExit"></a> <strong>TestingDirAuthVoteExit</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+</dt>
+<dd>
+<p>
+    A list of identity fingerprints, country codes, and
+    address patterns of nodes to vote Exit for regardless of their
+    uptime, bandwidth, or exit policy. See the <strong>ExcludeNodes</strong>
+    option for more information on how to specify nodes.
+<br />
+    In order for this option to have any effect, <strong>TestingTorNetwork</strong>
+    has to be set. See the <strong>ExcludeNodes</strong> option for more
+    information on how to specify nodes.
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="TestingDirAuthVoteGuard"></a> <strong>TestingDirAuthVoteGuard</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
-    A list of identity fingerprints, nicknames, country codes and
+    A list of identity fingerprints and country codes and
     address patterns of nodes to vote Guard for regardless of their
     uptime and bandwidth. See the <strong>ExcludeNodes</strong> option for more
     information on how to specify nodes.
 <br />
     In order for this option to have any effect, <strong>TestingTorNetwork</strong>
     has to be set.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingDirAuthVoteHSDir"></a> <strong>TestingDirAuthVoteHSDir</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+</dt>
+<dd>
+<p>
+    A list of identity fingerprints and country codes and
+    address patterns of nodes to vote HSDir for regardless of their
+    uptime and ORPort connectivity. See the <strong>ExcludeNodes</strong> option for more
+    information on how to specify nodes.
+<br />
+    In order for this option to have any effect, <strong>TestingTorNetwork</strong>
+    and <strong>VoteOnHidServDirectoriesV2</strong> both have to be set.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4749,21 +4869,6 @@ A short history of bandwidth usage, as produced in the router
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/approved-routers</strong>
-</dt>
-<dd>
-<p>
-    Only for naming authoritative directory servers (see
-    <strong>NamingAuthoritativeDirectory</strong>). This file lists nickname to identity
-    bindings. Each line lists a nickname and a fingerprint separated by
-    whitespace. See your <strong>fingerprint</strong> file in the <em>DataDirectory</em> for an
-    example line. If the nickname is <strong>!reject</strong> then descriptors from the
-    given identity (fingerprint) are rejected by this server. If it is
-    <strong>!invalid</strong> then descriptors are accepted but marked in the directory as
-    not valid, that is, not recommended.
-</p>
-</dd>
-<dt class="hdlist1">
 <em>DataDirectory</em><strong>/v3-status-votes</strong>
 </dt>
 <dd>
@@ -4866,6 +4971,16 @@ A short history of bandwidth usage, as produced in the router
 </p>
 </dd>
 <dt class="hdlist1">
+<em>DataDirectory</em><strong>/networkstatus-bridges</strong>
+</dt>
+<dd>
+<p>
+    Only used by authoritative bridge directories. Contains information
+    about bridges that have self-reported themselves to the bridge
+    authority.
+</p>
+</dd>
+<dt class="hdlist1">
 <em>HiddenServiceDirectory</em><strong>/hostname</strong>
 </dt>
 <dd>
@@ -4918,7 +5033,7 @@ A short history of bandwidth usage, as produced in the router
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2014-10-10 09:06:24 EDT
+Last updated 2015-03-11 13:32:49 EDT
 </div>
 </div>
 </body>

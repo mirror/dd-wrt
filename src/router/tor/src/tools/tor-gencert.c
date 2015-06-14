@@ -1,4 +1,4 @@
-/* Copyright (c) 2007-2013, The Tor Project, Inc. */
+/* Copyright (c) 2007-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -134,17 +134,29 @@ parse_commandline(int argc, char **argv)
         fprintf(stderr, "No argument to -i\n");
         return 1;
       }
+      if (identity_key_file) {
+        fprintf(stderr, "Duplicate values for -i\n");
+        return -1;
+      }
       identity_key_file = tor_strdup(argv[++i]);
     } else if (!strcmp(argv[i], "-s")) {
       if (i+1>=argc) {
         fprintf(stderr, "No argument to -s\n");
         return 1;
       }
+      if (signing_key_file) {
+        fprintf(stderr, "Duplicate values for -s\n");
+        return -1;
+      }
       signing_key_file = tor_strdup(argv[++i]);
     } else if (!strcmp(argv[i], "-c")) {
       if (i+1>=argc) {
         fprintf(stderr, "No argument to -c\n");
         return 1;
+      }
+      if (certificate_file) {
+        fprintf(stderr, "Duplicate values for -c\n");
+        return -1;
       }
       certificate_file = tor_strdup(argv[++i]);
     } else if (!strcmp(argv[i], "-m")) {
@@ -513,7 +525,7 @@ int
 main(int argc, char **argv)
 {
   int r = 1;
-  init_logging();
+  init_logging(1);
 
   /* Don't bother using acceleration. */
   if (crypto_global_init(0, NULL, NULL)) {

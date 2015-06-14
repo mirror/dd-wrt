@@ -1,13 +1,15 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2013, The Tor Project, Inc. */
+ * Copyright (c) 2007-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
  * \file routerparse.c
  * \brief Code to parse and validate router descriptors and directories.
  **/
+
+#define ROUTERPARSE_PRIVATE
 
 #include "or.h"
 #include "config.h"
@@ -23,6 +25,7 @@
 #include "networkstatus.h"
 #include "rephist.h"
 #include "routerparse.h"
+#include "entrynodes.h"
 #undef log
 #include <math.h>
 
@@ -131,6 +134,7 @@ typedef enum {
   K_CONSENSUS_METHOD,
   K_LEGACY_DIR_KEY,
   K_DIRECTORY_FOOTER,
+  K_PACKAGE,
 
   A_PURPOSE,
   A_LAST_LISTED,
@@ -420,6 +424,7 @@ static token_rule_t networkstatus_token_table[] = {
   T1("known-flags",            K_KNOWN_FLAGS,      ARGS,        NO_OBJ ),
   T01("params",                K_PARAMS,           ARGS,        NO_OBJ ),
   T( "fingerprint",            K_FINGERPRINT,      CONCAT_ARGS, NO_OBJ ),
+  T0N("package",               K_PACKAGE,          CONCAT_ARGS, NO_OBJ ),
 
   CERTIFICATE_MEMBERS
 
@@ -911,7 +916,9 @@ find_start_of_next_router_or_extrainfo(const char **s_ptr,
  * descriptor in the signed_descriptor_body field of each routerinfo_t.  If it
  * isn't SAVED_NOWHERE, remember the offset of each descriptor.
  *
- * Returns 0 on success and -1 on failure.
+ * Returns 0 on success and -1 on failure.  Adds a digest to
+ * <b>invalid_digests_out</b> for every entry that was unparseable or
+ * invalid. (This may cause duplicate entries.)
  */
 int
 router_parse_list_from_string(const char **s, const char *eos,
@@ -919,7 +926,8 @@ router_parse_list_from_string(const char **s, const char *eos,
                               saved_location_t saved_location,
                               int want_extrainfo,
                               int allow_annotations,
-                              const char *prepend_annotations)
+                              const char *prepend_annotations,
+                              smartlist_t *invalid_digests_out)
 {
   routerinfo_t *router;
   extrainfo_t *extrainfo;
@@ -939,6 +947,9 @@ router_parse_list_from_string(const char **s, const char *eos,
   tor_assert(eos >= *s);
 
   while (1) {
+    char raw_digest[DIGEST_LEN];
+    int have_raw_digest = 0;
+    int dl_again = 0;
     if (find_start_of_next_router_or_extrainfo(s, eos, &have_extrainfo) < 0)
       break;
 
@@ -955,18 +966,20 @@ router_parse_list_from_string(const char **s, const char *eos,
 
     if (have_extrainfo && want_extrainfo) {
       routerlist_t *rl = router_get_routerlist();
+      have_raw_digest = router_get_extrainfo_hash(*s, end-*s, raw_digest) == 0;
       extrainfo = extrainfo_parse_entry_from_string(*s, end,
                                        saved_location != SAVED_IN_CACHE,
-                                       rl->identity_map);
+                                       rl->identity_map, &dl_again);
       if (extrainfo) {
         signed_desc = &extrainfo->cache_info;
         elt = extrainfo;
       }
     } else if (!have_extrainfo && !want_extrainfo) {
+      have_raw_digest = router_get_router_hash(*s, end-*s, raw_digest) == 0;
       router = router_parse_entry_from_string(*s, end,
                                               saved_location != SAVED_IN_CACHE,
                                               allow_annotations,
-                                              prepend_annotations);
+                                              prepend_annotations, &dl_again);
       if (router) {
         log_debug(LD_DIR, "Read router '%s', purpose '%s'",
                   router_describe(router),
@@ -974,6 +987,9 @@ router_parse_list_from_string(const char **s, const char *eos,
         signed_desc = &router->cache_info;
         elt = router;
       }
+    }
+    if (! elt && ! dl_again && have_raw_digest && invalid_digests_out) {
+      smartlist_add(invalid_digests_out, tor_memdup(raw_digest, DIGEST_LEN));
     }
     if (!elt) {
       *s = end;
@@ -1068,11 +1084,17 @@ find_single_ipv6_orport(const smartlist_t *list,
  * around when caching the router.
  *
  * Only one of allow_annotations and prepend_annotations may be set.
+ *
+ * If <b>can_dl_again_out</b> is provided, set *<b>can_dl_again_out</b> to 1
+ * if it's okay to try to download a descriptor with this same digest again,
+ * and 0 if it isn't.  (It might not be okay to download it again if part of
+ * the part covered by the digest is invalid.)
  */
 routerinfo_t *
 router_parse_entry_from_string(const char *s, const char *end,
                                int cache_copy, int allow_annotations,
-                               const char *prepend_annotations)
+                               const char *prepend_annotations,
+                               int *can_dl_again_out)
 {
   routerinfo_t *router = NULL;
   char digest[128];
@@ -1083,6 +1105,9 @@ router_parse_entry_from_string(const char *s, const char *end,
   size_t prepend_len = prepend_annotations ? strlen(prepend_annotations) : 0;
   int ok = 1;
   memarea_t *area = NULL;
+  /* Do not set this to '1' until we have parsed everything that we intend to
+   * parse that's covered by the hash. */
+  int can_dl_again = 0;
 
   tor_assert(!allow_annotations || !prepend_annotations);
 
@@ -1389,19 +1414,21 @@ router_parse_entry_from_string(const char *s, const char *end,
     verified_digests = digestmap_new();
   digestmap_set(verified_digests, signed_digest, (void*)(uintptr_t)1);
 #endif
-  if (check_signature_token(digest, DIGEST_LEN, tok, router->identity_pkey, 0,
-                            "router descriptor") < 0)
-    goto err;
 
   if (!router->or_port) {
     log_warn(LD_DIR,"or_port unreadable or 0. Failing.");
     goto err;
   }
 
+  /* We've checked everything that's covered by the hash. */
+  can_dl_again = 1;
+  if (check_signature_token(digest, DIGEST_LEN, tok, router->identity_pkey, 0,
+                            "router descriptor") < 0)
+    goto err;
+
   if (!router->platform) {
     router->platform = tor_strdup("<unknown>");
   }
-
   goto done;
 
  err:
@@ -1418,6 +1445,8 @@ router_parse_entry_from_string(const char *s, const char *end,
     DUMP_AREA(area, "routerinfo");
     memarea_drop_all(area);
   }
+  if (can_dl_again_out)
+    *can_dl_again_out = can_dl_again;
   return router;
 }
 
@@ -1426,10 +1455,16 @@ router_parse_entry_from_string(const char *s, const char *end,
  * <b>cache_copy</b> is true, make a copy of the extra-info document in the
  * cache_info fields of the result.  If <b>routermap</b> is provided, use it
  * as a map from router identity to routerinfo_t when looking up signing keys.
+ *
+ * If <b>can_dl_again_out</b> is provided, set *<b>can_dl_again_out</b> to 1
+ * if it's okay to try to download an extrainfo with this same digest again,
+ * and 0 if it isn't.  (It might not be okay to download it again if part of
+ * the part covered by the digest is invalid.)
  */
 extrainfo_t *
 extrainfo_parse_entry_from_string(const char *s, const char *end,
-                           int cache_copy, struct digest_ri_map_t *routermap)
+                            int cache_copy, struct digest_ri_map_t *routermap,
+                            int *can_dl_again_out)
 {
   extrainfo_t *extrainfo = NULL;
   char digest[128];
@@ -1439,6 +1474,9 @@ extrainfo_parse_entry_from_string(const char *s, const char *end,
   routerinfo_t *router = NULL;
   memarea_t *area = NULL;
   const char *s_dup = s;
+  /* Do not set this to '1' until we have parsed everything that we intend to
+   * parse that's covered by the hash. */
+  int can_dl_again = 0;
 
   if (!end) {
     end = s + strlen(s);
@@ -1498,6 +1536,9 @@ extrainfo_parse_entry_from_string(const char *s, const char *end,
     goto err;
   }
 
+  /* We've checked everything that's covered by the hash. */
+  can_dl_again = 1;
+
   if (routermap &&
       (router = digestmap_get((digestmap_t*)routermap,
                               extrainfo->cache_info.identity_digest))) {
@@ -1540,6 +1581,8 @@ extrainfo_parse_entry_from_string(const char *s, const char *end,
     DUMP_AREA(area, "extrainfo");
     memarea_drop_all(area);
   }
+  if (can_dl_again_out)
+    *can_dl_again_out = can_dl_again;
   return extrainfo;
 }
 
@@ -1754,6 +1797,63 @@ find_start_of_next_routerstatus(const char *s)
     return eos;
 }
 
+/** Parse the GuardFraction string from a consensus or vote.
+ *
+ *  If <b>vote</b> or <b>vote_rs</b> are set the document getting
+ *  parsed is a vote routerstatus. Otherwise it's a consensus. This is
+ *  the same semantic as in routerstatus_parse_entry_from_string(). */
+STATIC int
+routerstatus_parse_guardfraction(const char *guardfraction_str,
+                                 networkstatus_t *vote,
+                                 vote_routerstatus_t *vote_rs,
+                                 routerstatus_t *rs)
+{
+  int ok;
+  const char *end_of_header = NULL;
+  int is_consensus = !vote_rs;
+  uint32_t guardfraction;
+
+  tor_assert(bool_eq(vote, vote_rs));
+
+  /* If this info comes from a consensus, but we should't apply
+     guardfraction, just exit. */
+  if (is_consensus && !should_apply_guardfraction(NULL)) {
+    return 0;
+  }
+
+  end_of_header = strchr(guardfraction_str, '=');
+  if (!end_of_header) {
+    return -1;
+  }
+
+  guardfraction = (uint32_t)tor_parse_ulong(end_of_header+1,
+                                            10, 0, 100, &ok, NULL);
+  if (!ok) {
+    log_warn(LD_DIR, "Invalid GuardFraction %s", escaped(guardfraction_str));
+    return -1;
+  }
+
+  log_debug(LD_GENERAL, "[*] Parsed %s guardfraction '%s' for '%s'.",
+            is_consensus ? "consensus" : "vote",
+            guardfraction_str, rs->nickname);
+
+  if (!is_consensus) { /* We are parsing a vote */
+    vote_rs->status.guardfraction_percentage = guardfraction;
+    vote_rs->status.has_guardfraction = 1;
+  } else {
+    /* We are parsing a consensus. Only apply guardfraction to guards. */
+    if (rs->is_possible_guard) {
+      rs->guardfraction_percentage = guardfraction;
+      rs->has_guardfraction = 1;
+    } else {
+      log_warn(LD_BUG, "Got GuardFraction for non-guard %s. "
+               "This is not supposed to happen. Not applying. ", rs->nickname);
+    }
+  }
+
+  return 0;
+}
+
 /** Given a string at *<b>s</b>, containing a routerstatus object, and an
  * empty smartlist at <b>tokens</b>, parse and return the first router status
  * object in the string, and advance *<b>s</b> to just after the end of the
@@ -1900,8 +2000,6 @@ routerstatus_parse_entry_from_string(memarea_t *area,
         rs->is_possible_guard = 1;
       else if (!strcmp(tok->args[i], "BadExit"))
         rs->is_bad_exit = 1;
-      else if (!strcmp(tok->args[i], "BadDirectory"))
-        rs->is_bad_directory = 1;
       else if (!strcmp(tok->args[i], "Authority"))
         rs->is_authority = 1;
       else if (!strcmp(tok->args[i], "Unnamed") &&
@@ -1918,12 +2016,9 @@ routerstatus_parse_entry_from_string(memarea_t *area,
     rs->version_known = 1;
     if (strcmpstart(tok->args[0], "Tor ")) {
       rs->version_supports_microdesc_cache = 1;
-      rs->version_supports_optimistic_data = 1;
     } else {
       rs->version_supports_microdesc_cache =
         tor_version_supports_microdescriptors(tok->args[0]);
-      rs->version_supports_optimistic_data =
-        tor_version_as_new_as(tok->args[0], "0.2.3.1-alpha");
       rs->version_supports_extend2_cells =
         tor_version_as_new_as(tok->args[0], "0.2.4.8-alpha");
     }
@@ -1961,6 +2056,11 @@ routerstatus_parse_entry_from_string(memarea_t *area,
         vote->has_measured_bws = 1;
       } else if (!strcmpstart(tok->args[i], "Unmeasured=1")) {
         rs->bw_is_unmeasured = 1;
+      } else if (!strcmpstart(tok->args[i], "GuardFraction=")) {
+        if (routerstatus_parse_guardfraction(tok->args[i],
+                                             vote, vote_rs, rs) < 0) {
+          goto err;
+        }
       }
     }
   }
@@ -2048,6 +2148,7 @@ networkstatus_verify_bw_weights(networkstatus_t *ns, int consensus_method)
   double Gtotal=0, Mtotal=0, Etotal=0;
   const char *casename = NULL;
   int valid = 1;
+  (void) consensus_method;
 
   weight_scale = networkstatus_get_weight_scale_param(ns);
   Wgg = networkstatus_get_bw_weight(ns, "Wgg", -1);
@@ -2127,12 +2228,8 @@ networkstatus_verify_bw_weights(networkstatus_t *ns, int consensus_method)
   // Then, gather G, M, E, D, T to determine case
   SMARTLIST_FOREACH_BEGIN(ns->routerstatus_list, routerstatus_t *, rs) {
     int is_exit = 0;
-    if (consensus_method >= MIN_METHOD_TO_CUT_BADEXIT_WEIGHT) {
-      /* Bug #2203: Don't count bad exits as exits for balancing */
-      is_exit = rs->is_exit && !rs->is_bad_exit;
-    } else {
-      is_exit = rs->is_exit;
-    }
+    /* Bug #2203: Don't count bad exits as exits for balancing */
+    is_exit = rs->is_exit && !rs->is_bad_exit;
     if (rs->has_bandwidth) {
       T += rs->bandwidth_kb;
       if (is_exit && rs->is_possible_guard) {
@@ -2568,11 +2665,15 @@ networkstatus_parse_vote_from_string(const char *s, const char **eos_out,
     (int) tor_parse_long(tok->args[1], 10, 0, INT_MAX, &ok, NULL);
   if (!ok)
     goto err;
-  if (ns->valid_after + MIN_VOTE_INTERVAL > ns->fresh_until) {
+  if (ns->valid_after +
+      (get_options()->TestingTorNetwork ?
+       MIN_VOTE_INTERVAL_TESTING : MIN_VOTE_INTERVAL) > ns->fresh_until) {
     log_warn(LD_DIR, "Vote/consensus freshness interval is too short");
     goto err;
   }
-  if (ns->valid_after + MIN_VOTE_INTERVAL*2 > ns->valid_until) {
+  if (ns->valid_after +
+      (get_options()->TestingTorNetwork ?
+       MIN_VOTE_INTERVAL_TESTING : MIN_VOTE_INTERVAL)*2 > ns->valid_until) {
     log_warn(LD_DIR, "Vote/consensus liveness interval is too short");
     goto err;
   }
@@ -2590,6 +2691,16 @@ networkstatus_parse_vote_from_string(const char *s, const char **eos_out,
   }
   if ((tok = find_opt_by_keyword(tokens, K_SERVER_VERSIONS))) {
     ns->server_versions = tor_strdup(tok->args[0]);
+  }
+
+  {
+    smartlist_t *package_lst = find_all_by_keyword(tokens, K_PACKAGE);
+    ns->package_lines = smartlist_new();
+    if (package_lst) {
+      SMARTLIST_FOREACH(package_lst, directory_token_t *, t,
+                    smartlist_add(ns->package_lines, tor_strdup(t->args[0])));
+    }
+    smartlist_free(package_lst);
   }
 
   tok = find_by_keyword(tokens, K_KNOWN_FLAGS);
@@ -3247,8 +3358,8 @@ networkstatus_parse_detached_signatures(const char *s, const char *eos)
  * AF_UNSPEC for '*'.  Use policy_expand_unspec() to turn this into a pair
  * of AF_INET and AF_INET6 items.
  */
-addr_policy_t *
-router_parse_addr_policy_item_from_string(const char *s, int assume_action)
+MOCK_IMPL(addr_policy_t *,
+router_parse_addr_policy_item_from_string,(const char *s, int assume_action))
 {
   directory_token_t *tok = NULL;
   const char *cp, *eos;
@@ -4014,12 +4125,15 @@ find_start_of_next_microdesc(const char *s, const char *eos)
  * If <b>saved_location</b> isn't SAVED_IN_CACHE, make a local copy of each
  * descriptor in the body field of each microdesc_t.
  *
- * Return all newly
- * parsed microdescriptors in a newly allocated smartlist_t. */
+ * Return all newly parsed microdescriptors in a newly allocated
+ * smartlist_t. If <b>invalid_disgests_out</b> is provided, add a SHA256
+ * microdesc digest to it for every microdesc that we found to be badly
+ * formed. (This may cause duplicates) */
 smartlist_t *
 microdescs_parse_from_string(const char *s, const char *eos,
                              int allow_annotations,
-                             saved_location_t where)
+                             saved_location_t where,
+                             smartlist_t *invalid_digests_out)
 {
   smartlist_t *tokens;
   smartlist_t *result;
@@ -4041,15 +4155,11 @@ microdescs_parse_from_string(const char *s, const char *eos,
   tokens = smartlist_new();
 
   while (s < eos) {
+    int okay = 0;
+
     start_of_next_microdesc = find_start_of_next_microdesc(s, eos);
     if (!start_of_next_microdesc)
       start_of_next_microdesc = eos;
-
-    if (tokenize_string(area, s, start_of_next_microdesc, tokens,
-                        microdesc_token_table, flags)) {
-      log_warn(LD_DIR, "Unparseable microdescriptor");
-      goto next;
-    }
 
     md = tor_malloc_zero(sizeof(microdesc_t));
     {
@@ -4064,6 +4174,13 @@ microdescs_parse_from_string(const char *s, const char *eos,
       else
         md->body = (char*)cp;
       md->off = cp - start;
+    }
+    crypto_digest256(md->digest, md->body, md->bodylen, DIGEST_SHA256);
+
+    if (tokenize_string(area, s, start_of_next_microdesc, tokens,
+                        microdesc_token_table, flags)) {
+      log_warn(LD_DIR, "Unparseable microdescriptor");
+      goto next;
     }
 
     if ((tok = find_opt_by_keyword(tokens, A_LAST_LISTED))) {
@@ -4121,12 +4238,15 @@ microdescs_parse_from_string(const char *s, const char *eos,
       md->ipv6_exit_policy = parse_short_policy(tok->args[0]);
     }
 
-    crypto_digest256(md->digest, md->body, md->bodylen, DIGEST_SHA256);
-
     smartlist_add(result, md);
+    okay = 1;
 
     md = NULL;
   next:
+    if (! okay && invalid_digests_out) {
+      smartlist_add(invalid_digests_out,
+                    tor_memdup(md->digest, DIGEST256_LEN));
+    }
     microdesc_free(md);
     md = NULL;
 
@@ -4207,40 +4327,50 @@ tor_version_parse(const char *s, tor_version_t *out)
   char *eos=NULL;
   const char *cp=NULL;
   /* Format is:
-   *   "Tor " ? NUM dot NUM dot NUM [ ( pre | rc | dot ) NUM [ - tag ] ]
+   *   "Tor " ? NUM dot NUM [ dot NUM [ ( pre | rc | dot ) NUM ] ] [ - tag ]
    */
   tor_assert(s);
   tor_assert(out);
 
   memset(out, 0, sizeof(tor_version_t));
-
+  out->status = VER_RELEASE;
   if (!strcasecmpstart(s, "Tor "))
     s += 4;
 
-  /* Get major. */
-  out->major = (int)strtol(s,&eos,10);
-  if (!eos || eos==s || *eos != '.') return -1;
-  cp = eos+1;
+  cp = s;
 
-  /* Get minor */
-  out->minor = (int) strtol(cp,&eos,10);
-  if (!eos || eos==cp || *eos != '.') return -1;
-  cp = eos+1;
+#define NUMBER(m)                               \
+  do {                                          \
+    out->m = (int)strtol(cp, &eos, 10);         \
+    if (!eos || eos == cp)                      \
+      return -1;                                \
+    cp = eos;                                   \
+  } while (0)
 
-  /* Get micro */
-  out->micro = (int) strtol(cp,&eos,10);
-  if (!eos || eos==cp) return -1;
-  if (!*eos) {
-    out->status = VER_RELEASE;
-    out->patchlevel = 0;
+#define DOT()                                   \
+  do {                                          \
+    if (*cp != '.')                             \
+      return -1;                                \
+    ++cp;                                       \
+  } while (0)
+
+  NUMBER(major);
+  DOT();
+  NUMBER(minor);
+  if (*cp == 0)
     return 0;
-  }
-  cp = eos;
+  else if (*cp == '-')
+    goto status_tag;
+  DOT();
+  NUMBER(micro);
 
   /* Get status */
-  if (*cp == '.') {
-    out->status = VER_RELEASE;
+  if (*cp == 0) {
+    return 0;
+  } else if (*cp == '.') {
     ++cp;
+  } else if (*cp == '-') {
+    goto status_tag;
   } else if (0==strncmp(cp, "pre", 3)) {
     out->status = VER_PRE;
     cp += 3;
@@ -4251,11 +4381,9 @@ tor_version_parse(const char *s, tor_version_t *out)
     return -1;
   }
 
-  /* Get patchlevel */
-  out->patchlevel = (int) strtol(cp,&eos,10);
-  if (!eos || eos==cp) return -1;
-  cp = eos;
+  NUMBER(patchlevel);
 
+ status_tag:
   /* Get status tag. */
   if (*cp == '-' || *cp == '.')
     ++cp;
@@ -4291,6 +4419,8 @@ tor_version_parse(const char *s, tor_version_t *out)
   }
 
   return 0;
+#undef NUMBER
+#undef DOT
 }
 
 /** Compare two tor versions; Return <0 if a < b; 0 if a ==b, >0 if a >
@@ -4378,6 +4508,9 @@ sort_version_list(smartlist_t *versions, int remove_duplicates)
  * to *<b>encoded_size_out</b>, and a pointer to the possibly next
  * descriptor to *<b>next_out</b>; return 0 for success (including validation)
  * and -1 for failure.
+ *
+ * If <b>as_hsdir</b> is 1, we're parsing this as an HSDir, and we should
+ * be strict about time formats.
  */
 int
 rend_parse_v2_service_descriptor(rend_service_descriptor_t **parsed_out,
@@ -4385,7 +4518,8 @@ rend_parse_v2_service_descriptor(rend_service_descriptor_t **parsed_out,
                                  char **intro_points_encrypted_out,
                                  size_t *intro_points_encrypted_size_out,
                                  size_t *encoded_size_out,
-                                 const char **next_out, const char *desc)
+                                 const char **next_out, const char *desc,
+                                 int as_hsdir)
 {
   rend_service_descriptor_t *result =
                             tor_malloc_zero(sizeof(rend_service_descriptor_t));
@@ -4399,6 +4533,8 @@ rend_parse_v2_service_descriptor(rend_service_descriptor_t **parsed_out,
   char public_key_hash[DIGEST_LEN];
   char test_desc_id[DIGEST_LEN];
   memarea_t *area = NULL;
+  const int strict_time_fmt = as_hsdir;
+
   tor_assert(desc);
   /* Check if desc starts correctly. */
   if (strncmp(desc, "rendezvous-service-descriptor ",
@@ -4493,7 +4629,7 @@ rend_parse_v2_service_descriptor(rend_service_descriptor_t **parsed_out,
    * descriptor. */
   tok = find_by_keyword(tokens, R_PUBLICATION_TIME);
   tor_assert(tok->n_args == 1);
-  if (parse_iso_time(tok->args[0], &result->timestamp) < 0) {
+  if (parse_iso_time_(tok->args[0], &result->timestamp, strict_time_fmt) < 0) {
     log_warn(LD_REND, "Invalid publication time: '%s'", tok->args[0]);
     goto err;
   }
@@ -4684,7 +4820,7 @@ rend_parse_introduction_points(rend_service_descriptor_t *parsed,
                                size_t intro_points_encoded_size)
 {
   const char *current_ipo, *end_of_intro_points;
-  smartlist_t *tokens;
+  smartlist_t *tokens = NULL;
   directory_token_t *tok;
   rend_intro_point_t *intro;
   extend_info_t *info;
@@ -4693,8 +4829,10 @@ rend_parse_introduction_points(rend_service_descriptor_t *parsed,
   tor_assert(parsed);
   /** Function may only be invoked once. */
   tor_assert(!parsed->intro_nodes);
-  tor_assert(intro_points_encoded);
-  tor_assert(intro_points_encoded_size > 0);
+  if (!intro_points_encoded || intro_points_encoded_size == 0) {
+    log_warn(LD_REND, "Empty or zero size introduction point list");
+    goto err;
+  }
   /* Consider one intro point after the other. */
   current_ipo = intro_points_encoded;
   end_of_intro_points = intro_points_encoded + intro_points_encoded_size;
@@ -4798,8 +4936,10 @@ rend_parse_introduction_points(rend_service_descriptor_t *parsed,
 
  done:
   /* Free tokens and clear token list. */
-  SMARTLIST_FOREACH(tokens, directory_token_t *, t, token_clear(t));
-  smartlist_free(tokens);
+  if (tokens) {
+    SMARTLIST_FOREACH(tokens, directory_token_t *, t, token_clear(t));
+    smartlist_free(tokens);
+  }
   if (area)
     memarea_drop_all(area);
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2013, The Tor Project, Inc. */
+/* Copyright (c) 2009-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "or.h"
@@ -57,9 +57,9 @@ microdesc_eq_(microdesc_t *a, microdesc_t *b)
 
 HT_PROTOTYPE(microdesc_map, microdesc_t, node,
              microdesc_hash_, microdesc_eq_);
-HT_GENERATE(microdesc_map, microdesc_t, node,
+HT_GENERATE2(microdesc_map, microdesc_t, node,
              microdesc_hash_, microdesc_eq_, 0.6,
-             malloc, realloc, free);
+             tor_reallocarray_, tor_free_)
 
 /** Write the body of <b>md</b> into <b>f</b>, with appropriate annotations.
  * On success, return the total number of bytes written, and set
@@ -147,39 +147,81 @@ microdescs_add_to_cache(microdesc_cache_t *cache,
                         int no_save, time_t listed_at,
                         smartlist_t *requested_digests256)
 {
+  void * const DIGEST_REQUESTED = (void*)1;
+  void * const DIGEST_RECEIVED = (void*)2;
+  void * const DIGEST_INVALID = (void*)3;
+
   smartlist_t *descriptors, *added;
   const int allow_annotations = (where != SAVED_NOWHERE);
+  smartlist_t *invalid_digests = smartlist_new();
 
   descriptors = microdescs_parse_from_string(s, eos,
                                              allow_annotations,
-                                             where);
+                                             where, invalid_digests);
   if (listed_at != (time_t)-1) {
     SMARTLIST_FOREACH(descriptors, microdesc_t *, md,
                       md->last_listed = listed_at);
   }
   if (requested_digests256) {
-    digestmap_t *requested; /* XXXX actually we should just use a
-                               digest256map */
-    requested = digestmap_new();
-    SMARTLIST_FOREACH(requested_digests256, const char *, cp,
-      digestmap_set(requested, cp, (void*)1));
+    digest256map_t *requested;
+    requested = digest256map_new();
+    /* Set requested[d] to DIGEST_REQUESTED for every md we requested. */
+    SMARTLIST_FOREACH(requested_digests256, const uint8_t *, cp,
+      digest256map_set(requested, cp, DIGEST_REQUESTED));
+    /* Set requested[d] to DIGEST_INVALID for every md we requested which we
+     * will never be able to parse.  Remove the ones we didn't request from
+     * invalid_digests.
+     */
+    SMARTLIST_FOREACH_BEGIN(invalid_digests, uint8_t *, cp) {
+      if (digest256map_get(requested, cp)) {
+        digest256map_set(requested, cp, DIGEST_INVALID);
+      } else {
+        tor_free(cp);
+        SMARTLIST_DEL_CURRENT(invalid_digests, cp);
+      }
+    } SMARTLIST_FOREACH_END(cp);
+    /* Update requested[d] to 2 for the mds we asked for and got. Delete the
+     * ones we never requested from the 'descriptors' smartlist.
+     */
     SMARTLIST_FOREACH_BEGIN(descriptors, microdesc_t *, md) {
-      if (digestmap_get(requested, md->digest)) {
-        digestmap_set(requested, md->digest, (void*)2);
+      if (digest256map_get(requested, (const uint8_t*)md->digest)) {
+        digest256map_set(requested, (const uint8_t*)md->digest,
+                         DIGEST_RECEIVED);
       } else {
         log_fn(LOG_PROTOCOL_WARN, LD_DIR, "Received non-requested microdesc");
         microdesc_free(md);
         SMARTLIST_DEL_CURRENT(descriptors, md);
       }
     } SMARTLIST_FOREACH_END(md);
-    SMARTLIST_FOREACH_BEGIN(requested_digests256, char *, cp) {
-      if (digestmap_get(requested, cp) == (void*)2) {
+    /* Remove the ones we got or the invalid ones from requested_digests256.
+     */
+    SMARTLIST_FOREACH_BEGIN(requested_digests256, uint8_t *, cp) {
+      void *status = digest256map_get(requested, cp);
+      if (status == DIGEST_RECEIVED || status == DIGEST_INVALID) {
         tor_free(cp);
         SMARTLIST_DEL_CURRENT(requested_digests256, cp);
       }
     } SMARTLIST_FOREACH_END(cp);
-    digestmap_free(requested, NULL);
+    digest256map_free(requested, NULL);
   }
+
+  /* For every requested microdescriptor that was unparseable, mark it
+   * as not to be retried. */
+  if (smartlist_len(invalid_digests)) {
+    networkstatus_t *ns =
+      networkstatus_get_latest_consensus_by_flavor(FLAV_MICRODESC);
+    if (ns) {
+      SMARTLIST_FOREACH_BEGIN(invalid_digests, char *, d) {
+        routerstatus_t *rs =
+          router_get_mutable_consensus_status_by_descriptor_digest(ns, d);
+        if (rs && tor_memeq(d, rs->descriptor_digest, DIGEST256_LEN)) {
+          download_status_mark_impossible(&rs->dl_status);
+        }
+      } SMARTLIST_FOREACH_END(d);
+    }
+  }
+  SMARTLIST_FOREACH(invalid_digests, uint8_t *, d, tor_free(d));
+  smartlist_free(invalid_digests);
 
   added = microdescs_add_list_to_cache(cache, descriptors, where, no_save);
   smartlist_free(descriptors);
@@ -576,6 +618,7 @@ microdesc_cache_rebuild(microdesc_cache_t *cache, int force)
         microdesc_wipe_body(md);
       }
     }
+    smartlist_free(wrote);
     return -1;
   }
 
@@ -751,7 +794,7 @@ microdesc_average_size(microdesc_cache_t *cache)
  * smartlist.  Omit all microdescriptors whose digest appear in <b>skip</b>. */
 smartlist_t *
 microdesc_list_missing_digest256(networkstatus_t *ns, microdesc_cache_t *cache,
-                                 int downloadable_only, digestmap_t *skip)
+                                 int downloadable_only, digest256map_t *skip)
 {
   smartlist_t *result = smartlist_new();
   time_t now = time(NULL);
@@ -763,7 +806,7 @@ microdesc_list_missing_digest256(networkstatus_t *ns, microdesc_cache_t *cache,
         !download_status_is_ready(&rs->dl_status, now,
                   get_options()->TestingMicrodescMaxDownloadTries))
       continue;
-    if (skip && digestmap_get(skip, rs->descriptor_digest))
+    if (skip && digest256map_get(skip, (const uint8_t*)rs->descriptor_digest))
       continue;
     if (tor_mem_is_zero(rs->descriptor_digest, DIGEST256_LEN))
       continue;
@@ -788,7 +831,7 @@ update_microdesc_downloads(time_t now)
   const or_options_t *options = get_options();
   networkstatus_t *consensus;
   smartlist_t *missing;
-  digestmap_t *pending;
+  digest256map_t *pending;
 
   if (should_delay_dir_fetches(options, NULL))
     return;
@@ -802,14 +845,14 @@ update_microdesc_downloads(time_t now)
   if (!we_fetch_microdescriptors(options))
     return;
 
-  pending = digestmap_new();
+  pending = digest256map_new();
   list_pending_microdesc_downloads(pending);
 
   missing = microdesc_list_missing_digest256(consensus,
                                              get_microdesc_cache(),
                                              1,
                                              pending);
-  digestmap_free(pending, NULL);
+  digest256map_free(pending, NULL);
 
   launch_descriptor_downloads(DIR_PURPOSE_FETCH_MICRODESC,
                               missing, NULL, now);

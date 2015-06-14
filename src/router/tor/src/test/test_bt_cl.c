@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013, The Tor Project, Inc. */
+/* Copyright (c) 2012-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -30,7 +30,12 @@ int
 crash(int x)
 {
   if (crashtype == 0) {
+#if defined(__clang_analyzer__) || defined(__COVERITY__)
+    tor_assert(1 == 0); /* Avert your eyes, clangalyzer and coverity!  You
+                         * don't need to see us dereference NULL. */
+#else
     *(volatile int *)0 = 0;
+#endif
   } else if (crashtype == 1) {
     tor_assert(1 == 0);
   } else if (crashtype == -1) {
@@ -91,7 +96,7 @@ main(int argc, char **argv)
     return 1;
   }
 
-  init_logging();
+  init_logging(1);
   set_log_severity_config(LOG_WARN, LOG_ERR, &severity);
   add_stream_log(&severity, "stdout", STDOUT_FILENO);
   tor_log_update_sigsafe_err_fds();
