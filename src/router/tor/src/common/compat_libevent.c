@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2013, The Tor Project, Inc. */
+/* Copyright (c) 2009-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -146,12 +146,24 @@ tor_evsignal_new(struct event_base * base, int sig,
 {
   return tor_event_new(base, sig, EV_SIGNAL|EV_PERSIST, cb, arg);
 }
-/** Work-alike replacement for event_free() on pre-Libevent-2.0 systems. */
+/** Work-alike replacement for event_free() on pre-Libevent-2.0 systems,
+ * except tolerate tor_event_free(NULL). */
 void
 tor_event_free(struct event *ev)
 {
+  if (ev == NULL)
+    return;
   event_del(ev);
   tor_free(ev);
+}
+#else
+/* Wrapper for event_free() that tolerates tor_event_free(NULL) */
+void
+tor_event_free(struct event *ev)
+{
+  if (ev == NULL)
+    return;
+  event_free(ev);
 }
 #endif
 
@@ -210,6 +222,9 @@ tor_libevent_initialize(tor_libevent_cfg *torcfg)
     } else {
       using_iocp_bufferevents = 0;
     }
+#elif defined(__COVERITY__)
+    /* Avoid a 'dead code' warning below. */
+    using_threads = ! torcfg->disable_iocp;
 #endif
 
     if (!using_threads) {
@@ -280,8 +295,8 @@ tor_libevent_initialize(tor_libevent_cfg *torcfg)
 }
 
 /** Return the current Libevent event base that we're set up to use. */
-struct event_base *
-tor_libevent_get_base(void)
+MOCK_IMPL(struct event_base *,
+tor_libevent_get_base, (void))
 {
   return the_event_base;
 }
@@ -714,7 +729,7 @@ tor_gettimeofday_cached_monotonic(struct timeval *tv)
   struct timeval last_tv = { 0, 0 };
 
   tor_gettimeofday_cached(tv);
-  if (timercmp(tv, &last_tv, <)) {
+  if (timercmp(tv, &last_tv, OP_LT)) {
     memcpy(tv, &last_tv, sizeof(struct timeval));
   } else {
     memcpy(&last_tv, tv, sizeof(struct timeval));

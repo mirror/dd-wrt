@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2013, The Tor Project, Inc. */
+ * Copyright (c) 2007-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /* Ordinarily defined in tor_main.c; this bit is just here to provide one
@@ -26,10 +26,9 @@ const char tor_git_revision[] = "";
 #endif
 
 #include "config.h"
-#ifdef CURVE25519_ENABLED
 #include "crypto_curve25519.h"
 #include "onion_ntor.h"
-#endif
+#include "crypto_ed25519.h"
 
 #if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
 static uint64_t nanostart;
@@ -78,6 +77,9 @@ perftime(void)
 
 #define NANOCOUNT(start,end,iters) \
   ( ((double)((end)-(start))) / (iters) )
+
+#define MICROCOUNT(start,end,iters) \
+  ( NANOCOUNT((start), (end), (iters)) / 1000.0 )
 
 /** Run AES performance benchmarks. */
 static void
@@ -162,7 +164,8 @@ bench_onion_TAP(void)
     char key_out[CPATH_KEY_MATERIAL_LEN];
     int s;
     dh = crypto_dh_dup(dh_out);
-    s = onion_skin_TAP_client_handshake(dh, or, key_out, sizeof(key_out));
+    s = onion_skin_TAP_client_handshake(dh, or, key_out, sizeof(key_out),
+                                        NULL);
     crypto_dh_free(dh);
     tor_assert(s == 0);
   }
@@ -175,7 +178,6 @@ bench_onion_TAP(void)
   crypto_pk_free(key2);
 }
 
-#ifdef CURVE25519_ENABLED
 static void
 bench_onion_ntor(void)
 {
@@ -222,7 +224,8 @@ bench_onion_ntor(void)
   for (i = 0; i < iters; ++i) {
     uint8_t key_out[CPATH_KEY_MATERIAL_LEN];
     int s;
-    s = onion_skin_ntor_client_handshake(state, or, key_out, sizeof(key_out));
+    s = onion_skin_ntor_client_handshake(state, or, key_out, sizeof(key_out),
+                                         NULL);
     tor_assert(s == 0);
   }
   end = perftime();
@@ -232,7 +235,63 @@ bench_onion_ntor(void)
   ntor_handshake_state_free(state);
   dimap_free(keymap, NULL);
 }
-#endif
+
+static void
+bench_ed25519(void)
+{
+  uint64_t start, end;
+  const int iters = 1<<12;
+  int i;
+  const uint8_t msg[] = "but leaving, could not tell what they had heard";
+  ed25519_signature_t sig;
+  ed25519_keypair_t kp;
+  curve25519_keypair_t curve_kp;
+  ed25519_public_key_t pubkey_tmp;
+
+  ed25519_secret_key_generate(&kp.seckey, 0);
+  start = perftime();
+  for (i = 0; i < iters; ++i) {
+    ed25519_public_key_generate(&kp.pubkey, &kp.seckey);
+  }
+  end = perftime();
+  printf("Generate public key: %.2f usec\n",
+         MICROCOUNT(start, end, iters));
+
+  start = perftime();
+  for (i = 0; i < iters; ++i) {
+    ed25519_sign(&sig, msg, sizeof(msg), &kp);
+  }
+  end = perftime();
+  printf("Sign a short message: %.2f usec\n",
+         MICROCOUNT(start, end, iters));
+
+  start = perftime();
+  for (i = 0; i < iters; ++i) {
+    ed25519_checksig(&sig, msg, sizeof(msg), &kp.pubkey);
+  }
+  end = perftime();
+  printf("Verify signature: %.2f usec\n",
+         MICROCOUNT(start, end, iters));
+
+  curve25519_keypair_generate(&curve_kp, 0);
+  start = perftime();
+  for (i = 0; i < iters; ++i) {
+    ed25519_public_key_from_curve25519_public_key(&pubkey_tmp,
+                                                  &curve_kp.pubkey, 1);
+  }
+  end = perftime();
+  printf("Convert public point from curve25519: %.2f usec\n",
+         MICROCOUNT(start, end, iters));
+
+  curve25519_keypair_generate(&curve_kp, 0);
+  start = perftime();
+  for (i = 0; i < iters; ++i) {
+    ed25519_public_blind(&pubkey_tmp, &kp.pubkey, msg);
+  }
+  end = perftime();
+  printf("Blind a public key: %.2f usec\n",
+         MICROCOUNT(start, end, iters));
+}
 
 static void
 bench_cell_aes(void)
@@ -512,9 +571,9 @@ static struct benchmark_t benchmarks[] = {
   ENT(siphash),
   ENT(aes),
   ENT(onion_TAP),
-#ifdef CURVE25519_ENABLED
   ENT(onion_ntor),
-#endif
+  ENT(ed25519),
+
   ENT(cell_aes),
   ENT(cell_ops),
   ENT(dh),
@@ -569,7 +628,7 @@ main(int argc, const char **argv)
   crypto_seed_rng(1);
   crypto_init_siphash_key();
   options = options_new();
-  init_logging();
+  init_logging(1);
   options->command = CMD_RUN_UNITTESTS;
   options->DataDirectory = tor_strdup("");
   options_init(options);

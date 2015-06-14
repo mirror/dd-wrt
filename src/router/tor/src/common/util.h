@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2013, The Tor Project, Inc. */
+ * Copyright (c) 2007-2015, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -79,6 +79,7 @@ void *tor_malloc_(size_t size DMALLOC_PARAMS) ATTR_MALLOC;
 void *tor_malloc_zero_(size_t size DMALLOC_PARAMS) ATTR_MALLOC;
 void *tor_calloc_(size_t nmemb, size_t size DMALLOC_PARAMS) ATTR_MALLOC;
 void *tor_realloc_(void *ptr, size_t size DMALLOC_PARAMS);
+void *tor_reallocarray_(void *ptr, size_t size1, size_t size2 DMALLOC_PARAMS);
 char *tor_strdup_(const char *s DMALLOC_PARAMS) ATTR_MALLOC ATTR_NONNULL((1));
 char *tor_strndup_(const char *s, size_t n DMALLOC_PARAMS)
   ATTR_MALLOC ATTR_NONNULL((1));
@@ -116,6 +117,8 @@ extern int dmalloc_free(const char *file, const int line, void *pnt,
 #define tor_malloc_zero(size)  tor_malloc_zero_(size DMALLOC_ARGS)
 #define tor_calloc(nmemb,size) tor_calloc_(nmemb, size DMALLOC_ARGS)
 #define tor_realloc(ptr, size) tor_realloc_(ptr, size DMALLOC_ARGS)
+#define tor_reallocarray(ptr, sz1, sz2) \
+  tor_reallocarray_((ptr), (sz1), (sz2) DMALLOC_ARGS)
 #define tor_strdup(s)          tor_strdup_(s DMALLOC_ARGS)
 #define tor_strndup(s, n)      tor_strndup_(s, n DMALLOC_ARGS)
 #define tor_memdup(s, n)       tor_memdup_(s, n DMALLOC_ARGS)
@@ -169,6 +172,10 @@ uint64_t round_to_power_of_2(uint64_t u64);
 unsigned round_to_next_multiple_of(unsigned number, unsigned divisor);
 uint32_t round_uint32_to_next_multiple_of(uint32_t number, uint32_t divisor);
 uint64_t round_uint64_to_next_multiple_of(uint64_t number, uint64_t divisor);
+int64_t round_int64_to_next_multiple_of(int64_t number, int64_t divisor);
+int64_t sample_laplace_distribution(double mu, double b, double p);
+int64_t add_laplace_noise(int64_t signal, double random, double delta_f,
+                          double epsilon);
 int n_bits_set_u8(uint8_t v);
 
 /* Compute the CEIL of <b>a</b> divided by <b>b</b>, for nonnegative <b>a</b>
@@ -224,11 +231,15 @@ const char *find_str_at_start_of_line(const char *haystack,
                                       const char *needle);
 int string_is_C_identifier(const char *string);
 int string_is_key_value(int severity, const char *string);
+int string_is_valid_hostname(const char *string);
+int string_is_valid_ipv4_address(const char *string);
+int string_is_valid_ipv6_address(const char *string);
 
 int tor_mem_is_zero(const char *mem, size_t len);
 int tor_digest_is_zero(const char *digest);
 int tor_digest256_is_zero(const char *digest);
 char *esc_for_log(const char *string) ATTR_MALLOC;
+char *esc_for_log_len(const char *chars, size_t n) ATTR_MALLOC;
 const char *escaped(const char *string);
 
 char *tor_escape_str_for_pt_args(const char *string,
@@ -264,6 +275,7 @@ void format_local_iso_time(char *buf, time_t t);
 void format_iso_time(char *buf, time_t t);
 void format_iso_time_nospace(char *buf, time_t t);
 void format_iso_time_nospace_usec(char *buf, const struct timeval *tv);
+int parse_iso_time_(const char *cp, time_t *t, int strict);
 int parse_iso_time(const char *buf, time_t *t);
 int parse_http_time(const char *buf, struct tm *tm);
 int format_time_interval(char *out, size_t out_len, long interval);
@@ -331,7 +343,7 @@ enum stream_status get_string_from_pipe(FILE *stream, char *buf, size_t count);
 
 /** Return values from file_status(); see that function's documentation
  * for details. */
-typedef enum { FN_ERROR, FN_NOENT, FN_FILE, FN_DIR } file_status_t;
+typedef enum { FN_ERROR, FN_NOENT, FN_FILE, FN_DIR, FN_EMPTY } file_status_t;
 file_status_t file_status(const char *filename);
 
 /** Possible behaviors for check_private_dir() on encountering a nonexistent
@@ -341,9 +353,11 @@ typedef unsigned int cpd_check_t;
 #define CPD_CREATE 1
 #define CPD_CHECK 2
 #define CPD_GROUP_OK 4
-#define CPD_CHECK_MODE_ONLY 8
+#define CPD_GROUP_READ 8
+#define CPD_CHECK_MODE_ONLY 16
 int check_private_dir(const char *dirname, cpd_check_t check,
                       const char *effective_user);
+
 #define OPEN_FLAGS_REPLACE (O_WRONLY|O_CREAT|O_TRUNC)
 #define OPEN_FLAGS_APPEND (O_WRONLY|O_CREAT|O_APPEND)
 #define OPEN_FLAGS_DONT_REPLACE (O_CREAT|O_EXCL|O_APPEND|O_WRONLY)
@@ -551,7 +565,7 @@ STATIC int format_helper_exit_status(unsigned char child_state,
 
 const char *libor_get_digests(void);
 
-#define ARRAY_LENGTH(x) (sizeof(x)) / sizeof(x[0])
+#define ARRAY_LENGTH(x) ((sizeof(x)) / sizeof(x[0]))
 
 #endif
 

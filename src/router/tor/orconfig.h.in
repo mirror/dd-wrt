@@ -9,23 +9,14 @@
 /* tor's configuration directory */
 #undef CONFDIR
 
-/* Defined if we have a curve25519 implementation */
-#undef CURVE25519_ENABLED
+/* Defined if we're not going to look for a torrc in SYSCONF */
+#undef DISABLE_SYSTEM_TORRC
 
 /* Define to 1 iff memset(0) sets doubles to 0.0 */
 #undef DOUBLE_0_REP_IS_ZERO_BYTES
 
-/* Defined if we try to use freelists for buffer RAM chunks */
-#undef ENABLE_BUF_FREELISTS
-
 /* Defined if we default to host local appdata paths on Windows */
 #undef ENABLE_LOCAL_APPDATA
-
-/* Defined if we try to use mempools for cells being relayed */
-#undef ENABLE_MEMPOOLS
-
-/* Defined if we will try to use multithreading */
-#undef ENABLE_THREADS
 
 /* Define if enum is always signed */
 #undef ENUM_VALS_ARE_SIGNED
@@ -91,6 +82,9 @@
 
 /* Define to 1 if you have the <event2/event.h> header file. */
 #undef HAVE_EVENT2_EVENT_H
+
+/* Define to 1 if you have the `eventfd' function. */
+#undef HAVE_EVENTFD
 
 /* Define to 1 if you have the `event_base_loopexit' function. */
 #undef HAVE_EVENT_BASE_LOOPEXIT
@@ -180,11 +174,21 @@
 /* Define to 1 if you have the `issetugid' function. */
 #undef HAVE_ISSETUGID
 
+/* Define to 1 if you have the <libscrypt.h> header file. */
+#undef HAVE_LIBSCRYPT_H
+
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
+/* Define to 1 if you have the <linux/if.h> header file. */
+#undef HAVE_LINUX_IF_H
+
 /* Define to 1 if you have the <linux/netfilter_ipv4.h> header file. */
 #undef HAVE_LINUX_NETFILTER_IPV4_H
+
+/* Define to 1 if you have the <linux/netfilter_ipv6/ip6_tables.h> header
+   file. */
+#undef HAVE_LINUX_NETFILTER_IPV6_IP6_TABLES_H
 
 /* Define to 1 if you have the <linux/types.h> header file. */
 #undef HAVE_LINUX_TYPES_H
@@ -250,6 +254,12 @@
 /* Define to 1 if you have the <net/pfvar.h> header file. */
 #undef HAVE_NET_PFVAR_H
 
+/* Define to 1 if you have the `pipe' function. */
+#undef HAVE_PIPE
+
+/* Define to 1 if you have the `pipe2' function. */
+#undef HAVE_PIPE2
+
 /* Define to 1 if you have the `prctl' function. */
 #undef HAVE_PRCTL
 
@@ -304,6 +314,9 @@
 /* Define to 1 if you have the `strlcpy' function. */
 #undef HAVE_STRLCPY
 
+/* Define to 1 if you have the `strnlen' function. */
+#undef HAVE_STRNLEN
+
 /* Define to 1 if you have the `strptime' function. */
 #undef HAVE_STRPTIME
 
@@ -349,6 +362,15 @@
 
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
+
+/* Have systemd */
+#undef HAVE_SYSTEMD
+
+/* Have systemd v209 or more */
+#undef HAVE_SYSTEMD_209
+
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
 
 /* Define to 1 if you have the <sys/fcntl.h> header file. */
 #undef HAVE_SYS_FCNTL_H
