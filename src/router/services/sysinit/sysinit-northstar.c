@@ -3559,6 +3559,42 @@ void start_sysinit(void)
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
+		nvram_set("0:maxp2ga0", "0x70");
+		nvram_set("0:maxp2ga1", "0x70");
+		nvram_set("0:maxp2ga2", "0x70");
+		nvram_set("0:cckbw202gpo", "0x5555");
+		nvram_set("0:cckbw20ul2gpo", "0x5555");
+		nvram_set("0:legofdmbw202gpo", "0x97555555");
+		nvram_set("0:legofdmbw20ul2gpo", "0x97555555");
+		nvram_set("0:mcsbw202gpo", "0xFC955555");
+		nvram_set("0:mcsbw20ul2gpo", "0xFC955555");
+		nvram_set("0:mcsbw402gpo", "0xFFFF9999");
+		nvram_set("0:mcs32po", "0x9999");
+		nvram_set("0:legofdm40duppo", "0x4444");
+
+		nvram_set("1:maxp5ga0", "0x6A");
+		nvram_set("1:maxp5ga1", "0x6A");
+		nvram_set("1:maxp5ga2", "0x6A");
+		nvram_set("1:maxp5hga0", "0x6A");
+		nvram_set("1:maxp5hga1", "0x6A");
+		nvram_set("1:maxp5hga2", "0x6A");
+		nvram_set("1:legofdmbw205gmpo", "0x77777777");
+		nvram_set("1:legofdmbw20ul5gmpo", "0x77777777");
+		nvram_set("1:mcsbw205gmpo", "0x77777777");
+		nvram_set("1:mcsbw20ul5gmpo", "0x77777777");
+		nvram_set("1:mcsbw405gmpo", "0x77777777");
+		nvram_set("1:maxp5gha0", "0x6A");
+		nvram_set("1:maxp5gha1", "0x6A");
+		nvram_set("1:maxp5gha2", "0x6A");
+		nvram_set("1:legofdmbw205ghpo", "0x77777777");
+		nvram_set("1:legofdmbw20ul5ghpo", "0x77777777");
+		nvram_set("1:mcsbw205ghpo", "0x77777777");
+		nvram_set("1:mcsbw20ul5ghpo", "0x77777777");
+		nvram_set("1:mcsbw405ghpo", "0x77777777");
+		nvram_set("1:mcs32po", "0x7777");
+		nvram_set("1:legofdm40duppo", "0x0000");
+
+
 		nvram_set("0:boardflags2", "0x1000");
 		nvram_set("1:boardflags2", "0x00001000");
 		nvram_set("0:ledbh12", "7");
