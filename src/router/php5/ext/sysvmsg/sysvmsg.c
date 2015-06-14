@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2014 The PHP Group                                |
+  | Copyright (c) 1997-2015 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: adf1d2d6be849c46eed3c3ee6f1cbebd1448d6e5 $ */
+/* $Id: 1e821e8a0cbb868efec453560ba303e04f3a1db2 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -145,7 +145,7 @@ PHP_MINFO_FUNCTION(sysvmsg)
 {
 	php_info_print_table_start();
 	php_info_print_table_row(2, "sysvmsg support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: adf1d2d6be849c46eed3c3ee6f1cbebd1448d6e5 $");
+	php_info_print_table_row(2, "Revision", "$Id: 1e821e8a0cbb868efec453560ba303e04f3a1db2 $");
 	php_info_print_table_end();
 }
 /* }}} */

@@ -24,7 +24,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: cc20febf71decff99c48bd582bebc34ebe1a9644 $ */
+/* $Id: 60288e2d791bcf8486e334d4ea43c876431c9b3a $ */
 
 /* Sanity check to ensure that pcre extension needed by this script is available.
  * In the event it is not, print a nice error message indicating that this script will
@@ -240,6 +240,7 @@ $ini_overwrites = array(
 		'ignore_repeated_errors=0',
 		'precision=14',
 		'memory_limit=128M',
+		'log_errors_max_len=0',
 		'opcache.fast_shutdown=0',
 		'opcache.file_update_protection=0',
 	);
@@ -313,7 +314,7 @@ VALGRIND    : " . ($leak_check ? $valgrind_header : 'Not used') . "
 define('PHP_QA_EMAIL', 'qa-reports@lists.php.net');
 define('QA_SUBMISSION_PAGE', 'http://qa.php.net/buildtest-process.php');
 define('QA_REPORTS_PAGE', 'http://qa.php.net/reports');
-define('TRAVIS_CI' , (bool) getenv('TRAVIS_PHP_VERSION'));
+define('TRAVIS_CI' , (bool) getenv('TRAVIS'));
 
 function save_or_mail_results()
 {
@@ -662,7 +663,7 @@ if (isset($argc) && $argc > 1) {
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: cc20febf71decff99c48bd582bebc34ebe1a9644 $' . "\n";
+					echo '$Id: 60288e2d791bcf8486e334d4ea43c876431c9b3a $' . "\n";
 					exit(1);
 
 				default:
@@ -2714,7 +2715,7 @@ function junit_mark_test_as($type, $file_name, $test_name, $time = null, $messag
 
 	if (is_array($type)) {
 		$output_type = $type[0] . 'ED';
-		$temp = array_intersect(array('XFAIL', 'FAIL'), $type);
+		$temp = array_intersect(array('XFAIL', 'FAIL', 'WARN'), $type);
 		$type = reset($temp);
 	} else {
 		$output_type = $type . 'ED';
@@ -2728,6 +2729,9 @@ function junit_mark_test_as($type, $file_name, $test_name, $time = null, $messag
 	} elseif ('SKIP' == $type) {
 		junit_suite_record($suite, 'test_skip');
 		$JUNIT['files'][$file_name]['xml'] .= "<skipped>$escaped_message</skipped>\n";
+	} elseif ('WARN' == $type) {
+		junit_suite_record($suite, 'test_warn');
+		$JUNIT['files'][$file_name]['xml'] .= "<warning>$escaped_message</warning>\n";
 	} elseif('FAIL' == $type) {
 		junit_suite_record($suite, 'test_fail');
 		$JUNIT['files'][$file_name]['xml'] .= "<failure type='$output_type' message='$escaped_message'>$escaped_details</failure>\n";
