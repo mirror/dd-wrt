@@ -192,31 +192,7 @@ enum {
   ucp_Miao,
   ucp_Sharada,
   ucp_Sora_Sompeng,
-  ucp_Takri,
-  /* New for Unicode 7.0.0: */
-  ucp_Bassa_Vah,
-  ucp_Caucasian_Albanian,
-  ucp_Duployan,
-  ucp_Elbasan,
-  ucp_Grantha,
-  ucp_Khojki,
-  ucp_Khudawadi,
-  ucp_Linear_A,
-  ucp_Mahajani,
-  ucp_Manichaean,
-  ucp_Mende_Kikakui,
-  ucp_Modi,
-  ucp_Mro,
-  ucp_Nabataean,
-  ucp_Old_North_Arabian,
-  ucp_Old_Permic,
-  ucp_Pahawh_Hmong,
-  ucp_Palmyrene,
-  ucp_Psalter_Pahlavi,
-  ucp_Pau_Cin_Hau,
-  ucp_Siddham,
-  ucp_Tirhuta,
-  ucp_Warang_Citi
+  ucp_Takri
 };
 
 #endif

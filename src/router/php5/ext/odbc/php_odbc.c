@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2015 The PHP Group                                |
+   | Copyright (c) 1997-2014 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -951,18 +951,17 @@ int odbc_bindcols(odbc_result *result TSRMLS_DC)
 	SQLUSMALLINT	colfieldid;
 	int		charextraalloc;
 
+	colfieldid = SQL_COLUMN_DISPLAY_SIZE;
+	charextraalloc = 0;
 	result->values = (odbc_result_value *) safe_emalloc(sizeof(odbc_result_value), result->numcols, 0);
 
 	result->longreadlen = ODBCG(defaultlrl);
 	result->binmode = ODBCG(defaultbinmode);
 
 	for(i = 0; i < result->numcols; i++) {
-		charextraalloc = 0;
-		colfieldid = SQL_COLUMN_DISPLAY_SIZE;
-
-		rc = PHP_ODBC_SQLCOLATTRIBUTE(result->stmt, (SQLUSMALLINT)(i+1), PHP_ODBC_SQL_DESC_NAME,
+		rc = SQLColAttributes(result->stmt, (SQLUSMALLINT)(i+1), SQL_COLUMN_NAME, 
 				result->values[i].name, sizeof(result->values[i].name), &colnamelen, 0);
-		rc = PHP_ODBC_SQLCOLATTRIBUTE(result->stmt, (SQLUSMALLINT)(i+1), SQL_COLUMN_TYPE, 
+		rc = SQLColAttributes(result->stmt, (SQLUSMALLINT)(i+1), SQL_COLUMN_TYPE, 
 				NULL, 0, NULL, &result->values[i].coltype);
 		
 		/* Don't bind LONG / BINARY columns, so that fetch behaviour can
@@ -997,17 +996,8 @@ int odbc_bindcols(odbc_result *result TSRMLS_DC)
 				charextraalloc = 1;
 #endif
 			default:
-				rc = PHP_ODBC_SQLCOLATTRIBUTE(result->stmt, (SQLUSMALLINT)(i+1), colfieldid,
+				rc = SQLColAttributes(result->stmt, (SQLUSMALLINT)(i+1), colfieldid,
 								NULL, 0, NULL, &displaysize);
-#if defined(ODBCVER) && (ODBCVER >= 0x0300)
-				if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO && colfieldid == SQL_DESC_OCTET_LENGTH) {
-					 /* This is  a quirk for ODBC 2.0 compatibility for broken driver implementations.
-					  */
-					charextraalloc = 1;
-					rc = SQLColAttributes(result->stmt, (SQLUSMALLINT)(i+1), SQL_COLUMN_DISPLAY_SIZE,
-								NULL, 0, NULL, &displaysize);
-				}
-#endif
 				/* Workaround for Oracle ODBC Driver bug (#50162) when fetching TIMESTAMP column */
 				if (result->values[i].coltype == SQL_TIMESTAMP) {
 					displaysize += 3;
@@ -1100,7 +1090,7 @@ void odbc_column_lengths(INTERNAL_FUNCTION_PARAMETERS, int type)
 		RETURN_FALSE;
 	}
 
-	PHP_ODBC_SQLCOLATTRIBUTE(result->stmt, (SQLUSMALLINT)pv_num, (SQLUSMALLINT) (type?SQL_COLUMN_SCALE:SQL_COLUMN_PRECISION), NULL, 0, NULL, &len);
+	SQLColAttributes(result->stmt, (SQLUSMALLINT)pv_num, (SQLUSMALLINT) (type?SQL_COLUMN_SCALE:SQL_COLUMN_PRECISION), NULL, 0, NULL, &len);
 
 	RETURN_LONG(len);
 }
@@ -1190,7 +1180,7 @@ PHP_FUNCTION(odbc_prepare)
 	
 	result->numparams = 0;
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -1618,7 +1608,7 @@ PHP_FUNCTION(odbc_exec)
 		
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
 		efree(result);
@@ -2144,7 +2134,7 @@ PHP_FUNCTION(odbc_result)
 				   fieldsize = result->longreadlen;
 				}
 			} else {
-			   PHP_ODBC_SQLCOLATTRIBUTE(result->stmt, (SQLUSMALLINT)(field_ind + 1), 
+			   SQLColAttributes(result->stmt, (SQLUSMALLINT)(field_ind + 1), 
 					   			(SQLUSMALLINT)((sql_c_type == SQL_C_BINARY) ? SQL_COLUMN_LENGTH :
 					   			SQL_COLUMN_DISPLAY_SIZE),
 					   			NULL, 0, NULL, &fieldsize);
@@ -2880,7 +2870,7 @@ PHP_FUNCTION(odbc_field_type)
 		RETURN_FALSE;
 	}
 
-	PHP_ODBC_SQLCOLATTRIBUTE(result->stmt, (SQLUSMALLINT)pv_num, SQL_COLUMN_TYPE_NAME, tmp, 31, &tmplen, NULL);
+	SQLColAttributes(result->stmt, (SQLUSMALLINT)pv_num, SQL_COLUMN_TYPE_NAME, tmp, 31, &tmplen, NULL);
 	RETURN_STRING(tmp,1)
 }
 /* }}} */
@@ -3119,7 +3109,7 @@ PHP_FUNCTION(odbc_tables)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3186,7 +3176,7 @@ PHP_FUNCTION(odbc_columns)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3256,7 +3246,7 @@ PHP_FUNCTION(odbc_columnprivileges)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3332,7 +3322,7 @@ PHP_FUNCTION(odbc_foreignkeys)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3398,7 +3388,7 @@ PHP_FUNCTION(odbc_gettypeinfo)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3455,7 +3445,7 @@ PHP_FUNCTION(odbc_primarykeys)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3521,7 +3511,7 @@ PHP_FUNCTION(odbc_procedurecolumns)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3588,7 +3578,7 @@ PHP_FUNCTION(odbc_procedures)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3656,7 +3646,7 @@ PHP_FUNCTION(odbc_specialcolumns)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3725,7 +3715,7 @@ PHP_FUNCTION(odbc_statistics)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");
@@ -3788,7 +3778,7 @@ PHP_FUNCTION(odbc_tableprivileges)
 
 	result = (odbc_result *)ecalloc(1, sizeof(odbc_result));
 	
-	rc = PHP_ODBC_SQLALLOCSTMT(conn->hdbc, &(result->stmt));
+	rc = SQLAllocStmt(conn->hdbc, &(result->stmt));
 	if (rc == SQL_INVALID_HANDLE) {
 		efree(result);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "SQLAllocStmt error 'Invalid Handle'");

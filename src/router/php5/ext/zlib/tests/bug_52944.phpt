@@ -2,6 +2,10 @@
 Bug #52944 (segfault with zlib filter and corrupted data)
 --SKIPIF--
 <?php if (!extension_loaded("zlib")) print "skip"; ?>
+<?php
+if (PHP_OS == 'Darwin') {
+	die("skip not for Darwin");
+}
 --INI--
 allow_url_fopen=1
 --FILE--

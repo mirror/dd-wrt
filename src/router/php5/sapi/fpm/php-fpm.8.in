@@ -84,13 +84,6 @@ Version number
 Specify alternative prefix path (the default is @php_fpm_prefix@)
 .TP
 .PD 0
-.B \-\-pid \fIfile\fP
-.TP
-.PD 1
-.B \-g
-Specify the PID file location.
-.TP
-.PD 0
 .B \-\-fpm\-config \fIfile\fP
 .TP
 .PD 1
@@ -120,11 +113,12 @@ Force to run in background and ignore daemonize option from configuration file.
 Force to stay in foreground and ignore daemonize option from configuration file.
 .TP
 .PD 0
-.B \-\-allow\-to\-run\-as\-root
+.B \-\-zend\-extension \fIfile\fP
 .TP
 .PD 1
-.B \-R
-Allow pool to run as root (disabled by default)
+.B \-z \fIfile\fP
+Load Zend extension 
+.IR file
 .SH FILES
 .TP 15
 .B php-fpm.conf

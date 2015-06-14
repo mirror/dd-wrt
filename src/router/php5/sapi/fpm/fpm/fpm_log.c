@@ -46,8 +46,6 @@ int fpm_log_open(int reopen) /* {{{ */
 		if (0 > fd) {
 			zlog(ZLOG_SYSERROR, "failed to open access log (%s)", wp->config->access_log);
 			return -1;
-		} else {
-			zlog(ZLOG_DEBUG, "open access log (%s)", wp->config->access_log);
 		}
 
 		if (reopen) {
@@ -369,7 +367,7 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 
 				case 'R': /* remote IP address */
 					if (!test) {
-						const char *tmp = fcgi_get_last_client_ip();
+						char *tmp = fcgi_get_last_client_ip();
 						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", tmp ? tmp : "-");
 					}
 					break;

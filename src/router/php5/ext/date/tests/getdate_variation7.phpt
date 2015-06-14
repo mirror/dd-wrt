@@ -27,7 +27,7 @@ var_dump( getdate($timestamp) );
 -- Testing getdate\(\) function by passing float 12.3456789000e10 value to timestamp --
 array\(11\) {
   \["seconds"\]=>
-  int\((.+)\)
+  int\((36|0)\)
   \["minutes"\]=>
   int\((43|0)\)
   \["hours"\]=>
@@ -53,7 +53,7 @@ array\(11\) {
 -- Testing getdate\(\) function by passing float -12.3456789000e10 value to timestamp --
 array\(11\) {
   \["seconds"\]=>
-  int\((.+)\)
+  int\((44|12|20)\)
   \["minutes"\]=>
   int\((39|23)\)
   \["hours"\]=>
@@ -61,7 +61,7 @@ array\(11\) {
   \["mday"\]=>
   int\((9|14|23)\)
   \["wday"\]=>
-  int\((0|6)\)
+  int\((6|-4)\)
   \["mon"\]=>
   int\((10|12)\)
   \["year"\]=>
@@ -69,7 +69,7 @@ array\(11\) {
   \["yday"\]=>
   int\((282|347|295)\)
   \["weekday"\]=>
-  string\((6|8)\) "(Sunday|Saturday)"
+  string\((8|7)\) "(Saturday|Unknown)"
   \["month"\]=>
   string\((7|8)\) "(October|December)"
   \[0\]=>
