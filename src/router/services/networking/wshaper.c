@@ -272,8 +272,8 @@ static void s_addIF(char **list, char *ifname)
 		*list = strdup(ifname);
 	} else {
 		*list = realloc(*list, strlen(*list) + strlen(ifname) + 2);
+		sprintf(*list, "%s %s", *list, ifname);
 	}
-	sprintf(*list, "%s %s", *list, ifname);
 }
 
 static void s_clearIF(char **list)
