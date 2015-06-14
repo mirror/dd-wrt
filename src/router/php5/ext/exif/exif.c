@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 637ebf9289b40d157fdf8edcdddeb3d907b28d9b $ */
+/* $Id: 77f4630d93dc49bf34fec7c4769d100367202046 $ */
 
 /*  ToDos
  *
@@ -138,7 +138,7 @@ const zend_function_entry exif_functions[] = {
 };
 /* }}} */
 
-#define EXIF_VERSION "1.4 $Id: 637ebf9289b40d157fdf8edcdddeb3d907b28d9b $"
+#define EXIF_VERSION "1.4 $Id: 77f4630d93dc49bf34fec7c4769d100367202046 $"
 
 /* {{{ PHP_MINFO_FUNCTION
  */
@@ -2702,7 +2702,7 @@ static int exif_process_user_comment(image_info_type *ImageInfo, char **pszInfoP
 static int exif_process_unicode(image_info_type *ImageInfo, xp_field_type *xp_field, int tag, char *szValuePtr, int ByteCount TSRMLS_DC)
 {
 	xp_field->tag = tag;	
-	
+	xp_field->value = NULL;
 	/* XXX this will fail again if encoding_converter returns on error something different than SIZE_MAX   */
 	if (zend_multibyte_encoding_converter(
 			(unsigned char**)&xp_field->value, 

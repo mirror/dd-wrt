@@ -571,9 +571,6 @@
 /* */
 #undef HAVE_DCNGETTEXT
 
-/* Define if the compiler supports Decimal32/64/128 types. */
-#undef HAVE_DECIMAL_FP_SUPPORT
-
 /* Whether system headers declare timezone */
 #undef HAVE_DECLARED_TIMEZONE
 
@@ -1417,6 +1414,9 @@
 /* Define to 1 if you have the `random' function. */
 #undef HAVE_RANDOM
 
+/* Define to 1 if you have the `RAND_egd' function. */
+#undef HAVE_RAND_EGD
+
 /* Define to 1 if you have the `rand_r' function. */
 #undef HAVE_RAND_R
 
@@ -2033,7 +2033,10 @@
 /* iconv() is aliased to libiconv() in -liconv */
 #undef ICONV_ALIASED_LIBICONV
 
-/* Whether iconv supports error no or not */
+/* Whether iconv supports IGNORE */
+#undef ICONV_BROKEN_IGNORE
+
+/* Whether iconv supports IGNORE */
 #undef ICONV_SUPPORTS_ERRNO
 
 /* */
@@ -2086,6 +2089,9 @@
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
+
+/* The highest supported ODBC version */
+#undef ODBCVER
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT

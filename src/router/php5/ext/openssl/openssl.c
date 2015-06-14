@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -927,11 +927,13 @@ static int php_openssl_load_rand_file(const char * file, int *egdsocket, int *se
 
 	if (file == NULL) {
 		file = RAND_file_name(buffer, sizeof(buffer));
+#ifdef HAVE_RAND_EGD
 	} else if (RAND_egd(file) > 0) {
 		/* if the given filename is an EGD socket, don't
 		 * write anything back to it */
 		*egdsocket = 1;
 		return SUCCESS;
+#endif
 	}
 	if (file == NULL || !RAND_load_file(file, -1)) {
 		if (RAND_status() == 0) {
@@ -1501,7 +1503,7 @@ PHP_FUNCTION(openssl_x509_parse)
 	zval ** zcert;
 	X509 * cert = NULL;
 	long certresource = -1;
-	int i;
+	int i, sig_nid;
 	zend_bool useshortnames = 1;
 	char * tmpstr;
 	zval * subitem;
@@ -1548,11 +1550,12 @@ PHP_FUNCTION(openssl_x509_parse)
 	if (tmpstr) {
 		add_assoc_string(return_value, "alias", tmpstr, 1);
 	}
-/*
-	add_assoc_long(return_value, "signaturetypeLONG", X509_get_signature_type(cert));
-	add_assoc_string(return_value, "signaturetype", OBJ_nid2sn(X509_get_signature_type(cert)), 1);
-	add_assoc_string(return_value, "signaturetypeLN", OBJ_nid2ln(X509_get_signature_type(cert)), 1);
-*/
+
+	sig_nid = OBJ_obj2nid((cert)->sig_alg->algorithm);
+	add_assoc_string(return_value, "signatureTypeSN", (char*)OBJ_nid2sn(sig_nid), 1);
+	add_assoc_string(return_value, "signatureTypeLN", (char*)OBJ_nid2ln(sig_nid), 1);
+	add_assoc_long(return_value, "signatureTypeNID", sig_nid);
+
 	MAKE_STD_ZVAL(subitem);
 	array_init(subitem);
 
@@ -4619,14 +4622,14 @@ int php_openssl_apply_verification_policy(SSL *ssl, X509 *peer, php_stream *stre
 			return FAILURE;
 		}
 
-		match = strcmp(cnmatch, buf) == 0;
+		match = strcasecmp(cnmatch, buf) == 0;
 		if (!match && strlen(buf) > 3 && buf[0] == '*' && buf[1] == '.') {
 			/* Try wildcard */
 
 			if (strchr(buf+2, '.')) {
 				char *tmp = strstr(cnmatch, buf+1);
 
-				match = tmp && strcmp(tmp, buf+2) && tmp == strchr(cnmatch, '.');
+				match = tmp && strcasecmp(tmp, buf+2) && tmp == strchr(cnmatch, '.');
 			}
 		}
 

@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2014 The PHP Group                                |
+  | Copyright (c) 1997-2015 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.0 of the PHP license,       |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   |         Ilia Alshanetsky <ilia@prohost.org>                          |
   +----------------------------------------------------------------------+
 
-  $Id: 6de2feac8047059326b85565067ecdba8fb4f363 $
+  $Id: d7c115e366f245f6234c5d1b1f3e93cf5500ab14 $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -326,7 +326,7 @@ PHP_MINFO_FUNCTION(enchant)
 #elif defined(HAVE_ENCHANT_BROKER_SET_PARAM)
 	php_info_print_table_row(2, "Libenchant Version", "1.5.0 or later");
 #endif
-	php_info_print_table_row(2, "Revision", "$Id: 6de2feac8047059326b85565067ecdba8fb4f363 $");
+	php_info_print_table_row(2, "Revision", "$Id: d7c115e366f245f6234c5d1b1f3e93cf5500ab14 $");
 	php_info_print_table_end();
 
 	php_info_print_table_start();
@@ -550,13 +550,12 @@ PHP_FUNCTION(enchant_broker_request_dict)
 
 	d = enchant_broker_request_dict(pbroker->pbroker, (const char *)tag);
 	if (d) {
+		pos = pbroker->dictcnt++;
 		if (pbroker->dictcnt) {
 			pbroker->dict = (enchant_dict **)erealloc(pbroker->dict, sizeof(enchant_dict *) * pbroker->dictcnt);
-			pos = pbroker->dictcnt++;
 		} else {
 			pbroker->dict = (enchant_dict **)emalloc(sizeof(enchant_dict *));
 			pos = 0;
-			pbroker->dictcnt++;
 		}
 
 		dict = pbroker->dict[pos] = (enchant_dict *)emalloc(sizeof(enchant_dict));
@@ -607,14 +606,14 @@ PHP_FUNCTION(enchant_broker_request_pwl_dict)
 
 	d = enchant_broker_request_pwl_dict(pbroker->pbroker, (const char *)pwl);
 	if (d) {
+		pos = pbroker->dictcnt++;
 		if (pbroker->dictcnt) {
-			pos = pbroker->dictcnt++;
 			pbroker->dict = (enchant_dict **)erealloc(pbroker->dict, sizeof(enchant_dict *) * pbroker->dictcnt);
 		} else {
 			pbroker->dict = (enchant_dict **)emalloc(sizeof(enchant_dict *));
 			pos = 0;
-			pbroker->dictcnt++;
 		}
+
 		dict = pbroker->dict[pos] = (enchant_dict *)emalloc(sizeof(enchant_dict));
 		dict->id = pos;
 		dict->pbroker = pbroker;

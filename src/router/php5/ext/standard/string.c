@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -13,7 +13,7 @@
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
    | Authors: Rasmus Lerdorf <rasmus@php.net>                             |
-   |          Stig Sæther Bakken <ssb@php.net>                            |
+   |          Stig Sï¿½ther Bakken <ssb@php.net>                            |
    |          Zeev Suraski <zeev@zend.com>                                |
    +----------------------------------------------------------------------+
  */
@@ -203,8 +203,18 @@ PHPAPI struct lconv *localeconv_r(struct lconv *out)
 	tsrm_mutex_lock( locale_mutex );
 # endif
 
+#if defined(PHP_WIN32) && defined(ZTS)
+	{
+		/* Even with the enabled per thread locale, localeconv
+			won't check any locale change in the master thread. */
+		_locale_t cur = _get_current_locale();
+
+		res = cur->locinfo->lconv;
+	}
+#else
 	/* localeconv doesn't return an error condition */
 	res = localeconv();
+#endif
 
 	*out = *res;
 
@@ -1444,7 +1454,7 @@ PHPAPI void php_basename(const char *s, size_t len, char *suffix, size_t sufflen
 					}
 #if defined(PHP_WIN32) || defined(NETWARE)
 				/* Catch relative paths in c:file.txt style. They're not to confuse
-				   with the NTFS streams. This part ensures also, that no drive 
+				   with the NTFS streams. This part ensures also, that no drive
 				   letter traversing happens. */
 				} else if ((*c == ':' && (c - comp == 1))) {
 					if (state == 0) {
@@ -3930,7 +3940,7 @@ static void php_str_replace_in_subject(zval *search, zval *replace, zval **subje
 														   replace_value, replace_len, &Z_STRLEN(temp_result), case_sensitivity, replace_count);
 			}
 
-           str_efree(Z_STRVAL_P(result));
+			str_efree(Z_STRVAL_P(result));
 			Z_STRVAL_P(result) = Z_STRVAL(temp_result);
 			Z_STRLEN_P(result) = Z_STRLEN(temp_result);
 
@@ -4900,6 +4910,10 @@ PHP_FUNCTION(str_repeat)
 
 	/* Initialize the result string */
 	result_len = input_len * mult;
+	if(result_len > INT_MAX) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Result is too big, maximum %d allowed", INT_MAX);
+		RETURN_EMPTY_STRING();
+	}
 	result = (char *)safe_emalloc(input_len, mult, 1);
 
 	/* Heavy optimization for situations where input string is 1 byte long */

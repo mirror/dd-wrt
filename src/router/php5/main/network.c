@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2014 The PHP Group                                |
+   | Copyright (c) 1997-2015 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -24,7 +24,7 @@
 #include "php.h"
 
 #include <stddef.h>
-
+#include <errno.h>
 
 
 #ifdef PHP_WIN32
@@ -246,7 +246,12 @@ PHPAPI int php_network_getaddresses(const char *host, int socktype, struct socka
 #else
 	if (!inet_aton(host, &in)) {
 		/* XXX NOT THREAD SAFE (is safe under win32) */
-		host_info = gethostbyname(host);
+		if(strlen(host) > MAXFQDNLEN) {
+			host_info = NULL;
+			errno = E2BIG;
+		} else {
+			host_info = gethostbyname(host);
+		}
 		if (host_info == NULL) {
 			if (error_string) {
 				spprintf(error_string, 0, "php_network_getaddresses: gethostbyname failed. errno=%d", errno);
