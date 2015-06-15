@@ -1999,10 +1999,12 @@ static void clear_translationcache(void)
 {
 	int i;
 	for (i = 0; i < cachecount; i++) {
-		free(translationcache[i].request);
-		free(translationcache[i].translation);
-		translationcache[i].request = NULL;
-		translationcache[i].translation = NULL;
+		if (translationcache[i].request != NULL) {
+			free(translationcache[i].request);
+			free(translationcache[i].translation);
+			translationcache[i].request = NULL;
+			translationcache[i].translation = NULL;
+		}
 	}
 
 }
