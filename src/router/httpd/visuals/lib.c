@@ -60,16 +60,10 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 	char *p;
 	char string[32], date[16];
 	sprintf(string, CYBERTAN_VERSION);
-	p = strtok(string, "(");
-	if (p != NULL) {
-		p = strtok(NULL, ")");
-		if (p != NULL) {
-			sprintf(date, "%s", p);
-		}
-	}
+	sprintf(date, "%s", BUILD_DATE);
 #endif
 #ifdef HAVE_BUFFALO
-	websWrite(wp, " %s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+	websWrite(wp, " DD-WRT v3.0 (" BUILD_DATE ") %s%s", nvram_safe_get("dist_type"), DIST_OPT);
 #else
 
 #ifdef HAVE_REGISTER
@@ -155,7 +149,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_HOBBIT
 		websWrite(wp, " HQ-NDS %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
-		websWrite(wp, " %s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, " DD-WRT v3.0 (" BUILD_DATE ") %s%s", nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 	}
 #endif
