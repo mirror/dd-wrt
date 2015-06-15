@@ -606,11 +606,11 @@ int main(int argc, char **argv)
 #else
 #ifdef DIST
 	if (strlen(DIST) > 0)
-		fprintf(fp, "DD-WRT v3.0-%s %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n",  SVN_REVISION, DIST);
+		fprintf(fp, "DD-WRT v3.0-r%s %s (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n",  SVN_REVISION, DIST);
 	else
-		fprintf(fp, "DD-WRT v3.0-%s custom (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);
+		fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);
 #else
-	fprintf(fp, "DD-WRT v3.0-%s custom (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);
+	fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2015 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);
 #endif
 #endif
 #endif
