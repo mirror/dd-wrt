@@ -48,7 +48,7 @@ void start_dhcp6c(void)
 
 	if (!nvram_match("ipv6_typ", "ipv6pd"))
 		return;
-
+	nvram_unset("ipv6_prefix");
 	fprintf(stderr, "dhcp6c start\n");
 	char mac[18];
 	getLANMac(mac);
