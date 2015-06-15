@@ -1,5 +1,5 @@
 /* Declaration for error-reporting function
-   Copyright (C) 1995-1997, 2003, 2006, 2008-2013 Free Software Foundation,
+   Copyright (C) 1995-1997, 2003, 2006, 2008-2014 Free Software Foundation,
    Inc.
    This file is part of the GNU C Library.
 
@@ -58,7 +58,7 @@ extern void error_at_line (int __status, int __errnum, const char *__fname,
 /* If NULL, error will flush stdout, then print on stderr the program
    name, a colon and a space.  Otherwise, error will call this
    function without parameters instead.  */
-extern void (*error_print_progname) (void);
+extern DLL_VARIABLE void (*error_print_progname) (void);
 
 /* This variable is incremented each time 'error' is called.  */
 extern DLL_VARIABLE unsigned int error_message_count;

@@ -1,6 +1,6 @@
 ## DO NOT EDIT! GENERATED AUTOMATICALLY!
 ## Process this file with automake to produce Makefile.in.
-# Copyright (C) 2002-2013 Free Software Foundation, Inc.
+# Copyright (C) 2002-2014 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,6 +73,15 @@ test_sameacls_LDADD = $(LDADD) $(LIB_ACL) @LIBINTL@
 EXTRA_DIST += test-file-has-acl.sh test-file-has-acl-1.sh test-file-has-acl-2.sh test-set-mode-acl.sh test-set-mode-acl-1.sh test-set-mode-acl-2.sh test-copy-acl.sh test-copy-acl-1.sh test-copy-acl-2.sh test-file-has-acl.c test-set-mode-acl.c test-copy-acl.c test-sameacls.c macros.h
 
 ## end   gnulib module acl-tests
+
+## begin gnulib module alignof-tests
+
+TESTS += test-alignof
+check_PROGRAMS += test-alignof
+
+EXTRA_DIST += test-alignof.c
+
+## end   gnulib module alignof-tests
 
 ## begin gnulib module alloca-opt-tests
 
@@ -558,6 +567,7 @@ inttypes.h: inttypes.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_U
 	      -e 's/@''HAVE_DECL_STRTOIMAX''@/$(HAVE_DECL_STRTOIMAX)/g' \
 	      -e 's/@''HAVE_DECL_STRTOUMAX''@/$(HAVE_DECL_STRTOUMAX)/g' \
 	      -e 's/@''REPLACE_STRTOIMAX''@/$(REPLACE_STRTOIMAX)/g' \
+	      -e 's/@''REPLACE_STRTOUMAX''@/$(REPLACE_STRTOUMAX)/g' \
 	      -e 's/@''INT32_MAX_LT_INTMAX_MAX''@/$(INT32_MAX_LT_INTMAX_MAX)/g' \
 	      -e 's/@''INT64_MAX_EQ_LONG_MAX''@/$(INT64_MAX_EQ_LONG_MAX)/g' \
 	      -e 's/@''UINT32_MAX_LT_UINTMAX_MAX''@/$(UINT32_MAX_LT_UINTMAX_MAX)/g' \
@@ -1334,7 +1344,7 @@ TESTS += test-term-ostream-xterm
 TESTS_ENVIRONMENT += srcdir='$(srcdir)'
 check_PROGRAMS += test-term-ostream
 test_term_ostream_LDADD = $(LIBTERMCAP) $(LDADD)
-EXTRA_DIST += test-term-ostream.c test-term-ostream-xterm test-term-ostream-xterm-r6.out test-term-ostream-xterm-xf86-v32.out test-term-ostream-xterm-basic.out test-term-ostream-xterm-8bit.out test-term-ostream-xterm-linux-debian.out test-term-ostream-xterm-linux-mandriva.out test-term-ostream-xterm-netbsd3.out test-term-ostream-xterm-solaris10.out test-term-ostream-xterm-aix51.out test-term-ostream-xterm-osf51.out test-term-ostream-xterm-irix65.out test-term-ostream-xterm-mingw.out test-term-ostream-xterm-16color.out test-term-ostream-xterm-88color.out test-term-ostream-xterm-256color.out
+EXTRA_DIST += test-term-ostream.c test-term-ostream-xterm test-term-ostream-xterm-r6.out test-term-ostream-xterm-xf86-v32.out test-term-ostream-xterm-basic.out test-term-ostream-xterm-basic-italic.out test-term-ostream-xterm-8bit.out test-term-ostream-xterm-linux-debian.out test-term-ostream-xterm-linux-mandriva.out test-term-ostream-xterm-netbsd3.out test-term-ostream-xterm-solaris10.out test-term-ostream-xterm-aix51.out test-term-ostream-xterm-osf51.out test-term-ostream-xterm-irix65.out test-term-ostream-xterm-mingw.out test-term-ostream-xterm-16color.out test-term-ostream-xterm-88color.out test-term-ostream-xterm-256color.out
 
 ## end   gnulib module term-ostream-tests
 
@@ -1403,10 +1413,12 @@ EXTRA_DIST += unilbrk/test-u8-width-linebreaks.c macros.h
 
 ## begin gnulib module uniname/uniname-tests
 
+if LIBUNISTRING_COMPILE_UNINAME_UNINAME
 TESTS += uniname/test-uninames.sh
 check_PROGRAMS += test-uninames
 test_uninames_SOURCES = uniname/test-uninames.c
 test_uninames_LDADD = $(LDADD) $(LIBUNISTRING) @LIBINTL@
+endif
 
 EXTRA_DIST += uniname/test-uninames.sh uniname/test-uninames.c uniname/UnicodeDataNames.txt
 

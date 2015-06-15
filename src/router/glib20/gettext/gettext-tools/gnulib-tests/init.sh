@@ -1,6 +1,6 @@
 # source this file; set up for tests
 
-# Copyright (C) 2009-2013 Free Software Foundation, Inc.
+# Copyright (C) 2009-2014 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -201,6 +201,8 @@ else
       *x*) opts_=-x ;;
       *) opts_= ;;
     esac
+    re_shell=$re_shell_
+    export re_shell
     exec "$re_shell_" $opts_ "$0" --no-reexec "$@"
     echo "$ME_: exec failed" 1>&2
     exit 127
