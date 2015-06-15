@@ -153,8 +153,7 @@ recode-sr-latin.1.html: recode-sr-latin.1
 gettextize.1.html: gettextize.1
 autopoint.1.html: autopoint.1
 
-install-html-local:
-	$(MKDIR_P) $(DESTDIR)$(htmldir)
+install-html: installdirs-html
 	for file in $(man_HTML); do \
 	  if test -f $$file; then dir=.; else dir=$(srcdir); fi; \
 	  $(INSTALL_DATA) $$dir/$$file $(DESTDIR)$(htmldir)/$$file; \
