@@ -171,8 +171,7 @@ textdomain.3.html: textdomain.3.in
 bindtextdomain.3.html: bindtextdomain.3.in
 bind_textdomain_codeset.3.html: bind_textdomain_codeset.3.in
 
-install-html-local:
-	$(MKDIR_P) $(DESTDIR)$(htmldir)
+install-html: installdirs-html
 	for file in $(man_HTML); do \
 	  if test -f $$file; then dir=.; else dir=$(srcdir); fi; \
 	  $(INSTALL_DATA) $$dir/$$file $(DESTDIR)$(htmldir)/$$file; \
