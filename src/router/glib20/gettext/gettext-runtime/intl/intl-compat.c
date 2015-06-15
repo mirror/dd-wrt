@@ -129,7 +129,3 @@ bind_textdomain_codeset (const char *domainname, const char *codeset)
 {
   return libintl_bind_textdomain_codeset (domainname, codeset);
 }
-
-#ifdef __UCLIBC__
-DLL_EXPORTED void (*error_print_progname)(void) = NULL;
-#endif

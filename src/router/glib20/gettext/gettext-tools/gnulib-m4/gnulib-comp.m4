@@ -1,5 +1,5 @@
 # DO NOT EDIT! GENERATED AUTOMATICALLY!
-# Copyright (C) 2002-2013 Free Software Foundation, Inc.
+# Copyright (C) 2002-2014 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,8 +39,11 @@ AC_DEFUN([gl_EARLY],
   m4_pattern_allow([^gl_LTLIBOBJS$])dnl a variable
   AC_REQUIRE([gl_PROG_AR_RANLIB])
   AC_REQUIRE([AM_PROG_CC_C_O])
+  # Code from module absolute-header:
   # Code from module acl:
   # Code from module acl-tests:
+  # Code from module alignof:
+  # Code from module alignof-tests:
   # Code from module alloca-opt:
   # Code from module alloca-opt-tests:
   # Code from module allocator:
@@ -511,7 +514,6 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_ATEXIT
   fi
   gt_PREREQ_BACKUPFILE
-  gl_MODULE_INDICATOR([binary-io])
   BISON_I18N
   gl_BYTESWAP
   gl_CANONICALIZE_LGPL
@@ -603,7 +605,7 @@ AC_DEFUN([gl_INIT],
   fi
   gl_STDIO_MODULE_INDICATOR([getdelim])
   gl_FUNC_GETDTABLESIZE
-  if test $HAVE_GETDTABLESIZE = 0; then
+  if test $HAVE_GETDTABLESIZE = 0 || test $REPLACE_GETDTABLESIZE = 1; then
     AC_LIBOBJ([getdtablesize])
     gl_PREREQ_GETDTABLESIZE
   fi
@@ -1042,7 +1044,7 @@ AC_DEFUN([gl_INIT],
   gt_TMPDIR
   gl_LIBUNISTRING_LIBHEADER([0.9], [uniconv.h])
   gl_LIBUNISTRING_MODULE([0.9], [uniconv/u8-conv-from-enc])
-  gl_LIBUNISTRING_LIBHEADER([0.9], [unilbrk.h])
+  gl_LIBUNISTRING_LIBHEADER([0.9.4], [unilbrk.h])
   AC_REQUIRE([AC_C_INLINE])
   gl_LIBUNISTRING_MODULE([0.9.4], [unilbrk/u8-possible-linebreaks])
   gl_LIBUNISTRING_MODULE([0.9.4], [unilbrk/u8-width-linebreaks])
@@ -1420,6 +1422,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/acl.h
   lib/acl_entries.c
   lib/addext.c
+  lib/alignof.h
   lib/alloca.in.h
   lib/allocator.c
   lib/allocator.h
@@ -2098,6 +2101,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/nls.m4
   m4/no-c++.m4
   m4/nocrash.m4
+  m4/obstack.m4
   m4/off_t.m4
   m4/open.m4
   m4/opendir.m4
@@ -2201,6 +2205,7 @@ AC_DEFUN([gl_FILE_LIST], [
   tests/init.sh
   tests/macros.h
   tests/signature.h
+  tests/test-alignof.c
   tests/test-alloca-opt.c
   tests/test-areadlink.c
   tests/test-areadlink.h
@@ -2403,6 +2408,7 @@ AC_DEFUN([gl_FILE_LIST], [
   tests/test-term-ostream-xterm-88color.out
   tests/test-term-ostream-xterm-8bit.out
   tests/test-term-ostream-xterm-aix51.out
+  tests/test-term-ostream-xterm-basic-italic.out
   tests/test-term-ostream-xterm-basic.out
   tests/test-term-ostream-xterm-irix65.out
   tests/test-term-ostream-xterm-linux-debian.out
