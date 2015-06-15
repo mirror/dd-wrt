@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /* A test program for the main loop and IO channel code.
@@ -40,10 +38,10 @@
   #define STRICT
   #include <windows.h>
   #define pipe(fds) _pipe(fds, 4096, _O_BINARY)
-#else
-  #ifdef HAVE_UNISTD_H
-    #include <unistd.h>
-  #endif
+#endif
+
+#ifdef G_OS_UNIX
+  #include <unistd.h>
 #endif
 
 static int nrunning;
@@ -343,6 +341,7 @@ main (int    argc,
 				     pipe_to_sub[0], pipe_from_sub[1]);
 	  
 	  system (cmdline);
+          g_free (cmdline);
 #endif
 	  close (pipe_to_sub[0]);
 	  close (pipe_from_sub [1]);
@@ -359,11 +358,16 @@ main (int    argc,
 		   (end.tv_usec - start.tv_usec) / 1000,
 		   pollresult);
 #endif
+          g_io_channel_unref (my_read_channel);
 	}
       
       main_loop = g_main_loop_new (NULL, FALSE);
       
       g_main_loop_run (main_loop);
+
+      g_main_loop_unref (main_loop);
+      g_free (seqtab);
+      g_free (id);
     }
   else if (argc == 3)
     {

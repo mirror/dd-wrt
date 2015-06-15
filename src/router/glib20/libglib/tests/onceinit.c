@@ -112,18 +112,18 @@ int
 main (int   argc,
       char *argv[])
 {
-  GThread *threads[N_THREADS];
+  G_GNUC_UNUSED GThread *threads[N_THREADS];
   int i;
+  void *p;
+
   /* test simple initializer */
   initializer1();
   initializer1();
   /* test pointer initializer */
-  void *p = initializer2();
+  p = initializer2();
   g_assert (p == &dummy_value);
   p = initializer2();
   g_assert (p == &dummy_value);
-  /* setup threads */
-  g_thread_init (NULL);
   /* start multiple threads for initializer3() */
   g_mutex_lock (&tmutex);
   for (i = 0; i < N_THREADS; i++)

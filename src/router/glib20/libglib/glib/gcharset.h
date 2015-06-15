@@ -14,25 +14,28 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with the Gnome Library; see the file COPYING.LIB.  If not,
- * write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- *   Boston, MA 02111-1307, USA.
+ * see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_CHARSET_H__
+#define __G_CHARSET_H__
 
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
-#ifndef __G_CHARSET_H__
-#define __G_CHARSET_H__
-
 #include <glib/gtypes.h>
 
 G_BEGIN_DECLS
 
+GLIB_AVAILABLE_IN_ALL
 gboolean              g_get_charset         (const char **charset);
+GLIB_AVAILABLE_IN_ALL
 gchar *               g_get_codeset         (void);
 
+GLIB_AVAILABLE_IN_ALL
 const gchar * const * g_get_language_names  (void);
+GLIB_AVAILABLE_IN_ALL
 gchar **              g_get_locale_variants (const gchar *locale);
 
 G_END_DECLS

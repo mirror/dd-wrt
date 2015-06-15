@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "gio.h"
@@ -243,7 +241,7 @@ test_default (void)
   m = g_network_monitor_get_default ();
   g_assert (G_IS_NETWORK_MONITOR (m));
 
-  monitor = g_initable_new (G_TYPE_NETWORK_MONITOR_BASE, NULL, &error, NULL);
+  monitor = g_initable_newv (G_TYPE_NETWORK_MONITOR_BASE, 0, NULL, NULL,  &error);
   g_assert_no_error (error);
 
   /* In the default configuration, all addresses are reachable */
@@ -494,6 +492,14 @@ watch_network_changed (GNetworkMonitor *monitor,
 }
 
 static void
+watch_connectivity_changed (GNetworkMonitor *monitor,
+			    GParamSpec      *pspec,
+			    gpointer         user_data)
+{
+  g_print ("Connectivity is %d\n", g_network_monitor_get_connectivity (monitor));
+}
+
+static void
 do_watch_network (void)
 {
   GNetworkMonitor *monitor = g_network_monitor_get_default ();
@@ -503,7 +509,10 @@ do_watch_network (void)
 
   g_signal_connect (monitor, "network-changed",
                     G_CALLBACK (watch_network_changed), NULL);
+  g_signal_connect (monitor, "notify::connectivity",
+                    G_CALLBACK (watch_connectivity_changed), NULL);
   watch_network_changed (monitor, g_network_monitor_get_network_available (monitor), NULL);
+  watch_connectivity_changed (monitor, NULL, NULL);
 
   loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (loop);
@@ -513,8 +522,6 @@ int
 main (int argc, char **argv)
 {
   int ret;
-
-  g_type_init ();
 
   if (argc == 2 && !strcmp (argv[1], "--watch"))
     {

@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Benjamin Otte <otte@gnome.org>
  */
@@ -91,6 +89,7 @@
 #define G_FILE_ATTRIBUTE_ID_OWNER_GROUP (9437184 + 3)
 #define G_FILE_ATTRIBUTE_ID_THUMBNAIL_PATH (10485760 + 1)
 #define G_FILE_ATTRIBUTE_ID_THUMBNAILING_FAILED (10485760 + 2)
+#define G_FILE_ATTRIBUTE_ID_THUMBNAIL_IS_VALID (10485760 + 3)
 #define G_FILE_ATTRIBUTE_ID_PREVIEW_ICON (11534336 + 1)
 #define G_FILE_ATTRIBUTE_ID_FILESYSTEM_SIZE (12582912 + 1)
 #define G_FILE_ATTRIBUTE_ID_FILESYSTEM_FREE (12582912 + 2)

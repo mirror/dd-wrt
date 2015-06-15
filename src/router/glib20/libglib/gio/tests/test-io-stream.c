@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  * Author: Simon McVittie <simon.mcvittie@collabora.co.uk>
@@ -77,7 +75,7 @@ test_io_stream_class_init (TestIOStreamClass *klass)
   giostream_class->get_output_stream = test_io_stream_get_output_stream;
 }
 
-/*
+/**
  * test_io_stream_new:
  * @input_stream: an input stream
  * @output_stream: an output stream

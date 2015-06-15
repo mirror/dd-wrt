@@ -13,17 +13,15 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_SOCKET_ADDRESS_ENUMERATOR_H__
+#define __G_SOCKET_ADDRESS_ENUMERATOR_H__
 
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_SOCKET_ADDRESS_ENUMERATOR_H__
-#define __G_SOCKET_ADDRESS_ENUMERATOR_H__
 
 #include <gio/giotypes.h>
 
@@ -69,16 +67,20 @@ struct _GSocketAddressEnumeratorClass
 				    GError                   **error);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType           g_socket_address_enumerator_get_type        (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GSocketAddress *g_socket_address_enumerator_next        (GSocketAddressEnumerator  *enumerator,
 							 GCancellable              *cancellable,
 							 GError                   **error);
 
+GLIB_AVAILABLE_IN_ALL
 void            g_socket_address_enumerator_next_async  (GSocketAddressEnumerator  *enumerator,
 							 GCancellable              *cancellable,
 							 GAsyncReadyCallback        callback,
 							 gpointer                   user_data);
+GLIB_AVAILABLE_IN_ALL
 GSocketAddress *g_socket_address_enumerator_next_finish (GSocketAddressEnumerator  *enumerator,
 							 GAsyncResult              *result,
 							 GError                   **error);

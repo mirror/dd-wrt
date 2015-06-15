@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <gio/gio.h>
 #include <gio/gfiledescriptorbased.h>
+#ifdef G_OS_UNIX
+#include <sys/stat.h>
+#endif
 
 static void
 test_basic (void)
@@ -76,16 +79,19 @@ test_child (void)
 static void
 test_type (void)
 {
+  GFile *datapath_f;
   GFile *file;
   GFileType type;
   GError *error = NULL;
 
-  file = g_file_new_for_path (SRCDIR "/file.c");
+  datapath_f = g_file_new_for_path (g_test_get_dir (G_TEST_DIST));
+
+  file = g_file_get_child (datapath_f, "g-icon.c");
   type = g_file_query_file_type (file, 0, NULL);
   g_assert_cmpint (type, ==, G_FILE_TYPE_REGULAR);
   g_object_unref (file);
 
-  file = g_file_new_for_path (SRCDIR "/schema-tests");
+  file = g_file_get_child (datapath_f, "cert-tests");
   type = g_file_query_file_type (file, 0, NULL);
   g_assert_cmpint (type, ==, G_FILE_TYPE_DIRECTORY);
 
@@ -93,8 +99,28 @@ test_type (void)
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_IS_DIRECTORY);
   g_error_free (error);
   g_object_unref (file);
+
+  g_object_unref (datapath_f);
 }
 
+static void
+test_parse_name (void)
+{
+  GFile *file;
+  gchar *name;
+
+  file = g_file_new_for_uri ("file://somewhere");
+  name = g_file_get_parse_name (file);
+  g_assert_cmpstr (name, ==, "file://somewhere");
+  g_object_unref (file);
+  g_free (name);
+
+  file = g_file_parse_name ("~foo");
+  name = g_file_get_parse_name (file);
+  g_assert (name != NULL);
+  g_object_unref (file);
+  g_free (name);
+}
 
 typedef struct
 {
@@ -430,7 +456,7 @@ test_create_delete (gconstpointer d)
    */
   if (!strcmp (G_OBJECT_TYPE_NAME (data->monitor), "GPollFileMonitor"))
     {
-      g_print ("skipping test for this GFileMonitor implementation");
+      g_test_skip ("skipping test for this GFileMonitor implementation");
       goto skip;
     }
 
@@ -465,6 +491,35 @@ test_create_delete (gconstpointer d)
   g_free (data->buffer);
   g_free (data);
 }
+
+static const gchar *replace_data =
+    "/**\n"
+    " * g_file_replace_contents_async:\n"
+    " * @file: input #GFile.\n"
+    " * @contents: string of contents to replace the file with.\n"
+    " * @length: the length of @contents in bytes.\n"
+    " * @etag: (allow-none): a new <link linkend=\"gfile-etag\">entity tag</link> for the @file, or %NULL\n"
+    " * @make_backup: %TRUE if a backup should be created.\n"
+    " * @flags: a set of #GFileCreateFlags.\n"
+    " * @cancellable: optional #GCancellable object, %NULL to ignore.\n"
+    " * @callback: a #GAsyncReadyCallback to call when the request is satisfied\n"
+    " * @user_data: the data to pass to callback function\n"
+    " * \n"
+    " * Starts an asynchronous replacement of @file with the given \n"
+    " * @contents of @length bytes. @etag will replace the document's\n"
+    " * current entity tag.\n"
+    " * \n"
+    " * When this operation has completed, @callback will be called with\n"
+    " * @user_user data, and the operation can be finalized with \n"
+    " * g_file_replace_contents_finish().\n"
+    " * \n"
+    " * If @cancellable is not %NULL, then the operation can be cancelled by\n"
+    " * triggering the cancellable object from another thread. If the operation\n"
+    " * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. \n"
+    " * \n"
+    " * If @make_backup is %TRUE, this function will attempt to \n"
+    " * make a backup of @file.\n"
+    " **/\n";
 
 typedef struct
 {
@@ -549,34 +604,7 @@ test_replace_load (void)
 
   data = g_new0 (ReplaceLoadData, 1);
   data->again = TRUE;
-  data->data =
-    "/**\n"
-    " * g_file_replace_contents_async:\n"
-    " * @file: input #GFile.\n"
-    " * @contents: string of contents to replace the file with.\n"
-    " * @length: the length of @contents in bytes.\n"
-    " * @etag: (allow-none): a new <link linkend=\"gfile-etag\">entity tag</link> for the @file, or %NULL\n"
-    " * @make_backup: %TRUE if a backup should be created.\n"
-    " * @flags: a set of #GFileCreateFlags.\n"
-    " * @cancellable: optional #GCancellable object, %NULL to ignore.\n"
-    " * @callback: a #GAsyncReadyCallback to call when the request is satisfied\n"
-    " * @user_data: the data to pass to callback function\n"
-    " * \n"
-    " * Starts an asynchronous replacement of @file with the given \n"
-    " * @contents of @length bytes. @etag will replace the document's\n"
-    " * current entity tag.\n"
-    " * \n"
-    " * When this operation has completed, @callback will be called with\n"
-    " * @user_user data, and the operation can be finalized with \n"
-    " * g_file_replace_contents_finish().\n"
-    " * \n"
-    " * If @cancellable is not %NULL, then the operation can be cancelled by\n"
-    " * triggering the cancellable object from another thread. If the operation\n"
-    " * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. \n"
-    " * \n"
-    " * If @make_backup is %TRUE, this function will attempt to \n"
-    " * make a backup of @file.\n"
-    " **/\n";
+  data->data = replace_data;
 
   data->file = g_file_new_tmp ("g_file_replace_load_XXXXXX",
 			       &iostream, NULL);
@@ -606,6 +634,127 @@ test_replace_load (void)
   g_object_unref (data->file);
   g_free (data);
   free (path);
+}
+
+static void
+test_replace_cancel (void)
+{
+  GFile *tmpdir, *file;
+  GFileOutputStream *ostream;
+  GFileEnumerator *fenum;
+  GFileInfo *info;
+  GCancellable *cancellable;
+  gchar *path;
+  gsize nwrote;
+  guint count;
+  GError *error = NULL;
+
+  g_test_bug ("629301");
+
+  path = g_dir_make_tmp ("g_file_replace_cancel_XXXXXX", &error);
+  g_assert_no_error (error);
+  tmpdir = g_file_new_for_path (path);
+  g_free (path);
+
+  file = g_file_get_child (tmpdir, "file");
+  g_file_replace_contents (file,
+                           replace_data,
+                           strlen (replace_data),
+                           NULL, FALSE, 0, NULL,
+                           NULL, &error);
+  g_assert_no_error (error);
+
+  ostream = g_file_replace (file, NULL, TRUE, 0, NULL, &error);
+  g_assert_no_error (error);
+
+  g_output_stream_write_all (G_OUTPUT_STREAM (ostream),
+                             replace_data, strlen (replace_data),
+                             &nwrote, NULL, &error);
+  g_assert_no_error (error);
+  g_assert_cmpint (nwrote, ==, strlen (replace_data));
+
+  /* At this point there should be two files; the original and the
+   * temporary.
+   */
+  fenum = g_file_enumerate_children (tmpdir, NULL, 0, NULL, &error);
+  g_assert_no_error (error);
+
+  info = g_file_enumerator_next_file (fenum, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (info != NULL);
+  g_object_unref (info);
+  info = g_file_enumerator_next_file (fenum, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (info != NULL);
+  g_object_unref (info);
+
+  g_file_enumerator_close (fenum, NULL, &error);
+  g_assert_no_error (error);
+  g_object_unref (fenum);
+
+  /* Also test the g_file_enumerator_iterate() API */
+  fenum = g_file_enumerate_children (tmpdir, NULL, 0, NULL, &error);
+  g_assert_no_error (error);
+  count = 0;
+
+  while (TRUE)
+    {
+      gboolean ret = g_file_enumerator_iterate (fenum, &info, NULL, NULL, &error);
+      g_assert (ret);
+      g_assert_no_error (error);
+      if (!info)
+        break;
+      count++;
+    }
+  g_assert_cmpint (count, ==, 2);
+
+  g_file_enumerator_close (fenum, NULL, &error);
+  g_assert_no_error (error);
+  g_object_unref (fenum);
+
+  /* Now test just getting child from the g_file_enumerator_iterate() API */
+  fenum = g_file_enumerate_children (tmpdir, "standard::name", 0, NULL, &error);
+  g_assert_no_error (error);
+  count = 0;
+
+  while (TRUE)
+    {
+      GFile *child;
+      gboolean ret = g_file_enumerator_iterate (fenum, NULL, &child, NULL, &error);
+
+      g_assert (ret);
+      g_assert_no_error (error);
+
+      if (!child)
+        break;
+
+      g_assert (G_IS_FILE (child));
+      count++;
+    }
+  g_assert_cmpint (count, ==, 2);
+
+  g_file_enumerator_close (fenum, NULL, &error);
+  g_assert_no_error (error);
+  g_object_unref (fenum);
+
+  /* Make sure the temporary gets deleted even if we cancel. */
+  cancellable = g_cancellable_new ();
+  g_cancellable_cancel (cancellable);
+  g_output_stream_close (G_OUTPUT_STREAM (ostream), cancellable, &error);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+  g_clear_error (&error);
+
+  g_object_unref (cancellable);
+  g_object_unref (ostream);
+
+  g_file_delete (file, NULL, &error);
+  g_assert_no_error (error);
+  g_object_unref (file);
+
+  /* This will only succeed if the temp file was deleted. */
+  g_file_delete (tmpdir, NULL, &error);
+  g_assert_no_error (error);
+  g_object_unref (tmpdir);
 }
 
 static void
@@ -650,24 +799,275 @@ test_async_delete (void)
   g_object_unref (file);
 }
 
+#ifdef G_OS_UNIX
+static void
+test_copy_preserve_mode (void)
+{
+  GFile *tmpfile;
+  GFile *dest_tmpfile;
+  GFileInfo *dest_info;
+  GFileIOStream *iostream;
+  GError *local_error = NULL;
+  GError **error = &local_error;
+  guint32 romode = S_IFREG | 0600;
+  guint32 dest_mode;
+
+  tmpfile = g_file_new_tmp ("tmp-copy-preserve-modeXXXXXX",
+                            &iostream, error);
+  g_assert_no_error (local_error);
+  g_io_stream_close ((GIOStream*)iostream, NULL, error);
+  g_assert_no_error (local_error);
+  g_clear_object (&iostream);
+
+  g_file_set_attribute (tmpfile, G_FILE_ATTRIBUTE_UNIX_MODE, G_FILE_ATTRIBUTE_TYPE_UINT32,
+                        &romode, G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                        NULL, error);
+  g_assert_no_error (local_error);
+
+  dest_tmpfile = g_file_new_tmp ("tmp-copy-preserve-modeXXXXXX",
+                                 &iostream, error);
+  g_assert_no_error (local_error);
+  g_io_stream_close ((GIOStream*)iostream, NULL, error);
+  g_assert_no_error (local_error);
+  g_clear_object (&iostream);
+
+  g_file_copy (tmpfile, dest_tmpfile, G_FILE_COPY_OVERWRITE | G_FILE_COPY_NOFOLLOW_SYMLINKS | G_FILE_COPY_ALL_METADATA,
+               NULL, NULL, NULL, error);
+  g_assert_no_error (local_error);
+
+  dest_info = g_file_query_info (dest_tmpfile, G_FILE_ATTRIBUTE_UNIX_MODE, G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                 NULL, error);
+  g_assert_no_error (local_error);
+
+  dest_mode = g_file_info_get_attribute_uint32 (dest_info, G_FILE_ATTRIBUTE_UNIX_MODE);
+  
+  g_assert_cmpint (dest_mode, ==, romode);
+
+  (void) g_file_delete (tmpfile, NULL, NULL);
+  (void) g_file_delete (dest_tmpfile, NULL, NULL);
+  
+  g_clear_object (&tmpfile);
+  g_clear_object (&dest_tmpfile);
+  g_clear_object (&dest_info);
+}
+#endif
+
+static gchar *
+splice_to_string (GInputStream   *stream,
+                  GError        **error)
+{
+  GMemoryOutputStream *buffer = NULL;
+  char *ret = NULL;
+
+  buffer = (GMemoryOutputStream*)g_memory_output_stream_new (NULL, 0, g_realloc, g_free);
+  if (g_output_stream_splice ((GOutputStream*)buffer, stream, 0, NULL, error) < 0)
+    goto out;
+
+  if (!g_output_stream_write ((GOutputStream*)buffer, "\0", 1, NULL, error))
+    goto out;
+
+  if (!g_output_stream_close ((GOutputStream*)buffer, NULL, error))
+    goto out;
+
+  ret = g_memory_output_stream_steal_data (buffer);
+ out:
+  g_clear_object (&buffer);
+  return ret;
+}
+
+static guint64
+get_size_from_du (const gchar *path)
+{
+  GSubprocess *du;
+  gchar *result;
+  gchar *endptr;
+  guint64 size;
+  GError *error = NULL;
+
+  du = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_PIPE,
+                         &error,
+                         "du", "--bytes", "-s", path, NULL);
+  g_assert_no_error (error);
+
+  result = splice_to_string (g_subprocess_get_stdout_pipe (du), &error);
+  g_assert_no_error (error);
+
+  size = g_ascii_strtoll (result, &endptr, 10);
+
+  g_object_unref (du);
+  g_free (result);
+
+  return size;
+}
+
+static void
+test_measure (void)
+{
+  GFile *file;
+  guint64 size;
+  guint64 num_bytes;
+  guint64 num_dirs;
+  guint64 num_files;
+  GError *error = NULL;
+  gboolean ok;
+  gchar *path;
+
+  path = g_test_build_filename (G_TEST_DIST, "desktop-files", NULL);
+  file = g_file_new_for_path (path);
+
+  if (g_find_program_in_path ("du"))
+    {
+      size = get_size_from_du (path);
+    }
+  else
+    {
+      g_test_message ("du not found, skipping byte measurement");
+      size = 0;
+    }
+
+  ok = g_file_measure_disk_usage (file,
+                                  G_FILE_MEASURE_APPARENT_SIZE,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  &num_bytes,
+                                  &num_dirs,
+                                  &num_files,
+                                  &error);
+  g_assert (ok);
+  g_assert_no_error (error);
+
+  if (size > 0)
+    g_assert_cmpuint (num_bytes, ==, size);
+  g_assert_cmpuint (num_dirs, ==, 6);
+  g_assert_cmpuint (num_files, ==, 30);
+
+  g_object_unref (file);
+  g_free (path);
+}
+
+typedef struct {
+  guint64 expected_bytes;
+  guint64 expected_dirs;
+  guint64 expected_files;
+  gint progress_count;
+  guint64 progress_bytes;
+  guint64 progress_dirs;
+  guint64 progress_files;
+} MeasureData;
+
+static void
+measure_progress (gboolean reporting,
+                  guint64  current_size,
+                  guint64  num_dirs,
+                  guint64  num_files,
+                  gpointer user_data)
+{
+  MeasureData *data = user_data;
+
+  data->progress_count += 1;
+
+  g_assert_cmpuint (current_size, >=, data->progress_bytes);
+  g_assert_cmpuint (num_dirs, >=, data->progress_dirs);
+  g_assert_cmpuint (num_files, >=, data->progress_files);
+
+  data->progress_bytes = current_size;
+  data->progress_dirs = num_dirs;
+  data->progress_files = num_files;
+}
+
+static void
+measure_done (GObject      *source,
+              GAsyncResult *res,
+              gpointer      user_data)
+{
+  MeasureData *data = user_data;
+  guint64 num_bytes, num_dirs, num_files;
+  GError *error = NULL;
+  gboolean ok;
+
+  ok = g_file_measure_disk_usage_finish (G_FILE (source), res, &num_bytes, &num_dirs, &num_files, &error);
+  g_assert (ok);
+  g_assert_no_error (error);
+
+  if (data->expected_bytes > 0)
+    g_assert_cmpuint (data->expected_bytes, ==, num_bytes);
+  g_assert_cmpuint (data->expected_dirs, ==, num_dirs);
+  g_assert_cmpuint (data->expected_files, ==, num_files);
+
+  g_assert_cmpuint (data->progress_count, >, 0);
+  g_assert_cmpuint (num_bytes, >=, data->progress_bytes);
+  g_assert_cmpuint (num_dirs, >=, data->progress_dirs);
+  g_assert_cmpuint (num_files, >=, data->progress_files);
+
+  g_free (data);
+  g_object_unref (source);
+}
+
+static void
+test_measure_async (void)
+{
+  gchar *path;
+  GFile *file;
+  MeasureData *data;
+
+  data = g_new (MeasureData, 1);
+
+  data->progress_count = 0;
+  data->progress_bytes = 0;
+  data->progress_files = 0;
+  data->progress_dirs = 0;
+
+  path = g_test_build_filename (G_TEST_DIST, "desktop-files", NULL);
+  file = g_file_new_for_path (path);
+
+  if (g_find_program_in_path ("du"))
+    {
+      data->expected_bytes = get_size_from_du (path);
+    }
+  else
+    {
+      g_test_message ("du not found, skipping byte measurement");
+      data->expected_bytes = 0;
+    }
+
+  g_free (path);
+
+  data->expected_dirs = 6;
+  data->expected_files = 30;
+
+  g_file_measure_disk_usage_async (file,
+                                   G_FILE_MEASURE_APPARENT_SIZE,
+                                   0, NULL,
+                                   measure_progress, data,
+                                   measure_done, data);
+}
+
 int
 main (int argc, char *argv[])
 {
-  g_type_init ();
-
   g_test_init (&argc, &argv, NULL);
+
+  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/file/basic", test_basic);
   g_test_add_func ("/file/parent", test_parent);
   g_test_add_func ("/file/child", test_child);
   g_test_add_func ("/file/type", test_type);
+  g_test_add_func ("/file/parse-name", test_parse_name);
   g_test_add_data_func ("/file/async-create-delete/0", GINT_TO_POINTER (0), test_create_delete);
   g_test_add_data_func ("/file/async-create-delete/1", GINT_TO_POINTER (1), test_create_delete);
   g_test_add_data_func ("/file/async-create-delete/10", GINT_TO_POINTER (10), test_create_delete);
   g_test_add_data_func ("/file/async-create-delete/25", GINT_TO_POINTER (25), test_create_delete);
   g_test_add_data_func ("/file/async-create-delete/4096", GINT_TO_POINTER (4096), test_create_delete);
   g_test_add_func ("/file/replace-load", test_replace_load);
+  g_test_add_func ("/file/replace-cancel", test_replace_cancel);
   g_test_add_func ("/file/async-delete", test_async_delete);
+#ifdef G_OS_UNIX
+  g_test_add_func ("/file/copy-preserve-mode", test_copy_preserve_mode);
+#endif
+  g_test_add_func ("/file/measure", test_measure);
+  g_test_add_func ("/file/measure-async", test_measure_async);
 
   return g_test_run ();
 }

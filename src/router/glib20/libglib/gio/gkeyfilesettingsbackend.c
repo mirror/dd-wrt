@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Vincent Untz <vuntz@gnome.org>
  *          Ryan Lortie <desrt@desrt.ca>
@@ -394,6 +392,7 @@ keyfile_to_tree (GKeyfileSettingsBackend *kfsb,
         continue;
 
       keys = g_key_file_get_keys (keyfile, groups[i], NULL, NULL);
+      g_assert (keys != NULL);
 
       for (j = 0; keys[j]; j++)
         {
@@ -538,7 +537,8 @@ g_keyfile_settings_backend_class_init (GKeyfileSettingsBackendClass *class)
   class->get_permission = g_keyfile_settings_backend_get_permission;
   /* No need to implement subscribed/unsubscribe: the only point would be to
    * stop monitoring the file when there's no GSettings anymore, which is no
-   * big win. */
+   * big win.
+   */
 }
 
 static void
@@ -550,7 +550,9 @@ file_changed (GFileMonitor      *monitor,
 {
   GKeyfileSettingsBackend *kfsb = user_data;
 
-  g_keyfile_settings_backend_keyfile_reload (kfsb);
+  /* Ignore file deletions, let the GKeyFile content remain in tact. */
+  if (event_type != G_FILE_MONITOR_EVENT_DELETED)
+    g_keyfile_settings_backend_keyfile_reload (kfsb);
 }
 
 static void
@@ -640,8 +642,8 @@ g_keyfile_settings_backend_new (const gchar *filename,
   kfsb->dir = g_file_get_parent (kfsb->file);
   g_file_make_directory_with_parents (kfsb->dir, NULL, NULL);
 
-  kfsb->file_monitor = g_file_monitor_file (kfsb->file, 0, NULL, NULL);
-  kfsb->dir_monitor = g_file_monitor_file (kfsb->dir, 0, NULL, NULL);
+  kfsb->file_monitor = g_file_monitor (kfsb->file, 0, NULL, NULL);
+  kfsb->dir_monitor = g_file_monitor (kfsb->dir, 0, NULL, NULL);
 
   kfsb->prefix_len = strlen (root_path);
   kfsb->prefix = g_strdup (root_path);

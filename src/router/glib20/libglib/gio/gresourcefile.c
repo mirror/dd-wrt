@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -71,6 +69,8 @@ static void g_resource_file_file_iface_init (GFileIface *iface);
 
 static GFileAttributeInfoList *resource_writable_attributes = NULL;
 static GFileAttributeInfoList *resource_writable_namespaces = NULL;
+
+static GType _g_resource_file_enumerator_get_type (void);
 
 #define G_TYPE_RESOURCE_FILE_ENUMERATOR         (_g_resource_file_enumerator_get_type ())
 #define G_RESOURCE_FILE_ENUMERATOR(o)           (G_TYPE_CHECK_INSTANCE_CAST ((o), G_TYPE_RESOURCE_FILE_ENUMERATOR, GResourceFileEnumerator))

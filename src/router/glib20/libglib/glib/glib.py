@@ -1,4 +1,8 @@
 import gdb
+import sys
+
+if sys.version_info[0] >= 3:
+    long = int
 
 # This is not quite right, as local vars may override symname
 def read_global_var (symname):
@@ -135,10 +139,6 @@ class GHashPrinter:
 
     def display_hint (self):
         return "map"
-
-def pretty_printer_lookup (val):
-    if is_g_type_instance (val):
-        return GTypePrettyPrinter (val)
 
 def pretty_printer_lookup (val):
     # None yet, want things like hash table and list

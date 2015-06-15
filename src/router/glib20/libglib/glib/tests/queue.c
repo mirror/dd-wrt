@@ -529,6 +529,7 @@ random_test (gconstpointer d)
               g_queue_insert_before (q, qinf->tail, x);
               g_queue_insert_before (q, qinf->head, x);
               g_queue_insert_before (q, g_queue_find (q, x), x);
+              g_queue_insert_before (q, NULL, x);
             }
           qinf->head = q->head;
           qinf->tail = q->tail;
@@ -542,6 +543,7 @@ random_test (gconstpointer d)
               g_queue_insert_after (q, qinf->tail, x);
               g_queue_insert_after (q, qinf->head, x);
               g_queue_insert_after (q, g_queue_find (q, x), x);
+              g_queue_insert_after (q, NULL, x);
             }
           qinf->head = q->head;
           qinf->tail = q->tail;
@@ -720,7 +722,7 @@ random_test (gconstpointer d)
       if (qinf->head != q->head ||
           qinf->tail != q->tail ||
           qinf->length != q->length)
-        g_print ("op: %d\n", op);
+        g_printerr ("op: %d\n", op);
 
       g_assert (qinf->head == q->head);
       g_assert (qinf->tail == q->tail);

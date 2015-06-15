@@ -13,17 +13,15 @@
  * Library General Public License for more details.
  *
  * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_CHECKSUM_H__
+#define __G_CHECKSUM_H__
 
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_CHECKSUM_H__
-#define __G_CHECKSUM_H__
 
 #include <glib/gtypes.h>
 #include <glib/gbytes.h>
@@ -35,6 +33,7 @@ G_BEGIN_DECLS
  * @G_CHECKSUM_MD5: Use the MD5 hashing algorithm
  * @G_CHECKSUM_SHA1: Use the SHA-1 hashing algorithm
  * @G_CHECKSUM_SHA256: Use the SHA-256 hashing algorithm
+ * @G_CHECKSUM_SHA512: Use the SHA-512 hashing algorithm
  *
  * The hashing algorithm to be used by #GChecksum when performing the
  * digest of some data.
@@ -47,7 +46,8 @@ G_BEGIN_DECLS
 typedef enum {
   G_CHECKSUM_MD5,
   G_CHECKSUM_SHA1,
-  G_CHECKSUM_SHA256
+  G_CHECKSUM_SHA256,
+  G_CHECKSUM_SHA512
 } GChecksumType;
 
 /**
@@ -61,23 +61,33 @@ typedef enum {
  */
 typedef struct _GChecksum       GChecksum;
 
+GLIB_AVAILABLE_IN_ALL
 gssize                g_checksum_type_get_length    (GChecksumType    checksum_type);
 
+GLIB_AVAILABLE_IN_ALL
 GChecksum *           g_checksum_new                (GChecksumType    checksum_type);
+GLIB_AVAILABLE_IN_ALL
 void                  g_checksum_reset              (GChecksum       *checksum);
+GLIB_AVAILABLE_IN_ALL
 GChecksum *           g_checksum_copy               (const GChecksum *checksum);
+GLIB_AVAILABLE_IN_ALL
 void                  g_checksum_free               (GChecksum       *checksum);
+GLIB_AVAILABLE_IN_ALL
 void                  g_checksum_update             (GChecksum       *checksum,
                                                      const guchar    *data,
                                                      gssize           length);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_checksum_get_string         (GChecksum       *checksum);
+GLIB_AVAILABLE_IN_ALL
 void                  g_checksum_get_digest         (GChecksum       *checksum,
                                                      guint8          *buffer,
                                                      gsize           *digest_len);
 
+GLIB_AVAILABLE_IN_ALL
 gchar                *g_compute_checksum_for_data   (GChecksumType    checksum_type,
                                                      const guchar    *data,
                                                      gsize            length);
+GLIB_AVAILABLE_IN_ALL
 gchar                *g_compute_checksum_for_string (GChecksumType    checksum_type,
                                                      const gchar     *str,
                                                      gssize           length);

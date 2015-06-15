@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -37,9 +35,9 @@
  *     other type
  * @see_also: The fundamental types which all support #GValue
  *     operations and thus can be used as a type initializer for
- *     g_value_init() are defined by a separate interface.  See the <link
- *     linkend="gobject-Standard-Parameter-and-Value-Types">Standard
- *     Values API</link> for details.
+ *     g_value_init() are defined by a separate interface.  See the
+ *     [standard values API][gobject-Standard-Parameter-and-Value-Types]
+ *     for details
  * @title: Generic values
  *
  * The #GValue structure is basically a variable container that consists
@@ -57,8 +55,8 @@
  * The code in the example program below demonstrates #GValue's
  * features.
  *
- * |[
- * #include &lt;glib-object.h&gt;
+ * |[<!-- language="C" --> 
+ * #include <glib-object.h>
  *
  * static void
  * int2string (const GValue *src_value,
@@ -74,42 +72,40 @@
  * main (int   argc,
  *       char *argv[])
  * {
- *   /&ast; GValues must be initialized &ast;/
+ *   // GValues must be initialized
  *   GValue a = G_VALUE_INIT;
  *   GValue b = G_VALUE_INIT;
  *   const gchar *message;
  *
- *   g_type_init ();
+ *   // The GValue starts empty
+ *   g_assert (!G_VALUE_HOLDS_STRING (&a));
  *
- *   /&ast; The GValue starts empty &ast;/
- *   g_assert (!G_VALUE_HOLDS_STRING (&amp;a));
+ *   // Put a string in it
+ *   g_value_init (&a, G_TYPE_STRING);
+ *   g_assert (G_VALUE_HOLDS_STRING (&a));
+ *   g_value_set_static_string (&a, "Hello, world!");
+ *   g_printf ("%s\n", g_value_get_string (&a));
  *
- *   /&ast; Put a string in it &ast;/
- *   g_value_init (&amp;a, G_TYPE_STRING);
- *   g_assert (G_VALUE_HOLDS_STRING (&amp;a));
- *   g_value_set_static_string (&amp;a, "Hello, world!");
- *   g_printf ("%s\n", g_value_get_string (&amp;a));
+ *   // Reset it to its pristine state
+ *   g_value_unset (&a);
  *
- *   /&ast; Reset it to its pristine state &ast;/
- *   g_value_unset (&amp;a);
+ *   // It can then be reused for another type
+ *   g_value_init (&a, G_TYPE_INT);
+ *   g_value_set_int (&a, 42);
  *
- *   /&ast; It can then be reused for another type &ast;/
- *   g_value_init (&amp;a, G_TYPE_INT);
- *   g_value_set_int (&amp;a, 42);
+ *   // Attempt to transform it into a GValue of type STRING
+ *   g_value_init (&b, G_TYPE_STRING);
  *
- *   /&ast; Attempt to transform it into a GValue of type STRING &ast;/
- *   g_value_init (&amp;b, G_TYPE_STRING);
- *
- *   /&ast; An INT is transformable to a STRING &ast;/
+ *   // An INT is transformable to a STRING
  *   g_assert (g_value_type_transformable (G_TYPE_INT, G_TYPE_STRING));
  *
- *   g_value_transform (&amp;a, &amp;b);
- *   g_printf ("%s\n", g_value_get_string (&amp;b));
+ *   g_value_transform (&a, &b);
+ *   g_printf ("%s\n", g_value_get_string (&b));
  *
- *   /&ast; Attempt to transform it again using a custom transform function &ast;/
+ *   // Attempt to transform it again using a custom transform function
  *   g_value_register_transform_func (G_TYPE_INT, G_TYPE_STRING, int2string);
- *   g_value_transform (&amp;a, &amp;b);
- *   g_printf ("%s\n", g_value_get_string (&amp;b));
+ *   g_value_transform (&a, &b);
+ *   g_printf ("%s\n", g_value_get_string (&b));
  *   return 0;
  * }
  * ]|
@@ -179,12 +175,12 @@ g_value_init (GValue *value,
       value_table->value_init (value);
     }
   else if (G_VALUE_TYPE (value))
-    g_warning ("%s: cannot initialize GValue with type `%s', the value has already been initialized as `%s'",
+    g_warning ("%s: cannot initialize GValue with type '%s', the value has already been initialized as '%s'",
 	       G_STRLOC,
 	       g_type_name (g_type),
 	       g_type_name (G_VALUE_TYPE (value)));
   else /* !G_TYPE_IS_VALUE (g_type) */
-    g_warning ("%s: cannot initialize GValue with type `%s', %s",
+    g_warning ("%s: cannot initialize GValue with type '%s', %s",
 	       G_STRLOC,
 	       g_type_name (g_type),
 	       g_type_value_table_peek (g_type) ?
@@ -300,12 +296,13 @@ g_value_fits_pointer (const GValue *value)
 
 /**
  * g_value_peek_pointer:
- * @value: An initialized #GValue structure.
+ * @value: An initialized #GValue structure
  *
- * Returns: (transfer none): the value contents as pointer. This
- * function asserts that g_value_fits_pointer() returned %TRUE for the
- * passed in value.  This is an internal function introduced mainly
- * for C marshallers.
+ * Returns the value contents as pointer. This function asserts that
+ * g_value_fits_pointer() returned %TRUE for the passed in value.
+ * This is an internal function introduced mainly for C marshallers.
+ *
+ * Returns: (transfer none): the value contents as pointer
  */
 gpointer
 g_value_peek_pointer (const GValue *value)
@@ -373,6 +370,71 @@ g_value_set_instance (GValue  *value,
        */
       value_meminit (value, g_type);
       value_table->value_init (value);
+    }
+}
+
+/**
+ * g_value_init_from_instance:
+ * @value: An uninitialized #GValue structure.
+ * @instance: the instance
+ *
+ * Initializes and sets @value from an instantiatable type via the
+ * value_table's collect_value() function.
+ *
+ * Note: The @value will be initialised with the exact type of
+ * @instance.  If you wish to set the @value's type to a different GType
+ * (such as a parent class GType), you need to manually call
+ * g_value_init() and g_value_set_instance().
+ *
+ * Since: 2.42
+ */
+void
+g_value_init_from_instance (GValue  *value,
+                            gpointer instance)
+{
+  g_return_if_fail (value != NULL && G_VALUE_TYPE(value) == 0);
+
+  if (G_IS_OBJECT (instance))
+    {
+      /* Fast-path.
+       * If G_IS_OBJECT() succeeds we know:
+       * * that instance is present and valid
+       * * that it is a GObject, and therefore we can directly
+       *   use the collect implementation (g_object_ref) */
+      value_meminit (value, G_TYPE_FROM_INSTANCE (instance));
+      value->data[0].v_pointer = g_object_ref (instance);
+    }
+  else
+    {  
+      GType g_type;
+      GTypeValueTable *value_table;
+      GTypeCValue cvalue;
+      gchar *error_msg;
+
+      g_return_if_fail (G_TYPE_CHECK_INSTANCE (instance));
+
+      g_type = G_TYPE_FROM_INSTANCE (instance);
+      value_table = g_type_value_table_peek (g_type);
+      g_return_if_fail (strcmp (value_table->collect_format, "p") == 0);
+
+      memset (&cvalue, 0, sizeof (cvalue));
+      cvalue.v_pointer = instance;
+
+      /* setup and collect */
+      value_meminit (value, g_type);
+      value_table->value_init (value);
+      error_msg = value_table->collect_value (value, 1, &cvalue, 0);
+      if (error_msg)
+        {
+          g_warning ("%s: %s", G_STRLOC, error_msg);
+          g_free (error_msg);
+
+          /* we purposely leak the value here, it might not be
+           * in a sane state if an error condition occoured
+           */
+          value_meminit (value, g_type);
+          value_table->value_init (value);
+        }
     }
 }
 
@@ -452,7 +514,7 @@ g_value_register_transform_func (GType           src_type,
 
 #if 0 /* let transform function replacement be a valid operation */
   if (g_bsearch_array_lookup (transform_array, &transform_bconfig, &entry))
-    g_warning ("reregistering value transformation function (%p) for `%s' to `%s'",
+    g_warning ("reregistering value transformation function (%p) for '%s' to '%s'",
 	       transform_func,
 	       g_type_name (src_type),
 	       g_type_name (dest_type));
@@ -468,7 +530,9 @@ g_value_register_transform_func (GType           src_type,
  * @dest_type: Target type.
  *
  * Check whether g_value_transform() is able to transform values
- * of type @src_type into values of type @dest_type.
+ * of type @src_type into values of type @dest_type. Note that for
+ * the types to be transformable, they must be compatible and a
+ * transform function must be registered.
  *
  * Returns: %TRUE if the transformation is possible, %FALSE otherwise.
  */

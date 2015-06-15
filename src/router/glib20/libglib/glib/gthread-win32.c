@@ -16,9 +16,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -43,6 +41,7 @@
 #include "config.h"
 
 #include "glib.h"
+#include "glib-init.h"
 #include "gthread.h"
 #include "gthreadprivate.h"
 #include "gslice.h"
@@ -982,7 +981,7 @@ g_thread_lookup_native_funcs (void)
   return TRUE;
 }
 
-G_GNUC_INTERNAL void
+void
 g_thread_win32_init (void)
 {
   if (!g_thread_lookup_native_funcs ())
@@ -991,7 +990,7 @@ g_thread_win32_init (void)
   InitializeCriticalSection (&g_private_lock);
 }
 
-G_GNUC_INTERNAL void
+void
 g_thread_win32_thread_detach (void)
 {
   gboolean dtors_called;

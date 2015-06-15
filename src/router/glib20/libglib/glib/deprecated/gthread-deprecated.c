@@ -16,9 +16,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -55,6 +53,8 @@
  * @G_THREAD_PRIORITY_NORMAL: the default priority
  * @G_THREAD_PRIORITY_HIGH: a priority higher than normal
  * @G_THREAD_PRIORITY_URGENT: the highest priority
+ *
+ * Thread priorities.
  *
  * Deprecated:2.32: Thread priorities no longer have any effect.
  */
@@ -196,6 +196,7 @@ g_thread_get_initialized (void)
 }
 
 /* We need this for ABI compatibility */
+GLIB_AVAILABLE_IN_ALL
 void g_thread_init_glib (void);
 void g_thread_init_glib (void) { }
 
@@ -351,9 +352,10 @@ g_thread_create (GThreadFunc   func,
  * @bound: ignored
  * @priority: ignored
  * @error: return location for error.
- * @Returns: the new #GThread on success.
  *
  * This function creates a new thread.
+ *
+ * Returns: the new #GThread on success.
  *
  * Deprecated:2.32: The @bound and @priority arguments are now ignored.
  * Use g_thread_new().
@@ -372,7 +374,7 @@ g_thread_create_full (GThreadFunc       func,
   thread = g_thread_new_internal (NULL, g_deprecated_thread_proxy,
                                   func, data, stack_size, error);
 
-  if (!joinable)
+  if (thread && !joinable)
     {
       thread->joinable = FALSE;
       g_thread_unref (thread);
@@ -401,14 +403,8 @@ g_once_init_enter_impl (volatile gsize *location)
  * as well, and GStaticMutex has been deprecated.
  *
  * Here is a version of our give_me_next_number() example using
- * a GStaticMutex.
- *
- * <example>
- *  <title>
- *   Using <structname>GStaticMutex</structname>
- *   to simplify thread-safe programming
- *  </title>
- *  <programlisting>
+ * a GStaticMutex:
+ * |[
  *   int
  *   give_me_next_number (void)
  *   {
@@ -416,14 +412,13 @@ g_once_init_enter_impl (volatile gsize *location)
  *     int ret_val;
  *     static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
  *
- *     g_static_mutex_lock (&amp;mutex);
+ *     g_static_mutex_lock (&mutex);
  *     ret_val = current_number = calc_next_number (current_number);
- *     g_static_mutex_unlock (&amp;mutex);
+ *     g_static_mutex_unlock (&mutex);
  *
  *     return ret_val;
  *   }
- *  </programlisting>
- * </example>
+ * ]|
  *
  * Sometimes you would like to dynamically create a mutex. If you don't
  * want to require prior calling to g_thread_init(), because your code
@@ -438,16 +433,15 @@ g_once_init_enter_impl (volatile gsize *location)
  * the following functions, as it is defined differently on different
  * platforms.
  *
- * All of the <function>g_static_mutex_*</function> functions apart
- * from <function>g_static_mutex_get_mutex</function> can also be used
- * even if g_thread_init() has not yet been called. Then they do
- * nothing, apart from <function>g_static_mutex_trylock</function>,
- * which does nothing but returning %TRUE.
+ * All of the g_static_mutex_* functions apart from
+ * g_static_mutex_get_mutex() can also be used even if g_thread_init()
+ * has not yet been called. Then they do nothing, apart from
+ * g_static_mutex_trylock() which does nothing but returning %TRUE.
  *
- * <note><para>All of the <function>g_static_mutex_*</function>
- * functions are actually macros. Apart from taking their addresses, you
- * can however use them as if they were functions.</para></note>
- **/
+ * All of the g_static_mutex_* functions are actually macros. Apart from
+ * taking their addresses, you can however use them as if they were
+ * functions.
+ */
 
 /**
  * G_STATIC_MUTEX_INIT:
@@ -501,11 +495,12 @@ g_static_mutex_init (GStaticMutex *mutex)
 /**
  * g_static_mutex_get_mutex:
  * @mutex: a #GStaticMutex.
- * @Returns: the #GMutex corresponding to @mutex.
  *
  * For some operations (like g_cond_wait()) you must have a #GMutex
  * instead of a #GStaticMutex. This function will return the
  * corresponding #GMutex for @mutex.
+ *
+ * Returns: the #GMutex corresponding to @mutex.
  *
  * Deprecated: 2.32: Just use a #GMutex
  */
@@ -556,9 +551,10 @@ g_static_mutex_get_mutex_impl (GStaticMutex* mutex)
 /**
  * g_static_mutex_trylock:
  * @mutex: a #GStaticMutex.
- * @Returns: %TRUE, if the #GStaticMutex could be locked.
  *
  * Works like g_mutex_trylock(), but for a #GStaticMutex.
+ *
+ * Returns: %TRUE, if the #GStaticMutex could be locked.
  *
  * Deprecated: 2.32: Use g_mutex_trylock()
  */
@@ -583,10 +579,10 @@ g_static_mutex_get_mutex_impl (GStaticMutex* mutex)
  * a #GStaticMutex as a member of a structure and the structure is
  * freed, you should also free the #GStaticMutex.
  *
- * <note><para>Calling g_static_mutex_free() on a locked mutex may
- * result in undefined behaviour.</para></note>
+ * Calling g_static_mutex_free() on a locked mutex may result in
+ * undefined behaviour.
  *
- * Deprecated: 2.32: Use g_mutex_free()
+ * Deprecated: 2.32: Use g_mutex_clear()
  */
 void
 g_static_mutex_free (GStaticMutex* mutex)
@@ -626,11 +622,11 @@ g_static_mutex_free (GStaticMutex* mutex)
  * Even though #GStaticRecMutex is not opaque, it should only be used
  * with the following functions.
  *
- * All of the <function>g_static_rec_mutex_*</function> functions can
- * be used even if g_thread_init() has not been called. Then they do
- * nothing, apart from <function>g_static_rec_mutex_trylock</function>,
- * which does nothing but returning %TRUE.
- **/
+ * All of the g_static_rec_mutex_* functions can be used even if
+ * g_thread_init() has not been called. Then they do nothing, apart
+ * from g_static_rec_mutex_trylock(), which does nothing but returning
+ * %TRUE.
+ */
 
 /**
  * G_STATIC_REC_MUTEX_INIT:
@@ -716,13 +712,14 @@ g_static_rec_mutex_lock (GStaticRecMutex* mutex)
 /**
  * g_static_rec_mutex_trylock:
  * @mutex: a #GStaticRecMutex to lock.
- * @Returns: %TRUE, if @mutex could be locked.
  *
  * Tries to lock @mutex. If @mutex is already locked by another thread,
  * it immediately returns %FALSE. Otherwise it locks @mutex and returns
  * %TRUE. If @mutex is already locked by the calling thread, this
  * functions increases the depth of @mutex and immediately returns
  * %TRUE.
+ *
+ * Returns: %TRUE, if @mutex could be locked.
  *
  * Deprecated: 2.32: Use g_rec_mutex_trylock()
  */
@@ -789,8 +786,6 @@ g_static_rec_mutex_lock_full (GStaticRecMutex *mutex,
 /**
  * g_static_rec_mutex_unlock_full:
  * @mutex: a #GStaticRecMutex to completely unlock.
- * @Returns: number of times @mutex has been locked by the current
- *           thread.
  *
  * Completely unlocks @mutex. If another thread is blocked in a
  * g_static_rec_mutex_lock() call for @mutex, it will be woken and can
@@ -799,6 +794,9 @@ g_static_rec_mutex_lock_full (GStaticRecMutex *mutex,
  * before the call to g_static_rec_mutex_unlock_full() you can call
  * g_static_rec_mutex_lock_full() with the depth returned by this
  * function.
+ *
+ * Returns: number of times @mutex has been locked by the current
+ *          thread.
  *
  * Deprecated: 2.32: Use g_rec_mutex_unlock()
  */
@@ -858,12 +856,10 @@ g_static_rec_mutex_free (GStaticRecMutex *mutex)
  * lock can be used for protecting data that some portions of code only
  * read from, while others also write. In such situations it is
  * desirable that several readers can read at once, whereas of course
- * only one writer may write at a time. Take a look at the following
- * example:
+ * only one writer may write at a time.
  *
- * <example>
- *  <title>An array with access functions</title>
- *  <programlisting>
+ * Take a look at the following example:
+ * |[
  *   GStaticRWLock rwlock = G_STATIC_RW_LOCK_INIT;
  *   GPtrArray *array;
  *
@@ -875,10 +871,10 @@ g_static_rec_mutex_free (GStaticRecMutex *mutex)
  *     if (!array)
  *       return NULL;
  *
- *     g_static_rw_lock_reader_lock (&amp;rwlock);
- *     if (index &lt; array->len)
+ *     g_static_rw_lock_reader_lock (&rwlock);
+ *     if (index < array->len)
  *       retval = g_ptr_array_index (array, index);
- *     g_static_rw_lock_reader_unlock (&amp;rwlock);
+ *     g_static_rw_lock_reader_unlock (&rwlock);
  *
  *     return retval;
  *   }
@@ -886,27 +882,25 @@ g_static_rec_mutex_free (GStaticRecMutex *mutex)
  *   void
  *   my_array_set (guint index, gpointer data)
  *   {
- *     g_static_rw_lock_writer_lock (&amp;rwlock);
+ *     g_static_rw_lock_writer_lock (&rwlock);
  *
  *     if (!array)
- *       array = g_ptr_array_new (<!-- -->);
+ *       array = g_ptr_array_new ();
  *
  *     if (index >= array->len)
- *       g_ptr_array_set_size (array, index+1);
+ *       g_ptr_array_set_size (array, index + 1);
  *     g_ptr_array_index (array, index) = data;
  *
- *     g_static_rw_lock_writer_unlock (&amp;rwlock);
+ *     g_static_rw_lock_writer_unlock (&rwlock);
  *   }
- *  </programlisting>
- * </example>
+ * ]|
  *
  * This example shows an array which can be accessed by many readers
- * (the <function>my_array_get()</function> function) simultaneously,
- * whereas the writers (the <function>my_array_set()</function>
- * function) will only be allowed once at a time and only if no readers
- * currently access the array. This is because of the potentially
- * dangerous resizing of the array. Using these functions is fully
- * multi-thread safe now.
+ * (the my_array_get() function) simultaneously, whereas the writers
+ * (the my_array_set() function) will only be allowed once at a time
+ * and only if no readers currently access the array. This is because
+ * of the potentially dangerous resizing of the array. Using these
+ * functions is fully multi-thread safe now.
  *
  * Most of the time, writers should have precedence over readers. That
  * means, for this implementation, that as soon as a writer wants to
@@ -918,20 +912,18 @@ g_static_rec_mutex_free (GStaticRecMutex *mutex)
  * Even though #GStaticRWLock is not opaque, it should only be used
  * with the following functions.
  *
- * All of the <function>g_static_rw_lock_*</function> functions can be
- * used even if g_thread_init() has not been called. Then they do
- * nothing, apart from <function>g_static_rw_lock_*_trylock</function>,
- * which does nothing but returning %TRUE.
+ * All of the g_static_rw_lock_* functions can be used even if
+ * g_thread_init() has not been called. Then they do nothing, apart
+ * from g_static_rw_lock_*_trylock, which does nothing but returning %TRUE.
  *
- * <note><para>A read-write lock has a higher overhead than a mutex. For
- * example, both g_static_rw_lock_reader_lock() and
- * g_static_rw_lock_reader_unlock() have to lock and unlock a
- * #GStaticMutex, so it takes at least twice the time to lock and unlock
- * a #GStaticRWLock that it does to lock and unlock a #GStaticMutex. So
- * only data structures that are accessed by multiple readers, and which
- * keep the lock for a considerable time justify a #GStaticRWLock. The
- * above example most probably would fare better with a
- * #GStaticMutex.</para></note>
+ * A read-write lock has a higher overhead than a mutex. For example, both
+ * g_static_rw_lock_reader_lock() and g_static_rw_lock_reader_unlock() have
+ * to lock and unlock a #GStaticMutex, so it takes at least twice the time
+ * to lock and unlock a #GStaticRWLock that it does to lock and unlock a
+ * #GStaticMutex. So only data structures that are accessed by multiple
+ * readers, and which keep the lock for a considerable time justify a
+ * #GStaticRWLock. The above example most probably would fare better with a
+ * #GStaticMutex.
  *
  * Deprecated: 2.32: Use a #GRWLock instead
  **/
@@ -1023,14 +1015,15 @@ g_static_rw_lock_reader_lock (GStaticRWLock* lock)
 
 /**
  * g_static_rw_lock_reader_trylock:
- * @lock: a #GStaticRWLock to lock for reading.
- * @Returns: %TRUE, if @lock could be locked for reading.
+ * @lock: a #GStaticRWLock to lock for reading
  *
  * Tries to lock @lock for reading. If @lock is already locked for
  * writing by another thread or if another thread is already waiting to
  * lock @lock for writing, immediately returns %FALSE. Otherwise locks
  * @lock for reading and returns %TRUE. This lock has to be unlocked by
  * g_static_rw_lock_reader_unlock().
+ *
+ * Returns: %TRUE, if @lock could be locked for reading
  *
  * Deprectated: 2.32: Use g_rw_lock_reader_trylock() instead
  */
@@ -1056,7 +1049,7 @@ g_static_rw_lock_reader_trylock (GStaticRWLock* lock)
 
 /**
  * g_static_rw_lock_reader_unlock:
- * @lock: a #GStaticRWLock to unlock after reading.
+ * @lock: a #GStaticRWLock to unlock after reading
  *
  * Unlocks @lock. If a thread waits to lock @lock for writing and all
  * locks for reading have been unlocked, the waiting thread is woken up
@@ -1081,7 +1074,7 @@ g_static_rw_lock_reader_unlock  (GStaticRWLock* lock)
 
 /**
  * g_static_rw_lock_writer_lock:
- * @lock: a #GStaticRWLock to lock for writing.
+ * @lock: a #GStaticRWLock to lock for writing
  *
  * Locks @lock for writing. If @lock is already locked for writing or
  * reading by other threads, this function will block until @lock is
@@ -1112,13 +1105,14 @@ g_static_rw_lock_writer_lock (GStaticRWLock* lock)
 
 /**
  * g_static_rw_lock_writer_trylock:
- * @lock: a #GStaticRWLock to lock for writing.
- * @Returns: %TRUE, if @lock could be locked for writing.
+ * @lock: a #GStaticRWLock to lock for writing
  *
  * Tries to lock @lock for writing. If @lock is already locked (for
  * either reading or writing) by another thread, it immediately returns
  * %FALSE. Otherwise it locks @lock for writing and returns %TRUE. This
  * lock has to be unlocked by g_static_rw_lock_writer_unlock().
+ *
+ * Returns: %TRUE, if @lock could be locked for writing
  *
  * Deprectated: 2.32: Use g_rw_lock_writer_trylock() instead
  */
@@ -1259,32 +1253,28 @@ GPrivate static_private_private = G_PRIVATE_INIT (g_static_private_cleanup);
  * A #GStaticPrivate works almost like a #GPrivate, but it has one
  * significant advantage. It doesn't need to be created at run-time
  * like a #GPrivate, but can be defined at compile-time. This is
- * similar to the difference between #GMutex and #GStaticMutex. Now
- * look at our <function>give_me_next_number()</function> example with
- * #GStaticPrivate:
+ * similar to the difference between #GMutex and #GStaticMutex.
  *
- * <example>
- *  <title>Using GStaticPrivate for per-thread data</title>
- *  <programlisting>
+ * Now look at our give_me_next_number() example with #GStaticPrivate:
+ * |[
  *   int
- *   give_me_next_number (<!-- -->)
+ *   give_me_next_number ()
  *   {
  *     static GStaticPrivate current_number_key = G_STATIC_PRIVATE_INIT;
- *     int *current_number = g_static_private_get (&amp;current_number_key);
+ *     int *current_number = g_static_private_get (&current_number_key);
  *
  *     if (!current_number)
  *       {
- *         current_number = g_new (int,1);
+ *         current_number = g_new (int, 1);
  *         *current_number = 0;
- *         g_static_private_set (&amp;current_number_key, current_number, g_free);
+ *         g_static_private_set (&current_number_key, current_number, g_free);
  *       }
  *
  *     *current_number = calc_next_number (*current_number);
  *
  *     return *current_number;
  *   }
- *  </programlisting>
- * </example>
+ * ]|
  */
 
 /**
@@ -1371,8 +1361,7 @@ g_static_private_get (GStaticPrivate *private_key)
  * will be inherited only by the main thread, i.e. the one that called
  * g_thread_init().
  *
- * <note><para>@notify is used quite differently from @destructor in
- * g_private_new().</para></note>
+ * @notify is used quite differently from @destructor in g_private_new().
  */
 void
 g_static_private_set (GStaticPrivate *private_key,
@@ -1555,6 +1544,7 @@ g_cond_free (GCond *cond)
  * and g_time_val_add() can be used.
  *
  * Returns: %TRUE if @cond was signalled, or %FALSE on timeout
+ *
  * Deprecated:2.32: Use g_cond_wait_until() instead.
  */
 gboolean
@@ -1574,16 +1564,10 @@ g_cond_timed_wait (GCond    *cond,
   end_time *= 1000000;
   end_time += abs_time->tv_usec;
 
-#ifdef CLOCK_MONOTONIC
   /* would be nice if we had clock_rtoffset, but that didn't seem to
    * make it into the kernel yet...
    */
   end_time += g_get_monotonic_time () - g_get_real_time ();
-#else
-  /* if CLOCK_MONOTONIC is not defined then g_get_montonic_time() and
-   * g_get_real_time() are returning the same clock, so don't bother...
-   */
-#endif
 
   return g_cond_wait_until (cond, mutex, end_time);
 }

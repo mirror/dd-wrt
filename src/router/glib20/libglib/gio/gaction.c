@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
@@ -23,12 +21,15 @@
 #include "gaction.h"
 #include "glibintl.h"
 
+#include <string.h>
+
 G_DEFINE_INTERFACE (GAction, g_action, G_TYPE_OBJECT)
 
 /**
  * SECTION:gaction
  * @title: GAction
  * @short_description: An action interface
+ * @include: gio/gio.h
  *
  * #GAction represents a single named action.
  *
@@ -48,7 +49,7 @@ G_DEFINE_INTERFACE (GAction, g_action, G_TYPE_OBJECT)
  *
  * #GAction is merely the interface to the concept of an action, as
  * described above.  Various implementations of actions exist, including
- * #GSimpleAction and #GtkAction.
+ * #GSimpleAction.
  *
  * In all cases, the implementing class is responsible for storing the
  * name of the action, the parameter type, the enabled state, the
@@ -59,6 +60,13 @@ G_DEFINE_INTERFACE (GAction, g_action, G_TYPE_OBJECT)
  *
  * Probably the only useful thing to do with a #GAction is to put it
  * inside of a #GSimpleActionGroup.
+ **/
+
+/**
+ * GAction:
+ *
+ * #GAction is an opaque data structure and can only be accessed
+ * using the following functions.
  **/
 
 /**
@@ -85,7 +93,7 @@ g_action_default_init (GActionInterface *iface)
    * GAction:name:
    *
    * The name of the action.  This is mostly meaningful for identifying
-   * the action once it has been added to a #GActionGroup.
+   * the action once it has been added to a #GActionGroup. It is immutable.
    *
    * Since: 2.28
    **/
@@ -101,7 +109,8 @@ g_action_default_init (GActionInterface *iface)
    * GAction:parameter-type:
    *
    * The type of the parameter that must be given when activating the
-   * action.
+   * action. This is immutable, and may be %NULL if no parameter is needed when
+   * activating the action.
    *
    * Since: 2.28
    **/
@@ -135,7 +144,7 @@ g_action_default_init (GActionInterface *iface)
    * GAction:state-type:
    *
    * The #GVariantType of the state that the action has, or %NULL if the
-   * action is stateless.
+   * action is stateless. This is immutable.
    *
    * Since: 2.28
    **/
@@ -326,7 +335,7 @@ g_action_get_state_type (GAction *action)
  * The return value (if non-%NULL) should be freed with
  * g_variant_unref() when it is no longer required.
  *
- * Returns: (transfer full): the state range hint
+ * Returns: (nullable) (transfer full): the state range hint
  *
  * Since: 2.28
  **/
@@ -372,6 +381,8 @@ g_action_get_enabled (GAction *action)
  * the parameter type given at construction time).  If the parameter
  * type was %NULL then @parameter must also be %NULL.
  *
+ * If the @parameter GVariant is floating, it is consumed.
+ *
  * Since: 2.28
  **/
 void
@@ -388,4 +399,190 @@ g_action_activate (GAction  *action,
 
   if (parameter != NULL)
     g_variant_unref (parameter);
+}
+
+/**
+ * g_action_name_is_valid:
+ * @action_name: an potential action name
+ *
+ * Checks if @action_name is valid.
+ *
+ * @action_name is valid if it consists only of alphanumeric characters,
+ * plus '-' and '.'.  The empty string is not a valid action name.
+ *
+ * It is an error to call this function with a non-utf8 @action_name.
+ * @action_name must not be %NULL.
+ *
+ * Returns: %TRUE if @action_name is valid
+ *
+ * Since: 2.38
+ **/
+gboolean
+g_action_name_is_valid (const gchar *action_name)
+{
+  gchar c;
+  gint i;
+
+  g_return_val_if_fail (action_name != NULL, FALSE);
+
+  for (i = 0; (c = action_name[i]); i++)
+    if (!g_ascii_isalnum (c) && c != '.' && c != '-')
+      return FALSE;
+
+  return i > 0;
+}
+
+/**
+ * g_action_parse_detailed_name:
+ * @detailed_name: a detailed action name
+ * @action_name: (out): the action name
+ * @target_value: (out): the target value, or %NULL for no target
+ * @error: a pointer to a %NULL #GError, or %NULL
+ *
+ * Parses a detailed action name into its separate name and target
+ * components.
+ *
+ * Detailed action names can have three formats.
+ *
+ * The first format is used to represent an action name with no target
+ * value and consists of just an action name containing no whitespace
+ * nor the characters ':', '(' or ')'.  For example: "app.action".
+ *
+ * The second format is used to represent an action with a target value
+ * that is a non-empty string consisting only of alphanumerics, plus '-'
+ * and '.'.  In that case, the action name and target value are
+ * separated by a double colon ("::").  For example:
+ * "app.action::target".
+ *
+ * The third format is used to represent an action with any type of
+ * target value, including strings.  The target value follows the action
+ * name, surrounded in parens.  For example: "app.action(42)".  The
+ * target value is parsed using g_variant_parse().  If a tuple-typed
+ * value is desired, it must be specified in the same way, resulting in
+ * two sets of parens, for example: "app.action((1,2,3))".  A string
+ * target can be specified this way as well: "app.action('target')".
+ * For strings, this third format must be used if * target value is
+ * empty or contains characters other than alphanumerics, '-' and '.'.
+ *
+ * Returns: %TRUE if successful, else %FALSE with @error set
+ *
+ * Since: 2.38
+ **/
+gboolean
+g_action_parse_detailed_name (const gchar  *detailed_name,
+                              gchar       **action_name,
+                              GVariant    **target_value,
+                              GError      **error)
+{
+  const gchar *target;
+  gsize target_len;
+  gsize base_len;
+
+  /* For historical (compatibility) reasons, this function accepts some
+   * cases of invalid action names as long as they don't interfere with
+   * the separation of the action from the target value.
+   *
+   * We decide which format we have based on which we see first between
+   * '::' '(' and '\0'.
+   */
+
+  if (*detailed_name == '\0' || *detailed_name == ' ')
+    goto bad_fmt;
+
+  base_len = strcspn (detailed_name, ": ()");
+  target = detailed_name + base_len;
+  target_len = strlen (target);
+
+  switch (target[0])
+    {
+    case ' ':
+    case ')':
+      goto bad_fmt;
+
+    case ':':
+      if (target[1] != ':')
+        goto bad_fmt;
+
+      *target_value = g_variant_ref_sink (g_variant_new_string (target + 2));
+      break;
+
+    case '(':
+      {
+        if (target[target_len - 1] != ')')
+          goto bad_fmt;
+
+        *target_value = g_variant_parse (NULL, target + 1, target + target_len - 1, NULL, error);
+        if (*target_value == NULL)
+          goto bad_fmt;
+      }
+      break;
+
+    case '\0':
+      *target_value = NULL;
+      break;
+    }
+
+  *action_name = g_strndup (detailed_name, base_len);
+
+  return TRUE;
+
+bad_fmt:
+  if (error)
+    {
+      if (*error == NULL)
+        g_set_error (error, G_VARIANT_PARSE_ERROR, G_VARIANT_PARSE_ERROR_FAILED,
+                     "Detailed action name '%s' has invalid format", detailed_name);
+      else
+        g_prefix_error (error, "Detailed action name '%s' has invalid format: ", detailed_name);
+    }
+
+  return FALSE;
+}
+
+/**
+ * g_action_print_detailed_name:
+ * @action_name: a valid action name
+ * @target_value: (allow-none): a #GVariant target value, or %NULL
+ *
+ * Formats a detailed action name from @action_name and @target_value.
+ *
+ * It is an error to call this function with an invalid action name.
+ *
+ * This function is the opposite of
+ * g_action_parse_detailed_action_name().  It will produce a string that
+ * can be parsed back to the @action_name and @target_value by that
+ * function.
+ *
+ * See that function for the types of strings that will be printed by
+ * this function.
+ *
+ * Returns: a detailed format string
+ *
+ * Since: 2.38
+ **/
+gchar *
+g_action_print_detailed_name (const gchar *action_name,
+                              GVariant    *target_value)
+{
+  g_return_val_if_fail (g_action_name_is_valid (action_name), NULL);
+
+  if (target_value == NULL)
+    return g_strdup (action_name);
+
+  if (g_variant_is_of_type (target_value, G_VARIANT_TYPE_STRING))
+    {
+      const gchar *str = g_variant_get_string (target_value, NULL);
+
+      if (g_action_name_is_valid (str))
+        return g_strconcat (action_name, "::", str, NULL);
+    }
+
+  {
+    GString *result = g_string_new (action_name);
+    g_string_append_c (result, '(');
+    g_variant_print_string (target_value, result, TRUE);
+    g_string_append_c (result, ')');
+
+    return g_string_free (result, FALSE);
+  }
 }

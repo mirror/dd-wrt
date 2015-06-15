@@ -13,12 +13,12 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
+
+#include "config.h"
 
 #include "gbitlock.h"
 
@@ -29,10 +29,9 @@
 #include <glib/gslice.h>
 
 #include "gthreadprivate.h"
-#include "config.h"
 
-#undef HAVE_FUTEX
 #ifdef G_BIT_LOCK_FORCE_FUTEX_EMULATION
+#undef HAVE_FUTEX
 #endif
 
 #ifndef HAVE_FUTEX
@@ -52,6 +51,11 @@ static GSList *g_futex_address_list = NULL;
 #include <linux/futex.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+
+#ifndef FUTEX_WAIT_PRIVATE
+#define FUTEX_WAIT_PRIVATE FUTEX_WAIT
+#define FUTEX_WAKE_PRIVATE FUTEX_WAKE
+#endif
 
 /* < private >
  * g_futex_wait:
@@ -74,7 +78,7 @@ static void
 g_futex_wait (const volatile gint *address,
               gint                 value)
 {
-  syscall (__NR_futex, address, (gsize) FUTEX_WAIT, (gsize) value, NULL);
+  syscall (__NR_futex, address, (gsize) FUTEX_WAIT_PRIVATE, (gsize) value, NULL);
 }
 
 /* < private >
@@ -91,7 +95,7 @@ g_futex_wait (const volatile gint *address,
 static void
 g_futex_wake (const volatile gint *address)
 {
-  syscall (__NR_futex, address, (gsize) FUTEX_WAKE, (gsize) 1, NULL);
+  syscall (__NR_futex, address, (gsize) FUTEX_WAKE_PRIVATE, (gsize) 1, NULL);
 }
 
 #else
@@ -207,12 +211,12 @@ g_bit_lock (volatile gint *address,
 {
 #ifdef USE_ASM_GOTO
  retry:
-  asm volatile goto ("lock bts %1, (%0)\n"
-                     "jc %l[contended]"
-                     : /* no output */
-                     : "r" (address), "r" (lock_bit)
-                     : "cc", "memory"
-                     : contended);
+  __asm__ volatile goto ("lock bts %1, (%0)\n"
+                         "jc %l[contended]"
+                         : /* no output */
+                         : "r" (address), "r" (lock_bit)
+                         : "cc", "memory"
+                         : contended);
   return;
 
  contended:
@@ -280,12 +284,12 @@ g_bit_trylock (volatile gint *address,
 #ifdef USE_ASM_GOTO
   gboolean result;
 
-  asm volatile ("lock bts %2, (%1)\n"
-                "setnc %%al\n"
-                "movzx %%al, %0"
-                : "=r" (result)
-                : "r" (address), "r" (lock_bit)
-                : "cc", "memory");
+  __asm__ volatile ("lock bts %2, (%1)\n"
+                    "setnc %%al\n"
+                    "movzx %%al, %0"
+                    : "=r" (result)
+                    : "r" (address), "r" (lock_bit)
+                    : "cc", "memory");
 
   return result;
 #else

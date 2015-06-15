@@ -1,9 +1,42 @@
-include $(top_srcdir)/Makefile.decl
+include $(top_srcdir)/glib-tap.mk
 
-AM_CPPFLAGS = 					\
-	-DG_LOG_DOMAIN=\"GLib-GObject\"
+LDADD = ../libgobject-2.0.la $(top_builddir)/glib/libglib-2.0.la
+AM_CPPFLAGS = -g $(gobject_INCLUDES) $(GLIB_DEBUG_FLAGS)
+DEFS = -DG_LOG_DOMAIN=\"GLib-GObject\"
+AM_CFLAGS = $(GLIB_WARN_CFLAGS)
 
-INCLUDES = -g $(gobject_INCLUDES) $(GLIB_DEBUG_FLAGS)
+# -----------------------------------------------------------------------------
+
+test_programs = \
+	qdata				\
+	boxed				\
+	enums				\
+	param				\
+	threadtests			\
+	dynamictests			\
+	binding				\
+	properties			\
+	reference			\
+	valuearray			\
+	type				\
+	private				\
+	closure				\
+	object				\
+	$(NULL)
+
+# -----------------------------------------------------------------------------
+
+test_programs += ifaceproperties
+ifaceproperties_SOURCES = ifaceproperties.c testcommon.h
+
+# -----------------------------------------------------------------------------
+
+test_programs += signals
+signals_SOURCES = signals.c
+nodist_signals_SOURCES = marshalers.c marshalers.h
+signals.o: marshalers.h
+CLEANFILES += marshalers.h marshalers.c
+EXTRA_DIST += marshalers.list
 
 if CROSS_COMPILING
   glib_genmarshal=$(GLIB_GENMARSHAL)
@@ -11,34 +44,8 @@ else
   glib_genmarshal=$(top_builddir)/gobject/glib-genmarshal
 endif
 
-noinst_PROGRAMS  = $(TEST_PROGS)
-LDADD = ../libgobject-2.0.la $(top_builddir)/gthread/libgthread-2.0.la $(top_builddir)/glib/libglib-2.0.la
-
-TEST_PROGS += 		\
-	qdata		\
-	boxed		\
-	enums		\
-	param		\
-	signals		\
-	threadtests	\
-	dynamictests	\
-	binding		\
-	properties	\
-	reference	\
-	ifaceproperties	\
-	valuearray
-
-signals_SOURCES = signals.c marshalers.c
-
 marshalers.h: Makefile.am marshalers.list
 	$(AM_V_GEN) $(glib_genmarshal) --prefix=test $(srcdir)/marshalers.list --header --valist-marshallers > marshalers.h
 
-marshalers.c: Makefile.am marshalers.list
-	$(AM_V_GEN) $(glib_genmarshal) --prefix=test $(srcdir)/marshalers.list --body --valist-marshallers > marshalers.c
-
-BUILT_SOURCES = marshalers.h marshalers.c
-CLEANFILES = marshalers.h marshalers.c
-
-ifaceproperties_SOURCES = ifaceproperties.c testcommon.h
-
-EXTRA_DIST += marshalers.list
+marshalers.c: Makefile.am marshalers.h marshalers.list
+	$(AM_V_GEN) (echo "#include \"marshalers.h\""; $(glib_genmarshal) --prefix=test $(srcdir)/marshalers.list --body --valist-marshallers) > $@.tmp && mv $@.tmp $@

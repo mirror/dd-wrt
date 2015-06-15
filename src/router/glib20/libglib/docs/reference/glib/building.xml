@@ -51,11 +51,12 @@
     <title>Dependencies</title>
     <para>
       Before you can compile the GLib library, you need to have
-      various other tools and libraries installed on your
-      system. The two tools needed during the build process (as
-      differentiated from the tools used in when creating GLib
-      mentioned above such as <application>autoconf</application>)
-      are <command>pkg-config</command> and GNU make.
+      various other tools and libraries installed on your system.
+      Beyond a C compiler (which must implement C90, but does not need
+      to implement C99), the two tools needed during the build process
+      (as differentiated from the tools used in when creating GLib
+      mentioned above such as <application>autoconf</application>) are
+      <command>pkg-config</command> and GNU make.
     </para>
     <itemizedlist>
       <listitem>
@@ -75,18 +76,20 @@
       </listitem>
       <listitem>
         <para>
-          The GTK+ makefiles will mostly work with different versions
-          of <command>make</command>, however, there tends to be
-          a few incompatibilities, so the GTK+ team recommends
-          installing <ulink url="http://www.gnu.org/software/make">GNU
-          make</ulink> if you don't already have it on your system
-          and using it. (It may be called <command>gmake</command>
-          rather than <command>make</command>.)
+          The GLib Makefiles make use of several features specific to
+          <ulink url="http://www.gnu.org/software/make">GNU
+          make</ulink>, and will not build correctly with other
+          versions of <command>make</command>. You will need to
+          install it if you don't already have it on your system. (It
+          may be called <command>gmake</command> rather than
+          <command>make</command>.)
         </para>
       </listitem>
     </itemizedlist>
     <para>
-      GLib depends on a number of other libraries.
+      A UNIX build of GLib requires that the system implements at
+      least the original 1990 version of POSIX. Beyond this, it
+      depends on a number of other libraries.
     </para>
     <itemizedlist>
       <listitem>
@@ -400,7 +403,7 @@
       </para>
       <para>
         These options can be used to explicitly control whether
-        an implementation fo the printf() family should be included or not.
+        an implementation of the printf() family should be included or not.
       </para>
     </formalpara>
 
@@ -504,8 +507,8 @@
     </formalpara>
 
     <formalpara>
-      <title><systemitem>--enable-gcov</systemitem> and
-        <systemitem>--disable-gcov</systemitem></title>
+      <title><systemitem>--enable-coverage</systemitem> and
+        <systemitem>--disable-coverage</systemitem></title>
 
       <para>
         Enable the generation of coverage reports for the GLib tests.
@@ -533,6 +536,15 @@
       </para>
     </formalpara>
 
+    <formalpara>
+      <title><systemitem>--with-python</systemitem></title>
+
+      <para>
+        Allows specifying the Python interpreter to use, either as an absolute path,
+        or as a program name. GLib can be built with Python 2 (at least version 2.5)
+        or Python 3.
+      </para>
+    </formalpara>
   </refsect1>
 
 </refentry>

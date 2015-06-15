@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -32,7 +30,7 @@
 /**
  * SECTION:gdbusutils
  * @title: D-Bus Utilities
- * @short_description: Various utilities related to D-Bus.
+ * @short_description: Various utilities related to D-Bus
  * @include: gio/gio.h
  *
  * Various utility routines related to D-Bus.
@@ -499,82 +497,41 @@ g_dbus_gvariant_to_gvalue (GVariant  *value,
 
 /**
  * g_dbus_gvalue_to_gvariant:
- * @gvalue: A #GValue to convert to a #GVariant.
- * @type: A #GVariantType.
+ * @gvalue: A #GValue to convert to a #GVariant
+ * @type: A #GVariantType
  *
- * Converts a #GValue to a #GVariant of the type indicated by the @type parameter.
+ * Converts a #GValue to a #GVariant of the type indicated by the @type
+ * parameter.
  *
  * The conversion is using the following rules:
- * <table frame='all'>
- *   <title>#GValue / #GVariant conversion rules</title>
- *   <tgroup cols='2' align='left' colsep='1' rowsep='1'>
- *     <thead>
- *       <row>
- *         <entry>If the #GType for @gvalue is...</entry>
- *         <entry>... then @type must be</entry>
- *       </row>
- *     </thead>
- *     <tbody>
- *       <row>
- *         <entry>#G_TYPE_STRING</entry>
- *         <entry><link linkend="G-VARIANT-TYPE-STRING:CAPS">'s'</link>, <link linkend="G-VARIANT-TYPE-OBJECT-PATH:CAPS">'o'</link>, <link linkend="G-VARIANT-TYPE-SIGNATURE:CAPS">'g'</link> or <link linkend="G-VARIANT-TYPE-BYTESTRING:CAPS">'ay'</link></entry>
- *       </row>
- *       <row>
- *         <entry>#G_TYPE_STRV</entry>
- *         <entry><link linkend="G-VARIANT-TYPE-STRING-ARRAY:CAPS">'as'</link>, <link linkend="G-VARIANT-TYPE-OBJECT-PATH-ARRAY:CAPS">'ao'</link> or <link linkend="G-VARIANT-TYPE-BYTESTRING-ARRAY:CAPS">'aay'</link></entry>
- *       </row>
- *       <row>
- *         <entry>#G_TYPE_BOOLEAN</entry>
- *         <entry><link linkend="G-VARIANT-TYPE-BOOLEAN:CAPS">'b'</link></entry>
- *       </row>
- *       <row>
- *         <entry>#G_TYPE_UCHAR</entry>
- *         <entry><link linkend="G-VARIANT-TYPE-BYTE:CAPS">'y'</link></entry>
- *       </row>
- *       <row>
- *         <entry>#G_TYPE_INT</entry>
- *         <entry><link linkend="G-VARIANT-TYPE-INT32:CAPS">'i'</link> or <link linkend="G-VARIANT-TYPE-INT16:CAPS">'n'</link></entry>
- *       </row>
- *       <row>
- *         <entry>#G_TYPE_UINT</entry>
- *         <entry><link linkend="G-VARIANT-TYPE-UINT32:CAPS">'u'</link> or <link linkend="G-VARIANT-TYPE-UINT16:CAPS">'q'</link></entry>
- *       </row>
- *       <row>
- *         <entry>#G_TYPE_INT64</entry>
- *         <entry><link linkend="G-VARIANT-TYPE-INT64:CAPS">'x'</link></entry>
- *       </row>
- *       <row>
- *         <entry>#G_TYPE_UINT64</entry>
- *         <entry><link linkend="G-VARIANT-TYPE-UINT64:CAPS">'t'</link></entry>
- *       </row>
- *       <row>
- *         <entry>#G_TYPE_DOUBLE</entry>
- *         <entry><link linkend="G-VARIANT-TYPE-DOUBLE:CAPS">'d'</link></entry>
- *       </row>
- *       <row>
- *         <entry>#G_TYPE_VARIANT</entry>
- *         <entry>Any #GVariantType</entry>
- *       </row>
- *     </tbody>
- *   </tgroup>
- * </table>
+ *
+ * - #G_TYPE_STRING: 's', 'o', 'g' or 'ay'
+ * - #G_TYPE_STRV: 'as', 'ao' or 'aay'
+ * - #G_TYPE_BOOLEAN: 'b'
+ * - #G_TYPE_UCHAR: 'y'
+ * - #G_TYPE_INT: 'i', 'n'
+ * - #G_TYPE_UINT: 'u', 'q'
+ * - #G_TYPE_INT64 'x'
+ * - #G_TYPE_UINT64: 't'
+ * - #G_TYPE_DOUBLE: 'd'
+ * - #G_TYPE_VARIANT: Any #GVariantType
+ *
  * This can fail if e.g. @gvalue is of type #G_TYPE_STRING and @type
- * is <link linkend="G-VARIANT-TYPE-INT32:CAPS">'i'</link>. It will
- * also fail for any #GType (including e.g. #G_TYPE_OBJECT and
- * #G_TYPE_BOXED derived-types) not in the table above.
+ * is ['i'][G-VARIANT-TYPE-INT32:CAPS]. It will also fail for any #GType
+ * (including e.g. #G_TYPE_OBJECT and #G_TYPE_BOXED derived-types) not
+ * in the table above.
  *
  * Note that if @gvalue is of type #G_TYPE_VARIANT and its value is
- * %NULL, the <emphasis>empty</emphasis> #GVariant instance (never
- * %NULL) for @type is returned (e.g. 0 for scalar types, the empty
- * string for string types, <literal>'/'</literal> for object path
- * types, the empty array for any array type and so on).
+ * %NULL, the empty #GVariant instance (never %NULL) for @type is
+ * returned (e.g. 0 for scalar types, the empty string for string types,
+ * '/' for object path types, the empty array for any array type and so on).
  *
  * See the g_dbus_gvariant_to_gvalue() function for how to convert a
  * #GVariant to a #GValue.
  *
- * Returns: A #GVariant (never floating) of #GVariantType
- * @type holding the data from @gvalue or %NULL in case of
- * failure. Free with g_variant_unref().
+ * Returns: A #GVariant (never floating) of #GVariantType @type holding
+ *     the data from @gvalue or %NULL in case of failure. Free with
+ *     g_variant_unref().
  *
  * Since: 2.30
  */

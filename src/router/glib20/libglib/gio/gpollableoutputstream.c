@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -181,7 +179,7 @@ g_pollable_output_stream_default_write_nonblocking (GPollableOutputStream  *stre
  * to having been cancelled.
  *
  * Virtual: write_nonblocking
- * Return value: the number of bytes written, or -1 on error (including
+ * Returns: the number of bytes written, or -1 on error (including
  *   %G_IO_ERROR_WOULD_BLOCK).
  */
 gssize

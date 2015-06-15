@@ -308,7 +308,6 @@ process (gint      line,
 int
 main (int argc, char **argv)
 {
-  gchar *srcdir = getenv ("srcdir");
   gchar *testfile;
   gchar *contents;
   GError *error = NULL;
@@ -321,11 +320,10 @@ main (int argc, char **argv)
   GArray *ucs4;
   Status status = VALID;	/* Quiet GCC */
 
-  if (!srcdir)
-    srcdir = ".";
-  
-  testfile = g_strconcat (srcdir, G_DIR_SEPARATOR_S "utf8.txt", NULL);
-  
+  g_test_init (&argc, &argv, NULL);
+
+  testfile = g_test_build_filename (G_TEST_DIST, "utf8.txt", NULL);
+
   g_file_get_contents (testfile, &contents, NULL, &error);
   if (error)
     croak ("Cannot open utf8.txt: %s", error->message);
@@ -418,5 +416,8 @@ main (int argc, char **argv)
       line++;
     }
 
+  g_free (testfile);
+  g_array_free (ucs4, TRUE);
+  g_free (contents);
   return exit_status;
 }

@@ -332,7 +332,7 @@ test_thread_idle_timeout (gpointer data)
 }
 
 static void
-test_thread_idle_time ()
+test_thread_idle_time (void)
 {
   guint limit = 50;
   guint interval = 10000;
@@ -452,13 +452,13 @@ test_check_start_and_stop (gpointer user_data)
 int
 main (int argc, char *argv[])
 {
-  g_thread_init (NULL);
-
   DEBUG_MSG (("Starting... (in one second)"));
   g_timeout_add (1000, test_check_start_and_stop, NULL);
 
   main_loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (main_loop);
+  g_main_loop_unref (main_loop);
 
+  g_thread_pool_free (idle_pool, FALSE, TRUE);
   return 0;
 }

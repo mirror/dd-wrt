@@ -13,17 +13,15 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_NETWORK_ADDRESS_H__
+#define __G_NETWORK_ADDRESS_H__
 
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_NETWORK_ADDRESS_H__
-#define __G_NETWORK_ADDRESS_H__
 
 #include <gio/giotypes.h>
 
@@ -53,18 +51,27 @@ struct _GNetworkAddressClass
 
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType               g_network_address_get_type     (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GSocketConnectable *g_network_address_new          (const gchar      *hostname,
 						    guint16           port);
+GLIB_AVAILABLE_IN_2_44
+GSocketConnectable *g_network_address_new_loopback (guint16           port);
+GLIB_AVAILABLE_IN_ALL
 GSocketConnectable *g_network_address_parse        (const gchar      *host_and_port,
 						    guint16           default_port,
 						    GError          **error);
+GLIB_AVAILABLE_IN_ALL
 GSocketConnectable *g_network_address_parse_uri    (const gchar      *uri,
     						    guint16           default_port,
 						    GError          **error);
+GLIB_AVAILABLE_IN_ALL
 const gchar        *g_network_address_get_hostname (GNetworkAddress  *addr);
+GLIB_AVAILABLE_IN_ALL
 guint16             g_network_address_get_port     (GNetworkAddress  *addr);
+GLIB_AVAILABLE_IN_ALL
 const gchar        *g_network_address_get_scheme   (GNetworkAddress  *addr);
 
 

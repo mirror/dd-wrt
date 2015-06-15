@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
 
+#ifndef __G_FILE_ICON_H__
+#define __G_FILE_ICON_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_FILE_ICON_H__
-#define __G_FILE_ICON_H__
 
 #include <gio/giotypes.h>
 
@@ -45,10 +43,13 @@ G_BEGIN_DECLS
  **/
 typedef struct _GFileIconClass   GFileIconClass;
 
+GLIB_AVAILABLE_IN_ALL
 GType   g_file_icon_get_type (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GIcon * g_file_icon_new      (GFile     *file);
 
+GLIB_AVAILABLE_IN_ALL
 GFile * g_file_icon_get_file (GFileIcon *icon);
 
 G_END_DECLS

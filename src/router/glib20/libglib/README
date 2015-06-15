@@ -1,7 +1,7 @@
 General Information
 ===================
 
-This is GLib version 2.34.3. GLib is the low-level core
+This is GLib version 2.45.2. GLib is the low-level core
 library that forms the basis for projects such as GTK+ and GNOME. It
 provides data structure handling for C, portability wrappers, and
 interfaces for such runtime functionality as an event loop, threads,
@@ -66,6 +66,67 @@ Otherwise, enter a new bug report that describes the patch,
 and attach the patch to that bug report.
 
 Patches should be in unified diff form. (The -up option to GNU diff.)
+
+Notes about GLib 2.46
+=====================
+
+* GTask no longer imposes a fixed limit on the number of tasks that
+  can be run_in_thread() simultaneously, since doing this inevitably
+  results in deadlocks in some use cases. Instead, it now has a base
+  number of threads that can be used "for free", but will gradually
+  add more threads to the pool if too much time passes without any
+  tasks completing.
+
+  The exact behavior may continue to change in the future, and it's
+  possible that some future version of GLib may not do any
+  rate-limiting at all. As a result, you should no longer assume that
+  GTask will rate-limit tasks itself (or, by extension, that calls to
+  certain async gio methods will automatically be rate-limited for
+  you). If you have a very large number of tasks to run, and don't
+  want them to all run at once, you should rate-limit them yourself.
+
+Notes about GLib 2.40
+=====================
+
+* g_test_run() no longer runs tests in exactly the order they are
+  registered; instead, it groups them according to test suites (ie,
+  path components) like the documentation always claimed it did. In
+  some cases, this can result in a sub-optimal ordering of tests,
+  relative to the old behavior. The fix is to change the test paths to
+  properly group together the tests that should run together. (eg, if
+  you want to run test_foo_simple(), test_bar_simple(), and
+  test_foo_using_bar() in that order, they should have test paths like
+  "/simple/foo", "/simple/bar", "/complex/foo-using-bar", not
+  "/foo/simple", "/bar/simple", "/foo/using-bar" (which would result
+  in test_foo_using_bar() running before test_bar_simple()).
+
+  (The behavior actually changed in GLib 2.36, but it was not
+  documented at the time, since we didn't realize it mattered.)
+
+Notes about GLib 2.36
+=====================
+
+* It is no longer necessary to call g_type_init().  If you are
+  loading GLib as a dynamic module, you should be careful to avoid
+  unloading it, then subsequently loading it again.  This never
+  really worked before, but it is now explicitly undefined behavior.
+  Note that if g_type_init() was the only explicit use of a GObject
+  API and you are using linker flags such as --no-add-needed, then
+  you may have to artificially use some GObject call to keep the
+  linker from optimizing away -lgobject. We recommend to use
+  g_type_ensure (G_TYPE_OBJECT) for this purpose.
+
+* This release contains an incompatible change to the g_get_home_dir()
+  function.  Previously, this function would effectively ignore the HOME
+  environment variable and always return the value from /etc/password.
+  As of this version, the HOME variable is used if it is set and the
+  value from /etc/passwd is only used as a fallback.
+
+* The 'flowinfo' and 'scope_id' fields of GInetSocketAddress
+  (introduced in GLib 2.32) have been fixed to be in host byte order
+  rather than network byte order. This is an incompatible change, but
+  the previous behavior was clearly broken, so it seems unlikely that
+  anyone was using it.
 
 Notes about GLib 2.34
 =====================

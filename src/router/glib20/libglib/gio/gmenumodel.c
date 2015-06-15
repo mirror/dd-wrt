@@ -12,12 +12,12 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
- * USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
+
+#include "config.h"
 
 #include "gmenumodel.h"
 
@@ -25,6 +25,7 @@
  * SECTION:gmenumodel
  * @title: GMenuModel
  * @short_description: An abstract class representing the contents of a menu
+ * @include: gio/gio.h
  * @see_also: #GActionGroup
  *
  * #GMenuModel represents the contents of a menu -- an ordered list of
@@ -42,39 +43,35 @@
  * it (or, in the case of the 'root' menu, is defined by the context
  * in which it is used).
  *
- * As an example, consider the visible portions of the menu in
- * <xref linkend="menu-example"/>.
+ * As an example, consider the visible portions of this menu:
  *
- * <figure id="menu-example">
- *   <title>An example menu</title>
- *   <graphic fileref="menu-example.png" format="PNG"></graphic>
- * </figure>
+ * ## An example menu # {#menu-example}
+ *
+ * ![](menu-example.png)
  *
  * There are 8 "menus" visible in the screenshot: one menubar, two
  * submenus and 5 sections:
- * <itemizedlist>
- * <listitem>the toplevel menubar (containing 4 items)</listitem>
- * <listitem>the View submenu (containing 3 sections)</listitem>
- * <listitem>the first section of the View submenu (containing 2 items)</listitem>
- * <listitem>the second section of the View submenu (containing 1 item)</listitem>
- * <listitem>the final section of the View submenu (containing 1 item)</listitem>
- * <listitem>the Highlight Mode submenu (containing 2 sections)</listitem>
- * <listitem>the Sources section (containing 2 items)</listitem>
- * <listitem>the Markup section (containing 2 items)</listitem>
- * </itemizedlist>
  *
- * <xref linkend="menu-model"/> illustrates the conceptual connection between
+ * - the toplevel menubar (containing 4 items)
+ * - the View submenu (containing 3 sections)
+ * - the first section of the View submenu (containing 2 items)
+ * - the second section of the View submenu (containing 1 item)
+ * - the final section of the View submenu (containing 1 item)
+ * - the Highlight Mode submenu (containing 2 sections)
+ * - the Sources section (containing 2 items)
+ * - the Markup section (containing 2 items)
+ *
+ * The [example][menu-model] illustrates the conceptual connection between
  * these 8 menus. Each large block in the figure represents a menu and the
  * smaller blocks within the large block represent items in that menu. Some
  * items contain references to other menus.
  *
- * <figure id="menu-model">
- *   <title>A menu model</title>
- *   <graphic fileref="menu-model.png" format="PNG"></graphic>
- * </figure>
+ * ## A menu example # {#menu-model}
  *
- * Notice that the separators visible in <xref linkend="menu-example"/>
- * appear nowhere in <xref linkend="menu-model"/>. This is because
+ * ![](menu-model.png)
+ *
+ * Notice that the separators visible in the [example][menu-example]
+ * appear nowhere in the [menu model][menu-model]. This is because
  * separators are not explicitly represented in the menu model. Instead,
  * a separator is inserted between any two non-empty sections of a menu.
  * Section items can have labels just like any other item. In that case,
@@ -85,12 +82,10 @@
  * outside the application. Examples include global menus, jumplists,
  * dash boards, etc. To support such uses, it is necessary to 'export'
  * information about actions and their representation in menus, which
- * is exactly what the
- * <link linkend="gio-GActionGroup-exporter">GActionGroup exporter</link>
- * and the
- * <link linkend="gio-GMenuModel-exporter">GMenuModel exporter</link>
- * do for #GActionGroup and #GMenuModel. The client-side counterparts
- * to make use of the exported information are #GDBusActionGroup and
+ * is exactly what the [GActionGroup exporter][gio-GActionGroup-exporter]
+ * and the [GMenuModel exporter][gio-GMenuModel-exporter] do for
+ * #GActionGroup and #GMenuModel. The client-side counterparts to
+ * make use of the exported information are #GDBusActionGroup and
  * #GDBusMenuModel.
  *
  * The API of #GMenuModel is very generic, with iterators for the
@@ -115,48 +110,37 @@
  * While a wide variety of stateful actions is possible, the following
  * is the minimum that is expected to be supported by all users of exported
  * menu information:
- * <itemizedlist>
- * <listitem>an action with no parameter type and no state</listitem>
- * <listitem>an action with no parameter type and boolean state</listitem>
- * <listitem>an action with string parameter type and string state</listitem>
- * </itemizedlist>
+ * - an action with no parameter type and no state
+ * - an action with no parameter type and boolean state
+ * - an action with string parameter type and string state
  *
- * <formalpara><title>Stateless</title>
- * <para>
+ * ## Stateless 
+ *
  * A stateless action typically corresponds to an ordinary menu item.
- * </para>
- * <para>
- * Selecting such a menu item will activate the action (with no parameter).
- * </para>
- * </formalpara>
  *
- * <formalpara><title>Boolean State</title>
- * <para>
+ * Selecting such a menu item will activate the action (with no parameter).
+ *
+ * ## Boolean State
+ *
  * An action with a boolean state will most typically be used with a "toggle"
  * or "switch" menu item. The state can be set directly, but activating the
  * action (with no parameter) results in the state being toggled.
- * </para>
- * <para>
+ *
  * Selecting a toggle menu item will activate the action. The menu item should
  * be rendered as "checked" when the state is true.
- * </para>
- * </formalpara>
  *
- * <formalpara><title>String Parameter and State</title>
- * <para>
+ * ## String Parameter and State
+ *
  * Actions with string parameters and state will most typically be used to
  * represent an enumerated choice over the items available for a group of
  * radio menu items. Activating the action with a string parameter is
  * equivalent to setting that parameter as the state.
- * </para>
- * <para>
+ *
  * Radio menu items, in addition to being associated with the action, will
  * have a target value. Selecting that menu item will result in activation
  * of the action with the target value as the parameter. The menu item should
  * be rendered as "selected" when the state of the action is equal to the
  * target value of the menu item.
- * </para>
- * </formalpara>
  */
 
 /**
@@ -194,6 +178,8 @@ typedef struct
 } GMenuLinkHashIter;
 
 typedef GMenuLinkIterClass GMenuLinkHashIterClass;
+
+static GType g_menu_link_hash_iter_get_type (void);
 
 G_DEFINE_TYPE (GMenuLinkHashIter, g_menu_link_hash_iter, G_TYPE_MENU_LINK_ITER)
 
@@ -249,6 +235,8 @@ typedef struct
 
 typedef GMenuAttributeIterClass GMenuAttributeHashIterClass;
 
+static GType g_menu_attribute_hash_iter_get_type (void);
+
 G_DEFINE_TYPE (GMenuAttributeHashIter, g_menu_attribute_hash_iter, G_TYPE_MENU_ATTRIBUTE_ITER)
 
 static gboolean
@@ -297,7 +285,7 @@ g_menu_attribute_hash_iter_class_init (GMenuAttributeHashIterClass *class)
 G_DEFINE_ABSTRACT_TYPE (GMenuModel, g_menu_model, G_TYPE_OBJECT)
 
 
-guint g_menu_model_items_changed_signal;
+static guint g_menu_model_items_changed_signal;
 
 static GMenuAttributeIter *
 g_menu_model_real_iterate_item_attributes (GMenuModel *model,
@@ -583,7 +571,7 @@ g_menu_model_get_item_attribute_value (GMenuModel         *model,
  * g_variant_get(), followed by a g_variant_unref().  As such,
  * @format_string must make a complete copy of the data (since the
  * #GVariant may go away after the call to g_variant_unref()).  In
- * particular, no '&amp;' characters are allowed in @format_string.
+ * particular, no '&' characters are allowed in @format_string.
  *
  * Returns: %TRUE if the named attribute was found with the expected
  *     type
@@ -700,14 +688,14 @@ g_menu_model_items_changed (GMenuModel *model,
   g_signal_emit (model, g_menu_model_items_changed_signal, 0, position, removed, added);
 }
 
-G_DEFINE_ABSTRACT_TYPE (GMenuAttributeIter, g_menu_attribute_iter, G_TYPE_OBJECT)
-
 struct _GMenuAttributeIterPrivate
 {
   GQuark name;
   GVariant *value;
   gboolean valid;
 };
+
+G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (GMenuAttributeIter, g_menu_attribute_iter, G_TYPE_OBJECT)
 
 /**
  * g_menu_attribute_iter_get_next:
@@ -845,7 +833,7 @@ g_menu_attribute_iter_finalize (GObject *object)
 static void
 g_menu_attribute_iter_init (GMenuAttributeIter *iter)
 {
-  iter->priv = G_TYPE_INSTANCE_GET_PRIVATE (iter, G_TYPE_MENU_ATTRIBUTE_ITER, GMenuAttributeIterPrivate);
+  iter->priv = g_menu_attribute_iter_get_instance_private (iter);
 }
 
 static void
@@ -854,11 +842,7 @@ g_menu_attribute_iter_class_init (GMenuAttributeIterClass *class)
   GObjectClass *object_class = G_OBJECT_CLASS (class);
 
   object_class->finalize = g_menu_attribute_iter_finalize;
-
-  g_type_class_add_private (class, sizeof (GMenuAttributeIterPrivate));
 }
-
-G_DEFINE_ABSTRACT_TYPE (GMenuLinkIter, g_menu_link_iter, G_TYPE_OBJECT)
 
 struct _GMenuLinkIterPrivate
 {
@@ -866,6 +850,8 @@ struct _GMenuLinkIterPrivate
   GMenuModel *value;
   gboolean valid;
 };
+
+G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (GMenuLinkIter, g_menu_link_iter, G_TYPE_OBJECT)
 
 /**
  * g_menu_link_iter_get_next:
@@ -1001,7 +987,7 @@ g_menu_link_iter_finalize (GObject *object)
 static void
 g_menu_link_iter_init (GMenuLinkIter *iter)
 {
-  iter->priv = G_TYPE_INSTANCE_GET_PRIVATE (iter, G_TYPE_MENU_LINK_ITER, GMenuLinkIterPrivate);
+  iter->priv = g_menu_link_iter_get_instance_private (iter);
 }
 
 static void
@@ -1010,6 +996,4 @@ g_menu_link_iter_class_init (GMenuLinkIterClass *class)
   GObjectClass *object_class = G_OBJECT_CLASS (class);
 
   object_class->finalize = g_menu_link_iter_finalize;
-
-  g_type_class_add_private (class, sizeof (GMenuLinkIterPrivate));
 }

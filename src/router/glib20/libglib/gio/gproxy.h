@@ -15,19 +15,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Nicolas Dufresne <nicolas.dufresne@collabora.co.uk>
  */
 
+#ifndef __G_PROXY_H__
+#define __G_PROXY_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_PROXY_H__
-#define __G_PROXY_H__
 
 #include <gio/giotypes.h>
 
@@ -42,7 +40,7 @@ G_BEGIN_DECLS
  * G_PROXY_EXTENSION_POINT_NAME:
  *
  * Extension point for proxy functionality.
- * See <link linkend="extending-gio">Extending GIO</link>.
+ * See [Extending GIO][extending-gio].
  *
  * Since: 2.26
  */
@@ -96,16 +94,20 @@ struct _GProxyInterface
   gboolean    (* supports_hostname) (GProxy             *proxy);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType      g_proxy_get_type                 (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GProxy    *g_proxy_get_default_for_protocol (const gchar *protocol);
 
+GLIB_AVAILABLE_IN_ALL
 GIOStream *g_proxy_connect           (GProxy               *proxy,
 				      GIOStream            *connection,
 				      GProxyAddress        *proxy_address,
 				      GCancellable         *cancellable,
 				      GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 void       g_proxy_connect_async     (GProxy               *proxy,
 				      GIOStream            *connection,
 				      GProxyAddress        *proxy_address,
@@ -113,10 +115,12 @@ void       g_proxy_connect_async     (GProxy               *proxy,
 				      GAsyncReadyCallback   callback,
 				      gpointer              user_data);
 
+GLIB_AVAILABLE_IN_ALL
 GIOStream *g_proxy_connect_finish    (GProxy               *proxy,
 				      GAsyncResult         *result,
 				      GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean   g_proxy_supports_hostname (GProxy               *proxy);
 
 G_END_DECLS

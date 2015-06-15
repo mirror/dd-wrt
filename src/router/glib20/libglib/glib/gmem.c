@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -36,8 +34,6 @@
 #include <string.h>
 #include <signal.h>
 
-#include "glib-init.h"
-
 #include "gslice.h"
 #include "gbacktrace.h"
 #include "gtestutils.h"
@@ -50,72 +46,17 @@
 /* notes on macros:
  * having G_DISABLE_CHECKS defined disables use of glib_mem_profiler_table and
  * g_mem_profile().
- * REALLOC_0_WORKS is defined if g_realloc (NULL, x) works.
- * SANE_MALLOC_PROTOS is defined if the systems malloc() and friends functions
- * match the corresponding GLib prototypes, keep configure.ac and gmem.h in sync here.
- * g_mem_gc_friendly is TRUE, freed memory should be 0-wiped.
+ * If g_mem_gc_friendly is TRUE, freed memory should be 0-wiped.
  */
-
-/* --- malloc wrappers --- */
-#ifndef	REALLOC_0_WORKS
-static gpointer
-standard_realloc (gpointer mem,
-		  gsize    n_bytes)
-{
-  if (!mem)
-    return malloc (n_bytes);
-  else
-    return realloc (mem, n_bytes);
-}
-#endif	/* !REALLOC_0_WORKS */
-
-#ifdef SANE_MALLOC_PROTOS
-#  define standard_malloc	malloc
-#  ifdef REALLOC_0_WORKS
-#    define standard_realloc	realloc
-#  endif /* REALLOC_0_WORKS */
-#  define standard_free		free
-#  define standard_calloc	calloc
-#  define standard_try_malloc	malloc
-#  define standard_try_realloc	realloc
-#else	/* !SANE_MALLOC_PROTOS */
-static gpointer
-standard_malloc (gsize n_bytes)
-{
-  return malloc (n_bytes);
-}
-#  ifdef REALLOC_0_WORKS
-static gpointer
-standard_realloc (gpointer mem,
-		  gsize    n_bytes)
-{
-  return realloc (mem, n_bytes);
-}
-#  endif /* REALLOC_0_WORKS */
-static void
-standard_free (gpointer mem)
-{
-  free (mem);
-}
-static gpointer
-standard_calloc (gsize n_blocks,
-		 gsize n_bytes)
-{
-  return calloc (n_blocks, n_bytes);
-}
-#define	standard_try_malloc	standard_malloc
-#define	standard_try_realloc	standard_realloc
-#endif	/* !SANE_MALLOC_PROTOS */
-
 
 /* --- variables --- */
 static GMemVTable glib_mem_vtable = {
-  standard_malloc,
-  standard_realloc,
-  standard_free,
-  standard_calloc,
-  standard_try_malloc,
-  standard_try_realloc,
+  malloc,
+  realloc,
+  free,
+  calloc,
+  malloc,
+  realloc,
 };
 
 /**
@@ -125,18 +66,15 @@ static GMemVTable glib_mem_vtable = {
  * 
  * These functions provide support for allocating and freeing memory.
  * 
- * <note>
  * If any call to allocate memory fails, the application is terminated.
  * This also means that there is no need to check if the call succeeded.
- * </note>
  * 
- * <note>
- * It's important to match g_malloc() with g_free(), plain malloc() with free(),
- * and (if you're using C++) new with delete and new[] with delete[]. Otherwise
- * bad things can happen, since these allocators may use different memory
- * pools (and new/delete call constructors and destructors). See also
- * g_mem_set_vtable().
- * </note>
+ * It's important to match g_malloc() (and wrappers such as g_new()) with
+ * g_free(), g_slice_alloc() (and wrappers such as g_slice_new()) with
+ * g_slice_free(), plain malloc() with free(), and (if you're using C++)
+ * new with delete and new[] with delete[]. Otherwise bad things can happen,
+ * since these allocators may use different memory pools (and new/delete call
+ * constructors and destructors). See also g_mem_set_vtable().
  */
 
 /* --- functions --- */
@@ -202,7 +140,7 @@ g_malloc0 (gsize n_bytes)
 
 /**
  * g_realloc:
- * @mem: the memory to reallocate
+ * @mem: (allow-none): the memory to reallocate
  * @n_bytes: new size of the memory in bytes
  * 
  * Reallocates the memory pointed to by @mem, so that it now has space for
@@ -240,10 +178,12 @@ g_realloc (gpointer mem,
 
 /**
  * g_free:
- * @mem: the memory to free
+ * @mem: (allow-none): the memory to free
  * 
  * Frees the memory pointed to by @mem.
- * If @mem is %NULL it simply returns.
+ *
+ * If @mem is %NULL it simply returns, so there is no need to check @mem
+ * against %NULL before calling this function.
  */
 void
 g_free (gpointer mem)
@@ -266,9 +206,6 @@ g_free (gpointer mem)
  * Otherwise, the variable is destroyed using @destroy and the
  * pointer is set to %NULL.
  *
- * This function is threadsafe and modifies the pointer atomically,
- * using memory barriers where needed.
- *
  * A macro is also included that allows this function to be used without
  * pointer casts.
  *
@@ -281,15 +218,12 @@ g_clear_pointer (gpointer      *pp,
 {
   gpointer _p;
 
-  /* This is a little frustrating.
-   * Would be nice to have an atomic exchange (with no compare).
-   */
-  do
-    _p = g_atomic_pointer_get (pp);
-  while G_UNLIKELY (!g_atomic_pointer_compare_and_exchange (pp, _p, NULL));
-
+  _p = *pp;
   if (_p)
-    destroy (_p);
+    {
+      *pp = NULL;
+      destroy (_p);
+    }
 }
 
 /**
@@ -349,7 +283,9 @@ g_try_malloc0 (gsize n_bytes)
  * 
  * Attempts to realloc @mem to a new size, @n_bytes, and returns %NULL
  * on failure. Contrast with g_realloc(), which aborts the program
- * on failure. If @mem is %NULL, behaves the same as g_try_malloc().
+ * on failure.
+ *
+ * If @mem is %NULL, behaves the same as g_try_malloc().
  * 
  * Returns: the allocated memory, or %NULL.
  */
@@ -426,7 +362,7 @@ g_malloc0_n (gsize n_blocks,
 
 /**
  * g_realloc_n:
- * @mem: the memory to reallocate
+ * @mem: (allow-none): the memory to reallocate
  * @n_blocks: the number of blocks to allocate
  * @n_block_bytes: the size of each block in bytes
  * 
@@ -543,7 +479,7 @@ static gboolean vtable_set = FALSE;
  *
  * A different allocator can be set using g_mem_set_vtable().
  *
- * Return value: if %TRUE, malloc() and g_malloc() can be mixed.
+ * Returns: if %TRUE, malloc() and g_malloc() can be mixed.
  **/
 gboolean
 g_mem_is_system_malloc (void)
@@ -555,13 +491,17 @@ g_mem_is_system_malloc (void)
  * g_mem_set_vtable:
  * @vtable: table of memory allocation routines.
  * 
- * Sets the #GMemVTable to use for memory allocation. You can use this to provide
- * custom memory allocation routines. <emphasis>This function must be called
- * before using any other GLib functions.</emphasis> The @vtable only needs to
- * provide malloc(), realloc(), and free() functions; GLib can provide default
- * implementations of the others. The malloc() and realloc() implementations
- * should return %NULL on failure, GLib will handle error-checking for you.
- * @vtable is copied, so need not persist after this function has been called.
+ * Sets the #GMemVTable to use for memory allocation. You can use this
+ * to provide custom memory allocation routines.
+ *
+ * The @vtable only needs to provide malloc(), realloc(), and free()
+ * functions; GLib can provide default implementations of the others.
+ * The malloc() and realloc() implementations should return %NULL on
+ * failure, GLib will handle error-checking for you. @vtable is copied,
+ * so need not persist after this function has been called.
+ *
+ * Note that this function must be called before using any other GLib
+ * functions.
  */
 void
 g_mem_set_vtable (GMemVTable *vtable)
@@ -613,11 +553,6 @@ static gsize profile_allocs = 0;
 static gsize profile_zinit = 0;
 static gsize profile_frees = 0;
 static GMutex gmem_profile_mutex;
-#ifdef  G_ENABLE_DEBUG
-static volatile gsize g_trap_free_size = 0;
-static volatile gsize g_trap_realloc_size = 0;
-static volatile gsize g_trap_malloc_size = 0;
-#endif  /* G_ENABLE_DEBUG */
 
 #define	PROFILE_TABLE(f1,f2,f3)   ( ( ((f3) << 2) | ((f2) << 1) | (f1) ) * (MEM_PROFILE_TABLE_SIZE + 1))
 
@@ -629,8 +564,8 @@ profiler_log (ProfilerJob job,
   g_mutex_lock (&gmem_profile_mutex);
   if (!profile_data)
     {
-      profile_data = standard_calloc ((MEM_PROFILE_TABLE_SIZE + 1) * 8, 
-                                      sizeof (profile_data[0]));
+      profile_data = calloc ((MEM_PROFILE_TABLE_SIZE + 1) * 8, 
+                             sizeof (profile_data[0]));
       if (!profile_data)	/* memory system kiddin' me, eh? */
 	{
 	  g_mutex_unlock (&gmem_profile_mutex);
@@ -757,12 +692,7 @@ profiler_try_malloc (gsize n_bytes)
 {
   gsize *p;
 
-#ifdef  G_ENABLE_DEBUG
-  if (g_trap_malloc_size == n_bytes)
-    G_BREAKPOINT ();
-#endif  /* G_ENABLE_DEBUG */
-
-  p = standard_malloc (sizeof (gsize) * 2 + n_bytes);
+  p = malloc (sizeof (gsize) * 2 + n_bytes);
 
   if (p)
     {
@@ -795,12 +725,7 @@ profiler_calloc (gsize n_blocks,
   gsize l = n_blocks * n_block_bytes;
   gsize *p;
 
-#ifdef  G_ENABLE_DEBUG
-  if (g_trap_malloc_size == l)
-    G_BREAKPOINT ();
-#endif  /* G_ENABLE_DEBUG */
-  
-  p = standard_calloc (1, sizeof (gsize) * 2 + l);
+  p = calloc (1, sizeof (gsize) * 2 + l);
 
   if (p)
     {
@@ -834,17 +759,12 @@ profiler_free (gpointer mem)
     }
   else
     {
-#ifdef  G_ENABLE_DEBUG
-      if (g_trap_free_size == p[1])
-	G_BREAKPOINT ();
-#endif  /* G_ENABLE_DEBUG */
-
       profiler_log (PROFILER_FREE,
 		    p[1],	/* length */
 		    TRUE);
       memset (p + 2, 0xaa, p[1]);
 
-      /* for all those that miss standard_free (p); in this place, yes,
+      /* for all those that miss free (p); in this place, yes,
        * we do leak all memory when profiling, and that is intentional
        * to catch double frees. patch submissions are futile.
        */
@@ -859,11 +779,6 @@ profiler_try_realloc (gpointer mem,
   gsize *p = mem;
 
   p -= 2;
-
-#ifdef  G_ENABLE_DEBUG
-  if (g_trap_realloc_size == n_bytes)
-    G_BREAKPOINT ();
-#endif  /* G_ENABLE_DEBUG */
   
   if (mem && p[0])	/* free count */
     {
@@ -876,7 +791,7 @@ profiler_try_realloc (gpointer mem,
     }
   else
     {
-      p = standard_realloc (mem ? p : NULL, sizeof (gsize) * 2 + n_bytes);
+      p = realloc (mem ? p : NULL, sizeof (gsize) * 2 + n_bytes);
 
       if (p)
 	{

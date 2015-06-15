@@ -13,8 +13,7 @@
 
    You should have received a copy of the GNU Library General Public
    License along with the Gnome Library; see the file COPYING.LIB.  If not,
-   write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.
+   see <http://www.gnu.org/licenses/>.
 
    Authors:.
 		John McCutchan <john@johnmccutchan.com>
@@ -38,9 +37,10 @@ typedef struct ik_event_s {
    * then event1->pair == event2 and event2->pair == NULL.
    * It will result also in event1->pair->is_second_in_pair == TRUE */
   struct ik_event_s *pair;
+  gint64 timestamp; /* monotonic time that this was created */
 } ik_event_t;
 
-gboolean _ik_startup (void (*cb) (ik_event_t *event));
+gboolean _ik_startup (gboolean (*cb) (ik_event_t *event));
 
 ik_event_t *_ik_event_new_dummy (const char *name,
 				 gint32      wd,

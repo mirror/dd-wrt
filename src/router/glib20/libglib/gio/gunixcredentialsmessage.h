@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: David Zeuthen <davidz@redhat.com>
  */
@@ -37,6 +35,8 @@ G_BEGIN_DECLS
 
 typedef struct _GUnixCredentialsMessagePrivate  GUnixCredentialsMessagePrivate;
 typedef struct _GUnixCredentialsMessageClass    GUnixCredentialsMessageClass;
+
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixCredentialsMessage, g_object_unref)
 
 /**
  * GUnixCredentialsMessageClass:
@@ -70,11 +70,16 @@ struct _GUnixCredentialsMessage
   GUnixCredentialsMessagePrivate *priv;
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType                  g_unix_credentials_message_get_type             (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GSocketControlMessage *g_unix_credentials_message_new                  (void);
+GLIB_AVAILABLE_IN_ALL
 GSocketControlMessage *g_unix_credentials_message_new_with_credentials (GCredentials *credentials);
+GLIB_AVAILABLE_IN_ALL
 GCredentials          *g_unix_credentials_message_get_credentials      (GUnixCredentialsMessage *message);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean               g_unix_credentials_message_is_supported         (void);
 
 G_END_DECLS

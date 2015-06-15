@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -161,8 +159,8 @@ g_pollable_input_stream_default_read_nonblocking (GPollableInputStream  *stream,
 /**
  * g_pollable_input_stream_read_nonblocking:
  * @stream: a #GPollableInputStream
- * @buffer: a buffer to read data into (which should be at least @count
- *     bytes long).
+ * @buffer: (array length=count) (element-type guint8): a buffer to
+ *     read data into (which should be at least @count bytes long).
  * @count: the number of bytes you want to read
  * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @error: #GError for error reporting, or %NULL to ignore.
@@ -180,7 +178,7 @@ g_pollable_input_stream_default_read_nonblocking (GPollableInputStream  *stream,
  * to having been cancelled.
  *
  * Virtual: read_nonblocking
- * Return value: the number of bytes read, or -1 on error (including
+ * Returns: the number of bytes read, or -1 on error (including
  *   %G_IO_ERROR_WOULD_BLOCK).
  */
 gssize

@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -24,14 +22,14 @@
  * SECTION:gfileinfo
  * @short_description: File Information and Attributes
  * @include: gio/gio.h
- * @see_also: #GFile, <link linkend="gio-GFileAttribute">GFileAttribute</link>
+ * @see_also: #GFile, [GFileAttribute][gio-GFileAttribute]
  *
  * Functionality for manipulating basic metadata for files. #GFileInfo
  * implements methods for getting information that all files should
  * contain, and allows for manipulation of extended attributes.
  *
- * See <link linkend="gio-GFileAttribute">GFileAttribute</link> for more
- * information on how GIO handles file attributes.
+ * See [GFileAttribute][gio-GFileAttribute] for more information on how
+ * GIO handles file attributes.
  *
  * To obtain a #GFileInfo for a #GFile, use g_file_query_info() (or its
  * async variant). To obtain a #GFileInfo for a file input or output
@@ -251,6 +249,7 @@ ensure_attribute_hash (void)
   REGISTER_ATTRIBUTE (OWNER_GROUP);
   REGISTER_ATTRIBUTE (THUMBNAIL_PATH);
   REGISTER_ATTRIBUTE (THUMBNAILING_FAILED);
+  REGISTER_ATTRIBUTE (THUMBNAIL_IS_VALID);
   REGISTER_ATTRIBUTE (PREVIEW_ICON);
   REGISTER_ATTRIBUTE (FILESYSTEM_SIZE);
   REGISTER_ATTRIBUTE (FILESYSTEM_FREE);
@@ -365,7 +364,7 @@ g_file_info_new (void)
  * @src_info: source to copy attributes from.
  * @dest_info: destination to copy attributes to.
  *
- * Copies all of the <link linkend="gio-GFileAttribute">GFileAttribute</link>s
+ * Copies all of the [GFileAttribute][gio-GFileAttribute]
  * from @src_info to @dest_info.
  **/
 void
@@ -620,9 +619,9 @@ g_file_info_has_namespace (GFileInfo  *info,
  *
  * Lists the file info structure's attributes.
  *
- * Returns: (array zero-terminated=1) (transfer full): a null-terminated array of strings of all of the
- * possible attribute types for the given @name_space, or
- * %NULL on error.
+ * Returns: (nullable) (array zero-terminated=1) (transfer full): a
+ * null-terminated array of strings of all of the possible attribute
+ * types for the given @name_space, or %NULL on error.
  **/
 char **
 g_file_info_list_attributes (GFileInfo  *info,
@@ -1440,6 +1439,42 @@ g_file_info_set_attribute_int64  (GFileInfo  *info,
 
 /* Helper getters */
 /**
+ * g_file_info_get_deletion_date:
+ * @info: a #GFileInfo.
+ *
+ * Returns the #GDateTime representing the deletion date of the file, as
+ * available in G_FILE_ATTRIBUTE_TRASH_DELETION_DATE. If the
+ * G_FILE_ATTRIBUTE_TRASH_DELETION_DATE attribute is unset, %NULL is returned.
+ *
+ * Returns: a #GDateTime, or %NULL.
+ *
+ * Since: 2.36
+ **/
+GDateTime *
+g_file_info_get_deletion_date (GFileInfo *info)
+{
+  static guint32 attr = 0;
+  GFileAttributeValue *value;
+  const char *date_str;
+  GTimeVal tv;
+
+  g_return_val_if_fail (G_IS_FILE_INFO (info), FALSE);
+
+  if (attr == 0)
+    attr = lookup_attribute (G_FILE_ATTRIBUTE_TRASH_DELETION_DATE);
+
+  value = g_file_info_find_value (info, attr);
+  date_str = _g_file_attribute_value_get_string (value);
+  if (!date_str)
+    return NULL;
+
+  if (g_time_val_from_iso8601 (date_str, &tv) == FALSE)
+    return NULL;
+
+  return g_date_time_new_from_timeval_local (&tv);
+}
+
+/**
  * g_file_info_get_file_type:
  * @info: a #GFileInfo.
  *
@@ -1760,7 +1795,7 @@ g_file_info_get_symlink_target (GFileInfo *info)
  * g_file_info_get_etag:
  * @info: a #GFileInfo.
  *
- * Gets the <link linkend="gfile-etag">entity tag</link> for a given
+ * Gets the [entity tag][gfile-etag] for a given
  * #GFileInfo. See %G_FILE_ATTRIBUTE_ETAG_VALUE.
  *
  * Returns: a string containing the value of the "etag:value" attribute.
@@ -1835,7 +1870,7 @@ g_file_info_set_file_type (GFileInfo *info,
  * @info: a #GFileInfo.
  * @is_hidden: a #gboolean.
  *
- * Sets the "is_hidden" attribute in a #GFileInfo according to @is_symlink.
+ * Sets the "is_hidden" attribute in a #GFileInfo according to @is_hidden.
  * See %G_FILE_ATTRIBUTE_STANDARD_IS_HIDDEN.
  **/
 void
@@ -2015,7 +2050,7 @@ g_file_info_set_symbolic_icon (GFileInfo *info,
 /**
  * g_file_info_set_content_type:
  * @info: a #GFileInfo.
- * @content_type: a content type. See <link linkend="gio-GContentType">GContentType</link>.
+ * @content_type: a content type. See [GContentType][gio-GContentType]
  *
  * Sets the content type attribute for a given #GFileInfo.
  * See %G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE.
@@ -2250,7 +2285,7 @@ matcher_optimize (GFileAttributeMatcher *matcher)
  * @attributes: an attribute string to match.
  *
  * Creates a new file attribute matcher, which matches attributes
- * against a given string. #GFileAttributeMatcher<!-- -->s are reference
+ * against a given string. #GFileAttributeMatchers are reference
  * counted structures, and are created with a reference count of 1. If
  * the number of references falls to 0, the #GFileAttributeMatcher is
  * automatically destroyed.
@@ -2261,21 +2296,16 @@ matcher_optimize (GFileAttributeMatcher *matcher)
  * The wildcard "*" may be used to match all keys and namespaces, or
  * "namespace::*" will match all keys in a given namespace.
  *
- * Examples of strings to use:
- * <table>
- * <title>File Attribute Matcher strings and results</title>
- * <tgroup cols='2' align='left'><thead>
- * <row><entry> Matcher String </entry><entry> Matches </entry></row></thead>
- * <tbody>
- * <row><entry>"*"</entry><entry>matches all attributes.</entry></row>
- * <row><entry>"standard::is-hidden"</entry><entry>matches only the key is-hidden in the standard namespace.</entry></row>
- * <row><entry>"standard::type,unix::*"</entry><entry>matches the type key in the standard namespace and
- * all keys in the unix namespace.</entry></row>
- * </tbody></tgroup>
- * </table>
+ * ## Examples of file attribute matcher strings and results
  *
- * Returns: a #GFileAttributeMatcher.
- **/
+ * - `"*"`: matches all attributes.
+ * - `"standard::is-hidden"`: matches only the key is-hidden in the
+ *   standard namespace.
+ * - `"standard::type,unix::*"`: matches the type key in the standard
+ *   namespace and all keys in the unix namespace.
+ *
+ * Returns: a #GFileAttributeMatcher
+ */
 GFileAttributeMatcher *
 g_file_attribute_matcher_new (const char *attributes)
 {

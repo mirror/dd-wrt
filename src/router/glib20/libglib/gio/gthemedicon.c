@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -155,8 +153,17 @@ g_themed_icon_constructed (GObject *object)
       const char *p;
       char *dashp;
       char *last;
+      gboolean is_symbolic;
+      char *name;
+      char **names;
 
-      p = themed->names[0];
+      is_symbolic = g_str_has_suffix (themed->names[0], "-symbolic");
+      if (is_symbolic)
+        name = g_strndup (themed->names[0], strlen (themed->names[0]) - 9);
+      else
+        name = g_strdup (themed->names[0]);
+
+      p = name;
       while (*p)
         {
           if (*p == '-')
@@ -164,17 +171,34 @@ g_themed_icon_constructed (GObject *object)
           p++;
         }
 
-      last = g_strdup (themed->names[0]);
+      last = name;
 
       g_strfreev (themed->names);
 
-      themed->names = g_new (char *, dashes + 1 + 1);
-      themed->names[i++] = last;
+      names = g_new (char *, dashes + 1 + 1);
+      names[i++] = last;
 
       while ((dashp = strrchr (last, '-')) != NULL)
-        themed->names[i++] = last = g_strndup (last, dashp - last);
+        names[i++] = last = g_strndup (last, dashp - last);
 
-      themed->names[i++] = NULL;
+      names[i++] = NULL;
+
+      if (is_symbolic)
+        {
+          themed->names = g_new (char *, 2 * dashes + 3);
+          for (i = 0; names[i] != NULL; i++)
+            {
+              themed->names[i] = g_strconcat (names[i], "-symbolic", NULL);
+              themed->names[dashes + 1 + i] = names[i];
+            }
+
+          themed->names[dashes + 1 + i] = NULL;
+          g_free (names);
+        }
+      else
+        {
+          themed->names = names;
+        }
     }
 }
 
@@ -233,7 +257,7 @@ g_themed_icon_class_init (GThemedIconClass *klass)
    *
    * For example, if the icon name was "gnome-dev-cdrom-audio", the array 
    * would become
-   * |[
+   * |[<!-- language="C" -->
    * {
    *   "gnome-dev-cdrom-audio",
    *   "gnome-dev-cdrom",
@@ -321,7 +345,7 @@ g_themed_icon_new_from_names (char **iconnames,
  * that can be created by shortening @iconname at '-' characters.
  * 
  * In the following example, @icon1 and @icon2 are equivalent:
- * |[
+ * |[<!-- language="C" -->
  * const char *names[] = { 
  *   "gnome-dev-cdrom-audio",
  *   "gnome-dev-cdrom",
@@ -366,10 +390,8 @@ g_themed_icon_get_names (GThemedIcon *icon)
  *
  * Append a name to the list of icons from within @icon.
  *
- * <note><para>
  * Note that doing so invalidates the hash computed by prior calls
  * to g_icon_hash().
- * </para></note>
  */
 void
 g_themed_icon_append_name (GThemedIcon *icon, 
@@ -395,10 +417,8 @@ g_themed_icon_append_name (GThemedIcon *icon,
  *
  * Prepend a name to the list of icons from within @icon.
  *
- * <note><para>
  * Note that doing so invalidates the hash computed by prior calls
  * to g_icon_hash().
- * </para></note>
  *
  * Since: 2.18
  */
@@ -512,6 +532,14 @@ g_themed_icon_from_tokens (gchar  **tokens,
   return icon;
 }
 
+static GVariant *
+g_themed_icon_serialize (GIcon *icon)
+{
+  GThemedIcon *themed_icon = G_THEMED_ICON (icon);
+
+  return g_variant_new ("(sv)", "themed", g_variant_new ("^as", themed_icon->names));
+}
+
 static void
 g_themed_icon_icon_iface_init (GIconIface *iface)
 {
@@ -519,4 +547,5 @@ g_themed_icon_icon_iface_init (GIconIface *iface)
   iface->equal = g_themed_icon_equal;
   iface->to_tokens = g_themed_icon_to_tokens;
   iface->from_tokens = g_themed_icon_from_tokens;
+  iface->serialize = g_themed_icon_serialize;
 }

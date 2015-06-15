@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
- * USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -23,12 +21,16 @@
 
 #include "gmenu.h"
 
+#include "gaction.h"
 #include <string.h>
+
+#include "gicon.h"
 
 /**
  * SECTION:gmenu
  * @title: GMenu
  * @short_description: A simple implementation of GMenuModel
+ * @include: gio/gio.h
  *
  * #GMenu is a simple implementation of #GMenuModel.
  * You populate a #GMenu by adding #GMenuItem instances to it.
@@ -483,6 +485,29 @@ g_menu_remove (GMenu *menu,
   g_menu_clear_item (&g_array_index (menu->items, struct item, position));
   g_array_remove_index (menu->items, position);
   g_menu_model_items_changed (G_MENU_MODEL (menu), position, 1, 0);
+}
+
+/**
+ * g_menu_remove_all:
+ * @menu: a #GMenu
+ *
+ * Removes all items in the menu.
+ *
+ * Since: 2.38
+ **/
+void
+g_menu_remove_all (GMenu *menu)
+{
+  gint i, n;
+
+  g_return_if_fail (G_IS_MENU (menu));
+  n = menu->items->len;
+
+  for (i = 0; i < n; i++)
+    g_menu_clear_item (&g_array_index (menu->items, struct item, i));
+  g_array_set_size (menu->items, 0);
+
+  g_menu_model_items_changed (G_MENU_MODEL (menu), 0, n, 0);
 }
 
 static void
@@ -1056,14 +1081,8 @@ g_menu_item_set_action_and_target (GMenuItem   *menu_item,
  *
  * Sets the "action" and possibly the "target" attribute of @menu_item.
  *
- * If @detailed_action contains a double colon ("::") then it is used as
- * a separator between an action name and a target string.  In this
- * case, this call is equivalent to calling
- * g_menu_item_set_action_and_target() with the part before the "::" and
- * with a string-type #GVariant containing the part following the "::".
- *
- * If @detailed_action doesn't contain "::" then the action is set to
- * the given string (verbatim) and the target value is unset.
+ * The format of @detailed_action is the same format parsed by
+ * g_action_parse_detailed_name().
  *
  * See g_menu_item_set_action_and_target() or
  * g_menu_item_set_action_and_target_value() for more flexible (but
@@ -1078,21 +1097,17 @@ void
 g_menu_item_set_detailed_action (GMenuItem   *menu_item,
                                  const gchar *detailed_action)
 {
-  const gchar *sep;
+  GError *error = NULL;
+  GVariant *target;
+  gchar *name;
 
-  sep = strstr (detailed_action, "::");
+  if (!g_action_parse_detailed_name (detailed_action, &name, &target, &error))
+    g_error ("g_menu_item_set_detailed_action: %s", error->message);
 
-  if (sep != NULL)
-    {
-      gchar *action;
-
-      action = g_strndup (detailed_action, sep - detailed_action);
-      g_menu_item_set_action_and_target (menu_item, action, "s", sep + 2);
-      g_free (action);
-    }
-
-  else
-    g_menu_item_set_action_and_target_value (menu_item, detailed_action, NULL);
+  g_menu_item_set_action_and_target_value (menu_item, name, target);
+  if (target)
+    g_variant_unref (target);
+  g_free (name);
 }
 
 /**
@@ -1188,8 +1203,7 @@ g_menu_item_new_submenu (const gchar *label,
  * second with the "Cut", "Copy" and "Paste" items.  The first and
  * second menus would then be added as submenus of the third.  In XML
  * format, this would look something like the following:
- *
- * <informalexample><programlisting><![CDATA[
+ * |[
  * <menu id='edit-menu'>
  *   <section>
  *     <item label='Undo'/>
@@ -1201,7 +1215,7 @@ g_menu_item_new_submenu (const gchar *label,
  *     <item label='Paste'/>
  *   </section>
  * </menu>
- * ]]></programlisting></informalexample>
+ * ]|
  *
  * The following example is exactly equivalent.  It is more illustrative
  * of the exact relationship between the menus and items (keeping in
@@ -1209,8 +1223,7 @@ g_menu_item_new_submenu (const gchar *label,
  * containing one).  The style of the second example is more verbose and
  * difficult to read (and therefore not recommended except for the
  * purpose of understanding what is really going on).
- *
- * <informalexample><programlisting><![CDATA[
+ * |[
  * <menu id='edit-menu'>
  *   <item>
  *     <link name='section'>
@@ -1226,7 +1239,7 @@ g_menu_item_new_submenu (const gchar *label,
  *     </link>
  *   </item>
  * </menu>
- * ]]></programlisting></informalexample>
+ * ]|
  *
  * Returns: a new #GMenuItem
  *
@@ -1333,4 +1346,43 @@ g_menu_item_new_from_model (GMenuModel *model,
     }
 
   return menu_item;
+}
+
+/**
+ * g_menu_item_set_icon:
+ * @menu_item: a #GMenuItem
+ * @icon: a #GIcon, or %NULL
+ *
+ * Sets (or unsets) the icon on @menu_item.
+ *
+ * This call is the same as calling g_icon_serialize() and using the
+ * result as the value to g_menu_item_set_attribute_value() for
+ * %G_MENU_ATTRIBUTE_ICON.
+ *
+ * This API is only intended for use with "noun" menu items; things like
+ * bookmarks or applications in an "Open With" menu.  Don't use it on
+ * menu items corresponding to verbs (eg: stock icons for 'Save' or
+ * 'Quit').
+ *
+ * If @icon is %NULL then the icon is unset.
+ *
+ * Since: 2.38
+ **/
+void
+g_menu_item_set_icon (GMenuItem *menu_item,
+                      GIcon     *icon)
+{
+  GVariant *value;
+
+  g_return_if_fail (G_IS_MENU_ITEM (menu_item));
+  g_return_if_fail (G_IS_ICON (icon));
+
+  if (icon != NULL)
+    value = g_icon_serialize (icon);
+  else
+    value = NULL;
+
+  g_menu_item_set_attribute_value (menu_item, G_MENU_ATTRIBUTE_ICON, value);
+  if (value)
+    g_variant_unref (value);
 }

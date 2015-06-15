@@ -14,8 +14,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with GLib; see the file COPYING.LIB.  If not,
- * write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __G_STDIO_H__
@@ -27,7 +26,7 @@
 
 G_BEGIN_DECLS
 
-#if defined (_MSC_VER) && !defined(_WIN64)
+#if (defined (__MINGW64_VERSION_MAJOR) || defined (_MSC_VER)) && !defined(_WIN64)
 
 /* Make it clear that we mean the struct with 32-bit st_size and
  * 32-bit st_*time fields as that is how the 32-bit GLib DLL normally
@@ -74,13 +73,17 @@ typedef struct stat GStatBuf;
 #define g_utime   utime
 #endif
 
+GLIB_AVAILABLE_IN_ALL
 int g_access (const gchar *filename,
 	      int          mode);
 
+GLIB_AVAILABLE_IN_ALL
 int g_chdir  (const gchar *path);
 
+GLIB_AVAILABLE_IN_ALL
 int g_unlink (const gchar *filename);
 
+GLIB_AVAILABLE_IN_ALL
 int g_rmdir  (const gchar *filename);
 
 #else /* ! G_OS_UNIX */
@@ -95,42 +98,56 @@ int g_rmdir  (const gchar *filename);
  * API.
  */
 
+GLIB_AVAILABLE_IN_ALL
 int g_access    (const gchar *filename,
 		 int          mode);
 
+GLIB_AVAILABLE_IN_ALL
 int g_chmod     (const gchar *filename,
 		 int          mode);
 
+GLIB_AVAILABLE_IN_ALL
 int g_open      (const gchar *filename,
                  int          flags,
                  int          mode);
 
+GLIB_AVAILABLE_IN_ALL
 int g_creat     (const gchar *filename,
                  int          mode);
 
+GLIB_AVAILABLE_IN_ALL
 int g_rename    (const gchar *oldfilename,
                  const gchar *newfilename);
 
+GLIB_AVAILABLE_IN_ALL
 int g_mkdir     (const gchar *filename,
                  int          mode);
 
+GLIB_AVAILABLE_IN_ALL
 int g_chdir     (const gchar *path);
 
+GLIB_AVAILABLE_IN_ALL
 int g_stat      (const gchar *filename,
                  GStatBuf    *buf);
 
+GLIB_AVAILABLE_IN_ALL
 int g_lstat     (const gchar *filename,
                  GStatBuf    *buf);
 
+GLIB_AVAILABLE_IN_ALL
 int g_unlink    (const gchar *filename);
 
+GLIB_AVAILABLE_IN_ALL
 int g_remove    (const gchar *filename);
 
+GLIB_AVAILABLE_IN_ALL
 int g_rmdir     (const gchar *filename);
 
+GLIB_AVAILABLE_IN_ALL
 FILE *g_fopen   (const gchar *filename,
                  const gchar *mode);
 
+GLIB_AVAILABLE_IN_ALL
 FILE *g_freopen (const gchar *filename,
                  const gchar *mode,
                  FILE        *stream);
@@ -139,10 +156,15 @@ struct utimbuf;			/* Don't need the real definition of struct utimbuf when just
 				 * including this header.
 				 */
 
+GLIB_AVAILABLE_IN_ALL
 int g_utime     (const gchar    *filename,
 		 struct utimbuf *utb);
 
 #endif /* G_OS_UNIX */
+
+GLIB_AVAILABLE_IN_2_36
+gboolean g_close (gint       fd,
+                  GError   **error);
 
 G_END_DECLS
 

@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Xavier Claessens <xavier.claessens@collabora.co.uk>
  */
@@ -47,3 +45,14 @@ session_bus_down (void)
   g_clear_object (&singleton);
 }
 
+gint
+session_bus_run (void)
+{
+  gint ret;
+
+  session_bus_up ();
+  ret = g_test_run ();
+  session_bus_down ();
+
+  return ret;
+}

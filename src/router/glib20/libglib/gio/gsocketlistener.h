@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Christian Kellner <gicmo@gnome.org>
  *          Samuel Cormier-Iijima <sciyoshi@gmail.com>
@@ -25,12 +23,12 @@
  *          Alexander Larsson <alexl@redhat.com>
  */
 
+#ifndef __G_SOCKET_LISTENER_H__
+#define __G_SOCKET_LISTENER_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_SOCKET_LISTENER_H__
-#define __G_SOCKET_LISTENER_H__
 
 #include <gio/giotypes.h>
 
@@ -54,6 +52,8 @@ typedef struct _GSocketListenerClass                        GSocketListenerClass
 /**
  * GSocketListenerClass:
  * @changed: virtual method called when the set of socket listened to changes
+ *
+ * Class structure for #GSocketListener.
  **/
 struct _GSocketListenerClass
 {
@@ -61,8 +61,11 @@ struct _GSocketListenerClass
 
   void (* changed) (GSocketListener *listener);
 
+  void (* event) (GSocketListener      *listener,
+                  GSocketListenerEvent *event,
+                  GSocket              *socket);
+
   /* Padding for future expansion */
-  void (*_g_reserved1) (void);
   void (*_g_reserved2) (void);
   void (*_g_reserved3) (void);
   void (*_g_reserved4) (void);
@@ -76,17 +79,22 @@ struct _GSocketListener
   GSocketListenerPrivate *priv;
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType                   g_socket_listener_get_type                      (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GSocketListener *       g_socket_listener_new                           (void);
 
+GLIB_AVAILABLE_IN_ALL
 void                    g_socket_listener_set_backlog                   (GSocketListener     *listener,
 									 int                  listen_backlog);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_socket_listener_add_socket                    (GSocketListener     *listener,
                                                                          GSocket             *socket,
 									 GObject             *source_object,
 									 GError             **error);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_socket_listener_add_address                   (GSocketListener     *listener,
                                                                          GSocketAddress      *address,
 									 GSocketType          type,
@@ -94,43 +102,52 @@ gboolean                g_socket_listener_add_address                   (GSocket
 									 GObject             *source_object,
                                                                          GSocketAddress     **effective_address,
 									 GError             **error);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_socket_listener_add_inet_port                 (GSocketListener     *listener,
                                                                          guint16              port,
 									 GObject             *source_object,
 									 GError             **error);
+GLIB_AVAILABLE_IN_ALL
 guint16                 g_socket_listener_add_any_inet_port             (GSocketListener     *listener,
 									 GObject             *source_object,
 									 GError             **error);
 
+GLIB_AVAILABLE_IN_ALL
 GSocket *               g_socket_listener_accept_socket                 (GSocketListener      *listener,
 									 GObject             **source_object,
                                                                          GCancellable         *cancellable,
                                                                          GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void                    g_socket_listener_accept_socket_async           (GSocketListener      *listener,
                                                                          GCancellable         *cancellable,
                                                                          GAsyncReadyCallback   callback,
                                                                          gpointer              user_data);
+GLIB_AVAILABLE_IN_ALL
 GSocket *               g_socket_listener_accept_socket_finish          (GSocketListener      *listener,
                                                                          GAsyncResult         *result,
 									 GObject             **source_object,
                                                                          GError              **error);
 
 
+GLIB_AVAILABLE_IN_ALL
 GSocketConnection *     g_socket_listener_accept                        (GSocketListener      *listener,
 									 GObject             **source_object,
                                                                          GCancellable         *cancellable,
                                                                          GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 void                    g_socket_listener_accept_async                  (GSocketListener      *listener,
                                                                          GCancellable         *cancellable,
                                                                          GAsyncReadyCallback   callback,
                                                                          gpointer              user_data);
 
+GLIB_AVAILABLE_IN_ALL
 GSocketConnection *     g_socket_listener_accept_finish                 (GSocketListener      *listener,
                                                                          GAsyncResult         *result,
 									 GObject             **source_object,
                                                                          GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 void                    g_socket_listener_close                         (GSocketListener      *listener);
 
 G_END_DECLS

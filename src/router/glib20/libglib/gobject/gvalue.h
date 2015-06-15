@@ -12,18 +12,16 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * gvalue.h: generic GValue functions
  */
+#ifndef __G_VALUE_H__
+#define __G_VALUE_H__
+
 #if !defined (__GLIB_GOBJECT_H_INSIDE__) && !defined (GOBJECT_COMPILATION)
 #error "Only <glib-object.h> can be included directly."
 #endif
-
-#ifndef __G_VALUE_H__
-#define __G_VALUE_H__
 
 #include	<gobject/gtype.h>
 
@@ -126,28 +124,42 @@ struct _GValue
 
 
 /* --- prototypes --- */
+GLIB_AVAILABLE_IN_ALL
 GValue*         g_value_init	   	(GValue       *value,
 					 GType         g_type);
+GLIB_AVAILABLE_IN_ALL
 void            g_value_copy    	(const GValue *src_value,
 					 GValue       *dest_value);
+GLIB_AVAILABLE_IN_ALL
 GValue*         g_value_reset   	(GValue       *value);
+GLIB_AVAILABLE_IN_ALL
 void            g_value_unset   	(GValue       *value);
+GLIB_AVAILABLE_IN_ALL
 void		g_value_set_instance	(GValue	      *value,
 					 gpointer      instance);
+GLIB_AVAILABLE_IN_2_42
+void            g_value_init_from_instance   (GValue       *value,
+                                              gpointer      instance);
 
 
 /* --- private --- */
+GLIB_AVAILABLE_IN_ALL
 gboolean	g_value_fits_pointer	(const GValue *value);
+GLIB_AVAILABLE_IN_ALL
 gpointer	g_value_peek_pointer	(const GValue *value);
 
 
 /* --- implementation details --- */
+GLIB_AVAILABLE_IN_ALL
 gboolean g_value_type_compatible	(GType		 src_type,
 					 GType		 dest_type);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_value_type_transformable	(GType           src_type,
 					 GType           dest_type);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_value_transform		(const GValue   *src_value,
 					 GValue         *dest_value);
+GLIB_AVAILABLE_IN_ALL
 void	g_value_register_transform_func	(GType		 src_type,
 					 GType		 dest_type,
 					 GValueTransform transform_func);
@@ -164,10 +176,9 @@ void	g_value_register_transform_func	(GType		 src_type,
 /**
  * G_VALUE_INIT:
  *
- * A #GValue must be initialized before it can be used.
- * This macro can be used as initializer instead of an explicit
- * <literal>{ 0 }</literal> when declaring a variable,
- * but it cannot be assigned to a variable.
+ * A #GValue must be initialized before it can be used. This macro can
+ * be used as initializer instead of an explicit `{ 0 }` when declaring
+ * a variable, but it cannot be assigned to a variable.
  *
  * |[
  *   GValue value = G_VALUE_INIT;

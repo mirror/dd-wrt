@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -45,7 +43,7 @@ enum
   PROP_CREDENTIALS
 };
 
-G_DEFINE_ABSTRACT_TYPE (GDBusAuthMechanism, _g_dbus_auth_mechanism, G_TYPE_OBJECT);
+G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (GDBusAuthMechanism, _g_dbus_auth_mechanism, G_TYPE_OBJECT)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -115,8 +113,6 @@ _g_dbus_auth_mechanism_class_init (GDBusAuthMechanismClass *klass)
 {
   GObjectClass *gobject_class;
 
-  g_type_class_add_private (klass, sizeof (GDBusAuthMechanismPrivate));
-
   gobject_class = G_OBJECT_CLASS (klass);
   gobject_class->get_property = _g_dbus_auth_mechanism_get_property;
   gobject_class->set_property = _g_dbus_auth_mechanism_set_property;
@@ -161,10 +157,7 @@ _g_dbus_auth_mechanism_class_init (GDBusAuthMechanismClass *klass)
 static void
 _g_dbus_auth_mechanism_init (GDBusAuthMechanism *mechanism)
 {
-  /* not used for now */
-  mechanism->priv = G_TYPE_INSTANCE_GET_PRIVATE (mechanism,
-                                                 G_TYPE_DBUS_AUTH_MECHANISM,
-                                                 GDBusAuthMechanismPrivate);
+  mechanism->priv = _g_dbus_auth_mechanism_get_instance_private (mechanism);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */

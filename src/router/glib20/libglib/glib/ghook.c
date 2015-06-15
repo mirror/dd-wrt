@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -59,8 +57,7 @@
  *     The default behaviour is to call the hooks @destroy function
  * @dummy: unused
  *
- * The <structname>GHookList</structname> struct represents a
- * list of hook functions.
+ * The #GHookList struct represents a list of hook functions.
  */
 
 /**
@@ -94,7 +91,7 @@
  *
  * The position of the first bit which is not reserved for internal
  * use be the #GHook implementation, i.e.
- * <literal>1 &lt;&lt; G_HOOK_FLAG_USER_SHIFT</literal> is the first
+ * `1 << G_HOOK_FLAG_USER_SHIFT` is the first
  * bit which can be used for application-defined flags.
  */
 
@@ -102,7 +99,7 @@
  * G_HOOK:
  * @hook: a pointer
  *
- * Casts a pointer to a <literal>GHook*</literal>.
+ * Casts a pointer to a `GHook*`.
  */
 
 /**
@@ -157,8 +154,7 @@
  * @destroy: the default @finalize_hook function of a #GHookList calls
  *     this member of the hook that is being finalized
  *
- * The <structname>GHook</structname> struct represents a single hook
- * function in a #GHookList.
+ * The #GHook struct represents a single hook function in a #GHookList.
  */
 
 /**
@@ -197,7 +193,7 @@ default_finalize_hook (GHookList *hook_list,
  * g_hook_list_init:
  * @hook_list: a #GHookList
  * @hook_size: the size of each element in the #GHookList,
- *     typically <literal>sizeof (GHook)</literal>
+ *     typically `sizeof (GHook)`.
  *
  * Initializes a #GHookList.
  * This must be called before the #GHookList is used.
@@ -977,7 +973,7 @@ g_hook_find_func_data (GHookList *hook_list,
  * Defines the type of function used to compare #GHook elements in
  * g_hook_insert_sorted().
  *
- * Returns: a value &lt;= 0 if @new_hook should be before @sibling
+ * Returns: a value <= 0 if @new_hook should be before @sibling
  */
 
 /**
@@ -1039,7 +1035,7 @@ g_hook_insert_sorted (GHookList	      *hook_list,
  * Compares the ids of two #GHook elements, returning a negative value
  * if the second id is greater than the first.
  *
- * Returns: a value &lt;= 0 if the id of @sibling is >= the id of @new_hook
+ * Returns: a value <= 0 if the id of @sibling is >= the id of @new_hook
  */
 gint
 g_hook_compare_ids (GHook *new_hook,

@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -43,6 +41,8 @@ typedef struct _GUnixOutputStream         GUnixOutputStream;
 typedef struct _GUnixOutputStreamClass    GUnixOutputStreamClass;
 typedef struct _GUnixOutputStreamPrivate  GUnixOutputStreamPrivate;
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixOutputStream, g_object_unref)
+
 struct _GUnixOutputStream
 {
   GOutputStream parent_instance;
@@ -64,13 +64,18 @@ struct _GUnixOutputStreamClass
   void (*_g_reserved5) (void);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType           g_unix_output_stream_get_type     (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GOutputStream * g_unix_output_stream_new          (gint     fd,
                                                    gboolean close_fd);
+GLIB_AVAILABLE_IN_ALL
 void            g_unix_output_stream_set_close_fd (GUnixOutputStream *stream,
                                                    gboolean           close_fd);
+GLIB_AVAILABLE_IN_ALL
 gboolean        g_unix_output_stream_get_close_fd (GUnixOutputStream *stream);
+GLIB_AVAILABLE_IN_ALL
 gint            g_unix_output_stream_get_fd       (GUnixOutputStream *stream);
 G_END_DECLS
 

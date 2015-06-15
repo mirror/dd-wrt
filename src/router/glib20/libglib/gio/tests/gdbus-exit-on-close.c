@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -109,88 +107,94 @@ close_async_cb (GObject *source G_GNUC_UNUSED,
 }
 
 static void
+test_exit_on_close_subprocess (gconstpointer test_data)
+{
+  const TestData *td = test_data;
+  GDBusConnection *c;
+
+  loop = g_main_loop_new (NULL, FALSE);
+
+  session_bus_up ();
+  c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
+
+  g_assert (c != NULL);
+
+  /* the default is meant to be TRUE */
+  if (td->exit_on_close != IMPLICITLY_TRUE)
+    g_dbus_connection_set_exit_on_close (c, td->exit_on_close);
+
+  g_assert_cmpint (g_dbus_connection_get_exit_on_close (c), ==,
+                   (td->exit_on_close != EXPLICITLY_FALSE));
+  g_assert (!g_dbus_connection_is_closed (c));
+
+  g_timeout_add (50, quit_later_cb, NULL);
+  g_main_loop_run (loop);
+
+  g_signal_connect (c, "closed", G_CALLBACK (closed_cb), (gpointer) td);
+
+  if (td->who_closes == LOCAL)
+    {
+      GVariant *v;
+      GError *error = NULL;
+
+      v = g_dbus_connection_call_sync (c, "org.freedesktop.DBus",
+                                       "/org/freedesktop/DBus",
+                                       "org.freedesktop.DBus",
+                                       "ListNames",
+                                       NULL,
+                                       G_VARIANT_TYPE ("(as)"),
+                                       G_DBUS_CALL_FLAGS_NONE,
+                                       -1,
+                                       NULL,
+                                       &error);
+      g_assert_no_error (error);
+      g_assert (v != NULL);
+      g_variant_unref (v);
+
+      g_dbus_connection_close (c, NULL, close_async_cb, NULL);
+    }
+  else
+    {
+      session_bus_stop ();
+    }
+
+  g_main_loop_run (loop);
+  /* this is only reached when we turn off exit-on-close */
+  g_main_loop_unref (loop);
+  g_object_unref (c);
+
+  session_bus_down ();
+
+  exit (0);
+}
+
+static void
 test_exit_on_close (gconstpointer test_data)
 {
   const TestData *td = test_data;
-  GTestTrapFlags silence;
-
-  /* all the tests rely on a shared main loop */
-  loop = g_main_loop_new (NULL, FALSE);
+  GTestSubprocessFlags flags;
+  char *child_name;
 
   g_test_dbus_unset ();
 
   if (g_test_verbose ())
-    silence = 0;
+    flags = G_TEST_SUBPROCESS_INHERIT_STDOUT | G_TEST_SUBPROCESS_INHERIT_STDERR;
   else
-    silence = G_TEST_TRAP_SILENCE_STDOUT | G_TEST_TRAP_SILENCE_STDERR;
+    flags = 0;
 
-  if (g_test_trap_fork (0, silence))
-    {
-      GDBusConnection *c;
-
-      session_bus_up ();
-      c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
-
-      g_assert (c != NULL);
-
-      /* the default is meant to be TRUE */
-      if (td->exit_on_close != IMPLICITLY_TRUE)
-        g_dbus_connection_set_exit_on_close (c, td->exit_on_close);
-
-      g_assert_cmpint (g_dbus_connection_get_exit_on_close (c), ==,
-                       (td->exit_on_close != EXPLICITLY_FALSE));
-      g_assert (!g_dbus_connection_is_closed (c));
-
-      g_timeout_add (50, quit_later_cb, NULL);
-      g_main_loop_run (loop);
-
-      g_signal_connect (c, "closed", G_CALLBACK (closed_cb), (gpointer) td);
-
-      if (td->who_closes == LOCAL)
-        {
-          GVariant *v;
-          GError *error = NULL;
-
-          v = g_dbus_connection_call_sync (c, "org.freedesktop.DBus",
-                                           "/org/freedesktop/DBus",
-                                           "org.freedesktop.DBus",
-                                           "ListNames",
-                                           NULL,
-                                           G_VARIANT_TYPE ("(as)"),
-                                           G_DBUS_CALL_FLAGS_NONE,
-                                           -1,
-                                           NULL,
-                                           &error);
-          g_assert_no_error (error);
-          g_assert (v != NULL);
-          g_variant_unref (v);
-
-          g_dbus_connection_close (c, NULL, close_async_cb, NULL);
-        }
-      else
-        {
-          session_bus_stop ();
-        }
-
-      g_main_loop_run (loop);
-      /* this is only reached when we turn off exit-on-close */
-      g_main_loop_unref (loop);
-      g_object_unref (c);
-
-      session_bus_down ();
-
-      exit (0);
-    }
+  child_name = g_strdup_printf ("/gdbus/exit-on-close/%s/subprocess", td->name);
+  g_test_trap_subprocess (child_name, 0, flags);
+  g_free (child_name);
 
   if (td->exit_on_close == EXPLICITLY_FALSE ||
       td->who_closes == LOCAL)
     {
-      g_test_trap_assert_stdout_unmatched (VANISHED_PATTERN);
+      g_test_trap_assert_stderr_unmatched (VANISHED_PATTERN);
       g_test_trap_assert_passed ();
     }
   else
     {
-      g_test_trap_assert_stdout (VANISHED_PATTERN);
+      g_test_trap_assert_stderr (VANISHED_PATTERN);
       g_test_trap_assert_failed();
     }
 }
@@ -203,14 +207,18 @@ main (int   argc,
 {
   gint i;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   for (i = 0; cases[i].name != NULL; i++)
     {
-      gchar *name = g_strdup_printf ("/gdbus/exit-on-close/%s", cases[i].name);
+      gchar *name;
 
+      name = g_strdup_printf ("/gdbus/exit-on-close/%s", cases[i].name);
       g_test_add_data_func (name, &cases[i], test_exit_on_close);
+      g_free (name);
+
+      name = g_strdup_printf ("/gdbus/exit-on-close/%s/subprocess", cases[i].name);
+      g_test_add_data_func (name, &cases[i], test_exit_on_close_subprocess);
       g_free (name);
     }
 

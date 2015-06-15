@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -113,7 +111,11 @@ _g_module_self (void)
    * are required on some systems.
    */
   
+#ifdef __BIONIC__
+  handle = RTLD_DEFAULT;
+#else
   handle = dlopen (NULL, RTLD_GLOBAL | RTLD_LAZY);
+#endif
   if (!handle)
     g_module_set_error (fetch_dlerror (TRUE));
   

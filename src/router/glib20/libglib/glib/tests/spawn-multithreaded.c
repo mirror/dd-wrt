@@ -26,8 +26,6 @@
 #include <glib.h>
 #include <string.h>
 
-#define N_THREADS (20)
-
 static char *echo_prog_path;
 
 static void
@@ -35,8 +33,12 @@ multithreaded_test_run (GThreadFunc function)
 {
   int i;
   GPtrArray *threads = g_ptr_array_new ();
+  guint n_threads;
 
-  for (i = 0; i < N_THREADS; i++)
+  /* Limit to 64, otherwise we may hit file descriptor limits and such */
+  n_threads = MIN (g_get_num_processors () * 2, 64);
+
+  for (i = 0; i < n_threads; i++)
     {
       GThread *thread;
 
@@ -44,7 +46,7 @@ multithreaded_test_run (GThreadFunc function)
       g_ptr_array_add (threads, thread);
     }
 
-  for (i = 0; i < N_THREADS; i++)
+  for (i = 0; i < n_threads; i++)
     {
       gpointer ret;
       ret = g_thread_join (g_ptr_array_index (threads, i));
@@ -70,7 +72,7 @@ test_spawn_sync_multithreaded_instance (gpointer data)
   g_ptr_array_add (argv, arg);
   g_ptr_array_add (argv, NULL);
 
-  g_spawn_sync (NULL, (char**)argv->pdata, NULL, 0, NULL, NULL, &stdout_str, NULL, &estatus, &error);
+  g_spawn_sync (NULL, (char**)argv->pdata, NULL, G_SPAWN_DEFAULT, NULL, NULL, &stdout_str, NULL, &estatus, &error);
   g_assert_no_error (error);
   g_assert_cmpstr (arg, ==, stdout_str);
   g_free (arg);
@@ -220,11 +222,11 @@ main (int   argc,
   g_test_init (&argc, &argv, NULL);
 
   dirname = g_path_get_dirname (argv[0]);
-  echo_prog_path = g_build_filename (dirname, "test-spawn-echo", NULL);
+  echo_prog_path = g_build_filename (dirname, "test-spawn-echo" EXEEXT, NULL);
   if (!g_file_test (echo_prog_path, G_FILE_TEST_EXISTS))
     {
       g_free (echo_prog_path);
-      echo_prog_path = g_build_filename (dirname, "lt-test-spawn-echo", NULL);
+      echo_prog_path = g_build_filename (dirname, "lt-test-spawn-echo" EXEEXT, NULL);
     }
   g_free (dirname);
 

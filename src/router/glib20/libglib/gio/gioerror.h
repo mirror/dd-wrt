@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
 
+#ifndef __G_IO_ERROR_H__
+#define __G_IO_ERROR_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_IO_ERROR_H__
-#define __G_IO_ERROR_H__
 
 #include <glib.h>
 #include <gio/gioenums.h>
@@ -40,10 +38,13 @@ G_BEGIN_DECLS
  **/
 #define G_IO_ERROR g_io_error_quark()
 
+GLIB_AVAILABLE_IN_ALL
 GQuark       g_io_error_quark      (void);
+GLIB_AVAILABLE_IN_ALL
 GIOErrorEnum g_io_error_from_errno (gint err_no);
 
 #ifdef G_OS_WIN32
+GLIB_AVAILABLE_IN_ALL
 GIOErrorEnum g_io_error_from_win32_error (gint error_code);
 #endif
 

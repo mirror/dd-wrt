@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #undef	G_LOG_DOMAIN
@@ -86,7 +84,7 @@ test_signal1_accumulator (GSignalInvocationHint *ihint,
   return TRUE;
 }
 
-gchar*
+static gchar *
 test_object_signal1_callback_before (TestObject *tobject,
 				     gint        param,
 				     gpointer    data)
@@ -94,14 +92,14 @@ test_object_signal1_callback_before (TestObject *tobject,
   return g_strdup ("<before>");
 }
 
-gchar*
+static gchar *
 test_object_real_signal1 (TestObject *tobject,
 			  gint        param)
 {
   return g_strdup ("<default>");
 }
 
-gchar*
+static gchar *
 test_object_signal1_callback_after (TestObject *tobject,
 				    gint        param,
 				    gpointer    data)
@@ -109,7 +107,7 @@ test_object_signal1_callback_after (TestObject *tobject,
   return g_strdup ("<after>");
 }
 
-gboolean
+static gboolean
 test_object_signal2_callback_before (TestObject *tobject,
 				     gint        param)
 {
@@ -125,7 +123,7 @@ test_object_signal2_callback_before (TestObject *tobject,
   return FALSE;
 }
 
-gboolean
+static gboolean
 test_object_real_signal2 (TestObject *tobject,
 			  gint        param)
 {
@@ -141,7 +139,7 @@ test_object_real_signal2 (TestObject *tobject,
   return FALSE;
 }
 
-gboolean
+static gboolean
 test_object_signal2_callback_after (TestObject *tobject,
 				     gint        param)
 {
@@ -262,7 +260,6 @@ main (int   argc,
   g_log_set_always_fatal (g_log_set_always_fatal (G_LOG_FATAL_MASK) |
 			  G_LOG_LEVEL_WARNING |
 			  G_LOG_LEVEL_CRITICAL);
-  g_type_init ();
 
   object = g_object_new (TEST_TYPE_OBJECT, NULL);
 
@@ -303,6 +300,8 @@ main (int   argc,
   g_assert (!variant_finalised);
   g_variant_unref (variant_result);
   g_assert (variant_finalised);
+
+  g_object_unref (object);
 
   return 0;
 }

@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Christian Kellner <gicmo@gnome.org>
  */
 
+#ifndef __G_MEMORY_OUTPUT_STREAM_H__
+#define __G_MEMORY_OUTPUT_STREAM_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_MEMORY_OUTPUT_STREAM_H__
-#define __G_MEMORY_OUTPUT_STREAM_H__
 
 #include <gio/goutputstream.h>
 
@@ -82,15 +80,23 @@ struct _GMemoryOutputStreamClass
 typedef gpointer (* GReallocFunc) (gpointer data,
                                    gsize    size);
 
+GLIB_AVAILABLE_IN_ALL
 GType          g_memory_output_stream_get_type      (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GOutputStream *g_memory_output_stream_new           (gpointer             data,
                                                      gsize                size,
                                                      GReallocFunc         realloc_function,
                                                      GDestroyNotify       destroy_function);
+GLIB_AVAILABLE_IN_2_36
+GOutputStream *g_memory_output_stream_new_resizable (void);
+GLIB_AVAILABLE_IN_ALL
 gpointer       g_memory_output_stream_get_data      (GMemoryOutputStream *ostream);
+GLIB_AVAILABLE_IN_ALL
 gsize          g_memory_output_stream_get_size      (GMemoryOutputStream *ostream);
+GLIB_AVAILABLE_IN_ALL
 gsize          g_memory_output_stream_get_data_size (GMemoryOutputStream *ostream);
+GLIB_AVAILABLE_IN_ALL
 gpointer       g_memory_output_stream_steal_data    (GMemoryOutputStream *ostream);
 
 GLIB_AVAILABLE_IN_2_34

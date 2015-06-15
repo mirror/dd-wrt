@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -42,6 +40,7 @@ int main (int argc, char *argv[])
   items = g_list_append (items, "bb");
   items = g_list_append (items, "bc");
   g_completion_add_items (cmp, items);
+  g_list_free (items);
 
   items = g_completion_complete (cmp, "a", &prefix);
   g_assert (!strcmp ("a\302", prefix));
@@ -71,6 +70,7 @@ int main (int argc, char *argv[])
 
   items = g_list_append (NULL, "bb");
   g_completion_remove_items (cmp, items);
+  g_list_free (items);
 
   items = g_completion_complete_utf8 (cmp, "b", &prefix);
   g_assert (g_list_length (items) == 1);

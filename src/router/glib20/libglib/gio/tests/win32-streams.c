@@ -27,7 +27,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <io.h>
-#include <unistd.h>
 
 #include <windows.h>
 
@@ -340,7 +339,7 @@ test_pipe_io_overlap (void)
   gchar name[256];
 
   g_snprintf (name, sizeof (name),
-              "\\\\.\\pipe\\gtest-io-overlap-%u", (guint) getpid ());
+              "\\\\.\\pipe\\gtest-io-overlap-%u", (guint) GetCurrentProcessId ());
 
   server = CreateNamedPipe (name,
                             PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
@@ -419,7 +418,7 @@ test_pipe_io_concurrent (void)
   gchar name[256], c;
 
   g_snprintf (name, sizeof (name),
-              "\\\\.\\pipe\\gtest-io-concurrent-%u", (guint) getpid ());
+              "\\\\.\\pipe\\gtest-io-concurrent-%u", (guint) GetCurrentProcessId ());
 
   server = CreateNamedPipe (name,
                             PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
@@ -491,7 +490,7 @@ test_pipe_io_cancel (void)
   gchar name[256];
 
   g_snprintf (name, sizeof (name),
-              "\\\\.\\pipe\\gtest-io-cancel-%u", (guint) getpid ());
+              "\\\\.\\pipe\\gtest-io-cancel-%u", (guint) GetCurrentProcessId ());
 
   in_handle = CreateNamedPipe (name,
                                PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED,
@@ -525,7 +524,6 @@ int
 main (int   argc,
       char *argv[])
 {
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/win32-streams/pipe-io-test", test_pipe_io);

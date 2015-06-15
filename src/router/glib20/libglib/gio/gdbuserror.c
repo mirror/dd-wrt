@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -57,8 +55,8 @@
  * automatically map from D-Bus errors to #GError and back. This
  * is typically done in the function returning the #GQuark for the
  * error domain:
- * <example id="error-registration"><title>Error Registration</title><programlisting>
- * /<!-- -->* foo-bar-error.h: *<!-- -->/
+ * |[<!-- language="C" -->
+ * // foo-bar-error.h:
  *
  * #define FOO_BAR_ERROR (foo_bar_error_quark ())
  * GQuark foo_bar_error_quark (void);
@@ -68,10 +66,10 @@
  *   FOO_BAR_ERROR_FAILED,
  *   FOO_BAR_ERROR_ANOTHER_ERROR,
  *   FOO_BAR_ERROR_SOME_THIRD_ERROR,
- *   FOO_BAR_N_ERRORS /<!-- -->*< skip >*<!-- -->/
+ *   FOO_BAR_N_ERRORS / *< skip >* /
  * } FooBarError;
  *
- * /<!-- -->* foo-bar-error.c: *<!-- -->/
+ * // foo-bar-error.c:
  *
  * static const GDBusErrorEntry foo_bar_error_entries[] =
  * {
@@ -80,7 +78,7 @@
  *   {FOO_BAR_ERROR_SOME_THIRD_ERROR, "org.project.Foo.Bar.Error.SomeThirdError"},
  * };
  *
- * /<!-- -->* Ensure that every error code has an associated D-Bus error name *<!-- -->/
+ * // Ensure that every error code has an associated D-Bus error name
  * G_STATIC_ASSERT (G_N_ELEMENTS (foo_bar_error_entries) == FOO_BAR_N_ERRORS);
  *
  * GQuark
@@ -93,15 +91,15 @@
  *                                       G_N_ELEMENTS (foo_bar_error_entries));
  *   return (GQuark) quark_volatile;
  * }
- * </programlisting></example>
+ * ]|
  * With this setup, a D-Bus peer can transparently pass e.g. %FOO_BAR_ERROR_ANOTHER_ERROR and
- * other peers will see the D-Bus error name <literal>org.project.Foo.Bar.Error.AnotherError</literal>.
+ * other peers will see the D-Bus error name org.project.Foo.Bar.Error.AnotherError.
  *
  * If the other peer is using GDBus, and has registered the association with
  * g_dbus_error_register_error_domain() in advance (e.g. by invoking the %FOO_BAR_ERROR quark
  * generation itself in the previous example) the peer will see also %FOO_BAR_ERROR_ANOTHER_ERROR instead
  * of %G_IO_ERROR_DBUS_ERROR. Note that GDBus clients can still recover
- * <literal>org.project.Foo.Bar.Error.AnotherError</literal> using g_dbus_error_get_remote_error().
+ * org.project.Foo.Bar.Error.AnotherError using g_dbus_error_get_remote_error().
  *
  * Note that errors in the %G_DBUS_ERROR error domain is intended only
  * for returning errors from a remote message bus process. Errors
@@ -152,12 +150,16 @@ static const GDBusErrorEntry g_dbus_error_entries[] =
   {G_DBUS_ERROR_SELINUX_SECURITY_CONTEXT_UNKNOWN, "org.freedesktop.DBus.Error.SELinuxSecurityContextUnknown"},
   {G_DBUS_ERROR_ADT_AUDIT_DATA_UNKNOWN,           "org.freedesktop.DBus.Error.AdtAuditDataUnknown"},
   {G_DBUS_ERROR_OBJECT_PATH_IN_USE,               "org.freedesktop.DBus.Error.ObjectPathInUse"},
+  {G_DBUS_ERROR_UNKNOWN_OBJECT,                   "org.freedesktop.DBus.Error.UnknownObject"},
+  {G_DBUS_ERROR_UNKNOWN_INTERFACE,                "org.freedesktop.DBus.Error.UnknownInterface"},
+  {G_DBUS_ERROR_UNKNOWN_PROPERTY,                 "org.freedesktop.DBus.Error.UnknownProperty"},
+  {G_DBUS_ERROR_PROPERTY_READ_ONLY,               "org.freedesktop.DBus.Error.PropertyReadOnly"},
 };
 
 GQuark
 g_dbus_error_quark (void)
 {
-  G_STATIC_ASSERT (G_N_ELEMENTS (g_dbus_error_entries) - 1 == G_DBUS_ERROR_OBJECT_PATH_IN_USE);
+  G_STATIC_ASSERT (G_N_ELEMENTS (g_dbus_error_entries) - 1 == G_DBUS_ERROR_PROPERTY_READ_ONLY);
   static volatile gsize quark_volatile = 0;
   g_dbus_error_register_error_domain ("g-dbus-error-quark",
                                       &quark_volatile,
@@ -338,7 +340,7 @@ static GHashTable *dbus_error_name_to_re = NULL;
  * @dbus_error_name: A D-Bus error name.
  *
  * Creates an association to map between @dbus_error_name and
- * #GError<!-- -->s specified by @error_domain and @error_code.
+ * #GErrors specified by @error_domain and @error_code.
  *
  * This is typically done in the routine that returns the #GQuark for
  * an error domain.
@@ -492,16 +494,17 @@ g_dbus_error_is_remote_error (const GError *error)
 
 /**
  * g_dbus_error_get_remote_error:
- * @error: A #GError.
+ * @error: a #GError
  *
  * Gets the D-Bus error name used for @error, if any.
  *
  * This function is guaranteed to return a D-Bus error name for all
- * #GError<!-- -->s returned from functions handling remote method
- * calls (e.g. g_dbus_connection_call_finish()) unless
+ * #GErrors returned from functions handling remote method calls
+ * (e.g. g_dbus_connection_call_finish()) unless
  * g_dbus_error_strip_remote_error() has been used on @error.
  *
- * Returns: An allocated string or %NULL if the D-Bus error name could not be found. Free with g_free().
+ * Returns: an allocated string or %NULL if the D-Bus error name
+ *     could not be found. Free with g_free().
  *
  * Since: 2.26
  */
@@ -791,7 +794,7 @@ g_dbus_error_strip_remote_error (GError *error)
  * D-Bus error name will be returned.
  *
  * Otherwise the a name of the form
- * <literal>org.gtk.GDBus.UnmappedGError.Quark._ESCAPED_QUARK_NAME.Code_ERROR_CODE</literal>
+ * `org.gtk.GDBus.UnmappedGError.Quark._ESCAPED_QUARK_NAME.Code_ERROR_CODE`
  * will be used. This allows other GDBus applications to map the error
  * on the wire back to a #GError using g_dbus_error_new_for_dbus_error().
  *

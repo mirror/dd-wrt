@@ -16,7 +16,10 @@
  * if advised of the possibility of such damage.
  */
 #include <glib-object.h>
+
+#ifdef G_OS_UNIX
 #include <unistd.h>
+#endif
 
 #define TEST_POINTER1   ((gpointer) 47)
 #define TEST_POINTER2   ((gpointer) 49)
@@ -43,6 +46,7 @@ typedef struct {
 #define MY_IS_TEST_CLASS(tclass)   (G_TYPE_CHECK_CLASS_TYPE ((tclass), G_TYPE_TEST))
 #define MY_TEST_GET_CLASS(test)    (G_TYPE_INSTANCE_GET_CLASS ((test), G_TYPE_TEST, GTestClass))
 
+static GType my_test_get_type (void);
 G_DEFINE_TYPE (GTest, my_test, G_TYPE_OBJECT);
 
 /* --- variables --- */
@@ -243,7 +247,6 @@ main (int    argc,
 
   g_print ("START: %s\n", argv[0]);
   g_log_set_always_fatal (G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL | g_log_set_always_fatal (G_LOG_FATAL_MASK));
-  g_type_init ();
 
   object = g_object_new (G_TYPE_TEST, NULL);
   closure = g_cclosure_new (G_CALLBACK (test_signal_handler), TEST_POINTER2, destroy_data);

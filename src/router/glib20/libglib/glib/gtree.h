@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,12 +22,12 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_TREE_H__
+#define __G_TREE_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_TREE_H__
-#define __G_TREE_H__
 
 #include <glib/gnode.h>
 
@@ -43,32 +41,45 @@ typedef gboolean (*GTraverseFunc) (gpointer  key,
 
 /* Balanced binary trees
  */
+GLIB_AVAILABLE_IN_ALL
 GTree*   g_tree_new             (GCompareFunc      key_compare_func);
+GLIB_AVAILABLE_IN_ALL
 GTree*   g_tree_new_with_data   (GCompareDataFunc  key_compare_func,
                                  gpointer          key_compare_data);
+GLIB_AVAILABLE_IN_ALL
 GTree*   g_tree_new_full        (GCompareDataFunc  key_compare_func,
                                  gpointer          key_compare_data,
                                  GDestroyNotify    key_destroy_func,
                                  GDestroyNotify    value_destroy_func);
+GLIB_AVAILABLE_IN_ALL
 GTree*   g_tree_ref             (GTree            *tree);
+GLIB_AVAILABLE_IN_ALL
 void     g_tree_unref           (GTree            *tree);
+GLIB_AVAILABLE_IN_ALL
 void     g_tree_destroy         (GTree            *tree);
+GLIB_AVAILABLE_IN_ALL
 void     g_tree_insert          (GTree            *tree,
                                  gpointer          key,
                                  gpointer          value);
+GLIB_AVAILABLE_IN_ALL
 void     g_tree_replace         (GTree            *tree,
                                  gpointer          key,
                                  gpointer          value);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_tree_remove          (GTree            *tree,
                                  gconstpointer     key);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_tree_steal           (GTree            *tree,
                                  gconstpointer     key);
+GLIB_AVAILABLE_IN_ALL
 gpointer g_tree_lookup          (GTree            *tree,
                                  gconstpointer     key);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_tree_lookup_extended (GTree            *tree,
                                  gconstpointer     lookup_key,
                                  gpointer         *orig_key,
                                  gpointer         *value);
+GLIB_AVAILABLE_IN_ALL
 void     g_tree_foreach         (GTree            *tree,
                                  GTraverseFunc	   func,
                                  gpointer	   user_data);
@@ -79,10 +90,13 @@ void     g_tree_traverse        (GTree            *tree,
                                  GTraverseType     traverse_type,
                                  gpointer          user_data);
 
+GLIB_AVAILABLE_IN_ALL
 gpointer g_tree_search          (GTree            *tree,
                                  GCompareFunc      search_func,
                                  gconstpointer     user_data);
+GLIB_AVAILABLE_IN_ALL
 gint     g_tree_height          (GTree            *tree);
+GLIB_AVAILABLE_IN_ALL
 gint     g_tree_nnodes          (GTree            *tree);
 
 G_END_DECLS

@@ -20,9 +20,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -741,18 +739,27 @@ xdg_mime_media_type_equal (const char *mime_a,
 
 #if 1
 static int
-xdg_mime_is_super_type (const char *mime)
+ends_with (const char *str,
+           const char *suffix)
 {
   int length;
-  const char *type;
+  int suffix_length;
 
-  length = strlen (mime);
-  type = &(mime[length - 2]);
+  length = strlen (str);
+  suffix_length = strlen (suffix);
+  if (length < suffix_length)
+    return 0;
 
-  if (strcmp (type, "/*") == 0)
+  if (strcmp (str + length - suffix_length, suffix) == 0)
     return 1;
 
   return 0;
+}
+
+static int
+xdg_mime_is_super_type (const char *mime)
+{
+  return ends_with (mime, "/*");
 }
 #endif
 

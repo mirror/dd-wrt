@@ -5,19 +5,15 @@
 static void
 test_warnings (void)
 {
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
-    {
-      g_warn_if_reached ();
-    }
-  g_test_trap_assert_failed();
-  g_test_trap_assert_stderr ("*WARNING*test_warnings*should not be reached*");
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                         "*test_warnings*should not be reached*");
+  g_warn_if_reached ();
+  g_test_assert_expected_messages ();
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
-    {
-      g_warn_if_fail (FALSE);
-    }
-  g_test_trap_assert_failed();
-  g_test_trap_assert_stderr ("*WARNING*test_warnings*runtime check failed*");
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                         "*test_warnings*runtime check failed*");
+  g_warn_if_fail (FALSE);
+  g_test_assert_expected_messages ();
 }
 
 static guint log_count = 0;
@@ -44,113 +40,152 @@ test_set_handler (void)
 
   id = g_log_set_handler ("bu", G_LOG_LEVEL_INFO, log_handler, NULL);
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
-    {
-      g_log ("bu", G_LOG_LEVEL_DEBUG, "message");
-      g_log ("ba", G_LOG_LEVEL_DEBUG, "message");
-      g_log ("bu", G_LOG_LEVEL_INFO, "message");
-      g_log ("ba", G_LOG_LEVEL_INFO, "message");
+  g_log ("bu", G_LOG_LEVEL_DEBUG, "message");
+  g_log ("ba", G_LOG_LEVEL_DEBUG, "message");
+  g_log ("bu", G_LOG_LEVEL_INFO, "message");
+  g_log ("ba", G_LOG_LEVEL_INFO, "message");
 
-      g_assert_cmpint (log_count, ==, 1);
-      exit (0);
-    }
-  g_test_trap_assert_passed ();
+  g_assert_cmpint (log_count, ==, 1);
 
   g_log_remove_handler ("bu", id);
 }
 
 static void
+test_default_handler_error (void)
+{
+  g_log_set_default_handler (g_log_default_handler, NULL);
+  g_error ("message1");
+  exit (0);
+}
+
+static void
+test_default_handler_critical (void)
+{
+  g_log_set_default_handler (g_log_default_handler, NULL);
+  g_critical ("message2");
+  exit (0);
+}
+
+static void
+test_default_handler_warning (void)
+{
+  g_log_set_default_handler (g_log_default_handler, NULL);
+  g_warning ("message3");
+  exit (0);
+}
+
+static void
+test_default_handler_message (void)
+{
+  g_log_set_default_handler (g_log_default_handler, NULL);
+  g_message ("message4");
+  exit (0);
+}
+
+static void
+test_default_handler_info (void)
+{
+  g_log_set_default_handler (g_log_default_handler, NULL);
+  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "message5");
+  exit (0);
+}
+
+static void
+test_default_handler_bar_info (void)
+{
+  g_log_set_default_handler (g_log_default_handler, NULL);
+
+  g_setenv ("G_MESSAGES_DEBUG", "foo bar baz", TRUE);
+
+  g_log ("bar", G_LOG_LEVEL_INFO, "message5");
+  exit (0);
+}
+
+static void
+test_default_handler_baz_debug (void)
+{
+  g_log_set_default_handler (g_log_default_handler, NULL);
+
+  g_setenv ("G_MESSAGES_DEBUG", "foo bar baz", TRUE);
+
+  g_log ("baz", G_LOG_LEVEL_DEBUG, "message6");
+  exit (0);
+}
+
+static void
+test_default_handler_debug (void)
+{
+  g_log_set_default_handler (g_log_default_handler, NULL);
+
+  g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
+
+  g_log ("foo", G_LOG_LEVEL_DEBUG, "6");
+  g_log ("bar", G_LOG_LEVEL_DEBUG, "6");
+  g_log ("baz", G_LOG_LEVEL_DEBUG, "6");
+  exit (0);
+}
+
+static void
+test_default_handler_0x400 (void)
+{
+  g_log_set_default_handler (g_log_default_handler, NULL);
+  g_log (G_LOG_DOMAIN, 1<<10, "message7");
+  exit (0);
+}
+
+static void
 test_default_handler (void)
 {
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
-    {
-      g_error ("message1");
-      exit (0);
-    }
+  g_test_trap_subprocess ("/logging/default-handler/subprocess/error", 0, 0);
   g_test_trap_assert_failed ();
   g_test_trap_assert_stderr ("*ERROR*message1*");
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
-    {
-      g_critical ("message2");
-      exit (0);
-    }
+  g_test_trap_subprocess ("/logging/default-handler/subprocess/critical", 0, 0);
   g_test_trap_assert_failed ();
   g_test_trap_assert_stderr ("*CRITICAL*message2*");
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
-    {
-      g_warning ("message3");
-      exit (0);
-    }
+  g_test_trap_subprocess ("/logging/default-handler/subprocess/warning", 0, 0);
   g_test_trap_assert_failed ();
   g_test_trap_assert_stderr ("*WARNING*message3*");
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
-    {
-      g_message ("message4");
-      exit (0);
-    }
+  g_test_trap_subprocess ("/logging/default-handler/subprocess/message", 0, 0);
   g_test_trap_assert_passed ();
   g_test_trap_assert_stderr ("*Message*message4*");
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
-    {
-      g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "message5");
-      exit (0);
-    }
+  g_test_trap_subprocess ("/logging/default-handler/subprocess/info", 0, 0);
   g_test_trap_assert_passed ();
   g_test_trap_assert_stdout_unmatched ("*INFO*message5*");
 
-  g_setenv ("G_MESSAGES_DEBUG", "foo bar baz", TRUE);
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
-    {
-      g_log ("bar", G_LOG_LEVEL_INFO, "message5");
-      exit (0);
-    }
+  g_test_trap_subprocess ("/logging/default-handler/subprocess/bar-info", 0, 0);
   g_test_trap_assert_passed ();
   g_test_trap_assert_stdout ("*INFO*message5*");
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
-    {
-      g_log ("baz", G_LOG_LEVEL_DEBUG, "message6");
-      exit (0);
-    }
+  g_test_trap_subprocess ("/logging/default-handler/subprocess/baz-debug", 0, 0);
   g_test_trap_assert_passed ();
   g_test_trap_assert_stdout ("*DEBUG*message6*");
 
-  g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
-    {
-      g_log ("foo", G_LOG_LEVEL_DEBUG, "6");
-      g_log ("bar", G_LOG_LEVEL_DEBUG, "6");
-      g_log ("baz", G_LOG_LEVEL_DEBUG, "6");
-      exit (0);
-    }
+  g_test_trap_subprocess ("/logging/default-handler/subprocess/debug", 0, 0);
   g_test_trap_assert_passed ();
   g_test_trap_assert_stdout ("*DEBUG*6*6*6*");
 
-  g_unsetenv ("G_MESSAGES_DEBUG");
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
-    {
-      g_log (G_LOG_DOMAIN, 1<<10, "message7");
-      exit (0);
-    }
+  g_test_trap_subprocess ("/logging/default-handler/subprocess/0x400", 0, 0);
   g_test_trap_assert_passed ();
   g_test_trap_assert_stdout ("*LOG-0x400*message7*");
 }
 
-/* test that setting levels as fatal works */
 static void
 test_fatal_log_mask (void)
 {
-  GLogLevelFlags flags;
-
-  flags = g_log_set_fatal_mask ("bu", G_LOG_LEVEL_INFO);
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
-    g_log ("bu", G_LOG_LEVEL_INFO, "fatal");
+  if (g_test_subprocess ())
+    {
+      g_log_set_fatal_mask ("bu", G_LOG_LEVEL_INFO);
+      g_log ("bu", G_LOG_LEVEL_INFO, "fatal");
+      return;
+    }
+  g_test_trap_subprocess (NULL, 0, 0);
   g_test_trap_assert_failed ();
-  g_log_set_fatal_mask ("bu", flags);
+  /* G_LOG_LEVEL_INFO isn't printed by default */
+  g_test_trap_assert_stdout_unmatched ("*fatal*");
 }
 
 static gint my_print_count = 0;
@@ -246,6 +281,19 @@ bug653052 (void)
   g_return_if_fail (0);
 }
 
+static void
+test_gibberish (void)
+{
+  if (g_test_subprocess ())
+    {
+      g_warning ("bla bla \236\237\190");
+      return;
+    }
+  g_test_trap_subprocess (NULL, 0, 0);
+  g_test_trap_assert_failed ();
+  g_test_trap_assert_stderr ("*bla bla \\x9e\\x9f\\u000190*");
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -255,12 +303,22 @@ main (int argc, char *argv[])
   g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/logging/default-handler", test_default_handler);
+  g_test_add_func ("/logging/default-handler/subprocess/error", test_default_handler_error);
+  g_test_add_func ("/logging/default-handler/subprocess/critical", test_default_handler_critical);
+  g_test_add_func ("/logging/default-handler/subprocess/warning", test_default_handler_warning);
+  g_test_add_func ("/logging/default-handler/subprocess/message", test_default_handler_message);
+  g_test_add_func ("/logging/default-handler/subprocess/info", test_default_handler_info);
+  g_test_add_func ("/logging/default-handler/subprocess/bar-info", test_default_handler_bar_info);
+  g_test_add_func ("/logging/default-handler/subprocess/baz-debug", test_default_handler_baz_debug);
+  g_test_add_func ("/logging/default-handler/subprocess/debug", test_default_handler_debug);
+  g_test_add_func ("/logging/default-handler/subprocess/0x400", test_default_handler_0x400);
   g_test_add_func ("/logging/warnings", test_warnings);
   g_test_add_func ("/logging/fatal-log-mask", test_fatal_log_mask);
   g_test_add_func ("/logging/set-handler", test_set_handler);
   g_test_add_func ("/logging/print-handler", test_print_handler);
   g_test_add_func ("/logging/printerr-handler", test_printerr_handler);
   g_test_add_func ("/logging/653052", bug653052);
+  g_test_add_func ("/logging/gibberish", test_gibberish);
 
   return g_test_run ();
 }

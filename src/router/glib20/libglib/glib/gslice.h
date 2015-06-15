@@ -12,17 +12,15 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_SLICE_H__
+#define __G_SLICE_H__
 
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_SLICE_H__
-#define __G_SLICE_H__
 
 #include <glib/gtypes.h>
 
@@ -30,12 +28,17 @@ G_BEGIN_DECLS
 
 /* slices - fast allocation/release of small memory blocks
  */
+GLIB_AVAILABLE_IN_ALL
 gpointer g_slice_alloc          	(gsize	       block_size) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
+GLIB_AVAILABLE_IN_ALL
 gpointer g_slice_alloc0         	(gsize         block_size) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
+GLIB_AVAILABLE_IN_ALL
 gpointer g_slice_copy                   (gsize         block_size,
                                          gconstpointer mem_block) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
+GLIB_AVAILABLE_IN_ALL
 void     g_slice_free1          	(gsize         block_size,
 					 gpointer      mem_block);
+GLIB_AVAILABLE_IN_ALL
 void     g_slice_free_chain_with_offset (gsize         block_size,
 					 gpointer      mem_chain,
 					 gsize         next_offset);
@@ -57,16 +60,17 @@ void     g_slice_free_chain_with_offset (gsize         block_size,
 #define g_slice_dup(type, mem)                                  \
   (1 ? (type*) g_slice_copy (sizeof (type), (mem))              \
      : ((void) ((type*) 0 == (mem)), (type*) 0))
-#define g_slice_free(type, mem)				do {	\
+#define g_slice_free(type, mem)                                 \
+G_STMT_START {                                                  \
   if (1) g_slice_free1 (sizeof (type), (mem));			\
   else   (void) ((type*) 0 == (mem)); 				\
-} while (0)
-#define g_slice_free_chain(type, mem_chain, next)	do {	\
+} G_STMT_END
+#define g_slice_free_chain(type, mem_chain, next)               \
+G_STMT_START {                                                  \
   if (1) g_slice_free_chain_with_offset (sizeof (type),		\
                  (mem_chain), G_STRUCT_OFFSET (type, next)); 	\
   else   (void) ((type*) 0 == (mem_chain));			\
-} while (0)
-
+} G_STMT_END
 
 /* --- internal debugging API --- */
 typedef enum {
@@ -84,6 +88,11 @@ GLIB_DEPRECATED_IN_2_34
 gint64   g_slice_get_config	   (GSliceConfig ckey);
 GLIB_DEPRECATED_IN_2_34
 gint64*  g_slice_get_config_state  (GSliceConfig ckey, gint64 address, guint *n_values);
+
+#ifdef G_ENABLE_DEBUG
+GLIB_AVAILABLE_IN_ALL
+void     g_slice_debug_tree_statistics (void);
+#endif
 
 G_END_DECLS
 

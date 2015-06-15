@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -37,33 +35,68 @@ G_BEGIN_DECLS
 typedef struct _GDesktopAppInfo        GDesktopAppInfo;
 typedef struct _GDesktopAppInfoClass   GDesktopAppInfoClass;
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GDesktopAppInfo, g_object_unref)
+
 struct _GDesktopAppInfoClass
 {
   GObjectClass parent_class;
 };
 
 
+GLIB_AVAILABLE_IN_ALL
 GType            g_desktop_app_info_get_type          (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GDesktopAppInfo *g_desktop_app_info_new_from_filename (const char      *filename);
+GLIB_AVAILABLE_IN_ALL
 GDesktopAppInfo *g_desktop_app_info_new_from_keyfile  (GKeyFile        *key_file);
 
+GLIB_AVAILABLE_IN_ALL
 const char *     g_desktop_app_info_get_filename      (GDesktopAppInfo *info);
 
+GLIB_AVAILABLE_IN_2_30
 const char *     g_desktop_app_info_get_generic_name  (GDesktopAppInfo *info);
+GLIB_AVAILABLE_IN_2_30
 const char *     g_desktop_app_info_get_categories    (GDesktopAppInfo *info);
+GLIB_AVAILABLE_IN_2_30
 const char * const *g_desktop_app_info_get_keywords   (GDesktopAppInfo *info);
+GLIB_AVAILABLE_IN_2_30
 gboolean         g_desktop_app_info_get_nodisplay     (GDesktopAppInfo *info);
+GLIB_AVAILABLE_IN_2_30
 gboolean         g_desktop_app_info_get_show_in       (GDesktopAppInfo *info,
                                                        const gchar     *desktop_env);
 GLIB_AVAILABLE_IN_2_34
 const char *     g_desktop_app_info_get_startup_wm_class (GDesktopAppInfo *info);
 
+GLIB_AVAILABLE_IN_ALL
 GDesktopAppInfo *g_desktop_app_info_new               (const char      *desktop_id);
+GLIB_AVAILABLE_IN_ALL
 gboolean         g_desktop_app_info_get_is_hidden     (GDesktopAppInfo *info);
 
+GLIB_DEPRECATED_IN_2_42
 void             g_desktop_app_info_set_desktop_env   (const char      *desktop_env);
 
+GLIB_AVAILABLE_IN_2_36
+gboolean         g_desktop_app_info_has_key           (GDesktopAppInfo *info,
+                                                       const char      *key);
+GLIB_AVAILABLE_IN_2_36
+char *           g_desktop_app_info_get_string        (GDesktopAppInfo *info,
+                                                       const char      *key);
+GLIB_AVAILABLE_IN_2_36
+gboolean         g_desktop_app_info_get_boolean       (GDesktopAppInfo *info,
+                                                       const char      *key);
+
+GLIB_AVAILABLE_IN_2_38
+const gchar * const *   g_desktop_app_info_list_actions                 (GDesktopAppInfo   *info);
+
+GLIB_AVAILABLE_IN_2_38
+void                    g_desktop_app_info_launch_action                (GDesktopAppInfo   *info,
+                                                                         const gchar       *action_name,
+                                                                         GAppLaunchContext *launch_context);
+
+GLIB_AVAILABLE_IN_2_38
+gchar *                 g_desktop_app_info_get_action_name              (GDesktopAppInfo   *info,
+                                                                         const gchar       *action_name);
 
 #ifndef G_DISABLE_DEPRECATED
 
@@ -76,14 +109,16 @@ void             g_desktop_app_info_set_desktop_env   (const char      *desktop_
  * G_DESKTOP_APP_INFO_LOOKUP_EXTENSION_POINT_NAME:
  *
  * Extension point for default handler to URI association. See
- * <link linkend="extending-gio">Extending GIO</link>.
+ * [Extending GIO][extending-gio].
  */
 #define G_DESKTOP_APP_INFO_LOOKUP_EXTENSION_POINT_NAME "gio-desktop-app-info-lookup"
 
 #endif /* G_DISABLE_DEPRECATED */
 
 /**
- * GDesktopAppInfoLookup:
+ * GDesktopAppInfoLookupIface:
+ * @get_default_for_uri_scheme: Virtual method for
+ *  g_desktop_app_info_lookup_get_default_for_uri_scheme().
  *
  * Interface that is used by backends to associate default
  * handlers with URI schemes.
@@ -120,6 +155,7 @@ typedef void (*GDesktopAppLaunchCallback) (GDesktopAppInfo  *appinfo,
 					   GPid              pid,
 					   gpointer          user_data);
 
+GLIB_AVAILABLE_IN_2_28
 gboolean    g_desktop_app_info_launch_uris_as_manager (GDesktopAppInfo            *appinfo,
 						       GList                      *uris,
 						       GAppLaunchContext          *launch_context,
@@ -130,6 +166,11 @@ gboolean    g_desktop_app_info_launch_uris_as_manager (GDesktopAppInfo          
 						       gpointer                    pid_callback_data,
 						       GError                    **error);
 
+GLIB_AVAILABLE_IN_2_40
+gchar *** g_desktop_app_info_search (const gchar *search_string);
+
+GLIB_AVAILABLE_IN_2_42
+GList *g_desktop_app_info_get_implementations (const gchar *interface);
 
 G_END_DECLS
 

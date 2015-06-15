@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
 
+#ifndef __G_DBUS_ACTION_GROUP_H__
+#define __G_DBUS_ACTION_GROUP_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_DBUS_ACTION_GROUP_H__
-#define __G_DBUS_ACTION_GROUP_H__
 
 #include "giotypes.h"
 
@@ -43,6 +41,7 @@ G_BEGIN_DECLS
 #define G_DBUS_ACTION_GROUP_GET_CLASS(inst)                 (G_TYPE_INSTANCE_GET_CLASS ((inst),                      \
                                                              G_TYPE_DBUS_ACTION_GROUP, GDBusActionGroupClass))
 
+GLIB_AVAILABLE_IN_ALL
 GType                   g_dbus_action_group_get_type                  (void) G_GNUC_CONST;
 
 GLIB_AVAILABLE_IN_2_32

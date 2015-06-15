@@ -78,16 +78,46 @@ test_qdata_threaded (void)
   result = GPOINTER_TO_INT (g_object_get_data (object, "test"));
 
   g_assert_cmpint (sum, ==, result);
+
+  g_object_unref (object);
+}
+
+static void
+test_qdata_dup (void)
+{
+  gchar *s, *s2;
+  GQuark quark;
+  gboolean b;
+
+  quark = g_quark_from_static_string ("test");
+  object = g_object_new (G_TYPE_OBJECT, NULL);
+  s = g_strdup ("s");
+  g_object_set_qdata_full (object, quark, s, g_free);
+
+  s2 = g_object_dup_qdata (object, quark, (GDuplicateFunc)g_strdup, NULL);
+
+  g_assert_cmpstr (s, ==, s2);
+  g_assert (s != s2);
+
+  g_free (s2);
+
+  b = g_object_replace_qdata (object, quark, s, "s2", NULL, NULL);
+  g_assert (b);
+
+  g_free (s);
+
+  g_object_unref (object);
 }
 
 int
 main (int argc, char **argv)
 {
   g_test_init (&argc, &argv, NULL);
-  g_type_init ();
+
   fail = !!g_getenv ("FAIL");
 
   g_test_add_func ("/qdata/threaded", test_qdata_threaded);
+  g_test_add_func ("/qdata/dup", test_qdata_dup);
 
   return g_test_run ();
 }

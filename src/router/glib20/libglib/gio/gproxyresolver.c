@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Nicolas Dufresne <nicolas.dufresne@collabora.co.uk>
  */
@@ -43,6 +41,19 @@
  * the method g_socket_connectable_proxy_enumerate().
  */
 
+/**
+ * GProxyResolverInterface:
+ * @g_iface: The parent interface.
+ * @is_supported: the virtual function pointer for g_proxy_resolver_is_supported()
+ * @lookup: the virtual function pointer for g_proxy_resolver_lookup()
+ * @lookup_async: the virtual function pointer for
+ *  g_proxy_resolver_lookup_async()
+ * @lookup_finish: the virtual function pointer for
+ *  g_proxy_resolver_lookup_finish()
+ *
+ * The virtual function table for #GProxyResolver.
+ */
+
 G_DEFINE_INTERFACE (GProxyResolver, g_proxy_resolver, G_TYPE_OBJECT)
 
 static void
@@ -55,7 +66,7 @@ g_proxy_resolver_default_init (GProxyResolverInterface *iface)
  *
  * Gets the default #GProxyResolver for the system.
  *
- * Return value: (transfer none): the default #GProxyResolver.
+ * Returns: (transfer none): the default #GProxyResolver.
  *
  * Since: 2.26
  */
@@ -75,7 +86,7 @@ g_proxy_resolver_get_default (void)
  * internally; g_proxy_resolver_get_default() will only return a proxy
  * resolver that returns %TRUE for this method.)
  *
- * Return value: %TRUE if @resolver is supported.
+ * Returns: %TRUE if @resolver is supported.
  *
  * Since: 2.26
  */
@@ -99,22 +110,22 @@ g_proxy_resolver_is_supported (GProxyResolver *resolver)
  * @error: return location for a #GError, or %NULL
  *
  * Looks into the system proxy configuration to determine what proxy,
- * if any, to use to connect to @uri. The returned proxy URIs are of the
- * form <literal>&lt;protocol&gt;://[user[:password]@]host:port</literal>
- * or <literal>direct://</literal>, where &lt;protocol&gt; could be
- * http, rtsp, socks or other proxying protocol.
+ * if any, to use to connect to @uri. The returned proxy URIs are of
+ * the form `<protocol>://[user[:password]@]host:port` or
+ * `direct://`, where <protocol> could be http, rtsp, socks
+ * or other proxying protocol.
  *
  * If you don't know what network protocol is being used on the
- * socket, you should use <literal>none</literal> as the URI protocol.
+ * socket, you should use `none` as the URI protocol.
  * In this case, the resolver might still return a generic proxy type
  * (such as SOCKS), but would not return protocol-specific proxy types
  * (such as http).
  *
- * <literal>direct://</literal> is used when no proxy is needed.
+ * `direct://` is used when no proxy is needed.
  * Direct connection should not be attempted unless it is part of the
  * returned array of proxies.
  *
- * Return value: (transfer full) (array zero-terminated=1): A
+ * Returns: (transfer full) (array zero-terminated=1): A
  *               NULL-terminated array of proxy URIs. Must be freed
  *               with g_strfreev().
  *
@@ -176,7 +187,7 @@ g_proxy_resolver_lookup_async (GProxyResolver      *resolver,
  * g_proxy_resolver_lookup_async() is complete. See
  * g_proxy_resolver_lookup() for more details.
  *
- * Return value: (transfer full) (array zero-terminated=1): A
+ * Returns: (transfer full) (array zero-terminated=1): A
  *               NULL-terminated array of proxy URIs. Must be freed
  *               with g_strfreev().
  *

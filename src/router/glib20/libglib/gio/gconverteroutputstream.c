@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -114,17 +112,15 @@ static void g_converter_output_stream_pollable_iface_init (GPollableOutputStream
 G_DEFINE_TYPE_WITH_CODE (GConverterOutputStream,
 			 g_converter_output_stream,
 			 G_TYPE_FILTER_OUTPUT_STREAM,
+                         G_ADD_PRIVATE (GConverterOutputStream)
 			 G_IMPLEMENT_INTERFACE (G_TYPE_POLLABLE_OUTPUT_STREAM,
-						g_converter_output_stream_pollable_iface_init);
-			 )
+						g_converter_output_stream_pollable_iface_init))
 
 static void
 g_converter_output_stream_class_init (GConverterOutputStreamClass *klass)
 {
   GObjectClass *object_class;
   GOutputStreamClass *istream_class;
-
-  g_type_class_add_private (klass, sizeof (GConverterOutputStreamPrivate));
 
   object_class = G_OBJECT_CLASS (klass);
   object_class->get_property = g_converter_output_stream_get_property;
@@ -223,9 +219,7 @@ g_converter_output_stream_get_property (GObject    *object,
 static void
 g_converter_output_stream_init (GConverterOutputStream *stream)
 {
-  stream->priv = G_TYPE_INSTANCE_GET_PRIVATE (stream,
-					      G_TYPE_CONVERTER_OUTPUT_STREAM,
-					      GConverterOutputStreamPrivate);
+  stream->priv = g_converter_output_stream_get_instance_private (stream);
 }
 
 /**

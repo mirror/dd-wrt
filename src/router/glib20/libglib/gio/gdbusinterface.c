@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -67,17 +65,16 @@ g_dbus_interface_get_info (GDBusInterface *interface_)
 
 /**
  * g_dbus_interface_get_object: (skip)
- * @interface_: An exported D-Bus interface.
+ * @interface_: An exported D-Bus interface
  *
  * Gets the #GDBusObject that @interface_ belongs to, if any.
  *
- * <warning>It is not safe to use the returned object if @interface_
- * or the returned object is being used from other threads. See
- * g_dbus_interface_dup_object() for a thread-safe
- * alternative.</warning>
+ * It is not safe to use the returned object if @interface_ or
+ * the returned object is being used from other threads. See
+ * g_dbus_interface_dup_object() for a thread-safe alternative.
  *
  * Returns: (transfer none): A #GDBusObject or %NULL. The returned
- * reference belongs to @interface_ and should not be freed.
+ *     reference belongs to @interface_ and should not be freed.
  *
  * Since: 2.30
  */
@@ -89,7 +86,7 @@ g_dbus_interface_get_object (GDBusInterface *interface_)
 }
 
 /**
- * g_dbus_interface_dup_object:
+ * g_dbus_interface_dup_object: (rename-to g_dbus_interface_get_object)
  * @interface_: An exported D-Bus interface.
  *
  * Gets the #GDBusObject that @interface_ belongs to, if any.
@@ -98,8 +95,6 @@ g_dbus_interface_get_object (GDBusInterface *interface_)
  * reference should be freed with g_object_unref().
  *
  * Since: 2.32
- *
- * Rename to: g_dbus_interface_get_object
  */
 GDBusObject *
 g_dbus_interface_dup_object (GDBusInterface *interface_)

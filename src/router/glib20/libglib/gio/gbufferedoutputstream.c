@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Christian Kellner <gicmo@gnome.org> 
  */
@@ -24,7 +22,7 @@
 #include "gbufferedoutputstream.h"
 #include "goutputstream.h"
 #include "gseekable.h"
-#include "gsimpleasyncresult.h"
+#include "gtask.h"
 #include "string.h"
 #include "gioerror.h"
 #include "glibintl.h"
@@ -124,6 +122,7 @@ static gboolean g_buffered_output_stream_truncate            (GSeekable       *s
 G_DEFINE_TYPE_WITH_CODE (GBufferedOutputStream,
 			 g_buffered_output_stream,
 			 G_TYPE_FILTER_OUTPUT_STREAM,
+                         G_ADD_PRIVATE (GBufferedOutputStream)
 			 G_IMPLEMENT_INTERFACE (G_TYPE_SEEKABLE,
 						g_buffered_output_stream_seekable_iface_init))
 
@@ -133,8 +132,6 @@ g_buffered_output_stream_class_init (GBufferedOutputStreamClass *klass)
 {
   GObjectClass *object_class;
   GOutputStreamClass *ostream_class;
- 
-  g_type_class_add_private (klass, sizeof (GBufferedOutputStreamPrivate));
 
   object_class = G_OBJECT_CLASS (klass);
   object_class->get_property = g_buffered_output_stream_get_property;
@@ -345,10 +342,7 @@ g_buffered_output_stream_finalize (GObject *object)
 static void
 g_buffered_output_stream_init (GBufferedOutputStream *stream)
 {
-  stream->priv = G_TYPE_INSTANCE_GET_PRIVATE (stream,
-                                              G_TYPE_BUFFERED_OUTPUT_STREAM,
-                                              GBufferedOutputStreamPrivate);
-
+  stream->priv = g_buffered_output_stream_get_instance_private (stream);
 }
 
 static void
@@ -435,7 +429,7 @@ flush_buffer (GBufferedOutputStream  *stream,
   count = priv->pos - bytes_written;
 
   if (count > 0)
-    g_memmove (priv->buffer, priv->buffer + bytes_written, count);
+    memmove (priv->buffer, priv->buffer + bytes_written, count);
   
   priv->pos -= bytes_written;
 
@@ -652,9 +646,10 @@ free_flush_data (gpointer data)
  * and so closing and writing is just a special
  * case of flushing + some addition stuff */
 static void
-flush_buffer_thread (GSimpleAsyncResult *result,
-                     GObject            *object,
-                     GCancellable       *cancellable)
+flush_buffer_thread (GTask        *task,
+                     gpointer      object,
+                     gpointer      task_data,
+                     GCancellable *cancellable)
 {
   GBufferedOutputStream *stream;
   GOutputStream *base_stream;
@@ -663,7 +658,7 @@ flush_buffer_thread (GSimpleAsyncResult *result,
   GError        *error = NULL;
 
   stream = G_BUFFERED_OUTPUT_STREAM (object);
-  fdata = g_simple_async_result_get_op_res_gpointer (result);
+  fdata = task_data;
   base_stream = G_FILTER_OUTPUT_STREAM (stream)->base_stream;
 
   res = flush_buffer (stream, cancellable, &error);
@@ -689,7 +684,9 @@ flush_buffer_thread (GSimpleAsyncResult *result,
     }
 
   if (res == FALSE)
-    g_simple_async_result_take_error (result, error);
+    g_task_return_error (task, error);
+  else
+    g_task_return_boolean (task, TRUE);
 }
 
 static void
@@ -699,25 +696,19 @@ g_buffered_output_stream_flush_async (GOutputStream        *stream,
                                       GAsyncReadyCallback   callback,
                                       gpointer              data)
 {
-  GSimpleAsyncResult *res;
-  FlushData          *fdata;
+  GTask *task;
+  FlushData *fdata;
 
   fdata = g_slice_new (FlushData);
   fdata->flush_stream = TRUE;
   fdata->close_stream = FALSE;
 
-  res = g_simple_async_result_new (G_OBJECT (stream),
-                                   callback,
-                                   data,
-                                   g_buffered_output_stream_flush_async);
+  task = g_task_new (stream, cancellable, callback, data);
+  g_task_set_task_data (task, fdata, free_flush_data);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_set_op_res_gpointer (res, fdata, free_flush_data);
-
-  g_simple_async_result_run_in_thread (res, 
-                                       flush_buffer_thread, 
-                                       io_priority,
-                                       cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, flush_buffer_thread);
+  g_object_unref (task);
 }
 
 static gboolean
@@ -725,14 +716,9 @@ g_buffered_output_stream_flush_finish (GOutputStream        *stream,
                                        GAsyncResult         *result,
                                        GError              **error)
 {
-  GSimpleAsyncResult *simple;
+  g_return_val_if_fail (g_task_is_valid (result, stream), FALSE);
 
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == 
-            g_buffered_output_stream_flush_async);
-
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 static void
@@ -742,24 +728,18 @@ g_buffered_output_stream_close_async (GOutputStream        *stream,
                                       GAsyncReadyCallback   callback,
                                       gpointer              data)
 {
-  GSimpleAsyncResult *res;
-  FlushData          *fdata;
+  GTask *task;
+  FlushData *fdata;
 
   fdata = g_slice_new (FlushData);
   fdata->close_stream = TRUE;
 
-  res = g_simple_async_result_new (G_OBJECT (stream),
-                                   callback,
-                                   data,
-                                   g_buffered_output_stream_close_async);
+  task = g_task_new (stream, cancellable, callback, data);
+  g_task_set_task_data (task, fdata, free_flush_data);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_set_op_res_gpointer (res, fdata, free_flush_data);
-
-  g_simple_async_result_run_in_thread (res, 
-                                       flush_buffer_thread, 
-                                       io_priority,
-                                       cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, flush_buffer_thread);
+  g_object_unref (task);
 }
 
 static gboolean
@@ -767,12 +747,7 @@ g_buffered_output_stream_close_finish (GOutputStream        *stream,
                                        GAsyncResult         *result,
                                        GError              **error)
 {
-  GSimpleAsyncResult *simple;
+  g_return_val_if_fail (g_task_is_valid (result, stream), FALSE);
 
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == 
-            g_buffered_output_stream_close_async);
-
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (result), error);
 }

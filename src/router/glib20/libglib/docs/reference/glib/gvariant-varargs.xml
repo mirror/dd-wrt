@@ -62,7 +62,7 @@
    </listitem>
    <listitem>
     <para>
-     a sequence of zero or more format strings strings, concatenated and enclosed in parentheses
+     a sequence of zero or more format strings, concatenated and enclosed in parentheses
     </para>
    </listitem>
    <listitem>
@@ -221,7 +221,8 @@
       </entry>
       <entry colsep='1' rowsep='1'>
        <para>
-        Used as a prefix on a GVariant type string (not format string).  Denotes that a pointer to a
+        Used as a prefix for a GVariant type string (not a prefix for a format string, so <literal>@as</literal> is
+        a valid format string but <literal>@^as</literal> is not).  Denotes that a pointer to a
         <link linkend='GVariant'>GVariant</link> should be used in place of the normal C type or types.  For
         <link linkend='g-variant-new'><function>g_variant_new()</function></link> this means that you must pass a
         non-<link linkend='NULL:CAPS'><literal>NULL</literal></link> <code>(<link linkend='GVariant'>GVariant</link>
@@ -260,7 +261,9 @@
       </entry>
       <entry colsep='1' rowsep='1'>
        <para>
-        Used as a prefix on a GVariant type string (not format string).  Denotes that a C pointer to serialised data
+        Used as a prefix for a GVariant type string (not a prefix for a format string, so <literal>&amp;s</literal> is
+        a valid format string but <literal>&amp;@s</literal> is not).
+        Denotes that a C pointer to serialised data
         should be used in place of the normal C type.  See
         <link linkend='gvariant-format-strings-pointers'>Pointers</link> below.
        </para>
@@ -466,11 +469,12 @@
     </tgroup>
    </informaltable>
 
+   <anchor id='gvariant-varargs'/>
    <para>
     Note that in C, small integer types in variable argument lists are promoted up to <link
     linkend='gint'><type>int</type></link> or <link linkend='guint'><type>unsigned int</type></link> as appropriate, and
     read back accordingly.  <link linkend='gint'><type>int</type></link> is 32 bits on every platform on which GLib is
-    currently suported.  This means that you can use C expressions of type <link linkend='gint'><type>int</type></link>
+    currently supported.  This means that you can use C expressions of type <link linkend='gint'><type>int</type></link>
     with <link linkend='g-variant-new'><function>g_variant_new()</function></link> and format characters
     '<literal>b</literal>', '<literal>y</literal>', '<literal>n</literal>', '<literal>q</literal>',
     '<literal>i</literal>', '<literal>u</literal>' and '<literal>h</literal>'.  Specifically, you can use integer

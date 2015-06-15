@@ -1,8 +1,11 @@
 #include <glib/glib.h>
 #include <glib/gstdio.h>
 #include <gio/gio.h>
-#include <unistd.h>
 #include <string.h>
+
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
 
 static const char *original_data = "This is some test data that we can put in a file...";
 static const char *new_data = "new data..";
@@ -60,6 +63,18 @@ verify_iostream (GFileIOStream *file_iostream)
   g_assert_cmpint ((int)n_bytes, ==, 10);
   g_assert (memcmp (buffer, original_data + strlen (original_data) - 10, 10) == 0);
 
+  verify_pos (iostream, strlen (original_data));
+
+  res = g_seekable_seek (G_SEEKABLE (iostream),
+			 10, G_SEEK_SET,
+			 NULL, NULL);
+
+  res = g_input_stream_skip (in, 5, NULL, NULL);
+  g_assert (res == 5);
+  verify_pos (iostream, 15);
+
+  res = g_input_stream_skip (in, 10000, NULL, NULL);
+  g_assert (res == strlen (original_data) - 15);
   verify_pos (iostream, strlen (original_data));
 
   res = g_seekable_seek (G_SEEKABLE (iostream),
@@ -284,7 +299,6 @@ int
 main (int   argc,
       char *argv[])
 {
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/readwrite/test_g_file_open_readwrite",

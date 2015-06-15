@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 #include <glib.h>
 #include <string.h>
@@ -62,14 +60,16 @@ static void
 test_scanner_error (ScannerFixture *fix,
                     gconstpointer   test_data)
 {
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT | G_TEST_TRAP_SILENCE_STDERR))
+  if (g_test_subprocess ())
     {
       int pe = fix->scanner->parse_errors;
       g_scanner_error (fix->scanner, "scanner-error-message-test");
       g_assert_cmpint (fix->scanner->parse_errors, ==, pe + 1);
       exit (0);
     }
-  g_test_trap_assert_passed();
+
+  g_test_trap_subprocess (NULL, 0, 0);
+  g_test_trap_assert_passed ();
   g_test_trap_assert_stderr ("*scanner-error-message-test*");
 }
 

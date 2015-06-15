@@ -457,6 +457,7 @@ static void test_object_c_init (TestObjectC *c) { }
  * That gives 21 (7 * 3) properties that will be installed.
  */
 typedef GTypeInterface TestInterfaceInterface;
+static GType test_interface_get_type (void);
 //typedef struct _TestInterface TestInterface;
 G_DEFINE_INTERFACE (TestInterface, test_interface, G_TYPE_OBJECT)
 static void
@@ -534,56 +535,56 @@ test_interface_default_init (TestInterfaceInterface *iface)
 
 static gint valid_impl_types[48][4] = {
                     /* a    b    c    GObject */
-    /* 'a-' */       { },
+    /* 'a-' */       { 0, },
     /* 'a-r' */      { 'v', 'v', '<', '<' },
     /* 'a-w' */      { 'v', '>', '>', 'v' },
     /* 'a-rw' */     { 'v', '=', '=', '=' },
-    /* 'a-c */       { },
-    /* 'a-rc' */     { },
+    /* 'a-c */       { 0, },
+    /* 'a-rc' */     { 0, },
     /* 'a-wc' */     { 'v', '>', '>', 'v' },
     /* 'a-rwc' */    { 'v', '=', '=', '=' },
-    /* 'a-C */       { },
-    /* 'a-rC' */     { },
+    /* 'a-C */       { 0, },
+    /* 'a-rC' */     { 0, },
     /* 'a-wC' */     { 'v', '>', '>', 'v' },
     /* 'a-rwC' */    { 'v', '=', '=', '=' },
-    /* 'a-cC */      { },
-    /* 'a-rcC' */    { },
-    /* 'a-wcC' */    { },
-    /* 'a-rwcC' */   { },
+    /* 'a-cC */      { 0, },
+    /* 'a-rcC' */    { 0, },
+    /* 'a-wcC' */    { 0, },
+    /* 'a-rwcC' */   { 0, },
 
-    /* 'b-' */       { },
+    /* 'b-' */       { 0, },
     /* 'b-r' */      { '<', 'v', '<', '<' },
     /* 'b-w' */      { 'v', 'v', '>', 'v' },
     /* 'b-rw' */     { '=', 'v', '=', '=' },
-    /* 'b-c */       { },
-    /* 'b-rc' */     { },
+    /* 'b-c */       { 0, },
+    /* 'b-rc' */     { 0, },
     /* 'b-wc' */     { 'v', 'v', '>', 'v' },
     /* 'b-rwc' */    { '=', 'v', '=', '=' },
-    /* 'b-C */       { },
-    /* 'b-rC' */     { },
+    /* 'b-C */       { 0, },
+    /* 'b-rC' */     { 0, },
     /* 'b-wC' */     { 'v', 'v', '>', 'v' },
     /* 'b-rwC' */    { '=', 'v', '=', '=' },
-    /* 'b-cC */      { },
-    /* 'b-rcC' */    { },
-    /* 'b-wcC' */    { },
-    /* 'b-rwcC' */   { },
+    /* 'b-cC */      { 0, },
+    /* 'b-rcC' */    { 0, },
+    /* 'b-wcC' */    { 0, },
+    /* 'b-rwcC' */   { 0, },
 
-    /* 'c-' */       { },
+    /* 'c-' */       { 0, },
     /* 'c-r' */      { '<', '<', 'v', '<' },
     /* 'c-w' */      { '>', '>', 'v', 'v' },
     /* 'c-rw' */     { '=', '=', 'v', '=' },
-    /* 'c-c */       { },
-    /* 'c-rc' */     { },
+    /* 'c-c */       { 0, },
+    /* 'c-rc' */     { 0, },
     /* 'c-wc' */     { '>', '>', 'v', 'v' },
     /* 'c-rwc' */    { '=', '=', 'v', '=' },
-    /* 'c-C */       { },
-    /* 'c-rC' */     { },
+    /* 'c-C */       { 0, },
+    /* 'c-rC' */     { 0, },
     /* 'c-wC' */     { '>', '>', 'v', 'v' },
     /* 'c-rwC' */    { '=', '=', 'v', '=' },
-    /* 'c-cC */      { },
-    /* 'c-rcC' */    { },
-    /* 'c-wcC' */    { },
-    /* 'c-rwcC' */   { }
+    /* 'c-cC */      { 0, },
+    /* 'c-rcC' */    { 0, },
+    /* 'c-wcC' */    { 0, },
+    /* 'c-rwcC' */   { 0, }
 };
 
 /* We also try to change the flags.  We must ensure that all
@@ -623,16 +624,16 @@ static gint valid_impl_types[48][4] = {
  */
 static gint valid_impl_flags[16][16] = {
                  /* ''   r    w    rw   c    rc   wc   rwc  C    rC   wC   rwC  cC   rcC  wcC  rwcC */
-    /* '*-' */    { },
+    /* '*-' */    { 0, },
     /* '*-r' */   { 'i', 'v', 'f', 'v', 'i', 'i', 'f', 'v', 'i', 'i', 'f', 'v', 'i', 'i', 'i', 'i' },
     /* '*-w' */   { 'i', 'f', 'v', 'v', 'i', 'i', 'v', 'v', 'i', 'i', 'r', 'r', 'i', 'i', 'i', 'i' },
     /* '*-rw' */  { 'i', 'f', 'f', 'v', 'i', 'i', 'f', 'v', 'i', 'i', 'f', 'r', 'i', 'i', 'i', 'i' },
-    /* '*-c */    { },
-    /* '*-rc' */  { },
+    /* '*-c */    { 0, },
+    /* '*-rc' */  { 0, },
     /* '*-wc' */  { 'i', 'f', 'v', 'v', 'i', 'i', 'v', 'v', 'i', 'i', 'r', 'r', 'i', 'i', 'i', 'i' },
     /* '*-rwc' */ { 'i', 'f', 'f', 'v', 'i', 'i', 'f', 'v', 'i', 'i', 'f', 'r', 'i', 'i', 'i', 'i' },
-    /* '*-C */    { },
-    /* '*-rC' */  { },
+    /* '*-C */    { 0, },
+    /* '*-rC' */  { 0, },
     /* '*-wC' */  { 'i', 'f', 'v', 'v', 'i', 'i', 'v', 'v', 'i', 'i', 'v', 'v', 'i', 'i', 'i', 'i' },
     /* '*-rwC' */ { 'i', 'f', 'f', 'v', 'i', 'i', 'f', 'v', 'i', 'i', 'f', 'v', 'i', 'i', 'i', 'i' },
 };
@@ -694,9 +695,18 @@ static void test_implementation_class_init (TestImplementationClass *class)
   g_object_class_install_property (class, 1, pspec);
 }
 
+typedef struct {
+  gint change_this_flag;
+  gint change_this_type;
+  gint use_this_flag;
+  gint use_this_type;
+} TestParamImplementData;
+
 static void
-test_param_implement (void)
+test_param_implement_child (gconstpointer user_data)
 {
+  TestParamImplementData *data = (gpointer) user_data;
+
   /* GObject oddity: GObjectClass must be initialised before we can
    * initialise a GTypeInterface.
    */
@@ -704,6 +714,22 @@ test_param_implement (void)
 
   /* Bring up the interface first. */
   g_type_default_interface_ref (test_interface_get_type ());
+
+  /* Copy the flags into the global vars so
+   * test_implementation_class_init() will see them.
+   */
+  change_this_flag = data->change_this_flag;
+  change_this_type = data->change_this_type;
+  use_this_flag = data->use_this_flag;
+  use_this_type = data->use_this_type;
+
+  g_type_class_ref (test_implementation_get_type ());
+}
+
+static void
+test_param_implement (void)
+{
+  gchar *test_path;
 
   for (change_this_flag = 0; change_this_flag < 16; change_this_flag++)
     for (change_this_type = 0; change_this_type < 3; change_this_type++)
@@ -720,11 +746,11 @@ test_param_implement (void)
                   continue;
               }
 
-            if (g_test_trap_fork (G_TIME_SPAN_SECOND, G_TEST_TRAP_SILENCE_STDERR))
-              {
-                g_type_class_ref (test_implementation_get_type ());
-                exit (0);
-              }
+            test_path = g_strdup_printf ("/param/implement/subprocess/%d-%d-%d-%d",
+                                         change_this_flag, change_this_type,
+                                         use_this_flag, use_this_type);
+            g_test_trap_subprocess (test_path, G_TIME_SPAN_SECOND, 0);
+            g_free (test_path);
 
             /* We want to ensure that any flags mismatch problems are reported first. */
             switch (valid_impl_flags[change_this_flag][use_this_flag])
@@ -785,10 +811,27 @@ test_param_implement (void)
           }
 }
 
+static void
+test_param_default (void)
+{
+  GParamSpec *param;
+  const GValue *def;
+
+  param = g_param_spec_int ("my-int", "My Int", "Blurb", 0, 20, 10, G_PARAM_READWRITE);
+  def = g_param_spec_get_default_value (param);
+
+  g_assert (G_VALUE_HOLDS (def, G_TYPE_INT));
+  g_assert_cmpint (g_value_get_int (def), ==, 10);
+
+  g_param_spec_unref (param);
+}
+
 int
 main (int argc, char *argv[])
 {
-  g_type_init ();
+  TestParamImplementData data, *test_data;
+  gchar *test_path;
+
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/param/value", test_param_value);
@@ -796,8 +839,25 @@ main (int argc, char *argv[])
   g_test_add_func ("/param/qdata", test_param_qdata);
   g_test_add_func ("/param/validate", test_param_validate);
   g_test_add_func ("/param/convert", test_param_convert);
-  g_test_add_func ("/param/implement", test_param_implement);
+
+  if (g_test_slow ())
+    g_test_add_func ("/param/implement", test_param_implement);
+
+  for (data.change_this_flag = 0; data.change_this_flag < 16; data.change_this_flag++)
+    for (data.change_this_type = 0; data.change_this_type < 3; data.change_this_type++)
+      for (data.use_this_flag = 0; data.use_this_flag < 16; data.use_this_flag++)
+        for (data.use_this_type = 0; data.use_this_type < 4; data.use_this_type++)
+          {
+            test_path = g_strdup_printf ("/param/implement/subprocess/%d-%d-%d-%d",
+                                         data.change_this_flag, data.change_this_type,
+                                         data.use_this_flag, data.use_this_type);
+            test_data = g_memdup (&data, sizeof (TestParamImplementData));
+            g_test_add_data_func_full (test_path, test_data, test_param_implement_child, g_free);
+            g_free (test_path);
+          }
+
   g_test_add_func ("/value/transform", test_value_transform);
+  g_test_add_func ("/param/default", test_param_default);
 
   return g_test_run ();
 }

@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
 
+#ifndef __G_ICON_H__
+#define __G_ICON_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_ICON_H__
-#define __G_ICON_H__
 
 #include <gio/giotypes.h>
 
@@ -47,13 +45,14 @@ typedef struct _GIconIface GIconIface;
  * GIconIface:
  * @g_iface: The parent interface.
  * @hash: A hash for a given #GIcon.
- * @equal: Checks if two #GIcon<!-- -->s are equal.
+ * @equal: Checks if two #GIcons are equal.
  * @to_tokens: Serializes a #GIcon into tokens. The tokens must not
  * contain any whitespace. Don't implement if the #GIcon can't be
  * serialized (Since 2.20).
  * @from_tokens: Constructs a #GIcon from tokens. Set the #GError if
  * the tokens are malformed. Don't implement if the #GIcon can't be
  * serialized (Since 2.20).
+ * @serialize: Serializes a #GIcon into a #GVariant. Since: 2.38
  *
  * GIconIface is used to implement GIcon types for various
  * different systems. See #GThemedIcon and #GLoadableIcon for
@@ -75,16 +74,28 @@ struct _GIconIface
                                gint     num_tokens,
                                gint     version,
                                GError **error);
+
+  GVariant *  (* serialize)   (GIcon   *icon);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType    g_icon_get_type  (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 guint    g_icon_hash            (gconstpointer  icon);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_icon_equal           (GIcon         *icon1,
                                  GIcon         *icon2);
+GLIB_AVAILABLE_IN_ALL
 gchar   *g_icon_to_string       (GIcon         *icon);
+GLIB_AVAILABLE_IN_ALL
 GIcon   *g_icon_new_for_string  (const gchar   *str,
                                  GError       **error);
+
+GLIB_AVAILABLE_IN_2_38
+GVariant * g_icon_serialize     (GIcon         *icon);
+GLIB_AVAILABLE_IN_2_38
+GIcon *    g_icon_deserialize   (GVariant      *value);
 
 G_END_DECLS
 
