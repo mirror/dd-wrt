@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -41,10 +39,13 @@
  * signals you are interested in. Note that new signals may be added
  * in the future
  *
+ * ## Controlling Authentication # {#auth-observer}
+ *
  * For example, if you only want to allow D-Bus connections from
  * processes owned by the same uid as the server, you would use a
  * signal handler like the following:
- * <example id="auth-observer"><title>Controlling Authentication</title><programlisting>
+ * 
+ * |[<!-- language="C" -->
  * static gboolean
  * on_authorize_authenticated_peer (GDBusAuthObserver *observer,
  *                                  GIOStream         *stream,
@@ -65,7 +66,7 @@
  *
  *   return authorized;
  * }
- * </programlisting></example>
+ * ]|
  */
 
 typedef struct _GDBusAuthObserverClass GDBusAuthObserverClass;
@@ -180,7 +181,7 @@ g_dbus_auth_observer_class_init (GDBusAuthObserverClass *klass)
   /**
    * GDBusAuthObserver::allow-mechanism:
    * @observer: The #GDBusAuthObserver emitting the signal.
-   * @mechanism: The name of the mechanism, e.g. <literal>DBUS_COOKIE_SHA1</literal>.
+   * @mechanism: The name of the mechanism, e.g. `DBUS_COOKIE_SHA1`.
    *
    * Emitted to check if @mechanism is allowed to be used.
    *
@@ -255,7 +256,7 @@ g_dbus_auth_observer_authorize_authenticated_peer (GDBusAuthObserver  *observer,
 /**
  * g_dbus_auth_observer_allow_mechanism:
  * @observer: A #GDBusAuthObserver.
- * @mechanism: The name of the mechanism, e.g. <literal>DBUS_COOKIE_SHA1</literal>.
+ * @mechanism: The name of the mechanism, e.g. `DBUS_COOKIE_SHA1`.
  *
  * Emits the #GDBusAuthObserver::allow-mechanism signal on @observer.
  *

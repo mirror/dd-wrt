@@ -1,314 +1,219 @@
-include $(top_srcdir)/Makefile.decl
+include $(top_srcdir)/glib-tap.mk
 
-INCLUDES = 				\
-	-g 				\
-	$(glib_INCLUDES) 		\
-	-DG_LOG_DOMAIN=\"GLib\" 	\
-	-DSRCDIR=\""$(srcdir)"\"	\
-	$(GLIB_DEBUG_FLAGS)
+LDADD = $(top_builddir)/glib/libglib-2.0.la -lm
+AM_CPPFLAGS = -g $(glib_INCLUDES) $(GLIB_DEBUG_FLAGS)
+DEFS = -DG_LOG_DOMAIN=\"GLib\" -DEXEEXT=\"$(EXEEXT)\"
+AM_CFLAGS = $(GLIB_WARN_CFLAGS)
 
-noinst_PROGRAMS = $(TEST_PROGS) test-spawn-echo
-progs_ldadd     = $(top_builddir)/glib/libglib-2.0.la 
+# These tests corrupt the gcov bookkeeping, so we
+# skip them. See bug 682133
+spawn_singlethread_LDFLAGS = $(patsubst -lgcov,,$(LDFLAGS))
+spawn_multithreaded_LDFLAGS = $(patsubst -lgcov,,$(LDFLAGS))
 
-test_spawn_echo_SOURCES = test-spawn-echo.c
-test_spawn_echo_LDADD = $(progs_ldadd)
+# -----------------------------------------------------------------------------
 
-TEST_PROGS       += testing
-testing_SOURCES	  = testing.c
-testing_LDADD	  = $(progs_ldadd)
+dist_test_data = \
+	keyfiletest.ini			\
+	pages.ini			\
+	keyfile.c			\
+	empty				\
+	4096-random-bytes		\
+	$(NULL)
 
-TEST_PROGS       	 += option-context
-option_context_SOURCES	  = option-context.c
-option_context_LDADD	  = $(progs_ldadd)
+dist_test_extra_scripts = \
+	echo-script			\
+	echo-script.bat			\
+	$(NULL)
 
-TEST_PROGS       	 += option-argv0
-option_argv0_SOURCES	  = option-argv0.c
-option_argv0_LDADD	  = $(progs_ldadd)
+test_extra_programs = \
+	test-spawn-echo			\
+	$(NULL)
 
-TEST_PROGS     	 += keyfile
-keyfile_SOURCES	  = keyfile.c
-keyfile_LDADD	  = $(progs_ldadd)
+test_programs = \
+	array-test			\
+	asyncqueue			\
+	base64				\
+	bitlock				\
+	bookmarkfile			\
+	bytes				\
+	cache				\
+	checksum			\
+	collate				\
+	cond				\
+	convert				\
+	dataset				\
+	date				\
+	dir				\
+	environment			\
+	error				\
+	fileutils			\
+	gdatetime			\
+	gvariant			\
+	hash				\
+	hmac				\
+	hook				\
+	hostutils			\
+	keyfile				\
+	list				\
+	logging				\
+	mainloop			\
+	malloc				\
+	mappedfile			\
+	markup				\
+	markup-parse			\
+	markup-collect			\
+	markup-escape			\
+	markup-subparser		\
+	mem-overflow			\
+	mutex				\
+	node				\
+	once				\
+	option-context			\
+	option-argv0			\
+	pattern				\
+	private				\
+	protocol			\
+	queue				\
+	rand				\
+	rec-mutex			\
+	regex				\
+	rwlock				\
+	scannerapi			\
+	search-utils			\
+	sequence			\
+	shell				\
+	slice				\
+	slist				\
+	sort				\
+	spawn-multithreaded		\
+	spawn-singlethread		\
+	strfuncs			\
+	string				\
+	testing				\
+	test-printf			\
+	thread				\
+	timeout				\
+	timer				\
+	tree				\
+	utf8-performance		\
+	utf8-pointer			\
+	utf8-validate			\
+	utf8-misc			\
+	utils				\
+	unicode				\
+	uri				\
+	1bit-mutex			\
+	642026				\
+	$(NULL)
 
-TEST_PROGS        += fileutils
-fileutils_SOURCES  = fileutils.c
-fileutils_LDADD	   = $(progs_ldadd)
+uninstalled_test_programs = \
+	$(NULL)
 
-TEST_PROGS          += test-printf
-test_printf_SOURCES  = test-printf.c
-test_printf_LDADD    = $(progs_ldadd) -lm
+dist_test_data += \
+	bookmarks/fail-01.xbel \
+	bookmarks/fail-02.xbel \
+	bookmarks/fail-03.xbel \
+	bookmarks/fail-04.xbel \
+	bookmarks/fail-05.xbel \
+	bookmarks/fail-06.xbel \
+	bookmarks/fail-07.xbel \
+	bookmarks/fail-08.xbel \
+	bookmarks/fail-09.xbel \
+	bookmarks/fail-10.xbel \
+	bookmarks/fail-11.xbel \
+	bookmarks/fail-12.xbel \
+	bookmarks/fail-13.xbel \
+	bookmarks/fail-14.xbel \
+	bookmarks/fail-15.xbel \
+	bookmarks/fail-16.xbel \
+	bookmarks/fail-17.xbel \
+	bookmarks/valid-01.xbel \
+	bookmarks/valid-02.xbel \
+	bookmarks/valid-03.xbel \
+	$(NULL)
 
-TEST_PROGS        += protocol
-protocol_SOURCES   = protocol.c
-protocol_LDADD     = $(progs_ldadd)
+markup_tests = \
+	fail-1 fail-2 fail-3 fail-4 fail-5 \
+	fail-6 fail-7 fail-8 fail-9 fail-10 \
+	fail-11 fail-12 fail-13 fail-14 fail-15 \
+	fail-16 fail-17 fail-18 fail-19 fail-20 \
+	fail-21 fail-22 fail-23 fail-24 fail-25 \
+	fail-26 fail-27 fail-28 fail-29 fail-30 \
+	fail-31 fail-32 fail-33 fail-34 fail-35 \
+	fail-36 fail-37 fail-38 fail-39 fail-40 \
+	fail-41 fail-42 fail-43 fail-44 fail-45 \
+	fail-46 fail-47 fail-48 fail-49 \
+	valid-1 valid-2 valid-3 valid-4 valid-5 \
+	valid-6 valid-7 valid-8 valid-9 valid-10 \
+	valid-11 valid-12 valid-13 valid-14 valid-15 \
+	valid-16 \
+	$(NULL)
 
-TEST_PROGS        += rand
-rand_SOURCES       = rand.c
-rand_LDADD         = $(progs_ldadd) -lm
+cdata_markup_tests = \
+	valid-8 valid-16 \
+	$(NULL)
 
-TEST_PROGS        += strfuncs
-strfuncs_SOURCES   = strfuncs.c
-strfuncs_LDADD	   = $(progs_ldadd) -lm
+dist_test_data += $(all_markup_data)
+all_markup_data = \
+	$(addprefix markups/,$(markup_tests:=.gmarkup) $(markup_tests:=.expected)) \
+	$(addprefix markups/,$(cdata_markup_tests.=.cdata-as-text))
 
-TEST_PROGS        += string
-string_SOURCES     = string.c
-string_LDADD	   = $(progs_ldadd) -lm
+# -----------------------------------------------------------------------------
 
-TEST_PROGS          += markup-parse
-markup_parse_LDADD   = $(progs_ldadd)
-
-TEST_PROGS          += markup-collect
-markup_collect_LDADD = $(progs_ldadd)
-
-TEST_PROGS         += markup-escape
-markup_escape_LDADD = $(progs_ldadd)
-
-TEST_PROGS               += markup-subparser
-markup_subparser_LDADD    = $(progs_ldadd)
-
-TEST_PROGS         += array-test
-array_test_LDADD    = $(progs_ldadd)
-
-TEST_PROGS         += bytes
-bytes_LDADD         = $(progs_ldadd)
-
-TEST_PROGS         += hostutils
-hostutils_LDADD     = $(progs_ldadd)
-
-TEST_PROGS         += gvariant
-gvariant_LDADD      = $(progs_ldadd)
-
-TEST_PROGS         += mem-overflow
-mem_overflow_LDADD  = $(progs_ldadd)
-
-TEST_PROGS              += utf8-performance
-utf8_performance_SOURCES = utf8-performance.c
-utf8_performance_LDADD   = $(progs_ldadd)
-
-TEST_PROGS         += utils
-utils_LDADD         = $(progs_ldadd)
-
-TEST_PROGS         += regex
-regex_LDADD         = $(progs_ldadd)
-
-TEST_PROGS         += base64
-base64_LDADD        = $(progs_ldadd)
-
-TEST_PROGS         += sequence
-sequence_LDADD      = $(progs_ldadd)
-
-TEST_PROGS         += scannerapi
-scannerapi_LDADD    = $(progs_ldadd)
-
-TEST_PROGS         += shell
-shell_LDADD         = $(progs_ldadd)
-
-TEST_PROGS         += collate
-collate_LDADD       = $(progs_ldadd)
-
-TEST_PROGS         += utf8-pointer
-utf8_pointer_LDADD  = $(progs_ldadd)
-
-TEST_PROGS         += utf8-validate
-utf8_validate_LDADD = $(progs_ldadd)
-
-TEST_PROGS         += utf8-misc
-utf8_misc_LDADD     = $(progs_ldadd)
-
-TEST_PROGS         += unicode
-unicode_LDADD     = $(progs_ldadd)
-
-TEST_PROGS         += checksum
-checksum_LDADD      = $(progs_ldadd)
-
-TEST_PROGS         += hmac
-hmac_LDADD          = $(progs_ldadd)
-
-TEST_PROGS         += hash
-hash_LDADD          = $(progs_ldadd)
-
-TEST_PROGS         += cache
-cache_LDADD         = $(progs_ldadd)
-
-TEST_PROGS         += date
-date_LDADD          = $(progs_ldadd)
-
-TEST_PROGS         += node
-node_LDADD          = $(progs_ldadd)
-
-TEST_PROGS         += convert
-convert_LDADD       = $(progs_ldadd)
-
-TEST_PROGS         += list
-list_LDADD          = $(progs_ldadd)
-
-TEST_PROGS         += slist
-slist_LDADD         = $(progs_ldadd)
-
-TEST_PROGS         += queue
-queue_LDADD         = $(progs_ldadd)
-
-TEST_PROGS         += tree
-tree_LDADD          = $(progs_ldadd)
-
-TEST_PROGS         += uri
-uri_LDADD           = $(progs_ldadd)
-
-TEST_PROGS         += dir
-dir_LDADD           = $(progs_ldadd)
-
-TEST_PROGS         += pattern
-pattern_LDADD       = $(progs_ldadd)
-
-TEST_PROGS         += logging
-logging_LDADD       = $(progs_ldadd)
-
-TEST_PROGS         += error
-error_LDADD         = $(progs_ldadd)
-
-TEST_PROGS         += bookmarkfile
-bookmarkfile_LDADD  = $(progs_ldadd)
-
-TEST_PROGS          += gdatetime
-gdatetime_SOURCES    = gdatetime.c
-gdatetime_LDADD      = $(progs_ldadd)
-
-TEST_PROGS          += timeout
-timeout_SOURCES      = timeout.c
-timeout_LDADD        = $(progs_ldadd)
-
-TEST_PROGS       += environment
-environment_LDADD = $(progs_ldadd)
-
-TEST_PROGS       += mappedfile
-mappedfile_LDADD  = $(progs_ldadd)
-
-TEST_PROGS    += dataset
-dataset_LDADD  = $(progs_ldadd)
-
-TEST_PROGS    += sort
-sort_LDADD     = $(progs_ldadd)
-
-TEST_PROGS    += atomic
-atomic_CFLAGS  = $(INCLUDES)
+test_programs += atomic
+atomic_CFLAGS  = $(AM_CFLAGS)
 if HAVE_GCC
 atomic_CFLAGS += -Wstrict-aliasing=2
 endif
-atomic_LDADD = $(progs_ldadd)
 
-TEST_PROGS    += bitlock
-bitlock_LDADD  = $(progs_ldadd)
-
-TEST_PROGS    += mutex
-mutex_LDADD    = $(progs_ldadd)
-
-TEST_PROGS      += rec-mutex
-rec_mutex_LDADD  = $(progs_ldadd)
-
-TEST_PROGS      += rwlock
-rwlock_LDADD     = $(progs_ldadd)
-
-TEST_PROGS      += once
-once_LDADD       = $(progs_ldadd)
-
-TEST_PROGS      += cond
-cond_LDADD       = $(progs_ldadd)
-
-TEST_PROGS      += thread
-thread_LDADD     = $(progs_ldadd)
-
-TEST_PROGS      += slice
-slice_LDADD      = $(progs_ldadd)
-
-TEST_PROGS      += hook
-hook_LDADD       = $(progs_ldadd)
-
-TEST_PROGS      += mainloop
-mainloop_LDADD   = $(progs_ldadd)
-
-TEST_PROGS      += private
-private_LDADD    = $(progs_ldadd)
-
-TEST_PROGS       += asyncqueue
-asyncqueue_LDADD  = $(progs_ldadd)
-
-TEST_PROGS       += 1bit-mutex
-1bit_mutex_LDADD  = $(progs_ldadd)
-
-TEST_PROGS       += 642026
-642026_LDADD      = $(progs_ldadd)
-
-TEST_PROGS       += 642026-ec
+test_programs += 642026-ec
 642026_ec_SOURCES = 642026.c
-642026_ec_LDADD   = $(progs_ldadd)
-642026_ec_CFLAGS  = -DG_ERRORCHECK_MUTEXES
+642026_ec_CFLAGS = -DG_ERRORCHECK_MUTEXES
 
-TEST_PROGS            += 1bit-emufutex
+uninstalled_test_programs += 1bit-emufutex
 1bit_emufutex_SOURCES  = 1bit-mutex.c
-1bit_emufutex_CFLAGS   = -DTEST_EMULATED_FUTEX
-1bit_emufutex_LDADD    = $(progs_ldadd)
+1bit_emufutex_CFLAGS = $(AM_CFLAGS) -DTEST_EMULATED_FUTEX
 
-TEST_PROGS += spawn-multithreaded
-spawn_multithreaded_SOURCES = spawn-multithreaded.c
-spawn_multithreaded_LDADD    = $(progs_ldadd)
-
-TEST_PROGS += spawn-singlethread
-spawn_singlethread_SOURCES = spawn-singlethread.c
-spawn_singlethread_LDADD    = $(progs_ldadd)
-
-TEST_PROGS += gwakeup
+uninstalled_test_programs += gwakeup
 gwakeup_SOURCES = gwakeuptest.c ../../glib/gwakeup.c
-gwakeup_LDADD    = $(progs_ldadd)
 
-if HAVE_EVENTFD
-TEST_PROGS += gwakeup-fallback
-gwakeup_fallback_SOURCES = gwakeuptest.c ../../glib/gwakeup.c
-gwakeup_fallback_CFLAGS = $(AM_CFLAGS) -DTEST_EVENTFD_FALLBACK
-gwakeup_fallback_LDADD    = $(progs_ldadd)
-endif
+# -----------------------------------------------------------------------------
 
 if OS_UNIX
-private_LDFLAGS = -pthread
+test_programs += \
+	unix				\
+	include				\
+	$(NULL)
 
-TEST_PROGS += unix-multithreaded
-unix_multithreaded_SOURCES = $(top_srcdir)/glib/tests/unix.c
-unix_multithreaded_CFLAGS   = -DTEST_THREADED
-unix_multithreaded_LDADD    = $(progs_ldadd)
+# some testing of gtester functionality
+XMLLINT = xmllint
+GTESTER = $(top_builddir)/glib/gtester
 
-TEST_PROGS    += unix
-unix_LDADD  = $(progs_ldadd)
-
-TEST_PROGS    += unix-nothreads
-unix_nothreads_SOURCES = unix.c
-unix_nothreads_LDADD  = $(progs_ldadd)
-
-TEST_PROGS      += include
-include_LDADD    = $(progs_ldadd)
-
-# some testing of gtester funcitonality
-XMLLINT=xmllint
 gtester-xmllint-check: # check testreport xml with xmllint if present
 	${GTESTER} -k --quiet -o tmpsample.xml --test-arg=--gtester-selftest ${GTESTER}
 	${XMLLINT} --version 2>/dev/null; test "$$?" != 0 || ${XMLLINT} --noout tmpsample.xml
+
+CLEANFILES += tmpsample.xml
+
 check-am: gtester-xmllint-check
 
+private_LDFLAGS = @G_THREAD_LIBS@
 endif
 
-CLEANFILES = \
-	tmpsample.xml
+if HAVE_GCC
+test_programs += \
+	autoptr				\
+	$(NULL)
+endif
 
-EXTRA_DIST += \
-	4096-random-bytes	\
-	keyfiletest.ini		\
-	pages.ini		\
-	bookmarks.xbel		\
-	empty			\
-	echo-script
+# -----------------------------------------------------------------------------
 
-dist-hook:
-	mkdir $(distdir)/markups;		\
-	for f in $(srcdir)/markups/*; do 	\
-	  cp $$f $(distdir)/markups; done
-	mkdir $(distdir)/bookmarks;		\
-	for f in $(srcdir)/bookmarks/* ; do 	\
-	  cp $$f $(distdir)/bookmarks; done
+if HAVE_EVENTFD
+uninstalled_test_programs += gwakeup-fallback
+gwakeup_fallback_SOURCES = gwakeuptest.c ../../glib/gwakeup.c
+gwakeup_fallback_CFLAGS = $(AM_CFLAGS) -DTEST_EVENTFD_FALLBACK
+endif
 
+# -----------------------------------------------------------------------------
+
+EXTRA_DIST += bookmarks.xbel

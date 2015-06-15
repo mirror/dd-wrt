@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -71,7 +69,7 @@
  * or ISO timestamps or the like. It extrapolates the current Gregorian
  * calendar forward and backward in time; there is no attempt to change
  * the calendar to match time periods or locations. #GDate does not store
- * time information; it represents a <emphasis>day</emphasis>.
+ * time information; it represents a day.
  *
  * The #GDate implementation has several nice features; it is only a
  * 64-bit struct, so storing large numbers of dates is very efficient. It
@@ -89,16 +87,16 @@
  * calling g_date_clear(). A cleared date is sane; it's safe to call
  * g_date_set_dmy() and the other mutator functions to initialize the
  * value of a cleared date. However, a cleared date is initially
- * <emphasis>invalid</emphasis>, meaning that it doesn't represent a day
- * that exists. It is undefined to call any of the date calculation
- * routines on an invalid date. If you obtain a date from a user or other
+ * invalid, meaning that it doesn't represent a day that exists.
+ * It is undefined to call any of the date calculation routines on an
+ * invalid date. If you obtain a date from a user or other
  * unpredictable source, you should check its validity with the
  * g_date_valid() predicate. g_date_valid() is also used to check for
  * errors with g_date_set_parse() and other functions that can
  * fail. Dates can be invalidated by calling g_date_clear() again.
  *
- * <emphasis>It is very important to use the API to access the #GDate
- * struct.</emphasis> Often only the day-month-year or only the Julian
+ * It is very important to use the API to access the #GDate
+ * struct. Often only the day-month-year or only the Julian
  * representation is valid. Sometimes neither is valid. Use the API.
  *
  * GLib also features #GDateTime which represents a precise time.
@@ -117,8 +115,8 @@
  * @tv_usec: microseconds
  *
  * Represents a precise time, with seconds and microseconds.
- * Similar to the <structname>struct timeval</structname> returned by
- * the gettimeofday() UNIX system call.
+ * Similar to the struct timeval returned by the gettimeofday()
+ * UNIX system call.
  *
  * GLib is attempting to unify around the use of 64bit integers to
  * represent microsecond-precision time. As such, this type will be
@@ -137,34 +135,37 @@
  * @year: the day of the day-month-year representation of the date
  *
  * Represents a day between January 1, Year 1 and a few thousand years in
- * the future. None of its members should be accessed directly. If the
- * <structname>GDate</structname> is obtained from g_date_new(), it will
- * be safe to mutate but invalid and thus not safe for calendrical
- * computations. If it's declared on the stack, it will contain garbage
- * so must be initialized with g_date_clear(). g_date_clear() makes the
- * date invalid but sane. An invalid date doesn't represent a day, it's
- * "empty." A date becomes valid after you set it to a Julian day or you
- * set a day, month, and year.
+ * the future. None of its members should be accessed directly.
+ *
+ * If the #GDate-struct is obtained from g_date_new(), it will be safe
+ * to mutate but invalid and thus not safe for calendrical computations.
+ *
+ * If it's declared on the stack, it will contain garbage so must be
+ * initialized with g_date_clear(). g_date_clear() makes the date invalid
+ * but sane. An invalid date doesn't represent a day, it's "empty." A date
+ * becomes valid after you set it to a Julian day or you set a day, month,
+ * and year.
  */
 
 /**
  * GTime:
  *
- * Simply a replacement for <type>time_t</type>. It has been deprecated
- * since it is <emphasis>not</emphasis> equivalent to <type>time_t</type>
- * on 64-bit platforms with a 64-bit <type>time_t</type>.
- * Unrelated to #GTimer.
+ * Simply a replacement for time_t. It has been deprecated
+ * since it is not equivalent to time_t on 64-bit platforms
+ * with a 64-bit time_t. Unrelated to #GTimer.
  *
- * Note that <type>GTime</type> is defined to always be a 32bit integer,
- * unlike <type>time_t</type> which may be 64bit on some systems.
- * Therefore, <type>GTime</type> will overflow in the year 2038, and
- * you cannot use the address of a <type>GTime</type> variable as argument
- * to the UNIX time() function. Instead, do the following:
- * |[
+ * Note that #GTime is defined to always be a 32-bit integer,
+ * unlike time_t which may be 64-bit on some systems. Therefore,
+ * #GTime will overflow in the year 2038, and you cannot use the
+ * address of a #GTime variable as argument to the UNIX time()
+ * function.
+ *
+ * Instead, do the following:
+ * |[<!-- language="C" -->
  * time_t ttime;
  * GTime gtime;
  *
- * time (&amp;ttime);
+ * time (&ttime);
  * gtime = (GTime)ttime;
  * ]|
  */
@@ -182,8 +183,8 @@
 /**
  * GDateDay:
  *
- * Integer representing a day of the month; between 1 and
- * 31. #G_DATE_BAD_DAY represents an invalid day of the month.
+ * Integer representing a day of the month; between 1 and 31.
+ * #G_DATE_BAD_DAY represents an invalid day of the month.
  */
 
 /**
@@ -1096,7 +1097,7 @@ g_date_prepare_to_parse (const gchar      *str,
             ++i;
           }
         DEBUG_MSG (("**Order: %s, %s, %s", strings[0], strings[1], strings[2]));
-        DEBUG_MSG (("**Sample date in this locale: `%s'", buf));
+        DEBUG_MSG (("**Sample date in this locale: '%s'", buf));
       }
 #endif
     }
@@ -1110,10 +1111,10 @@ g_date_prepare_to_parse (const gchar      *str,
  * @str: string to parse
  *
  * Parses a user-inputted string @str, and try to figure out what date it
- * represents, taking the <link linkend="setlocale">current locale</link>
- * into account. If the string is successfully parsed, the date will be
- * valid after the call. Otherwise, it will be invalid. You should check
- * using g_date_valid() to see whether the parsing succeeded.
+ * represents, taking the [current locale][setlocale] into account. If the
+ * string is successfully parsed, the date will be valid after the call.
+ * Otherwise, it will be invalid. You should check using g_date_valid()
+ * to see whether the parsing succeeded.
  *
  * This function is not appropriate for file formats and the like; it
  * isn't very precise, and its exact behavior varies with the locale.
@@ -1137,7 +1138,7 @@ g_date_set_parse (GDate       *d,
 
   g_date_prepare_to_parse (str, &pt);
   
-  DEBUG_MSG (("Found %d ints, `%d' `%d' `%d' and written out month %d", 
+  DEBUG_MSG (("Found %d ints, '%d' '%d' '%d' and written out month %d",
 	      pt.num_ints, pt.n[0], pt.n[1], pt.n[2], pt.month));
   
   
@@ -1278,14 +1279,14 @@ g_date_set_parse (GDate       *d,
 /**
  * g_date_set_time_t:
  * @date: a #GDate 
- * @timet: <type>time_t</type> value to set
+ * @timet: time_t value to set
  *
  * Sets the value of a date to the date corresponding to a time 
  * specified as a time_t. The time to date conversion is done using 
  * the user's current timezone.
  *
  * To set the value of a date to the current day, you could write:
- * |[
+ * |[<!-- language="C" -->
  *  g_date_set_time_t (date, time (NULL)); 
  * ]|
  *
@@ -1761,11 +1762,11 @@ g_date_subtract_years (GDate *d,
  * @year: year to check
  *
  * Returns %TRUE if the year is a leap year.
- * <footnote><para>For the purposes of this function,
- * leap year is every year divisible by 4 unless that year
- * is divisible by 100. If it is divisible by 100 it would
- * be a leap year only if that year is also divisible
- * by 400.</para></footnote>
+ *
+ * For the purposes of this function, leap year is every year
+ * divisible by 4 unless that year is divisible by 100. If it
+ * is divisible by 100 it would be a leap year only if that year
+ * is also divisible by 400.
  *
  * Returns: %TRUE if the year is a leap year
  */
@@ -1936,12 +1937,11 @@ g_date_compare (const GDate *lhs,
 
 /**
  * g_date_to_struct_tm:
- * @date: a #GDate to set the <structname>struct tm</structname> from
- * @tm: <structname>struct tm</structname> to fill
+ * @date: a #GDate to set the struct tm from
+ * @tm: struct tm to fill
  *
- * Fills in the date-related bits of a <structname>struct tm</structname>
- * using the @date value. Initializes the non-date parts with something
- * sane but meaningless.
+ * Fills in the date-related bits of a struct tm using the @date value.
+ * Initializes the non-date parts with something sane but meaningless.
  */
 void        
 g_date_to_struct_tm (const GDate *d, 
@@ -2424,7 +2424,7 @@ win32_strftime_helper (const GDate     *d,
  * @date: valid #GDate
  *
  * Generates a printed representation of the date, in a
- * <link linkend="setlocale">locale</link>-specific way.
+ * [locale][setlocale]-specific way.
  * Works just like the platform's C library strftime() function,
  * but only accepts date-related formats; time-related formats
  * give undefined results. Date must be valid. Unlike strftime()

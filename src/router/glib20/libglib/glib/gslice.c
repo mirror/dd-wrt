@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 /* MT safe */
 
@@ -32,7 +30,7 @@
 #include <string.h>
 #include <errno.h>
 
-#ifdef HAVE_UNISTD_H
+#ifdef G_OS_UNIX
 #include <unistd.h>             /* sysconf() */
 #endif
 #ifdef G_OS_WIN32
@@ -53,6 +51,8 @@
 #include "gthread.h"
 #include "glib_trace.h"
 
+#include "valgrind.h"
+
 /**
  * SECTION:memory_slices
  * @title: Memory Slices
@@ -66,12 +66,13 @@
  *
  * To achieve these goals, the slice allocator uses a sophisticated,
  * layered design that has been inspired by Bonwick's slab allocator
- * <footnote><para>
- * <ulink url="http://citeseer.ist.psu.edu/bonwick94slab.html">[Bonwick94]</ulink> Jeff Bonwick, The slab allocator: An object-caching kernel
+ * ([Bonwick94](http://citeseer.ist.psu.edu/bonwick94slab.html)
+ * Jeff Bonwick, The slab allocator: An object-caching kernel
  * memory allocator. USENIX 1994, and
- * <ulink url="http://citeseer.ist.psu.edu/bonwick01magazines.html">[Bonwick01]</ulink> Bonwick and Jonathan Adams, Magazines and vmem: Extending the
- * slab allocator to many cpu's and arbitrary resources. USENIX 2001
- * </para></footnote>.
+ * [Bonwick01](http://citeseer.ist.psu.edu/bonwick01magazines.html)
+ * Bonwick and Jonathan Adams, Magazines and vmem: Extending the
+ * slab allocator to many cpu's and arbitrary resources. USENIX 2001)
+ *
  * It uses posix_memalign() to optimize allocations of many equally-sized
  * chunks, and has per-thread free lists (the so-called magazine layer)
  * to quickly satisfy allocation requests of already known structure sizes.
@@ -86,42 +87,39 @@
  * unlike malloc(), it does not reserve extra space per block. For large block
  * sizes, g_slice_new() and g_slice_alloc() will automatically delegate to the
  * system malloc() implementation. For newly written code it is recommended
- * to use the new <literal>g_slice</literal> API instead of g_malloc() and
+ * to use the new `g_slice` API instead of g_malloc() and
  * friends, as long as objects are not resized during their lifetime and the
  * object size used at allocation time is still available when freeing.
  *
- * <example>
- * <title>Using the slice allocator</title>
- * <programlisting>
+ * Here is an example for using the slice allocator:
+ * |[<!-- language="C" --> 
  * gchar *mem[10000];
  * gint i;
  *
- * /&ast; Allocate 10000 blocks. &ast;/
- * for (i = 0; i &lt; 10000; i++)
+ * // Allocate 10000 blocks.
+ * for (i = 0; i < 10000; i++)
  *   {
  *     mem[i] = g_slice_alloc (50);
  *
- *     /&ast; Fill in the memory with some junk. &ast;/
- *     for (j = 0; j &lt; 50; j++)
+ *     // Fill in the memory with some junk.
+ *     for (j = 0; j < 50; j++)
  *       mem[i][j] = i * j;
  *   }
  *
- * /&ast; Now free all of the blocks. &ast;/
- * for (i = 0; i &lt; 10000; i++)
- *   {
- *     g_slice_free1 (50, mem[i]);
- *   }
- * </programlisting></example>
+ * // Now free all of the blocks.
+ * for (i = 0; i < 10000; i++)
+ *   g_slice_free1 (50, mem[i]);
+ * ]|
  *
- * <example>
- * <title>Using the slice allocator with data structures</title>
- * <programlisting>
+ * And here is an example for using the using the slice allocator
+ * with data structures:
+ * |[<!-- language="C" --> 
  * GRealArray *array;
  *
- * /&ast; Allocate one block, using the g_slice_new() macro. &ast;/
+ * // Allocate one block, using the g_slice_new() macro.
  * array = g_slice_new (GRealArray);
 
- * /&ast; We can now use array just like a normal pointer to a structure. &ast;/
+ * // We can now use array just like a normal pointer to a structure.
  * array->data            = NULL;
  * array->len             = 0;
  * array->alloc           = 0;
@@ -129,9 +127,9 @@
  * array->clear           = (clear ? 1 : 0);
  * array->elt_size        = elt_size;
  *
- * /&ast; We can free the block, so it can be reused. &ast;/
+ * // We can free the block, so it can be reused.
  * g_slice_free (GRealArray, array);
- * </programlisting></example>
+ * ]|
  */
 
 /* the GSlice allocator is split up into 4 layers, roughly modelled after the slab
@@ -382,6 +380,17 @@ slice_config_init (SliceConfig *config)
       if (flags & (1 << 1))
         config->debug_blocks = TRUE;
     }
+  else
+    {
+      /* G_SLICE was not specified, so check if valgrind is running and
+       * disable ourselves if it is.
+       *
+       * This way it's possible to force gslice to be enabled under
+       * valgrind just by setting G_SLICE to the empty string.
+       */
+      if (RUNNING_ON_VALGRIND)
+        config->always_malloc = TRUE;
+    }
 }
 
 static void
@@ -433,11 +442,9 @@ g_slice_init_nomessage (void)
       allocator->slab_stack = g_new0 (SlabInfo*, MAX_SLAB_INDEX (allocator));
     }
 
-  g_mutex_init (&allocator->magazine_mutex);
   allocator->mutex_counter = 0;
   allocator->stamp_counter = MAX_STAMP_COUNTER; /* force initial update */
   allocator->last_stamp = 0;
-  g_mutex_init (&allocator->slab_mutex);
   allocator->color_accu = 0;
   magazine_cache_update_stamp();
   /* values cached for performance reasons */
@@ -860,11 +867,10 @@ thread_memory_magazine2_free (ThreadMemory *tmem,
  * A convenience macro to allocate a block of memory from the
  * slice allocator.
  *
- * It calls g_slice_alloc() with <literal>sizeof (@type)</literal>
- * and casts the returned pointer to a pointer of the given type,
- * avoiding a type cast in the source code.
- * Note that the underlying slice allocation mechanism can
- * be changed with the <link linkend="G_SLICE">G_SLICE=always-malloc</link>
+ * It calls g_slice_alloc() with `sizeof (@type)` and casts the
+ * returned pointer to a pointer of the given type, avoiding a type
+ * cast in the source code. Note that the underlying slice allocation
+ * mechanism can be changed with the [`G_SLICE=always-malloc`][G_SLICE]
  * environment variable.
  *
  * Returns: a pointer to the allocated block, cast to a pointer to @type
@@ -879,11 +885,11 @@ thread_memory_magazine2_free (ThreadMemory *tmem,
  * A convenience macro to allocate a block of memory from the
  * slice allocator and set the memory to 0.
  *
- * It calls g_slice_alloc0() with <literal>sizeof (@type)</literal>
+ * It calls g_slice_alloc0() with `sizeof (@type)`
  * and casts the returned pointer to a pointer of the given type,
  * avoiding a type cast in the source code.
  * Note that the underlying slice allocation mechanism can
- * be changed with the <link linkend="G_SLICE">G_SLICE=always-malloc</link>
+ * be changed with the [`G_SLICE=always-malloc`][G_SLICE]
  * environment variable.
  *
  * Since: 2.10
@@ -897,11 +903,11 @@ thread_memory_magazine2_free (ThreadMemory *tmem,
  * A convenience macro to duplicate a block of memory using
  * the slice allocator.
  *
- * It calls g_slice_copy() with <literal>sizeof (@type)</literal>
+ * It calls g_slice_copy() with `sizeof (@type)`
  * and casts the returned pointer to a pointer of the given type,
  * avoiding a type cast in the source code.
  * Note that the underlying slice allocation mechanism can
- * be changed with the <link linkend="G_SLICE">G_SLICE=always-malloc</link>
+ * be changed with the [`G_SLICE=always-malloc`][G_SLICE]
  * environment variable.
  *
  * Returns: a pointer to the allocated block, cast to a pointer to @type
@@ -917,12 +923,11 @@ thread_memory_magazine2_free (ThreadMemory *tmem,
  * A convenience macro to free a block of memory that has
  * been allocated from the slice allocator.
  *
- * It calls g_slice_free1() using <literal>sizeof (type)</literal>
+ * It calls g_slice_free1() using `sizeof (type)`
  * as the block size.
  * Note that the exact release behaviour can be changed with the
- * <link linkend="G_DEBUG">G_DEBUG=gc-friendly</link> environment
- * variable, also see <link linkend="G_SLICE">G_SLICE</link> for
- * related debugging options.
+ * [`G_DEBUG=gc-friendly`][G_DEBUG] environment variable, also see
+ * [`G_SLICE`][G_SLICE] for related debugging options.
  *
  * Since: 2.10
  */
@@ -939,9 +944,8 @@ thread_memory_magazine2_free (ThreadMemory *tmem,
  * a @next pointer (similar to #GSList). The name of the
  * @next field in @type is passed as third argument.
  * Note that the exact release behaviour can be changed with the
- * <link linkend="G_DEBUG">G_DEBUG=gc-friendly</link> environment
- * variable, also see <link linkend="G_SLICE">G_SLICE</link> for
- * related debugging options.
+ * [`G_DEBUG=gc-friendly`][G_DEBUG] environment variable, also see
+ * [`G_SLICE`][G_SLICE] for related debugging options.
  *
  * Since: 2.10
  */
@@ -952,12 +956,12 @@ thread_memory_magazine2_free (ThreadMemory *tmem,
  *
  * Allocates a block of memory from the slice allocator.
  * The block adress handed out can be expected to be aligned
- * to at least <literal>1 * sizeof (void*)</literal>,
+ * to at least 1 * sizeof (void*),
  * though in general slices are 2 * sizeof (void*) bytes aligned,
  * if a malloc() fallback implementation is used instead,
  * the alignment may be reduced in a libc dependent fashion.
  * Note that the underlying slice allocation mechanism can
- * be changed with the <link linkend="G_SLICE">G_SLICE=always-malloc</link>
+ * be changed with the [`G_SLICE=always-malloc`][G_SLICE]
  * environment variable.
  *
  * Returns: a pointer to the allocated memory block
@@ -1015,8 +1019,7 @@ g_slice_alloc (gsize mem_size)
  *
  * Allocates a block of memory via g_slice_alloc() and initializes
  * the returned memory to 0. Note that the underlying slice allocation
- * mechanism can be changed with the
- * <link linkend="G_SLICE">G_SLICE=always-malloc</link>
+ * mechanism can be changed with the [`G_SLICE=always-malloc`][G_SLICE]
  * environment variable.
  *
  * Returns: a pointer to the allocated block
@@ -1064,10 +1067,8 @@ g_slice_copy (gsize         mem_size,
  * The memory must have been allocated via g_slice_alloc() or
  * g_slice_alloc0() and the @block_size has to match the size
  * specified upon allocation. Note that the exact release behaviour
- * can be changed with the
- * <link linkend="G_DEBUG">G_DEBUG=gc-friendly</link> environment
- * variable, also see <link linkend="G_SLICE">G_SLICE</link> for
- * related debugging options.
+ * can be changed with the [`G_DEBUG=gc-friendly`][G_DEBUG] environment
+ * variable, also see [`G_SLICE`][G_SLICE] for related debugging options.
  *
  * Since: 2.10
  */
@@ -1126,9 +1127,8 @@ g_slice_free1 (gsize    mem_size,
  * @next pointer (similar to #GSList). The offset of the @next
  * field in each block is passed as third argument.
  * Note that the exact release behaviour can be changed with the
- * <link linkend="G_DEBUG">G_DEBUG=gc-friendly</link> environment
- * variable, also see <link linkend="G_SLICE">G_SLICE</link> for
- * related debugging options.
+ * [`G_DEBUG=gc-friendly`][G_DEBUG] environment variable, also see
+ * [`G_SLICE`][G_SLICE] for related debugging options.
  *
  * Since: 2.10
  */
@@ -1254,10 +1254,7 @@ allocator_add_slab (Allocator *allocator,
   guint i;
   if (!mem)
     {
-      const gchar *syserr = "unknown error";
-#if HAVE_STRERROR
-      syserr = strerror (errno);
-#endif
+      const gchar *syserr = strerror (errno);
       mem_error ("failed to allocate %u bytes (alignment: %u): %s\n",
                  (guint) (page_size - NATIVE_MALLOC_PADDING), (guint) page_size, syserr);
     }
@@ -1523,10 +1520,7 @@ static SmcBranch     **smc_tree_root = NULL;
 static void
 smc_tree_abort (int errval)
 {
-  const char *syserr = "unknown error";
-#if HAVE_STRERROR
-  syserr = strerror (errval);
-#endif
+  const char *syserr = strerror (errval);
   mem_error ("MemChecker: failure in debugging tree: %s", syserr);
 }
 
@@ -1542,7 +1536,7 @@ smc_tree_branch_grow_L (SmcBranch   *branch,
   if (!branch->entries)
     smc_tree_abort (errno);
   entry = branch->entries + index;
-  g_memmove (entry + 1, entry, (branch->n_entries - index) * sizeof (entry[0]));
+  memmove (entry + 1, entry, (branch->n_entries - index) * sizeof (entry[0]));
   branch->n_entries += 1;
   return entry;
 }
@@ -1641,7 +1635,7 @@ smc_tree_remove (SmcKType key)
         {
           unsigned int i = entry - smc_tree_root[ix0][ix1].entries;
           smc_tree_root[ix0][ix1].n_entries -= 1;
-          g_memmove (entry, entry + 1, (smc_tree_root[ix0][ix1].n_entries - i) * sizeof (entry[0]));
+          memmove (entry, entry + 1, (smc_tree_root[ix0][ix1].n_entries - i) * sizeof (entry[0]));
           if (!smc_tree_root[ix0][ix1].n_entries)
             {
               /* avoid useless pressure on the memory system */

@@ -13,17 +13,15 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_RESOLVER_H__
+#define __G_RESOLVER_H__
 
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_RESOLVER_H__
-#define __G_RESOLVER_H__
 
 #include <gio/giotypes.h>
 
@@ -115,44 +113,56 @@ struct _GResolverClass {
 
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType      g_resolver_get_type                  (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GResolver *g_resolver_get_default               (void);
+GLIB_AVAILABLE_IN_ALL
 void       g_resolver_set_default               (GResolver            *resolver);
 
+GLIB_AVAILABLE_IN_ALL
 GList     *g_resolver_lookup_by_name            (GResolver            *resolver,
 						 const gchar          *hostname,
 						 GCancellable         *cancellable,
 						 GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void       g_resolver_lookup_by_name_async      (GResolver            *resolver,
 						 const gchar          *hostname,
 						 GCancellable         *cancellable,
 						 GAsyncReadyCallback   callback,
 						 gpointer              user_data);
+GLIB_AVAILABLE_IN_ALL
 GList     *g_resolver_lookup_by_name_finish     (GResolver            *resolver,
 						 GAsyncResult         *result,
 						 GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 void       g_resolver_free_addresses            (GList                *addresses);
 
+GLIB_AVAILABLE_IN_ALL
 gchar     *g_resolver_lookup_by_address         (GResolver            *resolver,
 						 GInetAddress         *address,
 						 GCancellable         *cancellable,
 						 GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void       g_resolver_lookup_by_address_async   (GResolver            *resolver,
 						 GInetAddress         *address,
 						 GCancellable         *cancellable,
 						 GAsyncReadyCallback   callback,
 						 gpointer              user_data);
+GLIB_AVAILABLE_IN_ALL
 gchar     *g_resolver_lookup_by_address_finish  (GResolver            *resolver,
 						 GAsyncResult         *result,
 						 GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 GList     *g_resolver_lookup_service            (GResolver            *resolver,
 						 const gchar          *service,
 						 const gchar          *protocol,
 						 const gchar          *domain,
 						 GCancellable         *cancellable,
 						 GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void       g_resolver_lookup_service_async      (GResolver            *resolver,
 						 const gchar          *service,
 						 const gchar          *protocol,
@@ -160,6 +170,7 @@ void       g_resolver_lookup_service_async      (GResolver            *resolver,
 						 GCancellable         *cancellable,
 						 GAsyncReadyCallback   callback,
 						 gpointer              user_data);
+GLIB_AVAILABLE_IN_ALL
 GList     *g_resolver_lookup_service_finish     (GResolver            *resolver,
 						 GAsyncResult         *result,
 						 GError              **error);
@@ -182,6 +193,7 @@ GList     *g_resolver_lookup_records_finish     (GResolver            *resolver,
                                                  GAsyncResult         *result,
                                                  GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 void       g_resolver_free_targets              (GList                *targets);
 
 /**
@@ -192,6 +204,7 @@ void       g_resolver_free_targets              (GList                *targets);
  * error domains.
  */
 #define G_RESOLVER_ERROR (g_resolver_error_quark ())
+GLIB_AVAILABLE_IN_ALL
 GQuark g_resolver_error_quark (void);
 
 G_END_DECLS

@@ -27,81 +27,6 @@
 
 typedef struct
 {
-  GIOStream parent;
-  GInputStream *input_stream;
-  GOutputStream *output_stream;
-} GTestIOStream;
-
-typedef struct
-{
-  GIOStreamClass parent_class;
-} GTestIOStreamClass;
-
-static GType g_test_io_stream_get_type (void);
-G_DEFINE_TYPE (GTestIOStream, g_test_io_stream, G_TYPE_IO_STREAM);
-
-
-static GInputStream *
-get_input_stream (GIOStream *io_stream)
-{
-  GTestIOStream *self =  (GTestIOStream *) io_stream;
-
-  return self->input_stream;
-}
-
-static GOutputStream *
-get_output_stream (GIOStream *io_stream)
-{
-  GTestIOStream *self =  (GTestIOStream *) io_stream;
-
-  return self->output_stream;
-}
-
-static void
-finalize (GObject *object)
-{
-  GTestIOStream *self = (GTestIOStream *) object;
-
-  if (self->input_stream != NULL)
-    g_object_unref (self->input_stream);
-
-  if (self->output_stream != NULL)
-    g_object_unref (self->output_stream);
-
-  G_OBJECT_CLASS (g_test_io_stream_parent_class)->finalize (object);
-}
-
-static void
-g_test_io_stream_class_init (GTestIOStreamClass *klass)
-{
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GIOStreamClass *io_class = G_IO_STREAM_CLASS (klass);
-
-  object_class->finalize = finalize;
-
-  io_class->get_input_stream = get_input_stream;
-  io_class->get_output_stream = get_output_stream;
-}
-
-static void
-g_test_io_stream_init (GTestIOStream *self)
-{
-}
-
-static GIOStream *
-g_test_io_stream_new (GInputStream *input, GOutputStream *output)
-{
-  GTestIOStream *self;
-
-  self = g_object_new (g_test_io_stream_get_type (), NULL);
-  self->input_stream = g_object_ref (input);
-  self->output_stream = g_object_ref (output);
-
-  return G_IO_STREAM (self);
-}
-
-typedef struct
-{
   GMainLoop *main_loop;
   const gchar *data1;
   const gchar *data2;
@@ -122,11 +47,11 @@ test_copy_chunks_splice_cb (GObject *source_object,
   g_io_stream_splice_finish (res, &error);
   g_assert_no_error (error);
 
-  ostream = G_MEMORY_OUTPUT_STREAM (((GTestIOStream *) data->iostream1)->output_stream);
+  ostream = G_MEMORY_OUTPUT_STREAM (g_io_stream_get_output_stream (data->iostream1));
   received_data = g_memory_output_stream_get_data (ostream);
   g_assert_cmpstr (received_data, ==, data->data2);
 
-  ostream = G_MEMORY_OUTPUT_STREAM (((GTestIOStream *) data->iostream2)->output_stream);
+  ostream = G_MEMORY_OUTPUT_STREAM (g_io_stream_get_output_stream (data->iostream2));
   received_data = g_memory_output_stream_get_data (ostream);
   g_assert_cmpstr (received_data, ==, data->data1);
 
@@ -149,13 +74,13 @@ test_copy_chunks (void)
 
   istream = g_memory_input_stream_new_from_data (data.data1, -1, NULL);
   ostream = g_memory_output_stream_new (NULL, 0, g_realloc, g_free);
-  data.iostream1 = g_test_io_stream_new (istream, ostream);
+  data.iostream1 = g_simple_io_stream_new (istream, ostream);
   g_object_unref (istream);
   g_object_unref (ostream);
 
   istream = g_memory_input_stream_new_from_data (data.data2, -1, NULL);
   ostream = g_memory_output_stream_new (NULL, 0, g_realloc, g_free);
-  data.iostream2 = g_test_io_stream_new (istream, ostream);
+  data.iostream2 = g_simple_io_stream_new (istream, ostream);
   g_object_unref (istream);
   g_object_unref (ostream);
 
@@ -173,14 +98,74 @@ test_copy_chunks (void)
   g_main_loop_unref (data.main_loop);
 }
 
+static void
+close_async_done (GObject *source,
+                  GAsyncResult *result,
+                  gpointer user_data)
+{
+  gboolean *done = user_data;
+
+  *done = TRUE;
+}
+
+static void
+test_close_file (void)
+{
+#ifdef G_OS_UNIX
+  GFileIOStream *fios;
+  gboolean done;
+  GIOStream *io;
+  GFile *file;
+
+  file = g_file_new_for_path ("/dev/null");
+  fios = g_file_open_readwrite (file, NULL, NULL);
+  g_object_unref (file);
+  g_assert (fios);
+
+  io = g_simple_io_stream_new (g_io_stream_get_input_stream (G_IO_STREAM (fios)),
+                               g_io_stream_get_output_stream (G_IO_STREAM (fios)));
+  g_object_unref (fios);
+
+  g_io_stream_close_async (io, 0, NULL, close_async_done, &done);
+  g_object_unref (io);
+
+  done = FALSE;
+  while (!done)
+    g_main_context_iteration (NULL, TRUE);
+#endif
+}
+
+static void
+test_close_memory (void)
+{
+  GInputStream *in;
+  GOutputStream *out;
+  gboolean done;
+  GIOStream *io;
+
+  in = g_memory_input_stream_new ();
+  out = g_memory_output_stream_new_resizable ();
+  io = g_simple_io_stream_new (in, out);
+  g_object_unref (out);
+  g_object_unref (in);
+
+  g_io_stream_close_async (io, 0, NULL, close_async_done, &done);
+  g_object_unref (io);
+
+  done = FALSE;
+  while (!done)
+    g_main_context_iteration (NULL, TRUE);
+}
+
 int
 main (int   argc,
       char *argv[])
 {
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/io-stream/copy-chunks", test_copy_chunks);
+  g_test_add_func ("/io-stream/close/async/memory", test_close_memory);
+  g_test_add_func ("/io-stream/close/async/file", test_close_file);
 
   return g_test_run();
 }

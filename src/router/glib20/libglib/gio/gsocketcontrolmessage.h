@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
 
+#ifndef __G_SOCKET_CONTROL_MESSAGE_H__
+#define __G_SOCKET_CONTROL_MESSAGE_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_SOCKET_CONTROL_MESSAGE_H__
-#define __G_SOCKET_CONTROL_MESSAGE_H__
 
 #include <gio/giotypes.h>
 
@@ -56,6 +54,8 @@ typedef struct _GSocketControlMessageClass                  GSocketControlMessag
  * @get_type: gets the protocol specific type of the message.
  * @serialize: Writes out the message data.
  * @deserialize: Tries to deserialize a message.
+ *
+ * Class structure for #GSocketControlMessage.
  **/
 
 struct _GSocketControlMessageClass
@@ -88,12 +88,18 @@ struct _GSocketControlMessage
   GSocketControlMessagePrivate *priv;
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType                  g_socket_control_message_get_type     (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 gsize                  g_socket_control_message_get_size     (GSocketControlMessage *message);
+GLIB_AVAILABLE_IN_ALL
 int                    g_socket_control_message_get_level    (GSocketControlMessage *message);
+GLIB_AVAILABLE_IN_ALL
 int                    g_socket_control_message_get_msg_type (GSocketControlMessage *message);
+GLIB_AVAILABLE_IN_ALL
 void                   g_socket_control_message_serialize    (GSocketControlMessage *message,
 							      gpointer               data);
+GLIB_AVAILABLE_IN_ALL
 GSocketControlMessage *g_socket_control_message_deserialize  (int                    level,
 							      int                    type,
 							      gsize                  size,

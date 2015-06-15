@@ -22,63 +22,63 @@
 
 #include <errno.h>  /* errno */
 #include <glib.h>
-#ifndef _WIN32
+#ifdef G_OS_UNIX
 #include <unistd.h> /* pipe() */
-#else
+#endif
+#ifdef G_OS_WIN32
 #include <io.h>
 #include <fcntl.h>
 #define pipe(fds) _pipe(fds, 4096, _O_BINARY)
 #endif
 
+static const char *argv0;
+
 static void
 debug (void)
 {
-  if (g_test_verbose ())
+  if (g_test_subprocess ())
     g_debug ("this is a regular g_debug() from the test suite");
 }
 
 static void
 info (void)
 {
-#ifdef g_info
-#error "rewrite this to use g_info()"
-#endif
-  if (g_test_verbose ())
-    g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "this is a regular g_log(..., G_LOG_LEVEL_INFO, ...) from the test suite");
+  if (g_test_subprocess ())
+    g_info ("this is a regular g_info from the test suite");
 }
 
 static void
 message (void)
 {
-  if (g_test_verbose ())
+  if (g_test_subprocess ())
     g_message ("this is a regular g_message() from the test suite");
 }
 
 static void
 warning (void)
 {
-  if (g_test_verbose ())
+  if (g_test_subprocess ())
     g_warning ("this is a regular g_warning() from the test suite");
 }
 
 static void
 critical (void)
 {
-  if (g_test_verbose ())
+  if (g_test_subprocess ())
     g_critical ("this is a regular g_critical() from the test suite");
 }
 
 static void
 error (void)
 {
-  if (g_test_verbose ())
+  if (g_test_subprocess ())
     g_error ("this is a regular g_error() from the test suite");
 }
 
 static void
 gtest_message (void)
 {
-  if (g_test_verbose ())
+  if (g_test_subprocess ())
     g_test_message ("this is a regular g_test_message() from the test suite");
 }
 
@@ -119,9 +119,9 @@ static void
 test_message (void)
 {
   gchar* argv[] = {
-          "./protocol",
+          (gchar*)argv0,
           NULL,
-          "--verbose",
+          "--GTestSubprocess",
           "-p", "/glib/testing/protocol/debug",
           "-p", "/glib/testing/protocol/message",
           "-p", "/glib/testing/protocol/gtest-message",
@@ -172,6 +172,10 @@ test_message (void)
   g_assert_cmpint (*line_term, ==, '\n');
   g_assert_cmpint (line_term_len, ==, 1);
 
+  g_assert (g_io_channel_get_close_on_unref (channel));
+  g_assert (g_io_channel_get_encoding (channel) == NULL);
+  g_assert (!g_io_channel_get_buffered (channel));
+
   io_source = g_io_add_watch (channel, G_IO_IN, test_message_cb1, tlb);
   child_source = g_child_watch_add (pid, test_message_cb2, loop);
 
@@ -179,7 +183,9 @@ test_message (void)
 
   test_message_cb1 (channel, G_IO_IN, tlb);
 
+  g_test_expect_message ("GLib", G_LOG_LEVEL_CRITICAL, "Source ID*");
   g_assert (!g_source_remove (child_source));
+  g_test_assert_expected_messages ();
   g_assert (g_source_remove (io_source));
   g_io_channel_unref (channel);
 
@@ -191,6 +197,8 @@ test_message (void)
         {
         case G_TEST_LOG_START_BINARY:
         case G_TEST_LOG_START_CASE:
+        case G_TEST_LOG_START_SUITE:
+        case G_TEST_LOG_STOP_SUITE:
           /* ignore */
           break;
         case G_TEST_LOG_STOP_CASE:
@@ -239,9 +247,9 @@ test_error (void)
   for (i = 0; i < G_N_ELEMENTS (tests); i++)
     {
       gchar* argv[] = {
-              "./protocol",
+              (gchar*)argv0,
               NULL,
-              "--verbose",
+              "--GTestSubprocess",
               "-p", tests[i],
               NULL
       };
@@ -288,7 +296,9 @@ test_error (void)
 
       test_message_cb1 (channel, G_IO_IN, tlb);
 
+      g_test_expect_message ("GLib", G_LOG_LEVEL_CRITICAL, "Source ID*");
       g_assert (!g_source_remove (child_source));
+      g_test_assert_expected_messages ();
       g_assert (g_source_remove (io_source));
       g_io_channel_unref (channel);
 
@@ -300,6 +310,8 @@ test_error (void)
             {
             case G_TEST_LOG_START_BINARY:
             case G_TEST_LOG_START_CASE:
+            case G_TEST_LOG_START_SUITE:
+            case G_TEST_LOG_STOP_SUITE:
               /* ignore */
               break;
             case G_TEST_LOG_STOP_CASE:
@@ -336,6 +348,8 @@ int
 main (int   argc,
       char**argv)
 {
+  argv0 = argv[0];
+
   g_test_init (&argc, &argv, NULL);
 
   /* we use ourself as the testcase, these are the ones we need internally */

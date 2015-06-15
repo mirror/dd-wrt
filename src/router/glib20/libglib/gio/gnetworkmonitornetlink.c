@@ -13,14 +13,13 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
 
 #include <errno.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "gnetworkmonitornetlink.h"
@@ -29,6 +28,7 @@
 #include "ginitable.h"
 #include "giomodule-priv.h"
 #include "glibintl.h"
+#include "glib/gstdio.h"
 #include "gnetworkingprivate.h"
 #include "gnetworkmonitor.h"
 #include "gsocket.h"
@@ -41,18 +41,6 @@
 
 static void g_network_monitor_netlink_iface_init (GNetworkMonitorInterface *iface);
 static void g_network_monitor_netlink_initable_iface_init (GInitableIface *iface);
-
-#define g_network_monitor_netlink_get_type _g_network_monitor_netlink_get_type
-G_DEFINE_TYPE_WITH_CODE (GNetworkMonitorNetlink, g_network_monitor_netlink, G_TYPE_NETWORK_MONITOR_BASE,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_NETWORK_MONITOR,
-                                                g_network_monitor_netlink_iface_init)
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-                                                g_network_monitor_netlink_initable_iface_init)
-                         _g_io_modules_ensure_extension_points_registered ();
-                         g_io_extension_point_implement (G_NETWORK_MONITOR_EXTENSION_POINT_NAME,
-                                                         g_define_type_id,
-                                                         "netlink",
-                                                         20))
 
 struct _GNetworkMonitorNetlinkPrivate
 {
@@ -68,12 +56,23 @@ static gboolean read_netlink_messages (GSocket             *socket,
 static gboolean request_dump (GNetworkMonitorNetlink  *nl,
                               GError                 **error);
 
+#define g_network_monitor_netlink_get_type _g_network_monitor_netlink_get_type
+G_DEFINE_TYPE_WITH_CODE (GNetworkMonitorNetlink, g_network_monitor_netlink, G_TYPE_NETWORK_MONITOR_BASE,
+                         G_ADD_PRIVATE (GNetworkMonitorNetlink)
+                         G_IMPLEMENT_INTERFACE (G_TYPE_NETWORK_MONITOR,
+                                                g_network_monitor_netlink_iface_init)
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+                                                g_network_monitor_netlink_initable_iface_init)
+                         _g_io_modules_ensure_extension_points_registered ();
+                         g_io_extension_point_implement (G_NETWORK_MONITOR_EXTENSION_POINT_NAME,
+                                                         g_define_type_id,
+                                                         "netlink",
+                                                         20))
+
 static void
 g_network_monitor_netlink_init (GNetworkMonitorNetlink *nl)
 {
-  nl->priv = G_TYPE_INSTANCE_GET_PRIVATE (nl,
-                                          G_TYPE_NETWORK_MONITOR_NETLINK,
-                                          GNetworkMonitorNetlinkPrivate);
+  nl->priv = g_network_monitor_netlink_get_instance_private (nl);
 }
 
 
@@ -83,13 +82,13 @@ g_network_monitor_netlink_initable_init (GInitable     *initable,
                                          GError       **error)
 {
   GNetworkMonitorNetlink *nl = G_NETWORK_MONITOR_NETLINK (initable);
-  gint sockfd, val;
+  gint sockfd;
   struct sockaddr_nl snl;
 
   /* We create the socket the old-school way because sockaddr_netlink
    * can't be represented as a GSocketAddress
    */
-  sockfd = socket (PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+  sockfd = g_socket (PF_NETLINK, SOCK_RAW, NETLINK_ROUTE, NULL);
   if (sockfd == -1)
     {
       int errsv = errno;
@@ -108,18 +107,7 @@ g_network_monitor_netlink_initable_init (GInitable     *initable,
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
                    _("Could not create network monitor: %s"),
                    g_strerror (errno));
-      close (sockfd);
-      return FALSE;
-    }
-
-  val = 1;
-  if (setsockopt (sockfd, SOL_SOCKET, SO_PASSCRED, &val, sizeof (val)) != 0)
-    {
-      int errsv = errno;
-      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
-                   _("Could not create network monitor: %s"),
-                   g_strerror (errno));
-      close (sockfd);
+      (void) g_close (sockfd, NULL);
       return FALSE;
     }
 
@@ -127,7 +115,17 @@ g_network_monitor_netlink_initable_init (GInitable     *initable,
   if (error)
     {
       g_prefix_error (error, "%s", _("Could not create network monitor: "));
-      close (sockfd);
+      (void) g_close (sockfd, NULL);
+      return FALSE;
+    }
+
+  if (!g_socket_set_option (nl->priv->sock, SOL_SOCKET, SO_PASSCRED,
+			    TRUE, NULL))
+    {
+      int errsv = errno;
+      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                   _("Could not create network monitor: %s"),
+                   g_strerror (errno));
       return FALSE;
     }
 
@@ -219,8 +217,7 @@ static void
 add_network (GNetworkMonitorNetlink *nl,
              GSocketFamily           family,
              gint                    dest_len,
-             guint8                 *dest,
-             guint8                 *gateway)
+             guint8                 *dest)
 {
   GInetAddress *dest_addr;
   GInetAddressMask *network;
@@ -246,8 +243,7 @@ static void
 remove_network (GNetworkMonitorNetlink *nl,
                 GSocketFamily           family,
                 gint                    dest_len,
-                guint8                 *dest,
-                guint8                 *gateway)
+                guint8                 *dest)
 {
   GInetAddress *dest_addr;
   GInetAddressMask *network;
@@ -306,7 +302,7 @@ read_netlink_messages (GSocket      *socket,
   struct rtmsg *rtmsg;
   struct rtattr *attr;
   gsize attrlen;
-  guint8 *dest, *gateway;
+  guint8 *dest, *gateway, *oif;
   gboolean retval = TRUE;
 
   iv.buffer = NULL;
@@ -368,22 +364,37 @@ read_netlink_messages (GSocket      *socket,
 
           attrlen = NLMSG_PAYLOAD (msg, sizeof (struct rtmsg));
           attr = RTM_RTA (rtmsg);
-          dest = gateway = NULL;
+          dest = gateway = oif = NULL;
           while (RTA_OK (attr, attrlen))
             {
               if (attr->rta_type == RTA_DST)
                 dest = RTA_DATA (attr);
               else if (attr->rta_type == RTA_GATEWAY)
                 gateway = RTA_DATA (attr);
+              else if (attr->rta_type == RTA_OIF)
+                oif = RTA_DATA (attr);
               attr = RTA_NEXT (attr, attrlen);
             }
 
-          if (dest || gateway)
+          if (dest || gateway || oif)
             {
+              /* Unless we're processing the results of a dump, ignore
+               * IPv6 link-local multicast routes, which are added and
+               * removed all the time for some reason.
+               */
+#define UNALIGNED_IN6_IS_ADDR_MC_LINKLOCAL(a)           \
+              ((a[0] == 0xff) && ((a[1] & 0xf) == 0x2))
+
+              if (!nl->priv->dump_networks &&
+                  rtmsg->rtm_family == AF_INET6 &&
+                  rtmsg->rtm_dst_len != 0 &&
+                  UNALIGNED_IN6_IS_ADDR_MC_LINKLOCAL (dest))
+                continue;
+
               if (msg->nlmsg_type == RTM_NEWROUTE)
-                add_network (nl, rtmsg->rtm_family, rtmsg->rtm_dst_len, dest, gateway);
+                add_network (nl, rtmsg->rtm_family, rtmsg->rtm_dst_len, dest);
               else
-                remove_network (nl, rtmsg->rtm_family, rtmsg->rtm_dst_len, dest, gateway);
+                remove_network (nl, rtmsg->rtm_family, rtmsg->rtm_dst_len, dest);
               queue_request_dump (nl);
             }
           break;
@@ -450,8 +461,6 @@ static void
 g_network_monitor_netlink_class_init (GNetworkMonitorNetlinkClass *nl_class)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (nl_class);
-
-  g_type_class_add_private (nl_class, sizeof (GNetworkMonitorNetlinkPrivate));
 
   gobject_class->finalize  = g_network_monitor_netlink_finalize;
 }

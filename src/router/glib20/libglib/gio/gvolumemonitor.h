@@ -15,20 +15,18 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  *         David Zeuthen <davidz@redhat.com>
  */
 
+#ifndef __G_VOLUME_MONITOR_H__
+#define __G_VOLUME_MONITOR_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_VOLUME_MONITOR_H__
-#define __G_VOLUME_MONITOR_H__
 
 #include <gio/giotypes.h>
 
@@ -45,7 +43,7 @@ G_BEGIN_DECLS
  * G_VOLUME_MONITOR_EXTENSION_POINT_NAME:
  *
  * Extension point for volume monitor functionality.
- * See <link linkend="extending-gio">Extending GIO</link>.
+ * See [Extending GIO][extending-gio].
  */
 #define G_VOLUME_MONITOR_EXTENSION_POINT_NAME "gio-volume-monitor"
 
@@ -130,14 +128,21 @@ struct _GVolumeMonitorClass
   void (*_g_reserved6) (void);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType           g_volume_monitor_get_type             (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GVolumeMonitor *g_volume_monitor_get                  (void);
+GLIB_AVAILABLE_IN_ALL
 GList *         g_volume_monitor_get_connected_drives (GVolumeMonitor *volume_monitor);
+GLIB_AVAILABLE_IN_ALL
 GList *         g_volume_monitor_get_volumes          (GVolumeMonitor *volume_monitor);
+GLIB_AVAILABLE_IN_ALL
 GList *         g_volume_monitor_get_mounts           (GVolumeMonitor *volume_monitor);
+GLIB_AVAILABLE_IN_ALL
 GVolume *       g_volume_monitor_get_volume_for_uuid  (GVolumeMonitor *volume_monitor,
                                                        const char     *uuid);
+GLIB_AVAILABLE_IN_ALL
 GMount *        g_volume_monitor_get_mount_for_uuid   (GVolumeMonitor *volume_monitor,
                                                        const char     *uuid);
 

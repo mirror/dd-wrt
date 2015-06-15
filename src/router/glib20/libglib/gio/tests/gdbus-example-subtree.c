@@ -57,7 +57,7 @@ manager_method_call (GDBusConnection       *connection,
 
   g_variant_get (parameters, "(&s)", &greeting);
 
-  response = g_strdup_printf ("Method %s.%s with user_data `%s' on object path %s called with arg '%s'",
+  response = g_strdup_printf ("Method %s.%s with user_data '%s' on object path %s called with arg '%s'",
                               interface_name,
                               method_name,
                               (const gchar *) user_data,
@@ -96,7 +96,7 @@ block_method_call (GDBusConnection       *connection,
 
       g_variant_get (parameters, "(&s)", &greeting);
 
-      response = g_strdup_printf ("Method %s.%s with user_data `%s' on object path %s called with arg '%s'",
+      response = g_strdup_printf ("Method %s.%s with user_data '%s' on object path %s called with arg '%s'",
                                   interface_name,
                                   method_name,
                                   (const gchar *) user_data,
@@ -209,7 +209,7 @@ partition_method_call (GDBusConnection       *connection,
 
   g_variant_get (parameters, "(&s)", &greeting);
 
-  response = g_strdup_printf ("Method %s.%s with user_data `%s' on object path %s called with arg '%s'",
+  response = g_strdup_printf ("Method %s.%s with user_data '%s' on object path %s called with arg '%s'",
                               interface_name,
                               method_name,
                               (const gchar *) user_data,
@@ -363,8 +363,6 @@ main (int argc, char *argv[])
 {
   guint owner_id;
   GMainLoop *loop;
-
-  g_type_init ();
 
   /* We are lazy here - we don't want to manually provide
    * the introspection data structures - so we just build

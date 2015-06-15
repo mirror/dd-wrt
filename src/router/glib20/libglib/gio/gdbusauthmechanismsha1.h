@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
 
+#ifndef __G_DBUS_AUTH_MECHANISM_SHA1_H__
+#define __G_DBUS_AUTH_MECHANISM_SHA1_H__
+
 #if !defined (GIO_COMPILATION)
 #error "gdbusauthmechanismsha1.h is a private header file."
 #endif
-
-#ifndef __G_DBUS_AUTH_MECHANISM_SHA1_H__
-#define __G_DBUS_AUTH_MECHANISM_SHA1_H__
 
 #include <gio/giotypes.h>
 #include <gio/gdbusauthmechanism.h>

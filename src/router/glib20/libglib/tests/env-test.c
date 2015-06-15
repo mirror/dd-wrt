@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -23,8 +21,6 @@
  * files for a list of changes.  These files are distributed with
  * GLib at ftp://ftp.gtk.org/pub/gtk/. 
  */
-
-#include "config.h"
 
 #undef G_DISABLE_ASSERT
 #undef G_LOG_DOMAIN
@@ -38,10 +34,6 @@
 #include <string.h>
 
 #include <glib.h>
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 int 
 main (int argc, char *argv[])

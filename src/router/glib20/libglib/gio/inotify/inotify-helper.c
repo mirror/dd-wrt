@@ -16,8 +16,7 @@
 
    You should have received a copy of the GNU Library General Public
    License along with the Gnome Library; see the file COPYING.LIB.  If not,
-   write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.
+   see <http://www.gnu.org/licenses/>.
 
    Authors: 
 		 John McCutchan <john@johnmccutchan.com>
@@ -28,10 +27,10 @@
 #include <time.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 /* Just include the local header to stop all the pain */
 #include <sys/inotify.h>
-#include <gio/glocalfile.h>
-#include <gio/gfilemonitor.h>
+#include <gio/glocalfilemonitor.h>
 #include <gio/gfile.h>
 #include "inotify-helper.h"
 #include "inotify-missing.h"
@@ -40,7 +39,9 @@
 static gboolean ih_debug_enabled = FALSE;
 #define IH_W if (ih_debug_enabled) g_warning 
 
-static void ih_event_callback (ik_event_t *event, inotify_sub *sub);
+static gboolean ih_event_callback (ik_event_t  *event,
+                                   inotify_sub *sub,
+                                   gboolean     file_event);
 static void ih_not_missing_callback (inotify_sub *sub);
 
 /* We share this lock with inotify-kernel.c and inotify-missing.c
@@ -53,7 +54,7 @@ static void ih_not_missing_callback (inotify_sub *sub);
  *
  * We take the lock in all public functions
  */
-G_GNUC_INTERNAL G_LOCK_DEFINE (inotify_lock);
+G_LOCK_DEFINE (inotify_lock);
 
 static GFileMonitorEvent ih_mask_to_EventFlags (guint32 mask);
 
@@ -63,7 +64,7 @@ static GFileMonitorEvent ih_mask_to_EventFlags (guint32 mask);
  * Initializes the inotify backend.  This must be called before
  * any other functions in this module.
  *
- * Return value: #TRUE if initialization succeeded, #FALSE otherwise
+ * Returns: #TRUE if initialization succeeded, #FALSE otherwise
  */
 gboolean
 _ih_startup (void)
@@ -108,6 +109,7 @@ _ih_sub_add (inotify_sub *sub)
     _im_add (sub);
   
   G_UNLOCK (inotify_lock);
+
   return TRUE;
 }
 
@@ -128,16 +130,20 @@ _ih_sub_cancel (inotify_sub *sub)
     }
   
   G_UNLOCK (inotify_lock);
-  
+
   return TRUE;
 }
 
 static char *
-_ih_fullpath_from_event (ik_event_t *event, const char *dirname)
+_ih_fullpath_from_event (ik_event_t *event,
+			 const char *dirname,
+			 const char *filename)
 {
   char *fullpath;
 
-  if (event->name)
+  if (filename)
+    fullpath = g_strdup_printf ("%s/%s", dirname, filename);
+  else if (event->name)
     fullpath = g_strdup_printf ("%s/%s", dirname, event->name);
   else
     fullpath = g_strdup_printf ("%s/", dirname);
@@ -145,111 +151,100 @@ _ih_fullpath_from_event (ik_event_t *event, const char *dirname)
    return fullpath;
 }
 
-
 static gboolean
-ih_event_is_paired_move (ik_event_t *event)
+ih_event_callback (ik_event_t  *event,
+                   inotify_sub *sub,
+                   gboolean     file_event)
 {
-  if (event->pair)
+  gboolean interesting;
+
+  g_assert (!file_event); /* XXX hardlink support */
+
+  if (event->mask & IN_MOVE)
     {
-      ik_event_t *paired = event->pair;
-      /* intofiy(7): IN_MOVE == IN_MOVED_FROM | IN_MOVED_TO */
-      return (event->mask | paired->mask) & IN_MOVE;
-    }
+      /* We either have a rename (in the same directory) or a move
+       * (between different directories).
+       */
+      if (event->pair && event->pair->wd == event->wd)
+        {
+          /* this is a rename */
+          interesting = g_file_monitor_source_handle_event (sub->user_data, G_FILE_MONITOR_EVENT_RENAMED,
+                                                            event->name, event->pair->name, NULL, event->timestamp);
+        }
+      else
+        {
+          GFile *other;
 
-    return FALSE;
-}
+          if (event->pair)
+            {
+              const char *parent_dir;
+              gchar *fullpath;
 
-static void
-ih_event_callback (ik_event_t  *event, 
-                   inotify_sub *sub)
-{
-  gchar *fullpath;
-  GFileMonitorEvent eflags;
-  GFile* child;
-  GFile* other;
+              parent_dir = _ip_get_path_for_wd (event->pair->wd);
+              fullpath = _ih_fullpath_from_event (event->pair, parent_dir, NULL);
+              other = g_file_new_for_path (fullpath);
+              g_free (fullpath);
+            }
+          else
+            other = NULL;
 
-  eflags = ih_mask_to_EventFlags (event->mask);
-  fullpath = _ih_fullpath_from_event (event, sub->dirname);
-  child = g_file_new_for_path (fullpath);
-  g_free (fullpath);
+          /* this is either an incoming or outgoing move */
+          interesting = g_file_monitor_source_handle_event (sub->user_data, ih_mask_to_EventFlags (event->mask),
+                                                            event->name, NULL, other, event->timestamp);
 
-  if (ih_event_is_paired_move (event) && sub->pair_moves)
-    {
-      const char *parent_dir = (char *) _ip_get_path_for_wd (event->pair->wd);
-      fullpath = _ih_fullpath_from_event (event->pair, parent_dir);
-      other = g_file_new_for_path (fullpath);
-      g_free (fullpath);
-      eflags = G_FILE_MONITOR_EVENT_MOVED;
-      event->pair = NULL; /* prevents the paired event to be emitted as well */
+          if (other)
+            g_object_unref (other);
+        }
     }
   else
-    other = NULL;
+    /* unpaired event -- no 'other' field */
+    interesting = g_file_monitor_source_handle_event (sub->user_data, ih_mask_to_EventFlags (event->mask),
+                                                      event->name, NULL, NULL, event->timestamp);
 
-  g_file_monitor_emit_event (G_FILE_MONITOR (sub->user_data),
-			     child, other, eflags);
-
-  /* For paired moves or moves whose mask has been changed from IN_MOVED_TO to
-   * IN_CREATE, notify also that it's probably the last change to the file,
-   * emitting CHANGES_DONE_HINT.
-   * The first (first part of the if's guard below) is the case of a normal
-   * move within the monitored tree and in the same mounted volume.
-   * The latter (second part of the guard) is the case of a move within the
-   * same mounted volume, but from a not monitored directory.
-   *
-   * It's not needed in cases like moves across mounted volumes as the IN_CREATE
-   * will be followed by a IN_MODIFY and IN_CLOSE_WRITE events.
-   * Also not needed if sub->pair_moves is set as EVENT_MOVED will be emitted
-   * instead of EVENT_CREATED which implies no further modification will be
-   * applied to the file
-   * See: https://bugzilla.gnome.org/show_bug.cgi?id=640077
-   */
-  if ((!sub->pair_moves &&
-        event->is_second_in_pair && (event->mask & IN_MOVED_TO)) ||
-      (!ih_event_is_paired_move (event) &&
-       (event->original_mask & IN_MOVED_TO) && (event->mask & IN_CREATE)))
+  if (event->mask & IN_CREATE)
     {
-      g_file_monitor_emit_event (G_FILE_MONITOR (sub->user_data),
-          child, NULL, G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT);
+      const gchar *parent_dir;
+      gchar *fullname;
+      struct stat buf;
+      gint s;
+
+      /* The kernel reports IN_CREATE for two types of events:
+       *
+       *  - creat(), in which case IN_CLOSE_WRITE will come soon; or
+       *  - link(), mkdir(), mknod(), etc., in which case it won't
+       *
+       * We can attempt to detect the second case and send the
+       * CHANGES_DONE immediately so that the user isn't left waiting.
+       *
+       * The detection for link() is not 100% reliable since the link
+       * count could be 1 if the original link was deleted or if
+       * O_TMPFILE was being used, but in that case the virtual
+       * CHANGES_DONE will be emitted to close the loop.
+       */
+
+      parent_dir = _ip_get_path_for_wd (event->wd);
+      fullname = _ih_fullpath_from_event (event, parent_dir, NULL);
+      s = stat (fullname, &buf);
+      g_free (fullname);
+
+      /* if it doesn't look like the result of creat()... */
+      if (s != 0 || !S_ISREG (buf.st_mode) || buf.st_nlink != 1)
+        g_file_monitor_source_handle_event (sub->user_data, G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT,
+                                            event->name, NULL, NULL, event->timestamp);
     }
 
-  g_object_unref (child);
-  if (other)
-    g_object_unref (other);
+  return interesting;
 }
 
 static void
 ih_not_missing_callback (inotify_sub *sub)
 {
-  gchar *fullpath;
-  GFileMonitorEvent eflags;
-  guint32 mask;
-  GFile* child;
+  gint now = g_get_monotonic_time ();
 
-  if (sub->filename)
-    {
-      fullpath = g_strdup_printf ("%s/%s", sub->dirname, sub->filename);
-      g_warning ("Missing callback called fullpath = %s\n", fullpath);
-      if (!g_file_test (fullpath, G_FILE_TEST_EXISTS))
-	{
-	  g_free (fullpath);
-	  return;
-	}
-      mask = IN_CREATE;
-    }
-  else
-    {
-      fullpath = g_strdup_printf ("%s", sub->dirname);
-      mask = IN_CREATE|IN_ISDIR;
-    }
-
-  eflags = ih_mask_to_EventFlags (mask);
-  child = g_file_new_for_path (fullpath);
-  g_free (fullpath);
-
-  g_file_monitor_emit_event (G_FILE_MONITOR (sub->user_data),
-			     child, NULL, eflags);
-
-  g_object_unref (child);
+  g_file_monitor_source_handle_event (sub->user_data, G_FILE_MONITOR_EVENT_CREATED,
+                                      sub->filename, NULL, NULL, now);
+  g_file_monitor_source_handle_event (sub->user_data, G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT,
+                                      sub->filename, NULL, NULL, now);
 }
 
 /* Transforms a inotify event to a GVFS event. */
@@ -266,13 +261,15 @@ ih_mask_to_EventFlags (guint32 mask)
     case IN_ATTRIB:
       return G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED;
     case IN_MOVE_SELF:
-    case IN_MOVED_FROM:
     case IN_DELETE:
     case IN_DELETE_SELF:
       return G_FILE_MONITOR_EVENT_DELETED;
     case IN_CREATE:
-    case IN_MOVED_TO:
       return G_FILE_MONITOR_EVENT_CREATED;
+    case IN_MOVED_FROM:
+      return G_FILE_MONITOR_EVENT_MOVED_OUT;
+    case IN_MOVED_TO:
+      return G_FILE_MONITOR_EVENT_MOVED_IN;
     case IN_UNMOUNT:
       return G_FILE_MONITOR_EVENT_UNMOUNTED;
     case IN_Q_OVERFLOW:

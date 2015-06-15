@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding="ISO-8859-1"?>
+<?xml version='1.0' encoding="UTF-8"?>
 <!DOCTYPE part PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" 
                "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 ]>
@@ -24,7 +24,7 @@
   <chapter id="tools-vala">
     <title>Vala</title>
     <para>
-      From the <ulink url="http://live.gnome.org/Vala">Vala
+      From the <ulink url="https://wiki.gnome.org/Projects/Vala">Vala
       homepage</ulink> itself: <quote>Vala is a new programming language
       that aims to bring modern programming language features to GNOME
       developers without imposing any additional runtime requirements
@@ -43,8 +43,8 @@
     <title>GObject builder</title>
   
     <para>
-      In order to help a GObject class developper, one obvious idea is
-      to use some sort of templates for the skeletons.  and then run
+      In order to help a GObject class developer, one obvious idea is
+      to use some sort of templates for the skeletons and then run
       them through a special tool to generate the real C files.  <ulink
       url="http://www.5z.com/jirka/gob.html">GOB</ulink> (or GOB2) is
       such a tool. It is a preprocessor which can be used to build
@@ -73,24 +73,17 @@
       The reference counting scheme used by GObject does solve quite 
       a few memory management problems but also introduces new sources of bugs.
       In large applications, finding the exact spot where the reference count
-      of an Object is not properly handled can be very difficult. Hopefully, 
-      there exist a tool named <ulink url="http://refdbg.sf.net/">refdbg</ulink>
-      which can be used to automate the task of tracking down the location
-      of invalid code with regard to reference counting. This application 
-      intercepts the reference counting calls and tries to detect invalid behavior. 
-      It supports a filter-rule mechanism to let you trace only the objects you are 
-      interested in and it can be used together with GDB.
+      of an Object is not properly handled can be very difficult.
     </para>
     <para>
-      <indexterm><primary>g_trap_object_ref</primary></indexterm>
-      Note that if GObject has been compiled with <option>--enable-debug=yes</option>,
-      it exports a trap variable 
+      A useful tool in debugging reference counting problems is to
+      set breakpoints in gdb on g_object_ref() and g_object_unref().
+      Once you know the address of the object you are interested in,
+      you can make the breakpoints conditional:
       <programlisting>
-static volatile GObject *g_trap_object_ref;
+break g_object_ref if _object == 0xcafebabe
+break g_object_unref if _object == 0xcafebabe
       </programlisting>
-      If set to a non-NULL value, <link linkend="g-object-ref">g_object_ref</link>()
-      and <link linkend="g-object-unref">g_object_unref</link>() will be intercepted
-      when called with that value. 
     </para>
   </chapter>
     
@@ -106,7 +99,7 @@ static volatile GObject *g_trap_object_ref;
     (a small program part of the libxslt library) to generate the final HTML
     output. Other tools can be used to generate PDF output from the source XML.
     The following code excerpt shows what these comments look like.
-    <programlisting>
+      <informalexample><programlisting>
 /**
  * gtk_widget_freeze_child_notify:
  * @widget: a #GtkWidget
@@ -120,13 +113,13 @@ void
 gtk_widget_freeze_child_notify (GtkWidget *widget)
 {
 ...
-      </programlisting>
+      </programlisting></informalexample>
     </para>
     <para>
     Thorough
-    <ulink url="http://library.gnome.org/devel/gtk-doc-manual/stable/">documentation</ulink>
+    <ulink url="https://developer.gnome.org/gtk-doc-manual/stable/">documentation</ulink>
     on how to set up and use gtk-doc in your project is provided on the
-    <ulink url="http://library.gnome.org/devel/">GNOME developer website</ulink>.
+    <ulink url="https://developer.gnome.org/">GNOME developer website</ulink>.
     </para>
   </chapter>
 </part>

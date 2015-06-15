@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,12 +22,12 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_RAND_H__
+#define __G_RAND_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_RAND_H__
-#define __G_RAND_H__
 
 #include <glib/gtypes.h>
 
@@ -46,36 +44,52 @@ typedef struct _GRand           GRand;
  * double_range -> [begin..end)
  */
 
+GLIB_AVAILABLE_IN_ALL
 GRand*  g_rand_new_with_seed  (guint32  seed);
+GLIB_AVAILABLE_IN_ALL
 GRand*  g_rand_new_with_seed_array (const guint32 *seed,
 				    guint seed_length);
+GLIB_AVAILABLE_IN_ALL
 GRand*  g_rand_new            (void);
+GLIB_AVAILABLE_IN_ALL
 void    g_rand_free           (GRand   *rand_);
+GLIB_AVAILABLE_IN_ALL
 GRand*  g_rand_copy           (GRand   *rand_);
+GLIB_AVAILABLE_IN_ALL
 void    g_rand_set_seed       (GRand   *rand_,
 			       guint32  seed);
+GLIB_AVAILABLE_IN_ALL
 void	g_rand_set_seed_array (GRand   *rand_,
 			       const guint32 *seed,
 			       guint    seed_length);
 
 #define g_rand_boolean(rand_) ((g_rand_int (rand_) & (1 << 15)) != 0)
 
+GLIB_AVAILABLE_IN_ALL
 guint32 g_rand_int            (GRand   *rand_);
+GLIB_AVAILABLE_IN_ALL
 gint32  g_rand_int_range      (GRand   *rand_,
 			       gint32   begin,
 			       gint32   end);
+GLIB_AVAILABLE_IN_ALL
 gdouble g_rand_double         (GRand   *rand_);
+GLIB_AVAILABLE_IN_ALL
 gdouble g_rand_double_range   (GRand   *rand_,
 			       gdouble  begin,
 			       gdouble  end);
+GLIB_AVAILABLE_IN_ALL
 void    g_random_set_seed     (guint32  seed);
 
 #define g_random_boolean() ((g_random_int () & (1 << 15)) != 0)
 
+GLIB_AVAILABLE_IN_ALL
 guint32 g_random_int          (void);
+GLIB_AVAILABLE_IN_ALL
 gint32  g_random_int_range    (gint32   begin,
 			       gint32   end);
+GLIB_AVAILABLE_IN_ALL
 gdouble g_random_double       (void);
+GLIB_AVAILABLE_IN_ALL
 gdouble g_random_double_range (gdouble  begin,
 			       gdouble  end);
 

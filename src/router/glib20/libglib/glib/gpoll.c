@@ -16,9 +16,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -55,10 +53,8 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif /* HAVE_SYS_TIME_H */
-#ifdef GLIB_HAVE_SYS_POLL_H
-#  include <sys/poll.h>
-#  undef events	 /* AIX 4.1.5 & 4.3.2 define this for SVR3,4 compatibility */
-#  undef revents /* AIX 4.1.5 & 4.3.2 define this for SVR3,4 compatibility */
+#ifdef HAVE_POLL
+#  include <poll.h>
 
 /* The poll() emulation on OS/X doesn't handle fds=NULL, nfds=0,
  * so we prefer our own poll emulation.
@@ -68,9 +64,9 @@
 #endif
 
 #endif /* GLIB_HAVE_SYS_POLL_H */
-#ifdef HAVE_UNISTD_H
+#ifdef G_OS_UNIX
 #include <unistd.h>
-#endif /* HAVE_UNISTD_H */
+#endif /* G_OS_UNIX */
 #include <errno.h>
 
 #ifdef G_OS_WIN32
@@ -89,10 +85,6 @@ extern gboolean _g_main_poll_debug;
 #endif
 
 #ifdef HAVE_POLL
-/* SunOS has poll, but doesn't provide a prototype. */
-#  if defined (sun) && !defined (__SVR4)
-extern gint poll (struct pollfd *fds, guint nfsd, gint timeout);
-#  endif  /* !sun */
 
 /**
  * g_poll:
@@ -116,9 +108,9 @@ extern gint poll (struct pollfd *fds, guint nfsd, gint timeout);
  * file descriptor, but the situation is much more complicated on
  * Windows. If you need to use g_poll() in code that has to run on
  * Windows, the easiest solution is to construct all of your
- * #GPollFD<!-- -->s with g_io_channel_win32_make_pollfd().
+ * #GPollFDs with g_io_channel_win32_make_pollfd().
  *
- * Return value: the number of entries in @fds whose %revents fields
+ * Returns: the number of entries in @fds whose %revents fields
  * were filled in, or 0 if the operation timed out, or -1 on error or
  * if the call was interrupted.
  *
@@ -279,30 +271,17 @@ g_poll (GPollFD *fds,
       }
     else if (f->fd > 0)
       {
-	/* Don't add the same handle several times into the array, as
-	 * docs say that is not allowed, even if it actually does seem
-	 * to work.
-	 */
-	gint i;
-
-	for (i = 0; i < nhandles; i++)
-	  if (handles[i] == (HANDLE) f->fd)
-	    break;
-
-	if (i == nhandles)
-	  {
-	    if (nhandles == MAXIMUM_WAIT_OBJECTS)
-	      {
-		g_warning ("Too many handles to wait for!\n");
-		break;
-	      }
-	    else
-	      {
-		if (_g_main_poll_debug)
-		  g_print (" %p", (HANDLE) f->fd);
-		handles[nhandles++] = (HANDLE) f->fd;
-	      }
-	  }
+        if (nhandles == MAXIMUM_WAIT_OBJECTS)
+          {
+            g_warning ("Too many handles to wait for!\n");
+            break;
+          }
+        else
+          {
+            if (_g_main_poll_debug)
+              g_print (" %p", (HANDLE) f->fd);
+            handles[nhandles++] = (HANDLE) f->fd;
+          }
       }
 
   if (_g_main_poll_debug)
@@ -358,10 +337,6 @@ g_poll (GPollFD *fds,
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif /* HAVE_SYS_SELECT_H */
-
-#ifdef G_OS_BEOS
-#undef NO_FD_SET
-#endif /* G_OS_BEOS */
 
 #ifndef NO_FD_SET
 #  define SELECT_MASK fd_set

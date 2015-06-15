@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  *         David Zeuthen <davidz@redhat.com>
@@ -106,7 +104,7 @@ g_win32_mount_init (GWin32Mount *win32_mount)
 {
 }
 
-gchar *
+static gchar *
 _win32_get_displayname (const char *drive)
 {
   gunichar2 *wdrive = g_utf8_to_utf16 (drive, -1, NULL, NULL, NULL);
@@ -194,7 +192,7 @@ g_win32_mount_get_root (GMount *mount)
   return g_file_new_for_path (win32_mount->mount_path);
 }
 
-const char *
+static const char *
 _win32_drive_type_to_icon (int type, gboolean use_symbolic)
 {
   switch (type)

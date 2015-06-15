@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -86,11 +84,12 @@
 /**
  * GCompletionFunc:
  * @Param1: the completion item.
- * @Returns: the string corresponding to the item.
  *
  * Specifies the type of the function passed to g_completion_new(). It
  * should return the string corresponding to the given target item.
  * This is used when you use data structures as #GCompletion items.
+ *
+ * Returns: the string corresponding to the item.
  **/
 
 /**
@@ -98,14 +97,15 @@
  * @s1: string to compare with @s2.
  * @s2: string to compare with @s1.
  * @n: maximal number of bytes to compare.
- * @Returns: an integer less than, equal to, or greater than zero if
- *           the first @n bytes of @s1 is found, respectively, to be
- *           less than, to match, or to be greater than the first @n
- *           bytes of @s2.
  *
  * Specifies the type of the function passed to
  * g_completion_set_compare(). This is used when you use strings as
  * #GCompletion items.
+ *
+ * Returns: an integer less than, equal to, or greater than zero if
+ *          the first @n bytes of @s1 is found, respectively, to be
+ *          less than, to match, or to be greater than the first @n
+ *          bytes of @s2.
  **/
 
 static void completion_check_cache (GCompletion* cmp,
@@ -116,9 +116,10 @@ static void completion_check_cache (GCompletion* cmp,
  * @func: the function to be called to return the string representing
  *        an item in the #GCompletion, or %NULL if strings are going to
  *        be used as the #GCompletion items.
- * @Returns: the new #GCompletion.
  *
  * Creates a new #GCompletion.
+ *
+ * Returns: the new #GCompletion.
  **/
 GCompletion* 
 g_completion_new (GCompletionFunc func)
@@ -234,10 +235,10 @@ static void
 completion_check_cache (GCompletion* cmp,
 			gchar**	     new_prefix)
 {
-  register GList* list;
-  register gsize len;  
-  register gsize i;
-  register gsize plen;
+  GList* list;
+  gsize len;
+  gsize i;
+  gsize plen;
   gchar* postfix;
   gchar* s;
   
@@ -291,7 +292,7 @@ completion_check_cache (GCompletion* cmp,
  * You should use this function instead of g_completion_complete() if your 
  * items are UTF-8 strings.
  *
- * Return value: (element-type utf8) (transfer none): the list of items whose strings begin with @prefix. This should
+ * Returns: (element-type utf8) (transfer none): the list of items whose strings begin with @prefix. This should
  * not be changed.
  *
  * Since: 2.4
@@ -336,11 +337,12 @@ g_completion_complete_utf8 (GCompletion  *cmp,
  *              common to all items that matched @prefix, or %NULL if
  *              no items matched @prefix.  This string should be freed
  *              when no longer needed.
- * @Returns: (transfer none): the list of items whose strings begin with
- *           @prefix. This should not be changed.
  *
  * Attempts to complete the string @prefix using the #GCompletion
  * target items.
+ *
+ * Returns: (transfer none): the list of items whose strings begin with
+ *          @prefix. This should not be changed.
  *
  * Deprecated: 2.26: Rarely used API
  **/

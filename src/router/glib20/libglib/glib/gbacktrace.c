@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -40,30 +38,27 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
-#endif
 #include <sys/types.h>
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
-#endif
 
 #include <time.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#include <sys/wait.h>
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif /* HAVE_SYS_SELECT_H */
+#endif
 
-#include <string.h> /* for bzero on BSD systems */
+#include <string.h>
 
 #ifdef G_OS_WIN32
 #  define STRICT                /* Strict typing, please */
 #  define _WIN32_WINDOWS 0x0401 /* to get IsDebuggerPresent */
 #  include <windows.h>
 #  undef STRICT
+#else
+#  include <fcntl.h>
 #endif
 
 #include "gbacktrace.h"
@@ -89,24 +84,25 @@
 static void stack_trace (char **args);
 #endif
 
-extern volatile gboolean glib_on_error_halt;
+/* People want to hit this from their debugger... */
+GLIB_AVAILABLE_IN_ALL volatile gboolean glib_on_error_halt;
 volatile gboolean glib_on_error_halt = TRUE;
 
 /**
  * g_on_error_query:
- * @prg_name: the program name, needed by <command>gdb</command>
- *     for the [S]tack trace option. If @prg_name is %NULL, g_get_prgname()
- *     is called to get the program name (which will work correctly if
- *     gdk_init() or gtk_init() has been called)
+ * @prg_name: the program name, needed by gdb for the "[S]tack trace"
+ *     option. If @prg_name is %NULL, g_get_prgname() is called to get
+ *     the program name (which will work correctly if gdk_init() or
+ *     gtk_init() has been called)
  *
  * Prompts the user with
- * <computeroutput>[E]xit, [H]alt, show [S]tack trace or [P]roceed</computeroutput>.
+ * `[E]xit, [H]alt, show [S]tack trace or [P]roceed`.
  * This function is intended to be used for debugging use only.
  * The following example shows how it can be used together with
  * the g_log() functions.
  *
- * |[
- * &num;include &lt;glib.h&gt;
+ * |[<!-- language="C" -->
+ * #include <glib.h>
  *
  * static void
  * log_handler (const gchar   *log_domain,
@@ -128,17 +124,17 @@ volatile gboolean glib_on_error_halt = TRUE;
  *                      G_LOG_LEVEL_CRITICAL,
  *                      log_handler,
  *                      NULL);
- *   /&ast; ... &ast;/
+ *   ...
  * ]|
  *
- * If [E]xit is selected, the application terminates with a call
- * to <literal>_exit(0)</literal>.
+ * If "[E]xit" is selected, the application terminates with a call
+ * to _exit(0).
  *
- * If [S]tack trace is selected, g_on_error_stack_trace() is called.
- * This invokes <command>gdb</command>, which attaches to the current
- * process and shows a stack trace. The prompt is then shown again.
+ * If "[S]tack" trace is selected, g_on_error_stack_trace() is called.
+ * This invokes gdb, which attaches to the current process and shows
+ * a stack trace. The prompt is then shown again.
  *
- * If [P]roceed is selected, the function returns.
+ * If "[P]roceed" is selected, the function returns.
  *
  * This function may cause different actions on non-UNIX platforms.
  */
@@ -213,21 +209,21 @@ g_on_error_query (const gchar *prg_name)
 
 /**
  * g_on_error_stack_trace:
- * @prg_name: the program name, needed by <command>gdb</command>
- *     for the [S]tack trace option.
+ * @prg_name: the program name, needed by gdb for the "[S]tack trace"
+ *     option
  *
- * Invokes <command>gdb</command>, which attaches to the current
- * process and shows a stack trace. Called by g_on_error_query()
- * when the [S]tack trace option is selected. You can get the current
- * process's "program name" with g_get_prgname(), assuming that you
- * have called gtk_init() or gdk_init().
+ * Invokes gdb, which attaches to the current process and shows a
+ * stack trace. Called by g_on_error_query() when the "[S]tack trace"
+ * option is selected. You can get the current process's program name
+ * with g_get_prgname(), assuming that you have called gtk_init() or
+ * gdk_init().
  *
  * This function may cause different actions on non-UNIX platforms.
  */
 void
 g_on_error_stack_trace (const gchar *prg_name)
 {
-#if defined(G_OS_UNIX) || defined(G_OS_BEOS)
+#if defined(G_OS_UNIX)
   pid_t pid;
   gchar buf[16];
   gchar *args[4] = { "gdb", NULL, NULL, NULL };
@@ -297,12 +293,19 @@ stack_trace (char **args)
   pid = fork ();
   if (pid == 0)
     {
+      /* Save stderr for printing failure below */
+      int old_err = dup (2);
+      fcntl (old_err, F_SETFD, fcntl (old_err, F_GETFD) | FD_CLOEXEC);
+
       close (0); dup (in_fd[0]);   /* set the stdin to the in pipe */
       close (1); dup (out_fd[1]);  /* set the stdout to the out pipe */
       close (2); dup (out_fd[1]);  /* set the stderr to the out pipe */
 
       execvp (args[0], args);      /* exec gdb */
-      perror ("exec failed");
+
+      /* Print failure to original stderr */
+      close (2); dup (old_err);
+      perror ("exec gdb failed");
       _exit (0);
     }
   else if (pid == (pid_t) -1)

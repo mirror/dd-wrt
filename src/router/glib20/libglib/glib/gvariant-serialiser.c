@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -552,6 +550,7 @@ gvs_fixed_sized_array_is_normal (GVariantSerialised value)
  * normal form and that is the one that the serialiser must produce.
  */
 
+/* bytes may be NULL if (size == 0). */
 static inline gsize
 gvs_read_unaligned_le (guchar *bytes,
                        guint   size)
@@ -563,7 +562,8 @@ gvs_read_unaligned_le (guchar *bytes,
   } tmpvalue;
 
   tmpvalue.integer = 0;
-  memcpy (&tmpvalue.bytes, bytes, size);
+  if (bytes != NULL)
+    memcpy (&tmpvalue.bytes, bytes, size);
 
   return GSIZE_FROM_LE (tmpvalue.integer);
 }
@@ -918,7 +918,7 @@ gvs_tuple_get_child (GVariantSerialised value,
       child.size = fixed_size;
     }
 
-  else /* G_VARIANT_MEMEBER_ENDING_OFFSET */
+  else /* G_VARIANT_MEMBER_ENDING_OFFSET */
     end = gvs_read_unaligned_le (value.data + value.size -
                                  offset_size * (member_info->i + 2),
                                  offset_size);
@@ -1022,6 +1022,10 @@ gvs_tuple_is_normal (GVariantSerialised value)
   gsize length;
   gsize offset;
   gsize i;
+
+  /* as per the comment in gvs_tuple_get_child() */
+  if G_UNLIKELY (value.data == NULL && value.size != 0)
+    return FALSE;
 
   offset_size = gvs_get_offset_size (value.size);
   length = g_variant_type_info_n_members (value.type_info);

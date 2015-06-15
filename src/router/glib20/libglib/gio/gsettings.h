@@ -12,19 +12,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
 
+#ifndef __G_SETTINGS_H__
+#define __G_SETTINGS_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_SETTINGS_H__
-#define __G_SETTINGS_H__
 
 #include <gio/gsettingsschema.h>
 #include <gio/giotypes.h>
@@ -69,15 +67,22 @@ struct _GSettings
 };
 
 
+GLIB_AVAILABLE_IN_ALL
 GType                   g_settings_get_type                             (void);
 
+GLIB_DEPRECATED_IN_2_40_FOR(g_settings_schema_source_list_schemas)
 const gchar * const *   g_settings_list_schemas                         (void);
+GLIB_DEPRECATED_IN_2_40_FOR(g_settings_schema_source_list_schemas)
 const gchar * const *   g_settings_list_relocatable_schemas             (void);
+GLIB_AVAILABLE_IN_ALL
 GSettings *             g_settings_new                                  (const gchar        *schema_id);
+GLIB_AVAILABLE_IN_ALL
 GSettings *             g_settings_new_with_path                        (const gchar        *schema_id,
                                                                          const gchar        *path);
+GLIB_AVAILABLE_IN_ALL
 GSettings *             g_settings_new_with_backend                     (const gchar        *schema_id,
                                                                          GSettingsBackend   *backend);
+GLIB_AVAILABLE_IN_ALL
 GSettings *             g_settings_new_with_backend_and_path            (const gchar        *schema_id,
                                                                          GSettingsBackend   *backend,
                                                                          const gchar        *path);
@@ -85,81 +90,120 @@ GLIB_AVAILABLE_IN_2_32
 GSettings *             g_settings_new_full                             (GSettingsSchema    *schema,
                                                                          GSettingsBackend   *backend,
                                                                          const gchar        *path);
+GLIB_AVAILABLE_IN_ALL
 gchar **                g_settings_list_children                        (GSettings          *settings);
+GLIB_AVAILABLE_IN_ALL
 gchar **                g_settings_list_keys                            (GSettings          *settings);
+GLIB_DEPRECATED_IN_2_40_FOR(g_settings_schema_key_get_range)
 GVariant *              g_settings_get_range                            (GSettings          *settings,
                                                                          const gchar        *key);
+GLIB_DEPRECATED_IN_2_40_FOR(g_settings_schema_key_range_check)
 gboolean                g_settings_range_check                          (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          GVariant           *value);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_set_value                            (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          GVariant           *value);
+GLIB_AVAILABLE_IN_ALL
 GVariant *              g_settings_get_value                            (GSettings          *settings,
                                                                          const gchar        *key);
 
+GLIB_AVAILABLE_IN_2_40
+GVariant *              g_settings_get_user_value                       (GSettings          *settings,
+                                                                         const gchar        *key);
+GLIB_AVAILABLE_IN_2_40
+GVariant *              g_settings_get_default_value                    (GSettings          *settings,
+                                                                         const gchar        *key);
+
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_set                                  (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          const gchar        *format,
                                                                          ...);
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_get                                  (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          const gchar        *format,
                                                                          ...);
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_reset                                (GSettings          *settings,
                                                                          const gchar        *key);
 
+GLIB_AVAILABLE_IN_ALL
 gint                    g_settings_get_int                              (GSettings          *settings,
                                                                          const gchar        *key);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_set_int                              (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          gint                value);
+GLIB_AVAILABLE_IN_2_32
 guint                   g_settings_get_uint                             (GSettings          *settings,
                                                                          const gchar        *key);
+GLIB_AVAILABLE_IN_2_32
 gboolean                g_settings_set_uint                             (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          guint               value);
+GLIB_AVAILABLE_IN_ALL
 gchar *                 g_settings_get_string                           (GSettings          *settings,
                                                                          const gchar        *key);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_set_string                           (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          const gchar        *value);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_get_boolean                          (GSettings          *settings,
                                                                          const gchar        *key);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_set_boolean                          (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          gboolean            value);
+GLIB_AVAILABLE_IN_ALL
 gdouble                 g_settings_get_double                           (GSettings          *settings,
                                                                          const gchar        *key);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_set_double                           (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          gdouble             value);
+GLIB_AVAILABLE_IN_ALL
 gchar **                g_settings_get_strv                             (GSettings          *settings,
                                                                          const gchar        *key);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_set_strv                             (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          const gchar *const *value);
+GLIB_AVAILABLE_IN_ALL
 gint                    g_settings_get_enum                             (GSettings          *settings,
                                                                          const gchar        *key);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_set_enum                             (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          gint                value);
+GLIB_AVAILABLE_IN_ALL
 guint                   g_settings_get_flags                            (GSettings          *settings,
                                                                          const gchar        *key);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_set_flags                            (GSettings          *settings,
                                                                          const gchar        *key,
                                                                          guint               value);
+GLIB_AVAILABLE_IN_ALL
 GSettings *             g_settings_get_child                            (GSettings          *settings,
                                                                          const gchar        *name);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_is_writable                          (GSettings          *settings,
                                                                          const gchar        *name);
 
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_delay                                (GSettings          *settings);
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_apply                                (GSettings          *settings);
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_revert                               (GSettings          *settings);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_settings_get_has_unapplied                    (GSettings          *settings);
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_sync                                 (void);
 
 /**
@@ -220,7 +264,7 @@ typedef gboolean      (*GSettingsGetMapping)                            (GVarian
 
 /**
  * GSettingsBindFlags:
- * @G_SETTINGS_BIND_DEFAULT: Equivalent to <literal>G_SETTINGS_BIND_GET|G_SETTINGS_BIND_SET</literal>
+ * @G_SETTINGS_BIND_DEFAULT: Equivalent to `G_SETTINGS_BIND_GET|G_SETTINGS_BIND_SET`
  * @G_SETTINGS_BIND_GET: Update the #GObject property when the setting changes.
  *     It is an error to use this flag if the property is not writable.
  * @G_SETTINGS_BIND_SET: Update the setting when the #GObject property changes.
@@ -246,11 +290,13 @@ typedef enum
   G_SETTINGS_BIND_INVERT_BOOLEAN = (1<<4)
 } GSettingsBindFlags;
 
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_bind                                 (GSettings               *settings,
                                                                          const gchar             *key,
                                                                          gpointer                 object,
                                                                          const gchar             *property,
                                                                          GSettingsBindFlags       flags);
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_bind_with_mapping                    (GSettings               *settings,
                                                                          const gchar             *key,
                                                                          gpointer                 object,
@@ -260,11 +306,13 @@ void                    g_settings_bind_with_mapping                    (GSettin
                                                                          GSettingsBindSetMapping  set_mapping,
                                                                          gpointer                 user_data,
                                                                          GDestroyNotify           destroy);
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_bind_writable                        (GSettings               *settings,
                                                                          const gchar             *key,
                                                                          gpointer                 object,
                                                                          const gchar             *property,
                                                                          gboolean                 inverted);
+GLIB_AVAILABLE_IN_ALL
 void                    g_settings_unbind                               (gpointer                 object,
                                                                          const gchar             *property);
 
@@ -272,6 +320,7 @@ GLIB_AVAILABLE_IN_2_32
 GAction *               g_settings_create_action                        (GSettings               *settings,
                                                                          const gchar             *key);
 
+GLIB_AVAILABLE_IN_ALL
 gpointer                g_settings_get_mapped                           (GSettings               *settings,
                                                                          const gchar             *key,
                                                                          GSettingsGetMapping      mapping,

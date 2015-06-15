@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+static gboolean missing_locale = FALSE;
+
 typedef struct {
   const gchar **input;
   const gchar **sorted;
@@ -44,6 +46,12 @@ do_collate (gboolean for_file, gboolean use_key, const CollateTest *test)
   GArray *line_array;
   Line line;
   gint i;
+
+  if (missing_locale)
+    {
+      g_test_skip ("no en_US locale");
+      return;
+    }
 
   line_array = g_array_new (FALSE, FALSE, sizeof(Line));
   g_array_set_clear_func (line_array, (GDestroyNotify)clear_line);
@@ -188,13 +196,64 @@ const gchar *file_sorted1[] = {
   NULL
 };
 
+const gchar *input2[] = {
+  "file26",
+  "file100",
+  "file1",
+  "file:foo",
+  "a.a",
+  "file027",
+  "file10",
+  "aa.a",
+  "file5",
+  "file0027",
+  "a-.a",
+  "file0000",
+  "file000x",
+  NULL
+};
+
+const gchar *sorted2[] = {
+  "a-.a",
+  "a.a",
+  "aa.a",
+  "file0000",
+  "file000x",
+  "file0027",
+  "file027",
+  "file1",
+  "file10",
+  "file100",
+  "file26",
+  "file5",
+  "file:foo",
+  NULL
+};
+
+const gchar *file_sorted2[] = {
+  "a.a",
+  "a-.a",
+  "aa.a",
+  "file0000",
+  "file000x",
+  "file1",
+  "file5",
+  "file10",
+  "file26",
+  "file027",
+  "file0027",
+  "file100",
+  "file:foo",
+  NULL
+};
+
 int
 main (int argc, char *argv[])
 {
   gchar *path;
   gint i;
   const gchar *locale;
-  CollateTest test[2];
+  CollateTest test[3];
 
   g_test_init (&argc, &argv, NULL);
 
@@ -202,8 +261,10 @@ main (int argc, char *argv[])
   locale = setlocale (LC_ALL, "");
   if (locale == NULL || strcmp (locale, "en_US") != 0)
     {
-      g_test_message ("No suitable locale, skipping test");
-      return 0;
+      g_test_message ("No suitable locale, skipping tests");
+      missing_locale = TRUE;
+      /* let the tests run to completion so they show up as SKIP'd in TAP
+       * output */
     }
 
   test[0].input = input0;
@@ -212,6 +273,9 @@ main (int argc, char *argv[])
   test[1].input = input1;
   test[1].sorted = sorted1;
   test[1].file_sorted = file_sorted1;
+  test[2].input = input2;
+  test[2].sorted = sorted2;
+  test[2].file_sorted = file_sorted2;
 
   for (i = 0; i < G_N_ELEMENTS (test); i++)
     {
@@ -219,10 +283,10 @@ main (int argc, char *argv[])
       g_test_add_data_func (path, &test[i], test_collate);
       g_free (path);
       path = g_strdup_printf ("/unicode/collate-key/%d", i);
-      g_test_add_data_func (path, test, test_collate_key);
+      g_test_add_data_func (path, &test[i], test_collate_key);
       g_free (path);
       path = g_strdup_printf ("/unicode/collate-filename/%d", i);
-      g_test_add_data_func (path, test, test_collate_file);
+      g_test_add_data_func (path, &test[i], test_collate_file);
       g_free (path);
     }
 

@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -40,9 +38,9 @@
  * converting between Unicode and ASCII-encoded forms of
  * Internationalized Domain Names (IDNs).
  *
- * The <ulink
- * url="http://www.ietf.org/rfc/rfc3490.txt">Internationalized Domain
- * Names for Applications (IDNA)</ulink> standards allow for the use
+ * The
+ * [Internationalized Domain Names for Applications (IDNA)](http://www.ietf.org/rfc/rfc3490.txt)
+ * standards allow for the use
  * of Unicode domain names in applications, while providing
  * backward-compatibility with the old ASCII-only DNS, by defining an
  * ASCII-Compatible Encoding of any given Unicode name, which can be
@@ -415,7 +413,7 @@ idna_end_of_label (const gchar *str)
  * string containing no uppercase letters and not ending with a
  * trailing dot.
  *
- * Return value: an ASCII hostname, which must be freed, or %NULL if
+ * Returns: an ASCII hostname, which must be freed, or %NULL if
  * @hostname is in some way invalid.
  *
  * Since: 2.22
@@ -489,7 +487,7 @@ g_hostname_to_ascii (const gchar *hostname)
  * segments, and so it is possible for g_hostname_is_non_ascii() and
  * g_hostname_is_ascii_encoded() to both return %TRUE for a name.
  *
- * Return value: %TRUE if @hostname contains any non-ASCII characters
+ * Returns: %TRUE if @hostname contains any non-ASCII characters
  *
  * Since: 2.22
  **/
@@ -596,7 +594,7 @@ punycode_decode (const gchar *input,
  * Of course if @hostname is not an internationalized hostname, then
  * the canonical presentation form will be entirely ASCII.
  *
- * Return value: a UTF-8 hostname, which must be freed, or %NULL if
+ * Returns: a UTF-8 hostname, which must be freed, or %NULL if
  * @hostname is in some way invalid.
  *
  * Since: 2.22
@@ -660,7 +658,7 @@ g_hostname_to_unicode (const gchar *hostname)
  * segments, and so it is possible for g_hostname_is_non_ascii() and
  * g_hostname_is_ascii_encoded() to both return %TRUE for a name.
  *
- * Return value: %TRUE if @hostname contains any ASCII-encoded
+ * Returns: %TRUE if @hostname contains any ASCII-encoded
  * segments.
  *
  * Since: 2.22
@@ -687,7 +685,7 @@ g_hostname_is_ascii_encoded (const gchar *hostname)
  * Tests if @hostname is the string form of an IPv4 or IPv6 address.
  * (Eg, "192.168.0.1".)
  *
- * Return value: %TRUE if @hostname is an IP address
+ * Returns: %TRUE if @hostname is an IP address
  *
  * Since: 2.22
  **/

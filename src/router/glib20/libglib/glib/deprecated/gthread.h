@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,16 +22,18 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_DEPRECATED_THREAD_H__
+#define __G_DEPRECATED_THREAD_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
-#ifndef __G_DEPRECATED_THREAD_H__
-#define __G_DEPRECATED_THREAD_H__
-
 #include <glib/gthread.h>
 
 G_BEGIN_DECLS
+
+#ifndef G_DISABLE_DEPRECATED
 
 typedef enum
 {
@@ -43,6 +43,8 @@ typedef enum
   G_THREAD_PRIORITY_URGENT
 } GThreadPriority;
 
+#endif
+
 struct  _GThread
 {
   /*< private >*/
@@ -51,6 +53,8 @@ struct  _GThread
   gboolean joinable;
   GThreadPriority priority;
 };
+
+#ifndef G_DISABLE_DEPRECATED
 
 typedef struct _GThreadFunctions GThreadFunctions;
 struct _GThreadFunctions
@@ -120,6 +124,7 @@ void     g_thread_foreach      (GFunc             thread_func,
                                 gpointer          user_data);
 
 #ifndef G_OS_WIN32
+#include <sys/types.h>
 #include <pthread.h>
 #endif
 
@@ -143,8 +148,9 @@ typedef struct
 
 GLIB_DEPRECATED_IN_2_32_FOR(g_mutex_init)
 void    g_static_mutex_init           (GStaticMutex *mutex);
-GLIB_DEPRECATED_IN_2_32_FOR(g_mutex_free)
+GLIB_DEPRECATED_IN_2_32_FOR(g_mutex_clear)
 void    g_static_mutex_free           (GStaticMutex *mutex);
+GLIB_DEPRECATED_IN_2_32_FOR(GMutex)
 GMutex *g_static_mutex_get_mutex_impl (GStaticMutex *mutex);
 
 typedef struct _GStaticRecMutex GStaticRecMutex;
@@ -279,6 +285,8 @@ GLIB_DEPRECATED_IN_2_32
 gboolean        g_cond_timed_wait       (GCond          *cond,
                                          GMutex         *mutex,
                                          GTimeVal       *timeval);
+
+#endif
 
 G_END_DECLS
 

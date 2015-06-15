@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,6 +22,7 @@
 
 #include "config.h"
 
+#include "../glib/valgrind.h"
 #include <string.h>
 
 #include <ffi.h>
@@ -34,7 +33,7 @@
 #include "genums.h"
 #include "gvalue.h"
 #include "gvaluetypes.h"
-#include  "gtype-private.h"
+#include "gtype-private.h"
 
 
 /**
@@ -44,14 +43,14 @@
  *
  * A #GClosure represents a callback supplied by the programmer. It
  * will generally comprise a function of some kind and a marshaller
- * used to call it. It is the reponsibility of the marshaller to
- * convert the arguments for the invocation from #GValue<!-- -->s into
+ * used to call it. It is the responsibility of the marshaller to
+ * convert the arguments for the invocation from #GValues into
  * a suitable form, perform the callback on the converted arguments,
  * and transform the return value back into a #GValue.
  *
  * In the case of C programs, a closure usually just holds a pointer
  * to a function and maybe a data argument, and the marshaller
- * converts between #GValue<!-- --> and native C types. The GObject
+ * converts between #GValue and native C types. The GObject
  * library provides the #GCClosure type for this purpose. Bindings for
  * other languages need marshallers which convert between #GValue<!--
  * -->s and suitable representations in the runtime of the language in
@@ -63,9 +62,8 @@
  * marshaller for any closure which is connected to this
  * signal. GObject provides a number of C marshallers for this
  * purpose, see the g_cclosure_marshal_*() functions. Additional C
- * marshallers can be generated with the <link
- * linkend="glib-genmarshal">glib-genmarshal</link> utility.  Closures
- * can be explicitly connected to signals with
+ * marshallers can be generated with the [glib-genmarshal][glib-genmarshal]
+ * utility.  Closures can be explicitly connected to signals with
  * g_signal_connect_closure(), but it usually more convenient to let
  * GObject create a closure automatically by using one of the
  * g_signal_connect_*() functions which take a callback function/user
@@ -73,22 +71,17 @@
  *
  * Using closures has a number of important advantages over a simple
  * callback function/data pointer combination:
- * <itemizedlist>
- * <listitem><para>
- * Closures allow the callee to get the types of the callback parameters,
- * which means that language bindings don't have to write individual glue
- * for each callback type.
- * </para></listitem>
- * <listitem><para>
- * The reference counting of #GClosure makes it easy to handle reentrancy
- * right; if a callback is removed while it is being invoked, the closure
- * and its parameters won't be freed until the invocation finishes.
- * </para></listitem>
- * <listitem><para>
- * g_closure_invalidate() and invalidation notifiers allow callbacks to be
- * automatically removed when the objects they point to go away.
- * </para></listitem>
- * </itemizedlist>
+ * 
+ * - Closures allow the callee to get the types of the callback parameters,
+ *   which means that language bindings don't have to write individual glue
+ *   for each callback type.
+ *
+ * - The reference counting of #GClosure makes it easy to handle reentrancy
+ *   right; if a callback is removed while it is being invoked, the closure
+ *   and its parameters won't be freed until the invocation finishes.
+ *
+ * - g_closure_invalidate() and invalidation notifiers allow callbacks to be
+ *   automatically removed when the objects they point to go away.
  */
 
 #define	CLOSURE_MAX_REF_COUNT		((1 << 15) - 1)
@@ -151,14 +144,14 @@ enum {
 /**
  * g_closure_new_simple:
  * @sizeof_closure: the size of the structure to allocate, must be at least
- *                  <literal>sizeof (GClosure)</literal>
+ *                  `sizeof (GClosure)`
  * @data: data to store in the @data field of the newly allocated #GClosure
  *
  * Allocates a struct of the given size and initializes the initial
  * part as a #GClosure. This function is mainly useful when
  * implementing new types of closures.
  *
- * |[
+ * |[<!-- language="C" --> 
  * typedef struct _MyClosure MyClosure;
  * struct _MyClosure
  * {
@@ -197,14 +190,31 @@ GClosure*
 g_closure_new_simple (guint           sizeof_closure,
 		      gpointer        data)
 {
-  GRealClosure *real_closure;
   GClosure *closure;
+  gint private_size;
+  gchar *allocated;
 
   g_return_val_if_fail (sizeof_closure >= sizeof (GClosure), NULL);
-  sizeof_closure = sizeof_closure + sizeof (GRealClosure) - sizeof (GClosure);
 
-  real_closure = g_malloc0 (sizeof_closure);
-  closure = &real_closure->closure;
+  private_size = sizeof (GRealClosure) - sizeof (GClosure);
+
+  /* See comments in gtype.c about what's going on here... */
+  if (RUNNING_ON_VALGRIND)
+    {
+      private_size += sizeof (gpointer);
+
+      allocated = g_malloc0 (private_size + sizeof_closure + sizeof (gpointer));
+
+      *(gpointer *) (allocated + private_size + sizeof_closure) = allocated + sizeof (gpointer);
+
+      VALGRIND_MALLOCLIKE_BLOCK (allocated + private_size, sizeof_closure + sizeof (gpointer), 0, TRUE);
+      VALGRIND_MALLOCLIKE_BLOCK (allocated + sizeof (gpointer), private_size - sizeof (gpointer), 0, TRUE);
+    }
+  else
+    allocated = g_malloc0 (private_size + sizeof_closure);
+
+  closure = (GClosure *) (allocated + private_size);
+
   SET (closure, ref_count, 1);
   SET (closure, floating, TRUE);
   closure->data = data;
@@ -315,9 +325,8 @@ g_closure_set_meta_va_marshal (GClosure       *closure,
  * Sets the meta marshaller of @closure.  A meta marshaller wraps
  * @closure->marshal and modifies the way it is called in some
  * fashion. The most common use of this facility is for C callbacks.
- * The same marshallers (generated by <link
- * linkend="glib-genmarshal">glib-genmarshal</link>) are used
- * everywhere, but the way that we get the callback function
+ * The same marshallers (generated by [glib-genmarshal][glib-genmarshal]),
+ * are used everywhere, but the way that we get the callback function
  * differs. In most cases we want to use @closure->callback, but in
  * other cases we want to use some different technique to retrieve the
  * callback function.
@@ -598,7 +607,22 @@ g_closure_unref (GClosure *closure)
     {
       closure_invoke_notifiers (closure, FNOTIFY);
       g_free (closure->notifiers);
-      g_free (G_REAL_CLOSURE (closure));
+
+      /* See comments in gtype.c about what's going on here... */
+      if (RUNNING_ON_VALGRIND)
+        {
+          gchar *allocated;
+
+          allocated = (gchar *) G_REAL_CLOSURE (closure);
+          allocated -= sizeof (gpointer);
+
+          g_free (allocated);
+
+          VALGRIND_FREELIKE_BLOCK (allocated + sizeof (gpointer), 0);
+          VALGRIND_FREELIKE_BLOCK (closure, 0);
+        }
+      else
+        g_free (G_REAL_CLOSURE (closure));
     }
 }
 
@@ -608,27 +632,27 @@ g_closure_unref (GClosure *closure)
  *           still being held
  *
  * Takes over the initial ownership of a closure.  Each closure is
- * initially created in a <firstterm>floating</firstterm> state, which
- * means that the initial reference count is not owned by any caller.
- * g_closure_sink() checks to see if the object is still floating, and
- * if so, unsets the floating state and decreases the reference
- * count. If the closure is not floating, g_closure_sink() does
- * nothing. The reason for the existence of the floating state is to
- * prevent cumbersome code sequences like:
- * |[
+ * initially created in a "floating" state, which means that the initial
+ * reference count is not owned by any caller. g_closure_sink() checks
+ * to see if the object is still floating, and if so, unsets the
+ * floating state and decreases the reference count. If the closure
+ * is not floating, g_closure_sink() does nothing. The reason for the
+ * existence of the floating state is to prevent cumbersome code
+ * sequences like:
+ * |[<!-- language="C" --> 
  * closure = g_cclosure_new (cb_func, cb_data);
  * g_source_set_closure (source, closure);
- * g_closure_unref (closure); // XXX GObject doesn't really need this
+ * g_closure_unref (closure); // GObject doesn't really need this
  * ]|
  * Because g_source_set_closure() (and similar functions) take ownership of the
  * initial reference count, if it is unowned, we instead can write:
- * |[
+ * |[<!-- language="C" --> 
  * g_source_set_closure (source, g_cclosure_new (cb_func, cb_data));
  * ]|
  *
  * Generally, this function is used together with g_closure_ref(). Ane example
  * of storing a closure for later notification looks like:
- * |[
+ * |[<!-- language="C" --> 
  * static GClosure *notify_closure = NULL;
  * void
  * foo_notify_set_closure (GClosure *closure)
@@ -733,7 +757,7 @@ g_closure_remove_finalize_notifier (GClosure      *closure,
  *                doesn't return a value.
  * @n_param_values: the length of the @param_values array
  * @param_values: (array length=n_param_values): an array of
- *                #GValue<!-- -->s holding the arguments on which to
+ *                #GValues holding the arguments on which to
  *                invoke the callback of @closure
  * @invocation_hint: (allow-none): a context-dependent invocation hint
  *
@@ -855,7 +879,7 @@ _g_closure_invoke_va (GClosure       *closure,
  * @closure: a #GClosure
  * @marshal: a #GClosureMarshal function
  *
- * Sets the marshaller of @closure. The <literal>marshal_data</literal>
+ * Sets the marshaller of @closure. The `marshal_data`
  * of @marshal provides a way for a meta marshaller to provide additional
  * information to the marshaller. (See g_closure_set_meta_marshal().) For
  * GObject's C predefined marshallers (the g_cclosure_marshal_*()
@@ -1367,7 +1391,7 @@ va_to_ffi_type (GType gtype,
  * @return_gvalue: A #GValue to store the return value. May be %NULL
  *   if the callback of closure doesn't return a value.
  * @n_param_values: The length of the @param_values array.
- * @param_values: An array of #GValue<!-- -->s holding the arguments
+ * @param_values: An array of #GValues holding the arguments
  *   on which to invoke the callback of closure.
  * @invocation_hint: The invocation hint given as the last argument to
  *   g_closure_invoke().
@@ -1375,8 +1399,11 @@ va_to_ffi_type (GType gtype,
  *   marshaller, see g_closure_set_marshal() and
  *   g_closure_set_meta_marshal()
  *
- * A generic marshaller function implemented via <ulink
- * url="http://sourceware.org/libffi/">libffi</ulink>.
+ * A generic marshaller function implemented via
+ * [libffi](http://sourceware.org/libffi/).
+ *
+ * Normally this function is not passed explicitly to g_signal_new(),
+ * but used automatically by GLib when specifying a %NULL marshaller.
  *
  * Since: 2.30
  */
@@ -1457,6 +1484,26 @@ g_cclosure_marshal_generic (GClosure     *closure,
     value_from_ffi_type (return_gvalue, rvalue);
 }
 
+/**
+ * g_cclosure_marshal_generic_va:
+ * @closure: the #GClosure to which the marshaller belongs
+ * @return_value: (allow-none): a #GValue to store the return
+ *  value. May be %NULL if the callback of @closure doesn't return a
+ *  value.
+ * @instance: the instance on which the closure is invoked.
+ * @args_list: va_list of arguments to be passed to the closure.
+ * @marshal_data: (allow-none): additional data specified when
+ *  registering the marshaller, see g_closure_set_marshal() and
+ *  g_closure_set_meta_marshal()
+ * @n_params: the length of the @param_types array
+ * @param_types: (array length=n_params): the #GType of each argument from
+ *  @args_list.
+ *
+ * A generic #GVaClosureMarshal function implemented via
+ * [libffi](http://sourceware.org/libffi/).
+ *
+ * Since: 2.30
+ */
 void
 g_cclosure_marshal_generic_va (GClosure *closure,
 			       GValue   *return_value,
@@ -1495,9 +1542,6 @@ g_cclosure_marshal_generic_va (GClosure *closure,
   atypes = g_alloca (sizeof (ffi_type *) * n_args);
   args =  g_alloca (sizeof (gpointer) * n_args);
   storage = g_alloca (sizeof (va_arg_storage) * n_params);
-
-  if (tmpval_used)
-    enum_tmpval = g_alloca (sizeof (gint));
 
   if (G_CCLOSURE_SWAP_DATA (closure))
     {
@@ -1585,7 +1629,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, gpointer user_data)`.
  */
 
 /**
@@ -1599,7 +1643,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gboolean arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, gboolean arg1, gpointer user_data)`.
  */
 
 /**
@@ -1613,7 +1657,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gchar arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, gchar arg1, gpointer user_data)`.
  */
 
 /**
@@ -1627,7 +1671,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, guchar arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, guchar arg1, gpointer user_data)`.
  */
 
 /**
@@ -1641,7 +1685,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gint arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, gint arg1, gpointer user_data)`.
  */
 
 /**
@@ -1655,7 +1699,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, guint arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, guint arg1, gpointer user_data)`.
  */
 
 /**
@@ -1669,7 +1713,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, glong arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, glong arg1, gpointer user_data)`.
  */
 
 /**
@@ -1683,7 +1727,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gulong arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, gulong arg1, gpointer user_data)`.
  */
 
 /**
@@ -1697,7 +1741,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gint arg1, gpointer user_data)</literal> where the #gint parameter denotes an enumeration type..
+ * `void (*callback) (gpointer instance, gint arg1, gpointer user_data)` where the #gint parameter denotes an enumeration type..
  */
 
 /**
@@ -1711,7 +1755,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gint arg1, gpointer user_data)</literal> where the #gint parameter denotes a flags type.
+ * `void (*callback) (gpointer instance, gint arg1, gpointer user_data)` where the #gint parameter denotes a flags type.
  */
 
 /**
@@ -1725,7 +1769,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gfloat arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, gfloat arg1, gpointer user_data)`.
  */
 
 /**
@@ -1739,7 +1783,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gdouble arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, gdouble arg1, gpointer user_data)`.
  */
 
 /**
@@ -1753,7 +1797,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, const gchar *arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, const gchar *arg1, gpointer user_data)`.
  */
 
 /**
@@ -1767,7 +1811,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, GParamSpec *arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, GParamSpec *arg1, gpointer user_data)`.
  */
 
 /**
@@ -1781,7 +1825,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, GBoxed *arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, GBoxed *arg1, gpointer user_data)`.
  */
 
 /**
@@ -1795,7 +1839,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, gpointer arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, gpointer arg1, gpointer user_data)`.
  */
 
 /**
@@ -1809,7 +1853,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, GObject *arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, GObject *arg1, gpointer user_data)`.
  */
 
 /**
@@ -1823,7 +1867,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, GVariant *arg1, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, GVariant *arg1, gpointer user_data)`.
  *
  * Since: 2.26
  */
@@ -1839,7 +1883,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>void (*callback) (gpointer instance, guint arg1, gpointer arg2, gpointer user_data)</literal>.
+ * `void (*callback) (gpointer instance, guint arg1, gpointer arg2, gpointer user_data)`.
  */
 
 /**
@@ -1853,7 +1897,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>gboolean (*callback) (gpointer instance, gint arg1, gpointer user_data)</literal> where the #gint parameter
+ * `gboolean (*callback) (gpointer instance, gint arg1, gpointer user_data)` where the #gint parameter
  * denotes a flags type.
  */
 
@@ -1873,7 +1917,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>gchar* (*callback) (gpointer instance, GObject *arg1, gpointer arg2, gpointer user_data)</literal>.
+ * `gchar* (*callback) (gpointer instance, GObject *arg1, gpointer arg2, gpointer user_data)`.
  */
 /**
  * g_cclosure_marshal_BOOLEAN__OBJECT_BOXED_BOXED:
@@ -1886,7 +1930,7 @@ g_cclosure_marshal_generic_va (GClosure *closure,
  * @marshal_data: additional data specified when registering the marshaller
  *
  * A marshaller for a #GCClosure with a callback of type
- * <literal>gboolean (*callback) (gpointer instance, GBoxed *arg1, GBoxed *arg2, gpointer user_data)</literal>.
+ * `gboolean (*callback) (gpointer instance, GBoxed *arg1, GBoxed *arg2, gpointer user_data)`.
  *
  * Since: 2.26
  */

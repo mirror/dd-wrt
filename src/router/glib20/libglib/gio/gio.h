@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -38,6 +36,7 @@
 #include <gio/gasyncresult.h>
 #include <gio/gbufferedinputstream.h>
 #include <gio/gbufferedoutputstream.h>
+#include <gio/gbytesicon.h>
 #include <gio/gcancellable.h>
 #include <gio/gcharsetconverter.h>
 #include <gio/gcontenttype.h>
@@ -99,6 +98,7 @@
 #include <gio/gpollableinputstream.h>
 #include <gio/gpollableoutputstream.h>
 #include <gio/gpollableutils.h>
+#include <gio/gpropertyaction.h>
 #include <gio/gproxy.h>
 #include <gio/gproxyaddress.h>
 #include <gio/gproxyaddressenumerator.h>
@@ -111,6 +111,7 @@
 #include <gio/gsimpleaction.h>
 #include <gio/gsimpleactiongroup.h>
 #include <gio/gsimpleasyncresult.h>
+#include <gio/gsimpleiostream.h>
 #include <gio/gsimplepermission.h>
 #include <gio/gsocketaddressenumerator.h>
 #include <gio/gsocketaddress.h>
@@ -122,6 +123,10 @@
 #include <gio/gsocketlistener.h>
 #include <gio/gsocketservice.h>
 #include <gio/gsrvtarget.h>
+#include <gio/gsimpleproxyresolver.h>
+#include <gio/gtask.h>
+#include <gio/gsubprocess.h>
+#include <gio/gsubprocesslauncher.h>
 #include <gio/gtcpconnection.h>
 #include <gio/gtcpwrapperconnection.h>
 #include <gio/gtestdbus.h>
@@ -155,6 +160,11 @@
 #include <gio/gmenu.h>
 #include <gio/gmenuexporter.h>
 #include <gio/gdbusmenumodel.h>
+#include <gio/gnotification.h>
+#include <gio/glistmodel.h>
+#include <gio/gliststore.h>
+
+#include <gio/gio-autocleanups.h>
 
 #undef __GIO_GIO_H_INSIDE__
 

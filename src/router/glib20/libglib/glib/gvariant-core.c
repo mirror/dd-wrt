@@ -13,10 +13,10 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#include "config.h"
 
 #include <glib/gvariant-core.h>
 
@@ -484,8 +484,7 @@ g_variant_alloc (const GVariantType *type,
   return value;
 }
 
-/* -- internal -- */
-/* < internal >
+/**
  * g_variant_new_from_bytes:
  * @type: a #GVariantType
  * @bytes: a #GBytes
@@ -497,7 +496,9 @@ g_variant_alloc (const GVariantType *type,
  *
  * A reference is taken on @bytes.
  *
- * Returns: a new #GVariant with a floating reference
+ * Returns: (transfer none): a new #GVariant with a floating reference
+ *
+ * Since: 2.36
  */
 GVariant *
 g_variant_new_from_bytes (const GVariantType *type,
@@ -534,6 +535,8 @@ g_variant_new_from_bytes (const GVariantType *type,
 
   return value;
 }
+
+/* -- internal -- */
 
 /* < internal >
  * g_variant_new_from_children:
@@ -667,7 +670,7 @@ g_variant_ref (GVariant *value)
  * @value: a #GVariant
  *
  * #GVariant uses a floating reference count system.  All functions with
- * names starting with <literal>g_variant_new_</literal> return floating
+ * names starting with `g_variant_new_` return floating
  * references.
  *
  * Calling g_variant_ref_sink() on a #GVariant with a floating reference
@@ -841,7 +844,7 @@ g_variant_get_size (GVariant *value)
  * serialised data, you must know the type of the #GVariant, and (if the
  * machine might be different) the endianness of the machine that stored
  * it. As a result, file formats or network messages that incorporate
- * serialised #GVariant<!---->s must include this information either
+ * serialised #GVariants must include this information either
  * implicitly (for instance "the file always contains a
  * %G_VARIANT_TYPE_VARIANT and it is always in little-endian order") or
  * explicitly (by storing the type and/or endianness in addition to the
@@ -860,6 +863,43 @@ g_variant_get_data (GVariant *value)
 
   return value->contents.serialised.data;
 }
+
+/**
+ * g_variant_get_data_as_bytes:
+ * @value: a #GVariant
+ *
+ * Returns a pointer to the serialised form of a #GVariant instance.
+ * The semantics of this function are exactly the same as
+ * g_variant_get_data(), except that the returned #GBytes holds
+ * a reference to the variant data.
+ *
+ * Returns: (transfer full): A new #GBytes representing the variant data
+ *
+ * Since: 2.36
+ */ 
+GBytes *
+g_variant_get_data_as_bytes (GVariant *value)
+{
+  const gchar *bytes_data;
+  const gchar *data;
+  gsize bytes_size;
+  gsize size;
+
+  g_variant_lock (value);
+  g_variant_ensure_serialised (value);
+  g_variant_unlock (value);
+
+  bytes_data = g_bytes_get_data (value->contents.serialised.bytes, &bytes_size);
+  data = value->contents.serialised.data;
+  size = value->size;
+
+  if (data == bytes_data && size == bytes_size)
+    return g_bytes_ref (value->contents.serialised.bytes);
+  else
+    return g_bytes_new_from_bytes (value->contents.serialised.bytes,
+                                   data - bytes_data, size);
+}
+
 
 /**
  * g_variant_n_children:

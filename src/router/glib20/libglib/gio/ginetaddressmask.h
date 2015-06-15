@@ -13,17 +13,15 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_INET_ADDRESS_MASK_H__
+#define __G_INET_ADDRESS_MASK_H__
 
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_INET_ADDRESS_MASK_H__
-#define __G_INET_ADDRESS_MASK_H__
 
 #include <gio/giotypes.h>
 
@@ -64,14 +62,20 @@ GInetAddressMask *g_inet_address_mask_new             (GInetAddress      *addr,
 GLIB_AVAILABLE_IN_2_32
 GInetAddressMask *g_inet_address_mask_new_from_string (const gchar       *mask_string,
 						       GError           **error);
+GLIB_AVAILABLE_IN_2_32
 gchar            *g_inet_address_mask_to_string       (GInetAddressMask  *mask);
 
+GLIB_AVAILABLE_IN_2_32
 GSocketFamily     g_inet_address_mask_get_family      (GInetAddressMask  *mask);
+GLIB_AVAILABLE_IN_2_32
 GInetAddress     *g_inet_address_mask_get_address     (GInetAddressMask  *mask);
+GLIB_AVAILABLE_IN_2_32
 guint             g_inet_address_mask_get_length      (GInetAddressMask  *mask);
 
+GLIB_AVAILABLE_IN_2_32
 gboolean          g_inet_address_mask_matches         (GInetAddressMask  *mask,
 						       GInetAddress      *address);
+GLIB_AVAILABLE_IN_2_32
 gboolean          g_inet_address_mask_equal           (GInetAddressMask  *mask,
 						       GInetAddressMask  *mask2);
 

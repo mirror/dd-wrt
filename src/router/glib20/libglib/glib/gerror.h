@@ -14,16 +14,15 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with the Gnome Library; see the file COPYING.LIB.  If not,
- * write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- *   Boston, MA 02111-1307, USA.
+ * see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_ERROR_H__
+#define __G_ERROR_H__
 
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_ERROR_H__
-#define __G_ERROR_H__
 
 #include <stdarg.h>
 
@@ -37,8 +36,8 @@ G_BEGIN_DECLS
  * @code: error code, e.g. %G_FILE_ERROR_NOENT
  * @message: human-readable informative error message
  *
- * The <structname>GError</structname> structure contains
- * information about an error that has occurred.
+ * The `GError` structure contains information about
+ * an error that has occurred.
  */
 typedef struct _GError GError;
 
@@ -49,22 +48,28 @@ struct _GError
   gchar       *message;
 };
 
+GLIB_AVAILABLE_IN_ALL
 GError*  g_error_new           (GQuark         domain,
                                 gint           code,
                                 const gchar   *format,
                                 ...) G_GNUC_PRINTF (3, 4);
 
+GLIB_AVAILABLE_IN_ALL
 GError*  g_error_new_literal   (GQuark         domain,
                                 gint           code,
                                 const gchar   *message);
+GLIB_AVAILABLE_IN_ALL
 GError*  g_error_new_valist    (GQuark         domain,
                                 gint           code,
                                 const gchar   *format,
-                                va_list        args);
+                                va_list        args) G_GNUC_PRINTF(3, 0);
 
+GLIB_AVAILABLE_IN_ALL
 void     g_error_free          (GError        *error);
+GLIB_AVAILABLE_IN_ALL
 GError*  g_error_copy          (const GError  *error);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean g_error_matches       (const GError  *error,
                                 GQuark         domain,
                                 gint           code);
@@ -72,12 +77,14 @@ gboolean g_error_matches       (const GError  *error,
 /* if (err) *err = g_error_new(domain, code, format, ...), also has
  * some sanity checks.
  */
+GLIB_AVAILABLE_IN_ALL
 void     g_set_error           (GError       **err,
                                 GQuark         domain,
                                 gint           code,
                                 const gchar   *format,
                                 ...) G_GNUC_PRINTF (4, 5);
 
+GLIB_AVAILABLE_IN_ALL
 void     g_set_error_literal   (GError       **err,
                                 GQuark         domain,
                                 gint           code,
@@ -85,18 +92,22 @@ void     g_set_error_literal   (GError       **err,
 
 /* if (dest) *dest = src; also has some sanity checks.
  */
+GLIB_AVAILABLE_IN_ALL
 void     g_propagate_error     (GError       **dest,
 				GError        *src);
 
 /* if (err && *err) { g_error_free(*err); *err = NULL; } */
+GLIB_AVAILABLE_IN_ALL
 void     g_clear_error         (GError       **err);
 
 /* if (err) prefix the formatted string to the ->message */
+GLIB_AVAILABLE_IN_ALL
 void     g_prefix_error               (GError       **err,
                                        const gchar   *format,
                                        ...) G_GNUC_PRINTF (2, 3);
 
 /* g_propagate_error then g_error_prefix on dest */
+GLIB_AVAILABLE_IN_ALL
 void     g_propagate_prefixed_error   (GError       **dest,
                                        GError        *src,
                                        const gchar   *format,

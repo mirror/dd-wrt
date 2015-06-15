@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Matthias Clasen <mclasen@redhat.com>
  *         Clemens N. Buss <cebuzz@gmail.com>
@@ -61,6 +59,7 @@ static GParamSpec *properties[NUM_PROPERTIES] = { NULL, };
 static void g_emblemed_icon_icon_iface_init (GIconIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (GEmblemedIcon, g_emblemed_icon, G_TYPE_OBJECT,
+                         G_ADD_PRIVATE (GEmblemedIcon)
                          G_IMPLEMENT_INTERFACE (G_TYPE_ICON,
                          g_emblemed_icon_icon_iface_init))
 
@@ -72,7 +71,7 @@ g_emblemed_icon_finalize (GObject *object)
 
   emblemed = G_EMBLEMED_ICON (object);
 
-  g_object_unref (emblemed->priv->icon);
+  g_clear_object (&emblemed->priv->icon);
   g_list_free_full (emblemed->priv->emblems, g_object_unref);
 
   (*G_OBJECT_CLASS (g_emblemed_icon_parent_class)->finalize) (object);
@@ -133,16 +132,12 @@ g_emblemed_icon_class_init (GEmblemedIconClass *klass)
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
   g_object_class_install_properties (gobject_class, NUM_PROPERTIES, properties);
-
-  g_type_class_add_private (klass, sizeof (GEmblemedIconPrivate));
 }
 
 static void
 g_emblemed_icon_init (GEmblemedIcon *emblemed)
 {
-  emblemed->priv =
-    G_TYPE_INSTANCE_GET_PRIVATE (emblemed, G_TYPE_EMBLEMED_ICON,
-                                 GEmblemedIconPrivate);
+  emblemed->priv = g_emblemed_icon_get_instance_private (emblemed);
 }
 
 /**
@@ -201,7 +196,7 @@ g_emblemed_icon_get_icon (GEmblemedIcon *emblemed)
  * Gets the list of emblems for the @icon.
  *
  * Returns: (element-type Gio.Emblem) (transfer none): a #GList of
- *          #GEmblem <!-- -->s that is owned by @emblemed
+ *     #GEmblems that is owned by @emblemed
  *
  * Since: 2.18
  **/
@@ -255,7 +250,7 @@ g_emblem_comp (GEmblem *a,
  * @emblemed: a #GEmblemedIcon
  * @emblem: a #GEmblem
  *
- * Adds @emblem to the #GList of #GEmblem <!-- -->s.
+ * Adds @emblem to the #GList of #GEmblems.
  *
  * Since: 2.18
  **/
@@ -413,6 +408,54 @@ g_emblemed_icon_from_tokens (gchar  **tokens,
   return NULL;
 }
 
+static GVariant *
+g_emblemed_icon_serialize (GIcon *icon)
+{
+  GEmblemedIcon *emblemed_icon = G_EMBLEMED_ICON (icon);
+  GVariantBuilder builder;
+  GVariant *icon_data;
+  GList *node;
+
+  icon_data = g_icon_serialize (emblemed_icon->priv->icon);
+  if (!icon_data)
+    return NULL;
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(va(va{sv}))"));
+
+  g_variant_builder_add (&builder, "v", icon_data);
+  g_variant_unref (icon_data);
+
+  g_variant_builder_open (&builder, G_VARIANT_TYPE ("a(va{sv})"));
+  for (node = emblemed_icon->priv->emblems; node != NULL; node = node->next)
+    {
+      icon_data = g_icon_serialize (node->data);
+      if (icon_data)
+        {
+          /* We know how emblems serialise, so do a tweak here to
+           * reduce some of the variant wrapping and redundant storage
+           * of 'emblem' over and again...
+           */
+          if (g_variant_is_of_type (icon_data, G_VARIANT_TYPE ("(sv)")))
+            {
+              const gchar *name;
+              GVariant *content;
+
+              g_variant_get (icon_data, "(&sv)", &name, &content);
+
+              if (g_str_equal (name, "emblem") && g_variant_is_of_type (content, G_VARIANT_TYPE ("(va{sv})")))
+                g_variant_builder_add (&builder, "@(va{sv})", content);
+
+              g_variant_unref (content);
+            }
+
+          g_variant_unref (icon_data);
+        }
+    }
+  g_variant_builder_close (&builder);
+
+  return g_variant_new ("(sv)", "emblemed", g_variant_builder_end (&builder));
+}
+
 static void
 g_emblemed_icon_icon_iface_init (GIconIface *iface)
 {
@@ -420,4 +463,5 @@ g_emblemed_icon_icon_iface_init (GIconIface *iface)
   iface->equal = g_emblemed_icon_equal;
   iface->to_tokens = g_emblemed_icon_to_tokens;
   iface->from_tokens = g_emblemed_icon_from_tokens;
+  iface->serialize = g_emblemed_icon_serialize;
 }

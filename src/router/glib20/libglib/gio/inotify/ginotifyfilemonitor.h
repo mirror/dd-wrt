@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Alexander Larsson <alexl@redhat.com>
  *          John McCutchan <john@johnmccutchan.com> 
@@ -34,7 +32,7 @@
 
 G_BEGIN_DECLS
 
-#define G_TYPE_INOTIFY_FILE_MONITOR		(_g_inotify_file_monitor_get_type ())
+#define G_TYPE_INOTIFY_FILE_MONITOR		(g_inotify_file_monitor_get_type ())
 #define G_INOTIFY_FILE_MONITOR(o)		(G_TYPE_CHECK_INSTANCE_CAST ((o), G_TYPE_INOTIFY_FILE_MONITOR, GInotifyFileMonitor))
 #define G_INOTIFY_FILE_MONITOR_CLASS(k)		(G_TYPE_CHECK_CLASS_CAST ((k), G_TYPE_INOTIFY_FILE_MONITOR, GInotifyFileMonitorClass))
 #define G_IS_INOTIFY_FILE_MONITOR(o)		(G_TYPE_CHECK_INSTANCE_TYPE ((o), G_TYPE_INOTIFY_FILE_MONITOR))
@@ -47,7 +45,7 @@ struct _GInotifyFileMonitorClass {
   GLocalFileMonitorClass parent_class;
 };
 
-GType _g_inotify_file_monitor_get_type (void);
+GType g_inotify_file_monitor_get_type (void);
 
 G_END_DECLS
 

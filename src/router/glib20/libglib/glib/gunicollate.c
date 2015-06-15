@@ -14,8 +14,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with the Gnome Library; see the file COPYING.LIB.  If not,
- * write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- *   Boston, MA 02111-1307, USA.
+ * see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -66,14 +65,14 @@ msc_strxfrm_wrapper (char       *string1,
  * @str2: a UTF-8 encoded string
  * 
  * Compares two strings for ordering using the linguistically
- * correct rules for the <link linkend="setlocale">current locale</link>. 
+ * correct rules for the [current locale][setlocale].
  * When sorting a large number of strings, it will be significantly 
  * faster to obtain collation keys with g_utf8_collate_key() and 
  * compare the keys with strcmp() when sorting instead of sorting 
  * the original strings.
  * 
- * Return value: &lt; 0 if @str1 compares before @str2, 
- *   0 if they compare equal, &gt; 0 if @str1 compares after @str2.
+ * Returns: < 0 if @str1 compares before @str2, 
+ *   0 if they compare equal, > 0 if @str1 compares after @str2.
  **/
 gint
 g_utf8_collate (const gchar *str1,
@@ -364,10 +363,9 @@ carbon_collate_key_for_filename (const gchar *str,
  * with strcmp() will always be the same as comparing the two 
  * original keys with g_utf8_collate().
  * 
- * Note that this function depends on the 
- * <link linkend="setlocale">current locale</link>.
+ * Note that this function depends on the [current locale][setlocale].
  * 
- * Return value: a newly allocated string. This string should
+ * Returns: a newly allocated string. This string should
  *   be freed with g_free() when you are done with it.
  **/
 gchar *
@@ -397,12 +395,12 @@ g_utf8_collate_key (const gchar *str,
   result_wc = g_new (wchar_t, xfrm_len + 1);
   wcsxfrm (result_wc, (wchar_t *)str_norm, xfrm_len + 1);
 
-  for (i=0; i < xfrm_len; i++)
+  for (i = 0; i < xfrm_len; i++)
     result_len += utf8_encode (NULL, result_wc[i]);
 
   result = g_malloc (result_len + 1);
   result_len = 0;
-  for (i=0; i < xfrm_len; i++)
+  for (i = 0; i < xfrm_len; i++)
     result_len += utf8_encode (result + result_len, result_wc[i]);
 
   result[result_len] = '\0';
@@ -471,9 +469,9 @@ g_utf8_collate_key (const gchar *str,
 }
 
 /* This is a collation key that is very very likely to sort before any
-   collation key that libc strxfrm generates. We use this before any
-   special case (dot or number) to make sure that its sorted before
-   anything else.
+ * collation key that libc strxfrm generates. We use this before any
+ * special case (dot or number) to make sure that its sorted before
+ * anything else.
  */
 #define COLLATION_SENTINEL "\1\1\1"
 
@@ -492,15 +490,14 @@ g_utf8_collate_key (const gchar *str,
  * would like to treat numbers intelligently so that "file1" "file10" "file5"
  * is sorted as "file1" "file5" "file10".
  * 
- * Note that this function depends on the 
- * <link linkend="setlocale">current locale</link>.
+ * Note that this function depends on the [current locale][setlocale].
  *
- * Return value: a newly allocated string. This string should
+ * Returns: a newly allocated string. This string should
  *   be freed with g_free() when you are done with it.
  *
  * Since: 2.8
  */
-gchar*
+gchar *
 g_utf8_collate_key_for_filename (const gchar *str,
 				 gssize       len)
 {

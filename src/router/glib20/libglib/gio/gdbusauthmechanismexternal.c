@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -23,10 +21,6 @@
 #include "config.h"
 
 #include <string.h>
-#include <sys/types.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #include "gdbusauthmechanismexternal.h"
 #include "gcredentials.h"
@@ -77,7 +71,7 @@ static void                     mechanism_client_shutdown           (GDBusAuthMe
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-G_DEFINE_TYPE (GDBusAuthMechanismExternal, _g_dbus_auth_mechanism_external, G_TYPE_DBUS_AUTH_MECHANISM);
+G_DEFINE_TYPE_WITH_PRIVATE (GDBusAuthMechanismExternal, _g_dbus_auth_mechanism_external, G_TYPE_DBUS_AUTH_MECHANISM)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -95,8 +89,6 @@ _g_dbus_auth_mechanism_external_class_init (GDBusAuthMechanismExternalClass *kla
 {
   GObjectClass *gobject_class;
   GDBusAuthMechanismClass *mechanism_class;
-
-  g_type_class_add_private (klass, sizeof (GDBusAuthMechanismExternalPrivate));
 
   gobject_class = G_OBJECT_CLASS (klass);
   gobject_class->finalize = _g_dbus_auth_mechanism_external_finalize;
@@ -123,9 +115,7 @@ _g_dbus_auth_mechanism_external_class_init (GDBusAuthMechanismExternalClass *kla
 static void
 _g_dbus_auth_mechanism_external_init (GDBusAuthMechanismExternal *mechanism)
 {
-  mechanism->priv = G_TYPE_INSTANCE_GET_PRIVATE (mechanism,
-                                                 G_TYPE_DBUS_AUTH_MECHANISM_EXTERNAL,
-                                                 GDBusAuthMechanismExternalPrivate);
+  mechanism->priv = _g_dbus_auth_mechanism_external_get_instance_private (mechanism);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -333,7 +323,7 @@ mechanism_client_initiate (GDBusAuthMechanism   *mechanism,
                            gsize                *out_initial_response_len)
 {
   GDBusAuthMechanismExternal *m = G_DBUS_AUTH_MECHANISM_EXTERNAL (mechanism);
-  gchar *initial_response;
+  gchar *initial_response = NULL;
   GCredentials *credentials;
 
   g_return_val_if_fail (G_IS_DBUS_AUTH_MECHANISM_EXTERNAL (mechanism), NULL);

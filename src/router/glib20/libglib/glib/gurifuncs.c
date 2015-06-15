@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -39,8 +37,9 @@
  * @short_description: manipulating URIs
  *
  * Functions for manipulating Universal Resource Identifiers (URIs) as
- * defined by <ulink url="http://www.ietf.org/rfc/rfc3986.txt">
- * RFC 3986</ulink>. It is highly recommended that you have read and
+ * defined by
+ * [RFC 3986](http://www.ietf.org/rfc/rfc3986.txt).
+ * It is highly recommended that you have read and
  * understand RFC 3986 for understanding this API.
  */
 
@@ -139,7 +138,8 @@ g_uri_unescape_segment (const char *escaped_string,
 /**
  * g_uri_unescape_string:
  * @escaped_string: an escaped string to be unescaped.
- * @illegal_characters: an optional string of illegal characters not to be allowed.
+ * @illegal_characters: (allow-none): a string of illegal characters not to be
+ *      allowed, or %NULL.
  * 
  * Unescapes a whole escaped string.
  * 
@@ -166,9 +166,9 @@ g_uri_unescape_string (const char *escaped_string,
  * @uri: a valid URI.
  * 
  * Gets the scheme portion of a URI string. RFC 3986 decodes the scheme as:
- * <programlisting>
+ * |[
  * URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ] 
- * </programlisting>
+ * ]|
  * Common schemes include "file", "http", "svn+ssh", etc.
  * 
  * Returns: The "Scheme" component of the URI, or %NULL on error. 
@@ -217,8 +217,8 @@ g_uri_parse_scheme (const char  *uri)
 /**
  * g_uri_escape_string:
  * @unescaped: the unescaped input string.
- * @reserved_chars_allowed: a string of reserved characters that are
- *      allowed to be used, or %NULL.
+ * @reserved_chars_allowed: (allow-none): a string of reserved characters that
+ *      are allowed to be used, or %NULL.
  * @allow_utf8: %TRUE if the result can include UTF-8 characters.
  * 
  * Escapes a string for use in a URI.

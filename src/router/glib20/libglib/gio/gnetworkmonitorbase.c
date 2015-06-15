@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -30,27 +28,18 @@
 #include "gnetworkmonitor.h"
 #include "gsocketaddressenumerator.h"
 #include "gsocketconnectable.h"
+#include "gtask.h"
 #include "glibintl.h"
 
 static void g_network_monitor_base_iface_init (GNetworkMonitorInterface *iface);
 static void g_network_monitor_base_initable_iface_init (GInitableIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (GNetworkMonitorBase, g_network_monitor_base, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-                                                g_network_monitor_base_initable_iface_init)
-                         G_IMPLEMENT_INTERFACE (G_TYPE_NETWORK_MONITOR,
-                                                g_network_monitor_base_iface_init)
-                         _g_io_modules_ensure_extension_points_registered ();
-                         g_io_extension_point_implement (G_NETWORK_MONITOR_EXTENSION_POINT_NAME,
-                                                         g_define_type_id,
-                                                         "base",
-                                                         0))
-
 enum
 {
   PROP_0,
 
-  PROP_NETWORK_AVAILABLE
+  PROP_NETWORK_AVAILABLE,
+  PROP_CONNECTIVITY
 };
 
 struct _GNetworkMonitorBasePrivate
@@ -69,13 +58,22 @@ static guint network_changed_signal = 0;
 
 static void queue_network_changed (GNetworkMonitorBase *monitor);
 
+G_DEFINE_TYPE_WITH_CODE (GNetworkMonitorBase, g_network_monitor_base, G_TYPE_OBJECT,
+                         G_ADD_PRIVATE (GNetworkMonitorBase)
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+                                                g_network_monitor_base_initable_iface_init)
+                         G_IMPLEMENT_INTERFACE (G_TYPE_NETWORK_MONITOR,
+                                                g_network_monitor_base_iface_init)
+                         _g_io_modules_ensure_extension_points_registered ();
+                         g_io_extension_point_implement (G_NETWORK_MONITOR_EXTENSION_POINT_NAME,
+                                                         g_define_type_id,
+                                                         "base",
+                                                         0))
+
 static void
 g_network_monitor_base_init (GNetworkMonitorBase *monitor)
 {
-  monitor->priv = G_TYPE_INSTANCE_GET_PRIVATE (monitor,
-                                               G_TYPE_NETWORK_MONITOR_BASE,
-                                               GNetworkMonitorBasePrivate);
-
+  monitor->priv = g_network_monitor_base_get_instance_private (monitor);
   monitor->priv->networks = g_ptr_array_new_with_free_func (g_object_unref);
   monitor->priv->context = g_main_context_get_thread_default ();
   if (monitor->priv->context)
@@ -117,12 +115,20 @@ g_network_monitor_base_get_property (GObject    *object,
 
   switch (prop_id)
     {
-      case PROP_NETWORK_AVAILABLE:
-        g_value_set_boolean (value, monitor->priv->is_available);
-        break;
+    case PROP_NETWORK_AVAILABLE:
+      g_value_set_boolean (value, monitor->priv->is_available);
+      break;
 
-      default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    case PROP_CONNECTIVITY:
+      g_value_set_enum (value,
+                        monitor->priv->is_available ?
+                        G_NETWORK_CONNECTIVITY_FULL :
+                        G_NETWORK_CONNECTIVITY_LOCAL);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
     }
 
 }
@@ -149,13 +155,32 @@ g_network_monitor_base_class_init (GNetworkMonitorBaseClass *monitor_class)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (monitor_class);
 
-  g_type_class_add_private (monitor_class, sizeof (GNetworkMonitorBasePrivate));
-
   gobject_class->constructed  = g_network_monitor_base_constructed;
   gobject_class->get_property = g_network_monitor_base_get_property;
   gobject_class->finalize     = g_network_monitor_base_finalize;
 
   g_object_class_override_property (gobject_class, PROP_NETWORK_AVAILABLE, "network-available");
+  g_object_class_override_property (gobject_class, PROP_CONNECTIVITY, "connectivity");
+}
+
+static gboolean
+g_network_monitor_base_can_reach_sockaddr (GNetworkMonitorBase *base,
+                                           GSocketAddress *sockaddr)
+{
+  GInetAddress *iaddr;
+  int i;
+
+  if (!G_IS_INET_SOCKET_ADDRESS (sockaddr))
+    return FALSE;
+
+  iaddr = g_inet_socket_address_get_address (G_INET_SOCKET_ADDRESS (sockaddr));
+  for (i = 0; i < base->priv->networks->len; i++)
+    {
+      if (g_inet_address_mask_matches (base->priv->networks->pdata[i], iaddr))
+        return TRUE;
+    }
+
+  return FALSE;
 }
 
 static gboolean
@@ -164,15 +189,11 @@ g_network_monitor_base_can_reach (GNetworkMonitor      *monitor,
                                   GCancellable         *cancellable,
                                   GError              **error)
 {
-  GNetworkMonitorBasePrivate *priv = G_NETWORK_MONITOR_BASE (monitor)->priv;
+  GNetworkMonitorBase *base = G_NETWORK_MONITOR_BASE (monitor);
   GSocketAddressEnumerator *enumerator;
   GSocketAddress *addr;
 
-  if (priv->have_ipv4_default_route &&
-      priv->have_ipv6_default_route)
-    return TRUE;
-
-  if (priv->networks->len == 0)
+  if (base->priv->networks->len == 0)
     {
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NETWORK_UNREACHABLE,
                            _("Network unreachable"));
@@ -188,23 +209,21 @@ g_network_monitor_base_can_reach (GNetworkMonitor      *monitor,
       return FALSE;
     }
 
+  if (base->priv->have_ipv4_default_route &&
+      base->priv->have_ipv6_default_route)
+    {
+      g_object_unref (enumerator);
+      g_object_unref (addr);
+      return TRUE;
+    }
+
   while (addr)
     {
-      if (G_IS_INET_SOCKET_ADDRESS (addr))
+      if (g_network_monitor_base_can_reach_sockaddr (base, addr))
         {
-          GInetAddress *iaddr;
-          int i;
-
-          iaddr = g_inet_socket_address_get_address (G_INET_SOCKET_ADDRESS (addr));
-          for (i = 0; i < priv->networks->len; i++)
-            {
-              if (g_inet_address_mask_matches (priv->networks->pdata[i], iaddr))
-                {
-                  g_object_unref (addr);
-                  g_object_unref (enumerator);
-                  return TRUE;
-                }
-            }
+          g_object_unref (addr);
+          g_object_unref (enumerator);
+          return TRUE;
         }
 
       g_object_unref (addr);
@@ -221,9 +240,92 @@ g_network_monitor_base_can_reach (GNetworkMonitor      *monitor,
 }
 
 static void
+can_reach_async_got_address (GObject      *object,
+                             GAsyncResult *result,
+                             gpointer      user_data)
+{
+  GSocketAddressEnumerator *enumerator = G_SOCKET_ADDRESS_ENUMERATOR (object);
+  GTask *task = user_data;
+  GNetworkMonitorBase *base = g_task_get_source_object (task);
+  GSocketAddress *addr;
+  GError *error = NULL;
+
+  addr = g_socket_address_enumerator_next_finish (enumerator, result, &error);
+  if (!addr)
+    {
+      if (error)
+        {
+          /* Either the user cancelled, or DNS resolution failed */
+          g_task_return_error (task, error);
+          g_object_unref (task);
+          return;
+        }
+      else
+        {
+          /* Resolved all addresses, none matched */
+          g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_HOST_UNREACHABLE,
+                                   _("Host unreachable"));
+          g_object_unref (task);
+          return;
+        }
+    }
+
+  if (g_network_monitor_base_can_reach_sockaddr (base, addr))
+    {
+      g_object_unref (addr);
+      g_task_return_boolean (task, TRUE);
+      g_object_unref (task);
+      return;
+    }
+  g_object_unref (addr);
+
+  g_socket_address_enumerator_next_async (enumerator,
+                                          g_task_get_cancellable (task),
+                                          can_reach_async_got_address, task);
+}
+
+static void
+g_network_monitor_base_can_reach_async (GNetworkMonitor     *monitor,
+                                        GSocketConnectable  *connectable,
+                                        GCancellable        *cancellable,
+                                        GAsyncReadyCallback  callback,
+                                        gpointer             user_data)
+{
+  GTask *task;
+  GSocketAddressEnumerator *enumerator;
+
+  task = g_task_new (monitor, cancellable, callback, user_data);
+
+  if (G_NETWORK_MONITOR_BASE (monitor)->priv->networks->len == 0)
+    {
+      g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_NETWORK_UNREACHABLE,
+                               _("Network unreachable"));
+      g_object_unref (task);
+      return;
+    }
+
+  enumerator = g_socket_connectable_proxy_enumerate (connectable);
+  g_socket_address_enumerator_next_async (enumerator, cancellable,
+                                          can_reach_async_got_address, task);
+  g_object_unref (enumerator);
+}
+
+static gboolean
+g_network_monitor_base_can_reach_finish (GNetworkMonitor  *monitor,
+                                         GAsyncResult     *result,
+                                         GError          **error)
+{
+  g_return_val_if_fail (g_task_is_valid (result, monitor), FALSE);
+
+  return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+static void
 g_network_monitor_base_iface_init (GNetworkMonitorInterface *monitor_iface)
 {
   monitor_iface->can_reach = g_network_monitor_base_can_reach;
+  monitor_iface->can_reach_async = g_network_monitor_base_can_reach_async;
+  monitor_iface->can_reach_finish = g_network_monitor_base_can_reach_finish;
 
   network_changed_signal = g_signal_lookup ("network-changed", G_TYPE_NETWORK_MONITOR);
 }
@@ -287,6 +389,7 @@ queue_network_changed (GNetworkMonitorBase *monitor)
        */
       g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
       g_source_set_callback (source, emit_network_changed, monitor, NULL);
+      g_source_set_name (source, "[gio] emit_network_changed");
       g_source_attach (source, monitor->priv->context);
       monitor->priv->network_changed_source = source;
     }

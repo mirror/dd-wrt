@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -106,7 +104,7 @@ pokee_method_call (GDBusConnection       *connection,
   g_assert_cmpstr (method_name, ==, "Poke");
 
   g_variant_get (parameters, "(&s)", &str);
-  ret = g_strdup_printf ("You poked me with: `%s'", str);
+  ret = g_strdup_printf ("You poked me with: '%s'", str);
   g_dbus_method_invocation_return_value (invocation, g_variant_new ("(s)", ret));
   g_free (ret);
 }
@@ -219,6 +217,8 @@ test_non_socket (void)
       break;
     }
 
+  /* This is #ifdef G_OS_UNIX anyway, so just use g_test_trap_fork() */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
   if (!g_test_trap_fork (0, 0))
     {
       /* parent */
@@ -229,6 +229,7 @@ test_non_socket (void)
       g_assert_cmpint (kill (first_child, SIGTERM), ==, 0);
       return;
     }
+  G_GNUC_END_IGNORE_DEPRECATIONS;
 
   /* second child */
 
@@ -266,7 +267,7 @@ test_non_socket (void)
                                      &error);
   g_assert_no_error (error);
   g_variant_get (ret, "(&s)", &str);
-  g_assert_cmpstr (str, ==, "You poked me with: `I am the POKER!'");
+  g_assert_cmpstr (str, ==, "You poked me with: 'I am the POKER!'");
   g_variant_unref (ret);
 
   g_object_unref (connection);
@@ -291,7 +292,6 @@ main (int   argc,
 {
   gint ret;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/gdbus/non-socket", test_non_socket);

@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -95,7 +93,7 @@ do_cmdline_test (gconstpointer d)
   gboolean res;
 
   err = NULL;
-g_print ("test cmdline: %s\n", test->cmdline);
+  g_printerr ("test cmdline: %s\n", test->cmdline);
   res = g_shell_parse_argv (test->cmdline, &argc, &argv, &err);
   if (test->error_code == -1)
     {

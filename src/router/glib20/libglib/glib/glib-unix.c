@@ -14,14 +14,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Colin Walters <walters@verbum.org>
  */
 
 #include "config.h"
+
+/* To make bionic export pipe2() */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
 
 #include "glib-unix.h"
 #include "gmain-internal.h"
@@ -60,19 +63,17 @@ g_unix_set_error_from_errno (GError **error,
 /**
  * g_unix_open_pipe:
  * @fds: Array of two integers
- * @flags: Bitfield of file descriptor flags, see "man 2 fcntl"
+ * @flags: Bitfield of file descriptor flags, as for fcntl()
  * @error: a #GError
  *
  * Similar to the UNIX pipe() call, but on modern systems like Linux
  * uses the pipe2() system call, which atomically creates a pipe with
- * the configured flags.  The only supported flag currently is
- * <literal>FD_CLOEXEC</literal>.  If for example you want to configure
- * <literal>O_NONBLOCK</literal>, that must still be done separately with
- * fcntl().
+ * the configured flags. The only supported flag currently is
+ * %FD_CLOEXEC. If for example you want to configure %O_NONBLOCK, that
+ * must still be done separately with fcntl().
  *
- * <note>This function does *not* take <literal>O_CLOEXEC</literal>, it takes
- * <literal>FD_CLOEXEC</literal> as if for fcntl(); these are
- * different on Linux/glibc.</note>
+ * This function does not take %O_CLOEXEC, it takes %FD_CLOEXEC as if
+ * for fcntl(); these are different on Linux/glibc.
  *
  * Returns: %TRUE on success, %FALSE if not (and errno will be set).
  *
@@ -105,7 +106,11 @@ g_unix_open_pipe (int     *fds,
   ecode = pipe (fds);
   if (ecode == -1)
     return g_unix_set_error_from_errno (error, errno);
-  ecode = fcntl (fds[0], flags);
+
+  if (flags == 0)
+    return TRUE;
+
+  ecode = fcntl (fds[0], F_SETFD, flags);
   if (ecode == -1)
     {
       int saved_errno = errno;
@@ -113,7 +118,7 @@ g_unix_open_pipe (int     *fds,
       close (fds[1]);
       return g_unix_set_error_from_errno (error, saved_errno);
     }
-  ecode = fcntl (fds[1], flags);
+  ecode = fcntl (fds[1], F_SETFD, flags);
   if (ecode == -1)
     {
       int saved_errno = errno;
@@ -131,8 +136,8 @@ g_unix_open_pipe (int     *fds,
  * @error: a #GError
  *
  * Control the non-blocking state of the given file descriptor,
- * according to @nonblock.  On most systems this uses <literal>O_NONBLOCK</literal>, but
- * on some older ones may use <literal>O_NDELAY</literal>.
+ * according to @nonblock. On most systems this uses %O_NONBLOCK, but
+ * on some older ones may use %O_NDELAY.
  *
  * Returns: %TRUE if successful
  *
@@ -175,19 +180,20 @@ g_unix_set_fd_nonblocking (gint       fd,
 #endif
 }
 
-
 /**
  * g_unix_signal_source_new:
  * @signum: A signal number
  *
  * Create a #GSource that will be dispatched upon delivery of the UNIX
- * signal @signum.  Currently only <literal>SIGHUP</literal>,
- * <literal>SIGINT</literal>, and <literal>SIGTERM</literal> can
- * be monitored.  Note that unlike the UNIX default, all sources which
- * have created a watch will be dispatched, regardless of which
- * underlying thread invoked g_unix_signal_source_new().
+ * signal @signum.  In GLib versions before 2.36, only `SIGHUP`, `SIGINT`,
+ * `SIGTERM` can be monitored.  In GLib 2.36, `SIGUSR1` and `SIGUSR2`
+ * were added.
  *
- * For example, an effective use of this function is to handle <literal>SIGTERM</literal>
+ * Note that unlike the UNIX default, all sources which have created a
+ * watch will be dispatched, regardless of which underlying thread
+ * invoked g_unix_signal_source_new().
+ *
+ * For example, an effective use of this function is to handle `SIGTERM`
  * cleanly; flushing any outstanding files, and then calling
  * g_main_loop_quit ().  It is not safe to do any of this a regular
  * UNIX signal handler; your handler may be invoked while malloc() or
@@ -209,13 +215,14 @@ g_unix_set_fd_nonblocking (gint       fd,
 GSource *
 g_unix_signal_source_new (int signum)
 {
-  g_return_val_if_fail (signum == SIGHUP || signum == SIGINT || signum == SIGTERM, NULL);
+  g_return_val_if_fail (signum == SIGHUP || signum == SIGINT || signum == SIGTERM ||
+                        signum == SIGUSR1 || signum == SIGUSR2, NULL);
 
   return _g_main_create_unix_signal_watch (signum);
 }
 
 /**
- * g_unix_signal_add_full:
+ * g_unix_signal_add_full: (rename-to g_unix_signal_add)
  * @priority: the priority of the signal source. Typically this will be in
  *            the range between #G_PRIORITY_DEFAULT and #G_PRIORITY_HIGH.
  * @signum: Signal number
@@ -273,4 +280,143 @@ g_unix_signal_add (int         signum,
                    gpointer    user_data)
 {
   return g_unix_signal_add_full (G_PRIORITY_DEFAULT, signum, handler, user_data, NULL);
+}
+
+typedef struct
+{
+  GSource source;
+
+  gint     fd;
+  gpointer tag;
+} GUnixFDSource;
+
+static gboolean
+g_unix_fd_source_dispatch (GSource     *source,
+                           GSourceFunc  callback,
+                           gpointer     user_data)
+{
+  GUnixFDSource *fd_source = (GUnixFDSource *) source;
+  GUnixFDSourceFunc func = (GUnixFDSourceFunc) callback;
+
+  if (!callback)
+    {
+      g_warning ("GUnixFDSource dispatched without callback\n"
+                 "You must call g_source_set_callback().");
+      return FALSE;
+    }
+
+  return (* func) (fd_source->fd, g_source_query_unix_fd (source, fd_source->tag), user_data);
+}
+
+GSourceFuncs g_unix_fd_source_funcs = {
+  NULL, NULL, g_unix_fd_source_dispatch, NULL
+};
+
+/**
+ * g_unix_fd_source_new:
+ * @fd: a file descriptor
+ * @condition: IO conditions to watch for on @fd
+ *
+ * Creates a #GSource to watch for a particular IO condition on a file
+ * descriptor.
+ *
+ * The source will never close the fd -- you must do it yourself.
+ *
+ * Returns: the newly created #GSource
+ *
+ * Since: 2.36
+ **/
+GSource *
+g_unix_fd_source_new (gint         fd,
+                      GIOCondition condition)
+{
+  GUnixFDSource *fd_source;
+  GSource *source;
+
+  source = g_source_new (&g_unix_fd_source_funcs, sizeof (GUnixFDSource));
+  fd_source = (GUnixFDSource *) source;
+
+  fd_source->fd = fd;
+  fd_source->tag = g_source_add_unix_fd (source, fd, condition);
+
+  return source;
+}
+
+/**
+ * g_unix_fd_add_full:
+ * @priority: the priority of the source
+ * @fd: a file descriptor
+ * @condition: IO conditions to watch for on @fd
+ * @function: a #GUnixFDSourceFunc
+ * @user_data: data to pass to @function
+ * @notify: function to call when the idle is removed, or %NULL
+ *
+ * Sets a function to be called when the IO condition, as specified by
+ * @condition becomes true for @fd.
+ *
+ * This is the same as g_unix_fd_add(), except that it allows you to
+ * specify a non-default priority and a provide a #GDestroyNotify for
+ * @user_data.
+ *
+ * Returns: the ID (greater than 0) of the event source
+ *
+ * Since: 2.36
+ **/
+guint
+g_unix_fd_add_full (gint              priority,
+                    gint              fd,
+                    GIOCondition      condition,
+                    GUnixFDSourceFunc function,
+                    gpointer          user_data,
+                    GDestroyNotify    notify)
+{
+  GSource *source;
+  guint id;
+
+  g_return_val_if_fail (function != NULL, 0);
+
+  source = g_unix_fd_source_new (fd, condition);
+
+  if (priority != G_PRIORITY_DEFAULT)
+    g_source_set_priority (source, priority);
+
+  g_source_set_callback (source, (GSourceFunc) function, user_data, notify);
+  id = g_source_attach (source, NULL);
+  g_source_unref (source);
+
+  return id;
+}
+
+/**
+ * g_unix_fd_add:
+ * @fd: a file descriptor
+ * @condition: IO conditions to watch for on @fd
+ * @function: a #GPollFDFunc
+ * @user_data: data to pass to @function
+ *
+ * Sets a function to be called when the IO condition, as specified by
+ * @condition becomes true for @fd.
+ *
+ * @function will be called when the specified IO condition becomes
+ * %TRUE.  The function is expected to clear whatever event caused the
+ * IO condition to become true and return %TRUE in order to be notified
+ * when it happens again.  If @function returns %FALSE then the watch
+ * will be cancelled.
+ *
+ * The return value of this function can be passed to g_source_remove()
+ * to cancel the watch at any time that it exists.
+ *
+ * The source will never close the fd -- you must do it yourself.
+ *
+ * Returns: the ID (greater than 0) of the event source
+ *
+ * Since: 2.36
+ **/
+guint
+g_unix_fd_add (gint              fd,
+               GIOCondition      condition,
+               GUnixFDSourceFunc function,
+               gpointer          user_data)
+{
+  return g_unix_fd_add_full (G_PRIORITY_DEFAULT, fd, condition, function, user_data, NULL);
 }

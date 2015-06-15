@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
 
+#ifndef __G_CHARSET_CONVERTER_H__
+#define __G_CHARSET_CONVERTER_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_CHARSET_CONVERTER_H__
-#define __G_CHARSET_CONVERTER_H__
 
 #include <gio/gconverter.h>
 
@@ -45,14 +43,19 @@ struct _GCharsetConverterClass
   GObjectClass parent_class;
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType              g_charset_converter_get_type      (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GCharsetConverter *g_charset_converter_new            (const gchar  *to_charset,
 						       const gchar  *from_charset,
 						       GError **error);
+GLIB_AVAILABLE_IN_ALL
 void               g_charset_converter_set_use_fallback (GCharsetConverter *converter,
 							 gboolean use_fallback);
+GLIB_AVAILABLE_IN_ALL
 gboolean           g_charset_converter_get_use_fallback (GCharsetConverter *converter);
+GLIB_AVAILABLE_IN_ALL
 guint              g_charset_converter_get_num_fallbacks (GCharsetConverter *converter);
 
 G_END_DECLS

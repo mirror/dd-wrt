@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <string.h>
@@ -149,7 +147,7 @@ test_resource_file (void)
   g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT);
   g_clear_error (&error);
 
-  resource = g_resource_load ("test.gresource", &error);
+  resource = g_resource_load (g_test_get_filename (G_TEST_BUILT, "test.gresource", NULL), &error);
   g_assert (resource != NULL);
   g_assert_no_error (error);
 
@@ -167,8 +165,8 @@ test_resource_data (void)
   gsize content_size;
   GBytes *data;
 
-  loaded_file = g_file_get_contents ("test.gresource", &content, &content_size,
-				     NULL);
+  loaded_file = g_file_get_contents (g_test_get_filename (G_TEST_BUILT, "test.gresource", NULL),
+                                     &content, &content_size, NULL);
   g_assert (loaded_file);
 
   data = g_bytes_new_take (content, content_size);
@@ -195,7 +193,7 @@ test_resource_registered (void)
   GInputStream *in;
   char buffer[128];
 
-  resource = g_resource_load ("test.gresource", &error);
+  resource = g_resource_load (g_test_get_filename (G_TEST_BUILT, "test.gresource", NULL), &error);
   g_assert (resource != NULL);
   g_assert_no_error (error);
 
@@ -396,14 +394,8 @@ test_resource_module (void)
 
   if (g_module_supported ())
     {
-      char *dir, *path;
-
-      dir = g_get_current_dir ();
-
-      path = g_strconcat (dir, G_DIR_SEPARATOR_S "libresourceplugin",  NULL);
-      module = g_io_module_new (path);
-      g_free (path);
-      g_free (dir);
+      /* For in-tree, this will find the .la file and use it to get to the .so in .libs/ */
+      module = g_io_module_new (g_test_get_filename (G_TEST_BUILT, "libresourceplugin",  NULL));
 
       error = NULL;
 
@@ -456,10 +448,10 @@ test_uri_query_info (void)
   GBytes *data;
   GFile *file;
   GFileInfo *info;
-  const char *content_type;
+  const char *content_type, *mime_type;
 
-  loaded_file = g_file_get_contents ("test.gresource", &content, &content_size,
-                                     NULL);
+  loaded_file = g_file_get_contents (g_test_get_filename (G_TEST_BUILT, "test.gresource", NULL),
+                                     &content, &content_size, NULL);
   g_assert (loaded_file);
 
   data = g_bytes_new_take (content, content_size);
@@ -477,9 +469,13 @@ test_uri_query_info (void)
 
   content_type = g_file_info_get_content_type (info);
   g_assert (content_type);
-  g_assert_cmpstr (content_type, ==, "text/plain");
+  mime_type = g_content_type_get_mime_type (content_type);
+  g_assert (mime_type);
+  g_assert_cmpstr (mime_type, ==, "text/plain");
 
   g_object_unref (info);
+
+  g_assert_cmpuint  (g_file_hash (file), !=, 0);
 
   g_object_unref (file);
 
@@ -487,7 +483,7 @@ test_uri_query_info (void)
   g_resource_unref (resource);
 }
 
-void
+static void
 test_uri_file (void)
 {
   GResource *resource;
@@ -508,8 +504,8 @@ test_uri_file (void)
   gboolean ret;
   gssize skipped;
 
-  loaded_file = g_file_get_contents ("test.gresource", &content, &content_size,
-                                     NULL);
+  loaded_file = g_file_get_contents (g_test_get_filename (G_TEST_BUILT, "test.gresource", NULL),
+                                     &content, &content_size, NULL);
   g_assert (loaded_file);
 
   data = g_bytes_new_take (content, content_size);
@@ -630,7 +626,6 @@ int
 main (int   argc,
       char *argv[])
 {
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   _g_test2_register_resource ();

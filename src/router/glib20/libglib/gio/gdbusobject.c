@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -37,6 +35,13 @@
  * the service side (see #GDBusObjectSkeleton) and the client side
  * (see #GDBusObjectProxy). It is essentially just a container of
  * interfaces.
+ */
+
+/**
+ * GDBusObject:
+ *
+ * #GDBusObject is an opaque data structure and can only be accessed
+ * using the following functions.
  */
 
 typedef GDBusObjectIface GDBusObjectInterface;

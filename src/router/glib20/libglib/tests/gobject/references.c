@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #undef	G_LOG_DOMAIN
@@ -44,6 +42,7 @@ static gboolean toggle_ref3_strengthened;
 /*
  * TestObject, a parent class for TestObject
  */
+static GType test_object_get_type (void);
 #define TEST_TYPE_OBJECT          (test_object_get_type ())
 typedef struct _TestObject        TestObject;
 typedef struct _TestObjectClass   TestObjectClass;
@@ -168,7 +167,6 @@ main (int   argc,
   g_log_set_always_fatal (g_log_set_always_fatal (G_LOG_FATAL_MASK) |
 			  G_LOG_LEVEL_WARNING |
 			  G_LOG_LEVEL_CRITICAL);
-  g_type_init ();
 
   /* Test basic weak reference operation
    */

@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -69,7 +67,8 @@ static guint signals[LAST_SIGNAL] = {0};
 static void dbus_object_interface_init (GDBusObjectIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (GDBusObjectSkeleton, g_dbus_object_skeleton, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_DBUS_OBJECT, dbus_object_interface_init));
+                         G_ADD_PRIVATE (GDBusObjectSkeleton)
+                         G_IMPLEMENT_INTERFACE (G_TYPE_DBUS_OBJECT, dbus_object_interface_init))
 
 
 static void
@@ -103,7 +102,7 @@ g_dbus_object_skeleton_get_property (GObject    *_object,
       break;
 
     default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (_object, prop_id, pspec);
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
     }
 }
@@ -123,7 +122,7 @@ g_dbus_object_skeleton_set_property (GObject       *_object,
       break;
 
     default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (_object, prop_id, pspec);
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
     }
 }
@@ -174,9 +173,9 @@ g_dbus_object_skeleton_class_init (GDBusObjectSkeletonClass *klass)
    * Emitted when a method is invoked by a remote caller and used to
    * determine if the method call is authorized.
    *
-   * This signal is like #GDBusInterfaceSkeleton<!-- -->'s
-   * #GDBusInterfaceSkeleton::g-authorize-method signal, except that it is
-   * for the enclosing object.
+   * This signal is like #GDBusInterfaceSkeleton's
+   * #GDBusInterfaceSkeleton::g-authorize-method signal,
+   * except that it is for the enclosing object.
    *
    * The default class handler just returns %TRUE.
    *
@@ -196,14 +195,12 @@ g_dbus_object_skeleton_class_init (GDBusObjectSkeletonClass *klass)
                   2,
                   G_TYPE_DBUS_INTERFACE_SKELETON,
                   G_TYPE_DBUS_METHOD_INVOCATION);
-
-  g_type_class_add_private (klass, sizeof (GDBusObjectSkeletonPrivate));
 }
 
 static void
 g_dbus_object_skeleton_init (GDBusObjectSkeleton *object)
 {
-  object->priv = G_TYPE_INSTANCE_GET_PRIVATE (object, G_TYPE_DBUS_OBJECT_SKELETON, GDBusObjectSkeletonPrivate);
+  object->priv = g_dbus_object_skeleton_get_instance_private (object);
   g_mutex_init (&object->priv->lock);
   object->priv->map_name_to_iface = g_hash_table_new_full (g_str_hash,
                                                            g_str_equal,

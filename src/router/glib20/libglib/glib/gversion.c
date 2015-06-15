@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -51,6 +49,15 @@
  */
 
 /**
+ * glib_major_version:
+ *
+ * The major version of the GLib library.
+ *
+ * An integer variable exported from the library linked
+ * against at application run time.
+ */
+
+/**
  * GLIB_MAJOR_VERSION:
  *
  * The major version number of the GLib library.
@@ -61,6 +68,15 @@
  */
 
 /**
+ * glib_minor_version:
+ *
+ * The minor version number of the GLib library.
+ *
+ * An integer variable exported from the library linked
+ * against at application run time.
+ */
+
+/**
  * GLIB_MINOR_VERSION:
  *
  * The minor version number of the GLib library.
@@ -68,6 +84,15 @@
  * Like #gtk_minor_version, but from the headers used at
  * application compile time, rather than from the library
  * linked against at application run time.
+ */
+
+/**
+ * glib_micro_version:
+ *
+ * The micro version number of the GLib library.
+ *
+ * An integer variable exported from the library linked
+ * against at application run time.
  */
 
 /**
@@ -87,20 +112,30 @@
  * @micro: the micro version to check for
  *
  * Checks the version of the GLib library that is being compiled
- * against.
- *
- * <example>
- * <title>Checking the version of the GLib library</title>
- * <programlisting>
- *   if (!GLIB_CHECK_VERSION (1, 2, 0))
- *     g_error ("GLib version 1.2.0 or above is needed");
- * </programlisting>
- * </example>
- *
- * See glib_check_version() for a runtime check.
+ * against. See glib_check_version() for a runtime check.
  *
  * Returns: %TRUE if the version of the GLib header files
  * is the same as or newer than the passed-in version.
+ */
+
+/**
+ * glib_binary_age:
+ *
+ * The binary age of the GLib library.
+ * Defines how far back backwards compatibility reaches.
+ *
+ * An integer variable exported from the library linked
+ * against at application run time.
+ */
+
+/**
+ * glib_interface_age:
+ *
+ * The interface age of the GLib library.
+ * Defines how far back the API has last been extended.
+ *
+ * An integer variable exported from the library linked
+ * against at application run time.
  */
 
 const guint glib_major_version = GLIB_MAJOR_VERSION;
@@ -111,9 +146,9 @@ const guint glib_binary_age = GLIB_BINARY_AGE;
 
 /**
  * glib_check_version:
- * @required_major: the required major version.
- * @required_minor: the required minor version.
- * @required_micro: the required micro version.
+ * @required_major: the required major version
+ * @required_minor: the required minor version
+ * @required_micro: the required micro version
  *
  * Checks that the GLib library in use is compatible with the
  * given version. Generally you would pass in the constants
@@ -130,10 +165,10 @@ const guint glib_binary_age = GLIB_BINARY_AGE;
  * version @required_major.required_minor.@required_micro
  * (same major version.)
  *
- * Return value: %NULL if the GLib library is compatible with the
- *   given version, or a string describing the version mismatch.
- *   The returned string is owned by GLib and must not be modified
- *   or freed.
+ * Returns: %NULL if the GLib library is compatible with the
+ *     given version, or a string describing the version mismatch.
+ *     The returned string is owned by GLib and must not be modified
+ *     or freed.
  *
  * Since: 2.6
  */

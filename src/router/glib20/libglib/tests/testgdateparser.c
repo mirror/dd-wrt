@@ -11,21 +11,6 @@
 #include <string.h>
 #include <locale.h>
 
-void g_date_debug_print(GDate* d)
-{
-  if (!d) g_print("NULL!\n");
-  else 
-    g_print("julian: %u (%s) DMY: %u %u %u (%s)\n",
-	    d->julian_days, 
-	    d->julian ? "valid" : "invalid",
-	    d->day,
-	    d->month,
-	    d->year,
-	    d->dmy ? "valid" : "invalid");
-  
-  fflush(stdout);
-}
-
 /* These only work in the POSIX locale, maybe C too - 
  * type POSIX into the program to check them
  */
@@ -60,7 +45,7 @@ int main(int argc, char** argv)
     {
       if (input[0] == '\n') 
         {
-          g_print("Enter a date to parse and press enter, or type `POSIX':\n");
+          g_print("Enter a date to parse and press enter, or type 'POSIX':\n");
           continue;
         }
 
@@ -70,7 +55,7 @@ int main(int argc, char** argv)
           while (*s) {
             g_date_set_parse(d, *s);
             
-            g_print("POSIXy parse test `%s' ...", *s);
+            g_print("POSIXy parse test '%s' ...", *s);
 
             if (!g_date_valid(d))
               {
@@ -80,7 +65,7 @@ int main(int argc, char** argv)
               {
                 gchar buf[256];
                 
-                g_date_strftime(buf,100," parsed `%x' (%B %d %Y)\n",
+                g_date_strftime(buf,100," parsed '%x' (%B %d %Y)\n",
                                 d);
                 g_print("%s", buf);
               }
@@ -100,7 +85,7 @@ int main(int argc, char** argv)
             {
               gchar buf[256];
               
-              g_date_strftime(buf,100,"Parsed: `%x' (%B %d %Y)\n",
+              g_date_strftime(buf,100,"Parsed: '%x' (%B %d %Y)\n",
                               d);
               g_print("%s", buf);
             }

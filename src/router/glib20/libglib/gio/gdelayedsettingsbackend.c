@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -37,9 +35,9 @@ struct _GDelayedSettingsBackendPrivate
   gpointer owner;
 };
 
-G_DEFINE_TYPE (GDelayedSettingsBackend,
-               g_delayed_settings_backend,
-               G_TYPE_SETTINGS_BACKEND)
+G_DEFINE_TYPE_WITH_PRIVATE (GDelayedSettingsBackend,
+                            g_delayed_settings_backend,
+                            G_TYPE_SETTINGS_BACKEND)
 
 static gboolean
 invoke_notify_unapplied (gpointer data)
@@ -102,6 +100,32 @@ g_delayed_settings_backend_read (GSettingsBackend   *backend,
                                       expected_type, default_value);
 
   return result;
+}
+
+static GVariant *
+g_delayed_settings_backend_read_user_value (GSettingsBackend   *backend,
+                                            const gchar        *key,
+                                            const GVariantType *expected_type)
+{
+  GDelayedSettingsBackend *delayed = G_DELAYED_SETTINGS_BACKEND (backend);
+  gboolean value_found = FALSE;
+  gpointer result = NULL;
+
+  /* If we find an explicit NULL in our changeset then we want to return
+   * NULL (because the user value has been reset).
+   *
+   * Otherwise, chain up.
+   */
+  g_mutex_lock (&delayed->priv->lock);
+  value_found = g_tree_lookup_extended (delayed->priv->delayed, key, NULL, &result);
+  if (result)
+    g_variant_ref (result);
+  g_mutex_unlock (&delayed->priv->lock);
+
+  if (value_found)
+    return result;
+
+  return g_settings_backend_read_user_value (delayed->priv->backend, key, expected_type);
 }
 
 static gboolean
@@ -282,8 +306,8 @@ static void
 delayed_backend_keys_changed (GObject             *target,
                               GSettingsBackend    *backend,
                               const gchar         *path,
-                              const gchar * const *items,
-                              gpointer             origin_tag)
+                              gpointer             origin_tag,
+                              const gchar * const *items)
 {
   GDelayedSettingsBackend *delayed = G_DELAYED_SETTINGS_BACKEND (target);
 
@@ -428,9 +452,8 @@ g_delayed_settings_backend_class_init (GDelayedSettingsBackendClass *class)
   GSettingsBackendClass *backend_class = G_SETTINGS_BACKEND_CLASS (class);
   GObjectClass *object_class = G_OBJECT_CLASS (class);
 
-  g_type_class_add_private (class, sizeof (GDelayedSettingsBackendPrivate));
-
   backend_class->read = g_delayed_settings_backend_read;
+  backend_class->read_user_value = g_delayed_settings_backend_read_user_value;
   backend_class->write = g_delayed_settings_backend_write;
   backend_class->write_tree = g_delayed_settings_backend_write_tree;
   backend_class->reset = g_delayed_settings_backend_reset;
@@ -445,10 +468,7 @@ g_delayed_settings_backend_class_init (GDelayedSettingsBackendClass *class)
 static void
 g_delayed_settings_backend_init (GDelayedSettingsBackend *delayed)
 {
-  delayed->priv =
-    G_TYPE_INSTANCE_GET_PRIVATE (delayed, G_TYPE_DELAYED_SETTINGS_BACKEND,
-                                 GDelayedSettingsBackendPrivate);
-
+  delayed->priv = g_delayed_settings_backend_get_instance_private (delayed);
   delayed->priv->delayed = g_settings_backend_create_tree ();
   g_mutex_init (&delayed->priv->lock);
 }

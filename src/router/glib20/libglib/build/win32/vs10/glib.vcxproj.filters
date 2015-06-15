@@ -86,6 +86,7 @@
     <ClCompile Include="..\..\..\glib\gthreadpool.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\glib\gtimer.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\glib\gtimezone.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\glib\gtranslit.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\glib\gtrashstack.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\glib\gtree.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\glib\guniprop.c"><Filter>Source Files</Filter></ClCompile>
@@ -187,13 +188,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="..\..\..\config.h.win32"><Filter>Resource Files</Filter></CustomBuild>
+    <CustomBuild Include="..\..\..\glib\glibconfig.h.win32"><Filter>Resource Files</Filter></CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
     <ResourceCompile Include="..\..\..\glib\glib.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="..\..\..\glib\glib.symbols">
-      <Filter>Resource Files</Filter>
-    </CustomBuild>
   </ItemGroup>
 </Project>

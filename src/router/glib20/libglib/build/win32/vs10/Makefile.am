@@ -1,7 +1,6 @@
 EXTRA_DIST = \
 	README.txt \
 	glib.sln \
-	glib.props \
 	glib.vcxproj \
 	glib.vcxproj.filters \
 	glib.vcxprojin \
@@ -24,8 +23,6 @@ EXTRA_DIST = \
 	gio.vcxproj.filters \
 	gio.vcxprojin \
 	gio.vcxproj.filtersin \
-	testglib.vcxproj \
-	testglib.vcxproj.filters \
 	glib-compile-schemas.vcxproj \
 	glib-compile-schemas.vcxproj.filters \
 	gsettings.vcxproj \
@@ -34,4 +31,12 @@ EXTRA_DIST = \
 	glib-compile-resources.vcxproj.filters \
 	gresource.vcxproj \
 	gresource.vcxproj.filters \
-	install.vcxproj 
+	gio-querymodules.vcxproj \
+	gio-querymodules.vcxproj.filters \
+	gdbus.vcxproj \
+	gdbus.vcxproj.filters \
+	glib-install.vcxproj	\
+	glib-build-defines.props	\
+	glib-install.props	\
+	glib-version-paths.props	\
+	glib-gen-srcs.props

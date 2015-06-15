@@ -3,11 +3,13 @@ gio/gactiongroup.c
 gio/gappinfo.c
 gio/gapplication.c
 gio/gapplicationcommandline.c
+gio/gapplication-tool.c
 gio/gasynchelper.c
 gio/gasyncinitable.c
 gio/gasyncresult.c
 gio/gbufferedinputstream.c
 gio/gbufferedoutputstream.c
+gio/gbytesicon.c
 gio/gcancellable.c
 gio/gcharsetconverter.c
 gio/gcontenttype.c
@@ -47,6 +49,7 @@ gio/gfilenamecompleter.c
 gio/gfileoutputstream.c
 gio/gfilterinputstream.c
 gio/gfilteroutputstream.c
+gio/ghttpproxy.c
 gio/gicon.c
 gio/ginetaddress.c
 gio/ginetaddressmask.c
@@ -60,7 +63,6 @@ gio/giostream.c
 gio/glib-compile-resources.c
 gio/glib-compile-schemas.c
 gio/gloadableicon.c
-gio/glocaldirectorymonitor.c
 gio/glocalfile.c
 gio/glocalfileenumerator.c
 gio/glocalfileinfo.c
@@ -77,12 +79,14 @@ gio/gnetworkaddress.c
 gio/gnetworkmonitorbase.c
 gio/gnetworkmonitor.c
 gio/gnetworkmonitornetlink.c
+gio/gnetworkmonitornm.c
 gio/gnetworkservice.c
 gio/goutputstream.c
 gio/gpermission.c
 gio/gpollableinputstream.c
 gio/gpollableoutputstream.c
 gio/gpollfilemonitor.c
+gio/gpropertyaction.c
 gio/gproxyaddress.c
 gio/gproxyaddressenumerator.c
 gio/gresolver.c
@@ -95,6 +99,8 @@ gio/gsettings.c
 gio/gsettings-tool.c
 gio/gsimpleaction.c
 gio/gsimpleasyncresult.c
+gio/gsimpleiostream.c
+gio/gsimpleproxyresolver.c
 gio/gsocketaddress.c
 gio/gsocket.c
 gio/gsocketclient.c
@@ -105,10 +111,13 @@ gio/gsocketlistener.c
 gio/gsocketoutputstream.c
 gio/gsocks4aproxy.c
 gio/gsocks5proxy.c
+gio/gsubprocess.c
+gio/gtask.c
 gio/gtcpconnection.c
 gio/gtcpwrapperconnection.c
 gio/gtestdbus.c
 gio/gthemedicon.c
+gio/gthreadedresolver.c
 gio/gthreadedsocketservice.c
 gio/gtlscertificate.c
 gio/gtlsclientconnection.c

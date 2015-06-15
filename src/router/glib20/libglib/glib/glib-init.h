@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
- * USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -24,17 +22,16 @@
 
 #include "gmessages.h"
 
-G_GNUC_INTERNAL extern GLogLevelFlags g_log_always_fatal;
-G_GNUC_INTERNAL extern GLogLevelFlags g_log_msg_prefix;
-GLIB_VAR gboolean g_mem_gc_friendly;
+extern GLogLevelFlags g_log_always_fatal;
+extern GLogLevelFlags g_log_msg_prefix;
 
 #ifdef G_OS_WIN32
 #include <windows.h>
 
-G_GNUC_INTERNAL void g_thread_win32_thread_detach (void);
-G_GNUC_INTERNAL void g_thread_win32_init (void);
-G_GNUC_INTERNAL void g_clock_win32_init (void);
-G_GNUC_INTERNAL extern HMODULE glib_dll;
+void g_thread_win32_thread_detach (void);
+void g_thread_win32_init (void);
+void g_clock_win32_init (void);
+extern HMODULE glib_dll;
 #endif
 
 #endif /* __GLIB_INIT_H__ */

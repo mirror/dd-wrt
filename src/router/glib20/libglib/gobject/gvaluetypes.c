@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -59,7 +57,7 @@ value_lcopy_char (const GValue *value,
   gint8 *int8_p = collect_values[0].v_pointer;
   
   if (!int8_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
   
   *int8_p = value->data[0].v_int;
   
@@ -75,7 +73,7 @@ value_lcopy_boolean (const GValue *value,
   gboolean *bool_p = collect_values[0].v_pointer;
   
   if (!bool_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
   
   *bool_p = value->data[0].v_int;
   
@@ -102,7 +100,7 @@ value_lcopy_int (const GValue *value,
   gint *int_p = collect_values[0].v_pointer;
   
   if (!int_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
   
   *int_p = value->data[0].v_int;
   
@@ -129,7 +127,7 @@ value_lcopy_long (const GValue *value,
   glong *long_p = collect_values[0].v_pointer;
   
   if (!long_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
   
   *long_p = value->data[0].v_long;
   
@@ -169,7 +167,7 @@ value_lcopy_int64 (const GValue *value,
   gint64 *int64_p = collect_values[0].v_pointer;
   
   if (!int64_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
   
   *int64_p = value->data[0].v_int64;
   
@@ -209,7 +207,7 @@ value_lcopy_float (const GValue *value,
   gfloat *float_p = collect_values[0].v_pointer;
   
   if (!float_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
   
   *float_p = value->data[0].v_float;
   
@@ -249,7 +247,7 @@ value_lcopy_double (const GValue *value,
   gdouble *double_p = collect_values[0].v_pointer;
   
   if (!double_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
   
   *double_p = value->data[0].v_double;
   
@@ -304,7 +302,7 @@ value_lcopy_string (const GValue *value,
   gchar **string_p = collect_values[0].v_pointer;
   
   if (!string_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
   
   if (!value->data[0].v_pointer)
     *string_p = NULL;
@@ -355,7 +353,7 @@ value_lcopy_pointer (const GValue *value,
   gpointer *pointer_p = collect_values[0].v_pointer;
 
   if (!pointer_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
 
   *pointer_p = value->data[0].v_pointer;
 
@@ -408,7 +406,7 @@ value_lcopy_variant (const GValue *value,
   GVariant **variant_p = collect_values[0].v_pointer;
 
   if (!variant_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
 
   if (!value->data[0].v_pointer)
     *variant_p = NULL;

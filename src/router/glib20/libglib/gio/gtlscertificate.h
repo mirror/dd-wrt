@@ -13,17 +13,15 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_TLS_CERTIFICATE_H__
+#define __G_TLS_CERTIFICATE_H__
 
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_TLS_CERTIFICATE_H__
-#define __G_TLS_CERTIFICATE_H__
 
 #include <gio/giotypes.h>
 
@@ -58,22 +56,29 @@ struct _GTlsCertificateClass
   gpointer padding[8];
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType                 g_tls_certificate_get_type           (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GTlsCertificate      *g_tls_certificate_new_from_pem       (const gchar         *data,
 							    gssize               length,
 							    GError             **error);
 
+GLIB_AVAILABLE_IN_ALL
 GTlsCertificate      *g_tls_certificate_new_from_file      (const gchar         *file,
 							    GError             **error);
+GLIB_AVAILABLE_IN_ALL
 GTlsCertificate      *g_tls_certificate_new_from_files     (const gchar         *cert_file,
 							    const gchar         *key_file,
 							    GError             **error);
+GLIB_AVAILABLE_IN_ALL
 GList                *g_tls_certificate_list_new_from_file (const gchar         *file,
 							    GError             **error);
 
+GLIB_AVAILABLE_IN_ALL
 GTlsCertificate      *g_tls_certificate_get_issuer         (GTlsCertificate     *cert);
 
+GLIB_AVAILABLE_IN_ALL
 GTlsCertificateFlags  g_tls_certificate_verify             (GTlsCertificate     *cert,
 							    GSocketConnectable  *identity,
 							    GTlsCertificate     *trusted_ca);

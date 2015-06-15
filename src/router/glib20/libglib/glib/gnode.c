@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -88,8 +86,7 @@
  *            children are accessed by using the @next pointer of each
  *            child.
  *
- * The #GNode struct represents one node in a
- * <link linkend="glib-N-ary-Trees">N-ary Tree</link>. fields
+ * The #GNode struct represents one node in a [n-ary tree][glib-N-ary-Trees].
  **/
 
 #define g_node_alloc0()         g_slice_new0 (GNode)
@@ -177,7 +174,7 @@ g_node_unlink (GNode *node)
  * 
  * Recursively copies a #GNode and its data.
  * 
- * Return value: a new #GNode containing copies of the data in @node.
+ * Returns: a new #GNode containing copies of the data in @node.
  *
  * Since: 2.4
  **/
@@ -820,6 +817,35 @@ g_node_depth_traverse_level (GNode             *node,
  * It calls the given function for each node visited.
  * The traversal can be halted at any point by returning %TRUE from @func.
  */
+
+/**
+ * GTraverseType:
+ * @G_IN_ORDER: vists a node's left child first, then the node itself,
+ *              then its right child. This is the one to use if you
+ *              want the output sorted according to the compare
+ *              function.
+ * @G_PRE_ORDER: visits a node, then its children.
+ * @G_POST_ORDER: visits the node's children, then the node itself.
+ * @G_LEVEL_ORDER: is not implemented for
+ *              [balanced binary trees][glib-Balanced-Binary-Trees].
+ *              For [n-ary trees][glib-N-ary-Trees], it
+ *              vists the root node first, then its children, then
+ *              its grandchildren, and so on. Note that this is less
+ *              efficient than the other orders.
+ *
+ * Specifies the type of traveral performed by g_tree_traverse(),
+ * g_node_traverse() and g_node_find(). The different orders are
+ * illustrated here:
+ * - In order: A, B, C, D, E, F, G, H, I
+ *   ![](Sorted_binary_tree_inorder.svg)
+ * - Pre order: F, B, A, D, C, E, G, I, H
+ *   ![](Sorted_binary_tree_preorder.svg)
+ * - Post order: A, C, E, D, B, H, I, G, F
+ *   ![](Sorted_binary_tree_postorder.svg)
+ * - Level order: F, B, G, A, D, I, C, E, H
+ *   ![](Sorted_binary_tree_breadth-first_traversal.svg)
+ */
+
 /**
  * GTraverseFlags:
  * @G_TRAVERSE_LEAVES: only leaf nodes should be visited. This name has
@@ -840,12 +866,13 @@ g_node_depth_traverse_level (GNode             *node,
  * GNodeTraverseFunc:
  * @node: a #GNode.
  * @data: user data passed to g_node_traverse().
- * @Returns: %TRUE to stop the traversal.
  *
  * Specifies the type of function passed to g_node_traverse(). The
  * function is called with each of the nodes visited, together with the
  * user data passed to g_node_traverse(). If the function returns
  * %TRUE, then the traversal is stopped.
+ *
+ * Returns: %TRUE to stop the traversal.
  **/
 void
 g_node_traverse (GNode		  *root,

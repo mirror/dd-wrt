@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
- * USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -111,7 +109,7 @@
  * Since: 2.4
  **/
 gint
-(g_atomic_int_get) (volatile gint *atomic)
+(g_atomic_int_get) (const volatile gint *atomic)
 {
   return g_atomic_int_get (atomic);
 }
@@ -141,8 +139,7 @@ void
  *
  * Increments the value of @atomic by 1.
  *
- * Think of this operation as an atomic version of
- * <literal>{ *@atomic += 1; }</literal>
+ * Think of this operation as an atomic version of `{ *atomic += 1; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -161,7 +158,7 @@ void
  * Decrements the value of @atomic by 1.
  *
  * Think of this operation as an atomic version of
- * <literal>{ *@atomic -= 1; return (*@atomic == 0); }</literal>
+ * `{ *atomic -= 1; return (*atomic == 0); }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -187,7 +184,7 @@ gboolean
  * This compare and exchange is done atomically.
  *
  * Think of this operation as an atomic version of
- * <literal>{ if (*@atomic == @oldval) { *@atomic = @newval; return TRUE; } else return FALSE; }</literal>
+ * `{ if (*atomic == oldval) { *atomic = newval; return TRUE; } else return FALSE; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -211,7 +208,7 @@ gboolean
  * Atomically adds @val to the value of @atomic.
  *
  * Think of this operation as an atomic version of
- * <literal>{ tmp = *atomic; *@atomic += @val; return tmp; }</literal>
+ * `{ tmp = *atomic; *atomic += val; return tmp; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -240,7 +237,7 @@ gint
  * This call acts as a full compiler and hardware memory barrier.
  *
  * Think of this operation as an atomic version of
- * <literal>{ tmp = *atomic; *@atomic &= @val; return tmp; }</literal>
+ * `{ tmp = *atomic; *atomic &= val; return tmp; }`.
  *
  * Returns: the value of @atomic before the operation, unsigned
  *
@@ -262,7 +259,7 @@ guint
  * storing the result back in @atomic.
  *
  * Think of this operation as an atomic version of
- * <literal>{ tmp = *atomic; *@atomic |= @val; return tmp; }</literal>
+ * `{ tmp = *atomic; *atomic |= val; return tmp; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -286,7 +283,7 @@ guint
  * storing the result back in @atomic.
  *
  * Think of this operation as an atomic version of
- * <literal>{ tmp = *atomic; *@atomic ^= @val; return tmp; }</literal>
+ * `{ tmp = *atomic; *atomic ^= val; return tmp; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -316,9 +313,9 @@ guint
  * Since: 2.4
  **/
 gpointer
-(g_atomic_pointer_get) (volatile void *atomic)
+(g_atomic_pointer_get) (const volatile void *atomic)
 {
-  return g_atomic_pointer_get ((volatile gpointer *) atomic);
+  return g_atomic_pointer_get ((const volatile gpointer *) atomic);
 }
 
 /**
@@ -352,7 +349,7 @@ void
  * This compare and exchange is done atomically.
  *
  * Think of this operation as an atomic version of
- * <literal>{ if (*@atomic == @oldval) { *@atomic = @newval; return TRUE; } else return FALSE; }</literal>
+ * `{ if (*atomic == oldval) { *atomic = newval; return TRUE; } else return FALSE; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -377,7 +374,7 @@ gboolean
  * Atomically adds @val to the value of @atomic.
  *
  * Think of this operation as an atomic version of
- * <literal>{ tmp = *atomic; *@atomic += @val; return tmp; }</literal>
+ * `{ tmp = *atomic; *atomic += val; return tmp; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -401,7 +398,7 @@ gssize
  * storing the result back in @atomic.
  *
  * Think of this operation as an atomic version of
- * <literal>{ tmp = *atomic; *@atomic &= @val; return tmp; }</literal>
+ * `{ tmp = *atomic; *atomic &= val; return tmp; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -425,7 +422,7 @@ gsize
  * storing the result back in @atomic.
  *
  * Think of this operation as an atomic version of
- * <literal>{ tmp = *atomic; *@atomic |= @val; return tmp; }</literal>
+ * `{ tmp = *atomic; *atomic |= val; return tmp; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -449,7 +446,7 @@ gsize
  * storing the result back in @atomic.
  *
  * Think of this operation as an atomic version of
- * <literal>{ tmp = *atomic; *@atomic ^= @val; return tmp; }</literal>
+ * `{ tmp = *atomic; *atomic ^= val; return tmp; }`.
  *
  * This call acts as a full compiler and hardware memory barrier.
  *
@@ -467,17 +464,67 @@ gsize
 #elif defined (G_PLATFORM_WIN32)
 
 #include <windows.h>
-#if !defined(_M_AMD64) && !defined (_M_IA64) && !defined(_M_X64)
+#if !defined(_M_AMD64) && !defined (_M_IA64) && !defined(_M_X64) && !(defined _MSC_VER && _MSC_VER <= 1200)
 #define InterlockedAnd _InterlockedAnd
 #define InterlockedOr _InterlockedOr
 #define InterlockedXor _InterlockedXor
+#endif
+
+#if !defined (_MSC_VER) || _MSC_VER <= 1200
+#include "gmessages.h"
+/* Inlined versions for older compiler */
+static LONG
+_gInterlockedAnd (volatile guint *atomic,
+                  guint           val)
+{
+  LONG i, j;
+
+  j = *atomic;
+  do {
+    i = j;
+    j = InterlockedCompareExchange(atomic, i & val, i);
+  } while (i != j);
+
+  return j;
+}
+#define InterlockedAnd(a,b) _gInterlockedAnd(a,b)
+static LONG
+_gInterlockedOr (volatile guint *atomic,
+                 guint           val)
+{
+  LONG i, j;
+
+  j = *atomic;
+  do {
+    i = j;
+    j = InterlockedCompareExchange(atomic, i | val, i);
+  } while (i != j);
+
+  return j;
+}
+#define InterlockedOr(a,b) _gInterlockedOr(a,b)
+static LONG
+_gInterlockedXor (volatile guint *atomic,
+                  guint           val)
+{
+  LONG i, j;
+
+  j = *atomic;
+  do {
+    i = j;
+    j = InterlockedCompareExchange(atomic, i ^ val, i);
+  } while (i != j);
+
+  return j;
+}
+#define InterlockedXor(a,b) _gInterlockedXor(a,b)
 #endif
 
 /*
  * http://msdn.microsoft.com/en-us/library/ms684122(v=vs.85).aspx
  */
 gint
-(g_atomic_int_get) (volatile gint *atomic)
+(g_atomic_int_get) (const volatile gint *atomic)
 {
   MemoryBarrier ();
   return *atomic;
@@ -541,9 +588,9 @@ guint
 
 
 gpointer
-(g_atomic_pointer_get) (volatile void *atomic)
+(g_atomic_pointer_get) (const volatile void *atomic)
 {
-  volatile gpointer *ptr = atomic;
+  const volatile gpointer *ptr = atomic;
 
   MemoryBarrier ();
   return *ptr;
@@ -632,7 +679,7 @@ gsize
 static pthread_mutex_t g_atomic_lock = PTHREAD_MUTEX_INITIALIZER;
 
 gint
-(g_atomic_int_get) (volatile gint *atomic)
+(g_atomic_int_get) (const volatile gint *atomic)
 {
   gint value;
 
@@ -747,9 +794,9 @@ guint
 
 
 gpointer
-(g_atomic_pointer_get) (volatile void *atomic)
+(g_atomic_pointer_get) (const volatile void *atomic)
 {
-  volatile gpointer *ptr = atomic;
+  const volatile gpointer *ptr = atomic;
   gpointer value;
 
   pthread_mutex_lock (&g_atomic_lock);

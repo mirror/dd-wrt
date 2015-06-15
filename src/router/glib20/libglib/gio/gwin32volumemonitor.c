@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  *         David Zeuthen <davidz@redhat.com>
@@ -35,14 +33,10 @@
 #include "gmount.h"
 #include "giomodule.h"
 
-#define _WIN32_WINNT 0x0500
 #include <windows.h>
 
 struct _GWin32VolumeMonitor {
   GNativeVolumeMonitor parent;
-
-  GList *volumes;
-  GList *mounts;
 };
 
 #define g_win32_volume_monitor_get_type _g_win32_volume_monitor_get_type
@@ -52,18 +46,7 @@ G_DEFINE_TYPE_WITH_CODE (GWin32VolumeMonitor, g_win32_volume_monitor, G_TYPE_NAT
 							 "win32",
 							 0));
 							 
-static void
-g_win32_volume_monitor_finalize (GObject *object)
-{
-  GWin32VolumeMonitor *monitor;
-  
-  monitor = G_WIN32_VOLUME_MONITOR (object);
-
-  if (G_OBJECT_CLASS (g_win32_volume_monitor_parent_class)->finalize)
-    (*G_OBJECT_CLASS (g_win32_volume_monitor_parent_class)->finalize) (object);
-}
-
-/*
+/**
  * get_viewable_logical_drives:
  *
  * Returns the list of logical and viewable drives as defined by
@@ -72,7 +55,7 @@ g_win32_volume_monitor_finalize (GObject *object)
  * HKLM or HKCU. If neither key exists the result of
  * GetLogicalDrives() is returned.
  *
- * Return value: bitmask with same meaning as returned by GetLogicalDrives()
+ * Returns: bitmask with same meaning as returned by GetLogicalDrives()
  */
 static guint32 
 get_viewable_logical_drives (void)
@@ -126,13 +109,10 @@ get_viewable_logical_drives (void)
 static GList *
 get_mounts (GVolumeMonitor *volume_monitor)
 {
-  GWin32VolumeMonitor *monitor;
   DWORD   drives;
   gchar   drive[4] = "A:\\";
   GList *list = NULL;
   
-  monitor = G_WIN32_VOLUME_MONITOR (volume_monitor);
-
   drives = get_viewable_logical_drives ();
 
   if (!drives)
@@ -154,27 +134,20 @@ get_mounts (GVolumeMonitor *volume_monitor)
 static GList *
 get_volumes (GVolumeMonitor *volume_monitor)
 {
-  GWin32VolumeMonitor *monitor;
-  GList *l = NULL;
-  
-  monitor = G_WIN32_VOLUME_MONITOR (volume_monitor);
-
-  return l;
+  return NULL;
 }
 
 /* real hardware */
 static GList *
 get_connected_drives (GVolumeMonitor *volume_monitor)
 {
-  GWin32VolumeMonitor *monitor;
+  GList *list = NULL;
+
+#if 0
   HANDLE  find_handle;
   BOOL    found;
   wchar_t wc_name[MAX_PATH+1];
-  GList *list = NULL;
   
-  monitor = G_WIN32_VOLUME_MONITOR (volume_monitor);
-
-#if 0
   find_handle = FindFirstVolumeW (wc_name, MAX_PATH);
   found = (find_handle != INVALID_HANDLE_VALUE);
   while (found)
@@ -248,12 +221,9 @@ get_mount_for_mount_path (const char *mount_path,
 static void
 g_win32_volume_monitor_class_init (GWin32VolumeMonitorClass *klass)
 {
-  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GVolumeMonitorClass *monitor_class = G_VOLUME_MONITOR_CLASS (klass);
   GNativeVolumeMonitorClass *native_class = G_NATIVE_VOLUME_MONITOR_CLASS (klass);
   
-  gobject_class->finalize = g_win32_volume_monitor_finalize;
-
   monitor_class->get_mounts = get_mounts;
   monitor_class->get_volumes = get_volumes;
   monitor_class->get_connected_drives = get_connected_drives;

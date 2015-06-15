@@ -12,19 +12,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
 
+#ifndef __G_SIMPLE_ACTION_GROUP_H__
+#define __G_SIMPLE_ACTION_GROUP_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_SIMPLE_ACTION_GROUP_H__
-#define __G_SIMPLE_ACTION_GROUP_H__
 
 #include "gactiongroup.h"
 #include "gactionmap.h"
@@ -70,19 +68,25 @@ struct _GSimpleActionGroupClass
   gpointer padding[12];
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType                   g_simple_action_group_get_type                  (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GSimpleActionGroup *    g_simple_action_group_new                       (void);
 
+GLIB_DEPRECATED_IN_2_38_FOR (g_action_map_lookup_action)
 GAction *               g_simple_action_group_lookup                    (GSimpleActionGroup *simple,
                                                                          const gchar        *action_name);
 
+GLIB_DEPRECATED_IN_2_38_FOR (g_action_map_add_action)
 void                    g_simple_action_group_insert                    (GSimpleActionGroup *simple,
                                                                          GAction            *action);
 
+GLIB_DEPRECATED_IN_2_38_FOR (g_action_map_remove_action)
 void                    g_simple_action_group_remove                    (GSimpleActionGroup *simple,
                                                                          const gchar        *action_name);
 
+GLIB_DEPRECATED_IN_2_38_FOR (g_action_map_add_action_entries)
 void                    g_simple_action_group_add_entries               (GSimpleActionGroup *simple,
                                                                          const GActionEntry *entries,
                                                                          gint                n_entries,

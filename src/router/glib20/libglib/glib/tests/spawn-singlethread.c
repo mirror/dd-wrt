@@ -26,6 +26,22 @@
 #include <glib.h>
 #include <string.h>
 
+#ifdef G_OS_WIN32
+#define LINEEND "\r\n"
+#else
+#define LINEEND "\n"
+#endif
+
+/* MinGW builds are likely done using a BASH-style shell, so run the
+ * normal script there, as on non-Windows builds, as it is more likely
+ * that one will run 'make check' in such shells to test the code
+ */
+#if defined (G_OS_WIN32) && defined (_MSC_VER)
+#define SCRIPT_EXT ".bat"
+#else
+#define SCRIPT_EXT
+#endif
+
 static char *echo_prog_path;
 static char *echo_script_path;
 
@@ -179,7 +195,7 @@ test_spawn_script (void)
 
   g_spawn_sync (NULL, (char**)argv->pdata, NULL, 0, NULL, NULL, &stdout_str, NULL, &estatus, &error);
   g_assert_no_error (error);
-  g_assert_cmpstr ("echo\n", ==, stdout_str);
+  g_assert_cmpstr ("echo" LINEEND, ==, stdout_str);
   g_free (stdout_str);
   g_ptr_array_free (argv, TRUE);
 }
@@ -194,24 +210,17 @@ main (int   argc,
   g_test_init (&argc, &argv, NULL);
 
   dirname = g_path_get_dirname (argv[0]);
-  echo_prog_path = g_build_filename (dirname, "test-spawn-echo", NULL);
+  echo_prog_path = g_build_filename (dirname, "test-spawn-echo" EXEEXT, NULL);
   if (!g_file_test (echo_prog_path, G_FILE_TEST_EXISTS))
     {
       g_free (echo_prog_path);
-      echo_prog_path = g_build_filename (dirname, "lt-test-spawn-echo", NULL);
+      echo_prog_path = g_build_filename (dirname, "lt-test-spawn-echo" EXEEXT, NULL);
     }
-#ifndef SRCDIR
-#define SRCDIR dirname
-#endif
-  echo_script_path = g_build_filename (SRCDIR, "echo-script", NULL);
+  echo_script_path = g_build_filename (dirname, "echo-script" SCRIPT_EXT, NULL);
   if (!g_file_test (echo_script_path, G_FILE_TEST_EXISTS))
     {
-      gchar *tmp;
-      /* strip .libs */
-      tmp = g_path_get_dirname (dirname);
       g_free (echo_script_path);
-      echo_script_path = g_build_filename (tmp, "echo-script", NULL);
-      g_free (tmp);
+      echo_script_path = g_test_build_filename (G_TEST_DIST, "echo-script" SCRIPT_EXT, NULL);
     }
   g_free (dirname);
 

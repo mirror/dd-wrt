@@ -1,6 +1,4 @@
-include $(top_srcdir)/Makefile.decl
-
-NULL =
+include $(top_srcdir)/glib.mk
 
 SUBDIRS = gdbus-2.0/codegen
 
@@ -10,7 +8,7 @@ endif
 
 if OS_WIN32_AND_DLL_COMPILATION
 if MS_LIB_AVAILABLE
-noinst_DATA = gio-2.0.lib
+noinst_DATA += gio-2.0.lib
 
 install_ms_lib_cmd = $(INSTALL) gio-2.0.lib $(DESTDIR)$(libdir)
 uninstall_ms_lib_cmd = -rm $(DESTDIR)$(libdir)/gio-2.0.lib
@@ -23,22 +21,14 @@ install-ms-lib:
 uninstall-ms-lib:
 	$(uninstall_ms_lib_cmd)
 
-gio.def: gio.symbols
-	$(AM_V_GEN) (echo EXPORTS; $(CPP) -P -DINCLUDE_VARIABLES -DINCLUDE_INTERNAL_SYMBOLS -DG_OS_WIN32 -DALL_FILES - <$(srcdir)/gio.symbols | sed -e '/^$$/d' -e 's/^/	/' -e 's/G_GNUC_[^ ]*//g' | sort) > $(builddir)/gio.def.tmp && \
-	  mv $(builddir)/gio.def.tmp $(builddir)/gio.def
-
-if OS_LINUX
-if HAVE_GNUC_VISIBILITY
-TESTS = abicheck.sh
-endif
-endif
-
 AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\"GLib-GIO\"			\
 	$(gmodule_INCLUDES)				\
 	$(GLIB_DEBUG_FLAGS)				\
 	-DGIO_COMPILATION				\
 	-DGIO_MODULE_DIR=\"$(GIO_MODULE_DIR)\"	
+
+AM_CFLAGS = $(GLIB_WARN_CFLAGS)
 
 lib_LTLIBRARIES = libgio-2.0.la
 
@@ -155,12 +145,14 @@ application_headers = \
 	gactiongroupexporter.h		\
 	gdbusactiongroup.h		\
 	gaction.h			\
+	gpropertyaction.h		\
 	gsimpleaction.h			\
 					\
 	gmenumodel.h			\
 	gmenu.h				\
 	gmenuexporter.h			\
 	gdbusmenumodel.h		\
+	gnotification.h			\
 	$(NULL)
 
 application_sources = \
@@ -174,19 +166,25 @@ application_sources = \
 	gsimpleactiongroup.c			\
 	gremoteactiongroup.c			\
 	gactiongroupexporter.c			\
+	gdbusactiongroup-private.h		\
 	gdbusactiongroup.c			\
 	gaction.c				\
+	gpropertyaction.c			\
 	gsimpleaction.c				\
 						\
 	gmenumodel.c				\
 	gmenu.c					\
 	gmenuexporter.c				\
 	gdbusmenumodel.c			\
+	gnotification-private.h			\
+	gnotificationbackend.h			\
+	gnotification.c				\
+	gnotificationbackend.c			\
 	$(NULL)
 
 local_sources = \
-	glocaldirectorymonitor.c 	\
-	glocaldirectorymonitor.h 	\
+	ghttpproxy.c			\
+	ghttpproxy.h			\
 	glocalfile.c 			\
 	glocalfile.h 			\
 	glocalfileenumerator.c 		\
@@ -209,6 +207,8 @@ local_sources = \
 	gsocks4aproxy.h			\
 	gsocks5proxy.c			\
 	gsocks5proxy.h			\
+	thumbnail-verify.h		\
+	thumbnail-verify.c		\
 	$(NULL)
 
 platform_libadd =
@@ -221,11 +221,10 @@ platform_libadd += inotify/libinotify.la
 platform_deps += inotify/libinotify.la
 endif
 
-if HAVE_FEN
-AM_CPPFLAGS += -DHAVE_FEN
-SUBDIRS += fen
-platform_libadd += fen/libfen.la
-platform_deps += fen/libfen.la
+if HAVE_KQUEUE
+SUBDIRS += kqueue
+platform_libadd += kqueue/libkqueue.la
+platform_deps += kqueue/libkqueue.la
 endif
 
 if OS_WIN32
@@ -234,7 +233,7 @@ platform_libadd += win32/libgiowin32.la
 platform_deps += win32/libgiowin32.la
 endif
 
-SUBDIRS += .
+SUBDIRS += . tests
 
 if HAVE_FAM
 SUBDIRS += fam
@@ -242,7 +241,7 @@ endif
 
 if OS_UNIX
 appinfo_sources += gdesktopappinfo.c
-platform_libadd += xdgmime/libxdgmime.la $(RESOLVER_LIBADD)
+platform_libadd += xdgmime/libxdgmime.la
 platform_deps += xdgmime/libxdgmime.la
 unix_sources = \
 	gfiledescriptorbased.c  \
@@ -262,6 +261,8 @@ unix_sources = \
 	gunixoutputstream.c 	\
 	gcontenttype.c 		\
 	gcontenttypeprivate.h 	\
+	gfdonotificationbackend.c \
+	ggtknotificationbackend.c \
 	$(NULL)
 
 
@@ -283,6 +284,8 @@ if HAVE_NETLINK
 unix_sources +=			 \
 	gnetworkmonitornetlink.c \
 	gnetworkmonitornetlink.h \
+	gnetworkmonitornm.c	 \
+	gnetworkmonitornm.h	 \
 	$(NULL)
 endif
 endif
@@ -304,20 +307,22 @@ win32_actual_sources = \
 	gwin32inputstream.c \
 	gwin32outputstream.c \
 	gwin32outputstream.h \
+	gwin32networking.h \
 	$(NULL)
 
 win32_more_sources_for_vcproj = \
 	gwin32appinfo.c \
 	gregistrysettingsbackend.c \
-	win32/gwin32directorymonitor.c \
 	win32/gwinhttpfile.c \
 	win32/gwinhttpfileinputstream.c \
 	win32/gwinhttpfileoutputstream.c \
-	win32/gwinhttpvfs.c
+	win32/gwinhttpvfs.c \
+	win32/gwin32fsmonitorutils.c \
+	win32/gwin32filemonitor.c
 
 if OS_WIN32
 appinfo_sources += gwin32appinfo.c gwin32appinfo.h
-platform_libadd += -lshlwapi -lws2_32 -ldnsapi
+platform_libadd += -lshlwapi -lws2_32 -ldnsapi -liphlpapi
 win32_sources = $(win32_actual_sources)
 
 giowin32includedir=$(includedir)/gio-win32-2.0/gio
@@ -328,24 +333,25 @@ giowin32include_HEADERS = \
 
 endif
 
-if BUILD_MODULAR_TESTS
-SUBDIRS += tests 
-endif
-
 libgio_2_0_la_SOURCES =		\
 	gappinfo.c 		\
+	gappinfoprivate.h	\
 	gasynchelper.c 		\
 	gasynchelper.h 		\
 	gasyncinitable.c	\
 	gasyncresult.c 		\
 	gbufferedinputstream.c 	\
 	gbufferedoutputstream.c \
+	gbytesicon.c		\
 	gcancellable.c 		\
 	gcharsetconverter.c	\
+	gcontextspecificgroup.c	\
+	gcontextspecificgroup.h	\
 	gconverter.c		\
 	gconverterinputstream.c	\
 	gconverteroutputstream.c	\
 	gcredentials.c		\
+	gcredentialsprivate.h	\
 	gdatainputstream.c 	\
 	gdataoutputstream.c 	\
 	gdrive.c 		\
@@ -385,6 +391,8 @@ libgio_2_0_la_SOURCES =		\
 	giomodule-priv.h	\
 	gioscheduler.c 		\
 	giostream.c		\
+	gioprivate.h		\
+	giowin32-priv.h 	\
 	gloadableicon.c 	\
 	gmount.c 		\
 	gmemoryinputstream.c 	\
@@ -393,6 +401,7 @@ libgio_2_0_la_SOURCES =		\
 	gnativevolumemonitor.c 	\
 	gnativevolumemonitor.h 	\
 	gnetworkaddress.c	\
+	gnetworking.c		\
 	gnetworkingprivate.h	\
 	gnetworkmonitor.c	\
 	gnetworkmonitorbase.c	\
@@ -405,6 +414,9 @@ libgio_2_0_la_SOURCES =		\
 	gpollableutils.c	\
 	gpollfilemonitor.c 	\
 	gpollfilemonitor.h 	\
+	gproxy.c		\
+	gproxyaddress.c         \
+	gproxyaddressenumerator.c \
 	gproxyresolver.c	\
 	gresolver.c		\
 	gresource.c		\
@@ -412,6 +424,7 @@ libgio_2_0_la_SOURCES =		\
 	gresourcefile.h		\
 	gseekable.c 		\
 	gsimpleasyncresult.c 	\
+	gsimpleiostream.c	\
 	gsimplepermission.c 	\
 	gsocket.c		\
 	gsocketaddress.c	\
@@ -425,11 +438,13 @@ libgio_2_0_la_SOURCES =		\
 	gsocketlistener.c	\
 	gsocketoutputstream.c	\
 	gsocketoutputstream.h	\
-	gproxy.c		\
-	gproxyaddress.c         \
-	gproxyaddressenumerator.c \
+	gsubprocesslauncher.c	\
+	gsubprocess.c		\
+	gsubprocesslauncher-private.h	\
 	gsocketservice.c	\
 	gsrvtarget.c		\
+	gsimpleproxyresolver.c	\
+	gtask.c			\
 	gtcpconnection.c	\
 	gtcpwrapperconnection.c \
 	gthreadedsocketservice.c\
@@ -455,6 +470,8 @@ libgio_2_0_la_SOURCES =		\
 	gmountprivate.h 	\
 	gioenumtypes.h		\
 	gioenumtypes.c		\
+	glistmodel.c 		\
+	gliststore.c 		\
 	$(appinfo_sources) 	\
 	$(unix_sources) 	\
 	$(win32_sources) 	\
@@ -467,9 +484,9 @@ libgio_2_0_la_SOURCES =		\
 EXTRA_DIST += strinfo.c
 
 libgio_2_0_la_LIBADD = \
-	$(top_builddir)/glib/libglib-2.0.la 		\
 	$(top_builddir)/gobject/libgobject-2.0.la 	\
 	$(top_builddir)/gmodule/libgmodule-2.0.la 	\
+	$(top_builddir)/glib/libglib-2.0.la 		\
 	$(platform_libadd) 				\
 	$(ZLIB_LIBS)					\
 	$(SELINUX_LIBS) 				\
@@ -485,37 +502,24 @@ no_undefined = -no-undefined
 endif
 
 if OS_WIN32_AND_DLL_COMPILATION
-export_symbols = -export-symbols $(builddir)/gio.def
-gio_def = gio.def
-
 gio_win32_res = gio-win32-res.o
 gio_win32_res_ldflag = -Wl,$(gio_win32_res)
-
-install-def-file:
-	$(INSTALL) $(builddir)/gio.def $(DESTDIR)$(libdir)/gio-2.0.def
-
-uninstall-def-file:
-	-rm $(DESTDIR)$(libdir)/gio-2.0.def
-else
-install-def-file:
-uninstall-def-file:
-
-export_symbols = $(LIBTOOL_EXPORT_OPTIONS)
 endif
 
-install-data-local: install-ms-lib install-def-file
+install-data-local: install-ms-lib
 	$(mkinstalldirs) $(DESTDIR)$(GIO_MODULE_DIR)
 
-uninstall-local: uninstall-ms-lib uninstall-def-file
+uninstall-local: uninstall-ms-lib
 
+libgio_2_0_la_CFLAGS = $(AM_CFLAGS) $(GLIB_HIDDEN_VISIBILITY_CFLAGS)
 libgio_2_0_la_LDFLAGS = $(GLIB_LINK_FLAGS) \
 	$(gio_win32_res_ldflag) \
 	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
-	-export-dynamic $(no_undefined) $(export_symbols)
+	-export-dynamic $(no_undefined)
 
 if OS_COCOA
 # This is dumb.  The ObjC source file should be properly named .m
-libgio_2_0_la_CFLAGS = -xobjective-c
+libgio_2_0_la_CFLAGS += -xobjective-c
 libgio_2_0_la_LDFLAGS += -Wl,-framework,Foundation
 endif
 
@@ -530,6 +534,7 @@ gio_headers =			\
 	gasyncresult.h 		\
 	gbufferedinputstream.h 	\
 	gbufferedoutputstream.h \
+	gbytesicon.h		\
 	gcancellable.h 		\
 	gcontenttype.h 		\
 	gcharsetconverter.h	\
@@ -560,6 +565,7 @@ gio_headers =			\
 	ginputstream.h 		\
 	ginitable.h		\
 	gio.h			\
+	gio-autocleanups.h	\
 	giotypes.h		\
 	gioenums.h		\
 	gioerror.h 		\
@@ -588,6 +594,7 @@ gio_headers =			\
 	gresource.h		\
 	gseekable.h 		\
 	gsimpleasyncresult.h 	\
+	gsimpleiostream.h	\
 	gsimplepermission.h 	\
 	gsocket.h		\
 	gsocketaddress.h	\
@@ -599,6 +606,10 @@ gio_headers =			\
 	gsocketlistener.h	\
 	gsocketservice.h	\
 	gsrvtarget.h		\
+	gsimpleproxyresolver.h	\
+	gtask.h			\
+	gsubprocess.h		\
+	gsubprocesslauncher.h	\
 	gtcpconnection.h	\
 	gtcpwrapperconnection.h \
 	gthreadedsocketservice.h\
@@ -617,6 +628,8 @@ gio_headers =			\
 	gvolumemonitor.h 	\
 	gzlibcompressor.h	\
 	gzlibdecompressor.h	\
+	glistmodel.h		\
+	gliststore.h		\
 	$(application_headers)	\
 	$(settings_headers)	\
 	$(gdbus_headers)	\
@@ -627,57 +640,67 @@ gioinclude_HEADERS = 		\
 	$(gio_headers)		\
 	gioenumtypes.h
 
+nodist_gioinclude_HEADERS =	\
+	gnetworking.h		\
+	$(NULL)
+
 # these sources (also mentioned above) are generated.
-BUILT_SOURCES = 		\
+BUILT_SOURCES += 		\
 	gconstructor_as_data.h	\
 	gioenumtypes.h		\
 	gioenumtypes.c		\
 	gdbus-daemon-generated.c \
 	gdbus-daemon-generated.h \
+	gnetworking.h		\
 	$(NULL)
 
 EXTRA_DIST += 			\
 	data-to-c.pl		\
-	gio.symbols		\
 	gioenumtypes.h.template	\
 	gioenumtypes.c.template	\
 	makefile.msc		\
-	abicheck.sh		\
 	gio.rc.in		\
 	gschema.dtd		\
 	gconstructor_as_data.h	\
+	gnetworking.h.win32	\
 	$(NULL)
 
-BUILT_EXTRA_DIST = 		\
+BUILT_EXTRA_DIST += 		\
 	gio.rc
 
 # This is read by gobject-introspection/misc/ and gtk-doc
 gio-public-headers.txt: Makefile
 	$(AM_V_GEN) echo $(gioinclude_HEADERS) $(giowin32include_HEADERS) $(giounixinclude_HEADERS) > $@.tmp && mv $@.tmp $@
 
-CLEANFILES = gdbus-daemon-generated.c gdbus-daemon-generated.h gio-public-headers.txt gconstructor_as_data.h
+CLEANFILES += gdbus-daemon-generated.c gdbus-daemon-generated.h gio-public-headers.txt gconstructor_as_data.h
+
+
+DISTCLEANFILES += 		\
+	gioenumtypes.h		\
+	gioenumtypes.c
 
 all-local: gio-public-headers.txt
 
 gioenumtypes.h: $(gio_headers) gioenumtypes.h.template
-	$(AM_V_GEN) ( top_builddir=`cd $(top_builddir) && pwd`; \
-	  cd $(srcdir) && $$top_builddir/gobject/glib-mkenums --template gioenumtypes.h.template $(gio_headers) ) > \
+	$(AM_V_GEN) $(top_builddir)/gobject/glib-mkenums --template $(filter %.template,$^) $(filter-out %.template,$^) > \
 	    gioenumtypes.h.tmp && mv gioenumtypes.h.tmp gioenumtypes.h
 
 gioenumtypes.c: $(gio_headers) gioenumtypes.c.template
-	$(AM_V_GEN) ( top_builddir=`cd $(top_builddir) && pwd`; \
-	  cd $(srcdir) && $$top_builddir/gobject/glib-mkenums --template gioenumtypes.c.template $(gio_headers) ) > \
+	$(AM_V_GEN) $(top_builddir)/gobject/glib-mkenums --template $(filter %.template,$^) $(filter-out %.template,$^) > \
 	    gioenumtypes.c.tmp && mv gioenumtypes.c.tmp gioenumtypes.c
 
+gio.def: libgio-2.0.la
+	$(AM_V_GEN) dumpbin.exe -exports .libs/libgio-2.0-0.dll | awk 'BEGIN { print "EXPORTS" } / +[[:digit:]]+ +[[:xdigit:]]+ +[[:xdigit:]]+/{ print $$4 }' > gio.def.tmp && mv gio.def.tmp gio.def
+
 gio-2.0.lib: libgio-2.0.la gio.def
-	lib -machine:@LIB_EXE_MACHINE_FLAG@ -name:libgio-2.0-$(LT_CURRENT_MINUS_AGE).dll -def:$(builddir)/gio.def -out:$@
+	$(AM_V_GEN) lib.exe -machine:@LIB_EXE_MACHINE_FLAG@ -name:libgio-2.0-$(LT_CURRENT_MINUS_AGE).dll -def:$(builddir)/gio.def -out:$@
 
 bin_PROGRAMS = gio-querymodules glib-compile-schemas glib-compile-resources gsettings
 
-glib_compile_resources_LDADD = \
-	$(top_builddir)/glib/libglib-2.0.la \
+glib_compile_resources_LDADD = libgio-2.0.la 		\
 	$(top_builddir)/gobject/libgobject-2.0.la	\
-	libgio-2.0.la
+	$(top_builddir)/glib/libglib-2.0.la 		\
+	$(NULL)
 
 glib_compile_resources_SOURCES = \
 	gvdb/gvdb-format.h		\
@@ -686,11 +709,10 @@ glib_compile_resources_SOURCES = \
 	glib-compile-resources.c
 
 gio_querymodules_SOURCES = gio-querymodules.c
-gio_querymodules_LDADD	 = \
-	$(top_builddir)/glib/libglib-2.0.la		\
+gio_querymodules_LDADD	 = libgio-2.0.la 		\
 	$(top_builddir)/gobject/libgobject-2.0.la	\
 	$(top_builddir)/gmodule/libgmodule-2.0.la	\
-	libgio-2.0.la					\
+	$(top_builddir)/glib/libglib-2.0.la		\
 	$(NULL)
 
 gconstructor_as_data.h: $(top_srcdir)/glib/gconstructor.h data-to-c.pl
@@ -704,10 +726,10 @@ glib_compile_schemas_SOURCES = \
 	gvdb/gvdb-builder.c		\
 	glib-compile-schemas.c
 
-gsettings_LDADD = \
-	$(top_builddir)/glib/libglib-2.0.la		\
+gsettings_LDADD = libgio-2.0.la 			\
 	$(top_builddir)/gobject/libgobject-2.0.la	\
-	libgio-2.0.la
+	$(top_builddir)/glib/libglib-2.0.la		\
+	$(NULL)
 gsettings_SOURCES = gsettings-tool.c
 
 schemadir = $(datadir)/glib-2.0/schemas
@@ -718,12 +740,25 @@ dist_schema_DATA = gschema.dtd
 
 bin_PROGRAMS += gdbus
 gdbus_SOURCES = gdbus-tool.c
-gdbus_LDADD = libgio-2.0.la \
-	$(top_builddir)/glib/libglib-2.0.la 		\
-	$(top_builddir)/gobject/libgobject-2.0.la
+gdbus_LDADD = libgio-2.0.la 				\
+	$(top_builddir)/gobject/libgobject-2.0.la	\
+	$(top_builddir)/glib/libglib-2.0.la		\
+	$(NULL)
+
+if OS_UNIX
+# ------------------------------------------------------------------------
+# gapplication(1) tool
+bin_PROGRAMS += gapplication
+gapplication_SOURCES = gapplication-tool.c
+gapplication_LDADD = libgio-2.0.la 			\
+	$(top_builddir)/gobject/libgobject-2.0.la	\
+	$(top_builddir)/glib/libglib-2.0.la		\
+	$(NULL)
+endif
 
 completiondir = $(datadir)/bash-completion/completions
 completion_DATA = \
+	completion/gapplication				\
 	completion/gdbus				\
 	completion/gsettings				\
 	completion/gresource
@@ -735,9 +770,9 @@ EXTRA_DIST += $(completion_DATA)
 bin_PROGRAMS += gresource
 gresource_SOURCES = gresource-tool.c
 gresource_CPPFLAGS = $(LIBELF_CFLAGS) $(AM_CPPFLAGS)
-gresource_LDADD = libgio-2.0.la \
-	$(top_builddir)/glib/libglib-2.0.la 		\
-	$(top_builddir)/gobject/libgobject-2.0.la \
+gresource_LDADD = libgio-2.0.la				\
+	$(top_builddir)/gobject/libgobject-2.0.la	\
+	$(top_builddir)/glib/libglib-2.0.la		\
 	$(LIBELF_LIBS)
 
 # ------------------------------------------------------------------------
@@ -751,7 +786,7 @@ dist-hook: $(BUILT_EXTRA_DIST) ../build/win32/vs9/gio.vcproj ../build/win32/vs10
 ../build/win32/vs9/gio.vcproj: $(top_srcdir)/build/win32/vs9/gio.vcprojin
 	for F in `echo $(libgio_2_0_la_SOURCES) $(win32_actual_sources) $(win32_more_sources_for_vcproj) | tr '/' '\\'`; do \
 		case $$F in \
-		gunix*.c|gdesktopappinfo.c|gnetworkmonitornetlink.c|gcontenttype.c) ;; \
+		gunix*.c|gdesktopappinfo.c|gnetworkmonitornetlink.c|gcontenttype.c|gnetworkmonitornm.c) ;; \
 		*.c) echo '   <File RelativePath="..\..\..\gio\'$$F'" />' \
 		     ;; \
 		esac; \
@@ -762,7 +797,7 @@ dist-hook: $(BUILT_EXTRA_DIST) ../build/win32/vs9/gio.vcproj ../build/win32/vs10
 ../build/win32/vs10/gio.vcxproj: $(top_srcdir)/build/win32/vs10/gio.vcxprojin
 	for F in `echo $(libgio_2_0_la_SOURCES) $(win32_actual_sources) $(win32_more_sources_for_vcproj) | tr '/' '\\'`; do \
 		case $$F in \
-		gunix*.c|gdesktopappinfo.c|gnetworkmonitornetlink.c|gcontenttype.c) ;; \
+		gunix*.c|gdesktopappinfo.c|gnetworkmonitornetlink.c|gcontenttype.c|gnetworkmonitornm.c) ;; \
 		*.c) echo '    <ClCompile Include="..\..\..\gio\'$$F'" />' \
 		     ;; \
 		esac; \
@@ -773,7 +808,7 @@ dist-hook: $(BUILT_EXTRA_DIST) ../build/win32/vs9/gio.vcproj ../build/win32/vs10
 ../build/win32/vs10/gio.vcxproj.filters: $(top_srcdir)/build/win32/vs10/gio.vcxproj.filtersin
 	for F in `echo $(libgio_2_0_la_SOURCES) $(win32_actual_sources) $(win32_more_sources_for_vcproj) | tr '/' '\\'`; do \
 		case $$F in \
-		gunix*.c|gdesktopappinfo.c|gnetworkmonitornetlink.c|gcontenttype.c) ;; \
+		gunix*.c|gdesktopappinfo.c|gnetworkmonitornetlink.c|gcontenttype.c|gnetworkmonitornm.c) ;; \
 		*.c) echo '    <ClCompile Include="..\..\..\gio\'$$F'"><Filter>Source Files</Filter></ClCompile>' \
 		     ;; \
 		esac; \

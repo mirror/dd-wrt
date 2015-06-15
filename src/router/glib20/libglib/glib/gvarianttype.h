@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
 
+#ifndef __G_VARIANT_TYPE_H__
+#define __G_VARIANT_TYPE_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_VARIANT_TYPE_H__
-#define __G_VARIANT_TYPE_H__
 
 #include <glib/gmessages.h>
 #include <glib/gtypes.h>
@@ -294,57 +292,87 @@ typedef struct _GVariantType GVariantType;
 #endif
 
 /* type string checking */
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_string_is_valid          (const gchar         *type_string);
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_string_scan              (const gchar         *string,
                                                                          const gchar         *limit,
                                                                          const gchar        **endptr);
 
 /* create/destroy */
+GLIB_AVAILABLE_IN_ALL
 void                            g_variant_type_free                     (GVariantType        *type);
+GLIB_AVAILABLE_IN_ALL
 GVariantType *                  g_variant_type_copy                     (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 GVariantType *                  g_variant_type_new                      (const gchar         *type_string);
 
 /* getters */
+GLIB_AVAILABLE_IN_ALL
 gsize                           g_variant_type_get_string_length        (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 const gchar *                   g_variant_type_peek_string              (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 gchar *                         g_variant_type_dup_string               (const GVariantType  *type);
 
 /* classification */
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_is_definite              (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_is_container             (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_is_basic                 (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_is_maybe                 (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_is_array                 (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_is_tuple                 (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_is_dict_entry            (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_is_variant               (const GVariantType  *type);
 
 /* for hash tables */
+GLIB_AVAILABLE_IN_ALL
 guint                           g_variant_type_hash                     (gconstpointer        type);
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_equal                    (gconstpointer        type1,
                                                                          gconstpointer        type2);
 
 /* subtypes */
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_type_is_subtype_of            (const GVariantType  *type,
                                                                          const GVariantType  *supertype);
 
 /* type iterator interface */
+GLIB_AVAILABLE_IN_ALL
 const GVariantType *            g_variant_type_element                  (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 const GVariantType *            g_variant_type_first                    (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 const GVariantType *            g_variant_type_next                     (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 gsize                           g_variant_type_n_items                  (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 const GVariantType *            g_variant_type_key                      (const GVariantType  *type);
+GLIB_AVAILABLE_IN_ALL
 const GVariantType *            g_variant_type_value                    (const GVariantType  *type);
 
 /* constructors */
+GLIB_AVAILABLE_IN_ALL
 GVariantType *                  g_variant_type_new_array                (const GVariantType  *element);
+GLIB_AVAILABLE_IN_ALL
 GVariantType *                  g_variant_type_new_maybe                (const GVariantType  *element);
+GLIB_AVAILABLE_IN_ALL
 GVariantType *                  g_variant_type_new_tuple                (const GVariantType * const *items,
                                                                          gint                 length);
+GLIB_AVAILABLE_IN_ALL
 GVariantType *                  g_variant_type_new_dict_entry           (const GVariantType  *key,
                                                                          const GVariantType  *value);
 
 /*< private >*/
+GLIB_AVAILABLE_IN_ALL
 const GVariantType *            g_variant_type_checked_                 (const gchar *);
 
 G_END_DECLS

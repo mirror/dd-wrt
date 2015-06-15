@@ -1,8 +1,6 @@
-include $(top_srcdir)/Makefile.decl
+include $(top_srcdir)/glib.mk
 
-NULL =
-
-noinst_LTLIBRARIES = libinotify.la
+noinst_LTLIBRARIES += libinotify.la
 
 libinotify_la_SOURCES = 		\
 	inotify-kernel.c 		\
@@ -17,11 +15,10 @@ libinotify_la_SOURCES = 		\
 	inotify-helper.h		\
 	ginotifyfilemonitor.c		\
 	ginotifyfilemonitor.h		\
-	ginotifydirectorymonitor.c	\
-	ginotifydirectorymonitor.h	\
 	$(NULL)
 
 libinotify_la_CFLAGS = \
+	$(GLIB_HIDDEN_VISIBILITY_CFLAGS)	\
 	-DG_LOG_DOMAIN=\"GLib-GIO\"	\
 	$(gio_INCLUDES) 		\
 	$(GLIB_DEBUG_FLAGS)		\

@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -144,17 +142,10 @@ g_string_chunk_new (gsize size)
 void
 g_string_chunk_free (GStringChunk *chunk)
 {
-  GSList *tmp_list;
-
   g_return_if_fail (chunk != NULL);
 
   if (chunk->storage_list)
-    {
-      for (tmp_list = chunk->storage_list; tmp_list; tmp_list = tmp_list->next)
-        g_free (tmp_list->data);
-
-      g_slist_free (chunk->storage_list);
-    }
+    g_slist_free_full (chunk->storage_list, g_free);
 
   if (chunk->const_table)
     g_hash_table_destroy (chunk->const_table);
@@ -175,16 +166,11 @@ g_string_chunk_free (GStringChunk *chunk)
 void
 g_string_chunk_clear (GStringChunk *chunk)
 {
-  GSList *tmp_list;
-
   g_return_if_fail (chunk != NULL);
 
   if (chunk->storage_list)
     {
-      for (tmp_list = chunk->storage_list; tmp_list; tmp_list = tmp_list->next)
-        g_free (tmp_list->data);
-
-      g_slist_free (chunk->storage_list);
+      g_slist_free_full (chunk->storage_list, g_free);
 
       chunk->storage_list = NULL;
       chunk->storage_next = chunk->default_size;
@@ -285,7 +271,7 @@ g_string_chunk_insert_const (GStringChunk *chunk,
  * The characters in the returned string can be changed, if necessary,
  * though you should not change anything after the end of the string.
  *
- * Return value: a pointer to the copy of @string within the #GStringChunk
+ * Returns: a pointer to the copy of @string within the #GStringChunk
  *
  * Since: 2.4
  */

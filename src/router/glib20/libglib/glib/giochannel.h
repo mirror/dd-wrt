@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,12 +22,12 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_IOCHANNEL_H__
+#define __G_IOCHANNEL_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_IOCHANNEL_H__
-#define __G_IOCHANNEL_H__
 
 #include <glib/gconvert.h>
 #include <glib/gmain.h>
@@ -83,30 +81,18 @@ typedef enum
   G_SEEK_END
 } GSeekType;
 
-typedef enum /*< flags >*/
-{
-  G_IO_IN	GLIB_SYSDEF_POLLIN,
-  G_IO_OUT	GLIB_SYSDEF_POLLOUT,
-  G_IO_PRI	GLIB_SYSDEF_POLLPRI,
-  G_IO_ERR	GLIB_SYSDEF_POLLERR,
-  G_IO_HUP	GLIB_SYSDEF_POLLHUP,
-  G_IO_NVAL	GLIB_SYSDEF_POLLNVAL
-} GIOCondition;
-
 typedef enum
 {
   G_IO_FLAG_APPEND = 1 << 0,
   G_IO_FLAG_NONBLOCK = 1 << 1,
   G_IO_FLAG_IS_READABLE = 1 << 2,	/* Read only flag */
   G_IO_FLAG_IS_WRITABLE = 1 << 3,	/* Read only flag */
+  G_IO_FLAG_IS_WRITEABLE = 1 << 3,      /* Misspelling in 2.29.10 and earlier */
   G_IO_FLAG_IS_SEEKABLE = 1 << 4,	/* Read only flag */
   G_IO_FLAG_MASK = (1 << 5) - 1,
   G_IO_FLAG_GET_MASK = G_IO_FLAG_MASK,
   G_IO_FLAG_SET_MASK = G_IO_FLAG_APPEND | G_IO_FLAG_NONBLOCK
 } GIOFlags;
-
-/* Misspelling in enum in 2.29.10 and earlier */
-#define G_IO_FLAG_IS_WRITEABLE (G_IO_FLAG_IS_WRITABLE)
 
 struct _GIOChannel
 {
@@ -169,11 +155,14 @@ struct _GIOFuncs
   GIOFlags   (*io_get_flags)     (GIOChannel   *channel);
 };
 
+GLIB_AVAILABLE_IN_ALL
 void        g_io_channel_init   (GIOChannel    *channel);
+GLIB_AVAILABLE_IN_ALL
 GIOChannel *g_io_channel_ref    (GIOChannel    *channel);
+GLIB_AVAILABLE_IN_ALL
 void        g_io_channel_unref  (GIOChannel    *channel);
 
-GLIB_DEPRECATED_FOR(g_io_channel_read_for)
+GLIB_DEPRECATED_FOR(g_io_channel_read_chars)
 GIOError    g_io_channel_read   (GIOChannel    *channel,
                                  gchar         *buf,
                                  gsize          count,
@@ -193,17 +182,21 @@ GIOError  g_io_channel_seek     (GIOChannel    *channel,
 GLIB_DEPRECATED_FOR(g_io_channel_shutdown)
 void      g_io_channel_close    (GIOChannel    *channel);
 
+GLIB_AVAILABLE_IN_ALL
 GIOStatus g_io_channel_shutdown (GIOChannel      *channel,
 				 gboolean         flush,
 				 GError         **err);
+GLIB_AVAILABLE_IN_ALL
 guint     g_io_add_watch_full   (GIOChannel      *channel,
 				 gint             priority,
 				 GIOCondition     condition,
 				 GIOFunc          func,
 				 gpointer         user_data,
 				 GDestroyNotify   notify);
+GLIB_AVAILABLE_IN_ALL
 GSource * g_io_create_watch     (GIOChannel      *channel,
 				 GIOCondition     condition);
+GLIB_AVAILABLE_IN_ALL
 guint     g_io_add_watch        (GIOChannel      *channel,
 				 GIOCondition     condition,
 				 GIOFunc          func,
@@ -212,77 +205,98 @@ guint     g_io_add_watch        (GIOChannel      *channel,
 /* character encoding conversion involved functions.
  */
 
+GLIB_AVAILABLE_IN_ALL
 void                  g_io_channel_set_buffer_size      (GIOChannel   *channel,
 							 gsize         size);
+GLIB_AVAILABLE_IN_ALL
 gsize                 g_io_channel_get_buffer_size      (GIOChannel   *channel);
+GLIB_AVAILABLE_IN_ALL
 GIOCondition          g_io_channel_get_buffer_condition (GIOChannel   *channel);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus             g_io_channel_set_flags            (GIOChannel   *channel,
 							 GIOFlags      flags,
 							 GError      **error);
+GLIB_AVAILABLE_IN_ALL
 GIOFlags              g_io_channel_get_flags            (GIOChannel   *channel);
+GLIB_AVAILABLE_IN_ALL
 void                  g_io_channel_set_line_term        (GIOChannel   *channel,
 							 const gchar  *line_term,
 							 gint          length);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_io_channel_get_line_term        (GIOChannel   *channel,
 							 gint         *length);
+GLIB_AVAILABLE_IN_ALL
 void		      g_io_channel_set_buffered		(GIOChannel   *channel,
 							 gboolean      buffered);
+GLIB_AVAILABLE_IN_ALL
 gboolean	      g_io_channel_get_buffered		(GIOChannel   *channel);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus             g_io_channel_set_encoding         (GIOChannel   *channel,
 							 const gchar  *encoding,
 							 GError      **error);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_io_channel_get_encoding         (GIOChannel   *channel);
+GLIB_AVAILABLE_IN_ALL
 void                  g_io_channel_set_close_on_unref	(GIOChannel   *channel,
 							 gboolean      do_close);
+GLIB_AVAILABLE_IN_ALL
 gboolean              g_io_channel_get_close_on_unref	(GIOChannel   *channel);
 
 
+GLIB_AVAILABLE_IN_ALL
 GIOStatus   g_io_channel_flush            (GIOChannel   *channel,
 					   GError      **error);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus   g_io_channel_read_line        (GIOChannel   *channel,
 					   gchar       **str_return,
 					   gsize        *length,
 					   gsize        *terminator_pos,
 					   GError      **error);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus   g_io_channel_read_line_string (GIOChannel   *channel,
 					   GString      *buffer,
 					   gsize        *terminator_pos,
 					   GError      **error);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus   g_io_channel_read_to_end      (GIOChannel   *channel,
 					   gchar       **str_return,
 					   gsize        *length,
 					   GError      **error);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus   g_io_channel_read_chars       (GIOChannel   *channel,
 					   gchar        *buf,
 					   gsize         count,
 					   gsize        *bytes_read,
 					   GError      **error);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus   g_io_channel_read_unichar     (GIOChannel   *channel,
 					   gunichar     *thechar,
 					   GError      **error);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus   g_io_channel_write_chars      (GIOChannel   *channel,
 					   const gchar  *buf,
 					   gssize        count,
 					   gsize        *bytes_written,
 					   GError      **error);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus   g_io_channel_write_unichar    (GIOChannel   *channel,
 					   gunichar      thechar,
 					   GError      **error);
+GLIB_AVAILABLE_IN_ALL
 GIOStatus   g_io_channel_seek_position    (GIOChannel   *channel,
 					   gint64        offset,
 					   GSeekType     type,
 					   GError      **error);
-#ifdef G_OS_WIN32
-#define g_io_channel_new_file g_io_channel_new_file_utf8
-#endif
-
+GLIB_AVAILABLE_IN_ALL
 GIOChannel* g_io_channel_new_file         (const gchar  *filename,
 					   const gchar  *mode,
 					   GError      **error);
 
 /* Error handling */
 
+GLIB_AVAILABLE_IN_ALL
 GQuark          g_io_channel_error_quark      (void);
+GLIB_AVAILABLE_IN_ALL
 GIOChannelError g_io_channel_error_from_errno (gint en);
 
 /* On Unix, IO channels created with this function for any file
@@ -303,7 +317,9 @@ GIOChannelError g_io_channel_error_from_errno (gint en);
  * corresponding concept is file HANDLE. There isn't as of yet a way to
  * get GIOChannels for Win32 file HANDLEs.
  */
+GLIB_AVAILABLE_IN_ALL
 GIOChannel* g_io_channel_unix_new    (int         fd);
+GLIB_AVAILABLE_IN_ALL
 gint        g_io_channel_unix_get_fd (GIOChannel *channel);
 
 
@@ -324,6 +340,7 @@ GLIB_VAR GSourceFuncs g_io_watch_funcs;
  * from the underlying file descriptor. For SOCKETs, it is possible to call
  * recv().
  */
+GLIB_AVAILABLE_IN_ALL
 void        g_io_channel_win32_make_pollfd (GIOChannel   *channel,
 					    GIOCondition  condition,
 					    GPollFD      *fd);
@@ -331,6 +348,7 @@ void        g_io_channel_win32_make_pollfd (GIOChannel   *channel,
 /* This can be used to wait a until at least one of the channels is readable.
  * On Unix you would do a select() on the file descriptors of the channels.
  */
+GLIB_AVAILABLE_IN_ALL
 gint        g_io_channel_win32_poll   (GPollFD    *fds,
 				       gint        n_fds,
 				       gint        timeout_);
@@ -341,8 +359,10 @@ gint        g_io_channel_win32_poll   (GPollFD    *fds,
  * pointer, like the guint in the traditional prototype. We can't use
  * intptr_t as that is not portable enough.
  */
+GLIB_AVAILABLE_IN_ALL
 GIOChannel *g_io_channel_win32_new_messages (gsize hwnd);
 #else
+GLIB_AVAILABLE_IN_ALL
 GIOChannel *g_io_channel_win32_new_messages (guint hwnd);
 #endif
 
@@ -355,9 +375,11 @@ GIOChannel *g_io_channel_win32_new_messages (guint hwnd);
  * the file descriptor should be done by this internal GLib
  * thread. Your code should call only g_io_channel_read_chars().
  */
+GLIB_AVAILABLE_IN_ALL
 GIOChannel* g_io_channel_win32_new_fd (gint         fd);
 
 /* Get the C runtime file descriptor of a channel. */
+GLIB_AVAILABLE_IN_ALL
 gint        g_io_channel_win32_get_fd (GIOChannel *channel);
 
 /* Create an IO channel for a winsock socket. The parameter should be
@@ -365,9 +387,28 @@ gint        g_io_channel_win32_get_fd (GIOChannel *channel);
  * you can use normal recv() or recvfrom() on sockets even if GLib
  * is polling them.
  */
+GLIB_AVAILABLE_IN_ALL
 GIOChannel *g_io_channel_win32_new_socket (gint socket);
 
+GLIB_DEPRECATED_FOR(g_io_channel_win32_new_socket)
+GIOChannel *g_io_channel_win32_new_stream_socket (gint socket);
+
+GLIB_AVAILABLE_IN_ALL
+void        g_io_channel_win32_set_debug (GIOChannel *channel,
+                                          gboolean    flag);
+
 #endif
+
+#ifndef __GTK_DOC_IGNORE__
+#ifdef G_OS_WIN32
+#define g_io_channel_new_file g_io_channel_new_file_utf8
+
+GLIB_AVAILABLE_IN_ALL
+GIOChannel *g_io_channel_new_file_utf8 (const gchar  *filename,
+                                        const gchar  *mode,
+                                        GError      **error);
+#endif
+#endif /* __GTK_DOC_IGNORE__ */
 
 G_END_DECLS
 
