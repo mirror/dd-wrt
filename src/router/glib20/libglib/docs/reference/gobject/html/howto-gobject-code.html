@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Boilerplate code: GObject Reference Manual</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<link rel="home" href="index.html" title="GObject Reference Manual">
+<link rel="up" href="howto-gobject.html" title="How to define and implement a new GObject">
+<link rel="prev" href="howto-gobject.html" title="How to define and implement a new GObject">
+<link rel="next" href="howto-gobject-construction.html" title="Object Construction">
+<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts"></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="howto-gobject.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="howto-gobject.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="howto-gobject-construction.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="sect1">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="howto-gobject-code"></a>Boilerplate code</h2></div></div></div>
+<p>
+      In your code, the first step is to #include the needed headers: depending
+      on your header include strategy, this can be as simple as
+      <code class="literal">#include "maman-bar.h"</code> or as complicated as tens
+      of #include lines ending with <code class="literal">#include "maman-bar.h"</code>:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="comment">/*</span>
+<span class="comment"> * Copyright information</span>
+<span class="comment"> */</span>
+
+<span class="preproc">#include</span><span class="normal"> </span><span class="string">"maman-bar.h"</span>
+
+<span class="comment">/* If you use Pimpls, include the private structure </span>
+<span class="comment"> * definition here. Some people create a maman-bar-private.h header</span>
+<span class="comment"> * which is included by the maman-bar.c file and which contains the</span>
+<span class="comment"> * definition for this private structure.</span>
+<span class="comment"> */</span>
+<span class="keyword">struct</span><span class="normal"> </span><span class="classname">_MamanBarPrivate</span><span class="normal"> </span><span class="cbracket">{</span>
+<span class="normal">  </span><span class="type">int</span><span class="normal"> member_1</span><span class="symbol">;</span>
+<span class="normal">  </span><span class="comment">/* stuff */</span>
+<span class="cbracket">}</span><span class="symbol">;</span>
+
+<span class="comment">/* </span>
+<span class="comment"> * forward definitions</span>
+<span class="comment"> */</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+    </p>
+<p>
+      Call the <code class="function">G_DEFINE_TYPE</code> macro using the name
+      of the type, the prefix of the functions and the parent GType to
+      reduce the amount of boilerplate needed. This macro will:
+
+      </p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem">implement the <code class="function">maman_bar_get_type</code>
+        function</li>
+<li class="listitem">define a parent class pointer accessible from
+        the whole .c file</li>
+</ul></div>
+<p>
+
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE:CAPS">G_DEFINE_TYPE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanBar</span><span class="symbol">,</span><span class="normal"> maman_bar</span><span class="symbol">,</span><span class="normal"> <a href="gobject-Type-Information.html#G-TYPE-OBJECT:CAPS">G_TYPE_OBJECT</a></span><span class="symbol">)</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+    </p>
+<p>
+      It is also possible to use the
+      <code class="function">G_DEFINE_TYPE_WITH_CODE</code> macro to control the
+      get_type function implementation - for instance, to add a call to
+      <code class="function">G_IMPLEMENT_INTERFACE</code> macro which will
+      call the <code class="function">g_type_implement_interface</code> function,
+      or call the <code class="function">G_ADD_PRIVATE</code> macro will add an
+      instance private data structure.
+    </p>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.23</div>
+</body>
+</html>
