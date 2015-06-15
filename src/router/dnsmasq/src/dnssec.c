@@ -1230,8 +1230,11 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
     val = dnssec_validate_reply(now, header, plen, name, keyname, NULL, &neganswer, &nons);
   /* Note dnssec_validate_reply() will have cached positive answers */
   
-  if (val == STAT_NO_SIG || val == STAT_INSECURE)
+  if (val == STAT_INSECURE)
     val = STAT_BOGUS;
+
+  if (val == STAT_NO_SIG)
+    return val;
   
   p = (unsigned char *)(header+1);
   extract_name(header, plen, &p, name, 1, 4);
@@ -1882,11 +1885,14 @@ int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, ch
    
   if (neganswer && !have_answer)
     *neganswer = 1;
-
+  
   /* No data, therefore no sigs */
   if (ntohs(header->ancount) + ntohs(header->nscount) == 0)
-    return STAT_NO_SIG;
-  
+    {
+      *keyname = 0;
+      return STAT_NO_SIG;
+    }
+
   for (p1 = ans_start, i = 0; i < ntohs(header->ancount) + ntohs(header->nscount); i++)
     {
       if (!extract_name(header, plen, &p1, name, 1, 10))
@@ -1955,6 +1961,19 @@ int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, ch
 		{
 		  if (class)
 		    *class = class1; /* Class for DS or DNSKEY */
+
+		  if (rc == STAT_NO_SIG)
+		    {
+		      /* If we dropped off the end of a CNAME chain, return
+			 STAT_NO_SIG and the last name is keyname. This is used for proving non-existence
+			 if DS records in CNAME chains. */
+		      if (cname_count == CNAME_CHAIN || i < ntohs(header->ancount)) 
+			/* No CNAME chain, or no sig in answer section, return empty name. */
+			*keyname = 0;
+		      else if (!extract_name(header, plen, &qname, keyname, 1, 0))
+			return STAT_BOGUS;
+		    }
+ 
 		  return rc;
 		}
 	      
@@ -2067,8 +2086,17 @@ int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, ch
   /* NXDOMAIN or NODATA reply, prove that (name, class1, type1) can't exist */
   /* First marshall the NSEC records, if we've not done it previously */
   if (!nsec_type && !(nsec_type = find_nsec_records(header, plen, &nsecs, &nsec_count, qclass)))
-    return STAT_NO_SIG; /* No NSECs, this is probably a dangling CNAME pointing into
-			   an unsigned zone. Return STAT_NO_SIG to cause this to be proved. */
+    {
+      /* No NSEC records. If we dropped off the end of a CNAME chain, return
+	 STAT_NO_SIG and the last name is keyname. This is used for proving non-existence
+	 if DS records in CNAME chains. */
+      if (cname_count == CNAME_CHAIN) /* No CNAME chain, return empty name. */
+	*keyname = 0;
+      else if (!extract_name(header, plen, &qname, keyname, 1, 0))
+	return STAT_BOGUS;
+      return STAT_NO_SIG; /* No NSECs, this is probably a dangling CNAME pointing into
+			     an unsigned zone. Return STAT_NO_SIG to cause this to be proved. */
+    }
    
   /* Get name of missing answer */
   if (!extract_name(header, plen, &qname, name, 1, 0))
