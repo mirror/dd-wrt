@@ -17,16 +17,16 @@ dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.62])
-AC_INIT
+AC_INIT([gettext-runtime],
+	m4_esyscmd([../build-aux/git-version-gen ../.tarball-version]),
+	[bug-gnu-gettext@gnu.org])
 AC_CONFIG_SRCDIR([intl/dcigettext.c])
 AC_CONFIG_AUX_DIR([../build-aux])
-. $srcdir/../version.sh
-gl_INIT_PACKAGE([gettext-runtime], [$VERSION_NUMBER])
 AM_INIT_AUTOMAKE([1.11.1 silent-rules parallel-tests])
 AC_CONFIG_HEADERS([config.h])
 
 dnl Installation directories.
-test "$docdir" != '${datarootdir}/doc/${PACKAGE}' || docdir='${datarootdir}/doc/gettext'
+test "$docdir" != '${datarootdir}/doc/${PACKAGE_TARNAME}' || docdir='${datarootdir}/doc/gettext'
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -61,6 +61,7 @@ AC_EXEEXT
 
 dnl Make sure we see all GNU and Solaris extensions.
 gl_EARLY
+AM_PROG_CC_C_O
 
 dnl Check for build configuration.
 
@@ -166,7 +167,7 @@ AC_ARG_ENABLE([libasprintf],
      SUBDIR_libasprintf=
    fi
   ], [SUBDIR_libasprintf=libasprintf])
-if test "$CXX" = ":"; then
+if test "$CXX" = "no"; then
   SUBDIR_libasprintf=
 fi
 AM_CONDITIONAL([ENABLE_LIBASPRINTF], [test -n "$SUBDIR_libasprintf"])
