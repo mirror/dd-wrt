@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -449,13 +447,18 @@ g_thread_pool_start_thread (GRealThreadPool  *pool,
  * until it is destroyed by g_thread_pool_free(). If @exclusive is
  * %FALSE, threads are created when needed and shared between all
  * non-exclusive thread pools. This implies that @max_threads may
- * not be -1 for exclusive thread pools.
+ * not be -1 for exclusive thread pools. Besides, exclusive thread
+ * pools are not affected by g_thread_pool_set_max_idle_time()
+ * since their threads are never considered idle and returned to the
+ * global pool.
  *
  * @error can be %NULL to ignore errors, or non-%NULL to report
  * errors. An error can only occur when @exclusive is set to %TRUE
  * and not all @max_threads threads could be created.
+ * See #GThreadError for possible errors that may occur.
+ * Note, even in case of error a valid #GThreadPool is returned.
  *
- * Return value: the new #GThreadPool
+ * Returns: the new #GThreadPool
  */
 GThreadPool *
 g_thread_pool_new (GFunc      func,
@@ -533,7 +536,7 @@ g_thread_pool_new (GFunc      func,
  *
  * Before version 2.32, this function did not return a success status.
  *
- * Return value: %TRUE on success, %FALSE if an error occurred
+ * Returns: %TRUE on success, %FALSE if an error occurred
  */
 gboolean
 g_thread_pool_push (GThreadPool  *pool,
@@ -598,7 +601,7 @@ g_thread_pool_push (GThreadPool  *pool,
  *
  * Before version 2.32, this function did not return a success status.
  *
- * Return value: %TRUE on success, %FALSE if an error occurred
+ * Returns: %TRUE on success, %FALSE if an error occurred
  */
 gboolean
 g_thread_pool_set_max_threads (GThreadPool  *pool,
@@ -650,7 +653,7 @@ g_thread_pool_set_max_threads (GThreadPool  *pool,
  *
  * Returns the maximal number of threads for @pool.
  *
- * Return value: the maximal number of threads
+ * Returns: the maximal number of threads
  */
 gint
 g_thread_pool_get_max_threads (GThreadPool *pool)
@@ -676,7 +679,7 @@ g_thread_pool_get_max_threads (GThreadPool *pool)
  *
  * Returns the number of threads currently running in @pool.
  *
- * Return value: the number of threads currently running
+ * Returns: the number of threads currently running
  */
 guint
 g_thread_pool_get_num_threads (GThreadPool *pool)
@@ -702,7 +705,7 @@ g_thread_pool_get_num_threads (GThreadPool *pool)
  *
  * Returns the number of tasks still unprocessed in @pool.
  *
- * Return value: the number of unprocessed tasks
+ * Returns: the number of unprocessed tasks
  */
 guint
 g_thread_pool_unprocessed (GThreadPool *pool)
@@ -818,8 +821,14 @@ g_thread_pool_wakeup_and_stop_all (GRealThreadPool *pool)
 
   pool->immediate = TRUE;
 
+  /*
+   * So here we're sending bogus data to the pool threads, which
+   * should cause them each to wake up, and check the above
+   * pool->immediate condition. However we don't want that
+   * data to be sorted (since it'll crash the sorter).
+   */
   for (i = 0; i < pool->num_threads; i++)
-    g_thread_pool_queue_push_unlocked (pool, GUINT_TO_POINTER (1));
+    g_async_queue_push_unlocked (pool->queue, GUINT_TO_POINTER (1));
 }
 
 /**
@@ -866,7 +875,7 @@ g_thread_pool_set_max_unused_threads (gint max_threads)
  *
  * Returns the maximal allowed number of unused threads.
  *
- * Return value: the maximal number of unused threads
+ * Returns: the maximal number of unused threads
  */
 gint
 g_thread_pool_get_max_unused_threads (void)
@@ -879,7 +888,7 @@ g_thread_pool_get_max_unused_threads (void)
  *
  * Returns the number of currently unused threads.
  *
- * Return value: the number of currently unused threads
+ * Returns: the number of currently unused threads
  */
 guint
 g_thread_pool_get_num_unused_threads (void)
@@ -1004,7 +1013,7 @@ g_thread_pool_set_max_idle_time (guint interval)
  * If this function returns 0, threads waiting in the thread
  * pool for new work are not stopped.
  *
- * Return value: the maximum @interval (milliseconds) to wait
+ * Returns: the maximum @interval (milliseconds) to wait
  *     for new tasks in the thread pool before stopping the
  *     thread
  *

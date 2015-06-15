@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -73,10 +71,11 @@
  * in the gio library, for those.)
  *
  * For space-efficiency, the #GVariant serialisation format does not
- * automatically include the variant's type or endianness, which must
- * either be implied from context (such as knowledge that a particular
- * file format always contains a little-endian %G_VARIANT_TYPE_VARIANT)
- * or supplied out-of-band (for instance, a type and/or endianness
+ * automatically include the variant's length, type or endianness,
+ * which must either be implied from context (such as knowledge that a
+ * particular file format always contains a little-endian
+ * %G_VARIANT_TYPE_VARIANT which occupies the whole length of the file)
+ * or supplied out-of-band (for instance, a length, type and/or endianness
  * indicator could be placed at the beginning of a file, network message
  * or network stream).
  *
@@ -93,201 +92,170 @@
  * values.  #GVariant includes a printer for this language and a parser
  * with type inferencing.
  *
- * <refsect2>
- *  <title>Memory Use</title>
- *  <para>
- *   #GVariant tries to be quite efficient with respect to memory use.
- *   This section gives a rough idea of how much memory is used by the
- *   current implementation.  The information here is subject to change
- *   in the future.
- *  </para>
- *  <para>
- *   The memory allocated by #GVariant can be grouped into 4 broad
- *   purposes: memory for serialised data, memory for the type
- *   information cache, buffer management memory and memory for the
- *   #GVariant structure itself.
- *  </para>
- *  <refsect3 id="gvariant-serialised-data-memory">
- *   <title>Serialised Data Memory</title>
- *   <para>
- *    This is the memory that is used for storing GVariant data in
- *    serialised form.  This is what would be sent over the network or
- *    what would end up on disk.
- *   </para>
- *   <para>
- *    The amount of memory required to store a boolean is 1 byte.  16,
- *    32 and 64 bit integers and double precision floating point numbers
- *    use their "natural" size.  Strings (including object path and
- *    signature strings) are stored with a nul terminator, and as such
- *    use the length of the string plus 1 byte.
- *   </para>
- *   <para>
- *    Maybe types use no space at all to represent the null value and
- *    use the same amount of space (sometimes plus one byte) as the
- *    equivalent non-maybe-typed value to represent the non-null case.
- *   </para>
- *   <para>
- *    Arrays use the amount of space required to store each of their
- *    members, concatenated.  Additionally, if the items stored in an
- *    array are not of a fixed-size (ie: strings, other arrays, etc)
- *    then an additional framing offset is stored for each item.  The
- *    size of this offset is either 1, 2 or 4 bytes depending on the
- *    overall size of the container.  Additionally, extra padding bytes
- *    are added as required for alignment of child values.
- *   </para>
- *   <para>
- *    Tuples (including dictionary entries) use the amount of space
- *    required to store each of their members, concatenated, plus one
- *    framing offset (as per arrays) for each non-fixed-sized item in
- *    the tuple, except for the last one.  Additionally, extra padding
- *    bytes are added as required for alignment of child values.
- *   </para>
- *   <para>
- *    Variants use the same amount of space as the item inside of the
- *    variant, plus 1 byte, plus the length of the type string for the
- *    item inside the variant.
- *   </para>
- *   <para>
- *    As an example, consider a dictionary mapping strings to variants.
- *    In the case that the dictionary is empty, 0 bytes are required for
- *    the serialisation.
- *   </para>
- *   <para>
- *    If we add an item "width" that maps to the int32 value of 500 then
- *    we will use 4 byte to store the int32 (so 6 for the variant
- *    containing it) and 6 bytes for the string.  The variant must be
- *    aligned to 8 after the 6 bytes of the string, so that's 2 extra
- *    bytes.  6 (string) + 2 (padding) + 6 (variant) is 14 bytes used
- *    for the dictionary entry.  An additional 1 byte is added to the
- *    array as a framing offset making a total of 15 bytes.
- *   </para>
- *   <para>
- *    If we add another entry, "title" that maps to a nullable string
- *    that happens to have a value of null, then we use 0 bytes for the
- *    null value (and 3 bytes for the variant to contain it along with
- *    its type string) plus 6 bytes for the string.  Again, we need 2
- *    padding bytes.  That makes a total of 6 + 2 + 3 = 11 bytes.
- *   </para>
- *   <para>
- *    We now require extra padding between the two items in the array.
- *    After the 14 bytes of the first item, that's 2 bytes required.  We
- *    now require 2 framing offsets for an extra two bytes.  14 + 2 + 11
- *    + 2 = 29 bytes to encode the entire two-item dictionary.
- *   </para>
- *  </refsect3>
- *  <refsect3>
- *   <title>Type Information Cache</title>
- *   <para>
- *    For each GVariant type that currently exists in the program a type
- *    information structure is kept in the type information cache.  The
- *    type information structure is required for rapid deserialisation.
- *   </para>
- *   <para>
- *    Continuing with the above example, if a #GVariant exists with the
- *    type "a{sv}" then a type information struct will exist for
- *    "a{sv}", "{sv}", "s", and "v".  Multiple uses of the same type
- *    will share the same type information.  Additionally, all
- *    single-digit types are stored in read-only static memory and do
- *    not contribute to the writable memory footprint of a program using
- *    #GVariant.
- *   </para>
- *   <para>
- *    Aside from the type information structures stored in read-only
- *    memory, there are two forms of type information.  One is used for
- *    container types where there is a single element type: arrays and
- *    maybe types.  The other is used for container types where there
- *    are multiple element types: tuples and dictionary entries.
- *   </para>
- *   <para>
- *    Array type info structures are 6 * sizeof (void *), plus the
- *    memory required to store the type string itself.  This means that
- *    on 32bit systems, the cache entry for "a{sv}" would require 30
- *    bytes of memory (plus malloc overhead).
- *   </para>
- *   <para>
- *    Tuple type info structures are 6 * sizeof (void *), plus 4 *
- *    sizeof (void *) for each item in the tuple, plus the memory
- *    required to store the type string itself.  A 2-item tuple, for
- *    example, would have a type information structure that consumed
- *    writable memory in the size of 14 * sizeof (void *) (plus type
- *    string)  This means that on 32bit systems, the cache entry for
- *    "{sv}" would require 61 bytes of memory (plus malloc overhead).
- *   </para>
- *   <para>
- *    This means that in total, for our "a{sv}" example, 91 bytes of
- *    type information would be allocated.
- *   </para>
- *   <para>
- *    The type information cache, additionally, uses a #GHashTable to
- *    store and lookup the cached items and stores a pointer to this
- *    hash table in static storage.  The hash table is freed when there
- *    are zero items in the type cache.
- *   </para>
- *   <para>
- *    Although these sizes may seem large it is important to remember
- *    that a program will probably only have a very small number of
- *    different types of values in it and that only one type information
- *    structure is required for many different values of the same type.
- *   </para>
- *  </refsect3>
- *  <refsect3>
- *   <title>Buffer Management Memory</title>
- *   <para>
- *    #GVariant uses an internal buffer management structure to deal
- *    with the various different possible sources of serialised data
- *    that it uses.  The buffer is responsible for ensuring that the
- *    correct call is made when the data is no longer in use by
- *    #GVariant.  This may involve a g_free() or a g_slice_free() or
- *    even g_mapped_file_unref().
- *   </para>
- *   <para>
- *    One buffer management structure is used for each chunk of
- *    serialised data.  The size of the buffer management structure is 4
- *    * (void *).  On 32bit systems, that's 16 bytes.
- *   </para>
- *  </refsect3>
- *  <refsect3>
- *   <title>GVariant structure</title>
- *   <para>
- *    The size of a #GVariant structure is 6 * (void *).  On 32 bit
- *    systems, that's 24 bytes.
- *   </para>
- *   <para>
- *    #GVariant structures only exist if they are explicitly created
- *    with API calls.  For example, if a #GVariant is constructed out of
- *    serialised data for the example given above (with the dictionary)
- *    then although there are 9 individual values that comprise the
- *    entire dictionary (two keys, two values, two variants containing
- *    the values, two dictionary entries, plus the dictionary itself),
- *    only 1 #GVariant instance exists -- the one referring to the
- *    dictionary.
- *   </para>
- *   <para>
- *    If calls are made to start accessing the other values then
- *    #GVariant instances will exist for those values only for as long
- *    as they are in use (ie: until you call g_variant_unref()).  The
- *    type information is shared.  The serialised data and the buffer
- *    management structure for that serialised data is shared by the
- *    child.
- *   </para>
- *  </refsect3>
- *  <refsect3>
- *   <title>Summary</title>
- *   <para>
- *    To put the entire example together, for our dictionary mapping
- *    strings to variants (with two entries, as given above), we are
- *    using 91 bytes of memory for type information, 29 byes of memory
- *    for the serialised data, 16 bytes for buffer management and 24
- *    bytes for the #GVariant instance, or a total of 160 bytes, plus
- *    malloc overhead.  If we were to use g_variant_get_child_value() to
- *    access the two dictionary entries, we would use an additional 48
- *    bytes.  If we were to have other dictionaries of the same type, we
- *    would use more memory for the serialised data and buffer
- *    management for those dictionaries, but the type information would
- *    be shared.
- *   </para>
- *  </refsect3>
- * </refsect2>
+ * ## Memory Use
+ *
+ * #GVariant tries to be quite efficient with respect to memory use.
+ * This section gives a rough idea of how much memory is used by the
+ * current implementation.  The information here is subject to change
+ * in the future.
+ *
+ * The memory allocated by #GVariant can be grouped into 4 broad
+ * purposes: memory for serialised data, memory for the type
+ * information cache, buffer management memory and memory for the
+ * #GVariant structure itself.
+ *
+ * ## Serialised Data Memory
+ *
+ * This is the memory that is used for storing GVariant data in
+ * serialised form.  This is what would be sent over the network or
+ * what would end up on disk, not counting any indicator of the
+ * endianness, or of the length or type of the top-level variant.
+ *
+ * The amount of memory required to store a boolean is 1 byte. 16,
+ * 32 and 64 bit integers and double precision floating point numbers
+ * use their "natural" size.  Strings (including object path and
+ * signature strings) are stored with a nul terminator, and as such
+ * use the length of the string plus 1 byte.
+ *
+ * Maybe types use no space at all to represent the null value and
+ * use the same amount of space (sometimes plus one byte) as the
+ * equivalent non-maybe-typed value to represent the non-null case.
+ *
+ * Arrays use the amount of space required to store each of their
+ * members, concatenated.  Additionally, if the items stored in an
+ * array are not of a fixed-size (ie: strings, other arrays, etc)
+ * then an additional framing offset is stored for each item.  The
+ * size of this offset is either 1, 2 or 4 bytes depending on the
+ * overall size of the container.  Additionally, extra padding bytes
+ * are added as required for alignment of child values.
+ *
+ * Tuples (including dictionary entries) use the amount of space
+ * required to store each of their members, concatenated, plus one
+ * framing offset (as per arrays) for each non-fixed-sized item in
+ * the tuple, except for the last one.  Additionally, extra padding
+ * bytes are added as required for alignment of child values.
+ *
+ * Variants use the same amount of space as the item inside of the
+ * variant, plus 1 byte, plus the length of the type string for the
+ * item inside the variant.
+ *
+ * As an example, consider a dictionary mapping strings to variants.
+ * In the case that the dictionary is empty, 0 bytes are required for
+ * the serialisation.
+ *
+ * If we add an item "width" that maps to the int32 value of 500 then
+ * we will use 4 byte to store the int32 (so 6 for the variant
+ * containing it) and 6 bytes for the string.  The variant must be
+ * aligned to 8 after the 6 bytes of the string, so that's 2 extra
+ * bytes.  6 (string) + 2 (padding) + 6 (variant) is 14 bytes used
+ * for the dictionary entry.  An additional 1 byte is added to the
+ * array as a framing offset making a total of 15 bytes.
+ *
+ * If we add another entry, "title" that maps to a nullable string
+ * that happens to have a value of null, then we use 0 bytes for the
+ * null value (and 3 bytes for the variant to contain it along with
+ * its type string) plus 6 bytes for the string.  Again, we need 2
+ * padding bytes.  That makes a total of 6 + 2 + 3 = 11 bytes.
+ *
+ * We now require extra padding between the two items in the array.
+ * After the 14 bytes of the first item, that's 2 bytes required.
+ * We now require 2 framing offsets for an extra two
+ * bytes. 14 + 2 + 11 + 2 = 29 bytes to encode the entire two-item
+ * dictionary.
+ *
+ * ## Type Information Cache
+ *
+ * For each GVariant type that currently exists in the program a type
+ * information structure is kept in the type information cache.  The
+ * type information structure is required for rapid deserialisation.
+ *
+ * Continuing with the above example, if a #GVariant exists with the
+ * type "a{sv}" then a type information struct will exist for
+ * "a{sv}", "{sv}", "s", and "v".  Multiple uses of the same type
+ * will share the same type information.  Additionally, all
+ * single-digit types are stored in read-only static memory and do
+ * not contribute to the writable memory footprint of a program using
+ * #GVariant.
+ *
+ * Aside from the type information structures stored in read-only
+ * memory, there are two forms of type information.  One is used for
+ * container types where there is a single element type: arrays and
+ * maybe types.  The other is used for container types where there
+ * are multiple element types: tuples and dictionary entries.
+ *
+ * Array type info structures are 6 * sizeof (void *), plus the
+ * memory required to store the type string itself.  This means that
+ * on 32-bit systems, the cache entry for "a{sv}" would require 30
+ * bytes of memory (plus malloc overhead).
+ *
+ * Tuple type info structures are 6 * sizeof (void *), plus 4 *
+ * sizeof (void *) for each item in the tuple, plus the memory
+ * required to store the type string itself.  A 2-item tuple, for
+ * example, would have a type information structure that consumed
+ * writable memory in the size of 14 * sizeof (void *) (plus type
+ * string)  This means that on 32-bit systems, the cache entry for
+ * "{sv}" would require 61 bytes of memory (plus malloc overhead).
+ *
+ * This means that in total, for our "a{sv}" example, 91 bytes of
+ * type information would be allocated.
+ * 
+ * The type information cache, additionally, uses a #GHashTable to
+ * store and lookup the cached items and stores a pointer to this
+ * hash table in static storage.  The hash table is freed when there
+ * are zero items in the type cache.
+ *
+ * Although these sizes may seem large it is important to remember
+ * that a program will probably only have a very small number of
+ * different types of values in it and that only one type information
+ * structure is required for many different values of the same type.
+ *
+ * ## Buffer Management Memory
+ *
+ * #GVariant uses an internal buffer management structure to deal
+ * with the various different possible sources of serialised data
+ * that it uses.  The buffer is responsible for ensuring that the
+ * correct call is made when the data is no longer in use by
+ * #GVariant.  This may involve a g_free() or a g_slice_free() or
+ * even g_mapped_file_unref().
+ *
+ * One buffer management structure is used for each chunk of
+ * serialised data.  The size of the buffer management structure
+ * is 4 * (void *).  On 32-bit systems, that's 16 bytes.
+ *
+ * ## GVariant structure
+ *
+ * The size of a #GVariant structure is 6 * (void *).  On 32-bit
+ * systems, that's 24 bytes.
+ *
+ * #GVariant structures only exist if they are explicitly created
+ * with API calls.  For example, if a #GVariant is constructed out of
+ * serialised data for the example given above (with the dictionary)
+ * then although there are 9 individual values that comprise the
+ * entire dictionary (two keys, two values, two variants containing
+ * the values, two dictionary entries, plus the dictionary itself),
+ * only 1 #GVariant instance exists -- the one referring to the
+ * dictionary.
+ *
+ * If calls are made to start accessing the other values then
+ * #GVariant instances will exist for those values only for as long
+ * as they are in use (ie: until you call g_variant_unref()).  The
+ * type information is shared.  The serialised data and the buffer
+ * management structure for that serialised data is shared by the
+ * child.
+ *
+ * ## Summary
+ *
+ * To put the entire example together, for our dictionary mapping
+ * strings to variants (with two entries, as given above), we are
+ * using 91 bytes of memory for type information, 29 byes of memory
+ * for the serialised data, 16 bytes for buffer management and 24
+ * bytes for the #GVariant instance, or a total of 160 bytes, plus
+ * malloc overhead.  If we were to use g_variant_get_child_value() to
+ * access the two dictionary entries, we would use an additional 48
+ * bytes.  If we were to have other dictionaries of the same type, we
+ * would use more memory for the serialised data and buffer
+ * management for those dictionaries, but the type information would
+ * be shared.
  */
 
 /* definition of GVariant structure is in gvariant-core.c */
@@ -957,7 +925,10 @@ g_variant_new_dict_entry (GVariant *key,
  * @format_string determines the C types that are used for unpacking
  * the values and also determines if the values are copied or borrowed,
  * see the section on
- * <link linkend='gvariant-format-strings-pointers'>GVariant Format Strings</link>.
+ * [GVariant format strings][gvariant-format-strings-pointers].
+ *
+ * This function is currently implemented with a linear scan.  If you
+ * plan to do many lookups then #GVariantDict may be more efficient.
  *
  * Returns: %TRUE if a value was unpacked
  *
@@ -1003,25 +974,25 @@ g_variant_lookup (GVariant    *dictionary,
  *
  * Looks up a value in a dictionary #GVariant.
  *
- * This function works with dictionaries of the type
- * <literal>a{s*}</literal> (and equally well with type
- * <literal>a{o*}</literal>, but we only further discuss the string case
+ * This function works with dictionaries of the type a{s*} (and equally
+ * well with type a{o*}, but we only further discuss the string case
  * for sake of clarity).
  *
- * In the event that @dictionary has the type <literal>a{sv}</literal>,
- * the @expected_type string specifies what type of value is expected to
- * be inside of the variant.  If the value inside the variant has a
- * different type then %NULL is returned.  In the event that @dictionary
- * has a value type other than <literal>v</literal> then @expected_type
- * must directly match the key type and it is used to unpack the value
- * directly or an error occurs.
+ * In the event that @dictionary has the type a{sv}, the @expected_type
+ * string specifies what type of value is expected to be inside of the
+ * variant. If the value inside the variant has a different type then
+ * %NULL is returned. In the event that @dictionary has a value type other
+ * than v then @expected_type must directly match the key type and it is
+ * used to unpack the value directly or an error occurs.
  *
- * In either case, if @key is not found in @dictionary, %NULL is
- * returned.
+ * In either case, if @key is not found in @dictionary, %NULL is returned.
  *
  * If the key is found and the value has the correct type, it is
  * returned.  If @expected_type was specified then any non-%NULL return
  * value will have this type.
+ *
+ * This function is currently implemented with a linear scan.  If you
+ * plan to do many lookups then #GVariantDict may be more efficient.
  *
  * Returns: (transfer full): the value of the dictionary key, or %NULL
  *
@@ -1101,38 +1072,27 @@ g_variant_lookup_value (GVariant           *dictionary,
  *
  * @element_size must be the size of a single element in the array,
  * as given by the section on
- * <link linkend='gvariant-serialised-data-memory'>Serialised Data
- * Memory</link>.
+ * [serialized data memory][gvariant-serialised-data-memory].
  *
  * In particular, arrays of these fixed-sized types can be interpreted
- * as an array of the given C type, with @element_size set to
- * <code>sizeof</code> the appropriate type:
+ * as an array of the given C type, with @element_size set to the size
+ * the appropriate type:
+ * - %G_VARIANT_TYPE_INT16 (etc.): #gint16 (etc.)
+ * - %G_VARIANT_TYPE_BOOLEAN: #guchar (not #gboolean!)
+ * - %G_VARIANT_TYPE_BYTE: #guchar
+ * - %G_VARIANT_TYPE_HANDLE: #guint32
+ * - %G_VARIANT_TYPE_DOUBLE: #gdouble
  *
- * <informaltable>
- * <tgroup cols='2'>
- * <thead><row><entry>element type</entry> <entry>C type</entry></row></thead>
- * <tbody>
- * <row><entry>%G_VARIANT_TYPE_INT16 (etc.)</entry>
- *   <entry>#gint16 (etc.)</entry></row>
- * <row><entry>%G_VARIANT_TYPE_BOOLEAN</entry>
- *   <entry>#guchar (not #gboolean!)</entry></row>
- * <row><entry>%G_VARIANT_TYPE_BYTE</entry> <entry>#guchar</entry></row>
- * <row><entry>%G_VARIANT_TYPE_HANDLE</entry> <entry>#guint32</entry></row>
- * <row><entry>%G_VARIANT_TYPE_DOUBLE</entry> <entry>#gdouble</entry></row>
- * </tbody>
- * </tgroup>
- * </informaltable>
- *
- * For example, if calling this function for an array of 32 bit integers,
- * you might say <code>sizeof (gint32)</code>.  This value isn't used
- * except for the purpose of a double-check that the form of the
- * serialised data matches the caller's expectation.
+ * For example, if calling this function for an array of 32-bit integers,
+ * you might say sizeof(gint32). This value isn't used except for the purpose
+ * of a double-check that the form of the serialised data matches the caller's
+ * expectation.
  *
  * @n_elements, which must be non-%NULL is set equal to the number of
  * items in the array.
  *
  * Returns: (array length=n_elements) (transfer none): a pointer to
- *          the fixed array
+ *     the fixed array
  *
  * Since: 2.24
  **/
@@ -1160,13 +1120,13 @@ g_variant_get_fixed_array (GVariant *value,
     {
       if (array_element_size)
         g_critical ("g_variant_get_fixed_array: assertion "
-                    "`g_variant_array_has_fixed_size (value, element_size)' "
+                    "'g_variant_array_has_fixed_size (value, element_size)' "
                     "failed: array size %"G_GSIZE_FORMAT" does not match "
                     "given element_size %"G_GSIZE_FORMAT".",
                     array_element_size, element_size);
       else
         g_critical ("g_variant_get_fixed_array: assertion "
-                    "`g_variant_array_has_fixed_size (value, element_size)' "
+                    "'g_variant_array_has_fixed_size (value, element_size)' "
                     "failed: array does not have fixed size.");
     }
 
@@ -1197,11 +1157,11 @@ g_variant_get_fixed_array (GVariant *value,
  * @value must be an array with fixed-sized elements.  Numeric types are
  * fixed-size as are tuples containing only other fixed-sized types.
  *
- * @element_size must be the size of a single element in the array.  For
- * example, if calling this function for an array of 32 bit integers,
- * you might say <code>sizeof (gint32)</code>.  This value isn't used
- * except for the purpose of a double-check that the form of the
- * serialised data matches the caller's expectation.
+ * @element_size must be the size of a single element in the array.
+ * For example, if calling this function for an array of 32-bit integers,
+ * you might say sizeof(gint32). This value isn't used except for the purpose
+ * of a double-check that the form of the serialised data matches the caller's
+ * expectation.
  *
  * @n_elements, which must be non-%NULL is set equal to the number of
  * items in the array.
@@ -1253,11 +1213,11 @@ g_variant_new_fixed_array (const GVariantType  *element_type,
 /* String type constructor/getters/validation {{{1 */
 /**
  * g_variant_new_string:
- * @string: a normal utf8 nul-terminated string
+ * @string: a normal UTF-8 nul-terminated string
  *
  * Creates a string #GVariant with the contents of @string.
  *
- * @string must be valid utf8.
+ * @string must be valid UTF-8.
  *
  * Returns: (transfer none): a floating reference to a new string #GVariant instance
  *
@@ -1271,6 +1231,80 @@ g_variant_new_string (const gchar *string)
 
   return g_variant_new_from_trusted (G_VARIANT_TYPE_STRING,
                                      string, strlen (string) + 1);
+}
+
+/**
+ * g_variant_new_take_string: (skip)
+ * @string: a normal UTF-8 nul-terminated string
+ *
+ * Creates a string #GVariant with the contents of @string.
+ *
+ * @string must be valid UTF-8.
+ *
+ * This function consumes @string.  g_free() will be called on @string
+ * when it is no longer required.
+ *
+ * You must not modify or access @string in any other way after passing
+ * it to this function.  It is even possible that @string is immediately
+ * freed.
+ *
+ * Returns: (transfer none): a floating reference to a new string
+ *   #GVariant instance
+ *
+ * Since: 2.38
+ **/
+GVariant *
+g_variant_new_take_string (gchar *string)
+{
+  GVariant *value;
+  GBytes *bytes;
+
+  g_return_val_if_fail (string != NULL, NULL);
+  g_return_val_if_fail (g_utf8_validate (string, -1, NULL), NULL);
+
+  bytes = g_bytes_new_take (string, strlen (string) + 1);
+  value = g_variant_new_from_bytes (G_VARIANT_TYPE_STRING, bytes, TRUE);
+  g_bytes_unref (bytes);
+
+  return value;
+}
+
+/**
+ * g_variant_new_printf: (skip)
+ * @format_string: a printf-style format string
+ * @...: arguments for @format_string
+ *
+ * Creates a string-type GVariant using printf formatting.
+ *
+ * This is similar to calling g_strdup_printf() and then
+ * g_variant_new_string() but it saves a temporary variable and an
+ * unnecessary copy.
+ *
+ * Returns: (transfer none): a floating reference to a new string
+ *   #GVariant instance
+ *
+ * Since: 2.38
+ **/
+GVariant *
+g_variant_new_printf (const gchar *format_string,
+                      ...)
+{
+  GVariant *value;
+  GBytes *bytes;
+  gchar *string;
+  va_list ap;
+
+  g_return_val_if_fail (format_string != NULL, NULL);
+
+  va_start (ap, format_string);
+  string = g_strdup_vprintf (format_string, ap);
+  va_end (ap);
+
+  bytes = g_bytes_new_take (string, strlen (string) + 1);
+  value = g_variant_new_from_bytes (G_VARIANT_TYPE_STRING, bytes, TRUE);
+  g_bytes_unref (bytes);
+
+  return value;
 }
 
 /**
@@ -1373,7 +1407,7 @@ g_variant_is_signature (const gchar *string)
  * type.  This includes the types %G_VARIANT_TYPE_STRING,
  * %G_VARIANT_TYPE_OBJECT_PATH and %G_VARIANT_TYPE_SIGNATURE.
  *
- * The string will always be utf8 encoded.
+ * The string will always be UTF-8 encoded.
  *
  * If @length is non-%NULL then the length of the string (in bytes) is
  * returned there.  For trusted values, this information is already
@@ -1384,7 +1418,7 @@ g_variant_is_signature (const gchar *string)
  *
  * The return value remains valid as long as @value exists.
  *
- * Returns: (transfer none): the constant string, utf8 encoded
+ * Returns: (transfer none): the constant string, UTF-8 encoded
  *
  * Since: 2.24
  **/
@@ -1451,11 +1485,11 @@ g_variant_get_string (GVariant *value,
  * Similar to g_variant_get_string() except that instead of returning
  * a constant string, the string is duplicated.
  *
- * The string will always be utf8 encoded.
+ * The string will always be UTF-8 encoded.
  *
  * The return value must be freed using g_free().
  *
- * Returns: (transfer full): a newly allocated string, utf8 encoded
+ * Returns: (transfer full): a newly allocated string, UTF-8 encoded
  *
  * Since: 2.24
  **/
@@ -1743,7 +1777,7 @@ g_variant_dup_objv (GVariant *value,
  *
  * Creates an array-of-bytes #GVariant with the contents of @string.
  * This function is just like g_variant_new_string() except that the
- * string need not be valid utf8.
+ * string need not be valid UTF-8.
  *
  * The nul terminator character at the end of the string is stored in
  * the array.
@@ -2535,7 +2569,7 @@ g_variant_print_string (GVariant *value,
  *
  * Pretty-prints @value in the format understood by g_variant_parse().
  *
- * The format is described <link linkend='gvariant-text'>here</link>.
+ * The format is described [here][gvariant-text].
  *
  * If @type_annotate is %TRUE, then type information is included in
  * the output.
@@ -2731,9 +2765,9 @@ g_variant_equal (gconstpointer one,
  * If you only require an equality comparison, g_variant_equal() is more
  * general.
  *
- * Returns: negative value if a &lt; b;
+ * Returns: negative value if a < b;
  *          zero if a = b;
- *          positive value if a &gt; b.
+ *          positive value if a > b.
  *
  * Since: 2.26
  **/
@@ -2998,10 +3032,9 @@ g_variant_iter_free (GVariantIter *iter)
  * Use g_variant_unref() to drop your reference on the return value when
  * you no longer need it.
  *
- * <example>
- *  <title>Iterating with g_variant_iter_next_value()</title>
- *  <programlisting>
- *   /<!-- -->* recursively iterate a container *<!-- -->/
+ * Here is an example for iterating with g_variant_iter_next_value():
+ * |[<!-- language="C" --> 
+ *   // recursively iterate a container
  *   void
  *   iterate_container_recursive (GVariant *container)
  *   {
@@ -3019,8 +3052,7 @@ g_variant_iter_free (GVariantIter *iter)
  *         g_variant_unref (child);
  *       }
  *   }
- * </programlisting>
- * </example>
+ * ]|
  *
  * Returns: (allow-none) (transfer full): a #GVariant, or %NULL
  *
@@ -3592,6 +3624,508 @@ g_variant_builder_end (GVariantBuilder *builder)
   return value;
 }
 
+/* GVariantDict {{{1 */
+
+/**
+ * GVariantDict:
+ *
+ * #GVariantDict is a mutable interface to #GVariant dictionaries.
+ *
+ * It can be used for doing a sequence of dictionary lookups in an
+ * efficient way on an existing #GVariant dictionary or it can be used
+ * to construct new dictionaries with a hashtable-like interface.  It
+ * can also be used for taking existing dictionaries and modifying them
+ * in order to create new ones.
+ *
+ * #GVariantDict can only be used with %G_VARIANT_TYPE_VARDICT
+ * dictionaries.
+ *
+ * It is possible to use #GVariantDict allocated on the stack or on the
+ * heap.  When using a stack-allocated #GVariantDict, you begin with a
+ * call to g_variant_dict_init() and free the resources with a call to
+ * g_variant_dict_clear().
+ *
+ * Heap-allocated #GVariantDict follows normal refcounting rules: you
+ * allocate it with g_variant_dict_new() and use g_variant_dict_ref()
+ * and g_variant_dict_unref().
+ *
+ * g_variant_dict_end() is used to convert the #GVariantDict back into a
+ * dictionary-type #GVariant.  When used with stack-allocated instances,
+ * this also implicitly frees all associated memory, but for
+ * heap-allocated instances, you must still call g_variant_dict_unref()
+ * afterwards.
+ *
+ * You will typically want to use a heap-allocated #GVariantDict when
+ * you expose it as part of an API.  For most other uses, the
+ * stack-allocated form will be more convenient.
+ *
+ * Consider the following two examples that do the same thing in each
+ * style: take an existing dictionary and look up the "count" uint32
+ * key, adding 1 to it if it is found, or returning an error if the
+ * key is not found.  Each returns the new dictionary as a floating
+ * #GVariant.
+ *
+ * ## Using a stack-allocated GVariantDict
+ *
+ * |[<!-- language="C" -->
+ *   GVariant *
+ *   add_to_count (GVariant  *orig,
+ *                 GError   **error)
+ *   {
+ *     GVariantDict dict;
+ *     guint32 count;
+ *
+ *     g_variant_dict_init (&dict, orig);
+ *     if (!g_variant_dict_lookup (&dict, "count", "u", &count))
+ *       {
+ *         g_set_error (...);
+ *         g_variant_dict_clear (&dict);
+ *         return NULL;
+ *       }
+ *
+ *     g_variant_dict_insert (&dict, "count", "u", count + 1);
+ *
+ *     return g_variant_dict_end (&dict);
+ *   }
+ * ]|
+ *
+ * ## Using heap-allocated GVariantDict
+ *
+ * |[<!-- language="C" -->
+ *   GVariant *
+ *   add_to_count (GVariant  *orig,
+ *                 GError   **error)
+ *   {
+ *     GVariantDict *dict;
+ *     GVariant *result;
+ *     guint32 count;
+ *
+ *     dict = g_variant_dict_new (orig);
+ *
+ *     if (g_variant_dict_lookup (dict, "count", "u", &count))
+ *       {
+ *         g_variant_dict_insert (dict, "count", "u", count + 1);
+ *         result = g_variant_dict_end (dict);
+ *       }
+ *     else
+ *       {
+ *         g_set_error (...);
+ *         result = NULL;
+ *       }
+ *
+ *     g_variant_dict_unref (dict);
+ *
+ *     return result;
+ *   }
+ * ]|
+ *
+ * Since: 2.40
+ **/
+struct stack_dict
+{
+  GHashTable *values;
+  gsize magic;
+};
+
+G_STATIC_ASSERT (sizeof (struct stack_dict) <= sizeof (GVariantDict));
+
+struct heap_dict
+{
+  struct stack_dict dict;
+  gint ref_count;
+  gsize magic;
+};
+
+#define GVSD(d)                 ((struct stack_dict *) (d))
+#define GVHD(d)                 ((struct heap_dict *) (d))
+#define GVSD_MAGIC              ((gsize) 2579507750u)
+#define GVHD_MAGIC              ((gsize) 2450270775u)
+#define is_valid_dict(d)        (d != NULL && \
+                                 GVSD(d)->magic == GVSD_MAGIC)
+#define is_valid_heap_dict(d)   (GVHD(d)->magic == GVHD_MAGIC)
+
+/**
+ * g_variant_dict_new:
+ * @from_asv: (allow-none): the #GVariant with which to initialise the
+ *   dictionary
+ *
+ * Allocates and initialises a new #GVariantDict.
+ *
+ * You should call g_variant_dict_unref() on the return value when it
+ * is no longer needed.  The memory will not be automatically freed by
+ * any other call.
+ *
+ * In some cases it may be easier to place a #GVariantDict directly on
+ * the stack of the calling function and initialise it with
+ * g_variant_dict_init().  This is particularly useful when you are
+ * using #GVariantDict to construct a #GVariant.
+ *
+ * Returns: (transfer full): a #GVariantDict
+ *
+ * Since: 2.40
+ **/
+GVariantDict *
+g_variant_dict_new (GVariant *from_asv)
+{
+  GVariantDict *dict;
+
+  dict = g_slice_alloc (sizeof (struct heap_dict));
+  g_variant_dict_init (dict, from_asv);
+  GVHD(dict)->magic = GVHD_MAGIC;
+  GVHD(dict)->ref_count = 1;
+
+  return dict;
+}
+
+/**
+ * g_variant_dict_init: (skip)
+ * @dict: a #GVariantDict
+ * @from_asv: (allow-none): the initial value for @dict
+ *
+ * Initialises a #GVariantDict structure.
+ *
+ * If @from_asv is given, it is used to initialise the dictionary.
+ *
+ * This function completely ignores the previous contents of @dict.  On
+ * one hand this means that it is valid to pass in completely
+ * uninitialised memory.  On the other hand, this means that if you are
+ * initialising over top of an existing #GVariantDict you need to first
+ * call g_variant_dict_clear() in order to avoid leaking memory.
+ *
+ * You must not call g_variant_dict_ref() or g_variant_dict_unref() on a
+ * #GVariantDict that was initialised with this function.  If you ever
+ * pass a reference to a #GVariantDict outside of the control of your
+ * own code then you should assume that the person receiving that
+ * reference may try to use reference counting; you should use
+ * g_variant_dict_new() instead of this function.
+ *
+ * Since: 2.40
+ **/
+void
+g_variant_dict_init (GVariantDict *dict,
+                     GVariant     *from_asv)
+{
+  GVariantIter iter;
+  gchar *key;
+  GVariant *value;
+
+  GVSD(dict)->values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_variant_unref);
+  GVSD(dict)->magic = GVSD_MAGIC;
+
+  if (from_asv)
+    {
+      g_variant_iter_init (&iter, from_asv);
+      while (g_variant_iter_next (&iter, "{sv}", &key, &value))
+        g_hash_table_insert (GVSD(dict)->values, key, value);
+    }
+}
+
+/**
+ * g_variant_dict_lookup:
+ * @dict: a #GVariantDict
+ * @key: the key to lookup in the dictionary
+ * @format_string: a GVariant format string
+ * @...: the arguments to unpack the value into
+ *
+ * Looks up a value in a #GVariantDict.
+ *
+ * This function is a wrapper around g_variant_dict_lookup_value() and
+ * g_variant_get().  In the case that %NULL would have been returned,
+ * this function returns %FALSE.  Otherwise, it unpacks the returned
+ * value and returns %TRUE.
+ *
+ * @format_string determines the C types that are used for unpacking the
+ * values and also determines if the values are copied or borrowed, see the
+ * section on [GVariant format strings][gvariant-format-strings-pointers].
+ *
+ * Returns: %TRUE if a value was unpacked
+ *
+ * Since: 2.40
+ **/
+gboolean
+g_variant_dict_lookup (GVariantDict *dict,
+                       const gchar  *key,
+                       const gchar  *format_string,
+                       ...)
+{
+  GVariant *value;
+  va_list ap;
+
+  g_return_val_if_fail (is_valid_dict (dict), FALSE);
+  g_return_val_if_fail (key != NULL, FALSE);
+  g_return_val_if_fail (format_string != NULL, FALSE);
+
+  value = g_hash_table_lookup (GVSD(dict)->values, key);
+
+  if (value == NULL || !g_variant_check_format_string (value, format_string, FALSE))
+    return FALSE;
+
+  va_start (ap, format_string);
+  g_variant_get_va (value, format_string, NULL, &ap);
+  va_end (ap);
+
+  return TRUE;
+}
+
+/**
+ * g_variant_dict_lookup_value:
+ * @dict: a #GVariantDict
+ * @key: the key to lookup in the dictionary
+ * @expected_type: (allow-none): a #GVariantType, or %NULL
+ *
+ * Looks up a value in a #GVariantDict.
+ *
+ * If @key is not found in @dictionary, %NULL is returned.
+ *
+ * The @expected_type string specifies what type of value is expected.
+ * If the value associated with @key has a different type then %NULL is
+ * returned.
+ *
+ * If the key is found and the value has the correct type, it is
+ * returned.  If @expected_type was specified then any non-%NULL return
+ * value will have this type.
+ *
+ * Returns: (transfer full): the value of the dictionary key, or %NULL
+ *
+ * Since: 2.40
+ **/
+GVariant *
+g_variant_dict_lookup_value (GVariantDict       *dict,
+                             const gchar        *key,
+                             const GVariantType *expected_type)
+{
+  GVariant *result;
+
+  g_return_val_if_fail (is_valid_dict (dict), NULL);
+  g_return_val_if_fail (key != NULL, NULL);
+
+  result = g_hash_table_lookup (GVSD(dict)->values, key);
+
+  if (result && (!expected_type || g_variant_is_of_type (result, expected_type)))
+    return g_variant_ref (result);
+
+  return NULL;
+}
+
+/**
+ * g_variant_dict_contains:
+ * @dict: a #GVariantDict
+ * @key: the key to lookup in the dictionary
+ *
+ * Checks if @key exists in @dict.
+ *
+ * Returns: %TRUE if @key is in @dict
+ *
+ * Since: 2.40
+ **/
+gboolean
+g_variant_dict_contains (GVariantDict *dict,
+                         const gchar  *key)
+{
+  g_return_val_if_fail (is_valid_dict (dict), FALSE);
+  g_return_val_if_fail (key != NULL, FALSE);
+
+  return g_hash_table_contains (GVSD(dict)->values, key);
+}
+
+/**
+ * g_variant_dict_insert:
+ * @dict: a #GVariantDict
+ * @key: the key to insert a value for
+ * @format_string: a #GVariant varargs format string
+ * @...: arguments, as per @format_string
+ *
+ * Inserts a value into a #GVariantDict.
+ *
+ * This call is a convenience wrapper that is exactly equivalent to
+ * calling g_variant_new() followed by g_variant_dict_insert_value().
+ *
+ * Since: 2.40
+ **/
+void
+g_variant_dict_insert (GVariantDict *dict,
+                       const gchar  *key,
+                       const gchar  *format_string,
+                       ...)
+{
+  va_list ap;
+
+  g_return_if_fail (is_valid_dict (dict));
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (format_string != NULL);
+
+  va_start (ap, format_string);
+  g_variant_dict_insert_value (dict, key, g_variant_new_va (format_string, NULL, &ap));
+  va_end (ap);
+}
+
+/**
+ * g_variant_dict_insert_value:
+ * @dict: a #GVariantDict
+ * @key: the key to insert a value for
+ * @value: the value to insert
+ *
+ * Inserts (or replaces) a key in a #GVariantDict.
+ *
+ * @value is consumed if it is floating.
+ *
+ * Since: 2.40
+ **/
+void
+g_variant_dict_insert_value (GVariantDict *dict,
+                             const gchar  *key,
+                             GVariant     *value)
+{
+  g_return_if_fail (is_valid_dict (dict));
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (value != NULL);
+
+  g_hash_table_insert (GVSD(dict)->values, g_strdup (key), g_variant_ref_sink (value));
+}
+
+/**
+ * g_variant_dict_remove:
+ * @dict: a #GVariantDict
+ * @key: the key to remove
+ *
+ * Removes a key and its associated value from a #GVariantDict.
+ *
+ * Returns: %TRUE if the key was found and removed
+ *
+ * Since: 2.40
+ **/
+gboolean
+g_variant_dict_remove (GVariantDict *dict,
+                       const gchar  *key)
+{
+  g_return_val_if_fail (is_valid_dict (dict), FALSE);
+  g_return_val_if_fail (key != NULL, FALSE);
+
+  return g_hash_table_remove (GVSD(dict)->values, key);
+}
+
+/**
+ * g_variant_dict_clear:
+ * @dict: a #GVariantDict
+ *
+ * Releases all memory associated with a #GVariantDict without freeing
+ * the #GVariantDict structure itself.
+ *
+ * It typically only makes sense to do this on a stack-allocated
+ * #GVariantDict if you want to abort building the value part-way
+ * through.  This function need not be called if you call
+ * g_variant_dict_end() and it also doesn't need to be called on dicts
+ * allocated with g_variant_dict_new (see g_variant_dict_unref() for
+ * that).
+ *
+ * It is valid to call this function on either an initialised
+ * #GVariantDict or one that was previously cleared by an earlier call
+ * to g_variant_dict_clear() but it is not valid to call this function
+ * on uninitialised memory.
+ *
+ * Since: 2.40
+ **/
+void
+g_variant_dict_clear (GVariantDict *dict)
+{
+  if (GVSD(dict)->magic == 0)
+    /* all-zeros case */
+    return;
+
+  g_return_if_fail (is_valid_dict (dict));
+
+  g_hash_table_unref (GVSD(dict)->values);
+  GVSD(dict)->values = NULL;
+
+  GVSD(dict)->magic = 0;
+}
+
+/**
+ * g_variant_dict_end:
+ * @dict: a #GVariantDict
+ *
+ * Returns the current value of @dict as a #GVariant of type
+ * %G_VARIANT_TYPE_VARDICT, clearing it in the process.
+ *
+ * It is not permissible to use @dict in any way after this call except
+ * for reference counting operations (in the case of a heap-allocated
+ * #GVariantDict) or by reinitialising it with g_variant_dict_init() (in
+ * the case of stack-allocated).
+ *
+ * Returns: (transfer none): a new, floating, #GVariant
+ *
+ * Since: 2.40
+ **/
+GVariant *
+g_variant_dict_end (GVariantDict *dict)
+{
+  GVariantBuilder builder;
+  GHashTableIter iter;
+  gpointer key, value;
+
+  g_return_val_if_fail (is_valid_dict (dict), NULL);
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+
+  g_hash_table_iter_init (&iter, GVSD(dict)->values);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    g_variant_builder_add (&builder, "{sv}", (const gchar *) key, (GVariant *) value);
+
+  g_variant_dict_clear (dict);
+
+  return g_variant_builder_end (&builder);
+}
+
+/**
+ * g_variant_dict_ref:
+ * @dict: a heap-allocated #GVariantDict
+ *
+ * Increases the reference count on @dict.
+ *
+ * Don't call this on stack-allocated #GVariantDict instances or bad
+ * things will happen.
+ *
+ * Returns: (transfer full): a new reference to @dict
+ *
+ * Since: 2.40
+ **/
+GVariantDict *
+g_variant_dict_ref (GVariantDict *dict)
+{
+  g_return_val_if_fail (is_valid_heap_dict (dict), NULL);
+
+  GVHD(dict)->ref_count++;
+
+  return dict;
+}
+
+/**
+ * g_variant_dict_unref:
+ * @dict: (transfer full): a heap-allocated #GVariantDict
+ *
+ * Decreases the reference count on @dict.
+ *
+ * In the event that there are no more references, releases all memory
+ * associated with the #GVariantDict.
+ *
+ * Don't call this on stack-allocated #GVariantDict instances or bad
+ * things will happen.
+ *
+ * Since: 2.40
+ **/
+void
+g_variant_dict_unref (GVariantDict *dict)
+{
+  g_return_if_fail (is_valid_heap_dict (dict));
+
+  if (--GVHD(dict)->ref_count == 0)
+    {
+      g_variant_dict_clear (dict);
+      g_slice_free (struct heap_dict, (struct heap_dict *) dict);
+    }
+}
+
+
 /* Format strings {{{1 */
 /*< private >
  * g_variant_format_string_scan:
@@ -3613,8 +4147,7 @@ g_variant_builder_end (GVariantBuilder *builder)
  * not be accessed and the effect is otherwise equivalent to if the
  * character at @limit were nul.
  *
- * See the section on <link linkend='gvariant-format-strings'>GVariant
- * Format Strings</link>.
+ * See the section on [GVariant format strings][gvariant-format-strings].
  *
  * Returns: %TRUE if there was a valid format string
  *
@@ -3907,10 +4440,10 @@ valid_format_string (const gchar *format_string,
   if G_UNLIKELY (type == NULL || (single && *endptr != '\0'))
     {
       if (single)
-        g_critical ("`%s' is not a valid GVariant format string",
+        g_critical ("'%s' is not a valid GVariant format string",
                     format_string);
       else
-        g_critical ("`%s' does not have a valid GVariant format "
+        g_critical ("'%s' does not have a valid GVariant format "
                     "string as a prefix", format_string);
 
       if (type != NULL)
@@ -3927,11 +4460,13 @@ valid_format_string (const gchar *format_string,
       fragment = g_strndup (format_string, endptr - format_string);
       typestr = g_variant_type_dup_string (type);
 
-      g_critical ("the GVariant format string `%s' has a type of "
-                  "`%s' but the given value has a type of `%s'",
+      g_critical ("the GVariant format string '%s' has a type of "
+                  "'%s' but the given value has a type of '%s'",
                   fragment, typestr, g_variant_get_type_string (value));
 
       g_variant_type_free (type);
+      g_free (fragment);
+      g_free (typestr);
 
       return FALSE;
     }
@@ -4081,14 +4616,14 @@ g_variant_valist_new_nnp (const gchar **str,
 
           if G_UNLIKELY (!g_variant_type_is_array (type))
             g_error ("g_variant_new: expected array GVariantBuilder but "
-                     "the built value has type `%s'",
+                     "the built value has type '%s'",
                      g_variant_get_type_string (value));
 
           type = g_variant_type_element (type);
 
           if G_UNLIKELY (!g_variant_type_is_subtype_of (type, (GVariantType *) *str))
             g_error ("g_variant_new: expected GVariantBuilder array element "
-                     "type `%s' but the built value has element type `%s'",
+                     "type '%s' but the built value has element type '%s'",
                      g_variant_type_dup_string ((GVariantType *) *str),
                      g_variant_get_type_string (value) + 1);
 
@@ -4152,8 +4687,8 @@ g_variant_valist_new_nnp (const gchar **str,
 
     case '@':
       if G_UNLIKELY (!g_variant_is_of_type (ptr, (GVariantType *) *str))
-        g_error ("g_variant_new: expected GVariant of type `%s' but "
-                 "received value has type `%s'",
+        g_error ("g_variant_new: expected GVariant of type '%s' but "
+                 "received value has type '%s'",
                  g_variant_type_dup_string ((GVariantType *) *str),
                  g_variant_get_type_string (ptr));
 
@@ -4166,16 +4701,16 @@ g_variant_valist_new_nnp (const gchar **str,
 
     case '?':
       if G_UNLIKELY (!g_variant_type_is_basic (g_variant_get_type (ptr)))
-        g_error ("g_variant_new: format string `?' expects basic-typed "
-                 "GVariant, but received value has type `%s'",
+        g_error ("g_variant_new: format string '?' expects basic-typed "
+                 "GVariant, but received value has type '%s'",
                  g_variant_get_type_string (ptr));
 
       return ptr;
 
     case 'r':
       if G_UNLIKELY (!g_variant_type_is_tuple (g_variant_get_type (ptr)))
-        g_error ("g_variant_new: format string `r` expects tuple-typed "
-                 "GVariant, but received value has type `%s'",
+        g_error ("g_variant_new: format string 'r' expects tuple-typed "
+                 "GVariant, but received value has type '%s'",
                  g_variant_get_type_string (ptr));
 
       return ptr;
@@ -4611,15 +5146,30 @@ g_variant_valist_get (const gchar **str,
  *
  * Think of this function as an analogue to g_strdup_printf().
  *
- * The type of the created instance and the arguments that are
- * expected by this function are determined by @format_string.  See the
- * section on <link linkend='gvariant-format-strings'>GVariant Format
- * Strings</link>.  Please note that the syntax of the format string is
- * very likely to be extended in the future.
+ * The type of the created instance and the arguments that are expected
+ * by this function are determined by @format_string. See the section on
+ * [GVariant format strings][gvariant-format-strings]. Please note that
+ * the syntax of the format string is very likely to be extended in the
+ * future.
  *
  * The first character of the format string must not be '*' '?' '@' or
  * 'r'; in essence, a new #GVariant must always be constructed by this
  * function (and not merely passed through it unmodified).
+ *
+ * Note that the arguments must be of the correct width for their types
+ * specified in @format_string. This can be achieved by casting them. See
+ * the [GVariant varargs documentation][gvariant-varargs].
+ *
+ * |[<!-- language="C" -->
+ * MyFlags some_flags = FLAG_ONE | FLAG_TWO;
+ * const gchar *some_strings[] = { "a", "b", "c", NULL };
+ * GVariant *new_variant;
+ *
+ * new_variant = g_variant_new ("(t^as)",
+ *                              /<!-- -->* This cast is required. *<!-- -->/
+ *                              (guint64) some_flags,
+ *                              some_strings);
+ * ]|
  *
  * Returns: a new floating #GVariant instance
  *
@@ -4666,6 +5216,10 @@ g_variant_new (const gchar *format_string,
  * @app is a pointer to a #va_list.  The arguments, according to
  * @format_string, are collected from this #va_list and the list is left
  * pointing to the argument following the last.
+ *
+ * Note that the arguments in @app must be of the correct width for their
+ * types specified in @format_string when collected into the #va_list.
+ * See the [GVariant varargs documentation][gvariant-varargs.
  *
  * These two generalisations allow mixing of multiple calls to
  * g_variant_new_va() and g_variant_get_va() within a single actual
@@ -4720,15 +5274,15 @@ g_variant_new_va (const gchar  *format_string,
  * The arguments that are expected by this function are entirely
  * determined by @format_string.  @format_string also restricts the
  * permissible types of @value.  It is an error to give a value with
- * an incompatible type.  See the section on <link
- * linkend='gvariant-format-strings'>GVariant Format Strings</link>.
+ * an incompatible type.  See the section on
+ * [GVariant format strings][gvariant-format-strings].
  * Please note that the syntax of the format string is very likely to be
  * extended in the future.
  *
  * @format_string determines the C types that are used for unpacking
  * the values and also determines if the values are copied or borrowed,
  * see the section on
- * <link linkend='gvariant-format-strings-pointers'>GVariant Format Strings</link>.
+ * [GVariant format strings][gvariant-format-strings-pointers].
  *
  * Since: 2.24
  **/
@@ -4781,7 +5335,7 @@ g_variant_get (GVariant    *value,
  * @format_string determines the C types that are used for unpacking
  * the values and also determines if the values are copied or borrowed,
  * see the section on
- * <link linkend='gvariant-format-strings-pointers'>GVariant Format Strings</link>.
+ * [GVariant format strings][gvariant-format-strings-pointers].
  *
  * Since: 2.24
  **/
@@ -4808,7 +5362,7 @@ g_variant_get_va (GVariant     *value,
 /* Varargs-enabled Utility Functions {{{1 */
 
 /**
- * g_variant_builder_add: (skp)
+ * g_variant_builder_add: (skip)
  * @builder: a #GVariantBuilder
  * @format_string: a #GVariant varargs format string
  * @...: arguments, as per @format_string
@@ -4818,30 +5372,34 @@ g_variant_get_va (GVariant     *value,
  * This call is a convenience wrapper that is exactly equivalent to
  * calling g_variant_new() followed by g_variant_builder_add_value().
  *
+ * Note that the arguments must be of the correct width for their types
+ * specified in @format_string. This can be achieved by casting them. See
+ * the [GVariant varargs documentation][gvariant-varargs].
+ *
  * This function might be used as follows:
  *
- * <programlisting>
+ * |[<!-- language="C" --> 
  * GVariant *
  * make_pointless_dictionary (void)
  * {
- *   GVariantBuilder *builder;
+ *   GVariantBuilder builder;
  *   int i;
  *
- *   builder = g_variant_builder_new (G_VARIANT_TYPE_ARRAY);
+ *   g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
  *   for (i = 0; i < 16; i++)
  *     {
  *       gchar buf[3];
  *
  *       sprintf (buf, "%d", i);
- *       g_variant_builder_add (builder, "{is}", i, buf);
+ *       g_variant_builder_add (&builder, "{is}", i, buf);
  *     }
  *
- *   return g_variant_builder_end (builder);
+ *   return g_variant_builder_end (&builder);
  * }
- * </programlisting>
+ * ]|
  *
  * Since: 2.24
- **/
+ */
 void
 g_variant_builder_add (GVariantBuilder *builder,
                        const gchar     *format_string,
@@ -4872,7 +5430,7 @@ g_variant_builder_add (GVariantBuilder *builder,
  * @format_string determines the C types that are used for unpacking
  * the values and also determines if the values are copied or borrowed,
  * see the section on
- * <link linkend='gvariant-format-strings-pointers'>GVariant Format Strings</link>.
+ * [GVariant format strings][gvariant-format-strings-pointers].
  *
  * Since: 2.24
  **/
@@ -4911,13 +5469,9 @@ g_variant_get_child (GVariant    *value,
  * responsibility of the caller to free all of the values returned by
  * the unpacking process.
  *
- * See the section on <link linkend='gvariant-format-strings'>GVariant
- * Format Strings</link>.
- *
- * <example>
- *  <title>Memory management with g_variant_iter_next()</title>
- *  <programlisting>
- *   /<!-- -->* Iterates a dictionary of type 'a{sv}' *<!-- -->/
+ * Here is an example for memory management with g_variant_iter_next():
+ * |[<!-- language="C" --> 
+ *   // Iterates a dictionary of type 'a{sv}'
  *   void
  *   iterate_dictionary (GVariant *dictionary)
  *   {
@@ -4931,21 +5485,21 @@ g_variant_get_child (GVariant    *value,
  *         g_print ("Item '%s' has type '%s'\n", key,
  *                  g_variant_get_type_string (value));
  *
- *         /<!-- -->* must free data for ourselves *<!-- -->/
+ *         // must free data for ourselves
  *         g_variant_unref (value);
  *         g_free (key);
  *       }
  *   }
- *  </programlisting>
- * </example>
+ * ]|
  *
  * For a solution that is likely to be more convenient to C programmers
  * when dealing with loops, see g_variant_iter_loop().
  *
  * @format_string determines the C types that are used for unpacking
- * the values and also determines if the values are copied or borrowed,
- * see the section on
- * <link linkend='gvariant-format-strings-pointers'>GVariant Format Strings</link>.
+ * the values and also determines if the values are copied or borrowed.
+ *
+ * See the section on
+ * [GVariant format strings][gvariant-format-strings-pointers].
  *
  * Returns: %TRUE if a value was unpacked, or %FALSE if there as no value
  *
@@ -5007,13 +5561,9 @@ g_variant_iter_next (GVariantIter *iter,
  * you must free or unreference all the unpacked values as you would with
  * g_variant_get(). Failure to do so will cause a memory leak.
  *
- * See the section on <link linkend='gvariant-format-strings'>GVariant
- * Format Strings</link>.
- *
- * <example>
- *  <title>Memory management with g_variant_iter_loop()</title>
- *  <programlisting>
- *   /<!-- -->* Iterates a dictionary of type 'a{sv}' *<!-- -->/
+ * Here is an example for memory management with g_variant_iter_loop():
+ * |[<!-- language="C" --> 
+ *   // Iterates a dictionary of type 'a{sv}'
  *   void
  *   iterate_dictionary (GVariant *dictionary)
  *   {
@@ -5027,12 +5577,11 @@ g_variant_iter_next (GVariantIter *iter,
  *         g_print ("Item '%s' has type '%s'\n", key,
  *                  g_variant_get_type_string (value));
  *
- *         /<!-- -->* no need to free 'key' and 'value' here *<!-- -->/
- *         /<!-- -->* unless breaking out of this loop *<!-- -->/
+ *         // no need to free 'key' and 'value' here
+ *         // unless breaking out of this loop
  *       }
  *   }
- *  </programlisting>
- * </example>
+ * ]|
  *
  * For most cases you should use g_variant_iter_next().
  *
@@ -5046,9 +5595,10 @@ g_variant_iter_next (GVariantIter *iter,
  * thereby avoiding the need to free anything as well).
  *
  * @format_string determines the C types that are used for unpacking
- * the values and also determines if the values are copied or borrowed,
- * see the section on
- * <link linkend='gvariant-format-strings-pointers'>GVariant Format Strings</link>.
+ * the values and also determines if the values are copied or borrowed.
+ *
+ * See the section on
+ * [GVariant format strings][gvariant-format-strings-pointers].
  *
  * Returns: %TRUE if a value was unpacked, or %FALSE if there was no
  *          value

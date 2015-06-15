@@ -14,12 +14,12 @@
  *          Alexander Larsson <alexl@redhat.com>
  */
 
+#ifndef __G_IO_STREAM_H__
+#define __G_IO_STREAM_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_IO_STREAM_H__
-#define __G_IO_STREAM_H__
 
 #include <gio/ginputstream.h>
 #include <gio/goutputstream.h>
@@ -83,11 +83,15 @@ struct _GIOStreamClass
   void (*_g_reserved10) (void);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType          g_io_stream_get_type          (void)  G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GInputStream * g_io_stream_get_input_stream  (GIOStream            *stream);
+GLIB_AVAILABLE_IN_ALL
 GOutputStream *g_io_stream_get_output_stream (GIOStream            *stream);
 
+GLIB_AVAILABLE_IN_ALL
 void           g_io_stream_splice_async      (GIOStream            *stream1,
 					      GIOStream            *stream2,
 					      GIOStreamSpliceFlags  flags,
@@ -96,26 +100,34 @@ void           g_io_stream_splice_async      (GIOStream            *stream1,
 					      GAsyncReadyCallback   callback,
 					      gpointer              user_data);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean       g_io_stream_splice_finish     (GAsyncResult         *result,
                                               GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean       g_io_stream_close             (GIOStream            *stream,
 					      GCancellable         *cancellable,
 					      GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 void           g_io_stream_close_async       (GIOStream            *stream,
 					      int                   io_priority,
 					      GCancellable         *cancellable,
 					      GAsyncReadyCallback   callback,
 					      gpointer              user_data);
+GLIB_AVAILABLE_IN_ALL
 gboolean       g_io_stream_close_finish      (GIOStream            *stream,
 					      GAsyncResult         *result,
 					      GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean       g_io_stream_is_closed         (GIOStream            *stream);
+GLIB_AVAILABLE_IN_ALL
 gboolean       g_io_stream_has_pending       (GIOStream            *stream);
+GLIB_AVAILABLE_IN_ALL
 gboolean       g_io_stream_set_pending       (GIOStream            *stream,
 					      GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void           g_io_stream_clear_pending     (GIOStream            *stream);
 
 G_END_DECLS

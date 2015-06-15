@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -28,7 +26,7 @@
 #include "glibintl.h"
 #include "gloadableicon.h"
 #include "ginputstream.h"
-#include "gsimpleasyncresult.h"
+#include "gtask.h"
 #include "gioerror.h"
 
 
@@ -120,7 +118,8 @@ g_file_icon_finalize (GObject *object)
 
   icon = G_FILE_ICON (object);
 
-  g_object_unref (icon->file);
+  if (icon->file)
+    g_object_unref (icon->file);
 
   G_OBJECT_CLASS (g_file_icon_parent_class)->finalize (object);
 }
@@ -256,6 +255,14 @@ g_file_icon_from_tokens (gchar  **tokens,
   return icon;
 }
 
+static GVariant *
+g_file_icon_serialize (GIcon *icon)
+{
+  GFileIcon *file_icon = G_FILE_ICON (icon);
+
+  return g_variant_new ("(sv)", "file", g_variant_new_take_string (g_file_get_uri (file_icon->file)));
+}
+
 static void
 g_file_icon_icon_iface_init (GIconIface *iface)
 {
@@ -263,6 +270,7 @@ g_file_icon_icon_iface_init (GIconIface *iface)
   iface->equal = g_file_icon_equal;
   iface->to_tokens = g_file_icon_to_tokens;
   iface->from_tokens = g_file_icon_from_tokens;
+  iface->serialize = g_file_icon_serialize;
 }
 
 
@@ -279,21 +287,11 @@ g_file_icon_load (GLoadableIcon  *icon,
   stream = g_file_read (file_icon->file,
 			cancellable,
 			error);
+
+  if (stream && type)
+    *type = NULL;
   
   return G_INPUT_STREAM (stream);
-}
-
-typedef struct {
-  GLoadableIcon *icon;
-  GAsyncReadyCallback callback;
-  gpointer user_data;
-} LoadData;
-
-static void
-load_data_free (LoadData *data)
-{
-  g_object_unref (data->icon);
-  g_free (data);
 }
 
 static void
@@ -303,35 +301,14 @@ load_async_callback (GObject      *source_object,
 {
   GFileInputStream *stream;
   GError *error = NULL;
-  GSimpleAsyncResult *simple;
-  LoadData *data = user_data;
+  GTask *task = user_data;
 
   stream = g_file_read_finish (G_FILE (source_object), res, &error);
-  
   if (stream == NULL)
-    {
-      simple = g_simple_async_result_new_take_error (G_OBJECT (data->icon),
-						     data->callback,
-						     data->user_data,
-						     error);
-    }
+    g_task_return_error (task, error);
   else
-    {
-      simple = g_simple_async_result_new (G_OBJECT (data->icon),
-					  data->callback,
-					  data->user_data,
-					  g_file_icon_load_async);
-      
-      g_simple_async_result_set_op_res_gpointer (simple,
-						 stream,
-						 g_object_unref);
-  }
-
-
-  g_simple_async_result_complete (simple);
-  
-  load_data_free (data);
-  g_object_unref (simple);
+    g_task_return_pointer (task, stream, g_object_unref);
+  g_object_unref (task);
 }
 
 static void
@@ -342,17 +319,13 @@ g_file_icon_load_async (GLoadableIcon       *icon,
                         gpointer             user_data)
 {
   GFileIcon *file_icon = G_FILE_ICON (icon);
-  LoadData *data;
+  GTask *task;
 
-  data = g_new0 (LoadData, 1);
-  data->icon = g_object_ref (icon);
-  data->callback = callback;
-  data->user_data = user_data;
+  task = g_task_new (icon, cancellable, callback, user_data);
   
   g_file_read_async (file_icon->file, 0,
-		     cancellable,
-		     load_async_callback, data);
-  
+                     cancellable,
+                     load_async_callback, task);
 }
 
 static GInputStream *
@@ -361,19 +334,12 @@ g_file_icon_load_finish (GLoadableIcon  *icon,
 			 char          **type,
 			 GError        **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  gpointer op;
-
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_icon_load_async);
+  g_return_val_if_fail (g_task_is_valid (res, icon), NULL);
 
   if (type)
     *type = NULL;
   
-  op = g_simple_async_result_get_op_res_gpointer (simple);
-  if (op)
-    return g_object_ref (op);
-  
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 static void

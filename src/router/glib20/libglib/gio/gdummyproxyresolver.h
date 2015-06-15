@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Nicolas Dufresne <nicolas.dufresne@collabora.co.uk>
  */
 
+#ifndef __G_DUMMY_PROXY_RESOLVER_H__
+#define __G_DUMMY_PROXY_RESOLVER_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_DUMMY_PROXY_RESOLVER_H__
-#define __G_DUMMY_PROXY_RESOLVER_H__
 
 #include <gio/giotypes.h>
 

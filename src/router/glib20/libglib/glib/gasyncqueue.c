@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -92,7 +90,7 @@
  *
  * The GAsyncQueue struct is an opaque data structure which represents
  * an asynchronous queue. It should only be accessed through the
- * <function>g_async_queue_*</function> functions.
+ * g_async_queue_* functions.
  */
 struct _GAsyncQueue
 {
@@ -115,7 +113,7 @@ typedef struct
  *
  * Creates a new asynchronous queue.
  *
- * Return value: a new #GAsyncQueue. Free with g_async_queue_unref()
+ * Returns: a new #GAsyncQueue. Free with g_async_queue_unref()
  */
 GAsyncQueue *
 g_async_queue_new (void)
@@ -131,7 +129,7 @@ g_async_queue_new (void)
  * function that is used to free any remaining queue items when
  * the queue is destroyed after the final unref.
  *
- * Return value: a new #GAsyncQueue. Free with g_async_queue_unref()
+ * Returns: a new #GAsyncQueue. Free with g_async_queue_unref()
  *
  * Since: 2.16
  */
@@ -249,8 +247,8 @@ g_async_queue_unref (GAsyncQueue *queue)
  * Call g_async_queue_unlock() to drop the lock again.
  *
  * While holding the lock, you can only call the
- * <function>g_async_queue_*_unlocked()</function> functions
- * on @queue. Otherwise, deadlock may occur.
+ * g_async_queue_*_unlocked() functions on @queue. Otherwise,
+ * deadlock may occur.
  */
 void
 g_async_queue_lock (GAsyncQueue *queue)
@@ -442,7 +440,7 @@ g_async_queue_pop_intern_unlocked (GAsyncQueue *queue,
  * Pops data from the @queue. If @queue is empty, this function
  * blocks until data becomes available.
  *
- * Return value: data from the queue
+ * Returns: data from the queue
  */
 gpointer
 g_async_queue_pop (GAsyncQueue *queue)
@@ -467,7 +465,7 @@ g_async_queue_pop (GAsyncQueue *queue)
  *
  * This function must be called while holding the @queue's lock.
  *
- * Return value: data from the queue.
+ * Returns: data from the queue.
  */
 gpointer
 g_async_queue_pop_unlocked (GAsyncQueue *queue)
@@ -484,7 +482,7 @@ g_async_queue_pop_unlocked (GAsyncQueue *queue)
  * Tries to pop data from the @queue. If no data is available,
  * %NULL is returned.
  *
- * Return value: data from the queue or %NULL, when no data is
+ * Returns: data from the queue or %NULL, when no data is
  *     available immediately.
  */
 gpointer
@@ -510,7 +508,7 @@ g_async_queue_try_pop (GAsyncQueue *queue)
  *
  * This function must be called while holding the @queue's lock.
  *
- * Return value: data from the queue or %NULL, when no data is
+ * Returns: data from the queue or %NULL, when no data is
  *     available immediately.
  */
 gpointer
@@ -531,7 +529,7 @@ g_async_queue_try_pop_unlocked (GAsyncQueue *queue)
  *
  * If no data is received before the timeout, %NULL is returned.
  *
- * Return value: data from the queue or %NULL, when no data is
+ * Returns: data from the queue or %NULL, when no data is
  *     received before the timeout.
  */
 gpointer
@@ -560,7 +558,7 @@ g_async_queue_timeout_pop (GAsyncQueue *queue,
  *
  * This function must be called while holding the @queue's lock.
  *
- * Return value: data from the queue or %NULL, when no data is
+ * Returns: data from the queue or %NULL, when no data is
  *     received before the timeout.
  */
 gpointer
@@ -585,7 +583,7 @@ g_async_queue_timeout_pop_unlocked (GAsyncQueue *queue,
  * To easily calculate @end_time, a combination of g_get_current_time()
  * and g_time_val_add() can be used.
  *
- * Return value: data from the queue or %NULL, when no data is
+ * Returns: data from the queue or %NULL, when no data is
  *     received before @end_time.
  *
  * Deprecated: use g_async_queue_timeout_pop().
@@ -602,8 +600,7 @@ g_async_queue_timed_pop (GAsyncQueue *queue,
   if (end_time != NULL)
     {
       m_end_time = g_get_monotonic_time () +
-	((gint64)end_time->tv_sec * G_USEC_PER_SEC + end_time->tv_usec -
-	 g_get_real_time ());
+        ((gint64) end_time->tv_sec * G_USEC_PER_SEC + end_time->tv_usec - g_get_real_time ());
     }
   else
     m_end_time = -1;
@@ -630,7 +627,7 @@ g_async_queue_timed_pop (GAsyncQueue *queue,
  *
  * This function must be called while holding the @queue's lock.
  *
- * Return value: data from the queue or %NULL, when no data is
+ * Returns: data from the queue or %NULL, when no data is
  *     received before @end_time.
  *
  * Deprecated: use g_async_queue_timeout_pop_unlocked().
@@ -646,8 +643,7 @@ g_async_queue_timed_pop_unlocked (GAsyncQueue *queue,
   if (end_time != NULL)
     {
       m_end_time = g_get_monotonic_time () +
-	(end_time->tv_sec * G_USEC_PER_SEC + end_time->tv_usec -
-	 g_get_real_time ());
+        ((gint64) end_time->tv_sec * G_USEC_PER_SEC + end_time->tv_usec - g_get_real_time ());
     }
   else
     m_end_time = -1;
@@ -668,7 +664,7 @@ g_async_queue_timed_pop_unlocked (GAsyncQueue *queue,
  * in the queue and n threads waiting. This can happen due to locking
  * of the queue or due to scheduling.
  *
- * Return value: the length of the @queue
+ * Returns: the length of the @queue
  */
 gint
 g_async_queue_length (GAsyncQueue *queue)
@@ -699,7 +695,7 @@ g_async_queue_length (GAsyncQueue *queue)
  *
  * This function must be called while holding the @queue's lock.
  *
- * Return value: the length of the @queue.
+ * Returns: the length of the @queue.
  */
 gint
 g_async_queue_length_unlocked (GAsyncQueue *queue)
@@ -728,7 +724,7 @@ g_async_queue_length_unlocked (GAsyncQueue *queue)
  *
  * If you were sorting a list of priority numbers to make sure the
  * lowest priority would be at the top of the queue, you could use:
- * |[
+ * |[<!-- language="C" -->
  *  gint32 id1;
  *  gint32 id2;
  *

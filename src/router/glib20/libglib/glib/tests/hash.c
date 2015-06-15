@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -241,7 +239,6 @@ not_even_foreach (gpointer key,
   g_assert (i != 3);
 }
 
-
 static gboolean
 remove_even_foreach (gpointer key,
                      gpointer value,
@@ -356,7 +353,6 @@ find_first (gpointer key,
   return (*v == *test);
 }
 
-
 static void
 direct_hash_test (void)
 {
@@ -377,6 +373,60 @@ direct_hash_test (void)
 
       g_assert (rc != 0);
       g_assert ((rc - 42) == i);
+    }
+
+  g_hash_table_destroy (h);
+}
+
+static void
+direct_hash_test2 (void)
+{
+  gint       i, rc;
+  GHashTable     *h;
+
+  h = g_hash_table_new (g_direct_hash, g_direct_equal);
+  g_assert (h != NULL);
+  for (i = 1; i <= 20; i++)
+    g_hash_table_insert (h, GINT_TO_POINTER (i),
+                         GINT_TO_POINTER (i + 42));
+
+  g_assert (g_hash_table_size (h) == 20);
+
+  for (i = 1; i <= 20; i++)
+    {
+      rc = GPOINTER_TO_INT (g_hash_table_lookup (h, GINT_TO_POINTER (i)));
+
+      g_assert (rc != 0);
+      g_assert ((rc - 42) == i);
+    }
+
+  g_hash_table_destroy (h);
+}
+
+static void
+int_hash_test (void)
+{
+  gint       i, rc;
+  GHashTable     *h;
+  gint     values[20];
+  gint key;
+
+  h = g_hash_table_new (g_int_hash, g_int_equal);
+  g_assert (h != NULL);
+  for (i = 0; i < 20; i++)
+    {
+      values[i] = i + 42;
+      g_hash_table_insert (h, &values[i], GINT_TO_POINTER (i + 42));
+    }
+
+  g_assert (g_hash_table_size (h) == 20);
+
+  for (i = 0; i < 20; i++)
+    {
+      key = i + 42;
+      rc = GPOINTER_TO_INT (g_hash_table_lookup (h, &key));
+
+      g_assert_cmpint (rc, ==, i + 42);
     }
 
   g_hash_table_destroy (h);
@@ -508,8 +558,10 @@ set_hash_test (void)
   for (i = 2; i < 5000; i += 7)
     {
       char *s = g_strdup_printf ("%d", i);
-      g_hash_table_add (hash_table, s);
+      g_assert (g_hash_table_add (hash_table, s));
     }
+
+  g_assert (!g_hash_table_add (hash_table, g_strdup_printf ("%d", 2)));
 
   i = 0;
   g_hash_table_foreach (hash_table, set_check, &i);
@@ -520,7 +572,11 @@ set_hash_test (void)
   g_assert (!g_hash_table_contains (hash_table, "a"));
 
   /* this will cause the hash table to loose set nature */
-  g_hash_table_insert (hash_table, g_strdup ("a"), "b");
+  g_assert (g_hash_table_insert (hash_table, g_strdup ("a"), "b"));
+  g_assert (!g_hash_table_insert (hash_table, g_strdup ("a"), "b"));
+
+  g_assert (g_hash_table_replace (hash_table, g_strdup ("c"), "d"));
+  g_assert (!g_hash_table_replace (hash_table, g_strdup ("c"), "d"));
 
   g_assert_cmpstr (g_hash_table_lookup (hash_table, "2"), ==, "2");
   g_assert_cmpstr (g_hash_table_lookup (hash_table, "a"), ==, "b");
@@ -737,9 +793,10 @@ test_remove_all (void)
   gboolean res;
 
   h = g_hash_table_new_full (g_str_hash, g_str_equal, key_destroy, value_destroy);
-  g_hash_table_insert (h, "abc", "ABC");
-  g_hash_table_insert (h, "cde", "CDE");
-  g_hash_table_insert (h, "xyz", "XYZ");
+
+  g_hash_table_insert (h, "abc", "cde");
+  g_hash_table_insert (h, "cde", "xyz");
+  g_hash_table_insert (h, "xyz", "abc");
 
   destroy_counter = 0;
   destroy_key_counter = 0;
@@ -767,6 +824,52 @@ test_remove_all (void)
   g_assert_cmpint (destroy_key_counter, ==, 2);
 
   g_hash_table_unref (h);
+}
+
+GHashTable *recursive_destruction_table = NULL;
+static void
+recursive_value_destroy (gpointer value)
+{
+  destroy_counter++;
+
+  if (recursive_destruction_table)
+    g_hash_table_remove (recursive_destruction_table, value);
+}
+
+static void
+test_recursive_remove_all_subprocess (void)
+{
+  GHashTable *h;
+
+  h = g_hash_table_new_full (g_str_hash, g_str_equal, key_destroy, recursive_value_destroy);
+  recursive_destruction_table = h;
+
+  /* Add more items compared to test_remove_all, as it would not fail otherwise. */
+  g_hash_table_insert (h, "abc", "cde");
+  g_hash_table_insert (h, "cde", "fgh");
+  g_hash_table_insert (h, "fgh", "ijk");
+  g_hash_table_insert (h, "ijk", "lmn");
+  g_hash_table_insert (h, "lmn", "opq");
+  g_hash_table_insert (h, "opq", "rst");
+  g_hash_table_insert (h, "rst", "uvw");
+  g_hash_table_insert (h, "uvw", "xyz");
+  g_hash_table_insert (h, "xyz", "abc");
+
+  destroy_counter = 0;
+  destroy_key_counter = 0;
+
+  g_hash_table_remove_all (h);
+  g_assert_cmpint (destroy_counter, ==, 9);
+  g_assert_cmpint (destroy_key_counter, ==, 9);
+
+  g_hash_table_unref (h);
+}
+
+static void
+test_recursive_remove_all (void)
+{
+  g_test_trap_subprocess ("/hash/recursive-remove-all/subprocess", 1000000, 0);
+  g_test_trap_assert_passed ();
 }
 
 typedef struct {
@@ -1037,6 +1140,53 @@ test_foreach (void)
   g_hash_table_unref (hash);
 }
 
+static gboolean
+foreach_steal_func (gpointer key, gpointer value, gpointer data)
+{
+  GHashTable *hash2 = data;
+
+  if (strstr ("ace", (gchar*)key))
+    {
+      g_hash_table_insert (hash2, key, value);
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
+
+static void
+test_foreach_steal (void)
+{
+  GHashTable *hash;
+  GHashTable *hash2;
+
+  hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+  hash2 = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
+  g_hash_table_insert (hash, g_strdup ("a"), g_strdup ("A"));
+  g_hash_table_insert (hash, g_strdup ("b"), g_strdup ("B"));
+  g_hash_table_insert (hash, g_strdup ("c"), g_strdup ("C"));
+  g_hash_table_insert (hash, g_strdup ("d"), g_strdup ("D"));
+  g_hash_table_insert (hash, g_strdup ("e"), g_strdup ("E"));
+  g_hash_table_insert (hash, g_strdup ("f"), g_strdup ("F"));
+
+  g_hash_table_foreach_steal (hash, foreach_steal_func, hash2);
+
+  g_assert_cmpint (g_hash_table_size (hash), ==, 3);
+  g_assert_cmpint (g_hash_table_size (hash2), ==, 3);
+
+  g_assert_cmpstr (g_hash_table_lookup (hash2, "a"), ==, "A");
+  g_assert_cmpstr (g_hash_table_lookup (hash, "b"), ==, "B");
+  g_assert_cmpstr (g_hash_table_lookup (hash2, "c"), ==, "C");
+  g_assert_cmpstr (g_hash_table_lookup (hash, "d"), ==, "D");
+  g_assert_cmpstr (g_hash_table_lookup (hash2, "e"), ==, "E");
+  g_assert_cmpstr (g_hash_table_lookup (hash, "f"), ==, "F");
+
+  g_hash_table_unref (hash);
+  g_hash_table_unref (hash2);
+}
+
 struct _GHashTable
 {
   gint             size;
@@ -1215,6 +1365,127 @@ test_iter_replace (void)
   g_hash_table_unref (h);
 }
 
+static void
+replace_first_character (gchar *string)
+{
+  string[0] = 'b';
+}
+
+static void
+test_set_insert_corruption (void)
+{
+  GHashTable *hash_table =
+    g_hash_table_new_full (g_str_hash, g_str_equal,
+        (GDestroyNotify) replace_first_character, NULL);
+  GHashTableIter iter;
+  gchar a[] = "foo";
+  gchar b[] = "foo";
+  gpointer key, value;
+
+  g_test_bug ("692815");
+
+  g_hash_table_insert (hash_table, a, a);
+  g_assert (g_hash_table_contains (hash_table, "foo"));
+
+  g_hash_table_insert (hash_table, b, b);
+
+  g_assert_cmpuint (g_hash_table_size (hash_table), ==, 1);
+  g_hash_table_iter_init (&iter, hash_table);
+  if (!g_hash_table_iter_next (&iter, &key, &value))
+    g_assert_not_reached();
+
+  /* per the documentation to g_hash_table_insert(), 'b' has now been freed,
+   * and the sole key in 'hash_table' should be 'a'.
+   */
+  g_assert (key != b);
+  g_assert (key == a);
+
+  g_assert_cmpstr (b, ==, "boo");
+
+  /* g_hash_table_insert() also says that the value should now be 'b',
+   * which is probably not what the caller intended but is precisely what they
+   * asked for.
+   */
+  g_assert (value == b);
+
+  /* even though the hash has now been de-set-ified: */
+  g_assert (g_hash_table_contains (hash_table, "foo"));
+
+  g_hash_table_unref (hash_table);
+}
+
+static void
+test_set_to_strv (void)
+{
+  GHashTable *set;
+  gchar **strv;
+  guint n;
+
+  set = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  g_hash_table_add (set, g_strdup ("xyz"));
+  g_hash_table_add (set, g_strdup ("xyz"));
+  g_hash_table_add (set, g_strdup ("abc"));
+  strv = (gchar **) g_hash_table_get_keys_as_array (set, &n);
+  g_hash_table_steal_all (set);
+  g_hash_table_unref (set);
+  g_assert_cmpint (n, ==, 2);
+  n = g_strv_length (strv);
+  g_assert_cmpint (n, ==, 2);
+  if (g_str_equal (strv[0], "abc"))
+    g_assert_cmpstr (strv[1], ==, "xyz");
+  else
+    {
+    g_assert_cmpstr (strv[0], ==, "xyz");
+    g_assert_cmpstr (strv[1], ==, "abc");
+    }
+  g_strfreev (strv);
+}
+
+static gboolean
+is_prime (guint p)
+{
+  guint i;
+
+  if (p % 2 == 0)
+    return FALSE;
+
+  i = 3;
+  while (TRUE)
+    {
+      if (i * i > p)
+        return TRUE;
+
+      if (p % i == 0)
+        return FALSE;
+
+      i += 2;       
+    }
+}
+
+static void
+test_primes (void)
+{
+  guint p, q;
+  gdouble r, min, max;
+
+  max = 1.0;
+  min = 10.0;
+  q = 1;
+  while (1) {
+    p = q;
+    q = g_spaced_primes_closest (p);
+    g_assert (is_prime (q));
+    if (p == 1) continue;
+    if (q == p) break;
+    r = q / (gdouble) p;
+    min = MIN (min, r);
+    max = MAX (max, r);
+  };
+
+  g_assert_cmpfloat (1.3, <, min);
+  g_assert_cmpfloat (max, <, 2.0);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -1226,6 +1497,8 @@ main (int argc, char *argv[])
   g_test_add_data_func ("/hash/one", GINT_TO_POINTER (TRUE), second_hash_test);
   g_test_add_data_func ("/hash/honeyman", GINT_TO_POINTER (FALSE), second_hash_test);
   g_test_add_func ("/hash/direct", direct_hash_test);
+  g_test_add_func ("/hash/direct2", direct_hash_test2);
+  g_test_add_func ("/hash/int", int_hash_test);
   g_test_add_func ("/hash/int64", int64_hash_test);
   g_test_add_func ("/hash/double", double_hash_test);
   g_test_add_func ("/hash/string", string_hash_test);
@@ -1233,14 +1506,20 @@ main (int argc, char *argv[])
   g_test_add_func ("/hash/set-ref", set_ref_hash_test);
   g_test_add_func ("/hash/ref", test_hash_ref);
   g_test_add_func ("/hash/remove-all", test_remove_all);
+  g_test_add_func ("/hash/recursive-remove-all", test_recursive_remove_all);
+  g_test_add_func ("/hash/recursive-remove-all/subprocess", test_recursive_remove_all_subprocess);
   g_test_add_func ("/hash/find", test_find);
   g_test_add_func ("/hash/foreach", test_foreach);
+  g_test_add_func ("/hash/foreach-steal", test_foreach_steal);
 
   /* tests for individual bugs */
   g_test_add_func ("/hash/lookup-null-key", test_lookup_null_key);
   g_test_add_func ("/hash/destroy-modify", test_destroy_modify);
   g_test_add_func ("/hash/consistency", test_internal_consistency);
   g_test_add_func ("/hash/iter-replace", test_iter_replace);
+  g_test_add_func ("/hash/set-insert-corruption", test_set_insert_corruption);
+  g_test_add_func ("/hash/set-to-strv", test_set_to_strv);
+  g_test_add_func ("/hash/primes", test_primes);
 
   return g_test_run ();
 

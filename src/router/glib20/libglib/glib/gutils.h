@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,12 +22,12 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_UTILS_H__
+#define __G_UTILS_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_UTILS_H__
-#define __G_UTILS_H__
 
 #include <glib/gtypes.h>
 #include <stdarg.h>
@@ -43,15 +41,15 @@ G_BEGIN_DECLS
 #  if defined (__GNUC__) && defined (__PPC__) && (defined (_CALL_SYSV) || defined (_WIN32))
 #    define G_VA_COPY(ap1, ap2)	  (*(ap1) = *(ap2))
 #  elif defined (G_VA_COPY_AS_ARRAY)
-#    define G_VA_COPY(ap1, ap2)	  g_memmove ((ap1), (ap2), sizeof (va_list))
+#    define G_VA_COPY(ap1, ap2)	  memmove ((ap1), (ap2), sizeof (va_list))
 #  else /* va_list is a pointer */
 #    define G_VA_COPY(ap1, ap2)	  ((ap1) = (ap2))
 #  endif /* va_list is a pointer */
 #endif /* !G_VA_COPY */
 
-/* inlining hassle. for compilers that don't allow the `inline' keyword,
+/* inlining hassle. for compilers that don't allow the 'inline' keyword,
  * mostly because of strict ANSI C compliance or dumbness, we try to fall
- * back to either `__inline__' or `__inline'.
+ * back to either '__inline__' or '__inline'.
  * G_CAN_INLINE is defined in glibconfig.h if the compiler seems to be 
  * actually *capable* to do function inlining, in which case inline 
  * function bodies do make sense. we also define G_INLINE_FUNC to properly 
@@ -74,43 +72,49 @@ G_BEGIN_DECLS
 #  endif
 #endif
 #ifdef G_IMPLEMENT_INLINES
-#  define G_INLINE_FUNC
+#  define G_INLINE_FUNC _GLIB_EXTERN
 #  undef  G_CAN_INLINE
 #elif defined (__GNUC__) 
 #  define G_INLINE_FUNC static __inline __attribute__ ((unused))
 #elif defined (G_CAN_INLINE) 
 #  define G_INLINE_FUNC static inline
 #else /* can't inline */
-#  define G_INLINE_FUNC
+#  define G_INLINE_FUNC _GLIB_EXTERN
 #endif /* !G_INLINE_FUNC */
 
-#ifndef __GTK_DOC_IGNORE__
-#ifdef G_OS_WIN32
-#define g_get_user_name g_get_user_name_utf8
-#define g_get_real_name g_get_real_name_utf8
-#define g_get_home_dir g_get_home_dir_utf8
-#define g_get_tmp_dir g_get_tmp_dir_utf8
-#endif
-#endif
-
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_get_user_name        (void);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_get_real_name        (void);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_get_home_dir         (void);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_get_tmp_dir          (void);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_get_host_name	     (void);
-gchar *               g_get_prgname          (void);
+GLIB_AVAILABLE_IN_ALL
+const gchar *         g_get_prgname          (void);
+GLIB_AVAILABLE_IN_ALL
 void                  g_set_prgname          (const gchar *prgname);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_get_application_name (void);
+GLIB_AVAILABLE_IN_ALL
 void                  g_set_application_name (const gchar *application_name);
 
+GLIB_AVAILABLE_IN_ALL
 void      g_reload_user_special_dirs_cache     (void);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_get_user_data_dir      (void);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_get_user_config_dir    (void);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_get_user_cache_dir     (void);
+GLIB_AVAILABLE_IN_ALL
 const gchar * const * g_get_system_data_dirs   (void);
 
 #ifdef G_OS_WIN32
 /* This functions is not part of the public GLib API */
+GLIB_AVAILABLE_IN_ALL
 const gchar * const * g_win32_get_system_data_dirs_for_module (void (*address_of_function)(void));
 #endif
 
@@ -127,8 +131,10 @@ _g_win32_get_system_data_dirs (void)
 #define g_get_system_data_dirs _g_win32_get_system_data_dirs
 #endif
 
+GLIB_AVAILABLE_IN_ALL
 const gchar * const * g_get_system_config_dirs (void);
 
+GLIB_AVAILABLE_IN_ALL
 const gchar * g_get_user_runtime_dir (void);
 
 /**
@@ -166,6 +172,7 @@ typedef enum {
   G_USER_N_DIRECTORIES
 } GUserDirectory;
 
+GLIB_AVAILABLE_IN_ALL
 const gchar * g_get_user_special_dir (GUserDirectory directory);
 
 /**
@@ -185,19 +192,24 @@ struct _GDebugKey
 
 /* Miscellaneous utility functions
  */
+GLIB_AVAILABLE_IN_ALL
 guint                 g_parse_debug_string (const gchar     *string,
 					    const GDebugKey *keys,
 					    guint            nkeys);
 
+GLIB_AVAILABLE_IN_ALL
 gint                  g_snprintf           (gchar       *string,
 					    gulong       n,
 					    gchar const *format,
 					    ...) G_GNUC_PRINTF (3, 4);
+GLIB_AVAILABLE_IN_ALL
 gint                  g_vsnprintf          (gchar       *string,
 					    gulong       n,
 					    gchar const *format,
-					    va_list      args);
+					    va_list      args)
+					    G_GNUC_PRINTF(3, 0);
 
+GLIB_AVAILABLE_IN_ALL
 void                  g_nullify_pointer    (gpointer    *nullify_location);
 
 typedef enum
@@ -225,16 +237,7 @@ gchar *g_format_size_for_display (goffset size);
  * function passed to g_atexit().
  */
 typedef void (*GVoidFunc) (void);
-#ifndef ATEXIT
-# define ATEXIT(proc) g_ATEXIT(proc)
-#else
-# define G_NATIVE_ATEXIT
-#endif /* ATEXIT */
-/* we use a GLib function as a replacement for ATEXIT, so
- * the programmer is not required to check the return value
- * (if there is any in the implementation) and doesn't encounter
- * missing include files.
- */
+#define ATEXIT(proc) g_ATEXIT(proc)
 GLIB_DEPRECATED
 void	g_atexit		(GVoidFunc    func);
 
@@ -253,13 +256,9 @@ int atexit (void (*)(void));
 
 #endif  /* G_DISABLE_DEPRECATED */
 
-#ifndef __GTK_DOC_IGNORE__
-#ifdef G_OS_WIN32
-#define g_find_program_in_path g_find_program_in_path_utf8
-#endif
-#endif
 
 /* Look for an executable in PATH, following execvp() rules */
+GLIB_AVAILABLE_IN_ALL
 gchar*  g_find_program_in_path  (const gchar *program);
 
 /* Bit tests
@@ -308,7 +307,7 @@ g_bit_storage (gulong number)
   return G_LIKELY (number) ?
 	   ((GLIB_SIZEOF_LONG * 8U - 1) ^ (guint) __builtin_clzl(number)) + 1 : 1;
 #else
-  register guint n_bits = 0;
+  guint n_bits = 0;
   
   do
     {
@@ -320,8 +319,6 @@ g_bit_storage (gulong number)
 #endif
 }
 #endif  /* G_CAN_INLINE || __G_UTILS_C__ */
-
-G_END_DECLS
 
 #ifndef G_DISABLE_DEPRECATED
 
@@ -371,5 +368,7 @@ DllMain (HINSTANCE hinstDLL,						\
 #endif	/* !G_DISABLE_DEPRECATED */
 
 #endif /* G_PLATFORM_WIN32 */
+
+G_END_DECLS
 
 #endif /* __G_UTILS_H__ */

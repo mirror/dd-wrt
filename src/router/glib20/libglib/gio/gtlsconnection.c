@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -287,7 +285,7 @@ g_tls_connection_class_init (GTlsConnectionClass *klass)
    * need to worry about this, and can simply block in the signal
    * handler until the UI thread returns an answer.
    *
-   * Return value: %TRUE to accept @peer_cert (which will also
+   * Returns: %TRUE to accept @peer_cert (which will also
    * immediately end the signal emission). %FALSE to allow the signal
    * emission to continue, which will cause the handshake to fail if
    * no one else overrides it.
@@ -362,7 +360,7 @@ g_tls_connection_set_use_system_certdb (GTlsConnection *conn,
  * Gets whether @conn uses the system certificate database to verify
  * peer certificates. See g_tls_connection_set_use_system_certdb().
  *
- * Return value: whether @conn uses the system certificate database
+ * Returns: whether @conn uses the system certificate database
  *
  * Deprecated: 2.30: Use g_tls_connection_get_database() instead
  */
@@ -414,7 +412,7 @@ g_tls_connection_set_database (GTlsConnection *conn,
  * Gets the certificate database that @conn uses to verify
  * peer certificates. See g_tls_connection_set_database().
  *
- * Return value: (transfer none): the certificate database that @conn uses or %NULL
+ * Returns: (transfer none): the certificate database that @conn uses or %NULL
  *
  * Since: 2.30
  */
@@ -476,7 +474,7 @@ g_tls_connection_set_certificate (GTlsConnection  *conn,
  * Gets @conn's certificate, as set by
  * g_tls_connection_set_certificate().
  *
- * Return value: (transfer none): @conn's certificate, or %NULL
+ * Returns: (transfer none): @conn's certificate, or %NULL
  *
  * Since: 2.28
  */
@@ -552,7 +550,7 @@ g_tls_connection_get_interaction (GTlsConnection       *conn)
  * (It is not set during the emission of
  * #GTlsConnection::accept-certificate.)
  *
- * Return value: (transfer none): @conn's peer's certificate, or %NULL
+ * Returns: (transfer none): @conn's peer's certificate, or %NULL
  *
  * Since: 2.28
  */
@@ -578,7 +576,7 @@ g_tls_connection_get_peer_certificate (GTlsConnection *conn)
  * certificate, after the handshake has completed. (It is not set
  * during the emission of #GTlsConnection::accept-certificate.)
  *
- * Return value: @conn's peer's certificate errors
+ * Returns: @conn's peer's certificate errors
  *
  * Since: 2.28
  */
@@ -646,7 +644,7 @@ g_tls_connection_set_require_close_notify (GTlsConnection *conn,
  * when the connection is closed. See
  * g_tls_connection_set_require_close_notify() for details.
  *
- * Return value: %TRUE if @conn requires a proper TLS close
+ * Returns: %TRUE if @conn requires a proper TLS close
  * notification.
  *
  * Since: 2.28
@@ -679,16 +677,16 @@ g_tls_connection_get_require_close_notify (GTlsConnection *conn)
  *
  * %G_TLS_REHANDSHAKE_SAFELY means that the connection will allow a
  * rehandshake only if the other end of the connection supports the
- * TLS <literal>renegotiation_info</literal> extension. This is the
- * default behavior, but means that rehandshaking will not work
- * against older implementations that do not support that extension.
+ * TLS `renegotiation_info` extension. This is the default behavior,
+ * but means that rehandshaking will not work against older
+ * implementations that do not support that extension.
  *
  * %G_TLS_REHANDSHAKE_UNSAFELY means that the connection will allow
- * rehandshaking even without the
- * <literal>renegotiation_info</literal> extension. On the server side
- * in particular, this is not recommended, since it leaves the server
- * open to certain attacks. However, this mode is necessary if you
- * need to allow renegotiation with older client software.
+ * rehandshaking even without the `renegotiation_info` extension. On
+ * the server side in particular, this is not recommended, since it
+ * leaves the server open to certain attacks. However, this mode is
+ * necessary if you need to allow renegotiation with older client
+ * software.
  *
  * Since: 2.28
  */
@@ -710,7 +708,7 @@ g_tls_connection_set_rehandshake_mode (GTlsConnection       *conn,
  * Gets @conn rehandshaking mode. See
  * g_tls_connection_set_rehandshake_mode() for details.
  *
- * Return value: @conn's rehandshaking mode
+ * Returns: @conn's rehandshaking mode
  *
  * Since: 2.28
  */
@@ -756,7 +754,7 @@ g_tls_connection_get_rehandshake_mode (GTlsConnection       *conn)
  * #GTlsConnection::accept_certificate may be emitted during the
  * handshake.
  *
- * Return value: success or failure
+ * Returns: success or failure
  *
  * Since: 2.28
  */
@@ -773,8 +771,7 @@ g_tls_connection_handshake (GTlsConnection   *conn,
 /**
  * g_tls_connection_handshake_async:
  * @conn: a #GTlsConnection
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- * of the request.
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @callback: callback to call when the handshake is complete
  * @user_data: the data to pass to the callback function
@@ -807,7 +804,7 @@ g_tls_connection_handshake_async (GTlsConnection       *conn,
  * Finish an asynchronous TLS handshake operation. See
  * g_tls_connection_handshake() for more information.
  *
- * Return value: %TRUE on success, %FALSE on failure, in which
+ * Returns: %TRUE on success, %FALSE on failure, in which
  * case @error will be set.
  *
  * Since: 2.28
@@ -827,7 +824,7 @@ g_tls_connection_handshake_finish (GTlsConnection  *conn,
  *
  * Gets the TLS error quark.
  *
- * Return value: a #GQuark.
+ * Returns: a #GQuark.
  *
  * Since: 2.28
  */
@@ -842,7 +839,7 @@ G_DEFINE_QUARK (g-tls-error-quark, g_tls_error)
  * Used by #GTlsConnection implementations to emit the
  * #GTlsConnection::accept-certificate signal.
  *
- * Return value: %TRUE if one of the signal handlers has returned
+ * Returns: %TRUE if one of the signal handlers has returned
  *     %TRUE to accept @peer_cert
  *
  * Since: 2.28

@@ -15,9 +15,7 @@
 # Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General
-# Public License along with this library; if not, write to the
-# Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-# Boston, MA 02111-1307, USA.
+# Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
 #
 # Author: David Zeuthen <davidz@redhat.com>
 
@@ -166,7 +164,7 @@ def codegen_main():
 
     all_ifaces = []
     for fname in args:
-        f = open(fname)
+        f = open(fname, 'rb')
         xml_data = f.read()
         f.close()
         parsed_ifaces = parser.parse_dbus_xml(xml_data)
@@ -194,6 +192,8 @@ def codegen_main():
                                     docbook_gen,
                                     h, c);
         ret = gen.generate()
+        h.close()
+        c.close()
 
     sys.exit(0)
 

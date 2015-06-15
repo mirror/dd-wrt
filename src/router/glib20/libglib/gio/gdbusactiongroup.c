@@ -13,16 +13,14 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
 
 #include "config.h"
 
-#include "gdbusactiongroup.h"
+#include "gdbusactiongroup-private.h"
 
 #include "gremoteactiongroup.h"
 #include "gdbusconnection.h"
@@ -32,11 +30,19 @@
  * SECTION:gdbusactiongroup
  * @title: GDBusActionGroup
  * @short_description: A D-Bus GActionGroup implementation
- * @see_also: <link linkend="gio-GActionGroup-exporter">GActionGroup exporter</link>
+ * @include: gio/gio.h
+ * @see_also: [GActionGroup exporter][gio-GActionGroup-exporter]
  *
  * #GDBusActionGroup is an implementation of the #GActionGroup
  * interface that can be used as a proxy for an action group
  * that is exported over D-Bus with g_dbus_connection_export_action_group().
+ */
+
+/**
+ * GDBusActionGroup:
+ *
+ * #GDBusActionGroup is an opaque data structure and can only be accessed
+ * using the following functions.
  */
 
 struct _GDBusActionGroup
@@ -92,7 +98,7 @@ action_info_free (gpointer user_data)
   g_slice_free (ActionInfo, info);
 }
 
-ActionInfo *
+static ActionInfo *
 action_info_new_from_iter (GVariantIter *iter)
 {
   const gchar *param_str;
@@ -505,7 +511,7 @@ g_dbus_action_group_get (GDBusConnection *connection,
   return group;
 }
 
-G_GNUC_INTERNAL gboolean
+gboolean
 g_dbus_action_group_sync (GDBusActionGroup  *group,
                           GCancellable      *cancellable,
                           GError           **error)

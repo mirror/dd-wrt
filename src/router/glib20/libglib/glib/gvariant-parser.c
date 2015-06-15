@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -71,13 +69,27 @@
  *
  * Error codes returned by parsing text-format GVariants.
  **/
-G_DEFINE_QUARK (g-variant-parse-error-quark, g_variant_parser_get_error)
+G_DEFINE_QUARK (g-variant-parse-error-quark, g_variant_parse_error)
+
+/**
+ * g_variant_parser_get_error_quark:
+ *
+ * Same as g_variant_error_quark().
+ *
+ * Deprecated: Use g_variant_parse_error_quark() instead.
+ */
+GQuark
+g_variant_parser_get_error_quark (void)
+{
+  return g_variant_parse_error_quark ();
+}
 
 typedef struct
 {
   gint start, end;
 } SourceRef;
 
+G_GNUC_PRINTF(5, 0)
 static void
 parser_set_error_va (GError      **error,
                      SourceRef    *location,
@@ -105,6 +117,7 @@ parser_set_error_va (GError      **error,
   g_string_free (msg, TRUE);
 }
 
+G_GNUC_PRINTF(5, 6)
 static void
 parser_set_error (GError      **error,
                   SourceRef    *location,
@@ -130,6 +143,7 @@ typedef struct
 } TokenStream;
 
 
+G_GNUC_PRINTF(5, 6)
 static void
 token_stream_set_error (TokenStream  *stream,
                         GError      **error,
@@ -220,10 +234,11 @@ token_stream_prepare (TokenStream *stream)
     case '@': case '%':
       /* stop at the first space, comma, colon or unmatched bracket.
        * deals nicely with cases like (%i, %i) or {%i: %i}.
+       * Also: ] and > are never in format strings.
        */
       for (end = stream->stream + 1;
            end != stream->end && *end != ',' &&
-           *end != ':' && *end != '>' && !g_ascii_isspace (*end);
+           *end != ':' && *end != '>' && *end != ']' && !g_ascii_isspace (*end);
            end++)
 
         if (*end == '(' || *end == '{')
@@ -328,7 +343,7 @@ token_stream_require (TokenStream  *stream,
     {
       token_stream_set_error (stream, error, FALSE,
                               G_VARIANT_PARSE_ERROR_UNEXPECTED_TOKEN,
-                              "expected `%s'%s", token, purpose);
+                              "expected '%s'%s", token, purpose);
       return FALSE;
     }
 
@@ -525,6 +540,7 @@ ast_free (AST *ast)
   ast->class->free (ast);
 }
 
+G_GNUC_PRINTF(5, 6)
 static void
 ast_set_error (AST          *ast,
                GError      **error,
@@ -553,7 +569,7 @@ ast_type_error (AST                 *ast,
   typestr = g_variant_type_dup_string (type);
   ast_set_error (ast, error, NULL,
                  G_VARIANT_PARSE_ERROR_TYPE_ERROR,
-                 "can not parse as value of type `%s'",
+                 "can not parse as value of type '%s'",
                  typestr);
   g_free (typestr);
 
@@ -939,7 +955,7 @@ array_parse (TokenStream  *stream,
 
       if (need_comma &&
           !token_stream_require (stream, ",",
-                                 " or `]' to follow array element",
+                                 " or ']' to follow array element",
                                  error))
         goto error;
 
@@ -1078,7 +1094,7 @@ tuple_parse (TokenStream  *stream,
 
       if (need_comma &&
           !token_stream_require (stream, ",",
-                                 " or `)' to follow tuple element",
+                                 " or ')' to follow tuple element",
                                  error))
         goto error;
 
@@ -1138,7 +1154,9 @@ variant_get_value (AST                 *ast,
   Variant *variant = (Variant *) ast;
   GVariant *child;
 
-  g_assert (g_variant_type_equal (type, G_VARIANT_TYPE_VARIANT));
+  if (!g_variant_type_equal (type, G_VARIANT_TYPE_VARIANT))
+    return ast_type_error (ast, type, error);
+
   child = ast_resolve (variant->value, error);
 
   if (child == NULL)
@@ -1379,7 +1397,7 @@ dictionary_parse (TokenStream  *stream,
   only_one = token_stream_consume (stream, ",");
   if (!only_one &&
       !token_stream_require (stream, ":",
-                             " or `,' to follow dictionary entry key",
+                             " or ',' to follow dictionary entry key",
                              error))
     goto error;
 
@@ -1405,7 +1423,7 @@ dictionary_parse (TokenStream  *stream,
       AST *child;
 
       if (!token_stream_require (stream, ",",
-                                 " or `}' to follow dictionary entry", error))
+                                 " or '}' to follow dictionary entry", error))
         goto error;
 
       child = parse (stream, app, error);
@@ -1652,7 +1670,8 @@ bytestring_get_value (AST                 *ast,
 {
   ByteString *string = (ByteString *) ast;
 
-  g_assert (g_variant_type_equal (type, G_VARIANT_TYPE_BYTESTRING));
+  if (!g_variant_type_equal (type, G_VARIANT_TYPE_BYTESTRING))
+    return ast_type_error (ast, type, error);
 
   return g_variant_new_bytestring (string->string);
 }
@@ -1785,7 +1804,7 @@ number_overflow (AST                 *ast,
 {
   ast_set_error (ast, error, NULL,
                  G_VARIANT_PARSE_ERROR_NUMBER_OUT_OF_RANGE,
-                 "number out of range for type `%c'",
+                 "number out of range for type '%c'",
                  g_variant_type_peek_string (type)[0]);
   return NULL;
 }
@@ -2303,13 +2322,12 @@ parse (TokenStream  *stream,
  * @limit: (allow-none): a pointer to the end of @text, or %NULL
  * @endptr: (allow-none): a location to store the end pointer, or %NULL
  * @error: (allow-none): a pointer to a %NULL #GError pointer, or %NULL
- * @Returns: a reference to a #GVariant, or %NULL
  *
  * Parses a #GVariant from a text representation.
  *
  * A single #GVariant is parsed from the content of @text.
  *
- * The format is described <link linkend='gvariant-text'>here</link>.
+ * The format is described [here][gvariant-text].
  *
  * The memory at @limit will never be accessed and the parser behaves as
  * if the character at @limit is the nul terminator.  This has the
@@ -2328,13 +2346,16 @@ parse (TokenStream  *stream,
  * with empty arrays).
  *
  * In the event that the parsing is successful, the resulting #GVariant
- * is returned.
+ * is returned. It is never floating, and must be freed with
+ * g_variant_unref().
  *
  * In case of any error, %NULL will be returned.  If @error is non-%NULL
  * then it will be set to reflect the error that occurred.
  *
  * Officially, the language understood by the parser is "any string
  * produced by g_variant_print()".
+ *
+ * Returns: a non-floating reference to a #GVariant, or %NULL
  **/
 GVariant *
 g_variant_parse (const GVariantType  *type,
@@ -2410,6 +2431,10 @@ g_variant_parse (const GVariantType  *type,
  * #GVariant pointer will be returned unmodified, without adding any
  * additional references.
  *
+ * Note that the arguments in @app must be of the correct width for their types
+ * specified in @format when collected into the #va_list. See
+ * the [GVariant varargs documentation][gvariant-varargs].
+ *
  * In order to behave correctly in all cases it is necessary for the
  * calling function to g_variant_ref_sink() the return result before
  * returning control to the user that originally provided the pointer.
@@ -2463,15 +2488,21 @@ g_variant_new_parsed_va (const gchar *format,
  * that case, the same arguments are collected from the argument list as
  * g_variant_new() would have collected.
  *
- * Consider this simple example:
+ * Note that the arguments must be of the correct width for their types
+ * specified in @format. This can be achieved by casting them. See
+ * the [GVariant varargs documentation][gvariant-varargs].
  *
- * <informalexample><programlisting>
+ * Consider this simple example:
+ * |[<!-- language="C" --> 
  *  g_variant_new_parsed ("[('one', 1), ('two', %i), (%s, 3)]", 2, "three");
- * </programlisting></informalexample>
+ * ]|
  *
  * In the example, the variable argument parameters are collected and
  * filled in as if they were part of the original string to produce the
- * result of <code>[('one', 1), ('two', 2), ('three', 3)]</code>.
+ * result of
+ * |[<!-- language="C" --> 
+ * [('one', 1), ('two', 2), ('three', 3)]
+ * ]|
  *
  * This function is intended only to be used with @format as a string
  * literal.  Any parse error is fatal to the calling process.  If you
@@ -2510,25 +2541,29 @@ g_variant_new_parsed (const gchar *format,
  * calling g_variant_new_parsed() followed by
  * g_variant_builder_add_value().
  *
+ * Note that the arguments must be of the correct width for their types
+ * specified in @format_string. This can be achieved by casting them. See
+ * the [GVariant varargs documentation][gvariant-varargs].
+ *
  * This function might be used as follows:
  *
- * <programlisting>
+ * |[<!-- language="C" --> 
  * GVariant *
  * make_pointless_dictionary (void)
  * {
- *   GVariantBuilder *builder;
+ *   GVariantBuilder builder;
  *   int i;
  *
- *   builder = g_variant_builder_new (G_VARIANT_TYPE_ARRAY);
- *   g_variant_builder_add_parsed (builder, "{'width', <%i>}", 600);
- *   g_variant_builder_add_parsed (builder, "{'title', <%s>}", "foo");
- *   g_variant_builder_add_parsed (builder, "{'transparency', <0.5>}");
- *   return g_variant_builder_end (builder);
+ *   g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
+ *   g_variant_builder_add_parsed (&builder, "{'width', <%i>}", 600);
+ *   g_variant_builder_add_parsed (&builder, "{'title', <%s>}", "foo");
+ *   g_variant_builder_add_parsed (&builder, "{'transparency', <0.5>}");
+ *   return g_variant_builder_end (&builder);
  * }
- * </programlisting>
+ * ]|
  *
  * Since: 2.26
- **/
+ */
 void
 g_variant_builder_add_parsed (GVariantBuilder *builder,
                               const gchar     *format,
@@ -2539,4 +2574,226 @@ g_variant_builder_add_parsed (GVariantBuilder *builder,
   va_start (ap, format);
   g_variant_builder_add_value (builder, g_variant_new_parsed_va (format, &ap));
   va_end (ap);
+}
+
+static gboolean
+parse_num (const gchar *num,
+           const gchar *limit,
+           gint        *result)
+{
+  gchar *endptr;
+  gint64 bignum;
+
+  bignum = g_ascii_strtoll (num, &endptr, 10);
+
+  if (endptr != limit)
+    return FALSE;
+
+  if (bignum < 0 || bignum > G_MAXINT)
+    return FALSE;
+
+  *result = bignum;
+
+  return TRUE;
+}
+
+static void
+add_last_line (GString     *err,
+               const gchar *str)
+{
+  const gchar *last_nl;
+  gchar *chomped;
+  gint i;
+
+  /* This is an error at the end of input.  If we have a file
+   * with newlines, that's probably the empty string after the
+   * last newline, which is not the most useful thing to show.
+   *
+   * Instead, show the last line of non-whitespace that we have
+   * and put the pointer at the end of it.
+   */
+  chomped = g_strchomp (g_strdup (str));
+  last_nl = strrchr (chomped, '\n');
+  if (last_nl == NULL)
+    last_nl = chomped;
+  else
+    last_nl++;
+
+  /* Print the last line like so:
+   *
+   *   [1, 2, 3,
+   *            ^
+   */
+  g_string_append (err, "  ");
+  if (last_nl[0])
+    g_string_append (err, last_nl);
+  else
+    g_string_append (err, "(empty input)");
+  g_string_append (err, "\n  ");
+  for (i = 0; last_nl[i]; i++)
+    g_string_append_c (err, ' ');
+  g_string_append (err, "^\n");
+  g_free (chomped);
+}
+
+static void
+add_lines_from_range (GString     *err,
+                      const gchar *str,
+                      const gchar *start1,
+                      const gchar *end1,
+                      const gchar *start2,
+                      const gchar *end2)
+{
+  while (str < end1 || str < end2)
+    {
+      const gchar *nl;
+
+      nl = str + strcspn (str, "\n");
+
+      if ((start1 < nl && str < end1) || (start2 < nl && str < end2))
+        {
+          const gchar *s;
+
+          /* We're going to print this line */
+          g_string_append (err, "  ");
+          g_string_append_len (err, str, nl - str);
+          g_string_append (err, "\n  ");
+
+          /* And add underlines... */
+          for (s = str; s < nl; s++)
+            {
+              if ((start1 <= s && s < end1) || (start2 <= s && s < end2))
+                g_string_append_c (err, '^');
+              else
+                g_string_append_c (err, ' ');
+            }
+          g_string_append_c (err, '\n');
+        }
+
+      if (!*nl)
+        break;
+
+      str = nl + 1;
+    }
+}
+
+/**
+ * g_variant_parse_error_print_context:
+ * @error: a #GError from the #GVariantParseError domain
+ * @source_str: the string that was given to the parser
+ *
+ * Pretty-prints a message showing the context of a #GVariant parse
+ * error within the string for which parsing was attempted.
+ *
+ * The resulting string is suitable for output to the console or other
+ * monospace media where newlines are treated in the usual way.
+ *
+ * The message will typically look something like one of the following:
+ *
+ * |[
+ * unterminated string constant:
+ *   (1, 2, 3, 'abc
+ *             ^^^^
+ * ]|
+ *
+ * or
+ *
+ * |[
+ * unable to find a common type:
+ *   [1, 2, 3, 'str']
+ *    ^        ^^^^^
+ * ]|
+ *
+ * The format of the message may change in a future version.
+ *
+ * @error must have come from a failed attempt to g_variant_parse() and
+ * @source_str must be exactly the same string that caused the error.
+ * If @source_str was not nul-terminated when you passed it to
+ * g_variant_parse() then you must add nul termination before using this
+ * function.
+ *
+ * Returns: (transfer full): the printed message
+ *
+ * Since: 2.40
+ **/
+gchar *
+g_variant_parse_error_print_context (GError      *error,
+                                     const gchar *source_str)
+{
+  const gchar *colon, *dash, *comma;
+  gboolean success = FALSE;
+  GString *err;
+
+  g_return_val_if_fail (error->domain == G_VARIANT_PARSE_ERROR, FALSE);
+
+  /* We can only have a limited number of possible types of ranges
+   * emitted from the parser:
+   *
+   *  - a:          -- usually errors from the tokeniser (eof, invalid char, etc.)
+   *  - a-b:        -- usually errors from handling one single token
+   *  - a-b,c-d:    -- errors involving two tokens (ie: type inferencing)
+   *
+   * We never see, for example "a,c".
+   */
+
+  colon = strchr (error->message, ':');
+  dash = strchr (error->message, '-');
+  comma = strchr (error->message, ',');
+
+  if (!colon)
+    return NULL;
+
+  err = g_string_new (colon + 1);
+  g_string_append (err, ":\n");
+
+  if (dash == NULL || colon < dash)
+    {
+      gint point;
+
+      /* we have a single point */
+      if (!parse_num (error->message, colon, &point))
+        goto out;
+
+      if (point >= strlen (source_str))
+        /* the error is at the end of the input */
+        add_last_line (err, source_str);
+      else
+        /* otherwise just treat it as a error at a thin range */
+        add_lines_from_range (err, source_str, source_str + point, source_str + point + 1, NULL, NULL);
+    }
+  else
+    {
+      /* We have one or two ranges... */
+      if (comma && comma < colon)
+        {
+          gint start1, end1, start2, end2;
+          const gchar *dash2;
+
+          /* Two ranges */
+          dash2 = strchr (comma, '-');
+
+          if (!parse_num (error->message, dash, &start1) || !parse_num (dash + 1, comma, &end1) ||
+              !parse_num (comma + 1, dash2, &start2) || !parse_num (dash2 + 1, colon, &end2))
+            goto out;
+
+          add_lines_from_range (err, source_str,
+                                source_str + start1, source_str + end1,
+                                source_str + start2, source_str + end2);
+        }
+      else
+        {
+          gint start, end;
+
+          /* One range */
+          if (!parse_num (error->message, dash, &start) || !parse_num (dash + 1, colon, &end))
+            goto out;
+
+          add_lines_from_range (err, source_str, source_str + start, source_str + end, NULL, NULL);
+        }
+    }
+
+  success = TRUE;
+
+out:
+  return g_string_free (err, !success);
 }

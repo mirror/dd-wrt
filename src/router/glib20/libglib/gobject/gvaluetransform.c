@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -368,11 +366,8 @@ _g_value_transforms_init (void)
   g_value_register_transform_func (G_TYPE_UINT64,       G_TYPE_UINT64,          value_transform_uint64_uint64);
   g_value_register_transform_func (G_TYPE_UINT64,       G_TYPE_ENUM,            value_transform_uint64_long);
   g_value_register_transform_func (G_TYPE_UINT64,       G_TYPE_FLAGS,           value_transform_uint64_ulong);
-#ifndef _MSC_VER
-  /* required casts unsupported with msvc 5.0 */
   g_value_register_transform_func (G_TYPE_UINT64,       G_TYPE_FLOAT,           value_transform_uint64_float);
   g_value_register_transform_func (G_TYPE_UINT64,       G_TYPE_DOUBLE,          value_transform_uint64_double);
-#endif
   g_value_register_transform_func (G_TYPE_UINT64,       G_TYPE_STRING,          value_transform_uint64_string);
   g_value_register_transform_func (G_TYPE_ENUM,         G_TYPE_CHAR,            value_transform_long_s8);
   g_value_register_transform_func (G_TYPE_ENUM,         G_TYPE_UCHAR,           value_transform_long_u8);

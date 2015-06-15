@@ -16,16 +16,15 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with GLib; see the file COPYING.LIB.  If not,
- * write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- *   Boston, MA 02111-1307, USA.
+ * see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_KEY_FILE_H__
+#define __G_KEY_FILE_H__
 
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_KEY_FILE_H__
-#define __G_KEY_FILE_H__
 
 #include <glib/gerror.h>
 
@@ -43,6 +42,7 @@ typedef enum
 
 #define G_KEY_FILE_ERROR g_key_file_error_quark()
 
+GLIB_AVAILABLE_IN_ALL
 GQuark g_key_file_error_quark (void);
 
 typedef struct _GKeyFile GKeyFile;
@@ -54,184 +54,234 @@ typedef enum
   G_KEY_FILE_KEEP_TRANSLATIONS = 1 << 1
 } GKeyFileFlags;
 
+GLIB_AVAILABLE_IN_ALL
 GKeyFile *g_key_file_new                    (void);
+GLIB_AVAILABLE_IN_ALL
 GKeyFile *g_key_file_ref                    (GKeyFile             *key_file);
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_unref                  (GKeyFile             *key_file);
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_free                   (GKeyFile             *key_file);
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_list_separator     (GKeyFile             *key_file,
 					     gchar                 separator);
+GLIB_AVAILABLE_IN_ALL
 gboolean  g_key_file_load_from_file         (GKeyFile             *key_file,
 					     const gchar          *file,
 					     GKeyFileFlags         flags,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 gboolean  g_key_file_load_from_data         (GKeyFile             *key_file,
 					     const gchar          *data,
 					     gsize                 length,
 					     GKeyFileFlags         flags,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_key_file_load_from_dirs          (GKeyFile             *key_file,
 					     const gchar	  *file,
 					     const gchar	 **search_dirs,
 					     gchar		 **full_path,
 					     GKeyFileFlags         flags,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_key_file_load_from_data_dirs     (GKeyFile             *key_file,
 					     const gchar          *file,
 					     gchar               **full_path,
 					     GKeyFileFlags         flags,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 gchar    *g_key_file_to_data                (GKeyFile             *key_file,
 					     gsize                *length,
 					     GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_2_40
+gboolean  g_key_file_save_to_file           (GKeyFile             *key_file,
+                                             const gchar          *filename,
+                                             GError              **error);
+GLIB_AVAILABLE_IN_ALL
 gchar    *g_key_file_get_start_group        (GKeyFile             *key_file) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 gchar   **g_key_file_get_groups             (GKeyFile             *key_file,
 					     gsize                *length) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 gchar   **g_key_file_get_keys               (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     gsize                *length,
 					     GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 gboolean  g_key_file_has_group              (GKeyFile             *key_file,
 					     const gchar          *group_name);
+GLIB_AVAILABLE_IN_ALL
 gboolean  g_key_file_has_key                (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 gchar    *g_key_file_get_value              (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_value              (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     const gchar          *value);
+GLIB_AVAILABLE_IN_ALL
 gchar    *g_key_file_get_string             (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_string             (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     const gchar          *string);
+GLIB_AVAILABLE_IN_ALL
 gchar    *g_key_file_get_locale_string      (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     const gchar          *locale,
 					     GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_locale_string      (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     const gchar          *locale,
 					     const gchar          *string);
+GLIB_AVAILABLE_IN_ALL
 gboolean  g_key_file_get_boolean            (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_boolean            (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     gboolean              value);
+GLIB_AVAILABLE_IN_ALL
 gint      g_key_file_get_integer            (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_integer            (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     gint                  value);
+GLIB_AVAILABLE_IN_ALL
 gint64    g_key_file_get_int64              (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_int64              (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     gint64                value);
+GLIB_AVAILABLE_IN_ALL
 guint64   g_key_file_get_uint64             (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_uint64             (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     guint64               value);
+GLIB_AVAILABLE_IN_ALL
 gdouble   g_key_file_get_double             (GKeyFile             *key_file,
                                              const gchar          *group_name,
                                              const gchar          *key,
                                              GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_double             (GKeyFile             *key_file,
                                              const gchar          *group_name,
                                              const gchar          *key,
                                              gdouble               value);
+GLIB_AVAILABLE_IN_ALL
 gchar   **g_key_file_get_string_list        (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     gsize                *length,
 					     GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_string_list        (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     const gchar * const   list[],
 					     gsize                 length);
+GLIB_AVAILABLE_IN_ALL
 gchar   **g_key_file_get_locale_string_list (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     const gchar          *locale,
 					     gsize                *length,
 					     GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_locale_string_list (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     const gchar          *locale,
 					     const gchar * const   list[],
 					     gsize                 length);
+GLIB_AVAILABLE_IN_ALL
 gboolean *g_key_file_get_boolean_list       (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     gsize                *length,
 					     GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_boolean_list       (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     gboolean              list[],
 					     gsize                 length);
+GLIB_AVAILABLE_IN_ALL
 gint     *g_key_file_get_integer_list       (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     gsize                *length,
 					     GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_double_list        (GKeyFile             *key_file,
                                              const gchar          *group_name,
                                              const gchar          *key,
                                              gdouble               list[],
                                              gsize                 length);
+GLIB_AVAILABLE_IN_ALL
 gdouble  *g_key_file_get_double_list        (GKeyFile             *key_file,
                                              const gchar          *group_name,
                                              const gchar          *key,
                                              gsize                *length,
                                              GError              **error) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_ALL
 void      g_key_file_set_integer_list       (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     gint                  list[],
 					     gsize                 length);
+GLIB_AVAILABLE_IN_ALL
 gboolean  g_key_file_set_comment            (GKeyFile             *key_file,
                                              const gchar          *group_name,
                                              const gchar          *key,
                                              const gchar          *comment,
                                              GError              **error);
+GLIB_AVAILABLE_IN_ALL
 gchar    *g_key_file_get_comment            (GKeyFile             *key_file,
                                              const gchar          *group_name,
                                              const gchar          *key,
                                              GError              **error) G_GNUC_MALLOC;
 
+GLIB_AVAILABLE_IN_ALL
 gboolean  g_key_file_remove_comment         (GKeyFile             *key_file,
                                              const gchar          *group_name,
                                              const gchar          *key,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 gboolean  g_key_file_remove_key             (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     const gchar          *key,
 					     GError              **error);
+GLIB_AVAILABLE_IN_ALL
 gboolean  g_key_file_remove_group           (GKeyFile             *key_file,
 					     const gchar          *group_name,
 					     GError              **error);
@@ -258,6 +308,8 @@ gboolean  g_key_file_remove_group           (GKeyFile             *key_file,
 #define G_KEY_FILE_DESKTOP_KEY_STARTUP_NOTIFY   "StartupNotify"
 #define G_KEY_FILE_DESKTOP_KEY_STARTUP_WM_CLASS "StartupWMClass"
 #define G_KEY_FILE_DESKTOP_KEY_URL              "URL"
+#define G_KEY_FILE_DESKTOP_KEY_DBUS_ACTIVATABLE "DBusActivatable"
+#define G_KEY_FILE_DESKTOP_KEY_ACTIONS          "Actions"
 
 #define G_KEY_FILE_DESKTOP_TYPE_APPLICATION     "Application"
 #define G_KEY_FILE_DESKTOP_TYPE_LINK            "Link"

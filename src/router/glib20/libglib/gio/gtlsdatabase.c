@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Stef Walter <stefw@collabora.co.uk>
  */
@@ -27,8 +25,8 @@
 #include "gasyncresult.h"
 #include "gcancellable.h"
 #include "glibintl.h"
-#include "gsimpleasyncresult.h"
 #include "gsocketconnectable.h"
+#include "gtask.h"
 #include "gtlscertificate.h"
 #include "gtlsinteraction.h"
 
@@ -89,7 +87,6 @@ typedef struct _AsyncVerifyChain {
   GSocketConnectable *identity;
   GTlsInteraction *interaction;
   GTlsDatabaseVerifyFlags flags;
-  GTlsCertificateFlags verify_result;
 } AsyncVerifyChain;
 
 static void
@@ -104,24 +101,27 @@ async_verify_chain_free (gpointer data)
 }
 
 static void
-async_verify_chain_thread (GSimpleAsyncResult *res,
-                           GObject            *object,
-                           GCancellable       *cancellable)
+async_verify_chain_thread (GTask         *task,
+			   gpointer       object,
+			   gpointer       task_data,
+			   GCancellable  *cancellable)
 {
-  AsyncVerifyChain *args = g_simple_async_result_get_op_res_gpointer (res);
+  AsyncVerifyChain *args = task_data;
+  GTlsCertificateFlags verify_result;
   GError *error = NULL;
 
-  args->verify_result = g_tls_database_verify_chain (G_TLS_DATABASE (object),
-                                                     args->chain,
-                                                     args->purpose,
-                                                     args->identity,
-                                                     args->interaction,
-                                                     args->flags,
-                                                     cancellable,
-                                                     &error);
-
+  verify_result = g_tls_database_verify_chain (G_TLS_DATABASE (object),
+					       args->chain,
+					       args->purpose,
+					       args->identity,
+					       args->interaction,
+					       args->flags,
+					       cancellable,
+					       &error);
   if (error)
-      g_simple_async_result_take_error (res, error);
+    g_task_return_error (task, error);
+  else
+    g_task_return_int (task, (gssize)verify_result);
 }
 
 static void
@@ -135,7 +135,7 @@ g_tls_database_real_verify_chain_async (GTlsDatabase           *self,
                                         GAsyncReadyCallback     callback,
                                         gpointer                user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   AsyncVerifyChain *args;
 
   args = g_slice_new0 (AsyncVerifyChain);
@@ -145,12 +145,10 @@ g_tls_database_real_verify_chain_async (GTlsDatabase           *self,
   args->interaction = interaction ? g_object_ref (interaction) : NULL;
   args->flags = flags;
 
-  res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-                                   g_tls_database_real_verify_chain_async);
-  g_simple_async_result_set_op_res_gpointer (res, args, async_verify_chain_free);
-  g_simple_async_result_run_in_thread (res, async_verify_chain_thread,
-                                       G_PRIORITY_DEFAULT, cancellable);
-  g_object_unref (res);
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_task_data (task, args, async_verify_chain_free);
+  g_task_run_in_thread (task, async_verify_chain_thread);
+  g_object_unref (task);
 }
 
 static GTlsCertificateFlags
@@ -158,24 +156,21 @@ g_tls_database_real_verify_chain_finish (GTlsDatabase          *self,
                                          GAsyncResult          *result,
                                          GError               **error)
 {
-  AsyncVerifyChain *args;
+  GTlsCertificateFlags ret;
 
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), G_TLS_CERTIFICATE_GENERIC_ERROR);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self),
-                        g_tls_database_real_verify_chain_async), FALSE);
+  g_return_val_if_fail (g_task_is_valid (result, self), G_TLS_CERTIFICATE_GENERIC_ERROR);
 
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error))
+  ret = (GTlsCertificateFlags)g_task_propagate_int (G_TASK (result), error);
+  if (ret == (GTlsCertificateFlags)-1)
     return G_TLS_CERTIFICATE_GENERIC_ERROR;
-
-  args = g_simple_async_result_get_op_res_gpointer (G_SIMPLE_ASYNC_RESULT (result));
-  return args->verify_result;
+  else
+    return ret;
 }
 
 typedef struct {
   gchar *handle;
   GTlsInteraction *interaction;
   GTlsDatabaseLookupFlags flags;
-  GTlsCertificate *result;
 } AsyncLookupCertificateForHandle;
 
 static void
@@ -185,27 +180,29 @@ async_lookup_certificate_for_handle_free (gpointer data)
 
   g_free (args->handle);
   g_clear_object (&args->interaction);
-  g_clear_object (&args->result);
   g_slice_free (AsyncLookupCertificateForHandle, args);
 }
 
 static void
-async_lookup_certificate_for_handle_thread (GSimpleAsyncResult *res,
-                                            GObject            *object,
-                                            GCancellable       *cancellable)
+async_lookup_certificate_for_handle_thread (GTask         *task,
+					    gpointer       object,
+					    gpointer       task_data,
+					    GCancellable  *cancellable)
 {
-  AsyncLookupCertificateForHandle *args = g_simple_async_result_get_op_res_gpointer (res);
+  AsyncLookupCertificateForHandle *args = task_data;
+  GTlsCertificate *result;
   GError *error = NULL;
 
-  args->result = g_tls_database_lookup_certificate_for_handle (G_TLS_DATABASE (object),
-                                                               args->handle,
-                                                               args->interaction,
-                                                               args->flags,
-                                                               cancellable,
-                                                               &error);
-
-  if (error)
-      g_simple_async_result_take_error (res, error);
+  result = g_tls_database_lookup_certificate_for_handle (G_TLS_DATABASE (object),
+							 args->handle,
+							 args->interaction,
+							 args->flags,
+							 cancellable,
+							 &error);
+  if (result)
+    g_task_return_pointer (task, result, g_object_unref);
+  else
+    g_task_return_error (task, error);
 }
 
 static void
@@ -217,19 +214,17 @@ g_tls_database_real_lookup_certificate_for_handle_async (GTlsDatabase           
                                                          GAsyncReadyCallback     callback,
                                                          gpointer                user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   AsyncLookupCertificateForHandle *args;
 
   args = g_slice_new0 (AsyncLookupCertificateForHandle);
   args->handle = g_strdup (handle);
   args->interaction = interaction ? g_object_ref (interaction) : NULL;
 
-  res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-                                   g_tls_database_real_lookup_certificate_for_handle_async);
-  g_simple_async_result_set_op_res_gpointer (res, args, async_lookup_certificate_for_handle_free);
-  g_simple_async_result_run_in_thread (res, async_lookup_certificate_for_handle_thread,
-                                       G_PRIORITY_DEFAULT, cancellable);
-  g_object_unref (res);
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_task_data (task, args, async_lookup_certificate_for_handle_free);
+  g_task_run_in_thread (task, async_lookup_certificate_for_handle_thread);
+  g_object_unref (task);
 }
 
 static GTlsCertificate*
@@ -237,20 +232,9 @@ g_tls_database_real_lookup_certificate_for_handle_finish (GTlsDatabase          
                                                           GAsyncResult          *result,
                                                           GError               **error)
 {
-  AsyncLookupCertificateForHandle *args;
-  GTlsCertificate *certificate;
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
 
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self),
-                        g_tls_database_real_lookup_certificate_for_handle_async), FALSE);
-
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error))
-    return NULL;
-
-  args = g_simple_async_result_get_op_res_gpointer (G_SIMPLE_ASYNC_RESULT (result));
-  certificate = args->result;
-  args->result = NULL;
-  return certificate;
+  return g_task_propagate_pointer (G_TASK (result), error);
 }
 
 
@@ -258,7 +242,6 @@ typedef struct {
   GTlsCertificate *certificate;
   GTlsInteraction *interaction;
   GTlsDatabaseLookupFlags flags;
-  GTlsCertificate *issuer;
 } AsyncLookupCertificateIssuer;
 
 static void
@@ -268,27 +251,29 @@ async_lookup_certificate_issuer_free (gpointer data)
 
   g_clear_object (&args->certificate);
   g_clear_object (&args->interaction);
-  g_clear_object (&args->issuer);
   g_slice_free (AsyncLookupCertificateIssuer, args);
 }
 
 static void
-async_lookup_certificate_issuer_thread (GSimpleAsyncResult *res,
-                            GObject            *object,
-                            GCancellable       *cancellable)
+async_lookup_certificate_issuer_thread (GTask         *task,
+					gpointer       object,
+					gpointer       task_data,
+					GCancellable  *cancellable)
 {
-  AsyncLookupCertificateIssuer *args = g_simple_async_result_get_op_res_gpointer (res);
+  AsyncLookupCertificateIssuer *args = task_data;
+  GTlsCertificate *issuer;
   GError *error = NULL;
 
-  args->issuer = g_tls_database_lookup_certificate_issuer (G_TLS_DATABASE (object),
-                                                           args->certificate,
-                                                           args->interaction,
-                                                           args->flags,
-                                                           cancellable,
-                                                           &error);
-
-  if (error)
-      g_simple_async_result_take_error (res, error);
+  issuer = g_tls_database_lookup_certificate_issuer (G_TLS_DATABASE (object),
+						     args->certificate,
+						     args->interaction,
+						     args->flags,
+						     cancellable,
+						     &error);
+  if (issuer)
+    g_task_return_pointer (task, issuer, g_object_unref);
+  else
+    g_task_return_error (task, error);
 }
 
 static void
@@ -300,7 +285,7 @@ g_tls_database_real_lookup_certificate_issuer_async (GTlsDatabase           *sel
                                                      GAsyncReadyCallback     callback,
                                                      gpointer                user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   AsyncLookupCertificateIssuer *args;
 
   args = g_slice_new0 (AsyncLookupCertificateIssuer);
@@ -308,73 +293,66 @@ g_tls_database_real_lookup_certificate_issuer_async (GTlsDatabase           *sel
   args->flags = flags;
   args->interaction = interaction ? g_object_ref (interaction) : NULL;
 
-  res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-                                   g_tls_database_real_lookup_certificate_issuer_async);
-  g_simple_async_result_set_op_res_gpointer (res, args, async_lookup_certificate_issuer_free);
-  g_simple_async_result_run_in_thread (res, async_lookup_certificate_issuer_thread,
-                                       G_PRIORITY_DEFAULT, cancellable);
-  g_object_unref (res);
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_task_data (task, args, async_lookup_certificate_issuer_free);
+  g_task_run_in_thread (task, async_lookup_certificate_issuer_thread);
+  g_object_unref (task);
 }
 
-static GTlsCertificate*
+static GTlsCertificate *
 g_tls_database_real_lookup_certificate_issuer_finish (GTlsDatabase          *self,
                                                       GAsyncResult          *result,
                                                       GError               **error)
 {
-  AsyncLookupCertificateIssuer *args;
-  GTlsCertificate *issuer;
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
 
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self),
-                        g_tls_database_real_lookup_certificate_issuer_async), FALSE);
-
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error))
-    return NULL;
-
-  args = g_simple_async_result_get_op_res_gpointer (G_SIMPLE_ASYNC_RESULT (result));
-  issuer = args->issuer;
-  args->issuer = NULL;
-  return issuer;
+  return g_task_propagate_pointer (G_TASK (result), error);
 }
 
 typedef struct {
   GByteArray *issuer;
   GTlsInteraction *interaction;
   GTlsDatabaseLookupFlags flags;
-  GList *results;
 } AsyncLookupCertificatesIssuedBy;
 
 static void
 async_lookup_certificates_issued_by_free (gpointer data)
 {
   AsyncLookupCertificatesIssuedBy *args = data;
-  GList *l;
 
   g_byte_array_unref (args->issuer);
   g_clear_object (&args->interaction);
-  for (l = args->results; l; l = g_list_next (l))
-    g_object_unref (l->data);
-  g_list_free (args->results);
   g_slice_free (AsyncLookupCertificatesIssuedBy, args);
 }
 
 static void
-async_lookup_certificates_issued_by_thread (GSimpleAsyncResult *res,
-                                            GObject            *object,
-                                            GCancellable       *cancellable)
+async_lookup_certificates_free_certificates (gpointer data)
 {
-  AsyncLookupCertificatesIssuedBy *args = g_simple_async_result_get_op_res_gpointer (res);
+  GList *list = data;
+
+  g_list_free_full (list, g_object_unref);
+}
+
+static void
+async_lookup_certificates_issued_by_thread (GTask         *task,
+					    gpointer       object,
+					    gpointer       task_data,
+                                            GCancellable  *cancellable)
+{
+  AsyncLookupCertificatesIssuedBy *args = task_data;
+  GList *results;
   GError *error = NULL;
 
-  args->results = g_tls_database_lookup_certificates_issued_by (G_TLS_DATABASE (object),
-                                                                args->issuer,
-                                                                args->interaction,
-                                                                args->flags,
-                                                                cancellable,
-                                                                &error);
-
-  if (error)
-      g_simple_async_result_take_error (res, error);
+  results = g_tls_database_lookup_certificates_issued_by (G_TLS_DATABASE (object),
+							  args->issuer,
+							  args->interaction,
+							  args->flags,
+							  cancellable,
+							  &error);
+  if (results)
+    g_task_return_pointer (task, results, async_lookup_certificates_free_certificates);
+  else
+    g_task_return_error (task, error);
 }
 
 static void
@@ -386,7 +364,7 @@ g_tls_database_real_lookup_certificates_issued_by_async (GTlsDatabase           
                                                          GAsyncReadyCallback     callback,
                                                          gpointer                user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   AsyncLookupCertificatesIssuedBy *args;
 
   args = g_slice_new0 (AsyncLookupCertificatesIssuedBy);
@@ -394,33 +372,20 @@ g_tls_database_real_lookup_certificates_issued_by_async (GTlsDatabase           
   args->flags = flags;
   args->interaction = interaction ? g_object_ref (interaction) : NULL;
 
-  res = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-                                   g_tls_database_real_lookup_certificates_issued_by_async);
-  g_simple_async_result_set_op_res_gpointer (res, args, async_lookup_certificates_issued_by_free);
-  g_simple_async_result_run_in_thread (res, async_lookup_certificates_issued_by_thread,
-                                       G_PRIORITY_DEFAULT, cancellable);
-  g_object_unref (res);
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_task_data (task, args, async_lookup_certificates_issued_by_free);
+  g_task_run_in_thread (task, async_lookup_certificates_issued_by_thread);
+  g_object_unref (task);
 }
 
-static GList*
+static GList *
 g_tls_database_real_lookup_certificates_issued_by_finish (GTlsDatabase          *self,
                                                           GAsyncResult          *result,
                                                           GError               **error)
 {
-  AsyncLookupCertificatesIssuedBy *args;
-  GList *results;
+  g_return_val_if_fail (g_task_is_valid (result, self), NULL);
 
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self),
-                        g_tls_database_real_lookup_certificates_issued_by_async), FALSE);
-
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error))
-    return NULL;
-
-  args = g_simple_async_result_get_op_res_gpointer (G_SIMPLE_ASYNC_RESULT (result));
-  results = args->results;
-  args->results = NULL;
-  return results;
+  return g_task_propagate_pointer (G_TASK (result), error);
 }
 
 static void
@@ -472,7 +437,7 @@ g_tls_database_class_init (GTlsDatabaseClass *klass)
  * This function can block, use g_tls_database_verify_chain_async() to perform
  * the verification operation asynchronously.
  *
- * Return value: the appropriate #GTlsCertificateFlags which represents the
+ * Returns: the appropriate #GTlsCertificateFlags which represents the
  * result of verification.
  *
  * Since: 2.30
@@ -569,7 +534,7 @@ g_tls_database_verify_chain_async (GTlsDatabase           *self,
  *
  * Finish an asynchronous verify chain operation. See
  * g_tls_database_verify_chain() for more information. *
- * Return value: the appropriate #GTlsCertificateFlags which represents the
+ * Returns: the appropriate #GTlsCertificateFlags which represents the
  * result of verification.
  *
  * Since: 2.30
@@ -603,7 +568,9 @@ g_tls_database_verify_chain_finish (GTlsDatabase          *self,
  * and between applications. If a certificate is modified in the database,
  * then it is not guaranteed that this handle will continue to point to it.
  *
- * Returns: (allow-none): a newly allocated string containing the handle.
+ * Returns: (nullable): a newly allocated string containing the
+ * handle.
+ *
  * Since: 2.30
  */
 gchar*
@@ -639,7 +606,7 @@ g_tls_database_create_certificate_handle (GTlsDatabase            *self,
  * This function can block, use g_tls_database_lookup_certificate_for_handle_async() to perform
  * the lookup operation asynchronously.
  *
- * Return value: (transfer full) (allow-none): a newly allocated
+ * Returns: (transfer full) (allow-none): a newly allocated
  * #GTlsCertificate, or %NULL. Use g_object_unref() to release the certificate.
  *
  * Since: 2.30
@@ -717,7 +684,7 @@ g_tls_database_lookup_certificate_for_handle_async (GTlsDatabase            *sel
  * If the handle is no longer valid, or does not point to a certificate in
  * this database, then %NULL will be returned.
  *
- * Return value: (transfer full): a newly allocated #GTlsCertificate object.
+ * Returns: (transfer full): a newly allocated #GTlsCertificate object.
  * Use g_object_unref() to release the certificate.
  *
  * Since: 2.30
@@ -754,7 +721,7 @@ g_tls_database_lookup_certificate_for_handle_finish (GTlsDatabase            *se
  * This function can block, use g_tls_database_lookup_certificate_issuer_async() to perform
  * the lookup operation asynchronously.
  *
- * Return value: (transfer full): a newly allocated issuer #GTlsCertificate,
+ * Returns: (transfer full): a newly allocated issuer #GTlsCertificate,
  * or %NULL. Use g_object_unref() to release the certificate.
  *
  * Since: 2.30
@@ -829,7 +796,7 @@ g_tls_database_lookup_certificate_issuer_async (GTlsDatabase           *self,
  * Finish an asynchronous lookup issuer operation. See
  * g_tls_database_lookup_certificate_issuer() for more information.
  *
- * Return value: (transfer full): a newly allocated issuer #GTlsCertificate,
+ * Returns: (transfer full): a newly allocated issuer #GTlsCertificate,
  * or %NULL. Use g_object_unref() to release the certificate.
  *
  * Since: 2.30
@@ -862,7 +829,7 @@ g_tls_database_lookup_certificate_issuer_finish (GTlsDatabase          *self,
  * This function can block, use g_tls_database_lookup_certificates_issued_by_async() to perform
  * the lookup operation asynchronously.
  *
- * Return value: (transfer full) (element-type GTlsCertificate): a newly allocated list of #GTlsCertificate
+ * Returns: (transfer full) (element-type GTlsCertificate): a newly allocated list of #GTlsCertificate
  * objects. Use g_object_unref() on each certificate, and g_list_free() on the release the list.
  *
  * Since: 2.30
@@ -941,8 +908,8 @@ g_tls_database_lookup_certificates_issued_by_async (GTlsDatabase           *self
  * Finish an asynchronous lookup of certificates. See
  * g_tls_database_lookup_certificates_issued_by() for more information.
  *
- * Return value: (transfer full): a newly allocated list of #GTlsCertificate objects.
- * Use g_object_unref() on each certificate, and g_list_free() on the release the list.
+ * Returns: (transfer full) (element-type GTlsCertificate): a newly allocated list of #GTlsCertificate
+ * objects. Use g_object_unref() on each certificate, and g_list_free() on the release the list.
  *
  * Since: 2.30
  */

@@ -1,7 +1,7 @@
 #include <gio/gio.h>
+#include <gio/gnetworking.h>
 #include <gio/gunixfdmessage.h>
 #include <gio/gunixsocketaddress.h>
-#include <sys/socket.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -234,8 +234,6 @@ int
 main (int argc, char **argv)
 {
   g_test_init (&argc, &argv, NULL);
-
-  g_type_init ();
 
   g_test_add_func ("/unix-streams/file-descriptors", test_fds);
 

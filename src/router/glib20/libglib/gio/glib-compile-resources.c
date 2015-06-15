@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -30,6 +28,9 @@
 #include <stdio.h>
 #include <locale.h>
 #include <errno.h>
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
 #ifdef G_OS_WIN32
 #include <io.h>
 #endif
@@ -38,14 +39,14 @@
 #include <gio/gzlibcompressor.h>
 #include <gio/gconverteroutputstream.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #include <glib.h>
 #include "gvdb/gvdb-builder.h"
 
 #include "gconstructor_as_data.h"
+
+#ifdef G_OS_WIN32
+#include "glib/glib-private.h"
+#endif
 
 typedef struct
 {
@@ -187,7 +188,7 @@ find_file (const gchar *filename)
   /* search all the sourcedirs for the correct files in order */
   for (i = 0; sourcedirs[i] != NULL; i++)
     {
-	real_file = g_build_filename (sourcedirs[i], filename, NULL);
+	real_file = g_build_path ("/", sourcedirs[i], filename, NULL);
 	exists = g_file_test (real_file, G_FILE_TEST_EXISTS);
 	if (exists)
 	  return real_file;
@@ -293,9 +294,8 @@ end_element (GMarkupParseContext  *context,
 
           if (xml_stripblanks && xmllint != NULL)
             {
-              gchar *argv[8];
-              int status, fd, argc;
-              gchar *stderr_child = NULL;
+              int fd;
+	      GSubprocess *proc;
 
               tmp_file = g_strdup ("resource-XXXXXXXX");
               if ((fd = g_mkstemp (tmp_file)) == -1)
@@ -311,43 +311,29 @@ end_element (GMarkupParseContext  *context,
                 }
               close (fd);
 
-              argc = 0;
-              argv[argc++] = (gchar *) xmllint;
-              argv[argc++] = "--nonet";
-              argv[argc++] = "--noblanks";
-              argv[argc++] = "--output";
-              argv[argc++] = tmp_file;
-              argv[argc++] = real_file;
-              argv[argc++] = NULL;
-              g_assert (argc <= G_N_ELEMENTS (argv));
-
-              if (!g_spawn_sync (NULL /* cwd */, argv, NULL /* envv */,
-                                 G_SPAWN_STDOUT_TO_DEV_NULL,
-                                 NULL, NULL, NULL, &stderr_child, &status, &my_error))
-                {
-                  g_propagate_error (error, my_error);
-                  goto cleanup;
-                }
-	      
-	      /* Ugly...we shoud probably just let stderr be inherited */
-	      if (!g_spawn_check_exit_status (status, NULL))
-                {
-                  g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                               _("Error processing input file with xmllint:\n%s"), stderr_child);
-                  g_free (stderr_child);
-                  goto cleanup;
-                }
-
-              g_free (stderr_child);
+              proc = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_SILENCE, error,
+                                       xmllint, "--nonet", "--noblanks", "--output", tmp_file, real_file, NULL);
               g_free (real_file);
+	      real_file = NULL;
+
+	      if (!proc)
+		goto cleanup;
+
+	      if (!g_subprocess_wait_check (proc, NULL, error))
+		{
+		  g_object_unref (proc);
+                  goto cleanup;
+                }
+
+	      g_object_unref (proc);
+
               real_file = g_strdup (tmp_file);
             }
 
           if (to_pixdata)
             {
-              gchar *argv[4];
-              gchar *stderr_child = NULL;
-              int status, fd, argc;
+              int fd;
+	      GSubprocess *proc;
 
               if (gdk_pixbuf_pixdata == NULL)
                 {
@@ -371,31 +357,19 @@ end_element (GMarkupParseContext  *context,
                 }
               close (fd);
 
-              argc = 0;
-              argv[argc++] = (gchar *) gdk_pixbuf_pixdata;
-              argv[argc++] = real_file;
-              argv[argc++] = tmp_file2;
-              argv[argc++] = NULL;
-              g_assert (argc <= G_N_ELEMENTS (argv));
-
-              if (!g_spawn_sync (NULL /* cwd */, argv, NULL /* envv */,
-                                 G_SPAWN_STDOUT_TO_DEV_NULL,
-                                 NULL, NULL, NULL, &stderr_child, &status, &my_error))
-                {
-                  g_propagate_error (error, my_error);
-                  goto cleanup;
-                }
-	      
-	      if (!g_spawn_check_exit_status (status, NULL))
-                {
-                  g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-			       _("Error processing input file with to-pixdata:\n%s"), stderr_child);
-                  g_free (stderr_child);
-                  goto cleanup;
-                }
-
-              g_free (stderr_child);
+              proc = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_SILENCE, error,
+                                       gdk_pixbuf_pixdata, real_file, tmp_file2, NULL);
               g_free (real_file);
+              real_file = NULL;
+
+	      if (!g_subprocess_wait_check (proc, NULL, error))
+		{
+		  g_object_unref (proc);
+                  goto cleanup;
+		}
+
+	      g_object_unref (proc);
+
               real_file = g_strdup (tmp_file2);
             }
 	}
@@ -605,9 +579,11 @@ main (int argc, char **argv)
   gboolean generate_source = FALSE;
   gboolean generate_header = FALSE;
   gboolean manual_register = FALSE;
+  gboolean internal = FALSE;
   gboolean generate_dependencies = FALSE;
   char *c_name = NULL;
   char *c_name_no_underscores;
+  const char *linkage = "extern";
   GOptionContext *context;
   GOptionEntry entries[] = {
     { "target", 0, 0, G_OPTION_ARG_FILENAME, &target, N_("name of the output file"), N_("FILE") },
@@ -617,12 +593,12 @@ main (int argc, char **argv)
     { "generate-source", 0, 0, G_OPTION_ARG_NONE, &generate_source, N_("Generate sourcecode used to link in the resource file into your code"), NULL },
     { "generate-dependencies", 0, 0, G_OPTION_ARG_NONE, &generate_dependencies, N_("Generate dependency list"), NULL },
     { "manual-register", 0, 0, G_OPTION_ARG_NONE, &manual_register, N_("Don't automatically create and register resource"), NULL },
+    { "internal", 0, 0, G_OPTION_ARG_NONE, &internal, N_("Don't export functions; declare them G_GNUC_INTERNAL"), NULL },
     { "c-name", 0, 0, G_OPTION_ARG_STRING, &c_name, N_("C identifier name used for the generated source code"), NULL },
     { NULL }
   };
 
 #ifdef G_OS_WIN32
-  extern gchar *_glib_get_locale_dir (void);
   gchar *tmp;
 #endif
 
@@ -640,8 +616,6 @@ main (int argc, char **argv)
 #ifdef HAVE_BIND_TEXTDOMAIN_CODESET
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 #endif
-
-  g_type_init ();
 
   context = g_option_context_new (N_("FILE"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
@@ -665,6 +639,9 @@ main (int argc, char **argv)
       g_printerr (_("You should give exactly one file name\n"));
       return 1;
     }
+
+  if (internal)
+    linkage = "G_GNUC_INTERNAL";
 
   srcfile = argv[1];
 
@@ -692,6 +669,12 @@ main (int argc, char **argv)
 	    base[strlen(base) - strlen (".gresource")] = 0;
 	  target_basename = g_strconcat (base, ".c", NULL);
 	}
+      else if (generate_header)
+        {
+          if (g_str_has_suffix (base, ".gresource"))
+            base[strlen(base) - strlen (".gresource")] = 0;
+          target_basename = g_strconcat (base, ".h", NULL);
+        }
       else
 	{
 	  if (g_str_has_suffix (base, ".gresource"))
@@ -807,16 +790,16 @@ main (int argc, char **argv)
 	       "\n"
 	       "#include <gio/gio.h>\n"
 	       "\n"
-	       "extern GResource *%s_get_resource (void);\n",
-	       c_name, c_name, c_name);
+	       "%s GResource *%s_get_resource (void);\n",
+	       c_name, c_name, linkage, c_name);
 
       if (manual_register)
 	fprintf (file,
 		 "\n"
-		 "extern void %s_register_resource (void);\n"
-		 "extern void %s_unregister_resource (void);\n"
+		 "%s void %s_register_resource (void);\n"
+		 "%s void %s_unregister_resource (void);\n"
 		 "\n",
-		 c_name, c_name);
+		 linkage, c_name, linkage, c_name);
 
       fprintf (file,
 	       "#endif\n");
@@ -871,31 +854,31 @@ main (int argc, char **argv)
 
       fprintf (file,
 	       "\n"
-	       "static GStaticResource static_resource = { %s_resource_data.data, sizeof (%s_resource_data.data) };\n"
-	       "extern GResource *%s_get_resource (void);\n"
+	       "static GStaticResource static_resource = { %s_resource_data.data, sizeof (%s_resource_data.data), NULL, NULL, NULL };\n"
+	       "%s GResource *%s_get_resource (void);\n"
 	       "GResource *%s_get_resource (void)\n"
 	       "{\n"
 	       "  return g_static_resource_get_resource (&static_resource);\n"
 	       "}\n",
-	       c_name, c_name, c_name, c_name);
+	       c_name, c_name, linkage, c_name, c_name);
 
 
       if (manual_register)
 	{
 	  fprintf (file,
 		   "\n"
-		   "extern void %s_unregister_resource (void);\n"
+		   "%s void %s_unregister_resource (void);\n"
 		   "void %s_unregister_resource (void)\n"
 		   "{\n"
 		   "  g_static_resource_fini (&static_resource);\n"
 		   "}\n"
 		   "\n"
-		   "extern void %s_register_resource (void);\n"
+		   "%s void %s_register_resource (void);\n"
 		   "void %s_register_resource (void)\n"
 		   "{\n"
 		   "  g_static_resource_init (&static_resource);\n"
 		   "}\n",
-		   c_name, c_name, c_name, c_name);
+		   linkage, c_name, c_name, linkage, c_name, c_name);
 	}
       else
 	{

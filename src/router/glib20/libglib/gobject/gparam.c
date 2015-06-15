@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -41,13 +39,13 @@
  * #GParamSpec is an object structure that encapsulates the metadata
  * required to specify parameters, such as e.g. #GObject properties.
  *
- * <para id="canonical-parameter-name">
- * Parameter names need to start with a letter (a-z or A-Z). Subsequent
- * characters can be letters, numbers or a '-'.
+ * ## Parameter names # {#canonical-parameter-names}
+ *
+ * Parameter names need to start with a letter (a-z or A-Z).
+ * Subsequent characters can be letters, numbers or a '-'.
  * All other characters are replaced by a '-' during construction.
- * The result of this replacement is called the canonical name of the
- * parameter.
- * </para>
+ * The result of this replacement is called the canonical name of
+ * the parameter.
  */
 
 
@@ -80,8 +78,20 @@ static gchar*	value_param_lcopy_value		(const GValue	*value,
 						 GTypeCValue    *collect_values,
 						 guint           collect_flags);
 
+typedef struct
+{
+  GValue default_value;
+} GParamSpecPrivate;
+
+static gint g_param_private_offset;
 
 /* --- functions --- */
+static inline GParamSpecPrivate *
+g_param_spec_get_private (GParamSpec *pspec)
+{
+  return &G_STRUCT_MEMBER (GParamSpecPrivate, pspec, g_param_private_offset);
+}
+
 void
 _g_param_type_init (void)
 {
@@ -125,6 +135,7 @@ _g_param_type_init (void)
    */
   type = g_type_register_fundamental (G_TYPE_PARAM, g_intern_static_string ("GParam"), &param_spec_info, &finfo, G_TYPE_FLAG_ABSTRACT);
   g_assert (type == G_TYPE_PARAM);
+  g_param_private_offset = g_type_add_instance_private (type, sizeof (GParamSpecPrivate));
   g_value_register_transform_func (G_TYPE_PARAM, G_TYPE_PARAM, value_param_transform_value);
 }
 
@@ -147,6 +158,8 @@ g_param_spec_class_init (GParamSpecClass *class,
   class->value_set_default = NULL;
   class->value_validate = NULL;
   class->values_cmp = NULL;
+
+  g_type_class_adjust_private_offset (class, &g_param_private_offset);
 }
 
 static void
@@ -168,6 +181,11 @@ g_param_spec_init (GParamSpec      *pspec,
 static void
 g_param_spec_finalize (GParamSpec *pspec)
 {
+  GParamSpecPrivate *priv = g_param_spec_get_private (pspec);
+
+  if (priv->default_value.g_type)
+    g_value_reset (&priv->default_value);
+
   g_datalist_clear (&pspec->qdata);
 
   if (!(pspec->flags & G_PARAM_STATIC_NICK))
@@ -225,8 +243,8 @@ g_param_spec_unref (GParamSpec *pspec)
  * The initial reference count of a newly created #GParamSpec is 1,
  * even though no one has explicitly called g_param_spec_ref() on it
  * yet. So the initial reference count is flagged as "floating", until
- * someone calls <literal>g_param_spec_ref (pspec); g_param_spec_sink
- * (pspec);</literal> in sequence on it, taking over the initial
+ * someone calls `g_param_spec_ref (pspec); g_param_spec_sink
+ * (pspec);` in sequence on it, taking over the initial
  * reference count (thus ending up with a @pspec that has a reference
  * count of 1 still, but is not flagged "floating" anymore).
  */
@@ -392,7 +410,7 @@ is_canonical (const gchar *key)
  * efficient and in fact required when using property names as detail
  * strings for signals.
  *
- * Beyond the name, #GParamSpec<!-- -->s have two more descriptive
+ * Beyond the name, #GParamSpecs have two more descriptive
  * strings associated with them, the @nick, which should be suitable
  * for use as a label for the property in a property editor, and the
  * @blurb, which should be a somewhat longer description, suitable for
@@ -502,7 +520,7 @@ g_param_spec_set_qdata (GParamSpec *pspec,
  *  be freed
  *
  * This function works like g_param_spec_set_qdata(), but in addition,
- * a <literal>void (*destroy) (gpointer)</literal> function may be
+ * a `void (*destroy) (gpointer)` function may be
  * specified which is called with @data as argument when the @pspec is
  * finalized, or the data is being overwritten by a call to
  * g_param_spec_set_qdata() with the same @quark.
@@ -794,14 +812,14 @@ value_param_collect_value (GValue      *value,
       GParamSpec *param = collect_values[0].v_pointer;
 
       if (param->g_type_instance.g_class == NULL)
-	return g_strconcat ("invalid unclassed param spec pointer for value type `",
+	return g_strconcat ("invalid unclassed param spec pointer for value type '",
 			    G_VALUE_TYPE_NAME (value),
 			    "'",
 			    NULL);
       else if (!g_value_type_compatible (G_PARAM_SPEC_TYPE (param), G_VALUE_TYPE (value)))
-	return g_strconcat ("invalid param spec type `",
+	return g_strconcat ("invalid param spec type '",
 			    G_PARAM_SPEC_TYPE_NAME (param),
-			    "' for value type `",
+			    "' for value type '",
 			    G_VALUE_TYPE_NAME (value),
 			    "'",
 			    NULL);
@@ -822,7 +840,7 @@ value_param_lcopy_value (const GValue *value,
   GParamSpec **param_p = collect_values[0].v_pointer;
 
   if (!param_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
 
   if (!value->data[0].v_pointer)
     *param_p = NULL;
@@ -839,7 +857,7 @@ value_param_lcopy_value (const GValue *value,
 /**
  * GParamSpecPool:
  *
- * A #GParamSpecPool maintains a collection of #GParamSpec<!-- -->s which can be
+ * A #GParamSpecPool maintains a collection of #GParamSpecs which can be
  * quickly accessed by owner and name. The implementation of the #GObject property
  * system uses such a pool to store the #GParamSpecs of the properties all object
  * types.
@@ -958,7 +976,7 @@ g_param_spec_pool_remove (GParamSpecPool *pool,
       if (g_hash_table_remove (pool->hash_table, pspec))
 	g_param_spec_unref (pspec);
       else
-	g_warning (G_STRLOC ": attempt to remove unknown pspec `%s' from pool", pspec->name);
+	g_warning (G_STRLOC ": attempt to remove unknown pspec '%s' from pool", pspec->name);
       g_mutex_unlock (&pool->mutex);
     }
   else
@@ -1044,11 +1062,8 @@ g_param_spec_pool_lookup (GParamSpecPool *pool,
   GParamSpec *pspec;
   gchar *delim;
 
-  if (!pool || !param_name)
-    {
-      g_return_val_if_fail (pool != NULL, NULL);
-      g_return_val_if_fail (param_name != NULL, NULL);
-    }
+  g_return_val_if_fail (pool != NULL, NULL);
+  g_return_val_if_fail (param_name != NULL, NULL);
 
   g_mutex_lock (&pool->mutex);
 
@@ -1117,12 +1132,12 @@ pool_list (gpointer key,
  * @pool: a #GParamSpecPool
  * @owner_type: the owner to look for
  *
- * Gets an #GList of all #GParamSpec<!-- -->s owned by @owner_type in
+ * Gets an #GList of all #GParamSpecs owned by @owner_type in
  * the pool.
  *
  * Returns: (transfer container) (element-type GObject.ParamSpec): a
- *          #GList of all #GParamSpec<!-- -->s owned by @owner_type in
- *          the pool#GParamSpec<!-- -->s.
+ *          #GList of all #GParamSpecs owned by @owner_type in
+ *          the pool#GParamSpecs.
  */
 GList*
 g_param_spec_pool_list_owned (GParamSpecPool *pool,
@@ -1259,7 +1274,7 @@ pool_depth_list_for_interface (gpointer key,
  * @owner_type: the owner to look for
  * @n_pspecs_p: (out): return location for the length of the returned array
  *
- * Gets an array of all #GParamSpec<!-- -->s owned by @owner_type in
+ * Gets an array of all #GParamSpecs owned by @owner_type in
  * the pool.
  *
  * Returns: (array length=n_pspecs_p) (transfer container): a newly
@@ -1505,4 +1520,51 @@ g_value_dup_param (const GValue *value)
   g_return_val_if_fail (G_VALUE_HOLDS_PARAM (value), NULL);
 
   return value->data[0].v_pointer ? g_param_spec_ref (value->data[0].v_pointer) : NULL;
+}
+
+/**
+ * g_param_spec_get_default_value:
+ * @param: a #GParamSpec
+ *
+ * Gets the default value of @param as a pointer to a #GValue.
+ *
+ * The #GValue will remain value for the life of @param.
+ *
+ * Returns: a pointer to a #GValue which must not be modified
+ *
+ * Since: 2.38
+ **/
+const GValue *
+g_param_spec_get_default_value (GParamSpec *pspec)
+{
+  GParamSpecPrivate *priv = g_param_spec_get_private (pspec);
+
+  /* We use the type field of the GValue as the key for the once because
+   * it will be zero before it is initialised and non-zero after.  We
+   * have to take care that we don't write a non-zero value to the type
+   * field before we are completely done, however, because then another
+   * thread could come along and find the value partially-initialised.
+   *
+   * In order to accomplish this we store the default value in a
+   * stack-allocated GValue.  We then set the type field in that value
+   * to zero and copy the contents into place.  We then end by storing
+   * the type as the last step in order to ensure that we're completely
+   * done before a g_once_init_enter() could take the fast path in
+   * another thread.
+   */
+  if (g_once_init_enter (&priv->default_value.g_type))
+    {
+      GValue default_value = G_VALUE_INIT;
+
+      g_value_init (&default_value, pspec->value_type);
+      g_param_value_set_default (pspec, &default_value);
+
+      /* store all but the type */
+      default_value.g_type = 0;
+      priv->default_value = default_value;
+
+      g_once_init_leave (&priv->default_value.g_type, pspec->value_type);
+    }
+
+  return &priv->default_value;
 }

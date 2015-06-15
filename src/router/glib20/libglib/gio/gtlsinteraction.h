@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Stef Walter <stefw@collabora.co.uk>
  */
 
+#ifndef __G_TLS_INTERACTION_H__
+#define __G_TLS_INTERACTION_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_TLS_INTERACTION_H__
-#define __G_TLS_INTERACTION_H__
 
 #include <gio/giotypes.h>
 
@@ -69,33 +67,81 @@ struct _GTlsInteractionClass
                                                   GAsyncResult       *result,
                                                   GError            **error);
 
+  GTlsInteractionResult  (* request_certificate)        (GTlsInteraction              *interaction,
+                                                         GTlsConnection               *connection,
+                                                         GTlsCertificateRequestFlags   flags,
+                                                         GCancellable                 *cancellable,
+                                                         GError                      **error);
+
+  void                   (* request_certificate_async)  (GTlsInteraction              *interaction,
+                                                         GTlsConnection               *connection,
+                                                         GTlsCertificateRequestFlags   flags,
+                                                         GCancellable                 *cancellable,
+                                                         GAsyncReadyCallback           callback,
+                                                         gpointer                      user_data);
+
+  GTlsInteractionResult  (* request_certificate_finish) (GTlsInteraction              *interaction,
+                                                         GAsyncResult                 *result,
+                                                         GError                      **error);
+
   /*< private >*/
   /* Padding for future expansion */
-  gpointer padding[24];
+  gpointer padding[21];
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType                  g_tls_interaction_get_type            (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GTlsInteractionResult  g_tls_interaction_invoke_ask_password (GTlsInteraction    *interaction,
                                                               GTlsPassword       *password,
                                                               GCancellable       *cancellable,
                                                               GError            **error);
 
-
+GLIB_AVAILABLE_IN_ALL
 GTlsInteractionResult  g_tls_interaction_ask_password        (GTlsInteraction    *interaction,
                                                               GTlsPassword       *password,
                                                               GCancellable       *cancellable,
                                                               GError            **error);
 
+GLIB_AVAILABLE_IN_ALL
 void                   g_tls_interaction_ask_password_async  (GTlsInteraction    *interaction,
                                                               GTlsPassword       *password,
                                                               GCancellable       *cancellable,
                                                               GAsyncReadyCallback callback,
                                                               gpointer            user_data);
 
+GLIB_AVAILABLE_IN_ALL
 GTlsInteractionResult  g_tls_interaction_ask_password_finish (GTlsInteraction    *interaction,
                                                               GAsyncResult       *result,
                                                               GError            **error);
+
+GLIB_AVAILABLE_IN_2_40
+GTlsInteractionResult  g_tls_interaction_invoke_request_certificate (GTlsInteraction              *interaction,
+                                                                     GTlsConnection               *connection,
+                                                                     GTlsCertificateRequestFlags   flags,
+                                                                     GCancellable                 *cancellable,
+                                                                     GError                      **error);
+
+GLIB_AVAILABLE_IN_2_40
+GTlsInteractionResult  g_tls_interaction_request_certificate        (GTlsInteraction              *interaction,
+                                                                     GTlsConnection               *connection,
+                                                                     GTlsCertificateRequestFlags   flags,
+                                                                     GCancellable                 *cancellable,
+                                                                     GError                      **error);
+
+GLIB_AVAILABLE_IN_2_40
+void                   g_tls_interaction_request_certificate_async  (GTlsInteraction              *interaction,
+                                                                     GTlsConnection               *connection,
+                                                                     GTlsCertificateRequestFlags   flags,
+                                                                     GCancellable                 *cancellable,
+                                                                     GAsyncReadyCallback           callback,
+                                                                     gpointer                      user_data);
+
+GLIB_AVAILABLE_IN_2_40
+GTlsInteractionResult  g_tls_interaction_request_certificate_finish (GTlsInteraction              *interaction,
+                                                                     GAsyncResult                 *result,
+                                                                     GError                      **error);
 
 G_END_DECLS
 

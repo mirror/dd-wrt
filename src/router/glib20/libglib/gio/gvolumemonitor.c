@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  *         David Zeuthen <davidz@redhat.com>
@@ -41,10 +39,10 @@
  * on the computer. In other words, what a file selector or file manager
  * would show in a sidebar. 
  *
- * #GVolumeMonitor is not <link
- * linkend="g-main-context-push-thread-default">thread-default-context
- * aware</link>, and so should not be used other than from the main
- * thread, with no thread-default-context active.
+ * #GVolumeMonitor is not
+ * [thread-default-context aware][g-main-context-push-thread-default],
+ * and so should not be used other than from the main thread, with no
+ * thread-default-context active.
  **/
 
 G_DEFINE_TYPE (GVolumeMonitor, g_volume_monitor, G_TYPE_OBJECT);

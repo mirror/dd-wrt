@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -30,9 +28,6 @@
 
 #include "config.h"
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -137,7 +132,8 @@ g_string_sized_new (gsize dfl_size)
 
 /**
  * g_string_new:
- * @init: the initial text to copy into the string
+ * @init: (allow-none): the initial text to copy into the string, or %NULL to
+ * start with an empty string.
  *
  * Creates a new #GString, initialized with the given string.
  *
@@ -207,7 +203,7 @@ g_string_new_len (const gchar *init,
  * it's %FALSE, the caller gains ownership of the buffer and must
  * free it after use with g_free().
  *
- * Returns: the character data of @string
+ * Returns: (nullable): the character data of @string
  *          (i.e. %NULL if @free_segment is %TRUE)
  */
 gchar *
@@ -270,7 +266,7 @@ g_string_free_to_bytes (GString *string)
  * Compares two strings for equality, returning %TRUE if they are equal.
  * For use with #GHashTable.
  *
- * Returns: %TRUE if they strings are the same length and contain the
+ * Returns: %TRUE if the strings are the same length and contain the
  *     same bytes
  */
 gboolean
@@ -388,7 +384,7 @@ g_string_truncate (GString *string,
  * of the newly added area are undefined. (However, as
  * always, string->str[string->len] will be a nul byte.)
  *
- * Return value: @string
+ * Returns: @string
  */
 GString *
 g_string_set_size (GString *string,
@@ -460,7 +456,7 @@ g_string_insert_len (GString     *string,
 
       /* Open up space where we are going to insert.  */
       if (pos < string->len)
-        g_memmove (string->str + pos + len, string->str + pos, string->len - pos);
+        memmove (string->str + pos + len, string->str + pos, string->len - pos);
 
       /* Move the source part before the gap, if any.  */
       if (offset < pos)
@@ -483,7 +479,7 @@ g_string_insert_len (GString     *string,
        * of the old string to the end, opening up space
        */
       if (pos < string->len)
-        g_memmove (string->str + pos + len, string->str + pos, string->len - pos);
+        memmove (string->str + pos + len, string->str + pos, string->len - pos);
 
       /* insert the new string */
       if (len == 1)
@@ -658,7 +654,7 @@ g_string_append_c (GString *string,
  * Converts a Unicode character into UTF-8, and appends it
  * to the string.
  *
- * Return value: @string
+ * Returns: @string
  */
 GString *
 g_string_append_unichar (GString  *string,
@@ -743,7 +739,7 @@ g_string_prepend_c (GString *string,
  * Converts a Unicode character into UTF-8, and prepends it
  * to the string.
  *
- * Return value: @string
+ * Returns: @string
  */
 GString *
 g_string_prepend_unichar (GString  *string,
@@ -805,7 +801,7 @@ g_string_insert_c (GString *string,
 
   /* If not just an append, move the old stuff */
   if (pos < string->len)
-    g_memmove (string->str + pos + 1, string->str + pos, string->len - pos);
+    memmove (string->str + pos + 1, string->str + pos, string->len - pos);
 
   string->str[pos] = c;
 
@@ -826,7 +822,7 @@ g_string_insert_c (GString *string,
  * Converts a Unicode character into UTF-8, and insert it
  * into the string at the given position.
  *
- * Return value: @string
+ * Returns: @string
  */
 GString *
 g_string_insert_unichar (GString  *string,
@@ -880,7 +876,7 @@ g_string_insert_unichar (GString  *string,
 
   /* If not just an append, move the old stuff */
   if (pos < string->len)
-    g_memmove (string->str + pos + charlen, string->str + pos, string->len - pos);
+    memmove (string->str + pos + charlen, string->str + pos, string->len - pos);
 
   dest = string->str + pos;
   /* Code copied from g_unichar_to_utf() */
@@ -907,7 +903,7 @@ g_string_insert_unichar (GString  *string,
  *
  * Overwrites part of a string, lengthening it if necessary.
  *
- * Return value: @string
+ * Returns: @string
  *
  * Since: 2.14
  */
@@ -930,7 +926,7 @@ g_string_overwrite (GString     *string,
  * Overwrites part of a string, lengthening it if necessary.
  * This function will work with embedded nuls.
  *
- * Return value: @string
+ * Returns: @string
  *
  * Since: 2.14
  */
@@ -997,7 +993,7 @@ g_string_erase (GString *string,
       g_return_val_if_fail (pos + len <= string->len, string);
 
       if (pos + len < string->len)
-        g_memmove (string->str + pos, string->str + pos + len, string->len - (pos + len));
+        memmove (string->str + pos, string->str + pos + len, string->len - (pos + len));
     }
 
   string->len -= len;
@@ -1013,7 +1009,7 @@ g_string_erase (GString *string,
  *
  * Converts all uppercase ASCII letters to lowercase ASCII letters.
  *
- * Return value: passed-in @string pointer, with all the
+ * Returns: passed-in @string pointer, with all the
  *     uppercase characters converted to lowercase in place,
  *     with semantics that exactly match g_ascii_tolower().
  */
@@ -1044,7 +1040,7 @@ g_string_ascii_down (GString *string)
  *
  * Converts all lowercase ASCII letters to uppercase ASCII letters.
  *
- * Return value: passed-in @string pointer, with all the
+ * Returns: passed-in @string pointer, with all the
  *     lowercase characters converted to uppercase in place,
  *     with semantics that exactly match g_ascii_toupper().
  */
@@ -1109,7 +1105,7 @@ g_string_down (GString *string)
  *
  * Converts a #GString to uppercase.
  *
- * Return value: @string
+ * Returns: @string
  *
  * Deprecated:2.2: This function uses the locale-specific
  *     toupper() function, which is almost never the right thing.

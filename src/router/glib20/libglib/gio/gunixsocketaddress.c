@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Christian Kellner <gicmo@gnome.org>
  *          Samuel Cormier-Iijima <sciyoshi@gmail.com>
@@ -27,7 +25,7 @@
 
 #include "gunixsocketaddress.h"
 #include "glibintl.h"
-#include "gnetworkingprivate.h"
+#include "gnetworking.h"
 
 
 /**
@@ -46,18 +44,17 @@
  * errors. You can use g_unix_socket_address_abstract_names_supported()
  * to see if abstract names are supported.
  *
- * Note that <filename>&lt;gio/gunixsocketaddress.h&gt;</filename> belongs to
- * the UNIX-specific GIO interfaces, thus you have to use the
- * <filename>gio-unix-2.0.pc</filename> pkg-config file when using it.
+ * Note that `<gio/gunixsocketaddress.h>` belongs to the UNIX-specific GIO
+ * interfaces, thus you have to use the `gio-unix-2.0.pc` pkg-config file
+ * when using it.
  */
 
 /**
  * GUnixSocketAddress:
  *
  * A UNIX-domain (local) socket address, corresponding to a
- * <type>struct sockaddr_un</type>.
+ * struct sockaddr_un.
  */
-G_DEFINE_TYPE (GUnixSocketAddress, g_unix_socket_address, G_TYPE_SOCKET_ADDRESS);
 
 enum
 {
@@ -78,6 +75,8 @@ struct _GUnixSocketAddressPrivate
   gsize path_len; /* Not including any terminating zeros */
   GUnixSocketAddressType address_type;
 };
+
+G_DEFINE_TYPE_WITH_PRIVATE (GUnixSocketAddress, g_unix_socket_address, G_TYPE_SOCKET_ADDRESS)
 
 static void
 g_unix_socket_address_set_property (GObject      *object,
@@ -117,26 +116,15 @@ g_unix_socket_address_set_property (GObject      *object,
       break;
 
     case PROP_ABSTRACT:
-      /* If the caller already set PROP_ADDRESS_TYPE, don't let the
-       * default value of PROP_ABSTRACT overwrite it.
-       */
-      if (address->priv->address_type != G_UNIX_SOCKET_ADDRESS_INVALID)
-	return;
-
+      /* Only set it if it's not the default... */
       if (g_value_get_boolean (value))
-	address->priv->address_type = G_UNIX_SOCKET_ADDRESS_ABSTRACT_PADDED;
-      else
-	address->priv->address_type = G_UNIX_SOCKET_ADDRESS_PATH;
+       address->priv->address_type = G_UNIX_SOCKET_ADDRESS_ABSTRACT_PADDED;
       break;
 
     case PROP_ADDRESS_TYPE:
-      /* If the caller already set PROP_ABSTRACT, don't let the
-       * default value of PROP_ADDRESS_TYPE overwrite it.
-       */
-      if (address->priv->address_type != G_UNIX_SOCKET_ADDRESS_INVALID)
-	return;
-
-      address->priv->address_type = g_value_get_enum (value);
+      /* Only set it if it's not the default... */
+      if (g_value_get_enum (value) != G_UNIX_SOCKET_ADDRESS_PATH)
+        address->priv->address_type = g_value_get_enum (value);
       break;
 
     default:
@@ -259,8 +247,6 @@ g_unix_socket_address_class_init (GUnixSocketAddressClass *klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GSocketAddressClass *gsocketaddress_class = G_SOCKET_ADDRESS_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (GUnixSocketAddressPrivate));
-
   gobject_class->set_property = g_unix_socket_address_set_property;
   gobject_class->get_property = g_unix_socket_address_get_property;
 
@@ -316,13 +302,11 @@ g_unix_socket_address_class_init (GUnixSocketAddressClass *klass)
 static void
 g_unix_socket_address_init (GUnixSocketAddress *address)
 {
-  address->priv = G_TYPE_INSTANCE_GET_PRIVATE (address,
-					       G_TYPE_UNIX_SOCKET_ADDRESS,
-					       GUnixSocketAddressPrivate);
+  address->priv = g_unix_socket_address_get_instance_private (address);
 
   memset (address->priv->path, 0, sizeof (address->priv->path));
   address->priv->path_len = -1;
-  address->priv->address_type = G_UNIX_SOCKET_ADDRESS_INVALID;
+  address->priv->address_type = G_UNIX_SOCKET_ADDRESS_PATH;
 }
 
 /**
@@ -392,7 +376,7 @@ g_unix_socket_address_new_abstract (const gchar *path,
  * zero-padded buffer will be considered the name. (As above, if
  * @path_len is -1, then @path is assumed to be NUL-terminated.) In
  * this case, g_socket_address_get_native_size() will always return
- * the full size of a <literal>struct sockaddr_un</literal>, although
+ * the full size of a `struct sockaddr_un`, although
  * g_unix_socket_address_get_path_len() will still return just the
  * length of @path.
  *

@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -77,11 +75,16 @@ struct _GDBusObjectManagerIface
                                            GDBusInterface       *interface_);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType            g_dbus_object_manager_get_type        (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 const gchar     *g_dbus_object_manager_get_object_path (GDBusObjectManager    *manager);
+GLIB_AVAILABLE_IN_ALL
 GList           *g_dbus_object_manager_get_objects     (GDBusObjectManager    *manager);
+GLIB_AVAILABLE_IN_ALL
 GDBusObject     *g_dbus_object_manager_get_object      (GDBusObjectManager    *manager,
                                                         const gchar           *object_path);
+GLIB_AVAILABLE_IN_ALL
 GDBusInterface  *g_dbus_object_manager_get_interface   (GDBusObjectManager    *manager,
                                                         const gchar           *object_path,
                                                         const gchar           *interface_name);

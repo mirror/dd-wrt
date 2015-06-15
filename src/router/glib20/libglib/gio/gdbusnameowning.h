@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
 
+#ifndef __G_DBUS_NAME_OWNING_H__
+#define __G_DBUS_NAME_OWNING_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_DBUS_NAME_OWNING_H__
-#define __G_DBUS_NAME_OWNING_H__
 
 #include <gio/giotypes.h>
 
@@ -74,6 +72,7 @@ typedef void (*GBusNameLostCallback) (GDBusConnection *connection,
                                       const gchar     *name,
                                       gpointer         user_data);
 
+GLIB_AVAILABLE_IN_ALL
 guint g_bus_own_name                 (GBusType                  bus_type,
                                       const gchar              *name,
                                       GBusNameOwnerFlags        flags,
@@ -83,6 +82,7 @@ guint g_bus_own_name                 (GBusType                  bus_type,
                                       gpointer                  user_data,
                                       GDestroyNotify            user_data_free_func);
 
+GLIB_AVAILABLE_IN_ALL
 guint g_bus_own_name_on_connection   (GDBusConnection          *connection,
                                       const gchar              *name,
                                       GBusNameOwnerFlags        flags,
@@ -91,6 +91,7 @@ guint g_bus_own_name_on_connection   (GDBusConnection          *connection,
                                       gpointer                  user_data,
                                       GDestroyNotify            user_data_free_func);
 
+GLIB_AVAILABLE_IN_ALL
 guint g_bus_own_name_with_closures   (GBusType                  bus_type,
                                       const gchar              *name,
                                       GBusNameOwnerFlags        flags,
@@ -98,6 +99,7 @@ guint g_bus_own_name_with_closures   (GBusType                  bus_type,
                                       GClosure                 *name_acquired_closure,
                                       GClosure                 *name_lost_closure);
 
+GLIB_AVAILABLE_IN_ALL
 guint g_bus_own_name_on_connection_with_closures (
                                       GDBusConnection          *connection,
                                       const gchar              *name,
@@ -105,6 +107,7 @@ guint g_bus_own_name_on_connection_with_closures (
                                       GClosure                 *name_acquired_closure,
                                       GClosure                 *name_lost_closure);
 
+GLIB_AVAILABLE_IN_ALL
 void  g_bus_unown_name               (guint                     owner_id);
 
 G_END_DECLS

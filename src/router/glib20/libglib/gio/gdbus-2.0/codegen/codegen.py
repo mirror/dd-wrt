@@ -15,9 +15,7 @@
 # Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General
-# Public License along with this library; if not, write to the
-# Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-# Boston, MA 02111-1307, USA.
+# Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
 #
 # Author: David Zeuthen <davidz@redhat.com>
 
@@ -1029,6 +1027,10 @@ class CodeGenerator:
         self.write_gtkdoc_deprecated_and_since_and_close(i, self.c, 0)
         self.c.write('\n')
 
+        self.c.write('typedef %sIface %sInterface;\n'%(i.camel_name, i.camel_name))
+        self.c.write('G_DEFINE_INTERFACE (%s, %s, G_TYPE_OBJECT);\n'%(i.camel_name, i.name_lower))
+        self.c.write('\n')
+
         self.c.write('static void\n'
                      '%s_default_init (%sIface *iface)\n'
                      '{\n'%(i.name_lower, i.camel_name));
@@ -1174,10 +1176,6 @@ class CodeGenerator:
 
         self.c.write('}\n'
                      '\n')
-
-        self.c.write('typedef %sIface %sInterface;\n'%(i.camel_name, i.camel_name))
-        self.c.write('G_DEFINE_INTERFACE (%s, %s, G_TYPE_OBJECT);\n'%(i.camel_name, i.name_lower))
-        self.c.write('\n')
 
     # ----------------------------------------------------------------------------------------------------
 
@@ -1569,8 +1567,14 @@ class CodeGenerator:
 
         self.c.write('static void %s_proxy_iface_init (%sIface *iface);\n'
                      '\n'%(i.name_lower, i.camel_name))
+        self.c.write('#if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_38\n')
+        self.c.write('G_DEFINE_TYPE_WITH_CODE (%sProxy, %s_proxy, G_TYPE_DBUS_PROXY,\n'%(i.camel_name, i.name_lower))
+        self.c.write('                         G_ADD_PRIVATE (%sProxy)\n'%(i.camel_name))
+        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_proxy_iface_init));\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
+        self.c.write('#else\n')
         self.c.write('G_DEFINE_TYPE_WITH_CODE (%sProxy, %s_proxy, G_TYPE_DBUS_PROXY,\n'%(i.camel_name, i.name_lower))
         self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_proxy_iface_init));\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
+        self.c.write('#endif\n')
 
         # finalize
         self.c.write('static void\n'
@@ -1591,7 +1595,7 @@ class CodeGenerator:
                      '%s_proxy_get_property (GObject      *object,\n'
                      '  guint         prop_id,\n'
                      '  GValue       *value,\n'
-                     '  GParamSpec   *pspec)\n'
+                     '  GParamSpec   *pspec G_GNUC_UNUSED)\n'
                      '{\n'%(i.name_lower))
         if len(i.properties) > 0:
             self.c.write('  const _ExtendedGDBusPropertyInfo *info;\n'
@@ -1623,13 +1627,19 @@ class CodeGenerator:
                          '{\n'%(i.name_lower))
             self.c.write('  const _ExtendedGDBusPropertyInfo *info = user_data;\n'
                          '  GError *error;\n'
+                         '  GVariant *_ret;\n'
                          '  error = NULL;\n'
-                         '  if (!g_dbus_proxy_call_finish (proxy, res, &error))\n'
+                         '  _ret = g_dbus_proxy_call_finish (proxy, res, &error);\n'
+                         '  if (!_ret)\n'
                          '    {\n'
-                         '      g_warning ("Error setting property `%%s\' on interface %s: %%s (%%s, %%d)",\n'
+                         '      g_warning ("Error setting property \'%%s\' on interface %s: %%s (%%s, %%d)",\n'
                          '                 info->parent_struct.name, \n'
                          '                 error->message, g_quark_to_string (error->domain), error->code);\n'
                          '      g_error_free (error);\n'
+                         '    }\n'
+                         '  else\n'
+                         '    {\n'
+                         '      g_variant_unref (_ret);\n'
                          '    }\n'
                          %(i.name))
             self.c.write('}\n'
@@ -1638,7 +1648,7 @@ class CodeGenerator:
                      '%s_proxy_set_property (GObject      *object,\n'
                      '  guint         prop_id,\n'
                      '  const GValue *value,\n'
-                     '  GParamSpec   *pspec)\n'
+                     '  GParamSpec   *pspec G_GNUC_UNUSED)\n'
                      '{\n'%(i.name_lower))
         if len(i.properties) > 0:
             self.c.write('  const _ExtendedGDBusPropertyInfo *info;\n'
@@ -1660,7 +1670,7 @@ class CodeGenerator:
         # signal received
         self.c.write('static void\n'
                      '%s_proxy_g_signal (GDBusProxy *proxy,\n'
-                     '  const gchar *sender_name,\n'
+                     '  const gchar *sender_name G_GNUC_UNUSED,\n'
                      '  const gchar *signal_name,\n'
                      '  GVariant *parameters)\n'
                      '{\n'%(i.name_lower))
@@ -1794,11 +1804,16 @@ class CodeGenerator:
         self.c.write('static void\n'
                      '%s_proxy_init (%sProxy *proxy)\n'
                      '{\n'
+                     '#if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_38\n'
+                     '  proxy->priv = %s_proxy_get_instance_private (proxy);\n'
+                     '#else\n'
                      '  proxy->priv = G_TYPE_INSTANCE_GET_PRIVATE (proxy, %sTYPE_%s_PROXY, %sProxyPrivate);\n'
+                     '#endif\n\n'
                      '  g_dbus_proxy_set_interface_info (G_DBUS_PROXY (proxy), %s_interface_info ());\n'
                      '}\n'
                      '\n'
                      %(i.name_lower, i.camel_name,
+                       i.name_lower,
                        i.ns_upper, i.name_upper, i.camel_name,
                        i.name_lower))
         self.c.write('static void\n'
@@ -1806,8 +1821,6 @@ class CodeGenerator:
                      '{\n'
                      '  GObjectClass *gobject_class;\n'
                      '  GDBusProxyClass *proxy_class;\n'
-                     '\n'
-                     '  g_type_class_add_private (klass, sizeof (%sProxyPrivate));\n'
                      '\n'
                      '  gobject_class = G_OBJECT_CLASS (klass);\n'
                      '  gobject_class->finalize     = %s_proxy_finalize;\n'
@@ -1818,11 +1831,12 @@ class CodeGenerator:
                      '  proxy_class->g_signal = %s_proxy_g_signal;\n'
                      '  proxy_class->g_properties_changed = %s_proxy_g_properties_changed;\n'
                      '\n'%(i.name_lower, i.camel_name,
-                           i.camel_name,
                            i.name_lower, i.name_lower, i.name_lower, i.name_lower, i.name_lower))
         if len(i.properties) > 0:
-            self.c.write('\n'
-                         '  %s_override_properties (gobject_class, 1);\n'%(i.name_lower))
+            self.c.write('  %s_override_properties (gobject_class, 1);\n\n'%(i.name_lower))
+        self.c.write('#if GLIB_VERSION_MAX_ALLOWED < GLIB_VERSION_2_38\n'
+                     '  g_type_class_add_private (klass, sizeof (%sProxyPrivate));\n'
+                     '#endif\n'%(i.camel_name))
         self.c.write('}\n'
                      '\n')
 
@@ -2070,9 +2084,9 @@ class CodeGenerator:
 
         self.c.write('static void\n'
                      '_%s_skeleton_handle_method_call (\n'
-                     '  GDBusConnection *connection,\n'
-                     '  const gchar *sender,\n'
-                     '  const gchar *object_path,\n'
+                     '  GDBusConnection *connection G_GNUC_UNUSED,\n'
+                     '  const gchar *sender G_GNUC_UNUSED,\n'
+                     '  const gchar *object_path G_GNUC_UNUSED,\n'
                      '  const gchar *interface_name,\n'
                      '  const gchar *method_name,\n'
                      '  GVariant *parameters,\n'
@@ -2142,10 +2156,10 @@ class CodeGenerator:
 
         self.c.write('static GVariant *\n'
                      '_%s_skeleton_handle_get_property (\n'
-                     '  GDBusConnection *connection,\n'
-                     '  const gchar *sender,\n'
-                     '  const gchar *object_path,\n'
-                     '  const gchar *interface_name,\n'
+                     '  GDBusConnection *connection G_GNUC_UNUSED,\n'
+                     '  const gchar *sender G_GNUC_UNUSED,\n'
+                     '  const gchar *object_path G_GNUC_UNUSED,\n'
+                     '  const gchar *interface_name G_GNUC_UNUSED,\n'
                      '  const gchar *property_name,\n'
                      '  GError **error,\n'
                      '  gpointer user_data)\n'
@@ -2178,10 +2192,10 @@ class CodeGenerator:
 
         self.c.write('static gboolean\n'
                      '_%s_skeleton_handle_set_property (\n'
-                     '  GDBusConnection *connection,\n'
-                     '  const gchar *sender,\n'
-                     '  const gchar *object_path,\n'
-                     '  const gchar *interface_name,\n'
+                     '  GDBusConnection *connection G_GNUC_UNUSED,\n'
+                     '  const gchar *sender G_GNUC_UNUSED,\n'
+                     '  const gchar *object_path G_GNUC_UNUSED,\n'
+                     '  const gchar *interface_name G_GNUC_UNUSED,\n'
                      '  const gchar *property_name,\n'
                      '  GVariant *variant,\n'
                      '  GError **error,\n'
@@ -2221,12 +2235,13 @@ class CodeGenerator:
                      '{\n'
                      '  _%s_skeleton_handle_method_call,\n'
                      '  _%s_skeleton_handle_get_property,\n'
-                     '  _%s_skeleton_handle_set_property\n'
+                     '  _%s_skeleton_handle_set_property,\n'
+                     '  {NULL}\n'
                      '};\n'
                      '\n'%(i.name_lower, i.name_lower, i.name_lower, i.name_lower))
 
         self.c.write('static GDBusInterfaceInfo *\n'
-                     '%s_skeleton_dbus_interface_get_info (GDBusInterfaceSkeleton *skeleton)\n'
+                     '%s_skeleton_dbus_interface_get_info (GDBusInterfaceSkeleton *skeleton G_GNUC_UNUSED)\n'
                      '{\n'
                      '  return %s_interface_info ();\n'
                      %(i.name_lower, i.name_lower))
@@ -2234,7 +2249,7 @@ class CodeGenerator:
                      '\n')
 
         self.c.write('static GDBusInterfaceVTable *\n'
-                     '%s_skeleton_dbus_interface_get_vtable (GDBusInterfaceSkeleton *skeleton)\n'
+                     '%s_skeleton_dbus_interface_get_vtable (GDBusInterfaceSkeleton *skeleton G_GNUC_UNUSED)\n'
                      '{\n'
                      '  return (GDBusInterfaceVTable *) &_%s_skeleton_vtable;\n'
                      %(i.name_lower, i.name_lower))
@@ -2339,8 +2354,14 @@ class CodeGenerator:
         self.c.write('static void %s_skeleton_iface_init (%sIface *iface);\n'
                      %(i.name_lower, i.camel_name))
 
+        self.c.write('#if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_38\n')
+        self.c.write('G_DEFINE_TYPE_WITH_CODE (%sSkeleton, %s_skeleton, G_TYPE_DBUS_INTERFACE_SKELETON,\n'%(i.camel_name, i.name_lower))
+        self.c.write('                         G_ADD_PRIVATE (%sSkeleton)\n'%(i.camel_name))
+        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_skeleton_iface_init));\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
+        self.c.write('#else\n')
         self.c.write('G_DEFINE_TYPE_WITH_CODE (%sSkeleton, %s_skeleton, G_TYPE_DBUS_INTERFACE_SKELETON,\n'%(i.camel_name, i.name_lower))
         self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_skeleton_iface_init));\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
+        self.c.write('#endif\n')
 
         # finalize
         self.c.write('static void\n'
@@ -2367,7 +2388,7 @@ class CodeGenerator:
                          '%s_skeleton_get_property (GObject      *object,\n'
                          '  guint         prop_id,\n'
                          '  GValue       *value,\n'
-                         '  GParamSpec   *pspec)\n'
+                         '  GParamSpec   *pspec G_GNUC_UNUSED)\n'
                          '{\n'%(i.name_lower))
             self.c.write('  %sSkeleton *skeleton = %s%s_SKELETON (object);\n'
                          '  g_assert (prop_id != 0 && prop_id - 1 < %d);\n'
@@ -2489,7 +2510,7 @@ class CodeGenerator:
             # where the idle will be emitted from
             self.c.write('static void\n'
                          '%s_skeleton_notify (GObject      *object,\n'
-                         '  GParamSpec *pspec)\n'
+                         '  GParamSpec *pspec G_GNUC_UNUSED)\n'
                          '{\n'
                          '  %sSkeleton *skeleton = %s%s_SKELETON (object);\n'
                          '  g_mutex_lock (&skeleton->priv->lock);\n'
@@ -2499,13 +2520,14 @@ class CodeGenerator:
                          '      skeleton->priv->changed_properties_idle_source = g_idle_source_new ();\n'
                          '      g_source_set_priority (skeleton->priv->changed_properties_idle_source, G_PRIORITY_DEFAULT);\n'
                          '      g_source_set_callback (skeleton->priv->changed_properties_idle_source, _%s_emit_changed, g_object_ref (skeleton), (GDestroyNotify) g_object_unref);\n'
+                         '      g_source_set_name (skeleton->priv->changed_properties_idle_source, "[generated] _%s_emit_changed");\n'
                          '      g_source_attach (skeleton->priv->changed_properties_idle_source, skeleton->priv->context);\n'
                          '      g_source_unref (skeleton->priv->changed_properties_idle_source);\n'
                          '    }\n'
                          '  g_mutex_unlock (&skeleton->priv->lock);\n'
                          '}\n'
                          '\n'
-                         %(i.name_lower, i.camel_name, i.ns_upper, i.name_upper, i.name_lower))
+                         %(i.name_lower, i.camel_name, i.ns_upper, i.name_upper, i.name_lower, i.name_lower))
 
             self.c.write('static void\n'
                          '%s_skeleton_set_property (GObject      *object,\n'
@@ -2533,8 +2555,14 @@ class CodeGenerator:
         self.c.write('static void\n'
                      '%s_skeleton_init (%sSkeleton *skeleton)\n'
                      '{\n'
+                     '#if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_38\n'
+                     '  skeleton->priv = %s_skeleton_get_instance_private (skeleton);\n'
+                     '#else\n'
                      '  skeleton->priv = G_TYPE_INSTANCE_GET_PRIVATE (skeleton, %sTYPE_%s_SKELETON, %sSkeletonPrivate);\n'
-                     %(i.name_lower, i.camel_name, i.ns_upper, i.name_upper, i.camel_name))
+                     '#endif\n\n'
+                     %(i.name_lower, i.camel_name,
+                       i.name_lower,
+                       i.ns_upper, i.name_upper, i.camel_name))
         self.c.write('  g_mutex_init (&skeleton->priv->lock);\n')
         self.c.write('  skeleton->priv->context = g_main_context_ref_thread_default ();\n')
         if len(i.properties) > 0:
@@ -2570,11 +2598,9 @@ class CodeGenerator:
                      '  GObjectClass *gobject_class;\n'
                      '  GDBusInterfaceSkeletonClass *skeleton_class;\n'
                      '\n'
-                     '  g_type_class_add_private (klass, sizeof (%sSkeletonPrivate));\n'
-                     '\n'
                      '  gobject_class = G_OBJECT_CLASS (klass);\n'
                      '  gobject_class->finalize = %s_skeleton_finalize;\n'
-                     %(i.name_lower, i.camel_name, i.camel_name, i.name_lower))
+                     %(i.name_lower, i.camel_name, i.name_lower))
         if len(i.properties) > 0:
             self.c.write('  gobject_class->get_property = %s_skeleton_get_property;\n'
                          '  gobject_class->set_property = %s_skeleton_set_property;\n'
@@ -2588,6 +2614,12 @@ class CodeGenerator:
         self.c.write('  skeleton_class->get_properties = %s_skeleton_dbus_interface_get_properties;\n'%(i.name_lower))
         self.c.write('  skeleton_class->flush = %s_skeleton_dbus_interface_flush;\n'%(i.name_lower))
         self.c.write('  skeleton_class->get_vtable = %s_skeleton_dbus_interface_get_vtable;\n'%(i.name_lower))
+
+        self.c.write('\n'
+                     '#if GLIB_VERSION_MAX_ALLOWED < GLIB_VERSION_2_38\n'
+                     '  g_type_class_add_private (klass, sizeof (%sSkeletonPrivate));\n'
+                     '#endif\n'%(i.camel_name))
+
         self.c.write('}\n'
                      '\n')
 
@@ -2659,6 +2691,9 @@ class CodeGenerator:
                 %(self.namespace, self.namespace), False))
         self.c.write('\n')
 
+        self.c.write('typedef %sObjectIface %sObjectInterface;\n'%(self.namespace, self.namespace))
+        self.c.write('G_DEFINE_INTERFACE_WITH_CODE (%sObject, %sobject, G_TYPE_OBJECT, g_type_interface_add_prerequisite (g_define_type_id, G_TYPE_DBUS_OBJECT));\n'%(self.namespace, self.ns_lower))
+        self.c.write('\n')
         self.c.write('static void\n'
                      '%sobject_default_init (%sObjectIface *iface)\n'
                      '{\n'
@@ -2678,10 +2713,6 @@ class CodeGenerator:
                          %(i.name_hyphen, i.name_hyphen, i.name_hyphen, self.ns_upper, i.name_upper))
         self.c.write('}\n'
                      '\n')
-
-        self.c.write('typedef %sObjectIface %sObjectInterface;\n'%(self.namespace, self.namespace))
-        self.c.write('G_DEFINE_INTERFACE_WITH_CODE (%sObject, %sobject, G_TYPE_OBJECT, g_type_interface_add_prerequisite (g_define_type_id, G_TYPE_DBUS_OBJECT));\n'%(self.namespace, self.ns_lower))
-        self.c.write('\n')
 
         for i in self.ifaces:
             self.c.write(self.docbook_gen.expand(
@@ -2736,7 +2767,12 @@ class CodeGenerator:
         self.c.write('static void\n'
                      '%sobject_notify (GDBusObject *object, GDBusInterface *interface)\n'
                      '{\n'
-                     '  g_object_notify (G_OBJECT (object), ((_ExtendedGDBusInterfaceInfo *) g_dbus_interface_get_info (interface))->hyphen_name);\n'
+                     '  _ExtendedGDBusInterfaceInfo *info = (_ExtendedGDBusInterfaceInfo *) g_dbus_interface_get_info (interface);\n'
+                     '  /* info can be NULL if the other end is using a D-Bus interface we don\'t know\n'
+                     '   * anything about, for example old generated code in this process talking to\n'
+                     '   * newer generated code in the other process. */\n'
+                     '  if (info != NULL)\n'
+                     '    g_object_notify (G_OBJECT (object), info->hyphen_name);\n'
                      '}\n'
                      '\n'
                      %(self.ns_lower))
@@ -2760,7 +2796,7 @@ class CodeGenerator:
         self.c.write('\n')
         # class boilerplate
         self.c.write('static void\n'
-                     '%sobject_proxy__%sobject_iface_init (%sObjectIface *iface)\n'
+                     '%sobject_proxy__%sobject_iface_init (%sObjectIface *iface G_GNUC_UNUSED)\n'
                      '{\n'
                      '}\n'
                      '\n'
@@ -2781,14 +2817,14 @@ class CodeGenerator:
                      %(self.namespace, self.ns_lower, self.ns_upper, self.ns_lower, self.ns_lower, self.ns_lower))
         # class boilerplate
         self.c.write('static void\n'
-                     '%sobject_proxy_init (%sObjectProxy *object)\n'
+                     '%sobject_proxy_init (%sObjectProxy *object G_GNUC_UNUSED)\n'
                      '{\n'
                      '}\n'
                      '\n'%(self.ns_lower, self.namespace))
         self.c.write('static void\n'
                      '%sobject_proxy_set_property (GObject      *gobject,\n'
                      '  guint         prop_id,\n'
-                     '  const GValue *value,\n'
+                     '  const GValue *value G_GNUC_UNUSED,\n'
                      '  GParamSpec   *pspec)\n'
                      '{\n'
                      '  G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop_id, pspec);\n'
@@ -2880,7 +2916,7 @@ class CodeGenerator:
         self.c.write('\n')
         # class boilerplate
         self.c.write('static void\n'
-                     '%sobject_skeleton__%sobject_iface_init (%sObjectIface *iface)\n'
+                     '%sobject_skeleton__%sobject_iface_init (%sObjectIface *iface G_GNUC_UNUSED)\n'
                      '{\n'
                      '}\n'
                      '\n'
@@ -2901,7 +2937,7 @@ class CodeGenerator:
                      %(self.namespace, self.ns_lower, self.ns_upper, self.ns_lower, self.ns_lower, self.ns_lower))
         # class boilerplate
         self.c.write('static void\n'
-                     '%sobject_skeleton_init (%sObjectSkeleton *object)\n'
+                     '%sobject_skeleton_init (%sObjectSkeleton *object G_GNUC_UNUSED)\n'
                      '{\n'
                      '}\n'
                      '\n'%(self.ns_lower, self.namespace))
@@ -3065,12 +3101,12 @@ class CodeGenerator:
 
         # class boilerplate
         self.c.write('static void\n'
-                     '%sobject_manager_client_init (%sObjectManagerClient *manager)\n'
+                     '%sobject_manager_client_init (%sObjectManagerClient *manager G_GNUC_UNUSED)\n'
                      '{\n'
                      '}\n'
                      '\n'%(self.ns_lower, self.namespace))
         self.c.write('static void\n'
-                     '%sobject_manager_client_class_init (%sObjectManagerClientClass *klass)\n'
+                     '%sobject_manager_client_class_init (%sObjectManagerClientClass *klass G_GNUC_UNUSED)\n'
                      '{\n'
                      '}\n'
                      '\n'%(self.ns_lower, self.namespace))
@@ -3089,7 +3125,7 @@ class CodeGenerator:
                 %(self.ns_lower, self.namespace), False))
         self.c.write(' */\n')
         self.c.write('GType\n'
-                     '%sobject_manager_client_get_proxy_type (GDBusObjectManagerClient *manager, const gchar *object_path, const gchar *interface_name, gpointer user_data)\n'
+                     '%sobject_manager_client_get_proxy_type (GDBusObjectManagerClient *manager G_GNUC_UNUSED, const gchar *object_path G_GNUC_UNUSED, const gchar *interface_name, gpointer user_data G_GNUC_UNUSED)\n'
                      '{\n'
                      %(self.ns_lower))
         self.c.write('  static gsize once_init_value = 0;\n'
@@ -3372,4 +3408,5 @@ class CodeGenerator:
         if self.generate_objmanager:
             self.generate_object()
             self.generate_object_manager_client()
+
         self.generate_outro()

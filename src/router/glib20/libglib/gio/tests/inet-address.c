@@ -20,7 +20,10 @@
  * if advised of the possibility of such damage.
  */
 
+#include "config.h"
+
 #include <gio/gio.h>
+#include <gio/gnetworking.h>
 
 static void
 test_parse (void)
@@ -51,9 +54,19 @@ test_parse (void)
 
   addr = g_inet_address_new_from_string ("::1::2");
   g_assert (addr == NULL);
+  addr = g_inet_address_new_from_string ("2001:1:2:3:4:5:6:7]");
+  g_assert (addr == NULL);
+  addr = g_inet_address_new_from_string ("[2001:1:2:3:4:5:6:7");
+  g_assert (addr == NULL);
+  addr = g_inet_address_new_from_string ("[2001:1:2:3:4:5:6:7]");
+  g_assert (addr == NULL);
+  addr = g_inet_address_new_from_string ("[2001:1:2:3:4:5:6:7]:80");
+  g_assert (addr == NULL);
   addr = g_inet_address_new_from_string ("0:1:2:3:4:5:6:7:8:9");
   g_assert (addr == NULL);
   addr = g_inet_address_new_from_string ("::FFFFFFF");
+  g_assert (addr == NULL);
+  addr = g_inet_address_new_from_string ("204.152.189.116:80");
   g_assert (addr == NULL);
 }
 
@@ -347,7 +360,6 @@ test_mask_match (void)
 int
 main (int argc, char *argv[])
 {
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/inet-address/parse", test_parse);

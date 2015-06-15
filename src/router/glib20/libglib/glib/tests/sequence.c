@@ -133,7 +133,7 @@ check_integrity (SequenceInfo *info)
 
 #if 0
   if (g_sequence_get_length (info->sequence) != info->n_items)
-    g_print ("%d %d\n",
+    g_printerr ("%d %d\n",
              g_sequence_get_length (info->sequence), info->n_items);
 #endif
   g_assert (info->n_items == g_queue_get_length (info->queue));
@@ -402,22 +402,12 @@ dump_info (SequenceInfo *seq)
   while (iter != g_sequence_get_end_iter (seq->sequence))
     {
       Item *item = get_item (iter);
-      g_print ("%p  %p    %d\n", list->data, iter, item->number);
+      g_printerr ("%p  %p    %d\n", list->data, iter, item->number);
 
       iter = g_sequence_iter_next (iter);
       list = list->next;
     }
 #endif
-}
-
-/* A version of g_queue_insert_before() that appends if link is NULL */
-static void
-queue_insert_before (SequenceInfo *seq, GList *link, gpointer data)
-{
-  if (link)
-    g_queue_insert_before (seq->queue, link, data);
-  else
-    g_queue_push_tail (seq->queue, data);
 }
 
 static void
@@ -432,7 +422,7 @@ run_random_tests (gconstpointer d)
   int k;
 
 #if 0
-  g_print ("    seed: %u\n", seed);
+  g_printerr ("    seed: %u\n", seed);
 #endif
 
   g_random_set_seed (seed);
@@ -453,7 +443,7 @@ run_random_tests (gconstpointer d)
       int op = g_random_int_range (0, N_OPS);
 
 #if 0
-      g_print ("%d on %p\n", op, seq);
+      g_printerr ("%d on %p\n", op, seq);
 #endif
 
       switch (op)
@@ -611,7 +601,7 @@ run_random_tests (gconstpointer d)
 
                 new_iter = g_sequence_insert_before (iter, new_item (seq));
 
-                queue_insert_before (seq, link, new_iter);
+                g_queue_insert_before (seq->queue, link, new_iter);
               }
           }
           break;
@@ -630,7 +620,7 @@ run_random_tests (gconstpointer d)
                 if (!link2)
                   g_assert (g_sequence_iter_is_end (iter2));
 
-                queue_insert_before (seq2, link2, link1->data);
+                g_queue_insert_before (seq2->queue, link2, link1->data);
 
                 g_queue_delete_link (seq1->queue, link1);
 
@@ -864,7 +854,7 @@ run_random_tests (gconstpointer d)
                 Item *item = get_item (list->data);
 
                 g_assert (dst->queue);
-                queue_insert_before (dst, dst_link, list->data);
+                g_queue_insert_before (dst->queue, dst_link, list->data);
                 g_queue_delete_link (src->queue, list);
 
                 g_assert (item->seq == src);

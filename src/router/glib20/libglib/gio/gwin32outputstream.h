@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  * Author: Tor Lillqvist <tml@iki.fi>
@@ -44,6 +42,8 @@ typedef struct _GWin32OutputStream         GWin32OutputStream;
 typedef struct _GWin32OutputStreamClass    GWin32OutputStreamClass;
 typedef struct _GWin32OutputStreamPrivate  GWin32OutputStreamPrivate;
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GWin32OutputStream, g_object_unref)
+
 struct _GWin32OutputStream
 {
   GOutputStream parent_instance;
@@ -65,13 +65,18 @@ struct _GWin32OutputStreamClass
   void (*_g_reserved5) (void);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType           g_win32_output_stream_get_type         (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GOutputStream * g_win32_output_stream_new              (void               *handle,
 							gboolean            close_handle);
+GLIB_AVAILABLE_IN_ALL
 void            g_win32_output_stream_set_close_handle (GWin32OutputStream *stream,
 							gboolean           close_handle);
+GLIB_AVAILABLE_IN_ALL
 gboolean        g_win32_output_stream_get_close_handle (GWin32OutputStream *stream);
+GLIB_AVAILABLE_IN_ALL
 void           *g_win32_output_stream_get_handle       (GWin32OutputStream *stream);
 G_END_DECLS
 

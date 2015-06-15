@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -52,51 +50,65 @@ typedef	struct _GModule			 GModule;
 typedef const gchar* (*GModuleCheckInit) (GModule	*module);
 typedef void	     (*GModuleUnload)	 (GModule	*module);
 
-#ifndef __GTK_DOC_IGNORE__
-#ifdef G_OS_WIN32
-#define g_module_open g_module_open_utf8
-#define g_module_name g_module_name_utf8
-#endif
-#endif
-
 /* return TRUE if dynamic module loading is supported */
+GLIB_AVAILABLE_IN_ALL
 gboolean	g_module_supported	   (void) G_GNUC_CONST;
 
-/* open a module `file_name' and return handle, which is NULL on error */
+/* open a module 'file_name' and return handle, which is NULL on error */
+GLIB_AVAILABLE_IN_ALL
 GModule*              g_module_open          (const gchar  *file_name,
 					      GModuleFlags  flags);
 
 /* close a previously opened module, returns TRUE on success */
+GLIB_AVAILABLE_IN_ALL
 gboolean              g_module_close         (GModule      *module);
 
 /* make a module resident so g_module_close on it will be ignored */
+GLIB_AVAILABLE_IN_ALL
 void                  g_module_make_resident (GModule      *module);
 
 /* query the last module error as a string */
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_module_error         (void);
 
-/* retrieve a symbol pointer from `module', returns TRUE on success */
+/* retrieve a symbol pointer from 'module', returns TRUE on success */
+GLIB_AVAILABLE_IN_ALL
 gboolean              g_module_symbol        (GModule      *module,
 					      const gchar  *symbol_name,
 					      gpointer     *symbol);
 
 /* retrieve the file name from an existing module */
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_module_name          (GModule      *module);
 
-/* Build the actual file name containing a module. `directory' is the
+/* Build the actual file name containing a module. 'directory' is the
  * directory where the module file is supposed to be, or NULL or empty
  * in which case it should either be in the current directory or, on
  * some operating systems, in some standard place, for instance on the
  * PATH. Hence, to be absoultely sure to get the correct module,
  * always pass in a directory. The file name consists of the directory,
- * if supplied, and `module_name' suitably decorated according to
+ * if supplied, and 'module_name' suitably decorated according to
  * the operating system's conventions (for instance lib*.so or *.dll).
  *
  * No checks are made that the file exists, or is of correct type.
  */
+GLIB_AVAILABLE_IN_ALL
 gchar*                g_module_build_path    (const gchar  *directory,
 					      const gchar  *module_name);
 
+
+#ifndef __GTK_DOC_IGNORE__
+#ifdef G_OS_WIN32
+#define g_module_open g_module_open_utf8
+#define g_module_name g_module_name_utf8
+
+GLIB_AVAILABLE_IN_ALL
+GModule *    g_module_open_utf8 (const gchar  *file_name,
+                                 GModuleFlags  flags);
+GLIB_AVAILABLE_IN_ALL
+const gchar *g_module_name_utf8 (GModule      *module);
+#endif
+#endif
 
 G_END_DECLS
 

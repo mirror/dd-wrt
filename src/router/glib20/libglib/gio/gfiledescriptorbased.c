@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Christian Kellner <gicmo@gnome.org>
  */
@@ -34,9 +32,9 @@
  * #GFileDescriptorBased is implemented by streams (implementations of
  * #GInputStream or #GOutputStream) that are based on file descriptors.
  *
- * Note that <filename>&lt;gio/gfiledescriptorbased.h&gt;</filename> belongs to
- * the UNIX-specific GIO interfaces, thus you have to use the
- * <filename>gio-unix-2.0.pc</filename> pkg-config file when using it.
+ * Note that `<gio/gfiledescriptorbased.h>` belongs to the UNIX-specific
+ * GIO interfaces, thus you have to use the `gio-unix-2.0.pc` pkg-config
+ * file when using it.
  *
  * Since: 2.24
  *

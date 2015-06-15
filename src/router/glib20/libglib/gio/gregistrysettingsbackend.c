@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Sam Thursfield <ssssam@gmail.com>
  */
@@ -97,9 +95,6 @@
 #include "gsettingsbackend.h"
 #include "giomodule.h"
 
-
-#define _WIN32_WINNT 0x0500
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 //#define TRACE
@@ -233,7 +228,7 @@ g_message_win32_error (DWORD result_code,
   if (result_code == ERROR_KEY_DELETED)
     trace ("(%s)", win32_message);
   else
-    g_message (win32_message);
+    g_message ("%s", win32_message);
 };
 
 
@@ -495,7 +490,7 @@ registry_cache_unref_tree (GNode *tree)
     }
 }
 
-
+#if 0
 static void
 registry_cache_dump (GNode    *cache_node,
                      gpointer  data)
@@ -518,7 +513,7 @@ registry_cache_dump (GNode    *cache_node,
   g_node_children_foreach (cache_node, G_TRAVERSE_ALL, registry_cache_dump,
                            GINT_TO_POINTER (new_depth));
 }
-
+#endif
 
 typedef struct
 {
@@ -1659,9 +1654,6 @@ watch_start (GRegistryBackend *self)
 
   g_return_val_if_fail (self->watch == NULL, FALSE);
 
-  self->cache_lock = g_slice_new (CRITICAL_SECTION);
-  InitializeCriticalSection (self->cache_lock);
-
   watch = g_slice_new (WatchThreadState);
   watch->owner = G_SETTINGS_BACKEND (self);
 
@@ -1690,8 +1682,6 @@ watch_start (GRegistryBackend *self)
   return TRUE;
 
 fail_2:
-  DeleteCriticalSection (self->cache_lock);
-  g_slice_free (CRITICAL_SECTION, self->cache_lock);
   DeleteCriticalSection (watch->message_lock);
   g_slice_free (CRITICAL_SECTION, watch->message_lock);
   CloseHandle (watch->message_sent_event);
@@ -1725,9 +1715,7 @@ watch_stop_unlocked (GRegistryBackend *self)
 
   LeaveCriticalSection (watch->message_lock);
   DeleteCriticalSection (watch->message_lock);
-  DeleteCriticalSection (self->cache_lock);
   g_slice_free (CRITICAL_SECTION, watch->message_lock);
-  g_slice_free (CRITICAL_SECTION, self->cache_lock);
   CloseHandle (watch->message_sent_event);
   CloseHandle (watch->message_received_event);
   CloseHandle (watch->thread);
@@ -1746,7 +1734,9 @@ watch_add_notify (GRegistryBackend *self,
   WatchThreadState  *watch = self->watch;
   GNode             *cache_node;
   RegistryCacheItem *cache_item;
+#ifdef TRACE
   DWORD              result;
+#endif
 
   g_return_val_if_fail (watch != NULL, FALSE);
   trace ("watch_add_notify: prefix %s.\n", gsettings_prefix);
@@ -1757,8 +1747,12 @@ watch_add_notify (GRegistryBackend *self,
   EnterCriticalSection (self->cache_lock);
   cache_node = registry_cache_get_node_for_key (self->cache_root, gsettings_prefix, TRUE);
 
-  g_return_val_if_fail (cache_node != NULL, FALSE);
-  g_return_val_if_fail (cache_node->data != NULL, FALSE);
+  if (cache_node == NULL || cache_node->data == NULL)
+    {
+      LeaveCriticalSection (self->cache_lock);
+      g_warn_if_reached ();
+      return FALSE;
+    }
   
   cache_item = cache_node->data;
 
@@ -1767,6 +1761,7 @@ watch_add_notify (GRegistryBackend *self,
     {
       trace ("watch_add_notify: prefix %s already watched, %i subscribers.\n",
              gsettings_prefix, cache_item->subscription_count);
+      LeaveCriticalSection (self->cache_lock);
       return FALSE;
     }
 
@@ -1788,11 +1783,15 @@ watch_add_notify (GRegistryBackend *self,
    * one was received. If it takes > 200ms there is a possible race but the worst outcome is
    * a notification is ignored.
    */
-  result = WaitForSingleObject (watch->message_received_event, 200);
-  #ifdef TRACE
-    if (result != WAIT_OBJECT_0)
-      trace ("watch thread is slow to respond - notification may not be added.");
-  #endif
+#ifdef TRACE
+  result =
+#endif
+    WaitForSingleObject (watch->message_received_event, 200);
+#ifdef TRACE
+  if (result != WAIT_OBJECT_0)
+    trace ("watch thread is slow to respond - notification may not be added.");
+#endif
+
   LeaveCriticalSection (watch->message_lock);
 
   return TRUE;
@@ -1912,11 +1911,6 @@ g_registry_backend_unsubscribe (GSettingsBackend *backend,
  * Object management junk
  ********************************************************************************/
 
-GSettingsBackend *
-g_registry_backend_new (void) {
-  return g_object_new (G_TYPE_REGISTRY_BACKEND, NULL);
-}
-
 static void
 g_registry_backend_finalize (GObject *object)
 {
@@ -1934,6 +1928,9 @@ g_registry_backend_finalize (GObject *object)
       EnterCriticalSection (self->watch->message_lock);
       watch_stop_unlocked (self);
     }
+
+  DeleteCriticalSection (self->cache_lock);
+  g_slice_free (CRITICAL_SECTION, self->cache_lock);
 
   g_free (self->base_path);
 }
@@ -1968,6 +1965,9 @@ g_registry_backend_init (GRegistryBackend *self)
   item->name = g_strdup ("<root>");
   item->ref_count = 1;
   self->cache_root = g_node_new (item);
+
+  self->cache_lock = g_slice_new (CRITICAL_SECTION);
+  InitializeCriticalSection (self->cache_lock);
 
   self->watch = NULL;
 }

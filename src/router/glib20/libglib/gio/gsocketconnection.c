@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Christian Kellner <gicmo@gnome.org>
  *          Samuel Cormier-Iijima <sciyoshi@gmail.com>
@@ -31,8 +29,9 @@
 
 #include "gsocketoutputstream.h"
 #include "gsocketinputstream.h"
+#include "gioprivate.h"
 #include <gio/giostream.h>
-#include <gio/gsimpleasyncresult.h>
+#include <gio/gtask.h>
 #include "gunixconnection.h"
 #include "gtcpconnection.h"
 #include "glibintl.h"
@@ -57,10 +56,12 @@
  * custom socket connection types for specific combination of socket
  * family/type/protocol using g_socket_connection_factory_register_type().
  *
+ * To close a #GSocketConnection, use g_io_stream_close(). Closing both
+ * substreams of the #GIOStream separately will not close the underlying
+ * #GSocket.
+ *
  * Since: 2.22
  */
-
-G_DEFINE_TYPE (GSocketConnection, g_socket_connection, G_TYPE_IO_STREAM);
 
 enum
 {
@@ -73,6 +74,8 @@ struct _GSocketConnectionPrivate
   GSocket       *socket;
   GInputStream  *input_stream;
   GOutputStream *output_stream;
+
+  GSocketAddress *cached_remote_address;
 
   gboolean       in_dispose;
 };
@@ -88,6 +91,8 @@ static void     g_socket_connection_close_async   (GIOStream            *stream,
 static gboolean g_socket_connection_close_finish  (GIOStream            *stream,
 						   GAsyncResult         *result,
 						   GError              **error);
+
+G_DEFINE_TYPE_WITH_PRIVATE (GSocketConnection, g_socket_connection, G_TYPE_IO_STREAM)
 
 static GInputStream *
 g_socket_connection_get_input_stream (GIOStream *io_stream)
@@ -184,43 +189,37 @@ g_socket_connection_connect_async (GSocketConnection   *connection,
 				   GAsyncReadyCallback  callback,
 				   gpointer             user_data)
 {
-  GSimpleAsyncResult *simple;
+  GTask *task;
   GError *tmp_error = NULL;
 
   g_return_if_fail (G_IS_SOCKET_CONNECTION (connection));
   g_return_if_fail (G_IS_SOCKET_ADDRESS (address));
 
-  simple = g_simple_async_result_new (G_OBJECT (connection),
-				      callback, user_data,
-				      g_socket_connection_connect_async);
+  task = g_task_new (connection, cancellable, callback, user_data);
 
   g_socket_set_blocking (connection->priv->socket, FALSE);
 
   if (g_socket_connect (connection->priv->socket, address,
 			cancellable, &tmp_error))
     {
-      g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-      g_simple_async_result_complete_in_idle (simple);
+      g_task_return_boolean (task, TRUE);
+      g_object_unref (task);
     }
   else if (g_error_matches (tmp_error, G_IO_ERROR, G_IO_ERROR_PENDING))
     {
       GSource *source;
 
-      g_simple_async_result_set_check_cancellable (simple, cancellable);
-
       g_error_free (tmp_error);
       source = g_socket_create_source (connection->priv->socket,
 				       G_IO_OUT, cancellable);
-      g_source_set_callback (source,
-			     (GSourceFunc) g_socket_connection_connect_callback,
-			     simple, NULL);
-      g_source_attach (source, g_main_context_get_thread_default ());
+      g_task_attach_source (task, source,
+			    (GSourceFunc) g_socket_connection_connect_callback);
       g_source_unref (source);
     }
   else
     {
-      g_simple_async_result_take_error (simple, tmp_error);
-      g_simple_async_result_complete_in_idle (simple);
+      g_task_return_error (task, tmp_error);
+      g_object_unref (task);
     }
 }
 
@@ -229,20 +228,16 @@ g_socket_connection_connect_callback (GSocket      *socket,
 				      GIOCondition  condition,
 				      gpointer      user_data)
 {
-  GSimpleAsyncResult *simple = user_data;
-  GSocketConnection *connection;
+  GTask *task = user_data;
+  GSocketConnection *connection = g_task_get_source_object (task);
   GError *error = NULL;
 
-  connection = G_SOCKET_CONNECTION (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
-  g_object_unref (connection);
-
   if (g_socket_check_connect_result (connection->priv->socket, &error))
-    g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+    g_task_return_boolean (task, TRUE);
   else
-    g_simple_async_result_take_error (simple, error);
+    g_task_return_error (task, error);
 
-  g_simple_async_result_complete (simple);
-  g_object_unref (simple);
+  g_object_unref (task);
   return FALSE;
 }
 
@@ -263,15 +258,10 @@ g_socket_connection_connect_finish (GSocketConnection  *connection,
 				    GAsyncResult       *result,
 				    GError            **error)
 {
-  GSimpleAsyncResult *simple;
-
   g_return_val_if_fail (G_IS_SOCKET_CONNECTION (connection), FALSE);
-  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (connection), g_socket_connection_connect_async), FALSE);
+  g_return_val_if_fail (g_task_is_valid (result, connection), FALSE);
 
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /**
@@ -282,7 +272,7 @@ g_socket_connection_connect_finish (GSocketConnection  *connection,
  * This can be useful if you want to do something unusual on it
  * not supported by the #GSocketConnection APIs.
  *
- * Returns: (transfer none): a #GSocketAddress or %NULL on error.
+ * Returns: (transfer none): a #GSocket or %NULL on error.
  *
  * Since: 2.22
  */
@@ -320,6 +310,13 @@ g_socket_connection_get_local_address (GSocketConnection  *connection,
  *
  * Try to get the remote address of a socket connection.
  *
+ * Since GLib 2.40, when used with g_socket_client_connect() or
+ * g_socket_client_connect_async(), during emission of
+ * %G_SOCKET_CLIENT_CONNECTING, this function will return the remote
+ * address that will be used for the connection.  This allows
+ * applications to print e.g. "Connecting to example.com
+ * (10.42.77.3)...".
+ *
  * Returns: (transfer full): a #GSocketAddress or %NULL on error.
  *     Free the returned object with g_object_unref().
  *
@@ -329,7 +326,25 @@ GSocketAddress *
 g_socket_connection_get_remote_address (GSocketConnection  *connection,
 					GError            **error)
 {
+  if (!g_socket_is_connected (connection->priv->socket))
+    {
+      return connection->priv->cached_remote_address ?
+        g_object_ref (connection->priv->cached_remote_address) : NULL;
+    }
   return g_socket_get_remote_address (connection->priv->socket, error);
+}
+
+/* Private API allowing applications to retrieve the resolved address
+ * now, before we start connecting.
+ *
+ * https://bugzilla.gnome.org/show_bug.cgi?id=712547
+ */
+void
+g_socket_connection_set_cached_remote_address (GSocketConnection *connection,
+                                               GSocketAddress    *address)
+{
+  g_clear_object (&connection->priv->cached_remote_address);
+  connection->priv->cached_remote_address = address ? g_object_ref (address) : NULL;
 }
 
 static void
@@ -385,6 +400,8 @@ g_socket_connection_dispose (GObject *object)
 
   connection->priv->in_dispose = TRUE;
 
+  g_clear_object (&connection->priv->cached_remote_address);
+
   G_OBJECT_CLASS (g_socket_connection_parent_class)
     ->dispose (object);
 
@@ -414,8 +431,6 @@ g_socket_connection_class_init (GSocketConnectionClass *klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GIOStreamClass *stream_class = G_IO_STREAM_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (GSocketConnectionPrivate));
-
   gobject_class->set_property = g_socket_connection_set_property;
   gobject_class->get_property = g_socket_connection_get_property;
   gobject_class->constructed = g_socket_connection_constructed;
@@ -442,9 +457,7 @@ g_socket_connection_class_init (GSocketConnectionClass *klass)
 static void
 g_socket_connection_init (GSocketConnection *connection)
 {
-  connection->priv = G_TYPE_INSTANCE_GET_PRIVATE (connection,
-                                                  G_TYPE_SOCKET_CONNECTION,
-                                                  GSocketConnectionPrivate);
+  connection->priv = g_socket_connection_get_instance_private (connection);
 }
 
 static gboolean
@@ -481,29 +494,23 @@ g_socket_connection_close_async (GIOStream           *stream,
 				 GAsyncReadyCallback  callback,
 				 gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   GIOStreamClass *class;
   GError *error;
 
   class = G_IO_STREAM_GET_CLASS (stream);
 
+  task = g_task_new (stream, cancellable, callback, user_data);
+
   /* socket close is not blocked, just do it! */
   error = NULL;
   if (class->close_fn &&
       !class->close_fn (stream, cancellable, &error))
-    {
-      g_simple_async_report_take_gerror_in_idle (G_OBJECT (stream),
-					    callback, user_data,
-					    error);
-      return;
-    }
+    g_task_return_error (task, error);
+  else
+    g_task_return_boolean (task, TRUE);
 
-  res = g_simple_async_result_new (G_OBJECT (stream),
-				   callback,
-				   user_data,
-				   g_socket_connection_close_async);
-  g_simple_async_result_complete_in_idle (res);
-  g_object_unref (res);
+  g_object_unref (task);
 }
 
 static gboolean
@@ -511,7 +518,7 @@ g_socket_connection_close_finish (GIOStream     *stream,
 				  GAsyncResult  *result,
 				  GError       **error)
 {
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 typedef struct {

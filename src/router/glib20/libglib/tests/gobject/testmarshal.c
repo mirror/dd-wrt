@@ -1,3 +1,4 @@
+#include "testmarshal.h"
 
 #include	<glib-object.h>
 

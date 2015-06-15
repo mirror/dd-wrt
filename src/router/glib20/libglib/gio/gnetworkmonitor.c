@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -28,7 +26,7 @@
 #include "ginitable.h"
 #include "gioenumtypes.h"
 #include "giomodule-priv.h"
-#include "gsimpleasyncresult.h"
+#include "gtask.h"
 
 /**
  * SECTION:gnetworkmonitor
@@ -46,6 +44,22 @@
  *
  * #GNetworkMonitor monitors the status of network connections and
  * indicates when a possibly-user-visible change has occurred.
+ *
+ * Since: 2.32
+ */
+
+/**
+ * GNetworkMonitorInterface:
+ * @g_iface: The parent interface.
+ * @network_changed: the virtual function pointer for the
+ *  GNetworkMonitor::network-changed signal.
+ * @can_reach: the virtual function pointer for g_network_monitor_can_reach()
+ * @can_reach_async: the virtual function pointer for
+ *  g_network_monitor_can_reach_async()
+ * @can_reach_finish: the virtual function pointer for
+ *  g_network_monitor_can_reach_finish()
+ *
+ * The virtual function table for #GNetworkMonitor.
  *
  * Since: 2.32
  */
@@ -87,7 +101,7 @@ g_network_monitor_get_default (void)
  * IPv6. It does not necessarily imply that the public Internet is
  * reachable. See #GNetworkMonitor:network-available for more details.
  *
- * Return value: whether the network is available
+ * Returns: whether the network is available
  *
  * Since: 2.32
  */
@@ -98,6 +112,44 @@ g_network_monitor_get_network_available (GNetworkMonitor *monitor)
 
   g_object_get (G_OBJECT (monitor), "network-available", &available, NULL);
   return available;
+}
+
+/**
+ * g_network_monitor_get_connectivity:
+ * @monitor: the #GNetworkMonitor
+ *
+ * Gets a more detailed networking state than
+ * g_network_monitor_get_network_available().
+ *
+ * If #GNetworkMonitor:network-available is %FALSE, then the
+ * connectivity state will be %G_NETWORK_CONNECTIVITY_LOCAL.
+ *
+ * If #GNetworkMonitor:network-available is %TRUE, then the
+ * connectivity state will be %G_NETWORK_CONNECTIVITY_FULL (if there
+ * is full Internet connectivity), %G_NETWORK_CONNECTIVITY_LIMITED (if
+ * the host has a default route, but appears to be unable to actually
+ * reach the full Internet), or %G_NETWORK_CONNECTIVITY_PORTAL (if the
+ * host is trapped behind a "captive portal" that requires some sort
+ * of login or acknowledgement before allowing full Internet access).
+ *
+ * Note that in the case of %G_NETWORK_CONNECTIVITY_LIMITED and
+ * %G_NETWORK_CONNECTIVITY_PORTAL, it is possible that some sites are
+ * reachable but others are not. In this case, applications can
+ * attempt to connect to remote servers, but should gracefully fall
+ * back to their "offline" behavior if the connection attempt fails.
+ *
+ * Return value: the network connectivity state
+ *
+ * Since: 2.44
+ */
+GNetworkConnectivity
+g_network_monitor_get_connectivity (GNetworkMonitor *monitor)
+{
+  GNetworkConnectivity connectivity;
+
+  g_object_get (G_OBJECT (monitor), "connectivity", &connectivity, NULL);
+
+  return connectivity;
 }
 
 /**
@@ -125,7 +177,7 @@ g_network_monitor_get_network_available (GNetworkMonitor *monitor)
  * trying to do multicast DNS on the local network), so if you do not
  * want to block, you should use g_network_monitor_can_reach_async().
  *
- * Return value: %TRUE if @connectable is reachable, %FALSE if not.
+ * Returns: %TRUE if @connectable is reachable, %FALSE if not.
  *
  * Since: 2.32
  */
@@ -148,18 +200,15 @@ g_network_monitor_real_can_reach_async (GNetworkMonitor     *monitor,
                                         GAsyncReadyCallback  callback,
                                         gpointer             user_data)
 {
-  GSimpleAsyncResult *simple;
+  GTask *task;
   GError *error = NULL;
 
-  simple = g_simple_async_result_new (G_OBJECT (monitor),
-                                      callback, user_data,
-                                      g_network_monitor_real_can_reach_async);
+  task = g_task_new (monitor, cancellable, callback, user_data);
   if (g_network_monitor_can_reach (monitor, connectable, cancellable, &error))
-    g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+    g_task_return_boolean (task, TRUE);
   else
-    g_simple_async_result_take_error (simple, error);
-  g_simple_async_result_complete_in_idle (simple);
-  g_object_unref (simple);
+    g_task_return_error (task, error);
+  g_object_unref (task);
 }
 
 /**
@@ -199,15 +248,9 @@ g_network_monitor_real_can_reach_finish (GNetworkMonitor  *monitor,
                                          GAsyncResult     *result,
                                          GError          **error)
 {
-  GSimpleAsyncResult *simple;
+  g_return_val_if_fail (g_task_is_valid (result, monitor), FALSE);
 
-  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (monitor), g_network_monitor_real_can_reach_async), FALSE);
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-  else
-    return g_simple_async_result_get_op_res_gboolean (simple);
+  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /**
@@ -219,7 +262,7 @@ g_network_monitor_real_can_reach_finish (GNetworkMonitor  *monitor,
  * Finishes an async network connectivity test.
  * See g_network_monitor_can_reach_async().
  *
- * Return value: %TRUE if network is reachable, %FALSE if not.
+ * Returns: %TRUE if network is reachable, %FALSE if not.
  */
 gboolean
 g_network_monitor_can_reach_finish (GNetworkMonitor     *monitor,
@@ -273,10 +316,9 @@ g_network_monitor_default_init (GNetworkMonitorInterface *iface)
    * connected to a functioning router that has lost its own upstream
    * connectivity. Some hosts might only be accessible when a VPN is
    * active. Other hosts might only be accessible when the VPN is
-   * <emphasis>not</emphasis> active. Thus, it is best to use
-   * g_network_monitor_can_reach() or
-   * g_network_monitor_can_reach_async() to test for reachability on a
-   * host-by-host basis. (On the other hand, when the property is
+   * not active. Thus, it is best to use g_network_monitor_can_reach()
+   * or g_network_monitor_can_reach_async() to test for reachability
+   * on a host-by-host basis. (On the other hand, when the property is
    * %FALSE, the application can reasonably expect that no remote
    * hosts at all are reachable, and should indicate this to the user
    * in its UI.)
@@ -292,4 +334,22 @@ g_network_monitor_default_init (GNetworkMonitorInterface *iface)
                                                              FALSE,
                                                              G_PARAM_READABLE |
                                                              G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GNetworkMonitor:connectivity:
+   *
+   * More detailed information about the host's network connectivity.
+   * See g_network_monitor_get_connectivity() and
+   * #GNetworkConnectivity for more details.
+   *
+   * Since: 2.44
+   */
+  g_object_interface_install_property (iface,
+                                       g_param_spec_enum ("connectivity",
+                                                          P_("Network connectivity"),
+                                                          P_("Level of network connectivity"),
+                                                          G_TYPE_NETWORK_CONNECTIVITY,
+                                                          G_NETWORK_CONNECTIVITY_FULL,
+                                                          G_PARAM_READABLE |
+                                                          G_PARAM_STATIC_STRINGS));
 }

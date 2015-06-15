@@ -747,6 +747,8 @@ test_roundtrip (gconstpointer data)
   GConverter *compressor, *decompressor;
   GZlibCompressorFormat fmt;
   gint lvl;
+  GFileInfo *info;
+  GFileInfo *info2;
 
   g_test_bug ("619945");
 
@@ -759,6 +761,12 @@ test_roundtrip (gconstpointer data)
 
   ostream1 = g_memory_output_stream_new (NULL, 0, g_realloc, g_free);
   compressor = G_CONVERTER (g_zlib_compressor_new (test->format, test->level));
+  info = g_file_info_new ();
+  g_file_info_set_name (info, "foo");
+  g_object_set (compressor, "file-info", info, NULL);
+  info2 = g_zlib_compressor_get_file_info (G_ZLIB_COMPRESSOR (compressor));
+  g_assert (info == info2);
+  g_object_unref (info);
   costream1 = g_converter_output_stream_new (ostream1, compressor);
   g_assert (g_converter_output_stream_get_converter (G_CONVERTER_OUTPUT_STREAM (costream1)) == compressor);
 
@@ -1003,7 +1011,7 @@ test_converter_pollable (void)
 
       if (outptr < expanded_end)
 	{
-	  res = g_output_stream_write (socket_out,
+	   res = g_output_stream_write (socket_out,
 				       outptr,
 				       MIN (1000, (expanded_end - outptr)),
 				       NULL, &error);
@@ -1066,6 +1074,8 @@ test_converter_pollable (void)
   cstream_out = g_converter_output_stream_new (mem_out, compressor);
   g_object_unref (mem_out);
   pollable_out = G_POLLABLE_OUTPUT_STREAM (cstream_out);
+  g_assert (g_pollable_output_stream_can_poll (pollable_out));
+  g_assert (g_pollable_output_stream_is_writable (pollable_out));
 
   for (i = 0; i < expanded_size; i++)
     {
@@ -1153,6 +1163,29 @@ test_truncation (gconstpointer data)
   g_free (data0);
 }
 
+static void
+test_converter_basics (void)
+{
+  GConverter *converter;
+  GError *error = NULL;
+  gchar *to;
+  gchar *from;
+
+  converter = (GConverter *)g_charset_converter_new ("utf-8", "latin1", &error);
+  g_assert_no_error (error);
+  g_object_get (converter,
+                "to-charset", &to,
+                "from-charset", &from,
+                NULL);
+
+  g_assert_cmpstr (to, ==, "utf-8");
+  g_assert_cmpstr (from, ==, "latin1");
+
+  g_free (to);
+  g_free (from);
+  g_object_unref (converter);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -1178,11 +1211,11 @@ main (int   argc,
 
   gint i;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   g_test_bug_base ("http://bugzilla.gnome.org/");
 
+  g_test_add_func ("/converter/basics", test_converter_basics);
   g_test_add_func ("/converter-input-stream/expander", test_expander);
   g_test_add_func ("/converter-input-stream/compressor", test_compressor);
 

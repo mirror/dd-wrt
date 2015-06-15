@@ -45,6 +45,7 @@
 #include "config.h"
 
 #include "glib.h"
+#include "glib-private.h"
 #include "gprintfint.h"
 #include "glibintl.h"
 #include "gthread.h"
@@ -61,6 +62,7 @@
 #include <direct.h>
 #include <wchar.h>
 
+#ifndef GSPAWN_HELPER
 #ifdef G_SPAWN_WIN32_DEBUG
   static int debug = 1;
   #define SETUP_DEBUG() /* empty */
@@ -78,6 +80,7 @@
 	  }						\
       }							\
     G_STMT_END
+#endif
 #endif
 
 enum
@@ -545,7 +548,6 @@ do_spawn_with_pipes (gint                 *exit_status,
   gchar *helper_process;
   CONSOLE_CURSOR_INFO cursor_info;
   wchar_t *whelper, **wargv, **wenvp;
-  extern gchar *_glib_get_dll_directory (void);
   gchar *glib_dll_directory;
 
   if (child_setup && !warned_about_child_setup)
@@ -588,7 +590,7 @@ do_spawn_with_pipes (gint                 *exit_status,
     goto cleanup_and_fail;
   
   new_argv = g_new (char *, argc + 1 + ARG_COUNT);
-  if (GetConsoleCursorInfo (GetStdHandle (STD_OUTPUT_HANDLE), &cursor_info))
+  if (GetConsoleWindow () != NULL)
     helper_process = HELPER_PROCESS "-console.exe";
   else
     helper_process = HELPER_PROCESS ".exe";

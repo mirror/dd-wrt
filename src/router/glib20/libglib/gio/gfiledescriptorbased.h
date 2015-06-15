@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Christian Kellner <gicmo@gnome.org>
  */
@@ -31,6 +29,7 @@ G_BEGIN_DECLS
 #define G_FILE_DESCRIPTOR_BASED(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), G_TYPE_FILE_DESCRIPTOR_BASED, GFileDescriptorBased))
 #define G_IS_FILE_DESCRIPTOR_BASED(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), G_TYPE_FILE_DESCRIPTOR_BASED))
 #define G_FILE_DESCRIPTOR_BASED_GET_IFACE(obj)  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), G_TYPE_FILE_DESCRIPTOR_BASED, GFileDescriptorBasedIface))
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GFileDescriptorBased, g_object_unref)
 
 /**
  * GFileDescriptorBased:
@@ -42,7 +41,9 @@ typedef struct _GFileDescriptorBasedIface   GFileDescriptorBasedIface;
 /**
  * GFileDescriptorBasedIface:
  * @g_iface: The parent interface.
+ * @get_fd: Gets the underlying file descriptor.
  *
+ * An interface for file descriptor based io objects.
  **/
 struct _GFileDescriptorBasedIface
 {
@@ -52,8 +53,10 @@ struct _GFileDescriptorBasedIface
   int (*get_fd) (GFileDescriptorBased *fd_based);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType    g_file_descriptor_based_get_type     (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 int      g_file_descriptor_based_get_fd       (GFileDescriptorBased *fd_based);
 
 G_END_DECLS

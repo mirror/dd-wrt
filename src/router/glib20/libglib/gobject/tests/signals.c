@@ -74,6 +74,8 @@ static const GFlagsValue my_flag_values[] =
 static GType enum_type;
 static GType flags_type;
 
+static guint simple_id;
+static guint simple2_id;
 
 typedef struct _Test Test;
 typedef struct _TestClass TestClass;
@@ -112,6 +114,22 @@ test_class_init (TestClass *klass)
 
   klass->all_types = all_types_handler;
 
+  simple_id = g_signal_new ("simple",
+                G_TYPE_FROM_CLASS (klass),
+                G_SIGNAL_RUN_LAST,
+                0,
+                NULL, NULL,
+                NULL,
+                G_TYPE_NONE,
+                0);
+  simple2_id = g_signal_new ("simple-2",
+                G_TYPE_FROM_CLASS (klass),
+                G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE,
+                0,
+                NULL, NULL,
+                NULL,
+                G_TYPE_NONE,
+                0);
   g_signal_new ("generic-marshaller-1",
                 G_TYPE_FROM_CLASS (klass),
                 G_SIGNAL_RUN_LAST,
@@ -803,18 +821,286 @@ test_connect (void)
   g_object_unref (test);
 }
 
+static void
+simple_handler1 (GObject *sender,
+                 GObject *target)
+{
+  g_object_unref (target);
+}
+
+static void
+simple_handler2 (GObject *sender,
+                 GObject *target)
+{
+  g_object_unref (target);
+}
+
+static void
+test_destroy_target_object (void)
+{
+  Test *sender, *target1, *target2;
+
+  sender = g_object_new (test_get_type (), NULL);
+  target1 = g_object_new (test_get_type (), NULL);
+  target2 = g_object_new (test_get_type (), NULL);
+  g_signal_connect_object (sender, "simple", G_CALLBACK (simple_handler1), target1, 0);
+  g_signal_connect_object (sender, "simple", G_CALLBACK (simple_handler2), target2, 0);
+  g_signal_emit_by_name (sender, "simple");
+  g_object_unref (sender);
+}
+
+static gboolean
+hook_func (GSignalInvocationHint *ihint,
+           guint                  n_params,
+           const GValue          *params,
+           gpointer               data)
+{
+  gint *count = data;
+
+  (*count)++;
+
+  return TRUE;
+}
+
+static void
+test_emission_hook (void)
+{
+  GObject *test1, *test2;
+  gint count = 0;
+  gulong hook;
+
+  test1 = g_object_new (test_get_type (), NULL);
+  test2 = g_object_new (test_get_type (), NULL);
+
+  hook = g_signal_add_emission_hook (simple_id, 0, hook_func, &count, NULL);
+  g_assert_cmpint (count, ==, 0);
+  g_signal_emit_by_name (test1, "simple");
+  g_assert_cmpint (count, ==, 1);
+  g_signal_emit_by_name (test2, "simple");
+  g_assert_cmpint (count, ==, 2);
+  g_signal_remove_emission_hook (simple_id, hook);
+  g_signal_emit_by_name (test1, "simple");
+  g_assert_cmpint (count, ==, 2);
+
+  g_object_unref (test1);
+  g_object_unref (test2);
+}
+
+static void
+simple_cb (gpointer instance, gpointer data)
+{
+  GSignalInvocationHint *ihint;
+
+  ihint = g_signal_get_invocation_hint (instance);
+
+  g_assert_cmpstr (g_signal_name (ihint->signal_id), ==, "simple");
+
+  g_signal_emit_by_name (instance, "simple-2");
+}
+
+static void
+simple2_cb (gpointer instance, gpointer data)
+{
+  GSignalInvocationHint *ihint;
+
+  ihint = g_signal_get_invocation_hint (instance);
+
+  g_assert_cmpstr (g_signal_name (ihint->signal_id), ==, "simple-2");
+}
+
+static void
+test_invocation_hint (void)
+{
+  GObject *test;
+
+  test = g_object_new (test_get_type (), NULL);
+
+  g_signal_connect (test, "simple", G_CALLBACK (simple_cb), NULL);
+  g_signal_connect (test, "simple-2", G_CALLBACK (simple2_cb), NULL);
+  g_signal_emit_by_name (test, "simple");
+
+  g_object_unref (test);
+}
+
+static gboolean
+in_set (const gchar *s,
+        const gchar *set[])
+{
+  gint i;
+
+  for (i = 0; set[i]; i++)
+    {
+      if (g_strcmp0 (s, set[i]) == 0)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+static void
+test_introspection (void)
+{
+  guint *ids;
+  guint n_ids;
+  const gchar *name;
+  gint i;
+  const gchar *names[] = {
+    "simple",
+    "simple-2",
+    "generic-marshaller-1",
+    "generic-marshaller-2",
+    "generic-marshaller-enum-return-signed",
+    "generic-marshaller-enum-return-unsigned",
+    "generic-marshaller-int-return",
+    "va-marshaller-int-return",
+    "generic-marshaller-uint-return",
+    "va-marshaller-uint-return",
+    "variant-changed-no-slot",
+    "variant-changed",
+    "all-types",
+    "all-types-va",
+    "all-types-generic",
+    "all-types-null",
+    "all-types-empty",
+    NULL
+  };
+  GSignalQuery query;
+
+  ids = g_signal_list_ids (test_get_type (), &n_ids);
+  g_assert_cmpuint (n_ids, ==, g_strv_length ((gchar**)names));
+
+  for (i = 0; i < n_ids; i++)
+    {
+      name = g_signal_name (ids[i]);
+      g_assert (in_set (name, names));
+    }
+
+  g_signal_query (simple_id, &query);
+  g_assert_cmpuint (query.signal_id, ==, simple_id);
+  g_assert_cmpstr (query.signal_name, ==, "simple");
+  g_assert (query.itype == test_get_type ());
+  g_assert (query.signal_flags == G_SIGNAL_RUN_LAST);
+  g_assert (query.return_type == G_TYPE_NONE);
+  g_assert_cmpuint (query.n_params, ==, 0);
+
+  g_free (ids);
+}
+
+static void
+test_handler (gpointer instance, gpointer data)
+{
+  gint *count = data;
+
+  (*count)++;
+}
+
+static void
+test_block_handler (void)
+{
+  GObject *test1, *test2;
+  gint count1 = 0;
+  gint count2 = 0;
+  gulong handler1, handler;
+
+  test1 = g_object_new (test_get_type (), NULL);
+  test2 = g_object_new (test_get_type (), NULL);
+
+  handler1 = g_signal_connect (test1, "simple", G_CALLBACK (test_handler), &count1);
+  g_signal_connect (test2, "simple", G_CALLBACK (test_handler), &count2);
+
+  handler = g_signal_handler_find (test1, G_SIGNAL_MATCH_ID, simple_id, 0, NULL, NULL, NULL);
+
+  g_assert (handler == handler1);
+
+  g_assert_cmpint (count1, ==, 0);
+  g_assert_cmpint (count2, ==, 0);
+
+  g_signal_emit_by_name (test1, "simple");
+  g_signal_emit_by_name (test2, "simple");
+
+  g_assert_cmpint (count1, ==, 1);
+  g_assert_cmpint (count2, ==, 1);
+
+  g_signal_handler_block (test1, handler1);
+
+  g_signal_emit_by_name (test1, "simple");
+  g_signal_emit_by_name (test2, "simple");
+
+  g_assert_cmpint (count1, ==, 1);
+  g_assert_cmpint (count2, ==, 2);
+
+  g_signal_handler_unblock (test1, handler1);
+
+  g_signal_emit_by_name (test1, "simple");
+  g_signal_emit_by_name (test2, "simple");
+
+  g_assert_cmpint (count1, ==, 2);
+  g_assert_cmpint (count2, ==, 3);
+
+  g_assert_cmpuint (g_signal_handlers_block_matched (test1, G_SIGNAL_MATCH_FUNC, 0, 0, NULL, test_block_handler, NULL), ==, 0);
+  g_assert_cmpuint (g_signal_handlers_block_matched (test2, G_SIGNAL_MATCH_FUNC, 0, 0, NULL, test_handler, NULL), ==, 1);
+
+  g_signal_emit_by_name (test1, "simple");
+  g_signal_emit_by_name (test2, "simple");
+
+  g_assert_cmpint (count1, ==, 3);
+  g_assert_cmpint (count2, ==, 3);
+
+  g_signal_handlers_unblock_matched (test2, G_SIGNAL_MATCH_FUNC, 0, 0, NULL, test_handler, NULL);
+
+  g_object_unref (test1);
+  g_object_unref (test2);
+}
+
+static void
+stop_emission (gpointer instance, gpointer data)
+{
+  g_signal_stop_emission (instance, simple_id, 0);
+}
+
+static void
+stop_emission_by_name (gpointer instance, gpointer data)
+{
+  g_signal_stop_emission_by_name (instance, "simple");
+}
+
+static void
+dont_reach (gpointer instance, gpointer data)
+{
+  g_assert_not_reached ();
+}
+
+static void
+test_stop_emission (void)
+{
+  GObject *test1;
+  gulong handler;
+
+  test1 = g_object_new (test_get_type (), NULL);
+  handler = g_signal_connect (test1, "simple", G_CALLBACK (stop_emission), NULL);
+  g_signal_connect_after (test1, "simple", G_CALLBACK (dont_reach), NULL);
+
+  g_signal_emit_by_name (test1, "simple");
+
+  g_signal_handler_disconnect (test1, handler);
+  g_signal_connect (test1, "simple", G_CALLBACK (stop_emission_by_name), NULL);
+
+  g_signal_emit_by_name (test1, "simple");
+
+  g_object_unref (test1);
+}
+
 /* --- */
 
 int
 main (int argc,
      char *argv[])
 {
-  g_type_init ();
-
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/gobject/signals/all-types", test_all_types);
   g_test_add_func ("/gobject/signals/variant", test_variant_signal);
+  g_test_add_func ("/gobject/signals/destroy-target-object", test_destroy_target_object);
   g_test_add_func ("/gobject/signals/generic-marshaller-1", test_generic_marshaller_signal_1);
   g_test_add_func ("/gobject/signals/generic-marshaller-2", test_generic_marshaller_signal_2);
   g_test_add_func ("/gobject/signals/generic-marshaller-enum-return-signed", test_generic_marshaller_signal_enum_return_signed);
@@ -822,6 +1108,11 @@ main (int argc,
   g_test_add_func ("/gobject/signals/generic-marshaller-int-return", test_generic_marshaller_signal_int_return);
   g_test_add_func ("/gobject/signals/generic-marshaller-uint-return", test_generic_marshaller_signal_uint_return);
   g_test_add_func ("/gobject/signals/connect", test_connect);
+  g_test_add_func ("/gobject/signals/emission-hook", test_emission_hook);
+  g_test_add_func ("/gobject/signals/introspection", test_introspection);
+  g_test_add_func ("/gobject/signals/block-handler", test_block_handler);
+  g_test_add_func ("/gobject/signals/stop-emission", test_stop_emission);
+  g_test_add_func ("/gobject/signals/invocation-hint", test_invocation_hint);
 
   return g_test_run ();
 }

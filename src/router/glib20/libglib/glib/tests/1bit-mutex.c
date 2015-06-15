@@ -10,6 +10,8 @@
  * See the included COPYING file for more information.
  */
 
+#include "config.h"
+
 /* LOCKS should be more than the number of contention
  * counters in gthread.c in order to ensure we exercise
  * the case where they overlap.
@@ -21,6 +23,10 @@
 #include <glib.h>
 
 #if TEST_EMULATED_FUTEX
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+
   /* this is defined for the 1bit-mutex-emufutex test.
    *
    * we want to test the emulated futex even if futex(2) is available.
@@ -46,6 +52,8 @@
   #define G_BIT_LOCK_FORCE_FUTEX_EMULATION
 
   #include <glib/gbitlock.c>
+
+#pragma GCC diagnostic pop
 #endif
 
 volatile GThread *owners[LOCKS];
@@ -68,7 +76,7 @@ acquire (int      nr,
         : g_bit_trylock (&locks[nr], bits[nr])))
     {
       if (g_test_verbose ())
-        g_print ("thread %p going to block on lock %d\n", self, nr);
+        g_printerr ("thread %p going to block on lock %d\n", self, nr);
 
       if (use_pointers)
         g_pointer_bit_lock (&ptrs[nr], bits[nr]);

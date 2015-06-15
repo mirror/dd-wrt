@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -62,19 +60,42 @@ G_DEFINE_TYPE_WITH_CODE (GDummyTlsBackend, g_dummy_tls_backend, G_TYPE_OBJECT,
 							 -100))
 
 static void
-g_dummy_tls_backend_init (GDummyTlsBackend *backend)
+g_dummy_tls_backend_init (GDummyTlsBackend *dummy)
 {
+}
+
+static void
+g_dummy_tls_backend_finalize (GObject *object)
+{
+  GDummyTlsBackend *dummy = G_DUMMY_TLS_BACKEND (object);
+
+  g_clear_object (&dummy->database);
+
+  G_OBJECT_CLASS (g_dummy_tls_backend_parent_class)->finalize (object);
 }
 
 static void
 g_dummy_tls_backend_class_init (GDummyTlsBackendClass *backend_class)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (backend_class);
+
+  object_class->finalize = g_dummy_tls_backend_finalize;
 }
 
-static GTlsDatabase*
+static GTlsDatabase *
 g_dummy_tls_backend_get_default_database (GTlsBackend *backend)
 {
-  return g_object_new (_g_dummy_tls_database_get_type (), NULL);
+  GDummyTlsBackend *dummy = G_DUMMY_TLS_BACKEND (backend);
+
+  if (g_once_init_enter (&dummy->database))
+    {
+      GTlsDatabase *tlsdb;
+
+      tlsdb = g_object_new (_g_dummy_tls_database_get_type (), NULL);
+      g_once_init_leave (&dummy->database, tlsdb);
+    }
+
+  return g_object_ref (dummy->database);
 }
 
 static void
@@ -201,6 +222,7 @@ enum
   PROP_CONN_REHANDSHAKE_MODE,
   PROP_CONN_CERTIFICATE,
   PROP_CONN_DATABASE,
+  PROP_CONN_INTERACTION,
   PROP_CONN_PEER_CERTIFICATE,
   PROP_CONN_PEER_CERTIFICATE_ERRORS,
   PROP_CONN_VALIDATION_FLAGS,
@@ -265,6 +287,7 @@ g_dummy_tls_connection_class_init (GDummyTlsConnectionClass *connection_class)
   g_object_class_override_property (gobject_class, PROP_CONN_REHANDSHAKE_MODE, "rehandshake-mode");
   g_object_class_override_property (gobject_class, PROP_CONN_CERTIFICATE, "certificate");
   g_object_class_override_property (gobject_class, PROP_CONN_DATABASE, "database");
+  g_object_class_override_property (gobject_class, PROP_CONN_INTERACTION, "interaction");
   g_object_class_override_property (gobject_class, PROP_CONN_PEER_CERTIFICATE, "peer-certificate");
   g_object_class_override_property (gobject_class, PROP_CONN_PEER_CERTIFICATE_ERRORS, "peer-certificate-errors");
   g_object_class_override_property (gobject_class, PROP_CONN_VALIDATION_FLAGS, "validation-flags");

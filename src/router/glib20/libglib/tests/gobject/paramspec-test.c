@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -196,6 +194,7 @@ test_param_spec_override (void)
   g_assert (modified && g_value_get_char (&value) == 40);
 
   g_param_spec_unref (pspec);
+  g_param_spec_unref (ospec);
 }
 
 static void
@@ -220,6 +219,8 @@ test_param_spec_gtype (void)
   g_value_set_gtype (&value, G_TYPE_PARAM_INT);
   modified = g_param_value_validate (pspec, &value);
   g_assert (!modified && g_value_get_gtype (&value) == G_TYPE_PARAM_INT);
+
+  g_param_spec_unref (pspec);
 }
 
 static void
@@ -256,7 +257,6 @@ int
 main (int argc, char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
-  g_type_init ();
 
   g_test_add_func ("/paramspec/char", test_param_spec_char);
   g_test_add_func ("/paramspec/string", test_param_spec_string);

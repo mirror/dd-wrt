@@ -12,9 +12,7 @@
  * Library General Public License for more details.
  *
  * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __G_UNIX_H__
@@ -43,17 +41,15 @@ G_BEGIN_DECLS
 /**
  * G_UNIX_ERROR:
  *
- * Error domain for API in the "g_unix_" namespace.  Note that there is
- * no exported enumeration mapping %errno.  Instead, all functions
- * ensure that %errno is relevant.  The code for all #G_UNIX_ERROR is
- * always <literal>0</literal>, and the error message is always
- * generated via g_strerror().
+ * Error domain for API in the g_unix_ namespace. Note that there is no
+ * exported enumeration mapping %errno. Instead, all functions ensure that
+ * %errno is relevant. The code for all #G_UNIX_ERROR is always 0, and the
+ * error message is always generated via g_strerror().
  *
- * It is expected that most code will not look at %errno from these
- * APIs. Important cases where one would want to differentiate between
- * errors are already covered by existing cross-platform GLib API,
- * such as e.g. #GFile wrapping <literal>ENOENT</literal>.  However, it is
- * provided for completeness, at least.
+ * It is expected that most code will not look at %errno from these APIs.
+ * Important cases where one would want to differentiate between errors are
+ * already covered by existing cross-platform GLib API, such as e.g. #GFile
+ * wrapping `ENOENT`. However, it is provided for completeness, at least.
  */
 #define G_UNIX_ERROR (g_unix_error_quark())
 
@@ -84,6 +80,39 @@ GLIB_AVAILABLE_IN_2_30
 guint    g_unix_signal_add         (gint        signum,
                                     GSourceFunc handler,
                                     gpointer    user_data);
+
+/**
+ * GUnixFDSourceFunc:
+ * @fd: the fd that triggered the event
+ * @condition: the IO conditions reported on @fd
+ * @user_data: user data passed to g_unix_fd_add()
+ *
+ * The type of functions to be called when a UNIX fd watch source
+ * triggers.
+ *
+ * Returns: %FALSE if the source should be removed
+ **/
+typedef gboolean (*GUnixFDSourceFunc) (gint         fd,
+                                       GIOCondition condition,
+                                       gpointer     user_data);
+
+GLIB_AVAILABLE_IN_2_36
+GSource *g_unix_fd_source_new      (gint         fd,
+                                    GIOCondition condition);
+
+GLIB_AVAILABLE_IN_2_36
+guint    g_unix_fd_add_full        (gint              priority,
+                                    gint              fd,
+                                    GIOCondition      condition,
+                                    GUnixFDSourceFunc function,
+                                    gpointer          user_data,
+                                    GDestroyNotify    notify);
+
+GLIB_AVAILABLE_IN_2_36
+guint    g_unix_fd_add             (gint              fd,
+                                    GIOCondition      condition,
+                                    GUnixFDSourceFunc function,
+                                    gpointer          user_data);
 
 G_END_DECLS
 

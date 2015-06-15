@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -24,6 +22,9 @@
 #include <errno.h>
 #include "gioerror.h"
 
+#ifdef G_OS_WIN32
+#include <winsock2.h>
+#endif
 
 /**
  * SECTION:gioerror
@@ -38,7 +39,7 @@
  *
  * Gets the GIO Error Quark.
  *
- * Return value: a #GQuark.
+ * Returns: a #GQuark.
  **/
 G_DEFINE_QUARK (g-io-error-quark, g_io_error)
 
@@ -46,7 +47,10 @@ G_DEFINE_QUARK (g-io-error-quark, g_io_error)
  * g_io_error_from_errno:
  * @err_no: Error number as defined in errno.h.
  *
- * Converts errno.h error codes into GIO error codes.
+ * Converts errno.h error codes into GIO error codes. The fallback
+ * value %G_IO_ERROR_FAILED is returned for error codes not currently
+ * handled (but note that future GLib releases may return a more
+ * specific value instead).
  *
  * Returns: #GIOErrorEnum value for the given errno.h error number.
  **/
@@ -133,7 +137,8 @@ g_io_error_from_errno (gint err_no)
       break;
 #endif
 
-#if defined(ENOTEMPTY) && (!defined (EEXIST) || (ENOTEMPTY != EEXIST))
+    /* ENOTEMPTY == EEXIST on AIX for backward compatibility reasons */
+#if defined (ENOTEMPTY) && (!defined (EEXIST) || (ENOTEMPTY != EEXIST))
     case ENOTEMPTY:
       return G_IO_ERROR_NOT_EMPTY;
       break;
@@ -141,6 +146,37 @@ g_io_error_from_errno (gint err_no)
 
 #ifdef ENOTSUP
     case ENOTSUP:
+      return G_IO_ERROR_NOT_SUPPORTED;
+      break;
+#endif
+
+    /* EOPNOTSUPP == ENOTSUP on Linux, but POSIX considers them distinct */
+#if defined (EOPNOTSUPP) && (!defined (ENOTSUP) || (EOPNOTSUPP != ENOTSUP))
+    case EOPNOTSUPP:
+      return G_IO_ERROR_NOT_SUPPORTED;
+      break;
+#endif
+
+#ifdef EPROTONOSUPPORT
+    case EPROTONOSUPPORT:
+      return G_IO_ERROR_NOT_SUPPORTED;
+      break;
+#endif
+
+#ifdef ESOCKTNOSUPPORT
+    case ESOCKTNOSUPPORT:
+      return G_IO_ERROR_NOT_SUPPORTED;
+      break;
+#endif
+
+#ifdef EPFNOSUPPORT
+    case EPFNOSUPPORT:
+      return G_IO_ERROR_NOT_SUPPORTED;
+      break;
+#endif
+
+#ifdef EAFNOSUPPORT
+    case EAFNOSUPPORT:
       return G_IO_ERROR_NOT_SUPPORTED;
       break;
 #endif
@@ -157,30 +193,17 @@ g_io_error_from_errno (gint err_no)
       break;
 #endif
 
-/* some magic to deal with EWOULDBLOCK and EAGAIN.
- * apparently on HP-UX these are actually defined to different values,
- * but on Linux, for example, they are the same.
- */
-#if defined(EWOULDBLOCK) && defined(EAGAIN) && EWOULDBLOCK == EAGAIN
-    /* we have both and they are the same: only emit one case. */
-    case EAGAIN:
-      return G_IO_ERROR_WOULD_BLOCK;
-      break;
-#else
-    /* else: consider each of them separately.  this handles both the
-     * case of having only one and the case where they are different values.
-     */
-# ifdef EAGAIN
-    case EAGAIN:
-      return G_IO_ERROR_WOULD_BLOCK;
-      break;
-# endif
-
-# ifdef EWOULDBLOCK
+#ifdef EWOULDBLOCK
     case EWOULDBLOCK:
       return G_IO_ERROR_WOULD_BLOCK;
       break;
-# endif
+#endif
+
+    /* EWOULDBLOCK == EAGAIN on most systems, but POSIX considers them distinct */
+#if defined (EAGAIN) && (!defined (EWOULDBLOCK) || (EWOULDBLOCK != EAGAIN))
+    case EAGAIN:
+      return G_IO_ERROR_WOULD_BLOCK;
+      break;
 #endif
 
 #ifdef EMFILE
@@ -213,6 +236,24 @@ g_io_error_from_errno (gint err_no)
       break;
 #endif
 
+#ifdef EPIPE
+    case EPIPE:
+      return G_IO_ERROR_BROKEN_PIPE;
+      break;
+#endif
+
+#ifdef ECONNRESET
+    case ECONNRESET:
+      return G_IO_ERROR_CONNECTION_CLOSED;
+      break;
+#endif
+
+#ifdef ENOTCONN
+    case ENOTCONN:
+      return G_IO_ERROR_NOT_CONNECTED;
+      break;
+#endif
+
     default:
       return G_IO_ERROR_FAILED;
       break;
@@ -225,9 +266,15 @@ g_io_error_from_errno (gint err_no)
  * g_io_error_from_win32_error:
  * @error_code: Windows error number.
  *
- * Converts some common error codes into GIO error codes. The
- * fallback value G_IO_ERROR_FAILED is returned for error codes not
- * handled.
+ * Converts some common error codes (as returned from GetLastError()
+ * or WSAGetLastError()) into GIO error codes. The fallback value
+ * %G_IO_ERROR_FAILED is returned for error codes not currently
+ * handled (but note that future GLib releases may return a more
+ * specific value instead).
+ *
+ * You can use g_win32_error_message() to get a localized string
+ * corresponding to @error_code. (But note that unlike g_strerror(),
+ * g_win32_error_message() returns a string that must be freed.)
  *
  * Returns: #GIOErrorEnum value for the given error number.
  *
@@ -236,11 +283,48 @@ g_io_error_from_errno (gint err_no)
 GIOErrorEnum
 g_io_error_from_win32_error (gint error_code)
 {
+  /* Note: Winsock errors are a subset of Win32 error codes as a
+   * whole. (The fact that the Winsock API makes them look like they
+   * aren't is just because the API predates Win32.)
+   */
+
   switch (error_code)
     {
+    case WSAEADDRINUSE:
+      return G_IO_ERROR_ADDRESS_IN_USE;
+
+    case WSAEWOULDBLOCK:
+      return G_IO_ERROR_WOULD_BLOCK;
+
+    case WSAEACCES:
+      return G_IO_ERROR_PERMISSION_DENIED;
+
+    case WSA_INVALID_HANDLE:
+    case WSA_INVALID_PARAMETER:
+    case WSAEBADF:
+    case WSAENOTSOCK:
+      return G_IO_ERROR_INVALID_ARGUMENT;
+
+    case WSAEPROTONOSUPPORT:
+      return G_IO_ERROR_NOT_SUPPORTED;
+
+    case WSAECANCELLED:
+      return G_IO_ERROR_CANCELLED;
+
+    case WSAESOCKTNOSUPPORT:
+    case WSAEOPNOTSUPP:
+    case WSAEPFNOSUPPORT:
+    case WSAEAFNOSUPPORT:
+      return G_IO_ERROR_NOT_SUPPORTED;
+
+    case WSAECONNRESET:
+      return G_IO_ERROR_CONNECTION_CLOSED;
+
+    case ERROR_PIPE_LISTENING:
+      return G_IO_ERROR_NOT_CONNECTED;
+
     default:
       return G_IO_ERROR_FAILED;
-      break;
     }
 }
 

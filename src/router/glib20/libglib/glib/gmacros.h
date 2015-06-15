@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -28,12 +26,12 @@
  * not refer to variables from glibconfig.h
  */
 
+#ifndef __G_MACROS_H__
+#define __G_MACROS_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_MACROS_H__
-#define __G_MACROS_H__
 
 /* We include stddef.h to get the system's definition of NULL
  */
@@ -44,18 +42,16 @@
  * "long long" types even in the presence of '-ansi -pedantic'. 
  */
 #if     __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)
-#  define G_GNUC_EXTENSION __extension__
+#define G_GNUC_EXTENSION __extension__
 #else
-#  define G_GNUC_EXTENSION
+#define G_GNUC_EXTENSION
 #endif
 
 /* Provide macros to feature the GCC function attribute.
  */
 #if    __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96)
-#define G_GNUC_PURE                            \
-  __attribute__((__pure__))
-#define G_GNUC_MALLOC    			\
-  __attribute__((__malloc__))
+#define G_GNUC_PURE __attribute__((__pure__))
+#define G_GNUC_MALLOC __attribute__((__malloc__))
 #else
 #define G_GNUC_PURE
 #define G_GNUC_MALLOC
@@ -67,7 +63,13 @@
 #define G_GNUC_NULL_TERMINATED
 #endif
 
-#if     (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
+/* Clang feature detection: http://clang.llvm.org/docs/LanguageExtensions.html */
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+
+#if     (!defined(__clang__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))) || \
+        (defined(__clang__) && __has_feature(__alloc_size__))
 #define G_GNUC_ALLOC_SIZE(x) __attribute__((__alloc_size__(x)))
 #define G_GNUC_ALLOC_SIZE2(x,y) __attribute__((__alloc_size__(x,y)))
 #else
@@ -101,8 +103,7 @@
 #endif  /* !__GNUC__ */
 
 #if    __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
-#define G_GNUC_DEPRECATED                            \
-  __attribute__((__deprecated__))
+#define G_GNUC_DEPRECATED __attribute__((__deprecated__))
 #else
 #define G_GNUC_DEPRECATED
 #endif /* __GNUC__ */
@@ -120,20 +121,31 @@
   _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 #define G_GNUC_END_IGNORE_DEPRECATIONS			\
   _Pragma ("GCC diagnostic pop")
+#elif defined (_MSC_VER) && (_MSC_VER >= 1500)
+#define G_GNUC_BEGIN_IGNORE_DEPRECATIONS		\
+  __pragma (warning (push))  \
+  __pragma (warning (disable : 4996))
+#define G_GNUC_END_IGNORE_DEPRECATIONS			\
+  __pragma (warning (pop))
+#elif defined (__clang__)
+#define G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+  _Pragma("clang diagnostic push") \
+  _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define G_GNUC_END_IGNORE_DEPRECATIONS \
+  _Pragma("clang diagnostic pop")
 #else
 #define G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 #define G_GNUC_END_IGNORE_DEPRECATIONS
 #endif
 
 #if     __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)
-#  define G_GNUC_MAY_ALIAS __attribute__((may_alias))
+#define G_GNUC_MAY_ALIAS __attribute__((may_alias))
 #else
-#  define G_GNUC_MAY_ALIAS
+#define G_GNUC_MAY_ALIAS
 #endif
 
 #if    __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
-#define G_GNUC_WARN_UNUSED_RESULT 		\
-  __attribute__((warn_unused_result))
+#define G_GNUC_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #else
 #define G_GNUC_WARN_UNUSED_RESULT
 #endif /* __GNUC__ */
@@ -152,6 +164,14 @@
 #endif  /* !__GNUC__ */
 #endif  /* !G_DISABLE_DEPRECATED */
 
+#if __has_feature(attribute_analyzer_noreturn)
+#define G_ANALYZER_ANALYZING 1
+#define G_ANALYZER_NORETURN __attribute__((analyzer_noreturn))
+#else
+#define G_ANALYZER_ANALYZING 0
+#define G_ANALYZER_NORETURN
+#endif
+
 #define G_STRINGIFY(macro_or_string)	G_STRINGIFY_ARG (macro_or_string)
 #define	G_STRINGIFY_ARG(contents)	#contents
 
@@ -159,38 +179,38 @@
 #define G_PASTE_ARGS(identifier1,identifier2) identifier1 ## identifier2
 #define G_PASTE(identifier1,identifier2)      G_PASTE_ARGS (identifier1, identifier2)
 #ifdef __COUNTER__
-#define G_STATIC_ASSERT(expr) typedef char G_PASTE (_GStaticAssertCompileTimeAssertion_, __COUNTER__)[(expr) ? 1 : -1]
+#define G_STATIC_ASSERT(expr) typedef char G_PASTE (_GStaticAssertCompileTimeAssertion_, __COUNTER__)[(expr) ? 1 : -1] G_GNUC_UNUSED
 #else
-#define G_STATIC_ASSERT(expr) typedef char G_PASTE (_GStaticAssertCompileTimeAssertion_, __LINE__)[(expr) ? 1 : -1]
+#define G_STATIC_ASSERT(expr) typedef char G_PASTE (_GStaticAssertCompileTimeAssertion_, __LINE__)[(expr) ? 1 : -1] G_GNUC_UNUSED
 #endif
 #define G_STATIC_ASSERT_EXPR(expr) ((void) sizeof (char[(expr) ? 1 : -1]))
 #endif
 
 /* Provide a string identifying the current code position */
 #if defined(__GNUC__) && (__GNUC__ < 3) && !defined(__cplusplus)
-#  define G_STRLOC	__FILE__ ":" G_STRINGIFY (__LINE__) ":" __PRETTY_FUNCTION__ "()"
+#define G_STRLOC	__FILE__ ":" G_STRINGIFY (__LINE__) ":" __PRETTY_FUNCTION__ "()"
 #else
-#  define G_STRLOC	__FILE__ ":" G_STRINGIFY (__LINE__)
+#define G_STRLOC	__FILE__ ":" G_STRINGIFY (__LINE__)
 #endif
 
 /* Provide a string identifying the current function, non-concatenatable */
-#if defined (__GNUC__)
-#  define G_STRFUNC     ((const char*) (__PRETTY_FUNCTION__))
-#elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 19901L
-#  define G_STRFUNC     ((const char*) (__func__))
-#elif defined(_MSC_VER) && (_MSC_VER > 1300)
-#  define G_STRFUNC     ((const char*) (__FUNCTION__))
+#if defined (__GNUC__) && defined (__cplusplus)
+#define G_STRFUNC     ((const char*) (__PRETTY_FUNCTION__))
+#elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#define G_STRFUNC     ((const char*) (__func__))
+#elif defined (__GNUC__) || (defined(_MSC_VER) && (_MSC_VER > 1300))
+#define G_STRFUNC     ((const char*) (__FUNCTION__))
 #else
-#  define G_STRFUNC     ((const char*) ("???"))
+#define G_STRFUNC     ((const char*) ("???"))
 #endif
 
 /* Guard C code in headers, while including them from C++ */
 #ifdef  __cplusplus
-# define G_BEGIN_DECLS  extern "C" {
-# define G_END_DECLS    }
+#define G_BEGIN_DECLS  extern "C" {
+#define G_END_DECLS    }
 #else
-# define G_BEGIN_DECLS
-# define G_END_DECLS
+#define G_BEGIN_DECLS
+#define G_END_DECLS
 #endif
 
 /* Provide definitions for some commonly used macros.
@@ -200,9 +220,9 @@
  */
 #ifndef NULL
 #  ifdef __cplusplus
-#    define NULL        (0L)
+#  define NULL        (0L)
 #  else /* !__cplusplus */
-#    define NULL        ((void*) 0)
+#  define NULL        ((void*) 0)
 #  endif /* !__cplusplus */
 #endif
 
@@ -242,10 +262,10 @@
  */
 
 #if defined(__GNUC__)  && __GNUC__ >= 4
-#  define G_STRUCT_OFFSET(struct_type, member) \
+#define G_STRUCT_OFFSET(struct_type, member) \
       ((glong) offsetof (struct_type, member))
 #else
-#  define G_STRUCT_OFFSET(struct_type, member)	\
+#define G_STRUCT_OFFSET(struct_type, member)	\
       ((glong) ((guint8*) &((struct_type*) 0)->member))
 #endif
 
@@ -260,10 +280,20 @@
  *   if (x) G_STMT_START { ... } G_STMT_END; else ...
  * This intentionally does not use compiler extensions like GCC's '({...})' to
  * avoid portability issue or side effects when compiled with different compilers.
+ * MSVC complains about "while(0)": C4127: "Conditional expression is constant",
+ * so we use __pragma to avoid the warning since the use here is intentional.
  */
 #if !(defined (G_STMT_START) && defined (G_STMT_END))
-#  define G_STMT_START  do
-#  define G_STMT_END    while (0)
+#define G_STMT_START  do
+#if defined (_MSC_VER) && (_MSC_VER >= 1500)
+#define G_STMT_END \
+    __pragma(warning(push)) \
+    __pragma(warning(disable:4127)) \
+    while(0) \
+    __pragma(warning(pop))
+#else
+#define G_STMT_END    while (0)
+#endif
 #endif
 
 /* Deprecated -- do not use. */
@@ -321,7 +351,11 @@
 #elif defined(_MSC_FULL_VER) && (_MSC_FULL_VER > 140050320)
 #define G_UNAVAILABLE(maj,min) __declspec(deprecated("is not available before " #maj "." #min))
 #else
-#define G_UNAVAILABLE(maj,min)
+#define G_UNAVAILABLE(maj,min) G_DEPRECATED
+#endif
+
+#ifndef _GLIB_EXTERN
+#define _GLIB_EXTERN extern
 #endif
 
 /* These macros are used to mark deprecated functions in GLib headers,
@@ -331,13 +365,56 @@
  */
 
 #ifdef GLIB_DISABLE_DEPRECATION_WARNINGS
-#define GLIB_DEPRECATED
-#define GLIB_DEPRECATED_FOR(f)
-#define GLIB_UNAVAILABLE(maj,min)
+#define GLIB_DEPRECATED _GLIB_EXTERN
+#define GLIB_DEPRECATED_FOR(f) _GLIB_EXTERN
+#define GLIB_UNAVAILABLE(maj,min) _GLIB_EXTERN
 #else
-#define GLIB_DEPRECATED G_DEPRECATED
-#define GLIB_DEPRECATED_FOR(f) G_DEPRECATED_FOR(f)
-#define GLIB_UNAVAILABLE(maj,min) G_UNAVAILABLE(maj,min)
+#define GLIB_DEPRECATED G_DEPRECATED _GLIB_EXTERN
+#define GLIB_DEPRECATED_FOR(f) G_DEPRECATED_FOR(f) _GLIB_EXTERN
+#define GLIB_UNAVAILABLE(maj,min) G_UNAVAILABLE(maj,min) _GLIB_EXTERN
+#endif
+
+#ifdef __GNUC__
+
+/* these macros are private */
+#define _GLIB_AUTOPTR_FUNC_NAME(TypeName) glib_autoptr_cleanup_##TypeName
+#define _GLIB_AUTOPTR_TYPENAME(TypeName)  TypeName##_autoptr
+#define _GLIB_AUTO_FUNC_NAME(TypeName)    glib_auto_cleanup_##TypeName
+#define _GLIB_CLEANUP(func)               __attribute__((cleanup(func)))
+#define _GLIB_DEFINE_AUTOPTR_CHAINUP(ModuleObjName, ParentName) \
+  typedef ModuleObjName *_GLIB_AUTOPTR_TYPENAME(ModuleObjName);                                          \
+  static inline void _GLIB_AUTOPTR_FUNC_NAME(ModuleObjName) (ModuleObjName **_ptr) {                     \
+    _GLIB_AUTOPTR_FUNC_NAME(ParentName) ((ParentName **) _ptr); }                                        \
+
+
+/* these macros are API */
+#define G_DEFINE_AUTOPTR_CLEANUP_FUNC(TypeName, func) \
+  typedef TypeName *_GLIB_AUTOPTR_TYPENAME(TypeName);                                                           \
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS                                                                              \
+  static inline void _GLIB_AUTOPTR_FUNC_NAME(TypeName) (TypeName **_ptr) { if (*_ptr) (func) (*_ptr); }         \
+  G_GNUC_END_IGNORE_DEPRECATIONS
+#define G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(TypeName, func) \
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS                                                                              \
+  static inline void _GLIB_AUTO_FUNC_NAME(TypeName) (TypeName *_ptr) { (func) (_ptr); }                         \
+  G_GNUC_END_IGNORE_DEPRECATIONS
+#define G_DEFINE_AUTO_CLEANUP_FREE_FUNC(TypeName, func, none) \
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS                                                                              \
+  static inline void _GLIB_AUTO_FUNC_NAME(TypeName) (TypeName *_ptr) { if (*_ptr != none) (func) (*_ptr); }     \
+  G_GNUC_END_IGNORE_DEPRECATIONS
+#define g_autoptr(TypeName) _GLIB_CLEANUP(_GLIB_AUTOPTR_FUNC_NAME(TypeName)) _GLIB_AUTOPTR_TYPENAME(TypeName)
+#define g_auto(TypeName) _GLIB_CLEANUP(_GLIB_AUTO_FUNC_NAME(TypeName)) TypeName
+#define g_autofree _GLIB_CLEANUP(g_autoptr_cleanup_generic_gfree)
+
+#else /* not GNU C */
+/* this (dummy) macro is private */
+#define _GLIB_DEFINE_AUTOPTR_CHAINUP(ModuleObjName, ParentName)
+
+/* these (dummy) macros are API */
+#define G_DEFINE_AUTOPTR_CLEANUP_FUNC(TypeName, func)
+#define G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(TypeName, func)
+#define G_DEFINE_AUTO_CLEANUP_FREE_FUNC(TypeName, func, none)
+
+/* no declaration of g_auto() or g_autoptr() here */
 #endif
 
 #endif /* __G_MACROS_H__ */

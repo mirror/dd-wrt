@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Nicolas Dufresne <nicolas.dufresne@collabora.co.uk>
  */
@@ -32,6 +30,7 @@
 /**
  * SECTION:gproxyaddress
  * @short_description: An internet address with proxy information
+ * @include: gio/gio.h
  *
  * Support for proxied #GInetSocketAddress.
  */
@@ -43,7 +42,14 @@
  *
  * Since: 2.26
  **/
-G_DEFINE_TYPE (GProxyAddress, g_proxy_address, G_TYPE_INET_SOCKET_ADDRESS);
+
+/**
+ * GProxyAddressClass:
+ *
+ * Class structure for #GProxyAddress.
+ *
+ * Since: 2.26
+ **/
 
 enum
 {
@@ -67,6 +73,8 @@ struct _GProxyAddressPrivate
   gchar 	 *dest_hostname;
   guint16 	  dest_port;
 };
+
+G_DEFINE_TYPE_WITH_PRIVATE (GProxyAddress, g_proxy_address, G_TYPE_INET_SOCKET_ADDRESS)
 
 static void
 g_proxy_address_finalize (GObject *object)
@@ -180,8 +188,6 @@ g_proxy_address_class_init (GProxyAddressClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (GProxyAddressPrivate));
-
   gobject_class->finalize = g_proxy_address_finalize;
   gobject_class->set_property = g_proxy_address_set_property;
   gobject_class->get_property = g_proxy_address_get_property;
@@ -276,9 +282,7 @@ g_proxy_address_class_init (GProxyAddressClass *klass)
 static void
 g_proxy_address_init (GProxyAddress *proxy)
 {
-  proxy->priv = G_TYPE_INSTANCE_GET_PRIVATE (proxy,
-					     G_TYPE_PROXY_ADDRESS,
-					     GProxyAddressPrivate);
+  proxy->priv = g_proxy_address_get_instance_private (proxy);
   proxy->priv->protocol = NULL;
   proxy->priv->username = NULL;
   proxy->priv->password = NULL;

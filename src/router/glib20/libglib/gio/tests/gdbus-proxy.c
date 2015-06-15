@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -569,7 +567,7 @@ test_bogus_property (GDBusProxy *proxy)
 static const gchar *frob_dbus_interface_xml =
   "<node>"
   "  <interface name='com.example.Frob'>"
-  /* PairReturn() is deliberately different from gdbus-testserver.py's definition */
+  /* PairReturn() is deliberately different from gdbus-testserver's definition */
   "    <method name='PairReturn'>"
   "      <arg type='u' name='somenumber' direction='in'/>"
   "      <arg type='s' name='somestring' direction='out'/>"
@@ -583,9 +581,9 @@ static const gchar *frob_dbus_interface_xml =
   "    </method>"
   /* We deliberately only mention a single property here */
   "    <property name='y' type='y' access='readwrite'/>"
-  /* The 'i' property is deliberately different from gdbus-testserver.py's definition */
+  /* The 'i' property is deliberately different from gdbus-testserver's definition */
   "    <property name='i' type='u' access='readwrite'/>"
-  /* ::TestSignal2 is deliberately different from gdbus-testserver.py's definition */
+  /* ::TestSignal2 is deliberately different from gdbus-testserver's definition */
   "    <signal name='TestSignal2'>"
   "      <arg type='u' name='somenumber'/>"
   "    </signal>"
@@ -620,12 +618,10 @@ test_expected_interface (GDBusProxy *proxy)
   if (g_test_undefined ())
     {
       /* Also check that we complain if setting a cached property of the wrong type */
-      if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT | G_TEST_TRAP_SILENCE_STDERR))
-        {
-          g_dbus_proxy_set_cached_property (proxy, "y", g_variant_new_string ("error_me_out!"));
-        }
-      g_test_trap_assert_stderr ("*Trying to set property y of type s but according to the expected interface the type is y*");
-      g_test_trap_assert_failed();
+      g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                             "*Trying to set property y of type s but according to the expected interface the type is y*");
+      g_dbus_proxy_set_cached_property (proxy, "y", g_variant_new_string ("error_me_out!"));
+      g_test_assert_expected_messages ();
     }
 
   /* this should work, however (since the type is correct) */
@@ -636,12 +632,10 @@ test_expected_interface (GDBusProxy *proxy)
       /* Try to get the value of a property where the type we expect is different from
        * what we have in our cache (e.g. what the service returned)
        */
-      if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT | G_TEST_TRAP_SILENCE_STDERR))
-        {
-          value = g_dbus_proxy_get_cached_property (proxy, "i");
-        }
-      g_test_trap_assert_stderr ("*Trying to get property i with type i but according to the expected interface the type is u*");
-      g_test_trap_assert_failed();
+      g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                             "*Trying to get property i with type i but according to the expected interface the type is u*");
+      value = g_dbus_proxy_get_cached_property (proxy, "i");
+      g_test_assert_expected_messages ();
     }
 
   /* Even if a property does not exist in expected_interface, looking it
@@ -735,6 +729,7 @@ test_basic (GDBusProxy *proxy)
 static void
 kill_test_service (GDBusConnection *connection)
 {
+#ifdef G_OS_UNIX
   guint pid;
   GVariant *ret;
   GError *error = NULL;
@@ -754,6 +749,9 @@ kill_test_service (GDBusConnection *connection)
   g_variant_get (ret, "(u)", &pid);
   g_variant_unref (ret);
   kill (pid, SIGTERM);
+#else
+  g_warning ("Can't kill com.example.TestService");
+#endif
 }
 
 static void
@@ -780,7 +778,7 @@ test_proxy (void)
   g_assert_no_error (error);
 
   /* this is safe; testserver will exit once the bus goes away */
-  g_assert (g_spawn_command_line_async (SRCDIR "/gdbus-testserver.py", NULL));
+  g_assert (g_spawn_command_line_async (g_test_get_filename (G_TEST_BUILT, "gdbus-testserver", NULL), NULL));
 
   _g_assert_property_notify (proxy, "g-name-owner");
 
@@ -842,7 +840,7 @@ test_async (void)
                             NULL);
 
   /* this is safe; testserver will exit once the bus goes away */
-  g_assert (g_spawn_command_line_async (SRCDIR "/gdbus-testserver.py", NULL));
+  g_assert (g_spawn_command_line_async (g_test_get_filename (G_TEST_BUILT, "gdbus-testserver", NULL), NULL));
 
   g_timeout_add (10000, fail_test, NULL);
   g_main_loop_run (loop);
@@ -912,7 +910,6 @@ main (int   argc,
   gint ret;
   GDBusNodeInfo *introspection_data = NULL;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   introspection_data = g_dbus_node_info_new_for_xml (frob_dbus_interface_xml, NULL);
@@ -922,17 +919,14 @@ main (int   argc,
   /* all the tests rely on a shared main loop */
   loop = g_main_loop_new (NULL, FALSE);
 
-  session_bus_up ();
-
   g_test_add_func ("/gdbus/proxy", test_proxy);
   g_test_add_func ("/gdbus/proxy/no-properties", test_no_properties);
   g_test_add_func ("/gdbus/proxy/wellknown-noauto", test_wellknown_noauto);
   g_test_add_func ("/gdbus/proxy/async", test_async);
 
-  ret = g_test_run();
+  ret = session_bus_run();
 
   g_dbus_node_info_unref (introspection_data);
 
-  session_bus_down ();
   return ret;
 }

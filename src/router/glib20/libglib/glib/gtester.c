@@ -13,11 +13,12 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+#include "config.h"
+
 #include <glib.h>
+#include <glib-unix.h>
 #include <gstdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -127,6 +128,8 @@ test_log_msg (GTestLogMsg *msg)
       guint i;
       gchar **strv;
     case G_TEST_LOG_NONE:
+    case G_TEST_LOG_START_SUITE:
+    case G_TEST_LOG_STOP_SUITE:
       break;
     case G_TEST_LOG_ERROR:
       strv = g_strsplit (msg->strings[0], "\n", -1);
@@ -283,12 +286,13 @@ launch_test_binary (const char *binary,
   gboolean loop_pending;
   gint i = 0;
 
-  if (pipe (report_pipe) < 0)
+  if (!g_unix_open_pipe (report_pipe, FD_CLOEXEC, &error))
     {
       if (subtest_mode_fatal)
-        g_error ("Failed to open pipe for test binary: %s: %s", binary, g_strerror (errno));
+        g_error ("Failed to open pipe for test binary: %s: %s", binary, error->message);
       else
-        g_warning ("Failed to open pipe for test binary: %s: %s", binary, g_strerror (errno));
+        g_warning ("Failed to open pipe for test binary: %s: %s", binary, error->message);
+      g_clear_error (&error);
       return FALSE;
     }
 
@@ -415,7 +419,9 @@ launch_test_binary (const char *binary,
       loop_pending = g_main_context_pending (NULL);
     }
 
-  g_source_remove (child_report_cb_id);
+  if (subtest_io_pending)
+    g_source_remove (child_report_cb_id);
+
   close (report_pipe[0]);
   g_test_log_buffer_free (tlb);
 

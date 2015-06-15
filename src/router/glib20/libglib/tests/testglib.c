@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -23,8 +21,6 @@
  * files for a list of changes.  These files are distributed with
  * GLib at ftp://ftp.gtk.org/pub/gtk/. 
  */
-
-#include "config.h"
 
 #undef GLIB_COMPILATION
 
@@ -37,7 +33,7 @@
 
 #include <stdlib.h>
 
-#ifdef HAVE_UNISTD_H
+#ifdef G_OS_UNIX
 #include <unistd.h>
 #endif
 
@@ -75,7 +71,7 @@ my_list_compare_two (gconstpointer a, gconstpointer b)
 my_list_print (gpointer a, gpointer b)
 {
   gint three = *((gint*)a);
-  g_print("%d", three);
+  g_printerr ("%d", three);
 }; */
 
 static void
@@ -106,7 +102,7 @@ glist_test (void)
     list = g_list_insert_sorted (list, &more_nums[i], my_list_compare_one);
 
   /*
-  g_print("\n");
+  g_printerr ("\n");
   g_list_foreach (list, my_list_print, NULL);
   */
 
@@ -124,7 +120,7 @@ glist_test (void)
     list = g_list_insert_sorted (list, &more_nums[i], my_list_compare_two);
 
   /*
-  g_print("\n");
+  g_printerr ("\n");
   g_list_foreach (list, my_list_print, NULL);
   */
 
@@ -144,7 +140,7 @@ glist_test (void)
   list = g_list_sort (list, my_list_compare_two);
 
   /*
-  g_print("\n");
+  g_printerr ("\n");
   g_list_foreach (list, my_list_print, NULL);
   */
 
@@ -182,7 +178,7 @@ gslist_test (void)
     slist = g_slist_insert_sorted (slist, &more_nums[i], my_list_compare_one);
 
   /*
-  g_print("\n");
+  g_printerr ("\n");
   g_slist_foreach (slist, my_list_print, NULL);
   */
 
@@ -200,7 +196,7 @@ gslist_test (void)
     slist = g_slist_insert_sorted (slist, &more_nums[i], my_list_compare_two);
 
   /*
-  g_print("\n");
+  g_printerr ("\n");
   g_slist_foreach (slist, my_list_print, NULL);
   */
 
@@ -220,7 +216,7 @@ gslist_test (void)
   slist = g_slist_sort (slist, my_list_compare_two);
 
   /*
-  g_print("\n");
+  g_printerr ("\n");
   g_slist_foreach (slist, my_list_print, NULL);
   */
 
@@ -397,7 +393,7 @@ my_traverse (gpointer key,
 	     gpointer data)
 {
   char *ch = key;
-  g_print ("%c ", *ch);
+  g_printerr ("%c ", *ch);
   return FALSE;
 }
 
@@ -431,9 +427,9 @@ binary_tree_test (void)
 
   if (g_test_verbose())
     {
-      g_print ("tree: ");
+      g_printerr ("tree: ");
       g_tree_foreach (tree, my_traverse, NULL);
-      g_print ("\n");
+      g_printerr ("\n");
     }
 
   for (i = 0; i < 10; i++)
@@ -444,9 +440,9 @@ binary_tree_test (void)
 
   if (g_test_verbose())
     {
-      g_print ("tree: ");
+      g_printerr ("tree: ");
       g_tree_foreach (tree, my_traverse, NULL);
-      g_print ("\n");
+      g_printerr ("\n");
     }
 
   g_tree_unref (tree);
@@ -473,7 +469,7 @@ my_hash_callback_remove_test (gpointer key,
   int *d = value;
 
   if ((*d) % 2)
-    g_print ("bad!\n");
+    g_error ("hash table entry %d should have been removed already\n", *d);
 }
 
 static void
@@ -552,32 +548,30 @@ test_g_parse_debug_string (void)
 static void
 log_warning_error_tests (void)
 {
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT | G_TEST_TRAP_SILENCE_STDERR))
-    {
-      g_message ("this is a g_message test.");
-      g_message ("non-printable UTF-8: \"\xc3\xa4\xda\x85\"");
-      g_message ("unsafe chars: \"\x10\x11\x12\n\t\x7f\x81\x82\x83\"");
-      exit (0);
-    }
-  g_test_trap_assert_passed();
-  g_test_trap_assert_stderr ("*is a g_message test*");
-  g_test_trap_assert_stderr ("*non-printable UTF-8*");
-  g_test_trap_assert_stderr ("*unsafe chars*");
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT | G_TEST_TRAP_SILENCE_STDERR))
-    {
-      g_warning ("harmless warning with parameters: %d %s %#x", 42, "Boo", 12345);
-      exit (0);
-    }
-  g_test_trap_assert_failed(); /* we have fatal-warnings enabled */
-  g_test_trap_assert_stderr ("*harmless warning*");
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT | G_TEST_TRAP_SILENCE_STDERR))
-    {
-      g_print (NULL);
-      exit (0);
-    }
-  g_test_trap_assert_failed(); /* we have fatal-warnings enabled */
-  g_test_trap_assert_stderr ("*g_print*assertion*failed*");
-  g_test_trap_assert_stderr ("*NULL*");
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_MESSAGE,
+                         "*is a g_message test*");
+  g_message ("this is a g_message test.");
+  g_test_assert_expected_messages ();
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_MESSAGE,
+                         "*non-printable UTF-8*");
+  g_message ("non-printable UTF-8: \"\xc3\xa4\xda\x85\"");
+  g_test_assert_expected_messages ();
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_MESSAGE,
+                         "*unsafe chars*");
+  g_message ("unsafe chars: \"\x10\x11\x12\n\t\x7f\x81\x82\x83\"");
+  g_test_assert_expected_messages ();
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                         "*harmless warning*");
+  g_warning ("harmless warning with parameters: %d %s %#x", 42, "Boo", 12345);
+  g_test_assert_expected_messages ();
+
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                         "*g_print*assertion*failed*");
+  g_print (NULL);
+  g_test_assert_expected_messages ();
 }
 
 static void
@@ -597,69 +591,69 @@ timer_tests (void)
   if (g_test_slow())
     {
       if (g_test_verbose())
-        g_print ("checking timers...\n");
+        g_printerr ("checking timers...\n");
       timer = g_timer_new ();
       if (g_test_verbose())
-        g_print ("  spinning for 3 seconds...\n");
+        g_printerr ("  spinning for 3 seconds...\n");
       g_timer_start (timer);
       while (g_timer_elapsed (timer, NULL) < 3)
         ;
       g_timer_stop (timer);
       g_timer_destroy (timer);
       if (g_test_verbose())
-        g_print ("ok\n");
+        g_printerr ("ok\n");
     }
 
   if (g_test_slow())
     {
       gulong elapsed_usecs;
       if (g_test_verbose())
-        g_print ("checking g_timer_continue...\n");
+        g_printerr ("checking g_timer_continue...\n");
       timer2 = g_timer_new ();
       if (g_test_verbose())
-        g_print ("\trun for 1 second...\n");
+        g_printerr ("\trun for 1 second...\n");
       timer = g_timer_new();
       g_usleep (G_USEC_PER_SEC); /* run timer for 1 second */
       g_timer_stop (timer);
       if (g_test_verbose())
-        g_print ("\tstop for 1 second...\n");
+        g_printerr ("\tstop for 1 second...\n");
       g_usleep (G_USEC_PER_SEC); /* wait for 1 second */
       if (g_test_verbose())
-        g_print ("\trun for 2 seconds...\n");
+        g_printerr ("\trun for 2 seconds...\n");
       g_timer_continue (timer);
       g_usleep (2 * G_USEC_PER_SEC); /* run timer for 2 seconds */
       g_timer_stop(timer);
       if (g_test_verbose())
-        g_print ("\tstop for 1.5 seconds...\n");
+        g_printerr ("\tstop for 1.5 seconds...\n");
       g_usleep ((3 * G_USEC_PER_SEC) / 2); /* wait for 1.5 seconds */
       if (g_test_verbose())
-        g_print ("\trun for 0.2 seconds...\n");
+        g_printerr ("\trun for 0.2 seconds...\n");
       g_timer_continue (timer);
       g_usleep (G_USEC_PER_SEC / 5); /* run timer for 0.2 seconds */
       g_timer_stop (timer);
       if (g_test_verbose())
-        g_print ("\tstop for 4 seconds...\n");
+        g_printerr ("\tstop for 4 seconds...\n");
       g_usleep (4 * G_USEC_PER_SEC); /* wait for 4 seconds */
       if (g_test_verbose())
-        g_print ("\trun for 5.8 seconds...\n");
+        g_printerr ("\trun for 5.8 seconds...\n");
       g_timer_continue (timer);
       g_usleep ((29 * G_USEC_PER_SEC) / 5); /* run timer for 5.8 seconds */
       g_timer_stop(timer);
       elapsed = g_timer_elapsed (timer, &elapsed_usecs);
       if (g_test_verbose())
-        g_print ("\t=> timer = %.6f = %d.%06ld (should be: 9.000000) (%.6f off)\n", elapsed, (int) elapsed, elapsed_usecs, ABS (elapsed - 9.));
+        g_printerr ("\t=> timer = %.6f = %d.%06ld (should be: 9.000000) (%.6f off)\n", elapsed, (int) elapsed, elapsed_usecs, ABS (elapsed - 9.));
       g_assert_cmpfloat (elapsed, >, 8.8);
       g_assert_cmpfloat (elapsed, <, 9.2);
       if (g_test_verbose())
-        g_print ("g_timer_continue ... ok\n\n");
+        g_printerr ("g_timer_continue ... ok\n\n");
       g_timer_stop (timer2);
       elapsed = g_timer_elapsed (timer2, &elapsed_usecs);
       if (g_test_verbose())
-        g_print ("\t=> timer2 = %.6f = %d.%06ld (should be: %.6f) (%.6f off)\n\n", elapsed, (int) elapsed, elapsed_usecs, 9.+6.5, ABS (elapsed - (9.+6.5)));
+        g_printerr ("\t=> timer2 = %.6f = %d.%06ld (should be: %.6f) (%.6f off)\n\n", elapsed, (int) elapsed, elapsed_usecs, 9.+6.5, ABS (elapsed - (9.+6.5)));
       g_assert_cmpfloat (elapsed, >, 8.8 + 6.5);
       g_assert_cmpfloat (elapsed, <, 9.2 + 6.5);
       if (g_test_verbose())
-        g_print ("timer2 ... ok\n\n");
+        g_printerr ("timer2 ... ok\n\n");
       g_timer_destroy (timer);
       g_timer_destroy (timer2);
     }
@@ -679,7 +673,7 @@ type_sizes (void)
   g_assert_cmpint (sizeof (gint64), ==, 8);
   /* endian macros */
   if (g_test_verbose())
-    g_print ("checking endian macros (host is %s)...\n",
+    g_printerr ("checking endian macros (host is %s)...\n",
              G_BYTE_ORDER == G_BIG_ENDIAN ? "big endian" : "little endian");
   g_assert (GUINT16_SWAP_LE_BE (gu16t1) == gu16t2);
   g_assert (GUINT32_SWAP_LE_BE (gu32t1) == gu32t2);
@@ -696,7 +690,7 @@ test_info (void)
   const gchar *charset;
   gboolean charset_is_utf8;
   if (g_test_verbose())
-    g_print ("TestGLib v%u.%u.%u (i:%u b:%u)\n",
+    g_printerr ("TestGLib v%u.%u.%u (i:%u b:%u)\n",
              glib_major_version,
              glib_minor_version,
              glib_micro_version,
@@ -709,10 +703,10 @@ test_info (void)
   hn = g_get_host_name();
   if (g_test_verbose())
     {
-      g_print ("cwd: %s\n", cwd);
-      g_print ("user: %s\n", un);
-      g_print ("real: %s\n", rn);
-      g_print ("host: %s\n", hn);
+      g_printerr ("cwd: %s\n", cwd);
+      g_printerr ("user: %s\n", un);
+      g_printerr ("real: %s\n", rn);
+      g_printerr ("host: %s\n", hn);
     }
   g_free (cwd);
 
@@ -747,18 +741,18 @@ test_info (void)
 
   if (g_test_verbose())
     {
-      g_print ("tmp-dir: %s\n", tmpdir);
-      g_print ("home: %s\n", homedir);
-      g_print ("user_data: %s\n", userdatadir);
-      g_print ("user_config: %s\n", uconfdir);
-      g_print ("user_cache: %s\n", ucachedir);
-      g_print ("user_runtime: %s\n", uruntimedir);
-      g_print ("system_data: %s\n", sdatadirs);
-      g_print ("system_config: %s\n", sconfdirs);
-      g_print ("languages: %s\n", langnames);
-      g_print ("user_special[DESKTOP]: %s\n", uddesktop);
-      g_print ("user_special[DOCUMENTS]: %s\n", udddocs);
-      g_print ("user_special[PUBLIC_SHARE]: %s\n", uddpubshare);
+      g_printerr ("tmp-dir: %s\n", tmpdir);
+      g_printerr ("home: %s\n", homedir);
+      g_printerr ("user_data: %s\n", userdatadir);
+      g_printerr ("user_config: %s\n", uconfdir);
+      g_printerr ("user_cache: %s\n", ucachedir);
+      g_printerr ("user_runtime: %s\n", uruntimedir);
+      g_printerr ("system_data: %s\n", sdatadirs);
+      g_printerr ("system_config: %s\n", sconfdirs);
+      g_printerr ("languages: %s\n", langnames);
+      g_printerr ("user_special[DESKTOP]: %s\n", uddesktop);
+      g_printerr ("user_special[DOCUMENTS]: %s\n", udddocs);
+      g_printerr ("user_special[PUBLIC_SHARE]: %s\n", uddpubshare);
     }
   g_free (sdatadirs);
   g_free (sconfdirs);
@@ -769,20 +763,20 @@ test_info (void)
   if (g_test_verbose())
     {
       if (charset_is_utf8)
-        g_print ("current charset is UTF-8: %s\n", charset);
+        g_printerr ("current charset is UTF-8: %s\n", charset);
       else
-        g_print ("current charset is not UTF-8: %s\n", charset);
+        g_printerr ("current charset is not UTF-8: %s\n", charset);
     }
 
   if (g_test_verbose())
     {
 #ifdef G_PLATFORM_WIN32
-      g_print ("current locale: %s\n", g_win32_getlocale ());
+      g_printerr ("current locale: %s\n", g_win32_getlocale ());
 
-      g_print ("found more.com as %s\n", g_find_program_in_path ("more.com"));
-      g_print ("found regedit as %s\n", g_find_program_in_path ("regedit"));
+      g_printerr ("found more.com as %s\n", g_find_program_in_path ("more.com"));
+      g_printerr ("found regedit as %s\n", g_find_program_in_path ("regedit"));
 
-      g_print ("a Win32 error message: %s\n", g_win32_error_message (2));
+      g_printerr ("a Win32 error message: %s\n", g_win32_error_message (2));
 #endif
     }
 }
@@ -847,7 +841,7 @@ test_paths (void)
   gchar *string;
   guint i;
   if (g_test_verbose())
-    g_print ("checking g_path_get_basename()...");
+    g_printerr ("checking g_path_get_basename()...");
   string = g_path_get_basename (G_DIR_SEPARATOR_S "foo" G_DIR_SEPARATOR_S "dir" G_DIR_SEPARATOR_S);
   g_assert (strcmp (string, "dir") == 0);
   g_free (string);
@@ -855,7 +849,7 @@ test_paths (void)
   g_assert (strcmp (string, "file") == 0);
   g_free (string);
   if (g_test_verbose())
-    g_print ("ok\n");
+    g_printerr ("ok\n");
 
 #ifdef G_OS_WIN32
   string = g_path_get_basename ("/foo/dir/");
@@ -867,7 +861,7 @@ test_paths (void)
 #endif
 
   if (g_test_verbose())
-    g_print ("checking g_path_get_dirname()...");
+    g_printerr ("checking g_path_get_dirname()...");
   for (i = 0; i < n_dirname_checks; i++)
     {
       gchar *dirname = g_path_get_dirname (dirname_checks[i].filename);
@@ -881,10 +875,10 @@ test_paths (void)
       g_free (dirname);
     }
   if (g_test_verbose())
-    g_print ("ok\n");
+    g_printerr ("ok\n");
 
   if (g_test_verbose())
-    g_print ("checking g_path_skip_root()...");
+    g_printerr ("checking g_path_skip_root()...");
   for (i = 0; i < n_skip_root_checks; i++)
     {
       const gchar *skipped = g_path_skip_root (skip_root_checks[i].filename);
@@ -901,7 +895,7 @@ test_paths (void)
 	}
     }
   if (g_test_verbose())
-    g_print ("ok\n");
+    g_printerr ("ok\n");
 }
 
 static void
@@ -917,7 +911,7 @@ test_file_functions (void)
   strcpy (template, "foobar");
   fd = g_mkstemp (template);
   if (g_test_verbose() && fd != -1)
-    g_print ("g_mkstemp works even if template doesn't end in XXXXXX\n");
+    g_printerr ("g_mkstemp works even if template doesn't end in XXXXXX\n");
   if (fd != -1)
     close (fd);
   strcpy (template, "fooXXXXXX");
@@ -940,8 +934,8 @@ test_file_functions (void)
   chars[n] = 0;
   if (strcmp (chars, hello) != 0)
     g_error ("wrote '%s', but got '%s'\n", hello, chars);
-
-  close (fd);
+  if (fd != -1)
+    close (fd);
   remove (template);
 
   error = NULL;
@@ -951,9 +945,9 @@ test_file_functions (void)
   if (g_test_verbose())
     {
       if (fd != -1)
-        g_print ("g_file_open_tmp works even if template contains '%s'\n", G_DIR_SEPARATOR_S);
+        g_printerr ("g_file_open_tmp works even if template contains '%s'\n", G_DIR_SEPARATOR_S);
       else
-        g_print ("g_file_open_tmp correctly returns error: %s\n", error->message);
+        g_printerr ("g_file_open_tmp correctly returns error: %s\n", error->message);
     }
   if (fd != -1)
     close (fd);
@@ -967,11 +961,12 @@ test_file_functions (void)
   if (g_test_verbose())
     {
       if (fd != -1)
-        g_print ("g_file_open_tmp works even if template contains '/'\n");
+        g_printerr ("g_file_open_tmp works even if template contains '/'\n");
       else
-        g_print ("g_file_open_tmp correctly returns error: %s\n", error->message);
+        g_printerr ("g_file_open_tmp correctly returns error: %s\n", error->message);
     }
-  close (fd);
+  if (fd != -1)
+    close (fd);
   g_clear_error (&error);
   g_free (name_used);
 #endif
@@ -982,8 +977,9 @@ test_file_functions (void)
   if (fd == -1)
     g_error ("g_file_open_tmp didn't work for template '%s': %s\n", template, error->message);
   else if (g_test_verbose())
-    g_print ("g_file_open_tmp for template '%s' used name '%s'\n", template, name_used);
-  close (fd);
+    g_printerr ("g_file_open_tmp for template '%s' used name '%s'\n", template, name_used);
+  if (fd != -1)
+    close (fd);
   g_clear_error (&error);
   remove (name_used);
   g_free (name_used);
@@ -992,7 +988,8 @@ test_file_functions (void)
   fd = g_file_open_tmp (NULL, &name_used, &error);
   if (fd == -1)
     g_error ("g_file_open_tmp didn't work for a NULL template: %s\n", error->message);
-  close (fd);
+  else
+    close (fd);
   g_clear_error (&error);
   remove (name_used);
   g_free (name_used);
@@ -1161,7 +1158,7 @@ gstring_tests (void)
   guint i;
 
   if (g_test_verbose())
-    g_print ("test GString basics\n");
+    g_printerr ("test GString basics\n");
 
   string1 = g_string_new ("hi pete!");
   string2 = g_string_new ("");
@@ -1190,18 +1187,18 @@ gstring_tests (void)
 #endif
 
   if (g_test_verbose())
-    g_print ("string2 length = %lu...\n", (gulong)string2->len);
+    g_printerr ("string2 length = %lu...\n", (gulong)string2->len);
   string2->str[70] = '\0';
   if (g_test_verbose())
-    g_print ("first 70 chars:\n%s\n", string2->str);
+    g_printerr ("first 70 chars:\n%s\n", string2->str);
   string2->str[141] = '\0';
   if (g_test_verbose())
-    g_print ("next 70 chars:\n%s\n", string2->str+71);
+    g_printerr ("next 70 chars:\n%s\n", string2->str+71);
   string2->str[212] = '\0';
   if (g_test_verbose())
-    g_print ("and next 70:\n%s\n", string2->str+142);
+    g_printerr ("and next 70:\n%s\n", string2->str+142);
   if (g_test_verbose())
-    g_print ("last 70 chars:\n%s\n", string2->str+string2->len - 70);
+    g_printerr ("last 70 chars:\n%s\n", string2->str+string2->len - 70);
 
   g_string_free (string1, TRUE);
   g_string_free (string2, TRUE);
@@ -1271,7 +1268,7 @@ gstring_tests (void)
 
   /* Check handling of embedded ASCII 0 (NUL) characters in GString. */
   if (g_test_verbose())
-    g_print ("test embedded ASCII 0 (NUL) characters in GString\n");
+    g_printerr ("test embedded ASCII 0 (NUL) characters in GString\n");
   string1 = g_string_new ("fiddle");
   string2 = g_string_new ("fiddle");
   g_assert (g_string_equal(string1, string2));
@@ -1302,7 +1299,7 @@ various_string_tests (void)
   const gchar *tz;
 
   if (g_test_verbose())
-    g_print ("checking string chunks...");
+    g_printerr ("checking string chunks...");
   string_chunk = g_string_chunk_new (1024);
   for (i = 0; i < 100000; i ++)
     {
@@ -1317,11 +1314,11 @@ various_string_tests (void)
   g_string_chunk_free (string_chunk);
 
   if (g_test_verbose())
-    g_print ("test positional printf formats (not supported):");
+    g_printerr ("test positional printf formats (not supported):");
   string = g_strdup_printf ("%.*s%s", 5, "a", "b");
   tmp_string = g_strdup_printf ("%2$*1$s", 5, "c");
   if (g_test_verbose())
-    g_print ("%s%s\n", string, tmp_string);
+    g_printerr ("%s%s\n", string, tmp_string);
   g_free (tmp_string);
   g_free (string);
 
@@ -1342,16 +1339,16 @@ various_string_tests (void)
 #define REF_STR_DATE_ONLY "1980-02-22"
 
   if (g_test_verbose())
-    g_print ("checking g_time_val_from_iso8601...\n");
+    g_printerr ("checking g_time_val_from_iso8601...\n");
   ref_date.tv_sec = REF_SEC_UTC;
   ref_date.tv_usec = 0;
   g_assert (g_time_val_from_iso8601 (REF_INVALID1, &date) == FALSE);
   g_assert (g_time_val_from_iso8601 (REF_INVALID2, &date) == FALSE);
   g_assert (g_time_val_from_iso8601 (REF_INVALID3, &date) == FALSE);
-  g_assert (g_time_val_from_iso8601 (REF_STR_DATE_ONLY, &date) != FALSE);
+  g_assert (g_time_val_from_iso8601 (REF_STR_DATE_ONLY, &date) == FALSE);
   g_assert (g_time_val_from_iso8601 (REF_STR_UTC, &date) != FALSE);
   if (g_test_verbose())
-    g_print ("\t=> UTC stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
+    g_printerr ("\t=> UTC stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
              date.tv_sec, date.tv_usec, ref_date.tv_sec, ref_date.tv_usec,
              date.tv_sec - ref_date.tv_sec, date.tv_usec - ref_date.tv_usec);
   g_assert (date.tv_sec == ref_date.tv_sec && date.tv_usec == ref_date.tv_usec);
@@ -1363,7 +1360,7 @@ various_string_tests (void)
 
   g_assert (g_time_val_from_iso8601 (REF_STR_LOCAL, &date) != FALSE);
   if (g_test_verbose())
-    g_print ("\t=> LOCAL stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
+    g_printerr ("\t=> LOCAL stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
              date.tv_sec, date.tv_usec, ref_date.tv_sec, ref_date.tv_usec,
              date.tv_sec - ref_date.tv_sec, date.tv_usec - ref_date.tv_usec);
   g_assert (date.tv_sec == ref_date.tv_sec && date.tv_usec == ref_date.tv_usec);
@@ -1377,21 +1374,21 @@ various_string_tests (void)
 
   g_assert (g_time_val_from_iso8601 (REF_STR_CEST, &date) != FALSE);
   if (g_test_verbose())
-    g_print ("\t=> CEST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
+    g_printerr ("\t=> CEST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
              date.tv_sec, date.tv_usec, ref_date.tv_sec, ref_date.tv_usec,
              date.tv_sec - ref_date.tv_sec, date.tv_usec - ref_date.tv_usec);
   g_assert (date.tv_sec == ref_date.tv_sec && date.tv_usec == ref_date.tv_usec);
 
   g_assert (g_time_val_from_iso8601 (REF_STR_EST, &date) != FALSE);
   if (g_test_verbose())
-    g_print ("\t=> EST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
+    g_printerr ("\t=> EST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
              date.tv_sec, date.tv_usec, ref_date.tv_sec, ref_date.tv_usec,
              date.tv_sec - ref_date.tv_sec, date.tv_usec - ref_date.tv_usec);
   g_assert (date.tv_sec == ref_date.tv_sec && date.tv_usec == ref_date.tv_usec);
 
   g_assert (g_time_val_from_iso8601 (REF_STR_NST, &date) != FALSE);
   if (g_test_verbose())
-    g_print ("\t=> NST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
+    g_printerr ("\t=> NST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
              date.tv_sec, date.tv_usec, ref_date.tv_sec, ref_date.tv_usec,
              date.tv_sec - ref_date.tv_sec, date.tv_usec - ref_date.tv_usec);
   g_assert (date.tv_sec == ref_date.tv_sec && date.tv_usec == ref_date.tv_usec);
@@ -1399,40 +1396,40 @@ various_string_tests (void)
   ref_date.tv_usec = REF_USEC_UTC;
   g_assert (g_time_val_from_iso8601 (REF_STR_USEC_UTC, &date) != FALSE);
   if (g_test_verbose())
-    g_print ("\t=> UTC stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
+    g_printerr ("\t=> UTC stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
              date.tv_sec, date.tv_usec, ref_date.tv_sec, ref_date.tv_usec,
              date.tv_sec - ref_date.tv_sec, date.tv_usec - ref_date.tv_usec);
   g_assert (date.tv_sec == ref_date.tv_sec && date.tv_usec == ref_date.tv_usec);
 
   g_assert (g_time_val_from_iso8601 (REF_STR_USEC_CEST, &date) != FALSE);
   if (g_test_verbose())
-    g_print ("\t=> CEST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
+    g_printerr ("\t=> CEST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
              date.tv_sec, date.tv_usec, ref_date.tv_sec, ref_date.tv_usec,
              date.tv_sec - ref_date.tv_sec, date.tv_usec - ref_date.tv_usec);
   g_assert (date.tv_sec == ref_date.tv_sec && date.tv_usec == ref_date.tv_usec);
 
   g_assert (g_time_val_from_iso8601 (REF_STR_USEC_EST, &date) != FALSE);
   if (g_test_verbose())
-    g_print ("\t=> EST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
+    g_printerr ("\t=> EST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
              date.tv_sec, date.tv_usec, ref_date.tv_sec, ref_date.tv_usec,
              date.tv_sec - ref_date.tv_sec, date.tv_usec - ref_date.tv_usec);
   g_assert (date.tv_sec == ref_date.tv_sec && date.tv_usec == ref_date.tv_usec);
 
   g_assert (g_time_val_from_iso8601 (REF_STR_USEC_NST, &date) != FALSE);
   if (g_test_verbose())
-    g_print ("\t=> NST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
+    g_printerr ("\t=> NST stamp = %ld.%06ld (should be: %ld.%06ld) (%ld.%06ld off)\n",
              date.tv_sec, date.tv_usec, ref_date.tv_sec, ref_date.tv_usec,
              date.tv_sec - ref_date.tv_sec, date.tv_usec - ref_date.tv_usec);
   g_assert (date.tv_sec == ref_date.tv_sec && date.tv_usec == ref_date.tv_usec);
 
   if (g_test_verbose())
-    g_print ("checking g_time_val_to_iso8601...\n");
+    g_printerr ("checking g_time_val_to_iso8601...\n");
   ref_date.tv_sec = REF_SEC_UTC;
   ref_date.tv_usec = 0;
   date_str = g_time_val_to_iso8601 (&ref_date);
   g_assert (date_str != NULL);
   if (g_test_verbose())
-    g_print ("\t=> date string = %s (should be: %s)\n", date_str, REF_STR_UTC);
+    g_printerr ("\t=> date string = %s (should be: %s)\n", date_str, REF_STR_UTC);
   g_assert (strcmp (date_str, REF_STR_UTC) == 0);
   g_free (date_str);
 
@@ -1440,12 +1437,12 @@ various_string_tests (void)
   date_str = g_time_val_to_iso8601 (&ref_date);
   g_assert (date_str != NULL);
   if (g_test_verbose())
-    g_print ("\t=> date string = %s (should be: %s)\n", date_str, REF_STR_USEC_UTC);
+    g_printerr ("\t=> date string = %s (should be: %s)\n", date_str, REF_STR_USEC_UTC);
   g_assert (strcmp (date_str, REF_STR_USEC_UTC) == 0);
   g_free (date_str);
 
   if (g_test_verbose())
-    g_print ("checking g_ascii_strcasecmp...");
+    g_printerr ("checking g_ascii_strcasecmp...");
   g_assert (g_ascii_strcasecmp ("FroboZZ", "frobozz") == 0);
   g_assert (g_ascii_strcasecmp ("frobozz", "frobozz") == 0);
   g_assert (g_ascii_strcasecmp ("frobozz", "FROBOZZ") == 0);
@@ -1462,7 +1459,7 @@ various_string_tests (void)
   g_assert (g_ascii_strcasecmp ("B", "A") > 0);
 
   if (g_test_verbose())
-    g_print ("checking g_strdup...\n");
+    g_printerr ("checking g_strdup...\n");
   g_assert (g_strdup (NULL) == NULL);
   string = g_strdup (GLIB_TEST_STRING);
   g_assert (string != NULL);
@@ -1470,7 +1467,7 @@ various_string_tests (void)
   g_free (string);
 
   if (g_test_verbose())
-    g_print ("checking g_strconcat...\n");
+    g_printerr ("checking g_strconcat...\n");
   string = g_strconcat (GLIB_TEST_STRING, NULL);
   g_assert (string != NULL);
   g_assert (strcmp (string, GLIB_TEST_STRING) == 0);
@@ -1483,7 +1480,7 @@ various_string_tests (void)
   g_free (string);
 
   if (g_test_verbose())
-    g_print ("checking g_strlcpy/g_strlcat...");
+    g_printerr ("checking g_strlcpy/g_strlcat...");
   /* The following is a torture test for strlcpy/strlcat, with lots of
    * checking; normal users wouldn't use them this way!
    */
@@ -1538,7 +1535,7 @@ various_string_tests (void)
   g_free(string);
 
   if (g_test_verbose())
-    g_print ("checking g_strdup_printf...\n");
+    g_printerr ("checking g_strdup_printf...\n");
   string = g_strdup_printf ("%05d %-5s", 21, "test");
   g_assert (string != NULL);
   g_assert (strcmp(string, "00021 test ") == 0);

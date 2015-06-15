@@ -1,7 +1,6 @@
 EXTRA_DIST = \
 	README.txt \
 	glib.sln \
-	glib.vsprops \
 	glib.vcproj \
 	glib.vcprojin \
 	glib-genmarshal.vcproj \
@@ -13,9 +12,14 @@ EXTRA_DIST = \
 	gthread.vcproj \
 	gio.vcproj \
 	gio.vcprojin \
-	testglib.vcproj \
 	glib-compile-schemas.vcproj \
 	gsettings.vcproj \
 	glib-compile-resources.vcproj \
 	gresource.vcproj \
-	install.vcproj
+	gio-querymodules.vcproj \
+	gdbus.vcproj \
+	glib-install.vcproj	\
+	glib-build-defines.vsprops	\
+	glib-install.vsprops	\
+	glib-version-paths.vsprops	\
+	glib-gen-srcs.vsprops

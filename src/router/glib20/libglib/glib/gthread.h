@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
- * USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,19 +22,21 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_THREAD_H__
+#define __G_THREAD_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
-#ifndef __G_THREAD_H__
-#define __G_THREAD_H__
-
 #include <glib/gatomic.h>
 #include <glib/gerror.h>
+#include <glib/gutils.h>
 
 G_BEGIN_DECLS
 
 #define G_THREAD_ERROR g_thread_error_quark ()
+GLIB_AVAILABLE_IN_ALL
 GQuark g_thread_error_quark (void);
 
 typedef enum
@@ -150,9 +150,13 @@ GThread *       g_thread_try_new                (const gchar    *name,
                                                  GThreadFunc     func,
                                                  gpointer        data,
                                                  GError        **error);
+GLIB_AVAILABLE_IN_ALL
 GThread *       g_thread_self                   (void);
+GLIB_AVAILABLE_IN_ALL
 void            g_thread_exit                   (gpointer        retval);
+GLIB_AVAILABLE_IN_ALL
 gpointer        g_thread_join                   (GThread        *thread);
+GLIB_AVAILABLE_IN_ALL
 void            g_thread_yield                  (void);
 
 
@@ -160,8 +164,11 @@ GLIB_AVAILABLE_IN_2_32
 void            g_mutex_init                    (GMutex         *mutex);
 GLIB_AVAILABLE_IN_2_32
 void            g_mutex_clear                   (GMutex         *mutex);
+GLIB_AVAILABLE_IN_ALL
 void            g_mutex_lock                    (GMutex         *mutex);
+GLIB_AVAILABLE_IN_ALL
 gboolean        g_mutex_trylock                 (GMutex         *mutex);
+GLIB_AVAILABLE_IN_ALL
 void            g_mutex_unlock                  (GMutex         *mutex);
 
 GLIB_AVAILABLE_IN_2_32
@@ -196,26 +203,34 @@ GLIB_AVAILABLE_IN_2_32
 void            g_cond_init                     (GCond          *cond);
 GLIB_AVAILABLE_IN_2_32
 void            g_cond_clear                    (GCond          *cond);
+GLIB_AVAILABLE_IN_ALL
 void            g_cond_wait                     (GCond          *cond,
                                                  GMutex         *mutex);
+GLIB_AVAILABLE_IN_ALL
 void            g_cond_signal                   (GCond          *cond);
+GLIB_AVAILABLE_IN_ALL
 void            g_cond_broadcast                (GCond          *cond);
 GLIB_AVAILABLE_IN_2_32
 gboolean        g_cond_wait_until               (GCond          *cond,
                                                  GMutex         *mutex,
                                                  gint64          end_time);
 
+GLIB_AVAILABLE_IN_ALL
 gpointer        g_private_get                   (GPrivate       *key);
+GLIB_AVAILABLE_IN_ALL
 void            g_private_set                   (GPrivate       *key,
                                                  gpointer        value);
 GLIB_AVAILABLE_IN_2_32
 void            g_private_replace               (GPrivate       *key,
                                                  gpointer        value);
 
+GLIB_AVAILABLE_IN_ALL
 gpointer        g_once_impl                     (GOnce          *once,
                                                  GThreadFunc     func,
                                                  gpointer        arg);
+GLIB_AVAILABLE_IN_ALL
 gboolean        g_once_init_enter               (volatile void  *location);
+GLIB_AVAILABLE_IN_ALL
 void            g_once_init_leave               (volatile void  *location,
                                                  gsize           result);
 
@@ -248,6 +263,78 @@ void            g_once_init_leave               (volatile void  *location,
 # define g_once_init_leave(location, result) \
   (g_once_init_leave((location), (gsize) (result)))
 #endif
+
+GLIB_AVAILABLE_IN_2_36
+guint          g_get_num_processors (void);
+
+/**
+ * GMutexLocker:
+ *
+ * Opaque type. See g_mutex_locker_new() for details.
+ * Since: 2.44
+ */
+typedef void GMutexLocker;
+
+/**
+ * g_mutex_locker_new:
+ * @mutex: a mutex to lock
+ *
+ * Lock @mutex and return a new #GMutexLocker. Unlock with
+ * g_mutex_locker_free(). Using g_mutex_unlock() on @mutex
+ * while a #GMutexLocker exists can lead to undefined behaviour.
+ *
+ * This is intended to be used with g_autoptr().  Note that g_autoptr()
+ * is only available when using GCC or clang, so the following example
+ * will only work with those compilers:
+ * |[
+ * typedef struct
+ * {
+ *   ...
+ *   GMutex mutex;
+ *   ...
+ * } MyObject;
+ *
+ * static void
+ * my_object_do_stuff (MyObject *self)
+ * {
+ *   g_autoptr(GMutexLocker) locker = g_mutex_locker_new (&self->mutex);
+ *
+ *   // Code with mutex locked here
+ *
+ *   if (cond)
+ *     // No need to unlock
+ *     return;
+ *
+ *   // Optionally early unlock
+ *   g_clear_pointer (&locker, g_mutex_locker_free);
+ *
+ *   // Code with mutex unlocked here
+ * }
+ * ]|
+ *
+ * Returns: a #GMutexLocker
+ * Since: 2.44
+ */
+static inline GMutexLocker *
+g_mutex_locker_new (GMutex *mutex)
+{
+  g_mutex_lock (mutex);
+  return (GMutexLocker *) mutex;
+}
+
+/**
+ * g_mutex_locker_free:
+ * @locker: a GMutexLocker
+ *
+ * Unlock @locker's mutex. See g_mutex_locker_new() for details.
+ *
+ * Since: 2.44
+ */
+static inline void
+g_mutex_locker_free (GMutexLocker *locker)
+{
+  g_mutex_unlock ((GMutex *) locker);
+}
 
 G_END_DECLS
 

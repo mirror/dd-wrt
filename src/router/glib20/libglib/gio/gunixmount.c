@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  *         David Zeuthen <davidz@redhat.com>
@@ -30,6 +28,8 @@
 #include <unistd.h>
 
 #include <glib.h>
+#include "gsubprocess.h"
+#include "gioenums.h"
 #include "gunixvolumemonitor.h"
 #include "gunixmount.h"
 #include "gunixmounts.h"
@@ -242,161 +242,58 @@ g_unix_mount_can_eject (GMount *mount)
   return unix_mount->can_eject;
 }
 
-
-typedef struct {
-  GUnixMount *unix_mount;
-  GAsyncReadyCallback callback;
-  gpointer user_data;
-  GCancellable *cancellable;
-  int error_fd;
-  GIOChannel *error_channel;
-  GSource *error_channel_source;
-  GString *error_string;
-  gchar **argv;
-} UnmountEjectOp;
-
-static void 
-eject_unmount_cb (GPid pid, gint status, gpointer user_data)
+static void
+eject_unmount_done (GObject      *source,
+                    GAsyncResult *result,
+                    gpointer      user_data)
 {
-  UnmountEjectOp *data = user_data;
-  GSimpleAsyncResult *simple;
-  
-  if (WEXITSTATUS (status) != 0)
+  GSubprocess *subprocess = G_SUBPROCESS (source);
+  GTask *task = user_data;
+  GError *error = NULL;
+  gchar *stderr_str;
+
+  if (!g_subprocess_communicate_utf8_finish (subprocess, result, NULL, &stderr_str, &error))
     {
-      GError *error;
-      error = g_error_new_literal (G_IO_ERROR, 
-                                   G_IO_ERROR_FAILED,
-                                   data->error_string->str);
-      simple = g_simple_async_result_new_from_error (G_OBJECT (data->unix_mount),
-                                                     data->callback,
-                                                     data->user_data,
-                                                     error);
+      g_task_return_error (task, error);
       g_error_free (error);
     }
-  else
+  else /* successful communication */
     {
-      simple = g_simple_async_result_new (G_OBJECT (data->unix_mount),
-                                          data->callback,
-                                          data->user_data,
-                                          NULL);
+      if (!g_subprocess_get_successful (subprocess))
+        /* ...but bad exit code */
+        g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_FAILED, "%s", stderr_str);
+      else
+        /* ...and successful exit code */
+        g_task_return_boolean (task, TRUE);
+
+      g_free (stderr_str);
     }
 
-  g_simple_async_result_complete (simple);
-  g_object_unref (simple);
-
-  if (data->error_channel_source)
-    {
-      g_source_destroy (data->error_channel_source);
-      g_source_unref (data->error_channel_source);
-    }
-  g_io_channel_unref (data->error_channel);
-  g_string_free (data->error_string, TRUE);
-  g_strfreev (data->argv);
-  close (data->error_fd);
-  g_spawn_close_pid (pid);
-  g_free (data);
-}
-
-static gboolean
-eject_unmount_read_error (GIOChannel *channel,
-                    GIOCondition condition,
-                    gpointer user_data)
-{
-  UnmountEjectOp *data = user_data;
-  char buf[BUFSIZ];
-  gsize bytes_read;
-  GError *error;
-  GIOStatus status;
-
-  error = NULL;
-read:
-  status = g_io_channel_read_chars (channel, buf, sizeof (buf), &bytes_read, &error);
-  if (status == G_IO_STATUS_NORMAL)
-   {
-     g_string_append_len (data->error_string, buf, bytes_read);
-     if (bytes_read == sizeof (buf))
-        goto read;
-   }
-  else if (status == G_IO_STATUS_EOF)
-    g_string_append_len (data->error_string, buf, bytes_read);
-  else if (status == G_IO_STATUS_ERROR)
-    {
-      if (data->error_string->len > 0)
-        g_string_append (data->error_string, "\n");
-
-      g_string_append (data->error_string, error->message);
-      g_error_free (error);
-
-      if (data->error_channel_source)
-        {
-          g_source_unref (data->error_channel_source);
-          data->error_channel_source = NULL;
-        }
-      return FALSE;
-    }
-
-  return TRUE;
+  g_object_unref (task);
 }
 
 static gboolean
 eject_unmount_do_cb (gpointer user_data)
 {
-  UnmountEjectOp *data = (UnmountEjectOp *) user_data;
-  GPid child_pid;
-  GSource *child_watch;
+  GTask *task = user_data;
   GError *error = NULL;
+  GSubprocess *subprocess;
+  const gchar **argv;
 
-  if (!g_spawn_async_with_pipes (NULL,         /* working dir */
-                                 data->argv,
-                                 NULL,         /* envp */
-                                 G_SPAWN_DO_NOT_REAP_CHILD|G_SPAWN_SEARCH_PATH,
-                                 NULL,         /* child_setup */
-                                 NULL,         /* user_data for child_setup */
-                                 &child_pid,
-                                 NULL,           /* standard_input */
-                                 NULL,           /* standard_output */
-                                 &(data->error_fd),
-                                 &error)) {
-    g_assert (error != NULL);
-    goto handle_error;
-  }
+  argv = g_task_get_task_data (task);
 
-  data->error_string = g_string_new ("");
+  if (g_task_return_error_if_cancelled (task))
+    {
+      g_object_unref (task);
+      return G_SOURCE_REMOVE;
+    }
 
-  data->error_channel = g_io_channel_unix_new (data->error_fd);
-  g_io_channel_set_flags (data->error_channel, G_IO_FLAG_NONBLOCK, &error);
-  if (error != NULL)
-    goto handle_error;
+  subprocess = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_SILENCE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
+  g_assert_no_error (error);
 
-  data->error_channel_source = g_io_create_watch (data->error_channel, G_IO_IN);
-  g_source_set_callback (data->error_channel_source,
-                         (GSourceFunc) eject_unmount_read_error, data, NULL);
-  g_source_attach (data->error_channel_source, g_main_context_get_thread_default ());
-
-  child_watch = g_child_watch_source_new (child_pid);
-  g_source_set_callback (child_watch, (GSourceFunc) eject_unmount_cb, data, NULL);
-  g_source_attach (child_watch, g_main_context_get_thread_default ());
-  g_source_unref (child_watch);
-
-handle_error:
-  if (error != NULL) {
-    GSimpleAsyncResult *simple;
-    simple = g_simple_async_result_new_take_error (G_OBJECT (data->unix_mount),
-                                                   data->callback,
-                                                   data->user_data,
-                                                   error);
-    g_simple_async_result_complete (simple);
-    g_object_unref (simple);
-
-    if (data->error_string != NULL)
-      g_string_free (data->error_string, TRUE);
-
-    if (data->error_channel != NULL)
-      g_io_channel_unref (data->error_channel);
-
-    g_strfreev (data->argv);
-    g_free (data);
-  }
+  g_subprocess_communicate_utf8_async (subprocess, NULL,
+                                       g_task_get_cancellable (task),
+                                       eject_unmount_done, task);
 
   return G_SOURCE_REMOVE;
 }
@@ -409,21 +306,20 @@ eject_unmount_do (GMount              *mount,
                   char               **argv)
 {
   GUnixMount *unix_mount = G_UNIX_MOUNT (mount);
-  UnmountEjectOp *data;
+  GTask *task;
+  GSource *timeout;
 
-  data = g_new0 (UnmountEjectOp, 1);
-  data->unix_mount = unix_mount;
-  data->callback = callback;
-  data->user_data = user_data;
-  data->cancellable = cancellable;
-  data->argv = g_strdupv (argv);
+  task = g_task_new (mount, cancellable, callback, user_data);
+  g_task_set_task_data (task, g_strdupv (argv), (GDestroyNotify) g_strfreev);
 
   if (unix_mount->volume_monitor != NULL)
     g_signal_emit_by_name (unix_mount->volume_monitor, "mount-pre-unmount", mount);
 
   g_signal_emit_by_name (mount, "pre-unmount", 0);
 
-  g_timeout_add (500, (GSourceFunc) eject_unmount_do_cb, data);
+  timeout = g_timeout_source_new (500);
+  g_task_attach_source (task, timeout, (GSourceFunc) eject_unmount_do_cb);
+  g_source_unref (timeout);
 }
 
 static void
@@ -449,7 +345,7 @@ g_unix_mount_unmount_finish (GMount       *mount,
                              GAsyncResult  *result,
                              GError       **error)
 {
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 static void
@@ -475,7 +371,7 @@ g_unix_mount_eject_finish (GMount       *mount,
                            GAsyncResult  *result,
                            GError       **error)
 {
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 static void

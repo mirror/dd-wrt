@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -29,7 +27,7 @@
 #include "gdbusprivate.h"
 #include "gdbusmethodinvocation.h"
 #include "gdbusconnection.h"
-#include "gioscheduler.h"
+#include "gtask.h"
 #include "gioerror.h"
 
 #include "glibintl.h"
@@ -91,7 +89,8 @@ static void     skeleton_intercept_handle_method_call              (GDBusConnect
 
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (GDBusInterfaceSkeleton, g_dbus_interface_skeleton, G_TYPE_OBJECT,
-                                  G_IMPLEMENT_INTERFACE (G_TYPE_DBUS_INTERFACE, dbus_interface_interface_init));
+                                  G_ADD_PRIVATE (GDBusInterfaceSkeleton)
+                                  G_IMPLEMENT_INTERFACE (G_TYPE_DBUS_INTERFACE, dbus_interface_interface_init))
 
 static void
 g_dbus_interface_skeleton_finalize (GObject *object)
@@ -209,11 +208,11 @@ g_dbus_interface_skeleton_class_init (GDBusInterfaceSkeletonClass *klass)
    *
    * Note that this signal is emitted in a thread dedicated to
    * handling the method call so handlers are allowed to perform
-   * blocking IO. This means that it is appropriate to call
-   * e.g. <ulink
-   * url="http://hal.freedesktop.org/docs/polkit/PolkitAuthority.html#polkit-authority-check-authorization-sync">polkit_authority_check_authorization_sync()</ulink>
-   * with the <ulink
-   * url="http://hal.freedesktop.org/docs/polkit/PolkitAuthority.html#POLKIT-CHECK-AUTHORIZATION-FLAGS-ALLOW-USER-INTERACTION:CAPS">POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION</ulink> flag set.
+   * blocking IO. This means that it is appropriate to call e.g.
+   * [polkit_authority_check_authorization_sync()](http://hal.freedesktop.org/docs/polkit/PolkitAuthority.html#polkit-authority-check-authorization-sync)
+   * with the
+   * [POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION](http://hal.freedesktop.org/docs/polkit/PolkitAuthority.html#POLKIT-CHECK-AUTHORIZATION-FLAGS-ALLOW-USER-INTERACTION:CAPS)
+   * flag set.
    *
    * If %FALSE is returned then no further handlers are run and the
    * signal handler must take a reference to @invocation and finish
@@ -253,14 +252,12 @@ g_dbus_interface_skeleton_class_init (GDBusInterfaceSkeletonClass *klass)
                   G_TYPE_BOOLEAN,
                   1,
                   G_TYPE_DBUS_METHOD_INVOCATION);
-
-  g_type_class_add_private (klass, sizeof (GDBusInterfaceSkeletonPrivate));
 }
 
 static void
 g_dbus_interface_skeleton_init (GDBusInterfaceSkeleton *interface)
 {
-  interface->priv = G_TYPE_INSTANCE_GET_PRIVATE (interface, G_TYPE_DBUS_INTERFACE_SKELETON, GDBusInterfaceSkeletonPrivate);
+  interface->priv = g_dbus_interface_skeleton_get_instance_private (interface);
   g_mutex_init (&interface->priv->lock);
 }
 
@@ -360,7 +357,9 @@ g_dbus_interface_skeleton_get_vtable (GDBusInterfaceSkeleton *interface_)
  *
  * Gets all D-Bus properties for @interface_.
  *
- * Returns: (transfer full): A #GVariant of type <link linkend="G-VARIANT-TYPE-VARDICT:CAPS">'a{sv}'</link>. Free with g_variant_unref().
+ * Returns: (transfer full): A #GVariant of type
+ * ['a{sv}'][G-VARIANT-TYPE-VARDICT:CAPS].
+ * Free with g_variant_unref().
  *
  * Since: 2.30
  */
@@ -382,7 +381,7 @@ g_dbus_interface_skeleton_get_properties (GDBusInterfaceSkeleton *interface_)
  *
  * For example, an exported D-Bus interface may queue up property
  * changes and emit the
- * <literal>org.freedesktop.DBus.Properties::PropertiesChanged</literal>
+ * `org.freedesktop.DBus.Properties::Propert``
  * signal later (e.g. in an idle handler). This technique is useful
  * for collapsing multiple property changes into one.
  *
@@ -459,17 +458,13 @@ typedef struct
   GDBusInterfaceSkeleton       *interface;
   GDBusInterfaceMethodCallFunc  method_call_func;
   GDBusMethodInvocation        *invocation;
-  GMainContext                 *context;
 } DispatchData;
 
 static void
 dispatch_data_unref (DispatchData *data)
 {
   if (g_atomic_int_dec_and_test (&data->ref_count))
-    {
-      g_main_context_unref (data->context);
-      g_free (data);
-    }
+    g_slice_free (DispatchData, data);
 }
 
 static DispatchData *
@@ -494,12 +489,13 @@ dispatch_invoke_in_context_func (gpointer user_data)
   return FALSE;
 }
 
-static gboolean
-dispatch_in_thread_func (GIOSchedulerJob *job,
-                         GCancellable    *cancellable,
-                         gpointer         user_data)
+static void
+dispatch_in_thread_func (GTask        *task,
+                         gpointer      source_object,
+                         gpointer      task_data,
+                         GCancellable *cancellable)
 {
-  DispatchData *data = user_data;
+  DispatchData *data = task_data;
   GDBusInterfaceSkeletonFlags flags;
   GDBusObject *object;
   gboolean authorized;
@@ -549,8 +545,8 @@ dispatch_in_thread_func (GIOSchedulerJob *job,
       else
         {
           /* bah, back to original context */
-          g_main_context_invoke_full (data->context,
-                                      G_PRIORITY_DEFAULT,
+          g_main_context_invoke_full (g_task_get_context (task),
+                                      g_task_get_priority (task),
                                       dispatch_invoke_in_context_func,
                                       dispatch_data_ref (data),
                                       (GDestroyNotify) dispatch_data_unref);
@@ -563,8 +559,6 @@ dispatch_in_thread_func (GIOSchedulerJob *job,
 
   if (object != NULL)
     g_object_unref (object);
-
-  return FALSE;
 }
 
 static void
@@ -623,18 +617,19 @@ g_dbus_interface_method_dispatch_helper (GDBusInterfaceSkeleton       *interface
     }
   else
     {
+      GTask *task;
       DispatchData *data;
-      data = g_new0 (DispatchData, 1);
+
+      data = g_slice_new0 (DispatchData);
       data->interface = interface;
       data->method_call_func = method_call_func;
       data->invocation = invocation;
-      data->context = g_main_context_ref_thread_default ();
       data->ref_count = 1;
-      g_io_scheduler_push_job (dispatch_in_thread_func,
-                               data,
-                               (GDestroyNotify) dispatch_data_unref,
-                               G_PRIORITY_DEFAULT,
-                               NULL); /* GCancellable* */
+
+      task = g_task_new (interface, NULL, NULL, NULL);
+      g_task_set_task_data (task, data, (GDestroyNotify) dispatch_data_unref);
+      g_task_run_in_thread (task, dispatch_in_thread_func);
+      g_object_unref (task);
     }
 
   if (object != NULL)
@@ -836,7 +831,7 @@ g_dbus_interface_skeleton_get_connections (GDBusInterfaceSkeleton *interface_)
  * @interface_: A #GDBusInterfaceSkeleton.
  * @connection: A #GDBusConnection.
  *
- * Checks if @interface_ is export on @connection.
+ * Checks if @interface_ is exported on @connection.
  *
  * Returns: %TRUE if @interface_ is exported on @connection, %FALSE otherwise.
  *

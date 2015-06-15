@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -25,12 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef _WIN32
-#include <io.h>
-#endif
 
 #include "giotypes.h"
 #include "gioerror.h"
@@ -45,10 +37,18 @@
 #include "gsocketservice.h"
 #include "gthreadedsocketservice.h"
 #include "gresolver.h"
+#include "glib/gstdio.h"
 #include "ginetaddress.h"
 #include "ginetsocketaddress.h"
 #include "ginputstream.h"
 #include "giostream.h"
+
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
+#ifdef G_OS_WIN32
+#include <io.h>
+#endif
 
 #ifdef G_OS_UNIX
 #include "gunixsocketaddress.h"
@@ -70,7 +70,8 @@
  * To just export an object on a well-known name on a message bus, such as the
  * session or system bus, you should instead use g_bus_own_name().
  *
- * <example id="gdbus-peer-to-peer"><title>D-Bus peer-to-peer example</title><programlisting><xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gdbus-example-peer.c"><xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback></xi:include></programlisting></example>
+ * An example of peer-to-peer communication with G-DBus can be found
+ * in [gdbus-example-peer.c](https://git.gnome.org/browse/glib/tree/gio/tests/gdbus-example-peer.c).
  */
 
 /**
@@ -404,9 +405,9 @@ g_dbus_server_class_init (GDBusServerClass *klass)
    *
    * If #GDBusServer:flags contains %G_DBUS_SERVER_FLAGS_RUN_IN_THREAD
    * then the signal is emitted in a new thread dedicated to the
-   * connection. Otherwise the signal is emitted in the <link
-   * linkend="g-main-context-push-thread-default">thread-default main
-   * loop</link> of the thread that @server was constructed in.
+   * connection. Otherwise the signal is emitted in the
+   * [thread-default main context][g-main-context-push-thread-default]
+   * of the thread that @server was constructed in.
    *
    * You are guaranteed that signal handlers for this signal runs
    * before incoming messages on @connection are processed. This means
@@ -463,8 +464,7 @@ on_run (GSocketService    *service,
  * The returned #GDBusServer isn't active - you have to start it with
  * g_dbus_server_start().
  *
- * See <xref linkend="gdbus-peer-to-peer"/> for how #GDBusServer can
- * be used.
+ * #GDBusServer is used in this [example][gdbus-peer-to-peer].
  *
  * This is a synchronous failable constructor. See
  * g_dbus_server_new() for the asynchronous version.
@@ -870,7 +870,7 @@ try_tcp (GDBusServer  *server,
               g_set_error (error,
                            G_IO_ERROR,
                            g_io_error_from_errno (errno),
-                           _("Error writing nonce file at `%s': %s"),
+                           _("Error writing nonce file at '%s': %s"),
                            server->nonce_file,
                            strerror (errno));
               goto out;
@@ -878,7 +878,8 @@ try_tcp (GDBusServer  *server,
           bytes_written += ret;
           bytes_remaining -= ret;
         }
-      close (fd);
+      if (!g_close (fd, error))
+        goto out;
       file_escaped = g_uri_escape_string (server->nonce_file, "/\\", FALSE);
       server->client_address = g_strdup_printf ("nonce-tcp:host=%s,port=%d,noncefile=%s",
                                                 host,
@@ -895,7 +896,8 @@ try_tcp (GDBusServer  *server,
 
  out:
   g_list_free_full (resolved_addresses, g_object_unref);
-  g_object_unref (resolver);
+  if (resolver)
+    g_object_unref (resolver);
   return ret;
 }
 
@@ -1010,6 +1012,7 @@ on_run (GSocketService    *service,
                              emit_new_connection_in_idle,
                              data,
                              (GDestroyNotify) emit_idle_data_free);
+      g_source_set_name (idle_source, "[gio] emit_new_connection_in_idle");
       g_source_attach (idle_source, server->main_context_at_construction);
       g_source_unref (idle_source);
     }
@@ -1038,7 +1041,7 @@ initable_init (GInitable     *initable,
       g_set_error (&last_error,
                    G_IO_ERROR,
                    G_IO_ERROR_INVALID_ARGUMENT,
-                   _("The string `%s' is not a valid D-Bus GUID"),
+                   _("The string '%s' is not a valid D-Bus GUID"),
                    server->guid);
       goto out;
     }
@@ -1078,7 +1081,7 @@ initable_init (GInitable     *initable,
             g_set_error (&this_error,
                          G_IO_ERROR,
                          G_IO_ERROR_INVALID_ARGUMENT,
-                         _("Cannot listen on unsupported transport `%s'"),
+                         _("Cannot listen on unsupported transport '%s'"),
                          transport_name);
 
           g_free (transport_name);

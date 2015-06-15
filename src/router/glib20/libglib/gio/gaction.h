@@ -12,19 +12,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
 
+#ifndef __G_ACTION_H__
+#define __G_ACTION_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_ACTION_H__
-#define __G_ACTION_H__
 
 #include <gio/giotypes.h>
 
@@ -61,18 +59,40 @@ struct _GActionInterface
 GLIB_AVAILABLE_IN_2_30
 GType                   g_action_get_type                               (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 const gchar *           g_action_get_name                               (GAction            *action);
+GLIB_AVAILABLE_IN_ALL
 const GVariantType *    g_action_get_parameter_type                     (GAction            *action);
+GLIB_AVAILABLE_IN_ALL
 const GVariantType *    g_action_get_state_type                         (GAction            *action);
+GLIB_AVAILABLE_IN_ALL
 GVariant *              g_action_get_state_hint                         (GAction            *action);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_action_get_enabled                            (GAction            *action);
+GLIB_AVAILABLE_IN_ALL
 GVariant *              g_action_get_state                              (GAction            *action);
 
+GLIB_AVAILABLE_IN_ALL
 void                    g_action_change_state                           (GAction            *action,
                                                                          GVariant           *value);
+GLIB_AVAILABLE_IN_ALL
 void                    g_action_activate                               (GAction            *action,
                                                                          GVariant           *parameter);
+
+GLIB_AVAILABLE_IN_2_28
+gboolean                g_action_name_is_valid                          (const gchar        *action_name);
+
+GLIB_AVAILABLE_IN_2_38
+gboolean                g_action_parse_detailed_name                    (const gchar        *detailed_name,
+                                                                         gchar             **action_name,
+                                                                         GVariant          **target_value,
+                                                                         GError            **error);
+
+GLIB_AVAILABLE_IN_2_38
+gchar *                 g_action_print_detailed_name                    (const gchar        *action_name,
+                                                                         GVariant           *target_value);
+
 G_END_DECLS
 
 #endif /* __G_ACTION_H__ */

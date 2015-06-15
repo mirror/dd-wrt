@@ -15,12 +15,12 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
+
+/* Prologue {{{1 */
 
 #include "config.h"
 
@@ -31,11 +31,8 @@
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_POLL_H
-#include <sys/poll.h>
 #endif
-#endif
-#ifdef HAVE_POLL_H
+#ifdef HAVE_POLL
 #include <poll.h>
 #endif
 #include <stdio.h>
@@ -71,6 +68,7 @@
 #include "gfilemonitor.h"
 #include "glibintl.h"
 #include "gthemedicon.h"
+#include "gcontextspecificgroup.h"
 
 
 #ifdef HAVE_MNTENT_H
@@ -84,12 +82,12 @@ static const char *_resolve_dev_root (void);
  *
  * Routines for managing mounted UNIX mount points and paths.
  *
- * Note that <filename>&lt;gio/gunixmounts.h&gt;</filename> belongs to the
- * UNIX-specific GIO interfaces, thus you have to use the
- * <filename>gio-unix-2.0.pc</filename> pkg-config file when using it.
+ * Note that `<gio/gunixmounts.h>` belongs to the UNIX-specific GIO
+ * interfaces, thus you have to use the `gio-unix-2.0.pc` pkg-config
+ * file when using it.
  */
 
-/*
+/**
  * GUnixMountType:
  * @G_UNIX_MOUNT_TYPE_UNKNOWN: Unknown UNIX mount type.
  * @G_UNIX_MOUNT_TYPE_FLOPPY: Floppy disk UNIX mount type.
@@ -141,35 +139,10 @@ struct _GUnixMountPoint {
   gboolean is_loopback;
 };
 
-enum {
-  MOUNTS_CHANGED,
-  MOUNTPOINTS_CHANGED,
-  LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL];
-
-struct _GUnixMountMonitor {
-  GObject parent;
-
-  GFileMonitor *fstab_monitor;
-  GFileMonitor *mtab_monitor;
-
-  GSource *proc_mounts_watch_source;
-};
-
-struct _GUnixMountMonitorClass {
-  GObjectClass parent_class;
-};
-  
-static GUnixMountMonitor *the_mount_monitor = NULL;
-
 static GList *_g_get_unix_mounts (void);
 static GList *_g_get_unix_mount_points (void);
 
-G_DEFINE_TYPE (GUnixMountMonitor, g_unix_mount_monitor, G_TYPE_OBJECT);
-
-#define MOUNT_POLL_INTERVAL 4000
+static guint64 mount_poller_time = 0;
 
 #ifdef HAVE_SYS_MNTTAB_H
 #define MNTOPT_RO	"ro"
@@ -193,6 +166,7 @@ G_DEFINE_TYPE (GUnixMountMonitor, g_unix_mount_monitor, G_TYPE_OBJECT);
 #endif
 
 #if (defined(HAVE_GETVFSSTAT) || defined(HAVE_GETFSSTAT)) && defined(HAVE_FSTAB_H) && defined(HAVE_SYS_MOUNT_H)
+#include <sys/param.h>
 #include <sys/ucred.h>
 #include <sys/mount.h>
 #include <fstab.h>
@@ -222,8 +196,7 @@ is_in (const char *value, const char *set[])
 
 /**
  * g_unix_is_mount_path_system_internal:
- * @mount_path: a mount path, e.g. <filename>/media/disk</filename> 
- *    or <filename>/usr</filename>
+ * @mount_path: a mount path, e.g. `/media/disk` or `/usr`
  *
  * Determines if @mount_path is considered an implementation of the
  * OS. This is primarily used for hiding mountable and mounted volumes
@@ -243,22 +216,31 @@ g_unix_is_mount_path_system_internal (const char *mount_path)
     "/",              /* we already have "Filesystem root" in Nautilus */ 
     "/bin",
     "/boot",
+    "/compat/linux/proc",
+    "/compat/linux/sys",
     "/dev",
     "/etc",
     "/home",
     "/lib",
     "/lib64",
+    "/libexec",
     "/live/cow",
     "/live/image",
     "/media",
     "/mnt",
     "/opt",
+    "/rescue",
     "/root",
     "/sbin",
     "/srv",
     "/tmp",
     "/usr",
+    "/usr/X11R6",
     "/usr/local",
+    "/usr/obj",
+    "/usr/ports",
+    "/usr/src",
+    "/usr/xobj",
     "/var",
     "/var/crash",
     "/var/local",
@@ -299,8 +281,11 @@ guess_system_internal (const char *mountpoint,
     "devfs",
     "devpts",
     "ecryptfs",
+    "fdescfs",
     "kernfs",
     "linprocfs",
+    "mfs",
+    "nullfs",
     "proc",
     "procfs",
     "ptyfs",
@@ -336,6 +321,9 @@ guess_system_internal (const char *mountpoint,
   return FALSE;
 }
 
+/* GUnixMounts (ie: mtab) implementations {{{1 */
+
+/* mntent.h (Linux, GNU, NSS) {{{2 */
 #ifdef HAVE_MNTENT_H
 
 static char *
@@ -347,7 +335,7 @@ get_mtab_read_file (void)
 # else
   return _PATH_MOUNTED;
 # endif
-#else	
+#else
   return "/etc/mtab";
 #endif
 }
@@ -361,7 +349,7 @@ get_mtab_monitor_file (void)
 # else
   return _PATH_MOUNTED;
 # endif
-#else	
+#else
   return "/etc/mtab";
 #endif
 }
@@ -418,7 +406,7 @@ _g_get_unix_mounts (void)
       
       mount_entry = g_new0 (GUnixMountEntry, 1);
       mount_entry->mount_path = g_strdup (mntent->mnt_dir);
-      if (strcmp (mntent->mnt_fsname, "/dev/root") == 0)
+      if (g_strcmp0 (mntent->mnt_fsname, "/dev/root") == 0)
         mount_entry->device_path = g_strdup (_resolve_dev_root ());
       else
         mount_entry->device_path = g_strdup (mntent->mnt_fsname);
@@ -451,6 +439,7 @@ _g_get_unix_mounts (void)
   return g_list_reverse (return_list);
 }
 
+/* mnttab.h {{{2 */
 #elif defined (HAVE_SYS_MNTTAB_H)
 
 G_LOCK_DEFINE_STATIC(getmntent);
@@ -517,6 +506,7 @@ _g_get_unix_mounts (void)
   return g_list_reverse (return_list);
 }
 
+/* mntctl.h (AIX) {{{2 */
 #elif defined(HAVE_SYS_MNTCTL_H) && defined(HAVE_SYS_VMOUNT_H) && defined(HAVE_SYS_VFS_H)
 
 static char *
@@ -591,6 +581,7 @@ _g_get_unix_mounts (void)
   return g_list_reverse (return_list);
 }
 
+/* sys/mount.h {{{2 */
 #elif (defined(HAVE_GETVFSSTAT) || defined(HAVE_GETFSSTAT)) && defined(HAVE_FSTAB_H) && defined(HAVE_SYS_MOUNT_H)
 
 static char *
@@ -602,9 +593,9 @@ get_mtab_monitor_file (void)
 static GList *
 _g_get_unix_mounts (void)
 {
-#if defined(HAVE_GETVFSSTAT)
+#if defined(USE_STATVFS)
   struct statvfs *mntent = NULL;
-#elif defined(HAVE_GETFSSTAT)
+#elif defined(USE_STATFS)
   struct statfs *mntent = NULL;
 #else
   #error statfs juggling failed
@@ -615,9 +606,9 @@ _g_get_unix_mounts (void)
   GList *return_list;
   
   /* Pass NOWAIT to avoid blocking trying to update NFS mounts. */
-#if defined(HAVE_GETVFSSTAT)
+#if defined(USE_STATVFS) && defined(HAVE_GETVFSSTAT)
   num_mounts = getvfsstat (NULL, 0, ST_NOWAIT);
-#elif defined(HAVE_GETFSSTAT)
+#elif defined(USE_STATFS) && defined(HAVE_GETFSSTAT)
   num_mounts = getfsstat (NULL, 0, MNT_NOWAIT);
 #endif
   if (num_mounts == -1)
@@ -625,9 +616,9 @@ _g_get_unix_mounts (void)
 
   bufsize = num_mounts * sizeof (*mntent);
   mntent = g_malloc (bufsize);
-#if defined(HAVE_GETVFSSTAT)
+#if defined(USE_STATVFS) && defined(HAVE_GETVFSSTAT)
   num_mounts = getvfsstat (mntent, bufsize, ST_NOWAIT);
-#elif defined(HAVE_GETFSSTAT)
+#elif defined(USE_STATFS) && defined(HAVE_GETFSSTAT)
   num_mounts = getfsstat (mntent, bufsize, MNT_NOWAIT);
 #endif
   if (num_mounts == -1)
@@ -642,10 +633,13 @@ _g_get_unix_mounts (void)
       mount_entry->mount_path = g_strdup (mntent[i].f_mntonname);
       mount_entry->device_path = g_strdup (mntent[i].f_mntfromname);
       mount_entry->filesystem_type = g_strdup (mntent[i].f_fstypename);
-#if defined(HAVE_GETVFSSTAT)
+
+#if defined(USE_STATVFS)
       if (mntent[i].f_flag & ST_RDONLY)
-#elif defined(HAVE_GETFSSTAT)
+#elif defined(USE_STATFS)
       if (mntent[i].f_flags & MNT_RDONLY)
+#else
+      #error statfs juggling failed
 #endif
         mount_entry->is_read_only = TRUE;
 
@@ -661,6 +655,8 @@ _g_get_unix_mounts (void)
   
   return g_list_reverse (return_list);
 }
+
+/* Interix {{{2 */
 #elif defined(__INTERIX)
 
 static char *
@@ -716,9 +712,13 @@ _g_get_unix_mounts (void)
 
   return return_list;
 }
+
+/* Common code {{{2 */
 #else
 #error No _g_get_unix_mounts() implementation for system
 #endif
+
+/* GUnixMountPoints (ie: fstab) implementations {{{1 */
 
 /* _g_get_unix_mount_points():
  * read the fstab.
@@ -740,6 +740,7 @@ get_fstab_file (void)
 #endif
 }
 
+/* mntent.h (Linux, GNU, NSS) {{{2 */
 #ifdef HAVE_MNTENT_H
 static GList *
 _g_get_unix_mount_points (void)
@@ -773,6 +774,12 @@ _g_get_unix_mount_points (void)
           (strcmp (mntent->mnt_dir, "swap") == 0) ||
           (strcmp (mntent->mnt_dir, "none") == 0))
 	continue;
+
+#ifdef HAVE_HASMNTOPT
+      /* We ignore bind fstab entries, as we ignore bind mounts anyway */
+      if (hasmntopt (mntent, "bind"))
+        continue;
+#endif
 
       mount_entry = g_new0 (GUnixMountPoint, 1);
       mount_entry->mount_path = g_strdup (mntent->mnt_dir);
@@ -815,6 +822,7 @@ _g_get_unix_mount_points (void)
   return g_list_reverse (return_list);
 }
 
+/* mnttab.h {{{2 */
 #elif defined (HAVE_SYS_MNTTAB_H)
 
 static GList *
@@ -876,6 +884,8 @@ _g_get_unix_mount_points (void)
   
   return g_list_reverse (return_list);
 }
+
+/* mntctl.h (AIX) {{{2 */
 #elif defined(HAVE_SYS_MNTCTL_H) && defined(HAVE_SYS_VMOUNT_H) && defined(HAVE_SYS_VFS_H)
 
 /* functions to parse /etc/filesystems on aix */
@@ -1100,12 +1110,15 @@ _g_get_unix_mount_points (void)
   
   return g_list_reverse (return_list);
 }
+/* Interix {{{2 */
 #elif defined(__INTERIX)
 static GList *
 _g_get_unix_mount_points (void)
 {
   return _g_get_unix_mounts ();
 }
+
+/* Common code {{{2 */
 #else
 #error No g_get_mount_table() implementation for system
 #endif
@@ -1120,7 +1133,11 @@ get_mounts_timestamp (void)
   if (monitor_file)
     {
       if (stat (monitor_file, &buf) == 0)
-	return (guint64)buf.st_mtime;
+        return (guint64)buf.st_mtime;
+    }
+  else
+    {
+      return mount_poller_time;
     }
   return 0;
 }
@@ -1135,7 +1152,7 @@ get_mount_points_timestamp (void)
   if (monitor_file)
     {
       if (stat (monitor_file, &buf) == 0)
-	return (guint64)buf.st_mtime;
+        return (guint64)buf.st_mtime;
     }
   return 0;
 }
@@ -1187,9 +1204,9 @@ g_unix_mount_at (const char *mount_path,
       mount_entry = l->data;
 
       if (!found && strcmp (mount_path, mount_entry->mount_path) == 0)
-	found = mount_entry;
+        found = mount_entry;
       else
-	g_unix_mount_free (mount_entry);
+        g_unix_mount_free (mount_entry);
     }
   g_list_free (mounts);
 
@@ -1245,33 +1262,210 @@ g_unix_mount_points_changed_since (guint64 time)
   return get_mount_points_timestamp () != time;
 }
 
+/* GUnixMountMonitor {{{1 */
+
+enum {
+  MOUNTS_CHANGED,
+  MOUNTPOINTS_CHANGED,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL];
+
+struct _GUnixMountMonitor {
+  GObject parent;
+
+  GMainContext *context;
+};
+
+struct _GUnixMountMonitorClass {
+  GObjectClass parent_class;
+};
+
+
+G_DEFINE_TYPE (GUnixMountMonitor, g_unix_mount_monitor, G_TYPE_OBJECT);
+
+static GContextSpecificGroup  mount_monitor_group;
+static GFileMonitor          *fstab_monitor;
+static GFileMonitor          *mtab_monitor;
+static GSource               *proc_mounts_watch_source;
+static GList                 *mount_poller_mounts;
+
+static void
+fstab_file_changed (GFileMonitor      *monitor,
+                    GFile             *file,
+                    GFile             *other_file,
+                    GFileMonitorEvent  event_type,
+                    gpointer           user_data)
+{
+  if (event_type != G_FILE_MONITOR_EVENT_CHANGED &&
+      event_type != G_FILE_MONITOR_EVENT_CREATED &&
+      event_type != G_FILE_MONITOR_EVENT_DELETED)
+    return;
+
+  g_context_specific_group_emit (&mount_monitor_group, signals[MOUNTPOINTS_CHANGED]);
+}
+
+static void
+mtab_file_changed (GFileMonitor      *monitor,
+                   GFile             *file,
+                   GFile             *other_file,
+                   GFileMonitorEvent  event_type,
+                   gpointer           user_data)
+{
+  if (event_type != G_FILE_MONITOR_EVENT_CHANGED &&
+      event_type != G_FILE_MONITOR_EVENT_CREATED &&
+      event_type != G_FILE_MONITOR_EVENT_DELETED)
+    return;
+
+  g_context_specific_group_emit (&mount_monitor_group, signals[MOUNTS_CHANGED]);
+}
+
+static gboolean
+proc_mounts_changed (GIOChannel   *channel,
+                     GIOCondition  cond,
+                     gpointer      user_data)
+{
+  if (cond & G_IO_ERR)
+    g_context_specific_group_emit (&mount_monitor_group, signals[MOUNTS_CHANGED]);
+
+  return TRUE;
+}
+
+static gboolean
+mount_change_poller (gpointer user_data)
+{
+  GList *current_mounts, *new_it, *old_it;
+  gboolean has_changed = FALSE;
+
+  current_mounts = _g_get_unix_mounts ();
+
+  for ( new_it = current_mounts, old_it = mount_poller_mounts;
+        new_it != NULL && old_it != NULL;
+        new_it = g_list_next (new_it), old_it = g_list_next (old_it) )
+    {
+      if (g_unix_mount_compare (new_it->data, old_it->data) != 0)
+        {
+          has_changed = TRUE;
+          break;
+        }
+    }
+  if (!(new_it == NULL && old_it == NULL))
+    has_changed = TRUE;
+
+  g_list_free_full (mount_poller_mounts, (GDestroyNotify) g_unix_mount_free);
+
+  mount_poller_mounts = current_mounts;
+
+  if (has_changed)
+    {
+      mount_poller_time = (guint64) g_get_monotonic_time ();
+      g_context_specific_group_emit (&mount_monitor_group, signals[MOUNTPOINTS_CHANGED]);
+    }
+
+  return TRUE;
+}
+
+
+static void
+mount_monitor_stop (void)
+{
+  if (fstab_monitor)
+    {
+      g_file_monitor_cancel (fstab_monitor);
+      g_object_unref (fstab_monitor);
+    }
+
+  if (proc_mounts_watch_source != NULL)
+    g_source_destroy (proc_mounts_watch_source);
+
+  if (mtab_monitor)
+    {
+      g_file_monitor_cancel (mtab_monitor);
+      g_object_unref (mtab_monitor);
+    }
+
+  g_list_free_full (mount_poller_mounts, (GDestroyNotify) g_unix_mount_free);
+}
+
+static void
+mount_monitor_start (void)
+{
+  GFile *file;
+
+  if (get_fstab_file () != NULL)
+    {
+      file = g_file_new_for_path (get_fstab_file ());
+      fstab_monitor = g_file_monitor_file (file, 0, NULL, NULL);
+      g_object_unref (file);
+
+      g_signal_connect (fstab_monitor, "changed", (GCallback)fstab_file_changed, NULL);
+    }
+
+  if (get_mtab_monitor_file () != NULL)
+    {
+      const gchar *mtab_path;
+
+      mtab_path = get_mtab_monitor_file ();
+      /* /proc/mounts monitoring is special - can't just use GFileMonitor.
+       * See 'man proc' for more details.
+       */
+      if (g_strcmp0 (mtab_path, "/proc/mounts") == 0)
+        {
+          GIOChannel *proc_mounts_channel;
+          GError *error = NULL;
+          proc_mounts_channel = g_io_channel_new_file ("/proc/mounts", "r", &error);
+          if (proc_mounts_channel == NULL)
+            {
+              g_warning ("Error creating IO channel for /proc/mounts: %s (%s, %d)",
+                         error->message, g_quark_to_string (error->domain), error->code);
+              g_error_free (error);
+            }
+          else
+            {
+              proc_mounts_watch_source = g_io_create_watch (proc_mounts_channel, G_IO_ERR);
+              g_source_set_callback (proc_mounts_watch_source,
+                                     (GSourceFunc) proc_mounts_changed,
+                                     NULL, NULL);
+              g_source_attach (proc_mounts_watch_source,
+                               g_main_context_get_thread_default ());
+              g_source_unref (proc_mounts_watch_source);
+              g_io_channel_unref (proc_mounts_channel);
+            }
+        }
+      else
+        {
+          file = g_file_new_for_path (mtab_path);
+          mtab_monitor = g_file_monitor_file (file, 0, NULL, NULL);
+          g_object_unref (file);
+          g_signal_connect (mtab_monitor, "changed", (GCallback)mtab_file_changed, NULL);
+        }
+    }
+  else
+    {
+      proc_mounts_watch_source = g_timeout_source_new_seconds (3);
+      mount_poller_mounts = _g_get_unix_mounts ();
+      mount_poller_time = (guint64)g_get_monotonic_time ();
+      g_source_set_callback (proc_mounts_watch_source,
+                             mount_change_poller,
+                             NULL, NULL);
+      g_source_attach (proc_mounts_watch_source,
+                       g_main_context_get_thread_default ());
+      g_source_unref (proc_mounts_watch_source);
+    }
+}
+
 static void
 g_unix_mount_monitor_finalize (GObject *object)
 {
   GUnixMountMonitor *monitor;
-  
+
   monitor = G_UNIX_MOUNT_MONITOR (object);
 
-  if (monitor->fstab_monitor)
-    {
-      g_file_monitor_cancel (monitor->fstab_monitor);
-      g_object_unref (monitor->fstab_monitor);
-    }
-  
-  if (monitor->proc_mounts_watch_source != NULL)
-    g_source_destroy (monitor->proc_mounts_watch_source);
-
-  if (monitor->mtab_monitor)
-    {
-      g_file_monitor_cancel (monitor->mtab_monitor);
-      g_object_unref (monitor->mtab_monitor);
-    }
-
-  the_mount_monitor = NULL;
+  g_context_specific_group_remove (&mount_monitor_group, monitor->context, monitor, mount_monitor_stop);
 
   G_OBJECT_CLASS (g_unix_mount_monitor_parent_class)->finalize (object);
 }
-
 
 static void
 g_unix_mount_monitor_class_init (GUnixMountMonitorClass *klass)
@@ -1312,106 +1506,8 @@ g_unix_mount_monitor_class_init (GUnixMountMonitorClass *klass)
 }
 
 static void
-fstab_file_changed (GFileMonitor      *monitor,
-		    GFile             *file,
-		    GFile             *other_file,
-		    GFileMonitorEvent  event_type,
-		    gpointer           user_data)
-{
-  GUnixMountMonitor *mount_monitor;
-
-  if (event_type != G_FILE_MONITOR_EVENT_CHANGED &&
-      event_type != G_FILE_MONITOR_EVENT_CREATED &&
-      event_type != G_FILE_MONITOR_EVENT_DELETED)
-    return;
-
-  mount_monitor = user_data;
-  g_signal_emit (mount_monitor, signals[MOUNTPOINTS_CHANGED], 0);
-}
-
-static void
-mtab_file_changed (GFileMonitor      *monitor,
-		   GFile             *file,
-		   GFile             *other_file,
-		   GFileMonitorEvent  event_type,
-		   gpointer           user_data)
-{
-  GUnixMountMonitor *mount_monitor;
-
-  if (event_type != G_FILE_MONITOR_EVENT_CHANGED &&
-      event_type != G_FILE_MONITOR_EVENT_CREATED &&
-      event_type != G_FILE_MONITOR_EVENT_DELETED)
-    return;
-  
-  mount_monitor = user_data;
-  g_signal_emit (mount_monitor, signals[MOUNTS_CHANGED], 0);
-}
-
-static gboolean
-proc_mounts_changed (GIOChannel   *channel,
-                     GIOCondition  cond,
-                     gpointer      user_data)
-{
-  GUnixMountMonitor *mount_monitor = G_UNIX_MOUNT_MONITOR (user_data);
-  if (cond & G_IO_ERR)
-    g_signal_emit (mount_monitor, signals[MOUNTS_CHANGED], 0);
-  return TRUE;
-}
-
-static void
 g_unix_mount_monitor_init (GUnixMountMonitor *monitor)
 {
-  GFile *file;
-    
-  if (get_fstab_file () != NULL)
-    {
-      file = g_file_new_for_path (get_fstab_file ());
-      monitor->fstab_monitor = g_file_monitor_file (file, 0, NULL, NULL);
-      g_object_unref (file);
-      
-      g_signal_connect (monitor->fstab_monitor, "changed", (GCallback)fstab_file_changed, monitor);
-    }
-  
-  if (get_mtab_monitor_file () != NULL)
-    {
-      const gchar *mtab_path;
-
-      mtab_path = get_mtab_monitor_file ();
-      /* /proc/mounts monitoring is special - can't just use GFileMonitor.
-       * See 'man proc' for more details.
-       */
-      if (g_strcmp0 (mtab_path, "/proc/mounts") == 0)
-        {
-          GIOChannel *proc_mounts_channel;
-          GError *error = NULL;
-          proc_mounts_channel = g_io_channel_new_file ("/proc/mounts", "r", &error);
-          if (proc_mounts_channel == NULL)
-            {
-              g_warning ("Error creating IO channel for /proc/mounts: %s (%s, %d)",
-                         error->message, g_quark_to_string (error->domain), error->code);
-              g_error_free (error);
-            }
-          else
-            {
-              monitor->proc_mounts_watch_source = g_io_create_watch (proc_mounts_channel, G_IO_ERR);
-              g_source_set_callback (monitor->proc_mounts_watch_source,
-                                     (GSourceFunc) proc_mounts_changed,
-                                     monitor,
-                                     NULL);
-              g_source_attach (monitor->proc_mounts_watch_source,
-                               g_main_context_get_thread_default ());
-              g_source_unref (monitor->proc_mounts_watch_source);
-              g_io_channel_unref (proc_mounts_channel);
-            }
-        }
-      else
-        {
-          file = g_file_new_for_path (mtab_path);
-          monitor->mtab_monitor = g_file_monitor_file (file, 0, NULL, NULL);
-          g_object_unref (file);
-          g_signal_connect (monitor->mtab_monitor, "changed", (GCallback)mtab_file_changed, monitor);
-        }
-    }
 }
 
 /**
@@ -1420,46 +1516,69 @@ g_unix_mount_monitor_init (GUnixMountMonitor *monitor)
  * @limit_msec: a integer with the limit in milliseconds to
  *     poll for changes.
  *
- * Sets the rate limit to which the @mount_monitor will report
- * consecutive change events to the mount and mount point entry files.
+ * This function does nothing.
+ *
+ * Before 2.44, this was a partially-effective way of controlling the
+ * rate at which events would be reported under some uncommon
+ * circumstances.  Since @mount_monitor is a singleton, it also meant
+ * that calling this function would have side effects for other users of
+ * the monitor.
  *
  * Since: 2.18
+ *
+ * Deprecated:2.44:This function does nothing.  Don't call it.
  */
 void
 g_unix_mount_monitor_set_rate_limit (GUnixMountMonitor *mount_monitor,
                                      gint               limit_msec)
 {
-  g_return_if_fail (G_IS_UNIX_MOUNT_MONITOR (mount_monitor));
+}
 
-  if (mount_monitor->fstab_monitor != NULL)
-    g_file_monitor_set_rate_limit (mount_monitor->fstab_monitor, limit_msec);
-
-  if (mount_monitor->mtab_monitor != NULL)
-    g_file_monitor_set_rate_limit (mount_monitor->mtab_monitor, limit_msec);
+/**
+ * g_unix_mount_monitor_get:
+ *
+ * Gets the #GUnixMountMonitor for the current thread-default main
+ * context.
+ *
+ * The mount monitor can be used to monitor for changes to the list of
+ * mounted filesystems as well as the list of mount points (ie: fstab
+ * entries).
+ *
+ * You must only call g_object_unref() on the return value from under
+ * the same main context as you called this function.
+ *
+ * Returns: (transfer full): the #GUnixMountMonitor.
+ *
+ * Since: 2.44
+ **/
+GUnixMountMonitor *
+g_unix_mount_monitor_get (void)
+{
+  return g_context_specific_group_get (&mount_monitor_group,
+                                       G_TYPE_UNIX_MOUNT_MONITOR,
+                                       G_STRUCT_OFFSET(GUnixMountMonitor, context),
+                                       mount_monitor_start);
 }
 
 /**
  * g_unix_mount_monitor_new:
- * 
- * Gets a new #GUnixMountMonitor. The default rate limit for which the
- * monitor will report consecutive changes for the mount and mount
- * point entry files is the default for a #GFileMonitor. Use
- * g_unix_mount_monitor_set_rate_limit() to change this.
- * 
- * Returns: a #GUnixMountMonitor. 
+ *
+ * Deprecated alias for g_unix_mount_monitor_get().
+ *
+ * This function was never a true constructor, which is why it was
+ * renamed.
+ *
+ * Returns: a #GUnixMountMonitor.
+ *
+ * Deprecated:2.44:Use g_unix_mount_monitor_get() instead.
  */
 GUnixMountMonitor *
 g_unix_mount_monitor_new (void)
 {
-  if (the_mount_monitor == NULL)
-    {
-      the_mount_monitor = g_object_new (G_TYPE_UNIX_MOUNT_MONITOR, NULL);
-      return the_mount_monitor;
-    }
-  
-  return g_object_ref (the_mount_monitor);
+  return g_unix_mount_monitor_get ();
 }
 
+/* GUnixMount {{{1 */
 /**
  * g_unix_mount_free:
  * @mount_entry: a #GUnixMountEntry.
@@ -1612,6 +1731,7 @@ g_unix_mount_is_system_internal (GUnixMountEntry *mount_entry)
   return mount_entry->is_system_internal;
 }
 
+/* GUnixMountPoint {{{1 */
 /**
  * g_unix_mount_point_compare:
  * @mount1: a #GUnixMount.
@@ -1855,7 +1975,7 @@ guess_mount_type (const char *mount_path,
   return type;
 }
 
-/*
+/**
  * g_unix_mount_guess_type:
  * @mount_entry: a #GUnixMount.
  * 
@@ -1877,7 +1997,7 @@ g_unix_mount_guess_type (GUnixMountEntry *mount_entry)
 			   mount_entry->filesystem_type);
 }
 
-/*
+/**
  * g_unix_mount_point_guess_type:
  * @mount_point: a #GUnixMountPoint.
  * 
@@ -2184,6 +2304,8 @@ g_unix_mount_point_guess_can_eject (GUnixMountPoint *mount_point)
   return FALSE;
 }
 
+/* Utility functions {{{1 */
+
 #ifdef HAVE_MNTENT_H
 /* borrowed from gtk/gtkfilesystemunix.c in GTK+ on 02/23/2006 */
 static void
@@ -2311,7 +2433,6 @@ _resolve_dev_root (void)
         {
           dev_t root_dev = statbuf.st_dev;
           FILE *f;
-          char buf[1024];
       
           /* see if device with similar major:minor as /dev/root is mention
            * in /etc/mtab (it usually is) 
@@ -2322,6 +2443,7 @@ _resolve_dev_root (void)
 	      struct mntent *entp;
 #ifdef HAVE_GETMNTENT_R        
               struct mntent ent;
+              char buf[1024];
               while ((entp = getmntent_r (f, &ent, buf, sizeof (buf))) != NULL) 
                 {
 #else
@@ -2370,3 +2492,6 @@ found:
   return real_dev_root;
 }
 #endif
+
+/* Epilogue {{{1 */
+/* vim:set foldmethod=marker: */

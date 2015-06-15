@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <string.h>
@@ -26,7 +24,7 @@
 /* Overview:
  *
  * We have an echo server, two proxy servers, two GProxy
- * implementations, and a GProxyResolver implementation.
+ * implementations, and two GProxyResolver implementations.
  *
  * The echo server runs at @server.server_addr (on
  * @server.server_port).
@@ -42,9 +40,10 @@
  * hostname resolution (but it just ignores the hostname and always
  * connects to @server_addr anyway).
  *
- * The GProxyResolver (GTestProxyResolver) looks at its URI and
- * returns [ "direct://" ] for "simple://" URIs, and [ proxy_a.uri,
- * proxy_b.uri ] for other URIs.
+ * The default GProxyResolver (GTestProxyResolver) looks at its URI
+ * and returns [ "direct://" ] for "simple://" URIs, and [
+ * proxy_a.uri, proxy_b.uri ] for other URIs. The other GProxyResolver
+ * (GTestAltProxyResolver) always returns [ proxy_a.uri ].
  */
 
 typedef struct {
@@ -94,6 +93,7 @@ typedef struct {
 
 static void g_test_proxy_resolver_iface_init (GProxyResolverInterface *iface);
 
+static GType _g_test_proxy_resolver_get_type (void);
 #define g_test_proxy_resolver_get_type _g_test_proxy_resolver_get_type
 G_DEFINE_TYPE_WITH_CODE (GTestProxyResolver, g_test_proxy_resolver, G_TYPE_OBJECT,
 			 G_IMPLEMENT_INTERFACE (G_TYPE_PROXY_RESOLVER,
@@ -159,22 +159,18 @@ g_test_proxy_resolver_lookup_async (GProxyResolver      *resolver,
 				    gpointer             user_data)
 {
   GError *error = NULL;
-  GSimpleAsyncResult *simple;
+  GTask *task;
   gchar **proxies;
 
-  proxies = g_test_proxy_resolver_lookup (resolver, uri, cancellable, &error);
+  proxies = g_proxy_resolver_lookup (resolver, uri, cancellable, &error);
 
-  simple = g_simple_async_result_new (G_OBJECT (resolver),
-				      callback, user_data,
-				      g_test_proxy_resolver_lookup_async);
-
+  task = g_task_new (resolver, NULL, callback, user_data);
   if (proxies == NULL)
-    g_simple_async_result_take_error (simple, error);
+    g_task_return_error (task, error);
   else
-    g_simple_async_result_set_op_res_gpointer (simple, proxies, (GDestroyNotify) g_strfreev);
+    g_task_return_pointer (task, proxies, (GDestroyNotify) g_strfreev);
 
-  g_simple_async_result_complete_in_idle (simple);
-  g_object_unref (simple);
+  g_object_unref (task);
 }
 
 static gchar **
@@ -182,19 +178,7 @@ g_test_proxy_resolver_lookup_finish (GProxyResolver     *resolver,
 				     GAsyncResult       *result,
 				     GError            **error)
 {
-  if (G_IS_SIMPLE_ASYNC_RESULT (result))
-    {
-      GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-      gchar **proxies;
-
-      if (g_simple_async_result_propagate_error (simple, error))
-        return NULL;
-
-      proxies = g_simple_async_result_get_op_res_gpointer (simple);
-      return g_strdupv (proxies);
-    }
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (result), error);
 }
 
 static void
@@ -209,6 +193,56 @@ g_test_proxy_resolver_iface_init (GProxyResolverInterface *iface)
   iface->lookup = g_test_proxy_resolver_lookup;
   iface->lookup_async = g_test_proxy_resolver_lookup_async;
   iface->lookup_finish = g_test_proxy_resolver_lookup_finish;
+}
+
+/****************************/
+/* Alternate GProxyResolver */
+/****************************/
+
+typedef GTestProxyResolver GTestAltProxyResolver;
+typedef GTestProxyResolverClass GTestAltProxyResolverClass;
+
+static void g_test_alt_proxy_resolver_iface_init (GProxyResolverInterface *iface);
+
+static GType _g_test_alt_proxy_resolver_get_type (void);
+#define g_test_alt_proxy_resolver_get_type _g_test_alt_proxy_resolver_get_type
+G_DEFINE_TYPE_WITH_CODE (GTestAltProxyResolver, g_test_alt_proxy_resolver, g_test_proxy_resolver_get_type (),
+			 G_IMPLEMENT_INTERFACE (G_TYPE_PROXY_RESOLVER,
+						g_test_alt_proxy_resolver_iface_init);
+                         )
+
+static void
+g_test_alt_proxy_resolver_init (GTestProxyResolver *resolver)
+{
+}
+
+static gchar **
+g_test_alt_proxy_resolver_lookup (GProxyResolver  *resolver,
+                                  const gchar     *uri,
+                                  GCancellable    *cancellable,
+                                  GError         **error)
+{
+  gchar **proxies;
+
+  proxies = g_new (gchar *, 2);
+
+  proxies[0] = g_strdup (proxy_a.uri);
+  proxies[1] = NULL;
+
+  last_proxies = g_strdupv (proxies);
+
+  return proxies;
+}
+
+static void
+g_test_alt_proxy_resolver_class_init (GTestProxyResolverClass *resolver_class)
+{
+}
+
+static void
+g_test_alt_proxy_resolver_iface_init (GProxyResolverInterface *iface)
+{
+  iface->lookup = g_test_alt_proxy_resolver_lookup;
 }
 
 
@@ -226,6 +260,7 @@ typedef struct {
   GObjectClass parent_class;
 } GProxyBaseClass;
 
+static GType _g_proxy_base_get_type (void);
 #define g_proxy_base_get_type _g_proxy_base_get_type
 G_DEFINE_ABSTRACT_TYPE (GProxyBase, g_proxy_base, G_TYPE_OBJECT)
 
@@ -292,24 +327,18 @@ g_proxy_base_connect_async (GProxy               *proxy,
 			    gpointer              user_data)
 {
   GError *error = NULL;
-  GSimpleAsyncResult *simple;
+  GTask *task;
   GIOStream *proxy_io_stream;
 
-  simple = g_simple_async_result_new (G_OBJECT (proxy),
-				      callback, user_data,
-				      g_proxy_base_connect_async);
+  task = g_task_new (proxy, NULL, callback, user_data);
 
   proxy_io_stream = g_proxy_connect (proxy, io_stream, proxy_address,
 				     cancellable, &error);
   if (proxy_io_stream)
-    {
-      g_simple_async_result_set_op_res_gpointer (simple, proxy_io_stream,
-						 g_object_unref);
-    }
+    g_task_return_pointer (task, proxy_io_stream, g_object_unref);
   else
-    g_simple_async_result_take_error (simple, error);
-  g_simple_async_result_complete_in_idle (simple);
-  g_object_unref (simple);
+    g_task_return_error (task, error);
+  g_object_unref (task);
 }
 
 static GIOStream *
@@ -317,12 +346,7 @@ g_proxy_base_connect_finish (GProxy        *proxy,
 			     GAsyncResult  *result,
 			     GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+  return g_task_propagate_pointer (G_TASK (result), error);
 }
 
 static void
@@ -340,6 +364,7 @@ typedef GProxyBaseClass GProxyAClass;
 
 static void g_proxy_a_iface_init (GProxyInterface *proxy_iface);
 
+static GType _g_proxy_a_get_type (void);
 #define g_proxy_a_get_type _g_proxy_a_get_type
 G_DEFINE_TYPE_WITH_CODE (GProxyA, g_proxy_a, g_proxy_base_get_type (),
 			 G_IMPLEMENT_INTERFACE (G_TYPE_PROXY,
@@ -384,6 +409,7 @@ typedef GProxyBaseClass GProxyBClass;
 
 static void g_proxy_b_iface_init (GProxyInterface *proxy_iface);
 
+static GType _g_proxy_b_get_type (void);
 #define g_proxy_b_get_type _g_proxy_b_get_type
 G_DEFINE_TYPE_WITH_CODE (GProxyB, g_proxy_b, g_proxy_base_get_type (),
 			 G_IMPLEMENT_INTERFACE (G_TYPE_PROXY,
@@ -692,6 +718,7 @@ create_server (ServerData *data, GCancellable *cancellable)
 typedef GResolver GFakeResolver;
 typedef GResolverClass GFakeResolverClass;
 
+static GType g_fake_resolver_get_type (void);
 G_DEFINE_TYPE (GFakeResolver, g_fake_resolver, G_TYPE_RESOLVER)
 
 static void
@@ -705,14 +732,17 @@ g_fake_resolver_lookup_by_name (GResolver     *resolver,
 				GCancellable  *cancellable,
 				GError       **error)
 {
-  /* This is only ever called with lookups that are expected to
-   * fail.
-   */
-  g_set_error (error,
-	       G_RESOLVER_ERROR,
-	       G_RESOLVER_ERROR_NOT_FOUND,
-	       "Not found");
-  return NULL;
+  if (!strcmp (hostname, "example.com"))
+    return g_list_prepend (NULL, g_inet_address_new_from_string ("127.0.0.1"));
+  else
+    {
+      /* Anything else is expected to fail. */
+      g_set_error (error,
+                   G_RESOLVER_ERROR,
+                   G_RESOLVER_ERROR_NOT_FOUND,
+                   "Not found");
+      return NULL;
+    }
 }
 
 static void
@@ -722,11 +752,32 @@ g_fake_resolver_lookup_by_name_async (GResolver           *resolver,
 				      GAsyncReadyCallback  callback,
 				      gpointer             user_data)
 {
-  g_simple_async_report_error_in_idle (G_OBJECT (resolver),
-				       callback, user_data,
-				       G_RESOLVER_ERROR,
-				       G_RESOLVER_ERROR_NOT_FOUND,
-				       "Not found");
+  GTask *task;
+
+  task = g_task_new (resolver, cancellable, callback, user_data);
+
+  if (!strcmp (hostname, "example.com"))
+    {
+      GList *result;
+
+      result = g_list_prepend (NULL, g_inet_address_new_from_string ("127.0.0.1"));
+      g_task_return_pointer (task, result, (GDestroyNotify) g_resolver_free_addresses);
+    }
+  else
+    {
+      g_task_return_new_error (task,
+                               G_RESOLVER_ERROR, G_RESOLVER_ERROR_NOT_FOUND,
+                               "Not found");
+    }
+  g_object_unref (task);
+}
+
+static GList *
+g_fake_resolver_lookup_by_name_finish (GResolver            *resolver,
+				       GAsyncResult         *result,
+				       GError              **error)
+{
+  return g_task_propagate_pointer (G_TASK (result), error);
 }
 
 static void
@@ -736,6 +787,7 @@ g_fake_resolver_class_init (GFakeResolverClass *fake_class)
 
   resolver_class->lookup_by_name        = g_fake_resolver_lookup_by_name;
   resolver_class->lookup_by_name_async  = g_fake_resolver_lookup_by_name_async;
+  resolver_class->lookup_by_name_finish = g_fake_resolver_lookup_by_name_finish;
 }
 
 
@@ -835,7 +887,7 @@ assert_direct (GSocketConnection *conn)
 
   addr = g_socket_connection_get_remote_address (conn, &error);
   g_assert_no_error (error);
-  g_assert (!G_IS_PROXY_ADDRESS (addr));
+  g_assert (addr != NULL && !G_IS_PROXY_ADDRESS (addr));
   g_object_unref (addr);
 
   addr = g_socket_connection_get_local_address (conn, &error);
@@ -1107,6 +1159,161 @@ test_dns (gpointer fixture,
   teardown_test (NULL, NULL);
 }
 
+static void
+assert_override (GSocketConnection *conn)
+{
+  g_assert_cmpint (g_strv_length (last_proxies), ==, 1);
+  g_assert_cmpstr (last_proxies[0], ==, proxy_a.uri);
+
+  if (conn)
+    g_assert_no_error (proxy_a.last_error);
+  else
+    g_assert_error (proxy_a.last_error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+}
+
+static void
+test_override (gpointer fixture,
+               gconstpointer user_data)
+{
+  GProxyResolver *alt_resolver;
+  GSocketConnection *conn;
+  GError *error = NULL;
+  gchar *uri;
+
+  g_assert (g_socket_client_get_proxy_resolver (client) == g_proxy_resolver_get_default ());
+  alt_resolver = g_object_new (g_test_alt_proxy_resolver_get_type (), NULL);
+  g_socket_client_set_proxy_resolver (client, alt_resolver);
+  g_assert (g_socket_client_get_proxy_resolver (client) == alt_resolver);
+
+  /* Alt proxy resolver always returns Proxy A, so alpha:// should
+   * succeed, and simple:// and beta:// should fail.
+   */
+
+  /* simple */
+  uri = g_strdup_printf ("simple://127.0.0.1:%u", server.server_port);
+  conn = g_socket_client_connect_to_uri (client, uri, 0, NULL, &error);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+  g_clear_error (&error);
+  assert_override (conn);
+  teardown_test (NULL, NULL);
+
+  g_socket_client_connect_to_uri_async (client, uri, 0, NULL,
+					async_got_error, &error);
+  while (error == NULL)
+    g_main_context_iteration (NULL, TRUE);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+  g_clear_error (&error);
+  assert_override (conn);
+  g_free (uri);
+  teardown_test (NULL, NULL);
+
+  /* alpha */
+  uri = g_strdup_printf ("alpha://127.0.0.1:%u", server.server_port);
+  conn = g_socket_client_connect_to_uri (client, uri, 0, NULL, &error);
+  g_assert_no_error (error);
+  assert_override (conn);
+  do_echo_test (conn);
+  g_clear_object (&conn);
+  teardown_test (NULL, NULL);
+
+  conn = NULL;
+  g_socket_client_connect_to_uri_async (client, uri, 0, NULL,
+					async_got_conn, &conn);
+  while (conn == NULL)
+    g_main_context_iteration (NULL, TRUE);
+  assert_override (conn);
+  do_echo_test (conn);
+  g_clear_object (&conn);
+  g_free (uri);
+  teardown_test (NULL, NULL);
+
+  /* beta */
+  uri = g_strdup_printf ("beta://127.0.0.1:%u", server.server_port);
+  conn = g_socket_client_connect_to_uri (client, uri, 0, NULL, &error);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+  g_clear_error (&error);
+  assert_override (conn);
+  teardown_test (NULL, NULL);
+
+  g_socket_client_connect_to_uri_async (client, uri, 0, NULL,
+					async_got_error, &error);
+  while (error == NULL)
+    g_main_context_iteration (NULL, TRUE);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+  g_clear_error (&error);
+  assert_override (conn);
+  g_free (uri);
+  teardown_test (NULL, NULL);
+
+  g_assert (g_socket_client_get_proxy_resolver (client) == alt_resolver);
+  g_socket_client_set_proxy_resolver (client, NULL);
+  g_assert (g_socket_client_get_proxy_resolver (client) == g_proxy_resolver_get_default ());
+  g_object_unref (alt_resolver);
+}
+
+static void
+assert_destination_port (GSocketAddressEnumerator *etor,
+                         guint16                   port)
+{
+  GSocketAddress *addr;
+  GProxyAddress *paddr;
+  GError *error = NULL;
+
+  while ((addr = g_socket_address_enumerator_next (etor, NULL, &error)))
+    {
+      g_assert_no_error (error);
+
+      g_assert (G_IS_PROXY_ADDRESS (addr));
+      paddr = G_PROXY_ADDRESS (addr);
+      g_assert_cmpint (g_proxy_address_get_destination_port (paddr), ==, port);
+      g_object_unref (addr);
+    }
+  g_assert_no_error (error);
+}
+
+static void
+test_proxy_enumerator_ports (void)
+{
+  GSocketAddressEnumerator *etor;
+
+  etor = g_object_new (G_TYPE_PROXY_ADDRESS_ENUMERATOR,
+                       "uri", "http://example.com/",
+                       NULL);
+  assert_destination_port (etor, 0);
+  g_object_unref (etor);
+
+  /* Have to call this to clear last_proxies so the next call to
+   * g_test_proxy_resolver_lookup() won't assert.
+   */
+  teardown_test (NULL, NULL);
+
+  etor = g_object_new (G_TYPE_PROXY_ADDRESS_ENUMERATOR,
+                       "uri", "http://example.com:8080/",
+                       NULL);
+  assert_destination_port (etor, 8080);
+  g_object_unref (etor);
+
+  teardown_test (NULL, NULL);
+
+  etor = g_object_new (G_TYPE_PROXY_ADDRESS_ENUMERATOR,
+                       "uri", "http://example.com/",
+                       "default-port", 80,
+                       NULL);
+  assert_destination_port (etor, 80);
+  g_object_unref (etor);
+
+  teardown_test (NULL, NULL);
+
+  etor = g_object_new (G_TYPE_PROXY_ADDRESS_ENUMERATOR,
+                       "uri", "http://example.com:8080/",
+                       "default-port", 80,
+                       NULL);
+  assert_destination_port (etor, 8080);
+  g_object_unref (etor);
+
+  teardown_test (NULL, NULL);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -1115,7 +1322,6 @@ main (int   argc,
   GCancellable *cancellable;
   gint result;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   /* Register stuff. The dummy g_proxy_get_default_for_protocol() call
@@ -1147,6 +1353,8 @@ main (int   argc,
   g_test_add_vtable ("/proxy/multiple_sync", 0, NULL, setup_test, test_multiple_sync, teardown_test);
   g_test_add_vtable ("/proxy/multiple_async", 0, NULL, setup_test, test_multiple_async, teardown_test);
   g_test_add_vtable ("/proxy/dns", 0, NULL, setup_test, test_dns, teardown_test);
+  g_test_add_vtable ("/proxy/override", 0, NULL, setup_test, test_override, teardown_test);
+  g_test_add_func ("/proxy/enumerator-ports", test_proxy_enumerator_ports);
 
   result = g_test_run();
 

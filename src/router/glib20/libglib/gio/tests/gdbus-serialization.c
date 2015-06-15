@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -217,7 +215,7 @@ append_gv_to_dbus_iter (DBusMessageIter  *iter,
       g_set_error (error,
                    G_IO_ERROR,
                    G_IO_ERROR_INVALID_ARGUMENT,
-                   "Error serializing GVariant with type-string `%s' to a D-Bus message",
+                   "Error serializing GVariant with type-string '%s' to a D-Bus message",
                    g_variant_get_type_string (value));
       goto fail;
     }
@@ -386,7 +384,7 @@ dbus_1_message_append (GString *s,
       {
         const gchar *value;
         dbus_message_iter_get_basic (iter, &value);
-        g_string_append_printf (s, "string: `%s'\n", value);
+        g_string_append_printf (s, "string: '%s'\n", value);
         break;
       }
 
@@ -394,7 +392,7 @@ dbus_1_message_append (GString *s,
       {
         const gchar *value;
         dbus_message_iter_get_basic (iter, &value);
-        g_string_append_printf (s, "object_path: `%s'\n", value);
+        g_string_append_printf (s, "object_path: '%s'\n", value);
         break;
       }
 
@@ -402,7 +400,7 @@ dbus_1_message_append (GString *s,
       {
         const gchar *value;
         dbus_message_iter_get_basic (iter, &value);
-        g_string_append_printf (s, "signature: `%s'\n", value);
+        g_string_append_printf (s, "signature: '%s'\n", value);
         break;
       }
 
@@ -459,7 +457,7 @@ dbus_1_message_append (GString *s,
        break;
 
      default:
-       g_printerr ("Error serializing D-Bus message to GVariant. Unsupported arg type `%c' (%d)",
+       g_printerr ("Error serializing D-Bus message to GVariant. Unsupported arg type '%c' (%d)",
                    arg_type,
                    arg_type);
        g_assert_not_reached ();
@@ -513,6 +511,7 @@ get_body_signature (GVariant *value)
   return ret;
 }
 
+/* If @value is floating, this assumes ownership. */
 static void
 check_serialization (GVariant *value,
                      const gchar *expected_dbus_1_output)
@@ -630,6 +629,7 @@ check_serialization (GVariant *value,
             }
         }
       g_object_unref (recovered_message);
+      g_free (blob);
     }
 
   g_object_unref (message);
@@ -653,9 +653,9 @@ message_serialize_basic (void)
                                       -G_GINT64_CONSTANT(2)<<34,
                                       G_GUINT64_CONSTANT(0xffffffffffffffff),
                                       42.5),
-                       "value 0:   string: `this is a string'\n"
-                       "value 1:   object_path: `/this/is/a/path'\n"
-                       "value 2:   signature: `sad'\n"
+                       "value 0:   string: 'this is a string'\n"
+                       "value 1:   object_path: '/this/is/a/path'\n"
+                       "value 2:   signature: 'sad'\n"
                        "value 3:   byte: 0x2a\n"
                        "value 4:   bool: true\n"
                        "value 5:   int16: -42\n"
@@ -689,11 +689,12 @@ message_serialize_complex (void)
                        "    int32: 3\n"
                        "value 1:   array:\n"
                        "    dict_entry:\n"
-                       "      string: `one'\n"
-                       "      string: `white'\n"
+                       "      string: 'one'\n"
+                       "      string: 'white'\n"
                        "    dict_entry:\n"
-                       "      string: `two'\n"
-                       "      string: `black'\n");
+                       "      string: 'two'\n"
+                       "      string: 'black'\n");
+  g_variant_unref (value);
 
   value = g_variant_parse (G_VARIANT_TYPE ("(sa{sv}as)"),
                            "('01234567890123456', {}, ['Something'])",
@@ -701,19 +702,20 @@ message_serialize_complex (void)
   g_assert_no_error (error);
   g_assert (value != NULL);
   check_serialization (value,
-                       "value 0:   string: `01234567890123456'\n"
+                       "value 0:   string: '01234567890123456'\n"
                        "value 1:   array:\n"
                        "value 2:   array:\n"
-                       "    string: `Something'\n");
+                       "    string: 'Something'\n");
+  g_variant_unref (value);
 
   /* https://bugzilla.gnome.org/show_bug.cgi?id=621838 */
   check_serialization (g_variant_new_parsed ("(@aay [], {'cwd': <'/home/davidz/Hacking/glib/gio/tests'>})"),
                        "value 0:   array:\n"
                        "value 1:   array:\n"
                        "    dict_entry:\n"
-                       "      string: `cwd'\n"
+                       "      string: 'cwd'\n"
                        "      variant:\n"
-                       "        string: `/home/davidz/Hacking/glib/gio/tests'\n");
+                       "        string: '/home/davidz/Hacking/glib/gio/tests'\n");
 
 #ifdef DBUS_TYPE_UNIX_FD
   value = g_variant_parse (G_VARIANT_TYPE ("(hah)"),
@@ -729,6 +731,7 @@ message_serialize_complex (void)
                        "value 1:   array:\n"
                        "    unix-fd: (not extracted)\n"
                        "    unix-fd: (not extracted)\n");
+  g_variant_unref (value);
 #endif
 }
 
@@ -840,6 +843,7 @@ message_serialize_invalid (void)
       g_assert (message == NULL);
 
       dbus_free (blob);
+      dbus_message_unref (dbus_message);
     }
 
 }
@@ -1017,6 +1021,7 @@ message_parse_empty_arrays_of_arrays (void)
       "    array:\n"
       "    array:\n"
       "    array:\n");
+  g_variant_unref (body);
 
   body = g_variant_parse (G_VARIANT_TYPE ("(aaa{uu})"),
       "([@aa{uu} [], [], []],)", NULL, NULL, &error);
@@ -1026,6 +1031,7 @@ message_parse_empty_arrays_of_arrays (void)
       "    array:\n"
       "    array:\n"
       "    array:\n");
+  g_variant_unref (body);
 
   /* Due to the same bug, g_dbus_message_new_from_blob() would fail for this
    * message because it would try to read past the end of the string. Hence,
@@ -1046,6 +1052,31 @@ message_parse_empty_arrays_of_arrays (void)
       "    struct:\n"
       "      array:\n"
       "      array:\n");
+  g_variant_unref (body);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+static void
+test_double_array (void)
+{
+  GVariantBuilder builder;
+  GVariant *body;
+
+  g_test_bug ("732754");
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("ad"));
+  g_variant_builder_add (&builder, "d", (gdouble)0.0);
+  g_variant_builder_add (&builder, "d", (gdouble)8.0);
+  g_variant_builder_add (&builder, "d", (gdouble)22.0);
+  g_variant_builder_add (&builder, "d", (gdouble)0.0);
+  body = g_variant_new ("(@ad)", g_variant_builder_end (&builder));
+  check_serialization (body,
+      "value 0:   array:\n"
+      "    double: 0.000000\n"
+      "    double: 8.000000\n"
+      "    double: 22.000000\n"
+      "    double: 0.000000\n");
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -1056,7 +1087,6 @@ main (int   argc,
 {
   setlocale (LC_ALL, "C");
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
   g_test_bug_base ("https://bugzilla.gnome.org/show_bug.cgi?id=");
 
@@ -1067,6 +1097,8 @@ main (int   argc,
 
   g_test_add_func ("/gdbus/message-parse-empty-arrays-of-arrays",
       message_parse_empty_arrays_of_arrays);
+
+  g_test_add_func ("/gdbus/message-serialize/double-array", test_double_array);
 
   return g_test_run();
 }

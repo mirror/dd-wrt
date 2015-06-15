@@ -26,17 +26,14 @@
 #include <sys/time.h>
 #endif
 #include <sys/types.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #ifdef HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
 #endif
 
-
 #include <glib.h>
 
-#ifndef G_OS_WIN32
+#ifdef G_OS_UNIX
+#include <unistd.h>
 #include <sys/resource.h>
 #endif
 
@@ -135,6 +132,12 @@ test_thread4 (void)
   GThread *thread;
   GError *error;
   gint ret;
+
+  /* Linux CAP_SYS_RESOURCE overrides RLIMIT_NPROC, and probably similar
+   * things are true on other systems.
+   */
+  if (getuid () == 0 || geteuid () == 0)
+    return;
 
   getrlimit (RLIMIT_NPROC, &nl);
   nl.rlim_cur = 1;

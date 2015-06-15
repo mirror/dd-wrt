@@ -15,7 +15,7 @@ static void
 test_small_writes (void)
 {
   GIOChannel *io;
-  GIOStatus status;
+  GIOStatus status = G_IO_STATUS_ERROR;
   guint cnt; 
   gchar tmp;
   GError *error = NULL;
@@ -58,17 +58,16 @@ gint main (gint argc, gchar * argv[])
     GError *gerr = NULL;
     GString *buffer;
     char *filename;
-    char *srcdir = getenv ("srcdir");
     gint rlength = 0;
     glong wlength = 0;
     gsize length_out;
     const gchar encoding[] = "EUC-JP";
     GIOStatus status;
 
-    if (!srcdir)
-      srcdir = ".";
-    filename = g_strconcat (srcdir, G_DIR_SEPARATOR_S, "iochannel-test-infile", NULL);
-  
+    g_test_init (&argc, &argv, NULL);
+
+    filename = g_test_build_filename (G_TEST_DIST, "iochannel-test-infile", NULL);
+
     setbuf (stdout, NULL); /* For debugging */
 
     gio_r = g_io_channel_new_file (filename, "r", &gerr);
@@ -165,6 +164,9 @@ gint main (gint argc, gchar * argv[])
     g_io_channel_unref(gio_w);
 
     test_small_writes ();
-    
+
+    g_free (filename);
+    g_string_free (buffer, TRUE);
+
     return 0;
 }

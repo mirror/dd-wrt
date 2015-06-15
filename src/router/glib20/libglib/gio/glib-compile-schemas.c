@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -29,12 +27,12 @@
 #include <stdio.h>
 #include <locale.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #include "gvdb/gvdb-builder.h"
 #include "strinfo.c"
+
+#ifdef G_OS_WIN32
+#include "glib/glib-private.h"
+#endif
 
 static void
 strip_string (GString *string)
@@ -194,6 +192,9 @@ typedef struct
 
   gboolean      checked;
   GVariant     *serialised;
+
+  gboolean      summary_seen;
+  gboolean      description_seen;
 } KeyState;
 
 static KeyState *
@@ -210,6 +211,8 @@ key_state_new (const gchar *type_string,
   state->have_gettext_domain = gettext_domain != NULL;
   state->is_enum = is_enum;
   state->is_flags = is_flags;
+  state->summary_seen = FALSE;
+  state->description_seen = FALSE;
 
   if (strinfo)
     state->strinfo = g_string_new_len (strinfo->str, strinfo->len);
@@ -466,6 +469,13 @@ key_state_end_default (KeyState  *state,
   state->default_value = g_variant_parse (state->type,
                                           state->unparsed_default_value->str,
                                           NULL, NULL, error);
+  if (!state->default_value)
+    {
+      gchar *type = g_variant_type_dup_string (state->type);
+      g_prefix_error (error, "failed to parse <default> value of type '%s': ", type);
+      g_free (type);
+    }
+
   key_state_check_range (state, error);
 }
 
@@ -1060,6 +1070,8 @@ override_state_end (KeyState **key_state,
 /* Handling of toplevel state {{{1 */
 typedef struct
 {
+  gboolean     strict;                  /* TRUE if --strict was given */
+
   GHashTable  *schema_table;            /* string -> SchemaState */
   GHashTable  *flags_table;             /* string -> EnumState */
   GHashTable  *enum_table;              /* string -> EnumState */
@@ -1122,7 +1134,7 @@ parse_state_start_schema (ParseState  *state,
         {
           g_set_error (error, G_MARKUP_ERROR,
                        G_MARKUP_ERROR_INVALID_CONTENT,
-                       _("<schema id='%s'> extends not-yet-existing "
+                       _("<schema id='%s'> extends not yet existing "
                          "schema '%s'"), id, extends_name);
           return;
         }
@@ -1138,7 +1150,7 @@ parse_state_start_schema (ParseState  *state,
         {
           g_set_error (error, G_MARKUP_ERROR,
                        G_MARKUP_ERROR_INVALID_CONTENT,
-                       _("<schema id='%s'> is list of not-yet-existing "
+                       _("<schema id='%s'> is list of not yet existing "
                          "schema '%s'"), id, list_of);
           return;
         }
@@ -1376,11 +1388,35 @@ start_element (GMarkupParseContext  *context,
           return;
         }
 
-      else if (strcmp (element_name, "summary") == 0 ||
-               strcmp (element_name, "description") == 0)
+      else if (strcmp (element_name, "summary") == 0)
         {
           if (NO_ATTRS ())
-            state->string = g_string_new (NULL);
+            {
+              if (state->key_state->summary_seen && state->strict)
+                g_set_error (error, G_MARKUP_ERROR, G_MARKUP_ERROR_INVALID_CONTENT,
+                             _("Only one <%s> element allowed inside <%s>"),
+                             element_name, container);
+              else
+                state->string = g_string_new (NULL);
+
+              state->key_state->summary_seen = TRUE;
+            }
+          return;
+        }
+
+      else if (strcmp (element_name, "description") == 0)
+        {
+          if (NO_ATTRS ())
+            {
+              if (state->key_state->description_seen && state->strict)
+                g_set_error (error, G_MARKUP_ERROR, G_MARKUP_ERROR_INVALID_CONTENT,
+                             _("Only one <%s> element allowed inside <%s>"),
+                             element_name, container);
+              else
+                state->string = g_string_new (NULL);
+
+            state->key_state->description_seen = TRUE;
+            }
           return;
         }
 
@@ -1700,6 +1736,8 @@ parse_gschema_files (gchar    **files,
   const gchar *filename;
   GError *error = NULL;
 
+  state.strict = strict;
+
   state.enum_table = g_hash_table_new_full (g_str_hash, g_str_equal,
                                             g_free, enum_state_free);
 
@@ -1714,6 +1752,7 @@ parse_gschema_files (gchar    **files,
       GMarkupParseContext *context;
       gchar *contents;
       gsize size;
+      gint line, col;
 
       if (!g_file_get_contents (filename, &contents, &size, &error))
         {
@@ -1724,7 +1763,8 @@ parse_gschema_files (gchar    **files,
 
       context = g_markup_parse_context_new (&parser,
                                             G_MARKUP_TREAT_CDATA_AS_TEXT |
-                                            G_MARKUP_PREFIX_ERROR_POSITION,
+                                            G_MARKUP_PREFIX_ERROR_POSITION |
+                                            G_MARKUP_IGNORE_QUALIFIED,
                                             &state, NULL);
 
 
@@ -1744,7 +1784,8 @@ parse_gschema_files (gchar    **files,
             g_hash_table_remove (state.enum_table, item->data);
 
           /* let them know */
-          fprintf (stderr, "%s: %s.  ", filename, error->message);
+          g_markup_parse_context_get_position (context, &line, &col);
+          fprintf (stderr, "%s:%d:%d  %s.  ", filename, line, col, error->message);
           g_clear_error (&error);
 
           if (strict)
@@ -1857,8 +1898,8 @@ set_overrides (GHashTable  *schema_table,
 
               if (state == NULL)
                 {
-                  fprintf (stderr, _("No such key `%s' in schema `%s' as "
-                                     "specified in override file `%s'"),
+                  fprintf (stderr, _("No such key '%s' in schema '%s' as "
+                                     "specified in override file '%s'"),
                            key, group, filename);
 
                   if (!strict)
@@ -1883,9 +1924,9 @@ set_overrides (GHashTable  *schema_table,
 
               if (value == NULL)
                 {
-                  fprintf (stderr, _("error parsing key `%s' in schema `%s' "
-                                     "as specified in override file `%s': "
-                                     "%s.  "),
+                  fprintf (stderr, _("error parsing key '%s' in schema '%s' "
+                                     "as specified in override file '%s': "
+                                     "%s."),
                            key, group, filename, error->message);
 
                   g_clear_error (&error);
@@ -1911,8 +1952,8 @@ set_overrides (GHashTable  *schema_table,
                       g_variant_compare (value, state->maximum) > 0)
                     {
                       fprintf (stderr,
-                               _("override for key `%s' in schema `%s' in "
-                                 "override file `%s' is outside the range "
+                               _("override for key '%s' in schema '%s' in "
+                                 "override file '%s' is outside the range "
                                  "given in the schema"),
                                key, group, filename);
 
@@ -1939,8 +1980,8 @@ set_overrides (GHashTable  *schema_table,
                   if (!is_valid_choices (value, state->strinfo))
                     {
                       fprintf (stderr,
-                               _("override for key `%s' in schema `%s' in "
-                                 "override file `%s' is not in the list "
+                               _("override for key '%s' in schema '%s' in "
+                                 "override file '%s' is not in the list "
                                  "of valid choices"),
                                key, group, filename);
 
@@ -2003,7 +2044,6 @@ main (int argc, char **argv)
   };
 
 #ifdef G_OS_WIN32
-  extern gchar *_glib_get_locale_dir (void);
   gchar *tmp;
 #endif
 

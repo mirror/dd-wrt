@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
@@ -22,13 +20,13 @@
 #include "config.h"
 
 #include "gsimpleaction.h"
-#include "gactiongroup.h"
 #include "gactionmap.h"
 #include "gaction.h"
 
 /**
  * SECTION:gactionmap
  * @title: GActionMap
+ * @include: gio/gio.h
  * @short_description: Interface for action containers
  *
  * The GActionMap interface is implemented by #GActionGroup
@@ -45,6 +43,13 @@
  **/
 
 /**
+ * GActionMap:
+ *
+ * #GActionMap is an opaque data structure and can only be accessed
+ * using the following functions.
+ **/
+
+/**
  * GActionMapInterface:
  * @lookup_action: the virtual function pointer for g_action_map_lookup_action()
  * @add_action: the virtual function pointer for g_action_map_add_action()
@@ -55,7 +60,7 @@
  * Since: 2.32
  **/
 
-G_DEFINE_INTERFACE (GActionMap, g_action_map, G_TYPE_ACTION_GROUP)
+G_DEFINE_INTERFACE (GActionMap, g_action_map, G_TYPE_OBJECT)
 
 static void
 g_action_map_default_init (GActionMapInterface *iface)
@@ -126,16 +131,23 @@ g_action_map_remove_action (GActionMap  *action_map,
  * GActionEntry:
  * @name: the name of the action
  * @activate: the callback to connect to the "activate" signal of the
- *            action
+ *            action.  Since GLib 2.40, this can be %NULL for stateful
+ *            actions, in which case the default handler is used.  For
+ *            boolean-stated actions with no parameter, this is a
+ *            toggle.  For other state types (and parameter type equal
+ *            to the state type) this will be a function that
+ *            just calls @change_state (which you should provide).
  * @parameter_type: the type of the parameter that must be passed to the
  *                  activate function for this action, given as a single
  *                  GVariant type string (or %NULL for no parameter)
- * @state: the initial state for this action, given in GVariant text
- *         format.  The state is parsed with no extra type information,
- *         so type tags must be added to the string if they are
- *         necessary.
+ * @state: the initial state for this action, given in
+ *         [GVariant text format][gvariant-text].  The state is parsed
+ *         with no extra type information, so type tags must be added to
+ *         the string if they are necessary.  Stateless actions should
+ *         give %NULL here.
  * @change_state: the callback to connect to the "change-state" signal
- *                of the action
+ *                of the action.  All stateful actions should provide a
+ *                handler here; stateless actions should not.
  *
  * This struct defines a single action.  It is for use with
  * g_action_map_add_action_entries().
@@ -152,8 +164,8 @@ g_action_map_remove_action (GActionMap  *action_map,
 /**
  * g_action_map_add_action_entries:
  * @action_map: a #GActionMap
- * @entries: a pointer to the first item in an array of #GActionEntry
- *           structs
+ * @entries: (array length=n_entries) (element-type GActionEntry): a pointer to
+ *           the first item in an array of #GActionEntry structs
  * @n_entries: the length of @entries, or -1 if @entries is %NULL-terminated
  * @user_data: the user data for signal connections
  *
@@ -162,9 +174,7 @@ g_action_map_remove_action (GActionMap  *action_map,
  *
  * Each action is constructed as per one #GActionEntry.
  *
- * <example>
- * <title>Using g_action_map_add_action_entries()</title>
- * <programlisting>
+ * |[<!-- language="C" -->
  * static void
  * activate_quit (GSimpleAction *simple,
  *                GVariant      *parameter,
@@ -195,8 +205,7 @@ g_action_map_remove_action (GActionMap  *action_map,
  *
  *   return G_ACTION_GROUP (group);
  * }
- * </programlisting>
- * </example>
+ * ]|
  *
  * Since: 2.32
  */

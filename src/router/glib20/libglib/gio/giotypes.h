@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
 
+#ifndef __GIO_TYPES_H__
+#define __GIO_TYPES_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __GIO_TYPES_H__
-#define __GIO_TYPES_H__
 
 #include <gio/gioenums.h>
 
@@ -52,6 +50,7 @@ typedef struct _GRemoteActionGroup            GRemoteActionGroup;
 typedef struct _GDBusActionGroup              GDBusActionGroup;
 typedef struct _GActionMap                    GActionMap;
 typedef struct _GActionGroup                  GActionGroup;
+typedef struct _GPropertyAction               GPropertyAction;
 typedef struct _GSimpleAction                 GSimpleAction;
 typedef struct _GAction                       GAction;
 typedef struct _GApplication                  GApplication;
@@ -61,6 +60,7 @@ typedef struct _GSettings                     GSettings;
 typedef struct _GPermission                   GPermission;
 
 typedef struct _GMenuModel                    GMenuModel;
+typedef struct _GNotification                 GNotification;
 
 /**
  * GDrive:
@@ -117,6 +117,7 @@ typedef struct _GIOExtension                  GIOExtension;
 typedef struct _GIOSchedulerJob               GIOSchedulerJob;
 typedef struct _GIOStreamAdapter              GIOStreamAdapter;
 typedef struct _GLoadableIcon                 GLoadableIcon; /* Dummy typedef */
+typedef struct _GBytesIcon                    GBytesIcon;
 typedef struct _GMemoryInputStream            GMemoryInputStream;
 typedef struct _GMemoryOutputStream           GMemoryOutputStream;
 
@@ -132,9 +133,11 @@ typedef struct _GNetworkMonitor               GNetworkMonitor;
 typedef struct _GNetworkService               GNetworkService;
 typedef struct _GOutputStream                 GOutputStream;
 typedef struct _GIOStream                     GIOStream;
+typedef struct _GSimpleIOStream               GSimpleIOStream;
 typedef struct _GPollableInputStream          GPollableInputStream; /* Dummy typedef */
 typedef struct _GPollableOutputStream         GPollableOutputStream; /* Dummy typedef */
 typedef struct _GResolver                     GResolver;
+
 /**
  * GResource:
  *
@@ -199,6 +202,7 @@ typedef struct _GSocketAddress                GSocketAddress;
 typedef struct _GSocketAddressEnumerator      GSocketAddressEnumerator;
 typedef struct _GSocketConnectable            GSocketConnectable;
 typedef struct _GSrvTarget                    GSrvTarget;
+typedef struct _GTask                         GTask;
 /**
  * GTcpConnection:
  *
@@ -292,6 +296,49 @@ typedef gboolean (* GFileReadMoreCallback) (const char *file_contents,
                                             goffset file_size,
                                             gpointer callback_data);
 
+/**
+ * GFileMeasureProgressCallback:
+ * @reporting: %TRUE if more reports will come
+ * @current_size: the current cumulative size measurement
+ * @num_dirs: the number of directories visited so far
+ * @num_files: the number of non-directory files encountered
+ * @user_data: the data passed to the original request for this callback
+ *
+ * This callback type is used by g_file_measure_disk_usage() to make
+ * periodic progress reports when measuring the amount of disk spaced
+ * used by a directory.
+ *
+ * These calls are made on a best-effort basis and not all types of
+ * #GFile will support them.  At the minimum, however, one call will
+ * always be made immediately.
+ *
+ * In the case that there is no support, @reporting will be set to
+ * %FALSE (and the other values undefined) and no further calls will be
+ * made.  Otherwise, the @reporting will be %TRUE and the other values
+ * all-zeros during the first (immediate) call.  In this way, you can
+ * know which type of progress UI to show without a delay.
+ *
+ * For g_file_measure_disk_usage() the callback is made directly.  For
+ * g_file_measure_disk_usage_async() the callback is made via the
+ * default main context of the calling thread (ie: the same way that the
+ * final async result would be reported).
+ *
+ * @current_size is in the same units as requested by the operation (see
+ * %G_FILE_DISK_USAGE_APPARENT_SIZE).
+ *
+ * The frequency of the updates is implementation defined, but is
+ * ideally about once every 200ms.
+ *
+ * The last progress callback may or may not be equal to the final
+ * result.  Always check the async result to get the final value.
+ *
+ * Since: 2.38
+ **/
+typedef void (* GFileMeasureProgressCallback) (gboolean reporting,
+                                               guint64  current_size,
+                                               guint64  num_dirs,
+                                               guint64  num_files,
+                                               gpointer user_data);
 
 /**
  * GIOSchedulerJobFunc:
@@ -347,7 +394,7 @@ typedef gboolean (*GSocketSourceFunc) (GSocket *socket,
  * @size: the available size in @buffer.
  *
  * Structure used for scatter/gather data input.
- * You generally pass in an array of #GInputVector<!-- -->s
+ * You generally pass in an array of #GInputVectors
  * and the operation will store the read data starting in the
  * first buffer, switching to the next as needed.
  *
@@ -366,7 +413,7 @@ struct _GInputVector {
  * @size: the size of @buffer.
  *
  * Structure used for scatter/gather data output.
- * You generally pass in an array of #GOutputVector<!-- -->s
+ * You generally pass in an array of #GOutputVectors
  * and the operation will use all the buffers as if they were
  * one buffer.
  *
@@ -377,6 +424,41 @@ typedef struct _GOutputVector GOutputVector;
 struct _GOutputVector {
   gconstpointer buffer;
   gsize size;
+};
+
+/**
+ * GOutputMessage:
+ * @address: (allow-none): a #GSocketAddress, or %NULL
+ * @vectors: pointer to an array of output vectors
+ * @num_vectors: the number of output vectors pointed to by @vectors.
+ * @bytes_sent: initialize to 0. Will be set to the number of bytes
+ *     that have been sent
+ * @control_messages: (array length=num_control_messages) (allow-none): a pointer
+ *   to an array of #GSocketControlMessages, or %NULL.
+ * @num_control_messages: number of elements in @control_messages.
+ *
+ * Structure used for scatter/gather data output when sending multiple
+ * messages or packets in one go. You generally pass in an array of
+ * #GOutputVectors and the operation will use all the buffers as if they
+ * were one buffer.
+ *
+ * If @address is %NULL then the message is sent to the default receiver
+ * (as previously set by g_socket_connect()).
+ *
+ * Since: 2.44
+ */
+typedef struct _GOutputMessage GOutputMessage;
+
+struct _GOutputMessage {
+  GSocketAddress         *address;
+
+  GOutputVector          *vectors;
+  guint                   num_vectors;
+
+  guint                   bytes_sent;
+
+  GSocketControlMessage **control_messages;
+  guint                   num_control_messages;
 };
 
 typedef struct _GCredentials                  GCredentials;
@@ -451,7 +533,7 @@ typedef struct _GDBusObjectManagerServer    GDBusObjectManagerServer;
  * object proxy (if @interface_name is %NULL).
  *
  * This function is called in the
- * <link linkend="g-main-context-push-thread-default">thread-default main loop</link>
+ * [thread-default main loop][g-main-context-push-thread-default]
  * that @manager was constructed in.
  *
  * Returns: A #GType to use for the remote object. The returned type
@@ -466,6 +548,23 @@ typedef GType (*GDBusProxyTypeFunc) (GDBusObjectManagerClient   *manager,
                                      gpointer                    user_data);
 
 typedef struct _GTestDBus GTestDBus;
+
+/**
+ * GSubprocess:
+ *
+ * A child process.
+ *
+ * Since: 2.40
+ */
+typedef struct _GSubprocess                   GSubprocess;
+/**
+ * GSubprocessLauncher:
+ *
+ * Options for launching a child process.
+ *
+ * Since: 2.40
+ */
+typedef struct _GSubprocessLauncher           GSubprocessLauncher;
 
 G_END_DECLS
 

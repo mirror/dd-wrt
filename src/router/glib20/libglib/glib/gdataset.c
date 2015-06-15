@@ -15,8 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -122,9 +121,9 @@
 /**
  * GData:
  *
- * The #GData struct is an opaque data structure to represent a <link
- * linkend="glib-Keyed-Data-Lists">Keyed Data List</link>. It should
- * only be accessed via the following functions.
+ * The #GData struct is an opaque data structure to represent a
+ * [Keyed Data List][glib-Keyed-Data-Lists]. It should only be
+ * accessed via the following functions.
  **/
 
 /**
@@ -135,9 +134,6 @@
  * is destroyed. It is passed the pointer to the data element and
  * should free any memory and resources allocated for it.
  **/
-
-/* --- defines --- */
-#define	G_QUARK_BLOCK_SIZE			(2048)
 
 #define G_DATALIST_FLAGS_MASK_INTERNAL 0x7
 
@@ -285,7 +281,7 @@ g_datalist_clear (GData **datalist)
 static inline GDataset*
 g_dataset_lookup (gconstpointer	dataset_location)
 {
-  register GDataset *dataset;
+  GDataset *dataset;
   
   if (g_dataset_cached && g_dataset_cached->location == dataset_location)
     return g_dataset_cached;
@@ -301,7 +297,7 @@ g_dataset_lookup (gconstpointer	dataset_location)
 static void
 g_dataset_destroy_internal (GDataset *dataset)
 {
-  register gconstpointer dataset_location;
+  gconstpointer dataset_location;
   
   dataset_location = dataset->location;
   while (dataset)
@@ -335,7 +331,7 @@ g_dataset_destroy (gconstpointer  dataset_location)
   G_LOCK (g_dataset_global);
   if (g_dataset_location_ht)
     {
-      register GDataset *dataset;
+      GDataset *dataset;
 
       dataset = g_dataset_lookup (dataset_location);
       if (dataset)
@@ -556,7 +552,7 @@ g_dataset_id_set_data_full (gconstpointer  dataset_location,
 			    gpointer       data,
 			    GDestroyNotify destroy_func)
 {
-  register GDataset *dataset;
+  GDataset *dataset;
   
   g_return_if_fail (dataset_location != NULL);
   if (!data)
@@ -678,10 +674,11 @@ g_datalist_id_set_data_full (GData	  **datalist,
  * g_dataset_id_remove_no_notify:
  * @dataset_location: the location identifying the dataset.
  * @key_id: the #GQuark ID identifying the data element.
- * @Returns: the data previously stored at @key_id, or %NULL if none.
  *
  * Removes an element, without calling its destroy notification
  * function.
+ *
+ * Returns: the data previously stored at @key_id, or %NULL if none.
  **/
 /**
  * g_dataset_remove_no_notify:
@@ -716,10 +713,11 @@ g_dataset_id_remove_no_notify (gconstpointer  dataset_location,
  * g_datalist_id_remove_no_notify:
  * @datalist: a datalist.
  * @key_id: the #GQuark identifying a data element.
- * @Returns: the data previously stored at @key_id, or %NULL if none.
  *
  * Removes an element, without calling its destroy notification
  * function.
+ *
+ * Returns: the data previously stored at @key_id, or %NULL if none.
  **/
 /**
  * g_datalist_remove_no_notify:
@@ -746,19 +744,21 @@ g_datalist_id_remove_no_notify (GData	**datalist,
  * g_dataset_id_get_data:
  * @dataset_location: the location identifying the dataset.
  * @key_id: the #GQuark id to identify the data element.
- * @Returns: the data element corresponding to the #GQuark, or %NULL if
- *           it is not found.
  *
  * Gets the data element corresponding to a #GQuark.
+ *
+ * Returns: the data element corresponding to the #GQuark, or %NULL if
+ *          it is not found.
  **/
 /**
  * g_dataset_get_data:
  * @l: the location identifying the dataset.
  * @k: the string identifying the data element.
- * @Returns: the data element corresponding to the string, or %NULL if
- *           it is not found.
  *
  * Gets the data element corresponding to a string.
+ *
+ * Returns: the data element corresponding to the string, or %NULL if
+ *          it is not found.
  **/
 gpointer
 g_dataset_id_get_data (gconstpointer  dataset_location,
@@ -850,7 +850,6 @@ g_datalist_id_dup_data (GData          **datalist,
   GDataElt *data, *data_end;
 
   g_return_val_if_fail (datalist != NULL, NULL);
-  g_return_val_if_fail (key_id != 0, NULL);
 
   g_datalist_lock (datalist);
 
@@ -903,7 +902,7 @@ g_datalist_id_dup_data (GData          **datalist,
  * or may not include using @old_destroy as sometimes replacement
  * should not destroy the object in the normal way.
  *
- * Return: %TRUE if the existing value for @key_id was replaced
+ * Returns: %TRUE if the existing value for @key_id was replaced
  *  by @newval, %FALSE otherwise.
  *
  * Since: 2.34
@@ -1004,10 +1003,11 @@ g_datalist_id_replace_data (GData          **datalist,
  * g_datalist_get_data:
  * @datalist: a datalist.
  * @key: the string identifying a data element.
- * @Returns: the data element, or %NULL if it is not found.
  *
  * Gets a data element, using its string identifier. This is slower than
  * g_datalist_id_get_data() because it compares strings.
+ *
+ * Returns: the data element, or %NULL if it is not found.
  **/
 gpointer
 g_datalist_get_data (GData	 **datalist,
@@ -1028,7 +1028,7 @@ g_datalist_get_data (GData	 **datalist,
       data_end = data + d->len;
       while (data < data_end)
 	{
-	  if (strcmp (g_quark_to_string (data->key), key) == 0)
+	  if (g_strcmp0 (g_quark_to_string (data->key), key) == 0)
 	    {
 	      res = data->data;
 	      break;
@@ -1069,7 +1069,7 @@ g_dataset_foreach (gconstpointer    dataset_location,
 		   GDataForeachFunc func,
 		   gpointer         user_data)
 {
-  register GDataset *dataset;
+  GDataset *dataset;
   
   g_return_if_fail (dataset_location != NULL);
   g_return_if_fail (func != NULL);
@@ -1216,7 +1216,7 @@ g_datalist_unset_flags (GData **datalist,
  * Gets flags values packed in together with the datalist.
  * See g_datalist_set_flags().
  * 
- * Return value: the flags of the datalist
+ * Returns: the flags of the datalist
  *
  * Since: 2.8
  **/

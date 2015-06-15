@@ -13,35 +13,37 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
 
+#ifndef __G_IO_SCHEDULER_H__
+#define __G_IO_SCHEDULER_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_IO_SCHEDULER_H__
-#define __G_IO_SCHEDULER_H__
 
 #include <gio/giotypes.h>
 
 G_BEGIN_DECLS
 
 
+GLIB_DEPRECATED_IN_2_36_FOR ("GThreadPool or g_task_run_in_thread")
 void     g_io_scheduler_push_job                   (GIOSchedulerJobFunc  job_func,
 						    gpointer             user_data,
 						    GDestroyNotify       notify,
 						    gint                 io_priority,
 						    GCancellable        *cancellable);
+GLIB_DEPRECATED_IN_2_36
 void     g_io_scheduler_cancel_all_jobs            (void);
+GLIB_DEPRECATED_IN_2_36_FOR (g_main_context_invoke)
 gboolean g_io_scheduler_job_send_to_mainloop       (GIOSchedulerJob     *job,
 						    GSourceFunc          func,
 						    gpointer             user_data,
 						    GDestroyNotify       notify);
+GLIB_DEPRECATED_IN_2_36_FOR (g_main_context_invoke)
 void     g_io_scheduler_job_send_to_mainloop_async (GIOSchedulerJob     *job,
 						    GSourceFunc          func,
 						    gpointer             user_data,

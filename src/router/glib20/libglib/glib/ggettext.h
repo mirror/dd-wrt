@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,32 +22,38 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_GETTEXT_H__
+#define __G_GETTEXT_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_GETTEXT_H__
-#define __G_GETTEXT_H__
 
 #include <glib/gtypes.h>
 
 G_BEGIN_DECLS
 
+GLIB_AVAILABLE_IN_ALL
 const gchar *g_strip_context (const gchar *msgid,
                               const gchar *msgval) G_GNUC_FORMAT(1);
 
+GLIB_AVAILABLE_IN_ALL
 const gchar *g_dgettext      (const gchar *domain,
                               const gchar *msgid) G_GNUC_FORMAT(2);
+GLIB_AVAILABLE_IN_ALL
 const gchar *g_dcgettext     (const gchar *domain,
                               const gchar *msgid,
                               gint         category) G_GNUC_FORMAT(2);
+GLIB_AVAILABLE_IN_ALL
 const gchar *g_dngettext     (const gchar *domain,
                               const gchar *msgid,
                               const gchar *msgid_plural,
                               gulong       n) G_GNUC_FORMAT(3);
+GLIB_AVAILABLE_IN_ALL
 const gchar *g_dpgettext     (const gchar *domain,
                               const gchar *msgctxtid,
                               gsize        msgidoffset) G_GNUC_FORMAT(2);
+GLIB_AVAILABLE_IN_ALL
 const gchar *g_dpgettext2    (const gchar *domain,
                               const gchar *context,
                               const gchar *msgid) G_GNUC_FORMAT(3);

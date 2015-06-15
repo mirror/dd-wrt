@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -38,9 +36,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #include "gscanner.h"
 
@@ -49,8 +44,11 @@
 #include "gstring.h"
 #include "gtestutils.h"
 
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
 #ifdef G_OS_WIN32
-#include <io.h> /* For _read() */
+#include <io.h>
 #endif
 
 
@@ -85,6 +83,14 @@
  * G_CSET_A_2_Z:
  *
  * The set of uppercase ASCII alphabet characters.
+ * Used for specifying valid identifier characters
+ * in #GScannerConfig.
+ */
+
+/**
+ * G_CSET_DIGITS:
+ *
+ * The set of ASCII digits.
  * Used for specifying valid identifier characters
  * in #GScannerConfig.
  */
@@ -256,11 +262,9 @@
  * @identifier_2_string: specifies if identifiers are reported as strings
  *     (the default is %FALSE).
  * @char_2_token: specifies if characters are reported by setting
- *     <literal>token = ch</literal> or as %G_TOKEN_CHAR (the default
- *     is %TRUE).
+ *     `token = ch` or as %G_TOKEN_CHAR (the default is %TRUE).
  * @symbol_2_token: specifies if symbols are reported by setting
- *     <literal>token = v_symbol</literal> or as %G_TOKEN_SYMBOL (the
- *     default is %FALSE).
+ *     `token = v_symbol` or as %G_TOKEN_SYMBOL (the default is %FALSE).
  * @scope_0_fallback: specifies if a symbol is searched for in the
  *     default scope in addition to the current scope (the default is %FALSE).
  * @store_int64: use value.v_int64 rather than v_int
@@ -1363,9 +1367,9 @@ g_scanner_unexp_token (GScanner		*scanner,
 	  if ((scanner->token >= ' ' && scanner->token <= '~') ||
 	      strchr (scanner->config->cset_identifier_first, scanner->token) ||
 	      strchr (scanner->config->cset_identifier_nth, scanner->token))
-	    _g_snprintf (token_string, token_string_len, "character `%c'", scanner->token);
+	    _g_snprintf (token_string, token_string_len, "character '%c'", scanner->token);
 	  else
-	    _g_snprintf (token_string, token_string_len, "character `\\%o'", scanner->token);
+	    _g_snprintf (token_string, token_string_len, "character '\\%o'", scanner->token);
 	  break;
 	}
       else if (!scanner->config->symbol_2_token)
@@ -1382,7 +1386,7 @@ g_scanner_unexp_token (GScanner		*scanner,
       if (symbol_name)
 	_g_snprintf (token_string,
 		     token_string_len,
-		     "%s%s `%s'",
+		     "%s%s '%s'",
 		     print_unexp ? "" : "invalid ",
 		     symbol_spec,
 		     symbol_name);
@@ -1435,7 +1439,7 @@ g_scanner_unexp_token (GScanner		*scanner,
       break;
       
     case G_TOKEN_CHAR:
-      _g_snprintf (token_string, token_string_len, "character `%c'", scanner->value.v_char);
+      _g_snprintf (token_string, token_string_len, "character '%c'", scanner->value.v_char);
       break;
       
     case G_TOKEN_IDENTIFIER:
@@ -1445,7 +1449,7 @@ g_scanner_unexp_token (GScanner		*scanner,
 	print_unexp = FALSE;
       _g_snprintf (token_string,
 		  token_string_len,
-		  "%s%s `%s'",
+		  "%s%s '%s'",
 		  print_unexp ? "" : "invalid ",
 		  identifier_spec,
 		  scanner->token == G_TOKEN_IDENTIFIER ? scanner->value.v_string : "null");
@@ -1456,13 +1460,13 @@ g_scanner_unexp_token (GScanner		*scanner,
     case G_TOKEN_INT:
     case G_TOKEN_HEX:
       if (scanner->config->store_int64)
-	_g_snprintf (token_string, token_string_len, "number `%" G_GUINT64_FORMAT "'", scanner->value.v_int64);
+	_g_snprintf (token_string, token_string_len, "number '%" G_GUINT64_FORMAT "'", scanner->value.v_int64);
       else
-	_g_snprintf (token_string, token_string_len, "number `%lu'", scanner->value.v_int);
+	_g_snprintf (token_string, token_string_len, "number '%lu'", scanner->value.v_int);
       break;
       
     case G_TOKEN_FLOAT:
-      _g_snprintf (token_string, token_string_len, "number `%.3f'", scanner->value.v_float);
+      _g_snprintf (token_string, token_string_len, "number '%.3f'", scanner->value.v_float);
       break;
       
     case G_TOKEN_STRING:
@@ -1508,9 +1512,9 @@ g_scanner_unexp_token (GScanner		*scanner,
 	  if ((expected_token >= ' ' && expected_token <= '~') ||
 	      strchr (scanner->config->cset_identifier_first, expected_token) ||
 	      strchr (scanner->config->cset_identifier_nth, expected_token))
-	    _g_snprintf (expected_string, expected_string_len, "character `%c'", expected_token);
+	    _g_snprintf (expected_string, expected_string_len, "character '%c'", expected_token);
 	  else
-	    _g_snprintf (expected_string, expected_string_len, "character `\\%o'", expected_token);
+	    _g_snprintf (expected_string, expected_string_len, "character '\\%o'", expected_token);
 	  break;
 	}
       else if (!scanner->config->symbol_2_token)

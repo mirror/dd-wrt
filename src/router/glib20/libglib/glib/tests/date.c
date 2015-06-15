@@ -12,6 +12,11 @@
 #include <locale.h>
 #include <time.h>
 
+#ifdef G_OS_WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 static void
 test_basic (void)
 {
@@ -67,6 +72,8 @@ test_julian_constructor (void)
   d2 = g_date_new_julian (5000);
   g_assert_cmpint (g_date_get_julian (d1), ==, 4000);
   g_assert_cmpint (g_date_days_between (d1, d2), ==, 1000);
+  g_assert_cmpint (g_date_get_year (d1), ==, 11);
+  g_assert_cmpint (g_date_get_day (d2), ==, 9);
   g_date_free (d1);
   g_date_free (d2);
 }
@@ -130,17 +137,38 @@ test_parse (void)
   g_assert_cmpint (g_date_get_day (d), ==, 10);
   g_assert_cmpint (g_date_get_year (d), ==, 2000);
 
-  g_date_set_parse (d, "10 10 2010");
+  g_date_set_parse (d, "2001 10 1");
   g_assert (g_date_valid (d));
   g_assert_cmpint (g_date_get_month (d), ==, 10);
-  g_assert_cmpint (g_date_get_day (d), ==, 10);
-  g_assert_cmpint (g_date_get_year (d), ==, 2010);
+  g_assert_cmpint (g_date_get_day (d), ==, 1);
+  g_assert_cmpint (g_date_get_year (d), ==, 2001);
 
-  g_date_set_parse (d, "10 March 2010");
+  g_date_set_parse (d, "2001 10");
+  g_assert (!g_date_valid (d));
+
+  g_date_set_parse (d, "2001 10 1 1");
+  g_assert (!g_date_valid (d));
+
+  g_date_set_parse (d, "March 1999");
   g_assert (g_date_valid (d));
   g_assert_cmpint (g_date_get_month (d), ==, 3);
+  g_assert_cmpint (g_date_get_day (d), ==, 1);
+  g_assert_cmpint (g_date_get_year (d), ==, 1999);
+
+  g_date_set_parse (d, "10 Sep 1087");
+  g_assert (g_date_valid (d));
+  g_assert_cmpint (g_date_get_month (d), ==, 9);
   g_assert_cmpint (g_date_get_day (d), ==, 10);
-  g_assert_cmpint (g_date_get_year (d), ==, 2010);
+  g_assert_cmpint (g_date_get_year (d), ==, 1087);
+
+  g_date_set_parse (d, "19990301");
+  g_assert (g_date_valid (d));
+  g_assert_cmpint (g_date_get_month (d), ==, 3);
+  g_assert_cmpint (g_date_get_day (d), ==, 1);
+  g_assert_cmpint (g_date_get_year (d), ==, 1999);
+
+  g_date_set_parse (d, "20011320");
+  g_assert (!g_date_valid (d));
 
   g_date_free (d);
 }
@@ -353,6 +381,9 @@ main (int argc, char** argv)
 
   g_setenv ("LANG", "en_US.utf-8", TRUE);
   setlocale (LC_ALL, "");
+#ifdef G_OS_WIN32
+  SetThreadLocale (MAKELCID (MAKELANGID (LANG_ENGLISH, SUBLANG_ENGLISH_US), SORT_DEFAULT));
+#endif
 
   g_test_init (&argc, &argv, NULL);
 

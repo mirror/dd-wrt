@@ -12,19 +12,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
 
+#ifndef __G_ACTION_MAP_H__
+#define __G_ACTION_MAP_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_ACTION_MAP_H__
-#define __G_ACTION_MAP_H__
 
 #include <gio/giotypes.h>
 
@@ -77,12 +75,16 @@ struct _GActionEntry
 GLIB_AVAILABLE_IN_2_32
 GType                   g_action_map_get_type                           (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_2_32
 GAction *               g_action_map_lookup_action                      (GActionMap         *action_map,
                                                                          const gchar        *action_name);
+GLIB_AVAILABLE_IN_2_32
 void                    g_action_map_add_action                         (GActionMap         *action_map,
                                                                          GAction            *action);
+GLIB_AVAILABLE_IN_2_32
 void                    g_action_map_remove_action                      (GActionMap         *action_map,
                                                                          const gchar        *action_name);
+GLIB_AVAILABLE_IN_2_32
 void                    g_action_map_add_action_entries                 (GActionMap         *action_map,
                                                                          const GActionEntry *entries,
                                                                          gint                n_entries,

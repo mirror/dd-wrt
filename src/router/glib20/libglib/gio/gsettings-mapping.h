@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Vincent Untz <vuntz@gnome.org>
  */
@@ -24,15 +22,12 @@
 
 #include <glib-object.h>
 
-G_GNUC_INTERNAL
 GVariant *              g_settings_set_mapping                          (const GValue       *value,
                                                                          const GVariantType *expected_type,
                                                                          gpointer            user_data);
-G_GNUC_INTERNAL
 gboolean                g_settings_get_mapping                          (GValue             *value,
                                                                          GVariant           *variant,
                                                                          gpointer            user_data);
-G_GNUC_INTERNAL
 gboolean                g_settings_mapping_is_compatible                (GType               gvalue_type,
                                                                          const GVariantType *variant_type);
 

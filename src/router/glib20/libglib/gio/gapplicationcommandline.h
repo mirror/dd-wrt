@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
 
+#ifndef __G_APPLICATION_COMMAND_LINE_H__
+#define __G_APPLICATION_COMMAND_LINE_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_APPLICATION_COMMAND_LINE_H__
-#define __G_APPLICATION_COMMAND_LINE_H__
 
 #include <gio/giotypes.h>
 
@@ -62,40 +60,62 @@ struct _GApplicationCommandLineClass
   /*< private >*/
   GObjectClass parent_class;
 
-  void (* print_literal)    (GApplicationCommandLine *cmdline,
-                             const gchar             *message);
-  void (* printerr_literal) (GApplicationCommandLine *cmdline,
-                             const gchar             *message);
+  void                  (* print_literal)       (GApplicationCommandLine *cmdline,
+                                                 const gchar             *message);
+  void                  (* printerr_literal)    (GApplicationCommandLine *cmdline,
+                                                 const gchar             *message);
+  GInputStream *        (* get_stdin)           (GApplicationCommandLine *cmdline);
 
-  gpointer padding[12];
+  gpointer padding[11];
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType                   g_application_command_line_get_type             (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 gchar **                g_application_command_line_get_arguments        (GApplicationCommandLine   *cmdline,
                                                                          int                       *argc);
 
+GLIB_AVAILABLE_IN_2_40
+GVariantDict *          g_application_command_line_get_options_dict     (GApplicationCommandLine   *cmdline);
+
+GLIB_AVAILABLE_IN_2_36
+GInputStream *          g_application_command_line_get_stdin            (GApplicationCommandLine   *cmdline);
+
+GLIB_AVAILABLE_IN_ALL
 const gchar * const *   g_application_command_line_get_environ          (GApplicationCommandLine   *cmdline);
 
+GLIB_AVAILABLE_IN_ALL
 const gchar *           g_application_command_line_getenv               (GApplicationCommandLine   *cmdline,
                                                                          const gchar               *name);
 
+GLIB_AVAILABLE_IN_ALL
 const gchar *           g_application_command_line_get_cwd              (GApplicationCommandLine   *cmdline);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_application_command_line_get_is_remote        (GApplicationCommandLine   *cmdline);
 
+GLIB_AVAILABLE_IN_ALL
 void                    g_application_command_line_print                (GApplicationCommandLine   *cmdline,
                                                                          const gchar               *format,
                                                                          ...) G_GNUC_PRINTF(2, 3);
+GLIB_AVAILABLE_IN_ALL
 void                    g_application_command_line_printerr             (GApplicationCommandLine   *cmdline,
                                                                          const gchar               *format,
                                                                          ...) G_GNUC_PRINTF(2, 3);
 
+GLIB_AVAILABLE_IN_ALL
 int                     g_application_command_line_get_exit_status      (GApplicationCommandLine   *cmdline);
+GLIB_AVAILABLE_IN_ALL
 void                    g_application_command_line_set_exit_status      (GApplicationCommandLine   *cmdline,
                                                                          int                        exit_status);
 
+GLIB_AVAILABLE_IN_ALL
 GVariant *              g_application_command_line_get_platform_data    (GApplicationCommandLine   *cmdline);
+
+GLIB_AVAILABLE_IN_2_36
+GFile *                 g_application_command_line_create_file_for_arg  (GApplicationCommandLine   *cmdline,
+                                                                         const gchar               *arg);
 
 G_END_DECLS
 

@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -125,7 +123,7 @@ test_introspection_parser (void)
   g_assert_no_error (error);
 
   /* this is safe; testserver will exit once the bus goes away */
-  g_assert (g_spawn_command_line_async (SRCDIR "/gdbus-testserver.py", NULL));
+  g_assert (g_spawn_command_line_async (g_test_get_filename (G_TEST_BUILT, "gdbus-testserver", NULL), NULL));
 
   _g_assert_property_notify (proxy, "g-name-owner");
 
@@ -163,7 +161,9 @@ test_generate (void)
   "      <method name='Sleep'>"
   "        <arg type='i' name='timeout' direction='in'/>"
   "      </method>"
-  "      <property name='y' type='y' access='readwrite'/>"
+  "      <property name='y' type='y' access='readwrite'>"
+  "        <annotation name='needs-escaping' value='bar&lt;&gt;&apos;&quot;'/>"
+  "      </property>"
   "    </interface>"
   "  </node>";
 
@@ -259,10 +259,6 @@ test_default_direction (void)
   g_dbus_node_info_unref (info);
 }
 
-#if 0
-/* XXX: need to figure out how generous we want to be here */
-/* test that extraneous attributes are ignored
- */
 static void
 test_extra_data (void)
 {
@@ -270,11 +266,18 @@ test_extra_data (void)
   const gchar *data =
   "  <node>"
   "    <interface name='com.example.Frob' version='1.0'>"
-  "      <annotation name='foo' value='bar' extra='bla'/>"
-  "      <method name='PairReturn' anotherattribute='bla'>"
-  "        <annotation name='org.freedesktop.DBus.GLib.Async' value=''/>"
-  "        <arg type='u' name='somenumber' direction='in' spin='left'/>"
-  "        <arg type='s' name='somestring' direction='out'/>"
+  "      <doc:doc><doc:description><doc:para>Blah blah</doc:para></doc:description></doc:doc>"
+  "      <method name='DownloadPackages'>"
+  "        <arg type='u' name='somenumber' direction='in'>"
+  "          <doc:doc><doc:summary><doc:para>"
+  "            See <doc:ulink url='http:///example.com'>example</doc:ulink>"
+  "          </doc:para></doc:summary></doc:doc>"
+  "        </arg>"
+  "        <arg type='s' name='somestring' direction='out'>"
+  "          <doc:doc><doc:summary><doc:para>"
+  "            More docs"
+  "          </doc:para></doc:summary></doc:doc>"
+  "        </arg>"
   "      </method>"
   "      <signal name='HelloWorld'>"
   "        <arg type='s' name='somestring'/>"
@@ -293,7 +296,6 @@ test_extra_data (void)
 
   g_dbus_node_info_unref (info);
 }
-#endif
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -303,25 +305,20 @@ main (int   argc,
 {
   gint ret;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   /* all the tests rely on a shared main loop */
   loop = g_main_loop_new (NULL, FALSE);
 
-  session_bus_up ();
-
   g_test_add_func ("/gdbus/introspection-parser", test_introspection_parser);
   g_test_add_func ("/gdbus/introspection-generate", test_generate);
   g_test_add_func ("/gdbus/introspection-default-direction", test_default_direction);
-#if 0
-  /* XXX: need to figure out how generous we want to be here */
   g_test_add_func ("/gdbus/introspection-extra-data", test_extra_data);
-#endif
 
-  ret = g_test_run ();
+  ret = session_bus_run ();
 
-  session_bus_down ();
+  while (g_main_context_iteration (NULL, FALSE));
+  g_main_loop_unref (loop);
 
   return ret;
 }

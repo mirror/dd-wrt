@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -31,6 +29,8 @@
 #include <string.h>
 
 gchar* global_state;
+
+G_MODULE_EXPORT void g_clash_func (void);
 
 G_MODULE_EXPORT void
 g_clash_func (void)
@@ -71,26 +71,21 @@ test_states (const gchar *global, const gchar *gplugin_a,
 static SimpleFunc plugin_clash_func = NULL;
 
 int
-main (int   arg,
-      char *argv[])
+main (int    argc,
+      char **argv)
 {
   GModule *module_self, *module_a, *module_b;
-  gchar *dir;
   gchar *plugin_a, *plugin_b;
   SimpleFunc f_a, f_b, f_self;
   GModuleFunc gmod_f;
 
+  g_test_init (&argc, &argv, NULL);
+
   if (!g_module_supported ())
     g_error ("dynamic modules not supported");
 
-  dir = g_get_current_dir ();
-
-  plugin_a = g_strconcat (dir, G_DIR_SEPARATOR_S "libmoduletestplugin_a", 
-			  NULL);
-  plugin_b = g_strconcat (dir, G_DIR_SEPARATOR_S "libmoduletestplugin_b", 
-			  NULL);
-
-  g_free (dir);
+  plugin_a = g_test_build_filename (G_TEST_BUILT, "libmoduletestplugin_a", NULL);
+  plugin_b = g_test_build_filename (G_TEST_BUILT, "libmoduletestplugin_b", NULL);
 
   /* module handles */
   
@@ -197,6 +192,9 @@ main (int   arg,
 
   if (!g_module_close (module_b))
     g_error ("error: %s", g_module_error ());
- 
+
+  g_free (plugin_a);
+  g_free (plugin_b);
+  g_module_close (module_self);
   return 0;
 }

@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  *         David Zeuthen <davidz@redhat.com>
@@ -35,6 +33,7 @@ G_BEGIN_DECLS
 #define G_WIN32_MOUNT_CLASS(k)    (G_TYPE_CHECK_CLASS_CAST((k), G_TYPE_WIN32_MOUNT, GWin32MountClass))
 #define G_IS_WIN32_MOUNT(o)       (G_TYPE_CHECK_INSTANCE_TYPE ((o), G_TYPE_WIN32_MOUNT))
 #define G_IS_WIN32_MOUNT_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_WIN32_MOUNT))
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GWin32Mount, g_object_unref)
 
 typedef struct _GWin32MountClass GWin32MountClass;
 

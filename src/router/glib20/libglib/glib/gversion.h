@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,12 +22,12 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_VERSION_H__
+#define __G_VERSION_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_VERSION_H__
-#define __G_VERSION_H__
 
 #include <glib/gtypes.h>
 
@@ -41,6 +39,7 @@ GLIB_VAR const guint glib_micro_version;
 GLIB_VAR const guint glib_interface_age;
 GLIB_VAR const guint glib_binary_age;
 
+GLIB_AVAILABLE_IN_ALL
 const gchar * glib_check_version (guint required_major,
                                   guint required_minor,
                                   guint required_micro);

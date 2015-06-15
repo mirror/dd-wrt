@@ -19,20 +19,34 @@
  * if advised of the possibility of such damage.
  */
 
+#include "config.h"
 #include <string.h>
-#include <unistd.h>
 #include <errno.h>
 
 /* We are testing some deprecated APIs here */
 #define GLIB_DISABLE_DEPRECATION_WARNINGS
 
 #include <glib.h>
+
+/* Test our stdio wrappers here */
+#define G_STDIO_NO_WRAP_ON_UNIX
 #include <glib/gstdio.h>
+
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+#include <fcntl.h>
+#include <utime.h>
+#ifdef G_OS_WIN32
+#include <windows.h>
+#endif
 
 #define S G_DIR_SEPARATOR_S
 
 static void
-check_string (gchar *str, gchar *expected)
+check_string (gchar *str, const gchar *expected)
 {
   g_assert (str != NULL);
   g_assert_cmpstr (str, ==, expected);
@@ -255,7 +269,7 @@ test_build_filename (void)
 
   /* Test also using the slash as file name separator */
 #define U "/"
-  check_string (g_build_filename (NULL), "");
+  /* check_string (g_build_filename (NULL), ""); */
   check_string (g_build_filename (U, NULL), U);
   check_string (g_build_filename (U"x", NULL), U"x");
   check_string (g_build_filename ("x"U, NULL), "x"U);
@@ -474,18 +488,18 @@ test_mkdir_with_parents (void)
 {
   gchar *cwd;
   if (g_test_verbose())
-    g_print ("checking g_mkdir_with_parents() in subdir ./hum/");
+    g_printerr ("checking g_mkdir_with_parents() in subdir ./hum/");
   test_mkdir_with_parents_1 ("hum");
   g_remove ("hum");
   if (g_test_verbose())
-    g_print ("checking g_mkdir_with_parents() in subdir ./hii///haa/hee/");
+    g_printerr ("checking g_mkdir_with_parents() in subdir ./hii///haa/hee/");
   test_mkdir_with_parents_1 ("hii///haa/hee");
   g_remove ("hii/haa/hee");
   g_remove ("hii/haa");
   g_remove ("hii");
   cwd = g_get_current_dir ();
   if (g_test_verbose())
-    g_print ("checking g_mkdir_with_parents() in cwd: %s", cwd);
+    g_printerr ("checking g_mkdir_with_parents() in cwd: %s", cwd);
   test_mkdir_with_parents_1 (cwd);
   g_free (cwd);
 
@@ -496,6 +510,9 @@ test_mkdir_with_parents (void)
 static void
 test_format_size_for_display (void)
 {
+#ifdef G_OS_WIN32
+  SetThreadLocale (MAKELCID (MAKELANGID (LANG_ENGLISH, SUBLANG_ENGLISH_US), SORT_DEFAULT));
+#endif
   /* nobody called setlocale(), so we should get "C" behaviour... */
   check_string (g_format_size_for_display (0), "0 bytes");
   check_string (g_format_size_for_display (1), "1 byte");
@@ -620,7 +637,7 @@ test_basename (void)
   g_free (b);
 
   b = g_path_get_basename ("///");
-  g_assert_cmpstr (b, ==, "/");
+  g_assert_cmpstr (b, ==, G_DIR_SEPARATOR_S);
   g_free (b);
 
   b = g_path_get_basename ("/a/b/c/d");
@@ -633,17 +650,20 @@ test_dir_make_tmp (void)
 {
   gchar *name;
   GError *error = NULL;
+  gint ret;
 
   name = g_dir_make_tmp ("testXXXXXXtest", &error);
   g_assert_no_error (error);
   g_assert (g_file_test (name, G_FILE_TEST_IS_DIR));
-  g_assert (g_rmdir (name) == 0);
+  ret = g_rmdir (name);
+  g_assert (ret == 0);
   g_free (name);
 
   name = g_dir_make_tmp (NULL, &error);
   g_assert_no_error (error);
   g_assert (g_file_test (name, G_FILE_TEST_IS_DIR));
-  g_assert (g_rmdir (name) == 0);
+  ret = g_rmdir (name);
+  g_assert (ret == 0);
   g_free (name);
 
   name = g_dir_make_tmp ("test/XXXXXX", &error);
@@ -768,6 +788,119 @@ test_set_contents (void)
   g_free (name);
 }
 
+static void
+test_read_link (void)
+{
+#ifdef HAVE_READLINK
+#ifdef G_OS_UNIX
+  int ret;
+  const gchar *oldpath;
+  gchar *cwd;
+  gchar *newpath;
+  gchar *badpath;
+  gchar *path;
+  GError *error = NULL;
+
+  cwd = g_get_current_dir ();
+
+  oldpath = g_test_get_filename (G_TEST_DIST, "4096-random-bytes", NULL);
+  newpath = g_build_filename (cwd, "page-of-junk", NULL);
+  badpath = g_build_filename (cwd, "4097-random-bytes", NULL);
+  remove (newpath);
+  ret = symlink (oldpath, newpath);
+  g_assert (ret == 0);
+  path = g_file_read_link (newpath, &error);
+  g_assert_no_error (error);
+  g_assert_cmpstr (path, ==, oldpath);
+  g_free (path);
+
+  remove (newpath);
+  ret = symlink (badpath, newpath);
+  g_assert (ret == 0);
+  path = g_file_read_link (newpath, &error);
+  g_assert_no_error (error);
+  g_assert_cmpstr (path, ==, badpath);
+  g_free (path);
+
+  path = g_file_read_link (oldpath, &error);
+  g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_INVAL);
+  g_assert_null (path);
+  g_error_free (error);
+
+  remove (newpath);
+  g_free (cwd);
+  g_free (newpath);
+  g_free (badpath);
+
+#endif
+#else
+  g_test_skip ("Symbolic links not supported");
+#endif
+}
+
+static void
+test_stdio_wrappers (void)
+{
+  GStatBuf buf;
+  gchar *cwd, *path;
+  gint ret;
+  struct utimbuf ut;
+  GError *error = NULL;
+
+  g_remove ("mkdir-test/test-create");
+  g_rmdir ("mkdir-test");
+
+  ret = g_stat ("mkdir-test", &buf);
+  g_assert (ret == -1);
+  ret = g_mkdir ("mkdir-test", 0666);
+  g_assert (ret == 0);
+  ret = g_stat ("mkdir-test", &buf);
+  g_assert (ret == 0);
+  g_assert (S_ISDIR (buf.st_mode));
+
+  cwd = g_get_current_dir ();
+  path = g_build_filename (cwd, "mkdir-test", NULL);
+  g_free (cwd);
+  ret = g_chdir (path);
+  g_assert (errno == EACCES);
+  g_assert (ret == -1);
+  ret = g_chmod (path, 0777);
+  g_assert (ret == 0);
+  ret = g_chdir (path);
+  g_assert (ret == 0);
+  cwd = g_get_current_dir ();
+  g_assert (g_str_equal (cwd, path));
+  g_free (cwd);
+  g_free (path);
+
+  ret = g_creat ("test-creat", 0555);
+  g_close (ret, &error);
+  g_assert_no_error (error);
+
+  ret = g_access ("test-creat", F_OK);
+  g_assert (ret == 0);
+
+  ret = g_rename ("test-creat", "test-create");
+  g_assert (ret == 0);
+
+  ret = g_open ("test-create", O_RDONLY, 0666);
+  g_close (ret, &error);
+  g_assert_no_error (error);
+
+  ut.actime = ut.modtime = (time_t)0;
+  ret = g_utime ("test-create", &ut);
+  g_assert (ret == 0);
+
+  ret = g_lstat ("test-create", &buf);
+  g_assert (ret == 0);
+  g_assert (buf.st_atime == (time_t)0);
+  g_assert (buf.st_mtime == (time_t)0);
+
+  g_chdir ("..");
+  g_remove ("mkdir-test/test-create");
+  g_rmdir ("mkdir-test");
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -787,6 +920,8 @@ main (int   argc,
   g_test_add_func ("/fileutils/mkstemp", test_mkstemp);
   g_test_add_func ("/fileutils/mkdtemp", test_mkdtemp);
   g_test_add_func ("/fileutils/set-contents", test_set_contents);
+  g_test_add_func ("/fileutils/read-link", test_read_link);
+  g_test_add_func ("/fileutils/stdio-wrappers", test_stdio_wrappers);
 
   return g_test_run ();
 }

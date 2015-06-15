@@ -33,9 +33,11 @@ static void
 push_value (gint value)
 {
   g_mutex_lock (&mutex);
+  while (next != 0)
+    g_cond_wait (&cond, &mutex);
   next = value;
   if (g_test_verbose ())
-    g_print ("Thread %p producing next value: %d\n", g_thread_self (), value);
+    g_printerr ("Thread %p producing next value: %d\n", g_thread_self (), value);
   if (value % 10 == 0)
     g_cond_broadcast (&cond);
   else
@@ -52,13 +54,14 @@ pop_value (void)
   while (next == 0)
     {
       if (g_test_verbose ())
-        g_print ("Thread %p waiting for cond\n", g_thread_self ());
+        g_printerr ("Thread %p waiting for cond\n", g_thread_self ());
       g_cond_wait (&cond, &mutex);
     }
   value = next;
   next = 0;
+  g_cond_broadcast (&cond);
   if (g_test_verbose ())
-    g_print ("Thread %p consuming value %d\n", g_thread_self (), value);
+    g_printerr ("Thread %p consuming value %d\n", g_thread_self (), value);
   g_mutex_unlock (&mutex);
 
   return value;
@@ -76,15 +79,13 @@ produce_values (gpointer data)
     {
       total += i;
       push_value (i);
-      g_usleep (1000);
     }
 
   push_value (-1);
-  g_usleep (1000);
   push_value (-1);
 
   if (g_test_verbose ())
-    g_print ("Thread %p produced %d altogether\n", g_thread_self (), total);
+    g_printerr ("Thread %p produced %d altogether\n", g_thread_self (), total);
 
   return GINT_TO_POINTER (total);
 }
@@ -105,7 +106,7 @@ consume_values (gpointer data)
     }
 
   if (g_test_verbose ())
-    g_print ("Thread %p accumulated %d\n", g_thread_self (), accum);
+    g_printerr ("Thread %p accumulated %d\n", g_thread_self (), accum);
 
   return GINT_TO_POINTER (accum);
 }
@@ -189,21 +190,21 @@ cond2_func (gpointer data)
   g_atomic_int_inc (&check);
 
   if (g_test_verbose ())
-    g_print ("thread %d starting, check %d\n", value, g_atomic_int_get (&check));
+    g_printerr ("thread %d starting, check %d\n", value, g_atomic_int_get (&check));
 
   g_usleep (10000 * value);
 
   g_atomic_int_inc (&check);
 
   if (g_test_verbose ())
-    g_print ("thread %d reaching barrier, check %d\n", value, g_atomic_int_get (&check));
+    g_printerr ("thread %d reaching barrier, check %d\n", value, g_atomic_int_get (&check));
 
   ret = barrier_wait (&b);
 
   g_assert_cmpint (g_atomic_int_get (&check), ==, 10);
 
   if (g_test_verbose ())
-    g_print ("thread %d leaving barrier (%d), check %d\n", value, ret, g_atomic_int_get (&check));
+    g_printerr ("thread %d leaving barrier (%d), check %d\n", value, ret, g_atomic_int_get (&check));
 
   return NULL;
 }
@@ -231,6 +232,44 @@ test_cond2 (void)
   barrier_clear (&b);
 }
 
+static void
+test_wait_until (void)
+{
+  gint64 until;
+  GMutex lock;
+  GCond cond;
+
+  /* This test will make sure we don't wait too much or too little.
+   *
+   * We check the 'too long' with a timeout of 60 seconds.
+   *
+   * We check the 'too short' by verifying a guarantee of the API: we
+   * should not wake up until the specified time has passed.
+   */
+  g_mutex_init (&lock);
+  g_cond_init (&cond);
+
+  until = g_get_monotonic_time () + G_TIME_SPAN_SECOND;
+
+  /* Could still have spurious wakeups, so we must loop... */
+  g_mutex_lock (&lock);
+  while (g_cond_wait_until (&cond, &lock, until))
+    ;
+  g_mutex_unlock (&lock);
+
+  /* Make sure it's after the until time */
+  g_assert_cmpint (until, <=, g_get_monotonic_time ());
+
+  /* Make sure it returns FALSE on timeout */
+  until = g_get_monotonic_time () + G_TIME_SPAN_SECOND / 50;
+  g_mutex_lock (&lock);
+  g_assert (g_cond_wait_until (&cond, &lock, until) == FALSE);
+  g_mutex_unlock (&lock);
+
+  g_mutex_clear (&lock);
+  g_cond_clear (&cond);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -238,6 +277,7 @@ main (int argc, char *argv[])
 
   g_test_add_func ("/thread/cond1", test_cond1);
   g_test_add_func ("/thread/cond2", test_cond2);
+  g_test_add_func ("/thread/cond/wait-until", test_wait_until);
 
   return g_test_run ();
 }

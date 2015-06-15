@@ -38,7 +38,7 @@ const gchar *myapp_data =
   "Encoding=UTF-8\n"
   "Version=1.0\n"
   "Type=Application\n"
-  "Exec=my_app %f\n"
+  "Exec=true %f\n"
   "Name=my app\n";
 
 const gchar *myapp2_data =
@@ -46,7 +46,7 @@ const gchar *myapp2_data =
   "Encoding=UTF-8\n"
   "Version=1.0\n"
   "Type=Application\n"
-  "Exec=my_app2 %f\n"
+  "Exec=sleep %f\n"
   "Name=my app 2\n";
 
 const gchar *myapp3_data =
@@ -54,15 +54,16 @@ const gchar *myapp3_data =
   "Encoding=UTF-8\n"
   "Version=1.0\n"
   "Type=Application\n"
-  "Exec=my_app3 %f\n"
-  "Name=my app 3\n";
+  "Exec=sleep 1\n"
+  "Name=my app 3\n"
+  "MimeType=image/png;";
 
 const gchar *myapp4_data =
   "[Desktop Entry]\n"
   "Encoding=UTF-8\n"
   "Version=1.0\n"
   "Type=Application\n"
-  "Exec=my_app4 %f\n"
+  "Exec=echo %f\n"
   "Name=my app 4\n"
   "MimeType=image/bmp;";
 
@@ -71,9 +72,17 @@ const gchar *myapp5_data =
   "Encoding=UTF-8\n"
   "Version=1.0\n"
   "Type=Application\n"
-  "Exec=my_app5 %f\n"
+  "Exec=true %f\n"
   "Name=my app 5\n"
   "MimeType=image/bmp;x-scheme-handler/ftp;";
+
+const gchar *nosuchapp_data =
+  "[Desktop Entry]\n"
+  "Encoding=UTF-8\n"
+  "Version=1.0\n"
+  "Type=Application\n"
+  "Exec=no_such_application %f\n"
+  "Name=no such app\n";
 
 const gchar *defaults_data =
   "[Default Applications]\n"
@@ -83,10 +92,11 @@ const gchar *defaults_data =
 
 const gchar *mimecache_data =
   "[MIME Cache]\n"
-  "image/bmp=myapp4.desktop;myapp5.desktop;\n";
+  "image/bmp=myapp4.desktop;myapp5.desktop;\n"
+  "image/png=myapp3.desktop;\n";
 
 /* Set up XDG_DATA_HOME and XDG_DATA_DIRS.
- * XDG_DATA_DIRS/applications will contain defaults.list
+ * XDG_DATA_DIRS/applications will contain mimeapps.list
  * XDG_DATA_HOME/applications will contain myapp.desktop
  * and myapp2.desktop, and no mimeapps.list
  */
@@ -94,6 +104,7 @@ static void
 setup (void)
 {
   gchar *dir;
+  gchar *xdgconfighome;
   gchar *xdgdatahome;
   gchar *xdgdatadir;
   gchar *appdir;
@@ -104,8 +115,11 @@ setup (void)
   GError *error = NULL;
 
   dir = g_get_current_dir ();
+  xdgconfighome = g_build_filename (dir, "xdgconfighome", NULL);
   xdgdatahome = g_build_filename (dir, "xdgdatahome", NULL);
   xdgdatadir = g_build_filename (dir, "xdgdatadir", NULL);
+  g_test_message ("setting XDG_CONFIG_HOME to '%s'\n", xdgconfighome);
+  g_setenv ("XDG_CONFIG_HOME", xdgconfighome, TRUE);
   g_test_message ("setting XDG_DATA_HOME to '%s'\n", xdgdatahome);
   g_setenv ("XDG_DATA_HOME", xdgdatahome, TRUE);
   g_test_message ("setting XDG_DATA_DIRS to '%s'\n", xdgdatadir);
@@ -116,7 +130,7 @@ setup (void)
   res = g_mkdir_with_parents (appdir, 0700);
   g_assert (res == 0);
 
-  name = g_build_filename (appdir, "defaults.list", NULL);
+  name = g_build_filename (appdir, "mimeapps.list", NULL);
   g_test_message ("creating '%s'\n", name);
   g_file_set_contents (name, defaults_data, -1, &error);
   g_assert_no_error (error);
@@ -157,6 +171,12 @@ setup (void)
   g_assert_no_error (error);
   g_free (name);
 
+  name = g_build_filename (apphome, "nosuchapp.desktop", NULL);
+  g_test_message ("creating '%s'\n", name);
+  g_file_set_contents (name, nosuchapp_data, -1, &error);
+  g_assert_no_error (error);
+  g_free (name);
+
   mimeapps = g_build_filename (apphome, "mimeapps.list", NULL);
   g_test_message ("removing '%s'\n", mimeapps);
   g_remove (mimeapps);
@@ -168,6 +188,7 @@ setup (void)
   g_free (name);
 
   g_free (dir);
+  g_free (xdgconfighome);
   g_free (xdgdatahome);
   g_free (xdgdatadir);
   g_free (apphome);
@@ -281,7 +302,7 @@ test_mime_file (void)
   const gchar *contenttype = "application/pdf";
 
   dir = g_get_current_dir ();
-  mimeapps = g_build_filename (dir, "xdgdatahome", "applications", "mimeapps.list", NULL);
+  mimeapps = g_build_filename (dir, "xdgconfighome", "mimeapps.list", NULL);
 
   /* clear things out */
   g_app_info_reset_type_associations (contenttype);
@@ -390,7 +411,7 @@ test_mime_file (void)
   g_free (dir);
 }
 
-/* test interaction between defaults.list and mimeapps.list */
+/* test interaction between mimeapps.list at different levels */
 static void
 test_mime_default (void)
 {
@@ -577,10 +598,33 @@ test_scheme_handler (void)
   g_object_unref (info5);
 }
 
+/* test that g_app_info_* ignores desktop files with nonexisting executables
+ */
+static void
+test_mime_ignore_nonexisting (void)
+{
+  GAppInfo *appinfo;
+
+  appinfo = (GAppInfo*)g_desktop_app_info_new ("nosuchapp.desktop");
+  g_assert (appinfo == NULL);
+}
+
+static void
+test_all (void)
+{
+  GList *all, *l;
+
+  all = g_app_info_get_all ();
+
+  for (l = all; l; l = l->next)
+    g_assert (G_IS_APP_INFO (l->data));
+
+  g_list_free_full (all, g_object_unref);
+}
+
 int
 main (int argc, char *argv[])
 {
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   setup ();
@@ -590,6 +634,8 @@ main (int argc, char *argv[])
   g_test_add_func ("/appinfo/mime/file", test_mime_file);
   g_test_add_func ("/appinfo/mime/scheme-handler", test_scheme_handler);
   g_test_add_func ("/appinfo/mime/default-last-used", test_mime_default_last_used);
+  g_test_add_func ("/appinfo/mime/ignore-nonexisting", test_mime_ignore_nonexisting);
+  g_test_add_func ("/appinfo/all", test_all);
 
   return g_test_run ();
 }

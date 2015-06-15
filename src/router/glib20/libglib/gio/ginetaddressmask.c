@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -33,6 +31,7 @@
 /**
  * SECTION:ginetaddressmask
  * @short_description: An IPv4/IPv6 address mask
+ * @include: gio/gio.h
  *
  * #GInetAddressMask represents a range of IPv4 or IPv6 addresses
  * described by a base address and a length indicating how many bits
@@ -49,17 +48,18 @@
  * Since: 2.32
  */
 
-static void     g_inet_address_mask_initable_iface_init (GInitableIface  *iface);
-
-G_DEFINE_TYPE_WITH_CODE (GInetAddressMask, g_inet_address_mask, G_TYPE_OBJECT,
-			 G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-						g_inet_address_mask_initable_iface_init));
-
 struct _GInetAddressMaskPrivate
 {
   GInetAddress *addr;
   guint         length;
 };
+
+static void     g_inet_address_mask_initable_iface_init (GInitableIface  *iface);
+
+G_DEFINE_TYPE_WITH_CODE (GInetAddressMask, g_inet_address_mask, G_TYPE_OBJECT,
+                         G_ADD_PRIVATE (GInetAddressMask)
+			 G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+						g_inet_address_mask_initable_iface_init))
 
 enum
 {
@@ -137,8 +137,6 @@ static void
 g_inet_address_mask_class_init (GInetAddressMaskClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-
-  g_type_class_add_private (klass, sizeof (GInetAddressMaskPrivate));
 
   gobject_class->set_property = g_inet_address_mask_set_property;
   gobject_class->get_property = g_inet_address_mask_get_property;
@@ -238,9 +236,7 @@ g_inet_address_mask_initable_iface_init (GInitableIface  *iface)
 static void
 g_inet_address_mask_init (GInetAddressMask *mask)
 {
-  mask->priv = G_TYPE_INSTANCE_GET_PRIVATE (mask,
-					    G_TYPE_INET_ADDRESS_MASK,
-					    GInetAddressMaskPrivate);
+  mask->priv = g_inet_address_mask_get_instance_private (mask);
 }
 
 /**
@@ -334,7 +330,7 @@ g_inet_address_mask_new_from_string (const gchar  *mask_string,
  *
  * Converts @mask back to its corresponding string form.
  *
- * Return value: a string corresponding to @mask.
+ * Returns: a string corresponding to @mask.
  *
  * Since: 2.32
  */
@@ -362,7 +358,7 @@ g_inet_address_mask_to_string (GInetAddressMask *mask)
  *
  * Gets the #GSocketFamily of @mask's address
  *
- * Return value: the #GSocketFamily of @mask's address
+ * Returns: the #GSocketFamily of @mask's address
  *
  * Since: 2.32
  */
@@ -380,7 +376,7 @@ g_inet_address_mask_get_family (GInetAddressMask *mask)
  *
  * Gets @mask's base address
  *
- * Return value: (transfer none): @mask's base address
+ * Returns: (transfer none): @mask's base address
  *
  * Since: 2.32
  */
@@ -398,7 +394,7 @@ g_inet_address_mask_get_address (GInetAddressMask *mask)
  *
  * Gets @mask's length
  *
- * Return value: @mask's length
+ * Returns: @mask's length
  *
  * Since: 2.32
  */
@@ -417,7 +413,7 @@ g_inet_address_mask_get_length (GInetAddressMask *mask)
  *
  * Tests if @address falls within the range described by @mask.
  *
- * Return value: whether @address falls within the range described by
+ * Returns: whether @address falls within the range described by
  * @mask.
  *
  * Since: 2.32
@@ -461,7 +457,7 @@ g_inet_address_mask_matches (GInetAddressMask *mask,
  *
  * Tests if @mask and @mask2 are the same mask.
  *
- * Return value: whether @mask and @mask2 are the same mask
+ * Returns: whether @mask and @mask2 are the same mask
  *
  * Since: 2.32
  */
@@ -469,6 +465,9 @@ gboolean
 g_inet_address_mask_equal (GInetAddressMask  *mask,
 			   GInetAddressMask  *mask2)
 {
+  g_return_val_if_fail (G_IS_INET_ADDRESS_MASK (mask), FALSE);
+  g_return_val_if_fail (G_IS_INET_ADDRESS_MASK (mask2), FALSE);
+
   return ((mask->priv->length == mask2->priv->length) &&
 	  g_inet_address_equal (mask->priv->addr, mask2->priv->addr));
 }

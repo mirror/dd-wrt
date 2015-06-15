@@ -1,6 +1,9 @@
-#include <unistd.h>
 #include <glib.h>
 #include <glib-object.h>
+
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
 
 #define G_TYPE_TEST                (my_test_get_type ())
 #define MY_TEST(test)              (G_TYPE_CHECK_INSTANCE_CAST ((test), G_TYPE_TEST, GTest))
@@ -103,7 +106,6 @@ main (int argc, char **argv)
 
   g_print ("START: %s\n", argv[0]);
   g_log_set_always_fatal (G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL | g_log_set_always_fatal (G_LOG_FATAL_MASK));
-  g_type_init ();
 
   test = g_object_new (G_TYPE_TEST, NULL);
 

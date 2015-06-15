@@ -14,8 +14,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with GLib; see the file COPYING.LIB.  If not,
- * write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -27,7 +26,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#ifdef HAVE_UNISTD_H
+#ifdef G_OS_UNIX
 #include <unistd.h>
 #endif
 
@@ -46,7 +45,7 @@
 #include "gstdio.h"
 
 
-#if !defined (G_OS_UNIX) && !defined (G_OS_WIN32) && !defined (G_OS_BEOS)
+#if !defined (G_OS_UNIX) && !defined (G_OS_WIN32)
 #error Please port this to your operating system
 #endif
 
@@ -74,8 +73,8 @@
  * See your C library manual for more details about access().
  *
  * Returns: zero if the pathname refers to an existing file system
- * object that has all the tested permissions, or -1 otherwise or on
- * error.
+ *     object that has all the tested permissions, or -1 otherwise
+ *     or on error.
  * 
  * Since: 2.8
  */
@@ -126,7 +125,7 @@ g_access (const gchar *filename,
  *
  * See your C library manual for more details about chmod().
  *
- * Returns: zero if the operation succeeded, -1 on error.
+ * Returns: 0 if the operation succeeded, -1 on error
  * 
  * Since: 2.8
  */
@@ -181,8 +180,9 @@ g_chmod (const gchar *filename,
  *
  * See your C library manual for more details about open().
  *
- * Returns: a new file descriptor, or -1 if an error occurred. The
- * return value can be used exactly like the return value from open().
+ * Returns: a new file descriptor, or -1 if an error occurred.
+ *     The return value can be used exactly like the return value
+ *     from open().
  * 
  * Since: 2.6
  */
@@ -243,8 +243,9 @@ g_open (const gchar *filename,
  *
  * See your C library manual for more details about creat().
  *
- * Returns: a new file descriptor, or -1 if an error occurred. The
- * return value can be used exactly like the return value from creat().
+ * Returns: a new file descriptor, or -1 if an error occurred.
+ *     The return value can be used exactly like the return value
+ *     from creat().
  * 
  * Since: 2.8
  */
@@ -432,41 +433,40 @@ g_chdir (const gchar *path)
 /**
  * GStatBuf:
  *
- * A type corresponding to the appropriate struct type for the stat
+ * A type corresponding to the appropriate struct type for the stat()
  * system call, depending on the platform and/or compiler being used.
  *
  * See g_stat() for more information.
- **/
+ */
 /**
  * g_stat: 
  * @filename: a pathname in the GLib file name encoding (UTF-8 on Windows)
- * @buf: a pointer to a <structname>stat</structname> struct, which
- *    will be filled with the file information
+ * @buf: a pointer to a stat struct, which will be filled with the file
+ *     information
  *
  * A wrapper for the POSIX stat() function. The stat() function
  * returns information about a file. On Windows the stat() function in
  * the C library checks only the FAT-style READONLY attribute and does
  * not look at the ACL at all. Thus on Windows the protection bits in
- * the st_mode field are a fabrication of little use.
+ * the @st_mode field are a fabrication of little use.
  * 
  * On Windows the Microsoft C libraries have several variants of the
- * <structname>stat</structname> struct and stat() function with names
- * like "_stat", "_stat32", "_stat32i64" and "_stat64i32". The one
- * used here is for 32-bit code the one with 32-bit size and time
- * fields, specifically called "_stat32".
+ * stat struct and stat() function with names like _stat(), _stat32(),
+ * _stat32i64() and _stat64i32(). The one used here is for 32-bit code
+ * the one with 32-bit size and time fields, specifically called _stat32().
  *
- * In Microsoft's compiler, by default "struct stat" means one with
- * 64-bit time fields while in MinGW "struct stat" is the legacy one
+ * In Microsoft's compiler, by default struct stat means one with
+ * 64-bit time fields while in MinGW struct stat is the legacy one
  * with 32-bit fields. To hopefully clear up this messs, the gstdio.h
- * header defines a type GStatBuf which is the appropriate struct type
+ * header defines a type #GStatBuf which is the appropriate struct type
  * depending on the platform and/or compiler being used. On POSIX it
- * is just "struct stat", but note that even on POSIX platforms,
- * "stat" might be a macro.
+ * is just struct stat, but note that even on POSIX platforms, stat()
+ * might be a macro.
  *
  * See your C library manual for more details about stat().
  *
- * Returns: 0 if the information was successfully retrieved, -1 if an error 
- *    occurred
+ * Returns: 0 if the information was successfully retrieved,
+ *     -1 if an error occurred
  * 
  * Since: 2.6
  */
@@ -508,8 +508,8 @@ g_stat (const gchar *filename,
 /**
  * g_lstat: 
  * @filename: a pathname in the GLib file name encoding (UTF-8 on Windows)
- * @buf: a pointer to a <structname>stat</structname> struct, which
- *    will be filled with the file information
+ * @buf: a pointer to a stat struct, which will be filled with the file
+ *     information
  *
  * A wrapper for the POSIX lstat() function. The lstat() function is
  * like stat() except that in the case of symbolic links, it returns
@@ -519,8 +519,8 @@ g_stat (const gchar *filename,
  * 
  * See your C library manual for more details about lstat().
  *
- * Returns: 0 if the information was successfully retrieved, -1 if an error 
- *    occurred
+ * Returns: 0 if the information was successfully retrieved,
+ *     -1 if an error occurred
  * 
  * Since: 2.6
  */
@@ -678,24 +678,22 @@ g_rmdir (const gchar *filename)
 /**
  * g_fopen:
  * @filename: a pathname in the GLib file name encoding (UTF-8 on Windows)
- * @mode: a string describing the mode in which the file should be 
- *   opened
+ * @mode: a string describing the mode in which the file should be opened
  *
  * A wrapper for the stdio fopen() function. The fopen() function
  * opens a file and associates a new stream with it.
  * 
  * Because file descriptors are specific to the C library on Windows,
- * and a file descriptor is partof the <type>FILE</type> struct, the
- * <type>FILE</type> pointer returned by this function makes sense
- * only to functions in the same C library. Thus if the GLib-using
- * code uses a different C library than GLib does, the
- * <type>FILE</type> pointer returned by this function cannot be
- * passed to C library functions like fprintf() or fread().
+ * and a file descriptor is part of the FILE struct, the FILE* returned
+ * by this function makes sense only to functions in the same C library.
+ * Thus if the GLib-using code uses a different C library than GLib does,
+ * the FILE* returned by this function cannot be passed to C library
+ * functions like fprintf() or fread().
  *
  * See your C library manual for more details about fopen().
  *
- * Returns: A <type>FILE</type> pointer if the file was successfully
- *    opened, or %NULL if an error occurred
+ * Returns: A FILE* if the file was successfully opened, or %NULL if
+ *     an error occurred
  * 
  * Since: 2.6
  */
@@ -740,8 +738,7 @@ g_fopen (const gchar *filename,
 /**
  * g_freopen:
  * @filename: a pathname in the GLib file name encoding (UTF-8 on Windows)
- * @mode: a string describing the mode in which the file should be 
- *   opened
+ * @mode: a string describing the mode in which the file should be  opened
  * @stream: (allow-none): an existing stream which will be reused, or %NULL
  *
  * A wrapper for the POSIX freopen() function. The freopen() function
@@ -749,8 +746,8 @@ g_fopen (const gchar *filename,
  * 
  * See your C library manual for more details about freopen().
  *
- * Returns: A <literal>FILE</literal> pointer if the file was successfully
- *    opened, or %NULL if an error occurred.
+ * Returns: A FILE* if the file was successfully opened, or %NULL if
+ *     an error occurred.
  * 
  * Since: 2.6
  */
@@ -804,8 +801,7 @@ g_freopen (const gchar *filename,
  * See your C library manual for more details about how utime() works
  * on your system.
  *
- * Returns: 0 if the operation was successful, -1 if an error 
- *    occurred
+ * Returns: 0 if the operation was successful, -1 if an error occurred
  * 
  * Since: 2.18
  */
@@ -835,3 +831,50 @@ g_utime (const gchar    *filename,
   return utime (filename, utb);
 #endif
 }
+
+/**
+ * g_close:
+ * @fd: A file descriptor
+ * @error: a #GError
+ *
+ * This wraps the close() call; in case of error, %errno will be
+ * preserved, but the error will also be stored as a #GError in @error.
+ *
+ * Besides using #GError, there is another major reason to prefer this
+ * function over the call provided by the system; on Unix, it will
+ * attempt to correctly handle %EINTR, which has platform-specific
+ * semantics.
+ *
+ * Returns: %TRUE on success, %FALSE if there was an error.
+ *
+ * Since: 2.36
+ */
+gboolean
+g_close (gint       fd,
+         GError   **error)
+{
+  int res;
+  res = close (fd);
+  /* Just ignore EINTR for now; a retry loop is the wrong thing to do
+   * on Linux at least.  Anyone who wants to add a conditional check
+   * for e.g. HP-UX is welcome to do so later...
+   *
+   * http://lkml.indiana.edu/hypermail/linux/kernel/0509.1/0877.html
+   * https://bugzilla.gnome.org/show_bug.cgi?id=682819
+   * http://utcc.utoronto.ca/~cks/space/blog/unix/CloseEINTR
+   * https://sites.google.com/site/michaelsafyan/software-engineering/checkforeintrwheninvokingclosethinkagain
+   */
+  if (G_UNLIKELY (res == -1 && errno == EINTR))
+    return TRUE;
+  else if (res == -1)
+    {
+      int errsv = errno;
+      g_set_error_literal (error, G_FILE_ERROR,
+                           g_file_error_from_errno (errsv),
+                           g_strerror (errsv));
+      errno = errsv;
+      return FALSE;
+    }
+  return TRUE;
+}
+

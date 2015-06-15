@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -87,8 +85,7 @@ g_initable_default_init (GInitableInterface *iface)
  * If the object is not initialized, or initialization returns with an
  * error, then all operations on the object except g_object_ref() and
  * g_object_unref() are considered to be invalid, and have undefined
- * behaviour. See the <xref linkend="ginitable"/> section introduction
- * for more details.
+ * behaviour. See the [introduction][ginitable] for more details.
  *
  * Implementations of this method must be idempotent, i.e. multiple calls
  * to this function with the same argument should return the same results.
@@ -130,7 +127,8 @@ g_initable_init (GInitable     *initable,
  * similar to g_object_new() but also initializes the object
  * and returns %NULL, setting an error on failure.
  *
- * Return value: (transfer full): a newly allocated #GObject, or %NULL on error
+ * Returns: (type GObject.Object) (transfer full): a newly allocated
+ *      #GObject, or %NULL on error
  *
  * Since: 2.22
  */
@@ -166,7 +164,8 @@ g_initable_new (GType          object_type,
  * similar to g_object_newv() but also initializes the object
  * and returns %NULL, setting an error on failure.
  *
- * Return value: (transfer full): a newly allocated #GObject, or %NULL on error
+ * Returns: (type GObject.Object) (transfer full): a newly allocated
+ *      #GObject, or %NULL on error
  *
  * Since: 2.22
  */
@@ -206,7 +205,8 @@ g_initable_newv (GType          object_type,
  * similar to g_object_new_valist() but also initializes the object
  * and returns %NULL, setting an error on failure.
  *
- * Return value: (transfer full): a newly allocated #GObject, or %NULL on error
+ * Returns: (type GObject.Object) (transfer full): a newly allocated
+ *      #GObject, or %NULL on error
  *
  * Since: 2.22
  */

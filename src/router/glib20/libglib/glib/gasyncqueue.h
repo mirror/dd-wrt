@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,12 +22,12 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_ASYNCQUEUE_H__
+#define __G_ASYNCQUEUE_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_ASYNCQUEUE_H__
-#define __G_ASYNCQUEUE_H__
 
 #include <glib/gthread.h>
 
@@ -37,11 +35,17 @@ G_BEGIN_DECLS
 
 typedef struct _GAsyncQueue GAsyncQueue;
 
+GLIB_AVAILABLE_IN_ALL
 GAsyncQueue *g_async_queue_new                  (void);
+GLIB_AVAILABLE_IN_ALL
 GAsyncQueue *g_async_queue_new_full             (GDestroyNotify item_free_func);
+GLIB_AVAILABLE_IN_ALL
 void         g_async_queue_lock                 (GAsyncQueue      *queue);
+GLIB_AVAILABLE_IN_ALL
 void         g_async_queue_unlock               (GAsyncQueue      *queue);
+GLIB_AVAILABLE_IN_ALL
 GAsyncQueue *g_async_queue_ref                  (GAsyncQueue      *queue);
+GLIB_AVAILABLE_IN_ALL
 void         g_async_queue_unref                (GAsyncQueue      *queue);
 
 GLIB_DEPRECATED_FOR(g_async_queue_ref)
@@ -50,31 +54,45 @@ void         g_async_queue_ref_unlocked         (GAsyncQueue      *queue);
 GLIB_DEPRECATED_FOR(g_async_queue_unref)
 void         g_async_queue_unref_and_unlock     (GAsyncQueue      *queue);
 
+GLIB_AVAILABLE_IN_ALL
 void         g_async_queue_push                 (GAsyncQueue      *queue,
                                                  gpointer          data);
+GLIB_AVAILABLE_IN_ALL
 void         g_async_queue_push_unlocked        (GAsyncQueue      *queue,
                                                  gpointer          data);
+GLIB_AVAILABLE_IN_ALL
 void         g_async_queue_push_sorted          (GAsyncQueue      *queue,
                                                  gpointer          data,
                                                  GCompareDataFunc  func,
                                                  gpointer          user_data);
+GLIB_AVAILABLE_IN_ALL
 void         g_async_queue_push_sorted_unlocked (GAsyncQueue      *queue,
                                                  gpointer          data,
                                                  GCompareDataFunc  func,
                                                  gpointer          user_data);
+GLIB_AVAILABLE_IN_ALL
 gpointer     g_async_queue_pop                  (GAsyncQueue      *queue);
+GLIB_AVAILABLE_IN_ALL
 gpointer     g_async_queue_pop_unlocked         (GAsyncQueue      *queue);
+GLIB_AVAILABLE_IN_ALL
 gpointer     g_async_queue_try_pop              (GAsyncQueue      *queue);
+GLIB_AVAILABLE_IN_ALL
 gpointer     g_async_queue_try_pop_unlocked     (GAsyncQueue      *queue);
+GLIB_AVAILABLE_IN_ALL
 gpointer     g_async_queue_timeout_pop          (GAsyncQueue      *queue,
                                                  guint64           timeout);
+GLIB_AVAILABLE_IN_ALL
 gpointer     g_async_queue_timeout_pop_unlocked (GAsyncQueue      *queue,
                                                  guint64           timeout);
+GLIB_AVAILABLE_IN_ALL
 gint         g_async_queue_length               (GAsyncQueue      *queue);
+GLIB_AVAILABLE_IN_ALL
 gint         g_async_queue_length_unlocked      (GAsyncQueue      *queue);
+GLIB_AVAILABLE_IN_ALL
 void         g_async_queue_sort                 (GAsyncQueue      *queue,
                                                  GCompareDataFunc  func,
                                                  gpointer          user_data);
+GLIB_AVAILABLE_IN_ALL
 void         g_async_queue_sort_unlocked        (GAsyncQueue      *queue,
                                                  GCompareDataFunc  func,
                                                  gpointer          user_data);

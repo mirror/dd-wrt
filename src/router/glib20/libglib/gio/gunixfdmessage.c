@@ -29,15 +29,20 @@
  * stream-oriented UNIX sockets, see g_unix_connection_send_fd() and
  * g_unix_connection_receive_fd().
  *
- * Note that <filename>&lt;gio/gunixfdmessage.h&gt;</filename> belongs to
- * the UNIX-specific GIO interfaces, thus you have to use the
- * <filename>gio-unix-2.0.pc</filename> pkg-config file when using it.
+ * Note that `<gio/gunixfdmessage.h>` belongs to the UNIX-specific GIO
+ * interfaces, thus you have to use the `gio-unix-2.0.pc` pkg-config
+ * file when using it.
+ */
+
+/**
+ * GUnixFDMessage:
+ *
+ * #GUnixFDMessage is an opaque data structure and can only be accessed
+ * using the following functions.
  **/
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
@@ -45,17 +50,15 @@
 
 #include "gunixfdmessage.h"
 #include "gunixfdlist.h"
+#include "gnetworking.h"
 #include "gioerror.h"
-
-
-
-G_DEFINE_TYPE (GUnixFDMessage, g_unix_fd_message,
-               G_TYPE_SOCKET_CONTROL_MESSAGE);
 
 struct _GUnixFDMessagePrivate
 {
   GUnixFDList *list;
 };
+
+G_DEFINE_TYPE_WITH_PRIVATE (GUnixFDMessage, g_unix_fd_message, G_TYPE_SOCKET_CONTROL_MESSAGE)
 
 static gsize
 g_unix_fd_message_get_size (GSocketControlMessage *message)
@@ -185,9 +188,7 @@ g_unix_fd_message_get_property (GObject *object, guint prop_id,
 static void
 g_unix_fd_message_init (GUnixFDMessage *message)
 {
-  message->priv = G_TYPE_INSTANCE_GET_PRIVATE (message,
-                                               G_TYPE_UNIX_FD_MESSAGE,
-                                               GUnixFDMessagePrivate);
+  message->priv = g_unix_fd_message_get_instance_private (message);
 }
 
 static void
@@ -207,7 +208,6 @@ g_unix_fd_message_class_init (GUnixFDMessageClass *class)
   GSocketControlMessageClass *scm_class = G_SOCKET_CONTROL_MESSAGE_CLASS (class);
   GObjectClass *object_class = G_OBJECT_CLASS (class);
 
-  g_type_class_add_private (class, sizeof (GUnixFDMessagePrivate));
   scm_class->get_size = g_unix_fd_message_get_size;
   scm_class->get_level = g_unix_fd_message_get_level;
   scm_class->get_type = g_unix_fd_message_get_msg_type;

@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,16 +22,18 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_DEPRECATED_MAIN_H__
+#define __G_DEPRECATED_MAIN_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
-#ifndef __G_DEPRECATED_MAIN_H__
-#define __G_DEPRECATED_MAIN_H__
-
 #include <glib/gmain.h>
 
 G_BEGIN_DECLS
+
+#ifndef G_DISABLE_DEPRECATED
 
 /* ============== Compat main loop stuff ================== */
 
@@ -132,6 +132,7 @@ G_BEGIN_DECLS
  */
 #define g_main_set_poll_func(func)  g_main_context_set_poll_func (NULL, func)
 
+#endif
 
 G_END_DECLS
 
