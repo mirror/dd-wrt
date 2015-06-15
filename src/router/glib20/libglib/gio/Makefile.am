@@ -699,6 +699,7 @@ bin_PROGRAMS = gio-querymodules glib-compile-schemas glib-compile-resources gset
 
 glib_compile_resources_LDADD = libgio-2.0.la 		\
 	$(top_builddir)/gobject/libgobject-2.0.la	\
+	$(top_builddir)/gmodule/libgmodule-2.0.la	\
 	$(top_builddir)/glib/libglib-2.0.la 		\
 	$(NULL)
 
