@@ -73,7 +73,7 @@ static AC_AUTOMATA_t * ac_automata_init (MATCH_CALBACK_f mc)
  * RETUERN VALUE: AC_ERROR_t
  * the return value indicates the success or failure of adding action
  ******************************************************************************/
-AC_ERROR_t ac_automata_add (AC_AUTOMATA_t * thiz, AC_PATTERN_t * patt)
+static AC_ERROR_t ac_automata_add (AC_AUTOMATA_t * thiz, AC_PATTERN_t * patt)
 {
   unsigned int i;
   AC_NODE_t * n = thiz->root;
