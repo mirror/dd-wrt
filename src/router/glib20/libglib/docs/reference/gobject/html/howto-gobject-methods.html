@@ -1,0 +1,420 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Object methods: GObject Reference Manual</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<link rel="home" href="index.html" title="GObject Reference Manual">
+<link rel="up" href="howto-gobject.html" title="How to define and implement a new GObject">
+<link rel="prev" href="howto-gobject-destruction.html" title="Object Destruction">
+<link rel="next" href="howto-gobject-chainup.html" title="Chaining up">
+<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts"></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="howto-gobject.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="howto-gobject-destruction.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="howto-gobject-chainup.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="sect1">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="howto-gobject-methods"></a>Object methods</h2></div></div></div>
+<p>
+      Just as with C++, there are many different ways to define object
+      methods and extend them: the following list and sections draw on
+      C++ vocabulary. (Readers are expected to know basic C++ concepts.
+      Those who have not had to write C++ code recently can refer to e.g.
+      <a class="ulink" href="http://www.cplusplus.com/doc/tutorial/" target="_top">http://www.cplusplus.com/doc/tutorial/</a> to refresh
+      their memories.)
+      </p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+            non-virtual public methods,
+          </p></li>
+<li class="listitem"><p>
+            virtual public methods and
+          </p></li>
+<li class="listitem"><p>
+            virtual private methods
+          </p></li>
+</ul></div>
+<p>
+    </p>
+<div class="sect2">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="id-1.6.3.7.3"></a>Non-virtual public methods</h3></div></div></div>
+<p>
+        These are the simplest: you want to provide a simple method which
+        can act on your object. All you need to do is to provide a function
+        prototype in the header and an implementation of that prototype
+        in the source file.
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="comment">/* declaration in the header. */</span>
+<span class="type">void</span><span class="normal"> </span><span class="function">maman_bar_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">);</span>
+
+<span class="comment">/* implementation in the source file */</span>
+<span class="type">void</span>
+<span class="function">maman_bar_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span><span class="normal"> </span><span class="symbol">(</span><span class="function">MAMAN_IS_BAR</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">));</span>
+
+<span class="normal">  </span><span class="comment">/* do stuff here. */</span>
+<span class="cbracket">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+      </p>
+</div>
+<div class="sect2">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="id-1.6.3.7.4"></a>Virtual public methods</h3></div></div></div>
+<p>
+        This is the preferred way to create polymorphic GObjects. All you
+        need to do is to define the common method and its class function in
+        the public header, implement the common method in the source file
+        and re-implement the class function in each object which inherits
+        from you.
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="comment">/* declaration in maman-bar.h. */</span>
+<span class="keyword">struct</span><span class="normal"> </span><span class="classname">_MamanBarClass</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="usertype">GObjectClass</span><span class="normal"> parent_class</span><span class="symbol">;</span>
+
+<span class="normal">  </span><span class="comment">/* stuff */</span>
+<span class="normal">  </span><span class="type">void</span><span class="normal"> </span><span class="symbol">(*</span><span class="normal">do_action</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">);</span>
+<span class="cbracket">}</span><span class="symbol">;</span>
+
+<span class="type">void</span><span class="normal"> </span><span class="function">maman_bar_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">);</span>
+
+<span class="comment">/* implementation in maman-bar.c */</span>
+<span class="type">void</span>
+<span class="function">maman_bar_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span><span class="normal"> </span><span class="symbol">(</span><span class="function">MAMAN_IS_BAR</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">));</span>
+
+<span class="normal">  </span><span class="function">MAMAN_BAR_GET_CLASS</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">)-&gt;</span><span class="function">do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">);</span>
+<span class="cbracket">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+        The code above simply redirects the do_action call to the relevant
+        class function.
+      </p>
+<p>
+        Please, note that it is possible for you to provide a default
+        implementation for this class method in the object's
+        <code class="function">class_init</code> function: initialize the
+        klass-&gt;do_action field to a pointer to the actual implementation.
+        By default, class methods that are not inherited are initialized to
+        NULL, and thus are to be considered "pure virtual".
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
+<span class="function">maman_bar_real_do_action_two</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="comment">/* Default implementation for the virtual method. */</span>
+<span class="cbracket">}</span>
+
+<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
+<span class="function">maman_bar_class_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">BarClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="comment">/* this is not necessary, except for demonstration purposes.</span>
+<span class="comment">   *</span>
+<span class="comment">   * pure virtual method: mandates implementation in children.</span>
+<span class="comment">   */</span>
+<span class="normal">  klass</span><span class="symbol">-&gt;</span><span class="normal">do_action_one </span><span class="symbol">=</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">;</span>
+
+<span class="normal">  </span><span class="comment">/* merely virtual method. */</span>
+<span class="normal">  klass</span><span class="symbol">-&gt;</span><span class="normal">do_action_two </span><span class="symbol">=</span><span class="normal"> maman_bar_real_do_action_two</span><span class="symbol">;</span>
+<span class="cbracket">}</span>
+
+<span class="type">void</span>
+<span class="function">maman_bar_do_action_one</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span><span class="normal"> </span><span class="symbol">(</span><span class="function">MAMAN_IS_BAR</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">));</span>
+
+<span class="normal">  </span><span class="comment">/* if the method is purely virtual, then it is a good idea to</span>
+<span class="comment">   * check that it has been overridden before calling it, and,</span>
+<span class="comment">   * depending on the intent of the class, either ignore it silently</span>
+<span class="comment">   * or warn the user.</span>
+<span class="comment">   /</span>
+<span class="comment">  if (MAMAN_BAR_GET_CLASS (self)-&gt;do_action_one != NULL)</span>
+<span class="comment">    MAMAN_BAR_GET_CLASS (self)-&gt;do_action_one (self, /* parameters */</span><span class="symbol">);</span>
+<span class="normal">  </span><span class="keyword">else</span>
+<span class="normal">    </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Message-Logging.html#g-warning">g_warning</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"Class '%s' does not override the mandatory "</span>
+<span class="normal">               </span><span class="string">"MamanBarClass.do_action_one() virtual function."</span><span class="symbol">,</span>
+<span class="normal">               </span><span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-TYPE-NAME:CAPS">G_OBJECT_TYPE_NAME</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">));</span>
+<span class="cbracket">}</span>
+
+<span class="type">void</span>
+<span class="function">maman_bar_do_action_two</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span><span class="normal"> </span><span class="symbol">(</span><span class="function">MAMAN_IS_BAR</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">));</span>
+
+<span class="normal">  </span><span class="function">MAMAN_BAR_GET_CLASS</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">)-&gt;</span><span class="function">do_action_two</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">);</span>
+<span class="cbracket">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+      </p>
+</div>
+<div class="sect2">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="id-1.6.3.7.5"></a>Virtual private Methods</h3></div></div></div>
+<p>
+        These are very similar to Virtual Public methods. They just don't
+        have a public function to call the function directly. The header
+        file contains only a declaration of the class function:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="comment">/* declaration in maman-bar.h. */</span>
+<span class="keyword">struct</span><span class="normal"> </span><span class="classname">_MamanBarClass</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="usertype">GObjectClass</span><span class="normal"> parent</span><span class="symbol">;</span>
+
+<span class="normal">  </span><span class="comment">/* stuff */</span>
+<span class="normal">  </span><span class="type">void</span><span class="normal"> </span><span class="symbol">(*</span><span class="normal"> helper_do_specific_action</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">);</span>
+<span class="cbracket">}</span><span class="symbol">;</span>
+
+<span class="type">void</span><span class="normal"> </span><span class="function">maman_bar_do_any_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+        These class functions are often used to delegate part of the job
+        to child classes:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="comment">/* this accessor function is static: it is not exported outside of this file. */</span>
+<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span><span class="normal"> </span>
+<span class="function">maman_bar_do_specific_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="function">MAMAN_BAR_GET_CLASS</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">)-&gt;</span><span class="function">do_specific_action</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">);</span>
+<span class="cbracket">}</span>
+
+<span class="type">void</span>
+<span class="function">maman_bar_do_any_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="comment">/* random code here */</span>
+
+<span class="normal">  </span><span class="comment">/* </span>
+<span class="comment">   * Try to execute the requested action. Maybe the requested action</span>
+<span class="comment">   * cannot be implemented here. So, we delegate its implementation</span>
+<span class="comment">   * to the child class:</span>
+<span class="comment">   */</span>
+<span class="normal">  </span><span class="function">maman_bar_do_specific_action</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* parameters */</span><span class="symbol">);</span>
+
+<span class="normal">  </span><span class="comment">/* other random code here */</span>
+<span class="cbracket">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+      </p>
+<p>
+        Again, it is possible to provide a default implementation for this
+        private virtual class function:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
+<span class="function">maman_bar_class_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBarClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="comment">/* pure virtual method: mandates implementation in children. */</span>
+<span class="normal">  klass</span><span class="symbol">-&gt;</span><span class="normal">do_specific_action_one </span><span class="symbol">=</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">;</span>
+
+<span class="normal">  </span><span class="comment">/* merely virtual method. */</span>
+<span class="normal">  klass</span><span class="symbol">-&gt;</span><span class="normal">do_specific_action_two </span><span class="symbol">=</span><span class="normal"> maman_bar_real_do_specific_action_two</span><span class="symbol">;</span>
+<span class="cbracket">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+      </p>
+<p>
+        Children can then implement the subclass with code such as:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
+<span class="function">maman_bar_subtype_class_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBarSubTypeClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">)</span>
+<span class="cbracket">{</span>
+<span class="normal">  </span><span class="usertype">MamanBarClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">bar_class </span><span class="symbol">=</span><span class="normal"> </span><span class="function">MAMAN_BAR_CLASS</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">klass</span><span class="symbol">);</span>
+
+<span class="normal">  </span><span class="comment">/* implement pure virtual class function. */</span>
+<span class="normal">  bar_class</span><span class="symbol">-&gt;</span><span class="normal">do_specific_action_one </span><span class="symbol">=</span><span class="normal"> maman_bar_subtype_do_specific_action_one</span><span class="symbol">;</span>
+<span class="cbracket">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+      </p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.23</div>
+</body>
+</html>
