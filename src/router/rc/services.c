@@ -1101,6 +1101,9 @@ static void handle_wireless(void)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service("zebra");
 #endif
+#ifdef HAVE_IPV6
+	startstop_f("dhcp6c");
+#endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
 #ifdef HAVE_80211AC
 	startstop_fdelay("httpd", 2);	// httpd will not accept connection anymore on wan/lan ip changes changes
@@ -1210,6 +1213,9 @@ static void handle_wireless_2(void)
 	}
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
+#endif
+#ifdef HAVE_IPV6
+	startstop_f("dhcp6c");
 #endif
 
 }
