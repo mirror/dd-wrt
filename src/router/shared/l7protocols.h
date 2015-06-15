@@ -461,6 +461,7 @@ l7filters filters_list[] = {
 	{"tuenti", NDPI_ONLY},
 	{"tvants", NDPI_ONLY},
 	{"tvuplayer", NDPI_ONLY},
+	{"twitch", NDPI_ONLY},
 	{"twitter", NDPI_ONLY},
 	{"ubuntuone", NDPI_ONLY},
 	{"unencryped_jabber", NDPI_ONLY},
