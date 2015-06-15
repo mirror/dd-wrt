@@ -1249,7 +1249,6 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC87U;
 	}
 
-
 	if (nvram_match("odmpid", "RT-AC87U")) {
 		setRouter("Asus RT-AC87U");
 		return ROUTER_ASUS_AC87U;
@@ -3504,8 +3503,8 @@ int internal_getRouterBrand()
 #else
 			setRouter("Buffalo WZR-D1800H");
 #endif
-			return ROUTER_D1800H;
 		}
+		return ROUTER_D1800H;
 	}
 #ifndef HAVE_BUFFALO
 	if (boardnum == 0 && nvram_match("boardtype", "0x048e") &&	// cfe sets boardnum="", strtoul -> 0
