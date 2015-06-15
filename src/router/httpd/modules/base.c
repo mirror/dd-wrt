@@ -1971,7 +1971,7 @@ struct cacheentry {
 	time_t time;
 };
 static int cachecount = 0;
-static struct cacheentry *translationcache;
+static struct cacheentry *translationcache = NULL;
 static char *cur_language = NULL;
 static char *private_live_translate(const char *tran)
 {
@@ -1998,13 +1998,18 @@ static char *private_live_translate(const char *tran)
 static void clear_translationcache(void)
 {
 	int i;
-	for (i = 0; i < cachecount; i++) {
-		if (translationcache[i].request != NULL) {
-			free(translationcache[i].request);
-			free(translationcache[i].translation);
-			translationcache[i].request = NULL;
-			translationcache[i].translation = NULL;
+	if (translationcache && cachecount > 0) {
+		for (i = 0; i < cachecount; i++) {
+			if (translationcache[i].request != NULL) {
+				free(translationcache[i].request);
+				free(translationcache[i].translation);
+				translationcache[i].request = NULL;
+				translationcache[i].translation = NULL;
+			}
 		}
+		free(translationcache);
+		translationcache = NULL;
+		cachecount = 0;
 	}
 
 }
