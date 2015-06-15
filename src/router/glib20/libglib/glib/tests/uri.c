@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -204,15 +202,16 @@ run_from_uri_tests (void)
                                  &error);
 
 #ifdef G_OS_WIN32
-      {
-        gchar *p, *slash;
-        p = from_uri_tests[i].expected_filename = g_strdup (from_uri_tests[i].expected_filename);
-        while ((slash = strchr (p, '/')) != NULL)
-          {
-            *slash = '\\';
-            p = slash + 1;
-          }
-      }
+      if (from_uri_tests[i].expected_filename)
+        {
+          gchar *p, *slash;
+          p = from_uri_tests[i].expected_filename = g_strdup (from_uri_tests[i].expected_filename);
+          while ((slash = strchr (p, '/')) != NULL)
+            {
+              *slash = '\\';
+              p = slash + 1;
+            }
+        }
 #endif
       if (res)
         g_assert_cmpstr (res, ==, from_uri_tests[i].expected_filename);
@@ -257,12 +256,12 @@ safe_strcmp_hostname (const gchar *a, const gchar *b)
   if (b == NULL)
     b = "";
 #ifndef G_OS_WIN32
-  return g_strcmp0 (a, b);
+  return strcmp (a, b);
 #else
-  if (g_strcmp0 (a, "localhost") == 0 && b == NULL)
+  if (strcmp (a, "localhost") == 0 && !*b)
     return 0;
   else
-    return g_strcmp0 (a, b);
+    return strcmp (a, b);
 #endif
 }
 

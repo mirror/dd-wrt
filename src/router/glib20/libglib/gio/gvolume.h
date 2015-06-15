@@ -13,20 +13,18 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  *         David Zeuthen <davidz@redhat.com>
  */
 
+#ifndef __G_VOLUME_H__
+#define __G_VOLUME_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_VOLUME_H__
-#define __G_VOLUME_H__
 
 #include <gio/giotypes.h>
 
@@ -70,18 +68,15 @@ G_BEGIN_DECLS
 /**
  * G_VOLUME_IDENTIFIER_KIND_CLASS:
  *
- * The string used to obtain the volume <emphasis>class</emphasis>
- * with g_volume_get_identifier().
+ * The string used to obtain the volume class with g_volume_get_identifier().
  *
- * Known volume classes include <literal>device</literal> and
- * <literal>network</literal>. Other classes may be added in the
- * future.
+ * Known volume classes include `device` and `network`. Other classes may
+ * be added in the future.
  *
  * This is intended to be used by applications to classify #GVolume
  * instances into different sections - for example a file manager or
- * file chooser can use this information to show
- * <literal>network</literal> volumes under a "Network" heading and
- * <literal>device</literal> volumes under a "Devices" heading.
+ * file chooser can use this information to show `network` volumes under
+ * a "Network" heading and `device` volumes under a "Devices" heading.
  */
 #define G_VOLUME_IDENTIFIER_KIND_CLASS "class"
 
@@ -110,10 +105,10 @@ G_BEGIN_DECLS
  * @mount_finish: Finishes a mount operation.
  * @eject: Ejects a given #GVolume.
  * @eject_finish: Finishes an eject operation.
- * @get_identifier: Returns the <link linkend="volume-identifier">identifier</link> of the given kind, or %NULL if
+ * @get_identifier: Returns the [identifier][volume-identifier] of the given kind, or %NULL if
  *    the #GVolume doesn't have one.
  * @enumerate_identifiers: Returns an array strings listing the kinds
- *    of <link linkend="volume-identifier">identifiers</link> which the #GVolume has.
+ *    of [identifiers][volume-identifier] which the #GVolume has.
  * @should_automount: Returns %TRUE if the #GVolume should be automatically mounted.
  * @get_activation_root: Returns the activation root for the #GVolume if it is known in advance or %NULL if
  *   it is not known.
@@ -184,23 +179,35 @@ struct _GVolumeIface
   GIcon       * (* get_symbolic_icon)   (GVolume             *volume);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType    g_volume_get_type              (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 char *   g_volume_get_name              (GVolume              *volume);
+GLIB_AVAILABLE_IN_ALL
 GIcon *  g_volume_get_icon              (GVolume              *volume);
+GLIB_AVAILABLE_IN_ALL
 GIcon *  g_volume_get_symbolic_icon     (GVolume              *volume);
+GLIB_AVAILABLE_IN_ALL
 char *   g_volume_get_uuid              (GVolume              *volume);
+GLIB_AVAILABLE_IN_ALL
 GDrive * g_volume_get_drive             (GVolume              *volume);
+GLIB_AVAILABLE_IN_ALL
 GMount * g_volume_get_mount             (GVolume              *volume);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_volume_can_mount             (GVolume              *volume);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_volume_can_eject             (GVolume              *volume);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_volume_should_automount      (GVolume              *volume);
+GLIB_AVAILABLE_IN_ALL
 void     g_volume_mount                 (GVolume              *volume,
 					 GMountMountFlags      flags,
 					 GMountOperation      *mount_operation,
 					 GCancellable         *cancellable,
 					 GAsyncReadyCallback   callback,
 					 gpointer              user_data);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_volume_mount_finish          (GVolume              *volume,
 					 GAsyncResult         *result,
 					 GError              **error);
@@ -215,18 +222,23 @@ GLIB_DEPRECATED_FOR(g_volume_eject_with_operation_finish)
 gboolean g_volume_eject_finish          (GVolume              *volume,
                                          GAsyncResult         *result,
                                          GError              **error);
+GLIB_AVAILABLE_IN_ALL
 char *   g_volume_get_identifier        (GVolume              *volume,
 					 const char           *kind);
+GLIB_AVAILABLE_IN_ALL
 char **  g_volume_enumerate_identifiers (GVolume              *volume);
 
+GLIB_AVAILABLE_IN_ALL
 GFile *  g_volume_get_activation_root   (GVolume              *volume);
 
+GLIB_AVAILABLE_IN_ALL
 void        g_volume_eject_with_operation     (GVolume             *volume,
                                                GMountUnmountFlags   flags,
                                                GMountOperation     *mount_operation,
                                                GCancellable        *cancellable,
                                                GAsyncReadyCallback  callback,
                                                gpointer             user_data);
+GLIB_AVAILABLE_IN_ALL
 gboolean    g_volume_eject_with_operation_finish (GVolume          *volume,
                                                GAsyncResult        *result,
                                                GError             **error);

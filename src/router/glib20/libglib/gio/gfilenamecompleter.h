@@ -13,19 +13,17 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
 
+#ifndef __G_FILENAME_COMPLETER_H__
+#define __G_FILENAME_COMPLETER_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_FILENAME_COMPLETER_H__
-#define __G_FILENAME_COMPLETER_H__
 
 #include <gio/giotypes.h>
 
@@ -60,14 +58,19 @@ struct _GFilenameCompleterClass
   void (*_g_reserved3) (void);
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType               g_filename_completer_get_type              (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GFilenameCompleter *g_filename_completer_new                   (void);
 
+GLIB_AVAILABLE_IN_ALL
 char *              g_filename_completer_get_completion_suffix (GFilenameCompleter *completer,
                                                                 const char *initial_text);
+GLIB_AVAILABLE_IN_ALL
 char **             g_filename_completer_get_completions       (GFilenameCompleter *completer,
                                                                 const char *initial_text);
+GLIB_AVAILABLE_IN_ALL
 void                g_filename_completer_set_dirs_only         (GFilenameCompleter *completer,
                                                                 gboolean dirs_only);
 

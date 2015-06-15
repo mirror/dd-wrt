@@ -12,26 +12,25 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
-#include "config.h"
-
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include <sys/types.h>
 #include <signal.h>
 
 #include "glib.h"
 #include "gstdio.h"
 
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
+
 static gchar *dir, *filename, *displayname, *childname;
 
 static gboolean stop = FALSE;
+
+static gint parent_pid;
 
 #ifndef G_OS_WIN32
 
@@ -94,26 +93,40 @@ map_or_die (const gchar *filename,
 
   return map;
 }
-	    
+    
+static gboolean
+signal_parent (gpointer data)
+{
+#ifndef G_OS_WIN32
+  kill (parent_pid, SIGUSR1);
+#endif
+  return G_SOURCE_REMOVE;
+}
+
 static int
 child_main (int argc, char *argv[])
 {
   GMappedFile *map;
   GMainLoop *loop;
 
+  parent_pid = atoi (argv[2]);
   map = map_or_die (filename, FALSE);
-  
-  loop = g_main_loop_new (NULL, FALSE);
 
 #ifndef G_OS_WIN32
   signal (SIGUSR1, handle_usr1);
 #endif
+  loop = g_main_loop_new (NULL, FALSE);
   g_idle_add (check_stop, loop);
+  g_idle_add (signal_parent, NULL);
   g_main_loop_run (loop);
+
+ g_message ("test_child_private: received parent signal");
 
   write_or_die (childname, 
 		g_mapped_file_get_contents (map),
 		g_mapped_file_get_length (map));
+
+  signal_parent (NULL);
 
   return 0;
 }
@@ -132,6 +145,7 @@ test_mapping (void)
   map = map_or_die (filename, TRUE);
   g_assert (g_mapped_file_get_length (map) == 3);
   g_mapped_file_free (map);
+  g_message ("test_mapping: ok");
 }
 
 static void 
@@ -162,6 +176,7 @@ test_private (void)
   g_assert (strcmp (buffer, "ABC") == 0);
   g_free (buffer);
 
+  g_message ("test_private: ok");
 }
 
 static void
@@ -171,8 +186,10 @@ test_child_private (gchar *argv0)
   GMappedFile *map;
   gchar *buffer;
   gsize len;
-  gchar *child_argv[3];
+  gchar *child_argv[4];
   GPid  child_pid;
+  GMainLoop *loop;
+  gchar pid[100];
   
 #ifdef G_OS_WIN32
   g_remove ("STOP");
@@ -182,9 +199,15 @@ test_child_private (gchar *argv0)
   write_or_die (filename, "ABC", -1);
   map = map_or_die (filename, TRUE);
 
+#ifndef G_OS_WIN32
+  signal (SIGUSR1, handle_usr1);
+#endif
+
+  g_snprintf (pid, sizeof(pid), "%d", getpid ());
   child_argv[0] = argv0;
   child_argv[1] = "mapchild";
-  child_argv[2] = NULL;
+  child_argv[2] = pid;
+  child_argv[3] = NULL;
   if (!g_spawn_async (dir, child_argv, NULL,
 		      0, NULL, NULL, &child_pid, &error))
     {
@@ -192,9 +215,18 @@ test_child_private (gchar *argv0)
 	       error->message);
       exit (1);            
     }
+ g_message ("test_child_private: child spawned");
 
-  /* give the child some time to set up its mapping */
+#ifndef G_OS_WIN32
+  loop = g_main_loop_new (NULL, FALSE);
+  g_idle_add (check_stop, loop);
+  g_main_loop_run (loop);
+  stop = FALSE;
+#else
   g_usleep (2000000);
+#endif
+
+ g_message ("test_child_private: received first child signal");
 
   buffer = (gchar *)g_mapped_file_get_contents (map);
   buffer[0] = '1';
@@ -208,8 +240,14 @@ test_child_private (gchar *argv0)
   g_file_set_contents ("STOP", "Hey there\n", -1, NULL);
 #endif
 
-  /* give the child some time to write the file */
+#ifndef G_OS_WIN32
+  g_idle_add (check_stop, loop);
+  g_main_loop_run (loop);
+#else
   g_usleep (2000000);
+#endif
+
+ g_message ("test_child_private: received second child signal");
 
   if (!g_file_get_contents (childname, &buffer, &len, &error))
     {
@@ -222,6 +260,8 @@ test_child_private (gchar *argv0)
   g_assert (len == 3);
   g_assert (strcmp (buffer, "ABC") == 0);
   g_free (buffer);
+
+  g_message ("test_child_private: ok");
 }
 
 static int 
@@ -244,13 +284,33 @@ int
 main (int argc, 
       char *argv[])
 {
+  int ret;
+#ifndef G_OS_WIN32
+  sigset_t sig_mask, old_mask;
+
+  sigemptyset (&sig_mask);
+  sigaddset (&sig_mask, SIGUSR1);
+  if (sigprocmask (SIG_UNBLOCK, &sig_mask, &old_mask) == 0)
+    {
+      if (sigismember (&old_mask, SIGUSR1))
+        g_message ("SIGUSR1 was blocked, unblocking it");
+    }
+#endif
+
   dir = g_get_current_dir ();
   filename = g_build_filename (dir, "maptest", NULL);
   displayname = g_filename_display_name (filename);
   childname = g_build_filename (dir, "mapchild", NULL);
 
   if (argc > 1)
-    return child_main (argc, argv);
+    ret = child_main (argc, argv);
   else 
-    return parent_main (argc, argv);
+    ret = parent_main (argc, argv);
+
+  g_free (childname);
+  g_free (filename);
+  g_free (displayname);
+  g_free (dir);
+
+  return ret;
 }

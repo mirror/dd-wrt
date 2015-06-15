@@ -33,7 +33,7 @@ test_unichar_validate (void)
   g_assert (g_unichar_validate ('j'));
   g_assert (g_unichar_validate (8356));
   g_assert (g_unichar_validate (8356));
-  g_assert (!g_unichar_validate (0xfdd1));
+  g_assert (g_unichar_validate (0xfdd1));
   g_assert (g_unichar_validate (917760));
   g_assert (!g_unichar_validate (0x110000));
 }
@@ -80,7 +80,7 @@ test_unichar_character_type (void)
 
   for (i = 0; i < G_N_ELEMENTS (examples); i++)
     {
-      g_assert (g_unichar_type (examples[i].c) == examples[i].type);
+      g_assert_cmpint (g_unichar_type (examples[i].c), ==, examples[i].type);
     }
 }
 
@@ -130,12 +130,13 @@ test_unichar_break_type (void)
     { G_UNICODE_BREAK_HANGUL_LV_SYLLABLE,  0xAC00 },
     { G_UNICODE_BREAK_HANGUL_LVT_SYLLABLE, 0xAC01 },
     { G_UNICODE_BREAK_CONDITIONAL_JAPANESE_STARTER, 0x3041 },
-    { G_UNICODE_BREAK_HEBREW_LETTER,                0x05D0 }
+    { G_UNICODE_BREAK_HEBREW_LETTER,                0x05D0 },
+    { G_UNICODE_BREAK_REGIONAL_INDICATOR,           0x1F1F6 }
   };
 
   for (i = 0; i < G_N_ELEMENTS (examples); i++)
     {
-      g_assert (g_unichar_break_type (examples[i].c) == examples[i].type);
+      g_assert_cmpint (g_unichar_break_type (examples[i].c), ==, examples[i].type);
     }
 }
 
@@ -251,11 +252,34 @@ test_unichar_script (void)
     { G_UNICODE_SCRIPT_MIAO,                   0x16F00 },
     { G_UNICODE_SCRIPT_SHARADA,                0x11180 },
     { G_UNICODE_SCRIPT_SORA_SOMPENG,           0x110D0 },
-    { G_UNICODE_SCRIPT_TAKRI,                  0x11680 }
+    { G_UNICODE_SCRIPT_TAKRI,                  0x11680 },
+    { G_UNICODE_SCRIPT_BASSA_VAH,              0x16AD0 },
+    { G_UNICODE_SCRIPT_CAUCASIAN_ALBANIAN,     0x10530 },
+    { G_UNICODE_SCRIPT_DUPLOYAN,               0x1BC00 },
+    { G_UNICODE_SCRIPT_ELBASAN,                0x10500 },
+    { G_UNICODE_SCRIPT_GRANTHA,                0x11301 },
+    { G_UNICODE_SCRIPT_KHOJKI,                 0x11200 },
+    { G_UNICODE_SCRIPT_KHUDAWADI,              0x112B0 },
+    { G_UNICODE_SCRIPT_LINEAR_A,               0x10600 },
+    { G_UNICODE_SCRIPT_MAHAJANI,               0x11150 },
+    { G_UNICODE_SCRIPT_MANICHAEAN,             0x10AC0 },
+    { G_UNICODE_SCRIPT_MENDE_KIKAKUI,          0x1E800 },
+    { G_UNICODE_SCRIPT_MODI,                   0x11600 },
+    { G_UNICODE_SCRIPT_MRO,                    0x16A40 },
+    { G_UNICODE_SCRIPT_NABATAEAN,              0x10880 },
+    { G_UNICODE_SCRIPT_OLD_NORTH_ARABIAN,      0x10A80 },
+    { G_UNICODE_SCRIPT_OLD_PERMIC,             0x10350 },
+    { G_UNICODE_SCRIPT_PAHAWH_HMONG,           0x16B00 },
+    { G_UNICODE_SCRIPT_PALMYRENE,              0x10860 },
+    { G_UNICODE_SCRIPT_PAU_CIN_HAU,            0x11AC0 },
+    { G_UNICODE_SCRIPT_PSALTER_PAHLAVI,        0x10B80 },
+    { G_UNICODE_SCRIPT_SIDDHAM,                0x11580 },
+    { G_UNICODE_SCRIPT_TIRHUTA,                0x11480 },
+    { G_UNICODE_SCRIPT_WARANG_CITI,            0x118A0 },
   };
   for (i = 0; i < G_N_ELEMENTS (examples); i++)
     {
-      g_assert (g_unichar_get_script (examples[i].c) == examples[i].script);
+      g_assert_cmpint (g_unichar_get_script (examples[i].c), ==, examples[i].script);
     }
 }
 
@@ -303,7 +327,7 @@ test_combining_class (void)
   };
   for (i = 0; i < G_N_ELEMENTS (examples); i++)
     {
-      g_assert (g_unichar_combining_class (examples[i].c) == examples[i].class);
+      g_assert_cmpint (g_unichar_combining_class (examples[i].c), ==, examples[i].class);
     }
 }
 
@@ -359,31 +383,31 @@ test_title (void)
   g_assert (!g_unichar_istitle ('a'));
   g_assert (!g_unichar_istitle ('A'));
 
-  g_assert (g_unichar_totitle (0x01c6) == 0x01c5);
-  g_assert (g_unichar_totitle (0x01c4) == 0x01c5);
-  g_assert (g_unichar_totitle (0x01c5) == 0x01c5);
-  g_assert (g_unichar_totitle (0x1f80) == 0x1f88);
-  g_assert (g_unichar_totitle (0x1f88) == 0x1f88);
-  g_assert (g_unichar_totitle ('a') == 'A');
-  g_assert (g_unichar_totitle ('A') == 'A');
+  g_assert_cmphex (g_unichar_totitle (0x01c6), ==, 0x01c5);
+  g_assert_cmphex (g_unichar_totitle (0x01c4), ==, 0x01c5);
+  g_assert_cmphex (g_unichar_totitle (0x01c5), ==, 0x01c5);
+  g_assert_cmphex (g_unichar_totitle (0x1f80), ==, 0x1f88);
+  g_assert_cmphex (g_unichar_totitle (0x1f88), ==, 0x1f88);
+  g_assert_cmphex (g_unichar_totitle ('a'), ==, 'A');
+  g_assert_cmphex (g_unichar_totitle ('A'), ==, 'A');
 }
 
 static void
 test_cases (void)
 {
-  g_assert (g_unichar_toupper ('a') == 'A');
-  g_assert (g_unichar_toupper ('A') == 'A');
-  g_assert (g_unichar_toupper (0x01C5) == 0x01C4);
-  g_assert (g_unichar_toupper (0x01C6) == 0x01C4);
-  g_assert (g_unichar_tolower ('A') == 'a');
-  g_assert (g_unichar_tolower ('a') == 'a');
-  g_assert (g_unichar_tolower (0x01C4) == 0x01C6);
-  g_assert (g_unichar_tolower (0x01C5) == 0x01C6);
-  g_assert (g_unichar_tolower (0x1F8A) == 0x1F82);
-  g_assert (g_unichar_totitle (0x1F8A) == 0x1F8A);
-  g_assert (g_unichar_toupper (0x1F8A) == 0x1F8A);
-  g_assert (g_unichar_tolower (0x1FB2) == 0x1FB2);
-  g_assert (g_unichar_toupper (0x1FB2) == 0x1FB2);
+  g_assert_cmphex (g_unichar_toupper ('a'), ==, 'A');
+  g_assert_cmphex (g_unichar_toupper ('A'), ==, 'A');
+  g_assert_cmphex (g_unichar_toupper (0x01C5), ==, 0x01C4);
+  g_assert_cmphex (g_unichar_toupper (0x01C6), ==, 0x01C4);
+  g_assert_cmphex (g_unichar_tolower ('A'), ==, 'a');
+  g_assert_cmphex (g_unichar_tolower ('a'), ==, 'a');
+  g_assert_cmphex (g_unichar_tolower (0x01C4), ==, 0x01C6);
+  g_assert_cmphex (g_unichar_tolower (0x01C5), ==, 0x01C6);
+  g_assert_cmphex (g_unichar_tolower (0x1F8A), ==, 0x1F82);
+  g_assert_cmphex (g_unichar_totitle (0x1F8A), ==, 0x1F8A);
+  g_assert_cmphex (g_unichar_toupper (0x1F8A), ==, 0x1F8A);
+  g_assert_cmphex (g_unichar_tolower (0x1FB2), ==, 0x1FB2);
+  g_assert_cmphex (g_unichar_toupper (0x1FB2), ==, 0x1FB2);
 }
 
 static void
@@ -391,6 +415,7 @@ test_defined (void)
 {
   g_assert (g_unichar_isdefined (0x0903));
   g_assert (g_unichar_isdefined (0x20DD));
+  g_assert (g_unichar_isdefined (0x20BA));
   g_assert (g_unichar_isdefined (0xA806));
   g_assert (g_unichar_isdefined ('a'));
   g_assert (!g_unichar_isdefined (0x10C49));
@@ -474,8 +499,8 @@ test_wide (void)
 
   for (i = 0; i < G_N_ELEMENTS (examples); i++)
     {
-      g_assert (g_unichar_iswide (examples[i].c) == (examples[i].wide == WIDE));
-      g_assert (g_unichar_iswide_cjk (examples[i].c) == (examples[i].wide != NOT_WIDE));
+      g_assert_cmpint (g_unichar_iswide (examples[i].c), ==, (examples[i].wide == WIDE));
+      g_assert_cmpint (g_unichar_iswide_cjk (examples[i].c), ==, (examples[i].wide != NOT_WIDE));
     }
 };
 
@@ -657,7 +682,10 @@ test_decompose_tail (void)
     if (g_unichar_decompose (ch, &a, &b))
       g_assert (!g_unichar_decompose (b, &c, &d));
     else
-      g_assert (a == ch && b == 0);
+      {
+        g_assert_cmpuint (a, ==, ch);
+        g_assert_cmpuint (b, ==, 0);
+      }
 }
 
 static void
@@ -799,6 +827,31 @@ test_iso15924 (void)
     { G_UNICODE_SCRIPT_SHARADA,                "Shrd" },
     { G_UNICODE_SCRIPT_SORA_SOMPENG,           "Sora" },
     { G_UNICODE_SCRIPT_TAKRI,                  "Takr" },
+
+    /* Unicode 7.0 additions */
+    { G_UNICODE_SCRIPT_BASSA_VAH,              "Bass" },
+    { G_UNICODE_SCRIPT_CAUCASIAN_ALBANIAN,     "Aghb" },
+    { G_UNICODE_SCRIPT_DUPLOYAN,               "Dupl" },
+    { G_UNICODE_SCRIPT_ELBASAN,                "Elba" },
+    { G_UNICODE_SCRIPT_GRANTHA,                "Gran" },
+    { G_UNICODE_SCRIPT_KHOJKI,                 "Khoj" },
+    { G_UNICODE_SCRIPT_KHUDAWADI,              "Sind" },
+    { G_UNICODE_SCRIPT_LINEAR_A,               "Lina" },
+    { G_UNICODE_SCRIPT_MAHAJANI,               "Mahj" },
+    { G_UNICODE_SCRIPT_MANICHAEAN,             "Manu" },
+    { G_UNICODE_SCRIPT_MENDE_KIKAKUI,          "Mend" },
+    { G_UNICODE_SCRIPT_MODI,                   "Modi" },
+    { G_UNICODE_SCRIPT_MRO,                    "Mroo" },
+    { G_UNICODE_SCRIPT_NABATAEAN,              "Nbat" },
+    { G_UNICODE_SCRIPT_OLD_NORTH_ARABIAN,      "Narb" },
+    { G_UNICODE_SCRIPT_OLD_PERMIC,             "Perm" },
+    { G_UNICODE_SCRIPT_PAHAWH_HMONG,           "Hmng" },
+    { G_UNICODE_SCRIPT_PALMYRENE,              "Palm" },
+    { G_UNICODE_SCRIPT_PAU_CIN_HAU,            "Pauc" },
+    { G_UNICODE_SCRIPT_PSALTER_PAHLAVI,        "Phlp" },
+    { G_UNICODE_SCRIPT_SIDDHAM,                "Sidd" },
+    { G_UNICODE_SCRIPT_TIRHUTA,                "Tirh" },
+    { G_UNICODE_SCRIPT_WARANG_CITI,            "Wara" },
   };
   guint i;
 

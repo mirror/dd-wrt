@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
@@ -34,6 +32,7 @@
 /**
  * SECTION:gactiongroupexporter
  * @title: GActionGroup exporter
+ * @include: gio/gio.h
  * @short_description: Export GActionGroups on D-Bus
  * @see_also: #GActionGroup, #GDBusActionGroup
  *
@@ -45,7 +44,7 @@
  * g_dbus_action_group_get() to obtain a #GDBusActionGroup.
  */
 
-G_GNUC_INTERNAL GVariant *
+static GVariant *
 g_action_group_describe_action (GActionGroup *action_group,
                                 const gchar  *name)
 {
@@ -86,7 +85,7 @@ g_action_group_describe_action (GActionGroup *action_group,
  * It's also a lot easier to read. :)
  *
  * For documentation of this interface, see
- * http://live.gnome.org/GTK+/GApplication-dbus-apis
+ * https://wiki.gnome.org/Projects/GLib/GApplication/DBusAPI
  */
 const char org_gtk_Actions_xml[] =
   "<node>"
@@ -239,6 +238,7 @@ g_action_group_exporter_set_events (GActionGroupExporter *exporter,
       source = g_idle_source_new ();
       exporter->pending_source = source;
       g_source_set_callback (source, g_action_group_exporter_dispatch_events, exporter, NULL);
+      g_source_set_name (source, "[gio] g_action_group_exporter_dispatch_events");
       g_source_attach (source, exporter->context);
       g_source_unref (source);
     }
@@ -380,6 +380,14 @@ org_gtk_Actions_method_call (GDBusConnection       *connection,
       GVariant *desc;
 
       g_variant_get (parameters, "(&s)", &name);
+
+      if (!g_action_group_has_action (exporter->action_group, name))
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                                 "The named action ('%s') does not exist.", name);
+          return;
+        }
+
       desc = g_action_group_describe_action (exporter->action_group, name);
       result = g_variant_new ("(@(bgav))", desc);
     }

@@ -12,18 +12,13 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
 
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include <sys/stat.h>
 #include <fcntl.h>
 
@@ -125,7 +120,7 @@ main (gint   argc,
   gboolean gen_froots = 0;
   gboolean gen_tree = 0;
   gint i;
-  gchar *iindent = "";
+  const gchar *iindent = "";
 
   f_out = stdout;
   
@@ -135,8 +130,6 @@ main (gint   argc,
   
   root = G_TYPE_OBJECT;
 
-  g_type_init ();
-  
   for (i = 1; i < argc; i++)
     {
       if (strcmp ("-s", argv[i]) == 0)

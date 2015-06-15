@@ -11,7 +11,7 @@
     <releaseinfo>
       for GIO &version;
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="http://library.gnome.org/devel/gio/unstable/">http://library.gnome.org/devel/gio/unstable/</ulink>.
+      <ulink role="online-location" url="https://developer.gnome.org/gio/unstable/">https://developer.gnome.org/gio/unstable/</ulink>.
     </releaseinfo>
   </bookinfo>
 
@@ -40,6 +40,7 @@
         <title>Asynchronous I/O</title>
         <xi:include href="xml/gcancellable.xml"/>
         <xi:include href="xml/gasyncresult.xml"/>
+        <xi:include href="xml/gtask.xml"/>
         <xi:include href="xml/gioscheduler.xml"/>
         <xi:include href="xml/gsimpleasyncresult.xml"/>
     </chapter>
@@ -56,6 +57,7 @@
         <xi:include href="xml/ginputstream.xml"/>
         <xi:include href="xml/goutputstream.xml"/>
         <xi:include href="xml/giostream.xml"/>
+        <xi:include href="xml/gsimpleiostream.xml"/>
         <xi:include href="xml/gfileinputstream.xml"/>
         <xi:include href="xml/gfileoutputstream.xml"/>
         <xi:include href="xml/gfileiostream.xml"/>
@@ -82,6 +84,7 @@
         <title>File types and applications</title>
         <xi:include href="xml/gcontenttype.xml"/>
         <xi:include href="xml/gappinfo.xml"/>
+        <xi:include href="xml/gappinfomonitor.xml"/>
         <xi:include href="xml/gdesktopappinfo.xml"/>
     </chapter>
     <chapter id="volume_mon">
@@ -96,6 +99,7 @@
         <title>Icons</title>
         <xi:include href="xml/gicon.xml"/>
         <xi:include href="xml/gfileicon.xml"/>
+        <xi:include href="xml/gbytesicon.xml"/>
         <xi:include href="xml/gloadableicon.xml"/>
         <xi:include href="xml/gthemedicon.xml"/>
         <xi:include href="xml/gemblemedicon.xml"/>
@@ -105,6 +109,11 @@
         <title>Failable Initialization</title>
         <xi:include href="xml/ginitable.xml"/>
         <xi:include href="xml/gasyncinitable.xml"/>
+    </chapter>
+    <chapter id="subprocesses">
+      <title>Subprocesses</title>
+      <xi:include href="xml/gsubprocess.xml"/>
+      <xi:include href="xml/gsubprocesslauncher.xml"/>
     </chapter>
     <chapter id="networking">
       <title>Low-level network support</title>
@@ -121,6 +130,7 @@
       <xi:include href="xml/gunixcredentialsmessage.xml"/>
       <xi:include href="xml/gproxy.xml"/>
       <xi:include href="xml/gproxyaddress.xml"/>
+      <xi:include href="xml/gnetworking.xml"/>
     </chapter>
     <chapter id="highlevel-socket">
       <title>High-level network functionallity</title>
@@ -151,13 +161,14 @@
       <title>DNS resolution</title>
       <xi:include href="xml/gresolver.xml"/>
       <xi:include href="xml/gproxyresolver.xml"/>
+      <xi:include href="xml/gsimpleproxyresolver.xml"/>
       <xi:include href="xml/gsocketconnectable.xml"/>
       <xi:include href="xml/gnetworkaddress.xml"/>
       <xi:include href="xml/gnetworkservice.xml"/>
       <xi:include href="xml/gsrvtarget.xml"/>
     </chapter>
     <chapter id="gdbus-lowlevel">
-      <title>Lowlevel D-Bus Support</title>
+      <title>Low-level D-Bus Support</title>
       <xi:include href="xml/gdbusutils.xml"/>
       <xi:include href="xml/gdbusaddress.xml"/>
       <xi:include href="xml/gdbusintrospection.xml"/>
@@ -169,7 +180,7 @@
       <xi:include href="xml/gdbusauthobserver.xml"/>
     </chapter>
     <chapter id="gdbus-convenience">
-      <title>Highlevel D-Bus Support</title>
+      <title>High-level D-Bus Support</title>
       <xi:include href="xml/gdbusnameowning.xml"/>
       <xi:include href="xml/gdbusnamewatching.xml"/>
       <xi:include href="xml/gdbusinterface.xml"/>
@@ -197,6 +208,11 @@
         <xi:include href="xml/gpermission.xml"/>
         <xi:include href="xml/gsimplepermission.xml"/>
     </chapter>
+    <chapter id='data-models'>
+        <title>Data Models</title>
+        <xi:include href="xml/glistmodel.xml"/>
+        <xi:include href="xml/gliststore.xml"/>
+    </chapter>
     <chapter id="application">
         <title>Application support</title>
         <xi:include href="xml/gapplication.xml"/>
@@ -206,6 +222,7 @@
         <xi:include href="xml/gsimpleactiongroup.xml"/>
         <xi:include href="xml/gaction.xml"/>
         <xi:include href="xml/gsimpleaction.xml"/>
+        <xi:include href="xml/gpropertyaction.xml"/>
         <xi:include href="xml/gremoteactiongroup.xml"/>
         <xi:include href="xml/gactiongroupexporter.xml"/>
         <xi:include href="xml/gdbusactiongroup.xml"/>
@@ -213,6 +230,7 @@
         <xi:include href="xml/gmenu.xml"/>
         <xi:include href="xml/gmenuexporter.xml"/>
         <xi:include href="xml/gdbusmenumodel.xml"/>
+        <xi:include href="xml/gnotification.xml"/>
     </chapter>
     <chapter id="extending">
         <title>Extending GIO</title>
@@ -229,6 +247,7 @@
         <xi:include href="gdbus.xml"/>
         <xi:include href="xml/gdbus-codegen.xml"/>
         <xi:include href="gresource.xml"/>
+        <xi:include href="gapplication.xml"/>
     </chapter>
     <chapter id="testing">
         <title>GIO Testing</title>
@@ -292,6 +311,26 @@
   <index id="api-index-2-34" role="2.34">
     <title>Index of new symbols in 2.34</title>
     <xi:include href="xml/api-index-2.34.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-36" role="2.36">
+    <title>Index of new symbols in 2.36</title>
+    <xi:include href="xml/api-index-2.36.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-38" role="2.38">
+    <title>Index of new symbols in 2.38</title>
+    <xi:include href="xml/api-index-2.38.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-40" role="2.40">
+    <title>Index of new symbols in 2.40</title>
+    <xi:include href="xml/api-index-2.40.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-42" role="2.42">
+    <title>Index of new symbols in 2.42</title>
+    <xi:include href="xml/api-index-2.42.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-44" role="2.44">
+    <title>Index of new symbols in 2.44</title>
+    <xi:include href="xml/api-index-2.44.xml"><xi:fallback /></xi:include>
   </index>
 
   <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>

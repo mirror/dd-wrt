@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -28,7 +26,7 @@
 #include "gvfs.h"
 #include <gio/gdummyfile.h>
 #include <sys/types.h>
-#ifdef HAVE_PWD_H
+#ifdef G_OS_UNIX
 #include <pwd.h>
 #endif
 #include <string.h>
@@ -155,7 +153,7 @@ g_local_vfs_parse_name (GVfs       *vfs,
 	    user_prefix = g_strdup (g_get_home_dir ());
 	  else
 	    {
-#ifdef HAVE_PWD_H
+#ifdef G_OS_UNIX
               struct passwd *passwd_file_entry;
               char *user_name;
 

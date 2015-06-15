@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -26,9 +24,7 @@
 #include <gio/gfileinfo.h>
 #include <gio/gfile.h>
 #include <sys/stat.h>
-#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#endif
 
 G_BEGIN_DECLS
 
@@ -58,6 +54,10 @@ typedef struct
 
 gboolean   _g_local_file_has_trash_dir        (const char             *dirname,
                                                dev_t                   dir_dev);
+#ifdef G_OS_UNIX
+gboolean   _g_local_file_is_lost_found_dir    (const char             *path,
+                                               dev_t                   path_dev);
+#endif
 void       _g_local_file_info_get_parent_info (const char             *dir,
                                                GFileAttributeMatcher  *attribute_matcher,
                                                GLocalParentFileInfo   *parent_info);

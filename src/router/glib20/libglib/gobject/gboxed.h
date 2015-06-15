@@ -12,16 +12,14 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef __G_BOXED_H__
+#define __G_BOXED_H__
+
 #if !defined (__GLIB_GOBJECT_H_INSIDE__) && !defined (GOBJECT_COMPILATION)
 #error "Only <glib-object.h> can be included directly."
 #endif
-
-#ifndef __G_BOXED_H__
-#define __G_BOXED_H__
 
 #include        <gobject/gtype.h>
 
@@ -68,24 +66,32 @@ typedef void (*GBoxedFreeFunc) (gpointer boxed);
 
 
 /* --- prototypes --- */
+GLIB_AVAILABLE_IN_ALL
 gpointer g_boxed_copy                     (GType boxed_type,
                                            gconstpointer  src_boxed);
+GLIB_AVAILABLE_IN_ALL
 void     g_boxed_free                     (GType          boxed_type,
                                            gpointer       boxed);
+GLIB_AVAILABLE_IN_ALL
 void     g_value_set_boxed                (GValue        *value,
                                            gconstpointer  v_boxed);
+GLIB_AVAILABLE_IN_ALL
 void     g_value_set_static_boxed         (GValue        *value,
                                            gconstpointer  v_boxed);
+GLIB_AVAILABLE_IN_ALL
 void     g_value_take_boxed               (GValue        *value,
                                            gconstpointer  v_boxed);
 GLIB_DEPRECATED_FOR(g_value_take_boxed)
 void     g_value_set_boxed_take_ownership (GValue        *value,
                                            gconstpointer  v_boxed);
+GLIB_AVAILABLE_IN_ALL
 gpointer g_value_get_boxed                (const GValue  *value);
+GLIB_AVAILABLE_IN_ALL
 gpointer g_value_dup_boxed                (const GValue  *value);
 
 
 /* --- convenience --- */
+GLIB_AVAILABLE_IN_ALL
 GType    g_boxed_type_register_static     (const gchar   *name,
                                            GBoxedCopyFunc boxed_copy,
                                            GBoxedFreeFunc boxed_free);
@@ -106,7 +112,9 @@ GType    g_boxed_type_register_static     (const gchar   *name,
  */
 #define G_TYPE_VALUE (g_value_get_type ())
 
+GLIB_AVAILABLE_IN_ALL
 GType   g_closure_get_type         (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_value_get_type           (void) G_GNUC_CONST;
 
 G_END_DECLS

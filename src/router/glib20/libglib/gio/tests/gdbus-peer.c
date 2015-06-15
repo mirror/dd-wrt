@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -35,11 +33,11 @@
 /* for g_unlink() */
 #include <glib/gstdio.h>
 
-#include <gio/gnetworkingprivate.h>
+#include <gio/gnetworking.h>
 #include <gio/gunixsocketaddress.h>
 #include <gio/gunixfdlist.h>
+#include <gio/gcredentialsprivate.h>
 
-/* used in test_overflow */
 #ifdef G_OS_UNIX
 #include <gio/gunixconnection.h>
 #include <errno.h>
@@ -47,7 +45,7 @@
 
 #include "gdbus-tests.h"
 
-#include "gdbus-example-objectmanager-generated.h"
+#include "gdbus-object-manager-example/gdbus-example-objectmanager-generated.h"
 
 #ifdef G_OS_UNIX
 static gboolean is_unix = TRUE;
@@ -57,6 +55,8 @@ static gboolean is_unix = FALSE;
 
 static gchar *tmp_address = NULL;
 static gchar *test_guid = NULL;
+static GMutex service_loop_lock;
+static GCond service_loop_cond;
 static GMainLoop *service_loop = NULL;
 static GDBusServer *server = NULL;
 static GMainLoop *loop = NULL;
@@ -179,6 +179,7 @@ test_interface_method_call (GDBusConnection       *connection,
       error = NULL;
 
       fd = g_open (path, O_RDONLY, 0);
+      g_assert (fd != -1);
       g_unix_fd_list_append (fd_list, fd, &error);
       g_assert_no_error (error);
       close (fd);
@@ -297,11 +298,25 @@ on_new_connection (GDBusServer *server,
   GError *error;
   guint reg_id;
 
-  //g_print ("Client connected.\n"
+  //g_printerr ("Client connected.\n"
   //         "Negotiated capabilities: unix-fd-passing=%d\n",
   //         g_dbus_connection_get_capabilities (connection) & G_DBUS_CAPABILITY_FLAGS_UNIX_FD_PASSING);
 
   g_ptr_array_add (data->current_connections, g_object_ref (connection));
+
+#if G_CREDENTIALS_SUPPORTED
+    {
+      GCredentials *credentials;
+
+      credentials = g_dbus_connection_get_peer_credentials (connection);
+
+      g_assert (credentials != NULL);
+      g_assert_cmpuint (g_credentials_get_unix_user (credentials, NULL), ==,
+                        getuid ());
+      g_assert_cmpuint (g_credentials_get_unix_pid (credentials, NULL), ==,
+                        getpid ());
+    }
+#endif
 
   /* export object on the newly established connection */
   error = NULL;
@@ -318,6 +333,53 @@ on_new_connection (GDBusServer *server,
   g_main_loop_quit (loop);
 
   return TRUE;
+}
+
+/* We don't tell the main thread about the new GDBusServer until it has
+ * had a chance to start listening. */
+static gboolean
+idle_in_service_loop (gpointer loop)
+{
+  g_assert (service_loop == NULL);
+  g_mutex_lock (&service_loop_lock);
+  service_loop = loop;
+  g_cond_broadcast (&service_loop_cond);
+  g_mutex_unlock (&service_loop_lock);
+
+  return G_SOURCE_REMOVE;
+}
+
+static void
+run_service_loop (GMainContext *service_context)
+{
+  GMainLoop *loop;
+  GSource *source;
+
+  g_assert (service_loop == NULL);
+
+  loop = g_main_loop_new (service_context, FALSE);
+  source = g_idle_source_new ();
+  g_source_set_callback (source, idle_in_service_loop, loop, NULL);
+  g_source_attach (source, service_context);
+  g_source_unref (source);
+  g_main_loop_run (loop);
+}
+
+static void
+teardown_service_loop (void)
+{
+  g_mutex_lock (&service_loop_lock);
+  g_clear_pointer (&service_loop, g_main_loop_unref);
+  g_mutex_unlock (&service_loop_lock);
+}
+
+static void
+await_service_loop (void)
+{
+  g_mutex_lock (&service_loop_lock);
+  while (service_loop == NULL)
+    g_cond_wait (&service_loop_cond, &service_loop_lock);
+  g_mutex_unlock (&service_loop_lock);
 }
 
 static gpointer
@@ -375,12 +437,11 @@ service_thread_func (gpointer user_data)
 
   g_dbus_server_start (server);
 
-  service_loop = g_main_loop_new (service_context, FALSE);
-  g_main_loop_run (service_loop);
+  run_service_loop (service_context);
 
   g_main_context_pop_thread_default (service_context);
 
-  g_main_loop_unref (service_loop);
+  teardown_service_loop ();
   g_main_context_unref (service_context);
 
   /* test code specifically unrefs the server - see below */
@@ -470,12 +531,11 @@ service_thread_func (gpointer data)
                     data);
   g_socket_service_start (service);
 
-  service_loop = g_main_loop_new (service_context, FALSE);
-  g_main_loop_run (service_loop);
+  run_service_loop (service_context);
 
   g_main_context_pop_thread_default (service_context);
 
-  g_main_loop_unref (service_loop);
+  teardown_service_loop ();
   g_main_context_unref (service_context);
 
   g_object_unref (address);
@@ -625,12 +685,10 @@ test_peer (void)
   g_assert (c == NULL);
 
   /* bring up a server - we run the server in a different thread to avoid deadlocks */
-  service_loop = NULL;
   service_thread = g_thread_new ("test_peer",
                                  service_thread_func,
                                  &data);
-  while (service_loop == NULL)
-    g_thread_yield ();
+  await_service_loop ();
   g_assert (server != NULL);
 
   /* bring up a connection and accept it */
@@ -738,12 +796,13 @@ test_peer (void)
     gsize len;
     gchar *buf2;
     gsize len2;
+    const char *testfile = g_test_get_filename (G_TEST_DIST, "file.c", NULL);
 
     method_call_message = g_dbus_message_new_method_call (NULL, /* name */
                                                           "/org/gtk/GDBus/PeerTestObject",
                                                           "org.gtk.GDBus.PeerTestInterface",
                                                           "OpenFile");
-    g_dbus_message_set_body (method_call_message, g_variant_new ("(s)", "/etc/hosts"));
+    g_dbus_message_set_body (method_call_message, g_variant_new ("(s)", testfile));
     error = NULL;
     method_reply_message = g_dbus_connection_send_message_with_reply_sync (c,
                                                                            method_call_message,
@@ -771,7 +830,7 @@ test_peer (void)
     close (fd);
 
     error = NULL;
-    g_file_get_contents ("/etc/hosts",
+    g_file_get_contents (testfile,
                          &buf2,
                          &len2,
                          &error);
@@ -795,9 +854,8 @@ test_peer (void)
   g_error_free (error);
 #endif /* G_OS_UNIX */
 
-  /* Check that g_socket_get_credentials() work - this really should
-   * be in a GSocket-specific test suite but no such test suite exists
-   * right now.
+  /* Check that g_socket_get_credentials() work - (though this really
+   * should be in socket.c)
    */
   {
     GSocket *socket;
@@ -806,30 +864,15 @@ test_peer (void)
     g_assert (G_IS_SOCKET (socket));
     error = NULL;
     credentials = g_socket_get_credentials (socket, &error);
-#ifdef __linux__
-    {
-      struct ucred *native_creds;
-      g_assert_no_error (error);
-      g_assert (G_IS_CREDENTIALS (credentials));
-      native_creds = g_credentials_get_native (credentials, G_CREDENTIALS_TYPE_LINUX_UCRED);
-      g_assert (native_creds != NULL);
-      g_assert (native_creds->uid == getuid ());
-      g_assert (native_creds->gid == getgid ());
-      g_assert (native_creds->pid == getpid ());
-    }
-    g_object_unref (credentials);
-#elif defined (__OpenBSD__)
-    {
-      struct sockpeercred *native_creds;
-      g_assert_no_error (error);
-      g_assert (G_IS_CREDENTIALS (credentials));
-      native_creds = g_credentials_get_native (credentials, G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED);
-      g_assert (native_creds != NULL);
-      g_assert (native_creds->uid == getuid ());
-      g_assert (native_creds->gid == getgid ());
-      g_assert (native_creds->pid == getpid ());
-    }
-    g_object_unref (credentials);
+
+#if G_CREDENTIALS_SOCKET_GET_CREDENTIALS_SUPPORTED
+    g_assert_no_error (error);
+    g_assert (G_IS_CREDENTIALS (credentials));
+
+    g_assert_cmpuint (g_credentials_get_unix_user (credentials, NULL), ==,
+                      getuid ());
+    g_assert_cmpuint (g_credentials_get_unix_pid (credentials, NULL), ==,
+                      getpid ());
 #else
     g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
     g_assert (credentials == NULL);
@@ -1187,12 +1230,11 @@ nonce_tcp_service_thread_func (gpointer user_data)
 
   g_dbus_server_start (server);
 
-  service_loop = g_main_loop_new (service_context, FALSE);
-  g_main_loop_run (service_loop);
+  run_service_loop (service_context);
 
   g_main_context_pop_thread_default (service_context);
 
-  g_main_loop_unref (service_loop);
+  teardown_service_loop ();
   g_main_context_unref (service_context);
 
   /* test code specifically unrefs the server - see below */
@@ -1218,14 +1260,11 @@ test_nonce_tcp (void)
 
   error = NULL;
   server = NULL;
-  service_loop = NULL;
   service_thread = g_thread_new ("nonce-tcp-service",
                                  nonce_tcp_service_thread_func,
                                  &data);
-  while (service_loop == NULL)
-    g_thread_yield ();
+  await_service_loop ();
   g_assert (server != NULL);
-
 
   /* bring up a connection and accept it */
   data.accept_connection = TRUE;
@@ -1347,129 +1386,6 @@ test_credentials (void)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-#ifdef G_OS_UNIX
-
-/* Chosen to be big enough to overflow the socket buffer */
-#define OVERFLOW_NUM_SIGNALS 5000
-#define OVERFLOW_TIMEOUT_SEC 10
-
-static GDBusMessage *
-overflow_filter_func (GDBusConnection *connection,
-                      GDBusMessage    *message,
-                      gboolean         incoming,
-                      gpointer         user_data)
-{
-  volatile gint *counter = user_data;
-  *counter += 1;
-  return message;
-}
-
-static gboolean
-overflow_on_500ms_later_func (gpointer user_data)
-{
-  g_main_loop_quit (loop);
-  return FALSE; /* don't keep the idle */
-}
-
-static void
-test_overflow (void)
-{
-  gint sv[2];
-  gint n;
-  GSocket *socket;
-  GSocketConnection *socket_connection;
-  GDBusConnection *producer, *consumer;
-  GError *error;
-  GTimer *timer;
-  volatile gint n_messages_received;
-  volatile gint n_messages_sent;
-
-  g_assert_cmpint (socketpair (AF_UNIX, SOCK_STREAM, 0, sv), ==, 0);
-
-  error = NULL;
-  socket = g_socket_new_from_fd (sv[0], &error);
-  g_assert_no_error (error);
-  socket_connection = g_socket_connection_factory_create_connection (socket);
-  g_assert (socket_connection != NULL);
-  g_object_unref (socket);
-  producer = g_dbus_connection_new_sync (G_IO_STREAM (socket_connection),
-					 NULL, /* guid */
-					 G_DBUS_CONNECTION_FLAGS_NONE,
-					 NULL, /* GDBusAuthObserver */
-					 NULL, /* GCancellable */
-					 &error);
-  g_dbus_connection_set_exit_on_close (producer, TRUE);
-  g_assert_no_error (error);
-  g_object_unref (socket_connection);
-  n_messages_sent = 0;
-  g_dbus_connection_add_filter (producer, overflow_filter_func, (gpointer) &n_messages_sent, NULL);
-
-  /* send enough data that we get an EAGAIN */
-  for (n = 0; n < OVERFLOW_NUM_SIGNALS; n++)
-    {
-      error = NULL;
-      g_dbus_connection_emit_signal (producer,
-                                     NULL, /* destination */
-                                     "/org/foo/Object",
-                                     "org.foo.Interface",
-                                     "Member",
-                                     g_variant_new ("(s)", "a string"),
-                                     &error);
-      g_assert_no_error (error);
-    }
-
-  /* sleep for 0.5 sec (to allow the GDBus IO thread to fill up the
-   * kernel buffers) and verify that n_messages_sent <
-   * OVERFLOW_NUM_SIGNALS
-   *
-   * This is to verify that not all the submitted messages have been
-   * sent to the underlying transport.
-   */
-  g_timeout_add (500, overflow_on_500ms_later_func, NULL);
-  g_main_loop_run (loop);
-  g_assert_cmpint (n_messages_sent, <, OVERFLOW_NUM_SIGNALS);
-
-  /* now suck it all out as a client, and add it up */
-  socket = g_socket_new_from_fd (sv[1], &error);
-  g_assert_no_error (error);
-  socket_connection = g_socket_connection_factory_create_connection (socket);
-  g_assert (socket_connection != NULL);
-  g_object_unref (socket);
-  consumer = g_dbus_connection_new_sync (G_IO_STREAM (socket_connection),
-					 NULL, /* guid */
-					 G_DBUS_CONNECTION_FLAGS_DELAY_MESSAGE_PROCESSING,
-					 NULL, /* GDBusAuthObserver */
-					 NULL, /* GCancellable */
-					 &error);
-  g_assert_no_error (error);
-  g_object_unref (socket_connection);
-  n_messages_received = 0;
-  g_dbus_connection_add_filter (consumer, overflow_filter_func, (gpointer) &n_messages_received, NULL);
-  g_dbus_connection_start_message_processing (consumer);
-
-  timer = g_timer_new ();
-  g_timer_start (timer);
-
-  while (n_messages_received < OVERFLOW_NUM_SIGNALS && g_timer_elapsed (timer, NULL) < OVERFLOW_TIMEOUT_SEC)
-      g_main_context_iteration (NULL, FALSE);
-
-  g_assert_cmpint (n_messages_sent, ==, OVERFLOW_NUM_SIGNALS);
-  g_assert_cmpint (n_messages_received, ==, OVERFLOW_NUM_SIGNALS);
-
-  g_timer_destroy (timer);
-  g_object_unref (consumer);
-  g_object_unref (producer);
-}
-#else
-static void
-test_overflow (void)
-{
-  /* TODO: test this with e.g. GWin32InputStream/GWin32OutputStream */
-}
-#endif
-
-/* ---------------------------------------------------------------------------------------------------- */
-
 static gboolean
 tcp_anonymous_on_new_connection (GDBusServer     *server,
                                  GDBusConnection *connection,
@@ -1506,12 +1422,11 @@ tcp_anonymous_service_thread_func (gpointer user_data)
 
   g_dbus_server_start (server);
 
-  service_loop = g_main_loop_new (service_context, FALSE);
-  g_main_loop_run (service_loop);
+  run_service_loop (service_context);
 
   g_main_context_pop_thread_default (service_context);
 
-  g_main_loop_unref (service_loop);
+  teardown_service_loop ();
   g_main_context_unref (service_context);
 
   return NULL;
@@ -1526,12 +1441,10 @@ test_tcp_anonymous (void)
   GError *error;
 
   seen_connection = FALSE;
-  service_loop = NULL;
   service_thread = g_thread_new ("tcp-anon-service",
                                  tcp_anonymous_service_thread_func,
                                  &seen_connection);
-  while (service_loop == NULL)
-    g_thread_yield ();
+  await_service_loop ();
   g_assert (server != NULL);
 
   error = NULL;
@@ -1622,7 +1535,7 @@ codegen_on_new_connection (GDBusServer *server,
   ExampleAnimal *animal = user_data;
   GError        *error = NULL;
 
-  /* g_print ("Client connected.\n" */
+  /* g_printerr ("Client connected.\n" */
   /*          "Negotiated capabilities: unix-fd-passing=%d\n", */
   /*          g_dbus_connection_get_capabilities (connection) & G_DBUS_CAPABILITY_FLAGS_UNIX_FD_PASSING); */
 
@@ -1664,14 +1577,13 @@ codegen_service_thread_func (gpointer user_data)
                     G_CALLBACK (codegen_on_new_connection),
                     animal);
 
-  service_loop = g_main_loop_new (service_context, FALSE);
-  g_main_loop_run (service_loop);
+  run_service_loop (service_context);
 
   g_object_unref (animal);
 
   g_main_context_pop_thread_default (service_context);
 
-  g_main_loop_unref (service_loop);
+  teardown_service_loop ();
   g_main_context_unref (service_context);
 
   g_dbus_server_stop (codegen_server);
@@ -1682,7 +1594,7 @@ codegen_service_thread_func (gpointer user_data)
 }
 
 
-gboolean
+static gboolean
 codegen_quit_mainloop_timeout (gpointer data)
 {
   g_main_loop_quit (loop);
@@ -1697,14 +1609,13 @@ codegen_test_peer (void)
   GThread             *service_thread;
   GError              *error = NULL;
   GVariant            *value;
+  const gchar         *s;
 
   /* bring up a server - we run the server in a different thread to avoid deadlocks */
-  service_loop = NULL;
   service_thread = g_thread_new ("codegen_test_peer",
                                  codegen_service_thread_func,
                                  NULL);
-  while (service_loop == NULL)
-    g_thread_yield ();
+  await_service_loop ();
   g_assert (codegen_server != NULL);
 
   /* Get an animal 1 ...  */
@@ -1762,6 +1673,16 @@ codegen_test_peer (void)
   example_animal_call_poke_sync (animal2, FALSE, TRUE, NULL, &error);
   g_assert_no_error (error);
 
+  /* Some random unrelated call, just to get some test coverage */
+  value = g_dbus_proxy_call_sync (G_DBUS_PROXY (animal2),
+                                  "org.freedesktop.DBus.Peer.GetMachineId",
+                                  NULL, G_DBUS_CALL_FLAGS_NONE, -1,
+                                  NULL, &error);
+  g_assert_no_error (error);
+  g_variant_get (value, "(&s)", &s);
+  g_assert (g_dbus_is_guid (s));
+  g_variant_unref (value);
+  
   /* Poke server and make sure animal is updated */
   value = g_dbus_proxy_call_sync (G_DBUS_PROXY (animal2),
                                   "org.freedesktop.DBus.Peer.Ping",
@@ -1801,7 +1722,6 @@ main (int   argc,
   GDBusNodeInfo *introspection_data = NULL;
   gchar *tmpdir = NULL;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   introspection_data = g_dbus_node_info_new_for_xml (test_interface_introspection_xml, NULL);
@@ -1829,9 +1749,9 @@ main (int   argc,
   g_test_add_func ("/gdbus/peer-to-peer", test_peer);
   g_test_add_func ("/gdbus/delayed-message-processing", delayed_message_processing);
   g_test_add_func ("/gdbus/nonce-tcp", test_nonce_tcp);
+
   g_test_add_func ("/gdbus/tcp-anonymous", test_tcp_anonymous);
   g_test_add_func ("/gdbus/credentials", test_credentials);
-  g_test_add_func ("/gdbus/overflow", test_overflow);
   g_test_add_func ("/gdbus/codegen-peer-to-peer", codegen_test_peer);
 
   ret = g_test_run();

@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -29,11 +27,11 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_SYS_MKDEV_H
+
+#if MAJOR_IN_MKDEV
 #include <sys/mkdev.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#elif MAJOR_IN_SYSMACROS
+#include <sys/sysmacros.h>
 #endif
 
 #include "gdbusutils.h"
@@ -55,6 +53,370 @@
 #endif
 
 #include "glibintl.h"
+
+typedef struct _GMemoryBuffer GMemoryBuffer;
+struct _GMemoryBuffer
+{
+  gsize len;
+  gsize valid_len;
+  gsize pos;
+  gchar *data;
+  GDataStreamByteOrder byte_order;
+};
+
+static gboolean
+g_memory_buffer_is_byteswapped (GMemoryBuffer *mbuf)
+{
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
+  return mbuf->byte_order == G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN;
+#else
+  return mbuf->byte_order == G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN;
+#endif
+}
+
+static guchar
+g_memory_buffer_read_byte (GMemoryBuffer  *mbuf)
+{
+  if (mbuf->pos >= mbuf->valid_len)
+    return 0;
+  return mbuf->data [mbuf->pos++];
+}
+
+static gint16
+g_memory_buffer_read_int16 (GMemoryBuffer  *mbuf)
+{
+  gint16 v;
+  
+  if (mbuf->pos > mbuf->valid_len - 2)
+    {
+      mbuf->pos = mbuf->valid_len;
+      return 0;
+    }
+
+  memcpy (&v, mbuf->data + mbuf->pos, 2);
+  mbuf->pos += 2;
+
+  if (g_memory_buffer_is_byteswapped (mbuf))
+    v = GUINT16_SWAP_LE_BE (v);
+
+  return v;
+}
+
+static guint16
+g_memory_buffer_read_uint16 (GMemoryBuffer  *mbuf)
+{
+  guint16 v;
+  
+  if (mbuf->pos > mbuf->valid_len - 2)
+    {
+      mbuf->pos = mbuf->valid_len;
+      return 0;
+    }
+
+  memcpy (&v, mbuf->data + mbuf->pos, 2);
+  mbuf->pos += 2;
+
+  if (g_memory_buffer_is_byteswapped (mbuf))
+    v = GUINT16_SWAP_LE_BE (v);
+
+  return v;
+}
+
+static gint32
+g_memory_buffer_read_int32 (GMemoryBuffer  *mbuf)
+{
+  gint32 v;
+  
+  if (mbuf->pos > mbuf->valid_len - 4)
+    {
+      mbuf->pos = mbuf->valid_len;
+      return 0;
+    }
+
+  memcpy (&v, mbuf->data + mbuf->pos, 4);
+  mbuf->pos += 4;
+
+  if (g_memory_buffer_is_byteswapped (mbuf))
+    v = GUINT32_SWAP_LE_BE (v);
+
+  return v;
+}
+
+static guint32
+g_memory_buffer_read_uint32 (GMemoryBuffer  *mbuf)
+{
+  guint32 v;
+  
+  if (mbuf->pos > mbuf->valid_len - 4)
+    {
+      mbuf->pos = mbuf->valid_len;
+      return 0;
+    }
+
+  memcpy (&v, mbuf->data + mbuf->pos, 4);
+  mbuf->pos += 4;
+
+  if (g_memory_buffer_is_byteswapped (mbuf))
+    v = GUINT32_SWAP_LE_BE (v);
+
+  return v;
+}
+
+static gint64
+g_memory_buffer_read_int64 (GMemoryBuffer  *mbuf)
+{
+  gint64 v;
+  
+  if (mbuf->pos > mbuf->valid_len - 8)
+    {
+      mbuf->pos = mbuf->valid_len;
+      return 0;
+    }
+
+  memcpy (&v, mbuf->data + mbuf->pos, 8);
+  mbuf->pos += 8;
+
+  if (g_memory_buffer_is_byteswapped (mbuf))
+    v = GUINT64_SWAP_LE_BE (v);
+
+  return v;
+}
+
+static guint64
+g_memory_buffer_read_uint64 (GMemoryBuffer  *mbuf)
+{
+  guint64 v;
+  
+  if (mbuf->pos > mbuf->valid_len - 8)
+    {
+      mbuf->pos = mbuf->valid_len;
+      return 0;
+    }
+
+  memcpy (&v, mbuf->data + mbuf->pos, 8);
+  mbuf->pos += 8;
+
+  if (g_memory_buffer_is_byteswapped (mbuf))
+    v = GUINT64_SWAP_LE_BE (v);
+
+  return v;
+}
+
+#define MIN_ARRAY_SIZE  128
+
+static gsize
+g_nearest_pow (gsize num)
+{
+  gsize n = 1;
+
+  while (n < num && n > 0)
+    n <<= 1;
+
+  return n;
+}
+
+static void
+array_resize (GMemoryBuffer  *mbuf,
+              gsize           size)
+{
+  gpointer data;
+  gsize len;
+
+  if (mbuf->len == size)
+    return;
+
+  len = mbuf->len;
+  data = g_realloc (mbuf->data, size);
+
+  if (size > len)
+    memset ((guint8 *)data + len, 0, size - len);
+
+  mbuf->data = data;
+  mbuf->len = size;
+
+  if (mbuf->len < mbuf->valid_len)
+    mbuf->valid_len = mbuf->len;
+}
+
+static gboolean
+g_memory_buffer_write (GMemoryBuffer  *mbuf,
+                       const void     *buffer,
+                       gsize           count)
+{
+  guint8   *dest;
+  gsize new_size;
+
+  if (count == 0)
+    return TRUE;
+
+  /* Check for address space overflow, but only if the buffer is resizable.
+     Otherwise we just do a short write and don't worry. */
+  if (mbuf->pos + count < mbuf->pos)
+    return FALSE;
+
+  if (mbuf->pos + count > mbuf->len)
+    {
+      /* At least enought to fit the write, rounded up
+	     for greater than linear growth.
+         TODO: This wastes a lot of memory at large buffer sizes.
+               Figure out a more rational allocation strategy. */
+      new_size = g_nearest_pow (mbuf->pos + count);
+      /* Check for overflow again. We have checked if
+         pos + count > G_MAXSIZE, but now check if g_nearest_pow () has
+         overflowed */
+      if (new_size == 0)
+        return FALSE;
+
+      new_size = MAX (new_size, MIN_ARRAY_SIZE);
+      array_resize (mbuf, new_size);
+    }
+
+  dest = (guint8 *)mbuf->data + mbuf->pos;
+  memcpy (dest, buffer, count);
+  mbuf->pos += count;
+
+  if (mbuf->pos > mbuf->valid_len)
+    mbuf->valid_len = mbuf->pos;
+
+  return TRUE;
+}
+
+static gboolean
+g_memory_buffer_put_byte (GMemoryBuffer  *mbuf,
+			  guchar          data)
+{
+  return g_memory_buffer_write (mbuf, &data, 1);
+}
+
+static gboolean
+g_memory_buffer_put_int16 (GMemoryBuffer  *mbuf,
+			   gint16          data)
+{
+  switch (mbuf->byte_order)
+    {
+    case G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN:
+      data = GINT16_TO_BE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN:
+      data = GINT16_TO_LE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_HOST_ENDIAN:
+    default:
+      break;
+    }
+  
+  return g_memory_buffer_write (mbuf, &data, 2);
+}
+
+static gboolean
+g_memory_buffer_put_uint16 (GMemoryBuffer  *mbuf,
+			    guint16         data)
+{
+  switch (mbuf->byte_order)
+    {
+    case G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN:
+      data = GUINT16_TO_BE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN:
+      data = GUINT16_TO_LE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_HOST_ENDIAN:
+    default:
+      break;
+    }
+  
+  return g_memory_buffer_write (mbuf, &data, 2);
+}
+
+static gboolean
+g_memory_buffer_put_int32 (GMemoryBuffer  *mbuf,
+			   gint32          data)
+{
+  switch (mbuf->byte_order)
+    {
+    case G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN:
+      data = GINT32_TO_BE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN:
+      data = GINT32_TO_LE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_HOST_ENDIAN:
+    default:
+      break;
+    }
+  
+  return g_memory_buffer_write (mbuf, &data, 4);
+}
+
+static gboolean
+g_memory_buffer_put_uint32 (GMemoryBuffer  *mbuf,
+			    guint32         data)
+{
+  switch (mbuf->byte_order)
+    {
+    case G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN:
+      data = GUINT32_TO_BE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN:
+      data = GUINT32_TO_LE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_HOST_ENDIAN:
+    default:
+      break;
+    }
+  
+  return g_memory_buffer_write (mbuf, &data, 4);
+}
+
+static gboolean
+g_memory_buffer_put_int64 (GMemoryBuffer  *mbuf,
+			   gint64          data)
+{
+  switch (mbuf->byte_order)
+    {
+    case G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN:
+      data = GINT64_TO_BE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN:
+      data = GINT64_TO_LE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_HOST_ENDIAN:
+    default:
+      break;
+    }
+  
+  return g_memory_buffer_write (mbuf, &data, 8);
+}
+
+static gboolean
+g_memory_buffer_put_uint64 (GMemoryBuffer  *mbuf,
+			    guint64         data)
+{
+  switch (mbuf->byte_order)
+    {
+    case G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN:
+      data = GUINT64_TO_BE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN:
+      data = GUINT64_TO_LE (data);
+      break;
+    case G_DATA_STREAM_BYTE_ORDER_HOST_ENDIAN:
+    default:
+      break;
+    }
+  
+  return g_memory_buffer_write (mbuf, &data, 8);
+}
+
+static gboolean
+g_memory_buffer_put_string (GMemoryBuffer  *mbuf,
+			    const char     *str)
+{
+  g_return_val_if_fail (str != NULL, FALSE);
+
+  return g_memory_buffer_write (mbuf, str, strlen (str));
+}
+
 
 /**
  * SECTION:gdbusmessage
@@ -416,6 +778,7 @@ g_dbus_message_new_method_error_literal (GDBusMessage  *method_call_message,
  *
  * Since: 2.26
  */
+G_GNUC_PRINTF(3, 0)
 GDBusMessage *
 g_dbus_message_new_method_error_valist (GDBusMessage             *method_call_message,
                                         const gchar              *error_name,
@@ -711,7 +1074,8 @@ g_dbus_message_get_header_fields (GDBusMessage  *message)
  *
  * Gets the body of a message.
  *
- * Returns: A #GVariant or %NULL if the body is empty. Do not free, it is owned by @message.
+ * Returns: (transfer none): A #GVariant or %NULL if the body is
+ * empty. Do not free, it is owned by @message.
  *
  * Since: 2.26
  */
@@ -839,6 +1203,27 @@ g_dbus_message_set_unix_fd_list (GDBusMessage  *message,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+static guint
+get_type_fixed_size (const GVariantType *type)
+{
+  /* NB: we do not treat 'b' as fixed-size here because GVariant and
+   * D-Bus disagree about the size.
+   */
+  switch (*g_variant_type_peek_string (type))
+    {
+    case 'y':
+      return 1;
+    case 'n': case 'q':
+      return 2;
+    case 'i': case 'u': case 'h':
+      return 4;
+    case 'x': case 't': case 'd':
+      return 8;
+    default:
+      return 0;
+    }
+}
+
 static gboolean
 validate_headers (GDBusMessage  *message,
                   GError       **error)
@@ -939,124 +1324,117 @@ validate_headers (GDBusMessage  *message,
 /* ---------------------------------------------------------------------------------------------------- */
 
 static gboolean
-ensure_input_padding (GMemoryInputStream   *mis,
-                      gsize                 padding_size,
-                      GError              **error)
+ensure_input_padding (GMemoryBuffer  *buf,
+                      gsize           padding_size)
 {
   gsize offset;
   gsize wanted_offset;
 
-  offset = g_seekable_tell (G_SEEKABLE (mis));
+  offset = buf->pos;
   wanted_offset = ((offset + padding_size - 1) / padding_size) * padding_size;
-
-  if (offset != wanted_offset)
-    {
-      return g_seekable_seek (G_SEEKABLE (mis), wanted_offset, G_SEEK_SET, NULL, error);
-    }
-  else
-    {
-      return TRUE;
-    }
+  buf->pos = wanted_offset;
+  return TRUE;
 }
 
-static gchar *
-read_string (GMemoryInputStream    *mis,
-             GDataInputStream      *dis,
-             gsize                  len,
-             GError               **error)
+static const gchar *
+read_string (GMemoryBuffer  *mbuf,
+             gsize           len,
+             GError        **error)
 {
-  GString *s;
-  gchar buf[256];
-  gsize remaining;
-  guchar nul;
-  GError *local_error;
+  gchar *str;
   const gchar *end_valid;
 
-  s = g_string_new (NULL);
-
-  remaining = len;
-  while (remaining > 0)
+  if G_UNLIKELY (mbuf->pos + len >= mbuf->valid_len || mbuf->pos + len < mbuf->pos)
     {
-      gsize to_read;
-      gssize num_read;
-
-      to_read = MIN (remaining, sizeof (buf));
-      num_read = g_input_stream_read (G_INPUT_STREAM (mis),
-                                      buf,
-                                      to_read,
-                                      NULL,
-                                      error);
-      if (num_read < 0)
-        goto fail;
-      if (num_read == 0)
-        {
-          /* G_GSIZE_FORMAT doesn't work with gettext, so we use %lu */
-          g_set_error (error,
-                       G_IO_ERROR,
-                       G_IO_ERROR_INVALID_ARGUMENT,
-                       g_dngettext (GETTEXT_PACKAGE,
-                                    "Wanted to read %lu byte but got EOF",
-                                    "Wanted to read %lu bytes but got EOF",
-                                    (gulong)to_read),
-                       (gulong)to_read);
-          goto fail;
-        }
-
-      remaining -= num_read;
-      g_string_append_len (s, buf, num_read);
+      mbuf->pos = mbuf->valid_len;
+      /* G_GSIZE_FORMAT doesn't work with gettext, so we use %lu */
+      g_set_error (error,
+                   G_IO_ERROR,
+                   G_IO_ERROR_INVALID_ARGUMENT,
+                   g_dngettext (GETTEXT_PACKAGE,
+                                "Wanted to read %lu byte but only got %lu",
+                                "Wanted to read %lu bytes but only got %lu",
+                                (gulong)len),
+                                (gulong)len,
+                   (gulong)(mbuf->valid_len - mbuf->pos));
+      return NULL;
     }
 
-  local_error = NULL;
-  nul = g_data_input_stream_read_byte (dis, NULL, &local_error);
-  if (local_error != NULL)
+  if G_UNLIKELY (mbuf->data[mbuf->pos + len] != '\0')
     {
-      g_propagate_error (error, local_error);
-      goto fail;
+      str = g_strndup (mbuf->data + mbuf->pos, len);
+      g_set_error (error,
+                   G_IO_ERROR,
+                   G_IO_ERROR_INVALID_ARGUMENT,
+                   _("Expected NUL byte after the string '%s' but found byte %d"),
+                   str, mbuf->data[mbuf->pos + len]);
+      g_free (str);
+      mbuf->pos += len + 1;
+      return NULL;
     }
-  if (!g_utf8_validate (s->str, -1, &end_valid))
+
+  str = mbuf->data + mbuf->pos;
+  mbuf->pos += len + 1;
+
+  if G_UNLIKELY (!g_utf8_validate (str, -1, &end_valid))
     {
       gint offset;
       gchar *valid_str;
-      offset = (gint) (end_valid - s->str);
-      valid_str = g_strndup (s->str, offset);
+      offset = (gint) (end_valid - str);
+      valid_str = g_strndup (str, offset);
       g_set_error (error,
                    G_IO_ERROR,
                    G_IO_ERROR_INVALID_ARGUMENT,
                    _("Expected valid UTF-8 string but found invalid bytes at byte offset %d (length of string is %d). "
-                     "The valid UTF-8 string up until that point was `%s'"),
+                     "The valid UTF-8 string up until that point was '%s'"),
                    offset,
-                   (gint) s->len,
+                   (gint) len,
                    valid_str);
       g_free (valid_str);
-      goto fail;
+      return NULL;
     }
-  if (nul != '\0')
+
+  return str;
+}
+
+static gconstpointer
+read_bytes (GMemoryBuffer  *mbuf,
+            gsize           len,
+            GError        **error)
+{
+  gconstpointer result;
+
+  if G_UNLIKELY (mbuf->pos + len > mbuf->valid_len || mbuf->pos + len < mbuf->pos)
     {
+      mbuf->pos = mbuf->valid_len;
+      /* G_GSIZE_FORMAT doesn't work with gettext, so we use %lu */
       g_set_error (error,
                    G_IO_ERROR,
                    G_IO_ERROR_INVALID_ARGUMENT,
-                   _("Expected NUL byte after the string `%s' but found byte %d"),
-                   s->str, nul);
-      goto fail;
+                   g_dngettext (GETTEXT_PACKAGE,
+                                "Wanted to read %lu byte but only got %lu",
+                                "Wanted to read %lu bytes but only got %lu",
+                                (gulong)len),
+                                (gulong)len,
+                   (gulong)(mbuf->valid_len - mbuf->pos));
+      return NULL;
     }
 
-  return g_string_free (s, FALSE);
+  result = mbuf->data + mbuf->pos;
+  mbuf->pos += len;
 
- fail:
-  g_string_free (s, TRUE);
-  return NULL;
+  return result;
 }
 
 /* if just_align==TRUE, don't read a value, just align the input stream wrt padding */
 
 /* returns a non-floating GVariant! */
 static GVariant *
-parse_value_from_blob (GMemoryInputStream    *mis,
-                       GDataInputStream      *dis,
-                       const GVariantType    *type,
-                       gboolean               just_align,
-                       guint                  indent,
-                       GError               **error)
+parse_value_from_blob (GMemoryBuffer       *buf,
+                       const GVariantType  *type,
+                       gboolean             just_align,
+                       guint                indent,
+                       GError             **error)
 {
   GVariant *ret;
   GError *local_error;
@@ -1073,7 +1451,7 @@ parse_value_from_blob (GMemoryInputStream    *mis,
                indent, "",
                just_align ? "Aligning" : "Reading",
                s,
-               (gint) g_seekable_tell (G_SEEKABLE (mis)));
+               (gint) g_seekable_tell (G_SEEKABLE (buf)));
       g_free (s);
     }
 #endif /* DEBUG_SERIALIZER */
@@ -1085,14 +1463,11 @@ parse_value_from_blob (GMemoryInputStream    *mis,
   switch (type_string[0])
     {
     case 'b': /* G_VARIANT_TYPE_BOOLEAN */
-      if (!ensure_input_padding (mis, 4, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 4);
       if (!just_align)
         {
           gboolean v;
-          v = g_data_input_stream_read_uint32 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          v = g_memory_buffer_read_uint32 (buf);
           ret = g_variant_new_boolean (v);
         }
       break;
@@ -1101,94 +1476,73 @@ parse_value_from_blob (GMemoryInputStream    *mis,
       if (!just_align)
         {
           guchar v;
-          v = g_data_input_stream_read_byte (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          v = g_memory_buffer_read_byte (buf);
           ret = g_variant_new_byte (v);
         }
       break;
 
     case 'n': /* G_VARIANT_TYPE_INT16 */
-      if (!ensure_input_padding (mis, 2, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 2);
       if (!just_align)
         {
           gint16 v;
-          v = g_data_input_stream_read_int16 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          v = g_memory_buffer_read_int16 (buf);
           ret = g_variant_new_int16 (v);
         }
       break;
 
     case 'q': /* G_VARIANT_TYPE_UINT16 */
-      if (!ensure_input_padding (mis, 2, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 2);
       if (!just_align)
         {
           guint16 v;
-          v = g_data_input_stream_read_uint16 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          v = g_memory_buffer_read_uint16 (buf);
           ret = g_variant_new_uint16 (v);
         }
       break;
 
     case 'i': /* G_VARIANT_TYPE_INT32 */
-      if (!ensure_input_padding (mis, 4, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 4);
       if (!just_align)
         {
           gint32 v;
-          v = g_data_input_stream_read_int32 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          v = g_memory_buffer_read_int32 (buf);
           ret = g_variant_new_int32 (v);
         }
       break;
 
     case 'u': /* G_VARIANT_TYPE_UINT32 */
-      if (!ensure_input_padding (mis, 4, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 4);
       if (!just_align)
         {
           guint32 v;
-          v = g_data_input_stream_read_uint32 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          v = g_memory_buffer_read_uint32 (buf);
           ret = g_variant_new_uint32 (v);
         }
       break;
 
     case 'x': /* G_VARIANT_TYPE_INT64 */
-      if (!ensure_input_padding (mis, 8, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 8);
       if (!just_align)
         {
           gint64 v;
-          v = g_data_input_stream_read_int64 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          v = g_memory_buffer_read_int64 (buf);
           ret = g_variant_new_int64 (v);
         }
       break;
 
     case 't': /* G_VARIANT_TYPE_UINT64 */
-      if (!ensure_input_padding (mis, 8, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 8);
       if (!just_align)
         {
           guint64 v;
-          v = g_data_input_stream_read_uint64 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          v = g_memory_buffer_read_uint64 (buf);
           ret = g_variant_new_uint64 (v);
         }
       break;
 
     case 'd': /* G_VARIANT_TYPE_DOUBLE */
-      if (!ensure_input_padding (mis, 8, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 8);
       if (!just_align)
         {
           union {
@@ -1196,42 +1550,33 @@ parse_value_from_blob (GMemoryInputStream    *mis,
             gdouble v_double;
           } u;
           G_STATIC_ASSERT (sizeof (gdouble) == sizeof (guint64));
-          u.v_uint64 = g_data_input_stream_read_uint64 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          u.v_uint64 = g_memory_buffer_read_uint64 (buf);
           ret = g_variant_new_double (u.v_double);
         }
       break;
 
     case 's': /* G_VARIANT_TYPE_STRING */
-      if (!ensure_input_padding (mis, 4, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 4);
       if (!just_align)
         {
           guint32 len;
-          gchar *v;
-          len = g_data_input_stream_read_uint32 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
-          v = read_string (mis, dis, (gsize) len, &local_error);
+          const gchar *v;
+          len = g_memory_buffer_read_uint32 (buf);
+          v = read_string (buf, (gsize) len, &local_error);
           if (v == NULL)
             goto fail;
           ret = g_variant_new_string (v);
-          g_free (v);
         }
       break;
 
     case 'o': /* G_VARIANT_TYPE_OBJECT_PATH */
-      if (!ensure_input_padding (mis, 4, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 4);
       if (!just_align)
         {
           guint32 len;
-          gchar *v;
-          len = g_data_input_stream_read_uint32 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
-          v = read_string (mis, dis, (gsize) len, &local_error);
+          const gchar *v;
+          len = g_memory_buffer_read_uint32 (buf);
+          v = read_string (buf, (gsize) len, &local_error);
           if (v == NULL)
             goto fail;
           if (!g_variant_is_object_path (v))
@@ -1239,13 +1584,11 @@ parse_value_from_blob (GMemoryInputStream    *mis,
               g_set_error (&local_error,
                            G_IO_ERROR,
                            G_IO_ERROR_INVALID_ARGUMENT,
-                           _("Parsed value `%s' is not a valid D-Bus object path"),
+                           _("Parsed value '%s' is not a valid D-Bus object path"),
                            v);
-              g_free (v);
               goto fail;
             }
           ret = g_variant_new_object_path (v);
-          g_free (v);
         }
       break;
 
@@ -1253,11 +1596,9 @@ parse_value_from_blob (GMemoryInputStream    *mis,
       if (!just_align)
         {
           guchar len;
-          gchar *v;
-          len = g_data_input_stream_read_byte (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
-          v = read_string (mis, dis, (gsize) len, &local_error);
+          const gchar *v;
+          len = g_memory_buffer_read_byte (buf);
+          v = read_string (buf, (gsize) len, &local_error);
           if (v == NULL)
             goto fail;
           if (!g_variant_is_signature (v))
@@ -1265,32 +1606,26 @@ parse_value_from_blob (GMemoryInputStream    *mis,
               g_set_error (&local_error,
                            G_IO_ERROR,
                            G_IO_ERROR_INVALID_ARGUMENT,
-                           _("Parsed value `%s' is not a valid D-Bus signature"),
+                           _("Parsed value '%s' is not a valid D-Bus signature"),
                        v);
-              g_free (v);
               goto fail;
             }
           ret = g_variant_new_signature (v);
-          g_free (v);
         }
       break;
 
     case 'h': /* G_VARIANT_TYPE_HANDLE */
-      if (!ensure_input_padding (mis, 4, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 4);
       if (!just_align)
         {
           gint32 v;
-          v = g_data_input_stream_read_int32 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          v = g_memory_buffer_read_int32 (buf);
           ret = g_variant_new_handle (v);
         }
       break;
 
     case 'a': /* G_VARIANT_TYPE_ARRAY */
-      if (!ensure_input_padding (mis, 4, &local_error))
-        goto fail;
+      ensure_input_padding (buf, 4);
 
       /* If we are only aligning for this array type, it is the child type of
        * another array, which is empty. So, we do not need to add padding for
@@ -1301,14 +1636,10 @@ parse_value_from_blob (GMemoryInputStream    *mis,
       if (!just_align)
         {
           guint32 array_len;
-          goffset offset;
-          goffset target;
           const GVariantType *element_type;
-          GVariantBuilder builder;
+          guint fixed_size;
 
-          array_len = g_data_input_stream_read_uint32 (dis, NULL, &local_error);
-          if (local_error != NULL)
-            goto fail;
+          array_len = g_memory_buffer_read_uint32 (buf);
 
           is_leaf = FALSE;
 #ifdef DEBUG_SERIALIZER
@@ -1329,46 +1660,82 @@ parse_value_from_blob (GMemoryInputStream    *mis,
               goto fail;
             }
 
-          g_variant_builder_init (&builder, type);
           element_type = g_variant_type_element (type);
+          fixed_size = get_type_fixed_size (element_type);
 
-          if (array_len == 0)
+          /* Fast-path the cases like 'ay', etc. */
+          if (fixed_size != 0)
             {
-              GVariant *item;
-              item = parse_value_from_blob (mis,
-                                            dis,
-                                            element_type,
-                                            TRUE,
-                                            indent + 2,
-                                            NULL);
-              g_assert (item == NULL);
+              gconstpointer array_data;
+
+              if (array_len % fixed_size != 0)
+                {
+                  g_set_error (&local_error,
+                               G_IO_ERROR,
+                               G_IO_ERROR_INVALID_ARGUMENT,
+                               _("Encountered array of type 'a%c', expected to have a length a multiple "
+                                 "of %u bytes, but found to be %u bytes in length"),
+                               g_variant_type_peek_string (element_type)[0], fixed_size, array_len);
+                  goto fail;
+                }
+
+              ensure_input_padding (buf, fixed_size);
+              array_data = read_bytes (buf, array_len, &local_error);
+              if (array_data == NULL)
+                goto fail;
+
+              ret = g_variant_new_fixed_array (element_type, array_data, array_len / fixed_size, fixed_size);
+
+              if (g_memory_buffer_is_byteswapped (buf))
+                {
+                  GVariant *tmp = g_variant_ref_sink (ret);
+                  ret = g_variant_byteswap (tmp);
+                  g_variant_unref (tmp);
+                }
             }
           else
             {
-              /* TODO: optimize array of primitive types */
-              offset = g_seekable_tell (G_SEEKABLE (mis));
-              target = offset + array_len;
-              while (offset < target)
+              GVariantBuilder builder;
+              goffset offset;
+              goffset target;
+
+              g_variant_builder_init (&builder, type);
+
+              if (array_len == 0)
                 {
                   GVariant *item;
-                  item = parse_value_from_blob (mis,
-                                                dis,
+                  item = parse_value_from_blob (buf,
                                                 element_type,
-                                                FALSE,
+                                                TRUE,
                                                 indent + 2,
-                                                &local_error);
-                  if (item == NULL)
-                    {
-                      g_variant_builder_clear (&builder);
-                      goto fail;
-                    }
-                  g_variant_builder_add_value (&builder, item);
-                  g_variant_unref (item);
-                  offset = g_seekable_tell (G_SEEKABLE (mis));
+                                                NULL);
+                  g_assert (item == NULL);
                 }
-            }
+              else
+                {
+                  offset = buf->pos;
+                  target = offset + array_len;
+                  while (offset < target)
+                    {
+                      GVariant *item;
+                      item = parse_value_from_blob (buf,
+                                                    element_type,
+                                                    FALSE,
+                                                    indent + 2,
+                                                    &local_error);
+                      if (item == NULL)
+                        {
+                          g_variant_builder_clear (&builder);
+                          goto fail;
+                        }
+                      g_variant_builder_add_value (&builder, item);
+                      g_variant_unref (item);
+                      offset = buf->pos;
+                    }
+                }
 
-          ret = g_variant_builder_end (&builder);
+              ret = g_variant_builder_end (&builder);
+            }
         }
       break;
 
@@ -1380,8 +1747,7 @@ parse_value_from_blob (GMemoryInputStream    *mis,
           GVariant *key;
           GVariant *value;
 
-          if (!ensure_input_padding (mis, 8, &local_error))
-            goto fail;
+          ensure_input_padding (buf, 8);
 
           is_leaf = FALSE;
 #ifdef DEBUG_SERIALIZER
@@ -1391,8 +1757,7 @@ parse_value_from_blob (GMemoryInputStream    *mis,
           if (!just_align)
             {
               key_type = g_variant_type_key (type);
-              key = parse_value_from_blob (mis,
-                                           dis,
+              key = parse_value_from_blob (buf,
                                            key_type,
                                            FALSE,
                                            indent + 2,
@@ -1400,8 +1765,7 @@ parse_value_from_blob (GMemoryInputStream    *mis,
               if (key == NULL)
                 goto fail;
               value_type = g_variant_type_value (type);
-              value = parse_value_from_blob (mis,
-                                             dis,
+              value = parse_value_from_blob (buf,
                                              value_type,
                                              FALSE,
                                              indent + 2,
@@ -1418,8 +1782,7 @@ parse_value_from_blob (GMemoryInputStream    *mis,
         }
       else if (g_variant_type_is_tuple (type))
         {
-          if (!ensure_input_padding (mis, 8, &local_error))
-            goto fail;
+          ensure_input_padding (buf, 8);
 
           is_leaf = FALSE;
 #ifdef DEBUG_SERIALIZER
@@ -1436,8 +1799,7 @@ parse_value_from_blob (GMemoryInputStream    *mis,
               while (element_type != NULL)
                 {
                   GVariant *item;
-                  item = parse_value_from_blob (mis,
-                                                dis,
+                  item = parse_value_from_blob (buf,
                                                 element_type,
                                                 FALSE,
                                                 indent + 2,
@@ -1465,14 +1827,12 @@ parse_value_from_blob (GMemoryInputStream    *mis,
           if (!just_align)
             {
               guchar siglen;
-              gchar *sig;
+              const gchar *sig;
               GVariantType *variant_type;
               GVariant *value;
 
-              siglen = g_data_input_stream_read_byte (dis, NULL, &local_error);
-              if (local_error != NULL)
-                goto fail;
-              sig = read_string (mis, dis, (gsize) siglen, &local_error);
+              siglen = g_memory_buffer_read_byte (buf);
+              sig = read_string (buf, (gsize) siglen, &local_error);
               if (sig == NULL)
                 goto fail;
               if (!g_variant_is_signature (sig))
@@ -1480,15 +1840,12 @@ parse_value_from_blob (GMemoryInputStream    *mis,
                   g_set_error (&local_error,
                                G_IO_ERROR,
                                G_IO_ERROR_INVALID_ARGUMENT,
-                               _("Parsed value `%s' for variant is not a valid D-Bus signature"),
+                               _("Parsed value '%s' for variant is not a valid D-Bus signature"),
                                sig);
-                  g_free (sig);
                   goto fail;
                 }
               variant_type = g_variant_type_new (sig);
-              g_free (sig);
-              value = parse_value_from_blob (mis,
-                                             dis,
+              value = parse_value_from_blob (buf,
                                              variant_type,
                                              FALSE,
                                              indent + 2,
@@ -1507,7 +1864,7 @@ parse_value_from_blob (GMemoryInputStream    *mis,
           g_set_error (&local_error,
                        G_IO_ERROR,
                        G_IO_ERROR_INVALID_ARGUMENT,
-                       _("Error deserializing GVariant with type string `%s' from the D-Bus wire format"),
+                       _("Error deserializing GVariant with type string '%s' from the D-Bus wire format"),
                        s);
           g_free (s);
           goto fail;
@@ -1539,12 +1896,9 @@ parse_value_from_blob (GMemoryInputStream    *mis,
   is_leaf = is_leaf; /* To avoid -Wunused-but-set-variable */
 #endif /* DEBUG_SERIALIZER */
 
-  /* sink the reference */
+  /* sink the reference, if floating */
   if (ret != NULL)
-    {
-      g_assert (g_variant_is_floating (ret));
-      g_variant_ref_sink (ret);
-    }
+    g_variant_take_ref (ret);
   return ret;
 
  fail:
@@ -1580,9 +1934,9 @@ parse_value_from_blob (GMemoryInputStream    *mis,
  * Since: 2.26
  */
 gssize
-g_dbus_message_bytes_needed (guchar                *blob,
-                             gsize                  blob_len,
-                             GError               **error)
+g_dbus_message_bytes_needed (guchar  *blob,
+                             gsize    blob_len,
+                             GError **error)
 {
   gssize ret;
 
@@ -1655,12 +2009,10 @@ g_dbus_message_new_from_blob (guchar                *blob,
                               GError               **error)
 {
   gboolean ret;
-  GMemoryInputStream *mis;
-  GDataInputStream *dis;
+  GMemoryBuffer mbuf;
   GDBusMessage *message;
   guchar endianness;
   guchar major_protocol_version;
-  GDataStreamByteOrder byte_order;
   guint32 message_body_len;
   GVariant *headers;
   GVariant *item;
@@ -1677,18 +2029,19 @@ g_dbus_message_new_from_blob (guchar                *blob,
 
   message = g_dbus_message_new ();
 
-  mis = G_MEMORY_INPUT_STREAM (g_memory_input_stream_new_from_data (blob, blob_len, NULL));
-  dis = g_data_input_stream_new (G_INPUT_STREAM (mis));
+  memset (&mbuf, 0, sizeof (mbuf));
+  mbuf.data = (gchar *)blob;
+  mbuf.len = mbuf.valid_len = blob_len;
 
-  endianness = g_data_input_stream_read_byte (dis, NULL, NULL);
+  endianness = g_memory_buffer_read_byte (&mbuf);
   switch (endianness)
     {
     case 'l':
-      byte_order = G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN;
+      mbuf.byte_order = G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN;
       message->byte_order = G_DBUS_MESSAGE_BYTE_ORDER_LITTLE_ENDIAN;
       break;
     case 'B':
-      byte_order = G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN;
+      mbuf.byte_order = G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN;
       message->byte_order = G_DBUS_MESSAGE_BYTE_ORDER_BIG_ENDIAN;
       break;
     default:
@@ -1699,11 +2052,10 @@ g_dbus_message_new_from_blob (guchar                *blob,
                    endianness);
       goto out;
     }
-  g_data_input_stream_set_byte_order (dis, byte_order);
 
-  message->type = g_data_input_stream_read_byte (dis, NULL, NULL);
-  message->flags = g_data_input_stream_read_byte (dis, NULL, NULL);
-  major_protocol_version = g_data_input_stream_read_byte (dis, NULL, NULL);
+  message->type = g_memory_buffer_read_byte (&mbuf);
+  message->flags = g_memory_buffer_read_byte (&mbuf);
+  major_protocol_version = g_memory_buffer_read_byte (&mbuf);
   if (major_protocol_version != 1)
     {
       g_set_error (error,
@@ -1713,8 +2065,8 @@ g_dbus_message_new_from_blob (guchar                *blob,
                    major_protocol_version);
       goto out;
     }
-  message_body_len = g_data_input_stream_read_uint32 (dis, NULL, NULL);
-  message->serial = g_data_input_stream_read_uint32 (dis, NULL, NULL);
+  message_body_len = g_memory_buffer_read_uint32 (&mbuf);
+  message->serial = g_memory_buffer_read_uint32 (&mbuf);
 
 #ifdef DEBUG_SERIALIZER
   g_print ("Parsing blob (blob_len = 0x%04x bytes)\n", (gint) blob_len);
@@ -1729,8 +2081,7 @@ g_dbus_message_new_from_blob (guchar                *blob,
 #ifdef DEBUG_SERIALIZER
   g_print ("Parsing headers (blob_len = 0x%04x bytes)\n", (gint) blob_len);
 #endif /* DEBUG_SERIALIZER */
-  headers = parse_value_from_blob (mis,
-                                   dis,
+  headers = parse_value_from_blob (&mbuf,
                                    G_VARIANT_TYPE ("a{yv}"),
                                    FALSE,
                                    2,
@@ -1766,7 +2117,7 @@ g_dbus_message_new_from_blob (guchar                *blob,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_INVALID_ARGUMENT,
-                       _("Signature header with signature `%s' found but message body is empty"),
+                       _("Signature header with signature '%s' found but message body is empty"),
                        signature_str);
           goto out;
         }
@@ -1780,7 +2131,7 @@ g_dbus_message_new_from_blob (guchar                *blob,
               g_set_error (error,
                            G_IO_ERROR,
                            G_IO_ERROR_INVALID_ARGUMENT,
-                           _("Parsed value `%s' is not a valid D-Bus signature (for body)"),
+                           _("Parsed value '%s' is not a valid D-Bus signature (for body)"),
                            signature_str);
               goto out;
             }
@@ -1790,8 +2141,7 @@ g_dbus_message_new_from_blob (guchar                *blob,
 #ifdef DEBUG_SERIALIZER
           g_print ("Parsing body (blob_len = 0x%04x bytes)\n", (gint) blob_len);
 #endif /* DEBUG_SERIALIZER */
-          message->body = parse_value_from_blob (mis,
-                                                 dis,
+          message->body = parse_value_from_blob (&mbuf,
                                                  variant_type,
                                                  FALSE,
                                                  2,
@@ -1828,9 +2178,6 @@ g_dbus_message_new_from_blob (guchar                *blob,
   ret = TRUE;
 
  out:
-  g_object_unref (dis);
-  g_object_unref (mis);
-
   if (ret)
     {
       return message;
@@ -1846,33 +2193,31 @@ g_dbus_message_new_from_blob (guchar                *blob,
 /* ---------------------------------------------------------------------------------------------------- */
 
 static gsize
-ensure_output_padding (GMemoryOutputStream  *mos,
-                       GDataOutputStream    *dos,
-                       gsize                 padding_size)
+ensure_output_padding (GMemoryBuffer  *mbuf,
+                       gsize           padding_size)
 {
   gsize offset;
   gsize wanted_offset;
   gsize padding_needed;
   guint n;
 
-  offset = g_memory_output_stream_get_data_size (mos);
+  offset = mbuf->pos;
   wanted_offset = ((offset + padding_size - 1) / padding_size) * padding_size;
   padding_needed = wanted_offset - offset;
 
   for (n = 0; n < padding_needed; n++)
-    g_data_output_stream_put_byte (dos, '\0', NULL, NULL);
+    g_memory_buffer_put_byte (mbuf, '\0');
 
   return padding_needed;
 }
 
 /* note that value can be NULL for e.g. empty arrays - type is never NULL */
 static gboolean
-append_value_to_blob (GVariant             *value,
-                      const GVariantType   *type,
-                      GMemoryOutputStream  *mos,
-                      GDataOutputStream    *dos,
-                      gsize                *out_padding_added,
-                      GError              **error)
+append_value_to_blob (GVariant            *value,
+                      const GVariantType  *type,
+                      GMemoryBuffer       *mbuf,
+                      gsize               *out_padding_added,
+                      GError             **error)
 {
   gsize padding_added;
   const gchar *type_string;
@@ -1884,11 +2229,11 @@ append_value_to_blob (GVariant             *value,
   switch (type_string[0])
     {
     case 'b': /* G_VARIANT_TYPE_BOOLEAN */
-      padding_added = ensure_output_padding (mos, dos, 4);
+      padding_added = ensure_output_padding (mbuf, 4);
       if (value != NULL)
         {
           gboolean v = g_variant_get_boolean (value);
-          g_data_output_stream_put_uint32 (dos, v, NULL, NULL);
+          g_memory_buffer_put_uint32 (mbuf, v);
         }
       break;
 
@@ -1896,66 +2241,66 @@ append_value_to_blob (GVariant             *value,
       if (value != NULL)
         {
           guint8 v = g_variant_get_byte (value);
-          g_data_output_stream_put_byte (dos, v, NULL, NULL);
+          g_memory_buffer_put_byte (mbuf, v);
         }
       break;
 
     case 'n': /* G_VARIANT_TYPE_INT16 */
-      padding_added = ensure_output_padding (mos, dos, 2);
+      padding_added = ensure_output_padding (mbuf, 2);
       if (value != NULL)
         {
           gint16 v = g_variant_get_int16 (value);
-          g_data_output_stream_put_int16 (dos, v, NULL, NULL);
+          g_memory_buffer_put_int16 (mbuf, v);
         }
       break;
 
     case 'q': /* G_VARIANT_TYPE_UINT16 */
-      padding_added = ensure_output_padding (mos, dos, 2);
+      padding_added = ensure_output_padding (mbuf, 2);
       if (value != NULL)
         {
           guint16 v = g_variant_get_uint16 (value);
-          g_data_output_stream_put_uint16 (dos, v, NULL, NULL);
+          g_memory_buffer_put_uint16 (mbuf, v);
         }
       break;
 
     case 'i': /* G_VARIANT_TYPE_INT32 */
-      padding_added = ensure_output_padding (mos, dos, 4);
+      padding_added = ensure_output_padding (mbuf, 4);
       if (value != NULL)
         {
           gint32 v = g_variant_get_int32 (value);
-          g_data_output_stream_put_int32 (dos, v, NULL, NULL);
+          g_memory_buffer_put_int32 (mbuf, v);
         }
       break;
 
     case 'u': /* G_VARIANT_TYPE_UINT32 */
-      padding_added = ensure_output_padding (mos, dos, 4);
+      padding_added = ensure_output_padding (mbuf, 4);
       if (value != NULL)
         {
           guint32 v = g_variant_get_uint32 (value);
-          g_data_output_stream_put_uint32 (dos, v, NULL, NULL);
+          g_memory_buffer_put_uint32 (mbuf, v);
         }
       break;
 
     case 'x': /* G_VARIANT_TYPE_INT64 */
-      padding_added = ensure_output_padding (mos, dos, 8);
+      padding_added = ensure_output_padding (mbuf, 8);
       if (value != NULL)
         {
           gint64 v = g_variant_get_int64 (value);
-          g_data_output_stream_put_int64 (dos, v, NULL, NULL);
+          g_memory_buffer_put_int64 (mbuf, v);
         }
       break;
 
     case 't': /* G_VARIANT_TYPE_UINT64 */
-      padding_added = ensure_output_padding (mos, dos, 8);
+      padding_added = ensure_output_padding (mbuf, 8);
       if (value != NULL)
         {
           guint64 v = g_variant_get_uint64 (value);
-          g_data_output_stream_put_uint64 (dos, v, NULL, NULL);
+          g_memory_buffer_put_uint64 (mbuf, v);
         }
       break;
 
     case 'd': /* G_VARIANT_TYPE_DOUBLE */
-      padding_added = ensure_output_padding (mos, dos, 8);
+      padding_added = ensure_output_padding (mbuf, 8);
       if (value != NULL)
         {
           union {
@@ -1964,12 +2309,12 @@ append_value_to_blob (GVariant             *value,
           } u;
           G_STATIC_ASSERT (sizeof (gdouble) == sizeof (guint64));
           u.v_double = g_variant_get_double (value);
-          g_data_output_stream_put_uint64 (dos, u.v_uint64, NULL, NULL);
+          g_memory_buffer_put_uint64 (mbuf, u.v_uint64);
         }
       break;
 
     case 's': /* G_VARIANT_TYPE_STRING */
-      padding_added = ensure_output_padding (mos, dos, 4);
+      padding_added = ensure_output_padding (mbuf, 4);
       if (value != NULL)
         {
           gsize len;
@@ -1977,22 +2322,22 @@ append_value_to_blob (GVariant             *value,
           const gchar *end;
           v = g_variant_get_string (value, &len);
           g_assert (g_utf8_validate (v, -1, &end) && (end == v + len));
-          g_data_output_stream_put_uint32 (dos, len, NULL, NULL);
-          g_data_output_stream_put_string (dos, v, NULL, NULL);
-          g_data_output_stream_put_byte (dos, '\0', NULL, NULL);
+          g_memory_buffer_put_uint32 (mbuf, len);
+          g_memory_buffer_put_string (mbuf, v);
+          g_memory_buffer_put_byte (mbuf, '\0');
         }
       break;
 
     case 'o': /* G_VARIANT_TYPE_OBJECT_PATH */
-      padding_added = ensure_output_padding (mos, dos, 4);
+      padding_added = ensure_output_padding (mbuf, 4);
       if (value != NULL)
         {
           gsize len;
           const gchar *v = g_variant_get_string (value, &len);
           g_assert (g_variant_is_object_path (v));
-          g_data_output_stream_put_uint32 (dos, len, NULL, NULL);
-          g_data_output_stream_put_string (dos, v, NULL, NULL);
-          g_data_output_stream_put_byte (dos, '\0', NULL, NULL);
+          g_memory_buffer_put_uint32 (mbuf, len);
+          g_memory_buffer_put_string (mbuf, v);
+          g_memory_buffer_put_byte (mbuf, '\0');
         }
       break;
 
@@ -2002,36 +2347,38 @@ append_value_to_blob (GVariant             *value,
           gsize len;
           const gchar *v = g_variant_get_string (value, &len);
           g_assert (g_variant_is_signature (v));
-          g_data_output_stream_put_byte (dos, len, NULL, NULL);
-          g_data_output_stream_put_string (dos, v, NULL, NULL);
-          g_data_output_stream_put_byte (dos, '\0', NULL, NULL);
+          g_memory_buffer_put_byte (mbuf, len);
+          g_memory_buffer_put_string (mbuf, v);
+          g_memory_buffer_put_byte (mbuf, '\0');
         }
       break;
 
     case 'h': /* G_VARIANT_TYPE_HANDLE */
-      padding_added = ensure_output_padding (mos, dos, 4);
+      padding_added = ensure_output_padding (mbuf, 4);
       if (value != NULL)
         {
           gint32 v = g_variant_get_handle (value);
-          g_data_output_stream_put_int32 (dos, v, NULL, NULL);
+          g_memory_buffer_put_int32 (mbuf, v);
         }
       break;
 
     case 'a': /* G_VARIANT_TYPE_ARRAY */
       {
+        const GVariantType *element_type;
         GVariant *item;
         GVariantIter iter;
         goffset array_len_offset;
         goffset array_payload_begin_offset;
         goffset cur_offset;
         gsize array_len;
+        guint fixed_size;
 
-        padding_added = ensure_output_padding (mos, dos, 4);
+        padding_added = ensure_output_padding (mbuf, 4);
         if (value != NULL)
           {
             /* array length - will be filled in later */
-            array_len_offset = g_memory_output_stream_get_data_size (mos);
-            g_data_output_stream_put_uint32 (dos, 0xF00DFACE, NULL, NULL);
+            array_len_offset = mbuf->valid_len;
+            g_memory_buffer_put_uint32 (mbuf, 0xF00DFACE);
 
             /* From the D-Bus spec:
              *
@@ -2046,19 +2393,36 @@ append_value_to_blob (GVariant             *value,
              * Thus, we need to count how much padding the first element
              * contributes and subtract that from the array length.
              */
-            array_payload_begin_offset = g_memory_output_stream_get_data_size (mos);
+            array_payload_begin_offset = mbuf->valid_len;
+
+            element_type = g_variant_type_element (type);
+            fixed_size = get_type_fixed_size (element_type);
 
             if (g_variant_n_children (value) == 0)
               {
                 gsize padding_added_for_item;
                 if (!append_value_to_blob (NULL,
-                                           g_variant_type_element (type),
-                                           mos,
-                                           dos,
+                                           element_type,
+                                           mbuf,
                                            &padding_added_for_item,
                                            error))
                   goto fail;
                 array_payload_begin_offset += padding_added_for_item;
+              }
+            else if (fixed_size != 0)
+              {
+                GVariant *use_value;
+
+                if (g_memory_buffer_is_byteswapped (mbuf))
+                  use_value = g_variant_byteswap (value);
+                else
+                  use_value = g_variant_ref (value);
+
+                array_payload_begin_offset += ensure_output_padding (mbuf, fixed_size);
+
+                array_len = g_variant_get_size (use_value);
+                g_memory_buffer_write (mbuf, g_variant_get_data (use_value), array_len);
+                g_variant_unref (use_value);
               }
             else
               {
@@ -2070,8 +2434,7 @@ append_value_to_blob (GVariant             *value,
                     gsize padding_added_for_item;
                     if (!append_value_to_blob (item,
                                                g_variant_get_type (item),
-                                               mos,
-                                               dos,
+                                               mbuf,
                                                &padding_added_for_item,
                                                error))
                       {
@@ -2087,14 +2450,12 @@ append_value_to_blob (GVariant             *value,
                   }
               }
 
-            cur_offset = g_memory_output_stream_get_data_size (mos);
+            cur_offset = mbuf->valid_len;
             array_len = cur_offset - array_payload_begin_offset;
-            if (!g_seekable_seek (G_SEEKABLE (mos), array_len_offset, G_SEEK_SET, NULL, error))
-              goto fail;
+            mbuf->pos = array_len_offset;
 
-            g_data_output_stream_put_uint32 (dos, array_len, NULL, NULL);
-            if (!g_seekable_seek (G_SEEKABLE (mos), cur_offset, G_SEEK_SET, NULL, error))
-              goto fail;
+            g_memory_buffer_put_uint32 (mbuf, array_len);
+            mbuf->pos = cur_offset;
           }
       }
       break;
@@ -2102,7 +2463,7 @@ append_value_to_blob (GVariant             *value,
     default:
       if (g_variant_type_is_dict_entry (type) || g_variant_type_is_tuple (type))
         {
-          padding_added = ensure_output_padding (mos, dos, 8);
+          padding_added = ensure_output_padding (mbuf, 8);
           if (value != NULL)
             {
               GVariant *item;
@@ -2112,8 +2473,7 @@ append_value_to_blob (GVariant             *value,
                 {
                   if (!append_value_to_blob (item,
                                              g_variant_get_type (item),
-                                             mos,
-                                             dos,
+                                             mbuf,
                                              NULL,
                                              error))
                     {
@@ -2132,13 +2492,12 @@ append_value_to_blob (GVariant             *value,
               const gchar *signature;
               child = g_variant_get_child_value (value, 0);
               signature = g_variant_get_type_string (child);
-              g_data_output_stream_put_byte (dos, strlen (signature), NULL, NULL);
-              g_data_output_stream_put_string (dos, signature, NULL, NULL);
-              g_data_output_stream_put_byte (dos, '\0', NULL, NULL);
+              g_memory_buffer_put_byte (mbuf, strlen (signature));
+              g_memory_buffer_put_string (mbuf, signature);
+              g_memory_buffer_put_byte (mbuf, '\0');
               if (!append_value_to_blob (child,
                                          g_variant_get_type (child),
-                                         mos,
-                                         dos,
+                                         mbuf,
                                          NULL,
                                          error))
                 {
@@ -2153,7 +2512,7 @@ append_value_to_blob (GVariant             *value,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_INVALID_ARGUMENT,
-                       _("Error serializing GVariant with type string `%s' to the D-Bus wire format"),
+                       _("Error serializing GVariant with type string '%s' to the D-Bus wire format"),
                        g_variant_get_type_string (value));
           goto fail;
         }
@@ -2170,10 +2529,9 @@ append_value_to_blob (GVariant             *value,
 }
 
 static gboolean
-append_body_to_blob (GVariant             *value,
-                     GMemoryOutputStream  *mos,
-                     GDataOutputStream    *dos,
-                     GError              **error)
+append_body_to_blob (GVariant       *value,
+                     GMemoryBuffer  *mbuf,
+                     GError        **error)
 {
   GVariant *item;
   GVariantIter iter;
@@ -2192,8 +2550,7 @@ append_body_to_blob (GVariant             *value,
     {
       if (!append_value_to_blob (item,
                                  g_variant_get_type (item),
-                                 mos,
-                                 dos,
+                                 mbuf,
                                  NULL,
                                  error))
         {
@@ -2232,11 +2589,9 @@ g_dbus_message_to_blob (GDBusMessage          *message,
                         GDBusCapabilityFlags   capabilities,
                         GError               **error)
 {
-  GMemoryOutputStream *mos;
-  GDataOutputStream *dos;
+  GMemoryBuffer mbuf;
   guchar *ret;
   gsize size;
-  GDataStreamByteOrder byte_order;
   goffset body_len_offset;
   goffset body_start_offset;
   gsize body_size;
@@ -2258,30 +2613,30 @@ g_dbus_message_to_blob (GDBusMessage          *message,
   g_return_val_if_fail (out_size != NULL, NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
-  mos = G_MEMORY_OUTPUT_STREAM (g_memory_output_stream_new (NULL, 0, g_realloc, g_free));
-  dos = g_data_output_stream_new (G_OUTPUT_STREAM (mos));
+  memset (&mbuf, 0, sizeof (mbuf));
+  mbuf.len = MIN_ARRAY_SIZE;
+  mbuf.data = g_malloc (mbuf.len);
 
-  byte_order = G_DATA_STREAM_BYTE_ORDER_HOST_ENDIAN;
+  mbuf.byte_order = G_DATA_STREAM_BYTE_ORDER_HOST_ENDIAN;
   switch (message->byte_order)
     {
     case G_DBUS_MESSAGE_BYTE_ORDER_BIG_ENDIAN:
-      byte_order = G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN;
+      mbuf.byte_order = G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN;
       break;
     case G_DBUS_MESSAGE_BYTE_ORDER_LITTLE_ENDIAN:
-      byte_order = G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN;
+      mbuf.byte_order = G_DATA_STREAM_BYTE_ORDER_LITTLE_ENDIAN;
       break;
     }
-  g_data_output_stream_set_byte_order (dos, byte_order);
 
   /* Core header */
-  g_data_output_stream_put_byte (dos, (guchar) message->byte_order, NULL, NULL);
-  g_data_output_stream_put_byte (dos, message->type, NULL, NULL);
-  g_data_output_stream_put_byte (dos, message->flags, NULL, NULL);
-  g_data_output_stream_put_byte (dos, 1, NULL, NULL); /* major protocol version */
-  body_len_offset = g_memory_output_stream_get_data_size (mos);
+  g_memory_buffer_put_byte (&mbuf, (guchar) message->byte_order);
+  g_memory_buffer_put_byte (&mbuf, message->type);
+  g_memory_buffer_put_byte (&mbuf, message->flags);
+  g_memory_buffer_put_byte (&mbuf, 1); /* major protocol version */
+  body_len_offset = mbuf.valid_len;
   /* body length - will be filled in later */
-  g_data_output_stream_put_uint32 (dos, 0xF00DFACE, NULL, NULL);
-  g_data_output_stream_put_uint32 (dos, message->serial, NULL, NULL);
+  g_memory_buffer_put_uint32 (&mbuf, 0xF00DFACE);
+  g_memory_buffer_put_uint32 (&mbuf, message->serial);
 
   num_fds_in_message = 0;
 #ifdef G_OS_UNIX
@@ -2319,7 +2674,7 @@ g_dbus_message_to_blob (GDBusMessage          *message,
 
   if (!append_value_to_blob (header_fields,
                              g_variant_get_type (header_fields),
-                             mos, dos,
+                             &mbuf,
                              NULL,
                              error))
     {
@@ -2329,9 +2684,9 @@ g_dbus_message_to_blob (GDBusMessage          *message,
   g_variant_unref (header_fields);
 
   /* header size must be a multiple of 8 */
-  ensure_output_padding (mos, dos, 8);
+  ensure_output_padding (&mbuf, 8);
 
-  body_start_offset = g_memory_output_stream_get_data_size (mos);
+  body_start_offset = mbuf.valid_len;
 
   signature = g_dbus_message_get_header (message, G_DBUS_MESSAGE_HEADER_FIELD_SIGNATURE);
   signature_str = NULL;
@@ -2346,7 +2701,7 @@ g_dbus_message_to_blob (GDBusMessage          *message,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_INVALID_ARGUMENT,
-                       _("Message body has signature `%s' but there is no signature header"),
+                       _("Message body has signature '%s' but there is no signature header"),
                        signature_str);
           g_free (tupled_signature_str);
           goto out;
@@ -2356,13 +2711,13 @@ g_dbus_message_to_blob (GDBusMessage          *message,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_INVALID_ARGUMENT,
-                       _("Message body has type signature `%s' but signature in the header field is `%s'"),
+                       _("Message body has type signature '%s' but signature in the header field is '%s'"),
                        tupled_signature_str, g_variant_get_type_string (message->body));
           g_free (tupled_signature_str);
           goto out;
         }
       g_free (tupled_signature_str);
-      if (!append_body_to_blob (message->body, mos, dos, error))
+      if (!append_body_to_blob (message->body, &mbuf, error))
         goto out;
     }
   else
@@ -2372,30 +2727,26 @@ g_dbus_message_to_blob (GDBusMessage          *message,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_INVALID_ARGUMENT,
-                       _("Message body is empty but signature in the header field is `(%s)'"),
+                       _("Message body is empty but signature in the header field is '(%s)'"),
                        signature_str);
           goto out;
         }
     }
 
   /* OK, we're done writing the message - set the body length */
-  size = g_memory_output_stream_get_data_size (mos);
+  size = mbuf.valid_len;
   body_size = size - body_start_offset;
 
-  if (!g_seekable_seek (G_SEEKABLE (mos), body_len_offset, G_SEEK_SET, NULL, error))
-    goto out;
+  mbuf.pos = body_len_offset;
 
-  g_data_output_stream_put_uint32 (dos, body_size, NULL, NULL);
-
-  if (!g_output_stream_close (G_OUTPUT_STREAM (dos), NULL, error))
-    goto out;
+  g_memory_buffer_put_uint32 (&mbuf, body_size);
 
   *out_size = size;
-  ret = g_memory_output_stream_steal_data (mos);
+  ret = (guchar *)mbuf.data;
 
  out:
-  g_object_unref (dos);
-  g_object_unref (mos);
+  if (ret == NULL)
+    g_free (mbuf.data);
 
   return ret;
 }
@@ -2929,7 +3280,7 @@ g_dbus_message_to_gerror (GDBusMessage   *message,
               g_dbus_error_set_dbus_error (error,
                                            error_name,
                                            "",
-                                           _("Error return with body of type `%s'"),
+                                           _("Error return with body of type '%s'"),
                                            g_variant_get_type_string (body));
             }
           else
@@ -3012,35 +3363,35 @@ _sort_keys_func (gconstpointer a,
  * The contents of the description has no ABI guarantees, the contents
  * and formatting is subject to change at any time. Typical output
  * looks something like this:
- * <programlisting>
- * Type&colon;    method-call
- * Flags&colon;   none
- * Version&colon; 0
- * Serial&colon;  4
- * Headers&colon;
+ * |[
+ * Type:    method-call
+ * Flags:   none
+ * Version: 0
+ * Serial:  4
+ * Headers:
  *   path -> objectpath '/org/gtk/GDBus/TestObject'
  *   interface -> 'org.gtk.GDBus.TestInterface'
  *   member -> 'GimmeStdout'
  *   destination -> ':1.146'
- * Body&colon; ()
+ * Body: ()
  * UNIX File Descriptors:
  *   (none)
- * </programlisting>
+ * ]|
  * or
- * <programlisting>
- * Type&colon;    method-return
- * Flags&colon;   no-reply-expected
- * Version&colon; 0
- * Serial&colon;  477
- * Headers&colon;
+ * |[
+ * Type:    method-return
+ * Flags:   no-reply-expected
+ * Version: 0
+ * Serial:  477
+ * Headers:
  *   reply-serial -> uint32 4
  *   destination -> ':1.159'
  *   sender -> ':1.146'
  *   num-unix-fds -> uint32 1
- * Body&colon; ()
- * UNIX File Descriptors&colon;
+ * Body: ()
+ * UNIX File Descriptors:
  *   fd 12: dev=0:10,mode=020620,ino=5,uid=500,gid=5,rdev=136:2,size=0,atime=1273085037,mtime=1273085851,ctime=1272982635
- * </programlisting>
+ * ]|
  *
  * Returns: A string that should be freed with g_free().
  *
@@ -3129,10 +3480,10 @@ g_dbus_message_print (GDBusMessage *message,
                                           statbuf.st_mode);
                   g_string_append_printf (fs, "%s" "ino=%" G_GUINT64_FORMAT, fs->len > 0 ? "," : "",
                                           (guint64) statbuf.st_ino);
-                  g_string_append_printf (fs, "%s" "uid=%d", fs->len > 0 ? "," : "",
-                                          statbuf.st_uid);
-                  g_string_append_printf (fs, "%s" "gid=%d", fs->len > 0 ? "," : "",
-                                          statbuf.st_gid);
+                  g_string_append_printf (fs, "%s" "uid=%u", fs->len > 0 ? "," : "",
+                                          (guint) statbuf.st_uid);
+                  g_string_append_printf (fs, "%s" "gid=%u", fs->len > 0 ? "," : "",
+                                          (guint) statbuf.st_gid);
                   g_string_append_printf (fs, "%s" "rdev=%d:%d", fs->len > 0 ? "," : "",
                                           major (statbuf.st_rdev), minor (statbuf.st_rdev));
                   g_string_append_printf (fs, "%s" "size=%" G_GUINT64_FORMAT, fs->len > 0 ? "," : "",
@@ -3275,6 +3626,8 @@ g_dbus_message_copy (GDBusMessage  *message,
   while (g_hash_table_iter_next (&iter, &header_key, (gpointer) &header_value))
     g_hash_table_insert (ret->headers, header_key, g_variant_ref (header_value));
 
+#ifdef G_OS_UNIX
  out:
+#endif
   return ret;
 }

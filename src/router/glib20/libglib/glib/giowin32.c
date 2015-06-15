@@ -17,9 +17,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -1625,7 +1623,8 @@ g_io_channel_new_file (const gchar  *filename,
     MODE_W = 1 << 1,
     MODE_A = 1 << 2,
     MODE_PLUS = 1 << 3,
-  } mode_num;
+  };
+  int mode_num;
 
   g_return_val_if_fail (filename != NULL, NULL);
   g_return_val_if_fail (mode != NULL, NULL);
@@ -1972,12 +1971,13 @@ static GIOFuncs win32_channel_sock_funcs = {
 /**
  * g_io_channel_win32_new_messages:
  * @hwnd: a window handle.
- * @Returns: a new #GIOChannel.
  *
  * Creates a new #GIOChannel given a window handle on Windows.
  *
  * This function creates a #GIOChannel that can be used to poll for
  * Windows messages for the window in question.
+ *
+ * Returns: a new #GIOChannel.
  **/
 GIOChannel *
 #if GLIB_SIZEOF_VOID_P == 8
@@ -2045,7 +2045,6 @@ g_io_channel_win32_new_fd_internal (gint             fd,
 /**
  * g_io_channel_win32_new_fd:
  * @fd: a C library file descriptor.
- * @Returns: a new #GIOChannel.
  *
  * Creates a new #GIOChannel given a file descriptor on Windows. This
  * works for file descriptors from the C runtime.
@@ -2069,6 +2068,8 @@ g_io_channel_win32_new_fd_internal (gint             fd,
  * thread. Your code should call only g_io_channel_read().
  *
  * This function is available only in GLib on Windows.
+ *
+ * Returns: a new #GIOChannel.
  **/
 GIOChannel *
 g_io_channel_win32_new_fd (gint fd)
@@ -2095,7 +2096,6 @@ g_io_channel_win32_get_fd (GIOChannel *channel)
 /**
  * g_io_channel_win32_new_socket:
  * @socket: a Winsock socket
- * @Returns: a new #GIOChannel
  *
  * Creates a new #GIOChannel given a socket on Windows.
  *
@@ -2105,6 +2105,8 @@ g_io_channel_win32_get_fd (GIOChannel *channel)
  * Polling a #GSource created to watch a channel for a socket puts the
  * socket in non-blocking mode. This is a side-effect of the
  * implementation and unavoidable.
+ *
+ * Returns: a new #GIOChannel
  **/
 GIOChannel *
 g_io_channel_win32_new_socket (int socket)

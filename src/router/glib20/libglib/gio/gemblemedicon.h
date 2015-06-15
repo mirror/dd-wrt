@@ -13,20 +13,18 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Matthias Clasen <mclasen@redhat.com>
  *         Clemens N. Buss <cebuzz@gmail.com>
  */
 
+#ifndef __G_EMBLEMED_ICON_H__
+#define __G_EMBLEMED_ICON_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_EMBLEMED_ICON_H__
-#define __G_EMBLEMED_ICON_H__
 
 #include <gio/gicon.h>
 #include <gio/gemblem.h>
@@ -62,14 +60,20 @@ struct _GEmblemedIconClass
   GObjectClass parent_class;
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType  g_emblemed_icon_get_type    (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GIcon *g_emblemed_icon_new         (GIcon         *icon,
                                     GEmblem       *emblem);
+GLIB_AVAILABLE_IN_ALL
 GIcon *g_emblemed_icon_get_icon    (GEmblemedIcon *emblemed);
+GLIB_AVAILABLE_IN_ALL
 GList *g_emblemed_icon_get_emblems (GEmblemedIcon *emblemed);
+GLIB_AVAILABLE_IN_ALL
 void   g_emblemed_icon_add_emblem  (GEmblemedIcon *emblemed,
                                     GEmblem       *emblem);
+GLIB_AVAILABLE_IN_ALL
 void   g_emblemed_icon_clear_emblems  (GEmblemedIcon *emblemed);
 
 G_END_DECLS

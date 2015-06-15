@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -102,11 +100,33 @@ test_mixed_address (void)
   g_assert (!g_dbus_is_supported_address ("tcp:host=localhost,port=42;tcp:family=bla", NULL));
 }
 
+static const struct { const char *before; const char *after; } escaping[] = {
+      { "foo", "foo" },
+      { "/.\\-_", "/.\\-_" },
+      { "<=>", "%3C%3D%3E" },
+      { "/foo~1", "/foo%7E1" },
+      { "\xe2\x98\xad\xff", "%E2%98%AD%FF" },
+      { NULL, NULL }
+};
+
+static void
+test_escape_address (void)
+{
+  gsize i;
+
+  for (i = 0; escaping[i].before != NULL; i++)
+    {
+      gchar *s = g_dbus_address_escape_value (escaping[i].before);
+
+      g_assert_cmpstr (s, ==, escaping[i].after);
+      g_free (s);
+    }
+}
+
 int
 main (int   argc,
       char *argv[])
 {
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/gdbus/empty-address", test_empty_address);
@@ -117,6 +137,7 @@ main (int   argc,
   g_test_add_func ("/gdbus/tcp-address", test_tcp_address);
   g_test_add_func ("/gdbus/autolaunch-address", test_autolaunch_address);
   g_test_add_func ("/gdbus/mixed-address", test_mixed_address);
+  g_test_add_func ("/gdbus/escape-address", test_escape_address);
 
   return g_test_run();
 }

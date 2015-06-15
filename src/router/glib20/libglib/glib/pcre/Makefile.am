@@ -1,10 +1,11 @@
-include $(top_srcdir)/Makefile.decl
+include $(top_srcdir)/glib.mk
 
-noinst_LTLIBRARIES = libpcre.la
+noinst_LTLIBRARIES += libpcre.la
 
 libpcre_la_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\"GLib-GRegex\" \
 	-DHAVE_CONFIG_H \
+	-DHAVE_MEMMOVE \
 	-DSUPPORT_UCP \
 	-DSUPPORT_UTF \
 	-DSUPPORT_UTF8 \
@@ -25,6 +26,7 @@ libpcre_la_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 libpcre_la_CFLAGS = \
+	$(GLIB_HIDDEN_VISIBILITY_CFLAGS) \
 	$(PCRE_WARN_CFLAGS) \
 	$(DEP_CFLAGS) \
 	$(AM_CFLAGS)

@@ -16,8 +16,7 @@
 
    You should have received a copy of the GNU Library General Public
    License along with the Gnome Library; see the file COPYING.LIB.  If not,
-   write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.
+   see <http://www.gnu.org/licenses/>.
 
    Authors: 
 		 John McCutchan <john@johnmccutchan.com>
@@ -27,6 +26,7 @@
 #include <glib.h>
 #include "inotify-missing.h"
 #include "inotify-path.h"
+#include "glib-private.h"
 
 #define SCAN_MISSING_TIME 4 /* 1/4 Hz */
 
@@ -70,8 +70,13 @@ _im_add (inotify_sub *sub)
   /* If the timeout is turned off, we turn it back on */
   if (!scan_missing_running)
     {
+      GSource *source;
+
       scan_missing_running = TRUE;
-      g_timeout_add_seconds (SCAN_MISSING_TIME, im_scan_missing, NULL);
+      source = g_timeout_source_new_seconds (SCAN_MISSING_TIME);
+      g_source_set_callback (source, im_scan_missing, NULL, NULL);
+      g_source_attach (source, GLIB_PRIVATE_CALL (g_get_worker_context) ());
+      g_source_unref (source);
     }
 }
 
@@ -148,20 +153,5 @@ im_scan_missing (gpointer user_data)
     {
       G_UNLOCK (inotify_lock);
       return TRUE;
-    }
-}
-
-
-/* inotify_lock must be held */
-void
-_im_diag_dump (GIOChannel *ioc)
-{
-  GList *l;
-  g_io_channel_write_chars (ioc, "missing list:\n", -1, NULL, NULL);
-  for (l = missing_sub_list; l; l = l->next)
-    {
-      inotify_sub *sub = l->data;
-      g_io_channel_write_chars (ioc, sub->dirname, -1, NULL, NULL);
-      g_io_channel_write_chars (ioc, "\n", -1, NULL, NULL);
     }
 }

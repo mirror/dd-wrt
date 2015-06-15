@@ -25,6 +25,8 @@
 
 static volatile int mtsafe_call_counter = 0; /* multi thread safe call counter */
 static int          unsafe_call_counter = 0; /* single-threaded call counter */
+static GCond sync_cond;
+static GMutex sync_mutex;
 
 #define NUM_COUNTER_INCREMENTS 100000
 
@@ -41,7 +43,7 @@ call_counter_init (gpointer tclass)
     }
 }
 
-static void interface_per_class_init () { call_counter_init (NULL); }
+static void interface_per_class_init (void) { call_counter_init (NULL); }
 
 /* define 3 test interfaces */
 typedef GTypeInterface MyFace0Interface;
@@ -52,10 +54,6 @@ typedef GTypeInterface MyFace1Interface;
 static GType my_face1_get_type (void);
 G_DEFINE_INTERFACE (MyFace1, my_face1, G_TYPE_OBJECT);
 static void my_face1_default_init (MyFace1Interface *iface) { call_counter_init (iface); }
-typedef GTypeInterface MyFace2Interface;
-static GType my_face2_get_type (void);
-G_DEFINE_INTERFACE (MyFace2, my_face2, G_TYPE_OBJECT);
-static void my_face2_default_init (MyFace2Interface *iface) { call_counter_init (iface); }
 
 /* define 3 test objects, adding interfaces 0 & 1, and adding interface 2 after class initialization */
 typedef GObject         MyTester0;
@@ -69,6 +67,14 @@ static void my_tester0_init (MyTester0*t) {}
 static void my_tester0_class_init (MyTester0Class*c) { call_counter_init (c); }
 typedef GObject         MyTester1;
 typedef GObjectClass    MyTester1Class;
+
+/* Disabled for now (see https://bugzilla.gnome.org/show_bug.cgi?id=687659) */
+#if 0
+typedef GTypeInterface MyFace2Interface;
+static GType my_face2_get_type (void);
+G_DEFINE_INTERFACE (MyFace2, my_face2, G_TYPE_OBJECT);
+static void my_face2_default_init (MyFace2Interface *iface) { call_counter_init (iface); }
+
 static GType my_tester1_get_type (void);
 G_DEFINE_TYPE_WITH_CODE (MyTester1, my_tester1, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (my_face0_get_type(), interface_per_class_init);
@@ -85,9 +91,6 @@ G_DEFINE_TYPE_WITH_CODE (MyTester2, my_tester2, G_TYPE_OBJECT,
                          );
 static void my_tester2_init (MyTester2*t) {}
 static void my_tester2_class_init (MyTester2Class*c) { call_counter_init (c); }
-
-static GCond sync_cond;
-static GMutex sync_mutex;
 
 static gpointer
 tester_init_thread (gpointer data)
@@ -114,32 +117,34 @@ tester_init_thread (gpointer data)
 static void
 test_threaded_class_init (void)
 {
-  GThread *thread;
+  GThread *t1, *t2, *t3;
 
   /* pause newly created threads */
   g_mutex_lock (&sync_mutex);
 
   /* create threads */
-  thread = g_thread_create (tester_init_thread, (gpointer) my_tester0_get_type(), TRUE, NULL);
-  g_thread_unref (thread);
-  thread = g_thread_create (tester_init_thread, (gpointer) my_tester1_get_type(), TRUE, NULL);
-  g_thread_unref (thread);
-  thread = g_thread_create (tester_init_thread, (gpointer) my_tester2_get_type(), TRUE, NULL);
-  g_thread_unref (thread);
+  t1 = g_thread_create (tester_init_thread, (gpointer) my_tester0_get_type(), TRUE, NULL);
+  t2 = g_thread_create (tester_init_thread, (gpointer) my_tester1_get_type(), TRUE, NULL);
+  t3 = g_thread_create (tester_init_thread, (gpointer) my_tester2_get_type(), TRUE, NULL);
 
   /* execute threads */
   g_mutex_unlock (&sync_mutex);
   while (g_atomic_int_get (&mtsafe_call_counter) < (3 + 3 + 3 * 3) * NUM_COUNTER_INCREMENTS)
     {
       if (g_test_verbose())
-        g_print ("Initializers counted: %u\n", g_atomic_int_get (&mtsafe_call_counter));
+        g_printerr ("Initializers counted: %u\n", g_atomic_int_get (&mtsafe_call_counter));
       g_usleep (50 * 1000); /* wait for threads to complete */
     }
   if (g_test_verbose())
-    g_print ("Total initializers: %u\n", g_atomic_int_get (&mtsafe_call_counter));
+    g_printerr ("Total initializers: %u\n", g_atomic_int_get (&mtsafe_call_counter));
   /* ensure non-corrupted counter updates */
   g_assert_cmpint (g_atomic_int_get (&mtsafe_call_counter), ==, unsafe_call_counter);
+
+  g_thread_join (t1);
+  g_thread_join (t2);
+  g_thread_join (t3);
 }
+#endif
 
 typedef struct {
   GObject parent;
@@ -260,7 +265,7 @@ test_threaded_weak_ref (void)
       GError *error = NULL;
 
       if (g_test_verbose () && (i % (n/20)) == 0)
-        g_print ("%u%%\n", ((i * 100) / n));
+        g_printerr ("%u%%\n", ((i * 100) / n));
 
       /* Have an object and a weak ref to it */
       data.strong = g_object_new (my_tester0_get_type (), NULL);
@@ -327,7 +332,7 @@ test_threaded_weak_ref (void)
     }
 
   if (g_test_verbose ())
-    g_print ("Race won by get %u times, unref %u times\n",
+    g_printerr ("Race won by get %u times, unref %u times\n",
              get_wins, unref_wins);
 }
 
@@ -336,9 +341,8 @@ main (int   argc,
       char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
-  g_type_init ();
 
-  g_test_add_func ("/GObject/threaded-class-init", test_threaded_class_init);
+  /* g_test_add_func ("/GObject/threaded-class-init", test_threaded_class_init); */
   g_test_add_func ("/GObject/threaded-object-init", test_threaded_object_init);
   g_test_add_func ("/GObject/threaded-weak-ref", test_threaded_weak_ref);
 

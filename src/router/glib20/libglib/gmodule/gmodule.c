@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -38,7 +36,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#ifdef HAVE_UNISTD_H
+#ifdef G_OS_UNIX
 #include <unistd.h>
 #endif
 #ifdef G_OS_WIN32
@@ -56,11 +54,10 @@
  * These functions provide a portable way to dynamically load object files
  * (commonly known as 'plug-ins'). The current implementation supports all
  * systems that provide an implementation of dlopen() (e.g. Linux/Sun), as
- * well as HP-UX via its shl_load() mechanism, and Windows platforms via DLLs.
+ * well as Windows platforms via DLLs.
  *
  * A program which wants to use these functions must be linked to the
- * libraries output by the command
- * <command>pkg-config --libs gmodule-2.0</command>.
+ * libraries output by the command `pkg-config --libs gmodule-2.0`.
  *
  * To use them you must first determine whether dynamic loading
  * is supported on the platform by calling g_module_supported().
@@ -78,13 +75,12 @@
  *
  * If your module introduces static data to common subsystems in the running
  * program, e.g. through calling
- * <literal>g_quark_from_static_string ("my-module-stuff")</literal>,
+ * `g_quark_from_static_string ("my-module-stuff")`,
  * it must ensure that it is never unloaded, by calling g_module_make_resident().
  *
- * <example>
- * <title>Calling a function defined in a <structname>GModule</structname></title>
- * <programlisting>
- * /&ast; the function signature for 'say_hello' &ast;/
+ * Example: Calling a function defined in a GModule
+ * |[<!-- language="C" --> 
+ * // the function signature for 'say_hello'
  * typedef void (* SayHelloFunc) (const char *message);
  *
  * gboolean
@@ -97,16 +93,16 @@
  *   if (!module)
  *     {
  *       g_set_error (error, FOO_ERROR, FOO_ERROR_BLAH,
- *                    "&percnt;s", g_module_error ());
+ *                    "%s", g_module_error ());
  *       return FALSE;
  *     }
  *
- *   if (!g_module_symbol (module, "say_hello", (gpointer *)&amp;say_hello))
+ *   if (!g_module_symbol (module, "say_hello", (gpointer *)&say_hello))
  *     {
  *       g_set_error (error, SAY_ERROR, SAY_ERROR_OPEN,
- *                    "&percnt;s: &percnt;s", filename, g_module_error ());
+ *                    "%s: %s", filename, g_module_error ());
  *       if (!g_module_close (module))
- *         g_warning ("&percnt;s: &percnt;s", filename, g_module_error ());
+ *         g_warning ("%s: %s", filename, g_module_error ());
  *       return FALSE;
  *     }
  *
@@ -115,27 +111,26 @@
  *       g_set_error (error, SAY_ERROR, SAY_ERROR_OPEN,
  *                    "symbol say_hello is NULL");
  *       if (!g_module_close (module))
- *         g_warning ("&percnt;s: &percnt;s", filename, g_module_error ());
+ *         g_warning ("%s: %s", filename, g_module_error ());
  *       return FALSE;
  *     }
  *
- *   /&ast; call our function in the module &ast;/
+ *   // call our function in the module
  *   say_hello ("Hello world!");
  *
  *   if (!g_module_close (module))
- *     g_warning ("&percnt;s: &percnt;s", filename, g_module_error ());
+ *     g_warning ("%s: %s", filename, g_module_error ());
  *   return TRUE;
  *  }
- * </programlisting>
- * </example>
+ * ]|
  */
 
 /**
  * GModule:
  *
  * The #GModule struct is an opaque data structure to represent a
- * <link linkend="glib-Dynamic-Loading-of-Modules">Dynamically-Loaded
- * Module</link>. It should only be accessed via the following functions.
+ * [dynamically-loaded module][glib-Dynamic-Loading-of-Modules].
+ * It should only be accessed via the following functions.
  */
 
 /**
@@ -143,7 +138,6 @@
  * @module: the #GModule corresponding to the module which has just been loaded
  *
  * Specifies the type of the module initialization function.
- * <indexterm zone="g-module-check-init"><primary>g_module_check_init</primary></indexterm>
  * If a module contains a function named g_module_check_init() it is called
  * automatically when the module is loaded. It is passed the #GModule structure
  * and should return %NULL on success or a string describing the initialization
@@ -156,7 +150,6 @@
  * GModuleUnload:
  * @module: the #GModule about to be unloaded
  *
- * <indexterm zone="g-module-unload"><primary>g_module_unload</primary></indexterm>
  * Specifies the type of the module function called when it is unloaded.
  * If a module contains a function named g_module_unload() it is called
  * automatically when the module is unloaded.
@@ -167,8 +160,8 @@
  * G_MODULE_SUFFIX:
  *
  * Expands to the proper shared library suffix for the current platform
- * without the leading dot. For the most Unices and Linux this is "so",
- * for some HP-UX versions this is "sl" and for Windows this is "dll".
+ * without the leading dot. For most Unices and Linux this is "so", and
+ * for Windows this is "dll".
  */
 
 /**
@@ -187,9 +180,7 @@
 
 /* We maintain a list of modules, so we can reference count them.
  * That's needed because some platforms don't support references counts on
- * modules e.g. the shl_* implementation of HP-UX
- * (http://www.stat.umn.edu/~luke/xls/projects/dlbasics/dlbasics.html).
- * Also, the module for the program itself is kept seperatedly for
+ * modules. Also, the module for the program itself is kept seperately for
  * faster access and because it has special semantics.
  */
 
@@ -287,8 +278,6 @@ g_module_set_error (const gchar *error)
 #define	SUPPORT_OR_RETURN(rv)	{ g_module_set_error (NULL); }
 #if	(G_MODULE_IMPL == G_MODULE_IMPL_DL)
 #include "gmodule-dl.c"
-#elif	(G_MODULE_IMPL == G_MODULE_IMPL_DLD)
-#include "gmodule-dld.c"
 #elif	(G_MODULE_IMPL == G_MODULE_IMPL_WIN32)
 #include "gmodule-win32.c"
 #elif	(G_MODULE_IMPL == G_MODULE_IMPL_DYLD)
@@ -811,7 +800,7 @@ g_module_error (void)
  * g_module_symbol:
  * @module: a #GModule
  * @symbol_name: the name of the symbol to find
- * @symbol: returns the pointer to the symbol value
+ * @symbol: (out): returns the pointer to the symbol value
  *
  * Gets a symbol pointer from a module, such as one exported
  * by #G_MODULE_EXPORT. Note that a valid symbol can be %NULL.
@@ -852,7 +841,7 @@ g_module_symbol (GModule     *module,
     {
       gchar *error;
 
-      error = g_strconcat ("`", symbol_name, "': ", module_error, NULL);
+      error = g_strconcat ("'", symbol_name, "': ", module_error, NULL);
       g_module_set_error (error);
       g_free (error);
       *symbol = NULL;
@@ -902,8 +891,8 @@ g_module_name (GModule *module)
 
 /**
  * g_module_build_path:
- * @directory: the directory where the module is. This can be %NULL
- *     or the empty string to indicate that the standard platform-specific
+ * @directory: (allow-none): the directory where the module is. This can be
+ *     %NULL or the empty string to indicate that the standard platform-specific
  *     directories will be used, though that is not recommended
  * @module_name: the name of the module
  *
@@ -917,10 +906,9 @@ g_module_name (GModule *module)
  * since the wrong module may be found.
  *
  * For example, calling g_module_build_path() on a Linux system with a
- * @directory of <filename>/lib</filename> and a @module_name of "mylibrary"
- * will return <filename>/lib/libmylibrary.so</filename>. On a Windows system,
- * using <filename>\Windows</filename> as the directory it will return
- * <filename>\Windows\mylibrary.dll</filename>.
+ * @directory of `/lib` and a @module_name of "mylibrary" will return
+ * `/lib/libmylibrary.so`. On a Windows system, using `\Windows` as the
+ * directory it will return `\Windows\mylibrary.dll`.
  *
  * Returns: the complete path of the module, including the standard library
  *     prefix and suffix. This should be freed when no longer needed

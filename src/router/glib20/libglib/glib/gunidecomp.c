@@ -15,8 +15,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with the Gnome Library; see the file COPYING.LIB.  If not,
- * write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- *   Boston, MA 02111-1307, USA.
+ * see <http://www.gnu.org/licenses/>.
  */
 
 /**
@@ -27,16 +26,16 @@
  * @See_also: g_locale_to_utf8(), g_locale_from_utf8()
  *
  * This section describes a number of functions for dealing with
- * Unicode characters and strings.  There are analogues of the
- * traditional <filename>ctype.h</filename> character classification
- * and case conversion functions, UTF-8 analogues of some string utility
- * functions, functions to perform normalization, case conversion and
- * collation on UTF-8 strings and finally functions to convert between
- * the UTF-8, UTF-16 and UCS-4 encodings of Unicode.
+ * Unicode characters and strings. There are analogues of the
+ * traditional `ctype.h` character classification and case conversion
+ * functions, UTF-8 analogues of some string utility functions,
+ * functions to perform normalization, case conversion and collation
+ * on UTF-8 strings and finally functions to convert between the UTF-8,
+ * UTF-16 and UCS-4 encodings of Unicode.
  *
  * The implementations of the Unicode functions in GLib are based
  * on the Unicode Character Data tables, which are available from
- * <ulink url="http://www.unicode.org/">www.unicode.org</ulink>.
+ * [www.unicode.org](http://www.unicode.org/).
  * GLib 2.8 supports Unicode 4.0, GLib 2.10 supports Unicode 4.1,
  * GLib 2.12 supports Unicode 5.0, GLib 2.16.3 supports Unicode 5.1,
  * GLib 2.30 supports Unicode 6.0.
@@ -76,7 +75,7 @@
  * 
  * Determines the canonical combining class of a Unicode character.
  * 
- * Return value: the combining class of the character
+ * Returns: the combining class of the character
  *
  * Since: 2.14
  **/
@@ -225,7 +224,7 @@ find_decomposition (gunichar ch,
  *
  * Computes the canonical decomposition of a Unicode character.  
  * 
- * Return value: a newly allocated string of Unicode characters.
+ * Returns: a newly allocated string of Unicode characters.
  *   @result_len is set to the resulting length of the string.
  *
  * Deprecated: 2.30: Use the more flexible g_unichar_fully_decompose()
@@ -523,7 +522,7 @@ _g_utf8_normalize_wc (const gchar    *str,
  * a legacy encoding or pass it to a system with
  * less capable Unicode handling.
  *
- * Return value: a newly allocated string, that is the
+ * Returns: a newly allocated string, that is the
  *   normalized form of @str, or %NULL if @str is not
  *   valid UTF-8.
  **/
@@ -596,7 +595,8 @@ decompose_hangul_step (gunichar  ch,
  * recursively call this function on @a.  Or use
  * g_unichar_fully_decompose().
  *
- * See <ulink url="http://unicode.org/reports/tr15/">UAX#15</ulink>
+ * See
+ * [UAX#15](http://unicode.org/reports/tr15/)
  * for details.
  *
  * Returns: %TRUE if the character could be decomposed
@@ -662,7 +662,8 @@ g_unichar_decompose (gunichar  ch,
  *
  * If @a and @b do not compose a new character, @ch is set to zero.
  *
- * See <ulink url="http://unicode.org/reports/tr15/">UAX#15</ulink>
+ * See
+ * [UAX#15](http://unicode.org/reports/tr15/)
  * for details.
  *
  * Returns: %TRUE if the characters could be composed
@@ -704,10 +705,11 @@ g_unichar_compose (gunichar  a,
  * decompositions, so that is the size recommended. This is provided
  * as %G_UNICHAR_MAX_DECOMPOSITION_LENGTH.
  *
- * See <ulink url="http://unicode.org/reports/tr15/">UAX#15</ulink>
+ * See
+ * [UAX#15](http://unicode.org/reports/tr15/)
  * for details.
  *
- * Return value: the length of the full decomposition.
+ * Returns: the length of the full decomposition.
  *
  * Since: 2.30
  **/

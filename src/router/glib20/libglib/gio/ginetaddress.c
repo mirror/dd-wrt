@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Christian Kellner <gicmo@gnome.org>
  *          Samuel Cormier-Iijima <sciyoshi@gmail.com>
@@ -33,10 +31,26 @@
 #include "glibintl.h"
 #include "gnetworkingprivate.h"
 
+#ifdef G_OS_WIN32
+/* Ensure Windows XP runtime compatibility, while using
+ * inet_pton() and inet_ntop() if available
+ */
+#include "gwin32networking.h"
+#endif
+
+struct _GInetAddressPrivate
+{
+  GSocketFamily family;
+  union {
+    struct in_addr ipv4;
+    struct in6_addr ipv6;
+  } addr;
+};
 
 /**
  * SECTION:ginetaddress
  * @short_description: An IPv4/IPv6 address
+ * @include: gio/gio.h
  *
  * #GInetAddress represents an IPv4 or IPv6 internet address. Use
  * g_resolver_lookup_by_name() or g_resolver_lookup_by_name_async() to
@@ -56,30 +70,9 @@
  * An IPv4 or IPv6 internet address.
  */
 
-/* Networking initialization function, called from inside the g_once of
- * g_inet_address_get_type()
- */
-static void
-_g_networking_init (void)
-{
-#ifdef G_OS_WIN32
-  WSADATA wsadata;
-  if (WSAStartup (MAKEWORD (2, 0), &wsadata) != 0)
-    g_error ("Windows Sockets could not be initialized");
-#endif
-}
-
 G_DEFINE_TYPE_WITH_CODE (GInetAddress, g_inet_address, G_TYPE_OBJECT,
-			 _g_networking_init ();)
-
-struct _GInetAddressPrivate
-{
-  GSocketFamily family;
-  union {
-    struct in_addr ipv4;
-    struct in6_addr ipv6;
-  } addr;
-};
+                         G_ADD_PRIVATE (GInetAddress)
+			 g_networking_init ();)
 
 enum
 {
@@ -193,8 +186,6 @@ static void
 g_inet_address_class_init (GInetAddressClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-
-  g_type_class_add_private (klass, sizeof (GInetAddressPrivate));
 
   gobject_class->set_property = g_inet_address_set_property;
   gobject_class->get_property = g_inet_address_get_property;
@@ -382,10 +373,111 @@ g_inet_address_class_init (GInetAddressClass *klass)
 static void
 g_inet_address_init (GInetAddress *address)
 {
-  address->priv = G_TYPE_INSTANCE_GET_PRIVATE (address,
-                                               G_TYPE_INET_ADDRESS,
-                                               GInetAddressPrivate);
+  address->priv = g_inet_address_get_instance_private (address);
 }
+
+/* These are provided so that we can use inet_pton() and inet_ntop() on Windows
+ * if they are available (i.e. Vista and later), and use the existing code path
+ * on Windows XP/Server 2003.  We can drop this portion when we drop support for
+ * XP/Server 2003.
+ */
+#if defined(G_OS_WIN32) && _WIN32_WINNT < 0x0600
+static gint
+inet_pton (gint family,
+           const gchar *addr_string,
+           gpointer addr)
+{
+  /* For Vista/Server 2008 and later, there is native inet_pton() in Winsock2 */
+  if (ws2funcs.pInetPton != NULL)
+    return ws2funcs.pInetPton (family, addr_string, addr);
+  else
+    {
+      /* Fallback codepath for XP/Server 2003 */
+      struct sockaddr_storage sa;
+      struct sockaddr_in *sin = (struct sockaddr_in *)&sa;
+      struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&sa;
+      gint len = sizeof (sa);
+
+      /* We need to make sure to not pass a string of the form
+       * "IPv4addr:port" or "[IPv6addr]:port" to WSAStringToAddress(),
+       * since it would accept them (returning both the address and the
+       * port), but we only want to accept standalone IP addresses. (In
+       * the IPv6 case, WINE actually only checks for the ']', not the
+       * '[', which is why we do the same here.)
+       */
+      if (family != AF_INET && family != AF_INET6)
+        {
+          WSASetLastError (WSAEAFNOSUPPORT);
+          return -1;
+        }
+      if (!strchr (addr_string, ':'))
+        {
+          if (WSAStringToAddress ((LPTSTR) addr_string, AF_INET, NULL, (LPSOCKADDR) &sa, &len) == 0)
+            {
+              /* XXX: Figure out when WSAStringToAddress() accepts a IPv4 address but the
+                      numbers-and-dots address is actually not complete.  This code will be
+                      removed once XP/Server 2003 support is dropped... */
+              addr = &sin->sin_addr;
+              return 1;
+            }
+        }
+      if (!strchr (addr_string, ']'))
+        {
+          if (WSAStringToAddress ((LPTSTR) addr_string, AF_INET6, NULL, (LPSOCKADDR) &sa, &len) == 0)
+            {
+              addr = &sin6->sin6_addr;
+              return 1;
+            }
+        }
+      return 0;
+    }
+}
+
+static const gchar *
+inet_ntop (gint family,
+           const gpointer addr,
+           gchar *addr_str,
+           socklen_t size)
+{
+  /* On Vista/Server 2008 and later, there is native inet_ntop() in Winsock2 */
+  if (ws2funcs.pInetNtop != NULL)
+    return ws2funcs.pInetNtop (family, addr, addr_str, size);
+  else
+    {
+      /* Fallback codepath for XP/Server 2003 */
+      DWORD buflen = sizeof (addr_str), addrlen;
+      struct sockaddr_storage sa;
+      struct sockaddr_in *sin = (struct sockaddr_in *)&sa;
+      struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&sa;
+
+      memset (&sa, 0, sizeof (sa));
+      sa.ss_family = family;
+      if (sa.ss_family == AF_INET)
+        {
+          struct in_addr *addrv4 = (struct in_addr *) addr;
+
+          addrlen = sizeof (*sin);
+          memcpy (&sin->sin_addr, addrv4, sizeof (sin->sin_addr));
+        }
+      else if (sa.ss_family == AF_INET6)
+        {
+          struct in6_addr *addrv6 = (struct in6_addr *) addr;
+
+          addrlen = sizeof (*sin6);
+          memcpy (&sin6->sin6_addr, addrv6, sizeof (sin6->sin6_addr));
+        }
+      else
+        {
+          WSASetLastError (WSAEAFNOSUPPORT);
+          return NULL;
+        }
+      if (WSAAddressToString ((LPSOCKADDR) &sa, addrlen, NULL, addr_str, &buflen) == 0)
+        return addr_str;
+      else
+        return NULL;
+    }
+}
+#endif
 
 /**
  * g_inet_address_new_from_string:
@@ -401,34 +493,21 @@ g_inet_address_init (GInetAddress *address)
 GInetAddress *
 g_inet_address_new_from_string (const gchar *string)
 {
-#ifdef G_OS_WIN32
-  struct sockaddr_storage sa;
-  struct sockaddr_in *sin = (struct sockaddr_in *)&sa;
-  struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&sa;
-  gint len;
-#else /* !G_OS_WIN32 */
   struct in_addr in_addr;
   struct in6_addr in6_addr;
-#endif
 
-  /* Make sure _g_networking_init() has been called */
-  g_type_ensure (G_TYPE_INET_ADDRESS);
+  g_return_val_if_fail (string != NULL, NULL);
 
-#ifdef G_OS_WIN32
-  memset (&sa, 0, sizeof (sa));
-  len = sizeof (sa);
-  if (WSAStringToAddress ((LPTSTR) string, AF_INET, NULL, (LPSOCKADDR) &sa, &len) == 0)
-    return g_inet_address_new_from_bytes ((guint8 *)&sin->sin_addr, AF_INET);
-  else if (WSAStringToAddress ((LPTSTR) string, AF_INET6, NULL, (LPSOCKADDR) &sa, &len) == 0)
-    return g_inet_address_new_from_bytes ((guint8 *)&sin6->sin6_addr, AF_INET6);
-
-#else /* !G_OS_WIN32 */
+  /* If this GInetAddress is the first networking-related object to be
+   * created, then we won't have called g_networking_init() yet at
+   * this point.
+   */
+  g_networking_init ();
 
   if (inet_pton (AF_INET, string, &in_addr) > 0)
     return g_inet_address_new_from_bytes ((guint8 *)&in_addr, AF_INET);
   else if (inet_pton (AF_INET6, string, &in6_addr) > 0)
     return g_inet_address_new_from_bytes ((guint8 *)&in6_addr, AF_INET6);
-#endif
 
   return NULL;
 }
@@ -529,41 +608,13 @@ gchar *
 g_inet_address_to_string (GInetAddress *address)
 {
   gchar buffer[INET6_ADDRSTRLEN];
-#ifdef G_OS_WIN32
-  DWORD buflen = sizeof (buffer), addrlen;
-  struct sockaddr_storage sa;
-  struct sockaddr_in *sin = (struct sockaddr_in *)&sa;
-  struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&sa;
-#endif
 
   g_return_val_if_fail (G_IS_INET_ADDRESS (address), NULL);
-
-#ifdef G_OS_WIN32
-  sa.ss_family = address->priv->family;
-  if (address->priv->family == AF_INET)
-    {
-      addrlen = sizeof (*sin);
-      memcpy (&sin->sin_addr, &address->priv->addr.ipv4,
-	      sizeof (sin->sin_addr));
-      sin->sin_port = 0;
-    }
-  else
-    {
-      addrlen = sizeof (*sin6);
-      memcpy (&sin6->sin6_addr, &address->priv->addr.ipv6,
-	      sizeof (sin6->sin6_addr));
-      sin6->sin6_port = 0;
-    }
-  if (WSAAddressToString ((LPSOCKADDR) &sa, addrlen, NULL, buffer, &buflen) != 0)
-    return NULL;
-
-#else /* !G_OS_WIN32 */
 
   if (address->priv->family == AF_INET)
     inet_ntop (AF_INET, &address->priv->addr.ipv4, buffer, sizeof (buffer));
   else
     inet_ntop (AF_INET6, &address->priv->addr.ipv6, buffer, sizeof (buffer));
-#endif
 
   return g_strdup (buffer);
 }

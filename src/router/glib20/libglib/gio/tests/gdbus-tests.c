@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -68,15 +66,67 @@ _g_assert_property_notify_run (gpointer     object,
                                  G_CALLBACK (on_property_notify),
                                  &data);
   g_free (s);
-  timeout_id = g_timeout_add (30 * 1000,
-                              on_property_notify_timeout,
-                              &data);
+  timeout_id = g_timeout_add_seconds (30,
+                                      on_property_notify_timeout,
+                                      &data);
   g_main_loop_run (data.loop);
   g_signal_handler_disconnect (object, handler_id);
   g_source_remove (timeout_id);
   g_main_loop_unref (data.loop);
 
   return data.timed_out;
+}
+
+static gboolean
+_give_up (gpointer data)
+{
+  g_error ("%s", (const gchar *) data);
+  g_return_val_if_reached (TRUE);
+}
+
+void
+ensure_gdbus_testserver_up (void)
+{
+  guint id;
+  gchar *name_owner;
+  GDBusConnection *connection;
+  GDBusProxy *proxy;
+  GError *error = NULL;
+
+  connection = g_bus_get_sync (G_BUS_TYPE_SESSION,
+                               NULL,
+                               &error);
+
+  g_assert_no_error (error);
+  error = NULL;
+
+  proxy = g_dbus_proxy_new_sync (connection,
+                                 G_DBUS_PROXY_FLAGS_NONE,
+                                 NULL,                      /* GDBusInterfaceInfo */
+                                 "com.example.TestService", /* name */
+                                 "/com/example/TestObject", /* object path */
+                                 "com.example.Frob",        /* interface */
+                                 NULL, /* GCancellable */
+                                 &error);
+  g_assert_no_error (error);
+
+  id = g_timeout_add_seconds (60, _give_up,
+      "waited more than ~ 60s for gdbus-testserver to take its bus name");
+
+  while (TRUE)
+    {
+      name_owner = g_dbus_proxy_get_name_owner (proxy);
+
+      if (name_owner != NULL)
+        break;
+
+      g_main_context_iteration (NULL, TRUE);
+    }
+
+  g_source_remove (id);
+  g_free (name_owner);
+  g_object_unref (proxy);
+  g_object_unref (connection);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -117,9 +167,9 @@ _g_assert_signal_received_run (gpointer     object,
                                          signal_name,
                                          G_CALLBACK (on_signal_received),
                                          &data);
-  timeout_id = g_timeout_add (30 * 1000,
-                              on_signal_received_timeout,
-                              &data);
+  timeout_id = g_timeout_add_seconds (30,
+                                      on_signal_received_timeout,
+                                      &data);
   g_main_loop_run (data.loop);
   g_signal_handler_disconnect (object, handler_id);
   g_source_remove (timeout_id);

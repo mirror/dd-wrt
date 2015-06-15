@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -105,25 +103,30 @@ g_tls_client_connection_default_init (GTlsClientConnectionInterface *iface)
   /**
    * GTlsClientConnection:use-ssl3:
    *
-   * If %TRUE, tells the connection to use SSL 3.0 rather than trying
-   * to negotiate the best version of TLS or SSL to use. This can be
-   * used when talking to servers that don't implement version
-   * negotiation correctly and therefore refuse to handshake at all with
-   * a "modern" TLS handshake.
+   * If %TRUE, tells the connection to use a fallback version of TLS
+   * or SSL, rather than trying to negotiate the best version of TLS
+   * to use. This can be used when talking to servers that don't
+   * implement version negotiation correctly and therefore refuse to
+   * handshake at all with a "modern" TLS handshake.
+   *
+   * Despite the property name, the fallback version is not
+   * necessarily SSL 3.0; if SSL 3.0 has been disabled, the
+   * #GTlsClientConnection will use the next highest available version
+   * (normally TLS 1.0) as the fallback version.
    *
    * Since: 2.28
    */
   g_object_interface_install_property (iface,
 				       g_param_spec_boolean ("use-ssl3",
-							     P_("Use SSL3"),
-							     P_("Use SSL 3.0 rather than trying to use TLS 1.x"),
+							     P_("Use fallback"),
+							     P_("Use fallback version of SSL/TLS rather than most recent version"),
 							     FALSE,
 							     G_PARAM_READWRITE |
 							     G_PARAM_CONSTRUCT |
 							     G_PARAM_STATIC_STRINGS));
 
   /**
-   * GTlsClientConnection:accepted-cas:
+   * GTlsClientConnection:accepted-cas: (type GLib.List) (element-type GLib.ByteArray)
    *
    * A list of the distinguished names of the Certificate Authorities
    * that the server will accept client certificates signed by. If the
@@ -153,7 +156,7 @@ g_tls_client_connection_default_init (GTlsClientConnectionInterface *iface)
  * must have pollable input and output streams) which is assumed to
  * communicate with the server identified by @server_identity.
  *
- * Return value: (transfer full) (type GTlsClientConnection): the new
+ * Returns: (transfer full) (type GTlsClientConnection): the new
  * #GTlsClientConnection, or %NULL on error
  *
  * Since: 2.28
@@ -181,7 +184,7 @@ g_tls_client_connection_new (GIOStream           *base_io_stream,
  *
  * Gets @conn's validation flags
  *
- * Return value: the validation flags
+ * Returns: the validation flags
  *
  * Since: 2.28
  */
@@ -222,7 +225,7 @@ g_tls_client_connection_set_validation_flags (GTlsClientConnection  *conn,
  *
  * Gets @conn's expected server identity
  *
- * Return value: (transfer none): a #GSocketConnectable describing the
+ * Returns: (transfer none): a #GSocketConnectable describing the
  * expected server identity, or %NULL if the expected identity is not
  * known.
  *
@@ -270,7 +273,7 @@ g_tls_client_connection_set_server_identity (GTlsClientConnection *conn,
  * highest-supported version of TLS; see
  * g_tls_client_connection_set_use_ssl3().
  *
- * Return value: whether @conn will use SSL 3.0
+ * Returns: whether @conn will use SSL 3.0
  *
  * Since: 2.28
  */
@@ -319,7 +322,7 @@ g_tls_client_connection_set_use_ssl3 (GTlsClientConnection *conn,
  * Each item in the list is a #GByteArray which contains the complete
  * subject DN of the certificate authority.
  *
- * Return value: (element-type GByteArray) (transfer full): the list of
+ * Returns: (element-type GByteArray) (transfer full): the list of
  * CA DNs. You should unref each element with g_byte_array_unref() and then
  * the free the list with g_list_free().
  *
@@ -334,4 +337,30 @@ g_tls_client_connection_get_accepted_cas (GTlsClientConnection *conn)
 
   g_object_get (G_OBJECT (conn), "accepted-cas", &accepted_cas, NULL);
   return accepted_cas;
+}
+
+/**
+ * g_tls_client_connection_copy_session_state:
+ * @conn: a #GTlsClientConnection
+ * @source: a #GTlsClientConnection
+ *
+ * Copies session state from one connection to another. This is
+ * not normally needed, but may be used when the same session
+ * needs to be used between different endpoints as is required
+ * by some protocols such as FTP over TLS. @source should have
+ * already completed a handshake, and @conn should not have
+ * completed a handshake.
+ *
+ * Since: 2.46
+ */
+void
+g_tls_client_connection_copy_session_state (GTlsClientConnection *conn,
+                                            GTlsClientConnection *source)
+{
+  g_return_if_fail (G_IS_TLS_CLIENT_CONNECTION (conn));
+  g_return_if_fail (G_IS_TLS_CLIENT_CONNECTION (source));
+  g_return_if_fail (G_TLS_CLIENT_CONNECTION_GET_INTERFACE (conn)->copy_session_state != NULL);
+
+  G_TLS_CLIENT_CONNECTION_GET_INTERFACE (conn)->copy_session_state (conn,
+                                                                    source);
 }

@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -90,7 +88,7 @@ G_BEGIN_DECLS
                                __FILE__,                                \
                                __LINE__,                                \
                                G_STRFUNC,                               \
-                               "Signal `" signal_name "' does not "     \
+                               "Signal '" signal_name "' does not "     \
                                "exist on object");                      \
         }                                                               \
       if (_g_assert_signal_received_run (object, signal_name))          \
@@ -99,7 +97,7 @@ G_BEGIN_DECLS
                                __FILE__,                                \
                                __LINE__,                                \
                                G_STRFUNC,                               \
-                               "Timed out waiting for signal `"         \
+                               "Timed out waiting for signal '"         \
                                signal_name "'");                        \
         }                                                               \
     }                                                                   \
@@ -115,6 +113,8 @@ gboolean _g_assert_signal_received_run (gpointer     object,
 GDBusConnection *_g_bus_get_priv (GBusType            bus_type,
                                   GCancellable       *cancellable,
                                   GError            **error);
+
+void ensure_gdbus_testserver_up (void);
 
 G_END_DECLS
 

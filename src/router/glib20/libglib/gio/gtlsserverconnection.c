@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -73,7 +71,7 @@ g_tls_server_connection_default_init (GTlsServerConnectionInterface *iface)
  * Creates a new #GTlsServerConnection wrapping @base_io_stream (which
  * must have pollable input and output streams).
  *
- * Return value: (transfer full) (type GTlsServerConnection): the new
+ * Returns: (transfer full) (type GTlsServerConnection): the new
  * #GTlsServerConnection, or %NULL on error
  *
  * Since: 2.28

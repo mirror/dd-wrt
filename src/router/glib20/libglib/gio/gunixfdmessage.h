@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
@@ -44,6 +42,8 @@ typedef struct _GUnixFDMessagePrivate                       GUnixFDMessagePrivat
 typedef struct _GUnixFDMessageClass                         GUnixFDMessageClass;
 typedef struct _GUnixFDMessage                              GUnixFDMessage;
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixFDMessage, g_object_unref)
+
 struct _GUnixFDMessageClass
 {
   GSocketControlMessageClass parent_class;
@@ -61,14 +61,20 @@ struct _GUnixFDMessage
   GUnixFDMessagePrivate *priv;
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType                   g_unix_fd_message_get_type                      (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GSocketControlMessage * g_unix_fd_message_new_with_fd_list              (GUnixFDList     *fd_list);
+GLIB_AVAILABLE_IN_ALL
 GSocketControlMessage * g_unix_fd_message_new                           (void);
 
+GLIB_AVAILABLE_IN_ALL
 GUnixFDList *           g_unix_fd_message_get_fd_list                   (GUnixFDMessage  *message);
 
+GLIB_AVAILABLE_IN_ALL
 gint *                  g_unix_fd_message_steal_fds                     (GUnixFDMessage  *message,
                                                                          gint            *length);
+GLIB_AVAILABLE_IN_ALL
 gboolean                g_unix_fd_message_append_fd                     (GUnixFDMessage  *message,
                                                                          gint             fd,
                                                                          GError         **error);

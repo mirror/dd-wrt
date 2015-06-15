@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Christian Kellner <gicmo@gnome.org> 
  */
@@ -26,7 +24,7 @@
 #include "ginputstream.h"
 #include "gseekable.h"
 #include "string.h"
-#include "gsimpleasyncresult.h"
+#include "gtask.h"
 #include "gioerror.h"
 #include "glibintl.h"
 
@@ -102,6 +100,7 @@ static GSource *g_memory_input_stream_create_source       (GPollableInputStream 
 static void     g_memory_input_stream_finalize            (GObject         *object);
 
 G_DEFINE_TYPE_WITH_CODE (GMemoryInputStream, g_memory_input_stream, G_TYPE_INPUT_STREAM,
+                         G_ADD_PRIVATE (GMemoryInputStream)
                          G_IMPLEMENT_INTERFACE (G_TYPE_SEEKABLE,
                                                 g_memory_input_stream_seekable_iface_init);
                          G_IMPLEMENT_INTERFACE (G_TYPE_POLLABLE_INPUT_STREAM,
@@ -114,8 +113,6 @@ g_memory_input_stream_class_init (GMemoryInputStreamClass *klass)
 {
   GObjectClass *object_class;
   GInputStreamClass *istream_class;
-
-  g_type_class_add_private (klass, sizeof (GMemoryInputStreamPrivate));
 
   object_class = G_OBJECT_CLASS (klass);
   object_class->finalize     = g_memory_input_stream_finalize;
@@ -165,9 +162,7 @@ g_memory_input_stream_pollable_iface_init (GPollableInputStreamInterface *iface)
 static void
 g_memory_input_stream_init (GMemoryInputStream *stream)
 {
-  stream->priv = G_TYPE_INSTANCE_GET_PRIVATE (stream,
-                                              G_TYPE_MEMORY_INPUT_STREAM,
-                                              GMemoryInputStreamPrivate);
+  stream->priv = g_memory_input_stream_get_instance_private (stream);
 }
 
 /**
@@ -217,8 +212,9 @@ g_memory_input_stream_new_from_data (const void     *data,
  * @bytes: a #GBytes
  *
  * Creates a new #GMemoryInputStream with data from the given @bytes.
- * 
+ *
  * Returns: new #GInputStream read from @bytes
+ *
  * Since: 2.34
  **/
 GInputStream *
@@ -377,17 +373,17 @@ g_memory_input_stream_skip_async (GInputStream        *stream,
                                   GAsyncReadyCallback  callback,
                                   gpointer             user_data)
 {
-  GSimpleAsyncResult *simple;
+  GTask *task;
   gssize nskipped;
+  GError *error = NULL;
 
-  nskipped = g_input_stream_skip (stream, count, cancellable, NULL);
-  simple = g_simple_async_result_new (G_OBJECT (stream),
-                                      callback,
-                                      user_data,
-                                      g_memory_input_stream_skip_async);
-  g_simple_async_result_set_op_res_gssize (simple, nskipped);
-  g_simple_async_result_complete_in_idle (simple);
-  g_object_unref (simple);
+  nskipped = G_INPUT_STREAM_GET_CLASS (stream)->skip (stream, count, cancellable, &error);
+  task = g_task_new (stream, cancellable, callback, user_data);
+  if (error)
+    g_task_return_error (task, error);
+  else
+    g_task_return_int (task, nskipped);
+  g_object_unref (task);
 }
 
 static gssize
@@ -395,14 +391,9 @@ g_memory_input_stream_skip_finish (GInputStream  *stream,
                                    GAsyncResult  *result,
                                    GError       **error)
 {
-  GSimpleAsyncResult *simple;
-  gssize nskipped;
+  g_return_val_if_fail (g_task_is_valid (result, stream), -1);
 
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_memory_input_stream_skip_async);
-  
-  nskipped = g_simple_async_result_get_op_res_gssize (simple);
-  return nskipped;
+  return g_task_propagate_int (G_TASK (result), error);
 }
 
 static void
@@ -412,14 +403,11 @@ g_memory_input_stream_close_async (GInputStream        *stream,
                                    GAsyncReadyCallback  callback,
                                    gpointer             user_data)
 {
-  GSimpleAsyncResult *simple;
-  
-  simple = g_simple_async_result_new (G_OBJECT (stream),
-				      callback,
-				      user_data,
-				      g_memory_input_stream_close_async);
-  g_simple_async_result_complete_in_idle (simple);
-  g_object_unref (simple);
+  GTask *task;
+
+  task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_return_boolean (task, TRUE);
+  g_object_unref (task);
 }
 
 static gboolean

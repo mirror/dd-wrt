@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <glib/glib.h>
@@ -62,7 +60,9 @@ static const struct {
 
   /* non-standard dot characters */
   { "example\xe3\x80\x82" "com", "example.com", TRUE, FALSE },
-  { "\xc3\xa9xample\xe3\x80\x82" "com", "xn--xample-9ua.com", TRUE, TRUE }
+  { "\xc3\xa9xample\xe3\x80\x82" "com", "xn--xample-9ua.com", TRUE, TRUE },
+  { "Å.idn.icann.org", "xn--5ca.idn.icann.org", TRUE, TRUE },
+  { "ℵℶℷ\xcd\x8f.idn.icann.org", "xn--4dbcd.idn.icann.org", TRUE, TRUE }
 };
 static const gint num_non_round_trip_names = G_N_ELEMENTS (non_round_trip_names);
 

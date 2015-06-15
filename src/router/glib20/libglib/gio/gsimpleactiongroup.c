@@ -12,12 +12,12 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
+
+#include "config.h"
 
 #include "gsimpleactiongroup.h"
 
@@ -29,6 +29,7 @@
  * SECTION:gsimpleactiongroup
  * @title: GSimpleActionGroup
  * @short_description: A simple GActionGroup implementation
+ * @include: gio/gio.h
  *
  * #GSimpleActionGroup is a hash table filled with #GAction objects,
  * implementing the #GActionGroup and #GActionMap interfaces.
@@ -43,6 +44,7 @@ static void g_simple_action_group_iface_init (GActionGroupInterface *);
 static void g_simple_action_group_map_iface_init (GActionMapInterface *);
 G_DEFINE_TYPE_WITH_CODE (GSimpleActionGroup,
   g_simple_action_group, G_TYPE_OBJECT,
+  G_ADD_PRIVATE (GSimpleActionGroup)
   G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_GROUP,
                          g_simple_action_group_iface_init);
   G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_MAP,
@@ -249,9 +251,7 @@ g_simple_action_group_finalize (GObject *object)
 static void
 g_simple_action_group_init (GSimpleActionGroup *simple)
 {
-  simple->priv = G_TYPE_INSTANCE_GET_PRIVATE (simple,
-                                              G_TYPE_SIMPLE_ACTION_GROUP,
-                                              GSimpleActionGroupPrivate);
+  simple->priv = g_simple_action_group_get_instance_private (simple);
   simple->priv->table = g_hash_table_new_full (g_str_hash, g_str_equal,
                                                g_free, g_object_unref);
 }
@@ -262,8 +262,6 @@ g_simple_action_group_class_init (GSimpleActionGroupClass *class)
   GObjectClass *object_class = G_OBJECT_CLASS (class);
 
   object_class->finalize = g_simple_action_group_finalize;
-
-  g_type_class_add_private (class, sizeof (GSimpleActionGroupPrivate));
 }
 
 static void
@@ -310,6 +308,8 @@ g_simple_action_group_new (void)
  * Returns: (transfer none): a #GAction, or %NULL
  *
  * Since: 2.28
+ *
+ * Deprecated: 2.38: Use g_action_map_lookup_action()
  */
 GAction *
 g_simple_action_group_lookup (GSimpleActionGroup *simple,
@@ -333,6 +333,8 @@ g_simple_action_group_lookup (GSimpleActionGroup *simple,
  * The action group takes its own reference on @action.
  *
  * Since: 2.28
+ *
+ * Deprecated: 2.38: Use g_action_map_add_action()
  **/
 void
 g_simple_action_group_insert (GSimpleActionGroup *simple,
@@ -353,6 +355,8 @@ g_simple_action_group_insert (GSimpleActionGroup *simple,
  * If no action of this name is in the group then nothing happens.
  *
  * Since: 2.28
+ *
+ * Deprecated: 2.38: Use g_action_map_remove_action()
  **/
 void
 g_simple_action_group_remove (GSimpleActionGroup *simple,
@@ -376,6 +380,8 @@ g_simple_action_group_remove (GSimpleActionGroup *simple,
  * and adding them to the action group.
  *
  * Since: 2.30
+ *
+ * Deprecated: 2.38: Use g_action_map_add_action_entries()
  **/
 void
 g_simple_action_group_add_entries (GSimpleActionGroup *simple,

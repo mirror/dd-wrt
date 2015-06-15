@@ -1,9 +1,11 @@
-#include <unistd.h>
 #include <glib.h>
 #include <glib/gwakeup.h>
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
 
 #ifdef _WIN32
-void alarm (int sec) { }
+static void alarm (int sec) { }
 #endif
 
 static gboolean

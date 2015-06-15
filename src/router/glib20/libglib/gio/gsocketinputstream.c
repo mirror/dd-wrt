@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Christian Kellner <gicmo@gnome.org>
  *          Samuel Cormier-Iijima <sciyoshi@gmail.com>
@@ -27,11 +25,19 @@
 #include "gsocketinputstream.h"
 #include "glibintl.h"
 
-#include "gsimpleasyncresult.h"
 #include "gcancellable.h"
 #include "gpollableinputstream.h"
 #include "gioerror.h"
 #include "gfiledescriptorbased.h"
+
+struct _GSocketInputStreamPrivate
+{
+  GSocket *socket;
+
+  /* pending operation metadata */
+  gpointer buffer;
+  gsize count;
+};
 
 static void g_socket_input_stream_pollable_iface_init (GPollableInputStreamInterface *iface);
 #ifdef G_OS_UNIX
@@ -42,11 +48,13 @@ static void g_socket_input_stream_file_descriptor_based_iface_init (GFileDescrip
 
 #ifdef G_OS_UNIX
 G_DEFINE_TYPE_WITH_CODE (GSocketInputStream, g_socket_input_stream, G_TYPE_INPUT_STREAM,
+                         G_ADD_PRIVATE (GSocketInputStream)
 			 G_IMPLEMENT_INTERFACE (G_TYPE_POLLABLE_INPUT_STREAM, g_socket_input_stream_pollable_iface_init)
 			 G_IMPLEMENT_INTERFACE (G_TYPE_FILE_DESCRIPTOR_BASED, g_socket_input_stream_file_descriptor_based_iface_init)
 			 )
 #else
 G_DEFINE_TYPE_WITH_CODE (GSocketInputStream, g_socket_input_stream, G_TYPE_INPUT_STREAM,
+                         G_ADD_PRIVATE (GSocketInputStream)
 			 G_IMPLEMENT_INTERFACE (G_TYPE_POLLABLE_INPUT_STREAM, g_socket_input_stream_pollable_iface_init)
 			 )
 #endif
@@ -55,17 +63,6 @@ enum
 {
   PROP_0,
   PROP_SOCKET
-};
-
-struct _GSocketInputStreamPrivate
-{
-  GSocket *socket;
-
-  /* pending operation metadata */
-  GSimpleAsyncResult *result;
-  GCancellable *cancellable;
-  gpointer buffer;
-  gsize count;
 };
 
 static void
@@ -114,8 +111,7 @@ g_socket_input_stream_finalize (GObject *object)
   if (stream->priv->socket)
     g_object_unref (stream->priv->socket);
 
-  if (G_OBJECT_CLASS (g_socket_input_stream_parent_class)->finalize)
-    (*G_OBJECT_CLASS (g_socket_input_stream_parent_class)->finalize) (object);
+  G_OBJECT_CLASS (g_socket_input_stream_parent_class)->finalize (object);
 }
 
 static gssize
@@ -186,8 +182,6 @@ g_socket_input_stream_class_init (GSocketInputStreamClass *klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GInputStreamClass *ginputstream_class = G_INPUT_STREAM_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (GSocketInputStreamPrivate));
-
   gobject_class->finalize = g_socket_input_stream_finalize;
   gobject_class->get_property = g_socket_input_stream_get_property;
   gobject_class->set_property = g_socket_input_stream_set_property;
@@ -221,11 +215,11 @@ g_socket_input_stream_pollable_iface_init (GPollableInputStreamInterface *iface)
 static void
 g_socket_input_stream_init (GSocketInputStream *stream)
 {
-  stream->priv = G_TYPE_INSTANCE_GET_PRIVATE (stream, G_TYPE_SOCKET_INPUT_STREAM, GSocketInputStreamPrivate);
+  stream->priv = g_socket_input_stream_get_instance_private (stream);
 }
 
 GSocketInputStream *
 _g_socket_input_stream_new (GSocket *socket)
 {
-  return G_SOCKET_INPUT_STREAM (g_object_new (G_TYPE_SOCKET_INPUT_STREAM, "socket", socket, NULL));
+  return g_object_new (G_TYPE_SOCKET_INPUT_STREAM, "socket", socket, NULL);
 }

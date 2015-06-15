@@ -13,14 +13,12 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
 
-#include "gcharset.h"
+#include "gcharsetprivate.h"
 
 #include "garray.h"
 #include "genviron.h"
@@ -87,7 +85,7 @@ get_alias_hash (void)
 /* As an abuse of the alias table, the following routines gets
  * the charsets that are aliases for the canonical name.
  */
-G_GNUC_INTERNAL const char **
+const char **
 _g_charset_get_aliases (const char *canonical_name)
 {
   GHashTable *alias_hash = get_alias_hash ();
@@ -154,13 +152,13 @@ charset_cache_free (gpointer data)
 
 /**
  * g_get_charset:
- * @charset: return location for character set name
+ * @charset: (out) (optional) (transfer none): return location for character set
+ *   name, or %NULL.
  *
- * Obtains the character set for the <link linkend="setlocale">current
- * locale</link>; you might use this character set as an argument to
- * g_convert(), to convert from the current locale's encoding to some
- * other encoding. (Frequently g_locale_to_utf8() and g_locale_from_utf8()
- * are nice shortcuts, though.)
+ * Obtains the character set for the [current locale][setlocale]; you
+ * might use this character set as an argument to g_convert(), to convert
+ * from the current locale's encoding to some other encoding. (Frequently
+ * g_locale_to_utf8() and g_locale_from_utf8() are nice shortcuts, though.)
  *
  * On Windows the character set returned by this function is the
  * so-called system default ANSI code-page. That is the character set
@@ -174,7 +172,7 @@ charset_cache_free (gpointer data)
  * The string returned in @charset is not allocated, and should not be
  * freed.
  *
- * Return value: %TRUE if the returned charset is UTF-8
+ * Returns: %TRUE if the returned charset is UTF-8
  */
 gboolean
 g_get_charset (const char **charset)
@@ -215,7 +213,7 @@ g_get_charset (const char **charset)
  *
  * Gets the character set for the current locale.
  *
- * Return value: a newly allocated string containing the name
+ * Returns: a newly allocated string containing the name
  *     of the character set. This string must be freed with g_free().
  */
 gchar *
@@ -440,7 +438,7 @@ append_locale_variants (GPtrArray *array,
  * For example, if @locale is "fr_BE", then the returned list
  * is "fr_BE", "fr".
  *
- * If you need the list of variants for the <emphasis>current locale</emphasis>,
+ * If you need the list of variants for the current locale,
  * use g_get_language_names().
  *
  * Returns: (transfer full) (array zero-terminated=1) (element-type utf8): a newly
@@ -471,15 +469,15 @@ guess_category_value (const gchar *category_name)
 {
   const gchar *retval;
 
-  /* The highest priority value is the `LANGUAGE' environment
+  /* The highest priority value is the 'LANGUAGE' environment
      variable.  This is a GNU extension.  */
   retval = g_getenv ("LANGUAGE");
   if ((retval != NULL) && (retval[0] != '\0'))
     return retval;
 
-  /* `LANGUAGE' is not set.  So we have to proceed with the POSIX
-     methods of looking to `LC_ALL', `LC_xxx', and `LANG'.  On some
-     systems this can be done by the `setlocale' function itself.  */
+  /* 'LANGUAGE' is not set.  So we have to proceed with the POSIX
+     methods of looking to 'LC_ALL', 'LC_xxx', and 'LANG'.  On some
+     systems this can be done by the 'setlocale' function itself.  */
 
   /* Setting of LC_ALL overwrites all other.  */
   retval = g_getenv ("LC_ALL");
@@ -541,11 +539,11 @@ language_names_cache_free (gpointer data)
  * For example, if LANGUAGE=de:en_US, then the returned list is
  * "de", "en_US", "en", "C".
  *
- * This function consults the environment variables <envar>LANGUAGE</envar>,
- * <envar>LC_ALL</envar>, <envar>LC_MESSAGES</envar> and <envar>LANG</envar>
- * to find the list of locales specified by the user.
+ * This function consults the environment variables `LANGUAGE`, `LC_ALL`,
+ * `LC_MESSAGES` and `LANG` to find the list of locales specified by the
+ * user.
  *
- * Return value: (array zero-terminated=1) (transfer none): a %NULL-terminated array of strings owned by GLib
+ * Returns: (array zero-terminated=1) (transfer none): a %NULL-terminated array of strings owned by GLib
  *    that must not be modified or freed.
  *
  * Since: 2.6

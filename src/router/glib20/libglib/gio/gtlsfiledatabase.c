@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Stef Walter <stefw@collabora.co.uk>
  */
@@ -35,7 +33,7 @@
  * @include: gio/gio.h
  *
  * #GTlsFileDatabase is implemented by #GTlsDatabase objects which load
- * their certificate information from a file. It is in interface which
+ * their certificate information from a file. It is an interface which
  * TLS library specific subtypes implement.
  *
  * Since: 2.30
@@ -84,7 +82,7 @@ g_tls_file_database_default_init (GTlsFileDatabaseInterface *iface)
  *
  * The certificates in @anchors must be PEM encoded.
  *
- * Return value: (transfer full) (type GTlsFileDatabase): the new
+ * Returns: (transfer full) (type GTlsFileDatabase): the new
  * #GTlsFileDatabase, or %NULL on error
  *
  * Since: 2.30

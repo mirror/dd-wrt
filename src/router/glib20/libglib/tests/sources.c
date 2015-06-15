@@ -9,9 +9,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2012 Red Hat, Inc
  */
@@ -54,6 +52,7 @@ thread_pool_attach_func (gpointer data,
   GSource *source = data;
 
   g_source_attach (source, context);
+  g_source_unref (source);
 }
 
 static void
@@ -103,7 +102,10 @@ main (int argc, char **argv)
 
   start = g_get_monotonic_time ();
   for (i = 0; i < NSOURCES; i++)
-    g_source_destroy (sources[i]);
+    {
+      g_source_destroy (sources[i]);
+      g_source_unref (sources[i]);
+    }
   end = g_get_monotonic_time ();
   g_print ("Remove in random order: %" G_GINT64_FORMAT "\n",
            (end - start) / 1000);
@@ -136,7 +138,10 @@ main (int argc, char **argv)
 
   start = g_get_monotonic_time ();
   for (i = 0; i < NSOURCES; i++)
-    g_source_destroy (sources[i]);
+    {
+      g_source_destroy (sources[i]);
+      g_source_unref (sources[i]);
+    }
   end = g_get_monotonic_time ();
   g_print ("Remove in random order: %" G_GINT64_FORMAT "\n",
            (end - start) / 1000);
@@ -175,5 +180,6 @@ main (int argc, char **argv)
   /* Make sure they really did get removed */
   g_main_context_iteration (context, FALSE);
 
+  g_free (sources);
   return 0;
 }

@@ -13,9 +13,18 @@
  */
 
 #include "config.h"
+
 #include "gunixconnection.h"
+#include "gnetworking.h"
+#include "gsocket.h"
+#include "gsocketcontrolmessage.h"
 #include "gunixcredentialsmessage.h"
+#include "gunixfdmessage.h"
 #include "glibintl.h"
+
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
 
 /**
  * SECTION:gunixconnection
@@ -30,26 +39,19 @@
  * It contains functions to do some of the UNIX socket specific
  * functionality like passing file descriptors.
  *
- * Note that <filename>&lt;gio/gunixconnection.h&gt;</filename> belongs to
- * the UNIX-specific GIO interfaces, thus you have to use the
- * <filename>gio-unix-2.0.pc</filename> pkg-config file when using it.
+ * Note that `<gio/gunixconnection.h>` belongs to the UNIX-specific
+ * GIO interfaces, thus you have to use the `gio-unix-2.0.pc`
+ * pkg-config file when using it.
  *
  * Since: 2.22
  */
 
-#include <gio/gsocketcontrolmessage.h>
-#include <gio/gunixfdmessage.h>
-#include <gio/gsocket.h>
-#include <unistd.h>
-
-#ifdef __linux__
-/* for getsockopt() and setsockopt() */
-#include <sys/types.h>          /* See NOTES */
-#include <sys/socket.h>
-#include <errno.h>
-#include <string.h>
-#endif
-
+/**
+ * GUnixConnection:
+ *
+ * #GUnixConnection is an opaque data structure and can only be accessed
+ * using the following functions.
+ **/
 
 G_DEFINE_TYPE_WITH_CODE (GUnixConnection, g_unix_connection,
 			 G_TYPE_SOCKET_CONNECTION,
@@ -161,7 +163,10 @@ g_unix_connection_receive_fd (GUnixConnection  *connection,
       gint i;
 
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-		   _("Expecting 1 control message, got %d"), nscm);
+        ngettext("Expecting 1 control message, got %d",
+                 "Expecting 1 control message, got %d",
+                 nscm),
+        nscm);
 
       for (i = 0; i < nscm; i++)
         g_object_unref (scms[i]);
@@ -192,7 +197,10 @@ g_unix_connection_receive_fd (GUnixConnection  *connection,
       gint i;
 
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-		   _("Expecting one fd, but got %d\n"), nfd);
+                   ngettext("Expecting one fd, but got %d\n",
+                            "Expecting one fd, but got %d\n",
+                            nfd),
+                   nfd);
 
       for (i = 0; i < nfd; i++)
         close (fds[i]);
@@ -359,18 +367,20 @@ g_unix_connection_send_credentials (GUnixConnection      *connection,
 }
 
 static void
-send_credentials_async_thread (GSimpleAsyncResult *result,
-                               GObject            *object,
-                               GCancellable       *cancellable)
+send_credentials_async_thread (GTask         *task,
+			       gpointer       source_object,
+			       gpointer       task_data,
+			       GCancellable  *cancellable)
 {
   GError *error = NULL;
 
-  if (!g_unix_connection_send_credentials (G_UNIX_CONNECTION (object),
-                                           cancellable,
-                                           &error))
-    {
-      g_simple_async_result_take_error (result, error);
-    }
+  if (g_unix_connection_send_credentials (G_UNIX_CONNECTION (source_object),
+					  cancellable,
+					  &error))
+    g_task_return_boolean (task, TRUE);
+  else
+    g_task_return_error (task, error);
+  g_object_unref (task);
 }
 
 /**
@@ -396,17 +406,11 @@ g_unix_connection_send_credentials_async (GUnixConnection      *connection,
                                           GAsyncReadyCallback   callback,
                                           gpointer              user_data)
 {
-  GSimpleAsyncResult *result;
+  GTask *task;
 
-  result = g_simple_async_result_new (G_OBJECT (connection),
-                                      callback, user_data,
-                                      g_unix_connection_send_credentials_async);
+  task = g_task_new (connection, cancellable, callback, user_data);
 
-  g_simple_async_result_run_in_thread (result,
-                                       send_credentials_async_thread,
-                                       G_PRIORITY_DEFAULT,
-                                       cancellable);
-  g_object_unref (result);
+  g_task_run_in_thread (task, send_credentials_async_thread);
 }
 
 /**
@@ -427,18 +431,9 @@ g_unix_connection_send_credentials_finish (GUnixConnection *connection,
                                            GAsyncResult    *result,
                                            GError         **error)
 {
-  g_return_val_if_fail (
-      g_simple_async_result_is_valid (result,
-                                      G_OBJECT (connection),
-                                      g_unix_connection_send_credentials_async),
-      FALSE);
+  g_return_val_if_fail (g_task_is_valid (result, connection), FALSE);
 
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-                                             error))
-    return FALSE;
-
-
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 /**
@@ -493,16 +488,14 @@ g_unix_connection_receive_credentials (GUnixConnection      *connection,
 #ifdef __linux__
   {
     gint opt_val;
-    socklen_t opt_len;
 
     turn_off_so_passcreds = FALSE;
     opt_val = 0;
-    opt_len = sizeof (gint);
-    if (getsockopt (g_socket_get_fd (socket),
-                    SOL_SOCKET,
-                    SO_PASSCRED,
-                    &opt_val,
-                    &opt_len) != 0)
+    if (!g_socket_get_option (socket,
+			      SOL_SOCKET,
+			      SO_PASSCRED,
+			      &opt_val,
+			      NULL))
       {
         g_set_error (error,
                      G_IO_ERROR,
@@ -511,24 +504,13 @@ g_unix_connection_receive_credentials (GUnixConnection      *connection,
                      strerror (errno));
         goto out;
       }
-    if (opt_len != sizeof (gint))
-      {
-        g_set_error (error,
-                     G_IO_ERROR,
-                     G_IO_ERROR_FAILED,
-                     _("Unexpected option length while checking if SO_PASSCRED is enabled for socket. "
-                       "Expected %d bytes, got %d"),
-                     (gint) sizeof (gint), (gint) opt_len);
-        goto out;
-      }
     if (opt_val == 0)
       {
-        opt_val = 1;
-        if (setsockopt (g_socket_get_fd (socket),
-                        SOL_SOCKET,
-                        SO_PASSCRED,
-                        &opt_val,
-                        sizeof opt_val) != 0)
+        if (!g_socket_set_option (socket,
+				  SOL_SOCKET,
+				  SO_PASSCRED,
+				  TRUE,
+				  NULL))
           {
             g_set_error (error,
                          G_IO_ERROR,
@@ -576,7 +558,9 @@ g_unix_connection_receive_credentials (GUnixConnection      *connection,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_FAILED,
-                       _("Expecting 1 control message, got %d"),
+                       ngettext("Expecting 1 control message, got %d",
+                                "Expecting 1 control message, got %d",
+                                nscm),
                        nscm);
           goto out;
         }
@@ -615,13 +599,11 @@ g_unix_connection_receive_credentials (GUnixConnection      *connection,
 #ifdef __linux__
   if (turn_off_so_passcreds)
     {
-      gint opt_val;
-      opt_val = 0;
-      if (setsockopt (g_socket_get_fd (socket),
-                      SOL_SOCKET,
-                      SO_PASSCRED,
-                      &opt_val,
-                      sizeof opt_val) != 0)
+      if (!g_socket_set_option (socket,
+				SOL_SOCKET,
+				SO_PASSCRED,
+				FALSE,
+				NULL))
         {
           g_set_error (error,
                        G_IO_ERROR,
@@ -644,21 +626,22 @@ g_unix_connection_receive_credentials (GUnixConnection      *connection,
 }
 
 static void
-receive_credentials_async_thread (GSimpleAsyncResult *result,
-                                  GObject            *object,
-                                  GCancellable       *cancellable)
+receive_credentials_async_thread (GTask         *task,
+				  gpointer       source_object,
+				  gpointer       task_data,
+				  GCancellable  *cancellable)
 {
   GCredentials *creds;
   GError *error = NULL;
 
-  creds = g_unix_connection_receive_credentials (G_UNIX_CONNECTION (object),
+  creds = g_unix_connection_receive_credentials (G_UNIX_CONNECTION (source_object),
                                                  cancellable,
                                                  &error);
-
-  if (creds == NULL)
-    g_simple_async_result_take_error (result, error);
+  if (creds)
+    g_task_return_pointer (task, creds, g_object_unref);
   else
-    g_simple_async_result_set_op_res_gpointer (result, creds, g_object_unref);
+    g_task_return_error (task, error);
+  g_object_unref (task);
 }
 
 /**
@@ -684,18 +667,11 @@ g_unix_connection_receive_credentials_async (GUnixConnection      *connection,
                                               GAsyncReadyCallback   callback,
                                               gpointer              user_data)
 {
-  GSimpleAsyncResult *result;
+  GTask *task;
 
-  result = g_simple_async_result_new (G_OBJECT (connection),
-                                      callback, user_data,
-                                      g_unix_connection_receive_credentials_async);
+  task = g_task_new (connection, cancellable, callback, user_data);
 
-  g_simple_async_result_run_in_thread (result,
-                                       receive_credentials_async_thread,
-                                       G_PRIORITY_DEFAULT,
-                                       cancellable);
-
-  g_object_unref (result);
+  g_task_run_in_thread (task, receive_credentials_async_thread);
 }
 
 /**
@@ -717,16 +693,7 @@ g_unix_connection_receive_credentials_finish (GUnixConnection *connection,
                                               GAsyncResult    *result,
                                               GError         **error)
 {
-  g_return_val_if_fail (
-      g_simple_async_result_is_valid (result,
-                                      G_OBJECT (connection),
-                                      g_unix_connection_receive_credentials_async),
-      NULL);
+  g_return_val_if_fail (g_task_is_valid (result, connection), NULL);
 
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
-                                             error))
-    return NULL;
-
-  return g_object_ref (g_simple_async_result_get_op_res_gpointer (
-      G_SIMPLE_ASYNC_RESULT (result)));
+  return g_task_propagate_pointer (G_TASK (result), error);
 }

@@ -13,9 +13,7 @@
  * Library General Public License for more details.
  *
  * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Stef Walter <stefw@collabora.co.uk>
  */
@@ -44,13 +42,15 @@
  * HMACs should be used when producing a cookie or hash based on data
  * and a key. Simple mechanisms for using SHA1 and other algorithms to
  * digest a key and data together are vulnerable to various security
- * issues. <ulink url="http://en.wikipedia.org/wiki/HMAC">HMAC</ulink>
+ * issues.
+ * [HMAC](http://en.wikipedia.org/wiki/HMAC)
  * uses algorithms like SHA1 in a secure way to produce a digest of a
  * key and data.
  *
  * Both the key and data are arbitrary byte arrays of bytes or characters.
  *
- * Support for HMAC Digests has been added in GLib 2.30.
+ * Support for HMAC Digests has been added in GLib 2.30, and support for SHA-512
+ * in GLib 2.42.
  */
 
 struct _GHmac
@@ -81,7 +81,9 @@ struct _GHmac
  * will be closed and it won't be possible to call g_hmac_update()
  * on it anymore.
  *
- * Return value: the newly created #GHmac, or %NULL.
+ * Support for digests of type %G_CHECKSUM_SHA512 has been added in GLib 2.42.
+ *
+ * Returns: the newly created #GHmac, or %NULL.
  *   Use g_hmac_unref() to free the memory allocated by it.
  *
  * Since: 2.30
@@ -108,7 +110,10 @@ g_hmac_new (GChecksumType  digest_type,
       block_size = 64; /* RFC 2104 */
       break;
     case G_CHECKSUM_SHA256:
-      block_size = 64; /* RFC draft-kelly-ipsec-ciph-sha2-01 */
+      block_size = 64; /* RFC 4868 */
+      break;
+    case G_CHECKSUM_SHA512:
+      block_size = 128; /* RFC 4868 */
       break;
     default:
       g_return_val_if_reached (NULL);
@@ -161,7 +166,7 @@ g_hmac_new (GChecksumType  digest_type,
  * g_hmac_get_string() or g_hmac_get_digest(), the copied
  * HMAC will be closed as well.
  *
- * Return value: the copy of the passed #GHmac. Use g_hmac_unref()
+ * Returns: the copy of the passed #GHmac. Use g_hmac_unref()
  *   when finished using it.
  *
  * Since: 2.30
@@ -190,7 +195,7 @@ g_hmac_copy (const GHmac *hmac)
  *
  * This function is MT-safe and may be called from any thread.
  *
- * Return value: the passed in #GHmac.
+ * Returns: the passed in #GHmac.
  *
  * Since: 2.30
  **/
@@ -265,7 +270,7 @@ g_hmac_update (GHmac        *hmac,
  *
  * The hexadecimal characters will be lower case.
  *
- * Return value: the hexadecimal representation of the HMAC. The
+ * Returns: the hexadecimal representation of the HMAC. The
  *   returned string is owned by the HMAC and should not be modified
  *   or freed.
  *
@@ -337,7 +342,7 @@ g_hmac_get_digest (GHmac  *hmac,
  *
  * The hexadecimal string returned will be in lower case.
  *
- * Return value: the HMAC of the binary data as a string in hexadecimal.
+ * Returns: the HMAC of the binary data as a string in hexadecimal.
  *   The returned string should be freed with g_free() when done using it.
  *
  * Since: 2.30
@@ -377,7 +382,7 @@ g_compute_hmac_for_data (GChecksumType  digest_type,
  *
  * The hexadecimal string returned will be in lower case.
  *
- * Return value: the HMAC as a hexadecimal string.
+ * Returns: the HMAC as a hexadecimal string.
  *     The returned string should be freed with g_free()
  *     when done using it.
  *

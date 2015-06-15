@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Ryan Lortie <desrt@desrt.ca>
  */
@@ -32,6 +30,9 @@
 #include "gactionmap.h"
 #include "gmenumodel.h"
 #include "gsettings.h"
+#include "gnotification-private.h"
+#include "gnotificationbackend.h"
+#include "gdbusutils.h"
 
 #include "gioenumtypes.h"
 #include "gioenums.h"
@@ -45,6 +46,7 @@
  * SECTION:gapplication
  * @title: GApplication
  * @short_description: Core application class
+ * @include: gio/gio.h
  *
  * A #GApplication is the foundation of an application.  It wraps some
  * low-level platform-specific services and is intended to act as the
@@ -53,41 +55,40 @@
  * this class outside of a higher level framework.
  *
  * GApplication provides convenient life cycle management by maintaining
- * a <firstterm>use count</firstterm> for the primary application instance.
- * The use count can be changed using g_application_hold() and
- * g_application_release(). If it drops to zero, the application exits.
- * Higher-level classes such as #GtkApplication employ the use count to
- * ensure that the application stays alive as long as it has any opened
- * windows.
+ * a "use count" for the primary application instance. The use count can
+ * be changed using g_application_hold() and g_application_release(). If
+ * it drops to zero, the application exits. Higher-level classes such as
+ * #GtkApplication employ the use count to ensure that the application
+ * stays alive as long as it has any opened windows.
  *
  * Another feature that GApplication (optionally) provides is process
- * uniqueness.  Applications can make use of this functionality by
- * providing a unique application ID.  If given, only one application
- * with this ID can be running at a time per session.  The session
+ * uniqueness. Applications can make use of this functionality by
+ * providing a unique application ID. If given, only one application
+ * with this ID can be running at a time per session. The session
  * concept is platform-dependent, but corresponds roughly to a graphical
- * desktop login.  When your application is launched again, its
+ * desktop login. When your application is launched again, its
  * arguments are passed through platform communication to the already
- * running program.  The already running instance of the program is
- * called the <firstterm>primary instance</firstterm>; for non-unique
- * applications this is the always the current instance.
- * On Linux, the D-Bus session bus is used for communication.
+ * running program. The already running instance of the program is
+ * called the "primary instance"; for non-unique applications this is
+ * the always the current instance. On Linux, the D-Bus session bus
+ * is used for communication.
  *
  * The use of #GApplication differs from some other commonly-used
- * uniqueness libraries (such as libunique) in important ways.  The
- * application is not expected to manually register itself and check if
- * it is the primary instance.  Instead, the <code>main()</code>
- * function of a #GApplication should do very little more than
- * instantiating the application instance, possibly connecting signal
- * handlers, then calling g_application_run().  All checks for
- * uniqueness are done internally.  If the application is the primary
- * instance then the startup signal is emitted and the mainloop runs.
- * If the application is not the primary instance then a signal is sent
- * to the primary instance and g_application_run() promptly returns.
- * See the code examples below.
+ * uniqueness libraries (such as libunique) in important ways. The
+ * application is not expected to manually register itself and check
+ * if it is the primary instance. Instead, the main() function of a
+ * #GApplication should do very little more than instantiating the
+ * application instance, possibly connecting signal handlers, then
+ * calling g_application_run(). All checks for uniqueness are done
+ * internally. If the application is the primary instance then the
+ * startup signal is emitted and the mainloop runs. If the application
+ * is not the primary instance then a signal is sent to the primary
+ * instance and g_application_run() promptly returns. See the code
+ * examples below.
  *
  * If used, the expected form of an application identifier is very close
  * to that of of a
- * <ulink url="http://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-interface">DBus bus name</ulink>.
+ * [DBus bus name](http://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-interface).
  * Examples include: "com.example.MyApp", "org.example.internal-apps.Calculator".
  * For details on valid application identifiers, see g_application_id_is_valid().
  *
@@ -114,23 +115,26 @@
  * for remote access to exported #GMenuModels.
  *
  * There is a number of different entry points into a GApplication:
- * <itemizedlist>
- * <listitem>via 'Activate' (i.e. just starting the application)</listitem>
- * <listitem>via 'Open' (i.e. opening some files)</listitem>
- * <listitem>by handling a command-line</listitem>
- * <listitem>via activating an action</listitem>
- * </itemizedlist>
+ *
+ * - via 'Activate' (i.e. just starting the application)
+ *
+ * - via 'Open' (i.e. opening some files)
+ *
+ * - by handling a command-line
+ *
+ * - via activating an action
+ *
  * The #GApplication::startup signal lets you handle the application
  * initialization for all of these in a single place.
  *
- * Regardless of which of these entry points is used to start the application,
- * GApplication passes some <firstterm id="platform-data">platform
- * data</firstterm> from the launching instance to the primary instance,
- * in the form of a #GVariant dictionary mapping strings to variants.
- * To use platform data, override the @before_emit or @after_emit virtual
- * functions in your #GApplication subclass. When dealing with
- * #GApplicationCommandLine objects, the platform data is directly
- * available via g_application_command_line_get_cwd(),
+ * Regardless of which of these entry points is used to start the
+ * application, GApplication passes some "platform data from the
+ * launching instance to the primary instance, in the form of a
+ * #GVariant dictionary mapping strings to variants. To use platform
+ * data, override the @before_emit or @after_emit virtual functions
+ * in your #GApplication subclass. When dealing with
+ * #GApplicationCommandLine objects, the platform data is
+ * directly available via g_application_command_line_get_cwd(),
  * g_application_command_line_get_environ() and
  * g_application_command_line_get_platform_data().
  *
@@ -149,37 +153,22 @@
  * vfunc, to parse them in either the primary instance or the local instance,
  * respectively.
  *
- * <example id="gapplication-example-open"><title>Opening files with a GApplication</title>
- * <programlisting>
- * <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gapplication-example-open.c">
- *   <xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback>
- * </xi:include>
- * </programlisting>
- * </example>
+ * For an example of opening files with a GApplication, see
+ * [gapplication-example-open.c](https://git.gnome.org/browse/glib/tree/gio/tests/gapplication-example-open.c).
  *
- * <example id="gapplication-example-actions"><title>A GApplication with actions</title>
- * <programlisting>
- * <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gapplication-example-actions.c">
- *   <xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback>
- * </xi:include>
- * </programlisting>
- * </example>
+ * For an example of using actions with GApplication, see
+ * [gapplication-example-actions.c](https://git.gnome.org/browse/glib/tree/gio/tests/gapplication-example-actions.c).
  *
- * <example id="gapplication-example-menu"><title>A GApplication with menus</title>
- * <programlisting>
- * <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gapplication-example-menu.c">
- *   <xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback>
- * </xi:include>
- * </programlisting>
- * </example>
+ * For an example of using extra D-Bus hooks with GApplication, see
+ * [gapplication-example-dbushooks.c](https://git.gnome.org/browse/glib/tree/gio/tests/gapplication-example-dbushooks.c).
+ */
+
+/**
+ * GApplication:
  *
- * <example id="gapplication-example-dbushooks"><title>Using extra D-Bus hooks with a GApplication</title>
- * <programlisting>
- * <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gapplication-example-dbushooks.c">
- *   <xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback>
- * </xi:include>
- * </programlisting>
- * </example>
+ * #GApplication is an opaque data structure and can only be accessed
+ * using the following functions.
+ * Since: 2.28
  */
 
 /**
@@ -221,6 +210,8 @@
  * @dbus_unregister: invoked locally during unregistration, if the application
  *     is using its D-Bus backend. Use this to undo anything done by the
  *     @dbus_register vfunc. Since: 2.34
+ * @handle_local_options: invoked locally after the parsing of the commandline
+ *  options has occurred.
  *
  * Virtual function table for #GApplication.
  *
@@ -231,6 +222,7 @@ struct _GApplicationPrivate
 {
   GApplicationFlags  flags;
   gchar             *id;
+  gchar             *resource_path;
 
   GActionGroup      *actions;
   GMenuModel        *app_menu;
@@ -239,6 +231,7 @@ struct _GApplicationPrivate
   guint              inactivity_timeout_id;
   guint              inactivity_timeout;
   guint              use_count;
+  guint              busy_count;
 
   guint              is_registered : 1;
   guint              is_remote : 1;
@@ -248,6 +241,17 @@ struct _GApplicationPrivate
 
   GRemoteActionGroup *remote_actions;
   GApplicationImpl   *impl;
+
+  GNotificationBackend *notifications;
+
+  /* GOptionContext support */
+  GOptionGroup       *main_options;
+  GSList             *option_groups;
+  GHashTable         *packed_options;
+  gboolean            options_parsed;
+
+  /* Allocated option strings, from g_application_add_main_option() */
+  GSList             *option_strings;
 };
 
 enum
@@ -255,10 +259,12 @@ enum
   PROP_NONE,
   PROP_APPLICATION_ID,
   PROP_FLAGS,
+  PROP_RESOURCE_BASE_PATH,
   PROP_IS_REGISTERED,
   PROP_IS_REMOTE,
   PROP_INACTIVITY_TIMEOUT,
-  PROP_ACTION_GROUP
+  PROP_ACTION_GROUP,
+  PROP_IS_BUSY
 };
 
 enum
@@ -269,6 +275,7 @@ enum
   SIGNAL_OPEN,
   SIGNAL_ACTION,
   SIGNAL_COMMAND_LINE,
+  SIGNAL_HANDLE_LOCAL_OPTIONS,
   NR_SIGNALS
 };
 
@@ -277,6 +284,7 @@ static guint g_application_signals[NR_SIGNALS];
 static void g_application_action_group_iface_init (GActionGroupInterface *);
 static void g_application_action_map_iface_init (GActionMapInterface *);
 G_DEFINE_TYPE_WITH_CODE (GApplication, g_application, G_TYPE_OBJECT,
+ G_ADD_PRIVATE (GApplication)
  G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_GROUP, g_application_action_group_iface_init)
  G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_MAP, g_application_action_map_iface_init))
 
@@ -364,6 +372,417 @@ g_application_exported_actions_new (GApplication *application)
   actions->application = application;
 
   return G_ACTION_GROUP (actions);
+}
+
+/* Command line option handling {{{1 */
+
+static void
+free_option_entry (gpointer data)
+{
+  GOptionEntry *entry = data;
+
+  switch (entry->arg)
+    {
+    case G_OPTION_ARG_STRING:
+    case G_OPTION_ARG_FILENAME:
+      g_free (*(gchar **) entry->arg_data);
+      break;
+
+    case G_OPTION_ARG_STRING_ARRAY:
+    case G_OPTION_ARG_FILENAME_ARRAY:
+      g_strfreev (*(gchar ***) entry->arg_data);
+      break;
+
+    default:
+      /* most things require no free... */
+      break;
+    }
+
+  /* ...except for the space that we allocated for it ourselves */
+  g_free (entry->arg_data);
+
+  g_slice_free (GOptionEntry, entry);
+}
+
+static void
+g_application_pack_option_entries (GApplication *application,
+                                   GVariantDict *dict)
+{
+  GHashTableIter iter;
+  gpointer item;
+
+  g_hash_table_iter_init (&iter, application->priv->packed_options);
+  while (g_hash_table_iter_next (&iter, NULL, &item))
+    {
+      GOptionEntry *entry = item;
+      GVariant *value = NULL;
+
+      switch (entry->arg)
+        {
+        case G_OPTION_ARG_NONE:
+          if (*(gboolean *) entry->arg_data != 2)
+            value = g_variant_new_boolean (*(gboolean *) entry->arg_data);
+          break;
+
+        case G_OPTION_ARG_STRING:
+          if (*(gchar **) entry->arg_data)
+            value = g_variant_new_string (*(gchar **) entry->arg_data);
+          break;
+
+        case G_OPTION_ARG_INT:
+          if (*(gint32 *) entry->arg_data)
+            value = g_variant_new_int32 (*(gint32 *) entry->arg_data);
+          break;
+
+        case G_OPTION_ARG_FILENAME:
+          if (*(gchar **) entry->arg_data)
+            value = g_variant_new_bytestring (*(gchar **) entry->arg_data);
+          break;
+
+        case G_OPTION_ARG_STRING_ARRAY:
+          if (*(gchar ***) entry->arg_data)
+            value = g_variant_new_strv (*(const gchar ***) entry->arg_data, -1);
+          break;
+
+        case G_OPTION_ARG_FILENAME_ARRAY:
+          if (*(gchar ***) entry->arg_data)
+            value = g_variant_new_bytestring_array (*(const gchar ***) entry->arg_data, -1);
+          break;
+
+        case G_OPTION_ARG_DOUBLE:
+          if (*(gdouble *) entry->arg_data)
+            value = g_variant_new_double (*(gdouble *) entry->arg_data);
+          break;
+
+        case G_OPTION_ARG_INT64:
+          if (*(gint64 *) entry->arg_data)
+            value = g_variant_new_int64 (*(gint64 *) entry->arg_data);
+          break;
+
+        default:
+          g_assert_not_reached ();
+        }
+
+      if (value)
+        g_variant_dict_insert_value (dict, entry->long_name, value);
+    }
+}
+
+static GVariantDict *
+g_application_parse_command_line (GApplication   *application,
+                                  gchar        ***arguments,
+                                  GError        **error)
+{
+  gboolean become_service = FALSE;
+  GVariantDict *dict = NULL;
+  GOptionContext *context;
+
+  /* Due to the memory management of GOptionGroup we can only parse
+   * options once.  That's because once you add a group to the
+   * GOptionContext there is no way to get it back again.  This is fine:
+   * local_command_line() should never get invoked more than once
+   * anyway.  Add a sanity check just to be sure.
+   */
+  g_return_val_if_fail (!application->priv->options_parsed, NULL);
+
+  context = g_option_context_new (NULL);
+
+  /* If the application has not registered local options and it has
+   * G_APPLICATION_HANDLES_COMMAND_LINE then we have to assume that
+   * their primary instance commandline handler may want to deal with
+   * the arguments.  We must therefore ignore them.
+   *
+   * We must also ignore --help in this case since some applications
+   * will try to handle this from the remote side.  See #737869.
+   */
+  if (application->priv->main_options == NULL && (application->priv->flags & G_APPLICATION_HANDLES_COMMAND_LINE))
+    {
+      g_option_context_set_ignore_unknown_options (context, TRUE);
+      g_option_context_set_help_enabled (context, FALSE);
+    }
+
+  /* Add the main option group, if it exists */
+  if (application->priv->main_options)
+    {
+      /* This consumes the main_options */
+      g_option_context_set_main_group (context, application->priv->main_options);
+      application->priv->main_options = NULL;
+    }
+
+  /* Add any other option groups if they exist.  Adding them to the
+   * context will consume them, so we free the list as we go...
+   */
+  while (application->priv->option_groups)
+    {
+      g_option_context_add_group (context, application->priv->option_groups->data);
+      application->priv->option_groups = g_slist_delete_link (application->priv->option_groups,
+                                                              application->priv->option_groups);
+    }
+
+  /* In the case that we are not explicitly marked as a service or a
+   * launcher then we want to add the "--gapplication-service" option to
+   * allow the process to be made into a service.
+   */
+  if ((application->priv->flags & (G_APPLICATION_IS_SERVICE | G_APPLICATION_IS_LAUNCHER)) == 0)
+    {
+      GOptionGroup *option_group;
+      GOptionEntry entries[] = {
+        { "gapplication-service", '\0', 0, G_OPTION_ARG_NONE, &become_service,
+          N_("Enter GApplication service mode (use from D-Bus service files)") },
+        { NULL }
+      };
+
+      option_group = g_option_group_new ("gapplication",
+                                         _("GApplication options"), _("Show GApplication options"),
+                                         NULL, NULL);
+      g_option_group_set_translation_domain (option_group, GETTEXT_PACKAGE);
+      g_option_group_add_entries (option_group, entries);
+
+      g_option_context_add_group (context, option_group);
+    }
+
+  /* Now we parse... */
+  if (!g_option_context_parse_strv (context, arguments, error))
+    goto out;
+
+  /* Check for --gapplication-service */
+  if (become_service)
+    application->priv->flags |= G_APPLICATION_IS_SERVICE;
+
+  dict = g_variant_dict_new (NULL);
+  if (application->priv->packed_options)
+    {
+      g_application_pack_option_entries (application, dict);
+      g_hash_table_unref (application->priv->packed_options);
+      application->priv->packed_options = NULL;
+    }
+
+out:
+  /* Make sure we don't run again */
+  application->priv->options_parsed = TRUE;
+
+  g_option_context_free (context);
+
+  return dict;
+}
+
+static void
+add_packed_option (GApplication *application,
+                   GOptionEntry *entry)
+{
+  switch (entry->arg)
+    {
+    case G_OPTION_ARG_NONE:
+      entry->arg_data = g_new (gboolean, 1);
+      *(gboolean *) entry->arg_data = 2;
+      break;
+
+    case G_OPTION_ARG_INT:
+      entry->arg_data = g_new0 (gint, 1);
+      break;
+
+    case G_OPTION_ARG_STRING:
+    case G_OPTION_ARG_FILENAME:
+    case G_OPTION_ARG_STRING_ARRAY:
+    case G_OPTION_ARG_FILENAME_ARRAY:
+      entry->arg_data = g_new0 (gpointer, 1);
+      break;
+
+    case G_OPTION_ARG_INT64:
+      entry->arg_data = g_new0 (gint64, 1);
+      break;
+
+    case G_OPTION_ARG_DOUBLE:
+      entry->arg_data = g_new0 (gdouble, 1);
+      break;
+
+    default:
+      g_return_if_reached ();
+    }
+
+  if (!application->priv->packed_options)
+    application->priv->packed_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, free_option_entry);
+
+  g_hash_table_insert (application->priv->packed_options,
+                       g_strdup (entry->long_name),
+                       g_slice_dup (GOptionEntry, entry));
+}
+
+/**
+ * g_application_add_main_option_entries:
+ * @application: a #GApplication
+ * @entries: (array zero-terminated=1) (element-type GOptionEntry) a
+ *           %NULL-terminated list of #GOptionEntrys
+ *
+ * Adds main option entries to be handled by @application.
+ *
+ * This function is comparable to g_option_context_add_main_entries().
+ *
+ * After the commandline arguments are parsed, the
+ * #GApplication::handle-local-options signal will be emitted.  At this
+ * point, the application can inspect the values pointed to by @arg_data
+ * in the given #GOptionEntrys.
+ *
+ * Unlike #GOptionContext, #GApplication supports giving a %NULL
+ * @arg_data for a non-callback #GOptionEntry.  This results in the
+ * argument in question being packed into a #GVariantDict which is also
+ * passed to #GApplication::handle-local-options, where it can be
+ * inspected and modified.  If %G_APPLICATION_HANDLES_COMMAND_LINE is
+ * set, then the resulting dictionary is sent to the primary instance,
+ * where g_application_command_line_get_options_dict() will return it.
+ * This "packing" is done according to the type of the argument --
+ * booleans for normal flags, strings for strings, bytestrings for
+ * filenames, etc.  The packing only occurs if the flag is given (ie: we
+ * do not pack a "false" #GVariant in the case that a flag is missing).
+ *
+ * In general, it is recommended that all commandline arguments are
+ * parsed locally.  The options dictionary should then be used to
+ * transmit the result of the parsing to the primary instance, where
+ * g_variant_dict_lookup() can be used.  For local options, it is
+ * possible to either use @arg_data in the usual way, or to consult (and
+ * potentially remove) the option from the options dictionary.
+ *
+ * This function is new in GLib 2.40.  Before then, the only real choice
+ * was to send all of the commandline arguments (options and all) to the
+ * primary instance for handling.  #GApplication ignored them completely
+ * on the local side.  Calling this function "opts in" to the new
+ * behaviour, and in particular, means that unrecognised options will be
+ * treated as errors.  Unrecognised options have never been ignored when
+ * %G_APPLICATION_HANDLES_COMMAND_LINE is unset.
+ *
+ * If #GApplication::handle-local-options needs to see the list of
+ * filenames, then the use of %G_OPTION_REMAINING is recommended.  If
+ * @arg_data is %NULL then %G_OPTION_REMAINING can be used as a key into
+ * the options dictionary.  If you do use %G_OPTION_REMAINING then you
+ * need to handle these arguments for yourself because once they are
+ * consumed, they will no longer be visible to the default handling
+ * (which treats them as filenames to be opened).
+ *
+ * Since: 2.40
+ */
+void
+g_application_add_main_option_entries (GApplication       *application,
+                                       const GOptionEntry *entries)
+{
+  gint i;
+
+  g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (entries != NULL);
+
+  if (!application->priv->main_options)
+    application->priv->main_options = g_option_group_new (NULL, NULL, NULL, NULL, NULL);
+
+  for (i = 0; entries[i].long_name; i++)
+    {
+      GOptionEntry my_entries[2] = { { NULL }, { NULL } };
+      my_entries[0] = entries[i];
+
+      if (!my_entries[0].arg_data)
+        add_packed_option (application, &my_entries[0]);
+
+      g_option_group_add_entries (application->priv->main_options, my_entries);
+    }
+}
+
+/**
+ * g_application_add_main_option:
+ * @application: the #GApplication
+ * @long_name: the long name of an option used to specify it in a commandline
+ * @short_name: the short name of an option
+ * @flags: flags from #GOptionFlags
+ * @arg: the type of the option, as a #GOptionArg
+ * @description: the description for the option in `--help` output
+ * @arg_description: (nullable): the placeholder to use for the extra argument
+ *    parsed by the option in `--help` output
+ *
+ * Add an option to be handled by @application.
+ *
+ * Calling this function is the equivalent of calling
+ * g_application_add_main_option_entries() with a single #GOptionEntry
+ * that has its arg_data member set to %NULL.
+ *
+ * The parsed arguments will be packed into a #GVariantDict which
+ * is passed to #GApplication::handle-local-options. If
+ * %G_APPLICATION_HANDLES_COMMAND_LINE is set, then it will also
+ * be sent to the primary instance. See
+ * g_application_add_main_option_entries() for more details.
+ *
+ * See #GOptionEntry for more documentation of the arguments.
+ *
+ * Since: 2.42
+ **/
+void
+g_application_add_main_option (GApplication *application,
+                               const char   *long_name,
+                               char          short_name,
+                               GOptionFlags  flags,
+                               GOptionArg    arg,
+                               const char   *description,
+                               const char   *arg_description)
+{
+  gchar *dup_string;
+  GOptionEntry my_entry[2] = {
+    { NULL, short_name, flags, arg, NULL, NULL, NULL },
+    { NULL }
+  };
+
+  g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (long_name != NULL);
+  g_return_if_fail (description != NULL);
+
+  my_entry[0].long_name = dup_string = g_strdup (long_name);
+  application->priv->option_strings = g_slist_prepend (application->priv->option_strings, dup_string);
+
+  my_entry[0].description = dup_string = g_strdup (description);
+  application->priv->option_strings = g_slist_prepend (application->priv->option_strings, dup_string);
+
+  my_entry[0].arg_description = dup_string = g_strdup (arg_description);
+  application->priv->option_strings = g_slist_prepend (application->priv->option_strings, dup_string);
+
+  g_application_add_main_option_entries (application, my_entry);
+}
+
+/**
+ * g_application_add_option_group:
+ * @application: the #GApplication
+ * @group: a #GOptionGroup
+ *
+ * Adds a #GOptionGroup to the commandline handling of @application.
+ *
+ * This function is comparable to g_option_context_add_group().
+ *
+ * Unlike g_application_add_main_option_entries(), this function does
+ * not deal with %NULL @arg_data and never transmits options to the
+ * primary instance.
+ *
+ * The reason for that is because, by the time the options arrive at the
+ * primary instance, it is typically too late to do anything with them.
+ * Taking the GTK option group as an example: GTK will already have been
+ * initialised by the time the #GApplication::command-line handler runs.
+ * In the case that this is not the first-running instance of the
+ * application, the existing instance may already have been running for
+ * a very long time.
+ *
+ * This means that the options from #GOptionGroup are only really usable
+ * in the case that the instance of the application being run is the
+ * first instance.  Passing options like `--display=` or `--gdk-debug=`
+ * on future runs will have no effect on the existing primary instance.
+ *
+ * Calling this function will cause the options in the supplied option
+ * group to be parsed, but it does not cause you to be "opted in" to the
+ * new functionality whereby unrecognised options are rejected even if
+ * %G_APPLICATION_HANDLES_COMMAND_LINE was given.
+ *
+ * Since: 2.40
+ **/
+void
+g_application_add_option_group (GApplication *application,
+                                GOptionGroup *group)
+{
+  g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (group != NULL);
+
+  application->priv->option_groups = g_slist_prepend (application->priv->option_groups, group);
 }
 
 /* vfunc defaults {{{1 */
@@ -458,40 +877,137 @@ g_application_real_command_line (GApplication            *application,
     return 1;
 }
 
+static gint
+g_application_real_handle_local_options (GApplication *application,
+                                         GVariantDict *options)
+{
+  return -1;
+}
+
+static GVariant *
+get_platform_data (GApplication *application,
+                   GVariant     *options)
+{
+  GVariantBuilder *builder;
+  GVariant *result;
+
+  builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+
+  {
+    gchar *cwd = g_get_current_dir ();
+    g_variant_builder_add (builder, "{sv}", "cwd",
+                           g_variant_new_bytestring (cwd));
+    g_free (cwd);
+  }
+
+  if (application->priv->flags & G_APPLICATION_SEND_ENVIRONMENT)
+    {
+      GVariant *array;
+      gchar **envp;
+
+      envp = g_get_environ ();
+      array = g_variant_new_bytestring_array ((const gchar **) envp, -1);
+      g_strfreev (envp);
+
+      g_variant_builder_add (builder, "{sv}", "environ", array);
+    }
+
+  if (options)
+    g_variant_builder_add (builder, "{sv}", "options", options);
+
+  G_APPLICATION_GET_CLASS (application)->
+    add_platform_data (application, builder);
+
+  result = g_variant_builder_end (builder);
+  g_variant_builder_unref (builder);
+
+  return result;
+}
+
+static void
+g_application_call_command_line (GApplication        *application,
+                                 const gchar * const *arguments,
+                                 GVariant            *options,
+                                 gint                *exit_status)
+{
+  if (application->priv->is_remote)
+    {
+      GVariant *platform_data;
+
+      platform_data = get_platform_data (application, options);
+      *exit_status = g_application_impl_command_line (application->priv->impl, arguments, platform_data);
+    }
+  else
+    {
+      GApplicationCommandLine *cmdline;
+      GVariant *v;
+
+      v = g_variant_new_bytestring_array ((const gchar **) arguments, -1);
+      cmdline = g_object_new (G_TYPE_APPLICATION_COMMAND_LINE,
+                              "arguments", v,
+                              "options", options,
+                              NULL);
+      g_signal_emit (application, g_application_signals[SIGNAL_COMMAND_LINE], 0, cmdline, exit_status);
+      g_object_unref (cmdline);
+    }
+}
+
 static gboolean
 g_application_real_local_command_line (GApplication   *application,
                                        gchar        ***arguments,
                                        int            *exit_status)
 {
-  if (application->priv->flags & G_APPLICATION_HANDLES_COMMAND_LINE)
-    return FALSE;
+  GError *error = NULL;
+  GVariantDict *options;
+  gint n_args;
 
+  options = g_application_parse_command_line (application, arguments, &error);
+  if (!options)
+    {
+      g_printerr ("%s\n", error->message);
+      *exit_status = 1;
+      return TRUE;
+    }
+
+  g_signal_emit (application, g_application_signals[SIGNAL_HANDLE_LOCAL_OPTIONS], 0, options, exit_status);
+
+  if (*exit_status >= 0)
+    {
+      g_variant_dict_unref (options);
+      return TRUE;
+    }
+
+  if (!g_application_register (application, NULL, &error))
+    {
+      g_printerr ("Failed to register: %s\n", error->message);
+      g_variant_dict_unref (options);
+      g_error_free (error);
+      *exit_status = 1;
+      return TRUE;
+    }
+
+  n_args = g_strv_length (*arguments);
+
+  if (application->priv->flags & G_APPLICATION_IS_SERVICE)
+    {
+      if ((*exit_status = n_args > 1))
+        {
+          g_printerr ("GApplication service mode takes no arguments.\n");
+          application->priv->flags &= ~G_APPLICATION_IS_SERVICE;
+          *exit_status = 1;
+        }
+      else
+        *exit_status = 0;
+    }
+  else if (application->priv->flags & G_APPLICATION_HANDLES_COMMAND_LINE)
+    {
+      g_application_call_command_line (application,
+                                       (const gchar **) *arguments,
+                                       g_variant_dict_end (options),
+                                       exit_status);
+    }
   else
     {
-      GError *error = NULL;
-      gint n_args;
-
-      if (!g_application_register (application, NULL, &error))
-        {
-          g_critical ("%s", error->message);
-          g_error_free (error);
-          *exit_status = 1;
-          return TRUE;
-        }
-
-      n_args = g_strv_length (*arguments);
-
-      if (application->priv->flags & G_APPLICATION_IS_SERVICE)
-        {
-          if ((*exit_status = n_args > 1))
-            {
-              g_printerr ("GApplication service mode takes no arguments.\n");
-              application->priv->flags &= ~G_APPLICATION_IS_SERVICE;
-            }
-
-          return TRUE;
-        }
-
       if (n_args <= 1)
         {
           g_application_activate (application);
@@ -526,9 +1042,11 @@ g_application_real_local_command_line (GApplication   *application,
               *exit_status = 0;
             }
         }
-
-      return TRUE;
     }
+
+  g_variant_dict_unref (options);
+
+  return TRUE;
 }
 
 static void
@@ -571,6 +1089,10 @@ g_application_set_property (GObject      *object,
 
     case PROP_FLAGS:
       g_application_set_flags (application, g_value_get_flags (value));
+      break;
+
+    case PROP_RESOURCE_BASE_PATH:
+      g_application_set_resource_base_path (application, g_value_get_string (value));
       break;
 
     case PROP_INACTIVITY_TIMEOUT:
@@ -640,6 +1162,10 @@ g_application_get_property (GObject    *object,
                          g_application_get_flags (application));
       break;
 
+    case PROP_RESOURCE_BASE_PATH:
+      g_value_set_string (value, g_application_get_resource_base_path (application));
+      break;
+
     case PROP_IS_REGISTERED:
       g_value_set_boolean (value,
                            g_application_get_is_registered (application));
@@ -655,6 +1181,10 @@ g_application_get_property (GObject    *object,
                         g_application_get_inactivity_timeout (application));
       break;
 
+    case PROP_IS_BUSY:
+      g_value_set_boolean (value, g_application_get_is_busy (application));
+      break;
+
     default:
       g_assert_not_reached ();
     }
@@ -667,6 +1197,20 @@ g_application_constructed (GObject *object)
 
   if (g_application_get_default () == NULL)
     g_application_set_default (application);
+
+  /* People should not set properties from _init... */
+  g_assert (application->priv->resource_path == NULL);
+
+  if (application->priv->id != NULL)
+    {
+      gint i;
+
+      application->priv->resource_path = g_strconcat ("/", application->priv->id, NULL);
+
+      for (i = 1; application->priv->resource_path[i]; i++)
+        if (application->priv->resource_path[i] == '.')
+          application->priv->resource_path[i] = '/';
+    }
 }
 
 static void
@@ -674,6 +1218,14 @@ g_application_finalize (GObject *object)
 {
   GApplication *application = G_APPLICATION (object);
 
+  g_slist_free_full (application->priv->option_groups, (GDestroyNotify) g_option_group_unref);
+  if (application->priv->main_options)
+    g_option_group_unref (application->priv->main_options);
+  if (application->priv->packed_options)
+    {
+      g_slist_free_full (application->priv->option_strings, g_free);
+      g_hash_table_unref (application->priv->packed_options);
+    }
   if (application->priv->impl)
     g_application_impl_destroy (application->priv->impl);
   g_free (application->priv->id);
@@ -684,6 +1236,11 @@ g_application_finalize (GObject *object)
   if (application->priv->actions)
     g_object_unref (application->priv->actions);
 
+  if (application->priv->notifications)
+    g_object_unref (application->priv->notifications);
+
+  g_free (application->priv->resource_path);
+
   G_OBJECT_CLASS (g_application_parent_class)
     ->finalize (object);
 }
@@ -691,9 +1248,7 @@ g_application_finalize (GObject *object)
 static void
 g_application_init (GApplication *application)
 {
-  application->priv = G_TYPE_INSTANCE_GET_PRIVATE (application,
-                                                   G_TYPE_APPLICATION,
-                                                   GApplicationPrivate);
+  application->priv = g_application_get_instance_private (application);
 
   application->priv->actions = g_application_exported_actions_new (application);
 
@@ -708,6 +1263,20 @@ g_application_init (GApplication *application)
                             G_CALLBACK (g_action_group_action_state_changed), application);
   g_signal_connect_swapped (application->priv->actions, "action-removed",
                             G_CALLBACK (g_action_group_action_removed), application);
+}
+
+static gboolean
+g_application_handle_local_options_accumulator (GSignalInvocationHint *ihint,
+                                                GValue                *return_accu,
+                                                const GValue          *handler_return,
+                                                gpointer               dummy)
+{
+  gint value;
+
+  value = g_value_get_int (handler_return);
+  g_value_set_int (return_accu, value);
+
+  return value >= 0;
 }
 
 static void
@@ -728,6 +1297,7 @@ g_application_class_init (GApplicationClass *class)
   class->open = g_application_real_open;
   class->command_line = g_application_real_command_line;
   class->local_command_line = g_application_real_local_command_line;
+  class->handle_local_options = g_application_real_handle_local_options;
   class->add_platform_data = g_application_real_add_platform_data;
   class->dbus_register = g_application_real_dbus_register;
   class->dbus_unregister = g_application_real_dbus_unregister;
@@ -745,6 +1315,12 @@ g_application_class_init (GApplicationClass *class)
                         P_("Flags specifying the behaviour of the application"),
                         G_TYPE_APPLICATION_FLAGS, G_APPLICATION_FLAGS_NONE,
                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (object_class, PROP_RESOURCE_BASE_PATH,
+    g_param_spec_string ("resource-base-path",
+                         P_("Resource base path"),
+                         P_("The base resource path for the application"),
+                         NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (object_class, PROP_IS_REGISTERED,
     g_param_spec_boolean ("is-registered",
@@ -771,6 +1347,20 @@ g_application_class_init (GApplicationClass *class)
                          P_("The group of actions that the application exports"),
                          G_TYPE_ACTION_GROUP,
                          G_PARAM_DEPRECATED | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GApplication:is-busy:
+   *
+   * Whether the application is currently marked as busy through
+   * g_application_mark_busy() or g_application_bind_busy_property().
+   *
+   * Since: 2.44
+   */
+  g_object_class_install_property (object_class, PROP_IS_BUSY,
+    g_param_spec_boolean ("is-busy",
+                          P_("Is busy"),
+                          P_("If this application is currently marked busy"),
+                          FALSE, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   /**
    * GApplication::startup:
@@ -845,43 +1435,66 @@ g_application_class_init (GApplicationClass *class)
                   NULL,
                   G_TYPE_INT, 1, G_TYPE_APPLICATION_COMMAND_LINE);
 
-  g_type_class_add_private (class, sizeof (GApplicationPrivate));
-}
+  /**
+   * GApplication::handle-local-options:
+   * @application: the application
+   * @options: the options dictionary
+   *
+   * The ::handle-local-options signal is emitted on the local instance
+   * after the parsing of the commandline options has occurred.
+   *
+   * You can add options to be recognised during commandline option
+   * parsing using g_application_add_main_option_entries() and
+   * g_application_add_option_group().
+   *
+   * Signal handlers can inspect @options (along with values pointed to
+   * from the @arg_data of an installed #GOptionEntrys) in order to
+   * decide to perform certain actions, including direct local handling
+   * (which may be useful for options like --version).
+   *
+   * In the event that the application is marked
+   * %G_APPLICATION_HANDLES_COMMAND_LINE the "normal processing" will
+   * send the @option dictionary to the primary instance where it can be
+   * read with g_application_command_line_get_options().  The signal
+   * handler can modify the dictionary before returning, and the
+   * modified dictionary will be sent.
+   *
+   * In the event that %G_APPLICATION_HANDLES_COMMAND_LINE is not set,
+   * "normal processing" will treat the remaining uncollected command
+   * line arguments as filenames or URIs.  If there are no arguments,
+   * the application is activated by g_application_activate().  One or
+   * more arguments results in a call to g_application_open().
+   *
+   * If you want to handle the local commandline arguments for yourself
+   * by converting them to calls to g_application_open() or
+   * g_action_group_activate_action() then you must be sure to register
+   * the application first.  You should probably not call
+   * g_application_activate() for yourself, however: just return -1 and
+   * allow the default handler to do it for you.  This will ensure that
+   * the `--gapplication-service` switch works properly (i.e. no activation
+   * in that case).
+   *
+   * Note that this signal is emitted from the default implementation of
+   * local_command_line().  If you override that function and don't
+   * chain up then this signal will never be emitted.
+   *
+   * You can override local_command_line() if you need more powerful
+   * capabilities than what is provided here, but this should not
+   * normally be required.
+   *
+   * Returns: an exit code. If you have handled your options and want
+   * to exit the process, return a non-negative option, 0 for success,
+   * and a positive value for failure. To continue, return -1 to let
+   * the default option processing continue.
+   *
+   * Since: 2.40
+   **/
+  g_application_signals[SIGNAL_HANDLE_LOCAL_OPTIONS] =
+    g_signal_new ("handle-local-options", G_TYPE_APPLICATION, G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (GApplicationClass, handle_local_options),
+                  g_application_handle_local_options_accumulator, NULL, NULL,
+                  G_TYPE_INT, 1, G_TYPE_VARIANT_DICT);
 
-static GVariant *
-get_platform_data (GApplication *application)
-{
-  GVariantBuilder *builder;
-  GVariant *result;
-
-  builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
-
-  {
-    gchar *cwd = g_get_current_dir ();
-    g_variant_builder_add (builder, "{sv}", "cwd",
-                           g_variant_new_bytestring (cwd));
-    g_free (cwd);
-  }
-
-  if (application->priv->flags & G_APPLICATION_SEND_ENVIRONMENT)
-    {
-      GVariant *array;
-      gchar **envp;
-
-      envp = g_get_environ ();
-      array = g_variant_new_bytestring_array ((const gchar **) envp, -1);
-      g_strfreev (envp);
-
-      g_variant_builder_add (builder, "{sv}", "environ", array);
-    }
-
-  G_APPLICATION_GET_CLASS (application)->
-    add_platform_data (application, builder);
-
-  result = g_variant_builder_end (builder);
-  g_variant_builder_unref (builder);
-
-  return result;
 }
 
 /* Application ID validity {{{1 */
@@ -897,16 +1510,23 @@ get_platform_data (GApplication *application)
  *
  * For convenience, the restrictions on application identifiers are
  * reproduced here:
- * <itemizedlist>
- *   <listitem>Application identifiers must contain only the ASCII characters "[A-Z][a-z][0-9]_-." and must not begin with a digit.</listitem>
- *   <listitem>Application identifiers must contain at least one '.' (period) character (and thus at least three elements).</listitem>
- *   <listitem>Application identifiers must not begin or end with a '.' (period) character.</listitem>
- *   <listitem>Application identifiers must not contain consecutive '.' (period) characters.</listitem>
- *   <listitem>Application identifiers must not exceed 255 characters.</listitem>
- * </itemizedlist>
+ *
+ * - Application identifiers must contain only the ASCII characters
+ *   "[A-Z][a-z][0-9]_-." and must not begin with a digit.
+ *
+ * - Application identifiers must contain at least one '.' (period)
+ *   character (and thus at least three elements).
+ *
+ * - Application identifiers must not begin or end with a '.' (period)
+ *   character.
+ *
+ * - Application identifiers must not contain consecutive '.' (period)
+ *   characters.
+ *
+ * - Application identifiers must not exceed 255 characters.
  *
  * Returns: %TRUE if @application_id is valid
- **/
+ */
 gboolean
 g_application_id_is_valid (const gchar *application_id)
 {
@@ -959,8 +1579,6 @@ g_application_id_is_valid (const gchar *application_id)
  *
  * Creates a new #GApplication instance.
  *
- * This function calls g_type_init() for you.
- *
  * If non-%NULL, the application id must be valid.  See
  * g_application_id_is_valid().
  *
@@ -974,8 +1592,6 @@ g_application_new (const gchar       *application_id,
                    GApplicationFlags  flags)
 {
   g_return_val_if_fail (application_id == NULL || g_application_id_is_valid (application_id), NULL);
-
-  g_type_init ();
 
   return g_object_new (G_TYPE_APPLICATION,
                        "application-id", application_id,
@@ -1082,6 +1698,79 @@ g_application_set_flags (GApplication      *application,
       application->priv->flags = flags;
 
       g_object_notify (G_OBJECT (application), "flags");
+    }
+}
+
+/**
+ * g_application_get_resource_base_path:
+ * @application: a #GApplication
+ *
+ * Gets the resource base path of @application.
+ *
+ * See g_application_set_resource_base_path() for more information.
+ *
+ * Returns: (nullable): the base resource path, if one is set
+ *
+ * Since: 2.42
+ */
+const gchar *
+g_application_get_resource_base_path (GApplication *application)
+{
+  g_return_val_if_fail (G_IS_APPLICATION (application), NULL);
+
+  return application->priv->resource_path;
+}
+
+/**
+ * g_application_set_resource_base_path:
+ * @application: a #GApplication
+ * @resource_path: (nullable): the resource path to use
+ *
+ * Sets (or unsets) the base resource path of @application.
+ *
+ * The path is used to automatically load various [application
+ * resources][gresource] such as menu layouts and action descriptions.
+ * The various types of resources will be found at fixed names relative
+ * to the given base path.
+ *
+ * By default, the resource base path is determined from the application
+ * ID by prefixing '/' and replacing each '.' with '/'.  This is done at
+ * the time that the #GApplication object is constructed.  Changes to
+ * the application ID after that point will not have an impact on the
+ * resource base path.
+ *
+ * As an example, if the application has an ID of "org.example.app" then
+ * the default resource base path will be "/org/example/app".  If this
+ * is a #GtkApplication (and you have not manually changed the path)
+ * then Gtk will then search for the menus of the application at
+ * "/org/example/app/gtk/menus.ui".
+ *
+ * See #GResource for more information about adding resources to your
+ * application.
+ *
+ * You can disable automatic resource loading functionality by setting
+ * the path to %NULL.
+ *
+ * Changing the resource base path once the application is running is
+ * not recommended.  The point at which the resource path is consulted
+ * for forming paths for various purposes is unspecified.
+ *
+ * Since: 2.42
+ */
+void
+g_application_set_resource_base_path (GApplication *application,
+                                      const gchar  *resource_path)
+{
+  g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (resource_path == NULL || g_str_has_prefix (resource_path, "/"));
+
+  if (g_strcmp0 (application->priv->resource_path, resource_path) != 0)
+    {
+      g_free (application->priv->resource_path);
+
+      application->priv->resource_path = g_strdup (resource_path);
+
+      g_object_notify (G_OBJECT (application), "resource-base-path");
     }
 }
 
@@ -1248,6 +1937,7 @@ g_application_get_dbus_object_path (GApplication *application)
   return g_application_impl_get_dbus_object_path (application->priv->impl);
 }
 
+
 /* Register {{{1 */
 /**
  * g_application_register:
@@ -1384,6 +2074,7 @@ void
 g_application_release (GApplication *application)
 {
   g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (application->priv->use_count > 0);
 
   application->priv->use_count--;
 
@@ -1414,7 +2105,7 @@ g_application_activate (GApplication *application)
 
   if (application->priv->is_remote)
     g_application_impl_activate (application->priv->impl,
-                                 get_platform_data (application));
+                                 get_platform_data (application, NULL));
 
   else
     g_signal_emit (application, g_application_signals[SIGNAL_ACTIVATE], 0);
@@ -1458,7 +2149,7 @@ g_application_open (GApplication  *application,
   if (application->priv->is_remote)
     g_application_impl_open (application->priv->impl,
                              files, n_files, hint,
-                             get_platform_data (application));
+                             get_platform_data (application, NULL));
 
   else
     g_signal_emit (application, g_application_signals[SIGNAL_OPEN],
@@ -1478,66 +2169,72 @@ g_application_open (GApplication  *application,
  * is intended to be returned by main(). Although you are expected to pass
  * the @argc, @argv parameters from main() to this function, it is possible
  * to pass %NULL if @argv is not available or commandline handling is not
- * required.
+ * required.  Note that on Windows, @argc and @argv are ignored, and
+ * g_win32_get_command_line() is called internally (for proper support
+ * of Unicode commandline arguments).
  *
- * First, the local_command_line() virtual function is invoked.
- * This function always runs on the local instance. It gets passed a pointer
- * to a %NULL-terminated copy of @argv and is expected to remove the arguments
- * that it handled (shifting up remaining arguments). See
- * <xref linkend="gapplication-example-cmdline2"/> for an example of
- * parsing @argv manually. Alternatively, you may use the #GOptionContext API,
- * after setting <literal>argc = g_strv_length (argv);</literal>.
+ * #GApplication will attempt to parse the commandline arguments.  You
+ * can add commandline flags to the list of recognised options by way of
+ * g_application_add_main_option_entries().  After this, the
+ * #GApplication::handle-local-options signal is emitted, from which the
+ * application can inspect the values of its #GOptionEntrys.
  *
- * The last argument to local_command_line() is a pointer to the @status
- * variable which can used to set the exit status that is returned from
- * g_application_run().
+ * #GApplication::handle-local-options is a good place to handle options
+ * such as `--version`, where an immediate reply from the local process is
+ * desired (instead of communicating with an already-running instance).
+ * A #GApplication::handle-local-options handler can stop further processing
+ * by returning a non-negative value, which then becomes the exit status of
+ * the process.
  *
- * If local_command_line() returns %TRUE, the command line is expected
- * to be completely handled, including possibly registering as the primary
- * instance, calling g_application_activate() or g_application_open(), etc.
- *
- * If local_command_line() returns %FALSE then the application is registered
- * and the #GApplication::command-line signal is emitted in the primary
- * instance (which may or may not be this instance). The signal handler
- * gets passed a #GApplicationCommandLine object that (among other things)
- * contains the remaining commandline arguments that have not been handled
- * by local_command_line().
- *
- * If the application has the %G_APPLICATION_HANDLES_COMMAND_LINE
- * flag set then the default implementation of local_command_line()
- * always returns %FALSE immediately, resulting in the commandline
- * always being handled in the primary instance.
- *
- * Otherwise, the default implementation of local_command_line() tries
- * to do a couple of things that are probably reasonable for most
- * applications.  First, g_application_register() is called to attempt
- * to register the application.  If that works, then the command line
- * arguments are inspected.  If no commandline arguments are given, then
- * g_application_activate() is called.  If commandline arguments are
- * given and the %G_APPLICATION_HANDLES_OPEN flag is set then they
- * are assumed to be filenames and g_application_open() is called.
- *
- * If you need to handle commandline arguments that are not filenames,
- * and you don't mind commandline handling to happen in the primary
- * instance, you should set %G_APPLICATION_HANDLES_COMMAND_LINE and
- * process the commandline arguments in your #GApplication::command-line
- * signal handler, either manually or using the #GOptionContext API.
+ * What happens next depends on the flags: if
+ * %G_APPLICATION_HANDLES_COMMAND_LINE was specified then the remaining
+ * commandline arguments are sent to the primary instance, where a
+ * #GApplication::command-line signal is emitted.  Otherwise, the
+ * remaining commandline arguments are assumed to be a list of files.
+ * If there are no files listed, the application is activated via the
+ * #GApplication::activate signal.  If there are one or more files, and
+ * %G_APPLICATION_HANDLES_OPEN was specified then the files are opened
+ * via the #GApplication::open signal.
  *
  * If you are interested in doing more complicated local handling of the
  * commandline then you should implement your own #GApplication subclass
  * and override local_command_line(). In this case, you most likely want
  * to return %TRUE from your local_command_line() implementation to
  * suppress the default handling. See
- * <xref linkend="gapplication-example-cmdline2"/> for an example.
+ * [gapplication-example-cmdline2.c][gapplication-example-cmdline2]
+ * for an example.
  *
  * If, after the above is done, the use count of the application is zero
  * then the exit status is returned immediately.  If the use count is
  * non-zero then the default main context is iterated until the use count
  * falls to zero, at which point 0 is returned.
  *
- * If the %G_APPLICATION_IS_SERVICE flag is set, then the exiting at
- * use count of zero is delayed for a while (ie: the instance stays
- * around to provide its <emphasis>service</emphasis> to others).
+ * If the %G_APPLICATION_IS_SERVICE flag is set, then the service will
+ * run for as much as 10 seconds with a use count of zero while waiting
+ * for the message that caused the activation to arrive.  After that,
+ * if the use count falls to zero the application will exit immediately,
+ * except in the case that g_application_set_inactivity_timeout() is in
+ * use.
+ *
+ * This function sets the prgname (g_set_prgname()), if not already set,
+ * to the basename of argv[0].
+ *
+ * Since 2.40, applications that are not explicitly flagged as services
+ * or launchers (ie: neither %G_APPLICATION_IS_SERVICE or
+ * %G_APPLICATION_IS_LAUNCHER are given as flags) will check (from the
+ * default handler for local_command_line) if "--gapplication-service"
+ * was given in the command line.  If this flag is present then normal
+ * commandline processing is interrupted and the
+ * %G_APPLICATION_IS_SERVICE flag is set.  This provides a "compromise"
+ * solution whereby running an application directly from the commandline
+ * will invoke it in the normal way (which can be useful for debugging)
+ * while still allowing applications to be D-Bus activated in service
+ * mode.  The D-Bus service file should invoke the executable with
+ * "--gapplication-service" as the sole commandline argument.  This
+ * approach is suitable for use by most graphical applications but
+ * should not be used from applications like editors that need precise
+ * control over when processes invoked via the commandline will exit and
+ * what their exit status will be.
  *
  * Returns: the exit status
  *
@@ -1550,16 +2247,23 @@ g_application_run (GApplication  *application,
 {
   gchar **arguments;
   int status;
-  gint i;
 
   g_return_val_if_fail (G_IS_APPLICATION (application), 1);
   g_return_val_if_fail (argc == 0 || argv != NULL, 1);
   g_return_val_if_fail (!application->priv->must_quit_now, 1);
 
-  arguments = g_new (gchar *, argc + 1);
-  for (i = 0; i < argc; i++)
-    arguments[i] = g_strdup (argv[i]);
-  arguments[i] = NULL;
+#ifdef G_OS_WIN32
+  arguments = g_win32_get_command_line ();
+#else
+  {
+    gint i;
+
+    arguments = g_new (gchar *, argc + 1);
+    for (i = 0; i < argc; i++)
+      arguments[i] = g_strdup (argv[i]);
+    arguments[i] = NULL;
+  }
+#endif
 
   if (g_get_prgname () == NULL && argc > 0)
     {
@@ -1577,32 +2281,12 @@ g_application_run (GApplication  *application,
 
       if (!g_application_register (application, NULL, &error))
         {
-          g_printerr ("%s", error->message);
+          g_printerr ("Failed to register: %s\n", error->message);
           g_error_free (error);
           return 1;
         }
 
-      if (application->priv->is_remote)
-        {
-          GVariant *platform_data;
-
-          platform_data = get_platform_data (application);
-          status = g_application_impl_command_line (application->priv->impl,
-                                                    arguments, platform_data);
-        }
-      else
-        {
-          GApplicationCommandLine *cmdline;
-          GVariant *v;
-
-          v = g_variant_new_bytestring_array ((const gchar **) arguments, -1);
-          cmdline = g_object_new (G_TYPE_APPLICATION_COMMAND_LINE,
-                                  "arguments", v, NULL);
-          g_signal_emit (application,
-                         g_application_signals[SIGNAL_COMMAND_LINE],
-                         0, cmdline, &status);
-          g_object_unref (cmdline);
-        }
+      g_application_call_command_line (application, (const gchar **) arguments, NULL, &status);
     }
 
   g_strfreev (arguments);
@@ -1625,7 +2309,7 @@ g_application_run (GApplication  *application,
       status = 0;
     }
 
-  if (!application->priv->is_remote)
+  if (application->priv->is_registered && !application->priv->is_remote)
     {
       g_signal_emit (application, g_application_signals[SIGNAL_SHUTDOWN], 0);
 
@@ -1639,6 +2323,10 @@ g_application_run (GApplication  *application,
     g_application_impl_flush (application->priv->impl);
 
   g_settings_sync ();
+
+  if (!application->priv->must_quit_now)
+    while (g_main_context_iteration (NULL, FALSE))
+      ;
 
   return status;
 }
@@ -1708,7 +2396,7 @@ g_application_change_action_state (GActionGroup *action_group,
 
   if (application->priv->remote_actions)
     g_remote_action_group_change_action_state_full (application->priv->remote_actions,
-                                                    action_name, value, get_platform_data (application));
+                                                    action_name, value, get_platform_data (application, NULL));
 
   else
     g_action_group_change_action_state (application->priv->actions, action_name, value);
@@ -1727,7 +2415,7 @@ g_application_activate_action (GActionGroup *action_group,
 
   if (application->priv->remote_actions)
     g_remote_action_group_activate_action_full (application->priv->remote_actions,
-                                                action_name, parameter, get_platform_data (application));
+                                                action_name, parameter, get_platform_data (application, NULL));
 
   else
     g_action_group_activate_action (application->priv->actions, action_name, parameter);
@@ -1739,9 +2427,9 @@ g_application_lookup_action (GActionMap  *action_map,
 {
   GApplication *application = G_APPLICATION (action_map);
 
-  g_return_val_if_fail (G_IS_SIMPLE_ACTION_GROUP (application->priv->actions), NULL);
+  g_return_val_if_fail (G_IS_ACTION_MAP (application->priv->actions), NULL);
 
-  return g_simple_action_group_lookup (G_SIMPLE_ACTION_GROUP (application->priv->actions), action_name);
+  return g_action_map_lookup_action (G_ACTION_MAP (application->priv->actions), action_name);
 }
 
 static void
@@ -1750,9 +2438,9 @@ g_application_add_action (GActionMap *action_map,
 {
   GApplication *application = G_APPLICATION (action_map);
 
-  g_return_if_fail (G_IS_SIMPLE_ACTION_GROUP (application->priv->actions));
+  g_return_if_fail (G_IS_ACTION_MAP (application->priv->actions));
 
-  g_simple_action_group_insert (G_SIMPLE_ACTION_GROUP (application->priv->actions), action);
+  g_action_map_add_action (G_ACTION_MAP (application->priv->actions), action);
 }
 
 static void
@@ -1761,9 +2449,9 @@ g_application_remove_action (GActionMap  *action_map,
 {
   GApplication *application = G_APPLICATION (action_map);
 
-  g_return_if_fail (G_IS_SIMPLE_ACTION_GROUP (application->priv->actions));
+  g_return_if_fail (G_IS_ACTION_MAP (application->priv->actions));
 
-  g_simple_action_group_remove (G_SIMPLE_ACTION_GROUP (application->priv->actions), action_name);
+  g_action_map_remove_action (G_ACTION_MAP (application->priv->actions), action_name);
 }
 
 static void
@@ -1849,6 +2537,316 @@ g_application_quit (GApplication *application)
   g_return_if_fail (G_IS_APPLICATION (application));
 
   application->priv->must_quit_now = TRUE;
+}
+
+/**
+ * g_application_mark_busy:
+ * @application: a #GApplication
+ *
+ * Increases the busy count of @application.
+ *
+ * Use this function to indicate that the application is busy, for instance
+ * while a long running operation is pending.
+ *
+ * The busy state will be exposed to other processes, so a session shell will
+ * use that information to indicate the state to the user (e.g. with a
+ * spinner).
+ *
+ * To cancel the busy indication, use g_application_unmark_busy().
+ *
+ * Since: 2.38
+ **/
+void
+g_application_mark_busy (GApplication *application)
+{
+  gboolean was_busy;
+
+  g_return_if_fail (G_IS_APPLICATION (application));
+
+  was_busy = (application->priv->busy_count > 0);
+  application->priv->busy_count++;
+
+  if (!was_busy)
+    {
+      g_application_impl_set_busy_state (application->priv->impl, TRUE);
+      g_object_notify (G_OBJECT (application), "is-busy");
+    }
+}
+
+/**
+ * g_application_unmark_busy:
+ * @application: a #GApplication
+ *
+ * Decreases the busy count of @application.
+ *
+ * When the busy count reaches zero, the new state will be propagated
+ * to other processes.
+ *
+ * This function must only be called to cancel the effect of a previous
+ * call to g_application_mark_busy().
+ *
+ * Since: 2.38
+ **/
+void
+g_application_unmark_busy (GApplication *application)
+{
+  g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (application->priv->busy_count > 0);
+
+  application->priv->busy_count--;
+
+  if (application->priv->busy_count == 0)
+    {
+      g_application_impl_set_busy_state (application->priv->impl, FALSE);
+      g_object_notify (G_OBJECT (application), "is-busy");
+    }
+}
+
+/**
+ * g_application_get_is_busy:
+ * @application: a #GApplication
+ *
+ * Gets the application's current busy state, as set through
+ * g_application_mark_busy() or g_application_bind_busy_property().
+ *
+ * Returns: %TRUE if @application is currenty marked as busy
+ *
+ * Since: 2.44
+ */
+gboolean
+g_application_get_is_busy (GApplication *application)
+{
+  g_return_val_if_fail (G_IS_APPLICATION (application), FALSE);
+
+  return application->priv->busy_count > 0;
+}
+
+/* Notifications {{{1 */
+
+/**
+ * g_application_send_notification:
+ * @application: a #GApplication
+ * @id: (allow-none): id of the notification, or %NULL
+ * @notification: the #GNotification to send
+ *
+ * Sends a notification on behalf of @application to the desktop shell.
+ * There is no guarantee that the notification is displayed immediately,
+ * or even at all.
+ *
+ * Notifications may persist after the application exits. It will be
+ * D-Bus-activated when the notification or one of its actions is
+ * activated.
+ *
+ * Modifying @notification after this call has no effect. However, the
+ * object can be reused for a later call to this function.
+ *
+ * @id may be any string that uniquely identifies the event for the
+ * application. It does not need to be in any special format. For
+ * example, "new-message" might be appropriate for a notification about
+ * new messages.
+ *
+ * If a previous notification was sent with the same @id, it will be
+ * replaced with @notification and shown again as if it was a new
+ * notification. This works even for notifications sent from a previous
+ * execution of the application, as long as @id is the same string.
+ *
+ * @id may be %NULL, but it is impossible to replace or withdraw
+ * notifications without an id.
+ *
+ * If @notification is no longer relevant, it can be withdrawn with
+ * g_application_withdraw_notification().
+ *
+ * Since: 2.40
+ */
+void
+g_application_send_notification (GApplication  *application,
+                                 const gchar   *id,
+                                 GNotification *notification)
+{
+  gchar *generated_id = NULL;
+
+  g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (G_IS_NOTIFICATION (notification));
+  g_return_if_fail (g_application_get_is_registered (application));
+  g_return_if_fail (!g_application_get_is_remote (application));
+
+  if (application->priv->notifications == NULL)
+    application->priv->notifications = g_notification_backend_new_default (application);
+
+  if (id == NULL)
+    {
+      generated_id = g_dbus_generate_guid ();
+      id = generated_id;
+    }
+
+  g_notification_backend_send_notification (application->priv->notifications, id, notification);
+
+  g_free (generated_id);
+}
+
+/**
+ * g_application_withdraw_notification:
+ * @application: a #GApplication
+ * @id: id of a previously sent notification
+ *
+ * Withdraws a notification that was sent with
+ * g_application_send_notification().
+ *
+ * This call does nothing if a notification with @id doesn't exist or
+ * the notification was never sent.
+ *
+ * This function works even for notifications sent in previous
+ * executions of this application, as long @id is the same as it was for
+ * the sent notification.
+ *
+ * Note that notifications are dismissed when the user clicks on one
+ * of the buttons in a notification or triggers its default action, so
+ * there is no need to explicitly withdraw the notification in that case.
+ *
+ * Since: 2.40
+ */
+void
+g_application_withdraw_notification (GApplication *application,
+                                     const gchar  *id)
+{
+  g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (id != NULL);
+
+  if (application->priv->notifications)
+    g_notification_backend_withdraw_notification (application->priv->notifications, id);
+}
+
+/* Busy binding {{{1 */
+
+typedef struct
+{
+  GApplication *app;
+  gboolean is_busy;
+} GApplicationBusyBinding;
+
+static void
+g_application_busy_binding_destroy (gpointer  data,
+                                    GClosure *closure)
+{
+  GApplicationBusyBinding *binding = data;
+
+  if (binding->is_busy)
+    g_application_unmark_busy (binding->app);
+
+  g_object_unref (binding->app);
+  g_slice_free (GApplicationBusyBinding, binding);
+}
+
+static void
+g_application_notify_busy_binding (GObject    *object,
+                                   GParamSpec *pspec,
+                                   gpointer    user_data)
+{
+  GApplicationBusyBinding *binding = user_data;
+  gboolean is_busy;
+
+  g_object_get (object, pspec->name, &is_busy, NULL);
+
+  if (is_busy && !binding->is_busy)
+    g_application_mark_busy (binding->app);
+  else if (!is_busy && binding->is_busy)
+    g_application_unmark_busy (binding->app);
+
+  binding->is_busy = is_busy;
+}
+
+/**
+ * g_application_bind_busy_property:
+ * @application: a #GApplication
+ * @object: (type GObject.Object): a #GObject
+ * @property: the name of a boolean property of @object
+ *
+ * Marks @application as busy (see g_application_mark_busy()) while
+ * @property on @object is %TRUE.
+ *
+ * The binding holds a reference to @application while it is active, but
+ * not to @object. Instead, the binding is destroyed when @object is
+ * finalized.
+ *
+ * Since: 2.44
+ */
+void
+g_application_bind_busy_property (GApplication *application,
+                                  gpointer      object,
+                                  const gchar  *property)
+{
+  guint notify_id;
+  GQuark property_quark;
+  GParamSpec *pspec;
+  GApplicationBusyBinding *binding;
+  GClosure *closure;
+
+  g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (G_IS_OBJECT (object));
+  g_return_if_fail (property != NULL);
+
+  notify_id = g_signal_lookup ("notify", G_TYPE_OBJECT);
+  property_quark = g_quark_from_string (property);
+  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (object), property);
+
+  g_return_if_fail (pspec != NULL && pspec->value_type == G_TYPE_BOOLEAN);
+
+  if (g_signal_handler_find (object, G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_DETAIL | G_SIGNAL_MATCH_FUNC,
+                             notify_id, property_quark, NULL, g_application_notify_busy_binding, NULL) > 0)
+    {
+      g_critical ("%s: '%s' is already bound to the busy state of the application", G_STRFUNC, property);
+      return;
+    }
+
+  binding = g_slice_new (GApplicationBusyBinding);
+  binding->app = g_object_ref (application);
+  binding->is_busy = FALSE;
+
+  closure = g_cclosure_new (G_CALLBACK (g_application_notify_busy_binding), binding,
+                            g_application_busy_binding_destroy);
+  g_signal_connect_closure_by_id (object, notify_id, property_quark, closure, FALSE);
+
+  /* fetch the initial value */
+  g_application_notify_busy_binding (object, pspec, binding);
+}
+
+/**
+ * g_application_unbind_busy_property:
+ * @application: a #GApplication
+ * @object: (type GObject.Object): a #GObject
+ * @property: the name of a boolean property of @object
+ *
+ * Destroys a binding between @property and the busy state of
+ * @application that was previously created with
+ * g_application_bind_busy_property().
+ *
+ * Since: 2.44
+ */
+void
+g_application_unbind_busy_property (GApplication *application,
+                                    gpointer      object,
+                                    const gchar  *property)
+{
+  guint notify_id;
+  GQuark property_quark;
+  gulong handler_id;
+
+  g_return_if_fail (G_IS_APPLICATION (application));
+  g_return_if_fail (G_IS_OBJECT (object));
+  g_return_if_fail (property != NULL);
+
+  notify_id = g_signal_lookup ("notify", G_TYPE_OBJECT);
+  property_quark = g_quark_from_string (property);
+
+  handler_id = g_signal_handler_find (object, G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_DETAIL | G_SIGNAL_MATCH_FUNC,
+                                      notify_id, property_quark, NULL, g_application_notify_busy_binding, NULL);
+  if (handler_id == 0)
+    {
+      g_critical ("%s: '%s' is not bound to the busy state of the application", G_STRFUNC, property);
+      return;
+    }
+
+  g_signal_handler_disconnect (object, handler_id);
 }
 
 /* Epilogue {{{1 */

@@ -31,6 +31,7 @@ struct _GTestClass
   GObjectClass parent_class;
 };
 
+static GType my_test_get_type (void);
 G_DEFINE_TYPE (GTest, my_test, G_TYPE_OBJECT);
 
 static volatile gboolean stopping;
@@ -161,7 +162,6 @@ main (int argc, char **argv)
 
   g_print ("START: %s\n", argv[0]);
   g_log_set_always_fatal (G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL | g_log_set_always_fatal (G_LOG_FATAL_MASK));
-  g_type_init ();
 
   test = g_object_new (G_TYPE_TEST, NULL);
 

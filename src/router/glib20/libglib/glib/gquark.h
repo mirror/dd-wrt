@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -24,12 +22,12 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
+#ifndef __G_QUARK_H__
+#define __G_QUARK_H__
+
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_QUARK_H__
-#define __G_QUARK_H__
 
 #include <glib/gtypes.h>
 
@@ -39,9 +37,13 @@ typedef guint32 GQuark;
 
 /* Quarks (string<->id association)
  */
+GLIB_AVAILABLE_IN_ALL
 GQuark                g_quark_try_string         (const gchar *string);
+GLIB_AVAILABLE_IN_ALL
 GQuark                g_quark_from_static_string (const gchar *string);
+GLIB_AVAILABLE_IN_ALL
 GQuark                g_quark_from_string        (const gchar *string);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_quark_to_string          (GQuark       quark) G_GNUC_CONST;
 
 #define G_DEFINE_QUARK(QN, q_n)                                         \
@@ -56,7 +58,9 @@ q_n##_quark (void)                                                      \
   return q;                                                             \
 }
 
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_intern_string            (const gchar *string);
+GLIB_AVAILABLE_IN_ALL
 const gchar *         g_intern_static_string     (const gchar *string);
 
 G_END_DECLS

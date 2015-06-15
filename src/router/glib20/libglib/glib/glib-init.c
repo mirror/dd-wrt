@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
- * USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -23,19 +21,35 @@
 
 #include "glib-init.h"
 
+#include "glib-private.h"
+#include "gtypes.h"
 #include "gutils.h"     /* for GDebugKey */
 #include "gconstructor.h"
+#include "gmem.h"       /* for g_mem_gc_friendly */
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 
+/* This seems as good a place as any to make static assertions about platform
+ * assumptions we make throughout GLib. */
+
+/* We do not support 36-bit bytes or other historical curiosities. */
+G_STATIC_ASSERT (CHAR_BIT == 8);
+
+/* We assume that data pointers are the same size as function pointers... */
+G_STATIC_ASSERT (sizeof (gpointer) == sizeof (GFunc));
+G_STATIC_ASSERT (_g_alignof (gpointer) == _g_alignof (GFunc));
+/* ... and that all function pointers are the same size. */
+G_STATIC_ASSERT (sizeof (GFunc) == sizeof (GCompareDataFunc));
+G_STATIC_ASSERT (_g_alignof (GFunc) == _g_alignof (GCompareDataFunc));
+
 /**
  * g_mem_gc_friendly:
  *
- * This variable is %TRUE if the <envar>G_DEBUG</envar> environment variable
- * includes the key <literal>gc-friendly</literal>.
+ * This variable is %TRUE if the `G_DEBUG` environment variable
+ * includes the key `gc-friendly`.
  */
 #ifdef ENABLE_GC_FRIENDLY_DEFAULT
 gboolean g_mem_gc_friendly = TRUE;
@@ -70,19 +84,19 @@ debug_key_matches (const gchar *key,
  * commas, or %NULL.
  * @keys: (array length=nkeys): pointer to an array of #GDebugKey which associate
  *     strings with bit flags.
- * @nkeys: the number of #GDebugKey<!-- -->s in the array.
+ * @nkeys: the number of #GDebugKeys in the array.
  *
  * Parses a string containing debugging options
  * into a %guint containing bit flags. This is used
  * within GDK and GTK+ to parse the debug options passed on the
  * command line or through environment variables.
  *
- * If @string is equal to <code>"all"</code>, all flags are set. Any flags
- * specified along with <code>"all"</code> in @string are inverted; thus,
- * <code>"all,foo,bar"</code> or <code>"foo,bar,all"</code> sets all flags
- * except those corresponding to <code>"foo"</code> and <code>"bar"</code>.
+ * If @string is equal to "all", all flags are set. Any flags
+ * specified along with "all" in @string are inverted; thus,
+ * "all,foo,bar" or "foo,bar,all" sets all flags except those
+ * corresponding to "foo" and "bar".
  *
- * If @string is equal to <code>"help"</code>, all the available keys in @keys
+ * If @string is equal to "help", all the available keys in @keys
  * are printed out to standard error.
  *
  * Returns: the combined set of bit flags.
@@ -223,6 +237,10 @@ glib_init (void)
 
 #if defined (G_OS_WIN32)
 
+BOOL WINAPI DllMain (HINSTANCE hinstDLL,
+                     DWORD     fdwReason,
+                     LPVOID    lpvReserved);
+
 HMODULE glib_dll;
 
 BOOL WINAPI
@@ -235,12 +253,16 @@ DllMain (HINSTANCE hinstDLL,
     case DLL_PROCESS_ATTACH:
       glib_dll = hinstDLL;
       g_clock_win32_init ();
+#ifdef THREADS_WIN32
       g_thread_win32_init ();
+#endif
       glib_init ();
       break;
 
     case DLL_THREAD_DETACH:
+#ifdef THREADS_WIN32
       g_thread_win32_thread_detach ();
+#endif
       break;
 
     default:

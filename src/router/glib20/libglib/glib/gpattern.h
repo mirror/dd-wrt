@@ -12,17 +12,15 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_PATTERN_H__
+#define __G_PATTERN_H__
 
 #if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
-
-#ifndef __G_PATTERN_H__
-#define __G_PATTERN_H__
 
 #include <glib/gtypes.h>
 
@@ -31,16 +29,22 @@ G_BEGIN_DECLS
 
 typedef struct _GPatternSpec    GPatternSpec;
 
+GLIB_AVAILABLE_IN_ALL
 GPatternSpec* g_pattern_spec_new       (const gchar  *pattern);
+GLIB_AVAILABLE_IN_ALL
 void          g_pattern_spec_free      (GPatternSpec *pspec);
+GLIB_AVAILABLE_IN_ALL
 gboolean      g_pattern_spec_equal     (GPatternSpec *pspec1,
 					GPatternSpec *pspec2);
+GLIB_AVAILABLE_IN_ALL
 gboolean      g_pattern_match          (GPatternSpec *pspec,
 					guint         string_length,
 					const gchar  *string,
 					const gchar  *string_reversed);
+GLIB_AVAILABLE_IN_ALL
 gboolean      g_pattern_match_string   (GPatternSpec *pspec,
 					const gchar  *string);
+GLIB_AVAILABLE_IN_ALL
 gboolean      g_pattern_match_simple   (const gchar  *pattern,
 					const gchar  *string);
 

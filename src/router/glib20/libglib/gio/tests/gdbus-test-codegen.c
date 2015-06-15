@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -93,7 +91,7 @@ on_handle_hello_world (FooiGenBar             *object,
                        gpointer                user_data)
 {
   gchar *response;
-  response = g_strdup_printf ("Word! You said `%s'. I'm Skeleton, btw!", greeting);
+  response = g_strdup_printf ("Word! You said '%s'. I'm Skeleton, btw!", greeting);
   foo_igen_bar_complete_hello_world (object, invocation, response);
   g_free (response);
   return TRUE;
@@ -120,7 +118,7 @@ on_handle_test_primitive_types (FooiGenBar            *object,
   gchar *s1;
   gchar *s2;
   gchar *s3;
-  s1 = g_strdup_printf ("Word! You said `%s'. Rock'n'roll!", val_string);
+  s1 = g_strdup_printf ("Word! You said '%s'. Rock'n'roll!", val_string);
   s2 = g_strdup_printf ("/modified%s", val_objpath);
   s3 = g_strdup_printf ("assgit%s", val_signature);
   foo_igen_bar_complete_test_primitive_types (object,
@@ -1574,7 +1572,7 @@ om_on_signal (GDBusConnection *connection,
     {
     default:
     case 0:
-      g_print ("failing and om_data->state=%d on signal %s, params=%s\n",
+      g_printerr ("failing and om_data->state=%d on signal %s, params=%s\n",
                om_data->state,
                signal_name,
                g_variant_print (parameters, TRUE));
@@ -2352,22 +2350,12 @@ int
 main (int   argc,
       char *argv[])
 {
-  gint ret;
-
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
-
-  session_bus_up ();
 
   g_test_add_func ("/gdbus/codegen/annotations", test_annotations);
   g_test_add_func ("/gdbus/codegen/interface_stability", test_interface_stability);
   g_test_add_func ("/gdbus/codegen/object-manager", test_object_manager);
   g_test_add_func ("/gdbus/codegen/property-naming", test_property_naming);
 
-  ret = g_test_run();
-
-  /* tear down bus */
-  session_bus_down ();
-
-  return ret;
+  return session_bus_run ();
 }

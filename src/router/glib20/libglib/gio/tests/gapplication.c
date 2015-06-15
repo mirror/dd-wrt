@@ -6,14 +6,48 @@
 #include "gdbus-tests.h"
 #include "gdbus-sessionbus.h"
 
+#if 0
+/* These tests are racy -- there is no guarantee about the order of data
+ * arriving over D-Bus.
+ *
+ * They're also a bit ridiculous -- GApplication was never meant to be
+ * abused in this way...
+ *
+ * We need new tests.
+ */
 static gint outstanding_watches;
 static GMainLoop *main_loop;
 
 typedef struct
 {
-  const gchar *expected_stdout;
+  gchar *expected_stdout;
   gint stdout_pipe;
+  gchar *expected_stderr;
+  gint stderr_pipe;
 } ChildData;
+
+static void
+check_data (gint fd, const gchar *expected)
+{
+  gssize len, actual;
+  gchar *buffer;
+  
+  len = strlen (expected);
+  buffer = g_alloca (len + 100);
+  actual = read (fd, buffer, len + 100);
+
+  g_assert_cmpint (actual, >=, 0);
+
+  if (actual != len ||
+      memcmp (buffer, expected, len) != 0)
+    {
+      buffer[MIN(len + 100, actual)] = '\0';
+
+      g_error ("\nExpected\n-----\n%s-----\nGot (%s)\n-----\n%s-----\n",
+               expected,
+               (actual > len) ? "truncated" : "full", buffer);
+    }
+}
 
 static void
 child_quit (GPid     pid,
@@ -21,29 +55,21 @@ child_quit (GPid     pid,
             gpointer data)
 {
   ChildData *child = data;
-  gssize expected, actual;
-  gchar *buffer;
 
   g_assert_cmpint (status, ==, 0);
 
   if (--outstanding_watches == 0)
     g_main_loop_quit (main_loop);
 
-  expected = strlen (child->expected_stdout);
-  buffer = g_alloca (expected + 100);
-  actual = read (child->stdout_pipe, buffer, expected + 100);
+  check_data (child->stdout_pipe, child->expected_stdout);
   close (child->stdout_pipe);
+  g_free (child->expected_stdout);
 
-  g_assert_cmpint (actual, >=, 0);
-
-  if (actual != expected ||
-      memcmp (buffer, child->expected_stdout, expected) != 0)
+  if (child->expected_stderr)
     {
-      buffer[MIN(expected + 100, actual)] = '\0';
-
-      g_error ("\nExpected\n-----\n%s-----\nGot (%s)\n-----\n%s-----\n",
-               child->expected_stdout,
-               (actual > expected) ? "truncated" : "full", buffer);
+      check_data (child->stderr_pipe, child->expected_stderr);
+      close (child->stderr_pipe);
+      g_free (child->expected_stderr);
     }
 
   g_slice_free (ChildData, child);
@@ -51,6 +77,7 @@ child_quit (GPid     pid,
 
 static void
 spawn (const gchar *expected_stdout,
+       const gchar *expected_stderr,
        const gchar *first_arg,
        ...)
 {
@@ -61,34 +88,52 @@ spawn (const gchar *expected_stdout,
   gchar **args;
   va_list ap;
   GPid pid;
+  GPollFD fd;
+  gchar **env;
 
   va_start (ap, first_arg);
   array = g_ptr_array_new ();
-  g_ptr_array_add (array, g_strdup ("./basic-application"));
+  g_ptr_array_add (array, g_test_build_filename (G_TEST_BUILT, "basic-application", NULL));
   for (arg = first_arg; arg; arg = va_arg (ap, const gchar *))
     g_ptr_array_add (array, g_strdup (arg));
   g_ptr_array_add (array, NULL);
   args = (gchar **) g_ptr_array_free (array, FALSE);
-
   va_end (ap);
 
-  data = g_slice_new (ChildData);
-  data->expected_stdout = expected_stdout;
+  env = g_environ_setenv (g_get_environ (), "TEST", "1", TRUE);
 
-  g_spawn_async_with_pipes (NULL, args, NULL,
+  data = g_slice_new (ChildData);
+  data->expected_stdout = g_strdup (expected_stdout);
+  data->expected_stderr = g_strdup (expected_stderr);
+
+  g_spawn_async_with_pipes (NULL, args, env,
                             G_SPAWN_DO_NOT_REAP_CHILD,
                             NULL, NULL, &pid, NULL,
-                            &data->stdout_pipe, NULL, &error);
+                            &data->stdout_pipe,
+                            expected_stderr ? &data->stderr_pipe : NULL,
+                            &error);
   g_assert_no_error (error);
+
+  g_strfreev (env);
 
   g_child_watch_add (pid, child_quit, data);
   outstanding_watches++;
+
+  /* we block until the children write to stdout to make sure
+   * they have started, as they need to be executed in order;
+   * see https://bugzilla.gnome.org/show_bug.cgi?id=664627
+   */
+  fd.fd = data->stdout_pipe;
+  fd.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+  g_poll (&fd, 1, -1);
 }
 
 static void
 basic (void)
 {
   GDBusConnection *c;
+
+  g_assert (outstanding_watches == 0);
 
   session_bus_up ();
   c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
@@ -98,30 +143,143 @@ basic (void)
   /* spawn the master */
   spawn ("activated\n"
          "open file:///a file:///b\n"
-         "cmdline '40 +' '2'\n"
-         "exit status: 0\n",
+         "exit status: 0\n", NULL,
          "./app", NULL);
 
-  /* make sure it becomes the master */
-  g_usleep (100000);
-
   /* send it some files */
-  spawn ("exit status: 0\n",
+  spawn ("exit status: 0\n", NULL,
          "./app", "/a", "/b", NULL);
-
-  /* make sure the commandline arrives after the files */
-  g_usleep (100000);
-
-  spawn ("40 + 2 = 42\n"
-         "exit status: 42\n",
-         "./cmd", "40 +", "2", NULL);
 
   g_main_loop_run (main_loop);
 
   g_object_unref (c);
   session_bus_down ();
+
+  g_main_loop_unref (main_loop);
 }
 
+static void
+test_remote_command_line (void)
+{
+  GDBusConnection *c;
+  GFile *file;
+  gchar *replies;
+  gchar *cwd;
+
+  g_assert (outstanding_watches == 0);
+
+  session_bus_up ();
+  c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
+
+  main_loop = g_main_loop_new (NULL, 0);
+
+  file = g_file_new_for_commandline_arg ("foo");
+  cwd = g_get_current_dir ();
+
+  replies = g_strconcat ("got ./cmd 0\n",
+                         "got ./cmd 1\n",
+                         "cmdline ./cmd echo --abc -d\n",
+                         "environment TEST=1\n",
+                         "getenv TEST=1\n",
+                         "file ", g_file_get_path (file), "\n",
+                         "properties ok\n",
+                         "cwd ", cwd, "\n",
+                         "busy\n",
+                         "idle\n",
+                         "stdin ok\n",        
+                         "exit status: 0\n",
+                         NULL);
+  g_object_unref (file);
+
+  /* spawn the master */
+  spawn (replies, NULL,
+         "./cmd", NULL);
+
+  g_free (replies);
+
+  /* send it a few commandlines */
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", "echo", "--abc", "-d", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", "env", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", "getenv", NULL);
+
+  spawn ("print test\n"
+         "exit status: 0\n", NULL,
+         "./cmd", "print", "test", NULL);
+
+  spawn ("exit status: 0\n", "printerr test\n",
+         "./cmd", "printerr", "test", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", "file", "foo", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", "properties", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", "cwd", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", "busy", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", "idle", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./cmd", "stdin", NULL);
+
+  g_main_loop_run (main_loop);
+
+  g_object_unref (c);
+  session_bus_down ();
+
+  g_main_loop_unref (main_loop);
+}
+
+static void
+test_remote_actions (void)
+{
+  GDBusConnection *c;
+
+  g_assert (outstanding_watches == 0);
+
+  session_bus_up ();
+  c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
+
+  main_loop = g_main_loop_new (NULL, 0);
+
+  /* spawn the master */
+  spawn ("got ./cmd 0\n"
+         "activate action1\n"
+         "change action2 1\n"
+         "exit status: 0\n", NULL,
+         "./cmd", NULL);
+
+  spawn ("actions quit new action1 action2\n"
+         "exit status: 0\n", NULL,
+         "./actions", "list", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./actions", "activate", NULL);
+
+  spawn ("exit status: 0\n", NULL,
+         "./actions", "set-state", NULL);
+
+  g_main_loop_run (main_loop);
+
+  g_object_unref (c);
+  session_bus_down ();
+
+  g_main_loop_unref (main_loop);
+}
+#endif
 
 #if 0
 /* Now that we register non-unique apps on the bus we need to fix the
@@ -317,7 +475,8 @@ nodbus_activate (GApplication *app)
 static void
 test_nodbus (void)
 {
-  gchar *argv[] = { "./unimportant", NULL };
+  char *binpath = g_test_build_filename (G_TEST_BUILT, "unimportant", NULL);
+  gchar *argv[] = { binpath, NULL };
   GApplication *app;
 
   app = g_application_new ("org.gtk.Unimportant", G_APPLICATION_FLAGS_NONE);
@@ -326,6 +485,7 @@ test_nodbus (void)
   g_object_unref (app);
 
   g_assert (nodbus_activated);
+  g_free (binpath);
 }
 
 static gboolean noappid_activated;
@@ -345,7 +505,8 @@ noappid_activate (GApplication *app)
 static void
 test_noappid (void)
 {
-  gchar *argv[] = { "./unimportant", NULL };
+  char *binpath = g_test_build_filename (G_TEST_BUILT, "unimportant", NULL);
+  gchar *argv[] = { binpath, NULL };
   GApplication *app;
 
   app = g_application_new (NULL, G_APPLICATION_FLAGS_NONE);
@@ -354,22 +515,24 @@ test_noappid (void)
   g_object_unref (app);
 
   g_assert (noappid_activated);
+  g_free (binpath);
 }
 
+static gboolean activated;
+static gboolean quitted;
 
 static gboolean
 quit_app (gpointer user_data)
 {
+  quitted = TRUE;
   g_application_quit (user_data);
   return G_SOURCE_REMOVE;
 }
 
-static gboolean quit_activated;
-
 static void
 quit_activate (GApplication *app)
 {
-  quit_activated = TRUE;
+  activated = TRUE;
   g_application_hold (app);
 
   g_assert (g_application_get_dbus_connection (app) != NULL);
@@ -382,7 +545,8 @@ static void
 test_quit (void)
 {
   GDBusConnection *c;
-  gchar *argv[] = { "./unimportant", NULL };
+  char *binpath = g_test_build_filename (G_TEST_BUILT, "unimportant", NULL);
+  gchar *argv[] = { binpath, NULL };
   GApplication *app;
 
   session_bus_up ();
@@ -390,14 +554,18 @@ test_quit (void)
 
   app = g_application_new ("org.gtk.Unimportant",
                            G_APPLICATION_FLAGS_NONE);
+  activated = FALSE;
+  quitted = FALSE;
   g_signal_connect (app, "activate", G_CALLBACK (quit_activate), NULL);
   g_application_run (app, 1, argv);
   g_object_unref (app);
   g_object_unref (c);
 
-  g_assert (quit_activated);
+  g_assert (activated);
+  g_assert (quitted);
 
   session_bus_down ();
+  g_free (binpath);
 }
 
 static void
@@ -424,47 +592,243 @@ on_activate (GApplication *app)
   state = g_action_group_get_action_state (G_ACTION_GROUP (app), "test");
   g_assert (g_variant_get_boolean (state) == TRUE);
 
+  action = g_action_map_lookup_action (G_ACTION_MAP (app), "test");
+  g_assert (action != NULL);
+
   g_action_map_remove_action (G_ACTION_MAP (app), "test");
 
   actions = g_action_group_list_actions (G_ACTION_GROUP (app));
   g_assert (g_strv_length (actions) == 0);
   g_strfreev (actions);
-
-  g_idle_add (quit_app, app);
 }
 
 static void
-test_actions (void)
+test_local_actions (void)
 {
-  gchar *argv[] = { "./unimportant", NULL };
+  char *binpath = g_test_build_filename (G_TEST_BUILT, "unimportant", NULL);
+  gchar *argv[] = { binpath, NULL };
   GApplication *app;
-
-  g_unsetenv ("DBUS_SESSION_BUS_ADDRESS");
 
   app = g_application_new ("org.gtk.Unimportant",
                            G_APPLICATION_FLAGS_NONE);
   g_signal_connect (app, "activate", G_CALLBACK (on_activate), NULL);
   g_application_run (app, 1, argv);
   g_object_unref (app);
+  g_free (binpath);
+}
+
+typedef GApplication TestLocCmdApp;
+typedef GApplicationClass TestLocCmdAppClass;
+
+static GType test_loc_cmd_app_get_type (void);
+G_DEFINE_TYPE (TestLocCmdApp, test_loc_cmd_app, G_TYPE_APPLICATION)
+
+static void
+test_loc_cmd_app_init (TestLocCmdApp *app)
+{
+}
+
+static void
+test_loc_cmd_app_startup (GApplication *app)
+{
+  g_assert_not_reached ();
+}
+
+static void
+test_loc_cmd_app_shutdown (GApplication *app)
+{
+  g_assert_not_reached ();
+}
+
+static gboolean
+test_loc_cmd_app_local_command_line (GApplication   *application,
+                                     gchar        ***arguments,
+                                     gint           *exit_status)
+{
+  return TRUE;
+}
+
+static void
+test_loc_cmd_app_class_init (TestLocCmdAppClass *klass)
+{
+  G_APPLICATION_CLASS (klass)->startup = test_loc_cmd_app_startup;
+  G_APPLICATION_CLASS (klass)->shutdown = test_loc_cmd_app_shutdown;
+  G_APPLICATION_CLASS (klass)->local_command_line = test_loc_cmd_app_local_command_line;
+}
+
+static void
+test_local_command_line (void)
+{
+  char *binpath = g_test_build_filename (G_TEST_BUILT, "unimportant", NULL);
+  gchar *argv[] = { binpath, "-invalid", NULL };
+  GApplication *app;
+
+  app = g_object_new (test_loc_cmd_app_get_type (),
+                      "application-id", "org.gtk.Unimportant",
+                      "flags", G_APPLICATION_FLAGS_NONE,
+                      NULL);
+  g_application_run (app, 1, argv);
+  g_object_unref (app);
+  g_free (binpath);
+}
+
+static void
+test_resource_path (void)
+{
+  GApplication *app;
+
+  app = g_application_new ("x.y.z", 0);
+  g_assert_cmpstr (g_application_get_resource_base_path (app), ==, "/x/y/z");
+
+  /* this should not change anything */
+  g_application_set_application_id (app, "a.b.c");
+  g_assert_cmpstr (g_application_get_resource_base_path (app), ==, "/x/y/z");
+
+  /* but this should... */
+  g_application_set_resource_base_path (app, "/x");
+  g_assert_cmpstr (g_application_get_resource_base_path (app), ==, "/x");
+
+  /* ... and this */
+  g_application_set_resource_base_path (app, NULL);
+  g_assert_cmpstr (g_application_get_resource_base_path (app), ==, NULL);
+
+  g_object_unref (app);
+
+  /* Make sure that overriding at construction time works properly */
+  app = g_object_new (G_TYPE_APPLICATION, "application-id", "x.y.z", "resource-base-path", "/a", NULL);
+  g_assert_cmpstr (g_application_get_resource_base_path (app), ==, "/a");
+  g_object_unref (app);
+
+  /* ... particularly if we override to NULL */
+  app = g_object_new (G_TYPE_APPLICATION, "application-id", "x.y.z", "resource-base-path", NULL, NULL);
+  g_assert_cmpstr (g_application_get_resource_base_path (app), ==, NULL);
+  g_object_unref (app);
+}
+
+static gint
+test_help_command_line (GApplication            *app,
+                        GApplicationCommandLine *command_line,
+                        gpointer                 user_data)
+{
+  gboolean *called = user_data;
+
+  *called = TRUE;
+
+  return 0;
+}
+
+/* Test whether --help is handled when HANDLES_COMMND_LINE is set and
+ * options have been added.
+ */
+static void
+test_help (void)
+{
+  if (g_test_subprocess ())
+    {
+      char *binpath = g_test_build_filename (G_TEST_BUILT, "unimportant", NULL);
+      gchar *argv[] = { binpath, "--help", NULL };
+      GApplication *app;
+      gboolean called = FALSE;
+      int status;
+
+      app = g_application_new ("org.gtk.TestApplication", G_APPLICATION_HANDLES_COMMAND_LINE);
+      g_application_add_main_option (app, "foo", 'f', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, "", "");
+      g_signal_connect (app, "command-line", G_CALLBACK (test_help_command_line), &called);
+
+      status = g_application_run (app, G_N_ELEMENTS (argv) -1, argv);
+      g_assert (called == TRUE);
+      g_assert_cmpint (status, ==, 0);
+
+      g_object_unref (app);
+      g_free (binpath);
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 0, 0);
+  g_test_trap_assert_passed ();
+  g_test_trap_assert_stdout ("*Application options*");
+}
+
+static void
+test_busy (void)
+{
+  GApplication *app;
+
+  /* use GSimpleAction to bind to the busy state, because it's easy to
+   * create and has an easily modifiable boolean property */
+  GSimpleAction *action1;
+  GSimpleAction *action2;
+
+  session_bus_up ();
+
+  app = g_application_new ("org.gtk.TestApplication", G_APPLICATION_NON_UNIQUE);
+  g_assert (g_application_register (app, NULL, NULL));
+
+  g_assert (!g_application_get_is_busy (app));
+  g_application_mark_busy (app);
+  g_assert (g_application_get_is_busy (app));
+  g_application_unmark_busy (app);
+  g_assert (!g_application_get_is_busy (app));
+
+  action1 = g_simple_action_new ("action", NULL);
+  g_application_bind_busy_property (app, action1, "enabled");
+  g_assert (g_application_get_is_busy (app));
+
+  g_simple_action_set_enabled (action1, FALSE);
+  g_assert (!g_application_get_is_busy (app));
+
+  g_application_mark_busy (app);
+  g_assert (g_application_get_is_busy (app));
+
+  action2 = g_simple_action_new ("action", NULL);
+  g_application_bind_busy_property (app, action2, "enabled");
+  g_assert (g_application_get_is_busy (app));
+
+  g_application_unmark_busy (app);
+  g_assert (g_application_get_is_busy (app));
+
+  g_object_unref (action2);
+  g_assert (!g_application_get_is_busy (app));
+
+  g_simple_action_set_enabled (action1, TRUE);
+  g_assert (g_application_get_is_busy (app));
+
+  g_application_mark_busy (app);
+  g_assert (g_application_get_is_busy (app));
+
+  g_application_unbind_busy_property (app, action1, "enabled");
+  g_assert (g_application_get_is_busy (app));
+
+  g_application_unmark_busy (app);
+  g_assert (!g_application_get_is_busy (app));
+
+  g_object_unref (action1);
+  g_object_unref (app);
+
+  session_bus_down ();
 }
 
 int
 main (int argc, char **argv)
 {
-  g_type_init ();
-
   g_test_init (&argc, &argv, NULL);
 
   g_test_dbus_unset ();
 
   g_test_add_func ("/gapplication/no-dbus", test_nodbus);
-  g_test_add_func ("/gapplication/basic", basic);
+/*  g_test_add_func ("/gapplication/basic", basic); */
   g_test_add_func ("/gapplication/no-appid", test_noappid);
 /*  g_test_add_func ("/gapplication/non-unique", test_nonunique); */
   g_test_add_func ("/gapplication/properties", properties);
   g_test_add_func ("/gapplication/app-id", appid);
   g_test_add_func ("/gapplication/quit", test_quit);
-  g_test_add_func ("/gapplication/actions", test_actions);
+  g_test_add_func ("/gapplication/local-actions", test_local_actions);
+/*  g_test_add_func ("/gapplication/remote-actions", test_remote_actions); */
+  g_test_add_func ("/gapplication/local-command-line", test_local_command_line);
+/*  g_test_add_func ("/gapplication/remote-command-line", test_remote_command_line); */
+  g_test_add_func ("/gapplication/resource-path", test_resource_path);
+  g_test_add_func ("/gapplication/test-help", test_help);
+  g_test_add_func ("/gapplication/test-busy", test_busy);
 
   return g_test_run ();
 }

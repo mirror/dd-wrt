@@ -14,9 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -25,20 +23,23 @@
 #include <sys/types.h> 
 #include <sys/stat.h> 
 #include <fcntl.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
 
 #include "glibconfig.h"
 
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
+
 #ifdef G_OS_WIN32
 #include <windows.h>
 #include <io.h>
 
+#undef fstat
 #define fstat(a,b) _fstati64(a,b)
+#undef stat
 #define stat _stati64
 
 #ifndef S_ISREG
@@ -232,7 +233,7 @@ mapped_file_new_from_fd (int           fd,
  * size 0 (e.g. device files such as /dev/null), @error will be set
  * to the #GFileError value #G_FILE_ERROR_INVAL.
  *
- * Return value: a newly allocated #GMappedFile which must be unref'd
+ * Returns: a newly allocated #GMappedFile which must be unref'd
  *    with g_mapped_file_unref(), or %NULL if the mapping failed.
  *
  * Since: 2.8
@@ -290,7 +291,7 @@ g_mapped_file_new (const gchar  *filename,
  * will not be modified, or if all modifications of the file are done
  * atomically (e.g. using g_file_set_contents()).
  *
- * Return value: a newly allocated #GMappedFile which must be unref'd
+ * Returns: a newly allocated #GMappedFile which must be unref'd
  *    with g_mapped_file_unref(), or %NULL if the mapping failed.
  *
  * Since: 2.32
@@ -367,7 +368,7 @@ g_mapped_file_free (GMappedFile *file)
  * Increments the reference count of @file by one.  It is safe to call
  * this function from any thread.
  *
- * Return value: the passed in #GMappedFile.
+ * Returns: the passed in #GMappedFile.
  *
  * Since: 2.22
  **/

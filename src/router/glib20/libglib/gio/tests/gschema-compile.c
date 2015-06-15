@@ -12,30 +12,40 @@ typedef struct {
 } SchemaTest;
 
 static void
+test_schema_do_compile (gpointer data)
+{
+  SchemaTest *test = (SchemaTest *) data;
+  gchar *filename = g_strconcat (test->name, ".gschema.xml", NULL);
+  gchar *path = g_test_build_filename (G_TEST_DIST, "schema-tests", filename, NULL);
+  gchar *argv[] = {
+    "../glib-compile-schemas",
+    "--strict",
+    "--dry-run",
+    "--schema-file", path,
+    (gchar *)test->opt,
+    NULL
+  };
+  gchar *envp[] = { NULL };
+
+  execve (argv[0], argv, envp);
+  g_assert_not_reached ();
+}
+
+static void
 test_schema (gpointer data)
 {
   SchemaTest *test = (SchemaTest *) data;
+  gchar *child_name;
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
-    {
-      gchar *filename = g_strconcat (test->name, ".gschema.xml", NULL);
-      gchar *path = g_build_filename (SRCDIR, "schema-tests", filename, NULL);
-      gchar *argv[] = {
-        "../glib-compile-schemas",
-        "--strict",
-        "--dry-run",
-        "--schema-file", path,
-        (gchar *)test->opt,
-        NULL
-      };
-      gchar *envp[] = { NULL };
-      execve (argv[0], argv, envp);
-      g_free (filename);
-      g_free (path);
-    }
+  child_name = g_strdup_printf ("/gschema/%s%s/subprocess/do_compile", test->name, test->opt ? "/opt" : "");
+  g_test_trap_subprocess (child_name, 0, 0);
+  g_free (child_name);
+
   if (test->err)
     {
       g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr_unmatched ("*CRITICAL*");
+      g_test_trap_assert_stderr_unmatched ("*WARNING*");
       g_test_trap_assert_stderr (test->err);
     }
   else
@@ -97,14 +107,14 @@ static const SchemaTest tests[] = {
   { "range-parse-error",            NULL, "*invalid character in number*"                       },
   { "from-docs",                    NULL, NULL                                                  },
   { "extending",                    NULL, NULL                                                  },
-  { "extend-missing",               NULL, "*extends not-yet-existing schema*"                   },
+  { "extend-missing",               NULL, "*extends not yet existing schema*"                   },
   { "extend-nonlist",               NULL, "*which is not a list*"                               },
-  { "extend-self",                  NULL, "*not-yet-existing*"                                  },
+  { "extend-self",                  NULL, "*not yet existing*"                                  },
   { "extend-wrong-list-indirect",   NULL, "*'y' does not extend 'x'*"                           },
   { "extend-wrong-list",            NULL, "*'y' does not extend 'x'*"                           },
   { "key-in-list-indirect",         NULL, "*cannot add keys to a 'list*"                        },
   { "key-in-list",                  NULL, "*cannot add keys to a 'list*"                        },
-  { "list-of-missing",              NULL, "*is list of not-yet-existing schema*"                },
+  { "list-of-missing",              NULL, "*is list of not yet existing schema*"                },
   { "extend-and-shadow",            NULL, "*shadows*use <override>*"                            },
   { "extend-and-shadow-indirect",   NULL, "*shadows*use <override>*"                            },
   { "override",                     NULL, NULL                                                  },
@@ -118,6 +128,9 @@ static const SchemaTest tests[] = {
   { "flags-more-than-one-bit",      NULL, "*flags values must have at most 1 bit set*"          },
   { "flags-with-enum-attr",         NULL, "*<enum id='flags'> not (yet) defined*"               },
   { "flags-with-enum-tag",          NULL, "*<flags id='flags'> not (yet) defined*"              },
+  { "summary-xmllang",              NULL, "*Only one <summary> element allowed*"                },
+  { "description-xmllang",          NULL, "*Only one <description> element allowed*"            },
+  { "summary-xmllang-and-attrs",    NULL, "*attribute 'lang' invalid for element 'summary'*"    },
   { "inherit-gettext-domain",       NULL, NULL                                                  },
   { "range-type-test",              NULL, NULL                                                  },
   { "cdata",                        NULL, NULL                                                  }
@@ -131,13 +144,18 @@ main (int argc, char *argv[])
 
   setlocale (LC_ALL, "");
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   for (i = 0; i < G_N_ELEMENTS (tests); ++i)
     {
-      gchar *name = g_strdup_printf ("/gschema/%s%s", tests[i].name, tests[i].opt ? "/opt" : "");
+      gchar *name;
+
+      name = g_strdup_printf ("/gschema/%s%s", tests[i].name, tests[i].opt ? "/opt" : "");
       g_test_add_data_func (name, &tests[i], (gpointer) test_schema);
+      g_free (name);
+
+      name = g_strdup_printf ("/gschema/%s%s/subprocess/do_compile", tests[i].name, tests[i].opt ? "/opt" : "");
+      g_test_add_data_func (name, &tests[i], (gpointer) test_schema_do_compile);
       g_free (name);
     }
 

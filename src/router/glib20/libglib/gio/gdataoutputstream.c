@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -77,6 +75,7 @@ static gboolean g_data_output_stream_truncate            (GSeekable       *seeka
 G_DEFINE_TYPE_WITH_CODE (GDataOutputStream,
 			 g_data_output_stream,
 			 G_TYPE_FILTER_OUTPUT_STREAM,
+                         G_ADD_PRIVATE (GDataOutputStream)
 			 G_IMPLEMENT_INTERFACE (G_TYPE_SEEKABLE,
 						g_data_output_stream_seekable_iface_init))
 
@@ -85,8 +84,6 @@ static void
 g_data_output_stream_class_init (GDataOutputStreamClass *klass)
 {
   GObjectClass *object_class;
-
-  g_type_class_add_private (klass, sizeof (GDataOutputStreamPrivate));
 
   object_class = G_OBJECT_CLASS (klass);
   object_class->get_property = g_data_output_stream_get_property;
@@ -158,10 +155,7 @@ g_data_output_stream_get_property (GObject    *object,
 static void
 g_data_output_stream_init (GDataOutputStream *stream)
 {
-  stream->priv = G_TYPE_INSTANCE_GET_PRIVATE (stream,
-                                              G_TYPE_DATA_OUTPUT_STREAM,
-                                              GDataOutputStreamPrivate);
-
+  stream->priv = g_data_output_stream_get_instance_private (stream);
   stream->priv->byte_order = G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN;
 }
 

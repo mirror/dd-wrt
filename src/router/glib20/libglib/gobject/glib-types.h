@@ -12,16 +12,14 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef __GLIB_TYPES_H__
+#define __GLIB_TYPES_H__
+
 #if !defined (__GLIB_GOBJECT_H_INSIDE__) && !defined (GOBJECT_COMPILATION) && !defined(GLIB_COMPILATION)
 #error "Only <glib-object.h> can be included directly."
 #endif
-
-#ifndef __GLIB_TYPES_H__
-#define __GLIB_TYPES_H__
 
 #include <glib.h>
 
@@ -201,6 +199,15 @@ typedef gsize GType;
 #define G_TYPE_VARIANT_BUILDER (g_variant_builder_get_type ())
 
 /**
+ * G_TYPE_VARIANT_DICT:
+ *
+ * The #GType for a boxed type holding a #GVariantDict.
+ *
+ * Since: 2.40
+ */
+#define G_TYPE_VARIANT_DICT (g_variant_dict_get_type ())
+
+/**
  * G_TYPE_MAIN_LOOP:
  *
  * The #GType for a boxed type holding a #GMainLoop.
@@ -228,6 +235,24 @@ typedef gsize GType;
 #define G_TYPE_SOURCE (g_source_get_type ())
 
 /**
+ * G_TYPE_POLLFD:
+ *
+ * The #GType for a boxed type holding a #GPollFD.
+ *
+ * Since: 2.36
+ */
+#define G_TYPE_POLLFD (g_pollfd_get_type ())
+
+/**
+ * G_TYPE_MARKUP_PARSE_CONTEXT:
+ *
+ * The #GType for a boxed type holding a #GMarkupParseContext.
+ *
+ * Since: 2.36
+ */
+#define G_TYPE_MARKUP_PARSE_CONTEXT (g_markup_parse_context_get_type ())
+
+/**
  * G_TYPE_KEY_FILE:
  *
  * The #GType for a boxed type holding a #GKeyFile.
@@ -236,24 +261,79 @@ typedef gsize GType;
  */
 #define G_TYPE_KEY_FILE (g_key_file_get_type ())
 
+/**
+ * G_TYPE_MAPPED_FILE:
+ *
+ * The #GType for a boxed type holding a #GMappedFile.
+ *
+ * Since: 2.40
+ */
+#define G_TYPE_MAPPED_FILE (g_mapped_file_get_type ())
+
+/**
+ * G_TYPE_THREAD:
+ *
+ * The #GType for a boxed type holding a #GThread.
+ *
+ * Since: 2.36
+ */
+#define G_TYPE_THREAD (g_thread_get_type ())
+
+/**
+ * G_TYPE_CHECKSUM:
+ *
+ * The #GType for a boxed type holding a #GChecksum.
+ *
+ * Since: 2.36
+ */
+#define G_TYPE_CHECKSUM (g_checksum_get_type ())
+
+/**
+ * G_TYPE_OPTION_GROUP:
+ *
+ * The #GType for a boxed type holding a #GOptionGroup.
+ *
+ * Since: 2.44
+ */
+#define G_TYPE_OPTION_GROUP (g_option_group_get_type ())
+
+GLIB_AVAILABLE_IN_ALL
 GType   g_date_get_type            (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_strv_get_type            (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_gstring_get_type         (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_hash_table_get_type      (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_array_get_type           (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_byte_array_get_type      (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_ptr_array_get_type       (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_bytes_get_type           (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_variant_type_get_gtype   (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_regex_get_type           (void) G_GNUC_CONST;
 GLIB_AVAILABLE_IN_2_30
 GType   g_match_info_get_type      (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_error_get_type           (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_date_time_get_type       (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_time_zone_get_type       (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_io_channel_get_type      (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_io_condition_get_type    (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_variant_builder_get_type (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_40
+GType   g_variant_dict_get_type    (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_ALL
 GType   g_key_file_get_type        (void) G_GNUC_CONST;
 GLIB_AVAILABLE_IN_2_30
 GType   g_main_loop_get_type       (void) G_GNUC_CONST;
@@ -261,6 +341,18 @@ GLIB_AVAILABLE_IN_2_30
 GType   g_main_context_get_type    (void) G_GNUC_CONST;
 GLIB_AVAILABLE_IN_2_30
 GType   g_source_get_type          (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_36
+GType   g_pollfd_get_type          (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_36
+GType   g_thread_get_type          (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_36
+GType   g_checksum_get_type        (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_36
+GType   g_markup_parse_context_get_type (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_40
+GType   g_mapped_file_get_type (void) G_GNUC_CONST;
+GLIB_AVAILABLE_IN_2_44
+GType   g_option_group_get_type    (void) G_GNUC_CONST;
 
 GLIB_DEPRECATED_FOR('G_TYPE_VARIANT')
 GType   g_variant_get_gtype        (void) G_GNUC_CONST;

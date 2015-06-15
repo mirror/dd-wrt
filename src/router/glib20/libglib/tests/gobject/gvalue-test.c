@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -355,6 +353,7 @@ test_copying (void)
     error = lcopy (&value, &c);
     g_assert (error == NULL);
     g_assert (strcmp (c, "string ?") == 0);
+    g_free (c);
   }  
 
   {
@@ -380,6 +379,7 @@ test_copying (void)
     g_assert (g_variant_is_of_type (c, G_VARIANT_TYPE ("u")));
     g_assert_cmpuint (g_variant_get_uint32 (c), ==, 42);
     g_variant_unref (c);
+    g_value_unset (&value);
   }
 }
 
@@ -388,7 +388,6 @@ int
 main (int argc, char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
-  g_type_init ();
 
   g_test_add_func ("/gvalue/enum-transformation", test_enum_transformation);
   g_test_add_func ("/gvalue/gtype", test_gtype_value);

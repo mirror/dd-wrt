@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Matthias Clasen
  */
@@ -39,6 +37,10 @@
 #include <gio/gio.h>
 #include <glib/gstdio.h>
 #include <gi18n.h>
+
+#ifdef G_OS_WIN32
+#include "glib/glib-private.h"
+#endif
 
 /* GResource functions {{{1 */
 static GResource *
@@ -124,10 +126,6 @@ extract_resource (GResource   *resource,
         g_printerr ("Data truncated\n");
       g_bytes_unref (bytes);
     }
-  else
-    {
-      g_printerr ("Can't find resource path %s\n", path);
-    }
 }
 
 /* Elf functions {{{1 */
@@ -149,10 +147,18 @@ get_elf (const gchar *file,
 
   elf = elf_begin (*fd, ELF_C_READ, NULL);
   if (elf == NULL)
-    return NULL;
+    {
+      g_close (*fd, NULL);
+      *fd = -1;
+      return NULL;
+    }
 
   if (elf_kind (elf) != ELF_K_ELF)
-    return NULL;
+    {
+      g_close (*fd, NULL);
+      *fd = -1;
+      return NULL;
+    }
 
   return elf;
 }
@@ -218,10 +224,16 @@ resource_from_section (GElf_Shdr *shdr,
   if (contents != MAP_FAILED)
     {
       GBytes *bytes;
+      GError *error = NULL;
 
       bytes = g_bytes_new_static (contents + page_offset, shdr->sh_size);
-      resource = g_resource_new_from_data (bytes, NULL);
+      resource = g_resource_new_from_data (bytes, &error);
       g_bytes_unref (bytes);
+      if (error)
+        {
+          g_printerr ("%s\n", error->message);
+          g_error_free (error);
+        }
     }
   else
     {
@@ -304,7 +316,10 @@ extract_resource_cb (GElf_Shdr   *shdr,
   extract_resource (resource, d->path);
   g_resource_unref (resource);
 
-  return FALSE;
+  if (d->section)
+    return FALSE;
+
+  return TRUE;
 }
 
 static void
@@ -385,7 +400,6 @@ cmd_list (const gchar *file,
   GResource *resource;
 
 #ifdef HAVE_LIBELF
-
   Elf *elf;
   int fd;
 
@@ -583,7 +597,6 @@ main (int argc, char *argv[])
   void (* function) (const gchar *, const gchar *, const gchar *, gboolean);
 
 #ifdef G_OS_WIN32
-  extern gchar *_glib_get_locale_dir (void);
   gchar *tmp;
 #endif
 
@@ -601,8 +614,6 @@ main (int argc, char *argv[])
 #ifdef HAVE_BIND_TEXTDOMAIN_CODESET
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 #endif
-
-  g_type_init ();
 
   if (argc < 2)
     return cmd_help (FALSE, NULL);

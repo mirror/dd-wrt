@@ -13,20 +13,18 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  *         David Zeuthen <davidz@redhat.com>
  */
 
+#ifndef __G_DRIVE_H__
+#define __G_DRIVE_H__
+
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_DRIVE_H__
-#define __G_DRIVE_H__
 
 #include <gio/giotypes.h>
 
@@ -159,17 +157,28 @@ struct _GDriveIface
 
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType    g_drive_get_type                 (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 char *   g_drive_get_name                 (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 GIcon *  g_drive_get_icon                 (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 GIcon *  g_drive_get_symbolic_icon        (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_has_volumes              (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 GList *  g_drive_get_volumes              (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_is_media_removable       (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_has_media                (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_is_media_check_automatic (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_can_poll_for_media       (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_can_eject                (GDrive               *drive);
 GLIB_DEPRECATED_FOR(g_drive_eject_with_operation)
 void     g_drive_eject                    (GDrive               *drive,
@@ -182,48 +191,62 @@ GLIB_DEPRECATED_FOR(g_drive_eject_with_operation_finish)
 gboolean g_drive_eject_finish             (GDrive               *drive,
                                            GAsyncResult         *result,
                                            GError              **error);
+GLIB_AVAILABLE_IN_ALL
 void     g_drive_poll_for_media           (GDrive               *drive,
                                            GCancellable         *cancellable,
                                            GAsyncReadyCallback   callback,
                                            gpointer              user_data);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_poll_for_media_finish    (GDrive               *drive,
                                            GAsyncResult         *result,
                                            GError              **error);
+GLIB_AVAILABLE_IN_ALL
 char *   g_drive_get_identifier           (GDrive              *drive,
                                            const char          *kind);
+GLIB_AVAILABLE_IN_ALL
 char **  g_drive_enumerate_identifiers    (GDrive              *drive);
 
+GLIB_AVAILABLE_IN_ALL
 GDriveStartStopType g_drive_get_start_stop_type (GDrive        *drive);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_can_start                (GDrive              *drive);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_can_start_degraded       (GDrive              *drive);
+GLIB_AVAILABLE_IN_ALL
 void     g_drive_start                    (GDrive              *drive,
                                            GDriveStartFlags     flags,
                                            GMountOperation     *mount_operation,
                                            GCancellable        *cancellable,
                                            GAsyncReadyCallback  callback,
                                            gpointer             user_data);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_start_finish             (GDrive               *drive,
                                            GAsyncResult         *result,
                                            GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_can_stop                 (GDrive               *drive);
+GLIB_AVAILABLE_IN_ALL
 void     g_drive_stop                     (GDrive               *drive,
                                            GMountUnmountFlags    flags,
                                            GMountOperation      *mount_operation,
                                            GCancellable         *cancellable,
                                            GAsyncReadyCallback   callback,
                                            gpointer              user_data);
+GLIB_AVAILABLE_IN_ALL
 gboolean g_drive_stop_finish              (GDrive               *drive,
                                            GAsyncResult         *result,
                                            GError              **error);
 
+GLIB_AVAILABLE_IN_ALL
 void        g_drive_eject_with_operation      (GDrive              *drive,
                                                GMountUnmountFlags   flags,
                                                GMountOperation     *mount_operation,
                                                GCancellable        *cancellable,
                                                GAsyncReadyCallback  callback,
                                                gpointer             user_data);
+GLIB_AVAILABLE_IN_ALL
 gboolean    g_drive_eject_with_operation_finish (GDrive            *drive,
                                                GAsyncResult        *result,
                                                GError             **error);

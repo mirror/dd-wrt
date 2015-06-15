@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -584,7 +582,6 @@ g_io_channel_new_file (const gchar *filename,
 /**
  * g_io_channel_unix_new:
  * @fd: a file descriptor.
- * @Returns: a new #GIOChannel.
  *
  * Creates a new #GIOChannel given a file descriptor. On UNIX systems
  * this works for plain files, pipes, and sockets.
@@ -606,6 +603,8 @@ g_io_channel_new_file (const gchar *filename,
  * in case the argument you pass to this function happens to be both a
  * valid file descriptor and socket. If that happens a warning is
  * issued, and GLib assumes that it is the file descriptor you mean.
+ *
+ * Returns: a new #GIOChannel.
  **/
 GIOChannel *
 g_io_channel_unix_new (gint fd)
@@ -639,12 +638,13 @@ g_io_channel_unix_new (gint fd)
 /**
  * g_io_channel_unix_get_fd:
  * @channel: a #GIOChannel, created with g_io_channel_unix_new().
- * @Returns: the file descriptor of the #GIOChannel.
  *
  * Returns the file descriptor of the #GIOChannel.
  *
  * On Windows this function returns the file descriptor or socket of
  * the #GIOChannel.
+ *
+ * Returns: the file descriptor of the #GIOChannel.
  **/
 gint
 g_io_channel_unix_get_fd (GIOChannel *channel)

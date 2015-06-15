@@ -27,25 +27,92 @@
 #include <string.h>
 #include <locale.h>
 
+static GOptionEntry main_entries[] = {
+  { "main-switch", 0, 0,
+    G_OPTION_ARG_NONE, NULL,
+    "A switch that is in the main group", NULL },
+  { NULL }
+};
+
+static GOptionEntry group_entries[] = {
+  { "test-switch", 0, 0,
+    G_OPTION_ARG_NONE, NULL,
+    "A switch that is in the test group", NULL },
+  { NULL }
+};
+
+static GOptionContext *
+make_options (int test_number)
+{
+  GOptionContext *options;
+  GOptionGroup   *group = NULL;
+  gboolean have_main_entries = (0 != (test_number & 1));
+  gboolean have_test_entries = (0 != (test_number & 2));
+
+  options = g_option_context_new (NULL);
+
+  if (have_main_entries)
+    g_option_context_add_main_entries (options, main_entries, NULL);
+  if (have_test_entries)
+    {
+      group = g_option_group_new ("test", "Test Options",
+                                  "Show all test options",
+                                  NULL, NULL);
+      g_option_context_add_group (options, group);
+      g_option_group_add_entries (group, group_entries);
+    }
+
+  return options;
+}
+
+static void
+print_help (GOptionContext *options, gchar **argv)
+{
+  gint    argc = 3;
+  GError *error = NULL;
+
+  g_setenv ("LANG", "C", TRUE);
+
+  g_option_context_parse (options, &argc, &argv, &error);
+  g_option_context_free (options);
+  exit(0);
+}
+
+static void
+test_group_captions_help (gconstpointer test_number)
+{
+  GOptionContext *options;
+  gchar *argv[] = { __FILE__, "--help", NULL };
+
+  options = make_options (GPOINTER_TO_INT (test_number));
+  print_help (options, argv);
+}
+
+static void
+test_group_captions_help_all (gconstpointer test_number)
+{
+  GOptionContext *options;
+  gchar *argv[] = { __FILE__, "--help-all", NULL };
+
+  options = make_options (GPOINTER_TO_INT (test_number));
+  print_help (options, argv);
+}
+
+static void
+test_group_captions_help_test (gconstpointer test_number)
+{
+  GOptionContext *options;
+  gchar *argv[] = { __FILE__, "--help-test", NULL };
+
+  options = make_options (GPOINTER_TO_INT (test_number));
+  print_help (options, argv);
+}
+
 static void
 test_group_captions (void)
 {
-  gchar *help_variants[] = { "--help", "--help-all", "--help-test" };
-
-  GOptionEntry main_entries[] = {
-    { "main-switch", 0, 0,
-      G_OPTION_ARG_NONE, NULL,
-      "A switch that is in the main group", NULL },
-    { NULL }
-  };
-
-  GOptionEntry group_entries[] = {
-    { "test-switch", 0, 0,
-      G_OPTION_ARG_NONE, NULL,
-      "A switch that is in the test group", NULL },
-    { NULL }
-  };
-
+  const gchar *test_name_base[] = { "help", "help-all", "help-test" };
+  gchar *test_name;
   gint i, j;
 
   g_test_bug ("504142");
@@ -55,115 +122,76 @@ test_group_captions (void)
       gboolean have_main_entries = (0 != (i & 1));
       gboolean have_test_entries = (0 != (i & 2));
 
-      GOptionContext *options;
-      GOptionGroup   *group = NULL;
-
-      options = g_option_context_new (NULL);
-
-      if (have_main_entries)
-        g_option_context_add_main_entries (options, main_entries, NULL);
-      if (have_test_entries)
+      for (j = 0; j < G_N_ELEMENTS (test_name_base); ++j)
         {
-          group = g_option_group_new ("test", "Test Options",
-                                      "Show all test options",
-                                      NULL, NULL);
-          g_option_context_add_group (options, group);
-          g_option_group_add_entries (group, group_entries);
-        }
+          GTestSubprocessFlags trap_flags = 0;
+          gboolean expect_main_description = FALSE;
+          gboolean expect_main_switch      = FALSE;
+          gboolean expect_test_description = FALSE;
+          gboolean expect_test_switch      = FALSE;
+          gboolean expect_test_group       = FALSE;
 
-      for (j = 0; j < G_N_ELEMENTS (help_variants); ++j)
-        {
-          GTestTrapFlags trap_flags = 0;
-          gchar *args[3];
+          if (g_test_verbose ())
+            trap_flags |= G_TEST_SUBPROCESS_INHERIT_STDOUT | G_TEST_SUBPROCESS_INHERIT_STDERR;
 
-          args[0] = __FILE__;
-          args[1] = help_variants[j];
-          args[2] = NULL;
+          test_name = g_strdup_printf ("/option/group/captions/subprocess/%s-%d",
+                                       test_name_base[j], i);
+          g_test_trap_subprocess (test_name, 0, trap_flags);
+          g_free (test_name);
+          g_test_trap_assert_passed ();
+          g_test_trap_assert_stderr ("");
 
-          if (!g_test_verbose ())
-            trap_flags |= G_TEST_TRAP_SILENCE_STDOUT | G_TEST_TRAP_SILENCE_STDERR;
-
-          g_test_message ("test setup: args='%s', main-entries=%d, test-entries=%d",
-                          args[1], have_main_entries, have_test_entries);
-
-          if (g_test_trap_fork (0, trap_flags))
+          switch (j)
             {
-              gchar **argv = args;
-              gint    argc = 2;
-              GError *error = NULL;
+            case 0:
+              g_assert_cmpstr ("help", ==, test_name_base[j]);
+              expect_main_switch = have_main_entries;
+              expect_test_group  = have_test_entries;
+              break;
 
-              g_setenv ("LANG", "C", TRUE);
+            case 1:
+              g_assert_cmpstr ("help-all", ==, test_name_base[j]);
+              expect_main_switch = have_main_entries;
+              expect_test_switch = have_test_entries;
+              expect_test_group  = have_test_entries;
+              break;
 
-              g_option_context_parse (options, &argc, &argv, &error);
-              g_option_context_free (options);
-              exit(0);
+            case 2:
+              g_assert_cmpstr ("help-test", ==, test_name_base[j]);
+              expect_test_switch = have_test_entries;
+              break;
+
+            default:
+              g_assert_not_reached ();
+              break;
             }
+
+          expect_main_description |= expect_main_switch;
+          expect_test_description |= expect_test_switch;
+
+          if (expect_main_description)
+            g_test_trap_assert_stdout           ("*Application Options*");
           else
-            {
-              gboolean expect_main_description = FALSE;
-              gboolean expect_main_switch      = FALSE;
+            g_test_trap_assert_stdout_unmatched ("*Application Options*");
+          if (expect_main_switch)
+            g_test_trap_assert_stdout           ("*--main-switch*");
+          else
+            g_test_trap_assert_stdout_unmatched ("*--main-switch*");
 
-              gboolean expect_test_description = FALSE;
-              gboolean expect_test_switch      = FALSE;
-              gboolean expect_test_group       = FALSE;
+          if (expect_test_description)
+            g_test_trap_assert_stdout           ("*Test Options*");
+          else
+            g_test_trap_assert_stdout_unmatched ("*Test Options*");
+          if (expect_test_switch)
+            g_test_trap_assert_stdout           ("*--test-switch*");
+          else
+            g_test_trap_assert_stdout_unmatched ("*--test-switch*");
 
-              g_test_trap_assert_passed ();
-              g_test_trap_assert_stderr ("");
-
-              switch (j)
-                {
-                  case 0:
-                    g_assert_cmpstr ("--help", ==, args[1]);
-                    expect_main_switch = have_main_entries;
-                    expect_test_group  = have_test_entries;
-                    break;
-
-                  case 1:
-                    g_assert_cmpstr ("--help-all", ==, args[1]);
-                    expect_main_switch = have_main_entries;
-                    expect_test_switch = have_test_entries;
-                    expect_test_group  = have_test_entries;
-                    break;
-
-                  case 2:
-                    g_assert_cmpstr ("--help-test", ==, args[1]);
-                    expect_test_switch = have_test_entries;
-                    break;
-
-                  default:
-                    g_assert_not_reached ();
-                    break;
-                }
-
-              expect_main_description |= expect_main_switch;
-              expect_test_description |= expect_test_switch;
-
-              if (expect_main_description)
-                g_test_trap_assert_stdout           ("*Application Options*");
-              else
-                g_test_trap_assert_stdout_unmatched ("*Application Options*");
-              if (expect_main_switch)
-                g_test_trap_assert_stdout           ("*--main-switch*");
-              else
-                g_test_trap_assert_stdout_unmatched ("*--main-switch*");
-
-              if (expect_test_description)
-                g_test_trap_assert_stdout           ("*Test Options*");
-              else
-                g_test_trap_assert_stdout_unmatched ("*Test Options*");
-              if (expect_test_switch)
-                g_test_trap_assert_stdout           ("*--test-switch*");
-              else
-                g_test_trap_assert_stdout_unmatched ("*--test-switch*");
-
-              if (expect_test_group)
-                g_test_trap_assert_stdout           ("*--help-test*");
-              else
-                g_test_trap_assert_stdout_unmatched ("*--help-test*");
-            }
+          if (expect_test_group)
+            g_test_trap_assert_stdout           ("*--help-test*");
+          else
+            g_test_trap_assert_stdout_unmatched ("*--help-test*");
         }
-
-      g_option_context_free (options);
     }
 }
 
@@ -596,7 +624,7 @@ arg_test5 (void)
   gchar **argv_copy;
   int argc;
   char *old_locale, *current_locale;
-  const char *locale = "de_DE";
+  const char *locale = "de_DE.UTF-8";
   GOptionEntry entries [] =
     { { "test", 0, 0, G_OPTION_ARG_DOUBLE, &arg_test5_double, NULL, NULL },
       { NULL } };
@@ -1937,6 +1965,65 @@ test_basic (void)
   g_option_context_free (context);
 }
 
+typedef struct {
+  gboolean parameter_seen;
+  gboolean summary_seen;
+  gboolean description_seen;
+  gboolean destroyed;
+} TranslateData;
+
+static const gchar *
+translate_func (const gchar *str,
+                gpointer     data)
+{
+  TranslateData *d = data;
+
+  if (strcmp (str, "parameter") == 0)
+    d->parameter_seen = TRUE;
+  else if (strcmp (str, "summary") == 0)
+    d->summary_seen = TRUE;
+  else if (strcmp (str, "description") == 0)
+    d->description_seen = TRUE;
+  
+  return str;
+}
+
+static void
+destroy_notify (gpointer data)
+{
+  TranslateData *d = data;
+
+  d->destroyed = TRUE;
+}
+
+static void
+test_translate (void)
+{
+  GOptionContext *context;
+  gchar *arg = NULL;
+  GOptionEntry entries [] =
+    { { "test", 't', 0, G_OPTION_ARG_STRING, &arg, NULL, NULL },
+      { NULL } };
+  TranslateData data = { 0, };
+  gchar *str;
+
+  context = g_option_context_new ("parameter");
+  g_option_context_add_main_entries (context, entries, NULL);
+  g_option_context_set_summary (context, "summary");
+  g_option_context_set_description (context, "description");
+
+  g_option_context_set_translate_func (context, translate_func, &data, destroy_notify);
+  
+  str = g_option_context_get_help (context, FALSE, NULL);
+  g_free (str);
+  g_option_context_free (context);
+
+  g_assert (data.parameter_seen);
+  g_assert (data.summary_seen);
+  g_assert (data.description_seen);
+  g_assert (data.destroyed);
+}
+
 static void
 test_help (void)
 {
@@ -2013,6 +2100,65 @@ test_help_no_options (void)
   g_assert (strstr (str, "Application Options") == NULL);
 
   g_free (str);
+  g_option_context_free (context);
+}
+
+static void
+test_help_no_help_options (void)
+{
+  GOptionContext *context;
+  GOptionGroup *group;
+  gchar *str;
+  gchar *arg = NULL;
+  gchar **sarr = NULL;
+  GOptionEntry entries[] = {
+    { "test", 't', 0, G_OPTION_ARG_STRING, &arg, "Test tests", "Argument to use in test" },
+    { "test2", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, NULL, "Tests also", NULL },
+    { "frob", 0, 0, G_OPTION_ARG_NONE, NULL, "Main frob", NULL },
+    { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &sarr, "Rest goes here", "REST" },
+    { NULL }
+  };
+  GOptionEntry group_entries[] = {
+    { "test", 't', 0, G_OPTION_ARG_STRING, &arg, "Group test", "Group test arg" },
+    { "frob", 0, G_OPTION_FLAG_NOALIAS, G_OPTION_ARG_NONE, NULL, "Group frob", NULL },
+    { NULL }
+  };
+
+  g_test_bug ("697652");
+
+  context = g_option_context_new ("blabla");
+  g_option_context_add_main_entries (context, entries, NULL);
+  g_option_context_set_summary (context, "Summary");
+  g_option_context_set_description (context, "Description");
+  g_option_context_set_help_enabled (context, FALSE);
+
+  group = g_option_group_new ("group1", "Group1-description", "Group1-help", NULL, NULL);
+  g_option_group_add_entries (group, group_entries);
+
+  g_option_context_add_group (context, group);
+
+  str = g_option_context_get_help (context, FALSE, NULL);
+  g_assert (strstr (str, "blabla") != NULL);
+  g_assert (strstr (str, "Test tests") != NULL);
+  g_assert (strstr (str, "Argument to use in test") != NULL);
+  g_assert (strstr (str, "Tests also") == NULL);
+  g_assert (strstr (str, "REST") != NULL);
+  g_assert (strstr (str, "Summary") != NULL);
+  g_assert (strstr (str, "Description") != NULL);
+  g_assert (strstr (str, "Help Options") == NULL);
+  g_assert (strstr (str, "--help") == NULL);
+  g_assert (strstr (str, "--help-all") == NULL);
+  g_assert (strstr (str, "--help-group1") == NULL);
+  g_assert (strstr (str, "Group1-description") != NULL);
+  g_assert (strstr (str, "Group1-help") == NULL);
+  g_assert (strstr (str, "Group test arg") != NULL);
+  g_assert (strstr (str, "Group frob") != NULL);
+  g_assert (strstr (str, "Main frob") != NULL);
+  g_assert (strstr (str, "--frob") != NULL);
+  g_assert (strstr (str, "--group1-test") != NULL);
+  g_assert (strstr (str, "--group1-frob") == NULL);
+  g_free (str);
+
   g_option_context_free (context);
 }
 
@@ -2154,88 +2300,226 @@ test_group_parse (void)
   g_option_context_free (context);
 }
 
+static gint
+option_context_parse_command_line (GOptionContext *context,
+                                   const gchar    *command_line)
+{
+  gchar **argv;
+  guint argv_len, argv_new_len;
+  gboolean success;
+
+  argv = split_string (command_line, NULL);
+  argv_len = g_strv_length (argv);
+
+  success = g_option_context_parse_strv (context, &argv, NULL);
+  argv_new_len = g_strv_length (argv);
+
+  g_strfreev (argv);
+  return success ? argv_len - argv_new_len : -1;
+}
+
+static void
+test_strict_posix (void)
+{
+  GOptionContext *context;
+  gboolean foo;
+  gboolean bar;
+  GOptionEntry entries[] = {
+    { "foo", 'f', 0, G_OPTION_ARG_NONE, &foo, NULL, NULL },
+    { "bar", 'b', 0, G_OPTION_ARG_NONE, &bar, NULL, NULL },
+    { NULL }
+  };
+  gint n_parsed;
+
+  context = g_option_context_new (NULL);
+  g_option_context_add_main_entries (context, entries, NULL);
+
+  foo = bar = FALSE;
+  g_option_context_set_strict_posix (context, FALSE);
+  n_parsed = option_context_parse_command_line (context, "program --foo command --bar");
+  g_assert_cmpint (n_parsed, ==, 2);
+  g_assert (foo == TRUE);
+  g_assert (bar == TRUE);
+
+  foo = bar = FALSE;
+  g_option_context_set_strict_posix (context, TRUE);
+  n_parsed = option_context_parse_command_line (context, "program --foo command --bar");
+  g_assert_cmpint (n_parsed, ==, 1);
+  g_assert (foo == TRUE);
+  g_assert (bar == FALSE);
+
+  foo = bar = FALSE;
+  g_option_context_set_strict_posix (context, TRUE);
+  n_parsed = option_context_parse_command_line (context, "program --foo --bar command");
+  g_assert_cmpint (n_parsed, ==, 2);
+  g_assert (foo == TRUE);
+  g_assert (bar == TRUE);
+
+  foo = bar = FALSE;
+  g_option_context_set_strict_posix (context, TRUE);
+  n_parsed = option_context_parse_command_line (context, "program command --foo --bar");
+  g_assert_cmpint (n_parsed, ==, 0);
+  g_assert (foo == FALSE);
+  g_assert (bar == FALSE);
+
+  g_option_context_free (context);
+}
+
 static void
 flag_reverse_string (void)
 {
+  GOptionContext *context;
+  gchar *arg = NULL;
+  GOptionEntry entries [] =
+    { { "test", 't', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_STRING, &arg, NULL, NULL },
+      { NULL } };
+  gchar **argv;
+  gint argc;
+  gboolean retval;
+  GError *error = NULL;
+
   if (!g_test_undefined ())
     return;
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
-    {
-      GOptionContext *context;
-      gchar *arg = NULL;
-      GOptionEntry entries [] =
-        { { "test", 't', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_STRING, &arg, NULL, NULL },
-          { NULL } };
-      gchar **argv;
-      gint argc;
-      gboolean retval;
-      GError *error = NULL;
+  context = g_option_context_new (NULL);
 
-      context = g_option_context_new (NULL);
-      g_option_context_add_main_entries (context, entries, NULL);
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                         "*ignoring reverse flag*");
+  g_option_context_add_main_entries (context, entries, NULL);
+  g_test_assert_expected_messages ();
 
-      argv = split_string ("program --test bla", &argc);
+  argv = split_string ("program --test bla", &argc);
 
-      retval = g_option_context_parse (context, &argc, &argv, &error);
-      g_assert (retval == FALSE);
-      g_clear_error (&error);
-      g_strfreev (argv);
-      g_option_context_free (context);
-      exit (0);
-    }
-  g_test_trap_assert_failed ();
-  g_test_trap_assert_stderr ("*ignoring reverse flag*");
+  retval = g_option_context_parse_strv (context, &argv, &error);
+  g_assert (retval == TRUE);
+  g_assert_no_error (error);
+  g_strfreev (argv);
+  g_option_context_free (context);
+  g_free (arg);
 }
 
 static void
 flag_optional_int (void)
 {
+  GOptionContext *context;
+  gint arg = 0;
+  GOptionEntry entries [] =
+    { { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_INT, &arg, NULL, NULL },
+      { NULL } };
+  gchar **argv;
+  gint argc;
+  gboolean retval;
+  GError *error = NULL;
+
   if (!g_test_undefined ())
     return;
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
-    {
-      GOptionContext *context;
-      gint arg = 0;
-      GOptionEntry entries [] =
-        { { "test", 't', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_INT, &arg, NULL, NULL },
-          { NULL } };
-      gchar **argv;
-      gint argc;
-      gboolean retval;
-      GError *error = NULL;
+  context = g_option_context_new (NULL);
 
-      context = g_option_context_new (NULL);
-      g_option_context_add_main_entries (context, entries, NULL);
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING,
+                         "*ignoring no-arg, optional-arg or filename flags*");
+  g_option_context_add_main_entries (context, entries, NULL);
+  g_test_assert_expected_messages ();
 
-      argv = split_string ("program --test 5", &argc);
+  argv = split_string ("program --test 5", &argc);
 
-      retval = g_option_context_parse (context, &argc, &argv, &error);
-      g_assert (retval == FALSE);
-      g_clear_error (&error);
-      g_strfreev (argv);
-      g_option_context_free (context);
-      exit (0);
-    }
-  g_test_trap_assert_failed ();
-  g_test_trap_assert_stderr ("*ignoring no-arg, optional-arg or filename flags*");
+  retval = g_option_context_parse_strv (context, &argv, &error);
+  g_assert (retval == TRUE);
+  g_assert_no_error (error);
+  g_strfreev (argv);
+  g_option_context_free (context);
 }
+
+static void
+short_remaining (void)
+{
+  gboolean ignore = FALSE;
+  gboolean remaining = FALSE;
+  gint number = 0;
+  gchar* text = NULL;
+  gchar** files = NULL;
+  GError* error = NULL;
+  GOptionEntry entries[] =
+  {
+    { "ignore", 'i', 0, G_OPTION_ARG_NONE, &ignore, NULL, NULL },
+    { "remaining", 'r', 0, G_OPTION_ARG_NONE, &remaining, NULL, NULL },
+    { "number", 'n', 0, G_OPTION_ARG_INT, &number, NULL, NULL },
+    { "text", 't', 0, G_OPTION_ARG_STRING, &text, NULL, NULL },
+    { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &files, NULL, NULL },
+    { NULL }
+  };
+  GOptionContext* context;
+  gchar **argv, **argv_copy;
+  gint argc;
+
+  g_test_bug ("729563");
+
+  argv = split_string ("program -ri -n 4 -t hello file1 file2", &argc);
+  argv_copy = copy_stringv (argv, argc);
+
+  context = g_option_context_new (NULL);
+
+  g_option_context_add_main_entries (context, entries, NULL);
+  g_option_context_set_ignore_unknown_options (context, TRUE);
+
+  g_option_context_parse (context, &argc, &argv, &error);
+  g_assert_no_error (error);
+
+  g_assert (ignore);
+  g_assert (remaining);
+  g_assert_cmpint (number, ==, 4);
+  g_assert_cmpstr (text, ==, "hello");
+  g_assert_cmpstr (files[0], ==, "file1"); 
+  g_assert_cmpstr (files[1], ==, "file2"); 
+  g_assert (files[2] == NULL); 
+
+  g_free (text);
+  g_strfreev (files);
+  g_strfreev (argv_copy);
+  g_free (argv);
+  g_option_context_free (context);
+}
+
 int
 main (int   argc,
       char *argv[])
 {
+  int i;
+  gchar *test_name;
+
   g_test_init (&argc, &argv, NULL);
 
   g_test_bug_base ("http://bugzilla.gnome.org/");
+
   g_test_add_func ("/option/help/options", test_help);
   g_test_add_func ("/option/help/no-options", test_help_no_options);
+  g_test_add_func ("/option/help/no-help-options", test_help_no_help_options);
 
   g_test_add_func ("/option/basic", test_basic);
+  g_test_add_func ("/option/translate", test_translate);
+
   g_test_add_func ("/option/group/captions", test_group_captions);
+  for (i = 0; i < 4; i++)
+    {
+      test_name = g_strdup_printf ("/option/group/captions/subprocess/help-%d", i);
+      g_test_add_data_func (test_name, GINT_TO_POINTER (i),
+                            test_group_captions_help);
+      g_free (test_name);
+      test_name = g_strdup_printf ("/option/group/captions/subprocess/help-all-%d", i);
+      g_test_add_data_func (test_name, GINT_TO_POINTER (i),
+                            test_group_captions_help_all);
+      g_free (test_name);
+      test_name = g_strdup_printf ("/option/group/captions/subprocess/help-test-%d", i);
+      g_test_add_data_func (test_name, GINT_TO_POINTER (i),
+                            test_group_captions_help_test);
+                            
+      g_free (test_name);
+    }
+
   g_test_add_func ("/option/group/main", test_main_group);
   g_test_add_func ("/option/group/error-hook", test_error_hook);
   g_test_add_func ("/option/group/parse", test_group_parse);
+  g_test_add_func ("/option/strict-posix", test_strict_posix);
 
   /* Test that restoration on failure works */
   g_test_add_func ("/option/restoration/int", error_test1);
@@ -2306,6 +2590,7 @@ main (int   argc,
   g_test_add_func ("/option/bug/lonely-dash", lonely_dash_test);
   g_test_add_func ("/option/bug/missing-arg", missing_arg_test);
   g_test_add_func ("/option/bug/dash-arg", dash_arg_test);
+  g_test_add_func ("/option/bug/short-remaining", short_remaining); 
 
   return g_test_run();
 }

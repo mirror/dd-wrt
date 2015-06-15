@@ -13,17 +13,15 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef __G_NETWORK_SERVICE_H__
+#define __G_NETWORK_SERVICE_H__
 
 #if !defined (__GIO_GIO_H_INSIDE__) && !defined (GIO_COMPILATION)
 #error "Only <gio/gio.h> can be included directly."
 #endif
-
-#ifndef __G_NETWORK_SERVICE_H__
-#define __G_NETWORK_SERVICE_H__
 
 #include <gio/giotypes.h>
 
@@ -53,16 +51,23 @@ struct _GNetworkServiceClass
 
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType                g_network_service_get_type      (void) G_GNUC_CONST;
 
+GLIB_AVAILABLE_IN_ALL
 GSocketConnectable  *g_network_service_new           (const gchar     *service,
 						      const gchar     *protocol,
 						      const gchar     *domain);
 
+GLIB_AVAILABLE_IN_ALL
 const gchar         *g_network_service_get_service   (GNetworkService *srv);
+GLIB_AVAILABLE_IN_ALL
 const gchar         *g_network_service_get_protocol  (GNetworkService *srv);
+GLIB_AVAILABLE_IN_ALL
 const gchar         *g_network_service_get_domain    (GNetworkService *srv);
+GLIB_AVAILABLE_IN_ALL
 const gchar         *g_network_service_get_scheme    (GNetworkService *srv);
+GLIB_AVAILABLE_IN_ALL
 void                 g_network_service_set_scheme    (GNetworkService *srv, const gchar *scheme);
 
 G_END_DECLS

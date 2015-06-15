@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -45,6 +43,13 @@ struct _GLocalFileClass
 GType   _g_local_file_get_type (void) G_GNUC_CONST;
 
 GFile * _g_local_file_new      (const char *filename);
+
+const char * _g_local_file_get_filename (GLocalFile *file);
+
+gboolean g_local_file_is_remote (const gchar *filename);
+
+GFile * g_local_file_new_from_dirname_and_basename (const char *dirname,
+                                                    const char *basename);
 
 G_END_DECLS
 

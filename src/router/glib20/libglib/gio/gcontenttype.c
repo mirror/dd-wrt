@@ -15,9 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
@@ -42,7 +40,9 @@
  * @include: gio/gio.h
  *
  * A content type is a platform specific string that defines the type
- * of a file. On UNIX it is a <ulink url="http://www.wikipedia.org/wiki/Internet_media_type">mime type</ulink> like "text/plain" or "image/png".
+ * of a file. On UNIX it is a
+ * [mime type](http://www.wikipedia.org/wiki/Internet_media_type)
+ * like "text/plain" or "image/png".
  * On Win32 it is an extension string like ".doc", ".txt" or a perceived
  * string like "audio". Such strings can be looked up in the registry at
  * HKEY_CLASSES_ROOT.
@@ -382,7 +382,7 @@ g_content_type_get_description (const gchar *type)
  *
  * Gets the mime type for the content type, if one is registered.
  *
- * Returns: (allow-none): the registered mime type for the given @type,
+ * Returns: (nullable): the registered mime type for the given @type,
  *     or %NULL if unknown.
  */
 char *
@@ -393,7 +393,6 @@ g_content_type_get_mime_type (const char *type)
   return g_strdup (type);
 }
 
-
 static GIcon *
 g_content_type_get_icon_internal (const gchar *type,
                                   gboolean     symbolic)
@@ -401,56 +400,46 @@ g_content_type_get_icon_internal (const gchar *type,
   char *mimetype_icon;
   char *generic_mimetype_icon = NULL;
   char *q;
-  char *xdg_mimetype_icon;
-  char *legacy_mimetype_icon;
-  char *xdg_mimetype_generic_icon;
-  char *icon_names[5];
+  char *icon_names[6];
   int n = 0;
   GIcon *themed_icon;
-  const char *file_template;
+  const char  *xdg_icon;
+  int i;
 
   g_return_val_if_fail (type != NULL, NULL);
 
-  if (symbolic)
-    {
-      file_template = "%s-symbolic";
-    }
-  else
-    {
-      file_template = "%s";
-    }
-
   G_LOCK (gio_xdgmime);
-  xdg_mimetype_icon = g_strdup_printf (file_template, xdg_mime_get_icon (type));
+  xdg_icon = xdg_mime_get_icon (type);
   G_UNLOCK (gio_xdgmime);
-  xdg_mimetype_generic_icon = g_content_type_get_generic_icon_name (type);
 
-  mimetype_icon = g_strdup_printf (file_template, type);
-  if (xdg_mimetype_generic_icon)
-    generic_mimetype_icon = g_strdup_printf (file_template, xdg_mimetype_generic_icon);
+  if (xdg_icon)
+    icon_names[n++] = g_strdup (xdg_icon);
 
+  mimetype_icon = g_strdup (type);
   while ((q = strchr (mimetype_icon, '/')) != NULL)
     *q = '-';
 
-  /* Not all icons have migrated to the new icon theme spec, look for old names too */
-  legacy_mimetype_icon = g_strconcat ("gnome-mime-", mimetype_icon, NULL);
-
-  if (xdg_mimetype_icon)
-    icon_names[n++] = xdg_mimetype_icon;
-
   icon_names[n++] = mimetype_icon;
-  icon_names[n++] = legacy_mimetype_icon;
 
+  generic_mimetype_icon = g_content_type_get_generic_icon_name (type);
   if (generic_mimetype_icon)
     icon_names[n++] = generic_mimetype_icon;
 
+  if (symbolic)
+    {
+      for (i = 0; i < n; i++)
+        {
+          icon_names[n + i] = icon_names[i];
+          icon_names[i] = g_strconcat (icon_names[i], "-symbolic", NULL);
+        }
+
+      n += n;
+    }
+
   themed_icon = g_themed_icon_new_from_names (icon_names, n);
 
-  g_free (xdg_mimetype_icon);
-  g_free (xdg_mimetype_generic_icon);
-  g_free (mimetype_icon);
-  g_free (legacy_mimetype_icon);
-  g_free (generic_mimetype_icon);
+  for (i = 0; i < n; i++)
+    g_free (icon_names[i]);
 
   return themed_icon;
 }
@@ -493,7 +482,8 @@ g_content_type_get_symbolic_icon (const gchar *type)
  *
  * Gets the generic icon name for a content type.
  *
- * See the <ulink url="http://www.freedesktop.org/wiki/Specifications/shared-mime-info-spec">shared-mime-info</ulink>
+ * See the
+ * [shared-mime-info](http://www.freedesktop.org/wiki/Specifications/shared-mime-info-spec)
  * specification for more on the generic icon name.
  *
  * Returns: (allow-none): the registered generic icon name for the given @type,
@@ -579,8 +569,8 @@ looks_like_text (const guchar *data, gsize data_size)
  *
  * Tries to find a content type based on the mime type name.
  *
- * Returns: (allow-none): Newly allocated string with content type
- *     or %NULL. Free with g_free()
+ * Returns: (nullable): Newly allocated string with content type or
+ *     %NULL. Free with g_free()
  *
  * Since: 2.18
  **/
@@ -663,8 +653,9 @@ g_content_type_guess (const gchar  *filename,
   /* Got an extension match, and no conflicts. This is it. */
   if (n_name_mimetypes == 1)
     {
+      gchar *s = g_strdup (name_mimetypes[0]);
       G_UNLOCK (gio_xdgmime);
-      return g_strdup (name_mimetypes[0]);
+      return s;
     }
 
   if (data)
@@ -795,11 +786,10 @@ enumerate_mimetypes_dir (const char *dir,
  *
  * Gets a list of strings containing all the registered content types
  * known to the system. The list and its data should be freed using
- * <programlisting>
- * g_list_free_full (list, g_free);
- * </programlisting>
+ * g_list_free_full (list, g_free).
  *
- * Returns: (element-type utf8) (transfer full): #GList of the registered content types
+ * Returns: (element-type utf8) (transfer full): list of the registered
+ *     content types
  */
 GList *
 g_content_types_get_registered (void)
@@ -1032,10 +1022,15 @@ read_tree_magic_from_directory (const gchar *prefix)
                   match = parse_header (lines[i]);
                   insert_match (match);
                 }
-              else
+              else if (match != NULL)
                 {
                   matchlet = parse_match_line (lines[i], &depth);
                   insert_matchlet (match, matchlet, depth);
+                }
+              else
+                {
+                  g_warning ("%s: header corrupt; skipping\n", filename);
+                  break;
                 }
             }
 
@@ -1325,7 +1320,8 @@ matchlet_match (TreeMatchlet *matchlet,
             result = FALSE;
         }
 
-      g_object_unref (info);
+      if (info)
+        g_object_unref (info);
       g_object_unref (file);
     }
   while (!result);
@@ -1375,7 +1371,8 @@ match_match (TreeMatch    *match,
  *
  * The types returned all have the form x-content/foo, e.g.
  * x-content/audio-cdda (for audio CDs) or x-content/image-dcf
- * (for a camera memory card). See the <ulink url="http://www.freedesktop.org/wiki/Specifications/shared-mime-info-spec">shared-mime-info</ulink>
+ * (for a camera memory card). See the
+ * [shared-mime-info](http://www.freedesktop.org/wiki/Specifications/shared-mime-info-spec)
  * specification for more on x-content types.
  *
  * This function is useful in the implementation of

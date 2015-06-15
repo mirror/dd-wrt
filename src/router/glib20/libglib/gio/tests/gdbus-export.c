@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -122,6 +120,15 @@ static const GDBusInterfaceInfo foo_interface_info =
   NULL,
 };
 
+/* Foo2 is just Foo without the properties */
+static const GDBusInterfaceInfo foo2_interface_info =
+{
+  -1,
+  "org.example.Foo2",
+  (GDBusMethodInfo **) &foo_method_info_pointers,
+  (GDBusSignalInfo **) &foo_signal_info_pointers,
+};
+
 static void
 foo_method_call (GDBusConnection       *connection,
                  const gchar           *sender,
@@ -137,7 +144,7 @@ foo_method_call (GDBusConnection       *connection,
       const gchar *input;
       gchar *output;
       g_variant_get (parameters, "(&s)", &input);
-      output = g_strdup_printf ("You passed the string `%s'. Jolly good!", input);
+      output = g_strdup_printf ("You passed the string '%s'. Jolly good!", input);
       g_dbus_method_invocation_return_value (invocation, g_variant_new ("(s)", output));
       g_free (output);
     }
@@ -160,7 +167,7 @@ foo_get_property (GDBusConnection       *connection,
 {
   GVariant *ret;
   gchar *s;
-  s = g_strdup_printf ("Property `%s' Is What It Is!", property_name);
+  s = g_strdup_printf ("Property '%s' Is What It Is!", property_name);
   ret = g_variant_new_string (s);
   g_free (s);
   return ret;
@@ -181,7 +188,7 @@ foo_set_property (GDBusConnection       *connection,
   g_set_error (error,
                G_DBUS_ERROR,
                G_DBUS_ERROR_SPAWN_FILE_INVALID,
-               "Returning some error instead of writing the value `%s' to the property `%s'",
+               "Returning some error instead of writing the value '%s' to the property '%s'",
                property_name, s);
   g_free (s);
   return FALSE;
@@ -774,7 +781,7 @@ test_dispatch_thread_func (gpointer user_data)
   g_assert (value != NULL);
   g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE ("(s)")));
   g_variant_get (value, "(&s)", &value_str);
-  g_assert_cmpstr (value_str, ==, "You passed the string `winwinwin'. Jolly good!");
+  g_assert_cmpstr (value_str, ==, "You passed the string 'winwinwin'. Jolly good!");
   g_variant_unref (value);
 
   error = NULL;
@@ -799,7 +806,7 @@ test_dispatch_thread_func (gpointer user_data)
                                   NULL,
                                   &error);
   g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS);
-  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: Type of message, `(s)', does not match expected type `()'");
+  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: Type of message, '(s)', does not match expected type '()'");
   g_error_free (error);
   g_assert (value == NULL);
 
@@ -812,7 +819,7 @@ test_dispatch_thread_func (gpointer user_data)
                                   NULL,
                                   &error);
   g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD);
-  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such method `NonExistantMethod'");
+  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such method 'NonExistantMethod'");
   g_error_free (error);
   g_assert (value == NULL);
 
@@ -844,8 +851,9 @@ test_dispatch_thread_func (gpointer user_data)
   g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE ("(v)")));
   g_variant_get (value, "(v)", &inner);
   g_assert (g_variant_is_of_type (inner, G_VARIANT_TYPE_STRING));
-  g_assert_cmpstr (g_variant_get_string (inner, NULL), ==, "Property `PropertyUno' Is What It Is!");
+  g_assert_cmpstr (g_variant_get_string (inner, NULL), ==, "Property 'PropertyUno' Is What It Is!");
   g_variant_unref (value);
+  g_variant_unref (inner);
 
   error = NULL;
   value = g_dbus_proxy_call_sync (foo_proxy,
@@ -859,7 +867,7 @@ test_dispatch_thread_func (gpointer user_data)
                                   &error);
   g_assert (value == NULL);
   g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS);
-  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: No such property `ThisDoesntExist'");
+  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: No such property 'ThisDoesntExist'");
   g_error_free (error);
 
   error = NULL;
@@ -874,7 +882,7 @@ test_dispatch_thread_func (gpointer user_data)
                                   &error);
   g_assert (value == NULL);
   g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS);
-  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: Property `NotReadable' is not readable");
+  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: Property 'NotReadable' is not readable");
   g_error_free (error);
 
   error = NULL;
@@ -890,7 +898,7 @@ test_dispatch_thread_func (gpointer user_data)
                                   &error);
   g_assert (value == NULL);
   g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_FILE_INVALID);
-  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.Spawn.FileInvalid: Returning some error instead of writing the value `NotReadable' to the property `'But Writable you are!''");
+  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.Spawn.FileInvalid: Returning some error instead of writing the value 'NotReadable' to the property ''But Writable you are!''");
   g_error_free (error);
 
   error = NULL;
@@ -906,7 +914,7 @@ test_dispatch_thread_func (gpointer user_data)
                                   &error);
   g_assert (value == NULL);
   g_assert_error (error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS);
-  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: Property `NotWritable' is not writable");
+  g_assert_cmpstr (error->message, ==, "GDBus.Error:org.freedesktop.DBus.Error.InvalidArgs: Property 'NotWritable' is not writable");
   g_error_free (error);
 
   error = NULL;
@@ -922,7 +930,7 @@ test_dispatch_thread_func (gpointer user_data)
   g_assert (value != NULL);
   g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE ("(a{sv})")));
   s = g_variant_print (value, TRUE);
-  g_assert_cmpstr (s, ==, "({'PropertyUno': <\"Property `PropertyUno' Is What It Is!\">, 'NotWritable': <\"Property `NotWritable' Is What It Is!\">},)");
+  g_assert_cmpstr (s, ==, "({'PropertyUno': <\"Property 'PropertyUno' Is What It Is!\">, 'NotWritable': <\"Property 'NotWritable' Is What It Is!\">},)");
   g_free (s);
   g_variant_unref (value);
 
@@ -1191,7 +1199,7 @@ test_object_registration (void)
   num_successful_registrations++;
 
   /* now register a dynamic subtree, spawning objects as they are called */
-  dyna_data = g_ptr_array_new ();
+  dyna_data = g_ptr_array_new_with_free_func (g_free);
   dyna_subtree_registration_id = g_dbus_connection_register_subtree (c,
                                                                      "/foo/dyna",
                                                                      &dynamic_subtree_vtable,
@@ -1211,9 +1219,9 @@ test_object_registration (void)
 
   /* Install three nodes in the dynamic subtree via the dyna_data backdoor and
    * assert that they show up correctly in the introspection data */
-  g_ptr_array_add (dyna_data, "lol");
-  g_ptr_array_add (dyna_data, "cat");
-  g_ptr_array_add (dyna_data, "cheezburger");
+  g_ptr_array_add (dyna_data, g_strdup ("lol"));
+  g_ptr_array_add (dyna_data, g_strdup ("cat"));
+  g_ptr_array_add (dyna_data, g_strdup ("cheezburger"));
   nodes = get_nodes_at (c, "/foo/dyna");
   g_assert (nodes != NULL);
   g_assert_cmpint (g_strv_length (nodes), ==, 3);
@@ -1450,13 +1458,13 @@ check_interfaces (GDBusConnection  *c,
 #if 0
   if (g_strv_length ((gchar**)interfaces) != i - 1)
     {
-      g_print ("expected ");
+      g_printerr ("expected ");
       for (i = 0; interfaces[i]; i++)
-        g_print ("%s ", interfaces[i]);
-      g_print ("\ngot ");
+        g_printerr ("%s ", interfaces[i]);
+      g_printerr ("\ngot ");
       for (i = 0; node_info->interfaces[i]; i++)
-        g_print ("%s ", node_info->interfaces[i]->name);
-      g_print ("\n");
+        g_printerr ("%s ", node_info->interfaces[i]->name);
+      g_printerr ("\n");
     }
 #endif
   g_assert_cmpint (g_strv_length ((gchar**)interfaces), ==, i - 1);
@@ -1525,30 +1533,220 @@ test_registered_interfaces (void)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+static void
+test_async_method_call (GDBusConnection       *connection,
+                        const gchar           *sender,
+                        const gchar           *object_path,
+                        const gchar           *interface_name,
+                        const gchar           *method_name,
+                        GVariant              *parameters,
+                        GDBusMethodInvocation *invocation,
+                        gpointer               user_data)
+{
+  const GDBusPropertyInfo *property;
+
+  /* Strictly speaking, this function should also expect to receive
+   * method calls not on the org.freedesktop.DBus.Properties interface,
+   * but we don't do any during this testcase, so assert that.
+   */
+  g_assert_cmpstr (interface_name, ==, "org.freedesktop.DBus.Properties");
+  g_assert (g_dbus_method_invocation_get_method_info (invocation) == NULL);
+
+  property = g_dbus_method_invocation_get_property_info (invocation);
+
+  /* We should never be seeing any property calls on the com.example.Bar
+   * interface because it doesn't export any properties.
+   *
+   * In each case below make sure the interface is org.example.Foo.
+   */
+
+  /* Do a whole lot of asserts to make sure that invalid calls are still
+   * getting properly rejected by GDBusConnection and that our
+   * environment is as we expect it to be.
+   */
+  if (g_str_equal (method_name, "Get"))
+    {
+      const gchar *iface_name, *prop_name;
+
+      g_variant_get (parameters, "(&s&s)", &iface_name, &prop_name);
+      g_assert_cmpstr (iface_name, ==, "org.example.Foo");
+      g_assert (property != NULL);
+      g_assert_cmpstr (prop_name, ==, property->name);
+      g_assert (property->flags & G_DBUS_PROPERTY_INFO_FLAGS_READABLE);
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("(v)", g_variant_new_string (prop_name)));
+    }
+
+  else if (g_str_equal (method_name, "Set"))
+    {
+      const gchar *iface_name, *prop_name;
+      GVariant *value;
+
+      g_variant_get (parameters, "(&s&sv)", &iface_name, &prop_name, &value);
+      g_assert_cmpstr (iface_name, ==, "org.example.Foo");
+      g_assert (property != NULL);
+      g_assert_cmpstr (prop_name, ==, property->name);
+      g_assert (property->flags & G_DBUS_PROPERTY_INFO_FLAGS_WRITABLE);
+      g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE (property->signature)));
+      g_dbus_method_invocation_return_value (invocation, g_variant_new ("()"));
+      g_variant_unref (value);
+    }
+
+  else if (g_str_equal (method_name, "GetAll"))
+    {
+      const gchar *iface_name;
+
+      g_variant_get (parameters, "(&s)", &iface_name);
+      g_assert_cmpstr (iface_name, ==, "org.example.Foo");
+      g_assert (property == NULL);
+      g_dbus_method_invocation_return_value (invocation,
+                                             g_variant_new_parsed ("({ 'PropertyUno': < 'uno' >,"
+                                                                   "   'NotWritable': < 'notwrite' > },)"));
+    }
+
+  else
+    g_assert_not_reached ();
+}
+
+static gint outstanding_cases;
+
+static void
+ensure_result_cb (GObject      *source,
+                  GAsyncResult *result,
+                  gpointer      user_data)
+{
+  GDBusConnection *connection = G_DBUS_CONNECTION (source);
+  GVariant *reply;
+
+  reply = g_dbus_connection_call_finish (connection, result, NULL);
+
+  if (user_data == NULL)
+    {
+      /* Expected an error */
+      g_assert (reply == NULL);
+    }
+  else
+    {
+      /* Expected a reply of a particular format. */
+      gchar *str;
+
+      g_assert (reply != NULL);
+      str = g_variant_print (reply, TRUE);
+      g_assert_cmpstr (str, ==, (const gchar *) user_data);
+      g_free (str);
+
+      g_variant_unref (reply);
+    }
+
+  g_assert_cmpint (outstanding_cases, >, 0);
+  outstanding_cases--;
+}
+
+static void
+test_async_case (GDBusConnection *connection,
+                 const gchar     *expected_reply,
+                 const gchar     *method,
+                 const gchar     *format_string,
+                 ...)
+{
+  va_list ap;
+
+  va_start (ap, format_string);
+
+  g_dbus_connection_call (connection, g_dbus_connection_get_unique_name (connection), "/foo",
+                          "org.freedesktop.DBus.Properties", method, g_variant_new_va (format_string, NULL, &ap),
+                          NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, ensure_result_cb, (gpointer) expected_reply);
+
+  va_end (ap);
+
+  outstanding_cases++;
+}
+
+static void
+test_async_properties (void)
+{
+  GError *error = NULL;
+  guint registration_id, registration_id2;
+  static const GDBusInterfaceVTable vtable = {
+    test_async_method_call, NULL, NULL
+  };
+
+  c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (c != NULL);
+
+  registration_id = g_dbus_connection_register_object (c,
+                                                       "/foo",
+                                                       (GDBusInterfaceInfo *) &foo_interface_info,
+                                                       &vtable, NULL, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (registration_id);
+  registration_id2 = g_dbus_connection_register_object (c,
+                                                        "/foo",
+                                                        (GDBusInterfaceInfo *) &foo2_interface_info,
+                                                        &vtable, NULL, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (registration_id);
+
+  test_async_case (c, NULL, "random", "()");
+
+  /* Test a variety of error cases */
+  test_async_case (c, NULL, "Get", "(si)", "wrong signature", 5);
+  test_async_case (c, NULL, "Get", "(ss)", "org.example.WrongInterface", "zzz");
+  test_async_case (c, NULL, "Get", "(ss)", "org.example.Foo", "NoSuchProperty");
+  test_async_case (c, NULL, "Get", "(ss)", "org.example.Foo", "NotReadable");
+
+  test_async_case (c, NULL, "Set", "(si)", "wrong signature", 5);
+  test_async_case (c, NULL, "Set", "(ssv)", "org.example.WrongInterface", "zzz", g_variant_new_string (""));
+  test_async_case (c, NULL, "Set", "(ssv)", "org.example.Foo", "NoSuchProperty", g_variant_new_string (""));
+  test_async_case (c, NULL, "Set", "(ssv)", "org.example.Foo", "NotWritable", g_variant_new_string (""));
+  test_async_case (c, NULL, "Set", "(ssv)", "org.example.Foo", "PropertyUno", g_variant_new_object_path ("/wrong"));
+
+  test_async_case (c, NULL, "GetAll", "(si)", "wrong signature", 5);
+  test_async_case (c, NULL, "GetAll", "(s)", "org.example.WrongInterface");
+
+  /* Make sure that we get no unexpected async property calls for com.example.Foo2 */
+  test_async_case (c, NULL, "Get", "(ss)", "org.example.Foo2", "zzz");
+  test_async_case (c, NULL, "Set", "(ssv)", "org.example.Foo2", "zzz", g_variant_new_string (""));
+  test_async_case (c, "(@a{sv} {},)", "GetAll", "(s)", "org.example.Foo2");
+
+  /* Now do the proper things */
+  test_async_case (c, "(<'PropertyUno'>,)", "Get", "(ss)", "org.example.Foo", "PropertyUno");
+  test_async_case (c, "(<'NotWritable'>,)", "Get", "(ss)", "org.example.Foo", "NotWritable");
+  test_async_case (c, "()", "Set", "(ssv)", "org.example.Foo", "PropertyUno", g_variant_new_string (""));
+  test_async_case (c, "()", "Set", "(ssv)", "org.example.Foo", "NotReadable", g_variant_new_string (""));
+  test_async_case (c, "({'PropertyUno': <'uno'>, 'NotWritable': <'notwrite'>},)", "GetAll", "(s)", "org.example.Foo");
+
+  while (outstanding_cases)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_dbus_connection_unregister_object (c, registration_id);
+  g_dbus_connection_unregister_object (c, registration_id2);
+  g_object_unref (c);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
 int
 main (int   argc,
       char *argv[])
 {
   gint ret;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   /* all the tests rely on a shared main loop */
   loop = g_main_loop_new (NULL, FALSE);
 
-  session_bus_up ();
-
   g_test_add_func ("/gdbus/object-registration", test_object_registration);
   g_test_add_func ("/gdbus/registered-interfaces", test_registered_interfaces);
+  g_test_add_func ("/gdbus/async-properties", test_async_properties);
 
   /* TODO: check that we spit out correct introspection data */
   /* TODO: check that registering a whole subtree works */
 
-  ret = g_test_run();
+  ret = session_bus_run ();
 
-  /* tear down bus */
-  session_bus_down ();
+  g_main_loop_unref (loop);
 
   return ret;
 }

@@ -15,8 +15,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -58,15 +57,14 @@ static gint           quark_block_offset = 0;
  * SECTION:quarks
  * @title: Quarks
  * @short_description: a 2-way association between a string and a
- *                     unique integer identifier
+ *     unique integer identifier
  *
  * Quarks are associations between strings and integer identifiers.
  * Given either the string or the #GQuark identifier it is possible to
  * retrieve the other.
  *
- * Quarks are used for both <link
- * linkend="glib-Datasets">Datasets</link> and <link
- * linkend="glib-Keyed-Data-Lists">Keyed Data Lists</link>.
+ * Quarks are used for both [datasets][glib-Datasets] and
+ * [keyed data lists][glib-Keyed-Data-Lists].
  *
  * To create a new quark from a string, use g_quark_from_string() or
  * g_quark_from_static_string().
@@ -83,14 +81,14 @@ static gint           quark_block_offset = 0;
  * representation for a string. One important advantage of interned
  * strings is that they can be compared for equality by a simple
  * pointer comparison, rather than using strcmp().
- **/
+ */
 
 /**
  * GQuark:
  *
  * A GQuark is a non-zero integer which uniquely identifies a
  * particular string. A GQuark value of zero is associated to %NULL.
- **/
+ */
 
 /**
  * G_DEFINE_QUARK:
@@ -99,25 +97,27 @@ static gint           quark_block_offset = 0;
  *
  * A convenience macro which defines a function returning the
  * #GQuark for the name @QN. The function will be named
- * @q_n<!-- -->_quark().
- * Note that the quark name will be stringified automatically in the
- * macro, so you shouldn't use double quotes.
+ * @q_n_quark().
+ *
+ * Note that the quark name will be stringified automatically
+ * in the macro, so you shouldn't use double quotes.
  *
  * Since: 2.34
  */
 
 /**
  * g_quark_try_string:
- * @string: (allow-none): a string.
- * @Returns: the #GQuark associated with the string, or 0 if @string is
- *           %NULL or there is no #GQuark associated with it.
+ * @string: (allow-none): a string
  *
  * Gets the #GQuark associated with the given string, or 0 if string is
  * %NULL or it has no associated #GQuark.
  *
  * If you want the GQuark to be created if it doesn't already exist,
  * use g_quark_from_string() or g_quark_from_static_string().
- **/
+ *
+ * Returns: the #GQuark associated with the string, or 0 if @string is
+ *     %NULL or there is no #GQuark associated with it
+ */
 GQuark
 g_quark_try_string (const gchar *string)
 {
@@ -183,14 +183,13 @@ quark_from_string (const gchar *string,
 
 /**
  * g_quark_from_string:
- * @string: (allow-none): a string.
+ * @string: (allow-none): a string
  *
  * Gets the #GQuark identifying the given string. If the string does
  * not currently have an associated #GQuark, a new #GQuark is created,
  * using a copy of the string.
  *
- * Returns: the #GQuark identifying the string, or 0 if @string is
- *     %NULL.
+ * Returns: the #GQuark identifying the string, or 0 if @string is %NULL
  */
 GQuark
 g_quark_from_string (const gchar *string)
@@ -209,7 +208,7 @@ g_quark_from_string (const gchar *string)
 
 /**
  * g_quark_from_static_string:
- * @string: (allow-none): a string.
+ * @string: (allow-none): a string
  *
  * Gets the #GQuark identifying the given (static) string. If the
  * string does not currently have an associated #GQuark, a new #GQuark
@@ -218,14 +217,13 @@ g_quark_from_string (const gchar *string)
  * Note that this function is identical to g_quark_from_string() except
  * that if a new #GQuark is created the string itself is used rather
  * than a copy. This saves memory, but can only be used if the string
- * will <emphasis>always</emphasis> exist. It can be used with
- * statically allocated strings in the main program, but not with
+ * will continue to exist until the program terminates. It can be used
+ * with statically allocated strings in the main program, but not with
  * statically allocated memory in dynamically loaded modules, if you
  * expect to ever unload the module again (e.g. do not use this
  * function in GTK+ theme engines).
  *
- * Returns: the #GQuark identifying the string, or 0 if @string is
- *     %NULL.
+ * Returns: the #GQuark identifying the string, or 0 if @string is %NULL
  */
 GQuark
 g_quark_from_static_string (const gchar *string)

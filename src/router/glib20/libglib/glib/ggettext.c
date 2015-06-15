@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -27,6 +25,8 @@
 #include "config.h"
 
 #include "ggettext.h"
+#include "glibintl.h"
+#include "glib-private.h"
 
 #include "galloca.h"
 #include "gthread.h"
@@ -162,7 +162,7 @@ glib_pgettext (const gchar *msgctxtid,
  *
  * An auxiliary function for gettext() support (see Q_()).
  *
- * Return value: @msgval, unless @msgval is identical to @msgid
+ * Returns: @msgval, unless @msgval is identical to @msgid
  *     and contains a '|' character, in which case a pointer to
  *     the substring of msgid after the first '|' character is returned.
  *
@@ -333,10 +333,11 @@ _g_dgettext_should_translate (void)
        *   - If locale is "C", maybe user calls setlocale(LC_ALL,"") later.
        *     Continue with old behavior of translating.
        */
-      if (0 != strcmp (default_domain, "messages") &&
+      if (!default_domain || !translator_comment || !translate_locale ||
+          (0 != strcmp (default_domain, "messages") &&
           '\0' == *translator_comment &&
           0 != strncmp (translate_locale, "en_", 3) &&
-          0 != strcmp (translate_locale, "C"))
+          0 != strcmp (translate_locale, "C")))
         should_translate = FALSE;
 
       g_once_init_leave (&translate,
@@ -369,17 +370,19 @@ _g_dgettext_should_translate (void)
  *
  * This function disables translations if and only if upon its first
  * call all the following conditions hold:
- * <itemizedlist>
- * <listitem>@domain is not %NULL</listitem>
- * <listitem>textdomain() has been called to set a default text domain</listitem>
- * <listitem>there is no translations available for the default text domain
- *           and the current locale</listitem>
- * <listitem>current locale is not "C" or any English locales (those
- *           starting with "en_")</listitem>
- * </itemizedlist>
+ * 
+ * - @domain is not %NULL
+ *
+ * - textdomain() has been called to set a default text domain
+ *
+ * - there is no translations available for the default text domain
+ *   and the current locale
+ *
+ * - current locale is not "C" or any English locales (those
+ *   starting with "en_")
  *
  * Note that this behavior may not be desired for example if an application
- * has its untranslated messages in a language other than English.  In those
+ * has its untranslated messages in a language other than English. In those
  * cases the application should call textdomain() after initializing GTK+.
  *
  * Applications should normally not use this function directly,
@@ -407,7 +410,7 @@ g_dgettext (const gchar *domain,
  * @category: a locale category
  *
  * This is a variant of g_dgettext() that allows specifying a locale
- * category instead of always using <envar>LC_MESSAGES</envar>. See g_dgettext() for
+ * category instead of always using `LC_MESSAGES`. See g_dgettext() for
  * more information about how this functions differs from calling
  * dcgettext() directly.
  *
@@ -470,24 +473,42 @@ g_dngettext (const gchar *domain,
  * easy-to-use form.
  *
  * In order to use these macros in an application, you must include
- * <filename>glib/gi18n.h</filename>. For use in a library, you must include
- * <filename>glib/gi18n-lib.h</filename> <emphasis>after</emphasis> defining
- * the GETTEXT_PACKAGE macro suitably for your library:
- * |[
- * &num;define GETTEXT_PACKAGE "gtk20"
- * &num;include &lt;glib/gi18n-lib.h&gt;
+ * `<glib/gi18n.h>`. For use in a library, you must include
+ * `<glib/gi18n-lib.h>`
+ * after defining the %GETTEXT_PACKAGE macro suitably for your library:
+ * |[<!-- language="C" -->
+ * #define GETTEXT_PACKAGE "gtk20"
+ * #include <glib/gi18n-lib.h>
  * ]|
  * For an application, note that you also have to call bindtextdomain(),
  * bind_textdomain_codeset(), textdomain() and setlocale() early on in your
- * main() to make gettext() work.
+ * main() to make gettext() work. For example:
+ * |[<!-- language="C" -->
+ * #include <glib/gi18n.h>
+ * #include <locale.h>
+ *
+ * int
+ * main (int argc, char **argv)
+ * {
+ *   setlocale (LC_ALL, "");
+ *   bindtextdomain (GETTEXT_PACKAGE, DATADIR "/locale");
+ *   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+ *   textdomain (GETTEXT_PACKAGE);
+ *
+ *   // Rest of your application.
+ * }
+ * ]|
+ * where `DATADIR` is as typically provided by automake.
  *
  * For a library, you only have to call bindtextdomain() and
  * bind_textdomain_codeset() in your initialization function. If your library
  * doesn't have an initialization function, you can call the functions before
  * the first translated message.
  *
- * The gettext manual covers details of how to set up message extraction
- * with xgettext.
+ * The
+ * [gettext manual](http://www.gnu.org/software/gettext/manual/gettext.html#Maintainers)
+ * covers details of how to integrate gettext into a project’s build system and
+ * workflow.
  */
 
 /**
@@ -519,11 +540,11 @@ g_dngettext (const gchar *domain,
  * See the C_() macro for a different way to mark up translatable strings
  * with context.
  *
- * <note><para>If you are using the Q_() macro, you need to make sure
- * that you pass <option>--keyword=Q_</option> to xgettext when extracting
- * messages. If you are using GNU gettext >= 0.15, you can also use
- * <option>--keyword=Q_:1g</option> to let xgettext split the context
- * string off into a msgctxt line in the po file.</para></note>
+ * If you are using the Q_() macro, you need to make sure that you pass
+ * `--keyword=Q_` to xgettext when extracting messages.
+ * If you are using GNU gettext >= 0.15, you can also use
+ * `--keyword=Q_:1g` to let xgettext split the context
+ * string off into a msgctxt line in the po file.
  *
  * Returns: the translated message
  *
@@ -539,15 +560,14 @@ g_dngettext (const gchar *domain,
  * used as a context. This is mainly useful for short strings which
  * may need different translations, depending on the context in which
  * they are used.
- * |[
+ * |[<!-- language="C" -->
  * label1 = C_("Navigation", "Back");
  * label2 = C_("Body part", "Back");
  * ]|
  *
- * <note><para>If you are using the C_() macro, you need to make sure
- * that you pass <option>--keyword=C_:1c,2</option> to xgettext when
- * extracting messages. Note that this only works with GNU
- * gettext >= 0.15.</para></note>
+ * If you are using the C_() macro, you need to make sure that you pass
+ * `--keyword=C_:1c,2` to xgettext when extracting messages.
+ * Note that this only works with GNU gettext >= 0.15.
  *
  * Returns: the translated message
  *
@@ -562,7 +582,7 @@ g_dngettext (const gchar *domain,
  * where the translated strings can't be directly used, e.g. in string
  * array initializers. To get the translated string, call gettext()
  * at runtime.
- * |[
+ * |[<!-- language="C" -->
  * {
  *   static const char *messages[] = {
  *     N_("some very meaningful message"),
@@ -591,7 +611,7 @@ g_dngettext (const gchar *domain,
  * be directly used, e.g. in string array initializers. To get the
  * translated string, you should call g_dpgettext2() at runtime.
  *
- * |[
+ * |[<!-- language="C" -->
  * {
  *   static const char *messages[] = {
  *     NC_("some context", "some very meaningful message"),
@@ -600,19 +620,18 @@ g_dngettext (const gchar *domain,
  *   const char *string;
  *   ...
  *   string
- *     = index &gt; 1 ? g_dpgettext2 (NULL, "some context", "a default message")
- *                    : g_dpgettext2 (NULL, "some context", messages[index]);
+ *     = index > 1 ? g_dpgettext2 (NULL, "some context", "a default message")
+ *                 : g_dpgettext2 (NULL, "some context", messages[index]);
  *
  *   fputs (string);
  *   ...
  * }
  * ]|
  *
- * <note><para>If you are using the NC_() macro, you need to make sure
- * that you pass <option>--keyword=NC_:1c,2</option> to xgettext when
- * extracting messages. Note that this only works with GNU gettext >= 0.15.
- * Intltool has support for the NC_() macro since version 0.40.1.
- * </para></note>
+ * If you are using the NC_() macro, you need to make sure that you pass
+ * `--keyword=NC_:1c,2` to xgettext when extracting messages.
+ * Note that this only works with GNU gettext >= 0.15. Intltool has support
+ * for the NC_() macro since version 0.40.1.
  *
  * Since: 2.18
  */

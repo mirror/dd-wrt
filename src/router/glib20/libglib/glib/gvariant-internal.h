@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
@@ -28,9 +26,8 @@
 #ifndef __G_VARIANT_INTERNAL_H__
 #define __G_VARIANT_INTERNAL_H__
 
-#ifndef GLIB_COMPILATION
-#define GLIB_COMPILATION
-#endif
+/* Hack */
+#define __GLIB_H_INSIDE__
 
 #include <glib/gvarianttype.h>
 #include <glib/gtypes.h>
@@ -38,10 +35,14 @@
 #include "gvariant-serialiser.h"
 #include "gvarianttypeinfo.h"
 
+#undef __GLIB_H_INSIDE__
+
+GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_format_string_scan            (const gchar          *string,
                                                                          const gchar          *limit,
                                                                          const gchar         **endptr);
 
+GLIB_AVAILABLE_IN_ALL
 GVariantType *                  g_variant_format_string_scan_type       (const gchar          *string,
                                                                          const gchar          *limit,
                                                                          const gchar         **endptr);

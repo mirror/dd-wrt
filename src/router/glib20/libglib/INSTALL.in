@@ -13,6 +13,10 @@ Simple install procedure
 Requirements
 ============
 
+GLib requires a C90-compliant (but not necessarily C99-compliant) C
+compiler and libc. On UNIX-like systems, it also assumes compliance
+with at least the original 1990 version of POSIX.
+
 GLib-2.0 requires pkg-config, which is tool for tracking the
 compilation flags needed for libraries. (For each library, a small .pc
 text file is installed in a standard location that contains the
@@ -21,7 +25,7 @@ information.) Information about pkg-config can be found at:
 
   http://www.freedesktop.org/software/pkgconfig/
 
-GNU make (http://www.gnu.org/software/make) is also recommended.
+GNU make (http://www.gnu.org/software/make) is also required.
 
 In order to implement conversions between character sets,
 GLib requires an implementation of the standard iconv() routine.
@@ -79,7 +83,7 @@ in the file:
 
 Or online at:
 
- http://library.gnome.org/devel/glib/stable/glib-building.html
+ https://developer.gnome.org/glib/stable/glib-building.html
 
 
 Installation directories
@@ -119,4 +123,4 @@ in the file:
 
 Or online at:
 
- http://library.gnome.org/devel/glib/stable/glib-cross-compiling.html
+ https://developer.gnome.org/glib/stable/glib-cross-compiling.html

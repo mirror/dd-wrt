@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors:
  *   Christian Kellner <gicmo@gnome.org>
@@ -27,7 +25,7 @@
 #include "goutputstream.h"
 #include "gpollableoutputstream.h"
 #include "gseekable.h"
-#include "gsimpleasyncresult.h"
+#include "gtask.h"
 #include "gioerror.h"
 #include "string.h"
 #include "glibintl.h"
@@ -42,8 +40,8 @@
  * #GMemoryOutputStream is a class for using arbitrary
  * memory chunks as output for GIO streaming output operations.
  *
- * As of GLib 2.34, #GMemoryOutputStream implements
- * #GPollableOutputStream.
+ * As of GLib 2.34, #GMemoryOutputStream trivially implements
+ * #GPollableOutputStream: it always polls as ready.
  */
 
 #define MIN_ARRAY_SIZE  16
@@ -57,8 +55,8 @@ enum {
   PROP_DESTROY_FUNCTION
 };
 
-struct _GMemoryOutputStreamPrivate {
-  
+struct _GMemoryOutputStreamPrivate
+{
   gpointer       data; /* Write buffer */
   gsize          len; /* Current length of the data buffer. Can change with resizing. */
   gsize          valid_len; /* The part of data that has been written to */
@@ -114,11 +112,12 @@ static gboolean g_memory_output_stream_truncate            (GSeekable       *see
 
 static gboolean g_memory_output_stream_is_writable       (GPollableOutputStream *stream);
 static GSource *g_memory_output_stream_create_source     (GPollableOutputStream *stream,
-							  GCancellable          *cancellable);
+                                                          GCancellable          *cancellable);
 
 static void g_memory_output_stream_pollable_iface_init (GPollableOutputStreamInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (GMemoryOutputStream, g_memory_output_stream, G_TYPE_OUTPUT_STREAM,
+                         G_ADD_PRIVATE (GMemoryOutputStream)
                          G_IMPLEMENT_INTERFACE (G_TYPE_SEEKABLE,
                                                 g_memory_output_stream_seekable_iface_init);
                          G_IMPLEMENT_INTERFACE (G_TYPE_POLLABLE_OUTPUT_STREAM,
@@ -130,8 +129,6 @@ g_memory_output_stream_class_init (GMemoryOutputStreamClass *klass)
 {
   GOutputStreamClass *ostream_class;
   GObjectClass *gobject_class;
-
-  g_type_class_add_private (klass, sizeof (GMemoryOutputStreamPrivate));
 
   gobject_class = G_OBJECT_CLASS (klass);
   gobject_class->set_property = g_memory_output_stream_set_property;
@@ -326,9 +323,7 @@ g_memory_output_stream_seekable_iface_init (GSeekableIface *iface)
 static void
 g_memory_output_stream_init (GMemoryOutputStream *stream)
 {
-  stream->priv = G_TYPE_INSTANCE_GET_PRIVATE (stream,
-                                              G_TYPE_MEMORY_OUTPUT_STREAM,
-                                              GMemoryOutputStreamPrivate);
+  stream->priv = g_memory_output_stream_get_instance_private (stream);
   stream->priv->pos = 0;
   stream->priv->valid_len = 0;
 }
@@ -344,24 +339,47 @@ g_memory_output_stream_init (GMemoryOutputStream *stream)
  *
  * Creates a new #GMemoryOutputStream.
  *
- * If @data is non-%NULL, the stream  will use that for its internal storage.
- * If @realloc_fn is non-%NULL, it will be used for resizing the internal
- * storage when necessary. To construct a fixed-size output stream,
- * pass %NULL as @realloc_fn.
+ * In most cases this is not the function you want.  See
+ * g_memory_output_stream_new_resizable() instead.
  *
- * |[
- * /&ast; a stream that can grow &ast;/
+ * If @data is non-%NULL, the stream will use that for its internal storage.
+ *
+ * If @realloc_fn is non-%NULL, it will be used for resizing the internal
+ * storage when necessary and the stream will be considered resizable.
+ * In that case, the stream will start out being (conceptually) empty.
+ * @size is used only as a hint for how big @data is.  Specifically,
+ * seeking to the end of a newly-created stream will seek to zero, not
+ * @size.  Seeking past the end of the stream and then writing will
+ * introduce a zero-filled gap.
+ *
+ * If @realloc_fn is %NULL then the stream is fixed-sized.  Seeking to
+ * the end will seek to @size exactly.  Writing past the end will give
+ * an 'out of space' error.  Attempting to seek past the end will fail.
+ * Unlike the resizable case, seeking to an offset within the stream and
+ * writing will preserve the bytes passed in as @data before that point
+ * and will return them as part of g_memory_output_stream_steal_data().
+ * If you intend to seek you should probably therefore ensure that @data
+ * is properly initialised.
+ *
+ * It is probably only meaningful to provide @data and @size in the case
+ * that you want a fixed-sized stream.  Put another way: if @realloc_fn
+ * is non-%NULL then it makes most sense to give @data as %NULL and
+ * @size as 0 (allowing #GMemoryOutputStream to do the initial
+ * allocation for itself).
+ *
+ * |[<!-- language="C" -->
+ * // a stream that can grow
  * stream = g_memory_output_stream_new (NULL, 0, realloc, free);
  *
- * /&ast; another stream that can grow &ast;/
+ * // another stream that can grow
  * stream2 = g_memory_output_stream_new (NULL, 0, g_realloc, g_free);
  *
- * /&ast; a fixed-size stream &ast;/
+ * // a fixed-size stream
  * data = malloc (200);
  * stream3 = g_memory_output_stream_new (data, 200, NULL, free);
  * ]|
  *
- * Return value: A newly created #GMemoryOutputStream object.
+ * Returns: A newly created #GMemoryOutputStream object.
  **/
 GOutputStream *
 g_memory_output_stream_new (gpointer       data,
@@ -379,6 +397,20 @@ g_memory_output_stream_new (gpointer       data,
                          NULL);
 
   return stream;
+}
+
+/**
+ * g_memory_output_stream_new_resizable:
+ *
+ * Creates a new #GMemoryOutputStream, using g_realloc() and g_free()
+ * for memory allocation.
+ *
+ * Since: 2.36
+ */
+GOutputStream *
+g_memory_output_stream_new_resizable (void)
+{
+  return g_memory_output_stream_new (NULL, 0, g_realloc, g_free);
 }
 
 /**
@@ -405,16 +437,20 @@ g_memory_output_stream_get_data (GMemoryOutputStream *ostream)
  * @ostream: a #GMemoryOutputStream
  *
  * Gets the size of the currently allocated data area (available from
- * g_memory_output_stream_get_data()). If the stream isn't
- * growable (no realloc was passed to g_memory_output_stream_new()) then
- * this is the maximum size of the stream and further writes
- * will return %G_IO_ERROR_NO_SPACE.
+ * g_memory_output_stream_get_data()).
  *
- * Note that for growable streams the returned size may become invalid on
- * the next write or truncate operation on the stream.
+ * You probably don't want to use this function on resizable streams.
+ * See g_memory_output_stream_get_data_size() instead.  For resizable
+ * streams the size returned by this function is an implementation
+ * detail and may be change at any time in response to operations on the
+ * stream.
  *
- * If you want the number of bytes currently written to the stream, use
- * g_memory_output_stream_get_data_size().
+ * If the stream is fixed-sized (ie: no realloc was passed to
+ * g_memory_output_stream_new()) then this is the maximum size of the
+ * stream and further writes will return %G_IO_ERROR_NO_SPACE.
+ *
+ * In any case, if you want the number of bytes currently written to the
+ * stream, use g_memory_output_stream_get_data_size().
  *
  * Returns: the number of bytes allocated for the data buffer
  */
@@ -430,9 +466,8 @@ g_memory_output_stream_get_size (GMemoryOutputStream *ostream)
  * g_memory_output_stream_get_data_size:
  * @ostream: a #GMemoryOutputStream
  *
- * Returns the number of bytes from the start up
- * to including the last byte written in the stream
- * that has not been truncated away.
+ * Returns the number of bytes from the start up to including the last
+ * byte written in the stream that has not been truncated away.
  *
  * Returns: the number of bytes written to the stream
  *
@@ -495,11 +530,11 @@ g_memory_output_stream_steal_as_bytes (GMemoryOutputStream *ostream)
   g_return_val_if_fail (g_output_stream_is_closed (G_OUTPUT_STREAM (ostream)), NULL);
 
   result = g_bytes_new_with_free_func (ostream->priv->data,
-				       ostream->priv->valid_len,
-				       ostream->priv->destroy,
-				       ostream->priv->data);
+                                       ostream->priv->valid_len,
+                                       ostream->priv->destroy,
+                                       ostream->priv->data);
   ostream->priv->data = NULL;
-			     
+
   return result;
 }
 
@@ -559,12 +594,12 @@ array_resize (GMemoryOutputStream  *ostream,
   return TRUE;
 }
 
-static gint
-g_nearest_pow (gint num)
+static gsize
+g_nearest_pow (gsize num)
 {
-  gint n = 1;
+  gsize n = 1;
 
-  while (n < num)
+  while (n < num && n > 0)
     n <<= 1;
 
   return n;
@@ -595,17 +630,19 @@ g_memory_output_stream_write (GOutputStream  *stream,
 
   if (priv->pos + count > priv->len)
     {
-      /* At least enought to fit the write, rounded up
-	     for greater than linear growth.
-         TODO: This wastes a lot of memory at large stream sizes.
-               Figure out a more rational allocation strategy. */
+      /* At least enough to fit the write, rounded up for greater than
+       * linear growth.
+       *
+       * Assuming that we're using something like realloc(), the kernel
+       * will overcommit memory to us, so doubling the size each time
+       * will keep the number of realloc calls low without wasting too
+       * much memory.
+       */
       new_size = g_nearest_pow (priv->pos + count);
-      /* Check for overflow again. We have only checked if
-         pos + count > G_MAXSIZE, but it only catches the case of writing
-         more than 4GiB total on a 32-bit system. There's still the problem
-         of g_nearest_pow overflowing above 0x7fffffff, so we're
-         effectively limited to 2GiB. */
-      if (new_size < priv->len)
+      /* Check for overflow again. We have checked if
+         pos + count > G_MAXSIZE, but now check if g_nearest_pow () has
+         overflowed */
+      if (new_size == 0)
         goto overflow;
 
       new_size = MAX (new_size, MIN_ARRAY_SIZE);
@@ -651,19 +688,15 @@ g_memory_output_stream_close_async (GOutputStream       *stream,
                                     GAsyncReadyCallback  callback,
                                     gpointer             data)
 {
-  GSimpleAsyncResult *simple;
+  GTask *task;
 
-  simple = g_simple_async_result_new (G_OBJECT (stream),
-                                      callback,
-                                      data,
-                                      g_memory_output_stream_close_async);
-
+  task = g_task_new (stream, cancellable, callback, data);
 
   /* will always return TRUE */
   g_memory_output_stream_close (stream, cancellable, NULL);
 
-  g_simple_async_result_complete_in_idle (simple);
-  g_object_unref (simple);
+  g_task_return_boolean (task, TRUE);
+  g_object_unref (task);
 }
 
 static gboolean
@@ -671,14 +704,9 @@ g_memory_output_stream_close_finish (GOutputStream  *stream,
                                      GAsyncResult   *result,
                                      GError        **error)
 {
-  GSimpleAsyncResult *simple;
+  g_return_val_if_fail (g_task_is_valid (result, stream), FALSE);
 
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) ==
-                  g_memory_output_stream_close_async);
-
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 static goffset
@@ -701,10 +729,10 @@ g_memory_output_stream_can_seek (GSeekable *seekable)
 
 static gboolean
 g_memory_output_stream_seek (GSeekable    *seekable,
-                            goffset        offset,
-                            GSeekType      type,
-                            GCancellable  *cancellable,
-                            GError       **error)
+                             goffset        offset,
+                             GSeekType      type,
+                             GCancellable  *cancellable,
+                             GError       **error)
 {
   GMemoryOutputStream        *stream;
   GMemoryOutputStreamPrivate *priv;
@@ -724,7 +752,14 @@ g_memory_output_stream_seek (GSeekable    *seekable,
       break;
 
     case G_SEEK_END:
-      absolute = priv->len + offset;
+      /* For resizable streams, we consider the end to be the data
+       * length.  For fixed-sized streams, we consider the end to be the
+       * size of the buffer.
+       */
+      if (priv->realloc_fn)
+        absolute = priv->valid_len + offset;
+      else
+        absolute = priv->len + offset;
       break;
 
     default:
@@ -745,7 +780,13 @@ g_memory_output_stream_seek (GSeekable    *seekable,
       return FALSE;
     }
 
-  if (absolute > priv->len)
+  /* Can't seek past the end of a fixed-size stream.
+   *
+   * Note: seeking to the non-existent byte at the end of a fixed-sized
+   * stream is valid (eg: a 1-byte fixed sized stream can have position
+   * 0 or 1).  Therefore '>' is what we want.
+   * */
+  if (priv->realloc_fn == NULL && absolute > priv->len)
     {
       g_set_error_literal (error,
                            G_IO_ERROR,
@@ -768,6 +809,7 @@ g_memory_output_stream_can_truncate (GSeekable *seekable)
   ostream = G_MEMORY_OUTPUT_STREAM (seekable);
   priv = ostream->priv;
 
+  /* We do not allow truncation of fixed-sized streams */
   return priv->realloc_fn != NULL;
 }
 
@@ -782,6 +824,8 @@ g_memory_output_stream_truncate (GSeekable     *seekable,
   if (!array_resize (ostream, offset, FALSE, error))
     return FALSE;
 
+  ostream->priv->valid_len = offset;
+
   return TRUE;
 }
 
@@ -793,13 +837,12 @@ g_memory_output_stream_is_writable (GPollableOutputStream *stream)
 
 static GSource *
 g_memory_output_stream_create_source (GPollableOutputStream *stream,
-				      GCancellable          *cancellable)
+                                      GCancellable          *cancellable)
 {
   GSource *base_source, *pollable_source;
 
   base_source = g_timeout_source_new (0);
-  pollable_source = g_pollable_source_new_full (stream, base_source,
-						cancellable);
+  pollable_source = g_pollable_source_new_full (stream, base_source, cancellable);
   g_source_unref (base_source);
 
   return pollable_source;

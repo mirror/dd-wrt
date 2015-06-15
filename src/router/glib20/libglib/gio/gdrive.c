@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  *         David Zeuthen <davidz@redhat.com>
@@ -23,7 +21,7 @@
 
 #include "config.h"
 #include "gdrive.h"
-#include "gsimpleasyncresult.h"
+#include "gtask.h"
 #include "gthemedicon.h"
 #include "gasyncresult.h"
 #include "gioerror.h"
@@ -388,10 +386,10 @@ g_drive_eject (GDrive              *drive,
 
   if (iface->eject == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (drive), callback, user_data,
-					   G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-					   _("drive doesn't implement eject"));
-      
+      g_task_report_new_error (drive, callback, user_data,
+                               g_drive_eject_with_operation,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("drive doesn't implement eject"));
       return;
     }
   
@@ -423,6 +421,8 @@ g_drive_eject_finish (GDrive        *drive,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_drive_eject_with_operation))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_DRIVE_GET_IFACE (drive);
   
@@ -461,13 +461,13 @@ g_drive_eject_with_operation (GDrive              *drive,
 
   if (iface->eject == NULL && iface->eject_with_operation == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (drive),
-					   callback, user_data,
-					   G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-					   /* Translators: This is an error
-					    * message for drive objects that
-					    * don't implement any of eject or eject_with_operation. */
-					   _("drive doesn't implement eject or eject_with_operation"));
+      g_task_report_new_error (drive, callback, user_data,
+                               g_drive_eject_with_operation,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               /* Translators: This is an error
+                                * message for drive objects that
+                                * don't implement any of eject or eject_with_operation. */
+                               _("drive doesn't implement eject or eject_with_operation"));
       return;
     }
 
@@ -503,6 +503,8 @@ g_drive_eject_with_operation_finish (GDrive        *drive,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_drive_eject_with_operation))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_DRIVE_GET_IFACE (drive);
   if (iface->eject_with_operation_finish != NULL)
@@ -538,10 +540,10 @@ g_drive_poll_for_media (GDrive              *drive,
 
   if (iface->poll_for_media == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (drive), callback, user_data,
-					   G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-					   _("drive doesn't implement polling for media"));
-      
+      g_task_report_new_error (drive, callback, user_data,
+                               g_drive_poll_for_media,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("drive doesn't implement polling for media"));
       return;
     }
   
@@ -571,6 +573,8 @@ g_drive_poll_for_media_finish (GDrive        *drive,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_drive_poll_for_media))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_DRIVE_GET_IFACE (drive);
   
@@ -741,9 +745,10 @@ g_drive_start (GDrive              *drive,
 
   if (iface->start == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (drive), callback, user_data,
-					   G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-					   _("drive doesn't implement start"));
+      g_task_report_new_error (drive, callback, user_data,
+                               g_drive_start,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("drive doesn't implement start"));
       return;
     }
 
@@ -775,6 +780,8 @@ g_drive_start_finish (GDrive         *drive,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_drive_start))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_DRIVE_GET_IFACE (drive);
 
@@ -840,9 +847,10 @@ g_drive_stop (GDrive               *drive,
 
   if (iface->stop == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (drive), callback, user_data,
-					   G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-					   _("drive doesn't implement stop"));
+      g_task_report_new_error (drive, callback, user_data,
+                               g_drive_start,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("drive doesn't implement stop"));
       return;
     }
 
@@ -874,6 +882,8 @@ g_drive_stop_finish (GDrive        *drive,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_drive_start))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_DRIVE_GET_IFACE (drive);
 

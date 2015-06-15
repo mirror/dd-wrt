@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -112,8 +110,8 @@ main (int   argc,
 {
   GError *error;
   gint ret;
+  gchar *path;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   /* all the tests rely on a shared main loop */
@@ -122,10 +120,11 @@ main (int   argc,
   session_bus_up ();
 
   /* this is safe; testserver will exit once the bus goes away */
-  g_assert (g_spawn_command_line_async (SRCDIR "/gdbus-testserver.py", NULL));
+  path = g_test_build_filename (G_TEST_BUILT, "gdbus-testserver", NULL);
+  g_assert (g_spawn_command_line_async (path, NULL));
+  g_free (path);
 
-  /* wait for the service to come up */
-  usleep (500 * 1000);
+  ensure_gdbus_testserver_up ();
 
   /* Create the connection in the main thread */
   error = NULL;

@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __G_NETWORK_MONITOR_BASE_H__
@@ -50,6 +48,7 @@ struct _GNetworkMonitorBaseClass {
   gpointer padding[8];
 };
 
+GLIB_AVAILABLE_IN_ALL
 GType g_network_monitor_base_get_type (void);
 
 /*< protected >*/
@@ -59,6 +58,7 @@ void g_network_monitor_base_add_network    (GNetworkMonitorBase  *monitor,
 GLIB_AVAILABLE_IN_2_32
 void g_network_monitor_base_remove_network (GNetworkMonitorBase  *monitor,
 					    GInetAddressMask     *network);
+GLIB_AVAILABLE_IN_ALL
 void g_network_monitor_base_set_networks   (GNetworkMonitorBase  *monitor,
 					    GInetAddressMask    **networks,
 					    gint                  length);

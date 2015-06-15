@@ -27,11 +27,13 @@
 <refsynopsisdiv>
   <cmdsynopsis>
     <command>gdbus-codegen</command>
+    <arg><option>-h</option>, <option>--help</option></arg>
     <arg><option>--interface-prefix</option> <replaceable>org.project.Prefix</replaceable></arg>
     <arg><option>--generate-c-code</option> <replaceable>OUTFILES</replaceable></arg>
     <arg><option>--c-namespace</option> <replaceable>YourProject</replaceable></arg>
     <arg><option>--c-generate-object-manager</option></arg>
     <arg><option>--generate-docbook</option> <replaceable>OUTFILES</replaceable></arg>
+    <arg><option>--xml-files</option> <replaceable>FILE</replaceable></arg>
     <group choice="plain" rep="repeat">
       <arg>
         <option>--annotate</option>
@@ -134,6 +136,24 @@
     The following options are supported:
   </para>
   <variablelist>
+
+    <varlistentry>
+      <term><option>-h</option>, <option>--help</option></term>
+      <listitem>
+        <para>
+          Show help and exit.
+        </para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term><option>--xml-files</option> <replaceable>FILE</replaceable></term>
+      <listitem>
+        <para>
+          The D-Bus introspection XML file.
+        </para>
+      </listitem>
+    </varlistentry>
 
     <varlistentry>
       <term><option>--interface-prefix</option> <replaceable>org.project.Prefix.</replaceable></term>
@@ -805,7 +825,8 @@ on_handle_hello_world (MyAppFrobber           *interface,
     The generated C functions are guaranteed to not change their ABI
     that is, if a method, signal or property does not change its
     signature in the introspection XML, the generated C functions will
-    not change its C ABI either.
+    not change its C ABI either. The ABI of the generated instance and
+    class structures will be preserved as well.
   </para>
   <para>
     The ABI of the generated #GType<!-- -->s will be preserved only if
@@ -821,7 +842,7 @@ on_handle_hello_world (MyAppFrobber           *interface,
   <para>
     The generated C code currently happens to be annotated with <ulink
     url="http://www.gtk.org/gtk-doc/">gtk-doc</ulink> / <ulink
-    url="https://live.gnome.org/GObjectIntrospection">GObject
+    url="https://wiki.gnome.org/Projects/GObjectIntrospection">GObject
     Introspection</ulink> comments / annotations. The layout and
     contents might change in the future so no guarantees about
     e.g. <literal>SECTION</literal> usage etc. is given.
@@ -829,6 +850,11 @@ on_handle_hello_world (MyAppFrobber           *interface,
   <para>
     While the generated Docbook for D-Bus interfaces isn't expected to
     change, no guarantees are given at this point.
+  </para>
+  <para>
+    It is important to note that the generated code should not be
+    checked into revision control systems, nor it should be included
+    in distributed source archives.
   </para>
 </refsect1>
 

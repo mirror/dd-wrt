@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Stef Walter <stefw@collabora.co.uk>
  */
@@ -23,10 +21,10 @@
 #include "config.h"
 
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <string.h>
 
 #ifdef G_OS_WIN32
-#include <glib/gprintf.h>
 #include <conio.h>
 #endif
 
@@ -40,8 +38,12 @@
 
 G_DEFINE_TYPE (GTlsConsoleInteraction, g_tls_console_interaction, G_TYPE_TLS_INTERACTION);
 
-#ifdef G_OS_WIN32
+#if defined(G_OS_WIN32) || defined(__BIONIC__)
 /* win32 doesn't have getpass() */
+#include <stdio.h>
+#ifndef BUFSIZ
+#define BUFSIZ 8192
+#endif
 static gchar *
 getpass (const gchar *prompt)
 {
@@ -53,7 +55,11 @@ getpass (const gchar *prompt)
 
   for (i = 0; i < BUFSIZ - 1; ++i)
     {
+#ifdef __BIONIC__
+      buf[i] = getc (stdin);
+#else
       buf[i] = _getch ();
+#endif
       if (buf[i] == '\r')
         break;
     }
@@ -86,18 +92,20 @@ g_tls_console_interaction_ask_password (GTlsInteraction    *interaction,
 }
 
 static void
-ask_password_with_getpass (GSimpleAsyncResult    *res,
-                           GObject               *object,
-                           GCancellable          *cancellable)
+ask_password_with_getpass (GTask        *task,
+                           gpointer      object,
+                           gpointer      task_data,
+                           GCancellable *cancellable)
 {
-  GTlsPassword *password;
+  GTlsPassword *password = task_data;
   GError *error = NULL;
 
-  password = g_simple_async_result_get_op_res_gpointer (res);
   g_tls_console_interaction_ask_password (G_TLS_INTERACTION (object), password,
                                           cancellable, &error);
   if (error != NULL)
-    g_simple_async_result_take_error (res, error);
+    g_task_return_error (task, error);
+  else
+    g_task_return_int (task, G_TLS_INTERACTION_HANDLED);
 }
 
 static void
@@ -107,14 +115,12 @@ g_tls_console_interaction_ask_password_async (GTlsInteraction    *interaction,
                                               GAsyncReadyCallback callback,
                                               gpointer            user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
 
-  res = g_simple_async_result_new (G_OBJECT (interaction), callback, user_data,
-                                   g_tls_console_interaction_ask_password);
-  g_simple_async_result_set_op_res_gpointer (res, g_object_ref (password), g_object_unref);
-  g_simple_async_result_run_in_thread (res, ask_password_with_getpass,
-                                       G_PRIORITY_DEFAULT, cancellable);
-  g_object_unref (res);
+  task = g_task_new (interaction, cancellable, callback, user_data);
+  g_task_set_task_data (task, g_object_ref (password), g_object_unref);
+  g_task_run_in_thread (task, ask_password_with_getpass);
+  g_object_unref (task);
 }
 
 static GTlsInteractionResult
@@ -122,13 +128,16 @@ g_tls_console_interaction_ask_password_finish (GTlsInteraction    *interaction,
                                                GAsyncResult       *result,
                                                GError            **error)
 {
-  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (interaction),
-                        g_tls_console_interaction_ask_password), G_TLS_INTERACTION_FAILED);
+  GTlsInteractionResult ret;
 
-  if (g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error))
+  g_return_val_if_fail (g_task_is_valid (result, interaction),
+                        G_TLS_INTERACTION_FAILED);
+
+  ret = g_task_propagate_int (G_TASK (result), error);
+  if (ret == (GTlsInteractionResult)-1)
     return G_TLS_INTERACTION_FAILED;
-
-  return G_TLS_INTERACTION_HANDLED;
+  else
+    return ret;
 }
 
 static void

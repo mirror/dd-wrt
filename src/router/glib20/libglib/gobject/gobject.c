@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -45,58 +43,59 @@
  * methods for all object types in GTK+, Pango and other libraries
  * based on GObject.  The GObject class provides methods for object
  * construction and destruction, property access methods, and signal
- * support.  Signals are described in detail in <xref
- * linkend="gobject-Signals"/>.
+ * support.  Signals are described in detail [here][gobject-Signals].
  *
- * <para id="floating-ref">
+ * ## Floating references # {#floating-ref}
+ *
  * GInitiallyUnowned is derived from GObject. The only difference between
  * the two is that the initial reference of a GInitiallyUnowned is flagged
- * as a <firstterm>floating</firstterm> reference.
- * This means that it is not specifically claimed to be "owned" by
- * any code portion. The main motivation for providing floating references is
- * C convenience. In particular, it allows code to be written as:
- * |[
+ * as a "floating" reference. This means that it is not specifically
+ * claimed to be "owned" by any code portion. The main motivation for
+ * providing floating references is C convenience. In particular, it
+ * allows code to be written as:
+ * |[<!-- language="C" --> 
  * container = create_container ();
  * container_add_child (container, create_child());
  * ]|
- * If <function>container_add_child()</function> will g_object_ref_sink() the
- * passed in child, no reference of the newly created child is leaked.
- * Without floating references, <function>container_add_child()</function>
- * can only g_object_ref() the new child, so to implement this code without
- * reference leaks, it would have to be written as:
- * |[
+ * If container_add_child() calls g_object_ref_sink() on the passed-in child,
+ * no reference of the newly created child is leaked. Without floating
+ * references, container_add_child() can only g_object_ref() the new child,
+ * so to implement this code without reference leaks, it would have to be
+ * written as:
+ * |[<!-- language="C" --> 
  * Child *child;
  * container = create_container ();
  * child = create_child ();
  * container_add_child (container, child);
  * g_object_unref (child);
  * ]|
- * The floating reference can be converted into
- * an ordinary reference by calling g_object_ref_sink().
- * For already sunken objects (objects that don't have a floating reference
- * anymore), g_object_ref_sink() is equivalent to g_object_ref() and returns
- * a new reference.
+ * The floating reference can be converted into an ordinary reference by
+ * calling g_object_ref_sink(). For already sunken objects (objects that
+ * don't have a floating reference anymore), g_object_ref_sink() is equivalent
+ * to g_object_ref() and returns a new reference.
+ *
  * Since floating references are useful almost exclusively for C convenience,
  * language bindings that provide automated reference and memory ownership
  * maintenance (such as smart pointers or garbage collection) should not
  * expose floating references in their API.
- * </para>
  *
  * Some object implementations may need to save an objects floating state
  * across certain code portions (an example is #GtkMenu), to achieve this,
  * the following sequence can be used:
  *
- * |[
- * /&ast; save floating state &ast;/
+ * |[<!-- language="C" --> 
+ * // save floating state
  * gboolean was_floating = g_object_is_floating (object);
  * g_object_ref_sink (object);
- * /&ast; protected code portion &ast;/
- * ...;
- * /&ast; restore floating state &ast;/
+ * // protected code portion
+ *
+ * ...
+ *
+ * // restore floating state
  * if (was_floating)
  *   g_object_force_floating (object);
  * else
- *   g_object_unref (object); /&ast; release previously acquired reference &ast;/
+ *   g_object_unref (object); // release previously acquired reference
  * ]|
  */
 
@@ -176,7 +175,7 @@ static void	g_object_dispatch_properties_changed	(GObject	*object,
 static guint               object_floating_flag_handler (GObject        *object,
                                                          gint            job);
 
-static void object_interface_check_properties           (gpointer        func_data,
+static void object_interface_check_properties           (gpointer        check_data,
 							 gpointer        g_iface);
 
 /* --- typedefs --- */
@@ -197,11 +196,10 @@ static GQuark	            quark_closure_array = 0;
 static GQuark	            quark_weak_refs = 0;
 static GQuark	            quark_toggle_refs = 0;
 static GQuark               quark_notify_queue;
+static GQuark               quark_in_construction;
 static GParamSpecPool      *pspec_pool = NULL;
 static gulong	            gobject_signals[LAST_SIGNAL] = { 0, };
 static guint (*floating_flag_handler) (GObject*, gint) = object_floating_flag_handler;
-G_LOCK_DEFINE_STATIC (construction_mutex);
-static GSList *construction_objects = NULL;
 /* qdata pointing to GSList<GWeakRef *>, protected by weak_locations_lock */
 static GQuark	            quark_weak_locations = 0;
 static GRWLock              weak_locations_lock;
@@ -314,7 +312,6 @@ g_object_notify_queue_add (GObject            *object,
 #ifdef	G_ENABLE_DEBUG
 #define	IF_DEBUG(debug_type)	if (_g_type_debug_flags & G_TYPE_DEBUG_ ## debug_type)
 G_LOCK_DEFINE_STATIC     (debug_objects);
-static volatile GObject *g_trap_object_ref = NULL;
 static guint		 debug_objects_count = 0;
 static GHashTable	*debug_objects_ht = NULL;
 
@@ -451,6 +448,7 @@ g_object_do_class_init (GObjectClass *class)
   quark_weak_locations = g_quark_from_static_string ("GObject-weak-locations");
   quark_toggle_refs = g_quark_from_static_string ("GObject-toggle-references");
   quark_notify_queue = g_quark_from_static_string ("GObject-notify-queue");
+  quark_in_construction = g_quark_from_static_string ("GObject-in-construction");
   pspec_pool = g_param_spec_pool_new (TRUE);
 
   class->constructor = g_object_constructor;
@@ -476,13 +474,13 @@ g_object_do_class_init (GObjectClass *class)
    * This signal is typically used to obtain change notification for a
    * single property, by specifying the property name as a detail in the
    * g_signal_connect() call, like this:
-   * |[
+   * |[<!-- language="C" --> 
    * g_signal_connect (text_view->buffer, "notify::paste-target-list",
    *                   G_CALLBACK (gtk_text_view_target_list_notify),
    *                   text_view)
    * ]|
    * It is important to note that you must use
-   * <link linkend="canonical-parameter-name">canonical</link> parameter names as
+   * [canonical][canonical-parameter-name] parameter names as
    * detail strings for the notify signal.
    */
   gobject_signals[NOTIFY] =
@@ -508,7 +506,7 @@ install_property_internal (GType       g_type,
 {
   if (g_param_spec_pool_lookup (pspec_pool, pspec->name, g_type, FALSE))
     {
-      g_warning ("When installing property: type `%s' already has a property named `%s'",
+      g_warning ("When installing property: type '%s' already has a property named '%s'",
 		 g_type_name (g_type),
 		 pspec->name);
       return;
@@ -525,7 +523,12 @@ install_property_internal (GType       g_type,
  * @property_id: the id for the new property
  * @pspec: the #GParamSpec for the new property
  *
- * Installs a new property. This is usually done in the class initializer.
+ * Installs a new property.
+ *
+ * All properties should be installed during the class initializer.  It
+ * is possible to install properties after that, but doing so is not
+ * recommend, and specifically, is not guaranteed to be thread-safe vs.
+ * use of properties on the same type on other threads.
  *
  * Note that it is possible to redefine a property in a derived class,
  * by installing a property with the same name. This can be useful at times,
@@ -540,8 +543,7 @@ g_object_class_install_property (GObjectClass *class,
   g_return_if_fail (G_IS_PARAM_SPEC (pspec));
 
   if (CLASS_HAS_DERIVED_CLASS (class))
-    g_error ("Attempt to add property %s::%s to class after it was derived",
-	     G_OBJECT_CLASS_NAME (class), pspec->name);
+    g_error ("Attempt to add property %s::%s to class after it was derived", G_OBJECT_CLASS_NAME (class), pspec->name);
 
   class->flags |= CLASS_HAS_PROPS_FLAG;
 
@@ -560,7 +562,7 @@ g_object_class_install_property (GObjectClass *class,
   install_property_internal (G_OBJECT_CLASS_TYPE (class), property_id, pspec);
 
   if (pspec->flags & (G_PARAM_CONSTRUCT | G_PARAM_CONSTRUCT_ONLY))
-    class->construct_properties = g_slist_prepend (class->construct_properties, pspec);
+    class->construct_properties = g_slist_append (class->construct_properties, pspec);
 
   /* for property overrides of construct properties, we have to get rid
    * of the overidden inherited construct property
@@ -573,12 +575,16 @@ g_object_class_install_property (GObjectClass *class,
 /**
  * g_object_class_install_properties:
  * @oclass: a #GObjectClass
- * @n_pspecs: the length of the #GParamSpec<!-- -->s array
- * @pspecs: (array length=n_pspecs): the #GParamSpec<!-- -->s array
+ * @n_pspecs: the length of the #GParamSpecs array
+ * @pspecs: (array length=n_pspecs): the #GParamSpecs array
  *   defining the new properties
  *
- * Installs new properties from an array of #GParamSpec<!-- -->s. This is
- * usually done in the class initializer.
+ * Installs new properties from an array of #GParamSpecs.
+ *
+ * All properties should be installed during the class initializer.  It
+ * is possible to install properties after that, but doing so is not
+ * recommend, and specifically, is not guaranteed to be thread-safe vs.
+ * use of properties on the same type on other threads.
  *
  * The property id of each property is the index of each #GParamSpec in
  * the @pspecs array.
@@ -587,10 +593,10 @@ g_object_class_install_property (GObjectClass *class,
  * be used to store a #GParamSpec.
  *
  * This function should be used if you plan to use a static array of
- * #GParamSpec<!-- -->s and g_object_notify_by_pspec(). For instance, this
+ * #GParamSpecs and g_object_notify_by_pspec(). For instance, this
  * class initialization:
  *
- * |[
+ * |[<!-- language="C" --> 
  * enum {
  *   PROP_0, PROP_FOO, PROP_BAR, N_PROPERTIES
  * };
@@ -623,7 +629,7 @@ g_object_class_install_property (GObjectClass *class,
  *
  * allows calling g_object_notify_by_pspec() to notify of property changes:
  *
- * |[
+ * |[<!-- language="C" --> 
  * void
  * my_object_set_foo (MyObject *self, gint foo)
  * {
@@ -677,7 +683,7 @@ g_object_class_install_properties (GObjectClass  *oclass,
       install_property_internal (oclass_type, i, pspec);
 
       if (pspec->flags & (G_PARAM_CONSTRUCT | G_PARAM_CONSTRUCT_ONLY))
-        oclass->construct_properties = g_slist_prepend (oclass->construct_properties, pspec);
+        oclass->construct_properties = g_slist_append (oclass->construct_properties, pspec);
 
       /* for property overrides of construct properties, we have to get rid
        * of the overidden inherited construct property
@@ -807,13 +813,12 @@ g_object_interface_find_property (gpointer      g_iface,
  * @name: the name of a property registered in a parent class or
  *  in an interface of this class.
  *
- * Registers @property_id as referring to a property with the
- * name @name in a parent class or in an interface implemented
- * by @oclass. This allows this class to <firstterm>override</firstterm>
- * a property implementation in a parent class or to provide
- * the implementation of a property from an interface.
+ * Registers @property_id as referring to a property with the name
+ * @name in a parent class or in an interface implemented by @oclass.
+ * This allows this class to "override" a property implementation in
+ * a parent class or to provide the implementation of a property from
+ * an interface.
  *
- * <note>
  * Internally, overriding is implemented by creating a property of type
  * #GParamSpecOverride; generally operations that query the properties of
  * the object class, such as g_object_class_find_property() or
@@ -824,7 +829,6 @@ g_object_interface_find_property (gpointer      g_iface,
  * correct.  For virtually all uses, this makes no difference. If you
  * need to get the overridden property, you can call
  * g_param_spec_get_redirect_target().
- * </note>
  *
  * Since: 2.4
  */
@@ -945,6 +949,12 @@ g_object_interface_list_properties (gpointer      g_iface,
   return pspecs;
 }
 
+static inline gboolean
+object_in_construction (GObject *object)
+{
+  return g_datalist_id_get_data (&object->qdata, quark_in_construction) != NULL;
+}
+
 static void
 g_object_init (GObject		*object,
 	       GObjectClass	*class)
@@ -960,10 +970,8 @@ g_object_init (GObject		*object,
 
   if (CLASS_HAS_CUSTOM_CONSTRUCTOR (class))
     {
-      /* enter construction list for notify_queue_thaw() and to allow construct-only properties */
-      G_LOCK (construction_mutex);
-      construction_objects = g_slist_prepend (construction_objects, object);
-      G_UNLOCK (construction_mutex);
+      /* mark object in-construction for notify_queue_thaw() and to allow construct-only properties */
+      g_datalist_id_set_data (&object->qdata, quark_in_construction, object);
     }
 
 #ifdef	G_ENABLE_DEBUG
@@ -1016,6 +1024,12 @@ g_object_real_dispose (GObject *object)
 static void
 g_object_finalize (GObject *object)
 {
+  if (object_in_construction (object))
+    {
+      g_critical ("object %s %p finalized while still in-construction",
+                  G_OBJECT_TYPE_NAME (object), object);
+    }
+
   g_datalist_clear (&object->qdata);
   
 #ifdef	G_ENABLE_DEBUG
@@ -1049,7 +1063,7 @@ g_object_dispatch_properties_changed (GObject     *object,
  * Releases all references to other objects. This can be used to break
  * reference cycles.
  *
- * This functions should only be called from object system implementations.
+ * This function should only be called from object system implementations.
  */
 void
 g_object_run_dispose (GObject *object)
@@ -1147,6 +1161,11 @@ g_object_notify_by_spec_internal (GObject    *object,
  * When possible, eg. when signaling a property change from within the class
  * that registered the property, you should use g_object_notify_by_pspec()
  * instead.
+ *
+ * Note that emission of the notify signal may be blocked with
+ * g_object_freeze_notify(). In this case, the signal emissions are queued
+ * and will be emitted (in reverse order) when g_object_thaw_notify() is
+ * called.
  */
 void
 g_object_notify (GObject     *object,
@@ -1170,7 +1189,7 @@ g_object_notify (GObject     *object,
 				    TRUE);
 
   if (!pspec)
-    g_warning ("%s: object class `%s' has no property named `%s'",
+    g_warning ("%s: object class '%s' has no property named '%s'",
 	       G_STRFUNC,
 	       G_OBJECT_TYPE_NAME (object),
 	       property_name);
@@ -1194,7 +1213,7 @@ g_object_notify (GObject     *object,
  * instead, is to store the GParamSpec used with
  * g_object_class_install_property() inside a static array, e.g.:
  *
- *|[
+ *|[<!-- language="C" --> 
  *   enum
  *   {
  *     PROP_0,
@@ -1219,7 +1238,7 @@ g_object_notify (GObject     *object,
  *
  * and then notify a change on the "foo" property with:
  *
- * |[
+ * |[<!-- language="C" --> 
  *   g_object_notify_by_pspec (self, properties[PROP_FOO]);
  * ]|
  *
@@ -1232,6 +1251,9 @@ g_object_notify_by_pspec (GObject    *object,
 
   g_return_if_fail (G_IS_OBJECT (object));
   g_return_if_fail (G_IS_PARAM_SPEC (pspec));
+
+  if (g_atomic_int_get (&object->ref_count) == 0)
+    return;
 
   g_object_ref (object);
   g_object_notify_by_spec_internal (object, pspec);
@@ -1247,7 +1269,8 @@ g_object_notify_by_pspec (GObject    *object,
  * and when it reaches zero, queued "notify" signals are emitted.
  *
  * Duplicate notifications for each property are squashed so that at most one
- * #GObject::notify signal is emitted for each property.
+ * #GObject::notify signal is emitted for each property, in the reverse order
+ * in which they have been queued.
  *
  * It is an error to call this function when the freeze count is zero.
  */
@@ -1272,6 +1295,56 @@ g_object_thaw_notify (GObject *object)
   g_object_unref (object);
 }
 
+static void
+consider_issuing_property_deprecation_warning (const GParamSpec *pspec)
+{
+  static GHashTable *already_warned_table;
+  static const gchar *enable_diagnostic;
+  static GMutex already_warned_lock;
+  gboolean already;
+
+  if (!(pspec->flags & G_PARAM_DEPRECATED))
+    return;
+
+  if (g_once_init_enter (&enable_diagnostic))
+    {
+      const gchar *value = g_getenv ("G_ENABLE_DIAGNOSTIC");
+
+      if (!value)
+        value = "-";
+
+      g_once_init_leave (&enable_diagnostic, value);
+    }
+
+  if (enable_diagnostic[0] == '0')
+    return;
+
+  /* We hash only on property names: this means that we could end up in
+   * a situation where we fail to emit a warning about a pair of
+   * same-named deprecated properties used on two separate types.
+   * That's pretty unlikely to occur, and even if it does, you'll still
+   * have seen the warning for the first one...
+   *
+   * Doing it this way lets us hash directly on the (interned) property
+   * name pointers.
+   */
+  g_mutex_lock (&already_warned_lock);
+
+  if (already_warned_table == NULL)
+    already_warned_table = g_hash_table_new (NULL, NULL);
+
+  already = g_hash_table_contains (already_warned_table, (gpointer) pspec->name);
+  if (!already)
+    g_hash_table_add (already_warned_table, (gpointer) pspec->name);
+
+  g_mutex_unlock (&already_warned_lock);
+
+  if (!already)
+    g_warning ("The property %s:%s is deprecated and shouldn't be used "
+               "anymore. It will be removed in a future version.",
+               g_type_name (pspec->owner_type), pspec->name);
+}
+
 static inline void
 object_get_property (GObject     *object,
 		     GParamSpec  *pspec,
@@ -1290,8 +1363,10 @@ object_get_property (GObject     *object,
 
   redirect = g_param_spec_get_redirect_target (pspec);
   if (redirect)
-    pspec = redirect;    
-  
+    pspec = redirect;
+
+  consider_issuing_property_deprecation_warning (pspec);
+
   class->get_property (object, param_id, value, pspec);
 }
 
@@ -1305,7 +1380,6 @@ object_set_property (GObject             *object,
   GObjectClass *class = g_type_class_peek (pspec->owner_type);
   guint param_id = PARAM_SPEC_PARAM_ID (pspec);
   GParamSpec *redirect;
-  static const gchar * enable_diagnostic = NULL;
 
   if (class == NULL)
     {
@@ -1318,25 +1392,10 @@ object_set_property (GObject             *object,
   if (redirect)
     pspec = redirect;
 
-  if (G_UNLIKELY (!enable_diagnostic))
-    {
-      enable_diagnostic = g_getenv ("G_ENABLE_DIAGNOSTIC");
-      if (!enable_diagnostic)
-        enable_diagnostic = "0";
-    }
-
-  if (enable_diagnostic[0] == '1')
-    {
-      if (pspec->flags & G_PARAM_DEPRECATED)
-        g_warning ("The property %s:%s is deprecated and shouldn't be used "
-                   "anymore. It will be removed in a future version.",
-                   G_OBJECT_TYPE_NAME (object), pspec->name);
-    }
-
   /* provide a copy to work from, convert (if necessary) and validate */
   g_value_init (&tmp_value, pspec->value_type);
   if (!g_value_transform (value, &tmp_value))
-    g_warning ("unable to set property `%s' of type `%s' from value of type `%s'",
+    g_warning ("unable to set property '%s' of type '%s' from value of type '%s'",
 	       pspec->name,
 	       g_type_name (pspec->value_type),
 	       G_VALUE_TYPE_NAME (value));
@@ -1344,7 +1403,7 @@ object_set_property (GObject             *object,
     {
       gchar *contents = g_strdup_value_contents (value);
 
-      g_warning ("value \"%s\" of type `%s' is invalid or out of range for property `%s' of type `%s'",
+      g_warning ("value \"%s\" of type '%s' is invalid or out of range for property '%s' of type '%s'",
 		 contents,
 		 G_VALUE_TYPE_NAME (value),
 		 pspec->name,
@@ -1353,20 +1412,23 @@ object_set_property (GObject             *object,
     }
   else
     {
-      GParamSpec *notify_pspec;
-
       class->set_property (object, param_id, &tmp_value, pspec);
 
-      notify_pspec = get_notify_pspec (pspec);
+      if (~pspec->flags & G_PARAM_EXPLICIT_NOTIFY)
+        {
+          GParamSpec *notify_pspec;
 
-      if (notify_pspec != NULL)
-        g_object_notify_queue_add (object, nqueue, notify_pspec);
+          notify_pspec = get_notify_pspec (pspec);
+
+          if (notify_pspec != NULL)
+            g_object_notify_queue_add (object, nqueue, notify_pspec);
+        }
     }
   g_value_unset (&tmp_value);
 }
 
 static void
-object_interface_check_properties (gpointer func_data,
+object_interface_check_properties (gpointer check_data,
 				   gpointer g_iface)
 {
   GTypeInterface *iface_class = g_iface;
@@ -1377,8 +1439,11 @@ object_interface_check_properties (gpointer func_data,
 
   class = g_type_class_ref (iface_class->g_instance_type);
 
-  if (!G_IS_OBJECT_CLASS (class))
+  if (class == NULL)
     return;
+
+  if (!G_IS_OBJECT_CLASS (class))
+    goto out;
 
   pspecs = g_param_spec_pool_list (pspec_pool, iface_type, &n);
 
@@ -1510,6 +1575,7 @@ object_interface_check_properties (gpointer func_data,
 
   g_free (pspecs);
 
+ out:
   g_type_class_unref (class);
 }
 
@@ -1554,40 +1620,222 @@ g_object_new (GType	   object_type,
   return object;
 }
 
-static gboolean
-slist_maybe_remove (GSList       **slist,
-                    gconstpointer  data)
+static gpointer
+g_object_new_with_custom_constructor (GObjectClass          *class,
+                                      GObjectConstructParam *params,
+                                      guint                  n_params)
 {
-  GSList *last = NULL, *node = *slist;
-  while (node)
+  GObjectNotifyQueue *nqueue = NULL;
+  gboolean newly_constructed;
+  GObjectConstructParam *cparams;
+  GObject *object;
+  GValue *cvalues;
+  gint n_cparams;
+  gint cvals_used;
+  GSList *node;
+  gint i;
+
+  /* If we have ->constructed() then we have to do a lot more work.
+   * It's possible that this is a singleton and it's also possible
+   * that the user's constructor() will attempt to modify the values
+   * that we pass in, so we'll need to allocate copies of them.
+   * It's also possible that the user may attempt to call
+   * g_object_set() from inside of their constructor, so we need to
+   * add ourselves to a list of objects for which that is allowed
+   * while their constructor() is running.
+   */
+
+  /* Create the array of GObjectConstructParams for constructor() */
+  n_cparams = g_slist_length (class->construct_properties);
+  cparams = g_new (GObjectConstructParam, n_cparams);
+  cvalues = g_new0 (GValue, n_cparams);
+  cvals_used = 0;
+  i = 0;
+
+  /* As above, we may find the value in the passed-in params list.
+   *
+   * If we have the value passed in then we can use the GValue from
+   * it directly because it is safe to modify.  If we use the
+   * default value from the class, we had better not pass that in
+   * and risk it being modified, so we create a new one.
+   * */
+  for (node = class->construct_properties; node; node = node->next)
     {
-      if (node->data == data)
+      GParamSpec *pspec;
+      GValue *value;
+      gint j;
+
+      pspec = node->data;
+      value = NULL; /* to silence gcc... */
+
+      for (j = 0; j < n_params; j++)
+        if (params[j].pspec == pspec)
+          {
+            consider_issuing_property_deprecation_warning (pspec);
+            value = params[j].value;
+            break;
+          }
+
+      if (j == n_params)
         {
-          if (last)
-            last->next = node->next;
-          else
-            *slist = node->next;
-          g_slist_free_1 (node);
-          return TRUE;
+          value = &cvalues[cvals_used++];
+          g_value_init (value, pspec->value_type);
+          g_param_value_set_default (pspec, value);
         }
-      last = node;
-      node = last->next;
+
+      cparams[i].pspec = pspec;
+      cparams[i].value = value;
+      i++;
     }
-  return FALSE;
+
+  /* construct object from construction parameters */
+  object = class->constructor (class->g_type_class.g_type, n_cparams, cparams);
+  /* free construction values */
+  g_free (cparams);
+  while (cvals_used--)
+    g_value_unset (&cvalues[cvals_used]);
+  g_free (cvalues);
+
+  /* There is code in the wild that relies on being able to return NULL
+   * from its custom constructor.  This was never a supported operation,
+   * but since the code is already out there...
+   */
+  if (object == NULL)
+    {
+      g_critical ("Custom constructor for class %s returned NULL (which is invalid). "
+                  "Please use GInitable instead.", G_OBJECT_CLASS_NAME (class));
+      return NULL;
+    }
+
+  /* g_object_init() will have marked the object as being in-construction.
+   * Check if the returned object still is so marked, or if this is an
+   * already-existing singleton (in which case we should not do 'constructed').
+   */
+  newly_constructed = object_in_construction (object);
+  if (newly_constructed)
+    g_datalist_id_set_data (&object->qdata, quark_in_construction, NULL);
+
+  if (CLASS_HAS_PROPS (class))
+    {
+      /* If this object was newly_constructed then g_object_init()
+       * froze the queue.  We need to freeze it here in order to get
+       * the handle so that we can thaw it below (otherwise it will
+       * be frozen forever).
+       *
+       * We also want to do a freeze if we have any params to set,
+       * even on a non-newly_constructed object.
+       *
+       * It's possible that we have the case of non-newly created
+       * singleton and all of the passed-in params were construct
+       * properties so n_params > 0 but we will actually set no
+       * properties.  This is a pretty lame case to optimise, so
+       * just ignore it and freeze anyway.
+       */
+      if (newly_constructed || n_params)
+        nqueue = g_object_notify_queue_freeze (object, FALSE);
+
+      /* Remember: if it was newly_constructed then g_object_init()
+       * already did a freeze, so we now have two.  Release one.
+       */
+      if (newly_constructed)
+        g_object_notify_queue_thaw (object, nqueue);
+    }
+
+  /* run 'constructed' handler if there is a custom one */
+  if (newly_constructed && CLASS_HAS_CUSTOM_CONSTRUCTED (class))
+    class->constructed (object);
+
+  /* set remaining properties */
+  for (i = 0; i < n_params; i++)
+    if (!(params[i].pspec->flags & (G_PARAM_CONSTRUCT | G_PARAM_CONSTRUCT_ONLY)))
+      {
+        consider_issuing_property_deprecation_warning (params[i].pspec);
+        object_set_property (object, params[i].pspec, params[i].value, nqueue);
+      }
+
+  /* If nqueue is non-NULL then we are frozen.  Thaw it. */
+  if (nqueue)
+    g_object_notify_queue_thaw (object, nqueue);
+
+  return object;
 }
 
-static inline gboolean
-object_in_construction_list (GObject *object)
+static gpointer
+g_object_new_internal (GObjectClass          *class,
+                       GObjectConstructParam *params,
+                       guint                  n_params)
 {
-  gboolean in_construction;
-  G_LOCK (construction_mutex);
-  in_construction = g_slist_find (construction_objects, object) != NULL;
-  G_UNLOCK (construction_mutex);
-  return in_construction;
+  GObjectNotifyQueue *nqueue = NULL;
+  GObject *object;
+
+  if G_UNLIKELY (CLASS_HAS_CUSTOM_CONSTRUCTOR (class))
+    return g_object_new_with_custom_constructor (class, params, n_params);
+
+  object = (GObject *) g_type_create_instance (class->g_type_class.g_type);
+
+  if (CLASS_HAS_PROPS (class))
+    {
+      GSList *node;
+
+      /* This will have been setup in g_object_init() */
+      nqueue = g_datalist_id_get_data (&object->qdata, quark_notify_queue);
+      g_assert (nqueue != NULL);
+
+      /* We will set exactly n_construct_properties construct
+       * properties, but they may come from either the class default
+       * values or the passed-in parameter list.
+       */
+      for (node = class->construct_properties; node; node = node->next)
+        {
+          const GValue *value;
+          GParamSpec *pspec;
+          gint j;
+
+          pspec = node->data;
+          value = NULL; /* to silence gcc... */
+
+          for (j = 0; j < n_params; j++)
+            if (params[j].pspec == pspec)
+              {
+                consider_issuing_property_deprecation_warning (pspec);
+                value = params[j].value;
+                break;
+              }
+
+          if (j == n_params)
+            value = g_param_spec_get_default_value (pspec);
+
+          object_set_property (object, pspec, value, nqueue);
+        }
+    }
+
+  /* run 'constructed' handler if there is a custom one */
+  if (CLASS_HAS_CUSTOM_CONSTRUCTED (class))
+    class->constructed (object);
+
+  if (nqueue)
+    {
+      gint i;
+
+      /* Set remaining properties.  The construct properties will
+       * already have been taken, so set only the non-construct
+       * ones.
+       */
+      for (i = 0; i < n_params; i++)
+        if (!(params[i].pspec->flags & (G_PARAM_CONSTRUCT | G_PARAM_CONSTRUCT_ONLY)))
+          {
+            consider_issuing_property_deprecation_warning (params[i].pspec);
+            object_set_property (object, params[i].pspec, params[i].value, nqueue);
+          }
+
+      g_object_notify_queue_thaw (object, nqueue);
+    }
+
+  return object;
 }
 
 /**
- * g_object_newv:
+ * g_object_newv: (rename-to g_object_new)
  * @object_type: the type id of the #GObject subtype to instantiate
  * @n_parameters: the length of the @parameters array
  * @parameters: (array length=n_parameters): an array of #GParameter
@@ -1597,166 +1845,80 @@ object_in_construction_list (GObject *object)
  * Construction parameters (see #G_PARAM_CONSTRUCT, #G_PARAM_CONSTRUCT_ONLY)
  * which are not explicitly specified are set to their default values.
  *
- * Rename to: g_object_new
  * Returns: (type GObject.Object) (transfer full): a new instance of
  * @object_type
  */
 gpointer
 g_object_newv (GType       object_type,
-	       guint       n_parameters,
-	       GParameter *parameters)
+               guint       n_parameters,
+               GParameter *parameters)
 {
-  GObjectConstructParam *cparams = NULL, *oparams;
-  GObjectNotifyQueue *nqueue = NULL; /* shouldn't be initialized, just to silence compiler */
-  GObject *object;
   GObjectClass *class, *unref_class = NULL;
-  GSList *slist;
-  guint n_total_cparams = 0, n_cparams = 0, n_oparams = 0, n_cvalues;
-  GValue *cvalues;
-  GList *clist = NULL;
-  gboolean newly_constructed;
-  guint i;
+  GObject *object;
 
   g_return_val_if_fail (G_TYPE_IS_OBJECT (object_type), NULL);
+  g_return_val_if_fail (n_parameters == 0 || parameters != NULL, NULL);
 
+  /* Try to avoid thrashing the ref_count if we don't need to (since
+   * it's a locked operation).
+   */
   class = g_type_class_peek_static (object_type);
+
   if (!class)
     class = unref_class = g_type_class_ref (object_type);
-  for (slist = class->construct_properties; slist; slist = slist->next)
+
+  if (n_parameters)
     {
-      clist = g_list_prepend (clist, slist->data);
-      n_total_cparams += 1;
-    }
+      GObjectConstructParam *cparams;
+      guint i, j;
 
-  if (n_parameters == 0 && n_total_cparams == 0)
-    {
-      /* This is a simple object with no construct properties, and
-       * no properties are being set, so short circuit the parameter
-       * handling. This speeds up simple object construction.
-       */
-      oparams = NULL;
-      object = class->constructor (object_type, 0, NULL);
-      goto did_construction;
-    }
+      cparams = g_newa (GObjectConstructParam, n_parameters);
+      j = 0;
 
-  /* collect parameters, sort into construction and normal ones */
-  oparams = g_new (GObjectConstructParam, n_parameters);
-  cparams = g_new (GObjectConstructParam, n_total_cparams);
-  for (i = 0; i < n_parameters; i++)
-    {
-      GValue *value = &parameters[i].value;
-      GParamSpec *pspec = g_param_spec_pool_lookup (pspec_pool,
-						    parameters[i].name,
-						    object_type,
-						    TRUE);
-      if (!pspec)
-	{
-	  g_warning ("%s: object class `%s' has no property named `%s'",
-		     G_STRFUNC,
-		     g_type_name (object_type),
-		     parameters[i].name);
-	  continue;
-	}
-      if (!(pspec->flags & G_PARAM_WRITABLE))
-	{
-	  g_warning ("%s: property `%s' of object class `%s' is not writable",
-		     G_STRFUNC,
-		     pspec->name,
-		     g_type_name (object_type));
-	  continue;
-	}
-      if (pspec->flags & (G_PARAM_CONSTRUCT | G_PARAM_CONSTRUCT_ONLY))
-	{
-	  GList *list = g_list_find (clist, pspec);
+      for (i = 0; i < n_parameters; i++)
+        {
+          GParamSpec *pspec;
+          gint k;
 
-	  if (!list)
-	    {
-	      g_warning ("%s: construct property \"%s\" for object `%s' can't be set twice",
-                         G_STRFUNC, pspec->name, g_type_name (object_type));
-	      continue;
-	    }
-	  cparams[n_cparams].pspec = pspec;
-	  cparams[n_cparams].value = value;
-	  n_cparams++;
-	  if (!list->prev)
-	    clist = list->next;
-	  else
-	    list->prev->next = list->next;
-	  if (list->next)
-	    list->next->prev = list->prev;
-	  g_list_free_1 (list);
-	}
-      else
-	{
-	  oparams[n_oparams].pspec = pspec;
-	  oparams[n_oparams].value = value;
-	  n_oparams++;
-	}
-    }
+          pspec = g_param_spec_pool_lookup (pspec_pool, parameters[i].name, object_type, TRUE);
 
-  /* set remaining construction properties to default values */
-  n_cvalues = n_total_cparams - n_cparams;
-  cvalues = g_new (GValue, n_cvalues);
-  while (clist)
-    {
-      GList *tmp = clist->next;
-      GParamSpec *pspec = clist->data;
-      GValue *value = cvalues + n_total_cparams - n_cparams - 1;
+          if G_UNLIKELY (!pspec)
+            {
+              g_critical ("%s: object class '%s' has no property named '%s'",
+                          G_STRFUNC, g_type_name (object_type), parameters[i].name);
+              continue;
+            }
 
-      value->g_type = 0;
-      g_value_init (value, pspec->value_type);
-      g_param_value_set_default (pspec, value);
+          if G_UNLIKELY (~pspec->flags & G_PARAM_WRITABLE)
+            {
+              g_critical ("%s: property '%s' of object class '%s' is not writable",
+                          G_STRFUNC, pspec->name, g_type_name (object_type));
+              continue;
+            }
 
-      cparams[n_cparams].pspec = pspec;
-      cparams[n_cparams].value = value;
-      n_cparams++;
+          if (pspec->flags & (G_PARAM_CONSTRUCT | G_PARAM_CONSTRUCT_ONLY))
+            {
+              for (k = 0; k < j; k++)
+                if (cparams[k].pspec == pspec)
+                    break;
+              if G_UNLIKELY (k != j)
+                {
+                  g_critical ("%s: construct property '%s' for type '%s' cannot be set twice",
+                              G_STRFUNC, parameters[i].name, g_type_name (object_type));
+                  continue;
+                }
+            }
 
-      g_list_free_1 (clist);
-      clist = tmp;
-    }
+          cparams[j].pspec = pspec;
+          cparams[j].value = &parameters[i].value;
+          j++;
+        }
 
-  /* construct object from construction parameters */
-  object = class->constructor (object_type, n_total_cparams, cparams);
-  /* free construction values */
-  g_free (cparams);
-  while (n_cvalues--)
-    g_value_unset (cvalues + n_cvalues);
-  g_free (cvalues);
-
- did_construction:
-  if (CLASS_HAS_CUSTOM_CONSTRUCTOR (class))
-    {
-      /* adjust freeze_count according to g_object_init() and remaining properties */
-      G_LOCK (construction_mutex);
-      newly_constructed = slist_maybe_remove (&construction_objects, object);
-      G_UNLOCK (construction_mutex);
+      object = g_object_new_internal (class, cparams, j);
     }
   else
-    newly_constructed = TRUE;
-
-  if (CLASS_HAS_PROPS (class))
-    {
-      if (newly_constructed || n_oparams)
-	nqueue = g_object_notify_queue_freeze (object, FALSE);
-      if (newly_constructed)
-	g_object_notify_queue_thaw (object, nqueue);
-    }
-
-  /* run 'constructed' handler if there is a custom one */
-  if (newly_constructed && CLASS_HAS_CUSTOM_CONSTRUCTED (class))
-    class->constructed (object);
-
-  /* set remaining properties */
-  for (i = 0; i < n_oparams; i++)
-    object_set_property (object, oparams[i].pspec, oparams[i].value, nqueue);
-  g_free (oparams);
-
-  if (CLASS_HAS_PROPS (class))
-    {
-      /* release our own freeze count and handle notifications */
-      if (newly_constructed || n_oparams)
-	g_object_notify_queue_thaw (object, nqueue);
-    }
+    /* Fast case: no properties passed in. */
+    object = g_object_new_internal (class, NULL, 0);
 
   if (unref_class)
     g_type_class_unref (unref_class);
@@ -1779,67 +1941,109 @@ g_object_newv (GType       object_type,
  * Returns: a new instance of @object_type
  */
 GObject*
-g_object_new_valist (GType	  object_type,
-		     const gchar *first_property_name,
-		     va_list	  var_args)
+g_object_new_valist (GType        object_type,
+                     const gchar *first_property_name,
+                     va_list      var_args)
 {
-  GObjectClass *class;
-  GParameter *params;
-  const gchar *name;
+  GObjectClass *class, *unref_class = NULL;
   GObject *object;
-  guint n_params = 0, n_alloced_params = 16;
-  
+
   g_return_val_if_fail (G_TYPE_IS_OBJECT (object_type), NULL);
 
-  if (!first_property_name)
-    return g_object_newv (object_type, 0, NULL);
+  /* Try to avoid thrashing the ref_count if we don't need to (since
+   * it's a locked operation).
+   */
+  class = g_type_class_peek_static (object_type);
 
-  class = g_type_class_ref (object_type);
+  if (!class)
+    class = unref_class = g_type_class_ref (object_type);
 
-  params = g_new0 (GParameter, n_alloced_params);
-  name = first_property_name;
-  while (name)
+  if (first_property_name)
     {
-      gchar *error = NULL;
-      GParamSpec *pspec = g_param_spec_pool_lookup (pspec_pool,
-						    name,
-						    object_type,
-						    TRUE);
-      if (!pspec)
-	{
-	  g_warning ("%s: object class `%s' has no property named `%s'",
-		     G_STRFUNC,
-		     g_type_name (object_type),
-		     name);
-	  break;
-	}
-      if (n_params >= n_alloced_params)
-	{
-	  n_alloced_params += 16;
-	  params = g_renew (GParameter, params, n_alloced_params);
-	  memset (params + n_params, 0, 16 * (sizeof *params));
-	}
-      params[n_params].name = name;
-      G_VALUE_COLLECT_INIT (&params[n_params].value, pspec->value_type,
-			    var_args, 0, &error);
-      if (error)
-	{
-	  g_warning ("%s: %s", G_STRFUNC, error);
-	  g_free (error);
-          g_value_unset (&params[n_params].value);
-	  break;
-	}
-      n_params++;
-      name = va_arg (var_args, gchar*);
+      GObjectConstructParam stack_params[16];
+      GObjectConstructParam *params;
+      const gchar *name;
+      gint n_params = 0;
+
+      name = first_property_name;
+      params = stack_params;
+
+      do
+        {
+          gchar *error = NULL;
+          GParamSpec *pspec;
+          gint i;
+
+          pspec = g_param_spec_pool_lookup (pspec_pool, name, object_type, TRUE);
+
+          if G_UNLIKELY (!pspec)
+            {
+              g_critical ("%s: object class '%s' has no property named '%s'",
+                          G_STRFUNC, g_type_name (object_type), name);
+              /* Can't continue because arg list will be out of sync. */
+              break;
+            }
+
+          if G_UNLIKELY (~pspec->flags & G_PARAM_WRITABLE)
+            {
+              g_critical ("%s: property '%s' of object class '%s' is not writable",
+                          G_STRFUNC, pspec->name, g_type_name (object_type));
+              break;
+            }
+
+          if (pspec->flags & (G_PARAM_CONSTRUCT | G_PARAM_CONSTRUCT_ONLY))
+            {
+              for (i = 0; i < n_params; i++)
+                if (params[i].pspec == pspec)
+                    break;
+              if G_UNLIKELY (i != n_params)
+                {
+                  g_critical ("%s: property '%s' for type '%s' cannot be set twice",
+                              G_STRFUNC, name, g_type_name (object_type));
+                  break;
+                }
+            }
+
+          if (n_params == 16)
+            {
+              params = g_new (GObjectConstructParam, n_params + 1);
+              memcpy (params, stack_params, sizeof stack_params);
+            }
+          else if (n_params > 16)
+            params = g_renew (GObjectConstructParam, params, n_params + 1);
+
+          params[n_params].pspec = pspec;
+          params[n_params].value = g_newa (GValue, 1);
+          memset (params[n_params].value, 0, sizeof (GValue));
+
+          G_VALUE_COLLECT_INIT (params[n_params].value, pspec->value_type, var_args, 0, &error);
+
+          if (error)
+            {
+              g_critical ("%s: %s", G_STRFUNC, error);
+              g_value_unset (params[n_params].value);
+              g_free (error);
+              break;
+            }
+
+          n_params++;
+        }
+      while ((name = va_arg (var_args, const gchar *)));
+
+      object = g_object_new_internal (class, params, n_params);
+
+      while (n_params--)
+        g_value_unset (params[n_params].value);
+
+      if (params != stack_params)
+        g_free (params);
     }
+  else
+    /* Fast case: no properties passed in. */
+    object = g_object_new_internal (class, NULL, 0);
 
-  object = g_object_newv (object_type, n_params, params);
-
-  while (n_params--)
-    g_value_unset (&params[n_params].value);
-  g_free (params);
-
-  g_type_class_unref (class);
+  if (unref_class)
+    g_type_class_unref (unref_class);
 
   return object;
 }
@@ -1919,7 +2123,7 @@ g_object_set_valist (GObject	 *object,
 					TRUE);
       if (!pspec)
 	{
-	  g_warning ("%s: object class `%s' has no property named `%s'",
+	  g_warning ("%s: object class '%s' has no property named '%s'",
 		     G_STRFUNC,
 		     G_OBJECT_TYPE_NAME (object),
 		     name);
@@ -1927,15 +2131,15 @@ g_object_set_valist (GObject	 *object,
 	}
       if (!(pspec->flags & G_PARAM_WRITABLE))
 	{
-	  g_warning ("%s: property `%s' of object class `%s' is not writable",
+	  g_warning ("%s: property '%s' of object class '%s' is not writable",
 		     G_STRFUNC,
 		     pspec->name,
 		     G_OBJECT_TYPE_NAME (object));
 	  break;
 	}
-      if ((pspec->flags & G_PARAM_CONSTRUCT_ONLY) && !object_in_construction_list (object))
+      if ((pspec->flags & G_PARAM_CONSTRUCT_ONLY) && !object_in_construction (object))
         {
-          g_warning ("%s: construct property \"%s\" for object `%s' can't be set after construction",
+          g_warning ("%s: construct property \"%s\" for object '%s' can't be set after construction",
                      G_STRFUNC, pspec->name, G_OBJECT_TYPE_NAME (object));
           break;
         }
@@ -1949,10 +2153,11 @@ g_object_set_valist (GObject	 *object,
           g_value_unset (&value);
 	  break;
 	}
-      
+
+      consider_issuing_property_deprecation_warning (pspec);
       object_set_property (object, pspec, &value, nqueue);
       g_value_unset (&value);
-      
+
       name = va_arg (var_args, gchar*);
     }
 
@@ -2000,7 +2205,7 @@ g_object_get_valist (GObject	 *object,
 					TRUE);
       if (!pspec)
 	{
-	  g_warning ("%s: object class `%s' has no property named `%s'",
+	  g_warning ("%s: object class '%s' has no property named '%s'",
 		     G_STRFUNC,
 		     G_OBJECT_TYPE_NAME (object),
 		     name);
@@ -2008,7 +2213,7 @@ g_object_get_valist (GObject	 *object,
 	}
       if (!(pspec->flags & G_PARAM_READABLE))
 	{
-	  g_warning ("%s: property `%s' of object class `%s' is not readable",
+	  g_warning ("%s: property '%s' of object class '%s' is not readable",
 		     G_STRFUNC,
 		     pspec->name,
 		     G_OBJECT_TYPE_NAME (object));
@@ -2044,6 +2249,10 @@ g_object_get_valist (GObject	 *object,
  *  name/value pairs, followed by %NULL
  *
  * Sets properties on an object.
+ *
+ * Note that the "notify" signals are queued and only emitted (in
+ * reverse order) after all properties have been set. See
+ * g_object_freeze_notify().
  */
 void
 g_object_set (gpointer     _object,
@@ -2073,12 +2282,9 @@ g_object_set (gpointer     _object,
  * is responsible for freeing the memory in the appropriate manner for
  * the type, for instance by calling g_free() or g_object_unref().
  *
- * <example>
- * <title>Using g_object_get(<!-- -->)</title>
- * An example of using g_object_get() to get the contents
- * of three properties - one of type #G_TYPE_INT,
- * one of type #G_TYPE_STRING, and one of type #G_TYPE_OBJECT:
- * <programlisting>
+ * Here is an example of using g_object_get() to get the contents
+ * of three properties: an integer, a string and an object:
+ * |[<!-- language="C" --> 
  *  gint intval;
  *  gchar *strval;
  *  GObject *objval;
@@ -2093,8 +2299,7 @@ g_object_set (gpointer     _object,
  *
  *  g_free (strval);
  *  g_object_unref (objval);
- * </programlisting>
- * </example>
+ *  ]|
  */
 void
 g_object_get (gpointer     _object,
@@ -2139,21 +2344,24 @@ g_object_set_property (GObject	    *object,
 				    G_OBJECT_TYPE (object),
 				    TRUE);
   if (!pspec)
-    g_warning ("%s: object class `%s' has no property named `%s'",
+    g_warning ("%s: object class '%s' has no property named '%s'",
 	       G_STRFUNC,
 	       G_OBJECT_TYPE_NAME (object),
 	       property_name);
   else if (!(pspec->flags & G_PARAM_WRITABLE))
-    g_warning ("%s: property `%s' of object class `%s' is not writable",
+    g_warning ("%s: property '%s' of object class '%s' is not writable",
                G_STRFUNC,
                pspec->name,
                G_OBJECT_TYPE_NAME (object));
-  else if ((pspec->flags & G_PARAM_CONSTRUCT_ONLY) && !object_in_construction_list (object))
-    g_warning ("%s: construct property \"%s\" for object `%s' can't be set after construction",
+  else if ((pspec->flags & G_PARAM_CONSTRUCT_ONLY) && !object_in_construction (object))
+    g_warning ("%s: construct property \"%s\" for object '%s' can't be set after construction",
                G_STRFUNC, pspec->name, G_OBJECT_TYPE_NAME (object));
   else
-    object_set_property (object, pspec, value, nqueue);
-  
+    {
+      consider_issuing_property_deprecation_warning (pspec);
+      object_set_property (object, pspec, value, nqueue);
+    }
+
   g_object_notify_queue_thaw (object, nqueue);
   g_object_unref (object);
 }
@@ -2192,12 +2400,12 @@ g_object_get_property (GObject	   *object,
 				    G_OBJECT_TYPE (object),
 				    TRUE);
   if (!pspec)
-    g_warning ("%s: object class `%s' has no property named `%s'",
+    g_warning ("%s: object class '%s' has no property named '%s'",
 	       G_STRFUNC,
 	       G_OBJECT_TYPE_NAME (object),
 	       property_name);
   else if (!(pspec->flags & G_PARAM_READABLE))
-    g_warning ("%s: property `%s' of object class `%s' is not readable",
+    g_warning ("%s: property '%s' of object class '%s' is not readable",
                G_STRFUNC,
                pspec->name,
                G_OBJECT_TYPE_NAME (object));
@@ -2214,7 +2422,7 @@ g_object_get_property (GObject	   *object,
 	}
       else if (!g_value_type_transformable (pspec->value_type, G_VALUE_TYPE (value)))
 	{
-	  g_warning ("%s: can't retrieve property `%s' of type `%s' as value of type `%s'",
+	  g_warning ("%s: can't retrieve property '%s' of type '%s' as value of type '%s'",
 		     G_STRFUNC, pspec->name,
 		     g_type_name (pspec->value_type),
 		     G_VALUE_TYPE_NAME (value));
@@ -2249,72 +2457,23 @@ g_object_get_property (GObject	   *object,
  *
  * The signal specs expected by this function have the form
  * "modifier::signal_name", where modifier can be one of the following:
- * <variablelist>
- * <varlistentry>
- * <term>signal</term>
- * <listitem><para>
- * equivalent to <literal>g_signal_connect_data (..., NULL, 0)</literal>
- * </para></listitem>
- * </varlistentry>
- * <varlistentry>
- * <term>object_signal</term>
- * <term>object-signal</term>
- * <listitem><para>
- * equivalent to <literal>g_signal_connect_object (..., 0)</literal>
- * </para></listitem>
- * </varlistentry>
- * <varlistentry>
- * <term>swapped_signal</term>
- * <term>swapped-signal</term>
- * <listitem><para>
- * equivalent to <literal>g_signal_connect_data (..., NULL, G_CONNECT_SWAPPED)</literal>
- * </para></listitem>
- * </varlistentry>
- * <varlistentry>
- * <term>swapped_object_signal</term>
- * <term>swapped-object-signal</term>
- * <listitem><para>
- * equivalent to <literal>g_signal_connect_object (..., G_CONNECT_SWAPPED)</literal>
- * </para></listitem>
- * </varlistentry>
- * <varlistentry>
- * <term>signal_after</term>
- * <term>signal-after</term>
- * <listitem><para>
- * equivalent to <literal>g_signal_connect_data (..., NULL, G_CONNECT_AFTER)</literal>
- * </para></listitem>
- * </varlistentry>
- * <varlistentry>
- * <term>object_signal_after</term>
- * <term>object-signal-after</term>
- * <listitem><para>
- * equivalent to <literal>g_signal_connect_object (..., G_CONNECT_AFTER)</literal>
- * </para></listitem>
- * </varlistentry>
- * <varlistentry>
- * <term>swapped_signal_after</term>
- * <term>swapped-signal-after</term>
- * <listitem><para>
- * equivalent to <literal>g_signal_connect_data (..., NULL, G_CONNECT_SWAPPED | G_CONNECT_AFTER)</literal>
- * </para></listitem>
- * </varlistentry>
- * <varlistentry>
- * <term>swapped_object_signal_after</term>
- * <term>swapped-object-signal-after</term>
- * <listitem><para>
- * equivalent to <literal>g_signal_connect_object (..., G_CONNECT_SWAPPED | G_CONNECT_AFTER)</literal>
- * </para></listitem>
- * </varlistentry>
- * </variablelist>
+ * * - signal: equivalent to g_signal_connect_data (..., NULL, 0)
+ * - object-signal, object_signal: equivalent to g_signal_connect_object (..., 0)
+ * - swapped-signal, swapped_signal: equivalent to g_signal_connect_data (..., NULL, G_CONNECT_SWAPPED)
+ * - swapped_object_signal, swapped-object-signal: equivalent to g_signal_connect_object (..., G_CONNECT_SWAPPED)
+ * - signal_after, signal-after: equivalent to g_signal_connect_data (..., NULL, G_CONNECT_AFTER)
+ * - object_signal_after, object-signal-after: equivalent to g_signal_connect_object (..., G_CONNECT_AFTER)
+ * - swapped_signal_after, swapped-signal-after: equivalent to g_signal_connect_data (..., NULL, G_CONNECT_SWAPPED | G_CONNECT_AFTER)
+ * - swapped_object_signal_after, swapped-object-signal-after: equivalent to g_signal_connect_object (..., G_CONNECT_SWAPPED | G_CONNECT_AFTER)
  *
- * |[
+ * |[<!-- language="C" --> 
  *   menu->toplevel = g_object_connect (g_object_new (GTK_TYPE_WINDOW,
  * 						   "type", GTK_WINDOW_POPUP,
  * 						   "child", menu,
  * 						   NULL),
  * 				     "signal::event", gtk_menu_window_event, menu,
  * 				     "signal::size_request", gtk_menu_window_size_request, menu,
- * 				     "signal::destroy", gtk_widget_destroyed, &amp;menu-&gt;toplevel,
+ * 				     "signal::destroy", gtk_widget_destroyed, &menu->toplevel,
  * 				     NULL);
  * ]|
  *
@@ -2638,8 +2797,7 @@ object_floating_flag_handler (GObject        *object,
  * g_object_is_floating:
  * @object: (type GObject.Object): a #GObject
  *
- * Checks whether @object has a <link linkend="floating-ref">floating</link>
- * reference.
+ * Checks whether @object has a [floating][floating-ref] reference.
  *
  * Since: 2.10
  *
@@ -2658,8 +2816,7 @@ g_object_is_floating (gpointer _object)
  * @object: (type GObject.Object): a #GObject
  *
  * Increase the reference count of @object, and possibly remove the
- * <link linkend="floating-ref">floating</link> reference, if @object
- * has a floating reference.
+ * [floating][floating-ref] reference, if @object has a floating reference.
  *
  * In other words, if the object is floating, then this call "assumes
  * ownership" of the floating reference, converting it to a normal
@@ -2689,11 +2846,10 @@ g_object_ref_sink (gpointer _object)
  * g_object_force_floating:
  * @object: a #GObject
  *
- * This function is intended for #GObject implementations to re-enforce a
- * <link linkend="floating-ref">floating</link> object reference.
- * Doing this is seldom required: all
- * #GInitiallyUnowned<!-- -->s are created with a floating reference which
- * usually just needs to be sunken by calling g_object_ref_sink().
+ * This function is intended for #GObject implementations to re-enforce
+ * a [floating][floating-ref] object reference. Doing this is seldom
+ * required: all #GInitiallyUnowneds are created with a floating reference
+ * which usually just needs to be sunken by calling g_object_ref_sink().
  *
  * Since: 2.10
  */
@@ -2757,8 +2913,8 @@ toggle_refs_notify (GObject *object,
  * to the proxy object, but when there are other references held to
  * @object, a strong reference is held. The @notify callback is called
  * when the reference from @object to the proxy object should be
- * <firstterm>toggled</firstterm> from strong to weak (@is_last_ref
- * true) or weak to strong (@is_last_ref false).
+ * "toggled" from strong to weak (@is_last_ref true) or weak to strong
+ * (@is_last_ref false).
  *
  * Since a (normal) reference must be held to the object before
  * calling g_object_add_toggle_ref(), the initial state of the reverse
@@ -2884,12 +3040,6 @@ g_object_ref (gpointer _object)
   g_return_val_if_fail (G_IS_OBJECT (object), NULL);
   g_return_val_if_fail (object->ref_count > 0, NULL);
   
-#ifdef  G_ENABLE_DEBUG
-  if (g_trap_object_ref == object)
-    G_BREAKPOINT ();
-#endif  /* G_ENABLE_DEBUG */
-
-
   old_val = g_atomic_int_add (&object->ref_count, 1);
 
   if (old_val == 1 && OBJECT_HAS_TOGGLE_REF (object))
@@ -2906,6 +3056,11 @@ g_object_ref (gpointer _object)
  *
  * Decreases the reference count of @object. When its reference count
  * drops to 0, the object is finalized (i.e. its memory is freed).
+ *
+ * If the pointer to the #GObject may be reused in future (for example, if it is
+ * an instance variable of another object), it is recommended to clear the
+ * pointer to %NULL rather than retain a dangling pointer to a potentially
+ * invalid #GObject instance. Use g_clear_object() for this.
  */
 void
 g_object_unref (gpointer _object)
@@ -2916,11 +3071,6 @@ g_object_unref (gpointer _object)
   g_return_if_fail (G_IS_OBJECT (object));
   g_return_if_fail (object->ref_count > 0);
   
-#ifdef  G_ENABLE_DEBUG
-  if (g_trap_object_ref == object)
-    G_BREAKPOINT ();
-#endif  /* G_ENABLE_DEBUG */
-
   /* here we want to atomically do: if (ref_count>1) { ref_count--; return; } */
  retry_atomic_decrement1:
   old_ref = g_atomic_int_get (&object->ref_count);
@@ -3051,9 +3201,6 @@ g_object_unref (gpointer _object)
  * Otherwise, the reference count of the object is decreased and the
  * pointer is set to %NULL.
  *
- * This function is threadsafe and modifies the pointer atomically,
- * using memory barriers where needed.
- *
  * A macro is also included that allows this function to be used without
  * pointer casts.
  *
@@ -3170,12 +3317,12 @@ g_object_dup_qdata (GObject        *object,
  *
  * If the previous value was replaced then ownership of the
  * old value (@oldval) is passed to the caller, including
- * the registred destroy notify for it (passed out in @old_destroy).
+ * the registered destroy notify for it (passed out in @old_destroy).
  * Its up to the caller to free this as he wishes, which may
  * or may not include using @old_destroy as sometimes replacement
  * should not destroy the object in the normal way.
  *
- * Return: %TRUE if the existing value for @quark was replaced
+ * Returns: %TRUE if the existing value for @quark was replaced
  *  by @newval, %FALSE otherwise.
  *
  * Since: 2.34
@@ -3234,7 +3381,7 @@ g_object_set_qdata_full (GObject       *object,
  * set).
  * Usually, calling this function is only required to update
  * user data pointers with a destroy notifier, for example:
- * |[
+ * |[<!-- language="C" --> 
  * void
  * object_add_to_user_list (GObject     *object,
  *                          const gchar *new_string)
@@ -3379,12 +3526,12 @@ g_object_dup_data (GObject        *object,
  *
  * If the previous value was replaced then ownership of the
  * old value (@oldval) is passed to the caller, including
- * the registred destroy notify for it (passed out in @old_destroy).
+ * the registered destroy notify for it (passed out in @old_destroy).
  * Its up to the caller to free this as he wishes, which may
  * or may not include using @old_destroy as sometimes replacement
  * should not destroy the object in the normal way.
  *
- * Return: %TRUE if the existing value for @key was replaced
+ * Returns: %TRUE if the existing value for @key was replaced
  *  by @newval, %FALSE otherwise.
  *
  * Since: 2.34
@@ -3506,14 +3653,14 @@ g_value_object_collect_value (GValue	  *value,
       GObject *object = collect_values[0].v_pointer;
       
       if (object->g_type_instance.g_class == NULL)
-	return g_strconcat ("invalid unclassed object pointer for value type `",
+	return g_strconcat ("invalid unclassed object pointer for value type '",
 			    G_VALUE_TYPE_NAME (value),
 			    "'",
 			    NULL);
       else if (!g_value_type_compatible (G_OBJECT_TYPE (object), G_VALUE_TYPE (value)))
-	return g_strconcat ("invalid object type `",
+	return g_strconcat ("invalid object type '",
 			    G_OBJECT_TYPE_NAME (object),
-			    "' for value type `",
+			    "' for value type '",
 			    G_VALUE_TYPE_NAME (value),
 			    "'",
 			    NULL);
@@ -3535,7 +3682,7 @@ g_value_object_lcopy_value (const GValue *value,
   GObject **object_p = collect_values[0].v_pointer;
   
   if (!object_p)
-    return g_strdup_printf ("value location for `%s' passed as NULL", G_VALUE_TYPE_NAME (value));
+    return g_strdup_printf ("value location for '%s' passed as NULL", G_VALUE_TYPE_NAME (value));
 
   if (!value->data[0].v_pointer)
     *object_p = NULL;
@@ -3688,24 +3835,10 @@ g_value_dup_object (const GValue *value)
  * ensures that the @gobject stays alive during the call to @c_handler
  * by temporarily adding a reference count to @gobject.
  *
- * Note that there is a bug in GObject that makes this function
- * much less useful than it might seem otherwise. Once @gobject is
- * disposed, the callback will no longer be called, but, the signal
- * handler is <emphasis>not</emphasis> currently disconnected. If the
- * @instance is itself being freed at the same time than this doesn't
- * matter, since the signal will automatically be removed, but
- * if @instance persists, then the signal handler will leak. You
- * should not remove the signal yourself because in a future versions of
- * GObject, the handler <emphasis>will</emphasis> automatically
- * be disconnected.
- *
- * It's possible to work around this problem in a way that will
- * continue to work with future versions of GObject by checking
- * that the signal handler is still connected before disconnected it:
- * <informalexample><programlisting>
- *  if (g_signal_handler_is_connected (instance, id))
- *    g_signal_handler_disconnect (instance, id);
- * </programlisting></informalexample>
+ * When the @gobject is destroyed the signal handler will be automatically
+ * disconnected.  Note that this is not currently threadsafe (ie:
+ * emitting a signal while @gobject is being destroyed in another thread
+ * is not safe).
  *
  * Returns: the handler id.
  */
@@ -3855,7 +3988,7 @@ g_object_watch_closure (GObject  *object,
 /**
  * g_closure_new_object:
  * @sizeof_closure: the size of the structure to allocate, must be at least
- *  <literal>sizeof (GClosure)</literal>
+ *  `sizeof (GClosure)`
  * @object: a #GObject pointer to store in the @data field of the newly
  *  allocated #GClosure
  *
@@ -3991,9 +4124,9 @@ g_initially_unowned_class_init (GInitiallyUnownedClass *klass)
  * objects.
  *
  * If the object's #GObjectClass.dispose method results in additional
- * references to the object being held, any #GWeakRef<!-- -->s taken
+ * references to the object being held, any #GWeakRefs taken
  * before it was disposed will continue to point to %NULL.  If
- * #GWeakRef<!-- -->s are taken after the object is disposed and
+ * #GWeakRefs are taken after the object is disposed and
  * re-referenced, they will continue to point to it until its refcount
  * goes back to zero, at which point they too will be invalidated.
  */

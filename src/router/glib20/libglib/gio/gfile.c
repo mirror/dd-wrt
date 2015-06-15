@@ -15,29 +15,38 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
 
 #include "config.h"
+
+#ifdef __linux__
+#include <sys/ioctl.h>
+#include <errno.h>
+/* See linux.git/fs/btrfs/ioctl.h */
+#define BTRFS_IOCTL_MAGIC 0x94
+#define BTRFS_IOC_CLONE _IOW(BTRFS_IOCTL_MAGIC, 9, int)
+#endif
+
 #ifdef HAVE_SPLICE
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #endif
+
 #include <string.h>
 #include <sys/types.h>
-#ifdef HAVE_PWD_H
-#include <pwd.h>
-#endif
+
 #include "gfile.h"
+#include "glib/gstdio.h"
+#ifdef G_OS_UNIX
+#include "glib-unix.h"
+#endif
 #include "gvfs.h"
-#include "gioscheduler.h"
-#include "gsimpleasyncresult.h"
+#include "gtask.h"
 #include "gfileattribute-priv.h"
 #include "gfiledescriptorbased.h"
 #include "gpollfilemonitor.h"
@@ -46,6 +55,7 @@
 #include "gfileoutputstream.h"
 #include "glocalfileoutputstream.h"
 #include "glocalfileiostream.h"
+#include "glocalfile.h"
 #include "gcancellable.h"
 #include "gasyncresult.h"
 #include "gioerror.h"
@@ -66,13 +76,11 @@
  * (see #GInputStream and #GOutputStream).
  *
  * To construct a #GFile, you can use:
- * <simplelist>
- * <member>g_file_new_for_path() if you have a path.</member>
- * <member>g_file_new_for_uri() if you have a URI.</member>
- * <member>g_file_new_for_commandline_arg() for a command line argument.</member>
- * <member>g_file_new_tmp() to create a temporary file from a template.</member>
- * <member>g_file_parse_name() from a UTF-8 string gotten from g_file_get_parse_name().</member>
- * </simplelist>
+ * - g_file_new_for_path() if you have a path.
+ * - g_file_new_for_uri() if you have a URI.
+ * - g_file_new_for_commandline_arg() for a command line argument.
+ * - g_file_new_tmp() to create a temporary file from a template.
+ * - g_file_parse_name() from a UTF-8 string gotten from g_file_get_parse_name().
  *
  * One way to think of a #GFile is as an abstraction of a pathname. For
  * normal files the system pathname is what is stored internally, but as
@@ -118,24 +126,29 @@
  * the operation, producing a GAsyncResult which is then passed to the
  * function's matching _finish() operation.
  *
- * Some #GFile operations do not have synchronous analogs, as they may
- * take a very long time to finish, and blocking may leave an application
- * unusable. Notable cases include:
- * <simplelist>
- * <member>g_file_mount_mountable() to mount a mountable file.</member>
- * <member>g_file_unmount_mountable_with_operation() to unmount a mountable file.</member>
- * <member>g_file_eject_mountable_with_operation() to eject a mountable file.</member>
- * </simplelist>
+ * It is highly recommended to use asynchronous calls when running within a
+ * shared main loop, such as in the main thread of an application. This avoids
+ * I/O operations blocking other sources on the main loop from being dispatched.
+ * Synchronous I/O operations should be performed from worker threads. See the
+ * [introduction to asynchronous programming section][async-programming] for
+ * more.
  *
- * <para id="gfile-etag"><indexterm><primary>entity tag</primary></indexterm>
+ * Some #GFile operations almost always take a noticeable amount of time, and
+ * so do not have synchronous analogs. Notable cases include:
+ * - g_file_mount_mountable() to mount a mountable file.
+ * - g_file_unmount_mountable_with_operation() to unmount a mountable file.
+ * - g_file_eject_mountable_with_operation() to eject a mountable file.
+ *
+ * ## Entity Tags # {#gfile-etag}
+ *
  * One notable feature of #GFiles are entity tags, or "etags" for
  * short. Entity tags are somewhat like a more abstract version of the
- * traditional mtime, and can be used to quickly determine if the file has
- * been modified from the version on the file system. See the HTTP 1.1
- * <ulink url="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html">specification</ulink>
+ * traditional mtime, and can be used to quickly determine if the file
+ * has been modified from the version on the file system. See the
+ * HTTP 1.1 
+ * [specification](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html)
  * for HTTP Etag headers, which are a very similar concept.
- * </para>
- **/
+ */
 
 static void               g_file_real_query_info_async            (GFile                  *file,
                                                                    const char             *attributes,
@@ -209,6 +222,22 @@ static void               g_file_real_delete_async                (GFile        
                                                                    GAsyncReadyCallback     callback,
                                                                    gpointer                user_data);
 static gboolean           g_file_real_delete_finish               (GFile                  *file,
+                                                                   GAsyncResult           *res,
+                                                                   GError                **error);
+static void               g_file_real_trash_async                 (GFile                  *file,
+                                                                   int                     io_priority,
+                                                                   GCancellable           *cancellable,
+                                                                   GAsyncReadyCallback     callback,
+                                                                   gpointer                user_data);
+static gboolean           g_file_real_trash_finish                (GFile                  *file,
+                                                                   GAsyncResult           *res,
+                                                                   GError                **error);
+static void               g_file_real_make_directory_async        (GFile                  *file,
+                                                                   int                     io_priority,
+                                                                   GCancellable           *cancellable,
+                                                                   GAsyncReadyCallback     callback,
+                                                                   gpointer                user_data);
+static gboolean           g_file_real_make_directory_finish       (GFile                  *file,
                                                                    GAsyncResult           *res,
                                                                    GError                **error);
 static void               g_file_real_open_readwrite_async        (GFile                  *file,
@@ -285,6 +314,30 @@ static gboolean           g_file_real_copy_finish                 (GFile        
                                                                    GAsyncResult           *res,
                                                                    GError                **error);
 
+static gboolean           g_file_real_measure_disk_usage          (GFile                         *file,
+                                                                   GFileMeasureFlags              flags,
+                                                                   GCancellable                  *cancellable,
+                                                                   GFileMeasureProgressCallback   progress_callback,
+                                                                   gpointer                       progress_data,
+                                                                   guint64                       *disk_usage,
+                                                                   guint64                       *num_dirs,
+                                                                   guint64                       *num_files,
+                                                                   GError                       **error);
+static void               g_file_real_measure_disk_usage_async    (GFile                         *file,
+                                                                   GFileMeasureFlags              flags,
+                                                                   gint                           io_priority,
+                                                                   GCancellable                  *cancellable,
+                                                                   GFileMeasureProgressCallback   progress_callback,
+                                                                   gpointer                       progress_data,
+                                                                   GAsyncReadyCallback            callback,
+                                                                   gpointer                       user_data);
+static gboolean           g_file_real_measure_disk_usage_finish   (GFile                         *file,
+                                                                   GAsyncResult                  *result,
+                                                                   guint64                       *disk_usage,
+                                                                   guint64                       *num_dirs,
+                                                                   guint64                       *num_files,
+                                                                   GError                       **error);
+
 typedef GFileIface GFileInterface;
 G_DEFINE_INTERFACE (GFile, g_file, G_TYPE_OBJECT)
 
@@ -311,6 +364,10 @@ g_file_default_init (GFileIface *iface)
   iface->replace_finish = g_file_real_replace_finish;
   iface->delete_file_async = g_file_real_delete_async;
   iface->delete_file_finish = g_file_real_delete_finish;
+  iface->trash_async = g_file_real_trash_async;
+  iface->trash_finish = g_file_real_trash_finish;
+  iface->make_directory_async = g_file_real_make_directory_async;
+  iface->make_directory_finish = g_file_real_make_directory_finish;
   iface->open_readwrite_async = g_file_real_open_readwrite_async;
   iface->open_readwrite_finish = g_file_real_open_readwrite_finish;
   iface->create_readwrite_async = g_file_real_create_readwrite_async;
@@ -322,6 +379,9 @@ g_file_default_init (GFileIface *iface)
   iface->set_attributes_from_info = g_file_real_set_attributes_from_info;
   iface->copy_async = g_file_real_copy_async;
   iface->copy_finish = g_file_real_copy_finish;
+  iface->measure_disk_usage = g_file_real_measure_disk_usage;
+  iface->measure_disk_usage_async = g_file_real_measure_disk_usage_async;
+  iface->measure_disk_usage_finish = g_file_real_measure_disk_usage_finish;
 }
 
 
@@ -390,9 +450,9 @@ g_file_has_uri_scheme (GFile      *file,
  *
  * Gets the URI scheme for a #GFile.
  * RFC 3986 decodes the scheme as:
- * <programlisting>
+ * |[
  * URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
- * </programlisting>
+ * ]|
  * Common schemes include "file", "http", "ftp", etc.
  *
  * This call does no blocking I/O.
@@ -432,8 +492,8 @@ g_file_get_uri_scheme (GFile *file)
  *
  * This call does no blocking I/O.
  *
- * Returns: string containing the #GFile's base name, or %NULL
- *     if given #GFile is invalid. The returned string should be
+ * Returns: (nullable): string containing the #GFile's base name, or
+ *     %NULL if given #GFile is invalid. The returned string should be
  *     freed with g_free() when no longer needed.
  */
 char *
@@ -456,9 +516,9 @@ g_file_get_basename (GFile *file)
  *
  * This call does no blocking I/O.
  *
- * Returns: string containing the #GFile's path, or %NULL if
- *     no such path exists. The returned string should be
- *     freed with g_free() when no longer needed.
+ * Returns: (nullable): string containing the #GFile's path, or %NULL
+ *     if no such path exists. The returned string should be freed
+ *     with g_free() when no longer needed.
  */
 char *
 g_file_get_path (GFile *file)
@@ -587,7 +647,7 @@ g_file_hash (gconstpointer file)
  * @file1: the first #GFile
  * @file2: the second #GFile
  *
- * Checks equality of two given #GFiles.
+ * Checks if the two given #GFiles refer to the same file.
  *
  * Note that two #GFiles that differ can still refer to the same
  * file on the filesystem due to various forms of filename
@@ -596,7 +656,6 @@ g_file_hash (gconstpointer file)
  * This call does no blocking I/O.
  *
  * Returns: %TRUE if @file1 and @file2 are equal.
- *     %FALSE if either is not a #GFile.
  */
 gboolean
 g_file_equal (GFile *file1,
@@ -606,6 +665,9 @@ g_file_equal (GFile *file1,
 
   g_return_val_if_fail (G_IS_FILE (file1), FALSE);
   g_return_val_if_fail (G_IS_FILE (file2), FALSE);
+
+  if (file1 == file2)
+    return TRUE;
 
   if (G_TYPE_FROM_INSTANCE (file1) != G_TYPE_FROM_INSTANCE (file2))
     return FALSE;
@@ -626,9 +688,9 @@ g_file_equal (GFile *file1,
  *
  * This call does no blocking I/O.
  *
- * Returns: (transfer full): a #GFile structure to the
- *     parent of the given #GFile or %NULL if there is
- *     no parent. Free the returned object with g_object_unref().
+ * Returns: (nullable) (transfer full): a #GFile structure to the
+ *     parent of the given #GFile or %NULL if there is no parent. Free
+ *     the returned object with g_object_unref().
  */
 GFile *
 g_file_get_parent (GFile *file)
@@ -757,6 +819,9 @@ g_file_get_child_for_display_name (GFile      *file,
  * so a path like /foo is not considered a prefix of /foobar, only
  * of /foo/bar.
  *
+ * A #GFile is not a prefix of itself. If you want to check for
+ * equality, use g_file_equal().
+ *
  * This call does no I/O, as it works purely on names. As such it can
  * sometimes return %FALSE even if @file is inside a @prefix (from a
  * filesystem point of view), because the prefix of @file is an alias
@@ -795,10 +860,10 @@ g_file_has_prefix (GFile *file,
  *
  * This call does no blocking I/O.
  *
- * Returns: string with the relative path from @descendant
- *     to @parent, or %NULL if @descendant doesn't have @parent
- *     as prefix. The returned string should be freed with g_free()
- *     when no longer needed.
+ * Returns: (nullable): string with the relative path from @descendant
+ *     to @parent, or %NULL if @descendant doesn't have @parent as
+ *     prefix. The returned string should be freed with g_free() when
+ *     no longer needed.
  */
 char *
 g_file_get_relative_path (GFile *parent,
@@ -874,7 +939,7 @@ g_file_resolve_relative_path (GFile      *file,
  * returned.
  *
  * If the file does not exist, the %G_IO_ERROR_NOT_FOUND error will
- * be returned. If the file is not a directory, the %G_FILE_ERROR_NOTDIR
+ * be returned. If the file is not a directory, the %G_IO_ERROR_NOT_DIRECTORY
  * error will be returned. Other errors are possible too.
  *
  * Returns: (transfer full): A #GFileEnumerator if successful,
@@ -913,8 +978,7 @@ g_file_enumerate_children (GFile                *file,
  * @file: input #GFile
  * @attributes: an attribute query string
  * @flags: a set of #GFileQueryInfoFlags
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call when the
@@ -1151,8 +1215,7 @@ g_file_query_info (GFile                *file,
  * @file: input #GFile
  * @attributes: an attribute query string
  * @flags: a set of #GFileQueryInfoFlags
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call when the
@@ -1289,8 +1352,7 @@ g_file_query_filesystem_info (GFile         *file,
  * g_file_query_filesystem_info_async:
  * @file: input #GFile
  * @attributes: an attribute query string
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -1412,8 +1474,7 @@ g_file_find_enclosing_mount (GFile         *file,
 /**
  * g_file_find_enclosing_mount_async:
  * @file: a #GFile
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -1641,7 +1702,7 @@ g_file_create (GFile             *file,
 /**
  * g_file_replace:
  * @file: input #GFile
- * @etag: (allow-none): an optional <link linkend="gfile-etag">entity tag</link>
+ * @etag: (allow-none): an optional [entity tag][gfile-etag]
  *     for the current #GFile, or #NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
@@ -1669,14 +1730,14 @@ g_file_create (GFile             *file,
  * operation was cancelled, the error %G_IO_ERROR_CANCELLED will be
  * returned.
  *
- * If you pass in a non-%NULL @etag value, then this value is
- * compared to the current entity tag of the file, and if they differ
- * an %G_IO_ERROR_WRONG_ETAG error is returned. This generally means
- * that the file has been changed since you last read it. You can get
- * the new etag from g_file_output_stream_get_etag() after you've
- * finished writing and closed the #GFileOutputStream. When you load
- * a new file you can use g_file_input_stream_query_info() to get
- * the etag of the file.
+ * If you pass in a non-%NULL @etag value and @file already exists, then
+ * this value is compared to the current entity tag of the file, and if
+ * they differ an %G_IO_ERROR_WRONG_ETAG error is returned. This
+ * generally means that the file has been changed since you last read
+ * it. You can get the new etag from g_file_output_stream_get_etag()
+ * after you've finished writing and closed the #GFileOutputStream. When
+ * you load a new file you can use g_file_input_stream_query_info() to
+ * get the etag of the file.
  *
  * If @make_backup is %TRUE, this function will attempt to make a
  * backup of the current file before overwriting it. If this fails
@@ -1846,7 +1907,7 @@ g_file_create_readwrite (GFile             *file,
 /**
  * g_file_replace_readwrite:
  * @file: a #GFile
- * @etag: (allow-none): an optional <link linkend="gfile-etag">entity tag</link>
+ * @etag: (allow-none): an optional [entity tag][gfile-etag]
  *     for the current #GFile, or #NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
@@ -1901,8 +1962,7 @@ g_file_replace_readwrite (GFile             *file,
 /**
  * g_file_read_async:
  * @file: input #GFile
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -1970,8 +2030,7 @@ g_file_read_finish (GFile         *file,
  * g_file_append_to_async:
  * @file: input #GFile
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -2042,8 +2101,7 @@ g_file_append_to_finish (GFile         *file,
  * g_file_create_async:
  * @file: input #GFile
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -2113,12 +2171,11 @@ g_file_create_finish (GFile         *file,
 /**
  * g_file_replace_async:
  * @file: input #GFile
- * @etag: (allow-none): an <link linkend="gfile-etag">entity tag</link>
- *     for the current #GFile, or NULL to ignore
+ * @etag: (allow-none): an [entity tag][gfile-etag] for the current #GFile,
+ *     or %NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -2192,8 +2249,7 @@ g_file_replace_finish (GFile         *file,
 /**
  * g_file_open_readwrite_async
  * @file: input #GFile
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -2265,8 +2321,7 @@ g_file_open_readwrite_finish (GFile         *file,
  * g_file_create_readwrite_async:
  * @file: input #GFile
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -2340,12 +2395,11 @@ g_file_create_readwrite_finish (GFile         *file,
 /**
  * g_file_replace_readwrite_async:
  * @file: input #GFile
- * @etag: (allow-none): an <link linkend="gfile-etag">entity tag</link>
- *     for the current #GFile, or NULL to ignore
+ * @etag: (allow-none): an [entity tag][gfile-etag] for the current #GFile,
+ *     or %NULL to ignore
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -2443,7 +2497,7 @@ copy_symlink (GFile           *destination,
       if (!tried_delete && (flags & G_FILE_COPY_OVERWRITE) &&
           my_error->domain == G_IO_ERROR && my_error->code == G_IO_ERROR_EXISTS)
         {
-          g_error_free (my_error);
+          g_clear_error (&my_error);
 
           /* Don't overwrite if the destination is a directory */
           info = g_file_query_info (destination, G_FILE_ATTRIBUTE_STANDARD_TYPE,
@@ -2476,7 +2530,7 @@ copy_symlink (GFile           *destination,
   return TRUE;
 }
 
-static GInputStream *
+static GFileInputStream *
 open_source_for_copy (GFile           *source,
                       GFile           *destination,
                       GFileCopyFlags   flags,
@@ -2484,14 +2538,14 @@ open_source_for_copy (GFile           *source,
                       GError         **error)
 {
   GError *my_error;
-  GInputStream *in;
+  GFileInputStream *ret;
   GFileInfo *info;
   GFileType file_type;
 
   my_error = NULL;
-  in = (GInputStream *)g_file_read (source, cancellable, &my_error);
-  if (in != NULL)
-    return in;
+  ret = g_file_read (source, cancellable, &my_error);
+  if (ret != NULL)
+    return ret;
 
   /* There was an error opening the source, try to set a good error for it: */
   if (my_error->domain == G_IO_ERROR && my_error->code == G_IO_ERROR_IS_DIRECTORY)
@@ -2554,26 +2608,48 @@ open_source_for_copy (GFile           *source,
 
 static gboolean
 should_copy (GFileAttributeInfo *info,
-             gboolean            as_move,
+             gboolean            copy_all_attributes,
              gboolean            skip_perms)
 {
   if (skip_perms && strcmp(info->name, "unix::mode") == 0)
         return FALSE;
 
-  if (as_move)
+  if (copy_all_attributes)
     return info->flags & G_FILE_ATTRIBUTE_INFO_COPY_WHEN_MOVED;
   return info->flags & G_FILE_ATTRIBUTE_INFO_COPY_WITH_FILE;
 }
 
-static char *
-build_attribute_list_for_copy (GFileAttributeInfoList *attributes,
-                               GFileAttributeInfoList *namespaces,
-                               gboolean                as_move,
-                               gboolean                skip_perms)
+static gboolean
+build_attribute_list_for_copy (GFile                  *file,
+                               GFileCopyFlags          flags,
+                               char                  **out_attributes,
+                               GCancellable           *cancellable,
+                               GError                **error)
 {
-  GString *s;
+  gboolean ret = FALSE;
+  GFileAttributeInfoList *attributes = NULL, *namespaces = NULL;
+  GString *s = NULL;
   gboolean first;
   int i;
+  gboolean copy_all_attributes;
+  gboolean skip_perms;
+
+  copy_all_attributes = flags & G_FILE_COPY_ALL_METADATA;
+  skip_perms = (flags & G_FILE_COPY_TARGET_DEFAULT_PERMS) != 0;
+
+  /* Ignore errors here, if the target supports no attributes there is
+   * nothing to copy.  We still honor the cancellable though.
+   */
+  attributes = g_file_query_settable_attributes (file, cancellable, NULL);
+  if (g_cancellable_set_error_if_cancelled (cancellable, error))
+    goto out;
+
+  namespaces = g_file_query_writable_namespaces (file, cancellable, NULL);
+  if (g_cancellable_set_error_if_cancelled (cancellable, error))
+    goto out;
+
+  if (attributes == NULL && namespaces == NULL)
+    goto out;
 
   first = TRUE;
   s = g_string_new ("");
@@ -2582,7 +2658,7 @@ build_attribute_list_for_copy (GFileAttributeInfoList *attributes,
     {
       for (i = 0; i < attributes->n_infos; i++)
         {
-          if (should_copy (&attributes->infos[i], as_move, skip_perms))
+          if (should_copy (&attributes->infos[i], copy_all_attributes, skip_perms))
             {
               if (first)
                 first = FALSE;
@@ -2598,7 +2674,7 @@ build_attribute_list_for_copy (GFileAttributeInfoList *attributes,
     {
       for (i = 0; i < namespaces->n_infos; i++)
         {
-          if (should_copy (&namespaces->infos[i], as_move, FALSE))
+          if (should_copy (&namespaces->infos[i], copy_all_attributes, FALSE))
             {
               if (first)
                 first = FALSE;
@@ -2611,7 +2687,18 @@ build_attribute_list_for_copy (GFileAttributeInfoList *attributes,
         }
     }
 
-  return g_string_free (s, FALSE);
+  ret = TRUE;
+  *out_attributes = g_string_free (s, FALSE);
+  s = NULL;
+ out:
+  if (s)
+    g_string_free (s, TRUE);
+  if (attributes)
+    g_file_attribute_info_list_unref (attributes);
+  if (namespaces)
+    g_file_attribute_info_list_unref (namespaces);
+  
+  return ret;
 }
 
 /**
@@ -2642,28 +2729,16 @@ g_file_copy_attributes (GFile           *source,
                         GCancellable    *cancellable,
                         GError         **error)
 {
-  GFileAttributeInfoList *attributes, *namespaces;
   char *attrs_to_read;
   gboolean res;
   GFileInfo *info;
-  gboolean as_move;
   gboolean source_nofollow_symlinks;
-  gboolean skip_perms;
 
-  as_move = flags & G_FILE_COPY_ALL_METADATA;
+  if (!build_attribute_list_for_copy (destination, flags, &attrs_to_read,
+                                      cancellable, error))
+    return FALSE;
+
   source_nofollow_symlinks = flags & G_FILE_COPY_NOFOLLOW_SYMLINKS;
-  skip_perms = (flags & G_FILE_COPY_TARGET_DEFAULT_PERMS) != 0;
-
-  /* Ignore errors here, if the target supports no attributes there is
-   * nothing to copy
-   */
-  attributes = g_file_query_settable_attributes (destination, cancellable, NULL);
-  namespaces = g_file_query_writable_namespaces (destination, cancellable, NULL);
-
-  if (attributes == NULL && namespaces == NULL)
-    return TRUE;
-
-  attrs_to_read = build_attribute_list_for_copy (attributes, namespaces, as_move, skip_perms);
 
   /* Ignore errors here, if we can't read some info (e.g. if it doesn't exist)
    * we just don't copy it.
@@ -2685,9 +2760,6 @@ g_file_copy_attributes (GFile           *source,
                                              error);
       g_object_unref (info);
     }
-
-  g_file_attribute_info_list_unref (attributes);
-  g_file_attribute_info_list_unref (namespaces);
 
   return res;
 }
@@ -2830,7 +2902,7 @@ splice_stream_with_progress (GInputStream           *in,
                              gpointer                progress_callback_data,
                              GError                **error)
 {
-  int buffer[2];
+  int buffer[2] = { -1, -1 };
   gboolean res;
   goffset total_size;
   loff_t offset_in;
@@ -2840,12 +2912,8 @@ splice_stream_with_progress (GInputStream           *in,
   fd_in = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (in));
   fd_out = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (out));
 
-  if (pipe (buffer) != 0)
-    {
-      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                           "Pipe creation failed");
-      return FALSE;
-    }
+  if (!g_unix_open_pipe (buffer, FD_CLOEXEC, error))
+    return FALSE;
 
   total_size = -1;
   /* avoid performance impact of querying total size when it's not needed */
@@ -2898,11 +2966,77 @@ splice_stream_with_progress (GInputStream           *in,
   if (progress_callback)
     progress_callback (offset_in, total_size, progress_callback_data);
 
+  if (!g_close (buffer[0], error))
+    goto out;
+  buffer[0] = -1;
+  if (!g_close (buffer[1], error))
+    goto out;
+  buffer[1] = -1;
  out:
-  close (buffer[0]);
-  close (buffer[1]);
+  if (buffer[0] != -1)
+    (void) g_close (buffer[0], NULL);
+  if (buffer[1] != -1)
+    (void) g_close (buffer[1], NULL);
 
   return res;
+}
+#endif
+
+#ifdef __linux__
+static gboolean
+btrfs_reflink_with_progress (GInputStream           *in,
+                             GOutputStream          *out,
+                             GFileInfo              *info,
+                             GCancellable           *cancellable,
+                             GFileProgressCallback   progress_callback,
+                             gpointer                progress_callback_data,
+                             GError                **error)
+{
+  goffset source_size;
+  int fd_in, fd_out;
+  int ret;
+
+  fd_in = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (in));
+  fd_out = g_file_descriptor_based_get_fd (G_FILE_DESCRIPTOR_BASED (out));
+
+  if (progress_callback)
+    source_size = g_file_info_get_size (info);
+
+  /* Btrfs clone ioctl properties:
+   *  - Works at the inode level
+   *  - Doesn't work with directories
+   *  - Always follows symlinks (source and destination)
+   *
+   * By the time we get here, *in and *out are both regular files */
+  ret = ioctl (fd_out, BTRFS_IOC_CLONE, fd_in);
+
+  if (ret < 0)
+    {
+      if (errno == EXDEV)
+	g_set_error_literal (error, G_IO_ERROR,
+			     G_IO_ERROR_NOT_SUPPORTED,
+			     _("Copy (reflink/clone) between mounts is not supported"));
+      else if (errno == EINVAL)
+	g_set_error_literal (error, G_IO_ERROR,
+			     G_IO_ERROR_NOT_SUPPORTED,
+			     _("Copy (reflink/clone) is not supported or invalid"));
+      else
+	/* Most probably something odd happened; retry with fallback */
+	g_set_error_literal (error, G_IO_ERROR,
+			     G_IO_ERROR_NOT_SUPPORTED,
+			     _("Copy (reflink/clone) is not supported or didn't work"));
+      /* We retry with fallback for all error cases because Btrfs is currently
+       * unstable, and so we can't trust it to do clone properly.
+       * In addition, any hard errors here would cause the same failure in the
+       * fallback manual copy as well. */
+      return FALSE;
+    }
+
+  /* Make sure we send full copied size */
+  if (progress_callback)
+    progress_callback (source_size, source_size, progress_callback_data);
+
+  return TRUE;
 }
 #endif
 
@@ -2915,14 +3049,14 @@ file_copy_fallback (GFile                  *source,
                     gpointer                progress_callback_data,
                     GError                **error)
 {
-  GInputStream *in;
-  GOutputStream *out;
-  GFileInfo *info;
+  gboolean ret = FALSE;
+  GFileInputStream *file_in = NULL;
+  GInputStream *in = NULL;
+  GOutputStream *out = NULL;
+  GFileInfo *info = NULL;
   const char *target;
-  gboolean result;
-#ifdef HAVE_SPLICE
-  gboolean fallback = TRUE;
-#endif
+  char *attrs_to_read;
+  gboolean do_set_attributes = FALSE;
 
   /* need to know the file type */
   info = g_file_query_info (source,
@@ -2930,9 +3064,8 @@ file_copy_fallback (GFile                  *source,
                             G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
                             cancellable,
                             error);
-
-  if (info == NULL)
-          return FALSE;
+  if (!info)
+    goto out;
 
   /* Maybe copy the symlink? */
   if ((flags & G_FILE_COPY_NOFOLLOW_SYMLINKS) &&
@@ -2942,16 +3075,12 @@ file_copy_fallback (GFile                  *source,
       if (target)
         {
           if (!copy_symlink (destination, flags, cancellable, target, error))
-            {
-              g_object_unref (info);
-              return FALSE;
-            }
+            goto out;
 
-          g_object_unref (info);
-          goto copied_file;
+          ret = TRUE;
+          goto out;
         }
         /* ... else fall back on a regular file copy */
-        g_object_unref (info);
     }
   /* Handle "special" files (pipes, device nodes, ...)? */
   else if (g_file_info_get_file_type (info) == G_FILE_TYPE_SPECIAL)
@@ -2959,18 +3088,80 @@ file_copy_fallback (GFile                  *source,
       /* FIXME: could try to recreate device nodes and others? */
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
                            _("Can't copy special file"));
-      g_object_unref (info);
-      return FALSE;
+      goto out;
     }
+
   /* Everything else should just fall back on a regular copy. */
-  else
-    g_object_unref (info);
 
-  in = open_source_for_copy (source, destination, flags, cancellable, error);
-  if (in == NULL)
-    return FALSE;
+  file_in = open_source_for_copy (source, destination, flags, cancellable, error);
+  if (!file_in)
+    goto out;
+  in = G_INPUT_STREAM (file_in);
 
-  if (flags & G_FILE_COPY_OVERWRITE)
+  if (!build_attribute_list_for_copy (destination, flags, &attrs_to_read,
+                                      cancellable, error))
+    goto out;
+
+  if (attrs_to_read != NULL)
+    {
+      GError *tmp_error = NULL;
+
+      /* Ok, ditch the previous lightweight info (on Unix we just
+       * called lstat()); at this point we gather all the information
+       * we need about the source from the opened file descriptor.
+       */
+      g_object_unref (info);
+
+      info = g_file_input_stream_query_info (file_in, attrs_to_read,
+                                             cancellable, &tmp_error);
+      if (!info)
+        {
+          /* Not all gvfs backends implement query_info_on_read(), we
+           * can just fall back to the pathname again.
+           * https://bugzilla.gnome.org/706254
+           */
+          if (g_error_matches (tmp_error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED))
+            {
+              g_clear_error (&tmp_error);
+              info = g_file_query_info (source, attrs_to_read, G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                        cancellable, error);
+            }
+          else
+            {
+              g_free (attrs_to_read);
+              g_propagate_error (error, tmp_error);
+              goto out;
+            }
+        }
+      g_free (attrs_to_read);
+      if (!info)
+        goto out;
+
+      do_set_attributes = TRUE;
+    }
+
+  /* In the local file path, we pass down the source info which
+   * includes things like unix::mode, to ensure that the target file
+   * is not created with different permissions from the source file.
+   *
+   * If a future API like g_file_replace_with_info() is added, switch
+   * this code to use that.
+   */
+  if (G_IS_LOCAL_FILE (destination))
+    {
+      if (flags & G_FILE_COPY_OVERWRITE)
+        out = (GOutputStream*)_g_local_file_output_stream_replace (_g_local_file_get_filename (G_LOCAL_FILE (destination)),
+                                                                   FALSE, NULL,
+                                                                   flags & G_FILE_COPY_BACKUP,
+                                                                   G_FILE_CREATE_REPLACE_DESTINATION,
+                                                                   info,
+                                                                   cancellable, error);
+      else
+        out = (GOutputStream*)_g_local_file_output_stream_create (_g_local_file_get_filename (G_LOCAL_FILE (destination)),
+                                                                  FALSE, 0, info,
+                                                                  cancellable, error);
+    }
+  else if (flags & G_FILE_COPY_OVERWRITE)
     {
       out = (GOutputStream *)g_file_replace (destination,
                                              NULL,
@@ -2983,56 +3174,101 @@ file_copy_fallback (GFile                  *source,
       out = (GOutputStream *)g_file_create (destination, 0, cancellable, error);
     }
 
-  if (out == NULL)
+  if (!out)
+    goto out;
+
+#ifdef __linux__
+  if (G_IS_FILE_DESCRIPTOR_BASED (in) && G_IS_FILE_DESCRIPTOR_BASED (out))
     {
-      g_object_unref (in);
-      return FALSE;
+      GError *reflink_err = NULL;
+
+      if (!btrfs_reflink_with_progress (in, out, info, cancellable,
+                                        progress_callback, progress_callback_data,
+                                        &reflink_err))
+        {
+          if (g_error_matches (reflink_err, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED))
+            {
+              g_clear_error (&reflink_err);
+            }
+          else
+            {
+              g_propagate_error (error, reflink_err);
+              goto out;
+            }
+        }
+      else
+        {
+          ret = TRUE;
+          goto out;
+        }
     }
+#endif
 
 #ifdef HAVE_SPLICE
   if (G_IS_FILE_DESCRIPTOR_BASED (in) && G_IS_FILE_DESCRIPTOR_BASED (out))
     {
       GError *splice_err = NULL;
 
-      result = splice_stream_with_progress (in, out, cancellable,
-                                            progress_callback, progress_callback_data,
-                                            &splice_err);
-
-      if (result || !g_error_matches (splice_err, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED))
+      if (!splice_stream_with_progress (in, out, cancellable,
+                                        progress_callback, progress_callback_data,
+                                        &splice_err))
         {
-          fallback = FALSE;
-          if (!result)
-            g_propagate_error (error, splice_err);
+          if (g_error_matches (splice_err, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED))
+            {
+              g_clear_error (&splice_err);
+            }
+          else
+            {
+              g_propagate_error (error, splice_err);
+              goto out;
+            }
         }
       else
-        g_clear_error (&splice_err);
+        {
+          ret = TRUE;
+          goto out;
+        }
     }
 
-  if (fallback)
 #endif
-    result = copy_stream_with_progress (in, out, source, cancellable,
-                                        progress_callback, progress_callback_data,
-                                        error);
 
-  /* Don't care about errors in source here */
-  g_input_stream_close (in, cancellable, NULL);
+  /* A plain read/write loop */
+  if (!copy_stream_with_progress (in, out, source, cancellable,
+                                  progress_callback, progress_callback_data,
+                                  error))
+    goto out;
 
-  /* But write errors on close are bad! */
-  if (!g_output_stream_close (out, cancellable, result ? error : NULL))
-    result = FALSE;
+  ret = TRUE;
+ out:
+  if (in)
+    {
+      /* Don't care about errors in source here */
+      (void) g_input_stream_close (in, cancellable, NULL);
+      g_object_unref (in);
+    }
 
-  g_object_unref (in);
-  g_object_unref (out);
+  if (out)
+    {
+      /* But write errors on close are bad! */
+      if (!g_output_stream_close (out, cancellable, ret ? error : NULL))
+        ret = FALSE;
+      g_object_unref (out);
+    }
 
-  if (result == FALSE)
-    return FALSE;
-
- copied_file:
   /* Ignore errors here. Failure to copy metadata is not a hard error */
-  g_file_copy_attributes (source, destination,
-                          flags, cancellable, NULL);
+  /* TODO: set these attributes /before/ we do the rename() on Unix */
+  if (ret && do_set_attributes)
+    {
+      g_file_set_attributes_from_info (destination,
+                                       info,
+                                       G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                       cancellable,
+                                       NULL);
+    }
 
-  return TRUE;
+  g_clear_object (&info);
+
+  return ret;
 }
 
 /**
@@ -3164,8 +3400,7 @@ g_file_copy (GFile                  *source,
  * @source: input #GFile
  * @destination: destination #GFile
  * @flags: set of #GFileCopyFlags
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @progress_callback: (allow-none): function to callback with progress
@@ -3178,8 +3413,9 @@ g_file_copy (GFile                  *source,
  * asynchronously. For details of the behaviour, see g_file_copy().
  *
  * If @progress_callback is not %NULL, then that function that will be called
- * just like in g_file_copy(), however the callback will run in the main loop,
- * not in the thread that is doing the I/O operation.
+ * just like in g_file_copy(). The callback will run in the default main context
+ * of the thread calling g_file_copy_async() — the same context as @callback is
+ * run in.
  *
  * When the operation is finished, @callback will be called. You can then call
  * g_file_copy_finish() to get the result of the operation.
@@ -3328,6 +3564,8 @@ g_file_move (GFile                  *source,
           g_propagate_error (error, my_error);
           return FALSE;
         }
+      else
+        g_clear_error (&my_error);
     }
 
   /* If the types are different, and the destination method failed
@@ -3353,6 +3591,8 @@ g_file_move (GFile                  *source,
               g_propagate_error (error, my_error);
               return FALSE;
             }
+          else
+            g_clear_error (&my_error);
         }
     }
 
@@ -3423,6 +3663,67 @@ g_file_make_directory (GFile         *file,
 }
 
 /**
+ * g_file_make_directory_async:
+ * @file: input #GFile
+ * @io_priority: the [I/O priority][io-priority] of the request
+ * @cancellable: (allow-none): optional #GCancellable object,
+ *     %NULL to ignore
+ * @callback: a #GAsyncReadyCallback to call
+ *     when the request is satisfied
+ * @user_data: the data to pass to callback function
+ *
+ * Asynchronously creates a directory.
+ *
+ * Virtual: make_directory_async
+ * Since: 2.38
+ */
+void
+g_file_make_directory_async (GFile               *file,
+                             int                  io_priority,
+                             GCancellable        *cancellable,
+                             GAsyncReadyCallback  callback,
+                             gpointer             user_data)
+{
+  GFileIface *iface;
+
+  g_return_if_fail (G_IS_FILE (file));
+
+  iface = G_FILE_GET_IFACE (file);
+  (* iface->make_directory_async) (file,
+                                   io_priority,
+                                   cancellable,
+                                   callback,
+                                   user_data);
+}
+
+/**
+ * g_file_make_directory_finish:
+ * @file: input #GFile
+ * @result: a #GAsyncResult
+ * @error: a #GError, or %NULL
+ *
+ * Finishes an asynchronous directory creation, started with
+ * g_file_make_directory_async().
+ *
+ * Virtual: make_directory_finish
+ * Returns: %TRUE on successful directory creation, %FALSE otherwise.
+ * Since: 2.38
+ */
+gboolean
+g_file_make_directory_finish (GFile         *file,
+                              GAsyncResult  *result,
+                              GError       **error)
+{
+  GFileIface *iface;
+
+  g_return_val_if_fail (G_IS_FILE (file), FALSE);
+  g_return_val_if_fail (G_IS_ASYNC_RESULT (result), FALSE);
+
+  iface = G_FILE_GET_IFACE (file);
+  return (* iface->make_directory_finish) (file, result, error);
+}
+
+/**
  * g_file_make_directory_with_parents:
  * @file: input #GFile
  * @cancellable: (allow-none): optional #GCancellable object,
@@ -3462,8 +3763,13 @@ g_file_make_directory_with_parents (GFile         *file,
   if (g_cancellable_set_error_if_cancelled (cancellable, error))
     return FALSE;
 
+  /* Try for the simple case of not having to create any parent
+   * directories.  If any parent directory needs to be created, this
+   * call will fail with NOT_FOUND. If that happens, then that value of
+   * my_error persists into the while loop below.
+   */
   g_file_make_directory (file, cancellable, &my_error);
-  if (my_error == NULL || my_error->code != G_IO_ERROR_NOT_FOUND)
+  if (!g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
     {
       if (my_error)
         g_propagate_error (error, my_error);
@@ -3472,7 +3778,14 @@ g_file_make_directory_with_parents (GFile         *file,
 
   work_file = g_object_ref (file);
 
-  while (my_error != NULL && my_error->code == G_IO_ERROR_NOT_FOUND)
+  /* Creates the parent directories as needed. In case any particular
+   * creation operation fails for lack of other parent directories
+   * (NOT_FOUND), the directory is added to a list of directories to
+   * create later, and the value of my_error is retained until the next
+   * iteration of the loop.  After the loop my_error should either be
+   * empty or contain a real failure condition.
+   */
+  while (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
     {
       GFile *parent_file;
 
@@ -3482,19 +3795,31 @@ g_file_make_directory_with_parents (GFile         *file,
 
       g_clear_error (&my_error);
       g_file_make_directory (parent_file, cancellable, &my_error);
+      /* Another process may have created the directory in between the
+       * G_IO_ERROR_NOT_FOUND and now
+       */
+      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_EXISTS))
+        g_clear_error (&my_error);
 
       g_object_unref (work_file);
       work_file = g_object_ref (parent_file);
 
-      if (my_error != NULL && my_error->code == G_IO_ERROR_NOT_FOUND)
+      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
         list = g_list_prepend (list, parent_file);  /* Transfer ownership of ref */
       else
         g_object_unref (parent_file);
     }
 
+  /* All directories should be able to be created now, so an error at
+   * this point means the whole operation must fail -- except an EXISTS
+   * error, which means that another process already created the
+   * directory in between the previous failure and now.
+   */
   for (l = list; my_error == NULL && l; l = l->next)
     {
       g_file_make_directory ((GFile *) l->data, cancellable, &my_error);
+      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_EXISTS))
+        g_clear_error (&my_error);
     }
 
   if (work_file)
@@ -3507,6 +3832,10 @@ g_file_make_directory_with_parents (GFile         *file,
       list = g_list_remove (list, list->data);
     }
 
+  /* At this point an error in my_error means a that something
+   * unexpected failed in either of the loops above, so the whole
+   * operation must fail.
+   */
   if (my_error != NULL)
     {
       g_propagate_error (error, my_error);
@@ -3613,8 +3942,7 @@ g_file_delete (GFile         *file,
 /**
  * g_file_delete_async:
  * @file: input #GFile
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: a #GAsyncReadyCallback to call
@@ -3656,6 +3984,7 @@ g_file_delete_async (GFile               *file,
  * Finishes deleting a file started with g_file_delete_async().
  *
  * Virtual: delete_file_finish
+ * Returns: %TRUE if the file was deleted. %FALSE otherwise.
  * Since: 2.34
  **/
 gboolean
@@ -3691,6 +4020,7 @@ g_file_delete_finish (GFile         *file,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned.
  *
+ * Virtual: trash
  * Returns: %TRUE on successful trash, %FALSE otherwise.
  */
 gboolean
@@ -3716,6 +4046,67 @@ g_file_trash (GFile         *file,
     }
 
   return (* iface->trash) (file, cancellable, error);
+}
+
+/**
+ * g_file_trash_async:
+ * @file: input #GFile
+ * @io_priority: the [I/O priority][io-priority] of the request
+ * @cancellable: (allow-none): optional #GCancellable object,
+ *     %NULL to ignore
+ * @callback: a #GAsyncReadyCallback to call
+ *     when the request is satisfied
+ * @user_data: the data to pass to callback function
+ *
+ * Asynchronously sends @file to the Trash location, if possible.
+ *
+ * Virtual: trash_async
+ * Since: 2.38
+ */
+void
+g_file_trash_async (GFile               *file,
+                    int                  io_priority,
+                    GCancellable        *cancellable,
+                    GAsyncReadyCallback  callback,
+                    gpointer             user_data)
+{
+  GFileIface *iface;
+
+  g_return_if_fail (G_IS_FILE (file));
+
+  iface = G_FILE_GET_IFACE (file);
+  (* iface->trash_async) (file,
+                          io_priority,
+                          cancellable,
+                          callback,
+                          user_data);
+}
+
+/**
+ * g_file_trash_finish:
+ * @file: input #GFile
+ * @result: a #GAsyncResult
+ * @error: a #GError, or %NULL
+ *
+ * Finishes an asynchronous file trashing operation, started with
+ * g_file_trash_async().
+ *
+ * Virtual: trash_finish
+ * Returns: %TRUE on successful trash, %FALSE otherwise.
+ * Since: 2.38
+ */
+gboolean
+g_file_trash_finish (GFile         *file,
+                     GAsyncResult  *result,
+                     GError       **error)
+{
+  GFileIface *iface;
+
+  g_return_val_if_fail (G_IS_FILE (file), FALSE);
+  g_return_val_if_fail (G_IS_ASYNC_RESULT (result), FALSE);
+
+  iface = G_FILE_GET_IFACE (file);
+  return (* iface->trash_finish) (file, result, error);
 }
 
 /**
@@ -3778,8 +4169,7 @@ g_file_set_display_name (GFile         *file,
  * g_file_set_display_name_async:
  * @file: input #GFile
  * @display_name: a string
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback to call
@@ -4034,7 +4424,7 @@ g_file_set_attribute (GFile                *file,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned.
  *
- * Returns: %TRUE if there was any error, %FALSE otherwise.
+ * Returns: %FALSE if there was any error, %TRUE otherwise.
  */
 gboolean
 g_file_set_attributes_from_info (GFile                *file,
@@ -4108,8 +4498,7 @@ g_file_real_set_attributes_from_info (GFile                *file,
  * @file: input #GFile
  * @info: a #GFileInfo
  * @flags: a #GFileQueryInfoFlags
- * @io_priority: the <link linkend="io-priority">I/O priority</link>
- *     of the request
+ * @io_priority: the [I/O priority][io-priority] of the request
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @callback: (scope async): a #GAsyncReadyCallback
@@ -4414,12 +4803,10 @@ g_file_mount_mountable (GFile               *file,
 
   if (iface->mount_mountable == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (file),
-                                           callback,
-                                           user_data,
-                                           G_IO_ERROR,
-                                           G_IO_ERROR_NOT_SUPPORTED,
-                                           _("Operation not supported"));
+      g_task_report_new_error (file, callback, user_data,
+                               g_file_mount_mountable,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("Operation not supported"));
       return;
     }
 
@@ -4457,6 +4844,8 @@ g_file_mount_mountable_finish (GFile         *file,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return NULL;
+  else if (g_async_result_is_tagged (result, g_file_mount_mountable))
+    return g_task_propagate_pointer (G_TASK (result), error);
 
   iface = G_FILE_GET_IFACE (file);
   return (* iface->mount_mountable_finish) (file, result, error);
@@ -4499,12 +4888,10 @@ g_file_unmount_mountable (GFile               *file,
 
   if (iface->unmount_mountable == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (file),
-                                           callback,
-                                           user_data,
-                                           G_IO_ERROR,
-                                           G_IO_ERROR_NOT_SUPPORTED,
-                                           _("Operation not supported"));
+      g_task_report_new_error (file, callback, user_data,
+                               g_file_unmount_mountable_with_operation,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("Operation not supported"));
       return;
     }
 
@@ -4544,6 +4931,8 @@ g_file_unmount_mountable_finish (GFile         *file,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_file_unmount_mountable_with_operation))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_FILE_GET_IFACE (file);
   return (* iface->unmount_mountable_finish) (file, result, error);
@@ -4589,12 +4978,10 @@ g_file_unmount_mountable_with_operation (GFile               *file,
 
   if (iface->unmount_mountable == NULL && iface->unmount_mountable_with_operation == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (file),
-                                           callback,
-                                           user_data,
-                                           G_IO_ERROR,
-                                           G_IO_ERROR_NOT_SUPPORTED,
-                                           _("Operation not supported"));
+      g_task_report_new_error (file, callback, user_data,
+                               g_file_unmount_mountable_with_operation,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("Operation not supported"));
       return;
     }
 
@@ -4642,6 +5029,8 @@ g_file_unmount_mountable_with_operation_finish (GFile         *file,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_file_unmount_mountable_with_operation))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_FILE_GET_IFACE (file);
   if (iface->unmount_mountable_with_operation_finish != NULL)
@@ -4686,12 +5075,10 @@ g_file_eject_mountable (GFile               *file,
 
   if (iface->eject_mountable == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (file),
-                                           callback,
-                                           user_data,
-                                           G_IO_ERROR,
-                                           G_IO_ERROR_NOT_SUPPORTED,
-                                           _("Operation not supported"));
+      g_task_report_new_error (file, callback, user_data,
+                               g_file_eject_mountable_with_operation,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("Operation not supported"));
       return;
     }
 
@@ -4729,6 +5116,8 @@ g_file_eject_mountable_finish (GFile         *file,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_file_eject_mountable_with_operation))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_FILE_GET_IFACE (file);
   return (* iface->eject_mountable_finish) (file, result, error);
@@ -4773,12 +5162,10 @@ g_file_eject_mountable_with_operation (GFile               *file,
 
   if (iface->eject_mountable == NULL && iface->eject_mountable_with_operation == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (file),
-                                           callback,
-                                           user_data,
-                                           G_IO_ERROR,
-                                           G_IO_ERROR_NOT_SUPPORTED,
-                                           _("Operation not supported"));
+      g_task_report_new_error (file, callback, user_data,
+                               g_file_eject_mountable_with_operation,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("Operation not supported"));
       return;
     }
 
@@ -4823,6 +5210,8 @@ g_file_eject_mountable_with_operation_finish (GFile         *file,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_file_eject_mountable_with_operation))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_FILE_GET_IFACE (file);
   if (iface->eject_mountable_with_operation_finish != NULL)
@@ -4846,6 +5235,12 @@ g_file_eject_mountable_with_operation_finish (GFile         *file,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned.
  *
+ * It does not make sense for @flags to contain
+ * %G_FILE_MONITOR_WATCH_HARD_LINKS, since hard links can not be made to
+ * directories.  It is not possible to monitor all the files in a
+ * directory for changes made via hard links; if you want to do this then
+ * you must register individual watches with g_file_monitor().
+ *
  * Virtual: monitor_dir
  * Returns: (transfer full): a #GFileMonitor for the given @file,
  *     or %NULL on error.
@@ -4860,6 +5255,7 @@ g_file_monitor_directory (GFile              *file,
   GFileIface *iface;
 
   g_return_val_if_fail (G_IS_FILE (file), NULL);
+  g_return_val_if_fail (~flags & G_FILE_MONITOR_WATCH_HARD_LINKS, NULL);
 
   if (g_cancellable_set_error_if_cancelled (cancellable, error))
     return NULL;
@@ -4892,6 +5288,14 @@ g_file_monitor_directory (GFile              *file,
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned.
  *
+ * If @flags contains %G_FILE_MONITOR_WATCH_HARD_LINKS then the monitor
+ * will also attempt to report changes made to the file via another
+ * filename (ie, a hard link). Without this flag, you can only rely on
+ * changes made through the filename contained in @file to be
+ * reported. Using this flag may result in an increase in resource
+ * usage, and may not have any effect depending on the #GFileMonitor
+ * backend and/or filesystem type.
+ * 
  * Returns: (transfer full): a #GFileMonitor for the given @file,
  *     or %NULL on error.
  *     Free the returned object with g_object_unref().
@@ -4952,7 +5356,9 @@ g_file_monitor (GFile              *file,
                 GError            **error)
 {
   if (g_file_query_file_type (file, 0, cancellable) == G_FILE_TYPE_DIRECTORY)
-    return g_file_monitor_directory (file, flags, cancellable, error);
+    return g_file_monitor_directory (file,
+                                     flags & ~G_FILE_MONITOR_WATCH_HARD_LINKS,
+                                     cancellable, error);
   else
     return g_file_monitor_file (file, flags, cancellable, error);
 }
@@ -4964,34 +5370,30 @@ g_file_monitor (GFile              *file,
 typedef struct {
   char *attributes;
   GFileQueryInfoFlags flags;
-  GFileInfo *info;
 } QueryInfoAsyncData;
 
 static void
 query_info_data_free (QueryInfoAsyncData *data)
 {
-  if (data->info)
-    g_object_unref (data->info);
   g_free (data->attributes);
   g_free (data);
 }
 
 static void
-query_info_async_thread (GSimpleAsyncResult *res,
-                         GObject            *object,
-                         GCancellable       *cancellable)
+query_info_async_thread (GTask         *task,
+                         gpointer       object,
+                         gpointer       task_data,
+                         GCancellable  *cancellable)
 {
-  GError *error = NULL;
-  QueryInfoAsyncData *data;
+  QueryInfoAsyncData *data = task_data;
   GFileInfo *info;
+  GError *error = NULL;
 
-  data = g_simple_async_result_get_op_res_gpointer (res);
   info = g_file_query_info (G_FILE (object), data->attributes, data->flags, cancellable, &error);
-
-  if (info == NULL)
-    g_simple_async_result_take_error (res, error);
+  if (info)
+    g_task_return_pointer (task, info, g_object_unref);
   else
-    data->info = info;
+    g_task_return_error (task, error);
 }
 
 static void
@@ -5003,18 +5405,18 @@ g_file_real_query_info_async (GFile               *file,
                               GAsyncReadyCallback  callback,
                               gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   QueryInfoAsyncData *data;
 
   data = g_new0 (QueryInfoAsyncData, 1);
   data->attributes = g_strdup (attributes);
   data->flags = flags;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_query_info_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)query_info_data_free);
-
-  g_simple_async_result_run_in_thread (res, query_info_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, data, (GDestroyNotify)query_info_data_free);
+  g_task_set_priority (task, io_priority);
+  g_task_run_in_thread (task, query_info_async_thread);
+  g_object_unref (task);
 }
 
 static GFileInfo *
@@ -5022,52 +5424,26 @@ g_file_real_query_info_finish (GFile         *file,
                                GAsyncResult  *res,
                                GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  QueryInfoAsyncData *data;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_query_info_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  data = g_simple_async_result_get_op_res_gpointer (simple);
-  if (data->info)
-    return g_object_ref (data->info);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
-typedef struct {
-  char *attributes;
+static void
+query_filesystem_info_async_thread (GTask         *task,
+                                    gpointer       object,
+                                    gpointer       task_data,
+                                    GCancellable  *cancellable)
+{
+  const char *attributes = task_data;
   GFileInfo *info;
-} QueryFilesystemInfoAsyncData;
-
-static void
-query_filesystem_info_data_free (QueryFilesystemInfoAsyncData *data)
-{
-  if (data->info)
-    g_object_unref (data->info);
-  g_free (data->attributes);
-  g_free (data);
-}
-
-static void
-query_filesystem_info_async_thread (GSimpleAsyncResult *res,
-                                    GObject            *object,
-                                    GCancellable       *cancellable)
-{
   GError *error = NULL;
-  QueryFilesystemInfoAsyncData *data;
-  GFileInfo *info;
 
-  data = g_simple_async_result_get_op_res_gpointer (res);
-
-  info = g_file_query_filesystem_info (G_FILE (object), data->attributes, cancellable, &error);
-
-  if (info == NULL)
-    g_simple_async_result_take_error (res, error);
+  info = g_file_query_filesystem_info (G_FILE (object), attributes, cancellable, &error);
+  if (info)
+    g_task_return_pointer (task, info, g_object_unref);
   else
-    data->info = info;
+    g_task_return_error (task, error);
 }
 
 static void
@@ -5078,17 +5454,13 @@ g_file_real_query_filesystem_info_async (GFile               *file,
                                          GAsyncReadyCallback  callback,
                                          gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
-  QueryFilesystemInfoAsyncData *data;
+  GTask *task;
 
-  data = g_new0 (QueryFilesystemInfoAsyncData, 1);
-  data->attributes = g_strdup (attributes);
-
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_query_filesystem_info_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)query_filesystem_info_data_free);
-
-  g_simple_async_result_run_in_thread (res, query_filesystem_info_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, g_strdup (attributes), g_free);
+  g_task_set_priority (task, io_priority);
+  g_task_run_in_thread (task, query_filesystem_info_async_thread);
+  g_object_unref (task);
 }
 
 static GFileInfo *
@@ -5096,53 +5468,26 @@ g_file_real_query_filesystem_info_finish (GFile         *file,
                                           GAsyncResult  *res,
                                           GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  QueryFilesystemInfoAsyncData *data;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_query_filesystem_info_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  data = g_simple_async_result_get_op_res_gpointer (simple);
-  if (data->info)
-    return g_object_ref (data->info);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
-typedef struct {
-  char *attributes;
-  GFileQueryInfoFlags flags;
+static void
+enumerate_children_async_thread (GTask         *task,
+                                 gpointer       object,
+                                 gpointer       task_data,
+                                 GCancellable  *cancellable)
+{
+  QueryInfoAsyncData *data = task_data;
   GFileEnumerator *enumerator;
-} EnumerateChildrenAsyncData;
-
-static void
-enumerate_children_data_free (EnumerateChildrenAsyncData *data)
-{
-  if (data->enumerator)
-    g_object_unref (data->enumerator);
-  g_free (data->attributes);
-  g_free (data);
-}
-
-static void
-enumerate_children_async_thread (GSimpleAsyncResult *res,
-                                 GObject            *object,
-                                 GCancellable       *cancellable)
-{
   GError *error = NULL;
-  EnumerateChildrenAsyncData *data;
-  GFileEnumerator *enumerator;
-
-  data = g_simple_async_result_get_op_res_gpointer (res);
 
   enumerator = g_file_enumerate_children (G_FILE (object), data->attributes, data->flags, cancellable, &error);
-
-  if (enumerator == NULL)
-    g_simple_async_result_take_error (res, error);
+  if (error)
+    g_task_return_error (task, error);
   else
-    data->enumerator = enumerator;
+    g_task_return_pointer (task, enumerator, g_object_unref);
 }
 
 static void
@@ -5154,18 +5499,18 @@ g_file_real_enumerate_children_async (GFile               *file,
                                       GAsyncReadyCallback  callback,
                                       gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
-  EnumerateChildrenAsyncData *data;
+  GTask *task;
+  QueryInfoAsyncData *data;
 
-  data = g_new0 (EnumerateChildrenAsyncData, 1);
+  data = g_new0 (QueryInfoAsyncData, 1);
   data->attributes = g_strdup (attributes);
   data->flags = flags;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_enumerate_children_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)enumerate_children_data_free);
-
-  g_simple_async_result_run_in_thread (res, enumerate_children_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, data, (GDestroyNotify)query_info_data_free);
+  g_task_set_priority (task, io_priority);
+  g_task_run_in_thread (task, enumerate_children_async_thread);
+  g_object_unref (task);
 }
 
 static GFileEnumerator *
@@ -5173,49 +5518,25 @@ g_file_real_enumerate_children_finish (GFile         *file,
                                        GAsyncResult  *res,
                                        GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  EnumerateChildrenAsyncData *data;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_enumerate_children_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  data = g_simple_async_result_get_op_res_gpointer (simple);
-  if (data->enumerator)
-    return g_object_ref (data->enumerator);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 static void
-open_read_async_thread (GSimpleAsyncResult *res,
-                        GObject            *object,
-                        GCancellable       *cancellable)
+open_read_async_thread (GTask         *task,
+                        gpointer       object,
+                        gpointer       task_data,
+                        GCancellable  *cancellable)
 {
-  GFileIface *iface;
   GFileInputStream *stream;
   GError *error = NULL;
 
-  iface = G_FILE_GET_IFACE (object);
-
-  if (iface->read_fn == NULL)
-    {
-      g_set_error_literal (&error, G_IO_ERROR,
-                           G_IO_ERROR_NOT_SUPPORTED,
-                           _("Operation not supported"));
-
-      g_simple_async_result_take_error (res, error);
-
-      return;
-    }
-
-  stream = iface->read_fn (G_FILE (object), cancellable, &error);
-
-  if (stream == NULL)
-    g_simple_async_result_take_error (res, error);
+  stream = g_file_read (G_FILE (object), cancellable, &error);
+  if (stream)
+    g_task_return_pointer (task, stream, g_object_unref);
   else
-    g_simple_async_result_set_op_res_gpointer (res, stream, g_object_unref);
+    g_task_return_error (task, error);
 }
 
 static void
@@ -5225,12 +5546,12 @@ g_file_real_read_async (GFile               *file,
                         GAsyncReadyCallback  callback,
                         gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_read_async);
-
-  g_simple_async_result_run_in_thread (res, open_read_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_priority (task, io_priority);
+  g_task_run_in_thread (task, open_read_async_thread);
+  g_object_unref (task);
 }
 
 static GFileInputStream *
@@ -5238,41 +5559,26 @@ g_file_real_read_finish (GFile         *file,
                          GAsyncResult  *res,
                          GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  gpointer op;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_read_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  op = g_simple_async_result_get_op_res_gpointer (simple);
-  if (op)
-    return g_object_ref (op);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 static void
-append_to_async_thread (GSimpleAsyncResult *res,
-                        GObject            *object,
-                        GCancellable       *cancellable)
+append_to_async_thread (GTask         *task,
+                        gpointer       source_object,
+                        gpointer       task_data,
+                        GCancellable  *cancellable)
 {
-  GFileIface *iface;
-  GFileCreateFlags *data;
+  GFileCreateFlags *data = task_data;
   GFileOutputStream *stream;
   GError *error = NULL;
 
-  iface = G_FILE_GET_IFACE (object);
-
-  data = g_simple_async_result_get_op_res_gpointer (res);
-
-  stream = iface->append_to (G_FILE (object), *data, cancellable, &error);
-
-  if (stream == NULL)
-    g_simple_async_result_take_error (res, error);
+  stream = g_file_append_to (G_FILE (source_object), *data, cancellable, &error);
+  if (stream)
+    g_task_return_pointer (task, stream, g_object_unref);
   else
-    g_simple_async_result_set_op_res_gpointer (res, stream, g_object_unref);
+    g_task_return_error (task, error);
 }
 
 static void
@@ -5284,16 +5590,17 @@ g_file_real_append_to_async (GFile               *file,
                              gpointer             user_data)
 {
   GFileCreateFlags *data;
-  GSimpleAsyncResult *res;
+  GTask *task;
 
   data = g_new0 (GFileCreateFlags, 1);
   *data = flags;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_append_to_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)g_free);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, data, g_free);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_run_in_thread (res, append_to_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, append_to_async_thread);
+  g_object_unref (task);
 }
 
 static GFileOutputStream *
@@ -5301,41 +5608,26 @@ g_file_real_append_to_finish (GFile         *file,
                               GAsyncResult  *res,
                               GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  gpointer op;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_append_to_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  op = g_simple_async_result_get_op_res_gpointer (simple);
-  if (op)
-    return g_object_ref (op);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 static void
-create_async_thread (GSimpleAsyncResult *res,
-                     GObject            *object,
-                     GCancellable       *cancellable)
+create_async_thread (GTask         *task,
+                     gpointer       source_object,
+                     gpointer       task_data,
+                     GCancellable  *cancellable)
 {
-  GFileIface *iface;
-  GFileCreateFlags *data;
+  GFileCreateFlags *data = task_data;
   GFileOutputStream *stream;
   GError *error = NULL;
 
-  iface = G_FILE_GET_IFACE (object);
-
-  data = g_simple_async_result_get_op_res_gpointer (res);
-
-  stream = iface->create (G_FILE (object), *data, cancellable, &error);
-
-  if (stream == NULL)
-    g_simple_async_result_take_error (res, error);
+  stream = g_file_create (G_FILE (source_object), *data, cancellable, &error);
+  if (stream)
+    g_task_return_pointer (task, stream, g_object_unref);
   else
-    g_simple_async_result_set_op_res_gpointer (res, stream, g_object_unref);
+    g_task_return_error (task, error);
 }
 
 static void
@@ -5347,16 +5639,17 @@ g_file_real_create_async (GFile               *file,
                           gpointer             user_data)
 {
   GFileCreateFlags *data;
-  GSimpleAsyncResult *res;
+  GTask *task;
 
   data = g_new0 (GFileCreateFlags, 1);
   *data = flags;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_create_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)g_free);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, data, g_free);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_run_in_thread (res, create_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, create_async_thread);
+  g_object_unref (task);
 }
 
 static GFileOutputStream *
@@ -5364,19 +5657,9 @@ g_file_real_create_finish (GFile         *file,
                            GAsyncResult  *res,
                            GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  gpointer op;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_create_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  op = g_simple_async_result_get_op_res_gpointer (simple);
-  if (op)
-    return g_object_ref (op);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 typedef struct {
@@ -5396,30 +5679,26 @@ replace_async_data_free (ReplaceAsyncData *data)
 }
 
 static void
-replace_async_thread (GSimpleAsyncResult *res,
-                      GObject            *object,
-                      GCancellable       *cancellable)
+replace_async_thread (GTask         *task,
+                      gpointer       source_object,
+                      gpointer       task_data,
+                      GCancellable  *cancellable)
 {
-  GFileIface *iface;
   GFileOutputStream *stream;
+  ReplaceAsyncData *data = task_data;
   GError *error = NULL;
-  ReplaceAsyncData *data;
 
-  iface = G_FILE_GET_IFACE (object);
-
-  data = g_simple_async_result_get_op_res_gpointer (res);
-
-  stream = iface->replace (G_FILE (object),
+  stream = g_file_replace (G_FILE (source_object),
                            data->etag,
                            data->make_backup,
                            data->flags,
                            cancellable,
                            &error);
 
-  if (stream == NULL)
-    g_simple_async_result_take_error (res, error);
+  if (stream)
+    g_task_return_pointer (task, stream, g_object_unref);
   else
-    data->stream = stream;
+    g_task_return_error (task, error);
 }
 
 static void
@@ -5432,7 +5711,7 @@ g_file_real_replace_async (GFile               *file,
                            GAsyncReadyCallback  callback,
                            gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   ReplaceAsyncData *data;
 
   data = g_new0 (ReplaceAsyncData, 1);
@@ -5440,11 +5719,12 @@ g_file_real_replace_async (GFile               *file,
   data->make_backup = make_backup;
   data->flags = flags;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_replace_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)replace_async_data_free);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, data, (GDestroyNotify)replace_async_data_free);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_run_in_thread (res, replace_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, replace_async_thread);
+  g_object_unref (task);
 }
 
 static GFileOutputStream *
@@ -5452,35 +5732,23 @@ g_file_real_replace_finish (GFile         *file,
                             GAsyncResult  *res,
                             GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  ReplaceAsyncData *data;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_replace_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  data = g_simple_async_result_get_op_res_gpointer (simple);
-  if (data->stream)
-    return g_object_ref (data->stream);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 static void
-delete_async_thread (GSimpleAsyncResult *res,
-                     GObject            *object,
-                     GCancellable       *cancellable)
+delete_async_thread (GTask        *task,
+                     gpointer      object,
+                     gpointer      task_data,
+                     GCancellable *cancellable)
 {
-  GFileIface *iface;
   GError *error = NULL;
 
-  iface = G_FILE_GET_IFACE (object);
-
-  if (!iface->delete_file (G_FILE (object),
-                           cancellable,
-                           &error))
-    g_simple_async_result_take_error (res, error);
+  if (g_file_delete (G_FILE (object), cancellable, &error))
+    g_task_return_boolean (task, TRUE);
+  else
+    g_task_return_error (task, error);
 }
 
 static void
@@ -5490,11 +5758,12 @@ g_file_real_delete_async (GFile               *file,
                           GAsyncReadyCallback  callback,
                           gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_delete_async);
-  g_simple_async_result_run_in_thread (res, delete_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_priority (task, io_priority);
+  g_task_run_in_thread (task, delete_async_thread);
+  g_object_unref (task);
 }
 
 static gboolean
@@ -5502,44 +5771,104 @@ g_file_real_delete_finish (GFile         *file,
                            GAsyncResult  *res,
                            GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
+  g_return_val_if_fail (g_task_is_valid (res, file), FALSE);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_delete_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (res), error);
 }
 
 static void
-open_readwrite_async_thread (GSimpleAsyncResult *res,
-                             GObject            *object,
-                             GCancellable       *cancellable)
+trash_async_thread (GTask        *task,
+                    gpointer      object,
+                    gpointer      task_data,
+                    GCancellable *cancellable)
 {
-  GFileIface *iface;
+  GError *error = NULL;
+
+  if (g_file_trash (G_FILE (object), cancellable, &error))
+    g_task_return_boolean (task, TRUE);
+  else
+    g_task_return_error (task, error);
+}
+
+static void
+g_file_real_trash_async (GFile               *file,
+                         int                  io_priority,
+                         GCancellable        *cancellable,
+                         GAsyncReadyCallback  callback,
+                         gpointer             user_data)
+{
+  GTask *task;
+
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_priority (task, io_priority);
+  g_task_run_in_thread (task, trash_async_thread);
+  g_object_unref (task);
+}
+
+static gboolean
+g_file_real_trash_finish (GFile         *file,
+                          GAsyncResult  *res,
+                          GError       **error)
+{
+  g_return_val_if_fail (g_task_is_valid (res, file), FALSE);
+
+  return g_task_propagate_boolean (G_TASK (res), error);
+}
+
+static void
+make_directory_async_thread (GTask        *task,
+                             gpointer      object,
+                             gpointer      task_data,
+                             GCancellable *cancellable)
+{
+  GError *error = NULL;
+
+  if (g_file_make_directory (G_FILE (object), cancellable, &error))
+    g_task_return_boolean (task, TRUE);
+  else
+    g_task_return_error (task, error);
+}
+
+static void
+g_file_real_make_directory_async (GFile               *file,
+                                  int                  io_priority,
+                                  GCancellable        *cancellable,
+                                  GAsyncReadyCallback  callback,
+                                  gpointer             user_data)
+{
+  GTask *task;
+
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_priority (task, io_priority);
+  g_task_run_in_thread (task, make_directory_async_thread);
+  g_object_unref (task);
+}
+
+static gboolean
+g_file_real_make_directory_finish (GFile         *file,
+                                   GAsyncResult  *res,
+                                   GError       **error)
+{
+  g_return_val_if_fail (g_task_is_valid (res, file), FALSE);
+
+  return g_task_propagate_boolean (G_TASK (res), error);
+}
+
+static void
+open_readwrite_async_thread (GTask        *task,
+                             gpointer      object,
+                             gpointer      task_data,
+                             GCancellable *cancellable)
+{
   GFileIOStream *stream;
   GError *error = NULL;
 
-  iface = G_FILE_GET_IFACE (object);
-
-  if (iface->open_readwrite == NULL)
-    {
-      g_set_error_literal (&error, G_IO_ERROR,
-                           G_IO_ERROR_NOT_SUPPORTED,
-                           _("Operation not supported"));
-
-      g_simple_async_result_take_error (res, error);
-
-      return;
-    }
-
-  stream = iface->open_readwrite (G_FILE (object), cancellable, &error);
+  stream = g_file_open_readwrite (G_FILE (object), cancellable, &error);
 
   if (stream == NULL)
-    g_simple_async_result_take_error (res, error);
+    g_task_return_error (task, error);
   else
-    g_simple_async_result_set_op_res_gpointer (res, stream, g_object_unref);
+    g_task_return_pointer (task, stream, g_object_unref);
 }
 
 static void
@@ -5549,12 +5878,13 @@ g_file_real_open_readwrite_async (GFile               *file,
                                   GAsyncReadyCallback  callback,
                                   gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_open_readwrite_async);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_run_in_thread (res, open_readwrite_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, open_readwrite_async_thread);
+  g_object_unref (task);
 }
 
 static GFileIOStream *
@@ -5562,52 +5892,27 @@ g_file_real_open_readwrite_finish (GFile         *file,
                                    GAsyncResult  *res,
                                    GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  gpointer op;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_open_readwrite_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  op = g_simple_async_result_get_op_res_gpointer (simple);
-  if (op)
-    return g_object_ref (op);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 static void
-create_readwrite_async_thread (GSimpleAsyncResult *res,
-                               GObject            *object,
-                               GCancellable       *cancellable)
+create_readwrite_async_thread (GTask        *task,
+                               gpointer      object,
+                               gpointer      task_data,
+                               GCancellable *cancellable)
 {
-  GFileIface *iface;
-  GFileCreateFlags *data;
+  GFileCreateFlags *data = task_data;
   GFileIOStream *stream;
   GError *error = NULL;
 
-  iface = G_FILE_GET_IFACE (object);
-
-  data = g_simple_async_result_get_op_res_gpointer (res);
-
-  if (iface->create_readwrite == NULL)
-    {
-      g_set_error_literal (&error, G_IO_ERROR,
-                           G_IO_ERROR_NOT_SUPPORTED,
-                           _("Operation not supported"));
-
-      g_simple_async_result_take_error (res, error);
-
-      return;
-    }
-
-  stream = iface->create_readwrite (G_FILE (object), *data, cancellable, &error);
+  stream = g_file_create_readwrite (G_FILE (object), *data, cancellable, &error);
 
   if (stream == NULL)
-    g_simple_async_result_take_error (res, error);
+    g_task_return_error (task, error);
   else
-    g_simple_async_result_set_op_res_gpointer (res, stream, g_object_unref);
+    g_task_return_pointer (task, stream, g_object_unref);
 }
 
 static void
@@ -5619,16 +5924,17 @@ g_file_real_create_readwrite_async (GFile               *file,
                                     gpointer             user_data)
 {
   GFileCreateFlags *data;
-  GSimpleAsyncResult *res;
+  GTask *task;
 
   data = g_new0 (GFileCreateFlags, 1);
   *data = flags;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_create_readwrite_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)g_free);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, data, g_free);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_run_in_thread (res, create_readwrite_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, create_readwrite_async_thread);
+  g_object_unref (task);
 }
 
 static GFileIOStream *
@@ -5636,23 +5942,12 @@ g_file_real_create_readwrite_finish (GFile         *file,
                                      GAsyncResult  *res,
                                      GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  gpointer op;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_create_readwrite_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  op = g_simple_async_result_get_op_res_gpointer (simple);
-  if (op)
-    return g_object_ref (op);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 typedef struct {
-  GFileIOStream *stream;
   char *etag;
   gboolean make_backup;
   GFileCreateFlags flags;
@@ -5661,27 +5956,21 @@ typedef struct {
 static void
 replace_rw_async_data_free (ReplaceRWAsyncData *data)
 {
-  if (data->stream)
-    g_object_unref (data->stream);
   g_free (data->etag);
   g_free (data);
 }
 
 static void
-replace_readwrite_async_thread (GSimpleAsyncResult *res,
-                                GObject            *object,
-                                GCancellable       *cancellable)
+replace_readwrite_async_thread (GTask        *task,
+                                gpointer      object,
+                                gpointer      task_data,
+                                GCancellable *cancellable)
 {
-  GFileIface *iface;
   GFileIOStream *stream;
   GError *error = NULL;
-  ReplaceRWAsyncData *data;
+  ReplaceRWAsyncData *data = task_data;
 
-  iface = G_FILE_GET_IFACE (object);
-
-  data = g_simple_async_result_get_op_res_gpointer (res);
-
-  stream = iface->replace_readwrite (G_FILE (object),
+  stream = g_file_replace_readwrite (G_FILE (object),
                                      data->etag,
                                      data->make_backup,
                                      data->flags,
@@ -5689,9 +5978,9 @@ replace_readwrite_async_thread (GSimpleAsyncResult *res,
                                      &error);
 
   if (stream == NULL)
-    g_simple_async_result_take_error (res, error);
+    g_task_return_error (task, error);
   else
-    data->stream = stream;
+    g_task_return_pointer (task, stream, g_object_unref);
 }
 
 static void
@@ -5704,7 +5993,7 @@ g_file_real_replace_readwrite_async (GFile               *file,
                                      GAsyncReadyCallback  callback,
                                      gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   ReplaceRWAsyncData *data;
 
   data = g_new0 (ReplaceRWAsyncData, 1);
@@ -5712,11 +6001,12 @@ g_file_real_replace_readwrite_async (GFile               *file,
   data->make_backup = make_backup;
   data->flags = flags;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_replace_readwrite_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)replace_rw_async_data_free);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, data, (GDestroyNotify)replace_rw_async_data_free);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_run_in_thread (res, replace_readwrite_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, replace_readwrite_async_thread);
+  g_object_unref (task);
 }
 
 static GFileIOStream *
@@ -5724,52 +6014,27 @@ g_file_real_replace_readwrite_finish (GFile         *file,
                                       GAsyncResult  *res,
                                       GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  ReplaceRWAsyncData *data;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_replace_readwrite_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  data = g_simple_async_result_get_op_res_gpointer (simple);
-  if (data->stream)
-    return g_object_ref (data->stream);
-
-  return NULL;
-}
-
-typedef struct {
-  char *name;
-  GFile *file;
-} SetDisplayNameAsyncData;
-
-static void
-set_display_name_data_free (SetDisplayNameAsyncData *data)
-{
-  g_free (data->name);
-  if (data->file)
-    g_object_unref (data->file);
-  g_free (data);
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 static void
-set_display_name_async_thread (GSimpleAsyncResult *res,
-                               GObject            *object,
-                               GCancellable       *cancellable)
+set_display_name_async_thread (GTask        *task,
+                               gpointer      object,
+                               gpointer      task_data,
+                               GCancellable *cancellable)
 {
   GError *error = NULL;
-  SetDisplayNameAsyncData *data;
+  char *name = task_data;
   GFile *file;
 
-  data = g_simple_async_result_get_op_res_gpointer (res);
-
-  file = g_file_set_display_name (G_FILE (object), data->name, cancellable, &error);
+  file = g_file_set_display_name (G_FILE (object), name, cancellable, &error);
 
   if (file == NULL)
-    g_simple_async_result_take_error (res, error);
+    g_task_return_error (task, error);
   else
-    data->file = file;
+    g_task_return_pointer (task, file, g_object_unref);
 }
 
 static void
@@ -5780,17 +6045,14 @@ g_file_real_set_display_name_async (GFile               *file,
                                     GAsyncReadyCallback  callback,
                                     gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
-  SetDisplayNameAsyncData *data;
+  GTask *task;
 
-  data = g_new0 (SetDisplayNameAsyncData, 1);
-  data->name = g_strdup (display_name);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, g_strdup (display_name), g_free);
+  g_task_set_priority (task, io_priority);
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_set_display_name_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)set_display_name_data_free);
-
-  g_simple_async_result_run_in_thread (res, set_display_name_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, set_display_name_async_thread);
+  g_object_unref (task);
 }
 
 static GFile *
@@ -5798,19 +6060,9 @@ g_file_real_set_display_name_finish (GFile         *file,
                                      GAsyncResult  *res,
                                      GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  SetDisplayNameAsyncData *data;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_set_display_name_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  data = g_simple_async_result_get_op_res_gpointer (simple);
-  if (data->file)
-    return g_object_ref (data->file);
-
-  return NULL;
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 typedef struct {
@@ -5831,13 +6083,12 @@ set_info_data_free (SetInfoAsyncData *data)
 }
 
 static void
-set_info_async_thread (GSimpleAsyncResult *res,
-                       GObject            *object,
-                       GCancellable       *cancellable)
+set_info_async_thread (GTask        *task,
+                       gpointer      object,
+                       gpointer      task_data,
+                       GCancellable *cancellable)
 {
-  SetInfoAsyncData *data;
-
-  data = g_simple_async_result_get_op_res_gpointer (res);
+  SetInfoAsyncData *data = task_data;
 
   data->error = NULL;
   data->res = g_file_set_attributes_from_info (G_FILE (object),
@@ -5856,18 +6107,19 @@ g_file_real_set_attributes_async (GFile               *file,
                                   GAsyncReadyCallback  callback,
                                   gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   SetInfoAsyncData *data;
 
   data = g_new0 (SetInfoAsyncData, 1);
   data->info = g_file_info_dup (info);
   data->flags = flags;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_set_attributes_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)set_info_data_free);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, data, (GDestroyNotify)set_info_data_free);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_run_in_thread (res, set_info_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, set_info_async_thread);
+  g_object_unref (task);
 }
 
 static gboolean
@@ -5876,12 +6128,11 @@ g_file_real_set_attributes_finish (GFile         *file,
                                    GFileInfo    **info,
                                    GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
   SetInfoAsyncData *data;
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_set_attributes_async);
+  g_return_val_if_fail (g_task_is_valid (res, file), FALSE);
 
-  data = g_simple_async_result_get_op_res_gpointer (simple);
+  data = g_task_get_task_data (G_TASK (res));
 
   if (info)
     *info = g_object_ref (data->info);
@@ -5893,9 +6144,10 @@ g_file_real_set_attributes_finish (GFile         *file,
 }
 
 static void
-find_enclosing_mount_async_thread (GSimpleAsyncResult *res,
-                                    GObject            *object,
-                                    GCancellable       *cancellable)
+find_enclosing_mount_async_thread (GTask        *task,
+                                   gpointer      object,
+                                   gpointer      task_data,
+                                   GCancellable *cancellable)
 {
   GError *error = NULL;
   GMount *mount;
@@ -5903,9 +6155,9 @@ find_enclosing_mount_async_thread (GSimpleAsyncResult *res,
   mount = g_file_find_enclosing_mount (G_FILE (object), cancellable, &error);
 
   if (mount == NULL)
-    g_simple_async_result_take_error (res, error);
+    g_task_return_error (task, error);
   else
-    g_simple_async_result_set_op_res_gpointer (res, mount, (GDestroyNotify)g_object_unref);
+    g_task_return_pointer (task, mount, g_object_unref);
 }
 
 static void
@@ -5915,29 +6167,23 @@ g_file_real_find_enclosing_mount_async (GFile               *file,
                                         GAsyncReadyCallback  callback,
                                         gpointer             user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
 
-  res = g_simple_async_result_new (G_OBJECT (file), callback, user_data, g_file_real_find_enclosing_mount_async);
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_priority (task, io_priority);
 
-  g_simple_async_result_run_in_thread (res, find_enclosing_mount_async_thread, io_priority, cancellable);
-  g_object_unref (res);
+  g_task_run_in_thread (task, find_enclosing_mount_async_thread);
+  g_object_unref (task);
 }
 
 static GMount *
 g_file_real_find_enclosing_mount_finish (GFile         *file,
-                                          GAsyncResult  *res,
-                                          GError       **error)
+                                         GAsyncResult  *res,
+                                         GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  GMount *mount;
+  g_return_val_if_fail (g_task_is_valid (res, file), NULL);
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_real_find_enclosing_mount_async);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  mount = g_simple_async_result_get_op_res_gpointer (simple);
-  return g_object_ref (mount);
+  return g_task_propagate_pointer (G_TASK (res), error);
 }
 
 
@@ -5947,7 +6193,6 @@ typedef struct {
   GFileCopyFlags flags;
   GFileProgressCallback progress_cb;
   gpointer progress_cb_data;
-  GIOSchedulerJob *job;
 } CopyAsyncData;
 
 static void
@@ -5955,7 +6200,7 @@ copy_async_data_free (CopyAsyncData *data)
 {
   g_object_unref (data->source);
   g_object_unref (data->destination);
-  g_free (data);
+  g_slice_free (CopyAsyncData, data);
 }
 
 typedef struct {
@@ -5982,7 +6227,8 @@ copy_async_progress_callback (goffset  current_num_bytes,
                               goffset  total_num_bytes,
                               gpointer user_data)
 {
-  CopyAsyncData *data = user_data;
+  GTask *task = user_data;
+  CopyAsyncData *data = g_task_get_task_data (task);
   ProgressData *progress;
 
   progress = g_new (ProgressData, 1);
@@ -5990,41 +6236,34 @@ copy_async_progress_callback (goffset  current_num_bytes,
   progress->current_num_bytes = current_num_bytes;
   progress->total_num_bytes = total_num_bytes;
 
-  g_io_scheduler_job_send_to_mainloop_async (data->job,
-                                             copy_async_progress_in_main,
-                                             progress,
-                                             g_free);
+  g_main_context_invoke_full (g_task_get_context (task),
+                              g_task_get_priority (task),
+                              copy_async_progress_in_main,
+                              progress,
+                              g_free);
 }
 
-static gboolean
-copy_async_thread (GIOSchedulerJob *job,
-                   GCancellable    *cancellable,
-                   gpointer         user_data)
+static void
+copy_async_thread (GTask        *task,
+                   gpointer      source,
+                   gpointer      task_data,
+                   GCancellable *cancellable)
 {
-  GSimpleAsyncResult *res;
-  CopyAsyncData *data;
+  CopyAsyncData *data = task_data;
   gboolean result;
-  GError *error;
+  GError *error = NULL;
 
-  res = user_data;
-  data = g_simple_async_result_get_op_res_gpointer (res);
-
-  error = NULL;
-  data->job = job;
   result = g_file_copy (data->source,
                         data->destination,
                         data->flags,
                         cancellable,
                         (data->progress_cb != NULL) ? copy_async_progress_callback : NULL,
-                        data,
+                        task,
                         &error);
-
-  if (!result)
-    g_simple_async_result_take_error (res, error);
-
-  g_simple_async_result_complete_in_idle (res);
-
-  return FALSE;
+  if (result)
+    g_task_return_boolean (task, TRUE);
+  else
+    g_task_return_error (task, error);
 }
 
 static void
@@ -6038,20 +6277,21 @@ g_file_real_copy_async (GFile                  *source,
                         GAsyncReadyCallback     callback,
                         gpointer                user_data)
 {
-  GSimpleAsyncResult *res;
+  GTask *task;
   CopyAsyncData *data;
 
-  data = g_new0 (CopyAsyncData, 1);
+  data = g_slice_new (CopyAsyncData);
   data->source = g_object_ref (source);
   data->destination = g_object_ref (destination);
   data->flags = flags;
   data->progress_cb = progress_callback;
   data->progress_cb_data = progress_callback_data;
 
-  res = g_simple_async_result_new (G_OBJECT (source), callback, user_data, g_file_real_copy_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)copy_async_data_free);
-
-  g_io_scheduler_push_job (copy_async_thread, res, g_object_unref, io_priority, cancellable);
+  task = g_task_new (source, cancellable, callback, user_data);
+  g_task_set_task_data (task, data, (GDestroyNotify)copy_async_data_free);
+  g_task_set_priority (task, io_priority);
+  g_task_run_in_thread (task, copy_async_thread);
+  g_object_unref (task);
 }
 
 static gboolean
@@ -6059,12 +6299,9 @@ g_file_real_copy_finish (GFile        *file,
                          GAsyncResult *res,
                          GError      **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
+  g_return_val_if_fail (g_task_is_valid (res, file), FALSE);
 
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  return TRUE;
+  return g_task_propagate_boolean (G_TASK (res), error);
 }
 
 
@@ -6207,6 +6444,36 @@ has_valid_scheme (const char *uri)
   return *p == ':';
 }
 
+static GFile *
+new_for_cmdline_arg (const gchar *arg,
+                     const gchar *cwd)
+{
+  GFile *file;
+  char *filename;
+
+  if (g_path_is_absolute (arg))
+    return g_file_new_for_path (arg);
+
+  if (has_valid_scheme (arg))
+    return g_file_new_for_uri (arg);
+
+  if (cwd == NULL)
+    {
+      char *current_dir;
+
+      current_dir = g_get_current_dir ();
+      filename = g_build_filename (current_dir, arg, NULL);
+      g_free (current_dir);
+    }
+  else
+    filename = g_build_filename (cwd, arg, NULL);
+
+  file = g_file_new_for_path (filename);
+  g_free (filename);
+
+  return file;
+}
+
 /**
  * g_file_new_for_commandline_arg:
  * @arg: a command line string
@@ -6217,32 +6484,55 @@ has_valid_scheme (const char *uri)
  * This operation never fails, but the returned object might not
  * support any I/O operation if @arg points to a malformed path.
  *
+ * Note that on Windows, this function expects its argument to be in
+ * UTF-8 -- not the system code page.  This means that you
+ * should not use this function with string from argv as it is passed
+ * to main().  g_win32_get_command_line() will return a UTF-8 version of
+ * the commandline.  #GApplication also uses UTF-8 but
+ * g_application_command_line_create_file_for_arg() may be more useful
+ * for you there.  It is also always possible to use this function with
+ * #GOptionContext arguments of type %G_OPTION_ARG_FILENAME.
+ *
  * Returns: (transfer full): a new #GFile.
  *    Free the returned object with g_object_unref().
  */
 GFile *
 g_file_new_for_commandline_arg (const char *arg)
 {
-  GFile *file;
-  char *filename;
-  char *current_dir;
-
   g_return_val_if_fail (arg != NULL, NULL);
 
-  if (g_path_is_absolute (arg))
-    return g_file_new_for_path (arg);
+  return new_for_cmdline_arg (arg, NULL);
+}
 
-  if (has_valid_scheme (arg))
-    return g_file_new_for_uri (arg);
+/**
+ * g_file_new_for_commandline_arg_and_cwd:
+ * @arg: a command line string
+ * @cwd: the current working directory of the commandline
+ *
+ * Creates a #GFile with the given argument from the command line.
+ *
+ * This function is similar to g_file_new_for_commandline_arg() except
+ * that it allows for passing the current working directory as an
+ * argument instead of using the current working directory of the
+ * process.
+ *
+ * This is useful if the commandline argument was given in a context
+ * other than the invocation of the current process.
+ *
+ * See also g_application_command_line_create_file_for_arg().
+ *
+ * Returns: (transfer full): a new #GFile
+ *
+ * Since: 2.36
+ **/
+GFile *
+g_file_new_for_commandline_arg_and_cwd (const gchar *arg,
+                                        const gchar *cwd)
+{
+  g_return_val_if_fail (arg != NULL, NULL);
+  g_return_val_if_fail (cwd != NULL, NULL);
 
-  current_dir = g_get_current_dir ();
-  filename = g_build_filename (current_dir, arg, NULL);
-  g_free (current_dir);
-
-  file = g_file_new_for_path (filename);
-  g_free (filename);
-
-  return file;
+  return new_for_cmdline_arg (arg, cwd);
 }
 
 /**
@@ -6284,11 +6574,10 @@ g_file_mount_enclosing_volume (GFile               *location,
 
   if (iface->mount_enclosing_volume == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (location),
-                                           callback, user_data,
-                                           G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                                           _("volume doesn't implement mount"));
-
+      g_task_report_new_error (location, callback, user_data,
+                               g_file_mount_enclosing_volume,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("volume doesn't implement mount"));
       return;
     }
 
@@ -6320,6 +6609,8 @@ g_file_mount_enclosing_volume_finish (GFile         *location,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_file_mount_enclosing_volume))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_FILE_GET_IFACE (location);
 
@@ -6496,12 +6787,8 @@ g_file_load_contents (GFile         *file,
 }
 
 typedef struct {
-  GFile *file;
-  GError *error;
-  GCancellable *cancellable;
+  GTask *task;
   GFileReadMoreCallback read_more_callback;
-  GAsyncReadyCallback callback;
-  gpointer user_data;
   GByteArray *content;
   gsize pos;
   char *etag;
@@ -6511,14 +6798,9 @@ typedef struct {
 static void
 load_contents_data_free (LoadContentsData *data)
 {
-  if (data->error)
-    g_error_free (data->error);
-  if (data->cancellable)
-    g_object_unref (data->cancellable);
   if (data->content)
     g_byte_array_free (data->content, TRUE);
   g_free (data->etag);
-  g_object_unref (data->file);
   g_free (data);
 }
 
@@ -6529,19 +6811,13 @@ load_contents_close_callback (GObject      *obj,
 {
   GInputStream *stream = G_INPUT_STREAM (obj);
   LoadContentsData *data = user_data;
-  GSimpleAsyncResult *res;
 
   /* Ignore errors here, we're only reading anyway */
   g_input_stream_close_finish (stream, close_res, NULL);
   g_object_unref (stream);
 
-  res = g_simple_async_result_new (G_OBJECT (data->file),
-                                   data->callback,
-                                   data->user_data,
-                                   g_file_load_contents_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)load_contents_data_free);
-  g_simple_async_result_complete (res);
-  g_object_unref (res);
+  g_task_return_boolean (data->task, TRUE);
+  g_object_unref (data->task);
 }
 
 static void
@@ -6554,7 +6830,7 @@ load_contents_fstat_callback (GObject      *obj,
   GFileInfo *info;
 
   info = g_file_input_stream_query_info_finish (G_FILE_INPUT_STREAM (stream),
-                                                   stat_res, NULL);
+                                                stat_res, NULL);
   if (info)
     {
       data->etag = g_strdup (g_file_info_get_etag (info));
@@ -6562,7 +6838,7 @@ load_contents_fstat_callback (GObject      *obj,
     }
 
   g_input_stream_close_async (stream, 0,
-                              data->cancellable,
+                              g_task_get_cancellable (data->task),
                               load_contents_close_callback, data);
 }
 
@@ -6580,18 +6856,19 @@ load_contents_read_callback (GObject      *obj,
 
   if (read_size < 0)
     {
-      /* Error or EOF, close the file */
-      data->error = error;
-      g_input_stream_close_async (stream, 0,
-                                  data->cancellable,
-                                  load_contents_close_callback, data);
+      g_task_return_error (data->task, error);
+      g_object_unref (data->task);
+
+      /* Close the file ignoring any error */
+      g_input_stream_close_async (stream, 0, NULL, NULL, NULL);
+      g_object_unref (stream);
     }
   else if (read_size == 0)
     {
       g_file_input_stream_query_info_async (G_FILE_INPUT_STREAM (stream),
                                             G_FILE_ATTRIBUTE_ETAG_VALUE,
                                             0,
-                                            data->cancellable,
+                                            g_task_get_cancellable (data->task),
                                             load_contents_fstat_callback,
                                             data);
     }
@@ -6604,11 +6881,12 @@ load_contents_read_callback (GObject      *obj,
 
 
       if (data->read_more_callback &&
-          !data->read_more_callback ((char *)data->content->data, data->pos, data->user_data))
+          !data->read_more_callback ((char *)data->content->data, data->pos,
+                                     g_async_result_get_user_data (G_ASYNC_RESULT (data->task))))
         g_file_input_stream_query_info_async (G_FILE_INPUT_STREAM (stream),
                                               G_FILE_ATTRIBUTE_ETAG_VALUE,
                                               0,
-                                              data->cancellable,
+                                              g_task_get_cancellable (data->task),
                                               load_contents_fstat_callback,
                                               data);
       else
@@ -6616,7 +6894,7 @@ load_contents_read_callback (GObject      *obj,
                                    data->content->data + data->pos,
                                    GET_CONTENT_BLOCK_SIZE,
                                    0,
-                                   data->cancellable,
+                                   g_task_get_cancellable (data->task),
                                    load_contents_read_callback,
                                    data);
     }
@@ -6631,7 +6909,6 @@ load_contents_open_callback (GObject      *obj,
   GFileInputStream *stream;
   LoadContentsData *data = user_data;
   GError *error = NULL;
-  GSimpleAsyncResult *res;
 
   stream = g_file_read_finish (file, open_res, &error);
 
@@ -6643,19 +6920,14 @@ load_contents_open_callback (GObject      *obj,
                                  data->content->data + data->pos,
                                  GET_CONTENT_BLOCK_SIZE,
                                  0,
-                                 data->cancellable,
+                                 g_task_get_cancellable (data->task),
                                  load_contents_read_callback,
                                  data);
     }
   else
     {
-      res = g_simple_async_result_new_take_error (G_OBJECT (data->file),
-                                                  data->callback,
-                                                  data->user_data,
-                                                  error);
-      g_simple_async_result_complete (res);
-      load_contents_data_free (data);
-      g_object_unref (res);
+      g_task_return_error (data->task, error);
+      g_object_unref (data->task);
     }
 }
 
@@ -6692,18 +6964,15 @@ g_file_load_partial_contents_async (GFile                 *file,
   g_return_if_fail (G_IS_FILE (file));
 
   data = g_new0 (LoadContentsData, 1);
-
-  if (cancellable)
-    data->cancellable = g_object_ref (cancellable);
   data->read_more_callback = read_more_callback;
-  data->callback = callback;
-  data->user_data = user_data;
   data->content = g_byte_array_new ();
-  data->file = g_object_ref (file);
+
+  data->task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (data->task, data, (GDestroyNotify)load_contents_data_free);
 
   g_file_read_async (file,
                      0,
-                     cancellable,
+                     g_task_get_cancellable (data->task),
                      load_contents_open_callback,
                      data);
 }
@@ -6736,31 +7005,23 @@ g_file_load_partial_contents_finish (GFile         *file,
                                      char         **etag_out,
                                      GError       **error)
 {
-  GSimpleAsyncResult *simple;
+  GTask *task;
   LoadContentsData *data;
 
   g_return_val_if_fail (G_IS_FILE (file), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (res), FALSE);
+  g_return_val_if_fail (g_task_is_valid (res, file), FALSE);
   g_return_val_if_fail (contents != NULL, FALSE);
 
-  simple = G_SIMPLE_ASYNC_RESULT (res);
+  task = G_TASK (res);
 
-  if (g_simple_async_result_propagate_error (simple, error))
-    return FALSE;
-
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_load_contents_async);
-
-  data = g_simple_async_result_get_op_res_gpointer (simple);
-
-  if (data->error)
+  if (!g_task_propagate_boolean (task, error))
     {
-      g_propagate_error (error, data->error);
-      data->error = NULL;
-      *contents = NULL;
       if (length)
         *length = 0;
       return FALSE;
     }
+
+  data = g_task_get_task_data (task);
 
   if (length)
     *length = data->pos;
@@ -6855,11 +7116,11 @@ g_file_load_contents_finish (GFile         *file,
  * @file: input #GFile
  * @contents: (element-type guint8) (array length=length): a string containing the new contents for @file
  * @length: the length of @contents in bytes
- * @etag: (allow-none): the old <link linkend="gfile-etag">entity tag</link>
- *     for the document, or %NULL
+ * @etag: (allow-none): the old [entity-tag][gfile-etag] for the document,
+ *     or %NULL
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
- * @new_etag: (allow-none) (out): a location to a new <link linkend="gfile-etag">entity tag</link>
+ * @new_etag: (allow-none) (out): a location to a new [entity tag][gfile-etag]
  *      for the document. This should be freed with g_free() when no longer
  *      needed, or %NULL
  * @cancellable: optional #GCancellable object, %NULL to ignore
@@ -6940,25 +7201,17 @@ g_file_replace_contents (GFile             *file,
 }
 
 typedef struct {
-  GFile *file;
-  GError *error;
-  GCancellable *cancellable;
-  GAsyncReadyCallback callback;
-  gpointer user_data;
-  const char *content;
-  gsize length;
+  GTask *task;
+  GBytes *content;
   gsize pos;
   char *etag;
+  gboolean failed;
 } ReplaceContentsData;
 
 static void
 replace_contents_data_free (ReplaceContentsData *data)
 {
-  if (data->error)
-    g_error_free (data->error);
-  if (data->cancellable)
-    g_object_unref (data->cancellable);
-  g_object_unref (data->file);
+  g_bytes_unref (data->content);
   g_free (data->etag);
   g_free (data);
 }
@@ -6970,21 +7223,17 @@ replace_contents_close_callback (GObject      *obj,
 {
   GOutputStream *stream = G_OUTPUT_STREAM (obj);
   ReplaceContentsData *data = user_data;
-  GSimpleAsyncResult *res;
 
   /* Ignore errors here, we're only reading anyway */
   g_output_stream_close_finish (stream, close_res, NULL);
   g_object_unref (stream);
 
-  data->etag = g_file_output_stream_get_etag (G_FILE_OUTPUT_STREAM (stream));
-
-  res = g_simple_async_result_new (G_OBJECT (data->file),
-                                   data->callback,
-                                   data->user_data,
-                                   g_file_replace_contents_async);
-  g_simple_async_result_set_op_res_gpointer (res, data, (GDestroyNotify)replace_contents_data_free);
-  g_simple_async_result_complete (res);
-  g_object_unref (res);
+  if (!data->failed)
+    {
+      data->etag = g_file_output_stream_get_etag (G_FILE_OUTPUT_STREAM (stream));
+      g_task_return_boolean (data->task, TRUE);
+    }
+  g_object_unref (data->task);
 }
 
 static void
@@ -7003,25 +7252,32 @@ replace_contents_write_callback (GObject      *obj,
     {
       /* Error or EOF, close the file */
       if (write_size < 0)
-        data->error = error;
+        {
+          data->failed = TRUE;
+          g_task_return_error (data->task, error);
+        }
       g_output_stream_close_async (stream, 0,
-                                   data->cancellable,
+                                   g_task_get_cancellable (data->task),
                                    replace_contents_close_callback, data);
     }
   else if (write_size > 0)
     {
+      const gchar *content;
+      gsize length;
+
+      content = g_bytes_get_data (data->content, &length);
       data->pos += write_size;
 
-      if (data->pos >= data->length)
+      if (data->pos >= length)
         g_output_stream_close_async (stream, 0,
-                                     data->cancellable,
+                                     g_task_get_cancellable (data->task),
                                      replace_contents_close_callback, data);
       else
         g_output_stream_write_async (stream,
-                                     data->content + data->pos,
-                                     data->length - data->pos,
+                                     content + data->pos,
+                                     length - data->pos,
                                      0,
-                                     data->cancellable,
+                                     g_task_get_cancellable (data->task),
                                      replace_contents_write_callback,
                                      data);
     }
@@ -7036,29 +7292,27 @@ replace_contents_open_callback (GObject      *obj,
   GFileOutputStream *stream;
   ReplaceContentsData *data = user_data;
   GError *error = NULL;
-  GSimpleAsyncResult *res;
 
   stream = g_file_replace_finish (file, open_res, &error);
 
   if (stream)
     {
+      const gchar *content;
+      gsize length;
+
+      content = g_bytes_get_data (data->content, &length);
       g_output_stream_write_async (G_OUTPUT_STREAM (stream),
-                                   data->content + data->pos,
-                                   data->length - data->pos,
+                                   content + data->pos,
+                                   length - data->pos,
                                    0,
-                                   data->cancellable,
+                                   g_task_get_cancellable (data->task),
                                    replace_contents_write_callback,
                                    data);
     }
   else
     {
-      res = g_simple_async_result_new_take_error (G_OBJECT (data->file),
-                                                  data->callback,
-                                                  data->user_data,
-                                                  error);
-      g_simple_async_result_complete (res);
-      replace_contents_data_free (data);
-      g_object_unref (res);
+      g_task_return_error (data->task, error);
+      g_object_unref (data->task);
     }
 }
 
@@ -7067,7 +7321,7 @@ replace_contents_open_callback (GObject      *obj,
  * @file: input #GFile
  * @contents: (element-type guint8) (array length=length): string of contents to replace the file with
  * @length: the length of @contents in bytes
- * @etag: (allow-none): a new <link linkend="gfile-etag">entity tag</link> for the @file, or %NULL
+ * @etag: (allow-none): a new [entity tag][gfile-etag] for the @file, or %NULL
  * @make_backup: %TRUE if a backup should be created
  * @flags: a set of #GFileCreateFlags
  * @cancellable: optional #GCancellable object, %NULL to ignore
@@ -7088,6 +7342,11 @@ replace_contents_open_callback (GObject      *obj,
  *
  * If @make_backup is %TRUE, this function will attempt to
  * make a backup of @file.
+ *
+ * Note that no copy of @content will be made, so it must stay valid
+ * until @callback is called. See g_file_replace_contents_bytes_async()
+ * for a #GBytes version that will automatically hold a reference to the
+ * contents (without copying) for the duration of the call.
  */
 void
 g_file_replace_contents_async  (GFile               *file,
@@ -7100,6 +7359,46 @@ g_file_replace_contents_async  (GFile               *file,
                                 GAsyncReadyCallback  callback,
                                 gpointer             user_data)
 {
+  GBytes *bytes;
+
+  bytes = g_bytes_new_static (contents, length);
+  g_file_replace_contents_bytes_async (file, bytes, etag, make_backup, flags,
+      cancellable, callback, user_data);
+  g_bytes_unref (bytes);
+}
+
+/**
+ * g_file_replace_contents_bytes_async:
+ * @file: input #GFile
+ * @contents: a #GBytes
+ * @etag: (allow-none): a new [entity tag][gfile-etag] for the @file, or %NULL
+ * @make_backup: %TRUE if a backup should be created
+ * @flags: a set of #GFileCreateFlags
+ * @cancellable: optional #GCancellable object, %NULL to ignore
+ * @callback: a #GAsyncReadyCallback to call when the request is satisfied
+ * @user_data: the data to pass to callback function
+ *
+ * Same as g_file_replace_contents_async() but takes a #GBytes input instead.
+ * This function will keep a ref on @contents until the operation is done.
+ * Unlike g_file_replace_contents_async() this allows forgetting about the
+ * content without waiting for the callback.
+ *
+ * When this operation has completed, @callback will be called with
+ * @user_user data, and the operation can be finalized with
+ * g_file_replace_contents_finish().
+ *
+ * Since: 2.40
+ */
+void
+g_file_replace_contents_bytes_async  (GFile               *file,
+                                      GBytes              *contents,
+                                      const char          *etag,
+                                      gboolean             make_backup,
+                                      GFileCreateFlags     flags,
+                                      GCancellable        *cancellable,
+                                      GAsyncReadyCallback  callback,
+                                      gpointer             user_data)
+{
   ReplaceContentsData *data;
 
   g_return_if_fail (G_IS_FILE (file));
@@ -7107,21 +7406,17 @@ g_file_replace_contents_async  (GFile               *file,
 
   data = g_new0 (ReplaceContentsData, 1);
 
-  if (cancellable)
-    data->cancellable = g_object_ref (cancellable);
-  data->callback = callback;
-  data->user_data = user_data;
-  data->content = contents;
-  data->length = length;
-  data->pos = 0;
-  data->file = g_object_ref (file);
+  data->content = g_bytes_ref (contents);
+
+  data->task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (data->task, data, (GDestroyNotify)replace_contents_data_free);
 
   g_file_replace_async (file,
                         etag,
                         make_backup,
                         flags,
                         0,
-                        cancellable,
+                        g_task_get_cancellable (data->task),
                         replace_contents_open_callback,
                         data);
 }
@@ -7130,7 +7425,7 @@ g_file_replace_contents_async  (GFile               *file,
  * g_file_replace_contents_finish:
  * @file: input #GFile
  * @res: a #GAsyncResult
- * @new_etag: (out) (allow-none): a location of a new <link linkend="gfile-etag">entity tag</link>
+ * @new_etag: (out) (allow-none): a location of a new [entity tag][gfile-etag]
  *     for the document. This should be freed with g_free() when it is no
  *     longer needed, or %NULL
  * @error: a #GError, or %NULL
@@ -7147,27 +7442,18 @@ g_file_replace_contents_finish (GFile         *file,
                                 char         **new_etag,
                                 GError       **error)
 {
-  GSimpleAsyncResult *simple;
+  GTask *task;
   ReplaceContentsData *data;
 
   g_return_val_if_fail (G_IS_FILE (file), FALSE);
-  g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (res), FALSE);
+  g_return_val_if_fail (g_task_is_valid (res, file), FALSE);
 
-  simple = G_SIMPLE_ASYNC_RESULT (res);
+  task = G_TASK (res);
 
-  if (g_simple_async_result_propagate_error (simple, error))
+  if (!g_task_propagate_boolean (task, error))
     return FALSE;
 
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_replace_contents_async);
-
-  data = g_simple_async_result_get_op_res_gpointer (simple);
-
-  if (data->error)
-    {
-      g_propagate_error (error, data->error);
-      data->error = NULL;
-      return FALSE;
-    }
+  data = g_task_get_task_data (task);
 
   if (new_etag)
     {
@@ -7176,6 +7462,285 @@ g_file_replace_contents_finish (GFile         *file,
     }
 
   return TRUE;
+}
+
+gboolean
+g_file_real_measure_disk_usage (GFile                         *file,
+                                GFileMeasureFlags              flags,
+                                GCancellable                  *cancellable,
+                                GFileMeasureProgressCallback   progress_callback,
+                                gpointer                       progress_data,
+                                guint64                       *disk_usage,
+                                guint64                       *num_dirs,
+                                guint64                       *num_files,
+                                GError                       **error)
+{
+  g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                       "Operation not supported for the current backend.");
+  return FALSE;
+}
+
+typedef struct
+{
+  GFileMeasureFlags             flags;
+  GFileMeasureProgressCallback  progress_callback;
+  gpointer                      progress_data;
+} MeasureTaskData;
+
+typedef struct
+{
+  guint64 disk_usage;
+  guint64 num_dirs;
+  guint64 num_files;
+} MeasureResult;
+
+typedef struct
+{
+  GFileMeasureProgressCallback callback;
+  gpointer                     user_data;
+  gboolean                     reporting;
+  guint64                      current_size;
+  guint64                      num_dirs;
+  guint64                      num_files;
+} MeasureProgress;
+
+static gboolean
+measure_disk_usage_invoke_progress (gpointer user_data)
+{
+  MeasureProgress *progress = user_data;
+
+  (* progress->callback) (progress->reporting,
+                          progress->current_size, progress->num_dirs, progress->num_files,
+                          progress->user_data);
+
+  return FALSE;
+}
+
+static void
+measure_disk_usage_progress (gboolean reporting,
+                             guint64  current_size,
+                             guint64  num_dirs,
+                             guint64  num_files,
+                             gpointer user_data)
+{
+  MeasureProgress progress;
+  GTask *task = user_data;
+  MeasureTaskData *data;
+
+  data = g_task_get_task_data (task);
+
+  progress.callback = data->progress_callback;
+  progress.user_data = data->progress_data;
+  progress.reporting = reporting;
+  progress.current_size = current_size;
+  progress.num_dirs = num_dirs;
+  progress.num_files = num_files;
+
+  g_main_context_invoke_full (g_task_get_context (task),
+                              g_task_get_priority (task),
+                              measure_disk_usage_invoke_progress,
+                              g_memdup (&progress, sizeof progress),
+                              g_free);
+}
+
+static void
+measure_disk_usage_thread (GTask        *task,
+                           gpointer      source_object,
+                           gpointer      task_data,
+                           GCancellable *cancellable)
+{
+  MeasureTaskData *data = task_data;
+  GError *error = NULL;
+  MeasureResult result = { 0, };
+
+  if (g_file_measure_disk_usage (source_object, data->flags, cancellable,
+                                 data->progress_callback ? measure_disk_usage_progress : NULL, task,
+                                 &result.disk_usage, &result.num_dirs, &result.num_files,
+                                 &error))
+    g_task_return_pointer (task, g_memdup (&result, sizeof result), g_free);
+  else
+    g_task_return_error (task, error);
+}
+
+static void
+g_file_real_measure_disk_usage_async (GFile                        *file,
+                                      GFileMeasureFlags             flags,
+                                      gint                          io_priority,
+                                      GCancellable                 *cancellable,
+                                      GFileMeasureProgressCallback  progress_callback,
+                                      gpointer                      progress_data,
+                                      GAsyncReadyCallback           callback,
+                                      gpointer                      user_data)
+{
+  MeasureTaskData data;
+  GTask *task;
+
+  data.flags = flags;
+  data.progress_callback = progress_callback;
+  data.progress_data = progress_data;
+
+  task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_task_data (task, g_memdup (&data, sizeof data), g_free);
+  g_task_set_priority (task, io_priority);
+
+  g_task_run_in_thread (task, measure_disk_usage_thread);
+  g_object_unref (task);
+}
+
+static gboolean
+g_file_real_measure_disk_usage_finish (GFile         *file,
+                                       GAsyncResult  *result,
+                                       guint64       *disk_usage,
+                                       guint64       *num_dirs,
+                                       guint64       *num_files,
+                                       GError       **error)
+{
+  MeasureResult *measure_result;
+
+  g_return_val_if_fail (g_task_is_valid (result, file), FALSE);
+
+  measure_result = g_task_propagate_pointer (G_TASK (result), error);
+
+  if (measure_result == NULL)
+    return FALSE;
+
+  if (disk_usage)
+    *disk_usage = measure_result->disk_usage;
+
+  if (num_dirs)
+    *num_dirs = measure_result->num_dirs;
+
+  if (num_files)
+    *num_files = measure_result->num_files;
+
+  g_free (measure_result);
+
+  return TRUE;
+}
+
+/**
+ * g_file_measure_disk_usage:
+ * @file: a #GFile
+ * @flags: #GFileMeasureFlags
+ * @cancellable: (allow-none): optional #GCancellable
+ * @progress_callback: (allow-none): a #GFileMeasureProgressCallback
+ * @progress_data: user_data for @progress_callback
+ * @disk_usage: (allow-none) (out): the number of bytes of disk space used
+ * @num_dirs: (allow-none) (out): the number of directories encountered
+ * @num_files: (allow-none) (out): the number of non-directories encountered
+ * @error: (allow-none): %NULL, or a pointer to a %NULL #GError pointer
+ *
+ * Recursively measures the disk usage of @file.
+ *
+ * This is essentially an analog of the 'du' command, but it also
+ * reports the number of directories and non-directory files encountered
+ * (including things like symbolic links).
+ *
+ * By default, errors are only reported against the toplevel file
+ * itself.  Errors found while recursing are silently ignored, unless
+ * %G_FILE_DISK_USAGE_REPORT_ALL_ERRORS is given in @flags.
+ *
+ * The returned size, @disk_usage, is in bytes and should be formatted
+ * with g_format_size() in order to get something reasonable for showing
+ * in a user interface.
+ *
+ * @progress_callback and @progress_data can be given to request
+ * periodic progress updates while scanning.  See the documentation for
+ * #GFileMeasureProgressCallback for information about when and how the
+ * callback will be invoked.
+ *
+ * Returns: %TRUE if successful, with the out parameters set.
+ *          %FALSE otherwise, with @error set.
+ *
+ * Since: 2.38
+ **/
+gboolean
+g_file_measure_disk_usage (GFile                         *file,
+                           GFileMeasureFlags              flags,
+                           GCancellable                  *cancellable,
+                           GFileMeasureProgressCallback   progress_callback,
+                           gpointer                       progress_data,
+                           guint64                       *disk_usage,
+                           guint64                       *num_dirs,
+                           guint64                       *num_files,
+                           GError                       **error)
+{
+  g_return_val_if_fail (G_IS_FILE (file), FALSE);
+  g_return_val_if_fail (cancellable == NULL || G_IS_CANCELLABLE (cancellable), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  return G_FILE_GET_IFACE (file)->measure_disk_usage (file, flags, cancellable,
+                                                      progress_callback, progress_data,
+                                                      disk_usage, num_dirs, num_files,
+                                                      error);
+}
+
+/**
+ * g_file_measure_disk_usage_async:
+ * @file: a #GFile
+ * @flags: #GFileMeasureFlags
+ * @io_priority: the [I/O priority][io-priority] of the request
+ * @cancellable: (allow-none): optional #GCancellable
+ * @progress_callback: (allow-none): a #GFileMeasureProgressCallback
+ * @progress_data: user_data for @progress_callback
+ * @callback: (allow-none): a #GAsyncReadyCallback to call when complete
+ * @user_data: the data to pass to callback function
+ *
+ * Recursively measures the disk usage of @file.
+ *
+ * This is the asynchronous version of g_file_measure_disk_usage().  See
+ * there for more information.
+ *
+ * Since: 2.38
+ **/
+void
+g_file_measure_disk_usage_async (GFile                        *file,
+                                 GFileMeasureFlags             flags,
+                                 gint                          io_priority,
+                                 GCancellable                 *cancellable,
+                                 GFileMeasureProgressCallback  progress_callback,
+                                 gpointer                      progress_data,
+                                 GAsyncReadyCallback           callback,
+                                 gpointer                      user_data)
+{
+  g_return_if_fail (G_IS_FILE (file));
+  g_return_if_fail (cancellable == NULL || G_IS_CANCELLABLE (cancellable));
+
+  G_FILE_GET_IFACE (file)->measure_disk_usage_async (file, flags, io_priority, cancellable,
+                                                     progress_callback, progress_data,
+                                                     callback, user_data);
+}
+
+/**
+ * g_file_measure_disk_usage_finish:
+ * @file: a #GFile
+ * @result: the #GAsyncResult passed to your #GAsyncReadyCallback
+ * @disk_usage: (allow-none) (out): the number of bytes of disk space used
+ * @num_dirs: (allow-none) (out): the number of directories encountered
+ * @num_files: (allow-none) (out): the number of non-directories encountered
+ * @error: (allow-none): %NULL, or a pointer to a %NULL #GError pointer
+ *
+ * Collects the results from an earlier call to
+ * g_file_measure_disk_usage_async().  See g_file_measure_disk_usage() for
+ * more information.
+ *
+ * Returns: %TRUE if successful, with the out parameters set.
+ *          %FALSE otherwise, with @error set.
+ *
+ * Since: 2.38
+ **/
+gboolean
+g_file_measure_disk_usage_finish (GFile         *file,
+                                  GAsyncResult  *result,
+                                  guint64       *disk_usage,
+                                  guint64       *num_dirs,
+                                  guint64       *num_files,
+                                  GError       **error)
+{
+  g_return_val_if_fail (G_IS_FILE (file), FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  return G_FILE_GET_IFACE (file)->measure_disk_usage_finish (file, result, disk_usage, num_dirs, num_files, error);
 }
 
 /**
@@ -7217,12 +7782,10 @@ g_file_start_mountable (GFile               *file,
 
   if (iface->start_mountable == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (file),
-                                           callback,
-                                           user_data,
-                                           G_IO_ERROR,
-                                           G_IO_ERROR_NOT_SUPPORTED,
-                                           _("Operation not supported"));
+      g_task_report_new_error (file, callback, user_data,
+                               g_file_start_mountable,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("Operation not supported"));
       return;
     }
 
@@ -7262,6 +7825,8 @@ g_file_start_mountable_finish (GFile         *file,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_file_start_mountable))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_FILE_GET_IFACE (file);
   return (* iface->start_mountable_finish) (file, result, error);
@@ -7307,12 +7872,10 @@ g_file_stop_mountable (GFile               *file,
 
   if (iface->stop_mountable == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (file),
-                                           callback,
-                                           user_data,
-                                           G_IO_ERROR,
-                                           G_IO_ERROR_NOT_SUPPORTED,
-                                           _("Operation not supported"));
+      g_task_report_new_error (file, callback, user_data,
+                               g_file_stop_mountable,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("Operation not supported"));
       return;
     }
 
@@ -7352,6 +7915,8 @@ g_file_stop_mountable_finish (GFile         *file,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_file_stop_mountable))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_FILE_GET_IFACE (file);
   return (* iface->stop_mountable_finish) (file, result, error);
@@ -7391,12 +7956,10 @@ g_file_poll_mountable (GFile               *file,
 
   if (iface->poll_mountable == NULL)
     {
-      g_simple_async_report_error_in_idle (G_OBJECT (file),
-                                           callback,
-                                           user_data,
-                                           G_IO_ERROR,
-                                           G_IO_ERROR_NOT_SUPPORTED,
-                                           _("Operation not supported"));
+      g_task_report_new_error (file, callback, user_data,
+                               g_file_poll_mountable,
+                               G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                               _("Operation not supported"));
       return;
     }
 
@@ -7434,6 +7997,8 @@ g_file_poll_mountable_finish (GFile         *file,
 
   if (g_async_result_legacy_propagate_error (result, error))
     return FALSE;
+  else if (g_async_result_is_tagged (result, g_file_poll_mountable))
+    return g_task_propagate_boolean (G_TASK (result), error);
 
   iface = G_FILE_GET_IFACE (file);
   return (* iface->poll_mountable_finish) (file, result, error);
@@ -7443,11 +8008,10 @@ g_file_poll_mountable_finish (GFile         *file,
  * g_file_supports_thread_contexts:
  * @file: a #GFile
  *
- * Checks if @file supports <link
- * linkend="g-main-context-push-thread-default-context">thread-default
- * contexts</link>. If this returns %FALSE, you cannot perform
- * asynchronous operations on @file in a thread that has a
- * thread-default context.
+ * Checks if @file supports
+ * [thread-default contexts][g-main-context-push-thread-default-context].
+ * If this returns %FALSE, you cannot perform asynchronous operations on
+ * @file in a thread that has a thread-default context.
  *
  * Returns: Whether or not @file supports thread-default contexts.
  *

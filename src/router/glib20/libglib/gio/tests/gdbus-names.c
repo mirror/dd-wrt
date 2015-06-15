@@ -13,9 +13,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General
- * Public License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Author: David Zeuthen <davidz@redhat.com>
  */
@@ -474,6 +472,9 @@ test_bus_own_name (void)
   g_object_unref (c2);
 
   session_bus_down ();
+
+  /* See https://bugzilla.gnome.org/show_bug.cgi?id=711807 */
+  g_usleep (1000000);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -769,7 +770,6 @@ main (int   argc,
 {
   gint ret;
 
-  g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
   loop = g_main_loop_new (NULL, FALSE);

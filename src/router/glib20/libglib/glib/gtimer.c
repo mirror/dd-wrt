@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -33,9 +31,9 @@
 
 #include <stdlib.h>
 
-#ifdef HAVE_UNISTD_H
+#ifdef G_OS_UNIX
 #include <unistd.h>
-#endif /* HAVE_UNISTD_H */
+#endif /* G_OS_UNIX */
 
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -82,10 +80,11 @@ struct _GTimer
 
 /**
  * g_timer_new:
- * @Returns: a new #GTimer.
  *
  * Creates a new timer, and starts timing (i.e. g_timer_start() is
  * implicitly called for you).
+ *
+ * Returns: a new #GTimer.
  **/
 GTimer*
 g_timer_new (void)
@@ -204,8 +203,6 @@ g_timer_continue (GTimer *timer)
  * @microseconds: return location for the fractional part of seconds
  *                elapsed, in microseconds (that is, the total number
  *                of microseconds elapsed, modulo 1000000), or %NULL
- * @Returns: seconds elapsed as a floating point value, including any
- *           fractional part.
  *
  * If @timer has been started but not stopped, obtains the time since
  * the timer was started. If @timer has been stopped, obtains the
@@ -213,6 +210,9 @@ g_timer_continue (GTimer *timer)
  * stopped. The return value is the number of seconds elapsed,
  * including any fractional part. The @microseconds out parameter is
  * essentially useless.
+ *
+ * Returns: seconds elapsed as a floating point value, including any
+ *          fractional part.
  **/
 gdouble
 g_timer_elapsed (GTimer *timer,
@@ -297,8 +297,8 @@ g_time_val_add (GTimeVal *time_, glong microseconds)
     }
 }
 
-/* converts a broken down date representation, relative to UTC, to
- * a timestamp; it uses timegm() if it's available.
+/* converts a broken down date representation, relative to UTC,
+ * to a timestamp; it uses timegm() if it's available.
  */
 static time_t
 mktime_utc (struct tm *tm)
@@ -344,7 +344,7 @@ mktime_utc (struct tm *tm)
  * zone indicator. (In the absence of any time zone indication, the
  * timestamp is assumed to be in local time.)
  *
- * Return value: %TRUE if the conversion was successful.
+ * Returns: %TRUE if the conversion was successful.
  *
  * Since: 2.12
  */
@@ -358,9 +358,9 @@ g_time_val_from_iso8601 (const gchar *iso_date,
   g_return_val_if_fail (iso_date != NULL, FALSE);
   g_return_val_if_fail (time_ != NULL, FALSE);
 
-  /* Ensure that the first character is a digit,
-   * the first digit of the date, otherwise we don't
-   * have an ISO 8601 date */
+  /* Ensure that the first character is a digit, the first digit
+   * of the date, otherwise we don't have an ISO 8601 date
+   */
   while (g_ascii_isspace (*iso_date))
     iso_date++;
 
@@ -392,12 +392,7 @@ g_time_val_from_iso8601 (const gchar *iso_date,
     }
 
   if (*iso_date != 'T')
-    {
-      /* Date only */
-      if (*iso_date == '\0')
-        return TRUE;
-      return FALSE;
-    }
+    return FALSE;
 
   iso_date++;
 
@@ -487,16 +482,16 @@ g_time_val_from_iso8601 (const gchar *iso_date,
  * "YYYY-MM-DDTHH:MM:SSZ" or "YYYY-MM-DDTHH:MM:SS.fffffZ".
  *
  * This corresponds to the Internet date/time format defined by
- * <ulink url="https://www.ietf.org/rfc/rfc3339.txt">RFC 3339</ulink>, and
- * to either of the two most-precise formats defined by
- * <ulink url="http://www.w3.org/TR/NOTE-datetime-19980827">the W3C Note
- * "Date and Time Formats"</ulink>. Both of these documents are profiles of
- * ISO 8601.
+ * [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt),
+ * and to either of the two most-precise formats defined by
+ * the W3C Note
+ * [Date and Time Formats](http://www.w3.org/TR/NOTE-datetime-19980827).
+ * Both of these documents are profiles of ISO 8601.
  *
  * Use g_date_time_format() or g_strdup_printf() if a different
  * variation of ISO 8601 format is required.
  *
- * Return value: a newly allocated string containing an ISO 8601 date
+ * Returns: a newly allocated string containing an ISO 8601 date
  *
  * Since: 2.12
  */

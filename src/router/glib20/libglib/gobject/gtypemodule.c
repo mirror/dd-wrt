@@ -12,9 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -28,30 +26,20 @@
 /**
  * SECTION:gtypemodule
  * @short_description: Type loading modules
- * @see_also:<variablelist>
- * <varlistentry>
- * <term>#GTypePlugin</term>
- * <listitem><para>The abstract type loader interface.</para></listitem>
- * </varlistentry>
- * <varlistentry>
- * <term>#GModule</term>
- * <listitem><para>Portable mechanism for dynamically loaded modules.</para></listitem>
- * </varlistentry>
- * </variablelist>
+ * @see_also: #GTypePlugin, #GModule
  * @title: GTypeModule
  *
  * #GTypeModule provides a simple implementation of the #GTypePlugin
  * interface. The model of #GTypeModule is a dynamically loaded module
- * which implements some number of types and interface
- * implementations. When the module is loaded, it registers its types
- * and interfaces using g_type_module_register_type() and
- * g_type_module_add_interface().  As long as any instances of these
- * types and interface implementations are in use, the module is kept
- * loaded. When the types and interfaces are gone, the module may be
- * unloaded. If the types and interfaces become used again, the module
- * will be reloaded. Note that the last unref cannot happen in module
- * code, since that would lead to the caller's code being unloaded before
- * g_object_unref() returns to it.
+ * which implements some number of types and interface implementations.
+ * When the module is loaded, it registers its types and interfaces
+ * using g_type_module_register_type() and g_type_module_add_interface().
+ * As long as any instances of these types and interface implementations
+ * are in use, the module is kept loaded. When the types and interfaces
+ * are gone, the module may be unloaded. If the types and interfaces
+ * become used again, the module will be reloaded. Note that the last
+ * unref cannot happen in module code, since that would lead to the
+ * caller's code being unloaded before g_object_unref() returns to it.
  *
  * Keeping track of whether the module should be loaded or not is done by
  * using a use count - it starts at zero, and whenever it is greater than
