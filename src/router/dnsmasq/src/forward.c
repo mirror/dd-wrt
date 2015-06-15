@@ -851,7 +851,7 @@ void reply_query(int fd, int family, time_t now)
 		   Avoid caching a reply with sigs if there's a vaildated break in the 
 		   DS chain, so we don't return replies from cache missing sigs. */
 		status = STAT_INSECURE_DS;
-	      else if (status == STAT_NO_NS)
+	      else if (status == STAT_NO_NS || status == STAT_NO_SIG)
 		status = STAT_BOGUS;
 	    }
 	  else if (forward->flags & FREC_CHECK_NOSIGN)
@@ -997,7 +997,7 @@ void reply_query(int fd, int family, time_t now)
 			   Avoid caching a reply with sigs if there's a vaildated break in the 
 			   DS chain, so we don't return replies from cache missing sigs. */
 			status = STAT_INSECURE_DS;
-		      else if (status == STAT_NO_NS)
+		      else if (status == STAT_NO_NS || status == STAT_NO_SIG)
 			status = STAT_BOGUS; 
 		    }
 		  else if (forward->flags & FREC_CHECK_NOSIGN)
@@ -1456,6 +1456,21 @@ static int do_check_sign(struct frec *forward, int status, time_t now, char *nam
       if (status == STAT_BOGUS)
 	return STAT_BOGUS;
 
+      if (status == STAT_NO_SIG && *keyname != 0)
+	{
+	  /* There is a validated CNAME chain that doesn't end in a DS record. Start 
+	     the search again in that domain. */
+	  blockdata_free(forward->orig_domain);
+	  forward->name_start = strlen(keyname);
+	  forward->name_len = forward->name_start + 1;
+	  if (!(forward->orig_domain = blockdata_alloc(keyname, forward->name_len)))
+	    return STAT_BOGUS;
+	  
+	  strcpy(name, keyname);
+	  status = 0; /* force to cache when we iterate. */
+	  continue;
+	}
+      
       /* There's a proven DS record, or we're within a zone, where there doesn't need
 	 to be a DS record. Add a name and try again. 
 	 If we've already tried the whole name, then fail */
@@ -1572,6 +1587,21 @@ static int  tcp_check_for_unsigned_zone(time_t now, struct dns_header *header, s
 	      return STAT_INSECURE;
 	    }
 	  
+	  if (status == STAT_NO_SIG && *keyname != 0)
+	    {
+	      /* There is a validated CNAME chain that doesn't end in a DS record. Start 
+		 the search again in that domain. */
+	      blockdata_free(block);
+	      name_len = strlen(keyname) + 1;
+	      name_start = name + name_len - 1;
+	      
+	      if (!(block = blockdata_alloc(keyname, name_len)))
+		return STAT_BOGUS;
+	      
+	      strcpy(name, keyname);
+	      continue;
+	    }
+	  
 	  if (status == STAT_BOGUS)
 	    {
 	      free(packet);
@@ -1627,7 +1657,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 	{
 	  if (new_status == STAT_NO_DS)
 	    new_status = STAT_INSECURE_DS;
-	  else if (new_status == STAT_NO_NS)
+	  else if (new_status == STAT_NO_NS || new_status == STAT_NO_SIG)
 	    new_status = STAT_BOGUS;
 	}
     }
@@ -1692,7 +1722,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 		    {
 		      if (new_status == STAT_NO_DS)
 			new_status = STAT_INSECURE_DS;
-		      else if (new_status == STAT_NO_NS)
+		      else if (new_status == STAT_NO_NS || new_status == STAT_NO_SIG)
 			new_status = STAT_BOGUS; /* Validated no DS */
 		    }
 		}
