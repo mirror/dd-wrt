@@ -23,71 +23,6 @@
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 
-#ifdef MODULE
-
-#define early_nvram_get(name) nvram_get(name)
-
-#else /* !MODULE */
-
-/* Convenience */
-#define KB * 1024
-#define MB * 1024 * 1024
-
-/* Probe for NVRAM header */
-static void __init
-early_nvram_init(void)
-{
-	struct nvram_header *header;
-	uint32 off, lim;
-	int i;
-
-	off = 0x0100000;	/* 1MB */
-	lim = 0x1000000;	/* 16MB */
-
-	while (off <= lim) {
-		/* windowed flash access */
-		header = (struct nvram_header *) (0xbe000000 + off - NVRAM_SPACE);
-		if (header->magic == NVRAM_MAGIC && header->len > 0 && header->len <= NVRAM_SPACE) {
-			u32 *src = (u32 *) header;
-			u32 *dst = (u32 *) nvram_buf;
-			for (i = 0; i < sizeof(struct nvram_header); i += 4)
-				*dst++ = *src++;
-			for (; i < header->len && i < NVRAM_SPACE; i += 4)
-				*dst++ = ltoh32(*src++);
-			return;
-		}
-		off <<= 1;
-	}	
-}
-
-/* Early (before mm or mtd) read-only access to NVRAM */
-static char * __init
-early_nvram_get(const char *name)
-{
-	char *var, *value, *end, *eq;
-
-	if (!name)
-		return NULL;
-
-	if (!nvram_buf[0])
-		early_nvram_init();
-
-	/* Look for name=value and return value */
-	var = &nvram_buf[sizeof(struct nvram_header)];
-	end = nvram_buf + sizeof(nvram_buf) - 2;
-	end[0] = end[1] = '\0';
-	for (; *var; var = value + strlen(value) + 1) {
-		if (!(eq = strchr(var, '=')))
-			break;
-		value = eq + 1;
-		if ((eq - var) == strlen(name) && strncmp(var, name, (eq - var)) == 0)
-			return value;
-	}
-
-	return NULL;
-}
-
-#endif /* !MODULE */
 
 extern char * _nvram_get(const char *name);
 extern int _nvram_set(const char *name, const char *value);
@@ -108,30 +43,9 @@ static struct mtd_info *nvram_mtd = NULL;
 int
 _nvram_read(char *buf)
 {
-	struct nvram_header *header = (struct nvram_header *) buf;
-	struct nvram_header *header2 = (struct nvram_header *) buf+0x10000;
 	size_t len;
-//	ret = master->read(master, offset,
-//			   master->erasesize, &retlen, (void *)buf);
-
-	if (!nvram_mtd || mtd_read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
-	    len != NVRAM_SPACE ||
-	    header->magic != NVRAM_MAGIC) {
-	    if (header2->magic==NVRAM_MAGIC)
-		{
-	        printk(KERN_EMERG "Found old NVRAM, converting\n");
-		memcpy(buf, header2, 0x10000); // move down
-		}else{
-	        printk(KERN_EMERG "Broken NVRAM found, recovering it (Magic %X)\n",header->magic);
-		/* Maybe we can recover some data from early initialization */
-		memcpy(buf, nvram_buf, NVRAM_SPACE);
-		memset(buf,0,NVRAM_SPACE);
-		header->magic = NVRAM_MAGIC;
-		header->len = 0;
-		}
-
-	}
-
+	if (nvram_mtd)
+		mtd_read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf);
 	return 0;
 }
 
@@ -211,7 +125,7 @@ nvram_get(const char *name)
 	if (nvram_major >= 0)
 		return real_nvram_get(name);
 	else
-		return early_nvram_get(name);
+		return NULL;
 }
 
 int
@@ -363,12 +277,12 @@ EXPORT_SYMBOL(nvram_commit);
 static ssize_t
 dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
-	char tmp[128], *name = tmp, *value;
+	char tmp[100], *name = tmp, *value;
 	ssize_t ret;
 	unsigned long off;
 
-	if (count > sizeof(tmp)) {
-		if (!(name = kmalloc(count,GFP_ATOMIC)))
+	if ((count+1) > sizeof(tmp)) {
+		if (!(name = kmalloc(count+1,GFP_ATOMIC)))
 			return -ENOMEM;
 	}
 
@@ -376,6 +290,7 @@ dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 		ret = -EFAULT;
 		goto done;
 	}
+	name[count] = '\0';
 
 	if (*name == '\0') {
 		/* Get all variables */
@@ -396,16 +311,14 @@ dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 		/* Provide the offset into mmap() space */
 		off = (unsigned long) value - (unsigned long) nvram_buf;
 
-		if (put_user(off, (unsigned long *) buf)) {
+		if (copy_to_user(buf, &off, ret = sizeof(off))) {
 			ret = -EFAULT;
 			goto done;
 		}
-
-		ret = sizeof(unsigned long);
 	}
-
-//	flush_cache_all();	
- 
+#ifdef	_DEPRECATED
+	flush_cache_all();
+#endif
 done:
 	if (name != tmp)
 		kfree(name);
@@ -413,14 +326,15 @@ done:
 	return ret;
 }
 
+
 static ssize_t
 dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 {
-	char tmp[128], *name = tmp, *value;
+	char tmp[100], *name = tmp, *value;
 	ssize_t ret;
 
 	if (count >= sizeof(tmp)) {
-		if (!(name = kmalloc(count + 1,GFP_ATOMIC)))
+		if (!(name = kmalloc(count+1,GFP_ATOMIC)))
 			return -ENOMEM;
 	}
 
@@ -428,20 +342,22 @@ dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 		ret = -EFAULT;
 		goto done;
 	}
-
+	name[ count ] = '\0';
 	value = name;
 	name = strsep(&value, "=");
 	if (value)
-		ret = nvram_set(name, value) ? : count;
+		ret = nvram_set(name, value) ;
 	else
-		ret = nvram_unset(name) ? : count;
+		ret = nvram_unset(name) ;
 
- done:
+	if( 0 == ret )
+		ret = count;
+done:
 	if (name != tmp)
 		kfree(name);
 
 	return ret;
-}	
+}
 
 static long
 dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
