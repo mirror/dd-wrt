@@ -1031,7 +1031,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			// fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
 			// fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
 			char local_ip[32];
-			sprintf(local_ip, "%s_local_ip", ifname);
+			sprintf(local_ip, "%s_local_ip", prefix);
 			char *lip = nvram_default_get(local_ip, "0.0.0.0");
 			if (strcmp(lip, "0.0.0.0")) {
 				fprintf(fp, "radius_client_addr=%s\n", lip);
