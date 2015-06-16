@@ -894,9 +894,9 @@ typedef struct ndpi_flow_struct {
   struct ndpi_flow_struct *flow;
   struct ndpi_id_struct *src;
   struct ndpi_id_struct *dst;
-  u8 detection_completed;
+  u_int8_t detection_completed;
   /* result only, not used for flow identification */
-  u32 detected_protocol;
+  u_int32_t detected_protocol;
 } ndpi_flow_struct_t;
 
 typedef enum {
