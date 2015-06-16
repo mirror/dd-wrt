@@ -1030,15 +1030,25 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			fprintf(fp, "ieee8021x=1\n");
 			// fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
 			// fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
-			if (nvram_match("wan_proto", "disabled"))
-				fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
-			else {
-				char *wip = get_wan_ipaddr();
-				if (strlen(wip))
-					fprintf(fp, "own_ip_addr=%s\n", wip);
-				else
+			char local_ip[32];
+			sprintf(local_ip, "%s_local_ip", ifname);
+			char *lip = nvram_default_get(local_ip, "0.0.0.0");
+			if (strcmp(lip, "0.0.0.0")) {
+				fprintf(fp, "radius_client_addr=%s\n", lip);
+				fprintf(fp, "own_ip_addr=%s\n", lip);
+			} else {
+				if (nvram_match("wan_proto", "disabled"))
 					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+				else {
+					char *wip = get_wan_ipaddr();
+					if (strlen(wip))
+						fprintf(fp, "own_ip_addr=%s\n", wip);
+					else
+						fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+				}
+
 			}
+
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			char retry[32];
