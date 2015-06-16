@@ -741,7 +741,7 @@ int __init ar7240_platform_init(void)
 #endif
 	enable_uart();
 #ifdef CONFIG_MACH_HORNET
-#ifdef defined(CONFIG_WR710) || defined(CONFIG_ERC)
+#if defined(CONFIG_WR710) || defined(CONFIG_ERC)
        ath79_setup_ar933x_phy4_switch(false, false);
 #else
        ath79_setup_ar933x_phy4_switch(true, true);
