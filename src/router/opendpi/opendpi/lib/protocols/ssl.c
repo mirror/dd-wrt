@@ -24,7 +24,7 @@
 
 #include "ndpi_api.h"
 
-// #define CERTIFICATE_DEBUG 1
+/* #define CERTIFICATE_DEBUG 1 */
 
 #ifdef NDPI_PROTOCOL_SSL
 
@@ -134,6 +134,14 @@ static void stripCertificateTrailer(char *buffer, int buffer_len)
 static int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, char *buffer, int buffer_len)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
+
+#ifdef CERTIFICATE_DEBUG
+	{
+		static u_int8_t id = 0;
+
+		printf("-> [%u] %02X\n", ++id, packet->payload[0] & 0xFF);
+	}
+#endif
 
 	/*
 	   Nothing matched so far: let's decode the certificate with some heuristics
@@ -285,36 +293,39 @@ static int sslDetectProtocolFromCertificate(struct ndpi_detection_module_struct 
 	if (!packet->iph /* IPv4 */ )
 		return (-1);
 
-	if ((packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN)
-	    || (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_SSL)) {
-		char certificate[64];
-		int rc;
+	if ((packet->payload_packet_len > 9)
+	    && (packet->payload[0] == 0x16 /* consider only specific SSL packets (handshake) */ )) {
+		if ((packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN)
+		    || (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_SSL)) {
+			char certificate[64];
+			int rc;
 
-		certificate[0] = '\0';
-		rc = getSSLcertificate(ndpi_struct, flow, certificate, sizeof(certificate));
-		packet->ssl_certificate_num_checks++;
+			certificate[0] = '\0';
+			rc = getSSLcertificate(ndpi_struct, flow, certificate, sizeof(certificate));
+			packet->ssl_certificate_num_checks++;
 
-		if (rc > 0) {
-			packet->ssl_certificate_detected++;
+			if (rc > 0) {
+				packet->ssl_certificate_detected++;
 #ifdef CERTIFICATE_DEBUG
-			printf("***** [SSL] %s\n", certificate);
+				printf("***** [SSL] %s\n", certificate);
 #endif
 
-			if (ndpi_match_string_subprotocol(ndpi_struct, flow, certificate, strlen(certificate)) != NDPI_PROTOCOL_UNKNOWN)
-				return (rc);	/* Fix courtesy of Gianluca Costa <g.costa@xplico.org> */
+				if (ndpi_match_string_subprotocol(ndpi_struct, flow, certificate, strlen(certificate)) != NDPI_PROTOCOL_UNKNOWN)
+					return (rc);	/* Fix courtesy of Gianluca Costa <g.costa@xplico.org> */
 
 #ifdef NDPI_PROTOCOL_TOR
-			if (ndpi_is_ssl_tor(ndpi_struct, flow, certificate) != 0)
-				return (rc);
+				if (ndpi_is_ssl_tor(ndpi_struct, flow, certificate) != 0)
+					return (rc);
 #endif
-		}
+			}
 
-		if (((packet->ssl_certificate_num_checks >= 2)
-		     && flow->l4.tcp.seen_syn && flow->l4.tcp.seen_syn_ack && flow->l4.tcp.seen_ack /* We have seen the 3-way handshake */ )
-		    || (flow->protos.ssl.server_certificate[0] != '\0')
-		    || (flow->protos.ssl.client_certificate[0] != '\0')
-		    )
-			ndpi_int_ssl_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SSL);
+			if (((packet->ssl_certificate_num_checks >= 2)
+			     && flow->l4.tcp.seen_syn && flow->l4.tcp.seen_syn_ack && flow->l4.tcp.seen_ack /* We have seen the 3-way handshake */ )
+			    || (flow->protos.ssl.server_certificate[0] != '\0')
+			    || (flow->protos.ssl.client_certificate[0] != '\0')
+			    )
+				ndpi_int_ssl_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SSL);
+		}
 	}
 
 	return (0);
@@ -494,14 +505,11 @@ static u_int8_t ndpi_search_sslv3_direction1(struct ndpi_detection_module_struct
 						return 1;
 					}
 				}
-
 			}
-
 		}
-
 	}
-	return 0;
 
+	return 0;
 }
 
 static void ndpi_search_ssl_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
