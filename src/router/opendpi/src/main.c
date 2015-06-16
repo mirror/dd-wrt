@@ -473,6 +473,13 @@ ndpi_enable_protocols (struct ndpi_net *n, const struct xt_ndpi_mtinfo *info)
                 if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) {
                         spin_lock_bh (&n->ipq_lock);
 			__module_get(THIS_MODULE);
+
+			//Force http (7) or ssl (91) detection for webserver host requests
+                        if ((i > 118 && i < 127) || (i > 139 && i < 146) || (i > 175 && i < 182 ) || i == 70 || i == 133) {
+                           NDPI_ADD_PROTOCOL_TO_BITMASK(n->protocols_bitmask, 7);
+                           NDPI_ADD_PROTOCOL_TO_BITMASK(n->protocols_bitmask, 91);
+                        }
+
                         if(atomic_inc_return(&n->protocols_cnt[i]) == 1) {
 				NDPI_ADD_PROTOCOL_TO_BITMASK(n->protocols_bitmask, i);
 				ndpi_set_protocol_detection_bitmask2
@@ -533,7 +540,12 @@ ndpi_process_packet(struct ndpi_net *n, struct nf_conn * ct, struct nf_ct_ext_nd
 	if (!flow) {
 		flow = ndpi_alloc_flow(ct_ndpi);
 		if (!flow) return proto;
+                else flow->detection_completed = 0;
 	}
+
+        if (flow->detection_completed && (flow->detected_protocol != NDPI_PROTOCOL_UNKNOWN)) {
+                return flow->detected_protocol;
+        }
 
 	src = ct_ndpi->src;
 	if (!src) {
@@ -563,10 +575,14 @@ ndpi_process_packet(struct ndpi_net *n, struct nf_conn * ct, struct nf_ct_ext_nd
 					 skb->len, time,
 					  src, dst, dir);
 
+        flow->detection_completed = 0;
 	if(proto) {
 		add_stat(flow->packet.parsed_lines);
-
-		return proto <= NDPI_LAST_IMPLEMENTED_PROTOCOL ? proto : NDPI_PROTOCOL_UNKNOWN;
+		if (proto <= NDPI_LAST_IMPLEMENTED_PROTOCOL) {
+			flow->detection_completed = 1;
+		}else proto = NDPI_PROTOCOL_UNKNOWN;
+    		flow->detected_protocol = proto;
+		return proto;
 	}
 	if(iph->version != 4) {
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
@@ -594,8 +610,12 @@ ndpi_process_packet(struct ndpi_net *n, struct nf_conn * ct, struct nf_ct_ext_nd
 	}
 	proto = ndpi_guess_undetected_protocol (
 			n->ndpi_struct,protocol,low_ip,low_port,up_ip,up_port);
+        flow->detected_protocol = proto;
 	if(proto && proto > NDPI_LAST_IMPLEMENTED_PROTOCOL)
 		proto = NDPI_PROTOCOL_UNKNOWN;
+	else 
+		flow->detection_completed = 1;
+
 	return proto;
 }
 static inline int can_handle(const struct sk_buff *skb,u8 *l4_proto)
