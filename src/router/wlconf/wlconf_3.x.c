@@ -1266,6 +1266,128 @@ static void wlconf_set_txbf_timer(char *name, char *prefix)
 	}
 }
 
+static int
+wlconf_del_brcm_syscap_ie(char *name, int bsscfg_idx, char *oui)
+{
+	int iebuf_len = 0;
+	vndr_ie_setbuf_t *ie_setbuf = NULL;
+	int iecount, i;
+
+	char getbuf[2048] = {0};
+	vndr_ie_buf_t *iebuf;
+	vndr_ie_info_t *ieinfo;
+	char *bufaddr;
+	int buflen = 0;
+	int found = 0;
+	uint32 pktflag;
+	uint32 frametype;
+	int ret = 0;
+
+	frametype = VNDR_IE_BEACON_FLAG;
+
+	WL_BSSIOVAR_GET(name, "vndr_ie", bsscfg_idx, getbuf, 2048);
+	iebuf = (vndr_ie_buf_t *)getbuf;
+
+	bufaddr = (char*)iebuf->vndr_ie_list;
+
+	for (i = 0; i < iebuf->iecount; i++) {
+		ieinfo = (vndr_ie_info_t *)bufaddr;
+		bcopy((char*)&ieinfo->pktflag, (char*)&pktflag, (int)sizeof(uint32));
+		if (pktflag == frametype) {
+			if (!memcmp(ieinfo->vndr_ie_data.oui, oui, DOT11_OUI_LEN)) {
+				found = 1;
+				bufaddr = (char*) &ieinfo->vndr_ie_data;
+				buflen = (int)ieinfo->vndr_ie_data.len + VNDR_IE_HDR_LEN;
+				break;
+			}
+		}
+		bufaddr = (char *)(ieinfo->vndr_ie_data.oui + ieinfo->vndr_ie_data.len);
+	}
+
+	if (!found)
+		goto err;
+
+	iebuf_len = buflen + sizeof(vndr_ie_setbuf_t) - sizeof(vndr_ie_t);
+	ie_setbuf = (vndr_ie_setbuf_t *)malloc(iebuf_len);
+	if (!ie_setbuf) {
+		WLCONF_DBG("memory alloc failure\n");
+		ret = -1;
+		goto err;
+	}
+
+	memset(ie_setbuf, 0, iebuf_len);
+
+	/* Copy the vndr_ie SET command ("add"/"del") to the buffer */
+	strcpy(ie_setbuf->cmd, "del");
+
+	/* Buffer contains only 1 IE */
+	iecount = 1;
+	memcpy(&ie_setbuf->vndr_ie_buffer.iecount, &iecount, sizeof(int));
+
+	memcpy(&ie_setbuf->vndr_ie_buffer.vndr_ie_list[0].pktflag, &frametype, sizeof(uint32));
+
+	memcpy(&ie_setbuf->vndr_ie_buffer.vndr_ie_list[0].vndr_ie_data, bufaddr, buflen);
+
+	WL_BSSIOVAR_SET(name, "vndr_ie", bsscfg_idx, ie_setbuf, iebuf_len);
+
+err:
+	if (ie_setbuf)
+		free(ie_setbuf);
+
+	return ret;
+}
+
+static int
+wlconf_set_brcm_syscap_ie(char *name, int bsscfg_idx, char *oui, uchar *data, int datalen)
+{
+	vndr_ie_setbuf_t *ie_setbuf = NULL;
+	unsigned int pktflag;
+	int buflen, iecount;
+	int ret = 0;
+
+	pktflag = VNDR_IE_BEACON_FLAG;
+
+	buflen = sizeof(vndr_ie_setbuf_t) + datalen - 1;
+	ie_setbuf = (vndr_ie_setbuf_t *)malloc(buflen);
+	if (!ie_setbuf) {
+		WLCONF_DBG("memory alloc failure\n");
+		ret = -1;
+		goto err;
+	}
+
+	memset(ie_setbuf, 0, buflen);
+
+	/* Copy the vndr_ie SET command ("add"/"del") to the buffer */
+	strcpy(ie_setbuf->cmd, "add");
+
+	/* Buffer contains only 1 IE */
+	iecount = 1;
+	memcpy(&ie_setbuf->vndr_ie_buffer.iecount, &iecount, sizeof(int));
+
+	/* The packet flag bit field indicates the packets that will contain this IE */
+	memcpy(&ie_setbuf->vndr_ie_buffer.vndr_ie_list[0].pktflag, &pktflag, sizeof(uint32));
+
+	/* Now, add the IE to the buffer, +1: one byte OUI_TYPE */
+	ie_setbuf->vndr_ie_buffer.vndr_ie_list[0].vndr_ie_data.len = DOT11_OUI_LEN + datalen;
+
+	memcpy(&ie_setbuf->vndr_ie_buffer.vndr_ie_list[0].vndr_ie_data.oui[0], oui, DOT11_OUI_LEN);
+	if (datalen > 0)
+		memcpy(&ie_setbuf->vndr_ie_buffer.vndr_ie_list[0].vndr_ie_data.data[0], data,
+		       datalen);
+
+	ret = wlconf_del_brcm_syscap_ie(name, bsscfg_idx, oui);
+	if (ret)
+		goto err;
+
+	WL_BSSIOVAR_SET(name, "vndr_ie", (int)bsscfg_idx, ie_setbuf, buflen);
+
+err:
+	if (ie_setbuf)
+		free(ie_setbuf);
+
+	return (ret);
+}
+
 
 #define VIFNAME_LEN 16
 
@@ -1418,6 +1540,8 @@ wlconf(char *name)
 	bool ure_enab = FALSE;
 	bool radar_enab = FALSE;
 	bool obss_coex = FALSE;
+	int wet_tunnel_cap = 0, wet_tunnel_enable = 0;
+	brcm_prop_ie_t brcm_syscap_ie;
 	int is_dhd = 0;
 
 	/* wlconf doesn't work for virtual i/f, so if we are given a
@@ -1461,7 +1585,8 @@ cprintf("wl probe\n");
 
 	/* Bring up the interface temporarily before issuing iovars. */
 	/* This will ensure all the cores are fully initialized */
-	WL_IOCTL(name, WLC_UP, NULL, 0);
+	if (is_dhd)
+		WL_IOCTL(name, WLC_UP, NULL, 0);
 
 
 
@@ -1499,6 +1624,8 @@ cprintf("get caps\n");
 			rxchain_pwrsave = 1;
 		else if (!strcmp(cap, "radio_pwrsave"))
 			radio_pwrsave = 1;
+		else if (!strcmp(cap, "wet_tunnel"))
+			wet_tunnel_cap = 1;
 	}
 cprintf("get wl addr\n");
 	/* Get MAC address */
@@ -1616,9 +1743,11 @@ cprintf("disable bss %s\n",name);
 		}
 	}
 
+	fprintf(stderr,"base addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 	if (!ure_enab) {
 		/* set local bit for our MBSS vif base */
 		ETHER_SET_LOCALADDR(vif_addr);
+		fprintf(stderr,"local bit addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 
 		/* construct and set other wlX.Y_hwaddr */
 		for (i = 1; i < bclist->count; i++) {
@@ -1627,7 +1756,7 @@ cprintf("disable bss %s\n",name);
 			if (!strcmp(addr, "")) {
 				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1))
 				        | ((max_no_vifs-1) & (vif_addr[5]+1));
-
+				fprintf(stderr,"set new addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 				nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
 			}
 		}
@@ -1725,6 +1854,15 @@ cprintf("set maxassoc flag %s\n",name);
 	}
 cprintf("set bsscfg %s\n",name);
 //fprintf(stderr, "set bsscfg %s\n",name);
+	/* Turn WET tunnel mode ON or OFF */
+	if ((ap || apsta) && (wet_tunnel_cap)) {
+		if (atoi(nvram_safe_get(strcat_r(prefix, "wet_tunnel", tmp))) == 1) {
+			WL_IOVAR_SETINT(name, "wet_tunnel", 1);
+			wet_tunnel_enable = 1;
+		} else {
+			WL_IOVAR_SETINT(name, "wet_tunnel", 0);
+		}
+	}
 
 	for (i = 0; i < bclist->count; i++) {
 		char *subprefix;
@@ -1750,6 +1888,15 @@ cprintf("set bsscfg %s\n",name);
 			wlconf_set_preauth(name, bsscfg->idx, set_preauth);
 		}
 #endif /* BCMWPA2 */
+		/* Clear BRCM System level Capability IE */
+		memset(&brcm_syscap_ie, 0, sizeof(brcm_prop_ie_t));
+		brcm_syscap_ie.type = BRCM_SYSCAP_IE_TYPE;
+
+		/* Add WET TUNNEL to IE */
+		if (wet_tunnel_enable) {
+			brcm_syscap_ie.cap |= BRCM_SYSCAP_WET_TUNNEL;
+			fprintf(stderr,"enable wet tunnel\n");
+		}
 
 		subprefix = apsta ? prefix : bsscfg->prefix;
 
@@ -1862,6 +2009,17 @@ cprintf("set radio pwrsave %s\n",name);
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_stas_assoc_check", bsscfg->idx,
 			val);
 	}
+
+		val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix, "aspm", tmp)));
+		WL_BSSIOVAR_SETINT(name, "aspm", bsscfg->idx, val);
+
+		/* Configure SYSCAP IE to driver */
+		if (brcm_syscap_ie.cap)  {
+			wlconf_set_brcm_syscap_ie(name, bsscfg->idx,
+				BRCM_PROP_OUI, (uchar *)&(brcm_syscap_ie.type),
+				sizeof(brcm_syscap_ie.type) +
+				sizeof(brcm_syscap_ie.cap));
+		}
 
 }
 cprintf("get phy type %s\n",name);
@@ -2916,7 +3074,6 @@ cprintf("set enable bss %s\n",name);
 	 * STA: Join the BSS regardless.
 	 */
 	for (i = 0; i < bclist->count; i++) {
-	cprintf("enable bss %s %d\n",name,i);
 
 		struct {int bsscfg_idx; int enable;} setbuf;
 
@@ -2924,11 +3081,14 @@ cprintf("set enable bss %s\n",name);
 		setbuf.enable = 1;
 
 		/* NAS runs if we have an AKM or radius authentication */
-		nas_will_run = 0;//wlconf_akm_options(bclist->bsscfgs[i].prefix) ||
-//		        nvram_default_match(strcat_r(bclist->bsscfgs[i].prefix, "auth_mode", tmp),
-//		                    "radius","disabled");
+		nas_will_run = wlconf_akm_options(bclist->bsscfgs[i].prefix) ||
+		        nvram_default_match(strcat_r(bclist->bsscfgs[i].prefix, "auth_mode", tmp),
+		                    "radius","disabled");
 
-		if (((ap || apsta) && !nas_will_run) || sta || wet) {
+	fprintf(stderr,"enable bss %s %d (%d)\n",name,i,nas_will_run);
+		
+		if (((ap || apsta) && !nas_will_run) || sta || (wet && !apsta)) {
+		
 			for (ii = 0; ii < MAX_BSS_UP_RETRIES; ii++) {
 				if (wl_ap_build) {
 #ifdef __CONFIG_DHDAP__
