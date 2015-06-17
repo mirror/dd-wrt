@@ -1927,6 +1927,8 @@ static char *scanfile(char *buf, const char *tran)
 			}
 			if (count == 255)
 				temp = realloc(temp, 512);
+			if (count == 511)
+				temp = realloc(temp, 1024);
 			temp[count++] = val;
 			switch (val) {
 			case '\r':
@@ -2017,7 +2019,8 @@ static void clear_translationcache(void)
 
 char *live_translate(const char *tran)
 {
-//	fprintf(stderr,"enter translation\n");
+	if (!tran || strlen(tran) == 0)
+		return "Error";
 	if (!cur_language) {
 		cur_language = nvram_safe_get("language");
 	} else {
@@ -2078,7 +2081,7 @@ char *live_translate(const char *tran)
 		entry->translation = ret;
 	else
 		entry->translation = strdup("Error");
-//	fprintf(stderr,"leave translation\n");
+//	fprintf(stderr,"leave translation \"%s\":\"%s\"\n",entry->request,entry->translation);
 	return entry->translation;
 }
 
