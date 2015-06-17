@@ -641,10 +641,22 @@ int wlconf_up(char *name)
 	char *next;
 	char var[80];
 	char *vifs = nvram_nget("%s_vifs", ifinst);
-	if (vifs != NULL)
+	if (vifs != NULL) {
 		foreach(var, vifs, next) {
-		eval("ifconfig", var, "up");
+			eval("ifconfig", var, "up");
 		}
+		if (nvram_nmatch("apstawet", "wl%d_mode", instance)) {
+			foreach(var, vifs, next) {
+				eval("wl", "-i", var, "down");
+				eval("wl", "-i", var, "apsta", "0");
+				eval("wl", "-i", var, "up");
+			}
+			eval("wl", "-i", name, "down");
+			eval("wl", "-i", name, "apsta", "1");
+			eval("wl", "-i", name, "wet", "1");
+			eval("wl", "-i", name, "up");
+		}
+	}
 #endif
 	eval("ifconfig", name, "up");
 	return ret;
