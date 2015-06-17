@@ -28,7 +28,7 @@ void remove_oldest_entry(int cur_month, int cur_year)
 			if (month == cur_month && year == cur_year) {
 				return;
 			}
-			sprintf(old, "traff-%02u-%u", month, year);
+			snprintf(old, sizeof(old), "traff-%02u-%u", month, year);
 			len = strlen(nvram_safe_get(old));
 			if (len > 0) {
 				dd_syslog(LOG_DEBUG, "ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n", month, year, len + 15);
@@ -39,6 +39,16 @@ void remove_oldest_entry(int cur_month, int cur_year)
 	}
 
 	return;
+}
+
+static int checkbuffer(char **buffer, char *var, int buffersize)
+{
+
+	if (buffersize >= ((buffersize - 1) - (strlen(var) + 1))) {
+		buffersize += 2048;
+		*buffer = (char *)realloc(*buffer, buffersize);
+	}
+	return buffersize;
 }
 
 void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsigned long long sent)
@@ -55,10 +65,10 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 	unsigned long long old_rcvd;
 	unsigned long long old_sent;
 	char *tdata;
-
-	buffer = (char *)malloc(2048);
-	memset(buffer, 0, 2048);
-	sprintf(tq, "traff-%02u-%u", month, year);
+	int buffersize = 2048;
+	buffer = (char *)malloc(buffersize);
+	memset(buffer, 0, buffersize);
+	snprintf(tq, sizeof(tq), "traff-%02u-%u", month, year);
 
 	/* keep some nvram free by removing oldest traf data */
 	int space = 0;
@@ -82,23 +92,27 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 	foreach(var, tdata, next) {
 		if (i == day) {
 			if (strstr(var, "[")) {	//check and correct faulty entries
-				sprintf(temp, "%llu:%llu ", rcvd, sent);
+				snprintf(temp, sizeof(temp), "%llu:%llu ", rcvd, sent);
 			} else {	//value OK
 				sscanf(var, "%llu:%llu", &old_rcvd, &old_sent);
-				sprintf(temp, "%llu:%llu ", old_rcvd + rcvd, old_sent + sent);
+				snprintf(temp, sizeof(temp), "%llu:%llu ", old_rcvd + rcvd, old_sent + sent);
 			}
-			strcat(buffer, temp);
+			buffersize = checkbuffer(&buffer, temp, buffersize);
+			snprintf(buffer, buffersize, "%s%s", buffer, temp);
 		} else if (i == (days + 1))	//make new monthly total
 		{
 			sscanf(var, "[%llu:%llu]", &old_rcvd, &old_sent);
-			sprintf(temp, "[%llu:%llu] ", old_rcvd + rcvd, old_sent + sent);
-			strcat(buffer, temp);
+			snprintf(temp, sizeof(temp), "[%llu:%llu] ", old_rcvd + rcvd, old_sent + sent);
+			buffersize = checkbuffer(&buffer, temp, buffersize);
+			snprintf(buffer, buffersize, "%s%s", buffer, temp);
 			i++;
 			break;
 		} else {
 			if (strchr(var, ':') != NULL) {
-				strcat(buffer, var);
-				strcat(buffer, " ");
+				buffersize = checkbuffer(&buffer, var, buffersize);
+				snprintf(buffer, buffersize, "%s%s", buffer, var);
+				buffersize = checkbuffer(&buffer, " ", buffersize);
+				snprintf(buffer, buffersize, "%s ", buffer);
 			}
 		}
 		i++;
@@ -107,9 +121,11 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 	/* correct entries if something strange happend */
 	if (i < (days + 2)) {
 		for (a = i; a <= days; a++) {
-			strcat(buffer, "0:0 ");
+			buffersize = checkbuffer(&buffer, "0:0 ", buffersize);
+			snprintf(buffer, buffersize, "%s0:0 ", buffer);
 		}
-		strcat(buffer, "[0:0] ");
+		buffersize = checkbuffer(&buffer, "[0:0] ", buffersize);
+		snprintf(buffer, buffersize, "%s[0:0] ", buffer);
 	}
 	strtrim_right(buffer, ' ');
 	nvram_set(tq, buffer);
