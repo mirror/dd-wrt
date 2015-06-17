@@ -1128,7 +1128,7 @@ endif
 	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils  $(LDFLAGS) 
 #endif
 	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  -L$(TOP)/libutils -lutils $(LDFLAGS)
+	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
 ifeq ($(CONFIG_WPS),y)
 	$(CC) $(CFLAGS) -o wpswatcher wpswatcher.c $(LDFLAGS)
