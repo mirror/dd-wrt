@@ -40,6 +40,11 @@ static int nvram_major = -1;
 //static devfs_handle_t nvram_handle = NULL;
 static struct mtd_info *nvram_mtd = NULL;
 
+#define mtd_read(mtd,offs,size,len,buf) mtd->read(mtd,offs,size,len,buf)
+#define mtd_write(mtd,offs,size,len,buf) mtd->write(mtd,offs,size,len,buf)
+#define mtd_unlock(mtd,offset,size) if (mtd->unlock) mtd->unlock(mtd,offset,size)
+#define mtd_erase(mtd,er) mtd->erase(mtd, er)
+
 int
 _nvram_read(char *buf)
 {
