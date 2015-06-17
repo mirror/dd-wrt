@@ -545,6 +545,44 @@ static struct mdio_board_info ap152_mdio0_info[] = {
 		.platform_data = &ap152_ar8337_data,
 	},
 };
+
+static struct ar8327_pad_cfg wpj344_ar8327_pad0_cfg = {
+	.mode = AR8327_PAD_MAC_RGMII,
+	.txclk_delay_en = true,
+	.rxclk_delay_en = true,
+	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
+	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+};
+
+static struct ar8327_led_cfg wpj344_ar8327_led_cfg = {
+	.led_ctrl0 = 0x00000000,
+	.led_ctrl1 = 0xc737c737,
+	.led_ctrl2 = 0x00000000,
+	.led_ctrl3 = 0x00c30c00,
+	.open_drain = true,
+};
+
+static struct ar8327_platform_data wpj344_ar8327_data = {
+	.pad0_cfg = &wpj344_ar8327_pad0_cfg,
+	.port0_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+	.led_cfg = &wpj344_ar8327_led_cfg,
+};
+
+static struct mdio_board_info wpj344_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &wpj344_ar8327_data,
+	},
+};
+
+
 extern void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
 void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
@@ -872,7 +910,9 @@ int __init ar7240_platform_init(void)
 	iounmap(base);
     #else
 	#ifdef CONFIG_AP135
+	#ifndef CONFIG_MMS344
 	ap136_gmac_setup();
+	#endif
 	#else
 #ifndef HAVE_DIR859
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
@@ -898,6 +938,8 @@ int __init ar7240_platform_init(void)
     #endif
 
     #ifdef CONFIG_DIR615I
+
+
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
@@ -995,16 +1037,51 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
 	#else
 	
-	
+	#ifdef CONFIG_MMS344
+	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 
+	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 |
+	       AR934X_ETH_CFG_MII_GMAC0 |
+	       AR934X_ETH_CFG_GMII_GMAC0 |
+	       AR934X_ETH_CFG_SW_ONLY_MODE |
+	       AR934X_ETH_CFG_SW_PHY_SWAP);
+	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
+
+	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+	iounmap(base);
+
+
+	mdiobus_register_board_info(wpj344_mdio0_info,
+					ARRAY_SIZE(wpj344_mdio0_info));
+
+
+//	ap136_ar8327_pad0_cfg.mac06_exchange_en = true;
+	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_add_device_mdio(0, 0x0);
 
+	/* GMAC0 is connected to an AR8327 switch */
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
+
+	/* GMAC1 is connected to the internal switch */
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+	ar71xx_add_device_eth(0);
+	ar71xx_add_device_eth(1);
+
+	#else
 	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
 	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
 	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
-	#ifdef CONFIG_MMS344
-	ap136_ar8327_pad0_cfg.mac06_exchange_en = true;
-	#endif
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_eth0_pll_data.pll_1000 = 0x56000000;
+	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
+
 
 	/* GMAC6 of the AR8327 switch is connected to GMAC0 via RGMII */
 	ap136_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_RGMII;
@@ -1013,11 +1090,25 @@ int __init ar7240_platform_init(void)
 	ap136_ar8327_pad6_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
 	ap136_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
 
-	ar71xx_eth0_pll_data.pll_1000 = 0x56000000;
-	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
 
 	mdiobus_register_board_info(ap136_mdio0_info,
 				    ARRAY_SIZE(ap136_mdio0_info));
+
+	/* GMAC0 is connected to the RMGII interface */
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+
+	ar71xx_add_device_eth(0);
+	/* GMAC1 is connected tot eh SGMII interface */
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
+	ar71xx_add_device_eth(1);
+	
+	#endif
 
 	    
 
@@ -1032,20 +1123,6 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac + DB120_MAC1_OFFSET, 0);
 	    #endif
 
-	/* GMAC0 is connected to the RMGII interface */
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth0_data.phy_mask = BIT(0);
-	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
-
-	ar71xx_add_device_eth(0);
-
-	/* GMAC1 is connected tot eh SGMII interface */
-	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
-	ar71xx_eth1_data.speed = SPEED_1000;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
-
-	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
-	ar71xx_add_device_eth(1);
 	#endif
 	#else
 	    #ifdef CONFIG_WDR3500
