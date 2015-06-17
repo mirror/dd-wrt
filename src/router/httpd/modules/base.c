@@ -1922,6 +1922,7 @@ static char *scanfile(char *buf, const char *tran)
 				}
 				free(temp);
 				free(temp1);
+				fclose(fp);
 				return NULL;
 			}
 			if (count == 255)
@@ -2016,10 +2017,12 @@ static void clear_translationcache(void)
 
 char *live_translate(const char *tran)
 {
+//	fprintf(stderr,"enter translation\n");
 	if (!cur_language) {
 		cur_language = nvram_safe_get("language");
 	} else {
 		if (!nvram_match("language", cur_language)) {
+//			fprintf(stderr,"clear translation\n");
 			clear_translationcache();
 			cur_language = nvram_safe_get("language");
 		}
@@ -2035,38 +2038,47 @@ char *live_translate(const char *tran)
 				translationcache[i].time = cur;
 			}
 			if (translationcache[i].request != NULL && cur > translationcache[i].time + 120) {	// free translation if not used for 2 minutes
-				free(translationcache[i].request);
+//				fprintf(stderr,"free translation result %s\n",translationcache[i].translation);
 				free(translationcache[i].translation);
+//				fprintf(stderr,"free translation request %s\n",translationcache[i].request);
+				free(translationcache[i].request);
 				translationcache[i].request = NULL;
 				translationcache[i].translation = NULL;
 			}
 		}
-		if (translation)
+		if (translation) {
+//			fprintf(stderr,"return from cache\n");
 			return translation;
+		}
 	}
 	char *ret = private_live_translate(tran);
 	struct cacheentry *entry = NULL;
 	/* fill hole if there is any */
 	int i;
+//	fprintf(stderr,"seek hole\n");
 	for (i = 0; i < cachecount; i++) {
 		if (translationcache[i].request == NULL) {
+//			fprintf(stderr,"hole found at %d\n",i);
 			entry = &translationcache[i];
 			break;
 		}
 
 	}
 	if (!entry) {
+//	fprintf(stderr,"realloc translation\n");
 		/* no hole has been found, alloc a new one */
 		translationcache = (struct cacheentry *)realloc(translationcache, sizeof(struct cacheentry) * (cachecount + 1));
 		entry = &translationcache[cachecount++];
 	}
 
+//	fprintf(stderr,"strdup tran %s\n",tran);
 	entry->request = strdup(tran);
 	entry->time = cur;
 	if (ret)
 		entry->translation = ret;
 	else
 		entry->translation = strdup("Error");
+//	fprintf(stderr,"leave translation\n");
 	return entry->translation;
 }
 
