@@ -2212,7 +2212,7 @@ cprintf("set antdiv mode %s\n",name);
 		        nvram_default_match(strcat_r(bclist->bsscfgs[i].prefix, "auth_mode", tmp),
 		                    "radius","disabled");
 
-		if (((ap || apsta) && !nas_will_run) || sta || wet) {
+		if (((ap || apsta) && !nas_will_run) || sta || (wet && !apsta)) {
 			for (ii = 0; ii < MAX_BSS_UP_RETRIES; ii++) {
 				if (wl_ap_build) {
 					WL_IOVAR_SET(name, "bss", &setbuf, sizeof(setbuf));
