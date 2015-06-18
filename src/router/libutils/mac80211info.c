@@ -136,18 +136,18 @@ int mac80211_parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_SURVEY_INFO]) {
-		fprintf(stderr,"no survey info\n");
+		fprintf(stderr, "no survey info\n");
 		return -1;
 	}
 
 	if (nla_parse_nested(sinfo, NL80211_SURVEY_INFO_MAX, tb[NL80211_ATTR_SURVEY_INFO], survey_policy)) {
-		fprintf(stderr,"error survey\n");
+		fprintf(stderr, "error survey\n");
 
 		return -1;
 	}
 
 	if (!sinfo[NL80211_SURVEY_INFO_FREQUENCY]) {
-		fprintf(stderr,"no frequency info\n");
+		fprintf(stderr, "no frequency info\n");
 		return -1;
 	}
 
@@ -265,17 +265,17 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	unsigned int ack = slot + sifs;
 	unsigned int cts = ack;
 	if ((int)distance == -1)
-	    return;
-	if (slot == 0) // too low value. 
-	    return;
+		return;
+	if (slot == 0)		// too low value. 
+		return;
 
 	ack *= 88;		// 88Mhz is the core clock of AR9880
 	cts *= 88;
 	sifs *= 88;
 	slot *= 88;
-	if (ack>0x3fff) {
-	    fprintf(stderr,"invalid ack 0x%08x, max is 0x3fff. truncate it\n",ack);
-	    ack = 0x3fff;
+	if (ack > 0x3fff) {
+		fprintf(stderr, "invalid ack 0x%08x, max is 0x3fff. truncate it\n", ack);
+		ack = 0x3fff;
 	}
 	unsigned int oldack = get_ath10kreg(dev, 0x28014) & 0x3fff;
 	if (oldack != ack) {
@@ -287,7 +287,7 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 
 unsigned int get_ath10kack(char *ifname)
 {
-	unsigned int ack,slot,sifs;
+	unsigned int ack, slot, sifs;
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
 	slot = (get_ath10kreg(ifname, 0x21070)) / 88;
 	sifs = (get_ath10kreg(ifname, 0x21030)) / 88;
@@ -375,12 +375,12 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_STA_INFO_TX_PACKETS] = {.type = NLA_U32},
 		[NL80211_STA_INFO_SIGNAL] = {.type = NLA_U8},
 		[NL80211_STA_INFO_TX_BITRATE] = {.type = NLA_NESTED},
-		[NL80211_STA_INFO_RX_BITRATE] = {.type = NLA_NESTED}, 
-		[NL80211_STA_INFO_LLID] = { .type = NLA_U16},
-		[NL80211_STA_INFO_PLID] = { .type = NLA_U16},
+		[NL80211_STA_INFO_RX_BITRATE] = {.type = NLA_NESTED},
+		[NL80211_STA_INFO_LLID] = {.type = NLA_U16},
+		[NL80211_STA_INFO_PLID] = {.type = NLA_U16},
 		[NL80211_STA_INFO_PLINK_STATE] = {.type = NLA_U8},
 		[NL80211_STA_INFO_CONNECTED_TIME] = {.type = NLA_U32},
-		[NL80211_STA_INFO_STA_FLAGS] ={ .minlen = sizeof(struct nl80211_sta_flag_update) },
+		[NL80211_STA_INFO_STA_FLAGS] = {.minlen = sizeof(struct nl80211_sta_flag_update)},
 	};
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
 		[NL80211_RATE_INFO_BITRATE] = {.type = NLA_U16},
@@ -394,8 +394,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_RATE_INFO_160_MHZ_WIDTH] = {.type = NLA_FLAG},
 		[NL80211_RATE_INFO_VHT_MCS] = {.type = NLA_U8},
 		[NL80211_RATE_INFO_VHT_NSS] = {.type = NLA_U8},
-//		[NL80211_RATE_INFO_10_MHZ_WIDTH] = {.type = NLA_FLAG},
-//		[NL80211_RATE_INFO_5_MHZ_WIDTH] = {.type = NLA_FLAG},
+//              [NL80211_RATE_INFO_10_MHZ_WIDTH] = {.type = NLA_FLAG},
+//              [NL80211_RATE_INFO_5_MHZ_WIDTH] = {.type = NLA_FLAG},
 #endif
 	};
 
@@ -480,10 +480,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	}
 	if (sinfo[NL80211_STA_INFO_STA_FLAGS]) {
 		sta_flags = (struct nl80211_sta_flag_update *)
-			    nla_data(sinfo[NL80211_STA_INFO_STA_FLAGS]);
-		if (sta_flags->mask & BIT(8)) // may work later. but not yet
-				mac80211_info->wci->ht40intol = 1;
-		
+		    nla_data(sinfo[NL80211_STA_INFO_STA_FLAGS]);
+		if (sta_flags->mask & BIT(8))	// may work later. but not yet
+			mac80211_info->wci->ht40intol = 1;
 
 	}
 	if (sinfo[NL80211_STA_INFO_RX_BITRATE]) {
@@ -724,6 +723,8 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	char sc[32];
 	int skip = 1;
 	int rrdcount = 0;
+	if (max_bandwidth_khz == 80)
+		htrange = 60;
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return NULL;
