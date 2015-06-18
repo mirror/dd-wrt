@@ -526,6 +526,10 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.pb42 opendpi
 	-$(MAKE) -f Makefile.pb42 opendpi-install
 endif
+ifeq ($(CONFIG_SERVICEGATE),y)
+	-$(MAKE) -f Makefile.pb42 servicegate
+	-$(MAKE) -f Makefile.pb42 servicegate-install
+endif
 
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
