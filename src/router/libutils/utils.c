@@ -1396,6 +1396,10 @@ int internal_getRouterBrand()
 	char *filename = "/sys/devices/soc0/soc.0/2100000.aips-bus/21a0000.i2c/i2c-0/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
 	FILE *file = fopen(filename, "rb");
 	if (!file) {
+		filename = "/sys/devices/soc0/soc/2100000.aips-bus/21a0000.i2c/i2c-0/0-0051/eeprom";	/* bank2=0x100 kernel 3.18 */
+		file = fopen(filename, "rb");
+	}
+	if (!file) {
 		setRouter("Gateworks Ventana GW54XX");
 	} else {
 		char gwid[9];
@@ -6678,8 +6682,10 @@ int get_ath9k_phy_idx(int idx)
 int get_ath9k_phy_ifname(const char *ifname)
 {
 	int devnum;
+	if (strncmp(ifname, "ath", 3))
+		return -1;
 	if (!sscanf(ifname, "ath%d", &devnum))
-		return (0);
+		return -1;
 	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
 	return get_ath9k_phy_idx(devnum);
 }
@@ -6698,6 +6704,8 @@ int is_ath9k(const char *prefix)
 #endif
 	// correct index if there are legacy cards arround
 	devnum = get_ath9k_phy_ifname(prefix);
+	if (devnum == -1)
+		return 0;
 	sprintf(globstring, "/sys/class/ieee80211/phy%d", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)
@@ -6716,6 +6724,8 @@ int is_ath5k(const char *prefix)
 	int devnum;
 	// correct index if there are legacy cards arround... should not...
 	devnum = get_ath9k_phy_ifname(prefix);
+	if (devnum == -1)
+		return 0;
 	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:ath5k", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)
@@ -6744,6 +6754,8 @@ int is_ath10k(const char *prefix)
 #endif
 	// correct index if there are legacy cards arround
 	devnum = get_ath9k_phy_ifname(prefix);
+	if (devnum == -1)
+		return 0;
 	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:ath10k_pci", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)
