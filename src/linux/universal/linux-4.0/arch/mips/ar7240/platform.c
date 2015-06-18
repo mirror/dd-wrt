@@ -914,7 +914,7 @@ int __init ar7240_platform_init(void)
 	iounmap(base);
     #else
 	#ifdef CONFIG_AP135
-	#ifndef CONFIG_MMS344
+	#if !defined(CONFIG_MMS344) || defined(CONFIG_DIR862)
 	ap136_gmac_setup();
 	#endif
 	#else
@@ -1041,7 +1041,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
 	#else
 	
-	#ifdef CONFIG_MMS344
+	#if defined(CONFIG_MMS344) && !defined(CONFIG_DIR862)
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 
