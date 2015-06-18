@@ -4826,6 +4826,13 @@ void start_hotplug_net(void)
 		}
 		sysprintf("echo %x > /sys/class/net/%s/queues/rx-0/rps_cpus", cpumask, interface);
 		sysprintf("echo %x > /sys/class/net/%s/queues/tx-0/xps_cpus", cpumask, interface);
+#ifdef HAVE_ATH10K
+	    if (is_ath10k(interface)) {
+		sysprintf("echo %x > /sys/class/net/%s/queues/tx-1/xps_cpus", cpumask, interface);
+		sysprintf("echo %x > /sys/class/net/%s/queues/tx-2/xps_cpus", cpumask, interface);
+		sysprintf("echo %x > /sys/class/net/%s/queues/tx-3/xps_cpus", cpumask, interface);
+	    }
+#endif
 	}
 #endif
 #ifdef HAVE_MADWIFI
