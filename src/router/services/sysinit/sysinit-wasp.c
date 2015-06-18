@@ -158,7 +158,7 @@ void start_sysinit(void)
 	}
 #endif
 
-#ifdef HAVE_MMS344
+#if defined(HAVE_MMS344) && !defined(HAVE_DIR862)
 	eval("ifconfig", "eth0", "up");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
