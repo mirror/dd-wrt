@@ -126,16 +126,16 @@ const char
 
 	char *chip;
 	u32 id;
-	u32 qca=0;
+	u32 qca = 0;
 	u32 tp = 0;
 	u32 rev = 0;
+	u32 ver = 1;
 	static char str[64];
 	id = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
 
 	switch (id) {
 	case AR7240_REV_1_0:
 		chip = "7240";
-		rev = 0;
 		break;
 	case AR7240_REV_1_1:
 		chip = "7240";
@@ -147,11 +147,9 @@ const char
 		break;
 	case AR7241_REV_1_0:
 		chip = "7241";
-		rev = 0;
 		break;
 	case AR7242_REV_1_0:
 		chip = "7242";
-		rev = 0;
 		break;
 	case AR7241_REV_1_1:
 		chip = "7241";
@@ -163,7 +161,6 @@ const char
 		break;
 	case AR9330_REV_1_0:
 		chip = "9330";
-		rev = 0;
 		break;
 	case AR9330_REV_1_1:
 		chip = "9330";
@@ -175,7 +172,6 @@ const char
 		break;
 	case AR9331_REV_1_0:
 		chip = "9331";
-		rev = 0;
 		break;
 	case AR9331_REV_1_1:
 		chip = "9331";
@@ -187,7 +183,6 @@ const char
 		break;
 	case AR9344_REV_1_0:
 		chip = "9344";
-		rev = 0;
 		break;
 	case AR9344_REV_1_1:
 		chip = "9344";
@@ -203,7 +198,6 @@ const char
 		break;
 	case AR9342_REV_1_0:
 		chip = "9342";
-		rev = 0;
 		break;
 	case AR9342_REV_1_1:
 		chip = "9342";
@@ -219,7 +213,6 @@ const char
 		break;
 	case AR9341_REV_1_0:
 		chip = "9341";
-		rev = 0;
 		break;
 	case AR9341_REV_1_1:
 		chip = "9341";
@@ -235,7 +228,11 @@ const char
 		break;
 	case QCA9533_REV_1_0:
 		chip = "9533";
-		rev = 0;
+		qca = 1;
+		break;
+	case QCA9533_V2:
+		chip = "9533";
+		ver = 2;
 		qca = 1;
 		break;
 	case QCA9533_REV_1_1:
@@ -256,7 +253,6 @@ const char
 
 	case QCA9556_REV_1_0:
 		chip = "9556";
-		rev = 0;
 		qca = 1;
 		break;
 	case QCA9556_REV_1_1:
@@ -274,10 +270,8 @@ const char
 		rev = 3;
 		qca = 1;
 		break;
-
 	case QCA9558_REV_1_0:
 		chip = "9558";
-		rev = 0;
 		qca = 1;
 		break;
 	case QCA9558_REV_1_1:
@@ -298,7 +292,6 @@ const char
 
 	case QCA9563_REV_1_0:
 		chip = "9563";
-		rev = 0;
 		qca = 1;
 		break;
 	case QCA9563_REV_1_1:
@@ -316,10 +309,8 @@ const char
 		rev = 3;
 		qca = 1;
 		break;
-
 	case TP9343_REV_1_0:
 		chip = "9343";
-		rev = 0;
 		tp = 1;
 		break;
 	case TP9343_REV_1_1:
@@ -341,9 +332,9 @@ const char
 		chip = "724x";
 	}
 	if (tp)
-		sprintf(str, "%s %s%s rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", "TP", chip, rev, id);
+		sprintf(str, "%s %s%s ver %u rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", "TP", chip, ver, rev, id);
 	else 
-		sprintf(str, "%s %s%s rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", qca ? "QCA" : "AR",chip, rev, id);
+		sprintf(str, "%s %s%s ver %u rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", qca ? "QCA" : "AR",chip, ver, rev, id);
 	return str;
 }
 
