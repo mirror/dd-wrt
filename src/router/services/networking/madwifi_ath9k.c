@@ -399,8 +399,19 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	chan = mac80211_get_channels(prefix, iso, 40, 0xff);
 	if (isrepeater) {
 		// for ht40- take second channel otherwise hostapd is unhappy (and does not start)
-		if (iht == -1)
-			i = 1;
+		if (has_2ghz(prefix)) {
+			if (iht == -1) {
+				i = 4;	// in 2.4 mhz channel spacing is different
+			}
+		}
+		if (has_5ghz(prefix)) {
+			if (iht == -1) {
+				if (nvram_match(bw, "80"))
+					i = 2;	// second index for 80 mhz
+				else
+					i = 1;
+			}
+		}
 		if (chan != NULL && chan[i].freq != -1) {
 			channel = chan[i].channel;
 			freq = chan[i].freq;
@@ -411,8 +422,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				freq = 2437;
 			}
 			if (has_5ghz(prefix)) {
-				channel = 40;
-				freq = 5200;
+				if (nvram_match(bw, "80")) {
+					channel = 44;
+					freq = 5220;
+				} else {
+					channel = 40;
+					freq = 5200;
+				}
 			}
 		}
 	} else {
@@ -482,34 +498,33 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 			if (nvram_match(bw, "40")) {
 				fprintf(fp, "vht_oper_chwidth=0\n");
-				int idx = channel;
-				
-				switch ((channel / 4) % 2) {
+				int idx = channel + (2 * iht);
+/*				switch ((channel / 4) % 2) {
 				case 0:
-					channel = channel + 2;
+					idx = channel + 2;
 					break;
 				case 1:
-					channel = channel - 2;
+					idx = channel - 2;
 					break;
-				}
+				}*/
 				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 			} else if (nvram_match(bw, "80")) {
 				fprintf(fp, "vht_oper_chwidth=1\n");
-				int idx = channel;
-                                switch ((channel / 4) % 4) {
+				int idx = channel + (6 * iht);
+/*                                switch ((channel / 4) % 4) {
                                 case 0:
-					channel = channel + 6;
+					idx = channel + 6;
 					break;
 				case 1:
-					channel = channel - 6;
+					idx = channel - 6;
 					break;
 				case 2:
-					channel = channel - 2;
+					idx = channel - 2;
 					break;
 				case 3:
-					channel = channel + 2;
+					idx = channel + 2;
 					break;
-				}
+				}*/
 				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 			} else if (nvram_match(bw, "160")) {
 				fprintf(fp, "vht_oper_chwidth=2\n");
