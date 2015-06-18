@@ -2324,7 +2324,10 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(regdomain, "%s_regdomain", prefix);
 				country = nvram_default_get(regdomain, "UNITED_STATES");
 				// temp end
-				chan = mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
+				int channelbw = 40;
+				if (nvram_nmatch("80", "%s_channelbw", prefix))
+					channelbw = 80;
+				chan = mac80211_get_channels(prefix, getIsoName(country), channelbw, 0xff);
 				/* if (chan == NULL)
 				   chan =
 				   list_channels_ath9k(dev, "DE", 40,
