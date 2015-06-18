@@ -383,10 +383,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	} else {
 		sprintf(ht, "HT20");
 	}
-	// fix for repeater mode as long as the driver is not able to do that
-	if (isrepeater) {
-		sprintf(ht, "HT20");
-	}
 	char regdomain[16];
 	sprintf(regdomain, "%s_regdomain", prefix);
 	country = nvram_default_get(regdomain, "GERMANY");
