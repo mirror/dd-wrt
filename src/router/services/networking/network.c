@@ -4824,8 +4824,8 @@ void start_hotplug_net(void)
 		if (cpucount > 1) {
 			cpumask = (1 << cpucount) - 1;
 		}
-		sysprintf("echo %d > /sys/class/net/%s/queues/rx-0/rps_cpus", cpumask, interface);
-		sysprintf("echo %d > /sys/class/net/%s/queues/tx-0/xps_cpus", cpumask, interface);
+		sysprintf("echo %x > /sys/class/net/%s/queues/rx-0/rps_cpus", cpumask, interface);
+		sysprintf("echo %x > /sys/class/net/%s/queues/tx-0/xps_cpus", cpumask, interface);
 	}
 #endif
 #ifdef HAVE_MADWIFI
