@@ -214,10 +214,6 @@
 
 #ifdef TARGET_LINUX
 
-#if defined(HAVE_NETINET_IF_ETHER_H)
-#include <netinet/if_ether.h>
-#endif
-
 #ifdef HAVE_LINUX_IF_TUN_H
 #ifndef __UCLIBC__
 #define _LINUX_IF_ETHER_H
