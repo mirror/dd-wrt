@@ -458,10 +458,19 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				}
 				free_mac80211_ac(acs);
 			} else {
-				if (has_2ghz(prefix))
+				if (has_2ghz(prefix)) {
 					channel = 6;
-				if (has_5ghz(prefix))
-					channel = 40;
+					freq = 2437;
+				}
+				if (has_5ghz(prefix)) {
+					if (nvram_match(bw, "80")) {
+						channel = 44;
+						freq = 5220;
+					} else {
+						channel = 40;
+						freq = 5200;
+					}
+				}
 			}
 		} else {
 			channel = ieee80211_mhz2ieee(freq);
