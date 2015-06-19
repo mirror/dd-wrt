@@ -200,8 +200,6 @@ static void getNoise_mac80211_internal(char *interface, struct mac80211_info *ma
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
-	return;
-
 nla_put_failure:
 	nlmsg_free(msg);
 	return;
@@ -217,6 +215,7 @@ int getNoise_mac80211(char *interface)
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
+	nlmsg_free(msg);
 	return mac80211_info.noise;
 
 nla_put_failure:
@@ -318,6 +317,7 @@ int getFrequency_mac80211(char *interface)
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
+	nlmsg_free(msg);
 	return mac80211_info.frequency;
 nla_put_failure:
 	nlmsg_free(msg);
@@ -548,7 +548,6 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 	// print_wifi_clients(mac80211_info->wci);
 	// free_wifi_clients(mac80211_info->wci);
 	globfree(&globbuf);
-	return (mac80211_info);
 nla_put_failure:
 	nlmsg_free(msg);
 	return (mac80211_info);
@@ -1045,7 +1044,6 @@ int mac80211_get_maxmcs(char *interface)
 	nlmsg_free(msg);
 	return maxmcs;
 out:
-	return 0;
 nla_put_failure:
 	nlmsg_free(msg);
 	return 0;
@@ -1067,6 +1065,7 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_TX, tx_ant);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_RX, rx_ant);
 	unl_genl_request(&unl, msg, NULL, NULL);
+	nlmsg_free(msg);
 	return;
 nla_put_failure:
 	nlmsg_free(msg);
@@ -1140,6 +1139,96 @@ int mac80211_get_configured_tx_antenna(int phy)
 int mac80211_get_configured_rx_antenna(int phy)
 {
 	return (mac80211_get_antennas(phy, 1, 1));
+}
+
+int mac80211_get_htwidth(char *dev)
+{
+	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
+	unsigned int *wiphy = arg;
+	const char *indent = "";
+	struct nl_msg *msg;
+	struct genlmsghdr *gnlh;
+	int width = 2;
+	int ret = 0;
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_INTERFACE, false);
+	if (!msg)
+		return 0;
+	int devidx = if_nametoindex(dev);
+
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devidx);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+		return 0;
+
+	gnlh = nlmsg_data(nlmsg_hdr(msg));
+	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (wiphy && tb_msg[NL80211_ATTR_WIPHY]) {
+		unsigned int thiswiphy = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
+		indent = "\t";
+		if (*wiphy != thiswiphy)
+			printf("phy#%d\n", thiswiphy);
+		*wiphy = thiswiphy;
+	}
+
+	if (tb_msg[NL80211_ATTR_WIPHY_FREQ]) {
+		uint32_t freq = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]);
+
+		if (tb_msg[NL80211_ATTR_CHANNEL_WIDTH]) {
+
+			switch (nla_get_u32(tb_msg[NL80211_ATTR_CHANNEL_WIDTH])) {
+			case NL80211_CHAN_WIDTH_20_NOHT:
+				width = 2;
+				break;
+			case NL80211_CHAN_WIDTH_20:
+				width = 20;
+				break;
+			case NL80211_CHAN_WIDTH_40:
+				width = 40;
+				break;
+			case NL80211_CHAN_WIDTH_80:
+				width = 80;
+				break;
+			case NL80211_CHAN_WIDTH_80P80:
+				width = 8080;
+				break;
+			case NL80211_CHAN_WIDTH_160:
+				width = 160;
+				break;
+			default:
+				width = 2;
+				break;
+			}
+
+		} else if (tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE]) {
+			enum nl80211_channel_type channel_type;
+
+			channel_type = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE]);
+			switch (channel_type) {
+			case NL80211_CHAN_NO_HT:
+				width = 2;
+				break;
+			case NL80211_CHAN_HT20:
+				width = 20;
+				break;
+			case NL80211_CHAN_HT40MINUS:
+				width = 40;
+				break;
+			case NL80211_CHAN_HT40PLUS:
+				width = 40;
+				break;
+			default:
+				width = 40;
+				break;
+			}
+
+		}
+
+	}
+	nlmsg_free(msg);
+	return width;
+nla_put_failure:
+	nlmsg_free(msg);
+	return width;
 }
 
 #ifdef TEST
