@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2543 | BrainSlayer | 2015-06-20 00:32:14 +0200 (Sat, 20 Jun 2015) | 1 line
+
+qca/atheros does not know which antenna is connected, so i do not let rule them
+------------------------------------------------------------------------
 r2542 | BrainSlayer | 2015-06-19 11:16:18 +0200 (Fri, 19 Jun 2015) | 1 line
 
 ath10k: add missing file from last patch
