@@ -344,10 +344,7 @@ int mac80211_get_coverageclass(char *interface)
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]) {
 		coverage = nla_get_u8(tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]);
-		/* See handle_distance() for an explanation where the '450' comes from */
-		// printf("\tCoverage class: %d (up to %dm)\n", coverage, 450 * coverage);
 	}
-	// printf ("%d\n", coverage);
 	nlmsg_free(msg);
 	return coverage;
 nla_put_failure:
@@ -410,7 +407,6 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	}
 	ether_etoa(nla_data(tb[NL80211_ATTR_MAC]), mac_addr);
 	if_indextoname(nla_get_u32(tb[NL80211_ATTR_IFINDEX]), dev);
-	printf("Station %s (on %s)", mac_addr, dev);
 	strcpy(mac80211_info->wci->mac, mac_addr);
 	strcpy(mac80211_info->wci->ifname, dev);
 	mac80211_info->wci->noise = mac80211_info->noise;
@@ -418,39 +414,31 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		mac80211_info->wci->is_wds = 1;
 	if (sinfo[NL80211_STA_INFO_INACTIVE_TIME]) {
 		mac80211_info->wci->inactive_time = nla_get_u32(sinfo[NL80211_STA_INFO_INACTIVE_TIME]);
-		printf("\n\tinactive time:\t%u ms", nla_get_u32(sinfo[NL80211_STA_INFO_INACTIVE_TIME]));
 	}
 	if (sinfo[NL80211_STA_INFO_RX_BYTES]) {
 		mac80211_info->wci->rx_bytes = nla_get_u32(sinfo[NL80211_STA_INFO_RX_BYTES]);
-		printf("\n\trx bytes:\t%u", nla_get_u32(sinfo[NL80211_STA_INFO_RX_BYTES]));
 	}
 	if (sinfo[NL80211_STA_INFO_RX_PACKETS]) {
 		mac80211_info->wci->rx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]);
-		printf("\n\trx packets:\t%u", nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]));
 	}
 	if (sinfo[NL80211_STA_INFO_TX_BYTES]) {
 		mac80211_info->wci->tx_bytes = nla_get_u32(sinfo[NL80211_STA_INFO_TX_BYTES]);
-		printf("\n\ttx bytes:\t%u", nla_get_u32(sinfo[NL80211_STA_INFO_TX_BYTES]));
 	}
 	if (sinfo[NL80211_STA_INFO_TX_PACKETS]) {
 		mac80211_info->wci->tx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]);
-		printf("\n\ttx packets:\t%u", nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]));
 	}
 	if (sinfo[NL80211_STA_INFO_SIGNAL]) {
 		mac80211_info->wci->signal = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
-		printf("\n\tsignal:  \t%d dBm", (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]));
 	}
 
 	if (sinfo[NL80211_STA_INFO_CONNECTED_TIME]) {
 		mac80211_info->wci->uptime = nla_get_u32(sinfo[NL80211_STA_INFO_CONNECTED_TIME]);
-		printf("\n\tuptime:\t%u", nla_get_u32(sinfo[NL80211_STA_INFO_CONNECTED_TIME]));
 	}
 
 	if (sinfo[NL80211_STA_INFO_TX_BITRATE]) {
 		if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy)) {
 			fprintf(stderr, "failed to parse nested tx rate attributes!\n");
 		} else {
-			printf("\n\ttx bitrate:\t");
 			if (rinfo[NL80211_RATE_INFO_BITRATE]) {
 				mac80211_info->wci->txrate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
 			}
@@ -489,7 +477,6 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, sinfo[NL80211_STA_INFO_RX_BITRATE], rate_policy)) {
 			fprintf(stderr, "failed to parse nested rx rate attributes!\n");
 		} else {
-			printf("\n\trx bitrate:\t");
 			if (rinfo[NL80211_RATE_INFO_BITRATE]) {
 				mac80211_info->wci->rxrate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
 			}
@@ -514,7 +501,6 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 #endif
 			if (rinfo[NL80211_RATE_INFO_SHORT_GI]) {
 				mac80211_info->wci->rx_is_short_gi = 1;
-				printf(" short GI");
 			}
 		}
 	}
@@ -917,14 +903,8 @@ static int get_max_mcs_index(const __u8 *mcs)
 		if (!mcs_rate_idx_set)
 			continue;
 		if (prev_bit != mcs_bit - 1) {
-			/* if (prev_bit != -2)
-			   printf("%d, ", prev_bit);
-			   else
-			   printf(" ");
-			   printf("%d", mcs_bit); */
 			prev_cont = 0;
 		} else if (!prev_cont) {
-			// printf("-");
 			prev_cont = 1;
 		}
 
@@ -932,9 +912,7 @@ static int get_max_mcs_index(const __u8 *mcs)
 	}
 
 	if (prev_cont)
-		// printf("%d", prev_bit);
 		return prev_bit;
-	// printf("\n");
 	return 0;
 }
 
@@ -948,28 +926,15 @@ static int get_ht_mcs(const __u8 *mcs)
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
 	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
-	// if (max_rx_supp_data_rate)
-	//      printf("\t\tHT Max RX data rate: %d Mbps\n", max_rx_supp_data_rate);
 	/* XXX: else see 9.6.0e.5.3 how to get this I think */
 	if (tx_mcs_set_defined) {
 		if (tx_mcs_set_equal) {
-			// printf("\t\tHT TX/RX MCS rate indexes supported:");
 			return (get_max_mcs_index(mcs));
 		} else {
-			// printf("\t\tHT RX MCS rate indexes supported:");
 			return (get_max_mcs_index(mcs));
-			// if (tx_unequal_modulation)
-			// printf("\t\tTX unequal modulation supported\n");
-			// else
-			// printf("\t\tTX unequal modulation not supported\n");
-			// printf("\t\tHT TX Max spatial streams: %d\n",
-			//      tx_max_num_spatial_streams);
-			// printf("\t\tHT TX MCS rate indexes supported may differ\n");
 		}
 	} else {
-		// printf("\t\tHT RX MCS rate indexes supported:");
 		return (get_max_mcs_index(mcs));
-		// printf("\t\tHT TX MCS rate indexes are undefined\n");
 	}
 }
 
@@ -1007,7 +972,6 @@ int mac80211_get_maxrate(char *interface)
 			maxrate = 0.1 * nla_get_u32(tb[NL80211_BITRATE_ATTR_RATE]);
 		}
 	}
-	printf("maxrate: %d\n", maxrate);
 	nlmsg_free(msg);
 	return maxrate;
 out:
@@ -1040,7 +1004,6 @@ int mac80211_get_maxmcs(char *interface)
 		    && nla_len(tb[NL80211_BAND_ATTR_HT_MCS_SET]) == 16)
 			maxmcs = get_ht_mcs(nla_data(tb[NL80211_BAND_ATTR_HT_MCS_SET]));
 	}
-	printf("maxmcs: %d\n", maxmcs);
 	nlmsg_free(msg);
 	return maxmcs;
 out:
@@ -1144,7 +1107,6 @@ int mac80211_get_configured_rx_antenna(int phy)
 int mac80211_get_htwidth(char *dev)
 {
 	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
-	unsigned int *wiphy = arg;
 	const char *indent = "";
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
@@ -1161,14 +1123,6 @@ int mac80211_get_htwidth(char *dev)
 
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
-
-	if (wiphy && tb_msg[NL80211_ATTR_WIPHY]) {
-		unsigned int thiswiphy = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
-		indent = "\t";
-		if (*wiphy != thiswiphy)
-			printf("phy#%d\n", thiswiphy);
-		*wiphy = thiswiphy;
-	}
 
 	if (tb_msg[NL80211_ATTR_WIPHY_FREQ]) {
 		uint32_t freq = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]);
