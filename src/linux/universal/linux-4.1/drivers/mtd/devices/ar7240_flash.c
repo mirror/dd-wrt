@@ -333,6 +333,7 @@ static int __init ar7240_flash_init(void)
 	size_t rootsize;
 	size_t len;
 	int fsize;
+	int inc=0;
 	init_MUTEX(&ar7240_flash_sem);
 
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
@@ -393,20 +394,28 @@ static int __init ar7240_flash_init(void)
 				if (*check2 == SQUASHFS_MAGIC) {
 				    buf+=0x60;
 				    offset +=0x60;
+				    inc = 0x60;
 				}
 				if (*check3 == SQUASHFS_MAGIC) {
 				    buf+=0xC0;
 				    offset +=0xC0;
+				    inc = 0xc0;
 				}
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
 
+				
 				dir_parts[2].size = sb->bytes_used;
+				size_t origlen = dir_parts[2].offset + dir_parts[2].size;
+				
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
-				dir_parts[2].size =
-				    (len & 0x1ffffff) - dir_parts[2].offset;
+				printk(KERN_INFO "adjusted length %X, original length %X\n",len,origlen);
+				if ((len - (inc + 4096)) < origlen)
+					len += mtd->erasesize;
+				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
+				
 				dir_parts[3].offset =
 				    dir_parts[2].offset + dir_parts[2].size;
 
