@@ -1137,11 +1137,20 @@ float wifi_getrate(char *ifname)
 			return 54.0 * MEGA;
 		if (nvram_nmatch("bg-mixed", "%s_net_mode", ifname))
 			return 54.0 * MEGA;
-		if (nvram_nmatch("2040", "%s_channelbw", ifname)
-		    || nvram_nmatch("40", "%s_channelbw", ifname)) {
-			return (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
-		} else {
+		int width = mac80211_get_htwidth(ifname);
+		switch (width) {
+		case 2:
+			return 54.0 * MEGA;
+		case 20:
 			return (float)(HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA;
+		case 40:
+			return (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
+		case 80:
+		case 8080:
+		case 160:
+			return (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;	// dummy, no qam256 info yet available
+		default:
+			return 54.0 * MEGA;
 		}
 	} else
 #endif
