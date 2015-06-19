@@ -88,7 +88,7 @@ ar7240_flash_geom_t flash_geom_tbl[AR7240_FLASH_MAX_BANKS] = {
 	 .pgsize = AR7240_FLASH_PG_SIZE_256B}
 };
 
-static int ar7240_flash_probe()
+static int ar7240_flash_probe(void)
 {
 	return 0;
 }
@@ -122,6 +122,14 @@ int guessbootsize(void *offset, unsigned int maxscan)
 		if (ofs[i] == 0x27051956) {
 			printk(KERN_EMERG "uboot detected\n");
 			return i * 4;	// uboot, lzma image
+		}
+		if (ofs[i] == 0x77617061) {
+			printk(KERN_EMERG "DAP3662 bootloader\n");
+			return 0x70000;	// uboot, lzma image
+		}
+		if (ofs[i] == 0x7761706e) {
+			printk(KERN_EMERG "DAP2230 bootloader\n");
+			return 0x70000;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x32303033) {
 			printk(KERN_EMERG "WNR2000 uboot detected\n");
@@ -325,6 +333,7 @@ static int __init ar7240_flash_init(void)
 	size_t rootsize;
 	size_t len;
 	int fsize;
+	int inc=0;
 	init_MUTEX(&ar7240_flash_sem);
 
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
@@ -378,28 +387,41 @@ static int __init ar7240_flash_init(void)
 		while ((offset + mtd->erasesize) < mtd->size) {
 //                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
 			__u32 *check2 = (__u32 *)&buf[0x60];	
-			if (*((__u32 *)buf) == SQUASHFS_MAGIC || *check2 == SQUASHFS_MAGIC) {
+			__u32 *check3 = (__u32 *)&buf[0xc0];	
+			if (*((__u32 *)buf) == SQUASHFS_MAGIC || *check2 == SQUASHFS_MAGIC || *check3 == SQUASHFS_MAGIC) {
 				printk(KERN_EMERG "\nfound squashfs at %X\n",
 				       offset);
 				if (*check2 == SQUASHFS_MAGIC) {
 				    buf+=0x60;
 				    offset +=0x60;
+				    inc = 0x60;
+				}
+				if (*check3 == SQUASHFS_MAGIC) {
+				    buf+=0xC0;
+				    offset +=0xC0;
+				    inc = 0xc0;
 				}
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
 
+				
 				dir_parts[2].size = sb->bytes_used;
+				size_t origlen = dir_parts[2].offset + dir_parts[2].size;
+				
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
-				dir_parts[2].size =
-				    (len & 0x1ffffff) - dir_parts[2].offset;
+				printk(KERN_INFO "adjusted length %X, original length %X\n",len,origlen);
+				if ((len - (inc + 4096)) < origlen)
+					len += mtd->erasesize;
+				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
+				
 				dir_parts[3].offset =
 				    dir_parts[2].offset + dir_parts[2].size;
 
 				dir_parts[5].offset = mtd->size - mtd->erasesize;	//fis config
 				dir_parts[5].size = mtd->erasesize;
-				#if defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)
+				#if (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)) || defined(CONFIG_DIR862)
 				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize*2);	//nvram
 				dir_parts[4].size = mtd->erasesize;
 				#else
