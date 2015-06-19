@@ -200,6 +200,7 @@ static void getNoise_mac80211_internal(char *interface, struct mac80211_info *ma
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
+	return;
 nla_put_failure:
 	nlmsg_free(msg);
 	return;
@@ -215,7 +216,6 @@ int getNoise_mac80211(char *interface)
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
-	nlmsg_free(msg);
 	return mac80211_info.noise;
 
 nla_put_failure:
@@ -317,7 +317,6 @@ int getFrequency_mac80211(char *interface)
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
-	nlmsg_free(msg);
 	return mac80211_info.frequency;
 nla_put_failure:
 	nlmsg_free(msg);
@@ -1007,6 +1006,7 @@ int mac80211_get_maxmcs(char *interface)
 	nlmsg_free(msg);
 	return maxmcs;
 out:
+	return 0;
 nla_put_failure:
 	nlmsg_free(msg);
 	return 0;
@@ -1028,7 +1028,6 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_TX, tx_ant);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_RX, rx_ant);
 	unl_genl_request(&unl, msg, NULL, NULL);
-	nlmsg_free(msg);
 	return;
 nla_put_failure:
 	nlmsg_free(msg);
