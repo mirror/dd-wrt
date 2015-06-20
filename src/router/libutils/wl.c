@@ -265,11 +265,10 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	for (i = 0; i < wrq.u.freq.e; i++)
 		freq *= 10.0;
 	freq /= 1000000.0;
-	struct wifi_interface *i;
-	i = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
-	i->freq = (int)freq;
+	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+	interface->freq = (int)freq;
 	cprintf("wifi channel %f\n", freq);
-	return i;
+	return interface;
 }
 
 float wifi_getrate(char *ifname)
