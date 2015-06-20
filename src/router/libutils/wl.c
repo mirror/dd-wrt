@@ -1126,7 +1126,7 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 float wifi_getrate(char *ifname)
 {
 #ifdef HAVE_ATH9K
-	if (is_ath9k(ifname) {
+	if (is_ath9k(ifname)) {
 		if (nvram_nmatch("b-only", "%s_net_mode", ifname))
 			return 11.0 * MEGA;
 		if (nvram_nmatch("g-only", "%s_net_mode", ifname))
