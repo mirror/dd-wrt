@@ -461,6 +461,11 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 
 	if (channel > 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(prefix);
+		if (!interface) {
+		    websWrite(wp, "%s", live_translate("share.unknown"));
+		    return;
+		}
+
 		int freq = get_wififreq(prefix, interface->freq);	// translation for special frequency devices
 #ifdef HAVE_ATH9K
 		if (is_ath9k(prefix)) {
