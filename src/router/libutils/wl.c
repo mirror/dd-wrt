@@ -1139,6 +1139,8 @@ float wifi_getrate(char *ifname)
 		if (nvram_nmatch("bg-mixed", "%s_net_mode", ifname))
 			return 54.0 * MEGA;
 		struct wifi_interface *interface = mac80211_get_interface(ifname);
+		if (!interface)
+		    return -1;
 		float rate;
 		switch (interface->width) {
 		case 2:
@@ -1580,6 +1582,8 @@ int wifi_getchannel(char *ifname)
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 		struct wifi_interface *interface = mac80211_get_interface(ifname);
+		if (!interface)
+		    return -1;
 		int f = interface->freq;
 		free(interface);
 		return ieee80211_mhz2ieee(f);
