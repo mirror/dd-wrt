@@ -11,7 +11,7 @@
 
 #include <netlink-local.h>
 #include <netlink/netlink.h>
-
+#if 0
 static const char *errmsg[NLE_MAX+1] = {
 [NLE_SUCCESS]		= "Success",
 [NLE_FAILURE]		= "Unspecific failure",
@@ -80,7 +80,7 @@ void nl_perror(int error, const char *s)
 	else
 		fprintf(stderr, "%s\n", nl_geterror(error));
 }
-
+#endif
 int nl_syserr2nlerr(int error)
 {
 	error = abs(error);
