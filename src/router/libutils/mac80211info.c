@@ -533,6 +533,7 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 	// print_wifi_clients(mac80211_info->wci);
 	// free_wifi_clients(mac80211_info->wci);
 	globfree(&globbuf);
+	return (mac80211_info);
 nla_put_failure:
 	nlmsg_free(msg);
 	return (mac80211_info);
