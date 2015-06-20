@@ -1104,14 +1104,14 @@ int mac80211_get_configured_rx_antenna(int phy)
 	return (mac80211_get_antennas(phy, 1, 1));
 }
 
-int mac80211_get_htwidth(char *dev)
+struct wifi_interface *mac80211_get_interface(char *dev)
 {
 	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
 	const char *indent = "";
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
-	int width = 2;
 	int ret = 0;
+	struct wifi_interface *interface = NULL;
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_INTERFACE, false);
 	if (!msg)
 		return 0;
@@ -1125,33 +1125,39 @@ int mac80211_get_htwidth(char *dev)
 	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (tb_msg[NL80211_ATTR_WIPHY_FREQ]) {
-		uint32_t freq = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]);
+		interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+		interface->freq = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]);
+		interface->width = 2;
+		interface->center1 = -1;
+		interface->center2 = -1;
 
 		if (tb_msg[NL80211_ATTR_CHANNEL_WIDTH]) {
 
 			switch (nla_get_u32(tb_msg[NL80211_ATTR_CHANNEL_WIDTH])) {
 			case NL80211_CHAN_WIDTH_20_NOHT:
-				width = 2;
+				interface->width = 2;
 				break;
 			case NL80211_CHAN_WIDTH_20:
-				width = 20;
+				interface->width = 20;
 				break;
 			case NL80211_CHAN_WIDTH_40:
-				width = 40;
+				interface->width = 40;
 				break;
 			case NL80211_CHAN_WIDTH_80:
-				width = 80;
+				interface->width = 80;
 				break;
 			case NL80211_CHAN_WIDTH_80P80:
-				width = 8080;
+				interface->width = 8080;
 				break;
 			case NL80211_CHAN_WIDTH_160:
-				width = 160;
-				break;
-			default:
-				width = 2;
+				interface->width = 160;
 				break;
 			}
+
+			if (tb_msg[NL80211_ATTR_CENTER_FREQ1])
+				interface->center1 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ1]);
+			if (tb_msg[NL80211_ATTR_CENTER_FREQ2])
+				interface->center1 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ2]);
 
 		} else if (tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE]) {
 			enum nl80211_channel_type channel_type;
@@ -1159,19 +1165,19 @@ int mac80211_get_htwidth(char *dev)
 			channel_type = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE]);
 			switch (channel_type) {
 			case NL80211_CHAN_NO_HT:
-				width = 2;
+				interface->width = 2;
 				break;
 			case NL80211_CHAN_HT20:
-				width = 20;
+				interface->width = 20;
 				break;
 			case NL80211_CHAN_HT40MINUS:
-				width = 40;
+				interface->width = 40;
 				break;
 			case NL80211_CHAN_HT40PLUS:
-				width = 40;
+				interface->width = 40;
 				break;
 			default:
-				width = 40;
+				interface->width = 40;
 				break;
 			}
 
@@ -1179,10 +1185,10 @@ int mac80211_get_htwidth(char *dev)
 
 	}
 	nlmsg_free(msg);
-	return width;
+	return interface;
 nla_put_failure:
 	nlmsg_free(msg);
-	return width;
+	return interface;
 }
 
 #ifdef TEST
