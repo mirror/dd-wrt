@@ -132,6 +132,13 @@ struct site_survey_list {
 	uint8 dtim_period;	/* DTIM period */
 };
 
+struct wifi_interface {
+	int freq;
+	int width;
+	int center1;
+	int center2;
+};
+
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 #include <stdint.h>
 
@@ -157,7 +164,8 @@ extern struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range
 extern void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant);
 extern int mac80211_get_avail_tx_antenna(int phy);
 extern int mac80211_get_avail_rx_antenna(int phy);
-extern int mac80211_get_htwidth(char *dev);
+
+extern struct wifi_interface *mac80211_get_interface(char *dev);
 extern int mac80211_get_configured_tx_antenna(int phy);
 extern int mac80211_get_configured_rx_antenna(int phy);
 extern int mac80211_check_valid_frequency(char *interface, char *country, int freq);
@@ -251,7 +259,7 @@ u_int ieee80211_mhz2ieee(u_int freq);
 #endif
 #if defined(HAVE_RT2880) || defined(HAVE_RT61) || defined(HAVE_MADWIFI)
 int wifi_getchannel(char *ifname);
-int wifi_getfreq(char *ifname);
+struct wifi_interface *wifi_getfreq(char *ifname);
 u_int ieee80211_mhz2ieee(u_int freq);
 int get_radiostate(char *ifname);
 
