@@ -245,7 +245,7 @@ int wifi_getchannel(char *ifname)
 	return channel;
 }
 
-int wifi_getfreq(char *ifname)
+struct wifi_interface *wifi_getfreq(char *ifname)
 {
 	struct iwreq wrq;
 	double freq;
@@ -265,8 +265,11 @@ int wifi_getfreq(char *ifname)
 	for (i = 0; i < wrq.u.freq.e; i++)
 		freq *= 10.0;
 	freq /= 1000000.0;
+	struct wifi_interface *i;
+	i = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+	i->freq = (int)freq;
 	cprintf("wifi channel %f\n", freq);
-	return freq;
+	return i;
 }
 
 float wifi_getrate(char *ifname)
@@ -1135,21 +1138,24 @@ float wifi_getrate(char *ifname)
 			return 54.0 * MEGA;
 		if (nvram_nmatch("bg-mixed", "%s_net_mode", ifname))
 			return 54.0 * MEGA;
-		int width = mac80211_get_htwidth(ifname);
-		switch (width) {
+		struct wifi_interface *interface = mac80211_get_interface(ifname);
+		float rate;
+		switch (interface->width) {
 		case 2:
-			return 54.0 * MEGA;
+			rate = 54.0 * MEGA;
 		case 20:
-			return (float)(HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA;
+			rate = (float)(HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA;
 		case 40:
-			return (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
+			rate = (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
 		case 80:
 		case 8080:
 		case 160:
-			return (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;	// dummy, no qam256 info yet available
+			rate = (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;	// dummy, no qam256 info yet available
 		default:
-			return 54.0 * MEGA;
+			rate = 54.0 * MEGA;
 		}
+		free(interface);
+		return rate;
 	} else
 #endif
 	{
@@ -1573,7 +1579,9 @@ int wifi_getchannel(char *ifname)
 	int channel;
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
-		int f = getFrequency_mac80211(ifname);
+		struct wifi_interface *interface = mac80211_get_interface(ifname);
+		int f = interface->freq;
+		free(interface);
 		return ieee80211_mhz2ieee(f);
 	}
 #endif
@@ -1596,13 +1604,13 @@ int wifi_getchannel(char *ifname)
 	return channel;
 }
 
-int wifi_getfreq(char *ifname)
+struct wifi_interface *wifi_getfreq(char *ifname)
 {
 	struct iwreq wrq;
 
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
-		return getFrequency_mac80211(ifname);
+		return mac80211_get_interface(ifname);
 	}
 #endif
 
@@ -1616,8 +1624,11 @@ int wifi_getfreq(char *ifname)
 	for (i = 0; i < wrq.u.freq.e; i++)
 		freq *= 10.0;
 	freq /= 1000000.0;
+	struct wifi_interface *interface;
+	interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+	interface->freq = (int)freq;
 	cprintf("wifi channel %f\n", freq);
-	return freq;
+	return interface;
 }
 
 int get_radiostate(char *ifname)
