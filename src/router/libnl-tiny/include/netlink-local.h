@@ -71,12 +71,20 @@ struct trans_list {
 #define NL_DBG(LVL,FMT,ARG...) \
 	do {} while (0)
 
+#if 0
 #define BUG()                            \
 	do {                                 \
 		fprintf(stderr, "BUG: %s:%d\n",  \
 			__FILE__, __LINE__);         \
 		assert(0);	\
 	} while (0)
+#else
+
+#define BUG()                            \
+	do {				\
+	} while (0)
+
+#endif
 
 extern int __nl_read_num_str_file(const char *path,
 				  int (*cb)(long, const char *));
