@@ -1159,6 +1159,12 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 			case NL80211_CHAN_WIDTH_160:
 				interface->width = 160;
 				break;
+			case 6:
+				interface->width = 5;
+				break;
+			case 7:
+				interface->width = 10;
+				break;
 			}
 
 		} else if (tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE]) {

@@ -1145,6 +1145,12 @@ float wifi_getrate(char *ifname)
 		case 2:
 			rate = 54.0 * MEGA;
 		break;
+		case 5:
+			rate = 54.0 * MEGA / 4;
+		break;
+		case 10:
+			rate = 54.0 * MEGA / 2;
+		break;
 		case 20:
 			rate = (float)(HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA;
 		break;
