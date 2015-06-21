@@ -1147,8 +1147,12 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 				break;
 			case NL80211_CHAN_WIDTH_40:
 				interface->width = 40;
-				if (interface->center1 != -1)
-					interface->center1 += 10;				
+				if (interface->center1 != -1) {
+					if (interface->freq > interface->center1)
+						interface->center1 -= 10;
+					else
+						interface->center1 += 10;
+				}				
 				break;
 			case NL80211_CHAN_WIDTH_80:
 				interface->width = 80;
