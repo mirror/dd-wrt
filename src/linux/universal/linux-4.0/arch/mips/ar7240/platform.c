@@ -857,6 +857,9 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
+    #else
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);    
     #endif
     #endif
 
