@@ -1134,9 +1134,9 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 		if (tb_msg[NL80211_ATTR_CHANNEL_WIDTH]) {
 
 			if (tb_msg[NL80211_ATTR_CENTER_FREQ1])
-				interface->center1 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ1]) + 10;
+				interface->center1 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ1]);
 			if (tb_msg[NL80211_ATTR_CENTER_FREQ2])
-				interface->center2 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ2]) + 10;
+				interface->center2 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ2]);
 
 			switch (nla_get_u32(tb_msg[NL80211_ATTR_CHANNEL_WIDTH])) {
 			case NL80211_CHAN_WIDTH_20_NOHT:
