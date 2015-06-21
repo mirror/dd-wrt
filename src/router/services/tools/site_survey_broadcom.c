@@ -445,21 +445,30 @@ int site_survey_main(int argc, char *argv[])
 	for (i = 0; i < scan_res->count; i++) {
 		strcpy(site_survey_lists[i].SSID, bss_info->SSID);
 		strcpy(site_survey_lists[i].BSSID, ether_etoa(bss_info->BSSID.octet, mac));
-#ifndef HAVE_RB500
 		site_survey_lists[i].channel = bss_info->chanspec & 0xff;
-#endif
+		switch ((bss_info->chanspec & 0x3800)) {
+		case 0:
+		case 0x800:
+		case 0x1000:
+			site_survey_lists[i].channel = bss_info->chanspec & 0xff;
+			break;
+		case 0x0C00:	// for older version
+		case 0x1800:
+		case 0x2000:
+		case 0x2800:
+		case 0x3000:
+			site_survey_lists[i].channel = bss_info->ctl_ch;
+		}
+
 #ifdef WL_CHANSPEC_BW_80
 		switch (bss_info->chanspec & 0x3800) {
 		case WL_CHANSPEC_BW_80:
-			site_survey_lists[i].channel -= ((80 - 20) / 2) / 5;
 			site_survey_lists[i].channel |= 0x1000;
 			break;
 		case WL_CHANSPEC_BW_8080:
-			site_survey_lists[i].channel -= ((80 - 20) / 2) / 5;
 			site_survey_lists[i].channel |= 0x1100;
 			break;
 		case WL_CHANSPEC_BW_160:
-			site_survey_lists[i].channel -= ((160 - 20) / 2) / 5;
 			site_survey_lists[i].channel |= 0x1200;
 			break;
 		}
