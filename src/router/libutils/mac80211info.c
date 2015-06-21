@@ -307,7 +307,7 @@ unsigned int get_ath10kdistance(char *ifname)
 }
 
 #endif
-
+#if 0
 int getFrequency_mac80211(char *interface)
 {
 	struct nl_msg *msg;
@@ -322,7 +322,7 @@ nla_put_failure:
 	nlmsg_free(msg);
 	return (0);
 }
-
+#endif
 int mac80211_get_coverageclass(char *interface)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -1114,12 +1114,12 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 	struct wifi_interface *interface = NULL;
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_INTERFACE, false);
 	if (!msg)
-		return 0;
+		return NULL;
 	int devidx = if_nametoindex(dev);
 
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devidx);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
-		return 0;
+		return NULL;
 
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
@@ -1133,6 +1133,11 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 
 		if (tb_msg[NL80211_ATTR_CHANNEL_WIDTH]) {
 
+			if (tb_msg[NL80211_ATTR_CENTER_FREQ1])
+				interface->center1 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ1]) + 10;
+			if (tb_msg[NL80211_ATTR_CENTER_FREQ2])
+				interface->center2 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ2]) + 10;
+
 			switch (nla_get_u32(tb_msg[NL80211_ATTR_CHANNEL_WIDTH])) {
 			case NL80211_CHAN_WIDTH_20_NOHT:
 				interface->width = 2;
@@ -1142,6 +1147,7 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 				break;
 			case NL80211_CHAN_WIDTH_40:
 				interface->width = 40;
+				interface->center1 += 10;				
 				break;
 			case NL80211_CHAN_WIDTH_80:
 				interface->width = 80;
@@ -1153,11 +1159,6 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 				interface->width = 160;
 				break;
 			}
-
-			if (tb_msg[NL80211_ATTR_CENTER_FREQ1])
-				interface->center1 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ1]);
-			if (tb_msg[NL80211_ATTR_CENTER_FREQ2])
-				interface->center1 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ2]);
 
 		} else if (tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE]) {
 			enum nl80211_channel_type channel_type;

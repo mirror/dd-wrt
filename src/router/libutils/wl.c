@@ -1144,14 +1144,18 @@ float wifi_getrate(char *ifname)
 		switch (interface->width) {
 		case 2:
 			rate = 54.0 * MEGA;
+		break;
 		case 20:
 			rate = (float)(HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA;
+		break;
 		case 40:
 			rate = (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
+		break;
 		case 80:
 		case 8080:
 		case 160:
 			rate = (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;	// dummy, no qam256 info yet available
+		break;
 		default:
 			rate = 54.0 * MEGA;
 		}
