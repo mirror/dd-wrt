@@ -972,7 +972,7 @@ void period_check(int sig)
 //      sesgpio = 0x110;
 //      val |= get_gpio(16) << 16;      //aoss pushbutton
 #elif defined(HAVE_WNDR3700V4)
-	wifigpio = 0x10f
+	wifigpio = 0x10f;
 	sesgpio = 0x10c;
 	val |= get_gpio(15) << 15;	//aoss pushbutton
 	val |= get_gpio(12) << 12;	//aoss pushbutton
