@@ -19,7 +19,7 @@
 #include <stdbool.h>
 
 #include "unl.h"
-#include "linux/nl80211.h"
+#include <nl80211.h>
 #include "list.h"
 #include "list_sort.h"
 
