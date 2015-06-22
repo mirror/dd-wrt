@@ -2098,7 +2098,7 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 	websWrite(stream,
 		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate("lang_charset.set"));
-	websWrite(stream, "<style type=\"text/css\">\n body { font-size: small; } \n</style>\n</head>\n");
+	websWrite(stream, "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n</head>\n");
 	websWrite(stream, "<body>\n<fieldset><legend>System Log</legend>");
 
 	if (nvram_match("syslogd_enable", "1")) {
@@ -2224,14 +2224,23 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 		  "<script type=\"text/javascript\">\n"
 		  "//<![CDATA[\n"
 		  "function Show(label) {\n"
-		  "document.getElementById(\"label\").innerHTML = label;\n" "}\n" "//]]>\n" "</script>\n" "<style type=\"text/css\">\n\n" "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
+		  "document.getElementById(\"label\").innerHTML = label;\n" "}\n" "//]]>\n" "</script>\n"
+		  "<style type=\"text/css\">\n\n"
+		  "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
 	websWrite(stream,
-		  "  margin: 1.1em 0 3.5em; padding: 0;\n" "  border: 1px solid gray; list-style: none;\n"
-		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n" "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
+		  "  margin: 1.1em 0 3.5em; padding: 0;\n"
+		  "  border: 1px solid gray; list-style: none;\n"
+		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n"
+		  "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n"
+		  "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
 	websWrite(stream,
-		  "  margin: 0; padding: 0;\n" "  text-align: center; list-style: none;}\n" "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"
-		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n" "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"
-		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n" "#t-graph li.rcvd {left: 3px; background: #228B22;}\n" "#t-graph li.sent {left: 8px; background: #CD0000;}\n");
+		  "  margin: 0; padding: 0;\n"
+		  "  text-align: center; list-style: none;}\n"
+		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"
+		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n"
+		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"
+		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n" "#t-graph li.rcvd {left: 3px; background: #228B22;}\n"
+		  "#t-graph li.sent {left: 8px; background: #CD0000;}\n");
 
 	for (i = 0; i < days - 1; i++) {
 		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
@@ -2404,6 +2413,7 @@ struct mime_handler mime_handlers[] = {
 	{"style/cyan/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/elegant/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/elegant/fresh.css", "text/css", NULL, NULL, do_ej, NULL, 1},
+	{"style/elegant/fresh-dark.css", "text/css", NULL, NULL, do_ej, NULL, 1},
 	{"style/green/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/orange/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/red/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
