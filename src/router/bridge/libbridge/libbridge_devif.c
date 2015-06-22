@@ -446,7 +446,7 @@ int br_set_port_priority(const char *bridge, const char *port, int priority)
 int br_set_port_snooping(const char *br, const char *port, const char *addr)
 {
 	unsigned int iaddr[6];
-	unsigned char dest[6];
+	unsigned char dest[12];
 	int i = 0;
 	
 	sscanf(addr, "%02x%02x%02x%02x%02x%02x", iaddr, iaddr+1, iaddr+2, iaddr+3, iaddr+4, iaddr+5);
@@ -461,7 +461,7 @@ int br_set_port_snooping(const char *br, const char *port, const char *addr)
 int br_clear_port_snooping(const char *br, const char *port, const char *addr)
 {
 	unsigned int iaddr[6];
-	unsigned char dest[6];
+	unsigned char dest[12];
 	int i = 0;
 	
 	sscanf(addr, "%02x%02x%02x%02x%02x%02x", iaddr, iaddr+1, iaddr+2, iaddr+3, iaddr+4, iaddr+5);
