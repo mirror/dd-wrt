@@ -470,9 +470,9 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ATH9K
 		if (is_ath9k(prefix)) {
 			websWrite(wp, "%d", ieee80211_mhz2ieee(interface->freq));
-			if (interface->center1 != -1)
+			if (interface->center1 != -1 && interface->center1 != interface->freq)
 				websWrite(wp, " + %d", ieee80211_mhz2ieee(interface->center1));
-			if (interface->center2 != -1)
+			if (interface->center2 != -1 && interface->center1 != interface->freq)
 				websWrite(wp, " + %d", ieee80211_mhz2ieee(interface->center2));
 		} else
 #endif
