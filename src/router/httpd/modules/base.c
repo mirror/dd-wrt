@@ -1372,7 +1372,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		sprintf(drive, "/dev/%s", getdisc());
 		FILE *in = fopen(drive, "r+b");
 		fseeko(in, 0, SEEK_END);
-		__off_t mtdlen = ftell(in);
+		off_t mtdlen = ftello(in);
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		int i;
 		for (i = 0; i < 65536; i++)
@@ -1390,7 +1390,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		sprintf(drive, "/dev/sda");
 		FILE *in = fopen(drive, "r+b");
 		fseeko(in, 0, SEEK_END);
-		__off_t mtdlen = ftell(in);
+		off_t mtdlen = ftello(in);
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		int i;
 		for (i = 0; i < 65536; i++)
