@@ -145,7 +145,7 @@ static void rtsp_parse_packet_acceptline(struct ndpi_detection_module_struct
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 
-  if(packet->accept_line.len >= 28 && memcmp(packet_hdr(accept_line), "application/x-rtsp-tunnelled", 28) == 0) {
+  if(packet->accept_line.len >= 28 && memcmp(packet->accept_line.ptr, "application/x-rtsp-tunnelled", 28) == 0) {
     NDPI_LOG(NDPI_PROTOCOL_RTSP, ndpi_struct, NDPI_LOG_DEBUG, "RTSP accept line detected\n");
     ndpi_int_http_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_RTSP);
   }
@@ -198,7 +198,14 @@ static void parseHttpSubprotocol(struct ndpi_detection_module_struct *ndpi_struc
       /* Try matching subprotocols */
       // ndpi_match_string_subprotocol(ndpi_struct, flow, (char*)packet->host_line.ptr, packet->host_line.len);
 
-      if(ndpi_struct->http_dissect_response) {
+    /*
+      NOTE
+
+      If http_dont_dissect_response = 1 dissection of HTTP response
+      mime types won't happen     
+     */
+
+      if(!ndpi_struct->http_dont_dissect_response) {
 	if(flow->http.url && flow->http_detected)
 	  ndpi_match_string_subprotocol(ndpi_struct, flow, (char *)&flow->http.url[7], strlen((const char *)&flow->http.url[7]));
       } else
@@ -224,7 +231,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
 
   u_int8_t a;
 
-  if(ndpi_struct->http_dissect_response) {
+  if(!ndpi_struct->http_dont_dissect_response) {
     if((flow->http.url == NULL)
        && (packet->http_url_name.len > 0)
        && (packet->host_line.len > 0)) {
@@ -233,8 +240,8 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
       flow->http.url = ndpi_malloc(len);
       if(flow->http.url) {
 	strncpy(flow->http.url, "http://", 7);
-	strncpy(&flow->http.url[7], (char*)packet_hdr(host_line), packet->host_line.len);
-	strncpy(&flow->http.url[7+packet->host_line.len], (char*)packet_hdr(http_url_name), 
+	strncpy(&flow->http.url[7], (char*)packet->host_line.ptr, packet->host_line.len);
+	strncpy(&flow->http.url[7+packet->host_line.len], (char*)packet->http_url_name.ptr, 
 		packet->http_url_name.len);
 	flow->http.url[len-1] = '\0';
       }
@@ -242,13 +249,13 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
       if(flow->packet.http_method.len < 3)
 	flow->http.method = HTTP_METHOD_UNKNOWN;
       else {
-	switch(packet_hdr(http_method)[0]) {
+	switch(flow->packet.http_method.ptr[0]) {
 	case 'O':  flow->http.method = HTTP_METHOD_OPTIONS; break;
 	case 'G':  flow->http.method = HTTP_METHOD_GET; break;
 	case 'H':  flow->http.method = HTTP_METHOD_HEAD; break;
 
 	case 'P':
-	  switch(packet_hdr(http_method)[1]) {
+	  switch(flow->packet.http_method.ptr[1]) {
 	  case 'O': flow->http.method = HTTP_METHOD_POST; break;
 	  case 'U': flow->http.method = HTTP_METHOD_PUT; break;
 	  }
@@ -269,14 +276,14 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
 
       flow->http.content_type = ndpi_malloc(len);
       if(flow->http.content_type) {
-	strncpy(flow->http.content_type, (char*)packet_hdr(content_line), 
+	strncpy(flow->http.content_type, (char*)packet->content_line.ptr, 
 		packet->content_line.len);      
 	flow->http.content_type[packet->content_line.len] = '\0';
       }
     }
   }
 
-  if(packet->user_agent_line.offs != 0xffff && packet->user_agent_line.len != 0) {
+  if(packet->user_agent_line.ptr != NULL && packet->user_agent_line.len != 0) {
     /* Format:
        Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) ....
     */
@@ -284,7 +291,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
       char ua[256];
       u_int mlen = ndpi_min(packet->user_agent_line.len, sizeof(ua)-1);
 
-      strncpy(ua, (const char *)packet_hdr(user_agent_line), mlen);
+      strncpy(ua, (const char *)packet->user_agent_line.ptr, mlen);
       ua[mlen] = '\0';
 
       if(strncmp(ua, "Mozilla", 7) == 0) {
@@ -335,49 +342,49 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
     }
 
     NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "User Agent Type Line found %.*s\n",
-	     packet->user_agent_line.len, packet_hdr(user_agent_line));
+	     packet->user_agent_line.len, packet->user_agent_line.ptr);
 
-    if((!ndpi_struct->http_dissect_response) || flow->http_detected)
+    if((ndpi_struct->http_dont_dissect_response) || flow->http_detected)
       ndpi_match_content_subprotocol(ndpi_struct, flow, 
-				     (char*)packet_hdr(user_agent_line),
+				     (char*)packet->user_agent_line.ptr, 
 				     packet->user_agent_line.len);
   }
 
   /* check for host line */
-  if(packet->host_line.offs != 0xffff) {
+  if(packet->host_line.ptr != NULL) {
     u_int len;
 
     NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "HOST Line found %.*s\n",
-	     packet->host_line.len, packet_hdr(host_line));
+	     packet->host_line.len, packet->host_line.ptr);
 
-    if((!ndpi_struct->http_dissect_response) || flow->http_detected)
+    if((ndpi_struct->http_dont_dissect_response) || flow->http_detected)
       ndpi_match_content_subprotocol(ndpi_struct, flow, 
-				     (char*)packet_hdr(host_line),
+				     (char*)packet->host_line.ptr, 
 				     packet->host_line.len);
 
     /* Copy result for nDPI apps */
     len = ndpi_min(packet->host_line.len, sizeof(flow->host_server_name)-1);
-    strncpy((char*)flow->host_server_name, (char*)packet_hdr(host_line), len);
+    strncpy((char*)flow->host_server_name, (char*)packet->host_line.ptr, len);
     flow->host_server_name[len] = '\0', flow->server_id = flow->dst;
 
     len = ndpi_min(packet->forwarded_line.len, sizeof(flow->nat_ip)-1);
-    strncpy((char*)flow->nat_ip, (char*)packet_hdr(forwarded_line), len);
+    strncpy((char*)flow->nat_ip, (char*)packet->forwarded_line.ptr, len);
     flow->nat_ip[len] = '\0';
 
-    if(!ndpi_struct->http_dissect_response)
+    if(ndpi_struct->http_dont_dissect_response)
       parseHttpSubprotocol(ndpi_struct, flow);
 
     if((flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN)
-       && ((!ndpi_struct->http_dissect_response) || flow->http_detected))
+       && ((ndpi_struct->http_dont_dissect_response) || flow->http_detected))
       ndpi_match_string_subprotocol(ndpi_struct, flow,
 				    (char *)flow->host_server_name,
 				    strlen((const char *)flow->host_server_name));
 
     if((flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN)
-       && ((!ndpi_struct->http_dissect_response) || flow->http_detected)
+       && ((ndpi_struct->http_dont_dissect_response) || flow->http_detected)
        && (packet->http_origin.len > 0))
       ndpi_match_string_subprotocol(ndpi_struct, flow,
-				    (char *)packet_hdr(http_origin),
+				    (char *)packet->http_origin.ptr,
 				    packet->http_origin.len);
 
     if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN) {
@@ -388,13 +395,13 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
     }
   }
 
-  if(ndpi_struct->http_dissect_response && flow->http_detected)
+  if(!ndpi_struct->http_dont_dissect_response && flow->http_detected)
     parseHttpSubprotocol(ndpi_struct, flow);
 
   /* check for accept line */
-  if(packet->accept_line.offs != 0xffff) {
+  if(packet->accept_line.ptr != NULL) {
     NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "Accept Line found %.*s\n",
-	     packet->accept_line.len, packet_hdr(accept_line));
+	     packet->accept_line.len, packet->accept_line.ptr);
 #ifdef NDPI_PROTOCOL_RTSP
     if(NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_struct->detection_bitmask, NDPI_PROTOCOL_RTSP) != 0) {
       rtsp_parse_packet_acceptline(ndpi_struct, flow);
@@ -405,7 +412,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
   /* search for line startin with "Icy-MetaData" */
 #ifdef NDPI_CONTENT_MPEG
   for (a = 0; a < packet->parsed_lines; a++) {
-    if(packet->line[a].len > 11 && memcmp(packet_line(a), "Icy-MetaData", 12) == 0) {
+    if(packet->line[a].len > 11 && memcmp(packet->line[a].ptr, "Icy-MetaData", 12) == 0) {
       NDPI_LOG(NDPI_CONTENT_MPEG, ndpi_struct, NDPI_LOG_DEBUG, "MPEG: Icy-MetaData found.\n");
       ndpi_int_http_add_connection(ndpi_struct, flow, NDPI_CONTENT_MPEG);
       return;
@@ -415,12 +422,12 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
 #endif
 #endif
 
-  if(packet->content_line.offs != 0xffff && packet->content_line.len != 0) {
+  if(packet->content_line.ptr != NULL && packet->content_line.len != 0) {
     NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "Content Type Line found %.*s\n",
-	     packet->content_line.len, packet_hdr(content_line));
-    
-    if((!ndpi_struct->http_dissect_response) || flow->http_detected)
-      ndpi_match_content_subprotocol(ndpi_struct, flow, (char*)packet_hdr(content_line), packet->content_line.len);
+	     packet->content_line.len, packet->content_line.ptr);
+
+    if((ndpi_struct->http_dont_dissect_response) || flow->http_detected)
+      ndpi_match_content_subprotocol(ndpi_struct, flow, (char*)packet->content_line.ptr, packet->content_line.len);
   }
 
   /* check user agent here too */
@@ -584,20 +591,20 @@ static void _org_ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_
 	/* parse one more packet .. */
 	NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "just one line, search next packet\n");
 
-	packet->http_method.offs = packet->line[0].offs;
+	packet->http_method.ptr = packet->line[0].ptr;
         packet->http_method.len = filename_start - 1;
 	flow->l4.tcp.http_stage = 1;
 	return;
       }
       // parsed_lines > 1 here
       if(packet->line[0].len >= (9 + filename_start)
-	 && memcmp(&packet_line(0)[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+	 && memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
 	u_int16_t proto_id;
 
-	packet->http_url_name.offs = filename_start;
+	packet->http_url_name.ptr = &packet->payload[filename_start];
 	packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
 
-	packet->http_method.offs = packet->line[0].offs;
+	packet->http_method.ptr = packet->line[0].ptr;
 	packet->http_method.len = filename_start - 1;
 
 	NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "http structure detected, adding\n");
@@ -605,7 +612,7 @@ static void _org_ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_
 	if(filename_start == 8 && (memcmp(packet->payload, "CONNECT ", 8) == 0)) /* nathan@getoffmalawn.com */
 	  proto_id = NDPI_PROTOCOL_HTTP_CONNECT;
 	else {
-	  if((packet->http_url_name.len > 7) && (!strncmp((const char*)packet_hdr(http_url_name), "http://", 7)))
+	  if((packet->http_url_name.len > 7) && (!strncmp((const char*)packet->http_url_name.ptr, "http://", 7)))
 	    proto_id = NDPI_PROTOCOL_HTTP_PROXY;
 	  else {
 	    proto_id = NDPI_PROTOCOL_HTTP;
@@ -615,7 +622,7 @@ static void _org_ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_
 	ndpi_int_http_add_connection(ndpi_struct, flow, proto_id);
 	check_content_type_and_change_protocol(ndpi_struct, flow);
 	/* HTTP found, look for host... */
-	if(packet->host_line.offs != 0xffff) {
+	if(packet->host_line.ptr != NULL) {
 	  /* aaahh, skip this direction and wait for a server reply here */
 	  flow->l4.tcp.http_stage = 2;
 	  NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "HTTP START HOST found\n");
@@ -648,7 +655,7 @@ static void _org_ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_
 	}
       }
       // http://www.slideshare.net/DSPIP/rtsp-analysis-wireshark
-      if(packet->line[0].len >= 9 && memcmp(&packet_line(0)[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+      if(packet->line[0].len >= 9 && memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
 	ndpi_int_http_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_HTTP);
 	check_content_type_and_change_protocol(ndpi_struct, flow);
 	NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG,
@@ -687,11 +694,11 @@ static void _org_ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_
       /* check for url here */
       filename_start = http_request_url_offset(ndpi_struct, flow);
       if(filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
-	 && memcmp(&packet_line(0)[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
-	packet->http_url_name.offs = filename_start;
+	 && memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+	packet->http_url_name.ptr = &packet->payload[filename_start];
 	packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
 
-	packet->http_method.offs = packet->line[0].offs;
+	packet->http_method.ptr = packet->line[0].ptr;
 	packet->http_method.len = filename_start - 1;
 
 	NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "next http action, "
@@ -700,7 +707,7 @@ static void _org_ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_
       }
       check_content_type_and_change_protocol(ndpi_struct, flow);
       /* HTTP found, look for host... */
-      if(packet->host_line.offs != 0xffff) {
+      if(packet->host_line.ptr != NULL) {
 	NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG,
 		 "HTTP RUN MAYBE NEXT HOST found, skipping all packets from this direction\n");
 	/* aaahh, skip this direction and wait for a server reply here */
@@ -788,7 +795,7 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
       NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG,
 	       "Found just one line, we will look further for the next packet...\n");
 
-      packet->http_method.offs = packet->line[0].offs;
+      packet->http_method.ptr = packet->line[0].ptr;
       packet->http_method.len = filename_start - 1;
 
       /* Encode the direction of the packet in the stage, so we will know when we need to look for the response packet. */
@@ -800,16 +807,16 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	     "Found more than one line, we look further for the next packet...\n");
 
     if(packet->line[0].len >= (9 + filename_start)
-        && memcmp(&packet_line(0)[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+        && memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
 
-      packet->http_url_name.offs = filename_start;
+      packet->http_url_name.ptr = &packet->payload[filename_start];
       packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
 
-      packet->http_method.offs = packet->line[0].offs;
+      packet->http_method.ptr = packet->line[0].ptr;
       packet->http_method.len = filename_start - 1;
 
       if((packet->http_url_name.len > 7)
-          && (!strncmp((const char*) packet_hdr(http_url_name), "http://", 7))) {
+          && (!strncmp((const char*) packet->http_url_name.ptr, "http://", 7))) {
         NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "HTTP_PROXY Found.\n");
         ndpi_int_http_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_HTTP_PROXY);
         check_content_type_and_change_protocol(ndpi_struct, flow);
@@ -827,7 +834,7 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 
       check_content_type_and_change_protocol(ndpi_struct, flow);
 
-      if(packet->host_line.offs != 0xffff) {
+      if(packet->host_line.ptr != NULL) {
 	/*
 	  nDPI is pretty scrupoulous about HTTP so it waits until the
 	  HTTP response is received just to check that it conforms
@@ -835,7 +842,7 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	  in 99.99% of the cases is like that.
 	*/
 
-	if(!ndpi_struct->http_dissect_response) {
+	if(ndpi_struct->http_dont_dissect_response) {
 	  if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN) /* No subprotocol found */
 	    ndpi_int_http_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_HTTP);
 	} else {
@@ -883,7 +890,7 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
       }
       // http://www.slideshare.net/DSPIP/rtsp-analysis-wireshark
       if (packet->line[0].len >= 9
-          && memcmp(&packet_line(0)[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+          && memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
 
         NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "Found HTTP.\n");
         ndpi_int_http_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_HTTP);
@@ -950,7 +957,7 @@ static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struc
 
 /* ********************************* */
 
-ndpi_http_method ndpi_get_http_method(struct ndpi_detection_module_struct *ndpi_mod,
+static ndpi_http_method ndpi_get_http_method(struct ndpi_detection_module_struct *ndpi_mod,
 				      struct ndpi_flow_struct *flow) {
   if(!flow)
     return(HTTP_METHOD_UNKNOWN);
@@ -960,7 +967,7 @@ ndpi_http_method ndpi_get_http_method(struct ndpi_detection_module_struct *ndpi_
 
 /* ********************************* */
 
-char* ndpi_get_http_url(struct ndpi_detection_module_struct *ndpi_mod,
+static char* ndpi_get_http_url(struct ndpi_detection_module_struct *ndpi_mod,
 			struct ndpi_flow_struct *flow) {
   if((!flow) || (!flow->http.url))
     return("");
@@ -970,7 +977,7 @@ char* ndpi_get_http_url(struct ndpi_detection_module_struct *ndpi_mod,
 
 /* ********************************* */
 
-char* ndpi_get_http_content_type(struct ndpi_detection_module_struct *ndpi_mod,
+static char* ndpi_get_http_content_type(struct ndpi_detection_module_struct *ndpi_mod,
 			       struct ndpi_flow_struct *flow) {
   if((!flow) || (!flow->http.content_type))
     return("");
