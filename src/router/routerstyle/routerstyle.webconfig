@@ -51,16 +51,16 @@ function previewStyle(val) {
 								theme2.id='freshCSS';
 								theme2.type="text/css";
 								document.head.appendChild(theme2);
-								if(theme2.styleSheet)
+								if(theme2.styleSheet) {
 									theme2.styleSheet.cssText=httpRequest2.responseText;
-								else
+								} else {
 									theme2.textContent=httpRequest2.responseText;
+								}
 							}
 						}
 					};
 					httpRequest2.open('GET', '/style/elegant/fresh.css');
 					httpRequest2.send(null);
-					// only add css if current user styles config is dark
 					if("<% nvram_get("router_style_dark"); %>"=="1"){
 						var httpRequest3 = new XMLHttpRequest();
 						httpRequest3.onreadystatechange = function(){
@@ -70,13 +70,14 @@ function previewStyle(val) {
 									theme3.id='darkCSS';
 									theme3.type="text/css";
 									document.head.appendChild(theme3);
-									if(theme3.styleSheet)
+									if(theme3.styleSheet) {
 										theme3.styleSheet.cssText=httpRequest3.responseText;
-									else
+									} else {
 										theme3.textContent=httpRequest3.responseText;
+									}
 								}
 							}
-						}
+						};
 						httpRequest3.open('GET', '/style/elegant/fresh-dark.css');
 						httpRequest3.send(null);
 					}
@@ -86,10 +87,11 @@ function previewStyle(val) {
 				Theme.type="text/css";
 				document.head.appendChild(Theme);
 				css=httpRequest.responseText.replace(/import url\(/g,'import url(/style/'+val+'/');
-				if(theme.styleSheet)
+				if(theme.styleSheet) {
 					Theme.styleSheet.cssText=css;
-				else
+				} else {
 					Theme.textContent=css;
+				}
 				document.head.removeChild(theme);
 				if(fresh)
 					document.head.appendChild(fresh);
