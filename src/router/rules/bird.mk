@@ -7,7 +7,7 @@ bird-install:
 	$(STRIP) $(INSTALLDIR)/bird/usr/sbin/bird
 
 bird-configure:
-	cd bird && ./configure --target=$(ARCH)-linux --host=$(ARCH) --with-protocols=bgp,rip,static CC=$(ARCH)-linux-gcc --prefix=/usr --disable-client --with-sysconfig=sysdep/cf/linux.h --localstatedir=/tmp/bird --sysconfdir=/tmp/bird CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	cd bird && ./configure --target=$(ARCH)-linux --host=$(ARCH) --with-protocols=bgp,rip,static CC=$(ARCH)-linux-gcc --prefix=/usr --disable-client --with-sysconfig=sysdep/cf/linux.h --localstatedir=/tmp/bird --sysconfdir=/tmp/bird CFLAGS="$(COPTS) $(MIPS16_OPT)  -std=gnu89 -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 bird-clean:
 	$(MAKE) -C bird clean
