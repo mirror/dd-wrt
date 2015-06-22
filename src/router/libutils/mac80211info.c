@@ -24,7 +24,7 @@
 
 #include "unl.h"
 #include "mac80211regulatory.h"
-#include "linux/nl80211.h"
+#include <nl80211.h>
 
 #include "wlutils.h"
 #include <utils.h>
