@@ -2,13 +2,15 @@
 This CSS is addition / overrides to elegant/fresh.css
 Colors also defined in theme style.css
 */
+body a {
+	color: #fff;
+}
+body a:visited {
+	color: #eee;
+}
 body, body.gui, .popup {
 	color: #999; /* default text color */
 	background: #111111; /* same as header */
-}
-h2, h3 {
-	color: #eee; /* [re]defined in color styles, comment to use color headers */
-	background-color: #666; /* [re]defined in color styles, comment to use color headers */
 }
 body div.message {
 	background-color: #1a1a1a;
@@ -61,24 +63,29 @@ body input {
 	background-color: #333;
 	border-color: #454545;
 }
+body input[disabled], body select[disabled] {
+	color: #666;
+	background-color: #1a1a1a;
+	border-color: #111111;
+}
 /* 4 main buttons styles */
-body input[value="Save"]:hover{
+body input[name="save_button"]:hover{
 	color: #eee; /* good for yellow style */
 }
-body input[value="Apply Settings"]:hover {
+body input[name="apply_button"]:hover {
 	background: none repeat scroll 0 0 #78D98D;
 	color: #fff;
 }
-body input[value="Cancel Changes"] {
+body input[name="reset_button"] {
 	background: none repeat scroll 0 0 #454545;
 	border-color: #333;
 	color: #ccc;
 }
-body input[value="Cancel Changes"]:hover {
+body input[name="reset_button"]:hover {
 	background: none repeat scroll 0 0 #FFA500;
 	color: #fff;
 }
-body input[value="Reboot Router"]:hover{
+body input[name="reboot_button"]:hover{
 	background: none repeat scroll 0 0 #FF7C7C;
 	color:#eee;
 }
@@ -98,6 +105,11 @@ select {
 	background-color: #333;
 	border: 1px solid #454545;
 }
+select[disabled] {
+	color: #666;
+	background-color: #1a1a1a;
+	border-color: #111111;
+}
 table tr th {
 	background-color: #333;
 	border-color: #333;
@@ -114,11 +126,13 @@ table tr:hover {
 	border-color: #999;
 }
 .off {
-	color: #333; /* as borders */
+	color: #666; /* Safari is evil */
 	background-color: #1a1a1a;
-	/* border-color: #111111;
-	this applied to fieldsets also
-	so it's off */
+	border-color: #111111; /* this applied to fieldsets borders also
+	so need fix */
+}
+fieldset.off {
+	border-color: #333;
 }
 .odd {
 	background-color: #222;
