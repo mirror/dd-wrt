@@ -394,8 +394,20 @@ static int calclength(char *webfile, char *ifname)
 	return len + 1;
 }
 
-static char *insert(char *ifname, char *index, char *webfile)
+static char *readweb(char *filename)
 {
+	FILE *web = getWebsFile(filename);
+	unsigned int len = getWebsFileLen(filename);
+	char *webfile = (char *)safe_malloc(len + 1);
+	fread(webfile, len, 1, web);
+	fclose(web);
+	webfile[len] = 0;
+	return webfile;
+}
+
+static char *insert(char *ifname, char *index, char *filename)
+{
+	char *webfile = readweb(filename);
 	int weblen = strlen(webfile);
 	int i;
 	int ai = 0;
@@ -425,19 +437,8 @@ static char *insert(char *ifname, char *index, char *webfile)
 		} else
 			temp[ai++] = webfile[i];
 	}
+	free(webfile);
 	return temp;
-}
-
-static char readweb(char *filename)
-{
-	char *webfile;
-	FILE *web = getWebsFile(filename);
-	unsigned int len = getWebsFileLen(filename);
-	char *webfile = (char *)safe_malloc(len + 1);
-	fread(webfile, len, 1, web);
-	fclose(web);
-	webfile[len] = 0;
-	return webfile;
 }
 
 // and now the tricky part (more dirty as dirty)
@@ -456,11 +457,9 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, cha
 	}
 
 	ifname[indexof(ifname, '.')] = 0;
-	char *webfile = readweb("WL_FilterTable.asp");
 	rep(ifname, '.', 'X');
 
-	char *temp = insert(ifname, "0", webfile);
-	free(webfile);
+	char *temp = insert(ifname, "0", "WL_FilterTable.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
 }
@@ -653,9 +652,7 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream, cha
 
 	ifname[indexof(ifname, '.')] = 0;
 
-	char *webfile = readweb("WL_ActiveTable.asp");
-	char *temp = insert(ifname, "0", webfile);
-	free(webfile);
+	char *temp = insert(ifname, "0", "WL_ActiveTable.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
 }
@@ -666,8 +663,7 @@ void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query
 	char ifname[32];
 	strncpy(ifname, temp2, sizeof(ifname));
 	ifname[indexof(ifname, '.')] = 0;
-	char *webfile = readweb("Wireless_WDS.asp");
-	char *temp = insert(ifname, "0", webfile);
+	char *temp = insert(ifname, "0", "Wireless_WDS.asp");
 	free(webfile);
 	do_ej_buffer(temp, stream);
 	free(temp);
@@ -682,8 +678,7 @@ void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, ch
 	ifname[indexof(ifname, '.')] = 0;
 	char index[2];
 	substring(strlen(ifname) - 1, strlen(ifname), ifname, index);
-	char *webfile = readweb("Wireless_Advanced.asp");
-	char *temp = insert(ifname, index, webfile);
+	char *temp = insert(ifname, index, "Wireless_Advanced.asp");
 	free(webfile);
 	do_ej_buffer(temp, stream);
 	free(temp);
