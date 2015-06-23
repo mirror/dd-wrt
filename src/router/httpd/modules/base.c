@@ -373,9 +373,9 @@ int variables_arraysize(void)
 void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = &path[indexof(path, '-') + 1];
-	char ifname[16];
+	char ifname[32];
 
-	strcpy(ifname, temp2);
+	strncpy(ifname, temp2, sizeof(ifname));
 
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3 != NULL) {
@@ -386,19 +386,21 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, cha
 
 	ifname[indexof(ifname, '.')] = 0;
 	FILE *web = getWebsFile("WL_FilterTable.asp");
-	char temp[4096];
 
-	memset(temp, 0, 4096);
 	unsigned int len = getWebsFileLen("WL_FilterTable.asp");
 	char *webfile = (char *)safe_malloc(len + 1);
 
 	fread(webfile, len, 1, web);
 	webfile[len] = 0;
 	rep(ifname, '.', 'X');
-	sprintf(temp, webfile, ifname, ifname, ifname, ifname, ifname, ifname);
+
+	char *temp = (char *)safe_malloc(len + 128);
+	memset(temp, 0, len + 64);
+	sprintf(temp, webfile, ifname, ifname, ifname, ifname);
 	free(webfile);
 	fclose(web);
 	do_ej_buffer(temp, stream);
+	free(temp);
 }
 
 #ifdef HAVE_FREERADIUS
@@ -431,9 +433,9 @@ static void show_certfield(webs_t wp, char *title, char *file)
 void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = &path[indexof(path, '-') + 1];
-	char number[16];
+	char number[32];
 	webs_t wp = stream;
-	strcpy(number, temp2);
+	strncpy(number, temp2, sizeof(number));
 	number[indexof(number, '.')] = 0;
 	int radiusindex = atoi(number);
 
@@ -572,126 +574,38 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char
 }
 
 #endif
-void do_activetable(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static int calclength(char *webfile, char *ifname)
 {
-	char *temp2 = &path[indexof(path, '-') + 1];
-	char ifname[16];
-
-	strcpy(ifname, temp2);
-
-	char *temp3 = websGetVar(stream, "ifname", NULL);
-	if (temp3 != NULL) {
-		if (strlen(temp3) > 0) {
-			strcpy(ifname, temp3);
+	int weblen = strlen(webfile);
+	int len = 0;
+	int i;
+	for (i = 0; i < weblen - 1; i++) {
+		if (webfile[i] == '%') {
+			if (webfile[i + 1] == '%') {
+				i += 2;
+				len += 2;
+				continue;
+			}
+			if (webfile[i + 1] == 'd') {
+				len++;
+			}
+			if (webfile[i + 1] == 's') {
+				len += strlen(ifname);
+			}
 		}
+		len++;
 	}
-
-	ifname[indexof(ifname, '.')] = 0;
-	FILE *web = getWebsFile("WL_ActiveTable.asp");
-	unsigned int len = getWebsFileLen("WL_ActiveTable.asp");
-	char *webfile = (char *)safe_malloc(len + 1);
-
-	fread(webfile, len, 1, web);
-	webfile[len] = 0;
-	fclose(web);
-
-	char temp[32768];
-
-	memset(temp, 0, 32768);
-	int ai = 0;
-	int i = 0;
-	int weblen = strlen(webfile);
-
-	for (i = 0; i < weblen; i++) {
-		if (webfile[i] == '%') {
-			i++;
-			switch (webfile[i]) {
-			case '%':
-				temp[ai++] = '%';
-				break;
-			case 's':
-				strcpy(&temp[ai], ifname);
-				ai += strlen(ifname);
-				break;
-			default:
-				temp[ai++] = webfile[i];
-				break;
-			}
-		} else
-			temp[ai++] = webfile[i];
-	}
-	free(webfile);
-	do_ej_buffer(temp, stream);
+	return len + 1;
 }
 
-void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static char *insert(char *ifname, char *index, char *webfile)
 {
-	char *temp2 = &path[indexof(path, '-') + 1];
-	char ifname[16];
-
-	strcpy(ifname, temp2);
-	ifname[indexof(ifname, '.')] = 0;
-	FILE *web = getWebsFile("Wireless_WDS.asp");
-	unsigned int len = getWebsFileLen("Wireless_WDS.asp");
-	char *webfile = (char *)safe_malloc(len + 1);
-
-	fread(webfile, len, 1, web);
-	webfile[len] = 0;
-	fclose(web);
-
-	char temp[32768];
-
-	memset(temp, 0, 32768);
-	int ai = 0;
-	int i = 0;
 	int weblen = strlen(webfile);
-
-	for (i = 0; i < weblen; i++) {
-		if (webfile[i] == '%') {
-			i++;
-			switch (webfile[i]) {
-			case '%':
-				temp[ai++] = '%';
-				break;
-			case 's':
-				strcpy(&temp[ai], ifname);
-				ai += strlen(ifname);
-				break;
-			default:
-				temp[ai++] = webfile[i];
-				break;
-			}
-		} else
-			temp[ai++] = webfile[i];
-	}
-	free(webfile);
-	do_ej_buffer(temp, stream);
-}
-
-void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, char *query)
-{
-	char *temp2 = &path[indexof(path, '-') + 1];
-	char ifname[16];
-
-	strcpy(ifname, temp2);
-	ifname[indexof(ifname, '.')] = 0;
-	FILE *web = getWebsFile("Wireless_Advanced.asp");
-	unsigned int len = getWebsFileLen("Wireless_Advanced.asp");
-	char *webfile = (char *)safe_malloc(len + 1);
-
-	char index[2];
-	substring(strlen(ifname) - 1, strlen(ifname), ifname, index);
-
-	fread(webfile, len, 1, web);
-	webfile[len] = 0;
-	fclose(web);
-
-	char temp[65536];
-
-	memset(temp, 0, 65536);
+	int i;
 	int ai = 0;
-	int i = 0;
-	int weblen = strlen(webfile);
+	int length = calclength(webfile,ifname);
+	char *temp = safe_malloc(length);
+	memset(temp, 0, length);
 
 	for (i = 0; i < weblen; i++) {
 		if (webfile[i] == '%') {
@@ -715,8 +629,80 @@ void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, ch
 		} else
 			temp[ai++] = webfile[i];
 	}
+	return temp;
+}
+
+void do_activetable(struct mime_handler *handler, char *path, webs_t stream, char *query)
+{
+	char *temp2 = &path[indexof(path, '-') + 1];
+	char ifname[32];
+
+	strncpy(ifname, temp2, sizeof(ifname));
+
+	char *temp3 = websGetVar(stream, "ifname", NULL);
+	if (temp3 != NULL) {
+		if (strlen(temp3) > 0) {
+			strcpy(ifname, temp3);
+		}
+	}
+
+	ifname[indexof(ifname, '.')] = 0;
+	FILE *web = getWebsFile("WL_ActiveTable.asp");
+	unsigned int len = getWebsFileLen("WL_ActiveTable.asp");
+	char *webfile = (char *)safe_malloc(len + 1);
+
+	fread(webfile, len, 1, web);
+	webfile[len] = 0;
+	fclose(web);
+
+	char *temp = insert(ifname, "0", webfile);
 	free(webfile);
 	do_ej_buffer(temp, stream);
+	free(temp);
+}
+
+void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query)
+{
+	char *temp2 = &path[indexof(path, '-') + 1];
+	char ifname[32];
+	strncpy(ifname, temp2, sizeof(ifname));
+	ifname[indexof(ifname, '.')] = 0;
+	FILE *web = getWebsFile("Wireless_WDS.asp");
+	unsigned int len = getWebsFileLen("Wireless_WDS.asp");
+	char *webfile = (char *)safe_malloc(len + 1);
+
+	fread(webfile, len, 1, web);
+	webfile[len] = 0;
+	fclose(web);
+
+	char *temp = insert(ifname, "0", webfile);
+	free(webfile);
+	do_ej_buffer(temp, stream);
+	free(temp);
+}
+
+void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, char *query)
+{
+	char *temp2 = &path[indexof(path, '-') + 1];
+	char ifname[32];
+
+	strncpy(ifname, temp2, sizeof(ifname));
+	ifname[indexof(ifname, '.')] = 0;
+	FILE *web = getWebsFile("Wireless_Advanced.asp");
+	unsigned int len = getWebsFileLen("Wireless_Advanced.asp");
+	char *webfile = (char *)safe_malloc(len + 1);
+
+	char index[2];
+	substring(strlen(ifname) - 1, strlen(ifname), ifname, index);
+
+	fread(webfile, len, 1, web);
+	webfile[len] = 0;
+	fclose(web);
+
+	char *temp = insert(ifname, index, webfile);
+	free(webfile);
+	do_ej_buffer(temp, stream);
+	free(temp);
 }
 
 void validate_cgi(webs_t wp)
@@ -1095,7 +1081,6 @@ int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t *
 			sprintf(path, "%s.asp", submit_button);
 	}
 
-	cprintf("refresh to %s\n", path);
 	if (!strncmp(path, "WL_FilterTable", 14))
 		do_filtertable(NULL, path, wp, NULL);	// refresh
 #ifdef HAVE_FREERADIUS
@@ -1480,7 +1465,6 @@ footer:
 				sprintf(path, "%s.asp", submit_button);
 		}
 
-		cprintf("refresh to %s\n", path);
 		if (!strncmp(path, "WL_FilterTable", 14))
 			do_filtertable(NULL, path, wp, NULL);	// refresh
 #ifdef HAVE_FREERADIUS
@@ -2025,7 +2009,7 @@ char *live_translate(const char *tran)
 		cur_language = nvram_safe_get("language");
 	} else {
 		if (!nvram_match("language", cur_language)) {
-//			fprintf(stderr,"clear translation\n");
+//                      fprintf(stderr,"clear translation\n");
 			clear_translationcache();
 			cur_language = nvram_safe_get("language");
 		}
@@ -2041,16 +2025,16 @@ char *live_translate(const char *tran)
 				translationcache[i].time = cur;
 			}
 			if (translationcache[i].request != NULL && cur > translationcache[i].time + 120) {	// free translation if not used for 2 minutes
-//				fprintf(stderr,"free translation result %s\n",translationcache[i].translation);
+//                              fprintf(stderr,"free translation result %s\n",translationcache[i].translation);
 				free(translationcache[i].translation);
-//				fprintf(stderr,"free translation request %s\n",translationcache[i].request);
+//                              fprintf(stderr,"free translation request %s\n",translationcache[i].request);
 				free(translationcache[i].request);
 				translationcache[i].request = NULL;
 				translationcache[i].translation = NULL;
 			}
 		}
 		if (translation) {
-//			fprintf(stderr,"return from cache\n");
+//                      fprintf(stderr,"return from cache\n");
 			return translation;
 		}
 	}
@@ -2058,30 +2042,29 @@ char *live_translate(const char *tran)
 	struct cacheentry *entry = NULL;
 	/* fill hole if there is any */
 	int i;
-//	fprintf(stderr,"seek hole\n");
+//      fprintf(stderr,"seek hole\n");
 	for (i = 0; i < cachecount; i++) {
 		if (translationcache[i].request == NULL) {
-//			fprintf(stderr,"hole found at %d\n",i);
+//                      fprintf(stderr,"hole found at %d\n",i);
 			entry = &translationcache[i];
 			break;
 		}
 
 	}
 	if (!entry) {
-//	fprintf(stderr,"realloc translation\n");
+//      fprintf(stderr,"realloc translation\n");
 		/* no hole has been found, alloc a new one */
 		translationcache = (struct cacheentry *)realloc(translationcache, sizeof(struct cacheentry) * (cachecount + 1));
 		entry = &translationcache[cachecount++];
 	}
-
-//	fprintf(stderr,"strdup tran %s\n",tran);
+//      fprintf(stderr,"strdup tran %s\n",tran);
 	entry->request = strdup(tran);
 	entry->time = cur;
 	if (ret)
 		entry->translation = ret;
 	else
 		entry->translation = strdup("Error");
-//	fprintf(stderr,"leave translation \"%s\":\"%s\"\n",entry->request,entry->translation);
+//      fprintf(stderr,"leave translation \"%s\":\"%s\"\n",entry->request,entry->translation);
 	return entry->translation;
 }
 
@@ -2098,7 +2081,8 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 	websWrite(stream,
 		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate("lang_charset.set"));
-	websWrite(stream, "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n</head>\n");
+	websWrite(stream,
+		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n</head>\n");
 	websWrite(stream, "<body>\n<fieldset><legend>System Log</legend>");
 
 	if (nvram_match("syslogd_enable", "1")) {
@@ -2224,23 +2208,18 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 		  "<script type=\"text/javascript\">\n"
 		  "//<![CDATA[\n"
 		  "function Show(label) {\n"
-		  "document.getElementById(\"label\").innerHTML = label;\n" "}\n" "//]]>\n" "</script>\n"
-		  "<style type=\"text/css\">\n\n"
-		  "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
+		  "document.getElementById(\"label\").innerHTML = label;\n" "}\n" "//]]>\n" "</script>\n" "<style type=\"text/css\">\n\n" "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
 	websWrite(stream,
 		  "  margin: 1.1em 0 3.5em; padding: 0;\n"
 		  "  border: 1px solid gray; list-style: none;\n"
-		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n"
-		  "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n"
-		  "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
+		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n" "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
 	websWrite(stream,
 		  "  margin: 0; padding: 0;\n"
 		  "  text-align: center; list-style: none;}\n"
 		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"
 		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n"
 		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"
-		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n" "#t-graph li.rcvd {left: 3px; background: #228B22;}\n"
-		  "#t-graph li.sent {left: 8px; background: #CD0000;}\n");
+		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n" "#t-graph li.rcvd {left: 3px; background: #228B22;}\n" "#t-graph li.sent {left: 8px; background: #CD0000;}\n");
 
 	for (i = 0; i < days - 1; i++) {
 		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
