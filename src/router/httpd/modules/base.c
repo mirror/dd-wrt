@@ -369,6 +369,77 @@ int variables_arraysize(void)
 	return varcount;
 }
 
+static int calclength(char *webfile, char *ifname)
+{
+	int weblen = strlen(webfile);
+	int len = 0;
+	int i;
+	for (i = 0; i < weblen - 1; i++) {
+		if (webfile[i] == '%') {
+			if (webfile[i + 1] == '%') {
+				i += 2;
+				len += 2;
+				continue;
+			}
+			if (webfile[i + 1] == 'd') {
+				len--;
+			}
+			if (webfile[i + 1] == 's') {
+				len += strlen(ifname);
+				len -= 2;	// substract size for %s
+			}
+		}
+		len++;
+	}
+	return len + 1;
+}
+
+static char *insert(char *ifname, char *index, char *webfile)
+{
+	int weblen = strlen(webfile);
+	int i;
+	int ai = 0;
+	int length = calclength(webfile, ifname);
+	char *temp = safe_malloc(length);
+	memset(temp, 0, length);
+
+	for (i = 0; i < weblen; i++) {
+		if (webfile[i] == '%') {
+			i++;
+			switch (webfile[i]) {
+			case '%':
+				temp[ai++] = '%';
+				break;
+			case 'd':
+				strcpy(&temp[ai], index);
+				ai++;
+				break;
+			case 's':
+				strcpy(&temp[ai], ifname);
+				ai += strlen(ifname);
+				break;
+			default:
+				temp[ai++] = webfile[i];
+				break;
+			}
+		} else
+			temp[ai++] = webfile[i];
+	}
+	return temp;
+}
+
+static char readweb(char *filename)
+{
+	char *webfile;
+	FILE *web = getWebsFile(filename);
+	unsigned int len = getWebsFileLen(filename);
+	char *webfile = (char *)safe_malloc(len + 1);
+	fread(webfile, len, 1, web);
+	fclose(web);
+	webfile[len] = 0;
+	return webfile;
+}
+
 // and now the tricky part (more dirty as dirty)
 void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
@@ -385,20 +456,11 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, cha
 	}
 
 	ifname[indexof(ifname, '.')] = 0;
-	FILE *web = getWebsFile("WL_FilterTable.asp");
-
-	unsigned int len = getWebsFileLen("WL_FilterTable.asp");
-	char *webfile = (char *)safe_malloc(len + 1);
-
-	fread(webfile, len, 1, web);
-	webfile[len] = 0;
+	char *webfile = readweb("WL_FilterTable.asp");
 	rep(ifname, '.', 'X');
 
-	char *temp = (char *)safe_malloc(len + 128);
-	memset(temp, 0, len + 64);
-	sprintf(temp, webfile, ifname, ifname, ifname, ifname);
+	char *temp = insert(ifname, "0", webfile);
 	free(webfile);
-	fclose(web);
 	do_ej_buffer(temp, stream);
 	free(temp);
 }
@@ -574,63 +636,6 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char
 }
 
 #endif
-static int calclength(char *webfile, char *ifname)
-{
-	int weblen = strlen(webfile);
-	int len = 0;
-	int i;
-	for (i = 0; i < weblen - 1; i++) {
-		if (webfile[i] == '%') {
-			if (webfile[i + 1] == '%') {
-				i += 2;
-				len += 2;
-				continue;
-			}
-			if (webfile[i + 1] == 'd') {
-				len++;
-			}
-			if (webfile[i + 1] == 's') {
-				len += strlen(ifname);
-			}
-		}
-		len++;
-	}
-	return len + 1;
-}
-
-static char *insert(char *ifname, char *index, char *webfile)
-{
-	int weblen = strlen(webfile);
-	int i;
-	int ai = 0;
-	int length = calclength(webfile,ifname);
-	char *temp = safe_malloc(length);
-	memset(temp, 0, length);
-
-	for (i = 0; i < weblen; i++) {
-		if (webfile[i] == '%') {
-			i++;
-			switch (webfile[i]) {
-			case '%':
-				temp[ai++] = '%';
-				break;
-			case 'd':
-				strcpy(&temp[ai], index);
-				ai++;
-				break;
-			case 's':
-				strcpy(&temp[ai], ifname);
-				ai += strlen(ifname);
-				break;
-			default:
-				temp[ai++] = webfile[i];
-				break;
-			}
-		} else
-			temp[ai++] = webfile[i];
-	}
-	return temp;
-}
 
 void do_activetable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
@@ -647,14 +652,8 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream, cha
 	}
 
 	ifname[indexof(ifname, '.')] = 0;
-	FILE *web = getWebsFile("WL_ActiveTable.asp");
-	unsigned int len = getWebsFileLen("WL_ActiveTable.asp");
-	char *webfile = (char *)safe_malloc(len + 1);
 
-	fread(webfile, len, 1, web);
-	webfile[len] = 0;
-	fclose(web);
-
+	char *webfile = readweb("WL_ActiveTable.asp");
 	char *temp = insert(ifname, "0", webfile);
 	free(webfile);
 	do_ej_buffer(temp, stream);
@@ -667,14 +666,7 @@ void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query
 	char ifname[32];
 	strncpy(ifname, temp2, sizeof(ifname));
 	ifname[indexof(ifname, '.')] = 0;
-	FILE *web = getWebsFile("Wireless_WDS.asp");
-	unsigned int len = getWebsFileLen("Wireless_WDS.asp");
-	char *webfile = (char *)safe_malloc(len + 1);
-
-	fread(webfile, len, 1, web);
-	webfile[len] = 0;
-	fclose(web);
-
+	char *webfile = readweb("Wireless_WDS.asp");
 	char *temp = insert(ifname, "0", webfile);
 	free(webfile);
 	do_ej_buffer(temp, stream);
@@ -688,17 +680,9 @@ void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, ch
 
 	strncpy(ifname, temp2, sizeof(ifname));
 	ifname[indexof(ifname, '.')] = 0;
-	FILE *web = getWebsFile("Wireless_Advanced.asp");
-	unsigned int len = getWebsFileLen("Wireless_Advanced.asp");
-	char *webfile = (char *)safe_malloc(len + 1);
-
 	char index[2];
 	substring(strlen(ifname) - 1, strlen(ifname), ifname, index);
-
-	fread(webfile, len, 1, web);
-	webfile[len] = 0;
-	fclose(web);
-
+	char *webfile = readweb("Wireless_Advanced.asp");
 	char *temp = insert(ifname, index, webfile);
 	free(webfile);
 	do_ej_buffer(temp, stream);
