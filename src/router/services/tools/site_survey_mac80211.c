@@ -117,7 +117,7 @@ static const struct ie_print ieprinters[] = {
 	[45] = {"HT capabilities", print_ht_capa, 26, 26, BIT(PRINT_SCAN),},
 	[61] = {"HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN),},
 	[48] = {"RSN", print_rsn, 2, 255, BIT(PRINT_SCAN),},
-	[50] = {"Extended supported rates", print_supprates, 0, 255,BIT(PRINT_SCAN),},
+	[50] = {"Extended supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN),},
 	[191] = {"VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN),},
 	[192] = {"VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN),},
 	[127] = {"Extended capabilities", print_capabilities, 0, 255,
@@ -265,32 +265,23 @@ static void print_mcs_index(const __u8 *mcs)
 			continue;
 
 		if (prev_bit != mcs_bit - 1) {
-			if (prev_bit != -2)
-				printf("%d, ", prev_bit);
-			else
-				printf(" ");
-			printf("%d", mcs_bit);
 			prev_cont = 0;
 		} else if (!prev_cont) {
-			printf("-");
 			prev_cont = 1;
 		}
-
 		prev_bit = mcs_bit;
 	}
 
 	if (prev_cont) {
-		printf("%d", prev_bit);
-		if (rate_count == 7)
+		if (prev_bit == 7)
 			rate_count = 150;
-		if (rate_count == 15)
+		if (prev_bit == 15)
 			rate_count = 300;
-		if (rate_count == 23)
+		if (prev_bit == 23)
 			rate_count = 450;
-		if (rate_count == 31)
+		if (prev_bit == 31)
 			rate_count = 600;
 	}
-	printf("\n");
 }
 
 static void print_ht_mcs(const __u8 *mcs)
@@ -1224,7 +1215,7 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 		site_survey_lists[sscount].channel |= 0x1000;
 		fillENC("VHT80", " ");
 	}
-	
+
 	PRINT_VHT_CAPA(6, "short GI (160/80+80 MHz)");
 	if (capa & BIT(6)) {
 		site_survey_lists[sscount].channel |= 0x1200;
@@ -1505,7 +1496,7 @@ void mac80211_site_survey(char *interface)
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
-			site_survey_lists[i].channel&0xff,
+			site_survey_lists[i].channel & 0xff,
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
