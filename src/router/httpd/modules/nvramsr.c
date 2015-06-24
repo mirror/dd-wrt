@@ -121,7 +121,7 @@ void nv_file_out(struct mime_handler *handler, char *path, webs_t wp, char *quer
 
 void td_file_in(char *url, webs_t wp, int len, char *boundary)	//load and set traffic data from config file
 {
-	char buf[2048];
+	char *buf = malloc(2048);
 	char *name = NULL;
 	char *data = NULL;
 
@@ -129,8 +129,10 @@ void td_file_in(char *url, webs_t wp, int len, char *boundary)	//load and set tr
 	 * Look for our part 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp))
+		if (!wfgets(buf, MIN(len + 1, 2048), wp)) {
+			free(buf);
 			return;
+		}
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"file\"")) {
@@ -142,18 +144,20 @@ void td_file_in(char *url, webs_t wp, int len, char *boundary)	//load and set tr
 	 * Skip boundary and headers 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, sizeof(buf), wp))
+		if (!wfgets(buf, 2048, wp)) {
+			free(buf);
 			return;
+		}
 		len -= strlen(buf);
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
 	}
 
-	if (wfgets(buf, sizeof(buf), wp) != NULL) {
+	if (wfgets(buf, 2048, wp) != NULL) {
 		len -= strlen(buf);
 		if (strncmp(buf, "TRAFF-DATA", 10) == 0)	//sig OK
 		{
-			while (wfgets(buf, sizeof(buf), wp) != NULL) {
+			while (wfgets(buf, 2048, wp) != NULL) {
 				len -= strlen(buf);
 				if (startswith(buf, "traff-")) {
 					name = strtok(buf, "=");
@@ -174,15 +178,7 @@ void td_file_in(char *url, webs_t wp, int len, char *boundary)	//load and set tr
 	/*
 	 * Slurp anything remaining in the request 
 	 */
-	while (len--) {
-#ifdef HAVE_HTTPS
-		if (do_ssl) {
-			wfgets(buf, 1, wp);
-		} else
-#endif
-			(void)fgetc(wp->fp);
-	}
-
+	wfgets(buf, len, wp);
 	nvram_commit();
 }
 
