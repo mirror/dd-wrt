@@ -117,6 +117,9 @@ extern int has_beamforming(char *prefix);
 
 #define SITE_SURVEY_DB  "/tmp/site_survey"
 #define SITE_SURVEY_NUM 256
+#define SCAN_HT20 1
+#define SCAN_HT40 2
+#define SCAN_VHT80 4
 
 struct site_survey_list {
 	char SSID[33];

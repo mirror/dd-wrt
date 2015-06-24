@@ -454,10 +454,11 @@ int site_survey_main(int argc, char *argv[])
 			break;
 		case 0x0C00:	// for older version
 		case 0x1800:
+			site_survey_lists[i].channel = 0x2000;			
 		case 0x2000:
 		case 0x2800:
 		case 0x3000:
-			site_survey_lists[i].channel = bss_info->ctl_ch;
+			site_survey_lists[i].channel |= bss_info->ctl_ch;
 		}
 
 #ifdef WL_CHANSPEC_BW_80
