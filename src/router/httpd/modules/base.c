@@ -444,19 +444,24 @@ static char *insert(char *ifname, char *index, char *filename)
 // and now the tricky part (more dirty as dirty)
 void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
-	char *temp2 = &path[indexof(path, '-') + 1];
+	int idx = indexof(path, '-');
+	if (idx < 0)
+		return;
+	char *temp2 = &path[idx + 1];
 	char ifname[32];
 
 	strncpy(ifname, temp2, sizeof(ifname));
 
 	char *temp3 = websGetVar(stream, "ifname", NULL);
-	if (temp3 != NULL) {
+	if (temp3) {
 		if (strlen(temp3) > 0) {
 			strcpy(ifname, temp3);
 		}
 	}
-
-	ifname[indexof(ifname, '.')] = 0;
+	idx = indexof(ifname, '.');
+	if (idx < 0)
+		return;
+	ifname[idx] = 0;
 	rep(ifname, '.', 'X');
 
 	char *temp = insert(ifname, "0", "WL_FilterTable.asp");
@@ -469,8 +474,10 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, cha
 
 static void cert_file_out(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
-	char *temp2 = &path[indexof(path, '/') + 1];
-	fprintf(stderr, "down %s\n", temp2);
+	int idx = indexof(path, '/');
+	if (idx < 0)
+		return;
+	char *temp2 = &path[idx + 1];
 	char link[128];
 	sprintf(link, "/jffs/etc/freeradius/certs/clients/%s", temp2);
 	do_file_attach(handler, link, stream, NULL, temp2);
@@ -493,11 +500,17 @@ static void show_certfield(webs_t wp, char *title, char *file)
 
 void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
-	char *temp2 = &path[indexof(path, '-') + 1];
+	int idx = indexof(path, '-');
+	if (idx < 0)
+		return;
+	char *temp2 = &path[idx + 1];
 	char number[32];
 	webs_t wp = stream;
 	strncpy(number, temp2, sizeof(number));
-	number[indexof(number, '.')] = 0;
+	idx = indexof(number, '.');
+	if (idx < 0)
+		return;
+	number[idx] = 0;
 	int radiusindex = atoi(number);
 
 	if (radiusindex == -1)
@@ -638,7 +651,11 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char
 
 void do_activetable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
-	char *temp2 = &path[indexof(path, '-') + 1];
+	int idx = indexof(path, '-');
+	if (idx < 0)
+		return;
+	char *temp2 = &path[idx + 1];
+
 	char ifname[32];
 
 	strncpy(ifname, temp2, sizeof(ifname));
@@ -650,7 +667,10 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream, cha
 		}
 	}
 
-	ifname[indexof(ifname, '.')] = 0;
+	idx = indexof(ifname, '.');
+	if (idx < 0)
+		return;
+	ifname[idx] = 0;
 
 	char *temp = insert(ifname, "0", "WL_ActiveTable.asp");
 	do_ej_buffer(temp, stream);
@@ -659,7 +679,10 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream, cha
 
 void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
-	char *temp2 = &path[indexof(path, '-') + 1];
+	int idx = indexof(path, '-');
+	if (idx < 0)
+		return;
+	char *temp2 = &path[idx + 1];
 	char ifname[32];
 	strncpy(ifname, temp2, sizeof(ifname));
 	ifname[indexof(ifname, '.')] = 0;
@@ -670,13 +693,24 @@ void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query
 
 void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
-	char *temp2 = &path[indexof(path, '-') + 1];
+	int idx = indexof(path, '-');
+	if (idx < 0)
+		return;
+	char *temp2 = &path[idx + 1];
 	char ifname[32];
 
 	strncpy(ifname, temp2, sizeof(ifname));
-	ifname[indexof(ifname, '.')] = 0;
+
+	idx = indexof(ifname, '.');
+	if (idx < 0)
+		return;
+	ifname[idx] = 0;
 	char index[2];
-	substring(strlen(ifname) - 1, strlen(ifname), ifname, index);
+	int strl = strlen(ifname);
+	if (strl > 0)
+		substring(strl - 1, strl, ifname, index);
+	else
+		return;
 	char *temp = insert(ifname, index, "Wireless_Advanced.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
@@ -1545,13 +1579,9 @@ static char *post_buf = NULL;
 void				// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
-	unsigned char buf[1024];
 	int count;
 	if (post == 1) {
-		if (post_buf)
-			post_buf = (char *)realloc(post_buf, len + 1);
-		else
-			post_buf = (char *)safe_malloc(len + 1);
+		post_buf = (char *)realloc(post_buf, len + 1);
 
 		if (!post_buf) {
 			cprintf("The POST data exceed length limit!\n");
@@ -1568,13 +1598,9 @@ do_apply_post(char *url, webs_t stream, int len, char *boundary)
 		/*
 		 * Slurp anything remaining in the request 
 		 */
-		while (--len > 0)
-#ifdef HAVE_HTTPS
-			if (do_ssl)
-				wfgets(buf, 1, stream);
-			else
-#endif
-				(void)fgetc(stream->fp);
+		char *buf = malloc(len);
+		wfgets(buf, len, stream);
+		free(buf);
 		init_cgi(post_buf);
 	}
 }
@@ -2241,7 +2267,9 @@ static void ttraff_backup(struct mime_handler *handler, char *url, webs_t stream
 	system2("nvram show | grep traff- >> /tmp/traffdata.bak");
 	do_file_attach(handler, "/tmp/traffdata.bak", stream, NULL, "traffdata.bak");
 	unlink("/tmp/traffdata.bak");
-} static void do_apply_cgi(struct mime_handler *handler, char *url, webs_t stream, char *q)
+}
+
+static void do_apply_cgi(struct mime_handler *handler, char *url, webs_t stream, char *q)
 {
 	char *path, *query;
 
