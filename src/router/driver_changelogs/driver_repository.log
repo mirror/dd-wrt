@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2551 | BrainSlayer | 2015-06-24 23:25:13 +0200 (Wed, 24 Jun 2015) | 1 line
+
+scan in ap mode, patch required for new mac80211 tree
+------------------------------------------------------------------------
 r2550 | BrainSlayer | 2015-06-23 13:13:19 +0200 (Tue, 23 Jun 2015) | 1 line
 
 remove almost unused debugfs entries
