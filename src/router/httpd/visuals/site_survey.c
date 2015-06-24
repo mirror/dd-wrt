@@ -153,7 +153,8 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 				sprintf(rates, "%d(a/n/ac)", speed);
 			}
 
-		} else {
+		} else if (site_survey_lists[i].channel & 0x2000) {
+
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
 				if (site_survey_lists[i].rate_count == 4)
 					rates = "11(b)";
@@ -167,6 +168,8 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 					rates = "450(b/g/n)";
 				else if (site_survey_lists[i].rate_count == 150)
 					rates = "150(b/g/n)";
+				else if (site_survey_lists[i].rate_count == 600)
+					rates = "600(b/g/n)";
 				else {
 					rates = buf;
 					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
@@ -184,6 +187,50 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 					rates = "450(a/n)";
 				else if (site_survey_lists[i].rate_count == 150)
 					rates = "150(a/n)";
+				else if (site_survey_lists[i].rate_count == 600)
+					rates = "600(a/n)";
+				else {
+					rates = buf;
+					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
+				}
+
+			}
+
+		} else {
+			if ((site_survey_lists[i].channel & 0xff) < 15) {
+				if (site_survey_lists[i].rate_count == 4)
+					rates = "11(b)";
+				else if (site_survey_lists[i].rate_count == 12)
+					rates = "54(b/g)";
+				else if (site_survey_lists[i].rate_count == 13)
+					rates = "108(b/g)";
+				else if (site_survey_lists[i].rate_count == 300)
+					rates = "144.444(b/g/n)";
+				else if (site_survey_lists[i].rate_count == 450)
+					rates = "216.7(b/g/n)";
+				else if (site_survey_lists[i].rate_count == 150)
+					rates = "72.2(b/g/n)";
+				else if (site_survey_lists[i].rate_count == 600)
+					rates = "288.9(b/g/n)";
+				else {
+					rates = buf;
+					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
+				}
+			} else {
+				if (site_survey_lists[i].rate_count == 4)
+					rates = "11(b)";	//bogus, never shown. but if, its definitly b with weired channel setting
+				else if (site_survey_lists[i].rate_count == 12)
+					rates = "54(a)";
+				else if (site_survey_lists[i].rate_count == 13)
+					rates = "108(a)";
+				else if (site_survey_lists[i].rate_count == 300)
+					rates = "144.444(a/n)";
+				else if (site_survey_lists[i].rate_count == 450)
+					rates = "216.7(a/n)";
+				else if (site_survey_lists[i].rate_count == 150)
+					rates = "72.2(a/n)";
+				else if (site_survey_lists[i].rate_count == 600)
+					rates = "288.9(a/n)";
 				else {
 					rates = buf;
 					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
