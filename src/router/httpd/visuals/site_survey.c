@@ -155,87 +155,59 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 
 		} else if (site_survey_lists[i].channel & 0x2000) {
 
-			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				if (site_survey_lists[i].rate_count == 4)
-					rates = "11(b)";
-				else if (site_survey_lists[i].rate_count == 12)
-					rates = "54(b/g)";
-				else if (site_survey_lists[i].rate_count == 13)
-					rates = "108(b/g)";
-				else if (site_survey_lists[i].rate_count == 300)
-					rates = "300(b/g/n)";
-				else if (site_survey_lists[i].rate_count == 450)
-					rates = "450(b/g/n)";
-				else if (site_survey_lists[i].rate_count == 150)
-					rates = "150(b/g/n)";
-				else if (site_survey_lists[i].rate_count == 600)
-					rates = "600(b/g/n)";
-				else {
-					rates = buf;
-					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
-				}
-			} else {
-				if (site_survey_lists[i].rate_count == 4)
-					rates = "11(b)";	//bogus, never shown. but if, its definitly b with weired channel setting
-				else if (site_survey_lists[i].rate_count == 12)
-					rates = "54(a)";
-				else if (site_survey_lists[i].rate_count == 13)
-					rates = "108(a)";
-				else if (site_survey_lists[i].rate_count == 300)
-					rates = "300(a/n)";
-				else if (site_survey_lists[i].rate_count == 450)
-					rates = "450(a/n)";
-				else if (site_survey_lists[i].rate_count == 150)
-					rates = "150(a/n)";
-				else if (site_survey_lists[i].rate_count == 600)
-					rates = "600(a/n)";
-				else {
-					rates = buf;
-					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
-				}
+			int speed = 0;
+			switch (site_survey_lists[i].rate_count) {
+			case 4:
+				speed = 11;
+				break;
+			case 12:
+				speed = 54;
+				break;
+			case 13:
+				speed = 108;
+				break;
+			default:
+				speed = site_survey_lists[i].rate_count;
+			}
+			rates = strbuf;
 
+			if ((site_survey_lists[i].channel & 0xff) < 15) {
+				sprintf(rates, "%d%s", speed, speed == 4 ? "(b)" : speed < 14 ? "(b/g)" : "(b/g/n)");
+			} else {
+				sprintf(rates, "%d%s", speed, speed < 14 ? "(a)" : "(a/n)");
 			}
 
 		} else {
-			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				if (site_survey_lists[i].rate_count == 4)
-					rates = "11(b)";
-				else if (site_survey_lists[i].rate_count == 12)
-					rates = "54(b/g)";
-				else if (site_survey_lists[i].rate_count == 13)
-					rates = "108(b/g)";
-				else if (site_survey_lists[i].rate_count == 300)
-					rates = "144.444(b/g/n)";
-				else if (site_survey_lists[i].rate_count == 450)
-					rates = "216.7(b/g/n)";
-				else if (site_survey_lists[i].rate_count == 150)
-					rates = "72.2(b/g/n)";
-				else if (site_survey_lists[i].rate_count == 600)
-					rates = "288.9(b/g/n)";
-				else {
-					rates = buf;
-					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
-				}
-			} else {
-				if (site_survey_lists[i].rate_count == 4)
-					rates = "11(b)";	//bogus, never shown. but if, its definitly b with weired channel setting
-				else if (site_survey_lists[i].rate_count == 12)
-					rates = "54(a)";
-				else if (site_survey_lists[i].rate_count == 13)
-					rates = "108(a)";
-				else if (site_survey_lists[i].rate_count == 300)
-					rates = "144.444(a/n)";
-				else if (site_survey_lists[i].rate_count == 450)
-					rates = "216.7(a/n)";
-				else if (site_survey_lists[i].rate_count == 150)
-					rates = "72.2(a/n)";
-				else if (site_survey_lists[i].rate_count == 600)
-					rates = "288.9(a/n)";
-				else {
-					rates = buf;
-					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
-				}
+			float speed = 0;
+			switch (site_survey_lists[i].rate_count) {
+			case 4:
+				speed = 11.0f;
+				break;
+			case 12:
+				speed = 54.0f;
+				break;
+			case 13:
+				speed = 108.0f;
+				break;
+			case 150:
+				speed = 72.2f;
+				break;
+			case 300:
+				speed = 144.4f;
+				break;
+			case 450:
+				speed = 216.7f;
+				break;
+			case 600:
+				speed = 288.9f;
+				break;
+			}
+			rates = strbuf;
 
+			if ((site_survey_lists[i].channel & 0xff) < 15) {
+				sprintf(rates, "%f%s", speed, speed == 4.0f ? "(b)" : speed < 14.0f ? "(b/g)" : "(b/g/n)");
+			} else {
+				sprintf(rates, "%f%s", speed, speed < 14.0f ? "(a)" : "(a/n)");
 			}
 		}
 
