@@ -248,11 +248,13 @@
 #define NDPI_SERVICE_TORCEDOR        			198
 #define NDPI_SERVICE_KAKAOTALK        			199 /* KakaoTalk Chat (no voice call) */
 #define NDPI_SERVICE_KAKAOTALK_VOICE  			200 /* KakaoTalk Voice */
-#define NDPI_SERVICE_TWITCH  				201 /* KakaoTalk Voice */
+#define NDPI_SERVICE_TWITCH                             201 /* Edoardo Dominici <edoaramis@gmail.com>  */
+#define NDPI_SERVICE_QUICKPLAY                          202 /* Streaming service used by various services such as hooq.tv  */
+#define NDPI_SERVICE_TIM                                203 /* Traffic for tim.com.br and tim.it */
 
 
 /* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_SERVICE_PANDORA) */
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL			201
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL			203
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                   (NDPI_NUM_BITS-NDPI_LAST_IMPLEMENTED_PROTOCOL)
