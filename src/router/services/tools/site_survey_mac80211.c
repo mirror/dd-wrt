@@ -838,7 +838,7 @@ static void print_tim(const uint8_t type, uint8_t len, const uint8_t * data)
 	if (len - 4)
 		printf(" (+ %u octet%s)", len - 4, len - 4 == 1 ? "" : "s");
 	printf("\n");
-	site_survey_lists[sscount].dtim = data[1];
+	site_survey_lists[sscount].dtim_period = data[1];
 }
 
 static void print_country(const uint8_t type, uint8_t len, const uint8_t * data)
