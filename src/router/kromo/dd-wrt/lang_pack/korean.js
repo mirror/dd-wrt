@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//                Korean translation file - DD-WRT V24 SP2        2015-06-06                //
-//              This translation file is based on R27102 English language file              //
+//                Korean translation file - DD-WRT V24 SP2        2015-06-24                //
+//              This translation file is based on R27421 English language file              //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -111,10 +111,10 @@ share.port="포트";
 share.ssid="SSID";
 share.channel="채널";
 share.frequency="주파수";
-share.rssi="Rssi";
+share.rssi="RSSI";
 share.signal="신호";
 share.noise="노이즈";
-share.beacon="beacon";
+share.beacon="Beacon";
 share.openn="열기";
 share.dtim="dtim";
 share.rates="속도";
