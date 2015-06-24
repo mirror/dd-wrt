@@ -350,6 +350,7 @@ l7filters filters_list[] = {
 	{"quake1", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"quic", NDPI_ONLY},
+	{"quickplay", NDPI_ONLY},
 #endif
 	{"quicktime", DPI},
 #ifdef HAVE_OPENDPI
@@ -450,6 +451,9 @@ l7filters filters_list[] = {
 #endif
 	{"thunder5_see", L7_ONLY},
 	{"thunder5_tcp", L7_ONLY},
+#ifdef HAVE_OPENDPI
+	{"tim", NDPI_ONLY},
+#endif
 	{"tonghuashun", L7_ONLY},
 	{"tor", DPI},
 #ifdef HAVE_OPENDPI
