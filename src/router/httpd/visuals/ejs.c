@@ -795,20 +795,14 @@ void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 	if (do_ssl && http_enable == NULL && https_enable == NULL) {
 		strcpy(http, "https");
 	} else if (do_ssl && http_enable && https_enable) {
-		if (atoi(https_enable) && atoi(http_enable))
+		if (atoi(https_enable))
 			strcpy(http, "https");
-		else if (atoi(https_enable) && !atoi(http_enable))
-			strcpy(http, "https");
-		else		// !atoi(https_enable) && atoi(http_enable)
+		else
 			strcpy(http, "http");
-	} else if (do_ssl && !http_enable && !https_enable) {
-		strcpy(http, "http");
 	} else if (!do_ssl && http_enable && https_enable) {
-		if (atoi(https_enable) && atoi(http_enable))
-			strcpy(http, "http");
-		else if (atoi(https_enable) && !atoi(http_enable))
+		if (atoi(https_enable) && !atoi(http_enable))
 			strcpy(http, "https");
-		else		// !atoi(https_enable) && atoi(http_enable)
+		else
 			strcpy(http, "http");
 	} else
 #endif
@@ -1347,7 +1341,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	websWrite(wp, "</iframe>\n");
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<br />\n");
-} 
+}
 
 void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 {
