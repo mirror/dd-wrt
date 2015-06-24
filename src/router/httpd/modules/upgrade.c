@@ -547,30 +547,35 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	killall("udhcpc", SIGKILL);
 
 #ifndef ANTI_FLASH
-	char buf[1024];
 	int type = 0;
-
+	char *buf = malloc(1024);
 	upgrade_ret = EINVAL;
 
 	/*
 	 * Look for our part 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
+		if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
+			free(buf);
 			return;
+		}
 
 		len -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20)) {
 			if (strstr(buf, "name=\"erase\"")) {
 				while (len > 0 && strcmp(buf, "\n")
 				       && strcmp(buf, "\r\n")) {
-					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
+					if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
+						free(buf);
 						return;
+					}
 
 					len -= strlen(buf);
 				}
-				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
+				if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
+					free(buf);
 					return;
+				}
 				len -= strlen(buf);
 				buf[1] = '\0';	// we only want the 1st digit
 				nvram_set("sv_restore_defaults", buf);
@@ -586,8 +591,10 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	 * Skip boundary and headers 
 	 */
 	while (len > 0) {
-		if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
+		if (!wfgets(buf, MIN(len + 1, 1024), stream)) {
+			free(buf);
 			return;
+		}
 
 		len -= strlen(buf);
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
@@ -615,23 +622,11 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	}
 	sys_commit();
 
-	// #ifdef HAVE_WRK54G
-	// sys_reboot();
-	// #endif
 	/*
 	 * Slurp anything remaining in the request 
 	 */
 
-	while ((len--) > 0) {
-#ifdef HAVE_HTTPS
-		if (do_ssl) {
-			wfgets(buf, 1, stream);
-		} else {
-			(void)fgetc(stream->fp);
-		}
-#else
-		(void)fgetc(stream->fp);
-#endif
-	}
+	wfgets(buf, len, stream);
+	free(buf);
 #endif
 }
