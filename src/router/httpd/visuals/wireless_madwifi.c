@@ -348,42 +348,14 @@ int get_acktiming(char *ifname)
 	return ack;
 }
 
-void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
-{
-	unsigned int ack, distance;
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("share.acktiming"));
-
-	char *ifname = nvram_safe_get("wifi_display");
-#ifdef HAVE_ATH10K
-	if (is_ath10k(ifname)) {
-		/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
-		ack = get_ath10kack(ifname);
-		distance = get_ath10kdistance(ifname);
-	} else
-#endif
-#ifdef HAVE_ATH9K
-	if (is_ath9k(ifname)) {
-		int coverage = mac80211_get_coverageclass(ifname);
-		ack = coverage * 3;
-		/* See handle_distance() for an explanation where the '450' comes from */
-		distance = coverage * 450;
-	} else {
-#endif
-		ack = get_acktiming(ifname);
-		distance = get_distance(ifname);
-#ifdef HAVE_ATH9K
-	}
-#endif
-
-	websWrite(wp, "<span id=\"wl_ack\">%d&#181;s (%dm)</span> &nbsp;\n", ack, distance);
-	websWrite(wp, "</div>\n");
-}
-
 void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 {
 	unsigned int ack, distance;
 	char *ifname = nvram_safe_get("wifi_display");
+	if (nvram_nmatch("disabled", "%s_net_mode", ifname)) {
+		websWrite(wp, "N/A");
+		return;
+	}
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
 		ack = get_ath10kack(ifname);
@@ -405,6 +377,17 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 #endif
 
 	websWrite(wp, "%d&#181;s (%dm)", ack, distance);
+}
+
+void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
+{
+	unsigned int ack, distance;
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("share.acktiming"));
+	websWrite(wp, "<span id=\"wl_ack\">\n");
+	ej_update_acktiming(wp, argc, argv);
+	websWrite(wp, "</span> &nbsp;\n", ack, distance);
+	websWrite(wp, "</div>\n");
 }
 
 extern float wifi_getrate(char *ifname);
@@ -462,8 +445,8 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	if (channel > 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(prefix);
 		if (!interface) {
-		    websWrite(wp, "%s", live_translate("share.unknown"));
-		    return;
+			websWrite(wp, "%s", live_translate("share.unknown"));
+			return;
 		}
 
 		int freq = get_wififreq(prefix, interface->freq);	// translation for special frequency devices
