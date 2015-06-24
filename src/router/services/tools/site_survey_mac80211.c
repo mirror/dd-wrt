@@ -281,12 +281,14 @@ static void print_mcs_index(const __u8 *mcs)
 
 	if (prev_cont) {
 		printf("%d", prev_bit);
-		if (prev_bit == 7)
+		if (rate_count == 7)
 			rate_count = 150;
-		if (prev_bit == 15)
+		if (rate_count == 15)
 			rate_count = 300;
-		if (prev_bit == 23)
+		if (rate_count == 23)
 			rate_count = 450;
+		if (rate_count == 31)
+			rate_count = 600;
 	}
 	printf("\n");
 }
@@ -836,6 +838,7 @@ static void print_tim(const uint8_t type, uint8_t len, const uint8_t * data)
 	if (len - 4)
 		printf(" (+ %u octet%s)", len - 4, len - 4 == 1 ? "" : "s");
 	printf("\n");
+	site_survey_lists[sscount].dtim = data[1];
 }
 
 static void print_country(const uint8_t type, uint8_t len, const uint8_t * data)
@@ -1201,12 +1204,15 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	switch ((capa >> 2) & 3) {
 	case 0:
 		printf("neither 160 nor 80+80\n");
+		site_survey_lists[sscount].channel |= 0x1000;
 		break;
 	case 1:
 		printf("160 MHz\n");
+		site_survey_lists[sscount].channel |= 0x1100;
 		break;
 	case 2:
 		printf("160 MHz, 80+80 MHz\n");
+		site_survey_lists[sscount].channel |= 0x1200;
 		break;
 	case 3:
 		printf("(reserved)\n");
@@ -1214,12 +1220,16 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	PRINT_VHT_CAPA(4, "RX LDPC");
 	PRINT_VHT_CAPA(5, "short GI (80 MHz)");
 
-	if (capa & BIT(5))
+	if (capa & BIT(5)) {
+		site_survey_lists[sscount].channel |= 0x1000;
 		fillENC("VHT80", " ");
-
+	}
+	
 	PRINT_VHT_CAPA(6, "short GI (160/80+80 MHz)");
-	if (capa & BIT(6))
+	if (capa & BIT(6)) {
+		site_survey_lists[sscount].channel |= 0x1200;
 		fillENC("VHT160", " ");
+	}
 	PRINT_VHT_CAPA(7, "TX STBC");
 	/* RX STBC */
 	PRINT_VHT_CAPA(11, "SU Beamformer");
@@ -1314,11 +1324,14 @@ static void print_ht_capability(__u16 cap)
 
 	PRINT_HT_CAP((cap & BIT(0)), "RX LDPC");
 	PRINT_HT_CAP((cap & BIT(1)), "HT20/HT40");
-	if (cap & BIT(1))
+	if (cap & BIT(1)) {
+		site_survey_lists[sscount].channel |= 0x2000;
 		fillENC("HT20 HT40", " ");
+	}
 	PRINT_HT_CAP(!(cap & BIT(1)), "HT20");
-	if (!(cap & BIT(1)))
+	if (!(cap & BIT(1))) {
 		fillENC("HT20", " ");
+	}
 
 	PRINT_HT_CAP(((cap >> 2) & 0x3) == 0, "Static SM Power Save");
 	PRINT_HT_CAP(((cap >> 2) & 0x3) == 1, "Dynamic SM Power Save");
@@ -1492,7 +1505,7 @@ void mac80211_site_survey(char *interface)
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
-			site_survey_lists[i].channel,
+			site_survey_lists[i].channel&0xff,
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
