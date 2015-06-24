@@ -664,7 +664,6 @@ void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query
 	strncpy(ifname, temp2, sizeof(ifname));
 	ifname[indexof(ifname, '.')] = 0;
 	char *temp = insert(ifname, "0", "Wireless_WDS.asp");
-	free(webfile);
 	do_ej_buffer(temp, stream);
 	free(temp);
 }
@@ -679,7 +678,6 @@ void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, ch
 	char index[2];
 	substring(strlen(ifname) - 1, strlen(ifname), ifname, index);
 	char *temp = insert(ifname, index, "Wireless_Advanced.asp");
-	free(webfile);
 	do_ej_buffer(temp, stream);
 	free(temp);
 }
