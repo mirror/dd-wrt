@@ -82,7 +82,7 @@ struct xt_ndpi_tginfo {
 "megaco",          "redis",                "pando",            "vhua",          "telegram", \
 "vevo",            "pandora",              "quic",    "popo",           "manolito", "feidian", \
 "gadugadu", "i23v5", "secondlife", "whatsapp_voice", "eaq", "meu", "torcedor", "kakaotalk", \
-"kakaotalk_voice" , "twitch"
+"kakaotalk_voice" , "twitch", "quickplay", "tim"
 
 #define NDPI_PROTOCOL_MAXNUM 200
 #endif
