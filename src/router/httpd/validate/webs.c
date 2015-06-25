@@ -482,7 +482,7 @@ void summary_delete_policy(webs_t wp)
 
 void addDeletion(char *word)
 {
-	if (!strlen(word) > 0)
+	if (!word || !strlen(word))
 		return;
 
 	char *oldarg = nvram_get("action_service_arg1");
@@ -2238,7 +2238,7 @@ void move_vif(char *prefix, char *svif, char *tvif)
 	strcpy(tvifx, tvif);
 	rep(tvifx, '.', 'X');
 
-	if (fp = fopen(filename, "r")) {
+	if ((fp = fopen(filename, "r"))) {
 		while (fgets(line, sizeof(line), fp)) {
 			pos = strcspn(line, "=");
 			if (pos) {
