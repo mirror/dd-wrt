@@ -392,5 +392,6 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	 */
 	wfgets(buf, len, stream);
 	fprintf(stderr, "upgrade done()\n");
+#endif
 
 }
