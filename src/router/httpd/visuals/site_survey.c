@@ -136,6 +136,8 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 					speed = 867;
 				else if (speed == 450)
 					speed = 1300;
+				else if (speed == 600)
+					speed = 1733;
 			case 0x100:
 			case 0x200:
 				if (speed == 150)
@@ -143,7 +145,9 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 				else if (speed == 300)
 					speed = 1733;
 				else if (speed == 450)
-					speed = 2600;
+					speed = 2340;
+				else if (speed == 600)
+					speed = 3466;
 			}
 			rates = strbuf;
 
@@ -178,36 +182,36 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			}
 
 		} else {
-			float speed = 0;
+			int speed = 0;
 			switch (site_survey_lists[i].rate_count) {
 			case 4:
-				speed = 11.0f;
+				speed = 11;
 				break;
 			case 12:
-				speed = 54.0f;
+				speed = 54;
 				break;
 			case 13:
-				speed = 108.0f;
+				speed = 108;
 				break;
 			case 150:
-				speed = 72.2f;
+				speed = 72;
 				break;
 			case 300:
-				speed = 144.4f;
+				speed = 144;
 				break;
 			case 450:
-				speed = 216.7f;
+				speed = 217;
 				break;
 			case 600:
-				speed = 288.9f;
+				speed = 289;
 				break;
 			}
 			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%f%s", speed, speed == 4.0f ? "(b)" : speed < 14.0f ? "(b/g)" : "(b/g/n)");
+				sprintf(rates, "%d%s", speed, speed == 4 ? "(b)" : speed < 14 ? "(b/g)" : "(b/g/n)");
 			} else {
-				sprintf(rates, "%f%s", speed, speed < 14.0f ? "(a)" : "(a/n)");
+				sprintf(rates, "%d%s", speed, speed < 14 ? "(a)" : "(a/n)");
 			}
 		}
 
