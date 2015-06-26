@@ -258,14 +258,15 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	int i;
 
 	freq = (float)wrq.u.freq.m;
+	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	if (freq < 1000.0f) {
-		return ieee80211_ieee2mhz((unsigned int)freq);
+		interface->freq = ieee80211_ieee2mhz((unsigned int)freq);
+		return interface;
 	}
 	freq = (double)wrq.u.freq.m;
 	for (i = 0; i < wrq.u.freq.e; i++)
 		freq *= 10.0;
 	freq /= 1000000.0;
-	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	interface->freq = (int)freq;
 	cprintf("wifi channel %f\n", freq);
 	return interface;
