@@ -1073,6 +1073,8 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 //station
 
 	if (nvram_nmatch("apsta", "wl%d_mode", idx) || nvram_nmatch("apstawet", "wl%d_mode", idx)) {
+		char *essid = nvram_nget("wl%d_ssid", idx);
+		char *key = NULL;
 		fprintf(fp, "ApCliEnable=1\n");
 		fprintf(fp, "ApCliSsid=%s\n", nvram_nget("wl%d_ssid", idx));
 		if (nvram_nmatch("psk", "wl%d_akm", idx)
@@ -1096,11 +1098,13 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 					fprintf(fp, "ApCliEncrypType=TKIPAES\n");
 				fprintf(fp, "ApCliAuthMode=WPA2PSK\n");
 			}
+			key = nvram_nget("wl%d_wpa_psk", idx);
 			fprintf(fp, "ApCliWPAPSK=%s\n", nvram_nget("wl%d_wpa_psk", idx));
 		}
 		if (nvram_nmatch("disabled", "wl%d_akm", idx)) {
 			fprintf(fp, "ApCliEncrypType=NONE\n");
 			fprintf(fp, "ApCliAuthMode=OPEN\n");
+			key = "";
 		}
 		if (nvram_nmatch("wep", "wl%d_akm", idx)) {
 			fprintf(fp, "ApCliEncrypType=WEP\n");
@@ -1119,7 +1123,13 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			fprintf(fp, "ApCliKey2Str=%s\n", nvram_nget("wl%d_key2", idx));
 			fprintf(fp, "ApCliKey3Str=%s\n", nvram_nget("wl%d_key3", idx));
 			fprintf(fp, "ApCliKey4Str=%s\n", nvram_nget("wl%d_key4", idx));
+			int keyidx = atoi(nvram_nget("wl%d_key", idx));
+			key = nvram_nget("wl%d_key%d", idx, keyidx);
 		}
+		if (idx == 0)
+			eval("ap_client", "ra0", "apcli0", essid, key);
+		else
+			eval("ap_client", "ba0", "apcli1", essid, key);
 	} else {
 		fprintf(fp, "ApCliEnable=0\n");
 	}
