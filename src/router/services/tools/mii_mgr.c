@@ -7,6 +7,7 @@
 #include <linux/if.h>
 #include <linux/mii.h>
 #include <linux/types.h>
+#include <string.h>
 
 #include "ra_ioctl.h"
 
@@ -24,7 +25,7 @@ int main(int argc, char *argv[])
 {
 	int sk, opt, ret;
 	char options[] = "gsp:r:v:?t";
-	int method;
+	int method = 0;
 	struct ifreq ifr;
 	ra_mii_ioctl_data mii;
 
