@@ -701,6 +701,7 @@ static int check_options(void)
 
 	return 0;
 }
+static int trunkfile=0;
 
 static void fill_header(char *buf, int len)
 {
@@ -721,7 +722,10 @@ static void fill_header(char *buf, int len)
 
 	hdr->kernel_la = HOST_TO_BE32(board->kernel_la);
 	hdr->kernel_ep = HOST_TO_BE32(board->kernel_ep);
-	hdr->fw_length = HOST_TO_BE32(board->fw_max_len);
+	if (trunkfile)
+	    hdr->fw_length = HOST_TO_BE32(sizeof(struct fw_header) + kernel_info.file_size + rootfs_info.file_size);
+	else
+	    hdr->fw_length = HOST_TO_BE32(board->fw_max_len);
 	hdr->kernel_ofs = HOST_TO_BE32(sizeof(struct fw_header));
 	hdr->kernel_len = HOST_TO_BE32(kernel_info.file_size);
 	if (!combined) {
@@ -775,6 +779,10 @@ static int build_fw(void)
 	char *p;
 	int ret = EXIT_FAILURE;
 
+	if (trunkfile)
+		buflen = board->rootfs_ofs + rootfs_info.file_size;
+	else
+		buflen = board->fw_max_len;
 	buflen = board->fw_max_len;
 
 	buf = malloc(buflen);
@@ -822,7 +830,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:V:N:ck:r:o:v:h:");
+		c = getopt(argc, argv, "B:V:N:ck:r:o:v:h:t::");
 		if (c == -1)
 			break;
 
@@ -850,6 +858,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 			fw_ver = optarg;
+			break;
+		case 't':
+			trunkfile = 1;
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
