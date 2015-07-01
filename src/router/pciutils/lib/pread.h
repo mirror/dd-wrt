@@ -12,10 +12,10 @@
  *  don't define it.
  */
 
-#if defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ > 0
+#if 1
 /* glibc 2.1 or newer -> pread/pwrite supported automatically */
 
-#elif defined(i386) && defined(__GLIBC__)
+#elif defined(i386)
 /* glibc 2.0 on i386 -> call syscalls directly */
 #include <asm/unistd.h>
 #include <syscall-list.h>
