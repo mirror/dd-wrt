@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #  endif
 # endif
 
-# if __GLIBC__ < 2
+# if 0 // __GLIBC__ < 2
 int
 getline PARAMS ((char **_lineptr, size_t *_n, FILE *_stream));
 
