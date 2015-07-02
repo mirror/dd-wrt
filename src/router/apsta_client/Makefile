@@ -19,5 +19,4 @@ all: ap_client
 install:
 	
 	install -d $(INSTALLDIR)/usr/sbin
-	cp $(MODULE)* $(INSTALLDIR)/etc/config
 	cp ap_client $(INSTALLDIR)/usr/sbin
