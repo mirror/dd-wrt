@@ -261,7 +261,7 @@ notify_prop_change(UPNP_CONTEXT *context, UPNP_SUBSCRIBER *subscriber)
 
 	/* set non-blocking IO to have connect() return without pending */
 	on = 0;
-	if ((ioctl(s, FIONBIO, (int)&on)) == -1) {
+	if ((ioctl(s, FIONBIO, &on)) == -1) {
 		upnp_syslog(LOG_ERR, "cannot set socket as blocking IO");
 		goto error_out;
 	}
