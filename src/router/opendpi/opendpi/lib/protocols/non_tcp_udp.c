@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "ndpi_protocols.h"
 
 #if defined(NDPI_PROTOCOL_IP_IPSEC) || defined(NDPI_PROTOCOL_IP_GRE) || defined(NDPI_PROTOCOL_IP_ICMP)  || defined(NDPI_PROTOCOL_IP_IGMP) || defined(NDPI_PROTOCOL_IP_EGP) || defined(NDPI_PROTOCOL_IP_SCTP) || defined(NDPI_PROTOCOL_IP_OSPF) || defined(NDPI_PROTOCOL_IP_IP_IN_IP)
@@ -31,78 +30,76 @@
   {									\
     if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_struct->detection_bitmask,nprot) != 0) \
       {									\
-	ndpi_int_add_connection(ndpi_struct, flow,			\
-				nprot,					\
-				NDPI_REAL_PROTOCOL);			\
+	ndpi_set_detected_protocol(ndpi_struct, flow,			\
+				   nprot, NDPI_PROTOCOL_UNKNOWN);		\
       }									\
   }
 
-
 static void ndpi_search_in_non_tcp_udp(struct ndpi_detection_module_struct
-				*ndpi_struct, struct ndpi_flow_struct *flow)
+				       *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+	struct ndpi_packet_struct *packet = &flow->packet;
 
-  if (packet->iph == NULL) {
+	if (packet->iph == NULL) {
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
-    if (packet->iphv6 == NULL)
+		if (packet->iphv6 == NULL)
 #endif
-      return;
-  }
+			return;
+	}
 
-  switch (packet->l4_protocol) {
+	switch (packet->l4_protocol) {
 #ifdef NDPI_PROTOCOL_IP_IPSEC
-  case NDPI_IPSEC_PROTOCOL_ESP:
-  case NDPI_IPSEC_PROTOCOL_AH:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_IPSEC);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_IPSEC */
+	case NDPI_IPSEC_PROTOCOL_ESP:
+	case NDPI_IPSEC_PROTOCOL_AH:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_IPSEC);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_IPSEC */
 #ifdef NDPI_PROTOCOL_IP_GRE
-  case NDPI_GRE_PROTOCOL_TYPE:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_GRE);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_GRE */
+	case NDPI_GRE_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_GRE);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_GRE */
 #ifdef NDPI_PROTOCOL_IP_ICMP
-  case NDPI_ICMP_PROTOCOL_TYPE:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_ICMP);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_ICMP */
+	case NDPI_ICMP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_ICMP);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_ICMP */
 #ifdef NDPI_PROTOCOL_IP_IGMP
-  case NDPI_IGMP_PROTOCOL_TYPE:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_IGMP);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_IGMP */
+	case NDPI_IGMP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_IGMP);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_IGMP */
 #ifdef NDPI_PROTOCOL_IP_EGP
-  case NDPI_EGP_PROTOCOL_TYPE:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_EGP);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_EGP */
+	case NDPI_EGP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_EGP);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_EGP */
 #ifdef NDPI_PROTOCOL_IP_SCTP
-  case NDPI_SCTP_PROTOCOL_TYPE:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_SCTP);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_SCTP */
+	case NDPI_SCTP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_SCTP);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_SCTP */
 #ifdef NDPI_PROTOCOL_IP_OSPF
-  case NDPI_OSPF_PROTOCOL_TYPE:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_OSPF);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_OSPF */
+	case NDPI_OSPF_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_OSPF);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_OSPF */
 #ifdef NDPI_PROTOCOL_IP_IP_IN_IP
-  case NDPI_IPIP_PROTOCOL_TYPE:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_IP_IN_IP);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_IP_IN_IP */
+	case NDPI_IPIP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_IP_IN_IP);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_IP_IN_IP */
 #ifdef NDPI_PROTOCOL_IP_ICMPV6
-  case NDPI_ICMPV6_PROTOCOL_TYPE:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_ICMPV6);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_ICMPV6 */
+	case NDPI_ICMPV6_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_ICMPV6);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_ICMPV6 */
 #ifdef NDPI_PROTOCOL_IP_VRRP
-  case 112:
-    set_protocol_and_bmask(NDPI_PROTOCOL_IP_VRRP);
-    break;
-#endif							/* NDPI_PROTOCOL_IP_VRRP */
-  }
+	case 112:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_VRRP);
+		break;
+#endif				/* NDPI_PROTOCOL_IP_VRRP */
+	}
 }
 
 #endif

@@ -15,31 +15,27 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
-
 
 #include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_VMWARE
 
-
 static void ndpi_search_vmware(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
-    
-  /* Check whether this is an VMWARE flow */
-  if((packet->payload_packet_len == 66)
-     && (ntohs(packet->udp->dest) == 902)
-     && ((packet->payload[0] & 0xFF) == 0xA4)) {
-    NDPI_LOG(NDPI_PROTOCOL_VMWARE, ndpi_struct, NDPI_LOG_DEBUG, "Found vmware.\n");
-    ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_VMWARE, NDPI_REAL_PROTOCOL);	
-  } else {
-    NDPI_LOG(NDPI_PROTOCOL_VMWARE, ndpi_struct, NDPI_LOG_DEBUG, "exclude vmware.\n");
-    NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_VMWARE);
-  }
+	struct ndpi_packet_struct *packet = &flow->packet;
+
+	/* Check whether this is an VMWARE flow */
+	if ((packet->payload_packet_len == 66)
+	    && (ntohs(packet->udp->dest) == 902)
+	    && ((packet->payload[0] & 0xFF) == 0xA4)) {
+		NDPI_LOG(NDPI_PROTOCOL_VMWARE, ndpi_struct, NDPI_LOG_DEBUG, "Found vmware.\n");
+		ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VMWARE, NDPI_PROTOCOL_UNKNOWN);
+	} else {
+		NDPI_LOG(NDPI_PROTOCOL_VMWARE, ndpi_struct, NDPI_LOG_DEBUG, "exclude vmware.\n");
+		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_VMWARE);
+	}
 }
 
-
-#endif /* NDPI_PROTOCOL_VMWARE */
-
+#endif				/* NDPI_PROTOCOL_VMWARE */

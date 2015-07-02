@@ -22,25 +22,21 @@
  * 
  */
 
-
 #include "ndpi_protocols.h"
 #ifdef NDPI_PROTOCOL_TELNET
 
-
-
 static void ndpi_int_telnet_add_connection(struct ndpi_detection_module_struct
-											 *ndpi_struct, struct ndpi_flow_struct *flow)
+					   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_TELNET, NDPI_REAL_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TELNET, NDPI_PROTOCOL_UNKNOWN);
 }
 
-	
 #if !defined(WIN32)
- static inline
+static inline
 #else
 __forceinline static
 #endif
-	 u_int8_t search_iac(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+u_int8_t search_iac(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -50,8 +46,7 @@ __forceinline static
 		return 0;
 	}
 
-	if (!(packet->payload[0] == 0xff
-		  && packet->payload[1] > 0xf9 && packet->payload[1] != 0xff && packet->payload[2] < 0x28)) {
+	if (!(packet->payload[0] == 0xff && packet->payload[1] > 0xf9 && packet->payload[1] != 0xff && packet->payload[2] < 0x28)) {
 		return 0;
 	}
 
@@ -61,9 +56,9 @@ __forceinline static
 		// commands start with a 0xff byte followed by a command byte >= 0xf0 and < 0xff
 		// command bytes 0xfb to 0xfe are followed by an option byte <= 0x28
 		if (!(packet->payload[a] != 0xff ||
-			  (packet->payload[a] == 0xff && (packet->payload[a + 1] >= 0xf0) && (packet->payload[a + 1] <= 0xfa)) ||
-			  (packet->payload[a] == 0xff && (packet->payload[a + 1] >= 0xfb) && (packet->payload[a + 1] != 0xff)
-			   && (packet->payload[a + 2] <= 0x28)))) {
+		      (packet->payload[a] == 0xff && (packet->payload[a + 1] >= 0xf0) && (packet->payload[a + 1] <= 0xfa)) ||
+		      (packet->payload[a] == 0xff && (packet->payload[a + 1] >= 0xfb) && (packet->payload[a + 1] != 0xff)
+		       && (packet->payload[a + 2] <= 0x28)))) {
 			return 0;
 		}
 		a++;
@@ -74,12 +69,12 @@ __forceinline static
 
 /* this detection also works asymmetrically */
 static void ndpi_search_telnet_tcp(struct ndpi_detection_module_struct
-							  *ndpi_struct, struct ndpi_flow_struct *flow)
+				   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-//  struct ndpi_packet_struct *packet = &flow->packet;
-	
-//      struct ndpi_id_struct         *src=ndpi_struct->src;
-//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
+	//  struct ndpi_packet_struct *packet = &flow->packet;
+
+	//      struct ndpi_id_struct         *src=ndpi_struct->src;
+	//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	NDPI_LOG(NDPI_PROTOCOL_TELNET, ndpi_struct, NDPI_LOG_DEBUG, "search telnet.\n");
 

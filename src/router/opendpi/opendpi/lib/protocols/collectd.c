@@ -18,36 +18,36 @@
  *
  */
 
-
 #include "ndpi_protocols.h"
 
 #ifdef NDPI_PROTOCOL_COLLECTD
 
 static void ndpi_search_collectd(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
-  u_int len = 0;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	u_int len = 0;
 
-  NDPI_LOG(NDPI_PROTOCOL_COLLECTD, ndpi_struct, NDPI_LOG_DEBUG, "search collectd.\n");
-  
-  if (packet->udp == NULL) return;
+	NDPI_LOG(NDPI_PROTOCOL_COLLECTD, ndpi_struct, NDPI_LOG_DEBUG, "search collectd.\n");
 
+	if (packet->udp == NULL)
+		return;
 
-  while(len < packet->payload_packet_len) {
-    // u_int16_t elem_type = ntohs(*((u_int16_t*)&packet->payload[len]));
-    u_int16_t elem_len = ntohs(*((u_int16_t*)&packet->payload[len+2]));
+	while (len < packet->payload_packet_len) {
+		// u_int16_t elem_type = ntohs(*((u_int16_t*)&packet->payload[len]));
+		u_int16_t elem_len = ntohs(*((u_int16_t *)&packet->payload[len + 2]));
 
-    if (elem_len == 0) break;
+		if (elem_len == 0)
+			break;
 
-    len += elem_len;
-  }
+		len += elem_len;
+	}
 
-  if(len == packet->payload_packet_len) {
-    NDPI_LOG(NDPI_PROTOCOL_COLLECTD, ndpi_struct, NDPI_LOG_DEBUG, "found COLLECTD.\n");      
-    ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_COLLECTD, NDPI_REAL_PROTOCOL);
-  } else {
-    NDPI_LOG(NDPI_PROTOCOL_COLLECTD, ndpi_struct, NDPI_LOG_DEBUG, "exclude COLLECTD.\n");
-    NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_COLLECTD);
-  }
+	if (len == packet->payload_packet_len) {
+		NDPI_LOG(NDPI_PROTOCOL_COLLECTD, ndpi_struct, NDPI_LOG_DEBUG, "found COLLECTD.\n");
+		ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_COLLECTD, NDPI_PROTOCOL_UNKNOWN);
+	} else {
+		NDPI_LOG(NDPI_PROTOCOL_COLLECTD, ndpi_struct, NDPI_LOG_DEBUG, "exclude COLLECTD.\n");
+		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_COLLECTD);
+	}
 }
 #endif
