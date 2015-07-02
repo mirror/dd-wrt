@@ -18,7 +18,6 @@
  *
  */
 
-
 #include "ndpi_api.h"
 
 /*
@@ -30,39 +29,42 @@
 
 #ifdef NDPI_PROTOCOL_VHUA
 
-static void ndpi_int_vhua_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_VHUA, NDPI_REAL_PROTOCOL);
-  NDPI_LOG(NDPI_PROTOCOL_VHUA, ndpi_struct, NDPI_LOG_TRACE, "VHUA Found.\n");
+static void ndpi_int_vhua_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VHUA, NDPI_PROTOCOL_UNKNOWN);
+	NDPI_LOG(NDPI_PROTOCOL_VHUA, ndpi_struct, NDPI_LOG_TRACE, "VHUA Found.\n");
 }
 
+static void ndpi_check_vhua(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	struct ndpi_packet_struct *packet = &flow->packet;
+	u_int32_t payload_len = packet->payload_packet_len;
+	u_char p0[] = { 0x05, 0x14, 0x3a, 0x05, 0x08, 0xf8, 0xa1, 0xb1, 0x03 };
 
-static void ndpi_check_vhua(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
-  u_int32_t payload_len = packet->payload_packet_len;
-  u_char p0[] =  { 0x05, 0x14, 0x3a, 0x05, 0x08, 0xf8, 0xa1, 0xb1, 0x03 };
+	if (payload_len == 0)
+		return;		/* Shouldn't happen */
 
-  if(payload_len == 0) return; /* Shouldn't happen */
-
-  /* Break after 3 packets. */
-  if((flow->packet_counter > 3)
-     || (packet->udp == NULL)
-     || (packet->payload_packet_len < sizeof(p0))) {
-    NDPI_LOG(NDPI_PROTOCOL_VHUA, ndpi_struct, NDPI_LOG_TRACE, "Exclude VHUA.\n");
-    NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_VHUA);
-  } else if(memcmp(packet->payload, p0, sizeof(p0)) == 0) {
-    ndpi_int_vhua_add_connection(ndpi_struct, flow);
-  }
+	/* Break after 3 packets. */
+	if ((flow->packet_counter > 3)
+	    || (packet->udp == NULL)
+	    || (packet->payload_packet_len < sizeof(p0))) {
+		NDPI_LOG(NDPI_PROTOCOL_VHUA, ndpi_struct, NDPI_LOG_TRACE, "Exclude VHUA.\n");
+		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_VHUA);
+	} else if (memcmp(packet->payload, p0, sizeof(p0)) == 0) {
+		ndpi_int_vhua_add_connection(ndpi_struct, flow);
+	}
 }
 
-static void ndpi_search_vhua(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
+static void ndpi_search_vhua(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	struct ndpi_packet_struct *packet = &flow->packet;
 
-  NDPI_LOG(NDPI_PROTOCOL_VHUA, ndpi_struct, NDPI_LOG_TRACE, "VHUA detection...\n");
+	NDPI_LOG(NDPI_PROTOCOL_VHUA, ndpi_struct, NDPI_LOG_TRACE, "VHUA detection...\n");
 
-  /* skip marked packets */
-  if(packet->detected_protocol_stack[0] != NDPI_PROTOCOL_VHUA) {
-    ndpi_check_vhua(ndpi_struct, flow);
-  }
+	/* skip marked packets */
+	if (packet->detected_protocol_stack[0] != NDPI_PROTOCOL_VHUA) {
+		ndpi_check_vhua(ndpi_struct, flow);
+	}
 }
 
 #endif

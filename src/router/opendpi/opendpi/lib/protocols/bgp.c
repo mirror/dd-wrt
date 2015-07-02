@@ -22,30 +22,26 @@
  *
  */
 
-
 #include "ndpi_protocols.h"
 #ifdef NDPI_PROTOCOL_BGP
 
-
 static void ndpi_int_bgp_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_BGP, NDPI_REAL_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_BGP, NDPI_PROTOCOL_UNKNOWN);
 }
 
 /* this detection also works asymmetrically */
 static void ndpi_search_bgp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
+
 //      struct ndpi_id_struct         *src=ndpi_struct->src;
 //      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (packet->payload_packet_len > 18 &&
-		get_u_int64_t(packet->payload, 0) == 0xffffffffffffffffULL &&
-		get_u_int64_t(packet->payload, 8) == 0xffffffffffffffffULL &&
-		ntohs(get_u_int16_t(packet->payload, 16)) <= packet->payload_packet_len &&
-		(packet->tcp->dest == htons(179) || packet->tcp->source == htons(179))
-		&& packet->payload[18] < 5) {
+	    get_u_int64_t(packet->payload, 0) == 0xffffffffffffffffULL &&
+	    get_u_int64_t(packet->payload, 8) == 0xffffffffffffffffULL && ntohs(get_u_int16_t(packet->payload, 16)) <= packet->payload_packet_len && (packet->tcp->dest == htons(179) || packet->tcp->source == htons(179))
+	    && packet->payload[18] < 5) {
 		NDPI_LOG(NDPI_PROTOCOL_BGP, ndpi_struct, NDPI_LOG_DEBUG, "BGP detected.\n");
 		ndpi_int_bgp_add_connection(ndpi_struct, flow);
 		return;

@@ -22,27 +22,23 @@
  *
  */
 
-
-
 #include "ndpi_protocols.h"
 #ifdef NDPI_PROTOCOL_HTTP_APPLICATION_ACTIVESYNC
 static void ndpi_int_activesync_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_HTTP_APPLICATION_ACTIVESYNC, NDPI_CORRELATED_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_HTTP_APPLICATION_ACTIVESYNC, NDPI_PROTOCOL_HTTP);
 }
 
 static void ndpi_search_activesync(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
+
 	if (packet->tcp != NULL) {
 
-		if (packet->payload_packet_len > 150
-			&& ((memcmp(packet->payload, "OPTIONS /Microsoft-Server-ActiveSync?", 37) == 0)
-				|| (memcmp(packet->payload, "POST /Microsoft-Server-ActiveSync?", 34) == 0))) {
+		if (packet->payload_packet_len > 150 && ((memcmp(packet->payload, "OPTIONS /Microsoft-Server-ActiveSync?", 37) == 0)
+							 || (memcmp(packet->payload, "POST /Microsoft-Server-ActiveSync?", 34) == 0))) {
 			ndpi_int_activesync_add_connection(ndpi_struct, flow);
-			NDPI_LOG(NDPI_PROTOCOL_HTTP_APPLICATION_ACTIVESYNC, ndpi_struct, NDPI_LOG_DEBUG,
-					" flow marked as ActiveSync \n");
+			NDPI_LOG(NDPI_PROTOCOL_HTTP_APPLICATION_ACTIVESYNC, ndpi_struct, NDPI_LOG_DEBUG, " flow marked as ActiveSync \n");
 			return;
 		}
 	}
