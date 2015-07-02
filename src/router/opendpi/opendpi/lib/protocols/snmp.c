@@ -22,22 +22,21 @@
  * 
  */
 
-
 #include "ndpi_protocols.h"
 #ifdef NDPI_PROTOCOL_SNMP
 
 static void ndpi_int_snmp_add_connection(struct ndpi_detection_module_struct
-										   *ndpi_struct, struct ndpi_flow_struct *flow)
+					 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SNMP, NDPI_REAL_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SNMP, NDPI_PROTOCOL_UNKNOWN);
 }
 
 static void ndpi_search_snmp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
-//      struct ndpi_id_struct         *src=ndpi_struct->src;
-//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
+
+	//      struct ndpi_id_struct         *src=ndpi_struct->src;
+	//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (packet->payload_packet_len > 32 && packet->payload[0] == 0x30) {
 		int offset;
@@ -85,8 +84,7 @@ static void ndpi_search_snmp(struct ndpi_detection_module_struct *ndpi_struct, s
 		} else if (flow->l4.udp.snmp_stage == 1 + packet->packet_direction) {
 			if (packet->payload[offset + 2] == 0) {
 				if (flow->l4.udp.snmp_msg_id != get_u_int8_t(packet->payload, offset + 15) - 1) {
-					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG,
-							"SNMP v1 excluded, message ID doesn't match\n");
+					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP v1 excluded, message ID doesn't match\n");
 					goto excl;
 				}
 			}
@@ -94,20 +92,17 @@ static void ndpi_search_snmp(struct ndpi_detection_module_struct *ndpi_struct, s
 			NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP stage 1-2.\n");
 			if (packet->payload[offset + 2] == 3) {
 				if (flow->l4.udp.snmp_msg_id != ntohs(get_u_int32_t(packet->payload, offset + 8))) {
-					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG,
-							"SNMP v3 excluded, message ID doesn't match\n");
+					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP v3 excluded, message ID doesn't match\n");
 					goto excl;
 				}
 			} else if (packet->payload[offset + 2] == 0) {
 				if (flow->l4.udp.snmp_msg_id != get_u_int8_t(packet->payload, offset + 15)) {
-					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG,
-							"SNMP v1 excluded, message ID doesn't match\n");
+					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP v1 excluded, message ID doesn't match\n");
 					goto excl;
 				}
 			} else {
 				if (flow->l4.udp.snmp_msg_id != ntohs(get_u_int16_t(packet->payload, offset + 15))) {
-					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG,
-							"SNMP v2 excluded, message ID doesn't match\n");
+					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP v2 excluded, message ID doesn't match\n");
 					goto excl;
 				}
 			}
@@ -118,7 +113,7 @@ static void ndpi_search_snmp(struct ndpi_detection_module_struct *ndpi_struct, s
 	} else {
 		NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP excluded.\n");
 	}
-  excl:
+excl:
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SNMP);
 
 }

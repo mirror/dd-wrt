@@ -18,31 +18,30 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_VIBER
 
 static void ndpi_search_viber(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
-  
-  NDPI_LOG(NDPI_PROTOCOL_VIBER, ndpi_struct, NDPI_LOG_DEBUG, "search for VIBER.\n");
-  
-  if(packet->udp != NULL) {
-    NDPI_LOG(NDPI_PROTOCOL_VIBER, ndpi_struct, NDPI_LOG_DEBUG, "calculating dport over udp.\n");
+	struct ndpi_packet_struct *packet = &flow->packet;
 
-    if((packet->payload_packet_len == 12 && packet->payload[2] == 0x03 && packet->payload[3] == 0x00)
-       || (packet->payload_packet_len == 20 && packet->payload[2] == 0x09 && packet->payload[3] == 0x00)
-       || ((packet->payload_packet_len < 135) && (packet->payload[0] == 0x11))) {
-      NDPI_LOG(NDPI_PROTOCOL_VIBER, ndpi_struct, NDPI_LOG_DEBUG, "found VIBER.\n");
-      ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_VIBER, NDPI_REAL_PROTOCOL);
-      return;
-    } 
-  }
+	NDPI_LOG(NDPI_PROTOCOL_VIBER, ndpi_struct, NDPI_LOG_DEBUG, "search for VIBER.\n");
 
-  NDPI_LOG(NDPI_PROTOCOL_VIBER, ndpi_struct, NDPI_LOG_DEBUG, "exclude VIBER.\n");
-  NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_VIBER);
+	if (packet->udp != NULL) {
+		NDPI_LOG(NDPI_PROTOCOL_VIBER, ndpi_struct, NDPI_LOG_DEBUG, "calculating dport over udp.\n");
+
+		if ((packet->payload_packet_len == 12 && packet->payload[2] == 0x03 && packet->payload[3] == 0x00)
+		    || (packet->payload_packet_len == 20 && packet->payload[2] == 0x09 && packet->payload[3] == 0x00)
+		    || ((packet->payload_packet_len < 135) && (packet->payload[0] == 0x11))) {
+			NDPI_LOG(NDPI_PROTOCOL_VIBER, ndpi_struct, NDPI_LOG_DEBUG, "found VIBER.\n");
+			ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VIBER, NDPI_PROTOCOL_UNKNOWN);
+			return;
+		}
+	}
+
+	NDPI_LOG(NDPI_PROTOCOL_VIBER, ndpi_struct, NDPI_LOG_DEBUG, "exclude VIBER.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_VIBER);
 }
 
 #endif

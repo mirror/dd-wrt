@@ -31,7 +31,7 @@
 #define __NDPI_PROTOCOLS_DEFAULT_H__
 
 #define NDPI_DETECTION_SUPPORT_IPV6
-#define NDPI_PROTOCOL_HISTORY_SIZE				3
+#define NDPI_PROTOCOL_HISTORY_SIZE				2
 
 #define NDPI_PROTOCOL_UNKNOWN					0
 
@@ -251,10 +251,11 @@
 #define NDPI_SERVICE_TWITCH                             201 /* Edoardo Dominici <edoaramis@gmail.com>  */
 #define NDPI_SERVICE_QUICKPLAY                          202 /* Streaming service used by various services such as hooq.tv  */
 #define NDPI_SERVICE_TIM                                203 /* Traffic for tim.com.br and tim.it */
+#define NDPI_PROTOCOL_MPEGTS        			204
 
 
 /* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_SERVICE_PANDORA) */
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL			203
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL			204
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                   (NDPI_NUM_BITS-NDPI_LAST_IMPLEMENTED_PROTOCOL)

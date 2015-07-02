@@ -28,5 +28,4 @@
 
 #include "ndpi_main.h"
 
-
 #endif /* __NDPI_PROTOCOLS_INCLUDE_FILE__ */

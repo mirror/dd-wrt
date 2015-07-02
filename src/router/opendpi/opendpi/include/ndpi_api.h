@@ -123,15 +123,16 @@ extern "C" {
    * @param dst void pointer to the destination subscriber state machine
    * @return returns the detected ID of the protocol
    */
-  static unsigned int
-  ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_struct,
-				struct ndpi_flow_struct *flow,
-				const unsigned char *packet,
-				const unsigned short packetlen,
-				const u_int64_t current_tick,
-				struct ndpi_id_struct *src,
-				struct ndpi_id_struct *dst,
-				int dir);
+  static u_int16_t ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_struct,
+					  struct ndpi_flow_struct *flow,
+					  const unsigned char *packet,
+					  const unsigned short packetlen,
+					  const u_int64_t current_tick,
+					  struct ndpi_id_struct *src,
+					  struct ndpi_id_struct *dst, int dir);
+
+  static u_int16_t ndpi_get_flow_masterprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+					 struct ndpi_flow_struct *flow);
 
 #define NDPI_DETECTION_ONLY_IPV4 ( 1 << 0 )
 #define NDPI_DETECTION_ONLY_IPV6 ( 1 << 1 )
@@ -156,7 +157,7 @@ extern "C" {
    * @param ndpi_struct the detection module
    * @return the protocol id of the last real protocol found in the protocol history of the flow
    */
-  static u_int16_t ndpi_detection_get_real_protocol_of_flow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+/*  static u_int16_t ndpi_detection_get_real_protocol_of_flow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow); */
 
   /**
    * returns true if the protocol history of the flow of the last packet given to the detection

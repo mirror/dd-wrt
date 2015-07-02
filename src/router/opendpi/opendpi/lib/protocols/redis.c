@@ -18,75 +18,77 @@
  * 
  */
 
-
 #include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_REDIS
 
-static void ndpi_int_redis_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_REDIS, NDPI_REAL_PROTOCOL);
+static void ndpi_int_redis_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_REDIS, NDPI_PROTOCOL_UNKNOWN);
 }
 
+static void ndpi_check_redis(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	struct ndpi_packet_struct *packet = &flow->packet;
+	u_int32_t payload_len = packet->payload_packet_len;
 
-static void ndpi_check_redis(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;  
-  u_int32_t payload_len = packet->payload_packet_len;
-  
-  if(payload_len == 0) return; /* Shouldn't happen */
+	if (payload_len == 0)
+		return;		/* Shouldn't happen */
 
-  /* Break after 20 packets. */
-  if(flow->packet_counter > 20) {
-    NDPI_LOG(NDPI_PROTOCOL_REDIS, ndpi_struct, NDPI_LOG_DEBUG, "Exclude Redis.\n");
-    NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_REDIS);
-    return;
-  }
+	/* Break after 20 packets. */
+	if (flow->packet_counter > 20) {
+		NDPI_LOG(NDPI_PROTOCOL_REDIS, ndpi_struct, NDPI_LOG_DEBUG, "Exclude Redis.\n");
+		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_REDIS);
+		return;
+	}
 
-  if(packet->packet_direction == 0)
-    flow->redis_s2d_first_char = packet->payload[0];
-  else
-    flow->redis_d2s_first_char = packet->payload[0];
+	if (packet->packet_direction == 0)
+		flow->redis_s2d_first_char = packet->payload[0];
+	else
+		flow->redis_d2s_first_char = packet->payload[0];
 
-  if((flow->redis_s2d_first_char != '\0') && (flow->redis_d2s_first_char != '\0')) {
-    /*
-     *1
-     $4
-     PING
-     +PONG
-     *3
-     $3
-     SET
-     $19
-     dns.cache.127.0.0.1
-     $9
-     localhost
-     +OK
-    */
+	if ((flow->redis_s2d_first_char != '\0') && (flow->redis_d2s_first_char != '\0')) {
+		/*
+		 *1
+		 $4
+		 PING
+		 +PONG
+		 *3
+		 $3
+		 SET
+		 $19
+		 dns.cache.127.0.0.1
+		 $9
+		 localhost
+		 +OK
+		 */
 
-    if(((flow->redis_s2d_first_char == '*') 
-	&& ((flow->redis_d2s_first_char == '+') || (flow->redis_d2s_first_char == ':')))
-       || ((flow->redis_d2s_first_char == '*') 
-	   && ((flow->redis_s2d_first_char == '+') || (flow->redis_s2d_first_char == ':')))) {
-      NDPI_LOG(NDPI_PROTOCOL_REDIS, ndpi_struct, NDPI_LOG_DEBUG, "Found Redis.\n");
-      ndpi_int_redis_add_connection(ndpi_struct, flow);
-    } else {
-      NDPI_LOG(NDPI_PROTOCOL_REDIS, ndpi_struct, NDPI_LOG_DEBUG, "Exclude Redis.\n");
-      NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_REDIS);      
-    }
-  } else
-    return; /* Too early */
+		if (((flow->redis_s2d_first_char == '*')
+		     && ((flow->redis_d2s_first_char == '+') || (flow->redis_d2s_first_char == ':')))
+		    || ((flow->redis_d2s_first_char == '*')
+			&& ((flow->redis_s2d_first_char == '+') || (flow->redis_s2d_first_char == ':')))) {
+			NDPI_LOG(NDPI_PROTOCOL_REDIS, ndpi_struct, NDPI_LOG_DEBUG, "Found Redis.\n");
+			ndpi_int_redis_add_connection(ndpi_struct, flow);
+		} else {
+			NDPI_LOG(NDPI_PROTOCOL_REDIS, ndpi_struct, NDPI_LOG_DEBUG, "Exclude Redis.\n");
+			NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_REDIS);
+		}
+	} else
+		return;		/* Too early */
 }
 
-static void ndpi_search_redis(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
+static void ndpi_search_redis(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	struct ndpi_packet_struct *packet = &flow->packet;
 
-  NDPI_LOG(NDPI_PROTOCOL_REDIS, ndpi_struct, NDPI_LOG_DEBUG, "Redis detection...\n");
+	NDPI_LOG(NDPI_PROTOCOL_REDIS, ndpi_struct, NDPI_LOG_DEBUG, "Redis detection...\n");
 
-  /* skip marked packets */
-  if (packet->detected_protocol_stack[0] != NDPI_PROTOCOL_REDIS) {
-    if (packet->tcp_retransmission == 0) {
-      ndpi_check_redis(ndpi_struct, flow);
-    }
-  }
+	/* skip marked packets */
+	if (packet->detected_protocol_stack[0] != NDPI_PROTOCOL_REDIS) {
+		if (packet->tcp_retransmission == 0) {
+			ndpi_check_redis(ndpi_struct, flow);
+		}
+	}
 }
 
 #endif
