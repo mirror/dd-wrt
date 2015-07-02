@@ -23,7 +23,7 @@
 
 #ifdef NDPI_PROTOCOL_MPEGTS
 
-void ndpi_search_mpegts(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_mpegts(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 	u_int16_t dport = 0, sport = 0;
