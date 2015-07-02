@@ -22,22 +22,20 @@
  * 
  */
 
-
 #include "ndpi_protocols.h"
 #ifdef NDPI_PROTOCOL_POSTGRES
 
-
 static void ndpi_int_postgres_add_connection(struct ndpi_detection_module_struct
-											   *ndpi_struct, struct ndpi_flow_struct *flow)
+					     *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_POSTGRES, NDPI_REAL_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_POSTGRES, NDPI_PROTOCOL_UNKNOWN);
 }
 
 static void ndpi_search_postgres_tcp(struct ndpi_detection_module_struct
-								*ndpi_struct, struct ndpi_flow_struct *flow)
+				     *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
+
 //      struct ndpi_id_struct         *src=ndpi_struct->src;
 //      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
@@ -46,18 +44,14 @@ static void ndpi_search_postgres_tcp(struct ndpi_detection_module_struct
 	if (flow->l4.tcp.postgres_stage == 0) {
 		//SSL
 		if (packet->payload_packet_len > 7 &&
-			packet->payload[4] == 0x04 &&
-			packet->payload[5] == 0xd2 &&
-			packet->payload[6] == 0x16 &&
-			packet->payload[7] == 0x2f && ntohl(get_u_int32_t(packet->payload, 0)) == packet->payload_packet_len) {
+		    packet->payload[4] == 0x04 && packet->payload[5] == 0xd2 && packet->payload[6] == 0x16 && packet->payload[7] == 0x2f && ntohl(get_u_int32_t(packet->payload, 0)) == packet->payload_packet_len) {
 			flow->l4.tcp.postgres_stage = 1 + packet->packet_direction;
 			return;
 		}
 		//no SSL
 		if (packet->payload_packet_len > 7 &&
-			//protocol version number - to be updated
-			ntohl(get_u_int32_t(packet->payload, 4)) < 0x00040000 &&
-			ntohl(get_u_int32_t(packet->payload, 0)) == packet->payload_packet_len) {
+		    //protocol version number - to be updated
+		    ntohl(get_u_int32_t(packet->payload, 4)) < 0x00040000 && ntohl(get_u_int32_t(packet->payload, 0)) == packet->payload_packet_len) {
 			flow->l4.tcp.postgres_stage = 3 + packet->packet_direction;
 			return;
 		}
@@ -78,15 +72,12 @@ static void ndpi_search_postgres_tcp(struct ndpi_detection_module_struct
 		}
 		//no SSL
 		if (flow->l4.tcp.postgres_stage == 4 - packet->packet_direction)
-			if (packet->payload_packet_len > 8 &&
-				ntohl(get_u_int32_t(packet->payload, 5)) < 10 &&
-				ntohl(get_u_int32_t(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 0x52) {
+			if (packet->payload_packet_len > 8 && ntohl(get_u_int32_t(packet->payload, 5)) < 10 && ntohl(get_u_int32_t(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 0x52) {
 				NDPI_LOG(NDPI_PROTOCOL_POSTGRES, ndpi_struct, NDPI_LOG_DEBUG, "PostgreSQL detected, no SSL.\n");
 				ndpi_int_postgres_add_connection(ndpi_struct, flow);
 				return;
 			}
-		if (flow->l4.tcp.postgres_stage == 6
-			&& ntohl(get_u_int32_t(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 'p') {
+		if (flow->l4.tcp.postgres_stage == 6 && ntohl(get_u_int32_t(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 'p') {
 			NDPI_LOG(NDPI_PROTOCOL_POSTGRES, ndpi_struct, NDPI_LOG_DEBUG, "found postgres asymmetrically.\n");
 			ndpi_int_postgres_add_connection(ndpi_struct, flow);
 			return;

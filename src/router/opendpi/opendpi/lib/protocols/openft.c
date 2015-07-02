@@ -22,29 +22,27 @@
  * 
  */
 
-
 #include "ndpi_protocols.h"
 #ifdef NDPI_PROTOCOL_OPENFT
 
 static void ndpi_int_openft_add_connection(struct ndpi_detection_module_struct
-											 *ndpi_struct, struct ndpi_flow_struct *flow)
+					   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_OPENFT, NDPI_CORRELATED_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OPENFT, NDPI_PROTOCOL_UNKNOWN);
 }
 
 static void ndpi_search_openft_tcp(struct ndpi_detection_module_struct
-							  *ndpi_struct, struct ndpi_flow_struct *flow)
+				   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
+
 //      struct ndpi_id_struct         *src=ndpi_struct->src;
 //      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (packet->payload_packet_len > 5 && memcmp(packet->payload, "GET /", 5) == 0) {
 		NDPI_LOG(NDPI_PROTOCOL_OPENFT, ndpi_struct, NDPI_LOG_DEBUG, "HTTP packet detected.\n");
 		ndpi_parse_packet_line_info(ndpi_struct, flow);
-		if (packet->parsed_lines >= 2
-			&& packet->line[1].len > 13 && memcmp(packet_line(1), "X-OpenftAlias:", 14) == 0) {
+		if (packet->parsed_lines >= 2 && packet->line[1].len > 13 && memcmp(packet_line(1), "X-OpenftAlias:", 14) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_OPENFT, ndpi_struct, NDPI_LOG_DEBUG, "OpenFT detected.\n");
 			ndpi_int_openft_add_connection(ndpi_struct, flow);
 			return;

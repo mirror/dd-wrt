@@ -18,105 +18,118 @@
  *
  */
 
-
 #include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_SKYPE
 
+static u_int8_t is_skype_host(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t host)
+{
+	struct in_addr pin;
 
-static u_int8_t is_skype_host(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t host) {
-  struct in_addr pin;
-  
-  pin.s_addr = host;
-  
-  return((ndpi_network_ptree_match(ndpi_struct, &pin) == NDPI_PROTOCOL_SKYPE) ? 1 : 0);
+	pin.s_addr = host;
+
+	return ((ndpi_network_ptree_match(ndpi_struct, &pin) == NDPI_PROTOCOL_SKYPE) ? 1 : 0);
 }
 
-static u_int8_t is_skype_flow(struct ndpi_detection_module_struct *ndpi_struct,
-		       struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
-	
-  if(packet->iph) {
-    /*
-      Skype connections are identified by some SSL-like communications
-      without SSL certificate being exchanged
-    */	
-    if(is_skype_host(ndpi_struct, ntohl(packet->iph->saddr))
-       || is_skype_host(ndpi_struct, ntohl(packet->iph->daddr))) {
-      return(1);
-    }
-  }
+static u_int8_t is_skype_flow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	struct ndpi_packet_struct *packet = &flow->packet;
 
-  return(0);
+	if (packet->iph) {
+		/*
+		   Skype connections are identified by some SSL-like communications
+		   without SSL certificate being exchanged
+		 */
+		if (is_skype_host(ndpi_struct, ntohl(packet->iph->saddr))
+		    || is_skype_host(ndpi_struct, ntohl(packet->iph->daddr))) {
+			return (1);
+		}
+	}
+
+	return (0);
 }
 
 static void ndpi_check_skype(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
-  // const u_int8_t *packet_payload = packet->payload;
-  u_int32_t payload_len = packet->payload_packet_len;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	// const u_int8_t *packet_payload = packet->payload;
+	u_int32_t payload_len = packet->payload_packet_len;
 
-  /*
-    Skype AS8220
-    212.161.8.0/24
-  */
-  if(is_skype_flow(ndpi_struct, flow)) {
-    ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SKYPE, NDPI_REAL_PROTOCOL);
-    return;
-  }
+	/*
+	   Skype AS8220
+	   212.161.8.0/24
+	 */
+	if (is_skype_flow(ndpi_struct, flow)) {
+		ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SKYPE, NDPI_PROTOCOL_UNKNOWN);
+		return;
+	}
 
-  if(packet->udp != NULL) {
-    flow->l4.udp.skype_packet_id++;
+	if (packet->udp != NULL) {
+		flow->l4.udp.skype_packet_id++;
 
-    if(flow->l4.udp.skype_packet_id < 5) {
-      /* skype-to-skype */
-      if(((payload_len == 3) && ((packet->payload[2] & 0x0F)== 0x0d))
-	 || ((payload_len >= 16)
-	     && (packet->payload[0] != 0x30) /* Avoid invalid SNMP detection */
-	     && (packet->payload[2] == 0x02))) {
-	NDPI_LOG(NDPI_PROTOCOL_SKYPE, ndpi_struct, NDPI_LOG_DEBUG, "Found skype.\n");
-	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SKYPE, NDPI_REAL_PROTOCOL);
-      }
+		if (flow->l4.udp.skype_packet_id < 5) {
+			/* skype-to-skype */
+			if (((payload_len == 3) && ((packet->payload[2] & 0x0F) == 0x0d))
+			    || ((payload_len >= 16)
+				&& (packet->payload[0] != 0x30)	/* Avoid invalid SNMP detection */
+				&&(packet->payload[2] == 0x02))) {
+				NDPI_LOG(NDPI_PROTOCOL_SKYPE, ndpi_struct, NDPI_LOG_DEBUG, "Found skype.\n");
+				ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SKYPE, NDPI_PROTOCOL_UNKNOWN);
+			}
 
-      return;
-    }
+			return;
+		}
 
-    NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SKYPE);
-    return;
-  } else if(packet->tcp != NULL) {
-    flow->l4.tcp.skype_packet_id++;
+		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SKYPE);
+		return;
+	} else if (packet->tcp != NULL) {
+		flow->l4.tcp.skype_packet_id++;
 
-    if(flow->l4.tcp.skype_packet_id < 3) {
-      ; /* Too early */
-    } else if((flow->l4.tcp.skype_packet_id == 3)
-	      /* We have seen the 3-way handshake */
-	      && flow->l4.tcp.seen_syn
-	      && flow->l4.tcp.seen_syn_ack
-	      && flow->l4.tcp.seen_ack) {
-      if((payload_len == 8) || (payload_len == 3)) {
-	//printf("[SKYPE] %u/%u\n", ntohs(packet->tcp->source), ntohs(packet->tcp->dest));
+		if (flow->l4.tcp.skype_packet_id < 3) {
+			;	/* Too early */
+		} else if ((flow->l4.tcp.skype_packet_id == 3)
+			   /* We have seen the 3-way handshake */
+			   && flow->l4.tcp.seen_syn && flow->l4.tcp.seen_syn_ack && flow->l4.tcp.seen_ack) {
+			if ((payload_len == 8) || (payload_len == 3)) {
+				//printf("[SKYPE] %u/%u\n", ntohs(packet->tcp->source), ntohs(packet->tcp->dest));
 
-	NDPI_LOG(NDPI_PROTOCOL_SKYPE, ndpi_struct, NDPI_LOG_DEBUG, "Found skype.\n");
-	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SKYPE, NDPI_REAL_PROTOCOL);
-      }
+				NDPI_LOG(NDPI_PROTOCOL_SKYPE, ndpi_struct, NDPI_LOG_DEBUG, "Found skype.\n");
+				ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SKYPE, NDPI_PROTOCOL_UNKNOWN);
+			}
 
-      /* printf("[SKYPE] [id: %u][len: %d]\n", flow->l4.tcp.skype_packet_id, payload_len);  */
-    } else
-      NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SKYPE);
+			/* printf("[SKYPE] [id: %u][len: %d]\n", flow->l4.tcp.skype_packet_id, payload_len);  */
+		} else
+			NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SKYPE);
 
-    return;
-  }
+		return;
+	}
 }
 
 static void ndpi_search_skype(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+	struct ndpi_packet_struct *packet = &flow->packet;
 
-  NDPI_LOG(NDPI_PROTOCOL_SKYPE, ndpi_struct, NDPI_LOG_DEBUG, "skype detection...\n");
+	NDPI_LOG(NDPI_PROTOCOL_SKYPE, ndpi_struct, NDPI_LOG_DEBUG, "skype detection...\n");
 
-  /* skip marked packets */
-  if(packet->detected_protocol_stack[0] != NDPI_PROTOCOL_SKYPE)
-    ndpi_check_skype(ndpi_struct, flow);
+	/* skip marked packets */
+	if (packet->detected_protocol_stack[0] != NDPI_PROTOCOL_SKYPE)
+		ndpi_check_skype(ndpi_struct, flow);
+}
+
+static ndpi_port_range *ndpi_build_default_ports(ndpi_port_range * ports, u_int16_t portA, u_int16_t portB, u_int16_t portC, u_int16_t portD, u_int16_t portE);
+
+static void init_skype_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_port_range ports_a[MAX_DEFAULT_PORTS], ports_b[MAX_DEFAULT_PORTS];
+	u_int16_t no_master[2] = { NDPI_PROTOCOL_NO_MASTER_PROTO, NDPI_PROTOCOL_NO_MASTER_PROTO };
+
+	ndpi_set_proto_defaults(ndpi_struct, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SKYPE, no_master, no_master, "Skype", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+
+	ndpi_set_bitmask_protocol_detection("Skype", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_SKYPE, ndpi_search_skype, NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+
+	*id = *id + 1;
 }
 
 #endif

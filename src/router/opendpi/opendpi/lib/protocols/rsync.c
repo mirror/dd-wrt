@@ -18,39 +18,35 @@
  *
  */
 
-
 #include "ndpi_api.h"
-
 
 #ifdef NDPI_PROTOCOL_RSYNC
 static void ndpi_int_rsync_add_connection(struct ndpi_detection_module_struct
 					  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_RSYNC, NDPI_CORRELATED_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RSYNC, NDPI_PROTOCOL_UNKNOWN);
 }
 
 static void ndpi_search_rsync(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+	struct ndpi_packet_struct *packet = &flow->packet;
 
-  NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "search for RSYNC.\n");
+	NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "search for RSYNC.\n");
 
-  if(packet->tcp != NULL) {
-    NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "calculating RSYNC over tcp.\n");
-    /*
-     * Should match: memcmp(packet->payload, "@RSYN NCD: 28", 14) == 0)
-     */
-    if (packet->payload_packet_len == 12 && packet->payload[0] == 0x40 &&
-	packet->payload[1] == 0x52 && packet->payload[2] == 0x53 &&
-	packet->payload[3] == 0x59 && packet->payload[4] == 0x4e &&
-	packet->payload[5] == 0x43 && packet->payload[6] == 0x44 &&
-	packet->payload[7] == 0x3a ) {
-      NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "found rsync.\n");
-      ndpi_int_rsync_add_connection(ndpi_struct, flow);
-    }
-  } else {
-    NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "exclude RSYNC.\n");
-    NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RSYNC);
-  }
+	if (packet->tcp != NULL) {
+		NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "calculating RSYNC over tcp.\n");
+		/*
+		 * Should match: memcmp(packet->payload, "@RSYN NCD: 28", 14) == 0)
+		 */
+		if (packet->payload_packet_len == 12 && packet->payload[0] == 0x40 &&
+		    packet->payload[1] == 0x52 && packet->payload[2] == 0x53 &&
+		    packet->payload[3] == 0x59 && packet->payload[4] == 0x4e && packet->payload[5] == 0x43 && packet->payload[6] == 0x44 && packet->payload[7] == 0x3a) {
+			NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "found rsync.\n");
+			ndpi_int_rsync_add_connection(ndpi_struct, flow);
+		}
+	} else {
+		NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "exclude RSYNC.\n");
+		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RSYNC);
+	}
 }
 #endif

@@ -22,23 +22,19 @@
  *
  */
 
-
 #include "ndpi_protocols.h"
 
 #ifdef NDPI_PROTOCOL_FASTTRACK
 
-
-
 static void ndpi_int_fasttrack_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_FASTTRACK, NDPI_CORRELATED_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_FASTTRACK, NDPI_PROTOCOL_UNKNOWN);
 }
-
 
 static void ndpi_search_fasttrack_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
+
 //      struct ndpi_id_struct         *src=ndpi_struct->src;
 //      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
@@ -65,9 +61,8 @@ static void ndpi_search_fasttrack_tcp(struct ndpi_detection_module_struct *ndpi_
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			for (a = 0; a < packet->parsed_lines; a++) {
 				if ((packet->line[a].len > 17 && memcmp(packet_line(a), "X-Kazaa-Username: ", 18) == 0)
-					|| (packet->line[a].len > 23 && memcmp(packet_line(a), "User-Agent: PeerEnabler/", 24) == 0)) {
-					NDPI_LOG(NDPI_PROTOCOL_FASTTRACK, ndpi_struct, NDPI_LOG_TRACE,
-							"detected X-Kazaa-Username: || User-Agent: PeerEnabler/\n");
+				    || (packet->line[a].len > 23 && memcmp(packet_line(a), "User-Agent: PeerEnabler/", 24) == 0)) {
+					NDPI_LOG(NDPI_PROTOCOL_FASTTRACK, ndpi_struct, NDPI_LOG_TRACE, "detected X-Kazaa-Username: || User-Agent: PeerEnabler/\n");
 					ndpi_int_fasttrack_add_connection(ndpi_struct, flow);
 					return;
 				}
@@ -75,7 +70,7 @@ static void ndpi_search_fasttrack_tcp(struct ndpi_detection_module_struct *ndpi_
 		}
 	}
 
-  exclude_fasttrack:
+exclude_fasttrack:
 	NDPI_LOG(NDPI_PROTOCOL_FASTTRACK, ndpi_struct, NDPI_LOG_TRACE, "fasttrack/kazaa excluded.\n");
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_FASTTRACK);
 }

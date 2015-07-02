@@ -18,7 +18,6 @@
  *
  */
 
-
 /*
   EAQ: Entitade Aferidora da Qualidade de Banda Larga
 
@@ -30,44 +29,44 @@
 #define EAQ_DEFAULT_SIZE     16
 
 #ifdef NDPI_PROTOCOL_EAQ
-static void ndpi_int_eaq_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
-					struct ndpi_flow_struct *flow) {
-  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_EAQ, NDPI_REAL_PROTOCOL);
+static void ndpi_int_eaq_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_EAQ, NDPI_PROTOCOL_UNKNOWN);
 }
 
+static void ndpi_search_eaq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	struct ndpi_packet_struct *packet = &flow->packet;
+	u_int16_t sport = ntohs(packet->udp->source), dport = ntohs(packet->udp->dest);
+	unsigned char *vers;
+	int ver_offs;
 
-static void ndpi_search_eaq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
-  u_int16_t sport = ntohs(packet->udp->source), dport = ntohs(packet->udp->dest);
-  unsigned char *vers;
-  int ver_offs;
-  
-  if((packet->payload_packet_len != EAQ_DEFAULT_SIZE)
-     || ((sport != EAQ_DEFAULT_PORT) && (dport != EAQ_DEFAULT_PORT))) {
-  exclude_eaq:
-    NDPI_LOG(NDPI_PROTOCOL_EAQ, ndpi_struct, NDPI_LOG_DEBUG, "Exclude eaq.\n");
-    NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_EAQ);
-    return;
-  }
+	if ((packet->payload_packet_len != EAQ_DEFAULT_SIZE)
+	    || ((sport != EAQ_DEFAULT_PORT) && (dport != EAQ_DEFAULT_PORT))) {
+	      exclude_eaq:
+		NDPI_LOG(NDPI_PROTOCOL_EAQ, ndpi_struct, NDPI_LOG_DEBUG, "Exclude eaq.\n");
+		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_EAQ);
+		return;
+	}
 
-  if(packet->udp != NULL) {
-    u_int32_t seq = (packet->payload[0] * 1000) + (packet->payload[1] * 100) + (packet->payload[2] * 10) + packet->payload[3];
-    
-    if(flow->l4.udp.eaq_pkt_id == 0)
-      flow->l4.udp.eaq_sequence = seq;
-    else {
-      if((flow->l4.udp.eaq_sequence == seq) || ((flow->l4.udp.eaq_sequence+1) == seq)) {
-	; /* Looks good */
-      } else
-	goto exclude_eaq;
-    }
+	if (packet->udp != NULL) {
+		u_int32_t seq = (packet->payload[0] * 1000) + (packet->payload[1] * 100) + (packet->payload[2] * 10) + packet->payload[3];
 
-    if(++flow->l4.udp.eaq_pkt_id == 4) {
-      /* We have collected enough packets so we assume it's EAQ */
-      NDPI_LOG(NDPI_PROTOCOL_EAQ, ndpi_struct, NDPI_LOG_DEBUG, "found eaq.\n");
-      ndpi_int_eaq_add_connection(ndpi_struct, flow);
-    }
-  } else
-    goto exclude_eaq;
+		if (flow->l4.udp.eaq_pkt_id == 0)
+			flow->l4.udp.eaq_sequence = seq;
+		else {
+			if ((flow->l4.udp.eaq_sequence == seq) || ((flow->l4.udp.eaq_sequence + 1) == seq)) {
+				;	/* Looks good */
+			} else
+				goto exclude_eaq;
+		}
+
+		if (++flow->l4.udp.eaq_pkt_id == 4) {
+			/* We have collected enough packets so we assume it's EAQ */
+			NDPI_LOG(NDPI_PROTOCOL_EAQ, ndpi_struct, NDPI_LOG_DEBUG, "found eaq.\n");
+			ndpi_int_eaq_add_connection(ndpi_struct, flow);
+		}
+	} else
+		goto exclude_eaq;
 }
 #endif

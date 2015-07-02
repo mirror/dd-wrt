@@ -22,21 +22,19 @@
  * 
  */
 
-
 #include "ndpi_protocols.h"
 
 #ifdef NDPI_PROTOCOL_DHCP
 
 static void ndpi_int_dhcp_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_DHCP, NDPI_REAL_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_DHCP, NDPI_PROTOCOL_UNKNOWN);
 }
-
 
 static void ndpi_search_dhcp_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
+
 //      struct ndpi_id_struct         *src=ndpi_struct->src;
 //      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
@@ -44,10 +42,10 @@ static void ndpi_search_dhcp_udp(struct ndpi_detection_module_struct *ndpi_struc
 
 	/*check standard DHCP 0.0.0.0:68 -> 255.255.255.255:67 */
 	if (packet->payload_packet_len >= 244 && (packet->udp->source == htons(67)
-											  || packet->udp->source == htons(68))
-		&& (packet->udp->dest == htons(67) || packet->udp->dest == htons(68))
-		&& get_u_int32_t(packet->payload, 236) == htonl(0x63825363)
-		&& get_u_int16_t(packet->payload, 240) == htons(0x3501)) {
+						  || packet->udp->source == htons(68))
+	    && (packet->udp->dest == htons(67) || packet->udp->dest == htons(68))
+	    && get_u_int32_t(packet->payload, 236) == htonl(0x63825363)
+	    && get_u_int16_t(packet->payload, 240) == htons(0x3501)) {
 
 		NDPI_LOG(NDPI_PROTOCOL_DHCP, ndpi_struct, NDPI_LOG_DEBUG, "DHCP request\n");
 

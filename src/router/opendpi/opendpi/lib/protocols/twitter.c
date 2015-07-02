@@ -21,43 +21,41 @@
  *
  */
 
-
 #include "ndpi_protocols.h"
 
 #ifdef NDPI_SERVICE_TWITTER
 
 static void ndpi_int_twitter_add_connection(struct ndpi_detection_module_struct
-                                             *ndpi_struct, struct ndpi_flow_struct *flow)
+					    *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_int_add_connection(ndpi_struct, flow, NDPI_SERVICE_TWITTER, NDPI_REAL_PROTOCOL);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_SERVICE_TWITTER, NDPI_PROTOCOL_UNKNOWN);
 }
-
 
 static void ndpi_search_twitter(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 
-  /*
-    Twitter AS34702
+	/*
+	   Twitter AS34702
 
-    http://bgp.he.net/AS13414
-  */
-  if(flow->packet.iph) {
-    // IPv4
-    u_int32_t src = ntohl(flow->packet.iph->saddr);
-    u_int32_t dst = ntohl(flow->packet.iph->daddr);
-    
-    if(ndpi_ips_match(src, dst, 0xC0854C00, 22)     /* 192.133.76.0/22 */
-       || ndpi_ips_match(src, dst, 0xC7109C00, 22)  /* 199.16.156.0/22 */
-       || ndpi_ips_match(src, dst, 0xC73B9400, 22)  /* 199.59.148.0/22 */
-       || ndpi_ips_match(src, dst, 0xC7603A00, 23)  /* 199.96.58.0/23  */
-       || ndpi_ips_match(src, dst, 0xC7603E00, 23)  /* 199.96.62.0/23  */
-       ) {
-      ndpi_int_twitter_add_connection(ndpi_struct, flow);
-      return;
-    }
+	   http://bgp.he.net/AS13414
+	 */
+	if (flow->packet.iph) {
+		// IPv4
+		u_int32_t src = ntohl(flow->packet.iph->saddr);
+		u_int32_t dst = ntohl(flow->packet.iph->daddr);
 
-  }
+		if (ndpi_ips_match(src, dst, 0xC0854C00, 22)	/* 192.133.76.0/22 */
+		    ||ndpi_ips_match(src, dst, 0xC7109C00, 22)	/* 199.16.156.0/22 */
+		    ||ndpi_ips_match(src, dst, 0xC73B9400, 22)	/* 199.59.148.0/22 */
+		    ||ndpi_ips_match(src, dst, 0xC7603A00, 23)	/* 199.96.58.0/23  */
+		    ||ndpi_ips_match(src, dst, 0xC7603E00, 23)	/* 199.96.62.0/23  */
+		    ) {
+			ndpi_int_twitter_add_connection(ndpi_struct, flow);
+			return;
+		}
 
-  NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_SERVICE_TWITTER);
+	}
+
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_SERVICE_TWITTER);
 }
 #endif
