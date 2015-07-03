@@ -3548,6 +3548,27 @@ void start_sysinit(void)
 			nvram_set("vlan2hwname", "et2");
 			nvram_set("vlan2ports", "4 8u");
 			nvram_set("image_second_offset", "16777216");
+			char *impbf_value;
+
+			nvram_unset("pcie/1/3/rpcal5gb0");
+			nvram_unset("pcie/1/4/rpcal2g");
+			nvram_unset("pcie/2/1/rpcal5gb3");
+
+			// 5G band1
+			impbf_value = nvram_get("sb/1/rpcal5gb0");
+			if (impbf_value && (strlen(impbf_value) > 0))
+				nvram_set("pcie/1/3/rpcal5gb0", impbf_value);
+
+			// 2.4G
+			impbf_value = nvram_get("sb/1/rpcal2g");
+			if (impbf_value && (strlen(impbf_value) > 0))
+				nvram_set("pcie/1/4/rpcal2g", impbf_value);
+
+			// 5G band4
+			impbf_value = nvram_get("sb/1/rpcal5gb3");
+			if (impbf_value && (strlen(impbf_value) > 0))
+				nvram_set("pcie/2/1/rpcal5gb3", impbf_value);
+
 			nvram_commit();
 		}
 		break;
@@ -3593,7 +3614,6 @@ void start_sysinit(void)
 		nvram_set("1:mcsbw405ghpo", "0x77777777");
 		nvram_set("1:mcs32po", "0x7777");
 		nvram_set("1:legofdm40duppo", "0x0000");
-
 
 		nvram_set("0:boardflags2", "0x1000");
 		nvram_set("1:boardflags2", "0x00001000");
