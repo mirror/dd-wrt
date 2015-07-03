@@ -40,15 +40,19 @@
 
 static void getMac(char *newmac)
 {
-
-	if (getRouterBrand() == ROUTER_ASUS_AC87U) {
+	int brand = getRouterBrand();
+	switch (brand) {
+	case ROUTER_ASUS_AC87U:
 		strcpy(newmac, nvram_safe_get("et1macaddr"));
-	} else if (getRouterBrand() == ROUTER_NETGEAR_R8000 || getRouterBrand() == ROUTER_TRENDNET_TEW828) {
+		break;
+	case ROUTER_NETGEAR_R8000:
+	case ROUTER_TRENDNET_TEW828:
 		strcpy(newmac, nvram_safe_get("et2macaddr"));
-	} else {
+		break;
+	default:
 		strcpy(newmac, nvram_safe_get("et0macaddr"));
+		break;
 	}
-
 }
 
 void getLANMac(char *newmac)
