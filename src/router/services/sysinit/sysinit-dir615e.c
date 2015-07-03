@@ -139,7 +139,7 @@ void start_sysinit(void)
 	eval("ifconfig", "eth1", "up");
 #ifdef HAVE_SWCONFIG
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
-	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
