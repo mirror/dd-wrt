@@ -386,6 +386,7 @@ static int get_cpuport(void)
 
 		if (strchr(port, FLAG_LAN) || strchr(port, FLAG_UNTAG)) {
 			/* Change it and return */
+			printk(KERN_INFO "detected CPU Port is %d\n",pid);
 			return pid;
 		}
 	}
@@ -1147,6 +1148,9 @@ static int handle_reset(void *driver, char *buf, int nr)
 	/* reset ports to a known good state */
 	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665") && !strcmp(boardrev, "0x1101")) {
 		//do nothing
+		printk(KERN_INFO "Netgear R8000 workaround\n");
+	} if (!strcmp(boardnum,"1234") && !strcmp(boardtype,"0x072F") && !strcmp(boardrev, "0x1202")) {
+		printk(KERN_INFO "Handle TEW828 workaround\n");
 	} else {
 		for (j = 0; j < d->ports; j++) {
 			robo_write16(ROBO_CTRL_PAGE, robo.port[j], 0x0000);
