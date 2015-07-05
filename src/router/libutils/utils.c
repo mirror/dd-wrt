@@ -3652,6 +3652,11 @@ int internal_getRouterBrand()
 		setRouter("Netgear WNR3500 v2/U/L v1");
 		return ROUTER_NETGEAR_WNR3500L;
 	}
+	
+	if ((boardnum == 35002) && nvram_match("boardtype", "0x04CE")) {
+		setRouter("Netgear WNR3500L v2");
+		return ROUTER_NETGEAR_WNR3500LV2;
+	}
 
 	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xb4cf")
 	    && nvram_match("boardrev", "0x1100")) {
@@ -5955,6 +5960,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x001;	// power led blink /off to indicate factory defaults
 		break;
 	case ROUTER_NETGEAR_WNR3500L:
+	case ROUTER_NETGEAR_WNR3500LV2:
 		power_gpio = 0x003;	//power led green
 		diag_gpio = 0x007;	// power led amber
 		ses_gpio = 0x001;	// WPS led green
