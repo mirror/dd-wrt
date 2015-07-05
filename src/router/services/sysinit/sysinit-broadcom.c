@@ -230,6 +230,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		nvram_set("wl0gpio0", "135");
 		break;
 	case ROUTER_NETGEAR_WNR3500L:
+	case ROUTER_NETGEAR_WNR3500LV2:
 		nvram_set("ledbh0", "7");
 		break;
 	case ROUTER_WRT320N:
@@ -267,6 +268,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WNDR3300:
 	case ROUTER_NETGEAR_WNDR3400:
 	case ROUTER_NETGEAR_WNR3500L:
+	case ROUTER_NETGEAR_WNR3500LV2:
 	case ROUTER_NETGEAR_WNR2000V2:
 	case ROUTER_ASUS_WL500W:
 	case ROUTER_WRT610NV2:
@@ -772,6 +774,7 @@ void start_sysinit(void)
 
 #ifdef HAVE_BCMMODERN
 	case ROUTER_NETGEAR_WNR3500L:
+	case ROUTER_NETGEAR_WNR3500LV2:
 	case ROUTER_WRT320N:
 	case ROUTER_ASUS_RTN16:
 		basic_params = vlan_1_2;
@@ -2849,6 +2852,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_NETGEAR_WNR3500L:	//usb power fix (gpio 12)
+	case ROUTER_NETGEAR_WNR3500LV2:
 		if (nvram_match("boardflags", "0x00001710")) {
 			nvram_set("boardflags", "0x00000710");
 			need_reboot = 1;
@@ -2902,6 +2906,7 @@ void start_sysinit(void)
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_NETGEAR_WNR3500LV2:
 			case ROUTER_BELKIN_F7D3301:
 			case ROUTER_BELKIN_F7D4301:
 			case ROUTER_BELKIN_F5D8235V3:
@@ -2997,6 +3002,7 @@ void start_sysinit(void)
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_NETGEAR_WNR3500LV2:
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 			case ROUTER_NETGEAR_WNDR4000:
