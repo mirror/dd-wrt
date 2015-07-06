@@ -401,6 +401,7 @@ l7filters filters_list[] = {
 	{"smtp", DPI},
 #ifdef HAVE_OPENDPI
 	{"smtp_ssl", NDPI_ONLY},
+	{"snapchat", NDPI_ONLY},
 #endif
 	{"snmp", DPI},
 	{"snmp-mon", L7_ONLY},
