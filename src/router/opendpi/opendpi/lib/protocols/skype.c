@@ -120,12 +120,6 @@ static ndpi_port_range *ndpi_build_default_ports(ndpi_port_range * ports, u_int1
 
 static void init_skype_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
 {
-	ndpi_port_range ports_a[MAX_DEFAULT_PORTS], ports_b[MAX_DEFAULT_PORTS];
-	u_int16_t no_master[2] = { NDPI_PROTOCOL_NO_MASTER_PROTO, NDPI_PROTOCOL_NO_MASTER_PROTO };
-
-	ndpi_set_proto_defaults(ndpi_struct, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SKYPE, no_master, no_master, "Skype", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
-				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
-
 	ndpi_set_bitmask_protocol_detection("Skype", ndpi_struct, detection_bitmask, *id,
 					    NDPI_PROTOCOL_SKYPE, ndpi_search_skype, NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
 
