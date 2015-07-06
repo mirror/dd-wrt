@@ -581,8 +581,7 @@ static int bdecode(const u_int8_t *b, size_t l, struct ndpi_detection_module_str
 	return r >= 0;
 }
 
-static void ndpi_add_connection_as_bittorrent(struct ndpi_detection_module_struct *ndpi_struct,
-					      struct ndpi_flow_struct *flow, const u_int8_t save_detection, const u_int8_t encrypted_connection)
+static void ndpi_add_connection_as_bittorrent(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, const u_int8_t save_detection, const u_int8_t encrypted_connection)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 	struct ndpi_id_struct *src = flow->src;
