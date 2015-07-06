@@ -752,7 +752,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
-		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
 		char *authmode = nvram_nget("%s_authmode", ifname);
 		if (aoss)
 			authmode = "auto";
@@ -802,7 +801,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
-		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
 		// fprintf (fp, "eap_server=0\n");
 		// fprintf (fp, "own_ip_addr=127.0.0.1\n");
 		fprintf(fp, "eapol_version=1\n");
