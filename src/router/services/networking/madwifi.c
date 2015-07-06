@@ -960,7 +960,6 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
 		fprintf(fp, "debug=0\n");
-		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
 		char *authmode = nvram_nget("%s_authmode", prefix);
 		if (!strcmp(authmode, "shared"))
 			fprintf(fp, "auth_algs=2\n");
@@ -1000,7 +999,6 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
 		fprintf(fp, "debug=0\n");
-		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
 		// fprintf (fp, "eap_server=0\n");
 		// fprintf (fp, "own_ip_addr=127.0.0.1\n");
 		fprintf(fp, "eapol_version=1\n");
