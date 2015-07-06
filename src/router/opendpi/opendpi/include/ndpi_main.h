@@ -37,7 +37,6 @@
 #include <time.h>
 #endif
 
-
 #ifndef WIN32
 #ifndef __KERNEL__
 #include <sys/time.h>
@@ -70,40 +69,29 @@
 #include "ndpi_typedefs.h"
 #include "ndpi_protocols.h"
 
-
-static void *ndpi_tdelete(const void * __restrict, void ** __restrict,
-		   int (*)(const void *, const void *));
+static void *ndpi_tdelete(const void *__restrict, void **__restrict, int (*)(const void *, const void *));
 static void *ndpi_tfind(const void *, void *, int (*)(const void *, const void *));
-static void *ndpi_tsearch(const void *, void**, int (*)(const void *, const void *));
-static void ndpi_twalk(const void *, void (*)(const void *, ndpi_VISIT, int, void*), void *user_data);
-static void ndpi_tdestroy(void *vrootp, void (*freefct)(void *));
+static void *ndpi_tsearch(const void *, void **, int (*)(const void *, const void *));
+static void ndpi_twalk(const void *, void (*)(const void *, ndpi_VISIT, int, void *), void *user_data);
+static void ndpi_tdestroy(void *vrootp, void (*freefct) (void *));
 
 static int NDPI_BITMASK_COMPARE(NDPI_PROTOCOL_BITMASK a, NDPI_PROTOCOL_BITMASK b);
 static int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a);
 static void NDPI_DUMP_BITMASK(NDPI_PROTOCOL_BITMASK a);
 
-static u_int8_t ndpi_net_match(u_int32_t ip_to_check,
-			       u_int32_t net,
-			       u_int32_t num_bits);
+static u_int8_t ndpi_net_match(u_int32_t ip_to_check, u_int32_t net, u_int32_t num_bits);
 
-static u_int8_t ndpi_ips_match(u_int32_t src, u_int32_t dst,
-			       u_int32_t net, u_int32_t num_bits);
+static u_int8_t ndpi_ips_match(u_int32_t src, u_int32_t dst, u_int32_t net, u_int32_t num_bits);
 
-static u_int16_t ntohs_ndpi_bytestream_to_number(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read);
+static u_int16_t ntohs_ndpi_bytestream_to_number(const u_int8_t *str, u_int16_t max_chars_to_read, u_int16_t *bytes_read);
 
-static u_int32_t ndpi_bytestream_to_number(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read);
-static u_int64_t ndpi_bytestream_to_number64(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read);
-static u_int32_t ndpi_bytestream_dec_or_hex_to_number(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read);
-static u_int64_t ndpi_bytestream_dec_or_hex_to_number64(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read);
-static u_int32_t ndpi_bytestream_to_ipv4(const u_int8_t * str, u_int16_t max_chars_to_read, u_int16_t * bytes_read);
+static u_int32_t ndpi_bytestream_to_number(const u_int8_t *str, u_int16_t max_chars_to_read, u_int16_t *bytes_read);
+static u_int64_t ndpi_bytestream_to_number64(const u_int8_t *str, u_int16_t max_chars_to_read, u_int16_t *bytes_read);
+static u_int32_t ndpi_bytestream_dec_or_hex_to_number(const u_int8_t *str, u_int16_t max_chars_to_read, u_int16_t *bytes_read);
+static u_int64_t ndpi_bytestream_dec_or_hex_to_number64(const u_int8_t *str, u_int16_t max_chars_to_read, u_int16_t *bytes_read);
+static u_int32_t ndpi_bytestream_to_ipv4(const u_int8_t *str, u_int16_t max_chars_to_read, u_int16_t *bytes_read);
 
-
-
-static void ndpi_set_detected_protocol(struct ndpi_detection_module_struct *ndpi_struct,                             
-				struct ndpi_flow_struct *flow,
-				u_int16_t upper_detected_protocol,
-                                u_int16_t lower_detected_protocol);
-
+static void ndpi_set_detected_protocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int16_t upper_detected_protocol, u_int16_t lower_detected_protocol);
 
 /* function to parse a packet which has line based information into a line based structure
  * this function will also set some well known line pointers like:
@@ -112,13 +100,11 @@ static void ndpi_set_detected_protocol(struct ndpi_detection_module_struct *ndpi
 static void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 static void ndpi_parse_packet_line_info_any(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 static u_int16_t ndpi_check_for_email_address(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int16_t counter);
-static  void ndpi_int_change_packet_protocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int16_t upper_detected_protocol, u_int16_t lower_detected_protocol);
-static  void ndpi_int_change_protocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int16_t upper_detected_protocol, u_int16_t lower_detected_protocol);
+static void ndpi_int_change_packet_protocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int16_t upper_detected_protocol, u_int16_t lower_detected_protocol);
+static void ndpi_int_change_protocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int16_t upper_detected_protocol, u_int16_t lower_detected_protocol);
 static void ndpi_set_proto_defaults(struct ndpi_detection_module_struct *ndpi_mod,
 				    ndpi_protocol_breed_t protoBreed, u_int16_t protoId,
-				    u_int16_t tcp_alias_protoId[2], u_int16_t udp_alias_protoId[2],
-				    char *protoName,
-				    ndpi_port_range *tcpDefPorts, ndpi_port_range *udpDefPorts);
+				    u_int16_t tcp_alias_protoId[2], u_int16_t udp_alias_protoId[2], char *protoName, ndpi_port_range * tcpDefPorts, ndpi_port_range * udpDefPorts);
 static void ndpi_int_reset_packet_protocol(struct ndpi_packet_struct *packet);
 static void ndpi_int_reset_protocol(struct ndpi_flow_struct *flow);
 static int ndpi_packet_src_ip_eql(const struct ndpi_packet_struct *packet, const ndpi_ip_addr_t * ip);
@@ -126,28 +112,19 @@ static int ndpi_packet_dst_ip_eql(const struct ndpi_packet_struct *packet, const
 static void ndpi_packet_src_ip_get(const struct ndpi_packet_struct *packet, ndpi_ip_addr_t * ip);
 static void ndpi_packet_dst_ip_get(const struct ndpi_packet_struct *packet, ndpi_ip_addr_t * ip);
 static char *ndpi_get_ip_string(struct ndpi_detection_module_struct *ndpi_struct, const ndpi_ip_addr_t * ip);
-static char *ndpi_get_packet_src_ip_string(struct ndpi_detection_module_struct *ndpi_struct,
-					   const struct ndpi_packet_struct *packet);
-static char* ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id);
-static u_int16_t ndpi_guess_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
-					u_int8_t proto, u_int16_t sport, u_int16_t dport);
-static int ndpi_get_protocol_id_master_proto(struct ndpi_detection_module_struct *ndpi_struct,
-					     u_int16_t protocol_id,
-					     u_int16_t** tcp_master_proto,
-					     u_int16_t** udp_master_proto);
+static char *ndpi_get_packet_src_ip_string(struct ndpi_detection_module_struct *ndpi_struct, const struct ndpi_packet_struct *packet);
+static char *ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id);
+static u_int16_t ndpi_guess_protocol_id(struct ndpi_detection_module_struct *ndpi_struct, u_int8_t proto, u_int16_t sport, u_int16_t dport);
+static int ndpi_get_protocol_id_master_proto(struct ndpi_detection_module_struct *ndpi_struct, u_int16_t protocol_id, u_int16_t **tcp_master_proto, u_int16_t **udp_master_proto);
 
-static u_int8_t ndpi_net_match(u_int32_t ip_to_check,
-			       u_int32_t net,
-			       u_int32_t num_bits);
+static u_int8_t ndpi_net_match(u_int32_t ip_to_check, u_int32_t net, u_int32_t num_bits);
 
-static u_int8_t ndpi_ips_match(u_int32_t src, u_int32_t dst,
-			       u_int32_t net, u_int32_t num_bits);
+static u_int8_t ndpi_ips_match(u_int32_t src, u_int32_t dst, u_int32_t net, u_int32_t num_bits);
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
-static   void ndpi_debug_get_last_log_function_line(struct ndpi_detection_module_struct *ndpi_struct,
-					     const char **file, const char **func, u_int32_t * line);
+static void ndpi_debug_get_last_log_function_line(struct ndpi_detection_module_struct *ndpi_struct, const char **file, const char **func, u_int32_t *line);
 #endif
 
 #include "ndpi_api.h"
 
-#endif	/* __NDPI_MAIN_INCLUDE_FILE__ */
+#endif				/* __NDPI_MAIN_INCLUDE_FILE__ */
