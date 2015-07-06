@@ -26,32 +26,31 @@
 #define __NDPI_WIN32_INCLUDE_FILE__
 
 #ifdef WIN32
-#include <Winsock2.h> /* winsock.h is included automatically */
+#include <Winsock2.h>		/* winsock.h is included automatically */
 #include <process.h>
 #include <io.h>
-#include <getopt.h> /* getopt from: http://www.pwilson.net/sample.html. */
-#include <process.h> /* for getpid() and the exec..() family */
+#include <getopt.h>		/* getopt from: http://www.pwilson.net/sample.html. */
+#include <process.h>		/* for getpid() and the exec..() family */
 
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #define snprintf	_snprintf
 
-extern char* strsep(char **stringp, const char *delim);
+extern char *strsep(char **stringp, const char *delim);
 
 #define __attribute__(x)
 #include <stdint.h>
 #ifndef __GNUC__
-typedef unsigned char  u_char;
+typedef unsigned char u_char;
 typedef unsigned short u_short;
-typedef unsigned int   uint;
-typedef unsigned long  u_long;
+typedef unsigned int uint;
+typedef unsigned long u_long;
 #endif
-typedef u_char  u_int8_t;
+typedef u_char u_int8_t;
 typedef u_short u_int16_t;
 typedef unsigned int u_int32_t;
 typedef unsigned __int64 u_int64_t;
-
 
 #define pthread_t                HANDLE
 #define pthread_mutex_t          HANDLE
@@ -62,12 +61,12 @@ typedef unsigned __int64 u_int64_t;
 #define pthread_rwlock_unlock    pthread_mutex_unlock
 #define pthread_rwlock_destroy	 pthread_mutex_destroy
 
-#define gmtime_r(a, b)           gmtime(a) /* Already thread safe on windows */
+#define gmtime_r(a, b)           gmtime(a)	/* Already thread safe on windows */
 
-extern unsigned long waitForNextEvent(unsigned long ulDelay /* ms */);
+extern unsigned long waitForNextEvent(unsigned long ulDelay /* ms */ );
 
 #define sleep(a /* sec */) waitForNextEvent(1000*a /* ms */)
 
-#endif /* Win32 */
+#endif				/* Win32 */
 
-#endif /* __NDPI_WIN32_INCLUDE_FILE__ */
+#endif				/* __NDPI_WIN32_INCLUDE_FILE__ */

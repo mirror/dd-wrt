@@ -31,8 +31,7 @@ static void ndpi_search_ciscovpn(struct ndpi_detection_module_struct *ndpi_struc
 
 	if ((tdport == 10000 && tsport == 10000) || ((tsport == 443 || tdport == 443) && (packet->payload[0] == 0x17 && packet->payload[1] == 0x01 && packet->payload[2] == 0x00 && packet->payload[3] == 0x00)
 	    )
-	    )
-	{
+	    ) {
 		/* This is a good query  17010000 */
 		NDPI_LOG(NDPI_PROTOCOL_CISCOVPN, ndpi_struct, NDPI_LOG_DEBUG, "found CISCOVPN.\n");
 		ndpi_int_ciscovpn_add_connection(ndpi_struct, flow);
