@@ -82,9 +82,9 @@ struct xt_ndpi_tginfo {
 "megaco",          "redis",                "pando",            "vhua",          "telegram", \
 "vevo",            "pandora",              "quic",    "popo",           "manolito", "feidian", \
 "gadugadu", "i23v5", "secondlife", "whatsapp_voice", "eaq", "meu", "torcedor", "kakaotalk", \
-"kakaotalk_voice" , "twitch", "quickplay", "tim", "mpegts"
+"kakaotalk_voice" , "twitch", "quickplay", "tim", "mpegts", "snapchat"
 
-#define NDPI_PROTOCOL_MAXNUM 204
+#define NDPI_PROTOCOL_MAXNUM 205
 #endif
 
 #endif /* _LINUX_NETFILTER_XT_NDPI_H */
