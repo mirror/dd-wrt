@@ -5158,7 +5158,8 @@ int led_control(int type, int act)
 		ses_gpio = 0x100;
 #endif
 #ifdef HAVE_DAP2230
-
+		diag_gpio = 0x00b;
+		power_gpio = 0x10b;
 #elif HAVE_WR841V9
 		diag_gpio = 0x103;
 #elif HAVE_WR842V2
