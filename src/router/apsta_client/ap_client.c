@@ -216,8 +216,6 @@ void assoc_loop(char *ifname, char *staname, char *essid, char *pass)
 			assoc_count++;
 			if (assoc_count > 1)
 				try_count = 0;
-			if ((assoc_count % 4) == 0)
-				syslog(LOG_INFO, "%s is still associated\n", staname);
 		}
 		sleep(15);
 	}
