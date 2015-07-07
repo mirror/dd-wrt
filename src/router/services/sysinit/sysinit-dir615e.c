@@ -190,7 +190,7 @@ void start_sysinit(void)
 #endif
 #ifndef HAVE_DAP3320
 #ifdef HAVE_DAP2230
-	setWirelessLedGeneric(0, 11);
+//	setWirelessLedGeneric(0, 11);
 #elif HAVE_DIR632
 	setWirelessLedPhy0(0);
 #elif HAVE_DIR615I
