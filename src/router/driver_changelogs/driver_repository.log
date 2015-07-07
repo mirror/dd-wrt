@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2557 | BrainSlayer | 2015-07-06 08:48:46 +0200 (Mon, 06 Jul 2015) | 1 line
+
+ath9k: disable stop dma messages if debug is disabled. this is made to avoid bogus bug reports. dma hangs arent critial
+------------------------------------------------------------------------
 r2556 | BrainSlayer | 2015-07-04 17:08:57 +0200 (Sat, 04 Jul 2015) | 1 line
 
 proper switch detection for northstar devices
