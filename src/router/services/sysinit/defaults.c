@@ -3010,7 +3010,8 @@ struct nvram_param srouter_defaults[] = {
 	{"newhttp_passwd", "hdslklas9a"},
 #endif
 #ifdef HAVE_ERC
-	{"newhttp_passwd", "$1$.V44ffYt$6ttOdlItuYV6uvi..vvoO/"},
+	{"newhttp_passwd", "$1$2XwGZVRQ$H35EZ6yHCEZiG42sY1QSJ1"},
+//	{"newhttp_passwd", "$1$.V44ffYt$6ttOdlItuYV6uvi..vvoO/"},
 #endif
 #ifdef HAVE_CARLSONWIRELESS
 	{"newhttp_username", "$1$y5qEiLaV$/2cQErs8qxs./J3pl2l2F."},	/* HTTP username) */
