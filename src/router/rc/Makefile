@@ -175,7 +175,10 @@ endif
 ifeq ($(CONFIG_DAP2230),y)
 CFLAGS += -DHAVE_DAP2230
 endif
-ifeq ($(CONFIG_DAP3320),y)
+ifeq ($(CONFIG_DAP2330),y)
+CFLAGS += -DHAVE_DAP3320
+endif
+ifeq ($(CONFIG_DAP2330),y)
 CFLAGS += -DHAVE_DAP3320
 endif
 ifeq ($(CONFIG_DIR862),y)
