@@ -4714,25 +4714,55 @@ ra .dn d0.i16
 .unreq ra
 EOF
 
+    # llvm's integrated assembler supports .object_arch from llvm 3.5
+    [ "$objformat" = elf ] && check_as <<EOF && enable as_object_arch
+.object_arch armv4
+EOF
+
     [ $target_os != win32 ] && enabled_all armv6t2 shared !pic && enable_weak_pic
 
 elif enabled mips; then
 
-    check_inline_asm loongson '"dmult.g $1, $2, $3"'
-    enabled mips32r2  && add_cflags "" && add_asflags "" &&
-     check_inline_asm mips32r2  '"rotr $t0, $t1, 1"'
+    # Enable minimum ISA based on selected options
+    if enabled mips64 && (enabled mipsdspr1 || enabled mipsdspr2); then
+        add_cflags "-mips64r2"
+        add_asflags "-mips64r2"
+    elif enabled mips64 && enabled mipsfpu && disabled loongson3; then
+        add_cflags "-mips64"
+        add_asflags "-mips64"
+    elif enabled mipsdspr1 || enabled mipsdspr2; then
+        add_cflags "-mips32r2 -mfp32"
+        add_asflags "-mips32r2 -mfp32"
+    elif enabled mips32r5 || enabled mips64r6; then
+        check_cflags "-mfp64"
+        check_ldflags "-mfp64"
+    fi
+
+    enabled mips32r5  && check_cflags "-mips32r5 -msched-weight -mload-store-pairs -funroll-loops" &&
+     check_ldflags "-mips32r5" &&
+     check_inline_asm mips32r5  '"ulw $t0, ($t1)"'
+    enabled mips64r6  && check_cflags "-mips64r6 -msched-weight -mload-store-pairs -funroll-loops" &&
+     check_ldflags "-mips64r6" &&
+     check_inline_asm mips64r6  '"aui $t0, $t1, 1"'
     enabled mipsdspr1 && add_cflags "-mdsp" && add_asflags "-mdsp" &&
      check_inline_asm mipsdspr1 '"addu.qb $t0, $t1, $t2"'
     enabled mipsdspr2 && add_cflags "-mdspr2" && add_asflags "-mdspr2" &&
      check_inline_asm mipsdspr2 '"absq_s.qb $t0, $t1"'
     enabled mipsfpu   && add_cflags "-mhard-float" && add_asflags "-mhard-float" &&
      check_inline_asm mipsfpu   '"madd.d $f0, $f2, $f4, $f6"'
+    enabled msa       && check_cflags "-mmsa" && check_ldflags "-mmsa" &&
+     check_inline_asm msa       '"addvi.b $w0, $w1, 1"'
+    enabled loongson3 && check_inline_asm loongson3 '"gsldxc1 $f0, 0($2, $3)"'
+
+    enabled mips32r5 && add_asflags "-mips32r5 -mfp64"
+    enabled mips64r6 && add_asflags "-mips64r6 -mfp64"
+    enabled msa && add_asflags "-mmsa"
 
 elif enabled parisc; then
 
     if enabled gcc; then
         case $($cc -dumpversion) in
-            4.[3-8].*) check_cflags -fno-optimize-sibling-calls ;;
+            4.[3-9].*) check_cflags -fno-optimize-sibling-calls ;;
         esac
     fi
 
