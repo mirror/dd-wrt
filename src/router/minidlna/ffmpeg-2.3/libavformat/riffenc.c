@@ -68,8 +68,6 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
      * fall back on using AVCodecContext.frame_size, which is not as reliable
      * for indicating packet duration. */
     frame_size = av_get_audio_frame_duration(enc, enc->block_align);
-    if (!frame_size)
-        frame_size = enc->frame_size;
 
     waveformatextensible = (enc->channels > 2 && enc->channel_layout) ||
                            enc->sample_rate > 48000 ||
@@ -104,12 +102,10 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
                enc->bits_per_coded_sample, bps);
     }
 
-    if (enc->codec_id == AV_CODEC_ID_MP2 ||
-        enc->codec_id == AV_CODEC_ID_MP3) {
-        /* This is wrong, but it seems many demuxers do not work if this
-         * is set correctly. */
-        blkalign = frame_size;
-        // blkalign = 144 * enc->bit_rate/enc->sample_rate;
+    if (enc->codec_id == AV_CODEC_ID_MP2) {
+        blkalign = (144 * enc->bit_rate - 1)/enc->sample_rate + 1;
+    } else if (enc->codec_id == AV_CODEC_ID_MP3) {
+        blkalign = 576 * (enc->sample_rate <= (24000 + 32000)/2 ? 1 : 2);
     } else if (enc->codec_id == AV_CODEC_ID_AC3) {
         blkalign = 3840;                /* maximum bytes per frame */
     } else if (enc->codec_id == AV_CODEC_ID_AAC) {
@@ -182,7 +178,7 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
         avio_wl32(pb, write_channel_mask ? enc->channel_layout : 0);
         /* GUID + next 3 */
         if (enc->codec_id == AV_CODEC_ID_EAC3) {
-            ff_put_guid(pb, get_codec_guid(enc->codec_id, ff_codec_wav_guids));
+            ff_put_guid(pb, ff_get_codec_guid(enc->codec_id, ff_codec_wav_guids));
         } else {
         avio_wl32(pb, enc->codec_tag);
         avio_wl32(pb, 0x00100000);
@@ -273,8 +269,8 @@ void ff_parse_specific_params(AVStream *st, int *au_rate,
 
 void ff_riff_write_info_tag(AVIOContext *pb, const char *tag, const char *str)
 {
-    int len = strlen(str);
-    if (len > 0) {
+    size_t len = strlen(str);
+    if (len > 0 && len < UINT32_MAX) {
         len++;
         ffio_wfourcc(pb, tag);
         avio_wl32(pb, len);
@@ -330,7 +326,7 @@ void ff_put_guid(AVIOContext *s, const ff_asf_guid *g)
     avio_write(s, *g, sizeof(*g));
 }
 
-const ff_asf_guid *get_codec_guid(enum AVCodecID id, const AVCodecGuid *av_guid)
+const ff_asf_guid *ff_get_codec_guid(enum AVCodecID id, const AVCodecGuid *av_guid)
 {
     int i;
     for (i = 0; av_guid[i].id != AV_CODEC_ID_NONE; i++) {
