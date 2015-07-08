@@ -214,7 +214,6 @@ int getbuttonstate()
 #elif defined(HAVE_DIR862)
 int getbuttonstate()
 {
-	return 0;
 	int ret = get_gpio(17);
 
 	if (ret == 0)
@@ -342,6 +341,14 @@ int getbuttonstate()
 int getbuttonstate()
 {
 	int ret = get_gpio(12);
+	if (ret == 0)
+		return 1;
+	return 0;
+}
+#elif defined(HAVE_DAP2330)
+int getbuttonstate()
+{
+	int ret = get_gpio(17);
 	if (ret == 0)
 		return 1;
 	return 0;
