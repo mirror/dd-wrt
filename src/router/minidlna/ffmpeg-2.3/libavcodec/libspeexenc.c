@@ -76,7 +76,7 @@
  *     encodes them with just enough bits to reproduce the background noise.
  *
  * Discontinuous Transmission (DTX)
- *     DTX is an addition to VAD/VBR operation, that allows to stop transmitting
+ *     DTX is an addition to VAD/VBR operation, that makes it possible to stop transmitting
  *     completely when the background noise is stationary.
  *     In file-based operation only 5 bits are used for such frames.
  */
@@ -93,7 +93,7 @@
 #include "audio_frame_queue.h"
 
 /* TODO: Think about converting abr, vad, dtx and such flags to a bit field */
-typedef struct {
+typedef struct LibSpeexEncContext {
     AVClass *class;             ///< AVClass for private options
     SpeexBits bits;             ///< libspeex bitwriter context
     SpeexHeader header;         ///< libspeex header struct
@@ -236,7 +236,7 @@ static av_cold int encode_init(AVCodecContext *avctx)
     s->header.frames_per_packet = s->frames_per_packet;
 
     /* set encoding delay */
-    speex_encoder_ctl(s->enc_state, SPEEX_GET_LOOKAHEAD, &avctx->delay);
+    speex_encoder_ctl(s->enc_state, SPEEX_GET_LOOKAHEAD, &avctx->initial_padding);
     ff_af_queue_init(avctx, &s->afq);
 
     /* create header packet bytes from header struct */
