@@ -297,7 +297,7 @@ endif
 ifneq ($(CONFIG_MUSL),y)
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 else
-	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-powerpc.so.1
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-powerpc-sf.so.1
 endif
 ifeq ($(CONFIG_LIBDL),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
