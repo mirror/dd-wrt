@@ -320,7 +320,13 @@ int mtd_write(const char *path, const char *mtd)
 			safe_fread(board_id, 1, sizeof(board_id), fp);
 
 			switch (brand) {
-
+			case ROUTER_NETGEAR_WNR3500LV2:
+				if (strncmp(board_id, "U12H172T00_NETGEAR", sizeof(board_id))) {
+					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H172T00_NETGEAR");
+					fclose(fp);
+					return -1;
+				}
+				break;
 			case ROUTER_NETGEAR_WNDR4000:
 				if (strncmp(board_id, "U12H181T00_NETGEAR", sizeof(board_id))) {
 					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H181T00_NETGEAR");
