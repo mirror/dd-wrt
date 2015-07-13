@@ -483,7 +483,7 @@ static uint lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, in
 		
 		if (*((__u32 *) buf) == SQUASHFS_MAGIC) {
 			printk(KERN_NOTICE
-			       "%s: squash filesystem with lzma found at offset %d\n",
+			       "%s: squash filesystem with lzma found at offset %X\n",
 			       mtd->name, off );
 		int size = squashfsb->bytes_used;
 		//part->size = part->size + 1024; /* uncomment for belkin v2000 ! */
@@ -559,6 +559,10 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 		offset = NFL_BOOT_SIZE;
 		nparts++;
 	}
+	
+	if (nvram_match("boardnum", "3500L") && nvram_match("boardtype", "0x052b"))
+		offset += 0x300000;
+
 
 	if ((bootflags & FLASH_KERNEL_NFLASH) == FLASH_KERNEL_NFLASH) {
 		/* Setup kernel MTD partition */
@@ -569,6 +573,10 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 		else
 #endif
 		bcm947xx_nflash_parts[nparts].size = nparts ? (NFL_BOOT_OS_SIZE - NFL_BOOT_SIZE) : NFL_BOOT_OS_SIZE;
+		
+		if (nvram_match("boardnum", "3500L") && nvram_match("boardtype", "0x052b"))
+			bcm947xx_nflash_parts[nparts].size -= 0x300000;
+		
 		bcm947xx_nflash_parts[nparts].offset = offset;
 			
 		shift = lookup_nflash_rootfs_offset(nfl, mtd, offset, bcm947xx_nflash_parts[nparts].size);
