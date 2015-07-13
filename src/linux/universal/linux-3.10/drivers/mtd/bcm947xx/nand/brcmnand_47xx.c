@@ -1753,18 +1753,25 @@ struct mtd_partition *init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t 
 	int bootflags = boot_flags();
 	int j = 0;
 	int offset = 0;
-
+	int offlinux = 0;
+	int offddwrt = 0;
+	
+	if (nvram_match("boardnum", "3500L") && nvram_match("boardtype", "0x052b")){
+		offlinux = 0x300000;
+		offddwrt = 0x2000000;
+	}
+	
 	if ((bootflags & FLASH_KERNEL_NFLASH) == FLASH_KERNEL_NFLASH) {
 		brcmnand_parts[j].name = "linux";
 		if ((bootflags & FLASH_BOOT_NFLASH) == FLASH_BOOT_NFLASH) {
-			brcmnand_parts[j].offset = NFL_BOOT_SIZE;
-			brcmnand_parts[j++].size = NFL_BOOT_OS_SIZE - NFL_BOOT_SIZE;
+			brcmnand_parts[j].offset = NFL_BOOT_SIZE + offlinux;
+			brcmnand_parts[j++].size = NFL_BOOT_OS_SIZE - NFL_BOOT_SIZE - offlinux;
 		} else {
 			brcmnand_parts[j].offset = 0;
 			brcmnand_parts[j++].size = NFL_BOOT_OS_SIZE;
 		}			
-		offset += NFL_BOOT_OS_SIZE;
-		size -= NFL_BOOT_OS_SIZE;
+		offset += NFL_BOOT_OS_SIZE + offddwrt;
+		size -= NFL_BOOT_OS_SIZE + offddwrt;
 	}
 
 	size -= NFL_BBT_SIZE;
