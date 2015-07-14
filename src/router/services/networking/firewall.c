@@ -2619,6 +2619,7 @@ void start_firewall6(void)
 	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-p", "icmpv6", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/64", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-i", "br0", "-j", "ACCEPT");
 
 	if (nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6to4")) {
 
