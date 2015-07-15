@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2014 Zabbix SIA
+** Copyright (C) 2001-2015 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -233,7 +233,7 @@ static int	discover_service(DB_DCHECK *dcheck, char *ip, int port, char *value)
 						ret = FAIL;
 				}
 				else
-#ifdef HAVE_SNMP
+#ifdef HAVE_NETSNMP
 				{
 					item.snmp_community = strdup(dcheck->snmp_community);
 					item.snmp_oid = strdup(dcheck->key_);
@@ -284,7 +284,7 @@ static int	discover_service(DB_DCHECK *dcheck, char *ip, int port, char *value)
 				}
 #else
 					ret = FAIL;
-#endif	/* HAVE_SNMP */
+#endif	/* HAVE_NETSNMP */
 
 				if (FAIL == ret && ISSET_MSG(&result))
 				{
