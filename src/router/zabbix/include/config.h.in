@@ -42,9 +42,6 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
-/* Define to 1 if function 'curl_easy_escape' exists. */
-#undef HAVE_FUNCTION_CURL_EASY_ESCAPE
-
 /* Define to 1 if function 'initgroups' exists. */
 #undef HAVE_FUNCTION_INITGROUPS
 
@@ -75,9 +72,6 @@
 /* Define to 1 if 'KERN_MAXPROC' exists. */
 #undef HAVE_FUNCTION_SYSCTL_KERN_MAXPROC
 
-/* Define to 1 if you have the `getaddrinfo' function. */
-#undef HAVE_GETADDRINFO
-
 /* Define to 1 if you have the `getenv' function. */
 #undef HAVE_GETENV
 
@@ -90,23 +84,11 @@
 /* Define to 1 if you have the `hstrerror' function. */
 #undef HAVE_HSTRERROR
 
-/* Define to 1 if IBM DB2 CLI libraries are available */
-#undef HAVE_IBM_DB2
-
-/* Define to 1 if you have the 'libiconv' library (-liconv) */
-#undef HAVE_ICONV
-
-/* Define to 1 if Iksemel library should be enabled. */
-#undef HAVE_IKSEMEL
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
 /* Define to 1 if IPv6 should be enabled. */
 #undef HAVE_IPV6
-
-/* Define to 1 if Jabber should be enabled. */
-#undef HAVE_JABBER
 
 /* Define to 1 if you have the <knlist.h> header file. */
 #undef HAVE_KNLIST_H
@@ -120,9 +102,6 @@
 /* Define to 1 if you have the <lber.h> header file. */
 #undef HAVE_LBER_H
 
-/* Define to 1 if LDAP should be enabled. */
-#undef HAVE_LDAP
-
 /* Define to 1 if you have a functional curl library. */
 #undef HAVE_LIBCURL
 
@@ -132,35 +111,17 @@
 /* Define to 1 if you have the 'libexecinfo' library (-lexecinfo) */
 #undef HAVE_LIBEXECINFO
 
-/* Define to 1 if you have the `gnutls' library (-lgnutls). */
-#undef HAVE_LIBGNUTLS
-
 /* Define to 1 if you have the `kvm' library (-lkvm). */
 #undef HAVE_LIBKVM
 
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
-/* Define to 1 if you have the `netsnmp' library (-lnetsnmp). */
-#undef HAVE_LIBNETSNMP
-
-/* Define to 1 if you have the `odbc' library (-lodbc). */
-#undef HAVE_LIBODBC
-
 /* Define to 1 if you have the 'libperfstat' library (-lperfstat) */
 #undef HAVE_LIBPERFSTAT
 
 /* Define to 1 if you have the <libperfstat.h> header file. */
 #undef HAVE_LIBPERFSTAT_H
-
-/* Define to 1 if you have the `pthread' library (-lpthread). */
-#undef HAVE_LIBPTHREAD
-
-/* Define to 1 if you have the `sasl2' library (-lsasl2). */
-#undef HAVE_LIBSASL2
-
-/* Define to 1 if libxml2 libraries are available */
-#undef HAVE_LIBXML2
 
 /* Define to 1 if you have the <linux/kernel.h> header file. */
 #undef HAVE_LINUX_KERNEL_H
@@ -189,17 +150,11 @@
 /* Define to 1 if database supports multirow insert statements. */
 #undef HAVE_MULTIROW_INSERT
 
-/* Define to 1 if MySQL libraries are available */
-#undef HAVE_MYSQL
-
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
-
-/* Define to 1 if Net-SNMP should be enabled. */
-#undef HAVE_NETSNMP
 
 /* Define to 1 if you have the <net/if.h> header file. */
 #undef HAVE_NET_IF_H
@@ -210,17 +165,11 @@
 /* Define to 1 if you have the <nlist.h> header file. */
 #undef HAVE_NLIST_H
 
-/* Define to 1 if OPENIPMI should be enabled. */
-#undef HAVE_OPENIPMI
-
 /* Define to 1 if Oracle should be enabled. */
 #undef HAVE_ORACLE
 
 /* Define to 1 if you have the <pdh.h> header file. */
 #undef HAVE_PDH_H
-
-/* Define to 1 if PostgreSQL libraries are available */
-#undef HAVE_POSTGRESQL
 
 /* Define to 1 if '/proc' file system should be used. */
 #undef HAVE_PROC
@@ -264,8 +213,11 @@
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
 
-/* Define to 1 if you have the DNS functions */
-#undef HAVE_RES_QUERY
+/* Define if res_mkquery exists */
+#undef HAVE_RES_MKQUERY
+
+/* Define if res_send exists */
+#undef HAVE_RES_SEND
 
 /* Define to 1 if union 'semun' exists. */
 #undef HAVE_SEMUN
@@ -279,20 +231,8 @@
 /* Define to 1 if you have the `sigqueue' function. */
 #undef HAVE_SIGQUEUE
 
-/* Define to 1 if SNMP should be enabled. */
-#undef HAVE_SNMP
-
-/* Define to 1 if 'session.localname' exist. */
-#undef HAVE_SNMP_SESSION_LOCALNAME
-
 /* Define to 1 if 'sockaddr_storage.ss_family' exists. */
 #undef HAVE_SOCKADDR_STORAGE_SS_FAMILY
-
-/* Define to 1 if SQLite libraries are available */
-#undef HAVE_SQLITE3
-
-/* Define to 1 if you have the 'libssh2' library (-lssh2) */
-#undef HAVE_SSH2
 
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
@@ -474,9 +414,6 @@
 /* Define to 1 if function 'sysconf' exists. */
 #undef HAVE_UNISTD_SYSCONF
 
-/* Define to 1 if unixUNIXODBC Driver Manager should be used. */
-#undef HAVE_UNIXODBC
-
 /* Define to 1 if you have the <vm/vm_param.h> header file. */
 #undef HAVE_VM_VM_PARAM_H
 
@@ -495,6 +432,9 @@
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #undef HAVE_WS2TCPIP_H
 
+/* Define to 1 if you have the <zone.h> header file. */
+#undef HAVE_ZONE_H
+
 /* Define to 1 if macro '__VA_ARGS__' exists. */
 #undef HAVE___VA_ARGS__
 
@@ -509,9 +449,6 @@
 
 /* Define to 1 if you are using Linux 2.6.x */
 #undef KERNEL_2_6
-
-/* Define to 1 if LDAP depricated functions is used. */
-#undef LDAP_DEPRECATED
 
 /* Defined if libcurl supports AsynchDNS */
 #undef LIBCURL_FEATURE_ASYNCHDNS
@@ -555,8 +492,20 @@
 /* Defined if libcurl supports HTTPS */
 #undef LIBCURL_PROTOCOL_HTTPS
 
+/* Defined if libcurl supports IMAP */
+#undef LIBCURL_PROTOCOL_IMAP
+
 /* Defined if libcurl supports LDAP */
 #undef LIBCURL_PROTOCOL_LDAP
+
+/* Defined if libcurl supports POP3 */
+#undef LIBCURL_PROTOCOL_POP3
+
+/* Defined if libcurl supports RTSP */
+#undef LIBCURL_PROTOCOL_RTSP
+
+/* Defined if libcurl supports SMTP */
+#undef LIBCURL_PROTOCOL_SMTP
 
 /* Defined if libcurl supports TELNET */
 #undef LIBCURL_PROTOCOL_TELNET
@@ -567,8 +516,8 @@
 /* Define to 1 if you are using Mac OS X. */
 #undef MAC_OS_X
 
-/* Define to 1 if OPENIPMI depricated functions is used. */
-#undef OPENIPMI_DEPRECATED
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -596,9 +545,6 @@
 
 /* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
-
-/* Disabling debugging messages from Net-SNMP library */
-#undef SNMP_NO_DEBUGGING
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
