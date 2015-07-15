@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2014 Zabbix SIA
+** Copyright (C) 2001-2015 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ static HANDLE		system_log_handle = INVALID_HANDLE_VALUE;
 
 static char		log_filename[MAX_STRING_LEN];
 static int		log_type = LOG_TYPE_UNDEFINED;
-static ZBX_MUTEX	log_file_access;
+static ZBX_MUTEX	log_file_access = ZBX_MUTEX_NULL;
 #ifdef DEBUG
 static int		log_level = LOG_LEVEL_DEBUG;
 #else

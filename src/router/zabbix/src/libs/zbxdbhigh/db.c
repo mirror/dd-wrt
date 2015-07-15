@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2014 Zabbix SIA
+** Copyright (C) 2001-2015 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -126,7 +126,6 @@ int	DBconnect(int flag)
 	int		err;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() flag:%d", __function_name, flag);
-
 
 	while (ZBX_DB_OK != (err = zbx_db_connect(CONFIG_DBHOST, CONFIG_DBUSER, CONFIG_DBPASSWORD,
 			CONFIG_DBNAME, CONFIG_DBSCHEMA, CONFIG_DBSOCKET, CONFIG_DBPORT)))
@@ -2272,7 +2271,7 @@ void	zbx_db_insert_add_values_dyn(zbx_db_insert_t *self, const zbx_db_value_t **
 #ifdef HAVE_ORACLE
 				row[i].str = NULL;
 				zbx_strncpy_alloc(&row[i].str, &str_alloc, &str_offset, value->str,
-						zbx_strlen_utf8_n(value->str, field->length));
+						zbx_strlen_utf8_nchars(value->str, field->length));
 #else
 				row[i].str = DBdyn_escape_string_len(value->str, field->length);
 #endif

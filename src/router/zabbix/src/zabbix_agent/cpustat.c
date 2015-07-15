@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2014 Zabbix SIA
+** Copyright (C) 2001-2015 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 #if !defined(_WINDOWS)
 #	define LOCK_CPUSTATS	zbx_mutex_lock(&cpustats_lock)
 #	define UNLOCK_CPUSTATS	zbx_mutex_unlock(&cpustats_lock)
-static ZBX_MUTEX	cpustats_lock;
+static ZBX_MUTEX	cpustats_lock = ZBX_MUTEX_NULL;
 #endif
 
 #ifdef HAVE_KSTAT_H
