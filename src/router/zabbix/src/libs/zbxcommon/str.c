@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2014 Zabbix SIA
+** Copyright (C) 2001-2015 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -2531,6 +2531,10 @@ const char	*zbx_dservice_type_string(zbx_dservice_type_t service)
 			return "SNMPv3 agent";
 		case SVC_ICMPPING:
 			return "ICMP ping";
+		case SVC_HTTPS:
+			return "HTTPS";
+		case SVC_TELNET:
+			return "Telnet";
 		default:
 			return "unknown";
 	}
@@ -2953,13 +2957,13 @@ size_t	zbx_utf8_char_len(const char *text)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_strlen_utf8_n                                                *
+ * Function: zbx_strlen_utf8_nchars                                           *
  *                                                                            *
  * Purpose: calculates number of bytes in utf8 text limited by utf8_maxlen    *
- * characters                                                                 *
+ *          characters                                                        *
  *                                                                            *
  ******************************************************************************/
-size_t	zbx_strlen_utf8_n(const char *text, size_t utf8_maxlen)
+size_t	zbx_strlen_utf8_nchars(const char *text, size_t utf8_maxlen)
 {
 	size_t		sz = 0, csz = 0;
 	const char	*next;
@@ -2974,6 +2978,31 @@ size_t	zbx_strlen_utf8_n(const char *text, size_t utf8_maxlen)
 		}
 		sz += csz;
 		utf8_maxlen--;
+	}
+
+	return sz;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_strlen_utf8_nbytes                                           *
+ *                                                                            *
+ * Purpose: calculates number of bytes in utf8 text limited by maxlen bytes   *
+ *                                                                            *
+ ******************************************************************************/
+size_t	zbx_strlen_utf8_nbytes(const char *text, size_t maxlen)
+{
+	size_t	sz;
+
+	sz = strlen(text);
+
+	if (sz > maxlen)
+	{
+		sz = maxlen;
+
+		/* ensure that the string is not cut in the middle of UTF-8 sequence */
+		while (0x80 == (0xc0 & text[sz]) && 0 < sz)
+			sz--;
 	}
 
 	return sz;
