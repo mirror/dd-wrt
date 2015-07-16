@@ -1271,6 +1271,10 @@ void period_check(int sig)
 	case ROUTER_NETGEAR_WNR3500L:
 		sesgpio = 0x106;	// gpio 6, inversed
 		break;
+	case ROUTER_NETGEAR_WNR3500LV2:
+		sesgpio = 0x106;	// gpio 6, inversed
+		wifigpio = 0x108;	
+		break;
 	case ROUTER_WRT320N:
 	case ROUTER_WRT160NV3:
 	case ROUTER_NETGEAR_WNDR4500:
