@@ -2129,6 +2129,7 @@ void start_restore_defaults(void)
 		linux_overrides = vlan;
 		break;
 	case ROUTER_NETGEAR_WNR3500L:
+	case ROUTER_NETGEAR_WNR3500LV2:
 		linux_overrides = wnr3500vlan;
 		break;
 	case ROUTER_ASUS_RTN16:
@@ -2550,6 +2551,7 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_NETGEAR_WNR3500LV2:
 			case ROUTER_WRT320N:
 			case ROUTER_NETGEAR_WNDR4500:
 			case ROUTER_NETGEAR_WNDR4500V2:
@@ -2605,6 +2607,7 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_NETGEAR_WNR3500LV2:
 			case ROUTER_NETGEAR_WNDR4500:
 			case ROUTER_NETGEAR_WNDR4500V2:
 			case ROUTER_NETGEAR_R6300:
