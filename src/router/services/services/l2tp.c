@@ -188,7 +188,7 @@ void start_l2tp(int status)
 		fprintf(fp, "novj\n"	// Disable Van Jacobson style TCP/IP
 			"nobsdcomp\n"	// Disables BSD-Compress compression
 			"nodeflate\n"	// Disables Deflate compression
-			"lcp-echo-failure 4\n"	//
+			"lcp-echo-failure 12\n"	//
 			"lcp-echo-interval 30\n"	// echo-request frame to the peer       
 			"lock\n"	//
 			"noauth\n");
