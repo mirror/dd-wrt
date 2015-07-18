@@ -146,8 +146,7 @@ AC_CHECK_LIB(m, main)
 AC_CHECK_LIB(kvm, main)
 
 dnl check for DNS lookup functions
-found_resolv="no"
-LIBRESOLV_CHECK_CONFIG([no])
+found_resolv="yes"
 if test "x$found_resolv" != "xyes"; then
 	AC_MSG_ERROR([Unable to do DNS lookups (libresolv check failed)])
 fi

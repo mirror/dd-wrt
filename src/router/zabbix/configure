@@ -629,21 +629,72 @@ PROXY_LDFLAGS
 SERVER_LIBS
 SERVER_LDFLAGS
 RANLIB
-LIBCURL
-LIBCURL_CPPFLAGS
+ICONV_LDFLAGS
+ICONV_CFLAGS
+LIBCURL_LIBS
+LIBCURL_LDFLAGS
+LIBCURL_CFLAGS
 _libcurl_config
+LDAP_LIBS
+LDAP_LDFLAGS
+LDAP_CPPFLAGS
 WITH_ODBC_FALSE
 WITH_ODBC_TRUE
 JABBER_FALSE
 JABBER_TRUE
 JAR
 JAVAC
+OPENIPMI_LIBS
+OPENIPMI_LDFLAGS
+OPENIPMI_CFLAGS
+SSH2_LIBS
+SSH2_LDFLAGS
+SSH2_CFLAGS
+SNMP_LIBS
+SNMP_LDFLAGS
+SNMP_CFLAGS
+_libnetsnmp_config
+UNIXODBC_LIBS
+UNIXODBC_CFLAGS
+UNIXODBC_LDFLAGS
+ODBC_CONFIG
+LIBXML2_LIBS
+LIBXML2_LDFLAGS
+LIBXML2_CFLAGS
+LIBXML2_VERSION
+LIBXML2_CONFIG
+JABBER_LIBS
+JABBER_LDFLAGS
+JABBER_CPPFLAGS
+IKSEMEL_LIBS
+IKSEMEL_CFLAGS
+PKG_CONFIG_LIBDIR
+PKG_CONFIG_PATH
+PKG_CONFIG
 DB_LIBS
 DB_LDFLAGS
 DB_CPPFLAGS
+SQLITE3_VERSION
+SQLITE3_LIBS
+SQLITE3_LDFLAGS
+SQLITE3_CPPFLAGS
+POSTGRESQL_VERSION
+POSTGRESQL_LIBS
+POSTGRESQL_LDFLAGS
+POSTGRESQL_CFLAGS
+PG_CONFIG
 ORACLE_LIBS
 ORACLE_LDFLAGS
 ORACLE_CPPFLAGS
+ORACLE_OCI_LIBS
+ORACLE_OCI_LDFLAGS
+ORACLE_OCI_CFLAGS
+ORACLE_OCI_VERSION
+MYSQL_LIBS
+MYSQL_LDFLAGS
+MYSQL_CFLAGS
+MYSQL_VERSION
+MYSQL_CONFIG
 JAVA_FALSE
 JAVA_TRUE
 AGENT_FALSE
@@ -759,7 +810,26 @@ enable_proxy
 enable_agent
 enable_java
 enable_ipv6
+with_ibm_db2
+with_ibm_db2_include
+with_ibm_db2_lib
+with_mysql
+with_oracle
+with_oracle_include
+with_oracle_lib
+with_postgresql
+with_sqlite3
+with_jabber
+with_libxml2
+with_unixodbc
+with_net_snmp
+with_ssh2
+with_openipmi
+with_ldap
 with_libcurl
+with_iconv
+with_iconv_include
+with_iconv_lib
 '
       ac_precious_vars='build_alias
 host_alias
@@ -769,7 +839,12 @@ CFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
-CPP'
+CPP
+PKG_CONFIG
+PKG_CONFIG_PATH
+PKG_CONFIG_LIBDIR
+IKSEMEL_CFLAGS
+IKSEMEL_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1405,8 +1480,69 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-libcurl=PREFIX   look for the curl library in PREFIX/lib and headers
-                          in PREFIX/include
+  --with-ibm-db2=[ARG]    use IBM DB2 CLI from given sqllib directory
+                          (ARG=path); use /home/db2inst1/sqllib (ARG=yes);
+                          disable IBM DB2 support (ARG=no)
+  --with-ibm-db2-include=[DIR]
+                          use IBM DB2 CLI headers from given path
+  --with-ibm-db2-lib=[DIR]
+                          use IBM DB2 CLI libraries from given path
+  --with-mysql[=ARG]      use MySQL client library [default=no], optionally
+                          specify path to mysql_config
+  --with-oracle=[ARG]     use Oracle OCI API from given Oracle home
+                          (ARG=path); use existing ORACLE_HOME (ARG=yes);
+                          disable Oracle OCI support (ARG=no)
+  --with-oracle-include=[DIR]
+                          use Oracle OCI API headers from given path
+  --with-oracle-lib=[DIR] use Oracle OCI API libraries from given path
+  --with-postgresql[=ARG] use PostgreSQL library [default=no], optionally
+                          specify path to pg_config
+  --with-sqlite3[=ARG]    use SQLite 3 library [default=no], optionally
+                          specify the prefix for sqlite3 library
+
+If you want to use Jabber protocol for messaging:
+  --with-jabber[=DIR]     Include Jabber support [default=no]. DIR is the
+                          iksemel library install directory.
+
+If you want to use XML library:
+  --with-libxml2[=ARG]    use libxml2 client library [default=no], optionally
+                          specify path to xml2-config
+
+If you want to use unixODBC library:
+  --with-unixodbc[=ARG]   use ODBC driver against unixODBC package
+                          [default=no], optionally specify full path to
+                          odbc_config binary.
+
+If you want to use Net-SNMP library:
+  --with-net-snmp[=ARG]   use Net-SNMP package [default=no], optionally
+                          specify path to net-snmp-config
+
+If you want to use SSH2 based checks:
+  --with-ssh2[=DIR]       use SSH2 package [default=no], DIR is the SSH2
+                          library install directory.
+
+If you want to check IPMI devices:
+  --with-openipmi[=DIR]   Include OPENIPMI support [default=no]. DIR is the
+                          OPENIPMI base install directory, default is to
+                          search through a number of common places for the
+                          OPENIPMI files.
+
+If you want to check LDAP servers:
+  --with-ldap[=DIR]       Include LDAP support [default=no]. DIR is the LDAP
+                          base install directory, default is to search through
+                          a number of common places for the LDAP files.
+
+If you want to use cURL library:
+  --with-libcurl[=DIR]    use cURL package [default=no], optionally specify
+                          path to curl-config
+
+If you want to specify iconv installation directories:
+  --with-iconv=[DIR]      use iconv from given base install directory (DIR),
+                          default is to search through a number of common
+                          places for the iconv files.
+  --with-iconv-include=[DIR]
+                          use iconv include headers from given path.
+  --with-iconv-lib=[DIR]  use iconv libraries from given path.
 
 Some influential environment variables:
   CC          C compiler command
@@ -1417,6 +1553,15 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
+  PKG_CONFIG  path to pkg-config utility
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+  PKG_CONFIG_LIBDIR
+              path overriding pkg-config's built-in search path
+  IKSEMEL_CFLAGS
+              C compiler flags for IKSEMEL, overriding pkg-config
+  IKSEMEL_LIBS
+              linker flags for IKSEMEL, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -7680,7 +7825,97 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 
 	have_multirow_insert="no"
 
-		AX_LIB_IBM_DB2()
+
+
+# Check whether --with-ibm-db2 was given.
+if test "${with_ibm_db2+set}" = set; then :
+  withval=$with_ibm_db2;
+        if test "$withval" != "no"; then
+            want_ibm_db2="yes"
+            if test "$withval" != "yes"; then
+                ibm_db2_include_dir="$withval/include"
+                ibm_db2_lib_dir="$withval/lib"
+            else
+                ibm_db2_include_dir=/home/db2inst1/sqllib/include
+                ibm_db2_lib_dir=/home/db2inst1/sqllib/lib
+            fi
+        fi
+
+
+fi
+
+
+# Check whether --with-ibm-db2-include was given.
+if test "${with_ibm_db2_include+set}" = set; then :
+  withval=$with_ibm_db2_include;
+        if test "$withval" != "no"; then
+            want_ibm_db2="yes"
+            ibm_db2_include_dir="$withval"
+        fi
+
+
+fi
+
+
+# Check whether --with-ibm-db2-lib was given.
+if test "${with_ibm_db2_lib+set}" = set; then :
+  withval=$with_ibm_db2_lib;
+        if test "$withval" != "no"; then
+            want_ibm_db2="yes"
+            ibm_db2_lib_dir="$withval"
+        fi
+
+
+fi
+
+
+    if test "x$want_ibm_db2" = "xyes"; then
+        IBM_DB2_CPPFLAGS="-I$ibm_db2_include_dir"
+        IBM_DB2_LDFLAGS="-L$ibm_db2_lib_dir"
+        IBM_DB2_LIBS="-ldb2"
+
+        saved_CPPFLAGS="$CPPFLAGS"
+        saved_LDFLAGS="$LDFLAGS"
+        saved_LIBS="$LIBS"
+        CPPFLAGS="$CPPFLAGS $IBM_DB2_CPPFLAGS"
+        LDFLAGS="$LDFLAGS $IBM_DB2_LDFLAGS"
+        LIBS="$LIBS $IBM_DB2_LIBS"
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for IBM DB2 CLI libraries" >&5
+$as_echo_n "checking for IBM DB2 CLI libraries... " >&6; }
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sqlcli1.h>
+int
+main ()
+{
+SQLHANDLE hdbc;
+                SQLRETURN sqlr;
+                sqlr = SQLDriverConnect(hdbc, 0, "", SQL_NTS, 0, 0, 0, SQL_DRIVER_NOPROMPT);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+$as_echo "#define HAVE_IBM_DB2 1" >>confdefs.h
+
+                found_ibm_db2="yes"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+        CPPFLAGS="$saved_CPPFLAGS"
+        LDFLAGS="$saved_LDFLAGS"
+        LIBS="$saved_LIBS"
+    fi
+
 	if test "x$want_ibm_db2" = "xyes"; then
 		if test "x$have_db" != "xno"; then
 			as_fn_error $? "You can configure for only one database." "$LINENO" 5
@@ -7694,7 +7929,259 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 		fi
 	fi
 
-		AX_LIB_MYSQL()
+
+    MYSQL_CONFIG="no"
+
+
+# Check whether --with-mysql was given.
+if test "${with_mysql+set}" = set; then :
+  withval=$with_mysql;
+        if test "$withval" = "no"; then
+            want_mysql="no"
+        elif test "$withval" = "yes"; then
+            want_mysql="yes"
+        else
+            want_mysql="yes"
+            MYSQL_CONFIG="$withval"
+        fi
+
+else
+  want_mysql="no"
+
+fi
+
+
+    MYSQL_CFLAGS=""
+    MYSQL_LDFLAGS=""
+    MYSQL_LIBS=""
+    MYSQL_VERSION=""
+
+
+    if test "$want_mysql" = "yes"; then
+
+        # Extract the first word of "mysql_config", so it can be a program name with args.
+set dummy mysql_config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MYSQL_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MYSQL_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MYSQL_CONFIG="$MYSQL_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MYSQL_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MYSQL_CONFIG=$ac_cv_path_MYSQL_CONFIG
+if test -n "$MYSQL_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MYSQL_CONFIG" >&5
+$as_echo "$MYSQL_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+        if test -x "$MYSQL_CONFIG"; then
+
+            MYSQL_CFLAGS="`$MYSQL_CONFIG --cflags`"
+
+            _full_libmysql_libs="`$MYSQL_CONFIG --libs`"
+
+            for i in $_full_libmysql_libs; do
+                case $i in
+                -lmysqlclient)
+             ;;
+                   -L*)
+                        MYSQL_LDFLAGS="${MYSQL_LDFLAGS} $i"
+                ;;
+                esac
+            done
+
+            if test "x$enable_static" = "xyes"; then
+               for i in $_full_libmysql_libs; do
+                   case $i in
+           	      -lmysqlclient)
+           	    ;;
+                      -l*)
+				_lib_name="`echo "$i" | cut -b3-`"
+				as_ac_Lib=`$as_echo "ac_cv_lib_$_lib_name''_main" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -l$_lib_name" >&5
+$as_echo_n "checking for main in -l$_lib_name... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$_lib_name  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+
+						MYSQL_LIBS="$MYSQL_LIBS $i"
+
+else
+
+						as_fn_error $? "Not found $_lib_name library" "$LINENO" 5
+
+fi
+
+                   ;;
+                   esac
+               done
+            fi
+
+		_save_mysql_libs="${LIBS}"
+		_save_mysql_ldflags="${LDFLAGS}"
+		_save_mysql_cflags="${CFLAGS}"
+		LIBS="${LIBS} ${MYSQL_LIBS}"
+		LDFLAGS="${LDFLAGS} ${MYSQL_LDFLAGS}"
+		CFLAGS="${CFLAGS} ${MYSQL_CFLAGS}"
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmysqlclient" >&5
+$as_echo_n "checking for main in -lmysqlclient... " >&6; }
+if ${ac_cv_lib_mysqlclient_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmysqlclient  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mysqlclient_main=yes
+else
+  ac_cv_lib_mysqlclient_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mysqlclient_main" >&5
+$as_echo "$ac_cv_lib_mysqlclient_main" >&6; }
+if test "x$ac_cv_lib_mysqlclient_main" = xyes; then :
+
+			MYSQL_LIBS="-lmysqlclient ${MYSQL_LIBS}"
+
+else
+
+			as_fn_error $? "Not found mysqlclient library" "$LINENO" 5
+
+fi
+
+
+		LIBS="${_save_mysql_libs}"
+		LDFLAGS="${_save_mysql_ldflags}"
+		CFLAGS="${_save_mysql_cflags}"
+		unset _save_mysql_libs
+		unset _save_mysql_ldflags
+		unset _save_mysql_cflags
+
+		MYSQL_VERSION=`$MYSQL_CONFIG --version`
+
+
+$as_echo "#define HAVE_MYSQL 1" >>confdefs.h
+
+
+            found_mysql="yes"
+        else
+            found_mysql="no"
+        fi
+    fi
+
+
+    mysql_version_req=
+
+    if test "$found_mysql" = "yes" -a -n "$mysql_version_req"; then
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if MySQL version is >= $mysql_version_req" >&5
+$as_echo_n "checking if MySQL version is >= $mysql_version_req... " >&6; }
+
+                        mysql_version_req_major=`expr $mysql_version_req : '\([0-9]*\)'`
+        mysql_version_req_minor=`expr $mysql_version_req : '[0-9]*\.\([0-9]*\)'`
+        mysql_version_req_micro=`expr $mysql_version_req : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
+        if test "x$mysql_version_req_micro" = "x"; then
+            mysql_version_req_micro="0"
+        fi
+
+        mysql_version_req_number=`expr $mysql_version_req_major \* 1000000 \
+                                   \+ $mysql_version_req_minor \* 1000 \
+                                   \+ $mysql_version_req_micro`
+
+                        mysql_version_major=`expr $MYSQL_VERSION : '\([0-9]*\)'`
+        mysql_version_minor=`expr $MYSQL_VERSION : '[0-9]*\.\([0-9]*\)'`
+        mysql_version_micro=`expr $MYSQL_VERSION : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
+        if test "x$mysql_version_micro" = "x"; then
+            mysql_version_micro="0"
+        fi
+
+        mysql_version_number=`expr $mysql_version_major \* 1000000 \
+                                   \+ $mysql_version_minor \* 1000 \
+                                   \+ $mysql_version_micro`
+
+        mysql_version_check=`expr $mysql_version_number \>\= $mysql_version_req_number`
+        if test "$mysql_version_check" = "1"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        fi
+    fi
+
+
+
+
+
+
 	if test "x$want_mysql" = "xyes"; then
 		if test "x$have_db" != "xno"; then
 			as_fn_error $? "You can configure for only one database." "$LINENO" 5
@@ -7708,7 +8195,302 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 		fi
 	fi
 
-		
+
+
+# Check whether --with-oracle was given.
+if test "${with_oracle+set}" = set; then :
+  withval=$with_oracle;
+        if test "$withval" = "no"; then
+            WANT_ORACLE_OCI="no"
+        elif test "$withval" = "yes"; then
+            WANT_ORACLE_OCI="yes"
+            oracle_home_dir="$ORACLE_HOME"
+        elif test -d "$withval"; then
+            WANT_ORACLE_OCI="yes"
+            oracle_home_dir="$withval"
+        else
+            WANT_ORACLE_OCI="yes"
+            oracle_home_dir=""
+        fi
+
+else
+  WANT_ORACLE_OCI="no"
+
+fi
+
+
+
+# Check whether --with-oracle-include was given.
+if test "${with_oracle_include+set}" = set; then :
+  withval=$with_oracle_include;
+        if test "$withval" != "no"; then
+            WANT_ORACLE_OCI="yes"
+            oracle_home_include_dir="$withval"
+        fi
+
+else
+  oracle_home_include_dir=""
+
+fi
+
+
+# Check whether --with-oracle-lib was given.
+if test "${with_oracle_lib+set}" = set; then :
+  withval=$with_oracle_lib;
+        if test "$withval" != "no"; then
+            WANT_ORACLE_OCI="yes"
+            oracle_home_lib_dir="$withval"
+        fi
+
+else
+  oracle_home_lib_dir=""
+
+fi
+
+
+    ORACLE_OCI_CFLAGS=""
+    ORACLE_OCI_LDFLAGS=""
+    ORACLE_OCI_LIBS=""
+    ORACLE_OCI_VERSION=""
+
+                want_oracle_but_no_path="no"
+
+    if test -n "$oracle_home_dir"; then
+
+        if test "$oracle_home_dir" != "no" -a "$oracle_home_dir" != "yes"; then
+
+                        oracle_include_dir="$oracle_home_dir/rdbms/public"
+
+                        oracle_include_dir2="$oracle_home_dir/rdbms/demo"
+
+                        oracle_lib_dir="$oracle_home_dir/lib"
+        elif test "$oracle_home_dir" = "yes"; then
+            want_oracle_but_no_path="yes"
+        fi
+
+    elif test -n "$oracle_home_include_dir" -o -n "$oracle_home_lib_dir"; then
+
+        if test "$oracle_home_include_dir" != "no" -a "$oracle_home_include_dir" != "yes"; then
+            oracle_include_dir="$oracle_home_include_dir"
+        elif test "$oracle_home_include_dir" = "yes"; then
+            want_oracle_but_no_path="yes"
+        fi
+
+        if test "$oracle_home_lib_dir" != "no" -a "$oracle_home_lib_dir" != "yes"; then
+            oracle_lib_dir="$oracle_home_lib_dir"
+        elif test "$oracle_home_lib_dir" = "yes"; then
+            want_oracle_but_no_path="yes"
+        fi
+    fi
+
+    if test "$want_oracle_but_no_path" = "yes"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Oracle support is requested but no Oracle paths have been provided. \
+Please, locate Oracle directories using --with-oracle or \
+--with-oracle-include and --with-oracle-lib options." >&5
+$as_echo "$as_me: WARNING: Oracle support is requested but no Oracle paths have been provided. \
+Please, locate Oracle directories using --with-oracle or \
+--with-oracle-include and --with-oracle-lib options." >&2;}
+    fi
+
+                if test -n "$oracle_include_dir" -a -n "$oracle_lib_dir"; then
+
+        saved_CPPFLAGS="$CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS -I$oracle_include_dir"
+
+                if test -n "$oracle_include_dir2"; then
+            CPPFLAGS="$CPPFLAGS -I$oracle_include_dir2"
+        fi
+
+                        saved_LDFLAGS="$LDFLAGS"
+        oci_ldflags="-L$oracle_lib_dir"
+        LDFLAGS="$LDFLAGS $oci_ldflags"
+
+        saved_LIBS="$LIBS"
+        oci_libs="-lclntsh"
+        LIBS="$LIBS $oci_libs"
+
+                                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Oracle OCI headers in $oracle_include_dir" >&5
+$as_echo_n "checking for Oracle OCI headers in $oracle_include_dir... " >&6; }
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+            #include <oci.h>
+int
+main ()
+{
+
+#if defined(OCI_MAJOR_VERSION)
+#if OCI_MAJOR_VERSION == 10 && OCI_MINOR_VERSION == 2
+// Oracle 10.2 detected
+#endif
+#elif defined(OCI_V7_SYNTAX)
+// OK, older Oracle detected
+// TODO - mloskot: find better macro to check for older versions;
+#else
+#  error Oracle oci.h header not found
+#endif
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+            ORACLE_OCI_CFLAGS="-I$oracle_include_dir"
+
+            if test -n "$oracle_include_dir2"; then
+                ORACLE_OCI_CFLAGS="$ORACLE_OCI_CFLAGS -I$oracle_include_dir2"
+            fi
+
+            oci_header_found="yes"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+            oci_header_found="no"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+                                oracle_version_req=10.0
+
+        if test "$oci_header_found" = "yes"; then
+
+            oracle_version_major=`cat $oracle_include_dir/oci.h \
+                                 | grep '#define.*OCI_MAJOR_VERSION.*' \
+                                 | sed -e 's/#define OCI_MAJOR_VERSION  *//' \
+                                 | sed -e 's/  *\/\*.*\*\///'`
+
+            oracle_version_minor=`cat $oracle_include_dir/oci.h \
+                                 | grep '#define.*OCI_MINOR_VERSION.*' \
+                                 | sed -e 's/#define OCI_MINOR_VERSION  *//' \
+                                 | sed -e 's/  *\/\*.*\*\///'`
+
+                        oracle_version_number=`expr $oracle_version_major \* 1000000 \
+                                  \+ $oracle_version_minor \* 1000`
+
+
+            if test -n "$oracle_version_req"; then
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Oracle OCI version is >= $oracle_version_req" >&5
+$as_echo_n "checking if Oracle OCI version is >= $oracle_version_req... " >&6; }
+
+                if test -n "$oracle_version_major" -a -n $"oracle_version_minor"; then
+
+                    ORACLE_OCI_VERSION="$oracle_version_major.$oracle_version_minor"
+
+                                                            oracle_version_req_major=`expr $oracle_version_req : '\([0-9]*\)'`
+                    oracle_version_req_minor=`expr $oracle_version_req : '[0-9]*\.\([0-9]*\)'`
+
+                    oracle_version_req_number=`expr $oracle_version_req_major \* 1000000 \
+                                               \+ $oracle_version_req_minor \* 1000`
+
+                    oracle_version_check=`expr $oracle_version_number \>\= $oracle_version_req_number`
+                    if test "$oracle_version_check" = "1"; then
+
+                        oracle_version_checked="yes"
+                        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+                    else
+                        oracle_version_checked="no"
+                        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                        as_fn_error $? "Oracle $ORACLE_OCI_VERSION found, but required version is $oracle_version_req" "$LINENO" 5
+                    fi
+                else
+                    ORACLE_OCI_VERSION="UNKNOWN"
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Oracle version unknown, probably OCI older than 10.2 is available" >&5
+$as_echo "$as_me: WARNING: Oracle version unknown, probably OCI older than 10.2 is available" >&2;}
+                fi
+            fi
+
+                        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Oracle OCI version >= 10.x to use -lnnz1x flag" >&5
+$as_echo_n "checking for Oracle OCI version >= 10.x to use -lnnz1x flag... " >&6; }
+            oracle_nnz1x_flag=`expr $oracle_version_number / 1000000`
+            if test "$oracle_nnz1x_flag" -ge 10; then
+                oci_libs="$oci_libs -lnnz$oracle_nnz1x_flag"
+                LIBS="$LIBS -lnnz$oracle_nnz1x_flag"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: -lnnz$oracle_nnz1x_flag" >&5
+$as_echo "-lnnz$oracle_nnz1x_flag" >&6; }
+            else
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+            fi
+        fi
+
+                                if test "$oci_header_found" = "yes"; then
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Oracle OCI libraries in $oracle_lib_dir" >&5
+$as_echo_n "checking for Oracle OCI libraries in $oracle_lib_dir... " >&6; }
+
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                #include <oci.h>
+int
+main ()
+{
+
+OCIEnv* envh = 0;
+OCIEnvCreate(&envh, OCI_DEFAULT, 0, 0, 0, 0, 0, 0);
+if (envh) OCIHandleFree(envh, OCI_HTYPE_ENV);
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+                ORACLE_OCI_LDFLAGS="$oci_ldflags"
+                ORACLE_OCI_LIBS="$oci_libs"
+                oci_lib_found="yes"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+                oci_lib_found="no"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+        fi
+
+        CPPFLAGS="$saved_CPPFLAGS"
+        LDFLAGS="$saved_LDFLAGS"
+        LIBS="$saved_LIBS"
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Oracle support" >&5
+$as_echo_n "checking for Oracle support... " >&6; }
+
+    if test "$oci_header_found" = "yes" -a "$oci_lib_found" = "yes"; then
+
+
+
+
+
+
+        HAVE_ORACLE_OCI="yes"
+    else
+        HAVE_ORACLE_OCI="no"
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_ORACLE_OCI" >&5
+$as_echo "$HAVE_ORACLE_OCI" >&6; }
+
 	if test "x$WANT_ORACLE_OCI" = "xyes"; then
 		if test "x$have_db" != "xno"; then
 			as_fn_error $? "You can configure for only one database." "$LINENO" 5
@@ -7733,7 +8515,189 @@ $as_echo "#define HAVE_ORACLE 1" >>confdefs.h
 		fi
 	fi
 
-		AX_LIB_POSTGRESQL()
+
+    PG_CONFIG="no"
+
+
+# Check whether --with-postgresql was given.
+if test "${with_postgresql+set}" = set; then :
+  withval=$with_postgresql;
+        if test "x$withval" = "xno"; then
+            want_postgresql="no"
+        elif test "x$withval" = "xyes"; then
+            want_postgresql="yes"
+        else
+            want_postgresql="yes"
+            PG_CONFIG="$withval"
+        fi
+
+else
+  want_postgresql="no"
+
+fi
+
+
+    POSTGRESQL_CFLAGS=""
+    POSTGRESQL_LDFLAGS=""
+    POSTGRESQL_LIBS=""
+    POSTGRESQL_VERSION=""
+
+
+    if test "x$want_postgresql" = "xyes"; then
+        # Extract the first word of "pg_config", so it can be a program name with args.
+set dummy pg_config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PG_CONFIG="$PG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PG_CONFIG=$ac_cv_path_PG_CONFIG
+if test -n "$PG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PG_CONFIG" >&5
+$as_echo "$PG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+        if test -x "$PG_CONFIG"; then
+            POSTGRESQL_CFLAGS="`$PG_CONFIG --includedir`"
+            if test -n "$POSTGRESQL_CFLAGS"; then
+                POSTGRESQL_CFLAGS="-I$POSTGRESQL_CFLAGS";
+            fi
+            POSTGRESQL_LDFLAGS="`$PG_CONFIG --libdir`"
+            if test -n "$POSTGRESQL_LDFLAGS"; then
+                POSTGRESQL_LDFLAGS="-L$POSTGRESQL_LDFLAGS";
+            fi
+            POSTGRESQL_LIBS="-lpq"
+
+            _save_postgresql_cflags="${CFLAGS}"
+            _save_postgresql_ldflags="${LDFLAGS}"
+            _save_postgresql_libs="${LIBS}"
+            CFLAGS="${CFLAGS} ${POSTGRESQL_CFLAGS}"
+            LDFLAGS="${LDFLAGS} ${POSTGRESQL_LDFLAGS}"
+            LIBS="${LIBS} ${POSTGRESQL_LIBS}"
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PostgreSQL libraries" >&5
+$as_echo_n "checking for PostgreSQL libraries... " >&6; }
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <libpq-fe.h>
+
+int
+main ()
+{
+
+PGconn	*conn;
+conn = PQsetdbLogin(NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+$as_echo "#define HAVE_POSTGRESQL 1" >>confdefs.h
+
+            found_postgresql="yes"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+            CFLAGS="${_save_postgresql_cflags}"
+            LDFLAGS="${_save_postgresql_ldflags}"
+            LIBS="${_save_postgresql_libs}"
+            unset _save_postgresql_cflags
+            unset _save_postgresql_ldflags
+            unset _save_postgresql_libs
+
+            if test "x$found_postgresql" = "xyes"; then
+                POSTGRESQL_VERSION=`$PG_CONFIG --version | sed -e 's#PostgreSQL ##'`
+            fi
+        fi
+    fi
+
+
+    postgresql_version_req="8.1"
+
+    if test "x$found_postgresql" = "xyes" -a -n "$postgresql_version_req"; then
+
+                        postgresql_version_major=`expr $POSTGRESQL_VERSION : '\([0-9]*\)'`
+        postgresql_version_minor=`expr $POSTGRESQL_VERSION : '[0-9]*\.\([0-9]*\)'`
+        postgresql_version_micro=`expr $POSTGRESQL_VERSION : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
+        if test "x$postgresql_version_micro" = "x"; then
+            postgresql_version_micro="0"
+        fi
+
+        postgresql_version_number=`expr $postgresql_version_major \* 1000000 \
+                                   \+ $postgresql_version_minor \* 1000 \
+                                   \+ $postgresql_version_micro`
+
+        if test -n "$postgresql_version_req"; then
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking if PostgreSQL version is >= $postgresql_version_req" >&5
+$as_echo_n "checking if PostgreSQL version is >= $postgresql_version_req... " >&6; }
+
+                                    postgresql_version_req_major=`expr $postgresql_version_req : '\([0-9]*\)'`
+            postgresql_version_req_minor=`expr $postgresql_version_req : '[0-9]*\.\([0-9]*\)'`
+            postgresql_version_req_micro=`expr $postgresql_version_req : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
+            if test "x$postgresql_version_req_micro" = "x"; then
+                postgresql_version_req_micro="0"
+            fi
+
+            postgresql_version_req_number=`expr $postgresql_version_req_major \* 1000000 \
+                                       \+ $postgresql_version_req_minor \* 1000 \
+                                       \+ $postgresql_version_req_micro`
+
+            postgresql_version_check=`expr $postgresql_version_number \>\= $postgresql_version_req_number`
+            if test "$postgresql_version_check" = "1"; then
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+            else
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+            fi
+
+	fi
+
+    fi
+
+
+
+
+
+
 	if test "x$want_postgresql" = "xyes"; then
 		if test "x$have_db" != "xno"; then
 			as_fn_error $? "You can configure for only one database." "$LINENO" 5
@@ -7755,7 +8719,138 @@ $as_echo "#define HAVE_ORACLE 1" >>confdefs.h
 		fi
 	fi
 
-		AX_LIB_SQLITE3()
+
+
+# Check whether --with-sqlite3 was given.
+if test "${with_sqlite3+set}" = set; then :
+  withval=$with_sqlite3;
+        if test "$withval" = "no"; then
+            WANT_SQLITE3="no"
+        elif test "$withval" = "yes"; then
+            WANT_SQLITE3="yes"
+            ac_sqlite3_path=""
+        else
+            WANT_SQLITE3="yes"
+            ac_sqlite3_path="$withval"
+        fi
+
+else
+  WANT_SQLITE3="no"
+
+fi
+
+
+    SQLITE3_CFLAGS=""
+    SQLITE3_LDFLAGS=""
+    SQLITE3_LIBS=""
+    SQLITE3_VERSION=""
+
+    if test "x$WANT_SQLITE3" = "xyes"; then
+
+        ac_sqlite3_header="sqlite3.h"
+
+        sqlite3_version_req=3.0.0
+        sqlite3_version_req_shorten=`expr $sqlite3_version_req : '\([0-9]*\.[0-9]*\)'`
+        sqlite3_version_req_major=`expr $sqlite3_version_req : '\([0-9]*\)'`
+        sqlite3_version_req_minor=`expr $sqlite3_version_req : '[0-9]*\.\([0-9]*\)'`
+        sqlite3_version_req_micro=`expr $sqlite3_version_req : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
+        if test "x$sqlite3_version_req_micro" = "x" ; then
+            sqlite3_version_req_micro="0"
+        fi
+
+        sqlite3_version_req_number=`expr $sqlite3_version_req_major \* 1000000 \
+                                   \+ $sqlite3_version_req_minor \* 1000 \
+                                   \+ $sqlite3_version_req_micro`
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SQLite3 library >= $sqlite3_version_req" >&5
+$as_echo_n "checking for SQLite3 library >= $sqlite3_version_req... " >&6; }
+
+        if test "$ac_sqlite3_path" != ""; then
+            ac_sqlite3_cppflags="-I$ac_sqlite3_path/include"
+            ac_sqlite3_ldflags="-L$ac_sqlite3_path/lib"
+        else
+            for ac_sqlite3_path_tmp in /usr /usr/local /opt ; do
+                if test -f "$ac_sqlite3_path_tmp/include/$ac_sqlite3_header" \
+                    && test -r "$ac_sqlite3_path_tmp/include/$ac_sqlite3_header"; then
+                    ac_sqlite3_path=$ac_sqlite3_path_tmp
+                    ac_sqlite3_cppflags="-I$ac_sqlite3_path/include"
+                    ac_sqlite3_ldflags="-L$ac_sqlite3_path/lib"
+                    break;
+                fi
+            done
+        fi
+
+        saved_CPPFLAGS="$CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS $ac_sqlite3_cppflags"
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+            #include <sqlite3.h>
+int
+main ()
+{
+
+#if (SQLITE_VERSION_NUMBER >= $sqlite3_version_req_number)
+// Everything is okay
+#else
+#  error SQLite version is too old
+#endif
+
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+            found_sqlite3="yes"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+            found_sqlite3="no"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+        CPPFLAGS="$saved_CPPFLAGS"
+
+        if test "$found_sqlite3" = "yes"; then
+
+            SQLITE3_CPPFLAGS="$ac_sqlite3_cppflags"
+            SQLITE3_LDFLAGS="$ac_sqlite3_ldflags"
+            SQLITE3_LIBS="-lsqlite3"
+
+            ac_sqlite3_header_path="$ac_sqlite3_path/include/$ac_sqlite3_header"
+
+                        if test "x$ac_sqlite3_header_path" != "x"; then
+                ac_sqlite3_version=`cat $ac_sqlite3_header_path \
+                    | grep '#define.*SQLITE_VERSION.*\"' | sed -e 's/.* "//' \
+                        | sed -e 's/"//'`
+                if test $ac_sqlite3_version != ""; then
+                    SQLITE3_VERSION=$ac_sqlite3_version
+                else
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Can not find SQLITE_VERSION macro in sqlite3.h header to retrieve SQLite version!" >&5
+$as_echo "$as_me: WARNING: Can not find SQLITE_VERSION macro in sqlite3.h header to retrieve SQLite version!" >&2;}
+                fi
+            fi
+
+
+
+
+
+
+$as_echo "#define HAVE_SQLITE3 1" >>confdefs.h
+
+        fi
+    fi
+
 	if test "x$WANT_SQLITE3" = "xyes"; then
 		if test "x$have_db" != "xno"; then
 			as_fn_error $? "You can configure for only one database." "$LINENO" 5
@@ -7840,7 +8935,336 @@ $as_echo "no" >&6; }
 	PROXY_LDFLAGS="${PROXY_LDFLAGS} ${DB_LDFLAGS}"
 	PROXY_LIBS="${PROXY_LIBS} ${DB_LIBS}"
 
-		JABBER_CHECK_CONFIG()
+
+
+
+
+
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
+$as_echo "$ac_pt_PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
+$as_echo_n "checking pkg-config is at least version $_pkg_min_version... " >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+		PKG_CONFIG=""
+	fi
+fi
+
+
+# Check whether --with-jabber was given.
+if test "${with_jabber+set}" = set; then :
+  withval=$with_jabber;
+	if test "$withval" = "no"; then
+            want_jabber="no"
+            _libiksemel_with="no"
+        elif test "$withval" = "yes"; then
+            want_jabber="yes"
+            _libiksemel_with="yes"
+        else
+            want_jabber="yes"
+            _libiksemel_with=$withval
+        fi
+
+else
+  _libiksemel_with=no
+fi
+
+
+  if test "x$_libiksemel_with" != x"no"; then
+       if test "$_libiksemel_with" = "yes"; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for IKSEMEL" >&5
+$as_echo_n "checking for IKSEMEL... " >&6; }
+
+if test -n "$IKSEMEL_CFLAGS"; then
+    pkg_cv_IKSEMEL_CFLAGS="$IKSEMEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"iksemel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "iksemel") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_IKSEMEL_CFLAGS=`$PKG_CONFIG --cflags "iksemel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$IKSEMEL_LIBS"; then
+    pkg_cv_IKSEMEL_LIBS="$IKSEMEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"iksemel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "iksemel") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_IKSEMEL_LIBS=`$PKG_CONFIG --libs "iksemel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        IKSEMEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "iksemel" 2>&1`
+        else
+	        IKSEMEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "iksemel" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$IKSEMEL_PKG_ERRORS" >&5
+
+
+			 found_iksemel="no"
+			 found_jabber="no"
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+			 found_iksemel="no"
+			 found_jabber="no"
+
+else
+	IKSEMEL_CFLAGS=$pkg_cv_IKSEMEL_CFLAGS
+	IKSEMEL_LIBS=$pkg_cv_IKSEMEL_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+			 JABBER_INCDIR="$IKSEMEL_CPPFLAGS"
+			 JABBER_LIBDIR="$IKSEMEL_LDFLAGS"
+			 JABBER_LIBS="-liksemel"
+
+fi
+       else
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for iksemel support" >&5
+$as_echo_n "checking for iksemel support... " >&6; }
+
+               if test -f $_libiksemel_with/include/iksemel.h; then
+                       JABBER_INCDIR="-I$_libiksemel_with/include"
+                       JABBER_LIBDIR="-L$_libiksemel_with/lib"
+                       JABBER_LIBS="-liksemel"
+		       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+               else
+                       found_iksemel="no"
+                       found_jabber="no"
+                       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+               fi
+       fi
+
+       if test "x$found_iksemel" != "xno" ; then
+
+               for ac_func in getaddrinfo
+do :
+  ac_fn_c_check_func "$LINENO" "getaddrinfo" "ac_cv_func_getaddrinfo"
+if test "x$ac_cv_func_getaddrinfo" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GETADDRINFO 1
+_ACEOF
+
+fi
+done
+
+
+               JABBER_CPPFLAGS=$JABBER_INCDIR
+               JABBER_LDFLAGS="$JABBER_LIBDIR"
+
+		if test "x$enable_static" = "xyes"; then
+			for i in -liksemel -lgnutls -ltasn1 -lgcrypt -lgpg-error; do
+				case $i in
+					-liksemel)
+				;;
+					-l*)
+						_lib_name=`echo "$i" | cut -b3-`
+						as_ac_Lib=`$as_echo "ac_cv_lib_$_lib_name ''_main" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -l$_lib_name " >&5
+$as_echo_n "checking for main in -l$_lib_name ... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$_lib_name   $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+
+							JABBER_LIBS="$JABBER_LIBS $i"
+
+else
+
+							as_fn_error $? "Not found $_lib_name library" "$LINENO" 5
+
+fi
+
+				;;
+				esac
+			done
+		fi
+
+               found_iksemel="yes"
+               found_jabber="yes"
+
+$as_echo "#define HAVE_IKSEMEL 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_JABBER 1" >>confdefs.h
+
+       fi
+  fi
+
+
+
+
+
+  unset _libiksemel_with
+
 	if test "x$want_jabber" = "xyes"; then
 		if test "x$found_jabber" != "xyes"; then
 			as_fn_error $? "Jabber library not found" "$LINENO" 5
@@ -7852,7 +9276,225 @@ $as_echo "no" >&6; }
 	SERVER_LDFLAGS="$SERVER_LDFLAGS $JABBER_LDFLAGS"
 	SERVER_LIBS="$SERVER_LIBS $JABBER_LIBS"
 
-		LIBXML2_CHECK_CONFIG()
+
+    LIBXML2_CONFIG="no"
+
+
+# Check whether --with-libxml2 was given.
+if test "${with_libxml2+set}" = set; then :
+  withval=$with_libxml2;
+        if test "$withval" = "no"; then
+            want_libxml2="no"
+        elif test "$withval" = "yes"; then
+            want_libxml2="yes"
+        else
+            want_libxml2="yes"
+            LIBXML2_CONFIG="$withval"
+        fi
+
+else
+  want_libxml2="no"
+
+fi
+
+
+    LIBXML2_CFLAGS=""
+    LIBXML2_LDFLAGS=""
+    LIBXML2_LIBS=""
+    LIBXML2_VERSION=""
+
+
+    if test "$want_libxml2" = "yes"; then
+
+        # Extract the first word of "xml2-config", so it can be a program name with args.
+set dummy xml2-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LIBXML2_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LIBXML2_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LIBXML2_CONFIG="$LIBXML2_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LIBXML2_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LIBXML2_CONFIG=$ac_cv_path_LIBXML2_CONFIG
+if test -n "$LIBXML2_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIBXML2_CONFIG" >&5
+$as_echo "$LIBXML2_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+        if test -x "$LIBXML2_CONFIG"; then
+
+            LIBXML2_CFLAGS="`$LIBXML2_CONFIG --cflags`"
+
+            _full_libxml2_libs="`$LIBXML2_CONFIG --libs`"
+
+            for i in $_full_libxml2_libs; do
+                case $i in
+                   -lxml2)
+                        ;;
+                   -L*)
+                        LIBXML2_LDFLAGS="${LIBXML2_LDFLAGS} $i"
+                        ;;
+                esac
+            done
+
+            if test "x$enable_static" = "xyes"; then
+                for i in $_full_libxml2_libs; do
+                    case $i in
+                        -lxml2)
+                            ;;
+                        -l*)
+                            _lib_name="`echo "$i" | cut -b3-`"
+                            as_ac_Lib=`$as_echo "ac_cv_lib_$_lib_name''_main" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -l$_lib_name" >&5
+$as_echo_n "checking for main in -l$_lib_name... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$_lib_name  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+
+                                    LIBXML2_LIBS="$LIBXML2_LIBS $i"
+
+else
+
+                                    as_fn_error $? "Not found $_lib_name library" "$LINENO" 5
+
+fi
+
+                            ;;
+                    esac
+                done
+            fi
+
+            _save_libxml2_libs="${LIBS}"
+            _save_libxml2_ldflags="${LDFLAGS}"
+            _save_libxml2_cflags="${CFLAGS}"
+            LIBS="${LIBS} ${LIBXML2_LIBS}"
+            LDFLAGS="${LDFLAGS} ${LIBXML2_LDFLAGS}"
+            CFLAGS="${CFLAGS} ${LIBXML2_CFLAGS}"
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlReadMemory in -lxml2" >&5
+$as_echo_n "checking for xmlReadMemory in -lxml2... " >&6; }
+if ${ac_cv_lib_xml2_xmlReadMemory+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lxml2  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char xmlReadMemory ();
+int
+main ()
+{
+return xmlReadMemory ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_xml2_xmlReadMemory=yes
+else
+  ac_cv_lib_xml2_xmlReadMemory=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_xml2_xmlReadMemory" >&5
+$as_echo "$ac_cv_lib_xml2_xmlReadMemory" >&6; }
+if test "x$ac_cv_lib_xml2_xmlReadMemory" = xyes; then :
+
+                    LIBXML2_LIBS="-lxml2 ${LIBXML2_LIBS}"
+
+else
+
+                    as_fn_error $? "Not found libxml2 library" "$LINENO" 5
+
+fi
+
+
+            LIBS="${_save_libxml2_libs}"
+            LDFLAGS="${_save_libxml2_ldflags}"
+            CFLAGS="${_save_libxml2_cflags}"
+            unset _save_libxml2_libs
+            unset _save_libxml2_ldflags
+            unset _save_libxml2_cflags
+
+            LIBXML2_VERSION=`$LIBXML2_CONFIG --version`
+
+
+$as_echo "#define HAVE_LIBXML2 1" >>confdefs.h
+
+
+            found_libxml2="yes"
+        else
+            found_libxml2="no"
+        fi
+    fi
+
+
+
+
+
+
 	if test "x$want_libxml2" = "xyes"; then
 		if test "x$found_libxml2" != "xyes"; then
 			as_fn_error $? "LIBXML2 library not found" "$LINENO" 5
@@ -7867,7 +9509,189 @@ $as_echo "no" >&6; }
 	PROXY_LDFLAGS="$PROXY_LDFLAGS $LIBXML2_LDFLAGS"
 	PROXY_LIBS="$PROXY_LIBS $LIBXML2_LIBS"
 
-		LIBUNIXODBC_CHECK_CONFIG()
+
+
+# Check whether --with-unixodbc was given.
+if test "${with_unixodbc+set}" = set; then :
+  withval=$with_unixodbc;  if test "x$withval" = "xno"; then
+            want_unixodbc="no"
+        elif test "x$withval" = "xyes"; then
+            want_unixodbc="yes"
+        else
+            want_unixodbc="yes"
+            specified_unixodbc="yes"
+            ODBC_CONFIG=$withval
+        fi
+
+else
+  want_unixodbc=no
+fi
+
+
+  if test "x$want_unixodbc" != "xno"; then
+	# Extract the first word of "odbc_config", so it can be a program name with args.
+set dummy odbc_config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ODBC_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ODBC_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ODBC_CONFIG="$ODBC_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ODBC_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ODBC_CONFIG=$ac_cv_path_ODBC_CONFIG
+if test -n "$ODBC_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ODBC_CONFIG" >&5
+$as_echo "$ODBC_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+	found_unixodbc="yes"
+
+	UNIXODBC_LIBS="-lodbc"
+
+	if test -x "$ODBC_CONFIG"; then
+		UNIXODBC_CFLAGS="-I`$ODBC_CONFIG --include-prefix`"
+		UNIXODBC_LDFLAGS="-L`$ODBC_CONFIG --lib-prefix`"
+	elif test "x$specified_unixodbc" = "xyes"; then
+		found_unixodbc="file $ODBC_CONFIG not found or not executable"
+	fi
+
+	if test "x$found_unixodbc" = "xyes"; then
+		_save_unixodbc_cflags="${CFLAGS}"
+		_save_unixodbc_ldflags="${LDFLAGS}"
+		_save_unixodbc_libs="${LIBS}"
+		CFLAGS="${CFLAGS} ${UNIXODBC_CFLAGS}"
+		LDFLAGS="${LDFLAGS} ${UNIXODBC_LDFLAGS}"
+		LIBS="${LIBS} ${UNIXODBC_LIBS}"
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lodbc" >&5
+$as_echo_n "checking for main in -lodbc... " >&6; }
+if ${ac_cv_lib_odbc_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lodbc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_odbc_main=yes
+else
+  ac_cv_lib_odbc_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_odbc_main" >&5
+$as_echo "$ac_cv_lib_odbc_main" >&6; }
+if test "x$ac_cv_lib_odbc_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBODBC 1
+_ACEOF
+
+  LIBS="-lodbc $LIBS"
+
+else
+  found_unixodbc="unixODBC library not found"
+fi
+
+
+		if test "x$found_unixodbc" = "xyes"; then
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether unixodbc is usable" >&5
+$as_echo_n "checking whether unixodbc is usable... " >&6; }
+if ${libunixodbc_cv_usable+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sql.h>
+#include <sqlext.h>
+#include <sqltypes.h>
+
+int
+main ()
+{
+
+/* try and use a few common options to force a failure if we are missing symbols or can't link */
+SQLRETURN	retcode;
+
+retcode = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, (SQLHENV*)0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  libunixodbc_cv_usable=yes
+else
+  libunixodbc_cv_usable=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $libunixodbc_cv_usable" >&5
+$as_echo "$libunixodbc_cv_usable" >&6; }
+
+			CFLAGS="${_save_unixodbc_cflags}"
+			LDFLAGS="${_save_unixodbc_ldflags}"
+			LIBS="${_save_unixodbc_libs}"
+			unset _save_unixodbc_cflags
+			unset _save_unixodbc_ldflags
+			unset _save_unixodbc_libs
+
+			if test "$libunixodbc_cv_usable" != "yes"; then
+				found_unixodbc="cannot use unixODBC library"
+			else
+
+$as_echo "#define HAVE_UNIXODBC 1" >>confdefs.h
+
+			fi
+		fi
+	fi
+  fi
+
+
+
+
+
+
 	if test "x$want_unixodbc" = "xyes"; then
 		if test "x$found_unixodbc" != "xyes"; then
 			as_fn_error $? "$found_unixodbc" "$LINENO" 5
@@ -7881,7 +9705,253 @@ $as_echo "no" >&6; }
 	PROXY_LDFLAGS="$PROXY_LDFLAGS $UNIXODBC_LDFLAGS"
 	PROXY_LIBS="$PROXY_LIBS $UNIXODBC_LIBS"
 
-		LIBNETSNMP_CHECK_CONFIG()
+
+  _libnetsnmp_config="no"
+
+
+# Check whether --with-net-snmp was given.
+if test "${with_net_snmp+set}" = set; then :
+  withval=$with_net_snmp;  if test "$withval" = "no"; then
+            want_netsnmp="no"
+        elif test "$withval" = "yes"; then
+            want_netsnmp="yes"
+        else
+            want_netsnmp="yes"
+            _libnetsnmp_config=$withval
+        fi
+
+else
+  want_netsnmp=no
+fi
+
+
+  SNMP_CFLAGS=""
+  SNMP_LDFLAGS=""
+  SNMP_LIBS=""
+
+  if test "x$want_netsnmp" != "xno"; then
+
+        # Extract the first word of "net-snmp-config", so it can be a program name with args.
+set dummy net-snmp-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path__libnetsnmp_config+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $_libnetsnmp_config in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path__libnetsnmp_config="$_libnetsnmp_config" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path__libnetsnmp_config="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+_libnetsnmp_config=$ac_cv_path__libnetsnmp_config
+if test -n "$_libnetsnmp_config"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $_libnetsnmp_config" >&5
+$as_echo "$_libnetsnmp_config" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+	if test -x "$_libnetsnmp_config"; then
+
+		_full_libnetsnmp_cflags="`$_libnetsnmp_config --cflags`"
+		for i in $_full_libnetsnmp_cflags; do
+			case $i in
+				-I*)
+					SNMP_CFLAGS="$SNMP_CFLAGS $i"
+
+			;;
+			esac
+		done
+
+		_full_libnetsnmp_libs="`$_libnetsnmp_config --netsnmp-libs`"
+		for i in $_full_libnetsnmp_libs; do
+			case $i in
+				-L*)
+					SNMP_LDFLAGS="${SNMP_LDFLAGS} $i"
+			;;
+				-l*)
+					SNMP_LIBS="${SNMP_LIBS} $i"
+			;;
+			esac
+		done
+
+		if test "x$enable_static" = "xyes"; then
+			_full_libnetsnmp_libs="`$_libnetsnmp_config --libs`"
+			for i in $_full_libnetsnmp_libs; do
+				case $i in
+					-lnetsnmp)
+				;;
+					-l*)
+						_lib_name="`echo "$i" | cut -b3-`"
+						as_ac_Lib=`$as_echo "ac_cv_lib_$_lib_name''_main" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -l$_lib_name" >&5
+$as_echo_n "checking for main in -l$_lib_name... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$_lib_name  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+
+								SNMP_LIBS="$SNMP_LIBS $i"
+
+else
+
+								as_fn_error $? "Not found $_lib_name library" "$LINENO" 5
+
+fi
+
+
+				;;
+				esac
+			done
+		fi
+
+		_save_netsnmp_cflags="$CFLAGS"
+		_save_netsnmp_ldflags="$LDFLAGS"
+		_save_netsnmp_libs="$LIBS"
+		CFLAGS="$CFLAGS $SNMP_CFLAGS"
+		LDFLAGS="$LDFLAGS $SNMP_LDFLAGS"
+		LIBS="$LIBS $SNMP_LIBS"
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lnetsnmp" >&5
+$as_echo_n "checking for main in -lnetsnmp... " >&6; }
+if ${ac_cv_lib_netsnmp_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lnetsnmp  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_netsnmp_main=yes
+else
+  ac_cv_lib_netsnmp_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_netsnmp_main" >&5
+$as_echo "$ac_cv_lib_netsnmp_main" >&6; }
+if test "x$ac_cv_lib_netsnmp_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBNETSNMP 1
+_ACEOF
+
+  LIBS="-lnetsnmp $LIBS"
+
+else
+  as_fn_error $? "Not found Net-SNMP library" "$LINENO" 5
+fi
+
+
+				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for localname in struct snmp_session" >&5
+$as_echo_n "checking for localname in struct snmp_session... " >&6; }
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+int
+main ()
+{
+
+struct snmp_session session;
+session.localname = "";
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_NETSNMP_SESSION_LOCALNAME 1" >>confdefs.h
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+		CFLAGS="$_save_netsnmp_cflags"
+		LDFLAGS="$_save_netsnmp_ldflags"
+		LIBS="$_save_netsnmp_libs"
+		unset _save_netsnmp_cflags
+		unset _save_netsnmp_ldflags
+		unset _save_netsnmp_libs
+
+
+$as_echo "#define HAVE_NETSNMP 1" >>confdefs.h
+
+
+		found_netsnmp="yes"
+	else
+		found_netsnmp="no"
+	fi
+  fi
+
+
+
+
+
 	if test "x$want_netsnmp" = "xyes"; then
 		if test "x$found_netsnmp" != "xyes"; then
 			as_fn_error $? "Invalid Net-SNMP directory - unable to find net-snmp-config" "$LINENO" 5
@@ -7896,7 +9966,159 @@ $as_echo "no" >&6; }
 	PROXY_LDFLAGS="$PROXY_LDFLAGS $SNMP_LDFLAGS"
 	PROXY_LIBS="$PROXY_LIBS $SNMP_LIBS"
 
-		LIBSSH2_CHECK_CONFIG()
+
+
+# Check whether --with-ssh2 was given.
+if test "${with_ssh2+set}" = set; then :
+  withval=$with_ssh2;
+	if test "$withval" = "no"; then
+	    want_ssh2="no"
+	    _libssh2_dir="no"
+	elif test "$withval" = "yes"; then
+	    want_ssh2="yes"
+	    _libssh2_dir="no"
+	else
+	    want_ssh2="yes"
+	    _libssh2_dir=$withval
+	fi
+	accept_ssh2_version="no"
+
+else
+  want_ssh2=no
+
+fi
+
+
+  if test "x$want_ssh2" = "xyes"; then
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSH2 support" >&5
+$as_echo_n "checking for SSH2 support... " >&6; }
+     if test "x$_libssh2_dir" = "xno"; then
+       if test -f /usr/include/libssh2.h; then
+         SSH2_CFLAGS=-I/usr/include
+         SSH2_LDFLAGS=-L/usr/lib
+         SSH2_LIBS="-lssh2"
+         found_ssh2="yes"
+
+	# Zabbix minimal major supported version of libssh2:
+	minimal_libssh2_major_version=1
+
+	# get the major version
+	found_ssh2_version_major=`cat /usr/include/libssh2.h | $EGREP \#define.*LIBSSH2_VERSION_MAJOR | $AWK '{print $3;}'`
+
+	accept_ssh2_version="no"
+
+	if test $found_ssh2_version_major -ge $minimal_libssh2_major_version; then
+		accept_ssh2_version="yes"
+	fi;
+
+       elif test -f /usr/local/include/libssh2.h; then
+         SSH2_CFLAGS=-I/usr/local/include
+         SSH2_LDFLAGS=-L/usr/local/lib
+         SSH2_LIBS="-lssh2"
+         found_ssh2="yes"
+
+	# Zabbix minimal major supported version of libssh2:
+	minimal_libssh2_major_version=1
+
+	# get the major version
+	found_ssh2_version_major=`cat /usr/local/include/libssh2.h | $EGREP \#define.*LIBSSH2_VERSION_MAJOR | $AWK '{print $3;}'`
+
+	accept_ssh2_version="no"
+
+	if test $found_ssh2_version_major -ge $minimal_libssh2_major_version; then
+		accept_ssh2_version="yes"
+	fi;
+
+       else #libraries are not found in default directories
+         found_ssh2="no"
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+       fi # test -f /usr/include/libssh2.h; then
+     else # test "x$_libssh2_dir" = "xno"; then
+       if test -f $_libssh2_dir/include/libssh2.h; then
+	 SSH2_CFLAGS=-I$_libssh2_dir/include
+         SSH2_LDFLAGS=-L$_libssh2_dir/lib
+         SSH2_LIBS="-lssh2"
+         found_ssh2="yes"
+
+	# Zabbix minimal major supported version of libssh2:
+	minimal_libssh2_major_version=1
+
+	# get the major version
+	found_ssh2_version_major=`cat $_libssh2_dir/include/libssh2.h | $EGREP \#define.*LIBSSH2_VERSION_MAJOR | $AWK '{print $3;}'`
+
+	accept_ssh2_version="no"
+
+	if test $found_ssh2_version_major -ge $minimal_libssh2_major_version; then
+		accept_ssh2_version="yes"
+	fi;
+
+       else #if test -f $_libssh2_dir/include/libssh2.h; then
+         found_ssh2="no"
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+       fi #test -f $_libssh2_dir/include/libssh2.h; then
+     fi #if test "x$_libssh2_dir" = "xno"; then
+  fi # if test "x$want_ssh2" != "xno"; then
+
+  if test "x$found_ssh2" = "xyes"; then
+    am_save_cflags="$CFLAGS"
+    am_save_ldflags="$LDFLAGS"
+    am_save_libs="$LIBS"
+
+    CFLAGS="$CFLAGS $SSH2_CFLAGS"
+    LDFLAGS="$LDFLAGS $SSH2_LDFLAGS"
+    LIBS="$LIBS $SSH2_LIBS"
+
+    found_ssh2="no"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <libssh2.h>
+
+int
+main ()
+{
+
+	LIBSSH2_SESSION	*session;
+	session = libssh2_session_init();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  found_ssh2="yes"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+
+    CFLAGS="$am_save_cflags"
+    LDFLAGS="$am_save_ldflags"
+    LIBS="$am_save_libs"
+
+    if test "x$found_ssh2" = "xyes"; then
+
+$as_echo "#define HAVE_SSH2 1" >>confdefs.h
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      SSH2_CFLAGS=""
+      SSH2_LDFLAGS=""
+      SSH2_LIBS=""
+    fi
+  fi
+
+
+
+
+
+
 	if test "x$want_ssh2" = "xyes"; then
 		if test "x$found_ssh2" != "xyes"; then
 			as_fn_error $? "SSH2 library not found" "$LINENO" 5
@@ -7914,7 +10136,79 @@ $as_echo "no" >&6; }
 	PROXY_LIBS="$PROXY_LIBS $SSH2_LIBS"
 
 	found_openipmi="no"
-		LIBOPENIPMI_CHECK_CONFIG()
+
+
+# Check whether --with-openipmi was given.
+if test "${with_openipmi+set}" = set; then :
+  withval=$with_openipmi;  if test "$withval" = "no"; then
+            want_openipmi="no"
+            _libopenipmi_with="no"
+        elif test "$withval" = "yes"; then
+            want_openipmi="yes"
+            _libopenipmi_with="yes"
+        else
+            want_openipmi="yes"
+            _libopenipmi_with=$withval
+        fi
+
+else
+  _libopenipmi_with=no
+fi
+
+
+  if test "x$_libopenipmi_with" != x"no"; then
+       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OPENIPMI support" >&5
+$as_echo_n "checking for OPENIPMI support... " >&6; }
+
+       if test "$_libopenipmi_with" = "yes"; then
+               if test -f /usr/local/include/OpenIPMI/ipmiif.h; then
+                       OPENIPMI_INCDIR=/usr/local/include
+                       OPENIPMI_LIBDIR=/usr/local/lib
+		       found_openipmi="yes"
+               elif test -f /usr/include/OpenIPMI/ipmiif.h; then
+                       OPENIPMI_INCDIR=/usr/include
+                       OPENIPMI_LIBDIR=/usr/lib
+		       found_openipmi="yes"
+               else
+                       found_openipmi="no"
+                       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+               fi
+       else
+               if test -f $_libopenipmi_with/include/OpenIPMI/ipmiif.h; then
+                       OPENIPMI_INCDIR=$_libopenipmi_with/include
+                       OPENIPMI_LIBDIR=$_libopenipmi_with/lib
+		       found_openipmi="yes"
+               else
+                       found_openipmi="no"
+                       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+               fi
+       fi
+
+       if test "x$found_openipmi" != "xno" ; then
+               OPENIPMI_CFLAGS="-I$OPENIPMI_INCDIR"
+               OPENIPMI_LDFLAGS="-L$OPENIPMI_LIBDIR"
+               OPENIPMI_LIBS="-lOpenIPMI -lOpenIPMIposix"
+
+               found_openipmi="yes"
+
+$as_echo "#define HAVE_OPENIPMI 1" >>confdefs.h
+
+
+$as_echo "#define OPENIPMI_DEPRECATED 1" >>confdefs.h
+
+               { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	fi
+  fi
+
+
+
+
+
+  unset _libopenipmi_with
+
 	if test "x$want_openipmi" = "xyes"; then
 		if test "x$found_openipmi" != "xyes"; then
 			as_fn_error $? "Invalid OPENIPMI directory - unable to find ipmiif.h" "$LINENO" 5
@@ -8043,7 +10337,214 @@ fi
 
 
 found_ldap="no"
-LIBLDAP_CHECK_CONFIG()
+
+
+# Check whether --with-ldap was given.
+if test "${with_ldap+set}" = set; then :
+  withval=$with_ldap;  if test "$withval" = "no"; then
+            want_ldap="no"
+            _libldap_with="no"
+        elif test "$withval" = "yes"; then
+            want_ldap="yes"
+            _libldap_with="yes"
+        else
+            want_ldap="yes"
+            _libldap_with=$withval
+        fi
+
+else
+  _libldap_with=no
+fi
+
+
+  if test "x$_libldap_with" != x"no"; then
+       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LDAP support" >&5
+$as_echo_n "checking for LDAP support... " >&6; }
+
+       if test "$_libldap_with" = "yes"; then
+               if test -f /usr/local/openldap/include/ldap.h; then
+                       LDAP_INCDIR=/usr/local/openldap/include/
+                       LDAP_LIBDIR=/usr/local/openldap/lib/
+		       found_ldap="yes"
+               elif test -f /usr/include/ldap.h; then
+                       LDAP_INCDIR=/usr/include
+                       LDAP_LIBDIR=/usr/lib
+		       found_ldap="yes"
+               elif test -f /usr/local/include/ldap.h; then
+                       LDAP_INCDIR=/usr/local/include
+                       LDAP_LIBDIR=/usr/local/lib
+		       found_ldap="yes"
+               else
+                       found_ldap="no"
+                       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+               fi
+       else
+               if test -f $_libldap_with/include/ldap.h; then
+                       LDAP_INCDIR=$_libldap_with/include
+                       LDAP_LIBDIR=$_libldap_with/lib
+		       found_ldap="yes"
+               else
+                       found_ldap="no"
+                       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+               fi
+       fi
+
+       if test "x$found_ldap" != "xno"; then
+               if test "x$enable_static" = "xyes"; then
+                       LDAP_LIBS=" -lgnutls -lpthread -lsasl2 $LDAP_LIBS"
+               fi
+
+               LDAP_CPPFLAGS="-I$LDAP_INCDIR"
+               LDAP_LDFLAGS="-L$LDAP_LIBDIR"
+               LDAP_LIBS="-lldap -llber $LDAP_LIBS"
+
+               found_ldap="yes"
+
+$as_echo "#define HAVE_LDAP 1" >>confdefs.h
+
+
+$as_echo "#define LDAP_DEPRECATED 1" >>confdefs.h
+
+               { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+	       if test "x$enable_static" = "xyes"; then
+                       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lgnutls" >&5
+$as_echo_n "checking for main in -lgnutls... " >&6; }
+if ${ac_cv_lib_gnutls_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgnutls  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gnutls_main=yes
+else
+  ac_cv_lib_gnutls_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gnutls_main" >&5
+$as_echo "$ac_cv_lib_gnutls_main" >&6; }
+if test "x$ac_cv_lib_gnutls_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGNUTLS 1
+_ACEOF
+
+  LIBS="-lgnutls $LIBS"
+
+else
+  as_fn_error $? "Not found GnuTLS library" "$LINENO" 5
+fi
+
+                       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lpthread" >&5
+$as_echo_n "checking for main in -lpthread... " >&6; }
+if ${ac_cv_lib_pthread_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpthread  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_pthread_main=yes
+else
+  ac_cv_lib_pthread_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pthread_main" >&5
+$as_echo "$ac_cv_lib_pthread_main" >&6; }
+if test "x$ac_cv_lib_pthread_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPTHREAD 1
+_ACEOF
+
+  LIBS="-lpthread $LIBS"
+
+else
+  as_fn_error $? "Not found Pthread library" "$LINENO" 5
+fi
+
+                       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lsasl2" >&5
+$as_echo_n "checking for main in -lsasl2... " >&6; }
+if ${ac_cv_lib_sasl2_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsasl2  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sasl2_main=yes
+else
+  ac_cv_lib_sasl2_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sasl2_main" >&5
+$as_echo "$ac_cv_lib_sasl2_main" >&6; }
+if test "x$ac_cv_lib_sasl2_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSASL2 1
+_ACEOF
+
+  LIBS="-lsasl2 $LIBS"
+
+else
+  as_fn_error $? "Not found SASL2 library" "$LINENO" 5
+fi
+
+               fi
+
+       fi
+  fi
+
+
+
+
+
+  unset _libldap_with
+
 if test "x$want_ldap" = "xyes"; then
 	if test "x$found_ldap" != "xyes"; then
 		as_fn_error $? "Invalid LDAP directory - unable to find ldap.h" "$LINENO" 5
@@ -8081,20 +10582,27 @@ found_curl="no"
 
 
 
-
-
-
+  _libcurl_config="no"
 
 
 # Check whether --with-libcurl was given.
 if test "${with_libcurl+set}" = set; then :
-  withval=$with_libcurl; _libcurl_with=$withval
+  withval=$with_libcurl;
+        if test "x$withval" = "xno"; then
+            want_curl="no"
+        elif test "x$withval" = "xyes"; then
+            want_curl="yes"
+        else
+            want_curl="yes"
+            _libcurl_config=$withval
+        fi
+
 else
-  _libcurl_with=yes
+  want_curl=no
 fi
 
 
-  if test "$_libcurl_with" != "no" ; then
+  if test "x$want_curl" != "xno"; then
 
      for ac_prog in gawk mawk nawk awk
 do
@@ -8141,53 +10649,9 @@ done
 
      _libcurl_version_parse="eval $AWK '{split(\$NF,A,\".\"); X=256*256*A[1]+256*A[2]+A[3]; print X;}'"
 
-     _libcurl_try_link=yes
+     _libcurl_try_link=no
 
-     if test -d "$_libcurl_with" ; then
-        LIBCURL_CPPFLAGS="-I$withval/include"
-        _libcurl_ldflags="-L$withval/lib"
-        # Extract the first word of "curl-config", so it can be a program name with args.
-set dummy curl-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path__libcurl_config+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $_libcurl_config in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path__libcurl_config="$_libcurl_config" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in "$withval/bin"
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path__libcurl_config="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-_libcurl_config=$ac_cv_path__libcurl_config
-if test -n "$_libcurl_config"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $_libcurl_config" >&5
-$as_echo "$_libcurl_config" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-     else
-        # Extract the first word of "curl-config", so it can be a program name with args.
+     # Extract the first word of "curl-config", so it can be a program name with args.
 set dummy curl-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8227,9 +10691,8 @@ $as_echo "no" >&6; }
 fi
 
 
-     fi
 
-     if test x$_libcurl_config != "x" ; then
+     if test -x "$_libcurl_config"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the version of libcurl" >&5
 $as_echo_n "checking for the version of libcurl... " >&6; }
 if ${libcurl_cv_lib_curl_version+:} false; then :
@@ -8240,63 +10703,183 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $libcurl_cv_lib_curl_version" >&5
 $as_echo "$libcurl_cv_lib_curl_version" >&6; }
 
-        _libcurl_version=`echo $libcurl_cv_lib_curl_version | $_libcurl_version_parse`
-        _libcurl_wanted=`echo 7.13.1 | $_libcurl_version_parse`
+	_libcurl_version=`echo $libcurl_cv_lib_curl_version | $_libcurl_version_parse`
+	_libcurl_wanted=`echo 7.13.1 | $_libcurl_version_parse`
 
-        if test $_libcurl_wanted -gt 0 ; then
-           { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libcurl >= version 7.13.1" >&5
+        if test $_libcurl_wanted -gt 0; then
+	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libcurl >= version 7.13.1" >&5
 $as_echo_n "checking for libcurl >= version 7.13.1... " >&6; }
 if ${libcurl_cv_lib_version_ok+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-              if test $_libcurl_version -ge $_libcurl_wanted ; then
-                 libcurl_cv_lib_version_ok=yes
-              else
-                 libcurl_cv_lib_version_ok=no
-              fi
+   	      if test $_libcurl_version -ge $_libcurl_wanted; then
+	         libcurl_cv_lib_version_ok=yes
+      	      else
+	         libcurl_cv_lib_version_ok=no
+  	      fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $libcurl_cv_lib_version_ok" >&5
 $as_echo "$libcurl_cv_lib_version_ok" >&6; }
         fi
 
-        if test $_libcurl_wanted -eq 0 || test x$libcurl_cv_lib_version_ok = xyes ; then
-           if test x"$LIBCURL_CPPFLAGS" = "x" ; then
-              LIBCURL_CPPFLAGS=`$_libcurl_config --cflags`
+	if test $_libcurl_wanted -eq 0 || test "x$libcurl_cv_lib_version_ok" = "xyes"; then
+           if test "x$LIBCURL_CFLAGS" = "x"; then
+              LIBCURL_CFLAGS=`$_libcurl_config --cflags`
            fi
-           if test x"$LIBCURL" = "x" ; then
-              LIBCURL=`$_libcurl_config --libs`
+           if test "x$LIBCURL_LIBS" = "x"; then
+		_full_libcurl_libs=`$_libcurl_config --libs`
+		for i in $_full_libcurl_libs; do
+			case $i in
+				-L*)
+					LIBCURL_LDFLAGS="$LIBCURL_LDFLAGS $i"
+			;;
+				-l*)
+					LIBCURL_LIBS="$LIBCURL_LIBS $i"
+			;;
+			esac
+		done
+
+		if test "x$enable_static" = "xyes"; then
+			_full_libcurl_libs=`$_libcurl_config --static-libs`
+			for i in $_full_libcurl_libs; do
+				case $i in
+					-lcurl)
+				;;
+					-l*)
+						_lib_name=`echo "$i" | cut -b3-`
+						as_ac_Lib=`$as_echo "ac_cv_lib_$_lib_name ''_main" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -l$_lib_name " >&5
+$as_echo_n "checking for main in -l$_lib_name ... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$_lib_name   $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+
+								LIBCURL_LIBS="$LIBCURL_LIBS $i"
+
+else
+
+								as_fn_error $? "static library $_lib_name required for linking libcurl not found" "$LINENO" 5
+
+fi
+
+
+				;;
+				esac
+			done
+		fi
+
+		_save_curl_cflags="$CFLAGS"
+		_save_curl_ldflags="$LDFLAGS"
+		_save_curl_libs="$LIBS"
+		CFLAGS="$CFLAGS $LIBCURL_CFLAGS"
+		LDFLAGS="$LDFLAGS $LIBCURL_LDFLAGS"
+		LIBS="$LIBS $LIBCURL_LIBS"
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lcurl" >&5
+$as_echo_n "checking for main in -lcurl... " >&6; }
+if ${ac_cv_lib_curl_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcurl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_curl_main=yes
+else
+  ac_cv_lib_curl_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curl_main" >&5
+$as_echo "$ac_cv_lib_curl_main" >&6; }
+if test "x$ac_cv_lib_curl_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBCURL 1
+_ACEOF
+
+  LIBS="-lcurl $LIBS"
+
+else
+  as_fn_error $? "libcurl library not found" "$LINENO" 5
+fi
+
+
+		CFLAGS="$_save_curl_cflags"
+		LDFLAGS="$_save_curl_ldflags"
+		LIBS="$_save_curl_libs"
+		unset _save_curl_cflags
+		unset _save_curl_ldflags
+		unset _save_curl_libs
 
               # This is so silly, but Apple actually has a bug in their
-              # curl-config script.  Fixed in Tiger, but there are still
-              # lots of Panther installs around.
+	      # curl-config script.  Fixed in Tiger, but there are still
+	      # lots of Panther installs around.
               case "${host}" in
                  powerpc-apple-darwin7*)
-                    LIBCURL=`echo $LIBCURL | sed -e 's|-arch i386||g'`
+                    LIBCURL_LIBS=`echo $LIBCURL_LIBS | sed -e 's|-arch i386||g'`
                  ;;
               esac
            fi
 
-           # All curl-config scripts support --feature
-           _libcurl_features=`$_libcurl_config --feature`
+	   # All curl-config scripts support --feature
+	   _libcurl_features=`$_libcurl_config --feature`
 
            # Is it modern enough to have --protocols? (7.12.4)
-           if test $_libcurl_version -ge 461828 ; then
+	   if test $_libcurl_version -ge 461828; then
               _libcurl_protocols=`$_libcurl_config --protocols`
            fi
-        else
-           _libcurl_try_link=no
-        fi
 
-        unset _libcurl_wanted
+           _libcurl_try_link=yes
+	fi
+
+	unset _libcurl_wanted
      fi
-
-     if test $_libcurl_try_link = yes ; then
-
+     if test "x$_libcurl_try_link" = "xyes"; then
         # we didn't find curl-config, so let's see if the user-supplied
         # link line (or failing that, "-lcurl") is enough.
-        LIBCURL=${LIBCURL-"$_libcurl_ldflags -lcurl"}
+        LIBCURL_LIBS=${LIBCURL_LIBS-"$_libcurl_libs -lcurl"}
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether libcurl is usable" >&5
 $as_echo_n "checking whether libcurl is usable... " >&6; }
@@ -8304,14 +10887,19 @@ if ${libcurl_cv_lib_curl_usable+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-           _libcurl_save_cppflags=$CPPFLAGS
-           CPPFLAGS="$LIBCURL_CPPFLAGS $CPPFLAGS"
-           _libcurl_save_libs=$LIBS
-           LIBS="$LIBCURL $LIBS"
+		_save_curl_libs="${LIBS}"
+		_save_curl_ldflags="${LDFLAGS}"
+		_save_curl_cflags="${CFLAGS}"
+		LIBS="${LIBS} ${LIBCURL_LIBS}"
+		LDFLAGS="${LDFLAGS} ${LIBCURL_LDFLAGS}"
+		CFLAGS="${CFLAGS} ${LIBCURL_CFLAGS}"
 
            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curl/curl.h>
+#ifndef NULL
+#define NULL (void *)0
+#endif
 int
 main ()
 {
@@ -8322,11 +10910,10 @@ int x;
 curl_easy_setopt(NULL,CURLOPT_URL,NULL);
 x=CURL_ERROR_SIZE;
 x=CURLOPT_WRITEFUNCTION;
-x=CURLOPT_WRITEDATA;
+x=CURLOPT_FILE;
 x=CURLOPT_ERRORBUFFER;
 x=CURLOPT_STDERR;
 x=CURLOPT_VERBOSE;
-if (x) ;
 
   ;
   return 0;
@@ -8340,26 +10927,36 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-           CPPFLAGS=$_libcurl_save_cppflags
-           LIBS=$_libcurl_save_libs
-           unset _libcurl_save_cppflags
-           unset _libcurl_save_libs
+		LIBS="${_save_curl_libs}"
+		LDFLAGS="${_save_curl_ldflags}"
+		CFLAGS="${_save_curl_cflags}"
+		unset _save_curl_libs
+		unset _save_curl_ldflags
+		unset _save_curl_cflags
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $libcurl_cv_lib_curl_usable" >&5
 $as_echo "$libcurl_cv_lib_curl_usable" >&6; }
 
-        if test $libcurl_cv_lib_curl_usable = yes ; then
+	if test "x$libcurl_cv_lib_curl_usable" = "xno"; then
+		link_mode="dynamic"
+		if test "x$enable_static" = "xyes"; then
+			link_mode="static"
+		fi
+		as_fn_error $? "libcurl is not available for ${link_mode} linking" "$LINENO" 5
+	fi
 
-           # Does curl_free() exist in this version of libcurl?
-           # If not, fake it with free()
+	# Does curl_free() exist in this version of libcurl?
+	# If not, fake it with free()
 
-           _libcurl_save_cppflags=$CPPFLAGS
-           CPPFLAGS="$CPPFLAGS $LIBCURL_CPPFLAGS"
-           _libcurl_save_libs=$LIBS
-           LIBS="$LIBS $LIBCURL"
+	_save_curl_libs="${LIBS}"
+	_save_curl_ldflags="${LDFLAGS}"
+	_save_curl_cflags="${CFLAGS}"
+	LIBS="${LIBS} ${LIBCURL_LIBS}"
+	LDFLAGS="${LDFLAGS} ${LIBCURL_LDFLAGS}"
+	CFLAGS="${CFLAGS} ${LIBCURL_CFLAGS}"
 
-           ac_fn_c_check_func "$LINENO" "curl_free" "ac_cv_func_curl_free"
+	ac_fn_c_check_func "$LINENO" "curl_free" "ac_cv_func_curl_free"
 if test "x$ac_cv_func_curl_free" = xyes; then :
 
 else
@@ -8369,10 +10966,20 @@ $as_echo "#define curl_free free" >>confdefs.h
 fi
 
 
-           CPPFLAGS=$_libcurl_save_cppflags
-           LIBS=$_libcurl_save_libs
-           unset _libcurl_save_cppflags
-           unset _libcurl_save_libs
+	ac_fn_c_check_func "$LINENO" "curl_easy_escape" "ac_cv_func_curl_easy_escape"
+if test "x$ac_cv_func_curl_easy_escape" = xyes; then :
+
+$as_echo "#define HAVE_FUNCTION_CURL_EASY_ESCAPE 1" >>confdefs.h
+
+fi
+
+
+	LIBS="${_save_curl_libs}"
+	LDFLAGS="${_save_curl_ldflags}"
+	CFLAGS="${_save_curl_cflags}"
+	unset _save_curl_libs
+	unset _save_curl_ldflags
+	unset _save_curl_cflags
 
 
 $as_echo "#define HAVE_LIBCURL 1" >>confdefs.h
@@ -8380,48 +10987,42 @@ $as_echo "#define HAVE_LIBCURL 1" >>confdefs.h
 
 
 
-           for _libcurl_feature in $_libcurl_features ; do
-              cat >>confdefs.h <<_ACEOF
+	found_curl="yes"
+
+	for _libcurl_feature in $_libcurl_features ; do
+		cat >>confdefs.h <<_ACEOF
 #define `$as_echo "libcurl_feature_$_libcurl_feature" | $as_tr_cpp` 1
 _ACEOF
 
-              eval `$as_echo "libcurl_feature_$_libcurl_feature" | $as_tr_sh`=yes
-           done
+		eval `$as_echo "libcurl_feature_$_libcurl_feature" | $as_tr_sh`=yes
+	done
 
-           if test "x$_libcurl_protocols" = "x" ; then
+	if test "x$_libcurl_protocols" = "x"; then
+		# We don't have --protocols, so just assume that all
+		# protocols are available
+		_libcurl_protocols="HTTP FTP FILE TELNET LDAP DICT"
 
-              # We don't have --protocols, so just assume that all
-              # protocols are available
-              _libcurl_protocols="HTTP FTP FILE TELNET LDAP DICT TFTP"
+		if test "x$libcurl_feature_SSL" = "xyes"; then
+			_libcurl_protocols="$_libcurl_protocols HTTPS"
 
-              if test x$libcurl_feature_SSL = xyes ; then
-                 _libcurl_protocols="$_libcurl_protocols HTTPS"
+			# FTPS wasn't standards-compliant until version
+			# 7.11.0
+			if test $_libcurl_version -ge 461568; then
+				_libcurl_protocols="$_libcurl_protocols FTPS"
+			fi
+		fi
+	fi
 
-                 # FTPS wasn't standards-compliant until version
-                 # 7.11.0 (0x070b00 == 461568)
-                 if test $_libcurl_version -ge 461568; then
-                    _libcurl_protocols="$_libcurl_protocols FTPS"
-                 fi
-              fi
-
-              # RTSP, IMAP, POP3 and SMTP were added in
-              # 7.20.0 (0x071400 == 463872)
-              if test $_libcurl_version -ge 463872; then
-                 _libcurl_protocols="$_libcurl_protocols RTSP IMAP POP3 SMTP"
-              fi
-           fi
-
-           for _libcurl_protocol in $_libcurl_protocols ; do
-              cat >>confdefs.h <<_ACEOF
+	for _libcurl_protocol in $_libcurl_protocols ; do
+		cat >>confdefs.h <<_ACEOF
 #define `$as_echo "libcurl_protocol_$_libcurl_protocol" | $as_tr_cpp` 1
 _ACEOF
 
-              eval `$as_echo "libcurl_protocol_$_libcurl_protocol" | $as_tr_sh`=yes
-           done
-        else
-           unset LIBCURL
-           unset LIBCURL_CPPFLAGS
-        fi
+		eval `$as_echo "libcurl_protocol_$_libcurl_protocol" | $as_tr_sh`=yes
+        done
+     else
+	   unset LIBCURL_LIBS
+	   unset LIBCURL_CFLAGS
      fi
 
      unset _libcurl_try_link
@@ -8432,10 +11033,10 @@ _ACEOF
      unset _libcurl_protocol
      unset _libcurl_protocols
      unset _libcurl_version
-     unset _libcurl_ldflags
+     unset _libcurl_libs
   fi
 
-  if test x$_libcurl_with = xno || test x$libcurl_cv_lib_curl_usable != xyes ; then
+  if test "x$want_curl" = "xno" || test "x$libcurl_cv_lib_curl_usable" != "xyes"; then
      # This is the IF-NO path
      :
   else
@@ -8443,7 +11044,6 @@ _ACEOF
      :
   fi
 
-  unset _libcurl_with
 
 if test "x$want_curl" = "xyes"; then
 	if test "x$found_curl" != "xyes"; then
@@ -8465,7 +11065,143 @@ AGENT_LDFLAGS="$AGENT_LDFLAGS $LIBCURL_LDFLAGS"
 AGENT_LIBS="$AGENT_LIBS $LIBCURL_LIBS"
 
 found_iconv="no"
-LIBICONV_CHECK_CONFIG()
+
+
+# Check whether --with-iconv was given.
+if test "${with_iconv+set}" = set; then :
+  withval=$with_iconv;
+			ICONV_CFLAGS="-I/$withval/include"
+			ICONV_LDFLAGS="-L/$withval/lib"
+			_iconv_dir_set="yes"
+
+
+fi
+
+
+
+# Check whether --with-iconv-include was given.
+if test "${with_iconv_include+set}" = set; then :
+  withval=$with_iconv_include;
+			ICONV_CFLAGS="-I/$withval"
+			_iconv_dir_set="yes"
+
+
+fi
+
+
+
+# Check whether --with-iconv-lib was given.
+if test "${with_iconv_lib+set}" = set; then :
+  withval=$with_iconv_lib;
+			ICONV_LDFLAGS="-L/$withval"
+			_iconv_dir_set="yes"
+
+
+fi
+
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ICONV support" >&5
+$as_echo_n "checking for ICONV support... " >&6; }
+
+	if test -n "$_iconv_dir_set" -o -f /usr/include/iconv.h; then
+		found_iconv="yes"
+	elif test -f /usr/local/include/iconv.h; then
+		ICONV_CFLAGS="-I/usr/local/include"
+		ICONV_LDFLAGS="-L/usr/local/lib"
+		found_iconv="yes"
+	else
+		found_iconv="no"
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	fi
+
+	if test "x$found_iconv" = "xyes"; then
+		am_save_CFLAGS="$CFLAGS"
+		am_save_LDFLAGS="$LDFLAGS"
+
+		CFLAGS="$CFLAGS $ICONV_CFLAGS"
+		LDFLAGS="$LDFLAGS $ICONV_LDFLAGS"
+
+		found_iconv="no"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <iconv.h>
+
+int
+main ()
+{
+
+	iconv_t cd = iconv_open("","");
+	iconv(cd, NULL, NULL, NULL, NULL);
+	iconv_close(cd);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  found_iconv="yes"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+
+		if test "x$found_iconv" = "xno"; then
+			am_save_LIBS="$LIBS"
+			LIBS="$LIBS -liconv"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <iconv.h>
+
+int
+main ()
+{
+
+	iconv_t cd = iconv_open("","");
+	iconv(cd, NULL, NULL, NULL, NULL);
+	iconv_close(cd);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  found_iconv="yes"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+			LIBS="$am_save_LIBS"
+
+			if test "x$found_iconv" = "xyes"; then
+				ICONV_LIBS="-liconv"
+			fi
+		fi
+
+		CFLAGS="$am_save_CFLAGS"
+		LDFLAGS="$am_save_LDFLAGS"
+	fi
+
+	if test "x$found_iconv" = "xyes"; then
+
+$as_echo "#define HAVE_ICONV 1" >>confdefs.h
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		ICONV_CFLAGS=""
+		ICONV_LDFLAGS=""
+	fi
+
+
+
+
 if test "x$found_iconv" != "xyes"; then
 	as_fn_error $? "Unable to use iconv (libiconv check failed)" "$LINENO" 5
 fi
