@@ -848,6 +848,7 @@ static struct gozila_action gozila_actions[] = {
 	{"WL_ActiveTable", "add_mac", "", 1, REFRESH, "add_active_mac"},
 	{"WL_ActiveTable-wl0", "add_mac", "", 1, REFRESH, "add_active_mac"},
 	{"WL_ActiveTable-wl1", "add_mac", "", 1, REFRESH, "add_active_mac"},
+	{"WL_ActiveTable-wl2", "add_mac", "", 1, REFRESH, "add_active_mac"},
 	/*
 	 * Siafu addition 
 	 */
@@ -859,9 +860,12 @@ static struct gozila_action gozila_actions[] = {
 #ifndef HAVE_MADWIFI
 	{"Wireless_WDS-wl0", "save", "wireless_2", 0, REFRESH, "save_wds"},
 	{"Wireless_WDS-wl1", "save", "wireless_2", 0, REFRESH, "save_wds"},
+	{"Wireless_WDS-wl2", "save", "wireless_2", 0, REFRESH, "save_wds"},
 	{"Wireless_Advanced-wl0", "save", "wireless_2", 0, REFRESH,
 	 "save_wireless_advanced"},
 	{"Wireless_Advanced-wl1", "save", "wireless_2", 0, REFRESH,
+	 "save_wireless_advanced"},
+	{"Wireless_Advanced-wl2", "save", "wireless_2", 0, REFRESH,
 	 "save_wireless_advanced"},
 #else
 	{"Wireless_WDS-ath0", "save", "wireless_2", 0, REFRESH, "save_wds"},
@@ -1142,6 +1146,8 @@ struct apply_action apply_actions[] = {
 	{"Wireless_Advanced-wl0", "wireless_2", 0, SERVICE_RESTART,
 	 "save_wireless_advanced"},
 	{"Wireless_Advanced-wl1", "wireless_2", 0, SERVICE_RESTART,
+	 "save_wireless_advanced"},
+	{"Wireless_Advanced-wl2", "wireless_2", 0, SERVICE_RESTART,
 	 "save_wireless_advanced"},
 	{"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, "save_macmode"},
 	{"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
