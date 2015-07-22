@@ -3423,6 +3423,28 @@ void wireless_save(webs_t wp)
 			save_prefix(wp, var);
 		}
 	}
+
+#ifdef HAVE_ERC
+	struct variable filter_variables[] = {
+             {argv:ARGV("1", "0")},
+             {argv:ARGV("1", "0")},
+        }, *which;
+
+	char *rd_off, *rd_boot_off;
+
+	rd_off = websGetVar(wp, "radiooff_button", NULL);
+	rd_off = websGetVar(wp, "radiooff_button", NULL);
+        if (!rd_off && !valid_choice(wp, rd_off, &which[0])) {
+                return;
+        }
+	nvram_set("radiooff_button", rd_off);
+	
+	rd_boot_off = websGetVar(wp, "radiooff_boot_off", NULL);
+	if (!rd_boot_off && !valid_choice(wp, rd_boot_off, &which[1])) {
+		return;
+	}
+	nvram_set("radiooff_boot_off", rd_boot_off); 
+#endif
 	// nvram_commit ();
 	applytake(value);
 #ifdef HAVE_GUESTPORT
