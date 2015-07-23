@@ -644,7 +644,7 @@ ifeq ($(CONFIG_ERC),y)
 	cp -f erc/common.js $(INSTALLDIR)/www/common.js
 	cp -f erc/help/* $(INSTALLDIR)/www/help
 	cp -f erc/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
-#	-cp -f erc/*.asp $(INSTALLDIR)/www/
+	cp -f erc/*.asp $(INSTALLDIR)/www/
 #copy extra scripts and whatever
 ifeq ($(CONFIG_CARAMBOLA),y)
 	cp -fa erc/extra_hornet/* $(INSTALLDIR) || true
