@@ -6026,6 +6026,8 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 		} else {
 			if (getRouterBrand() == ROUTER_ASUS_AC87U)
 				c = strdup(nvram_safe_get("et1macaddr"));
+			else if (getRouterBrand() == ROUTER_NETGEAR_R8000)
+				c = strdup(nvram_safe_get("et2macaddr"));
 			else
 				c = strdup(nvram_safe_get("et0macaddr"));
 		}
