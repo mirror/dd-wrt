@@ -1646,14 +1646,17 @@ ifeq ($(CONFIG_WRT160NL),y)
 	./tools/wrt160nl/addpattern -B E2100L -v v1.00.20 -i $(ARCH)-uclibc/e2100l-firmware.trx -o $(ARCH)-uclibc/e2100l-firmware.bin -g
 endif
 ifeq ($(CONFIG_TG2521),y)
-#	./tools/wrt160nl/pad $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/aligned.uimage
-#	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
-#	./tools/wrt160nl/trx -m 30000000 -o $(ARCH)-uclibc/wrt160nl-firmware.trx -f $(ARCH)-uclibc/aligned.uimage
-#	./tools/wrt160nl/addpattern -B WRT160NL -v v1.00.20 -i $(ARCH)-uclibc/wrt160nl-firmware.trx -o $(ARCH)-uclibc/wrt160nl-firmware.bin -g
 	./tools/zcom/makefirmware $(ARCH)-uclibc/zcom-firmware.img $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/root.fs TG2521
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.zcom bs=6356992 conv=sync
 	cat $(ARCH)-uclibc/root.uimage >> $(ARCH)-uclibc/root.zcom
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/zcom-firmware.bin $(ARCH)-uclibc/root.zcom
+endif
+
+ifeq ($(CONFIG_TEW824),y)
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.tew824 bs=14876672 conv=sync
+	cat $(ARCH)-uclibc/root.uimage >> $(ARCH)-uclibc/root.tew824
+	cat tools/tew824.tag >> $(ARCH)-uclibc/root.tew824	
+	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/tew824-firmware.bin $(ARCH)-uclibc/root.tew824
 endif
 
 ifeq ($(CONFIG_WR1043),y)
