@@ -700,8 +700,6 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{"http_passwd", "bJxJZz5DYRGxI"},	/* Password */
 #endif
-#elif HAVE_IDEXX
-	{"http_passwd", "$1$C.gzWpjy$x0Ic8.AnJFjjTSd6Bc.7a0"},
 #elif defined(HAVE_IAS) || defined(HAVE_AXTEL)
 	{"http_passwd", "$1$LJZEFe0/$yHSTW.W0nkBqSkWfcUnww."},
 #elif HAVE_CORENET
