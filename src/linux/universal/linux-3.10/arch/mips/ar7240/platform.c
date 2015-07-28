@@ -758,8 +758,28 @@ for (i=0;i<0x100;i++) {
 }
 printk(KERN_INFO "found nothing\n");
 return NULL;
-
 }
+
+static char *tew_scanmac(char *dest, char *base,char *str)
+{
+int i;
+printk(KERN_INFO "scan mac from %p\n",base);
+for (i=0;i<0x400;i++) {
+    if (!memcmp(&base[i],str,strlen(str))) {
+	    printk(KERN_INFO "found @%p\n",&base[i+strlen(str)]);
+	    char *src = &base[i+strlen(str)];
+	    int ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx", &dest[0], &dest[1], &dest[2], &dest[3], &dest[4], &dest[5]);
+	    if (ret!=6) {
+		printk(KERN_INFO "parse fail\n");
+		return NULL;
+	    }
+	    return dest;
+    }
+}
+printk(KERN_INFO "found nothing\n");
+return NULL;
+}
+
 int __init ar7240_platform_init(void)
 {
 	int ret;
@@ -845,6 +865,10 @@ int __init ar7240_platform_init(void)
     #elif CONFIG_DIR862
 	dir825b1_read_ascii_mac(mac0, DIR862_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR862_MAC_LOCATION_1);
+	if (!memcmp(mac0,"\x0\x0\x0\x0\x0\x0",6)) {
+		tew_scanmac(mac0,(u8 *)KSEG1ADDR(0x1f040000),"lan_mac=");
+		tew_scanmac(mac1,(u8 *)KSEG1ADDR(0x1f040000),"wan_mac=");
+	}
     #elif CONFIG_WR1043V2
 	mac = (u8 *)KSEG1ADDR(0x1f01fc00);
 	ath79_init_mac(mac0, mac, -1);
