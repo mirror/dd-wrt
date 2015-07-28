@@ -2625,7 +2625,6 @@ void start_firewall6(void)
 
 		eval("iptables", "-I", "INPUT", "-p", "41", "-j", "ACCEPT");
 
-		//we have to update ip6tables to support clamp-mss
 		eval("ip6tables", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu");
 
 	}
