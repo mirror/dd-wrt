@@ -2011,7 +2011,7 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_TEW824
-	setRouter("Trendnet TEW824");
+	setRouter("Trendnet TEW824DRU");
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	nvram_default_get("ath1_rxantenna", "3");
