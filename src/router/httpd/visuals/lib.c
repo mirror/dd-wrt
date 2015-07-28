@@ -151,7 +151,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_ERC
 		websWrite(wp, " RemoteEngineer FW 1.1 r%s (" BUILD_DATE ")", SVN_REVISION);
 #else
-		websWrite(wp, " DD-WRT v3.0-r%s r%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, " DD-WRT v3.0-r%s %s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 	}
 #endif
