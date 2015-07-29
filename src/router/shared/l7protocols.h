@@ -4,8 +4,8 @@
     /*
      * 2009-05-28 
      */
-
-typedef struct _l7filters	// l7 and p2p filters
+     
+typedef struct _l7filters 
 {
 
 	char *name;
@@ -31,6 +31,7 @@ l7filters filters_list[] = {
 #endif
 	{"100bao", L7_ONLY},
 #ifdef HAVE_OPENDPI
+	{"99taxi", NDPI_ONLY},
 	{"afp", NDPI_ONLY},
 #endif
 	{"aim", L7_ONLY},
@@ -56,6 +57,9 @@ l7filters filters_list[] = {
 	{"battlefield1942", L7_ONLY},
 	{"battlefield2", L7_ONLY},
 	{"battlefield2142", L7_ONLY},
+#ifdef HAVE_OPENDPI
+	{"battlenet", NDPI_ONLY},
+#endif
 	{"bearshare", PDPI_ONLY},
 	{"bgp", DPI},
 	{"biff", L7_ONLY},
@@ -85,6 +89,7 @@ l7filters filters_list[] = {
 	{"dazhihui", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"dcerpc", NDPI_ONLY},
+	{"deezer", NDPI_ONLY},
 #endif
 	{"dhcp", DPI},
 #ifdef HAVE_OPENDPI
@@ -99,6 +104,7 @@ l7filters filters_list[] = {
 	{"doom3", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"dropbox", NDPI_ONLY},
+	{"easytaxi", NDPI_ONLY},
 	{"eaq", NDPI_ONLY},
 	{"ebay", NDPI_ONLY},
 #endif
@@ -135,6 +141,7 @@ l7filters filters_list[] = {
 	{"gif", L7_ONLY},
 	{"gkrellm", L7_ONLY},
 #ifdef HAVE_OPENDPI
+	{"globotv", NDPI_ONLY},
 	{"gmail", NDPI_ONLY},
 #endif
 	{"gnucleuslan", L7_ONLY},
@@ -210,6 +217,7 @@ l7filters filters_list[] = {
 	{"imesh", DPI},
 #ifdef HAVE_OPENDPI
 	{"imessage_facetime", NDPI_ONLY},
+	{"instagram", NDPI_ONLY},
 	{"ip_egp", NDPI_ONLY},
 	{"ip_gre", NDPI_ONLY},
 	{"ip_icmp", NDPI_ONLY},
@@ -258,6 +266,7 @@ l7filters filters_list[] = {
 	{"megaco", NDPI_ONLY},
 	{"meu", NDPI_ONLY},
 	{"mgcp", NDPI_ONLY},
+	{"microsoft", NDPI_ONLY},
 	{"mms", NDPI_ONLY},
 #endif
 	{"mohaa", L7_ONLY},
@@ -299,6 +308,7 @@ l7filters filters_list[] = {
 	{"ogg", DPI},
 	{"openft", DPI},
 #ifdef HAVE_OPENDPI
+	{"opensignal", NDPI_ONLY},
 	{"openvpn", NDPI_ONLY},
 	{"oracle", NDPI_ONLY},
 	{"oscar", NDPI_ONLY},
@@ -384,6 +394,9 @@ l7filters filters_list[] = {
 	{"sflow", NDPI_ONLY},
 #endif
 	{"shoutcast", DPI},
+#ifdef HAVE_OPENDPI
+	{"simet", NDPI_ONLY},
+#endif
 	{"sip", DPI},
 #ifdef HAVE_OPENDPI
 	{"skinny", NDPI_ONLY},
@@ -423,6 +436,7 @@ l7filters filters_list[] = {
 	{"ssl", DPI},
 #ifdef HAVE_OPENDPI
 	{"ssl_no_cert", NDPI_ONLY},
+	{"starcraft", NDPI_ONLY},
 	{"stealthnet", NDPI_ONLY},
 	{"steam", NDPI_ONLY},
 #endif
@@ -453,7 +467,12 @@ l7filters filters_list[] = {
 	{"thunder5_see", L7_ONLY},
 	{"thunder5_tcp", L7_ONLY},
 #ifdef HAVE_OPENDPI
-	{"tim", NDPI_ONLY},
+	{"timmeu", NDPI_ONLY},
+	{"timsomdechamada", NDPI_ONLY},
+	{"timmenu", NDPI_ONLY},
+	{"timportasabertas", NDPI_ONLY},
+	{"timrecarga", NDPI_ONLY},
+	{"timbeta", NDPI_ONLY},
 #endif
 	{"tonghuashun", L7_ONLY},
 	{"tor", DPI},
