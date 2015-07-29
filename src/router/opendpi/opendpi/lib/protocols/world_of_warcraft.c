@@ -19,7 +19,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #include "ndpi_api.h"
@@ -56,17 +56,23 @@ static void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
 	NDPI_LOG(NDPI_PROTOCOL_WORLDOFWARCRAFT, ndpi_struct, NDPI_LOG_DEBUG, "Search World of Warcraft.\n");
 
 	if (packet->tcp != NULL) {
-		if ((packet->payload_packet_len > NDPI_STATICSTRING_LEN("POST /") &&
-		     memcmp(packet->payload, "POST /", NDPI_STATICSTRING_LEN("POST /")) == 0) ||
-		    (packet->payload_packet_len > NDPI_STATICSTRING_LEN("GET /") && memcmp(packet->payload, "GET /", NDPI_STATICSTRING_LEN("GET /")) == 0)) {
-			ndpi_parse_packet_line_info(ndpi_struct, flow);
-			if (packet->user_agent_line.offs != 0xffff &&
-			    packet->user_agent_line.len == NDPI_STATICSTRING_LEN("Blizzard Web Client") && memcmp(packet_hdr(user_agent_line), "Blizzard Web Client", NDPI_STATICSTRING_LEN("Blizzard Web Client")) == 0) {
-				ndpi_int_worldofwarcraft_add_connection(ndpi_struct, flow);
-				NDPI_LOG(NDPI_PROTOCOL_WORLDOFWARCRAFT, ndpi_struct, NDPI_LOG_DEBUG, "World of Warcraft: Web Client found\n");
-				return;
-			}
-		}
+		/*
+		   if ((packet->payload_packet_len > NDPI_STATICSTRING_LEN("POST /") &&
+		   memcmp(packet->payload, "POST /", NDPI_STATICSTRING_LEN("POST /")) == 0) ||
+		   (packet->payload_packet_len > NDPI_STATICSTRING_LEN("GET /") &&
+		   memcmp(packet->payload, "GET /", NDPI_STATICSTRING_LEN("GET /")) == 0)) {
+		   ndpi_parse_packet_line_info(ndpi_struct, flow);
+		   if (packet->user_agent_line.ptr != NULL &&
+		   packet->user_agent_line.len == NDPI_STATICSTRING_LEN("Blizzard Web Client") &&
+		   memcmp(packet->user_agent_line.ptr, "Blizzard Web Client",
+		   NDPI_STATICSTRING_LEN("Blizzard Web Client")) == 0) {
+		   ndpi_int_worldofwarcraft_add_connection(ndpi_struct, flow);
+		   NDPI_LOG(NDPI_PROTOCOL_WORLDOFWARCRAFT, ndpi_struct, NDPI_LOG_DEBUG,
+		   "World of Warcraft: Web Client found\n");
+		   return;
+		   }
+		   }
+		 */
 		if (packet->payload_packet_len > NDPI_STATICSTRING_LEN("GET /")
 		    && memcmp(packet->payload, "GET /", NDPI_STATICSTRING_LEN("GET /")) == 0) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
@@ -174,6 +180,15 @@ static void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
 	}
 
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_WORLDOFWARCRAFT);
+}
+
+static void init_world_of_warcraft_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("WorldOfWarcraft", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_WORLDOFWARCRAFT,
+					    ndpi_search_worldofwarcraft, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+
+	*id += 1;
 }
 
 #endif
