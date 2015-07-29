@@ -43,4 +43,11 @@ static void ndpi_search_megaco(struct ndpi_detection_module_struct *ndpi_struct,
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MEGACO);
 }
 
+static void init_megaco_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("Megaco", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_MEGACO, ndpi_search_megaco, NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+
+	*id += 1;
+}
 #endif

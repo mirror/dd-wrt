@@ -114,6 +114,8 @@ static void ndpi_packet_dst_ip_get(const struct ndpi_packet_struct *packet, ndpi
 static char *ndpi_get_ip_string(struct ndpi_detection_module_struct *ndpi_struct, const ndpi_ip_addr_t * ip);
 static char *ndpi_get_packet_src_ip_string(struct ndpi_detection_module_struct *ndpi_struct, const struct ndpi_packet_struct *packet);
 static char *ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id);
+static u_int8_t ndpi_is_proto(ndpi_protocol p, u_int16_t proto);
+static u_int16_t ndpi_get_lower_proto(ndpi_protocol p);
 static u_int16_t ndpi_guess_protocol_id(struct ndpi_detection_module_struct *ndpi_struct, u_int8_t proto, u_int16_t sport, u_int16_t dport);
 static int ndpi_get_protocol_id_master_proto(struct ndpi_detection_module_struct *ndpi_struct, u_int16_t protocol_id, u_int16_t **tcp_master_proto, u_int16_t **udp_master_proto);
 

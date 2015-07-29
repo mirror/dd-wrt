@@ -89,7 +89,7 @@ static inline
 #else
 __forceinline static
 #endif
-void init_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int8_t direction, u_int16_t seq, u_int8_t include_current_packet)
+static void init_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int8_t direction, u_int16_t seq, u_int8_t include_current_packet)
 {
 	flow->rtp_seqnum[direction] = seq;
 	NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "rtp_seqnum[%u] = %u\n", direction, seq);
@@ -294,4 +294,13 @@ static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, st
 }
 #endif
 
-#endif				/* NDPI_PROTOCOL_RTP */
+static void init_rtp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("RTP", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_RTP, ndpi_search_rtp, NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+
+	*id += 1;
+}
+
+#endif
+/* NDPI_PROTOCOL_RTP */
