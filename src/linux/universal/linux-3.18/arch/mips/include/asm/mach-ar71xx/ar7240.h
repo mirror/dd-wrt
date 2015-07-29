@@ -399,6 +399,7 @@ int ar7240_i2c_raw_read_bytes_from_addr(int addr, unsigned char *buffer, int cou
 #define AR7240_SPI_CMD_FAST_READ    0x0b
 #define AR7240_SPI_CMD_PAGE_PROG    0x02
 #define AR7240_SPI_CMD_SECTOR_ERASE 0xd8
+#define AR7240_SPI_CMD_RDID             0x9f
 
 /* Functions to access SPI through software. Example:
  *

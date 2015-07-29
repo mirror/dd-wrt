@@ -19,6 +19,13 @@
 #include "ar7240.h"
 #include "ar7240_flash.h"
 
+#define AR7240_SPI_CMD_WRITE_SR		0x01
+
+#define MXIC_JEDEC_ID        0x00c22017
+#define MXIC_ENSO            0xb1
+#define MXIC_EXSO            0xc1
+
+//#define ATH_SST_FLASH 1
 /* this is passed in as a boot parameter by bootloader */
 //extern int __ath_flash_size;
 
@@ -27,7 +34,9 @@
  */
 static void ar7240_spi_write_enable(void);
 static void ar7240_spi_poll(void);
+#if !defined(ATH_SST_FLASH)
 static void ar7240_spi_write_page(uint32_t addr, uint8_t * data, int len);
+#endif
 static void ar7240_spi_sector_erase(uint32_t addr);
 
 #define down mutex_lock
@@ -191,14 +200,58 @@ static unsigned int guessflashsize(void *base)
 
 }
 
+#if defined(ATH_SST_FLASH)
+void
+ar7240_spi_flash_unblock(void)
+{
+	ar7240_spi_write_enable();
+	ar7240_spi_bit_banger(AR7240_SPI_CMD_WRITE_SR);
+	ar7240_spi_bit_banger(0x0);
+	ar7240_spi_go();
+	ar7240_spi_poll();
+}
+#endif
+
+/*
+Before we claim the SPI driver we need to clean up any work in progress we have
+pre-empted from user-space SPI or other SPI device drivers.
+*/
+static int
+ar7424_flash_spi_reset(void) {
+	/* Enable SPI writes and retrieved flash JEDEC ID */
+	u_int32_t mfrid = 0;
+	ar7240_reg_wr_nf(AR7240_SPI_FS, 1);
+	ar7240_spi_poll();
+	ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_DIS);
+	ar7240_spi_bit_banger(AR7240_SPI_CMD_RDID);
+	ar7240_spi_bit_banger(0x0);
+	ar7240_spi_bit_banger(0x0);
+	ar7240_spi_bit_banger(0x0);
+	mfrid = ar7240_reg_rd(AR7240_SPI_RD_STATUS) & 0x00ffffff;
+	ar7240_spi_go();
+	/* If this is an MXIC flash, be sure we are not in secure area */
+	if(mfrid == MXIC_JEDEC_ID) {
+		/* Exit secure area of MXIC (in case we're in it) */
+		ar7240_spi_bit_banger(MXIC_EXSO);
+		ar7240_spi_go();
+	}
+	ar7240_spi_poll();
+	ar7240_reg_wr(AR7240_SPI_FS, 0);
+}
+
+
 static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	int nsect, s_curr, s_last;
 	uint64_t  res;
-	if (instr->addr + instr->len > mtd->size)
+	if (instr->addr + instr->len > mtd->size) {
+		printf(KERN_INFO "erase error, addr+len(0x%08X) is bigger than size(0x%08X)\n",instr->addr + instr->len,mtd->size);
 		return (-EINVAL);
+	}
 
 	ar7240_flash_spi_down();
+	preempt_disable();
+	ar7424_flash_spi_reset();
 
 	res = instr->len;
 	do_div(res, mtd->erasesize);
@@ -217,6 +270,7 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	ar7240_spi_done();
 
+	preempt_enable();
 	ar7240_flash_spi_up();
 
 	if (instr->callback) {
@@ -239,33 +293,72 @@ ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 		return (-EINVAL);
 
 //      ar7240_flash_spi_down();
+	preempt_disable();
+	ar7424_flash_spi_reset();
 
 	memcpy(buf, (uint8_t *) (addr), len);
 	*retlen = len;
 
+	preempt_enable();
 //      ar7240_flash_spi_up();
 //      printk(KERN_EMERG "read block %X:%X done\n",from,len);
 
 	return 0;
 }
 
+#if defined(ATH_SST_FLASH)
+static int
+ar7240_flash_write(struct mtd_info *mtd, loff_t dst, size_t len,
+		   size_t * retlen, const u_char * src)
+{
+	uint32_t val;
+
+	//printk("write len: %lu dst: 0x%x src: %p\n", len, dst, src);
+
+	*retlen = len;
+
+	for (; len; len--, dst++, src++) {
+		ar7240_spi_write_enable();	// dont move this above 'for'
+		ar7240_spi_bit_banger(AR7240_SPI_CMD_PAGE_PROG);
+		ar7240_spi_send_addr(dst);
+
+		val = *src & 0xff;
+		ar7240_spi_bit_banger(val);
+
+		ar7240_spi_go();
+		ar7240_spi_poll();
+	}
+	/*
+	 * Disable the Function Select
+	 * Without this we can't re-read the written data
+	 */
+	ar7240_reg_wr(AR7240_SPI_FS, 0);
+
+	if (len) {
+		*retlen -= len;
+		return -EIO;
+	}
+	return 0;
+}
+#else
 static int
 ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
-		   size_t *retlen, const u_char * buf)
+		   size_t *retlen, const u_char *buf)
 {
 	int total = 0, len_this_lp, bytes_this_page;
 	uint32_t addr = 0;
 	u_char *mem;
-//      printk(KERN_EMERG "write block %X:%X\n",to,len);
 
 	ar7240_flash_spi_down();
+	preempt_disable();
+	ar7424_flash_spi_reset();
 
 	while (total < len) {
-		mem = buf + total;
+		mem = (u_char *) (buf + total);
 		addr = to + total;
 		bytes_this_page =
 		    AR7240_SPI_PAGE_SIZE - (addr % AR7240_SPI_PAGE_SIZE);
-		len_this_lp = min((len - total), bytes_this_page);
+		len_this_lp = min(((int)len - total), bytes_this_page);
 
 		ar7240_spi_write_page(addr, mem, len_this_lp);
 		total += len_this_lp;
@@ -273,11 +366,13 @@ ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 
 	ar7240_spi_done();
 
+	preempt_enable();
 	ar7240_flash_spi_up();
 
 	*retlen = len;
 	return 0;
 }
+#endif
 
 static struct mtd_partition dir_parts[] = {
 #ifdef CONFIG_MTD_FLASH_16MB
@@ -336,7 +431,16 @@ static int __init ar7240_flash_init(void)
 	int inc=0;
 	init_MUTEX(&ar7240_flash_sem);
 
+
+#if defined(ATH_SST_FLASH)
+	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x3);
+	ar7240_reg_wr(AR7240_SPI_FS, 0);
+        ar7240_spi_flash_unblock();
+#else
+#ifndef CONFIG_WASP_SUPPORT
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
+#endif
+#endif
 	buf = (char *)0xbf000000;
 	fsize = guessflashsize(buf);
 	for (i = 0; i < AR7240_FLASH_MAX_BANKS; i++) {
