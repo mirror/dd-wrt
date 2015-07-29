@@ -2246,7 +2246,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti Bullet M5 Titanium", 0xe2d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
 		{"Ubiquiti Airgrid M2", 0xe212, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti Airgrid M2", 0xe242, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti Airgrid M2", 0xe252, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Ubiquiti Airgrid M2HP", 0xe252, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti Airgrid M5", 0xe215, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Airgrid M5", 0xe245, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Airgrid M5", 0xe255, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
