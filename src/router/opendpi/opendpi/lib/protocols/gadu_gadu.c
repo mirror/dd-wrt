@@ -410,4 +410,20 @@ static void ndpi_search_gadugadu(struct ndpi_detection_module_struct *ndpi_struc
 {
 	ndpi_search_gadugadu_tcp(ndpi_struct, flow);
 }
+
+static void init_gadugadu_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("GADUGADU", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_GADUGADU, ndpi_search_gadugadu, NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+	*id += 1;
+#ifdef NDPI_PROTOCOL_HTTP
+	NDPI_ADD_PROTOCOL_TO_BITMASK(ndpi_struct->callback_buffer[*id].detection_bitmask, NDPI_PROTOCOL_HTTP);
+#endif
+	NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[*id].excluded_protocol_bitmask, NDPI_PROTOCOL_GADUGADU);
+
+	*id += 1;
+}
+
+
+
 #endif

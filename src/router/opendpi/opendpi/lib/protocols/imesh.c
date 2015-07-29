@@ -236,4 +236,13 @@ static void ndpi_search_imesh_tcp_udp(struct ndpi_detection_module_struct *ndpi_
 	NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh excluded at stage %d\n", packet->tcp != NULL ? flow->l4.tcp.imesh_stage : 0);
 
 }
+
+static void init_imesh_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("iMESH", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_IMESH, ndpi_search_imesh_tcp_udp, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+
+	*id += 1;
+}
+
 #endif

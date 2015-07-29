@@ -1,5 +1,5 @@
 /*
- * ssh.c
+ * whoisdas.c
  *
  * Copyright (C) 2013 - ntop.org
  *
@@ -53,6 +53,15 @@ static void ndpi_search_whois_das(struct ndpi_detection_module_struct *ndpi_stru
 		NDPI_LOG(NDPI_PROTOCOL_WHOIS_DAS, ndpi_struct, NDPI_LOG_TRACE, "WHOIS Excluded.\n");
 		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_WHOIS_DAS);
 	}
+}
+
+static void init_whois_das_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("Whois-DAS", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_WHOIS_DAS,
+					    ndpi_search_whois_das, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+
+	*id += 1;
 }
 
 #endif
