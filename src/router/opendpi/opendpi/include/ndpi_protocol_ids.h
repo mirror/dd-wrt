@@ -165,7 +165,7 @@
 #define NDPI_PROTOCOL_WEBEX					141
 #define NDPI_PROTOCOL_VIBER					144
 #define NDPI_PROTOCOL_RADIUS					146
-#define NDPI_PROTOCOL_WINDOWS_UPDATE				147	/* Thierry Laurion */
+#define NDPI_SERVICE_WINDOWS_UPDATE				147
 #define NDPI_PROTOCOL_TEAMVIEWER				148	/* xplico.org */
 #define NDPI_PROTOCOL_LOTUS_NOTES				150
 #define NDPI_PROTOCOL_SAP					151
@@ -217,7 +217,7 @@
 #define NDPI_SERVICE_GOOGLE				126
 #define NDPI_SERVICE_NETFLIX				133
 #define NDPI_SERVICE_LASTFM				134
-#define NDPI_SERVICE_GROOVESHARK			135
+#define NDPI_SERVICE_WAZE        			135
 #define NDPI_SERVICE_APPLE				140
 #define NDPI_SERVICE_WHATSAPP				142
 #define NDPI_SERVICE_APPLE_ICLOUD			143
@@ -242,7 +242,7 @@
 #define NDPI_PROTOCOL_SECONDLIFE			194
 #define NDPI_PROTOCOL_WHATSAPP_VOICE			195
 #define NDPI_PROTOCOL_EAQ				196
-#define NDPI_SERVICE_MEU        			197
+#define NDPI_SERVICE_TIMMEU        			197
 #define NDPI_SERVICE_TORCEDOR        			198
 #define NDPI_SERVICE_KAKAOTALK        			199	/* KakaoTalk Chat (no voice call) */
 #define NDPI_SERVICE_KAKAOTALK_VOICE  			200	/* KakaoTalk Voice */
@@ -252,8 +252,24 @@
 #define NDPI_PROTOCOL_MPEGTS        			204
 #define NDPI_SERVICE_SNAPCHAT                           205
 
+#define NDPI_SERVICE_SIMET                              206
+#define NDPI_SERVICE_OPENSIGNAL                         207
+#define NDPI_SERVICE_99TAXI                             208
+#define NDPI_SERVICE_EASYTAXI                           209
+#define NDPI_SERVICE_GLOBOTV                            210
+#define NDPI_SERVICE_TIMSOMDECHAMADA                    211
+#define NDPI_SERVICE_TIMMENU                            212
+#define NDPI_SERVICE_TIMPORTASABERTAS                   213
+#define NDPI_SERVICE_TIMRECARGA                         214
+#define NDPI_SERVICE_TIMBETA                            215
+#define NDPI_SERVICE_DEEZER                             216
+#define NDPI_SERVICE_INSTAGRAM                          217	/* Andrea Buscarinu <andrea.buscarinu@gmail.com> */
+#define NDPI_SERVICE_MICROSOFT                          218
+#define NDPI_SERVICE_BATTLENET                          219	/* Matteo Bracci <matteobracci1@gmail.com> */
+#define NDPI_PROTOCOL_STARCRAFT 			220	/* Matteo Bracci <matteobracci1@gmail.com> */
+
 /* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_SERVICE_PANDORA) */
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL			205
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL			220
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                   (NDPI_NUM_BITS-NDPI_LAST_IMPLEMENTED_PROTOCOL)

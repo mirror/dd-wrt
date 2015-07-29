@@ -81,10 +81,13 @@ struct xt_ndpi_tginfo {
 "wikipedia",       "zmq",                  "amazon",           "ebay",          "cnn",\
 "megaco",          "redis",                "pando",            "vhua",          "telegram", \
 "vevo",            "pandora",              "quic",    "popo",           "manolito", "feidian", \
-"gadugadu", "i23v5", "secondlife", "whatsapp_voice", "eaq", "meu", "torcedor", "kakaotalk", \
-"kakaotalk_voice" , "twitch", "quickplay", "tim", "mpegts", "snapchat"
+"gadugadu", "i23v5", "secondlife", "whatsapp_voice", "eaq", "timmeu", "torcedor", "kakaotalk", \
+"kakaotalk_voice" , "twitch", "quickplay", "tim", "mpegts", "snapchat", "simet","opensignal", \
+"99taxi","easytaxi","globotv","timsomdechamada","timmenu","timportasabertas","timrecarga",\
+"timbeta","deezer","instagram","microsoft","battlenet","starcraft"
 
-#define NDPI_PROTOCOL_MAXNUM 205
+
+#define NDPI_PROTOCOL_MAXNUM 220
 #endif
 
 #endif /* _LINUX_NETFILTER_XT_NDPI_H */

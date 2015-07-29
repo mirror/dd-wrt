@@ -264,4 +264,12 @@ static void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_str
 #endif
 }
 
+static void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("Unencryped_Jabber", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_UNENCRYPED_JABBER,
+					    ndpi_search_jabber_tcp, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITHOUT_RETRANSMISSION, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+
+	*id += 1;
+}
 #endif

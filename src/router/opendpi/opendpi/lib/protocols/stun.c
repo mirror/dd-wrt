@@ -59,6 +59,9 @@ static ndpi_int_stun_t ndpi_int_check_stun(struct ndpi_detection_module_struct *
 
 	msg_type = ntohs(h->msg_type) & 0x3EEF, msg_len = ntohs(h->msg_len);
 
+	if ((payload[0] != 0x80) && ((msg_len + 20) > payload_length))
+		return (NDPI_IS_NOT_STUN);
+
 	if ((payload_length == (msg_len + 20))
 	    && ((msg_type <= 0x000b) /* http://www.3cx.com/blog/voip-howto/stun-details/ */ ))
 		goto udp_stun_found;
@@ -154,7 +157,9 @@ static ndpi_int_stun_t ndpi_int_check_stun(struct ndpi_detection_module_struct *
 	}
 #endif
 
-	if ((flow->num_stun_udp_pkts > 0) && ((payload[0] == 0x80) || (payload[0] == 0x81))) {
+	if (((flow->num_stun_udp_pkts > 0) && (msg_type = 0x0800))
+	    || ((msg_type = 0x0800) && (msg_len == 106))
+	    ) {
 		*is_whatsapp = 1;
 		return NDPI_IS_STUN;	/* This is WhatsApp Voice */
 	} else
@@ -199,6 +204,14 @@ static void ndpi_search_stun(struct ndpi_detection_module_struct *ndpi_struct, s
 		NDPI_LOG(NDPI_PROTOCOL_STUN, ndpi_struct, NDPI_LOG_DEBUG, "exclude stun.\n");
 		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_STUN);
 	}
+}
+
+static void init_stun_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("STUN", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_STUN, ndpi_search_stun, NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+
+	*id += 1;
 }
 
 #endif

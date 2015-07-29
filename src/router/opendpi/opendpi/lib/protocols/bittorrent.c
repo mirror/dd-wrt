@@ -205,6 +205,15 @@ static inline u_int32_t hash_calc6(ndpi_ip_addr_t * ip, u_int16_t port, u_int32_
 	key = ((key * M) + ipp[0] * M) + ipp[1];
 	return key % (size - 1);
 }
+static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+
+static void init_bittorrent_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("BitTorrent", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_BITTORRENT, ndpi_search_bittorrent, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+	*id += 1;
+}
+
 #endif
 
 // ndpi_ip_addr_t 
@@ -641,7 +650,6 @@ static void ndpi_add_connection_as_bittorrent(struct ndpi_detection_module_struc
 	}
 	/* tcp */
 	if (packet->udp != NULL) {
-		flow->no_cache_protocol = 1;	// for DHT parse
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 		if (ndpi_struct->bt6_ht && packet->iphv6) {
 			hash_ip4p_add(ndpi_struct->bt6_ht, (ndpi_ip_addr_t *) & packet->iphv6->saddr, packet->udp->source, flow->packet.tick_timestamp, 1);

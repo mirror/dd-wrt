@@ -25,42 +25,41 @@
 #define BTLIB_H
 #define BDEC_MAXDEPT 8
 
-
 typedef struct b_elem_s {
 	const u_int8_t *s;
-	size_t   l;
+	size_t l;
 } b_elem_s_t;
 
-struct __attribute__ ((__packed__)) bt_nodes_data {
-	u_int8_t  id[20] ;
+struct __attribute__((__packed__)) bt_nodes_data {
+	u_int8_t id[20];
 	u_int32_t ip;
 	u_int16_t port;
 };
 
-struct __attribute__ ((__packed__)) bt_ipv4p {
+struct __attribute__((__packed__)) bt_ipv4p {
 	u_int32_t ip;
 	u_int16_t port;
 };
 
-struct __attribute__ ((__packed__)) bt_ipv4p2 {
+struct __attribute__((__packed__)) bt_ipv4p2 {
 	struct bt_ipv4p d;
-	u_int8_t	pad[2];
+	u_int8_t pad[2];
 };
 
-struct __attribute__ ((__packed__)) bt_nodes6_data {
-	u_int8_t  id[20] ;
+struct __attribute__((__packed__)) bt_nodes6_data {
+	u_int8_t id[20];
 	u_int32_t ip[4];
 	u_int16_t port;
 };
 
-struct __attribute__ ((__packed__)) bt_ipv6p {
+struct __attribute__((__packed__)) bt_ipv6p {
 	u_int32_t ip[4];
 	u_int16_t port;
 };
 
-struct __attribute__ ((__packed__)) bt_ipv6p2 {
+struct __attribute__((__packed__)) bt_ipv6p2 {
 	struct bt_ipv6p d;
-	u_int8_t	pad[3];
+	u_int8_t pad[3];
 };
 
 /*
@@ -89,51 +88,48 @@ struct __attribute__ ((__packed__)) bt_ipv6p2 {
   */
 
 struct bt_parse_protocol {
-	u_int16_t y_e:1, y_r:1, y_q:1,
-		  q_a_peer:1,q_f_node:1,
-		  q_g_peers:1,q_ping:1,
-		  h_int:1,h_mint:1,h_ip:1;
+	u_int16_t y_e:1, y_r:1, y_q:1, q_a_peer:1, q_f_node:1, q_g_peers:1, q_ping:1, h_int:1, h_mint:1, h_ip:1;
 	struct {
-		const u_int8_t	*id,		// 20
-			 	*info_hash,	// 20
-			 	*target,	// 20
-				*token,		// 20|8
-			 	*name;		// varlen
+		const u_int8_t *id,	// 20
+		*info_hash,	// 20
+		*target,	// 20
+		*token,		// 20|8
+		*name;		// varlen
 		u_int16_t name_len;
 		u_int16_t port;
-		u_int16_t	t_len;
+		u_int16_t t_len;
 	} a;
 	struct {
-		const u_int8_t 	*id,		// 20
-			 	*token,		// 20|8
-				*values,	// (6+2)*x
-				*values6,	// (18_3)*x
-			 	*name;		// varlen
-		struct bt_ipv4p	*ip;
+		const u_int8_t *id,	// 20
+		*token,		// 20|8
+		*values,	// (6+2)*x
+		*values6,	// (18_3)*x
+		*name;		// varlen
+		struct bt_ipv4p *ip;
 		struct bt_nodes_data *nodes;
 		struct bt_nodes6_data *nodes6;
-		u_int16_t	name_len;
-		u_int16_t	nn;		// nodes num
-		u_int16_t	nv;		// valuse num
-		u_int16_t	nn6;		// nodes6 num
-		u_int16_t	nv6;		// valuse6 num
-		u_int16_t	port;
-		u_int16_t	t_len;
+		u_int16_t name_len;
+		u_int16_t nn;	// nodes num
+		u_int16_t nv;	// valuse num
+		u_int16_t nn6;	// nodes6 num
+		u_int16_t nv6;	// valuse6 num
+		u_int16_t port;
+		u_int16_t t_len;
 	} r;
-	int			interval,min_interval;
-	struct bt_ipv4p		*peers;
-	int			n_peers;
-	struct bt_ipv4p		*ip;
-	const u_int8_t		*e_msg;
-	u_int16_t		e_len;
-	u_int64_t		t,v;
+	int interval, min_interval;
+	struct bt_ipv4p *peers;
+	int n_peers;
+	struct bt_ipv4p *ip;
+	const u_int8_t *e_msg;
+	u_int16_t e_len;
+	u_int64_t t, v;
 };
 
 typedef struct bt_parse_data_cb {
 	struct bt_parse_protocol p;
-	char	buf[64];
-	int	level;
-	int	t;
+	char buf[64];
+	int level;
+	int t;
 	union {
 		i_int64_t i;
 		b_elem_s_t s;
@@ -144,6 +140,6 @@ typedef struct bt_parse_data_cb {
 extern int bt_parse_debug;
 void dump_bt_proto_struct(struct bt_parse_protocol *p);
 #endif
-static const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t *cbd);
+static const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t * cbd);
 
 #endif

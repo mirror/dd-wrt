@@ -23,6 +23,7 @@
  */
 
 #include "ndpi_protocols.h"
+
 #ifdef NDPI_PROTOCOL_KONTIKI
 
 static void ndpi_int_kontiki_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
@@ -57,6 +58,14 @@ static void ndpi_search_kontiki(struct ndpi_detection_module_struct *ndpi_struct
 	}
 
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_KONTIKI);
+}
+
+static void init_kontiki_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+{
+	ndpi_set_bitmask_protocol_detection("Kontiki", ndpi_struct, detection_bitmask, *id,
+					    NDPI_PROTOCOL_KONTIKI, ndpi_search_kontiki, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+
+	*id += 1;
 }
 
 #endif
