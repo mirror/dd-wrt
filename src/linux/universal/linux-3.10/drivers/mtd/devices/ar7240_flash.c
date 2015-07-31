@@ -200,8 +200,7 @@ static unsigned int guessflashsize(void *base)
 
 }
 
-#if defined(ATH_SST_FLASH)
-void
+static void
 ar7240_spi_flash_unblock(void)
 {
 	ar7240_spi_write_enable();
@@ -210,7 +209,6 @@ ar7240_spi_flash_unblock(void)
 	ar7240_spi_go();
 	ar7240_spi_poll();
 }
-#endif
 
 /*
 Before we claim the SPI driver we need to clean up any work in progress we have
@@ -236,6 +234,9 @@ ar7424_flash_spi_reset(void) {
 		ar7240_spi_go();
 	}
 	ar7240_spi_poll();
+	if(mfrid == MXIC_JEDEC_ID) {
+		    ar7240_spi_flash_unblock(); // required to unblock software protection mode by ubiquiti (consider that gpl did not release this in theires gpl sources. likelly to fuck up developers)
+	}
 	ar7240_reg_wr(AR7240_SPI_FS, 0);
 }
 
@@ -245,9 +246,11 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 	int nsect, s_curr, s_last;
 	uint64_t  res;
 	if (instr->addr + instr->len > mtd->size) {
-		printf(KERN_INFO "erase error, addr+len(0x%08X) is bigger than size(0x%08X)\n",instr->addr + instr->len,mtd->size);
 		return (-EINVAL);
 	}
+//    MY_WRITE(0xb8040028, (ar7240_reg_rd(0xb8040028) | 0x48002));
+
+//    MY_WRITE(0xb8040008, 0x2f);
 
 	ar7240_flash_spi_down();
 	preempt_disable();
