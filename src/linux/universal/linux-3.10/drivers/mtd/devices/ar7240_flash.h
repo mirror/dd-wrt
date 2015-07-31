@@ -11,6 +11,7 @@
 #endif
 #define AR7240_SPI_CE_LOW       0x60000
 #define AR7240_SPI_CE_HIGH      0x60100
+#define AR7240_SPI_CMD_WRSR         0x01
 #if 0
 #define AR7240_SPI_CMD_WREN         0x06
 #define AR7240_SPI_CMD_RD_STATUS    0x05
