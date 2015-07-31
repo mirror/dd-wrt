@@ -877,11 +877,6 @@ void Uart16550Init()
 	ar7240_sys_frequency();
 	freq = ar7240_ahb_freq;
 
-    /* Enable UART , SPI and Disable S26 UART */ 
-    MY_WRITE(0xb8040028, (ar7240_reg_rd(0xb8040028) | 0x48002));
-
-    MY_WRITE(0xb8040008, 0x2f);
-
 #if 0				// CONFIG_DIR615E
 	MY_WRITE(0xb8040000, 0xcff);
 
