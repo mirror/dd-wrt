@@ -127,6 +127,16 @@ void getWirelessMac(char *newmac, int instance)
 
 	}
 #endif
+#ifdef HAVE_MVEBU
+	if (instance < 0)
+		instance = 0;
+
+	strcpy(newmac, nvram_safe_get("et0macaddr"));
+	MAC_ADD(newmac);
+	MAC_ADD(newmac);
+	if (instance)
+		MAC_ADD(newmac);
+#endif
 	return;
 }
 
