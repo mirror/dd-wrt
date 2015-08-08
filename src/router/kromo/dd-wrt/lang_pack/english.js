@@ -172,7 +172,8 @@ share.styl_dark="Use Dark Styles";
 share.err="error";
 share.errs="errors";
 share.meters="meters";
-share.ht80="VHT (80+80 MHz)";
+share.ht160="VHT160 (80+80 MHz)";
+share.ht80="VHT (40+40 MHz)";
 share.ht40="Wide HT40 (20+20 MHz)";
 share.ht20="Full HT20 (20 MHz)";
 share.dynamicturbo="Dynamic (20/40 MHz)";
@@ -583,6 +584,8 @@ diag.startup="Startup";
 diag.shutdown="Shutdown";
 diag.firewall="Firewall";
 diag.custom="Custom Script";
+diag.running="Running";
+diag.stopped="Stopped";
 
 //help container
 var hdiag=new Object();
@@ -1769,8 +1772,8 @@ service.ses_script="Custom Script";
 
 //hwmon.webservices
 service.hwmon_legend="Hardware Monitoring";
-service.hwmon_critemp="Critical Temperature (FAN Switch On)";
-service.hwmon_hystemp="Hysteresis Temperature (FAN Switch Off)";
+service.hwmon_critemp="High Temperature (FAN On)";
+service.hwmon_hystemp="Normal Temperature (FAN Off)";
 
 //rstat.webservices
 service.rstats_legend="Bandwidth Monitoring";
