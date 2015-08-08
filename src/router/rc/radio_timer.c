@@ -24,6 +24,9 @@
 #define startstop(a) sysprintf("startstop %s",a);
 #define startstop_f(a) sysprintf("startstop_f %s",a);
 
+extern void handle_wireless(void);
+
+
 int main(int argc, char **argv)
 {
 
@@ -103,12 +106,16 @@ int main(int argc, char **argv)
 				case 1:	// 01 - turn radio on
 					syslog(LOG_DEBUG, "Turning radio 0 on\n");
 					start_service_force("radio_on_0");
-
+#ifdef HAVE_ATH9K
+					start_service_force("lan");
+#endif
 					break;
 
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG, "Turning radio 0 off\n");
 					start_service_force("radio_off_0");
+					eval("/sbin/ifconfig", "ath0", "down");
+					//eval("/usr/sbin/iwconfig", "ath0", "txpower", "off");
 					break;
 				}
 
@@ -120,11 +127,16 @@ int main(int argc, char **argv)
 				case 1:	// 01 - turn radio on
 					syslog(LOG_DEBUG, "Turning radio 1 on\n");
 					start_service_force("radio_on_1");
+#ifdef HAVE_ATH9K
+					start_service_force("lan");
+#endif
 					break;
 
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG, "Turning radio 1 off\n");
 					start_service_force("radio_off_1");
+					eval("/sbin/ifconfig", "ath1", "down");
+					//eval("/usr/sbin/iwconfig", "ath0", "txpower", "off");
 					break;
 				}
 

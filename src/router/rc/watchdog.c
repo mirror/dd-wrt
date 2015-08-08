@@ -10,6 +10,47 @@
 
 static void watchdog(void)
 {
+#ifdef HAVE_MVEBU
+	while (1) {
+		int cpu;
+		FILE *tempfp;
+		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d", &cpu);
+			fclose(tempfp);
+			if ( cpu > ((atoi(nvram_safe_get("hwmon_temp_max")) + 10) * 1000) )
+			{
+				system("/bin/echo 255 > /sys/class/hwmon/hwmon0/pwm1");
+				
+			} else if ( cpu > ((atoi(nvram_safe_get("hwmon_temp_max")) + 5) * 1000) )
+			{
+				system("/bin/echo 150 > /sys/class/hwmon/hwmon0/pwm1");
+				
+			} else if ( cpu > ((atoi(nvram_safe_get("hwmon_temp_max"))) * 1000) )
+			{
+				system("/bin/echo 100 > /sys/class/hwmon/hwmon0/pwm1");
+				
+			} else if ( cpu < ((atoi(nvram_safe_get("hwmon_temp_hyst"))) * 1000) )
+			{
+				system("/bin/echo 0 > /sys/class/hwmon/hwmon0/pwm1");
+				
+			}
+		
+		}
+		
+		FILE *procfp;
+		procfp = fopen("/proc/irq/28/smp_affinity", "rb");
+		if (procfp) {
+			fscanf(procfp, "%d", &cpu);
+			fclose(procfp);
+			if(cpu != 2) {
+				system("/bin/echo 2 > /proc/irq/27/smp_affinity");
+				system("/bin/echo 2 > /proc/irq/28/smp_affinity");
+			}
+		}
+		sleep(10);
+	}
+#else
 	int brand = getRouterBrand();
 	int registered = -1;
 	int radiostate0 = -1;
@@ -129,6 +170,7 @@ static void watchdog(void)
 #endif
 		}
 
+
 		sleep(5);
 		if (nvram_match("warn_enabled", "1")) {
 			counter++;
@@ -136,6 +178,7 @@ static void watchdog(void)
 				system("notifier&");	// 
 		}
 	}
+#endif //MVEBU
 }
 
 int watchdog_main(int argc, char *argv[])
