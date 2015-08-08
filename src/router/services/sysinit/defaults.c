@@ -187,7 +187,8 @@ struct nvram_param srouter_defaults[] = {
 	{"lan_ifnames", ""},	/* Enslaved LAN interfaces */
 	{"lan_hwnames", ""},	/* LAN driver names (e.g. et0) */
 	{"lan_hwaddr", ""},	/* LAN interface MAC address */
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
+//KONG needs to be modified for marvel
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
 	{"wl0_ifname", "ath0"},	/* LAN interface MAC address */
 #else
 	{"wl0_ifname", "eth1"},	/* LAN interface MAC address */
@@ -2675,6 +2676,8 @@ struct nvram_param srouter_defaults[] = {
 	{"ip_conntrack_max", "16384"},
 #elif HAVE_NORTHSTAR
 	{"ip_conntrack_max", "32768"},
+#elif HAVE_MVEBU
+	{"ip_conntrack_max", "32768"},
 #elif HAVE_LAGUNA
 	{"ip_conntrack_max", "32768"},
 #elif HAVE_RB600
@@ -3018,12 +3021,18 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_IPR
 	{"newhttp_passwd", "$1$hFOmcfz/$eYEVGPdzfrkGcA6MbUukF."},
 #endif
-#ifdef HAVE_MADWIFI
-	/*
-	 * {"ath0_regdomain", "96"}, {"ath1_regdomain", "96"},
-	 * {"ath2_regdomain", "96"}, {"ath3_regdomain", "96"},
-	 * {"ath4_regdomain", "96"}, {"ath5_regdomain", "96"}, 
-	 */
+#ifdef HAVE_MVEBU
+	 {"hwmon_temp_max", "65"},
+	 {"hwmon_temp_hyst", "60"},
+	 {"ath0_regdomain", "UNITED_STATES"},
+	 {"ath1_regdomain", "UNITED_STATES"},
+	 {"ath0_channel", "2437"},
+	 {"ath1_channel", "5745"},
+	 {"ath1_channelbw", "80"},
+	 {"ath1_nctrlsb", "upper"},
+	 {"ath1_net_mode","acn-mixed"},
+	 {"ath0_txpwrdbm","30"},
+	 {"ath1_txpwrdbm","30"},
 #endif
 #ifdef HAVE_SPUTNIK_APD
 
