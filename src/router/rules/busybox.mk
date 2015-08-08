@@ -257,6 +257,11 @@ else
 	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 endif
+ifeq ($(ARCHITECTURE),mvebu)	
+	cp busybox/.config_bcmmodern_std busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_CPU is not set/CONFIG_FEATURE_TOP_SMP_CPU=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_PROCESS is not set/CONFIG_FEATURE_TOP_SMP_PROCESS=y/g' busybox/.config
+endif
 ifeq ($(ARCHITECTURE),laguna)
 	cp busybox/.config_laguna busybox/.config
 	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
