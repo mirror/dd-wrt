@@ -52,6 +52,14 @@ int get_wl_instance(char *name)
 #else
 char *get_wl_instance_name(int instance)
 {
+#ifdef HAVE_MVEBU
+	fprintf(stderr, "get_wl_instance_name \n");
+	/*if (instance == 1)
+		return "wlan0";
+	if (instance == 2)
+		return "wlan1";*/
+	
+#endif
 #ifdef HAVE_QTN
 	if (instance == 1)
 		return "qtn";
@@ -70,6 +78,9 @@ char *get_wl_instance_name(int instance)
 
 int get_wl_instances(void)
 {
+#ifdef HAVE_MVEBU
+	return 2;
+#endif
 #ifdef HAVE_QTN
 	return 2;
 #else
