@@ -12,7 +12,6 @@
 # $Id: Makefile,v 1.10 2005/11/30 11:53:42 seg Exp $
 #
 
-
 include $(TOP)/.config
 
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
@@ -228,6 +227,9 @@ ifeq ($(CONFIG_MERAKI),y)
 endif
 ifeq ($(CONFIG_LS2),y)
   CFLAGS += -DHAVE_LS2
+endif
+ifeq ($(CONFIG_WRT1900AC),y)
+  CFLAGS += -DHAVE_1900AC
 endif
 ifeq ($(CONFIG_NS2),y)
   CFLAGS += -DHAVE_NS2
