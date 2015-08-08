@@ -322,6 +322,21 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 }
+#elif HAVE_MVEBU
+void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *fp = fopen("/sys/kernel/debug/clk/cpuclk/clk_rate", "rb");
+	if (fp) {
+		int freq;
+		fscanf(fp, "%d", &freq);
+		fclose(fp);
+		websWrite(wp, "%d", freq / 1000000);
+	} else {
+		websWrite(wp, "1200");
+		
+	}
+	return;
+}
 #elif HAVE_X86
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
@@ -2305,7 +2320,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		char cn[128];
 		char fr[32];
 		int gotchannels = 0;
-
+		int channelbw = 40;
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 		if (is_ath11n(prefix)) {
 #ifdef HAVE_MADWIFI_MIMO
@@ -2324,7 +2339,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(regdomain, "%s_regdomain", prefix);
 				country = nvram_default_get(regdomain, "UNITED_STATES");
 				// temp end
-				int channelbw = 40;
+				
 				if (nvram_nmatch("80", "%s_channelbw", prefix))
 					channelbw = 80;
 				chan = mac80211_get_channels(prefix, getIsoName(country), channelbw, 0xff);
@@ -2351,6 +2366,15 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			while (chan[i].freq != -1) {
 #ifdef HAVE_BUFFALO
 				if (chan[i].dfs == 1) {
+					i++;
+					continue;
+				}
+#endif
+
+#ifdef HAVE_MVEBU		
+				if( (chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) && channelbw == 80 )
+				{
+					fprintf(stderr, "Skip unsupported channel: %d\n", chan[i].channel);
 					i++;
 					continue;
 				}
@@ -4828,6 +4852,7 @@ if (!strcmp(prefix, "wl2"))
 		int maxtx = 7;
 #ifdef HAVE_ATH9K
 		int prefixcount;
+
 		sscanf(prefix, "ath%d", &prefixcount);
 		int phy_idx = get_ath9k_phy_idx(prefixcount);
 		maxrx = mac80211_get_avail_rx_antenna(phy_idx);
@@ -4983,6 +5008,7 @@ if (!strcmp(prefix, "wl2"))
 #ifdef HAVE_REGISTER
 	if (!iscpe())
 #endif
+	  
 		show_virtualssid(wp, prefix);
 }
 
