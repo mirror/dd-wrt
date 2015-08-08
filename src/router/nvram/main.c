@@ -28,6 +28,8 @@ static void usage(void)
 
 #ifdef NVRAM_SPACE_256
 #define NVRAMSPACE NVRAM_SPACE_256
+#elif HAVE_MVEBU
+#define NVRAMSPACE 0x10000
 #else
 #define NVRAMSPACE NVRAM_SPACE
 #endif
@@ -70,8 +72,8 @@ int main(int argc, char **argv)
 				puts(name);
 			size =
 			    sizeof(struct nvram_header) + (int)name - (int)buf;
-			fprintf(stderr, "size: %d bytes (%d left)\n", size,
-				NVRAMSPACE - size);
+			fprintf(stderr, "size: %d bytes (%d left) %d\n", size,
+				NVRAMSPACE - size, NVRAMSPACE);
 		}
 		if (!*argv)
 			break;
