@@ -1205,12 +1205,21 @@ void start_restore_defaults(void)
 		{"wan_default", "eth0"},
 		{0, 0}
 	};
+#elif HAVE_MVEBU
+	struct nvram_param generic[] = {
+		{"lan_ifname", "br0"},
+		{"lan_ifnames","eth0 eth1 ath0 ath1"},
+		{"wan_ifname", "eth1"},
+		{"wan_ifname2", "eth1"},
+		{"wan_ifnames", "eth1"},
+		{"wan_default", "eth1"},
+		{0, 0}
+	};	
 #elif HAVE_WDR4900
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
 		{"lan_ifnames",
-		 "vlan1 vlan2 ath0 ath1",
-		 0},
+		 "vlan1 vlan2 ath0 ath1",},
 		{"wan_ifname", "vlan2"},
 		{"wan_ifname2", "vlan2"},
 		{"wan_ifnames", "vlan2"},
@@ -1221,8 +1230,7 @@ void start_restore_defaults(void)
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
 		{"lan_ifnames",
-		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7",
-		 0},
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7",},
 		{"wan_ifname", "eth0"},
 		{"wan_ifname2", "eth0"},
 		{"wan_ifnames", "eth0"},
@@ -1524,10 +1532,11 @@ void start_restore_defaults(void)
 		{"wan_ifnames", "eth0"},
 		{"wan_default", "eth0"},
 #else
-		{"wan_ifname", "eth1"},
+/*		{"wan_ifname", "eth1"},
 		{"wan_ifname2", "eth1"},
 		{"wan_ifnames", "eth1"},
 		{"wan_default", "eth1"},
+*/
 #endif
 		{0, 0}
 	};
@@ -2020,7 +2029,7 @@ void start_restore_defaults(void)
 #ifdef HAVE_RB500
 	linux_overrides = generic;
 	int brand = getRouterBrand();
-#elif defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) \
+#elif defined(HAVE_MVEBU) || defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) \
     || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) \
     || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) \
     || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8)  || defined(HAVE_OCTEON)
@@ -2237,7 +2246,7 @@ void start_restore_defaults(void)
 	/*
 	 * Restore defaults 
 	 */
-#if defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) \
+#if defined(HAVE_MVEBU) || defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) \
     || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) \
     || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) \
     || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) || defined(HAVE_80211AC) || defined(HAVE_OCTEON)
@@ -2267,6 +2276,7 @@ void start_restore_defaults(void)
 					if (!strcmp(t->name, u->name)) {
 						nvcnt++;
 						nvram_set(u->name, u->value);
+						fprintf(stderr, "Name: %s Value: %s\n", u->name,u->value);
 						break;
 					}
 				}
@@ -2550,6 +2560,9 @@ void start_restore_defaults(void)
 
 		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
 			switch (brand) {
+//			case ROUTER_WRT_1900AC:
+//				nvram_set("vlan0ports", "0 1 2 3 5*");
+//				break;
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_NETGEAR_WNR3500LV2:
 			case ROUTER_WRT320N:
@@ -2606,6 +2619,9 @@ void start_restore_defaults(void)
 
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			switch (brand) {
+//			case ROUTER_WRT_1900AC:
+//				nvram_set("vlan2ports", "4 5");
+//				break;
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_NETGEAR_WNR3500LV2:
 			case ROUTER_NETGEAR_WNDR4500:
@@ -2839,11 +2855,10 @@ void start_drivers(void)
 		led_control(LED_USB, LED_ON);
 		led_control(LED_USB1, LED_ON);
 
-		insmod
-		    ("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd xhci-hcd xhci-pci dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx");
+		insmod("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd xhci-hcd xhci-pci dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx");
 
 		if (nvram_match("usb_storage", "1")) {
-			insmod("scsi_mod scsi_wait_scan sd_mod cdrom sr_mod usb-storage");
+			insmod("scsi_mod scsi_wait_scan sd_mod cdrom sr_mod usb-storage sata_mv ehci-orion");
 		}
 
 		if (nvram_match("usb_printer", "1")) {
