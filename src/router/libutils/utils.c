@@ -1917,6 +1917,9 @@ int internal_getRouterBrand()
 		setRouter("Fonera 2100/2200");
 		return ROUTER_BOARD_FONERA;
 	}
+#elif HAVE_WRT1900AC
+	setRouter("Linksys WRT 1900AC");
+	return ROUTER_WRT_1900AC;	
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;
@@ -3985,6 +3988,8 @@ void *getUEnv(char *name)
 	//fprintf(stderr,"[u-boot env]%s\n",name);
 #if defined(HAVE_WMBR_G300NH) || defined(HAVE_DIR810L)
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
+#elif HAVE_MVEBU
+	FILE *fp = fopen("/dev/mtdblock/1", "rb");
 #else
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 #endif
@@ -4160,7 +4165,7 @@ unsigned int write_gpio(char *device, unsigned int val)
 static char hw_error = 0;
 int diag_led_4704(int type, int act)
 {
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
+#if defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
 	return 0;
 #else
 	unsigned int control, in, outen, out;
@@ -4207,7 +4212,7 @@ int diag_led_4712(int type, int act)
 {
 	unsigned int control, in, outen, out, ctr_mask, out_mask;
 
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
+#if defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
 	return 0;
 #else
 
@@ -4289,6 +4294,17 @@ static char *stalist[] = {
 
 char *getWifi(char *ifname)
 {
+#ifdef HAVE_MVEBU
+  	if (!strncmp(ifname, "ath0", 4))
+		return "wlan0";
+	if (!strncmp(ifname, "ath1", 4))
+		return "wlan1";
+	if (!strncmp(ifname, "ath2", 4))
+		return "wlan2";
+	if (!strncmp(ifname, "ath3", 4))
+		return "wlan3";
+	return NULL;
+#else
 	if (!strncmp(ifname, "ath0", 4))
 		return "wifi0";
 	if (!strncmp(ifname, "ath1", 4))
@@ -4298,6 +4314,7 @@ char *getWifi(char *ifname)
 	if (!strncmp(ifname, "ath3", 4))
 		return "wifi3";
 	return NULL;
+#endif
 }
 
 char *getWDSSTA(void)
@@ -4749,6 +4766,8 @@ int getIfList(char *buffer, const char *ifprefix)
 			} else {
 				if (!strncmp(ifname, "wifi", 4))
 					skip = 1;
+				if (!strncmp(ifname, "wlan", 4))
+					skip = 1;
 				if (!strncmp(ifname, "ifb", 3))
 					skip = 1;
 				if (!strncmp(ifname, "imq", 3))
@@ -4859,7 +4878,10 @@ int sv_valid_hwaddr(char *value)
 char *cpustring(void)
 {
 	static char buf[256];
-#ifdef HAVE_UNIWIP
+#ifdef HAVE_MVEBU
+	strcpy(buf, "Marvel Armada 370/XP");
+	return buf;
+#elif HAVE_UNIWIP
 	strcpy(buf, "FreeScale MPC8314");
 	return buf;
 #elif HAVE_WDR4900
@@ -5031,6 +5053,15 @@ int led_control(int type, int act)
 		diag_gpio = 0x000;
 		usb_gpio = 0x001;
 		usb_gpio1 = 0x002;
+		break;
+#endif
+#ifdef HAVE_WRT1900AC
+	case ROUTER_WRT_1900AC:
+		diag_gpio = 0x100;
+		//esata = 0x003;
+		usb_gpio = 0x004;
+		usb_gpio1 = 0x005;
+		connected_gpio = 0x006;
 		break;
 #endif
 	case ROUTER_BOARD_PB42:
@@ -6700,7 +6731,11 @@ int getath9kdevicecount(void)
 int get_ath9k_phy_idx(int idx)
 {
 	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
+#ifdef HAVE_MVEBU
+	return idx;
+#else
 	return idx - getifcount("wifi");
+#endif
 }
 
 int get_ath9k_phy_ifname(const char *ifname)
@@ -6716,6 +6751,9 @@ int get_ath9k_phy_ifname(const char *ifname)
 
 int is_ath9k(const char *prefix)
 {
+#ifdef HAVE_MVEBU
+	return 1;
+#endif
 	glob_t globbuf;
 	int count = 0;
 	char globstring[1024];
@@ -6766,6 +6804,9 @@ int is_ath5k(const char *prefix)
 #ifdef HAVE_ATH10K
 int is_ath10k(const char *prefix)
 {
+#ifdef HAVE_MVEBU
+	return 1;
+#endif  
 	glob_t globbuf;
 	int count = 0;
 	char globstring[1024];
