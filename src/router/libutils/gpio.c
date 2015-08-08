@@ -148,6 +148,63 @@ int get_gpio(int gpio)
 	return 0;
 }
 
+#elif HAVE_WRT1900AC
+void set_gpio(int gpio, int value)
+{
+	//value 0 off 255 on
+	if(value == 1)
+		value = 255;
+	//fprintf(stderr, "GPIO %d value %d\n", gpio, value);
+	switch (gpio) {
+	case 0:		// power
+		sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:power/brightness", value);
+		break;
+	case 1:		// 2G
+		sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wlan_2g/brightness", value);
+		break;
+	case 2:		// 5G
+		sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wlan_5g/brightness", value);
+		break;
+	case 3:		// 5G
+		sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:esata/brightness", value);
+		break;
+	case 4: 
+		sysprintf("echo %d > /sys/class/leds/mamba\:white\:usb3_1/brightness", value);
+		break;
+	case 5: 
+		sysprintf("echo %d > /sys/class/leds/mamba\:white\:usb2/brightness", value);
+		break;
+	case 6: 
+		sysprintf("echo %d > /sys/class/leds/mamba\:white\:wan/brightness", value);
+		break;
+
+	}
+}
+
+int get_gpio(int gpio)
+{
+
+	FILE *fp = NULL;
+	int value;
+	switch (gpio) {
+	case 3:
+		fp = fopen("/tmp/.button_reset", "rb");
+		break;
+	case 4:
+		fp = fopen("/tmp/.button_wps", "rb");
+		break;
+	}
+	if (fp) {
+		value = getc(fp);
+		//fprintf(stderr, "Resetbutton value :%d\n", value);
+		fclose(fp);
+		if (value == EOF)
+			return 0;
+		return value;
+	}
+	return 0;
+}
+
 #elif defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
 
 void set_gpio(int gpio, int value)
