@@ -235,6 +235,10 @@ endif
 ifeq ($(CONFIG_SANSFIL),y)
   CFLAGS += -DHAVE_SANSFIL
 endif
+ifeq ($(CONFIG_MVEBU),y)
+CFLAGS += -DHAVE_MVEBU
+CFLAGS += -DHAVE_CPUTEMP
+endif
 include $(TOP)/rules/generic.mk
 CFLAGS += $(DD_CFLAGS)
 
@@ -273,6 +277,7 @@ endif
 ifeq ($(CONFIG_UNFY),y)
 CLFAGS += -DHAVE_UNFY
 endif
+
 
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
@@ -1150,6 +1155,8 @@ endif
 ifeq ($(CONFIG_CUSTOMSSLCERT),y)
 CFLAGS += -DHAVE_CUSTOMSSLCERT
 endif
+
+
 
 #use this do disable number of arguments checking (less code and faster exec)
 CFLAGS += -DFASTWEB
