@@ -31,6 +31,8 @@
 
 #ifdef NVRAM_SPACE_256
 #define NVRAMSPACE NVRAM_SPACE_256
+#elif HAVE_MVEBU
+#define NVRAMSPACE 0x10000
 #else
 #define NVRAMSPACE NVRAM_SPACE
 #endif
@@ -48,7 +50,6 @@ int nvram_init(void *unused)
 
 	/* Map kernel string buffer into user space */
 	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
-
 	if (nvram_buf == MAP_FAILED) {
 		close(nvram_fd);
 		fprintf(stderr, "nvram_init(): failed\n");
