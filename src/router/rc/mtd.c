@@ -646,6 +646,7 @@ int mtd_write(const char *path, const char *mtd)
 				skipoffset++;
 				goto again;
 			}
+
 			lseek(mtd_fd, (i + skipoffset) * mtd_info.erasesize, SEEK_SET);
 
 			if (write(mtd_fd, buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
@@ -654,8 +655,8 @@ int mtd_write(const char *path, const char *mtd)
 					goto again;
 				goto fail;
 			}
-
 		}
+
 #else
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			fprintf(stderr, "write block [%ld] at [0x%08X]        \n", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
@@ -666,9 +667,25 @@ int mtd_write(const char *path, const char *mtd)
 				goto fail;
 			}
 		}
+		
+#if defined(HAVE_MVEBU)
+		//fprintf(stderr, "clean flash start: %ld  end: %ld\n",erase_info.start, mtd_info.size);
+		for (i; i < (mtd_info.size / mtd_info.erasesize); i++) {
+			erase_info.start = base + (i * mtd_info.erasesize);
+			//fprintf(stderr, "erase[%d]\n", erase_info.start);
+			//(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+				perror(mtd);
+				goto fail;
+			}
+		}
+#endif
 
 #endif
 	}
+	
+
+	fprintf(stderr, "done [%ld]\n", i * mtd_info.erasesize);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
 	 */
