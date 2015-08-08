@@ -2217,8 +2217,50 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 #include <qcnapi.h>
 #endif
 
+void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
+{
+      websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", live_translate("service.dhcp_legend2"));
+      if(nvram_match("lan_proto", "dhcp")){
+		websWrite(wp, "%s", live_translate("share.enabled"));
+		if(pidof("dnsmasq") > 0 || pidof("udhcpd") > 0){
+			websWrite(wp, " - %s", live_translate("diag.running"));
+		} else {
+			websWrite(wp, " - %s", live_translate("diag.stopped"));
+		}
+      } else {
+		websWrite(wp, "%s", live_translate("share.disabled"));
+      }
+      websWrite(wp, "&nbsp;</div>");
+
+#ifdef HAVE_SAMBA_SERVER
+      websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", live_translate("service.samba3_srv"));
+      if(nvram_match("samba3_enable", "1")){
+		websWrite(wp, "%s", live_translate("share.enabled"));
+		if(pidof("smbd") > 0){
+			websWrite(wp, " - %s", live_translate("diag.running"));
+		} else {
+			websWrite(wp, " - %s", live_translate("diag.stopped"));
+		}
+      } else {
+		websWrite(wp, "%s", live_translate("share.disabled"));
+      }
+      websWrite(wp, "&nbsp;</div>");
+#endif
+}
+
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
+#ifdef HAVE_MVEBU
+	FILE *tempfp;
+	tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+	if (tempfp) {
+		int cpu;
+		fscanf(tempfp, "%d", &cpu);
+		fclose(tempfp);
+		websWrite(wp, "%d &#176;C ", cpu / 1000);
+	}
+	return;
+#endif
 #ifdef HAVE_BCMMODERN
 
 	static int tempcount = 0;
