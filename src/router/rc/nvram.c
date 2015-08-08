@@ -13,12 +13,20 @@ static void usage(void)
 	exit(0);
 }
 
+#ifdef NVRAM_SPACE_256
+#define NVRAMSPACE NVRAM_SPACE_256
+#elif HAVE_MVEBU
+#define NVRAMSPACE 0x10000
+#else
+#define NVRAMSPACE NVRAM_SPACE
+#endif
+
 /* 
  * NVRAM utility 
  */
 int main(int argc, char **argv)
 {
-	char *name, *value, buf[NVRAM_SPACE];
+	char *name, *value, buf[NVRAMSPACE];
 	int size;
 
 	/* 
@@ -56,7 +64,7 @@ int main(int argc, char **argv)
 			for (name = buf; *name; name += strlen(name) + 1)
 				puts(name);
 			size = sizeof(struct nvram_header) + (long)name - (long)buf;
-			fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAM_SPACE - size);
+			fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAMSPACE - size);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {
 				int ret = nvram_backup(*argv);
