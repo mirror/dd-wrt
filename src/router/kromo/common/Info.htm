@@ -330,10 +330,12 @@ function refresh(F)
 							<div class="col2r">
 								<fieldset>
 									<legend><% tran("info.srv"); %></legend>
-									<div class="setting">
+									<% get_service_state(); %>
+							<!--		<div class="setting">
 										<div class="label"><% tran("service.dhcp_legend2"); %></div>
 										<% nvm("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvm("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 									</div>
+							-->
 									<div class="setting">
 										<div class="label">WRT-radauth</div>
 									<% nvim("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvm("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvim("wl0_mode", "ap", "-->"); %>&nbsp;
