@@ -19,13 +19,14 @@ export OPENSSL_TARGET := linux-armv4
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-armv4.o aes_cbc.o"
 export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections
+COPTS := -O3
 endif
 endif
 ifeq ($(ARCH),mips)
 export OPENSSL_TARGET := linux-mips
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes_cbc.o aes-mips.o"
-export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections
+export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_SMALL_FOOTPRINT
 endif
 ifeq ($(ARCH),mips64)
 export OPENSSL_TARGET := linux-mips64
@@ -107,7 +108,6 @@ openssl-configure:
 			--openssldir=/etc/ssl \
 			$(COPTS) $(OPENSSL_CMAKEFLAGS)  -L$(TOP)/zlib -I$(TOP)/zlib -DNDEBUG \
 			$(TARGET_LDFLAGS) -ldl \
-			-DOPENSSL_SMALL_FOOTPRINT \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
 
