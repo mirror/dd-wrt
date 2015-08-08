@@ -927,6 +927,25 @@ void start_lan(void)
 		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
+#elif HAVE_MVEBU
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
+		PORTSETUPWAN("eth1");
+	}
+
+	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+	MAC_ADD(mac);
+	ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+	ioctl(s, SIOCSIFHWADDR, &ifr);
 #elif HAVE_WDR4900
 	nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -2844,6 +2863,9 @@ void start_wan(int status)
 #elif HAVE_UNIWIP
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
+#elif HAVE_MVEBU
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_WDR4900
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
@@ -4848,6 +4870,13 @@ void start_hotplug_net(void)
 		sysprintf("echo %x > /sys/class/net/%s/queues/tx-3/xps_cpus", cpumask, interface);
 	    }
 #endif
+		sysprintf("echo %d > /sys/class/net/%s/queues/tx-1/xps_cpus", cpumask, interface);
+		sysprintf("echo %d > /sys/class/net/%s/queues/tx-2/xps_cpus", cpumask, interface);
+		sysprintf("echo %d > /sys/class/net/%s/queues/tx-3/xps_cpus", cpumask, interface);
+		sysprintf("echo %d > /sys/class/net/%s/queues/tx-4/xps_cpus", cpumask, interface);
+		sysprintf("echo %d > /sys/class/net/%s/queues/tx-5/xps_cpus", cpumask, interface);
+		sysprintf("echo %d > /sys/class/net/%s/queues/tx-6/xps_cpus", cpumask, interface);
+		sysprintf("echo %d > /sys/class/net/%s/queues/tx-7/xps_cpus", cpumask, interface);		
 	}
 #endif
 #ifdef HAVE_MADWIFI
