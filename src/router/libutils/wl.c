@@ -35,7 +35,7 @@ struct nvram_param router_defaults[] = {
  * DD-WRT addition (loaned from radauth) 
  */
 
-#ifndef HAVE_MADWIFI
+#ifndef HAVE_MADWIFI 
 u_int ieee80211_mhz2ieee(u_int freq)
 {
 	if (freq == 2484)
@@ -1128,7 +1128,7 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 
 float wifi_getrate(char *ifname)
 {
-#ifdef HAVE_ATH9K
+#ifdef HAVE_ATH9K && !defined(HAVE_MVEBU)
 	if (is_ath9k(ifname)) {
 		if (nvram_nmatch("b-only", "%s_net_mode", ifname))
 			return 11.0 * MEGA;
@@ -1210,6 +1210,9 @@ int iw_mwatt2dbm(int in)
 
 static int checkid(char *ifname, int vendorid, int productid)	//checks if its usually a emp card (no concrete detection possible)
 {
+#ifdef HAVE_MVEBU
+	return 0;
+#endif
 	int vendor;
 	int product;
 	int devcount;
@@ -1874,7 +1877,6 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	}
 	if (!allchans) {
 		uint8_t active[64];
-
 		if (do80211priv(ifname, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof(active)) < 0) {
 			fprintf(stderr, "unable to get active channel list\n");
 			return NULL;
@@ -2105,7 +2107,7 @@ int getUptime(char *ifname, unsigned char *mac)
 		si = (struct ieee80211req_sta_info *)cp;
 		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
 			close(s);
-			int uptime = si->isi_uptime;
+			int uptime = 0; //si->isi_uptime;
 
 			free(buf);
 			return uptime;
@@ -2307,8 +2309,12 @@ void radio_off(int idx)
 	}
 #endif
 	if (idx != -1) {
+#ifdef HAVE_MVEBU
+
+#else
 		writevaproc("1", "/proc/sys/dev/wifi%d/silent", idx);
 		writevaproc("1", "/proc/sys/dev/wifi%d/ledon", idx);	// switch off led
+#endif
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_OFF);
 		if (idx == 1)
@@ -2317,8 +2323,12 @@ void radio_off(int idx)
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++) {
+#ifdef HAVE_MVEBU
+
+#else
 			writevaproc("1", "/proc/sys/dev/wifi%d/silent", i);
 			writevaproc("1", "/proc/sys/dev/wifi%d/ledon", i);	// switch off led
+#endif
 		}
 		led_control(LED_WLAN0, LED_OFF);
 		led_control(LED_WLAN1, LED_OFF);
@@ -2352,8 +2362,11 @@ void radio_on(int idx)
 	}
 #endif
 	if (idx != -1) {
+#ifdef HAVE_MVEBU
 
+#else
 		writevaproc("0", "/proc/sys/dev/wifi%d/silent", idx);
+#endif
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_ON);
 		if (idx == 1)
