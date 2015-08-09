@@ -211,6 +211,9 @@ extern int of_property_read_string(struct device_node *np,
 extern int of_property_read_string_index(struct device_node *np,
 					 const char *propname,
 					 int index, const char **output);
+extern int of_property_match_string(struct device_node *np,
+				    const char *propname,
+				    const char *string);
 extern int of_property_count_strings(struct device_node *np,
 				     const char *propname);
 extern int of_device_is_compatible(const struct device_node *device,
@@ -311,6 +314,13 @@ static inline const void *of_get_property(const struct device_node *node,
 
 static inline int of_property_read_u64(const struct device_node *np,
 				       const char *propname, u64 *out_value)
+{
+	return -ENOSYS;
+}
+
+static inline int of_property_match_string(struct device_node *np,
+					   const char *propname,
+					   const char *string)
 {
 	return -ENOSYS;
 }
