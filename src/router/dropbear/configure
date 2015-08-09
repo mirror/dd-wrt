@@ -5336,7 +5336,7 @@ else
 int
 main ()
 {
- struct sockaddr_storage s;
+ if (sizeof(struct sockaddr_storage)) return 0
   ;
   return 0;
 }
@@ -5372,7 +5372,7 @@ else
 int
 main ()
 {
- struct sockaddr_in6 s; s.sin6_family = 0;
+ if (sizeof(struct sockaddr_in6)) return 0
   ;
   return 0;
 }
@@ -5409,7 +5409,7 @@ else
 int
 main ()
 {
- struct in6_addr s; s.s6_addr[0] = 0;
+ if (sizeof(struct in6_addr)) return 0
   ;
   return 0;
 }
@@ -5447,7 +5447,7 @@ else
 int
 main ()
 {
- struct addrinfo s; s.ai_flags = AI_PASSIVE;
+ if (sizeof(struct addrinfo)) return 0
   ;
   return 0;
 }
