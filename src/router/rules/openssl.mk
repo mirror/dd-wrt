@@ -19,7 +19,6 @@ export OPENSSL_TARGET := linux-armv4
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-armv4.o aes_cbc.o"
 export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections
-COPTS := -O3
 endif
 endif
 ifeq ($(ARCH),mips)
