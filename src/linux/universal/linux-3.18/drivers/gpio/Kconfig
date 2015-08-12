@@ -223,6 +223,11 @@ config GPIO_MVEBU
 	select GPIO_GENERIC
 	select GENERIC_IRQ_CHIP
 
+config GPIO_MVEBU_PWM
+	def_bool y
+	depends on GPIO_MVEBU
+	depends on PWM
+
 config GPIO_MXC
 	def_bool y
 	depends on ARCH_MXC
