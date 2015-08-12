@@ -132,12 +132,16 @@ config ADM6996_PHY
 	tristate "Driver for ADM6996 switches"
 	select SWCONFIG
 	---help---
-	  Currently supports the ADM6996F switch
+	  Currently supports the ADM6996FC and ADM6996M switches.
+	  Support for FC is very limited.
 
 config MVSWITCH_PHY
 	tristate "Driver for Marvell 88E6060 switches"
-	select SWCONFIG
 	select ETHERNET_PACKET_MANGLE
+
+config MVSW61XX_PHY
+	tristate "Driver for Marvell 88E6171/6172 switches"
+	select SWCONFIG
 
 config IP17XX_PHY
 	tristate "Driver for IC+ IP17xx switches"
