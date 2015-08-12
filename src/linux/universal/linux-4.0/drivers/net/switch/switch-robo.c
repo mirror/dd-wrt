@@ -1149,7 +1149,7 @@ static int handle_reset(void *driver, char *buf, int nr)
 	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665") && !strcmp(boardrev, "0x1101")) {
 		//do nothing
 		printk(KERN_INFO "Netgear R8000 workaround\n");
-	} if (!strcmp(boardnum,"1234") && !strcmp(boardtype,"0x072F") && !strcmp(boardrev, "0x1202")) {
+	} else if (!strcmp(boardnum,"1234") && !strcmp(boardtype,"0x072F") && !strcmp(boardrev, "0x1202")) {
 		printk(KERN_INFO "Handle TEW828 workaround\n");
 	} else {
 		for (j = 0; j < d->ports; j++) {
