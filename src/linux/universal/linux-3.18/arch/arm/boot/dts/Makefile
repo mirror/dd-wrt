@@ -462,13 +462,16 @@ dtb-$(CONFIG_MACH_ARMADA_375) += \
 	armada-375-db.dtb
 dtb-$(CONFIG_MACH_ARMADA_38X) += \
 	armada-385-db.dtb \
+	armada-385-db-ap.dtb \
+	armada-385-linksys-caiman.dtb \
+	armada-385-linksys-cobra.dtb \
 	armada-385-rd.dtb
 dtb-$(CONFIG_MACH_ARMADA_XP) += \
 	armada-xp-axpwifiap.dtb \
 	armada-xp-db.dtb \
 	armada-xp-gp.dtb \
 	armada-xp-lenovo-ix4-300d.dtb \
-	armada-xp-mamba.dtb \
+	armada-xp-linksys-mamba.dtb \
 	armada-xp-matrix.dtb \
 	armada-xp-netgear-rn2120.dtb \
 	armada-xp-openblocks-ax3-4.dtb
