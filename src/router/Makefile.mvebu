@@ -464,12 +464,12 @@ endif
 	mkimage -A arm -O linux -T kernel -a 0x00008000 -C none -e 0x00008000 -n 'DD-WRT' -d $(ARCH)-uclibc/zImage-armada-xp-gp $(ARCH)-uclibc/uImage-armada-xp-gp;
 
 
-	cp $(ARCH)-uclibc/uImage-armada-xp-gp $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-xp-gp;   cp $(ARCH)-uclibc/zImage $(ARCH)-uclibc/zImage-armada-xp-mamba;
-	cat $(LINUXDIR)/arch/arm/boot/dts//armada-xp-mamba.dtb >> $(ARCH)-uclibc/zImage-armada-xp-mamba;
-	mkimage -A arm -O linux -T kernel -a 0x00008000 -C none -e 0x00008000 -n 'DD-WRT' -d $(ARCH)-uclibc/zImage-armada-xp-mamba $(ARCH)-uclibc/uImage-armada-xp-mamba;
+	cp $(ARCH)-uclibc/uImage-armada-xp-gp $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-xp-gp;   cp $(ARCH)-uclibc/zImage $(ARCH)-uclibc/zImage-armada-xp-linksys-mamba;
+	cat $(LINUXDIR)/arch/arm/boot/dts//armada-xp-linksys-mamba.dtb >> $(ARCH)-uclibc/zImage-armada-xp-linksys-mamba;
+	mkimage -A arm -O linux -T kernel -a 0x00008000 -C none -e 0x00008000 -n 'DD-WRT' -d $(ARCH)-uclibc/zImage-armada-xp-linksys-mamba $(ARCH)-uclibc/uImage-armada-xp-linksys-mamba;
 
 
-	cp $(ARCH)-uclibc/uImage-armada-xp-mamba $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-xp-mamba;
+	cp $(ARCH)-uclibc/uImage-armada-xp-linksys-mamba $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-xp-linksys-mamba;
 	
 	tools/wrt1900ac/mksquashfs4 $(TARGETDIR) $(ARCH)-uclibc/root.squashfs -nopad -noappend -root-owned -comp xz -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2 -Xbcj arm -b 256k -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1' -processors 1
 	#$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
@@ -481,7 +481,7 @@ endif
 	cp tools/wrt1900ac/ubinize.cfg $(ARCH)-uclibc
 	cd $(ARCH)-uclibc && ../tools/wrt1900ac/ubinize -v -m 2048 -p 128KiB -s 512 -O 2048 -o ddwrt-mvebu-armada-xp-mamba-squashfs-ubinized.bin ubinize.cfg && cd ..
 	#cd $(ARCH)-uclibc && ../tools/wrt1900ac/ubinize -v -m 2048 -p 128KiB -s 2048 -o ddwrt-mvebu-armada-xp-mamba-squashfs-ubinized.bin ubinize.cfg && cd ..
-	( dd if=$(ARCH)-uclibc/uImage-armada-xp-mamba bs=3072k conv=sync; dd if=$(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-ubinized.bin bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
+	( dd if=$(ARCH)-uclibc/uImage-armada-xp-linksys-mamba bs=3072k conv=sync; dd if=$(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-ubinized.bin bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
 
 	../../opt/tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
 	
