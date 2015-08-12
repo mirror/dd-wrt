@@ -738,4 +738,13 @@ config INPUT_DRV2667_HAPTICS
 	  To compile this driver as a module, choose M here: the
 	  module will be called drv260x-haptics.
 
+config INPUT_BUTTON_LINKSYS
+	tristate "Linksys Button Support"
+	select REGMAP_I2C
+	help
+	  Say Y to enable support for the Linksys Button driver.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called gpio-button-hotplug.
+
 endif

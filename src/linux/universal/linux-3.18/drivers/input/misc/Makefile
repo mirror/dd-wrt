@@ -70,3 +70,4 @@ obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
 obj-$(CONFIG_INPUT_GPIO_BUTTONS)	+= gpio_buttons.o
 obj-$(CONFIG_BUTTON_HOTPLUG)		+= button-hotplug.o
 obj-$(CONFIG_INPUT_IDEAPAD_SLIDEBAR)	+= ideapad_slidebar.o
+obj-$(CONFIG_INPUT_BUTTON_LINKSYS)	+= gpio-button-hotplug.o
