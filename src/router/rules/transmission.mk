@@ -54,4 +54,6 @@ transmission-configure: libevent-configure curl-configure
 	LIBCURL_CFLAGS="-I$(TOP)/curl/include" \
 	LIBCURL_LIBS="-L$(TOP)/curl/lib/.libs -lcurl" \
 	LIBEVENT_CFLAGS="-I$(TOP)/libevent/include" \
-	LIBEVENT_LIBS="-L$(TOP)/libevent/.libs -levent"
+	LIBEVENT_LIBS="-L$(TOP)/libevent/.libs -levent" \
+	OPENSSL_CFLAGS="-I$(TOP)/openssl/include" \
+	OPENSSL_LIBS="-L$(TOP)/openssl"
