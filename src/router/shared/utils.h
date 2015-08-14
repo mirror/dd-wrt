@@ -708,6 +708,8 @@
 
 #define ROUTER_ASUS_AC3200 0xdc1b
 
+#define ROUTER_LINKSYS_EA6400 0xdd1b
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
