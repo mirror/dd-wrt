@@ -2450,6 +2450,7 @@ void start_restore_defaults(void)
 	case ROUTER_ASUS_AC56U:
 	case ROUTER_TRENDNET_TEW812:
 	case ROUTER_TRENDNET_TEW811:
+	case ROUTER_LINKSYS_EA6400:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
