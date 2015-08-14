@@ -1194,8 +1194,9 @@ int internal_getRouterBrand()
 
 		return ROUTER_LINKSYS_EA6900;
 	}
-
-	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("0:devid", "0x43a9") && nvram_match("boardnum", "01")) {
+	
+	
+	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "01") && !strncmp(nvram_safe_get("modelNumber"),"EA6400",6)) {
 		setRouter("Linksys EA6400");
 
 		return ROUTER_LINKSYS_EA6400;
@@ -5930,6 +5931,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_LINKSYS_EA6700:
+	case ROUTER_LINKSYS_EA6400:
 	case ROUTER_LINKSYS_EA6900:
 		usb_power = 0x009;	//usb power on/off
 		usb_power1 = 0x00a;	//usb power on/off
