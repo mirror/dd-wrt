@@ -64,7 +64,10 @@ ipeth-configure:
 		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
 		libplist_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist" \
 		libplistmm_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
-		libplistmm_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist"
+		libplistmm_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist" \
+		openssl_CFLAGS="-I$(TOP)/openssl/include" \
+		openssl_LIBS="-L$(TOP)/openssl -lcrypto -lssl"
+
 	cd $(TOP)/ipeth/libimobiledevice && make
 
 	cd $(TOP)/ipeth/usbmuxd && ./autogen.sh
