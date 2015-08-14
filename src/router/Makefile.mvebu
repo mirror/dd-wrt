@@ -61,13 +61,13 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/arm-ope
 
 
 
-export BASEOPT:=-O2
+export BASEOPT:=-Os
 
 
-ifeq ($(ARCH),arm)
-#export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9 -mfpu=vfpv3-d16 -mfloat-abi=soft -fpic
-export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9  -msoft-float -mfloat-abi=soft -fno-caller-saves 
-endif
+#ifeq ($(ARCH),arm)
+#export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9  -mfloat-abi=soft -fpic
+export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16 -mfloat-abi=soft -fno-caller-saves 
+#endif
 
 
 export CC := ccache $(CROSS_COMPILE)gcc
@@ -95,6 +95,7 @@ export TARGETDIR := $(PLATFORMDIR)/target
 #
 CONFIG_IPTABLES=y
 CONFIG_MUSL=y
+CONFIG_NOOPT=y
 
 include rules/configs.mk
 
@@ -106,6 +107,7 @@ all: install_headers build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
 
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+	echo "CONFIG_MUSL=y" >> .config 
 
 
 kernel:
@@ -126,22 +128,22 @@ endif
 	fi
 	
 	#noch extra rules.mk machen wie in ~/TODO
-	#$(MAKE) -C "$(TOP)/compat-wireless" CROSS_COMPILE="$(ARCH)-openwrt-linux-" EXTRA_CFLAGS="-I$(TOP)/compat-wireless/include" KLIB_BUILD="$(LINUXDIR)" MODPROBE=true KLIB="$(LINUXDIR)" BACKPORT_PWD="$(TOP)/compat-wireless" KERNEL_SUBLEVEL=18 KBUILD_LDFLAGS_MODULE_PREREQ= 
+#	#$(MAKE) -C "$(TOP)/compat-wireless" CROSS_COMPILE="$(ARCH)-openwrt-linux-" EXTRA_CFLAGS="-I$(TOP)/compat-wireless/include" KLIB_BUILD="$(LINUXDIR)" MODPROBE=true KLIB="$(LINUXDIR)" BACKPORT_PWD="$(TOP)/compat-wireless" KERNEL_SUBLEVEL=18 KBUILD_LDFLAGS_MODULE_PREREQ= 
 
-	$(MAKE) -C $(LINUXDIR) modules CROSS_COMPILE="$(ARCH)-openwrt-linux-" SUBDIRS="$(TOP)/mwlwifi" NOSTDINC_FLAGS="-I$(TOP)/mwlwifi -I$(TOP)/mwlwifi/mac80211-backport/uapi -I$(TOP)/mwlwifi/mac80211-backport -I$(TOP)/mwlwifi/mac80211/uapi -I$(TOP)/mwlwifi/mac80211 -include backport/backport.h " 
+#	$(MAKE) -C $(LINUXDIR) modules CROSS_COMPILE="$(ARCH)-openwrt-linux-" SUBDIRS="$(TOP)/mwlwifi" NOSTDINC_FLAGS="-I$(TOP)/mwlwifi -I$(TOP)/mwlwifi/mac80211-backport/uapi -I$(TOP)/mwlwifi/mac80211-backport -I$(TOP)/mwlwifi/mac80211/uapi -I$(TOP)/mwlwifi/mac80211 -include backport/backport.h " 
 	
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-#	-$(MAKE) -f Makefile.mvebu ath9k
-#	-$(MAKE) -f Makefile.mvebu ath9k-install
+	-$(MAKE) -f Makefile.mvebu ath9k
+	-$(MAKE) -f Makefile.mvebu ath9k-install
 	-$(MAKE) -f Makefile.mvebu libutils
 	-$(MAKE) -f Makefile.mvebu madwifi
 	-$(MAKE) -f Makefile.mvebu madwifi-install
-#	-$(MAKE) -f Makefile.mvebu batman-adv
-#	-$(MAKE) -f Makefile.mvebu batman-adv-install
+	-$(MAKE) -f Makefile.mvebu batman-adv
+	-$(MAKE) -f Makefile.mvebu batman-adv-install
 	-$(MAKE) -f Makefile.mvebu opendpi
 	-$(MAKE) -f Makefile.mvebu opendpi-install
 #	-$(MAKE) -f Makefile.mvebu uniwip-gpio
@@ -149,19 +151,19 @@ endif
 
 
 	mkdir -p $(ARCH)-uclibc/target/usr/sbin/
-	cp tools/wrt1900ac/strace $(ARCH)-uclibc/target/usr/sbin/
-	mkdir -p $(ARCH)-uclibc/target/lib/firmware/mwlwifi
-	cp mwlwifi/bin/firmware/* $(ARCH)-uclibc/target/lib/firmware/mwlwifi/
+#	cp tools/wrt1900ac/strace $(ARCH)-uclibc/target/usr/sbin/
+#	mkdir -p $(ARCH)-uclibc/target/lib/firmware/mwlwifi
+#	cp mwlwifi/bin/firmware/* $(ARCH)-uclibc/target/lib/firmware/mwlwifi/
 
-	mkdir -p $(ARCH)-uclibc/target/lib/crda
-	cp tools/wrt1900ac/regulatory.bin $(ARCH)-uclibc/target/lib/crda/
+#	mkdir -p $(ARCH)-uclibc/target/lib/crda
+#	cp tools/wrt1900ac/regulatory.bin $(ARCH)-uclibc/target/lib/crda/
 
-	cp env/fw_printenv $(ARCH)-uclibc/target/usr/sbin/
-	cp env/fw_setenv $(ARCH)-uclibc/target/usr/sbin/
-	cp mwlwifi/mwlwifi.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-	cp compat-wireless/compat/compat.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-	cp compat-wireless/net/wireless/cfg80211.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-	cp compat-wireless/net/mac80211/mac80211.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
+#	cp env/fw_printenv $(ARCH)-uclibc/target/usr/sbin/
+#	cp env/fw_setenv $(ARCH)-uclibc/target/usr/sbin/
+#	cp mwlwifi/mwlwifi.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
+#	cp compat-wireless/compat/compat.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
+#	cp compat-wireless/net/wireless/cfg80211.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
+#	cp compat-wireless/net/mac80211/mac80211.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
 	
 	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
@@ -211,7 +213,7 @@ realclean: $(obj-clean)
 	-rm -f $(ARCH)-uclibc/*
 
 	
-clean: rc-clean httpd-clean services-clean shared-clean libutils-clean nvram-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean
+clean: rc-clean httpd-clean services-clean shared-clean libutils-clean nvram-clean madwifi-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean
 	rm -f .config.old .config.cmd
 	#umount $(TARGETDIR)
 	rm -rf $(INSTALLDIR)
@@ -376,9 +378,9 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	mkdir -p $(ARCH)-uclibc/target/etc/kaid
 	mkdir -p $(ARCH)-uclibc/target/etc/langpack
 	#cp ./opt/bin/ipkg $(ARCH)-uclibc/target/bin
-	cp ../../opt/bin/bootstrap $(ARCH)-uclibc/target/bin
+	-cp ../../opt/bin/bootstrap $(ARCH)-uclibc/target/bin
 #	cp ../../opt/bin/functions.sh $(ARCH)-uclibc/target/lib
-	cp ../../opt/bin/ddup $(ARCH)-uclibc/target/bin
+	-cp ../../opt/bin/ddup $(ARCH)-uclibc/target/bin
 	cd  $(ARCH)-uclibc/target/lib
 	cp ../../opt/etc/preinit $(ARCH)-uclibc/target/etc
 	cp ../../opt/etc/postinit $(ARCH)-uclibc/target/etc
@@ -471,8 +473,8 @@ endif
 
 	cp $(ARCH)-uclibc/uImage-armada-xp-linksys-mamba $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-xp-linksys-mamba;
 	
-	tools/wrt1900ac/mksquashfs4 $(TARGETDIR) $(ARCH)-uclibc/root.squashfs -nopad -noappend -root-owned -comp xz -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2 -Xbcj arm -b 256k -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1' -processors 1
-	#$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
+	#tools/wrt1900ac/mksquashfs4 $(TARGETDIR) $(ARCH)-uclibc/root.squashfs -nopad -noappend -root-owned -comp xz -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2 -Xbcj arm -b 256k -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1' -processors 1
+	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
 	tools/wrt1900ac/padjffs2 $(ARCH)-uclibc/root.squashfs 128
 	
 	#mkfs.ubifs -F -m 2048 -e 124KiB -c 4096 -x favor_lzo -X 10 -o $(ARCH)-uclibc/root.squashfs -d $(TARGETDIR)
@@ -483,7 +485,7 @@ endif
 	#cd $(ARCH)-uclibc && ../tools/wrt1900ac/ubinize -v -m 2048 -p 128KiB -s 2048 -o ddwrt-mvebu-armada-xp-mamba-squashfs-ubinized.bin ubinize.cfg && cd ..
 	( dd if=$(ARCH)-uclibc/uImage-armada-xp-linksys-mamba bs=3072k conv=sync; dd if=$(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-ubinized.bin bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
 
-	../../opt/tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
+	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
 	
 
 
