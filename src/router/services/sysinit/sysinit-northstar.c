@@ -3127,6 +3127,9 @@ void start_sysinit(void)
 			nvram_commit();
 		}
 		nvram_set("partialboots", "0");
+	case ROUTER_LINKSYS_EA6400:
+		nvram_set("partialboots", "0");
+		break;
 	case ROUTER_LINKSYS_EA6500V2:
 		if (nvram_get("0:aa2g") == NULL) {
 			struct nvram_param ea6500v2_1_1params[] = {
