@@ -909,6 +909,11 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 		nvsz = 0x100000;
 	}
 
+	if (((boardnum == 1) || (nvram_get("boardnum") == NULL)) && nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && !strncmp(nvram_safe_get("modelNumber"),"EA6300",6)) {
+		bootossz = 0x3c00000;	
+		nvsz = 0x100000;
+	}
+
 #ifdef CONFIG_FAILSAFE_UPGRADE
 	char *img_boot = nvram_get(BOOTPARTITION);
 	char *imag_1st_offset = nvram_get(IMAGE_FIRST_OFFSET);
