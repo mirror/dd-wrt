@@ -164,6 +164,7 @@ extern void __cpuc_flush_dcache_area(void *, size_t);
 extern void dmac_map_area(const void *, size_t, int);
 extern void dmac_unmap_area(const void *, size_t, int);
 extern void dmac_flush_range(const void *, const void *);
+
 #endif
 
 /*
