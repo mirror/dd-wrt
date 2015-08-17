@@ -50,7 +50,7 @@ static void watchdog(void)
 		}
 		sleep(10);
 	}
-#else
+#endif
 	int brand = getRouterBrand();
 	int registered = -1;
 	int radiostate0 = -1;
@@ -178,7 +178,6 @@ static void watchdog(void)
 				system("notifier&");	// 
 		}
 	}
-#endif //MVEBU
 }
 
 int watchdog_main(int argc, char *argv[])
