@@ -775,6 +775,92 @@ struct journal_head *jbd2_journal_get_descriptor_buffer(journal_t *journal)
 	return jbd2_journal_add_journal_head(bh);
 }
 
+/*
+ * Return tid of the oldest transaction in the journal and block in the journal
+ * where the transaction starts.
+ *
+ * If the journal is now empty, return which will be the next transaction ID
+ * we will write and where will that transaction start.
+ *
+ * The return value is 0 if journal tail cannot be pushed any further, 1 if
+ * it can.
+ */
+int jbd2_journal_get_log_tail(journal_t *journal, tid_t *tid,
+			      unsigned long *block)
+{
+	transaction_t *transaction;
+	int ret;
+
+	read_lock(&journal->j_state_lock);
+	spin_lock(&journal->j_list_lock);
+	transaction = journal->j_checkpoint_transactions;
+	if (transaction) {
+		*tid = transaction->t_tid;
+		*block = transaction->t_log_start;
+	} else if ((transaction = journal->j_committing_transaction) != NULL) {
+		*tid = transaction->t_tid;
+		*block = transaction->t_log_start;
+	} else if ((transaction = journal->j_running_transaction) != NULL) {
+		*tid = transaction->t_tid;
+		*block = journal->j_head;
+	} else {
+		*tid = journal->j_transaction_sequence;
+		*block = journal->j_head;
+	}
+	ret = tid_gt(*tid, journal->j_tail_sequence);
+	spin_unlock(&journal->j_list_lock);
+	read_unlock(&journal->j_state_lock);
+
+	return ret;
+}
+
+/*
+ * Update information in journal structure and in on disk journal superblock
+ * about log tail. This function does not check whether information passed in
+ * really pushes log tail further. It's responsibility of the caller to make
+ * sure provided log tail information is valid (e.g. by holding
+ * j_checkpoint_mutex all the time between computing log tail and calling this
+ * function as is the case with jbd2_cleanup_journal_tail()).
+ *
+ * Requires j_checkpoint_mutex
+ */
+int __jbd2_update_log_tail(journal_t *journal, tid_t tid, unsigned long block)
+{
+	unsigned long freed;
+	int ret;
+
+	BUG_ON(!mutex_is_locked(&journal->j_checkpoint_mutex));
+
+	/*
+	 * We cannot afford for write to remain in drive's caches since as
+	 * soon as we update j_tail, next transaction can start reusing journal
+	 * space and if we lose sb update during power failure we'd replay
+	 * old transaction with possibly newly overwritten data.
+	 */
+	ret = jbd2_journal_update_sb_log_tail(journal, tid, block, WRITE_FUA);
+	if (ret)
+		goto out;
+
+	write_lock(&journal->j_state_lock);
+	freed = block - journal->j_tail;
+	if (block < journal->j_tail)
+		freed += journal->j_last - journal->j_first;
+
+	trace_jbd2_update_log_tail(journal, tid, block, freed);
+	jbd_debug(1,
+		  "Cleaning journal tail from %d to %d (offset %lu), "
+		  "freeing %lu\n",
+		  journal->j_tail_sequence, tid, block, freed);
+
+	journal->j_free += freed;
+	journal->j_tail_sequence = tid;
+	journal->j_tail = block;
+	write_unlock(&journal->j_state_lock);
+
+out:
+	return ret;
+}
+
 struct jbd2_stats_proc_session {
 	journal_t *journal;
 	struct transaction_stats_s *stats;
@@ -1143,40 +1229,41 @@ static int journal_reset(journal_t *journal)
 
 	journal->j_max_transaction_buffers = journal->j_maxlen / 4;
 
-	/* Add the dynamic fields and write it to disk. */
-	jbd2_journal_update_superblock(journal, 1);
-	return jbd2_journal_start_thread(journal);
-}
-
-/**
- * void jbd2_journal_update_superblock() - Update journal sb on disk.
- * @journal: The journal to update.
- * @wait: Set to '0' if you don't want to wait for IO completion.
- *
- * Update a journal's dynamic superblock fields and write it to disk,
- * optionally waiting for the IO to complete.
- */
-void jbd2_journal_update_superblock(journal_t *journal, int wait)
-{
-	journal_superblock_t *sb = journal->j_superblock;
-	struct buffer_head *bh = journal->j_sb_buffer;
-
 	/*
 	 * As a special case, if the on-disk copy is already marked as needing
-	 * no recovery (s_start == 0) and there are no outstanding transactions
-	 * in the filesystem, then we can safely defer the superblock update
-	 * until the next commit by setting JBD2_FLUSHED.  This avoids
+	 * no recovery (s_start == 0), then we can safely defer the superblock
+	 * update until the next commit by setting JBD2_FLUSHED.  This avoids
 	 * attempting a write to a potential-readonly device.
 	 */
-	if (sb->s_start == 0 && journal->j_tail_sequence ==
-				journal->j_transaction_sequence) {
+	if (sb->s_start == 0) {
 		jbd_debug(1, "JBD2: Skipping superblock update on recovered sb "
 			"(start %ld, seq %d, errno %d)\n",
 			journal->j_tail, journal->j_tail_sequence,
 			journal->j_errno);
-		goto out;
+		journal->j_flags |= JBD2_FLUSHED;
+	} else {
+		/*
+		 * Update log tail information. We use WRITE_FUA since new
+		 * transaction will start reusing journal space and so we
+		 * must make sure information about current log tail is on
+		 * disk before that.
+		 */
+		jbd2_journal_update_sb_log_tail(journal,
+						journal->j_tail_sequence,
+						journal->j_tail,
+						WRITE_FUA);
 	}
+	return jbd2_journal_start_thread(journal);
+}
 
+static int jbd2_write_superblock(journal_t *journal, int write_op)
+{
+	struct buffer_head *bh = journal->j_sb_buffer;
+	int ret;
+
+	if (!(journal->j_flags & JBD2_BARRIER))
+		write_op &= ~(REQ_FUA | REQ_FLUSH);
+	lock_buffer(bh);
 	if (buffer_write_io_error(bh)) {
 		/*
 		 * Oh, dear.  A previous attempt to write the journal
@@ -1192,48 +1279,112 @@ void jbd2_journal_update_superblock(journal_t *journal, int wait)
 		clear_buffer_write_io_error(bh);
 		set_buffer_uptodate(bh);
 	}
+	get_bh(bh);
+	bh->b_end_io = end_buffer_write_sync;
+	ret = submit_bh(write_op, bh);
+	wait_on_buffer(bh);
+	if (buffer_write_io_error(bh)) {
+		clear_buffer_write_io_error(bh);
+		set_buffer_uptodate(bh);
+		ret = -EIO;
+	}
+	if (ret) {
+		printk(KERN_ERR "JBD2: Error %d detected when updating "
+		       "journal superblock for %s.\n", ret,
+		       journal->j_devname);
+		jbd2_journal_abort(journal, ret);
+	}
+
+	return ret;
+}
+
+/**
+ * jbd2_journal_update_sb_log_tail() - Update log tail in journal sb on disk.
+ * @journal: The journal to update.
+ * @tail_tid: TID of the new transaction at the tail of the log
+ * @tail_block: The first block of the transaction at the tail of the log
+ * @write_op: With which operation should we write the journal sb
+ *
+ * Update a journal's superblock information about log tail and write it to
+ * disk, waiting for the IO to complete.
+ */
+int jbd2_journal_update_sb_log_tail(journal_t *journal, tid_t tail_tid,
+				     unsigned long tail_block, int write_op)
+{
+	journal_superblock_t *sb = journal->j_superblock;
+	int ret;
+
+	jbd_debug(1, "JBD2: updating superblock (start %lu, seq %u)\n",
+		  tail_block, tail_tid);
+
+	sb->s_sequence = cpu_to_be32(tail_tid);
+	sb->s_start    = cpu_to_be32(tail_block);
+
+	ret = jbd2_write_superblock(journal, write_op);
+	if (ret)
+		goto out;
+	/* Log is no longer empty */
+	write_lock(&journal->j_state_lock);
+	WARN_ON(!sb->s_sequence);
+	journal->j_flags &= ~JBD2_FLUSHED;
+	write_unlock(&journal->j_state_lock);
+
+out:
+	return ret;
+}
+
+/**
+ * jbd2_mark_journal_empty() - Mark on disk journal as empty.
+ * @journal: The journal to update.
+ *
+ * Update a journal's dynamic superblock fields to show that journal is empty.
+ * Write updated superblock to disk waiting for IO to complete.
+ */
+static void jbd2_mark_journal_empty(journal_t *journal)
+{
+	journal_superblock_t *sb = journal->j_superblock;
 
 	read_lock(&journal->j_state_lock);
-	jbd_debug(1, "JBD2: updating superblock (start %ld, seq %d, errno %d)\n",
-		  journal->j_tail, journal->j_tail_sequence, journal->j_errno);
+	jbd_debug(1, "JBD2: Marking journal as empty (seq %d)\n",
+		  journal->j_tail_sequence);
 
 	sb->s_sequence = cpu_to_be32(journal->j_tail_sequence);
-	sb->s_start    = cpu_to_be32(journal->j_tail);
+	sb->s_start    = cpu_to_be32(0);
+	read_unlock(&journal->j_state_lock);
+
+	jbd2_write_superblock(journal, WRITE_FUA);
+
+	/* Log is no longer empty */
+	write_lock(&journal->j_state_lock);
+	journal->j_flags |= JBD2_FLUSHED;
+	write_unlock(&journal->j_state_lock);
+}
+
+
+/**
+ * jbd2_journal_update_sb_errno() - Update error in the journal.
+ * @journal: The journal to update.
+ *
+ * Update a journal's errno.  Write updated superblock to disk waiting for IO
+ * to complete.
+ */
+static void jbd2_journal_update_sb_errno(journal_t *journal)
+{
+	journal_superblock_t *sb = journal->j_superblock;
+
+	read_lock(&journal->j_state_lock);
+	jbd_debug(1, "JBD2: updating superblock error (errno %d)\n",
+		  journal->j_errno);
 	sb->s_errno    = cpu_to_be32(journal->j_errno);
 	read_unlock(&journal->j_state_lock);
 
-	BUFFER_TRACE(bh, "marking dirty");
-	mark_buffer_dirty(bh);
-	if (wait) {
-		sync_dirty_buffer(bh);
-		if (buffer_write_io_error(bh)) {
-			printk(KERN_ERR "JBD2: I/O error detected "
-			       "when updating journal superblock for %s.\n",
-			       journal->j_devname);
-			clear_buffer_write_io_error(bh);
-			set_buffer_uptodate(bh);
-		}
-	} else
-		write_dirty_buffer(bh, WRITE);
-
-out:
-	/* If we have just flushed the log (by marking s_start==0), then
-	 * any future commit will have to be careful to update the
-	 * superblock again to re-record the true start of the log. */
-
-	write_lock(&journal->j_state_lock);
-	if (sb->s_start)
-		journal->j_flags &= ~JBD2_FLUSHED;
-	else
-		journal->j_flags |= JBD2_FLUSHED;
-	write_unlock(&journal->j_state_lock);
+	jbd2_write_superblock(journal, WRITE_SYNC);
 }
 
 /*
  * Read the superblock for a given journal, performing initial
  * validation of the format.
  */
-
 static int journal_get_superblock(journal_t *journal)
 {
 	struct buffer_head *bh;
@@ -1426,15 +1577,10 @@ int jbd2_journal_destroy(journal_t *journal)
 	spin_unlock(&journal->j_list_lock);
 
 	if (journal->j_sb_buffer) {
-		if (!is_journal_aborted(journal)) {
-			/* We can now mark the journal as empty. */
-			journal->j_tail = 0;
-			journal->j_tail_sequence =
-				++journal->j_transaction_sequence;
-			jbd2_journal_update_superblock(journal, 1);
-		} else {
+		if (!is_journal_aborted(journal))
+			jbd2_mark_journal_empty(journal);
+		else
 			err = -EIO;
-		}
 		brelse(journal->j_sb_buffer);
 	}
 
@@ -1648,7 +1794,6 @@ int jbd2_journal_flush(journal_t *journal)
 {
 	int err = 0;
 	transaction_t *transaction = NULL;
-	unsigned long old_tail;
 
 	write_lock(&journal->j_state_lock);
 
@@ -1683,28 +1828,28 @@ int jbd2_journal_flush(journal_t *journal)
 	if (is_journal_aborted(journal))
 		return -EIO;
 
-	jbd2_cleanup_journal_tail(journal);
+	if (!err) {
+		err = jbd2_cleanup_journal_tail(journal);
+		if (err < 0)
+			goto out;
+		err = 0;
+	}
 
 	/* Finally, mark the journal as really needing no recovery.
 	 * This sets s_start==0 in the underlying superblock, which is
 	 * the magic code for a fully-recovered superblock.  Any future
 	 * commits of data to the journal will restore the current
 	 * s_start value. */
+	jbd2_mark_journal_empty(journal);
 	write_lock(&journal->j_state_lock);
-	old_tail = journal->j_tail;
-	journal->j_tail = 0;
-	write_unlock(&journal->j_state_lock);
-	jbd2_journal_update_superblock(journal, 1);
-	write_lock(&journal->j_state_lock);
-	journal->j_tail = old_tail;
-
 	J_ASSERT(!journal->j_running_transaction);
 	J_ASSERT(!journal->j_committing_transaction);
 	J_ASSERT(!journal->j_checkpoint_transactions);
 	J_ASSERT(journal->j_head == journal->j_tail);
 	J_ASSERT(journal->j_tail_sequence == journal->j_transaction_sequence);
 	write_unlock(&journal->j_state_lock);
-	return 0;
+out:
+	return err;
 }
 
 /**
@@ -1738,7 +1883,7 @@ int jbd2_journal_wipe(journal_t *journal, int write)
 
 	err = jbd2_journal_skip_recovery(journal);
 	if (write)
-		jbd2_journal_update_superblock(journal, 1);
+		jbd2_mark_journal_empty(journal);
 
  no_recovery:
 	return err;
@@ -1788,7 +1933,7 @@ static void __journal_abort_soft (journal_t *journal, int errno)
 	__jbd2_journal_abort_hard(journal);
 
 	if (errno)
-		jbd2_journal_update_superblock(journal, 1);
+		jbd2_journal_update_sb_errno(journal);
 }
 
 /**
