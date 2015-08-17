@@ -2875,7 +2875,7 @@ void start_drivers(void)
 #endif
 
 //ahci
-		insmod("libata libahci ahci ahci_platforms ahci_imx mmc_core mmc_block sdhci sdhci-pltfm sdhci-esdhc-imx");
+		insmod("libata libahci libahci_platform ahci ahci_platform ahci_platforms ahci_imx ahci_mvebu mmc_core mmc_block sdhci sdhci-pltfm sdhci-esdhc-imx");
 
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	} else {

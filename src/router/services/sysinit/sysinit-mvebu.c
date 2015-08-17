@@ -71,7 +71,6 @@ void start_sysinit(void)
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
-	nvram_set("resetbutton_enable","0");
 	int brand = getRouterBrand();
 	
 	/* 
