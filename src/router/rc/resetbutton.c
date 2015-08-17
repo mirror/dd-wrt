@@ -173,7 +173,12 @@ int getbuttonstate()
 #elif defined(HAVE_MVEBU)
 int getbuttonstate()
 {
-	int ret = get_gpio(33);
+	int ret;
+	if (getRouterBrand() == ROUTER_WRT_1900AC)
+		ret = get_gpio(33);
+	else
+		ret = get_gpio(29);
+
 	if (ret == 0)
 		return 1;
 	return 0;
@@ -968,7 +973,10 @@ void period_check(int sig)
 	val |= get_gpio(8) << 8;	//aoss pushbutton
 #elif defined(HAVE_MVEBU)
 	sesgpio = 0x101;
-	val |= get_gpio(32) << 1;	//aoss pushbutton
+	if (getRouterBrand() == ROUTER_WRT_1900AC)
+		val |= get_gpio(32) << 1;	//aoss pushbutton
+	else
+		val |= get_gpio(24) << 1;	//aoss pushbutton
 #elif defined(HAVE_DIR632)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
@@ -978,7 +986,7 @@ void period_check(int sig)
 #elif defined(HAVE_CARAMBOLA)
 #if defined(HAVE_ERC)
 	wifigpio = 0x117;
-	val |= get_gpio(23) << 23;	
+	val |= get_gpio(23) << 23;
 #endif
 #elif defined(HAVE_HORNET)
 	sesgpio = 0x00b;
@@ -1286,7 +1294,7 @@ void period_check(int sig)
 		break;
 	case ROUTER_NETGEAR_WNR3500LV2:
 		sesgpio = 0x106;	// gpio 6, inversed
-		wifigpio = 0x108;	
+		wifigpio = 0x108;
 		break;
 	case ROUTER_WRT320N:
 	case ROUTER_WRT160NV3:
@@ -1368,7 +1376,7 @@ void period_check(int sig)
 					return;
 				}
 				if ((brand & 0x000f) != 0x000f) {
-					fprintf(stderr,"resetbutton: factory default.\n");
+					fprintf(stderr, "resetbutton: factory default.\n");
 					dd_syslog(LOG_DEBUG, "Reset button: restoring factory defaults now!\n");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
 					led_control(LED_DIAG, LED_ON);
