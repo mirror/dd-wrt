@@ -129,36 +129,38 @@ static void watchdog(void)
 #endif
 		}
 #ifdef HAVE_MVEBU
-		int cpu;
-		FILE *tempfp;
-		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &cpu);
-			fclose(tempfp);
-			if (cpu > ((atoi(nvram_safe_get("hwmon_temp_max")) + 10) * 1000)) {
-				system("/bin/echo 255 > /sys/class/hwmon/hwmon0/pwm1");
+		if (getRouterBrand() == ROUTER_WRT_1900AC) {
+			int cpu;
+			FILE *tempfp;
+			tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+			if (tempfp) {
+				fscanf(tempfp, "%d", &cpu);
+				fclose(tempfp);
+				if (cpu > ((atoi(nvram_safe_get("hwmon_temp_max")) + 10) * 1000)) {
+					system("/bin/echo 255 > /sys/class/hwmon/hwmon0/pwm1");
 
-			} else if (cpu > ((atoi(nvram_safe_get("hwmon_temp_max")) + 5) * 1000)) {
-				system("/bin/echo 150 > /sys/class/hwmon/hwmon0/pwm1");
+				} else if (cpu > ((atoi(nvram_safe_get("hwmon_temp_max")) + 5) * 1000)) {
+					system("/bin/echo 150 > /sys/class/hwmon/hwmon0/pwm1");
 
-			} else if (cpu > ((atoi(nvram_safe_get("hwmon_temp_max"))) * 1000)) {
-				system("/bin/echo 100 > /sys/class/hwmon/hwmon0/pwm1");
+				} else if (cpu > ((atoi(nvram_safe_get("hwmon_temp_max"))) * 1000)) {
+					system("/bin/echo 100 > /sys/class/hwmon/hwmon0/pwm1");
 
-			} else if (cpu < ((atoi(nvram_safe_get("hwmon_temp_hyst"))) * 1000)) {
-				system("/bin/echo 0 > /sys/class/hwmon/hwmon0/pwm1");
+				} else if (cpu < ((atoi(nvram_safe_get("hwmon_temp_hyst"))) * 1000)) {
+					system("/bin/echo 0 > /sys/class/hwmon/hwmon0/pwm1");
+
+				}
 
 			}
 
-		}
-
-		FILE *procfp;
-		procfp = fopen("/proc/irq/28/smp_affinity", "rb");
-		if (procfp) {
-			fscanf(procfp, "%d", &cpu);
-			fclose(procfp);
-			if (cpu != 2) {
-				system("/bin/echo 2 > /proc/irq/27/smp_affinity");
-				system("/bin/echo 2 > /proc/irq/28/smp_affinity");
+			FILE *procfp;
+			procfp = fopen("/proc/irq/28/smp_affinity", "rb");
+			if (procfp) {
+				fscanf(procfp, "%d", &cpu);
+				fclose(procfp);
+				if (cpu != 2) {
+					system("/bin/echo 2 > /proc/irq/27/smp_affinity");
+					system("/bin/echo 2 > /proc/irq/28/smp_affinity");
+				}
 			}
 		}
 #endif
