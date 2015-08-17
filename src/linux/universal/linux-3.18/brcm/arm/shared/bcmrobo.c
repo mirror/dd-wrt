@@ -1097,7 +1097,6 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		}
 		ET_MSG(("%s: devid: 0x%x\n", __FUNCTION__, robo->devid));
 	}
-
 	if (robo->devid == DEVID5395)
 		nvram_set("switch_type", "BCM5395");
 	else if(robo->devid == DEVID5397)
@@ -1108,8 +1107,21 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		nvram_set("switch_type", "BCM53115S");
 	else if(robo->devid == DEVID53125)
 		nvram_set("switch_type", "BCM53125");
+	else if(robo->devid == DEVID53010)
+		nvram_set("switch_type", "BCM53010");
+	else if(robo->devid == DEVID53011)
+		nvram_set("switch_type", "BCM53011");
+	else if(robo->devid == DEVID53012)
+		nvram_set("switch_type", "BCM53012");
+	else if(robo->devid == DEVID53018)
+		nvram_set("switch_type", "BCM53018");
+	else if(robo->devid == DEVID53019)
+		nvram_set("switch_type", "BCM53019");
+	else if(robo->devid == DEVID53030)
+		nvram_set("switch_type", "BCM53030");
 	else
 		nvram_set("switch_type", "unknown");						
+
 	if (boothwmodel != NULL && !strcmp(boothwmodel, "WRT610N")
 		&& boothwver != NULL && !strcmp(boothwver, "1.0"))
 	iswrt610nv1=1;

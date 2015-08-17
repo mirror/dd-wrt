@@ -690,11 +690,12 @@ int __usb_get_extra_descriptor(char *buffer, unsigned size,
 }
 EXPORT_SYMBOL_GPL(__usb_get_extra_descriptor);
 
-#if 0
+
 static struct usb_device *match_device_name(struct usb_device *dev,
 					    const char *name)
 {
 	struct usb_device *ret_dev = NULL;
+	struct usb_device *childdev = NULL;
 	int child;
 
 	dev_dbg(&dev->dev, "check for name %s ...\n", name);
@@ -705,13 +706,12 @@ static struct usb_device *match_device_name(struct usb_device *dev,
 		ret_dev = usb_get_dev(dev);
 		goto exit;
 	}
-
 	/* look through all of the children of this device */
-	for (child = 0; child < dev->maxchild; ++child) {
-		if (dev->children[child]) {
-			usb_lock_device(dev->children[child]);
-			ret_dev = match_device_name(dev->children[child], name);
-			usb_unlock_device(dev->children[child]);
+	usb_hub_for_each_child(dev, child, childdev) {
+		if (childdev) {
+			usb_lock_device(childdev);
+			ret_dev = match_device_name(childdev, name);
+			usb_unlock_device(childdev);
 			if (ret_dev)
 				goto exit;
 		}
@@ -755,7 +755,6 @@ exit:
 	return dev;
 }
 EXPORT_SYMBOL_GPL(usb_find_device_by_name);
-#endif
 
 /**
  * usb_alloc_coherent - allocate dma-consistent buffer for URB_NO_xxx_DMA_MAP

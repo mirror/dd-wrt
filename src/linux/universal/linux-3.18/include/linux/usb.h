@@ -7,7 +7,6 @@
 #define USB_MAJOR			180
 #define USB_DEVICE_MAJOR		189
 
-
 #ifdef __KERNEL__
 
 #include <linux/errno.h>        /* for -ENODEV */
@@ -657,8 +656,6 @@ extern int usb_lock_device_for_reset(struct usb_device *udev,
 extern int usb_reset_device(struct usb_device *dev);
 extern void usb_queue_reset_device(struct usb_interface *dev);
 
-extern struct usb_device *usb_find_device_by_name(const char *name);
-
 /* USB autosuspend and autoresume */
 #ifdef CONFIG_PM_RUNTIME
 extern void usb_enable_autosuspend(struct usb_device *udev);
@@ -786,6 +783,8 @@ static inline bool usb_device_no_sg_constraint(struct usb_device *udev)
 {
 	return udev && udev->bus && udev->bus->no_sg_constraint;
 }
+
+extern struct usb_device *usb_find_device_by_name(const char *name);
 
 /* port claiming functions */
 int usb_hub_claim_port(struct usb_device *hdev, unsigned port1,
@@ -1724,7 +1723,6 @@ extern int usb_set_configuration(struct usb_device *dev, int configuration);
  */
 #define USB_CTRL_GET_TIMEOUT	5000
 #define USB_CTRL_SET_TIMEOUT	5000
-
 
 /**
  * struct usb_sg_request - support for scatter/gather I/O
