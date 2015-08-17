@@ -96,6 +96,7 @@ void start_sysinit(void)
 	insmod("pwm-fan");
 	insmod("armada_thermal");
 	insmod("tmp421");
+	insmod("rtc-armada38x"); // for WRT1200AC / WRT1900ACv2 only
 	/*
 	 * network drivers 
 	 */
