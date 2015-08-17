@@ -60,6 +60,7 @@ void start_sysinit(void)
 	char buf[PATH_MAX];
 	struct stat tmp_stat;
 	time_t tm = 0;
+	FILE *fp;
 
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
@@ -103,6 +104,7 @@ void start_sysinit(void)
 	insmod("/lib/ath9k/mwlwifi.ko");
 	int s;
 	struct ifreq ifr;
+	eval("ubootenv","set","auto_recovery","off");
 	
 /*	
 	system("swconfig dev switch0 set reset 1");
@@ -129,20 +131,7 @@ void start_sysinit(void)
 	nvram_set("wl0_ifname", "ath0");
 	nvram_set("wl1_ifname", "ath1");
 	
-	sysprintf("/usr/sbin/fw_printenv auto_recovery > /tmp/uenv");
 	sysprintf("echo 0 > /sys/class/hwmon/hwmon0/pwm1");
-
-	
-	FILE *fp;
-	char line[256];
-	if ((fp = fopen("/tmp/uenv", "r"))) {
-		while (fgets(line, sizeof(line), fp) != NULL) {
-			if (strstr(line, "auto_recovery=yes")) {
-				eval("/usr/sbin/fw_setenv", "auto_recovery", "no");
-			}
-		}
-		fclose(fp);
-	}
 	
 	char *mac;
 	if ((fp = fopen("/dev/mtdblock3", "r"))) {
