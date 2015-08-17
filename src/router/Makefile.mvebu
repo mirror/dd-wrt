@@ -485,6 +485,8 @@ endif
 	#cd $(ARCH)-uclibc && ../tools/wrt1900ac/ubinize -v -m 2048 -p 128KiB -s 2048 -o ddwrt-mvebu-armada-xp-mamba-squashfs-ubinized.bin ubinize.cfg && cd ..
 	( dd if=$(ARCH)-uclibc/uImage-armada-xp-linksys-mamba bs=3072k conv=sync; dd if=$(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-ubinized.bin bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
 
+	( dd if=$(ARCH)-uclibc/uImage-armada-xp-linksys-mamba bs=3072k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory-squash.img
+
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
 	
 
