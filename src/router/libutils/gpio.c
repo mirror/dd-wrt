@@ -226,6 +226,7 @@ void set_gpio(int gpio, int value)
 	if(value == 1)
 		value = 255;
 	//fprintf(stderr, "GPIO %d value %d\n", gpio, value);
+if (getRouterBrand() == ROUTER_WRT_1900AC) {
 	switch (gpio) {
 	case 0:		// power
 		sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:power/brightness", value);
@@ -252,6 +253,43 @@ void set_gpio(int gpio, int value)
 		i_set_gpio(gpio,value);
 		break;
 	}
+}else{
+	switch (gpio) {
+	case 0:		// power
+		sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:wan/brightness", value);
+		break;
+	case 1:		// power
+		sysprintf("echo %d > /sys/class/leds/caiman\\:amber\\:wan/brightness", value);
+		break;
+	case 2:		// 2G
+		sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:wlan_2g/brightness", value);
+		break;
+	case 3:		// 5G
+		sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:wlan_5g/brightness", value);
+		break;
+	case 4:		// 5G
+		sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:usb2/brightness", value);
+		break;
+	case 5: 
+		sysprintf("echo %d > /sys/class/leds/caiman\:white\:usb3_1/brightness", value);
+		break;
+	case 6: 
+		sysprintf("echo %d > /sys/class/leds/caiman\:white\:usb3_2/brightness", value);
+		break;
+	case 7: 
+		sysprintf("echo %d > /sys/class/leds/caiman\:white\:wpa/brightness", value);
+		break;
+	case 8: 
+		sysprintf("echo %d > /sys/class/leds/caiman\:amber\:wps/brightness", value);
+		break;
+	default:
+		i_set_gpio(gpio,value);
+		break;
+	}
+
+
+}
+
 }
 
 
