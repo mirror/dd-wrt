@@ -291,7 +291,6 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 		set_ath10kreg(dev, 0x28014, (cts << 16 & 0x3fff0000) | (ack & 0x3fff));
 	}
 }
-
 unsigned int get_ath10kack(char *ifname)
 {
 	unsigned int ack, slot, sifs;
