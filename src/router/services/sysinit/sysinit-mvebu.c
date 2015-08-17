@@ -132,7 +132,7 @@ void start_sysinit(void)
 	nvram_set("wl1_ifname", "ath1");
 	
 	sysprintf("echo 0 > /sys/class/hwmon/hwmon0/pwm1");
-	
+	char line[256];
 	char *mac;
 	if ((fp = fopen("/dev/mtdblock3", "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
