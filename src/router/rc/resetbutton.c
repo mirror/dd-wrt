@@ -173,10 +173,10 @@ int getbuttonstate()
 #elif defined(HAVE_MVEBU)
 int getbuttonstate()
 {
-	int ret = get_gpio(3);
+	int ret = get_gpio(33);
 	if (ret == 0)
-		return 0;
-	return 1;
+		return 1;
+	return 0;
 }
 #elif defined(HAVE_DAP3410)
 int getbuttonstate()
@@ -966,6 +966,9 @@ void period_check(int sig)
 #elif defined(HAVE_WZRG450)
 	sesgpio = 0x108;
 	val |= get_gpio(8) << 8;	//aoss pushbutton
+#elif defined(HAVE_MVEBU)
+	sesgpio = 0x101;
+	val |= get_gpio(32) << 1;	//aoss pushbutton
 #elif defined(HAVE_DIR632)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
