@@ -1933,21 +1933,23 @@ int internal_getRouterBrand()
 #elif HAVE_WRT1900AC
 	FILE *fp = fopen("/sys/firmware/devicetree/base/model","rb");
 	if (!fp) {
+	    fprintf(stderr,"error opening device tree\n");
 	    setRouter("Linksys WRT 1900AC");
 	    return ROUTER_WRT_1900AC;	
 	}
+	char vendorstr[32];
 	char modelstr[32];
-	fscanf(fp, "%s",&modelstr[0]);
+	fscanf(fp, "%s %s",&vendorstr[0],&modelstr[0]);
 	fclose(fp);
-	if (!strcmp(modelstr,"Linksys WRT1200AC")) {
+	if (!strcmp(modelstr,"WRT1200AC")) {
 	    setRouter("Linksys WRT 1200AC");
 	    return ROUTER_WRT_1200AC;	
 	}
-	if (!strcmp(modelstr,"Linksys WRT1900ACv2")) {
+	if (!strcmp(modelstr,"WRT1900ACv2")) {
 	    setRouter("Linksys WRT 1900ACv2");
 	    return ROUTER_WRT_1200AC;	// similar
 	}
-	if (!strcmp(modelstr,"Linksys WRT1900AC")) {
+	if (!strcmp(modelstr,"WRT1900AC")) {
 	    setRouter("Linksys WRT 1900AC");
 	    return ROUTER_WRT_1900AC;	// similar
 	}
