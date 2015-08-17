@@ -71,7 +71,7 @@ void start_sysinit(void)
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
-
+	nvram_set("resetbutton_enable","0");
 	int brand = getRouterBrand();
 	
 	/* 
@@ -86,7 +86,7 @@ void start_sysinit(void)
 	insmod("regmap-spi");
 	//insmod("input-core");
 	//insmod("button-hotplug");
-	insmod("gpio-button-hotplug");
+	//insmod("gpio-button-hotplug");
 	insmod("leds-tlc59116");
 
 	insmod("hwmon");
