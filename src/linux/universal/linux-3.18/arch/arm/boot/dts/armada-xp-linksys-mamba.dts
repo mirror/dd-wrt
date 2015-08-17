@@ -358,11 +358,6 @@
 					label = "syscfg";
 					reg = <0x5a00000 0x2600000>;    /* 38MB */
 				};
-
-				partition@180000 {
-					label = "ddwrt";
-					reg = <0x280000 0x680000>;   /* 6.5MB */
-				};
 			};
 
 			spi0: spi@10600 {
