@@ -696,8 +696,8 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	site_survey_lists[sscount].rate_count = rate_count;
 	int freq = site_survey_lists[sscount].frequency;
 	site_survey_lists[sscount].phy_noise = noise[freq];
-	if (site_survey_lists[sscount].channel == 0) {
-		site_survey_lists[sscount].channel = ieee80211_mhz2ieee(site_survey_lists[sscount].frequency);
+	if ((site_survey_lists[sscount].channel & 0xff) == 0) {
+		site_survey_lists[sscount].channel |= (ieee80211_mhz2ieee(site_survey_lists[sscount].frequency) & 0xff);
 	}
 	sscount++;
 
