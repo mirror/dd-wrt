@@ -182,6 +182,12 @@
 		};
 
 		internal-regs {
+
+			rtc@10300 {
+				/* No crystal connected to the internal RTC */
+				status = "disabled";
+			};
+
 			serial@12000 {
 				status = "okay";
 			};
@@ -318,12 +324,12 @@
 				};
 
 				partition@a00000 {
-					label = "kernel1";
+					label = "linux";
 					reg = <0xa00000 0x2700000>;    /* 3MB */
 				};
 
 				partition@d00000 {
-					label = "rootfs1";
+					label = "rootfs";
 					reg = <0xd00000 0x2500000>;    /* 37MB */
 				};
 				
@@ -333,7 +339,7 @@
 				};*/
 
 				partition@3200000 {
-					label = "linux";
+					label = "linux2";
 					reg = <0x3200000 0x2700000>;    /* 3MB */
 				};
 
@@ -351,6 +357,11 @@
 				partition@5a00000 {
 					label = "syscfg";
 					reg = <0x5a00000 0x2600000>;    /* 38MB */
+				};
+
+				partition@180000 {
+					label = "ddwrt";
+					reg = <0x280000 0x680000>;   /* 6.5MB */
 				};
 			};
 
