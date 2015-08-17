@@ -40,7 +40,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#if defined(HAVE_UNIWIP) || defined(HAVE_OCTEON)  || defined(HAVE_MVEBU)
+#if defined(HAVE_UNIWIP) || defined(HAVE_OCTEON)
 void set_gpio(int pin, int value)
 {
 	char str[32];
@@ -149,6 +149,77 @@ int get_gpio(int gpio)
 }
 
 #elif HAVE_WRT1900AC
+static void i_set_gpio(int pin, int value)
+{
+	char str[32];
+	char strdir[64];
+	FILE *fp;
+	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
+      new_try:;
+	fp = fopen(str, "rb");
+	if (!fp) {
+		fp = fopen("/sys/class/gpio/export", "wb");
+		if (fp) {
+			fprintf(fp, "%d", pin);
+			fclose(fp);
+		} else {
+			return;	//prevent deadlock
+		}
+		goto new_try;
+	}
+	fclose(fp);
+	fp = fopen(strdir, "wb");
+	if (fp) {
+		fprintf(fp, "out");
+		fclose(fp);
+	}
+	fp = fopen(str, "wb");
+	if (fp) {
+		fprintf(fp, "%d", value);
+		fclose(fp);
+	}
+}
+
+int get_gpio(int pin)
+{
+
+	char str[32];
+	char strdir[64];
+	FILE *fp;
+	int val = 0;
+	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
+      new_try:;
+	fp = fopen(str, "rb");
+	if (!fp) {
+		fp = fopen("/sys/class/gpio/export", "wb");
+		if (fp) {
+			fprintf(fp, "%d", pin);
+			fclose(fp);
+		} else {
+			return 0;	// prevent deadlock
+		}
+		goto new_try;
+	}
+	fclose(fp);
+	fp = fopen(strdir, "wb");
+	if (fp) {
+		fprintf(fp, "in");
+		fclose(fp);
+	}
+	fp = fopen(str, "rb");
+	if (fp) {
+		fscanf(fp, "%d", &val);
+		fclose(fp);
+	}
+	return val;
+
+}
+
+
+
+
 void set_gpio(int gpio, int value)
 {
 	//value 0 off 255 on
@@ -177,33 +248,12 @@ void set_gpio(int gpio, int value)
 	case 6: 
 		sysprintf("echo %d > /sys/class/leds/mamba\:white\:wan/brightness", value);
 		break;
-
+	default:
+		i_set_gpio(gpio,value);
+		break;
 	}
 }
 
-int get_gpio(int gpio)
-{
-
-	FILE *fp = NULL;
-	int value;
-	switch (gpio) {
-	case 3:
-		fp = fopen("/tmp/.button_reset", "rb");
-		break;
-	case 4:
-		fp = fopen("/tmp/.button_wps", "rb");
-		break;
-	}
-	if (fp) {
-		value = getc(fp);
-		//fprintf(stderr, "Resetbutton value :%d\n", value);
-		fclose(fp);
-		if (value == EOF)
-			return 0;
-		return value;
-	}
-	return 0;
-}
 
 #elif defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
 
