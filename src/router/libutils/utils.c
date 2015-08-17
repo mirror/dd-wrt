@@ -5087,6 +5087,12 @@ int led_control(int type, int act)
 		break;
 #endif
 #ifdef HAVE_WRT1900AC
+	case ROUTER_WRT_1200AC:
+		connected_gpio = 0x000;
+		disconnected_gpio = 0x001;
+		usb_gpio = 0x004;
+		usb_gpi1 = 0x005;
+	    break;
 	case ROUTER_WRT_1900AC:
 		diag_gpio = 0x100;
 		//esata = 0x003;
