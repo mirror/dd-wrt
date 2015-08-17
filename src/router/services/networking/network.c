@@ -928,14 +928,24 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
 #elif HAVE_MVEBU
-	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
-		PORTSETUPWAN("");
+	if (getRouterBrand() == ROUTER_WRT_1900AC) {
+		if (getSTA() || getWET() || CANBRIDGE()) {
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
+			PORTSETUPWAN("");
+		} else {
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
+			PORTSETUPWAN("eth1");
+		}
 	} else {
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
-		PORTSETUPWAN("eth1");
-	}
+		if (getSTA() || getWET() || CANBRIDGE()) {
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
+			PORTSETUPWAN("");
+		} else {
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
+			PORTSETUPWAN("eth0");
+		}
 
+	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
@@ -2864,8 +2874,11 @@ void start_wan(int status)
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_MVEBU
-	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
+	char *pppoe_wan_ifname;
+	if (getRouterBrand() == ROUTER_WRT_1900AC)
+		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
+	else
+		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WDR4900
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
@@ -4864,11 +4877,11 @@ void start_hotplug_net(void)
 		sysprintf("echo %x > /sys/class/net/%s/queues/rx-0/rps_cpus", cpumask, interface);
 		sysprintf("echo %x > /sys/class/net/%s/queues/tx-0/xps_cpus", cpumask, interface);
 #ifdef HAVE_ATH10K
-	    if (is_ath10k(interface)) {
-		sysprintf("echo %x > /sys/class/net/%s/queues/tx-1/xps_cpus", cpumask, interface);
-		sysprintf("echo %x > /sys/class/net/%s/queues/tx-2/xps_cpus", cpumask, interface);
-		sysprintf("echo %x > /sys/class/net/%s/queues/tx-3/xps_cpus", cpumask, interface);
-	    }
+		if (is_ath10k(interface)) {
+			sysprintf("echo %x > /sys/class/net/%s/queues/tx-1/xps_cpus", cpumask, interface);
+			sysprintf("echo %x > /sys/class/net/%s/queues/tx-2/xps_cpus", cpumask, interface);
+			sysprintf("echo %x > /sys/class/net/%s/queues/tx-3/xps_cpus", cpumask, interface);
+		}
 #endif
 		sysprintf("echo %d > /sys/class/net/%s/queues/tx-1/xps_cpus", cpumask, interface);
 		sysprintf("echo %d > /sys/class/net/%s/queues/tx-2/xps_cpus", cpumask, interface);
@@ -4876,7 +4889,7 @@ void start_hotplug_net(void)
 		sysprintf("echo %d > /sys/class/net/%s/queues/tx-4/xps_cpus", cpumask, interface);
 		sysprintf("echo %d > /sys/class/net/%s/queues/tx-5/xps_cpus", cpumask, interface);
 		sysprintf("echo %d > /sys/class/net/%s/queues/tx-6/xps_cpus", cpumask, interface);
-		sysprintf("echo %d > /sys/class/net/%s/queues/tx-7/xps_cpus", cpumask, interface);		
+		sysprintf("echo %d > /sys/class/net/%s/queues/tx-7/xps_cpus", cpumask, interface);
 	}
 #endif
 #ifdef HAVE_MADWIFI
