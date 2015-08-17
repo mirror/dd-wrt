@@ -62,8 +62,10 @@ void start_sysinit(void)
 	time_t tm = 0;
 	FILE *fp;
 
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_match("disable_watchdog", "1")) {
+		insmod("orion_wdt");
 		eval("watchdog");
+	}
 	/*
 	 * Setup console 
 	 */
