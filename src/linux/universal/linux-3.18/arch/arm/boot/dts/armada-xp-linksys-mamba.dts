@@ -348,7 +348,7 @@
 					reg = <0x3500000 0x2400000>;    /* 37MB */
 				};
 				
-				partition@3100000 {
+				partition@5900000 {
 					label = "nvram";
 					reg = <0x5900000 0x40000>;
 				};
