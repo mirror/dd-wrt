@@ -231,10 +231,14 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 	int phy = get_ath9k_phy_ifname(ifname);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
+	if (fp == NULL)
+	    return 0;
 	fprintf(fp, "0x%x", reg);
 	fclose(fp);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "rb");
+	if (fp == NULL)
+	    return 0;
 	int value;
 	fscanf(fp, "0x%08x:0x%08x", &reg, &value);
 	fclose(fp);
@@ -248,10 +252,14 @@ void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 	int phy = get_ath9k_phy_ifname(ifname);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
+	if (fp == NULL)
+	    return;
 	fprintf(fp, "0x%x", reg);
 	fclose(fp);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "wb");
+	if (fp == NULL)
+	    return;
 	fprintf(fp, "0x%x", value);
 	fclose(fp);
 }
