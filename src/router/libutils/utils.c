@@ -1931,8 +1931,26 @@ int internal_getRouterBrand()
 		return ROUTER_BOARD_FONERA;
 	}
 #elif HAVE_WRT1900AC
-	setRouter("Linksys WRT 1900AC");
-	return ROUTER_WRT_1900AC;	
+	FILE *fp = fopen("/sys/firmware/devicetree/base/model","rb");
+	if (!fp) {
+	    setRouter("Linksys WRT 1900AC");
+	    return ROUTER_WRT_1900AC;	
+	}
+	char modelstr[32];
+	fscanf(fp, "%s",&modelstr[0]);
+	fclose(fp);
+	if (!strcmp(modelstr,"Linksys WRT1200AC")) {
+	    setRouter("Linksys WRT 1200AC");
+	    return ROUTER_WRT_1200AC;	
+	}
+	if (!strcmp(modelstr,"Linksys WRT1900ACv2")) {
+	    setRouter("Linksys WRT 1900ACv2");
+	    return ROUTER_WRT_1200AC;	// similar
+	}
+	if (!strcmp(modelstr,"Linksys WRT1900AC")) {
+	    setRouter("Linksys WRT 1900AC");
+	    return ROUTER_WRT_1900AC;	// similar
+	}
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;
