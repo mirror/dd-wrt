@@ -1434,9 +1434,9 @@ CONFIG_ATA=y
 #
 # Controllers with non-SFF native interface
 #
-# CONFIG_SATA_AHCI is not set
-# CONFIG_SATA_AHCI_PLATFORM is not set
-# CONFIG_AHCI_MVEBU is not set
+CONFIG_SATA_AHCI=m
+CONFIG_SATA_AHCI_PLATFORM=m
+CONFIG_AHCI_MVEBU=m
 # CONFIG_SATA_INIC162X is not set
 # CONFIG_SATA_ACARD_AHCI is not set
 # CONFIG_SATA_SIL24 is not set
