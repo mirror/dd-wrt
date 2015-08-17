@@ -30,7 +30,7 @@
 #include <linux/leds.h>
 #include <linux/usb.h>
 
-#include "leds.h"
+#include <linux/leds.h>
 
 #define DEV_BUS_ID_SIZE		32
 
