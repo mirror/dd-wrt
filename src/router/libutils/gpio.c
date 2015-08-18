@@ -268,7 +268,7 @@ void set_gpio(int gpio, int value)
 	if (brand == ROUTER_WRT_1200AC) {
 		switch (gpio) {
 		case 0:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:power/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:power/brightness", value);
 			break;
 		case 1:	// 2G
 			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:wlan_2g/brightness", value);
@@ -277,7 +277,7 @@ void set_gpio(int gpio, int value)
 			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:wlan_5g/brightness", value);
 			break;
 		case 3:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:sata/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:sata/brightness", value);
 			break;
 		case 4:
 			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:usb3_1/brightness", value);
@@ -310,7 +310,7 @@ void set_gpio(int gpio, int value)
 	if (brand == ROUTER_WRT_1900ACV2) {
 		switch (gpio) {
 		case 0:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:power/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:power/brightness", value);
 			break;
 		case 1:	// 2G
 			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:wlan_2g/brightness", value);
@@ -319,7 +319,7 @@ void set_gpio(int gpio, int value)
 			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:wlan_5g/brightness", value);
 			break;
 		case 3:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:sata/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:sata/brightness", value);
 			break;
 		case 4:
 			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:usb3_1/brightness", value);
