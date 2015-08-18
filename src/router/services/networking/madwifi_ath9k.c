@@ -219,7 +219,12 @@ void configure_single_ath9k(int count)
 
 	char macaddr[32];
 	// interface is created at this point, so that should work
+#ifdef HAVE_MVEBU
+	getWirelessMac(macaddr, count);
+	eval("ifconfig", dev, "hw", "ether", macaddr);
+#else
 	getMacAddr(dev, macaddr);
+#endif
 	nvram_set(athmac, macaddr);
 	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
 	char dist[32];
@@ -495,10 +500,20 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			fprintf(fp, "ieee80211ac=1\n");
 			if (!strcmp(netmode, "ac-only")) {
 				fprintf(fp, "require_vht=1\n");
+				fprintf(fp, "ieee80211d=1\n");
+				fprintf(fp, "ieee80211h=1\n");
+				//might be needed for dfs
+				//fprintf(fp, "spectrum_mgmt_required=1\n");
+				//fprintf(fp, "local_pwr_constraint=3\n");
 			}
 
 			if (!strcmp(netmode, "acn-mixed")) {
 				fprintf(fp, "require_ht=1\n");
+				fprintf(fp, "ieee80211d=1\n");
+				fprintf(fp, "ieee80211h=1\n");
+				//might be needed for dfs
+				//fprintf(fp, "spectrum_mgmt_required=1\n");
+				//fprintf(fp, "local_pwr_constraint=3\n");
 			}
 
 			if (nvram_match(bw, "40")) {
