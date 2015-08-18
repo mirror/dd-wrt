@@ -325,7 +325,12 @@ static int __init root_data_setup(char *str)
 static char * __initdata root_fs_names;
 static int __init fs_names_setup(char *str)
 {
-	root_fs_names = str;
+
+#ifdef CONFIG_ARCH_MVEBU	
+root_fs_names = "squashfs";
+#else
+root_fs_names = str;
+#endif
 	return 1;
 }
 
