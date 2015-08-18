@@ -4012,6 +4012,8 @@ void *getUEnv(char *name)
 #define UOFFSET 0x0
 #elif HAVE_DIR810L
 #define UOFFSET 0x0
+#elif HAVE_MVEBU
+#define UOFFSET 0x0  
 #else
 #define UOFFSET 0x3E000
 #endif
