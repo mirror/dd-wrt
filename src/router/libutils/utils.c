@@ -1947,7 +1947,7 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr,"WRT1900ACv2")) {
 	    setRouter("Linksys WRT 1900ACv2");
-	    return ROUTER_WRT_1200AC;	// similar
+	    return ROUTER_WRT_1900ACV2;	// similar
 	}
 	if (!strcmp(modelstr,"WRT1900AC")) {
 	    setRouter("Linksys WRT 1900AC");
@@ -5091,6 +5091,7 @@ int led_control(int type, int act)
 #ifdef HAVE_WRT1900AC
 	case ROUTER_WRT_1200AC:
 	case ROUTER_WRT_1900AC:
+	case ROUTER_WRT_1900ACV2:
 		power_gpio = 0x000;
 		diag_gpio = 0x100;
 		connected_gpio = 0x006;

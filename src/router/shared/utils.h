@@ -712,6 +712,8 @@
 
 #define ROUTER_WRT_1200AC 0xde11
 
+#define ROUTER_WRT_1900ACV2 0xdf11
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
