@@ -217,99 +217,139 @@ int get_gpio(int pin)
 
 }
 
-
-
-
 void set_gpio(int gpio, int value)
 {
 	//value 0 off 255 on
-	if(value == 1)
+	if (value == 1)
 		value = 255;
 	//fprintf(stderr, "GPIO %d value %d\n", gpio, value);
-if (getRouterBrand() == ROUTER_WRT_1900AC) {
-	switch (gpio) {
-	case 0:		// power
-		sysprintf("echo %d > /sys/class/leds/white\\:power/brightness", value);
-		break;
-	case 1:		// 2G
-		sysprintf("echo %d > /sys/class/leds/white\\:wlan_2g/brightness", value);
-		break;
-	case 2:		// 5G
-		sysprintf("echo %d > /sys/class/leds/white\\:wlan_5g/brightness", value);
-		break;
-	case 3:		// 5G
-		sysprintf("echo %d > /sys/class/leds/white\\:esata/brightness", value);
-		break;
-	case 4: 
-		sysprintf("echo %d > /sys/class/leds/white\\:usb3_1/brightness", value);
-		break;
-	case 5: 
-		sysprintf("echo %d > /sys/class/leds/white\\:usb2/brightness", value);
-		break;
-	case 6: 
-		sysprintf("echo %d > /sys/class/leds/white\\:wan/brightness", value);
-		break;
-	case 7: 
-		sysprintf("echo %d > /sys/class/leds/amber\\:wan/brightness", value);
-		break;
-	case 8: 
-    		sysprintf("echo %d > /sys/class/leds/white\\:usb3_2/brightness", value);
-		break;
-	case 9: 
-    		sysprintf("echo %d > /sys/class/leds/white\\:wps/brightness", value);
-		break;
-	case 10: 
-    		sysprintf("echo %d > /sys/class/leds/amber\\:wps/brightness", value);
-		break;
-	default:
-		i_set_gpio(gpio,value);
-		break;
-	}
-}else{
-	switch (gpio) {
-	case 0:		// power
-		sysprintf("echo %d > /sys/class/leds/white\\:power/brightness", value);
-		break;
-	case 1:		// 2G
-		sysprintf("echo %d > /sys/class/leds/white\\:wlan_2g/brightness", value);
-		break;
-	case 2:		// 5G
-		sysprintf("echo %d > /sys/class/leds/white\\:wlan_5g/brightness", value);
-		break;
-	case 3: 
-		sysprintf("echo %d > /sys/class/leds/white\\:sata/brightness", value);
-		break;
-	case 4: 
-		sysprintf("echo %d > /sys/class/leds/white\\:usb3_1/brightness", value);
-		break;
-	case 5:		// 5G
-		sysprintf("echo %d > /sys/class/leds/white\\:usb2/brightness", value);
-		break;
-	case 6:		// power
-		sysprintf("echo %d > /sys/class/leds/white\\:wan/brightness", value);
-		break;
-	case 7:		// power
-		sysprintf("echo %d > /sys/class/leds/amber\\:wan/brightness", value);
-		break;
-	case 8: 
-		sysprintf("echo %d > /sys/class/leds/white\\:usb3_2/brightness", value);
-		break;
-	case 9: 
-		sysprintf("echo %d > /sys/class/leds/white\\:wps/brightness", value);
-		break;
-	case 10: 
-		sysprintf("echo %d > /sys/class/leds/amber\\:wps/brightness", value);
-		break;
-	default:
-		i_set_gpio(gpio,value);
-		break;
+	int brand = getRouterBrand();
+	if (brand == ROUTER_WRT_1900AC) {
+		switch (gpio) {
+		case 0:	// power
+			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:power/brightness", value);
+			break;
+		case 1:	// 2G
+			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wlan_2g/brightness", value);
+			break;
+		case 2:	// 5G
+			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wlan_5g/brightness", value);
+			break;
+		case 3:	// 5G
+			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:esata/brightness", value);
+			break;
+		case 4:
+			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:usb3_1/brightness", value);
+			break;
+		case 5:
+			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:usb2/brightness", value);
+			break;
+		case 6:
+			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wan/brightness", value);
+			break;
+		case 7:
+			sysprintf("echo %d > /sys/class/leds/mamba\\:amber\\:wan/brightness", value);
+			break;
+		case 8:
+			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:usb3_2/brightness", value);
+			break;
+		case 9:
+			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wps/brightness", value);
+			break;
+		case 10:
+			sysprintf("echo %d > /sys/class/leds/mamba\\:amber\\:wps/brightness", value);
+			break;
+		default:
+			i_set_gpio(gpio, value);
+			break;
+		}
 	}
 
+	if (brand == ROUTER_WRT_1200AC) {
+		switch (gpio) {
+		case 0:	// power
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:power/brightness", value);
+			break;
+		case 1:	// 2G
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:wlan_2g/brightness", value);
+			break;
+		case 2:	// 5G
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:wlan_5g/brightness", value);
+			break;
+		case 3:
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:sata/brightness", value);
+			break;
+		case 4:
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:usb3_1/brightness", value);
+			break;
+		case 5:	// 5G
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:usb2/brightness", value);
+			break;
+		case 6:	// power
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:wan/brightness", value);
+			break;
+		case 7:	// power
+			sysprintf("echo %d > /sys/class/leds/caiman\\:amber\\:wan/brightness", value);
+			break;
+		case 8:
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:usb3_2/brightness", value);
+			break;
+		case 9:
+			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:wps/brightness", value);
+			break;
+		case 10:
+			sysprintf("echo %d > /sys/class/leds/caiman\\:amber\\:wps/brightness", value);
+			break;
+		default:
+			i_set_gpio(gpio, value);
+			break;
+		}
+
+	}
+
+	if (brand == ROUTER_WRT_1900ACV2) {
+		switch (gpio) {
+		case 0:	// power
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:power/brightness", value);
+			break;
+		case 1:	// 2G
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:wlan_2g/brightness", value);
+			break;
+		case 2:	// 5G
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:wlan_5g/brightness", value);
+			break;
+		case 3:
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:sata/brightness", value);
+			break;
+		case 4:
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:usb3_1/brightness", value);
+			break;
+		case 5:	// 5G
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:usb2/brightness", value);
+			break;
+		case 6:	// power
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:wan/brightness", value);
+			break;
+		case 7:	// power
+			sysprintf("echo %d > /sys/class/leds/cobra\\:amber\\:wan/brightness", value);
+			break;
+		case 8:
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:usb3_2/brightness", value);
+			break;
+		case 9:
+			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:wps/brightness", value);
+			break;
+		case 10:
+			sysprintf("echo %d > /sys/class/leds/cobra\\:amber\\:wps/brightness", value);
+			break;
+		default:
+			i_set_gpio(gpio, value);
+			break;
+		}
+
+	}
 
 }
-
-}
-
 
 #elif defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
 
