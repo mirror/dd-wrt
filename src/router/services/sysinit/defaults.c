@@ -3022,8 +3022,6 @@ struct nvram_param srouter_defaults[] = {
 	{"newhttp_passwd", "$1$hFOmcfz/$eYEVGPdzfrkGcA6MbUukF."},
 #endif
 #ifdef HAVE_MVEBU
-	 {"hwmon_temp_max", "65"},
-	 {"hwmon_temp_hyst", "60"},
 	 {"ath0_regdomain", "UNITED_STATES"},
 	 {"ath1_regdomain", "UNITED_STATES"},
 	 {"ath0_channel", "2437"},
@@ -3114,10 +3112,15 @@ struct nvram_param srouter_defaults[] = {
 	{"radio1_on_time", "111111111111111111111111"},	/* Radio timer,always on */
 	{"radio1_timer_enable", "0"},
 	{"radio2_on_time", "111111111111111111111111"},	/* Radio timer,always on */
-	{"radio2_timer_enable", "0"},
+	{"radio2_timer_enable", "0"},	
 #ifdef HAVE_CPUTEMP
+#ifdef HAVE_MVEBU
+	{"hwmon_temp_max", "65"},
+	{"hwmon_temp_hyst", "60"},
+#else
 	{"hwmon_temp_max", "60"},
 	{"hwmon_temp_hyst", "50"},
+#endif
 #endif
 #ifdef HAVE_RSTATS
 	{"rstats_enable", "0"},
