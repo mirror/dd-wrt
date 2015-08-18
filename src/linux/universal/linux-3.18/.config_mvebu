@@ -2647,7 +2647,7 @@ CONFIG_USB_STORAGE=m
 #
 # USB Physical Layer drivers
 #
-# CONFIG_USB_PHY is not set
+CONFIG_USB_PHY=y
 # CONFIG_NOP_USB_XCEIV is not set
 # CONFIG_AM335X_PHY_USB is not set
 # CONFIG_USB_GPIO_VBUS is not set
@@ -2674,7 +2674,7 @@ CONFIG_LEDS_GPIO=y
 # CONFIG_LEDS_LP5562 is not set
 # CONFIG_LEDS_LP8501 is not set
 # CONFIG_LEDS_PCA955X is not set
-# CONFIG_LEDS_PCA963X is not set
+CONFIG_LEDS_PCA963X=m
 # CONFIG_LEDS_DAC124S085 is not set
 # CONFIG_LEDS_PWM is not set
 # CONFIG_LEDS_BD2802 is not set
