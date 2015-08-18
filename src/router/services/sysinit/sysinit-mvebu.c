@@ -89,6 +89,7 @@ void start_sysinit(void)
 	//insmod("button-hotplug");
 	//insmod("gpio-button-hotplug");
 	insmod("leds-tlc59116");
+	insmod("leds-pca963x");
 
 	insmod("hwmon");
 	insmod("thermal_sys");
