@@ -270,11 +270,11 @@ static int ehci_platform_probe(struct platform_device *dev)
 	hcd->rsrc_len = resource_size(res_mem);
 
 #ifdef CONFIG_USB_PHY
-	hcd->phy = devm_usb_get_phy(&dev->dev, USB_PHY_TYPE_USB2);
-	if (!IS_ERR_OR_NULL(hcd->phy)) {
-		otg_set_host(hcd->phy->otg,
+	hcd->usb_phy = devm_usb_get_phy(&dev->dev, USB_PHY_TYPE_USB2);
+	if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
+		otg_set_host(hcd->usb_phy->otg,
 				&hcd->self);
-		usb_phy_init(hcd->phy);
+		usb_phy_init(hcd->usb_phy);
 	}
 #endif
 
@@ -384,6 +384,9 @@ static int ehci_platform_resume(struct device *dev)
 
 static const struct of_device_id ralink_ehci_ids[] = {
 	{ .compatible = "ralink,rt3xxx-ehci", },
+	{ .compatible = "via,vt8500-ehci", },
+	{ .compatible = "wm,prizm-ehci", },
+	{ .compatible = "generic-ehci", },
 	{}
 };
 
