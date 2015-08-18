@@ -254,17 +254,9 @@ int mtd_write(const char *path, const char *mtd)
 	 */
 	unsigned int trxhd = STORE32_LE(TRX_MAGIC);
 #if defined(HAVE_MVEBU)
-	sysprintf("ubootenv list > /tmp/uenv");
-	FILE *fp_uenv;
-	char line[256];
-	if ((fp_uenv = fopen("/tmp/uenv", "r"))) {
-		while (fgets(line, sizeof(line), fp_uenv) != NULL) {
-			if (strstr(line, "boot_part=2")) {
-				mtd = "linux2";
-			}
-		}
-		fclose(fp_uenv);
-	}
+	char *part = getUEnv("boot_part");
+	if (part && !strcmp(part, "2"))
+		mtd = "linux2";
 #endif
 	switch (brand) {
 	case ROUTER_BUFFALO_WZR900DHP:
@@ -681,7 +673,7 @@ int mtd_write(const char *path, const char *mtd)
 				goto fail;
 			}
 		}
-		
+
 #if defined(HAVE_MVEBU)
 		for (i; i < (mtd_info.size / mtd_info.erasesize); i++) {
 			erase_info.start = base + (i * mtd_info.erasesize);
@@ -694,7 +686,6 @@ int mtd_write(const char *path, const char *mtd)
 
 #endif
 	}
-	
 
 	fprintf(stderr, "done [%ld]\n", i * mtd_info.erasesize);
 	/* 
