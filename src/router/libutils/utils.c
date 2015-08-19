@@ -4028,16 +4028,18 @@ void *getUEnv(char *name)
 #else
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 #endif
+	char newname[64];
+	snprintf(newname,64,"%s=",name);
 	fseek(fp, UOFFSET, SEEK_SET);
 	char *mem = safe_malloc(0x2000);
 	fread(mem, 0x2000, 1, fp);
 	fclose(fp);
-	int s = (0x2000 - 1) - strlen(name);
+	int s = (0x2000 - 1) - strlen(newname);
 	int i;
-	int l = strlen(name);
+	int l = strlen(newname);
 	for (i = 0; i < s; i++) {
-		if (!strncmp(mem + i, name, l)) {
-			strncpy(res, mem + i + l + 1, sizeof(res) - 1);
+		if (!strncmp(mem + i, newname, l)) {
+			strncpy(res, mem + i + l, sizeof(res) - 1);
 			free(mem);
 			return res;
 		}
