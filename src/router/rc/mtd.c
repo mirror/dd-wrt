@@ -642,7 +642,7 @@ int mtd_write(const char *path, const char *mtd)
 
 		int length = ROUNDUP(count, mtd_info.erasesize);
 		int base = erase_info.start;
-#if defined(HAVE_80211AC) && !defined(HAVE_NORTHSTAR) || defined(HAVE_MVEBU) 
+#if (defined(HAVE_80211AC) && !defined(HAVE_NORTHSTAR)) || defined(HAVE_MVEBU) 
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 		      again:;
