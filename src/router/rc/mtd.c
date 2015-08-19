@@ -253,19 +253,13 @@ int mtd_write(const char *path, const char *mtd)
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
 	unsigned int trxhd = STORE32_LE(TRX_MAGIC);
+	
 #if defined(HAVE_MVEBU)
-	sysprintf("ubootenv list > /tmp/uenv");
-	FILE *fp_uenv;
-	char line[256];
-	if ((fp_uenv = fopen("/tmp/uenv", "r"))) {
-		while (fgets(line, sizeof(line), fp_uenv) != NULL) {
-			if (strstr(line, "boot_part=2")) {
-				mtd = "linux2";
-			}
-		}
-		fclose(fp_uenv);
-	}
+	char *part = getUEnv("boot_part");
+	if (part && !strcmp(part, "2"))
+		mtd = "linux2";
 #endif
+	
 	switch (brand) {
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
