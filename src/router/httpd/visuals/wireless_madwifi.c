@@ -357,13 +357,13 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 #ifdef HAVE_ATH10K
-	if (is_ath10k(ifname)) {
+	if (is_ath10k(ifname) && !is_mvebu(prefix)) {
 		ack = get_ath10kack(ifname);
 		distance = get_ath10kdistance(ifname);
 	} else
 #endif
 #ifdef HAVE_ATH9K
-	if (is_ath9k(ifname)) {
+	if (is_ath9k(ifname) || is_mvebu(prefix)) {
 		int coverage = mac80211_get_coverageclass(ifname);
 		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
@@ -375,8 +375,10 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ATH9K
 	}
 #endif
-
-	websWrite(wp, "%d&#181;s (%dm)", ack, distance);
+	if (ack < 0 || distance < 0)
+		websWrite(wp, "N/A");
+	else
+		websWrite(wp, "%d&#181;s (%dm)", ack, distance);
 }
 
 void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)

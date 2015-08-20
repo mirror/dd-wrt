@@ -6842,12 +6842,30 @@ int is_ath5k(const char *prefix)
 	return (0);
 }
 #endif
+#ifdef HAVE_MVEBU
+int is_mvebu(const char *prefix) 
+{
+	glob_t globbuf;
+	int count = 0;
+	char globstring[1024];
+	int globresult;
+	int devnum;
+	// get legacy interface count
+	// correct index if there are legacy cards arround
+	devnum = get_ath9k_phy_ifname(prefix);
+	if (devnum == -1)
+		return 0;
+	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:mwlwifi", devnum);
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	if (globresult == 0)
+		count = (int)globbuf.gl_pathc;
+	globfree(&globbuf);
+	return (count);
+}
+#endif
 #ifdef HAVE_ATH10K
 int is_ath10k(const char *prefix)
 {
-#ifdef HAVE_MVEBU
-	return 1;
-#endif  
 	glob_t globbuf;
 	int count = 0;
 	char globstring[1024];

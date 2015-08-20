@@ -3799,7 +3799,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 
 #ifdef HAVE_ATH10K
-	if (!is_ath10k(prefix))
+	if (!is_ath10k(prefix) && !is_mvebu(prefix))
 #endif
 	{
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
@@ -4750,7 +4750,7 @@ if (!strcmp(prefix, "wl2"))
 #endif
 
 #ifdef HAVE_ATH10K
-	if (!is_ath10k(prefix))
+	if (!is_ath10k(prefix) && !is_mvebu(prefix))
 #endif
 	{
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
