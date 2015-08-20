@@ -680,8 +680,7 @@ int main(int argc, char **argv)
 	while (1) {
 		sleep(WLAND_INTERVAL);
 		do_wlan_check();
-#ifdef HAVE_ATH10K
-		if (!is_mvebu(prefix)) {
+#if defined(HAVE_ATH10K) && !defined(HAVE_MVEBU)
 			int c = getdevicecount();
 			char dev[32];
 			int i;
@@ -693,7 +692,6 @@ int main(int argc, char **argv)
 					set_ath10kdistance(dev, atoi(nvram_safe_get(dst)));
 				}
 			}
-		}
 #endif
 
 	}
