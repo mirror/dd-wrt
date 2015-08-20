@@ -375,7 +375,7 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ATH9K
 	}
 #endif
-	if (ack < 0 || distance < 0)
+	if (ack <= 0 || distance <= 0)
 		websWrite(wp, "N/A");
 	else
 		websWrite(wp, "%d&#181;s (%dm)", ack, distance);
