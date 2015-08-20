@@ -61,6 +61,7 @@
 #include "parser.h"
 #include "scheduler.h"
 #include "net_olsr.h"
+#include "olsr_random.h"
 
 #ifdef USE_OPENSSL
 
@@ -535,8 +536,8 @@ send_challenge(struct interface_olsr *olsr_if, const union olsr_ip_addr *new_hos
 
   /* Set the size including OLSR packet size */
 
-  challenge = rand() << 16;
-  challenge |= rand();
+  challenge = olsr_random() << 16;
+  challenge |= olsr_random();
 
   /* initialise rrmsg */
   memset(&cmsg, 0, sizeof(cmsg));
@@ -889,8 +890,8 @@ send_cres(struct interface_olsr *olsr_if, union olsr_ip_addr *to, union olsr_ip_
 
   olsr_printf(1, "[ENC]Building CRESPONSE message\n");
 
-  challenge = rand() << 16;
-  challenge |= rand();
+  challenge = olsr_random() << 16;
+  challenge |= olsr_random();
 
   entry->challenge = challenge;
 

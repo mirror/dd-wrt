@@ -1,3 +1,163 @@
+0.9.0.2 -------------------------------------------------------------------
+
+Ferry Huberts (4):
+      conf: lock_file is derived config.
+      jsoninfo: fix a crash when there are no gateways
+      txtinfo: fix a crash when there are no gateways
+      release: fix release script
+
+Henning Rogge (2):
+      Update version after release of v0.9.0.1
+      Release v0.9.0.2
+
+0.9.0.2 -------------------------------------------------------------------
+
+Ferry Huberts (4):
+      conf: lock_file is derived config.
+      jsoninfo: fix a crash when there are no gateways
+      txtinfo: fix a crash when there are no gateways
+      release: fix release script
+
+Henning Rogge (2):
+      Update version after release of v0.9.0.1
+      Release v0.9.0.2
+
+0.9.0.1 -------------------------------------------------------------------
+
+Ferry Huberts (3):
+      neighbors: signal link changes when deleting a neighbor
+      jsoninfo: do not output smart-gateway info when not enabled.
+      txtinfo: jsoninfo: do not output smart-gateway info when not enabled.
+
+Henning Rogge (2):
+      Update version after release of v0.9.0
+      Release v0.9.0.1
+
+0.9.0 -------------------------------------------------------------------
+
+Daniel Golle (4):
+      plugins: fix build with musl
+      plugins: fix build on some glibc systems
+      plugins: use previous definition of struct udphdr on Android
+      plugins: fix precompiled syntax
+
+Ferry Huberts (98):
+      build: uberclean must also remove builddata.txt
+      build: add some pud targets
+      Rename 'struct interface' to 'struct interface_olsr'
+      Merge branch 'release-0.6.8'
+      pud: wireformat-java: improve java detection
+      pud: wireformat-java: improve java detection
+      sgw: ensure a bandwidth of 1 does not alias onto 0 when serialising
+      sgw: minor improvement
+      sgw: gwContainer can't be null here
+      dyn_gw: fix a Coverity warning
+      pud: nmealib: fix a Coverity warning
+      pud: nmealib: fix a Coverity warning
+      httpinfo: fix a Coverity warning
+      parser: fix a Coverity warning
+      quagga: minor readability fixes
+      olsr_random: introduce better random functions
+      main: replace random() by our own function
+      unix: replace random() by our own function
+      bsd: replace random() by our own function
+      win32: replace random() by our own function
+      pud: nmealib: replace random() by our own function
+      secure: replace random() by our own function
+      contrib: fix the build
+      contrib: replace random() by our own function
+      olsr_switch: replace random() by our own function
+      olsr_random: need to include time.h
+      pud: nmealib: align nmea_random to olsrd _random
+      pud: nmealib: doc: disable generation of the PDF; pdflatex somehow fails
+      pud: nmealib: doc: upgrade doxygen configuration file
+      sgw: egress file: use full time resolution on Linux
+      sgw: egress: Android is not Linux
+      jsoninfo: formatting
+      jsoninfo: some comparison simplifications
+      jsoninfo: clearer distinction between JSON and non-JSON blocks
+      jsoninfo: more comparison simplifications
+      jsoninfo: refactor outputting JSON
+      sgw: fix a shadowing warning
+      jsoninfo: formatting fixup
+      jsoninfo: systemTime and timeSinceStartup can be first
+      jsoninfo: minor fixup
+      jsoninfo: the IP address for a neighbour can also be an IPv6 address
+      jsoninfo: add version, 2hop and sgw. now in sync with txtinfo
+      arprefresh: update the readme
+      dyngw: update the readme
+      dyngw_plain: update the readme
+      httpinfo: update the readme
+      jsoninfo: update the readme
+      secure: update the readme
+      txtinfo: update the readme
+      pud: move the config sample into the readme
+      ipcalc: fix a double slash for IPv6 in olsr_ip_prefix_to_string
+      cfg: make sure lockfile has a default as specified in the cfg file
+      cfgfile_gen: whitespace and typo fixes
+      cfgfile_gen: better LinkQualityMult examples
+      cfgfile_gen: make sure to print IPv6Src as an IPv6 prefix
+      cfgfile_gen: fix default for RtProto
+      cfgfile_gen: add some comments to the generated configuration file
+      cfgfile_gen: print comments when the are no ipc_nets
+      cfgfile_gen: improve printing of HNAs
+      cfgfile_gen: improve printing of MainIp
+      cfgfile_gen: improve printing of SmartGatewayPrefix
+      cfgfile_gen: improve printing of SmartGatewayEgressFile
+      cfgfile_gen: update comments file SmartGatewayEgressFilePeriod
+      cfgfile_gen: improve printing of SmartGatewayEgressInterfaces
+      cfgfile_gen: improve printing of SmartGatewayPolicyRoutingScript
+      cfgfile_gen: improve printing of UseNiit
+      cfgfile_gen: improve printing of routing tables
+      cfgfile_gen: improve printing of routing table priorities
+      files: remove olsrd.conf.default.lq-fisheye
+      files: minor improvements to the FunkFeuer configuration files
+      files: minor improvements to the commotion configuration file
+      files: rename the generated configuration files
+      files: add configurations files corresponding to generated (txt) files
+      files: add a README, explaining generation of effective config files
+      files: remove lq and rfc effective config files
+      files: add a script to generate an effective configuration file
+      files: update the default effective configuration file to current state
+      mantissa: fix a typo in a comment
+      mantissa: add a function to query the minimum interval
+      sgw: fill HNA header in the same order as the fields in the packet
+      sgw: extract appending a sgw HNA into its own function
+      sgw: olsr_modifiy_inetgw_netmask can choose between normal and zero bw
+      jsoninfo: validity times are in 'me' format, convert them to msec first
+      sgw: fix a typo in an assert
+      sgw: sgw HNAs are not considered normal HNAs during processing
+      sgw: implement HNA expiry
+      sgw: update the status file when a sgw HNA is removed (multi-sgw mode
+         only)
+      ifnet: also store the HNA validity time in msec
+      sgw: do not write uplink/downlink speed directly
+      sgw: immediately remove sgw HNAs with zero bandwidth
+      sgw: send sgw HNAs with zero bandwidth after local gw has gone away
+      sgw: do not send zero bandwidth sgw HNAs by default
+      pud: doc: update the documentation
+      release: stricter matching of release tags
+      autobuf: fix warning in Windows release builds
+      Merge branch 'release-0.6.7'
+      Merge branch 'release-0.6.8'
+      Branch v0.9.0
+
+Henning Rogge (7):
+      Update version after release of v0.6.8
+      Update version after release of v0.6.8
+      tc: properly initialise the path_costs field in a new tc
+      tc: properly initialise the path_costs field in a new tc
+      keep pushing data through dotdraw plugin
+      Restrict maxmimum message size (not packet size) to IPv6 minimal MTU.
+      Release v0.9.0
+
+Sebastian Kürten (2):
+      Added simple hard-coded whitelist
+      Revert "Added simple hard-coded whitelist"
+
+Teco Boot (1):
+      arprefresh: README adjusted for plugin name
+
 0.6.8 -------------------------------------------------------------------
 
 Ferry Huberts (81):

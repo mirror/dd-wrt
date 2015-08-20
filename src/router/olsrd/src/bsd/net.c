@@ -594,7 +594,7 @@ olsr_sendto(int s, const void *buf, size_t len, int flags __attribute__ ((unused
 
   /* initialize IP ID field if necessary */
   if (ip_id == 0) {
-    ip_id = (u_int16_t) (arc4random() & 0xffff);
+    ip_id = (u_int16_t) (olsr_random() & 0xffff);
   }
 
   udp_tag = libnet_build_udp(olsr_cnf->olsrport,        /* src port */

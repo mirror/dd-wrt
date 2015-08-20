@@ -3,9 +3,9 @@ SRC +=	$(wildcard ./src/*.c)
 OBJS = $(SRC:.c=.o)
 
 CC = gcc
-CFLAGS = -c -g -Wall -Werror -I./src
+CFLAGS = -c -g -Wall -Werror -I./src -I../../src
 LFLAGS = -g -Wall 
-BUILDLIBS = -lpcap -Wl
+BUILDLIBS = -lpcap
 
 .c.o:
 	${CC} ${CFLAGS} -o $@ $^

@@ -42,6 +42,7 @@
 #include "link_rules.h"
 #include "olsr_host_switch.h"
 #include "ipcalc.h"
+#include "olsr_random.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -64,7 +65,7 @@ ohs_check_link(struct ohs_connection *oc, union olsr_ip_addr *dst)
       return 0;
     }
 
-    r = 1 + (int)(100.0 / (RAND_MAX + 1.0) * rand());
+    r = 1 + (int)(100.0 / (RAND_MAX + 1.0) * olsr_random());
 
     if (logbits & LOG_LINK) {
       struct ipaddr_str addrstr, dststr;

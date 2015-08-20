@@ -48,8 +48,6 @@ struct autobuf;
 #include <stdarg.h>
 #include <time.h>
 
-#define ROUND_UP_TO_POWER_OF_2(val, pow2) (((val) + (pow2) - 1) & ~((pow2) - 1))
-
 #define AUTOBUFCHUNK	4096
 struct autobuf {
   int size;

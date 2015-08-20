@@ -172,7 +172,7 @@ int nmea_scanf(const char *s, int len, const char *format, ...) {
 			if (isdigit(*format))
 				break;
 			{
-				tok_type = NMEA_TOKS_TYPE;
+				/* No need to do 'tok_type = NMEA_TOKS_TYPE' since we'll do a fall-through */
 				if (format > beg_fmt)
 					width = nmea_atoi(beg_fmt, (int) (format - beg_fmt), 10);
 			}
