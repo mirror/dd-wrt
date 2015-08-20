@@ -419,7 +419,7 @@
 // Netgear WNR3500v2 - same - half flash
 #define ROUTER_NETGEAR_WNR3500L 0x7414	//(18)
 // Netgear WNR3500L V2 (BCM47186B0 cpu, 128MB ram,  128MB nand flash, int. antennae can be replaced with ext)
-#define ROUTER_NETGEAR_WNR3500LV2 0x7416	
+#define ROUTER_NETGEAR_WNR3500LV2 0x7416
 
 // Linksys WRT320N (BCM4717A cpu, 8MB serial flash, Gigabit switch, fccid: Linksys Q87-WRT320N)
 // Linksys E2000 (BCM4717A cpu, 8MB serial flash, Gigabit switch, fccid: Linksys Q87-E2000)
@@ -1021,7 +1021,17 @@ extern int count_processes(char *pidName);
 extern int is_ath9k(const char *prefix);
 extern int getath9kdevicecount(void);
 #endif
-
+#ifdef HAVE_ATH10K
+extern int is_ath10k(const char *prefix);
+#endif
+#ifdef HAVE_MVEBU
+extern int is_mvebu(const char *prefix);
+#else
+static int is_mvebu(const char *prefix)
+{
+	return 0;
+}
+#endif
 extern char *get3GDeviceVendor(void);
 
 int isGrep(char *string, char *cmp);

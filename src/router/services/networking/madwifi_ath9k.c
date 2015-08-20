@@ -234,7 +234,7 @@ void configure_single_ath9k(int count)
 		sprintf(dist, "auto");
 	eval("iw", "phy", wif, "set", "distance", dist);
 #ifdef HAVE_ATH10K
-	if (is_ath10k(dev)) {	// evil hack for QCA 
+	if (is_ath10k(dev) && !is_mvebu(dev)) {	// evil hack for QCA 
 		set_ath10kdistance(dev, distance);
 	}
 #endif
@@ -491,7 +491,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		free(caps);
 	}
 #ifdef HAVE_ATH10K
-	if (is_ath10k(prefix)) {
+	if (is_ath10k(prefix) || is_mvebu(prefix)) {
 		if ((!strcmp(netmode, "mixed") ||	//
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
 			caps = mac80211_get_vhtcaps(prefix);
