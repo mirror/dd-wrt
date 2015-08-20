@@ -196,7 +196,7 @@ function getVersionDigitsFromReleaseTag() {
 declare prevRelTagVersion=""
 function getPrevRelTag() {
   set +e
-  prevRelTagVersion="$(git describe --abbrev=0 | \
+  prevRelTagVersion="$(git describe --abbrev=0 --match 'v[0-9]*' | \
                        grep -E "^${versionRegexReleaseTag}$")"
   set -e
   if [[ -z "${prevRelTagVersion}" ]]; then

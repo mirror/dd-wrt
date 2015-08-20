@@ -41,7 +41,7 @@ USAGE
 
 LoadPlugin "olsrd_secure.so.0.6"
 {
-    PlParam     "Keyfile"   "FILENAME"
+    # PlParam     "keyfile"            "/etc/olsr-keyfile.txt"
 }
 
   replacing FILENAME with the full path of the file

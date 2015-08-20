@@ -300,7 +300,7 @@ dotdraw_write_data(void *foo __attribute__ ((unused))) {
     if (result > 0)
       abuf_pull(&outbuffer, result);
 
-    if (result <= 0) {
+    if (result < 0) {
       /* close this socket and cleanup*/
       close(outbuffer_socket);
       abuf_free(&outbuffer);
@@ -308,14 +308,6 @@ dotdraw_write_data(void *foo __attribute__ ((unused))) {
       writetimer_entry = NULL;
       outbuffer_socket = -1;
     }
-  }
-  if (outbuffer.len == 0) {
-    /* close this socket and cleanup*/
-    close(outbuffer_socket);
-    abuf_free(&outbuffer);
-    olsr_stop_timer(writetimer_entry);
-    writetimer_entry = NULL;
-    outbuffer_socket = -1;
   }
 }
 

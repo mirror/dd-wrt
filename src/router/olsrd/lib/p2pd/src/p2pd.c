@@ -204,7 +204,11 @@ PacketReceivedFromOLSR(unsigned char *encapsulationUdpData, int len)
           udpHeader = (struct udphdr*) ARM_NOWARN_ALIGN((encapsulationUdpData +
                                        GetIpHeaderLength(encapsulationUdpData)));
           destAddr.v4.s_addr = ipHeader->ip_dst.s_addr;
+#if defined(__GLIBC__) || defined(__BIONIC__)
           destPort = htons(udpHeader->dest);
+#else
+          destPort = htons(udpHeader->uh_dport);
+#endif
           isInList = InUdpDestPortList(AF_INET, &destAddr, destPort);
 #ifdef INCLUDE_DEBUG_OUTPUT
           if (!isInList) {
@@ -223,7 +227,11 @@ PacketReceivedFromOLSR(unsigned char *encapsulationUdpData, int len)
         if (ip6Header->ip6_nxt == SOL_UDP && !IsIpv6Fragment(ip6Header)) {
           udpHeader = (struct udphdr*) ARM_NOWARN_ALIGN((encapsulationUdpData + 40));
           memcpy(&destAddr.v6, &ip6Header->ip6_dst, sizeof(struct in6_addr));
+#if defined(__GLIBC__) || defined(__BIONIC__)
           destPort = htons(udpHeader->dest);
+#else
+          destPort = htons(udpHeader->uh_dport);
+#endif
           isInList = InUdpDestPortList(AF_INET6, &destAddr, destPort);
 #ifdef INCLUDE_DEBUG_OUTPUT
           if (!isInList) {
@@ -695,7 +703,11 @@ P2pdPacketCaptured(unsigned char *encapsulationUdpData, int nBytes)
 
     udpHeader = (struct udphdr *) ARM_NOWARN_ALIGN((encapsulationUdpData +
                                   GetIpHeaderLength(encapsulationUdpData)));
+#if defined(__GLIBC__) || defined(__BIONIC__)
     destPort = ntohs(udpHeader->dest);
+#else
+    destPort = ntohs(udpHeader->uh_dport);
+#endif
 
     if (!InUdpDestPortList(AF_INET, &dst, destPort)) {
 #ifdef INCLUDE_DEBUG_OUTPUT
@@ -739,7 +751,11 @@ P2pdPacketCaptured(unsigned char *encapsulationUdpData, int nBytes)
       return;
 
     udpHeader = (struct udphdr *) ARM_NOWARN_ALIGN((encapsulationUdpData + 40));
+#if defined(__GLIBC__) || defined(__BIONIC__)
     destPort = ntohs(udpHeader->dest);
+#else
+    destPort = ntohs(udpHeader->uh_dport);
+#endif
 
     if (!InUdpDestPortList(AF_INET6, &dst, destPort)) {
 #ifdef INCLUDE_DEBUG_OUTPUT

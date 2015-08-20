@@ -217,6 +217,7 @@ olsr_delete_neighbor_table(const union olsr_ip_addr *neighbor_addr)
   free(entry);
 
   changes_neighborhood = true;
+  signal_link_changes(true);
   return 1;
 
 }

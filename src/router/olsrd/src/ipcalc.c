@@ -177,7 +177,7 @@ olsr_ip_prefix_to_string(const struct olsr_ip_prefix *prefix)
     rv = inet_ntop(AF_INET6, &prefix->prefix.v6, buf, sizeof(buf));
     len = strlen(buf);
     buf[len++] = '/';
-    snprintf(buf + len, sizeof(buf) - len, "/%d", prefix->prefix_len);
+    snprintf(buf + len, sizeof(buf) - len, "%d", prefix->prefix_len);
   }
   return rv;
 }

@@ -48,6 +48,7 @@
 #include "../link_set.h"
 #include "../olsr.h"
 #include "../egressTypes.h"
+#include "../gateway.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -1292,6 +1293,7 @@ amin_tc_vtime: TOK_MIN_TC_VTIME TOK_FLOAT
 alock_file: TOK_LOCK_FILE TOK_STRING
 {
   PARSER_DEBUG_PRINTF("Lock file %s\n", $2->string);
+  if (olsr_cnf->lock_file) free(olsr_cnf->lock_file);
   olsr_cnf->lock_file = $2->string;
   free($2);
 }
@@ -1578,8 +1580,8 @@ ssmart_gw_uplink: TOK_SMART_GW_UPLINK TOK_STRING
 ismart_gw_speed: TOK_SMART_GW_SPEED TOK_INTEGER TOK_INTEGER
 {
 	PARSER_DEBUG_PRINTF("Smart gateway speed: %u uplink/%u downlink kbit/s\n", $2->integer, $3->integer);
-	olsr_cnf->smart_gw_uplink = $2->integer;
-	olsr_cnf->smart_gw_downlink = $3->integer;
+	smartgw_set_uplink(olsr_cnf, $2->integer);
+	smartgw_set_downlink(olsr_cnf, $3->integer);
 	free($2);
 	free($3);
 }

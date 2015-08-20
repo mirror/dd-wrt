@@ -258,7 +258,14 @@ net_outbuffer_push_reserved(struct interface_olsr *ifp, const void *data, const 
 int
 net_outbuffer_bytes_left(const struct interface_olsr *ifp)
 {
-  return ifp->netbuf.maxsize - ifp->netbuf.pending;
+  /* IPv6 minimum MTU - IPv6 header - UDP header - VLAN-Tag */
+  static int MAX_REMAINING = 1280 - 40 - 8 - 4;
+  int remaining = ifp->netbuf.maxsize - ifp->netbuf.pending;
+
+  if (remaining > MAX_REMAINING) {
+    return MAX_REMAINING;
+  }
+  return remaining;
 }
 
 /**

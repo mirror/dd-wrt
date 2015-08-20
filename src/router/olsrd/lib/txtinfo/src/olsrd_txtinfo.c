@@ -538,65 +538,66 @@ extern struct interfaceName * sgwTunnel6InterfaceNames;
  * @param fmtv the format for printing
  */
 static void sgw_ipvx(struct autobuf *abuf, bool ipv6, const char * fmth, const char * fmtv) {
-  struct gateway_entry * current_gw = olsr_get_inet_gateway(ipv6);
-  struct interfaceName * sgwTunnelInterfaceNames = !ipv6 ? sgwTunnel4InterfaceNames : sgwTunnel6InterfaceNames;
-  int i = 0;
-
   abuf_appendf(abuf, "# Table: Smart Gateway IPv%s\n", ipv6 ? "6" : "4");
   abuf_appendf(abuf, fmth, "#", "Originator", "Prefix", "Uplink", "Downlink", "PathCost", "IPv4", "IPv4-NAT", "IPv6", "Tunnel-Name", "Destination", "Cost");
 
-  for (i = 0; i < olsr_cnf->smart_gw_use_count; i++) {
-    bool selected;
-    struct ipaddr_str originatorStr;
-    const char * originator;
-    struct ipaddr_str prefixIpStr;
-    const char * prefixIPStr;
-    union olsr_ip_addr netmask = { { 0 } };
-    struct ipaddr_str prefixMaskStr;
-    const char * prefixMASKStr;
-    struct interfaceName * node = &sgwTunnelInterfaceNames[i];
-    struct ipaddr_str tunnelGwStr;
-    const char * tunnelGw;
+  if (olsr_cnf->smart_gw_active) {
+    struct gateway_entry * current_gw = olsr_get_inet_gateway(ipv6);
+    struct interfaceName * sgwTunnelInterfaceNames = !ipv6 ? sgwTunnel4InterfaceNames : sgwTunnel6InterfaceNames;
+    int i = 0;
+    for (i = 0; i < olsr_cnf->smart_gw_use_count; i++) {
+      bool selected;
+      struct ipaddr_str originatorStr;
+      const char * originator;
+      struct ipaddr_str prefixIpStr;
+      const char * prefixIPStr;
+      union olsr_ip_addr netmask = { { 0 } };
+      struct ipaddr_str prefixMaskStr;
+      const char * prefixMASKStr;
+      struct interfaceName * node = &sgwTunnelInterfaceNames[i];
+      struct ipaddr_str tunnelGwStr;
+      const char * tunnelGw;
 
-    struct gateway_entry * gw = node->gw;
-    struct tc_entry* tc;
+      struct gateway_entry * gw = node ? node->gw : NULL;
+      struct tc_entry* tc;
 
-    if (!gw) {
-      continue;
-    }
+      if (!gw) {
+        continue;
+      }
 
-    tc = olsr_lookup_tc_entry(&gw->originator);
-    if (!tc) {
-      continue;
-    }
+      tc = olsr_lookup_tc_entry(&gw->originator);
+      if (!tc) {
+        continue;
+      }
 
-    selected = current_gw && (current_gw == gw);
-    originator = olsr_ip_to_string(&originatorStr, &gw->originator);
-    prefixIPStr = olsr_ip_to_string(&prefixIpStr, &gw->external_prefix.prefix);
+      selected = current_gw && (current_gw == gw);
+      originator = olsr_ip_to_string(&originatorStr, &gw->originator);
+      prefixIPStr = olsr_ip_to_string(&prefixIpStr, &gw->external_prefix.prefix);
 
-    prefix_to_netmask((uint8_t *) &netmask, !ipv6 ? sizeof(netmask.v4) : sizeof(netmask.v6), gw->external_prefix.prefix_len);
-    prefixMASKStr = olsr_ip_to_string(&prefixMaskStr, &netmask);
+      prefix_to_netmask((uint8_t *) &netmask, !ipv6 ? sizeof(netmask.v4) : sizeof(netmask.v6), gw->external_prefix.prefix_len);
+      prefixMASKStr = olsr_ip_to_string(&prefixMaskStr, &netmask);
 
-    tunnelGw = olsr_ip_to_string(&tunnelGwStr, &gw->originator);
+      tunnelGw = olsr_ip_to_string(&tunnelGwStr, &gw->originator);
 
-    {
-      char prefix[strlen(prefixIPStr) + 1 + strlen(prefixMASKStr) + 1];
-      snprintf(prefix, sizeof(prefix), "%s/%s", prefixIPStr, prefixMASKStr);
+      {
+        char prefix[strlen(prefixIPStr) + 1 + strlen(prefixMASKStr) + 1];
+        snprintf(prefix, sizeof(prefix), "%s/%s", prefixIPStr, prefixMASKStr);
 
-      abuf_appendf(abuf, fmtv, //
-          selected ? "*" : " ", // selected
-          originator, // Originator
-          prefix, // Prefix IP / Prefix Mask
-          gw->uplink, // Uplink
-          gw->downlink, // Downlink
-          tc->path_cost, // PathCost
-          gw->ipv4 ? "Y" : "N", // IPv4
-          gw->ipv4nat ? "Y" : "N", // IPv4-NAT
-          gw->ipv6 ? "Y" : "N", // IPv6
-          node->name, // Tunnel-Name
-          tunnelGw, // Destination
-          gw->path_cost // Cost
-          );
+        abuf_appendf(abuf, fmtv, //
+            selected ? "*" : " ", // selected
+            originator, // Originator
+            prefix, // Prefix IP / Prefix Mask
+            gw->uplink, // Uplink
+            gw->downlink, // Downlink
+            tc->path_cost, // PathCost
+            gw->ipv4 ? "Y" : "N", // IPv4
+            gw->ipv4nat ? "Y" : "N", // IPv4-NAT
+            gw->ipv6 ? "Y" : "N", // IPv6
+            node->name, // Tunnel-Name
+            tunnelGw, // Destination
+            gw->path_cost // Cost
+            );
+      }
     }
   }
 }

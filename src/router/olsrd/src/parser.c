@@ -300,13 +300,8 @@ parse_packet(struct olsr *olsr, int size, struct interface_olsr *in_if, union ol
    * Hysteresis update - for every OLSR package
    */
   if (olsr_cnf->use_hysteresis) {
-    if (olsr_cnf->ip_version == AF_INET) {
-      /* IPv4 */
-      update_hysteresis_incoming(from_addr, in_if, olsr->olsr_seqno);
-    } else {
-      /* IPv6 */
-      update_hysteresis_incoming(from_addr, in_if, olsr->olsr_seqno);
-    }
+    /* IPv4 & IPv6 */
+    update_hysteresis_incoming(from_addr, in_if, olsr->olsr_seqno);
   }
 
   for (; count > 0; m = (union olsr_message *)((char *)m + (msgsize))) {
