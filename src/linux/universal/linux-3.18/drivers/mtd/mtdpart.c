@@ -890,7 +890,7 @@ int add_mtd_partitions(struct mtd_info *master,
 
 		add_mtd_device(&slave->mtd);
 #ifdef CONFIG_MTD_ROOTFS_GEN
-		if (!strcmp(parts[i].name, "linux")) {
+		if (!strcmp(parts[i].name, "linux") || !strcmp(parts[i].name, "linux2")) {
 
 		char *buf = vmalloc(4096);
 		int offset = slave->offset;
@@ -917,7 +917,7 @@ int add_mtd_partitions(struct mtd_info *master,
 		vfree(buf);		
 		}
 #endif
-		if (!strcmp(parts[i].name, "rootfs")) {
+		if (!strcmp(parts[i].name, "rootfs") || !strcmp(parts[i].name, "rootfs2")) {
 #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
 			if (ROOT_DEV == 0) {
 				printk(KERN_NOTICE "mtd: partition \"rootfs\" "
