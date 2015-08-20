@@ -214,7 +214,8 @@ set_plugin_cmd(const char *value, void *data __attribute__ ((unused)), set_plugi
   size_t len = strlen(value);
 
   if (len < PING_CMD_MAX_LEN) {
-    strncpy(ping_cmd, value, sizeof(ping_cmd));
+    strncpy(ping_cmd, value, MAX(sizeof(ping_cmd), PING_CMD_MAX_LEN - 1));
+    ping_cmd[PING_CMD_MAX_LEN - 1] = '\0';
     return 0;
   }
 

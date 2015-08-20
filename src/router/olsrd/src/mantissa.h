@@ -64,6 +64,8 @@ olsr_reltime me_to_reltime(const uint8_t);
 
 uint8_t reltime_to_me(const olsr_reltime);
 
+olsr_reltime reltime_minimum_interval(void);
+
 #endif /* _OLSR_MANTISSA */
 
 /*

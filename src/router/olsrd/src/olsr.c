@@ -66,6 +66,7 @@
 #include "lq_plugin.h"
 #include "gateway.h"
 #include "duplicate_handler.h"
+#include "olsr_random.h"
 
 #include <stdarg.h>
 #include <signal.h>
@@ -127,7 +128,7 @@ union olsr_ip_addr all_zero;
 void
 init_msg_seqno(void)
 {
-  message_seqno = random() & 0xFFFF;
+  message_seqno = olsr_random() & 0xFFFF;
 }
 
 /**
@@ -413,7 +414,7 @@ void
 set_buffer_timer(struct interface_olsr *ifn)
 {
   /* Set timer */
-  ifn->fwdtimer = GET_TIMESTAMP(random() * olsr_cnf->max_jitter * MSEC_PER_SEC / RAND_MAX);
+  ifn->fwdtimer = GET_TIMESTAMP(olsr_random() * olsr_cnf->max_jitter * MSEC_PER_SEC / OLSR_RANDOM_MAX);
 }
 
 void

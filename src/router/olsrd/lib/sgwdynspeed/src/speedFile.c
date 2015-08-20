@@ -264,10 +264,10 @@ void readSpeedFile(char * fileName) {
 	fp = NULL;
 
 	if (uplinkSet) {
-		olsr_cnf->smart_gw_uplink = uplink;
+	  smartgw_set_uplink(olsr_cnf, uplink);
 	}
 	if (downlinkSet) {
-		olsr_cnf->smart_gw_downlink = downlink;
+	  smartgw_set_downlink(olsr_cnf, downlink);
 	}
 	if (uplinkSet || downlinkSet) {
 	  refresh_smartgw_netmask();

@@ -1590,7 +1590,7 @@ static void sgw_ipvx(struct autobuf *abuf, bool ipv6) {
           abuf_appendf(abuf, "      <td>%u</td>\n", gw->gw->uplink);
           abuf_appendf(abuf, "      <td>%u</td>\n", gw->gw->downlink);
 
-          if (tc->path_cost == ROUTE_COST_BROKEN) {
+          if (!tc || tc->path_cost == ROUTE_COST_BROKEN) {
             abuf_appendf(abuf, "      <td>Unreachable</td>\n");
           } else {
             abuf_appendf(abuf, "      <td>%u</td>\n", etx);

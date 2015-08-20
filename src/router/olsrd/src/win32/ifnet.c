@@ -42,8 +42,6 @@
 #ifdef _WIN32
 
 #include <stdlib.h>
-#define random() rand()
-#define srandom(x) srand(x)
 #include <winsock2.h>
 #include "interfaces.h"
 #include "olsr.h"
@@ -56,6 +54,7 @@
 #include "mantissa.h"
 #include "lq_packet.h"
 #include "net_olsr.h"
+#include "olsr_random.h"
 
 #include <iphlpapi.h>
 #include <iprtrmib.h>
@@ -822,7 +821,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
   else
     New->int_metric = Info.Metric;
 
-  New->olsr_seqnum = random() & 0xffff;
+  New->olsr_seqnum = olsr_random() & 0xffff;
 
   New->ttl_index = -32;         /* For the first 32 TC's, fish-eye is disabled */
 

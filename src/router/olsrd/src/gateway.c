@@ -55,6 +55,9 @@ static struct olsr_cookie_info *gateway_entry_mem_cookie = NULL;
 /** gateway container cookie */
 static struct olsr_cookie_info *gw_container_entry_mem_cookie = NULL;
 
+/** the gateway netmask for the HNA with zero bandwidth */
+static uint8_t smart_gateway_netmask_zero[sizeof(union olsr_ip_addr)];
+
 /** the gateway netmask for the HNA */
 static uint8_t smart_gateway_netmask[sizeof(union olsr_ip_addr)];
 
@@ -109,6 +112,7 @@ static struct BestOverallLink bestOverallLink;
  */
 
 static void olsr_delete_gateway_tree_entry(struct gateway_entry * gw, uint8_t prefixlen, bool immediate);
+static void writeProgramStatusFile(enum sgw_multi_change_phase phase);
 
 /*
  * Helper Functions
@@ -145,8 +149,6 @@ static uint32_t deserialize_gw_speed(uint8_t value) {
   uint32_t exp;
 
   if (!value) {
-    /* 0 and 1 alias onto 0 during serialisation. We take 0 here to mean 0 and
-     * not 1 (since a bandwidth of 1 is no bandwidth at all really) */
     return 0;
   }
 
@@ -168,6 +170,8 @@ static uint32_t deserialize_gw_speed(uint8_t value) {
  * Convert an uplink/downlink speed value into an encoded 1 byte transport
  * value (5 bits mantissa, 3 bits exponent)
  *
+ * A bandwidth of 1 will alias onto a bandwidth of 2.
+ *
  * @param speed the uplink/downlink speed value (in kbit/s)
  * @return value the encoded 1 byte transport value
  */
@@ -176,6 +180,10 @@ static uint8_t serialize_gw_speed(uint32_t speed) {
 
   if (speed == 0) {
     return 0;
+  }
+
+  if (speed == 1) {
+    speed++;
   }
 
   if (speed >= MAX_SMARTGW_SPEED) {
@@ -548,6 +556,20 @@ static void smartgw_tunnel_monitor(int if_index, struct interface_olsr *ifh, enu
 }
 
 /**
+ * Timer callback to expire a gateway entry
+ *
+ * @param ptr a pointer to the smart gateway HNA to expire (struct gateway_entry*)
+ */
+static void expire_gateway_handler(void *ptr) {
+  struct gateway_entry *gw = ptr;
+
+  assert(gw);
+
+  /* remove gateway entry */
+  olsr_delete_gateway_entry(&gw->originator, gw->external_prefix.prefix_len, false);
+}
+
+/**
  * Timer callback to remove and cleanup a gateway entry
  *
  * @param ptr
@@ -601,7 +623,7 @@ static void takeDownExpensiveGateways(struct gw_list * gw_list, bool ipv4, struc
    * exit immediately when takedown is disabled, there is no current gateway, or
    * when there is only a single gateway
    */
-  if ((olsr_cnf->smart_gw_takedown_percentage == 0) || (current_gw == NULL ) || (gw_list->count <= 1)) {
+  if ((olsr_cnf->smart_gw_takedown_percentage == 0) || !current_gw || (gw_list->count <= 1)) {
     return;
   }
 
@@ -980,12 +1002,16 @@ void olsr_print_gateway_entries(void) {
  *
  * @param mask pointer to netmask of the HNA
  * @param prefixlen of the HNA
+ * @param zero true to use zero bandwidth
  */
-void olsr_modifiy_inetgw_netmask(union olsr_ip_addr *mask, int prefixlen) {
+void olsr_modifiy_inetgw_netmask(union olsr_ip_addr *mask, int prefixlen, bool zero) {
   uint8_t *ptr = hna_mask_to_hna_pointer(mask, prefixlen);
 
   /* copy the current settings for uplink/downlink into the mask */
-  memcpy(ptr, &smart_gateway_netmask, sizeof(smart_gateway_netmask) - prefixlen / 8);
+  memcpy( //
+      ptr, //
+      zero ? &smart_gateway_netmask_zero : &smart_gateway_netmask, //
+      (zero ? sizeof(smart_gateway_netmask_zero) : sizeof(smart_gateway_netmask)) - prefixlen / 8);
   if (olsr_cnf->has_ipv4_gateway) {
     ptr[GW_HNA_FLAGS] |= GW_HNA_FLAG_IPV4;
 
@@ -1026,6 +1052,13 @@ void refresh_smartgw_netmask(void) {
       ip[GW_HNA_V6PREFIXLEN] = olsr_cnf->smart_gw_prefix.prefix_len;
       memcpy(&ip[GW_HNA_V6PREFIX], &olsr_cnf->smart_gw_prefix.prefix, 8);
     }
+
+    {
+      uint8_t *ipz = (uint8_t *) &smart_gateway_netmask_zero;
+      memcpy(ipz, ip, sizeof(smart_gateway_netmask_zero));
+      ipz[GW_HNA_DOWNLINK] = serialize_gw_speed(0);
+      ipz[GW_HNA_UPLINK] = serialize_gw_speed(0);
+    }
   }
 }
 
@@ -1058,8 +1091,9 @@ bool olsr_is_smart_gateway(struct olsr_ip_prefix *prefix, union olsr_ip_addr *ma
  * @param mask netmask of the HNA
  * @param prefixlen of the HNA
  * @param seqno the sequence number of the HNA
+ * @param vtime the validity time of the HNA
  */
-void olsr_update_gateway_entry(union olsr_ip_addr *originator, union olsr_ip_addr *mask, int prefixlen, uint16_t seqno) {
+void olsr_update_gateway_entry(union olsr_ip_addr *originator, union olsr_ip_addr *mask, int prefixlen, uint16_t seqno, olsr_reltime vtime) {
   struct gw_container_entry * new_gw_in_list;
   uint8_t *ptr;
   int64_t prev_path_cost = 0;
@@ -1078,14 +1112,14 @@ void olsr_update_gateway_entry(union olsr_ip_addr *originator, union olsr_ip_add
 
   /* keep new HNA seqno */
   gw->seqno = seqno;
+  gw->uplink = 0;
+  gw->downlink = 0;
+  gw->path_cost = INT64_MAX;
 
   ptr = hna_mask_to_hna_pointer(mask, prefixlen);
   if ((ptr[GW_HNA_FLAGS] & GW_HNA_FLAG_LINKSPEED) != 0) {
     gw->uplink = deserialize_gw_speed(ptr[GW_HNA_UPLINK]);
     gw->downlink = deserialize_gw_speed(ptr[GW_HNA_DOWNLINK]);
-  } else {
-    gw->uplink = 0;
-    gw->downlink = 0;
   }
 
   gw->ipv4 = (ptr[GW_HNA_FLAGS] & GW_HNA_FLAG_IPV4) != 0;
@@ -1106,6 +1140,19 @@ void olsr_update_gateway_entry(union olsr_ip_addr *originator, union olsr_ip_add
         memcpy(&gw->external_prefix.prefix, &ptr[GW_HNA_V6PREFIX], 8);
       }
     }
+  }
+
+  if (!gw->uplink || !gw->downlink) {
+    olsr_delete_gateway_tree_entry(gw, FORCE_DELETE_GW_ENTRY, true);
+    return;
+  }
+
+  if (!gw->expire_timer) {
+    /* start expire timer */
+    olsr_set_timer(&gw->expire_timer, vtime, 0, false, expire_gateway_handler, gw, NULL);
+  } else {
+    /* restart expire timer */
+    olsr_change_timer(gw->expire_timer, vtime, 0, false);
   }
 
   /* stop cleanup timer if necessary */
@@ -1177,6 +1224,12 @@ static void olsr_delete_gateway_tree_entry(struct gateway_entry * gw, uint8_t pr
     return;
   }
 
+  if (gw->expire_timer) {
+    /* stop expire timer */
+    olsr_stop_timer(gw->expire_timer);
+    gw->expire_timer = NULL;
+  }
+
   if (immediate && gw->cleanup_timer) {
     /* stop timer if we have to remove immediately */
     olsr_stop_timer(gw->cleanup_timer);
@@ -1200,6 +1253,7 @@ static void olsr_delete_gateway_tree_entry(struct gateway_entry * gw, uint8_t pr
     }
 
     if (prefixlen == FORCE_DELETE_GW_ENTRY || !(gw->ipv4 || gw->ipv6)) {
+      bool write_status = false;
       struct gw_container_entry * gw_in_list;
 
       /* prevent this gateway from being chosen as the new gateway */
@@ -1232,6 +1286,7 @@ static void olsr_delete_gateway_tree_entry(struct gateway_entry * gw, uint8_t pr
         gw_in_list->gw = NULL;
         gw_in_list = olsr_gw_list_remove(&gw_list_ipv4, gw_in_list);
         olsr_cookie_free(gw_container_entry_mem_cookie, gw_in_list);
+        write_status = true;
       }
 
       gw_in_list = olsr_gw_list_find(&gw_list_ipv6, gw);
@@ -1254,6 +1309,7 @@ static void olsr_delete_gateway_tree_entry(struct gateway_entry * gw, uint8_t pr
         gw_in_list->gw = NULL;
         gw_in_list = olsr_gw_list_remove(&gw_list_ipv6, gw_in_list);
         olsr_cookie_free(gw_container_entry_mem_cookie, gw_in_list);
+        write_status = true;
       }
 
       if (!immediate) {
@@ -1269,6 +1325,9 @@ static void olsr_delete_gateway_tree_entry(struct gateway_entry * gw, uint8_t pr
         gw_handler->choose(!current_ipv4_gw, !current_ipv6_gw);
       }
 
+      if (multi_gateway_mode() && write_status) {
+        writeProgramStatusFile(GW_MULTI_CHANGE_PHASE_RUNTIME);
+      }
     } else if (change) {
       assert(gw_handler);
       gw_handler->update(gw);
@@ -1506,11 +1565,11 @@ static bool determineBestEgressLink(enum sgw_multi_change_phase phase) {
 
   if (changed || MSGW_ROUTE_FORCED(phase)) {
     if (!bestEgressLink || !bestEgressLink->upCurrent) {
-      olsr_cnf->smart_gw_uplink = 0;
-      olsr_cnf->smart_gw_downlink = 0;
+      smartgw_set_uplink(olsr_cnf, 0);
+      smartgw_set_downlink(olsr_cnf, 0);
     } else {
-      olsr_cnf->smart_gw_uplink = bestEgressLink->bwCurrent.egressUk;
-      olsr_cnf->smart_gw_downlink = bestEgressLink->bwCurrent.egressDk;
+      smartgw_set_uplink(olsr_cnf, bestEgressLink->bwCurrent.egressUk);
+      smartgw_set_downlink(olsr_cnf, bestEgressLink->bwCurrent.egressDk);
     }
     refresh_smartgw_netmask();
   }
@@ -1548,7 +1607,11 @@ static bool determineBestOverallLink(enum sgw_multi_change_phase phase) {
     bestOverallLink.link.egress = bestEgressLink;
     bestOverallLink.olsrTunnelIfIndex = 0;
   } else {
-    struct olsr_iptunnel_entry * tunnel = !gwContainer ? NULL : gwContainer->tunnel;
+    struct olsr_iptunnel_entry * tunnel;
+
+    assert(gwContainer);
+
+    tunnel = gwContainer->tunnel;
 
     bestOverallLink.valid = olsrGw;
     bestOverallLink.isOlsr = true;

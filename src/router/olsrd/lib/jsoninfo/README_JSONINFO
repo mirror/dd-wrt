@@ -60,33 +60,32 @@ futher parameters.  Here's an example configuration for UNIX systems
 
 LoadPlugin "olsrd_jsoninfo.so.0.0"
 {
-    # the default port is 9090 but you can change it like this:
-    #PlParam     "port"   "8080"
+    # The port number on which the plugin will be listening
+    # PlParam     "port"               "9090"
 
-    # You can set a "accept" single address to allow to connect to
-    # jsoninfo. If no address is specified, then localhost (127.0.0.1)
-    # is allowed by default.  jsoninfo will only use the first "accept"
-    # parameter specified and will ignore the rest.
+    # You can set an "accept" IP address that is allowed to connect to
+    # the plugin. If no address is specified, then localhost (127.0.0.1)
+    # is allowed by default.  Only the last parameter specified will be used,
+    # others will be ignored.
+    # Use 0.0.0.0 to accept all connections
+    # PlParam     "accept"             "127.0.0.1"
 
-    # Set this parameter to activate the IPV6_V6ONLY flag for the plugin
-    # to prevent it from receiving IPv4 messages
-    #PlParam     "ipv6only"   "false"
+    # You can set a "listen" IP address that is used to determine the interface
+    # on which the plugin will be listening. If no address is specified, then
+    # the plugin will listen on all interfaes. Only the last parameter specified
+    # will be used, others will be ignored.
+    # PlParam     "listen"             "0.0.0.0"
 
-    # to allow a specific host:
-    #PlParam      "accept" "172.29.44.23"
-    # if you set it to 0.0.0.0, it will accept all connections
-    #PlParam      "accept" "0.0.0.0"
+    # The first line of the specified file will be read. This line will then be
+    # included in the JSON reply as the value of the 'uuid' field.
+    # Mainly used for debugging.
+    # PlParam     "uuidfile"           "uuid.txt"
 
-    # The "httpheaders" parameter prepends HTTP headers to the reply.
-    # If not set it will default to "no" and have the same behaviour as before.
-    # Among with a minimal set of headers also Cross-origin resource sharing
-    # headers (CORS) are included in reply allowing the json retrieval by
-    # javascript applications not served by olsrd itself.
-    # You can enable it uncommenting the following line:
-    #PlParam      "httpheaders" "yes"
+    # Set to true to prepend HTTP headers before the JSON reply
+    # PlParam     "httpheaders"        "false"
 
-    # specify a UUID for this node to track it for debugging
-    #PlParam      "UUIDFile" "/etc/olsrd/olsrd.uuid"
+    # Set to true to only listen on IPv6 addresses when running in IPv6 mode.
+    # PlParam     "ipv6only"           "false"
 }
 
 

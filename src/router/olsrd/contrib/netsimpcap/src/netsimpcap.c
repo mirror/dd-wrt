@@ -44,6 +44,7 @@
 
 #include "config.h"
 #include "network_tap.h"
+#include "olsr_random.h"
 
 int debugMode = 0;
 
@@ -202,7 +203,7 @@ capture_callback(u_char * args, const struct pcap_pkthdr *hdr, const u_char * pa
       prop = connBC[GRID(*index, i, deviceCount)];
     }
 
-    if (prop == 0 || prop < (rand() % (1 << 24))) {
+    if (prop == 0 || prop < (olsr_random() % (1 << 24))) {
       continue;
     }
 

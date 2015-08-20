@@ -2,6 +2,10 @@ DYNAMIC INTERNET GATEWAY PLAIN PLUGIN FOR olsr.org olsrd
 by Andreas Tonnesen(andreto@olsr.org)
 additions by Sven-Ola Tuecke
 
+Automatically adds a default gateway HNA when the node has such a route.
+Automatically removes a default gateway HNA when the node has no such route.
+IPv4 only.
+
 This plugin is without Ping/libthread. It is the plain dyn_gw!
 
 HOW TO USE
@@ -11,6 +15,7 @@ Add an entry like this to your olsrd configuration file:
 LoadPlugin "olsrd_dyn_gw_plain.so.0.4"
 {
 }
+
 
 ABOUT
 

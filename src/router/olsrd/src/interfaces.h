@@ -100,6 +100,7 @@ struct vtimes {
   uint8_t tc;
   uint8_t mid;
   uint8_t hna;
+  uint32_t hna_reltime;
 };
 
 /* Output buffer structure. This should actually be in net_olsr.h but we have circular references then.
@@ -163,6 +164,9 @@ struct interface_olsr {
 
   /* Timeout for OLSR forwarding on this if */
   uint32_t fwdtimer;
+
+  /* Timeout for OLSR to keep sending zero bandwidth sgw HNAs */
+  uint32_t sgw_sgw_zero_bw_timeout;
 
   /* the buffer to construct the packet data */
   struct olsr_netbuf netbuf;

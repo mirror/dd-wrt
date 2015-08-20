@@ -1028,7 +1028,11 @@ BMF_handle_listeningFd(int skfd, void *data, unsigned int flags __attribute__ ((
   }
 
   udpHeader = (struct udphdr*) ARM_NOWARN_ALIGN((rxBuffer + headerLength));
+#if defined(__GLIBC__) || defined(__BIONIC__)
   destPort = ntohs(udpHeader->dest);
+#else
+  destPort = ntohs(udpHeader->uh_dport);
+#endif
   if (destPort != BMF_ENCAP_PORT)
   {
     /* Not BMF */

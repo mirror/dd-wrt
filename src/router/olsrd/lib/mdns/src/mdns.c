@@ -462,7 +462,11 @@ BmfPacketCaptured(
       return;                   /* for */
     }
     udpHeader = (struct udphdr *)ARM_NOWARN_ALIGN(encapsulationUdpData + GetIpHeaderLength(encapsulationUdpData));
+#if defined(__GLIBC__) || defined(__BIONIC__)
     destPort = ntohs(udpHeader->dest);
+#else
+    destPort = ntohs(udpHeader->uh_dport);
+#endif
     if (destPort != 5353) {
       return;
     }
@@ -498,7 +502,11 @@ BmfPacketCaptured(
       return;                   /* for */
     }
     udpHeader = (struct udphdr *)ARM_NOWARN_ALIGN(encapsulationUdpData + 40);
+#if defined(__GLIBC__) || defined(__BIONIC__)
     destPort = ntohs(udpHeader->dest);
+#else
+    destPort = ntohs(udpHeader->uh_dport);
+#endif
     if (destPort != 5353) {
       return;
     }

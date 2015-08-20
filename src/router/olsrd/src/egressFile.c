@@ -66,11 +66,16 @@ static bool started = false;
 
 /** type to hold the cached stat result */
 typedef struct _CachedStat {
+#if defined(__linux__) && !defined(__ANDROID__)
+  struct timespec timeStamp; /* Time of last modification (full resolution) */
+#else
   time_t timeStamp; /* Time of last modification (second resolution) */
+#endif
 } CachedStat;
 
 /** the cached stat result */
 static CachedStat cachedStat;
+static CachedStat cachedStatClear;
 
 /** the malloc-ed buffer in which to store a line read from the file */
 static char * line = NULL;
@@ -425,7 +430,8 @@ bool startEgressFile(void) {
     return false;
   }
 
-  cachedStat.timeStamp = 0;
+  memset(&cachedStat.timeStamp, 0, sizeof(cachedStat.timeStamp));
+  memset(&cachedStatClear.timeStamp, 0, sizeof(cachedStatClear.timeStamp));
 
   readEgressFile(olsr_cnf->smart_gw_egress_file);
 
@@ -488,18 +494,24 @@ static bool readEgressFile(const char * fileName) {
   ssize_t length = -1;
   bool reportedErrorsLocal = false;
   const char * filepath = !fileName ? DEF_GW_EGRESS_FILE : fileName;
+  void * mtim;
 
-  if (cachedStat.timeStamp != 0) {
+  if (memcmp(&cachedStat.timeStamp, &cachedStatClear.timeStamp, sizeof(cachedStat.timeStamp))) {
     /* read the file before */
 
     if (stat(filepath, &statBuf)) {
       /* could not stat the file */
-      cachedStat.timeStamp = 0;
+      memset(&cachedStat.timeStamp, 0, sizeof(cachedStat.timeStamp));
       readEgressFileClear();
       goto outerror;
     }
 
-    if (!memcmp(&cachedStat.timeStamp, &statBuf.st_mtime, sizeof(cachedStat.timeStamp))) {
+#if defined(__linux__) && !defined(__ANDROID__)
+    mtim = &statBuf.st_mtim;
+#else
+    mtim = &statBuf.st_mtime;
+#endif
+    if (!memcmp(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp))) {
       /* file did not change since last read */
       return false;
     }
@@ -508,7 +520,7 @@ static bool readEgressFile(const char * fileName) {
   fp = fopen(filepath, "r");
   if (!fp) {
     /* could not open the file */
-    cachedStat.timeStamp = 0;
+    memset(&cachedStat.timeStamp, 0, sizeof(cachedStat.timeStamp));
     readEgressFileClear();
     goto outerror;
   }
@@ -681,7 +693,8 @@ static bool readEgressFile(const char * fileName) {
     if (networkSet) {
       /* assumes IPv4 */
       in_addr_t mask = (network.prefix_len == 0) ? 0 : (~0U << (32 - network.prefix_len));
-      network.prefix.v4.s_addr = htonl(ntohl(network.prefix.v4.s_addr) & mask);
+      uint32_t masked = ntohl(network.prefix.v4.s_addr) & mask;
+      network.prefix.v4.s_addr = htonl(masked);
     }
 
     if (!uplink || !downlink) {
@@ -705,7 +718,12 @@ static bool readEgressFile(const char * fileName) {
   fclose(fp);
   fp = NULL;
 
-  memcpy(&cachedStat.timeStamp, &statBuf.st_mtime, sizeof(cachedStat.timeStamp));
+#if defined(__linux__) && !defined(__ANDROID__)
+    mtim = &statBuf.st_mtim;
+#else
+    mtim = &statBuf.st_mtime;
+#endif
+  memcpy(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp));
 
   reportedErrors = reportedErrorsLocal;
 

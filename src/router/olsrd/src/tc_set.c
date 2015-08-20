@@ -157,6 +157,7 @@ olsr_add_tc_entry(union olsr_ip_addr *adr)
   /* Fill entry */
   tc->addr = *adr;
   tc->vertex_node.key = &tc->addr;
+  tc->path_cost = ROUTE_COST_BROKEN;
 
   /*
    * Insert into the global tc tree.

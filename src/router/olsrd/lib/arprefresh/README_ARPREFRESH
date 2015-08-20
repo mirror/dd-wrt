@@ -3,13 +3,14 @@ ARP REFRESH PLUGIN FOR OLSRD
 by Sven-Ola Tuecke <sven-ola-aet-gmx.de>
 ---------------------------------------------------------------------
 
-This plugin listens to all received UDP packets and maintains an
-internal list of MAC addresses extracted from these. By hitchhiking
-the set-route-function, the kernel ARP cache will be refreshed from
-this list if a direct-neighbor host route is configured. Result:
-no more ARP lookups if you use a larger routing chain - e.g. fetch
-a web site 8 olsr-hops away does not show the typical 8-nodes-need
-to ARP first delay.
+The plugin listens to all received UDP packets on port 698 and maintains
+an internal list of MAC addresses extracted from these. The kernel ARP
+cache will be refreshed from this list if a direct-neighbor host route is
+configured. Result: no more ARP lookups if you use a larger routing
+chain - e.g. fetch a web site 8 olsr-hops away does not show the typical
+8-nodes-need-to-ARP first delay.
+IPv4 only.
+Does not support VLANs.
 
 ---------------------------------------------------------------------
 PLUGIN PARAMETERS (PlParam)
@@ -23,7 +24,7 @@ SAMPLE CONFIG
 
 add in /etc/olsrd/olsrd.conf:
 
-LoadPlugin "arprefresh.so.0.1"
+LoadPlugin "olsrd_arprefresh.so.0.1"
 {
 }
 
