@@ -46,6 +46,7 @@
 #include "olsr_cookie.h"
 #include "net_os.h"
 #include "mpr_selector_set.h"
+#include "olsr_random.h"
 
 #include <sys/times.h>
 
@@ -626,7 +627,7 @@ walk_timers(uint32_t * last_run)
            */
           if (timer->timer_period) {
             /* For periodical timers, rehash the random number and restart */
-            timer->timer_random = random();
+            timer->timer_random = olsr_random();
             olsr_change_timer(timer, timer->timer_period, timer->timer_jitter_pct, OLSR_TIMER_PERIODIC);
           } else {
             /* Singleshot timers are stopped */
@@ -801,7 +802,7 @@ olsr_start_timer(unsigned int rel_time,
    * Compute random numbers only once.
    */
   if (!timer->timer_random) {
-    timer->timer_random = random();
+    timer->timer_random = olsr_random();
   }
 
   /* Fill entry */

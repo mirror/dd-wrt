@@ -80,7 +80,7 @@ static bool serialize_tc4(struct tc_message *, struct interface_olsr *);
 
 static bool serialize_mid4(struct interface_olsr *);
 
-static bool serialize_hna4(struct interface_olsr *);
+static bool serialize_hna4(struct ip_prefix_list *h, struct interface_olsr *, bool is_zero_bw);
 
 /* IPv6 */
 
@@ -90,7 +90,7 @@ static bool serialize_tc6(struct tc_message *, struct interface_olsr *);
 
 static bool serialize_mid6(struct interface_olsr *);
 
-static bool serialize_hna6(struct interface_olsr *);
+static bool serialize_hna6(struct ip_prefix_list *h, struct interface_olsr *, bool is_zero_bw);
 
 /**
  * Set the timer that controls the generation of
@@ -215,10 +215,10 @@ queue_hna(struct interface_olsr * ifp)
 
   switch (olsr_cnf->ip_version) {
   case (AF_INET6):
-    return serialize_hna6(ifp);
+    return serialize_hna6(olsr_cnf->hna_entries, ifp, false);
   case (AF_INET):
   default:
-    return serialize_hna4(ifp);
+    return serialize_hna4(olsr_cnf->hna_entries, ifp, false);
   }
   return false;
 }
@@ -971,6 +971,62 @@ serialize_mid6(struct interface_olsr *ifp)
   return true;
 }
 
+static void appendHNAEntry(struct interface_olsr *ifp, struct ip_prefix_list *h, uint16_t * remainsize, uint16_t * curr_size,
+    union olsr_message *m, struct hnapair **pair, bool zero
+#ifndef __linux__
+__attribute__((unused))
+#endif
+  , bool * sgw_set
+#ifndef __linux__
+__attribute__((unused))
+#endif
+  ) {
+  union olsr_ip_addr ip_addr;
+#ifdef __linux__
+  bool is_def_route = is_prefix_inetgw(&h->net);
+#endif
+
+#ifdef __linux__
+  if (!zero && olsr_cnf->smart_gw_active && is_def_route && smartgw_is_zero_bandwidth(olsr_cnf)) {
+    /* this is the default route, with zero bandwidth, do not append it */
+    return;
+  }
+#endif /* __linux__ */
+
+  if ((*curr_size + (2 * olsr_cnf->ipsize)) > *remainsize) {
+    /* Only add HNA message if it contains data */
+    if (*curr_size > OLSR_HNA_IPV4_HDRSIZE) {
+#ifdef DEBUG
+      OLSR_PRINTF(BMSG_DBGLVL, "Sending partial(size: %d, buff left:%d)\n", *curr_size, *remainsize);
+#endif /* DEBUG */
+      m->v4.olsr_msgsize = htons(*curr_size);
+      m->v4.seqno = htons(get_msg_seqno());
+      net_outbuffer_push(ifp, msg_buffer, *curr_size);
+      *curr_size = OLSR_HNA_IPV4_HDRSIZE;
+      *pair = m->v4.message.hna.hna_net;
+    }
+    net_output(ifp);
+    *remainsize = net_outbuffer_bytes_left(ifp);
+    check_buffspace(*curr_size + (2 * olsr_cnf->ipsize), *remainsize, "HNA2");
+  }
+#ifdef DEBUG
+  OLSR_PRINTF(BMSG_DBGLVL, "\tNet: %s\n", olsr_ip_prefix_to_string(&h->net));
+#endif /* DEBUG */
+
+  olsr_prefix_to_netmask(&ip_addr, h->net.prefix_len);
+#ifdef __linux__
+  if (olsr_cnf->smart_gw_active && is_def_route) {
+    /* this is the default route, overwrite it with the smart gateway */
+    olsr_modifiy_inetgw_netmask(&ip_addr, h->net.prefix_len, zero);
+    *sgw_set = true;
+  }
+#endif /* __linux__ */
+  (*pair)->addr = h->net.prefix.v4.s_addr;
+  (*pair)->netmask = ip_addr.v4.s_addr;
+  *pair = &(*pair)[1];
+  *curr_size += (2 * olsr_cnf->ipsize);
+}
+
 /**
  *IP version 4
  *
@@ -978,23 +1034,24 @@ serialize_mid6(struct interface_olsr *ifp)
  *@return nada
  */
 static bool
-serialize_hna4(struct interface_olsr *ifp)
+serialize_hna4(struct ip_prefix_list *h, struct interface_olsr *ifp, bool is_zero_bw)
 {
   uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */
   union olsr_message *m;
   struct hnapair *pair;
-  struct ip_prefix_list *h;
+  bool h_empty = !h;
+  bool sgw_set = false;
 
-  /* No hna nets */
   if (ifp == NULL) {
     return false;
   }
+
   if (olsr_cnf->ip_version != AF_INET) {
     return false;
   }
-  h = olsr_cnf->hna_entries;
-  if (h == NULL) {
+
+  if (h_empty && !ifp->sgw_sgw_zero_bw_timeout) {
     return false;
   }
 
@@ -1002,75 +1059,134 @@ serialize_hna4(struct interface_olsr *ifp)
 
   curr_size = OLSR_HNA_IPV4_HDRSIZE;
 
-  /* calculate size needed for HNA */
   needsize = curr_size;
-  while (h) {
-    needsize += olsr_cnf->ipsize*2;
-    h = h->next;
-  }
 
-  h = olsr_cnf->hna_entries;
+  if (!h_empty) {
+    /* calculate size needed for HNA */
+    struct ip_prefix_list *h_tmp = h;
+    while (h_tmp) {
+      needsize += olsr_cnf->ipsize*2;
+      h_tmp = h_tmp->next;
+    }
 
-  /* Send pending packet if not room in buffer */
-  if (needsize > remainsize) {
-    net_output(ifp);
-    remainsize = net_outbuffer_bytes_left(ifp);
-  }
-  check_buffspace(curr_size, remainsize, "HNA");
-
-  m = (union olsr_message *)msg_buffer;
-
-  /* Fill header */
-  m->v4.originator = olsr_cnf->main_addr.v4.s_addr;
-  m->v4.hopcnt = 0;
-  m->v4.ttl = MAX_TTL;
-  m->v4.olsr_msgtype = HNA_MESSAGE;
-  m->v4.olsr_vtime = ifp->valtimes.hna;
-
-  pair = m->v4.message.hna.hna_net;
-
-  for (; h != NULL; h = h->next) {
-    union olsr_ip_addr ip_addr;
-    if ((curr_size + (2 * olsr_cnf->ipsize)) > remainsize) {
-      /* Only add HNA message if it contains data */
-      if (curr_size > OLSR_HNA_IPV4_HDRSIZE) {
-#ifdef DEBUG
-        OLSR_PRINTF(BMSG_DBGLVL, "Sending partial(size: %d, buff left:%d)\n", curr_size, remainsize);
-#endif /* DEBUG */
-        m->v4.seqno = htons(get_msg_seqno());
-        m->v4.olsr_msgsize = htons(curr_size);
-        net_outbuffer_push(ifp, msg_buffer, curr_size);
-        curr_size = OLSR_HNA_IPV4_HDRSIZE;
-        pair = m->v4.message.hna.hna_net;
-      }
+    /* Send pending packet if not room in buffer */
+    if (needsize > remainsize) {
       net_output(ifp);
       remainsize = net_outbuffer_bytes_left(ifp);
-      check_buffspace(curr_size + (2 * olsr_cnf->ipsize), remainsize, "HNA2");
     }
-#ifdef DEBUG
-    OLSR_PRINTF(BMSG_DBGLVL, "\tNet: %s\n", olsr_ip_prefix_to_string(&h->net));
-#endif /* DEBUG */
+    check_buffspace(curr_size, remainsize, "HNA");
 
-    olsr_prefix_to_netmask(&ip_addr, h->net.prefix_len);
-#ifdef __linux__
-    if (olsr_cnf->smart_gw_active && is_prefix_inetgw(&h->net)) {
-      /* this is the default route, overwrite it with the smart gateway */
-      olsr_modifiy_inetgw_netmask(&ip_addr, h->net.prefix_len);
+    m = (union olsr_message *)msg_buffer;
+
+    /* Fill header */
+    m->v4.olsr_msgtype = HNA_MESSAGE;
+    m->v4.olsr_vtime = is_zero_bw ? reltime_to_me(ifp->sgw_sgw_zero_bw_timeout) : ifp->valtimes.hna;
+    // olsr_msgsize
+    m->v4.originator = olsr_cnf->main_addr.v4.s_addr;
+    m->v4.ttl = MAX_TTL;
+    m->v4.hopcnt = 0;
+    // seqno
+
+    pair = m->v4.message.hna.hna_net;
+
+    for (; h != NULL; h = h->next) {
+      appendHNAEntry(ifp, h, &remainsize, &curr_size, m, &pair, is_zero_bw, &sgw_set);
     }
-#endif /* __linux__ */
-    pair->addr = h->net.prefix.v4.s_addr;
-    pair->netmask = ip_addr.v4.s_addr;
-    pair++;
-    curr_size += (2 * olsr_cnf->ipsize);
+
+    m->v4.olsr_msgsize = htons(curr_size);
+    m->v4.seqno = htons(get_msg_seqno());
+
+    net_outbuffer_push(ifp, msg_buffer, curr_size);
+
+#ifdef __linux__
+    if (sgw_set && !is_zero_bw) {
+      /* (re)set zero bandwidth sgw HNAs timeout */
+      ifp->sgw_sgw_zero_bw_timeout = ifp->valtimes.hna_reltime;
+    }
+#endif
   }
 
-  m->v4.seqno = htons(get_msg_seqno());
-  m->v4.olsr_msgsize = htons(curr_size);
+#ifdef __linux__
+  if (olsr_cnf->smart_gw_active /* sgw is active */
+      && (h_empty || !sgw_set) /* there are no HNAs at all or no sgw HNA */
+      && ifp->sgw_sgw_zero_bw_timeout /* the zero bandwidth sgw HNA window is still valid */
+      && !is_zero_bw /* prevent infinite recursion */
+      ) {
+    struct ip_prefix_list h_zero;
 
-  net_outbuffer_push(ifp, msg_buffer, curr_size);
+    memset(&h_zero, 0, sizeof(h_zero));
+    serialize_hna4(&h_zero, ifp, true);
+
+    /* decrement the window validity time */
+    {
+      unsigned int hna_period = ifp->hna_gen_timer->timer_period;
+      if (ifp->sgw_sgw_zero_bw_timeout <= hna_period) {
+        ifp->sgw_sgw_zero_bw_timeout = 0;
+      } else {
+        ifp->sgw_sgw_zero_bw_timeout -= hna_period;
+      }
+    }
+  }
+#endif /* __linux__ */
 
   //printf("Sending HNA (%d bytes)...\n", outputsize);
   return false;
+}
+
+static void appendHNA6Entry(struct interface_olsr *ifp, struct ip_prefix_list *h, uint16_t * remainsize, uint16_t * curr_size,
+    union olsr_message *m, struct hnapair6 **pair, bool zero
+#ifndef __linux__
+__attribute__((unused))
+#endif
+  , bool * sgw_set
+#ifndef __linux__
+__attribute__((unused))
+#endif
+  ) {
+  union olsr_ip_addr ip_addr;
+#ifdef __linux__
+  bool is_def_route = is_prefix_inetgw(&h->net);
+#endif
+
+#ifdef __linux__
+  if (!zero && olsr_cnf->smart_gw_active && is_def_route && smartgw_is_zero_bandwidth(olsr_cnf)) {
+    /* this is the default route, with zero bandwidth, do not append it */
+    return;
+  }
+#endif /* __linux__ */
+
+  if ((*curr_size + (2 * olsr_cnf->ipsize)) > *remainsize) {
+    /* Only add HNA message if it contains data */
+    if (*curr_size > OLSR_HNA_IPV6_HDRSIZE) {
+#ifdef DEBUG
+      OLSR_PRINTF(BMSG_DBGLVL, "Sending partial(size: %d, buff left:%d)\n", *curr_size, *remainsize);
+#endif /* DEBUG */
+      m->v6.olsr_msgsize = htons(*curr_size);
+      m->v6.seqno = htons(get_msg_seqno());
+      net_outbuffer_push(ifp, msg_buffer, *curr_size);
+      *curr_size = OLSR_HNA_IPV6_HDRSIZE;
+      *pair = m->v6.message.hna.hna_net;
+    }
+    net_output(ifp);
+    *remainsize = net_outbuffer_bytes_left(ifp);
+    check_buffspace(*curr_size + (2 * olsr_cnf->ipsize), *remainsize, "HNA2");
+  }
+#ifdef DEBUG
+  OLSR_PRINTF(BMSG_DBGLVL, "\tNet: %s\n", olsr_ip_prefix_to_string(&h->net));
+#endif /* DEBUG */
+
+  olsr_prefix_to_netmask(&ip_addr, h->net.prefix_len);
+#ifdef __linux__
+  if (olsr_cnf->smart_gw_active && is_def_route) {
+    /* this is the default route, overwrite it with the smart gateway */
+    olsr_modifiy_inetgw_netmask(&ip_addr, h->net.prefix_len, zero);
+    *sgw_set = true;
+  }
+#endif /* __linux__ */
+  (*pair)->addr = h->net.prefix.v6;
+  (*pair)->netmask = ip_addr.v6;
+  *pair = &(*pair)[1];
+  *curr_size += (2 * olsr_cnf->ipsize);
 }
 
 /**
@@ -1080,90 +1196,103 @@ serialize_hna4(struct interface_olsr *ifp)
  *@return nada
  */
 static bool
-serialize_hna6(struct interface_olsr *ifp)
+serialize_hna6(struct ip_prefix_list *h, struct interface_olsr *ifp, bool is_zero_bw)
 {
   uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */
   union olsr_message *m;
-  struct hnapair6 *pair6;
-  union olsr_ip_addr tmp_netmask;
-  struct ip_prefix_list *h = olsr_cnf->hna_entries;
+  struct hnapair6 *pair;
+  bool h_empty = !h;
+  bool sgw_set = false;
 
-  /* No hna nets */
-  if ((olsr_cnf->ip_version != AF_INET6) || (!ifp) || h == NULL)
+  if (ifp == NULL) {
     return false;
+  }
+
+  if (olsr_cnf->ip_version != AF_INET6) {
+    return false;
+  }
+
+  if (h_empty && !ifp->sgw_sgw_zero_bw_timeout) {
+    return false;
+  }
 
   remainsize = net_outbuffer_bytes_left(ifp);
 
   curr_size = OLSR_HNA_IPV6_HDRSIZE;
 
-  /* calculate size needed for HNA */
   needsize = curr_size;
-  while (h) {
-    needsize += olsr_cnf->ipsize*2;
-    h = h->next;
-  }
 
-  h = olsr_cnf->hna_entries;
+  if (!h_empty) {
+    /* calculate size needed for HNA */
+    struct ip_prefix_list *h_tmp = h;
+    while (h_tmp) {
+      needsize += olsr_cnf->ipsize*2;
+      h_tmp = h_tmp->next;
+    }
 
-  /* Send pending packet if not room in buffer */
-  if (needsize > remainsize) {
-    net_output(ifp);
-    remainsize = net_outbuffer_bytes_left(ifp);
-  }
-  check_buffspace(curr_size, remainsize, "HNA");
-
-  m = (union olsr_message *)msg_buffer;
-
-  /* Fill header */
-  m->v6.originator = olsr_cnf->main_addr.v6;
-  m->v6.hopcnt = 0;
-  m->v6.ttl = MAX_TTL;
-  m->v6.olsr_msgtype = HNA_MESSAGE;
-  m->v6.olsr_vtime = ifp->valtimes.hna;
-
-  pair6 = m->v6.message.hna.hna_net;
-
-  while (h) {
-    if ((curr_size + (2 * olsr_cnf->ipsize)) > remainsize) {
-      /* Only add HNA message if it contains data */
-      if (curr_size > OLSR_HNA_IPV6_HDRSIZE) {
-#ifdef DEBUG
-        OLSR_PRINTF(BMSG_DBGLVL, "Sending partial(size: %d, buff left:%d)\n", curr_size, remainsize);
-#endif /* DEBUG */
-        m->v6.seqno = htons(get_msg_seqno());
-        m->v6.olsr_msgsize = htons(curr_size);
-        net_outbuffer_push(ifp, msg_buffer, curr_size);
-        curr_size = OLSR_HNA_IPV6_HDRSIZE;
-        pair6 = m->v6.message.hna.hna_net;
-      }
+    /* Send pending packet if not room in buffer */
+    if (needsize > remainsize) {
       net_output(ifp);
       remainsize = net_outbuffer_bytes_left(ifp);
-      check_buffspace(curr_size + (2 * olsr_cnf->ipsize), remainsize, "HNA2");
     }
-#ifdef DEBUG
-    OLSR_PRINTF(BMSG_DBGLVL, "\tNet: %s\n", olsr_ip_prefix_to_string(&h->net));
-#endif /* DEBUG */
-    olsr_prefix_to_netmask(&tmp_netmask, h->net.prefix_len);
+    check_buffspace(curr_size, remainsize, "HNA");
+
+    m = (union olsr_message *)msg_buffer;
+
+    /* Fill header */
+    m->v6.olsr_msgtype = HNA_MESSAGE;
+    m->v6.olsr_vtime = is_zero_bw ? reltime_to_me(ifp->sgw_sgw_zero_bw_timeout) : ifp->valtimes.hna;
+    // olsr_msgsize
+    m->v6.originator = olsr_cnf->main_addr.v6;
+    m->v6.ttl = MAX_TTL;
+    m->v6.hopcnt = 0;
+    // seqno
+
+    pair = m->v6.message.hna.hna_net;
+
+    for (; h != NULL; h = h->next) {
+      appendHNA6Entry(ifp, h, &remainsize, &curr_size, m, &pair, is_zero_bw, &sgw_set);
+    }
+
+    m->v6.olsr_msgsize = htons(curr_size);
+    m->v6.seqno = htons(get_msg_seqno());
+
+    net_outbuffer_push(ifp, msg_buffer, curr_size);
+
 #ifdef __linux__
-    if (olsr_cnf->smart_gw_active && is_prefix_inetgw(&h->net)) {
-      /* this is the default gateway, so overwrite it with the smart one */
-      olsr_modifiy_inetgw_netmask(&tmp_netmask, h->net.prefix_len);
+    if (sgw_set && !is_zero_bw) {
+      /* (re)set zero bandwidth sgw HNAs timeout */
+      ifp->sgw_sgw_zero_bw_timeout = ifp->valtimes.hna_reltime;
     }
-#endif /* __linux__ */
-    pair6->addr = h->net.prefix.v6;
-    pair6->netmask = tmp_netmask.v6;
-    pair6++;
-    curr_size += (2 * olsr_cnf->ipsize);
-    h = h->next;
+#endif
   }
 
-  m->v6.olsr_msgsize = htons(curr_size);
-  m->v6.seqno = htons(get_msg_seqno());
+#ifdef __linux__
+  if (olsr_cnf->smart_gw_active /* sgw is active */
+      && (h_empty || !sgw_set) /* there are no HNAs at all or no sgw HNA */
+      && ifp->sgw_sgw_zero_bw_timeout /* the zero bandwidth sgw HNA window is still valid */
+      && !is_zero_bw /* prevent infinite recursion */
+      ) {
+    struct ip_prefix_list h_zero;
 
-  net_outbuffer_push(ifp, msg_buffer, curr_size);
+    memset(&h_zero, 0, sizeof(h_zero));
+    serialize_hna6(&h_zero, ifp, true);
+
+    /* decrement the window validity time */
+    {
+      unsigned int hna_period = ifp->hna_gen_timer->timer_period;
+      if (ifp->sgw_sgw_zero_bw_timeout <= hna_period) {
+        ifp->sgw_sgw_zero_bw_timeout = 0;
+      } else {
+        ifp->sgw_sgw_zero_bw_timeout -= hna_period;
+      }
+    }
+  }
+#endif /* __linux__ */
+
+  //printf("Sending HNA (%d bytes)...\n", outputsize);
   return false;
-
 }
 
 /*

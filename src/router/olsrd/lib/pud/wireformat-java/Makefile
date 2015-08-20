@@ -57,37 +57,29 @@ LIBDIR_BUILD = lib
 INC_DIR_WIREFORMAT = ../wireformat/include
 INC_DIR_WIREFORMAT_FULL = $(INC_DIR_WIREFORMAT)/$(WIREFORMAT_PROJECT)
 
-ifneq ($(wildcard /usr/lib/jvm/java),)
-  INC_DIR_JVM = /usr/lib/jvm/java/include
-else
-  ifneq ($(wildcard /usr/lib/jvm/java-1.7.0-openjdk$(ARCH)),)
-    INC_DIR_JVM = /usr/lib/jvm/java-1.7.0-openjdk$(ARCH)/include
-  else
-    ifneq ($(wildcard /usr/lib/jvm/java-1.7.0-openjdk$(ARCH2)),)
-      INC_DIR_JVM = /usr/lib/jvm/java-1.7.0-openjdk$(ARCH2)/include
-    else
-      ifneq ($(wildcard /usr/lib/jvm/java-1.7.0-openjdk),)
-        INC_DIR_JVM = /usr/lib/jvm/java-1.7.0-openjdk/include
-      else
-        ifneq ($(wildcard /usr/lib/jvm/java-1.6.0-openjdk$(ARCH)),)
-          INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk$(ARCH)/include
-        else
-          ifneq ($(wildcard /usr/lib/jvm/java-1.6.0-openjdk$(ARCH2)),)
-            INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk$(ARCH2)/include
-          else
-            ifneq ($(wildcard /usr/lib/jvm/java-1.6.0-openjdk),)
-              INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk/include
-            else
-              $(error No java detected)
-            endif
-          endif
-        endif
-      endif
-    endif
-  endif
+
+JAVAHOMEREGEX = ^[[:space:]]*java\.home[[:space:]]*=[[:space:]]*(.+)[[:space:]]*$$
+JAVAHOME = $(shell java -XshowSettings 2>&1 | grep -E '$(JAVAHOMEREGEX)' | sed -r 's/$(JAVAHOMEREGEX)/\1/')
+
+ifeq ($(JAVAHOME),)
+  $(error No java detected)
 endif
 
-INC_DIR_JVM_OS = $(INC_DIR_JVM)/$(OS)
+INC_DIR_JVM = $(JAVAHOME)/../include
+
+ifeq ($(wildcard $(INC_DIR_JVM)),)
+  $(error No java include directory detected at $(INC_DIR_JVM))
+endif
+
+ifeq ($(OS),android)
+  INC_DIR_JVM_OS = $(INC_DIR_JVM)/linux
+else
+  INC_DIR_JVM_OS = $(INC_DIR_JVM)/$(OS)
+endif
+
+ifeq ($(wildcard $(INC_DIR_JVM_OS)),)
+  $(error No java OS include directory detected at $(INC_DIR_JVM_OS))
+endif
 
 
 SRC_DIR_C = src/main/c

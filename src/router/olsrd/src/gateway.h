@@ -67,6 +67,7 @@ struct gateway_entry {
     bool ipv4nat;
     bool ipv6;
 
+    struct timer_entry *expire_timer;
     struct timer_entry *cleanup_timer;
     uint16_t seqno;
 };
@@ -185,7 +186,7 @@ void olsr_print_gateway_entries(void);
  * Tx Path Interface
  */
 
-void olsr_modifiy_inetgw_netmask(union olsr_ip_addr *mask, int prefixlen);
+void olsr_modifiy_inetgw_netmask(union olsr_ip_addr *mask, int prefixlen, bool zero);
 
 /*
  * Interface to adjust uplink/downlink speed
@@ -198,7 +199,7 @@ void refresh_smartgw_netmask(void);
  */
 
 bool olsr_is_smart_gateway(struct olsr_ip_prefix *prefix, union olsr_ip_addr *net);
-void olsr_update_gateway_entry(union olsr_ip_addr *originator, union olsr_ip_addr *mask, int prefixlen, uint16_t seqno);
+void olsr_update_gateway_entry(union olsr_ip_addr *originator, union olsr_ip_addr *mask, int prefixlen, uint16_t seqno, olsr_reltime vtime);
 void olsr_delete_gateway_entry(union olsr_ip_addr *originator, uint8_t prefixlen, bool immediate);
 void olsr_trigger_gatewayloss_check(void);
 

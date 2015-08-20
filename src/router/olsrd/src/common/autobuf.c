@@ -47,10 +47,23 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
+#include <assert.h>
 
 
 static int autobuf_enlarge(struct autobuf *autobuf, int new_size);
 
+static int ROUND_UP_TO_POWER_OF_2(int val, int pow2) {
+  assert(val >= 0);
+  assert(pow2 > 0);
+
+  if (val <= (INT32_MAX - (pow2 - 1))) {
+    /* no overflow */
+    return ((val + (pow2 - 1)) & ~(pow2 - 1));
+  }
+
+  /* overflow */
+  return (INT32_MAX & ~(pow2 - 1));
+}
 
 int
 abuf_init(struct autobuf *autobuf, int initial_size)

@@ -1,34 +1,45 @@
 #
-# sourced from: http://wiki.funkfeuer.at/index.php/OLSR-Konfiguration
+# Copied from http://wiki.funkfeuer.at/index.php/OLSR-Konfiguration
+#
+# jsoninfo plugin added to be able to generate the effective configuration
+# file easily
 #
 
-DebugLevel              0
-IpVersion               4
-AllowNoInt              yes
-FIBMetric               "flat"
-TcRedundancy            2
-MprCoverage             5
-LinkQualityFishEye      1
-LinkQualityAlgorithm    "etx_ff"  
-LinkQualityLevel 2
-UseHysteresis no
+DebugLevel                     0
+IpVersion                      4
+AllowNoInt                     yes
+FIBMetric                      "flat"
+TcRedundancy                   2
+MprCoverage                    5
+LinkQualityFishEye             1
+LinkQualityAlgorithm           "etx_ff"
+LinkQualityLevel               2
+UseHysteresis                  no
+
+Interface "wlan0"
+{
+}
 
 LoadPlugin "olsrd_httpinfo.so.0.1"
 {
-       PlParam     "port"   "80"
-       PlParam     "Net"    "0.0.0.0 0.0.0.0"
+    PlParam "port"             "80"
+    PlParam "Net"              "0.0.0.0 0.0.0.0"
+}
+
+LoadPlugin "olsrd_jsoninfo.so.0.0"
+{
 }
 
 #Trage hier deine OLSR-Interfaces (funk, lan, tunnel, etc,..) ein
 InterfaceDefaults
 {
-       Ip4Broadcast 255.255.255.255
-       HelloInterval           5.0
-       HelloValidityTime       100.0
-       TcInterval              3.0
-       TcValidityTime          500.0
-       MidInterval             30.0
-       MidValidityTime         500.0
-       HnaInterval             30.0
-       HnaValidityTime         500.0
+    Ip4Broadcast               255.255.255.255
+    HelloInterval              5.0
+    HelloValidityTime          100.0
+    TcInterval                 3.0
+    TcValidityTime             500.0
+    MidInterval                30.0
+    MidValidityTime            500.0
+    HnaInterval                30.0
+    HnaValidityTime            500.0
 }

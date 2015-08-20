@@ -194,11 +194,11 @@ zclient_read(ssize_t * size)
 
     /* detect zebra packet fragmentation */
     do {
-      memcpy(&length, buf + offset, sizeof length);
+      memcpy(&length, buf + offset, sizeof(length));
       length = ntohs(length);
       offset += length;
     }
-    while (*size >= (ssize_t) (offset + sizeof length));
+    while (*size >= (ssize_t) (offset + sizeof(length)));
     /* set blocking socket on fragmented packet */
     if (*size != offset)
       (void)fcntl(zebra.sock, F_SETFL, sockstatus);

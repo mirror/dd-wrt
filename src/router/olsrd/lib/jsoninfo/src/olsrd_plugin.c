@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
@@ -73,9 +72,7 @@ static void my_fini(void) __attribute__ ((destructor));
 /**
  *Constructor
  */
-static void
-my_init(void)
-{
+static void my_init(void) {
   /* Print plugin info to stdout */
   printf("%s\n", MOD_DESC);
 
@@ -99,9 +96,7 @@ my_init(void)
 /**
  *Destructor
  */
-static void
-my_fini(void)
-{
+static void my_fini(void) {
   /* Calls the destruction function
    * olsr_plugin_exit()
    * This function should be present in your
@@ -111,25 +106,19 @@ my_fini(void)
   olsr_plugin_exit();
 }
 
-int
-olsrd_plugin_interface_version(void)
-{
+int olsrd_plugin_interface_version(void) {
   return PLUGIN_INTERFACE_VERSION;
 }
 
-static int
-store_string(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
-{
+static int store_string(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused))) {
   char *str = data;
   snprintf(str, FILENAME_MAX, "%s", value);
   return 0;
 }
 
-static int
-store_boolean(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
-{
+static int store_boolean(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused))) {
   bool *dest = data;
-  if(strcmp(value, "yes") == 0)
+  if (strcmp(value, "yes") == 0)
     *dest = true;
   else if (strcmp(value, "no") == 0)
     *dest = false;
@@ -139,18 +128,17 @@ store_boolean(const char *value, void *data, set_plugin_parameter_addon addon __
   return 0;
 }
 
-static const struct olsrd_plugin_parameters plugin_parameters[] = {
-  {.name = "port",.set_plugin_parameter = &set_plugin_port,.data = &ipc_port},
-  {.name = "accept",.set_plugin_parameter = &set_plugin_ipaddress,.data = &jsoninfo_accept_ip},
-  {.name = "listen",.set_plugin_parameter = &set_plugin_ipaddress,.data = &jsoninfo_listen_ip},
-  {.name = "uuidfile",.set_plugin_parameter = &store_string,.data = uuidfile},
-  {.name = "httpheaders",.set_plugin_parameter = &store_boolean,.data = &http_headers},
-  {.name = "ipv6only", .set_plugin_parameter = &set_plugin_boolean, .data = &jsoninfo_ipv6_only},
-};
+static const struct olsrd_plugin_parameters plugin_parameters[] = { //
+    //
+        { .name = "port", .set_plugin_parameter = &set_plugin_port, .data = &ipc_port }, //
+        { .name = "accept", .set_plugin_parameter = &set_plugin_ipaddress, .data = &jsoninfo_accept_ip }, //
+        { .name = "listen", .set_plugin_parameter = &set_plugin_ipaddress, .data = &jsoninfo_listen_ip }, //
+        { .name = "uuidfile", .set_plugin_parameter = &store_string, .data = uuidfile }, //
+        { .name = "httpheaders", .set_plugin_parameter = &store_boolean, .data = &http_headers }, //
+        { .name = "ipv6only", .set_plugin_parameter = &set_plugin_boolean, .data = &jsoninfo_ipv6_only } //
+    };
 
-void
-olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
-{
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size) {
   *params = plugin_parameters;
   *size = sizeof(plugin_parameters) / sizeof(*plugin_parameters);
 }

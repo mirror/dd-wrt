@@ -55,20 +55,22 @@ futher parameters.  Here's an example configuration for UNIX systems
 
 LoadPlugin "olsrd_txtinfo.so.0.1"
 {
-    # the default port is 2006 but you can change it like this:
-    #PlParam     "port"   "8080"
+    # The port number on which the plugin will be listening
+    # PlParam     "port"               "2006"
 
-    # You can set a "accept" single address to allow to connect to
-    # txtinfo. If no address is specified, then localhost (127.0.0.1)
-    # is allowed by default.  txtinfo will only use the first "accept"
-    # parameter specified and will ignore the rest.
+    # You can set an "accept" IP address that is allowed to connect to
+    # the plugin. If no address is specified, then localhost (127.0.0.1)
+    # is allowed by default.  Only the last parameter specified will be used,
+    # others will be ignored.
+    # Use 0.0.0.0 to accept all connections
+    # PlParam     "accept"             "127.0.0.1"
 
-    # Set this parameter to activate the IPV6_V6ONLY flag for the plugin
-    # to prevent it from receiving IPv4 messages
-    #PlParam     "ipv6only"   "false"
+    # You can set a "listen" IP address that is used to determine the interface
+    # on which the plugin will be listening. If no address is specified, then
+    # the plugin will listen on all interfaes. Only the last parameter specified
+    # will be used, others will be ignored.
+    # PlParam     "listen"             "0.0.0.0"
 
-    # to allow a specific host:
-    #PlParam      "accept" "172.29.44.23"
-    # if you set it to 0.0.0.0, it will accept all connections
-    #PlParam      "accept" "0.0.0.0"
+    # Set to true to only listen on IPv6 addresses when running in IPv6 mode.
+    # PlParam     "ipv6only"           "false"
 }
