@@ -3024,11 +3024,6 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_MVEBU
 	 {"ath0_regdomain", "UNITED_STATES"},
 	 {"ath1_regdomain", "UNITED_STATES"},
-	 {"ath0_channel", "2437"},
-	 {"ath1_channel", "5745"},
-	 {"ath1_channelbw", "80"},
-	 {"ath1_nctrlsb", "upper"},
-	 {"ath1_net_mode","acn-mixed"},
 	 {"ath0_txpwrdbm","30"},
 	 {"ath1_txpwrdbm","30"},
 #endif
