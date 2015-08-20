@@ -2537,10 +2537,10 @@ int __net_init fib_proc_init(struct net *net)
 	return 0;
 
 out3:
-	if (!IS_ENABLED(CONFIG_PROC_STRIPPED)
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED))
 		remove_proc_entry("fib_triestat", net->proc_net);
 out2:
-	if (!IS_ENABLED(CONFIG_PROC_STRIPPED)
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED))
 		remove_proc_entry("fib_trie", net->proc_net);
 out1:
 	return -ENOMEM;
