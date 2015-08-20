@@ -153,7 +153,7 @@ static struct fib_table *fib_empty_table(struct net *net)
 	u32 id;
 
 	for (id = 1; id <= RT_TABLE_MAX; id++)
-		if (fib_get_table(net, id) == NULL)
+		if (!fib_get_table(net, id))
 			return fib_new_table(net, id);
 	return NULL;
 }
@@ -174,12 +174,17 @@ static int fib4_rule_configure(struct fib_rule *rule, struct sk_buff *skb,
 	if (frh->tos & ~IPTOS_TOS_MASK)
 		goto errout;
 
+	/* split local/main if they are not already split */
+	err = fib_unmerge(net);
+	if (err)
+		goto errout;
+
 	if (rule->table == RT_TABLE_UNSPEC) {
 		if (rule->action == FR_ACT_TO_TBL) {
 			struct fib_table *table;
 
 			table = fib_empty_table(net);
-			if (table == NULL) {
+			if (!table) {
 				err = -ENOBUFS;
 				goto errout;
 			}
@@ -209,21 +214,29 @@ static int fib4_rule_configure(struct fib_rule *rule, struct sk_buff *skb,
 	rule4->tos = frh->tos;
 
 	net->ipv4.fib_has_custom_rules = true;
+
 	err = 0;
 errout:
 	return err;
 }
 
-static void fib4_rule_delete(struct fib_rule *rule)
+static int fib4_rule_delete(struct fib_rule *rule)
 {
 	struct net *net = rule->fr_net;
-#ifdef CONFIG_IP_ROUTE_CLASSID
-	struct fib4_rule *rule4 = (struct fib4_rule *) rule;
+	int err;
 
-	if (rule4->tclassid)
+	/* split local/main if they are not already split */
+	err = fib_unmerge(net);
+	if (err)
+		goto errout;
+
+#ifdef CONFIG_IP_ROUTE_CLASSID
+	if (((struct fib4_rule *)rule)->tclassid)
 		net->ipv4.fib_num_tclassid_users--;
 #endif
 	net->ipv4.fib_has_custom_rules = true;
+errout:
+	return err;
 }
 
 static int fib4_rule_compare(struct fib_rule *rule, struct fib_rule_hdr *frh,
