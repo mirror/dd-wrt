@@ -1,0 +1,162 @@
+#!/bin/bash
+
+set -e
+set -u
+
+configFileTmp=""
+function exitTrapHandler() {
+  local -i exitCode=${?}
+
+  if [ -n "$configFileTmp" ]; then
+    rm -f "$configFileTmp"
+  fi
+
+  if [[ ${exitCode} -ne 0 ]]; then
+    echo "Exiting with code ${exitCode}"
+  fi
+  exit ${exitCode}
+}
+
+trap exitTrapHandler EXIT
+
+
+script="$0"
+scriptDir="$(dirname "$script")"
+pushd "$scriptDir" &> /dev/null
+scriptDir="$(pwd)"
+popd &> /dev/null
+baseDir="$(dirname "$scriptDir")"
+
+olsrd="$baseDir/olsrd"
+
+arprefreshLib="$baseDir/lib/arprefresh/olsrd_arprefresh.so.0.1"
+arprefreshLibDir="$(dirname "$arprefreshLib")"
+dyngwLib="$baseDir/lib/dyn_gw/olsrd_dyn_gw.so.0.5"
+dyngwLibDir="$(dirname "$dyngwLib")"
+httpinfoLib="$baseDir/lib/httpinfo/olsrd_httpinfo.so.0.1"
+httpinfoLibDir="$(dirname "$httpinfoLib")"
+jsoninfoLib="$baseDir/lib/jsoninfo/olsrd_jsoninfo.so.0.0"
+jsoninfoLibDir="$(dirname "$jsoninfoLib")"
+nameserviceLib="$baseDir/lib/nameservice/olsrd_nameservice.so.0.3"
+nameserviceLibDir="$(dirname "$nameserviceLib")"
+p2pdinfoLib="$baseDir/lib/p2pd/olsrd_p2pd.so.0.1.0"
+p2pdinfoLibDir="$(dirname "$p2pdinfoLib")"
+txtinfoLib="$baseDir/lib/txtinfo/olsrd_txtinfo.so.0.1"
+txtinfoLibDir="$(dirname "$txtinfoLib")"
+
+
+# Check root
+if [ ! "$(whoami)" = "root" ]; then
+  echo "ERROR: must be root."
+  exit 1
+fi
+
+
+# Check nc
+set +e
+nc="$(which nc 2> /dev/null)"
+set -e
+if [ -z "$nc" ]; then
+  echo "ERROR: nc doesn't seem to be installed."
+  exit 1
+fi
+
+
+# Check compiled
+for i in "$olsrd" \
+         "$arprefreshLib" \
+         "$dyngwLib" \
+         "$httpinfoLib" \
+         "$jsoninfoLib" \
+         "$nameserviceLib" \
+         "$p2pdinfoLib" \
+         "$txtinfoLib"; do
+  if [ ! -r "$i" ]; then
+    echo "ERROR: $i is not readable."
+    exit 1
+  fi
+done
+
+
+# Check parameters
+if [ $# -ne 2 ]; then
+  echo "ERROR: specify network interface and configuration file."
+  exit 1
+fi
+
+nwif="$1"
+configFile="$2"
+
+# Check network interfaces
+set +e
+nwifGrep="$(cat /proc/net/dev | grep -E "^[[:space:]]*$nwif[[:space:]]*:[[:space:]]+.*\$")"
+set -e
+
+if [ -z "$nwifGrep" ]; then
+  echo "ERROR: network interface $nwif doesn't exist."
+  exit 1
+fi
+
+
+# Check configuration file
+if [ ! -r "$configFile" ]; then
+  echo "ERROR: configuration file $configFile is not readable."
+  exit 1
+fi
+
+configFileDir="$(dirname "$configFile")"
+pushd "$configFileDir" &> /dev/null
+configFileDir="$(pwd)"
+popd &> /dev/null
+configFile="$configFileDir/$(basename "$configFile")"
+
+
+# Generate adjusted configuration file
+regex="^([[:space:]]*[Ii][Nn][Tt][Ee][Rr][Ff][Aa][Cc][Ee][[:space:]]+)"
+configFileTmp="$(mktemp)"
+sed -r "s/$regex\"wlan0\"/\1\"$nwif\"/" \
+       "$configFile" \
+       > "$configFileTmp"
+
+
+echo "Stopping all olsrd instances"
+set +e
+killall "$(basename "$olsrd")"
+set -e
+
+
+echo "Starting $(basename "$olsrd")"
+export LD_LIBRARY_PATH="$arprefreshLibDir:$dyngwLibDir:$httpinfoLibDir:$jsoninfoLibDir:$nameserviceLibDir:$p2pdinfoLibDir:$txtinfoLibDir"
+"$olsrd" -f "$configFileTmp" -nofork & #> /dev/null &
+
+
+sleep 1
+echo -n "Sleeping a bit "
+for i in 3 2 1; do
+  echo -n "$i"
+  sleep 1
+done
+echo ""
+
+
+echo "Generating effective configuration file"
+echo "  $configFile.txt"
+echo "/olsrd.conf" | \
+  nc localhost 9090 | \
+  tail -n +6 | \
+  sed -r "s/$regex\"$nwif\"/\1\"wlan0\"/" \
+  > "$configFile.txt"
+chown --reference="$configFile" "$configFile.txt"
+
+
+echo "Stopping all $(basename "$olsrd") instances"
+set +e
+killall "$(basename "$olsrd")"
+set -e
+
+
+rm -f "$configFileTmp"
+configFileTmp=""
+
+sleep 1
+echo ""
