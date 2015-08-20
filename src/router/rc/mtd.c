@@ -665,6 +665,16 @@ int mtd_write(const char *path, const char *mtd)
 			}
 		}
 
+#if defined(HAVE_MVEBU)
+		for (i; i < (mtd_info.size / mtd_info.erasesize); i++) {
+			erase_info.start = base + (i * mtd_info.erasesize);
+			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+				perror(mtd);
+				goto fail;
+			}
+		}
+#endif
+
 #else
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			fprintf(stderr, "write block [%ld] at [0x%08X]        \n", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
