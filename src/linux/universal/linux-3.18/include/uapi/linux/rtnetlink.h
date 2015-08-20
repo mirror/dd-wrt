@@ -203,8 +203,11 @@ enum {
 	RTN_THROW,		/* Not in this table		*/
 	RTN_NAT,		/* Translate this address	*/
 	RTN_XRESOLVE,		/* Use external resolver	*/
+	RTN_POLICY_FAILED,	/* Failed ingress/egress policy */
 	__RTN_MAX
 };
+
+#define RTN_FAILED_POLICY RTN_POLICY_FAILED
 
 #define RTN_MAX (__RTN_MAX - 1)
 
