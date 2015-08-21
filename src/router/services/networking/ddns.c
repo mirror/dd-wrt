@@ -41,6 +41,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <rc.h>
+#include <services.h>
 
 /*
  * inadyn scripts by lawnmowerguy1 
