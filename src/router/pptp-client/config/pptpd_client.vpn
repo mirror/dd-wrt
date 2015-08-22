@@ -28,7 +28,7 @@ case $1 in
   echo -n $$ > "${PIDFILE}"
   echo "PID file created"
   echo "Attempting initial connect"
-  pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user $(nvram get pptpd_client_srvuser) password $(nvram get pptpd_client_srvpass)
+  pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
   echo "Initial connection dropped" 
   while [ 1 ];
   do
@@ -37,7 +37,7 @@ case $1 in
    sleep 2
    killall -9 pppd 2>/dev/null
    sleep 1
-   pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user $(nvram get pptpd_client_srvuser) password $(nvram get pptpd_client_srvpass)
+   pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
    echo "Connection dropped..."
    sleep 2
   done;
@@ -62,7 +62,7 @@ case $1 in
   echo -n $$ > "${PIDFILE}"
   echo "PID file created"
   echo "Attempting initial connect"
-  pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user $(nvram get pptpd_client_srvuser) password $(nvram get pptpd_client_srvpass)
+  pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
   echo "Initial connection dropped"
   while [ 1 ];
   do
@@ -71,7 +71,7 @@ case $1 in
    sleep 2
    killall -9 pppd 2>/dev/null
    sleep 1
-   pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user $(nvram get pptpd_client_srvuser) password $(nvram get pptpd_client_srvpass)
+   pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
    echo "Connection dropped..."
    sleep 2
   done;
