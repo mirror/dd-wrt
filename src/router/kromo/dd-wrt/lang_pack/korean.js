@@ -1,6 +1,6 @@
-//////////////////////////////////////////////////////////////////////////////////////////////
-//                Korean translation file - DD-WRT V24 SP2        2015-06-24                //
-//              This translation file is based on R27421 English language file              //
+﻿//////////////////////////////////////////////////////////////////////////////////////////////
+//                Korean translation file - DD-WRT V24 SP2        2015-06-06                //
+//              This translation file is based on R27102 English language file              //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -116,7 +116,7 @@ share.signal="신호";
 share.noise="노이즈";
 share.beacon="Beacon";
 share.openn="열기";
-share.dtim="dtim";
+share.dtim="DTIM";
 share.rates="속도";
 share.rate="속도";
 share.txrate="송신속도";
