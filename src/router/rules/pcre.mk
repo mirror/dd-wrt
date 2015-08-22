@@ -11,5 +11,7 @@ pcre-clean:
 
 pcre-install:
 	install -D pcre/.libs/libpcre.so.1 $(INSTALLDIR)/pcre/usr/lib/libpcre.so.1
+ifeq ($(CONFIG_PHP),y)
 	install -D pcre/.libs/libpcrecpp.so.0 $(INSTALLDIR)/pcre/usr/lib/libpcrecpp.so.0
+endif
 	install -D pcre/.libs/libpcreposix.so.0 $(INSTALLDIR)/pcre/usr/lib/libpcreposix.so.0
