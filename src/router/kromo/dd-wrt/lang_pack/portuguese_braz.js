@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////////////////////////
 //      Update (23945 based - WIP ... 24050)    - DD-WRT V24 SP2 by mrc_torres 14/MAI/2014  //
 //      A few style changes and several spell check corrections  by ftrebien   01/MAI/2014  //
 //      Portuguese Brazililian translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006  //
@@ -117,7 +117,7 @@ share.signal="Sinal";
 share.noise="Ruído";
 share.beacon="Beacon";
 share.openn="Aberto";
-share.dtim="dtim";
+share.dtim="DTIM";
 share.rates="Taxa";
 share.rate="Taxa";
 share.txrate="Taxa TX";
