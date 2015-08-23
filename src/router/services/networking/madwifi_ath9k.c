@@ -482,7 +482,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 	}
 	if (!isath5k) {
-		caps = mac80211_get_caps(prefix);
+		char shortgi[32];
+		sprintf(shortgi, "%s_shortgi", prefix);
+		caps = mac80211_get_caps(prefix, nvram_default_get(shortgi, "1") ? 1 : 0);
 		if (strlen(ht) > 0) {
 			fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
 		} else {
@@ -494,7 +496,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	if (is_ath10k(prefix) || is_mvebu(prefix)) {
 		if ((!strcmp(netmode, "mixed") ||	//
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
-			caps = mac80211_get_vhtcaps(prefix);
+			char shortgi[32];
+			sprintf(shortgi, "%s_shortgi", prefix);
+			caps = mac80211_get_vhtcaps(prefix, nvram_default_get(shortgi, "1") ? 1 : 0);
 			fprintf(fp, "vht_capab=%s\n", caps);
 			free(caps);
 			fprintf(fp, "ieee80211ac=1\n");
