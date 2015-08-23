@@ -333,7 +333,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%d", freq / 1000000);
 	} else {
 		websWrite(wp, "1200");
-		
+
 	}
 	return;
 }
@@ -2339,7 +2339,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(regdomain, "%s_regdomain", prefix);
 				country = nvram_default_get(regdomain, "UNITED_STATES");
 				// temp end
-				
+
 				if (nvram_nmatch("80", "%s_channelbw", prefix))
 					channelbw = 80;
 				chan = mac80211_get_channels(prefix, getIsoName(country), channelbw, 0xff);
@@ -2371,9 +2371,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 #endif
 
-#ifdef HAVE_MVEBU		
-				if( (chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) && channelbw == 80 )
-				{
+#ifdef HAVE_MVEBU
+				if ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) && channelbw == 80) {
 					fprintf(stderr, "Skip unsupported channel: %d\n", chan[i].channel);
 					i++;
 					continue;
@@ -3275,10 +3274,15 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n");
 			websWrite(wp, "</div>\n");
 		}
-
-		sprintf(power, "%s_mtikie", var);
-		nvram_default_get(power, "0");
-		showRadio(wp, "wl_basic.mtikie", power);
+#ifdef HAVE_ATH9K
+		if (!is_ath9k(var)) {
+#endif
+			sprintf(power, "%s_mtikie", var);
+			nvram_default_get(power, "0");
+			showRadio(wp, "wl_basic.mtikie", power);
+#ifdef HAVE_ATH9K
+		}
+#endif
 #endif
 #ifdef HAVE_RT2880
 		showbridgesettings(wp, getRADev(var), 1, 0);
@@ -3778,6 +3782,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_protmode[32];
 	char wl_doth[32];
 	char wl_csma[32];
+	char wl_shortgi[32];
 
 	sprintf(wl_csma, "%s_csma", prefix);
 	sprintf(wl_doth, "%s_doth", prefix);
@@ -3790,6 +3795,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 //    sprintf( wl_comp, "%s_compression", prefix );
 	sprintf(wl_ff, "%s_ff", prefix);
 	sprintf(wl_preamble, "%s_preamble", prefix);
+	sprintf(wl_shortgi, "%s_shortgi", prefix);
 	sprintf(wl_preambletime, "%s_preambletime", prefix);
 	sprintf(wl_sifstime, "%s_sifstime", prefix);
 	sprintf(wl_xr, "%s_xr", prefix);
@@ -3845,14 +3851,27 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	showRadio(wp, "wl_basic.csma", wl_csma);
 #endif
 	// showOption (wp, "wl_basic.extchannel", wl_xchanmode);
+#ifdef HAVE_ATH9K
+	if (has_shortgi(prefix)) {
+		nvram_default_get(wl_shortgi, "1");
+		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
+	}
+#endif
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-	if (has_5ghz(prefix)) {
-		if (nvram_nmatch("1", "%s_regulatory", prefix)
-		    || !issuperchannel()) {
-			showRadio(wp, "wl_basic.outband", wl_outdoor);
+#ifdef HAVE_ATH9K
+	if (!is_ath9k(var)) {
+#endif
+
+		if (has_5ghz(prefix)) {
+			if (nvram_nmatch("1", "%s_regulatory", prefix)
+			    || !issuperchannel()) {
+				showRadio(wp, "wl_basic.outband", wl_outdoor);
+			}
 		}
+#ifdef HAVE_ATH9K
 	}
+#endif
 #endif
 #endif
 	websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n", wl_width);
@@ -4123,9 +4142,9 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div>\n");
 		websWrite(wp, "<select name=\"%s_nbw\">\n", prefix);
-//		websWrite(wp,
-//			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
-//			  nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
+//              websWrite(wp,
+//                        "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
+//                        nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "<option value=\"40\" %s><script type=\"text/javascript\">Capture(share.ht40);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 		if (has_ac(prefix) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))
@@ -4256,9 +4275,15 @@ if (nvram_nmatch("ap", "%s_mode", prefix)
 	websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 	websWrite(wp, "</div>\n");
 }
-sprintf(power, "%s_mtikie", prefix);
-nvram_default_get(power, "0");
-showRadio(wp, "wl_basic.mtikie", power);
+#ifdef HAVE_ATH9K
+if (!is_ath9k(var)) {
+#endif
+	sprintf(power, "%s_mtikie", prefix);
+	nvram_default_get(power, "0");
+	showRadio(wp, "wl_basic.mtikie", power);
+#ifdef HAVE_ATH9K
+}
+#endif
 showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
 showbridgesettings(wp, getRADev(prefix), 1, 1);
@@ -4390,6 +4415,7 @@ if (!strcmp(prefix, "wl2"))
 	char wl_protmode[32];
 	char wl_doth[32];
 	char wl_csma[32];
+	char wl_shortgi[32];
 
 	sprintf(wl_csma, "%s_csma", prefix);
 	sprintf(wl_doth, "%s_doth", prefix);
@@ -4402,6 +4428,7 @@ if (!strcmp(prefix, "wl2"))
 //    sprintf( wl_comp, "%s_compression", prefix );
 	sprintf(wl_ff, "%s_ff", prefix);
 	sprintf(wl_preamble, "%s_preamble", prefix);
+	sprintf(wl_shortgi, "%s_shortgi", prefix);
 	sprintf(wl_preambletime, "%s_preambletime", prefix);
 	sprintf(wl_sifstime, "%s_sifstime", prefix);
 	sprintf(wl_xr, "%s_xr", prefix);
@@ -4504,9 +4531,9 @@ if (!strcmp(prefix, "wl2"))
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div>\n");
 			websWrite(wp, "<select name=\"%s_nbw\">\n", prefix);
-//			websWrite(wp,
-//				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
-//				  nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
+//                      websWrite(wp,
+//                                "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
+//                                nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "<option value=\"40\" %s>40 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			if (has_ac(prefix) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
@@ -4793,14 +4820,26 @@ if (!strcmp(prefix, "wl2"))
 		showRadio(wp, "wl_basic.extrange", wl_xr);
 		showRadio(wp, "wl_basic.supergff", wl_ff);
 	}
+#ifdef HAVE_ATH9K
+	if (has_shortgi(prefix)) {
+		nvram_default_get(wl_shortgi, "1");
+		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
+	}
+#endif
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-	if (has_5ghz(prefix)) {
-		if (nvram_nmatch("1", "%s_regulatory", prefix)
-		    || !issuperchannel()) {
-			showRadio(wp, "wl_basic.outband", wl_outdoor);
+#ifdef HAVE_ATH9K
+	if (!is_ath9k(var)) {
+#endif
+		if (has_5ghz(prefix)) {
+			if (nvram_nmatch("1", "%s_regulatory", prefix)
+			    || !issuperchannel()) {
+				showRadio(wp, "wl_basic.outband", wl_outdoor);
+			}
 		}
+#ifdef HAVE_ATH9K
 	}
+#endif
 #endif
 #endif
 
@@ -4985,10 +5024,15 @@ if (!strcmp(prefix, "wl2"))
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
-	sprintf(power, "%s_mtikie", prefix);
-	nvram_default_get(power, "0");
-	showRadio(wp, "wl_basic.mtikie", power);
-
+#ifdef HAVE_ATH9K
+	if (!is_ath9k(var)) {
+#endif
+		sprintf(power, "%s_mtikie", prefix);
+		nvram_default_get(power, "0");
+		showRadio(wp, "wl_basic.mtikie", power);
+#ifdef HAVE_ATH9K
+	}
+#endif
 	showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
 	showbridgesettings(wp, getRADev(prefix), 1, 1);
@@ -5008,7 +5052,7 @@ if (!strcmp(prefix, "wl2"))
 #ifdef HAVE_REGISTER
 	if (!iscpe())
 #endif
-	  
+
 		show_virtualssid(wp, prefix);
 }
 
