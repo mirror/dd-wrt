@@ -232,13 +232,13 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
-	    return 0;
+		return 0;
 	fprintf(fp, "0x%x", reg);
 	fclose(fp);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "rb");
 	if (fp == NULL)
-	    return 0;
+		return 0;
 	int value;
 	fscanf(fp, "0x%08x:0x%08x", &reg, &value);
 	fclose(fp);
@@ -252,13 +252,13 @@ void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
-	    return;
+		return;
 	fprintf(fp, "0x%x", reg);
 	fclose(fp);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "wb");
 	if (fp == NULL)
-	    return;
+		return;
 	fprintf(fp, "0x%x", value);
 	fclose(fp);
 }
@@ -290,6 +290,7 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 		set_ath10kreg(dev, 0x28014, (cts << 16 & 0x3fff0000) | (ack & 0x3fff));
 	}
 }
+
 unsigned int get_ath10kack(char *ifname)
 {
 	unsigned int ack, slot, sifs;
@@ -545,7 +546,7 @@ nla_put_failure:
 	return (mac80211_info);
 }
 
-char *mac80211_get_caps(char *interface)
+char *mac80211_get_caps(char *interface, int shortgi)
 {
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
@@ -570,8 +571,8 @@ char *mac80211_get_caps(char *interface)
 			continue;
 		cap = nla_get_u16(caps);
 		asprintf(&capstring, "%s%s%s%s%s%s%s%s", (cap & HT_CAP_INFO_LDPC_CODING_CAP ? "[LDPC]" : "")
-			 , (cap & HT_CAP_INFO_SHORT_GI20MHZ ? "[SHORT-GI-20]" : "")
-			 , (cap & HT_CAP_INFO_SHORT_GI40MHZ ? "[SHORT-GI-40]" : "")
+			 , (((cap & HT_CAP_INFO_SHORT_GI20MHZ) && shortgi) ? "[SHORT-GI-20]" : "")
+			 , (((cap & HT_CAP_INFO_SHORT_GI40MHZ) && shortgi) ? "[SHORT-GI-40]" : "")
 			 , (cap & HT_CAP_INFO_TX_STBC ? "[TX-STBC]" : "")
 			 , (((cap >> 8) & 0x3) == 1 ? "[RX-STBC1]" : "")
 			 , (((cap >> 8) & 0x3) == 2 ? "[RX-STBC12]" : "")
@@ -589,7 +590,7 @@ nla_put_failure:
 
 #ifdef HAVE_ATH10K
 
-char *mac80211_get_vhtcaps(char *interface)
+char *mac80211_get_vhtcaps(char *interface, int shortgi)
 {
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
@@ -614,8 +615,8 @@ char *mac80211_get_vhtcaps(char *interface)
 			continue;
 		cap = nla_get_u32(caps);
 		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
-			 , (cap & VHT_CAP_SHORT_GI_80 ? "[SHORT-GI-80]" : "")
-			 , (cap & VHT_CAP_SHORT_GI_160 ? "[SHORT-GI-160]" : "")
+			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi) ? "[SHORT-GI-80]" : "")
+			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi) ? "[SHORT-GI-160]" : "")
 			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
 			 , (((cap >> 8) & 0x7) == 1 ? "[RX-STBC1]" : "")
 			 , (((cap >> 8) & 0x7) == 2 ? "[RX-STBC12]" : "")
@@ -646,6 +647,26 @@ nla_put_failure:
 	return capstring;
 }
 #endif
+
+int has_shortgi(char *interface)
+{
+	char *htcaps = mac80211_get_caps(interface, 1);
+	if (strstr(htcaps, "SHORT-GI")) {
+		free(htcaps);
+		return 1;
+	}
+	free(htcaps);
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1);
+	if (strstr(vhtcaps, "SHORT-GI")) {
+		free(vhtcaps);
+		return 1;
+	}
+	free(vhtcaps);
+#endif
+	return 0;
+}
+
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = {
 					 .type = NLA_U32},
@@ -1158,7 +1179,7 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 						interface->center1 -= 10;
 					else
 						interface->center1 += 10;
-				}				
+				}
 				break;
 			case NL80211_CHAN_WIDTH_80:
 				interface->width = 80;
