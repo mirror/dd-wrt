@@ -50,7 +50,7 @@ static char * __initdata root_device_name;
 dev_t ROOT_DEV;
 #define BASE_ROOT ROOT_DEV
 #endif
-static char __initdata saved_root_name[64];
+char __initdata saved_root_name[64];
 static int root_wait;
 
 
@@ -299,7 +299,11 @@ done:
 
 int __init root_dev_setup(char *line)
 {
+#ifdef CONFIG_ARCH_MVEBU
+	strcpy(saved_root_name, "/dev/ubiblock0_0");
+#else
 	strlcpy(saved_root_name, line, sizeof(saved_root_name));
+#endif
 	return 1;
 }
 
@@ -456,7 +460,27 @@ out:
 	put_page(page);
 	return 0;
 }
- 
+
+static int __init mount_ubi_rootfs(void)
+{
+	int flags = MS_SILENT;
+	int err, tried = 0;
+
+	while (tried < 2) {
+		err = do_mount_root("ubi0:rootfs", "ubifs", flags, \
+					root_mount_data);
+		switch (err) {
+			case -EACCES:
+				flags |= MS_RDONLY;
+				tried++;
+			default:
+				return err;
+		}
+	}
+
+	return -EINVAL;
+}
+
 #ifdef CONFIG_ROOT_NFS
 
 #define NFSROOT_TIMEOUT_MIN	5
@@ -549,6 +573,10 @@ void __init mount_root(void)
 		} else
 			change_floppy("root floppy");
 	}
+#endif
+#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
+	if (!mount_ubi_rootfs())
+		return;
 #endif
 #ifdef CONFIG_BLOCK
 #ifdef CONFIG_X86

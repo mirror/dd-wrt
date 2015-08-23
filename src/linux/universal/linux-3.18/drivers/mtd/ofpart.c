@@ -19,18 +19,22 @@
 #include <linux/mtd/mtd.h>
 #include <linux/slab.h>
 #include <linux/mtd/partitions.h>
+#include <asm/setup.h>
+
 
 static bool node_has_compatible(struct device_node *pp)
 {
 	return of_get_property(pp, "compatible", NULL);
 }
 
+static int mangled_rootblock;
 static int parse_ofpart_partitions(struct mtd_info *master,
 				   struct mtd_partition **pparts,
 				   struct mtd_part_parser_data *data)
 {
 	struct device_node *node;
 	const char *partname;
+	const char *owrtpart = "ubi";
 	struct device_node *pp;
 	int nr_parts, i;
 
@@ -41,7 +45,16 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 	node = data->of_node;
 	if (!node)
 		return 0;
-
+#ifdef CONFIG_ARCH_MVEBU
+	for (i = 0;i < COMMAND_LINE_SIZE - sizeof("/dev/mtdblockxx"); i++) {
+	    if (!memcmp(&boot_command_line[i],"/dev/mtdblock",13)) {
+		    printk(KERN_INFO "found commandline\n");
+		    mangled_rootblock = boot_command_line[i + 13] - '0';
+		    break;
+	    }
+	}
+	printk(KERN_INFO "rename part %d to ubi",mangled_rootblock);
+#endif
 	/* First count the subnodes */
 	nr_parts = 0;
 	for_each_child_of_node(node,  pp) {
@@ -77,10 +90,16 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 		s_cells = of_n_size_cells(pp);
 		(*pparts)[i].offset = of_read_number(reg, a_cells);
 		(*pparts)[i].size = of_read_number(reg + a_cells, s_cells);
+		
+		if (mangled_rootblock && (i == mangled_rootblock)) {
+				partname = owrtpart;
+		} else {
+			partname = of_get_property(pp, "label", &len);
 
-		partname = of_get_property(pp, "label", &len);
-		if (!partname)
-			partname = of_get_property(pp, "name", &len);
+			if (!partname)
+				partname = of_get_property(pp, "name", &len);
+		}
+
 		(*pparts)[i].name = partname;
 
 		if (of_get_property(pp, "read-only", &len))
@@ -177,6 +196,18 @@ static int __init ofpart_parser_init(void)
 	register_mtd_parser(&ofoldpart_parser);
 	return 0;
 }
+
+static int __init active_root(char *str)
+{
+	get_option(&str, &mangled_rootblock);
+
+	if (!mangled_rootblock)
+		return 1;
+
+	return 1;
+}
+
+__setup("mangled_rootblock=", active_root);
 
 static void __exit ofpart_parser_exit(void)
 {
