@@ -4829,7 +4829,7 @@ if (!strcmp(prefix, "wl2"))
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 #ifdef HAVE_ATH9K
-	if (!is_ath9k(var)) {
+	if (!is_ath9k(prefix)) {
 #endif
 		if (has_5ghz(prefix)) {
 			if (nvram_nmatch("1", "%s_regulatory", prefix)
