@@ -800,6 +800,13 @@ out_unlock:
 	return err;
 }
 
+static bool ec_hdr_has_eof(struct ubi_ec_hdr *ech)
+{
+	return ech->padding1[0] == 'E' &&
+	       ech->padding1[1] == 'O' &&
+	       ech->padding1[2] == 'F';
+}
+
 /**
  * scan_peb - scan and process UBI headers of a PEB.
  * @ubi: UBI device description object
@@ -830,9 +837,21 @@ static int scan_peb(struct ubi_device *ubi, struct ubi_attach_info *ai,
 		return 0;
 	}
 
-	err = ubi_io_read_ec_hdr(ubi, pnum, ech, 0);
-	if (err < 0)
-		return err;
+	if (!ai->eof_found) {
+		err = ubi_io_read_ec_hdr(ubi, pnum, ech, 0);
+		if (err < 0)
+			return err;
+
+		if (ec_hdr_has_eof(ech)) {
+			pr_notice("UBI: EOF marker found, PEBs from %d will be erased",
+				pnum);
+			ai->eof_found = true;
+		}
+	}
+
+	if (ai->eof_found)
+		err = UBI_IO_FF_BITFLIPS;
+
 	switch (err) {
 	case 0:
 		break;

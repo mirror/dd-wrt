@@ -48,6 +48,7 @@
 #include <linux/blkdev.h>
 #include <linux/hdreg.h>
 #include <asm/div64.h>
+#include <linux/root_dev.h>
 
 #include "ubi-media.h"
 #include "ubi.h"
@@ -448,6 +449,15 @@ int ubiblock_create(struct ubi_volume_info *vi)
 	add_disk(dev->gd);
 	ubi_msg("%s created from ubi%d:%d(%s)",
 		dev->gd->disk_name, dev->ubi_num, dev->vol_id, vi->name);
+
+	if (!strcmp(vi->name, "rootfs") &&
+	    config_enabled(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
+	    ROOT_DEV == 0) {
+		pr_notice("ubiblock: device ubiblock%d_%d (%s) set to be root filesystem\n",
+			  dev->ubi_num, dev->vol_id, vi->name);
+		ROOT_DEV = MKDEV(gd->major, gd->first_minor);
+	}
+
 	return 0;
 
 out_free_queue:
@@ -615,6 +625,44 @@ static int __init ubiblock_create_from_param(void)
 	return ret;
 }
 
+#define UBIFS_NODE_MAGIC  0x06101831
+static inline int ubi_vol_is_ubifs(struct ubi_volume_desc *desc)
+{
+	int ret;
+	uint32_t magic_of, magic;
+	ret = ubi_read(desc, 0, (char *)&magic_of, 0, 4);
+	if (ret)
+		return 0;
+	magic = le32_to_cpu(magic_of);
+	return magic == UBIFS_NODE_MAGIC;
+}
+
+static void __init ubiblock_create_auto_rootfs(void)
+{
+	int ubi_num, ret, is_ubifs;
+	struct ubi_volume_desc *desc;
+	struct ubi_volume_info vi;
+
+	for (ubi_num = 0; ubi_num < UBI_MAX_DEVICES; ubi_num++) {
+		desc = ubi_open_volume_nm(ubi_num, "rootfs", UBI_READONLY);
+		if (IS_ERR(desc))
+			continue;
+
+		ubi_get_volume_info(desc, &vi);
+		is_ubifs = ubi_vol_is_ubifs(desc);
+		ubi_close_volume(desc);
+		if (is_ubifs)
+			break;
+
+		ret = ubiblock_create(&vi);
+		if (ret)
+			ubi_err("block: can't add '%s' volume, err=%d\n",
+				vi.name, ret);
+		/* always break if we get here */
+		break;
+	}
+}
+
 static void ubiblock_remove_all(void)
 {
 	struct ubiblock *next;
@@ -644,6 +692,10 @@ int __init ubiblock_init(void)
 	ret = ubiblock_create_from_param();
 	if (ret)
 		goto err_remove;
+
+	/* auto-attach "rootfs" volume if existing and non-ubifs */
+	if (config_enabled(CONFIG_MTD_ROOTFS_ROOT_DEV))
+		ubiblock_create_auto_rootfs();
 
 	/*
 	 * Block devices are only created upon user requests, so we ignore
