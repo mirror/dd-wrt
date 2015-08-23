@@ -484,7 +484,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	if (!isath5k) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
-		caps = mac80211_get_caps(prefix, nvram_default_get(shortgi, "1", "1") ? 1 : 0);
+		caps = mac80211_get_caps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0);
 		if (strlen(ht) > 0) {
 			fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
 		} else {
@@ -498,7 +498,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
-			caps = mac80211_get_vhtcaps(prefix, nvram_default_get(shortgi, "1", "1") ? 1 : 0);
+			caps = mac80211_get_vhtcaps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0);
 			fprintf(fp, "vht_capab=%s\n", caps);
 			free(caps);
 			fprintf(fp, "ieee80211ac=1\n");
