@@ -5025,7 +5025,7 @@ if (!strcmp(prefix, "wl2"))
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_ATH9K
-	if (!is_ath9k(var)) {
+	if (!is_ath9k(prefix)) {
 #endif
 		sprintf(power, "%s_mtikie", prefix);
 		nvram_default_get(power, "0");
