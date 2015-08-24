@@ -424,9 +424,9 @@ ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
-#	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
-#	export STRIP="sstrip" && \
-#	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
 	#mkdir $(TARGETDIR)/boot
 	
