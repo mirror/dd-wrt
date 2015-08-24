@@ -15,7 +15,7 @@
 
 include $(TOP)/.config
 
-CFLAGS	+= $(COPTS) -Ilibubox -I. -D_GNU_SOURCE -Wall -Wno-gnu -std=c99
+CFLAGS	+= $(COPTS) -Ilibubox -I. -D_GNU_SOURCE -Wall -Wno-gnu -std=c99 -Dtypeof=__typeof
 
 vpath %.c libubox src
 
