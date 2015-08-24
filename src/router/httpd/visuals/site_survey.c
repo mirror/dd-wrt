@@ -54,6 +54,15 @@ static int open_site_survey(void)
 	return FALSE;
 }
 
+static char *dtim_period(int dtim, char *mem)
+{
+	if (dtim)
+		snprintf(mem, 32, "%d", dtim);
+	else
+		snprintf(mem, 32, "%s", "None");
+
+}
+
 #ifdef FBNFW
 
 void ej_list_fbn(webs_t wp, int argc, char_t ** argv)
@@ -247,12 +256,13 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		strcpy(net, netmode);
 		websWrite(wp, "%c\"", i ? ',' : ' ');
 		tf_webWriteJS(wp, tssid);
+		char dtim[32];
 		websWrite(wp,
-			  "\",\"%s\",\"%s\",\"%d (%d MHz)\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
+			  "\",\"%s\",\"%s\",\"%d (%d MHz)\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
 			  net, site_survey_lists[i].BSSID,
 			  site_survey_lists[i].channel & 0xff,
 			  site_survey_lists[i].frequency,
-			  site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO, site_survey_lists[i].dtim_period, rates);
+			  site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO, dtim_period(site_survey_lists[i].dtim_period, dtim), rates);
 
 	}
 
