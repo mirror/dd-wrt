@@ -178,7 +178,7 @@ void ej_show_routing(webs_t wp, int argc, char_t ** argv)
 
 }
 
-#ifdef HAVE_BUFFALO
+#if defined (HAVE_BUFFALO) || defined (HAVE_IDEXX)
 extern void *getUEnv(char *name);
 #endif
 
@@ -3651,7 +3651,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO)
+#if !defined(HAVE_WZR450HP2) || (!defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX))
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
@@ -3857,7 +3857,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
 	}
 #endif
-#ifndef HAVE_BUFFALO
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX)
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 #ifdef HAVE_ATH9K
 	if (!is_ath9k(var)) {
@@ -3922,7 +3922,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 }
 #endif
-#if !defined(HAVE_BUFFALO)
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
 #if defined(HAVE_ATH10K)
 if (!has_ac(prefix))
@@ -4114,7 +4114,7 @@ websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_
 tf_webWriteESCNV(wp, wl_ssid);
 websWrite(wp, "\" /></div>\n");
 #ifdef HAVE_MADWIFI
-#ifndef HAVE_BUFFALO
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX)
 if (has_5ghz(prefix)) {
 	showRadio(wp, "wl_basic.radar", wl_doth);
 }
@@ -4337,7 +4337,7 @@ if (!strcmp(prefix, "wl2"))
 #endif
 				  nvram_match(wl_mode, "wet") ? "selected=\\\"selected\\\"" : "");
 #endif
-#ifndef HAVE_BUFFALO
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX)
 			if (!cpeonly)
 #else
 			if (!cpeonly && !has_5ghz(prefix))
@@ -4488,7 +4488,7 @@ if (!strcmp(prefix, "wl2"))
 	}
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_match(wl_width, "20") ? "selected=\\\"selected\\\"" : "");
 
-#if !defined(HAVE_BUFFALO)
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
 #if defined(HAVE_ATH10K)
 	if (!has_ac(prefix))
@@ -4756,7 +4756,7 @@ if (!strcmp(prefix, "wl2"))
 	}
 #endif
 #endif
-#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO)
+#if !defined(HAVE_WZR450HP2) || (!defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX))
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
@@ -4826,7 +4826,7 @@ if (!strcmp(prefix, "wl2"))
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
 	}
 #endif
-#ifndef HAVE_BUFFALO
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX)
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 #ifdef HAVE_ATH9K
 	if (!is_ath9k(prefix)) {
@@ -4977,7 +4977,7 @@ if (!strcmp(prefix, "wl2"))
 
 // radar detection
 #ifdef HAVE_MADWIFI
-#ifndef HAVE_BUFFALO
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX)
 	if (has_5ghz(prefix)) {
 		showRadio(wp, "wl_basic.radar", wl_doth);
 	}
@@ -5058,7 +5058,7 @@ if (!strcmp(prefix, "wl2"))
 
 void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 {
-#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
+#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && (!defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX))
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "wl_regdomain");
@@ -5771,7 +5771,7 @@ void ej_show_defwpower(webs_t wp, int argc, char_t ** argv)
 	case ROUTER_LINKSYS_E4200:
 		websWrite(wp, "100");
 		break;
-#ifndef HAVE_BUFFALO
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_IDEXX)
 	case ROUTER_BUFFALO_WHRG54S:
 		if (nvram_match("DD_BOARD", "Buffalo WHR-HP-G54"))
 			websWrite(wp, "28");
