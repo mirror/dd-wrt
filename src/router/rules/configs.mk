@@ -1,3 +1,4 @@
+obj-$(CONFIG_OMCPROXY) += omcproxy
 obj-$(CONFIG_NVRAM) += nvram
 obj-$(CONFIG_WIRELESS_TOOLS) += wireless-tools
 obj-$(CONFIG_SHARED) += libutils
