@@ -178,7 +178,7 @@ l7filters filters_list[] = {
 	{"hl2", NDPI_ONLY},
 #endif
 	{"hotline", L7_ONLY},
-	{"hotspot-shield", L7_ONLY},
+	{"hotspot-shield", DPI},
 	{"html", L7_ONLY},
 	{"http", DPI},
 	{"http-dap", L7_ONLY},
@@ -458,6 +458,9 @@ l7filters filters_list[] = {
 	{"telegram", NDPI_ONLY},
 #endif
 	{"telnet", DPI},
+#ifdef HAVE_OPENDPI
+	{"teredo", NDPI_ONLY},
+#endif
 	{"tesla", L7_ONLY},
 	{"tftp", DPI},
 	{"thecircle", L7_ONLY},
