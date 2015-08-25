@@ -753,7 +753,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 
 	int i;
 	ndpi_port_range ports_a[MAX_DEFAULT_PORTS], ports_b[MAX_DEFAULT_PORTS];
-	u_int16_t no_master[2] = { NDPI_PROTOCOL_NO_MASTER_PROTO, NDPI_PROTOCOL_NO_MASTER_PROTO }, custom_master[2], custom_master1[2];
+	u_int16_t no_master[2] = { NDPI_PROTOCOL_NO_MASTER_PROTO, NDPI_PROTOCOL_NO_MASTER_PROTO }, custom_master[2];
 
 	/* Reset all settings */
 	memset(ndpi_mod->proto_defaults, 0, sizeof(ndpi_mod->proto_defaults));
@@ -863,6 +863,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_BITTORRENT, no_master, no_master, "BitTorrent", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_TEREDO, no_master, no_master, "Teredo", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 3544, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_EPP, no_master, no_master, "EPP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_CONTENT_AVI, no_master, no_master, "AVI", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
@@ -936,6 +938,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_HALFLIFE2, no_master, no_master, "HalfLife2", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_WORLDOFWARCRAFT, no_master, no_master, "WorldOfWarcraft", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_SERVICE_HOTSPOT_SHIELD, no_master, no_master, "HotspotShield", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_TELNET, no_master, no_master, "Telnet", ndpi_build_default_ports(ports_a, 23, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
@@ -1729,6 +1733,9 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
 	/* BITTORRENT */
 	init_bittorrent_dissector(ndpi_struct, &a, detection_bitmask);
+
+	/* Teredo */
+	init_teredo_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* EDONKEY */
 	init_edonkey_dissector(ndpi_struct, &a, detection_bitmask);
@@ -2828,6 +2835,21 @@ ret_protocols:
 			ret.master_protocol = NDPI_PROTOCOL_UNKNOWN;
 	} else
 		ret.protocol = flow->detected_protocol_stack[0];
+
+	if ((ret.master_protocol == NDPI_PROTOCOL_UNKNOWN) && flow->packet.iph) {
+		struct ndpi_packet_struct *packet = &flow->packet;
+
+		if ((ret.master_protocol = ndpi_network_ptree_match(ndpi_struct, (struct in_addr *)&packet->iph->saddr)) == NDPI_PROTOCOL_UNKNOWN)
+			ret.master_protocol = ndpi_network_ptree_match(ndpi_struct, (struct in_addr *)&packet->iph->daddr);
+
+		/* Swap proocols in case of success */
+		if (ret.master_protocol != NDPI_PROTOCOL_UNKNOWN) {
+			u_int16_t t = ret.master_protocol;
+
+			ret.master_protocol = ret.protocol;
+			ret.protocol = t;
+		}
+	}
 
 	return (ret);
 }
