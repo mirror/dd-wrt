@@ -38,8 +38,6 @@ static void ndpi_search_eaq(struct ndpi_detection_module_struct *ndpi_struct, st
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 	u_int16_t sport = ntohs(packet->udp->source), dport = ntohs(packet->udp->dest);
-	unsigned char *vers;
-	int ver_offs;
 
 	if ((packet->payload_packet_len != EAQ_DEFAULT_SIZE)
 	    || ((sport != EAQ_DEFAULT_PORT) && (dport != EAQ_DEFAULT_PORT))) {

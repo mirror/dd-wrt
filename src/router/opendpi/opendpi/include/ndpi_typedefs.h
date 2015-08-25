@@ -773,6 +773,11 @@ typedef struct ndpi_flow_struct {
 		} dns;
 
 		struct {
+			u_int8_t request_code;
+			u_int8_t version;
+		} ntp;
+
+		struct {
 			char client_certificate[48], server_certificate[48];
 		} ssl;
 	} protos;
