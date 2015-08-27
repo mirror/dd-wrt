@@ -91,8 +91,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = iperf3$(EXEEXT)
-noinst_PROGRAMS = t_timer$(EXEEXT) t_units$(EXEEXT) t_uuid$(EXEEXT) \
-	iperf3_profile$(EXEEXT)
+noinst_PROGRAMS = t_timer$(EXEEXT) t_units$(EXEEXT) t_uuid$(EXEEXT)
 TESTS = t_timer$(EXEEXT) t_units$(EXEEXT) t_uuid$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -153,27 +152,6 @@ iperf3_DEPENDENCIES = libiperf.la
 iperf3_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(iperf3_CFLAGS) $(CFLAGS) \
 	$(iperf3_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_1 = iperf3_profile-cjson.$(OBJEXT) \
-	iperf3_profile-iperf_api.$(OBJEXT) \
-	iperf3_profile-iperf_error.$(OBJEXT) \
-	iperf3_profile-iperf_client_api.$(OBJEXT) \
-	iperf3_profile-iperf_locale.$(OBJEXT) \
-	iperf3_profile-iperf_server_api.$(OBJEXT) \
-	iperf3_profile-iperf_tcp.$(OBJEXT) \
-	iperf3_profile-iperf_udp.$(OBJEXT) \
-	iperf3_profile-iperf_sctp.$(OBJEXT) \
-	iperf3_profile-iperf_util.$(OBJEXT) \
-	iperf3_profile-net.$(OBJEXT) iperf3_profile-tcp_info.$(OBJEXT) \
-	iperf3_profile-tcp_window_size.$(OBJEXT) \
-	iperf3_profile-timer.$(OBJEXT) iperf3_profile-units.$(OBJEXT)
-am_iperf3_profile_OBJECTS = iperf3_profile-main.$(OBJEXT) \
-	$(am__objects_1)
-iperf3_profile_OBJECTS = $(am_iperf3_profile_OBJECTS)
-iperf3_profile_DEPENDENCIES = libiperf.la
-iperf3_profile_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(iperf3_profile_CFLAGS) $(CFLAGS) $(iperf3_profile_LDFLAGS) \
-	$(LDFLAGS) -o $@
 am_t_timer_OBJECTS = t_timer-t_timer.$(OBJEXT)
 t_timer_OBJECTS = $(am_t_timer_OBJECTS)
 t_timer_DEPENDENCIES = libiperf.la
@@ -226,12 +204,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libiperf_la_SOURCES) $(iperf3_SOURCES) \
-	$(iperf3_profile_SOURCES) $(t_timer_SOURCES) \
+SOURCES = $(libiperf_la_SOURCES) $(iperf3_SOURCES) $(t_timer_SOURCES) \
 	$(t_units_SOURCES) $(t_uuid_SOURCES)
 DIST_SOURCES = $(libiperf_la_SOURCES) $(iperf3_SOURCES) \
-	$(iperf3_profile_SOURCES) $(t_timer_SOURCES) \
-	$(t_units_SOURCES) $(t_uuid_SOURCES)
+	$(t_timer_SOURCES) $(t_units_SOURCES) $(t_uuid_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -484,7 +460,6 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
-LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
@@ -604,15 +579,6 @@ iperf3_SOURCES = main.c
 iperf3_CFLAGS = -g
 iperf3_LDADD = libiperf.la
 iperf3_LDFLAGS = -g
-
-# Specify the sources and various flags for the profiled iperf binary. This
-# binary recompiles all the source files to make sure they are all profiled.
-iperf3_profile_SOURCES = main.c \
-						  $(libiperf_la_SOURCES)
-
-iperf3_profile_CFLAGS = -pg -g
-iperf3_profile_LDADD = libiperf.la
-iperf3_profile_LDFLAGS = -pg -g
 
 # Specify the sources and various flags for the test cases
 t_timer_SOURCES = t_timer.c
@@ -780,10 +746,6 @@ iperf3$(EXEEXT): $(iperf3_OBJECTS) $(iperf3_DEPENDENCIES) $(EXTRA_iperf3_DEPENDE
 	@rm -f iperf3$(EXEEXT)
 	$(AM_V_CCLD)$(iperf3_LINK) $(iperf3_OBJECTS) $(iperf3_LDADD) $(LIBS)
 
-iperf3_profile$(EXEEXT): $(iperf3_profile_OBJECTS) $(iperf3_profile_DEPENDENCIES) $(EXTRA_iperf3_profile_DEPENDENCIES) 
-	@rm -f iperf3_profile$(EXEEXT)
-	$(AM_V_CCLD)$(iperf3_profile_LINK) $(iperf3_profile_OBJECTS) $(iperf3_profile_LDADD) $(LIBS)
-
 t_timer$(EXEEXT): $(t_timer_OBJECTS) $(t_timer_DEPENDENCIES) $(EXTRA_t_timer_DEPENDENCIES) 
 	@rm -f t_timer$(EXEEXT)
 	$(AM_V_CCLD)$(t_timer_LINK) $(t_timer_OBJECTS) $(t_timer_LDADD) $(LIBS)
@@ -804,22 +766,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cjson.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3-main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-cjson.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_client_api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_error.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_locale.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_sctp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_server_api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_tcp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_udp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-iperf_util.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-net.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-tcp_info.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-tcp_window_size.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-timer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf3_profile-units.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf_api.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf_client_api.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iperf_error.Plo@am__quote@
@@ -872,230 +818,6 @@ iperf3-main.obj: main.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='main.c' object='iperf3-main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_CFLAGS) $(CFLAGS) -c -o iperf3-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
-
-iperf3_profile-main.o: main.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-main.o -MD -MP -MF $(DEPDIR)/iperf3_profile-main.Tpo -c -o iperf3_profile-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-main.Tpo $(DEPDIR)/iperf3_profile-main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='main.c' object='iperf3_profile-main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
-
-iperf3_profile-main.obj: main.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-main.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-main.Tpo -c -o iperf3_profile-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-main.Tpo $(DEPDIR)/iperf3_profile-main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='main.c' object='iperf3_profile-main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
-
-iperf3_profile-cjson.o: cjson.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-cjson.o -MD -MP -MF $(DEPDIR)/iperf3_profile-cjson.Tpo -c -o iperf3_profile-cjson.o `test -f 'cjson.c' || echo '$(srcdir)/'`cjson.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-cjson.Tpo $(DEPDIR)/iperf3_profile-cjson.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cjson.c' object='iperf3_profile-cjson.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-cjson.o `test -f 'cjson.c' || echo '$(srcdir)/'`cjson.c
-
-iperf3_profile-cjson.obj: cjson.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-cjson.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-cjson.Tpo -c -o iperf3_profile-cjson.obj `if test -f 'cjson.c'; then $(CYGPATH_W) 'cjson.c'; else $(CYGPATH_W) '$(srcdir)/cjson.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-cjson.Tpo $(DEPDIR)/iperf3_profile-cjson.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cjson.c' object='iperf3_profile-cjson.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-cjson.obj `if test -f 'cjson.c'; then $(CYGPATH_W) 'cjson.c'; else $(CYGPATH_W) '$(srcdir)/cjson.c'; fi`
-
-iperf3_profile-iperf_api.o: iperf_api.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_api.o -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_api.Tpo -c -o iperf3_profile-iperf_api.o `test -f 'iperf_api.c' || echo '$(srcdir)/'`iperf_api.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_api.Tpo $(DEPDIR)/iperf3_profile-iperf_api.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_api.c' object='iperf3_profile-iperf_api.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_api.o `test -f 'iperf_api.c' || echo '$(srcdir)/'`iperf_api.c
-
-iperf3_profile-iperf_api.obj: iperf_api.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_api.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_api.Tpo -c -o iperf3_profile-iperf_api.obj `if test -f 'iperf_api.c'; then $(CYGPATH_W) 'iperf_api.c'; else $(CYGPATH_W) '$(srcdir)/iperf_api.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_api.Tpo $(DEPDIR)/iperf3_profile-iperf_api.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_api.c' object='iperf3_profile-iperf_api.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_api.obj `if test -f 'iperf_api.c'; then $(CYGPATH_W) 'iperf_api.c'; else $(CYGPATH_W) '$(srcdir)/iperf_api.c'; fi`
-
-iperf3_profile-iperf_error.o: iperf_error.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_error.o -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_error.Tpo -c -o iperf3_profile-iperf_error.o `test -f 'iperf_error.c' || echo '$(srcdir)/'`iperf_error.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_error.Tpo $(DEPDIR)/iperf3_profile-iperf_error.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_error.c' object='iperf3_profile-iperf_error.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_error.o `test -f 'iperf_error.c' || echo '$(srcdir)/'`iperf_error.c
-
-iperf3_profile-iperf_error.obj: iperf_error.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_error.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_error.Tpo -c -o iperf3_profile-iperf_error.obj `if test -f 'iperf_error.c'; then $(CYGPATH_W) 'iperf_error.c'; else $(CYGPATH_W) '$(srcdir)/iperf_error.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_error.Tpo $(DEPDIR)/iperf3_profile-iperf_error.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_error.c' object='iperf3_profile-iperf_error.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_error.obj `if test -f 'iperf_error.c'; then $(CYGPATH_W) 'iperf_error.c'; else $(CYGPATH_W) '$(srcdir)/iperf_error.c'; fi`
-
-iperf3_profile-iperf_client_api.o: iperf_client_api.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_client_api.o -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_client_api.Tpo -c -o iperf3_profile-iperf_client_api.o `test -f 'iperf_client_api.c' || echo '$(srcdir)/'`iperf_client_api.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_client_api.Tpo $(DEPDIR)/iperf3_profile-iperf_client_api.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_client_api.c' object='iperf3_profile-iperf_client_api.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_client_api.o `test -f 'iperf_client_api.c' || echo '$(srcdir)/'`iperf_client_api.c
-
-iperf3_profile-iperf_client_api.obj: iperf_client_api.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_client_api.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_client_api.Tpo -c -o iperf3_profile-iperf_client_api.obj `if test -f 'iperf_client_api.c'; then $(CYGPATH_W) 'iperf_client_api.c'; else $(CYGPATH_W) '$(srcdir)/iperf_client_api.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_client_api.Tpo $(DEPDIR)/iperf3_profile-iperf_client_api.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_client_api.c' object='iperf3_profile-iperf_client_api.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_client_api.obj `if test -f 'iperf_client_api.c'; then $(CYGPATH_W) 'iperf_client_api.c'; else $(CYGPATH_W) '$(srcdir)/iperf_client_api.c'; fi`
-
-iperf3_profile-iperf_locale.o: iperf_locale.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_locale.o -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_locale.Tpo -c -o iperf3_profile-iperf_locale.o `test -f 'iperf_locale.c' || echo '$(srcdir)/'`iperf_locale.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_locale.Tpo $(DEPDIR)/iperf3_profile-iperf_locale.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_locale.c' object='iperf3_profile-iperf_locale.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_locale.o `test -f 'iperf_locale.c' || echo '$(srcdir)/'`iperf_locale.c
-
-iperf3_profile-iperf_locale.obj: iperf_locale.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_locale.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_locale.Tpo -c -o iperf3_profile-iperf_locale.obj `if test -f 'iperf_locale.c'; then $(CYGPATH_W) 'iperf_locale.c'; else $(CYGPATH_W) '$(srcdir)/iperf_locale.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_locale.Tpo $(DEPDIR)/iperf3_profile-iperf_locale.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_locale.c' object='iperf3_profile-iperf_locale.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_locale.obj `if test -f 'iperf_locale.c'; then $(CYGPATH_W) 'iperf_locale.c'; else $(CYGPATH_W) '$(srcdir)/iperf_locale.c'; fi`
-
-iperf3_profile-iperf_server_api.o: iperf_server_api.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_server_api.o -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_server_api.Tpo -c -o iperf3_profile-iperf_server_api.o `test -f 'iperf_server_api.c' || echo '$(srcdir)/'`iperf_server_api.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_server_api.Tpo $(DEPDIR)/iperf3_profile-iperf_server_api.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_server_api.c' object='iperf3_profile-iperf_server_api.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_server_api.o `test -f 'iperf_server_api.c' || echo '$(srcdir)/'`iperf_server_api.c
-
-iperf3_profile-iperf_server_api.obj: iperf_server_api.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_server_api.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_server_api.Tpo -c -o iperf3_profile-iperf_server_api.obj `if test -f 'iperf_server_api.c'; then $(CYGPATH_W) 'iperf_server_api.c'; else $(CYGPATH_W) '$(srcdir)/iperf_server_api.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_server_api.Tpo $(DEPDIR)/iperf3_profile-iperf_server_api.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_server_api.c' object='iperf3_profile-iperf_server_api.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_server_api.obj `if test -f 'iperf_server_api.c'; then $(CYGPATH_W) 'iperf_server_api.c'; else $(CYGPATH_W) '$(srcdir)/iperf_server_api.c'; fi`
-
-iperf3_profile-iperf_tcp.o: iperf_tcp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_tcp.o -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_tcp.Tpo -c -o iperf3_profile-iperf_tcp.o `test -f 'iperf_tcp.c' || echo '$(srcdir)/'`iperf_tcp.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_tcp.Tpo $(DEPDIR)/iperf3_profile-iperf_tcp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_tcp.c' object='iperf3_profile-iperf_tcp.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_tcp.o `test -f 'iperf_tcp.c' || echo '$(srcdir)/'`iperf_tcp.c
-
-iperf3_profile-iperf_tcp.obj: iperf_tcp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_tcp.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_tcp.Tpo -c -o iperf3_profile-iperf_tcp.obj `if test -f 'iperf_tcp.c'; then $(CYGPATH_W) 'iperf_tcp.c'; else $(CYGPATH_W) '$(srcdir)/iperf_tcp.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_tcp.Tpo $(DEPDIR)/iperf3_profile-iperf_tcp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_tcp.c' object='iperf3_profile-iperf_tcp.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_tcp.obj `if test -f 'iperf_tcp.c'; then $(CYGPATH_W) 'iperf_tcp.c'; else $(CYGPATH_W) '$(srcdir)/iperf_tcp.c'; fi`
-
-iperf3_profile-iperf_udp.o: iperf_udp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_udp.o -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_udp.Tpo -c -o iperf3_profile-iperf_udp.o `test -f 'iperf_udp.c' || echo '$(srcdir)/'`iperf_udp.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_udp.Tpo $(DEPDIR)/iperf3_profile-iperf_udp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_udp.c' object='iperf3_profile-iperf_udp.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_udp.o `test -f 'iperf_udp.c' || echo '$(srcdir)/'`iperf_udp.c
-
-iperf3_profile-iperf_udp.obj: iperf_udp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_udp.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_udp.Tpo -c -o iperf3_profile-iperf_udp.obj `if test -f 'iperf_udp.c'; then $(CYGPATH_W) 'iperf_udp.c'; else $(CYGPATH_W) '$(srcdir)/iperf_udp.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_udp.Tpo $(DEPDIR)/iperf3_profile-iperf_udp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_udp.c' object='iperf3_profile-iperf_udp.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_udp.obj `if test -f 'iperf_udp.c'; then $(CYGPATH_W) 'iperf_udp.c'; else $(CYGPATH_W) '$(srcdir)/iperf_udp.c'; fi`
-
-iperf3_profile-iperf_sctp.o: iperf_sctp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_sctp.o -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_sctp.Tpo -c -o iperf3_profile-iperf_sctp.o `test -f 'iperf_sctp.c' || echo '$(srcdir)/'`iperf_sctp.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_sctp.Tpo $(DEPDIR)/iperf3_profile-iperf_sctp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_sctp.c' object='iperf3_profile-iperf_sctp.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_sctp.o `test -f 'iperf_sctp.c' || echo '$(srcdir)/'`iperf_sctp.c
-
-iperf3_profile-iperf_sctp.obj: iperf_sctp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_sctp.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_sctp.Tpo -c -o iperf3_profile-iperf_sctp.obj `if test -f 'iperf_sctp.c'; then $(CYGPATH_W) 'iperf_sctp.c'; else $(CYGPATH_W) '$(srcdir)/iperf_sctp.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_sctp.Tpo $(DEPDIR)/iperf3_profile-iperf_sctp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_sctp.c' object='iperf3_profile-iperf_sctp.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_sctp.obj `if test -f 'iperf_sctp.c'; then $(CYGPATH_W) 'iperf_sctp.c'; else $(CYGPATH_W) '$(srcdir)/iperf_sctp.c'; fi`
-
-iperf3_profile-iperf_util.o: iperf_util.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_util.o -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_util.Tpo -c -o iperf3_profile-iperf_util.o `test -f 'iperf_util.c' || echo '$(srcdir)/'`iperf_util.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_util.Tpo $(DEPDIR)/iperf3_profile-iperf_util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_util.c' object='iperf3_profile-iperf_util.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_util.o `test -f 'iperf_util.c' || echo '$(srcdir)/'`iperf_util.c
-
-iperf3_profile-iperf_util.obj: iperf_util.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-iperf_util.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-iperf_util.Tpo -c -o iperf3_profile-iperf_util.obj `if test -f 'iperf_util.c'; then $(CYGPATH_W) 'iperf_util.c'; else $(CYGPATH_W) '$(srcdir)/iperf_util.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-iperf_util.Tpo $(DEPDIR)/iperf3_profile-iperf_util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='iperf_util.c' object='iperf3_profile-iperf_util.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-iperf_util.obj `if test -f 'iperf_util.c'; then $(CYGPATH_W) 'iperf_util.c'; else $(CYGPATH_W) '$(srcdir)/iperf_util.c'; fi`
-
-iperf3_profile-net.o: net.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-net.o -MD -MP -MF $(DEPDIR)/iperf3_profile-net.Tpo -c -o iperf3_profile-net.o `test -f 'net.c' || echo '$(srcdir)/'`net.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-net.Tpo $(DEPDIR)/iperf3_profile-net.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net.c' object='iperf3_profile-net.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-net.o `test -f 'net.c' || echo '$(srcdir)/'`net.c
-
-iperf3_profile-net.obj: net.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-net.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-net.Tpo -c -o iperf3_profile-net.obj `if test -f 'net.c'; then $(CYGPATH_W) 'net.c'; else $(CYGPATH_W) '$(srcdir)/net.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-net.Tpo $(DEPDIR)/iperf3_profile-net.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='net.c' object='iperf3_profile-net.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-net.obj `if test -f 'net.c'; then $(CYGPATH_W) 'net.c'; else $(CYGPATH_W) '$(srcdir)/net.c'; fi`
-
-iperf3_profile-tcp_info.o: tcp_info.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-tcp_info.o -MD -MP -MF $(DEPDIR)/iperf3_profile-tcp_info.Tpo -c -o iperf3_profile-tcp_info.o `test -f 'tcp_info.c' || echo '$(srcdir)/'`tcp_info.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-tcp_info.Tpo $(DEPDIR)/iperf3_profile-tcp_info.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tcp_info.c' object='iperf3_profile-tcp_info.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-tcp_info.o `test -f 'tcp_info.c' || echo '$(srcdir)/'`tcp_info.c
-
-iperf3_profile-tcp_info.obj: tcp_info.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-tcp_info.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-tcp_info.Tpo -c -o iperf3_profile-tcp_info.obj `if test -f 'tcp_info.c'; then $(CYGPATH_W) 'tcp_info.c'; else $(CYGPATH_W) '$(srcdir)/tcp_info.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-tcp_info.Tpo $(DEPDIR)/iperf3_profile-tcp_info.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tcp_info.c' object='iperf3_profile-tcp_info.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-tcp_info.obj `if test -f 'tcp_info.c'; then $(CYGPATH_W) 'tcp_info.c'; else $(CYGPATH_W) '$(srcdir)/tcp_info.c'; fi`
-
-iperf3_profile-tcp_window_size.o: tcp_window_size.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-tcp_window_size.o -MD -MP -MF $(DEPDIR)/iperf3_profile-tcp_window_size.Tpo -c -o iperf3_profile-tcp_window_size.o `test -f 'tcp_window_size.c' || echo '$(srcdir)/'`tcp_window_size.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-tcp_window_size.Tpo $(DEPDIR)/iperf3_profile-tcp_window_size.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tcp_window_size.c' object='iperf3_profile-tcp_window_size.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-tcp_window_size.o `test -f 'tcp_window_size.c' || echo '$(srcdir)/'`tcp_window_size.c
-
-iperf3_profile-tcp_window_size.obj: tcp_window_size.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-tcp_window_size.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-tcp_window_size.Tpo -c -o iperf3_profile-tcp_window_size.obj `if test -f 'tcp_window_size.c'; then $(CYGPATH_W) 'tcp_window_size.c'; else $(CYGPATH_W) '$(srcdir)/tcp_window_size.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-tcp_window_size.Tpo $(DEPDIR)/iperf3_profile-tcp_window_size.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tcp_window_size.c' object='iperf3_profile-tcp_window_size.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-tcp_window_size.obj `if test -f 'tcp_window_size.c'; then $(CYGPATH_W) 'tcp_window_size.c'; else $(CYGPATH_W) '$(srcdir)/tcp_window_size.c'; fi`
-
-iperf3_profile-timer.o: timer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-timer.o -MD -MP -MF $(DEPDIR)/iperf3_profile-timer.Tpo -c -o iperf3_profile-timer.o `test -f 'timer.c' || echo '$(srcdir)/'`timer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-timer.Tpo $(DEPDIR)/iperf3_profile-timer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='timer.c' object='iperf3_profile-timer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-timer.o `test -f 'timer.c' || echo '$(srcdir)/'`timer.c
-
-iperf3_profile-timer.obj: timer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-timer.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-timer.Tpo -c -o iperf3_profile-timer.obj `if test -f 'timer.c'; then $(CYGPATH_W) 'timer.c'; else $(CYGPATH_W) '$(srcdir)/timer.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-timer.Tpo $(DEPDIR)/iperf3_profile-timer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='timer.c' object='iperf3_profile-timer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-timer.obj `if test -f 'timer.c'; then $(CYGPATH_W) 'timer.c'; else $(CYGPATH_W) '$(srcdir)/timer.c'; fi`
-
-iperf3_profile-units.o: units.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-units.o -MD -MP -MF $(DEPDIR)/iperf3_profile-units.Tpo -c -o iperf3_profile-units.o `test -f 'units.c' || echo '$(srcdir)/'`units.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-units.Tpo $(DEPDIR)/iperf3_profile-units.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='units.c' object='iperf3_profile-units.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-units.o `test -f 'units.c' || echo '$(srcdir)/'`units.c
-
-iperf3_profile-units.obj: units.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -MT iperf3_profile-units.obj -MD -MP -MF $(DEPDIR)/iperf3_profile-units.Tpo -c -o iperf3_profile-units.obj `if test -f 'units.c'; then $(CYGPATH_W) 'units.c'; else $(CYGPATH_W) '$(srcdir)/units.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iperf3_profile-units.Tpo $(DEPDIR)/iperf3_profile-units.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='units.c' object='iperf3_profile-units.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(iperf3_profile_CFLAGS) $(CFLAGS) -c -o iperf3_profile-units.obj `if test -f 'units.c'; then $(CYGPATH_W) 'units.c'; else $(CYGPATH_W) '$(srcdir)/units.c'; fi`
 
 t_timer-t_timer.o: t_timer.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(t_timer_CFLAGS) $(CFLAGS) -MT t_timer-t_timer.o -MD -MP -MF $(DEPDIR)/t_timer-t_timer.Tpo -c -o t_timer-t_timer.o `test -f 't_timer.c' || echo '$(srcdir)/'`t_timer.c
