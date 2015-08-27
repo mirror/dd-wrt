@@ -1,6 +1,6 @@
 lib_LTLIBRARIES         = libiperf.la                                   # Build and install an iperf library
 bin_PROGRAMS            = iperf3                                        # Build and install an iperf binary
-noinst_PROGRAMS         = t_timer t_units t_uuid iperf3_profile         # Build, but don't install the test programs and a profiled version of iperf3
+noinst_PROGRAMS         = t_timer t_units t_uuid         # Build, but don't install the test programs and a profiled version of iperf3
 include_HEADERS         = iperf_api.h # Defines the headers that get installed with the program
 
 
@@ -43,15 +43,6 @@ iperf3_SOURCES          = main.c
 iperf3_CFLAGS           = -g
 iperf3_LDADD            = libiperf.la
 iperf3_LDFLAGS          = -g
-
-# Specify the sources and various flags for the profiled iperf binary. This
-# binary recompiles all the source files to make sure they are all profiled.
-iperf3_profile_SOURCES  = main.c \
-						  $(libiperf_la_SOURCES)
-
-iperf3_profile_CFLAGS   = -pg -g
-iperf3_profile_LDADD    = libiperf.la
-iperf3_profile_LDFLAGS  = -pg -g
 
 # Specify the sources and various flags for the test cases
 t_timer_SOURCES         = t_timer.c
