@@ -1,13 +1,34 @@
-/* src/config.h.in.  Generated from configure.ac by autoheader.  */
+/* src/iperf_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if you have the `cpuset_setaffinity' function. */
+#undef HAVE_CPUSET_SETAFFINITY
+
+/* Have CPU affinity support. */
+#undef HAVE_CPU_AFFINITY
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
+
+/* Have IPv6 flowlabel support. */
+#undef HAVE_FLOWLABEL
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <netinet/sctp.h> header file. */
+#undef HAVE_NETINET_SCTP_H
+
+/* Define to 1 if you have the `sched_setaffinity' function. */
+#undef HAVE_SCHED_SETAFFINITY
+
+/* Have SCTP support. */
+#undef HAVE_SCTP
+
+/* Define to 1 if you have the `sendfile' function. */
+#undef HAVE_SENDFILE
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -21,11 +42,20 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if the system has the type `struct sctp_assoc_value'. */
+#undef HAVE_STRUCT_SCTP_ASSOC_VALUE
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#undef HAVE_SYS_SOCKET_H
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Have TCP_CONGESTION sockopt. */
+#undef HAVE_TCP_CONGESTION
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
