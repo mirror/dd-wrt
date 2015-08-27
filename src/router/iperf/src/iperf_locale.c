@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------- 
- * iperf, Copyright (c) 2014, 2015, The Regents of the University of
+ * iperf, Copyright (c) 2014, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -77,7 +77,7 @@
  * -------------------------------------------------------------------
  * Strings and other stuff that is locale specific.
  * ------------------------------------------------------------------- */
-#include "config.h"
+#include "iperf_config.h"
 
 #include "version.h"
 
@@ -101,19 +101,28 @@ const char usage_longstr[] = "Usage: iperf [-s|-c host] [options]\n"
                            "  -f, --format    [kmgKMG]  format to report: Kbits, Mbits, KBytes, MBytes\n"
                            "  -i, --interval  #         seconds between periodic bandwidth reports\n"
                            "  -F, --file name           xmit/recv the specified file\n"
+#if defined(HAVE_CPU_AFFINITY)
                            "  -A, --affinity n/n,m      set CPU affinity\n"
+#endif /* HAVE_CPU_AFFINITY */
                            "  -B, --bind      <host>    bind to a specific interface\n"
                            "  -V, --verbose             more detailed output\n"
                            "  -J, --json                output in JSON format\n"
+                           "  --logfile f               send output to a log file\n"
                            "  -d, --debug               emit debugging output\n"
                            "  -v, --version             show version information and quit\n"
                            "  -h, --help                show this message and quit\n"
                            "Server specific:\n"
                            "  -s, --server              run in server mode\n"
                            "  -D, --daemon              run the server as a daemon\n"
+                           "  -I, --pidfile file        write PID file\n"
                            "  -1, --one-off             handle one client connection then exit\n"
                            "Client specific:\n"
                            "  -c, --client    <host>    run in client mode, connecting to <host>\n"
+#if defined(HAVE_SCTP)
+                           "  --sctp                    use SCTP rather than TCP\n"
+                           "  -X, --xbind <name>        bind SCTP association to links\n"
+                           "  --nstreams      #         number of SCTP streams\n"
+#endif /* HAVE_SCTP */
                            "  -u, --udp                 use UDP rather than TCP\n"
                            "  -b, --bandwidth #[KMG][/#] target bandwidth in bits/sec (0 for unlimited)\n"
                            "                            (default %d Mbit/sec for UDP, unlimited for TCP)\n"
@@ -123,24 +132,26 @@ const char usage_longstr[] = "Usage: iperf [-s|-c host] [options]\n"
                            "  -k, --blockcount #[KMG]   number of blocks (packets) to transmit (instead of -t or -n)\n"
                            "  -l, --len       #[KMG]    length of buffer to read or write\n"
 			   "                            (default %d KB for TCP, %d KB for UDP)\n"
+                           "  --cport         <port>    bind to a specific client port (TCP and UDP, default: ephemeral port)\n"
                            "  -P, --parallel  #         number of parallel client streams to run\n"
                            "  -R, --reverse             run in reverse mode (server sends, client receives)\n"
                            "  -w, --window    #[KMG]    set window size / socket buffer size\n"
-#if defined(linux)
-                           "  -C, --linux-congestion <algo>  set TCP congestion control algorithm (Linux only)\n"
-#endif
-                           "  -M, --set-mss   #         set TCP maximum segment size (MTU - 40 bytes)\n"
-                           "  -N, --nodelay             set TCP no delay, disabling Nagle's Algorithm\n"
+#if defined(HAVE_TCP_CONGESTION)
+                           "  -C, --congestion <algo>   set TCP congestion control algorithm (Linux and FreeBSD only)\n"
+#endif /* HAVE_TCP_CONGESTION */
+                           "  -M, --set-mss   #         set TCP/SCTP maximum segment size (MTU - 40 bytes)\n"
+                           "  -N, --no-delay            set TCP/SCTP no delay, disabling Nagle's Algorithm\n"
                            "  -4, --version4            only use IPv4\n"
                            "  -6, --version6            only use IPv6\n"
                            "  -S, --tos N               set the IP 'type of service'\n"
-#if defined(linux)
+#if defined(HAVE_FLOWLABEL)
                            "  -L, --flowlabel N         set the IPv6 flow label (only supported on Linux)\n"
-#endif
+#endif /* HAVE_FLOWLABEL */
                            "  -Z, --zerocopy            use a 'zero copy' method of sending data\n"
                            "  -O, --omit N              omit the first n seconds\n"
                            "  -T, --title str           prefix every output line with this string\n"
                            "  --get-server-output       get results from server\n"
+                           "  --udp-counters-64bit      use 64-bit counters in UDP test packets\n"
 
 #ifdef NOT_YET_SUPPORTED /* still working on these */
 #endif
@@ -152,9 +163,9 @@ const char usage_longstr[] = "Usage: iperf [-s|-c host] [options]\n"
                            "iperf3 homepage at: " PACKAGE_URL "\n"
 #endif /* PACKAGE_URL */
 #ifdef PACKAGE_BUGREPORT
-                           "Report bugs to:     " PACKAGE_BUGREPORT "\n";
+                           "Report bugs to:     " PACKAGE_BUGREPORT "\n"
 #endif /* PACKAGE_BUGREPORT */
-
+			   ;
 
 #ifdef OBSOLETE /* from old iperf: no longer supported. Add some of these back someday */
   "-d, --dualtest           Do a bidirectional test simultaneously\n"
@@ -184,6 +195,9 @@ const char client_port[] =
 
 const char bind_address[] =
 "Binding to local address %s\n";
+
+const char bind_port[] =
+"Binding to local port %s\n";
 
 const char multicast_ttl[] =
 "Setting multicast TTL to %d\n";
@@ -352,6 +366,10 @@ const char report_tcpInfo[] =
 "event=TCP_Info CWND=%u SND_SSTHRESH=%u RCV_SSTHRESH=%u UNACKED=%u SACK=%u LOST=%u RETRANS=%u FACK=%u RTT=%u REORDERING=%u\n";
 #endif
 #if defined(__FreeBSD__)
+const char report_tcpInfo[] =
+"event=TCP_Info CWND=%u RCV_WIND=%u SND_SSTHRESH=%u RTT=%u\n";
+#endif
+#if defined(__NetBSD__)
 const char report_tcpInfo[] =
 "event=TCP_Info CWND=%u RCV_WIND=%u SND_SSTHRESH=%u RTT=%u\n";
 #endif

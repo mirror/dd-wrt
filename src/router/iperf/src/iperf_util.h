@@ -28,6 +28,7 @@
 #define __IPERF_UTIL_H
 
 #include "cjson.h"
+#include <sys/select.h>
 
 void make_cookie(char *);
 
@@ -43,7 +44,9 @@ int delay(int64_t ns);
 
 void cpu_util(double pcpu[3]);
 
-char* get_system_info(void);
+const char* get_system_info(void);
+
+const char* get_optional_features(void);
 
 cJSON* iperf_json_printf(const char *format, ...);
 

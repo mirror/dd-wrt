@@ -24,6 +24,7 @@
  * This code is distributed under a BSD style license, see the LICENSE
  * file for complete information.
  */
+#include "iperf_config.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -38,6 +39,7 @@
 #include <string.h>
 #include <sys/fcntl.h>
 
+#ifdef HAVE_SENDFILE
 #ifdef linux
 #include <sys/sendfile.h>
 #else
@@ -52,6 +54,7 @@
 #endif
 #endif
 #endif
+#endif /* HAVE_SENDFILE */
 
 #include "iperf_util.h"
 #include "net.h"
@@ -63,7 +66,7 @@
 
 /* make connection to server */
 int
-netdial(int domain, int proto, char *local, char *server, int port)
+netdial(int domain, int proto, char *local, int local_port, char *server, int port)
 {
     struct addrinfo hints, *local_res, *server_res;
     int s;
@@ -91,6 +94,13 @@ netdial(int domain, int proto, char *local, char *server, int port)
     }
 
     if (local) {
+        if (local_port) {
+            struct sockaddr_in *lcladdr;
+            lcladdr = (struct sockaddr_in *)local_res->ai_addr;
+            lcladdr->sin_port = htons(local_port);
+            local_res->ai_addr = (struct sockaddr *)lcladdr;
+        }
+
         if (bind(s, (struct sockaddr *) local_res->ai_addr, local_res->ai_addrlen) < 0) {
 	    close(s);
 	    freeaddrinfo(local_res);
@@ -213,7 +223,7 @@ Nread(int fd, char *buf, size_t count, int prot)
     while (nleft > 0) {
         r = read(fd, buf, nleft);
         if (r < 0) {
-            if (errno == EINTR || errno == EAGAIN)
+            if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
                 break;
             else
                 return NET_HARDERROR;
@@ -243,6 +253,9 @@ Nwrite(int fd, const char *buf, size_t count, int prot)
 	    switch (errno) {
 		case EINTR:
 		case EAGAIN:
+#if (EAGAIN != EWOULDBLOCK)
+		case EWOULDBLOCK:
+#endif
 		return count - nleft;
 
 		case ENOBUFS:
@@ -263,19 +276,12 @@ Nwrite(int fd, const char *buf, size_t count, int prot)
 int
 has_sendfile(void)
 {
-#ifdef linux
+#if defined(HAVE_SENDFILE)
     return 1;
-#else
-#ifdef __FreeBSD__
-    return 1;
-#else
-#if defined(__APPLE__) && defined(__MACH__) && defined(MAC_OS_X_VERSION_10_6)	/* OS X */
-    return 1;
-#else
+#else /* HAVE_SENDFILE */
     return 0;
-#endif
-#endif
-#endif
+#endif /* HAVE_SENDFILE */
+
 }
 
 
@@ -287,6 +293,7 @@ int
 Nsendfile(int fromfd, int tofd, const char *buf, size_t count)
 {
     off_t offset;
+#if defined(HAVE_SENDFILE)
 #if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__) && defined(MAC_OS_X_VERSION_10_6))
     off_t sent;
 #endif
@@ -316,6 +323,9 @@ Nsendfile(int fromfd, int tofd, const char *buf, size_t count)
 	    switch (errno) {
 		case EINTR:
 		case EAGAIN:
+#if (EAGAIN != EWOULDBLOCK)
+		case EWOULDBLOCK:
+#endif
 		if (count == nleft)
 		    return NET_SOFTERROR;
 		return count - nleft;
@@ -334,6 +344,10 @@ Nsendfile(int fromfd, int tofd, const char *buf, size_t count)
 #endif
     }
     return count;
+#else /* HAVE_SENDFILE */
+    errno = ENOSYS;	/* error if somehow get called without HAVE_SENDFILE */
+    return NET_HARDERROR;
+#endif /* HAVE_SENDFILE */
 }
 
 /*************************************************************************/

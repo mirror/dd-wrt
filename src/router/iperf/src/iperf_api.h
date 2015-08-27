@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2015, The Regents of the University of
+ * iperf, Copyright (c) 2014, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -27,8 +27,8 @@
 #ifndef        __IPERF_API_H
 #define        __IPERF_API_H
 
+#include <sys/time.h>
 #include <setjmp.h>
-#include <sys/select.h>
 
 struct iperf_test;
 struct iperf_stream_result;
@@ -38,13 +38,18 @@ struct iperf_stream;
 /* default settings */
 #define Ptcp SOCK_STREAM
 #define Pudp SOCK_DGRAM
+#define Psctp 12
 #define DEFAULT_UDP_BLKSIZE 8192
 #define DEFAULT_TCP_BLKSIZE (128 * 1024)  /* default read/write block size */
+#define DEFAULT_SCTP_BLKSIZE (64 * 1024)
 
 /* short option equivalents, used to support options that only have long form */
 #define OPT_SCTP 1
 #define OPT_LOGFILE 2
 #define OPT_GET_SERVER_OUTPUT 3
+#define OPT_UDP_COUNTERS_64BIT 4
+#define OPT_CLIENT_PORT 5
+#define OPT_NUMSTREAMS 6
 
 /* states */
 #define TEST_START 1
@@ -74,6 +79,7 @@ int	iperf_get_test_duration( struct iperf_test* ipt );
 char	iperf_get_test_role( struct iperf_test* ipt );
 int	iperf_get_test_reverse( struct iperf_test* ipt );
 int	iperf_get_test_blksize( struct iperf_test* ipt );
+FILE*	iperf_get_test_outfile( struct iperf_test* ipt );
 uint64_t iperf_get_test_rate( struct iperf_test* ipt );
 int     iperf_get_test_burst( struct iperf_test* ipt );
 int	iperf_get_test_socket_bufsize( struct iperf_test* ipt );
@@ -84,9 +90,11 @@ int	iperf_get_test_server_port( struct iperf_test* ipt );
 char*	iperf_get_test_server_hostname( struct iperf_test* ipt );
 int	iperf_get_test_protocol_id( struct iperf_test* ipt );
 int	iperf_get_test_json_output( struct iperf_test* ipt );
+char*	iperf_get_test_json_output_string ( struct iperf_test* ipt );
 int	iperf_get_test_zerocopy( struct iperf_test* ipt );
 int	iperf_get_test_get_server_output( struct iperf_test* ipt );
 char*	iperf_get_test_bind_address ( struct iperf_test* ipt );
+int	iperf_get_test_udp_counters_64bit( struct iperf_test* ipt );
 int	iperf_get_test_one_off( struct iperf_test* ipt );
 
 /* Setter routines for some fields inside iperf_test. */
@@ -111,6 +119,7 @@ int	iperf_has_zerocopy( void );
 void	iperf_set_test_zerocopy( struct iperf_test* ipt, int zerocopy );
 void	iperf_set_test_get_server_output( struct iperf_test* ipt, int get_server_output );
 void	iperf_set_test_bind_address( struct iperf_test* ipt, char *bind_address );
+void	iperf_set_test_udp_counters_64bit( struct iperf_test* ipt, int udp_counters_64bit );
 void	iperf_set_test_one_off( struct iperf_test* ipt, int one_off );
 
 /**
@@ -192,6 +201,7 @@ int has_tcpinfo_retransmits(void);
 void save_tcpinfo(struct iperf_stream *sp, struct iperf_interval_results *irp);
 long get_total_retransmits(struct iperf_interval_results *irp);
 long get_snd_cwnd(struct iperf_interval_results *irp);
+long get_rtt(struct iperf_interval_results *irp);
 void print_tcpinfo(struct iperf_test *test);
 void build_tcpinfo_message(struct iperf_interval_results *r, char *message);
 
@@ -234,18 +244,20 @@ int iperf_server_listen(struct iperf_test *);
 int iperf_accept(struct iperf_test *);
 int iperf_handle_message_server(struct iperf_test *);
 void iperf_test_reset(struct iperf_test *);
+int iperf_create_pidfile(struct iperf_test *);
+int iperf_delete_pidfile(struct iperf_test *);
 
 /* JSON output routines. */
 int iperf_json_start(struct iperf_test *);
 int iperf_json_finish(struct iperf_test *);
 
 /* CPU affinity routines */
-int iperf_setaffinity(int affinity);
-int iperf_clearaffinity(void);
+int iperf_setaffinity(struct iperf_test *, int affinity);
+int iperf_clearaffinity(struct iperf_test *);
 
 /* Custom printf routine. */
 int iprintf(struct iperf_test *test, const char *format, ...) __attribute__ ((format(printf,2,3)));
-
+int iflush(struct iperf_test *test);
 
 /* Error routines. */
 void iperf_err(struct iperf_test *test, const char *format, ...) __attribute__ ((format(printf,2,3)));
@@ -271,6 +283,9 @@ enum {
     IEFILE = 14,            // -F file couldn't be opened
     IEBURST = 15,           // Invalid burst count. Maximum value = %dMAX_BURST
     IEENDCONDITIONS = 16,   // Only one test end condition (-t, -n, -k) may be specified
+    IELOGFILE = 17,	    // Can't open log file
+    IENOSCTP = 18,	    // No SCTP support available
+    IEBIND = 19,			// Local port specified with no local bind option
     IEUDPBLOCKSIZE = 20,    // Block size too large. Maximum value = %dMAX_UDP_BLOCKSIZE
     /* Test errors */
     IENEWTEST = 100,        // Unable to create a new test (check perror)
@@ -295,8 +310,8 @@ enum {
     IECLIENTTERM = 119,     // The client has terminated
     IESERVERTERM = 120,     // The server has terminated
     IEACCESSDENIED = 121,   // The server is busy running a test. Try again later.
-    IESETNODELAY = 122,     // Unable to set TCP NODELAY (check perror)
-    IESETMSS = 123,         // Unable to set TCP MSS (check perror)
+    IESETNODELAY = 122,     // Unable to set TCP/SCTP NODELAY (check perror)
+    IESETMSS = 123,         // Unable to set TCP/SCTP MSS (check perror)
     IESETBUF = 124,         // Unable to set socket buffer size (check perror)
     IESETTOS = 125,         // Unable to set IP TOS (check perror)
     IESETCOS = 126,         // Unable to set IPv6 traffic class (check perror)
@@ -308,7 +323,11 @@ enum {
     IEAFFINITY = 132,       // Unable to set CPU affinity (check perror)
     IEDAEMON = 133,	    // Unable to become a daemon process
     IESETCONGESTION = 134,  // Unable to set TCP_CONGESTION
+    IEPIDFILE = 135,	    // Unable to write PID file
     IEV6ONLY = 136,  	    // Unable to set/unset IPV6_V6ONLY (check perror)
+    IESETSCTPDISABLEFRAG = 137, // Unable to set SCTP Fragmentation (check perror)
+    IESETSCTPNSTREAM= 138,  //  Unable to set SCTP number of streams (check perror)
+    IESETSCTPBINDX= 139,    // Unable to process sctp_bindx() parameters
     /* Stream errors */
     IECREATESTREAM = 200,   // Unable to create a new stream (check herror/perror)
     IEINITSTREAM = 201,     // Unable to initialize stream (check herror/perror)
