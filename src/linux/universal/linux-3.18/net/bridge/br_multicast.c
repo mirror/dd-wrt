@@ -988,7 +988,7 @@ static int br_ip4_multicast_igmp3_report(struct net_bridge *br,
 					 struct sk_buff *skb,
 					 u16 vid)
 {
-	const unsigned char *src = eth_hdr(skb)->h_source;
+	const unsigned char *src;
 	struct igmpv3_report *ih;
 	struct igmpv3_grec *grec;
 	int i;
@@ -1031,7 +1031,7 @@ static int br_ip4_multicast_igmp3_report(struct net_bridge *br,
 		default:
 			continue;
 		}
-
+		src = eth_hdr(skb)->h_source;
 		err = br_ip4_multicast_add_group(br, port, group, vid, src);
 		if (err)
 			break;
@@ -1046,7 +1046,7 @@ static int br_ip6_multicast_mld2_report(struct net_bridge *br,
 					struct sk_buff *skb,
 					u16 vid)
 {
-	const unsigned char *src = eth_hdr(skb)->h_source;
+	const unsigned char *src;
 	struct icmp6hdr *icmp6h;
 	struct mld2_grec *grec;
 	int i;
@@ -1094,6 +1094,7 @@ static int br_ip6_multicast_mld2_report(struct net_bridge *br,
 			continue;
 		}
 
+		src = eth_hdr(skb)->h_source;
 		err = br_ip6_multicast_add_group(br, port, &grec->grec_mca,
 						 vid, src);
 		if (err)
@@ -1581,7 +1582,7 @@ static int br_multicast_ipv4_rcv(struct net_bridge *br,
 				 struct sk_buff *skb,
 				 u16 vid)
 {
-	const unsigned char *src = eth_hdr(skb)->h_source;
+	const unsigned char *src;
 	struct sk_buff *skb2 = skb;
 	const struct iphdr *iph;
 	struct igmphdr *ih;
@@ -1655,6 +1656,7 @@ static int br_multicast_ipv4_rcv(struct net_bridge *br,
 	case IGMP_HOST_MEMBERSHIP_REPORT:
 	case IGMPV2_HOST_MEMBERSHIP_REPORT:
 		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
+		src = eth_hdr(skb)->h_source;
 		err = br_ip4_multicast_add_group(br, port, ih->group, vid, src);
 		break;
 	case IGMPV3_HOST_MEMBERSHIP_REPORT:
@@ -1664,6 +1666,7 @@ static int br_multicast_ipv4_rcv(struct net_bridge *br,
 		err = br_ip4_multicast_query(br, port, skb2, vid);
 		break;
 	case IGMP_HOST_LEAVE_MESSAGE:
+		src = eth_hdr(skb)->h_source;
 		br_ip4_multicast_leave_group(br, port, ih->group, vid, src);
 		break;
 	}
@@ -1682,7 +1685,7 @@ static int br_multicast_ipv6_rcv(struct net_bridge *br,
 				 struct sk_buff *skb,
 				 u16 vid)
 {
-	const unsigned char *src = eth_hdr(skb)->h_source;
+	const unsigned char *src;
 	struct sk_buff *skb2;
 	const struct ipv6hdr *ip6h;
 	u8 icmp6_type;
@@ -1792,6 +1795,7 @@ static int br_multicast_ipv6_rcv(struct net_bridge *br,
 		}
 		mld = (struct mld_msg *)skb_transport_header(skb2);
 		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
+		src = eth_hdr(skb)->h_source;
 		err = br_ip6_multicast_add_group(br, port, &mld->mld_mca, vid,
 						 src);
 		break;
@@ -1810,6 +1814,7 @@ static int br_multicast_ipv6_rcv(struct net_bridge *br,
 			goto out;
 		}
 		mld = (struct mld_msg *)skb_transport_header(skb2);
+		src = eth_hdr(skb)->h_source;
 		br_ip6_multicast_leave_group(br, port, &mld->mld_mca, vid, src);
 	    }
 	}
