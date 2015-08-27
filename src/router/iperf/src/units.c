@@ -54,8 +54,11 @@
 #include <stdio.h>
 #include <assert.h>
 #include <ctype.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/time.h>
 #include <netinet/tcp.h>
 
@@ -259,7 +262,7 @@ extern    "C"
 	{
 	    inNum *= 8;
 	}
-	switch    (toupper(inFormat))
+	switch    (toupper((u_char)inFormat))
 	{
 	case 'B':
 	    conv = UNIT_CONV;

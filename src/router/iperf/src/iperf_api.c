@@ -27,6 +27,8 @@
 #define _GNU_SOURCE
 #define __USE_GNU
 
+#include "iperf_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +44,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
 #include <netinet/tcp.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -52,11 +56,19 @@
 #include <setjmp.h>
 #include <stdarg.h>
 
+#if defined(HAVE_CPUSET_SETAFFINITY)
+#include <sys/param.h>
+#include <sys/cpuset.h>
+#endif /* HAVE_CPUSET_SETAFFINITY */
+
 #include "net.h"
 #include "iperf.h"
 #include "iperf_api.h"
 #include "iperf_udp.h"
 #include "iperf_tcp.h"
+#if defined(HAVE_SCTP)
+#include "iperf_sctp.h"
+#endif /* HAVE_SCTP */
 #include "timer.h"
 
 #include "cjson.h"
@@ -64,7 +76,7 @@
 #include "tcp_window_size.h"
 #include "iperf_util.h"
 #include "iperf_locale.h"
-
+#include "version.h"
 
 /* Forwards. */
 static int send_parameters(struct iperf_test *test);
@@ -156,6 +168,12 @@ iperf_get_test_blksize(struct iperf_test *ipt)
     return ipt->settings->blksize;
 }
 
+FILE *
+iperf_get_test_outfile (struct iperf_test *ipt)
+{
+    return ipt->outfile;
+}
+
 int
 iperf_get_test_socket_bufsize(struct iperf_test *ipt)
 {
@@ -204,6 +222,12 @@ iperf_get_test_json_output(struct iperf_test *ipt)
     return ipt->json_output;
 }
 
+char *
+iperf_get_test_json_output_string(struct iperf_test *ipt)
+{
+    return ipt->json_output_string;
+}
+
 int
 iperf_get_test_zerocopy(struct iperf_test *ipt)
 {
@@ -226,6 +250,12 @@ char *
 iperf_get_test_bind_address(struct iperf_test *ipt)
 {
     return ipt->bind_address;
+}
+
+int
+iperf_get_test_udp_counters_64bit(struct iperf_test *ipt)
+{
+    return ipt->udp_counters_64bit;
 }
 
 int
@@ -385,6 +415,12 @@ void
 iperf_set_test_bind_address(struct iperf_test *ipt, char *bind_address)
 {
     ipt->bind_address = strdup(bind_address);
+}
+
+void
+iperf_set_test_udp_counters_64bit(struct iperf_test *ipt, int udp_counters_64bit)
+{
+    ipt->udp_counters_64bit = udp_counters_64bit;
 }
 
 void
@@ -578,21 +614,35 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
         {"reverse", no_argument, NULL, 'R'},
         {"window", required_argument, NULL, 'w'},
         {"bind", required_argument, NULL, 'B'},
+        {"cport", required_argument, NULL, OPT_CLIENT_PORT},
         {"set-mss", required_argument, NULL, 'M'},
         {"no-delay", no_argument, NULL, 'N'},
         {"version4", no_argument, NULL, '4'},
         {"version6", no_argument, NULL, '6'},
         {"tos", required_argument, NULL, 'S'},
+#if defined(HAVE_FLOWLABEL)
         {"flowlabel", required_argument, NULL, 'L'},
+#endif /* HAVE_FLOWLABEL */
         {"zerocopy", no_argument, NULL, 'Z'},
         {"omit", required_argument, NULL, 'O'},
         {"file", required_argument, NULL, 'F'},
+#if defined(HAVE_CPU_AFFINITY)
         {"affinity", required_argument, NULL, 'A'},
+#endif /* HAVE_CPU_AFFINITY */
         {"title", required_argument, NULL, 'T'},
-#if defined(linux) && defined(TCP_CONGESTION)
+#if defined(HAVE_TCP_CONGESTION)
+        {"congestion", required_argument, NULL, 'C'},
         {"linux-congestion", required_argument, NULL, 'C'},
+#endif /* HAVE_TCP_CONGESTION */
+#if defined(HAVE_SCTP)
+        {"sctp", no_argument, NULL, OPT_SCTP},
+        {"nstreams", required_argument, NULL, OPT_NUMSTREAMS},
+        {"xbind", required_argument, NULL, 'X'},
 #endif
+	{"pidfile", required_argument, NULL, 'I'},
+	{"logfile", required_argument, NULL, OPT_LOGFILE},
 	{"get-server-output", no_argument, NULL, OPT_GET_SERVER_OUTPUT},
+	{"udp-counters-64bit", no_argument, NULL, OPT_UDP_COUNTERS_64BIT},
         {"debug", no_argument, NULL, 'd'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, NULL, 0}
@@ -600,12 +650,15 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     int flag;
     int blksize;
     int server_flag, client_flag, rate_flag, duration_flag;
+#if defined(HAVE_CPU_AFFINITY)
     char* comma;
+#endif /* HAVE_CPU_AFFINITY */
     char* slash;
+    struct xbind_entry *xbe;
 
     blksize = 0;
     server_flag = client_flag = rate_flag = duration_flag = 0;
-    while ((flag = getopt_long(argc, argv, "p:f:i:D1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dh", longopts, NULL)) != -1) {
+    while ((flag = getopt_long(argc, argv, "p:f:i:D1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:hX:", longopts, NULL)) != -1) {
         switch (flag) {
             case 'p':
                 test->server_port = atoi(optarg);
@@ -637,8 +690,8 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 test->json_output = 1;
                 break;
             case 'v':
-                printf("%s\n", version);
-		system("uname -a");
+                printf("%s\n%s\n%s\n", version, get_system_info(), 
+		       get_optional_features());
                 exit(0);
             case 's':
                 if (test->role == 'c') {
@@ -659,6 +712,24 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 set_protocol(test, Pudp);
 		client_flag = 1;
                 break;
+            case OPT_SCTP:
+#if defined(HAVE_SCTP)
+                set_protocol(test, Psctp);
+                client_flag = 1;
+#else /* HAVE_SCTP */
+                i_errno = IEUNIMP;
+                return -1;
+#endif /* HAVE_SCTP */
+            break;
+
+            case OPT_NUMSTREAMS:
+#if defined(linux) || defined(__FreeBSD__)
+                test->settings->num_ostreams = unit_atoi(optarg);
+                client_flag = 1;
+#else /* linux */
+                i_errno = IEUNIMP;
+                return -1;
+#endif /* linux */
             case 'b':
 		slash = strchr(optarg, '/');
 		if (slash) {
@@ -720,6 +791,9 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
             case 'B':
                 test->bind_address = strdup(optarg);
                 break;
+            case OPT_CLIENT_PORT:
+                test->bind_port = atoi(optarg);
+                break;
             case 'M':
                 test->settings->mss = atoi(optarg);
                 if (test->settings->mss > MAX_MSS) {
@@ -743,17 +817,31 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		client_flag = 1;
                 break;
             case 'L':
-#if defined(linux)
+#if defined(HAVE_FLOWLABEL)
                 test->settings->flowlabel = strtol(optarg, NULL, 0);
 		if (test->settings->flowlabel < 1 || test->settings->flowlabel > 0xfffff) {
                     i_errno = IESETFLOW;
                     return -1;
 		}
 		client_flag = 1;
-#else /* linux */
+#else /* HAVE_FLOWLABEL */
                 i_errno = IEUNIMP;
                 return -1;
-#endif /* linux */
+#endif /* HAVE_FLOWLABEL */
+                break;
+            case 'X':
+		xbe = (struct xbind_entry *)malloc(sizeof(struct xbind_entry));
+                if (!xbe) {
+		    i_errno = IESETSCTPBINDX;
+                    return -1;
+                }
+	        memset(xbe, 0, sizeof(*xbe));
+                xbe->name = strdup(optarg);
+                if (!xbe->name) {
+		    i_errno = IESETSCTPBINDX;
+                    return -1;
+                }
+		TAILQ_INSERT_TAIL(&test->xbind_addrs, xbe, link);
                 break;
             case 'Z':
                 if (!has_sendfile()) {
@@ -775,6 +863,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 test->diskfile_name = optarg;
                 break;
             case 'A':
+#if defined(HAVE_CPU_AFFINITY)
                 test->affinity = atoi(optarg);
                 if (test->affinity < 0 || test->affinity > 1024) {
                     i_errno = IEAFFINITY;
@@ -789,32 +878,55 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		    }
 		    client_flag = 1;
 		}
+#else /* HAVE_CPU_AFFINITY */
+                i_errno = IEUNIMP;
+                return -1;
+#endif /* HAVE_CPU_AFFINITY */
                 break;
             case 'T':
                 test->title = strdup(optarg);
 		client_flag = 1;
                 break;
 	    case 'C':
-#if defined(linux) && defined(TCP_CONGESTION)
+#if defined(HAVE_TCP_CONGESTION)
 		test->congestion = strdup(optarg);
 		client_flag = 1;
-#else /* linux */
+#else /* HAVE_TCP_CONGESTION */
 		i_errno = IEUNIMP;
 		return -1;
-#endif /* linux */
+#endif /* HAVE_TCP_CONGESTION */
 		break;
 	    case 'd':
 		test->debug = 1;
 		break;
+	    case 'I':
+		test->pidfile = strdup(optarg);
+		server_flag = 1;
+	        break;
+	    case OPT_LOGFILE:
+		test->logfile = strdup(optarg);
+		break;
 	    case OPT_GET_SERVER_OUTPUT:
 		test->get_server_output = 1;
 		client_flag = 1;
+		break;
+	    case OPT_UDP_COUNTERS_64BIT:
+		test->udp_counters_64bit = 1;
 		break;
             case 'h':
             default:
                 usage_long();
                 exit(1);
         }
+    }
+
+    /* Set logging to a file if specified, otherwise use the default (stdout) */
+    if (test->logfile) {
+	test->outfile = fopen(test->logfile, "a+");
+	if (test->outfile == NULL) {
+	    i_errno = IELOGFILE;
+	    return -1;
+	}
     }
 
     /* Check flag / role compatibility. */
@@ -827,9 +939,15 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	return -1;
     }
 
+    if (!test->bind_address && test->bind_port) {
+        i_errno = IEBIND;
+        return -1;
+    }
     if (blksize == 0) {
 	if (test->protocol->id == Pudp)
 	    blksize = DEFAULT_UDP_BLKSIZE;
+	else if (test->protocol->id == Psctp)
+	    blksize = DEFAULT_SCTP_BLKSIZE;
 	else
 	    blksize = DEFAULT_TCP_BLKSIZE;
     }
@@ -1135,6 +1253,8 @@ send_parameters(struct iperf_test *test)
 	    cJSON_AddTrueToObject(j, "tcp");
 	else if (test->protocol->id == Pudp)
 	    cJSON_AddTrueToObject(j, "udp");
+        else if (test->protocol->id == Psctp)
+            cJSON_AddTrueToObject(j, "sctp");
 	cJSON_AddIntToObject(j, "omit", test->omit);
 	if (test->server_affinity != -1)
 	    cJSON_AddIntToObject(j, "server_affinity", test->server_affinity);
@@ -1169,6 +1289,10 @@ send_parameters(struct iperf_test *test)
 	    cJSON_AddStringToObject(j, "congestion", test->congestion);
 	if (test->get_server_output)
 	    cJSON_AddIntToObject(j, "get_server_output", iperf_get_test_get_server_output(test));
+	if (test->udp_counters_64bit)
+	    cJSON_AddIntToObject(j, "udp_counters_64bit", iperf_get_test_udp_counters_64bit(test));
+
+	cJSON_AddStringToObject(j, "client_version", IPERF_VERSION);
 
 	if (test->debug) {
 	    printf("send_parameters:\n%s\n", cJSON_Print(j));
@@ -1205,6 +1329,8 @@ get_parameters(struct iperf_test *test)
 	    set_protocol(test, Ptcp);
 	if ((j_p = cJSON_GetObjectItem(j, "udp")) != NULL)
 	    set_protocol(test, Pudp);
+        if ((j_p = cJSON_GetObjectItem(j, "sctp")) != NULL)
+            set_protocol(test, Psctp);
 	if ((j_p = cJSON_GetObjectItem(j, "omit")) != NULL)
 	    test->omit = j_p->valueint;
 	if ((j_p = cJSON_GetObjectItem(j, "server_affinity")) != NULL)
@@ -1241,6 +1367,8 @@ get_parameters(struct iperf_test *test)
 	    test->congestion = strdup(j_p->valuestring);
 	if ((j_p = cJSON_GetObjectItem(j, "get_server_output")) != NULL)
 	    iperf_set_test_get_server_output(test, 1);
+	if ((j_p = cJSON_GetObjectItem(j, "udp_counters_64bit")) != NULL)
+	    iperf_set_test_udp_counters_64bit(test, 1);
 	if (test->sender && test->protocol->id == Ptcp && has_tcpinfo_retransmits())
 	    test->sender_has_retransmits = 1;
 	cJSON_Delete(j);
@@ -1587,7 +1715,32 @@ iperf_new_test()
     }
     memset(test->settings, 0, sizeof(struct iperf_settings));
 
+    /* By default all output goes to stdout */
+    test->outfile = stdout;
+
     return test;
+}
+
+/**************************************************************************/
+
+struct protocol *
+protocol_new(void)
+{
+    struct protocol *proto;
+
+    proto = malloc(sizeof(struct protocol));
+    if(!proto) {
+        return NULL;
+    }
+    memset(proto, 0, sizeof(struct protocol));
+
+    return proto;
+}
+
+void
+protocol_free(struct protocol *proto)
+{
+    free(proto); 
 }
 
 /**************************************************************************/
@@ -1595,12 +1748,19 @@ int
 iperf_defaults(struct iperf_test *testp)
 {
     struct protocol *tcp, *udp;
+#if defined(HAVE_SCTP)
+    struct protocol *sctp;
+#endif /* HAVE_SCTP */
 
     testp->omit = OMIT;
     testp->duration = DURATION;
     testp->diskfile_name = (char*) 0;
     testp->affinity = -1;
     testp->server_affinity = -1;
+    TAILQ_INIT(&testp->xbind_addrs);
+#if defined(HAVE_CPUSET_SETAFFINITY)
+    CPU_ZERO(&testp->cpumask);
+#endif /* HAVE_CPUSET_SETAFFINITY */
     testp->title = NULL;
     testp->congestion = NULL;
     testp->server_port = PORT;
@@ -1630,16 +1790,9 @@ iperf_defaults(struct iperf_test *testp)
     SLIST_INIT(&testp->streams);
     SLIST_INIT(&testp->protocols);
 
-    tcp = (struct protocol *) malloc(sizeof(struct protocol));
+    tcp = protocol_new();
     if (!tcp)
         return -1;
-    memset(tcp, 0, sizeof(struct protocol));
-    udp = (struct protocol *) malloc(sizeof(struct protocol));
-    if (!udp) {
-        free(tcp);
-        return -1;
-    }
-    memset(udp, 0, sizeof(struct protocol));
 
     tcp->id = Ptcp;
     tcp->name = "TCP";
@@ -1650,6 +1803,12 @@ iperf_defaults(struct iperf_test *testp)
     tcp->recv = iperf_tcp_recv;
     tcp->init = NULL;
     SLIST_INSERT_HEAD(&testp->protocols, tcp, protocols);
+
+    udp = protocol_new();
+    if (!udp) {
+        protocol_free(tcp);
+        return -1;
+    }
 
     udp->id = Pudp;
     udp->name = "UDP";
@@ -1662,6 +1821,26 @@ iperf_defaults(struct iperf_test *testp)
     SLIST_INSERT_AFTER(tcp, udp, protocols);
 
     set_protocol(testp, Ptcp);
+
+#if defined(HAVE_SCTP)
+    sctp = protocol_new();
+    if (!sctp) {
+        protocol_free(tcp);
+        protocol_free(udp);
+        return -1;
+    }
+
+    sctp->id = Psctp;
+    sctp->name = "SCTP";
+    sctp->accept = iperf_sctp_accept;
+    sctp->listen = iperf_sctp_listen;
+    sctp->connect = iperf_sctp_connect;
+    sctp->send = iperf_sctp_send;
+    sctp->recv = iperf_sctp_recv;
+    sctp->init = iperf_sctp_init;
+
+    SLIST_INSERT_AFTER(udp, sctp, protocols);
+#endif /* HAVE_SCTP */
 
     testp->on_new_stream = iperf_on_new_stream;
     testp->on_test_start = iperf_on_test_start;
@@ -1692,6 +1871,18 @@ iperf_free_test(struct iperf_test *test)
 	free(test->server_hostname);
     if (test->bind_address)
 	free(test->bind_address);
+    if (!TAILQ_EMPTY(&test->xbind_addrs)) {
+        struct xbind_entry *xbe;
+
+        while (!TAILQ_EMPTY(&test->xbind_addrs)) {
+            xbe = TAILQ_FIRST(&test->xbind_addrs);
+            TAILQ_REMOVE(&test->xbind_addrs, xbe, link);
+            if (xbe->ai)
+                freeaddrinfo(xbe->ai);
+            free(xbe->name);
+            free(xbe);
+        }
+    }
     free(test->settings);
     if (test->title)
 	free(test->title);
@@ -1718,6 +1909,11 @@ iperf_free_test(struct iperf_test *test)
 	test->server_output_text = NULL;
     }
 
+    if (test->json_output_string) {
+	free(test->json_output_string);
+	test->json_output_string = NULL;
+    }
+
     /* Free output line buffers, if any (on the server only) */
     struct iperf_textline *t;
     while (!TAILQ_EMPTY(&test->server_output_list)) {
@@ -1725,6 +1921,18 @@ iperf_free_test(struct iperf_test *test)
 	TAILQ_REMOVE(&test->server_output_list, t, textlineentries);
 	free(t->line);
 	free(t);
+    }
+
+    /* sctp_bindx: do not free the arguments, only the resolver results */
+    if (!TAILQ_EMPTY(&test->xbind_addrs)) {
+        struct xbind_entry *xbe;
+
+        TAILQ_FOREACH(xbe, &test->xbind_addrs, link) {
+            if (xbe->ai) {
+                freeaddrinfo(xbe->ai);
+                xbe->ai = NULL;
+            }
+        }
     }
 
     /* XXX: Why are we setting these values to NULL? */
@@ -1773,6 +1981,9 @@ iperf_reset_test(struct iperf_test *test)
     test->omit = OMIT;
     test->duration = DURATION;
     test->server_affinity = -1;
+#if defined(HAVE_CPUSET_SETAFFINITY)
+    CPU_ZERO(&test->cpumask);
+#endif /* HAVE_CPUSET_SETAFFINITY */
     test->state = 0;
     
     test->ctrl_sck = -1;
@@ -1795,6 +2006,7 @@ iperf_reset_test(struct iperf_test *test)
     test->settings->mss = 0;
     memset(test->cookie, 0, COOKIE_SIZE);
     test->multisend = 10;	/* arbitrary */
+    test->udp_counters_64bit = 0;
 
     /* Free output line buffers, if any (on the server only) */
     struct iperf_textline *t;
@@ -1842,12 +2054,9 @@ iperf_reset_stats(struct iperf_test *test)
 /**************************************************************************/
 
 /**
- * iperf_stats_callback -- handles the statistic gathering for both the client and server
- *
- * XXX: This function needs to be updated to reflect the new code
+ * Gather statistics during a test.
+ * This function works for both the client and server side.
  */
-
-
 void
 iperf_stats_callback(struct iperf_test *test)
 {
@@ -1882,6 +2091,20 @@ iperf_stats_callback(struct iperf_test *test)
 		    rp->stream_prev_total_retrans = total_retrans;
 
 		    temp.snd_cwnd = get_snd_cwnd(&temp);
+		    if (temp.snd_cwnd > rp->stream_max_snd_cwnd) {
+			rp->stream_max_snd_cwnd = temp.snd_cwnd;
+		    }
+		    
+		    temp.rtt = get_rtt(&temp);
+		    if (temp.rtt > rp->stream_max_rtt) {
+			rp->stream_max_rtt = temp.rtt;
+		    }
+		    if (rp->stream_min_rtt == 0 ||
+			temp.rtt < rp->stream_min_rtt) {
+			rp->stream_min_rtt = temp.rtt;
+		    }
+		    rp->stream_sum_rtt += temp.rtt;
+		    rp->stream_count_rtt++;
 		}
 	    }
 	} else {
@@ -1904,6 +2127,12 @@ iperf_stats_callback(struct iperf_test *test)
     }
 }
 
+/**
+ * Print intermediate results during a test (interval report).
+ * Uses print_interval_results to print the results for each stream,
+ * then prints an interval summary for all streams in this
+ * interval.
+ */
 static void
 iperf_print_intermediate(struct iperf_test *test)
 {
@@ -1967,7 +2196,7 @@ iperf_print_intermediate(struct iperf_test *test)
 
         start_time = timeval_diff(&sp->result->start_time,&irp->interval_start_time);
         end_time = timeval_diff(&sp->result->start_time,&irp->interval_end_time);
-	if (test->protocol->id == Ptcp) {
+	if (test->protocol->id == Ptcp || test->protocol->id == Psctp) {
 	    if (test->sender && test->sender_has_retransmits) {
 		/* Interval sum, TCP with retransmits. */
 		if (test->json_output)
@@ -2001,6 +2230,9 @@ iperf_print_intermediate(struct iperf_test *test)
     }
 }
 
+/**
+ * Print overall summary statistics at the end of a test.
+ */
 static void
 iperf_print_results(struct iperf_test *test)
 {
@@ -2030,7 +2262,7 @@ iperf_print_results(struct iperf_test *test)
 	iprintf(test, "%s", report_bw_separator);
 	if (test->verbose)
 	    iprintf(test, "%s", report_summary);
-	if (test->protocol->id == Ptcp) {
+	if (test->protocol->id == Ptcp || test->protocol->id == Psctp) {
 	    if (test->sender_has_retransmits)
 		iprintf(test, "%s", report_bw_retrans_header);
 	    else
@@ -2062,7 +2294,7 @@ iperf_print_results(struct iperf_test *test)
         total_sent += bytes_sent;
         total_received += bytes_received;
 
-        if (test->protocol->id == Ptcp) {
+        if (test->protocol->id == Ptcp || test->protocol->id == Psctp) {
 	    if (test->sender_has_retransmits) {
 		total_retransmits += sp->result->stream_retrans;
 	    }
@@ -2075,11 +2307,11 @@ iperf_print_results(struct iperf_test *test)
 	unit_snprintf(ubuf, UNIT_LEN, (double) bytes_sent, 'A');
 	bandwidth = (double) bytes_sent / (double) end_time;
 	unit_snprintf(nbuf, UNIT_LEN, bandwidth, test->settings->unit_format);
-	if (test->protocol->id == Ptcp) {
+	if (test->protocol->id == Ptcp || test->protocol->id == Psctp) {
 	    if (test->sender_has_retransmits) {
 		/* Summary, TCP with retransmits. */
 		if (test->json_output)
-		    cJSON_AddItemToObject(json_summary_stream, "sender", iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  retransmits: %d", (int64_t) sp->socket, (double) start_time, (double) end_time, (double) end_time, (int64_t) bytes_sent, bandwidth * 8, (int64_t) sp->result->stream_retrans));
+		    cJSON_AddItemToObject(json_summary_stream, "sender", iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  retransmits: %d  max_snd_cwnd:  %d  max_rtt:  %d  min_rtt:  %d  mean_rtt:  %d", (int64_t) sp->socket, (double) start_time, (double) end_time, (double) end_time, (int64_t) bytes_sent, bandwidth * 8, (int64_t) sp->result->stream_retrans, (int64_t) sp->result->stream_max_snd_cwnd, (int64_t) sp->result->stream_max_rtt, (int64_t) sp->result->stream_min_rtt, (int64_t) ((sp->result->stream_count_rtt == 0) ? 0 : sp->result->stream_sum_rtt / sp->result->stream_count_rtt)));
 		else
 		    iprintf(test, report_bw_retrans_format, sp->socket, start_time, end_time, ubuf, nbuf, sp->result->stream_retrans, report_sender);
 	    } else {
@@ -2117,7 +2349,7 @@ iperf_print_results(struct iperf_test *test)
 	unit_snprintf(ubuf, UNIT_LEN, (double) bytes_received, 'A');
 	bandwidth = (double) bytes_received / (double) end_time;
 	unit_snprintf(nbuf, UNIT_LEN, bandwidth, test->settings->unit_format);
-	if (test->protocol->id == Ptcp) {
+	if (test->protocol->id == Ptcp || test->protocol->id == Psctp) {
 	    if (test->json_output)
 		cJSON_AddItemToObject(json_summary_stream, "receiver", iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f", (int64_t) sp->socket, (double) start_time, (double) end_time, (double) end_time, (int64_t) bytes_received, bandwidth * 8));
 	    else
@@ -2136,7 +2368,7 @@ iperf_print_results(struct iperf_test *test)
 	    bandwidth = 0.0;
 	}
         unit_snprintf(nbuf, UNIT_LEN, bandwidth, test->settings->unit_format);
-        if (test->protocol->id == Ptcp) {
+        if (test->protocol->id == Ptcp || test->protocol->id == Psctp) {
 	    if (test->sender_has_retransmits) {
 		/* Summary sum, TCP with retransmits. */
 		if (test->json_output)
@@ -2205,10 +2437,11 @@ iperf_print_results(struct iperf_test *test)
 /**************************************************************************/
 
 /**
- * iperf_reporter_callback -- handles the report printing
- *
+ * Main report-printing callback.
+ * Prints results either during a test (interval report only) or 
+ * after the entire test has been run (last interval report plus 
+ * overall summary).
  */
-
 void
 iperf_reporter_callback(struct iperf_test *test)
 {
@@ -2218,6 +2451,7 @@ iperf_reporter_callback(struct iperf_test *test)
             /* print interval results for each stream */
             iperf_print_intermediate(test);
             break;
+        case TEST_END:
         case DISPLAY_RESULTS:
             iperf_print_intermediate(test);
             iperf_print_results(test);
@@ -2226,7 +2460,11 @@ iperf_reporter_callback(struct iperf_test *test)
 
 }
 
-/**************************************************************************/
+/**
+ * Print the interval results for one stream.
+ * This function needs to know about the overall test so it can determine the
+ * context for printing headers, separators, etc.
+ */
 static void
 print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *json_interval_streams)
 {
@@ -2250,7 +2488,7 @@ print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *
 	    ** else nothing.
 	    */
 	    if (timeval_equals(&sp->result->start_time, &irp->interval_start_time)) {
-		if (test->protocol->id == Ptcp) {
+		if (test->protocol->id == Ptcp || test->protocol->id == Psctp) {
 		    if (test->sender && test->sender_has_retransmits)
 			iprintf(test, "%s", report_bw_retrans_cwnd_header);
 		    else
@@ -2273,11 +2511,11 @@ print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *
     st = timeval_diff(&sp->result->start_time, &irp->interval_start_time);
     et = timeval_diff(&sp->result->start_time, &irp->interval_end_time);
     
-    if (test->protocol->id == Ptcp) {
+    if (test->protocol->id == Ptcp || test->protocol->id == Psctp) {
 	if (test->sender && test->sender_has_retransmits) {
 	    /* Interval, TCP with retransmits. */
 	    if (test->json_output)
-		cJSON_AddItemToArray(json_interval_streams, iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  retransmits: %d  snd_cwnd:  %d  omitted: %b", (int64_t) sp->socket, (double) st, (double) et, (double) irp->interval_duration, (int64_t) irp->bytes_transferred, bandwidth * 8, (int64_t) irp->interval_retrans, (int64_t) irp->snd_cwnd, irp->omitted));
+		cJSON_AddItemToArray(json_interval_streams, iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  retransmits: %d  snd_cwnd:  %d  rtt:  %d  omitted: %b", (int64_t) sp->socket, (double) st, (double) et, (double) irp->interval_duration, (int64_t) irp->bytes_transferred, bandwidth * 8, (int64_t) irp->interval_retrans, (int64_t) irp->snd_cwnd, (int64_t) irp->rtt, irp->omitted));
 	    else {
 		unit_snprintf(cbuf, UNIT_LEN, irp->snd_cwnd, 'A');
 		iprintf(test, report_bw_retrans_cwnd_format, sp->socket, st, et, ubuf, nbuf, irp->interval_retrans, cbuf, irp->omitted?report_omitted:"");
@@ -2304,6 +2542,9 @@ print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *
 		iprintf(test, report_bw_udp_format, sp->socket, st, et, ubuf, nbuf, irp->jitter * 1000.0, irp->interval_cnt_error, irp->interval_packet_count, lost_percent, irp->omitted?report_omitted:"");
 	}
     }
+
+    if (test->logfile)
+        iflush(test);
 }
 
 /**************************************************************************/
@@ -2529,6 +2770,12 @@ iperf_catch_sigend(void (*handler)(int))
     signal(SIGHUP, handler);
 }
 
+/**
+ * Called as a result of getting a signal.
+ * Depending on the current state of the test (and the role of this
+ * process) compute and report one more set of ending statistics
+ * before cleaning up and exiting.
+ */
 void
 iperf_got_sigend(struct iperf_test *test)
 {
@@ -2556,6 +2803,39 @@ iperf_got_sigend(struct iperf_test *test)
     iperf_errexit(test, "interrupt - %s", iperf_strerror(i_errno));
 }
 
+/* Try to write a PID file if requested, return -1 on an error. */
+int
+iperf_create_pidfile(struct iperf_test *test)
+{
+    if (test->pidfile) {
+	int fd;
+	char buf[8];
+	fd = open(test->pidfile, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR|S_IWUSR);
+	if (fd < 0) {
+	    return -1;
+	}
+	snprintf(buf, sizeof(buf), "%d", getpid()); /* no trailing newline */
+	if (write(fd, buf, strlen(buf) + 1) < 0) {
+	    return -1;
+	}
+	if (close(fd) < 0) {
+	    return -1;
+	};
+    }
+    return 0;
+}
+
+/* Get rid of a PID file, return -1 on error. */
+int
+iperf_delete_pidfile(struct iperf_test *test)
+{
+    if (test->pidfile) {
+	if (unlink(test->pidfile) < 0) {
+	    return -1;
+	}
+    }
+    return 0;
+}
 
 int
 iperf_json_start(struct iperf_test *test)
@@ -2587,8 +2867,6 @@ iperf_json_start(struct iperf_test *test)
 int
 iperf_json_finish(struct iperf_test *test)
 {
-    char *str;
-
     /* Include server output */
     if (test->json_server_output) {
 	cJSON_AddItemToObject(test->json_top, "server_output_json", test->json_server_output);
@@ -2596,25 +2874,23 @@ iperf_json_finish(struct iperf_test *test)
     if (test->server_output_text) {
 	cJSON_AddStringToObject(test->json_top, "server_output_text", test->server_output_text);
     }
-    str = cJSON_Print(test->json_top);
-    if (str == NULL)
+    test->json_output_string = cJSON_Print(test->json_top);
+    if (test->json_output_string == NULL)
         return -1;
-    fputs(str, stdout);
-    putchar('\n');
-    fflush(stdout);
-    free(str);
+    fprintf(test->outfile, "%s\n", test->json_output_string);
+    iflush(test);
     cJSON_Delete(test->json_top);
     test->json_top = test->json_start = test->json_connected = test->json_intervals = test->json_server_output = test->json_end = NULL;
     return 0;
 }
 
 
-/* CPU affinity stuff - linux only. */
+/* CPU affinity stuff - Linux and FreeBSD only. */
 
 int
-iperf_setaffinity(int affinity)
+iperf_setaffinity(struct iperf_test *test, int affinity)
 {
-#ifdef linux
+#if defined(HAVE_SCHED_SETAFFINITY)
     cpu_set_t cpu_set;
 
     CPU_ZERO(&cpu_set);
@@ -2624,16 +2900,34 @@ iperf_setaffinity(int affinity)
         return -1;
     }
     return 0;
-#else /*linux*/
+#elif defined(HAVE_CPUSET_SETAFFINITY)
+    cpuset_t cpumask;
+
+    if(cpuset_getaffinity(CPU_LEVEL_WHICH, CPU_WHICH_PID, -1,
+                          sizeof(cpuset_t), &test->cpumask) != 0) {
+        i_errno = IEAFFINITY;
+        return -1;
+    }
+
+    CPU_ZERO(&cpumask);
+    CPU_SET(affinity, &cpumask);
+
+    if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_PID, -1,
+                          sizeof(cpuset_t), &cpumask) != 0) {
+        i_errno = IEAFFINITY;
+        return -1;
+    }
+    return 0;
+#else /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY */
     i_errno = IEAFFINITY;
     return -1;
-#endif /*linux*/
+#endif /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY */
 }
 
 int
-iperf_clearaffinity(void)
+iperf_clearaffinity(struct iperf_test *test)
 {
-#ifdef linux
+#if defined(HAVE_SCHED_SETAFFINITY)
     cpu_set_t cpu_set;
     int i;
 
@@ -2645,10 +2939,17 @@ iperf_clearaffinity(void)
         return -1;
     }
     return 0;
-#else /*linux*/
+#elif defined(HAVE_CPUSET_SETAFFINITY)
+    if(cpuset_setaffinity(CPU_LEVEL_WHICH,CPU_WHICH_PID, -1,
+                          sizeof(cpuset_t), &test->cpumask) != 0) {
+        i_errno = IEAFFINITY;
+        return -1;
+    }
+    return 0;
+#else /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY */
     i_errno = IEAFFINITY;
     return -1;
-#endif /*linux*/
+#endif /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY */
 }
 
 int
@@ -2671,9 +2972,9 @@ iprintf(struct iperf_test *test, const char* format, ...)
      */
     if (test->role == 'c') {
 	if (test->title)
-	    printf("%s:  ", test->title);
+	    fprintf(test->outfile, "%s:  ", test->title);
 	va_start(argp, format);
-	r = vprintf(format, argp);
+	r = vfprintf(test->outfile, format, argp);
 	va_end(argp);
     }
     else if (test->role == 's') {
@@ -2681,7 +2982,7 @@ iprintf(struct iperf_test *test, const char* format, ...)
 	va_start(argp, format);
 	r = vsnprintf(linebuffer, sizeof(linebuffer), format, argp);
 	va_end(argp);
-	printf("%s", linebuffer);
+	fprintf(test->outfile, "%s", linebuffer);
 
 	if (test->role == 's' && iperf_get_test_get_server_output(test)) {
 	    struct iperf_textline *l = (struct iperf_textline *) malloc(sizeof(struct iperf_textline));
@@ -2690,4 +2991,10 @@ iprintf(struct iperf_test *test, const char* format, ...)
 	}
     }
     return r;
+}
+
+int
+iflush(struct iperf_test *test)
+{
+    return fflush(test->outfile);
 }

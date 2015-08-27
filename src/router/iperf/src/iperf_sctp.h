@@ -24,51 +24,45 @@
  * This code is distributed under a BSD style license, see the LICENSE
  * file for complete information.
  */
-#ifndef        __FLOW_LABEL_H
-#define        __FLOW_LABEL_H
+#ifndef        IPERF_SCTP_H
+#define        IPERF_SCTP_H
+
+/**
+ * iperf_sctp_accept -- accepts a new SCTP connection
+ * on sctp_listener_socket for SCTP data and param/result
+ * exchange messages
+ *returns 0 on success
+ *
+ */
+int iperf_sctp_accept(struct iperf_test *);
+
+/**
+ * iperf_sctp_recv -- receives the data for sctp
+ * and the Param/result message exchange
+ *returns state of packet received
+ *
+ */
+int iperf_sctp_recv(struct iperf_stream *);
 
 
-#include <linux/types.h>
+/**
+ * iperf_sctp_send -- sends the client data for sctp
+ * and the  Param/result message exchanges
+ * returns: bytes sent
+ *
+ */
+int iperf_sctp_send(struct iperf_stream *);
 
-/*                                                                                                                                                                             
-   It is just a stripped copy of the Linux kernel header "linux/in6.h" 
-   "Flow label" things are still not defined in "netinet/in*.h" headers,
-   but we cannot use "linux/in6.h" immediately because it currently
-   conflicts with "netinet/in.h" .
-*/
 
-#ifndef __ANDROID__
-struct in6_flowlabel_req
-{
-    struct in6_addr flr_dst;
-    __u32   flr_label;
-    __u8    flr_action;
-    __u8    flr_share;
-    __u16   flr_flags;
-    __u16   flr_expires;
-    __u16   flr_linger;
-    __u32   __flr_pad;
-    /* Options in format of IPV6_PKTOPTIONS */
-};
-#endif
+int iperf_sctp_listen(struct iperf_test *);
 
-#define IPV6_FL_A_GET           0
-#define IPV6_FL_A_PUT           1
-#define IPV6_FL_A_RENEW         2
+int iperf_sctp_connect(struct iperf_test *);
 
-#define IPV6_FL_F_CREATE        1
-#define IPV6_FL_F_EXCL          2
+int iperf_sctp_init(struct iperf_test *test);
 
-#define IPV6_FL_S_NONE          0
-#define IPV6_FL_S_EXCL          1
-#define IPV6_FL_S_PROCESS       2
-#define IPV6_FL_S_USER          3
-#define IPV6_FL_S_ANY           255
+#define IPERF_SCTP_CLIENT 0
+#define IPERF_SCTP_SERVER 1
 
-#define IPV6_FLOWINFO_FLOWLABEL 0x000fffff
-#define IPV6_FLOWINFO_PRIORITY  0x0ff00000
-
-#define IPV6_FLOWLABEL_MGR      32
-#define IPV6_FLOWINFO_SEND      33
+int iperf_sctp_bindx(struct iperf_test *test, int s, int is_server);
 
 #endif

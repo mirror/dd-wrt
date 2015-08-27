@@ -1,3 +1,57 @@
+== iperf 3.1.0 ????-??-?? ==
+
+The release notes for iperf 3.1.0 describe changes and new
+functionality in iperf 3.1.0, but not present in 3.0.11 or any earlier
+3.0.x release.
+
+* Selected user-visible changes
+
+  * SCTP support has been added (with the --sctp flag), on Linux,
+    FreeBSD, and Solaris (issue #131).
+
+  * Setting CPU affinity now works on FreeBSD.
+
+  * Selection of TCP congestion now works on FreeBSD, and is now
+    called --congestion (the old --linux-congestion option works
+    but is now deprecated).
+
+  * A new -I option for the server causes it to write a PID file,
+    mostly useful for daemon mode (issue #120).
+
+  * A --logfile argument can now force all output to go to a file,
+    rather than to a file.  This is especially useful when running an
+    iperf3 server in daemon mode (issue #119).
+
+  * Various compatibility fixes for Android (issue #184, issue #185),
+    NetBSD (issue #248), Solaris (issue #175, issue #178, issue #180,
+    issue #211), vxWorks (issue #268).
+
+  * A --udp-counters-64bit flag has been added to support very
+    long-running UDP tests, which could cause a counter to overflow
+    (issue #191).
+
+  * A --cport option to specify the client-side port has been added
+    (issue #207, issue #209, issue #239).
+
+  * Some calculation errors with the -O feature have been fixed (issue
+    #236).
+
+  * A potential crash in the iperf3 server has been fixed (issue #257,
+    issue #258).
+
+  * Many miscellaneous bug fixes.
+
+* Selected developer-visible changes
+
+  * Consumers of libiperf can now get the JSON output for a
+    just-completed test (issue #147).
+
+  * Detection of various optional features has been improved to check
+    for the presence or absence of platform functionality, not the name
+    of platforms.
+
+  * Out-of-tree builds now work (issue #265).
+
 == iperf 3.0.11 2015-01-09 ==
 
 * User-visible changes
