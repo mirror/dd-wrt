@@ -1,4 +1,4 @@
-.TH LIBIPERF 3 "June 2014" ESnet "User Manuals"
+.TH LIBIPERF 3 "June 2015" ESnet "User Manuals"
 .SH NAME
 libiperf \- API for iperf3 network throughput tester
 
@@ -25,7 +25,7 @@ Setting test parameters:
 .nf
     void iperf_set_test_role( struct iperf_test *pt, char role );
     void iperf_set_test_bind_address( struct iperf_test *t, char *bind_address );
-    void iperf_set_test_server_hostname( struct iperf_test *t, char *server_hos
+    void iperf_set_test_server_hostname( struct iperf_test *t, char *server_host );
     void iperf_set_test_server_port( struct iperf_test *t, int server_port );
     void iperf_set_test_duration( struct iperf_test *t, int duration );
     void iperf_set_test_blksize( struct iperf_test *t, int blksize );
@@ -39,6 +39,11 @@ Running a test:
     int iperf_run_client(struct iperf_test *);
     int iperf_run_server(struct iperf_test *);
     void iperf_test_reset(struct iperf_test *);
+.fi
+Output:
+.nf
+    FILE *iperf_get_test_outfile(struct iperf_test *);
+    char* iperf_get_test_json_output_string(struct iperf_test *);
 .fi
 Error reporting:
 .nf
@@ -92,14 +97,9 @@ The full runnable source code can be found in the examples subdirectory
 of the iperf3 source tree.
 
 .SH AUTHORS
-Iperf was originally written by Mark Gates and Alex Warshavsky.
-Man page and maintence by Jon Dugan <jdugan at x1024 dot net>.
-Other contributions from Ajay Tirumala, Jim Ferguson,
-Feng Qin,
-Kevin Gibbs,
-John Estabrook <jestabro at ncsa.uiuc.edu>,
-Andrew Gallatin <gallatin at gmail.com>,
-Stephen Hemminger <shemminger at linux-foundation.org>
+A list of the contributors to iperf3 can be found within the
+documentation located at
+\fChttp://software.es.net/iperf/dev.html#authors\fR.
 
 .SH "SEE ALSO"
 iperf3(1),

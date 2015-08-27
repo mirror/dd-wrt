@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, The Regents of the University of
+ * iperf, Copyright (c) 2014, 2015, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -50,8 +50,12 @@ iperf_create_streams(struct iperf_test *test)
     int i, s;
     struct iperf_stream *sp;
 
+    int orig_bind_port = test->bind_port;
     for (i = 0; i < test->num_streams; ++i) {
 
+        test->bind_port = orig_bind_port;
+	if (orig_bind_port)
+	    test->bind_port += i;
         if ((s = test->protocol->connect(test)) < 0)
             return -1;
 
@@ -285,7 +289,8 @@ iperf_connect(struct iperf_test *test)
 
     /* Create and connect the control channel */
     if (test->ctrl_sck < 0)
-	test->ctrl_sck = netdial(test->settings->domain, Ptcp, test->bind_address, test->server_hostname, test->server_port);
+	// Create the control channel using an ephemeral port
+	test->ctrl_sck = netdial(test->settings->domain, Ptcp, test->bind_address, 0, test->server_hostname, test->server_port);
     if (test->ctrl_sck < 0) {
         i_errno = IECONNECT;
         return -1;
@@ -323,15 +328,6 @@ iperf_client_end(struct iperf_test *test)
 }
 
 
-static jmp_buf sigend_jmp_buf;
-
-static void
-sigend_handler(int sig)
-{
-    longjmp(sigend_jmp_buf, 1);
-}
-
-
 int
 iperf_run_client(struct iperf_test * test)
 {
@@ -342,13 +338,8 @@ iperf_run_client(struct iperf_test * test)
     struct timeval* timeout = NULL;
     struct iperf_stream *sp;
 
-    /* Termination signals. */
-    iperf_catch_sigend(sigend_handler);
-    if (setjmp(sigend_jmp_buf))
-	iperf_got_sigend(test);
-
     if (test->affinity != -1)
-	if (iperf_setaffinity(test->affinity) != 0)
+	if (iperf_setaffinity(test, test->affinity) != 0)
 	    return -1;
 
     if (test->json_output)
@@ -361,8 +352,8 @@ iperf_run_client(struct iperf_test * test)
     } else if (test->verbose) {
 	iprintf(test, "%s\n", version);
 	iprintf(test, "%s", "");
-	fflush(stdout);
-	system("uname -a");
+	iprintf(test, "%s\n", get_system_info());
+	iflush(test);
     }
 
     /* Start the client and connect to the server */
@@ -426,7 +417,7 @@ iperf_run_client(struct iperf_test * test)
 	         (test->settings->bytes != 0 && test->bytes_sent >= test->settings->bytes) ||
 	         (test->settings->blocks != 0 && test->blocks_sent >= test->settings->blocks))) {
 
-		// Set non-blocking for non-UDP tests
+		// Unset non-blocking for non-UDP tests
 		if (test->protocol->id != Pudp) {
 		    SLIST_FOREACH(sp, &test->streams, streams) {
 			setnonblocking(sp->socket, 0);
@@ -459,6 +450,8 @@ iperf_run_client(struct iperf_test * test)
 	iprintf(test, "\n");
 	iprintf(test, "%s", report_done);
     }
+
+    iflush(test);
 
     return 0;
 }

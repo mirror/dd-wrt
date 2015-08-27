@@ -24,6 +24,7 @@
  * This code is distributed under a BSD style license, see the LICENSE
  * file for complete information.
  */
+#include "iperf_config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,9 +44,9 @@
 #include "iperf_tcp.h"
 #include "net.h"
 
-#if defined(linux)
+#if defined(HAVE_FLOWLABEL)
 #include "flowlabel.h"
-#endif
+#endif /* HAVE_FLOWLABEL */
 
 /* iperf_tcp_recv
  *
@@ -222,7 +223,19 @@ iperf_tcp_listen(struct iperf_test *test)
                 return -1;
             }
         }
-#if defined(linux) && defined(TCP_CONGESTION)
+	if (test->debug) {
+	    socklen_t optlen = sizeof(opt);
+	    if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, &optlen) < 0) {
+		saved_errno = errno;
+		close(s);
+		freeaddrinfo(res);
+		errno = saved_errno;
+		i_errno = IESETBUF;
+		return -1;
+	    }
+	    printf("SO_SNDBUF is %u\n", opt);
+	}
+#if defined(HAVE_TCP_CONGESTION)
 	if (test->congestion) {
 	    if (setsockopt(s, IPPROTO_TCP, TCP_CONGESTION, test->congestion, strlen(test->congestion)) < 0) {
 		close(s);
@@ -231,7 +244,7 @@ iperf_tcp_listen(struct iperf_test *test)
 		return -1;
 	    } 
 	}
-#endif
+#endif /* HAVE_TCP_CONGESTION */
         opt = 1;
         if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
 	    saved_errno = errno;
@@ -330,6 +343,11 @@ iperf_tcp_connect(struct iperf_test *test)
     }
 
     if (test->bind_address) {
+        struct sockaddr_in *lcladdr;
+        lcladdr = (struct sockaddr_in *)local_res->ai_addr;
+        lcladdr->sin_port = htons(test->bind_port);
+        local_res->ai_addr = (struct sockaddr *)lcladdr;
+
         if (bind(s, (struct sockaddr *) local_res->ai_addr, local_res->ai_addrlen) < 0) {
 	    saved_errno = errno;
 	    close(s);
@@ -382,7 +400,19 @@ iperf_tcp_connect(struct iperf_test *test)
             return -1;
         }
     }
-#if defined(linux)
+    if (test->debug) {
+	socklen_t optlen = sizeof(opt);
+	if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, &optlen) < 0) {
+	    saved_errno = errno;
+	    close(s);
+	    freeaddrinfo(server_res);
+	    errno = saved_errno;
+	    i_errno = IESETBUF;
+	    return -1;
+	}
+	printf("SO_SNDBUF is %u\n", opt);
+    }
+#if defined(HAVE_FLOWLABEL)
     if (test->settings->flowlabel) {
         if (server_res->ai_addr->sa_family != AF_INET6) {
 	    saved_errno = errno;
@@ -425,9 +455,9 @@ iperf_tcp_connect(struct iperf_test *test)
             } 
 	}
     }
-#endif
+#endif /* HAVE_FLOWLABEL */
 
-#if defined(linux) && defined(TCP_CONGESTION)
+#if defined(HAVE_TCP_CONGESTION)
     if (test->congestion) {
 	if (setsockopt(s, IPPROTO_TCP, TCP_CONGESTION, test->congestion, strlen(test->congestion)) < 0) {
 	    close(s);
@@ -436,7 +466,7 @@ iperf_tcp_connect(struct iperf_test *test)
 	    return -1;
 	}
     }
-#endif
+#endif /* HAVE_TCP_CONGESTION */
 
     if (connect(s, (struct sockaddr *) server_res->ai_addr, server_res->ai_addrlen) < 0 && errno != EINPROGRESS) {
 	saved_errno = errno;
