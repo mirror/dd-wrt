@@ -16,12 +16,12 @@ base, and a library version of the functionality that can be used in
 other programs. iperf3 also a number of features found in other tools
 such as nuttcp and netperf, but were missing from the original iperf.
 These include, for example, a zero-copy mode and optional JSON output.
-Note that iperf3 is NOT backwards compatible with the original iperf.
+Note that iperf3 is *not* backwards compatible with the original iperf.
 
 Primary development for iperf3 takes place on CentOS Linux, FreeBSD,
 and MacOS X.  At this time, these are the only officially supported
 platforms, however there have been some reports of success with
-OpenBSD, Android, other Linux distributions.
+OpenBSD, NetBSD, Android, Solaris, and other Linux distributions.
 
 iperf3 is principally developed by ESnet / Lawrence Berkeley National
 Laboratory.  It is released under a three-clause BSD license.
@@ -37,16 +37,16 @@ Downloads of iperf3 are available at:
 
     http://downloads.es.net/pub/iperf/
 
-To check out the most recent code, do:
+To check out the most recent code, clone the git repository at:
 
-    git clone https://github.com/esnet/iperf.git
+    https://github.com/esnet/iperf.git
 
 Building iperf3
 ---------------
 
 ### Prerequisites: ###
-  * libuuid: this is not installed by default for Debian/Ubuntu Systems
-             to install: `apt-get install uuid-dev`
+
+None.
 
 ### Building ###
 
@@ -79,9 +79,23 @@ These flags include:
 Bug Reports
 -----------
 
-Before submitting a bug report, try checking out the latest version of
-the code, and confirm that its not already fixed. Then submit to:
+Before submitting a bug report, please make sure you're running the
+latest version of the code, and confirm that your issue has not
+already been fixed.  Then submit to the iperf3 issue tracker on
+GitHub:
+
 https://github.com/esnet/iperf/issues
+
+In your issue submission, please indicate the version of iperf3 and
+what platform you're trying to run on (provide the platform
+information even if you're not using a supported platform, we
+*might* be able to help anyway).  Exact command-line arguments will
+help us recreate your problem.  If you're getting error messages,
+please include them verbatim if possible, but remember to sanitize any
+sensitive information.
+
+If you have a question about usage or about the code, please do *not*
+submit an issue.  Please use one of the mailing lists for that.
 
 Changes from iperf 2.x
 ----------------------
@@ -94,7 +108,7 @@ New options:
     -O, --omit N              omit the first n seconds (to ignore slowstart)
     -T, --title str           prefix every output line with this string
     -F, --file name           xmit/recv the specified file
-    -A, --affinity n/n,m      set CPU affinity (Linux only)
+    -A, --affinity n/n,m      set CPU affinity (Linux and FreeBSD only)
     -k, --blockcount #[KMG]   number of blocks (packets) to transmit (instead 
                               of -t or -n)
     -L, --flowlabel           set IPv6 flow label (Linux only)
@@ -159,7 +173,7 @@ responsibility for the content of these pages.
 Copyright
 ---------
 
-iperf, Copyright (c) 2014-2015, The Regents of the University of
+iperf, Copyright (c) 2014, The Regents of the University of
 California, through Lawrence Berkeley National Laboratory (subject
 to receipt of any required approvals from the U.S. Dept. of
 Energy).  All rights reserved.

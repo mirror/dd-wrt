@@ -46,7 +46,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/param.h>
-//#include <sys/queue.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>
@@ -62,7 +61,8 @@
 int
 has_tcpinfo(void)
 {
-#if defined(linux) || defined(__FreeBSD__)
+#if (defined(linux) || defined(__FreeBSD__) || defined(__NetBSD__)) \
+	&& defined(TCP_INFO)
     return 1;
 #else
     return 0;
@@ -82,8 +82,9 @@ has_tcpinfo_retransmits(void)
     return 1;
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 600000
-    /* return 1; */
-    return 0;	/* FreeBSD retransmit reporting doesn't actually work yet */
+    return 1; /* Should work now */
+#elif defined(__NetBSD__) && defined(TCP_INFO)
+    return 1;
 #else
     return 0;
 #endif
@@ -94,15 +95,17 @@ has_tcpinfo_retransmits(void)
 void
 save_tcpinfo(struct iperf_stream *sp, struct iperf_interval_results *irp)
 {
-#if defined(linux) || defined(__FreeBSD__)
+#if (defined(linux) || defined(__FreeBSD__) || defined(__NetBSD__)) && \
+	defined(TCP_INFO)
     socklen_t tcp_info_length = sizeof(struct tcp_info);
 
     if (getsockopt(sp->socket, IPPROTO_TCP, TCP_INFO, (void *)&irp->tcpInfo, &tcp_info_length) < 0)
 	iperf_err(sp->test, "getsockopt - %s", strerror(errno));
 
     if (sp->test->debug) {
-	printf("tcpi_snd_cwnd %u tcpi_snd_mss %u\n",
-	       irp->tcpInfo.tcpi_snd_cwnd, irp->tcpInfo.tcpi_snd_mss);
+	printf("tcpi_snd_cwnd %u tcpi_snd_mss %u tcpi_rtt %u\n",
+	       irp->tcpInfo.tcpi_snd_cwnd, irp->tcpInfo.tcpi_snd_mss,
+	       irp->tcpInfo.tcpi_rtt);
     }
 
 #endif
@@ -114,12 +117,12 @@ get_total_retransmits(struct iperf_interval_results *irp)
 {
 #if defined(linux) && defined(TCP_MD5SIG)
     return irp->tcpInfo.tcpi_total_retrans;
-#else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 600000
-    return irp->tcpInfo.__tcpi_retransmits;
+#elif defined(__FreeBSD__) && __FreeBSD_version >= 600000
+    return irp->tcpInfo.tcpi_snd_rexmitpack;
+#elif defined(__NetBSD__) && defined(TCP_INFO)
+    return irp->tcpInfo.tcpi_snd_rexmitpack;
 #else
     return -1;
-#endif
 #endif
 }
 
@@ -132,46 +135,32 @@ get_snd_cwnd(struct iperf_interval_results *irp)
 {
 #if defined(linux) && defined(TCP_MD5SIG)
     return irp->tcpInfo.tcpi_snd_cwnd * irp->tcpInfo.tcpi_snd_mss;
-#else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 600000
+#elif defined(__FreeBSD__) && __FreeBSD_version >= 600000
+    return irp->tcpInfo.tcpi_snd_cwnd * irp->tcpInfo.tcpi_snd_mss;
+#elif defined(__NetBSD__) && defined(TCP_INFO)
     return irp->tcpInfo.tcpi_snd_cwnd * irp->tcpInfo.tcpi_snd_mss;
 #else
     return -1;
 #endif
-#endif
 }
 
-#ifdef notdef
 /*************************************************************/
-//print_tcpinfo(struct iperf_interval_results *r)
-void
-print_tcpinfo(struct iperf_test *test)
-{
-#if defined(linux)
-    long int retransmits = 0;
-    struct iperf_stream *sp;
-    SLIST_FOREACH(sp, &test->streams, streams) {
-        retransmits += TAILQ_LAST(&sp->result->interval_results, irlisthead)->tcpInfo.tcpi_retransmits;
-    }
-    printf("TCP Info\n");
-    printf("  Retransmits: %ld\n", retransmits);
-
-/* old test print_tcpinfo code
-    printf(report_tcpInfo, r->tcpInfo.tcpi_snd_cwnd, r->tcpInfo.tcpi_snd_ssthresh,
-	    r->tcpInfo.tcpi_rcv_ssthresh, r->tcpInfo.tcpi_unacked, r->tcpInfo.tcpi_sacked,
-	    r->tcpInfo.tcpi_lost, r->tcpInfo.tcpi_retrans, r->tcpInfo.tcpi_fackets, 
-	    r->tcpInfo.tcpi_rtt, r->tcpInfo.tcpi_reordering);
-*/
-#endif
-#if defined(__FreeBSD__)
 /*
-    printf(report_tcpInfo, r->tcpInfo.tcpi_snd_cwnd, r->tcpInfo.tcpi_rcv_space,
-	   r->tcpInfo.tcpi_snd_ssthresh, r->tcpInfo.tcpi_rtt);
-*/
+ * Return rtt in usec.
+ */
+long
+get_rtt(struct iperf_interval_results *irp)
+{
+#if defined(linux) && defined(TCP_MD5SIG)
+    return irp->tcpInfo.tcpi_rtt;
+#elif defined(__FreeBSD__) && __FreeBSD_version >= 600000
+    return irp->tcpInfo.tcpi_rtt;
+#elif defined(__NetBSD__) && defined(TCP_INFO)
+    return irp->tcpInfo.tcpi_rtt;
+#else
+    return -1;
 #endif
 }
-#endif
-
 
 /*************************************************************/
 void
@@ -184,6 +173,10 @@ build_tcpinfo_message(struct iperf_interval_results *r, char *message)
 	    r->tcpInfo.tcpi_rtt, r->tcpInfo.tcpi_reordering);
 #endif
 #if defined(__FreeBSD__)
+    sprintf(message, report_tcpInfo, r->tcpInfo.tcpi_snd_cwnd,
+	    r->tcpInfo.tcpi_rcv_space, r->tcpInfo.tcpi_snd_ssthresh, r->tcpInfo.tcpi_rtt);
+#endif
+#if defined(__NetBSD__) && defined(TCP_INFO)
     sprintf(message, report_tcpInfo, r->tcpInfo.tcpi_snd_cwnd,
 	    r->tcpInfo.tcpi_rcv_space, r->tcpInfo.tcpi_snd_ssthresh, r->tcpInfo.tcpi_rtt);
 #endif

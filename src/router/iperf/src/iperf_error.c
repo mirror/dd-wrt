@@ -45,11 +45,16 @@ iperf_err(struct iperf_test *test, const char *format, ...)
     if (test != NULL && test->json_output && test->json_top != NULL)
 	cJSON_AddStringToObject(test->json_top, "error", str);
     else
-	fprintf(stderr, "iperf3: %s\n", str);
+	if (test && test->outfile) {
+	    fprintf(test->outfile, "iperf3: %s\n", str);
+	}
+	else {
+	    fprintf(stderr, "iperf3: %s\n", str);
+	}
     va_end(argp);
 }
 
-/* Do a printf to stderr, then exit. */
+/* Do a printf to stderr or log file as appropriate, then exit. */
 void
 iperf_errexit(struct iperf_test *test, const char *format, ...)
 {
@@ -62,8 +67,14 @@ iperf_errexit(struct iperf_test *test, const char *format, ...)
 	cJSON_AddStringToObject(test->json_top, "error", str);
 	iperf_json_finish(test);
     } else
-	fprintf(stderr, "iperf3: %s\n", str);
+	if (test && test->outfile) {
+	    fprintf(test->outfile, "iperf3: %s\n", str);
+	}
+	else {
+	    fprintf(stderr, "iperf3: %s\n", str);
+	}
     va_end(argp);
+    iperf_delete_pidfile(test);
     exit(1);
 }
 
@@ -110,6 +121,9 @@ iperf_strerror(int i_errno)
         case IEINTERVAL:
             snprintf(errstr, len, "invalid report interval (min = %g, max = %g seconds)", MIN_INTERVAL, MAX_INTERVAL);
             break;
+        case IEBIND:
+            snprintf(errstr, len, "--bind must be specified to use --cport");
+            break;
         case IEUDPBLOCKSIZE:
             snprintf(errstr, len, "block size too large (maximum = %d bytes)", MAX_UDP_BLOCKSIZE);
             break;
@@ -135,6 +149,13 @@ iperf_strerror(int i_errno)
         case IEENDCONDITIONS:
             snprintf(errstr, len, "only one test end condition (-t, -n, -k) may be specified");
             break;
+	case IELOGFILE:
+	    snprintf(errstr, len, "unable to open log file");
+	    perr = 1;
+	    break;
+	case IENOSCTP:
+	    snprintf(errstr, len, "no SCTP support available");
+	    break;
         case IENEWTEST:
             snprintf(errstr, len, "unable to create a new test");
             perr = 1;
@@ -220,11 +241,11 @@ iperf_strerror(int i_errno)
             snprintf(errstr, len, "the server is busy running a test. try again later");
             break;
         case IESETNODELAY:
-            snprintf(errstr, len, "unable to set TCP NODELAY");
+            snprintf(errstr, len, "unable to set TCP/SCTP NODELAY");
             perr = 1;
             break;
         case IESETMSS:
-            snprintf(errstr, len, "unable to set TCP MSS");
+            snprintf(errstr, len, "unable to set TCP/SCTP MSS");
             perr = 1;
             break;
         case IESETBUF:
@@ -314,10 +335,22 @@ iperf_strerror(int i_errno)
             snprintf(errstr, len, "unable to set TCP_CONGESTION: " 
                                   "Supplied congestion control algorithm not supported on this host");
             break;
+	case IEPIDFILE:
+            snprintf(errstr, len, "unable to write PID file");
+            perr = 1;
+            break;
 	case IEV6ONLY:
 	    snprintf(errstr, len, "Unable to set/reset IPV6_V6ONLY");
 	    perr = 1;
 	    break;
+        case IESETSCTPDISABLEFRAG:
+            snprintf(errstr, len, "unable to set SCTP_DISABLE_FRAGMENTS");
+            perr = 1;
+            break;
+        case IESETSCTPNSTREAM:
+            snprintf(errstr, len, "unable to set SCTP_INIT num of SCTP streams\n");
+            perr = 1;
+            break;
     }
 
     if (herr || perr)
