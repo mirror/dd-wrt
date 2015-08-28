@@ -186,7 +186,7 @@
 				 */
 				partition@5a00000 {
 					label = "ddwrt";
-					reg = <0x5a00000 0x2600000>;
+					reg = <0x5a00000 0x2500000>;
 				};
 
 
