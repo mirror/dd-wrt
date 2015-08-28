@@ -54,7 +54,6 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
-
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -74,11 +73,11 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 	int brand = getRouterBrand();
-	
+
 	/* 
 	 * 
 	 */
-	
+
 	insmod("i2c-core");
 	insmod("i2c-dev");
 	insmod("i2c-mv64xxx");
@@ -97,7 +96,7 @@ void start_sysinit(void)
 	insmod("pwm-fan");
 	insmod("armada_thermal");
 	insmod("tmp421");
-	insmod("rtc-armada38x"); // for WRT1200AC / WRT1900ACv2 only
+	insmod("rtc-armada38x");	// for WRT1200AC / WRT1900ACv2 only
 	/*
 	 * network drivers 
 	 */
@@ -107,8 +106,10 @@ void start_sysinit(void)
 	insmod("/lib/ath9k/mwlwifi.ko");
 	int s;
 	struct ifreq ifr;
-	eval("ubootenv","set","auto_recovery","off");
-	
+	char *recovery = getUEnv("auto_recovery");
+	if (recovery && strcmp(recovery, "yes"))
+		eval("ubootenv", "set", "auto_recovery", "yes");
+
 /*	
 	system("swconfig dev switch0 set reset 1");
 	system("swconfig dev switch0 set enable_vlan 1");
@@ -133,14 +134,14 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 	nvram_set("wl1_ifname", "ath1");
-	
+
 	sysprintf("echo 0 > /sys/class/hwmon/hwmon0/pwm1");
 	char line[256];
 	char *mac;
 	if ((fp = fopen("/dev/mtdblock3", "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (strstr(line, "hw_mac_addr")) {
-				strtok_r (line, "=", &mac);
+				strtok_r(line, "=", &mac);
 				//fprintf(stderr, "Found mac: %s\n", mac);
 				nvram_set("et0macaddr", mac);
 				nvram_set("et0macaddr_safe", mac);
@@ -156,9 +157,7 @@ void start_sysinit(void)
 		}
 		fclose(fp);
 	}
-	
-	
-	
+
 	return;
 	cprintf("done\n");
 }
