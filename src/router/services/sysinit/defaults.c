@@ -220,12 +220,14 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_IDEXX
 	{"lan_ipaddr", "192.168.222.1"},	/* LAN ip address */
 #elif HAVE_BUFFALO
+#ifndef HAVE_IDEXX
 #ifdef BUFFALO_EU
 	{"ath0_regdomain", "GERMANY"},	/* LAN IP address */
 #endif
 	{"lan_ipaddr", "192.168.11.1"},	/* LAN IP address */
 	{"dhcp_start", "2"},	/* DHCP Start IP */
 	{"dhcp_num", "64"},	/* DHCP Start IP */
+#endif
 #elif HAVE_GGEW
 #if defined(HAVE_NS5) || defined(HAVE_EOC5610)
 	{"ath0_regdomain", "GERMANY_BFWA"},	/* LAN IP address */
@@ -1443,7 +1445,9 @@ struct nvram_param srouter_defaults[] = {
 #ifndef HAVE_BUFFALO
 	{"wl0_akm", "disabled"},
 	{"wl0_wpa_psk", ""},	/* WPA pre-shared key */
-#elif HAVE_IDEXX
+#endif
+
+#ifdef HAVE_IDEXX
 	{"wl0_akm", "psk psk2"},
 	{"wl0_wpa_psk", "IDEXXwlan1234"},	/* WPA pre-shared key */
 #endif
@@ -1498,15 +1502,16 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_CARLSONWIRELESS
 	{"ath0_akm", "psk2"},
 	{"ath0_wpa_psk", "7078227000"},	/* ath0 encryption key */
-#elif HAVE_IDEXX
-	{"ath0_akm", "psk psk2"},
-	{"ath0_wpa_psk", "IDEXXwlan1234"},	/* ath0 encryption key */
-	{"ath0.1_akm", "psk psk2"},
-	{"ath0.1_wpa_psk", "IDEXXguest1234"},	/* ath0 encryption key */
 #else
 	{"ath0_akm", "disabled"},
 	{"ath0_wpa_psk", ""},	/* WPA pre-shared key */
 #endif
+#endif
+#ifdef HAVE_IDEXX
+	{"ath0_akm", "psk psk2"},
+	{"ath0_wpa_psk", "IDEXXwlan1234"},	/* ath0 encryption key */
+	{"ath0.1_akm", "psk psk2"},
+	{"ath0.1_wpa_psk", "IDEXXguest1234"},	/* ath0 encryption key */
 #endif
 	{"ath0_wpa_gtk_rekey", "3600"},	/* WPA GTK rekey interval *//* Modify */
 	{"ath0_radius_port", "1812"},	/* RADIUS server UDP port */
@@ -1518,13 +1523,12 @@ struct nvram_param srouter_defaults[] = {
 	{"ath1_auth_mode", "disabled"},	/* WPA mode (disabled|radius|wpa|psk) 
 					 */
 #ifndef HAVE_BUFFALO
-#ifdef HAVE_IDEXX
-	{"ath1_akm", "psk psk2"},
-	{"ath1_wpa_psk", "IDEXXwlan1234"},	/* WPA pre-shared key */
-#else
 	{"ath1_akm", "disabled"},
 	{"ath1_wpa_psk", ""},	/* WPA pre-shared key */
 #endif
+#ifdef HAVE_IDEXX
+	{"ath1_akm", "psk psk2"},
+	{"ath1_wpa_psk", "IDEXXwlan1234"},	/* WPA pre-shared key */
 #endif
 	{"ath1_radius_ipaddr", ""},	/* RADIUS server IP address */
 	{"ath1_radius_key", ""},	/* RADIUS shared secret */
