@@ -356,7 +356,7 @@
 				/* Last MB is for the BBT, i.e. not writable */
 				partition@5a00000 {
 					label = "ddwrt";
-					reg = <0x5a00000 0x2600000>;    /* 38MB */
+					reg = <0x5a00000 0x2500000>;    /* 38MB */
 				};
 			};
 
