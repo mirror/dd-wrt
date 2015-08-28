@@ -66,6 +66,7 @@
 /* 
  * to be continued 
  */
+int mtdtype;
 
 struct trx_header {
 	uint32_t magic;		/* "HDR0" */
@@ -202,6 +203,7 @@ int mtd_check(char *mtd)
 		close(fd);
 		return 0;
 	}
+	mtdtype = mtdInfo.type;
 
 	close(fd);
 	return 1;
@@ -236,6 +238,21 @@ static int mtd_unlock(const char *mtd)
 	return 0;
 }
 
+int mtd_block_is_bad(int fd, int offset)
+{
+	int r = 0;
+	loff_t o = offset;
+
+	if (mtdtype == MTD_NANDFLASH) {
+		r = ioctl(fd, MEMGETBADBLOCK, &o);
+		if (r < 0) {
+			fprintf(stderr, "Failed to get erase block status\n");
+			exit(1);
+		}
+	}
+	return r;
+}
+
 static int mtd_erase(const char *mtd)
 {
 	int fd;
@@ -257,12 +274,12 @@ static int mtd_erase(const char *mtd)
 	mtdEraseInfo.length = mtdInfo.erasesize;
 
 	for (mtdEraseInfo.start = 0; mtdEraseInfo.start < mtdInfo.size; mtdEraseInfo.start += mtdInfo.erasesize) {
-
-		ioctl(fd, MEMUNLOCK, &mtdEraseInfo);
-		if (ioctl(fd, MEMERASE, &mtdEraseInfo)) {
-			fprintf(stderr, "Could not erase MTD device: %s\n", mtd);
-			close(fd);
-			exit(1);
+		if (mtd_block_is_bad(fd, mtdEraseInfo.start)) {
+			fprintf(stderr, "\nSkipping bad block at 0x%x   ", mtdEraseInfo.start);
+		} else {
+			ioctl(fd, MEMUNLOCK, &mtdEraseInfo);
+			if (ioctl(fd, MEMERASE, &mtdEraseInfo))
+				fprintf(stderr, "Failed to erase block on %s at 0x%x\n", mtd, mtdEraseInfo.start);
 		}
 	}
 
@@ -274,7 +291,7 @@ static int mtd_erase(const char *mtd)
 static int mtd_write(int imagefd, const char *mtd, int quiet)
 {
 	int fd, i, result;
-	size_t r, w, e;
+	size_t r, w, e, skip_bad_blocks;
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
 	int ret = 0;
@@ -312,7 +329,7 @@ static int mtd_write(int imagefd, const char *mtd, int quiet)
 		/* 
 		 * need to erase the next block before writing data to it 
 		 */
-		while (w > e) {
+		while (w > e - skip_bad_blocks) {
 			mtdEraseInfo.start = e;
 			mtdEraseInfo.length = mtdInfo.erasesize;
 
@@ -321,6 +338,17 @@ static int mtd_write(int imagefd, const char *mtd, int quiet)
 			/* 
 			 * erase the chunk 
 			 */
+			if (mtd_block_is_bad(fd, mtdEraseInfo.start)) {
+				if (!quiet)
+					fprintf(stderr, "\nSkipping bad block at 0x%08zx   ", e);
+				skip_bad_blocks += mtdInfo.erasesize;
+				e += mtdInfo.erasesize;
+				// Move the file pointer along over the bad block.
+				lseek(fd, mtdInfo.erasesize, SEEK_CUR);
+				continue;
+
+			}
+
 			if (ioctl(fd, MEMERASE, &mtdEraseInfo) < 0) {
 				fprintf(stderr, "Erasing mtd failed: %s\n", mtd);
 				exit(1);
