@@ -24,7 +24,7 @@ LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L
 CFLAGS += -I$(LINUXDIR)
 else
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
-CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils -fPIC 
+CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils -fPIC  -D_GNU_SOURCE
 
 #ifneq ($(ARCHITECTURE),lsx)
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
