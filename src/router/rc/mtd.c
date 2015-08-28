@@ -677,11 +677,11 @@ int mtd_write(const char *path, const char *mtd)
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 		      again:;
-			fprintf(stderr, "write block [%ld] at [0x%08X]        \n", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
+			fprintf(stderr, "write block [%ld] at [0x%08X]        \r", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
 			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
-				fprintf(stderr, "Skipping bad block at 0x%08zx\n", erase_info.start);
+				fprintf(stderr, "\nSkipping bad block at 0x%08zx\n", erase_info.start);
 				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
 				length += mtd_info.erasesize;
 				badblocks += mtd_info.erasesize;
@@ -690,13 +690,13 @@ int mtd_write(const char *path, const char *mtd)
 #if !defined(HAVE_MVEBU)	// we do not need to erase again. it has been done before
 
 			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-				fprintf(stderr, "erase/write failed\n");
+				fprintf(stderr, "\nerase/write failed\n");
 				goto fail;
 			}
 #endif
 
 			if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) != mtd_info.erasesize) {
-				fprintf(stderr, "try again %d\n", redo++);
+				fprintf(stderr, "\ntry again %d\n", redo++);
 				if (redo < 10)
 					goto again;
 				goto fail;
@@ -705,7 +705,7 @@ int mtd_write(const char *path, const char *mtd)
 
 	}
 
-	fprintf(stderr, "done [%ld]\n", i * mtd_info.erasesize);
+	fprintf(stderr, "\ndone [%ld]\n", i * mtd_info.erasesize);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
 	 */
