@@ -435,6 +435,7 @@ static void usage(void)
 		"The device is in the format of mtdX (eg: mtd4) or its label.\n"
 		"mtd recognizes these commands:\n"
 		"        unlock                  unlock the device\n"
+		"        resetbc                 reset bootcounter for WRT1900AC/WRT1200AC/WRT1900ACv2\n"
 		"        erase                   erase all data on device\n"
 		"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
 		"Following options are available:\n"
@@ -499,7 +500,7 @@ int mtd_main(int argc, char **argv)
 	} else if ((strcmp(argv[0], "erase") == 0) && (argc == 2)) {
 		cmd = CMD_ERASE;
 		device = argv[1];
-	} else if ((strcmp(argv[0], "reset_bc") == 0) && (argc == 2)) {
+	} else if ((strcmp(argv[0], "resetbc") == 0) && (argc == 2)) {
 		mtd_resetbc(argv[1]);
 		exit(0);
 	} else if ((strcmp(argv[0], "write") == 0) && (argc == 3)) {

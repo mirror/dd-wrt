@@ -109,6 +109,7 @@ void start_sysinit(void)
 	char *recovery = getUEnv("auto_recovery");
 	if (recovery && strcmp(recovery, "yes"))
 		eval("ubootenv", "set", "auto_recovery", "yes");
+	eval("mtd","resetbc","s_env"); // reset boot counter
 
 /*	
 	system("swconfig dev switch0 set reset 1");
