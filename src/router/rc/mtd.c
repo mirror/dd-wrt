@@ -96,6 +96,23 @@ struct __attribute__((__packed__)) chk_header {
 
 };
 
+static int mtdtype = 0;
+
+static int mtd_block_is_bad(int fd, int offset)
+{
+	int r = 0;
+	loff_t o = offset;
+
+	if (mtdtype == MTD_NANDFLASH) {
+		r = ioctl(fd, MEMGETBADBLOCK, &o);
+		if (r < 0) {
+			fprintf(stderr, "Failed to get erase block status\n");
+			exit(1);
+		}
+	}
+	return r;
+}
+
 /* 
  * Open an MTD device
  * @param       mtd     path to or partition name of MTD device
@@ -159,27 +176,23 @@ int mtd_erase(const char *mtd)
 	}
 
 	erase_info.length = mtd_info.erasesize;
-#if defined(HAVE_80211AC) && !defined(HAVE_NORTHSTAR)
+	mtdtype = mtd_info.type;
+	if (mtdtype == MTD_NANDFLASH)
+		fprintf(stderr, "Flash is NAND\n");
 	for (erase_info.start = 0; erase_info.start < mtd_info.size; erase_info.start += mtd_info.erasesize) {
 		fprintf(stderr, "erase[%d]\r", erase_info.start);
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-			fprintf(stderr, "\nerror on sector %d, skip\n", erase_info.start);
+		if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
+			fprintf(stderr, "\nSkipping bad block at 0x%08zx\n", erase_info.start);
 			continue;
 		}
-	}
-#else
-
-	for (erase_info.start = 0; erase_info.start < mtd_info.size; erase_info.start += mtd_info.erasesize) {
-		fprintf(stderr, "erase[%d]\r", erase_info.start);
-		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 			perror(mtd);
 			close(mtd_fd);
 			return errno;
 		}
 	}
-#endif
+
 	close(mtd_fd);
 	fprintf(stderr, "erase[%d]\n", erase_info.start);
 	/* 
@@ -246,20 +259,20 @@ int mtd_write(const char *path, const char *mtd)
 	int sum = 0;		// for debug
 	int ret = -1;
 	int i;
-	int skipoffset = 0;
+	int badblocks = 0;
 	unsigned char lzmaloader[4096];
 	int brand = getRouterBrand();
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
 	unsigned int trxhd = STORE32_LE(TRX_MAGIC);
-	
+
 #if defined(HAVE_MVEBU)
 	char *part = getUEnv("boot_part");
 	if (part && !strcmp(part, "2"))
 		mtd = "linux2";
 #endif
-	
+
 	switch (brand) {
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
@@ -523,6 +536,9 @@ int mtd_write(const char *path, const char *mtd)
 		goto fail;
 	}
 	// #endif
+	mtdtype = mtd_info.type;
+	if (mtdtype == MTD_NANDFLASH)
+		fprintf(stderr, "Flash is NAND\n");
 
 	/* 
 	 * See if we have enough memory to store the whole file 
@@ -642,22 +658,44 @@ int mtd_write(const char *path, const char *mtd)
 
 		int length = ROUNDUP(count, mtd_info.erasesize);
 		int base = erase_info.start;
-#if (defined(HAVE_80211AC) && !defined(HAVE_NORTHSTAR))
+		badblocks = 0;
+#if defined(HAVE_MVEBU)		// erase all blocks first
+
+		for (i = 0; i < (mtd_info.size / mtd_info.erasesize); i++) {
+			erase_info.start = base + (i * mtd_info.erasesize);
+			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
+				fprintf(stderr, "Skipping bad block at 0x%08zx\n", erase_info.start);
+				continue;
+			}
+			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+				perror(mtd);
+				goto fail;
+			}
+		}
+#endif
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 		      again:;
-			fprintf(stderr, "write block [%ld] at [0x%08X]        \n", i * mtd_info.erasesize, base + ((i + skipoffset) * mtd_info.erasesize));
-			erase_info.start = base + ((i + skipoffset) * mtd_info.erasesize);
+			fprintf(stderr, "write block [%ld] at [0x%08X]        \n", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
+			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-				fprintf(stderr, "erase/write failed, skip block\n");
-				skipoffset++;
-				goto again;
+			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
+				fprintf(stderr, "Skipping bad block at 0x%08zx\n", erase_info.start);
+				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
+				length += mtd_info.erasesize;
+				badblocks += mtd_info.erasesize;
+				continue;
 			}
+#if !defined(HAVE_MVEBU)	// we do not need to erase again. it has been done before
 
-			lseek(mtd_fd, (i + skipoffset) * mtd_info.erasesize, SEEK_SET);
+			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+				fprintf(stderr, "erase/write failed\n");
+				goto fail;
+			}
+#endif
 
-			if (write(mtd_fd, buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
+			if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) != mtd_info.erasesize) {
 				fprintf(stderr, "try again %d\n", redo++);
 				if (redo < 10)
 					goto again;
@@ -665,38 +703,6 @@ int mtd_write(const char *path, const char *mtd)
 			}
 		}
 
-#if defined(HAVE_MVEBU)
-		for (i; i < (mtd_info.size / mtd_info.erasesize); i++) {
-			erase_info.start = base + (i * mtd_info.erasesize);
-			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-				perror(mtd);
-				goto fail;
-			}
-		}
-#endif
-
-#else
-		for (i = 0; i < (length / mtd_info.erasesize); i++) {
-			fprintf(stderr, "write block [%ld] at [0x%08X]        \n", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
-			erase_info.start = base + (i * mtd_info.erasesize);
-			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0 || write(mtd_fd, buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
-				perror(mtd);
-				goto fail;
-			}
-		}
-
-#if defined(HAVE_MVEBU)
-		for (i; i < (mtd_info.size / mtd_info.erasesize); i++) {
-			erase_info.start = base + (i * mtd_info.erasesize);
-			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-				perror(mtd);
-				goto fail;
-			}
-		}
-#endif
-
-#endif
 	}
 
 	fprintf(stderr, "done [%ld]\n", i * mtd_info.erasesize);
