@@ -506,11 +506,11 @@ static bool readEgressFile(const char * fileName) {
       goto outerror;
     }
 
-#if defined(__linux__) && !defined(__ANDROID__)
-    mtim = &statBuf.st_mtim;
-#else
+//#if defined(__linux__) && !defined(__ANDROID__)
+//    mtim = &statBuf.st_mtim;
+//#else
     mtim = &statBuf.st_mtime;
-#endif
+//#endif
     if (!memcmp(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp))) {
       /* file did not change since last read */
       return false;
@@ -718,11 +718,11 @@ static bool readEgressFile(const char * fileName) {
   fclose(fp);
   fp = NULL;
 
-#if defined(__linux__) && !defined(__ANDROID__)
-    mtim = &statBuf.st_mtim;
-#else
+//#if defined(__linux__) && !defined(__ANDROID__)
+//    mtim = &statBuf.st_mtim;
+//#else
     mtim = &statBuf.st_mtime;
-#endif
+//#endif
   memcpy(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp));
 
   reportedErrors = reportedErrorsLocal;
