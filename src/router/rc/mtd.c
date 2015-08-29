@@ -583,6 +583,19 @@ int mtd_write(const char *path, const char *mtd)
 #ifndef NETGEAR_CRC_FAKE
 	calculate_checksum(0, NULL, 0);	// init
 #endif
+#if defined(HAVE_MVEBU)		// erase all blocks first
+	for (erase_info.start = 0; erase_info.start < (mtd_info.size / mtd_info.erasesize); erase_info.start += mtd_info.erasesize) {
+		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+		if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
+			fprintf(stderr, "Skipping bad block at 0x%08zx\n", erase_info.start);
+			continue;
+		}
+		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+			perror(mtd);
+			goto fail;
+		}
+	}
+#endif
 	/* 
 	 * Write file or URL to MTD device 
 	 */
@@ -659,21 +672,6 @@ int mtd_write(const char *path, const char *mtd)
 		int length = ROUNDUP(count, mtd_info.erasesize);
 		int base = erase_info.start;
 		badblocks = 0;
-#if defined(HAVE_MVEBU)		// erase all blocks first
-
-		for (i = 0; i < (mtd_info.size / mtd_info.erasesize); i++) {
-			erase_info.start = base + (i * mtd_info.erasesize);
-			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
-				fprintf(stderr, "Skipping bad block at 0x%08zx\n", erase_info.start);
-				continue;
-			}
-			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-				perror(mtd);
-				goto fail;
-			}
-		}
-#endif
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 		      again:;
