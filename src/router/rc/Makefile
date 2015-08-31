@@ -21,7 +21,7 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/l
 CFLAGS  += $(COPTS)
 ifeq ($(ARCH),i386)
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
-CFLAGS += -I$(LINUXDIR)
+CFLAGS += -I$(LINUXDIR)  -D_GNU_SOURCE
 else
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
 CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils -fPIC  -D_GNU_SOURCE
