@@ -387,7 +387,7 @@ static void parse_upnp_forward()
 
 	if (nvram_match("upnp_clear", "1")) {	// tofu10
 		nvram_unset("upnp_clear");
-		for (i = 0; i < 50; ++i) {
+		for (i = 0; i < 1000; ++i) {
 			sprintf(name, "forward_port%d", i);
 			nvram_unset(name);
 		}
