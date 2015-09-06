@@ -36,9 +36,9 @@
 				<% tran("hwl_adv.page14"); %>
 				<dt><% tran("wl_adv.label16"); %></dt>
 				<% tran("hwl_adv.page15"); %>
-				<dt><% tran("wl_adv.labeli17"); %></dt>
+				<dt><% tran("wl_adv.label17"); %></dt>
 				<% tran("hwl_adv.page16"); %>
-				<dt><% tran("wl_adv.legend2"); %></dt>
+				<dt><% tran("wl_basic.legend2"); %></dt>
 				<% tran("hwl_adv.page17"); %>
 				<dt><% tran("wl_adv.label18"); %></dt>
 				<% tran("hwl_adv.page18"); %>
