@@ -861,13 +861,13 @@ static void nat_postrouting(void)
 			writeproc("/proc/sys/net/ipv4/conf/br0/loop", "1");
 
 		if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_match("wshaper_enable", "0")) {
-			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
-			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+			//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+			//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
 		}
 	} else {
 		if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_match("wshaper_enable", "0")) {
-			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
-			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+			//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+			//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
 		}
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
 		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
