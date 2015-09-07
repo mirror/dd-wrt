@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2597 | BrainSlayer | 2015-09-08 01:24:14 +0200 (Tue, 08 Sep 2015) | 1 line
+
+fix small typo in thermal sensor code (ath10k)
+------------------------------------------------------------------------
 r2596 | BrainSlayer | 2015-09-08 00:35:09 +0200 (Tue, 08 Sep 2015) | 1 line
 
 apply newer code again with mac80211 mesh fix
