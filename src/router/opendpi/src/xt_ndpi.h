@@ -84,7 +84,7 @@ struct xt_ndpi_tginfo {
 "gadugadu", "i23v5", "secondlife", "whatsapp_voice", "eaq", "timmeu", "torcedor", "kakaotalk", \
 "kakaotalk_voice" , "twitch", "quickplay", "tim", "mpegts", "snapchat", "simet","opensignal", \
 "99taxi","easytaxi","globotv","timsomdechamada","timmenu","timportasabertas","timrecarga",\
-"timbeta","deezer","instagram","microsoft","battlenet","starcraft", "teredo", "hotspot-shield"
+"timbeta","deezer","instagram","microsoft","battlenet","starcraft", "teredo", "hotspot-shield", "hep"
 
 
 #define NDPI_PROTOCOL_MAXNUM 220
