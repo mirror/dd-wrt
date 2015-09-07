@@ -60,7 +60,7 @@ static char *dtim_period(int dtim, char *mem)
 		snprintf(mem, 32, "%d", dtim);
 	else
 		snprintf(mem, 32, "%s", "None");
-
+	return mem;
 }
 
 #ifdef FBNFW
