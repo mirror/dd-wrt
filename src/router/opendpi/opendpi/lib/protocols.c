@@ -145,3 +145,4 @@
 #include "protocols/mpegts.c"
 #include "protocols/starcraft.c"
 #include "protocols/teredo.c"
+#include "protocols/hep.c"
