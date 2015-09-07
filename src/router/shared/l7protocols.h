@@ -175,6 +175,7 @@ l7filters filters_list[] = {
 	{"hamachi1", L7_ONLY},
 	{"hddtemp", L7_ONLY},
 #ifdef HAVE_OPENDPI
+	{"hep", NDPI_ONLY},
 	{"hl2", NDPI_ONLY},
 #endif
 	{"hotline", L7_ONLY},
