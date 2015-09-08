@@ -85,7 +85,7 @@ int write_boot(const char *path, const char *mtd)
 		ret++;
 		goto fail;
 	}
-	printf("Read header size = [%ld]\n", (unsigned long)count);
+	printf("Read header size = [%d]\n", (unsigned long)count);
 
 	if (memcmp(&boot.magic[0], &BOOT_PATTERN, 3)) {
 		printf("Bad boot header!\n");
@@ -141,7 +141,7 @@ int write_boot(const char *path, const char *mtd)
 		if (fp)
 			count += fread(&buf[off], 1, len - off, fp);
 
-		printf("Read data size = [%ld]\n", count - sizeof(struct boot_header));
+		printf("Read data size = [%d]\n", count - sizeof(struct boot_header));
 
 		if (count < 0) {
 			perror(path);
