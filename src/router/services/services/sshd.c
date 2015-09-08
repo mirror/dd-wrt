@@ -57,14 +57,9 @@ static int generate_dropbear_rsa_host_key(void);
 void start_sshd(void)
 {
 
-	// pid_t pid;
-	// char buf[255] = { 0 };
-	cprintf("check for ssh\n");
 	if (!nvram_invmatch("sshd_enable", "0"))
 		return;
-	cprintf("empty dir check\n");
 	empty_dir_check();
-	cprintf("write key file\n");
 	int changed = 0;
 
 	if (write_key_file(NVRAM_RSA_KEY_NAME, RSA_HOST_KEY_FILE, 0600) == -1) {
@@ -72,11 +67,10 @@ void start_sshd(void)
 		write_key_file(NVRAM_RSA_KEY_NAME, RSA_HOST_KEY_FILE, 0600);
 		changed = 1;
 	}
-	cprintf("convert key\n");
 	eval("dropbearconvert", "openssh", "dropbear", RSA_HOST_KEY_FILE, RSA_HOST_KEY_FILE);
+	nvram_unset("sshd_dss_host_key");
 	if (changed)
 		nvram_commit();
-	cprintf("write authorized keys\n");
 	write_key_file("sshd_authorized_keys", AUTHORIZED_KEYS_FILE, 0600);
 	stop_sshd();
 	char *port = nvram_safe_get("sshd_port");
