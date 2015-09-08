@@ -66,6 +66,11 @@ struct mon mons[] = {
 #ifdef HAVE_MULTICAST
 	{"igmprt", 1, M_WAN, "block_multicast", "0"},
 #endif
+#ifdef HAVE_ERC
+#ifdef HAVE_OPENVPN
+	{"openvpn", 1, M_LAN, "openvpncl_enable", "1"},
+#endif
+#endif
 	{NULL, 0, 0}
 };
 
