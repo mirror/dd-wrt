@@ -71,7 +71,6 @@ extern char *get_wdev(void);
  */
 
 extern int check_process(char *name);
-extern int start_services_main(int argc, char **argv);
 extern int config_vlan(void);
 extern void config_loopback(void);
 
@@ -131,7 +130,6 @@ extern int roaming_daemon_main(int argc, char *argv[]);
 extern int pptpd_main(int argc, char **argv);
 #endif
 
-extern int is_running(char *process_name);
 
 extern int create_rc_file(char *name);
 extern int wland_main(int argc, char **argv);
@@ -141,39 +139,6 @@ extern void stop_vpn_modules(void);
 extern void load_vpn_modules(void);
 extern void unload_vpn_modules(void);
 extern void depend_vpn_modules(void);
-
-extern void start_service(char *name);
-extern void stop_service(char *name);
-extern void start_service_force(char *name);
-extern void stop_service_force(char *name);
-extern void startstop(char *name);
-extern int stop_running(void);
-extern int stop_running_main(int argc, char *argv[]);
-extern void *start_service_nofree(char *name, void *handle);
-extern void *start_service_nofree_delay(char *name, void *handle, int delay);
-extern void *stop_service_nofree(char *name, void *handle);
-extern void *start_service_nofree_force(char *name, void *handle);
-extern void *stop_service_nofree_force(char *name, void *handle);
-extern int startstop_main(int argc, char **argv);
-extern void *startstop_nofree(char *name, void *handle);
-extern int start_main(char *name, int argc, char **argv);
-extern void start_servicei(char *name, int param);
-
-extern void startstop_f(char *name);
-extern void start_service_f(char *name);
-extern void start_service_force_f(char *name);
-extern void stop_service_f(char *name);
-extern void stop_service_force_f(char *name);
-extern void *start_service_nofree_f(char *name, void *handle);
-extern void *start_service_nofree_fdelay(char *name, void *handle, int delay);
-extern void *stop_service_nofree_f(char *name, void *handle);
-extern void *start_service_nofree_force_f(char *name, void *handle);
-extern void *stop_service_nofree_force_f(char *name, void *handle);
-extern int startstop_main_f(int argc, char **argv);
-extern void *startstop_nofree_f(char *name, void *handle);
-extern void *startstop_nofree_fdelay(char *name, void *handle, int delay);
-extern int start_main_f(char *name, int argc, char **argv);
-extern void start_servicei_f(char *name, int param);
 
 extern int zebra_ospf_init(void);
 extern int zebra_ripd_init(void);
@@ -196,10 +161,6 @@ extern int ipupdate_main(int argc, char **argv);
 extern int gpio_main(int argc, char **argv);
 extern int redial_main(int argc, char **argv);
 
-extern void del_routes(char *route);
-
-extern int start_single_service_main(int argc, char **argv);
-
 extern int write_boot(const char *path, const char *mtd);
 extern void do_mssid(char *wlname);
 extern int init_mtu(char *wan_proto);
@@ -209,7 +170,6 @@ extern char *range(char *start, char *end);
 // static void start_heartbeat (int status);
 extern void stop_heartbeat(void);
 extern int hb_connect_main(int argc, char **argv);
-extern int stop_services_main(int argc, char **argv);
 extern int hb_disconnect_main(int argc, char **argv);
 extern int check_ps_main(int argc, char **argv);
 extern int listen_main(int argc, char **argv);
