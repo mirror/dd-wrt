@@ -269,12 +269,14 @@ int mtd_write(const char *path, const char *mtd)
 
 #if defined(HAVE_MVEBU)
 	char *part = getUEnv("boot_part");
-	if (part && !strcmp(part, "2")){
-		mtd = "linux";
-		eval("ubootenv", "set", "boot_part", "1");
-	} else {
-		mtd = "linux2";
-		eval("ubootenv", "set", "boot_part", "2");
+	if (part) {
+		if (!strcmp(part, "2")) {
+			mtd = "linux";
+			eval("ubootenv", "set", "boot_part", "1");
+		} else {
+			mtd = "linux2";
+			eval("ubootenv", "set", "boot_part", "2");
+		}
 	}
 #endif
 
