@@ -429,9 +429,11 @@ int mtd_resetbc(const char *mtd)
 	}
 
 	/* no need to do writes when last boot count is already 0 */
-	if (last_count == 0)
+	if (last_count == 0) {
+		fprintf(stderr, "count is already zero, no need to call again\n");
 		goto out;
-
+	}
+	fprintf(stderr, "reset boot counter\n");
 	if (i == num_bc) {
 		struct erase_info_user erase_info;
 		erase_info.start = 0;
