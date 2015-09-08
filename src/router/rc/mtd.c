@@ -270,6 +270,7 @@ int mtd_write(const char *path, const char *mtd)
 #if defined(HAVE_MVEBU)
 	char *part = getUEnv("boot_part");
 	if (part) {
+		fprintf(stderr,"boot partiton is %s\n",part);
 		if (!strcmp(part, "2")) {
 			mtd = "linux";
 			eval("ubootenv", "set", "boot_part", "1");
@@ -277,6 +278,9 @@ int mtd_write(const char *path, const char *mtd)
 			mtd = "linux2";
 			eval("ubootenv", "set", "boot_part", "2");
 		}
+		fprintf(stderr,"flash to partition %s\n",mtd);
+	} else {
+		fprintf(stderr,"no boot partition info found\n");
 	}
 #endif
 
