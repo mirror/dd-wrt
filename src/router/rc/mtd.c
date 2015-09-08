@@ -596,6 +596,7 @@ int mtd_write(const char *path, const char *mtd)
 #endif
 #if defined(HAVE_MVEBU)		// erase all blocks first
 	for (erase_info.start = 0; erase_info.start < (mtd_info.size / mtd_info.erasesize); erase_info.start += mtd_info.erasesize) {
+		fprintf(stderr, "erase=[%d]         \n", erase_info.start);
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
 			fprintf(stderr, "Skipping bad block at 0x%08zx\n", erase_info.start);
