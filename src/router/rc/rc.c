@@ -21,7 +21,6 @@
 
 #include <epivers.h>
 #include <bcmnvram.h>
-#include <mtd.h>
 #include <shutils.h>
 #include <rc.h>
 #include <netconf.h>
@@ -42,6 +41,13 @@
 #include <arpa/inet.h>
 
 #include <revision.h>
+#include "servicemanager.c"
+#include "services.c"
+#include "mtd.c"
+#include "mtd_main.c"
+#ifdef HAVE_PPTPD
+#include "pptpd.c"
+#endif
 
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 static void check_qmi(void)

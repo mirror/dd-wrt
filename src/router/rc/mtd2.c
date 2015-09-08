@@ -147,7 +147,7 @@ int mtd_write(const char *path, const char *mtd)
 	else
 		count = http_get(path, (char *)&trx, sizeof(struct trx_header), 0);
 	if (count < sizeof(struct trx_header)) {
-		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path, count);
+		fprintf(stderr, "%s: File is too small (%d bytes)\n", path, count);
 		goto fail;
 	}
 	if (trx.magic != TRX_MAGIC || trx.len > support_max_len || trx.len < sizeof(struct trx_header)) {
@@ -167,7 +167,7 @@ int mtd_write(const char *path, const char *mtd)
 	 * See if we have enough memory to store the whole file 
 	 */
 	sysinfo(&info);
-	fprintf(stderr, "freeram=[%ld] bufferram=[%ld]\n", info.freeram, info.bufferram);
+	fprintf(stderr, "freeram=[%d] bufferram=[%d]\n", info.freeram, info.bufferram);
 	if (info.freeram >= (trx.len + 1 * 1024 * 1024)) {
 		fprintf(stderr, "The free memory is enough, writing image once.\n");
 		/* 
@@ -293,7 +293,7 @@ int nvram_restore(const char *path, char *mtd)
 		count = safe_fread(&buf, 1, sizeof(buf), fp);
 
 	if (count < sizeof(struct nvram_header)) {
-		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path, count);
+		fprintf(stderr, "%s: File is too small (%d bytes)\n", path, count);
 		goto fail;
 	}
 
