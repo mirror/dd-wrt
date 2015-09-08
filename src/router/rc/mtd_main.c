@@ -398,7 +398,14 @@ int mtd_resetbc(const char *mtd)
 	int fd;
 	int ret;
 
-	fd = mtd_check(mtd);
+	if (!mtd_check(mtd))
+		return -1;
+
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
+	if (fd < 0) {
+		fprintf(stderr, "error while opening mtd\n");
+		return -1;
+	}
 
 	if (ioctl(fd, MEMGETINFO, &mtd_info) < 0) {
 		fprintf(stderr, "failed to get mtd info!\n");
