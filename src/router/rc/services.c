@@ -47,7 +47,7 @@
  */
 void start_tmp_ppp(int num);
 
-void del_routes(char *route)
+static void del_routes(char *route)
 {
 	char word[80], *tmp;
 	char *ipaddr, *netmask, *gateway, *metric, *ifname;
@@ -78,7 +78,7 @@ void del_routes(char *route)
 	}
 }
 
-int start_services_main(int argc, char **argv)
+static int start_services_main(int argc, char **argv)
 {
 	update_timezone();
 
@@ -225,7 +225,7 @@ int start_services_main(int argc, char **argv)
 	return 0;
 }
 
-int stop_services_main(int argc, char **argv)
+static int stop_services_main(int argc, char **argv)
 {
 #ifdef HAVE_P910ND
 	stop_service_f("printer");
@@ -1312,7 +1312,7 @@ static struct SERVICES services_def[] = {
 	{NULL, NULL}
 };
 
-int start_single_service_main(int argc, char **argv)
+static int start_single_service_main(int argc, char **argv)
 {
 	start_service_force("overclocking");
 	char *next;
@@ -1342,7 +1342,7 @@ int start_single_service_main(int argc, char **argv)
 	return 0;
 }
 
-int is_running(char *process_name)
+static int is_running(char *process_name)
 {
 	DIR *dir;
 	struct dirent *next;

@@ -12,7 +12,7 @@
 
 #define WOL_INTERVAL 15
 
-int wol_run(void)
+static int wol_run(void)
 {
 	int ret = 0;
 	char *macs = NULL;

@@ -49,9 +49,9 @@ INITCFLAGS = $(call cc-option,-Os -ffunction-sections -fdata-sections,)
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-OBJS := rc.o servicemanager.o event.o
+OBJS := rc.o event.o
 #http.o stats.o
-OBJS += watchdog.o services.o mtd_main.o
+OBJS += watchdog.o
 
 #ifdef $(CONFIG_DIST)
 CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
@@ -59,11 +59,6 @@ CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 
 CFLAGS += -DARCHITECTURE="\"$(ARCHITECTURE)\""
 
-ifneq ($(CONFIG_RB500),y)
-ifneq ($(CONFIG_X86),y)
-OBJS += mtd.o
-endif
-endif
 ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
@@ -764,7 +759,6 @@ CFLAGS += -DHAVE_AQOS
 
 ifeq ($(CONFIG_PPTPD),y)
 CFLAGS += -DHAVE_PPTPD
-OBJS += pptpd.o
 endif
 ifeq ($(CONFIG_PPTP),y)
 CFLAGS += -DHAVE_PPTP

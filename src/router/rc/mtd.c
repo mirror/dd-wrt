@@ -119,7 +119,7 @@ static int mtd_block_is_bad(int fd, int offset)
  * @param       flags   open() flags
  * @return      return value of open()
  */
-int mtd_open(const char *mtd, int flags)
+static int mtd_open(const char *mtd, int flags)
 {
 	FILE *fp;
 	char dev[PATH_MAX];
@@ -217,7 +217,7 @@ struct img_info {
 	uint32_t CRC;
 };
 
-struct code_header {
+struct code_header2 {
 	char magic[4];
 	char res1[4];		// for extra magic
 	char fwdate[3];
@@ -230,7 +230,7 @@ struct code_header {
 } __attribute__((packed));
 
 struct etrx_header {
-	struct code_header code;
+	struct code_header2 code;
 	struct trx_header trx;
 } __attribute__((packed));
 
@@ -439,7 +439,7 @@ int mtd_write(const char *path, const char *mtd)
 #endif
 	// count = http_get (path, (char *) &trx, sizeof (struct trx_header), 0);
 	if (count < sizeof(struct trx_header)) {
-		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path, count);
+		fprintf(stderr, "%s: File is too small (%d bytes)\n", path, count);
 		goto fail;
 	}
 	sysinfo(&info);
@@ -628,12 +628,12 @@ int mtd_write(const char *path, const char *mtd)
 		 * for debug 
 		 */
 		sum = sum + count;
-		fprintf(stderr, "write=[%ld]         \n", sum);
+		fprintf(stderr, "write=[%d]         \n", sum);
 
 		if (((count < len)
 		     && (len - off) > (mtd_info.erasesize * mul))
 		    || (count == 0)) {
-			fprintf(stderr, "%s: Truncated file (actual %ld expect %ld)\n", path, count - off, len - off);
+			fprintf(stderr, "%s: Truncated file (actual %d expect %d)\n", path, count - off, len - off);
 			goto fail;
 		}
 		/* 
@@ -660,7 +660,7 @@ int mtd_write(const char *path, const char *mtd)
 		 * Check CRC before writing if possible 
 		 */
 #ifdef HAVE_WRT160NL
-		if (count == trx.len + sizeof(struct code_header)) {
+		if (count == trx.len + sizeof(struct code_header2)) {
 #else
 		if (count == trx.len) {
 #endif
@@ -680,7 +680,7 @@ int mtd_write(const char *path, const char *mtd)
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 		      again:;
-			fprintf(stderr, "write block [%ld] at [0x%08X]        \r", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
+			fprintf(stderr, "write block [%d] at [0x%08X]        \r", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
 			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
@@ -708,7 +708,7 @@ int mtd_write(const char *path, const char *mtd)
 
 	}
 
-	fprintf(stderr, "\ndone [%ld]\n", i * mtd_info.erasesize);
+	fprintf(stderr, "\ndone [%d]\n", i * mtd_info.erasesize);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
 	 */
@@ -946,7 +946,7 @@ fail:
  * @param       mtd     path to or partition name of MTD device
  * @return      0 on success and errno on failure
  */
-int mtd_unlock(const char *mtd)
+static int mtd_unlock(const char *mtd)
 {
 	int mtd_fd;
 	struct mtd_info_user mtd_info;
