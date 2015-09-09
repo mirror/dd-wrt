@@ -19,20 +19,10 @@ CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include 
 CFLAGS  += $(COPTS)
-ifeq ($(ARCH),i386)
-LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
-CFLAGS += -I$(LINUXDIR)  -D_GNU_SOURCE
-else
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
 CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils -fPIC  -D_GNU_SOURCE
 
-#ifneq ($(ARCHITECTURE),lsx)
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
-#endif
-#ifeq ($(ARCHITECTURE),lsx)
-#CFLAGS += -fomit-frame-pointer 
-#endif
-endif
 CFLAGS += $(MIPS16_OPT) 
 
 cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
