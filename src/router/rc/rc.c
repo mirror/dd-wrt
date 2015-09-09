@@ -43,11 +43,7 @@
 #include <revision.h>
 #include "servicemanager.c"
 #include "services.c"
-#ifndef HAVE_RB500
-#ifndef HAVE_X86
 #include "mtd.c"
-#endif
-#endif
 #include "mtd_main.c"
 #ifdef HAVE_PPTPD
 #include "pptpd.c"
