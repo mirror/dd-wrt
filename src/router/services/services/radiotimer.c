@@ -61,7 +61,9 @@ void start_radio_timer(void)
 	    && nvram_match("radio2_timer_enable", "0"))
 		return;
 #ifdef HAVE_MADWIFI
-	if (nvram_match("ath0_net_mode", "disabled"))
+	if (nvram_match("ath0_net_mode", "disabled")
+	    && nvram_match("ath1_net_mode", "disabled")
+	)
 #else
 	if (nvram_match("wl0_net_mode", "disabled")
 	    && nvram_match("wl1_net_mode", "disabled")
