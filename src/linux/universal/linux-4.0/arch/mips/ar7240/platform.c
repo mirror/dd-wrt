@@ -203,6 +203,23 @@ static void __init ath79_usb_register(const char *name, int id,
 	pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
 }
 
+static void ar933x_usb_setup(void)
+{
+	ar71xx_device_stop(AR933X_RESET_USBSUS_OVERRIDE);
+	mdelay(10);
+
+	ar71xx_device_start(AR933X_RESET_USB_HOST);
+	mdelay(10);
+
+	ar71xx_device_start(AR933X_RESET_USB_PHY);
+	mdelay(10);
+
+	ath79_usb_register("ehci-platform", -1,
+			   AR933X_EHCI_BASE, AR933X_EHCI_SIZE,
+			   3,
+			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
+}
+
 
 static void qca956x_usb_setup(void)
 {
@@ -1239,13 +1256,16 @@ int __init ar7240_platform_init(void)
 	if (ret < 0)
 		return ret;
 
-	if (is_ar7241() || is_ar7242() || is_ar933x() || is_ar934x()) {
+	if (is_ar7241() || is_ar7242() || is_ar934x()) {
 		ret = platform_add_devices(ar7241_platform_devices, ARRAY_SIZE(ar7241_platform_devices));
 	}
 	if (is_ar7240()) {
 		ret = platform_add_devices(ar7240_platform_devices, ARRAY_SIZE(ar7240_platform_devices));
 	}
 
+	if (is_ar933x()) {
+		ar933x_usb_setup();
+	}
 	if (is_qca955x() || is_qca956x()) {
 		qca_usbregister();
 	}
