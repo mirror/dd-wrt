@@ -383,7 +383,7 @@ config USB_OHCI_AR7100
 
 config USB_OHCI_AR7240
 	bool "USB OHCI support for AR7240"
-	depends on (MACH_AR7240 || MACH_HORNET) && USB_OHCI_HCD
+	depends on (MACH_AR7240) && USB_OHCI_HCD
 	depends on MACH_AR7240 && USB_OHCI_HCD
 	help
 	  Support for AR7240 OHCI controller
@@ -396,7 +396,7 @@ config USB_EHCI_AR7100
 
 config USB_EHCI_AR9130
 	bool "USB EHCI support for AR9130"
-	depends on (MACH_AR7100 || MACH_AR7240 || MACH_HORNET) && USB_EHCI_HCD
+	depends on (MACH_AR7100 || MACH_AR7240) && USB_EHCI_HCD
 	help
 	  Support for AR9130 EHCI controller
 

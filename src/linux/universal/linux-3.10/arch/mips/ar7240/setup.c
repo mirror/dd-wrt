@@ -598,7 +598,7 @@ static void ar7240_sys_frequency(void)
 	ref_div = (pll >> REF_DIV_SHIFT) & REF_DIV_MASK;
 	ddr_div = ((pll >> DDR_DIV_SHIFT) & DDR_DIV_MASK) + 1;
 	ahb_div = (((pll >> AHB_DIV_SHIFT) & AHB_DIV_MASK) + 1) * 2;
-
+	
 	freq = pll_div * ref_div * 5000000;
 
 	ar7240_cpu_freq = freq;
