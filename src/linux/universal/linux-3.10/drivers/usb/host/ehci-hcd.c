@@ -45,7 +45,7 @@
 #include <asm/irq.h>
 #include <asm/unaligned.h>
 
-#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_WASP_SUPPORT)
+#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_WASP_SUPPORT)
 
 #ifdef CONFIG_WASP_SUPPORT
 #include "../gadget/ath_defs.h"
@@ -260,7 +260,7 @@ static int ehci_reset (struct ehci_hcd *ehci)
 	dbg_cmd (ehci, "reset", command);
 	ehci_writel(ehci, command, &ehci->regs->command);
 
-#if ((defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_WASP_SUPPORT)) && !defined(CONFIG_AP135)  && !defined(CONFIG_DIR859)) || defined(CONFIG_MMS344) 
+#if ((defined(CONFIG_MACH_AR7240) || defined(CONFIG_WASP_SUPPORT)) && !defined(CONFIG_AP135)  && !defined(CONFIG_DIR859)) || defined(CONFIG_MMS344) 
 #define ath_usb_reg_wr		ar7240_reg_wr
 #define ath_usb_reg_rd		ar7240_reg_rd
 #define ATH_USB_USB_MODE	AR9130_USB_MODE
