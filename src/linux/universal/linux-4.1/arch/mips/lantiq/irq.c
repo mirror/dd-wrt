@@ -389,6 +389,7 @@ void __init arch_init_irq(void)
 
 	cp0_perfcount_irq = LTQ_PERF_IRQ;
 }
+EXPORT_SYMBOL_GPL(get_c0_perfcount_int);
 
 unsigned int get_c0_compare_int(void)
 {
