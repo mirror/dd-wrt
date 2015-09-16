@@ -168,7 +168,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
-	setEthLED(17, "eth1");
+	setEthLED(17, "eth0");
 	setSwitchLED(13, 0x02);
 	setSwitchLED(14, 0x04);
 	setSwitchLED(15, 0x08);
