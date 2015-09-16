@@ -263,7 +263,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .active_low = 0,
 #endif
 	 },
-#if defined(CONFIG_DIR825C1) || defined(CONFIG_DIR615E)
+#if defined(CONFIG_DIR825C1) || defined(CONFIG_DIR615E) || defined(CONFIG_ERC)
 	{
 	 .name = "generic_13",
 	 .gpio = 13,
@@ -279,7 +279,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 	 .name = "generic_14",
 	 .gpio = 14,
-#if defined(CONFIG_DIR615E) || defined(CONFIG_WR841V9)
+#if defined(CONFIG_DIR615E) || defined(CONFIG_WR841V9) || defined(CONFIG_ERC)
 	 .active_low = 1,
 #else
 	 .active_low = 0,
@@ -288,7 +288,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 	 .name = "generic_15",
 	 .gpio = 15,
-#if defined(CONFIG_DIR615E) || defined(CONFIG_WR841V9)
+#if defined(CONFIG_DIR615E) || defined(CONFIG_WR841V9)  || defined(CONFIG_ERC)
 	 .active_low = 1,
 #else
 	 .active_low = 0,
@@ -297,7 +297,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 	 .name = "generic_16",
 	 .gpio = 16,
-#if defined(CONFIG_DIR615E) || defined(CONFIG_WR841V9)
+#if defined(CONFIG_DIR615E) || defined(CONFIG_WR841V9)  || defined(CONFIG_ERC)
 	 .active_low = 1,
 #else
 	 .active_low = 0,
