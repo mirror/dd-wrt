@@ -353,6 +353,40 @@ void set_gpio(int gpio, int value)
 
 #elif defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
 
+#ifdef HAVE_ERC
+void set_extgpio(int pin, int value)
+{
+	char str[32];
+	char strdir[64];
+	FILE *fp;
+	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
+      new_try:;
+	fp = fopen(str, "rb");
+	if (!fp) {
+		fp = fopen("/sys/class/gpio/export", "wb");
+		if (fp) {
+			fprintf(fp, "%d", pin);
+			fclose(fp);
+		} else {
+			return;	//prevent deadlock
+		}
+		goto new_try;
+	}
+	fclose(fp);
+	fp = fopen(strdir, "wb");
+	if (fp) {
+		fprintf(fp, "out");
+		fclose(fp);
+	}
+	fp = fopen(str, "wb");
+	if (fp) {
+		fprintf(fp, "%d", value);
+		fclose(fp);
+	}
+}
+#endif
+
 void set_gpio(int gpio, int value)
 {
 	FILE *in;
@@ -371,6 +405,12 @@ void set_gpio(int gpio, int value)
 		fclose(in);
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
 	} else
+#ifdef HAVE_ERC
+	if (gpio >= 55) {
+		set_extgpio(gpio, value);
+		return;
+	} else
+#endif
 #ifdef HAVE_DANUBE
 	if (gpio >= 200)
 		sprintf(buf, "/proc/gpiostp/%d_out", gpio - 200);
@@ -380,12 +420,13 @@ void set_gpio(int gpio, int value)
 		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 	}
 
-//      in = fopen(buf, "wb");
-//      if (in == NULL)
-//              return;
+	in = fopen(buf, "wb");
+	if (in == NULL)
+		return;
+	fprintf(in, "%d", value);
+	fclose(in);
+
 	sysprintf("echo %d > %s", value, buf);
-//      fprintf(in, "%d", value);
-//      fclose(in);
 }
 
 int get_gpio(int gpio)
