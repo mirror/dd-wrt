@@ -173,6 +173,8 @@ void start_sysinit(void)
 	setSwitchLED(14, 0x04);
 	setSwitchLED(15, 0x08);
 	setSwitchLED(16, 0x10);
+	set_gpio(17,0);
+	setEthLED(17, "eth0");
 #elif HAVE_CARAMBOLA
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
