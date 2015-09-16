@@ -184,7 +184,7 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth1", "1");
 	eval("vconfig", "add", "eth1", "2");
 #endif
-#ifnef HAVE_ERC
+#ifndef HAVE_ERC
 #ifdef HAVE_HORNET
 #ifdef HAVE_ONNET
 	setEthLED(13, "eth0");
