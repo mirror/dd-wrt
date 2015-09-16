@@ -426,7 +426,7 @@ void set_gpio(int gpio, int value)
 	fprintf(in, "%d", value);
 	fclose(in);
 
-	sysprintf("echo %d > %s", value, buf);
+//	sysprintf("echo %d > %s", value, buf);
 }
 
 int get_gpio(int gpio)
