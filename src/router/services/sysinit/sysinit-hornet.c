@@ -173,8 +173,7 @@ void start_sysinit(void)
 	setSwitchLED(14, 0x04);
 	setSwitchLED(15, 0x08);
 	setSwitchLED(16, 0x10);
-	set_gpio(17,0);
-	setEthLED(17, "eth0");
+	set_gpio(17,1);
 #elif HAVE_CARAMBOLA
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
@@ -185,6 +184,7 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth1", "1");
 	eval("vconfig", "add", "eth1", "2");
 #endif
+#ifnef HAVE_ERC
 #ifdef HAVE_HORNET
 #ifdef HAVE_ONNET
 	setEthLED(13, "eth0");
@@ -192,6 +192,7 @@ void start_sysinit(void)
 #else
 	setEthLED(17, "eth0");
 	setEthLED(13, "eth1");
+#endif
 #endif
 #endif
 	struct ifreq ifr;
@@ -216,6 +217,7 @@ void start_sysinit(void)
 	led_control(LED_BRIDGE, LED_OFF);
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
+	led_control(LED_VPN, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 	setWirelessLed(0, 0);
 
