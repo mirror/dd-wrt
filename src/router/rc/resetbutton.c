@@ -962,6 +962,9 @@ void period_check(int sig)
 #ifdef HAVE_WZRG300NH
 	sesgpio = 0x117;
 	val |= get_gpio(23) << 23;	//aoss pushbutton
+#elif defined(HAVE_WZR600DHP)
+	sesgpio = 0x105;
+	val |= get_gpio(5) << 5;
 #elif defined(HAVE_WZRG300NH2)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
@@ -1499,13 +1502,11 @@ void period_check(int sig)
 			}
 
 		}
-#ifdef HAVE_AOSS
+#if defined(HAVE_AOSS) || defined(HAVE_WPS)
 		else if (nvram_match("radiooff_button", "2")) {
 			sysprintf("startstop aoss");
 		}
-#else
 #endif
-
 	} else if ((wifigpio != 0xfff)
 		   && (((wifigpio & 0x100) == 0 && (val & pushwifi))
 		       || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi)))) {

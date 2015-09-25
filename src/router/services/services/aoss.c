@@ -19,7 +19,7 @@
  *
  * $Id:
  */
-#ifdef HAVE_AOSS
+#if defined(HAVE_AOSS) || defined(HAVE_WPS)
 #include <stdlib.h>
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -50,14 +50,13 @@ void start_aoss(void)
 #endif
 	if (nvram_match("aoss_enable", "0")) {
 		stop_aoss();
-//#ifdef HAVE_WPS			// set to 1 or remove the #if to reenable WPS support
-#if 1
+#ifdef HAVE_WPS	
 		unlink("/tmp/.wpsdone");
 		if (nvram_match("wps_enabled", "1")) {
 			if (!nvram_match("ath0_net_mode", "disabled")) {
 				eval("hostapd_cli", "-i", "ath0", "wps_pbc");
-			}
-#ifdef HAVE_WZRHPAG300NH
+		}
+#if defined(HAVE_WZRHPAG300NH)
 			if (!nvram_match("ath1_net_mode", "disabled")) {
 				eval("hostapd_cli", "-i", "ath1", "wps_pbc");
 			}
@@ -67,6 +66,7 @@ void start_aoss(void)
 
 		return;
 	}
+#ifdef HAVE_AOSS
 	if (pidof("aoss") > 0)
 		return;
 	led_control(LED_SES, LED_FLASH);	// when pressed, blink white
@@ -243,15 +243,18 @@ void start_aoss(void)
 	} else
 		dd_syslog(LOG_INFO, "aoss : aoss daemon not started (operation mode is not AP or WDSAP)\n");
 
+#endif
 	cprintf("done\n");
 	return;
 }
 
 void stop_aoss(void)
 {
+#ifdef HAVE_AOSS
 	stop_process("aoss", "buffalo aoss daemon");
 	eval("iptables", "-D", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
 	eval("iptables", "-D", "INPUT", "-i", "aoss", "-j", "ACCEPT");
+#endif
 	return;
 }
 

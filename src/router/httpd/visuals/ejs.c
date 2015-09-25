@@ -1568,10 +1568,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	static char menuname_t[8][14][32] = {
 		{"setup", "setupbasic", "setupipv6", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", ""},	//
 		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity",	//
-#ifdef HAVE_WPS
+#if defined(HAVE_AOSS) && defined(HAVE_WPS)
 		 "wirelessAossWPS",
-#else
+#elif defined(HAVE_AOSS) && !defined(HAVE_WPS)
 		 "wirelessAoss",
+#elif !defined(HAVE_AOSS) && defined(HAVE_WPS)
+		"wirelessWPS",
 #endif
 		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},	//
 		{"services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesLighttpd", ""},	//
@@ -1725,7 +1727,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// WiMAX
 					j++;
 #endif
-#ifndef HAVE_AOSS
+#if !defined(HAVE_AOSS) && !defined(HAVE_WPS)
+				if (!strcmp(menu[i][j], "AOSS.asp"))	// jump over
+					// AOSS
+					j++;
+#endif
+#if defined(HAVE_WPS) && !defined(HAVE_IDEXX)
 				if (!strcmp(menu[i][j], "AOSS.asp"))	// jump over
 					// AOSS
 					j++;
