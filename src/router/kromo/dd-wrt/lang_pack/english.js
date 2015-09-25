@@ -411,6 +411,7 @@ bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Wireless Security";
 bmenu.wirelessAoss="AOSS";
 bmenu.wirelessAossWPS="AOSS / WPS";
+bmenu.wirelessWPS="WPS";
 bmenu.wirelessMac="MAC Filter";
 bmenu.wirelessAdvanced="Advanced Settings";
 bmenu.wirelessAdvancedwl0="WL0-Advanced";

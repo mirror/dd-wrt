@@ -337,6 +337,9 @@ endif
 ifeq ($(CONFIG_AOSS),y)
   CFLAGS += -DHAVE_AOSS
 endif
+ifeq ($(CONFIG_WPS),y)
+  CFLAGS += -DHAVE_WPS
+endif
 ifeq ($(CONFIG_IAS),y)
   CFLAGS += -DHAVE_IAS
 endif

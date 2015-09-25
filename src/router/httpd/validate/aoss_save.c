@@ -1,4 +1,4 @@
-#ifdef HAVE_AOSS
+#if defined(HAVE_AOSS) || defined(HAVE_WPS)
 #define VALIDSOURCE 1
 
 #ifdef WEBS
