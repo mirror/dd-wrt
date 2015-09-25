@@ -1138,7 +1138,7 @@ struct nvram_param srouter_defaults[] = {
 #else
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_IDEXX
-	{"ath1_closed", "1"},	/* Closed (hidden) network */
+	{"ath1_closed", "0"},	/* Closed (hidden) network */
 #else
 	{"ath0_radio", "1"},	/* Enable (1) or disable (0) radio */
 	{"ath0_closed", "0"},	/* Closed (hidden) network */
@@ -2244,6 +2244,8 @@ struct nvram_param srouter_defaults[] = {
 	{"sshd_enable", "1"},
 #elif HAVE_UNFY
 	{"sshd_enable", "1"},
+#elif HAVE_IDEXX
+	{"sshd_enable", "1"},
 #else
 	{"sshd_enable", "0"},
 #endif
@@ -3098,7 +3100,7 @@ struct nvram_param srouter_defaults[] = {
 	{"pptpd_client_mtu", "1436"},
 	{"pptpd_client_mru", "1436"},
 #ifdef HAVE_RADIOOFF
-#ifdef HAVE_AOSS
+#if defined(HAVE_AOSS) || defined(HAVE_WPS)
 	{"radiooff_button", "2"},
 	{"radiooff_boot_off", "0"},
 #else
@@ -3458,8 +3460,13 @@ struct nvram_param srouter_defaults[] = {
 	{"aoss_wep", "0"},
 #endif
 #ifdef HAVE_WPS
+	{"aoss_enable", "0"},
 	{"wps_enabled", "1"},
+#ifdef HAVE_IDEXX
+	{"wps_registrar", "0"},
+#else
 	{"wps_registrar", "1"},
+#endif
 #endif
 
 #ifdef HAVE_LLTD
