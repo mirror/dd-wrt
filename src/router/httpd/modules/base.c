@@ -990,8 +990,6 @@ static struct gozila_action gozila_actions[] = {
 	 "set_security"},
 	{"SetupAssistant", "keysize", "setupassistant", 1, REFRESH,
 	 "security_save"},
-	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
-	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
 	{"Upgrade", "get_upgrades", "firmware", 1, REFRESH,
 	 "get_airstation_upgrades"},
 #ifdef HAVE_IAS
@@ -999,12 +997,6 @@ static struct gozila_action gozila_actions[] = {
 	 "internetatstart"},
 	{"InternetAtStart.ajax", "ajax", "intatstart_ajax", 1, REFRESH,
 	 "intatstart_ajax"},
-#endif
-#ifdef HAVE_WPS
-	{"AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register"},
-	{"AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register"},
-	{"AOSS", "wps_forcerelease", "aoss", 1, REFRESH, "wps_forcerelease"},
-	{"AOSS", "wps_configure", "aoss", 1, REFRESH, "wps_configure"},
 #endif
 #ifdef HAVE_SPOTPASS
 	{"Nintendo", "save", "spotpass", 1, REFRESH, "nintendo_save"},
@@ -1016,6 +1008,16 @@ static struct gozila_action gozila_actions[] = {
 #endif
 #ifdef HAVE_MINIDLNA
 	{"NAS", "save", "nassrv", 1, REFRESH, "dlna_save"},
+#endif
+#if defined(HAVE_WPS) || defined(HAVE_AOSS)
+ 	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
+	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
+#ifdef HAVE_WPS
+	{"AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register"},
+	{"AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register"},
+	{"AOSS", "wps_forcerelease", "aoss", 1, REFRESH, "wps_forcerelease"},
+	{"AOSS", "wps_configure", "aoss", 1, REFRESH, "wps_configure"},
+#endif
 #endif
 };
 
