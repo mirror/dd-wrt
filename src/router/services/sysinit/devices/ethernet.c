@@ -40,24 +40,21 @@ static int detect_driver(char *drivers, char *list)
 	static char word[256];
 	char *next, *wordlist;
 	int ret;
+	int newcount;
 	int rcc = 0;
 	wordlist = drivers;
 	foreach(word, wordlist, next) {
-		fprintf(stderr, "try %s\n", word);
 		ret = eval("modprobe", word);
-		if (!ret) {
-			int newcount = getifcount("eth");
-			if (newcount > basecount) {
-				basecount = newcount;
-				char *pcid = nvram_safe_get(list);
-				char *newdriver = malloc(strlen(pcid) + strlen(word) + 2);
-				if (strlen(pcid))
-					sprintf(newdriver, "%s %s", pcid, word);
-				else
-					sprintf(newdriver, "%s", word);
-				nvram_set(list, newdriver);
-				rcc++;
-			}
+		if (!ret && (newcount = getifcount("eth")) > basecount) {
+			basecount = newcount;
+			char *pcid = nvram_safe_get(list);
+			char *newdriver = malloc(strlen(pcid) + strlen(word) + 2);
+			if (strlen(pcid))
+				sprintf(newdriver, "%s %s", pcid, word);
+			else
+				sprintf(newdriver, "%s", word);
+			nvram_set(list, newdriver);
+			rcc++;
 		} else {
 			eval("modprobe", "-r", word);
 		}
@@ -65,17 +62,17 @@ static int detect_driver(char *drivers, char *list)
 	return rcc;
 }
 
-static int detect_pcidrivers(void)
+static int detect_drivers(char *enabled, char *list)
 {
 	static char word[256];
 	char *next, *wordlist;
 	int rcc = 0;
-	if (!nvram_match("pci_detected", "1")) {
-		rcc = detect_driver(pcidrivers, "pcidrivers");
-		nvram_set("pci_detected", "1");
+	if (!nvram_match(enabled, "1")) {
+		rcc = detect_driver(pcidrivers, list);
+		nvram_set(enabled, "1");
 		nvram_commit();
 	} else {
-		wordlist = nvram_safe_get("pcidrivers");
+		wordlist = nvram_safe_get(list);
 		foreach(word, wordlist, next) {
 			eval("modprobe", word);
 		}
@@ -87,27 +84,14 @@ static int detect_pcidrivers(void)
 	return rcc;
 }
 
+static int detect_pcidrivers(void)
+{
+	return detect_drivers("pci_detected", "pcidrivers");
+}
+
 static int detect_usbdrivers(void)
 {
-	static char word[256];
-	char *next, *wordlist;
-	int rcc = 0;
-	if (!nvram_match("usb_detected", "1")) {
-		rcc = detect_driver(usbdrivers, "usbdrivers");
-		nvram_set("usb_detected", "1");
-		nvram_commit();
-	} else {
-		wordlist = nvram_safe_get("pcidrivers");
-		foreach(word, wordlist, next) {
-			eval("modprobe", word);
-		}
-		if (strlen(wordlist))
-			rcc = 1;
-		else
-			rcc = 0;
-
-	}
-	return rcc;
+	return detect_drivers("usb_detected", "usbdrivers");
 }
 
 static int detect_ethernet_devices(void)
