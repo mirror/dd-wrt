@@ -15,6 +15,8 @@
 #include <sys/utsname.h>
 #include <fnmatch.h>
 
+#define ENABLE_FEATURE_MODPROBE_FANCY_ALIAS 0
+#define ENABLE_FEATURE_MODPROBE_MULTIPLE_OPTIONS 0
 #define line_buffer bb_common_bufsiz1
 
 struct mod_opt_t {	/* one-way list of options to pass to a module */
