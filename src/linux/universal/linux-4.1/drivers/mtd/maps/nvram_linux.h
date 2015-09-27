@@ -1,10 +1,10 @@
 #ifndef __NVRAM_LINUX__
 #define	__NVRAM_LINUX__
 
-//typedef unsigned int	uint;
-typedef unsigned int	uint32;
-typedef unsigned short	uint16;
-typedef unsigned char	uint8;
+//typedef unsigned int  uint;
+typedef unsigned int uint32;
+typedef unsigned short uint16;
+typedef unsigned char uint8;
 #define	u32		uint32
 #define	u16		uint16
 #define	u8		uint8
@@ -12,34 +12,16 @@ typedef unsigned char	uint8;
 #define	ushort	uint16
 #define	uchar	uint8
 
-
 #define	INLINE	__inline__
 #define	ltoh32
 #define	htol32
 #define	bzero(b, len)		memset((b), '\0', (len))
-#define	MALLOC(size)		kmalloc((size),GFP_ATOMIC)
-#define	MFREE(addr, size)	kfree((addr))
+#define	MALLOC(size)		vmalloc((size))
+#define	MFREE(addr, size)	vfree((addr))
 
-#define	CRC8_USED		/* for nvram header verify */
-//#define	CRC32_USED		/* for trx header verify */
-
-/* crc defines */
-#ifdef	CRC8_USED
-extern uint8 crc8(uint8 *pdata, uint nbytes, uint8 crc);
-#define CRC8_INIT_VALUE  0xff		/* Initial CRC8 checksum value */
-#define CRC8_GOOD_VALUE  0x9f		/* Good final CRC8 checksum value */
-#endif
-#ifdef	CRC16_USED
-extern uint16 crc16(uint8 *pdata, uint nbytes, uint16 crc);
-#define CRC16_INIT_VALUE 0xffff		/* Initial CRC16 checksum value */
-#define CRC16_GOOD_VALUE 0xf0b8		/* Good final CRC16 checksum value */
-#endif
-#ifdef	CRC32_USED
-extern uint32 crc32(uint8 *pdata, uint nbytes, uint32 crc);
-#define CRC32_INIT_VALUE 0xffffffff	/* Initial CRC32 checksum value */
-#define CRC32_GOOD_VALUE 0xdebb20e3	/* Good final CRC32 checksum value */
-#endif
-
+extern uint8 crc8(uint8 * pdata, uint nbytes, uint8 crc);
+#define CRC8_INIT_VALUE  0xff	/* Initial CRC8 checksum value */
+#define CRC8_GOOD_VALUE  0x9f	/* Good final CRC8 checksum value */
 
 #ifndef MIN
 #define	MIN(a, b)		(((a)<(b))?(a):(b))
@@ -55,7 +37,6 @@ extern uint32 crc32(uint8 *pdata, uint nbytes, uint32 crc);
 #define	ISPOWEROF2(x)		((((x)-1)&(x))==0)
 #define	OFFSETOF(type, member)	((uint) &((type *)0)->member)
 #define ARRAYSIZE(a)		(sizeof(a)/sizeof(a[0]))
-
 
 struct nvram_header {
 	uint32 magic;
@@ -89,7 +70,7 @@ extern void nvram_exit(void);
  * @param	name	name of variable to get
  * @return	value of variable or NULL if undefined
  */
-extern char * nvram_get(const char *name);
+extern char *nvram_get(const char *name);
 
 /* 
  * Get the value of an NVRAM variable.
@@ -105,8 +86,8 @@ extern char * nvram_get(const char *name);
  * @return	TRUE if variable is defined and its value is string equal
  *		to match or FALSE otherwise
  */
-static INLINE int
-nvram_match(char *name, char *match) {
+static INLINE int nvram_match(char *name, char *match)
+{
 	const char *value = nvram_get(name);
 	return (value && !strcmp(value, match));
 }
@@ -118,8 +99,8 @@ nvram_match(char *name, char *match) {
  * @return	TRUE if variable is defined and its value is not string
  *		equal to invmatch or FALSE otherwise
  */
-static INLINE int
-nvram_invmatch(char *name, char *invmatch) {
+static INLINE int nvram_invmatch(char *name, char *invmatch)
+{
 	const char *value = nvram_get(name);
 	return (value && strcmp(value, invmatch));
 }
