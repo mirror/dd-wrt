@@ -101,7 +101,7 @@ int nvram_set(const char *name, const char *value)
 	spin_lock_irqsave(&nvram_lock, flags);
 	if ((ret = _nvram_set(name, value))) {
 		/* Consolidate space and try again */
-		if ((header = vmalloc(NVRAM_SPACE, GFP_ATOMIC))) {
+		if ((header = vmalloc(NVRAM_SPACE))) {
 			if (_nvram_commit(header) == 0)
 				ret = _nvram_set(name, value);
 			vfree(header);
