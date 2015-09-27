@@ -1,10 +1,10 @@
 #ifndef __NVRAM_LINUX__
 #define	__NVRAM_LINUX__
 
-//typedef unsigned int	uint;
-typedef unsigned long	uint32;
-typedef unsigned short	uint16;
-typedef unsigned char	uint8;
+//typedef unsigned int  uint;
+typedef unsigned int uint32;
+typedef unsigned short uint16;
+typedef unsigned char uint8;
 #define	u32		uint32
 #define	u16		uint16
 #define	u8		uint8
