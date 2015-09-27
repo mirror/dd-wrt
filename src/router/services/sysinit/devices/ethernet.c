@@ -1,7 +1,7 @@
 /*
  * ethernet.c
  *
- * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2015 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,361 +22,100 @@
  * detects ethernet adapters and loads the drivers
  */
 
-static int try_module(char *module)
+static char pcidrivers[] = {
+	"dmfe.ko de4x5.ko de2104x.ko tulip.ko xircom_cb.ko winbond-840.ko uli526x.ko hp100.ko mlx4_en.ko mlx4_core.ko starfire.ko w5300.ko w5100.ko sungem.ko cassini.ko niu.ko sunhme.ko cxgb.ko cxgb4.ko cxgb4vf.ko s2io.ko vxge.ko myri10ge.ko fealnx.ko enc28j60.ko netxen_nic.ko qlge.ko qla3xxx.ko qlcnic.ko ks8851_mll.ko ks8851.ko ksz884x.ko via-velocity.ko via-rhine.ko fmvj18x_cs.ko enic.ko tg3.ko cnic.ko bnx2x.ko jme.ko stmmac.ko sfc.ko dnet.ko bna.ko ns83820.ko natsemi.ko ipg.ko tlan.ko r6040.ko forcedeth.ko sky2.ko skge.ko epic100.ko smsc9420.ko smsc911x.ko smc91c92_cs.ko be2net.ko xirc2ps_cs.ko amd8111e.ko pcnet32.ko nmclan_cs.ko et131x.ko 8139too.ko 8139cp.ko r8169.ko sundance.ko dl2k.ko tehuti.ko ixgbe.ko e1000e.ko igbvf.ko e1000gcu.ko e1000gbe.ko e100.ko ixgb.ko igb.ko e1000.ko sc92031.ko sis190.ko sis900.ko axnet_cs.ko 8390.ko ne2k-pci.ko pcnet_cs.ko 3c59x.ko 3c589_cs.ko 3c574_cs.ko typhoon.ko ethoc.ko acenic.ko yellowfin.ko hamachi.ko samsung-sxgbe.ko atl1c.ko atl1e.ko atl1.ko atl2.ko alx.ko"
+};
+
+static char usbdrivers[] = {
+	"r8152.ko dm9601.ko gl620a.ko smsc95xx.ko ax88179_178a.ko cdc_mbim.ko asix.ko rtl8150.ko pegasus.ko net1080.ko sr9700.ko kaweth.ko cx82310_eth.ko usbnet.ko lg-vl600.ko hso.ko zaurus.ko int51x1.ko mcs7830.ko catc.ko smsc75xx.ko plusb.ko kalmia.ko"
+};
+
+static int detect_driver(char *drivers, char *list)
 {
-	eval("insmod", module);
-	return 1;
+	int basecount = getifcount("eth");
+	static char word[256];
+	char *next, *wordlist;
+	int ret;
+	int rcc = 0;
+	wordlist = drivers;
+	foreach(word, wordlist, next) {
+		ret = eval("modprobe", word);
+		if (!ret) {
+			int newcount = getifcount("eth");
+			if (newcount > basecount) {
+				basecount = newcount;
+				char *pcid = nvram_safe_get(list);
+				char *newdriver = malloc(strlen(pcid) + strlen(word) + 2);
+				if (strlen(pcid))
+					sprintf(newdriver, "%s %s", pcid, word);
+				else
+					sprintf(newdriver, "%s", word);
+				nvram_set(list, newdriver);
+				rcc++;
+			}
+		} else {
+			eval("modprobe", "-r", word);
+		}
+	}
+	return rcc;
 }
 
-static int detect(char *devicename)
+static int detect_pcidrivers(void)
 {
-	FILE *tmp = fopen("/tmp/devices", "rb");
+	static char word[256];
+	char *next, *wordlist;
+	int rcc = 0;
+	if (!nvram_match("pci_detected", "1")) {
+		rcc = detect_driver(pcidrivers, "pcidrivers");
+		nvram_set("pci_detected", "1");
+		nvram_commit();
+	} else {
+		wordlist = nvram_safe_get("pcidrivers");
+		foreach(word, wordlist, next) {
+			eval("modprobe", "word");
+		}
+		if (strlen(wordlist))
+			rcc = 1;
+		else
+			rcc = 0;
+	}
+	return rcc;
+}
 
-	if (tmp == NULL) {
-		system2("/sbin/lspci>/tmp/devices");
-		system2("/sbin/lspci -n>>/tmp/devices");
-	} else
-		fclose(tmp);
-	char devcall[128];
-	int res;
+static int detect_usbdrivers(void)
+{
+	static char word[256];
+	char *next, *wordlist;
+	int rcc = 0;
+	if (!nvram_match("usb_detected", "1")) {
+		rcc = detect_driver(usbdrivers, "usbdrivers");
+		nvram_set("usb_detected", "1");
+		nvram_commit();
+	} else {
+		wordlist = nvram_safe_get("pcidrivers");
+		foreach(word, wordlist, next) {
+			eval("modprobe", "word");
+		}
+		if (strlen(wordlist))
+			rcc = 1;
+		else
+			rcc = 0;
 
-	sprintf(devcall, "cat /tmp/devices|/bin/grep \"%s\"|/usr/bin/wc -l", devicename);
-	FILE *in = popen(devcall, "r");
-
-	fscanf(in, "%d", &res);
-	pclose(in);
-	return res > 0 ? 1 : 0;
+	}
+	return rcc;
 }
 
 static int detect_ethernet_devices(void)
 {
-	int returncode = 0;
-#ifndef HAVE_XSCALE
-	if (detect("Rhine-"))	// VIA Rhine-I, Rhine-II, Rhine-III
-		returncode = try_module("via-rhine");
-	if (detect("VT6120"))	// VIA Rhine-I, Rhine-II, Rhine-III
-		returncode = try_module("via-velocity");
-	else if (detect("VT6121"))	// VIA Rhine-I, Rhine-II, Rhine-III
-		returncode = try_module("via-velocity");
-	else if (detect("VT6122"))	// VIA Rhine-I, Rhine-II, Rhine-III
-		returncode = try_module("via-velocity");
-
-	if (detect("DP8381"))
-		returncode = try_module("natsemi");
-	if (detect("DP83065"))
-		returncode = try_module("cassini");
-	if (detect("EG20T"))
-		returncode = try_module("pch_gbe");
-	if (detect("Rohm"))
-		returncode = try_module("pch_gbe");
-	if (detect("Cassini"))
-		returncode = try_module("cassini");
-	if (detect("PCnet32"))	// vmware?
-		returncode = try_module("pcnet32");
-	if (detect("Tigon3"))	// Broadcom 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("tg3");
-	} else if (detect("NetXtreme")) {	// Broadcom 
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("tg3");
+	int rcc = 0;
+	rcc |= detect_pcidrivers();
+	if (nvram_match("usb_enable", "1")) {
+		rcc |= detect_usbdrivers();
 	}
-	if (detect("NetXtreme II"))	// Broadcom 
-		returncode = try_module("bnx2");
-	if (detect("BCM44"))	// Broadcom 
-		returncode = try_module("b44");
+	return rcc;
+}
 
-	if (detect("EtherExpress PRO/100"))	// intel 100 mbit 
-		returncode = try_module("e100");
-	else if (detect("PRO/100"))	// intel 100 mbit
-		returncode = try_module("e100");
-	else if (detect("8280"))	// intel 100 mbit 
-		returncode = try_module("e100");
-	else if (detect("Ethernet Pro 100"))	// intel 100 mbit 
-		returncode = try_module("e100");
-	else if (detect("8255"))	// intel 100 mbit 
-		returncode = try_module("e100");
-#endif
-	if (detect("PRO/1000"))	// Intel Gigabit 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82541"))	// Intel Gigabit
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82542"))	// Intel Gigabit
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82543"))	// Intel Gigabit
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82544"))	// Intel Gigabit
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82545"))	// Intel Gigabit
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82546"))	// Intel Gigabit
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82547"))	// Intel Gigabit
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82571"))	// Intel Gigabit 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82572"))	// Intel Gigabit 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82573"))	// Intel Gigabit 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82574"))	// Intel Gigabit 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("82583"))	// Intel Gigabit 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("I217-LM"))	// Intel Gigabit 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("8086:151a"))	// Intel Gigabit 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-	} else if (detect("QCA8171"))	// QCA 
-	{
-		returncode = try_module("alx");
-	} else if (detect("QCA8172"))	// QCA
-	{
-		returncode = try_module("alx");
-	} else if (detect("QCA8161"))	// QCA
-	{
-		returncode = try_module("alx");
-	} else if (detect("QCA8162"))	// QCA
-	{
-		returncode = try_module("alx");
-	} else if (detect("Killer E220x"))	// QCA
-	{
-		returncode = try_module("alx");
-	} else if (detect("Attansic L1"))	// QCA
-	{
-		returncode = try_module("atl1");
-	} else if (detect("Attansic L2"))	// QCA
-	{
-		returncode = try_module("atl2");
-	} else if (detect("AR8132"))	// QCA
-	{
-		returncode = try_module("atl1c");
-	} else if (detect("AR8131"))	// QCA
-	{
-		returncode = try_module("atl1c");
-	} else if (detect("AR8152"))	// QCA
-	{
-		returncode = try_module("atl1c");
-	} else if (detect("AR8151"))	// QCA
-	{
-		returncode = try_module("atl1c");
-	} else if (detect("Attansic L2c"))	// QCA
-	{
-		returncode = try_module("atl1e");
-	} else if (detect("AR8121"))	// QCA
-	{
-		returncode = try_module("atl1e");
-	}
-#ifndef HAVE_XSCALE
-	if (detect("Tolapai"))	// Realtek 8169 Adapter (various notebooks) 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-		returncode = try_module("e1000gcu");
-		returncode = try_module("e1000gbe");
-	} else if (detect("EP80579"))	// Realtek 8169 Adapter (various notebooks) 
-	{
-		try_module("pps_core");
-		try_module("ptp");
-		returncode = try_module("e1000");
-		returncode = try_module("e1000e");
-		returncode = try_module("e1000gcu");
-		returncode = try_module("e1000gbe");
-	}
-#endif
-	if (detect("RTL-8110"))	// Realtek 8169 Adapter (various notebooks) 
-		returncode = try_module("r8169");
-	else if (detect("RTL-8111"))	// Realtek 8169 Adapter (various notebooks) 
-		returncode = try_module("r8169");
-	else if (detect("RTL8111"))	// Realtek 8169 Adapter (various notebooks) 
-		returncode = try_module("r8169");
-	else if (detect("RTL-8169"))	// Realtek 8169 Adapter (various
-		// notebooks) 
-		returncode = try_module("r8169");
-	else if (detect("Linksys Gigabit"))
-		returncode = try_module("r8169");
-	else if (detect("RTL8101"))	// Realtek 8169 Adapter (various
-		// notebooks) 
-		returncode = try_module("r8169");
-
-#ifndef HAVE_XSCALE
-	if (detect("Happy Meal"))
-		returncode = try_module("sunhme");
-
-#endif
-	if (detect("8139"))	// Realtek 8139 Adapter (various notebooks) 
-		returncode = try_module("8139too");
-	if (detect("DFE-690TXD"))	// Realtek 8139 Adapter (various
-		// notebooks) 
-		returncode = try_module("8139too");
-	else if (detect("SMC2-1211TX"))	// Realtek 8139 Adapter (various
-		// notebooks) 
-		returncode = try_module("8139too");
-	else if (detect("Robotics"))	// Realtek 8139 Adapter (various
-		// notebooks) 
-		returncode = try_module("8139too");
-#ifndef HAVE_XSCALE
-
-	if (detect("nForce2 Ethernet"))	// nForce2 
-		returncode = try_module("forcedeth");
-	else if (detect("nForce3 Ethernet"))	// nForce3 
-		returncode = try_module("forcedeth");
-	else if (detect("nForce Ethernet"))	// nForce 
-		returncode = try_module("forcedeth");
-	else if (detect("CK804 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("CK8S Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP04 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP2A Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP51 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP55 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP61 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP65 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP67 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP67 Gigabit"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP73 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP77 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-	else if (detect("MCP79 Ethernet"))	// nForce
-		returncode = try_module("forcedeth");
-
-	if (detect("Sundance"))	// Dlink fibre
-		returncode = try_module("sundance");
-	else if (detect("DL10050"))
-		returncode = try_module("sundance");
-
-	if (detect("88E8001"))	// Marvell Yukon
-		returncode = try_module("sk98lin");
-	else if (detect("RDK-"))
-		returncode = try_module("sk98lin");
-	else if (detect("SK-98"))
-		returncode = try_module("sk98lin");
-	else if (detect("3c940"))
-		returncode = try_module("sk98lin");
-	else if (detect("Marvell"))
-		returncode = try_module("sk98lin");
-
-	if (detect("RTL-8029"))	// Old Realtek PCI NE2000 clone (10M only)
-	{
-		returncode = try_module("8390");
-		returncode = try_module("ne2k-pci");
-	}
-
-	if (detect("3c905"))	// 3Com
-		returncode = try_module("3c59x");
-	else if (detect("3c555"))	// 3Com
-		returncode = try_module("3c59x");
-	else if (detect("3c556"))	// 3Com
-		returncode = try_module("3c59x");
-	else if (detect("ScSOHO100"))	// 3Com
-		returncode = try_module("3c59x");
-	else if (detect("Hurricane"))	// 3Com
-		returncode = try_module("3c59x");
-
-	if (detect("LNE100TX"))	// liteon / linksys
-		returncode = try_module("tulip");
-	else if (detect("FasterNet"))
-		returncode = try_module("tulip");
-	else if (detect("ADMtek NC100"))
-		returncode = try_module("tulip");
-	else if (detect("910-A1"))
-		returncode = try_module("tulip");
-	else if (detect("tulip"))
-		returncode = try_module("tulip");
-	else if (detect("DECchip 21142"))
-		returncode = try_module("tulip");
-	else if (detect("MX987x5"))
-		returncode = try_module("tulip");
-
-	if (detect("DGE-530T"))
-		returncode = try_module("skge");
-	else if (detect("D-Link Gigabit"))
-		returncode = try_module("skge");
-
-	if (detect("SiS900"))	// Sis 900
-		returncode = try_module("sis900");
-
-	if (detect("SafeXcel-1141")) {
-		try_module("ocf");
-		try_module("cryptodev");
-		try_module("safe");
-		nvram_set("use_crypto", "1");
-	} else
-		nvram_set("use_crypto", "0");
-#endif
-	return returncode;
+void start_detectdrivers(void)
+{
+	detect_ethernet_devices();
 }
