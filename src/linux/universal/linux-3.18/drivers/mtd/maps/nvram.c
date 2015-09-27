@@ -11,6 +11,7 @@
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
 #include <linux/mtd/mtd.h>
+#include <linux/vmalloc.h>
 
 #include "nvram_linux.h"
 
