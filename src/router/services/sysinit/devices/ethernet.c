@@ -114,9 +114,7 @@ static int detect_ethernet_devices(void)
 {
 	int rcc = 0;
 	rcc |= detect_pcidrivers();
-	if (nvram_match("usb_enable", "1")) {
-		rcc |= detect_usbdrivers();
-	}
+	rcc |= detect_usbdrivers();
 	return rcc;
 }
 
