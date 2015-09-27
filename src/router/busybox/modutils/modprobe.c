@@ -12,6 +12,15 @@
 */
 
 //applet:IF_MODPROBE(APPLET(modprobe, BB_DIR_SBIN, BB_SUID_DROP))
+//usage:#define modprobe_trivial_usage
+//usage:	"[-qfwrsv] MODULE [SYMBOL=VALUE]..."
+//usage:#define modprobe_full_usage "\n\n"
+//usage:       "	-r	Remove MODULE (stacks) or do autoclean"
+//usage:     "\n	-q	Quiet"
+//usage:     "\n	-v	Verbose"
+//usage:     "\n	-f	Force"
+//usage:     "\n	-w	Wait for unload"
+//usage:     "\n	-s	Report via syslog instead of stderr"
 
 #include "libbb.h"
 #include <sys/utsname.h>
