@@ -77,7 +77,7 @@ static int detect_pcidrivers(void)
 	} else {
 		wordlist = nvram_safe_get("pcidrivers");
 		foreach(word, wordlist, next) {
-			eval("modprobe", "word");
+			eval("modprobe", word);
 		}
 		if (strlen(wordlist))
 			rcc = 1;
@@ -99,7 +99,7 @@ static int detect_usbdrivers(void)
 	} else {
 		wordlist = nvram_safe_get("pcidrivers");
 		foreach(word, wordlist, next) {
-			eval("modprobe", "word");
+			eval("modprobe", word);
 		}
 		if (strlen(wordlist))
 			rcc = 1;
