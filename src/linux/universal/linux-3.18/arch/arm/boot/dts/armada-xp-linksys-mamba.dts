@@ -325,7 +325,7 @@
 
 				partition@a00000 {
 					label = "linux";
-					reg = <0xa00000 0x2700000>;    /* 3MB */
+					reg = <0xa00000 0x2800000>;    /* 3MB */
 				};
 
 				partition@d00000 {
