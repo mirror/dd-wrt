@@ -147,9 +147,11 @@ void start_sysinit(void)
 		nvram_commit();
 	}
 
+	
 	if (nvram_get("et_txq_thresh") == NULL) {
 		nvram_set("et_txq_thresh", "1024");
 	}
+
 
 	switch (getRouterBrand()) {
 	case ROUTER_NETGEAR_AC1450:
@@ -607,7 +609,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R6300V2:
 
-		if (nvram_get("pci/1/1/venid") == NULL) {
+		if (nvram_get("pci/1/1/ddwrt") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -817,7 +819,7 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
-			nvram_set("pci/1/1/venid", "0x14E4");
+			nvram_set("pci/1/1/ddwrt", "1");
 			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
@@ -831,7 +833,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R7000:
 
-		if (nvram_get("pci/1/1/venid") == NULL) {
+		if (nvram_get("pci/1/1/ddwrt") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -915,6 +917,7 @@ void start_sysinit(void)
 				{"devid", "0x43a1"},
 				{"mcsbw402gpo", "0xA976A600"},
 				{"mcsbw202gpo", "0xA976A600"},
+				{"venid", "0x14E4"},
 				{0, 0}
 			};
 			/*
@@ -952,12 +955,8 @@ void start_sysinit(void)
 				{"tempsense_option", "0x3"},
 				{"devid", "0x43a2"},
 				{"femctrl", "3"},
-				{"epagain2g", "0"},
 				{"aa5g", "0"},
-				{"rxgains2gelnagaina0", "0"},
-				{"rxgains2gelnagaina1", "0"},
 				{"pdoffset80ma0", "0"},
-				{"rxgains2gelnagaina2", "0"},
 				{"pdoffset80ma1", "0"},
 				{"cckbw20ul2gpo", "0"},
 				{"pdoffset80ma2", "0"},
@@ -982,19 +981,13 @@ void start_sysinit(void)
 				{"mcsbw202gpo", "0"},
 				{"rxgainerr5ga1", "31,31,31,31"},
 				{"rxgainerr5ga2", "31,31,31,31"},
-				{"rxgains2gtrisoa0", "0"},
-				{"rxgains2gtrisoa1", "0"},
 				{"pdoffset40ma0", "4369"},
-				{"rxgains2gtrisoa2", "0"},
 				{"pdoffset40ma1", "4369"},
 				{"pdoffset40ma2", "4369"},
 				{"sb40and80lr5gmpo", "0"},
 				{"rxgains5gelnagaina0", "4"},
 				{"rxgains5gelnagaina1", "4"},
-				{"noiselvl2ga0", "31"},
 				{"rxgains5gelnagaina2", "4"},
-				{"noiselvl2ga1", "31"},
-				{"noiselvl2ga2", "31"},
 				{"agbg0", "0"},
 				{"mcsbw205glpo", "0xBA768600"},
 				{"agbg1", "0"},
@@ -1015,15 +1008,9 @@ void start_sysinit(void)
 				{"sb40and80hr5gmpo", "0"},
 				{"sb20in80and160hr5gmpo", "0"},
 				{"mcsbw1605gmpo", "0"},
-				{"pa2ga0", "0xfe72,0x14c0,0xfac7"},
-				{"pa2ga1", "0xfe80,0x1472,0xfabc"},
-				{"pa2ga2", "0xfe82,0x14bf,0xfad9"},
 				{"epagain5g", "0"},
 				{"mcsbw405gmpo", "0xBA768600"},
-				{"rxgainerr2ga0", "63"},
 				{"boardtype", "0x621"},
-				{"rxgainerr2ga1", "31"},
-				{"rxgainerr2ga2", "31"},
 				{"cckbw202gpo", "0"},
 				{"rxchain", "7"},
 				{"sb40and80lr5glpo", "0"},
@@ -1034,9 +1021,7 @@ void start_sysinit(void)
 				{"sb20in80and160lr5glpo", "0"},
 				{"sb40and80lr5ghpo", "0"},
 				{"mcsbw805glpo", "0xBA768600"},
-				{"pdgain2g", "4"},
 				{"sb20in80and160lr5ghpo", "0"},
-				{"tssifloor2g", "0x3ff"},
 				{"tempsense_slope", "0xff"},
 				{"mcsbw805ghpo", "0xBA768600"},
 				{"antswitch", "0"},
@@ -1045,22 +1030,16 @@ void start_sysinit(void)
 				{"rawtempsense", "0x1ff"},
 				{"aga2", "0"},
 				{"tempthresh", "255"},
-				{"tworangetssi2g", "0"},
 				{"dot11agduphrpo", "0"},
 				{"sb40and80hr5glpo", "0"},
 				{"sromrev", "11"},
 				{"boardnum", "20507"},
 				{"sb20in40lrpo", "0"},
-				{"rxgains2gtrelnabypa0", "0"},
-				{"rxgains2gtrelnabypa1", "0"},
 				{"sb20in80and160hr5glpo", "0"},
 				{"mcsbw1605glpo", "0"},
-				{"rxgains2gtrelnabypa2", "0"},
 				{"sb40and80hr5ghpo", "0"},
 				{"mcsbw405glpo", "0xBA768600"},
-				{"rpcal2g", "0"},
 				{"dot11agofdmhrbw202gpo", "0"},
-				{"aa2g", "7"},
 				{"boardrev", "0x1451"},
 				{"mcsbw1605ghpo", "0"},
 				{"rxgains5gmtrisoa0", "5"},
@@ -1068,14 +1047,10 @@ void start_sysinit(void)
 				{"rxgains5gmtrisoa1", "4"},
 				{"rxgains5gmtrisoa2", "4"},
 				{"rxgains5gmtrelnabypa0", "1"},
-				{"papdcap2g", "0"},
 				{"rxgains5gmtrelnabypa1", "1"},
 				{"rxgains5gmtrelnabypa2", "1"},
 				{"mcsbw405ghpo", "0xBA768600"},
 				{"tssiposslope2g", "1"},
-				{"maxp2ga0", "76"},
-				{"maxp2ga1", "76"},
-				{"maxp2ga2", "76"},
 				{"boardflags2", "0x300002"},
 				{"boardflags3", "0x10000000"},
 				{"rxgains5ghtrelnabypa0", "1"},
@@ -1085,13 +1060,13 @@ void start_sysinit(void)
 				{"rpcal5gb0", "0x7005"},
 				{"rpcal5gb1", "0x8403"},
 				{"rpcal5gb2", "0x6ff9"},
-				{"sar2g", "18"},
 				{"rpcal5gb3", "0x8509"},
 				{"temps_hysteresis", "15"},
 				{"rxgains5gtrelnabypa0", "1"},
 				{"rxgains5gtrelnabypa1", "1"},
 				{"rxgains5gtrelnabypa2", "1"},
 				{"pdoffset2g40mvalid", "1"},
+				{"venid", "0x14E4"},
 				{0, 0}
 			};
 
@@ -1106,7 +1081,7 @@ void start_sysinit(void)
 			nvram_set("wl_pcie_mrrs", "128");
 			nvram_set("wl0_pcie_mrrs", "128");
 			nvram_set("wl1_pcie_mrrs", "128");
-			nvram_set("pci/1/1/venid", "0x14E4");
+			nvram_set("pci/1/1/ddwrt", "1");
 			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
@@ -1118,7 +1093,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_EX6200:
 		nvram_set("vlan2hwname", "et0");
-		if (nvram_get("0:venid") == NULL) {
+		if (nvram_get("0:ddwrt") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("0:macaddr"))
 			    || startswith(nvram_safe_get("0:macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("1:macaddr"))
@@ -1329,7 +1304,11 @@ void start_sysinit(void)
 				extra_params++;
 			}
 
-			nvram_set("devpath0", "pci/1/1"), nvram_set("devpath1", "pci/2/1"), nvram_set("wl_pcie_mrrs", "128"), nvram_commit();
+			nvram_set("devpath0", "pci/1/1"); 
+			nvram_set("devpath1", "pci/2/1");
+			nvram_set("wl_pcie_mrrs", "128");
+			nvram_set("0:ddwrt", "1");
+			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
 		set_gpio(0, 1);	//USB
@@ -1340,7 +1319,7 @@ void start_sysinit(void)
 		set_gpio(12, 1);	//green 5
 		break;
 	case ROUTER_NETGEAR_R8000:
-		if (nvram_get("0:venid") == NULL) {
+		if (nvram_get("0:ddwrt") == NULL) {
 			char mac[20];
 			strcpy(mac, nvram_safe_get("et2macaddr"));
 			MAC_ADD(mac);
@@ -1351,7 +1330,6 @@ void start_sysinit(void)
 			MAC_ADD(mac);
 			nvram_set("2:macaddr", mac);
 			struct nvram_param r8000_0params[] = {
-				{"venid", "0x14e4"},
 				{"watchdog", "3000"},
 				{"deadman_to", "720000000"},
 				{"rxgains5gmelnagaina0", "1"},
@@ -1647,6 +1625,7 @@ void start_sysinit(void)
 			nvram_set("devpath2", "pcie/2/4");
 			nvram_set("wl2_channel", "48");
 			nvram_set("wl0_channel", "161");
+			nvram_set("0:ddwrt", "1");
 
 			extra_params = r8000_0params;
 			while (extra_params->name) {
@@ -1667,9 +1646,6 @@ void start_sysinit(void)
 
 			nvram_commit();
 		}
-		set_regulation(0, "Q2", "86");
-		set_regulation(1, "Q2", "86");
-		set_regulation(2, "Q2", "86");
 		nvram_unset("et0macaddr");
 		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
