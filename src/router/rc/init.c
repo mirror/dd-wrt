@@ -799,7 +799,6 @@ int main(int argc, char **argv)
 			cprintf("set led release wan control\n");
 			SET_LED(RELEASE_WAN_CONTROL);
 
-#ifndef HAVE_ERC
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")
 			    && nvram_match("radiooff_boot_off", "1")) {
@@ -807,7 +806,6 @@ int main(int argc, char **argv)
 				led_control(LED_SEC0, LED_OFF);
 				led_control(LED_SEC1, LED_OFF);
 			} else
-#endif
 #endif
 			{
 				start_service_force("radio_off");
