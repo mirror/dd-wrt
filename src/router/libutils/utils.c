@@ -1311,12 +1311,20 @@ int internal_getRouterBrand()
 		return ROUTER_DLINK_DIR890;
 	}
 
-	if (nvram_match("boardnum","N/A") && nvram_match("boardtype", "0x072F")
+	if (nvram_match("boardnum","N/A") && nvram_match("boardtype", "0x072F") && !nvram_match("2:devid","0x43c5")
 	    && nvram_match("boardrev", "0x1101")
 	    && nvram_match("gpio7", "wps_button")) {
 		setRouter("Dlink-DIR885L");
 		return ROUTER_DLINK_DIR885;
 	}
+
+	if (nvram_match("boardnum","N/A") && nvram_match("boardtype", "0x072F") && nvram_match("2:devid","0x43c5")
+	    && nvram_match("boardrev", "0x1101")
+	    && nvram_match("gpio7", "wps_button")) {
+		setRouter("Dlink-DIR895L");
+		return ROUTER_DLINK_DIR895;
+	}
+
 	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("gpio15", "wps_button")) {
@@ -6111,7 +6119,18 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_DLINK_DIR885:
 		usb_power = 0x012;
-		usb_gpio = 0x108;
+    		usb_gpio = 0x108;
+		power_gpio = 0x100;
+		diag_gpio = 0x102;
+		diag_gpio_disabled = 0x100;
+		disconnected_gpio = 0x103;
+		connected_gpio = 0x101;
+		break;
+	case ROUTER_DLINK_DIR895:
+		usb_power = 0x015;
+		usb_power1 = 0x012;
+    		usb_gpio = 0x108;
+		usb_gpio1 = 0x10f;
 		power_gpio = 0x100;
 		diag_gpio = 0x102;
 		diag_gpio_disabled = 0x100;
