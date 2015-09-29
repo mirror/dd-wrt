@@ -132,6 +132,8 @@ struct nvram_param srouter_defaults[] = {
 	{"time_zone", "America/Mexico City"},
 #elif HAVE_HOBBIT
 	{"time_zone", "Europe/Brussels"},
+#elif HAVE_ONNET
+	{"time_zone", "Asia/Dubai"},
 #else
 	{"time_zone", "Europe/Berlin"},
 #endif
@@ -1028,12 +1030,22 @@ struct nvram_param srouter_defaults[] = {
 	{"ath2_ssid", "hdwifi3"},
 	{"ath3_ssid", "hdwifi4"},
 #elif defined(HAVE_ONNET_BLANK)
+#ifdef HAVE_MMS344
+        {"ath0_ssid", "OTAi2.4"},
+        {"ath1_ssid", "OTAi5.8"},
+#else
 	{"ath0_ssid", "Enterprise WIFI"},
 	{"ath1_ssid", "Enterprise WIFI_1"},
 	{"ath2_ssid", "Enterprise WIFI_2"},
+#endif
 #elif defined(HAVE_ONNET)
+#ifdef HAVE_MMS344
+	{"ath0_ssid", "OTAi2.4"},
+	{"ath1_ssid", "OTAi5.8"},
+#else
 	{"ath0_ssid", "OTAi"},
 	{"ath1_ssid", "OTAi_1"},
+#endif
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
 	{"ath0_ssid", "GGEWnet-WLAN"},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
@@ -2286,6 +2298,9 @@ struct nvram_param srouter_defaults[] = {
 	{"telnet_wanport", "23"},	/* WAN port to listen on */
 	{"syslogd_enable", "0"},
 	{"syslogd_rem_ip", ""},
+#ifdef HAVE_ONNET
+	{"tcp_congestion_control", "vegas"},
+#endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K)
 	{"wl0_wds1_enable", "0"},
 	{"wl0_wds2_enable", "0"},

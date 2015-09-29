@@ -1071,6 +1071,11 @@ void setRouter(char *name)
 #elif HAVE_SANSFIL
 	nvram_set("DD_BOARD", "SANSFIL");
 	nvram_set("DD_BOARD2", name);
+#elif HAVE_ONNET
+#ifdef HAVE_MMS344
+	nvram_set("DD_BOARD", "DBDC344");
+	nvram_set("DD_BOARD2", "DBDC344");
+#endif
 #elif HAVE_ESPOD
 	if (name)
 		nvram_set("DD_BOARD2", name);
