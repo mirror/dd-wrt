@@ -2476,6 +2476,7 @@ void start_restore_defaults(void)
 			nvram_set("vlan2ports", "4 5u");
 		}
 		break;
+	case ROUTER_DLINK_DIR885:
 	case ROUTER_TRENDNET_TEW828:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_get("vlan2ports")
