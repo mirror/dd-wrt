@@ -2175,6 +2175,65 @@ void start_sysinit(void)
 			nvram_commit();
 		}
 		break;
+	case ROUTER_DLINK_DIR895:
+		if (!strncmp(nvram_safe_get("et0macaddr"), "00:90", 5)) {
+			char buf[64];
+			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
+			fread(buf, 1, 24, fp);
+			pclose(fp);
+			buf[24] = 0;
+			fprintf(stderr, "set main mac %s\n", &buf[7]);
+			nvram_set("et0macaddr", &buf[7]);
+
+			fp = popen("cat /dev/mtdblock0|grep wlan24mac=", "r");
+			fread(buf, 1, 27, fp);
+			pclose(fp);
+			buf[27] = 0;
+			fprintf(stderr, "set 2.4g mac %s\n", &buf[10]);
+			nvram_set("0:macaddr", &buf[10]);
+
+			fp = popen("cat /dev/mtdblock0|grep wlan5mac2=", "r");
+			fread(buf, 1, 27, fp);
+			pclose(fp);
+			buf[27] = 0;
+			fprintf(stderr, "set 5g mac 1 %s\n", &buf[10]);
+			nvram_set("1:macaddr", &buf[10]);
+
+			fp = popen("cat /dev/mtdblock0|grep wlan5mac=", "r");
+			fread(buf, 1, 26, fp);
+			pclose(fp);
+			buf[26] = 0;
+			fprintf(stderr, "set 5g mac 2 %s\n", &buf[9]);
+			nvram_set("2:macaddr", &buf[9]);
+			nvram_commit();
+		}
+		break;
+	case ROUTER_DLINK_DIR885:
+		if (!strncmp(nvram_safe_get("et0macaddr"), "00:90", 5)) {
+			char buf[64];
+			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
+			fread(buf, 1, 24, fp);
+			pclose(fp);
+			buf[24] = 0;
+			fprintf(stderr, "set main mac %s\n", &buf[7]);
+			nvram_set("et0macaddr", &buf[7]);
+
+			fp = popen("cat /dev/mtdblock0|grep wlan24mac=", "r");
+			fread(buf, 1, 27, fp);
+			pclose(fp);
+			buf[27] = 0;
+			fprintf(stderr, "set 2.4g mac %s\n", &buf[10]);
+			nvram_set("0:macaddr", &buf[10]);
+
+			fp = popen("cat /dev/mtdblock0|grep wlan5mac=", "r");
+			fread(buf, 1, 27, fp);
+			pclose(fp);
+			buf[27] = 0;
+			fprintf(stderr, "set 5g mac 1 %s\n", &buf[10]);
+			nvram_set("1:macaddr", &buf[10]);
+			nvram_commit();
+		}
+		break;
 	case ROUTER_DLINK_DIR880:
 		if (nvram_get("0:venid") == NULL) {
 			char buf[64];
