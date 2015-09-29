@@ -806,40 +806,29 @@ wlconf_auto_channel(char *name)
 	WLCONF_DBG("interface %s: channel selected %d\n", name, chosen);
 	return chosen;
 }
-
 static chanspec_t
-wlconf_auto_chanspec(char *name,char *prefix)
+wlconf_auto_chanspec(char *name)
 {
 	chanspec_t chosen = 0;
+	int temp = 0;
 	wl_uint32_list_t request;
-	char tmp[100];
-	int bandtype;
 	int ret;
 	int i;
-	int chanspec_asus = 0;
-
-cprintf("wlconf_auto_chanspec 01\n");
-	/* query the band type */
-	WL_GETINT(name, WLC_GET_BAND, &bandtype);
-cprintf("wlconf_auto_chanspec 02\n");
 
 	request.count = 0;	/* let the ioctl decide */
 	WL_IOCTL(name, WLC_START_CHANNEL_SEL, &request, sizeof(request));
-cprintf("wlconf_auto_chanspec 03\n");
 	if (!ret) {
-cprintf("wlconf_auto_chanspec 04\n");
-		sleep_ms(1000);
-cprintf("wlconf_auto_chanspec 04-\n");
+		/* this time needs to be < 1000 to prevent mpc kicking in for 2nd radio */
+		sleep_ms(500);
 		for (i = 0; i < 100; i++) {
-cprintf("wlconf_auto_chanspec 05 %d\n", i);
-			WL_IOVAR_GETINT(name, "apcschspec", (void *)&chosen);
+			WL_IOVAR_GETINT(name, "apcschspec", &temp);
 			if (!ret)
 				break;
 			sleep_ms(100);
 		}
 	}
-cprintf("wlconf_auto_chanspec 06\n");
 
+	chosen = (chanspec_t) temp;
 	WLCONF_DBG("interface %s: chanspec selected %04x\n", name, chosen);
 	return chosen;
 }
@@ -1580,6 +1569,7 @@ wlconf(char *name)
 	int max_assoc = -1;
 	bool ure_enab = FALSE;
 	bool radar_enab = FALSE;
+	chanspec_t chanspec = 0;
 	bool obss_coex = FALSE;
 	int wet_tunnel_cap = 0, wet_tunnel_enable = 0;
 	brcm_prop_ie_t brcm_syscap_ie;
@@ -2340,7 +2330,6 @@ cprintf("set channel %s\n",name);
 			nvram_set(strcat_r(prefix, "channel", tmp), buf);
 		}
 	} else if (val && WLCONF_PHYTYPE_11N(phytype)) {
-		chanspec_t chanspec = 0;
 		uint channel;
 		uint nctrlsb = 0;
 		nmode = AUTO;	/* enable by default for NPHY */
@@ -3112,22 +3101,31 @@ cprintf("set obss_coex %s\n",name);
 	 */
 cprintf("set auto channel selection %s\n",name);
 	if (ap || apsta) {
-//		if(!strcmp(name, "eth1"))
-//			val = 6;
-//		else
-//			val = 52;
-		if(1 == 0) {
-		//if (!(val = atoi(nvram_default_get(strcat_r(prefix, "channel", tmp),"0")))) {
+		int channel = chanspec ? wf_chspec_ctlchan(chanspec) : 0;
+		if (obss_coex || channel == 0) {
 			if (WLCONF_PHYTYPE_11N(phytype)) {
-cprintf("set auto channel 01 tmp: %s %s\n", name, prefix);
-				chanspec_t chanspec = wlconf_auto_chanspec(name,prefix);
+				chanspec_t chanspec;
+				int pref_chspec;
+
+				if (channel != 0) {
+					/* assumes that initial chanspec has been set earlier */
+					/* Maybe we expand scope of chanspec from above so
+					 * that we don't have to do the iovar_get here?
+					 */
+
+					/* We're not doing auto-channel, give the driver
+					 * the preferred chanspec.
+					 */
+					WL_IOVAR_GETINT(name, "chanspec", &pref_chspec);
+					WL_IOVAR_SETINT(name, "pref_chanspec", pref_chspec);
+				} else {
+					WL_IOVAR_SETINT(name, "pref_chanspec", 0);
+				}
+
+				chanspec = wlconf_auto_chanspec(name);
 				if (chanspec != 0)
-					{
-//					fprintf(stderr,"auto chanspec %X\n",chanspec);
 					WL_IOVAR_SETINT(name, "chanspec", chanspec);
-					}
-			}
-			else {
+			} else {
 				/* select a channel */
 				val = wlconf_auto_channel(name);
 				/* switch to the selected channel */
@@ -3135,14 +3133,19 @@ cprintf("set auto channel 01 tmp: %s %s\n", name, prefix);
 					WL_IOCTL(name, WLC_SET_CHANNEL, &val, sizeof(val));
 			}
 			/* set the auto channel scan timer in the driver when in auto mode */
-			val = 15;	/* 15 minutes for now */
-			WL_IOCTL(name, WLC_SET_CS_SCAN_TIMER, &val, sizeof(val));
-		}
-		else {
+			if (channel == 0) {
+				val = 15;	/* 15 minutes for now */
+			} else {
+				val = 0;
+			}
+		} else {
 			/* reset the channel scan timer in the driver when not in auto mode */
 			val = 0;
-			WL_IOCTL(name, WLC_SET_CS_SCAN_TIMER, &val, sizeof(val));
 		}
+
+		WL_IOCTL(name, WLC_SET_CS_SCAN_TIMER, &val, sizeof(val));
+		WL_IOVAR_SETINT(name, "chanim_mode", CHANIM_ACT);
+
 	}
 
 	/* Security settings for each BSS Configuration */
