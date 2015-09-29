@@ -716,6 +716,8 @@
 
 #define ROUTER_DLINK_DIR885 0xe0111
 
+#define ROUTER_DLINK_DIR895 0xe0111
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
