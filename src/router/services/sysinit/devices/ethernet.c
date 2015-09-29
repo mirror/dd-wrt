@@ -132,8 +132,28 @@ static char pcidrivers[] = {
 };
 
 static char usbdrivers[] = {
-	"r8152 dm9601 gl620a smsc95xx ax88179_178a asix rtl8150 pegasus net1080 sr9700 kaweth cx82310_eth usbnet"
-	" lg-vl600 hso zaurus int51x1 mcs7830 catc smsc75xx plusb kalmia"
+"asix"
+"ax88179_178a"
+"catc"
+"cx82310_eth"
+"dm9601"
+"gl620a"
+"int51x1"
+"kalmia"
+"kaweth"
+"lg-vl600"
+"mcs7830"
+"net1080"
+"pegasus"
+"plusb"
+"r8152"
+"rtl8150"
+"sierra_net"
+"smsc75xx"
+"smsc95xx"
+"sr9700"
+"usbnet"
+"zaurus"
 };
 
 static int detect_driver(char *drivers, char *list)
@@ -156,7 +176,8 @@ static int detect_driver(char *drivers, char *list)
 			else
 				sprintf(newdriver, "%s", word);
 			nvram_set(list, newdriver);
-			rcc++;
+			free(newdriver);
+			rcc |= 1;
 		} else {
 			eval("modprobe", "-r", word);
 		}
@@ -175,13 +196,12 @@ static int detect_drivers(char *enabled, char *list)
 		nvram_commit();
 	} else {
 		wordlist = nvram_safe_get(list);
+		if (!strlen(wordlist))
+		    return 0;
 		foreach(word, wordlist, next) {
 			eval("modprobe", word);
 		}
-		if (strlen(wordlist))
-			rcc = 1;
-		else
-			rcc = 0;
+		rcc = 1;
 	}
 	return rcc;
 }
