@@ -94,6 +94,8 @@
 #define BCM4365_CHIP(chipid)	((CHIPID(chipid) == BCM4365_CHIP_ID) || \
 				(CHIPID(chipid) == BCM4366_CHIP_ID))
 
+#define BCM43602_CHIP_ID	0xaa52		/* 43602 chipcommon chipid */
+
 /* phy types */
 #define	PHY_TYPE_A		0
 #define	PHY_TYPE_B		1
