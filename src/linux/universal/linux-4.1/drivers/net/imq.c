@@ -217,11 +217,7 @@ static inline struct imq_net *imq_pernet(struct net *net)
 
 static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num);
 
-static unsigned int imq_nf_hook(const struct nf_hook_ops *hook_ops,
-				struct sk_buff *pskb,
-				const struct net_device *indev,
-				const struct net_device *outdev,
-				int (*okfn)(struct sk_buff *));
+static nf_hookfn imq_nf_hook;
 
 static struct nf_hook_ops imq_ops[] = {
 	{
@@ -645,7 +641,7 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num)
 
 	skb = entry->skb;
 
-	switch (entry->pf) {
+	switch (entry->state.pf) {
 	case NFPROTO_IPV4:
 		skb->protocol = htons(ETH_P_IP);
 		break;
@@ -795,12 +791,10 @@ packet_not_eaten_by_imq_dev:
 }
 
 static unsigned int imq_nf_hook(const struct nf_hook_ops *hook_ops,
-				struct sk_buff *pskb,
-				const struct net_device *indev,
-				const struct net_device *outdev,
-				int (*okfn)(struct sk_buff *))
+				struct sk_buff *skb,
+				const struct nf_hook_state *state)
 {
-	return (pskb->imq_flags & IMQ_F_ENQUEUE) ? NF_IMQ_QUEUE : NF_ACCEPT;
+	return (skb->imq_flags & IMQ_F_ENQUEUE) ? NF_IMQ_QUEUE : NF_ACCEPT;
 }
 
 static int imq_close(struct net_device *dev)
