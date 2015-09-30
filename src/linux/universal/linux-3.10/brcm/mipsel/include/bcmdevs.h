@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmdevs.h 523408 2014-12-30 05:46:51Z $
+ * $Id: bcmdevs.h 544468 2015-03-27 09:51:33Z $
  */
 
 #ifndef	_BCMDEVS_H
@@ -178,6 +178,12 @@
 #define BCM43602_D11AC_ID	0x43ba		/* ac dualband PCI devid SPROM programmed */
 #define BCM43602_D11AC2G_ID	0x43bb		/* 43602 802.11ac 2.4G device */
 #define BCM43602_D11AC5G_ID	0x43bc		/* 43602 802.11ac 5G device */
+#define BCM53573_D11AC_ID	0x43b4		/* 53573 802.11ac dualband device */
+#define BCM53573_D11AC2G_ID	0x43b5		/* 53573 802.11ac 2.4G device */
+#define BCM53573_D11AC5G_ID	0x43b6		/* 53573 802.11ac 5G device */
+#define BCM47189_D11AC_ID	0x43c6		/* 47189 802.11ac dualband device */
+#define BCM47189_D11AC2G_ID	0x43c7		/* 47189 802.11ac 2.4G device */
+#define BCM47189_D11AC5G_ID	0x43c8		/* 47189 802.11ac 5G device */
 
 /* PCI Subsystem ID */
 #define BCM943228HMB_SSID_VEN1	0x0607
@@ -219,6 +225,14 @@
 #define BCM4354_D11AC2G_ID	0x43e0		/* 4354 802.11ac 2.4G device */
 #define BCM4354_D11AC5G_ID	0x43e1		/* 4354 802.11ac 5G device */
 
+
+#define BCM4365_D11AC_ID	0x43ca
+#define BCM4365_D11AC2G_ID	0x43cb
+#define BCM4365_D11AC5G_ID	0x43cc
+
+#define BCM4366_D11AC_ID	0x43c3
+#define BCM4366_D11AC2G_ID	0x43c4
+#define BCM4366_D11AC5G_ID	0x43c5
 
 #define BCM4356_D11AC_ID	0x43ec		/* 4356 802.11ac dualband device */
 #define BCM4356_D11AC2G_ID	0x43ed		/* 4356 802.11ac 2.4G device */
@@ -352,7 +366,10 @@
 #define BCM43602_CHIP_ID	0xaa52		/* 43602 chipcommon chipid */
 #define BCM43462_CHIP_ID	0xa9c6		/* 43462 chipcommon chipid */
 
-
+#define BCM4365_CHIP_ID		0x4365		/* 4365 chipcommon chipid */
+#define BCM4366_CHIP_ID		0x4366		/* 4366 chipcommon chipid */
+#define BCM4365_CHIP(chipid)	((CHIPID(chipid) == BCM4365_CHIP_ID) || \
+				(CHIPID(chipid) == BCM4366_CHIP_ID))
 #define	BCM4342_CHIP_ID		4342		/* 4342 chipcommon chipid (OTP, RBBU) */
 #define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
 #define	BCM4704_CHIP_ID		0x4704		/* 4704 chipcommon chipid */
@@ -377,6 +394,9 @@
 #define	BCM5356_CHIP_ID		0x5356		/* 5356 chipcommon chipid */
 #define	BCM5357_CHIP_ID		0x5357		/* 5357 chipcommon chipid */
 #define	BCM53572_CHIP_ID	53572		/* 53572 chipcommon chipid */
+#define	BCM53573_CHIP_ID	53573		/* 53573 chipcommon chipid */
+#define BCM53573_CHIP(chipid)	(CHIPID(chipid) == BCM53573_CHIP_ID)
+#define BCM53573_CHIP_GRPID	BCM53573_CHIP_ID
 
 /* Package IDs */
 #define	BCM4303_PKG_ID		2		/* 4303 package id */

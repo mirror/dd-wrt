@@ -16,7 +16,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etcgmac.c 523408 2014-12-30 05:46:51Z $
+ * $Id: etcgmac.c 573045 2015-07-21 20:17:41Z $
  */
 
 #include <et_cfg.h>
@@ -251,6 +251,7 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	etc->coreid = si_coreid(ch->sih);
 	etc->nicmode = !(ch->sih->bustype == SI_BUS);
 	etc->gmac_fwd = FALSE;  /* BCM_GMAC3 */
+	etc->hwrxoff = HWRXOFF; /* default hw rx offset */
 	etc->boardflags = getintvar(ch->vars, "boardflags");
 
 	boardflags = etc->boardflags;
@@ -282,9 +283,14 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	 * Select GMAC mode of operation:
 	 * If a valid MAC address is present, it operates as an Ethernet Network
 	 * interface, otherwise it operates as a forwarding GMAC interface.
+	 *
+	 * GMAC3 fwder device driver uses a smaller HWRXOFFSET. This size is
+	 * selected such that the GMAC DMA will be 32B aligned and the IP header
+	 * is also 32B aligned (PCIE D11 DMA).
 	 */
 	if (ETHER_ISNULLADDR(&etc->perm_etheraddr)) {
 		etc->gmac_fwd = TRUE;
+		etc->hwrxoff = GMAC_FWDER_HWRXOFF; /* smaller hwrxoff for aligned DMA */
 	}
 #else  /* ! BCM_GMAC3 */
 	if (ETHER_ISNULLADDR(&etc->perm_etheraddr)) {
@@ -349,7 +355,7 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	ch->di[0] = dma_attach(osh, name, ch->sih,
 	                       DMAREG(ch, DMA_TX, TX_Q0),
 	                       DMAREG(ch, DMA_RX, RX_Q0),
-	                       NTXD, NRXD, RXBUFSZ, -1, NRXBUFPOST, HWRXOFF,
+	                       NTXD, NRXD, RXBUFSZ, -1, NRXBUFPOST, etc->hwrxoff,
 	                       &et_msg_level);
 
 	/* TX: TC_BE, RX: UNUSED */
@@ -498,6 +504,55 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	 */
 	if (DEV_NTKIF(etc) &&
 		(boardflags & BFL_ENETROBO) && (etc->phyaddr == EPHY_NOREG)) {
+
+#if defined(_CFE_)
+		/* For NS Bx and NS C0,
+		 * Override the STRAP_P5_MODE according to nvram,
+		 * 0: RGMII, 1: MII Lite, 3: Internal MAC (Default)
+		 */
+		if (etc->corerev == 7) {
+			uint32 *dmu_base;
+			uint32 reset_state, straps;
+			char *var;
+			uint32 p5_mode = 3;
+
+			if ((var = getvar(ch->vars, "strap_p5_mode")) != NULL) {
+				p5_mode = (uint32)bcm_atoi(var) & 0x3;
+
+				/* Not support value 2 and force it to default */
+				if (p5_mode == 2)
+					p5_mode = 3;
+			}
+
+			dmu_base = (uint32 *)REG_MAP(0x1800C000, 4096);
+
+			/* Check the port5 mode from CRU_STRAPS_CONTROL reg */
+			straps = R_REG(ch->osh, dmu_base + 0xa8);
+			if (((straps >> 6) & 0x3) != p5_mode) {
+				ET_ERROR(("et%d: chipattach: override STRAP_P5_MODE to %d\n",
+					etc->unit, p5_mode));
+
+				/* Force ROBOSW_RESET_N bit[5] of CRU_RESET reg to reset */
+				reset_state = R_REG(ch->osh, dmu_base + 0x61);
+				reset_state &= ~(0x1 << 5);
+				W_REG(ch->osh, dmu_base + 0x61, reset_state);
+
+				/* Set SOFTWARE_OVERRIDE bit[31] and STRAP_P5_MODE bit[7:6] of
+				 * CRU_STRAPS_CONTROL reg
+				 */
+				straps = R_REG(ch->osh, dmu_base + 0xa8);
+				straps &= ~(0x3 << 6);
+				straps |= (0x1 << 31) | (p5_mode << 6);
+				W_REG(ch->osh, dmu_base + 0xa8, straps);
+
+				/* Deassert ROBOSW_RESET_N bit[5] of CRU_RESET reg */
+				reset_state |= (0x1 << 5);
+				W_REG(ch->osh, dmu_base + 0x61, reset_state);
+			}
+
+			REG_UNMAP((void *)dmu_base);
+		}
+#endif /* defined(_CFE_) */
 
 		ET_TRACE(("et%d: chipattach: Calling robo attach\n", etc->unit));
 
@@ -1070,7 +1125,7 @@ gmac_enable(ch_t *ch)
 }
 
 static void
-gmac_txflowcontrol(ch_t *ch, bool on)
+gmac_flowcontrol(ch_t *ch, bool tx_flowctrl, bool rx_flowctrl)
 {
 	uint32 cmdcfg;
 
@@ -1080,10 +1135,16 @@ gmac_txflowcontrol(ch_t *ch, bool on)
 	gmac_init_reset(ch);
 
 	/* to enable tx flow control clear the rx pause ignore bit */
-	if (on)
+	if (tx_flowctrl)
 		cmdcfg &= ~CC_RPI;
 	else
 		cmdcfg |= CC_RPI;
+
+	/* to enable rx flow control clear the tx pause transmit ignore bit */
+	if (rx_flowctrl)
+		cmdcfg &= ~CC_TPI;
+	else
+		cmdcfg |= CC_TPI;
 
 	W_REG(ch->osh, &ch->regs->cmdcfg, cmdcfg);
 
@@ -1328,7 +1389,7 @@ gmac_mf_add(ch_t *ch, struct ether_addr *mcaddr)
 
 	/* discard duplicate add requests */
 	if (gmac_mf_lkup(ch, mcaddr) == SUCCESS) {
-		ET_ERROR(("et%d: adding duplicate mcast filter entry\n", ch->etc->unit));
+		ET_ERROR(("et%d: discarding duplicate mcast filter entry\n", ch->etc->unit));
 		return (FAILURE);
 	}
 
@@ -1389,8 +1450,15 @@ chipinit(ch_t *ch, uint options)
 	/* enable one rx interrupt per received frame */
 	W_REG(ch->osh, &regs->intrecvlazy, (1 << IRL_FC_SHIFT));
 
-	/* enable 802.3x tx flow control (honor received PAUSE frames) */
-	gmac_txflowcontrol(ch, TRUE);
+	/* enable 802.3x tx flow control (honor received PAUSE frames) and
+	 * rx flow control (enable transmit PAUSE frames)
+	 */
+	if (etc->corerev == 8) {
+		/* 53573 series enabled rx flowcontrol, to avoid gmac rx FIFO overflow */
+		gmac_flowcontrol(ch, TRUE, TRUE);
+	} else {
+		gmac_flowcontrol(ch, TRUE, FALSE);
+	}
 
 	/* enable/disable promiscuous mode */
 	gmac_promisc(ch, etc->promisc);
@@ -1559,6 +1627,7 @@ chiprx(ch_t *ch)
 {
 	void *p;
 	struct ether_addr *da;
+	int hwrxoff = ch->etc->hwrxoff;
 
 	ET_TRACE(("et%d: chiprx\n", ch->etc->unit));
 	ET_LOG("et%d: chiprx", ch->etc->unit, 0);
@@ -1580,13 +1649,13 @@ chiprx(ch_t *ch)
 		}
 		else {
 			/* skip the rx header */
-			PKTPULL(ch->osh, p, HWRXOFF);
+			PKTPULL(ch->osh, p, hwrxoff);
 
 			/* do filtering only for multicast packets when allmulti is false */
 			da = (struct ether_addr *)PKTDATA(ch->osh, p);
 			if (!ETHER_ISMULTI(da) ||
 			    (gmac_mf_lkup(ch, da) == SUCCESS) || ETHER_ISBCAST(da)) {
-				PKTPUSH(ch->osh, p, HWRXOFF);
+				PKTPUSH(ch->osh, p, hwrxoff);
 				return (p);
 			}
 			PKTFREE(ch->osh, p, FALSE);
@@ -1608,6 +1677,7 @@ chiprxquota(ch_t *ch, int quota, void **rxpkts)
 	void * pkt;
 	uint8 * rxh;
 	hnddma_t * di_rx_q0;
+	int hwrxoff = ch->etc->hwrxoff;
 
 	ET_TRACE(("et%d: chiprxquota %d\n", ch->etc->unit, quota));
 	ET_LOG("et%d: chiprxquota", ch->etc->unit, 0);
@@ -1620,7 +1690,7 @@ chiprxquota(ch_t *ch, int quota, void **rxpkts)
 		rxh = PKTDATA(ch->osh, pkt); /* start of pkt data */
 
 #if !defined(_CFE_)
-		bcm_prefetch_32B(rxh + 32, 1); /* skip 30B of HWRXOFF */
+		bcm_prefetch_32B(rxh + hwrxoff, 1); /* skip etc->hwrxoff */
 #endif /* _CFE_ */
 
 #if defined(BCM_GMAC3)
@@ -1642,7 +1712,7 @@ chiprxquota(ch_t *ch, int quota, void **rxpkts)
 
 		for (nrx = 0; nrx < rxcnt; nrx++) {
 			pkt = rxpkts[nrx];
-			da = (struct ether_addr *)(PKTDATA(ch->osh, pkt) + HWRXOFF);
+			da = (struct ether_addr *)(PKTDATA(ch->osh, pkt) + hwrxoff);
 			if (!ETHER_ISMULTI(da) || ETHER_ISBCAST(da) ||
 				(gmac_mf_lkup(ch, da) == SUCCESS)) {
 				rxpkts[mfpass++] = pkt; /* repack rxpkts array */

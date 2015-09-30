@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: linux_osl.c 524987 2015-01-08 14:34:41Z $
+ * $Id: linux_osl.c 575569 2015-07-30 08:37:01Z $
  */
 
 #define LINUX_PORT
@@ -1418,7 +1418,7 @@ osl_dma_map(osl_t *osh, void *va, uint size, int direction, void *p, hnddma_seg_
 #if defined(BCM47XX_CA9) && defined(BCMDMASGLISTOSL)
 	if (dmah != NULL) {
 		int32 nsegs, i, totsegs = 0, totlen = 0;
-		struct scatterlist *sg, _sg[MAX_DMA_SEGS * 2];
+		struct scatterlist *sg, _sg[MAX_DMA_SEGS];
 		struct scatterlist *s;
 		struct sk_buff *skb;
 
@@ -1499,6 +1499,13 @@ osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction)
 	pci_unmap_single(osh->pdev, (uint32)pa, size, dir);
 }
 
+/* OSL function for CPU relax */
+inline void BCMFASTPATH
+osl_cpu_relax(void)
+{
+	cpu_relax();
+}
+
 #if defined(mips)
 inline void BCMFASTPATH
 osl_cache_flush(void *va, uint size)
@@ -1526,13 +1533,7 @@ osl_cache_inv(void *va, uint size)
 
 inline void osl_prefetch(const void *ptr)
 {
-	/* Borrowed from linux/linux-2.6/include/asm-mips/processor.h */
-	__asm__ __volatile__(
-		"   .set	mips4		\n"
-		"   pref	%0, (%1)	\n"
-		"   .set	mips0		\n"
-		:
-		: "i" (Pref_Load), "r" (ptr));
+	__asm__ __volatile__(".set mips4\npref %0,(%1)\n.set mips0\n"::"i" (Pref_Load), "r" (ptr));
 }
 
 #elif defined(__ARM_ARCH_7A__)
@@ -1542,7 +1543,7 @@ osl_cache_flush(void *va, uint size)
 {
 
 #ifdef BCM47XX_CA9
-	if (ACP_WAR_ENAB() && (virt_to_phys(va) < ACP_WIN_LIMIT))
+	if (osl_arch_is_coherent() || (ACP_WAR_ENAB() && (virt_to_phys(va) < ACP_WIN_LIMIT)))
 		return;
 #endif /* BCM47XX_CA9 */
 
@@ -1554,7 +1555,7 @@ osl_cache_inv(void *va, uint size)
 {
 
 #ifdef BCM47XX_CA9
-	if (ACP_WAR_ENAB() && (virt_to_phys(va) < ACP_WIN_LIMIT))
+	if (osl_arch_is_coherent() || (ACP_WAR_ENAB() && (virt_to_phys(va) < ACP_WIN_LIMIT)))
 		return;
 #endif /* BCM47XX_CA9 */
 
@@ -1563,12 +1564,7 @@ osl_cache_inv(void *va, uint size)
 
 inline void osl_prefetch(const void *ptr)
 {
-	/* Borrowed from linux/linux-2.6/include/asm-arm/processor.h */
-	__asm__ __volatile__(
-		"pld\t%0"
-		:
-		: "o" (*(char *)ptr)
-		: "cc");
+	__asm__ __volatile__("pld\t%0" :: "o"(*(char *)ptr) : "cc");
 }
 
 int osl_arch_is_coherent(void)
@@ -2797,6 +2793,14 @@ osl_sec_dma_alloc_consistent(osl_t *osh, uint size, uint16 align_bits, ulong *pa
 
 	*pap = (unsigned long)temp_pa;
 	return temp_va;
+}
+
+void
+osl_sec_cma_baseaddr_memsize(osl_t *osh, dma_addr_t *cma_baseaddr, size_t *cma_memsize)
+{
+
+	*cma_baseaddr = (dma_addr_t)osh->contig_base;
+	*cma_memsize = (size_t)CMA_MEMBLOCK;
 }
 
 #endif /* BCM_SECURE_DMA */

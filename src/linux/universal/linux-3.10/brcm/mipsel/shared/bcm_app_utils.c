@@ -16,7 +16,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: bcm_app_utils.c 315295 2012-02-16 06:55:23Z $
+ * $Id: bcm_app_utils.c 549303 2015-04-15 11:16:48Z $
  */
 
 #include <typedefs.h>
@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 #ifndef ASSERT
 #define ASSERT(exp)
 #endif
@@ -42,7 +43,7 @@
 
 #include <bcmutils.h>
 #include <wlioctl.h>
-
+#include <wlioctl_utils.h>
 cca_congest_channel_req_t *
 cca_per_chan_summary(cca_congest_channel_req_t *input, cca_congest_channel_req_t *avg,
 	bool percent);
@@ -238,4 +239,754 @@ cca_analyze(cca_congest_channel_req_t *input[], int num_chans, uint flags, chans
 	*answer = input[winner]->chanspec;
 
 	return 0;
+}
+
+/* offset of cntmember by sizeof(uint32) from the first cnt variable, txframe. */
+#define IDX_IN_WL_CNT_VER_6_T(cntmember)		\
+	((OFFSETOF(wl_cnt_ver_6_t, cntmember) - OFFSETOF(wl_cnt_ver_6_t, txframe)) / sizeof(uint32))
+
+#define IDX_IN_WL_CNT_VER_11_T(cntmember)		\
+	((OFFSETOF(wl_cnt_ver_11_t, cntmember) - OFFSETOF(wl_cnt_ver_11_t, txframe))	\
+	/ sizeof(uint32))
+
+/* Exclude version and length fields */
+#define NUM_OF_CNT_IN_WL_CNT_VER_6_T	\
+	((sizeof(wl_cnt_ver_6_t) - 2 * sizeof(uint16)) / sizeof(uint32))
+/* Exclude macstat cnt variables. wl_cnt_ver_6_t only has 62 macstat cnt variables. */
+#define NUM_OF_WLCCNT_IN_WL_CNT_VER_6_T			\
+	(NUM_OF_CNT_IN_WL_CNT_VER_6_T - (WL_CNT_MCST_VAR_NUM - 2))
+
+/* Exclude version and length fields */
+#define NUM_OF_CNT_IN_WL_CNT_VER_11_T	\
+	((sizeof(wl_cnt_ver_11_t) - 2 * sizeof(uint16)) / sizeof(uint32))
+/* Exclude 64 macstat cnt variables. */
+#define NUM_OF_WLCCNT_IN_WL_CNT_VER_11_T		\
+	(NUM_OF_CNT_IN_WL_CNT_VER_11_T - WL_CNT_MCST_VAR_NUM)
+
+/* Index conversion table from wl_cnt_ver_6_t to wl_cnt_wlc_t */
+static const uint8 wlcntver6t_to_wlcntwlct[NUM_OF_WLCCNT_IN_WL_CNT_VER_6_T] = {
+	IDX_IN_WL_CNT_VER_6_T(txframe),
+	IDX_IN_WL_CNT_VER_6_T(txbyte),
+	IDX_IN_WL_CNT_VER_6_T(txretrans),
+	IDX_IN_WL_CNT_VER_6_T(txerror),
+	IDX_IN_WL_CNT_VER_6_T(txctl),
+	IDX_IN_WL_CNT_VER_6_T(txprshort),
+	IDX_IN_WL_CNT_VER_6_T(txserr),
+	IDX_IN_WL_CNT_VER_6_T(txnobuf),
+	IDX_IN_WL_CNT_VER_6_T(txnoassoc),
+	IDX_IN_WL_CNT_VER_6_T(txrunt),
+	IDX_IN_WL_CNT_VER_6_T(txchit),
+	IDX_IN_WL_CNT_VER_6_T(txcmiss),
+	IDX_IN_WL_CNT_VER_6_T(txuflo),
+	IDX_IN_WL_CNT_VER_6_T(txphyerr),
+	IDX_IN_WL_CNT_VER_6_T(txphycrs),
+	IDX_IN_WL_CNT_VER_6_T(rxframe),
+	IDX_IN_WL_CNT_VER_6_T(rxbyte),
+	IDX_IN_WL_CNT_VER_6_T(rxerror),
+	IDX_IN_WL_CNT_VER_6_T(rxctl),
+	IDX_IN_WL_CNT_VER_6_T(rxnobuf),
+	IDX_IN_WL_CNT_VER_6_T(rxnondata),
+	IDX_IN_WL_CNT_VER_6_T(rxbadds),
+	IDX_IN_WL_CNT_VER_6_T(rxbadcm),
+	IDX_IN_WL_CNT_VER_6_T(rxfragerr),
+	IDX_IN_WL_CNT_VER_6_T(rxrunt),
+	IDX_IN_WL_CNT_VER_6_T(rxgiant),
+	IDX_IN_WL_CNT_VER_6_T(rxnoscb),
+	IDX_IN_WL_CNT_VER_6_T(rxbadproto),
+	IDX_IN_WL_CNT_VER_6_T(rxbadsrcmac),
+	IDX_IN_WL_CNT_VER_6_T(rxbadda),
+	IDX_IN_WL_CNT_VER_6_T(rxfilter),
+	IDX_IN_WL_CNT_VER_6_T(rxoflo),
+	IDX_IN_WL_CNT_VER_6_T(rxuflo),
+	IDX_IN_WL_CNT_VER_6_T(rxuflo) + 1,
+	IDX_IN_WL_CNT_VER_6_T(rxuflo) + 2,
+	IDX_IN_WL_CNT_VER_6_T(rxuflo) + 3,
+	IDX_IN_WL_CNT_VER_6_T(rxuflo) + 4,
+	IDX_IN_WL_CNT_VER_6_T(rxuflo) + 5,
+	IDX_IN_WL_CNT_VER_6_T(d11cnt_txrts_off),
+	IDX_IN_WL_CNT_VER_6_T(d11cnt_rxcrc_off),
+	IDX_IN_WL_CNT_VER_6_T(d11cnt_txnocts_off),
+	IDX_IN_WL_CNT_VER_6_T(dmade),
+	IDX_IN_WL_CNT_VER_6_T(dmada),
+	IDX_IN_WL_CNT_VER_6_T(dmape),
+	IDX_IN_WL_CNT_VER_6_T(reset),
+	IDX_IN_WL_CNT_VER_6_T(tbtt),
+	IDX_IN_WL_CNT_VER_6_T(txdmawar),
+	IDX_IN_WL_CNT_VER_6_T(pkt_callback_reg_fail),
+	IDX_IN_WL_CNT_VER_6_T(txfrag),
+	IDX_IN_WL_CNT_VER_6_T(txmulti),
+	IDX_IN_WL_CNT_VER_6_T(txfail),
+	IDX_IN_WL_CNT_VER_6_T(txretry),
+	IDX_IN_WL_CNT_VER_6_T(txretrie),
+	IDX_IN_WL_CNT_VER_6_T(rxdup),
+	IDX_IN_WL_CNT_VER_6_T(txrts),
+	IDX_IN_WL_CNT_VER_6_T(txnocts),
+	IDX_IN_WL_CNT_VER_6_T(txnoack),
+	IDX_IN_WL_CNT_VER_6_T(rxfrag),
+	IDX_IN_WL_CNT_VER_6_T(rxmulti),
+	IDX_IN_WL_CNT_VER_6_T(rxcrc),
+	IDX_IN_WL_CNT_VER_6_T(txfrmsnt),
+	IDX_IN_WL_CNT_VER_6_T(rxundec),
+	IDX_IN_WL_CNT_VER_6_T(tkipmicfaill),
+	IDX_IN_WL_CNT_VER_6_T(tkipcntrmsr),
+	IDX_IN_WL_CNT_VER_6_T(tkipreplay),
+	IDX_IN_WL_CNT_VER_6_T(ccmpfmterr),
+	IDX_IN_WL_CNT_VER_6_T(ccmpreplay),
+	IDX_IN_WL_CNT_VER_6_T(ccmpundec),
+	IDX_IN_WL_CNT_VER_6_T(fourwayfail),
+	IDX_IN_WL_CNT_VER_6_T(wepundec),
+	IDX_IN_WL_CNT_VER_6_T(wepicverr),
+	IDX_IN_WL_CNT_VER_6_T(decsuccess),
+	IDX_IN_WL_CNT_VER_6_T(tkipicverr),
+	IDX_IN_WL_CNT_VER_6_T(wepexcluded),
+	IDX_IN_WL_CNT_VER_6_T(txchanrej),
+	IDX_IN_WL_CNT_VER_6_T(psmwds),
+	IDX_IN_WL_CNT_VER_6_T(phywatchdog),
+	IDX_IN_WL_CNT_VER_6_T(prq_entries_handled),
+	IDX_IN_WL_CNT_VER_6_T(prq_undirected_entries),
+	IDX_IN_WL_CNT_VER_6_T(prq_bad_entries),
+	IDX_IN_WL_CNT_VER_6_T(atim_suppress_count),
+	IDX_IN_WL_CNT_VER_6_T(bcn_template_not_ready),
+	IDX_IN_WL_CNT_VER_6_T(bcn_template_not_ready_done),
+	IDX_IN_WL_CNT_VER_6_T(late_tbtt_dpc),
+	IDX_IN_WL_CNT_VER_6_T(rx1mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx2mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx5mbps5),
+	IDX_IN_WL_CNT_VER_6_T(rx6mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx9mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx11mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx12mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx18mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx24mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx36mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx48mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx54mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx108mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx162mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx216mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx270mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx324mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx378mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx432mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx486mbps),
+	IDX_IN_WL_CNT_VER_6_T(rx540mbps),
+	IDX_IN_WL_CNT_VER_6_T(rfdisable),
+	IDX_IN_WL_CNT_VER_6_T(txexptime),
+	IDX_IN_WL_CNT_VER_6_T(txmpdu_sgi),
+	IDX_IN_WL_CNT_VER_6_T(rxmpdu_sgi),
+	IDX_IN_WL_CNT_VER_6_T(txmpdu_stbc),
+	IDX_IN_WL_CNT_VER_6_T(rxmpdu_stbc),
+	IDX_IN_WL_CNT_VER_6_T(rxundec_mcst),
+	IDX_IN_WL_CNT_VER_6_T(tkipmicfaill_mcst),
+	IDX_IN_WL_CNT_VER_6_T(tkipcntrmsr_mcst),
+	IDX_IN_WL_CNT_VER_6_T(tkipreplay_mcst),
+	IDX_IN_WL_CNT_VER_6_T(ccmpfmterr_mcst),
+	IDX_IN_WL_CNT_VER_6_T(ccmpreplay_mcst),
+	IDX_IN_WL_CNT_VER_6_T(ccmpundec_mcst),
+	IDX_IN_WL_CNT_VER_6_T(fourwayfail_mcst),
+	IDX_IN_WL_CNT_VER_6_T(wepundec_mcst),
+	IDX_IN_WL_CNT_VER_6_T(wepicverr_mcst),
+	IDX_IN_WL_CNT_VER_6_T(decsuccess_mcst),
+	IDX_IN_WL_CNT_VER_6_T(tkipicverr_mcst),
+	IDX_IN_WL_CNT_VER_6_T(wepexcluded_mcst)
+};
+
+/* Index conversion table from wl_cnt_ver_11_t to wl_cnt_wlc_t */
+static const uint8 wlcntver11t_to_wlcntwlct[NUM_OF_WLCCNT_IN_WL_CNT_VER_11_T] = {
+	IDX_IN_WL_CNT_VER_11_T(txframe),
+	IDX_IN_WL_CNT_VER_11_T(txbyte),
+	IDX_IN_WL_CNT_VER_11_T(txretrans),
+	IDX_IN_WL_CNT_VER_11_T(txerror),
+	IDX_IN_WL_CNT_VER_11_T(txctl),
+	IDX_IN_WL_CNT_VER_11_T(txprshort),
+	IDX_IN_WL_CNT_VER_11_T(txserr),
+	IDX_IN_WL_CNT_VER_11_T(txnobuf),
+	IDX_IN_WL_CNT_VER_11_T(txnoassoc),
+	IDX_IN_WL_CNT_VER_11_T(txrunt),
+	IDX_IN_WL_CNT_VER_11_T(txchit),
+	IDX_IN_WL_CNT_VER_11_T(txcmiss),
+	IDX_IN_WL_CNT_VER_11_T(txuflo),
+	IDX_IN_WL_CNT_VER_11_T(txphyerr),
+	IDX_IN_WL_CNT_VER_11_T(txphycrs),
+	IDX_IN_WL_CNT_VER_11_T(rxframe),
+	IDX_IN_WL_CNT_VER_11_T(rxbyte),
+	IDX_IN_WL_CNT_VER_11_T(rxerror),
+	IDX_IN_WL_CNT_VER_11_T(rxctl),
+	IDX_IN_WL_CNT_VER_11_T(rxnobuf),
+	IDX_IN_WL_CNT_VER_11_T(rxnondata),
+	IDX_IN_WL_CNT_VER_11_T(rxbadds),
+	IDX_IN_WL_CNT_VER_11_T(rxbadcm),
+	IDX_IN_WL_CNT_VER_11_T(rxfragerr),
+	IDX_IN_WL_CNT_VER_11_T(rxrunt),
+	IDX_IN_WL_CNT_VER_11_T(rxgiant),
+	IDX_IN_WL_CNT_VER_11_T(rxnoscb),
+	IDX_IN_WL_CNT_VER_11_T(rxbadproto),
+	IDX_IN_WL_CNT_VER_11_T(rxbadsrcmac),
+	IDX_IN_WL_CNT_VER_11_T(rxbadda),
+	IDX_IN_WL_CNT_VER_11_T(rxfilter),
+	IDX_IN_WL_CNT_VER_11_T(rxoflo),
+	IDX_IN_WL_CNT_VER_11_T(rxuflo),
+	IDX_IN_WL_CNT_VER_11_T(rxuflo) + 1,
+	IDX_IN_WL_CNT_VER_11_T(rxuflo) + 2,
+	IDX_IN_WL_CNT_VER_11_T(rxuflo) + 3,
+	IDX_IN_WL_CNT_VER_11_T(rxuflo) + 4,
+	IDX_IN_WL_CNT_VER_11_T(rxuflo) + 5,
+	IDX_IN_WL_CNT_VER_11_T(d11cnt_txrts_off),
+	IDX_IN_WL_CNT_VER_11_T(d11cnt_rxcrc_off),
+	IDX_IN_WL_CNT_VER_11_T(d11cnt_txnocts_off),
+	IDX_IN_WL_CNT_VER_11_T(dmade),
+	IDX_IN_WL_CNT_VER_11_T(dmada),
+	IDX_IN_WL_CNT_VER_11_T(dmape),
+	IDX_IN_WL_CNT_VER_11_T(reset),
+	IDX_IN_WL_CNT_VER_11_T(tbtt),
+	IDX_IN_WL_CNT_VER_11_T(txdmawar),
+	IDX_IN_WL_CNT_VER_11_T(pkt_callback_reg_fail),
+	IDX_IN_WL_CNT_VER_11_T(txfrag),
+	IDX_IN_WL_CNT_VER_11_T(txmulti),
+	IDX_IN_WL_CNT_VER_11_T(txfail),
+	IDX_IN_WL_CNT_VER_11_T(txretry),
+	IDX_IN_WL_CNT_VER_11_T(txretrie),
+	IDX_IN_WL_CNT_VER_11_T(rxdup),
+	IDX_IN_WL_CNT_VER_11_T(txrts),
+	IDX_IN_WL_CNT_VER_11_T(txnocts),
+	IDX_IN_WL_CNT_VER_11_T(txnoack),
+	IDX_IN_WL_CNT_VER_11_T(rxfrag),
+	IDX_IN_WL_CNT_VER_11_T(rxmulti),
+	IDX_IN_WL_CNT_VER_11_T(rxcrc),
+	IDX_IN_WL_CNT_VER_11_T(txfrmsnt),
+	IDX_IN_WL_CNT_VER_11_T(rxundec),
+	IDX_IN_WL_CNT_VER_11_T(tkipmicfaill),
+	IDX_IN_WL_CNT_VER_11_T(tkipcntrmsr),
+	IDX_IN_WL_CNT_VER_11_T(tkipreplay),
+	IDX_IN_WL_CNT_VER_11_T(ccmpfmterr),
+	IDX_IN_WL_CNT_VER_11_T(ccmpreplay),
+	IDX_IN_WL_CNT_VER_11_T(ccmpundec),
+	IDX_IN_WL_CNT_VER_11_T(fourwayfail),
+	IDX_IN_WL_CNT_VER_11_T(wepundec),
+	IDX_IN_WL_CNT_VER_11_T(wepicverr),
+	IDX_IN_WL_CNT_VER_11_T(decsuccess),
+	IDX_IN_WL_CNT_VER_11_T(tkipicverr),
+	IDX_IN_WL_CNT_VER_11_T(wepexcluded),
+	IDX_IN_WL_CNT_VER_11_T(txchanrej),
+	IDX_IN_WL_CNT_VER_11_T(psmwds),
+	IDX_IN_WL_CNT_VER_11_T(phywatchdog),
+	IDX_IN_WL_CNT_VER_11_T(prq_entries_handled),
+	IDX_IN_WL_CNT_VER_11_T(prq_undirected_entries),
+	IDX_IN_WL_CNT_VER_11_T(prq_bad_entries),
+	IDX_IN_WL_CNT_VER_11_T(atim_suppress_count),
+	IDX_IN_WL_CNT_VER_11_T(bcn_template_not_ready),
+	IDX_IN_WL_CNT_VER_11_T(bcn_template_not_ready_done),
+	IDX_IN_WL_CNT_VER_11_T(late_tbtt_dpc),
+	IDX_IN_WL_CNT_VER_11_T(rx1mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx2mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx5mbps5),
+	IDX_IN_WL_CNT_VER_11_T(rx6mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx9mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx11mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx12mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx18mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx24mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx36mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx48mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx54mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx108mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx162mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx216mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx270mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx324mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx378mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx432mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx486mbps),
+	IDX_IN_WL_CNT_VER_11_T(rx540mbps),
+	IDX_IN_WL_CNT_VER_11_T(rfdisable),
+	IDX_IN_WL_CNT_VER_11_T(txexptime),
+	IDX_IN_WL_CNT_VER_11_T(txmpdu_sgi),
+	IDX_IN_WL_CNT_VER_11_T(rxmpdu_sgi),
+	IDX_IN_WL_CNT_VER_11_T(txmpdu_stbc),
+	IDX_IN_WL_CNT_VER_11_T(rxmpdu_stbc),
+	IDX_IN_WL_CNT_VER_11_T(rxundec_mcst),
+	IDX_IN_WL_CNT_VER_11_T(tkipmicfaill_mcst),
+	IDX_IN_WL_CNT_VER_11_T(tkipcntrmsr_mcst),
+	IDX_IN_WL_CNT_VER_11_T(tkipreplay_mcst),
+	IDX_IN_WL_CNT_VER_11_T(ccmpfmterr_mcst),
+	IDX_IN_WL_CNT_VER_11_T(ccmpreplay_mcst),
+	IDX_IN_WL_CNT_VER_11_T(ccmpundec_mcst),
+	IDX_IN_WL_CNT_VER_11_T(fourwayfail_mcst),
+	IDX_IN_WL_CNT_VER_11_T(wepundec_mcst),
+	IDX_IN_WL_CNT_VER_11_T(wepicverr_mcst),
+	IDX_IN_WL_CNT_VER_11_T(decsuccess_mcst),
+	IDX_IN_WL_CNT_VER_11_T(tkipicverr_mcst),
+	IDX_IN_WL_CNT_VER_11_T(wepexcluded_mcst),
+	IDX_IN_WL_CNT_VER_11_T(dma_hang),
+	IDX_IN_WL_CNT_VER_11_T(reinit),
+	IDX_IN_WL_CNT_VER_11_T(pstatxucast),
+	IDX_IN_WL_CNT_VER_11_T(pstatxnoassoc),
+	IDX_IN_WL_CNT_VER_11_T(pstarxucast),
+	IDX_IN_WL_CNT_VER_11_T(pstarxbcmc),
+	IDX_IN_WL_CNT_VER_11_T(pstatxbcmc),
+	IDX_IN_WL_CNT_VER_11_T(cso_passthrough),
+	IDX_IN_WL_CNT_VER_11_T(cso_normal),
+	IDX_IN_WL_CNT_VER_11_T(chained),
+	IDX_IN_WL_CNT_VER_11_T(chainedsz1),
+	IDX_IN_WL_CNT_VER_11_T(unchained),
+	IDX_IN_WL_CNT_VER_11_T(maxchainsz),
+	IDX_IN_WL_CNT_VER_11_T(currchainsz),
+	IDX_IN_WL_CNT_VER_11_T(pciereset),
+	IDX_IN_WL_CNT_VER_11_T(cfgrestore),
+	IDX_IN_WL_CNT_VER_11_T(reinitreason),
+	IDX_IN_WL_CNT_VER_11_T(reinitreason) + 1,
+	IDX_IN_WL_CNT_VER_11_T(reinitreason) + 2,
+	IDX_IN_WL_CNT_VER_11_T(reinitreason) + 3,
+	IDX_IN_WL_CNT_VER_11_T(reinitreason) + 4,
+	IDX_IN_WL_CNT_VER_11_T(reinitreason) + 5,
+	IDX_IN_WL_CNT_VER_11_T(reinitreason) + 6,
+	IDX_IN_WL_CNT_VER_11_T(reinitreason) + 7,
+	IDX_IN_WL_CNT_VER_11_T(rxrtry),
+	IDX_IN_WL_CNT_VER_11_T(rxmpdu_mu),
+	IDX_IN_WL_CNT_VER_11_T(txbar),
+	IDX_IN_WL_CNT_VER_11_T(rxbar),
+	IDX_IN_WL_CNT_VER_11_T(txpspoll),
+	IDX_IN_WL_CNT_VER_11_T(rxpspoll),
+	IDX_IN_WL_CNT_VER_11_T(txnull),
+	IDX_IN_WL_CNT_VER_11_T(rxnull),
+	IDX_IN_WL_CNT_VER_11_T(txqosnull),
+	IDX_IN_WL_CNT_VER_11_T(rxqosnull),
+	IDX_IN_WL_CNT_VER_11_T(txassocreq),
+	IDX_IN_WL_CNT_VER_11_T(rxassocreq),
+	IDX_IN_WL_CNT_VER_11_T(txreassocreq),
+	IDX_IN_WL_CNT_VER_11_T(rxreassocreq),
+	IDX_IN_WL_CNT_VER_11_T(txdisassoc),
+	IDX_IN_WL_CNT_VER_11_T(rxdisassoc),
+	IDX_IN_WL_CNT_VER_11_T(txassocrsp),
+	IDX_IN_WL_CNT_VER_11_T(rxassocrsp),
+	IDX_IN_WL_CNT_VER_11_T(txreassocrsp),
+	IDX_IN_WL_CNT_VER_11_T(rxreassocrsp),
+	IDX_IN_WL_CNT_VER_11_T(txauth),
+	IDX_IN_WL_CNT_VER_11_T(rxauth),
+	IDX_IN_WL_CNT_VER_11_T(txdeauth),
+	IDX_IN_WL_CNT_VER_11_T(rxdeauth),
+	IDX_IN_WL_CNT_VER_11_T(txprobereq),
+	IDX_IN_WL_CNT_VER_11_T(rxprobereq),
+	IDX_IN_WL_CNT_VER_11_T(txprobersp),
+	IDX_IN_WL_CNT_VER_11_T(rxprobersp),
+	IDX_IN_WL_CNT_VER_11_T(txaction),
+	IDX_IN_WL_CNT_VER_11_T(rxaction)
+};
+
+/* Index conversion table from wl_cnt_ver_11_t to
+ * either wl_cnt_ge40mcst_v1_t or wl_cnt_lt40mcst_v1_t
+ */
+static const uint8 wlcntver11t_to_wlcntXX40mcstv1t[WL_CNT_MCST_VAR_NUM] = {
+	IDX_IN_WL_CNT_VER_11_T(txallfrm),
+	IDX_IN_WL_CNT_VER_11_T(txrtsfrm),
+	IDX_IN_WL_CNT_VER_11_T(txctsfrm),
+	IDX_IN_WL_CNT_VER_11_T(txackfrm),
+	IDX_IN_WL_CNT_VER_11_T(txdnlfrm),
+	IDX_IN_WL_CNT_VER_11_T(txbcnfrm),
+	IDX_IN_WL_CNT_VER_11_T(txfunfl),
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 1,
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 2,
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 3,
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 4,
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 5,
+	IDX_IN_WL_CNT_VER_11_T(txfbw),
+	IDX_IN_WL_CNT_VER_11_T(txmpdu),
+	IDX_IN_WL_CNT_VER_11_T(txtplunfl),
+	IDX_IN_WL_CNT_VER_11_T(txphyerror),
+	IDX_IN_WL_CNT_VER_11_T(pktengrxducast),
+	IDX_IN_WL_CNT_VER_11_T(pktengrxdmcast),
+	IDX_IN_WL_CNT_VER_11_T(rxfrmtoolong),
+	IDX_IN_WL_CNT_VER_11_T(rxfrmtooshrt),
+	IDX_IN_WL_CNT_VER_11_T(rxinvmachdr),
+	IDX_IN_WL_CNT_VER_11_T(rxbadfcs),
+	IDX_IN_WL_CNT_VER_11_T(rxbadplcp),
+	IDX_IN_WL_CNT_VER_11_T(rxcrsglitch),
+	IDX_IN_WL_CNT_VER_11_T(rxstrt),
+	IDX_IN_WL_CNT_VER_11_T(rxdfrmucastmbss),
+	IDX_IN_WL_CNT_VER_11_T(rxmfrmucastmbss),
+	IDX_IN_WL_CNT_VER_11_T(rxcfrmucast),
+	IDX_IN_WL_CNT_VER_11_T(rxrtsucast),
+	IDX_IN_WL_CNT_VER_11_T(rxctsucast),
+	IDX_IN_WL_CNT_VER_11_T(rxackucast),
+	IDX_IN_WL_CNT_VER_11_T(rxdfrmocast),
+	IDX_IN_WL_CNT_VER_11_T(rxmfrmocast),
+	IDX_IN_WL_CNT_VER_11_T(rxcfrmocast),
+	IDX_IN_WL_CNT_VER_11_T(rxrtsocast),
+	IDX_IN_WL_CNT_VER_11_T(rxctsocast),
+	IDX_IN_WL_CNT_VER_11_T(rxdfrmmcast),
+	IDX_IN_WL_CNT_VER_11_T(rxmfrmmcast),
+	IDX_IN_WL_CNT_VER_11_T(rxcfrmmcast),
+	IDX_IN_WL_CNT_VER_11_T(rxbeaconmbss),
+	IDX_IN_WL_CNT_VER_11_T(rxdfrmucastobss),
+	IDX_IN_WL_CNT_VER_11_T(rxbeaconobss),
+	IDX_IN_WL_CNT_VER_11_T(rxrsptmout),
+	IDX_IN_WL_CNT_VER_11_T(bcntxcancl),
+	IDX_IN_WL_CNT_VER_11_T(rxnodelim),
+	IDX_IN_WL_CNT_VER_11_T(rxf0ovfl),
+	IDX_IN_WL_CNT_VER_11_T(rxf1ovfl),
+	IDX_IN_WL_CNT_VER_11_T(rxf2ovfl),
+	IDX_IN_WL_CNT_VER_11_T(txsfovfl),
+	IDX_IN_WL_CNT_VER_11_T(pmqovfl),
+	IDX_IN_WL_CNT_VER_11_T(rxcgprqfrm),
+	IDX_IN_WL_CNT_VER_11_T(rxcgprsqovfl),
+	IDX_IN_WL_CNT_VER_11_T(txcgprsfail),
+	IDX_IN_WL_CNT_VER_11_T(txcgprssuc),
+	IDX_IN_WL_CNT_VER_11_T(prs_timeout),
+	IDX_IN_WL_CNT_VER_11_T(rxnack),
+	IDX_IN_WL_CNT_VER_11_T(frmscons),
+	IDX_IN_WL_CNT_VER_11_T(txnack),
+	IDX_IN_WL_CNT_VER_11_T(rxback),
+	IDX_IN_WL_CNT_VER_11_T(txback),
+	IDX_IN_WL_CNT_VER_11_T(bphy_rxcrsglitch),
+	IDX_IN_WL_CNT_VER_11_T(rxdrop20s),
+	IDX_IN_WL_CNT_VER_11_T(rxtoolate),
+	IDX_IN_WL_CNT_VER_11_T(bphy_badplcp)
+};
+
+/* For mcst offsets that were not used. (2 Pads) */
+#define INVALID_MCST_IDX ((uint8)(-1))
+/* Index conversion table from wl_cnt_ver_11_t to wl_cnt_v_le10_mcst_t */
+static const uint8 wlcntver11t_to_wlcntvle10mcstt[WL_CNT_MCST_VAR_NUM] = {
+	IDX_IN_WL_CNT_VER_11_T(txallfrm),
+	IDX_IN_WL_CNT_VER_11_T(txrtsfrm),
+	IDX_IN_WL_CNT_VER_11_T(txctsfrm),
+	IDX_IN_WL_CNT_VER_11_T(txackfrm),
+	IDX_IN_WL_CNT_VER_11_T(txdnlfrm),
+	IDX_IN_WL_CNT_VER_11_T(txbcnfrm),
+	IDX_IN_WL_CNT_VER_11_T(txfunfl),
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 1,
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 2,
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 3,
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 4,
+	IDX_IN_WL_CNT_VER_11_T(txfunfl) + 5,
+	IDX_IN_WL_CNT_VER_11_T(txfbw),
+	INVALID_MCST_IDX,
+	IDX_IN_WL_CNT_VER_11_T(txtplunfl),
+	IDX_IN_WL_CNT_VER_11_T(txphyerror),
+	IDX_IN_WL_CNT_VER_11_T(pktengrxducast),
+	IDX_IN_WL_CNT_VER_11_T(pktengrxdmcast),
+	IDX_IN_WL_CNT_VER_11_T(rxfrmtoolong),
+	IDX_IN_WL_CNT_VER_11_T(rxfrmtooshrt),
+	IDX_IN_WL_CNT_VER_11_T(rxinvmachdr),
+	IDX_IN_WL_CNT_VER_11_T(rxbadfcs),
+	IDX_IN_WL_CNT_VER_11_T(rxbadplcp),
+	IDX_IN_WL_CNT_VER_11_T(rxcrsglitch),
+	IDX_IN_WL_CNT_VER_11_T(rxstrt),
+	IDX_IN_WL_CNT_VER_11_T(rxdfrmucastmbss),
+	IDX_IN_WL_CNT_VER_11_T(rxmfrmucastmbss),
+	IDX_IN_WL_CNT_VER_11_T(rxcfrmucast),
+	IDX_IN_WL_CNT_VER_11_T(rxrtsucast),
+	IDX_IN_WL_CNT_VER_11_T(rxctsucast),
+	IDX_IN_WL_CNT_VER_11_T(rxackucast),
+	IDX_IN_WL_CNT_VER_11_T(rxdfrmocast),
+	IDX_IN_WL_CNT_VER_11_T(rxmfrmocast),
+	IDX_IN_WL_CNT_VER_11_T(rxcfrmocast),
+	IDX_IN_WL_CNT_VER_11_T(rxrtsocast),
+	IDX_IN_WL_CNT_VER_11_T(rxctsocast),
+	IDX_IN_WL_CNT_VER_11_T(rxdfrmmcast),
+	IDX_IN_WL_CNT_VER_11_T(rxmfrmmcast),
+	IDX_IN_WL_CNT_VER_11_T(rxcfrmmcast),
+	IDX_IN_WL_CNT_VER_11_T(rxbeaconmbss),
+	IDX_IN_WL_CNT_VER_11_T(rxdfrmucastobss),
+	IDX_IN_WL_CNT_VER_11_T(rxbeaconobss),
+	IDX_IN_WL_CNT_VER_11_T(rxrsptmout),
+	IDX_IN_WL_CNT_VER_11_T(bcntxcancl),
+	INVALID_MCST_IDX,
+	IDX_IN_WL_CNT_VER_11_T(rxf0ovfl),
+	IDX_IN_WL_CNT_VER_11_T(rxf1ovfl),
+	IDX_IN_WL_CNT_VER_11_T(rxf2ovfl),
+	IDX_IN_WL_CNT_VER_11_T(txsfovfl),
+	IDX_IN_WL_CNT_VER_11_T(pmqovfl),
+	IDX_IN_WL_CNT_VER_11_T(rxcgprqfrm),
+	IDX_IN_WL_CNT_VER_11_T(rxcgprsqovfl),
+	IDX_IN_WL_CNT_VER_11_T(txcgprsfail),
+	IDX_IN_WL_CNT_VER_11_T(txcgprssuc),
+	IDX_IN_WL_CNT_VER_11_T(prs_timeout),
+	IDX_IN_WL_CNT_VER_11_T(rxnack),
+	IDX_IN_WL_CNT_VER_11_T(frmscons),
+	IDX_IN_WL_CNT_VER_11_T(txnack),
+	IDX_IN_WL_CNT_VER_11_T(rxback),
+	IDX_IN_WL_CNT_VER_11_T(txback),
+	IDX_IN_WL_CNT_VER_11_T(bphy_rxcrsglitch),
+	IDX_IN_WL_CNT_VER_11_T(rxdrop20s),
+	IDX_IN_WL_CNT_VER_11_T(rxtoolate),
+	IDX_IN_WL_CNT_VER_11_T(bphy_badplcp)
+};
+
+
+/* Index conversion table from wl_cnt_ver_6_t to wl_cnt_v_le10_mcst_t */
+static const uint8 wlcntver6t_to_wlcntvle10mcstt[WL_CNT_MCST_VAR_NUM] = {
+	IDX_IN_WL_CNT_VER_6_T(txallfrm),
+	IDX_IN_WL_CNT_VER_6_T(txrtsfrm),
+	IDX_IN_WL_CNT_VER_6_T(txctsfrm),
+	IDX_IN_WL_CNT_VER_6_T(txackfrm),
+	IDX_IN_WL_CNT_VER_6_T(txdnlfrm),
+	IDX_IN_WL_CNT_VER_6_T(txbcnfrm),
+	IDX_IN_WL_CNT_VER_6_T(txfunfl),
+	IDX_IN_WL_CNT_VER_6_T(txfunfl) + 1,
+	IDX_IN_WL_CNT_VER_6_T(txfunfl) + 2,
+	IDX_IN_WL_CNT_VER_6_T(txfunfl) + 3,
+	IDX_IN_WL_CNT_VER_6_T(txfunfl) + 4,
+	IDX_IN_WL_CNT_VER_6_T(txfunfl) + 5,
+	IDX_IN_WL_CNT_VER_6_T(txfbw),
+	INVALID_MCST_IDX,
+	IDX_IN_WL_CNT_VER_6_T(txtplunfl),
+	IDX_IN_WL_CNT_VER_6_T(txphyerror),
+	IDX_IN_WL_CNT_VER_6_T(pktengrxducast),
+	IDX_IN_WL_CNT_VER_6_T(pktengrxdmcast),
+	IDX_IN_WL_CNT_VER_6_T(rxfrmtoolong),
+	IDX_IN_WL_CNT_VER_6_T(rxfrmtooshrt),
+	IDX_IN_WL_CNT_VER_6_T(rxinvmachdr),
+	IDX_IN_WL_CNT_VER_6_T(rxbadfcs),
+	IDX_IN_WL_CNT_VER_6_T(rxbadplcp),
+	IDX_IN_WL_CNT_VER_6_T(rxcrsglitch),
+	IDX_IN_WL_CNT_VER_6_T(rxstrt),
+	IDX_IN_WL_CNT_VER_6_T(rxdfrmucastmbss),
+	IDX_IN_WL_CNT_VER_6_T(rxmfrmucastmbss),
+	IDX_IN_WL_CNT_VER_6_T(rxcfrmucast),
+	IDX_IN_WL_CNT_VER_6_T(rxrtsucast),
+	IDX_IN_WL_CNT_VER_6_T(rxctsucast),
+	IDX_IN_WL_CNT_VER_6_T(rxackucast),
+	IDX_IN_WL_CNT_VER_6_T(rxdfrmocast),
+	IDX_IN_WL_CNT_VER_6_T(rxmfrmocast),
+	IDX_IN_WL_CNT_VER_6_T(rxcfrmocast),
+	IDX_IN_WL_CNT_VER_6_T(rxrtsocast),
+	IDX_IN_WL_CNT_VER_6_T(rxctsocast),
+	IDX_IN_WL_CNT_VER_6_T(rxdfrmmcast),
+	IDX_IN_WL_CNT_VER_6_T(rxmfrmmcast),
+	IDX_IN_WL_CNT_VER_6_T(rxcfrmmcast),
+	IDX_IN_WL_CNT_VER_6_T(rxbeaconmbss),
+	IDX_IN_WL_CNT_VER_6_T(rxdfrmucastobss),
+	IDX_IN_WL_CNT_VER_6_T(rxbeaconobss),
+	IDX_IN_WL_CNT_VER_6_T(rxrsptmout),
+	IDX_IN_WL_CNT_VER_6_T(bcntxcancl),
+	INVALID_MCST_IDX,
+	IDX_IN_WL_CNT_VER_6_T(rxf0ovfl),
+	IDX_IN_WL_CNT_VER_6_T(rxf1ovfl),
+	IDX_IN_WL_CNT_VER_6_T(rxf2ovfl),
+	IDX_IN_WL_CNT_VER_6_T(txsfovfl),
+	IDX_IN_WL_CNT_VER_6_T(pmqovfl),
+	IDX_IN_WL_CNT_VER_6_T(rxcgprqfrm),
+	IDX_IN_WL_CNT_VER_6_T(rxcgprsqovfl),
+	IDX_IN_WL_CNT_VER_6_T(txcgprsfail),
+	IDX_IN_WL_CNT_VER_6_T(txcgprssuc),
+	IDX_IN_WL_CNT_VER_6_T(prs_timeout),
+	IDX_IN_WL_CNT_VER_6_T(rxnack),
+	IDX_IN_WL_CNT_VER_6_T(frmscons),
+	IDX_IN_WL_CNT_VER_6_T(txnack),
+	IDX_IN_WL_CNT_VER_6_T(rxback),
+	IDX_IN_WL_CNT_VER_6_T(txback),
+	IDX_IN_WL_CNT_VER_6_T(bphy_rxcrsglitch),
+	IDX_IN_WL_CNT_VER_6_T(rxdrop20s),
+	IDX_IN_WL_CNT_VER_6_T(rxtoolate),
+	IDX_IN_WL_CNT_VER_6_T(bphy_badplcp)
+};
+
+/* copy wlc layer counters from old type cntbuf to wl_cnt_wlc_t type. */
+static int
+wl_copy_wlccnt(uint16 cntver, uint32 *dst, uint32 *src, uint8 src_max_idx)
+{
+	uint i;
+	if (dst == NULL || src == NULL) {
+		return BCME_ERROR;
+	}
+
+	/* Init wlccnt with invalid value. Unchanged value will not be printed out */
+	for (i = 0; i < (sizeof(wl_cnt_wlc_t) / sizeof(uint32)); i++) {
+		dst[i] = INVALID_CNT_VAL;
+	}
+
+	if (cntver == WL_CNT_VERSION_6) {
+		for (i = 0; i < NUM_OF_WLCCNT_IN_WL_CNT_VER_6_T; i++) {
+			if (wlcntver6t_to_wlcntwlct[i] >= src_max_idx) {
+			/* src buffer does not have counters from here */
+				break;
+			}
+			dst[i] = src[wlcntver6t_to_wlcntwlct[i]];
+		}
+	} else {
+		for (i = 0; i < NUM_OF_WLCCNT_IN_WL_CNT_VER_11_T; i++) {
+			if (wlcntver11t_to_wlcntwlct[i] >= src_max_idx) {
+			/* src buffer does not have counters from here */
+				break;
+			}
+			dst[i] = src[wlcntver11t_to_wlcntwlct[i]];
+		}
+	}
+	return BCME_OK;
+}
+
+/* copy macstat counters from old type cntbuf to wl_cnt_v_le10_mcst_t type. */
+static int
+wl_copy_macstat_upto_ver10(uint16 cntver, uint32 *dst, uint32 *src)
+{
+	uint i;
+
+	if (dst == NULL || src == NULL) {
+		return BCME_ERROR;
+	}
+
+	if (cntver == WL_CNT_VERSION_6) {
+		for (i = 0; i < WL_CNT_MCST_VAR_NUM; i++) {
+			if (wlcntver6t_to_wlcntvle10mcstt[i] == INVALID_MCST_IDX) {
+				/* This mcst counter does not exist in wl_cnt_ver_6_t */
+				dst[i] = INVALID_CNT_VAL;
+			} else {
+				dst[i] = src[wlcntver6t_to_wlcntvle10mcstt[i]];
+			}
+		}
+	} else {
+		for (i = 0; i < WL_CNT_MCST_VAR_NUM; i++) {
+			if (wlcntver11t_to_wlcntvle10mcstt[i] == INVALID_MCST_IDX) {
+				/* This mcst counter does not exist in wl_cnt_ver_11_t */
+				dst[i] = INVALID_CNT_VAL;
+			} else {
+				dst[i] = src[wlcntver11t_to_wlcntvle10mcstt[i]];
+			}
+		}
+	}
+	return BCME_OK;
+}
+
+static int
+wl_copy_macstat_ver11(uint32 *dst, uint32 *src)
+{
+	uint i;
+
+	if (dst == NULL || src == NULL) {
+		return BCME_ERROR;
+	}
+
+	for (i = 0; i < WL_CNT_MCST_VAR_NUM; i++) {
+		dst[i] = src[wlcntver11t_to_wlcntXX40mcstv1t[i]];
+	}
+	return BCME_OK;
+}
+
+/**
+ * Translate non-xtlv 'wl counters' IOVar buffer received by old driver/FW to xtlv format.
+ * Parameters:
+ *	cntbuf: pointer to non-xtlv 'wl counters' IOVar buffer received by old driver/FW.
+ *		Newly translated xtlv format is written to this pointer.
+ *	buflen: length of the "cntbuf" without any padding.
+ *	corerev: chip core revision of the driver/FW.
+ */
+int
+wl_cntbuf_to_xtlv_format(void *ctx, void *cntbuf, int buflen, uint32 corerev)
+{
+	wl_cnt_wlc_t *wlccnt = NULL;
+	uint32 *macstat = NULL;
+	xtlv_desc_t xtlv_desc[3];
+	uint16 mcst_xtlv_id;
+	int res = BCME_OK;
+	wl_cnt_info_t *cntinfo = cntbuf;
+	void *xtlvbuf_p = cntinfo->data;
+	uint16 ver = cntinfo->version;
+	uint16 xtlvbuflen = (uint16)buflen;
+	uint16 src_max_idx;
+#ifdef BCMDRIVER
+	osl_t *osh = ctx;
+#else
+	BCM_REFERENCE(ctx);
+#endif
+
+	if (ver >= WL_CNT_VERSION_XTLV) {
+		/* Already in xtlv format. */
+		goto exit;
+	}
+
+#ifdef BCMDRIVER
+	wlccnt = MALLOC(osh, sizeof(*wlccnt));
+	macstat = MALLOC(osh, WL_CNT_MCST_STRUCT_SZ);
+#else
+	wlccnt = (wl_cnt_wlc_t *)malloc(sizeof(*wlccnt));
+	macstat = (uint32 *)malloc(WL_CNT_MCST_STRUCT_SZ);
+#endif
+	if (!wlccnt) {
+		printf("wl_cntbuf_to_xtlv_format malloc fail!\n");
+		res = BCME_NOMEM;
+		goto exit;
+	}
+
+	/* Check if the max idx in the struct exceeds the boundary of uint8 */
+	if (NUM_OF_CNT_IN_WL_CNT_VER_6_T > ((uint8)(-1) + 1) ||
+		NUM_OF_CNT_IN_WL_CNT_VER_11_T > ((uint8)(-1) + 1)) {
+		printf("wlcntverXXt_to_wlcntwlct and src_max_idx need"
+			" to be of uint16 instead of uint8\n");
+		res = BCME_ERROR;
+		goto exit;
+	}
+
+	/* Exclude version and length fields in either wlc_cnt_ver_6_t or wlc_cnt_ver_11_t */
+	src_max_idx = (cntinfo->datalen - OFFSETOF(wl_cnt_info_t, data)) / sizeof(uint32);
+
+	if (src_max_idx > (uint8)(-1)) {
+		printf("wlcntverXXt_to_wlcntwlct and src_max_idx need"
+			" to be of uint16 instead of uint8\n"
+			"Try updating wl utility to the latest.\n");
+		res = BCME_ERROR;
+	}
+
+	/* Copy wlc layer counters to wl_cnt_wlc_t */
+	res = wl_copy_wlccnt(ver, (uint32 *)wlccnt, (uint32 *)cntinfo->data, (uint8)src_max_idx);
+	if (res != BCME_OK) {
+		printf("wl_copy_wlccnt fail!\n");
+		goto exit;
+	}
+
+	/* Copy macstat counters to wl_cnt_wlc_t */
+	if (ver == WL_CNT_VERSION_11) {
+		res = wl_copy_macstat_ver11(macstat, (uint32 *)cntinfo->data);
+		if (res != BCME_OK) {
+			printf("wl_copy_macstat_ver11 fail!\n");
+			goto exit;
+		}
+		if (corerev >= 40) {
+			mcst_xtlv_id = WL_CNT_XTLV_GE40_UCODE_V1;
+		} else {
+			mcst_xtlv_id = WL_CNT_XTLV_LT40_UCODE_V1;
+		}
+	} else {
+		res = wl_copy_macstat_upto_ver10(ver, macstat, (uint32 *)cntinfo->data);
+		if (res != BCME_OK) {
+			printf("wl_copy_macstat_upto_ver10 fail!\n");
+			goto exit;
+		}
+		mcst_xtlv_id = WL_CNT_XTLV_CNTV_LE10_UCODE;
+	}
+
+	xtlv_desc[0].type = WL_CNT_XTLV_WLC;
+	xtlv_desc[0].len = sizeof(*wlccnt);
+	xtlv_desc[0].ptr = wlccnt;
+
+	xtlv_desc[1].type = mcst_xtlv_id;
+	xtlv_desc[1].len = WL_CNT_MCST_STRUCT_SZ;
+	xtlv_desc[1].ptr = macstat;
+
+	xtlv_desc[2].type = 0;
+	xtlv_desc[2].len = 0;
+	xtlv_desc[2].ptr = NULL;
+
+	memset(cntbuf, 0, WL_CNTBUF_MAX_SIZE);
+
+	res = bcm_pack_xtlv_buf_from_mem(&xtlvbuf_p, &xtlvbuflen,
+		xtlv_desc, BCM_XTLV_OPTION_ALIGN32);
+	cntinfo->datalen = (buflen - xtlvbuflen);
+exit:
+#ifdef BCMDRIVER
+	if (wlccnt) {
+		MFREE(osh, wlccnt, sizeof(*wlccnt));
+	}
+	if (macstat) {
+		MFREE(osh, macstat, WL_CNT_MCST_STRUCT_SZ);
+	}
+#else
+	if (wlccnt) {
+		free(wlccnt);
+	}
+	if (macstat) {
+		free(macstat);
+	}
+#endif
+	return res;
 }
