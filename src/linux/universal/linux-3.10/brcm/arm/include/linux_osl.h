@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: linux_osl.h 524987 2015-01-08 14:34:41Z $
+ * $Id: linux_osl.h 573045 2015-07-21 20:17:41Z $
  */
 
 #ifndef _linux_osl_h_
@@ -214,6 +214,10 @@ extern void osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction);
 
 /* API for DMA addressing capability */
 #define OSL_DMADDRWIDTH(osh, addrwidth) ({BCM_REFERENCE(osh); BCM_REFERENCE(addrwidth);})
+
+/* API for CPU relax */
+extern void osl_cpu_relax(void);
+#define OSL_CPU_RELAX() osl_cpu_relax()
 
 #if defined(__mips__) || defined(CONFIG_ARM)
 	extern void osl_cache_flush(void *va, uint size);
@@ -906,15 +910,18 @@ extern void osl_pkt_frmfwder(osl_t *osh, void *skbs, int skb_cnt);
  * to be accompanied with a clear of the FWDERBUF tag.
  */
 
-/** Forwarded packets, have a HWRXOFF sized rx header (etc.h) */
-#define FWDER_HWRXOFF       (30)
+/** Forwarded packets, have a GMAC_FWDER_HWRXOFF sized rx header (etc.h) */
+#define FWDER_HWRXOFF       (18)
 
 /** Maximum amount of a pktadat that a downstream forwarder (GMAC) may have
  * read into the L1 cache (not dirty). This may be used in reduced cache ops.
  *
- * Max 56: ET HWRXOFF[30] + BRCMHdr[4] + EtherHdr[14] + VlanHdr[4] + IP[4]
+ * Max 44: ET HWRXOFF[18] + BRCMHdr[4] + EtherHdr[14] + VlanHdr[4] + IP[4]
+ * Min 32: GMAC_FWDER_HWRXOFF[18] + EtherHdr[14]
  */
-#define FWDER_PKTMAPSZ      (FWDER_HWRXOFF + 4 + 14 + 4 + 4)
+#define FWDER_MINMAPSZ      (FWDER_HWRXOFF + 14)
+#define FWDER_MAXMAPSZ      (FWDER_HWRXOFF + 4 + 14 + 4 + 4)
+#define FWDER_PKTMAPSZ      (FWDER_MAXMAPSZ)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
 

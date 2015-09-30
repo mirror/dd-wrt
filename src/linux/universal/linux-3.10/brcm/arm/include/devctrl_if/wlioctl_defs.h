@@ -135,7 +135,8 @@
 #define WL_STA_RIFS_CAP		0x00080000	/* rifs enabled */
 #define WL_STA_VHT_CAP		0x00100000	/* STA VHT(11ac) capable */
 #define WL_STA_WPS		0x00200000	/* WPS state */
-
+#define WL_STA_DWDS_CAP		0x01000000	/* DWDS CAP */
+#define WL_STA_DWDS		0x02000000	/* DWDS active */
 #define WL_WDS_LINKUP		WL_STA_WDS_LINKUP	/* deprecated */
 
 /* STA HT cap fields */
@@ -1025,8 +1026,9 @@
 #define ACPHY_ACI_HWACI_PKTGAINLMT 2      /* bit 1 */
 #define ACPHY_ACI_W2NB_PKTGAINLMT 4       /* bit 2 */
 #define ACPHY_ACI_PREEMPTION 8            /* bit 3 */
-#define ACPHY_HWACI_MITIGATION 16            /* bit 4 */
-#define ACPHY_ACI_MAX_MODE 31
+#define ACPHY_HWACI_MITIGATION 16         /* bit 4 */
+#define ACPHY_LPD_PREEMPTION 32           /* bit 5 */
+#define ACPHY_ACI_MAX_MODE 63
 
 /* AP environment */
 #define AP_ENV_DETECT_NOT_USED		0 /* We aren't using AP environment detection */
@@ -1169,6 +1171,7 @@
 #define WL_TXBF_VAL		0x00100000
 #define WL_P2PO_VAL		0x00200000
 #define WL_TBTT_VAL		0x00400000
+#define WL_RRM_VAL		0x00800000
 #define WL_MQ_VAL		0x01000000
 
 /* This level is currently used in Phoenix2 only */
@@ -1218,7 +1221,8 @@
 #define	WL_LED_NUMBEHAVIOR	25
 
 /* led behavior numeric value format */
-#define	WL_LED_BEH_MASK		0x7f		/* behavior mask */
+#define	WL_LED_BEH_MASK		0x3f		/* behavior mask */
+#define	WL_LED_PMU_OVERRIDE	0x40		/* need to set PMU Override bit for the GPIO */
 #define	WL_LED_AL_MASK		0x80		/* activelow (polarity) bit */
 
 /* number of bytes needed to define a proper bit mask for MAC event reporting */
