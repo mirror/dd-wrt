@@ -1097,7 +1097,6 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		}
 		ET_MSG(("%s: devid: 0x%x\n", __FUNCTION__, robo->devid));
 	}
-
 	if (robo->devid == DEVID5395)
 		nvram_set("switch_type", "BCM5395");
 	else if(robo->devid == DEVID5397)
@@ -1108,8 +1107,21 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		nvram_set("switch_type", "BCM53115S");
 	else if(robo->devid == DEVID53125)
 		nvram_set("switch_type", "BCM53125");
+	else if(robo->devid == DEVID53010)
+		nvram_set("switch_type", "BCM53010");
+	else if(robo->devid == DEVID53011)
+		nvram_set("switch_type", "BCM53011");
+	else if(robo->devid == DEVID53012)
+		nvram_set("switch_type", "BCM53012");
+	else if(robo->devid == DEVID53018)
+		nvram_set("switch_type", "BCM53018");
+	else if(robo->devid == DEVID53019)
+		nvram_set("switch_type", "BCM53019");
+	else if(robo->devid == DEVID53030)
+		nvram_set("switch_type", "BCM53030");
 	else
 		nvram_set("switch_type", "unknown");						
+
 	if (boothwmodel != NULL && !strcmp(boothwmodel, "WRT610N")
 		&& boothwver != NULL && !strcmp(boothwver, "1.0"))
 	iswrt610nv1=1;
@@ -2160,18 +2172,19 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x16, &val16, sizeof(val16));    
 	}
 
-
 	if (boardnum != NULL && boardtype != NULL && boardrev != NULL)
-	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665") && !strcmp(boardrev, "0x1301") ) {
+	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665")) {
 		/* WAN port LED fix*/
 		val16 = 0x3000 ;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x10, &val16, sizeof(val16));
 		val8 = 0x78 ;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val8, sizeof(val8)); 
+		if(!strcmp(boardrev, "0x1301"))
 		val8 = 0x01 ;
+		if(!strcmp(boardrev, "0x1101"))
+		val8 = 0x10 ;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x14, &val8, sizeof(val8)); 
 	}
-
 
 	if (SRAB_ENAB() && ROBO_IS_BCM5301X(robo->devid)) {
 		int pdescsz = sizeof(pdesc97) / sizeof(pdesc_t);

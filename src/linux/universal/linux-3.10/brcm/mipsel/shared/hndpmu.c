@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndpmu.c 472529 2014-04-24 08:55:47Z $
+ * $Id: hndpmu.c 530228 2015-01-29 13:35:01Z $
  */
 
 
@@ -7785,40 +7785,27 @@ si_pmu_spuravoid_pllupdate(si_t *sih, chipcregs_t *cc, osl_t *osh, uint8 spuravo
 		# spur_mode 8 VCO=968MHz
 		# spur_mode 9 VCO=969MHz
 		*/
-		W_REG(osh, pllctrl_addr, PMU1_PLL0_PLLCTL3);
-		switch (spuravoid) {
-		case 0:
-			W_REG(osh, pllctrl_data, 0x80BFA863);
-			break;
-		case 1:
-			W_REG(osh, pllctrl_data, 0x80AB1F7D);
-			break;
-		case 2:
-			W_REG(osh, pllctrl_data, 0x80b1f7c9);
-			break;
-		case 3:
-			W_REG(osh, pllctrl_data, 0x80c680af);
-			break;
-		case 4:
-			W_REG(osh, pllctrl_data, 0x80B8D016);
-			break;
-		case 5:
-			W_REG(osh, pllctrl_data, 0x80CD58FC);
-			break;
-		case 6:
-			W_REG(osh, pllctrl_data, 0x80D43149);
-			break;
-		case 7:
-			W_REG(osh, pllctrl_data, 0x80DB0995);
-			break;
-		case 8:
-			W_REG(osh, pllctrl_data, 0x80E1E1E2);
-			break;
-		case 9:
-			W_REG(osh, pllctrl_data, 0x80E8BA2F);
-			break;
-		default:
-			break;
+		{
+			uint32 plldata43162[10] = {
+				/* 40MHz xtal */
+				0x80133333, 0x81000000, 0x80066666, 0x8019999A, 0x800CCCCD,
+				0x80200000, 0x80266666, 0x802CCCCD, 0x80333333, 0x80E8BA2F
+			};
+			uint32 plldata[10] = {
+				0x80BFA863, 0x80AB1F7D, 0x80b1f7c9, 0x80c680af, 0x80B8D016,
+				0x80CD58FC, 0x80D43149, 0x80DB0995, 0x80E1E1E2, 0x80E8BA2F
+			};
+			uint32 *datap = NULL;
+			W_REG(osh, pllctrl_addr, PMU1_PLL0_PLLCTL3);
+			/* WAR for 43162 FCBGA PKG */
+			if (sih->chippkg == BCM4335_FCBGA_PKG_ID)
+				datap = plldata43162;
+			else
+				datap = plldata;
+			if (spuravoid < 10)
+				W_REG(osh, pllctrl_data, datap[spuravoid]);
+			else
+				PMU_ERROR(("Wrong spuravoidance settings %d\n", spuravoid));
 		}
 		tmp = PCTL_PLL_PLLCTL_UPD;
 		break;

@@ -19,7 +19,6 @@
 #include "bcmutils.h"
 #include "siutils.h"
 #include "bcmrobo.h"
-#include "bcmnvram.h"
 
 /******************************************************************************/
 /* Local functions. */
@@ -8321,15 +8320,6 @@ LM_ResetPhy(LM_DEVICE_BLOCK *pDevice)
 {
     int j;
     LM_UINT32 miireg;
-
-    char *boothwmodel=nvram_get("boot_hw_model");
-    if (boothwmodel && !strcmp(boothwmodel,"WRT610N"))
-	if (pDevice->Flags & ROBO_SWITCH_FLAG)                   
-	    {
-	     printk(KERN_EMERG "enable WRT610N phy reset hack\n");
-             return;
-            }
-
 
     if (pDevice->PhyFlags & PHY_CHECK_TAPS_AFTER_RESET)
     {
