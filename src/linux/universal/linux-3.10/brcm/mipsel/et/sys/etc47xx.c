@@ -17,7 +17,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etc47xx.c 458474 2014-02-27 00:47:47Z $
+ * $Id: etc47xx.c 573045 2015-07-21 20:17:41Z $
  */
 
 #include <et_cfg.h>
@@ -222,6 +222,8 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	etc->nicmode = !(ch->sih->bustype == SI_BUS);
 	etc->coreunit = si_coreunit(ch->sih);
 	etc->boardflags = getintvar(ch->vars, "boardflags");
+
+	etc->hwrxoff = HWRXOFF;
 
 	boardflags = etc->boardflags;
 	boardtype = ch->sih->boardtype;
