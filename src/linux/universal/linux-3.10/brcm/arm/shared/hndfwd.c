@@ -33,24 +33,8 @@
 #include <proto/vlan.h>
 #include <proto/ethernet.h>
 
-/* forward declaration */
-struct fwder_if;
-struct fwder_cpumap;
 
-#define FWDER_WOFA_NULL         ((fwder_wofa_t *)NULL)
-#define FWDER_NET_DEVICE_NULL   ((struct net_device *)NULL)
-#define FWDER_BYPASS_FN_NULL    ((fwder_bypass_fn_t)NULL)
-
-#define FWDER_ALIGN16(sym)      FWDER_ASSERT((((uintptr)sym) & 1) == 0)
-
-/* Safe fetch of a string member given a structure pointer. */
-#define __SSTR(_struct_ptr, _member) \
-	(((_struct_ptr) != NULL) ? (_struct_ptr)->_member : "null")
-
-/* Formatted Etherned Mac Address display */
-#define __EFMT                      "%02X:%02X:%02X:%02X:%02X:%02X "
-#define __EVAL(e)                   *((e) + 0), *((e) + 1), *((e) + 2), \
-	                                *((e) + 3), *((e) + 4), *((e) + 5)
+/** HND WOFA WiFi Offload Forwarder Assist for 3GMAC Atlas */
 
 /** WOFA Dictionary manipulation helper static function declarations. */
 /** WOFA Dictionary symbol manipulation. */
@@ -64,54 +48,11 @@ static inline void   __wofa_bloom_clr16(uint32 * bfilter, const uint16 hash16);
 
 /** WOFA based Forwarding static function declarations. */
 /** WOFA Accessors. */
-static inline uint32 __fwder_wofa_syms(struct fwder_wofa * fwder_wofa);
-#if defined(FWDER_STATS)
-static inline uint32 __fwder_wofa_hits(struct fwder_wofa * fwder_wofa);
-static inline uint32 __fwder_wofa_miss(struct fwder_wofa * fwder_wofa);
-#endif /* FWDER_STATS */
-/** WOFA Constructor and Destructor. */
-static struct fwder_wofa * _fwder_wofa_init(const int funit);
-static void          _fwder_wofa_fini(struct fwder_wofa * fwder_wofa);
-/** WOFA Address Resolution Logic. */
-static inline int    __fwder_wofa_add(struct fwder_wofa * fwder_wofa,
-                                      uint16 * symbol, wofa_t wofa);
-static inline int    __fwder_wofa_del(struct fwder_wofa * fwder_wofa,
-                                      uint16 * symbol, wofa_t wofa);
-static inline int    __fwder_wofa_clr(struct fwder_wofa * fwder_wofa,
-                                      wofa_t wofa);
-static inline uintptr_t __fwder_wofa_lkup(struct fwder_wofa * fwder_wofa,
-                                          uint16 * symbol, const int port);
-/** WOFA Debug dump and audit. */
-static void          _fwder_wofa_dump(struct bcmstrbuf *b,
-                                      struct fwder_wofa * fwder_wofa);
-
-/** Forwarder static function delcarations. */
-/** Forwarder accessor string formating. */
-static inline const char * __fwder_dir(const int dir);
-static inline const char * __fwder_mode(const int mode);
-static inline const char * __fwder_chan(const int chan);
-/** Forwarder default bypass handler. */
-static int _fwder_bypass_fn(fwder_t * fwder, struct sk_buff * skbs, int skb_cnt,
-                            struct net_device * rx_dev);
-/** Forwarder cpumap configuration. */
-static int _fwder_cpumap_config(int radio, struct fwder_cpumap *map);
-static int _fwder_cpumap_parse(const char *fwder_cpumap_nvar_str);
-/** Forwarder instance accessor. */
-static inline fwder_t * ___fwder_self(const fwder_dir_t dir, int funit);
-static inline fwder_t * __fwder_self(const fwder_dir_t dir, int funit);
-static inline void      __fwder_sync_devs_cnt(fwder_t * fwder_dn);
-static inline struct fwder_if * __fwder_if(int unit, int subunit);
-
-/** Forwarder Debug and audit. */
-static void _fwder_dump(struct bcmstrbuf *b, const fwder_t * fwder);
-static void _fwder_devs_dump(struct bcmstrbuf *b, dll_t * fwder_if_dll);
-
-
-/** WOFA Dictionary sizing. */
-#define WOFA_DICT_SYMBOL_SIZE   (6) /* Size of a Mac Address */
-#define WOFA_DICT_BKT_MAX       (1 << NBBY)
-#define WOFA_DICT_BIN_MAX       (4) /* collision list */
-#define WOFA_DICT_SYMBOLS_MAX   (WOFA_DICT_BKT_MAX * WOFA_DICT_BIN_MAX)
+static inline uint32 __wofa_syms(struct wofa * wofa);
+#if defined(WOFA_STATS)
+static inline uint32 __wofa_hits(struct wofa * wofa);
+static inline uint32 __wofa_miss(struct wofa * wofa);
+#endif /* WOFA_STATS */
 
 #if (WOFA_DICT_SYMBOL_SIZE != 6)
 #error "Validated for 6Byte symbols"
@@ -121,13 +62,6 @@ static void _fwder_devs_dump(struct bcmstrbuf *b, dll_t * fwder_if_dll);
 #error "Dictionary hash table size uses a uint8 index"
 #endif
 
-/** WOFA Bloom Filter sizing. */
-#define WOFA_BLOOMFILTER_BITS   (64 * 1024) /* 16bit hash index */
-#define WOFA_BLOOMFILTER_WORDS  (WOFA_BLOOMFILTER_BITS / 32)
-
-/** WOFA Cached recent hit per LAN port|WLAN Interface. */
-#define WOFA_MAX_PORTS          (FWDER_MAX_IF + 1)
-
 /** WOFA Symbol: key, 32bit associated metadata, and runtime stats */
 typedef struct wofa_sym {           /* 16Byte symbol + metadata */
 	uint16         hash16;
@@ -135,8 +69,8 @@ typedef struct wofa_sym {           /* 16Byte symbol + metadata */
 		uint8       u8[WOFA_DICT_SYMBOL_SIZE];
 		uint16     u16[WOFA_DICT_SYMBOL_SIZE / sizeof(uint16)];
 	} key;
-	wofa_t         wofa;            /* 32bit meta data */
-#if defined(FWDER_STATS)
+	uintptr_t      data;            /* 32bit meta data */
+#if defined(WOFA_STATS)
 	uint32         hits;            /* Per symbol hit statistics */
 #endif
 } wofa_sym_t;
@@ -167,17 +101,15 @@ typedef struct wofa_dict {
 } wofa_dict_t;
 
 /** Forwarder instance of a WOFA lkup system. */
-typedef struct fwder_wofa {
+typedef struct wofa {
 	wofa_dict_t    dict;            /* Dictionary of 6B symbols and metadata */
 	int            syms;            /* Number of symbols in dictionary */
-#if defined(FWDER_STATS)
+#if defined(WOFA_STATS)
 	uint32         hits;            /* Lookup successful statistics counter */
 	uint32         miss;            /* Lookup failure statistics counter */
-#endif /* FWDER_STATS */
-} fwder_wofa_t;
+#endif /* WOFA_STATS */
+} wofa_t;
 
-static fwder_wofa_t * _fwder_wofa[FWDER_MAX_UNIT] =
-{ FWDER_WOFA_NULL, FWDER_WOFA_NULL };
 
 /** Hash table and symbol manipulation helper routines. */
 
@@ -231,39 +163,35 @@ __wofa_bloom_clr16(uint32 * bloom_filter, const uint16 hash16)
 }
 
 #define DECLARE_WOFA_FN(FIELD)                                                 \
-static inline uint32 __fwder_wofa_ ## FIELD(fwder_wofa_t * fwder_wofa)         \
-{ return fwder_wofa->FIELD; }
-DECLARE_WOFA_FN(syms) /* __fwder_wofa_syms(): Return num active symbols */
-#if defined(FWDER_STATS)
-DECLARE_WOFA_FN(hits) /* __fwder_wofa_hits() Return num of successful lkups */
-DECLARE_WOFA_FN(miss) /* __fwder_wofa_miss() Return num of unsuccessful lkups */
-#endif /* FWDER_STATS */
+static inline uint32 __wofa_ ## FIELD(struct wofa * wofa)                      \
+{ return wofa->FIELD; }
+DECLARE_WOFA_FN(syms) /* __wofa_syms(): Return num active symbols */
+#if defined(WOFA_STATS)
+DECLARE_WOFA_FN(hits) /* __wofa_hits() Return num of successful lkups */
+DECLARE_WOFA_FN(miss) /* __wofa_miss() Return num of unsuccessful lkups */
+#endif /* WOFA_STATS */
 
 /** Allocate and reset storage for dictionary and bloom filter. */
-static fwder_wofa_t * __init
-_fwder_wofa_init(const int funit)
+struct wofa *
+wofa_init(void)
 {
 	int bin, bkt, port;
 	gfp_t flags;
 	wofa_dict_t * dict;
-	fwder_wofa_t * fwder_wofa;
-	const int fwder_wofa_sz = sizeof(fwder_wofa_t);
-
-	FWDER_ASSERT(funit < FWDER_MAX_UNIT);
-	FWDER_ASSERT(_fwder_wofa[funit] == FWDER_WOFA_NULL);
+	struct wofa * wofa;
+	const int wofa_sz = sizeof(struct wofa);
 
 	flags = CAN_SLEEP() ? GFP_KERNEL : GFP_ATOMIC;
-	fwder_wofa = (fwder_wofa_t *)kmalloc(fwder_wofa_sz, flags);
+	wofa = (struct wofa *)kmalloc(wofa_sz, flags);
 
-	if (fwder_wofa == FWDER_WOFA_NULL) {
-		FWDER_WARN(("%s Failed allocate wofa size<%u>\n",
-		            __FUNCTION__, fwder_wofa_sz));
-		ASSERT(fwder_wofa != FWDER_WOFA_NULL);
-		return FWDER_WOFA_NULL;
+	if (wofa == WOFA_NULL) {
+		WOFA_WARN(("%s Failed allocate wofa_sz<%u>\n", __FUNCTION__, wofa_sz));
+		ASSERT(wofa != WOFA_NULL);
+		return WOFA_NULL;
 	}
 
-	bzero(fwder_wofa, fwder_wofa_sz); /* Initializes bloomfilter state */
-	dict = &fwder_wofa->dict;
+	bzero(wofa, wofa_sz); /* Initializes bloomfilter state */
+	dict = &wofa->dict;
 
 	/* Initialize cache lkup state */
 	for (port = 0; port < WOFA_MAX_PORTS; port++) {
@@ -274,43 +202,41 @@ _fwder_wofa_init(const int funit)
 	/* Initialize hash lkup state */
 	for (bkt = 0; bkt < WOFA_DICT_BKT_MAX; bkt++) {
 		for (bin = 0; bin < WOFA_DICT_BIN_MAX; bin++) {
-			dict->table.bkt[bkt].bin[bin].wofa = FWDER_WOFA_INVALID;
+			dict->table.bkt[bkt].bin[bin].data = WOFA_DATA_INVALID;
 		}
 	}
 
-	FWDER_STATS_CLR(fwder_wofa->hits);
-	FWDER_STATS_CLR(fwder_wofa->miss);
+	WOFA_STATS_CLR(wofa->hits);
+	WOFA_STATS_CLR(wofa->miss);
 
-	FWDER_TRACE(("Fwder WOFA[%d]:<%p> size<%uKB:%uB>\n",
-	             funit, fwder_wofa, fwder_wofa_sz/1024, fwder_wofa_sz));
+	WOFA_TRACE(("WOFA<%p> size<%uKB:%uB>\n", wofa, wofa_sz/1024, wofa_sz));
 
-	_fwder_wofa[funit] = fwder_wofa;
-
-	return fwder_wofa;
+	return wofa;
 }
 
 /** Free storage for dictionary and bloom filter. */
-static void
-_fwder_wofa_fini(fwder_wofa_t * fwder_wofa)
+void
+wofa_fini(struct wofa * wofa)
 {
-	if (fwder_wofa == FWDER_WOFA_NULL)
+	if (wofa == WOFA_NULL)
 		return;
 
-	kfree(fwder_wofa);
+	kfree(wofa);
 }
 
 /** Add a symbol to WOFA dictionary: hash table and bloom-filter. */
-static inline int
-__fwder_wofa_add(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
+int
+wofa_add(struct wofa * wofa, uint16 * symbol, uintptr_t data)
 {
 	uint16 hash16;
 	wofa_dict_t * dict;
 
-	FWDER_ASSERT(fwder_wofa != FWDER_WOFA_NULL);
-	FWDER_ASSERT(symbol != NULL);
-	FWDER_ASSERT(wofa != FWDER_WOFA_INVALID);
+	WOFA_ASSERT(wofa != WOFA_NULL);
+	WOFA_ASSERT(symbol != NULL);
+	WOFA_ALIGN16(symbol);
+	WOFA_ASSERT(data != WOFA_DATA_INVALID);
 
-	dict = &fwder_wofa->dict;
+	dict = &wofa->dict;
 	hash16 = __wofa_sym48_hash16(symbol);
 
 	{   /* Search the exact match hash table */
@@ -329,20 +255,20 @@ __fwder_wofa_add(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
 		while ((uintptr)sym < (uintptr)end) {
 
 			/* Check for duplicates */
-			if (sym->wofa != FWDER_WOFA_INVALID) { /* valid entry */
+			if (sym->data != WOFA_DATA_INVALID) { /* valid entry */
 
 				if (__wofa_sym48_cmp16(symbol, sym->key.u16) == 0) {
 					/* Found a previous entry */
 					if (added == 0) { /* overwrite duplicate */
-						FWDER_ASSERT(sym->hash16 == hash16);
-						sym->wofa = wofa;
-						FWDER_STATS_CLR(sym->hits);
+						WOFA_ASSERT(sym->hash16 == hash16);
+						sym->data = data;
+						WOFA_STATS_CLR(sym->hits);
 						added = 1;
 					} else {  /* duplicate? */
-						FWDER_WARN(("Found several duplicate symbol"));
-						sym->wofa = FWDER_WOFA_INVALID;
+						WOFA_WARN(("Found several duplicate symbol"));
+						sym->data = WOFA_DATA_INVALID;
 						sym->hash16 = 0; /* 0 may be a valid value */
-						fwder_wofa->syms--;
+						wofa->syms--;
 					}
 				}
 
@@ -353,11 +279,11 @@ __fwder_wofa_add(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
 				__wofa_sym48_set16(symbol, sym->key.u16);
 
 				sym->hash16 = hash16;
-				sym->wofa = wofa;
-				FWDER_STATS_CLR(sym->hits);
-				FWDER_TRACE(("WOFA add " __EFMT "wofa<0x%08x>\n",
-				             __EVAL((uint8*)symbol), (uint)wofa));
-				fwder_wofa->syms++;
+				sym->data = data;
+				WOFA_STATS_CLR(sym->hits);
+				WOFA_TRACE(("WOFA add " __EFMT "data<0x%p>\n",
+				            __EVAL((uint8*)symbol), (void*)data));
+				wofa->syms++;
 				added = 1; /* used to clear duplicates */
 			}
 
@@ -365,8 +291,8 @@ __fwder_wofa_add(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
 		}
 
 		if (added == 0) {
-			FWDER_WARN(("WOFA add " __EFMT "wofa<0x%08x> : bkt<%u> overflow\n",
-			            __EVAL((uint8*)symbol), (uint)wofa, hash8));
+			WOFA_WARN(("WOFA add " __EFMT "data<0x%p> : bkt<%u> overflow\n",
+			            __EVAL((uint8*)symbol), (void*)data, hash8));
 		}
 	}
 
@@ -376,17 +302,18 @@ __fwder_wofa_add(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
 /** Delete a symbol from the WOFA dictionary and clear the bloom filter if no
  * other elements have a matching hash.
  */
-static inline int
-__fwder_wofa_del(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
+int
+wofa_del(struct wofa * wofa, uint16 * symbol, uintptr_t data)
 {
 	uint16 hash16;
 	wofa_dict_t * dict;
 
-	FWDER_ASSERT(fwder_wofa != FWDER_WOFA_NULL);
-	FWDER_ASSERT(symbol != NULL);
-	FWDER_ASSERT(wofa != FWDER_WOFA_INVALID);
+	WOFA_ASSERT(wofa != WOFA_NULL);
+	WOFA_ASSERT(symbol != NULL);
+	WOFA_ALIGN16(symbol);
+	WOFA_ASSERT(data != WOFA_DATA_INVALID);
 
-	dict = &fwder_wofa->dict;
+	dict = &wofa->dict;
 	hash16 = __wofa_sym48_hash16(symbol);
 
 	{   /* Clear cached entry */
@@ -413,17 +340,17 @@ __fwder_wofa_del(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
 		end = sym + WOFA_DICT_BIN_MAX; /* after last bin in collision list */
 
 		while ((uintptr)sym < (uintptr)end) {
-			if ((sym->wofa != FWDER_WOFA_INVALID) &&
-			       (sym->hash16 == hash16)) {
+			if ((sym->data != WOFA_DATA_INVALID) && (sym->hash16 == hash16)) {
 				if (__wofa_sym48_cmp16(symbol, sym->key.u16) == 0) {
-					if (sym->wofa != wofa) {
-						FWDER_WARN((
-						   "%s sym->wofa<0x%08x> != wofa<0x%08x>\n",
-						   __FUNCTION__, (uint)sym->wofa, (uint)wofa));
+					if (sym->data != data) {
+						WOFA_WARN((
+						   "%s sym->data<0x%p> != wofa<0x%p>\n",
+						   __FUNCTION__, (void*)sym->data, (void*)data));
+					} else {
+						sym->data = WOFA_DATA_INVALID;
+						sym->hash16 = 0; /* 0 is a valid value */
+						wofa->syms--;
 					}
-					sym->wofa = FWDER_WOFA_INVALID;
-					sym->hash16 = 0; /* 0 is a valid value */
-					fwder_wofa->syms--;
 				}
 			}
 			sym++; /* next bin in bkt collision list */
@@ -441,7 +368,7 @@ __fwder_wofa_del(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
 		for (bkt = 0; bkt < WOFA_DICT_BKT_MAX; bkt++) {
 			for (bin = 0; bin < WOFA_DICT_BIN_MAX; bin++) {
 				const wofa_sym_t * sym = &dict->table.bkt[bkt].bin[bin];
-				if ((sym->wofa != FWDER_WOFA_INVALID) &&
+				if ((sym->data != WOFA_DATA_INVALID) &&
 				        (sym->hash16 == hash16)) {
 					found_hash16 = 1;
 					break;
@@ -461,15 +388,15 @@ __fwder_wofa_del(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
 /** Delete all symbols in the WOFA dictionary that match the wofa metadata and
  * clear the bloom filter.
  */
-static inline int
-__fwder_wofa_clr(struct fwder_wofa * fwder_wofa, wofa_t wofa)
+int
+wofa_clr(struct wofa * wofa, uintptr_t data)
 {
 	wofa_dict_t * dict;
 
-	FWDER_ASSERT(fwder_wofa != FWDER_WOFA_NULL);
-	FWDER_ASSERT(wofa != FWDER_WOFA_INVALID);
+	WOFA_ASSERT(wofa != WOFA_NULL);
+	WOFA_ASSERT(data != WOFA_DATA_INVALID);
 
-	dict = &fwder_wofa->dict;
+	dict = &wofa->dict;
 
 	{   /* Reset cache entries */
 		int port;
@@ -487,7 +414,7 @@ __fwder_wofa_clr(struct fwder_wofa * fwder_wofa, wofa_t wofa)
 		int bkt, bin;
 		for (bkt = 0; bkt < WOFA_DICT_BKT_MAX; bkt++) {
 			for (bin = 0; bin < WOFA_DICT_BIN_MAX; bin++) {
-				if (dict->table.bkt[bkt].bin[bin].wofa == wofa) {
+				if (dict->table.bkt[bkt].bin[bin].data == data) {
 					hash16 = dict->table.bkt[bkt].bin[bin].hash16;
 					__wofa_bloom_set16(dict->bloomfilter, hash16);
 				}
@@ -495,24 +422,24 @@ __fwder_wofa_clr(struct fwder_wofa * fwder_wofa, wofa_t wofa)
 		}
 	}
 
-	return FWDER_SUCCESS;
+	return BCME_OK;
 }
 
 /** Lookup a symbol in the WOFA dictionary returning the wofa metadata.
  * 3 Step lookup is performed. First the last hit cached entry is tested.
  */
-static inline wofa_t
-__fwder_wofa_lkup(struct fwder_wofa * fwder_wofa, uint16 * symbol,
-                  const int port)
+uintptr_t
+wofa_lkup(struct wofa * wofa, uint16 * symbol, const int port)
 {
 	uint16 hash16;
 	wofa_sym_t * sym;
 	wofa_dict_t * dict;
 
-	FWDER_ASSERT(fwder_wofa != FWDER_WOFA_NULL);
-	FWDER_ASSERT(symbol != NULL);
+	WOFA_ASSERT(wofa != WOFA_NULL);
+	WOFA_ASSERT(symbol != NULL);
+	WOFA_ALIGN16(symbol);
 
-	dict = &fwder_wofa->dict;
+	dict = &wofa->dict;
 	hash16 = __wofa_sym48_hash16(symbol);
 
 	/* Lkup the cached hit entry first */
@@ -561,38 +488,40 @@ __fwder_wofa_lkup(struct fwder_wofa * fwder_wofa, uint16 * symbol,
 	}
 
 bloomfilter_lkup_failure:
-	FWDER_STATS_INCR(fwder_wofa->miss);
+	WOFA_STATS_INCR(wofa->miss);
 
-	return FWDER_WOFA_INVALID;
+	return WOFA_DATA_INVALID;
 
 found_symbol:
-	FWDER_STATS_INCR(fwder_wofa->hits);
-	FWDER_STATS_INCR(sym->hits);
+	WOFA_STATS_INCR(wofa->hits);
+	WOFA_STATS_INCR(sym->hits);
 
-	FWDER_ASSERT(sym->wofa != FWDER_WOFA_INVALID);
+	if (sym->data == WOFA_DATA_INVALID) {
+		WOFA_WARN(("%s sym->data == WOFA_DATA_INVALID\n", __FUNCTION__));
+	}
 
-	return sym->wofa; /* return associated wofa metadata */
+	return sym->data; /* return associated wofa metadata */
 }
 
 /** Debug dump a forwaring unit's WOFA table. */
-static void
-_fwder_wofa_dump(struct bcmstrbuf *b, fwder_wofa_t * fwder_wofa)
+void
+wofa_dump(struct bcmstrbuf *b, struct wofa * wofa)
 {
 	int dump, word, port, bkt, bin;
 	wofa_sym_t * sym;
 	wofa_dict_t * dict;
 
-	if (fwder_wofa == FWDER_WOFA_NULL)
+	if (wofa == WOFA_NULL)
 		return;
 
-	dict = &fwder_wofa->dict;
+	dict = &wofa->dict;
 
-	bcm_bprintf(b, "WOFA Symbols<%u>\n", __fwder_wofa_syms(fwder_wofa));
+	bcm_bprintf(b, "WOFA Symbols<%u>\n", __wofa_syms(wofa));
 
-#if defined(FWDER_STATS)
+#if defined(WOFA_STATS)
 	bcm_bprintf(b, "WOFA Statistics: hits<%u> miss<%u>\n",
-	            __fwder_wofa_hits(fwder_wofa), __fwder_wofa_miss(fwder_wofa));
-#endif /* FWDER_STATS */
+	            __wofa_hits(wofa), __wofa_miss(wofa));
+#endif /* WOFA_STATS */
 
 	bcm_bprintf(b, "WOFA Cached Table Dump:\n");
 	for (port = 0; port < WOFA_MAX_PORTS; port++) {
@@ -614,14 +543,14 @@ _fwder_wofa_dump(struct bcmstrbuf *b, fwder_wofa_t * fwder_wofa)
 	for (bkt = 0; bkt < WOFA_DICT_BKT_MAX; bkt++) {
 		for (bin = 0; bin < WOFA_DICT_BIN_MAX; bin++) {
 			sym = &dict->table.bkt[bkt].bin[bin];
-			if (sym->wofa != FWDER_WOFA_INVALID) {
-				bcm_bprintf(b, "\t" __EFMT "wofa<0x%08x> "
-#if defined(FWDER_STATS)
+			if (sym->data != WOFA_DATA_INVALID) {
+				bcm_bprintf(b, "\t" __EFMT "data<0x%p> "
+#if defined(WOFA_STATS)
 				            "hits<%u> "
 #endif
 				            "BktBin<%03d:%d] sym<%p> hash<0x%04X:%05u>\n",
-				            __EVAL(sym->key.u8), (uint)sym->wofa,
-#if defined(FWDER_STATS)
+				            __EVAL(sym->key.u8), (void*)sym->data,
+#if defined(WOFA_STATS)
 				            sym->hits,
 #endif
 				            bkt, bin, sym, sym->hash16, (int)sym->hash16);
@@ -636,6 +565,48 @@ _fwder_wofa_dump(struct bcmstrbuf *b, fwder_wofa_t * fwder_wofa)
 
 	bcm_bprintf(b, "\n\n");
 }
+
+/** HND Forwarder for 3GMAC Atlas */
+
+/* forward declaration */
+struct fwder_if;
+struct fwder_cpumap;
+
+#define FWDER_WOFA_NULL         (WOFA_NULL)
+#define FWDER_NET_DEVICE_NULL   ((struct net_device *)NULL)
+#define FWDER_BYPASS_FN_NULL    ((fwder_bypass_fn_t)NULL)
+
+#if (WOFA_MAX_PORTS != (FWDER_MAX_IF + 1))
+#error "mismatch WOFA_MAX_PORTS and FWDER_MAX_IF"
+#endif
+
+/* Safe fetch of a string member given a structure pointer. */
+#define __SSTR(_struct_ptr, _member) \
+	(((_struct_ptr) != NULL) ? (_struct_ptr)->_member : "null")
+
+/** Forwarder static function delcarations. */
+/** Forwarder accessor string formating. */
+static inline const char * __fwder_dir(const int dir);
+static inline const char * __fwder_mode(const int mode);
+static inline const char * __fwder_chan(const int chan);
+/** Forwarder default bypass handler. */
+static int _fwder_bypass_fn(fwder_t * fwder, struct sk_buff * skbs, int skb_cnt,
+                            struct net_device * rx_dev);
+/** Forwarder cpumap configuration. */
+static int _fwder_cpumap_config(int radio, struct fwder_cpumap *map);
+static int _fwder_cpumap_parse(const char *fwder_cpumap_nvar_str);
+/** Forwarder instance accessor. */
+static inline fwder_t * ___fwder_self(const fwder_dir_t dir, int funit);
+static inline fwder_t * __fwder_self(const fwder_dir_t dir, int funit);
+static inline void      __fwder_sync_devs_cnt(fwder_t * fwder_dn);
+static inline struct fwder_if * __fwder_if(int unit, int subunit);
+
+/** Forwarder Debug and audit. */
+static void _fwder_dump(struct bcmstrbuf *b, const fwder_t * fwder);
+static void _fwder_devs_dump(struct bcmstrbuf *b, dll_t * fwder_if_dll);
+
+static struct wofa * _fwder_wofa[FWDER_MAX_UNIT] =
+{ FWDER_WOFA_NULL, FWDER_WOFA_NULL };
 
 /* fwder enum to string conversions for debug dump: fwder_dir(), fwder_mode() */
 static const char * _fwder_dir_g[FWDER_MAX_DIR] = { "UP", "DN" };
@@ -986,7 +957,7 @@ fwder_init(void)
 
 	/* Instantiate WOFA dictionary. */
 	for (funit = 0; funit < FWDER_MAX_UNIT; funit++) {
-		_fwder_wofa[funit] = _fwder_wofa_init(funit);
+		_fwder_wofa[funit] = wofa_init();
 		if (_fwder_wofa[funit] == FWDER_WOFA_NULL)
 			return FWDER_FAILURE;
 	}
@@ -1069,7 +1040,7 @@ fwder_exit(void)
 #endif /* ! CONFIG_SMP */
 	{
 		fwder = __fwder_self(FWDER_UPSTREAM, funit);
-		_fwder_wofa_fini(fwder->wofa);
+		wofa_fini(fwder->wofa);
 		fwder->mate->wofa = fwder->wofa = FWDER_WOFA_NULL;
 		_fwder_wofa[funit] = FWDER_WOFA_NULL;
 	}
@@ -1169,7 +1140,7 @@ fwder_dettach(fwder_t * mate, fwder_dir_t dir, int unit)
 			if (fwder_if->dev != FWDER_NET_DEVICE_NULL) {
 				/* Move to pool's free list */
 				FWDER_ASSERT(!dll_empty(&self->devs_dll));
-				fwder_flush(self, (wofa_t)fwder_if->dev);
+				fwder_flush(self, (uintptr_t)fwder_if->dev);
 				self->devs_cnt--;
 				dll_delete(&fwder_if->node);
 				fwder_if->dev = FWDER_NET_DEVICE_NULL;
@@ -1195,7 +1166,7 @@ fwder_dettach(fwder_t * mate, fwder_dir_t dir, int unit)
 }
 
 /** Given an upstream fwder handle, register a default interface
- * to mate downstream fwder. Deregister bu using a NULL net_device.
+ * to mate downstream fwder. Deregister by using a NULL net_device.
  */
 int
 fwder_register(fwder_t * fwder, struct net_device * dev)
@@ -1319,68 +1290,65 @@ unlock_ret:
 
 /** Add a station to a forwarder's WOFA on association or reassociation. */
 int
-fwder_reassoc(fwder_t * fwder, uint16 * symbol, wofa_t wofa)
+fwder_reassoc(fwder_t * fwder, uint16 * symbol, uintptr_t data)
 {
 	int err;
 	if (fwder == FWDER_NULL)
 		return FWDER_FAILURE;
 
-	FWDER_TRACE(("%s fwder<%p,%s> " __EFMT "wofa<0x%08x>\n", __FUNCTION__,
-	           fwder, __SSTR(fwder, name), __EVAL((uint8*)symbol), (uint)wofa));
+	FWDER_TRACE(("%s fwder<%p,%s> " __EFMT "data<0x%p>\n", __FUNCTION__, fwder,
+	            __SSTR(fwder, name), __EVAL((uint8*)symbol), (void*)data));
 	FWDER_ASSERT(fwder->wofa == fwder->mate->wofa);
-	FWDER_ALIGN16(symbol);
 
-	err = __fwder_wofa_add(fwder->wofa, symbol, wofa);
+	err = wofa_add(fwder->wofa, symbol, data);
 
 	return err;
 }
 
 /** Delete a station from a forwarder's WOFA on deassociation. */
 int
-fwder_deassoc(fwder_t * fwder, uint16 * symbol, wofa_t wofa)
+fwder_deassoc(fwder_t * fwder, uint16 * symbol, uintptr_t data)
 {
 	int err;
 	if (fwder == FWDER_NULL)
 		return FWDER_FAILURE;
 
-	FWDER_TRACE(("%s fwder<%p,%s> " __EFMT "wofa<0x%08x>\n", __FUNCTION__,
-	       fwder, __SSTR(fwder, name), __EVAL((uint8*)symbol), (uint)wofa));
-	FWDER_ALIGN16(symbol);
+	FWDER_TRACE(("%s fwder<%p,%s> " __EFMT "data<0x%p>\n", __FUNCTION__, fwder,
+	            __SSTR(fwder, name), __EVAL((uint8*)symbol), (void*)data));
 	FWDER_ASSERT(fwder->wofa == fwder->mate->wofa);
 
-	err = __fwder_wofa_del(fwder->wofa, symbol, wofa);
+	err = wofa_del(fwder->wofa, symbol, data);
 
 	return err;
 }
 
 /** Flush all entries in the forwarder's WOFA containing the metadata */
 int
-fwder_flush(fwder_t * fwder, wofa_t wofa)
+fwder_flush(fwder_t * fwder, uintptr_t data)
 {
 	int err;
-	if ((fwder == FWDER_NULL) || (wofa == FWDER_WOFA_INVALID))
+	if ((fwder == FWDER_NULL) || (data == WOFA_DATA_INVALID))
 		return FWDER_FAILURE;
 
-	FWDER_TRACE(("%s fwder<%p,%s> wofa<0x%08x>\n", __FUNCTION__,
-	            fwder, __SSTR(fwder, name), (uint)wofa));
+	FWDER_TRACE(("%s fwder<%p,%s> data<0x%p>\n", __FUNCTION__,
+	            fwder, __SSTR(fwder, name), (void*)data));
 	FWDER_ASSERT(fwder->wofa == fwder->mate->wofa);
 
-	err = __fwder_wofa_clr(fwder->wofa, wofa);
+	err = wofa_clr(fwder->wofa, data);
 
 	return err;
 }
 
 /** Lookup WOFA for a station (by Mac Address) assocatied with a forwarder. */
-wofa_t
+uintptr_t
 fwder_lookup(fwder_t * fwder, uint16 * symbol, const int port)
 {
-	wofa_t wofa;
+	uintptr_t data;
 	FWDER_ASSERT(fwder != FWDER_NULL);
 	FWDER_PTRACE(("%s fwder<%p,%s> " __EFMT "port<%d>\n", __FUNCTION__,
 	              fwder, __SSTR(fwder, name), __EVAL((uint8*)symbol), port));
-	FWDER_ALIGN16(symbol);
-	wofa = __fwder_wofa_lkup(fwder->wofa, symbol, port);
-	return wofa;
+	data = wofa_lkup(fwder->wofa, symbol, port);
+	return data;
 }
 
 /** Flood a packet to all interfaces. Free original if clone is FALSE. */
@@ -1540,7 +1508,7 @@ fwder_dump(struct bcmstrbuf *b)
 		_fwder_dump(b, fwder); /* dump upstream forwarder */
 		_fwder_dump(b, fwder->mate); /* dump mate downstream forwarder */
 		_fwder_devs_dump(b, &fwder->devs_dll); /* dump bound interfaces */
-		_fwder_wofa_dump(b, fwder->wofa); /* dump WOFA ARL */
+		wofa_dump(b, fwder->wofa); /* dump WOFA ARL */
 	}	/* for_each_online_cpu | for unit = 0 .. FWDER_MAX_UNIT */
 }
 #endif  /*  BCM_GMAC3 */

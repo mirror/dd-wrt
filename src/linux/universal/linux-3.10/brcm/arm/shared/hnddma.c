@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hnddma.c 524987 2015-01-08 14:34:41Z $
+ * $Id: hnddma.c 523721 2015-01-01 13:02:06Z $
  */
 
 #include <bcm_cfg.h>
@@ -2515,7 +2515,6 @@ dma32_txfast(dma_info_t *di, void *p0, bool commit)
 #else
 		pa = DMA_MAP(di->osh, data, len, DMA_TX, p, &di->txp_dmah[txout]);
 #endif /* BCM_SECURE_DMA */
-
 		if (DMASGLIST_ENAB) {
 			map = &di->txp_dmah[txout];
 
@@ -2663,7 +2662,6 @@ dma32_getnexttxp(dma_info_t *di, txd_range_t range)
 			if (j > 1)
 				i = NEXTTXD(i);
 		}
-
 #ifdef BCM_SECURE_DMA
 		SECURE_DMA_UNMAP(di->osh, pa, size, DMA_TX, NULL, NULL, &di->sec_cma_info_tx, 0);
 #else
@@ -2724,7 +2722,6 @@ dma32_getnextrxp(dma_info_t *di, bool forceall)
 	DMA_UNMAP(di->osh, pa,
 	          di->rxbufsize, DMA_RX, rxp, &di->rxp_dmah[i]);
 #endif
-
 	W_SM(&di->rxd32[i].addr, 0xdeadbeef);
 
 	di->rxin = NEXTRXD(i);
@@ -3213,7 +3210,6 @@ dma64_txunframed(dma_info_t *di, void *buf, uint len, bool commit)
 
 	if (len == 0)
 		return 0;
-
 #ifdef BCM_SECURE_DMA
 	pa = SECURE_DMA_MAP(di->osh, buf, len, DMA_TX, NULL, NULL, &di->sec_cma_info_tx, 0);
 #else
@@ -3322,8 +3318,8 @@ dma64_txfast(dma_info_t *di, void *p0, bool commit)
 		/* get physical address of buffer start */
 		if (DMASGLIST_ENAB)
 			bzero(&di->txp_dmah[txout], sizeof(hnddma_seg_map_t));
-
 #ifdef BCM_SECURE_DMA
+
 		if (DMASGLIST_ENAB) {
 			pa = SECURE_DMA_MAP(di->osh, data, len, DMA_TX, p, &di->txp_dmah[txout],
 				&di->sec_cma_info_tx, 0);
@@ -3576,6 +3572,7 @@ dma64_getnexttxp(dma_info_t *di, txd_range_t range)
 #if ((!defined(__mips__) && !defined(BCM47XX_CA9)) || defined(__NetBSD__))
 		DMA_UNMAP(di->osh, pa, size, DMA_TX, txp, map);
 #endif
+
 #ifdef BCM_SECURE_DMA
 		SECURE_DMA_UNMAP(di->osh, pa, size, DMA_TX, NULL, NULL, &di->sec_cma_info_tx, 0);
 #endif

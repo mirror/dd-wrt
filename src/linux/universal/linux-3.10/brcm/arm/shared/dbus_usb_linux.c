@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: dbus_usb_linux.c 452339 2014-01-30 00:41:10Z $
+ * $Id: dbus_usb_linux.c 550891 2015-04-21 20:18:21Z $
  */
 
 #include <typedefs.h>
@@ -3090,6 +3090,7 @@ dbus_usbos_thread_init(usbos_info_t *usbos_info)
 	unsigned long       flags, ii;
 
 	spin_lock_init(&usbos_info->usbos_list_lock);
+	spin_lock_init(&usbos_info->ctrl_lock);
 	INIT_LIST_HEAD(&usbos_info->usbos_list);
 	INIT_LIST_HEAD(&usbos_info->usbos_free_list);
 	init_waitqueue_head(&usbos_info->usbos_queue_head);
@@ -4043,6 +4044,9 @@ dbus_get_fw_nvfile(int devid, uint8 **fw, int *fwlen, int type, uint16 boardtype
 		case BCM43242_CHIP_ID:
 			strcat(fw_name, "43242");
 			break;
+		case BCM43238_CHIP_ID:
+			strcat(fw_name, "43238");
+			break;
 		case BCM43526_CHIP_ID:
 			strcat(fw_name, "43526");
 			break;
@@ -4080,6 +4084,9 @@ dbus_get_fw_nvfile(int devid, uint8 **fw, int *fwlen, int type, uint16 boardtype
 			break;
 		case BCM43236_CHIP_ID:
 			strcat(fw_name, "43236");
+			break;
+		case BCM43238_CHIP_ID:
+			strcat(fw_name, "43238");
 			break;
 		case BCM43242_CHIP_ID:
 			strcat(fw_name, "43242");
