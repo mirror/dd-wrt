@@ -2592,6 +2592,7 @@ wl_basic.label6="Sensitivity Range (ACK Timing)";
 wl_basic.label7="802.11n Transmission Mode";
 wl_basic.igmpsnooping="Optimize Multicast Traffic";
 wl_basic.turboqam="TurboQAM (QAM256) support";
+wl_basic.nitroqam="NitroQAM (QAM1024) support";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dual Link";
 wl_basic.parent="Parent IP";

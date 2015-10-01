@@ -509,13 +509,13 @@ int wlconf_up(char *name)
 	}
 	if (has_ac(prefix)) {
 		if (nvram_nmatch("1", "wl%d_nband", instance)) {
-			if (nvram_nmatch("2", "wl%d_turbo_qam", instance))
+			if (nvram_nmatch("1", "wl%d_nitro_qam", instance))
 				eval("wl", "-i", name, "vht_features", "4");	// nitro qam
 			else
 				eval("wl", "-i", name, "vht_features", "0");
 		}
 		if (nvram_nmatch("2", "wl%d_nband", instance)) {
-			if (nvram_nmatch("2", "wl%d_turbo_qam", instance))
+			if (nvram_nmatch("1", "wl%d_nitro_qam", instance))
 				eval("wl", "-i", name, "vht_features", "7");	// nitro qam
 			else if (nvram_nmatch("1", "wl%d_turbo_qam", instance))
 				eval("wl", "-i", name, "vht_features", "3");
