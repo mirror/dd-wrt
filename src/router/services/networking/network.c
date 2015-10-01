@@ -508,10 +508,20 @@ int wlconf_up(char *name)
 
 	}
 	if (has_2ghz(prefix) && has_ac(prefix)) {
-		if (nvram_nmatch("1", "wl%d_turbo_qam", instance))
-			eval("wl", "-i", name, "vht_features", "3");
-		else
-			eval("wl", "-i", name, "vht_features", "1");
+		if (nvram_nmatch("1", "wl%d_nband", instance)) {
+			if (nvram_nmatch("2", "wl%d_turbo_qam", instance))
+				eval("wl", "-i", name, "vht_features", "4");	// nitro qam
+			else
+				eval("wl", "-i", name, "vht_features", "0");
+		}
+		if (nvram_nmatch("2", "wl%d_nband", instance)) {
+			if (nvram_nmatch("2", "wl%d_turbo_qam", instance))
+				eval("wl", "-i", name, "vht_features", "7");	// nitro qam
+			else if (nvram_nmatch("1", "wl%d_turbo_qam", instance))
+				eval("wl", "-i", name, "vht_features", "3");
+			else
+				eval("wl", "-i", name, "vht_features", "0");
+		}
 	}
 #endif
 #if (defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC)) && !defined(HAVE_BUFFALO)
@@ -4877,7 +4887,7 @@ void start_hotplug_net(void)
 		sysprintf("echo %x > /sys/class/net/%s/queues/rx-0/rps_cpus", cpumask, interface);
 		sysprintf("echo %x > /sys/class/net/%s/queues/tx-0/xps_cpus", cpumask, interface);
 #ifdef HAVE_ATH10K
-		if (is_ath10k(interface)  || is_mvebu(interface)) {
+		if (is_ath10k(interface) || is_mvebu(interface)) {
 			sysprintf("echo %x > /sys/class/net/%s/queues/tx-1/xps_cpus", cpumask, interface);
 			sysprintf("echo %x > /sys/class/net/%s/queues/tx-2/xps_cpus", cpumask, interface);
 			sysprintf("echo %x > /sys/class/net/%s/queues/tx-3/xps_cpus", cpumask, interface);
