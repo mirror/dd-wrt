@@ -3194,8 +3194,12 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
 	copytonv(wp, "%s_wmf_bss_enable", prefix);
-	if (has_2ghz(prefix) && has_ac(prefix))
+	if (has_ac(prefix) && has_2ghz(prefix)) {
 		copytonv(wp, "%s_turbo_qam", prefix);
+	}
+	if (has_ac(prefix)) {
+		copytonv(wp, "%s_nitro_qam", prefix);
+	}
 	if (has_beamforming(prefix)) {
 		copytonv(wp, "%s_txbf", prefix);
 		copytonv(wp, "%s_itxbf", prefix);
@@ -3429,24 +3433,24 @@ void wireless_save(webs_t wp)
 
 #ifdef HAVE_ERC
 	struct variable filter_variables[] = {
-             {argv:ARGV("1", "0")},
-             {argv:ARGV("1", "0")},
-        }, *which;
+	      {argv:ARGV("1", "0")},
+	      {argv:ARGV("1", "0")},
+	}, *which;
 
 	char *rd_off, *rd_boot_off;
 
 	rd_off = websGetVar(wp, "radiooff_button", NULL);
 	rd_off = websGetVar(wp, "radiooff_button", NULL);
-        if (!rd_off && !valid_choice(wp, rd_off, &which[0])) {
-                return;
-        }
+	if (!rd_off && !valid_choice(wp, rd_off, &which[0])) {
+		return;
+	}
 	nvram_set("radiooff_button", rd_off);
-	
+
 	rd_boot_off = websGetVar(wp, "radiooff_boot_off", NULL);
 	if (!rd_boot_off && !valid_choice(wp, rd_boot_off, &which[1])) {
 		return;
 	}
-	nvram_set("radiooff_boot_off", rd_boot_off); 
+	nvram_set("radiooff_boot_off", rd_boot_off);
 #endif
 	// nvram_commit ();
 	applytake(value);
