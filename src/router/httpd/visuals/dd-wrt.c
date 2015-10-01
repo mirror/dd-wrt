@@ -4226,6 +4226,12 @@ if (has_ac(prefix) && has_2ghz(prefix)) {
 	showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 }
 
+if (has_ac(prefix)) {
+	char wl_nitroqam[16];
+	sprintf(wl_nitroqam, "%s_nitro_qam", prefix);
+	showRadio(wp, "wl_basic.nitroqam", wl_nitroqam);
+}
+
 if (has_beamforming(prefix)) {
 
 	char wl_bft[16];
