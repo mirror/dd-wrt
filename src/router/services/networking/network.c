@@ -507,7 +507,7 @@ int wlconf_up(char *name)
 			eval("wl", "-i", name, "txbf_imp", "0");
 
 	}
-	if (has_2ghz(prefix) && has_ac(prefix)) {
+	if (has_ac(prefix)) {
 		if (nvram_nmatch("1", "wl%d_nband", instance)) {
 			if (nvram_nmatch("2", "wl%d_turbo_qam", instance))
 				eval("wl", "-i", name, "vht_features", "4");	// nitro qam
@@ -522,6 +522,10 @@ int wlconf_up(char *name)
 			else
 				eval("wl", "-i", name, "vht_features", "0");
 		}
+		if (nvram_nmatch("1", "wl%d_turbo_qam", instance) && nvram_nmatch("1", "wl%d_vreqd", instance))
+			eval("wl", "-i", name, "vhtmode", "1");
+		else
+			eval("wl", "-i", name, "vhtmode", "0");
 	}
 #endif
 #if (defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC)) && !defined(HAVE_BUFFALO)
