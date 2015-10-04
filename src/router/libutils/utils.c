@@ -4936,7 +4936,7 @@ char *cpustring(void)
 {
 	static char buf[256];
 #ifdef HAVE_MVEBU
-	strcpy(buf, "Marvel Armada 370/XP");
+	strcpy(buf, "Marvel Armada");
 	return buf;
 #elif HAVE_UNIWIP
 	strcpy(buf, "FreeScale MPC8314");
