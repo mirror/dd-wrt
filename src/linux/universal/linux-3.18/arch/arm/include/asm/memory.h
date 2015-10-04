@@ -358,6 +358,10 @@ static inline __deprecated void *bus_to_virt(unsigned long x)
 #endif
 #endif
 
+#ifndef arch_is_coherent
+#define arch_is_coherent()	((coherence_flag & COHERENCE_ACP_ACE) != 0)
+#endif
+
 #include <asm-generic/memory_model.h>
 
 #endif

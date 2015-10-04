@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.21 Kernel Configuration
+# Linux/arm 3.18.22 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -418,6 +418,7 @@ CONFIG_ARM_ERRATA_720789=y
 #
 CONFIG_PCI=y
 CONFIG_PCI_SYSCALL=y
+# CONFIG_PCIEPORTBUS is not set
 CONFIG_PCI_MSI=y
 # CONFIG_PCI_DEBUG is not set
 # CONFIG_PCI_REALLOC_ENABLE_AUTO is not set
@@ -432,7 +433,6 @@ CONFIG_PCI_MSI=y
 #
 CONFIG_PCI_MVEBU=y
 # CONFIG_PCI_HOST_GENERIC is not set
-# CONFIG_PCIEPORTBUS is not set
 # CONFIG_PCCARD is not set
 
 #
