@@ -71,9 +71,19 @@ EXPORT_SYMBOL(ctf_attach_fn);
 unsigned int ddr_phys_offset_va = -1;
 EXPORT_SYMBOL(ddr_phys_offset_va);
 
-/* For NS-Ax ACP only */
-unsigned int ns_acp_win_size = SZ_256M;
-EXPORT_SYMBOL(ns_acp_win_size);
+unsigned int coherence_win_sz = SZ_256M;
+EXPORT_SYMBOL(coherence_win_sz);
+
+/*
+ * Coherence flag:
+ * 0: arch is non-coherent with NS ACP or BCM53573 ACE (CCI-400) disabled.
+ * 1: arch is non-coherent with NS-Ax ACP enabled for ACP WAR.
+ * 2: arch is coherent with NS-Bx ACP enabled.
+ * 4: arch is coherent with BCM53573 ACE enabled.
+ * give non-zero initial value to let this global variable be stored in Data Segment
+ */
+unsigned int coherence_flag = ~(COHERENCE_MASK);
+EXPORT_SYMBOL(coherence_flag);
 
 
 /* This is the main reference clock 25MHz from external crystal */
@@ -93,6 +103,8 @@ static struct clk_lookup board_clk_lookups[] = {
 
 extern int _memsize;
 
+extern int _chipid;
+
 #if 0
 #include <mach/uncompress.h>
 
@@ -105,6 +117,11 @@ void printch(int c)
 void __init board_map_io(void)
 {
 	early_printk("board_map_io\n");
+
+	if (BCM53573_CHIP(_chipid)) {
+		/* Override the main reference clock to be 40 MHz */
+		clk_ref.rate = 40 * 1000000;
+	}
 	/* Install clock sources into the lookup table */
 	clkdev_add_table(board_clk_lookups, ARRAY_SIZE(board_clk_lookups));
 
@@ -122,6 +139,8 @@ void __init board_init_irq(void)
 
 void board_init_timer(void)
 {
+	/* Get global SB handle */
+	sih = si_kattach(SI_OSH);
 	early_printk("board_init_timer\n");
 	soc_init_timer();
 }
@@ -179,23 +198,28 @@ static int watchdog = 0;
 
 static void __init brcm_setup(void)
 {
-	/* Get global SB handle */
-	sih = si_kattach(SI_OSH);
-#if 0
+
 	if (ACP_WAR_ENAB() && BCM4707_CHIP(CHIPID(sih->chip))) {
 		if (sih->chippkg == BCM4708_PKG_ID)
-			ns_acp_win_size = SZ_128M;
+			coherence_win_sz = SZ_128M;
 		else if (sih->chippkg == BCM4707_PKG_ID)
-			ns_acp_win_size = SZ_32M;
+			coherence_win_sz = SZ_32M;
 		else
-			ns_acp_win_size = SZ_256M;
-	} else if (BCM4707_CHIP(CHIPID(sih->chip)) &&
-		(CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) {
-		/* Chiprev 4 for NS-B0 and chiprev 6 for NS-B1 */
-		ns_acp_win_size = SZ_1G;
+			coherence_win_sz = SZ_256M;
+	} else if ((BCM4707_CHIP(CHIPID(sih->chip)) &&
+		(CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) ||
+		(CHIPID(sih->chip) == BCM47094_CHIP_ID)) {
+		/* For NS-Bx and NS47094. Chiprev 4 for NS-B0 and chiprev 6 for NS-B1 */
+		coherence_win_sz = SZ_1G;
+	} else if (BCM53573_CHIP(sih->chip)) {
+		if (PHYS_OFFSET == PADDR_ACE1_BCM53573)
+			coherence_win_sz = SZ_512M;
+		else
+			coherence_win_sz = SZ_256M;
 	}
-	printk(KERN_INFO "acp_win_size = %X\n",SZ_1G);
-#endif
+	
+	printk(KERN_INFO "coherence_win_size = %X\n",coherence_win_sz);
+
 //      if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
 //              sprintf(saved_root_name, "/dev/mtdblock%d", rootfs_mtdblock());
 	/* Set watchdog interval in ms */
@@ -773,17 +797,10 @@ static uint lookup_nflash_rootfs_offset(hndnand_t * nfl, struct mtd_info *mtd, i
 	/* Look at every block boundary till 16MB; higher space is reserved for application data. */
 
 	rbsize = blocksize = mtd->erasesize;	//65536;
-
 	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("gpio7", "wps_button")) {
 		printk(KERN_INFO "DIR-686L Hack for detecting filesystems\n");
-		blocksize = 65536;
-	}
-
-	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
-	    && nvram_match("boardrev", "0x1101")) {
-		printk(KERN_INFO "DIR-868LC Hack for detecting filesystems\n");
 		blocksize = 65536;
 	}
 
@@ -797,9 +814,23 @@ static uint lookup_nflash_rootfs_offset(hndnand_t * nfl, struct mtd_info *mtd, i
 	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x072F")
 	    && nvram_match("boardrev", "0x1101")
 	    && nvram_match("gpio7", "wps_button")) {
-		printk(KERN_INFO "DIR-690L Hack for detecting filesystems\n");
+		printk(KERN_INFO "DIR-890L Hack for detecting filesystems\n");
 		blocksize = 65536;
 	}
+
+	if (nvram_match("boardnum", "N/A") && nvram_match("boardtype", "0x072F")
+	    && nvram_match("boardrev", "0x1101")
+	    && nvram_match("gpio7", "wps_button")) {
+		printk(KERN_INFO "DIR-885/895L Hack for detecting filesystems\n");
+		blocksize = 65536;
+	}
+
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1101")) {
+		printk(KERN_INFO "DIR-868LC Hack for detecting filesystems\n");
+		blocksize = 65536;
+	}
+
 
 	printk("lookup_nflash_rootfs_offset: offset = 0x%x size = 0x%x, 0x%x\n", offset, size, blocksize);
 	for (off = offset; off < offset + size; off += blocksize) {

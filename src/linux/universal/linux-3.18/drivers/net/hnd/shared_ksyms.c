@@ -236,6 +236,7 @@ extern void osl_attach; EXPORT_SYMBOL(osl_attach);
 extern void osl_cache_flush; EXPORT_SYMBOL(osl_cache_flush);
 extern void osl_cache_inv; EXPORT_SYMBOL(osl_cache_inv);
 extern void osl_check_memleak; EXPORT_SYMBOL(osl_check_memleak);
+extern void osl_cpu_relax; EXPORT_SYMBOL(osl_cpu_relax);
 extern void osl_delay; EXPORT_SYMBOL(osl_delay);
 extern void osl_detach; EXPORT_SYMBOL(osl_detach);
 extern void osl_dma_alloc_consistent; EXPORT_SYMBOL(osl_dma_alloc_consistent);
