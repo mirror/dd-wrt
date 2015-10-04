@@ -4,7 +4,19 @@
 #  and sources(windows style makefile). it doesn't depend on
 #  Makerules.env except to get SRCBASE if not yet defined.
 #
-#  $Id: GNUmakefile.inc 435281 2013-11-09 07:57:27Z $
+#  Copyright (C) 2015, Broadcom Corporation
+#  All Rights Reserved.
+#  
+#  This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+#  the contents of this file may not be disclosed to third parties, copied
+#  or duplicated in any form, in whole or in part, without the prior
+#  written permission of Broadcom Corporation.
+#
+#
+#  <<Broadcom-WL-IPTag/Proprietary:>>
+#
+#  $Id: GNUmakefile.inc 514727 2014-11-12 03:02:48Z $
+
 
 WLAN_ComponentsInUse ?= bcmwifi ppr
 include $(dir $(lastword $(MAKEFILE_LIST)))makefiles/WLAN_Common.mk

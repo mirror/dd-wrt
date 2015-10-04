@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbpcmcia.h 442600 2013-12-12 01:41:08Z $
+ * $Id: sbpcmcia.h 521644 2014-12-18 09:14:16Z $
  */
 
 #ifndef	_SBPCMCIA_H
@@ -332,7 +332,7 @@
 #define HNBU_USB30PHY_NOSS		0x75	/* USB30 NO Super Speed */
 #define HNBU_USB30PHY_U1U2		0x76	/* USB30 PHY U1U2 Enable */
 #define HNBU_USB30PHY_REGS		0x77	/* USB30 PHY REGs update */
-
+#define HNBU_GPIO_PULL_DOWN     0x78    /* 4 byte GPIO pull down mask */
 #define HNBU_SROM3SWRGN		0x80	/* 78 bytes; srom rev 3 s/w region without crc8
 					 * plus extra info appended.
 					 */
