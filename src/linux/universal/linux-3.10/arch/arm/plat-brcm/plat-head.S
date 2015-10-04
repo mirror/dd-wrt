@@ -47,6 +47,77 @@ ENTRY(__mach_head_fixup)
 	mov	r0, #'.'
 	bl	printch
 	mov	r0,#0
+
+
+	ldr	r1, =0x18000000		@ SI_ENUM_BASE
+	ldr	r3, =0			@ CC_CHIPID
+	ldr	r3, [r1, r3]
+	/* Compare Chip Rev */
+	ldr	r5, =0x000f0000		@ CID_REV_MASK
+	and	r4, r3, r5
+	/* Compare Chip ID */
+	ldr	r1, =0x0000ffff		@ CID_ID_MASK
+	and	r3, r3, r1
+	ldr	r1, =53573		@ BCM53573_CHIP_ID
+	cmp	r3, r1
+	beq     3f                      @ It's BCM53573
+	ldr     r1, =53574              @ BCM53574_CHIP_ID
+	cmp     r3, r1
+	bne	no_cci_snoop		@ Neither BCM53573 nor 53574
+3:
+	/* Enable CCI400 S4 snoop request for CA7 on BCM53573 */
+	ldr	r0, =0x18305000		@ CCI400 S4 snoop control register base for CA7
+	ldr	r3, [r0]
+	orr	r3, r3, #1		@ Enable snoop request on S4 for CA7
+	str	r3, [r0]
+	dsb
+	isb
+	/* Polling until change_pending bit is clear */
+	ldr	r0, =0x1830000c		@ Status register base
+1:
+	ldr	r3, [r0]
+	tst	r3, #1
+	bne	1b
+
+	ldr	r8, =coherence_flag	@ get VA of coherence_flag
+	ldr	r1, =PAGE_OFFSET
+	sub	r8, r8, r1
+	ldr	r1, =CONFIG_DRAM_BASE
+	add	r8, r8, r1		@ PA = VA - PAGE_OFFSET + CONFIG_DRAM_BASE
+	ldr	r8, [r8]		@ get real coherence_flag value
+	cmp	r8, #0
+	beq	2f			@ non-coherence if r8 = 0
+	ldr	r0, =0x18010c40		@ Enable access write for GCI control register 11
+	ldr	r1, =0xb
+	str	r1, [r0]
+	ldr	r0, =0x18010e00		@ Enable all coherence bits for all DMA
+	ldr	r1, =0xffffffff
+	cmp     r4, #0x20000		@ The revision number of BCM53573 A0=0, A1=1, B0=2.
+	bne	4f
+	ldr	r7, [r0]
+	ldr     r0, =0x18010c40         @ Enable access write for GCI control register 11
+	ldr     r1, =0xb
+	str     r1, [r0]
+	ldr     r0, =0x18010e00
+	ldr	r1, =0x13ffff		@ DDR shadow region, bit20=1, for BCM53573 B0.
+	orr	r1, r7, r1
+	ldr	r5, =ddr_phys_offset_va
+	ldr	r6, =PAGE_OFFSET
+	sub	r5, r5, r6
+	ldr	r6, =CONFIG_DRAM_BASE
+	add	r5, r5, r6
+	ldr	r6, [r5]
+	ldr	r3, =PADDR_ACE_BCM53573
+	cmp	r6, r3			@ To know DDR shadow region or normal region.
+	bne	4f
+	ldr	r1, =0xffe3ffff		@ DDR normal region, bit20=0, bit19=0, bit18=0.
+	and	r1, r7, r1
+4:
+	str	r1, [r0]
+	b	2f
+
+no_cci_snoop:
+	/* For NS only */
 	ldr	r3, =L2CC_BASE_PA	@ L2 cache controller, control reg
 	str	r0, [r3, #0x100]	@ Disable L2 cache
 	ldr	r0, =0xffff
@@ -74,7 +145,7 @@ ENTRY(__mach_head_fixup)
 	ldr	r0,=IHOST_PROC_CLK_APB0_CLKGATE
 	str	r1,[r0]
 
-
+2:
 #ifndef	CONFIG_XIP_KERNEL
 	/* Copy ourselves to RAM if loaded in wrong address */
 	mov	r0, #0xff000000
@@ -143,6 +214,29 @@ ENTRY(__mach_head_fixup)
 	nop
 #endif	/* !CONFIG_XIP_KERNEL */
 
+chip_id_rev:
+	ldr	r3,=0x18000000
+	ldr	r2,[r3]
+
+	ldr	r1, =0xffff
+	and	r0, r2, r1
+	adr	r7,__mach_head_fixup
+	ldr	r8,=__mach_head_fixup
+	sub	r7,r7,r8
+	ldr	r8,=_chipid
+	add	r7,r8,r7
+	str	r0,[r7]				/* _chipid */
+
+	ldr	r1, =0xf
+	mov	r0, r2, lsr#16
+	and	r0, r0, r1
+	adr	r7,__mach_head_fixup
+	ldr	r8,=__mach_head_fixup
+	sub	r7,r7,r8
+	ldr	r8,=_chiprev
+	add	r7,r8,r7
+	str	r0,[r7]				/* _chiprev */
+
 szmem:
 	ldr	r3,=0x80000000
 	ldr	r2,=0xaa55beef
@@ -190,6 +284,20 @@ ENDPROC(__mach_head_fixup)
         .size   _memsize, 4
         .align  2
 _memsize:
+	.word   0
+
+        .global _chipid
+        .type   _chipid, %object
+        .size   _chipid, 4
+        .align  2
+_chipid:
+	.word   0
+
+        .global _chiprev
+        .type   _chiprev, %object
+        .size   _chiprev, 4
+        .align  2
+_chiprev:
 	.word   0
 
 #ifdef	CONFIG_SMP

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.14 Kernel Configuration
+# Linux/mips 3.18.22 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1209,6 +1209,7 @@ CONFIG_IMQ=m
 CONFIG_IMQ_BEHAVIOR_BA=y
 # CONFIG_IMQ_BEHAVIOR_BB is not set
 CONFIG_IMQ_NUM_DEVS=2
+CONFIG_IMQ_ALLOC_DEVS=2
 CONFIG_TUN=y
 # CONFIG_VETH is not set
 # CONFIG_NLMON is not set
@@ -1312,6 +1313,7 @@ CONFIG_BCM87XX_PHY=y
 # CONFIG_MICREL_PHY is not set
 # CONFIG_ADM6996_PHY is not set
 # CONFIG_MVSWITCH_PHY is not set
+# CONFIG_MVSW61XX_PHY is not set
 # CONFIG_IP17XX_PHY is not set
 # CONFIG_AR8216_PHY is not set
 # CONFIG_RTL8306_PHY is not set
@@ -2052,6 +2054,7 @@ CONFIG_LEDS_GPIO=y
 # CONFIG_LEDS_BD2802 is not set
 # CONFIG_LEDS_LT3593 is not set
 # CONFIG_LEDS_TCA6507 is not set
+# CONFIG_LEDS_TLC59116 is not set
 # CONFIG_LEDS_LM355x is not set
 
 #
@@ -2635,8 +2638,3 @@ CONFIG_LIBFDT=y
 CONFIG_OID_REGISTRY=y
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_IMQ_ALLOC_DEVS=2
-CONFIG_IMQ_ALLOC_DEVS=2
-# CONFIG_MVSW61XX_PHY is not set
-# CONFIG_INPUT_BUTTON_LINKSYS is not set
-# CONFIG_LEDS_TLC59116 is not set

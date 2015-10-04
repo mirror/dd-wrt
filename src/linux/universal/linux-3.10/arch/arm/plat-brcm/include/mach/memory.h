@@ -14,6 +14,20 @@
 
 #define PLAT_PHYS_OFFSET             UL(CONFIG_DRAM_BASE)
 
+#define PADDR_ACE_BCM53573	(0x00000000)
+#define PADDR_ACE1_BCM53573	(0x80000000)
+
+/*
+ * Different coherence setting for coherence_flag
+ */
+#define COHERENCE_NONE		0
+#define COHERENCE_ACP_WAR	1
+#define COHERENCE_ACP		2
+#define COHERENCE_ACE		4
+#define COHERENCE_ACP_ACE	(COHERENCE_ACP | COHERENCE_ACE)
+#define COHERENCE_MASK		(COHERENCE_ACP_WAR | COHERENCE_ACP_ACE)
+ 
+
 
 
 /*
@@ -28,6 +42,15 @@
 
 /* 2nd physical memory window */
 #define PHYS_OFFSET2		0x80000000
+
+#if !defined(__ASSEMBLY__)
+extern unsigned int coherence_flag;
+#define ACP_WAR_ENAB()		((coherence_flag & COHERENCE_ACP_WAR) != 0)
+
+extern unsigned int coherence_win_sz;
+#define ACP_WIN_SIZE			(coherence_win_sz)
+#define ACP_WIN_LIMIT			(PHYS_OFFSET + ACP_WIN_SIZE)
+#endif
 
 #if !defined(__ASSEMBLY__) && defined(CONFIG_ZONE_DMA)
 extern void bcm47xx_adjust_zones(unsigned long *size, unsigned long *hole);
