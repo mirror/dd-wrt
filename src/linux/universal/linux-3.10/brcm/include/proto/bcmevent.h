@@ -17,7 +17,7 @@
  *
  * Dependencies: proto/bcmeth.h
  *
- * $Id: bcmevent.h 477020 2014-05-12 09:39:58Z $
+ * $Id: bcmevent.h 576533 2015-08-04 01:43:45Z $
  *
  */
 
@@ -230,9 +230,11 @@ typedef BWL_PRE_PACKED_STRUCT struct bcm_event {
 #define WLC_E_BCMC_CREDIT_SUPPORT	127	/* credit check for BCMC supported */
 #define WLC_E_AUTHORIZED	136	/* a STA been authroized for traffic */
 #define WLC_E_PROBREQ_MSG_RX	137 /* probe req with wl_event_rx_frame_data_t header */
-#define WLC_E_LAST			138	/* highest val + 1 for range checking */
-#if (WLC_E_LAST > 138)
-#error "WLC_E_LAST: Invalid value for last event; must be <= 138."
+#define WLC_E_RRM			139	/* RRM event */
+#define WLC_E_PRE_ASSOC_RSEP_IND	140
+#define WLC_E_LAST			141	/* highest val + 1 for range checking */
+#if (WLC_E_LAST > 141)
+#error "WLC_E_LAST: Invalid value for last event; must be <= 141."
 #endif /* WLC_E_LAST */
 
 /* define an API for getting the string name of an event */
@@ -483,6 +485,16 @@ typedef struct wl_intfer_event {
 	uint16 status;			/* status */
 	uint8 txfail_histo[WLINTFER_STATS_NSMPLS]; /* txfail histo */
 } wl_intfer_event_t;
+
+#define RRM_EVENT_VERSION		0
+typedef struct wl_rrm_event {
+	int16 version;
+	int16 len;
+	int16 cat;		/* Category */
+	int16 subevent;
+	char payload[1]; /* Measurement payload */
+} wl_rrm_event_t;
+
 
 /* WLC_E_PSTA_PRIMARY_INTF_IND event data */
 typedef struct wl_psta_primary_intf_event {
