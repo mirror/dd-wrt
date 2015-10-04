@@ -91,8 +91,8 @@ openssl-clean:
 	$(MAKE) -C openssl clean
 
 
-OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
-					no-rmd160 no-aes192 no-camellia no-ripemd no-ans1 no-krb5
+OPENSSL_NO_CIPHERS:= no-rc2 no-rc4 no-rc5 no-idea no-md2 no-mdc2 no-sha0 no-smime \
+			no-rmd160 no-aes192 no-camellia no-ripemd no-ans1 no-krb5
 ifeq ($(CONFIG_XSCALE),y)
 OPENSSL_OPTIONS:= no-err no-hw threads no-sse2 no-perlasm zlib-dynamic -DHAVE_CRYPTODEV
 else
@@ -105,7 +105,7 @@ openssl-configure:
 	cd openssl && ./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
-			$(COPTS) $(OPENSSL_CMAKEFLAGS)  -L$(TOP)/zlib -I$(TOP)/zlib -DNDEBUG \
+			$(COPTS) $(OPENSSL_CMAKEFLAGS) -L$(TOP)/zlib -I$(TOP)/zlib -DNDEBUG \
 			$(TARGET_LDFLAGS) -ldl \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
