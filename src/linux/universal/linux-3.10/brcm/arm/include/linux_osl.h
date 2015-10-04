@@ -1490,13 +1490,13 @@ extern void bzero(void *b, size_t len);
  * Adding these dummy values for build apss only
  * When we revisit need to change these.
  */
-//#if defined(STBLINUX)
+#if defined(STBLINUX)
 #if defined(__ARM_ARCH_7A__)
 #define ACP_WAR_ENAB() 0
 #define ACP_WIN_LIMIT 1
 #define arch_is_coherent() 0
 #endif /* __ARM_ARCH_7A__ */
-//#endif /* STBLINUX */
+#endif /* STBLINUX */
 
 #ifdef BCM_SECURE_DMA
 
