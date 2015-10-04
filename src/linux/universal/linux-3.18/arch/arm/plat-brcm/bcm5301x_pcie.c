@@ -1,3 +1,4 @@
+/* Modified by Broadcom Corp. Portions Copyright (c) Broadcom Corp, 2012. */
 /*
  * Northstar PCI-Express driver
  * Only supports Root-Complex (RC) mode
@@ -34,7 +35,6 @@
 #include <bcmdevs.h>
 #include <bcmnvram.h>
 
-#define ACP_WAR_ENAB() 0
 /* Global SB handle */
 extern si_t *bcm947xx_sih;
 extern spinlock_t bcm947xx_sih_lock;
@@ -46,7 +46,6 @@ extern spinlock_t bcm947xx_sih_lock;
 /*
  * Register offset definitions
  */
-#define SOC_PCIE_RC_AXI_CONFIG	0x100
 #define	SOC_PCIE_CONTROL	0x000	/* a.k.a. CLK_CONTROL reg */
 #define	SOC_PCIE_PM_STATUS	0x008
 #define	SOC_PCIE_PM_CONTROL	0x00c	/* in EP mode only ! */
@@ -89,6 +88,17 @@ extern int _memsize;
 #define PCI_MAX_BUS		4
 #define PLX_PRIM_SEC_BUS_NUM		(0x00000201 | (PCI_MAX_BUS << 16))
 
+#define PLX_SWITCH_ID		0x8603
+#define PLX_PCIE_CAP_REG_BASE	0x68	/* PLX Capability Register base */
+
+#define ASMEDIA_SWITCH_ID	0x1182
+#define ASMEDIA_PCIE_CAP_REG_BASE	0x80	/* ASMedia Capability Register base */
+
+#define BCM53573_PCIE_COREREV	0x5
+#define NS_BX_PCIE_COREREV		0x7
+
+static uint pcie_coreid, pcie_corerev;
+
 #ifdef	CONFIG_PCI
 
 /*
@@ -103,11 +113,6 @@ static int soc_pci_write_config(struct pci_bus *bus, unsigned int devfn, int whe
 #ifndef	CONFIG_PCI_DOMAINS
 #error	CONFIG_PCI_DOMAINS is required
 #endif
-
-#define PLX_SWITCH_ID		0x8603
-#define ASMEDIA_SWITCH_ID	0x1182
-
-static uint pcie_coreid, pcie_corerev;
 
 static int sbpci_read_config_reg(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *value)
 {
@@ -182,28 +187,6 @@ static struct resource soc_pcie_owin[3] = {
 	 },
 };
 
-/*
-static struct resource soc_pcie_owin[3] = {
-	{
-	.name = "PCIe Outbound Window, Port 0",
-	.start = 0x10000000,
-	.end =   0x10000000 + SZ_128M - 1,
-	.flags = IORESOURCE_MEM,
-	},
-	{
-	.name = "PCIe Outbound Window, Port 1",
-	.start = 0x40000000,
-	.end =   0x40000000 + SZ_128M - 1,
-	.flags = IORESOURCE_MEM,
-	},
-	{
-	.name = "PCIe Outbound Window, Port 2",
-	.start = 0x48000000,
-	.end =   0x48000000 + SZ_128M - 1,
-	.flags = IORESOURCE_MEM,
-	},
-};
-*/
 struct pci_bus __init *root_scan_bus(int nr, struct pci_sys_data *sys)
 {
 	pci_scan_root_bus(NULL, 0, &pcibios_ops, sys, &sys->resources);
@@ -217,7 +200,7 @@ static int __init dummy_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 /*
  * Per port control structure
  */
-static struct soc_pcie_port {
+typedef struct soc_pcie_port {
 	struct resource *regs_res;
 	struct resource *owin_res;
 	void *__iomem reg_base;
@@ -227,25 +210,117 @@ static struct soc_pcie_port {
 	bool enable;
 	bool link;
 	bool isswitch;
-	int  init_state;
+	int init_state;
 	bool port1active;
 	bool port2active;
 	uint16 switch_id;
-} soc_pcie_ports[4] = {
+} soc_pcie_port_t;
+#define pci_std_swizzle NULL
+
+static soc_pcie_port_t soc_pcie_ports[4] = {
 	{
-		.irqs = {
-		0, 0, 0, 0, 0, 0},.hw_pci = {
-	.domain = 0,.swizzle = NULL,.nr_controllers = 1,.map_irq = NULL,},.enable = 1,.isswitch = 0,.port1active = 0,.port2active = 0,}, {
-		.regs_res = &soc_pcie_regs[0],.owin_res = &soc_pcie_owin[0],.irqs = {
-		158, 159, 160, 161, 162, 163},.hw_pci = {
-	.domain = 1,.swizzle = NULL,.nr_controllers = 1,.setup = soc_pci_setup,.scan = soc_pci_scan_bus,.map_irq = soc_pcie_map_irq,},.enable = 1,.isswitch = 0,.port1active = 0,.port2active = 0,}, {
-		.regs_res = &soc_pcie_regs[1],.owin_res = &soc_pcie_owin[1],.irqs = {
-		164, 165, 166, 167, 168, 169},.hw_pci = {
-	.domain = 2,.swizzle = NULL,.nr_controllers = 1,.setup = soc_pci_setup,.scan = soc_pci_scan_bus,.map_irq = soc_pcie_map_irq,},.enable = 1,.isswitch = 0,.port1active = 0,.port2active = 0,}, {
-		.regs_res = &soc_pcie_regs[2],.owin_res = &soc_pcie_owin[2],.irqs = {
-		170, 171, 172, 173, 174, 175},.hw_pci = {
-	.domain = 3,.swizzle = NULL,.nr_controllers = 1,.setup = soc_pci_setup,.scan = soc_pci_scan_bus,.map_irq = soc_pcie_map_irq,},.enable = 1,.isswitch = 0,.port1active = 0,.port2active = 0,}
+	 .irqs = {0, 0, 0, 0, 0, 0},
+	 .hw_pci = {
+		    .domain = 0,
+		    .swizzle = NULL,
+		    .nr_controllers = 1,
+		    .map_irq = NULL,
+		    },
+	 .enable = 1,
+	 .isswitch = 0,
+	 .port1active = 0,
+	 .port2active = 0,
+	 },
+	{
+	 .regs_res = &soc_pcie_regs[0],
+	 .owin_res = &soc_pcie_owin[0],
+	 .irqs = {159, 160, 161, 162, 163, 164},
+	 .hw_pci = {
+		    .domain = 1,
+		    .swizzle = pci_std_swizzle,
+		    .nr_controllers = 1,
+		    .setup = soc_pci_setup,
+		    .scan = soc_pci_scan_bus,
+		    .map_irq = soc_pcie_map_irq,
+		    },
+	 .enable = 1,
+	 .isswitch = 0,
+	 .port1active = 0,
+	 .port2active = 0,
+	 },
+	{
+	 .regs_res = &soc_pcie_regs[1],
+	 .owin_res = &soc_pcie_owin[1],
+	 .irqs = {165, 166, 167, 168, 169, 170},
+	 .hw_pci = {
+		    .domain = 2,
+		    .swizzle = pci_std_swizzle,
+		    .nr_controllers = 1,
+		    .setup = soc_pci_setup,
+		    .scan = soc_pci_scan_bus,
+		    .map_irq = soc_pcie_map_irq,
+		    },
+	 .enable = 1,
+	 .isswitch = 0,
+	 .port1active = 0,
+	 .port2active = 0,
+	 },
+	{
+	 .regs_res = &soc_pcie_regs[2],
+	 .owin_res = &soc_pcie_owin[2],
+	 .irqs = {171, 172, 173, 174, 175, 176},
+	 .hw_pci = {
+		    .domain = 3,
+		    .swizzle = pci_std_swizzle,
+		    .nr_controllers = 1,
+		    .setup = soc_pci_setup,
+		    .scan = soc_pci_scan_bus,
+		    .map_irq = soc_pcie_map_irq,
+		    },
+	 .enable = 1,
+	 .isswitch = 0,
+	 .port1active = 0,
+	 .port2active = 0,
+	 }
 };
+
+/* For BCM53573 PCIe port */
+static soc_pcie_port_t bcm53573_pcie_ports[2] = {
+	{
+	 .irqs = {0, 0, 0, 0, 0, 0},
+	 .hw_pci = {
+		    .domain = 0,
+		    .swizzle = NULL,
+		    .nr_controllers = 1,
+		    .map_irq = NULL,
+		    },
+	 .enable = 1,
+	 .isswitch = 0,
+	 .port1active = 0,
+	 .port2active = 0,
+	 },
+	{
+	 .regs_res = &soc_pcie_regs[0],
+	 .owin_res = &soc_pcie_owin[0],
+	 .irqs = {34, 34, 34, 34, 34, 34},
+	 .hw_pci = {
+		    .domain = 1,
+		    .swizzle = pci_std_swizzle,
+		    .nr_controllers = 1,
+		    .setup = soc_pci_setup,
+		    .scan = soc_pci_scan_bus,
+		    .map_irq = soc_pcie_map_irq,
+		    },
+	 .enable = 1,
+	 .isswitch = 0,
+	 .port1active = 0,
+	 .port2active = 0,
+	 }
+};
+
+static soc_pcie_port_t *pcie_port = &soc_pcie_ports[0];
+
+static int pcie_ports_sz = ARRAY_SIZE(soc_pcie_ports);
 
 /*
  * Methods for accessing configuration registers
@@ -274,14 +349,47 @@ si_bus_irq_map_t si_bus_irq_map[] = {
 
 #define SI_BUS_IRQ_MAP_SIZE (sizeof(si_bus_irq_map) / sizeof(si_bus_irq_map_t))
 
+si_bus_irq_map_t si_bus_irq_map_bcm53573[] = {
+	{BCM47XX_GMAC_ID, 0, 1, 37} /* irq 37(OOB #5) for GMAC 0 */ ,
+	{BCM47XX_GMAC_ID, 0, 1, 38} /* irq 38(OOB #6) for GMAC 1 */ ,
+	{BCM53573_D11AC5G_ID, 0, 1, 33} /* irq 33 for D11 - Core 0 */ ,
+	{BCM53573_D11AC5G_ID, 0, 1, 39} /* irq 39 for D11 - Core 1 */ ,
+	{BCM53573_D11AC2G_ID, 0, 1, 33} /* irq 33 for D11 - Core 0 */ ,
+	{BCM53573_D11AC2G_ID, 0, 1, 39} /* irq 39 for D11 - Core 1 */ ,
+	{BCM53573_D11AC_ID, 0, 1, 33} /* irq 33 for D11 - Core 0 */ ,
+	{BCM53573_D11AC_ID, 0, 1, 39} /* irq 39 for D11 - Core 1 */ ,
+	{BCM47189_D11AC5G_ID, 0, 1, 33} /* irq 33 for D11 - Core 0 */ ,
+	{BCM47189_D11AC5G_ID, 0, 1, 39} /* irq 39 for D11 - Core 1 */ ,
+	{BCM47189_D11AC2G_ID, 0, 1, 33} /* irq 33 for D11 - Core 0 */ ,
+	{BCM47189_D11AC2G_ID, 0, 1, 39} /* irq 39 for D11 - Core 1 */ ,
+	{BCM47189_D11AC_ID, 0, 1, 33} /* irq 33 for D11 - Core 0 */ ,
+	{BCM47189_D11AC_ID, 0, 1, 39} /* irq 39 for D11 - Core 1 */ ,
+	{BCM47XX_USB20H_ID, 0, 1, 36} /* irq 36 for EHCI */ ,
+	{BCM47XX_USB20H_ID, 0, 1, 36}	/* irq 36 for OHCI */
+};
+
+#define SI_BUS_IRQ_MAP_BCM53573_SIZE (sizeof(si_bus_irq_map_bcm53573) / sizeof(si_bus_irq_map_t))
+
 static int si_bus_map_irq(struct pci_dev *pdev)
 {
 	int i, irq = 0;
+	si_bus_irq_map_t *irq_map;
+	int irq_map_size;
 
-	for (i = 0; i < SI_BUS_IRQ_MAP_SIZE; i++) {
-		if (pdev->device == si_bus_irq_map[i].device && si_bus_irq_map[i].unit < si_bus_irq_map[i].max_unit) {
-			irq = si_bus_irq_map[i].irq + si_bus_irq_map[i].unit;
-			si_bus_irq_map[i].unit++;
+	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == BCM53573_PCIE_COREREV) {
+		/* for BCM53573 */
+		irq_map = si_bus_irq_map_bcm53573;
+		irq_map_size = SI_BUS_IRQ_MAP_BCM53573_SIZE;
+	} else {
+		/* for NS */
+		irq_map = si_bus_irq_map;
+		irq_map_size = SI_BUS_IRQ_MAP_SIZE;
+	}
+
+	for (i = 0; i < irq_map_size; i++) {
+		if (pdev->device == irq_map[i].device && irq_map[i].unit < irq_map[i].max_unit) {
+			irq = irq_map[i].irq + irq_map[i].unit;
+			irq_map[i].unit++;
 			break;
 		}
 	}
@@ -294,8 +402,8 @@ static struct soc_pcie_port *soc_pcie_sysdata2port(struct pci_sys_data *sysdata)
 	unsigned port;
 
 	port = sysdata->domain;
-	BUG_ON(port >= ARRAY_SIZE(soc_pcie_ports));
-	return &soc_pcie_ports[port];
+	BUG_ON(port >= pcie_ports_sz);
+	return &pcie_port[port];
 }
 
 static struct soc_pcie_port *soc_pcie_pdev2port(const struct pci_dev *pdev)
@@ -318,7 +426,7 @@ static int soc_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
 	struct soc_pcie_port *port = soc_pcie_pdev2port(pdev);
 	int irq;
 
-	irq = port->irqs[5];	/* All INTx share int src 5, last per port */
+	irq = port->irqs[4];	/* All INTx share INTR4 */
 
 	pr_debug("PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n", pci_domain_nr(pdev->bus), pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), slot, pin, irq);
 
@@ -341,8 +449,7 @@ static void __iomem *soc_pci_cfg_base(struct pci_bus *bus, unsigned int devfn, i
 	/* If there is no link, just show the PCI bridge. */
 	if (!port->link && (busno > 0 || slot > 0))
 		return NULL;
-	/*
-	 */
+
 	if (busno == 0) {
 		if (slot >= 1)
 			return NULL;
@@ -363,17 +470,47 @@ static void __iomem *soc_pci_cfg_base(struct pci_bus *bus, unsigned int devfn, i
 	return base + offset;
 }
 
+static void pcie_switch_retrain_link(struct pci_bus *bus, unsigned int devfn)
+{
+	struct soc_pcie_port *port = soc_pcie_bus2port(bus);
+	u16 pos = PLX_PCIE_CAP_REG_BASE;
+	u16 tmp16;
+	int wait = 0;
+
+	if (port->switch_id == ASMEDIA_SWITCH_ID) {
+		pos = ASMEDIA_PCIE_CAP_REG_BASE;
+	}
+#ifdef DEBUG
+	pr_debug("%s: PCIE SwitchID (0x%x), Capability Reg Base (0x%x)\n", __FUNCTION__, port->switch_id, pos);
+#endif
+
+	/* Retrain link via Link Control Reg */
+	soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKCTL, 2, &tmp16);
+	tmp16 |= PCI_EXP_LNKCTL_RL;
+	soc_pci_write_config(bus, devfn, pos + PCI_EXP_LNKCTL, 2, tmp16);
+	/* Wait for link training via Link Status reg */
+	do {
+		soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKSTA, 2, &tmp16);
+		if (!(tmp16 & PCI_EXP_LNKSTA_LT))
+			break;
+		mdelay(100);
+	} while (wait++ < 10);
+
+	if (tmp16 & PCI_EXP_LNKSTA_LT)
+		pr_info("PCIE: Retrain link failed\n");
+}
+
 static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 {
 	struct soc_pcie_port *port = soc_pcie_bus2port(bus);
 	u32 dRead = 0;
 	u16 bm = 0;
 	int bus_inc = 0;
-	
+	u16 pos = PLX_PCIE_CAP_REG_BASE;
 	if ((port->init_state & (bus->number | devfn)) == (bus->number | devfn)) {
-	    return;
+		return;
 	}
-	port->init_state|=(bus->number | devfn);
+	port->init_state |= (bus->number | devfn);
 
 	soc_pci_read_config(bus, devfn, 0x100, 4, &dRead);
 	printk("PCIE: Doing PLX switch Init...Test Read = %08x\n", (unsigned int)dRead);
@@ -415,36 +552,70 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 	 */
 	if (bus->number == (bus_inc + 1)) {
 		soc_pci_write_config(bus, devfn, 0x18, 4, PLX_PRIM_SEC_BUS_NUM);
+
 		/* TODO: We need to scan all outgoing windows,
 		 * to look for a base limit pair for this register.
 		 */
 		/* MEM_BASE, MEM_LIM require 1MB alignment */
 		BUG_ON((port->owin_res->start >> 16) & 0xf);
-		soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, port->owin_res->start >> 16);
+		soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, (port->owin_res->start >> 16) & 0xfff0);
+
 		BUG_ON(((port->owin_res->start + SZ_32M) >> 16) & 0xf);
-		soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, (port->owin_res->start + SZ_32M) >> 16);
+		soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_32M - 1) >> 16) & 0xfff0);
+
+		printk("PCIE %04x:%02x:%04x: PLX UpPort mem_base 0x%08x, mem_limit 0x%08x\n", port->hw_pci.domain, bus->number, devfn, port->owin_res->start, port->owin_res->start + SZ_32M - 1);
 	} else if (bus->number == (bus_inc + 2)) {
 		/* TODO: I need to fix these hard coded addresses. */
 		if (devfn == 0x8) {
+			if (port->port1active == 1)
+				return;
+
 			soc_pci_write_config(bus, devfn, 0x18, 4, (0x00000000 | ((bus->number + 1) << 16) | ((bus->number + 1) << 8) | bus->number));
-			BUG_ON((port->owin_res->start + SZ_48M >> 16) & 0xf);
-			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, port->owin_res->start + SZ_48M >> 16);
+
+			BUG_ON(((port->owin_res->start + SZ_48M) >> 16) & 0xf);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, ((port->owin_res->start + SZ_48M) >> 16) & 0xfff0);
+
 			BUG_ON(((port->owin_res->start + SZ_48M + SZ_32M) >> 16) & 0xf);
-			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, (port->owin_res->start + SZ_48M + SZ_32M) >> 16);
-			soc_pci_read_config(bus, devfn, 0x7A, 2, &bm);
-			if (bm & PCI_EXP_LNKSTA_DLLLA)
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_48M + SZ_32M - 1) >> 16) & 0xfff0);
+
+			printk("PCIE %04x:%02x:%04x: PLX DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
+			       port->hw_pci.domain, bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
+
+			/* Retrain Link */
+			pcie_switch_retrain_link(bus, devfn);
+
+			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKSTA, 2, &bm);
+			if (bm & PCI_EXP_LNKSTA_DLLLA) {
 				port->port1active = 1;
-			printk("bm = %04x\n devfn = = %08x, bus = %08x\n", bm, devfn, bus->number);
+				printk("PCIE %04x:%02x:%04x: PLX DownPort Link speed is GEN%d\n", port->hw_pci.domain, bus->number, devfn, (bm & 0x3));
+			}
+
+			printk("PCIE %04x:%02x:%04x: PLX DownPort Link status 0x%04x\n", port->hw_pci.domain, bus->number, devfn, bm);
 		} else if (devfn == 0x10) {
+			if (port->port2active == 1)
+				return;
+
 			soc_pci_write_config(bus, devfn, 0x18, 4, (0x00000000 | ((bus->number + 2) << 16) | ((bus->number + 2) << 8) | bus->number));
-			BUG_ON((port->owin_res->start + (SZ_48M * 2) >> 16) & 0xf);
-			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, port->owin_res->start + (SZ_48M * 2) >> 16);
+
+			BUG_ON(((port->owin_res->start + (SZ_48M * 2)) >> 16) & 0xf);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, ((port->owin_res->start + (SZ_48M * 2)) >> 16) & 0xfff0);
+
 			BUG_ON(((port->owin_res->start + (SZ_48M * 2) + SZ_32M) >> 16) & 0xf);
-			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, (port->owin_res->start + (SZ_48M * 2) + SZ_32M) >> 16);
-			soc_pci_read_config(bus, devfn, 0x7A, 2, &bm);
-			if (bm & PCI_EXP_LNKSTA_DLLLA)
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1) >> 16) & 0xfff0);
+
+			printk("PCIE %04x:%02x:%04x: PLX DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
+			       port->hw_pci.domain, bus->number, devfn, port->owin_res->start + (SZ_48M * 2), port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1);
+
+			/* Retrain Link */
+			pcie_switch_retrain_link(bus, devfn);
+
+			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKSTA, 2, &bm);
+			if (bm & PCI_EXP_LNKSTA_DLLLA) {
 				port->port2active = 1;
-			printk("bm = %04x\n devfn = = %08x, bus = %08x\n", bm, devfn, bus->number);
+				printk("PCIE %04x:%02x:%04x: PLX DownPort Link speed is GEN%d\n", port->hw_pci.domain, bus->number, devfn, (bm & 0x3));
+			}
+
+			printk("PCIE %04x:%02x:%04x: PLX DownPort Link status 0x%04x\n", port->hw_pci.domain, bus->number, devfn, bm);
 		}
 	}
 }
@@ -455,6 +626,8 @@ static void asmedia_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 	u32 dRead = 0;
 	u16 bm = 0;
 	int bus_inc = 0;
+	u16 pos = ASMEDIA_PCIE_CAP_REG_BASE;
+	u16 tmp16;
 
 	soc_pci_read_config(bus, devfn, 0x100, 4, &dRead);
 	printk("PCIE: Doing ASMedia switch Init...Test Read = %08x\n", (unsigned int)dRead);
@@ -481,37 +654,77 @@ static void asmedia_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 
 		/* MEM_BASE, MEM_LIM require 1MB alignment */
 		BUG_ON((port->owin_res->start >> 16) & 0xf);
-		soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, port->owin_res->start >> 16);
-		BUG_ON(((port->owin_res->start + SZ_32M) >> 16) & 0xf);
-		soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, (port->owin_res->start + SZ_32M) >> 16);
+		soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, (port->owin_res->start >> 16) & 0xfff0);
 
-		printk("bm = %04x\n devfn = = %08x, bus = %08x\n", bm, devfn, bus->number);
+		BUG_ON(((port->owin_res->start + SZ_32M) >> 16) & 0xf);
+		soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_32M - 1) >> 16) & 0xfff0);
+
+		printk("PCIE %04x:%02x:%04x: ASMedia UpPort mem_base 0x%08x, mem_limit 0x%08x\n", port->hw_pci.domain, bus->number, devfn, port->owin_res->start, port->owin_res->start + SZ_32M - 1);
 	} else if (bus->number == (bus_inc + 2)) {
 		/* Downstream ports */
 		if (devfn == 0x18) {
+			if (port->port1active == 1)
+				return;
+
 			soc_pci_write_config(bus, devfn, 0x18, 4, (0x00000000 | ((bus->number + 1) << 16) | ((bus->number + 1) << 8) | bus->number));
-			BUG_ON((port->owin_res->start + SZ_48M >> 16) & 0xf);
-			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, port->owin_res->start + SZ_48M >> 16);
+
+			BUG_ON(((port->owin_res->start + SZ_48M) >> 16) & 0xf);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, ((port->owin_res->start + SZ_48M) >> 16) & 0xfff0);
+
 			BUG_ON(((port->owin_res->start + SZ_48M + SZ_32M) >> 16) & 0xf);
-			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, (port->owin_res->start + SZ_48M + SZ_32M) >> 16);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_48M + SZ_32M - 1) >> 16) & 0xfff0);
 
-			soc_pci_read_config(bus, devfn, 0x92, 2, &bm);
-			if (bm & PCI_EXP_LNKSTA_DLLLA)
+			printk("PCIE %04x:%02x:%04x: ASMedia DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
+			       port->hw_pci.domain, bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
+
+			/* Set link speed via Link Control2 reg */
+			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKCTL2, 2, &tmp16);
+			tmp16 &= ~0xf;
+			tmp16 |= 2;	/* GEN2 */
+			soc_pci_write_config(bus, devfn, pos + PCI_EXP_LNKCTL2, 2, tmp16);
+
+			/* Retrain Link */
+			pcie_switch_retrain_link(bus, devfn);
+
+			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKSTA, 2, &bm);
+			if (bm & PCI_EXP_LNKSTA_DLLLA) {
 				port->port1active = 1;
+				printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link speed is GEN%d\n", port->hw_pci.domain, bus->number, devfn, (bm & 0x3));
+			}
 
-			printk("bm = %04x\n devfn = = %08x, bus = %08x\n", bm, devfn, bus->number);
+			printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link status 0x%04x\n", port->hw_pci.domain, bus->number, devfn, bm);
 		} else if (devfn == 0x38) {
+			if (port->port2active == 1)
+				return;
+
 			soc_pci_write_config(bus, devfn, 0x18, 4, (0x00000000 | ((bus->number + 2) << 16) | ((bus->number + 2) << 8) | bus->number));
-			BUG_ON((port->owin_res->start + (SZ_48M * 2) >> 16) & 0xf);
-			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, port->owin_res->start + (SZ_48M * 2) >> 16);
+
+			BUG_ON(((port->owin_res->start + (SZ_48M * 2)) >> 16) & 0xf);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2, ((port->owin_res->start + (SZ_48M * 2)) >> 16) & 0xfff0);
+
 			BUG_ON(((port->owin_res->start + (SZ_48M * 2) + SZ_32M) >> 16) & 0xf);
-			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, (port->owin_res->start + (SZ_48M * 2) + SZ_32M) >> 16);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1) >> 16) & 0xfff0);
 
-			soc_pci_read_config(bus, devfn, 0x92, 2, &bm);
-			if (bm & PCI_EXP_LNKSTA_DLLLA)
+			printk("PCIE %04x:%02x:%04x: ASMedia DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
+			       port->hw_pci.domain, bus->number, devfn, port->owin_res->start + (SZ_48M * 2), port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1);
+
+			/* Set link speed via Link Control2 reg */
+			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKCTL2, 2, &tmp16);
+			tmp16 &= ~0xf;
+			tmp16 |= 2;	/* GEN2 */
+			soc_pci_write_config(bus, devfn, pos + PCI_EXP_LNKCTL2, 2, tmp16);
+
+			/* Retrain Link */
+			pcie_switch_retrain_link(bus, devfn);
+
+			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKSTA, 2, &bm);
+			if (bm & PCI_EXP_LNKSTA_DLLLA) {
 				port->port2active = 1;
+				printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link speed is GEN%d\n", port->hw_pci.domain, bus->number, devfn, (bm & 0x3));
 
-			printk("bm = %04x\n devfn = = %08x, bus = %08x\n", bm, devfn, bus->number);
+			}
+
+			printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link status 0x%04x\n", port->hw_pci.domain, bus->number, devfn, bm);
 		}
 	}
 }
@@ -581,7 +794,6 @@ static int soc_pci_read_config(struct pci_bus *bus, unsigned int devfn, int wher
 		port->switch_id = ASMEDIA_SWITCH_ID;
 		port->isswitch = 1;
 	}
-
 	if ((bus->number == (bus_inc + 2)) && (port->isswitch == 1) && (where == 0) && (((data_reg >> 16) & 0xFFFF) == PLX_SWITCH_ID)) {
 		plx_pcie_switch_init(bus, devfn);
 	} else if ((bus->number == (bus_inc + 2)) && (port->isswitch == 1) && (where == 0) && (((data_reg >> 16) & 0xFFFF) == ASMEDIA_SWITCH_ID)) {
@@ -648,9 +860,9 @@ static int soc_pci_write_config(struct pci_bus *bus, unsigned int devfn, int whe
 static int soc_pci_setup(int nr, struct pci_sys_data *sys)
 {
 	struct soc_pcie_port *port = soc_pcie_sysdata2port(sys);
+
 	int err = request_resource(&iomem_resource, port->owin_res);
 	pci_add_resource_offset(&sys->resources, port->owin_res, sys->mem_offset);
-
 	sys->private_data = port;
 	return 1;
 }
@@ -665,6 +877,7 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port *port, uint3
 	u16 pos, tmp16;
 	u8 nlw, tmp8;
 	u32 tmp32;
+	int wait = 0;
 
 	struct pci_sys_data sd = {
 		.domain = port->hw_pci.domain,
@@ -680,12 +893,30 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port *port, uint3
 
 	pci_bus_read_config_dword(&bus, devfn, 0xdc, &tmp32);
 	tmp32 &= ~0xf;
-	if (allow_gen2) {
+	if (allow_gen2)
 		tmp32 |= 2;
-	} else {
+	else {
+		/* force PCIE GEN1 */
 		tmp32 |= 1;
 	}
 	pci_bus_write_config_dword(&bus, devfn, 0xdc, tmp32);
+
+	/* Retrain link */
+	pos = pci_bus_find_capability(&bus, devfn, PCI_CAP_ID_EXP);
+	pci_bus_read_config_word(&bus, devfn, pos + PCI_EXP_LNKCTL, &tmp16);
+	tmp16 |= PCI_EXP_LNKCTL_RL;
+	pci_bus_write_config_word(&bus, devfn, pos + PCI_EXP_LNKCTL, tmp16);
+
+	/* Wait for link training */
+	do {
+		pci_bus_read_config_word(&bus, devfn, pos + PCI_EXP_LNKSTA, &tmp16);
+		if (!(tmp16 & PCI_EXP_LNKSTA_LT))
+			break;
+		mdelay(100);
+	} while (wait++ < 10);
+
+	if (tmp16 & PCI_EXP_LNKSTA_LT)
+		pr_info("PCIE%d: Retrain link failed\n", port->hw_pci.domain);
 
 	/* See if the port is in EP mode, indicated by header type 00 */
 	pci_bus_read_config_byte(&bus, devfn, PCI_HEADER_TYPE, &tmp8);
@@ -746,7 +977,8 @@ static void __init soc_pcie_hw_init(struct soc_pcie_port *port)
 	tmp32 &= ~((7 << 12) | (7 << 5));
 	tmp32 |= (2 << 12) | (2 << 5);
 	pci_bus_write_config_dword(&bus, devfn, 0xb4, tmp32);
-	/* Turn-on Root-Complex (RC) mode, from reset defailt of EP */
+
+	/* Turn-on Root-Complex (RC) mode, from reset default of EP */
 
 	/* The mode is set by straps, can be overwritten via DMU
 	   register <cru_straps_control> bit 5, "1" means RC
@@ -758,14 +990,16 @@ static void __init soc_pcie_hw_init(struct soc_pcie_port *port)
 	__raw_writel(0x1, port->reg_base + SOC_PCIE_CONTROL);
 	mdelay(250);
 
-	if (ACP_WAR_ENAB()) {
-		/* Set ARCACHE to 0xb, and AWCACHE to 0x7, ARUSER to 0x1, and AWUSER to 0x1
-		 * ARCACHE=0xb - Cacheable write-back, allocate on write
-		 * AWCACHE=0x7 - Cacheable write-back, allocate on read
-		 */
-		tmp32 = ((0x7 << 14) | (0x1 << 9) | (0xb << 5) | (0x1 << 0));
-		__raw_writel(tmp32, port->reg_base + SOC_PCIE_RC_AXI_CONFIG);
-		udelay(250);
+	if (ACP_WAR_ENAB() || arch_is_coherent()) {
+		if (pcie_corerev != BCM53573_PCIE_COREREV) {
+			/* Set ARCACHE = 0xb, AWCACHE = 0x7, ARUSER = 0x1, and AWUSER = 0x1
+			 * ARCACHE=0xb - Cacheable write-back, allocate on write
+			 * AWCACHE=0x7 - Cacheable write-back, allocate on read
+			 */
+			tmp32 = ((0x7 << 14) | (0x1 << 9) | (0xb << 5) | (0x1 << 0));
+			__raw_writel(tmp32, port->reg_base + SOC_PCIE_RC_AXI_CONFIG);
+			udelay(250);
+		}
 	}
 
 	/* TBD: take care of PM, check we're on */
@@ -803,7 +1037,7 @@ static void __init soc_pcie_map_init(struct soc_pcie_port *port)
 	}
 	WARN_ON(size > 0);
 
-	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == 0x7) {
+	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == NS_BX_PCIE_COREREV) {
 		/* Enable FUNC0_IMAP0_0/1/2/3 from RO to RW for NS-B0 */
 		__raw_writel(0x1, port->reg_base + SOC_PCIE_IMAP0_0123_REGS_TYPE);
 		/* 4KB memory page pointing to CCB for NS-B0 */
@@ -819,20 +1053,17 @@ static void __init soc_pcie_map_init(struct soc_pcie_port *port)
 	 * otherwise DMA bouncing mechanism may be required.
 	 * Also consider DMA mask to limit DMA physical address
 	 */
-
-//      if (arch_is_coherent()) {
-//              /* Using IARR_2/IMAP_2 is enough since it supports up to 2GB for NS-B0 */
-//              addr = DDR_PADDR_ACP;
-//              __raw_writel(addr | 0x1,
-//                      port->reg_base + SOC_PCIE_SYS_IMAP2(0));
-//              __raw_writel(addr | 0x1, /* 1GB size */
-//                      port->reg_base + SOC_PCIE_SYS_IARR(2));
-//              return;
-//      }
+	if (arch_is_coherent() && (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == NS_BX_PCIE_COREREV)) {
+		/* Using IARR_2/IMAP_2 is enough since it supports up to 2GB for NS-B0 */
+		addr = PHYS_OFFSET;
+		__raw_writel(addr | 0x1, port->reg_base + SOC_PCIE_SYS_IMAP2(0));
+		__raw_writel(addr | 0x1,	/* 1GB size */
+			     port->reg_base + SOC_PCIE_SYS_IARR(2));
+		return;
+	}
 
 	size = min(_memsize, SZ_128M);
 	addr = PHYS_OFFSET;
-	BUG_ON(size > SZ_128M);
 
 	size >>= 20;		/* In MB */
 	size &= 0xff;		/* Size is an 8-bit field */
@@ -842,13 +1073,17 @@ static void __init soc_pcie_map_init(struct soc_pcie_port *port)
 	__raw_writel(addr | 0x1, port->reg_base + SOC_PCIE_SYS_IMAP1(0));
 	__raw_writel(addr | size, port->reg_base + SOC_PCIE_SYS_IARR(1));
 
-	if (_memsize <= SZ_128M)
+	if (_memsize <= SZ_128M) {
 		return;
-
+	}
 #ifdef CONFIG_SPARSEMEM
-	addr = PHYS_OFFSET2 + SZ_128M;
-
-	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == 0x7) {
+	/* DDR memory size > 128MB */
+	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == BCM53573_PCIE_COREREV) {
+		addr = PHYS_OFFSET + SZ_128M;
+	} else {
+		addr = PHYS_OFFSET2;
+	}
+	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == NS_BX_PCIE_COREREV) {
 		/* Means 1GB for NS-B0 IARR_2 */
 		size = 1;
 	} else {
@@ -856,7 +1091,6 @@ static void __init soc_pcie_map_init(struct soc_pcie_port *port)
 		size >>= 20;	/* In MB */
 		size &= 0xff;	/* Size is an 8-bit field */
 	}
-
 	__raw_writel(addr | 0x1, port->reg_base + SOC_PCIE_SYS_IMAP2(0));
 	__raw_writel(addr | size, port->reg_base + SOC_PCIE_SYS_IARR(2));
 #endif
@@ -870,6 +1104,7 @@ static void __init noinline soc_pcie_bridge_init(struct soc_pcie_port *port)
 	u32 devfn = 0;
 	u8 tmp8;
 	u16 tmp16;
+
 	/* Fake <bus> object */
 	struct pci_sys_data sd = {
 		.domain = port->hw_pci.domain,
@@ -891,11 +1126,12 @@ static void __init noinline soc_pcie_bridge_init(struct soc_pcie_port *port)
 	/* MEM_BASE, MEM_LIM require 1MB alignment */
 	BUG_ON((port->owin_res->start >> 16) & 0xf);
 #ifdef	DEBUG
-	printk(KERN_DEBUG "%s: membase %#x memlimit %#x\n", __FUNCTION__, port->owin_res->start, port->owin_res->end + 1);
+	pr_debug("%s: membase %#x memlimit %#x\n", __FUNCTION__, port->owin_res->start, port->owin_res->end);
 #endif
-	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_BASE, port->owin_res->start >> 16);
+	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_BASE, (port->owin_res->start >> 16) & 0xfff0);
+
 	BUG_ON(((port->owin_res->end + 1) >> 16) & 0xf);
-	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_LIMIT, (port->owin_res->end + 1) >> 16);
+	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_LIMIT, (port->owin_res->end >> 16) & 0xfff0);
 
 	/* These registers are not supported on the NS */
 	pci_bus_write_config_word(&bus, devfn, PCI_IO_BASE_UPPER16, 0);
@@ -907,7 +1143,6 @@ static void __init noinline soc_pcie_bridge_init(struct soc_pcie_port *port)
 	pci_bus_read_config_word(&bus, devfn, PCI_CLASS_DEVICE, &tmp16);
 	pci_bus_read_config_word(&bus, devfn, PCI_MEMORY_BASE, &tmp16);
 	pci_bus_read_config_word(&bus, devfn, PCI_MEMORY_LIMIT, &tmp16);
-
 }
 
 int pcibios_enable_resources(struct pci_dev *dev)
@@ -942,7 +1177,7 @@ static void bcm5301x_usb_power_on(int coreid)
 {
 	int enable_usb;
 
-	if (coreid == NS_USB20_CORE_ID) {
+	if (coreid == NS_USB20_CORE_ID || coreid == USB20H_CORE_ID) {
 		enable_usb = getgpiopin(NULL, "usbport1", GPIO_PIN_NOTDEFINED);
 		if (enable_usb != GPIO_PIN_NOTDEFINED) {
 			int enable_usb_mask = 1 << enable_usb;
@@ -971,33 +1206,56 @@ static void bcm5301x_usb_power_on(int coreid)
 
 static void bcm5301x_usb20_phy_init(void)
 {
-	uint32 dmu_base;
-	uint32 *cru_clkset_key;
-	uint32 *cru_usb2_control;
+	uint32 *genpll_base;
+	uint32 val, ndiv, pdiv, ch2_mdiv, ch2_freq;
+	uint32 usb_pll_pdiv, usb_pll_ndiv;
 
 	/* Check Chip ID */
-	if (!BCM4707_CHIP(CHIPID(sih->chip)))
+	if (!BCM4707_CHIP(CHIPID(sih->chip))) {
 		return;
-
-	/* Check Package ID */
-	if (sih->chippkg == BCM4709_PKG_ID) {
-		return;
-	} else if (sih->chippkg == BCM4707_PKG_ID || sih->chippkg == BCM4708_PKG_ID) {
-		dmu_base = (uint32) REG_MAP(0x1800c000, 4096);
-		cru_clkset_key = (uint32 *) (dmu_base + 0x180);
-		cru_usb2_control = (uint32 *) (dmu_base + 0x164);
-
-		/* unlock */
-		writel(0x0000ea68, cru_clkset_key);
-
-		/* fill value */
-		writel(0x00dd10c3, cru_usb2_control);
-
-		/* lock */
-		writel(0x00000000, cru_clkset_key);
-
-		REG_UNMAP(dmu_base);
 	}
+
+	/* reg map for genpll base address */
+	genpll_base = (uint32 *) REG_MAP(0x1800C140, 4096);
+
+	/* get divider integer from the cru_genpll_control5 */
+	val = readl(genpll_base + 0x5);
+	ndiv = (val >> 20) & 0x3ff;
+	if (ndiv == 0)
+		ndiv = 1 << 10;
+
+	/* get pdiv and ch2_mdiv from the cru_genpll_control6 */
+	val = readl(genpll_base + 0x6);
+	pdiv = (val >> 24) & 0x7;
+	pdiv = (pdiv == 0) ? (1 << 3) : pdiv;
+
+	ch2_mdiv = val & 0xff;
+	ch2_mdiv = (ch2_mdiv == 0) ? (1 << 8) : ch2_mdiv;
+
+	/* calculate ch2_freq based on 25MHz reference clock */
+	ch2_freq = (25000000 / (pdiv * ch2_mdiv)) * ndiv;
+
+	/* get usb_pll_pdiv from the cru_usb2_control */
+	val = readl(genpll_base + 0x9);
+	usb_pll_pdiv = (val >> 12) & 0x7;
+	usb_pll_pdiv = (usb_pll_pdiv == 0) ? (1 << 3) : usb_pll_pdiv;
+
+	/* calculate usb_pll_ndiv based on a solid 1920MHz that is for USB2 phy */
+	usb_pll_ndiv = (1920000000 * usb_pll_pdiv) / ch2_freq;
+
+	/* unlock in cru_clkset_key */
+	writel(0x0000ea68, genpll_base + 0x10);
+
+	/* set usb_pll_ndiv to cru_usb2_control */
+	val &= ~(0x3ff << 2);
+	val |= (usb_pll_ndiv << 2);
+	writel(val, genpll_base + 0x9);
+
+	/* lock in cru_clkset_key */
+	writel(0x00000000, genpll_base + 0x10);
+
+	/* reg unmap */
+	REG_UNMAP((void *)genpll_base);
 }
 
 static void bcm5301x_usb30_phy_init(void)
@@ -1036,84 +1294,86 @@ static void bcm5301x_usb30_phy_init(void)
 	writel(0x0000009a, ccb_mii_mng_ctrl_addr);
 	OSL_DELAY(2);
 
-	if (CHIPID(sih->chip) == BCM4707_CHIP_ID) {
-		/* Chiprev 4 for NS-B0 and chiprev 6 for NS-B1 */
-		if (CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6) {
-			/* USB3 PLL Block */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
+	/* NS-Bx and NS47094
+	 * Chiprev 4 for NS-B0 and chiprev 6 for NS-B1 */
+	if ((CHIPID(sih->chip) == BCM4707_CHIP_ID && (CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) || (CHIPID(sih->chip) == BCM47094_CHIP_ID)) {
 
-			/* Clear ana_pllSeqStart */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x58061000, ccb_mii_mng_cmd_data_addr);
+		/* USB3 PLL Block */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
 
-			/* CMOS Divider ratio to 25 */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
+		/* Clear ana_pllSeqStart */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x58061000, ccb_mii_mng_cmd_data_addr);
 
-			/* Asserting PLL Reset */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x582ec000, ccb_mii_mng_cmd_data_addr);
+		/* CMOS Divider ratio to 25 */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
 
-			/* Deaaserting PLL Reset */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x582e8000, ccb_mii_mng_cmd_data_addr);
+		/* Asserting PLL Reset */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x582ec000, ccb_mii_mng_cmd_data_addr);
 
-			/* Deasserting USB3 system reset */
-			writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
+		/* Deaaserting PLL Reset */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x582e8000, ccb_mii_mng_cmd_data_addr);
 
-			/* Set ana_pllSeqStart */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x58069000, ccb_mii_mng_cmd_data_addr);
+		/* Deasserting USB3 system reset */
+		writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
 
-			/* RXPMD block */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x587e8020, ccb_mii_mng_cmd_data_addr);
+		/* Set ana_pllSeqStart */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x58069000, ccb_mii_mng_cmd_data_addr);
 
-			/* CDR int loop locking BW to 1 */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x58120049, ccb_mii_mng_cmd_data_addr);
+		/* RXPMD block */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e8020, ccb_mii_mng_cmd_data_addr);
 
-			/* CDR int loop acquisition BW to 1 */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x580e0049, ccb_mii_mng_cmd_data_addr);
+		/* CDR int loop locking BW to 1 */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x58120049, ccb_mii_mng_cmd_data_addr);
 
-			/* CDR prop loop BW to 1 */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x580a005c, ccb_mii_mng_cmd_data_addr);
+		/* CDR int loop acquisition BW to 1 */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x580e0049, ccb_mii_mng_cmd_data_addr);
 
-			/* Waiting MII Mgt interface idle */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		} else {
-			/* PLL30 block */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
+		/* CDR prop loop BW to 1 */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x580a005c, ccb_mii_mng_cmd_data_addr);
 
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
+		/* Waiting MII Mgt interface idle */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+	}
+	/* NS-Ax */
+	else if (CHIPID(sih->chip) == BCM4707_CHIP_ID) {
+		/* PLL30 block */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
 
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x587e80e0, ccb_mii_mng_cmd_data_addr);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
 
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x580a009c, ccb_mii_mng_cmd_data_addr);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e80e0, ccb_mii_mng_cmd_data_addr);
 
-			/* Enable SSC */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x580a009c, ccb_mii_mng_cmd_data_addr);
 
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x580a21d3, ccb_mii_mng_cmd_data_addr);
+		/* Enable SSC */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
 
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-			writel(0x58061003, ccb_mii_mng_cmd_data_addr);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x580a21d3, ccb_mii_mng_cmd_data_addr);
 
-			/* Waiting MII Mgt interface idle */
-			SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x58061003, ccb_mii_mng_cmd_data_addr);
 
-			/* Deasserting USB3 system reset */
-			writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
-		}
+		/* Waiting MII Mgt interface idle */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+
+		/* Deasserting USB3 system reset */
+		writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
 	} else if (CHIPID(sih->chip) == BCM53018_CHIP_ID) {
 		/* USB3 PLL Block */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
@@ -1179,7 +1439,7 @@ out:
 
 static void bcm5301x_usb_phy_init(int coreid)
 {
-	if (coreid == NS_USB20_CORE_ID) {
+	if (coreid == NS_USB20_CORE_ID || coreid == USB20H_CORE_ID) {
 		bcm5301x_usb20_phy_init();
 	} else if (coreid == NS_USB30_CORE_ID) {
 		bcm5301x_usb30_phy_init();
@@ -1193,8 +1453,13 @@ static void bcm5301x_usb_idm_ioctrl(int coreid)
 	uint32 ioctrl_val;
 	uint32 arcache = 0xb, awcache = 0x7, aruser = 0x1, awuser = 0x1;
 
-//      if (!arch_is_coherent())
-	return;
+	if (!arch_is_coherent()) {
+		return;
+	}
+
+	if (coreid == USB20H_CORE_ID) {
+		return;
+	}
 
 	usb3_idm_idm_base = (uint32) REG_MAP(0x18105000, 4096);
 	usb3_idm_idm_ioctrl_addr = (uint32 *) (usb3_idm_idm_base + 0x408);
@@ -1227,54 +1492,181 @@ static void bcm5301x_usb_idm_ioctrl(int coreid)
 	REG_UNMAP((void *)usb3_idm_idm_base);
 }
 
-static void bcm5301x_usb_hc_init(struct pci_dev *dev, int coreid)
+static void bcm5301x_usb_hc_init(struct pci_dev *dev, int coreid, int corerev)
 {
 	uint32 start, len;
+	void __iomem *ehci_base;
 
-	if (!BCM4707_CHIP(CHIPID(sih->chip)))
+	if (!BCM4707_CHIP(CHIPID(sih->chip)) && !BCM53573_CHIP(CHIPID(sih->chip))) {
 		return;
+	}
+
+	start = pci_resource_start(dev, 0);
+	len = pci_resource_len(dev, 0);
+	if (!len) {
+		return;
+	}
+
+	ehci_base = (void *)REG_MAP(start, len);
 
 	if (coreid == NS_USB20_CORE_ID) {
-		uint32 ehci_base;
 		uint32 *insnreg01, *insnreg03;
-
-		start = pci_resource_start(dev, 0);
-		len = pci_resource_len(dev, 0);
-		if (!len)
-			return;
 
 		/* Delay after PHY initialized to ensure HC is ready to be configured */
 		mdelay(1);
 
-		ehci_base = (uint32) REG_MAP(start, len);
-		insnreg01 = (uint32 *) (ehci_base + 0x94);
-		insnreg03 = (uint32 *) (ehci_base + 0x9C);
+		insnreg01 = (uint32 *) ((uint32) ehci_base + 0x94);
+		insnreg03 = (uint32 *) ((uint32) ehci_base + 0x9C);
+
 		/* Set packet buffer OUT threshold */
 		writel(((readl(insnreg01) & 0xFFFF) | (0x80 << 16)), insnreg01);
+
 		/* Enabling break memory transfer */
 		writel((readl(insnreg03) | 0x1), insnreg03);
-		REG_UNMAP((void *)ehci_base);
+	} else if (coreid == USB20H_CORE_ID) {
+		mdelay(10);
+		if (corerev >= 5) {
+			uint32 tmp;
+			void *usb_idm_base, *gci_base, *pmu_base;
+
+			usb_idm_base = (void *)REG_MAP(0x18104000, 4096);
+			gci_base = (void *)REG_MAP(0x18010000, 8192);
+			pmu_base = (void *)REG_MAP(0x18012000, 4096);
+
+			/* Take usb core out of reset */
+			writel(0x3, usb_idm_base + 0x408);
+			udelay(100);
+			writel(0x1, usb_idm_base + 0x800);
+			udelay(100);
+			writel(0x0, usb_idm_base + 0x800);
+			udelay(100);
+			writel(0x1, usb_idm_base + 0x408);
+			udelay(100);
+
+			/* Enable Misc PLL */
+			writel(0x142, ehci_base + 0x1e0);
+			udelay(100);
+
+			/* utmi_control1 */
+			writel(0xc7f85000, ehci_base + 0x510);
+			writel(0xc7f85003, ehci_base + 0x510);
+			udelay(300);
+
+			/* PMU:program usb phy pll parameters */
+			writel(0x6, pmu_base + 0x660);
+			writel(0x005360c1, pmu_base + 0x664);
+			udelay(100);
+			writel(0x7, pmu_base + 0x660);
+			writel(0x0, pmu_base + 0x664);
+			udelay(100);
+			tmp = readl(pmu_base + 0x600);
+			writel((tmp | 0x400), pmu_base + 0x600);
+			udelay(100);
+
+			/* Disable phy_iso */
+			writel(0xc7f8d003, ehci_base + 0x510);
+			udelay(300);
+
+			/* utmi_control1 */
+			writel(0x7f8d007, ehci_base + 0x510);
+			udelay(1000);
+
+			/* hostcontrol: out of reset */
+			writel(0x4ff, ehci_base + 0x200);
+			udelay(25);
+			writel(0x6ff, ehci_base + 0x200);
+			udelay(25);
+			writel(0x7ff, ehci_base + 0x200);
+			udelay(25);
+
+			/* Clear the mdio read data, if needed. */
+			tmp = readl(ehci_base + 0x528);
+			if ((tmp & 0x80000000) == 0x80000000) {
+				/* Clear read done */
+				writel(0x80000000, ehci_base + 0x528);
+			}
+
+			/* Read PHY register (address 0x1b), first try. */
+			writel(0x1ba9, ehci_base + 0x524);
+			tmp = readl(ehci_base + 0x524);
+
+			SPINWAIT((((tmp = readl(ehci_base + 0x528)) & 0x80000000) == 0), 100000);
+
+			if (tmp & 0x80000000) {
+				/* Clear read done */
+				writel(0x80000000, ehci_base + 0x528);
+			}
+
+			/* Read PHY register (address 0x1b) to check PHY PLL lock */
+			writel(0x1ba9, ehci_base + 0x524);
+			tmp = readl(ehci_base + 0x524);
+
+			SPINWAIT((((tmp = readl(ehci_base + 0x528)) & 0x80000000) == 0), 100000);
+
+			if (tmp & 0x80000000) {
+				/* Clear read done */
+				writel(0x80000000, ehci_base + 0x528);
+
+				/* Check USB PHY PLL lock bit, bit8 in reg 0x1b */
+				if (!((tmp >> 8) & 0x1)) {
+					printk(KERN_ERR "WARNING! USB PHY PLL can't lock\n");
+					BUG_ON(1);
+				}
+			} else {
+				printk(KERN_ERR "WARNING! can't get usb phy reg data ready\n");
+			}
+
+			/* Write PHY register (address 0x3 = 0x400) */
+			writel((0x0369 | (0x400 << 13)), ehci_base + 0x524);
+			tmp = readl(ehci_base + 0x524);
+			mdelay(5);
+
+			/* Read PHY register 0x3 and check the value */
+			writel(0x3a9, ehci_base + 0x524);
+			tmp = readl(ehci_base + 0x524);
+			mdelay(5);
+
+			SPINWAIT((((tmp = readl(ehci_base + 0x528)) & 0x80000000) == 0), 100000);
+
+			if (tmp & 0x80000000) {
+				/* Clear read done */
+				writel(0x80000000, ehci_base + 0x528);
+				if ((tmp & 0xffff) != 0x400) {
+					printk(KERN_ERR "WARNING! USB PHY REG 0x3 != 0x400\n");
+				}
+			}
+
+			REG_UNMAP(usb_idm_base);
+			REG_UNMAP(gci_base);
+			REG_UNMAP(pmu_base);
+		}
 	}
+out:
+	REG_UNMAP(ehci_base);
 }
 
 int pcibios_enable_device(struct pci_dev *dev, int mask)
 {
 	ulong flags;
-	uint coreidx, coreid;
+	uint coreidx, coreid, corerev;
 	void *regs;
 	int rc = -1;
+
 	/* External PCI device enable */
-	if (dev->bus->number != 0)
+	if (dev->bus->number != 0) {
 		return pcibios_enable_resources(dev);
+	}
 
 	/* These cores come out of reset enabled */
 	if (dev->device == NS_IHOST_CORE_ID || dev->device == CC_CORE_ID)
 		return 0;
+
 	spin_lock_irqsave(&sih_lock, flags);
 
 	regs = si_setcoreidx(sih, PCI_SLOT(dev->devfn));
 	coreidx = si_coreidx(sih);
 	coreid = si_coreid(sih);
+	corerev = si_corerev(sih);
 
 	if (!regs) {
 		printk(KERN_ERR "WARNING! PCIBIOS_DEVICE_NOT_FOUND\n");
@@ -1282,7 +1674,12 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
 	}
 
 	/* OHCI/EHCI only initialize one time */
-	if (coreid == NS_USB20_CORE_ID && si_iscoreup(sih)) {
+	if ((coreid == NS_USB20_CORE_ID || coreid == USB20H_CORE_ID) && si_iscoreup(sih)) {
+		rc = 0;
+		goto out;
+	}
+
+	if (BCM53573_CHIP(CHIPID(sih->chip)) && (coreid == D11_CORE_ID)) {
 		rc = 0;
 		goto out;
 	}
@@ -1290,7 +1687,7 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
 	if (coreid != GMAC_CORE_ID)
 		si_core_reset(sih, 0, 0);
 
-	if (coreid == NS_USB20_CORE_ID || coreid == NS_USB30_CORE_ID) {
+	if (coreid == NS_USB20_CORE_ID || coreid == NS_USB30_CORE_ID || coreid == USB20H_CORE_ID) {
 		/* Set gpio HIGH to turn on USB VBUS power */
 		bcm5301x_usb_power_on(coreid);
 
@@ -1298,10 +1695,9 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
 		bcm5301x_usb_phy_init(coreid);
 
 		/* USB HC init */
-		bcm5301x_usb_hc_init(dev, coreid);
+		bcm5301x_usb_hc_init(dev, coreid, corerev);
 
 		bcm5301x_usb_idm_ioctrl(coreid);
-
 	}
 
 	rc = 0;
@@ -1312,7 +1708,7 @@ out:
 	return rc;
 }
 
-bool plat_fixup_bus(struct pci_bus * b)
+bool __devinit plat_fixup_bus(struct pci_bus * b)
 {
 	struct list_head *ln;
 	struct pci_dev *d;
@@ -1321,7 +1717,6 @@ bool plat_fixup_bus(struct pci_bus * b)
 	printk("PCI: Fixing up bus %d\n", b->number);
 
 	/* Fix up SB */
-	//if (b->number == 0) {
 	if (((struct pci_sys_data *)b->sysdata)->domain == 0) {
 		list_for_each_entry(d, &b->devices, bus_list) {
 			/* Fix up interrupt lines */
@@ -1330,8 +1725,8 @@ bool plat_fixup_bus(struct pci_bus * b)
 			pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
 		}
 		return TRUE;
-	} else {
 	}
+
 	return FALSE;
 }
 
@@ -1355,7 +1750,13 @@ static int __init allow_gen2_rc(struct soc_pcie_port *port)
 	devid = val >> 16;
 	if (vendorid == VENDOR_BROADCOM &&
 	    (devid == BCM4360_CHIP_ID || devid == BCM4360_D11AC_ID ||
-	     devid == BCM4360_D11AC2G_ID || devid == BCM4360_D11AC5G_ID || devid == BCM4352_D11AC_ID || devid == BCM4352_D11AC2G_ID || devid == BCM4352_D11AC5G_ID)) {
+	     devid == BCM4360_D11AC2G_ID || devid == BCM4360_D11AC5G_ID ||
+	     devid == BCM4352_D11AC_ID || devid == BCM4352_D11AC2G_ID || devid == BCM4352_D11AC5G_ID || devid == BCM43217_CHIP_ID || devid == BCM43227_CHIP_ID)) {
+		if (devid == BCM43217_CHIP_ID || devid == BCM43227_CHIP_ID) {
+			/* Only support GEN1 */
+			return 0;
+		}
+
 		/* Config BAR0 */
 		bar = port->owin_res->start;
 		__raw_writel(0x10, port->reg_base + SOC_PCIE_CFG_ADDR);
@@ -1451,7 +1852,7 @@ static void __init bcm5301x_pcie_phy_init(void)
 	writel(0x0000009a, ccb_mii_mng_ctrl_addr);
 
 	/* To improve PCIE phy jitter */
-	for (i = 0; i < (ARRAY_SIZE(soc_pcie_ports) - 1); i++) {
+	for (i = 0; i < (pcie_ports_sz - 1); i++) {
 		if (i == 2) {
 			cru_straps_ctrl = readl((uint32 *) (dmu_base + 0x2a0));
 
@@ -1502,9 +1903,9 @@ static int __init soc_pcie_init(void)
 
 	/* Save current core index */
 	origidx = si_coreidx(sih);
-
 	/* Get pcie coreid and corerev */
 	si_setcore(sih, NS_PCIEG2_CORE_ID, 0);
+
 	pcie_coreid = si_coreid(sih);
 	pcie_corerev = si_corerev(sih);
 
@@ -1514,12 +1915,76 @@ static int __init soc_pcie_init(void)
 	spin_unlock_irqrestore(&sih_lock, flags);
 
 	/* For NS-B0, overwrite the start and end values for PCIE port 1 and port 2 */
-	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == 0x7) {
+	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == NS_BX_PCIE_COREREV) {
 		soc_pcie_owin[1].start = 0x20000000;
 		soc_pcie_owin[1].end = 0x20000000 + SZ_128M - 1;
 
 		soc_pcie_owin[2].start = 0x28000000;
 		soc_pcie_owin[2].end = 0x28000000 + SZ_128M - 1;
+	} else if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == BCM53573_PCIE_COREREV) {
+		int pcie_reset = getgpiopin(NULL, "pcie_reset", GPIO_PIN_NOTDEFINED);
+		int wombo_reset = getgpiopin(NULL, "wombo_reset", GPIO_PIN_NOTDEFINED);
+
+		if (wombo_reset != GPIO_PIN_NOTDEFINED) {
+			int wombo_reset_mask = 1 << wombo_reset;
+
+			/* Set wombo GPIO to output pin and set it to LOW */
+			si_gpioout(sih, wombo_reset_mask, 0, GPIO_DRV_PRIORITY);
+			si_gpioouten(sih, wombo_reset_mask, wombo_reset_mask, GPIO_DRV_PRIORITY);
+			mdelay(50);
+			/* Set GPIO to HIGH to reset wombo mac */
+			si_gpioout(sih, wombo_reset_mask, wombo_reset_mask, GPIO_DRV_PRIORITY);
+			mdelay(50);
+		}
+
+		if (pcie_reset != GPIO_PIN_NOTDEFINED) {
+			int pcie_reset_mask = 1 << pcie_reset;
+
+			/* Set GPIO to output pin and set it to LOW */
+			si_gpioout(sih, pcie_reset_mask, 0, GPIO_DRV_PRIORITY);
+			si_gpioouten(sih, pcie_reset_mask, pcie_reset_mask, GPIO_DRV_PRIORITY);
+			mdelay(100);
+			/* Set GPIO to HIGH to deassert PCIe reset */
+			si_gpioout(sih, pcie_reset_mask, pcie_reset_mask, GPIO_DRV_PRIORITY);
+			mdelay(100);
+		}
+
+		/* 53573 B0 WAR to reset pcie dev after WDT reboot */
+		if (CHIPREV(sih->chiprev) == 2) {
+			uint32 *pcie_regbase = (uint32 *) REG_MAP(0x18002000, 4096);
+			uint32 clk_control = readl(pcie_regbase + 0x0);
+
+			/* clk_control bit 0 is PCIE_RC_PCIE_RESET */
+			if (clk_control & 0x1) {
+				/* Still under reset mode. Need to
+				 * trigger a pulse to reset device
+				 */
+				clk_control &= ~0x1;
+				writel(clk_control, pcie_regbase + 0x0);
+				mdelay(100);
+				/* read back */
+				clk_control = readl(pcie_regbase + 0x0);
+			}
+
+			REG_UNMAP((void *)pcie_regbase);
+		}
+		/*
+		 * Update the following for BCM53573 because of only one PCIe port.
+		 */
+		soc_pcie_regs[0].start = 0x18002000;
+		soc_pcie_regs[0].end = 0x18002fff;
+
+		memset((void *)&soc_pcie_regs[1], 0, sizeof(soc_pcie_regs[1]));
+		memset((void *)&soc_pcie_regs[2], 0, sizeof(soc_pcie_regs[2]));
+
+		soc_pcie_owin[0].start = 0x10000000;
+		soc_pcie_owin[0].end = 0x10000000 + SZ_128M - 1;
+
+		memset((void *)&soc_pcie_owin[1], 0, sizeof(soc_pcie_owin[1]));
+		memset((void *)&soc_pcie_owin[2], 0, sizeof(soc_pcie_owin[2]));
+
+		pcie_port = &bcm53573_pcie_ports[0];
+		pcie_ports_sz = ARRAY_SIZE(bcm53573_pcie_ports);
 	}
 
 	/* Scan the SB bus */
@@ -1545,18 +2010,19 @@ static int __init soc_pcie_init(void)
 
 //      pci_scan_bus(0, &pcibios_ops, &sys);
 //        pci_common_init( & soc_pcie_ports[0].hw_pci );
+
 	bcm5301x_3rd_pcie_init();
 
 	bcm5301x_pcie_phy_init();
 
-	for (i = 1; i < ARRAY_SIZE(soc_pcie_ports); i++) {
-		struct soc_pcie_port *port = &soc_pcie_ports[i];
+	for (i = 1; i < pcie_ports_sz; i++) {
+		struct soc_pcie_port *port = &pcie_port[i];
 
 		/* Check if this port needs to be enabled */
 		if (!port->enable)
 			continue;
-		/* Setup PCIe controller registers */
 
+		/* Setup PCIe controller registers */
 //              pci_ioremap_io(SZ_64K * (i-1), port->regs_res->start);
 //              port->reg_base = PCI_IO_VIRT_BASE + SZ_64K * (i-1);
 
@@ -1584,13 +2050,11 @@ static int __init soc_pcie_init(void)
 				pr_info("PCIE%d switching to GEN2\n", port->hw_pci.domain);
 			}
 		}
-		/*
-		 * Skip inactive ports -
-		 * will need to change this for hot-plugging
-		 */
+
 		if (linkfail)
 			continue;
 
+		/* Announce this port to ARM/PCI common code */
 		pci_common_init(&port->hw_pci);
 
 		/* Setup virtual-wire interrupts */
@@ -1600,7 +2064,6 @@ static int __init soc_pcie_init(void)
 		__raw_writel(0x6, port->reg_base + SOC_PCIE_HDR_OFF + 4);
 	}
 
-	/*pci_assign_unassigned_resources(); */
 	return 0;
 }
 
