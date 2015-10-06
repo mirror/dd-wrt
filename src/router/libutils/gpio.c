@@ -420,13 +420,13 @@ void set_gpio(int gpio, int value)
 		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 	}
 
-	in = fopen(buf, "wb");
-	if (in == NULL)
-		return;
-	fprintf(in, "%d", value);
-	fclose(in);
+//	in = fopen(buf, "wb");
+//	if (in == NULL)
+//		return;
+//	fprintf(in, "%d", value);
+//	fclose(in);
 
-//	sysprintf("echo %d > %s", value, buf);
+	sysprintf("echo %d > %s", value, buf);
 }
 
 int get_gpio(int gpio)
