@@ -321,7 +321,8 @@ static ssize_t gpio_proc_write(struct file *file, const char __user * buffer, si
 {
 	u32 reg = 0;
 	unsigned int *data = PDE_DATA(file_inode(file));
-
+	if (!count)
+	    return 0;
 	/* get buffer size */
 	procfs_buffer_size = count;
 	if (procfs_buffer_size > PROCFS_MAX_SIZE) {
