@@ -32,6 +32,21 @@
 #include <broadcom.h>
 #include <cymac.h>
 
+#ifndef HAVE_IAS
+char *nvram_selget(webs_t wp, char *name)
+{
+	if (nvram_match("gozila_action", "1")) {
+		char *buf = GOZILA_GET(wp, name);
+
+		if (buf) {
+			return buf;
+			//              return sprintf("%s", buf);
+		}
+	}
+	return nvram_safe_get(name);
+}
+#endif
+
 int aoss_status(void)
 {
 	if (pidof("aoss") > 0) {
