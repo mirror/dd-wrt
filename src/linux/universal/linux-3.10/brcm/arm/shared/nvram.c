@@ -28,10 +28,16 @@
 #include <sbsdram.h>
 #include <linux/vmalloc.h>
 
-#ifdef NVRAM_SPACE_256
+#ifdef MAX_NVRAM_SPACE
+// nothign
+
+#elif NVRAM_SPACE_256
+#define MAX_NVRAM_SPACE NVRAMSIZEREAL
+#define DEF_NVRAM_SPACE NVRAMSIZEREAL
 extern int NVRAMSIZEREAL;
 #else
 #define NVRAMSIZEREAL NVRAM_SPACE
+#define MAX_NVRAM_SPACE NVRAM_SPACE
 #endif
 
 extern struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name,
@@ -95,12 +101,20 @@ static int
 BCMINITFN(nvram_rehash)(struct nvram_header *header)
 {
 	char buf[] = "0xXXXXXXXX", *name, *value, *end, *eq;
+	char *nvram_space_str = _nvram_get("nvram_space");
+	unsigned long nvram_space = MAX_NVRAM_SPACE;
+
+	if (nvram_space_str)
+		nvram_space =  bcm_strtoul(nvram_space_str, NULL, 0);
+
+	if (nvram_space < DEF_NVRAM_SPACE)
+		nvram_space = DEF_NVRAM_SPACE;
 	/* (Re)initialize hash table */
 	nvram_free();
 
 	/* Parse and set "name=value\0 ... \0\0" */
 	name = (char *) &header[1];
-	end = (char *) header + NVRAMSIZEREAL - 2;
+	end = (char *) header + nvram_space - 2;
 	end[0] = end[1] = '\0';
 	for (; *name; name = value + strlen(value) + 1) {
 		if (!(eq = strchr(name, '=')))
@@ -248,6 +262,14 @@ BCMINITFN(_nvram_commit)(struct nvram_header *header)
 	char *ptr, *end;
 	int i;
 	struct nvram_tuple *t;
+	char *nvram_space_str = _nvram_get("nvram_space");
+	unsigned long nvram_space = DEF_NVRAM_SPACE;
+
+	if (nvram_space_str)
+		nvram_space =  bcm_strtoul(nvram_space_str, NULL, 0);
+
+	if (nvram_space < DEF_NVRAM_SPACE)
+		nvram_space = DEF_NVRAM_SPACE;
 
 	/* Regenerate header */
 	header->magic = NVRAM_MAGIC;
@@ -269,10 +291,10 @@ BCMINITFN(_nvram_commit)(struct nvram_header *header)
 
 	/* Clear data area */
 	ptr = (char *) header + sizeof(struct nvram_header);
-	bzero(ptr, NVRAMSIZEREAL - sizeof(struct nvram_header));
+	bzero(ptr, nvram_space - sizeof(struct nvram_header));
 
 	/* Leave space for a double NUL at the end */
-	end = (char *) header + NVRAMSIZEREAL - 2;
+	end = (char *) header + nvram_space - 2;
 
 	/* Write out all tuples */
 	for (i = 0; i < ARRAYSIZE(nvram_hash); i++) {
@@ -302,9 +324,9 @@ BCMINITFN(_nvram_init)(void *sih)
 {
 	struct nvram_header *header;
 	int ret;
+	printk(KERN_INFO "max nvram space = %d\n",MAX_NVRAM_SPACE);
 
-
-	if (!(header = (struct nvram_header *) vmalloc(NVRAMSIZEREAL))) {
+	if (!(header = (struct nvram_header *) vmalloc(MAX_NVRAM_SPACE))) {
 		printf("nvram_init: out of memory\n");
 		return -12; /* -ENOMEM */
 	}
