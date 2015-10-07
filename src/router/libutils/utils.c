@@ -6220,6 +6220,7 @@ int led_control(int type, int act)
 		usb_gpio=  0x110;
 		usb_gpio1= 0x111;
 		power_gpio = 0x103;
+		diag_gpio = 0x003;
 		disconnected_gpio = 0x005;
 		ses_gpio = 0x113;
 		// komisches symbol gpio 21
