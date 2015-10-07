@@ -55,10 +55,17 @@ void start_aoss(void)
 		if (nvram_match("wps_enabled", "1")) {
 			if (!nvram_match("ath0_net_mode", "disabled")) {
 				eval("hostapd_cli", "-i", "ath0", "wps_pbc");
-		}
+#ifdef HAVE_IDEXX
+				eval("/usr/bin/check_wps");
+#endif
+			}
 #if defined(HAVE_WZRHPAG300NH)
 			if (!nvram_match("ath1_net_mode", "disabled")) {
+				led_control(LED_SES, LED_FLASH);
 				eval("hostapd_cli", "-i", "ath1", "wps_pbc");
+#ifdef HAVE_IDEXX
+				eval("/usr/bin/check_wps");
+#endif
 			}
 #endif
 		}
