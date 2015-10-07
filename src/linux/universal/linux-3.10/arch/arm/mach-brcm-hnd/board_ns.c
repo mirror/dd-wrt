@@ -54,6 +54,7 @@ DEFINE_SPINLOCK(bcm947xx_sih_lock);
 EXPORT_SYMBOL(bcm947xx_sih);
 EXPORT_SYMBOL(bcm947xx_sih_lock);
 
+extern int nvram_space;
 /* Convenience */
 #define sih bcm947xx_sih
 #define sih_lock bcm947xx_sih_lock
@@ -559,6 +560,8 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	if (nvram_match("boardnum", "1234") && nvram_match("boardtype", "0x072F")) {
 		nobackup = 1;
 	}
+	if (nvram_space == 0x20000)
+		nobackup = 1;
 
 	if (nvram_match("boardnum","679") && nvram_match("boardtype", "0x0646") 
 	    && (nvram_match("boardrev", "0x1110"))) {
@@ -604,7 +607,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 			bcm947xx_flash_parts[nparts].size = mtd->size - vmlz_off;
 
 			/* Reserve for NVRAM */
-			bcm947xx_flash_parts[nparts].size -= ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+			bcm947xx_flash_parts[nparts].size -= ROUNDUP(nvram_space, mtd->erasesize);
 #ifdef PLC
 			/* Reserve for PLC */
 			bcm947xx_flash_parts[nparts].size -= ROUNDUP(0x1000, mtd->erasesize);
@@ -624,7 +627,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		bcm947xx_flash_parts[nparts].size -= ROUNDUP(0x1000, mtd->erasesize);
 #endif
 		/* Reserve for NVRAM */
-		bcm947xx_flash_parts[nparts].size -= ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		bcm947xx_flash_parts[nparts].size -= ROUNDUP(nvram_space, mtd->erasesize);
 
 #ifdef BCMCONFMTD
 		bcm947xx_flash_parts[nparts].size -= (mtd->erasesize * 4);
@@ -656,7 +659,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 			bcm947xx_flash_parts[nparts].name = "linux2";
 			bcm947xx_flash_parts[nparts].size = mtd->size - image_second_offset;
 			/* Reserve for NVRAM */
-			bcm947xx_flash_parts[nparts].size -= ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+			bcm947xx_flash_parts[nparts].size -= ROUNDUP(nvram_space, mtd->erasesize);
 
 #ifdef BCMCONFMTD
 			bcm947xx_flash_parts[nparts].size -= (mtd->erasesize * 4);
@@ -712,7 +715,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	/* Setup plc MTD partition */
 	bcm947xx_flash_parts[nparts].name = "plc";
 	bcm947xx_flash_parts[nparts].size = ROUNDUP(0x1000, mtd->erasesize);
-	bcm947xx_flash_parts[nparts].offset = size - (ROUNDUP(NVRAM_SPACE, mtd->erasesize) + ROUNDUP(0x1000, mtd->erasesize));
+	bcm947xx_flash_parts[nparts].offset = size - (ROUNDUP(nvram_space, mtd->erasesize) + ROUNDUP(0x1000, mtd->erasesize));
 	nparts++;
 #endif
 	if (rootfssize) {
@@ -720,20 +723,20 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		bcm947xx_flash_parts[nparts].offset = bcm947xx_flash_parts[2].offset + bcm947xx_flash_parts[2].size;
 		bcm947xx_flash_parts[nparts].offset += (mtd->erasesize - 1);
 		bcm947xx_flash_parts[nparts].offset &= ~(mtd->erasesize - 1);
-		bcm947xx_flash_parts[nparts].size = (size - bcm947xx_flash_parts[nparts].offset) - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		bcm947xx_flash_parts[nparts].size = (size - bcm947xx_flash_parts[nparts].offset) - ROUNDUP(nvram_space, mtd->erasesize);
 		nparts++;
 	}
 	
 	if(is_ex6200){
 		bcm947xx_flash_parts[nparts].name = "board_data";
-		bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		bcm947xx_flash_parts[nparts].size = ROUNDUP(nvram_space, mtd->erasesize);
 		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
 		nparts++;
 	}
 	
 	/* Setup nvram MTD partition */
 	bcm947xx_flash_parts[nparts].name = "nvram_cfe";
-	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	bcm947xx_flash_parts[nparts].size = ROUNDUP(nvram_space, mtd->erasesize);
 	if (maxsize)
 		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
 	else
@@ -743,7 +746,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	
 
 	bcm947xx_flash_parts[nparts].name = "nvram";
-	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	bcm947xx_flash_parts[nparts].size = ROUNDUP(nvram_space, mtd->erasesize);
 	if (maxsize)
 		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
 		if(is_ex6200 || nobackup)
