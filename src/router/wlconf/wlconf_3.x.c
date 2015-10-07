@@ -2235,8 +2235,10 @@ cprintf("set nband %s\n",name);
 		    str = "2";
 		if (str && !strcmp(str,"0") && strstr(nvram_safe_get(strcat_r(prefix,"bandlist",tmp)),"a"))
 		    str = "1";
-		if (str)
+		if (str) {
 			val = atoi(str);
+			nvram_set(strcat_r(prefix, "nband", tmp), str);
+		}
 		else {
 			WL_GETINT(name, WLC_GET_BAND, &val);
 		}
