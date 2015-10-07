@@ -4226,7 +4226,7 @@ if (has_ac(prefix) && has_2ghz(prefix)) {
 	showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 }
 
-if (has_ac(prefix) && nvram_match("15","%s_hw_rxchain",prefix)) {
+if (has_ac(prefix) && nvram_nmatch("15","%s_hw_rxchain",prefix)) {
 	char wl_nitroqam[16];
 	sprintf(wl_nitroqam, "%s_nitro_qam", prefix);
 	showRadio(wp, "wl_basic.nitroqam", wl_nitroqam);
