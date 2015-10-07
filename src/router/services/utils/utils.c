@@ -44,6 +44,7 @@ static void getMac(char *newmac)
 	switch (brand) {
 	case ROUTER_ASUS_AC87U:
 	case ROUTER_ASUS_AC88U:
+	case ROUTER_ASUS_AC5300:
 		strcpy(newmac, nvram_safe_get("et1macaddr"));
 		break;
 	case ROUTER_NETGEAR_R8000:
