@@ -718,6 +718,8 @@
 
 #define ROUTER_DLINK_DIR895 0xe1111
 
+#define ROUTER_ASUS_AC88U 0xe21b
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
