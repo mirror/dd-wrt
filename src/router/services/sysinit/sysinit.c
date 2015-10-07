@@ -2517,6 +2517,15 @@ void start_restore_defaults(void)
 		}
 		break;
 
+	case ROUTER_ASUS_AC5300:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 4 7*");
+			nvram_set("vlan2ports", "0 7u");
+		}
+		break;
+
 	case ROUTER_ASUS_AC3200:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_get("vlan2ports")
