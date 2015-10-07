@@ -6221,7 +6221,8 @@ int led_control(int type, int act)
 		usb_gpio1= 0x111;
 		power_gpio = 0x103;
 		diag_gpio = 0x003;
-		disconnected_gpio = 0x005;
+		connected_gpio = 0x005;
+		disconnected_gpio = 0x115;
 		ses_gpio = 0x113;
 		// komisches symbol gpio 21
 		// quantenna reset 8 inv (off / on to reset)    
