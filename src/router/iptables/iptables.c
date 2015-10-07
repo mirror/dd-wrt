@@ -1874,7 +1874,14 @@ static char *get_modprobe(void)
 	close(procfile);
 	return NULL;
 }
-
+#if 1
+int iptables_insmod(const char *modname, const char *modprobe) {
+    return 0;
+}
+int load_iptables_ko(const char *modprobe) {
+    return 0;
+}
+#else
 int iptables_insmod(const char *modname, const char *modprobe)
 {
 	char *buf = NULL;
@@ -1923,7 +1930,7 @@ int load_iptables_ko(const char *modprobe)
 
 	return ret;
 }
-
+#endif
 static struct ipt_entry *
 generate_entry(const struct ipt_entry *fw,
 	       struct iptables_rule_match *matches,
