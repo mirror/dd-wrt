@@ -1260,6 +1260,11 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC88U;
 	}
 
+	if (nvram_match("model", "RT-AC5300")) {
+		setRouter("Asus RT-AC5300");
+		return ROUTER_ASUS_AC5300;
+	}
+
 	if (nvram_match("productid", "RT-AC3200") || nvram_match("model", "RT-AC3200")) {
 		setRouter("Asus RT-AC3200");
 		return ROUTER_ASUS_AC3200;
@@ -6208,6 +6213,17 @@ int led_control(int type, int act)
 		connected_gpio = 0x105;
 		diag_gpio = 0x003;
 		// wps gpio = 14
+		break;
+	case ROUTER_ASUS_AC88U:
+	case ROUTER_ASUS_AC5300:
+		usb_power = 0x009;
+		usb_gpio=  0x110;
+		usb_gpio1= 0x111;
+		power_gpio = 0x103;
+		disconnected_gpio = 0x005;
+		ses_gpio = 0x113;
+		// komisches symbol gpio 21
+		// quantenna reset 8 inv (off / on to reset)    
 		break;
 	case ROUTER_ASUS_AC87U:
 		usb_power = 0x009;

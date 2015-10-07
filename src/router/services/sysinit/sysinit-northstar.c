@@ -1657,9 +1657,10 @@ void start_sysinit(void)
 		set_gpio(2, 1);	// fixup ses button
 		break;
 	case ROUTER_ASUS_AC88U:
+		insmod("rtl8365mb");
 		set_gpio(11, 1);	// fixup reset button
-		set_gpio(15, 1);	// fixup wifi button
-		set_gpio(2, 1);	// fixup ses button
+		set_gpio(18, 1);	// fixup wifi button
+		set_gpio(20, 1);	// fixup ses button
 		break;
 	case ROUTER_ASUS_AC3200:
 		if (nvram_match("bl_version", "1.0.1.3")) {
