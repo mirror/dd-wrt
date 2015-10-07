@@ -1658,11 +1658,16 @@ void start_sysinit(void)
 		break;
 	case ROUTER_ASUS_AC88U:
 		insmod("rtl8365mb");
+		nvram_set("1:ledbh9","0x7");
+		nvram_set("0:ledbh9","0x7");
 		set_gpio(11, 1);	// fixup reset button
 		set_gpio(18, 1);	// fixup wifi button
 		set_gpio(20, 1);	// fixup ses button
 		break;
 	case ROUTER_ASUS_AC5300:
+		nvram_set("2:ledbh9","0x7");
+		nvram_set("1:ledbh9","0x7");
+		nvram_set("0:ledbh9","0x7");
 		set_gpio(11, 1);	// fixup reset button
 		set_gpio(18, 1);	// fixup wifi button
 		set_gpio(20, 1);	// fixup ses button
