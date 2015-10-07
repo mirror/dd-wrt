@@ -673,5 +673,12 @@ config TILE_SROM
 
 source "drivers/char/xillybus/Kconfig"
 
+config RTL8365MB
+	tristate "rtl8365mb driver"
+	default n
+	depends on MACH_BRCM_NS
+	help
+	  rtl8365mb driver
+
 endmenu
 

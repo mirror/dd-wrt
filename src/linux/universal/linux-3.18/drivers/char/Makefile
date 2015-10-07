@@ -75,3 +75,4 @@ js-rtc-y = rtc.o
 obj-$(CONFIG_TILE_SROM)		+= tile-srom.o
 obj-$(CONFIG_XILLYBUS)		+= xillybus/
 obj-$(CONFIG_IXP425_GPIO) += ixp425_gpio.o
+obj-$(CONFIG_RTL8365MB)		+= rtl8365mb/
