@@ -2899,7 +2899,7 @@ struct nvram_param srouter_defaults[] = {
 	// #elif HAVE_ADM5120
 	// {"dhcp_dnsmasq", "0"},
 #elif HAVE_IDEXX
-	{"dhcp_dnsmasq", "1"},
+	{"dhcp_dnsmasq", "0"},
 	{"dns_dnsmasq", "0"},
 #else
 	{"dhcp_dnsmasq", "1"},

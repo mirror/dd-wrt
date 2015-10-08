@@ -650,6 +650,10 @@ ifeq ($(CONFIG_ONNET),y)
 endif
 ifeq ($(CONFIG_IDEXX),y)
   CFLAGS += -DHAVE_IDEXX
+  ATH9KCFLAGS += -DHAVE_IDEXX
+  ifeq ($(CONFIG_IDEXX_WORLD),y)
+    ATH9KCFLAGS += -DHAVE_IDEXX_WORLD
+  endif
 endif
 ifeq ($(CONFIG_SUB3),y)
 CFLAGS += -DHAVE_SUB3
