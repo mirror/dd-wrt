@@ -1053,6 +1053,9 @@ endif
 ifeq ($(CONFIG_ADM5120),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 endif
+ifeq ($(CONFIG_NORTHSTAR),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc rtkswitch
+endif
 ifeq ($(CONFIG_PPPOESERVER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc addpppoeconnected
 	cd $(INSTALLDIR)/sbin && ln -sf rc delpppoeconnected
