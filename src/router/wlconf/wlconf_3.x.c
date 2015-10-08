@@ -949,7 +949,7 @@ cprintf("akm\n");
 	val = wlconf_akm_options(prefix);
 	/* In wet mode enable in driver wpa supplicant */
 
-	if (!is_dhd && wet && (CHECK_PSK(val))) {
+	if (wet && (CHECK_PSK(val))) {
 		wsec_pmk_t psk;
 		char *key;
 
