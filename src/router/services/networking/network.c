@@ -522,10 +522,14 @@ int wlconf_up(char *name)
 			else
 				eval("wl", "-i", name, "vht_features", "0");
 		}
-		if (nvram_nmatch("1", "wl%d_turbo_qam", instance) && nvram_nmatch("1", "wl%d_vreqd", instance))
+		if (has_2ghz(prefix)) {
+			if (nvram_nmatch("1", "wl%d_turbo_qam", instance))
+				eval("wl", "-i", name, "vhtmode", "1");
+			else
+				eval("wl", "-i", name, "vhtmode", "0");
+		} else {
 			eval("wl", "-i", name, "vhtmode", "1");
-		else
-			eval("wl", "-i", name, "vhtmode", "0");
+		}
 	}
 #endif
 #if (defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC)) && !defined(HAVE_BUFFALO)
