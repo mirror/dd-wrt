@@ -147,11 +147,9 @@ void start_sysinit(void)
 		nvram_commit();
 	}
 
-	
 	if (nvram_get("et_txq_thresh") == NULL) {
 		nvram_set("et_txq_thresh", "1024");
 	}
-
 
 	switch (getRouterBrand()) {
 	case ROUTER_NETGEAR_AC1450:
@@ -1304,7 +1302,7 @@ void start_sysinit(void)
 				extra_params++;
 			}
 
-			nvram_set("devpath0", "pci/1/1"); 
+			nvram_set("devpath0", "pci/1/1");
 			nvram_set("devpath1", "pci/2/1");
 			nvram_set("wl_pcie_mrrs", "128");
 			nvram_set("0:ddwrt", "1");
@@ -1657,17 +1655,32 @@ void start_sysinit(void)
 		set_gpio(2, 1);	// fixup ses button
 		break;
 	case ROUTER_ASUS_AC88U:
+		eval("mknod", "/dev/rtkswitch", "c", "233", "0");
 		insmod("rtl8365mb");
-		nvram_set("1:ledbh9","0x7");
-		nvram_set("0:ledbh9","0x7");
+		fprintf(stderr, "Reset RTL8365MB Switch\n");
+		usleep(400 * 1000);
+		int i, r;
+		for (i = 0; i < 10; ++i) {
+			set_gpio(10, 1);
+			if ((r = get_gpio(10)) != 1) {
+				fprintf(stderr, "\n! reset LED_RESET_SWITCH failed:%d, reset again !\n", r);
+				usleep(10 * 1000);
+			} else {
+				fprintf(stderr, "\nchk LED_RESET_SWITCH:%d\n", r);
+				break;
+			}
+		}
+
+		nvram_set("1:ledbh9", "0x7");
+		nvram_set("0:ledbh9", "0x7");
 		set_gpio(11, 1);	// fixup reset button
 		set_gpio(18, 1);	// fixup wifi button
 		set_gpio(20, 1);	// fixup ses button
 		break;
 	case ROUTER_ASUS_AC5300:
-		nvram_set("2:ledbh9","0x7");
-		nvram_set("1:ledbh9","0x7");
-		nvram_set("0:ledbh9","0x7");
+		nvram_set("2:ledbh9", "0x7");
+		nvram_set("1:ledbh9", "0x7");
+		nvram_set("0:ledbh9", "0x7");
 		set_gpio(11, 1);	// fixup reset button
 		set_gpio(18, 1);	// fixup wifi button
 		set_gpio(20, 1);	// fixup ses button
@@ -3756,7 +3769,8 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-
+	if (getRouterBrand() == ROUTER_ASUS_AC88U)
+		eval("rtkswitch", "1");
 	insmod("emf");
 	insmod("igs");
 #ifdef HAVE_DHDAP

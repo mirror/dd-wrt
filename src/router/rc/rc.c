@@ -362,6 +362,9 @@ static struct MAIN maincalls[] = {
 	{"brctl", "brctl", NULL},
 #endif
 	{"getbridgeprio", "getbridgeprio", NULL},
+#ifdef HAVE_NORTHSTAR
+	{"rtkswitch", "rtkswitch", NULL},
+#endif
 	{"setuserpasswd", "setuserpasswd", NULL},
 	{"getbridge", "getbridge", NULL},
 	{"getmask", "getmask", NULL},
