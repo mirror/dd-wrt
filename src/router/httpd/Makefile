@@ -267,6 +267,9 @@ endif
 
 ifeq ($(CONFIG_IDEXX),y)
 CFLAGS += -DHAVE_IDEXX
+ifeq ($(CONFIG_IDEXX_WORLD),y)
+CFLAGS += -DHAVE_IDEXX_WORLD
+endif
 endif
 
 ifeq ($(CONFIG_FREECWMP),y)
