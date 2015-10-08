@@ -188,6 +188,11 @@ ifeq ($(CONFIG_IDEXX),y)
 	cp idexx/images/* $(INSTALLDIR)/www/images
 	cp idexx/help/* $(INSTALLDIR)/www/help
 	cp -fa idexx/files/* $(INSTALLDIR) || true
+ifeq ($(CONFIG_IDEXX_WORLD),y)
+	echo "iw reg set 00" >> $(INSTALLDIR)/etc/config/idexx.startup
+else
+	echo "iw reg set US" >> $(INSTALLDIR)/etc/config/idexx.startup
+endif
 endif
 
 ifeq ($(CONFIG_AXTEL),y)
@@ -494,6 +499,7 @@ ifeq ($(CONFIG_ONNET),y)
   endif
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	ls -l $(INSTALLDIR)/www/help/
+#	cp -fa onnet/files/* $(INSTALLDIR) || true
 endif
 
 ifeq ($(CONFIG_GLAUCO),y)
