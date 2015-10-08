@@ -195,6 +195,7 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define DEF_NVRAM_SPACE		NVSIZE
 #else
 #define MAX_NVRAM_SPACE		NVRAM_SPACE
+#define DEF_NVRAM_SPACE		NVRAM_SPACE
 #endif
 
 
