@@ -288,6 +288,9 @@ static char *filter[] = { "lan_ifnames",
 	"et_txq_thresh",
 	"sn",
 	"um_board_id",
+	"rgmii_port",
+	"strap_p5_mode",
+	"territory_code",
 	NULL
 };
 
