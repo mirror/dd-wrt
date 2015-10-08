@@ -471,8 +471,8 @@ static int robo_switch_enable(void)
 		val |= 0xf1;
 		robo_write16(ROBO_CTRL_PAGE, ROBO_REG_CTRL_PORT0_GMIIPO + cpuport, val);
 		char *asus = nvram_get("model");
-		if (asus && !strcmp(asus,"RT-AC87U")) {
-		printk(KERN_INFO "workaround for RT-AC87U\n");
+		if (asus && (!strcmp(asus,"RT-AC87U") || !strcmp(asus,"RT-AC88U"))) {
+		printk(KERN_INFO "workaround for RT-AC87U/RT-AC88U\n");
 		val = robo_read16(ROBO_CTRL_PAGE, ROBO_REG_CTRL_PORT0_GMIIPO + 5);
 		/* (GMII_SPEED_UP_2G|SW_OVERRIDE|TXFLOW_CNTL|RXFLOW_CNTL|LINK_STS) */
 		val |= 0xf1;
