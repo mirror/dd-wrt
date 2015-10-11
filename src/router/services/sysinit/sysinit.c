@@ -2599,9 +2599,6 @@ void start_restore_defaults(void)
 
 		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
 			switch (brand) {
-//                      case ROUTER_WRT_1900AC:
-//                              nvram_set("vlan0ports", "0 1 2 3 5*");
-//                              break;
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_NETGEAR_WNR3500LV2:
 			case ROUTER_WRT320N:
