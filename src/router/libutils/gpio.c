@@ -349,6 +349,48 @@ void set_gpio(int gpio, int value)
 
 	}
 
+	if (brand == ROUTER_WRT_1900ACS) {
+		switch (gpio) {
+		case 0:	// power
+			sysprintf("echo %d > /sys/class/leds/shelby\\:white\\:power/brightness", value);
+			break;
+		case 1:	// 2G
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:wlan_2g/brightness", value);
+			break;
+		case 2:	// 5G
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:wlan_5g/brightness", value);
+			break;
+		case 3:
+			sysprintf("echo %d > /sys/class/leds/shelby\\:white\\:sata/brightness", value);
+			break;
+		case 4:
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:usb3_1/brightness", value);
+			break;
+		case 5:	// 5G
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:usb2/brightness", value);
+			break;
+		case 6:	// power
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:wan/brightness", value);
+			break;
+		case 7:	// power
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:amber\\:wan/brightness", value);
+			break;
+		case 8:
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:usb3_2/brightness", value);
+			break;
+		case 9:
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:wps/brightness", value);
+			break;
+		case 10:
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:amber\\:wps/brightness", value);
+			break;
+		default:
+			i_set_gpio(gpio, value);
+			break;
+		}
+
+	}
+
 }
 
 #elif defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
