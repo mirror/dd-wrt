@@ -1983,6 +1983,11 @@ int internal_getRouterBrand()
 	    setRouter("Linksys WRT 1900AC");
 	    return ROUTER_WRT_1900AC;	// similar
 	}
+
+	if (!strcmp(modelstr,"WRT1900ACS")) {
+	    setRouter("Linksys WRT 1900AC");
+	    return ROUTER_WRT_1900ACS;	// similar
+	}
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;
@@ -5129,6 +5134,7 @@ int led_control(int type, int act)
 #endif
 #ifdef HAVE_WRT1900AC
 	case ROUTER_WRT_1200AC:
+	case ROUTER_WRT_1200ACS:
 	case ROUTER_WRT_1900ACV2:
 		usb_power = 0x032;
 	case ROUTER_WRT_1900AC:
