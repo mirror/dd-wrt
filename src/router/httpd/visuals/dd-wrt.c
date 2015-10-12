@@ -3651,7 +3651,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO)
+#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO) || !defined(HAVE_IDEXX)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",

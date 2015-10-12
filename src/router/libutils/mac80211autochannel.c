@@ -152,6 +152,10 @@ static int freq_list(struct unl *unl, int phy)
 			if (tb[NL80211_FREQUENCY_ATTR_RADAR])
 				continue;
 #endif
+#ifdef HAVE_IDEXX
+			if  (ieee80211_mhz2ieee(freq_mhz) > 48)
+                                continue;
+#endif
 			f = calloc(1, sizeof(*f));
 			INIT_LIST_HEAD(&f->list);
 

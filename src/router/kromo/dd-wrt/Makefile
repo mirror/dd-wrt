@@ -190,8 +190,10 @@ ifeq ($(CONFIG_IDEXX),y)
 	cp -fa idexx/files/* $(INSTALLDIR) || true
 ifeq ($(CONFIG_IDEXX_WORLD),y)
 	echo "iw reg set 00" >> $(INSTALLDIR)/etc/config/idexx.startup
+	echo "startservice configurewifi" >> $(INSTALLDIR)/etc/config/idexx.startup
 else
 	echo "iw reg set US" >> $(INSTALLDIR)/etc/config/idexx.startup
+	echo "startservice configurewifi" >> $(INSTALLDIR)/etc/config/idexx.startup
 endif
 endif
 
