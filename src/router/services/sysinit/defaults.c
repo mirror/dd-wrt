@@ -221,15 +221,15 @@ struct nvram_param srouter_defaults[] = {
 	{"lan_ipaddr", "192.168.1.1"},	/* LAN IP address */
 #elif HAVE_IDEXX
 	{"lan_ipaddr", "192.168.222.1"},	/* LAN ip address */
+	{"ath0_regdomain", "UNITED_STATES"},
+	{"ath1_regdomain", "UNITED_STATES"},
 #elif HAVE_BUFFALO
-#ifndef HAVE_IDEXX
 #ifdef BUFFALO_EU
 	{"ath0_regdomain", "GERMANY"},	/* LAN IP address */
 #endif
 	{"lan_ipaddr", "192.168.11.1"},	/* LAN IP address */
 	{"dhcp_start", "2"},	/* DHCP Start IP */
 	{"dhcp_num", "64"},	/* DHCP Start IP */
-#endif
 #elif HAVE_GGEW
 #if defined(HAVE_NS5) || defined(HAVE_EOC5610)
 	{"ath0_regdomain", "GERMANY_BFWA"},	/* LAN IP address */
