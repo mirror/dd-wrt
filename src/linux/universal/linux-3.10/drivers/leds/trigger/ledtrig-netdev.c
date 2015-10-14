@@ -26,11 +26,6 @@
 #include <linux/timer.h>
 #include <linux/ctype.h>
 #include <linux/leds.h>
-#include <linux/version.h>
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
-#include <net/net_namespace.h>
-#endif
 
 #include "../leds.h"
 
@@ -102,7 +97,7 @@ static void set_baseline_state(struct led_netdev_data *trigger_data)
 }
 
 static ssize_t led_device_name_show(struct device *dev,
-				    struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct led_netdev_data *trigger_data = led_cdev->trigger_data;
@@ -114,12 +109,8 @@ static ssize_t led_device_name_show(struct device *dev,
 	return strlen(buf) + 1;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
-extern struct net init_net;
-#endif
-
 static ssize_t led_device_name_store(struct device *dev,
-				     struct device_attribute *attr, const char *buf, size_t size)
+		struct device_attribute *attr, const char *buf, size_t size)
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct led_netdev_data *trigger_data = led_cdev->trigger_data;
@@ -135,11 +126,7 @@ static ssize_t led_device_name_store(struct device *dev,
 
 	if (trigger_data->device_name[0] != 0) {
 		/* check for existing device to update from */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
 		trigger_data->net_dev = dev_get_by_name(&init_net, trigger_data->device_name);
-#else
-		trigger_data->net_dev = dev_get_by_name(trigger_data->device_name);
-#endif
 		if (trigger_data->net_dev != NULL)
 			trigger_data->link_up = (dev_get_flags(trigger_data->net_dev) & IFF_LOWER_UP) != 0;
 		set_baseline_state(trigger_data); /* updates LEDs, may start timers */
@@ -152,7 +139,7 @@ static ssize_t led_device_name_store(struct device *dev,
 static DEVICE_ATTR(device_name, 0644, led_device_name_show, led_device_name_store);
 
 static ssize_t led_mode_show(struct device *dev,
-			     struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct led_netdev_data *trigger_data = led_cdev->trigger_data;
@@ -177,17 +164,17 @@ static ssize_t led_mode_show(struct device *dev,
 }
 
 static ssize_t led_mode_store(struct device *dev,
-			      struct device_attribute *attr, const char *buf, size_t size)
+		struct device_attribute *attr, const char *buf, size_t size)
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct led_netdev_data *trigger_data = led_cdev->trigger_data;
-	char copybuf[32];
+	char copybuf[128];
 	int new_mode = -1;
 	char *p, *token;
 
 	/* take a copy since we don't want to trash the inbound buffer when using strsep */
 	strncpy(copybuf, buf, sizeof(copybuf));
-	copybuf[31] = 0;
+	copybuf[sizeof(copybuf) - 1] = 0;
 	p = copybuf;
 
 	while ((token = strsep(&p, " \t\n")) != NULL) {
@@ -223,7 +210,7 @@ static ssize_t led_mode_store(struct device *dev,
 static DEVICE_ATTR(mode, 0644, led_mode_show, led_mode_store);
 
 static ssize_t led_interval_show(struct device *dev,
-				 struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct led_netdev_data *trigger_data = led_cdev->trigger_data;
@@ -236,7 +223,7 @@ static ssize_t led_interval_show(struct device *dev,
 }
 
 static ssize_t led_interval_store(struct device *dev,
-				  struct device_attribute *attr, const char *buf, size_t size)
+		struct device_attribute *attr, const char *buf, size_t size)
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct led_netdev_data *trigger_data = led_cdev->trigger_data;
@@ -245,14 +232,14 @@ static ssize_t led_interval_store(struct device *dev,
 	unsigned long value = simple_strtoul(buf, &after, 10);
 	size_t count = after - buf;
 
-	if (*after && isspace(*after))
+	if (isspace(*after))
 		count++;
 
 	/* impose some basic bounds on the timer interval */
 	if (count == size && value >= 5 && value <= 10000) {
 		write_lock(&trigger_data->lock);
 		trigger_data->interval = msecs_to_jiffies(value);
-		set_baseline_state(trigger_data); // resets timer
+		set_baseline_state(trigger_data); /* resets timer */
 		write_unlock(&trigger_data->lock);
 		ret = count;
 	}
@@ -266,7 +253,7 @@ static int netdev_trig_notify(struct notifier_block *nb,
 			      unsigned long evt,
 			      void *dv)
 {
-	struct net_device *dev = dv;
+	struct net_device *dev = netdev_notifier_info_to_dev((struct netdev_notifier_info *) dv);
 	struct led_netdev_data *trigger_data = container_of(nb, struct led_netdev_data, notifier);
 
 	if (evt != NETDEV_UP && evt != NETDEV_DOWN && evt != NETDEV_CHANGE && evt != NETDEV_REGISTER && evt != NETDEV_UNREGISTER)
