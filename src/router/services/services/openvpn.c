@@ -386,11 +386,7 @@ void start_openvpn(void)
 			fprintf(fp, "key /tmp/openvpncl/client.key\n");
 	}
 	fprintf(fp,
-#ifdef HAVE_ERC
-		"management 127.0.0.1 5001\n"
-#else
 		"management 127.0.0.1 16\n"
-#endif
 		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
 	fprintf(fp, "dev %s\n", ovpniface);
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
