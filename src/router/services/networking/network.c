@@ -855,6 +855,9 @@ void start_lan(void)
 			}
 			sprintf(lan_ifnames, "%s %s", nvram_safe_get("lan_default"), nvram_safe_get("wan_default"));
 			strcpy(wan_ifname, "");
+#if defined(HAVE_ERC) && defined(HAVE_CARAMBOLA)
+			nvram_nset("1", "%s_bridged", nvram_safe_get("wan_default")); 
+#endif
 		} else {
 			if (nvram_match("fullswitch_set", "1")) {
 				strcpy(lan_ifnames, nvram_safe_get("lan_default"));
@@ -862,6 +865,9 @@ void start_lan(void)
 				strcpy(wan_ifname, nvram_safe_get("wan_default"));
 				nvram_unset("fullswitch_set");
 			}
+#if defined(HAVE_ERC) && defined(HAVE_CARAMBOLA)
+			nvram_nset("0", "%s_bridged", nvram_safe_get("wan_default")); 
+#endif
 		}
 	}
 
