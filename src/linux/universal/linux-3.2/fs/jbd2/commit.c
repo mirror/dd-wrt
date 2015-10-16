@@ -340,6 +340,7 @@ void jbd2_journal_commit_transaction(journal_t *journal)
 	/* Do we need to erase the effects of a prior jbd2_journal_flush? */
 	if (journal->j_flags & JBD2_FLUSHED) {
 		jbd_debug(3, "super block updated\n");
+		mutex_lock(&journal->j_checkpoint_mutex);
 		/*
 		 * We hold j_checkpoint_mutex so tail cannot change under us.
 		 * We don't need any special data guarantees for writing sb
@@ -350,6 +351,7 @@ void jbd2_journal_commit_transaction(journal_t *journal)
 						journal->j_tail_sequence,
 						journal->j_tail,
 						WRITE_SYNC);
+		mutex_unlock(&journal->j_checkpoint_mutex);
 	} else {
 		jbd_debug(3, "superblock not updated\n");
 	}
@@ -433,7 +435,7 @@ void jbd2_journal_commit_transaction(journal_t *journal)
 	 * frees some memory
 	 */
 	spin_lock(&journal->j_list_lock);
-	__jbd2_journal_clean_checkpoint_list(journal);
+	__jbd2_journal_clean_checkpoint_list(journal, false);
 	spin_unlock(&journal->j_list_lock);
 
 	jbd_debug(3, "JBD2: commit phase 1\n");
