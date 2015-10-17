@@ -81,7 +81,7 @@ much traffic. */
 
 /* Enable "Netcat mode" option. This will forward standard input/output
  * to a remote TCP-forwarded connection */
-// #define ENABLE_CLI_NETCAT
+#define ENABLE_CLI_NETCAT
 
 /* Whether to support "-c" and "-m" flags to choose ciphers/MACs at runtime */
 //#define ENABLE_USER_ALGO_LIST
