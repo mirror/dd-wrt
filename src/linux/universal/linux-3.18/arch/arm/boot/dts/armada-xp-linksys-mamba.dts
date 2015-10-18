@@ -1,3 +1,4 @@
+/* 
  * Device Tree file for the Linksys WRT1900AC (Mamba).
  *
  * Note: this board is shipped with a new generation boot loader that
