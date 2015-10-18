@@ -56,6 +56,12 @@ enum { STACK_SIZE = (COMMON_BUFSIZE - offsetof(struct globals, stack)) / sizeof(
 } while (0)
 
 
+static void check_under(void)
+{
+	if (pointer == 0)
+		bb_error_msg_and_die("stack underflow");
+}
+
 static void push(double a)
 {
 	if (pointer >= STACK_SIZE)
@@ -65,8 +71,7 @@ static void push(double a)
 
 static double pop(void)
 {
-	if (pointer == 0)
-		bb_error_msg_and_die("stack underflow");
+	check_under();
 	return stack[--pointer];
 }
 
@@ -187,6 +192,7 @@ static void print_stack_no_pop(void)
 
 static void print_no_pop(void)
 {
+	check_under();
 	print_base(stack[pointer-1]);
 }
 
@@ -244,9 +250,9 @@ static void stack_machine(const char *argument)
 
 	o = operators;
 	do {
-		const size_t name_len = strlen(o->name);
-		if (strncmp(o->name, argument, name_len) == 0) {
-			argument += name_len;
+		char *after_name = is_prefixed_with(argument, o->name);
+		if (after_name) {
+			argument = after_name;
 			o->function();
 			goto next;
 		}

@@ -116,21 +116,21 @@ static char* copy_stringbuf(void)
 
 static char* find_keyword(char *ptr, size_t len, const char *word)
 {
-	int wlen;
-
 	if (!ptr) /* happens if xmalloc_open_zipped_read_close cannot read it */
 		return NULL;
 
-	wlen = strlen(word);
-	len -= wlen - 1;
+	len -= strlen(word) - 1;
 	while ((ssize_t)len > 0) {
 		char *old = ptr;
+		char *after_word;
+
 		/* search for the first char in word */
-		ptr = memchr(ptr, *word, len);
+		ptr = memchr(ptr, word[0], len);
 		if (ptr == NULL) /* no occurance left, done */
 			break;
-		if (strncmp(ptr, word, wlen) == 0)
-			return ptr + wlen; /* found, return ptr past it */
+		after_word = is_prefixed_with(ptr, word);
+		if (after_word)
+			return after_word; /* found, return ptr past it */
 		++ptr;
 		len -= (ptr - old);
 	}
@@ -161,6 +161,15 @@ static char *filename2modname(const char *filename, char *modname)
 	modname[i] = '\0';
 
 	return modname;
+}
+
+static int pathname_matches_modname(const char *pathname, const char *modname)
+{
+	int r;
+	char name[MODULE_NAME_LEN];
+	filename2modname(bb_get_last_path_component_nostrip(pathname), name);
+	r = (strcmp(name, modname) == 0);
+	return r;
 }
 
 /* Take "word word", return malloced "word",NUL,"word",NUL,NUL */
@@ -293,18 +302,6 @@ static void parse_module(module_info *info, const char *pathname)
 	info->deps = copy_stringbuf();
 
 	free(module_image);
-}
-
-static int pathname_matches_modname(const char *pathname, const char *modname)
-{
-	int r;
-	char name[MODULE_NAME_LEN];
-	const char *fname = bb_get_last_path_component_nostrip(pathname);
-	const char *suffix = strrstr(fname, ".ko");
-	safe_strncpy(name, fname, suffix - fname + 1);
-	replace(name, '-', '_');
-	r = (strcmp(name, modname) == 0);
-	return r;
 }
 
 static FAST_FUNC int fileAction(const char *pathname,
@@ -539,17 +536,50 @@ static module_info** find_alias(const char *alias)
 // TODO: open only once, invent config_rewind()
 static int already_loaded(const char *name)
 {
-	int ret = 0;
-	char *s;
-	parser_t *parser = config_open2("/proc/modules", xfopen_for_read);
-	while (config_read(parser, &s, 1, 1, "# \t", PARSE_NORMAL & ~PARSE_GREEDY)) {
-		if (strcmp(s, name) == 0) {
-			ret = 1;
-			break;
+	int ret;
+	char *line;
+	FILE *fp;
+
+	ret = 5 * 2;
+ again:
+	fp = fopen_for_read("/proc/modules");
+	if (!fp)
+		return 0;
+	while ((line = xmalloc_fgetline(fp)) != NULL) {
+		char *live;
+		char *after_name;
+
+		// Examples from kernel 3.14.6:
+		//pcspkr 12718 0 - Live 0xffffffffa017e000
+		//snd_timer 28690 2 snd_seq,snd_pcm, Live 0xffffffffa025e000
+		//i915 801405 2 - Live 0xffffffffa0096000
+		after_name = is_prefixed_with(line, name);
+		if (!after_name || *after_name != ' ') {
+			free(line);
+			continue;
 		}
+		live = strstr(line, " Live");
+		free(line);
+		if (!live) {
+			/* State can be Unloading, Loading, or Live.
+			 * modprobe must not return prematurely if we see "Loading":
+			 * it can cause further programs to assume load completed,
+			 * but it did not (yet)!
+			 * Wait up to 5*20 ms for it to resolve.
+			 */
+			ret -= 2;
+			if (ret == 0)
+				break;  /* huh? report as "not loaded" */
+			fclose(fp);
+			usleep(20*1000);
+			goto again;
+		}
+		ret = 1;
+		break;
 	}
-	config_close(parser);
-	return ret;
+	fclose(fp);
+
+	return ret & 1;
 }
 #else
 #define already_loaded(name) 0
