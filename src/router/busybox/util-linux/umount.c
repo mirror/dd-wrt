@@ -55,6 +55,9 @@ static struct mntent *getmntent_r(FILE* stream, struct mntent* result,
 #define OPTION_STRING           "fldDnra" "vt:i"
 #define OPT_FORCE               (1 << 0) // Same as MNT_FORCE
 #define OPT_LAZY                (1 << 1) // Same as MNT_DETACH
+#ifndef MNT_DETACH
+#define MNT_DETACH	0x00000002	/* Just detach from the tree */
+#endif
 //#define OPT_FREE_LOOP           (1 << 2) // -d is assumed always present
 #define OPT_DONT_FREE_LOOP      (1 << 3)
 #define OPT_NO_MTAB             (1 << 4)
