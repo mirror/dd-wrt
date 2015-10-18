@@ -400,7 +400,7 @@ endif
 	echo "# CONFIG_FEATURE_DD_STATUS is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SYNC_FANCY is not set" >> busybox/.config
 	echo "# CONFIG_TRUNCATE is not set" >> busybox/.config
-	echo "# CONFIG_UNAME_OSNAME is not set" >> busybox/.config
+	echo "CONFIG_UNAME_OSNAME=\"DD-WRT\"" >> busybox/.config
 	echo "# CONFIG_UEVENT is not set" >> busybox/.config
 	echo "# CONFIG_I2CGET is not set" >> busybox/.config
 	echo "# CONFIG_I2CSET is not set" >> busybox/.config
