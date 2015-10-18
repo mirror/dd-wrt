@@ -205,11 +205,11 @@ int FAST_FUNC procps_read_smaps(pid_t pid, struct smaprec *total,
 		// Rss:                 nnn kB
 		// .....
 
-		char *tp = buf, *p;
+		char *tp, *p;
 
 #define SCAN(S, X) \
-		if (strncmp(tp, S, sizeof(S)-1) == 0) {              \
-			tp = skip_whitespace(tp + sizeof(S)-1);      \
+		if ((tp = is_prefixed_with(buf, S)) != NULL) {       \
+			tp = skip_whitespace(tp);                    \
 			total->X += currec.X = fast_strtoul_10(&tp); \
 			continue;                                    \
 		}
@@ -247,7 +247,7 @@ int FAST_FUNC procps_read_smaps(pid_t pid, struct smaprec *total,
 			// skipping "rw-s FILEOFS M:m INODE "
 			tp = skip_whitespace(skip_fields(tp, 4));
 			// filter out /dev/something (something != zero)
-			if (strncmp(tp, "/dev/", 5) != 0 || strcmp(tp, "/dev/zero\n") == 0) {
+			if (!is_prefixed_with(tp, "/dev/") || strcmp(tp, "/dev/zero\n") == 0) {
 				if (currec.smap_mode[1] == 'w') {
 					currec.mapped_rw = currec.smap_size;
 					total->mapped_rw += currec.smap_size;
@@ -497,8 +497,8 @@ procps_status_t* FAST_FUNC procps_scan(procps_status_t* sp, int flags)
 				while (fgets(buf, sizeof(buf), file)) {
 					char *tp;
 #define SCAN_TWO(str, name, statement) \
-	if (strncmp(buf, str, sizeof(str)-1) == 0) { \
-		tp = skip_whitespace(buf + sizeof(str)-1); \
+	if ((tp = is_prefixed_with(buf, str)) != NULL) { \
+		tp = skip_whitespace(tp); \
 		sscanf(tp, "%u", &sp->name); \
 		statement; \
 	}
@@ -554,8 +554,7 @@ procps_status_t* FAST_FUNC procps_scan(procps_status_t* sp, int flags)
 				break;
 			if (flags & PSSCAN_ARGVN) {
 				sp->argv_len = n;
-				sp->argv0 = xmalloc(n + 1);
-				memcpy(sp->argv0, buf, n + 1);
+				sp->argv0 = xmemdup(buf, n + 1);
 				/* sp->argv0[n] = '\0'; - buf has it */
 			} else {
 				sp->argv_len = 0;
@@ -614,7 +613,6 @@ void FAST_FUNC read_cmdline(char *buf, int col, unsigned pid, const char *comm)
 			buf[comm_len - 1] = ' ';
 			buf[col - 1] = '\0';
 		}
-
 	} else {
 		snprintf(buf, col, "[%s]", comm);
 	}
