@@ -396,6 +396,19 @@ else
 	echo "# CONFIG_TASKSET is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_TASKSET_FANCY is not set" >> busybox/.config
 endif
+	echo "# CONFIG_FEATURE_GZIP_LEVELS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_DD_STATUS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_SYNC_FANCY is not set" >> busybox/.config
+	echo "# CONFIG_TRUNCATE is not set" >> busybox/.config
+	echo "# CONFIG_UNAME_OSNAME is not set" >> busybox/.config
+	echo "# CONFIG_UEVENT is not set" >> busybox/.config
+	echo "# CONFIG_I2CGET is not set" >> busybox/.config
+	echo "# CONFIG_I2CSET is not set" >> busybox/.config
+	echo "# CONFIG_I2CDUMP is not set" >> busybox/.config
+	echo "# CONFIG_I2CDETECT is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_LESS_TRUNCATE is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_WGET_OPENSSL is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_WGET_SSL_HELPER is not set" >> busybox/.config
 
 	cd busybox && make oldconfig
 	
