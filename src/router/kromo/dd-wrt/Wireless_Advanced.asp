@@ -399,6 +399,7 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script></span>
 								</div>
+<%% ifndef("80211AC", "<!--"); %%>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label12"); %%></div>
 									<select name="%s_txant">
@@ -433,6 +434,7 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script></span>
 								</div>
+<%% ifndef("80211AC", "-->"); %%>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label14"); %%></div>
 									<select name="%s_plcphdr">
