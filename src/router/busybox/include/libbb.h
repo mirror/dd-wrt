@@ -84,7 +84,30 @@
 # include <selinux/av_permissions.h>
 #endif
 #if ENABLE_FEATURE_UTMP
-# include <utmp.h>
+# if defined __UCLIBC__ && ( \
+    (UCLIBC_VERSION >= KERNEL_VERSION(0, 9, 32) \
+     && UCLIBC_VERSION < KERNEL_VERSION(0, 9, 34) \
+     && defined __UCLIBC_HAS_UTMPX__ \
+    ) || ( \
+	 UCLIBC_VERSION >= KERNEL_VERSION(0, 9, 34) \
+	) \
+  )
+#  include <utmpx.h>
+# elif defined __UCLIBC__
+#  include <utmp.h>
+#  define utmpx utmp
+#  define setutxent setutent
+#  define endutxent endutent
+#  define getutxent getutent
+#  define getutxid getutid
+#  define getutxline getutline
+#  define pututxline pututline
+#  define utmpxname utmpname
+#  define updwtmpx updwtmp
+#  define _PATH_UTMPX _PATH_UTMP
+# else
+#  include <utmpx.h>
+# endif
 #endif
 #if ENABLE_LOCALE_SUPPORT
 # include <locale.h>
@@ -393,6 +416,8 @@ const char *bb_basename(const char *name) FAST_FUNC;
 /* NB: can violate const-ness (similarly to strchr) */
 char *last_char_is(const char *s, int c) FAST_FUNC;
 const char* endofname(const char *name) FAST_FUNC;
+char *is_prefixed_with(const char *string, const char *key) FAST_FUNC;
+char *is_suffixed_with(const char *string, const char *key) FAST_FUNC;
 
 int ndelay_on(int fd) FAST_FUNC;
 int ndelay_off(int fd) FAST_FUNC;
@@ -541,6 +566,11 @@ void xlisten(int s, int backlog) FAST_FUNC;
 void xconnect(int s, const struct sockaddr *s_addr, socklen_t addrlen) FAST_FUNC;
 ssize_t xsendto(int s, const void *buf, size_t len, const struct sockaddr *to,
 				socklen_t tolen) FAST_FUNC;
+
+int setsockopt_int(int fd, int level, int optname, int optval) FAST_FUNC;
+int setsockopt_1(int fd, int level, int optname) FAST_FUNC;
+int setsockopt_SOL_SOCKET_int(int fd, int optname, int optval) FAST_FUNC;
+int setsockopt_SOL_SOCKET_1(int fd, int optname) FAST_FUNC;
 /* SO_REUSEADDR allows a server to rebind to an address that is already
  * "in use" by old connections to e.g. previous server instance which is
  * killed or crashed. Without it bind will fail until all such connections
@@ -548,6 +578,7 @@ ssize_t xsendto(int s, const void *buf, size_t len, const struct sockaddr *to,
  * regardless of SO_REUSEADDR (unlike some other flavors of Unix).
  * Turn it on before you call bind(). */
 void setsockopt_reuseaddr(int fd) FAST_FUNC; /* On Linux this never fails. */
+int setsockopt_keepalive(int fd) FAST_FUNC;
 int setsockopt_broadcast(int fd) FAST_FUNC;
 int setsockopt_bindtodevice(int fd, const char *iface) FAST_FUNC;
 /* NB: returns port in host byte order */
@@ -653,6 +684,7 @@ uint16_t inet_cksum(uint16_t *addr, int len) FAST_FUNC;
 
 char *xstrdup(const char *s) FAST_FUNC RETURNS_MALLOC;
 char *xstrndup(const char *s, int n) FAST_FUNC RETURNS_MALLOC;
+void *xmemdup(const void *s, int n) FAST_FUNC RETURNS_MALLOC;
 void overlapping_strcpy(char *dst, const char *src) FAST_FUNC;
 char *safe_strncpy(char *dst, const char *src, size_t size) FAST_FUNC;
 char *strncpy_IFNAMSIZ(char *dst, const char *src) FAST_FUNC;
@@ -664,6 +696,7 @@ int bb_putchar(int ch) FAST_FUNC;
 /* Note: does not use stdio, writes to fd 2 directly */
 int bb_putchar_stderr(char ch) FAST_FUNC;
 char *xasprintf(const char *format, ...) __attribute__ ((format(printf, 1, 2))) FAST_FUNC RETURNS_MALLOC;
+char *auto_string(char *str) FAST_FUNC;
 // gcc-4.1.1 still isn't good enough at optimizing it
 // (+200 bytes compared to macro)
 //static ALWAYS_INLINE
@@ -716,7 +749,7 @@ void* xrealloc_vector_helper(void *vector, unsigned sizeof_and_shift, int idx) F
 
 
 extern ssize_t safe_read(int fd, void *buf, size_t count) FAST_FUNC;
-extern ssize_t nonblock_immune_read(int fd, void *buf, size_t count, int loop_on_EINTR) FAST_FUNC;
+extern ssize_t nonblock_immune_read(int fd, void *buf, size_t count) FAST_FUNC;
 // NB: will return short read on error, not -1,
 // if some data was read before error occurred
 extern ssize_t full_read(int fd, void *buf, size_t count) FAST_FUNC;
@@ -865,6 +898,8 @@ struct suffix_mult {
 };
 extern const struct suffix_mult bkm_suffixes[];
 #define km_suffixes (bkm_suffixes + 1)
+extern const struct suffix_mult cwbkMG_suffixes[];
+#define kMG_suffixes (cwbkMG_suffixes + 3)
 
 #include "xatonum.h"
 /* Specialized: */
@@ -925,9 +960,11 @@ void die_if_bad_username(const char* name) FAST_FUNC;
 #if ENABLE_FEATURE_UTMP
 void FAST_FUNC write_new_utmp(pid_t pid, int new_type, const char *tty_name, const char *username, const char *hostname);
 void FAST_FUNC update_utmp(pid_t pid, int new_type, const char *tty_name, const char *username, const char *hostname);
+void FAST_FUNC update_utmp_DEAD_PROCESS(pid_t pid);
 #else
 # define write_new_utmp(pid, new_type, tty_name, username, hostname) ((void)0)
 # define update_utmp(pid, new_type, tty_name, username, hostname) ((void)0)
+# define update_utmp_DEAD_PROCESS(pid) ((void)0)
 #endif
 
 
@@ -1095,9 +1132,8 @@ enum {
 extern const char *msg_eol;
 extern smallint syslog_level;
 extern smallint logmode;
-extern int die_sleep;
 extern uint8_t xfunc_error_retval;
-extern jmp_buf die_jmp;
+extern void (*die_func)(void);
 extern void xfunc_die(void) NORETURN FAST_FUNC;
 #ifdef HAVE_NOMESSAGE
 #define bb_show_usage() exit(-1) 
@@ -1235,7 +1271,8 @@ char *bb_ask_stdin(const char * prompt) FAST_FUNC;
 char *bb_ask(const int fd, int timeout, const char * prompt) FAST_FUNC;
 int bb_ask_confirmation(void) FAST_FUNC;
 
-int bb_parse_mode(const char* s, mode_t* theMode) FAST_FUNC;
+/* Returns -1 if input is invalid. current_mode is a base for e.g. "u+rw" */
+int bb_parse_mode(const char* s, unsigned cur_mode) FAST_FUNC;
 
 /*
  * Config file parser
@@ -1798,7 +1835,7 @@ extern const char bb_PATH_root_path[] ALIGN1; /* "PATH=/sbin:/usr/sbin:/bin:/usr
 #define bb_default_path      (bb_PATH_root_path + sizeof("PATH=/sbin:/usr/sbin"))
 
 extern const int const_int_0;
-extern const int const_int_1;
+//extern const int const_int_1;
 
 
 /* Providing hard guarantee on minimum size (think of BUFSIZ == 128) */
@@ -1974,7 +2011,6 @@ static ALWAYS_INLINE unsigned char bb_ascii_tolower(unsigned char a)
 typedef void (*bbunit_testfunc)(void);
 
 struct bbunit_listelem {
-	struct bbunit_listelem* next;
 	const char* name;
 	bbunit_testfunc testfunc;
 };

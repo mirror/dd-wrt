@@ -33,7 +33,6 @@ typedef struct module_info {
 static int FAST_FUNC parse_module(const char *fname, struct stat *sb UNUSED_PARAM,
 				void *data, int depth UNUSED_PARAM)
 {
-	char modname[MODULE_NAME_LEN];
 	module_info **first = (module_info **) data;
 	char *image, *ptr;
 	module_info *info;
@@ -51,13 +50,12 @@ static int FAST_FUNC parse_module(const char *fname, struct stat *sb UNUSED_PARA
 
 	info->dnext = info->dprev = info;
 	info->name = xstrdup(fname + 2); /* skip "./" */
-	info->modname = xstrdup(
-		filename2modname(
+	info->modname = filename2modname(
 			bb_get_last_path_component_nostrip(fname),
-			modname
-	));
+			NULL
+	);
 	for (ptr = image; ptr < image + len - 10; ptr++) {
-		if (strncmp(ptr, "depends=", 8) == 0) {
+		if (is_prefixed_with(ptr, "depends=")) {
 			char *u;
 
 			ptr += 8;
@@ -66,15 +64,15 @@ static int FAST_FUNC parse_module(const char *fname, struct stat *sb UNUSED_PARA
 					*u = '_';
 			ptr += string_to_llist(ptr, &info->dependencies, ",");
 		} else if (ENABLE_FEATURE_MODUTILS_ALIAS
-		 && strncmp(ptr, "alias=", 6) == 0
+		 && is_prefixed_with(ptr, "alias=")
 		) {
 			llist_add_to(&info->aliases, xstrdup(ptr + 6));
 			ptr += strlen(ptr);
 		} else if (ENABLE_FEATURE_MODUTILS_SYMBOLS
-		 && strncmp(ptr, "__ksymtab_", 10) == 0
+		 && is_prefixed_with(ptr, "__ksymtab_")
 		) {
 			ptr += 10;
-			if (strncmp(ptr, "gpl", 3) == 0
+			if (is_prefixed_with(ptr, "gpl")
 			 || strcmp(ptr, "strings") == 0
 			) {
 				continue;
@@ -250,11 +248,12 @@ int depmod_main(int argc UNUSED_PARAM, char **argv)
 		const char *fname = bb_basename(m->name);
 		filename2modname(fname, modname);
 		while (m->aliases) {
-			/* Last word can well be m->modname instead,
-			 * but depmod from module-init-tools 3.4
-			 * uses module basename, i.e., no s/-/_/g.
-			 * (pathname and .ko.* are still stripped)
-			 * Mimicking that... */
+			/*
+			 * Last word used to be a basename
+			 * (filename with path and .ko.* stripped)
+			 * at the time of module-init-tools 3.4.
+			 * kmod v.12 uses module name, i.e., s/-/_/g.
+			 */
 			printf("alias %s %s\n",
 				(char*)llist_pop(&m->aliases),
 				modname);
