@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * diomsg.h
  *
  * Internal declarations for the diskd routines
@@ -17,14 +25,14 @@ enum {
     _MQD_UNLINK
 };
 
-struct RefCountable_;
+class Lock;
 
 struct diomsg {
     mtyp_t mtype;
     int id;
     int seq_no;
     void * callback_data;
-    RefCountable_ * requestor;
+    Lock * requestor;
     size_t size;
     off_t offset;
     int status;
@@ -34,3 +42,4 @@ struct diomsg {
 };
 
 #endif /* SQUID_DIOMSG_H__ */
+

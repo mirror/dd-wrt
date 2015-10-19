@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "adaptation/Config.h"
 #include "adaptation/History.h"
@@ -10,12 +18,12 @@
 const static char *TheNullServices = ",null,";
 
 Adaptation::History::Entry::Entry(const String &serviceId, const timeval &when):
-        service(serviceId), start(when), theRptm(-1), retried(false)
+    service(serviceId), start(when), theRptm(-1), retried(false)
 {
 }
 
 Adaptation::History::Entry::Entry():
-        start(current_time), theRptm(-1), retried(false)
+    start(current_time), theRptm(-1), retried(false)
 {
 }
 
@@ -33,9 +41,9 @@ int Adaptation::History::Entry::rptm()
 }
 
 Adaptation::History::History():
-        lastMeta(hoReply),
-        allMeta(hoReply),
-        theNextServices(TheNullServices)
+    lastMeta(hoReply),
+    allMeta(hoReply),
+    theNextServices(TheNullServices)
 {
 }
 
@@ -149,6 +157,12 @@ void Adaptation::History::recordMeta(const HttpHeader *lm)
 }
 
 void
+Adaptation::History::recordAdaptationService(SBuf &srvId)
+{
+    theAdaptationServices.push_back(srvId);
+}
+
+void
 Adaptation::History::setFutureServices(const DynamicGroupCfg &services)
 {
     if (!theFutureServices.empty())
@@ -166,3 +180,4 @@ bool Adaptation::History::extractFutureServices(DynamicGroupCfg &value)
     theFutureServices.clear();
     return true;
 }
+

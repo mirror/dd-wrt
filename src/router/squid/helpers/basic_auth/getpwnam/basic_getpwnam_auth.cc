@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * basic_getpwnam_auth.c
  *
  * AUTHOR: Erik Hofman <erik.hofman@a1.nl>
@@ -27,19 +35,11 @@
 #include "squid.h"
 #include "helpers/defines.h"
 #include "rfc1738.h"
-//#include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
+#include <cstdlib>
+#include <cstring>
 #if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
 #endif
 #if HAVE_CRYPT_H
 #include <crypt.h>
@@ -57,12 +57,13 @@ passwd_auth(char *user, char *passwd)
     struct passwd *pwd;
     pwd = getpwnam(user);
     if (pwd == NULL) {
-        return 0;		/* User does not exist */
+        return 0;       /* User does not exist */
     } else {
-        if (strcmp(pwd->pw_passwd, (char *) crypt(passwd, pwd->pw_passwd))) {
-            return 2;		/* Wrong password */
+        char *crypted = crypt(passwd, pwd->pw_passwd);
+        if (!crypted || strcmp(pwd->pw_passwd, crypted)) {
+            return 2;       /* Wrong password */
         } else {
-            return 1;		/* Authentication Sucessful */
+            return 1;       /* Authentication Sucessful */
         }
     }
 }
@@ -74,12 +75,13 @@ shadow_auth(char *user, char *passwd)
     struct spwd *pwd;
     pwd = getspnam(user);
     if (pwd == NULL) {
-        return passwd_auth(user, passwd);	/* Fall back to passwd_auth */
+        return passwd_auth(user, passwd);   /* Fall back to passwd_auth */
     } else {
-        if (strcmp(pwd->sp_pwdp, crypt(passwd, pwd->sp_pwdp))) {
-            return 2;		/* Wrong password */
+        char *crypted = crypt(passwd, pwd->sp_pwdp);
+        if (!crypted || strcmp(pwd->sp_pwdp, crypted)) {
+            return 2;       /* Wrong password */
         } else {
-            return 1;		/* Authentication Sucessful */
+            return 1;       /* Authentication Sucessful */
         }
     }
 }
@@ -96,7 +98,7 @@ main(int argc, char **argv)
     while (fgets(buf, HELPER_INPUT_BUFFER, stdin) != NULL) {
 
         if ((p = strchr(buf, '\n')) != NULL)
-            *p = '\0';		/* strip \n */
+            *p = '\0';      /* strip \n */
 
         if ((user = strtok(buf, " ")) == NULL) {
             SEND_ERR("No Username");
@@ -125,3 +127,4 @@ main(int argc, char **argv)
     }
     return 0;
 }
+

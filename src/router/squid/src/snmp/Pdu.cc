@@ -1,18 +1,22 @@
 /*
- * DEBUG: section 49    SNMP Interface
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 49    SNMP Interface */
 
 #include "squid.h"
 #include "base/TextException.h"
 #include "ipc/TypedMsgHdr.h"
-#include "snmp_core.h"
 #include "snmp/Pdu.h"
 #include "snmp/Var.h"
+#include "snmp_core.h"
 #include "tools.h"
-#if HAVE_ALGORITHM
+
 #include <algorithm>
-#endif
 
 Snmp::Pdu::Pdu()
 {
@@ -233,3 +237,4 @@ Snmp::Pdu::fixAggregate()
     }
     aggrCount = 0;
 }
+

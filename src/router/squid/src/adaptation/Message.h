@@ -1,7 +1,15 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID__ADAPTATION__MESSAGE_H
 #define SQUID__ADAPTATION__MESSAGE_H
 
-#include "RefCount.h"
+#include "base/RefCount.h"
 
 class HttpMsg;
 class BodyPipe;
@@ -47,3 +55,4 @@ private:
 // TODO: replace ICAPInOut with Adaptation::Message (adding one for "cause")
 
 #endif /* SQUID__ADAPTATION__MESSAGE_H */
+

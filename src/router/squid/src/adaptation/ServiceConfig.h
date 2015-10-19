@@ -1,9 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_ADAPTATION__SERVICE_CONFIG_H
 #define SQUID_ADAPTATION__SERVICE_CONFIG_H
 
-#include "SquidString.h"
-#include "RefCount.h"
 #include "adaptation/Elements.h"
+#include "base/RefCount.h"
+#include "SquidString.h"
 
 namespace Adaptation
 {
@@ -56,3 +64,4 @@ protected:
 } // namespace Adaptation
 
 #endif /* SQUID_ADAPTATION__SERVICE_CONFIG_H */
+

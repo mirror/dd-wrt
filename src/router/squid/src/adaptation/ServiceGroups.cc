@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "adaptation/AccessRule.h"
 #include "adaptation/Config.h"
@@ -11,8 +19,8 @@
 #include "wordlist.h"
 
 Adaptation::ServiceGroup::ServiceGroup(const String &aKind, bool allSame):
-        kind(aKind), method(methodNone), point(pointNone),
-        allServicesSame(allSame)
+    kind(aKind), method(methodNone), point(pointNone),
+    allServicesSame(allSame)
 {
 }
 
@@ -23,7 +31,7 @@ Adaptation::ServiceGroup::~ServiceGroup()
 void
 Adaptation::ServiceGroup::parse()
 {
-    ConfigParser::ParseString(&id);
+    id = ConfigParser::NextToken();
 
     wordlist *names = NULL;
     ConfigParser::ParseWordList(&names);
@@ -48,7 +56,7 @@ Adaptation::ServiceGroup::finalize()
         }
         s.cut(s.size() - 1);
         debugs(93, DBG_IMPORTANT, "Adaptation group '" << id << "' contains disabled member(s) after reconfiguration: " << s);
-        removedServices.clean();
+        removedServices.clear();
     }
 
     String baselineKey;
@@ -203,7 +211,7 @@ Adaptation::ServiceSet::ServiceSet(): ServiceGroup("adaptation set", true)
 /* SingleService */
 
 Adaptation::SingleService::SingleService(const String &aServiceId):
-        ServiceGroup("single-service group", false)
+    ServiceGroup("single-service group", false)
 {
     id = aServiceId;
     services.push_back(aServiceId);
@@ -270,7 +278,7 @@ Adaptation::ServicePlan::ServicePlan(): pos(0), atEof(true)
 
 Adaptation::ServicePlan::ServicePlan(const ServiceGroupPointer &g,
                                      const ServiceFilter &filter):
-        group(g), pos(0), atEof(!g || !g->has(pos))
+    group(g), pos(0), atEof(!g || !g->has(pos))
 {
     // this will find the first service because starting pos is zero
     if (!atEof && !group->findService(filter, pos))
@@ -315,8 +323,8 @@ Adaptation::ServicePlan::print(std::ostream &os) const
 Adaptation::Groups &
 Adaptation::AllGroups()
 {
-    static Groups TheGroups;
-    return TheGroups;
+    static Groups *TheGroups = new Groups;
+    return *TheGroups;
 }
 
 Adaptation::ServiceGroupPointer
@@ -330,3 +338,4 @@ Adaptation::FindGroup(const ServiceGroup::Id &id)
 
     return NULL;
 }
+

@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 79    Squid-side DISKD I/O functions.
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 79    Squid-side DISKD I/O functions. */
 
 #include "squid.h"
 #include "base/TextException.h"
@@ -58,7 +63,7 @@ DiskdAction::Create(const Mgr::CommandPointer &aCmd)
 }
 
 DiskdAction::DiskdAction(const Mgr::CommandPointer &aCmd):
-        Action(aCmd), data()
+    Action(aCmd), data()
 {
     debugs(79, 5, HERE);
 }
@@ -145,3 +150,4 @@ DiskdAction::unpack(const Ipc::TypedMsgHdr& hdrMsg)
     hdrMsg.checkType(Ipc::mtCacheMgrResponse);
     hdrMsg.getPod(data);
 }
+

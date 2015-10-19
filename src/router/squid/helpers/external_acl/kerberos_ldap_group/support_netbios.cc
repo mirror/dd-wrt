@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * -----------------------------------------------------------------------------
  *
  * Author: Markus Moeller (markus_moeller at compuserve.com)
@@ -25,11 +33,12 @@
 #include "squid.h"
 #include "util.h"
 
-#ifdef HAVE_LDAP
+#if HAVE_LDAP
 
 #include "support.h"
 
 struct ndstruct *init_nd(void);
+void free_nd(struct ndstruct *ndsp);
 
 struct ndstruct *
 init_nd(void) {
@@ -78,13 +87,13 @@ create_nd(struct main_args *margs)
         debug((char *) "%s| %s: DEBUG: No netbios names defined.\n", LogTime(), PROGRAM);
         return (0);
     }
-    while (*p) {		/* loop over group list */
-        if (*p == '\n' || *p == '\r') {		/* Ignore CR and LF if exist */
+    while (*p) {        /* loop over group list */
+        if (*p == '\n' || *p == '\r') {     /* Ignore CR and LF if exist */
             ++p;
             continue;
         }
-        if (*p == '@') {	/* end of group name - start of domain name */
-            if (p == np) {	/* empty group name not allowed */
+        if (*p == '@') {    /* end of group name - start of domain name */
+            if (p == np) {  /* empty group name not allowed */
                 debug((char *) "%s| %s: DEBUG: No netbios name defined for domain %s\n", LogTime(), PROGRAM, p);
                 free_nd(ndsp);
                 return (1);
@@ -99,25 +108,25 @@ create_nd(struct main_args *margs)
             ndsp = init_nd();
             ndsp->netbios = xstrdup(np);
             ndsp->next = ndspn;
-            dp = p;		/* after @ starts new domain name */
-        } else if (*p == ':') {	/* end of group name or end of domain name */
-            if (p == np) {	/* empty group name not allowed */
+            dp = p;     /* after @ starts new domain name */
+        } else if (*p == ':') { /* end of group name or end of domain name */
+            if (p == np) {  /* empty group name not allowed */
                 debug((char *) "%s| %s: DEBUG: No netbios name defined for domain %s\n", LogTime(), PROGRAM, p);
                 free_nd(ndsp);
                 return (1);
             }
             *p = '\0';
             ++p;
-            if (dp) {		/* end of domain name */
+            if (dp) {       /* end of domain name */
                 ndsp->domain = xstrdup(dp);
                 dp = NULL;
-            } else {		/* end of group name and no domain name */
+            } else {        /* end of group name and no domain name */
                 ndsp = init_nd();
                 ndsp->netbios = xstrdup(np);
                 ndsp->next = ndspn;
             }
             ndspn = ndsp;
-            np = p;		/* after : starts new group name */
+            np = p;     /* after : starts new group name */
             if (!ndsp->domain || !strcmp(ndsp->domain, "")) {
                 debug((char *) "%s| %s: DEBUG: No domain defined for netbios name %s\n", LogTime(), PROGRAM, ndsp->netbios);
                 free_nd(ndsp);
@@ -127,14 +136,14 @@ create_nd(struct main_args *margs)
         } else
             ++p;
     }
-    if (p == np) {		/* empty group name not allowed */
+    if (p == np) {      /* empty group name not allowed */
         debug((char *) "%s| %s: DEBUG: No netbios name defined for domain %s\n", LogTime(), PROGRAM, p);
         free_nd(ndsp);
         return (1);
     }
-    if (dp) {			/* end of domain name */
+    if (dp) {           /* end of domain name */
         ndsp->domain = xstrdup(dp);
-    } else {			/* end of group name and no domain name */
+    } else {            /* end of group name and no domain name */
         ndsp = init_nd();
         ndsp->netbios = xstrdup(np);
         ndsp->next = ndspn;
@@ -168,3 +177,4 @@ get_netbios_name(struct main_args *margs, char *netbios)
     return NULL;
 }
 #endif
+

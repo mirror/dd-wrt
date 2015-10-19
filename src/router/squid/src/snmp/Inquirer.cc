@@ -1,24 +1,29 @@
 /*
- * DEBUG: section 49    SNMP Interface
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 49    SNMP Interface */
 
 #include "squid.h"
 #include "base/TextException.h"
-#include "CommCalls.h"
 #include "comm.h"
 #include "comm/Connection.h"
+#include "CommCalls.h"
 #include "ipc/UdsOp.h"
-#include "snmp_core.h"
 #include "snmp/Inquirer.h"
-#include "snmp/Response.h"
 #include "snmp/Request.h"
+#include "snmp/Response.h"
+#include "snmp_core.h"
 
 CBDATA_NAMESPACED_CLASS_INIT(Snmp, Inquirer);
 
 Snmp::Inquirer::Inquirer(const Request& aRequest, const Ipc::StrandCoords& coords):
-        Ipc::Inquirer(aRequest.clone(), coords, 2),
-        aggrPdu(aRequest.pdu)
+    Ipc::Inquirer(aRequest.clone(), coords, 2),
+    aggrPdu(aRequest.pdu)
 {
     conn = new Comm::Connection;
     conn->fd = aRequest.fd;
@@ -105,3 +110,4 @@ Snmp::Inquirer::sendResponse()
     snmp_build(&req.session, &aggrPdu, buffer, &len);
     comm_udp_sendto(conn->fd, req.address, buffer, len);
 }
+

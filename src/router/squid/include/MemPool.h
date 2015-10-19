@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _MEM_POOL_H_
 #define _MEM_POOL_H_
 
@@ -42,9 +50,7 @@
 #endif
 
 /// \ingroup MemPoolsAPI
-#define MB ((size_t)1024*1024)
-/// \ingroup MemPoolsAPI
-#define toMB(size) ( ((double) size) / MB )
+#define toMB(size) ( ((double) size) / ((double)(1024*1024)) )
 /// \ingroup MemPoolsAPI
 #define toKB(size) ( (size + 1024 - 1) / 1024 )
 
@@ -53,11 +59,11 @@
 /// \ingroup MemPoolsAPI
 #define MEM_CHUNK_SIZE 4096 * 4
 /// \ingroup MemPoolsAPI
-#define MEM_CHUNK_MAX_SIZE  256 * 1024	/* 2MB */
+#define MEM_CHUNK_MAX_SIZE  256 * 1024  /* 2MB */
 /// \ingroup MemPoolsAPI
 #define MEM_MIN_FREE  32
 /// \ingroup MemPoolsAPI
-#define MEM_MAX_FREE  65535	/* unsigned short is max number of items per chunk */
+#define MEM_MAX_FREE  65535 /* unsigned short is max number of items per chunk */
 
 class MemImplementingAllocator;
 class MemPoolStats;
@@ -122,8 +128,8 @@ public:
     void flushMeters();
 
     /**
-     \param label	Name for the pool. Displayed in stats.
-     \param obj_size	Size of elements in MemPool.
+     \param label   Name for the pool. Displayed in stats.
+     \param obj_size    Size of elements in MemPool.
      */
     MemImplementingAllocator * create(const char *label, size_t obj_size);
 
@@ -184,8 +190,8 @@ public:
     virtual ~MemAllocator() {}
 
     /**
-     \param stats	Object to be filled with statistical data about pool.
-     \retval		Number of objects in use, ie. allocated.
+     \param stats   Object to be filled with statistical data about pool.
+     \retval        Number of objects in use, ie. allocated.
      */
     virtual int getStats(MemPoolStats * stats, int accumulate = 0) = 0;
 
@@ -204,7 +210,7 @@ public:
     virtual char const *objectType() const;
     virtual size_t objectSize() const = 0;
     virtual int getInUseCount() = 0;
-    void zeroOnPush(bool doIt);
+    void zeroBlocks(bool doIt) {doZero = doIt;}
     int inUseCount();
 
     /**
@@ -220,13 +226,19 @@ public:
     virtual void setChunkSize(size_t chunksize) {}
 
     /**
-     \param minSize	Minimum size needed to be allocated.
+     \param minSize Minimum size needed to be allocated.
      \retval n Smallest size divisible by sizeof(void*)
      */
     static size_t RoundedSize(size_t minSize);
 
 protected:
-    bool doZeroOnPush;
+    /** Whether to zero memory on initial allocation and on return to the pool.
+     *
+     * We do this on some pools because many object constructors are/were incomplete
+     * and we are afraid some code may use the object after free.
+     * These probems are becoming less common, so when possible set this to false.
+     */
+    bool doZero;
 
 private:
     const char *label;
@@ -256,8 +268,8 @@ public:
     MemPoolMeter const &getMeter() const;
 
     /**
-     \param stats	Object to be filled with statistical data about pool.
-     \retval		Number of objects in use, ie. allocated.
+     \param stats   Object to be filled with statistical data about pool.
+     \retval        Number of objects in use, ie. allocated.
      */
     int getStats(MemPoolStats * stats);
 
@@ -307,7 +319,8 @@ CLASS::operator new (size_t byteCount) \
 void \
 CLASS::operator delete (void *address) \
 { \
-    Pool().freeOne(address); \
+    if (address) \
+        Pool().freeOne(address); \
 }
 
 /// \ingroup MemPoolsAPI
@@ -439,3 +452,4 @@ MemAllocatorProxy::MemAllocatorProxy(char const *aLabel, size_t const &aSize) : 
 }
 
 #endif /* _MEM_POOL_H_ */
+

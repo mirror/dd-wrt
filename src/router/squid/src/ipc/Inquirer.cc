@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #include "squid.h"
 #include "base/TextException.h"
@@ -27,8 +32,8 @@ LesserStrandByKidId(const Ipc::StrandCoord &c1, const Ipc::StrandCoord &c2)
 
 Ipc::Inquirer::Inquirer(Request::Pointer aRequest, const StrandCoords& coords,
                         double aTimeout):
-        AsyncJob("Ipc::Inquirer"),
-        request(aRequest), strands(coords), pos(strands.begin()), timeout(aTimeout)
+    AsyncJob("Ipc::Inquirer"),
+    request(aRequest), strands(coords), pos(strands.begin()), timeout(aTimeout)
 {
     debugs(54, 5, HERE);
 
@@ -72,7 +77,7 @@ Ipc::Inquirer::inquire()
     TheRequestsMap[request->requestId] = callback;
     TypedMsgHdr message;
     request->pack(message);
-    SendMessage(Port::MakeAddr(strandAddrPfx, kidId), message);
+    SendMessage(Port::MakeAddr(strandAddrLabel, kidId), message);
     eventAdd("Ipc::Inquirer::requestTimedOut", &Inquirer::RequestTimedOut,
              this, timeout, 0, false);
 }
@@ -202,3 +207,4 @@ Ipc::Inquirer::status() const
     buf.terminate();
     return buf.content();
 }
+

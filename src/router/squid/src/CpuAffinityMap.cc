@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #include "squid.h"
 #include "base/TextException.h"
@@ -10,7 +15,7 @@
 #include "Debug.h"
 
 bool
-CpuAffinityMap::add(const Vector<int> &aProcesses, const Vector<int> &aCores)
+CpuAffinityMap::add(const std::vector<int> &aProcesses, const std::vector<int> &aCores)
 {
     if (aProcesses.size() != aCores.size())
         return false;
@@ -53,3 +58,4 @@ CpuAffinityMap::calculateSet(const int targetProcess) const
     }
     return cpuAffinitySet;
 }
+

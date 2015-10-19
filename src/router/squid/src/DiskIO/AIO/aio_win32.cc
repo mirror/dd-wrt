@@ -1,46 +1,21 @@
-
 /*
- * DEBUG: section 81    aio_xxx() POSIX emulation on Windows
- * AUTHOR: Guido Serassio <serassio@squid-cache.org>
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 81    aio_xxx() POSIX emulation on Windows */
+
 #include "squid.h"
-#include "DiskIO/AIO/aio_win32.h"
 #include "comm.h"
+#include "DiskIO/AIO/aio_win32.h"
 #include "fd.h"
 #include "StatCounters.h"
 #include "win32.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+#include <cerrno>
 
 #if _SQUID_WINDOWS_
 VOID CALLBACK IoCompletionRoutine(DWORD dwErrorCode,
@@ -309,13 +284,13 @@ int aio_open(const char *path, int mode)
     else
         dwCreationDisposition = (mode & O_CREAT) ? OPEN_ALWAYS : OPEN_EXISTING;
 
-    if ((hndl = CreateFile(path,	                /* file name               */
-                           dwDesiredAccess,	        /* access mode             */
-                           0,			            /* share mode              */
-                           NULL,			        /* SD                      */
-                           dwCreationDisposition,	/* how to create           */
-                           FILE_FLAG_OVERLAPPED,	/* file attributes         */
-                           NULL			            /* handle to template file */
+    if ((hndl = CreateFile(path,                    /* file name               */
+                           dwDesiredAccess,         /* access mode             */
+                           0,                       /* share mode              */
+                           NULL,                    /* SD                      */
+                           dwCreationDisposition,   /* how to create           */
+                           FILE_FLAG_OVERLAPPED,    /* file attributes         */
+                           NULL                     /* handle to template file */
                           )) != INVALID_HANDLE_VALUE) {
         ++ statCounter.syscalls.disk.opens;
         fd = _open_osfhandle((long) hndl, 0);
@@ -347,3 +322,4 @@ ssize_t aio_return64(struct aiocb64 * aiocbp)
     return aiocbp->aio_sigevent.sigev_signo;
 }
 #endif /* _SQUID_WINDOWS_ */
+

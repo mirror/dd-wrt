@@ -1,32 +1,9 @@
 /*
- * HttpHdrCc.h
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_HTTPHDRCC_H
@@ -56,9 +33,9 @@ public:
     static const int32_t MIN_FRESH_UNKNOWN=-1; //min_fresh is unset
 
     HttpHdrCc() :
-            mask(0), max_age(MAX_AGE_UNKNOWN), s_maxage(S_MAXAGE_UNKNOWN),
-            max_stale(MAX_STALE_UNKNOWN), stale_if_error(STALE_IF_ERROR_UNKNOWN),
-            min_fresh(MIN_FRESH_UNKNOWN) {}
+        mask(0), max_age(MAX_AGE_UNKNOWN), s_maxage(S_MAXAGE_UNKNOWN),
+        max_stale(MAX_STALE_UNKNOWN), stale_if_error(STALE_IF_ERROR_UNKNOWN),
+        min_fresh(MIN_FRESH_UNKNOWN) {}
 
     /// reset data-members to default state
     void clear();
@@ -75,10 +52,12 @@ public:
     //manipulation for Cache-Control: private header
     bool hasPrivate() const {return isSet(CC_PRIVATE);}
     const String &Private() const {return private_;}
-    void Private(String &v) {
+    void Private(const String &v) {
         setMask(CC_PRIVATE,true);
+        if (!v.size())
+            return;
         // uses append for multi-line headers
-        if (private_.defined())
+        if (private_.size() > 0)
             private_.append(",");
         private_.append(v);
     }
@@ -87,10 +66,12 @@ public:
     //manipulation for Cache-Control: no-cache header
     bool hasNoCache() const {return isSet(CC_NO_CACHE);}
     const String &noCache() const {return no_cache;}
-    void noCache(String &v) {
+    void noCache(const String &v) {
         setMask(CC_NO_CACHE,true);
+        if (!v.size())
+            return;
         // uses append for multi-line headers
-        if (no_cache.defined())
+        if (no_cache.size() > 0 && v.size() > 0)
             no_cache.append(",");
         no_cache.append(v);
     }
@@ -207,3 +188,4 @@ void httpHdrCcStatDumper(StoreEntry * sentry, int idx, double val, double size, 
 #endif
 
 #endif /* SQUID_HTTPHDRCC_H */
+

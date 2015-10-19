@@ -1,49 +1,73 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 54    Interprocess Communication */
+
 #include "squid.h"
-#include "Store.h"
 #include "ipc/ReadWriteLock.h"
+#include "Store.h"
 
 bool
 Ipc::ReadWriteLock::lockShared()
 {
-    ++readers; // this locks "new" writers out
-    if (!writers) // there are no old writers
+    ++readLevel; // this locks "new" writers out
+    if (!writeLevel || appending) { // nobody is writing, or sharing is OK
+        ++readers;
         return true;
-    --readers;
+    }
+    --readLevel;
     return false;
 }
 
 bool
 Ipc::ReadWriteLock::lockExclusive()
 {
-    if (!writers++) { // we are the first writer + this locks "new" readers out
-        if (!readers) // there are no old readers
+    if (!writeLevel++) { // we are the first writer + lock "new" readers out
+        if (!readLevel) { // no old readers and nobody is becoming one
+            writing = true;
             return true;
+        }
     }
-    --writers;
+    --writeLevel;
     return false;
 }
 
 void
 Ipc::ReadWriteLock::unlockShared()
 {
-    assert(readers-- > 0);
+    assert(readers > 0);
+    --readers;
+    --readLevel;
 }
 
 void
 Ipc::ReadWriteLock::unlockExclusive()
 {
-    assert(writers-- > 0);
+    assert(writing);
+    appending = false;
+    writing = false;
+    --writeLevel;
 }
 
 void
 Ipc::ReadWriteLock::switchExclusiveToShared()
 {
-    ++readers; // must be done before we release exclusive control
+    assert(writing);
+    ++readLevel; // must be done before we release exclusive control
+    ++readers;
     unlockExclusive();
+}
+
+void
+Ipc::ReadWriteLock::startAppending()
+{
+    assert(writing);
+    appending = true;
 }
 
 void
@@ -52,9 +76,10 @@ Ipc::ReadWriteLock::updateStats(ReadWriteLockStats &stats) const
     if (readers) {
         ++stats.readable;
         stats.readers += readers;
-    } else if (writers) {
+    } else if (writing) {
         ++stats.writeable;
-        stats.writers += writers;
+        ++stats.writers;
+        stats.appenders += appending;
     } else {
         ++stats.idle;
     }
@@ -87,7 +112,10 @@ Ipc::ReadWriteLockStats::dump(StoreEntry &e) const
         const int locked = readers + writers;
         storeAppendPrintf(&e, "Readers:         %9d %6.2f%%\n",
                           readers, (100.0 * readers / locked));
-        storeAppendPrintf(&e, "Writers:         %9d %6.2f%%\n",
-                          writers, (100.0 * writers / locked));
+        const double appPerc = writers ? (100.0 * appenders / writers) : 0.0;
+        storeAppendPrintf(&e, "Writers:         %9d %6.2f%% including Appenders: %9d %6.2f%%\n",
+                          writers, (100.0 * writers / locked),
+                          appenders, appPerc);
     }
 }
+

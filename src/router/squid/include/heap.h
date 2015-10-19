@@ -1,32 +1,13 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * AUTHOR: John Dilley, Hewlett Packard
- *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
  */
 
 /****************************************************************************
@@ -38,8 +19,8 @@
  * the top of the heap (as in the smallest object key value).  Child nodes
  * are larger than their parent.
  ****************************************************************************/
-#ifndef	SQUID_HEAP_H
-#define	SQUID_HEAP_H
+#ifndef SQUID_HEAP_H
+#define SQUID_HEAP_H
 
 /*
  * Function for generating heap keys.  The first argument will typically be
@@ -72,8 +53,8 @@ typedef struct _heap {
     heap_mutex_t lock;
     unsigned long size;
     unsigned long last;
-    heap_key_func *gen_key;	/* key generator for heap */
-    heap_key age;		/* aging factor for heap */
+    heap_key_func *gen_key; /* key generator for heap */
+    heap_key age;       /* aging factor for heap */
     heap_node **nodes;
 } heap;
 
@@ -118,10 +99,10 @@ SQUIDCEXTERN heap_t heap_update(heap *, heap_node * elm, heap_t dat);
 /*
  * Generate a heap key for a given data object.  Alternative macro form:
  */
-#ifdef	MACRO_DEBUG
+#ifdef  MACRO_DEBUG
 SQUIDCEXTERN heap_key heap_gen_key(heap * hp, heap_t dat);
 #else
-#define	heap_gen_key(hp,md)	((hp)->gen_key((md),(hp)->age))
+#define heap_gen_key(hp,md) ((hp)->gen_key((md),(hp)->age))
 #endif /* MACRO_DEBUG */
 
 /*
@@ -153,12 +134,12 @@ SQUIDCEXTERN heap_t heap_peep(heap *, int n);
 /*
  * Is the heap empty?  How many nodes (data objects) are in it?
  */
-#ifdef	MACRO_DEBUG
+#ifdef  MACRO_DEBUG
 SQUIDCEXTERN int heap_empty(heap *);
 SQUIDCEXTERN int heap_nodes(heap *);
 #else /* MACRO_DEBUG */
-#define	heap_nodes(heap)	((heap)->last)
-#define	heap_empty(heap)	(((heap)->last <= 0) ? 1 : 0)
+#define heap_nodes(heap)    ((heap)->last)
+#define heap_empty(heap)    ((heap)->last <= 0 ? 1 : 0)
 #endif /* MACRO_DEBUG */
 
 /*
@@ -170,3 +151,4 @@ SQUIDCEXTERN void heap_printnode(char *msg, heap_node * elm);
 SQUIDCEXTERN int verify_heap_property(heap *);
 
 #endif /* SQUID_HEAP_H */
+

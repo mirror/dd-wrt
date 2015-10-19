@@ -1,11 +1,13 @@
 /*
- * digest_common.h
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * AUTHOR: Robert Collins.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * Digest helper API details.
- *
- * Copyright (c) 2003  Robert Collins  <robertc@squid-cache.org>
  */
 
 #ifndef SQUID_DIGEST_COMMON_H_
@@ -15,14 +17,9 @@
 #include "rfc2617.h"
 #include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
+#include <cstring>
 #if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
 #endif
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -32,6 +29,7 @@
 #endif
 
 typedef struct _request_data {
+    int channelId;
     char *user;
     char *realm;
     char *password;
@@ -49,3 +47,4 @@ typedef void HandleArguments(int, char **);
 typedef void HHA1Creator(RequestData *);
 
 #endif /* SQUID_DIGEST_COMMON_H_ */
+

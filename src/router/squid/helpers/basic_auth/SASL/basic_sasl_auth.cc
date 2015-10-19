@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * SASL authenticator module for Squid.
  * Copyright (C) 2002 Ian Castle <ian.castle@coldcomfortfarm.net>
  *
@@ -29,25 +37,16 @@
 #include "rfc1738.h"
 #include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
 #if HAVE_SASL_SASL_H
 #include <sasl/sasl.h>
 #else
 #include <sasl.h>
 #endif
 
-#define APP_NAME_SASL	"basic_sasl_auth"
+#define APP_NAME_SASL   "basic_sasl_auth"
 
 int
 main(int argc, char *argv[])
@@ -129,3 +128,4 @@ main(int argc, char *argv[])
     sasl_done();
     return 0;
 }
+

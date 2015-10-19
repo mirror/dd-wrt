@@ -1,14 +1,16 @@
-#ifndef _SMBLIB_STD_DEFINES_H
-#define _SMBLIB_STD_DEFINES_H
-
-/* RFCNB Standard includes ... */
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
+/*
    SMBlib Standard Includes
 
    Copyright (C) 1996, Richard Sharpe
 */
-/* One day we will conditionalize these on OS types ... */
 
 /*
    This program is free software; you can redistribute it and/or modify
@@ -26,6 +28,12 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#ifndef _SMBLIB_STD_DEFINES_H
+#define _SMBLIB_STD_DEFINES_H
+
+/* RFCNB Standard includes ... */
+/* One day we will conditionalize these on OS types ... */
+
 #define BOOL int
 
 #include <netdb.h>
@@ -34,7 +42,6 @@
 #include <sys/socket.h>
 #include <signal.h>
 #include <errno.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <strings.h>
 
@@ -42,3 +49,4 @@
 #define FALSE 0
 
 #endif /* _SMBLIB_STD_DEFINES_H */
+

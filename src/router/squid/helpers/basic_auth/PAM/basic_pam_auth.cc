@@ -1,5 +1,14 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * PAM authenticator module for Squid.
+ *
  * Copyright (C) 1999,2002,2003 Henrik Nordstrom <hno@squid-cache.org>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -49,40 +58,27 @@
  *
  *   Version 2.0, 2002-01-07
  *      One shot mode, command line options
- *	man page
+ *  man page
  *
  *   Version 1.3, 1999-12-10
- *   	Bugfix release 1.3 to work around Solaris 2.6
+ *      Bugfix release 1.3 to work around Solaris 2.6
  *      brokenness (not sending arguments to conversation
  *      functions)
  *
  *   Version 1.2, internal release
  *
  *   Version 1.1, 1999-05-11
- *	Initial version
- *
- * Compile this program with: gcc -o basic_pam_auth basic_pam_auth.cc -lpam -ldl
+ *  Initial version
  */
 #include "squid.h"
 #include "helpers/defines.h"
 #include "rfc1738.h"
 #include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_ASSERT_H
-#include <assert.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
-#if HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-#if HAVE_TIME_H
-#include <time.h>
-#endif
+#include <cassert>
+#include <csignal>
+#include <cstring>
+#include <ctime>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -101,7 +97,7 @@
 #endif
 
 #if _SQUID_SOLARIS_
-static char *password = NULL;	/* Workaround for Solaris 2.6 brokenness */
+static char *password = NULL;   /* Workaround for Solaris 2.6 brokenness */
 #endif
 
 extern "C" int password_conversation(int num_msg, PAM_CONV_FUNC_CONST_PARM struct pam_message **msg,
@@ -158,6 +154,7 @@ static void usage(char *program)
     fprintf(stderr, "           to authenticate all users\n");
     fprintf(stderr, " -o        Do not perform account mgmt (account expiration etc)\n");
     fprintf(stderr, " -1        Only one user authentication per PAM connection\n");
+    fprintf(stderr, " -r        Detect and remove Negotiate/NTLM realm from username\n");
 }
 
 int
@@ -172,12 +169,13 @@ main(int argc, char *argv[])
     int ttl = DEFAULT_SQUID_PAM_TTL;
     const char *service = DEFAULT_SQUID_PAM_SERVICE;
     int no_acct_mgmt = 0;
+    int no_realm = 0;
 
     /* make standard output line buffered */
     setvbuf(stdout, NULL, _IOLBF, 0);
 
     while (1) {
-        int ch = getopt(argc, argv, "1n:t:o");
+        int ch = getopt(argc, argv, "1n:t:or");
         switch (ch) {
         case -1:
             goto start;
@@ -192,6 +190,9 @@ main(int argc, char *argv[])
             break;
         case 'o':
             no_acct_mgmt = 1;
+            break;
+        case 'r':
+            no_realm = 1;
             break;
         default:
             fprintf(stderr, "FATAL: Unknown getopt value '%c'\n", ch);
@@ -223,7 +224,19 @@ start:
         ++password_buf;
         rfc1738_unescape(user);
         rfc1738_unescape(password_buf);
-        conv.appdata_ptr = (char *) password_buf;	/* from buf above. not allocated */
+        conv.appdata_ptr = (char *) password_buf;   /* from buf above. not allocated */
+
+        if (no_realm) {
+            /* Remove DOMAIN\.. and ...@domain from the user name in case the user
+             * thought this was an NTLM or Negotiate authentication popup box
+             */
+            char * user_ptr = strchr(user, '@');
+            if (user_ptr) *user_ptr = 0;
+            else {
+                user_ptr = strchr(user, '\\');
+                if (user_ptr) user = user_ptr + 1;
+            }
+        }
 
 #if _SQUID_SOLARIS_
         /* Workaround for Solaris 2.6 where the PAM library is broken
@@ -297,3 +310,4 @@ error:
     }
     return 0;
 }
+

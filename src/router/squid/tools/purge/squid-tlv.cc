@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 // Author:  Jens-S. V?ckler <voeckler@rvs.uni-hannover.de>
 //
 // File:    squid-tlv.cc
@@ -31,13 +39,12 @@
 // Revision 1.1  1999/06/15 21:10:16  voeckler
 // Initial revision
 //
-//
+
 #include "squid.h"
-//#include <assert.h>
 #include "squid-tlv.hh"
 
 SquidTLV::SquidTLV( SquidMetaType _type, size_t _size, void* _data )
-        :next(0),size(_size)
+    :next(0),size(_size)
 {
     type = _type;
     data = (char*) _data;
@@ -74,3 +81,4 @@ SquidMetaList::search( SquidMetaType type ) const
     while ( temp && temp->type != type ) temp = temp->next;
     return temp;
 }
+

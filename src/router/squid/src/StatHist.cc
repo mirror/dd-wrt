@@ -1,42 +1,18 @@
-
 /*
- * DEBUG: section 62    Generic Histogram
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 62    Generic Histogram */
 
 #include "squid.h"
 #include "StatHist.h"
 
-#if HAVE_MATH_H
-#include <math.h>
-#endif
+#include <cmath>
+
 /* Local functions */
 static StatHistBinDumper statHistBinDumper;
 
@@ -63,8 +39,8 @@ StatHist::init(unsigned int newCapacity, hbase_f * val_in_, hbase_f * val_out_, 
 }
 
 StatHist::StatHist(const StatHist &src) :
-        capacity_(src.capacity_), min_(src.min_), max_(src.max_),
-        scale_(src.scale_), val_in(src.val_in), val_out(src.val_out)
+    capacity_(src.capacity_), min_(src.min_), max_(src.max_),
+    scale_(src.scale_), val_in(src.val_in), val_out(src.val_out)
 {
     if (src.bins!=NULL) {
         bins = static_cast<bins_type *>(xcalloc(src.capacity_, sizeof(bins_type)));
@@ -73,11 +49,11 @@ StatHist::StatHist(const StatHist &src) :
 }
 
 void
-StatHist::count(double val)
+StatHist::count(double v)
 {
     if (bins==NULL) //do not count before initialization or after destruction
         return;
-    const unsigned int bin = findBin(val);
+    const unsigned int bin = findBin(v);
     ++bins[bin];
 }
 
@@ -85,9 +61,9 @@ unsigned int
 StatHist::findBin(double v)
 {
 
-    v -= min_;		/* offset */
+    v -= min_;      /* offset */
 
-    if (v <= 0.0)		/* too small */
+    if (v <= 0.0)       /* too small */
         return 0;
 
     unsigned int bin;
@@ -97,7 +73,7 @@ StatHist::findBin(double v)
         return 0;
     bin = static_cast <unsigned int>(tmp_bin);
 
-    if (bin >= capacity_)	/* too big */
+    if (bin >= capacity_)   /* too big */
         bin = capacity_ - 1;
 
     return bin;
@@ -205,6 +181,26 @@ StatHist::dump(StoreEntry * sentry, StatHistBinDumper * bd) const
     }
 }
 
+StatHist &
+StatHist::operator += (const StatHist &B)
+{
+    Must(capacity_ == B.capacity_);
+    Must(min_ == B.min_);
+    Must(max_ == B.max_);
+
+    if (B.bins == NULL) { // B was not yet initializted
+        return *this;
+    }
+    if (bins == NULL) { // this histogram was not yet initialized
+        *this = B;
+        return *this;
+    }
+    for (unsigned int i = 0; i < capacity_; ++i) {
+        bins[i] += B.bins[i];
+    }
+    return *this;
+}
+
 /* log based histogram */
 double
 Math::Log(double x)
@@ -253,3 +249,4 @@ statHistIntDumper(StoreEntry * sentry, int idx, double val, double size, int cou
     if (count)
         storeAppendPrintf(sentry, "%9d\t%9d\n", (int) val, count);
 }
+

@@ -1,35 +1,12 @@
-
 /*
- * DEBUG: section 19    Store Memory Primitives
- * AUTHOR: Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 19    Store Memory Primitives */
 
 #include "squid.h"
 #include "comm/Connection.h"
@@ -74,30 +51,52 @@ MemObject::inUseCount()
     return Pool().inUseCount();
 }
 
-void
-MemObject::resetUrls(char const *aUrl, char const *aLog_url)
+const char *
+MemObject::storeId() const
 {
-    safe_free(url);
-    safe_free(log_url);    /* XXX account log_url */
-    log_url = xstrdup(aLog_url);
-    url = xstrdup(aUrl);
+    if (!storeId_.size()) {
+        debugs(20, DBG_IMPORTANT, "Bug: Missing MemObject::storeId value");
+        dump();
+        storeId_ = "[unknown_URI]";
+    }
+    return storeId_.termedBuf();
 }
 
-MemObject::MemObject(char const *aUrl, char const *aLog_url)
+const char *
+MemObject::logUri() const
 {
-    debugs(20, 3, HERE << "new MemObject " << this);
-    HttpReply *rep = new HttpReply;
+    return logUri_.size() ? logUri_.termedBuf() : storeId();
+}
 
-    _reply  = HTTPMSGLOCK(rep);
-    url = xstrdup(aUrl);
+bool
+MemObject::hasUris() const
+{
+    return storeId_.size();
+}
+
+void
+MemObject::setUris(char const *aStoreId, char const *aLogUri, const HttpRequestMethod &aMethod)
+{
+    storeId_ = aStoreId;
+
+    // fast pointer comparison for a common storeCreateEntry(url,url,...) case
+    if (!aLogUri || aLogUri == aStoreId)
+        logUri_.clean(); // use storeId_ by default to minimize copying
+    else
+        logUri_ = aLogUri;
+
+    method = aMethod;
 
 #if URL_CHECKSUM_DEBUG
-
-    chksum = url_checksum(url);
-
+    chksum = url_checksum(urlXXX());
 #endif
+}
 
-    log_url = xstrdup(aLog_url);
+MemObject::MemObject(): smpCollapsed(false)
+{
+    debugs(20, 3, HERE << "new MemObject " << this);
+    _reply = new HttpReply;
+    HTTPMSGLOCK(_reply);
 
     object_sz = -1;
 
@@ -109,14 +108,17 @@ MemObject::MemObject(char const *aUrl, char const *aLog_url)
 MemObject::~MemObject()
 {
     debugs(20, 3, HERE << "del MemObject " << this);
-    const Ctx ctx = ctx_enter(url);
-#if URL_CHECKSUM_DEBUG
+    const Ctx ctx = ctx_enter(hasUris() ? urlXXX() : "[unknown_ctx]");
 
-    assert(chksum == url_checksum(url));
+#if URL_CHECKSUM_DEBUG
+    checkUrlChecksum();
 #endif
 
-    if (!shutting_down)
+    if (!shutting_down) { // Store::Root() is FATALly missing during shutdown
+        assert(xitTable.index < 0);
+        assert(memCache.index < 0);
         assert(swapout.sio == NULL);
+    }
 
     data_hdr.freeContent();
 
@@ -135,10 +137,6 @@ MemObject::~MemObject()
 
     ctx_exit(ctx);              /* must exit before we free mem->url */
 
-    safe_free(url);
-
-    safe_free(log_url);    /* XXX account log_url */
-
     safe_free(vary_headers);
 }
 
@@ -149,13 +147,10 @@ MemObject::unlinkRequest()
 }
 
 void
-MemObject::write ( StoreIOBuffer writeBuffer, STMCB *callback, void *callbackData)
+MemObject::write(const StoreIOBuffer &writeBuffer)
 {
     PROF_start(MemObject_write);
     debugs(19, 6, "memWrite: offset " << writeBuffer.offset << " len " << writeBuffer.length);
-
-    /* the offset is into the content, not the headers */
-    writeBuffer.offset += (_reply ? _reply->hdr_sz : 0);
 
     /* We don't separate out mime headers yet, so ensure that the first
      * write is at offset 0 - where they start
@@ -163,7 +158,6 @@ MemObject::write ( StoreIOBuffer writeBuffer, STMCB *callback, void *callbackDat
     assert (data_hdr.endOffset() || writeBuffer.offset == 0);
 
     assert (data_hdr.write (writeBuffer));
-    callback (callbackData, writeBuffer);
     PROF_stop(MemObject_write);
 }
 
@@ -182,7 +176,8 @@ MemObject::dump() const
     debugs(20, DBG_IMPORTANT, "MemObject->nclients: " << nclients);
     debugs(20, DBG_IMPORTANT, "MemObject->reply: " << _reply);
     debugs(20, DBG_IMPORTANT, "MemObject->request: " << request);
-    debugs(20, DBG_IMPORTANT, "MemObject->log_url: " << checkNullString(log_url));
+    debugs(20, DBG_IMPORTANT, "MemObject->logUri: " << logUri_);
+    debugs(20, DBG_IMPORTANT, "MemObject->storeId: " << storeId_);
 }
 
 HttpReply const *
@@ -195,7 +190,8 @@ void
 MemObject::replaceHttpReply(HttpReply *newrep)
 {
     HTTPMSGUNLOCK(_reply);
-    _reply = HTTPMSGLOCK(newrep);
+    _reply = newrep;
+    HTTPMSGLOCK(_reply);
 }
 
 struct LowestMemReader : public unary_function<store_client, void> {
@@ -224,8 +220,7 @@ struct StoreClientStats : public unary_function<store_client, void> {
 void
 MemObject::stat(MemBuf * mb) const
 {
-    mb->Printf("\t%s %s\n",
-               RequestMethodStr(method), log_url);
+    mb->Printf("\t" SQUIDSBUFPH " %s\n", SQUIDSBUFPRINT(method.image()), logUri());
     if (vary_headers)
         mb->Printf("\tvary_headers: %s\n", vary_headers);
     mb->Printf("\tinmem_lo: %" PRId64 "\n", inmem_lo);
@@ -236,6 +231,17 @@ MemObject::stat(MemBuf * mb) const
     if (swapout.sio.getRaw())
         mb->Printf("\tswapout: %" PRId64 " bytes written\n",
                    (int64_t) swapout.sio->offset());
+
+    if (xitTable.index >= 0)
+        mb->Printf("\ttransient index: %d state: %d\n",
+                   xitTable.index, xitTable.io);
+    if (memCache.index >= 0)
+        mb->Printf("\tmem-cache index: %d state: %d offset: %" PRId64 "\n",
+                   memCache.index, memCache.io, memCache.offset);
+    if (object_sz >= 0)
+        mb->Printf("\tobject_sz: %" PRId64 "\n", object_sz);
+    if (smpCollapsed)
+        mb->Printf("\tsmp-collapsed\n");
 
     StoreClientStats statsVisitor(mb);
 
@@ -306,7 +312,15 @@ MemObject::lowestMemReaderOffset() const
 bool
 MemObject::readAheadPolicyCanRead() const
 {
-    return endOffset() - getReply()->hdr_sz < lowestMemReaderOffset() + Config.readAheadGap;
+    const bool canRead = endOffset() - getReply()->hdr_sz <
+                         lowestMemReaderOffset() + Config.readAheadGap;
+
+    if (!canRead) {
+        debugs(19, 9, "no: " << endOffset() << '-' << getReply()->hdr_sz <<
+               " < " << lowestMemReaderOffset() << '+' << Config.readAheadGap);
+    }
+
+    return canRead;
 }
 
 void
@@ -320,7 +334,7 @@ MemObject::addClient(store_client *aClient)
 void
 MemObject::checkUrlChecksum () const
 {
-    assert(chksum == url_checksum(url));
+    assert(chksum == url_checksum(urlXXX()));
 }
 
 #endif
@@ -389,7 +403,7 @@ MemObject::trimSwappable()
         new_mem_lo = on_disk - 1;
 
     if (new_mem_lo == -1)
-        new_mem_lo = 0;	/* the above might become -1 */
+        new_mem_lo = 0; /* the above might become -1 */
 
     data_hdr.freeDataUpto(new_mem_lo);
 
@@ -399,11 +413,11 @@ MemObject::trimSwappable()
 void
 MemObject::trimUnSwappable()
 {
-    int64_t new_mem_lo = policyLowestOffsetToKeep(0);
-    assert (new_mem_lo > 0);
-
-    data_hdr.freeDataUpto(new_mem_lo);
-    inmem_lo = new_mem_lo;
+    if (const int64_t new_mem_lo = policyLowestOffsetToKeep(false)) {
+        assert (new_mem_lo > 0);
+        data_hdr.freeDataUpto(new_mem_lo);
+        inmem_lo = new_mem_lo;
+    } // else we should not trim anything at this time
 }
 
 bool
@@ -496,3 +510,4 @@ MemObject::availableForSwapOut() const
 {
     return endOffset() - swapout.queue_offset;
 }
+

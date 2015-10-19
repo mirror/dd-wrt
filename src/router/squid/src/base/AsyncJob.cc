@@ -1,6 +1,12 @@
 /*
- * DEBUG: section 93    ICAP (RFC 3507) Client
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    ICAP (RFC 3507) Client */
 
 #include "squid.h"
 #include "base/AsyncCall.h"
@@ -22,7 +28,7 @@ AsyncJob::Pointer AsyncJob::Start(AsyncJob *j)
 }
 
 AsyncJob::AsyncJob(const char *aTypeName) :
-        stopReason(NULL), typeName(aTypeName), inCall(NULL)
+    stopReason(NULL), typeName(aTypeName), inCall(NULL)
 {
     debugs(93,5, "AsyncJob constructed, this=" << this <<
            " type=" << typeName << " [" << id << ']');

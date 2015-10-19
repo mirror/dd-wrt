@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef ICMP_NET_DB_H
 #define ICMP_NET_DB_H
 
@@ -70,3 +78,4 @@ CachePeer *netdbClosestParent(HttpRequest *);
 void netdbHostData(const char *host, int *samp, int *rtt, int *hops);
 
 #endif /* ICMP_NET_DB_H */
+

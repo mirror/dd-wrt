@@ -1,10 +1,17 @@
-#define SQUID_UNIT_TEST 1
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 #include "squid.h"
-#include "testString.h"
-#include "SquidString.h"
-#include "Mem.h"
 #include "event.h"
+#include "Mem.h"
+#include "SquidString.h"
+#include "testString.h"
+#include "unitTestMain.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION( testString );
 
@@ -68,3 +75,4 @@ void testString::testSubstr()
     String ref("34");
     CPPUNIT_ASSERT(check == ref);
 }
+

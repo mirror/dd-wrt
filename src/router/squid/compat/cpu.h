@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_COMPAT_CPU_H
 #define SQUID_COMPAT_CPU_H
 
@@ -61,3 +69,4 @@ inline int sched_getaffinity(int, size_t, cpu_set_t *) { return ENOTSUP; }
 #endif /* HAVE_CPU_AFFINITY */
 
 #endif /* SQUID_COMPAT_CPU_H */
+

@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  *  basic_smb_auth - SMB proxy authentication module
  *  Copyright (C) 1998  Richard Huveneers <richard@hekkihek.hacom.nl>
  *
@@ -14,56 +22,27 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
  */
+
 #include "squid.h"
 #include "helpers/defines.h"
 #include "rfc1738.h"
 #include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
+#include <cstring>
 
-#define NMB_UNICAST		1
-#define NMB_BROADCAST	2
+#define NMB_UNICAST     1
+#define NMB_BROADCAST   2
 
 struct SMBDOMAIN {
-    const char *name;		/* domain name */
-    const char *sname;		/* match this with user input */
-    const char *passthrough;	/* pass-through authentication */
-    const char *nmbaddr;	/* name service address */
-    int nmbcast;		/* broadcast or unicast */
-    char *authshare;		/* share name of auth file */
-    const char *authfile;	/* pathname of auth file */
-    struct SMBDOMAIN *next;	/* linked list */
+    const char *name;       /* domain name */
+    const char *sname;      /* match this with user input */
+    const char *passthrough;    /* pass-through authentication */
+    const char *nmbaddr;    /* name service address */
+    int nmbcast;        /* broadcast or unicast */
+    char *authshare;        /* share name of auth file */
+    const char *authfile;   /* pathname of auth file */
+    struct SMBDOMAIN *next; /* linked list */
 };
 
 struct SMBDOMAIN *firstdom = NULL;
@@ -132,8 +111,7 @@ main(int argc, char *argv[])
             break;
 
         if (strcmp(argv[i], "-W") == 0) {
-            if ((dom = (struct SMBDOMAIN *) malloc(sizeof(struct SMBDOMAIN))) == NULL)
-                return 1;
+            dom = static_cast<struct SMBDOMAIN *>(xmalloc(sizeof(struct SMBDOMAIN)));
 
             dom->name = dom->sname = argv[++i];
             dom->passthrough = "";
@@ -257,6 +235,7 @@ main(int argc, char *argv[])
             SEND_OK("");
         else
             SEND_ERR("");
-    }				/* while (1) */
+    }               /* while (1) */
     return 0;
 }
+

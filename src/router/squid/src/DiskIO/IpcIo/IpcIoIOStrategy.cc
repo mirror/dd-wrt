@@ -1,6 +1,12 @@
 /*
- * DEBUG: section 47    Store Directory Routines
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 47    Store Directory Routines */
 
 #include "squid.h"
 #include "IpcIoFile.h"
@@ -37,3 +43,4 @@ IpcIoIOStrategy::unlinkFile(char const *path)
 {
     unlinkdUnlink(path);
 }
+

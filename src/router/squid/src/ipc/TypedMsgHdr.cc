@@ -1,14 +1,19 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #include "squid.h"
 #include "base/TextException.h"
 #include "ipc/TypedMsgHdr.h"
 #include "tools.h"
 
-#include <string.h>
+#include <cstring>
 
 Ipc::TypedMsgHdr::TypedMsgHdr()
 {
@@ -132,38 +137,38 @@ Ipc::TypedMsgHdr::putString(const String &s)
 }
 
 void
-Ipc::TypedMsgHdr::getFixed(void *raw, size_t size) const
+Ipc::TypedMsgHdr::getFixed(void *rawBuf, size_t rawSize) const
 {
     // no need to load size because it is constant
-    getRaw(raw, size);
+    getRaw(rawBuf, rawSize);
 }
 
 void
-Ipc::TypedMsgHdr::putFixed(const void *raw, size_t size)
+Ipc::TypedMsgHdr::putFixed(const void *rawBuf, size_t rawSize)
 {
     // no need to store size because it is constant
-    putRaw(raw, size);
+    putRaw(rawBuf, rawSize);
 }
 
 /// low-level loading of exactly size bytes of raw data
 void
-Ipc::TypedMsgHdr::getRaw(void *raw, size_t size) const
+Ipc::TypedMsgHdr::getRaw(void *rawBuf, size_t rawSize) const
 {
-    if (size > 0) {
-        Must(size <= data.size - offset);
-        memcpy(raw, data.raw + offset, size);
-        offset += size;
+    if (rawSize > 0) {
+        Must(rawSize <= data.size - offset);
+        memcpy(rawBuf, data.raw + offset, rawSize);
+        offset += rawSize;
     }
 }
 
 /// low-level storage of exactly size bytes of raw data
 void
-Ipc::TypedMsgHdr::putRaw(const void *raw, size_t size)
+Ipc::TypedMsgHdr::putRaw(const void *rawBuf, size_t rawSize)
 {
-    if (size > 0) {
-        Must(size <= sizeof(data.raw) - data.size);
-        memcpy(data.raw + data.size, raw, size);
-        data.size += size;
+    if (rawSize > 0) {
+        Must(rawSize <= sizeof(data.raw) - data.size);
+        memcpy(data.raw + data.size, rawBuf, rawSize);
+        data.size += rawSize;
     }
 }
 
@@ -190,7 +195,7 @@ Ipc::TypedMsgHdr::putFd(int fd)
     cmsg->cmsg_type = SCM_RIGHTS;
     cmsg->cmsg_len = CMSG_LEN(sizeof(int) * fdCount);
 
-    int *fdStore = reinterpret_cast<int*>(CMSG_DATA(cmsg));
+    int *fdStore = reinterpret_cast<int*>(SQUID_CMSG_DATA(cmsg));
     memcpy(fdStore, &fd, fdCount * sizeof(int));
     msg_controllen = cmsg->cmsg_len;
 
@@ -208,7 +213,7 @@ Ipc::TypedMsgHdr::getFd() const
     Must(cmsg->cmsg_type == SCM_RIGHTS);
 
     const int fdCount = 1;
-    const int *fdStore = reinterpret_cast<const int*>(CMSG_DATA(cmsg));
+    const int *fdStore = reinterpret_cast<const int*>(SQUID_CMSG_DATA(cmsg));
     int fd = -1;
     memcpy(&fd, fdStore, fdCount * sizeof(int));
     return fd;
@@ -251,3 +256,4 @@ Ipc::TypedMsgHdr::allocControl()
     msg_control = &ctrl;
     msg_controllen = sizeof(ctrl);
 }
+

@@ -1,6 +1,12 @@
 /*
- * DEBUG: section 93    ICAP (RFC 3507) Client
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    ICAP (RFC 3507) Client */
 
 #include "squid.h"
 #include "adaptation/Answer.h"
@@ -23,16 +29,16 @@
 CBDATA_NAMESPACED_CLASS_INIT(Adaptation::Icap, ServiceRep);
 
 Adaptation::Icap::ServiceRep::ServiceRep(const ServiceConfigPointer &svcCfg):
-        AsyncJob("Adaptation::Icap::ServiceRep"), Adaptation::Service(svcCfg),
-        theOptions(NULL), theOptionsFetcher(0), theLastUpdate(0),
-        theBusyConns(0),
-        theAllWaiters(0),
-        connOverloadReported(false),
-        theIdleConns(NULL),
-        isSuspended(0), notifying(false),
-        updateScheduled(false),
-        wasAnnouncedUp(true), // do not announce an "up" service at startup
-        isDetached(false)
+    AsyncJob("Adaptation::Icap::ServiceRep"), Adaptation::Service(svcCfg),
+    theOptions(NULL), theOptionsFetcher(0), theLastUpdate(0),
+    theBusyConns(0),
+    theAllWaiters(0),
+    connOverloadReported(false),
+    theIdleConns(NULL),
+    isSuspended(0), notifying(false),
+    updateScheduled(false),
+    wasAnnouncedUp(true), // do not announce an "up" service at startup
+    isDetached(false)
 {
     setMaxConnections();
     theIdleConns = new IdleConnList("ICAP Service", NULL);
@@ -147,7 +153,7 @@ void Adaptation::Icap::ServiceRep::putConnection(const Comm::ConnectionPointer &
 void Adaptation::Icap::ServiceRep::noteConnectionUse(const Comm::ConnectionPointer &conn)
 {
     Must(Comm::IsConnOpen(conn));
-    fd_table[conn->fd].noteUse(NULL); // pconn re-use but not via PconnPool API
+    fd_table[conn->fd].noteUse(); // pconn re-use, albeit not via PconnPool API
 }
 
 void Adaptation::Icap::ServiceRep::noteConnectionFailed(const char *comment)
@@ -375,7 +381,8 @@ void Adaptation::Icap::ServiceRep::noteTimeToNotify()
     Pointer us = NULL;
 
     while (!theClients.empty()) {
-        Client i = theClients.pop_back();
+        Client i = theClients.back();
+        theClients.pop_back();
         ScheduleCallHere(i.callback);
         i.callback = 0;
     }
@@ -469,7 +476,7 @@ void Adaptation::Icap::ServiceRep::checkOptions()
     if (!theOptions->methods.empty()) {
         bool method_found = false;
         String method_list;
-        Vector <ICAP::Method>::iterator iter = theOptions->methods.begin();
+        std::vector <ICAP::Method>::iterator iter = theOptions->methods.begin();
 
         while (iter != theOptions->methods.end()) {
 
@@ -530,13 +537,13 @@ void Adaptation::Icap::ServiceRep::noteAdaptationAnswer(const Answer &answer)
     }
 
     Must(answer.kind == Answer::akForward); // no akBlock for OPTIONS requests
-    HttpMsg *msg = answer.message;
+    const HttpMsg *msg = answer.message.getRaw();
     Must(msg);
 
     debugs(93,5, HERE << "is interpreting new options " << status());
 
     Adaptation::Icap::Options *newOptions = NULL;
-    if (HttpReply *r = dynamic_cast<HttpReply*>(msg)) {
+    if (const HttpReply *r = dynamic_cast<const HttpReply*>(msg)) {
         newOptions = new Adaptation::Icap::Options;
         newOptions->configure(r);
     } else {
@@ -653,9 +660,9 @@ Adaptation::Icap::ServiceRep::optionsFetchTime() const
 
 Adaptation::Initiate *
 Adaptation::Icap::ServiceRep::makeXactLauncher(HttpMsg *virgin,
-        HttpRequest *cause)
+        HttpRequest *cause, AccessLogEntry::Pointer &alp)
 {
-    return new Adaptation::Icap::ModXactLauncher(virgin, cause, this);
+    return new Adaptation::Icap::ModXactLauncher(virgin, cause, alp, this);
 }
 
 // returns a temporary string depicting service status, for debugging
@@ -711,9 +718,9 @@ bool Adaptation::Icap::ServiceRep::detached() const
     return isDetached;
 }
 
-Adaptation::Icap::ConnWaiterDialer::ConnWaiterDialer(const CbcPointer<ModXact> &xact,
+Adaptation::Icap::ConnWaiterDialer::ConnWaiterDialer(const CbcPointer<Adaptation::Icap::ModXact> &xact,
         Adaptation::Icap::ConnWaiterDialer::Parent::Method aHandler):
-        Parent(xact, aHandler)
+    Parent(xact, aHandler)
 {
     theService = &xact->service();
     theService->noteNewWaiter();
@@ -729,3 +736,4 @@ Adaptation::Icap::ConnWaiterDialer::~ConnWaiterDialer()
 {
     theService->noteGoneWaiter();
 }
+

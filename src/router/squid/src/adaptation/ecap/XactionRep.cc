@@ -1,20 +1,29 @@
 /*
- * DEBUG: section 93    eCAP Interface
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    eCAP Interface */
+
 #include "squid.h"
 #include <libecap/common/area.h>
 #include <libecap/common/delay.h>
 #include <libecap/common/named_values.h>
 #include <libecap/common/names.h>
 #include <libecap/adapter/xaction.h>
-#include "HttpRequest.h"
-#include "HttpReply.h"
-#include "SquidTime.h"
 #include "adaptation/Answer.h"
-#include "adaptation/ecap/XactionRep.h"
 #include "adaptation/ecap/Config.h"
+#include "adaptation/ecap/XactionRep.h"
 #include "adaptation/Initiator.h"
+#include "base/AsyncJobCalls.h"
 #include "base/TextException.h"
+#include "format/Format.h"
+#include "HttpReply.h"
+#include "HttpRequest.h"
+#include "SquidTime.h"
 
 CBDATA_NAMESPACED_CLASS_INIT(Adaptation::Ecap::XactionRep, XactionRep);
 
@@ -36,16 +45,17 @@ public:
 };
 
 Adaptation::Ecap::XactionRep::XactionRep(
-    HttpMsg *virginHeader, HttpRequest *virginCause,
+    HttpMsg *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp,
     const Adaptation::ServicePointer &aService):
-        AsyncJob("Adaptation::Ecap::XactionRep"),
-        Adaptation::Initiate("Adaptation::Ecap::XactionRep"),
-        theService(aService),
-        theVirginRep(virginHeader), theCauseRep(NULL),
-        makingVb(opUndecided), proxyingAb(opUndecided),
-        adaptHistoryId(-1),
-        vbProductionFinished(false),
-        abProductionFinished(false), abProductionAtEnd(false)
+    AsyncJob("Adaptation::Ecap::XactionRep"),
+    Adaptation::Initiate("Adaptation::Ecap::XactionRep"),
+    theService(aService),
+    theVirginRep(virginHeader), theCauseRep(NULL),
+    makingVb(opUndecided), proxyingAb(opUndecided),
+    adaptHistoryId(-1),
+    vbProductionFinished(false),
+    abProductionFinished(false), abProductionAtEnd(false),
+    al(alp)
 {
     if (virginCause)
         theCauseRep = new MessageRep(virginCause);
@@ -62,7 +72,7 @@ void
 Adaptation::Ecap::XactionRep::master(const AdapterXaction &x)
 {
     Must(!theMaster);
-    Must(x != NULL);
+    Must(x);
     theMaster = x;
 }
 
@@ -124,9 +134,9 @@ Adaptation::Ecap::XactionRep::clientIpValue() const
         } else
 #endif
             client_addr = request->client_addr;
-        if (!client_addr.IsAnyAddr() && !client_addr.IsNoAddr()) {
+        if (!client_addr.isAnyAddr() && !client_addr.isNoAddr()) {
             char ntoabuf[MAX_IPSTRLEN] = "";
-            client_addr.NtoA(ntoabuf,MAX_IPSTRLEN);
+            client_addr.toStr(ntoabuf,MAX_IPSTRLEN);
             return libecap::Area::FromTempBuffer(ntoabuf, strlen(ntoabuf));
         }
     }
@@ -143,7 +153,7 @@ Adaptation::Ecap::XactionRep::usernameValue() const
     if (request->auth_user_request != NULL) {
         if (char const *name = request->auth_user_request->username())
             return libecap::Area::FromTempBuffer(name, strlen(name));
-        else if (request->extacl_user.defined() && request->extacl_user.size())
+        else if (request->extacl_user.size() > 0)
             return libecap::Area::FromTempBuffer(request->extacl_user.rawBuf(),
                                                  request->extacl_user.size());
     }
@@ -177,10 +187,10 @@ Adaptation::Ecap::XactionRep::metaValue(const libecap::Name &name) const
     HttpReply *reply = dynamic_cast<HttpReply*>(theVirginRep.raw().header);
 
     if (name.known()) { // must check to avoid empty names matching unset cfg
-        typedef Adaptation::Config::MetaHeaders::iterator ACAMLI;
+        typedef Notes::iterator ACAMLI;
         for (ACAMLI i = Adaptation::Config::metaHeaders.begin(); i != Adaptation::Config::metaHeaders.end(); ++i) {
-            if (name == (*i)->name.termedBuf()) {
-                if (const char *value = (*i)->match(request, reply))
+            if (name == (*i)->key.termedBuf()) {
+                if (const char *value = (*i)->match(request, reply, al))
                     return libecap::Area::FromTempString(value);
                 else
                     return libecap::Area();
@@ -199,11 +209,11 @@ Adaptation::Ecap::XactionRep::visitEachMetaHeader(libecap::NamedValueVisitor &vi
     Must(request);
     HttpReply *reply = dynamic_cast<HttpReply*>(theVirginRep.raw().header);
 
-    typedef Adaptation::Config::MetaHeaders::iterator ACAMLI;
+    typedef Notes::iterator ACAMLI;
     for (ACAMLI i = Adaptation::Config::metaHeaders.begin(); i != Adaptation::Config::metaHeaders.end(); ++i) {
-        const char *v = (*i)->match(request, reply);
+        const char *v = (*i)->match(request, reply, al);
         if (v) {
-            const libecap::Name name((*i)->name.termedBuf());
+            const libecap::Name name((*i)->key.termedBuf());
             const libecap::Area value = libecap::Area::FromTempString(v);
             visitor.visit(name, value);
         }
@@ -218,13 +228,26 @@ Adaptation::Ecap::XactionRep::start()
     if (!theVirginRep.raw().body_pipe)
         makingVb = opNever; // there is nothing to deliver
 
-    const HttpRequest *request = dynamic_cast<const HttpRequest*> (theCauseRep ?
-                                 theCauseRep->raw().header : theVirginRep.raw().header);
+    HttpRequest *request = dynamic_cast<HttpRequest*> (theCauseRep ?
+                           theCauseRep->raw().header : theVirginRep.raw().header);
     Must(request);
+
+    HttpReply *reply = dynamic_cast<HttpReply*>(theVirginRep.raw().header);
+
     Adaptation::History::Pointer ah = request->adaptLogHistory();
     if (ah != NULL) {
         // retrying=false because ecap never retries transactions
         adaptHistoryId = ah->recordXactStart(service().cfg().key, current_time, false);
+        typedef Notes::iterator ACAMLI;
+        for (ACAMLI i = Adaptation::Config::metaHeaders.begin(); i != Adaptation::Config::metaHeaders.end(); ++i) {
+            const char *v = (*i)->match(request, reply, al);
+            if (v) {
+                if (ah->metaHeaders == NULL)
+                    ah->metaHeaders = new NotePairs();
+                if (!ah->metaHeaders->hasPair((*i)->key.termedBuf(), v))
+                    ah->metaHeaders->add((*i)->key.termedBuf(), v);
+            }
+        }
     }
 
     theMaster->start();
@@ -236,7 +259,7 @@ Adaptation::Ecap::XactionRep::swanSong()
     // clear body_pipes, if any
     // this code does not maintain proxying* and canAccessVb states; should it?
 
-    if (theAnswerRep != NULL) {
+    if (theAnswerRep) {
         BodyPipe::Pointer body_pipe = answer().body_pipe;
         if (body_pipe != NULL) {
             Must(body_pipe->stillProducing(this));
@@ -260,6 +283,25 @@ Adaptation::Ecap::XactionRep::swanSong()
     Adaptation::Initiate::swanSong();
 }
 
+void
+Adaptation::Ecap::XactionRep::resume()
+{
+    // go async to gain exception protection and done()-based job destruction
+    typedef NullaryMemFunT<Adaptation::Ecap::XactionRep> Dialer;
+    AsyncCall::Pointer call = asyncCall(93, 5, "Adaptation::Ecap::XactionRep::doResume",
+                                        Dialer(this, &Adaptation::Ecap::XactionRep::doResume));
+    ScheduleCallHere(call);
+}
+
+/// the guts of libecap::host::Xaction::resume() API implementation
+/// which just goes async in Adaptation::Ecap::XactionRep::resume().
+void
+Adaptation::Ecap::XactionRep::doResume()
+{
+    Must(theMaster);
+    theMaster->resume();
+}
+
 libecap::Message &
 Adaptation::Ecap::XactionRep::virgin()
 {
@@ -276,7 +318,7 @@ Adaptation::Ecap::XactionRep::cause()
 libecap::Message &
 Adaptation::Ecap::XactionRep::adapted()
 {
-    Must(theAnswerRep != NULL);
+    Must(theAnswerRep);
     return *theAnswerRep;
 }
 
@@ -582,12 +624,6 @@ Adaptation::Ecap::XactionRep::adaptationAborted()
     mustStop("adaptationAborted");
 }
 
-bool
-Adaptation::Ecap::XactionRep::callable() const
-{
-    return !done();
-}
-
 void
 Adaptation::Ecap::XactionRep::noteMoreBodySpaceAvailable(RefCount<BodyPipe> bp)
 {
@@ -696,3 +732,4 @@ Adaptation::Ecap::XactionRep::status() const
 
     return buf.content();
 }
+

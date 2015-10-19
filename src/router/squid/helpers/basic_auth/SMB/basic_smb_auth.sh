@@ -1,5 +1,11 @@
 #!/bin/sh
 #
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
 # smb_auth - SMB proxy authentication module
 # Copyright (C) 1998  Richard Huveneers <richard@hekkihek.hacom.nl>
 #
@@ -24,7 +30,7 @@ read NMBCAST
 read AUTHSHARE
 read AUTHFILE
 read SMBUSER
-read SMBPASS
+read -r SMBPASS
 
 # Find domain controller
 echo "Domain name: $DOMAINNAME"
@@ -47,7 +53,7 @@ else
   addropt=""
 fi
 echo "Query address options: $addropt"
-dcip=`nmblookup $addropt "$PASSTHROUGH#1c" | awk '/^[0-9.]+ / { print $1 ; exit }'`
+dcip=`nmblookup $addropt "$PASSTHROUGH#1c" | awk '/^[0-9.]+\..+ / { print $1 ; exit }'`
 echo "Domain controller IP address: $dcip"
 [ -n "$dcip" ] || exit 1
 
@@ -58,8 +64,12 @@ echo "Domain controller NETBIOS name: $dcname"
 [ -n "$dcname" ] || exit 1
 
 # Pass password to smbclient through environment. Not really safe.
-USER="$SMBUSER%$SMBPASS"
+# NOTE: this differs from what the smbclient documentation says.
+#       But works when the smbclient documented way does not.
+USER="$SMBUSER"
+PASSWD="$SMBPASS"
 export USER
+export PASSWD
 
 # Read the contents of the file $AUTHFILE on the $AUTHSHARE share
 authfilebs=`echo "$AUTHFILE" | tr / '\\\\'`

@@ -1,25 +1,43 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * Written By Rabellino Sergio (rabellino@di.unito.it) For Solaris 2.x
  */
 #include "squid.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+
+#include <cstdlib>
+#include <cstring>
+#if HAVE_SYSLOG_H
 #include <syslog.h>
+#endif
+#if HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#if HAVE_RPC_RPC_H
 #include <rpc/rpc.h>
+#endif
 
 #if _SQUID_FREEBSD_  && !defined(BOOL_DEFINED)
 // BUG: FreeBSD rpcsvc/yp_* headers try to redefine bool unless we match their non-standard hack.
 #define BOOL_DEFINED
 #endif
 
+#if HAVE_RPCSVC_YPCLNT_H
 #include <rpcsvc/ypclnt.h>
+#endif
+#if HAVE_RPCSVC_YP_PROT_H
 #include <rpcsvc/yp_prot.h>
+#endif
 
 #include "nis_support.h"
 
-#define NO_YPERR 0		/* There is no error */
+#define NO_YPERR 0      /* There is no error */
 
 char *
 get_nis_password(char *user, char *nisdomain, char *nismap)
@@ -51,9 +69,10 @@ get_nis_password(char *user, char *nisdomain, char *nismap)
     case YPERR_YPBIND:
         syslog(LOG_ERR, "Squid Authentication through ypbind failure: can't communicate with ypbind");
         return NULL;
-    case YPERR_KEY:		/* No such key in map */
+    case YPERR_KEY:     /* No such key in map */
         return NULL;
     default:
         return NULL;
     }
 }
+

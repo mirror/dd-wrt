@@ -1,35 +1,12 @@
 /*
- * DEBUG: section 04    Error Generation
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 04    Error Generation */
 
 #ifndef   SQUID_ERRORPAGE_H
 #define   SQUID_ERRORPAGE_H
@@ -38,12 +15,12 @@
 #include "comm/forward.h"
 #include "err_detail_type.h"
 #include "err_type.h"
-#include "HttpStatusCode.h"
+#include "http/StatusCode.h"
 #include "ip/Address.h"
 #include "SquidString.h"
 /* auth/UserRequest.h is empty unless USE_AUTH is defined */
 #include "auth/UserRequest.h"
-#if USE_SSL
+#if USE_OPENSSL
 #include "ssl/ErrorDetail.h"
 #endif
 
@@ -97,9 +74,12 @@ class MemBuf;
 class ErrorState
 {
 public:
-    ErrorState(err_type type, http_status, HttpRequest * request);
+    ErrorState(err_type type, Http::StatusCode, HttpRequest * request);
     ErrorState(); // not implemented.
     ~ErrorState();
+
+    /// Creates a general request forwarding error with the right http_status.
+    static ErrorState *NewForwarding(err_type type, HttpRequest *request);
 
     /**
      * Allocates and initializes an error response
@@ -153,7 +133,7 @@ public:
     err_type type;
     int page_id;
     char *err_language;
-    http_status httpStatus;
+    Http::StatusCode httpStatus;
 #if USE_AUTH
     Auth::UserRequest::Pointer auth_user_request;
 #endif
@@ -170,10 +150,6 @@ public:
     void *callback_data;
 
     struct {
-        unsigned int flag_cbdata:1;
-    } flags;
-
-    struct {
         wordlist *server_msg;
         char *request;
         char *reply;
@@ -184,7 +160,7 @@ public:
     char *request_hdrs;
     char *err_msg; /* Preformatted error message from the cache */
 
-#if USE_SSL
+#if USE_OPENSSL
     Ssl::ErrorDetail *detail;
 #endif
     /// type-specific detail about the transaction error;
@@ -282,7 +258,7 @@ public:
      * template selected (eg because of a "Accept-Language: *"), or not available
      * template found this function return false.
      */
-    bool loadFor(HttpRequest *request);
+    bool loadFor(const HttpRequest *request);
 
     /**
      * Load the file given by "path". It uses the "parse()" method.
@@ -328,3 +304,4 @@ protected:
 bool strHdrAcptLangGetItem(const String &hdr, char *lang, int langLen, size_t &pos);
 
 #endif /* SQUID_ERRORPAGE_H */
+

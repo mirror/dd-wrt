@@ -1,51 +1,28 @@
 /*
- * DEBUG: section 33    Client-side Routines
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 33    Client-side Routines */
 
 #ifndef SQUID_CLIENTSIDE_H
 #define SQUID_CLIENTSIDE_H
 
-#include "base/AsyncJob.h"
-#include "BodyPipe.h"
+#include "base/RunnersRegistry.h"
+#include "clientStreamForward.h"
 #include "comm.h"
-#include "CommCalls.h"
-#include "HttpRequest.h"
+#include "helper/forward.h"
 #include "HttpControlMsg.h"
 #include "HttpParser.h"
-#include "RefCount.h"
-#include "StoreIOBuffer.h"
+#include "ipc/FdNotes.h"
+#include "SBuf.h"
 #if USE_AUTH
 #include "auth/UserRequest.h"
 #endif
-#if USE_SSL
+#if USE_OPENSSL
 #include "ssl/support.h"
 #endif
 
@@ -82,22 +59,26 @@ class PortCfg;
  *
  * The individual processing actions are done by other Jobs which we
  * kick off as needed.
+ *
+ * XXX: If an async call ends the ClientHttpRequest job, ClientSocketContext
+ * (and ConnStateData) may not know about it, leading to segfaults and
+ * assertions like areAllContextsForThisConnection(). This is difficult to fix
+ * because ClientHttpRequest lacks a good way to communicate its ongoing
+ * destruction back to the ClientSocketContext which pretends to "own" *http.
  */
 class ClientSocketContext : public RefCountable
 {
 
 public:
     typedef RefCount<ClientSocketContext> Pointer;
-    void *operator new(size_t);
-    void operator delete(void *);
-    ClientSocketContext();
+    ClientSocketContext(const Comm::ConnectionPointer &aConn, ClientHttpRequest *aReq);
     ~ClientSocketContext();
     bool startOfOutput() const;
-    void writeComplete(const Comm::ConnectionPointer &conn, char *bufnotused, size_t size, comm_err_t errflag);
+    void writeComplete(const Comm::ConnectionPointer &conn, char *bufnotused, size_t size, Comm::Flag errflag);
     void keepaliveNextRequest();
 
     Comm::ConnectionPointer clientConnection; /// details about the client connection socket.
-    ClientHttpRequest *http;	/* we own this */
+    ClientHttpRequest *http;    /* we pretend to own that job */
     HttpReply *reply;
     char reqbuf[HTTP_REQBUF_SZ];
     Pointer next;
@@ -137,6 +118,7 @@ public:
     void buildRangeHeader(HttpReply * rep);
     clientStreamNode * getTail() const;
     clientStreamNode * getClientReplyContext() const;
+    ConnStateData *getConn() const;
     void connIsFinished();
     void removeFromConnectionList(ConnStateData * conn);
     void deferRecipientForLater(clientStreamNode * node, HttpReply * rep, StoreIOBuffer receivedData);
@@ -149,7 +131,7 @@ public:
 
 protected:
     static IOCB WroteControlMsg;
-    void wroteControlMsg(const Comm::ConnectionPointer &conn, char *bufnotused, size_t size, comm_err_t errflag, int xerrno);
+    void wroteControlMsg(const Comm::ConnectionPointer &conn, char *bufnotused, size_t size, Comm::Flag errflag, int xerrno);
 
 private:
     void prepareReply(HttpReply * rep);
@@ -164,11 +146,11 @@ private:
     bool mayUseConnection_; /* This request may use the connection. Don't read anymore requests for now */
     bool connRegistered_;
 
-    CBDATA_CLASS(ClientSocketContext);
+    CBDATA_CLASS2(ClientSocketContext);
 };
 
 class ConnectionDetail;
-#if USE_SSL
+#if USE_OPENSSL
 namespace Ssl
 {
 class ServerBump;
@@ -177,7 +159,7 @@ class ServerBump;
 /**
  * Manages a connection to a client.
  *
- * Multiple requests (up to 2) can be pipelined. This object is responsible for managing
+ * Multiple requests (up to pipeline_prefetch) can be pipelined. This object is responsible for managing
  * which one is currently being fulfilled and what happens to the queue if the current one
  * causes the client connection to be closed early.
  *
@@ -188,28 +170,24 @@ class ServerBump;
  *
  * If the above can be confirmed accurate we can call this object PipelineManager or similar
  */
-class ConnStateData : public BodyProducer, public HttpControlMsgSink
+class ConnStateData : public BodyProducer, public HttpControlMsgSink, public RegisteredRunner
 {
 
 public:
-
-    ConnStateData();
-    ~ConnStateData();
+    explicit ConnStateData(const MasterXaction::Pointer &xact);
+    virtual ~ConnStateData();
 
     void readSomeData();
-    int getAvailableBufferLength() const;
     bool areAllContextsForThisConnection() const;
     void freeAllContexts();
     void notifyAllContexts(const int xerrno); ///< tell everybody about the err
     /// Traffic parsing
     bool clientParseRequests();
     void readNextRequest();
-    bool maybeMakeSpaceAvailable();
     ClientSocketContext::Pointer getCurrentContext() const;
     void addContextToQueue(ClientSocketContext * context);
     int getConcurrentRequestCount() const;
     bool isOpen() const;
-    void checkHeaderLimits();
 
     // HttpControlMsgSink API
     virtual void sendControlMsg(HttpControlMsg msg);
@@ -220,12 +198,10 @@ public:
     struct In {
         In();
         ~In();
-        char *addressToReadInto() const;
+        bool maybeMakeSpaceAvailable();
 
         ChunkedCodingParser *bodyParser; ///< parses chunked request body
-        char *buf;
-        size_t notYetUsed;
-        size_t allocatedSize;
+        SBuf buf;
     } in;
 
     /** number of body bytes we need to comm_read for the "current" request
@@ -238,10 +214,20 @@ public:
 
 #if USE_AUTH
     /**
-     * note this is ONLY connection based because NTLM and Negotiate is against HTTP spec.
-     * the user details for connection based authentication
+     * Fetch the user details for connection based authentication
+     * NOTE: this is ONLY connection based because NTLM and Negotiate is against HTTP spec.
      */
-    Auth::UserRequest::Pointer auth_user_request;
+    const Auth::UserRequest::Pointer &getAuth() const { return auth_; }
+
+    /**
+     * Set the user details for connection-based authentication to use from now until connection closure.
+     *
+     * Any change to existing credentials shows that something invalid has happened. Such as:
+     * - NTLM/Negotiate auth was violated by the per-request headers missing a revalidation token
+     * - NTLM/Negotiate auth was violated by the per-request headers being for another user
+     * - SSL-Bump CONNECT tunnel with persistent credentials has ended
+     */
+    void setAuth(const Auth::UserRequest::Pointer &aur, const char *cause);
 #endif
 
     /**
@@ -263,13 +249,15 @@ public:
         int port;               /* port of pinned connection */
         bool pinned;             /* this connection was pinned */
         bool auth;               /* pinned for www authentication */
+        bool reading;   ///< we are monitoring for peer connection closure
         bool zeroReply; ///< server closed w/o response (ERR_ZERO_SIZE_OBJECT)
         CachePeer *peer;             /* CachePeer the connection goes via */
         AsyncCall::Pointer readHandler; ///< detects serverConnection closure
         AsyncCall::Pointer closeHandler; /*The close handler for pinned server side connection*/
     } pinning;
 
-    AnyP::PortCfg *port;
+    /// Squid listening port details where this connection arrived.
+    AnyP::PortCfgPointer port;
 
     bool transparent() const;
     bool reading() const;
@@ -286,21 +274,21 @@ public:
 
     void expectNoForwarding(); ///< cleans up virgin request [body] forwarding state
 
+    /* BodyPipe API */
     BodyPipe::Pointer expectRequestBody(int64_t size);
-    virtual void noteMoreBodySpaceAvailable(BodyPipe::Pointer);
-    virtual void noteBodyConsumerAborted(BodyPipe::Pointer);
+    virtual void noteMoreBodySpaceAvailable(BodyPipe::Pointer) = 0;
+    virtual void noteBodyConsumerAborted(BodyPipe::Pointer) = 0;
 
-    bool handleReadData(char *buf, size_t size);
+    bool handleReadData();
     bool handleRequestBodyData();
 
-    /**
-     * Correlate the current ConnStateData object with the pinning_fd socket descriptor.
-     */
-    void pinConnection(const Comm::ConnectionPointer &pinServerConn, HttpRequest *request, CachePeer *peer, bool auth);
-    /**
-     * Decorrelate the ConnStateData object from its pinned CachePeer
-     */
-    void unpinConnection();
+    /// Forward future client requests using the given server connection.
+    /// Optionally, monitor pinned server connection for remote-end closures.
+    void pinConnection(const Comm::ConnectionPointer &pinServerConn, HttpRequest *request, CachePeer *peer, bool auth, bool monitor = true);
+    /// Undo pinConnection() and, optionally, close the pinned connection.
+    void unpinConnection(const bool andClose);
+    /// Returns validated pinnned server connection (and stops its monitoring).
+    Comm::ConnectionPointer borrowPinnedConnection(HttpRequest *request, const CachePeer *aPeer);
     /**
      * Checks if there is pinning info if it is valid. It can close the server side connection
      * if pinned info is not valid.
@@ -315,15 +303,20 @@ public:
     CachePeer *pinnedPeer() const {return pinning.peer;}
     bool pinnedAuth() const {return pinning.auth;}
 
+    /// called just before a FwdState-dispatched job starts using connection
+    virtual void notePeerConnection(Comm::ConnectionPointer) {}
+
     // pining related comm callbacks
-    void clientPinnedConnectionClosed(const CommCloseCbParams &io);
+    virtual void clientPinnedConnectionClosed(const CommCloseCbParams &io);
 
     // comm callbacks
     void clientReadRequest(const CommIoCbParams &io);
+    void clientReadFtpData(const CommIoCbParams &io);
     void connStateClosed(const CommCloseCbParams &io);
     void requestTimeout(const CommTimeoutCbParams &params);
 
     // AsyncJob API
+    virtual void start();
     virtual bool doneAll() const { return BodyProducer::doneAll() && false;}
     virtual void swanSong();
 
@@ -334,7 +327,18 @@ public:
     /// The caller assumes responsibility for connection closure detection.
     void stopPinnedConnectionMonitoring();
 
-#if USE_SSL
+#if USE_OPENSSL
+    /// the second part of old httpsAccept, waiting for future HttpsServer home
+    void postHttpsAccept();
+
+    /// Initializes and starts a peek-and-splice negotiation with the SSL client
+    void startPeekAndSplice();
+    /// Called when the initialization of peek-and-splice negotiation finidhed
+    void startPeekAndSpliceDone();
+    /// Called when a peek-and-splice step finished. For example after
+    /// server SSL certificates received and fake server SSL certificates
+    /// generated
+    void doPeekAndSpliceStep();
     /// called by FwdState when it is done bumping the server
     void httpsPeeked(Comm::ConnectionPointer serverConnection);
 
@@ -347,9 +351,9 @@ public:
      */
     void getSslContextDone(SSL_CTX * sslContext, bool isNew = false);
     /// Callback function. It is called when squid receive message from ssl_crtd.
-    static void sslCrtdHandleReplyWrapper(void *data, char *reply);
+    static void sslCrtdHandleReplyWrapper(void *data, const Helper::Reply &reply);
     /// Proccess response from ssl_crtd.
-    void sslCrtdHandleReply(const char * reply);
+    void sslCrtdHandleReply(const Helper::Reply &reply);
 
     void switchToHttps(HttpRequest *request, Ssl::BumpMode bumpServerMode);
     bool switchedToHttps() const { return switchedToHttps_; }
@@ -360,6 +364,8 @@ public:
         else
             assert(sslServerBump == srvBump);
     }
+    const SBuf &sslCommonName() const {return sslCommonName_;}
+    void resetSslCommonName(const char *name) {sslCommonName_ = name;}
     /// Fill the certAdaptParams with the required data for certificate adaptation
     /// and create the key for storing/retrieve the certificate to/from the cache
     void buildSslCertGenerationParams(Ssl::CertificateProperties &certProperties);
@@ -375,6 +381,33 @@ public:
     bool switchedToHttps() const { return false; }
 #endif
 
+    /* clt_conn_tag=tag annotation access */
+    const SBuf &connectionTag() const { return connectionTag_; }
+    void connectionTag(const char *aTag) { connectionTag_ = aTag; }
+
+    /// handle a control message received by context from a peer and call back
+    virtual void writeControlMsgAndCall(ClientSocketContext *context, HttpReply *rep, AsyncCall::Pointer &call) = 0;
+
+    /// ClientStream calls this to supply response header (once) and data
+    /// for the current ClientSocketContext.
+    virtual void handleReply(HttpReply *header, StoreIOBuffer receivedData) = 0;
+
+    /// remove no longer needed leading bytes from the input buffer
+    void consumeInput(const size_t byteCount);
+
+    /* TODO: Make the methods below (at least) non-public when possible. */
+
+    /// stop parsing the request and create context for relaying error info
+    ClientSocketContext *abortRequestParsing(const char *const errUri);
+
+    /// generate a fake CONNECT request with the given payload
+    /// at the beginning of the client I/O buffer
+    void fakeAConnectRequest(const char *reason, const SBuf &payload);
+
+    /* Registered Runner API */
+    virtual void startShutdown();
+    virtual void endingShutdown();
+
 protected:
     void startDechunkingRequest();
     void finishDechunkingRequest(bool withSuccess);
@@ -384,21 +417,49 @@ protected:
     void startPinnedConnectionMonitoring();
     void clientPinnedConnectionRead(const CommIoCbParams &io);
 
+    /// parse input buffer prefix into a single transfer protocol request
+    /// return NULL to request more header bytes (after checking any limits)
+    /// use abortRequestParsing() to handle parsing errors w/o creating request
+    virtual ClientSocketContext *parseOneRequest(Http::ProtocolVersion &ver) = 0;
+
+    /// start processing a freshly parsed request
+    virtual void processParsedRequest(ClientSocketContext *context, const Http::ProtocolVersion &ver) = 0;
+
+    /// returning N allows a pipeline of 1+N requests (see pipeline_prefetch)
+    virtual int pipelinePrefetchMax() const;
+
+    /// timeout to use when waiting for the next request
+    virtual time_t idleTimeout() const = 0;
+
+    BodyPipe::Pointer bodyPipe; ///< set when we are reading request body
+
 private:
-    int connReadWasError(comm_err_t flag, int size, int xerrno);
     int connFinishedWithConn(int size);
     void clientAfterReadingRequests();
+    bool concurrentRequestQueueFilled() const;
 
-private:
-    HttpParser parser_;
+    void pinNewConnection(const Comm::ConnectionPointer &pinServer, HttpRequest *request, CachePeer *aPeer, bool auth);
 
-    // XXX: CBDATA plays with public/private and leaves the following 'private' fields all public... :(
+    /* PROXY protocol functionality */
+    bool proxyProtocolValidateClient();
+    bool parseProxyProtocolHeader();
+    bool parseProxy1p0();
+    bool parseProxy2p0();
+    bool proxyProtocolError(const char *reason);
 
-#if USE_SSL
+    /// whether PROXY protocol header is still expected
+    bool needProxyProtocolHeader_;
+
+#if USE_AUTH
+    /// some user details that can be used to perform authentication on this connection
+    Auth::UserRequest::Pointer auth_;
+#endif
+
+#if USE_OPENSSL
     bool switchedToHttps_;
     /// The SSL server host name appears in CONNECT request or the server ip address for the intercepted requests
     String sslConnectHostOrIp; ///< The SSL server host name as passed in the CONNECT request
-    String sslCommonName; ///< CN name for SSL certificate generation
+    SBuf sslCommonName_; ///< CN name for SSL certificate generation
     String sslBumpCertKey; ///< Key to use to store/retrieve generated certificate
 
     /// HTTPS server cert. fetching state for bump-ssl-server-first
@@ -412,9 +473,8 @@ private:
     const char *stoppedReceiving_;
 
     AsyncCall::Pointer reader; ///< set when we are reading
-    BodyPipe::Pointer bodyPipe; // set when we are reading request body
 
-    CBDATA_CLASS2(ConnStateData);
+    SBuf connectionTag_; ///< clt_conn_tag=Tag annotation for client connection
 };
 
 void setLogUri(ClientHttpRequest * http, char const *uri, bool cleanUrl = false);
@@ -423,8 +483,27 @@ const char *findTrailingHTTPVersion(const char *uriAndHTTPVersion, const char *e
 
 int varyEvaluateMatch(StoreEntry * entry, HttpRequest * req);
 
+/// accept requests to a given port and inform subCall about them
+void clientStartListeningOn(AnyP::PortCfgPointer &port, const RefCount< CommCbFunPtrCallT<CommAcceptCbPtrFun> > &subCall, const Ipc::FdNoteId noteId);
+
 void clientOpenListenSockets(void);
-void clientHttpConnectionsClose(void);
+void clientConnectionsClose(void);
 void httpRequestFree(void *);
 
+/// decide whether to expect multiple requests on the corresponding connection
+void clientSetKeepaliveFlag(ClientHttpRequest *http);
+
+/* misplaced declaratrions of Stream callbacks provided/used by client side */
+SQUIDCEXTERN CSR clientGetMoreData;
+SQUIDCEXTERN CSS clientReplyStatus;
+SQUIDCEXTERN CSD clientReplyDetach;
+CSCB clientSocketRecipient;
+CSD clientSocketDetach;
+
+/* TODO: Move to HttpServer. Warning: Move requires large code nonchanges! */
+ClientSocketContext *parseHttpRequest(ConnStateData *, HttpParser *, HttpRequestMethod *, Http::ProtocolVersion *);
+void clientProcessRequest(ConnStateData *conn, HttpParser *hp, ClientSocketContext *context, const HttpRequestMethod& method, Http::ProtocolVersion http_ver);
+void clientPostHttpsAccept(ConnStateData *connState);
+
 #endif /* SQUID_CLIENTSIDE_H */
+

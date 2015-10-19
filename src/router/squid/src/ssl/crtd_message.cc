@@ -1,18 +1,21 @@
-#include "squid.h"
-#include "ssl/gadgets.h"
-#include "ssl/crtd_message.h"
-#if HAVE_CSTDLIB
-#include <cstdlib>
-#endif
-#if HAVE_CSTRING
-#include <cstring>
-#endif
-#if HAVE_STDEXCEPT
-#include <stdexcept>
-#endif
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
-Ssl::CrtdMessage::CrtdMessage()
-        :   body_size(0), state(BEFORE_CODE)
+#include "squid.h"
+#include "ssl/crtd_message.h"
+#include "ssl/gadgets.h"
+
+#include <cstdlib>
+#include <cstring>
+#include <stdexcept>
+
+Ssl::CrtdMessage::CrtdMessage(MessageKind kind)
+    :   body_size(0), state(kind == REPLY ? BEFORE_LENGTH: BEFORE_CODE)
 {}
 
 Ssl::CrtdMessage::ParseResult Ssl::CrtdMessage::parse(const char * buffer, size_t len)
@@ -203,11 +206,20 @@ bool Ssl::CrtdMessage::parseRequest(Ssl::CertificateProperties &certProperties, 
     i = map.find(Ssl::CrtdMessage::param_Sign);
     if (i != map.end()) {
         if ((certProperties.signAlgorithm = Ssl::certSignAlgorithmId(i->second.c_str())) == Ssl::algSignEnd) {
-            error = "Wrong signing algoritm: " + i->second;
+            error = "Wrong signing algoritm: ";
+            error += i->second;
             return false;
         }
     } else
         certProperties.signAlgorithm = Ssl::algSignTrusted;
+
+    i = map.find(Ssl::CrtdMessage::param_SignHash);
+    const char *signHashName = i != map.end() ? i->second.c_str() : SQUID_SSL_SIGN_HASH_IF_NONE;
+    if (!(certProperties.signHash = EVP_get_digestbyname(signHashName))) {
+        error = "Wrong signing hash: ";
+        error += signHashName;
+        return false;
+    }
 
     if (!Ssl::readCertAndPrivateKeyFromMemory(certProperties.signWithX509, certProperties.signWithPkey, certs_part.c_str())) {
         error = "Broken signing certificate!";
@@ -236,6 +248,8 @@ void Ssl::CrtdMessage::composeRequest(Ssl::CertificateProperties const &certProp
         body +=  "\n" + Ssl::CrtdMessage::param_SetValidBefore + "=on";
     if (certProperties.signAlgorithm != Ssl::algSignEnd)
         body +=  "\n" +  Ssl::CrtdMessage::param_Sign + "=" +  certSignAlgorithm(certProperties.signAlgorithm);
+    if (certProperties.signHash)
+        body +=  "\n" + Ssl::CrtdMessage::param_SignHash + "=" + EVP_MD_name(certProperties.signHash);
 
     std::string certsPart;
     if (!Ssl::writeCertAndPrivateKeyToMemory(certProperties.signWithX509, certProperties.signWithPkey, certsPart))
@@ -253,3 +267,5 @@ const std::string Ssl::CrtdMessage::param_SetValidAfter(Ssl::CertAdaptAlgorithmS
 const std::string Ssl::CrtdMessage::param_SetValidBefore(Ssl::CertAdaptAlgorithmStr[algSetValidBefore]);
 const std::string Ssl::CrtdMessage::param_SetCommonName(Ssl::CertAdaptAlgorithmStr[algSetCommonName]);
 const std::string Ssl::CrtdMessage::param_Sign("Sign");
+const std::string Ssl::CrtdMessage::param_SignHash("SignHash");
+

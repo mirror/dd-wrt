@@ -1,7 +1,13 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 /*
  * DEBUG: section 81    Store HEAP Removal Policies
- * AUTHOR: Henrik Nordstrom
  *
  * Based on the ideas of the heap policy implemented by John Dilley of
  * Hewlett Packard. Rewritten from scratch when modularizing the removal
@@ -9,42 +15,14 @@
  *
  * For details on the original heap policy work and the thinking behind see
  * http://www.hpl.hp.com/techreports/1999/HPL-1999-69.html
- *
- *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
  */
 
 #include "squid.h"
 #include "heap.h"
-#include "store_heap_replacement.h"
+#include "MemObject.h"
 #include "SquidList.h"
 #include "Store.h"
-#include "MemObject.h"
+#include "store_heap_replacement.h"
 #include "wordlist.h"
 
 REMOVALPOLICYCREATE createRemovalPolicy_heap;
@@ -101,51 +79,51 @@ HeapPolicyData::setPolicyNode (StoreEntry *entry, void *value) const
 static void
 heap_add(RemovalPolicy * policy, StoreEntry * entry, RemovalPolicyNode * node)
 {
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     assert(!node->data);
 
     if (EBIT_TEST(entry->flags, ENTRY_SPECIAL))
-        return;			/* We won't manage these.. they messes things up */
+        return;         /* We won't manage these.. they messes things up */
 
-    node->data = heap_insert(heap->theHeap, entry);
+    node->data = heap_insert(h->theHeap, entry);
 
-    heap->count += 1;
+    h->count += 1;
 
-    if (!heap->type)
-        heap->type = heap_guessType(entry, node);
+    if (!h->type)
+        h->type = heap_guessType(entry, node);
 
     /* Add a little more variance to the aging factor */
-    heap->theHeap->age += heap->theHeap->age / 100000000;
+    h->theHeap->age += h->theHeap->age / 100000000;
 }
 
 static void
 heap_remove(RemovalPolicy * policy, StoreEntry * entry,
             RemovalPolicyNode * node)
 {
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     heap_node *hnode = (heap_node *)node->data;
 
     if (!hnode)
         return;
 
-    heap_delete(heap->theHeap, hnode);
+    heap_delete(h->theHeap, hnode);
 
     node->data = NULL;
 
-    heap->count -= 1;
+    h->count -= 1;
 }
 
 static void
 heap_referenced(RemovalPolicy * policy, const StoreEntry * entry,
                 RemovalPolicyNode * node)
 {
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     heap_node *hnode = (heap_node *)node->data;
 
     if (!hnode)
         return;
 
-    heap_update(heap->theHeap, hnode, (StoreEntry *) entry);
+    heap_update(h->theHeap, hnode, (StoreEntry *) entry);
 }
 
 /** RemovalPolicyWalker **/
@@ -161,13 +139,13 @@ heap_walkNext(RemovalPolicyWalker * walker)
 {
     HeapWalkData *heap_walk = (HeapWalkData *)walker->_data;
     RemovalPolicy *policy = walker->_policy;
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     StoreEntry *entry;
 
-    if (heap_walk->current >= heap_nodes(heap->theHeap))
-        return NULL;		/* done */
+    if (heap_walk->current >= heap_nodes(h->theHeap))
+        return NULL;        /* done */
 
-    entry = (StoreEntry *) heap_peep(heap->theHeap, heap_walk->current++);
+    entry = (StoreEntry *) heap_peep(h->theHeap, heap_walk->current++);
 
     return entry;
 }
@@ -176,10 +154,10 @@ static void
 heap_walkDone(RemovalPolicyWalker * walker)
 {
     RemovalPolicy *policy = walker->_policy;
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     assert(strcmp(policy->_type, "heap") == 0);
-    assert(heap->nwalkers > 0);
-    heap->nwalkers -= 1;
+    assert(h->nwalkers > 0);
+    h->nwalkers -= 1;
     safe_free(walker->_data);
     delete walker;
 }
@@ -187,10 +165,10 @@ heap_walkDone(RemovalPolicyWalker * walker)
 static RemovalPolicyWalker *
 heap_walkInit(RemovalPolicy * policy)
 {
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     RemovalPolicyWalker *walker;
     HeapWalkData *heap_walk;
-    heap->nwalkers += 1;
+    h->nwalkers += 1;
     walker = new RemovalPolicyWalker;
     heap_walk = (HeapWalkData *)xcalloc(1, sizeof(*heap_walk));
     heap_walk->current = 0;
@@ -215,29 +193,29 @@ heap_purgeNext(RemovalPurgeWalker * walker)
 {
     HeapPurgeData *heap_walker = (HeapPurgeData *)walker->_data;
     RemovalPolicy *policy = walker->_policy;
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     StoreEntry *entry;
     heap_key age;
 
 try_again:
 
-    if (!heap_nodes(heap->theHeap) > 0)
-        return NULL;		/* done */
+    if (heap_empty(h->theHeap))
+        return NULL;        /* done */
 
-    age = heap_peepminkey(heap->theHeap);
+    age = heap_peepminkey(h->theHeap);
 
-    entry = (StoreEntry *)heap_extractmin(heap->theHeap);
+    entry = (StoreEntry *)heap_extractmin(h->theHeap);
 
     if (entry->locked()) {
 
-        entry->lock();
+        entry->lock("heap_purgeNext");
         linklistPush(&heap_walker->locked_entries, entry);
 
         goto try_again;
     }
 
     heap_walker->min_age = age;
-    heap->setPolicyNode(entry, NULL);
+    h->setPolicyNode(entry, NULL);
     return entry;
 }
 
@@ -246,24 +224,24 @@ heap_purgeDone(RemovalPurgeWalker * walker)
 {
     HeapPurgeData *heap_walker = (HeapPurgeData *)walker->_data;
     RemovalPolicy *policy = walker->_policy;
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     StoreEntry *entry;
     assert(strcmp(policy->_type, "heap") == 0);
-    assert(heap->nwalkers > 0);
-    heap->nwalkers -= 1;
+    assert(h->nwalkers > 0);
+    h->nwalkers -= 1;
 
     if (heap_walker->min_age > 0) {
-        heap->theHeap->age = heap_walker->min_age;
-        debugs(81, 3, "heap_purgeDone: Heap age set to " << heap->theHeap->age  );
+        h->theHeap->age = heap_walker->min_age;
+        debugs(81, 3, "Heap age set to " << h->theHeap->age);
     }
 
     /*
      * Reinsert the locked entries
      */
     while ((entry = (StoreEntry *)linklistShift(&heap_walker->locked_entries))) {
-        heap_node *node = heap_insert(heap->theHeap, entry);
-        heap->setPolicyNode(entry, node);
-        entry->unlock();
+        heap_node *node = heap_insert(h->theHeap, entry);
+        h->setPolicyNode(entry, node);
+        entry->unlock("heap_purgeDone");
     }
 
     safe_free(walker->_data);
@@ -273,10 +251,10 @@ heap_purgeDone(RemovalPurgeWalker * walker)
 static RemovalPurgeWalker *
 heap_purgeInit(RemovalPolicy * policy, int max_scan)
 {
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     RemovalPurgeWalker *walker;
     HeapPurgeData *heap_walk;
-    heap->nwalkers += 1;
+    h->nwalkers += 1;
     walker = new RemovalPurgeWalker;
     heap_walk = (HeapPurgeData *)xcalloc(1, sizeof(*heap_walk));
     heap_walk->min_age = 0.0;
@@ -292,13 +270,13 @@ heap_purgeInit(RemovalPolicy * policy, int max_scan)
 static void
 heap_free(RemovalPolicy * policy)
 {
-    HeapPolicyData *heap = (HeapPolicyData *)policy->_data;
+    HeapPolicyData *h = (HeapPolicyData *)policy->_data;
     /* Make some verification of the policy state */
     assert(strcmp(policy->_type, "heap") == 0);
-    assert(heap->nwalkers);
-    assert(heap->count);
+    assert(h->nwalkers);
+    assert(h->count);
     /* Ok, time to destroy this policy */
-    safe_free(heap);
+    safe_free(h);
     memset(policy, 0, sizeof(*policy));
     delete policy;
 }
@@ -368,3 +346,4 @@ createRemovalPolicy_heap(wordlist * args)
 
     return policy;
 }
+

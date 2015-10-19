@@ -1,25 +1,30 @@
 /*
- * DEBUG: section 49    SNMP Interface
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 49    SNMP Interface */
 
 #include "squid.h"
 #include "base/TextException.h"
-#include "CommCalls.h"
 #include "comm.h"
+#include "CommCalls.h"
 #include "globals.h"
 #include "ipc/Port.h"
-#include "snmp_core.h"
 #include "snmp/Forwarder.h"
 #include "snmp/Request.h"
 #include "snmp/Response.h"
+#include "snmp_core.h"
 
 CBDATA_NAMESPACED_CLASS_INIT(Snmp, Forwarder);
 
 Snmp::Forwarder::Forwarder(const Pdu& aPdu, const Session& aSession, int aFd,
                            const Ip::Address& anAddress):
-        Ipc::Forwarder(new Request(KidIdentifier, 0, aPdu, aSession, aFd, anAddress), 2),
-        fd(aFd)
+    Ipc::Forwarder(new Request(KidIdentifier, 0, aPdu, aSession, aFd, anAddress), 2),
+    fd(aFd)
 {
     debugs(49, 5, HERE << "FD " << aFd);
     Must(fd >= 0);
@@ -101,5 +106,6 @@ Snmp::SendResponse(unsigned int requestId, const Pdu& pdu)
     }
     Ipc::TypedMsgHdr message;
     response.pack(message);
-    Ipc::SendMessage(Ipc::coordinatorAddr, message);
+    Ipc::SendMessage(Ipc::Port::CoordinatorAddr(), message);
 }
+

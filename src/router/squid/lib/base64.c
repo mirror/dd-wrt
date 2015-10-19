@@ -1,15 +1,18 @@
 /*
- * AUTHOR: Markus Moeller
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * Encoders adopted from http://ftp.sunet.se/pub2/gnu/vm/base64-encode.c with adjustments.
  */
 
 #include "squid.h"
 #include "base64.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -78,18 +81,18 @@ base64_decode(char *result, unsigned int result_size, const char *p)
         /* One quantum of four encoding characters/24 bit */
         if (j+4 <= result_size) {
             // Speed optimization: plenty of space, avoid some per-byte checks.
-            result[j++] = (val >> 16) & 0xff;	/* High 8 bits */
-            result[j++] = (val >> 8) & 0xff;	/* Mid 8 bits */
-            result[j++] = val & 0xff;		/* Low 8 bits */
+            result[j++] = (val >> 16) & 0xff;   /* High 8 bits */
+            result[j++] = (val >> 8) & 0xff;    /* Mid 8 bits */
+            result[j++] = val & 0xff;       /* Low 8 bits */
         } else {
             // part-quantum goes a bit slower with per-byte checks
-            result[j++] = (val >> 16) & 0xff;	/* High 8 bits */
+            result[j++] = (val >> 16) & 0xff;   /* High 8 bits */
             if (j == result_size)
                 return j;
-            result[j++] = (val >> 8) & 0xff;	/* Mid 8 bits */
+            result[j++] = (val >> 8) & 0xff;    /* Mid 8 bits */
             if (j == result_size)
                 return j;
-            result[j++] = val & 0xff;		/* Low 8 bits */
+            result[j++] = val & 0xff;       /* Low 8 bits */
         }
         if (j == result_size)
             return j;
@@ -146,7 +149,7 @@ base64_encode(char *result, int result_size, const char *data, int data_size)
     int char_count = 0;
     int out_cnt = 0;
 
-    if (!data || !*data || !result || result_size < 1 || data_size < 1)
+    if (!data || !result || result_size < 1 || data_size < 1)
         return 0;
 
     if (!base64_initialized)
@@ -209,3 +212,4 @@ base64_encode(char *result, int result_size, const char *data, int data_size)
     }
     return (out_cnt >= result_size?result_size:out_cnt);
 }
+

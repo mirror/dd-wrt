@@ -1,7 +1,15 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_SRC_COMM_LOOPS_H
 #define _SQUID_SRC_COMM_LOOPS_H
 
-#include "comm_err_t.h"
+#include "comm/Flag.h"
 
 // for PF
 #include "typedefs.h"
@@ -27,7 +35,7 @@ void ResetSelect(int);
 /** Perform a select() or equivalent call.
  * This is used by the main select loop engine to check for FD with IO available.
  */
-comm_err_t DoSelect(int);
+Comm::Flag DoSelect(int);
 
 void QuickPollRequired(void);
 
@@ -65,3 +73,4 @@ void QuickPollRequired(void);
 } // namespace Comm
 
 #endif /* _SQUID_SRC_COMM_LOOPS_H */
+

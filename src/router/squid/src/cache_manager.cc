@@ -1,38 +1,15 @@
 /*
- * DEBUG: section 16    Cache Manager Objects
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager Objects */
 
 #include "squid.h"
 #include "base/TextException.h"
-#include "mgr/ActionPasswordList.h"
 #include "CacheManager.h"
 #include "comm/Connection.h"
 #include "Debug.h"
@@ -40,8 +17,9 @@
 #include "fde.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
-#include "mgr/ActionCreator.h"
 #include "mgr/Action.h"
+#include "mgr/ActionCreator.h"
+#include "mgr/ActionPasswordList.h"
 #include "mgr/ActionProfile.h"
 #include "mgr/BasicActions.h"
 #include "mgr/Command.h"
@@ -49,10 +27,10 @@
 #include "mgr/FunAction.h"
 #include "mgr/QueryParams.h"
 #include "protos.h"
-#include "tools.h"
 #include "SquidConfig.h"
 #include "SquidTime.h"
 #include "Store.h"
+#include "tools.h"
 #include "wordlist.h"
 
 #include <algorithm>
@@ -82,7 +60,7 @@ void
 CacheManager::registerProfile(const Mgr::ActionProfile::Pointer &profile)
 {
     Must(profile != NULL);
-    if (std::find(menu_.begin(), menu_.end(), profile) == menu_.end()) {
+    if (!CacheManager::findAction(profile->name)) {
         menu_.push_back(profile);
         debugs(16, 3, HERE << "registered profile: " << *profile);
     } else {
@@ -289,9 +267,9 @@ CacheManager::ParseHeaders(const HttpRequest * request, Mgr::ActionParams &param
 /**
  \ingroup CacheManagerInternal
  *
- \retval 0	if mgr->password is good or "none"
- \retval 1	if mgr->password is "disable"
- \retval !0	if mgr->password does not match configured password
+ \retval 0  if mgr->password is good or "none"
+ \retval 1  if mgr->password is "disable"
+ \retval !0 if mgr->password does not match configured password
  */
 int
 CacheManager::CheckPassword(const Mgr::Command &cmd)
@@ -330,7 +308,7 @@ CacheManager::Start(const Comm::ConnectionPointer &client, HttpRequest * request
 
     Mgr::Command::Pointer cmd = ParseUrl(entry->url());
     if (!cmd) {
-        ErrorState *err = new ErrorState(ERR_INVALID_URL, HTTP_NOT_FOUND, request);
+        ErrorState *err = new ErrorState(ERR_INVALID_URL, Http::scNotFound, request);
         err->url = xstrdup(entry->url());
         errorAppendEntry(entry, err);
         entry->expires = squid_curtime;
@@ -353,7 +331,7 @@ CacheManager::Start(const Comm::ConnectionPointer &client, HttpRequest * request
 
     if (CheckPassword(*cmd) != 0) {
         /* build error message */
-        ErrorState errState(ERR_CACHE_MGR_ACCESS_DENIED, HTTP_UNAUTHORIZED, request);
+        ErrorState errState(ERR_CACHE_MGR_ACCESS_DENIED, Http::scUnauthorized, request);
         /* warn if user specified incorrect password */
 
         if (cmd->params.password.size()) {
@@ -407,11 +385,11 @@ CacheManager::Start(const Comm::ConnectionPointer &client, HttpRequest * request
 
     // special case: /squid-internal-mgr/ index page
     if (!strcmp(cmd->profile->name, "index")) {
-        ErrorState err(MGR_INDEX, HTTP_OK, request);
+        ErrorState err(MGR_INDEX, Http::scOkay, request);
         err.url = xstrdup(entry->url());
         HttpReply *rep = err.BuildHttpReply();
         if (strncmp(rep->body.content(),"Internal Error:", 15) == 0)
-            rep->sline.status = HTTP_NOT_FOUND;
+            rep->sline.set(Http::ProtocolVersion(1,1), Http::scNotFound);
         // Allow cachemgr and other XHR scripts access to our version string
         if (request->header.has(HDR_ORIGIN)) {
             rep->header.putExt("Access-Control-Allow-Origin",request->header.getStr(HDR_ORIGIN));
@@ -500,3 +478,4 @@ CacheManager::GetInstance()
     }
     return instance;
 }
+

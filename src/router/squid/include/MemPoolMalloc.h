@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _MEM_POOL_MALLOC_H_
 #define _MEM_POOL_MALLOC_H_
 
@@ -22,6 +30,8 @@
 
 #include "MemPool.h"
 
+#include <stack>
+
 /// \ingroup MemPoolsAPI
 class MemPoolMalloc : public MemImplementingAllocator
 {
@@ -32,8 +42,8 @@ public:
     virtual void clean(time_t maxage);
 
     /**
-     \param stats	Object to be filled with statistical data about pool.
-     \retval		Number of objects in use, ie. allocated.
+     \param stats   Object to be filled with statistical data about pool.
+     \retval        Number of objects in use, ie. allocated.
      */
     virtual int getStats(MemPoolStats * stats, int accumulate);
 
@@ -42,7 +52,8 @@ protected:
     virtual void *allocate();
     virtual void deallocate(void *, bool aggressive);
 private:
-    Stack<void *> freelist;
+    std::stack<void *> freelist;
 };
 
 #endif /* _MEM_POOL_MALLOC_H_ */
+

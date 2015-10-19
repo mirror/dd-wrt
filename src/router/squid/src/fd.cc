@@ -1,35 +1,12 @@
-
 /*
- * DEBUG: section 51    Filedescriptor Functions
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 51    Filedescriptor Functions */
 
 #include "squid.h"
 #include "comm/Loops.h"
@@ -42,7 +19,7 @@
 
 // Solaris and possibly others lack MSG_NOSIGNAL optimization
 // TODO: move this into compat/? Use a dedicated compat file to avoid dragging
-// sys/types.h and sys/socket.h into the rest of Squid??
+// sys/socket.h into the rest of Squid??
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
 #endif
@@ -106,7 +83,7 @@ fd_close(int fd)
     fde *F = &fd_table[fd];
 
     assert(fd >= 0);
-    assert(F->flags.open == 1);
+    assert(F->flags.open);
 
     if (F->type == FD_FILE) {
         assert(F->read_handler == NULL);
@@ -116,7 +93,7 @@ fd_close(int fd)
     debugs(51, 3, "fd_close FD " << fd << " " << F->desc);
     Comm::SetSelect(fd, COMM_SELECT_READ, NULL, NULL, 0);
     Comm::SetSelect(fd, COMM_SELECT_WRITE, NULL, NULL, 0);
-    F->flags.open = 0;
+    F->flags.open = false;
     fdUpdateBiggest(fd, 0);
     --Number_FD;
     *F = fde();
@@ -220,7 +197,7 @@ fd_open(int fd, unsigned int type, const char *desc)
     assert(!F->flags.open);
     debugs(51, 3, "fd_open() FD " << fd << " " << desc);
     F->type = type;
-    F->flags.open = 1;
+    F->flags.open = true;
     F->epoll_state = 0;
 #if _SQUID_WINDOWS_
 
@@ -264,8 +241,7 @@ fd_open(int fd, unsigned int type, const char *desc)
 
     fdUpdateBiggest(fd, 1);
 
-    if (desc)
-        xstrncpy(F->desc, desc, FD_DESC_SZ);
+    fd_note(fd, desc);
 
     ++Number_FD;
 }
@@ -274,7 +250,10 @@ void
 fd_note(int fd, const char *s)
 {
     fde *F = &fd_table[fd];
-    xstrncpy(F->desc, s, FD_DESC_SZ);
+    if (s)
+        xstrncpy(F->desc, s, FD_DESC_SZ);
+    else
+        *(F->desc) = 0; // ""-string
 }
 
 void
@@ -373,3 +352,4 @@ fdAdjustReserved(void)
            " due to failures (" << (Squid_MaxFD - newReserve) << "/" << Squid_MaxFD << " file descriptors available)");
     RESERVED_FD = newReserve;
 }
+

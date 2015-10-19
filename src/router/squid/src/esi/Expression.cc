@@ -1,47 +1,20 @@
-
 /*
- * DEBUG: section 86    ESI processing
- * AUTHOR: Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- ;  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 86    ESI processing */
 
 #include "squid.h"
 #include "Debug.h"
 #include "esi/Expression.h"
 #include "profiler/Profiler.h"
 
-#if HAVE_MATH_H
-#include <math.h>
-#endif
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+#include <cerrno>
+#include <cmath>
 
 /* stack precedence rules:
  * before pushing an operator onto the stack, the
@@ -78,7 +51,7 @@ typedef enum {
     ESI_EXPR_LESSEQ,
     ESI_EXPR_MORE,
     ESI_EXPR_MOREEQ,
-    ESI_EXPR_EXPR			/* the result of an expr PRI 1 */
+    ESI_EXPR_EXPR           /* the result of an expr PRI 1 */
 } evaltype;
 
 typedef enum {
@@ -530,11 +503,11 @@ evalmorethan(stackmember * stack, int *depth, int whereAmI, stackmember * candid
         /* invalid comparison */
         return 1;
 
-    stackpop(stack, depth);	/* arg rhs */
+    stackpop(stack, depth); /* arg rhs */
 
-    stackpop(stack, depth);	/* me */
+    stackpop(stack, depth); /* me */
 
-    stackpop(stack, depth);	/* arg lhs */
+    stackpop(stack, depth); /* arg lhs */
 
     srv.valuetype = ESI_EXPR_EXPR;
 
@@ -579,11 +552,11 @@ evalequals(stackmember * stack, int *depth, int whereAmI,
         /* invalid comparison */
         return 1;
 
-    stackpop(stack, depth);	/* arg rhs */
+    stackpop(stack, depth); /* arg rhs */
 
-    stackpop(stack, depth);	/* me */
+    stackpop(stack, depth); /* me */
 
-    stackpop(stack, depth);	/* arg lhs */
+    stackpop(stack, depth); /* arg lhs */
 
     srv.valuetype = ESI_EXPR_EXPR;
 
@@ -626,11 +599,11 @@ evalnotequals(stackmember * stack, int *depth, int whereAmI, stackmember * candi
         /* invalid comparison */
         return 1;
 
-    stackpop(stack, depth);	/* arg rhs */
+    stackpop(stack, depth); /* arg rhs */
 
-    stackpop(stack, depth);	/* me */
+    stackpop(stack, depth); /* me */
 
-    stackpop(stack, depth);	/* arg lhs */
+    stackpop(stack, depth); /* arg lhs */
 
     srv.valuetype = ESI_EXPR_EXPR;
 
@@ -699,7 +672,7 @@ getsymbol(const char *s, char const **endptr)
     char const *origs = s;
     /* trim whitespace */
     s = trim(s);
-    rv.eval = NULL;		/* A literal */
+    rv.eval = NULL;     /* A literal */
     rv.valuetype = ESI_EXPR_INVALID;
     rv.valuestored = ESI_LITERAL_INVALID;
     rv.precedence = 1; /* A literal */
@@ -1061,3 +1034,4 @@ ESIExpression::Evaluate(char const *s)
 
     return stack[0].value.integral ? 1 : 0;
 }
+

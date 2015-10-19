@@ -1,6 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
-#include "icap_log.h"
 #include "AccessLogEntry.h"
+#include "acl/FilledChecklist.h"
+#include "globals.h"
+#include "HttpReply.h"
+#include "icap_log.h"
 #include "log/CustomLog.h"
 #include "log/File.h"
 #include "log/Formats.h"
@@ -17,7 +28,7 @@ icapLogOpen()
         if (log->type == Log::Format::CLF_NONE)
             continue;
 
-        log->logfile = logfileOpen(log->filename, MAX_URL << 1, 1);
+        log->logfile = logfileOpen(log->filename, log->bufferSize, log->fatal);
 
         IcapLogfileStatus = LOG_ENABLE;
     }
@@ -46,8 +57,15 @@ icapLogRotate()
     }
 }
 
-void icapLogLog(AccessLogEntry::Pointer &al, ACLChecklist * checklist)
+void icapLogLog(AccessLogEntry::Pointer &al)
 {
-    if (IcapLogfileStatus == LOG_ENABLE)
-        accessLogLogTo(Config.Log.icaplogs, al, checklist);
+    if (IcapLogfileStatus == LOG_ENABLE) {
+        ACLFilledChecklist checklist(NULL, al->adapted_request, NULL);
+        if (al->reply) {
+            checklist.reply = al->reply;
+            HTTPMSGLOCK(checklist.reply);
+        }
+        accessLogLogTo(Config.Log.icaplogs, al, &checklist);
+    }
 }
+

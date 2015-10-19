@@ -1,16 +1,26 @@
-#define SQUID_UNIT_TEST 1
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
-
-#if HAVE_ASSERT_H
-#include <assert.h>
-#endif
-
 #include "testRFC1738.h"
+#include "unitTestMain.h"
+
+#include <cassert>
 
 /* Being a C library code it is best bodily included and tested with C++ type-safe techniques. */
 #include "lib/rfc1738.c"
 
 CPPUNIT_TEST_SUITE_REGISTRATION( testRFC1738 );
+
+#if _SQUID_OPENBSD_
+// the quite old GCC on OpenBSD 5.4 needs this when linking to libmisc-util.la
+time_t squid_curtime;
+#endif
 
 /* Regular Format de-coding tests */
 void testRFC1738::testUrlDecode()
@@ -147,3 +157,4 @@ void testRFC1738::PercentZeroNullDecoding()
     CPPUNIT_ASSERT(memcmp(unescaped_str, "w%%00%rd",9)==0);
     xfree(unescaped_str);
 }
+

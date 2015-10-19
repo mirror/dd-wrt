@@ -1,39 +1,16 @@
-
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_STOREIOSTATE_H
 #define SQUID_STOREIOSTATE_H
 
+#include "base/RefCount.h"
 #include "cbdata.h"
-#include "RefCount.h"
 
 class StoreIOState : public RefCountable
 {
@@ -81,7 +58,11 @@ public:
     off_t offset() const;
 
     virtual void read_(char *buf, size_t size, off_t offset, STRCB * callback, void *callback_data) = 0;
-    virtual void write(char const *buf, size_t size, off_t offset, FREE * free_func) = 0;
+    /** write the given buffer and free it when it is no longer needed
+     *  \param offset zero for the very first write and -1 for all other writes
+     *  \retval false if write failed (callback has been or will be called)
+     */
+    virtual bool write(char const *buf, size_t size, off_t offset, FREE * free_func) = 0;
 
     typedef enum {
         wroteAll, ///< success: caller supplied all data it wanted to swap out
@@ -92,10 +73,10 @@ public:
 
     sdirno swap_dirn;
     sfileno swap_filen;
-    StoreEntry *e;		/* Need this so the FS layers can play god */
+    StoreEntry *e;      /* Need this so the FS layers can play god */
     mode_t mode;
     off_t offset_; ///< number of bytes written or read for this entry so far
-    STFNCB *file_callback;	/* called on delayed sfileno assignments */
+    STFNCB *file_callback;  /* called on delayed sfileno assignments */
     STIOCB *callback;
     void *callback_data;
 
@@ -105,7 +86,7 @@ public:
     } read;
 
     struct {
-        unsigned int closing:1;	/* debugging aid */
+        bool closing;   /* debugging aid */
     } flags;
 };
 
@@ -116,3 +97,4 @@ void storeRead(StoreIOState::Pointer, char *, size_t, off_t, StoreIOState::STRCB
 void storeIOWrite(StoreIOState::Pointer, char const *, size_t, off_t, FREE *);
 
 #endif /* SQUID_STOREIOSTATE_H */
+

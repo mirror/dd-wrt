@@ -1,9 +1,16 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
-#include "acl/HierCodeData.h"
 #include "acl/Checklist.h"
+#include "acl/HierCodeData.h"
 #include "cache_cf.h"
 #include "hier_code.h"
-#include "wordlist.h"
 
 ACLHierCodeData::ACLHierCodeData()
 {
@@ -25,17 +32,17 @@ ACLHierCodeData::match(hier_code toFind)
     return values[toFind];
 }
 
-wordlist *
-ACLHierCodeData::dump()
+SBufList
+ACLHierCodeData::dump() const
 {
-    wordlist *W = NULL;
+    SBufList sl;
 
     for (hier_code iter=HIER_NONE; iter<HIER_MAX; ++iter) {
         if (!values[iter]) continue;
-        wordlistAdd(&W, hier_code_str[iter]);
+        sl.push_back(SBuf(hier_code_str[iter]));
     }
 
-    return W;
+    return sl;
 }
 
 void
@@ -71,3 +78,4 @@ ACLHierCodeData::clone() const
 {
     return new ACLHierCodeData(*this);
 }
+

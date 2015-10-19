@@ -1,12 +1,18 @@
 /*
- * DEBUG: section 93    eCAP Interface
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    eCAP Interface */
 
 #ifndef SQUID_ECAP_SERVICE_REP_H
 #define SQUID_ECAP_SERVICE_REP_H
 
-#include "adaptation/Service.h"
 #include "adaptation/forward.h"
+#include "adaptation/Service.h"
 #include <libecap/common/forward.h>
 #include <libecap/common/memory.h>
 
@@ -31,7 +37,7 @@ public:
     virtual void finalize();
     virtual bool probed() const;
     virtual bool up() const;
-    virtual Adaptation::Initiate *makeXactLauncher(HttpMsg *virginHeader, HttpRequest *virginCause);
+    virtual Adaptation::Initiate *makeXactLauncher(HttpMsg *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp);
     virtual bool wantsUrl(const String &urlPath) const;
     virtual void noteFailure();
     virtual const char *status() const;
@@ -61,3 +67,4 @@ void CheckUnusedAdapterServices(const Services& services);
 } // namespace Adaptation
 
 #endif /* SQUID_ECAP_SERVICE_REP_H */
+

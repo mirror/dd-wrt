@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "base/AsyncJob.h"
 
@@ -25,19 +33,19 @@ bool Comm::ConnOpener::doneAll() const STUB_RETVAL(false)
 void Comm::ConnOpener::start() STUB
 void Comm::ConnOpener::swanSong() STUB
 Comm::ConnOpener::ConnOpener(Comm::ConnectionPointer &, AsyncCall::Pointer &, time_t) : AsyncJob("STUB Comm::ConnOpener") STUB
-        Comm::ConnOpener::~ConnOpener() STUB
-        void Comm::ConnOpener::setHost(const char *) STUB
-        const char * Comm::ConnOpener::getHost() const STUB_RETVAL(NULL)
+    Comm::ConnOpener::~ConnOpener() STUB
+    void Comm::ConnOpener::setHost(const char *) STUB
+    const char * Comm::ConnOpener::getHost() const STUB_RETVAL(NULL)
 
 #include "comm/forward.h"
-        bool Comm::IsConnOpen(const Comm::ConnectionPointer &) STUB_RETVAL(false)
+    bool Comm::IsConnOpen(const Comm::ConnectionPointer &) STUB_RETVAL(false)
 
 #include "comm/IoCallback.h"
-        void Comm::IoCallback::setCallback(iocb_type type, AsyncCall::Pointer &cb, char *buf, FREE *func, int sz) STUB
-        void Comm::IoCallback::selectOrQueueWrite() STUB
-        void Comm::IoCallback::cancel(const char *reason) STUB
-        void Comm::IoCallback::finish(comm_err_t code, int xerrn) STUB
-        Comm::CbEntry *Comm::iocb_table = NULL;
+    void Comm::IoCallback::setCallback(iocb_type, AsyncCall::Pointer &, char *, FREE *, int) STUB
+    void Comm::IoCallback::selectOrQueueWrite() STUB
+    void Comm::IoCallback::cancel(const char *reason) STUB
+    void Comm::IoCallback::finish(Comm::Flag code, int xerrn) STUB
+    Comm::CbEntry *Comm::iocb_table = NULL;
 void Comm::CallbackTableInit() STUB
 void Comm::CallbackTableDestruct() STUB
 
@@ -45,18 +53,29 @@ void Comm::CallbackTableDestruct() STUB
 void Comm::SelectLoopInit(void) STUB
 void Comm::SetSelect(int, unsigned int, PF *, void *, time_t) STUB
 void Comm::ResetSelect(int) STUB
-comm_err_t Comm::DoSelect(int) STUB_RETVAL(COMM_ERROR)
+Comm::Flag Comm::DoSelect(int) STUB_RETVAL(Comm::COMM_ERROR)
 void Comm::QuickPollRequired(void) STUB
+
+#include "comm/Read.h"
+void Comm::Read(const Comm::ConnectionPointer &conn, AsyncCall::Pointer &callback) STUB
+bool Comm::MonitorsRead(int fd) STUB_RETVAL(false)
+Comm::Flag Comm::ReadNow(CommIoCbParams &params, SBuf &buf) STUB_RETVAL(Comm::COMM_ERROR)
+void Comm::ReadCancel(int fd, AsyncCall::Pointer &callback) STUB
+//void Comm::HandleRead(int, void*) STUB
+
+void comm_read_base(const Comm::ConnectionPointer &conn, char *buf, int len, AsyncCall::Pointer &callback) STUB
+void comm_read_cancel(int fd, IOCB *callback, void *data) STUB
 
 #include "comm/TcpAcceptor.h"
 //Comm::TcpAcceptor(const Comm::ConnectionPointer &conn, const char *note, const Subscription::Pointer &aSub) STUB
 void Comm::TcpAcceptor::subscribe(const Subscription::Pointer &aSub) STUB
 void Comm::TcpAcceptor::unsubscribe(const char *) STUB
 void Comm::TcpAcceptor::acceptNext() STUB
-void Comm::TcpAcceptor::notify(const comm_err_t flag, const Comm::ConnectionPointer &) const STUB
+void Comm::TcpAcceptor::notify(const Comm::Flag flag, const Comm::ConnectionPointer &) const STUB
 
 #include "comm/Write.h"
 void Comm::Write(const Comm::ConnectionPointer &, const char *, int, AsyncCall::Pointer &, FREE *) STUB
 void Comm::Write(const Comm::ConnectionPointer &conn, MemBuf *mb, AsyncCall::Pointer &callback) STUB
 void Comm::WriteCancel(const Comm::ConnectionPointer &conn, const char *reason) STUB
 /*PF*/ void Comm::HandleWrite(int, void*) STUB
+

@@ -1,11 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_SSL_ERROR_DETAIL_H
 #define _SQUID_SSL_ERROR_DETAIL_H
 
 #include "err_detail_type.h"
-#include "HttpRequest.h"
 #include "ErrorDetailManager.h"
-#include "ssl/support.h"
-#include "ssl/gadgets.h"
+#include "HttpRequest.h"
 
 #if HAVE_OPENSSL_SSL_H
 #include <openssl/ssl.h>
@@ -57,7 +63,7 @@ class ErrorDetail
 {
 public:
     // if broken certificate is nil, the peer certificate is broken
-    ErrorDetail(ssl_error_t err_no, X509 *peer, X509 *broken);
+    ErrorDetail(ssl_error_t err_no, X509 *peer, X509 *broken, const char *aReason = NULL);
     ErrorDetail(ErrorDetail const &);
     const String &toString() const;  ///< An error detail string to embed in squid error pages
     void useRequest(HttpRequest *aRequest) { if (aRequest != NULL) request = aRequest;}
@@ -101,9 +107,11 @@ private:
     unsigned long lib_error_no; ///< low-level error returned by OpenSSL ERR_get_error(3SSL)
     X509_Pointer peer_cert; ///< A pointer to the peer certificate
     X509_Pointer broken_cert; ///< A pointer to the broken certificate (peer or intermediate)
+    String errReason; ///< A custom reason for error, else retrieved from OpenSSL.
     mutable ErrorDetailEntry detailEntry;
     HttpRequest::Pointer request;
 };
 
 }//namespace Ssl
 #endif
+

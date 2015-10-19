@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_CACHE_SNMP_H
 #define SQUID_CACHE_SNMP_H
 
@@ -10,13 +18,8 @@ typedef int64_t snint;
 #endif
 
 #include "snmp.h"
-#include "snmp_impl.h"
-#if 0
-#include "asn1.h"
-#endif
 #include "snmp_api.h"
-
-#include "snmp_vars.h"
+#include "snmp_impl.h"
 
 /* MIB definitions
  * SQUID-MIB
@@ -267,3 +270,4 @@ enum {
 #endif /* SQUID_SNMP */
 
 #endif /* SQUID_CACHE_SNMP_H */
+

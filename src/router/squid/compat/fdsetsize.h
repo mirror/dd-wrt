@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_FDSETSIZE_H
 #define SQUID_FDSETSIZE_H
 
@@ -10,8 +18,8 @@
 /* FD_SETSIZE must be redefined before including sys/types.h */
 #if 0
 /* AYJ: would dearly like to use this to enforce include order
-	but at present some helpers don't follow the squid include methodology.
-	that will need fixing later.
+    but at present some helpers don't follow the squid include methodology.
+    that will need fixing later.
 */
 #ifdef _SYS_TYPES_H
 #error squid_fdsetsize.h for FDSETSIZE must be included before sys/types.h
@@ -90,3 +98,4 @@
 #endif
 
 #endif /* SQUID_FDSETSIZE_H */
+

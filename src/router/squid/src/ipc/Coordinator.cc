@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #include "squid.h"
 #include "base/Subscription.h"
@@ -20,15 +25,14 @@
 #include "snmp/Request.h"
 #include "snmp/Response.h"
 #endif
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+
+#include <cerrno>
 
 CBDATA_NAMESPACED_CLASS_INIT(Ipc, Coordinator);
 Ipc::Coordinator* Ipc::Coordinator::TheInstance = NULL;
 
 Ipc::Coordinator::Coordinator():
-        Port(coordinatorAddr)
+    Port(Ipc::Port::CoordinatorAddr())
 {
 }
 
@@ -136,7 +140,7 @@ void Ipc::Coordinator::handleRegistrationRequest(const HereIamMessage& msg)
     // send back an acknowledgement; TODO: remove as not needed?
     TypedMsgHdr message;
     msg.pack(message);
-    SendMessage(MakeAddr(strandAddrPfx, msg.strand.kidId), message);
+    SendMessage(MakeAddr(strandAddrLabel, msg.strand.kidId), message);
 }
 
 void
@@ -156,7 +160,7 @@ Ipc::Coordinator::handleSharedListenRequest(const SharedListenRequest& request)
     SharedListenResponse response(c->fd, errNo, request.mapId);
     TypedMsgHdr message;
     response.pack(message);
-    SendMessage(MakeAddr(strandAddrPfx, request.requestorId), message);
+    SendMessage(MakeAddr(strandAddrLabel, request.requestorId), message);
 }
 
 void
@@ -181,7 +185,7 @@ Ipc::Coordinator::handleCacheMgrRequest(const Mgr::Request& request)
     Mgr::Response response(request.requestId);
     TypedMsgHdr message;
     response.pack(message);
-    SendMessage(MakeAddr(strandAddrPfx, request.requestorId), message);
+    SendMessage(MakeAddr(strandAddrLabel, request.requestorId), message);
 
 }
 
@@ -221,7 +225,7 @@ Ipc::Coordinator::notifySearcher(const Ipc::StrandSearchRequest &request,
     const StrandSearchResponse response(strand);
     TypedMsgHdr message;
     response.pack(message);
-    SendMessage(MakeAddr(strandAddrPfx, request.requestorId), message);
+    SendMessage(MakeAddr(strandAddrLabel, request.requestorId), message);
 }
 
 #if SQUID_SNMP
@@ -233,7 +237,7 @@ Ipc::Coordinator::handleSnmpRequest(const Snmp::Request& request)
     Snmp::Response response(request.requestId);
     TypedMsgHdr message;
     response.pack(message);
-    SendMessage(MakeAddr(strandAddrPfx, request.requestorId), message);
+    SendMessage(MakeAddr(strandAddrLabel, request.requestorId), message);
 
     AsyncJob::Start(new Snmp::Inquirer(request, strands_));
 }
@@ -255,23 +259,23 @@ Ipc::Coordinator::openListenSocket(const SharedListenRequest& request,
     debugs(54, 6, HERE << "opening listen FD at " << p.addr << " for kid" <<
            request.requestorId);
 
-    Comm::ConnectionPointer conn = new Comm::Connection;
-    conn->local = p.addr; // comm_open_listener may modify it
-    conn->flags = p.flags;
+    Comm::ConnectionPointer newConn = new Comm::Connection;
+    newConn->local = p.addr; // comm_open_listener may modify it
+    newConn->flags = p.flags;
 
     enter_suid();
-    comm_open_listener(p.sock_type, p.proto, conn, FdNote(p.fdNote));
-    errNo = Comm::IsConnOpen(conn) ? 0 : errno;
+    comm_open_listener(p.sock_type, p.proto, newConn, FdNote(p.fdNote));
+    errNo = Comm::IsConnOpen(newConn) ? 0 : errno;
     leave_suid();
 
-    debugs(54, 6, HERE << "tried listening on " << conn << " for kid" <<
+    debugs(54, 6, HERE << "tried listening on " << newConn << " for kid" <<
            request.requestorId);
 
     // cache positive results
-    if (Comm::IsConnOpen(conn))
-        listeners[request.params] = conn;
+    if (Comm::IsConnOpen(newConn))
+        listeners[request.params] = newConn;
 
-    return conn;
+    return newConn;
 }
 
 void Ipc::Coordinator::broadcastSignal(int sig) const
@@ -299,3 +303,4 @@ Ipc::Coordinator::strands() const
 {
     return strands_;
 }
+

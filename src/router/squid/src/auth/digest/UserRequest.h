@@ -1,8 +1,15 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_SRC_AUTH_DIGEST_USERREQUEST_H
 #define _SQUID_SRC_AUTH_DIGEST_USERREQUEST_H
 
 #include "auth/UserRequest.h"
-#include "auth/digest/auth_digest.h"
 #include "MemPool.h"
 
 class ConnStateData;
@@ -34,7 +41,8 @@ public:
     virtual void addAuthenticationInfoTrailer(HttpReply * rep, int accel);
 #endif
 
-    virtual void module_start(AUTHCB *, void *);
+    virtual void startHelperLookup(HttpRequest *request, AccessLogEntry::Pointer &al, AUTHCB *, void *);
+    virtual const char *credentialsStr();
 
     char *nonceb64;             /* "dcd98b7102dd2f0e8b11d0f600bfb0c093" */
     char *cnonce;               /* "0a4f113b" */
@@ -48,9 +56,9 @@ public:
     char *response;
 
     struct {
-        unsigned int authinfo_sent:1;
-        unsigned int invalid_password:1;
-        unsigned int helper_queried:1;
+        bool authinfo_sent;
+        bool invalid_password;
+        bool helper_queried;
     } flags;
     digest_nonce_h *nonce;
 
@@ -64,3 +72,4 @@ private:
 MEMPROXY_CLASS_INLINE(Auth::Digest::UserRequest);
 
 #endif /* _SQUID_SRC_AUTH_DIGEST_USERREQUEST_H */
+

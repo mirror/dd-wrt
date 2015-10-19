@@ -1,6 +1,12 @@
-#define SQUID_UNIT_TEST 1
-#include "squid.h"
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
+#include "squid.h"
 #include "DiskIO/DiskIOModule.h"
 #include "fs/ufs/UFSSwapDir.h"
 #include "globals.h"
@@ -14,17 +20,16 @@
 #include "SwapDir.h"
 #include "testStoreSupport.h"
 #include "testUfs.h"
+#include "unitTestMain.h"
 
-#if HAVE_STDEXCEPT
 #include <stdexcept>
-#endif
 
 #define TESTDIR "testUfs_Store"
 
 CPPUNIT_TEST_SUITE_REGISTRATION( testUfs );
 
 typedef RefCount<Fs::Ufs::UFSSwapDir> SwapDirPointer;
-extern REMOVALPOLICYCREATE createRemovalPolicy_lru;	/* XXX fails with --enable-removal-policies=heap */
+extern REMOVALPOLICYCREATE createRemovalPolicy_lru; /* XXX fails with --enable-removal-policies=heap */
 
 static void
 addSwapDir(SwapDirPointer aStore)
@@ -53,16 +58,13 @@ testUfs::commonInit()
         return;
 
     Config.Store.avgObjectSize = 1024;
-
     Config.Store.objectsPerBucket = 20;
-
     Config.Store.maxObjectSize = 2048;
 
     Config.store_dir_select_algorithm = xstrdup("round-robin");
 
     Config.replPolicy = new RemovalPolicySettings;
-
-    Config.replPolicy->type = xstrdup ("lru");
+    Config.replPolicy->type = xstrdup("lru");
 
     /* garh garh */
     storeReplAdd("lru", createRemovalPolicy_lru);
@@ -71,9 +73,9 @@ testUfs::commonInit()
 
     comm_init();
 
-    httpHeaderInitModule();	/* must go before any header processing (e.g. the one in errorInitialize) */
+    httpHeaderInitModule(); /* must go before any header processing (e.g. the one in errorInitialize) */
 
-    httpReplyInitModule();	/* must go before accepting replies */
+    httpReplyInitModule();  /* must go before accepting replies */
 
     inited = true;
 }
@@ -104,11 +106,11 @@ testUfs::testUfsSearch()
 
     char *path=xstrdup(TESTDIR);
 
-    char *config_line=xstrdup("foo 100 1 1");
+    char *config_line=xstrdup("100 1 1");
 
     visible_appname_string = xstrdup(PACKAGE "/" VERSION);
 
-    strtok(config_line, w_space);
+    ConfigParser::SetCfgLine(config_line);
 
     aStore->parse(0, path);
     store_maxobjsize = 1024*1024*2;
@@ -129,7 +131,7 @@ testUfs::testUfsSearch()
     /* rebuild is a scheduled event */
     StockEventLoop loop;
 
-    while (StoreController::store_dirs_rebuilding > 1)
+    while (StoreController::store_dirs_rebuilding)
         loop.runOnce();
 
     /* cannot use loop.run(); as the loop will never idle: the store-dir
@@ -137,16 +139,16 @@ testUfs::testUfsSearch()
      */
 
     /* nothing left to rebuild */
-    CPPUNIT_ASSERT_EQUAL(1, StoreController::store_dirs_rebuilding);
+    CPPUNIT_ASSERT_EQUAL(0, StoreController::store_dirs_rebuilding);
 
     /* add an entry */
     {
         /* Create "vary" base object */
         RequestFlags flags;
-        flags.cachable = 1;
-        StoreEntry *pe = storeCreateEntry("dummy url", "dummy log url", flags, METHOD_GET);
-        HttpReply *rep = (HttpReply *) pe->getReply();	// bypass const
-        rep->setHeaders(HTTP_OK, "dummy test object", "x-squid-internal/test", 0, -1, squid_curtime + 100000);
+        flags.cachable = true;
+        StoreEntry *pe = storeCreateEntry("dummy url", "dummy log url", flags, Http::METHOD_GET);
+        HttpReply *rep = (HttpReply *) pe->getReply();  // bypass const
+        rep->setHeaders(Http::scOkay, "dummy test object", "x-squid-internal/test", 0, -1, squid_curtime + 100000);
 
         pe->setPublicKey();
 
@@ -163,9 +165,9 @@ testUfs::testUfsSearch()
         pe->timestampsSet();
         pe->complete();
         pe->swapOut();
-        CPPUNIT_ASSERT(pe->swap_dirn == 0);
-        CPPUNIT_ASSERT(pe->swap_filen == 0);
-        pe->unlock();
+        CPPUNIT_ASSERT_EQUAL(0, pe->swap_dirn);
+        CPPUNIT_ASSERT_EQUAL(0, pe->swap_filen);
+        pe->unlock("testUfs::testUfsSearch vary");
     }
 
     storeDirWriteCleanLogs(0);
@@ -178,34 +180,34 @@ testUfs::testUfsSearch()
     /* nothing should be immediately available */
 #if 0
 
-    CPPUNIT_ASSERT(search->next() == false);
+    CPPUNIT_ASSERT_EQUAL(false, search->next());
 #endif
 
-    CPPUNIT_ASSERT(search->error() == false);
-    CPPUNIT_ASSERT(search->isDone() == false);
-    CPPUNIT_ASSERT(search->currentItem() == NULL);
+    CPPUNIT_ASSERT_EQUAL(false, search->error());
+    CPPUNIT_ASSERT_EQUAL(false, search->isDone());
+    CPPUNIT_ASSERT_EQUAL(static_cast<StoreEntry *>(NULL), search->currentItem());
 
     /* trigger a callback */
     cbcalled = false;
     search->next(searchCallback, NULL);
-    CPPUNIT_ASSERT(cbcalled == true);
+    CPPUNIT_ASSERT_EQUAL(true, cbcalled);
 
     /* we should have access to a entry now, that matches the entry we had before */
-    //CPPUNIT_ASSERT(search->next() == false);
-    CPPUNIT_ASSERT(search->error() == false);
-    CPPUNIT_ASSERT(search->isDone() == false);
+    //CPPUNIT_ASSERT_EQUAL(false, search->next());
+    CPPUNIT_ASSERT_EQUAL(false, search->error());
+    CPPUNIT_ASSERT_EQUAL(false, search->isDone());
     CPPUNIT_ASSERT(search->currentItem() != NULL);
 
     /* trigger another callback */
     cbcalled = false;
     search->next(searchCallback, NULL);
-    CPPUNIT_ASSERT(cbcalled == true);
+    CPPUNIT_ASSERT_EQUAL(true, cbcalled);
 
     /* now we should have no error, we should have finished and have no current item */
-    //CPPUNIT_ASSERT(search->next() == false);
-    CPPUNIT_ASSERT(search->error() == false);
-    CPPUNIT_ASSERT(search->isDone() == true);
-    CPPUNIT_ASSERT(search->currentItem() == NULL);
+    //CPPUNIT_ASSERT_EQUAL(false, search->next());
+    CPPUNIT_ASSERT_EQUAL(false, search->error());
+    CPPUNIT_ASSERT_EQUAL(true, search->isDone());
+    CPPUNIT_ASSERT_EQUAL(static_cast<StoreEntry *>(NULL), search->currentItem());
 
     Store::Root(NULL);
 
@@ -240,12 +242,12 @@ testUfs::testUfsDefaultEngine()
     addSwapDir(aStore);
     commonInit();
     Config.replPolicy = new RemovalPolicySettings;
-    Config.replPolicy->type = xstrdup ("lru");
+    Config.replPolicy->type = xstrdup("lru");
     mem_policy = createRemovalPolicy(Config.replPolicy);
 
     char *path=xstrdup(TESTDIR);
-    char *config_line=xstrdup("foo 100 1 1");
-    strtok(config_line, w_space);
+    char *config_line=xstrdup("100 1 1");
+    ConfigParser::SetCfgLine(config_line);
     aStore->parse(0, path);
     safe_free(path);
     safe_free(config_line);
@@ -259,3 +261,4 @@ testUfs::testUfsDefaultEngine()
     if (0 > system ("rm -rf " TESTDIR))
         throw std::runtime_error("Failed to clean test work directory");
 }
+

@@ -1,20 +1,25 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 54    Interprocess Communication */
+
 #include "squid.h"
+#include "base/TextException.h"
 #include "comm.h"
-#include "CommCalls.h"
 #include "comm/Connection.h"
 #include "comm/Write.h"
-#include "base/TextException.h"
+#include "CommCalls.h"
 #include "ipc/UdsOp.h"
 
 Ipc::UdsOp::UdsOp(const String& pathAddr):
-        AsyncJob("Ipc::UdsOp"),
-        address(PathToAddress(pathAddr)),
-        options(COMM_NONBLOCKING)
+    AsyncJob("Ipc::UdsOp"),
+    address(PathToAddress(pathAddr)),
+    options(COMM_NONBLOCKING)
 {
     debugs(54, 5, HERE << '[' << this << "] pathAddr=" << pathAddr);
 }
@@ -77,12 +82,12 @@ Ipc::PathToAddress(const String& pathAddr) {
 CBDATA_NAMESPACED_CLASS_INIT(Ipc, UdsSender);
 
 Ipc::UdsSender::UdsSender(const String& pathAddr, const TypedMsgHdr& aMessage):
-        UdsOp(pathAddr),
-        message(aMessage),
-        retries(10), // TODO: make configurable?
-        timeout(10), // TODO: make configurable?
-        sleeping(false),
-        writing(false)
+    UdsOp(pathAddr),
+    message(aMessage),
+    retries(10), // TODO: make configurable?
+    timeout(10), // TODO: make configurable?
+    sleeping(false),
+    writing(false)
 {
     message.address(address);
 }
@@ -123,15 +128,15 @@ void Ipc::UdsSender::wrote(const CommIoCbParams& params)
 {
     debugs(54, 5, HERE << params.conn << " flag " << params.flag << " retries " << retries << " [" << this << ']');
     writing = false;
-    if (params.flag != COMM_OK && retries-- > 0) {
+    if (params.flag != Comm::OK && retries-- > 0) {
         // perhaps a fresh connection and more time will help?
         conn()->close();
-        sleep();
+        startSleep();
     }
 }
 
 /// pause for a while before resending the message
-void Ipc::UdsSender::sleep()
+void Ipc::UdsSender::startSleep()
 {
     Must(!sleeping);
     sleeping = true;
@@ -193,14 +198,15 @@ Ipc::ImportFdIntoComm(const Comm::ConnectionPointer &conn, int socktype, int pro
     if (getsockname(conn->fd, reinterpret_cast<sockaddr*>(&addr), &len) == 0) {
         conn->remote = addr;
         struct addrinfo* addr_info = NULL;
-        conn->remote.GetAddrInfo(addr_info);
+        conn->remote.getAddrInfo(addr_info);
         addr_info->ai_socktype = socktype;
         addr_info->ai_protocol = protocol;
         comm_import_opened(conn, Ipc::FdNote(noteId), addr_info);
-        conn->remote.FreeAddrInfo(addr_info);
+        Ip::Address::FreeAddr(addr_info);
     } else {
         debugs(54, DBG_CRITICAL, "ERROR: Ipc::ImportFdIntoComm: " << conn << ' ' << xstrerror());
         conn->close();
     }
     return conn;
 }
+

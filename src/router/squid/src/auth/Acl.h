@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_AUTH_ACL_H
 #define SQUID_AUTH_ACL_H
 
@@ -15,3 +23,4 @@ allow_t AuthenticateAcl(ACLChecklist *ch);
 
 #endif /* USE_AUTH */
 #endif /* SQUID_AUTH_ACL_H */
+

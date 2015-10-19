@@ -1,11 +1,16 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 54    Interprocess Communication */
+
 #include "squid.h"
-#include "base/TextException.h"
 #include "base/RunnersRegistry.h"
+#include "base/TextException.h"
 #include "ipc/mem/PagePool.h"
 #include "ipc/mem/Pages.h"
 #include "SwapDir.h"
@@ -90,28 +95,28 @@ class SharedMemPagesRr: public Ipc::Mem::RegisteredRunner
 public:
     /* RegisteredRunner API */
     SharedMemPagesRr(): owner(NULL) {}
-    virtual void run(const RunnerRegistry &);
-    virtual void create(const RunnerRegistry &);
-    virtual void open(const RunnerRegistry &);
+    virtual void useConfig();
+    virtual void create();
+    virtual void open();
     virtual ~SharedMemPagesRr();
 
 private:
     Ipc::Mem::PagePool::Owner *owner;
 };
 
-RunnerRegistrationEntry(rrAfterConfig, SharedMemPagesRr);
+RunnerRegistrationEntry(SharedMemPagesRr);
 
 void
-SharedMemPagesRr::run(const RunnerRegistry &r)
+SharedMemPagesRr::useConfig()
 {
     if (Ipc::Mem::PageLimit() <= 0)
         return;
 
-    Ipc::Mem::RegisteredRunner::run(r);
+    Ipc::Mem::RegisteredRunner::useConfig();
 }
 
 void
-SharedMemPagesRr::create(const RunnerRegistry &)
+SharedMemPagesRr::create()
 {
     Must(!owner);
     owner = Ipc::Mem::PagePool::Init(PagePoolId, Ipc::Mem::PageLimit(),
@@ -119,7 +124,7 @@ SharedMemPagesRr::create(const RunnerRegistry &)
 }
 
 void
-SharedMemPagesRr::open(const RunnerRegistry &)
+SharedMemPagesRr::open()
 {
     Must(!ThePagePool);
     ThePagePool = new Ipc::Mem::PagePool(PagePoolId);
@@ -134,3 +139,4 @@ SharedMemPagesRr::~SharedMemPagesRr()
     ThePagePool = NULL;
     delete owner;
 }
+

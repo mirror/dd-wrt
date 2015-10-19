@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_OS_LINUX_H
 #define SQUID_OS_LINUX_H
 
@@ -19,6 +27,21 @@
 #if !defined(HAVE_RES_INIT) && defined(HAVE___RES_INIT) && !defined(res_init)
 #define res_init  __res_init
 #define HAVE_RES_INIT  HAVE___RES_INIT
+#endif
+
+/*
+ * Netfilter header madness. (see Bug 4323)
+ *
+ * Netfilter have a history of defining their own versions of network protocol
+ * primitives without sufficient protection against the POSIX defines which are
+ * aways present in Linux.
+ *
+ * netinet/in.h must be included before any other sys header in order to properly
+ * activate include guards in <linux/libc-compat.h> the kernel maintainers added
+ * to workaround it.
+ */
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
 #endif
 
 /*
@@ -64,3 +87,4 @@ typedef uint32_t __u32;
 
 #endif /* _SQUID_LINUX_ */
 #endif /* SQUID_OS_LINUX_H */
+

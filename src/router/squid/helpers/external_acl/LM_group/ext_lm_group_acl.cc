@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * mswin_check_lm_group: lookup group membership in a Windows NT/2000 domain
  *
  * (C)2002,2005 Guido Serassio - Acme Consulting S.r.l.
@@ -77,27 +85,20 @@
 int _wcsicmp(const wchar_t *, const wchar_t *);
 #endif
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_CTYPE_H
-#include <ctype.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
+#undef assert
+#include <cassert>
+#include <cctype>
+#include <cstring>
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-#undef assert
-#include <assert.h>
 #include <windows.h>
 #include <lm.h>
 #include <ntsecapi.h>
 
 int use_global = 0;
 int use_PDC_only = 0;
-char *program_name;
+const char *program_name;
 pid_t mypid;
 char *machinedomain;
 int use_case_insensitive_compare = 0;
@@ -218,7 +219,7 @@ GetDomainName(void)
 static int
 wcstrcmparray(const wchar_t * str, const char **array)
 {
-    WCHAR wszGroup[GNLEN + 1];	// Unicode Group
+    WCHAR wszGroup[GNLEN + 1];  // Unicode Group
 
     while (*array) {
         MultiByteToWideChar(CP_ACP, 0, *array,
@@ -237,7 +238,7 @@ Valid_Local_Groups(char *UserName, const char **Groups)
 {
     int result = 0;
     char *Domain_Separator;
-    WCHAR wszUserName[UNLEN + 1];	// Unicode user name
+    WCHAR wszUserName[UNLEN + 1];   // Unicode user name
 
     LPLOCALGROUP_USERS_INFO_0 pBuf = NULL;
     LPLOCALGROUP_USERS_INFO_0 pTmpBuf;
@@ -311,11 +312,11 @@ int
 Valid_Global_Groups(char *UserName, const char **Groups)
 {
     int result = 0;
-    WCHAR wszUserName[UNLEN + 1];	// Unicode user name
+    WCHAR wszUserName[UNLEN + 1];   // Unicode user name
 
-    WCHAR wszLocalDomain[DNLEN + 1];	// Unicode Local Domain
+    WCHAR wszLocalDomain[DNLEN + 1];    // Unicode Local Domain
 
-    WCHAR wszUserDomain[DNLEN + 1];	// Unicode User Domain
+    WCHAR wszUserDomain[DNLEN + 1]; // Unicode User Domain
 
     char NTDomain[DNLEN + UNLEN + 2];
     char *domain_qualify;
@@ -494,12 +495,12 @@ process_options(int argc, char *argv[])
             exit(0);
         case '?':
             opt = optopt;
-            /* fall thru to default */
+        /* fall thru to default */
         default:
             fprintf(stderr, "%s: FATAL: Unknown option: -%c. Exiting\n", program_name, opt);
             usage(argv[0]);
             exit(1);
-            break;		/* not reached */
+            break;      /* not reached */
         }
     }
     return;
@@ -515,7 +516,7 @@ main(int argc, char *argv[])
     const char *groups[512];
     int n;
 
-    if (argc > 0) {		/* should always be true */
+    if (argc > 0) {     /* should always be true */
         program_name = strrchr(argv[0], '/');
         if (program_name == NULL)
             program_name = argv[0];
@@ -539,14 +540,16 @@ main(int argc, char *argv[])
         if (!DefaultDomain)
             DefaultDomain = xstrdup(machinedomain);
     }
-    debug("External ACL win32 group helper build " __DATE__ ", " __TIME__
-          " starting up...\n");
-    if (use_global)
+    debug("%s " VERSION " " SQUID_BUILD_INFO " starting up...\n", argv[0]);
+    if (use_global) {
         debug("Domain Global group mode enabled using '%s' as default domain.\n", DefaultDomain);
-    if (use_case_insensitive_compare)
+    }
+    if (use_case_insensitive_compare) {
         debug("Warning: running in case insensitive mode !!!\n");
-    if (use_PDC_only)
+    }
+    if (use_PDC_only) {
         debug("Warning: using only PDCs for group validation !!!\n");
+    }
 
     /* Main Loop */
     while (fgets(buf, HELPER_INPUT_BUFFER, stdin)) {
@@ -562,9 +565,9 @@ main(int argc, char *argv[])
             continue;
         }
         if ((p = strchr(buf, '\n')) != NULL)
-            *p = '\0';		/* strip \n */
+            *p = '\0';      /* strip \n */
         if ((p = strchr(buf, '\r')) != NULL)
-            *p = '\0';		/* strip \r */
+            *p = '\0';      /* strip \r */
 
         debug("Got '%s' from Squid (length: %d).\n", buf, strlen(buf));
 
@@ -593,3 +596,4 @@ main(int argc, char *argv[])
     }
     return 0;
 }
+

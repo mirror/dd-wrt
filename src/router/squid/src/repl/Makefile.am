@@ -1,11 +1,14 @@
-#  Makefile for storage modules in the Squid Object Cache server
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
 
 include $(top_srcdir)/src/Common.am
 
 ## we need our local files too (but avoid -I. at all costs)
-INCLUDES += -I$(srcdir)
-
-AUTOMAKE_OPTIONS = subdir-objects
+AM_CPPFLAGS += -I$(srcdir)
 
 # No recursion is needed for the subdirs, we build from here.
 

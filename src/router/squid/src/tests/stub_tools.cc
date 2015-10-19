@@ -1,10 +1,20 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
-#include "tools.h"
+// XXX: need src/ to avoid clashes with ip/tools.h in testIpAddress
+#include "src/tools.h"
 
 #define STUB_API "tools.cc"
 #include "tests/STUB.h"
 
 int DebugSignal = -1;
+SBuf service_name(APP_SHORTNAME);
 void releaseServerSockets(void) STUB
 char * dead_msg(void) STUB_RETVAL(NULL)
 void mail_warranty(void) STUB
@@ -65,4 +75,5 @@ int getMyPort(void) STUB_RETVAL(0)
 void setUmask(mode_t mask) STUB
 void strwordquote(MemBuf * mb, const char *str) STUB
 void keepCapabilities(void) STUB
-void restoreCapabilities(int keep) STUB
+void restoreCapabilities(bool keep) STUB
+

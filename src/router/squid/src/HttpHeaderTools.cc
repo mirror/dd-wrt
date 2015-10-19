@@ -1,43 +1,23 @@
 /*
- * DEBUG: section 66    HTTP Header Tools
- * AUTHOR: Alex Rousskov
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 66    HTTP Header Tools */
 
 #include "squid.h"
 #include "acl/FilledChecklist.h"
 #include "acl/Gadgets.h"
-#include "client_side_request.h"
 #include "client_side.h"
+#include "client_side_request.h"
 #include "comm/Connection.h"
 #include "compat/strtoll.h"
+#include "ConfigParser.h"
 #include "fde.h"
+#include "globals.h"
 #include "HttpHdrContRange.h"
 #include "HttpHeader.h"
 #include "HttpHeaderFieldInfo.h"
@@ -48,15 +28,13 @@
 #include "Store.h"
 #include "StrList.h"
 
-#if USE_SSL
+#if USE_OPENSSL
 #include "ssl/support.h"
 #endif
 
 #include <algorithm>
+#include <cerrno>
 #include <string>
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
 
 static void httpHeaderPutStrvf(HttpHeader * hdr, http_hdr_type id, const char *fmt, va_list vargs);
 
@@ -76,7 +54,7 @@ httpHeaderBuildFieldsInfo(const HttpHeaderFieldAttrs * attrs, int count)
         /* sanity checks */
         assert(id >= 0 && id < count);
         assert(attrs[i].name);
-        assert(info->id == HDR_ACCEPT && info->type == ftInvalid);	/* was not set before */
+        assert(info->id == HDR_ACCEPT && info->type == ftInvalid);  /* was not set before */
         /* copy and init fields */
         info->id = id;
         info->type = attrs[i].type;
@@ -111,10 +89,10 @@ httpHeaderCalcMask(HttpHeaderMask * mask, http_hdr_type http_hdr_type_enums[], s
     size_t i;
     const int * enums = (const int *) http_hdr_type_enums;
     assert(mask && enums);
-    assert(count < sizeof(*mask) * 8);	/* check for overflow */
+    assert(count < sizeof(*mask) * 8);  /* check for overflow */
 
     for (i = 0; i < count; ++i) {
-        assert(!CBIT_TEST(*mask, enums[i]));	/* check for duplicates */
+        assert(!CBIT_TEST(*mask, enums[i]));    /* check for duplicates */
         CBIT_SET(*mask, enums[i]);
     }
 }
@@ -215,7 +193,7 @@ httpHeaderParseOffset(const char *start, int64_t * value)
 {
     errno = 0;
     int64_t res = strtoll(start, NULL, 10);
-    if (!res && EINVAL == errno)	/* maybe not portable? */
+    if (!res && EINVAL == errno)    /* maybe not portable? */
         return 0;
     *value = res;
     return 1;
@@ -292,9 +270,40 @@ httpHeaderParseQuotedString(const char *start, const int len, String *val)
         return 0;
     }
     /* Make sure it's defined even if empty "" */
-    if (!val->defined())
+    if (!val->termedBuf())
         val->limitInit("", 0);
     return 1;
+}
+
+SBuf
+httpHeaderQuoteString(const char *raw)
+{
+    assert(raw);
+
+    // TODO: Optimize by appending a sequence of characters instead of a char.
+    // This optimization may be easier with Tokenizer after raw becomes SBuf.
+
+    // RFC 7230 says a "sender SHOULD NOT generate a quoted-pair in a
+    // quoted-string except where necessary" (i.e., DQUOTE and backslash)
+    bool needInnerQuote = false;
+    for (const char *s = raw; !needInnerQuote &&  *s; ++s)
+        needInnerQuote = *s == '"' || *s == '\\';
+
+    SBuf quotedStr;
+    quotedStr.append('"');
+
+    if (needInnerQuote) {
+        for (const char *s = raw; *s; ++s) {
+            if (*s == '"' || *s == '\\')
+                quotedStr.append('\\');
+            quotedStr.append(*s);
+        }
+    } else {
+        quotedStr.append(raw);
+    }
+
+    quotedStr.append('"');
+    return quotedStr;
 }
 
 /**
@@ -537,3 +546,4 @@ httpHdrAdd(HttpHeader *heads, HttpRequest *request, const AccessLogEntryPointer 
         }
     }
 }
+

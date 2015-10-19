@@ -1,51 +1,19 @@
 /*
- * DEBUG: section 64    HTTP Range Header
- * AUTHOR: Alex Rousskov
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
-#define SQUID_UNIT_TEST 1
+
+/* DEBUG: section 64    HTTP Range Header */
+
 #include "squid.h"
-
-#if 0
-//#include "Store.h"
-//#include "client_side_request.h"
-#endif
-
-/** \todo CLEANUP: This file shoudl be called something_stub.cc */
-
-#include "HttpHeaderRange.h"
 #include "HttpHeader.h"
+#include "HttpHeaderRange.h"
 #include "Mem.h"
 
-#if 0
-#include "acl/Checklist.h"
-#endif
+/** \todo CLEANUP: This file should be called something_stub.cc */
 
 void httpHeaderPutStr(HttpHeader * hdr, http_hdr_type type, const char *str)
 {
@@ -86,7 +54,7 @@ testRangeParser(char const *rangestring)
 
     HttpHdrRange copy(*range);
 
-    assert (copy.specs.count == range->specs.count);
+    assert (copy.specs.size() == range->specs.size());
 
     HttpHdrRange::iterator pos = range->begin();
 
@@ -111,7 +79,7 @@ void
 testRangeIter ()
 {
     HttpHdrRange *range=rangeFromString("bytes=0-3, 1-, -2");
-    assert (range->specs.count == 3);
+    assert (range->specs.size() == 3);
     size_t counter = 0;
     HttpHdrRange::iterator i = range->begin();
 
@@ -132,7 +100,7 @@ void
 testRangeCanonization()
 {
     HttpHdrRange *range=rangeFromString("bytes=0-3, 1-, -2");
-    assert (range->specs.count == 3);
+    assert (range->specs.size() == 3);
 
     /* 0-3 needs a content length of 4 */
     /* This passes in the extant code - but should it? */
@@ -140,13 +108,13 @@ testRangeCanonization()
     if (!range->canonize(3))
         exit(1);
 
-    assert (range->specs.count == 3);
+    assert (range->specs.size() == 3);
 
     delete range;
 
     range=rangeFromString("bytes=0-3, 1-, -2");
 
-    assert (range->specs.count == 3);
+    assert (range->specs.size() == 3);
 
     /* 0-3 needs a content length of 4 */
     if (!range->canonize(4))
@@ -156,7 +124,7 @@ testRangeCanonization()
 
     range=rangeFromString("bytes=3-6");
 
-    assert (range->specs.count == 1);
+    assert (range->specs.size() == 1);
 
     /* 3-6 needs a content length of 4 or more */
     if (range->canonize(3))
@@ -166,7 +134,7 @@ testRangeCanonization()
 
     range=rangeFromString("bytes=3-6");
 
-    assert (range->specs.count == 1);
+    assert (range->specs.size() == 1);
 
     /* 3-6 needs a content length of 4 or more */
     if (!range->canonize(4))
@@ -176,12 +144,12 @@ testRangeCanonization()
 
     range=rangeFromString("bytes=1-1,2-3");
 
-    assert (range->specs.count == 2);
+    assert (range->specs.size()== 2);
 
     if (!range->canonize(4))
         exit(1);
 
-    assert (range->specs.count == 2);
+    assert (range->specs.size() == 2);
 
     delete range;
 }
@@ -209,3 +177,4 @@ main(int argc, char **argv)
     }
     return 0;
 }
+

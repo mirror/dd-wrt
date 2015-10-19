@@ -1,9 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "base/TextException.h"
-#include "Debug.h"
-#include "Parsing.h"
 #include "ChunkedCodingParser.h"
+#include "Debug.h"
 #include "MemBuf.h"
+#include "Parsing.h"
 
 ChunkedCodingParser::Step ChunkedCodingParser::psChunkSize = &ChunkedCodingParser::parseChunkSize;
 ChunkedCodingParser::Step ChunkedCodingParser::psUnusedChunkExtension = &ChunkedCodingParser::parseUnusedChunkExtension;
@@ -300,3 +308,4 @@ void ChunkedCodingParser::parseLastChunkExtension()
     theIn->consume(crlfEnd);
     theStep = theChunkSize ? psChunkBody : psTrailer;
 }
+

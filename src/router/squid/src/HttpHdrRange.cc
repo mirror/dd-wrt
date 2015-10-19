@@ -1,42 +1,19 @@
-
 /*
- * DEBUG: section 64    HTTP Range Header
- * AUTHOR: Alex Rousskov
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 64    HTTP Range Header */
+
 #include "squid.h"
-#include "Store.h"
-#include "HttpHeaderRange.h"
 #include "client_side_request.h"
-#include "HttpReply.h"
+#include "HttpHeaderRange.h"
 #include "HttpHeaderTools.h"
+#include "HttpReply.h"
+#include "Store.h"
 #include "StrList.h"
 
 /*
@@ -92,7 +69,7 @@ HttpHdrRangeSpec::parseInit(const char *field, int flen)
 
     /* is it a suffix-byte-range-spec ? */
     if (*field == '-') {
-        if (!httpHeaderParseOffset(field + 1, &length))
+        if (!httpHeaderParseOffset(field + 1, &length) || !known_spec(length))
             return false;
     } else
         /* must have a '-' somewhere in _this_ field */
@@ -100,7 +77,7 @@ HttpHdrRangeSpec::parseInit(const char *field, int flen)
             debugs(64, 2, "invalid (missing '-') range-spec near: '" << field << "'");
             return false;
         } else {
-            if (!httpHeaderParseOffset(field, &offset))
+            if (!httpHeaderParseOffset(field, &offset) || !known_spec(offset))
                 return false;
 
             ++p;
@@ -109,7 +86,7 @@ HttpHdrRangeSpec::parseInit(const char *field, int flen)
             if (p - field < flen) {
                 int64_t last_pos;
 
-                if (!httpHeaderParseOffset(p, &last_pos))
+                if (!httpHeaderParseOffset(p, &last_pos) || !known_spec(last_pos))
                     return false;
 
                 // RFC 2616 s14.35.1 MUST: last-byte-pos >= first-byte-pos
@@ -130,11 +107,11 @@ HttpHdrRangeSpec::parseInit(const char *field, int flen)
 void
 HttpHdrRangeSpec::packInto(Packer * packer) const
 {
-    if (!known_spec(offset))	/* suffix */
+    if (!known_spec(offset))    /* suffix */
         packerPrintf(packer, "-%" PRId64,  length);
-    else if (!known_spec(length))		/* trailer */
+    else if (!known_spec(length))       /* trailer */
         packerPrintf(packer, "%" PRId64 "-", offset);
-    else			/* range */
+    else            /* range */
         packerPrintf(packer, "%" PRId64 "-%" PRId64,
                      offset, offset + length - 1);
 }
@@ -157,10 +134,10 @@ HttpHdrRangeSpec::canonize(int64_t clen)
     outputInfo ("have");
     HttpRange object(0, clen);
 
-    if (!known_spec(offset)) {	/* suffix */
+    if (!known_spec(offset)) {  /* suffix */
         assert(known_spec(length));
         offset = object.intersection(HttpRange (clen - length, clen)).start;
-    } else if (!known_spec(length)) {	/* trailer */
+    } else if (!known_spec(length)) {   /* trailer */
         assert(known_spec(offset));
         HttpRange newRange = object.intersection(HttpRange (offset, clen));
         length = newRange.size();
@@ -187,8 +164,8 @@ HttpHdrRangeSpec::mergeWith(const HttpHdrRangeSpec * donor)
     bool merged (false);
 #if MERGING_BREAKS_NOTHING
     /* Note: this code works, but some clients may not like its effects */
-    int64_t rhs = offset + length;		/* no -1 ! */
-    const int64_t donor_rhs = donor->offset + donor->length;	/* no -1 ! */
+    int64_t rhs = offset + length;      /* no -1 ! */
+    const int64_t donor_rhs = donor->offset + donor->length;    /* no -1 ! */
     assert(known_spec(offset));
     assert(known_spec(donor->offset));
     assert(length > 0);
@@ -196,13 +173,13 @@ HttpHdrRangeSpec::mergeWith(const HttpHdrRangeSpec * donor)
     /* do we have a left hand side overlap? */
 
     if (donor->offset < offset && offset <= donor_rhs) {
-        offset = donor->offset;	/* decrease left offset */
+        offset = donor->offset; /* decrease left offset */
         merged = 1;
     }
 
     /* do we have a right hand side overlap? */
     if (donor->offset <= rhs && rhs < donor_rhs) {
-        rhs = donor_rhs;	/* increase right offset */
+        rhs = donor_rhs;    /* increase right offset */
         merged = 1;
     }
 
@@ -224,7 +201,7 @@ HttpHdrRangeSpec::mergeWith(const HttpHdrRangeSpec * donor)
  * Range
  */
 
-HttpHdrRange::HttpHdrRange () : clen (HttpHdrRangeSpec::UnknownPosition)
+HttpHdrRange::HttpHdrRange() : clen(HttpHdrRangeSpec::UnknownPosition)
 {}
 
 HttpHdrRange *
@@ -247,7 +224,7 @@ HttpHdrRange::parseInit(const String * range_spec)
     const char *item;
     const char *pos = NULL;
     int ilen;
-    assert(this && range_spec);
+    assert(range_spec);
     ++ParsedCount;
     debugs(64, 8, "parsing range field: '" << range_spec << "'");
     /* check range type */
@@ -266,8 +243,10 @@ HttpHdrRange::parseInit(const String * range_spec)
          * at least one syntactically invalid byte-range-specs.
          */
         if (!spec) {
-            while (!specs.empty())
-                delete specs.pop_back();
+            while (!specs.empty()) {
+                delete specs.back();
+                specs.pop_back();
+            }
             debugs(64, 2, "ignoring invalid range field: '" << range_spec << "'");
             break;
         }
@@ -281,11 +260,15 @@ HttpHdrRange::parseInit(const String * range_spec)
 
 HttpHdrRange::~HttpHdrRange()
 {
-    while (specs.size())
-        delete specs.pop_back();
+    while (!specs.empty()) {
+        delete specs.back();
+        specs.pop_back();
+    }
 }
 
-HttpHdrRange::HttpHdrRange(HttpHdrRange const &old) : specs()
+HttpHdrRange::HttpHdrRange(HttpHdrRange const &old) :
+    specs(),
+    clen(HttpHdrRangeSpec::UnknownPosition)
 {
     specs.reserve(old.specs.size());
 
@@ -323,7 +306,6 @@ void
 HttpHdrRange::packInto(Packer * packer) const
 {
     const_iterator pos = begin();
-    assert(this);
 
     while (pos != end()) {
         if (pos != begin())
@@ -336,10 +318,10 @@ HttpHdrRange::packInto(Packer * packer) const
 }
 
 void
-HttpHdrRange::merge (Vector<HttpHdrRangeSpec *> &basis)
+HttpHdrRange::merge (std::vector<HttpHdrRangeSpec *> &basis)
 {
     /* reset old array */
-    specs.clean();
+    specs.clear();
     /* merge specs:
      * take one spec from "goods" and merge it with specs from
      * "specs" (if any) until there is no overlap */
@@ -348,12 +330,13 @@ HttpHdrRange::merge (Vector<HttpHdrRangeSpec *> &basis)
     while (i != basis.end()) {
         if (specs.size() && (*i)->mergeWith(specs.back())) {
             /* merged with current so get rid of the prev one */
-            delete specs.pop_back();
-            continue;	/* re-iterate */
+            delete specs.back();
+            specs.pop_back();
+            continue;   /* re-iterate */
         }
 
         specs.push_back (*i);
-        ++i;			/* progress */
+        ++i;            /* progress */
     }
 
     debugs(64, 3, "HttpHdrRange::merge: had " << basis.size() <<
@@ -361,7 +344,7 @@ HttpHdrRange::merge (Vector<HttpHdrRangeSpec *> &basis)
 }
 
 void
-HttpHdrRange::getCanonizedSpecs (Vector<HttpHdrRangeSpec *> &copy)
+HttpHdrRange::getCanonizedSpecs(std::vector<HttpHdrRangeSpec *> &copy)
 {
     /* canonize each entry and destroy bad ones if any */
 
@@ -372,8 +355,7 @@ HttpHdrRange::getCanonizedSpecs (Vector<HttpHdrRangeSpec *> &copy)
             delete (*pos);
     }
 
-    debugs(64, 3, "HttpHdrRange::getCanonizedSpecs: found " <<
-           specs.size() - copy.size() << " bad specs");
+    debugs(64, 3, "found " << specs.size() - copy.size() << " bad specs");
 }
 
 #include "HttpHdrContRange.h"
@@ -388,7 +370,7 @@ HttpHdrRange::getCanonizedSpecs (Vector<HttpHdrRangeSpec *> &copy)
 int
 HttpHdrRange::canonize(HttpReply *rep)
 {
-    assert(this && rep);
+    assert(rep);
 
     if (rep->content_range)
         clen = rep->content_range->elength;
@@ -402,14 +384,14 @@ int
 HttpHdrRange::canonize (int64_t newClen)
 {
     clen = newClen;
-    debugs(64, 3, "HttpHdrRange::canonize: started with " << specs.count <<
+    debugs(64, 3, "HttpHdrRange::canonize: started with " << specs.size() <<
            " specs, clen: " << clen);
-    Vector<HttpHdrRangeSpec*> goods;
+    std::vector<HttpHdrRangeSpec*> goods;
     getCanonizedSpecs(goods);
     merge (goods);
-    debugs(64, 3, "HttpHdrRange::canonize: finished with " << specs.count <<
+    debugs(64, 3, "HttpHdrRange::canonize: finished with " << specs.size() <<
            " specs");
-    return specs.count > 0;
+    return specs.size() > 0; // fixme, should return bool
 }
 
 /* hack: returns true if range specs are too "complex" for Squid to handle */
@@ -418,7 +400,6 @@ bool
 HttpHdrRange::isComplex() const
 {
     int64_t offset = 0;
-    assert(this);
     /* check that all rangers are in "strong" order */
     const_iterator pos (begin());
 
@@ -444,13 +425,12 @@ HttpHdrRange::isComplex() const
 bool
 HttpHdrRange::willBeComplex() const
 {
-    assert(this);
     /* check that all rangers are in "strong" order, */
     /* as far as we can tell without the content length */
     int64_t offset = 0;
 
     for (const_iterator pos (begin()); pos != end(); ++pos) {
-        if (!known_spec((*pos)->offset))	/* ignore unknowns */
+        if (!known_spec((*pos)->offset))    /* ignore unknowns */
             continue;
 
         /* Ensure typecasts is safe */
@@ -461,7 +441,7 @@ HttpHdrRange::willBeComplex() const
 
         offset = (*pos)->offset;
 
-        if (known_spec((*pos)->length))	/* avoid  unknowns */
+        if (known_spec((*pos)->length)) /* avoid  unknowns */
             offset += (*pos)->length;
     }
 
@@ -477,7 +457,6 @@ int64_t
 HttpHdrRange::firstOffset() const
 {
     int64_t offset = HttpHdrRangeSpec::UnknownPosition;
-    assert(this);
     const_iterator pos = begin();
 
     while (pos != end()) {
@@ -501,14 +480,13 @@ HttpHdrRange::lowestOffset(int64_t size) const
 {
     int64_t offset = HttpHdrRangeSpec::UnknownPosition;
     const_iterator pos = begin();
-    assert(this);
 
     while (pos != end()) {
         int64_t current = (*pos)->offset;
 
         if (!known_spec(current)) {
             if ((*pos)->length > size || !known_spec((*pos)->length))
-                return 0;	/* Unknown. Assume start of file */
+                return 0;   /* Unknown. Assume start of file */
 
             current = size - (*pos)->length;
         }
@@ -529,10 +507,6 @@ HttpHdrRange::lowestOffset(int64_t size) const
 bool
 HttpHdrRange::offsetLimitExceeded(const int64_t limit) const
 {
-    if (NULL == this)
-        /* not a range request */
-        return false;
-
     if (limit == 0)
         /* 0 == disabled */
         return true;
@@ -572,7 +546,7 @@ HttpHdrRange::contains(HttpHdrRangeSpec& r) const
 const HttpHdrRangeSpec *
 HttpHdrRangeIter::currentSpec() const
 {
-    if (pos.incrementable())
+    if (pos != end)
         return *pos;
 
     return NULL;
@@ -584,7 +558,7 @@ HttpHdrRangeIter::updateSpec()
     assert (debt_size == 0);
     assert (valid);
 
-    if (pos.incrementable()) {
+    if (pos != end) {
         debt(currentSpec()->length);
     }
 }
@@ -601,3 +575,4 @@ void HttpHdrRangeIter::debt(int64_t newDebt)
     debugs(64, 3, "HttpHdrRangeIter::debt: was " << debt_size << " now " << newDebt);
     debt_size = newDebt;
 }
+
