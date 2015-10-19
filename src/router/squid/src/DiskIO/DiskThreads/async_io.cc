@@ -1,43 +1,19 @@
-
 /*
- * DEBUG: section 32    Asynchronous Disk I/O
- * AUTHOR: Pete Bentley <pete@demon.net>
- * AUTHOR: Stewart Forster <slf@connect.com.au>
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 32    Asynchronous Disk I/O */
 
 #include "squid.h"
 #include "DiskThreads.h"
-#include "Store.h"
-#include "fde.h"
 #include "DiskThreadsIOStrategy.h"
+#include "fde.h"
 #include "Generic.h"
+#include "Store.h"
 
 AIOCounts squidaio_counts;
 
@@ -153,7 +129,7 @@ aioWrite(int fd, off_t offset, char *bufp, size_t len, AIOCB * callback, void *c
     ctrlp->result.data = ctrlp;
     squidaio_write(fd, bufp, len, offset, seekmode, &ctrlp->result);
     dlinkAdd(ctrlp, &ctrlp->node, &used_list);
-}				/* aioWrite */
+}               /* aioWrite */
 
 void
 aioRead(int fd, off_t offset, size_t len, AIOCB * callback, void *callback_data)
@@ -182,7 +158,7 @@ aioRead(int fd, off_t offset, size_t len, AIOCB * callback, void *callback_data)
     squidaio_read(fd, ctrlp->bufp, len, offset, seekmode, &ctrlp->result);
     dlinkAdd(ctrlp, &ctrlp->node, &used_list);
     return;
-}				/* aioRead */
+}               /* aioRead */
 
 void
 
@@ -201,7 +177,7 @@ aioStat(char *path, struct stat *sb, AIOCB * callback, void *callback_data)
     squidaio_stat(path, sb, &ctrlp->result);
     dlinkAdd(ctrlp, &ctrlp->node, &used_list);
     return;
-}				/* aioStat */
+}               /* aioStat */
 
 void
 aioUnlink(const char *path, AIOCB * callback, void *callback_data)
@@ -217,10 +193,11 @@ aioUnlink(const char *path, AIOCB * callback, void *callback_data)
     ctrlp->result.data = ctrlp;
     squidaio_unlink(path, &ctrlp->result);
     dlinkAdd(ctrlp, &ctrlp->node, &used_list);
-}				/* aioUnlink */
+}               /* aioUnlink */
 
 int
 aioQueueSize(void)
 {
     return DiskThreadsIOStrategy::Instance.squidaio_ctrl_pool->inUseCount();
 }
+

@@ -1,16 +1,22 @@
-#define SQUID_UNIT_TEST 1
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 #include "squid.h"
 #include "testBoilerplate.h"
+#include "unitTestMain.h"
 
-#if HAVE_STDEXCEPT
 #include <stdexcept>
-#endif
 
 CPPUNIT_TEST_SUITE_REGISTRATION( testBoilerplate );
 
 void
 testBoilerplate::testDemonstration()
 {
-    CPPUNIT_ASSERT(0 == 0);
+    CPPUNIT_ASSERT_EQUAL(0, 0);
 }
+

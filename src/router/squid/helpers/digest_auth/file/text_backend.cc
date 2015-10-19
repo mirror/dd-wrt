@@ -1,8 +1,14 @@
 /*
- * text_backend.c
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * AUTHOR: Robert Collins. Based on ncsa_auth.c by Arjan de Vet
- * <Arjan.deVet@adv.iae.nl>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
+ * AUTHOR: Robert Collins.
+ *  Based on ncsa_auth.c by Arjan de Vet <Arjan.deVet@adv.iae.nl>
  *
  * Example digest auth text backend for Squid, based on the original
  * proxy_auth code from client_side.c, written by
@@ -28,8 +34,8 @@
  *
  * Copyright (c) 2003  Robert Collins  <robertc@squid-cache.org>
  */
-#include "squid.h"
 
+#include "squid.h"
 #include "text_backend.h"
 
 static hash_table *hash = NULL;
@@ -112,7 +118,7 @@ read_passwd_file(const char *passwordFile, int isHa1Mode)
             u = static_cast<user_data*>(xcalloc(1, sizeof(*u)));
             if (realm) {
                 int len = strlen(user) + strlen(realm) + 2;
-                u->hash.key = malloc(len);
+                u->hash.key = xmalloc(len);
                 snprintf(static_cast<char*>(u->hash.key), len, "%s:%s", user, realm);
             } else {
                 u->hash.key = xstrdup(user);
@@ -189,3 +195,4 @@ TextHHA1(RequestData * requestData)
         DigestCalcHA1("md5", requestData->user, requestData->realm, u->passwd, NULL, NULL, HA1, requestData->HHA1);
     }
 }
+

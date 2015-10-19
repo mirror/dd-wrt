@@ -1,11 +1,16 @@
-#define SQUID_UNIT_TEST 1
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
-
-#if HAVE_ASSERT_H
-#include <assert.h>
-#endif
-
 #include "testRFC1035.h"
+#include "unitTestMain.h"
+
+#include <cassert>
 
 /* Being a C library code it is best bodily included and tested with C++ type-safe techniques. */
 #include "lib/rfc1035.c"
@@ -14,8 +19,8 @@
 CPPUNIT_TEST_SUITE_REGISTRATION( testRFC1035 );
 
 // TODO Test each function in the Library independently
-//	Just because we can for global functions.
-//	It's good for the code too.
+//  Just because we can for global functions.
+//  It's good for the code too.
 
 void testRFC1035::testHeaderUnpack()
 {
@@ -135,3 +140,4 @@ void testRFC1035::testBugPacketHeadersOnly()
     CPPUNIT_ASSERT(res < 0);
     CPPUNIT_ASSERT(msg == NULL);
 }
+

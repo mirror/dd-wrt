@@ -1,6 +1,12 @@
 /*
- * DEBUG: section 93    Adaptation
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    Adaptation */
 
 #include "squid.h"
 #include "adaptation/Message.h"
@@ -33,7 +39,8 @@ Adaptation::Message::set(Header *aHeader)
 {
     clear();
     if (aHeader) {
-        header = HTTPMSGLOCK(aHeader);
+        header = aHeader;
+        HTTPMSGLOCK(header);
         body_pipe = header->body_pipe;
     }
 }
@@ -55,3 +62,4 @@ Adaptation::Message::ShortCircuit(Message &src, Message &dest)
     }
     dest.set(src.header->clone());
 }
+

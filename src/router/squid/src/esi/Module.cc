@@ -1,7 +1,15 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
-#include "esi/Module.h"
 #include "esi/CustomParser.h"
 #include "esi/Libxml2Parser.h"
+#include "esi/Module.h"
 /* include for esi/ExpatParser.h must follow esi/Libxml2Parser.h */
 /* do not remove this comment, as it acts as barrier for the autmatic sorting */
 #include "esi/ExpatParser.h"
@@ -46,3 +54,4 @@ void Esi::Clean()
     delete prCustom;
     prCustom = NULL;
 }
+

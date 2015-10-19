@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 12    Internet Cache Protocol (ICP)
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 12    Internet Cache Protocol (ICP) */
 
 /**
  \defgroup ServerProtocolICPInternal2 ICPv2 Internals
@@ -65,14 +43,12 @@
 #include "tools.h"
 #include "wordlist.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+#include <cerrno>
 
 static void icpIncomingConnectionOpened(const Comm::ConnectionPointer &conn, int errNo);
 
 /// \ingroup ServerProtocolICPInternal2
-static void icpLogIcp(const Ip::Address &, log_type, int, const char *, int);
+static void icpLogIcp(const Ip::Address &, LogTags, int, const char *, int);
 
 /// \ingroup ServerProtocolICPInternal2
 static void icpHandleIcpV2(int, Ip::Address &, char *, int);
@@ -96,12 +72,12 @@ Comm::ConnectionPointer icpOutgoingConn = NULL;
 
 /* icp_common_t */
 _icp_common_t::_icp_common_t() :
-        opcode(ICP_INVALID), version(0), length(0), reqnum(0),
-        flags(0), pad(0), shostid(0)
+    opcode(ICP_INVALID), version(0), length(0), reqnum(0),
+    flags(0), pad(0), shostid(0)
 {}
 
 _icp_common_t::_icp_common_t(char *buf, unsigned int len) :
-        opcode(ICP_INVALID), version(0), reqnum(0), flags(0), pad(0), shostid(0)
+    opcode(ICP_INVALID), version(0), reqnum(0), flags(0), pad(0), shostid(0)
 {
     if (len < sizeof(_icp_common_t)) {
         /* mark as invalid */
@@ -131,11 +107,13 @@ _icp_common_t::getOpCode() const
 /* ICPState */
 
 ICPState::ICPState(icp_common_t &aHeader, HttpRequest *aRequest):
-        header(aHeader),
-        request(HTTPMSGLOCK(aRequest)),
-        fd(-1),
-        url(NULL)
-{}
+    header(aHeader),
+    request(aRequest),
+    fd(-1),
+    url(NULL)
+{
+    HTTPMSGLOCK(request);
+}
 
 ICPState::~ICPState()
 {
@@ -153,7 +131,7 @@ class ICP2State : public ICPState, public StoreClient
 
 public:
     ICP2State(icp_common_t & aHeader, HttpRequest *aRequest):
-            ICPState(aHeader, aRequest),rtt(0),src_rtt(0),flags(0) {}
+        ICPState(aHeader, aRequest),rtt(0),src_rtt(0),flags(0) {}
 
     ~ICP2State();
     void created(StoreEntry * newEntry);
@@ -199,7 +177,7 @@ ICP2State::created(StoreEntry *newEntry)
 
 /// \ingroup ServerProtocolICPInternal2
 static void
-icpLogIcp(const Ip::Address &caddr, log_type logcode, int len, const char *url, int delay)
+icpLogIcp(const Ip::Address &caddr, LogTags logcode, int len, const char *url, int delay)
 {
     AccessLogEntry::Pointer al = new AccessLogEntry();
 
@@ -220,7 +198,8 @@ icpLogIcp(const Ip::Address &caddr, log_type logcode, int len, const char *url, 
 
     al->cache.caddr = caddr;
 
-    al->cache.replySize = len;
+    // XXX: move to use icp.clientReply instead
+    al->http.clientReplySz.payloadData = len;
 
     al->cache.code = logcode;
 
@@ -296,7 +275,7 @@ int
 icpUdpSend(int fd,
            const Ip::Address &to,
            icp_common_t * msg,
-           log_type logcode,
+           LogTags logcode,
            int delay)
 {
     icpUdpData *queue;
@@ -380,7 +359,7 @@ icpGetCommonOpcode()
     return ICP_ERR;
 }
 
-log_type
+LogTags
 icpLogFromICPCode(icp_opcode opcode)
 {
     if (opcode == ICP_ERR)
@@ -435,7 +414,7 @@ icpAccessAllowed(Ip::Address &from, HttpRequest * icp_request)
 
     ACLFilledChecklist checklist(Config.accessList.icp, icp_request, NULL);
     checklist.src_addr = from;
-    checklist.my_addr.SetNoAddr();
+    checklist.my_addr.setNoAddr();
     return (checklist.fastCheck() == ACCESS_ALLOWED);
 }
 
@@ -498,21 +477,15 @@ doV2Query(int fd, Ip::Address &from, char *buf, icp_common_t header)
 #endif /* USE_ICMP */
 
     /* The peer is allowed to use this cache */
-    ICP2State *state = new ICP2State (header, icp_request);
-
+    ICP2State *state = new ICP2State(header, icp_request);
     state->fd = fd;
-
     state->from = from;
-
-    state->url = xstrdup (url);
-
+    state->url = xstrdup(url);
     state->flags = flags;
-
     state->rtt = rtt;
-
     state->src_rtt = src_rtt;
 
-    StoreEntry::getPublic (state, url, METHOD_GET);
+    StoreEntry::getPublic(state, url, Http::METHOD_GET);
 
     HTTPMSGUNLOCK(icp_request);
 }
@@ -657,7 +630,7 @@ icpHandleUdp(int sock, void *data)
             break;
         }
 
-        icp_version = (int) buf[1];	/* cheat! */
+        icp_version = (int) buf[1]; /* cheat! */
 
         if (icpOutgoingConn->local == from)
             // ignore ICP packets which loop back (multicast usually)
@@ -682,15 +655,15 @@ icpOpenPorts(void)
 
     icpIncomingConn = new Comm::Connection;
     icpIncomingConn->local = Config.Addrs.udp_incoming;
-    icpIncomingConn->local.SetPort(port);
+    icpIncomingConn->local.port(port);
 
-    if (!Ip::EnableIpv6 && !icpIncomingConn->local.SetIPv4()) {
+    if (!Ip::EnableIpv6 && !icpIncomingConn->local.setIPv4()) {
         debugs(12, DBG_CRITICAL, "ERROR: IPv6 is disabled. " << icpIncomingConn->local << " is not an IPv4 address.");
         fatal("ICP port cannot be opened.");
     }
     /* split-stack for now requires default IPv4-only ICP */
-    if (Ip::EnableIpv6&IPV6_SPECIAL_SPLITSTACK && icpIncomingConn->local.IsAnyAddr()) {
-        icpIncomingConn->local.SetIPv4();
+    if (Ip::EnableIpv6&IPV6_SPECIAL_SPLITSTACK && icpIncomingConn->local.isAnyAddr()) {
+        icpIncomingConn->local.setIPv4();
     }
 
     AsyncCall::Pointer call = asyncCall(12, 2,
@@ -702,18 +675,18 @@ icpOpenPorts(void)
                         icpIncomingConn,
                         Ipc::fdnInIcpSocket, call);
 
-    if ( !Config.Addrs.udp_outgoing.IsNoAddr() ) {
+    if ( !Config.Addrs.udp_outgoing.isNoAddr() ) {
         icpOutgoingConn = new Comm::Connection;
         icpOutgoingConn->local = Config.Addrs.udp_outgoing;
-        icpOutgoingConn->local.SetPort(port);
+        icpOutgoingConn->local.port(port);
 
-        if (!Ip::EnableIpv6 && !icpOutgoingConn->local.SetIPv4()) {
+        if (!Ip::EnableIpv6 && !icpOutgoingConn->local.setIPv4()) {
             debugs(49, DBG_CRITICAL, "ERROR: IPv6 is disabled. " << icpOutgoingConn->local << " is not an IPv4 address.");
             fatal("ICP port cannot be opened.");
         }
         /* split-stack for now requires default IPv4-only ICP */
-        if (Ip::EnableIpv6&IPV6_SPECIAL_SPLITSTACK && icpOutgoingConn->local.IsAnyAddr()) {
-            icpOutgoingConn->local.SetIPv4();
+        if (Ip::EnableIpv6&IPV6_SPECIAL_SPLITSTACK && icpOutgoingConn->local.isAnyAddr()) {
+            icpOutgoingConn->local.setIPv4();
         }
 
         enter_suid();
@@ -745,7 +718,7 @@ icpIncomingConnectionOpened(const Comm::ConnectionPointer &conn, int errNo)
 
     fd_note(conn->fd, "Incoming ICP port");
 
-    if (Config.Addrs.udp_outgoing.IsNoAddr()) {
+    if (Config.Addrs.udp_outgoing.isNoAddr()) {
         icpOutgoingConn = conn;
         debugs(12, DBG_IMPORTANT, "Sending ICP messages from " << icpOutgoingConn->local);
     }
@@ -856,5 +829,6 @@ icpGetCacheKey(const char *url, int reqnum)
     if (neighbors_do_private_keys && reqnum)
         return queried_keys[reqnum & N_QUERIED_KEYS_MASK];
 
-    return storeKeyPublic(url, METHOD_GET);
+    return storeKeyPublic(url, Http::METHOD_GET);
 }
+

@@ -1,40 +1,19 @@
 /*
- * DEBUG: section 00    Client Database
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 00    Client Database */
+
 #include "squid.h"
+#include "base/RunnersRegistry.h"
 #include "client_db.h"
+#include "ClientInfo.h"
 #include "event.h"
 #include "format/Token.h"
-#include "ClientInfo.h"
 #include "fqdncache.h"
 #include "ip/Address.h"
 #include "log/access_log.h"
@@ -82,7 +61,7 @@ clientdbAdd(const Ip::Address &addr)
     char *buf = static_cast<char*>(xmalloc(MAX_IPSTRLEN)); // becomes hash.key
     c = (ClientInfo *)memAllocate(MEM_CLIENT_INFO);
     debugs(77, 9, "ClientInfo constructed, this=" << c);
-    c->hash.key = addr.NtoA(buf,MAX_IPSTRLEN);
+    c->hash.key = addr.toStr(buf,MAX_IPSTRLEN);
     c->addr = addr;
 #if USE_DELAY_POOLS
     /* setup default values for client write limiter */
@@ -112,20 +91,27 @@ clientdbAdd(const Ip::Address &addr)
 }
 
 static void
-clientdbRegisterWithCacheManager(void)
-{
-    Mgr::RegisterAction("client_list", "Cache Client List", clientdbDump, 0, 1);
-}
-
-void
 clientdbInit(void)
 {
-    clientdbRegisterWithCacheManager();
-
     if (client_table)
         return;
 
     client_table = hash_create((HASHCMP *) strcmp, CLIENT_DB_HASH_SIZE, hash_string);
+}
+
+class ClientDbRr: public RegisteredRunner
+{
+public:
+    /* RegisteredRunner API */
+    virtual void useConfig();
+};
+RunnerRegistrationEntry(ClientDbRr);
+
+void
+ClientDbRr::useConfig()
+{
+    clientdbInit();
+    Mgr::RegisterAction("client_list", "Cache Client List", clientdbDump, 0, 1);
 }
 
 #if USE_DELAY_POOLS
@@ -141,7 +127,7 @@ ClientInfo * clientdbGetInfo(const Ip::Address &addr)
     if (!Config.onoff.client_db)
         return NULL;
 
-    addr.NtoA(key,MAX_IPSTRLEN);
+    addr.toStr(key,MAX_IPSTRLEN);
 
     c = (ClientInfo *) hash_lookup(client_table, key);
     if (c==NULL) {
@@ -152,7 +138,7 @@ ClientInfo * clientdbGetInfo(const Ip::Address &addr)
 }
 #endif
 void
-clientdbUpdate(const Ip::Address &addr, log_type ltype, AnyP::ProtocolType p, size_t size)
+clientdbUpdate(const Ip::Address &addr, LogTags ltype, AnyP::ProtocolType p, size_t size)
 {
     char key[MAX_IPSTRLEN];
     ClientInfo *c;
@@ -160,7 +146,7 @@ clientdbUpdate(const Ip::Address &addr, log_type ltype, AnyP::ProtocolType p, si
     if (!Config.onoff.client_db)
         return;
 
-    addr.NtoA(key,MAX_IPSTRLEN);
+    addr.toStr(key,MAX_IPSTRLEN);
 
     c = (ClientInfo *) hash_lookup(client_table, key);
 
@@ -204,7 +190,7 @@ clientdbEstablished(const Ip::Address &addr, int delta)
     if (!Config.onoff.client_db)
         return 0;
 
-    addr.NtoA(key,MAX_IPSTRLEN);
+    addr.toStr(key,MAX_IPSTRLEN);
 
     c = (ClientInfo *) hash_lookup(client_table, key);
 
@@ -234,7 +220,7 @@ clientdbCutoffDenied(const Ip::Address &addr)
     if (!Config.onoff.client_db)
         return 0;
 
-    addr.NtoA(key,MAX_IPSTRLEN);
+    addr.toStr(key,MAX_IPSTRLEN);
 
     c = (ClientInfo *) hash_lookup(client_table, key);
 
@@ -280,19 +266,11 @@ clientdbCutoffDenied(const Ip::Address &addr)
     return 1;
 }
 
-log_type &operator++ (log_type &aLogType)
-{
-    int tmp = (int)aLogType;
-    aLogType = (log_type)(++tmp);
-    return aLogType;
-}
-
 void
 clientdbDump(StoreEntry * sentry)
 {
     const char *name;
     ClientInfo *c;
-    log_type l;
     int icp_total = 0;
     int icp_hits = 0;
     int http_total = 0;
@@ -310,7 +288,7 @@ clientdbDump(StoreEntry * sentry)
         storeAppendPrintf(sentry, "    ICP  Requests %d\n",
                           c->Icp.n_requests);
 
-        for (l = LOG_TAG_NONE; l < LOG_TYPE_MAX; ++l) {
+        for (LogTags l = LOG_TAG_NONE; l < LOG_TYPE_MAX; ++l) {
             if (c->Icp.result_hist[l] == 0)
                 continue;
 
@@ -319,12 +297,12 @@ clientdbDump(StoreEntry * sentry)
             if (LOG_UDP_HIT == l)
                 icp_hits += c->Icp.result_hist[l];
 
-            storeAppendPrintf(sentry, "        %-20.20s %7d %3d%%\n",Format::log_tags[l], c->Icp.result_hist[l], Math::intPercent(c->Icp.result_hist[l], c->Icp.n_requests));
+            storeAppendPrintf(sentry, "        %-20.20s %7d %3d%%\n",LogTags_str[l], c->Icp.result_hist[l], Math::intPercent(c->Icp.result_hist[l], c->Icp.n_requests));
         }
 
         storeAppendPrintf(sentry, "    HTTP Requests %d\n", c->Http.n_requests);
 
-        for (l = LOG_TAG_NONE; l < LOG_TYPE_MAX; ++l) {
+        for (LogTags l = LOG_TAG_NONE; l < LOG_TYPE_MAX; ++l) {
             if (c->Http.result_hist[l] == 0)
                 continue;
 
@@ -335,7 +313,7 @@ clientdbDump(StoreEntry * sentry)
 
             storeAppendPrintf(sentry,
                               "        %-20.20s %7d %3d%%\n",
-                              Format::log_tags[l],
+                              LogTags_str[l],
                               c->Http.result_hist[l],
                               Math::intPercent(c->Http.result_hist[l], c->Http.n_requests));
         }
@@ -453,7 +431,7 @@ client_entry(Ip::Address *current)
     char key[MAX_IPSTRLEN];
 
     if (current) {
-        current->NtoA(key,MAX_IPSTRLEN);
+        current->toStr(key,MAX_IPSTRLEN);
         hash_first(client_table);
         while ((c = (ClientInfo *) hash_next(client_table))) {
             if (!strcmp(key, hashKeyStr(&c->hash)))
@@ -494,7 +472,7 @@ snmp_meshCtblFn(variable_list * Var, snint * ErrP)
         return NULL;
     }
 
-    keyIp.NtoA(key, sizeof(key));
+    keyIp.toStr(key, sizeof(key));
     debugs(49, 5, HERE << "[" << key << "] requested!");
     c = (ClientInfo *) hash_lookup(client_table, key);
 
@@ -506,13 +484,12 @@ snmp_meshCtblFn(variable_list * Var, snint * ErrP)
 
     variable_list *Answer = NULL;
     int aggr = 0;
-    log_type l;
 
     switch (Var->name[LEN_SQ_NET + 2]) {
 
     case MESH_CTBL_ADDR_TYPE: {
         int ival;
-        ival = c->addr.IsIPv4() ? INETADDRESSTYPE_IPV4 : INETADDRESSTYPE_IPV6 ;
+        ival = c->addr.isIPv4() ? INETADDRESSTYPE_IPV4 : INETADDRESSTYPE_IPV6 ;
         Answer = snmp_var_new_integer(Var->name, Var->name_length,
                                       ival, SMI_INTEGER);
     }
@@ -525,7 +502,7 @@ snmp_meshCtblFn(variable_list * Var, snint * ErrP)
         // See: rfc4001.txt
         Answer->type = ASN_OCTET_STR;
         char client[MAX_IPSTRLEN];
-        c->addr.NtoA(client,MAX_IPSTRLEN);
+        c->addr.toStr(client,MAX_IPSTRLEN);
         Answer->val_len = strlen(client);
         Answer->val.string =  (u_char *) xstrdup(client);
     }
@@ -545,7 +522,7 @@ snmp_meshCtblFn(variable_list * Var, snint * ErrP)
     case MESH_CTBL_HTHITS:
         aggr = 0;
 
-        for (l = LOG_TAG_NONE; l < LOG_TYPE_MAX; ++l) {
+        for (LogTags l = LOG_TAG_NONE; l < LOG_TYPE_MAX; ++l) {
             if (logTypeIsATcpHit(l))
                 aggr += c->Http.result_hist[l];
         }
@@ -596,3 +573,4 @@ snmp_meshCtblFn(variable_list * Var, snint * ErrP)
 }
 
 #endif /*SQUID_SNMP */
+

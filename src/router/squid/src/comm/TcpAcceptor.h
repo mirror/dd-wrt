@@ -1,11 +1,22 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_COMM_TCPACCEPTOR_H
 #define SQUID_COMM_TCPACCEPTOR_H
 
+#include "anyp/forward.h"
 #include "base/AsyncJob.h"
 #include "base/CbcPointer.h"
 #include "base/Subscription.h"
-#include "comm_err_t.h"
+#include "comm/Flag.h"
 #include "comm/forward.h"
+
+class CommCloseCbParams;
 
 namespace Comm
 {
@@ -39,6 +50,7 @@ private:
 
 public:
     TcpAcceptor(const Comm::ConnectionPointer &conn, const char *note, const Subscription::Pointer &aSub);
+    TcpAcceptor(const AnyP::PortCfgPointer &listenPort, const char *note, const Subscription::Pointer &aSub);
 
     /** Subscribe a handler to receive calls back about new connections.
      * Unsubscribes any existing subscribed handler.
@@ -57,7 +69,7 @@ public:
     void acceptNext();
 
     /// Call the subscribed callback handler with details about a new connection.
-    void notify(const comm_err_t flag, const Comm::ConnectionPointer &details) const;
+    void notify(const Comm::Flag flag, const Comm::ConnectionPointer &details) const;
 
     /// errno code of the last accept() or listen() action if one occurred.
     int errcode;
@@ -73,6 +85,12 @@ private:
     /// Reserved for read-only use.
     ConnectionPointer conn;
 
+    /// configuration details of the listening port (if provided)
+    AnyP::PortCfgPointer listenPort_;
+
+    /// listen socket closure handler
+    AsyncCall::Pointer closer_;
+
     /// Method to test if there are enough file descriptors to open a new client connection
     /// if not the accept() will be postponed
     static bool okToAccept();
@@ -81,8 +99,9 @@ private:
     static void doAccept(int fd, void *data);
 
     void acceptOne();
-    comm_err_t oldAccept(Comm::ConnectionPointer &details);
+    Comm::Flag oldAccept(Comm::ConnectionPointer &details);
     void setListen();
+    void handleClosure(const CommCloseCbParams &io);
 
     CBDATA_CLASS2(TcpAcceptor);
 };
@@ -90,3 +109,4 @@ private:
 } // namespace Comm
 
 #endif /* SQUID_COMM_TCPACCEPTOR_H */
+

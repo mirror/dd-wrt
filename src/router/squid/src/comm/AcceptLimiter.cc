@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "comm/AcceptLimiter.h"
 #include "comm/Connection.h"
@@ -47,7 +55,8 @@ Comm::AcceptLimiter::kick()
     debugs(5, 5, "size=" << deferred_.size());
     while (deferred_.size() > 0 && fdNFree() >= RESERVED_FD) {
         /* NP: shift() is equivalent to pop_front(). Giving us a FIFO queue. */
-        TcpAcceptor::Pointer temp = deferred_.shift();
+        TcpAcceptor::Pointer temp = deferred_.front();
+        deferred_.erase(deferred_.begin());
         if (temp.valid()) {
             debugs(5, 5, "doing one.");
             -- temp->isLimited;
@@ -56,3 +65,4 @@ Comm::AcceptLimiter::kick()
         }
     }
 }
+

@@ -1,14 +1,20 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "base/TextException.h"
-#include "SquidTime.h"
 #include "FadingCounter.h"
+#include "SquidTime.h"
 
-#if HAVE_MATH_H
-#include <math.h>
-#endif /* HAVE_MATH_H */
+#include <cmath>
 
 FadingCounter::FadingCounter(): horizon(-1), precision(10), delta(-1),
-        lastTime(0), total(0)
+    lastTime(0), total(0)
 {
     counters.reserve(precision);
     while (counters.size() < static_cast<unsigned int>(precision))
@@ -67,3 +73,4 @@ int FadingCounter::count(int howMany)
 
     return total;
 }
+

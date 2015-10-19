@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
   NT_auth -  Version 2.0
 
   Modified to act as a Squid authenticator module.
@@ -13,7 +21,7 @@
     Bill Welliver 1999
 
  * Distributed freely under the terms of the GNU General Public License,
- * version 2. See the file COPYING for licensing details
+ * version 2 or later. See the file COPYING for licensing details
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,23 +36,16 @@
 #ifndef _VALID_H_
 #define _VALID_H_
 
-#if _SQUID_CYGWIN_
+#include "sspwin32.h"
+
+#if HAVE_WINDOWS_H
 #include <windows.h>
 #endif
 #include <lm.h>
-#include "sspwin32.h"
+#include <sys/types.h>
 #undef debug
 
 /************* CONFIGURATION ***************/
-/*
- * define this if you want debugging
- */
-#ifndef DEBUG
-#define DEBUG
-#endif
-
-#define safe_free(x)	if (x) { free(x); x = NULL; }
-
 /* SMB User verification function */
 
 #define NTV_NO_ERROR 0
@@ -66,13 +67,8 @@ extern int debug_enabled;
 extern char Default_NTDomain[DNLEN+1];
 extern const char * errormsg;
 
-#include <sys/types.h>
-
 /* Debugging stuff */
-
-#ifdef __GNUC__			/* this is really a gcc-ism */
-#ifdef DEBUG
-#include <stdio.h>
+#if defined(__GNUC__)           /* this is really a gcc-ism */
 #include <unistd.h>
 static char *__foo;
 #define debug(X...) if (debug_enabled) { \
@@ -80,15 +76,10 @@ static char *__foo;
                     ((__foo=strrchr(__FILE__,'/'))==NULL?__FILE__:__foo+1),\
                     __LINE__);\
                     fprintf(stderr,X); }
-#else /* DEBUG */
-#define debug(X...)		/* */
-#endif /* DEBUG */
 #else /* __GNUC__ */
 static void
 debug(char *format,...)
 {
-#ifdef DEBUG
-#if _SQUID_WINDOWS_
     if (debug_enabled) {
         va_list args;
 
@@ -97,11 +88,8 @@ debug(char *format,...)
         vfprintf(stderr, format, args);
         va_end(args);
     }
-#endif /* _SQUID_WINDOWS_ */
-#endif /* DEBUG */
 }
 #endif /* __GNUC__ */
 
-int Valid_User(char *,char *, char *);
-
 #endif
+

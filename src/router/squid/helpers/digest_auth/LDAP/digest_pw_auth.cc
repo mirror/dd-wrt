@@ -1,8 +1,14 @@
 /*
- * digest_pw_auth.c
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * AUTHOR: Robert Collins. Based on ncsa_auth.c by Arjan de Vet
- * <Arjan.deVet@adv.iae.nl>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
+ * AUTHOR: Robert Collins.
+ * Based on ncsa_auth.c by Arjan de Vet <Arjan.deVet@adv.iae.nl>
  * LDAP backend extension by Flavio Pescuma, MARA Systems AB <flavio@marasystems.com>
  *
  * Example digest authentication program for Squid, based on the original
@@ -29,6 +35,7 @@
  *
  * Copyright (c) 2003  Robert Collins  <robertc@squid-cache.org>
  */
+
 #include "squid.h"
 #include "digest_common.h"
 #include "helpers/defines.h"
@@ -48,7 +55,15 @@ ParseBuffer(char *buf, RequestData * requestData)
     char *p;
     requestData->parsed = 0;
     if ((p = strchr(buf, '\n')) != NULL)
-        *p = '\0';		/* strip \n */
+        *p = '\0';      /* strip \n */
+
+    p = NULL;
+    requestData->channelId = strtoll(buf, &p, 10);
+    if (*p != ' ') // not a channel-ID
+        requestData->channelId = -1;
+    else
+        buf = ++p;
+
     if ((requestData->user = strtok(buf, "\"")) == NULL)
         return;
     if ((requestData->realm = strtok(NULL, "\"")) == NULL)
@@ -63,11 +78,13 @@ OutputHHA1(RequestData * requestData)
 {
     requestData->error = 0;
     GetHHA1(requestData);
+    if (requestData->channelId >= 0)
+        printf("%u ", requestData->channelId);
     if (requestData->error) {
-        SEND_ERR("No such user");
+        SEND_ERR("message=\"No such user\"");
         return;
     }
-    printf("%s\n", requestData->HHA1);
+    printf("OK ha1=\"%s\"\n", requestData->HHA1);
 }
 
 static void
@@ -76,7 +93,9 @@ DoOneRequest(char *buf)
     RequestData requestData;
     ParseBuffer(buf, &requestData);
     if (!requestData.parsed) {
-        SEND_ERR("");
+        if (requestData.channelId >= 0)
+            printf("%u ", requestData.channelId);
+        SEND_BH("message=\"Invalid line received\"");
         return;
     }
     OutputHHA1(&requestData);
@@ -101,3 +120,4 @@ main(int argc, char **argv)
         DoOneRequest(buf);
     exit(0);
 }
+

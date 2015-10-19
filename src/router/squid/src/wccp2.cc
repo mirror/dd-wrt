@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 80    WCCP Support
- * AUTHOR: Steven Wilton
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 80    WCCP Support */
 
 #include "squid.h"
 
@@ -38,7 +16,7 @@
 #include "comm.h"
 #include "comm/Connection.h"
 #include "comm/Loops.h"
-#include "compat/strsep.h"
+#include "ConfigParser.h"
 #include "event.h"
 #include "ip/Address.h"
 #include "md5.h"
@@ -63,15 +41,15 @@ static EVH wccp2AssignBuckets;
 
 /* KDW WCCP V2 */
 
-#define WCCP2_HASH_ASSIGNMENT		0x00
-#define WCCP2_MASK_ASSIGNMENT		0x01
+#define WCCP2_HASH_ASSIGNMENT       0x00
+#define WCCP2_MASK_ASSIGNMENT       0x01
 
-#define	WCCP2_NONE_SECURITY_LEN	0
-#define	WCCP2_MD5_SECURITY_LEN	16
+#define WCCP2_NONE_SECURITY_LEN 0
+#define WCCP2_MD5_SECURITY_LEN  SQUID_MD5_DIGEST_LENGTH // 16
 
 /* Useful defines */
-#define	WCCP2_NUMPORTS	8
-#define	WCCP2_PASSWORD_LEN	8
+#define WCCP2_NUMPORTS  8
+#define WCCP2_PASSWORD_LEN  8
 
 /* WCCPv2 Pakcet format structures */
 /* Defined in draft-wilson-wccp-v2-12-oct-2001.txt */
@@ -85,18 +63,18 @@ struct wccp2_item_header_t {
 };
 
 /* item type values */
-#define WCCP2_SECURITY_INFO		0
-#define WCCP2_SERVICE_INFO		1
-#define WCCP2_ROUTER_ID_INFO		2
-#define WCCP2_WC_ID_INFO		3
-#define WCCP2_RTR_VIEW_INFO		4
-#define WCCP2_WC_VIEW_INFO		5
-#define WCCP2_REDIRECT_ASSIGNMENT	6
-#define WCCP2_QUERY_INFO		7
-#define WCCP2_CAPABILITY_INFO		8
-#define WCCP2_ALT_ASSIGNMENT		13
-#define WCCP2_ASSIGN_MAP		14
-#define WCCP2_COMMAND_EXTENSION		15
+#define WCCP2_SECURITY_INFO     0
+#define WCCP2_SERVICE_INFO      1
+#define WCCP2_ROUTER_ID_INFO        2
+#define WCCP2_WC_ID_INFO        3
+#define WCCP2_RTR_VIEW_INFO     4
+#define WCCP2_WC_VIEW_INFO      5
+#define WCCP2_REDIRECT_ASSIGNMENT   6
+#define WCCP2_QUERY_INFO        7
+#define WCCP2_CAPABILITY_INFO       8
+#define WCCP2_ALT_ASSIGNMENT        13
+#define WCCP2_ASSIGN_MAP        14
+#define WCCP2_COMMAND_EXTENSION     15
 
 /** \interface WCCPv2_Protocol
  * Sect 5.5  WCCP Message Header
@@ -128,8 +106,8 @@ struct wccp2_security_none_t {
 };
 
 /* security options */
-#define WCCP2_NO_SECURITY		0
-#define WCCP2_MD5_SECURITY		1
+#define WCCP2_NO_SECURITY       0
+#define WCCP2_MD5_SECURITY      1
 
 /** \interface WCCPv2_Protocol
  * Sect 5.6.1 Security Info Component
@@ -167,23 +145,23 @@ struct wccp2_service_info_t {
     uint16_t port7;
 };
 /* services */
-#define WCCP2_SERVICE_STANDARD		0
-#define WCCP2_SERVICE_DYNAMIC		1
+#define WCCP2_SERVICE_STANDARD      0
+#define WCCP2_SERVICE_DYNAMIC       1
 
 /* service IDs */
-#define WCCP2_SERVICE_ID_HTTP		0x00
+#define WCCP2_SERVICE_ID_HTTP       0x00
 
 /* service flags */
-#define WCCP2_SERVICE_SRC_IP_HASH	0x1
-#define WCCP2_SERVICE_DST_IP_HASH	0x2
-#define WCCP2_SERVICE_SRC_PORT_HASH	0x4
-#define WCCP2_SERVICE_DST_PORT_HASH	0x8
-#define WCCP2_SERVICE_PORTS_DEFINED	0x10
-#define WCCP2_SERVICE_PORTS_SOURCE	0x20
-#define WCCP2_SERVICE_SRC_IP_ALT_HASH	0x100
-#define WCCP2_SERVICE_DST_IP_ALT_HASH	0x200
-#define WCCP2_SERVICE_SRC_PORT_ALT_HASH	0x400
-#define WCCP2_SERVICE_DST_PORT_ALT_HASH	0x800
+#define WCCP2_SERVICE_SRC_IP_HASH   0x1
+#define WCCP2_SERVICE_DST_IP_HASH   0x2
+#define WCCP2_SERVICE_SRC_PORT_HASH 0x4
+#define WCCP2_SERVICE_DST_PORT_HASH 0x8
+#define WCCP2_SERVICE_PORTS_DEFINED 0x10
+#define WCCP2_SERVICE_PORTS_SOURCE  0x20
+#define WCCP2_SERVICE_SRC_IP_ALT_HASH   0x100
+#define WCCP2_SERVICE_DST_IP_ALT_HASH   0x200
+#define WCCP2_SERVICE_SRC_PORT_ALT_HASH 0x400
+#define WCCP2_SERVICE_DST_PORT_ALT_HASH 0x800
 
 /* TODO the following structures need to be re-defined for correct full operation.
  wccp2_cache_identity_element needs to be merged as a sub-struct of
@@ -322,24 +300,24 @@ struct wccp2_capability_element_t {
 static struct wccp2_capability_element_t wccp2_capability_element;
 
 /* capability types */
-#define WCCP2_CAPABILITY_FORWARDING_METHOD	0x01
-#define WCCP2_CAPABILITY_ASSIGNMENT_METHOD	0x02
-#define WCCP2_CAPABILITY_RETURN_METHOD		0x03
+#define WCCP2_CAPABILITY_FORWARDING_METHOD  0x01
+#define WCCP2_CAPABILITY_ASSIGNMENT_METHOD  0x02
+#define WCCP2_CAPABILITY_RETURN_METHOD      0x03
 // 0x04 ?? - advertised by a 4507 (ios v15.1) Cisco switch
 // 0x05 ?? - advertised by a 4507 (ios v15.1) Cisco switch
 
 /* capability values */
-#define WCCP2_METHOD_GRE		0x00000001
-#define WCCP2_METHOD_L2			0x00000002
+#define WCCP2_METHOD_GRE        0x00000001
+#define WCCP2_METHOD_L2         0x00000002
 /* when type=WCCP2_CAPABILITY_FORWARDING_METHOD */
-#define WCCP2_FORWARDING_METHOD_GRE	WCCP2_METHOD_GRE
-#define WCCP2_FORWARDING_METHOD_L2	WCCP2_METHOD_L2
+#define WCCP2_FORWARDING_METHOD_GRE WCCP2_METHOD_GRE
+#define WCCP2_FORWARDING_METHOD_L2  WCCP2_METHOD_L2
 /* when type=WCCP2_CAPABILITY_ASSIGNMENT_METHOD */
-#define WCCP2_ASSIGNMENT_METHOD_HASH	0x00000001
-#define WCCP2_ASSIGNMENT_METHOD_MASK	0x00000002
+#define WCCP2_ASSIGNMENT_METHOD_HASH    0x00000001
+#define WCCP2_ASSIGNMENT_METHOD_MASK    0x00000002
 /* when type=WCCP2_CAPABILITY_RETURN_METHOD */
-#define WCCP2_PACKET_RETURN_METHOD_GRE	WCCP2_METHOD_GRE
-#define WCCP2_PACKET_RETURN_METHOD_L2	WCCP2_METHOD_L2
+#define WCCP2_PACKET_RETURN_METHOD_GRE  WCCP2_METHOD_GRE
+#define WCCP2_PACKET_RETURN_METHOD_L2   WCCP2_METHOD_L2
 
 /** \interface WCCPv2_Protocol
  * 5.7.8 Value Element
@@ -472,7 +450,7 @@ struct wccp2_service_list_t {
     size_t wccp_packet_size;
 
     struct wccp2_service_list_t *next;
-    char wccp_password[WCCP2_PASSWORD_LEN + 1];		/* hold the trailing C-string NUL */
+    char wccp_password[WCCP2_PASSWORD_LEN + 1];     /* hold the trailing C-string NUL */
     uint32_t wccp2_security_type;
 };
 
@@ -573,7 +551,7 @@ wccp2_get_service_by_id(int service, int service_id) {
 static char
 wccp2_update_md5_security(char *password, char *ptr, char *packet, int len)
 {
-    uint8_t md5_digest[16];
+    uint8_t md5Digest[SQUID_MD5_DIGEST_LENGTH];
     char pwd[WCCP2_PASSWORD_LEN];
     SquidMD5_CTX M;
 
@@ -601,7 +579,7 @@ wccp2_update_md5_security(char *password, char *ptr, char *packet, int len)
      * including the WCCP message header. The WCCP security implementation
      * area should be zero'ed before calculating the MD5 hash.
      */
-    /* XXX eventually we should be able to kill md5_digest and blit it directly in */
+    /* XXX eventually we should be able to kill md5Digest and blit it directly in */
     memset(ws->security_implementation, 0, sizeof(ws->security_implementation));
 
     SquidMD5Init(&M);
@@ -610,9 +588,9 @@ wccp2_update_md5_security(char *password, char *ptr, char *packet, int len)
 
     SquidMD5Update(&M, packet, len);
 
-    SquidMD5Final(md5_digest, &M);
+    SquidMD5Final(md5Digest, &M);
 
-    memcpy(ws->security_implementation, md5_digest, sizeof(md5_digest));
+    memcpy(ws->security_implementation, md5Digest, sizeof(md5Digest));
 
     /* Finished! */
     return 1;
@@ -627,7 +605,7 @@ wccp2_check_security(struct wccp2_service_list_t *srv, char *security, char *pac
 {
 
     struct wccp2_security_md5_t *ws = (struct wccp2_security_md5_t *) security;
-    uint8_t md5_digest[16], md5_challenge[16];
+    uint8_t md5Digest[SQUID_MD5_DIGEST_LENGTH], md5_challenge[SQUID_MD5_DIGEST_LENGTH];
     char pwd[WCCP2_PASSWORD_LEN];
     SquidMD5_CTX M;
 
@@ -655,7 +633,7 @@ wccp2_check_security(struct wccp2_service_list_t *srv, char *security, char *pac
     pwd[sizeof(pwd) - 1] = '\0';
 
     /* Take a copy of the challenge: we need to NUL it before comparing */
-    memcpy(md5_challenge, ws->security_implementation, 16);
+    memcpy(md5_challenge, ws->security_implementation, sizeof(md5_challenge));
 
     memset(ws->security_implementation, 0, sizeof(ws->security_implementation));
 
@@ -665,9 +643,9 @@ wccp2_check_security(struct wccp2_service_list_t *srv, char *security, char *pac
 
     SquidMD5Update(&M, packet, len);
 
-    SquidMD5Final(md5_digest, &M);
+    SquidMD5Final(md5Digest, &M);
 
-    return (memcmp(md5_digest, md5_challenge, 16) == 0);
+    return (memcmp(md5Digest, md5_challenge, SQUID_MD5_DIGEST_LENGTH) == 0);
 }
 
 void
@@ -681,8 +659,6 @@ wccp2Init(void)
 
     struct wccp2_router_list_t *router_list_ptr;
 
-    struct wccp2_security_md5_t wccp2_security_md5;
-
     debugs(80, 5, "wccp2Init: Called");
 
     if (wccp2_connected == 1)
@@ -692,7 +668,7 @@ wccp2Init(void)
 
     /* Calculate the number of routers configured in the config file */
     for (s = Config.Wccp2.router; s; s = s->next) {
-        if (!s->s.IsAnyAddr()) {
+        if (!s->s.isAnyAddr()) {
             /* Increment the counter */
             ++wccp2_numrouters;
         }
@@ -701,6 +677,9 @@ wccp2Init(void)
     if (wccp2_numrouters == 0) {
         return;
     }
+
+    struct wccp2_security_md5_t wccp2_security_md5;
+    memset(&wccp2_security_md5, 0, sizeof(wccp2_security_md5));
 
     /* Initialise the list of services */
     wccp2InitServices();
@@ -849,7 +828,7 @@ wccp2Init(void)
 
         /* Add each router.  Keep this functionality here to make sure the received_id can be updated in the packet */
         for (s = Config.Wccp2.router; s; s = s->next) {
-            if (!s->s.IsAnyAddr()) {
+            if (!s->s.isAnyAddr()) {
 
                 wccp2_here_i_am_header.length += sizeof(struct wccp2_router_id_element_t);
                 assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
@@ -857,9 +836,9 @@ wccp2Init(void)
                 /* Add a pointer to the router list for this router */
 
                 router_list_ptr->info = (struct wccp2_router_id_element_t *) ptr;
-                s->s.GetInAddr(router_list_ptr->info->router_address);
+                s->s.getInAddr(router_list_ptr->info->router_address);
                 router_list_ptr->info->received_id = htonl(0);
-                s->s.GetInAddr(router_list_ptr->router_sendto_address);
+                s->s.getInAddr(router_list_ptr->router_sendto_address);
                 router_list_ptr->member_change = htonl(0);
 
                 /* Build the next struct */
@@ -982,12 +961,12 @@ wccp2ConnectionOpen(void)
         return;
     }
 
-    if ( !Config.Wccp2.address.SetIPv4() ) {
+    if ( !Config.Wccp2.address.setIPv4() ) {
         debugs(80, DBG_CRITICAL, "WCCPv2 Disabled. Local address " << Config.Wccp2.address << " is not an IPv4 address.");
         return;
     }
 
-    Config.Wccp2.address.SetPort(WCCP_PORT);
+    Config.Wccp2.address.port(WCCP_PORT);
     theWccp2Connection = comm_open_listener(SOCK_DGRAM,
                                             0,
                                             Config.Wccp2.address,
@@ -1071,13 +1050,18 @@ wccp2ConnectionClose(void)
         return;
     }
 
+    /* TODO A shutting-down cache should generate a removal query, informing the router
+     * (and therefore the caches in the group) that this cache is going
+     * away and no new traffic should be forwarded to it.
+     */
+
     if (theWccp2Connection > -1) {
         debugs(80, DBG_IMPORTANT, "FD " << theWccp2Connection << " Closing WCCPv2 socket");
         comm_close(theWccp2Connection);
         theWccp2Connection = -1;
     }
 
-    /* for each router on each service send a packet */
+    /* free all stored router state */
     service_list_ptr = wccp2_service_list_head;
 
     while (service_list_ptr != NULL) {
@@ -1171,14 +1155,13 @@ wccp2HandleUdp(int sock, void *not_used)
 
     /* FIXME INET6 : drop conversion boundary */
     Ip::Address from_tmp;
+    from_tmp.setIPv4();
 
     len = comm_udp_recvfrom(sock,
                             &wccp2_i_see_you,
                             WCCP_RESPONSE_SIZE,
                             0,
                             from_tmp);
-    /* FIXME INET6 : drop conversion boundary */
-    from_tmp.GetSockAddr(from);
 
     if (len < 0)
         return;
@@ -1188,6 +1171,9 @@ wccp2HandleUdp(int sock, void *not_used)
 
     if (ntohl(wccp2_i_see_you.type) != WCCP2_I_SEE_YOU)
         return;
+
+    /* FIXME INET6 : drop conversion boundary */
+    from_tmp.getSockAddr(from);
 
     debugs(80, 3, "Incoming WCCPv2 I_SEE_YOU length " << ntohs(wccp2_i_see_you.length) << ".");
 
@@ -1260,7 +1246,7 @@ wccp2HandleUdp(int sock, void *not_used)
             router_capability_header = (struct wccp2_capability_info_header_t *) &wccp2_i_see_you.data[offset];
             break;
 
-            /* Nothing to do for the types below */
+        /* Nothing to do for the types below */
 
         case WCCP2_ASSIGN_MAP:
         case WCCP2_REDIRECT_ASSIGNMENT:
@@ -1554,7 +1540,7 @@ wccp2HereIam(void *voidnotused)
         return;
     }
 
-    router.SetPort(WCCP_PORT);
+    router.port(WCCP_PORT);
 
     /* for each router on each service send a packet */
     service_list_ptr = wccp2_service_list_head;
@@ -2012,7 +1998,7 @@ parse_wccp2_method(int *method)
     char *t;
 
     /* Snarf the method */
-    if ((t = strtok(NULL, w_space)) == NULL) {
+    if ((t = ConfigParser::NextToken()) == NULL) {
         debugs(80, DBG_CRITICAL, "wccp2_*_method: missing setting.");
         self_destruct();
     }
@@ -2059,7 +2045,7 @@ parse_wccp2_amethod(int *method)
     char *t;
 
     /* Snarf the method */
-    if ((t = strtok(NULL, w_space)) == NULL) {
+    if ((t = ConfigParser::NextToken()) == NULL) {
         debugs(80, DBG_CRITICAL, "wccp2_assignment_method: missing setting.");
         self_destruct();
     }
@@ -2115,7 +2101,7 @@ parse_wccp2_service(void *v)
     }
 
     /* Snarf the type */
-    if ((t = strtok(NULL, w_space)) == NULL) {
+    if ((t = ConfigParser::NextToken()) == NULL) {
         debugs(80, DBG_CRITICAL, "wccp2ParseServiceInfo: missing service info type (standard|dynamic)");
         self_destruct();
     }
@@ -2140,7 +2126,7 @@ parse_wccp2_service(void *v)
     memset(wccp_password, 0, sizeof(wccp_password));
     /* Handle password, if any */
 
-    if ((t = strtok(NULL, w_space)) != NULL) {
+    if ((t = ConfigParser::NextToken()) != NULL) {
         if (strncmp(t, "password=", 9) == 0) {
             security_type = WCCP2_MD5_SECURITY;
             strncpy(wccp_password, t + 9, WCCP2_PASSWORD_LEN);
@@ -2203,82 +2189,79 @@ check_null_wccp2_service(void *v)
 static int
 parse_wccp2_service_flags(char *flags)
 {
-    char *tmp, *tmp2;
-    char *flag;
+    if (!flags)
+        return 0;
+
+    char *flag = flags;
     int retflag = 0;
 
-    if (!flags) {
-        return 0;
-    }
+    while (size_t len = strcspn(flag, ",")) {
 
-    tmp = xstrdup(flags);
-    tmp2 = tmp;
-
-    flag = strsep(&tmp2, ",");
-
-    while (flag) {
-        if (strcmp(flag, "src_ip_hash") == 0) {
+        if (strncmp(flag, "src_ip_hash", len) == 0) {
             retflag |= WCCP2_SERVICE_SRC_IP_HASH;
-        } else if (strcmp(flag, "dst_ip_hash") == 0) {
+        } else if (strncmp(flag, "dst_ip_hash", len) == 0) {
             retflag |= WCCP2_SERVICE_DST_IP_HASH;
-        } else if (strcmp(flag, "source_port_hash") == 0) {
+        } else if (strncmp(flag, "source_port_hash", len) == 0) {
             retflag |= WCCP2_SERVICE_SRC_PORT_HASH;
-        } else if (strcmp(flag, "dst_port_hash") == 0) {
+        } else if (strncmp(flag, "dst_port_hash", len) == 0) {
             retflag |= WCCP2_SERVICE_DST_PORT_HASH;
-        } else if (strcmp(flag, "ports_source") == 0) {
+        } else if (strncmp(flag, "ports_source", len) == 0) {
             retflag |= WCCP2_SERVICE_PORTS_SOURCE;
-        } else if (strcmp(flag, "src_ip_alt_hash") == 0) {
+        } else if (strncmp(flag, "src_ip_alt_hash", len) == 0) {
             retflag |= WCCP2_SERVICE_SRC_IP_ALT_HASH;
-        } else if (strcmp(flag, "dst_ip_alt_hash") == 0) {
+        } else if (strncmp(flag, "dst_ip_alt_hash", len) == 0) {
             retflag |= WCCP2_SERVICE_DST_IP_ALT_HASH;
-        } else if (strcmp(flag, "src_port_alt_hash") == 0) {
+        } else if (strncmp(flag, "src_port_alt_hash", len) == 0) {
             retflag |= WCCP2_SERVICE_SRC_PORT_ALT_HASH;
-        } else if (strcmp(flag, "dst_port_alt_hash") == 0) {
+        } else if (strncmp(flag, "dst_port_alt_hash", len) == 0) {
             retflag |= WCCP2_SERVICE_DST_PORT_ALT_HASH;
         } else {
+            flag[len] = '\0';
             fatalf("Unknown wccp2 service flag: %s\n", flag);
         }
 
-        flag = strsep(&tmp2, ",");
+        if (flag[len] == '\0')
+            break;
+
+        flag += len+1;
     }
 
-    xfree(tmp);
     return retflag;
 }
 
 static void
 parse_wccp2_service_ports(char *options, int portlist[])
 {
-    int i = 0;
-    int p;
-    char *tmp, *tmp2, *port;
-
     if (!options) {
         return;
     }
 
-    tmp = xstrdup(options);
-    tmp2 = tmp;
+    int i = 0;
+    char *tmp = options;
+    static char copy[10];
 
-    port = strsep(&tmp2, ",");
+    while (size_t len = strcspn(tmp, ",")) {
+        if (i >= WCCP2_NUMPORTS) {
+            fatalf("parse_wccp2_service_ports: too many ports (maximum: 8) in list '%s'\n", options);
+        }
+        if (len > 6) { // 6 because "65535,"
+            fatalf("parse_wccp2_service_ports: port value '%s' isn't valid (1..65535)\n", tmp);
+        }
 
-    while (port && i < WCCP2_NUMPORTS) {
-        p = xatoi(port);
+        memcpy(copy, tmp, len);
+        copy[len] = '\0';
+        int p = xatoi(copy);
 
         if (p < 1 || p > 65535) {
-            fatalf("parse_wccp2_service_ports: port value '%s' isn't valid (1..65535)\n", port);
+            fatalf("parse_wccp2_service_ports: port value '%s' isn't valid (1..65535)\n", tmp);
         }
 
         portlist[i] = p;
         ++i;
-        port = strsep(&tmp2, ",");
+        if (tmp[len] == '\0')
+            return;
+        tmp += len+1;
     }
-
-    if (i == WCCP2_NUMPORTS && port) {
-        fatalf("parse_wccp2_service_ports: too many ports (maximum: 8) in list '%s'\n", options);
-    }
-
-    xfree(tmp);
 }
 
 void
@@ -2288,7 +2271,7 @@ parse_wccp2_service_info(void *v)
     int service_id = 0;
     int flags = 0;
     int portlist[WCCP2_NUMPORTS];
-    int protocol = -1;		/* IPPROTO_TCP | IPPROTO_UDP */
+    int protocol = -1;      /* IPPROTO_TCP | IPPROTO_UDP */
 
     struct wccp2_service_list_t *srv;
     int priority = -1;
@@ -2316,7 +2299,7 @@ parse_wccp2_service_info(void *v)
     }
 
     /* Next: loop until we don't have any more tokens */
-    while ((t = strtok(NULL, w_space)) != NULL) {
+    while ((t = ConfigParser::NextToken()) != NULL) {
         if (strncmp(t, "flags=", 6) == 0) {
             /* XXX eww, string pointer math */
             flags = parse_wccp2_service_flags(t + 6);
@@ -2537,3 +2520,4 @@ free_wccp2_service_info(void *v)
 {}
 
 #endif /* USE_WCCPv2 */
+

@@ -1,12 +1,16 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_SSL_CRTD_MESSAGE_H
 #define SQUID_SSL_CRTD_MESSAGE_H
 
-#if HAVE_STRING
-#include <string>
-#endif
-#if HAVE_MAP
 #include <map>
-#endif
+#include <string>
 
 namespace Ssl
 {
@@ -15,7 +19,7 @@ class CertificateProperties;
 /**
  * This class is responsible for composing and parsing messages destined to, or comming
  * from an ssl_crtd server. Format of these mesages is:
- *   <response/request code> <whitespace> <body length> <whitespace> <body>
+ *   response/request-code SP body length SP body
  */
 class CrtdMessage
 {
@@ -27,7 +31,11 @@ public:
         INCOMPLETE,
         ERROR
     };
-    CrtdMessage();
+    enum MessageKind {
+        REPLY,
+        REQUEST
+    };
+    CrtdMessage(MessageKind kind);
     /**Parse buffer of length len
      \retval OK          if parsing completes
      \retval INCOMPLETE  if more data required
@@ -76,7 +84,9 @@ public:
     static const std::string param_SetCommonName;
     /// Parameter name for passing signing algorithm
     static const std::string param_Sign;
-private:
+    /// The signing hash to use
+    static const std::string param_SignHash;
+protected:
     enum ParseState {
         BEFORE_CODE,
         CODE,
@@ -94,4 +104,6 @@ private:
 };
 
 } //namespace Ssl
+
 #endif // SQUID_SSL_CRTD_MESSAGE_H
+

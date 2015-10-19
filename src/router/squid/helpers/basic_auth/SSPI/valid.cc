@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
   NT_auth -  Version 2.0
 
   Modified to act as a Squid authenticator module.
@@ -14,7 +22,7 @@
     Bill Welliver 1999
 
  * Distributed freely under the terms of the GNU General Public License,
- * version 2. See the file COPYING for licensing details
+ * version 2 or later. See the file COPYING for licensing details
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -53,8 +61,8 @@ int
 Valid_Group(char *UserName, char *Group)
 {
     int result = FALSE;
-    WCHAR wszUserName[256];	// Unicode user name
-    WCHAR wszGroup[256];	// Unicode Group
+    WCHAR wszUserName[256]; // Unicode user name
+    WCHAR wszGroup[256];    // Unicode Group
 
     LPLOCALGROUP_USERS_INFO_0 pBuf = NULL;
     LPLOCALGROUP_USERS_INFO_0 pTmpBuf;
@@ -178,3 +186,4 @@ Valid_User(char *UserName, char *Password, char *Group)
     }
     return result;
 }
+

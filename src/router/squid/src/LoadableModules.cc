@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "Debug.h"
 #include "LoadableModule.h"
@@ -24,3 +32,4 @@ LoadableModulesConfigure(const wordlist *names)
         LoadModule(i->key);
     debugs(1, DBG_IMPORTANT, "Squid plugin modules loaded: " << count);
 }
+

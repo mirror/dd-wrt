@@ -1,40 +1,22 @@
 /*
- * DEBUG: section 46    Access Log
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 46    Access Log */
 
 #include "squid.h"
 #include "AccessLogEntry.h"
 #include "acl/Checklist.h"
+#if USE_ADAPTATION
+#include "adaptation/Config.h"
+#endif
 #include "CachePeer.h"
 #include "err_detail_type.h"
+#include "errorpage.h"
 #include "errorpage.h"
 #include "errorpage.h"
 #include "format/Token.h"
@@ -105,7 +87,7 @@ accessLogLogTo(CustomLog* log, AccessLogEntry::Pointer &al, ACLChecklist * check
     else if (al->htcp.opcode)
         al->_private.method_str = al->htcp.opcode;
     else
-        al->_private.method_str = RequestMethodStr(al->http.method);
+        al->_private.method_str = NULL;
 
     if (al->hier.host[0] == '\0')
         xstrncpy(al->hier.host, dash_str, SQUIDHOSTNAMELEN);
@@ -113,6 +95,10 @@ accessLogLogTo(CustomLog* log, AccessLogEntry::Pointer &al, ACLChecklist * check
     for (; log; log = log->next) {
         if (log->aclList && checklist && checklist->fastCheck(log->aclList) != ACCESS_ALLOWED)
             continue;
+
+        // The special-case "none" type has no logfile object set
+        if (log->type == Log::Format::CLF_NONE)
+            return;
 
         if (log->logfile) {
             logfileLineStart(log->logfile);
@@ -148,9 +134,6 @@ accessLogLogTo(CustomLog* log, AccessLogEntry::Pointer &al, ACLChecklist * check
                 Log::Format::SquidIcap(al, log->logfile);
                 break;
 #endif
-
-            case Log::Format::CLF_NONE:
-                return; // abort!
 
             default:
                 fatalf("Unknown log format %d\n", log->type);
@@ -245,15 +228,15 @@ accessLogClose(void)
 }
 
 HierarchyLogEntry::HierarchyLogEntry() :
-        code(HIER_NONE),
-        cd_lookup(LOOKUP_NONE),
-        n_choices(0),
-        n_ichoices(0),
-        peer_reply_status(HTTP_STATUS_NONE),
-        peer_response_time(-1),
-        total_response_time(-1),
-        tcpServer(NULL),
-        bodyBytesRead(-1)
+    code(HIER_NONE),
+    cd_lookup(LOOKUP_NONE),
+    n_choices(0),
+    n_ichoices(0),
+    peer_reply_status(Http::scNone),
+    peer_response_time(-1),
+    tcpServer(NULL),
+    bodyBytesRead(-1),
+    totalResponseTime_(-1)
 {
     memset(host, '\0', SQUIDHOSTNAMELEN);
     memset(cd_host, '\0', SQUIDHOSTNAMELEN);
@@ -267,8 +250,8 @@ HierarchyLogEntry::HierarchyLogEntry() :
     peer_http_request_sent.tv_sec = 0;
     peer_http_request_sent.tv_usec = 0;
 
-    first_conn_start.tv_sec = 0;
-    first_conn_start.tv_usec = 0;
+    firstConnStart_.tv_sec = 0;
+    firstConnStart_.tv_usec = 0;
 }
 
 void
@@ -288,6 +271,38 @@ HierarchyLogEntry::note(const Comm::ConnectionPointer &server, const char *reque
             xstrncpy(host, requestedHost, sizeof(host));
         }
     }
+}
+
+void
+HierarchyLogEntry::startPeerClock()
+{
+    if (!firstConnStart_.tv_sec)
+        firstConnStart_ = current_time;
+}
+
+void
+HierarchyLogEntry::stopPeerClock(const bool force)
+{
+    debugs(46, 5, "First connection started: " << firstConnStart_.tv_sec << "." <<
+           std::setfill('0') << std::setw(6) << firstConnStart_.tv_usec <<
+           ", current total response time value: " << totalResponseTime_ <<
+           (force ? ", force fixing" : ""));
+    if (!force && totalResponseTime_ >= 0)
+        return;
+
+    totalResponseTime_ = firstConnStart_.tv_sec ? tvSubMsec(firstConnStart_, current_time) : -1;
+}
+
+int64_t
+HierarchyLogEntry::totalResponseTime()
+{
+    // This should not really happen, but there may be rare code
+    // paths that lead to FwdState discarded (or transaction logged)
+    // without (or before) a stopPeerClock() call.
+    if (firstConnStart_.tv_sec && totalResponseTime_ < 0)
+        stopPeerClock(false);
+
+    return totalResponseTime_;
 }
 
 static void
@@ -316,7 +331,7 @@ accessLogInit(void)
         if (log->type == Log::Format::CLF_NONE)
             continue;
 
-        log->logfile = logfileOpen(log->filename, MAX_URL << 2, 1);
+        log->logfile = logfileOpen(log->filename, log->bufferSize, log->fatal);
 
         LogfileStatus = LOG_ENABLE;
 
@@ -326,7 +341,8 @@ accessLogInit(void)
                     curr_token->type == Format::LFT_ADAPTATION_ALL_XACT_TIMES ||
                     curr_token->type == Format::LFT_ADAPTATION_LAST_HEADER ||
                     curr_token->type == Format::LFT_ADAPTATION_LAST_HEADER_ELEM ||
-                    curr_token->type == Format::LFT_ADAPTATION_LAST_ALL_HEADERS) {
+                    curr_token->type == Format::LFT_ADAPTATION_LAST_ALL_HEADERS||
+                    (curr_token->type == Format::LFT_NOTE && !Adaptation::Config::metaHeaders.empty())) {
                 Log::TheConfig.hasAdaptToken = true;
             }
 #if ICAP_CLIENT
@@ -526,7 +542,6 @@ headersLog(int cs, int pq, const HttpRequestMethod& method, void *data)
     HttpRequest *req;
     unsigned short magic = 0;
     unsigned char M = (unsigned char) m;
-    unsigned short S;
     char *hmask;
     int ccmask = 0;
 
@@ -561,10 +576,9 @@ headersLog(int cs, int pq, const HttpRequestMethod& method, void *data)
     magic = htons(magic);
     ccmask = htonl(ccmask);
 
+    unsigned short S = 0;
     if (0 == pq)
-        S = (unsigned short) rep->sline.status;
-    else
-        S = (unsigned short) HTTP_STATUS_NONE;
+        S = static_cast<unsigned short>(rep->sline.status());
 
     logfileWrite(headerslog, &magic, sizeof(magic));
     logfileWrite(headerslog, &M, sizeof(M));
@@ -575,31 +589,3 @@ headersLog(int cs, int pq, const HttpRequestMethod& method, void *data)
 
 #endif
 
-int
-logTypeIsATcpHit(log_type code)
-{
-    /* this should be a bitmap for better optimization */
-
-    if (code == LOG_TCP_HIT)
-        return 1;
-
-    if (code == LOG_TCP_IMS_HIT)
-        return 1;
-
-    if (code == LOG_TCP_REFRESH_FAIL_OLD)
-        return 1;
-
-    if (code == LOG_TCP_REFRESH_UNMODIFIED)
-        return 1;
-
-    if (code == LOG_TCP_NEGATIVE_HIT)
-        return 1;
-
-    if (code == LOG_TCP_MEM_HIT)
-        return 1;
-
-    if (code == LOG_TCP_OFFLINE_HIT)
-        return 1;
-
-    return 0;
-}

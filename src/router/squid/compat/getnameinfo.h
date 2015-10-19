@@ -1,12 +1,18 @@
-#ifndef _getnameinfo_h
-#define _getnameinfo_h
 /*
- * Reconstructed from KAME getnameinfo.c (in lib/)
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
-#if !HAVE_GETNAMEINFO
+#ifndef _getnameinfo_h
+#define _getnameinfo_h
 
-/* RFC 2553 / Posix resolver */
+#if !HAVE_DECL_GETNAMEINFO
+
+// RFC 2553 / Posix resolver
+// Reconstructed from KAME getnameinfo.c
 SQUIDCEXTERN int xgetnameinfo(const struct sockaddr *sa,
                               socklen_t salen,
                               char *host,
@@ -14,7 +20,8 @@ SQUIDCEXTERN int xgetnameinfo(const struct sockaddr *sa,
                               char *serv,
                               size_t servlen,
                               int flags );
-#define getnameinfo	xgetnameinfo
+#define getnameinfo xgetnameinfo
 
-#endif /* HAVE_GETNAMEINFO */
+#endif /* HAVE_DECL_GETNAMEINFO */
 #endif /* _getnameinfo_h */
+

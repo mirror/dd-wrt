@@ -1,41 +1,24 @@
 /*
- * DEBUG: section 29    Authenticator
- * AUTHOR:  Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 29    Authenticator */
 
 #include "squid.h"
 #include "auth/Config.h"
 #include "auth/Gadgets.h"
 #include "auth/UserRequest.h"
+#include "cache_cf.h"
+#include "ConfigParser.h"
 #include "Debug.h"
+#include "format/Format.h"
 #include "globals.h"
+#include "Store.h"
+#include "wordlist.h"
 
 Auth::ConfigVector Auth::TheConfig;
 
@@ -47,7 +30,7 @@ Auth::ConfigVector Auth::TheConfig;
  * It may also be NULL reflecting that no user could be created.
  */
 Auth::UserRequest::Pointer
-Auth::Config::CreateAuthUser(const char *proxy_auth)
+Auth::Config::CreateAuthUser(const char *proxy_auth, AccessLogEntry::Pointer &al)
 {
     assert(proxy_auth != NULL);
     debugs(29, 9, HERE << "header = '" << proxy_auth << "'");
@@ -59,8 +42,17 @@ Auth::Config::CreateAuthUser(const char *proxy_auth)
                "Unsupported or unconfigured/inactive proxy-auth scheme, '" << proxy_auth << "'");
         return NULL;
     }
+    static MemBuf rmb;
+    rmb.reset();
+    if (config->keyExtras) {
+        // %credentials and %username, which normally included in
+        // request_format, are - at this time, but that is OK
+        // because user name is added to key explicitly, and we do
+        // not want to store authenticated credentials at all.
+        config->keyExtras->assemble(rmb, al, 0);
+    }
 
-    return config->decode(proxy_auth);
+    return config->decode(proxy_auth, rmb.hasContent() ? rmb.content() : NULL);
 }
 
 Auth::Config *
@@ -77,6 +69,93 @@ Auth::Config::Find(const char *proxy_auth)
 void
 Auth::Config::registerWithCacheManager(void)
 {}
+
+void
+Auth::Config::parse(Auth::Config * scheme, int n_configured, char *param_str)
+{
+    if (strcmp(param_str, "program") == 0) {
+        if (authenticateProgram)
+            wordlistDestroy(&authenticateProgram);
+
+        parse_wordlist(&authenticateProgram);
+
+        requirePathnameExists("Authentication helper program", authenticateProgram->key);
+
+    } else if (strcmp(param_str, "realm") == 0) {
+        realm.clear();
+
+        char *token = ConfigParser::NextQuotedOrToEol();
+
+        while (token && *token && xisspace(*token))
+            ++token;
+
+        if (!token || !*token) {
+            debugs(29, DBG_PARSE_NOTE(DBG_IMPORTANT), "ERROR: Missing auth_param " << scheme->type() << " realm");
+            self_destruct();
+            return;
+        }
+
+        realm = token;
+
+    } else if (strcmp(param_str, "children") == 0) {
+        authenticateChildren.parseConfig();
+
+    } else if (strcmp(param_str, "key_extras") == 0) {
+        keyExtrasLine = ConfigParser::NextQuotedToken();
+        Format::Format *nlf =  new ::Format::Format(scheme->type());
+        if (!nlf->parse(keyExtrasLine.termedBuf())) {
+            debugs(29, DBG_CRITICAL, "FATAL: Failed parsing key_extras formatting value");
+            self_destruct();
+            return;
+        }
+        if (keyExtras)
+            delete keyExtras;
+
+        keyExtras = nlf;
+
+        if (char *t = strtok(NULL, w_space)) {
+            debugs(29, DBG_CRITICAL, "FATAL: Unexpected argument '" << t << "' after request_format specification");
+            self_destruct();
+        }
+    } else {
+        debugs(29, DBG_CRITICAL, "Unrecognised " << scheme->type() << " auth scheme parameter '" << param_str << "'");
+    }
+}
+
+bool
+Auth::Config::dump(StoreEntry *entry, const char *name, Auth::Config *scheme) const
+{
+    if (!authenticateProgram)
+        return false; // not configured
+
+    wordlist *list = authenticateProgram;
+    storeAppendPrintf(entry, "%s %s", name, scheme->type());
+    while (list != NULL) {
+        storeAppendPrintf(entry, " %s", list->key);
+        list = list->next;
+    }
+    storeAppendPrintf(entry, "\n");
+
+    storeAppendPrintf(entry, "%s %s realm " SQUIDSBUFPH "\n", name, scheme->type(), SQUIDSBUFPRINT(realm));
+
+    storeAppendPrintf(entry, "%s %s children %d startup=%d idle=%d concurrency=%d\n",
+                      name, scheme->type(),
+                      authenticateChildren.n_max, authenticateChildren.n_startup,
+                      authenticateChildren.n_idle, authenticateChildren.concurrency);
+
+    if (keyExtrasLine.size() > 0)
+        storeAppendPrintf(entry, "%s %s key_extras \"%s\"\n", name, scheme->type(), keyExtrasLine.termedBuf());
+
+    return true;
+}
+
+void
+Auth::Config::done()
+{
+    delete keyExtras;
+    keyExtras = NULL;
+    keyExtrasLine.clean();
+}
 
 Auth::User::Pointer
 Auth::Config::findUserInCache(const char *nameKey, Auth::Type authType)
@@ -96,3 +175,4 @@ Auth::Config::findUserInCache(const char *nameKey, Auth::Type authType)
 
     return NULL;
 }
+

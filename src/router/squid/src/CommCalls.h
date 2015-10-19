@@ -1,10 +1,19 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_COMMCALLS_H
 #define SQUID_COMMCALLS_H
 
 #include "base/AsyncCall.h"
 #include "base/AsyncJobCalls.h"
-#include "comm_err_t.h"
+#include "comm/Flag.h"
 #include "comm/forward.h"
+#include "MasterXaction.h"
 
 /* CommCalls implement AsyncCall interface for comm_* callbacks.
  * The classes cover two call dialer kinds:
@@ -23,8 +32,8 @@
 class CommAcceptCbParams;
 typedef void IOACB(const CommAcceptCbParams &params);
 
-typedef void CNCB(const Comm::ConnectionPointer &conn, comm_err_t status, int xerrno, void *data);
-typedef void IOCB(const Comm::ConnectionPointer &conn, char *, size_t size, comm_err_t flag, int xerrno, void *data);
+typedef void CNCB(const Comm::ConnectionPointer &conn, Comm::Flag status, int xerrno, void *data);
+typedef void IOCB(const Comm::ConnectionPointer &conn, char *, size_t size, Comm::Flag flag, int xerrno, void *data);
 
 class CommTimeoutCbParams;
 typedef void CTCB(const CommTimeoutCbParams &params);
@@ -65,18 +74,18 @@ public:
     void *data; // cbdata-protected
 
     /** The connection which this call pertains to.
-     * \itemize On accept() calls this is the new client connection.
-     * \itemize On connect() finished calls this is the newely opened connection.
-     * \itemize On write calls this is the connection just written to.
-     * \itemize On read calls this is the connection just read from.
-     * \itemize On close calls this describes the connection which is now closed.
-     * \itemize On timeouts this is the connection whose operation timed out.
-     *          NP: timeouts might also return to the connect/read/write handler with COMM_ERR_TIMEOUT.
+     *  - On accept() calls this is the new client connection.
+     *  - On connect() finished calls this is the newely opened connection.
+     *  - On write calls this is the connection just written to.
+     *  - On read calls this is the connection just read from.
+     *  - On close calls this describes the connection which is now closed.
+     *  - On timeouts this is the connection whose operation timed out.
+     *   + NP: timeouts might also return to the connect/read/write handler with Comm::TIMEOUT.
      */
     Comm::ConnectionPointer conn;
 
-    comm_err_t flag;  ///< comm layer result status.
-    int xerrno;      ///< The last errno to occur. non-zero if flag is COMM_ERR.
+    Comm::Flag flag;  ///< comm layer result status.
+    int xerrno;      ///< The last errno to occur. non-zero if flag is Comm::COMM_ERROR.
 
     int fd; ///< FD which the call was about. Set by the async call creator.
 private:
@@ -89,6 +98,11 @@ class CommAcceptCbParams: public CommCommonCbParams
 {
 public:
     CommAcceptCbParams(void *aData);
+
+    void print(std::ostream &os) const;
+
+    /// Transaction which this call is part of.
+    MasterXaction::Pointer xaction;
 };
 
 // connect parameters
@@ -169,9 +183,9 @@ public:
     typedef Params_ Params;
     typedef void (C::*Method)(const Params &io);
 
-    CommCbMemFunT(const CbcPointer<C> &job, Method meth): JobDialer<C>(job),
-            CommDialerParamsT<Params_>(job.get()),
-            method(meth) {}
+    CommCbMemFunT(const CbcPointer<C> &aJob, Method aMeth): JobDialer<C>(aJob),
+        CommDialerParamsT<Params_>(aJob->toCbdata()),
+        method(aMeth) {}
 
     virtual bool canDial(AsyncCall &c) {
         return JobDialer<C>::canDial(c) &&
@@ -193,7 +207,7 @@ protected:
 
 // accept (IOACB) dialer
 class CommAcceptCbPtrFun: public CallDialer,
-        public CommDialerParamsT<CommAcceptCbParams>
+    public CommDialerParamsT<CommAcceptCbParams>
 {
 public:
     typedef CommAcceptCbParams Params;
@@ -212,7 +226,7 @@ public:
 
 // connect (CNCB) dialer
 class CommConnectCbPtrFun: public CallDialer,
-        public CommDialerParamsT<CommConnectCbParams>
+    public CommDialerParamsT<CommConnectCbParams>
 {
 public:
     typedef CommConnectCbParams Params;
@@ -228,7 +242,7 @@ public:
 
 // read/write (IOCB) dialer
 class CommIoCbPtrFun: public CallDialer,
-        public CommDialerParamsT<CommIoCbParams>
+    public CommDialerParamsT<CommIoCbParams>
 {
 public:
     typedef CommIoCbParams Params;
@@ -244,7 +258,7 @@ public:
 
 // close (CLCB) dialer
 class CommCloseCbPtrFun: public CallDialer,
-        public CommDialerParamsT<CommCloseCbParams>
+    public CommDialerParamsT<CommCloseCbParams>
 {
 public:
     typedef CommCloseCbParams Params;
@@ -259,7 +273,7 @@ public:
 };
 
 class CommTimeoutCbPtrFun:public CallDialer,
-        public CommDialerParamsT<CommTimeoutCbParams>
+    public CommDialerParamsT<CommTimeoutCbParams>
 {
 public:
     typedef CommTimeoutCbParams Params;
@@ -275,7 +289,7 @@ public:
 
 /// FD event (FDECB) dialer
 class FdeCbPtrFun: public CallDialer,
-        public CommDialerParamsT<FdeCbParams>
+    public CommDialerParamsT<FdeCbParams>
 {
 public:
     typedef FdeCbParams Params;
@@ -303,8 +317,8 @@ public:
                              const char *callName, const Dialer &aDialer);
 
     inline CommCbFunPtrCallT(const CommCbFunPtrCallT &o) :
-            AsyncCall(o.debugSection, o.debugLevel, o.name),
-            dialer(o.dialer) {}
+        AsyncCall(o.debugSection, o.debugLevel, o.name),
+        dialer(o.dialer) {}
 
     ~CommCbFunPtrCallT() {}
 
@@ -339,8 +353,8 @@ CommCbFunPtrCallT<Dialer> *commCbCall(int debugSection, int debugLevel,
 template <class Dialer>
 CommCbFunPtrCallT<Dialer>::CommCbFunPtrCallT(int aDebugSection, int aDebugLevel,
         const char *callName, const Dialer &aDialer):
-        AsyncCall(aDebugSection, aDebugLevel, callName),
-        dialer(aDialer)
+    AsyncCall(aDebugSection, aDebugLevel, callName),
+    dialer(aDialer)
 {
 }
 
@@ -371,3 +385,4 @@ CommCbFunPtrCallT<Dialer>::fire()
 }
 
 #endif /* SQUID_COMMCALLS_H */
+

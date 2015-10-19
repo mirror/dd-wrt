@@ -1,22 +1,26 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_IDENT_H
 #define SQUID_IDENT_H
-
-/**
- \defgroup IdentAPI Ident Lookup API
- \ingroup SquidComponents
- */
 
 #if USE_IDENT
 
 #include "cbdata.h"
 #include "comm/forward.h"
 
+typedef void IDCB(const char *ident, void *data);
+
+/// Ident Lookup API
 namespace Ident
 {
 
 /**
-  \ingroup IdentAPI
- *
  * Open a connection and request IDENT information from a peer machine.
  * Callack will be called whan the lookup is completed.
  * Self-registers with a global ident lookup manager,
@@ -25,15 +29,13 @@ namespace Ident
 void Start(const Comm::ConnectionPointer &conn, IDCB * callback, void *cbdata);
 
 /**
- \ingroup IdentAPI
- *
  * Initialize IDENT lookup manager.
  * Currently a hash list of open ident requests.
- * \bug Will leak the hash list if called twice.
  */
 void Init(void);
 
-}
+} // namespace Ident
 
 #endif /* USE_IDENT */
 #endif /* SQUID_IDENT_H */
+

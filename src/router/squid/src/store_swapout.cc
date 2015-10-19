@@ -1,49 +1,26 @@
-
 /*
- * DEBUG: section 20    Storage Manager Swapout Functions
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 20    Storage Manager Swapout Functions */
 
 #include "squid.h"
 #include "cbdata.h"
-#include "StoreClient.h"
 #include "globals.h"
 #include "Store.h"
+#include "StoreClient.h"
 /* FIXME: Abstract the use of this more */
 #include "mem_node.h"
 #include "MemObject.h"
 #include "SquidConfig.h"
-#include "SwapDir.h"
 #include "StatCounters.h"
 #include "store_log.h"
 #include "swap_log_op.h"
+#include "SwapDir.h"
 
 static void storeSwapOutStart(StoreEntry * e);
 static StoreIOState::STIOCB storeSwapOutFileClosed;
@@ -69,6 +46,7 @@ storeSwapOutStart(StoreEntry * e)
            e->swap_dirn << ", fileno " << std::hex << std::setw(8) << std::setfill('0') <<
            std::uppercase << e->swap_filen);
     e->swap_status = SWAPOUT_WRITING;
+    e->swapOutDecision(MemObject::SwapOut::swStarted);
     /* If we start swapping out objects with OutOfBand Metadata,
      * then this code needs changing
      */
@@ -87,7 +65,7 @@ storeSwapOutStart(StoreEntry * e)
 
     if (sio == NULL) {
         e->swap_status = SWAPOUT_NONE;
-        mem->swapout.decision = MemObject::SwapOut::swImpossible;
+        e->swapOutDecision(MemObject::SwapOut::swImpossible);
         delete c;
         xfree((char*)buf);
         storeLog(STORE_LOG_SWAPOUTFAIL, e);
@@ -98,7 +76,7 @@ storeSwapOutStart(StoreEntry * e)
     /* Don't lock until after create, or the replacement
      * code might get confused */
 
-    e->lock();
+    e->lock("storeSwapOutStart");
     /* Pick up the file number if it was assigned immediately */
     e->swap_filen = mem->swapout.sio->swap_filen;
 
@@ -111,8 +89,9 @@ storeSwapOutStart(StoreEntry * e)
 static void
 storeSwapOutFileNotify(void *data, int errflag, StoreIOState::Pointer self)
 {
-    generic_cbdata *c = (generic_cbdata *)data;
-    StoreEntry *e = (StoreEntry *)c->data;
+    StoreEntry *e;
+    static_cast<generic_cbdata *>(data)->unwrap(&e);
+
     MemObject *mem = e->mem_obj;
     assert(e->swap_status == SWAPOUT_WRITING);
     assert(mem);
@@ -123,7 +102,7 @@ storeSwapOutFileNotify(void *data, int errflag, StoreIOState::Pointer self)
     e->swap_dirn = mem->swapout.sio->swap_dirn;
 }
 
-static void
+static bool
 doPages(StoreEntry *anEntry)
 {
     MemObject *mem = anEntry->mem_obj;
@@ -134,7 +113,7 @@ doPages(StoreEntry *anEntry)
             mem->data_hdr.getBlockContainingLocation(mem->swapout.queue_offset);
 
         if (!page)
-            return; // wait for more data to become available
+            break; // wait for more data to become available
 
         // memNodeWriteComplete() and absence of buffer offset math below
         // imply that we always write from the very beginning of the page
@@ -158,15 +137,16 @@ doPages(StoreEntry *anEntry)
 
         mem->swapout.queue_offset += swap_buf_len;
 
-        storeIOWrite(mem->swapout.sio,
-                     mem->data_hdr.NodeGet(page),
-                     swap_buf_len,
-                     -1,
-                     memNodeWriteComplete);
+        // Quit if write() fails. Sio is going to call our callback, and that
+        // will cleanup, but, depending on the fs, that call may be async.
+        const bool ok = mem->swapout.sio->write(
+                            mem->data_hdr.NodeGet(page),
+                            swap_buf_len,
+                            -1,
+                            memNodeWriteComplete);
 
-        /* the storeWrite() call might generate an error */
-        if (anEntry->swap_status != SWAPOUT_WRITING)
-            break;
+        if (!ok || anEntry->swap_status != SWAPOUT_WRITING)
+            return false;
 
         int64_t swapout_size = mem->endOffset() - mem->swapout.queue_offset;
 
@@ -175,8 +155,11 @@ doPages(StoreEntry *anEntry)
                 break;
 
         if (swapout_size <= 0)
-            return;
+            break;
     } while (true);
+
+    // either wait for more data or call swapOutFileClose()
+    return true;
 }
 
 /* This routine is called every time data is sent to the client side.
@@ -198,9 +181,9 @@ StoreEntry::swapOut()
 
     const bool weAreOrMayBeSwappingOut = swappingOut() || mayStartSwapOut();
 
-    Store::Root().maybeTrimMemory(*this, weAreOrMayBeSwappingOut);
+    Store::Root().memoryOut(*this, weAreOrMayBeSwappingOut);
 
-    if (mem_obj->swapout.decision != MemObject::SwapOut::swPossible)
+    if (mem_obj->swapout.decision < MemObject::SwapOut::swPossible)
         return; // nothing else to do
 
     // Aborted entries have STORE_OK, but swapoutPossible rejects them. Thus,
@@ -251,7 +234,7 @@ StoreEntry::swapOut()
 
         /*
          * Wait until we are below the disk FD limit, only if the
-         * next server-side read won't be deferred.
+         * next read won't be deferred.
          */
         if (storeTooManyDiskFilesOpen() && !checkDeferRead(-1))
             return;
@@ -267,9 +250,7 @@ StoreEntry::swapOut()
     if (mem_obj->swapout.sio == NULL)
         return;
 
-    doPages(this);
-
-    if (mem_obj->swapout.sio == NULL)
+    if (!doPages(this))
         /* oops, we're not swapping out any more */
         return;
 
@@ -301,12 +282,12 @@ StoreEntry::swapOutFileClose(int how)
 static void
 storeSwapOutFileClosed(void *data, int errflag, StoreIOState::Pointer self)
 {
-    generic_cbdata *c = (generic_cbdata *)data;
-    StoreEntry *e = (StoreEntry *)c->data;
+    StoreEntry *e;
+    static_cast<generic_cbdata *>(data)->unwrap(&e);
+
     MemObject *mem = e->mem_obj;
     assert(mem->swapout.sio == self);
     assert(e->swap_status == SWAPOUT_WRITING);
-    cbdataFree(c);
 
     // if object_size is still unknown, the entry was probably aborted
     if (errflag || e->objectLen() < 0) {
@@ -354,7 +335,7 @@ storeSwapOutFileClosed(void *data, int errflag, StoreIOState::Pointer self)
 
     debugs(20, 3, "storeSwapOutFileClosed: " << __FILE__ << ":" << __LINE__);
     mem->swapout.sio = NULL;
-    e->unlock();
+    e->unlock("storeSwapOutFileClosed");
 }
 
 bool
@@ -368,53 +349,60 @@ StoreEntry::mayStartSwapOut()
         return false;
 
     assert(mem_obj);
-    MemObject::SwapOut::Decision &decision = mem_obj->swapout.decision;
+    const MemObject::SwapOut::Decision &decision = mem_obj->swapout.decision;
 
-    // if we decided that swapout is not possible, do not repeat same checks
+    // if we decided that starting is not possible, do not repeat same checks
     if (decision == MemObject::SwapOut::swImpossible) {
         debugs(20, 3, HERE << " already rejected");
         return false;
     }
 
-    // if we decided that swapout is possible, do not repeat same checks
-    if (decision == MemObject::SwapOut::swPossible) {
-        debugs(20, 3,  HERE << "already allowed");
-        return true;
-    }
-
     // if we swapped out already, do not start over
     if (swap_status == SWAPOUT_DONE) {
-        debugs(20, 3,  HERE << "already did");
-        decision = MemObject::SwapOut::swImpossible;
+        debugs(20, 3, "already did");
+        swapOutDecision(MemObject::SwapOut::swImpossible);
         return false;
+    }
+
+    // if we stared swapping out already, do not start over
+    if (decision == MemObject::SwapOut::swStarted) {
+        debugs(20, 3, "already started");
+        swapOutDecision(MemObject::SwapOut::swImpossible);
+        return false;
+    }
+
+    // if we decided that swapout is possible, do not repeat same checks
+    if (decision == MemObject::SwapOut::swPossible) {
+        debugs(20, 3, "already allowed");
+        return true;
     }
 
     if (!checkCachable()) {
         debugs(20, 3,  HERE << "not cachable");
-        decision = MemObject::SwapOut::swImpossible;
+        swapOutDecision(MemObject::SwapOut::swImpossible);
         return false;
     }
 
     if (EBIT_TEST(flags, ENTRY_SPECIAL)) {
         debugs(20, 3,  HERE  << url() << " SPECIAL");
-        decision = MemObject::SwapOut::swImpossible;
+        swapOutDecision(MemObject::SwapOut::swImpossible);
         return false;
     }
 
     if (mem_obj->inmem_lo > 0) {
         debugs(20, 3, "storeSwapOut: (inmem_lo > 0)  imem_lo:" <<  mem_obj->inmem_lo);
-        decision = MemObject::SwapOut::swImpossible;
+        swapOutDecision(MemObject::SwapOut::swImpossible);
         return false;
     }
 
     if (!mem_obj->isContiguous()) {
         debugs(20, 3, "storeSwapOut: not Contiguous");
-        decision = MemObject::SwapOut::swImpossible;
+        swapOutDecision(MemObject::SwapOut::swImpossible);
         return false;
     }
 
-    // check cache_dir max-size limit if all cache_dirs have it
-    if (store_maxobjsize >= 0) {
+    // handle store_maxobjsize limit
+    {
         // TODO: add estimated store metadata size to be conservative
 
         // use guaranteed maximum if it is known
@@ -423,7 +411,7 @@ StoreEntry::mayStartSwapOut()
         if (expectedEnd > store_maxobjsize) {
             debugs(20, 3,  HERE << "will not fit: " << expectedEnd <<
                    " > " << store_maxobjsize);
-            decision = MemObject::SwapOut::swImpossible;
+            swapOutDecision(MemObject::SwapOut::swImpossible);
             return false; // known to outgrow the limit eventually
         }
 
@@ -432,7 +420,7 @@ StoreEntry::mayStartSwapOut()
         if (currentEnd > store_maxobjsize) {
             debugs(20, 3,  HERE << "does not fit: " << currentEnd <<
                    " > " << store_maxobjsize);
-            decision = MemObject::SwapOut::swImpossible;
+            swapOutDecision(MemObject::SwapOut::swImpossible);
             return false; // already does not fit and may only get bigger
         }
 
@@ -455,6 +443,7 @@ StoreEntry::mayStartSwapOut()
         }
     }
 
-    decision = MemObject::SwapOut::swPossible;
+    swapOutDecision(MemObject::SwapOut::swPossible);
     return true;
 }
+

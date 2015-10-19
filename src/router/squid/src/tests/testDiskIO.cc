@@ -1,25 +1,25 @@
-#define SQUID_UNIT_TEST 1
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 #include "squid.h"
-#include "testDiskIO.h"
-#include "Store.h"
-#include "SwapDir.h"
 #include "DiskIO/DiskIOModule.h"
-#include "Mem.h"
-#include "MemObject.h"
 #include "HttpHeader.h"
 #include "HttpReply.h"
+#include "Mem.h"
+#include "MemObject.h"
+#include "Store.h"
 #include "StoreFileSystem.h"
+#include "SwapDir.h"
+#include "testDiskIO.h"
 #include "testStoreSupport.h"
+#include "unitTestMain.h"
 
-#if 0
-// AYJ: COSS in Squid-3 is disabled.
-#include "fs/coss/CossSwapDir.h"
-#endif
-
-#if HAVE_STDEXCEPT
 #include <stdexcept>
-#endif
 
 CPPUNIT_TEST_SUITE_REGISTRATION( testDiskIO );
 
@@ -42,3 +42,4 @@ testDiskIO::testFindDefault()
     CPPUNIT_ASSERT(module == NULL);
 #endif
 }
+

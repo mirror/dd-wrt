@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 // Author:   Jens-S. V?ckler <voeckler@rvs.uni-hannover.de>
 // File:     signal.hh
 // Date:     Sat Feb 28 1998
@@ -50,9 +58,7 @@
 
 #include "squid.h"
 
-#if HAVE_SIGNAL_H
-#include <signal.h>
-#endif
+#include <csignal>
 
 #if !defined(__cplusplus)
 #ifndef HAVE_BOOL

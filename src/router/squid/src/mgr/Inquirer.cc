@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 16    Cache Manager API
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager API */
 
 #include "squid.h"
 #include "base/TextException.h"
@@ -9,17 +14,17 @@
 #include "comm/Connection.h"
 #include "comm/Write.h"
 #include "CommCalls.h"
+#include "errorpage.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
 #include "ipc/UdsOp.h"
 #include "mgr/ActionWriter.h"
-#include "mgr/IntParam.h"
-#include "mgr/Inquirer.h"
 #include "mgr/Command.h"
+#include "mgr/Inquirer.h"
+#include "mgr/IntParam.h"
 #include "mgr/Request.h"
 #include "mgr/Response.h"
 #include "SquidTime.h"
-#include "errorpage.h"
 #include <memory>
 #include <algorithm>
 
@@ -27,8 +32,8 @@ CBDATA_NAMESPACED_CLASS_INIT(Mgr, Inquirer);
 
 Mgr::Inquirer::Inquirer(Action::Pointer anAction,
                         const Request &aCause, const Ipc::StrandCoords &coords):
-        Ipc::Inquirer(aCause.clone(), applyQueryParams(coords, aCause.params.queryParams), anAction->atomic() ? 10 : 100),
-        aggrAction(anAction)
+    Ipc::Inquirer(aCause.clone(), applyQueryParams(coords, aCause.params.queryParams), anAction->atomic() ? 10 : 100),
+    aggrAction(anAction)
 {
     conn = aCause.conn;
     Ipc::ImportFdIntoComm(conn, SOCK_STREAM, IPPROTO_TCP, Ipc::fdnHttpSocket);
@@ -67,29 +72,17 @@ Mgr::Inquirer::start()
     Must(Comm::IsConnOpen(conn));
     Must(aggrAction != NULL);
 
-#if HAVE_UNIQUE_PTR
     std::unique_ptr<MemBuf> replyBuf;
-#else
-    std::auto_ptr<MemBuf> replyBuf;
-#endif
     if (strands.empty()) {
         LOCAL_ARRAY(char, url, MAX_URL);
         snprintf(url, MAX_URL, "%s", aggrAction->command().params.httpUri.termedBuf());
         HttpRequest *req = HttpRequest::CreateFromUrl(url);
-        ErrorState err(ERR_INVALID_URL, HTTP_NOT_FOUND, req);
-#if HAVE_UNIQUE_PTR
+        ErrorState err(ERR_INVALID_URL, Http::scNotFound, req);
         std::unique_ptr<HttpReply> reply(err.BuildHttpReply());
-#else
-        std::auto_ptr<HttpReply> reply(err.BuildHttpReply());
-#endif
         replyBuf.reset(reply->pack());
     } else {
-#if HAVE_UNIQUE_PTR
         std::unique_ptr<HttpReply> reply(new HttpReply);
-#else
-        std::auto_ptr<HttpReply> reply(new HttpReply);
-#endif
-        reply->setHeaders(HTTP_OK, NULL, "text/plain", -1, squid_curtime, squid_curtime);
+        reply->setHeaders(Http::scOkay, NULL, "text/plain", -1, squid_curtime, squid_curtime);
         reply->header.putStr(HDR_CONNECTION, "close"); // until we chunk response
         replyBuf.reset(reply->pack());
     }
@@ -104,7 +97,7 @@ Mgr::Inquirer::noteWroteHeader(const CommIoCbParams& params)
 {
     debugs(16, 5, HERE);
     writer = NULL;
-    Must(params.flag == COMM_OK);
+    Must(params.flag == Comm::OK);
     Must(params.conn.getRaw() == conn.getRaw());
     Must(params.size != 0);
     // start inquiries at the initial pos
@@ -186,3 +179,4 @@ Mgr::Inquirer::applyQueryParams(const Ipc::StrandCoords& aStrands, const QueryPa
 
     return sc;
 }
+

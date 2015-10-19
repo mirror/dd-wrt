@@ -1,5 +1,14 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "acl/Gadgets.h"
+#include "acl/Tree.h"
 #include "adaptation/AccessRule.h"
 #include "adaptation/Service.h"
 #include "adaptation/ServiceGroups.h"
@@ -14,13 +23,13 @@ Adaptation::AccessRule::AccessRule(const String &aGroupId): id(++LastId), groupI
 
 Adaptation::AccessRule::~AccessRule()
 {
-    // XXX: leaking acls here?
+    delete acl;
 }
 
 void
 Adaptation::AccessRule::parse(ConfigParser &parser)
 {
-    aclParseAccessLine(parser, &acl);
+    aclParseAccessLine("adaptation_access", parser, &acl);
 }
 
 void
@@ -51,8 +60,8 @@ Adaptation::AccessRule::group()
 Adaptation::AccessRules &
 Adaptation::AllRules()
 {
-    static AccessRules TheRules;
-    return TheRules;
+    static AccessRules *TheRules = new AccessRules;
+    return *TheRules;
 }
 
 // TODO: make AccessRules::find work
@@ -79,3 +88,4 @@ Adaptation::FindRuleByGroupId(const String &groupId)
 
     return NULL;
 }
+

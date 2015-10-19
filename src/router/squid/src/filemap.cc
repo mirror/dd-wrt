@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 08    Swap File Bitmap
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 08    Swap File Bitmap */
 
 #include "squid.h"
 #include "Debug.h"
@@ -55,8 +33,8 @@
 #define FM_INITIAL_NUMBER (1<<14)
 
 FileMap::FileMap() :
-        capacity_(FM_INITIAL_NUMBER), usedSlots_(0),
-        nwords(capacity_ >> LONG_BIT_SHIFT)
+    capacity_(FM_INITIAL_NUMBER), usedSlots_(0),
+    nwords(capacity_ >> LONG_BIT_SHIFT)
 {
     debugs(8, 3, HERE << "creating space for " << capacity_ << " files");
     debugs(8, 5, "--> " << nwords << " words of " << sizeof(*bitmap) << " bytes each");
@@ -69,7 +47,7 @@ FileMap::grow()
     int old_sz = nwords * sizeof(*bitmap);
     void *old_map = bitmap;
     capacity_ <<= 1;
-    assert(capacity_ <= (1 << 24));	/* swap_filen is 25 bits, signed */
+    assert(capacity_ <= (1 << 24)); /* swap_filen is 25 bits, signed */
     nwords = capacity_ >> LONG_BIT_SHIFT;
     debugs(8, 3, HERE << " creating space for " << capacity_ << " files");
     debugs(8, 5, "--> " << nwords << " words of " << sizeof(*bitmap) << " bytes each");
@@ -158,3 +136,4 @@ FileMap::~FileMap()
 {
     safe_free(bitmap);
 }
+

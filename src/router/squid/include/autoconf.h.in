@@ -13,9 +13,6 @@
 /* Host type from configure */
 #undef CONFIG_HOST_TYPE
 
-/* Default COSS membuf size */
-#undef COSS_MEMBUF_SZ
-
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
    */
@@ -38,9 +35,6 @@
 
 /* Define to 1 if you have the <aio.h> header file. */
 #undef HAVE_AIO_H
-
-/* Define to 1 if you have the <algorithm> header file. */
-#undef HAVE_ALGORITHM
 
 /* Define to 1 if you have `alloca', as a function or macro. */
 #undef HAVE_ALLOCA
@@ -82,6 +76,9 @@
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
+/* Define to 1 if you have GCC __sync_add_and_fetch() and such */
+#undef HAVE_ATOMIC_OPS
+
 /* Basic auth module is built */
 #undef HAVE_AUTH_MODULE_BASIC
 
@@ -99,6 +96,9 @@
 
 /* Define to 1 if you have the `bcopy' function. */
 #undef HAVE_BCOPY
+
+/* Define to 1 if Heimdal krb5.h is broken for C++ */
+#undef HAVE_BROKEN_HEIMDAL_KRB5_H
 
 /* Define to 1 if Solaris krb5.h is broken for C++ */
 #undef HAVE_BROKEN_SOLARIS_KRB5_H
@@ -121,14 +121,11 @@
 /* Define to 1 if you have the <byteswap.h> header file. */
 #undef HAVE_BYTESWAP_H
 
-/* Define to 1 if you have the <cassert> header file. */
-#undef HAVE_CASSERT
-
-/* Define to 1 if you have the <climits> header file. */
-#undef HAVE_CLIMITS
-
 /* Define to 1 if you have the `closedir' function. */
 #undef HAVE_CLOSEDIR
+
+/* The system provides struct cmsghdr */
+#undef HAVE_CMSGHDR
 
 /* Define to 1 if you have the <com_err.h> header file. */
 #undef HAVE_COM_ERR_H
@@ -149,17 +146,11 @@
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
 
-/* Define to 1 if you have the <cstdarg> header file. */
-#undef HAVE_CSTDARG
-
-/* Define to 1 if you have the <cstdlib> header file. */
-#undef HAVE_CSTDLIB
-
-/* Define to 1 if you have the <cstring> header file. */
-#undef HAVE_CSTRING
-
 /* Define to 1 if you have the <ctype.h> header file. */
 #undef HAVE_CTYPE_H
+
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
 
 /* Define to 1 if you have the <db_185.h> header file. */
 #undef HAVE_DB_185_H
@@ -171,9 +162,28 @@
    you don't. */
 #undef HAVE_DECL_CYGWIN_CONV_PATH
 
+/* Define to 1 if you have the declaration of `getaddrinfo', and to 0 if you
+   don't. */
+#undef HAVE_DECL_GETADDRINFO
+
+/* Define to 1 if you have the declaration of `getnameinfo', and to 0 if you
+   don't. */
+#undef HAVE_DECL_GETNAMEINFO
+
+/* Define to 1 if you have the declaration of `inet_ntop', and to 0 if you
+   don't. */
+#undef HAVE_DECL_INET_NTOP
+
+/* Define to 1 if you have the declaration of `inet_pton', and to 0 if you
+   don't. */
+#undef HAVE_DECL_INET_PTON
+
 /* Define to 1 if you have the declaration of `krb5_kt_free_entry', and to 0
    if you don't. */
 #undef HAVE_DECL_KRB5_KT_FREE_ENTRY
+
+/* Define to 1 if you have the <direct.h> header file. */
+#undef HAVE_DIRECT_H
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -199,6 +209,9 @@
 
 /* Define if you have the _dyld_func_lookup function. */
 #undef HAVE_DYLD
+
+/* Define to 1 if you have the <endian.h> header file. */
+#undef HAVE_ENDIAN_H
 
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
@@ -233,14 +246,8 @@
 /* Define to 1 if you have the <fnmatch.h> header file. */
 #undef HAVE_FNMATCH_H
 
-/* Define to 1 if you have the <fstream> header file. */
-#undef HAVE_FSTREAM
-
 /* "Define to 1 if aufs filesystem module is build" */
 #undef HAVE_FS_AUFS
-
-/* "Define to 1 if coss filesystem module is build" */
-#undef HAVE_FS_COSS
 
 /* "Define to 1 if diskd filesystem module is build" */
 #undef HAVE_FS_DISKD
@@ -251,14 +258,11 @@
 /* "Define to 1 if ufs filesystem module is build" */
 #undef HAVE_FS_UFS
 
-/* Define to 1 if you have the `getaddrinfo' function. */
-#undef HAVE_GETADDRINFO
+/* Define if struct statfs has field f_frsize (Linux 2.6 or later) */
+#undef HAVE_F_FRSIZE_IN_STATFS
 
 /* Define to 1 if you have the `getdtablesize' function. */
 #undef HAVE_GETDTABLESIZE
-
-/* Define to 1 if you have the `getnameinfo' function. */
-#undef HAVE_GETNAMEINFO
 
 /* Define to 1 if you have the <getopt.h> header file. */
 #undef HAVE_GETOPT_H
@@ -296,11 +300,20 @@
 /* Define to 1 if you have the <gnumalloc.h> header file. */
 #undef HAVE_GNUMALLOC_H
 
+/* Define to 1 if you have the <gnutls/gnutls.h> header file. */
+#undef HAVE_GNUTLS_GNUTLS_H
+
+/* Define to 1 if you have the <gnutls/x509.h> header file. */
+#undef HAVE_GNUTLS_X509_H
+
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
 
 /* GSSAPI support */
 #undef HAVE_GSSAPI
+
+/* Define to 1 if you have the <gssapi/gssapi_ext.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_EXT_H
 
 /* Define to 1 if you have the <gssapi/gssapi_generic.h> header file. */
 #undef HAVE_GSSAPI_GSSAPI_GENERIC_H
@@ -314,20 +327,24 @@
 /* Define to 1 if you have the <gssapi.h> header file. */
 #undef HAVE_GSSAPI_H
 
-/* Define to 1 if you have Heimdal Kerberos */
-#undef HAVE_HEIMDAL_KERBEROS
+/* Define to 1 if you have the `gsskrb5_extract_authz_data_from_sec_context'
+   function. */
+#undef HAVE_GSSKRB5_EXTRACT_AUTHZ_DATA_FROM_SEC_CONTEXT
 
-/* Define to 1 if you have the `htobe16' function. */
-#undef HAVE_HTOBE16
+/* Define to 1 if you have the <gss.h> header file. */
+#undef HAVE_GSS_H
+
+/* Define to 1 if you have gss_map_name_to_any */
+#undef HAVE_GSS_MAP_ANY_TO_ANY
+
+/* Define to 1 if you have the `gss_map_name_to_any' function. */
+#undef HAVE_GSS_MAP_NAME_TO_ANY
 
 /* Define to 1 if you have the `htole16' function. */
 #undef HAVE_HTOLE16
 
-/* Define to 1 if you have the `inet_ntop' function. */
-#undef HAVE_INET_NTOP
-
-/* Define to 1 if you have the `inet_pton' function. */
-#undef HAVE_INET_PTON
+/* Define to 1 if you have the `htole32' function. */
+#undef HAVE_HTOLE32
 
 /* Define to 1 if you have the `initgroups' function. */
 #undef HAVE_INITGROUPS
@@ -338,16 +355,10 @@
 /* Define to 1 if you have the `ioctl' function. */
 #undef HAVE_IOCTL
 
-/* Define to 1 if you have the <iomanip> header file. */
-#undef HAVE_IOMANIP
+/* The system provides struct iovec */
+#undef HAVE_IOVEC
 
-/* Define to 1 if you have the <iosfwd> header file. */
-#undef HAVE_IOSFWD
-
-/* Define to 1 if you have the <iostream> header file. */
-#undef HAVE_IOSTREAM
-
-/* Define to 1 if you have the <Iphlpapi.h> header file. */
+/* Define to 1 if you have the <iphlpapi.h> header file. */
 #undef HAVE_IPHLPAPI_H
 
 /* Define to 1 if you have the <ipl.h> header file. */
@@ -371,17 +382,32 @@
 /* KRB5 support */
 #undef HAVE_KRB5
 
+/* Define to 1 if you have krb5_free_error_message */
+#undef HAVE_KRB5_FREE_ERROR_MESSAGE
+
+/* Define to 1 if you have krb5_free_error_string */
+#undef HAVE_KRB5_FREE_ERROR_STRING
+
 /* Define to 1 if you have krb5_get_error_message */
 #undef HAVE_KRB5_GET_ERROR_MESSAGE
 
 /* Define to 1 if you have krb5_get_err_text */
 #undef HAVE_KRB5_GET_ERR_TEXT
 
+/* Define to 1 if you krb5_get_init_creds_free requires krb5_context */
+#undef HAVE_KRB5_GET_INIT_CREDS_FREE_CONTEXT
+
+/* Define to 1 if you have krb5_get_init_creds_opt_alloc */
+#undef HAVE_KRB5_GET_INIT_CREDS_OPT_ALLOC
+
 /* Define to 1 if you have krb5_get_max_time_skew */
 #undef HAVE_KRB5_GET_MAX_TIME_SKEW
 
 /* Define to 1 if you have krb5_get_profile */
 #undef HAVE_KRB5_GET_PROFILE
+
+/* Define to 1 if you have krb5_get_renewed_creds */
+#undef HAVE_KRB5_GET_RENEWED_CREDS
 
 /* Define to 1 if you have the <krb5.h> header file. */
 #undef HAVE_KRB5_H
@@ -391,6 +417,15 @@
 
 /* Define if kerberos has MEMORY: cache support */
 #undef HAVE_KRB5_MEMORY_CACHE
+
+/* Define if kerberos has MEMORY: keytab support */
+#undef HAVE_KRB5_MEMORY_KEYTAB
+
+/* Define to 1 if you have krb5_pac */
+#undef HAVE_KRB5_PAC
+
+/* Define to 1 if you have krb5_principal_get_realm */
+#undef HAVE_KRB5_PRINCIPAL_GET_REALM
 
 /* Define to 1 if you have the <lber.h> header file. */
 #undef HAVE_LBER_H
@@ -427,6 +462,12 @@
 
 /* Define to 1 if you have ldap_url_parse */
 #undef HAVE_LDAP_URL_PARSE
+
+/* Define to 1 if you have the `le16toh' function. */
+#undef HAVE_LE16TOH
+
+/* Define to 1 if you have the `le32toh' function. */
+#undef HAVE_LE32TOH
 
 /* Define to 1 if you have the `cap' library (-lcap). */
 #undef HAVE_LIBCAP
@@ -472,23 +513,21 @@
 /* Define to 1 if you have the <libxml/parser.h> header file. */
 #undef HAVE_LIBXML_PARSER_H
 
-/* Define to 1 if you have the <limits> header file. */
-#undef HAVE_LIMITS
-
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
 /* Define to 1 if you have the <linux/netfilter_ipv4.h> header file. */
 #undef HAVE_LINUX_NETFILTER_IPV4_H
 
+/* Define to 1 if you have the <linux/netfilter_ipv6/ip6_tables.h> header
+   file. */
+#undef HAVE_LINUX_NETFILTER_IPV6_IP6_TABLES_H
+
 /* Define to 1 if you have the <linux/posix_types.h> header file. */
 #undef HAVE_LINUX_POSIX_TYPES_H
 
 /* Define to 1 if you have the <linux/types.h> header file. */
 #undef HAVE_LINUX_TYPES_H
-
-/* Define to 1 if you have the <list> header file. */
-#undef HAVE_LIST
 
 /* Define to 1 if you have the `lrand48' function. */
 #undef HAVE_LRAND48
@@ -502,9 +541,6 @@
 /* Define to 1 if you have the <mach-o/dyld.h> header file. */
 #undef HAVE_MACH_O_DYLD_H
 
-/* Define to 1 if you have the `mallinfo' function. */
-#undef HAVE_MALLINFO
-
 /* Define to 1 if you have the `mallocblksize' function. */
 #undef HAVE_MALLOCBLKSIZE
 
@@ -514,14 +550,8 @@
 /* Define to 1 if you have the `mallopt' function. */
 #undef HAVE_MALLOPT
 
-/* Define to 1 if you have the <map> header file. */
-#undef HAVE_MAP
-
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
-
-/* Define to 1 if max_skew in struct krb5_context */
-#undef HAVE_MAX_SKEW_IN_KRB5_CONTEXT
 
 /* Define to 1 if you have the `memcpy' function. */
 #undef HAVE_MEMCPY
@@ -529,17 +559,14 @@
 /* Define to 1 if you have the `memmove' function. */
 #undef HAVE_MEMMOVE
 
-/* Define to 1 if you have the <memory> header file. */
-#undef HAVE_MEMORY
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if you have the `memrchr' function. */
+#undef HAVE_MEMRCHR
+
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
-
-/* Define to 1 if you have MIT Kerberos */
-#undef HAVE_MIT_KERBEROS
 
 /* Define to 1 if you have the `mkstemp' function. */
 #undef HAVE_MKSTEMP
@@ -559,8 +586,14 @@
 /* Define to 1 if you have the <mozldap/ldap.h> header file. */
 #undef HAVE_MOZLDAP_LDAP_H
 
+/* The system provides struct msghdr */
+#undef HAVE_MSGHDR
+
 /* Define to 1 if you have the `mstats' function. */
 #undef HAVE_MSTATS
+
+/* Define to 1 if you have the <mswsock.h> header file. */
+#undef HAVE_MSWSOCK_H
 
 /* mtyp_t is defined by the system headers */
 #undef HAVE_MTYP_T
@@ -610,6 +643,9 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
+/* Define to 1 if you have the <nettle/md5.h> header file. */
+#undef HAVE_NETTLE_MD5_H
+
 /* Define to 1 if you have the <net/if_arp.h> header file. */
 #undef HAVE_NET_IF_ARP_H
 
@@ -628,9 +664,6 @@
 /* Define to 1 if you have the <net/route.h> header file. */
 #undef HAVE_NET_ROUTE_H
 
-/* Define to 1 if nullptr is supported */
-#undef HAVE_NULLPTR
-
 /* Define to 1 if nullptr_t is supported */
 #undef HAVE_NULLPTR_T
 
@@ -639,6 +672,9 @@
 
 /* OpenLDAP support */
 #undef HAVE_OPENLDAP
+
+/* Define to 1 if you have the <openssl/bio.h> header file. */
+#undef HAVE_OPENSSL_BIO_H
 
 /* Define to 1 if you have the <openssl/engine.h> header file. */
 #undef HAVE_OPENSSL_ENGINE_H
@@ -660,9 +696,6 @@
 
 /* Define to 1 if you have the <openssl/x509v3.h> header file. */
 #undef HAVE_OPENSSL_X509V3_H
-
-/* Define to 1 if you have the <ostream> header file. */
-#undef HAVE_OSTREAM
 
 /* pad128_t is defined in system headers */
 #undef HAVE_PAD128_T
@@ -739,6 +772,15 @@
 /* Define to 1 if you have the `rint' function. */
 #undef HAVE_RINT
 
+/* Define to 1 if you have the <rpcsvc/ypclnt.h> header file. */
+#undef HAVE_RPCSVC_YPCLNT_H
+
+/* Define to 1 if you have the <rpcsvc/yp_prot.h> header file. */
+#undef HAVE_RPCSVC_YP_PROT_H
+
+/* Define to 1 if you have the <rpc/rpc.h> header file. */
+#undef HAVE_RPC_RPC_H
+
 /* Define to 1 if Mac Darwin without sasl.h */
 #undef HAVE_SASL_DARWIN
 
@@ -747,9 +789,6 @@
 
 /* Define to 1 if you have the <sasl/sasl.h> header file. */
 #undef HAVE_SASL_SASL_H
-
-/* Define to 1 if you have the `sbrk' function. */
-#undef HAVE_SBRK
 
 /* Define to 1 if you have the `sched_getaffinity' function. */
 #undef HAVE_SCHED_GETAFFINITY
@@ -813,6 +852,9 @@
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
 
+/* The system provides sockaddr_un */
+#undef HAVE_SOCKADDR_UN
+
 /* Define to 1 if you have the `socketpair' function. */
 #undef HAVE_SOCKETPAIR
 
@@ -827,9 +869,6 @@
 
 /* Define to 1 if you have the `srandom' function. */
 #undef HAVE_SRANDOM
-
-/* Define to 1 if you have the <sstream> header file. */
-#undef HAVE_SSTREAM
 
 /* Define if sockaddr_storage has field ss_len */
 #undef HAVE_SS_LEN_IN_SS
@@ -846,14 +885,8 @@
 /* Define to 1 if you have the <stdbool.h> header file. */
 #undef HAVE_STDBOOL_H
 
-/* Define if g++ supports C++0x features. */
-#undef HAVE_STDCXX_0X
-
 /* Define to 1 if you have the <stddef.h> header file. */
 #undef HAVE_STDDEF_H
-
-/* Define to 1 if you have the <stdexcept> header file. */
-#undef HAVE_STDEXCEPT
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -866,9 +899,6 @@
 
 /* Define to 1 if you have the `strerror' function. */
 #undef HAVE_STRERROR
-
-/* Define to 1 if you have the <string> header file. */
-#undef HAVE_STRING
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
@@ -885,20 +915,11 @@
 /* MacOS brokenness: strnstr() can overrun on that system */
 #undef HAVE_STRNSTR
 
-/* Define to 1 if you have the `strsep' function. */
-#undef HAVE_STRSEP
-
 /* Define to 1 if you have the `strtoll' function. */
 #undef HAVE_STRTOLL
 
 /* Define to 1 if `ip_hl' is a member of `struct iphdr'. */
 #undef HAVE_STRUCT_IPHDR_IP_HL
-
-/* The system provides struct mallinfo */
-#undef HAVE_STRUCT_MALLINFO
-
-/* Define to 1 if `mxfast' is a member of `struct mallinfo'. */
-#undef HAVE_STRUCT_MALLINFO_MXFAST
 
 /* The system provides struct rusage */
 #undef HAVE_STRUCT_RUSAGE
@@ -952,8 +973,14 @@
 /* Define to 1 if you have the <sys/file.h> header file. */
 #undef HAVE_SYS_FILE_H
 
+/* Define to 1 if you have the <sys/ioccom.h> header file. */
+#undef HAVE_SYS_IOCCOM_H
+
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/ipc.cc> header file. */
+#undef HAVE_SYS_IPC_CC
 
 /* Define to 1 if you have the <sys/md5.h> header file. */
 #undef HAVE_SYS_MD5_H
@@ -983,11 +1010,17 @@
 /* Define to 1 if you have the <sys/select.h> header file. */
 #undef HAVE_SYS_SELECT_H
 
+/* Define to 1 if you have the <sys/shm.h> header file. */
+#undef HAVE_SYS_SHM_H
+
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
 
 /* Define to 1 if you have the <sys/sockio.h> header file. */
 #undef HAVE_SYS_SOCKIO_H
+
+/* Define to 1 if you have the <sys/statfs.h> header file. */
+#undef HAVE_SYS_STATFS_H
 
 /* Define to 1 if you have the <sys/statvfs.h> header file. */
 #undef HAVE_SYS_STATVFS_H
@@ -1052,8 +1085,14 @@
 /* The system implements a functional va_copy() */
 #undef HAVE_VA_COPY
 
+/* Define to 1 if you have the `vfork' function. */
+#undef HAVE_VFORK
+
 /* Define to 1 if you have the `vsnprintf' function. */
 #undef HAVE_VSNPRINTF
+
+/* Define to 1 if you have the <w32api/windows.h> header file. */
+#undef HAVE_W32API_WINDOWS_H
 
 /* Define to 1 if you have the <wchar.h> header file. */
 #undef HAVE_WCHAR_H
@@ -1063,6 +1102,9 @@
 
 /* Define to 1 if you have the <windows.h> header file. */
 #undef HAVE_WINDOWS_H
+
+/* Define to 1 if you have the <winldap.h> header file. */
+#undef HAVE_WINLDAP_H
 
 /* Define to 1 if you have the <winsock2.h> header file. */
 #undef HAVE_WINSOCK2_H
@@ -1078,6 +1120,18 @@
 
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #undef HAVE_WS2TCPIP_H
+
+/* Define to 1 if you have the `__htole16' function. */
+#undef HAVE___HTOLE16
+
+/* Define to 1 if you have the `__htole32' function. */
+#undef HAVE___HTOLE32
+
+/* Define to 1 if you have the `__le16toh' function. */
+#undef HAVE___LE16TOH
+
+/* Define to 1 if you have the `__le32toh' function. */
+#undef HAVE___LE32TOH
 
 /* Define to 1 if you have the `__res_init' function. */
 #undef HAVE___RES_INIT
@@ -1144,9 +1198,6 @@
 /* Define if dlsym() requires a leading underscore in symbol names. */
 #undef NEED_USCORE
 
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
-
 /* Name of package */
 #undef PACKAGE
 
@@ -1181,6 +1232,9 @@
 /* Compiler supports %zu printf macro */
 #undef PRIuSIZE
 
+/* Base type of the second argument to recv(2) */
+#undef RECV_ARG_TYPE
+
 /* The size of `int64_t', as computed by sizeof. */
 #undef SIZEOF_INT64_T
 
@@ -1214,6 +1268,9 @@
 /* Define to enable SNMP monitoring of Squid */
 #undef SQUID_SNMP
 
+/* "Define to 1 if the SSL_get_certificate crashes squid" */
+#undef SQUID_SSLGETCERTIFICATE_BUGGY
+
 /* "Define to 1 if the TXT_DB uses OPENSSL_PSTRING data member" */
 #undef SQUID_SSLTXTDB_PSTRINGDATA
 
@@ -1230,6 +1287,12 @@
 /* "Define to 1 if the SSL_CTX_new and similar openSSL API functions require
    'const SSL_METHOD *'" */
 #undef SQUID_USE_CONST_SSL_METHOD
+
+/* "Define to 1 if hello message can be overwritten in SSL struct" */
+#undef SQUID_USE_OPENSSL_HELLO_OVERWRITE_HACK
+
+/* "Define to 1 to use squid workaround for SSL_get_certificate" */
+#undef SQUID_USE_SSLGETCERTIFICATE_HACK
 
 /* "Define to 1 to use squid workaround for openssl IMPLEMENT_LHASH_* type
    conversion errors" */
@@ -1251,6 +1314,9 @@
 
 /* common adaptation support */
 #undef USE_ADAPTATION
+
+/* Apple Kerberos support is available */
+#undef USE_APPLE_KRB5
 
 /* Enable support for authentication */
 #undef USE_AUTH
@@ -1282,9 +1348,6 @@
 /* Enable DiskIO IpcIo module. */
 #undef USE_DISKIO_IPCIO
 
-/* Use dnsserver processes instead of the internal DNS protocol support */
-#undef USE_DNSHELPER
-
 /* Disable eCAP support */
 #undef USE_ECAP
 
@@ -1297,8 +1360,17 @@
 /* Enable Forw/Via database */
 #undef USE_FORW_VIA_DB
 
+/* GNU Kerberos support is available */
+#undef USE_GNUGSS
+
 /* Define if we should use GNU regex */
 #undef USE_GNUREGEX
+
+/* GnuTLS support is available */
+#undef USE_GNUTLS
+
+/* Heimdal Kerberos support is available */
+#undef USE_HEIMDAL_KRB5
 
 /* Define this to include code for the Hypertext Cache Protocol (HTCP) */
 #undef USE_HTCP
@@ -1332,9 +1404,13 @@
 /* Support Loadable Modules */
 #undef USE_LOADABLE_MODULES
 
-/* Define this to make use of the OpenSSL libraries for MD5 calculation rather
-   than Squid-supplied MD5 implementation or if building with SSL encryption
-   */
+/* MIT Kerberos support is available */
+#undef USE_MIT_KRB5
+
+/* Enable support for /dev/pf NAT lookups */
+#undef USE_NAT_DEVPF
+
+/* OpenSSL support is available */
 #undef USE_OPENSSL
 
 /* Use poll() for the IO loop */
@@ -1350,15 +1426,18 @@
 /* Use Winsock select() for the IO loop */
 #undef USE_SELECT_WIN32
 
+/* Workaround IPFilter minor_t breakage */
+#undef USE_SOLARIS_IPFILTER_MINOR_T_HACK
+
+/* Solaris Kerberos support is available */
+#undef USE_SOLARIS_KRB5
+
 /* Compile the ESI processor and Surrogate header support */
 #undef USE_SQUID_ESI
 
 /* Define this to include code which lets you use ethernet addresses. This
    code uses API initially defined in 4.4-BSD. */
 #undef USE_SQUID_EUI
-
-/* Define this to include code for SSL gatewaying support */
-#undef USE_SSL
 
 /* Use ssl_crtd daemon */
 #undef USE_SSL_CRTD
@@ -1495,6 +1574,9 @@
    a type exists and the standard includes do not define it. */
 #undef int8_t
 
+/* Leave undefined if nullptr is supported */
+#undef nullptr
+
 /* Define to `long int' if <sys/types.h> does not define. */
 #undef off_t
 
@@ -1525,3 +1607,6 @@
 /* Define to the type of an unsigned integer type of width exactly 8 bits if
    such a type exists and the standard includes do not define it. */
 #undef uint8_t
+
+/* Leave undefined if std::unique_ptr<T> is supported */
+#undef unique_ptr

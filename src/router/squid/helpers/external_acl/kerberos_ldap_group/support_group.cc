@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 /*
  * -----------------------------------------------------------------------------
@@ -26,11 +33,12 @@
 #include "squid.h"
 #include "util.h"
 
-#ifdef HAVE_LDAP
+#if HAVE_LDAP
 
 #include "support.h"
 
 struct gdstruct *init_gd(void);
+void free_gd(struct gdstruct *gdsp);
 
 struct gdstruct *
 init_gd(void) {
@@ -59,10 +67,10 @@ char *utf8dup(struct main_args *margs);
 char *
 utf8dup(struct main_args *margs)
 {
-    int c = 0, s;
+    size_t c = 0;
     size_t n;
     char *src;
-    unsigned char *p, *dupp;
+    unsigned char *p;
 
     src = margs->glist;
     if (!src)
@@ -71,15 +79,17 @@ utf8dup(struct main_args *margs)
         if ((unsigned char) src[n] > 127)
             ++c;
     if (c != 0) {
+        unsigned char *dupp;
         p = (unsigned char *) xmalloc(strlen(src) + c);
         dupp = p;
         for (n = 0; n < strlen(src); ++n) {
+            unsigned char s;
             s = (unsigned char) src[n];
             if (s > 127 && s < 192) {
                 *p = 194;
                 ++p;
                 *p = s;
-            } else if (s > 191 && s < 256) {
+            } else if (s > 191) {
                 *p = 195;
                 ++p;
                 *p = s - 64;
@@ -121,7 +131,7 @@ hex_utf_char(struct main_args *margs, int flag)
         return NULL;
 
     char *upd = strrchr(up, '@');
-    size_t a = (upd ? (upd - up) : strlen(up) );
+    size_t a = (upd ? (size_t)(upd - up) : strlen(up) );
 
     char *ul = (char *) xmalloc(strlen(up)+1);
     size_t n = 0;
@@ -174,17 +184,17 @@ hex_utf_char(struct main_args *margs, int flag)
         if (iUTF2) {
             if (iUTF2 == 0xC2 && ichar > 0x7F && ichar < 0xC0) {
                 iUTF2 = 0;
-                ul[nl - 1] = ichar;
+                ul[nl - 1] = (char)ichar;
             } else if (iUTF2 == 0xC3 && ichar > 0x7F && ichar < 0xC0) {
                 iUTF2 = 0;
-                ul[nl - 1] = ichar + 64;
+                ul[nl - 1] = (char)(ichar + 64);
             } else if (iUTF2 > 0xC3 && iUTF2 < 0xE0 && ichar > 0x7F && ichar < 0xC0) {
                 iUTF2 = 0;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else {
                 iUTF2 = 0;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ul[nl + 1] = '\0';
                 debug((char *) "%s| %s: WARNING: Invalid UTF-8 sequence for Unicode %s\n", LogTime(), PROGRAM, ul);
                 xfree(ul);
@@ -193,27 +203,27 @@ hex_utf_char(struct main_args *margs, int flag)
         } else if (iUTF3) {
             if (iUTF3 == 0xE0 && ichar > 0x9F && ichar < 0xC0) {
                 iUTF3 = 1;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else if (iUTF3 > 0xE0 && iUTF3 < 0xED && ichar > 0x7F && ichar < 0xC0) {
                 iUTF3 = 2;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else if (iUTF3 == 0xED && ichar > 0x7F && ichar < 0xA0) {
                 iUTF3 = 3;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else if (iUTF3 > 0xED && iUTF3 < 0xF0 && ichar > 0x7F && ichar < 0xC0) {
                 iUTF3 = 4;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else if (iUTF3 > 0 && iUTF3 < 5 && ichar > 0x7F && ichar < 0xC0) {
                 iUTF3 = 0;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else {
                 iUTF3 = 0;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ul[nl + 1] = '\0';
                 debug((char *) "%s| %s: WARNING: Invalid UTF-8 sequence for Unicode %s\n", LogTime(), PROGRAM, ul);
                 xfree(ul);
@@ -222,26 +232,26 @@ hex_utf_char(struct main_args *margs, int flag)
         } else if (iUTF4) {
             if (iUTF4 == 0xF0 && ichar > 0x8F && ichar < 0xC0) {
                 iUTF4 = 1;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else if (iUTF4 > 0xF0 && iUTF3 < 0xF4 && ichar > 0x7F && ichar < 0xC0) {
                 iUTF4 = 2;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else if (iUTF4 == 0xF4 && ichar > 0x7F && ichar < 0x90) {
                 iUTF4 = 3;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else if (iUTF4 > 0 && iUTF4 < 5 && ichar > 0x7F && ichar < 0xC0) {
                 if (iUTF4 == 4)
                     iUTF4 = 0;
                 else
                     iUTF4 = 4;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ++nl;
             } else {
                 iUTF4 = 0;
-                ul[nl] = ichar;
+                ul[nl] = (char)ichar;
                 ul[nl + 1] = '\0';
                 debug((char *) "%s| %s: WARNING: Invalid UTF-8 sequence for Unicode %s\n", LogTime(), PROGRAM, ul);
                 xfree(ul);
@@ -249,25 +259,25 @@ hex_utf_char(struct main_args *margs, int flag)
             }
         } else if (ichar < 0x80) {
             /* UTF1 */
-            ul[nl] = ichar;
+            ul[nl] = (char)ichar;
             ++nl;
         } else if (ichar > 0xC1 && ichar < 0xE0) {
             /* UTF2 (Latin) */
             iUTF2 = ichar;
-            ul[nl] = ichar;
+            ul[nl] = (char)ichar;
             ++nl;
         } else if (ichar > 0xDF && ichar < 0xF0) {
             /* UTF3 */
             iUTF3 = ichar;
-            ul[nl] = ichar;
+            ul[nl] = (char)ichar;
             ++nl;
         } else if (ichar > 0xEF && ichar < 0xF5) {
             /* UTF4 */
             iUTF4 = ichar;
-            ul[nl] = ichar;
+            ul[nl] = (char)ichar;
             ++nl;
         } else {
-            ul[nl] = ichar;
+            ul[nl] = (char)ichar;
             ul[nl + 1] = '\0';
             debug((char *) "%s| %s: WARNING: Invalid UTF-8 sequence for Unicode %s\n", LogTime(), PROGRAM, ul);
             xfree(ul);
@@ -377,13 +387,13 @@ create_gd(struct main_args *margs)
         cleanup();
         return (1);
     }
-    while (*p) {		/* loop over group list */
-        if (*p == '\n' || *p == '\r') {		/* Ignore CR and LF if exist */
+    while (*p) {        /* loop over group list */
+        if (*p == '\n' || *p == '\r') {     /* Ignore CR and LF if exist */
             ++p;
             continue;
         }
-        if (*p == '@') {	/* end of group name - start of domain name */
-            if (p == gp) {	/* empty group name not allowed */
+        if (*p == '@') {    /* end of group name - start of domain name */
+            if (p == gp) {  /* empty group name not allowed */
                 debug((char *) "%s| %s: ERROR: No group defined for domain %s\n", LogTime(), PROGRAM, p);
                 cleanup();
                 return (1);
@@ -398,40 +408,40 @@ create_gd(struct main_args *margs)
             gdsp = init_gd();
             gdsp->group = xstrdup(gp);
             gdsp->next = gdspn;
-            dp = p;		/* after @ starts new domain name */
-        } else if (*p == ':') {	/* end of group name or end of domain name */
-            if (p == gp) {	/* empty group name not allowed */
+            dp = p;     /* after @ starts new domain name */
+        } else if (*p == ':') { /* end of group name or end of domain name */
+            if (p == gp) {  /* empty group name not allowed */
                 debug((char *) "%s| %s: ERROR: No group defined for domain %s\n", LogTime(), PROGRAM, p);
                 cleanup();
                 return (1);
             }
             *p = '\0';
             ++p;
-            if (dp) {		/* end of domain name */
+            if (dp) {       /* end of domain name */
                 gdsp->domain = xstrdup(dp);
                 dp = NULL;
-            } else {		/* end of group name and no domain name */
+            } else {        /* end of group name and no domain name */
                 gdsp = init_gd();
                 gdsp->group = xstrdup(gp);
                 gdsp->next = gdspn;
             }
             gdspn = gdsp;
-            gp = p;		/* after : starts new group name */
+            gp = p;     /* after : starts new group name */
             debug((char *) "%s| %s: INFO: Group %s  Domain %s\n", LogTime(), PROGRAM, gdsp->group, gdsp->domain ? gdsp->domain : "NULL");
         } else
             ++p;
     }
-    if (p == gp) {		/* empty group name not allowed */
+    if (p == gp) {      /* empty group name not allowed */
         debug((char *) "%s| %s: ERROR: No group defined for domain %s\n", LogTime(), PROGRAM, p);
         cleanup();
         return (1);
     }
-    if (dp) {			/* end of domain name */
+    if (dp) {           /* end of domain name */
         gdsp->domain = xstrdup(dp);
-    } else {			/* end of group name and no domain name */
+    } else {            /* end of group name and no domain name */
         gdsp = init_gd();
         gdsp->group = xstrdup(gp);
-        if (gdspn)		/* Have already an existing structure */
+        if (gdspn)      /* Have already an existing structure */
             gdsp->next = gdspn;
     }
     debug((char *) "%s| %s: INFO: Group %s  Domain %s\n", LogTime(), PROGRAM, gdsp->group, gdsp->domain ? gdsp->domain : "NULL");
@@ -442,3 +452,4 @@ create_gd(struct main_args *margs)
     return (0);
 }
 #endif
+

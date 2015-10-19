@@ -1,35 +1,12 @@
 /*
- * DEBUG: section 86    ESI processing
- * AUTHOR: Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 86    ESI processing */
 
 #include "squid.h"
 #include "Debug.h"
@@ -40,10 +17,10 @@
  */
 #if (USE_SQUID_ESI == 1)
 
-#include "esi/Sequence.h"
-#include "esi/Literal.h"
 #include "esi/Attempt.h"
 #include "esi/Except.h"
+#include "esi/Literal.h"
+#include "esi/Sequence.h"
 
 class esiExcept;
 
@@ -53,15 +30,15 @@ esiSequence::~esiSequence ()
 }
 
 esiSequence::esiSequence(esiTreeParentPtr aParent, bool incrementalFlag) :
-        elements(),
-        processedcount(0),
-        parent(aParent),
-        mayFail_(true),
-        failed(false),
-        provideIncrementalData(incrementalFlag),
-        processing(false),
-        processingResult(ESI_PROCESS_COMPLETE),
-        nextElementToProcess_(0)
+    elements(),
+    processedcount(0),
+    parent(aParent),
+    mayFail_(true),
+    failed(false),
+    provideIncrementalData(incrementalFlag),
+    processing(false),
+    processingResult(ESI_PROCESS_COMPLETE),
+    nextElementToProcess_(0)
 {
     memset(&flags, 0, sizeof(flags));
 }
@@ -341,14 +318,14 @@ esiSequence::fail (ESIElement *source, char const *anError)
 }
 
 esiSequence::esiSequence(esiSequence const &old) :
-        processedcount(0),
-        parent(NULL),
-        mayFail_(old.mayFail_),
-        failed(old.failed),
-        provideIncrementalData(old.provideIncrementalData),
-        processing(false),
-        processingResult(ESI_PROCESS_COMPLETE),
-        nextElementToProcess_(0)
+    processedcount(0),
+    parent(NULL),
+    mayFail_(old.mayFail_),
+    failed(old.failed),
+    provideIncrementalData(old.provideIncrementalData),
+    processing(false),
+    processingResult(ESI_PROCESS_COMPLETE),
+    nextElementToProcess_(0)
 {
     flags.dovars = old.flags.dovars;
 }
@@ -414,3 +391,4 @@ esiSequence::makeUsable(esiTreeParentPtr newParent, ESIVarState &newVarState) co
 }
 
 #endif /* USE_SQUID_ESI == 1 */
+

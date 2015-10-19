@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_COMPAT_STDIO_H
 #define _SQUID_COMPAT_STDIO_H
 
@@ -15,7 +23,7 @@
 
 // Import the stdio.h definitions first to do the state setup
 #if HAVE_STDIO_H
-#include<stdio.h>
+#include <stdio.h>
 #endif
 
 // Check for the buggy case
@@ -46,8 +54,8 @@ inline FILE * tmpfile(void) { return tmpfile64(); }
 #endif /* __USE_FILE_OFFSET64 && !__REDIRECT */
 
 // Finally import the <cstdio> stuff we actually use
-#if HAVE_CSTDIO
-#include<cstdio>
+#if defined(__cplusplus)
+#include <cstdio>
 #endif
 
 #ifndef MAXPATHLEN
@@ -55,3 +63,4 @@ inline FILE * tmpfile(void) { return tmpfile64(); }
 #endif
 
 #endif /* _SQUID_COMPAT_STDIO_H */
+

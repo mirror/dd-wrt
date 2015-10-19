@@ -1,5 +1,14 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "cache_cf.h"
+#include "ConfigParser.h"
 #include "Debug.h"
 #include "log/Config.h"
 
@@ -10,17 +19,19 @@ Log::LogConfig::parseFormats()
 {
     char *name, *def;
 
-    if ((name = strtok(NULL, w_space)) == NULL)
+    if ((name = ConfigParser::NextToken()) == NULL)
         self_destruct();
 
-    if ((def = strtok(NULL, "\r\n")) == NULL) {
+    ::Format::Format *nlf = new ::Format::Format(name);
+
+    ConfigParser::EnableMacros();
+    if ((def = ConfigParser::NextQuotedOrToEol()) == NULL) {
         self_destruct();
         return;
     }
+    ConfigParser::DisableMacros();
 
     debugs(3, 2, "Log Format for '" << name << "' is '" << def << "'");
-
-    ::Format::Format *nlf = new ::Format::Format(name);
 
     if (!nlf->parse(def)) {
         self_destruct();
@@ -31,3 +42,4 @@ Log::LogConfig::parseFormats()
     nlf->next = logformats;
     logformats = nlf;
 }
+

@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_INCLUDE_RFC1123_H
 #define _SQUID_INCLUDE_RFC1123_H
 
@@ -16,9 +24,10 @@
  *  Squid accepts up to 255 character Hostname and Fully-Qualified Domain Names.
  *  Squid still NULL-terminates its FQDN and hotsname strings.
  */
-#define RFC2181_MAXHOSTNAMELEN	256
+#define RFC2181_MAXHOSTNAMELEN  256
 
 /** Back-port macro for old squid code still using SQUIDHOSTNAMELEN without RFC reference. */
-#define SQUIDHOSTNAMELEN	RFC2181_MAXHOSTNAMELEN
+#define SQUIDHOSTNAMELEN    RFC2181_MAXHOSTNAMELEN
 
 #endif /* _SQUID_INCLUDE_RFC1123_H */
+

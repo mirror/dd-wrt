@@ -1,87 +1,42 @@
 /*
- * DEBUG: section 79    Disk IO Routines
- * AUTHOR: Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 79    Disk IO Routines */
 
 #include "squid.h"
 #include "disk.h"
-#include "DiskThreadsDiskFile.h"
 #include "DiskIO/IORequestor.h"
 #include "DiskIO/ReadRequest.h"
 #include "DiskIO/WriteRequest.h"
+#include "DiskThreadsDiskFile.h"
 #include "fd.h"
 #include "Generic.h"
 #include "globals.h"
 #include "StatCounters.h"
 #include "Store.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+#include <cerrno>
 
 /* === PUBLIC =========================================================== */
 
 CBDATA_CLASS_INIT(DiskThreadsDiskFile);
-void *
-DiskThreadsDiskFile::operator new (size_t)
-{
-    CBDATA_INIT_TYPE(DiskThreadsDiskFile);
-    DiskThreadsDiskFile *result = cbdataAlloc(DiskThreadsDiskFile);
-    /*
-     * We used to call squidaio_init() here, but if the first transaction
-     * is to unlink a file (e.g., if Squid starts up over the disk space
-     * limit) then "squidaio" won't be initialized yet.
-     */
-
-    return result;
-}
-
-void
-DiskThreadsDiskFile::operator delete(void *address)
-{
-    DiskThreadsDiskFile *t = static_cast<DiskThreadsDiskFile *>(address);
-    cbdataFree(t);
-}
 
 DiskThreadsDiskFile::DiskThreadsDiskFile(char const *aPath, DiskThreadsIOStrategy *anIO):fd(-1), errorOccured (false), IO(anIO),
-        inProgressIOs (0)
+    inProgressIOs (0)
 {
-    assert (aPath);
+    assert(aPath);
     debugs(79, 3, "UFSFile::UFSFile: " << aPath);
-    path_ = xstrdup (aPath);
+    path_ = xstrdup(aPath);
 }
 
 DiskThreadsDiskFile::~DiskThreadsDiskFile()
 {
-    safe_free (path_);
+    safe_free(path_);
     doClose();
 }
 
@@ -319,7 +274,7 @@ DiskThreadsDiskFile::readDone(int rvfd, const char *buf, int len, int errflag, R
 #else
 
     if (errflag == DISK_EOF)
-        errflag = DISK_OK;	/* EOF is signalled by len == 0, not errors... */
+        errflag = DISK_OK;  /* EOF is signalled by len == 0, not errors... */
 
 #endif
 
@@ -370,23 +325,8 @@ DiskThreadsDiskFile::writeDone(int rvfd, int errflag, size_t len, RefCount<Write
     --loop_detect;
 }
 
-/** \cond AUTODOCS-IGNORE */
+/** \cond AUTODOCS_IGNORE */
 template <class RT>
 cbdata_type IoResult<RT>::CBDATA_IoResult = CBDATA_UNKNOWN;
 /** \endcond */
 
-template<class RT>
-void *
-IoResult<RT>::operator new(size_t unused)
-{
-    CBDATA_INIT_TYPE(IoResult);
-    IoResult<RT> *result = cbdataAlloc(IoResult);
-    return result;
-}
-
-template <class RT>
-void
-IoResult<RT>::operator delete(void *address)
-{
-    cbdataFree(address);
-}

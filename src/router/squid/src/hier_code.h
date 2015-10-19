@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID__HIER_CODE_H
 #define SQUID__HIER_CODE_H
 
@@ -26,6 +34,7 @@ typedef enum {
     SOURCEHASH_PARENT,
     PINNED,
     ORIGINAL_DST,
+    STANDBY_POOL,
     HIER_MAX
 } hier_code;
 
@@ -34,3 +43,4 @@ extern const char *hier_code_str[];
 inline hier_code operator++(hier_code &i) { return i = (hier_code)(1+(int)i); }
 
 #endif /* SQUID__HIER_CODE_H */
+

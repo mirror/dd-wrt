@@ -1,8 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_CBC_POINTER_H
 #define SQUID_CBC_POINTER_H
 
 #include "base/TextException.h"
 #include "cbdata.h"
+#include "Debug.h"
 
 /**
  \ingroup CBDATAAPI
@@ -112,6 +121,9 @@ template<class Cbc>
 void
 CbcPointer<Cbc>::clear()
 {
+#if USE_CBDATA_DEBUG
+    debugs(45, 3, "cbc=" << (void*)cbc << ", lock=" << (void*)lock);
+#endif
     cbdataReferenceDone(lock); // lock may be nil before and will be nil after
     cbc = NULL;
 }
@@ -135,7 +147,7 @@ Cbc &
 CbcPointer<Cbc>::operator *() const
 {
     Cbc *c = get();
-    Must(c);
+    assert(c);
     return *c;
 }
 
@@ -144,7 +156,7 @@ Cbc *
 CbcPointer<Cbc>::operator ->() const
 {
     Cbc *c = get();
-    Must(c);
+    assert(c);
     return c;
 }
 
@@ -155,3 +167,4 @@ std::ostream &CbcPointer<Cbc>::print(std::ostream &os) const
 }
 
 #endif /* SQUID_CBC_POINTER_H */
+

@@ -1,33 +1,12 @@
 /*
- * DEBUG: section 05    Socket Functions
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 05    Socket Functions */
 
 /*
  * This code was originally written by Benno Rice and hacked on quite
@@ -60,11 +39,9 @@
 #include "StatCounters.h"
 #include "Store.h"
 
+#include <cerrno>
 #if HAVE_SYS_EVENT_H
 #include <sys/event.h>
-#endif
-#if HAVE_ERRNO_H
-#include <errno.h>
 #endif
 
 #define KE_LENGTH        128
@@ -244,7 +221,7 @@ Comm::ResetSelect(int fd)
  * events.
  */
 
-comm_err_t
+Comm::Flag
 Comm::DoSelect(int msec)
 {
     int num, i;
@@ -273,7 +250,7 @@ Comm::DoSelect(int msec)
 
         getCurrentTime();
 
-        return COMM_ERROR;
+        return Comm::COMM_ERROR;
 
         /* NOTREACHED */
     }
@@ -281,7 +258,7 @@ Comm::DoSelect(int msec)
     getCurrentTime();
 
     if (num == 0)
-        return COMM_OK;		/* No error.. */
+        return Comm::OK;        /* No error.. */
 
     for (i = 0; i < num; ++i) {
         int fd = (int) ke[i].ident;
@@ -315,7 +292,7 @@ Comm::DoSelect(int msec)
         }
     }
 
-    return COMM_OK;
+    return Comm::OK;
 }
 
 void
@@ -330,3 +307,4 @@ commKQueueRegisterWithCacheManager(void)
 }
 
 #endif /* USE_KQUEUE */
+

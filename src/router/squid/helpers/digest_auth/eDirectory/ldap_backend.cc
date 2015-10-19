@@ -1,8 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- *
- *
- * ldap_backend.c
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * AUTHOR: Flavio Pescuma, MARA Systems AB <flavio@marasystems.com>
  */
 #include "squid.h"
@@ -453,11 +457,11 @@ LDAPArguments(int argc, char **argv)
             fprintf(stderr, "ERROR: Your LDAP library does not have URI support\n");
             return 1;
 #endif
-            /* Fall thru to -h */
+        /* Fall thru to -h */
         case 'h':
             if (ldapServer) {
                 int len = strlen(ldapServer) + 1 + strlen(value) + 1;
-                char *newhost = (char*)malloc(len);
+                char *newhost = static_cast<char*>(xmalloc(len));
                 snprintf(newhost, len, "%s %s", ldapServer, value);
                 free(ldapServer);
                 ldapServer = newhost;
@@ -586,7 +590,7 @@ LDAPArguments(int argc, char **argv)
         char *value = argv[1];
         if (ldapServer) {
             int len = strlen(ldapServer) + 1 + strlen(value) + 1;
-            char *newhost = (char*)malloc(len);
+            char *newhost = static_cast<char*>(xmalloc(len));
             snprintf(newhost, len, "%s %s", ldapServer, value);
             free(ldapServer);
             ldapServer = newhost;
@@ -687,3 +691,4 @@ LDAPHHA1(RequestData * requestData)
     }
 
 }
+

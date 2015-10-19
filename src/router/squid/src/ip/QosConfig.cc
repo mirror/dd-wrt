@@ -1,21 +1,26 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 
 #include "acl/Gadgets.h"
 #include "cache_cf.h"
 #include "comm/Connection.h"
+#include "compat/cmsg.h"
 #include "ConfigParser.h"
 #include "fde.h"
 #include "globals.h"
 #include "hier_code.h"
-#include "ip/tools.h"
 #include "ip/QosConfig.h"
+#include "ip/tools.h"
 #include "Parsing.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
-
-/* Qos namespace */
+#include <cerrno>
 
 void
 Ip::Qos::getTosFromServer(const Comm::ConnectionPointer &server, fde *clientFde)
@@ -40,7 +45,7 @@ Ip::Qos::getTosFromServer(const Comm::ConnectionPointer &server, fde *clientFde)
                     break;
 
                 if (o->cmsg_level == SOL_IP && o->cmsg_type == IP_TOS) {
-                    int *tmp = (int*)CMSG_DATA(o);
+                    int *tmp = (int*)SQUID_CMSG_DATA(o);
                     clientFde->tosFromServer = (tos_t)*tmp;
                     break;
                 }
@@ -66,27 +71,27 @@ void Ip::Qos::getNfmarkFromServer(const Comm::ConnectionPointer &server, const f
          * port numbers.
          */
 
-        if (Ip::EnableIpv6 && server->local.IsIPv6()) {
+        if (Ip::EnableIpv6 && server->local.isIPv6()) {
             nfct_set_attr_u8(ct, ATTR_L3PROTO, AF_INET6);
             struct in6_addr serv_fde_remote_ip6;
-            server->remote.GetInAddr(serv_fde_remote_ip6);
+            server->remote.getInAddr(serv_fde_remote_ip6);
             nfct_set_attr(ct, ATTR_IPV6_DST, serv_fde_remote_ip6.s6_addr);
             struct in6_addr serv_fde_local_ip6;
-            server->local.GetInAddr(serv_fde_local_ip6);
+            server->local.getInAddr(serv_fde_local_ip6);
             nfct_set_attr(ct, ATTR_IPV6_SRC, serv_fde_local_ip6.s6_addr);
         } else {
             nfct_set_attr_u8(ct, ATTR_L3PROTO, AF_INET);
             struct in_addr serv_fde_remote_ip;
-            server->remote.GetInAddr(serv_fde_remote_ip);
+            server->remote.getInAddr(serv_fde_remote_ip);
             nfct_set_attr_u32(ct, ATTR_IPV4_DST, serv_fde_remote_ip.s_addr);
             struct in_addr serv_fde_local_ip;
-            server->local.GetInAddr(serv_fde_local_ip);
+            server->local.getInAddr(serv_fde_local_ip);
             nfct_set_attr_u32(ct, ATTR_IPV4_SRC, serv_fde_local_ip.s_addr);
         }
 
         nfct_set_attr_u8(ct, ATTR_L4PROTO, IPPROTO_TCP);
-        nfct_set_attr_u16(ct, ATTR_PORT_DST, htons(server->remote.GetPort()));
-        nfct_set_attr_u16(ct, ATTR_PORT_SRC, htons(server->local.GetPort()));
+        nfct_set_attr_u16(ct, ATTR_PORT_DST, htons(server->remote.port()));
+        nfct_set_attr_u16(ct, ATTR_PORT_SRC, htons(server->local.port()));
 
         /* Open a handle to the conntrack */
         if (struct nfct_handle *h = nfct_open(CONNTRACK, 0)) {
@@ -185,12 +190,12 @@ Ip::Qos::doNfmarkLocalHit(const Comm::ConnectionPointer &conn)
 Ip::Qos::Config Ip::Qos::TheConfig;
 
 Ip::Qos::Config::Config() : tosLocalHit(0), tosSiblingHit(0), tosParentHit(0),
-        tosMiss(0), tosMissMask(0), preserveMissTos(false),
-        preserveMissTosMask(0xFF), markLocalHit(0), markSiblingHit(0),
-        markParentHit(0), markMiss(0), markMissMask(0),
-        preserveMissMark(false), preserveMissMarkMask(0xFFFFFFFF),
-        tosToServer(NULL), tosToClient(NULL), nfmarkToServer(NULL),
-        nfmarkToClient(NULL)
+    tosMiss(0), tosMissMask(0), preserveMissTos(false),
+    preserveMissTosMask(0xFF), markLocalHit(0), markSiblingHit(0),
+    markParentHit(0), markMiss(0), markMissMask(0),
+    preserveMissMark(false), preserveMissMarkMask(0xFFFFFFFF),
+    tosToServer(NULL), tosToClient(NULL), nfmarkToServer(NULL),
+    nfmarkToClient(NULL)
 {
 }
 
@@ -209,7 +214,7 @@ Ip::Qos::Config::parseConfigLine()
     self_destruct();
 #endif
 
-    while ( (token = strtok(NULL, w_space)) ) {
+    while ( (token = ConfigParser::NextToken()) ) {
 
         // Work out TOS or mark. Default to TOS for backwards compatibility
         if (!(mark || tos)) {
@@ -431,3 +436,4 @@ Ip::Qos::Config::dumpConfigLine(char *entry, const char *name) const
 #if !_USE_INLINE_
 #include "Qos.cci"
 #endif
+

@@ -1,12 +1,17 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_IPC_MEM_POINTER_H
 #define SQUID_IPC_MEM_POINTER_H
 
+#include "base/RefCount.h"
 #include "base/TextException.h"
 #include "ipc/mem/Segment.h"
-#include "RefCount.h"
 
 namespace Ipc
 {
@@ -31,6 +36,9 @@ public:
     static Owner *New(const char *const id, const P1 &p1, const P2 &p2, const P3 &p3, const P4 &p4);
 
     ~Owner();
+
+    /// Raw access; handy to finalize initiatization, but avoid if possible.
+    Class *object() { return theObject; }
 
 private:
     Owner(const char *const id, const off_t sharedSize);
@@ -86,7 +94,7 @@ public:
 
 template <class Class>
 Owner<Class>::Owner(const char *const id, const off_t sharedSize):
-        theSegment(id), theObject(NULL)
+    theSegment(id), theObject(NULL)
 {
     theSegment.create(sharedSize);
     Must(theSegment.mem());
@@ -176,3 +184,4 @@ Object<Class>::Old(const char *const id)
 } // namespace Ipc
 
 #endif /* SQUID_IPC_MEM_POINTER_H */
+

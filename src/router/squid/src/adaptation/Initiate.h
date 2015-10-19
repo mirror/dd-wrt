@@ -1,9 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_ADAPTATION__INITIATE_H
 #define SQUID_ADAPTATION__INITIATE_H
 
+#include "adaptation/forward.h"
 #include "base/AsyncJob.h"
 #include "base/CbcPointer.h"
-#include "adaptation/forward.h"
 
 namespace Adaptation
 {
@@ -50,3 +58,4 @@ private:
 } // namespace Adaptation
 
 #endif /* SQUID_ADAPTATION__INITIATE_H */
+

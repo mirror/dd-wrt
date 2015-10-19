@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 #ifndef SQUID_SRC_TEST_STORE_H
 #define SQUID_SRC_TEST_STORE_H
@@ -64,7 +71,7 @@ public:
 
     virtual void stat(StoreEntry &) const; /* output stats to the provided store entry */
 
-    virtual void reference(StoreEntry &) {}	/* Reference this object */
+    virtual void reference(StoreEntry &) {} /* Reference this object */
 
     virtual bool dereference(StoreEntry &, bool) { return true; }
 

@@ -1,35 +1,12 @@
-
 /*
- * DEBUG: section 58    HTTP Reply (Response)
- * AUTHOR: Alex Rousskov
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 58    HTTP Reply (Response) */
 
 #include "squid.h"
 #include "acl/AclSizeLimit.h"
@@ -76,14 +53,14 @@ static http_hdr_type Denied304HeadersArr[] = {
 void
 httpReplyInitModule(void)
 {
-    assert(HTTP_STATUS_NONE == 0); // HttpReply::parse() interface assumes that
+    assert(Http::scNone == 0); // HttpReply::parse() interface assumes that
     httpHeaderMaskInit(&Denied304HeadersMask, 0);
     httpHeaderCalcMask(&Denied304HeadersMask, Denied304HeadersArr, countof(Denied304HeadersArr));
 }
 
 HttpReply::HttpReply() : HttpMsg(hoReply), date (0), last_modified (0),
-        expires (0), surrogate_control (NULL), content_range (NULL), keep_alive (0),
-        protoPrefix("HTTP/"), bodySizeMax(-2)
+    expires (0), surrogate_control (NULL), content_range (NULL), keep_alive (0),
+    protoPrefix("HTTP/"), bodySizeMax(-2)
 {
     init();
 }
@@ -98,7 +75,7 @@ void
 HttpReply::init()
 {
     hdrCacheInit();
-    httpStatusLineInit(&sline);
+    sline.init();
     pstate = psReadyToParseStartLine;
     do_clean = true;
 }
@@ -126,14 +103,14 @@ HttpReply::clean()
     body.clear();
     hdrCacheClean();
     header.clean();
-    httpStatusLineClean(&sline);
+    sline.clean();
     bodySizeMax = -2; // hack: make calculatedBodySizeMax() false
 }
 
 void
 HttpReply::packHeadersInto(Packer * p) const
 {
-    httpStatusLinePackInto(&sline, p);
+    sline.packInto(p);
     header.packInto(p);
     packerAppend(p, "\r\n", 2);
 }
@@ -159,18 +136,6 @@ HttpReply::pack()
     return mb;
 }
 
-#if DEAD_CODE
-MemBuf *
-httpPackedReply(http_status status, const char *ctype, int64_t clen, time_t lmt, time_t expires)
-{
-    HttpReply *rep = new HttpReply;
-    rep->setHeaders(status, ctype, NULL, clen, lmt, expires);
-    MemBuf *mb = rep->pack();
-    delete rep;
-    return mb;
-}
-#endif
-
 HttpReply *
 HttpReply::make304() const
 {
@@ -188,8 +153,7 @@ HttpReply::make304() const
     /* rv->cache_control */
     /* rv->content_range */
     /* rv->keep_alive */
-    HttpVersion ver(1,1);
-    httpStatusLineSet(&rv->sline, ver, HTTP_NOT_MODIFIED, NULL);
+    rv->sline.set(Http::ProtocolVersion(1,1), Http::scNotModified, NULL);
 
     for (t = 0; ImsEntries[t] != HDR_OTHER; ++t)
         if ((e = header.findEntry(ImsEntries[t])))
@@ -212,12 +176,11 @@ HttpReply::packed304Reply()
 }
 
 void
-HttpReply::setHeaders(http_status status, const char *reason,
+HttpReply::setHeaders(Http::StatusCode status, const char *reason,
                       const char *ctype, int64_t clen, time_t lmt, time_t expiresTime)
 {
     HttpHeader *hdr;
-    HttpVersion ver(1,1);
-    httpStatusLineSet(&sline, ver, status, reason);
+    sline.set(Http::ProtocolVersion(1,1), status, reason);
     hdr = &header;
     hdr->putStr(HDR_SERVER, visible_appname_string);
     hdr->putStr(HDR_MIME_VERSION, "1.0");
@@ -235,7 +198,7 @@ HttpReply::setHeaders(http_status status, const char *reason,
     if (expiresTime >= 0)
         hdr->putTime(HDR_EXPIRES, expiresTime);
 
-    if (lmt > 0)		/* this used to be lmt != 0 @?@ */
+    if (lmt > 0)        /* this used to be lmt != 0 @?@ */
         hdr->putTime(HDR_LAST_MODIFIED, lmt);
 
     date = squid_curtime;
@@ -248,11 +211,10 @@ HttpReply::setHeaders(http_status status, const char *reason,
 }
 
 void
-HttpReply::redirect(http_status status, const char *loc)
+HttpReply::redirect(Http::StatusCode status, const char *loc)
 {
     HttpHeader *hdr;
-    HttpVersion ver(1,1);
-    httpStatusLineSet(&sline, ver, status, httpStatusString(status));
+    sline.set(Http::ProtocolVersion(1,1), status, NULL);
     hdr = &header;
     hdr->putStr(HDR_SERVER, APP_FULLNAME);
     hdr->putTime(HDR_DATE, squid_curtime);
@@ -285,7 +247,7 @@ HttpReply::validatorsMatch(HttpReply const * otherRep) const
 
     two = otherRep->header.getStrOrList(HDR_ETAG);
 
-    if (one.undefined() || two.undefined() || one.caseCmp(two)!=0 ) {
+    if (one.size()==0 || two.size()==0 || one.caseCmp(two)!=0 ) {
         one.clean();
         two.clean();
         return 0;
@@ -299,7 +261,7 @@ HttpReply::validatorsMatch(HttpReply const * otherRep) const
 
     two = otherRep->header.getStrOrList(HDR_CONTENT_MD5);
 
-    if (one.undefined() || two.undefined() || one.caseCmp(two) != 0 ) {
+    if (one.size()==0 || two.size()==0 || one.caseCmp(two)!=0 ) {
         one.clean();
         two.clean();
         return 0;
@@ -428,15 +390,15 @@ HttpReply::bodySize(const HttpRequestMethod& method) const
 {
     if (sline.version.major < 1)
         return -1;
-    else if (method.id() == METHOD_HEAD)
+    else if (method.id() == Http::METHOD_HEAD)
         return 0;
-    else if (sline.status == HTTP_OK)
-        (void) 0;		/* common case, continue */
-    else if (sline.status == HTTP_NO_CONTENT)
+    else if (sline.status() == Http::scOkay)
+        (void) 0;       /* common case, continue */
+    else if (sline.status() == Http::scNoContent)
         return 0;
-    else if (sline.status == HTTP_NOT_MODIFIED)
+    else if (sline.status() == Http::scNotModified)
         return 0;
-    else if (sline.status < HTTP_OK)
+    else if (sline.status() < Http::scOkay)
         return 0;
 
     return content_length;
@@ -449,7 +411,7 @@ HttpReply::bodySize(const HttpRequestMethod& method) const
  * NP: not all error cases are detected yet. Some are left for detection later in parse.
  */
 bool
-HttpReply::sanityCheckStartLine(MemBuf *buf, const size_t hdr_len, http_status *error)
+HttpReply::sanityCheckStartLine(MemBuf *buf, const size_t hdr_len, Http::StatusCode *error)
 {
     // hack warning: using psize instead of size here due to type mismatches with MemBuf.
 
@@ -458,7 +420,7 @@ HttpReply::sanityCheckStartLine(MemBuf *buf, const size_t hdr_len, http_status *
     if ( buf->contentSize() < (protoPrefix.psize() + 4) ) {
         if (hdr_len > 0) {
             debugs(58, 3, HERE << "Too small reply header (" << hdr_len << " bytes)");
-            *error = HTTP_INVALID_HEADER;
+            *error = Http::scInvalidHeader;
         }
         return false;
     }
@@ -473,7 +435,7 @@ HttpReply::sanityCheckStartLine(MemBuf *buf, const size_t hdr_len, http_status *
 
         if (protoPrefix.cmp(buf->content(), protoPrefix.size()) != 0) {
             debugs(58, 3, "HttpReply::sanityCheckStartLine: missing protocol prefix (" << protoPrefix << ") in '" << buf->content() << "'");
-            *error = HTTP_INVALID_HEADER;
+            *error = Http::scInvalidHeader;
             return false;
         }
 
@@ -486,7 +448,7 @@ HttpReply::sanityCheckStartLine(MemBuf *buf, const size_t hdr_len, http_status *
         // catch missing version info
         if (pos == protoPrefix.psize()) {
             debugs(58, 3, "HttpReply::sanityCheckStartLine: missing protocol version numbers (ie. " << protoPrefix << "/1.0) in '" << buf->content() << "'");
-            *error = HTTP_INVALID_HEADER;
+            *error = Http::scInvalidHeader;
             return false;
         }
     }
@@ -496,21 +458,17 @@ HttpReply::sanityCheckStartLine(MemBuf *buf, const size_t hdr_len, http_status *
 
     if (pos < buf->contentSize() && !xisdigit(*(buf->content()+pos))) {
         debugs(58, 3, "HttpReply::sanityCheckStartLine: missing or invalid status number in '" << buf->content() << "'");
-        *error = HTTP_INVALID_HEADER;
+        *error = Http::scInvalidHeader;
         return false;
     }
 
     return true;
 }
 
-void HttpReply::packFirstLineInto(Packer *p, bool unused) const
+bool
+HttpReply::parseFirstLine(const char *blk_start, const char *blk_end)
 {
-    httpStatusLinePackInto(&sline, p);
-}
-
-bool HttpReply::parseFirstLine(const char *blk_start, const char *blk_end)
-{
-    return httpStatusLineParse(&sline, protoPrefix, blk_start, blk_end);
+    return sline.parse(protoPrefix, blk_start, blk_end);
 }
 
 /* handy: resets and returns -1 */
@@ -519,7 +477,7 @@ HttpReply::httpMsgParseError()
 {
     int result(HttpMsg::httpMsgParseError());
     /* indicate an error in the status line */
-    sline.status = HTTP_INVALID_HEADER;
+    sline.set(Http::ProtocolVersion(1,1), Http::scInvalidHeader);
     return result;
 }
 
@@ -532,13 +490,13 @@ HttpReply::expectingBody(const HttpRequestMethod& req_method, int64_t& theSize) 
 {
     bool expectBody = true;
 
-    if (req_method == METHOD_HEAD)
+    if (req_method == Http::METHOD_HEAD)
         expectBody = false;
-    else if (sline.status == HTTP_NO_CONTENT)
+    else if (sline.status() == Http::scNoContent)
         expectBody = false;
-    else if (sline.status == HTTP_NOT_MODIFIED)
+    else if (sline.status() == Http::scNotModified)
         expectBody = false;
-    else if (sline.status < HTTP_OK)
+    else if (sline.status() < Http::scOkay)
         expectBody = false;
     else
         expectBody = true;
@@ -585,7 +543,7 @@ HttpReply::expectedBodyTooLarge(HttpRequest& request)
 }
 
 void
-HttpReply::calcMaxBodySize(HttpRequest& request)
+HttpReply::calcMaxBodySize(HttpRequest& request) const
 {
     // hack: -2 is used as "we have not calculated max body size yet" state
     if (bodySizeMax != -2) // already tried
@@ -597,7 +555,9 @@ HttpReply::calcMaxBodySize(HttpRequest& request)
         return;
 
     ACLFilledChecklist ch(NULL, &request, NULL);
-    ch.reply = HTTPMSGLOCK(this); // XXX: this lock makes method non-const
+    // XXX: cont-cast becomes irrelevant when checklist is HttpReply::Pointer
+    ch.reply = const_cast<HttpReply *>(this);
+    HTTPMSGLOCK(ch.reply);
     for (AclSizeLimit *l = Config.ReplyBodySize; l; l = l -> next) {
         /* if there is no ACL list or if the ACLs listed match use this size value */
         if (!l->aclList || ch.fastCheck(l->aclList) == ACCESS_ALLOWED) {
@@ -621,7 +581,6 @@ HttpReply::clone() const
     rep->pstate = pstate;
     rep->body_pipe = body_pipe;
 
-    rep->protocol = protocol;
     // keep_alive is handled in hdrCacheInit()
     return rep;
 }
@@ -698,3 +657,4 @@ String HttpReply::removeStaleWarningValues(const String &value)
 
     return newValue;
 }
+

@@ -1,35 +1,12 @@
-
 /*
- * DEBUG: section 81    CPU Profiling Routines
- * AUTHOR: Andres Kroonmaa
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Internet Object Cache  http://squid.nlanr.net/Squid/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from the
- *  Internet community.  Development is led by Duane Wessels of the
- *  National Laboratory for Applied Network Research and funded by the
- *  National Science Foundation.  Squid is Copyrighted (C) 1998 by
- *  the Regents of the University of California.  Please see the
- *  COPYRIGHT file for full details.  Squid incorporates software
- *  developed and/or copyrighted by other sources.  Please see the
- *  CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 81    CPU Profiling Routines */
 
 #include "squid.h"
 
@@ -195,7 +172,7 @@ xprof_average(TimersArray ** list, int secs)
     for (i = 0; i < XPROF_LAST; ++i) {
         hist[i]->name = head[i]->name;
         hist[i]->accu.summ += head[i]->accu.summ;
-        hist[i]->accu.count += head[i]->accu.count;	/* accumulate multisec */
+        hist[i]->accu.count += head[i]->accu.count; /* accumulate multisec */
 
         if (!hist[i]->accu.best)
             hist[i]->accu.best = head[i]->accu.best;
@@ -328,3 +305,4 @@ xprof_event(void *data)
 }
 
 #endif /* USE_XPROF_STATS */
+

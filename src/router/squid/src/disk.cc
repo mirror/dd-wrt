@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 06    Disk I/O Routines
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 06    Disk I/O Routines */
 
 #include "squid.h"
 #include "comm/Loops.h"
@@ -41,9 +19,7 @@
 #include "profiler/Profiler.h"
 #include "StatCounters.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+#include <cerrno>
 
 static PF diskHandleRead;
 static PF diskHandleWrite;
@@ -125,7 +101,7 @@ file_close(int fd)
         while (!diskWriteIsComplete(fd))
             diskHandleWrite(fd, NULL);
 #else
-        F->flags.close_request = 1;
+        F->flags.close_request = true;
         debugs(6, 2, "file_close: FD " << fd << ", delaying close");
         PROF_stop(file_close);
         return;
@@ -223,7 +199,7 @@ diskHandleWrite(int fd, void *notused)
     _fde_disk *fdd = &F->disk;
     dwrite_q *q = fdd->write_q;
     int status = DISK_OK;
-    int do_close;
+    bool do_close;
 
     if (NULL == q)
         return;
@@ -232,7 +208,7 @@ diskHandleWrite(int fd, void *notused)
 
     debugs(6, 3, "diskHandleWrite: FD " << fd);
 
-    F->flags.write_daemon = 0;
+    F->flags.write_daemon = false;
 
     assert(fdd->write_q != NULL);
 
@@ -332,7 +308,7 @@ diskHandleWrite(int fd, void *notused)
         /* another block is queued */
         diskCombineWrites(fdd);
         Comm::SetSelect(fd, COMM_SELECT_WRITE, diskHandleWrite, NULL, 0);
-        F->flags.write_daemon = 1;
+        F->flags.write_daemon = true;
     }
 
     do_close = F->flags.close_request;
@@ -446,7 +422,7 @@ diskHandleRead(int fd, void *data)
     {
 #endif
         debugs(6, 3, "diskHandleRead: FD " << fd << " seeking to offset " << ctrl_dat->offset);
-        lseek(fd, ctrl_dat->offset, SEEK_SET);	/* XXX ignore return? */
+        lseek(fd, ctrl_dat->offset, SEEK_SET);  /* XXX ignore return? */
         ++ statCounter.syscalls.disk.seeks;
         F->disk.offset = ctrl_dat->offset;
     }

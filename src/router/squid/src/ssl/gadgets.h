@@ -1,5 +1,9 @@
 /*
- * 2009/01/17
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_SSL_GADGETS_H
@@ -14,9 +18,7 @@
 #if HAVE_OPENSSL_TXT_DB_H
 #include <openssl/txt_db.h>
 #endif
-#if HAVE_STRING
 #include <string>
-#endif
 
 namespace Ssl
 {
@@ -30,6 +32,10 @@ namespace Ssl
 typedef const SSL_METHOD * ContextMethod;
 #else
 typedef SSL_METHOD * ContextMethod;
+#endif
+
+#if !defined(SQUID_SSL_SIGN_HASH_IF_NONE)
+#define SQUID_SSL_SIGN_HASH_IF_NONE "sha256"
 #endif
 
 /**
@@ -232,6 +238,7 @@ public:
     bool setCommonName; ///< Replace the CN field of the mimicing subject with the given
     std::string commonName; ///< A CN to use for the generated certificate
     CertSignAlgorithm signAlgorithm; ///< The signing algorithm to use
+    const EVP_MD *signHash; ///< The signing hash to use
     /// Returns certificate database primary key. New fake certificates
     /// purge old fake certificates with the same key.
     std::string & dbKey() const;
@@ -294,3 +301,4 @@ const char *getOrganization(X509 *x509);
 
 } // namespace Ssl
 #endif // SQUID_SSL_GADGETS_H
+

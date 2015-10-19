@@ -1,11 +1,17 @@
 /*
- * DEBUG: section 93    Adaptation
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 93    Adaptation */
+
 #include "squid.h"
-#include "HttpRequest.h"
-#include "adaptation/ServiceFilter.h"
 #include "adaptation/Service.h"
+#include "adaptation/ServiceFilter.h"
+#include "HttpRequest.h"
 
 Adaptation::Service::Service(const ServiceConfigPointer &aConfig): theConfig(aConfig)
 {
@@ -54,8 +60,8 @@ Adaptation::Service::wants(const ServiceFilter &filter) const
 Adaptation::Services &
 Adaptation::AllServices()
 {
-    static Services TheServices;
-    return TheServices;
+    static Services *TheServices = new Services;
+    return *TheServices;
 }
 
 Adaptation::ServicePointer
@@ -71,6 +77,9 @@ Adaptation::FindService(const Service::Id& key)
 
 void Adaptation::DetachServices()
 {
-    while (!AllServices().empty())
-        AllServices().pop_back()->detach();
+    while (!AllServices().empty()) {
+        AllServices().back()->detach();
+        AllServices().pop_back();
+    }
 }
+

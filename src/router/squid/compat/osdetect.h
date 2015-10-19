@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_COMPAT_OSDETECT_H
 #define SQUID_COMPAT_OSDETECT_H
 
@@ -24,35 +32,35 @@
 #define _SQUID_SUNOS_ 1
 #endif /* __SVR4 */
 
-#elif defined(__hpux)		/* HP-UX - SysV-like? */
+#elif defined(__hpux)       /* HP-UX - SysV-like? */
 #define _SQUID_HPUX_ 1
 #define _SQUID_SYSV_ 1
 
-#elif defined(__osf__)		/* OSF/1 */
+#elif defined(__osf__)      /* OSF/1 */
 #define _SQUID_OSF_ 1
 
-#elif defined(__ultrix)		/* Ultrix */
+#elif defined(__ultrix)     /* Ultrix */
 #define _SQUID_ULTRIX_ 1
 
-#elif defined(_AIX)		/* AIX */
+#elif defined(_AIX)     /* AIX */
 #define _SQUID_AIX_ 1
 
-#elif defined(__linux__)	/* Linux. WARNING: solaris-x86 also sets this */
+#elif defined(__linux__)    /* Linux. WARNING: solaris-x86 also sets this */
 #define _SQUID_LINUX_ 1
 
-#elif defined(__FreeBSD__)	/* FreeBSD */
+#elif defined(__FreeBSD__)  /* FreeBSD */
 #define _SQUID_FREEBSD_ 1
 
 #elif defined(__FreeBSD_kernel__)      /* GNU/kFreeBSD */
 #define _SQUID_KFREEBSD_ 1
 
-#elif defined(__sgi__)	|| defined(sgi) || defined(__sgi)	/* SGI */
+#elif defined(__sgi__)  || defined(sgi) || defined(__sgi)   /* SGI */
 #define _SQUID_SGI_ 1
 
 #elif defined(__NeXT__)
 #define _SQUID_NEXT_ 1
 
-#elif defined(__bsdi__)		/* BSD/OS */
+#elif defined(__bsdi__)     /* BSD/OS */
 #define _SQUID_BSDI_ 1
 
 #elif defined(__NetBSD__)
@@ -64,9 +72,8 @@
 #elif defined(__DragonFly__)
 #define _SQUID_DRAGONFLY_ 1
 
-#elif defined(__CYGWIN32__) || defined(__CYGWIN__)
+#elif defined(__CYGWIN__)
 #define _SQUID_CYGWIN_ 1
-#define _SQUID_WINDOWS_ 1
 
 #elif defined(__MINGW32__) || defined(__MINGW__)
 #define _SQUID_MINGW_ 1
@@ -90,3 +97,4 @@
 #endif /* OS automatic detection */
 
 #endif /* SQUID_COMPAT_OSDETECT_H */
+

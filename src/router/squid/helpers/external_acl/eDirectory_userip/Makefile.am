@@ -1,3 +1,10 @@
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+
 include $(top_srcdir)/src/Common.am
 
 libexec_PROGRAMS = ext_edirectory_userip_acl
@@ -13,4 +20,4 @@ ext_edirectory_userip_acl_LDADD = \
 
 man_MANS = ext_edirectory_userip_acl.8
 
-EXTRA_DIST = config.test ext_edirectory_userip_acl.8
+EXTRA_DIST = required.m4 ext_edirectory_userip_acl.8

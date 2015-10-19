@@ -1,9 +1,14 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
 #if HAVE_STRING_H
 #include <string.h>
 #endif
@@ -43,3 +48,4 @@ parse_iso3307_time(const char *buf)
 #endif
     return t;
 }
+

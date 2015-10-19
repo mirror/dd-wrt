@@ -1,31 +1,9 @@
 /*
- * MemBlob.cc (C) 2009 Francesco Chemolli <kinkie@squid-cache.org>
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #include "squid.h"
@@ -33,10 +11,9 @@
 #include "Debug.h"
 #include "Mem.h"
 #include "MemBlob.h"
+#include "SBufDetailedStats.h"
 
-#if HAVE_IOSTREAM
 #include <iostream>
-#endif
 
 MemBlobStats MemBlob::Stats;
 InstanceIdDefinitions(MemBlob, "blob");
@@ -46,23 +23,34 @@ InstanceIdDefinitions(MemBlob, "blob");
 MemBlobStats::MemBlobStats(): alloc(0), live(0), append(0), liveBytes(0)
 {}
 
+MemBlobStats&
+MemBlobStats::operator += (const MemBlobStats& s)
+{
+    alloc+=s.alloc;
+    live+=s.live;
+    append+=s.append;
+    liveBytes+=s.liveBytes;
+
+    return *this;
+}
+
 std::ostream&
 MemBlobStats::dump(std::ostream &os) const
 {
     os <<
-    "MemBlob created: " << alloc <<
-    "\nMemBlob alive: " << live <<
-    "\nMemBlob append calls: " << append <<
-    "\nMemBlob currently allocated size: " << liveBytes <<
-    "\nlive MemBlob mean current allocation size: " <<
-    (static_cast<double>(liveBytes)/(live?live:1)) << std::endl;
+       "MemBlob created: " << alloc <<
+       "\nMemBlob alive: " << live <<
+       "\nMemBlob append calls: " << append <<
+       "\nMemBlob currently allocated size: " << liveBytes <<
+       "\nlive MemBlob mean current allocation size: " <<
+       (static_cast<double>(liveBytes)/(live?live:1)) << std::endl;
     return os;
 }
 
 /* MemBlob */
 
 MemBlob::MemBlob(const MemBlob::size_type reserveSize) :
-        mem(NULL), capacity(0), size(0) // will be set by memAlloc
+    mem(NULL), capacity(0), size(0) // will be set by memAlloc
 {
     debugs(MEMBLOB_DEBUGSECTION,9, HERE << "constructed, this="
            << static_cast<void*>(this) << " id=" << id
@@ -71,7 +59,7 @@ MemBlob::MemBlob(const MemBlob::size_type reserveSize) :
 }
 
 MemBlob::MemBlob(const char *buffer, const MemBlob::size_type bufSize) :
-        mem(NULL), capacity(0), size(0) // will be set by memAlloc
+    mem(NULL), capacity(0), size(0) // will be set by memAlloc
 {
     debugs(MEMBLOB_DEBUGSECTION,9, HERE << "constructed, this="
            << static_cast<void*>(this) << " id=" << id
@@ -87,6 +75,7 @@ MemBlob::~MemBlob()
         memFreeString(capacity,mem);
     Stats.liveBytes -= capacity;
     --Stats.live;
+    recordMemBlobSizeAtDestruct(capacity);
 
     debugs(MEMBLOB_DEBUGSECTION,9, HERE << "destructed, this="
            << static_cast<void*>(this) << " id=" << id
@@ -117,6 +106,14 @@ MemBlob::memAlloc(const size_type minSize)
 }
 
 void
+MemBlob::appended(const size_type n)
+{
+    Must(willFit(n));
+    size += n;
+    ++Stats.append;
+}
+
+void
 MemBlob::append(const char *source, const size_type n)
 {
     if (n > 0) { // appending zero bytes is allowed but only affects the stats
@@ -138,9 +135,10 @@ std::ostream&
 MemBlob::dump(std::ostream &os) const
 {
     os << "id @" << (void *)this
-    << "mem:" << static_cast<void*>(mem)
-    << ",capacity:" << capacity
-    << ",size:" << size
-    << ",refs:" << RefCountCount() << "; ";
+       << "mem:" << static_cast<void*>(mem)
+       << ",capacity:" << capacity
+       << ",size:" << size
+       << ",refs:" << LockCount() << "; ";
     return os;
 }
+

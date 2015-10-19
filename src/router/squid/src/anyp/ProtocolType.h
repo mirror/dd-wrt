@@ -1,9 +1,15 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_SRC_ANYP_PROTOCOLTYPE_H
 #define _SQUID_SRC_ANYP_PROTOCOLTYPE_H
 
-#if HAVE_OSTREAM
 #include <ostream>
-#endif
 
 namespace AnyP
 {
@@ -29,7 +35,6 @@ typedef enum {
 #endif
     PROTO_URN,
     PROTO_WHOIS,
-    PROTO_INTERNAL,
     PROTO_ICY,
     PROTO_UNKNOWN,
     PROTO_MAX
@@ -54,3 +59,4 @@ operator <<(std::ostream &os, ProtocolType const &p)
 } // namespace AnyP
 
 #endif /* _SQUID_SRC_ANYP_PROTOCOLTYPE_H */
+

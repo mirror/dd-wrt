@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 
 /** This file exists to provide satic registration code to executables
@@ -5,10 +13,19 @@
     does not get linked in, because nobody is using these classes by name.
 */
 
-#include "acl/Acl.h"
+#if USE_ADAPTATION
+#include "acl/AdaptationService.h"
+#include "acl/AdaptationServiceData.h"
+#endif
+#include "acl/AllOf.h"
+#include "acl/AnyOf.h"
 #if USE_SQUID_EUI
 #include "acl/Arp.h"
 #include "acl/Eui64.h"
+#endif
+#if USE_OPENSSL
+#include "acl/AtStep.h"
+#include "acl/AtStepData.h"
 #endif
 #include "acl/Asn.h"
 #include "acl/Browser.h"
@@ -23,8 +40,8 @@
 #endif
 #include "acl/FilledChecklist.h"
 #include "acl/Gadgets.h"
-#include "acl/HierCodeData.h"
 #include "acl/HierCode.h"
+#include "acl/HierCodeData.h"
 #include "acl/HttpHeaderData.h"
 #include "acl/HttpRepHeader.h"
 #include "acl/HttpReqHeader.h"
@@ -34,12 +51,14 @@
 #include "acl/LocalIp.h"
 #include "acl/LocalPort.h"
 #include "acl/MaxConnection.h"
-#include "acl/MethodData.h"
 #include "acl/Method.h"
+#include "acl/MethodData.h"
 #include "acl/MyPortName.h"
+#include "acl/Note.h"
+#include "acl/NoteData.h"
 #include "acl/PeerName.h"
-#include "acl/ProtocolData.h"
 #include "acl/Protocol.h"
+#include "acl/ProtocolData.h"
 #include "acl/Random.h"
 #include "acl/Referer.h"
 #include "acl/RegexData.h"
@@ -50,26 +69,30 @@
 #include "acl/SourceAsn.h"
 #include "acl/SourceDomain.h"
 #include "acl/SourceIp.h"
-#if USE_SSL
-#include "acl/SslErrorData.h"
-#include "acl/SslError.h"
-#include "acl/CertificateData.h"
+#if USE_OPENSSL
 #include "acl/Certificate.h"
+#include "acl/CertificateData.h"
+#include "acl/ServerName.h"
+#include "acl/SslError.h"
+#include "acl/SslErrorData.h"
 #endif
 #include "acl/Strategised.h"
 #include "acl/Strategy.h"
 #include "acl/StringData.h"
+#if USE_OPENSSL
+#include "acl/ServerCertificate.h"
+#endif
 #include "acl/Tag.h"
-#include "acl/TimeData.h"
 #include "acl/Time.h"
+#include "acl/TimeData.h"
 #include "acl/Url.h"
 #include "acl/UrlLogin.h"
 #include "acl/UrlPath.h"
 #include "acl/UrlPort.h"
 #include "acl/UserData.h"
 #if USE_AUTH
-#include "auth/AclProxyAuth.h"
 #include "auth/AclMaxUserIp.h"
+#include "auth/AclProxyAuth.h"
 #endif
 #if USE_IDENT
 #include "ident/AclIdent.h"
@@ -77,10 +100,12 @@
 
 ACL::Prototype ACLBrowser::RegistryProtoype(&ACLBrowser::RegistryEntry_, "browser");
 ACLStrategised<char const *> ACLBrowser::RegistryEntry_(new ACLRegexData, ACLRequestHeaderStrategy<HDR_USER_AGENT>::Instance(), "browser");
+ACLFlag  DestinationDomainFlags[] = {ACL_F_NO_LOOKUP, ACL_F_END};
 ACL::Prototype ACLDestinationDomain::LiteralRegistryProtoype(&ACLDestinationDomain::LiteralRegistryEntry_, "dstdomain");
-ACLStrategised<char const *> ACLDestinationDomain::LiteralRegistryEntry_(new ACLDomainData, ACLDestinationDomainStrategy::Instance(), "dstdomain");
+ACLStrategised<char const *> ACLDestinationDomain::LiteralRegistryEntry_(new ACLDomainData, ACLDestinationDomainStrategy::Instance(), "dstdomain", DestinationDomainFlags);
 ACL::Prototype ACLDestinationDomain::RegexRegistryProtoype(&ACLDestinationDomain::RegexRegistryEntry_, "dstdom_regex");
-ACLStrategised<char const *> ACLDestinationDomain::RegexRegistryEntry_(new ACLRegexData,ACLDestinationDomainStrategy::Instance() ,"dstdom_regex");
+ACLFlag  DestinationDomainRegexFlags[] = {ACL_F_NO_LOOKUP, ACL_F_REGEX_CASE, ACL_F_END};
+ACLStrategised<char const *> ACLDestinationDomain::RegexRegistryEntry_(new ACLRegexData,ACLDestinationDomainStrategy::Instance() ,"dstdom_regex", DestinationDomainRegexFlags);
 ACL::Prototype ACLDestinationIP::RegistryProtoype(&ACLDestinationIP::RegistryEntry_, "dst");
 ACLDestinationIP ACLDestinationIP::RegistryEntry_;
 #if USE_AUTH
@@ -139,13 +164,24 @@ ACLStrategised<char const *> ACLUrlPath::RegistryEntry_(new ACLRegexData, ACLUrl
 ACL::Prototype ACLUrlPort::RegistryProtoype(&ACLUrlPort::RegistryEntry_, "port");
 ACLStrategised<int> ACLUrlPort::RegistryEntry_(new ACLIntRange, ACLUrlPortStrategy::Instance(), "port");
 
-#if USE_SSL
+#if USE_OPENSSL
 ACL::Prototype ACLSslError::RegistryProtoype(&ACLSslError::RegistryEntry_, "ssl_error");
-ACLStrategised<const Ssl::Errors *> ACLSslError::RegistryEntry_(new ACLSslErrorData, ACLSslErrorStrategy::Instance(), "ssl_error");
+ACLStrategised<const Ssl::CertErrors *> ACLSslError::RegistryEntry_(new ACLSslErrorData, ACLSslErrorStrategy::Instance(), "ssl_error");
 ACL::Prototype ACLCertificate::UserRegistryProtoype(&ACLCertificate::UserRegistryEntry_, "user_cert");
-ACLStrategised<SSL *> ACLCertificate::UserRegistryEntry_(new ACLCertificateData (sslGetUserAttribute), ACLCertificateStrategy::Instance(), "user_cert");
+ACLStrategised<X509 *> ACLCertificate::UserRegistryEntry_(new ACLCertificateData (Ssl::GetX509UserAttribute, "*"), ACLCertificateStrategy::Instance(), "user_cert");
 ACL::Prototype ACLCertificate::CARegistryProtoype(&ACLCertificate::CARegistryEntry_, "ca_cert");
-ACLStrategised<SSL *> ACLCertificate::CARegistryEntry_(new ACLCertificateData (sslGetCAAttribute), ACLCertificateStrategy::Instance(), "ca_cert");
+ACLStrategised<X509 *> ACLCertificate::CARegistryEntry_(new ACLCertificateData (Ssl::GetX509CAAttribute, "*"), ACLCertificateStrategy::Instance(), "ca_cert");
+ACL::Prototype ACLServerCertificate::X509FingerprintRegistryProtoype(&ACLServerCertificate::X509FingerprintRegistryEntry_, "server_cert_fingerprint");
+ACLStrategised<X509 *> ACLServerCertificate::X509FingerprintRegistryEntry_(new ACLCertificateData(Ssl::GetX509Fingerprint, "-sha1", true), ACLServerCertificateStrategy::Instance(), "server_cert_fingerprint");
+
+ACL::Prototype ACLAtStep::RegistryProtoype(&ACLAtStep::RegistryEntry_, "at_step");
+ACLStrategised<Ssl::BumpStep> ACLAtStep::RegistryEntry_(new ACLAtStepData, ACLAtStepStrategy::Instance(), "at_step");
+
+ACL::Prototype ACLServerName::LiteralRegistryProtoype(&ACLServerName::LiteralRegistryEntry_, "ssl::server_name");
+ACLStrategised<char const *> ACLServerName::LiteralRegistryEntry_(new ACLServerNameData, ACLServerNameStrategy::Instance(), "ssl::server_name");
+ACL::Prototype ACLServerName::RegexRegistryProtoype(&ACLServerName::RegexRegistryEntry_, "ssl::server_name_regex");
+ACLFlag  ServerNameRegexFlags[] = {ACL_F_REGEX_CASE, ACL_F_END};
+ACLStrategised<char const *> ACLServerName::RegexRegistryEntry_(new ACLRegexData, ACLServerNameStrategy::Instance(), "ssl::server_name_regex", ServerNameRegexFlags);
 #endif
 
 #if USE_SQUID_EUI
@@ -174,3 +210,18 @@ ACLMaxUserIP ACLMaxUserIP::RegistryEntry_("max_user_ip");
 
 ACL::Prototype ACLTag::RegistryProtoype(&ACLTag::RegistryEntry_, "tag");
 ACLStrategised<const char *> ACLTag::RegistryEntry_(new ACLStringData, ACLTagStrategy::Instance(), "tag");
+
+ACL::Prototype Acl::AnyOf::RegistryProtoype(&Acl::AnyOf::RegistryEntry_, "any-of");
+Acl::AnyOf Acl::AnyOf::RegistryEntry_;
+
+ACL::Prototype Acl::AllOf::RegistryProtoype(&Acl::AllOf::RegistryEntry_, "all-of");
+Acl::AllOf Acl::AllOf::RegistryEntry_;
+
+ACL::Prototype ACLNote::RegistryProtoype(&ACLNote::RegistryEntry_, "note");
+ACLStrategised<HttpRequest *> ACLNote::RegistryEntry_(new ACLNoteData, ACLNoteStrategy::Instance(), "note");
+
+#if USE_ADAPTATION
+ACL::Prototype ACLAdaptationService::RegistryProtoype(&ACLAdaptationService::RegistryEntry_, "adaptation_service");
+ACLStrategised<const char *> ACLAdaptationService::RegistryEntry_(new ACLAdaptationServiceData, ACLAdaptationServiceStrategy::Instance(), "adaptation_service");
+#endif
+

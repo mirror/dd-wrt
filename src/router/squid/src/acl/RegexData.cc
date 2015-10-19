@@ -1,43 +1,23 @@
 /*
- * DEBUG: section 28    Access Control
- * AUTHOR: Duane Wessels
- * AUTHOR: Marcus Kool
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
- * Copyright (c) 2011, Marcus Kool
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/*
+ * Portions of this code are copyrighted and released under GPLv2+ by:
+ * Copyright (c) 2011, Marcus Kool
+ * Please add new claims to the CONTRIBUTORS file instead.
+ */
+
+/* DEBUG: section 28    Access Control */
+
 #include "squid.h"
-#include "acl/RegexData.h"
-#include "acl/Checklist.h"
 #include "acl/Acl.h"
+#include "acl/Checklist.h"
+#include "acl/RegexData.h"
 #include "ConfigParser.h"
 #include "Debug.h"
 #include "Mem.h"
@@ -101,28 +81,28 @@ ACLRegexData::match(char const *word)
     return 0;
 }
 
-wordlist *
-ACLRegexData::dump()
+SBufList
+ACLRegexData::dump() const
 {
-    wordlist *W = NULL;
+    SBufList sl;
     RegexList *temp = data;
     int flags = REG_EXTENDED | REG_NOSUB;
 
     while (temp != NULL) {
         if (temp->flags != flags) {
             if ((temp->flags&REG_ICASE) != 0) {
-                wordlistAdd(&W, "-i");
+                sl.push_back(SBuf("-i"));
             } else {
-                wordlistAdd(&W, "+i");
+                sl.push_back(SBuf("+i"));
             }
             flags = temp->flags;
         }
 
-        wordlistAdd(&W, temp->pattern);
+        sl.push_back(SBuf(temp->pattern));
         temp = temp->next;
     }
 
-    return W;
+    return sl;
 }
 
 static const char *
@@ -322,7 +302,7 @@ aclParseRegexList(RegexList **curlist)
 
     debugs(28, 2, HERE << "aclParseRegexList: new Regex line or file");
 
-    while ((t = ConfigParser::strtokFile()) != NULL) {
+    while ((t = ConfigParser::RegexStrtokFile()) != NULL) {
         const char *clean = removeUnnecessaryWildcards(t);
         if (strlen(clean) > BUFSIZ-1) {
             debugs(28, DBG_CRITICAL, "" << cfg_filename << " line " << config_lineno << ": " << config_input_line);
@@ -360,3 +340,4 @@ ACLRegexData::clone() const
     assert (!data);
     return new ACLRegexData;
 }
+

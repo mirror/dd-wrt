@@ -1,47 +1,29 @@
 /*
- * DEBUG: section 48    Persistent Connections
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 48    Persistent Connections */
+
 #include "squid.h"
+#include "CachePeer.h"
 #include "comm.h"
 #include "comm/Connection.h"
+#include "comm/Read.h"
 #include "fd.h"
 #include "fde.h"
 #include "globals.h"
 #include "mgr/Registration.h"
+#include "neighbors.h"
 #include "pconn.h"
+#include "PeerPoolMgr.h"
 #include "SquidConfig.h"
 #include "Store.h"
 
-#define PCONN_FDS_SZ	8	/* pconn set size, increase for better memcache hit rate */
+#define PCONN_FDS_SZ    8   /* pconn set size, increase for better memcache hit rate */
 
 //TODO: re-attach to MemPools. WAS: static MemAllocator *pconn_fds_pool = NULL;
 PconnModule * PconnModule::instance = NULL;
@@ -50,9 +32,9 @@ CBDATA_CLASS_INIT(IdleConnList);
 /* ========== IdleConnList ============================================ */
 
 IdleConnList::IdleConnList(const char *key, PconnPool *thePool) :
-        capacity_(PCONN_FDS_SZ),
-        size_(0),
-        parent_(thePool)
+    capacity_(PCONN_FDS_SZ),
+    size_(0),
+    parent_(thePool)
 {
     hash.key = xstrdup(key);
     theList_ = new Comm::ConnectionPointer[capacity_];
@@ -63,6 +45,11 @@ IdleConnList::~IdleConnList()
 {
     if (parent_)
         parent_->unlinkList(this);
+
+    if (size_) {
+        parent_ = NULL; // prevent reentrant notifications and deletions
+        closeN(size_);
+    }
 
     delete[] theList_;
 
@@ -231,9 +218,9 @@ IdleConnList::pop()
 
         // finally, a match. pop and return it.
         Comm::ConnectionPointer result = theList_[i];
+        clearHandlers(result);
         /* may delete this */
         removeAt(i);
-        clearHandlers(result);
         return result;
     }
 
@@ -254,8 +241,8 @@ IdleConnList::findUseable(const Comm::ConnectionPointer &key)
     assert(size_);
 
     // small optimization: do the constant bool tests only once.
-    const bool keyCheckAddr = !key->local.IsAnyAddr();
-    const bool keyCheckPort = key->local.GetPort() > 0;
+    const bool keyCheckAddr = !key->local.isAnyAddr();
+    const bool keyCheckPort = key->local.port() > 0;
 
     for (int i=size_-1; i>=0; --i) {
 
@@ -263,7 +250,7 @@ IdleConnList::findUseable(const Comm::ConnectionPointer &key)
             continue;
 
         // local end port is required, but dont match.
-        if (keyCheckPort && key->local.GetPort() != theList_[i]->local.GetPort())
+        if (keyCheckPort && key->local.port() != theList_[i]->local.port())
             continue;
 
         // local address is required, but does not match.
@@ -277,9 +264,9 @@ IdleConnList::findUseable(const Comm::ConnectionPointer &key)
 
         // finally, a match. pop and return it.
         Comm::ConnectionPointer result = theList_[i];
+        clearHandlers(result);
         /* may delete this */
         removeAt(i);
-        clearHandlers(result);
         return result;
     }
 
@@ -292,21 +279,23 @@ IdleConnList::findAndClose(const Comm::ConnectionPointer &conn)
 {
     const int index = findIndexOf(conn);
     if (index >= 0) {
+        if (parent_)
+            parent_->notifyManager("idle conn closure");
+        clearHandlers(conn);
         /* might delete this */
         removeAt(index);
-        clearHandlers(conn);
         conn->close();
     }
 }
 
 void
-IdleConnList::Read(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm_err_t flag, int xerrno, void *data)
+IdleConnList::Read(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Flag flag, int xerrno, void *data)
 {
     debugs(48, 3, HERE << len << " bytes from " << conn);
 
-    if (flag == COMM_ERR_CLOSING) {
-        debugs(48, 3, HERE << "COMM_ERR_CLOSING from " << conn);
-        /* Bail out on COMM_ERR_CLOSING - may happen when shutdown aborts our idle FD */
+    if (flag == Comm::ERR_CLOSING) {
+        debugs(48, 3, HERE << "Comm::ERR_CLOSING from " << conn);
+        /* Bail out on Comm::ERR_CLOSING - may happen when shutdown aborts our idle FD */
         return;
     }
 
@@ -331,7 +320,7 @@ PconnPool::key(const Comm::ConnectionPointer &destLink, const char *domain)
 {
     LOCAL_ARRAY(char, buf, SQUIDHOSTNAMELEN * 3 + 10);
 
-    destLink->remote.ToURL(buf, SQUIDHOSTNAMELEN * 3 + 10);
+    destLink->remote.toUrl(buf, SQUIDHOSTNAMELEN * 3 + 10);
     if (domain) {
         const int used = strlen(buf);
         snprintf(buf+used, SQUIDHOSTNAMELEN * 3 + 10-used, "/%s", domain);
@@ -347,16 +336,15 @@ PconnPool::dumpHist(StoreEntry * e) const
     storeAppendPrintf(e,
                       "%s persistent connection counts:\n"
                       "\n"
-                      "\treq/\n"
-                      "\tconn      count\n"
-                      "\t----  ---------\n",
+                      "\t Requests\t Connection Count\n"
+                      "\t --------\t ----------------\n",
                       descr);
 
     for (int i = 0; i < PCONN_HIST_SZ; ++i) {
         if (hist[i] == 0)
             continue;
 
-        storeAppendPrintf(e, "\t%4d  %9d\n", i, hist[i]);
+        storeAppendPrintf(e, "\t%d\t%d\n", i, hist[i]);
     }
 }
 
@@ -367,16 +355,18 @@ PconnPool::dumpHash(StoreEntry *e) const
     hash_first(hid);
 
     int i = 0;
-    for (hash_link *walker = hid->next; walker; walker = hash_next(hid)) {
-        storeAppendPrintf(e, "\t item %5d: %s\n", i, (char *)(walker->key));
+    for (hash_link *walker = hash_next(hid); walker; walker = hash_next(hid)) {
+        storeAppendPrintf(e, "\t item %d:\t%s\n", i, (char *)(walker->key));
         ++i;
     }
 }
 
 /* ========== PconnPool PUBLIC FUNCTIONS ============================================ */
 
-PconnPool::PconnPool(const char *aDescr) : table(NULL), descr(aDescr),
-        theCount(0)
+PconnPool::PconnPool(const char *aDescr, const CbcPointer<PeerPoolMgr> &aMgr):
+    table(NULL), descr(aDescr),
+    mgr(aMgr),
+    theCount(0)
 {
     int i;
     table = hash_create((HASHCMP *) strcmp, 229, hash_string);
@@ -387,10 +377,18 @@ PconnPool::PconnPool(const char *aDescr) : table(NULL), descr(aDescr),
     PconnModule::GetInstance()->add(this);
 }
 
+static void
+DeleteIdleConnList(void *hashItem)
+{
+    delete reinterpret_cast<IdleConnList*>(hashItem);
+}
+
 PconnPool::~PconnPool()
 {
-    descr = NULL;
+    PconnModule::GetInstance()->remove(this);
+    hashFreeItems(table, &DeleteIdleConnList);
     hashFreeMemory(table);
+    descr = NULL;
 }
 
 void
@@ -405,6 +403,7 @@ PconnPool::push(const Comm::ConnectionPointer &conn, const char *domain)
         debugs(48, 3, HERE << "Squid is shutting down. Refusing to do anything");
         return;
     }
+    // TODO: also close used pconns if we exceed peer max-conn limit
 
     const char *aKey = key(conn, domain);
     IdleConnList *list = (IdleConnList *) hash_lookup(table, aKey);
@@ -424,35 +423,64 @@ PconnPool::push(const Comm::ConnectionPointer &conn, const char *domain)
     snprintf(desc, FD_DESC_SZ, "Idle server: %s", aKey);
     fd_note(conn->fd, desc);
     debugs(48, 3, HERE << "pushed " << conn << " for " << aKey);
+
+    // successful push notifications resume multi-connection opening sequence
+    notifyManager("push");
 }
 
 Comm::ConnectionPointer
-PconnPool::pop(const Comm::ConnectionPointer &destLink, const char *domain, bool isRetriable)
+PconnPool::pop(const Comm::ConnectionPointer &dest, const char *domain, bool keepOpen)
 {
-    const char * aKey = key(destLink, domain);
+
+    const char * aKey = key(dest, domain);
 
     IdleConnList *list = (IdleConnList *)hash_lookup(table, aKey);
     if (list == NULL) {
         debugs(48, 3, HERE << "lookup for key {" << aKey << "} failed.");
+        // failure notifications resume standby conn creation after fdUsageHigh
+        notifyManager("pop failure");
         return Comm::ConnectionPointer();
     } else {
-        debugs(48, 3, HERE << "found " << hashKeyStr(&list->hash) << (isRetriable?"(to use)":"(to kill)") );
+        debugs(48, 3, HERE << "found " << hashKeyStr(&list->hash) <<
+               (keepOpen ? " to use" : " to kill"));
     }
 
     /* may delete list */
-    Comm::ConnectionPointer temp = list->findUseable(destLink);
-    if (!isRetriable && Comm::IsConnOpen(temp))
-        temp->close();
+    Comm::ConnectionPointer popped = list->findUseable(dest);
+    if (!keepOpen && Comm::IsConnOpen(popped))
+        popped->close();
 
-    return temp;
+    // successful pop notifications replenish standby connections pool
+    notifyManager("pop");
+    return popped;
 }
 
 void
-PconnPool::closeN(int n, const Comm::ConnectionPointer &destLink, const char *domain)
+PconnPool::notifyManager(const char *reason)
 {
-    // TODO: optimize: we can probably do hash_lookup just once
-    for (int i = 0; i < n; ++i)
-        pop(destLink, domain, false); // may fail!
+    if (mgr.valid())
+        PeerPoolMgr::Checkpoint(mgr, reason);
+}
+
+void
+PconnPool::closeN(int n)
+{
+    hash_table *hid = table;
+    hash_first(hid);
+
+    // close N connections, one per list, to treat all lists "fairly"
+    for (int i = 0; i < n && count(); ++i) {
+
+        hash_link *current = hash_next(hid);
+        if (!current) {
+            hash_first(hid);
+            current = hash_next(hid);
+            Must(current); // must have one because the count() was positive
+        }
+
+        // may delete current
+        reinterpret_cast<IdleConnList*>(current)->closeN(1);
+    }
 }
 
 void
@@ -478,11 +506,8 @@ PconnPool::noteUses(int uses)
  * This simple class exists only for the cache manager
  */
 
-PconnModule::PconnModule() : pools(NULL), poolCount(0)
+PconnModule::PconnModule(): pools()
 {
-    pools = (PconnPool **) xcalloc(MAX_NUM_PCONN_POOLS, sizeof(*pools));
-//TODO: re-link to MemPools. WAS:    pconn_fds_pool = memPoolCreate("pconn_fds", PCONN_FDS_SZ * sizeof(int));
-    debugs(48, DBG_CRITICAL, "persistent connection module initialized");
     registerWithCacheManager();
 }
 
@@ -506,21 +531,26 @@ PconnModule::registerWithCacheManager(void)
 void
 PconnModule::add(PconnPool *aPool)
 {
-    assert(poolCount < MAX_NUM_PCONN_POOLS);
-    *(pools+poolCount) = aPool;
-    ++poolCount;
+    pools.insert(aPool);
+}
+
+void
+PconnModule::remove(PconnPool *aPool)
+{
+    pools.erase(aPool);
 }
 
 void
 PconnModule::dump(StoreEntry *e)
 {
-    int i;
-
-    for (i = 0; i < poolCount; ++i) {
+    typedef Pools::const_iterator PCI;
+    int i = 0; // TODO: Why number pools if they all have names?
+    for (PCI p = pools.begin(); p != pools.end(); ++p, ++i) {
+        // TODO: Let each pool dump itself the way it wants to.
         storeAppendPrintf(e, "\n Pool %d Stats\n", i);
-        (*(pools+i))->dumpHist(e);
+        (*p)->dumpHist(e);
         storeAppendPrintf(e, "\n Pool %d Hash Table\n",i);
-        (*(pools+i))->dumpHash(e);
+        (*p)->dumpHash(e);
     }
 }
 
@@ -529,3 +559,4 @@ PconnModule::DumpWrapper(StoreEntry *e)
 {
     PconnModule::GetInstance()->dump(e);
 }
+

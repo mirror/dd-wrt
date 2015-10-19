@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * ext_session_acl: Squid external acl helper for tracking sessions
  *
  * Copyright (C) 2006 Henrik Nordstrom <henrik@henriknordstrom.net>
@@ -23,6 +31,9 @@
 #endif
 #include "helpers/defines.h"
 
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #if HAVE_DB_H
 #include <db.h>
 #endif
@@ -30,12 +41,8 @@
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -226,3 +233,4 @@ int main(int argc, char **argv)
     shutdown_db();
     return 0;
 }
+

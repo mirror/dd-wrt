@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "ClientInfo.h"
 #include "comm/Connection.h"
@@ -103,13 +111,13 @@ Comm::IoCallback::reset()
 
 // Schedule the callback call and clear the callback
 void
-Comm::IoCallback::finish(comm_err_t code, int xerrn)
+Comm::IoCallback::finish(Comm::Flag code, int xerrn)
 {
-    debugs(5, 3, HERE << "called for " << conn << " (" << code << ", " << xerrno << ")");
+    debugs(5, 3, "called for " << conn << " (" << code << ", " << xerrn << ")");
     assert(active());
 
     /* free data */
-    if (freefunc) {
+    if (freefunc && buf) {
         freefunc(buf);
         buf = NULL;
         freefunc = NULL;
@@ -131,3 +139,4 @@ Comm::IoCallback::finish(comm_err_t code, int xerrn)
     /* Reset for next round. */
     reset();
 }
+

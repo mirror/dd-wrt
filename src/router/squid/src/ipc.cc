@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 54    Interprocess Communication
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #include "squid.h"
 #include "comm/Connection.h"
@@ -36,10 +14,11 @@
 #include "fde.h"
 #include "globals.h"
 #include "ip/Address.h"
+#include "ipc/Kid.h"
+#include "rfc1738.h"
 #include "SquidConfig.h"
 #include "SquidIpc.h"
 #include "tools.h"
-#include "rfc1738.h"
 
 static const char *hello_string = "hi there\n";
 #define HELLO_BUF_SZ 32
@@ -119,9 +98,9 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
                                 COMM_NOCLOEXEC,
                                 name);
         prfd = pwfd = comm_open(SOCK_STREAM,
-                                0,			/* protocol */
+                                0,          /* protocol */
                                 local_addr,
-                                0,			/* blocking */
+                                0,          /* blocking */
                                 name);
         IPC_CHECK_FAIL(crfd, "child read", "TCP " << local_addr);
         IPC_CHECK_FAIL(prfd, "parent read", "TCP " << local_addr);
@@ -204,10 +183,10 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
     debugs(54, 3, "ipcCreate: cwfd FD " << cwfd);
 
     if (type == IPC_TCP_SOCKET || type == IPC_UDP_SOCKET) {
-        PaS.InitAddrInfo(AI);
+        Ip::Address::InitAddr(AI);
 
         if (getsockname(pwfd, AI->ai_addr, &AI->ai_addrlen) < 0) {
-            PaS.FreeAddrInfo(AI);
+            Ip::Address::FreeAddr(AI);
             debugs(54, DBG_CRITICAL, "ipcCreate: getsockname: " << xstrerror());
             return ipcCloseAllFD(prfd, pwfd, crfd, cwfd);
         }
@@ -216,19 +195,19 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
 
         debugs(54, 3, "ipcCreate: FD " << pwfd << " sockaddr " << PaS);
 
-        PaS.FreeAddrInfo(AI);
+        Ip::Address::FreeAddr(AI);
 
-        ChS.InitAddrInfo(AI);
+        Ip::Address::InitAddr(AI);
 
         if (getsockname(crfd, AI->ai_addr, &AI->ai_addrlen) < 0) {
-            ChS.FreeAddrInfo(AI);
+            Ip::Address::FreeAddr(AI);
             debugs(54, DBG_CRITICAL, "ipcCreate: getsockname: " << xstrerror());
             return ipcCloseAllFD(prfd, pwfd, crfd, cwfd);
         }
 
         ChS = *AI;
 
-        ChS.FreeAddrInfo(AI);
+        Ip::Address::FreeAddr(AI);
 
         debugs(54, 3, "ipcCreate: FD " << crfd << " sockaddr " << ChS );
 
@@ -251,7 +230,7 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
         return ipcCloseAllFD(prfd, pwfd, crfd, cwfd);
     }
 
-    if (pid > 0) {		/* parent */
+    if (pid > 0) {      /* parent */
         /* close shared socket with child */
         comm_close(crfd);
 
@@ -261,7 +240,7 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
         cwfd = crfd = -1;
 
         if (type == IPC_TCP_SOCKET || type == IPC_UDP_SOCKET) {
-            if (comm_connect_addr(pwfd, ChS) == COMM_ERROR)
+            if (comm_connect_addr(pwfd, ChS) == Comm::COMM_ERROR)
                 return ipcCloseAllFD(prfd, pwfd, crfd, cwfd);
         }
 
@@ -310,7 +289,8 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
     }
 
     /* child */
-    no_suid();			/* give up extra priviliges */
+    TheProcessKind = pkHelper;
+    no_suid();          /* give up extra priviliges */
 
     /* close shared socket with parent */
     close(prfd);
@@ -332,7 +312,7 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
         close(crfd);
         cwfd = crfd = fd;
     } else if (type == IPC_UDP_SOCKET) {
-        if (comm_connect_addr(crfd, PaS) == COMM_ERROR)
+        if (comm_connect_addr(crfd, PaS) == Comm::COMM_ERROR)
             return ipcCloseAllFD(prfd, pwfd, crfd, cwfd);
     }
 
@@ -411,3 +391,4 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
 
     return 0;
 }
+

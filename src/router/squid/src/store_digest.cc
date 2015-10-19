@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 71    Store Digest Manager
- * AUTHOR: Alex Rousskov
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 71    Store Digest Manager */
 
 /*
  * TODO: We probably do not track all the cases when
@@ -56,9 +34,7 @@
 #include "Store.h"
 #include "StoreSearch.h"
 
-#if HAVE_MATH_H
-#include <math.h>
-#endif
+#include <cmath>
 
 /*
  * local types
@@ -69,8 +45,8 @@ class StoreDigestState
 
 public:
     StoreDigestCBlock cblock;
-    int rebuild_lock;		/* bucket number */
-    StoreEntry * rewrite_lock;	/* points to store entry with the digest */
+    int rebuild_lock;       /* bucket number */
+    StoreEntry * rewrite_lock;  /* points to store entry with the digest */
     StoreSearchPointer theSearch;
     int rewrite_offset;
     int rebuild_count;
@@ -78,12 +54,12 @@ public:
 };
 
 typedef struct {
-    int del_count;		/* #store entries deleted from store_digest */
-    int del_lost_count;		/* #store entries not found in store_digest on delete */
-    int add_count;		/* #store entries accepted to store_digest */
-    int add_coll_count;		/* #accepted entries that collided with existing ones */
-    int rej_count;		/* #store entries not accepted to store_digest */
-    int rej_coll_count;		/* #not accepted entries that collided with existing ones */
+    int del_count;      /* #store entries deleted from store_digest */
+    int del_lost_count;     /* #store entries not found in store_digest on delete */
+    int add_count;      /* #store entries accepted to store_digest */
+    int add_coll_count;     /* #accepted entries that collided with existing ones */
+    int rej_count;      /* #store entries not accepted to store_digest */
+    int rej_coll_count;     /* #not accepted entries that collided with existing ones */
 } StoreDigestStats;
 
 /* local vars */
@@ -224,11 +200,6 @@ storeDigestAddable(const StoreEntry * e)
 
     /* check various entry flags (mimics StoreEntry::checkCachable XXX) */
 
-    if (!EBIT_TEST(e->flags, ENTRY_CACHABLE)) {
-        debugs(71, 6, "storeDigestAddable: NO: not cachable");
-        return 0;
-    }
-
     if (EBIT_TEST(e->flags, KEY_PRIVATE)) {
         debugs(71, 6, "storeDigestAddable: NO: private key");
         return 0;
@@ -329,7 +300,7 @@ storeDigestRebuildResume(void)
     /* resize or clear */
 
     if (!storeDigestResize())
-        cacheDigestClear(store_digest);		/* not clean()! */
+        cacheDigestClear(store_digest);     /* not clean()! */
 
     memset(&sd_stats, 0, sizeof(sd_stats));
 
@@ -392,13 +363,14 @@ storeDigestRewriteStart(void *datanotused)
     debugs(71, 2, "storeDigestRewrite: start rewrite #" << sd_state.rewrite_count + 1);
     /* make new store entry */
     url = internalLocalUri("/squid-internal-periodic/", StoreDigestFileName);
-    flags.cachable = 1;
-    e = storeCreateEntry(url, url, flags, METHOD_GET);
+    flags.cachable = true;
+    e = storeCreateEntry(url, url, flags, Http::METHOD_GET);
     assert(e);
     sd_state.rewrite_lock = e;
     debugs(71, 3, "storeDigestRewrite: url: " << url << " key: " << e->getMD5Text());
     HttpRequest *req = HttpRequest::CreateFromUrl(url);
-    e->mem_obj->request = HTTPMSGLOCK(req);
+    e->mem_obj->request = req;
+    HTTPMSGLOCK(e->mem_obj->request);
     /* wait for rebuild (if any) to finish */
 
     if (sd_state.rebuild_lock) {
@@ -423,7 +395,7 @@ storeDigestRewriteResume(void)
     e->setPublicKey();
     /* fake reply */
     HttpReply *rep = new HttpReply;
-    rep->setHeaders(HTTP_OK, "Cache Digest OK",
+    rep->setHeaders(Http::scOkay, "Cache Digest OK",
                     "application/cache-digest", (store_digest->mask_size + sizeof(sd_state.cblock)),
                     squid_curtime, (squid_curtime + Config.digest.rewrite_period) );
     debugs(71, 3, "storeDigestRewrite: entry expires on " << rep->expires <<
@@ -446,7 +418,7 @@ storeDigestRewriteFinish(StoreEntry * e)
            " (" << std::showpos << (int) (e->expires - squid_curtime) << ")");
     /* is this the write order? @?@ */
     e->mem_obj->unlinkRequest();
-    e->unlock();
+    e->unlock("storeDigestRewriteFinish");
     sd_state.rewrite_lock = NULL;
     ++sd_state.rewrite_count;
     eventAdd("storeDigestRewriteStart", storeDigestRewriteStart, NULL, (double)
@@ -551,3 +523,4 @@ storeDigestResize(void)
 }
 
 #endif /* USE_CACHE_DIGESTS */
+

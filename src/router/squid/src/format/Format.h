@@ -1,7 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_FORMAT_FORMAT_H
 #define _SQUID_FORMAT_FORMAT_H
 
-#include "RefCount.h"
+#include "base/RefCount.h"
+#include "ConfigParser.h"
+
 /*
  * Squid configuration allows users to define custom formats in
  * several components.
@@ -29,7 +39,7 @@ class Format
 {
 public:
     Format(const char *name);
-    ~Format();
+    virtual ~Format();
 
     /* very inefficent parser, but who cares, this needs to be simple */
     /* First off, let's tokenize, we'll optimize in a second pass.
@@ -41,7 +51,7 @@ public:
     void assemble(MemBuf &mb, const AccessLogEntryPointer &al, int logSequenceNumber) const;
 
     /// dump this whole list of formats into the provided StoreEntry
-    void dump(StoreEntry * entry, const char *name);
+    void dump(StoreEntry * entry, const char *directiveName);
 
     char *name;
     Token *format;
@@ -51,3 +61,4 @@ public:
 } // namespace Format
 
 #endif /* _SQUID_FORMAT_FORMAT_H */
+

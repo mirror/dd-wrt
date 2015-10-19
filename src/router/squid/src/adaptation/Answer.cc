@@ -1,6 +1,12 @@
 /*
- * DEBUG: section 93    ICAP (RFC 3507) Client
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    ICAP (RFC 3507) Client */
 
 #include "squid.h"
 #include "adaptation/Answer.h"
@@ -42,3 +48,4 @@ Adaptation::Answer::print(std::ostream &os) const
 Adaptation::Answer::Answer(Kind aKind): final(true), kind(aKind)
 {
 }
+

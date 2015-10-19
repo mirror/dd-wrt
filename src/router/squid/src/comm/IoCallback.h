@@ -1,10 +1,20 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_COMM_IOCALLBACK_H
 #define _SQUID_COMM_IOCALLBACK_H
 
 #include "base/AsyncCall.h"
+#include "comm/Flag.h"
 #include "comm/forward.h"
-#include "comm_err_t.h"
 #include "typedefs.h"
+
+class SBuf;
 
 namespace Comm
 {
@@ -27,7 +37,7 @@ public:
     FREE *freefunc;
     int size;
     int offset;
-    comm_err_t errcode;
+    Comm::Flag errcode;
     int xerrno;
 #if USE_DELAY_POOLS
     unsigned int quotaQueueReserv; ///< reservation ID from CommQuotaQueue
@@ -43,7 +53,7 @@ public:
     void cancel(const char *reason);
 
     /// finish the IO operation imediately and schedule the callback with the current state.
-    void finish(comm_err_t code, int xerrn);
+    void finish(Comm::Flag code, int xerrn);
 
 private:
     void reset();
@@ -72,3 +82,4 @@ void CallbackTableDestruct();
 } // namespace Comm
 
 #endif /* _SQUID_COMM_IOCALLBACK_H */
+

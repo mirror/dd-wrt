@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 // Author:  Jens-S. V?ckler <voeckler@rvs.uni-hannover.de>
 //
 // File:    conffile.hh
@@ -52,7 +60,6 @@ typedef int bool;
 #define DEFAULT_SQUID_CONF "/usr/local/squid/etc/squid.conf"
 #endif
 
-#include <stdio.h>
 #include <vector>
 
 struct CacheDir {

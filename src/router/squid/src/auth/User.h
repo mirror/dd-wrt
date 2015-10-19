@@ -1,32 +1,9 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_AUTH_USER_H
@@ -36,9 +13,11 @@
 
 #include "auth/CredentialState.h"
 #include "auth/Type.h"
+#include "base/RefCount.h"
 #include "dlink.h"
 #include "ip/Address.h"
-#include "RefCount.h"
+#include "Notes.h"
+#include "SBuf.h"
 
 class AuthUserHashPointer;
 class StoreEntry;
@@ -69,20 +48,25 @@ public:
     Auth::Type auth_type;
     /** the config for this user */
     Auth::Config *config;
-    /** we may have many proxy-authenticate strings that decode to the same user */
-    dlink_list proxy_auth_list;
     dlink_list proxy_match_cache;
     size_t ipcount;
     long expiretime;
 
+    /// list of key=value pairs the helper produced
+    NotePairs notes;
+
 public:
     static void cacheInit();
     static void CachedACLsReset();
+    static SBuf BuildUserKey(const char *username, const char *realm);
 
     void absorb(Auth::User::Pointer from);
     virtual ~User();
-    _SQUID_INLINE_ char const *username() const;
-    _SQUID_INLINE_ void username(char const *);
+    char const *username() const { return username_; }
+    void username(char const *); ///< set stored username and userKey
+
+    // NP: key is set at the same time as username_. Until then both are empty/NULL.
+    const char *userKey() {return userKey_;}
 
     /**
      * How long these credentials are still valid for.
@@ -113,7 +97,7 @@ private:
     CredentialState credentials_state;
 
 protected:
-    User(Auth::Config *);
+    User(Auth::Config *, const char *requestRealm);
 
 private:
     /**
@@ -129,15 +113,27 @@ private:
      */
     const char *username_;
 
+    /**
+     * A realm for the user depending on request, designed to identify users,
+     * with the same username and different authentication domains.
+     * The requestRealm_ memory will be allocated via xstrdup().
+     * It is our responsibility.
+     */
+    const char *requestRealm_;
+
+    /**
+     * A Unique key for the user, consist by username and realm.
+     * The userKey_ memory will be allocated via xstrdup().
+     * It is our responsibility.
+     */
+    const char *userKey_;
+
     /** what ip addresses has this user been seen at?, plus a list length cache */
     dlink_list ip_list;
 };
 
 } // namespace Auth
 
-#if _USE_INLINE_
-#include "auth/User.cci"
-#endif
-
 #endif /* USE_AUTH */
 #endif /* SQUID_AUTH_USER_H */
+

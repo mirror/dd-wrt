@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 42    ICMP Pinger program
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 42    ICMP Pinger program */
 
 #define SQUID_HELPER 1
 
@@ -104,9 +82,9 @@ Win32__WSAFDIsSet(int fd, fd_set FAR * set)
 #define PINGER_TIMEOUT 10
 
 /* non-windows use STDOUT for feedback to squid */
-#define LINK_TO_SQUID	1
+#define LINK_TO_SQUID   1
 
-#endif	/* _SQUID_WINDOWS_ */
+#endif  /* _SQUID_WINDOWS_ */
 
 // ICMP Engines are declared global here so they can call each other easily.
 IcmpPinger control;
@@ -245,13 +223,15 @@ main(int argc, char *argv[])
     return 0;
 }
 
-#else
-#include <stdio.h>
+#else /* !USE_ICMP */
+
+#include <ostream>
 int
 main(int argc, char *argv[])
 {
-    fprintf(stderr, "%s: ICMP support not compiled in.\n", argv[0]);
+    std::cerr << argv[0] << ": ICMP support not compiled in." << std::endl;
     return 1;
 }
 
 #endif /* USE_ICMP */
+

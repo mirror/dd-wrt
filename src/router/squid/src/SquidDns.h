@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_DNS_H
 #define SQUID_DNS_H
 
@@ -10,13 +18,9 @@ class Address;
 void dnsInit(void);
 void dnsShutdown(void);
 
-#if USE_DNSHELPER
-// external DNS helper API
-void dnsSubmit(const char *lookup, HLPCB * callback, void *data);
-#else
 // internal DNS client API
 void idnsALookup(const char *, IDNSCB *, void *);
 void idnsPTRLookup(const Ip::Address &, IDNSCB *, void *);
-#endif
 
 #endif /* SQUID_DNS_H */
+

@@ -1,10 +1,16 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "compat/xalloc.h"
 #include "compat/xstring.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+#include <cerrno>
 
 char *
 xstrdup(const char *s)
@@ -73,3 +79,4 @@ xstrndup(const char *s, size_t n)
     p = xstrncpy((char *)xmalloc(sz), s, sz);
     return p;
 }
+

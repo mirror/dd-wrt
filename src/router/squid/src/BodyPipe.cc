@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 #include "squid.h"
 #include "base/AsyncJobCalls.h"
@@ -44,7 +51,7 @@ public:
 
     BodyProducerDialer(const BodyProducer::Pointer &aProducer,
                        Parent::Method aHandler, BodyPipe::Pointer bp):
-            Parent(aProducer, aHandler, bp) {}
+        Parent(aProducer, aHandler, bp) {}
 
     virtual bool canDial(AsyncCall &call);
 };
@@ -59,7 +66,7 @@ public:
 
     BodyConsumerDialer(const BodyConsumer::Pointer &aConsumer,
                        Parent::Method aHandler, BodyPipe::Pointer bp):
-            Parent(aConsumer, aHandler, bp) {}
+        Parent(aConsumer, aHandler, bp) {}
 
     virtual bool canDial(AsyncCall &call);
 };
@@ -71,10 +78,9 @@ BodyProducerDialer::canDial(AsyncCall &call)
         return false;
 
     const BodyProducer::Pointer &producer = job;
-    BodyPipe::Pointer pipe = arg1;
-    if (!pipe->stillProducing(producer)) {
-        debugs(call.debugSection, call.debugLevel, HERE << producer <<
-               " no longer producing for " << pipe->status());
+    BodyPipe::Pointer aPipe = arg1;
+    if (!aPipe->stillProducing(producer)) {
+        debugs(call.debugSection, call.debugLevel, producer << " no longer producing for " << aPipe->status());
         return call.cancel("no longer producing");
     }
 
@@ -88,10 +94,9 @@ BodyConsumerDialer::canDial(AsyncCall &call)
         return false;
 
     const BodyConsumer::Pointer &consumer = job;
-    BodyPipe::Pointer pipe = arg1;
-    if (!pipe->stillConsuming(consumer)) {
-        debugs(call.debugSection, call.debugLevel, HERE << consumer <<
-               " no longer consuming from " << pipe->status());
+    BodyPipe::Pointer aPipe = arg1;
+    if (!aPipe->stillConsuming(consumer)) {
+        debugs(call.debugSection, call.debugLevel, consumer << " no longer consuming from " << aPipe->status());
         return call.cancel("no longer consuming");
     }
 
@@ -101,32 +106,31 @@ BodyConsumerDialer::canDial(AsyncCall &call)
 /* BodyProducer */
 
 // inform the pipe that we are done and clear the Pointer
-void BodyProducer::stopProducingFor(RefCount<BodyPipe> &pipe, bool atEof)
+void BodyProducer::stopProducingFor(RefCount<BodyPipe> &p, bool atEof)
 {
-    debugs(91,7, HERE << this << " will not produce for " << pipe <<
-           "; atEof: " << atEof);
-    assert(pipe != NULL); // be strict: the caller state may depend on this
-    pipe->clearProducer(atEof);
-    pipe = NULL;
+    debugs(91,7, this << " will not produce for " << p << "; atEof: " << atEof);
+    assert(p != NULL); // be strict: the caller state may depend on this
+    p->clearProducer(atEof);
+    p = NULL;
 }
 
 /* BodyConsumer */
 
 // inform the pipe that we are done and clear the Pointer
-void BodyConsumer::stopConsumingFrom(RefCount<BodyPipe> &pipe)
+void BodyConsumer::stopConsumingFrom(RefCount<BodyPipe> &p)
 {
-    debugs(91,7, HERE << this << " will not consume from " << pipe);
-    assert(pipe != NULL); // be strict: the caller state may depend on this
-    pipe->clearConsumer();
-    pipe = NULL;
+    debugs(91,7, this << " will not consume from " << p);
+    assert(p != NULL); // be strict: the caller state may depend on this
+    p->clearConsumer();
+    p = NULL;
 }
 
 /* BodyPipe */
 
 BodyPipe::BodyPipe(Producer *aProducer): theBodySize(-1),
-        theProducer(aProducer), theConsumer(0),
-        thePutSize(0), theGetSize(0),
-        mustAutoConsume(false), abortedConsumption(false), isCheckedOut(false)
+    theProducer(aProducer), theConsumer(0),
+    thePutSize(0), theGetSize(0),
+    mustAutoConsume(false), abortedConsumption(false), isCheckedOut(false)
 {
     // TODO: teach MemBuf to start with zero minSize
     // TODO: limit maxSize by theBodySize, when known?
@@ -279,7 +283,7 @@ BodyPipe::expectNoConsumption()
         AsyncCall::Pointer call= asyncCall(91, 7,
                                            "BodyProducer::noteBodyConsumerAborted",
                                            BodyProducerDialer(theProducer,
-                                                              &BodyProducer::noteBodyConsumerAborted, this));
+                                                   &BodyProducer::noteBodyConsumerAborted, this));
         ScheduleCallHere(call);
         abortedConsumption = true;
 
@@ -379,7 +383,7 @@ BodyPipe::postConsume(size_t size)
         AsyncCall::Pointer call=  asyncCall(91, 7,
                                             "BodyProducer::noteMoreBodySpaceAvailable",
                                             BodyProducerDialer(theProducer,
-                                                               &BodyProducer::noteMoreBodySpaceAvailable, this));
+                                                    &BodyProducer::noteMoreBodySpaceAvailable, this));
         ScheduleCallHere(call);
     }
 }
@@ -409,7 +413,7 @@ BodyPipe::scheduleBodyDataNotification()
         AsyncCall::Pointer call = asyncCall(91, 7,
                                             "BodyConsumer::noteMoreBodyDataAvailable",
                                             BodyConsumerDialer(theConsumer,
-                                                               &BodyConsumer::noteMoreBodyDataAvailable, this));
+                                                    &BodyConsumer::noteMoreBodyDataAvailable, this));
         ScheduleCallHere(call);
     }
 }
@@ -422,13 +426,13 @@ BodyPipe::scheduleBodyEndNotification()
             AsyncCall::Pointer call = asyncCall(91, 7,
                                                 "BodyConsumer::noteBodyProductionEnded",
                                                 BodyConsumerDialer(theConsumer,
-                                                                   &BodyConsumer::noteBodyProductionEnded, this));
+                                                        &BodyConsumer::noteBodyProductionEnded, this));
             ScheduleCallHere(call);
         } else {
             AsyncCall::Pointer call = asyncCall(91, 7,
                                                 "BodyConsumer::noteBodyProducerAborted",
                                                 BodyConsumerDialer(theConsumer,
-                                                                   &BodyConsumer::noteBodyProducerAborted, this));
+                                                        &BodyConsumer::noteBodyProducerAborted, this));
             ScheduleCallHere(call);
         }
     }
@@ -472,9 +476,9 @@ const char *BodyPipe::status() const
 
 /* BodyPipeCheckout */
 
-BodyPipeCheckout::BodyPipeCheckout(BodyPipe &aPipe): pipe(aPipe),
-        buf(aPipe.checkOut()), offset(aPipe.consumedSize()),
-        checkedOutSize(buf.contentSize()), checkedIn(false)
+BodyPipeCheckout::BodyPipeCheckout(BodyPipe &aPipe): thePipe(aPipe),
+    buf(aPipe.checkOut()), offset(aPipe.consumedSize()),
+    checkedOutSize(buf.contentSize()), checkedIn(false)
 {
 }
 
@@ -485,7 +489,7 @@ BodyPipeCheckout::~BodyPipeCheckout()
         // TODO: consider implementing the long-term solution discussed at
         // http://www.mail-archive.com/squid-dev@squid-cache.org/msg07910.html
         debugs(91,2, HERE << "Warning: cannot undo BodyPipeCheckout");
-        pipe.checkIn(*this);
+        thePipe.checkIn(*this);
     }
 }
 
@@ -493,13 +497,13 @@ void
 BodyPipeCheckout::checkIn()
 {
     assert(!checkedIn);
-    pipe.checkIn(*this);
+    thePipe.checkIn(*this);
     checkedIn = true;
 }
 
-BodyPipeCheckout::BodyPipeCheckout(const BodyPipeCheckout &c): pipe(c.pipe),
-        buf(c.buf), offset(c.offset), checkedOutSize(c.checkedOutSize),
-        checkedIn(c.checkedIn)
+BodyPipeCheckout::BodyPipeCheckout(const BodyPipeCheckout &c): thePipe(c.thePipe),
+    buf(c.buf), offset(c.offset), checkedOutSize(c.checkedOutSize),
+    checkedIn(c.checkedIn)
 {
     assert(false); // prevent copying
 }
@@ -510,3 +514,4 @@ BodyPipeCheckout::operator =(const BodyPipeCheckout &)
     assert(false); // prevent assignment
     return *this;
 }
+

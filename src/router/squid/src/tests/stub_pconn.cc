@@ -1,9 +1,17 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * STUB file for the pconn.cc API
  */
 #include "squid.h"
-#include "pconn.h"
 #include "comm/Connection.h"
+#include "pconn.h"
 
 #define STUB_API "pconn.cc"
 #include "tests/STUB.h"
@@ -13,7 +21,7 @@ IdleConnList::~IdleConnList() STUB
 void IdleConnList::push(const Comm::ConnectionPointer &conn) STUB
 Comm::ConnectionPointer IdleConnList::findUseable(const Comm::ConnectionPointer &key) STUB_RETVAL(Comm::ConnectionPointer())
 void IdleConnList::clearHandlers(const Comm::ConnectionPointer &conn) STUB
-PconnPool::PconnPool(const char *) STUB
+PconnPool::PconnPool(const char *, const CbcPointer<PeerPoolMgr>&) STUB
 PconnPool::~PconnPool() STUB
 void PconnPool::moduleInit() STUB
 void PconnPool::push(const Comm::ConnectionPointer &serverConn, const char *domain) STUB
@@ -29,3 +37,4 @@ PconnModule::PconnModule() STUB
 void PconnModule::registerWithCacheManager(void) STUB
 void PconnModule::add(PconnPool *) STUB
 void PconnModule::dump(StoreEntry *) STUB
+

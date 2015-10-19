@@ -1,38 +1,12 @@
 /*
- * DEBUG: section 59    auto-growing Memory Buffer with printf
- * AUTHOR: Alex Rousskov
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
-/**
- \todo use memory pools for .buf recycling @?@ @?@
- */
+/* DEBUG: section 59    auto-growing Memory Buffer with printf */
 
 /**
  \verbatim
@@ -137,6 +111,7 @@ MemBuf::init(mb_size_t szInit, mb_size_t szMax)
     capacity = 0;
     stolen = 0;
     grow(szInit);
+    terminate();
 }
 
 /**
@@ -150,7 +125,7 @@ MemBuf::clean()
         // nothing to do
     } else {
         assert(buf);
-        assert(!stolen);	/* not frozen */
+        assert(!stolen);    /* not frozen */
 
         memFreeBuf(capacity, buf);
         buf = NULL;
@@ -168,7 +143,7 @@ MemBuf::reset()
     if (isNull()) {
         init();
     } else {
-        assert(!stolen);	/* not frozen */
+        assert(!stolen);    /* not frozen */
         /* reset */
         memset(buf, 0, capacity);
         size = 0;
@@ -182,9 +157,9 @@ int
 MemBuf::isNull()
 {
     if (!buf && !max_capacity && !capacity && !size)
-        return 1;		/* is null (not initialized) */
+        return 1;       /* is null (not initialized) */
 
-    assert(buf && max_capacity && capacity);	/* paranoid */
+    assert(buf && max_capacity && capacity);    /* paranoid */
 
     return 0;
 }
@@ -218,6 +193,20 @@ void MemBuf::consume(mb_size_t shiftSize)
         terminate();
     }
     PROF_stop(MemBuf_consume);
+}
+
+/// removes all whitespace prefix bytes and "packs" by moving content left
+void MemBuf::consumeWhitespacePrefix()
+{
+    PROF_start(MemBuf_consumeWhitespace);
+    if (contentSize() > 0) {
+        const char *end = buf + contentSize();
+        const char *p = buf;
+        for (; p<end && xisspace(*p); ++p);
+        if (p-buf > 0)
+            consume(p-buf);
+    }
+    PROF_stop(MemBuf_consumeWhitespace);
 }
 
 // removes last tailSize bytes
@@ -296,7 +285,7 @@ MemBuf::vPrintf(const char *fmt, va_list vargs)
     int sz = 0;
     assert(fmt);
     assert(buf);
-    assert(!stolen);	/* not frozen */
+    assert(!stolen);    /* not frozen */
     /* assert in Grow should quit first, but we do not want to have a scary infinite loop */
 
     while (capacity <= max_capacity) {
@@ -350,10 +339,10 @@ MemBuf::freeFunc()
 {
     FREE *ff;
     assert(buf);
-    assert(!stolen);	/* not frozen */
+    assert(!stolen);    /* not frozen */
 
     ff = memFreeBufFunc((size_t) capacity);
-    stolen = 1;		/* freeze */
+    stolen = 1;     /* freeze */
     return ff;
 }
 
@@ -377,7 +366,7 @@ MemBuf::grow(mb_size_t min_cap)
         new_cap = 64 * 1024;
 
         while (new_cap < (size_t) min_cap)
-            new_cap += 64 * 1024;	/* increase in reasonable steps */
+            new_cap += 64 * 1024;   /* increase in reasonable steps */
     } else {
         new_cap = (size_t) min_cap;
     }
@@ -386,9 +375,9 @@ MemBuf::grow(mb_size_t min_cap)
     if (new_cap > (size_t) max_capacity)
         new_cap = (size_t) max_capacity;
 
-    assert(new_cap <= (size_t) max_capacity);	/* no overflow */
+    assert(new_cap <= (size_t) max_capacity);   /* no overflow */
 
-    assert(new_cap > (size_t) capacity);	/* progress */
+    assert(new_cap > (size_t) capacity);    /* progress */
 
     buf_cap = (size_t) capacity;
 
@@ -414,3 +403,4 @@ memBufReport(MemBuf * mb)
 #if !_USE_INLINE_
 #include "MemBuf.cci"
 #endif
+

@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _MEM_METER_H_
 #define _MEM_METER_H_
 
@@ -19,3 +27,4 @@ public:
 #define memMeterDel(m, sz) { (m).level -= (sz); }
 
 #endif /* _MEM_METER_H_ */
+

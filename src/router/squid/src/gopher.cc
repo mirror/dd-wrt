@@ -1,40 +1,20 @@
 /*
- * DEBUG: section 10    Gopher
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 10    Gopher */
 
 #include "squid.h"
 #include "comm.h"
+#include "comm/Read.h"
 #include "comm/Write.h"
 #include "errorpage.h"
 #include "fd.h"
-#include "forward.h"
+#include "FwdState.h"
 #include "globals.h"
 #include "html_quote.h"
 #include "HttpReply.h"
@@ -92,7 +72,7 @@
 #define GOPHER_IMAGE        'I'
 
 /// \ingroup ServerProtocolGopherInternal
-#define GOPHER_HTML         'h'	/* HTML */
+#define GOPHER_HTML         'h' /* HTML */
 /// \ingroup ServerProtocolGopherInternal
 #define GOPHER_INFO         'i'
 /**
@@ -138,7 +118,7 @@ typedef struct gopher_ds {
     char request[MAX_URL];
     int cso_recno;
     int len;
-    char *buf;			/* pts to a 4k page */
+    char *buf;          /* pts to a 4k page */
     Comm::ConnectionPointer serverConn;
     HttpRequest *req;
     FwdState::Pointer fwd;
@@ -173,12 +153,12 @@ gopherStateFree(const CommCloseCbParams &params)
         return;
 
     if (gopherState->entry) {
-        gopherState->entry->unlock();
+        gopherState->entry->unlock("gopherState");
     }
 
     HTTPMSGUNLOCK(gopherState->req);
 
-    gopherState->fwd = NULL;	// refcounted
+    gopherState->fwd = NULL;    // refcounted
 
     memFree(gopherState->buf, MEM_4K_BUF);
     gopherState->buf = NULL;
@@ -257,7 +237,7 @@ gopherMimeCreate(GopherStateData * gopherState)
 
     HttpReply *reply = new HttpReply;
     entry->buffer();
-    reply->setHeaders(HTTP_OK, "Gatewaying", mime_type, -1, -1, -2);
+    reply->setHeaders(Http::scOkay, "Gatewaying", mime_type, -1, -1, -2);
     if (mime_enc)
         reply->header.putStr(HDR_CONTENT_ENCODING, mime_enc);
 
@@ -297,9 +277,9 @@ gopher_request_parse(const HttpRequest * req, char *type_id, char *request)
  \ingroup ServerProtocolGopherAPI
  * Parse the request to determine whether it is cachable.
  *
- \param req	Request data.
- \retval 0	Not cachable.
- \retval 1	Cachable.
+ \param req Request data.
+ \retval 0  Not cachable.
+ \retval 1  Cachable.
  */
 int
 gopherCachable(const HttpRequest * req)
@@ -516,22 +496,22 @@ gopherToHTML(GopherStateData * gopherState, char *inbuf, int len)
                         junk = strchr(host, TAB);
 
                         if (junk)
-                            *junk++ = 0;	/* Chop port */
+                            *junk++ = 0;    /* Chop port */
                         else {
                             junk = strchr(host, '\r');
 
                             if (junk)
-                                *junk++ = 0;	/* Chop port */
+                                *junk++ = 0;    /* Chop port */
                             else {
                                 junk = strchr(host, '\n');
 
                                 if (junk)
-                                    *junk++ = 0;	/* Chop port */
+                                    *junk++ = 0;    /* Chop port */
                             }
                         }
 
                         if ((port[1] == '0') && (!port[2]))
-                            port[0] = 0;	/* 0 means none */
+                            port[0] = 0;    /* 0 means none */
                     }
 
                     /* escape a selector here */
@@ -636,7 +616,7 @@ gopherToHTML(GopherStateData * gopherState, char *inbuf, int len)
             }
 
             break;
-        }			/* HTML_DIR, HTML_INDEX_RESULT */
+            }           /* HTML_DIR, HTML_INDEX_RESULT */
 
         case gopher_ds::HTML_CSO_RESULT: {
             if (line[0] == '-') {
@@ -686,11 +666,11 @@ gopherToHTML(GopherStateData * gopherState, char *inbuf, int len)
                     break;
                 }
 
-                case 102:	/* Number of matches */
+                case 102:   /* Number of matches */
 
-                case 501:	/* No Match */
+                case 501:   /* No Match */
 
-                case 502: {	/* Too Many Matches */
+                case 502: { /* Too Many Matches */
                     /* Print the message the server returns */
                     snprintf(tmpbuf, TEMP_BUF_SIZE, "</PRE><HR noshade size=\"1px\"><H2>%s</H2>\n<PRE>", html_quote(result));
                     outbuf.append(tmpbuf);
@@ -700,14 +680,14 @@ gopherToHTML(GopherStateData * gopherState, char *inbuf, int len)
                 }
             }
 
-        }			/* HTML_CSO_RESULT */
+            }           /* HTML_CSO_RESULT */
 
         default:
-            break;		/* do nothing */
+            break;      /* do nothing */
 
-        }			/* switch */
+        }           /* switch */
 
-    }				/* while loop */
+    }               /* while loop */
 
     if (outbuf.size() > 0) {
         entry->append(outbuf.rawBuf(), outbuf.size());
@@ -726,7 +706,7 @@ gopherTimeout(const CommTimeoutCbParams &io)
     GopherStateData *gopherState = static_cast<GopherStateData *>(io.data);
     debugs(10, 4, HERE << io.conn << ": '" << gopherState->entry->url() << "'" );
 
-    gopherState->fwd->fail(new ErrorState(ERR_READ_TIMEOUT, HTTP_GATEWAY_TIMEOUT, gopherState->fwd->request));
+    gopherState->fwd->fail(new ErrorState(ERR_READ_TIMEOUT, Http::scGatewayTimeout, gopherState->fwd->request));
 
     if (Comm::IsConnOpen(io.conn))
         io.conn->close();
@@ -738,7 +718,7 @@ gopherTimeout(const CommTimeoutCbParams &io)
  * Read until error or connection closed.
  */
 static void
-gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm_err_t flag, int xerrno, void *data)
+gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Flag flag, int xerrno, void *data)
 {
     GopherStateData *gopherState = (GopherStateData *)data;
     StoreEntry *entry = gopherState->entry;
@@ -749,9 +729,9 @@ gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm
     DelayId delayId = entry->mem_obj->mostBytesAllowed();
 #endif
 
-    /* Bail out early on COMM_ERR_CLOSING - close handlers will tidy up for us */
+    /* Bail out early on Comm::ERR_CLOSING - close handlers will tidy up for us */
 
-    if (flag == COMM_ERR_CLOSING) {
+    if (flag == Comm::ERR_CLOSING) {
         return;
     }
 
@@ -768,7 +748,7 @@ gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm
 
     /* leave one space for \0 in gopherToHTML */
 
-    if (flag == COMM_OK && len > 0) {
+    if (flag == Comm::OK && len > 0) {
 #if USE_DELAY_POOLS
         delayId.bytesIn(len);
 #endif
@@ -779,7 +759,7 @@ gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm
 
     debugs(10, 5, HERE << conn << " read len=" << len);
 
-    if (flag == COMM_OK && len > 0) {
+    if (flag == Comm::OK && len > 0) {
         AsyncCall::Pointer nil;
         commSetConnTimeout(conn, Config.Timeout.read, nil);
         ++IOStats.Gopher.reads;
@@ -796,7 +776,7 @@ gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm
         req->hier.bodyBytesRead += len;
     }
 
-    if (flag != COMM_OK) {
+    if (flag != Comm::OK) {
         debugs(50, DBG_IMPORTANT, "gopherReadReply: error reading: " << xstrerror());
 
         if (ignoreErrno(xerrno)) {
@@ -804,13 +784,13 @@ gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm
                                                  CommIoCbPtrFun(gopherReadReply, gopherState));
             comm_read(conn, buf, read_sz, call);
         } else {
-            ErrorState *err = new ErrorState(ERR_READ_ERROR, HTTP_INTERNAL_SERVER_ERROR, gopherState->fwd->request);
+            ErrorState *err = new ErrorState(ERR_READ_ERROR, Http::scInternalServerError, gopherState->fwd->request);
             err->xerrno = xerrno;
             gopherState->fwd->fail(err);
             gopherState->serverConn->close();
         }
     } else if (len == 0 && entry->isEmpty()) {
-        gopherState->fwd->fail(new ErrorState(ERR_ZERO_SIZE_OBJECT, HTTP_SERVICE_UNAVAILABLE, gopherState->fwd->request));
+        gopherState->fwd->fail(new ErrorState(ERR_ZERO_SIZE_OBJECT, Http::scServiceUnavailable, gopherState->fwd->request));
         gopherState->serverConn->close();
     } else if (len == 0) {
         /* Connection closed; retrieval done. */
@@ -840,7 +820,7 @@ gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm
  * This will be called when request write is complete. Schedule read of reply.
  */
 static void
-gopherSendComplete(const Comm::ConnectionPointer &conn, char *buf, size_t size, comm_err_t errflag, int xerrno, void *data)
+gopherSendComplete(const Comm::ConnectionPointer &conn, char *buf, size_t size, Comm::Flag errflag, int xerrno, void *data)
 {
     GopherStateData *gopherState = (GopherStateData *) data;
     StoreEntry *entry = gopherState->entry;
@@ -854,7 +834,7 @@ gopherSendComplete(const Comm::ConnectionPointer &conn, char *buf, size_t size, 
 
     if (errflag) {
         ErrorState *err;
-        err = new ErrorState(ERR_WRITE_ERROR, HTTP_SERVICE_UNAVAILABLE, gopherState->fwd->request);
+        err = new ErrorState(ERR_WRITE_ERROR, Http::scServiceUnavailable, gopherState->fwd->request);
         err->xerrno = xerrno;
         err->port = gopherState->fwd->request->port;
         err->url = xstrdup(entry->url());
@@ -862,7 +842,7 @@ gopherSendComplete(const Comm::ConnectionPointer &conn, char *buf, size_t size, 
         gopherState->serverConn->close();
 
         if (buf)
-            memFree(buf, MEM_4K_BUF);	/* Allocated by gopherSendRequest. */
+            memFree(buf, MEM_4K_BUF);   /* Allocated by gopherSendRequest. */
 
         return;
     }
@@ -907,7 +887,7 @@ gopherSendComplete(const Comm::ConnectionPointer &conn, char *buf, size_t size, 
     entry->delayAwareRead(conn, gopherState->replybuf, BUFSIZ, call);
 
     if (buf)
-        memFree(buf, MEM_4K_BUF);	/* Allocated by gopherSendRequest. */
+        memFree(buf, MEM_4K_BUF);   /* Allocated by gopherSendRequest. */
 }
 
 /**
@@ -924,7 +904,7 @@ gopherSendRequest(int fd, void *data)
         const char *t = strchr(gopherState->request, '?');
 
         if (t != NULL)
-            ++t;		/* skip the ? */
+            ++t;        /* skip the ? */
         else
             t = "";
 
@@ -945,8 +925,7 @@ gopherSendRequest(int fd, void *data)
                                          CommIoCbPtrFun(gopherSendComplete, gopherState));
     Comm::Write(gopherState->serverConn, buf, strlen(buf), call, NULL);
 
-    if (EBIT_TEST(gopherState->entry->flags, ENTRY_CACHABLE))
-        gopherState->entry->setPublicKey();	/* Make it public */
+    gopherState->entry->makePublic();
 }
 
 /// \ingroup ServerProtocolGopherInternal
@@ -962,7 +941,7 @@ gopherStart(FwdState * fwd)
     gopherState = cbdataAlloc(GopherStateData);
     gopherState->buf = (char *)memAllocate(MEM_4K_BUF);
 
-    entry->lock();
+    entry->lock("gopherState");
     gopherState->entry = entry;
 
     gopherState->fwd = fwd;
@@ -1006,3 +985,4 @@ gopherStart(FwdState * fwd)
                                      CommTimeoutCbPtrFun(gopherTimeout, gopherState));
     commSetConnTimeout(fwd->serverConnection(), Config.Timeout.read, timeoutCall);
 }
+

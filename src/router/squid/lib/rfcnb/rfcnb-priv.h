@@ -1,10 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 /* UNIX RFCNB (RFC1001/RFC1002) NetBIOS implementation
  *
  * Version 1.0
  * RFCNB Defines
  *
  * Copyright (C) Richard Sharpe 1996
- *
  */
 
 /*
@@ -32,9 +39,13 @@ typedef unsigned short uint16;
 
 #define GLOBAL extern
 
-#include "rfcnb/rfcnb-error.h"
-#include "rfcnb/rfcnb-common.h"
 #include "rfcnb/byteorder.h"
+#include "rfcnb/rfcnb-common.h"
+#include "rfcnb/rfcnb-error.h"
+
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
 
 #ifdef RFCNB_PORT
 #define RFCNB_Default_Port RFCNB_PORT
@@ -149,3 +160,4 @@ extern int RFCNB_saved_errno;   /* Save this from point of error */
 #endif
 
 #endif /* _RFCNB_RFCNB_PRIV_H */
+

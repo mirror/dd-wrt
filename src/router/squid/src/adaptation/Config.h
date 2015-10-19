@@ -1,14 +1,22 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_ADAPTATION__CONFIG_H
 #define SQUID_ADAPTATION__CONFIG_H
 
-#include "event.h"
-#include "acl/Gadgets.h"
-#include "base/AsyncCall.h"
-#include "adaptation/forward.h"
+#include "acl/forward.h"
 #include "adaptation/Elements.h"
+#include "adaptation/forward.h"
+#include "base/AsyncCall.h"
+#include "event.h"
+#include "Notes.h"
 #include "SquidString.h"
 
-class acl_access;
 class ConfigParser;
 class HttpRequest;
 class HttpReply;
@@ -23,9 +31,6 @@ public:
 
     static void ParseServiceSet(void);
     static void ParseServiceChain(void);
-    static void ParseMetaHeader(ConfigParser &parser);
-    static void FreeMetaHeader();
-    static void DumpMetaHeader(StoreEntry *, const char *);
 
     static void ParseAccess(ConfigParser &parser);
     static void FreeAccess(void);
@@ -50,55 +55,11 @@ public:
     time_t oldest_service_failure;
     int service_revival_delay;
 
-    /**
-     * Used to store meta headers. The meta headers are custom
-     * ICAP request headers or ECAP options used to pass custom
-     * transaction-state related meta information to a service.
-     */
-    class MetaHeader: public RefCountable
-    {
-    public:
-        typedef RefCount<MetaHeader> Pointer;
-        /// Stores a value for the meta header.
-        class Value: public RefCountable
-        {
-        public:
-            typedef RefCount<Value> Pointer;
-            String value; ///< a header value
-            ACLList *aclList; ///< The access list used to determine if this value is valid for a request
-            explicit Value(const String &aVal) : value(aVal), aclList(NULL) {}
-            ~Value();
-        };
-        typedef Vector<Value::Pointer> Values;
+    static Notes metaHeaders; ///< The list of configured meta headers
 
-        explicit MetaHeader(const String &aName): name(aName) {}
+    static bool needHistory; ///< HttpRequest adaptation history should recorded
 
-        /**
-         * Adds a value to the meta header and returns a  pointer to the
-         * related Value object.
-         */
-        Value::Pointer addValue(const String &value);
-
-        /**
-         * Walks through the  possible values list of the  meta and selects
-         * the first value which matches the given HttpRequest and HttpReply
-         * or NULL if none matches.
-         */
-        const char *match(HttpRequest *request, HttpReply *reply);
-        String name; ///< The meta header name
-        Values values; ///< The possible values list for the meta header
-    };
-    typedef Vector<MetaHeader::Pointer> MetaHeaders;
-    static MetaHeaders metaHeaders; ///< The list of configured meta headers
-
-    /**
-     * Adds a header to the meta headers list and returns a pointer to the
-     * related metaHeaders object. If the header name already exists in list,
-     * returns a pointer to the existing object.
-     */
-    static MetaHeader::Pointer addMetaHeader(const String &header);
-
-    typedef Vector<ServiceConfigPointer> ServiceConfigs;
+    typedef std::vector<ServiceConfigPointer> ServiceConfigs;
     ServiceConfigs serviceConfigs;
 
     Config();
@@ -107,7 +68,7 @@ public:
     void parseService(void);
     void freeService(void);
     void dumpService(StoreEntry *, const char *) const;
-    ServicePointer findService(const String&);
+    ServiceConfigPointer findServiceConfig(const String&);
 
     /**
      * Creates and starts the adaptation services. In the case the adaptation
@@ -144,3 +105,4 @@ private:
 } // namespace Adaptation
 
 #endif /* SQUID_ADAPTATION__CONFIG_H */
+

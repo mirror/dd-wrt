@@ -1,35 +1,25 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 /*
  * DEBUG: section 63    Low Level Memory Pool Management
  * AUTHOR: Alex Rousskov, Andres Kroonmaa, Robert Collins
- *
- * SQUID Internet Object Cache  http://squid.nlanr.net/Squid/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from the
- *  Internet community.  Development is led by Duane Wessels of the
- *  National Laboratory for Applied Network Research and funded by the
- *  National Science Foundation.  Squid is Copyrighted (C) 1998 by
- *  the Regents of the University of California.  Please see the
- *  COPYRIGHT file for full details.  Squid incorporates software
- *  developed and/or copyrighted by other sources.  Please see the
- *  CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
  */
+
+#include "squid.h"
+
+#include <cassert>
+
+#include "MemPoolChunked.h"
+
+#define MEM_MAX_MMAP_CHUNKS 2048
+
+#include <cstring>
 
 /*
  * Old way:
@@ -76,21 +66,7 @@
  *   badly fragmentation is spread across all chunks.
  *
  *   Andres Kroonmaa.
- *   Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
  */
-
-#include "squid.h"
-#if HAVE_ASSERT_H
-#include <assert.h>
-#endif
-
-#include "MemPoolChunked.h"
-
-#define MEM_MAX_MMAP_CHUNKS 2048
-
-#if HAVE_STRING_H
-#include <string.h>
-#endif
 
 /*
  * XXX This is a boundary violation between lib and src.. would be good
@@ -141,7 +117,11 @@ MemChunk::MemChunk(MemPoolChunked *aPool)
     next = NULL;
     pool = aPool;
 
-    objCache = xcalloc(1, pool->chunk_size);
+    if (pool->doZero)
+        objCache = xcalloc(1, pool->chunk_size);
+    else
+        objCache = xmalloc(pool->chunk_size);
+
     freeList = objCache;
     void **Free = (void **)freeList;
 
@@ -161,16 +141,11 @@ MemChunk::MemChunk(MemPoolChunked *aPool)
     pool->allChunks.insert(this, memCompChunks);
 }
 
-MemPoolChunked::MemPoolChunked(const char *aLabel, size_t aSize) : MemImplementingAllocator(aLabel, aSize)
+MemPoolChunked::MemPoolChunked(const char *aLabel, size_t aSize) :
+    MemImplementingAllocator(aLabel, aSize) , chunk_size(0),
+    chunk_capacity(0), chunkCount(0), freeCache(0), nextFreeChunk(0),
+    Chunks(0), allChunks(Splay<MemChunk *>())
 {
-    chunk_size = 0;
-    chunk_capacity = 0;
-    chunkCount = 0;
-    freeCache = 0;
-    nextFreeChunk = 0;
-    Chunks = 0;
-    next = 0;
-
     setChunkSize(MEM_CHUNK_SIZE);
 
 #if HAVE_MALLOPT && M_MMAP_MAX
@@ -196,7 +171,7 @@ MemPoolChunked::push(void *obj)
      * not really need to be cleared.. There was a condition based on
      * the object size here, but such condition is not safe.
      */
-    if (doZeroOnPush)
+    if (doZero)
         memset(obj, 0, obj_size);
     Free = (void **)obj;
     *Free = freeCache;
@@ -257,7 +232,7 @@ MemPoolChunked::createChunk()
     newChunk = new MemChunk(this);
 
     chunk = Chunks;
-    if (chunk == NULL) {	/* first chunk in pool */
+    if (chunk == NULL) {    /* first chunk in pool */
         Chunks = newChunk;
         return;
     }
@@ -286,10 +261,10 @@ MemPoolChunked::setChunkSize(size_t chunksize)
     int cap;
     size_t csize = chunksize;
 
-    if (Chunks)		/* unsafe to tamper */
+    if (Chunks)     /* unsafe to tamper */
         return;
 
-    csize = ((csize + MEM_PAGE_SIZE - 1) / MEM_PAGE_SIZE) * MEM_PAGE_SIZE;	/* round up to page size */
+    csize = ((csize + MEM_PAGE_SIZE - 1) / MEM_PAGE_SIZE) * MEM_PAGE_SIZE;  /* round up to page size */
     cap = csize / obj_size;
 
     if (cap < MEM_MIN_FREE)
@@ -302,7 +277,7 @@ MemPoolChunked::setChunkSize(size_t chunksize)
         cap = 1;
 
     csize = cap * obj_size;
-    csize = ((csize + MEM_PAGE_SIZE - 1) / MEM_PAGE_SIZE) * MEM_PAGE_SIZE;	/* round up to page size */
+    csize = ((csize + MEM_PAGE_SIZE - 1) / MEM_PAGE_SIZE) * MEM_PAGE_SIZE;  /* round up to page size */
     cap = csize / obj_size;
 
     chunk_capacity = cap;
@@ -371,8 +346,8 @@ MemPoolChunked::convertFreeCacheToChunkFreeCache()
         assert(chunk->inuse_count > 0);
         -- chunk->inuse_count;
         (void) VALGRIND_MAKE_MEM_DEFINED(Free, sizeof(void *));
-        freeCache = *(void **)Free;	/* remove from global cache */
-        *(void **)Free = chunk->freeList;	/* stuff into chunks freelist */
+        freeCache = *(void **)Free; /* remove from global cache */
+        *(void **)Free = chunk->freeList;   /* stuff into chunks freelist */
         (void) VALGRIND_MAKE_MEM_NOACCESS(Free, sizeof(void *));
         chunk->freeList = Free;
         chunk->lastref = squid_curtime;
@@ -387,8 +362,6 @@ MemPoolChunked::clean(time_t maxage)
     MemChunk *chunk, *freechunk, *listTail;
     time_t age;
 
-    if (!this)
-        return;
     if (!Chunks)
         return;
 
@@ -463,10 +436,10 @@ MemPoolChunked::getStats(MemPoolStats * stats, int accumulate)
     int chunks_free = 0;
     int chunks_partial = 0;
 
-    if (!accumulate)	/* need skip memset for GlobalStats accumulation */
+    if (!accumulate)    /* need skip memset for GlobalStats accumulation */
         memset(stats, 0, sizeof(MemPoolStats));
 
-    clean((time_t) 555555);	/* don't want to get chunks released before reporting */
+    clean((time_t) 555555); /* don't want to get chunks released before reporting */
 
     stats->pool = this;
     stats->label = objectType();
@@ -497,3 +470,4 @@ MemPoolChunked::getStats(MemPoolStats * stats, int accumulate)
 
     return meter.inuse.level;
 }
+

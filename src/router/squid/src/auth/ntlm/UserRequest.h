@@ -1,14 +1,21 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_SRC_AUTH_NTLM_USERREQUEST_H
 #define _SQUID_SRC_AUTH_NTLM_USERREQUEST_H
 
 #include "auth/UserRequest.h"
-#include "auth/ntlm/auth_ntlm.h"
+#include "helper/forward.h"
 #include "MemPool.h"
 
 class ConnStateData;
 class HttpReply;
 class HttpRequest;
-class helper_stateful_server;
 
 namespace Auth
 {
@@ -26,14 +33,14 @@ public:
     virtual int authenticated() const;
     virtual void authenticate(HttpRequest * request, ConnStateData * conn, http_hdr_type type);
     virtual Auth::Direction module_direction();
-    virtual void onConnectionClose(ConnStateData *);
-    virtual void module_start(AUTHCB *, void *);
+    virtual void startHelperLookup(HttpRequest *req, AccessLogEntry::Pointer &al, AUTHCB *, void *);
+    virtual const char *credentialsStr();
 
     virtual const char * connLastHeader();
 
     /* we need to store the helper server between requests */
     helper_stateful_server *authserver;
-    void releaseAuthServer(void); ///< Release authserver NTLM helpers properly when finished or abandoning.
+    virtual void releaseAuthServer(); ///< Release authserver NTLM helpers properly when finished or abandoning.
 
     /* our current blob to pass to the client */
     char *server_blob;
@@ -48,7 +55,7 @@ public:
     HttpRequest *request;
 
 private:
-    static HLPSCB HandleReply;
+    static HLPCB HandleReply;
 };
 
 } // namespace Ntlm
@@ -57,3 +64,4 @@ private:
 MEMPROXY_CLASS_INLINE(Auth::Ntlm::UserRequest);
 
 #endif /* _SQUID_SRC_AUTH_NTLM_USERREQUEST_H */
+

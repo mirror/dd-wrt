@@ -1,16 +1,17 @@
-INCLUDES = -I$(top_srcdir)/include
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
 
-AM_CFLAGS = $(TRIE_CFLAGS)
-AM_CXXFLAGS = $(TRIE_CXXFLAGS)
+include $(top_srcdir)/src/Common.am
 
-# TESTS = trie trie-c
-TESTS = trie
+AM_CPPFLAGS += -I$(top_srcdir)/include
 
-# check_PROGRAMS = trie trie-c
-check_PROGRAMS = trie
+TESTS += trie
+
+check_PROGRAMS += trie
 
 trie_SOURCES = trie.cc
-trie_LDADD = $(top_builddir)/src/libTrie.a
-
-#trie_c_SOURCES = trie-c.c
-#trie_c_LDADD = $(top_builddir)/src/libTrie.a -lm
+trie_LDADD = $(top_builddir)/lib/libTrie/libTrie.a

@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 // XXX: This file is made of large pieces of src/tools.cc
 // with only a few minor modifications. TODO: redesign or delete.
 
@@ -94,3 +102,4 @@ dlinkDelete(dlink_node * m, dlink_list * list)
 
     m->next = m->prev = NULL;
 }
+

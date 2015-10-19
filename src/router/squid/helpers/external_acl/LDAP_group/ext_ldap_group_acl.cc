@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * ext_ldap_group_acl: lookup group membership in LDAP
  *
  * Version 2.17
@@ -28,11 +36,6 @@
  *
  * If you want to make a TLS enabled connection you will also need the
  * OpenSSL libraries linked into openldap. See http://www.openssl.org/
- *
- * License: squid_ldap_group is free software; you can redistribute it
- * and/or modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2,
- * or (at your option) any later version.
  */
 #include "squid.h"
 #include "helpers/defines.h"
@@ -41,15 +44,8 @@
 
 #define LDAP_DEPRECATED 1
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
-#if HAVE_CTYPE_H
-#include <ctype.h>
-#endif
+#include <cctype>
+#include <cstring>
 
 #if _SQUID_WINDOWS_ && !_SQUID_CYGWIN_
 
@@ -89,12 +85,8 @@ PFldap_start_tls_s Win32_ldap_start_tls_s;
 
 #endif
 
-#if defined(LDAP_OPT_NETWORK_TIMEOUT)
-#include <sys/time.h>
-#endif
-
 #define PROGRAM_NAME "ext_ldap_group_acl"
-#define PROGRAM_VERSION "2.17"
+#define PROGRAM_VERSION "2.18"
 
 /* Globals */
 
@@ -265,11 +257,11 @@ main(int argc, char **argv)
             fprintf(stderr, "FATAL: Your LDAP library does not have URI support\n");
             exit(1);
 #endif
-            /* Fall thru to -h */
+        /* Fall thru to -h */
         case 'h':
             if (ldapServer) {
                 int len = strlen(ldapServer) + 1 + strlen(value) + 1;
-                char *newhost = (char*)malloc(len);
+                char *newhost = static_cast<char*>(xmalloc(len));
                 snprintf(newhost, len, "%s %s", ldapServer, value);
                 free(ldapServer);
                 ldapServer = newhost;
@@ -398,7 +390,7 @@ main(int argc, char **argv)
         char *value = argv[1];
         if (ldapServer) {
             int len = strlen(ldapServer) + 1 + strlen(value) + 1;
-            char *newhost = (char*)malloc(len);
+            char *newhost = static_cast<char*>(xmalloc(len));
             snprintf(newhost, len, "%s %s", ldapServer, value);
             free(ldapServer);
             ldapServer = newhost;
@@ -843,3 +835,4 @@ readSecret(const char *filename)
 
     return 0;
 }
+

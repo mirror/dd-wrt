@@ -1,12 +1,20 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_SRC_COMM_OPENERSTATEDATA_H
 #define _SQUID_SRC_COMM_OPENERSTATEDATA_H
 
 #include "base/AsyncCall.h"
 #include "base/AsyncJob.h"
 #include "cbdata.h"
-#include "CommCalls.h"
-#include "comm_err_t.h"
+#include "comm/Flag.h"
 #include "comm/forward.h"
+#include "CommCalls.h"
 
 namespace Comm
 {
@@ -40,10 +48,10 @@ private:
 
     void earlyAbort(const CommCloseCbParams &);
     void timeout(const CommTimeoutCbParams &);
-    void sendAnswer(comm_err_t errFlag, int xerrno, const char *why);
+    void sendAnswer(Comm::Flag errFlag, int xerrno, const char *why);
     static void InProgressConnectRetry(int fd, void *data);
     static void DelayedConnectRetry(void *data);
-    void connect();
+    void doConnect();
     void connected();
     void lookupLocalAddress();
 
@@ -66,7 +74,7 @@ private:
     int totalTries_;   ///< total number of connection attempts over all destinations so far.
     int failRetries_;  ///< number of retries current destination has been tried.
 
-    /// if we are not done by then, we will call back with COMM_TIMEOUT
+    /// if we are not done by then, we will call back with Comm::TIMEOUT
     time_t deadline_;
 
     /// handles to calls which we may need to cancel.
@@ -84,3 +92,4 @@ private:
 }; // namespace Comm
 
 #endif /* _SQUID_SRC_COMM_CONNOPENER_H */
+

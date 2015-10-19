@@ -1,27 +1,25 @@
 .if !'po4a'hide' .TH ext_ldap_group_acl 8 "30 January 2005"
 .
 .SH NAME
-.if !'po4a'hide' .B ext_ldap_group_acl
-.if !'po4a'hide' \-
-Squid LDAP external acl group helper
+ext_ldap_group_acl \- Squid LDAP external acl group helper
 .PP
-Version 2.17
+Version 2.18
 .
 .SH SYNOPSIS
 .if !'po4a'hide' .B ext_ldap_group_acl
-.if !'po4a'hide' .B "\-b \""
-base DN
-.if !'po4a'hide' .B "\" \-f \""
-LDAP search filter
-.if !'po4a'hide' .B "\" ["
+.if !'po4a'hide' .B \-b
+base\-DN
+.if !'po4a'hide' .B \-f
+filter
+.if !'po4a'hide' .B "["
 options
 .if !'po4a'hide' .B "] ["
-LDAP server name
-.if !'po4a'hide' .B "[:"
+server
+.if !'po4a'hide' .B "[ ':' "
 port
-.if !'po4a'hide' .B "]|"
+.if !'po4a'hide' .B "] |"
 URI
-.if !'po4a'hide' .B "]..."
+.if !'po4a'hide' .B "] ..."
 .
 .SH DESCRIPTION
 .B ext_ldap_group_acl
@@ -102,7 +100,7 @@ and the password is not being compromised if someone gets the squid
 configuration file without getting the secretfile.
 .
 .if !'po4a'hide' .TP
-.if !'po4a'hide' .BI \-E certpath
+.if !'po4a'hide' .BI "\-E " certpath
 Enable LDAP over SSL (requires Netscape LDAP API libraries)
 .
 .if !'po4a'hide' .TP
@@ -243,6 +241,13 @@ This manual was written by
 .if !'po4a'hide' .I Henrik Nordstrom <hno@marasystems.com>
 .
 .SH COPYRIGHT
+.PP
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+.PP
 This program and documentation is copyright to the authors named above.
 .PP
 Distributed under the GNU General Public License (GNU GPL) version 2 or later (GPLv2+).

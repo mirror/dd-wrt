@@ -1,24 +1,31 @@
 /*
- * DEBUG: section 93    eCAP Interface
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    eCAP Interface */
+
 #include "squid.h"
-#include "HttpRequest.h"
-#include "HttpReply.h"
 #include "BodyPipe.h"
+#include "HttpReply.h"
+#include "HttpRequest.h"
 #include <libecap/common/names.h>
 #include <libecap/common/area.h>
 #include <libecap/common/version.h>
 #include <libecap/common/named_values.h>
+#include "adaptation/ecap/Host.h" /* for protocol constants */
 #include "adaptation/ecap/MessageRep.h"
 #include "adaptation/ecap/XactionRep.h"
-#include "adaptation/ecap/Host.h" /* for protocol constants */
 #include "base/TextException.h"
 #include "URL.h"
 
 /* HeaderRep */
 
 Adaptation::Ecap::HeaderRep::HeaderRep(HttpMsg &aMessage): theHeader(aMessage.header),
-        theMessage(aMessage)
+    theMessage(aMessage)
 {
 }
 
@@ -39,7 +46,7 @@ Adaptation::Ecap::HeaderRep::value(const Name &name) const
     const String value = squidId == HDR_OTHER ?
                          theHeader.getByName(name.image().c_str()) :
                          theHeader.getStrOrList(squidId);
-    return value.defined() ?
+    return value.size() > 0 ?
            Value::FromTempString(value.termedBuf()) : Value();
 }
 
@@ -99,7 +106,7 @@ Adaptation::Ecap::HeaderRep::parse(const Area &buf)
     MemBuf mb;
     mb.init();
     mb.append(buf.start, buf.size);
-    http_status error;
+    Http::StatusCode error;
     Must(theMessage.parse(&mb, true, &error));
 }
 
@@ -135,7 +142,7 @@ libecap::Name
 Adaptation::Ecap::FirstLineRep::protocol() const
 {
     // TODO: optimize?
-    switch (theMessage.protocol) {
+    switch (theMessage.http_ver.protocol) {
     case AnyP::PROTO_HTTP:
         return libecap::protocolHttp;
     case AnyP::PROTO_HTTPS:
@@ -158,8 +165,6 @@ Adaptation::Ecap::FirstLineRep::protocol() const
 #endif
     case AnyP::PROTO_CACHE_OBJECT:
         return protocolCacheObj;
-    case AnyP::PROTO_INTERNAL:
-        return protocolInternal;
     case AnyP::PROTO_ICY:
         return protocolIcy;
     case AnyP::PROTO_COAP:
@@ -181,7 +186,7 @@ void
 Adaptation::Ecap::FirstLineRep::protocol(const Name &p)
 {
     // TODO: what happens if we fail to translate some protocol?
-    theMessage.protocol = TranslateProtocolId(p);
+    theMessage.http_ver.protocol = TranslateProtocolId(p);
 }
 
 AnyP::ProtocolType
@@ -195,7 +200,7 @@ Adaptation::Ecap::FirstLineRep::TranslateProtocolId(const Name &name)
 /* RequestHeaderRep */
 
 Adaptation::Ecap::RequestLineRep::RequestLineRep(HttpRequest &aMessage):
-        FirstLineRep(aMessage), theMessage(aMessage)
+    FirstLineRep(aMessage), theMessage(aMessage)
 {
 }
 
@@ -225,9 +230,9 @@ Adaptation::Ecap::RequestLineRep::method(const Name &aMethod)
 {
     if (aMethod.assignedHostId()) {
         const int id = aMethod.hostId();
-        Must(METHOD_NONE < id && id < METHOD_ENUM_END);
-        Must(id != METHOD_OTHER);
-        theMessage.method = HttpRequestMethod(static_cast<_method_t>(id));
+        Must(Http::METHOD_NONE < id && id < Http::METHOD_ENUM_END);
+        Must(id != Http::METHOD_OTHER);
+        theMessage.method = HttpRequestMethod(static_cast<Http::MethodType>(id));
     } else {
         const std::string &image = aMethod.image();
         theMessage.method = HttpRequestMethod(image.data(),
@@ -239,22 +244,22 @@ Adaptation::Ecap::RequestLineRep::Name
 Adaptation::Ecap::RequestLineRep::method() const
 {
     switch (theMessage.method.id()) {
-    case METHOD_GET:
+    case Http::METHOD_GET:
         return libecap::methodGet;
-    case METHOD_POST:
+    case Http::METHOD_POST:
         return libecap::methodPost;
-    case METHOD_PUT:
+    case Http::METHOD_PUT:
         return libecap::methodPut;
-    case METHOD_HEAD:
+    case Http::METHOD_HEAD:
         return libecap::methodHead;
-    case METHOD_CONNECT:
+    case Http::METHOD_CONNECT:
         return libecap::methodConnect;
-    case METHOD_DELETE:
+    case Http::METHOD_DELETE:
         return libecap::methodDelete;
-    case METHOD_TRACE:
+    case Http::METHOD_TRACE:
         return libecap::methodTrace;
     default:
-        return Name(theMessage.method.image());
+        return Name(theMessage.method.image().toStdString());
     }
 }
 
@@ -285,36 +290,33 @@ Adaptation::Ecap::RequestLineRep::protocol(const Name &p)
 /* ReplyHeaderRep */
 
 Adaptation::Ecap::StatusLineRep::StatusLineRep(HttpReply &aMessage):
-        FirstLineRep(aMessage), theMessage(aMessage)
+    FirstLineRep(aMessage), theMessage(aMessage)
 {
 }
 
 void
 Adaptation::Ecap::StatusLineRep::statusCode(int code)
 {
-    // TODO: why is .status a enum? Do we not support unknown statuses?
-    theMessage.sline.status = static_cast<http_status>(code);
+    theMessage.sline.set(theMessage.sline.version, static_cast<Http::StatusCode>(code), theMessage.sline.reason());
 }
 
 int
 Adaptation::Ecap::StatusLineRep::statusCode() const
 {
-    // TODO: see statusCode(code) TODO above
-    return static_cast<int>(theMessage.sline.status);
+    // TODO: remove cast when possible
+    return static_cast<int>(theMessage.sline.status());
 }
 
 void
-Adaptation::Ecap::StatusLineRep::reasonPhrase(const Area &)
+Adaptation::Ecap::StatusLineRep::reasonPhrase(const Area &str)
 {
-    // Squid does not support custom reason phrases
-    theMessage.sline.reason = NULL;
+    theMessage.sline.set(theMessage.sline.version, theMessage.sline.status(), str.toString().c_str());
 }
 
 Adaptation::Ecap::StatusLineRep::Area
 Adaptation::Ecap::StatusLineRep::reasonPhrase() const
 {
-    return theMessage.sline.reason ?
-           Area::FromTempString(std::string(theMessage.sline.reason)) : Area();
+    return Area::FromTempString(std::string(theMessage.sline.reason()));
 }
 
 libecap::Version
@@ -364,8 +366,8 @@ Adaptation::Ecap::BodyRep::bodySize() const
 /* MessageRep */
 
 Adaptation::Ecap::MessageRep::MessageRep(HttpMsg *rawHeader):
-        theMessage(rawHeader), theFirstLineRep(NULL),
-        theHeaderRep(NULL), theBodyRep(NULL)
+    theMessage(rawHeader), theFirstLineRep(NULL),
+    theHeaderRep(NULL), theBodyRep(NULL)
 {
     Must(theMessage.header); // we do not want to represent a missing message
 
@@ -456,3 +458,4 @@ const libecap::Body *Adaptation::Ecap::MessageRep::body() const
 {
     return theBodyRep;
 }
+

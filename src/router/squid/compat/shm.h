@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_COMPAT_SHM_H
 #define SQUID_COMPAT_SHM_H
 
@@ -43,3 +51,4 @@ extern "C" {
 bool shm_portable_segment_name_is_path();
 
 #endif /* SQUID_COMPAT_CPU_H */
+

@@ -1,36 +1,12 @@
-
 /*
- * DEBUG: section 86    ESI processing
- * AUTHOR: Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- ;  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 86    ESI processing */
 
 #include "squid.h"
 #include "esi/VarState.h"
@@ -167,8 +143,10 @@ ESIVarState::~ESIVarState()
 {
     freeResources();
 
-    while (variablesForCleanup.size())
-        delete variablesForCleanup.pop_back();
+    while (!variablesForCleanup.empty()) {
+        delete variablesForCleanup.back();
+        variablesForCleanup.pop_back();
+    }
 
     delete defaultVariable;
 }
@@ -202,14 +180,14 @@ ESIVariableUserAgent::getProductVersion (char const *s)
 {
     char const *t;
     int len;
-    t = index (s,'/');
+    t = index(s,'/');
 
     if (!t || !*(++t))
-        return xstrdup ("");
+        return xstrdup("");
 
-    len = strcspn (t, " \r\n()<>@,;:\\\"/[]?={}");
+    len = strcspn(t, " \r\n()<>@,;:\\\"/[]?={}");
 
-    return xstrndup (t, len + 1);
+    return xstrndup(t, len + 1);
 }
 
 ESIVariableQuery::ESIVariableQuery(char const *uri) : query (NULL), query_sz (0), query_elements (0), query_string (NULL)
@@ -219,11 +197,11 @@ ESIVariableQuery::ESIVariableQuery(char const *uri) : query (NULL), query_sz (0)
 
     if (query_start && query_start[1] != '\0' ) {
         unsigned int n;
-        query_string = xstrdup (query_start + 1);
+        query_string = xstrdup(query_start + 1);
         query_elements = 1;
         char const *query_pos = query_start + 1;
 
-        while ((query_pos = strchr (query_pos, '&'))) {
+        while ((query_pos = strchr(query_pos, '&'))) {
             ++query_elements;
             ++query_pos;
         }
@@ -234,8 +212,8 @@ ESIVariableQuery::ESIVariableQuery(char const *uri) : query (NULL), query_sz (0)
         n = 0;
 
         while (query_pos) {
-            char const *next = strchr (query_pos, '&');
-            char const *div = strchr (query_pos, '=');
+            char const *next = strchr(query_pos, '&');
+            char const *div = strchr(query_pos, '=');
 
             if (next)
                 ++next;
@@ -249,19 +227,19 @@ ESIVariableQuery::ESIVariableQuery(char const *uri) : query (NULL), query_sz (0)
                 /* zero length between & and = or & and & */
                 continue;
 
-            query[n].var = xstrndup (query_pos, div - query_pos + 1) ;
+            query[n].var = xstrndup(query_pos, div - query_pos + 1) ;
 
             if (div == next) {
-                query[n].val = xstrdup ("");
+                query[n].val = xstrdup("");
             } else {
-                query[n].val = xstrndup (div + 1, next - div - 1);
+                query[n].val = xstrndup(div + 1, next - div - 1);
             }
 
             query_pos = next;
             ++n;
         }
     } else {
-        query_string = xstrdup ("");
+        query_string = xstrdup("");
     }
 
     if (query) {
@@ -292,8 +270,8 @@ ESIVariableQuery::~ESIVariableQuery()
 }
 
 ESIVarState::ESIVarState(HttpHeader const *aHeader, char const *uri) :
-        output(NULL),
-        hdr(hoReply)
+    output(NULL),
+    hdr(hoReply)
 {
     memset(&flags, 0, sizeof(flags));
 
@@ -383,14 +361,14 @@ ESIVariableUserAgent::ESIVariableUserAgent(ESIVarState &state)
             t = index (t, ' ');
 
             if (!t)
-                browserversion = xstrdup ("");
+                browserversion = xstrdup("");
             else {
-                t1 = index (t, ';');
+                t1 = index(t, ';');
 
                 if (!t1)
-                    browserversion = xstrdup (t + 1);
+                    browserversion = xstrdup(t + 1);
                 else
-                    browserversion = xstrndup (t + 1, t1-t);
+                    browserversion = xstrndup(t + 1, t1-t);
             }
         } else if (strstr (s, "Mozilla")) {
             browser = ESI_BROWSER_MOZILLA;
@@ -402,7 +380,7 @@ ESIVariableUserAgent::ESIVariableUserAgent(ESIVarState &state)
     } else {
         UserOs = ESI_OS_OTHER;
         browser = ESI_BROWSER_OTHER;
-        browserversion = xstrdup ("");
+        browserversion = xstrdup("");
     }
 }
 
@@ -658,9 +636,9 @@ ESIVarState::doIt ()
 
 #define LOOKFORSTART 0
 ESIVariableProcessor::ESIVariableProcessor(char *aString, ESISegment::Pointer &aSegment, Trie &aTrie, ESIVarState *aState) :
-        string(aString), output (aSegment), variables(aTrie), varState (aState),
-        state(LOOKFORSTART), pos(0), var_pos(0), done_pos(0), found_subref (NULL),
-        found_default (NULL), currentFunction(NULL)
+    string(aString), output (aSegment), variables(aTrie), varState (aState),
+    state(LOOKFORSTART), pos(0), var_pos(0), done_pos(0), found_subref (NULL),
+    found_default (NULL), currentFunction(NULL)
 {
     len = strlen (string);
     vartype = varState->GetVar("",0);
