@@ -525,7 +525,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0 MBUS_ID(0x09, 0x15) 0 0x800>;
-+		};
+		};
 
 	};
 
