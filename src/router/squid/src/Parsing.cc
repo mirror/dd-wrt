@@ -1,41 +1,20 @@
 /*
- * DEBUG: section 03    Configuration File Parsing
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 03    Configuration File Parsing */
 
 #include "squid.h"
 #include "cache_cf.h"
 #include "compat/strtoll.h"
-#include "Parsing.h"
-#include "globals.h"
+#include "ConfigParser.h"
 #include "Debug.h"
+#include "globals.h"
+#include "Parsing.h"
 
 /*
  * These functions is the same as atoi/l/f, except that they check for errors
@@ -146,7 +125,7 @@ xatos(const char *token)
 int64_t
 GetInteger64(void)
 {
-    char *token = strtok(NULL, w_space);
+    char *token = ConfigParser::NextToken();
 
     if (token == NULL)
         self_destruct();
@@ -161,7 +140,7 @@ GetInteger64(void)
 int
 GetInteger(void)
 {
-    char *token = strtok(NULL, w_space);
+    char *token = ConfigParser::NextToken();
     int i;
 
     if (token == NULL)
@@ -188,8 +167,7 @@ GetInteger(void)
 int
 GetPercentage(void)
 {
-    int p;
-    char *token = strtok(NULL, w_space);
+    char *token = ConfigParser::NextToken();
 
     if (!token) {
         debugs(0, DBG_PARSE_NOTE(DBG_IMPORTANT), "ERROR: A percentage value is missing.");
@@ -202,7 +180,7 @@ GetPercentage(void)
         *end = '\0';
     }
 
-    p = xatoi(token);
+    int p = xatoi(token);
 
     if (p < 0 || p > 100) {
         debugs(0, DBG_PARSE_NOTE(DBG_IMPORTANT), "ERROR: The value '" << token << "' is out of range. A percentage should be within [0, 100].");
@@ -215,7 +193,7 @@ GetPercentage(void)
 unsigned short
 GetShort(void)
 {
-    char *token = strtok(NULL, w_space);
+    char *token = ConfigParser::NextToken();
 
     if (token == NULL)
         self_destruct();
@@ -301,14 +279,15 @@ GetHostWithPort(char *token, Ip::Address *ipa)
     }
 
     if (NULL == host)
-        ipa->SetAnyAddr();
+        ipa->setAnyAddr();
     else if ( ipa->GetHostByName(host) ) /* dont use ipcache. Accept either FQDN or IPA. */
         (void) 0;
     else
         return false;
 
     /* port MUST be set after the IPA lookup/conversion is performed. */
-    ipa->SetPort(port);
+    ipa->port(port);
 
     return true;
 }
+

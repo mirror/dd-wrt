@@ -1,4 +1,11 @@
 #!/usr/bin/perl -w
+#
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
 
 # Reads cache.log from STDIN, preferrably with full debugging enabled.
 # Finds creation and destruction messages for a given class.
@@ -49,11 +56,19 @@ my %Pairs = (
 	],
 	cbdata => [
 		'cbdataAlloc: (\S+)',
-		'cbdataFree: Freeing (\S+)',
+		'(?:cbdataFree|cbdataUnlock): Freeing (\S+)',
 	],
 	FD => [
 		'fd_open.*\sFD (\d+)',
 		'fd_close\s+FD (\d+)',
+	],
+	IpcStoreMapEntry => [
+		'StoreMap.* opened .*entry (\d+) for \S+ (\S+)',
+		'StoreMap.* closed .*entry (\d+) for \S+ (\S+)',
+	],
+	sh_page => [
+		'PageStack.* pop: (sh_page\S+) at',
+		'PageStack.* push: (sh_page\S+) at',
 	],
 );
 
@@ -70,29 +85,32 @@ die("unsupported Thing, stopped") unless $Pairs{$Thing};
 my $reConstructor = $Pairs{$Thing}->[0];
 my $reDestructor = $Pairs{$Thing}->[1];
 
-my %Alive = ();
+my %AliveCount = ();
+my %AliveImage = ();
 my $Count = 0;
 while (<STDIN>) {
-	if (/$reConstructor/) {
-		#die($_) if $Alive{$1};
-		$Alive{$1} = $_;
-		++$Count;
+	if (my @conIds = (/$reConstructor/)) {
+		my $id = join(':', @conIds);
+		#die($_) if $Alive{$id};
+		$AliveImage{$id} = $_;
+		++$Count unless $AliveCount{$id}++;
 	} 
-	elsif (/$reDestructor/) {
-		#warn("unborn: $_") unless $Alive{$1};
-		$Alive{$1} = undef();
+	elsif (my @deIds = (/$reDestructor/)) {
+		my $id = join(':', @deIds);
+		#warn("unborn: $_") unless $AliveCount{$id};
+		$AliveImage{$id} = undef() unless --$AliveCount{$id};
 	}
 }
 
 printf(STDERR "Found %d %s\n", $Count, $Thing);
 
-my $AliveCount = 0;
-foreach my $alive (sort grep { defined($_) } values %Alive) {
+my $aliveCount = 0;
+foreach my $alive (sort grep { defined($_) } values %AliveImage) {
 	next unless defined $alive;
 	printf("Alive: %s", $alive);
-	++$AliveCount;
+	++$aliveCount;
 }
 
-printf(STDERR "found %d still-alive %s\n", $AliveCount, $Thing);
+printf(STDERR "found %d still-alive %s\n", $aliveCount, $Thing);
 
 exit(0);

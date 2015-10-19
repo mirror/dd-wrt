@@ -1,45 +1,21 @@
 /*
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_CLIENTSIDEREPLY_H
 #define SQUID_CLIENTSIDEREPLY_H
 
+#include "acl/forward.h"
 #include "client_side_request.h"
-#include "clientStream.h"
-#include "HttpHeader.h"
-#include "RefCount.h"
+#include "ip/forward.h"
 #include "RequestFlags.h"
 #include "StoreClient.h"
 
 class ErrorState;
-#include "ip/forward.h"
 
 /* XXX make static method */
 
@@ -47,8 +23,6 @@ class clientReplyContext : public RefCountable, public StoreClient
 {
 
 public:
-    void *operator new (size_t byteCount);
-    void operator delete (void *address);
     static STCB CacheHit;
     static STCB HandleIMSReply;
     static STCB SendMoreData;
@@ -75,7 +49,7 @@ public:
     /// replaces current response store entry with the given one
     void setReplyToStoreEntry(StoreEntry *e, const char *reason);
     /// builds error using clientBuildError() and calls setReplyToError() below
-    void setReplyToError(err_type, http_status, const HttpRequestMethod&, char const *, Ip::Address &, HttpRequest *, const char *,
+    void setReplyToError(err_type, Http::StatusCode, const HttpRequestMethod&, char const *, Ip::Address &, HttpRequest *, const char *,
 #if USE_AUTH
                          Auth::UserRequest::Pointer);
 #else
@@ -83,6 +57,8 @@ public:
 #endif
     /// creates a store entry for the reply and appends err to it
     void setReplyToError(const HttpRequestMethod& method, ErrorState *err);
+    /// creates a store entry for the reply and appends error reply to it
+    void setReplyToReply(HttpReply *reply);
     void createStoreEntry(const HttpRequestMethod& m, RequestFlags flags);
     void removeStoreReference(store_client ** scp, StoreEntry ** ep);
     void removeClientStoreReference(store_client **scp, ClientHttpRequest *http);
@@ -91,8 +67,9 @@ public:
     clientStream_status_t replyStatus();
     void processMiss();
     void traceReply(clientStreamNode * node);
+    const char *storeId() const { return (http->store_id.size() > 0 ? http->store_id.termedBuf() : http->uri); }
 
-    http_status purgeStatus;
+    Http::StatusCode purgeStatus;
 
     /* state variable - replace with class to handle storeentries at some point */
     int lookingforstore;
@@ -100,25 +77,25 @@ public:
 
     ClientHttpRequest *http;
     int headers_sz;
-    store_client *sc;		/* The store_client we're using */
-    StoreIOBuffer tempBuffer;	/* For use in validating requests via IMS */
-    int old_reqsize;		/* ... again, for the buffer */
+    store_client *sc;       /* The store_client we're using */
+    StoreIOBuffer tempBuffer;   /* For use in validating requests via IMS */
+    int old_reqsize;        /* ... again, for the buffer */
     size_t reqsize;
     size_t reqofs;
-    char tempbuf[HTTP_REQBUF_SZ];	/* a temporary buffer if we need working storage */
+    char tempbuf[HTTP_REQBUF_SZ];   /* a temporary buffer if we need working storage */
 #if USE_CACHE_DIGESTS
 
-    const char *lookup_type;	/* temporary hack: storeGet() result: HIT/MISS/NONE */
+    const char *lookup_type;    /* temporary hack: storeGet() result: HIT/MISS/NONE */
 #endif
 
     struct {
 
         unsigned storelogiccomplete:1;
 
-        unsigned complete:1;		/* we have read all we can from upstream */
+        unsigned complete:1;        /* we have read all we can from upstream */
         bool headersSent;
     } flags;
-    clientStreamNode *ourNode;	/* This will go away if/when this file gets refactored some more */
+    clientStreamNode *ourNode;  /* This will go away if/when this file gets refactored some more */
 
 private:
     clientStreamNode *getNextNode() const;
@@ -134,7 +111,7 @@ private:
     void processReplyAccessResult(const allow_t &accessAllowed);
     void cloneReply();
     void buildReplyHeader ();
-    bool alwaysAllowResponse(http_status sline) const;
+    bool alwaysAllowResponse(Http::StatusCode sline) const;
     int checkTransferDone();
     void processOnlyIfCachedMiss();
     void processConditional(StoreIOBuffer &result);
@@ -144,6 +121,8 @@ private:
     void triggerInitialStoreRead();
     void sendClientOldEntry();
     void purgeAllCached();
+    void forgetHit();
+    bool blockedHit() const;
 
     void sendBodyTooLargeError();
     void sendPreconditionFailedError();
@@ -151,10 +130,11 @@ private:
     void sendNotModifiedOrPreconditionFailedError();
 
     StoreEntry *old_entry;
-    store_client *old_sc;	/* ... for entry to be validated */
+    store_client *old_sc;   /* ... for entry to be validated */
     bool deleting;
 
-    CBDATA_CLASS(clientReplyContext);
+    CBDATA_CLASS2(clientReplyContext);
 };
 
 #endif /* SQUID_CLIENTSIDEREPLY_H */
+

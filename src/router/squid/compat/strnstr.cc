@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_COMPAT_STRNSTR_CC_
 #define SQUID_COMPAT_STRNSTR_CC_
 
@@ -8,9 +16,9 @@
  * Update/Maintenance History:
  *
  *    26-Apr-2008 : Copied from FreeBSD via OpenGrok
- * 			- added protection around libray headers
- * 			- added squid_ prefix for uniqueness
- * 			  so we can use it where OS copy is broken.
+ *          - added protection around libray headers
+ *          - added squid_ prefix for uniqueness
+ *            so we can use it where OS copy is broken.
  *
  *  Original License and code follows.
  */
@@ -22,7 +30,7 @@
 /*-
  * Copyright (c) 2001 Mike Barcroft <mike@FreeBSD.org>
  * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *  The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Chris Torek.
@@ -51,7 +59,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#)strstr.c	8.1 (Berkeley) 6/4/93
+ * @(#)strstr.c 8.1 (Berkeley) 6/4/93
  * $FreeBSD: src/lib/libc/string/strnstr.c,v 1.2.2.1 2001/12/09 06:50:03 mike Exp $
  * $DragonFly: src/lib/libc/string/strnstr.c,v 1.4 2006/03/20 17:24:20 dillon Exp $
  */
@@ -59,9 +67,7 @@
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
+#include <cstring>
 
 /**
  * Find the first occurrence of find in s, where the search is limited to the
@@ -92,3 +98,4 @@ squid_strnstr(const char *s, const char *find, size_t slen)
 
 #endif /* !HAVE_STRNSTR */
 #endif /* SQUID_COMPAT_STRNSTR_CC_ */
+

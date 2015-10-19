@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "acl/Acl.h"
 #include "acl/Gadgets.h"
@@ -30,7 +38,7 @@ ClientDelayConfig::finalize()
 
 void ClientDelayConfig::freePoolCount()
 {
-    pools.clean();
+    pools.clear();
 }
 
 void ClientDelayConfig::dumpPoolCount(StoreEntry * entry, const char *name) const
@@ -83,7 +91,7 @@ void ClientDelayConfig::parsePoolAccess(ConfigParser &parser)
     }
 
     --pool;
-    aclParseAccessLine(parser, &pools[pool].access);
+    aclParseAccessLine("client_delay_access", parser, &pools[pool].access);
 }
 
 void ClientDelayConfig::clean()
@@ -92,3 +100,4 @@ void ClientDelayConfig::clean()
         aclDestroyAccessList(&pools[i].access);
     }
 }
+

@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 13    High Level Memory Pool Management
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 13    High Level Memory Pool Management */
 
 #include "squid.h"
 #include "acl/AclDenyInfoList.h"
@@ -36,13 +14,14 @@
 #include "CacheDigest.h"
 #include "ClientInfo.h"
 #include "disk.h"
+#include "dlink.h"
 #include "event.h"
+#include "icmp/net_db.h"
 #include "md5.h"
 #include "Mem.h"
 #include "MemBuf.h"
 #include "memMeter.h"
 #include "mgr/Registration.h"
-#include "icmp/net_db.h"
 #include "RegexList.h"
 #include "SquidConfig.h"
 #include "SquidList.h"
@@ -50,12 +29,8 @@
 #include "Store.h"
 #include "StoreEntryStream.h"
 
-#if HAVE_IOMANIP
 #include <iomanip>
-#endif
-#if HAVE_OSTREAM
 #include <ostream>
-#endif
 
 /* forward declarations */
 static void memFree2K(void *);
@@ -95,10 +70,10 @@ StrPoolsAttrs[mem_str_pool_count] = {
 
     {
         "Short Strings", MemAllocator::RoundedSize(36),
-    },				/* to fit rfc1123 and similar */
+    },              /* to fit rfc1123 and similar */
     {
         "Medium Strings", MemAllocator::RoundedSize(128),
-    },				/* to fit most urls */
+    },              /* to fit most urls */
     {
         "Long Strings", MemAllocator::RoundedSize(512),
     },
@@ -161,8 +136,8 @@ static void
 memBufStats(std::ostream & stream)
 {
     stream << "Large buffers: " <<
-    HugeBufCountMeter.level << " (" <<
-    HugeBufVolumeMeter.level / 1024 << " KB)\n";
+           HugeBufCountMeter.level << " (" <<
+           HugeBufVolumeMeter.level / 1024 << " KB)\n";
 }
 
 void
@@ -201,7 +176,7 @@ Mem::Stats(StoreEntry * sentry)
  * Relies on Mem::Init() having been called beforehand.
  */
 void
-memDataInit(mem_type type, const char *name, size_t size, int max_pages_notused, bool zeroOnPush)
+memDataInit(mem_type type, const char *name, size_t size, int max_pages_notused, bool doZero)
 {
     assert(name && size);
 
@@ -209,7 +184,7 @@ memDataInit(mem_type type, const char *name, size_t size, int max_pages_notused,
         return;
 
     MemPools[type] = memPoolCreate(name, size);
-    MemPools[type]->zeroOnPush(zeroOnPush);
+    MemPools[type]->zeroBlocks(doZero);
 }
 
 /* find appropriate pool and use it (pools always init buffer with 0s) */
@@ -381,7 +356,7 @@ memFreeBuf(size_t size, void *buf)
     }
 }
 
-static double clean_interval = 15.0;	/* time to live of idle chunk before release */
+static double clean_interval = 15.0;    /* time to live of idle chunk before release */
 
 void
 Mem::CleanIdlePools(void *unused)
@@ -477,7 +452,7 @@ Mem::Init(void)
     /** Lastly init the string pools. */
     for (i = 0; i < mem_str_pool_count; ++i) {
         StrPools[i].pool = memPoolCreate(StrPoolsAttrs[i].name, StrPoolsAttrs[i].obj_size);
-        StrPools[i].pool->zeroOnPush(false);
+        StrPools[i].pool->zeroBlocks(false);
 
         if (StrPools[i].pool->objectSize() != StrPoolsAttrs[i].obj_size)
             debugs(13, DBG_IMPORTANT, "Notice: " << StrPoolsAttrs[i].name << " is " << StrPools[i].pool->objectSize() << " bytes instead of requested " << StrPoolsAttrs[i].obj_size << " bytes");
@@ -634,9 +609,7 @@ Mem::PoolReport(const MemPoolStats * mp_st, const MemPoolMeter * AllMeter, std::
     MemPoolMeter *pm = mp_st->meter;
     const char *delim = "\t ";
 
-#if HAVE_IOMANIP
     stream.setf(std::ios_base::fixed);
-#endif
     stream << std::setw(20) << std::left << mp_st->label << delim;
     stream << std::setw(4) << std::right << mp_st->obj_size << delim;
 
@@ -743,22 +716,22 @@ Mem::Report(std::ostream &stream)
     stream << "Current memory usage:\n";
     /* heading */
     stream << "Pool\t Obj Size\t"
-    "Chunks\t\t\t\t\t\t\t"
-    "Allocated\t\t\t\t\t"
-    "In Use\t\t\t\t\t"
-    "Idle\t\t\t"
-    "Allocations Saved\t\t\t"
-    "Rate\t"
-    "\n"
-    " \t (bytes)\t"
-    "KB/ch\t obj/ch\t"
-    "(#)\t used\t free\t part\t %Frag\t "
-    "(#)\t (KB)\t high (KB)\t high (hrs)\t %Tot\t"
-    "(#)\t (KB)\t high (KB)\t high (hrs)\t %alloc\t"
-    "(#)\t (KB)\t high (KB)\t"
-    "(#)\t %cnt\t %vol\t"
-    "(#)/sec\t"
-    "\n";
+           "Chunks\t\t\t\t\t\t\t"
+           "Allocated\t\t\t\t\t"
+           "In Use\t\t\t\t\t"
+           "Idle\t\t\t"
+           "Allocations Saved\t\t\t"
+           "Rate\t"
+           "\n"
+           " \t (bytes)\t"
+           "KB/ch\t obj/ch\t"
+           "(#)\t used\t free\t part\t %Frag\t "
+           "(#)\t (KB)\t high (KB)\t high (hrs)\t %Tot\t"
+           "(#)\t (KB)\t high (KB)\t high (hrs)\t %alloc\t"
+           "(#)\t (KB)\t high (KB)\t"
+           "(#)\t %cnt\t %vol\t"
+           "(#)/sec\t"
+           "\n";
     xm_deltat = current_dtime - xm_time;
     xm_time = current_dtime;
 
@@ -774,7 +747,7 @@ Mem::Report(std::ostream &stream)
     while ((pool = memPoolIterateNext(iter))) {
         pool->getStats(&mp_stats);
 
-        if (!mp_stats.pool)	/* pool destroyed */
+        if (!mp_stats.pool) /* pool destroyed */
             continue;
 
         if (mp_stats.pool->getMeter().gb_allocated.count > 0) {
@@ -817,7 +790,7 @@ Mem::Report(std::ostream &stream)
     stream << "Cumulative allocated volume: "<< double_to_str(buf, 64, mp_total.TheMeter->gb_allocated.bytes) << "\n";
     /* overhead */
     stream << "Current overhead: " << mp_total.tot_overhead << " bytes (" <<
-    std::setprecision(3) << xpercent(mp_total.tot_overhead, mp_total.TheMeter->inuse.level) << "%)\n";
+           std::setprecision(3) << xpercent(mp_total.tot_overhead, mp_total.TheMeter->inuse.level) << "%)\n";
     /* limits */
     if (mp_total.mem_idle_limit >= 0)
         stream << "Idle pool limit: " << std::setprecision(2) << toMB(mp_total.mem_idle_limit) << " MB\n";
@@ -826,3 +799,4 @@ Mem::Report(std::ostream &stream)
     stream << "Pools ever used:     " << mp_total.tot_pools_alloc - not_used << " (shown above)\n";
     stream << "Currently in use:    " << mp_total.tot_pools_inuse << "\n";
 }
+

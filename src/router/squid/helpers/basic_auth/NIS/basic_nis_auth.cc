@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * Adapted By Rabellino Sergio (rabellino@di.unito.it) For Solaris 2.x
  * From NCSA Authentication module
  */
@@ -9,17 +17,10 @@
 #include "rfc1738.h"
 #include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
+#include <cstdlib>
+#include <cstring>
 #if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
 #endif
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -53,7 +54,7 @@ main(int argc, char **argv)
 
     while (fgets(buf, 256, stdin) != NULL) {
         if ((p = strchr(buf, '\n')) != NULL)
-            *p = '\0';		/* strip \n */
+            *p = '\0';      /* strip \n */
 
         if ((user = strtok(buf, " ")) == NULL) {
             printf("ERR\n");
@@ -72,13 +73,23 @@ main(int argc, char **argv)
         if (!nispasswd) {
             /* User does not exist */
             printf("ERR No such user\n");
-        } else if (strcmp(nispasswd, (char *) crypt(passwd, nispasswd)) == 0) {
+            continue;
+        }
+
+#if HAVE_CRYPT
+        char *crypted = NULL;
+        if ((crypted = crypt(passwd, nispasswd)) && strcmp(nispasswd, crypted) == 0) {
             /* All ok !, thanks... */
             printf("OK\n");
         } else {
             /* Password incorrect */
             printf("ERR Wrong password\n");
         }
+#else
+        /* Password incorrect */
+        printf("BH message=\"Missing crypto capability\"\n");
+#endif
     }
     exit(0);
 }
+

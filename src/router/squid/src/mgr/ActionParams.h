@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 16    Cache Manager API
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager API */
 
 #ifndef SQUID_MGR_ACTION_PARAMS_H
 #define SQUID_MGR_ACTION_PARAMS_H
@@ -26,7 +31,7 @@ public:
 public:
     /* details of the client HTTP request that caused the action */
     String httpUri; ///< HTTP request URI
-    _method_t httpMethod; ///< HTTP request method
+    HttpRequestMethod httpMethod; ///< HTTP request method
     RequestFlags httpFlags; ///< HTTP request flags
     String httpOrigin;       ///< HTTP Origin: header (if any)
 
@@ -42,3 +47,4 @@ public:
 std::ostream &operator <<(std::ostream &os, const Mgr::ActionParams &params);
 
 #endif /* SQUID_MGR_ACTION_PARAMS_H */
+

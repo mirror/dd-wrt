@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_ADAPTATION__ANSWER_H
 #define SQUID_ADAPTATION__ANSWER_H
 
@@ -27,7 +35,7 @@ public:
     std::ostream &print(std::ostream &os) const;
 
 public:
-    HttpMsgPointerT<HttpMsg> message; ///< HTTP request or response to forward
+    HttpMsg::Pointer message; ///< HTTP request or response to forward
     String ruleId; ///< ACL (or similar rule) name that blocked forwarding
     bool final; ///< whether the error, if any, cannot be bypassed
     Kind kind; ///< the type of the answer
@@ -45,3 +53,4 @@ std::ostream &operator <<(std::ostream &os, const Answer &answer)
 } // namespace Adaptation
 
 #endif /* SQUID_ADAPTATION__ANSWER_H */
+

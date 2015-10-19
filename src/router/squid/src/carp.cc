@@ -1,36 +1,12 @@
-
 /*
- * DEBUG: section 39    Cache Array Routing Protocol
- * AUTHOR: Henrik Nordstrom
- * BASED ON: carp.c by Eric Stern and draft-vinod-carp-v1-03.txt
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 39    Cache Array Routing Protocol */
 
 #include "squid.h"
 #include "CachePeer.h"
@@ -40,11 +16,8 @@
 #include "SquidConfig.h"
 #include "Store.h"
 #include "URL.h"
-#include "URLScheme.h"
 
-#if HAVE_MATH_H
-#include <math.h>
-#endif
+#include <cmath>
 
 #define ROTATE_LEFT(x, n) (((x) << (n)) | ((x) >> (32-(n))))
 
@@ -151,11 +124,11 @@ carpInit(void)
      */
     K = n_carp_peers;
 
-    P_last = 0.0;		/* Empty P_0 */
+    P_last = 0.0;       /* Empty P_0 */
 
-    Xn = 1.0;			/* Empty starting point of X_1 * X_2 * ... * X_{x-1} */
+    Xn = 1.0;           /* Empty starting point of X_1 * X_2 * ... * X_{x-1} */
 
-    X_last = 0.0;		/* Empty X_0, nullifies the first pow statement */
+    X_last = 0.0;       /* Empty X_0, nullifies the first pow statement */
 
     for (k = 1; k <= K; ++k) {
         double Kk1 = (double) (K - k + 1);
@@ -188,16 +161,14 @@ carpSelectParent(HttpRequest * request)
 
     /* select CachePeer */
     for (k = 0; k < n_carp_peers; ++k) {
-        String key;
+        SBuf key;
         tp = carp_peers[k];
         if (tp->options.carp_key.set) {
             //this code follows urlCanonical's pattern.
             //   corner cases should use the canonical URL
             if (tp->options.carp_key.scheme) {
-                // temporary, until bug 1961 URL handling is fixed.
-                const URLScheme sch = request->protocol;
-                key.append(sch.const_str());
-                if (key.size()) //if the scheme is not empty
+                key.append(request->url.getScheme().c_str());
+                if (key.length()) //if the scheme is not empty
                     key.append("://");
             }
             if (tp->options.carp_key.host) {
@@ -211,24 +182,24 @@ carpSelectParent(HttpRequest * request)
             if (tp->options.carp_key.path) {
                 String::size_type pos;
                 if ((pos=request->urlpath.find('?'))!=String::npos)
-                    key.append(request->urlpath.substr(0,pos));
+                    key.append(SBuf(request->urlpath.substr(0,pos)));
                 else
-                    key.append(request->urlpath);
+                    key.append(SBuf(request->urlpath));
             }
             if (tp->options.carp_key.params) {
                 String::size_type pos;
                 if ((pos=request->urlpath.find('?'))!=String::npos)
-                    key.append(request->urlpath.substr(pos,request->urlpath.size()));
+                    key.append(SBuf(request->urlpath.substr(pos,request->urlpath.size())));
             }
         }
         // if the url-based key is empty, e.g. because the user is
         // asking to balance on the path but the request doesn't supply any,
         // then fall back to canonical URL
 
-        if (key.size()==0)
-            key=urlCanonical(request);
+        if (key.isEmpty())
+            key=SBuf(urlCanonical(request));
 
-        for (const char *c = key.rawBuf(), *e=key.rawBuf()+key.size(); c < e; ++c)
+        for (const char *c = key.rawContent(), *e=key.rawContent()+key.length(); c < e; ++c)
             user_hash += ROTATE_LEFT(user_hash, 19) + *c;
         combined_hash = (user_hash ^ tp->carp.hash);
         combined_hash += combined_hash * 0x62531965;
@@ -272,3 +243,4 @@ carpCachemgr(StoreEntry * sentry)
                           sumfetches ? (double) p->stats.fetches / sumfetches : -1.0);
     }
 }
+

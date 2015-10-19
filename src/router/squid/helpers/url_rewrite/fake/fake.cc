@@ -1,26 +1,51 @@
 /*
- * AUTHOR: Amos Jeffries <squid3@treenet.co.nz>
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * Example url re-writer program for Squid.
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
+ * Copyright (c) 2009-2014, Treehouse Networks Ltd. New Zealand
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Example URL re-writer program for Squid.
  *
  * This code gets the url and returns it. No re-writing is done.
  * It is intended for testing use and as a base for further implementation.
- *
- *
- * This code is copyright (C) 2009 by Treehouse Networks Ltd
- * of New Zealand. It is published and Licensed as an extension of
- * squid under the same conditions as the main squid application.
  */
 
 #include "squid.h"
 #include "helpers/defines.h"
 
-#if HAVE_CSTRING
 #include <cstring>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
 
 /**
  * options:
@@ -55,7 +80,7 @@ process_options(int argc, char *argv[])
             exit(0);
         case '?':
             opt = optopt;
-            /* fall thru to default */
+        /* fall thru to default */
         default:
             fprintf(stderr, "unknown option: -%c. Exiting\n", opt);
             usage();
@@ -79,22 +104,30 @@ main(int argc, char *argv[])
 
     process_options(argc, argv);
 
-    debug("%s build " __DATE__ ", " __TIME__ " starting up...\n", my_program_name);
+    debug("%s " VERSION " " SQUID_BUILD_INFO " starting up...\n", my_program_name);
 
     while (fgets(buf, HELPER_INPUT_BUFFER, stdin) != NULL) {
         char *p;
 
         if ((p = strchr(buf, '\n')) != NULL) {
-            *p = '\0';		/* strip \n */
+            *p = '\0';      /* strip \n */
             buflen = p - buf;   /* length is known already */
         } else
             buflen = strlen(buf);   /* keep this so we only scan the buffer for \0 once per loop */
 
         debug("Got %d bytes '%s' from Squid\n", buflen, buf);
 
-        /* send 'no-change' result back to Squid */
-        fprintf(stdout,"\n");
+        p = NULL;
+        int64_t channelId = strtoll(buf, &p, 10);
+        if (*p != ' ') {
+            /* send 'no-change' result back to Squid in non-concurrent format */
+            fprintf(stdout,"ERR\n");
+        } else {
+            /* send 'no-change' result back to Squid in concurrent format */
+            fprintf(stdout, "%" PRId64 " ERR\n", channelId);
+        }
     }
-    debug("%s build " __DATE__ ", " __TIME__ " shutting down...\n", my_program_name);
-    exit(0);
+    debug("%s " VERSION " " SQUID_BUILD_INFO " shutting down...\n", my_program_name);
+    return 0;
 }
+

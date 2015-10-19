@@ -1,41 +1,18 @@
-
 /*
- * DEBUG: section 87    Client-side Stream routines.
- * AUTHOR: Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with thisObject program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 87    Client-side Stream routines. */
+
 #include "squid.h"
+#include "client_side_request.h"
 #include "clientStream.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
-#include "client_side_request.h"
 
 /**
  \defgroup ClientStreamInternal Client Streams Internals
@@ -190,9 +167,9 @@ clientStreamCallback(clientStreamNode * thisObject, ClientHttpRequest * http,
  \ingroup ClientStreamInternal
  * Call the previous node in the chain to read some data
  *
- \param thisObject	??
- \param http		??
- \param readBuffer	??
+ \param thisObject  ??
+ \param http        ??
+ \param readBuffer  ??
  */
 void
 clientStreamRead(clientStreamNode * thisObject, ClientHttpRequest * http,
@@ -213,8 +190,8 @@ clientStreamRead(clientStreamNode * thisObject, ClientHttpRequest * http,
  \ingroup ClientStreamInternal
  * Detach from the stream - only allowed for terminal members
  *
- \param thisObject	??
- \param http		??
+ \param thisObject  ??
+ \param http        ??
  */
 void
 clientStreamDetach(clientStreamNode * thisObject, ClientHttpRequest * http)
@@ -256,8 +233,8 @@ clientStreamDetach(clientStreamNode * thisObject, ClientHttpRequest * http)
  \ingroup ClientStreamInternal
  * Abort the stream - detach every node in the pipeline.
  *
- \param thisObject	??
- \param http		??
+ \param thisObject  ??
+ \param http        ??
  */
 void
 clientStreamAbort(clientStreamNode * thisObject, ClientHttpRequest * http)
@@ -278,8 +255,8 @@ clientStreamAbort(clientStreamNode * thisObject, ClientHttpRequest * http)
  \ingroup ClientStreamInternal
  * Call the upstream node to find it's status
  *
- \param thisObject	??
- \param http		??
+ \param thisObject  ??
+ \param http        ??
  */
 clientStream_status_t
 clientStreamStatus(clientStreamNode * thisObject, ClientHttpRequest * http)
@@ -330,3 +307,4 @@ clientStreamNode::next() const
     else
         return NULL;
 }
+

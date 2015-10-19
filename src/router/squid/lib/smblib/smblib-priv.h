@@ -1,10 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 /* UNIX SMBlib NetBIOS implementation
 
    Version 1.0
    SMBlib private Defines
 
    Copyright (C) Richard Sharpe 1996
-
 */
 
 /*
@@ -26,8 +33,8 @@
 #ifndef _SMBLIB_PRIV_H_
 #define _SMBLIB_PRIV_H_
 
-#include "smblib/std-defines.h"
 #include "smblib/smblib-common.h"
+#include "smblib/std-defines.h"
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -545,3 +552,4 @@ extern int SMBlib_SMB_Error;          /* last Error             */
 void SMB_Get_My_Name(char *name, int len);
 
 #endif /* _SMBLIB_PRIV_H_ */
+

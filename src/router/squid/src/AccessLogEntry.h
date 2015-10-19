@@ -1,48 +1,30 @@
 /*
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
 #ifndef SQUID_HTTPACCESSLOGENTRY_H
 #define SQUID_HTTPACCESSLOGENTRY_H
 
 #include "anyp/PortCfg.h"
+#include "base/RefCount.h"
 #include "comm/Connection.h"
-#include "HttpVersion.h"
-#include "HttpRequestMethod.h"
 #include "HierarchyLogEntry.h"
+#include "http/ProtocolVersion.h"
+#include "HttpHeader.h"
+#include "HttpRequestMethod.h"
 #include "icp_opcode.h"
 #include "ip/Address.h"
-#include "HttpRequestMethod.h"
+#include "LogTags.h"
+#include "MessageSizes.h"
+#include "Notes.h"
 #if ICAP_CLIENT
 #include "adaptation/icap/Elements.h"
 #endif
-#include "RefCount.h"
-#if USE_SSL
+#if USE_OPENSSL
 #include "ssl/gadgets.h"
 #endif
 
@@ -58,7 +40,7 @@ public:
     typedef RefCount<AccessLogEntry> Pointer;
 
     AccessLogEntry() : url(NULL), tcpClient(), reply(NULL), request(NULL),
-            adapted_request(NULL) {}
+        adapted_request(NULL) {}
     ~AccessLogEntry();
 
     /// Fetch the client IP log string into the given buffer.
@@ -81,13 +63,16 @@ public:
     {
 
     public:
-        HttpDetails() : method(METHOD_NONE), code(0), content_type(NULL),
-                timedout(false), aborted(false) {}
+        HttpDetails() : method(Http::METHOD_NONE), code(0), content_type(NULL),
+            timedout(false),
+            aborted(false),
+            clientRequestSz(),
+            clientReplySz() {}
 
         HttpRequestMethod method;
         int code;
         const char *content_type;
-        HttpVersion version;
+        Http::ProtocolVersion version;
         bool timedout; ///< terminated due to a lifetime or I/O timeout
         bool aborted; ///< other abnormal termination (e.g., I/O error)
 
@@ -95,6 +80,17 @@ public:
         const char *statusSfx() const {
             return timedout ? "_TIMEDOUT" : (aborted ? "_ABORTED" : "");
         }
+
+        /// counters for the original request received from client
+        // TODO calculate header and payload better (by parser)
+        // XXX payload encoding overheads not calculated at all yet.
+        MessageSizes clientRequestSz;
+
+        /// counters for the response sent to client
+        // TODO calculate header and payload better (by parser)
+        // XXX payload encoding overheads not calculated at all yet.
+        MessageSizes clientReplySz;
+
     } http;
 
     /** \brief This subclass holds log info for ICP protocol
@@ -120,7 +116,7 @@ public:
         const char *opcode;
     } htcp;
 
-#if USE_SSL
+#if USE_OPENSSL
     /// logging information specific to the SSL protocol
     class SslDetails
     {
@@ -142,40 +138,35 @@ public:
 
     public:
         CacheDetails() : caddr(),
-                requestSize(0),
-                replySize(0),
-                requestHeadersSize(0),
-                replyHeadersSize(0),
-                highOffset(0),
-                objectSize(0),
-                code (LOG_TAG_NONE),
-                msec(0),
-                rfc931 (NULL),
-                extuser(NULL),
-#if USE_SSL
-                ssluser(NULL),
+            highOffset(0),
+            objectSize(0),
+            code (LOG_TAG_NONE),
+            msec(0),
+            rfc931 (NULL),
+            extuser(NULL),
+#if USE_OPENSSL
+            ssluser(NULL),
 #endif
-                port(NULL) {
-            ;
+            port(NULL)
+        {
+            caddr.setNoAddr();
+            memset(&start_time, 0, sizeof(start_time));
         }
 
         Ip::Address caddr;
-        int64_t requestSize;
-        int64_t replySize;
-        int requestHeadersSize; ///< received, including request line
-        int replyHeadersSize; ///< sent, including status line
         int64_t highOffset;
         int64_t objectSize;
-        log_type code;
+        LogTags code;
+        struct timeval start_time; ///< The time the master transaction started
         int msec;
         const char *rfc931;
         const char *extuser;
-#if USE_SSL
+#if USE_OPENSSL
 
         const char *ssluser;
         Ssl::X509_Pointer sslClientCert; ///< cert received from the client
 #endif
-        AnyP::PortCfg *port;
+        AnyP::PortCfgPointer port;
 
     } cache;
 
@@ -187,8 +178,8 @@ public:
 
     public:
         Headers() : request(NULL),
-                adapted_request(NULL),
-                reply(NULL) {}
+            adapted_request(NULL),
+            reply(NULL) {}
 
         char *request; //< virgin HTTP request headers
 
@@ -213,8 +204,7 @@ public:
 #endif
 
     // Why is this a sub-class and not a set of real "private:" fields?
-    // It looks like its duplicating HTTPRequestMethod anyway!
-    // TODO: shuffle this to the relevant protocol section OR replace with request->method
+    // TODO: shuffle this to the relevant ICP/HTCP protocol section
     class Private
     {
 
@@ -228,6 +218,10 @@ public:
     HttpRequest *request; //< virgin HTTP request
     HttpRequest *adapted_request; //< HTTP request after adaptation and redirection
 
+    /// key:value pairs set by squid.conf note directive and
+    /// key=value pairs returned from URL rewrite/redirect helper
+    NotePairs::Pointer notes;
+
 #if ICAP_CLIENT
     /** \brief This subclass holds log info for ICAP part of request
      *  \todo Inner class declarations should be moved outside
@@ -235,7 +229,10 @@ public:
     class IcapLogEntry
     {
     public:
-        IcapLogEntry():bodyBytesRead(-1),request(NULL),reply(NULL),outcome(Adaptation::Icap::xoUnknown),trTime(0),ioTime(0),resStatus(HTTP_STATUS_NONE) {}
+        IcapLogEntry() : reqMethod(Adaptation::methodNone), bytesSent(0), bytesRead(0),
+            bodyBytesRead(-1), request(NULL), reply(NULL),
+            outcome(Adaptation::Icap::xoUnknown), trTime(0),
+            ioTime(0), resStatus(Http::scNone), processingTime(0) {}
 
         Ip::Address hostAddr; ///< ICAP server IP address
         String serviceName;        ///< ICAP service name
@@ -263,7 +260,7 @@ public:
          * ICAP response is received.
          */
         int ioTime;
-        http_status resStatus;   ///< ICAP response status code
+        Http::StatusCode resStatus;   ///< ICAP response status code
         int processingTime;      ///< total ICAP processing time in milliseconds
     }
     icap;
@@ -282,3 +279,4 @@ void accessLogInit(void);
 const char *accessLogTime(time_t);
 
 #endif /* SQUID_HTTPACCESSLOGENTRY_H */
+

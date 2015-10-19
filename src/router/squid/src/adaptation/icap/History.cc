@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "adaptation/icap/History.h"
 #include "Debug.h"
@@ -5,9 +13,12 @@
 #include "SquidTime.h"
 
 Adaptation::Icap::History::History():
-        logType(LOG_TAG_NONE), req_sz(0),
-        pastTime(0), concurrencyLevel(0)
+    logType(LOG_TAG_NONE),
+    req_sz(0),
+    pastTime(0),
+    concurrencyLevel(0)
 {
+    memset(&currentStart, 0, sizeof(currentStart));
 }
 
 void Adaptation::Icap::History::start(const char *context)
@@ -46,3 +57,4 @@ int Adaptation::Icap::History::currentTime() const
     return concurrencyLevel > 0 ?
            max(0, tvSubMsec(currentStart, current_time)) : 0;
 }
+

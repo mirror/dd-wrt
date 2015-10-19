@@ -1,40 +1,58 @@
 /*
- * Compatibility-layer for CMSG_
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
 #ifndef SQUID_COMPAT_CMSG_H
 #define SQUID_COMPAT_CMSG_H
+
+/*
+ * Compatibility-layer for CMSG_
+ */
 
 // cmsg.h is found through sys/socket.h
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 
-// WinSock2.h defines these for Windows
+// mswsock.h defines WSA_CMSG definitions
+#if HAVE_MSWSOCK_H
+#include <mswsock.h>
+#endif
 #if HAVE_WINSOCK2_H
 #include <winsock2.h>
-#define CMSG_H_ // prevent re-definition
 #endif
 
-#ifndef CMSG_H_
-#define CMSG_H_
+// sockaddr_un might be in sys/un.h if not pulled in already
+#if HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
 
-/* mostly windows-specific */
-#ifndef CMSG_SPACE
+#if !HAVE_CMSGHDR
 struct cmsghdr {
-    unsigned int    cmsg_len;
-    int  cmsg_level;
-    int     cmsg_type;
+    unsigned int cmsg_len;
+    int cmsg_level;
+    int cmsg_type;
     unsigned char cmsg_data[16]; /* dummy */
     /* followed by UCHAR cmsg_data[]; */
-} ;
+};
+#endif
 
 /* lifted off https://metacpan.org/source/SAMPO/Socket-PassAccessRights-0.03/passfd.c */
-#ifndef CMSG_DATA
-# define CMSG_DATA(cmsg) ((cmsg)->cmsg_data)
+// check for WSA_CMSG first because Windows defines CMSG_DATA for other uses
+#if defined(WSA_CMSG_DATA)
+# define SQUID_CMSG_DATA(cmsg) WSA_CMSG_DATA(cmsg)
+#elif defined(CMSG_DATA)
+# define SQUID_CMSG_DATA(cmsg) CMSG_DATA(cmsg)
+#else
+# define SQUID_CMSG_DATA(cmsg) ((cmsg)->cmsg_data)
 #endif
 
 #ifndef CMSG_NXTHDR
-# define CMSG_NXTHDR(mhdr, cmsg) __cmsg_nxthdr (mhdr, cmsg)
+# define CMSG_NXTHDR(mhdr, X) __cmsg_nxthdr (mhdr, X)
 #endif
 
 #ifndef CMSG_FIRSTHDR
@@ -48,15 +66,25 @@ struct cmsghdr {
              & ~(sizeof (size_t) - 1))
 #endif
 
+#ifndef CMSG_SPACE
 # define CMSG_SPACE(len) (CMSG_ALIGN (len) \
              + CMSG_ALIGN (sizeof (struct cmsghdr)))
 #undef HAVE_CONSTANT_CMSG_SPACE
 #define HAVE_CONSTANT_CMSG_SPACE 1
+#endif
 
 #ifndef CMSG_LEN
 # define CMSG_LEN(len)   (CMSG_ALIGN (sizeof (struct cmsghdr)) + (len))
 #endif
 
+#if !HAVE_IOVEC
+struct iovec {
+    void *iov_base;
+    size_t iov_len;
+};
+#endif
+
+#if !HAVE_MSGHDR
 struct msghdr {
     void *msg_name;             /* Address to send to/receive from.  */
     socklen_t msg_namelen;      /* Length of address data.  */
@@ -72,19 +100,19 @@ struct msghdr {
 
     int msg_flags;              /* Flags on received message.  */
 };
+#endif
 
-struct iovec {
-    void *iov_base;
-    size_t iov_len;
-};
+#if !HAVE_SOCKADDR_UN
 struct sockaddr_un {
     char sun_family;
     char sun_path[256];   /* pathname */
 };
+#endif
+
+#ifndef SUN_LEN
 # define SUN_LEN(ptr) ((size_t) (((struct sockaddr_un *) 0)->sun_path)        \
         + strlen ((ptr)->sun_path))
-
-#endif /* CMSG_SPACE */
+#endif
 
 #ifndef SCM_RIGHTS
 #define SCM_RIGHTS 1
@@ -100,8 +128,6 @@ struct sockaddr_un {
 #define AF_LOCAL 1
 #endif
 
-#endif /* CMSG_H_ */
-
 // CMSG_SPACE is not constant on some systems (in particular Max OS X),
 // provide a replacement that can be used at build time in that case
 // NP: this must go below our replacement definitions.
@@ -114,3 +140,4 @@ struct sockaddr_un {
 #endif
 
 #endif /* SQUID_COMPAT_CMSG_H */
+

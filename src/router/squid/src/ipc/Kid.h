@@ -1,4 +1,9 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_IPC_KID_H
@@ -90,9 +95,11 @@ typedef enum {
     pkCoordinator = 1, ///< manages all other kids
     pkWorker = 2, ///< general-purpose worker bee
     pkDisker = 4, ///< cache_dir manager
+    pkHelper = 8  ///< general-purpose helper child
 } ProcessKind;
 
 /// ProcessKind for the current process
 extern int TheProcessKind;
 
 #endif /* SQUID_IPC_KID_H */
+

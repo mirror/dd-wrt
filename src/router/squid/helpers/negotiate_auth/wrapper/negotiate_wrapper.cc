@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * -----------------------------------------------------------------------------
  *
  * Author: Markus Moeller (markus_moeller at compuserve.com)
@@ -21,36 +29,19 @@
  *
  * -----------------------------------------------------------------------------
  */
-/*
- * Hosted at http://sourceforge.net/projects/squidkerbauth
- */
 
 #include "squid.h"
 #include "base64.h"
 
-#if HAVE_STRING_H
-#include <string.h>
-#endif
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
+#include <cerrno>
+#include <cstring>
+#include <cstdlib>
+#include <ctime>
 #if HAVE_NETDB_H
 #include <netdb.h>
 #endif
 #if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#if HAVE_TIME_H
-#include <time.h>
-#endif
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#if HAVE_ERRNO_H
-#include <errno.h>
 #endif
 
 #if !defined(HAVE_DECL_XMALLOC) || !HAVE_DECL_XMALLOC
@@ -114,7 +105,6 @@ main(int argc, char *const argv[])
     int nend = 0, kend = 0;
     char *token;
     char **nargs, **kargs;
-    int i,j;
     int fpid;
     FILE *FDKIN,*FDKOUT;
     FILE *FDNIN,*FDNOUT;
@@ -131,13 +121,13 @@ main(int argc, char *const argv[])
         return 0;
     }
 
-    j = 1;
+    int j = 1;
     if (!strncasecmp(argv[1],"-d",2)) {
         debug = 1;
         j = 2;
     }
 
-    for (i=j; i<argc; ++i) {
+    for (int i=j; i<argc; ++i) {
         if (!strncasecmp(argv[i],"--ntlm",6))
             nstart = i;
         if (!strncasecmp(argv[i],"--kerberos",10))
@@ -167,7 +157,7 @@ main(int argc, char *const argv[])
     nargs[nend-nstart]=NULL;
     if (debug) {
         fprintf(stderr, "%s| %s: NTLM command: ", LogTime(), PROGRAM);
-        for (i=0; i<nend-nstart; ++i)
+        for (int i=0; i<nend-nstart; ++i)
             fprintf(stderr, "%s ", nargs[i]);
         fprintf(stderr, "\n");
     }
@@ -179,7 +169,7 @@ main(int argc, char *const argv[])
     kargs[kend-kstart]=NULL;
     if (debug) {
         fprintf(stderr, "%s| %s: Kerberos command: ", LogTime(), PROGRAM);
-        for (i=0; i<kend-kstart; ++i)
+        for (int i=0; i<kend-kstart; ++i)
             fprintf(stderr, "%s ", kargs[i]);
         fprintf(stderr, "\n");
     }
@@ -411,3 +401,4 @@ main(int argc, char *const argv[])
 
     return 1;
 }
+

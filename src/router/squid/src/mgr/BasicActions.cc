@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 16    Cache Manager API
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager API */
 
 #include "squid.h"
 #include "base/TextException.h"
@@ -11,8 +16,8 @@
 #include "mgr/BasicActions.h"
 #include "mgr/Registration.h"
 #include "protos.h"
-#include "Store.h"
 #include "SquidConfig.h"
+#include "Store.h"
 
 Mgr::IndexAction::Pointer
 Mgr::IndexAction::Create(const Command::Pointer &cmd)
@@ -20,7 +25,7 @@ Mgr::IndexAction::Create(const Command::Pointer &cmd)
     return new IndexAction(cmd);
 }
 
-Mgr::IndexAction::IndexAction(const Command::Pointer &cmd): Action(cmd)
+Mgr::IndexAction::IndexAction(const Command::Pointer &aCmd): Action(aCmd)
 {
     debugs(16, 5, HERE);
 }
@@ -37,7 +42,7 @@ Mgr::MenuAction::Create(const Command::Pointer &cmd)
     return new MenuAction(cmd);
 }
 
-Mgr::MenuAction::MenuAction(const Command::Pointer &cmd): Action(cmd)
+Mgr::MenuAction::MenuAction(const Command::Pointer &aCmd): Action(aCmd)
 {
     debugs(16, 5, HERE);
 }
@@ -64,7 +69,7 @@ Mgr::ShutdownAction::Create(const Command::Pointer &cmd)
     return new ShutdownAction(cmd);
 }
 
-Mgr::ShutdownAction::ShutdownAction(const Command::Pointer &cmd): Action(cmd)
+Mgr::ShutdownAction::ShutdownAction(const Command::Pointer &aCmd): Action(aCmd)
 {
     debugs(16, 5, HERE);
 }
@@ -82,8 +87,8 @@ Mgr::ReconfigureAction::Create(const Command::Pointer &cmd)
     return new ReconfigureAction(cmd);
 }
 
-Mgr::ReconfigureAction::ReconfigureAction(const Command::Pointer &cmd):
-        Action(cmd)
+Mgr::ReconfigureAction::ReconfigureAction(const Command::Pointer &aCmd):
+    Action(aCmd)
 {
     debugs(16, 5, HERE);
 }
@@ -102,7 +107,7 @@ Mgr::RotateAction::Create(const Command::Pointer &cmd)
     return new RotateAction(cmd);
 }
 
-Mgr::RotateAction::RotateAction(const Command::Pointer &cmd): Action(cmd)
+Mgr::RotateAction::RotateAction(const Command::Pointer &aCmd): Action(aCmd)
 {
     debugs(16, 5, HERE);
 }
@@ -125,8 +130,8 @@ Mgr::OfflineToggleAction::Create(const Command::Pointer &cmd)
     return new OfflineToggleAction(cmd);
 }
 
-Mgr::OfflineToggleAction::OfflineToggleAction(const Command::Pointer &cmd):
-        Action(cmd)
+Mgr::OfflineToggleAction::OfflineToggleAction(const Command::Pointer &aCmd):
+    Action(aCmd)
 {
     debugs(16, 5, HERE);
 }
@@ -151,3 +156,4 @@ Mgr::RegisterBasics()
     RegisterAction("reconfigure", "Reconfigure Squid", &Mgr::ReconfigureAction::Create, 1, 1);
     RegisterAction("rotate", "Rotate Squid Logs", &Mgr::RotateAction::Create, 1, 1);
 }
+

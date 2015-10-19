@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "format/Config.h"
 #include "format/Token.h"
@@ -5,32 +13,6 @@
 #include "globals.h"
 #include "SquidConfig.h"
 #include "Store.h"
-
-const char *Format::log_tags[] = {
-    "NONE",
-    "TCP_HIT",
-    "TCP_MISS",
-    "TCP_REFRESH_UNMODIFIED",
-    "TCP_REFRESH_FAIL", // same tag logged for LOG_TCP_REFRESH_FAIL_OLD and
-    "TCP_REFRESH_FAIL", // LOG_TCP_REFRESH_FAIL_ERR for backward-compatibility
-    "TCP_REFRESH_MODIFIED",
-    "TCP_CLIENT_REFRESH_MISS",
-    "TCP_IMS_HIT",
-    "TCP_SWAPFAIL_MISS",
-    "TCP_NEGATIVE_HIT",
-    "TCP_MEM_HIT",
-    "TCP_DENIED",
-    "TCP_DENIED_REPLY",
-    "TCP_OFFLINE_HIT",
-    "TCP_REDIRECT",
-    "UDP_HIT",
-    "UDP_MISS",
-    "UDP_DENIED",
-    "UDP_INVALID",
-    "UDP_MISS_NOFETCH",
-    "ICP_QUERY",
-    "LOG_TYPE_MAX"
-};
 
 // Due to token overlaps between 1 and 2 letter tokens (Bug 3310)
 // We split the token table into sets determined by the token length
@@ -57,7 +39,7 @@ static TokenTableEntry TokenTable1C[] = {
 
     {"%", LFT_PERCENT},
 
-    {NULL, LFT_NONE}		/* this must be last */
+    {NULL, LFT_NONE}        /* this must be last */
 };
 
 /// 2-char tokens
@@ -72,12 +54,12 @@ static TokenTableEntry TokenTable2C[] = {
     {"<la", LFT_SERVER_LOCAL_IP},
     {"oa", LFT_SERVER_LOCAL_IP_OLD_27},
     {"<lp", LFT_SERVER_LOCAL_PORT},
-    /* {"ot", LFT_PEER_OUTGOING_TOS}, */
 
     {"ts", LFT_TIME_SECONDS_SINCE_EPOCH},
     {"tu", LFT_TIME_SUBSECOND},
     {"tl", LFT_TIME_LOCALTIME},
     {"tg", LFT_TIME_GMT},
+    {"tS", LFT_TIME_START},
     {"tr", LFT_TIME_TO_HANDLE_REQUEST},
 
     {"<pt", LFT_PEER_RESPONSE_TIME},
@@ -107,50 +89,63 @@ static TokenTableEntry TokenTable2C[] = {
 
     {">rm", LFT_CLIENT_REQ_METHOD},
     {">ru", LFT_CLIENT_REQ_URI},
+    {">rs", LFT_CLIENT_REQ_URLSCHEME},
+    {">rd", LFT_CLIENT_REQ_URLDOMAIN},
+    {">rP", LFT_CLIENT_REQ_URLPORT},
     {">rp", LFT_CLIENT_REQ_URLPATH},
     /*{">rq", LFT_CLIENT_REQ_QUERY},*/
     {">rv", LFT_CLIENT_REQ_VERSION},
 
     {"rm", LFT_REQUEST_METHOD},
-    {"ru", LFT_REQUEST_URI},	/* doesn't include the query-string */
+    {"ru", LFT_REQUEST_URI},    /* doesn't include the query-string */
     {"rp", LFT_REQUEST_URLPATH_OLD_31},
     /* { "rq", LFT_REQUEST_QUERY }, * /     / * the query-string, INCLUDING the leading ? */
     {"rv", LFT_REQUEST_VERSION},
+    {"rG", LFT_REQUEST_URLGROUP_OLD_2X},
 
     {"<rm", LFT_SERVER_REQ_METHOD},
     {"<ru", LFT_SERVER_REQ_URI},
+    {"<rs", LFT_SERVER_REQ_URLSCHEME},
+    {"<rd", LFT_SERVER_REQ_URLDOMAIN},
+    {"<rP", LFT_SERVER_REQ_URLPORT},
     {"<rp", LFT_SERVER_REQ_URLPATH},
     /*{"<rq", LFT_SERVER_REQ_QUERY},*/
     {"<rv", LFT_SERVER_REQ_VERSION},
 
-    {">st", LFT_REQUEST_SIZE_TOTAL },
-    /*{ ">sl", LFT_REQUEST_SIZE_LINE }, * / / * the request line "GET ... " */
-    {">sh", LFT_REQUEST_SIZE_HEADERS },
+    {">st", LFT_CLIENT_REQUEST_SIZE_TOTAL },
+    {">sh", LFT_CLIENT_REQUEST_SIZE_HEADERS },
     /*{ ">sb", LFT_REQUEST_SIZE_BODY }, */
     /*{ ">sB", LFT_REQUEST_SIZE_BODY_NO_TE }, */
 
-    {"<st", LFT_REPLY_SIZE_TOTAL},
+    {"<st", LFT_ADAPTED_REPLY_SIZE_TOTAL}, // XXX: adapted should be code: <sta
     {"<sH", LFT_REPLY_HIGHOFFSET},
     {"<sS", LFT_REPLY_OBJECTSIZE},
-    /*{ "<sl", LFT_REPLY_SIZE_LINE }, * /   / * the reply line (protocol, code, text) */
-    {"<sh", LFT_REPLY_SIZE_HEADERS },
+    {"<sh", LFT_ADAPTED_REPLY_SIZE_HEADERS }, // XXX: adapted should be code: <sha
     /*{ "<sb", LFT_REPLY_SIZE_BODY }, */
     /*{ "<sB", LFT_REPLY_SIZE_BODY_NO_TE }, */
 
+    {"st", LFT_CLIENT_IO_SIZE_TOTAL}, // XXX: total from client should be stC ??
+    /*{"stP", LFT_SERVER_IO_SIZE_TOTAL},*/
+
     {"et", LFT_TAG},
-    {"st", LFT_IO_SIZE_TOTAL},
     {"ea", LFT_EXT_LOG},
     {"sn", LFT_SEQUENCE_NUMBER},
 
-    {NULL, LFT_NONE}		/* this must be last */
+    {NULL, LFT_NONE}        /* this must be last */
 };
 
 /// Miscellaneous >2 byte tokens
 static TokenTableEntry TokenTableMisc[] = {
     {">eui", LFT_CLIENT_EUI},
+    {">qos", LFT_CLIENT_LOCAL_TOS},
+    {"<qos", LFT_SERVER_LOCAL_TOS},
+    {">nfmark", LFT_CLIENT_LOCAL_NFMARK},
+    {"<nfmark", LFT_SERVER_LOCAL_NFMARK},
     {"err_code", LFT_SQUID_ERROR },
     {"err_detail", LFT_SQUID_ERROR_DETAIL },
-    {NULL, LFT_NONE}		/* this must be last */
+    {"note", LFT_NOTE },
+    {"credentials", LFT_CREDENTIALS},
+    {NULL, LFT_NONE}        /* this must be last */
 };
 
 #if USE_ADAPTATION
@@ -188,12 +183,15 @@ static TokenTableEntry TokenTableIcap[] = {
 };
 #endif
 
-#if USE_SSL
+#if USE_OPENSSL
 // SSL (ssl::) tokens
 static TokenTableEntry TokenTableSsl[] = {
     {"bump_mode", LFT_SSL_BUMP_MODE},
     {">cert_subject", LFT_SSL_USER_CERT_SUBJECT},
     {">cert_issuer", LFT_SSL_USER_CERT_ISSUER},
+    {">sni", LFT_SSL_CLIENT_SNI},
+    /*{"<cert_subject", LFT_SSL_SERVER_CERT_SUBJECT}, */
+    /*{"<cert_issuer", LFT_SSL_SERVER_CERT_ISSUER}, */
     {NULL, LFT_NONE}
 };
 #endif
@@ -212,7 +210,7 @@ Format::Token::Init()
 #if ICAP_CLIENT
     TheConfig.registerTokens(String("icap"),::Format::TokenTableIcap);
 #endif
-#if USE_SSL
+#if USE_OPENSSL
     TheConfig.registerTokens(String("ssl"),::Format::TokenTableSsl);
 #endif
 }
@@ -284,129 +282,124 @@ Format::Token::parse(const char *def, Quoting *quoting)
             --l;
         }
 
-        goto done;
-    }
+    } else if (*cur) {
 
-    if (!*cur)
-        goto done;
-
-    ++cur;
-
-    // select quoting style for his particular token
-    switch (*cur) {
-
-    case '"':
-        quote = LOG_QUOTE_QUOTES;
         ++cur;
-        break;
 
-    case '\'':
-        quote = LOG_QUOTE_RAW;
-        ++cur;
-        break;
+        // select quoting style for his particular token
+        switch (*cur) {
 
-    case '[':
-        quote = LOG_QUOTE_MIMEBLOB;
-        ++cur;
-        break;
-
-    case '#':
-        quote = LOG_QUOTE_URL;
-        ++cur;
-        break;
-
-    default:
-        quote = *quoting;
-        break;
-    }
-
-    if (*cur == '-') {
-        left = 1;
-        ++cur;
-    }
-
-    if (*cur == '0') {
-        zero = 1;
-        ++cur;
-    }
-
-    char *endp;
-    if (xisdigit(*cur)) {
-        widthMin = strtol(cur, &endp, 10);
-        cur = endp;
-    }
-
-    if (*cur == '.' && xisdigit(*(++cur))) {
-        widthMax = strtol(cur, &endp, 10);
-        cur = endp;
-    }
-
-    if (*cur == '{') {
-        char *cp;
-        ++cur;
-        l = strcspn(cur, "}");
-        cp = (char *)xmalloc(l + 1);
-        xstrncpy(cp, cur, l + 1);
-        data.string = cp;
-        cur += l;
-
-        if (*cur == '}')
+        case '"':
+            quote = LOG_QUOTE_QUOTES;
             ++cur;
-    }
+            break;
 
-    type = LFT_NONE;
+        case '\'':
+            quote = LOG_QUOTE_RAW;
+            ++cur;
+            break;
 
-    // Scan each registered token namespace
-    debugs(46, 9, HERE << "check for token in " << TheConfig.tokens.size() << " namespaces.");
-    for (std::list<TokenNamespace>::const_iterator itr = TheConfig.tokens.begin(); itr != TheConfig.tokens.end(); ++itr) {
-        debugs(46, 7, HERE << "check for possible " << itr->prefix << ":: token");
-        const size_t len = itr->prefix.size();
-        if (itr->prefix.cmp(cur, len) == 0 && cur[len] == ':' && cur[len+1] == ':') {
-            debugs(46, 5, HERE << "check for " << itr->prefix << ":: token in '" << cur << "'");
-            const char *old = cur;
-            cur = scanForToken(itr->tokenSet, cur+len+2);
-            if (old != cur) // found
-                break;
-            else // reset to start of namespace
-                cur = cur - len - 2;
+        case '[':
+            quote = LOG_QUOTE_MIMEBLOB;
+            ++cur;
+            break;
+
+        case '#':
+            quote = LOG_QUOTE_URL;
+            ++cur;
+            break;
+
+        default:
+            quote = *quoting;
+            break;
         }
-    }
 
-    if (type == LFT_NONE) {
-        // For upward compatibility, assume "http::" prefix as default prefix
-        // for all log access formatting codes, except those starting with a
-        // "%" or a known namespace. (ie "icap::", "adapt::")
-        if (strncmp(cur,"http::", 6) == 0 && *(cur+6) != '%' )
-            cur += 6;
+        if (*cur == '-') {
+            left = true;
+            ++cur;
+        }
 
-        // NP: scan the sets of tokens in decreasing size to guarantee no
-        //     mistakes made with overlapping names. (Bug 3310)
+        if (*cur == '0') {
+            zero = true;
+            ++cur;
+        }
 
-        // Scan for various long tokens
-        debugs(46, 5, HERE << "scan for possible Misc token");
-        cur = scanForToken(TokenTableMisc, cur);
-        // scan for 2-char tokens
+        char *endp;
+        if (xisdigit(*cur)) {
+            widthMin = strtol(cur, &endp, 10);
+            cur = endp;
+        }
+
+        if (*cur == '.' && xisdigit(*(++cur))) {
+            widthMax = strtol(cur, &endp, 10);
+            cur = endp;
+        }
+
+        if (*cur == '{') {
+            char *cp;
+            ++cur;
+            l = strcspn(cur, "}");
+            cp = (char *)xmalloc(l + 1);
+            xstrncpy(cp, cur, l + 1);
+            data.string = cp;
+            cur += l;
+
+            if (*cur == '}')
+                ++cur;
+        }
+
+        type = LFT_NONE;
+
+        // Scan each registered token namespace
+        debugs(46, 9, HERE << "check for token in " << TheConfig.tokens.size() << " namespaces.");
+        for (std::list<TokenNamespace>::const_iterator itr = TheConfig.tokens.begin(); itr != TheConfig.tokens.end(); ++itr) {
+            debugs(46, 7, HERE << "check for possible " << itr->prefix << ":: token");
+            const size_t len = itr->prefix.size();
+            if (itr->prefix.cmp(cur, len) == 0 && cur[len] == ':' && cur[len+1] == ':') {
+                debugs(46, 5, HERE << "check for " << itr->prefix << ":: token in '" << cur << "'");
+                const char *old = cur;
+                cur = scanForToken(itr->tokenSet, cur+len+2);
+                if (old != cur) // found
+                    break;
+                else // reset to start of namespace
+                    cur = cur - len - 2;
+            }
+        }
+
         if (type == LFT_NONE) {
-            debugs(46, 5, HERE << "scan for possible 2C token");
-            cur = scanForToken(TokenTable2C, cur);
+            // For upward compatibility, assume "http::" prefix as default prefix
+            // for all log access formatting codes, except those starting with a
+            // "%" or a known namespace. (ie "icap::", "adapt::")
+            if (strncmp(cur,"http::", 6) == 0 && *(cur+6) != '%' )
+                cur += 6;
+
+            // NP: scan the sets of tokens in decreasing size to guarantee no
+            //     mistakes made with overlapping names. (Bug 3310)
+
+            // Scan for various long tokens
+            debugs(46, 5, HERE << "scan for possible Misc token");
+            cur = scanForToken(TokenTableMisc, cur);
+            // scan for 2-char tokens
+            if (type == LFT_NONE) {
+                debugs(46, 5, HERE << "scan for possible 2C token");
+                cur = scanForToken(TokenTable2C, cur);
+            }
+            // finally scan for 1-char tokens.
+            if (type == LFT_NONE) {
+                debugs(46, 5, HERE << "scan for possible 1C token");
+                cur = scanForToken(TokenTable1C, cur);
+            }
         }
-        // finally scan for 1-char tokens.
+
         if (type == LFT_NONE) {
-            debugs(46, 5, HERE << "scan for possible 1C token");
-            cur = scanForToken(TokenTable1C, cur);
+            fatalf("Can't parse configuration token: '%s'\n", def);
+        }
+
+        if (*cur == ' ') {
+            space = true;
+            ++cur;
         }
     }
-
-    if (type == LFT_NONE) {
-        fatalf("Can't parse configuration token: '%s'\n", def);
-    }
-
-    if (*cur == ' ') {
-        space = 1;
-        ++cur;
-    }
-
-done:
 
     switch (type) {
 
@@ -425,6 +418,8 @@ done:
     case LFT_REQUEST_HEADER:
 
     case LFT_REPLY_HEADER:
+
+    case LFT_NOTE:
 
         if (data.string) {
             char *header = data.string;
@@ -512,18 +507,18 @@ done:
         Config.onoff.log_fqdn = 1;
         break;
 
+    case LFT_TIME_START:
     case LFT_TIME_SUBSECOND:
         divisor = 1000;
 
         if (widthMax > 0) {
-            int i;
             divisor = 1000000;
 
-            for (i = widthMax; i > 1; --i)
+            for (int i = widthMax; i > 0; --i)
                 divisor /= 10;
 
             if (!divisor)
-                divisor = 0;
+                divisor = 1;
         }
         break;
 
@@ -553,11 +548,34 @@ done:
         break;
 #endif
 
+    case LFT_REQUEST_URLGROUP_OLD_2X:
+        debugs(46, DBG_PARSE_NOTE(DBG_IMPORTANT), "WARNING: The \"rG\" formatting code is deprecated. Use \"note{urlgroup}\" instead.");
+        type = LFT_NOTE;
+        data.header.header = xstrdup("urlgroup");
+        break;
+
     default:
         break;
     }
 
     return (cur - def);
+}
+
+Format::Token::Token() : type(LFT_NONE),
+    label(NULL),
+    widthMin(-1),
+    widthMax(-1),
+    quote(LOG_QUOTE_NONE),
+    left(false),
+    space(false),
+    zero(false),
+    divisor(1),
+    next(NULL)
+{
+    data.string = NULL;
+    data.header.header = NULL;
+    data.header.element = NULL;
+    data.header.separator = ',';
 }
 
 Format::Token::~Token()

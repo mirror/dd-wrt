@@ -1,45 +1,23 @@
 /*
- * DEBUG: section 00    Announcement Server
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 00    Announcement Server */
+
 #include "squid.h"
 
-#include <stdio.h>
+#include <csignal>
+#include <cstring>
 #include <fcntl.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <signal.h>
 
 #define RECV_BUF_SIZE 8192
 
@@ -121,7 +99,7 @@ main(int argc, char *argv[])
         ipa = R.sin_addr;
         printf("==============================================================================\n");
         printf("Received from %s [%s]\n",
-               ipa.NtoA(tmp,MAX_HOSTNAMELEN),
+               ipa.toStr(tmp,MAX_HOSTNAMELEN),
                (hp && hp->h_name) ? hp->h_name : "Unknown");
         fputs(buf, stdout);
         fflush(stdout);
@@ -129,3 +107,4 @@ main(int argc, char *argv[])
 
     return 0;
 }
+

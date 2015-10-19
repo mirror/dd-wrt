@@ -1,34 +1,42 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 // 2008-05-14: rename to radius-util.* to avoid name clashes with squid util.*
 /*
  *
- *	RADIUS
- *	Remote Authentication Dial In User Service
+ *  RADIUS
+ *  Remote Authentication Dial In User Service
  *
  *
- *	Livingston Enterprises, Inc.
- *	6920 Koll Center Parkway
- *	Pleasanton, CA   94566
+ *  Livingston Enterprises, Inc.
+ *  6920 Koll Center Parkway
+ *  Pleasanton, CA   94566
  *
- *	Copyright 1992 Livingston Enterprises, Inc.
- *	Copyright 1997 Cistron Internet Services B.V.
+ *  Copyright 1992 Livingston Enterprises, Inc.
+ *  Copyright 1997 Cistron Internet Services B.V.
  *
- *	Permission to use, copy, modify, and distribute this software for any
- *	purpose and without fee is hereby granted, provided that this
- *	copyright and permission notice appear on all copies and supporting
- *	documentation, the name of Livingston Enterprises, Inc. not be used
- *	in advertising or publicity pertaining to distribution of the
- *	program without specific prior permission, and notice be given
- *	in supporting documentation that copying and distribution is by
- *	permission of Livingston Enterprises, Inc.
+ *  Permission to use, copy, modify, and distribute this software for any
+ *  purpose and without fee is hereby granted, provided that this
+ *  copyright and permission notice appear on all copies and supporting
+ *  documentation, the name of Livingston Enterprises, Inc. not be used
+ *  in advertising or publicity pertaining to distribution of the
+ *  program without specific prior permission, and notice be given
+ *  in supporting documentation that copying and distribution is by
+ *  permission of Livingston Enterprises, Inc.
  *
- *	Livingston Enterprises, Inc. makes no representations about
- *	the suitability of this software for any purpose.  It is
- *	provided "as is" without express or implied warranty.
+ *  Livingston Enterprises, Inc. makes no representations about
+ *  the suitability of this software for any purpose.  It is
+ *  provided "as is" without express or implied warranty.
  *
  */
 
 /*
- * util.c	Miscellanous generic functions.
+ * util.c   Miscellanous generic functions.
  *
  */
 
@@ -37,43 +45,32 @@ char util_sccsid[] =
     "		2.1 Copyright 1997 Cistron Internet Services B.V.";
 
 #include "squid.h"
+#include "md5.h"
+#include "radius-util.h"
 
+#include <cctype>
+#include <csignal>
+#include <ctime>
 #if HAVE_SYS_SOCKET_H
-#include	<sys/socket.h>
+#include <sys/socket.h>
 #endif
 #if HAVE_NETINET_IN_H
-#include	<netinet/in.h>
-#endif
-
-#if HAVE_STDIO_H
-#include	<stdio.h>
+#include <netinet/in.h>
 #endif
 #if HAVE_NETDB_H
-#include	<netdb.h>
+#include <netdb.h>
 #endif
 #if HAVE_PWD_H
-#include	<pwd.h>
+#include <pwd.h>
 #endif
-#if HAVE_TIME_H
-#include	<time.h>
-#endif
-#if HAVE_CTYPE_H
-#include	<ctype.h>
-#endif
-#if HAVE_SIGNAL_H
-#include	<signal.h>
-#endif
-
-#include	"md5.h"
-#include	"radius-util.h"
 
 /*
- *	Check for valid IP address in standard dot notation.
+ *  Check for valid IP address in standard dot notation.
  */
 static int good_ipaddr(char *addr)
 {
-    int	dot_count;
-    int	digit_count;
+    int dot_count;
+    int digit_count;
 
     dot_count = 0;
     digit_count = 0;
@@ -99,17 +96,17 @@ static int good_ipaddr(char *addr)
 }
 
 /*
- *	Return an IP address in host long notation from
- *	one supplied in standard dot notation.
+ *  Return an IP address in host long notation from
+ *  one supplied in standard dot notation.
  */
 static uint32_t ipstr2long(char *ip_str)
 {
-    char	buf[6];
-    char	*ptr;
-    int	i;
-    int	count;
-    uint32_t	ipaddr;
-    int	cur_byte;
+    char    buf[6];
+    char    *ptr;
+    int i;
+    int count;
+    uint32_t    ipaddr;
+    int cur_byte;
 
     ipaddr = (uint32_t)0;
     for (i = 0; i < 4; ++i) {
@@ -140,12 +137,12 @@ static uint32_t ipstr2long(char *ip_str)
 }
 
 /*
- *	Return an IP address in host long notation from a host
- *	name or address in dot notation.
+ *  Return an IP address in host long notation from a host
+ *  name or address in dot notation.
  */
 uint32_t get_ipaddr(char *host)
 {
-    struct hostent	*hp;
+    struct hostent  *hp;
 
     if (good_ipaddr(host) == 0) {
         return(ipstr2long(host));
@@ -154,3 +151,4 @@ uint32_t get_ipaddr(char *host)
     }
     return(ntohl(*(uint32_t *)hp->h_addr));
 }
+

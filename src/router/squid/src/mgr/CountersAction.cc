@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 16    Cache Manager API
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager API */
 
 #include "squid.h"
 #include "base/TextException.h"
@@ -90,8 +95,8 @@ Mgr::CountersAction::Create(const CommandPointer &cmd)
     return new CountersAction(cmd);
 }
 
-Mgr::CountersAction::CountersAction(const CommandPointer &cmd):
-        Action(cmd), data()
+Mgr::CountersAction::CountersAction(const CommandPointer &aCmd):
+    Action(aCmd), data()
 {
     debugs(16, 5, HERE);
 }
@@ -131,3 +136,4 @@ Mgr::CountersAction::unpack(const Ipc::TypedMsgHdr& msg)
     msg.checkType(Ipc::mtCacheMgrResponse);
     msg.getPod(data);
 }
+

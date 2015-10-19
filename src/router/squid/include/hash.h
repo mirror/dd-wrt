@@ -1,18 +1,27 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_HASH_H
 #define SQUID_HASH_H
 
 typedef void HASHFREE(void *);
 typedef int HASHCMP(const void *, const void *);
 typedef unsigned int HASHHASH(const void *, unsigned int);
-typedef struct _hash_link hash_link;
-typedef struct _hash_table hash_table;
 
-struct _hash_link {
+class hash_link {
+public:
+    hash_link() : key(NULL), next(NULL) {}
     void *key;
     hash_link *next;
 };
 
-struct _hash_table {
+class hash_table {
+public:
     hash_link **buckets;
     HASHCMP *cmp;
     HASHHASH *hash;
@@ -54,6 +63,7 @@ SQUIDCEXTERN const char *hashKeyStr(hash_link *);
  *  HASH_SIZE 33493             // prime number < 32768
  *  HASH_SIZE 65357             // prime number < 65536
  */
-#define  DEFAULT_HASH_SIZE 7951	/* prime number < 8192 */
+#define  DEFAULT_HASH_SIZE 7951 /* prime number < 8192 */
 
 #endif /* SQUID_HASH_H */
+

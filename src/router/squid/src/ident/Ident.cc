@@ -1,42 +1,22 @@
 /*
- * DEBUG: section 30    Ident (RFC 931)
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 30    Ident (RFC 931) */
+
 #include "squid.h"
 
 #if USE_IDENT
 #include "comm.h"
 #include "comm/Connection.h"
 #include "comm/ConnOpener.h"
-#include "CommCalls.h"
+#include "comm/Read.h"
 #include "comm/Write.h"
+#include "CommCalls.h"
 #include "globals.h"
 #include "ident/Config.h"
 #include "ident/Ident.h"
@@ -56,13 +36,27 @@ typedef struct _IdentClient {
     struct _IdentClient *next;
 } IdentClient;
 
-typedef struct _IdentStateData {
-    hash_link hash;		/* must be first */
+class IdentStateData
+{
+public:
+    /* AsyncJob API emulated */
+    void deleteThis(const char *aReason);
+    void swanSong();
+
+    /// notify all waiting IdentClient callbacks
+    void notify(const char *result);
+
+    hash_link hash;     /* must be first */
     Comm::ConnectionPointer conn;
     MemBuf queryMsg;  ///< the lookup message sent to IDENT server
     IdentClient *clients;
     char buf[IDENT_BUFSIZE];
-} IdentStateData;
+
+private:
+    CBDATA_CLASS2(IdentStateData);
+};
+
+CBDATA_CLASS_INIT(IdentStateData);
 
 // TODO: make these all a series of Async job calls. They are self-contained callbacks now.
 static IOCB ReadReply;
@@ -72,25 +66,39 @@ static CTCB Timeout;
 static CNCB ConnectDone;
 static hash_table *ident_hash = NULL;
 static void ClientAdd(IdentStateData * state, IDCB * callback, void *callback_data);
-static void identCallback(IdentStateData * state, char *result);
 
 } // namespace Ident
 
 Ident::IdentConfig Ident::TheConfig;
 
-/**** PRIVATE FUNCTIONS ****/
+void
+Ident::IdentStateData::deleteThis(const char *aReason)
+{
+    swanSong();
+    delete this;
+}
 
 void
-Ident::identCallback(IdentStateData * state, char *result)
+Ident::IdentStateData::swanSong()
 {
-    IdentClient *client;
+    if (clients != NULL)
+        notify(NULL);
 
-    if (result && *result == '\0')
-        result = NULL;
+    if (Comm::IsConnOpen(conn)) {
+        comm_remove_close_handler(conn->fd, Ident::Close, this);
+        conn->close();
+    }
 
-    while ((client = state->clients)) {
+    hash_remove_link(ident_hash, (hash_link *) this);
+    xfree(hash.key);
+}
+
+void
+Ident::IdentStateData::notify(const char *result)
+{
+    while (IdentClient *client = clients) {
         void *cbdata;
-        state->clients = client->next;
+        clients = client->next;
 
         if (cbdataReferenceValidDone(client->callback_data, &cbdata))
             client->callback(result, cbdata);
@@ -103,33 +111,28 @@ void
 Ident::Close(const CommCloseCbParams &params)
 {
     IdentStateData *state = (IdentStateData *)params.data;
-    identCallback(state, NULL);
-    state->conn->close();
-    hash_remove_link(ident_hash, (hash_link *) state);
-    xfree(state->hash.key);
-    cbdataFree(state);
+    state->deleteThis("connection closed");
 }
 
 void
 Ident::Timeout(const CommTimeoutCbParams &io)
 {
     debugs(30, 3, HERE << io.conn);
-    io.conn->close();
+    IdentStateData *state = (IdentStateData *)io.data;
+    state->deleteThis("timeout");
 }
 
 void
-Ident::ConnectDone(const Comm::ConnectionPointer &conn, comm_err_t status, int xerrno, void *data)
+Ident::ConnectDone(const Comm::ConnectionPointer &conn, Comm::Flag status, int xerrno, void *data)
 {
     IdentStateData *state = (IdentStateData *)data;
 
-    if (status != COMM_OK) {
-        if (status == COMM_TIMEOUT) {
+    if (status != Comm::OK) {
+        if (status == Comm::TIMEOUT)
             debugs(30, 3, "IDENT connection timeout to " << state->conn->remote);
-        }
+        state->deleteThis(status == Comm::TIMEOUT ? "connect timeout" : "connect error");
         return;
     }
-
-    assert(conn != NULL && conn == state->conn);
 
     /*
      * see if any of our clients still care
@@ -141,11 +144,11 @@ Ident::ConnectDone(const Comm::ConnectionPointer &conn, comm_err_t status, int x
     }
 
     if (c == NULL) {
-        /* no clients care */
-        conn->close();
+        state->deleteThis("client(s) aborted");
         return;
     }
 
+    assert(conn != NULL && conn == state->conn);
     comm_add_close_handler(conn->fd, Ident::Close, state);
 
     AsyncCall::Pointer writeCall = commCbCall(5,4, "Ident::WriteFeedback",
@@ -160,19 +163,20 @@ Ident::ConnectDone(const Comm::ConnectionPointer &conn, comm_err_t status, int x
 }
 
 void
-Ident::WriteFeedback(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm_err_t flag, int xerrno, void *data)
+Ident::WriteFeedback(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Flag flag, int xerrno, void *data)
 {
     debugs(30, 5, HERE << conn << ": Wrote IDENT request " << len << " bytes.");
 
     // TODO handle write errors better. retry or abort?
-    if (flag != COMM_OK) {
+    if (flag != Comm::OK) {
         debugs(30, 2, HERE << conn << " err-flags=" << flag << " IDENT write error: " << xstrerr(xerrno));
-        conn->close();
+        IdentStateData *state = (IdentStateData *)data;
+        state->deleteThis("write error");
     }
 }
 
 void
-Ident::ReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm_err_t flag, int xerrno, void *data)
+Ident::ReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Flag flag, int xerrno, void *data)
 {
     IdentStateData *state = (IdentStateData *)data;
     char *ident = NULL;
@@ -181,8 +185,8 @@ Ident::ReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, com
     assert(buf == state->buf);
     assert(conn->fd == state->conn->fd);
 
-    if (flag != COMM_OK || len <= 0) {
-        state->conn->close();
+    if (flag != Comm::OK || len <= 0) {
+        state->deleteThis("read error");
         return;
     }
 
@@ -204,11 +208,13 @@ Ident::ReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, com
     if (strstr(buf, "USERID")) {
         if ((ident = strrchr(buf, ':'))) {
             while (xisspace(*++ident));
-            Ident::identCallback(state, ident);
+            if (ident && *ident == '\0')
+                ident = NULL;
+            state->notify(ident);
         }
     }
 
-    state->conn->close();
+    state->deleteThis("completed");
 }
 
 void
@@ -223,10 +229,6 @@ Ident::ClientAdd(IdentStateData * state, IDCB * callback, void *callback_data)
     *C = c;
 }
 
-CBDATA_TYPE(IdentStateData);
-
-/**** PUBLIC FUNCTIONS ****/
-
 /*
  * start a TCP connection to the peer host on port 113
  */
@@ -238,8 +240,8 @@ Ident::Start(const Comm::ConnectionPointer &conn, IDCB * callback, void *data)
     char key2[IDENT_KEY_SZ];
     char key[IDENT_KEY_SZ];
 
-    conn->local.ToURL(key1, IDENT_KEY_SZ);
-    conn->remote.ToURL(key2, IDENT_KEY_SZ);
+    conn->local.toUrl(key1, IDENT_KEY_SZ);
+    conn->remote.toUrl(key2, IDENT_KEY_SZ);
     snprintf(key, IDENT_KEY_SZ, "%s,%s", key1, key2);
 
     if (!ident_hash) {
@@ -250,19 +252,18 @@ Ident::Start(const Comm::ConnectionPointer &conn, IDCB * callback, void *data)
         return;
     }
 
-    CBDATA_INIT_TYPE(IdentStateData);
-    state = cbdataAlloc(IdentStateData);
+    state = new IdentStateData;
     state->hash.key = xstrdup(key);
 
     // copy the conn details. We dont want the original FD to be re-used by IDENT.
     state->conn = conn->copyDetails();
     // NP: use random port for secure outbound to IDENT_PORT
-    state->conn->local.SetPort(0);
-    state->conn->remote.SetPort(IDENT_PORT);
+    state->conn->local.port(0);
+    state->conn->remote.port(IDENT_PORT);
 
     // build our query from the original connection details
     state->queryMsg.init();
-    state->queryMsg.Printf("%d, %d\r\n", conn->remote.GetPort(), conn->local.GetPort());
+    state->queryMsg.Printf("%d, %d\r\n", conn->remote.port(), conn->local.port());
 
     ClientAdd(state, callback, data);
     hash_join(ident_hash, &state->hash);
@@ -285,3 +286,4 @@ Ident::Init(void)
 }
 
 #endif /* USE_IDENT */
+

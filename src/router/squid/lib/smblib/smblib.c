@@ -1,4 +1,10 @@
-#include "squid.h"
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 /* UNIX SMBlib NetBIOS implementation
 
@@ -6,7 +12,6 @@
    SMBlib Routines
 
    Copyright (C) Richard Sharpe 1996
-
 */
 
 /*
@@ -25,13 +30,15 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include "squid.h"
+
 int SMBlib_errno;
 int SMBlib_SMB_Error;
 #define SMBLIB_ERRNO
 
-#include "smblib/smblib.h"
-#include "smblib/smblib-priv.h"
 #include "rfcnb/rfcnb.h"
+#include "smblib/smblib-priv.h"
+#include "smblib/smblib.h"
 
 #include <signal.h>
 #if HAVE_STRING_H
@@ -92,7 +99,7 @@ SMB_Handle_Type SMB_Create_Con_Handle()
 /* or anything else ...                                                  */
 
 SMB_Handle_Type SMB_Connect_Server(SMB_Handle_Type Con_Handle,
-                                   char *server, const char *NTdomain)
+                                   const char *server, const char *NTdomain)
 
 {
     SMB_Handle_Type con;
@@ -581,3 +588,4 @@ int SMB_Discon(SMB_Handle_Type Con_Handle, BOOL KeepHandle)
     return(0);
 
 }
+

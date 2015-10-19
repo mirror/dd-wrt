@@ -1,65 +1,40 @@
 /*
- * DEBUG: section 47    Store Directory Routines
- * AUTHOR: Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 47    Store Directory Routines */
 
 #define CLEAN_BUF_SZ 16384
 
 #include "squid.h"
 #include "cache_cf.h"
-#include "disk.h"
 #include "ConfigOption.h"
+#include "disk.h"
 #include "DiskIO/DiskIOModule.h"
-#include "FileMap.h"
+#include "DiskIO/DiskIOStrategy.h"
 #include "fde.h"
+#include "FileMap.h"
 #include "globals.h"
 #include "Parsing.h"
 #include "RebuildState.h"
+#include "SquidConfig.h"
 #include "SquidMath.h"
-#include "DiskIO/DiskIOStrategy.h"
+#include "SquidTime.h"
+#include "StatCounters.h"
 #include "store_key_md5.h"
 #include "StoreSearchUFS.h"
 #include "StoreSwapLogData.h"
-#include "SquidConfig.h"
-#include "SquidTime.h"
-#include "StatCounters.h"
 #include "tools.h"
 #include "UFSSwapDir.h"
 
-#if HAVE_MATH_H
-#include <math.h>
-#endif
+#include <cerrno>
+#include <cmath>
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
-#endif
-#if HAVE_ERRNO_H
-#include <errno.h>
 #endif
 
 int Fs::Ufs::UFSSwapDir::NumberOfUFSDirs = 0;
@@ -87,8 +62,8 @@ public:
 };
 
 UFSCleanLog::UFSCleanLog(SwapDir *aSwapDir) :
-        cur(NULL), newLog(NULL), cln(NULL), outbuf(NULL),
-        outbuf_offset(0), fd(-1),walker(NULL), sd(aSwapDir)
+    cur(NULL), newLog(NULL), cln(NULL), outbuf(NULL),
+    outbuf_offset(0), fd(-1),walker(NULL), sd(aSwapDir)
 {}
 
 const StoreEntry *
@@ -230,8 +205,10 @@ Fs::Ufs::UFSSwapDir::changeIO(DiskIOModule *module)
     IO->io = anIO;
     /* Change the IO Options */
 
-    if (currentIOOptions && currentIOOptions->options.size() > 2)
-        delete currentIOOptions->options.pop_back();
+    if (currentIOOptions && currentIOOptions->options.size() > 2) {
+        delete currentIOOptions->options.back();
+        currentIOOptions->options.pop_back();
+    }
 
     /* TODO: factor out these 4 lines */
     ConfigOption *ioOptions = IO->io->getOptionTree();
@@ -327,7 +304,19 @@ Fs::Ufs::UFSSwapDir::create()
     createSwapSubDirs();
 }
 
-Fs::Ufs::UFSSwapDir::UFSSwapDir(char const *aType, const char *anIOType) : SwapDir(aType), IO(NULL), map(new FileMap()), suggest(0), swaplog_fd (-1), currentIOOptions(new ConfigOptionVector()), ioType(xstrdup(anIOType)), cur_size(0), n_disk_objects(0)
+Fs::Ufs::UFSSwapDir::UFSSwapDir(char const *aType, const char *anIOType) :
+    SwapDir(aType),
+    IO(NULL),
+    fsdata(NULL),
+    map(new FileMap()),
+    suggest(0),
+    l1(16),
+    l2(256),
+    swaplog_fd(-1),
+    currentIOOptions(new ConfigOptionVector()),
+    ioType(xstrdup(anIOType)),
+    cur_size(0),
+    n_disk_objects(0)
 {
     /* modulename is only set to disk modules that are built, by configure,
      * so the Find call should never return NULL here.
@@ -341,15 +330,10 @@ Fs::Ufs::UFSSwapDir::~UFSSwapDir()
         file_close(swaplog_fd);
         swaplog_fd = -1;
     }
-
+    xfree(ioType);
     delete map;
-
-    if (IO)
-        delete IO;
-
-    IO = NULL;
-
-    safe_free(ioType);
+    delete IO;
+    delete currentIOOptions;
 }
 
 void
@@ -428,44 +412,96 @@ Fs::Ufs::UFSSwapDir::statfs(StoreEntry & sentry) const
 void
 Fs::Ufs::UFSSwapDir::maintain()
 {
-    /* We can't delete objects while rebuilding swap */
+    /* TODO: possible options for improvement;
+     *
+     * Note that too much aggression here is not good. It means that disk
+     * controller is getting a long queue of removals to act on, along
+     * with its regular I/O queue, and that client traffic is 'paused'
+     * and growing the network I/O queue as well while the scan happens.
+     * Possibly bad knock-on effects as Squid catches up on all that.
+     *
+     * Bug 2448 may have been a sign of what can wrong. At the least it
+     * provides a test case for aggression effects in overflow conditions.
+     *
+     * - base removal limit on space saved, instead of count ?
+     *
+     * - base removal rate on a traffic speed counter ?
+     *   as the purge took up more time out of the second it would grow to
+     *   a graceful full pause
+     *
+     * - pass out a value to cause another event to be scheduled immediately
+     *   instead of waiting a whole second more ?
+     *   knock on; schedule less if all caches are under low-water
+     *
+     * - admin configurable removal rate or count ?
+     *   the current numbers are arbitrary, config helps with experimental
+     *   trials and future-proofing the install base.
+     *   we also have this indirectly by shifting the relative positions
+     *   of low-, high- water and the total capacity limit.
+     */
 
-    /* XXX FIXME each store should start maintaining as it comes online. */
+    // minSize() is swap_low_watermark in bytes
+    const uint64_t lowWaterSz = minSize();
 
-    if (StoreController::store_dirs_rebuilding)
+    if (currentSize() < lowWaterSz) {
+        debugs(47, 5, "space still available in " << path);
         return;
+    }
 
-    StoreEntry *e = NULL;
+    /* We can't delete objects while rebuilding swap */
+    /* XXX each store should start maintaining as it comes online. */
+    if (StoreController::store_dirs_rebuilding) {
+        // suppress the warnings, except once each minute
+        static int64_t lastWarn = 0;
+        int warnLevel = 3;
+        if (lastWarn+60 < squid_curtime) {
+            lastWarn = squid_curtime;
+            warnLevel = DBG_IMPORTANT;
+        }
+        debugs(47, warnLevel, StoreController::store_dirs_rebuilding << " cache_dir still rebuilding. Skip GC for " << path);
+        return;
+    }
 
-    int removed = 0;
+    // maxSize() is cache_dir total size in bytes
+    const uint64_t highWaterSz = ((maxSize() * Config.Swap.highWaterMark) / 100);
 
-    RemovalPurgeWalker *walker;
+    // f is percentage of 'gap' filled between low- and high-water.
+    // Used to reduced purge rate when between water markers, and
+    // to multiply it more agressively the further above high-water
+    // it reaches. But in a graceful linear growth curve.
+    double f = 1.0;
+    if (highWaterSz > lowWaterSz) {
+        // might be equal. n/0 is bad.
+        f = (double) (currentSize() - lowWaterSz) / (highWaterSz - lowWaterSz);
+    }
 
-    double f = (double) (currentSize() - minSize()) / (maxSize() - minSize());
-
-    f = f < 0.0 ? 0.0 : f > 1.0 ? 1.0 : f;
-
+    // how deep to look for a single object that can be removed
     int max_scan = (int) (f * 400.0 + 100.0);
 
-    int max_remove = (int) (f * 70.0 + 10.0);
+    // try to purge only this many objects this cycle.
+    int max_remove = (int) (f * 300.0 + 20.0);
 
     /*
      * This is kinda cheap, but so we need this priority hack?
      */
+    debugs(47, 3, "f=" << f << ", max_scan=" << max_scan << ", max_remove=" << max_remove);
 
-    debugs(47, 3, HERE << "f=" << f << ", max_scan=" << max_scan << ", max_remove=" << max_remove  );
+    RemovalPurgeWalker *walker = repl->PurgeInit(repl, max_scan);
 
-    walker = repl->PurgeInit(repl, max_scan);
+    int removed = 0;
+    // only purge while above low-water
+    while (currentSize() >= lowWaterSz) {
 
-    while (1) {
-        if (currentSize() < minSize())
-            break;
-
+        // stop if we reached max removals for this cycle,
+        // Bug 2448 may be from this not clearing enough,
+        // but it predates the current algorithm so not sure
         if (removed >= max_remove)
             break;
 
-        e = walker->Next(walker);
+        StoreEntry *e = walker->Next(walker);
 
+        // stop if all objects are locked / in-use,
+        // or the cache is empty
         if (!e)
             break;      /* no more objects */
 
@@ -475,9 +511,12 @@ Fs::Ufs::UFSSwapDir::maintain()
     }
 
     walker->Done(walker);
-    debugs(47, (removed ? 2 : 3), HERE << path <<
+    debugs(47, (removed ? 2 : 3), path <<
            " removed " << removed << "/" << max_remove << " f=" <<
            std::setprecision(4) << f << " max_scan=" << max_scan);
+
+    // what if cache is still over the high watermark ?
+    // Store::Maintain() schedules another purge in 1 second.
 }
 
 void
@@ -759,14 +798,12 @@ Fs::Ufs::UFSSwapDir::addDiskRestore(const cache_key * key,
     e->swap_filen = file_number;
     e->swap_dirn = index;
     e->swap_file_sz = swap_file_sz;
-    e->lock_count = 0;
     e->lastref = lastref;
     e->timestamp = timestamp;
     e->expires = expires;
     e->lastmod = lastmod;
     e->refcount = refcount;
     e->flags = newFlags;
-    EBIT_SET(e->flags, ENTRY_CACHABLE);
     EBIT_CLR(e->flags, RELEASE_REQUEST);
     EBIT_CLR(e->flags, KEY_PRIVATE);
     e->ping_status = PING_NONE;
@@ -1344,3 +1381,4 @@ Fs::Ufs::UFSSwapDir::DirClean(int swap_index)
     debugs(36, 3, HERE << "Cleaned " << k << " unused files from " << p1);
     return k;
 }
+

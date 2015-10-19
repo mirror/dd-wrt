@@ -1,6 +1,12 @@
 /*
- * DEBUG: section 93    Adaptation
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    Adaptation */
 
 #include "squid.h"
 #include "adaptation/Answer.h"
@@ -10,22 +16,29 @@
 #include "adaptation/ServiceFilter.h"
 #include "adaptation/ServiceGroups.h"
 #include "base/TextException.h"
-#include "HttpRequest.h"
-#include "HttpReply.h"
 #include "HttpMsg.h"
+#include "HttpReply.h"
+#include "HttpRequest.h"
 
 Adaptation::Iterator::Iterator(
     HttpMsg *aMsg, HttpRequest *aCause,
+    AccessLogEntry::Pointer &alp,
     const ServiceGroupPointer &aGroup):
-        AsyncJob("Iterator"),
-        Adaptation::Initiate("Iterator"),
-        theGroup(aGroup),
-        theMsg(HTTPMSGLOCK(aMsg)),
-        theCause(aCause ? HTTPMSGLOCK(aCause) : NULL),
-        theLauncher(0),
-        iterations(0),
-        adapted(false)
+    AsyncJob("Iterator"),
+    Adaptation::Initiate("Iterator"),
+    theGroup(aGroup),
+    theMsg(aMsg),
+    theCause(aCause),
+    al(alp),
+    theLauncher(0),
+    iterations(0),
+    adapted(false)
 {
+    if (theCause != NULL)
+        HTTPMSGLOCK(theCause);
+
+    if (theMsg != NULL)
+        HTTPMSGLOCK(theMsg);
 }
 
 Adaptation::Iterator::~Iterator()
@@ -40,6 +53,19 @@ void Adaptation::Iterator::start()
     Adaptation::Initiate::start();
 
     thePlan = ServicePlan(theGroup, filter());
+
+    // Add adaptation group name once and now, before
+    // dynamic groups change it at step() time.
+    if (Adaptation::Config::needHistory && !thePlan.exhausted() && (dynamic_cast<ServiceSet *>(theGroup.getRaw()) || dynamic_cast<ServiceChain *>(theGroup.getRaw()))) {
+        HttpRequest *request = dynamic_cast<HttpRequest*>(theMsg);
+        if (!request)
+            request = theCause;
+        Must(request);
+        Adaptation::History::Pointer ah = request->adaptHistory(true);
+        SBuf gid(theGroup->id);
+        ah->recordAdaptationService(gid);
+    }
+
     step();
 }
 
@@ -74,8 +100,14 @@ void Adaptation::Iterator::step()
     Must(service != NULL);
     debugs(93,5, HERE << "using adaptation service: " << service->cfg().key);
 
+    if (Adaptation::Config::needHistory) {
+        Adaptation::History::Pointer ah = request->adaptHistory(true);
+        SBuf uid(thePlan.current()->cfg().key);
+        ah->recordAdaptationService(uid);
+    }
+
     theLauncher = initiateAdaptation(
-                      service->makeXactLauncher(theMsg, theCause));
+                      service->makeXactLauncher(theMsg, theCause, al));
     Must(initiated(theLauncher));
     Must(!done());
 }
@@ -85,7 +117,7 @@ Adaptation::Iterator::noteAdaptationAnswer(const Answer &answer)
 {
     switch (answer.kind) {
     case Answer::akForward:
-        handleAdaptedHeader(answer.message);
+        handleAdaptedHeader(const_cast<HttpMsg*>(answer.message.getRaw()));
         break;
 
     case Answer::akBlock:
@@ -115,7 +147,8 @@ Adaptation::Iterator::handleAdaptedHeader(HttpMsg *aMsg)
 
     Must(aMsg);
     HTTPMSGUNLOCK(theMsg);
-    theMsg = HTTPMSGLOCK(aMsg);
+    theMsg = aMsg;
+    HTTPMSGLOCK(theMsg);
     adapted = true;
 
     clearAdaptation(theLauncher);
@@ -215,9 +248,9 @@ bool Adaptation::Iterator::updatePlan(bool adopt)
 
     debugs(85,3, HERE << "retiring old plan: " << thePlan);
 
-    Adaptation::ServiceFilter filter = this->filter();
+    Adaptation::ServiceFilter f = this->filter();
     DynamicGroupCfg current, future;
-    DynamicServiceChain::Split(filter, services, current, future);
+    DynamicServiceChain::Split(f, services, current, future);
 
     if (!future.empty()) {
         ah->setFutureServices(future);
@@ -225,8 +258,8 @@ bool Adaptation::Iterator::updatePlan(bool adopt)
     }
 
     // use the current config even if it is empty; we must replace the old plan
-    theGroup = new DynamicServiceChain(current, filter); // refcounted
-    thePlan = ServicePlan(theGroup, filter);
+    theGroup = new DynamicServiceChain(current, f); // refcounted
+    thePlan = ServicePlan(theGroup, f);
     debugs(85,3, HERE << "adopted service-proposed plan: " << thePlan);
     return true;
 }
@@ -251,7 +284,8 @@ Adaptation::ServiceFilter Adaptation::Iterator::filter() const
         Must(false); // should not happen
     }
 
-    return ServiceFilter(method, theGroup->point, req, rep);
+    return ServiceFilter(method, theGroup->point, req, rep, al);
 }
 
 CBDATA_NAMESPACED_CLASS_INIT(Adaptation, Iterator);
+

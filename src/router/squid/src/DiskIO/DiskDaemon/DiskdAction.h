@@ -1,14 +1,19 @@
 /*
- * DEBUG: section 79    Squid-side DISKD I/O functions.
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 79    Squid-side DISKD I/O functions. */
 
 #ifndef SQUID_DISKD_ACTION_H
 #define SQUID_DISKD_ACTION_H
 
 #include "ipc/forward.h"
-#include "mgr/forward.h"
 #include "mgr/Action.h"
+#include "mgr/forward.h"
 
 /// store disk daemon stats
 class DiskdActionData
@@ -67,3 +72,4 @@ private:
 };
 
 #endif /* SQUID_DISKD_ACTION_H */
+

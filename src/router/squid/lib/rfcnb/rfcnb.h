@@ -1,10 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 /* UNIX RFCNB (RFC1001/RFC1002) NetBIOS implementation
  *
  * Version 1.0
  * RFCNB Defines
  *
  * Copyright (C) Richard Sharpe 1996
- *
  */
 
 /*
@@ -28,44 +35,45 @@
 
 /* Error responses */
 
-#include "rfcnb/rfcnb-error.h"
 #include "rfcnb/rfcnb-common.h"
+#include "rfcnb/rfcnb-error.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    /* Defines we need */
+/* Defines we need */
 
 #define RFCNB_Default_Port 139
 
-    struct RFCNB_Con;
+struct RFCNB_Con;
 
-    /* Definition of routines we define */
+/* Definition of routines we define */
 
-    void *RFCNB_Call(char *Called_Name, char *Calling_Name, char *Called_Address,
-                     int port);
+void *RFCNB_Call(char *Called_Name, char *Calling_Name, char *Called_Address,
+                 int port);
 
-    int RFCNB_Send(struct RFCNB_Con *Con_Handle, struct RFCNB_Pkt *udata, int Length);
+int RFCNB_Send(struct RFCNB_Con *Con_Handle, struct RFCNB_Pkt *udata, int Length);
 
-    int RFCNB_Recv(void *Con_Handle, struct RFCNB_Pkt *Data, int Length);
+int RFCNB_Recv(void *Con_Handle, struct RFCNB_Pkt *Data, int Length);
 
-    int RFCNB_Hangup(struct RFCNB_Con *con_Handle);
+int RFCNB_Hangup(struct RFCNB_Con *con_Handle);
 
-    void *RFCNB_Listen(void);
+void *RFCNB_Listen(void);
 
-    void RFCNB_Get_Error(char *buffer, int buf_len);
+void RFCNB_Get_Error(char *buffer, int buf_len);
 
-    int RFCNB_Get_Last_Error(void);
+int RFCNB_Get_Last_Error(void);
 
-    void RFCNB_Free_Pkt(struct RFCNB_Pkt *pkt);
+void RFCNB_Free_Pkt(struct RFCNB_Pkt *pkt);
 
-    int RFCNB_Set_Sock_NoDelay(struct RFCNB_Con *con_Handle, int yn);
+int RFCNB_Set_Sock_NoDelay(struct RFCNB_Con *con_Handle, int yn);
 
-    struct RFCNB_Pkt *RFCNB_Alloc_Pkt(int n);
+struct RFCNB_Pkt *RFCNB_Alloc_Pkt(int n);
 
 #ifdef __cplusplus
 }
 
 #endif
 #endif                          /* _RFCNB_RFCNB_H */
+

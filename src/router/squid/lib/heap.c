@@ -1,33 +1,13 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 /*
  * AUTHOR: John Dilley, Hewlett Packard
- *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
  */
 
 /****************************************************************************
@@ -46,9 +26,6 @@
 #endif
 #if HAVE_STRING_H
 #include <string.h>
-#endif
-#if HAVE_STDIO_H
-#include <stdio.h>
 #endif
 
 #include "util.h"
@@ -71,7 +48,7 @@ static void _heap_grow(heap * hp);
 static void _heap_swap_element(heap * hp, heap_node * elm1, heap_node * elm2);
 static int _heap_node_exist(heap * hp, int id);
 
-#ifdef	HEAP_DEBUG
+#ifdef  HEAP_DEBUG
 void _heap_print_tree(heap * hp, heap_node * node);
 #endif /* HEAP_DEBUG */
 
@@ -181,7 +158,7 @@ heap_delete(heap * hp, heap_node * elm)
         (void) 0;
     } else if (hp->last > 0) {
         if (lastNode->key < hp->nodes[Parent(lastNode->id)]->key)
-            _heap_ify_up(hp, lastNode);		/* COOL! */
+            _heap_ify_up(hp, lastNode);     /* COOL! */
         _heap_ify_down(hp, lastNode);
     }
     return data;
@@ -192,7 +169,7 @@ heap_delete(heap * hp, heap_node * elm)
  * heapify operation.
  */
 
-#ifndef	heap_gen_key
+#ifndef heap_gen_key
 /*
  * Function to generate keys.  See macro definition in heap.h.
  */
@@ -218,7 +195,7 @@ heap_extractmin(heap * hp)
     mutex_lock(hp->lock);
 
     data = hp->nodes[0]->data;
-    heap_delete(hp, hp->nodes[0]);	/* Delete the root */
+    heap_delete(hp, hp->nodes[0]);  /* Delete the root */
 
     mutex_unlock(hp->lock);
 
@@ -309,7 +286,7 @@ heap_peep(heap * hp, int n)
     return data;
 }
 
-#ifndef	heap_nodes
+#ifndef heap_nodes
 /*
  * Current number of nodes in HP.
  */
@@ -320,7 +297,7 @@ heap_nodes(heap * hp)
 }
 #endif /* heap_nodes */
 
-#ifndef	heap_empty
+#ifndef heap_empty
 /*
  * Determine if the heap is empty.  Returns 1 if HP has no elements and 0
  * otherwise.
@@ -379,7 +356,7 @@ _heap_ify_up(heap * hp, heap_node * elm)
         parentNode = hp->nodes[Parent(elm->id)];
         if (parentNode->key <= elm->key)
             break;
-        _heap_swap_element(hp, parentNode, elm);	/* Demote the parent. */
+        _heap_swap_element(hp, parentNode, elm);    /* Demote the parent. */
     }
 }
 
@@ -397,7 +374,7 @@ _heap_swap_element(heap * hp, heap_node * elm1, heap_node * elm2)
     hp->nodes[elm2->id] = elm2;
 }
 
-#ifdef	NOTDEF
+#ifdef  NOTDEF
 /*
  * Copy KEY and DATA fields of SRC to DEST. ID field is NOT copied.
  */
@@ -496,7 +473,7 @@ verify_heap_property(heap * hp)
     return correct;
 }
 
-#ifdef	MEASURE_HEAP_SKEW
+#ifdef  MEASURE_HEAP_SKEW
 
 /****************************************************************************
  * Heap skew computation
@@ -529,7 +506,7 @@ calc_heap_skew(heap * heap, int replace)
 {
     heap_node **nodes;
     long id, diff, skew = 0;
-#ifdef	HEAP_DEBUG_SKEW
+#ifdef  HEAP_DEBUG_SKEW
     long skewsq = 0;
 #endif /* HEAP_DEBUG_SKEW */
     float norm = 0;
@@ -563,9 +540,9 @@ calc_heap_skew(heap * heap, int replace)
         diff = id - nodes[id]->id;
         skew += abs(diff);
 
-#ifdef	HEAP_DEBUG_SKEW
+#ifdef  HEAP_DEBUG_SKEW
         skewsq += diff * diff;
-#ifdef	HEAP_DEBUG_ALL
+#ifdef  HEAP_DEBUG_ALL
         printf("%d\tKey = %f, diff = %d\n", id, nodes[id]->key, diff);
 #endif /* HEAP_DEBUG */
 #endif /* HEAP_DEBUG_SKEW */
@@ -605,3 +582,4 @@ calc_heap_skew(heap * heap, int replace)
 }
 
 #endif /* MEASURE_HEAP_SKEW */
+

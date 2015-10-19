@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * Copyright (C) 2002 Rodrigo Campos
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,15 +31,8 @@
 #include "rfc1738.h"
 #include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
+#include <cstdlib>
+#include <cstring>
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -58,7 +59,7 @@ struct ip_user_dict *load_dict(FILE *);
 int dict_lookup(struct ip_user_dict *, char *, char *);
 
 /** Size of lines read from the dictionary file */
-#define DICT_BUFFER_SIZE	8196
+#define DICT_BUFFER_SIZE    8196
 
 /** This function parses the dictionary file and loads it
  * in memory. All IP addresses are processed with a bitwise AND
@@ -69,17 +70,17 @@ int dict_lookup(struct ip_user_dict *, char *, char *);
  */
 struct ip_user_dict *
 load_dict(FILE * FH) {
-    struct ip_user_dict *current_entry;	/* the structure used to
-					   store data */
-    struct ip_user_dict *first_entry = NULL;	/* the head of the
-						   linked list */
+    struct ip_user_dict *current_entry; /* the structure used to
+                       store data */
+    struct ip_user_dict *first_entry = NULL;    /* the head of the
+                           linked list */
     char line[DICT_BUFFER_SIZE]; /* the buffer for the lines read
-				   from the dict file */
-    char *tmpbuf;			/* for the address before the
-				   bitwise AND */
+                   from the dict file */
+    char *tmpbuf;           /* for the address before the
+                   bitwise AND */
 
     /* the pointer to the first entry in the linked list */
-    first_entry = (struct ip_user_dict*)malloc(sizeof(struct ip_user_dict));
+    first_entry = static_cast<struct ip_user_dict*>(xmalloc(sizeof(struct ip_user_dict)));
     current_entry = first_entry;
 
     unsigned int lineCount = 0;
@@ -127,7 +128,7 @@ load_dict(FILE * FH) {
 
             /* get space and point current_entry to the new entry */
             current_entry->next_entry =
-                (struct ip_user_dict*)malloc(sizeof(struct ip_user_dict));
+                static_cast<struct ip_user_dict*>(xmalloc(sizeof(struct ip_user_dict)));
             current_entry = current_entry->next_entry;
         }
 
@@ -183,15 +184,15 @@ match_user(char *dict_username, char *username)
         }
     }
     return 0;
-}				/* match_user */
+}               /* match_user */
 
 int
 match_group(char *dict_group, char *username)
 {
-    struct group *g;		/* a struct to hold group entries */
-    ++dict_group;			/* the @ should be the first char
-				   so we rip it off by incrementing
-				   * the pointer by one */
+    struct group *g;        /* a struct to hold group entries */
+    ++dict_group;           /* the @ should be the first char
+                   so we rip it off by incrementing
+                   * the pointer by one */
 
     if ((g = getgrnam(dict_group)) == NULL) {
         debug("Group does not exist '%s'\n", dict_group);
@@ -289,3 +290,4 @@ main (int argc, char *argv[])
     fclose (FH);
     return 0;
 }
+

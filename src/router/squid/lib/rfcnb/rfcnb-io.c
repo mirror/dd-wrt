@@ -1,4 +1,10 @@
-#include "squid.h"
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 /* UNIX RFCNB (RFC1001/RFC1002) NEtBIOS implementation
  *
@@ -6,7 +12,6 @@
  * RFCNB IO Routines ...
  *
  * Copyright (C) Richard Sharpe 1996
- *
  */
 
 /*
@@ -25,16 +30,19 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "rfcnb/std-includes.h"
+#include "squid.h"
+#include "rfcnb/rfcnb-io.h"
 #include "rfcnb/rfcnb-priv.h"
 #include "rfcnb/rfcnb-util.h"
-#include "rfcnb/rfcnb-io.h"
-#include <sys/uio.h>
-#include <sys/signal.h>
+#include "rfcnb/std-includes.h"
 
+#if HAVE_SIGNAL_H
+#include <signal.h>
+#endif
 #if HAVE_STRING_H
 #include <string.h>
 #endif
+#include <sys/uio.h>
 
 int RFCNB_Timeout = 0;          /* Timeout in seconds ... */
 
@@ -114,12 +122,12 @@ RFCNB_Set_Timeout(int seconds)
         if (sigaction(SIGALRM, &inact, &outact) < 0)
             return (-1);
 #else /* !HAVE_SIGACTION */
-    invec.sv_handler = (void (*)()) rfcnb_alarm;
-    invec.sv_mask = 0;
-    invec.sv_flags = SV_INTERRUPT;
+        invec.sv_handler = (void (*)()) rfcnb_alarm;
+        invec.sv_mask = 0;
+        invec.sv_flags = SV_INTERRUPT;
 
-    if (sigvec(SIGALRM, &invec, &outvec) < 0)
-        return (-1);
+        if (sigvec(SIGALRM, &invec, &outvec) < 0)
+            return (-1);
 #endif /* !HAVE_SIGACTION */
     }
 #endif /* !ORIGINAL_SAMBA_CODE ADAPTED SQUID CODE */
@@ -382,7 +390,7 @@ RFCNB_Get_Pkt(struct RFCNB_Con *con, struct RFCNB_Pkt *pkt, int len)
         offset = RFCNB_Pkt_Hdr_Len;     /* Otherwise skip the header       */
     }
 
-    frag_len = pkt_frag->len;
+    frag_len = (pkt_frag ? pkt_frag->len : 0);
 
     if (more <= frag_len)       /* If len left to get less than frag space */
         this_len = more;        /* Get the rest ...                        */
@@ -443,3 +451,4 @@ RFCNB_Get_Pkt(struct RFCNB_Con *con, struct RFCNB_Pkt *pkt, int len)
 
     return (read_len + sizeof(RFCNB_Hdr));
 }
+

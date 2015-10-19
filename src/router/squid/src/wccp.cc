@@ -1,35 +1,13 @@
-
 /*
- * DEBUG: section 80    WCCP Support
- * AUTHOR: Glenn Chisholm
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 80    WCCP Support */
+
 #include "squid.h"
 
 #if USE_WCCP
@@ -120,7 +98,7 @@ wccpInit(void)
     last_assign_buckets_change = 0;
     number_caches = 0;
 
-    if (!Config.Wccp.router.IsAnyAddr())
+    if (!Config.Wccp.router.isAnyAddr())
         if (!eventFind(wccpHereIam, NULL))
             eventAdd("wccpHereIam", wccpHereIam, NULL, 5.0, 1);
 }
@@ -130,23 +108,23 @@ wccpConnectionOpen(void)
 {
     debugs(80, 5, "wccpConnectionOpen: Called");
 
-    if (Config.Wccp.router.IsAnyAddr()) {
+    if (Config.Wccp.router.isAnyAddr()) {
         debugs(80, 2, "WCCPv1 disabled.");
         return;
     }
 
-    if ( !Config.Wccp.router.SetIPv4() ) {
+    if ( !Config.Wccp.router.setIPv4() ) {
         debugs(80, DBG_CRITICAL, "WCCPv1 Disabled. Router " << Config.Wccp.router << " is not an IPv4 address.");
         return;
     }
 
-    if ( !Config.Wccp.address.SetIPv4() ) {
+    if ( !Config.Wccp.address.setIPv4() ) {
         debugs(80, DBG_CRITICAL, "WCCPv1 Disabled. Local address " << Config.Wccp.address << " is not an IPv4 address.");
         return;
     }
 
-    Config.Wccp.address.SetPort(WCCP_PORT);
-    Config.Wccp.router.SetPort(WCCP_PORT);
+    Config.Wccp.address.port(WCCP_PORT);
+    Config.Wccp.router.port(WCCP_PORT);
 
     theWccpConnection = comm_open_listener(SOCK_DGRAM,
                                            IPPROTO_UDP,
@@ -164,7 +142,7 @@ wccpConnectionOpen(void)
     // Sadly WCCP only does IPv4
 
     struct sockaddr_in router;
-    Config.Wccp.router.GetSockAddr(router);
+    Config.Wccp.router.getSockAddr(router);
     if (connect(theWccpConnection, (struct sockaddr*)&router, sizeof(router)))
         fatal("Unable to connect WCCP out socket");
 
@@ -382,3 +360,4 @@ wccpAssignBuckets(void)
 }
 
 #endif /* USE_WCCP */
+

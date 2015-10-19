@@ -1,4 +1,10 @@
-#include "squid.h"
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 // Author:  Jens-S. V?ckler <voeckler@rvs.uni-hannover.de>
 //
@@ -39,15 +45,15 @@
 // Revision 1.1  1998/08/13 21:38:04  voeckler
 // Initial revision
 //
-//
 
+#include "squid.h"
 #include "convert.hh"
-#include <string.h>
+
+#include <cstdlib>
+#include <cstring>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 #ifndef SA
 #define SA struct sockaddr
@@ -150,3 +156,4 @@ convertPortname( const char* port, unsigned short& dst )
     }
     return 0;
 }
+

@@ -1,39 +1,16 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_SRC_URL_H
 #define SQUID_SRC_URL_H
 
-#include "anyp/ProtocolType.h"
+#include "anyp/UriScheme.h"
 #include "MemPool.h"
-#include "URLScheme.h"
 
 /**
  \ingroup POD
@@ -42,13 +19,19 @@
  */
 class URL
 {
-
 public:
-
     MEMPROXY_CLASS(URL);
-    URL();
-    URL(URLScheme const &);
-    URLScheme const & getScheme() const {return scheme; }
+    URL() : scheme_() {}
+    URL(AnyP::UriScheme const &aScheme) : scheme_(aScheme) {}
+
+    void clear() {
+        scheme_=AnyP::PROTO_NONE;
+    }
+
+    AnyP::UriScheme const & getScheme() const {return scheme_;}
+
+    /// convert the URL scheme to that given
+    void setScheme(const AnyP::ProtocolType &p) {scheme_=p;}
 
 private:
     /**
@@ -62,7 +45,7 @@ private:
      * is to have one prototype URL with no host etc for each scheme,
      * another is to have an explicit scheme class, and then each URL class
      * could be a subclass of the scheme. Another way is one instance of
-     * a URLScheme class instance for each URLScheme we support, and one URL
+     * a AnyP::UriScheme class instance for each URL scheme we support, and one URL
      * class for each manner of treating the scheme : a Hierarchical URL, a
      * non-hierarchical URL etc.
      \par
@@ -71,7 +54,7 @@ private:
      * In order to make taking any of these routes easy, scheme is private
      * and immutable, only settable at construction time,
      */
-    URLScheme const scheme;
+    AnyP::UriScheme scheme_;
 };
 
 MEMPROXY_CLASS_INLINE(URL);
@@ -89,10 +72,42 @@ bool urlIsRelative(const char *);
 char *urlMakeAbsolute(const HttpRequest *, const char *);
 char *urlRInternal(const char *host, unsigned short port, const char *dir, const char *name);
 char *urlInternal(const char *dir, const char *name);
-int matchDomainName(const char *host, const char *domain);
+
+/**
+ * matchDomainName() compares a hostname (usually extracted from traffic)
+ * with a domainname (usually from an ACL) according to the following rules:
+ *
+ *    HOST      |   DOMAIN    |   MATCH?
+ * -------------|-------------|------
+ *    foo.com   |   foo.com   |     YES
+ *   .foo.com   |   foo.com   |     YES
+ *  x.foo.com   |   foo.com   |     NO
+ *    foo.com   |  .foo.com   |     YES
+ *   .foo.com   |  .foo.com   |     YES
+ *  x.foo.com   |  .foo.com   |     YES
+ *
+ *  We strip leading dots on hosts (but not domains!) so that
+ *  ".foo.com" is always the same as "foo.com".
+ *
+ * if honorWildcards is true then the matchDomainName() also accepts
+ * optional wildcards on hostname:
+ *
+ *    HOST      |    DOMAIN    |  MATCH?
+ * -------------|--------------|-------
+ *    *.foo.com |   x.foo.com  |   YES
+ *    *.foo.com |  .x.foo.com  |   YES
+ *    *.foo.com |    .foo.com  |   YES
+ *    *.foo.com |     foo.com  |   NO
+ *
+ * \retval 0 means the host matches the domain
+ * \retval 1 means the host is greater than the domain
+ * \retval -1 means the host is less than the domain
+ */
+int matchDomainName(const char *host, const char *domain, bool honorWildcards = false);
 int urlCheckRequest(const HttpRequest *);
 int urlDefaultPort(AnyP::ProtocolType p);
 char *urlHostname(const char *url);
 void urlExtMethodConfigure(void);
 
 #endif /* SQUID_SRC_URL_H_H */
+

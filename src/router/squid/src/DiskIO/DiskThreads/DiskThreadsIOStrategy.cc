@@ -1,36 +1,12 @@
-
 /*
- * DEBUG: section 79    Squid-side Disk I/O functions.
- * AUTHOR: Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 79    Squid-side Disk I/O functions. */
 
 #include "squid.h"
 
@@ -132,7 +108,7 @@ DiskThreadsIOStrategy::callback()
         }
 
         if (ctrlp == NULL)
-            continue;		/* XXX Should not happen */
+            continue;       /* XXX Should not happen */
 
         dlinkDelete(&ctrlp->node, &used_list);
 
@@ -142,7 +118,7 @@ DiskThreadsIOStrategy::callback()
             ctrlp->done_handler = NULL;
 
             if (cbdataReferenceValidDone(ctrlp->done_handler_data, &cbdata)) {
-                retval = 1;	/* Return that we've actually done some work */
+                retval = 1; /* Return that we've actually done some work */
                 done_callback(ctrlp->fd, cbdata, ctrlp->bufp,
                               ctrlp->result.aio_return, ctrlp->result.aio_errno);
             } else {
@@ -175,7 +151,7 @@ void
 DiskThreadsIOStrategy::sync()
 {
     if (!initialised)
-        return;			/* nothing to do then */
+        return;         /* nothing to do then */
 
     /* Flush all pending operations */
     debugs(32, 2, "aioSync: flushing pending I/O operations");
@@ -188,24 +164,24 @@ DiskThreadsIOStrategy::sync()
 }
 
 DiskThreadsIOStrategy::DiskThreadsIOStrategy() :
-        initialised(false),
-        squidaio_ctrl_pool(NULL)
+    initialised(false),
+    squidaio_ctrl_pool(NULL)
 {}
 
 void
 DiskThreadsIOStrategy::aioStats(StoreEntry * sentry)
 {
     storeAppendPrintf(sentry, "ASYNC IO Counters:\n");
-    storeAppendPrintf(sentry, "Operation\t# Requests\tNumber serviced\n");
-    storeAppendPrintf(sentry, "open\t%d\t%d\n", squidaio_counts.open_start, squidaio_counts.open_finish);
-    storeAppendPrintf(sentry, "close\t%d\t%d\n", squidaio_counts.close_start, squidaio_counts.close_finish);
-    storeAppendPrintf(sentry, "cancel\t%d\t-\n", squidaio_counts.cancel);
-    storeAppendPrintf(sentry, "write\t%d\t%d\n", squidaio_counts.write_start, squidaio_counts.write_finish);
-    storeAppendPrintf(sentry, "read\t%d\t%d\n", squidaio_counts.read_start, squidaio_counts.read_finish);
-    storeAppendPrintf(sentry, "stat\t%d\t%d\n", squidaio_counts.stat_start, squidaio_counts.stat_finish);
-    storeAppendPrintf(sentry, "unlink\t%d\t%d\n", squidaio_counts.unlink_start, squidaio_counts.unlink_finish);
-    storeAppendPrintf(sentry, "check_callback\t%d\t-\n", squidaio_counts.check_callback);
-    storeAppendPrintf(sentry, "queue\t%d\t-\n", squidaio_get_queue_len());
+    storeAppendPrintf(sentry, "  Operation\t# Requests\tNumber serviced\n");
+    storeAppendPrintf(sentry, "  open\t%" PRIu64 "\t%" PRIu64 "\n", squidaio_counts.open_start, squidaio_counts.open_finish);
+    storeAppendPrintf(sentry, "  close\t%" PRIu64 "\t%" PRIu64 "\n", squidaio_counts.close_start, squidaio_counts.close_finish);
+    storeAppendPrintf(sentry, "  cancel\t%" PRIu64 "\t-\n", squidaio_counts.cancel);
+    storeAppendPrintf(sentry, "  write\t%" PRIu64 "\t%" PRIu64 "\n", squidaio_counts.write_start, squidaio_counts.write_finish);
+    storeAppendPrintf(sentry, "  read\t%" PRIu64 "\t%" PRIu64 "\n", squidaio_counts.read_start, squidaio_counts.read_finish);
+    storeAppendPrintf(sentry, "  stat\t%" PRIu64 "\t%" PRIu64 "\n", squidaio_counts.stat_start, squidaio_counts.stat_finish);
+    storeAppendPrintf(sentry, "  unlink\t%" PRIu64 "\t%" PRIu64 "\n", squidaio_counts.unlink_start, squidaio_counts.unlink_finish);
+    storeAppendPrintf(sentry, "  check_callback\t%" PRIu64 "\t-\n", squidaio_counts.check_callback);
+    storeAppendPrintf(sentry, "  queue\t%d\t-\n", squidaio_get_queue_len());
     squidaio_stats(sentry);
 }
 
@@ -267,3 +243,4 @@ DiskThreadsIOStrategy::unlinkFile(char const *path)
     ++statCounter.syscalls.disk.unlinks;
     aioUnlink(path, NULL, NULL);
 }
+

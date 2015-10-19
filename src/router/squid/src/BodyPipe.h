@@ -1,9 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_BODY_PIPE_H
 #define SQUID_BODY_PIPE_H
 
-#include "MemBuf.h"
 #include "base/AsyncJob.h"
 #include "base/CbcPointer.h"
+#include "MemBuf.h"
 
 class BodyPipe;
 
@@ -23,7 +31,7 @@ public:
     virtual void noteBodyConsumerAborted(RefCount<BodyPipe> bp) = 0;
 
 protected:
-    void stopProducingFor(RefCount<BodyPipe> &pipe, bool atEof);
+    void stopProducingFor(RefCount<BodyPipe> &, bool atEof);
 };
 
 /** Interface for those who want to consume body content from others.
@@ -44,7 +52,7 @@ public:
     virtual void noteBodyProducerAborted(RefCount<BodyPipe> bp) = 0;
 
 protected:
-    void stopConsumingFrom(RefCount<BodyPipe> &pipe);
+    void stopConsumingFrom(RefCount<BodyPipe> &);
 };
 
 /** Makes raw buffer checkin/checkout interface efficient and exception-safe.
@@ -56,13 +64,13 @@ public:
     friend class BodyPipe;
 
 public:
-    BodyPipeCheckout(BodyPipe &pipe); // checks out
+    BodyPipeCheckout(BodyPipe &); // checks out
     ~BodyPipeCheckout(); // aborts checkout unless checkedIn
 
     void checkIn();
 
 public:
-    BodyPipe &pipe;
+    BodyPipe &thePipe;
     MemBuf &buf;
     const uint64_t offset; // of current content, relative to the body start
 
@@ -161,3 +169,4 @@ private:
 };
 
 #endif /* SQUID_BODY_PIPE_H */
+

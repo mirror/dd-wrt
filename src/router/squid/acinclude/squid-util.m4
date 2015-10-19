@@ -1,30 +1,9 @@
-dnl 
-dnl AUTHOR: Francesco Chemolli
-dnl
-dnl SQUID Web Proxy Cache          http://www.squid-cache.org/
-dnl ----------------------------------------------------------
-dnl Squid is the result of efforts by numerous individuals from
-dnl the Internet community; see the CONTRIBUTORS file for full
-dnl details.   Many organizations have provided support for Squid's
-dnl development; see the SPONSORS file for full details.  Squid is
-dnl Copyrighted (C) 2001 by the Regents of the University of
-dnl California; see the COPYRIGHT file for full details.  Squid
-dnl incorporates software developed and/or copyrighted by other
-dnl sources; see the CREDITS file for full details.
-dnl
-dnl This program is free software; you can redistribute it and/or modify
-dnl it under the terms of the GNU General Public License as published by
-dnl the Free Software Foundation; either version 2 of the License, or
-dnl (at your option) any later version.
-dnl
-dnl This program is distributed in the hope that it will be useful,
-dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
-dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-dnl GNU General Public License for more details.
-dnl
-dnl You should have received a copy of the GNU General Public License
-dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
 
 dnl save main environment variables to variables to the namespace defined by the
 dnl first argument (prefix)
@@ -216,10 +195,8 @@ AC_DEFUN([SQUID_EMBED_BUILD_INFO],[
       ;;
   esac
   ])
-  if test "x${squid_build_info:=no}" != "xno"; then
-    AC_DEFINE_UNQUOTED([SQUID_BUILD_INFO],["$squid_build_info"],
-       [Squid extended build info field for "squid -v" output])
-  fi
+  AC_DEFINE_UNQUOTED([SQUID_BUILD_INFO],["$squid_build_info"],
+     [Squid extended build info field for "squid -v" output])
 ])
 
 dnl like AC_SEARCH_LIBS, with an extra argument which is
@@ -248,4 +225,33 @@ AS_IF([test "$ac_res" != no],
   $3],
       [$4])
 AS_VAR_POPDEF([ac_Search])dnl
+])
+
+dnl Check for Cyrus SASL
+AC_DEFUN([SQUID_CHECK_SASL],[
+  squid_cv_check_sasl="auto"
+  AC_CHECK_HEADERS([sasl/sasl.h sasl.h])
+  AC_CHECK_LIB(sasl2,sasl_errstring,[LIBSASL="-lsasl2"],[
+    AC_CHECK_LIB(sasl,sasl_errstring,[LIBSASL="-lsasl"], [
+      squid_cv_check_sasl="no"
+    ])
+  ])
+  case "$squid_host_os" in
+    Darwin)
+      if test "$ac_cv_lib_sasl2_sasl_errstring" = "yes" ; then
+        AC_DEFINE(HAVE_SASL_DARWIN,1,[Define to 1 if Mac Darwin without sasl.h])
+        echo "checking for MAC Darwin without sasl.h ... yes"
+        squid_cv_check_sasl="yes"
+      else
+        echo "checking for MAC Darwin without sasl.h ... no"
+        squid_cv_check_sasl="no"
+      fi
+      ;;
+  esac
+  if test "x$squid_cv_check_sasl" = "xno"; then
+    AC_MSG_WARN([Neither SASL nor SASL2 found])
+  else
+    squid_cv_check_sasl="yes"
+  fi
+  AC_SUBST(LIBSASL)
 ])

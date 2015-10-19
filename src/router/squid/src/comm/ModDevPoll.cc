@@ -1,33 +1,12 @@
 /*
- * DEBUG: section 05    Socket Functions
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 05    Socket Functions */
 
 /*
  * This is a very simple driver for Solaris /dev/poll.
@@ -62,22 +41,18 @@
 #include "StatHist.h"
 #include "Store.h"
 
+#include <cerrno>
+#include <climits>
 #if HAVE_SYS_DEVPOLL_H
 /* Solaris /dev/poll support, see "man -s 7D poll" */
 #include <sys/devpoll.h>
 #endif
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
-#if HAVE_LIMITS_H
-#include <limits.h>
-#endif
 
 #define DEBUG_DEVPOLL 0
 
-// OPEN_MAX is defined in <limits.h>
-#define	DEVPOLL_UPDATESIZE	OPEN_MAX
-#define	DEVPOLL_QUERYSIZE	OPEN_MAX
+// OPEN_MAX is defined in <climits>
+#define DEVPOLL_UPDATESIZE  OPEN_MAX
+#define DEVPOLL_QUERYSIZE   OPEN_MAX
 
 /* TYPEDEFS */
 typedef short pollfd_events_t; /* type of pollfd.events from sys/poll.h */
@@ -340,7 +315,7 @@ Comm::ResetSelect(int fd)
  *
  * @param msec milliseconds to poll for (limited by max_poll_time)
  */
-comm_err_t
+Comm::Flag
 Comm::DoSelect(int msec)
 {
     int num, i;
@@ -370,7 +345,7 @@ Comm::DoSelect(int msec)
         /* error during poll */
         getCurrentTime();
         PROF_stop(comm_check_incoming);
-        return COMM_ERROR;
+        return Comm::COMM_ERROR;
     }
 
     PROF_stop(comm_check_incoming);
@@ -379,7 +354,7 @@ Comm::DoSelect(int msec)
     statCounter.select_fds_hist.count(num);
 
     if (num == 0)
-        return COMM_TIMEOUT; /* no error */
+        return Comm::TIMEOUT; /* no error */
 
     PROF_start(comm_handle_ready_fd);
 
@@ -457,7 +432,7 @@ Comm::DoSelect(int msec)
     }
 
     PROF_stop(comm_handle_ready_fd);
-    return COMM_OK;
+    return Comm::OK;
 }
 
 void
@@ -467,3 +442,4 @@ Comm::QuickPollRequired(void)
 }
 
 #endif /* USE_DEVPOLL */
+

@@ -1,10 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 /* UNIX RFCNB (RFC1001/RFC1002) NetBIOS implementation
  *
  * Version 1.0
  * RFCNB Error Response Defines
  *
  * Copyright (C) Richard Sharpe 1996
- *
  */
 
 /*
@@ -30,12 +37,12 @@
 extern "C" {
 #endif
 
-    /* Error responses */
+/* Error responses */
 
 #define RFCNBE_Bad -1           /* Bad response */
 #define RFCNBE_OK 0
 
-    /* these should follow the spec ... is there one ? */
+/* these should follow the spec ... is there one ? */
 
 #define RFCNBE_NoSpace 1        /* Could not allocate space for a struct */
 #define RFCNBE_BadName 2        /* Could not translate a name            */
@@ -54,12 +61,13 @@ extern "C" {
 #define RFCNBE_BadParam      15 /* Bad parameters passed ...             */
 #define RFCNBE_Timeout       16 /* IO Timed out                          */
 
-    /* Text strings for the error responses                                 */
+/* Text strings for the error responses                                 */
 
-    extern const char *RFCNB_Error_Strings[];
+extern const char *RFCNB_Error_Strings[];
 
 #ifdef __cplusplus
 }
 
 #endif
 #endif                          /* _RFCNB_ERROR_H_ */
+

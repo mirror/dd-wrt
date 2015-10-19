@@ -1,31 +1,9 @@
-
 /*
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #include "squid.h"
@@ -36,12 +14,13 @@
 #include "adaptation/History.h"
 #include "adaptation/Service.h"
 #include "adaptation/ServiceGroups.h"
-#include "Array.h"
 #include "ConfigParser.h"
 #include "globals.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
 #include "Store.h"
+
+#include <algorithm>
 
 bool Adaptation::Config::Enabled = false;
 char *Adaptation::Config::masterx_shared_name = NULL;
@@ -49,53 +28,25 @@ int Adaptation::Config::service_iteration_limit = 16;
 int Adaptation::Config::send_client_ip = false;
 int Adaptation::Config::send_username = false;
 int Adaptation::Config::use_indirect_client = true;
-Adaptation::Config::MetaHeaders Adaptation::Config::metaHeaders;
-
-Adaptation::Config::MetaHeader::Value::~Value()
-{
-    aclDestroyAclList(&aclList);
-}
-
-Adaptation::Config::MetaHeader::Value::Pointer
-Adaptation::Config::MetaHeader::addValue(const String &value)
-{
-    Value::Pointer v = new Value(value);
-    values.push_back(v);
-    return v;
-}
-
-const char *
-Adaptation::Config::MetaHeader::match(HttpRequest *request, HttpReply *reply)
-{
-
-    typedef Values::iterator VLI;
-    ACLFilledChecklist ch(NULL, request, NULL);
-    if (reply)
-        ch.reply = HTTPMSGLOCK(reply);
-
-    for (VLI i = values.begin(); i != values.end(); ++i ) {
-        const int ret= ch.fastCheck((*i)->aclList);
-        debugs(93, 5, HERE << "Check for header name: " << name << ": " << (*i)->value
-               <<", HttpRequest: " << request << " HttpReply: " << reply << " matched: " << ret);
-        if (ret == ACCESS_ALLOWED)
-            return (*i)->value.termedBuf();
-    }
-    return NULL;
-}
-
-Adaptation::Config::MetaHeader::Pointer
-Adaptation::Config::addMetaHeader(const String &headerName)
-{
-    typedef MetaHeaders::iterator AMLI;
-    for (AMLI i = metaHeaders.begin(); i != metaHeaders.end(); ++i) {
-        if ((*i)->name == headerName)
-            return (*i);
-    }
-
-    MetaHeader::Pointer meta = new MetaHeader(headerName);
-    metaHeaders.push_back(meta);
-    return meta;
-}
+const char *metasBlacklist[] = {
+    "Methods",
+    "Service",
+    "ISTag",
+    "Encapsulated",
+    "Opt-body-type",
+    "Max-Connections",
+    "Options-TTL",
+    "Date",
+    "Service-ID",
+    "Allow",
+    "Preview",
+    "Transfer-Preview",
+    "Transfer-Ignore",
+    "Transfer-Complete",
+    NULL
+};
+Notes Adaptation::Config::metaHeaders("ICAP header", metasBlacklist, true);
+bool Adaptation::Config::needHistory = false;
 
 Adaptation::ServiceConfig*
 Adaptation::Config::newServiceConfig() const
@@ -115,19 +66,35 @@ Adaptation::Config::removeService(const String& service)
         for (SGSI it = services.begin(); it != services.end(); ++it) {
             if (*it == service) {
                 group->removedServices.push_back(service);
-                group->services.prune(service);
-                debugs(93, 5, HERE << "adaptation service " << service <<
+                ServiceGroup::Store::iterator newend;
+                newend = std::remove(group->services.begin(), group->services.end(), service);
+                group->services.resize(newend-group->services.begin());
+                debugs(93, 5, "adaptation service " << service <<
                        " removed from group " << group->id);
                 break;
             }
         }
         if (services.empty()) {
             removeRule(group->id);
-            AllGroups().prune(group);
+            Groups::iterator newend;
+            newend = std::remove(AllGroups().begin(), AllGroups().end(), group);
+            AllGroups().resize(newend-AllGroups().begin());
         } else {
             ++i;
         }
     }
+}
+
+Adaptation::ServiceConfigPointer
+Adaptation::Config::findServiceConfig(const String &service)
+{
+    typedef ServiceConfigs::const_iterator SCI;
+    const ServiceConfigs& configs = serviceConfigs;
+    for (SCI cfg = configs.begin(); cfg != configs.end(); ++cfg) {
+        if ((*cfg)->key == service)
+            return *cfg;
+    }
+    return NULL;
 }
 
 void
@@ -138,8 +105,10 @@ Adaptation::Config::removeRule(const String& id)
     for (ARI it = rules.begin(); it != rules.end(); ++it) {
         AccessRule* rule = *it;
         if (rule->groupId == id) {
-            debugs(93, 5, HERE << "removing access rules for:" << id);
-            AllRules().prune(rule);
+            debugs(93, 5, "removing access rules for:" << id);
+            AccessRules::iterator newend;
+            newend = std::remove(AllRules().begin(), AllRules().end(), rule);
+            AllRules().resize(newend-AllRules().begin());
             delete (rule);
             break;
         }
@@ -155,7 +124,7 @@ Adaptation::Config::clear()
     const ServiceConfigs& configs = serviceConfigs;
     for (SCI cfg = configs.begin(); cfg != configs.end(); ++cfg)
         removeService((*cfg)->key);
-    serviceConfigs.clean();
+    serviceConfigs.clear();
     debugs(93, 3, HERE << "rules: " << AllRules().size() << ", groups: " <<
            AllGroups().size() << ", services: " << serviceConfigs.size());
 }
@@ -179,9 +148,7 @@ Adaptation::Config::freeService()
 
     DetachServices();
 
-    serviceConfigs.clean();
-
-    FreeMetaHeader();
+    serviceConfigs.clear();
 }
 
 void
@@ -228,7 +195,7 @@ Adaptation::Config::finalize()
     debugs(93,3, HERE << "Created " << created << " adaptation services");
 
     // services remember their configs; we do not have to
-    serviceConfigs.clean();
+    serviceConfigs.clear();
     return true;
 }
 
@@ -253,64 +220,6 @@ Adaptation::Config::Finalize(bool enabled)
     FinalizeEach(AllServices(), "message adaptation services");
     FinalizeEach(AllGroups(), "message adaptation service groups");
     FinalizeEach(AllRules(), "message adaptation access rules");
-}
-
-void
-Adaptation::Config::ParseMetaHeader(ConfigParser &parser)
-{
-    String name, value;
-    const char *warnFor[] = {
-        "Methods",
-        "Service",
-        "ISTag",
-        "Encapsulated",
-        "Opt-body-type",
-        "Max-Connections",
-        "Options-TTL",
-        "Date",
-        "Service-ID",
-        "Allow",
-        "Preview",
-        "Transfer-Preview",
-        "Transfer-Ignore",
-        "Transfer-Complete",
-        NULL
-    };
-    ConfigParser::ParseString(&name);
-    ConfigParser::ParseQuotedString(&value);
-
-    // TODO: Find a way to move this check to ICAP
-    for (int i = 0; warnFor[i] != NULL; ++i) {
-        if (name.caseCmp(warnFor[i]) == 0) {
-            fatalf("%s:%d: meta name \"%s\" is a reserved ICAP header name",
-                   cfg_filename, config_lineno, name.termedBuf());
-        }
-    }
-
-    MetaHeader::Pointer meta = addMetaHeader(name);
-    MetaHeader::Value::Pointer headValue = meta->addValue(value);
-    aclParseAclList(parser, &headValue->aclList);
-}
-
-void
-Adaptation::Config::DumpMetaHeader(StoreEntry *entry, const char *name)
-{
-    typedef MetaHeaders::iterator AMLI;
-    for (AMLI m = metaHeaders.begin(); m != metaHeaders.end(); ++m) {
-        typedef MetaHeader::Values::iterator VLI;
-        for (VLI v =(*m)->values.begin(); v != (*m)->values.end(); ++v ) {
-            storeAppendPrintf(entry, "%s " SQUIDSTRINGPH " %s",
-                              name, SQUIDSTRINGPRINT((*m)->name), ConfigParser::QuoteString((*v)->value));
-            dump_acl_list(entry, (*v)->aclList);
-            storeAppendPrintf(entry, "\n");
-        }
-    }
-}
-
-void
-Adaptation::Config::FreeMetaHeader()
-{
-    metaHeaders.clean();
 }
 
 void
@@ -353,8 +262,7 @@ Adaptation::Config::DumpServiceGroups(StoreEntry *entry, const char *name)
 void
 Adaptation::Config::ParseAccess(ConfigParser &parser)
 {
-    String groupId;
-    ConfigParser::ParseString(&groupId);
+    String groupId = ConfigParser::NextToken();
     AccessRule *r;
     if (!(r=FindRuleByGroupId(groupId))) {
         r = new AccessRule(groupId);
@@ -385,8 +293,8 @@ Adaptation::Config::DumpAccess(StoreEntry *entry, const char *name)
 }
 
 Adaptation::Config::Config() :
-        onoff(0), service_failure_limit(0), oldest_service_failure(0),
-        service_revival_delay(0)
+    onoff(0), service_failure_limit(0), oldest_service_failure(0),
+    service_revival_delay(0)
 {}
 
 // XXX: this is called for ICAP and eCAP configs, but deals mostly
@@ -395,3 +303,4 @@ Adaptation::Config::~Config()
 {
     freeService();
 }
+

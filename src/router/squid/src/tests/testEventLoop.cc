@@ -1,14 +1,22 @@
-#define SQUID_UNIT_TEST 1
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 
 #include <cppunit/TestAssert.h>
 
-#include "testEventLoop.h"
 #include "AsyncEngine.h"
 #include "EventLoop.h"
 #include "Mem.h"
 #include "SquidTime.h"
 #include "stat.h"
+#include "testEventLoop.h"
+#include "unitTestMain.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION( testEventLoop );
 
@@ -64,8 +72,7 @@ public:
     int calls;
     int lasttimeout;
     int return_timeout;
-    RecordingEngine(int return_timeout=0): calls(0), lasttimeout(0),
-            return_timeout(return_timeout) {}
+    RecordingEngine(int aTimeout=0): calls(0), lasttimeout(0), return_timeout(aTimeout) {}
 
     virtual int checkEvents(int timeout) {
         ++calls;
@@ -272,3 +279,4 @@ testEventLoop::testSetPrimaryEngine()
     CPPUNIT_ASSERT_EQUAL(10, first_engine.lasttimeout);
     CPPUNIT_ASSERT_EQUAL(0, second_engine.lasttimeout);
 }
+

@@ -1,42 +1,22 @@
 /*
- * DEBUG: section 78    DNS lookups; interacts with lib/rfc1035.c
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 78    DNS lookups; interacts with lib/rfc1035.c */
 
 #include "squid.h"
 #include "base/InstanceId.h"
+#include "comm.h"
 #include "comm/Connection.h"
 #include "comm/ConnOpener.h"
-#include "comm.h"
 #include "comm/Loops.h"
+#include "comm/Read.h"
 #include "comm/Write.h"
+#include "dlink.h"
 #include "event.h"
 #include "fd.h"
 #include "fde.h"
@@ -59,20 +39,12 @@
 #if HAVE_ARPA_NAMESER_H
 #include <arpa/nameser.h>
 #endif
+#include <cerrno>
 #if HAVE_RESOLV_H
 #include <resolv.h>
 #endif
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
 
-/* MS Visual Studio Projects are monolithic, so we need the following
-   #ifndef to exclude the internal DNS code from compile process when
-   using external DNS process.
- */
-#if !USE_DNSHELPER
 #if _SQUID_WINDOWS_
-#include "squid_windows.h"
 #define REG_TCPIP_PARA_INTERFACES "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces"
 #define REG_TCPIP_PARA "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters"
 #define REG_VXD_MSTCP "SYSTEM\\CurrentControlSet\\Services\\VxD\\MSTCP"
@@ -142,6 +114,7 @@ struct _idns_query {
 
     int nsends;
     int need_vc;
+    bool permit_mdns;
     int pending;
 
     struct timeval start_t;
@@ -180,6 +153,7 @@ struct _ns {
 #if WHEN_EDNS_RESPONSES_ARE_PARSED
     int last_seen_edns;
 #endif
+    bool mDNSResolver;
     nsvc *vc;
 };
 
@@ -195,6 +169,7 @@ static ns *nameservers = NULL;
 static sp *searchpath = NULL;
 static int nns = 0;
 static int nns_alloc = 0;
+static int nns_mdns_count = 0;
 static int npc = 0;
 static int npc_alloc = 0;
 static int ndots = 1;
@@ -232,15 +207,14 @@ static int max_shared_edns = RFC1035_DEFAULT_PACKET_SZ;
 
 static OBJH idnsStats;
 static void idnsAddNameserver(const char *buf);
+static void idnsAddMDNSNameservers();
 static void idnsAddPathComponent(const char *buf);
 static void idnsFreeNameservers(void);
 static void idnsFreeSearchpath(void);
-static void idnsParseNameservers(void);
-#if !_SQUID_WINDOWS_
-static void idnsParseResolvConf(void);
-#endif
+static bool idnsParseNameservers(void);
+static bool idnsParseResolvConf(void);
 #if _SQUID_WINDOWS_
-static void idnsParseWIN32Registry(void);
+static bool idnsParseWIN32Registry(void);
 static void idnsParseWIN32SearchList(const char *);
 #endif
 static void idnsStartQuery(idns_query * q, IDNSCB * callback, void *data);
@@ -263,6 +237,42 @@ static unsigned short idnsQueryID(void);
 static void idnsSendSlaveAAAAQuery(idns_query *q);
 
 static void
+idnsCheckMDNS(idns_query *q)
+{
+    if (!Config.onoff.dns_mdns || q->permit_mdns)
+        return;
+
+    size_t slen = strlen(q->name);
+    if (slen > 6 && memcmp(q->name +(slen-6),".local", 6) == 0) {
+        q->permit_mdns = true;
+    }
+}
+
+static void
+idnsAddMDNSNameservers()
+{
+    nns_mdns_count=0;
+
+    // mDNS is disabled
+    if (!Config.onoff.dns_mdns)
+        return;
+
+    // mDNS resolver addresses are explicit multicast group IPs
+    if (Ip::EnableIpv6) {
+        idnsAddNameserver("FF02::FB");
+        nameservers[nns-1].S.port(5353);
+        nameservers[nns-1].mDNSResolver = true;
+        ++nns_mdns_count;
+    }
+
+    idnsAddNameserver("224.0.0.251");
+    nameservers[nns-1].S.port(5353);
+    nameservers[nns-1].mDNSResolver = true;
+
+    ++nns_mdns_count;
+}
+
+static void
 idnsAddNameserver(const char *buf)
 {
     Ip::Address A;
@@ -272,13 +282,13 @@ idnsAddNameserver(const char *buf)
         return;
     }
 
-    if (A.IsAnyAddr()) {
+    if (A.isAnyAddr()) {
         debugs(78, DBG_CRITICAL, "WARNING: Squid does not accept " << A << " in DNS server specifications.");
-        A.SetLocalhost();
+        A.setLocalhost();
         debugs(78, DBG_CRITICAL, "Will be using " << A << " instead, assuming you meant that DNS is running on the same machine");
     }
 
-    if (!Ip::EnableIpv6 && !A.SetIPv4()) {
+    if (!Ip::EnableIpv6 && !A.setIPv4()) {
         debugs(78, DBG_IMPORTANT, "WARNING: IPv6 is disabled. Discarding " << A << " in DNS server specifications.");
         return;
     }
@@ -302,7 +312,7 @@ idnsAddNameserver(const char *buf)
     }
 
     assert(nns < nns_alloc);
-    A.SetPort(NS_DEFAULTPORT);
+    A.port(NS_DEFAULTPORT);
     nameservers[nns].S = A;
 #if WHEN_EDNS_RESPONSES_ARE_PARSED
     nameservers[nns].last_seen_edns = RFC1035_DEFAULT_PACKET_SZ;
@@ -355,41 +365,38 @@ idnsFreeSearchpath(void)
     npc = npc_alloc = 0;
 }
 
-static void
+static bool
 idnsParseNameservers(void)
 {
-    wordlist *w;
-
-    for (w = Config.dns_nameservers; w; w = w->next) {
+    bool result = false;
+    for (wordlist *w = Config.dns_nameservers; w; w = w->next) {
         debugs(78, DBG_IMPORTANT, "Adding nameserver " << w->key << " from squid.conf");
         idnsAddNameserver(w->key);
+        result = true;
     }
+    return result;
 }
 
-#if !_SQUID_WINDOWS_
-static void
+static bool
 idnsParseResolvConf(void)
 {
-    FILE *fp;
-    char buf[RESOLV_BUFSZ];
-    const char *t;
-    fp = fopen(_PATH_RESCONF, "r");
+    bool result = false;
+#if !_SQUID_WINDOWS_
+    FILE *fp = fopen(_PATH_RESCONF, "r");
 
     if (fp == NULL) {
         debugs(78, DBG_IMPORTANT, "" << _PATH_RESCONF << ": " << xstrerror());
-        return;
+        return false;
     }
 
-#if _SQUID_CYGWIN_
-    setmode(fileno(fp), O_TEXT);
-#endif
-
+    char buf[RESOLV_BUFSZ];
+    const char *t = NULL;
     while (fgets(buf, RESOLV_BUFSZ, fp)) {
         t = strtok(buf, w_space);
 
         if (NULL == t) {
             continue;
-        } else if (strcasecmp(t, "nameserver") == 0) {
+        } else if (strcmp(t, "nameserver") == 0) {
             t = strtok(NULL, w_space);
 
             if (NULL == t)
@@ -398,7 +405,8 @@ idnsParseResolvConf(void)
             debugs(78, DBG_IMPORTANT, "Adding nameserver " << t << " from " << _PATH_RESCONF);
 
             idnsAddNameserver(t);
-        } else if (strcasecmp(t, "domain") == 0) {
+            result = true;
+        } else if (strcmp(t, "domain") == 0) {
             idnsFreeSearchpath();
             t = strtok(NULL, w_space);
 
@@ -408,7 +416,7 @@ idnsParseResolvConf(void)
             debugs(78, DBG_IMPORTANT, "Adding domain " << t << " from " << _PATH_RESCONF);
 
             idnsAddPathComponent(t);
-        } else if (strcasecmp(t, "search") == 0) {
+        } else if (strcmp(t, "search") == 0) {
             idnsFreeSearchpath();
             while (NULL != t) {
                 t = strtok(NULL, w_space);
@@ -420,7 +428,7 @@ idnsParseResolvConf(void)
 
                 idnsAddPathComponent(t);
             }
-        } else if (strcasecmp(t, "options") == 0) {
+        } else if (strcmp(t, "options") == 0) {
             while (NULL != t) {
                 t = strtok(NULL, w_space);
 
@@ -445,9 +453,9 @@ idnsParseResolvConf(void)
     }
 
     fclose(fp);
-}
-
 #endif
+    return result;
+}
 
 #if _SQUID_WINDOWS_
 static void
@@ -494,12 +502,13 @@ idnsParseWIN32SearchList(const char * Separator)
     }
 }
 
-static void
+static bool
 idnsParseWIN32Registry(void)
 {
     char *t;
     char *token;
     HKEY hndKey, hndKey2;
+    bool result = false;
 
     switch (WIN32_OS_version) {
 
@@ -519,6 +528,7 @@ idnsParseWIN32Registry(void)
 
                 while (token) {
                     idnsAddNameserver(token);
+                    result = true;
                     debugs(78, DBG_IMPORTANT, "Adding DHCP nameserver " << token << " from Registry");
                     token = strtok(NULL, ",");
                 }
@@ -535,6 +545,7 @@ idnsParseWIN32Registry(void)
                 while (token) {
                     debugs(78, DBG_IMPORTANT, "Adding nameserver " << token << " from Registry");
                     idnsAddNameserver(token);
+                    result = true;
                     token = strtok(NULL, ", ");
                 }
                 xfree(t);
@@ -588,6 +599,7 @@ idnsParseWIN32Registry(void)
                                 while (token) {
                                     debugs(78, DBG_IMPORTANT, "Adding DHCP nameserver " << token << " from Registry");
                                     idnsAddNameserver(token);
+                                    result = true;
                                     token = strtok(NULL, ", ");
                                 }
                                 xfree(t);
@@ -601,6 +613,7 @@ idnsParseWIN32Registry(void)
                                 while (token) {
                                     debugs(78, DBG_IMPORTANT, "Adding nameserver " << token << " from Registry");
                                     idnsAddNameserver(token);
+                                    result = true;
                                     token = strtok(NULL, ", ");
                                 }
 
@@ -645,6 +658,7 @@ idnsParseWIN32Registry(void)
                 while (token) {
                     debugs(78, DBG_IMPORTANT, "Adding nameserver " << token << " from Registry");
                     idnsAddNameserver(token);
+                    result = true;
                     token = strtok(NULL, ", ");
                 }
                 xfree(t);
@@ -657,8 +671,9 @@ idnsParseWIN32Registry(void)
 
     default:
         debugs(78, DBG_IMPORTANT, "Failed to read nameserver from Registry: Unknown System Type.");
-        return;
     }
+
+    return result;
 }
 
 #endif
@@ -674,31 +689,34 @@ idnsStats(StoreEntry * sentry)
     storeAppendPrintf(sentry, "Internal DNS Statistics:\n");
     storeAppendPrintf(sentry, "\nThe Queue:\n");
     storeAppendPrintf(sentry, "                       DELAY SINCE\n");
-    storeAppendPrintf(sentry, "  ID   SIZE SENDS FIRST SEND LAST SEND\n");
-    storeAppendPrintf(sentry, "------ ---- ----- ---------- ---------\n");
+    storeAppendPrintf(sentry, "  ID   SIZE SENDS FIRST SEND LAST SEND M FQDN\n");
+    storeAppendPrintf(sentry, "------ ---- ----- ---------- --------- - ----\n");
 
     for (n = lru_list.head; n; n = n->next) {
         q = (idns_query *)n->data;
-        storeAppendPrintf(sentry, "%#06x %4d %5d %10.3f %9.3f\n",
+        storeAppendPrintf(sentry, "%#06x %4d %5d %10.3f %9.3f %c %s\n",
                           (int) q->query_id, (int) q->sz, q->nsends,
                           tvSubDsec(q->start_t, current_time),
-                          tvSubDsec(q->sent_t, current_time));
+                          tvSubDsec(q->sent_t, current_time),
+                          (q->permit_mdns? 'M':' '),
+                          q->name);
     }
 
     if (Config.dns.packet_max > 0)
-        storeAppendPrintf(sentry, "DNS jumbo-grams: %zd Bytes\n", Config.dns.packet_max);
+        storeAppendPrintf(sentry, "\nDNS jumbo-grams: %zd Bytes\n", Config.dns.packet_max);
     else
-        storeAppendPrintf(sentry, "DNS jumbo-grams: not working\n");
+        storeAppendPrintf(sentry, "\nDNS jumbo-grams: not working\n");
 
     storeAppendPrintf(sentry, "\nNameservers:\n");
-    storeAppendPrintf(sentry, "IP ADDRESS                                     # QUERIES # REPLIES\n");
-    storeAppendPrintf(sentry, "---------------------------------------------- --------- ---------\n");
+    storeAppendPrintf(sentry, "IP ADDRESS                                     # QUERIES # REPLIES Type\n");
+    storeAppendPrintf(sentry, "---------------------------------------------- --------- --------- --------\n");
 
     for (i = 0; i < nns; ++i) {
-        storeAppendPrintf(sentry, "%-45s %9d %9d\n",  /* Let's take the maximum: (15 IPv4/45 IPv6) */
-                          nameservers[i].S.NtoA(buf,MAX_IPSTRLEN),
+        storeAppendPrintf(sentry, "%-45s %9d %9d %s\n",  /* Let's take the maximum: (15 IPv4/45 IPv6) */
+                          nameservers[i].S.toStr(buf,MAX_IPSTRLEN),
                           nameservers[i].nqueries,
-                          nameservers[i].nreplies);
+                          nameservers[i].nreplies,
+                          nameservers[i].mDNSResolver?"multicast":"recurse");
     }
 
     storeAppendPrintf(sentry, "\nRcode Matrix:\n");
@@ -748,18 +766,18 @@ idnsTickleQueue(void)
 }
 
 static void
-idnsSentQueryVC(const Comm::ConnectionPointer &conn, char *buf, size_t size, comm_err_t flag, int xerrno, void *data)
+idnsSentQueryVC(const Comm::ConnectionPointer &conn, char *buf, size_t size, Comm::Flag flag, int xerrno, void *data)
 {
     nsvc * vc = (nsvc *)data;
 
-    if (flag == COMM_ERR_CLOSING)
+    if (flag == Comm::ERR_CLOSING)
         return;
 
     // XXX: irrelevant now that we have conn pointer?
     if (!Comm::IsConnOpen(conn) || fd_table[conn->fd].closing())
         return;
 
-    if (flag != COMM_OK || size <= 0) {
+    if (flag != Comm::OK || size <= 0) {
         conn->close();
         return;
     }
@@ -802,14 +820,14 @@ idnsDoSendQueryVC(nsvc *vc)
 }
 
 static void
-idnsInitVCConnected(const Comm::ConnectionPointer &conn, comm_err_t status, int xerrno, void *data)
+idnsInitVCConnected(const Comm::ConnectionPointer &conn, Comm::Flag status, int xerrno, void *data)
 {
     nsvc * vc = (nsvc *)data;
 
-    if (status != COMM_OK || !conn) {
+    if (status != Comm::OK || !conn) {
         char buf[MAX_IPSTRLEN] = "";
         if (vc->ns < nns)
-            nameservers[vc->ns].S.NtoA(buf,MAX_IPSTRLEN);
+            nameservers[vc->ns].S.toStr(buf,MAX_IPSTRLEN);
         debugs(78, DBG_IMPORTANT, HERE << "Failed to connect to nameserver " << buf << " using TCP.");
         return;
     }
@@ -837,29 +855,26 @@ idnsVCClosed(const CommCloseCbParams &params)
 }
 
 static void
-idnsInitVC(int ns)
+idnsInitVC(int nsv)
 {
     nsvc *vc = cbdataAlloc(nsvc);
-    assert(ns < nns);
+    assert(nsv < nns);
     assert(vc->conn == NULL); // MUST be NULL from the construction process!
-    nameservers[ns].vc = vc;
-    vc->ns = ns;
+    nameservers[nsv].vc = vc;
+    vc->ns = nsv;
     vc->queue = new MemBuf;
     vc->msg = new MemBuf;
     vc->busy = 1;
 
     Comm::ConnectionPointer conn = new Comm::Connection();
 
-    if (!Config.Addrs.udp_outgoing.IsNoAddr())
-        conn->local = Config.Addrs.udp_outgoing;
+    if (!Config.Addrs.udp_outgoing.isNoAddr())
+        conn->setAddrs(Config.Addrs.udp_outgoing, nameservers[nsv].S);
     else
-        conn->local = Config.Addrs.udp_incoming;
+        conn->setAddrs(Config.Addrs.udp_incoming, nameservers[nsv].S);
 
-    conn->remote = nameservers[ns].S;
-
-    if (conn->remote.IsIPv4()) {
-        conn->local.SetIPv4();
-    }
+    if (conn->remote.isIPv4())
+        conn->local.setIPv4();
 
     AsyncCall::Pointer call = commCbCall(78,3, "idnsInitVCConnected", CommConnectCbPtrFun(idnsInitVCConnected, vc));
 
@@ -869,17 +884,17 @@ idnsInitVC(int ns)
 }
 
 static void
-idnsSendQueryVC(idns_query * q, int ns)
+idnsSendQueryVC(idns_query * q, int nsn)
 {
-    assert(ns < nns);
-    if (nameservers[ns].vc == NULL)
-        idnsInitVC(ns);
+    assert(nsn < nns);
+    if (nameservers[nsn].vc == NULL)
+        idnsInitVC(nsn);
 
-    nsvc *vc = nameservers[ns].vc;
+    nsvc *vc = nameservers[nsn].vc;
 
     if (!vc) {
         char buf[MAX_IPSTRLEN];
-        debugs(78, DBG_IMPORTANT, "idnsSendQuery: Failed to initiate TCP connection to nameserver " << nameservers[ns].S.NtoA(buf,MAX_IPSTRLEN) << "!");
+        debugs(78, DBG_IMPORTANT, "idnsSendQuery: Failed to initiate TCP connection to nameserver " << nameservers[nsn].S.toStr(buf,MAX_IPSTRLEN) << "!");
 
         return;
     }
@@ -913,28 +928,32 @@ idnsSendQuery(idns_query * q)
     assert(q->lru.prev == NULL);
 
     int x = -1, y = -1;
-    int ns;
+    int nsn;
 
     do {
-        ns = q->nsends % nns;
+        // only use mDNS resolvers for mDNS compatible queries
+        if (!q->permit_mdns)
+            nsn = nns_mdns_count + q->nsends % (nns-nns_mdns_count);
+        else
+            nsn = q->nsends % nns;
 
         if (q->need_vc) {
-            idnsSendQueryVC(q, ns);
+            idnsSendQueryVC(q, nsn);
             x = y = 0;
         } else {
-            if (DnsSocketB >= 0 && nameservers[ns].S.IsIPv6())
-                y = comm_udp_sendto(DnsSocketB, nameservers[ns].S, q->buf, q->sz);
+            if (DnsSocketB >= 0 && nameservers[nsn].S.isIPv6())
+                y = comm_udp_sendto(DnsSocketB, nameservers[nsn].S, q->buf, q->sz);
             else if (DnsSocketA >= 0)
-                x = comm_udp_sendto(DnsSocketA, nameservers[ns].S, q->buf, q->sz);
+                x = comm_udp_sendto(DnsSocketA, nameservers[nsn].S, q->buf, q->sz);
         }
 
         ++ q->nsends;
 
         q->sent_t = current_time;
 
-        if (y < 0 && nameservers[ns].S.IsIPv6())
+        if (y < 0 && nameservers[nsn].S.isIPv6())
             debugs(50, DBG_IMPORTANT, "idnsSendQuery: FD " << DnsSocketB << ": sendto: " << xstrerror());
-        if (x < 0 && nameservers[ns].S.IsIPv4())
+        if (x < 0 && nameservers[nsn].S.isIPv4())
             debugs(50, DBG_IMPORTANT, "idnsSendQuery: FD " << DnsSocketA << ": sendto: " << xstrerror());
 
     } while ( (x<0 && y<0) && q->nsends % nns != 0);
@@ -946,7 +965,7 @@ idnsSendQuery(idns_query * q)
         fd_bytes(DnsSocketA, x, FD_WRITE);
     }
 
-    ++ nameservers[ns].nqueries;
+    ++ nameservers[nsn].nqueries;
     q->queue_t = current_time;
     dlinkAdd(q, &q->lru, &lru_list);
     q->pending = 1;
@@ -962,7 +981,7 @@ idnsFromKnownNameserver(Ip::Address const &from)
         if (nameservers[i].S != from)
             continue;
 
-        if (nameservers[i].S.GetPort() != from.GetPort())
+        if (nameservers[i].S.port() != from.port())
             continue;
 
         return i;
@@ -1017,9 +1036,8 @@ idnsCallback(idns_query *q, const char *error)
     if (q->master)
         q = q->master;
 
-    idns_query *q2;
     // If any of our subqueries are still pending then wait for them to complete before continuing
-    for ( q2 = q; q2; q2 = q2->slave) {
+    for (idns_query *q2 = q; q2; q2 = q2->slave) {
         if (q2->pending) {
             return;
         }
@@ -1031,7 +1049,7 @@ idnsCallback(idns_query *q, const char *error)
     int n = q->ancount;
     error = q->error;
 
-    while ( (q2 = q->slave) ) {
+    while ( idns_query *q2 = q->slave ) {
         debugs(78, 6, HERE << "Merging DNS results " << q->name << " A has " << n << " RR, AAAA has " << q2->ancount << " RR");
         q->slave = q2->slave;
         if ( !q2->error ) {
@@ -1127,9 +1145,9 @@ idnsGrokReply(const char *buf, size_t sz, int from_ns)
 
 #if WHEN_EDNS_RESPONSES_ARE_PARSED
 // TODO: actually gr the message right here.
-//	pull out the DNS meta data we need (A records, AAAA records and EDNS OPT) and store in q
-//	this is overall better than force-feeding A response with AAAA an section later anyway.
-//	AND allows us to merge AN+AR sections from both responses (one day)
+//  pull out the DNS meta data we need (A records, AAAA records and EDNS OPT) and store in q
+//  this is overall better than force-feeding A response with AAAA an section later anyway.
+//  AND allows us to merge AN+AR sections from both responses (one day)
 
     if (q->edns_seen >= 0) {
         if (max_shared_edns == nameservers[from_ns].last_seen_edns && max_shared_edns < q->edns_seen) {
@@ -1229,6 +1247,7 @@ idnsGrokReply(const char *buf, size_t sz, int from_ns)
 
             q->nsends = 0;
 
+            idnsCheckMDNS(q);
             idnsSendQuery(q);
             if (Ip::EnableIpv6)
                 idnsSendSlaveAAAAQuery(q);
@@ -1253,7 +1272,6 @@ idnsRead(int fd, void *data)
     int len;
     int max = INCOMING_DNS_MAX;
     static char rbuf[SQUID_UDP_SO_RCVBUF];
-    int ns;
     Ip::Address from;
 
     debugs(78, 3, "idnsRead: starting with FD " << fd);
@@ -1305,10 +1323,10 @@ idnsRead(int fd, void *data)
         debugs(78, 3, "idnsRead: FD " << fd << ": received " << len << " bytes from " << from);
 
         /* BUG: see above. Its here that it becomes apparent that the content of bugbypass is gone. */
-        ns = idnsFromKnownNameserver(from);
+        int nsn = idnsFromKnownNameserver(from);
 
-        if (ns >= 0) {
-            ++ nameservers[ns].nreplies;
+        if (nsn >= 0) {
+            ++ nameservers[nsn].nreplies;
         }
 
         // Before unknown_nameservers check to avoid flooding cache.log on attacks,
@@ -1316,7 +1334,7 @@ idnsRead(int fd, void *data)
         if (!lru_list.head)
             continue; // Don't process replies if there is no pending query.
 
-        if (ns < 0 && Config.onoff.ignore_unknown_nameservers) {
+        if (nsn < 0 && Config.onoff.ignore_unknown_nameservers) {
             static time_t last_warning = 0;
 
             if (squid_curtime - last_warning > 60) {
@@ -1328,7 +1346,7 @@ idnsRead(int fd, void *data)
             continue;
         }
 
-        idnsGrokReply(rbuf, len, ns);
+        idnsGrokReply(rbuf, len, nsn);
     }
 }
 
@@ -1387,14 +1405,14 @@ idnsCheckQueue(void *unused)
 }
 
 static void
-idnsReadVC(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm_err_t flag, int xerrno, void *data)
+idnsReadVC(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Flag flag, int xerrno, void *data)
 {
     nsvc * vc = (nsvc *)data;
 
-    if (flag == COMM_ERR_CLOSING)
+    if (flag == Comm::ERR_CLOSING)
         return;
 
-    if (flag != COMM_OK || len <= 0) {
+    if (flag != Comm::OK || len <= 0) {
         if (Comm::IsConnOpen(conn))
             conn->close();
         return;
@@ -1420,14 +1438,14 @@ idnsReadVC(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm_err_
 }
 
 static void
-idnsReadVCHeader(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm_err_t flag, int xerrno, void *data)
+idnsReadVCHeader(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Flag flag, int xerrno, void *data)
 {
     nsvc * vc = (nsvc *)data;
 
-    if (flag == COMM_ERR_CLOSING)
+    if (flag == Comm::ERR_CLOSING)
         return;
 
-    if (flag != COMM_OK || len <= 0) {
+    if (flag != Comm::OK || len <= 0) {
         if (Comm::IsConnOpen(conn))
             conn->close();
         return;
@@ -1447,6 +1465,12 @@ idnsReadVCHeader(const Comm::ConnectionPointer &conn, char *buf, size_t len, com
     vc->read_msglen = 0;
 
     vc->msglen = ntohs(vc->msglen);
+
+    if (!vc->msglen) {
+        if (Comm::IsConnOpen(conn))
+            conn->close();
+        return;
+    }
 
     vc->msg->init(vc->msglen, vc->msglen);
     AsyncCall::Pointer call = commCbCall(5,4, "idnsReadVC",
@@ -1489,15 +1513,15 @@ dnsInit(void)
     if (DnsSocketA < 0 && DnsSocketB < 0) {
         Ip::Address addrV6; // since we don't want to alter Config.Addrs.udp_* and dont have one of our own.
 
-        if (!Config.Addrs.udp_outgoing.IsNoAddr())
+        if (!Config.Addrs.udp_outgoing.isNoAddr())
             addrV6 = Config.Addrs.udp_outgoing;
         else
             addrV6 = Config.Addrs.udp_incoming;
 
         Ip::Address addrV4 = addrV6;
-        addrV4.SetIPv4();
+        addrV4.setIPv4();
 
-        if (Ip::EnableIpv6 && addrV6.IsIPv6()) {
+        if (Ip::EnableIpv6 && addrV6.isIPv6()) {
             debugs(78, 2, "idnsInit: attempt open DNS socket to: " << addrV6);
             DnsSocketB = comm_open_listener(SOCK_DGRAM,
                                             IPPROTO_UDP,
@@ -1506,7 +1530,7 @@ dnsInit(void)
                                             "DNS Socket IPv6");
         }
 
-        if (addrV4.IsIPv4()) {
+        if (addrV4.isIPv4()) {
             debugs(78, 2, "idnsInit: attempt open DNS socket to: " << addrV4);
             DnsSocketA = comm_open_listener(SOCK_DGRAM,
                                             IPPROTO_UDP,
@@ -1534,19 +1558,18 @@ dnsInit(void)
     }
 
     assert(0 == nns);
-    idnsParseNameservers();
-#if !_SQUID_WINDOWS_
+    idnsAddMDNSNameservers();
+    bool nsFound = idnsParseNameservers();
 
-    if (0 == nns)
-        idnsParseResolvConf();
+    if (!nsFound)
+        nsFound = idnsParseResolvConf();
 
-#endif
 #if _SQUID_WINDOWS_
-    if (0 == nns)
-        idnsParseWIN32Registry();
+    if (!nsFound)
+        nsFound = idnsParseWIN32Registry();
 #endif
 
-    if (0 == nns) {
+    if (!nsFound) {
         debugs(78, DBG_IMPORTANT, "Warning: Could not find any nameservers. Trying to use localhost");
 #if _SQUID_WINDOWS_
         debugs(78, DBG_IMPORTANT, "Please check your TCP-IP settings or /etc/resolv.conf file");
@@ -1662,6 +1685,7 @@ idnsSendSlaveAAAAQuery(idns_query *master)
         cbdataFree(q);
         return;
     }
+    idnsCheckMDNS(q);
     master->slave = q;
     idnsSendQuery(q);
 }
@@ -1720,6 +1744,7 @@ idnsALookup(const char *name, IDNSCB * callback, void *data)
     debugs(78, 3, "idnsALookup: buf is " << q->sz << " bytes for " << q->name <<
            ", id = 0x" << std::hex << q->query_id);
 
+    idnsCheckMDNS(q);
     idnsStartQuery(q, callback, data);
 
     if (Ip::EnableIpv6)
@@ -1734,7 +1759,7 @@ idnsPTRLookup(const Ip::Address &addr, IDNSCB * callback, void *data)
 
     char ip[MAX_IPSTRLEN];
 
-    addr.NtoA(ip,MAX_IPSTRLEN);
+    addr.toStr(ip,MAX_IPSTRLEN);
 
     q = cbdataAlloc(idns_query);
 
@@ -1742,13 +1767,13 @@ idnsPTRLookup(const Ip::Address &addr, IDNSCB * callback, void *data)
     q->xact_id.change();
     q->query_id = idnsQueryID();
 
-    if (addr.IsIPv6()) {
+    if (addr.isIPv6()) {
         struct in6_addr addr6;
-        addr.GetInAddr(addr6);
+        addr.getInAddr(addr6);
         q->sz = rfc3596BuildPTRQuery6(addr6, q->buf, sizeof(q->buf), q->query_id, &q->query, Config.dns.packet_max);
     } else {
         struct in_addr addr4;
-        addr.GetInAddr(addr4);
+        addr.getInAddr(addr4);
         // see EDNS notes at top of file why this sends 0
         q->sz = rfc3596BuildPTRQuery4(addr4, q->buf, sizeof(q->buf), q->query_id, &q->query, 0);
     }
@@ -1768,6 +1793,7 @@ idnsPTRLookup(const Ip::Address &addr, IDNSCB * callback, void *data)
     debugs(78, 3, "idnsPTRLookup: buf is " << q->sz << " bytes for " << ip <<
            ", id = 0x" << std::hex << q->query_id);
 
+    q->permit_mdns = Config.onoff.dns_mdns;
     idnsStartQuery(q, callback, data);
 }
 
@@ -1824,4 +1850,4 @@ snmp_netDnsFn(variable_list * Var, snint * ErrP)
 }
 
 #endif /*SQUID_SNMP */
-#endif /* USE_DNSHELPER */
+

@@ -1,20 +1,23 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #ifndef SQUID_IPC_START_LISTENING_H
 #define SQUID_IPC_START_LISTENING_H
 
+#include "base/AsyncCall.h"
 #include "base/Subscription.h"
 #include "comm/forward.h"
 #include "ip/forward.h"
 #include "ipc/FdNotes.h"
-#include "base/AsyncCall.h"
 
-#if HAVE_IOSFWD
 #include <iosfwd>
-#endif
 
 namespace Ipc
 {
@@ -43,3 +46,4 @@ void StartListening(int sock_type, int proto, const Comm::ConnectionPointer &lis
 } // namespace Ipc;
 
 #endif /* SQUID_IPC_START_LISTENING_H */
+

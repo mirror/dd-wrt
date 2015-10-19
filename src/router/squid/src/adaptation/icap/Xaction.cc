@@ -1,9 +1,14 @@
 /*
- * DEBUG: section 93    ICAP (RFC 3507) Client
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 93    ICAP (RFC 3507) Client */
+
 #include "squid.h"
-#include "acl/FilledChecklist.h"
 #include "adaptation/icap/Config.h"
 #include "adaptation/icap/Launcher.h"
 #include "adaptation/icap/Xaction.h"
@@ -11,12 +16,12 @@
 #include "comm.h"
 #include "comm/Connection.h"
 #include "comm/ConnOpener.h"
+#include "comm/Read.h"
 #include "comm/Write.h"
 #include "CommCalls.h"
 #include "err_detail_type.h"
 #include "fde.h"
-#include "forward.h"
-#include "globals.h"
+#include "FwdState.h"
 #include "HttpMsg.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
@@ -27,31 +32,37 @@
 #include "SquidConfig.h"
 #include "SquidTime.h"
 
-//CBDATA_NAMESPACED_CLASS_INIT(Adaptation::Icap, Xaction);
-
 Adaptation::Icap::Xaction::Xaction(const char *aTypeName, Adaptation::Icap::ServiceRep::Pointer &aService):
-        AsyncJob(aTypeName),
-        Adaptation::Initiate(aTypeName),
-        icapRequest(NULL),
-        icapReply(NULL),
-        attempts(0),
-        connection(NULL),
-        theService(aService),
-        commBuf(NULL), commBufSize(0),
-        commEof(false),
-        reuseConnection(true),
-        isRetriable(true),
-        isRepeatable(true),
-        ignoreLastWrite(false),
-        connector(NULL), reader(NULL), writer(NULL), closer(NULL),
-        alep(new AccessLogEntry),
-        al(*alep),
-        cs(NULL)
+    AsyncJob(aTypeName),
+    Adaptation::Initiate(aTypeName),
+    icapRequest(NULL),
+    icapReply(NULL),
+    attempts(0),
+    connection(NULL),
+    theService(aService),
+    commBuf(NULL),
+    commBufSize(0),
+    commEof(false),
+    reuseConnection(true),
+    isRetriable(true),
+    isRepeatable(true),
+    ignoreLastWrite(false),
+    stopReason(NULL),
+    connector(NULL),
+    reader(NULL),
+    writer(NULL),
+    closer(NULL),
+    alep(new AccessLogEntry),
+    al(*alep),
+    cs(NULL)
 {
     debugs(93,3, typeName << " constructed, this=" << this <<
            " [icapx" << id << ']'); // we should not call virtual status() here
-    icapRequest = HTTPMSGLOCK(new HttpRequest);
+    icapRequest = new HttpRequest;
+    HTTPMSGLOCK(icapRequest);
     icap_tr_start = current_time;
+    memset(&icap_tio_start, 0, sizeof(icap_tio_start));
+    memset(&icap_tio_finish, 0, sizeof(icap_tio_finish));
 }
 
 Adaptation::Icap::Xaction::~Xaction()
@@ -121,7 +132,7 @@ Adaptation::Icap::Xaction::openConnection()
         CbcPointer<Xaction> self(this);
         Dialer dialer(self, &Adaptation::Icap::Xaction::noteCommConnected);
         dialer.params.conn = connection;
-        dialer.params.flag = COMM_OK;
+        dialer.params.flag = Comm::OK;
         // fake other parameters by copying from the existing connection
         connector = asyncCall(93,3, "Adaptation::Icap::Xaction::noteCommConnected", dialer);
         ScheduleCallHere(connector);
@@ -153,7 +164,7 @@ Adaptation::Icap::Xaction::dnsLookupDone(const ipcache_addrs *ia)
         CbcPointer<Xaction> self(this);
         Dialer dialer(self, &Adaptation::Icap::Xaction::noteCommConnected);
         dialer.params.conn = connection;
-        dialer.params.flag = COMM_ERROR;
+        dialer.params.flag = Comm::COMM_ERROR;
         // fake other parameters by copying from the existing connection
         connector = asyncCall(93,3, "Adaptation::Icap::Xaction::noteCommConnected", dialer);
         ScheduleCallHere(connector);
@@ -165,7 +176,7 @@ Adaptation::Icap::Xaction::dnsLookupDone(const ipcache_addrs *ia)
 
     connection = new Comm::Connection;
     connection->remote = ia->in_addrs[ia->cur];
-    connection->remote.SetPort(s.cfg().port);
+    connection->remote.port(s.cfg().port);
     getOutgoingAddress(NULL, connection);
 
     // TODO: service bypass status may differ from that of a transaction
@@ -173,7 +184,7 @@ Adaptation::Icap::Xaction::dnsLookupDone(const ipcache_addrs *ia)
     connector = JobCallback(93,3, ConnectDialer, this, Adaptation::Icap::Xaction::noteCommConnected);
     cs = new Comm::ConnOpener(connection, connector, TheConfig.connect_timeout(service().cfg().bypass));
     cs->setHost(s.cfg().host.termedBuf());
-    AsyncJob::Start(cs);
+    AsyncJob::Start(cs.get());
 }
 
 /*
@@ -186,7 +197,7 @@ Adaptation::Icap::Xaction::reusedConnection(void *data)
 {
     debugs(93, 5, HERE << "reused connection");
     Adaptation::Icap::Xaction *x = (Adaptation::Icap::Xaction*)data;
-    x->noteCommConnected(COMM_OK);
+    x->noteCommConnected(Comm::OK);
 }
 #endif
 
@@ -228,7 +239,7 @@ void Adaptation::Icap::Xaction::noteCommConnected(const CommConnectCbParams &io)
 {
     cs = NULL;
 
-    if (io.flag == COMM_TIMEOUT) {
+    if (io.flag == Comm::TIMEOUT) {
         handleCommTimedout();
         return;
     }
@@ -236,7 +247,7 @@ void Adaptation::Icap::Xaction::noteCommConnected(const CommConnectCbParams &io)
     Must(connector != NULL);
     connector = NULL;
 
-    if (io.flag != COMM_OK)
+    if (io.flag != Comm::OK)
         dieOnConnectionFailure(); // throws
 
     typedef CommCbMemFunT<Adaptation::Icap::Xaction, CommTimeoutCbParams> TimeoutDialer;
@@ -287,7 +298,7 @@ void Adaptation::Icap::Xaction::noteCommWrote(const CommIoCbParams &io)
         ignoreLastWrite = false;
         debugs(93, 7, HERE << "ignoring last write; status: " << io.flag);
     } else {
-        Must(io.flag == COMM_OK);
+        Must(io.flag == Comm::OK);
         al.icap.bytesSent += io.size;
         updateTimeout();
         handleCommWrote(io.size);
@@ -393,7 +404,7 @@ void Adaptation::Icap::Xaction::noteCommRead(const CommIoCbParams &io)
     Must(reader != NULL);
     reader = NULL;
 
-    Must(io.flag == COMM_OK);
+    Must(io.flag == Comm::OK);
 
     if (!io.size) {
         commEof = true;
@@ -429,7 +440,7 @@ void Adaptation::Icap::Xaction::cancelRead()
 {
     if (reader != NULL) {
         Must(haveConnection());
-        comm_read_cancel(connection->fd, reader);
+        Comm::ReadCancel(connection->fd, reader);
         reader = NULL;
     }
 }
@@ -438,11 +449,11 @@ bool Adaptation::Icap::Xaction::parseHttpMsg(HttpMsg *msg)
 {
     debugs(93, 5, HERE << "have " << readBuf.contentSize() << " head bytes to parse");
 
-    http_status error = HTTP_STATUS_NONE;
+    Http::StatusCode error = Http::scNone;
     const bool parsed = msg->parse(&readBuf, commEof, &error);
     Must(parsed || !error); // success or need more data
 
-    if (!parsed) {	// need more data
+    if (!parsed) {  // need more data
         Must(mayReadMore());
         msg->reset();
         return false;
@@ -511,7 +522,7 @@ void Adaptation::Icap::Xaction::setOutcome(const Adaptation::Icap::XactOutcome &
 void Adaptation::Icap::Xaction::swanSong()
 {
     // kids should sing first and then call the parent method.
-    if (cs) {
+    if (cs.valid()) {
         debugs(93,6, HERE << id << " about to notify ConnOpener!");
         CallJobHere(93, 3, cs, Comm::ConnOpener, noteAbort);
         cs = NULL;
@@ -536,7 +547,7 @@ void Adaptation::Icap::Xaction::swanSong()
 void Adaptation::Icap::Xaction::tellQueryAborted()
 {
     if (theInitiator.set()) {
-        Adaptation::Icap::XactAbortInfo abortInfo(icapRequest, icapReply,
+        Adaptation::Icap::XactAbortInfo abortInfo(icapRequest, icapReply.getRaw(),
                 retriable(), repeatable());
         Launcher *launcher = dynamic_cast<Launcher*>(theInitiator.get());
         // launcher may be nil if initiator is invalid
@@ -549,16 +560,8 @@ void Adaptation::Icap::Xaction::tellQueryAborted()
 void Adaptation::Icap::Xaction::maybeLog()
 {
     if (IcapLogfileStatus == LOG_ENABLE) {
-        ACLFilledChecklist *checklist = new ACLFilledChecklist(::Config.accessList.icap, al.request, dash_str);
-        if (al.reply) {
-            checklist->reply = al.reply;
-            HTTPMSGLOCK(checklist->reply);
-        }
-        if (!::Config.accessList.icap || checklist->fastCheck() == ACCESS_ALLOWED) {
-            finalizeLogInfo();
-            icapLogLog(alep, checklist);
-        }
-        delete checklist;
+        finalizeLogInfo();
+        icapLogLog(alep);
     }
 }
 
@@ -575,10 +578,12 @@ void Adaptation::Icap::Xaction::finalizeLogInfo()
     al.icap.ioTime = tvSubMsec(icap_tio_start, icap_tio_finish);
     al.icap.trTime = tvSubMsec(icap_tr_start, current_time);
 
-    al.icap.request = HTTPMSGLOCK(icapRequest);
-    if (icapReply) {
-        al.icap.reply = HTTPMSGLOCK(icapReply);
-        al.icap.resStatus = icapReply->sline.status;
+    al.icap.request = icapRequest;
+    HTTPMSGLOCK(al.icap.request);
+    if (icapReply != NULL) {
+        al.icap.reply = icapReply.getRaw();
+        HTTPMSGLOCK(al.icap.reply);
+        al.icap.resStatus = icapReply->sline.status();
     }
 }
 
@@ -629,3 +634,4 @@ bool Adaptation::Icap::Xaction::fillVirginHttpHeader(MemBuf &buf) const
 {
     return false;
 }
+

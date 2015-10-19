@@ -1,5 +1,16 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_PCONN_H
 #define SQUID_PCONN_H
+
+#include "base/CbcPointer.h"
+#include <set>
 
 /**
  \defgroup PConnAPI Persistent Connection API
@@ -9,6 +20,7 @@
  */
 
 class PconnPool;
+class PeerPoolMgr;
 
 /* for CBDATA_CLASS2() macros */
 #include "cbdata.h"
@@ -16,9 +28,6 @@ class PconnPool;
 #include "hash.h"
 /* for IOCB */
 #include "comm.h"
-
-/// \ingroup PConnAPI
-#define MAX_NUM_PCONN_POOLS 10
 
 /// \ingroup PConnAPI
 #define PCONN_HIST_SZ (1<<16)
@@ -106,30 +115,37 @@ class PconnPool
 {
 
 public:
-    PconnPool(const char *);
+    PconnPool(const char *aDescription, const CbcPointer<PeerPoolMgr> &aMgr);
     ~PconnPool();
 
     void moduleInit();
     void push(const Comm::ConnectionPointer &serverConn, const char *domain);
 
     /**
-     * Updates destLink to point at an existing open connection if available and retriable.
-     * Otherwise, return false.
+     * Returns either a pointer to a popped connection to dest or nil.
+     * Closes the connection before returning its pointer unless keepOpen.
      *
-     * We close available persistent connection if the caller transaction is not
-     * retriable to avoid having a growing number of open connections when many
-     * transactions create persistent connections but are not retriable.
+     * A caller with a non-retriable transaction should set keepOpen to false
+     * and call pop() anyway, even though the caller does not want a pconn.
+     * This forces us to close an available persistent connection, avoiding
+     * creating a growing number of open connections when many transactions
+     * create (and push) persistent connections but are not retriable and,
+     * hence, do not need to pop a connection.
      */
-    Comm::ConnectionPointer pop(const Comm::ConnectionPointer &destLink, const char *domain, bool retriable);
+    Comm::ConnectionPointer pop(const Comm::ConnectionPointer &dest, const char *domain, bool keepOpen);
     void count(int uses);
     void dumpHist(StoreEntry *e) const;
     void dumpHash(StoreEntry *e) const;
     void unlinkList(IdleConnList *list);
     void noteUses(int uses);
-    void closeN(int n, const Comm::ConnectionPointer &destLink, const char *domain);
+    /// closes any n connections, regardless of their destination
+    void closeN(int n);
     int count() const { return theCount; }
     void noteConnectionAdded() { ++theCount; }
     void noteConnectionRemoved() { assert(theCount > 0); --theCount; }
+
+    // sends an async message to the pool manager, if any
+    void notifyManager(const char *reason);
 
 private:
 
@@ -138,6 +154,7 @@ private:
     int hist[PCONN_HIST_SZ];
     hash_table *table;
     const char *descr;
+    CbcPointer<PeerPoolMgr> mgr; ///< optional pool manager (for notifications)
     int theCount; ///< the number of pooled connections
 };
 
@@ -162,15 +179,16 @@ public:
     void registerWithCacheManager(void);
 
     void add(PconnPool *);
+    void remove(PconnPool *); ///< unregister and forget about this pool object
 
     OBJH dump;
 
 private:
-    PconnPool **pools;
+    typedef std::set<PconnPool*> Pools; ///< unordered PconnPool collection
+    Pools pools; ///< all live pools
 
     static PconnModule * instance;
-
-    int poolCount;
 };
 
 #endif /* SQUID_PCONN_H */
+

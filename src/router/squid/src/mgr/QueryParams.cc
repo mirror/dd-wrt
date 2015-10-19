@@ -1,14 +1,19 @@
 /*
- * DEBUG: section 16    Cache Manager API
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager API */
 
 #include "squid.h"
 #include "base/TextException.h"
 #include "ipc/TypedMsgHdr.h"
 #include "mgr/IntParam.h"
-#include "mgr/StringParam.h"
 #include "mgr/QueryParams.h"
+#include "mgr/StringParam.h"
 
 Mgr::QueryParam::Pointer
 Mgr::QueryParams::get(const String& name) const
@@ -133,3 +138,4 @@ Mgr::QueryParams::CreateParam(QueryParam::Type aType)
     }
     return NULL;
 }
+

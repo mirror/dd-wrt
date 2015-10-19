@@ -1,28 +1,24 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * based on ftp://ftp.cs.cmu.edu/user/sleator/splaying/top-down-splay.c
  * http://bobo.link.cs.cmu.edu/cgi-bin/splay/splay-cgi.pl
  */
 
 #include "squid.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
+#include <cstdlib>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#if 0
-#define assert(X) {if (!(X)) exit (1);}
 #include "splay.h"
-#undef assert
-#else
-#include "splay.h"
-#endif
-
 #include "util.h"
 
 class intnode
@@ -143,7 +139,10 @@ main(int argc, char *argv[])
         for (i = 0; i < 100; ++i) {
             I = (intnode *)xcalloc(sizeof(intnode), 1);
             I->i = squid_random();
-            top = top->insert(I, compareintvoid);
+            if (top)
+                top = top->insert(I, compareintvoid);
+            else
+                top = new splayNode(static_cast<void*>(new intnode(101)));
         }
 
         SplayCheck::BeginWalk();
@@ -152,15 +151,12 @@ main(int argc, char *argv[])
         SplayCheck::BeginWalk();
         top->walk(SplayCheck::WalkVoid, NULL);
         top->destroy(destintvoid);
-        /* check we don't segfault on NULL splay calls */
-        top = NULL;
-        top->splay((void *)NULL, compareintvoid);
     }
 
     /* test typesafe splay containers */
     {
         /* intnode* */
-        SplayNode<intnode *> *safeTop = NULL;
+        SplayNode<intnode *> *safeTop = new SplayNode<intnode *>(new intnode(101));
 
         for ( int i = 0; i < 100; ++i) {
             intnode *I;
@@ -173,13 +169,10 @@ main(int argc, char *argv[])
         safeTop->walk(SplayCheck::WalkNode, NULL);
 
         safeTop->destroy(destint);
-        /* check we don't segfault on NULL splay calls */
-        safeTop = NULL;
-        safeTop->splay((intnode *)NULL, compareint);
     }
     {
         /* intnode */
-        SplayNode<intnode> *safeTop = NULL;
+        SplayNode<intnode> *safeTop = new SplayNode<intnode>(101);
 
         for (int i = 0; i < 100; ++i) {
             intnode I;
@@ -191,25 +184,23 @@ main(int argc, char *argv[])
         safeTop->walk(SplayCheck::WalkNodeRef, NULL);
 
         safeTop->destroy(destintref);
-        /* check we don't segfault on NULL splay calls */
-        safeTop = NULL;
-        safeTop->splay(intnode(), compareintref);
-        SplayCheck::BeginWalk();
-        safeTop->walk(SplayCheck::WalkNodeRef, NULL);
     }
+
     /* check the check routine */
-    SplayCheck::BeginWalk();
-    intnode I;
-    I.i = 1;
-    /* check we don't segfault on NULL splay calls */
-    SplayCheck::WalkNodeRef(I, NULL);
-    I.i = 0;
-    SplayCheck::ExpectedFail = true;
-    SplayCheck::WalkNodeRef(I, NULL);
+    {
+        SplayCheck::BeginWalk();
+        intnode I;
+        I.i = 1;
+        /* check we don't segfault on NULL splay calls */
+        SplayCheck::WalkNodeRef(I, NULL);
+        I.i = 0;
+        SplayCheck::ExpectedFail = true;
+        SplayCheck::WalkNodeRef(I, NULL);
+    }
 
     {
         /* check for begin() */
-        SplayNode<intnode> *safeTop = NULL;
+        Splay<intnode> *safeTop = new Splay<intnode>();
 
         if (safeTop->start() != NULL)
             exit (1);
@@ -222,15 +213,15 @@ main(int argc, char *argv[])
             I.i = squid_random();
 
             if (I.i > 50 && I.i < 10000000)
-                safeTop = safeTop->insert(I, compareintref);
+                safeTop->insert(I, compareintref);
         }
 
         {
             intnode I;
             I.i = 50;
-            safeTop = safeTop->insert (I, compareintref);
+            safeTop->insert (I, compareintref);
             I.i = 10000000;
-            safeTop = safeTop->insert (I, compareintref);
+            safeTop->insert (I, compareintref);
         }
 
         if (!safeTop->start())
@@ -274,5 +265,8 @@ main(int argc, char *argv[])
             exit (1);
     }
 
+    /* TODO: also test the other Splay API */
+
     return 0;
 }
+

@@ -1,7 +1,15 @@
-#define SQUID_UNIT_TEST 1
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
-#include "testStatHist.h"
 #include "StatHist.h"
+#include "testStatHist.h"
+#include "unitTestMain.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION(testStatHist);
 
@@ -13,8 +21,8 @@ class InspectingStatHist : public StatHist
 {
 public:
     bool operator==(const InspectingStatHist &);
-    bins_type counter(double val) {
-        return bins[findBin(val)];
+    bins_type counter(double v) {
+        return bins[findBin(v)];
     }
 };
 
@@ -73,3 +81,26 @@ testStatHist::testStatHistLog()
     test.count(max);
     //CPPUNIT_ASSERT(test.val(capacity-1)==1); //FIXME: val() returns a density
 }
+
+void
+testStatHist::testStatHistSum()
+{
+    InspectingStatHist s1, s2;
+    s1.logInit(30,1.0,100.0);
+    s2.logInit(30,1.0,100.0);
+    s1.count(3);
+    s2.count(30);
+    InspectingStatHist ts1, ts2;
+    ts1=s1;
+    ts1+=s2;
+    ts2=s2;
+    ts2+=s1;
+    CPPUNIT_ASSERT(ts1 == ts2);
+    InspectingStatHist ts3;
+    ts3.logInit(30,1.0,100.0);
+    ts3.count(3);
+    ts3.count(30);
+    CPPUNIT_ASSERT(ts3 == ts1);
+
+}
+

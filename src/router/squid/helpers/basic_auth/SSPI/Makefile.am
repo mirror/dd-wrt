@@ -1,7 +1,14 @@
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+
 include $(top_srcdir)/src/Common.am
 
 ## we need our local files too (but avoid -I. at all costs)
-INCLUDES += -I$(srcdir)
+AM_CPPFLAGS += -I$(srcdir)
 
 if ENABLE_WIN32SPECIFIC
 libexec_PROGRAMS = basic_sspi_auth
@@ -20,4 +27,4 @@ basic_sspi_auth_LDADD = \
 	$(XTRA_LIBS)
 
 man_MANS = basic_sspi_auth.8
-EXTRA_DIST = basic_sspi_auth.8 config.test
+EXTRA_DIST = basic_sspi_auth.8 required.m4

@@ -1,16 +1,24 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "AccessLogEntry.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
 #include "SquidConfig.h"
 
-#if USE_SSL
+#if USE_OPENSSL
 #include "ssl/support.h"
 
 AccessLogEntry::SslDetails::SslDetails(): user(NULL), bumpMode(::Ssl::bumpEnd)
 {
 }
-#endif /* USE_SSL */
+#endif /* USE_OPENSSL */
 
 void
 AccessLogEntry::getLogClientIp(char *buf, size_t bufsz) const
@@ -24,7 +32,7 @@ AccessLogEntry::getLogClientIp(char *buf, size_t bufsz) const
 #endif
         if (tcpClient != NULL)
             log_ip = tcpClient->remote;
-        else if (cache.caddr.IsNoAddr()) { // e.g., ICAP OPTIONS lack client
+        else if (cache.caddr.isNoAddr()) { // e.g., ICAP OPTIONS lack client
             strncpy(buf, "-", bufsz);
             return;
         } else
@@ -35,17 +43,17 @@ AccessLogEntry::getLogClientIp(char *buf, size_t bufsz) const
     // - IPv4 clients masked with client_netmask
     // - IPv6 clients use 'privacy addressing' instead.
 
-    if (!log_ip.IsLocalhost() && log_ip.IsIPv4())
-        log_ip.ApplyMask(Config.Addrs.client_netmask);
+    if (!log_ip.isLocalhost() && log_ip.isIPv4())
+        log_ip.applyMask(Config.Addrs.client_netmask);
 
-    log_ip.NtoA(buf, bufsz);
+    log_ip.toStr(buf, bufsz);
 }
 
 AccessLogEntry::~AccessLogEntry()
 {
     safe_free(headers.request);
 
-#if ICAP_CLIENT
+#if USE_ADAPTATION
     safe_free(adapt.last_meta);
 #endif
 
@@ -60,5 +68,5 @@ AccessLogEntry::~AccessLogEntry()
     HTTPMSGUNLOCK(icap.reply);
     HTTPMSGUNLOCK(icap.request);
 #endif
-    cbdataReferenceDone(cache.port);
 }
+

@@ -1,40 +1,18 @@
 /*
- * DEBUG: section 00    Debug Routines
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 00    Debug Routines */
 
 #include "squid.h"
 #include "Debug.h"
+#include "ipc/Kids.h"
 #include "SquidTime.h"
 #include "util.h"
-#include "ipc/Kids.h"
 
 /* for shutting_down flag in xassert() */
 #include "globals.h"
@@ -45,6 +23,7 @@ int Debug::log_stderr = -1;
 bool Debug::log_syslog = false;
 int Debug::Levels[MAX_DEBUG_SECTIONS];
 int Debug::level;
+int Debug::sectionLevel;
 char *Debug::cache_log = NULL;
 int Debug::rotateNumber = -1;
 FILE *debug_log = NULL;
@@ -238,7 +217,7 @@ debugOpenLog(const char *logfile)
     if (debug_log_file)
         xfree(debug_log_file);
 
-    debug_log_file = xstrdup(logfile);	/* keep a static copy */
+    debug_log_file = xstrdup(logfile);  /* keep a static copy */
 
     if (debug_log && debug_log != stderr)
         fclose(debug_log);
@@ -730,6 +709,8 @@ ctx_get_descr(Ctx ctx)
 
 int Debug::TheDepth = 0;
 
+Debug::OutStream *Debug::CurrentDebug(NULL);
+
 std::ostream &
 Debug::getDebugOut()
 {
@@ -740,7 +721,7 @@ Debug::getDebugOut()
         *CurrentDebug << std::endl << "reentrant debuging " << TheDepth << "-{";
     } else {
         assert(!CurrentDebug);
-        CurrentDebug = new std::ostringstream();
+        CurrentDebug = new Debug::OutStream;
         // set default formatting flags
         CurrentDebug->setf(std::ios::fixed);
         CurrentDebug->precision(2);
@@ -772,12 +753,10 @@ Debug::xassert(const char *msg, const char *file, int line)
 
     if (CurrentDebug) {
         *CurrentDebug << "assertion failed: " << file << ":" << line <<
-        ": \"" << msg << "\"";
+                      ": \"" << msg << "\"";
     }
     abort();
 }
-
-std::ostringstream (*Debug::CurrentDebug)(NULL);
 
 size_t
 BuildPrefixInit()
@@ -801,3 +780,27 @@ SkipBuildPrefix(const char* path)
 
     return path+BuildPrefixLength;
 }
+
+std::ostream &
+Raw::print(std::ostream &os) const
+{
+    if (label_)
+        os << ' ' << label_ << '[' << size_ << ']';
+
+    if (!size_)
+        return os;
+
+    // finalize debugging level if no level was set explicitly via minLevel()
+    const int finalLevel = (level >= 0) ? level :
+                           (size_ > 40 ? DBG_DATA : Debug::sectionLevel);
+    if (finalLevel <= Debug::sectionLevel) {
+        os << (label_ ? '=' : ' ');
+        if (data_)
+            os.write(data_, size_);
+        else
+            os << "[null]";
+    }
+
+    return os;
+}
+

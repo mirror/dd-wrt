@@ -1,24 +1,28 @@
 /*
- * DEBUG: section 47    Store Directory Routines
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 47    Store Directory Routines */
 
 #include "squid.h"
 #include "Debug.h"
+#include "disk.h"
 #include "DiskIO/IORequestor.h"
 #include "DiskIO/Mmapped/MmappedFile.h"
 #include "DiskIO/ReadRequest.h"
 #include "DiskIO/WriteRequest.h"
-#include "disk.h"
 #include "globals.h"
 
+#include <cerrno>
 #if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
-#endif
-#if HAVE_ERRNO_H
-#include <errno.h>
 #endif
 
 // Some systems such as Hurd provide mmap() API but do not support MAP_NORESERVE
@@ -49,25 +53,8 @@ private:
     void *buf; ///< buffer returned by mmap, needed for munmap
 };
 
-void *
-MmappedFile::operator new(size_t sz)
-{
-    CBDATA_INIT_TYPE(MmappedFile);
-    MmappedFile *result = cbdataAlloc(MmappedFile);
-    /* Mark result as being owned - we want the refcounter to do the delete
-     * call */
-    return result;
-}
-
-void
-MmappedFile::operator delete(void *address)
-{
-    MmappedFile *t = static_cast<MmappedFile *>(address);
-    cbdataFree(t);
-}
-
 MmappedFile::MmappedFile(char const *aPath): fd(-1),
-        minOffset(0), maxOffset(-1), error_(false)
+    minOffset(0), maxOffset(-1), error_(false)
 {
     assert(aPath);
     path_ = xstrdup(aPath);
@@ -230,8 +217,8 @@ MmappedFile::ioInProgress() const
 }
 
 Mmapping::Mmapping(int aFd, size_t aLength, int aProt, int aFlags, off_t anOffset):
-        fd(aFd), length(aLength), prot(aProt), flags(aFlags), offset(anOffset),
-        delta(-1), buf(NULL)
+    fd(aFd), length(aLength), prot(aProt), flags(aFlags), offset(anOffset),
+    delta(-1), buf(NULL)
 {
 }
 
@@ -282,3 +269,4 @@ Mmapping::unmap()
 }
 
 // TODO: check MAP_NORESERVE, consider MAP_POPULATE and MAP_FIXED
+

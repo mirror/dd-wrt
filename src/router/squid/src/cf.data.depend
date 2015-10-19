@@ -1,4 +1,12 @@
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+#
 # type			dependencies
+#
 access_log		acl	logformat
 acl			external_acl_type auth_param
 acl_access		acl
@@ -14,6 +22,7 @@ b_ssize_t
 cachedir		cache_replacement_policy
 cachemgrpasswd
 ConfigAclTos
+configuration_includes_quoted_values
 CpuAffinityMap
 debug
 delay_pool_access	acl	delay_class
@@ -35,7 +44,6 @@ HeaderWithAclList	acl
 adaptation_access_type	adaptation_service_set adaptation_service_chain acl icap_service icap_class
 adaptation_service_set_type	icap_service ecap_service
 adaptation_service_chain_type	icap_service ecap_service
-adaptation_meta_type	acl
 icap_access_type	icap_class acl
 icap_class_type		icap_service
 icap_service_type
@@ -47,12 +55,15 @@ kb_size_t
 logformat
 YesNoNone
 memcachemode
+note			acl
 obsolete
 onoff
 peer
 peer_access		cache_peer acl
+pipelinePrefetch
 PortCfg
 QosConfig
+TokenOrQuotedString
 refreshpattern
 removalpolicy
 size_t
@@ -70,5 +81,7 @@ wccp2_service
 wccp2_service_info
 wordlist
 sslproxy_ssl_bump	acl
+sslproxy_ssl_bump_peeked acl
 sslproxy_cert_sign	acl
 sslproxy_cert_adapt	acl
+ftp_epsv                acl

@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 49    SNMP Interface
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 49    SNMP Interface */
 
 #include "squid.h"
 #include "base/TextException.h"
@@ -9,9 +14,8 @@
 #include "ipc/TypedMsgHdr.h"
 #include "snmp/Var.h"
 #include "tools.h"
-#if HAVE_ALGORITHM
+
 #include <algorithm>
-#endif
 
 Snmp::Var::Var()
 {
@@ -355,3 +359,4 @@ Snmp::Var::unpack(const Ipc::TypedMsgHdr& msg)
         msg.getFixed(val.string, val_len);
     }
 }
+

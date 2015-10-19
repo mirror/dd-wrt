@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID__TEXTEXCEPTION_H
 #define SQUID__TEXTEXCEPTION_H
 
@@ -82,3 +90,4 @@ void Throw(const char *message, const char *fileName, int lineNo, unsigned int i
 #endif
 
 #endif /* SQUID__TEXTEXCEPTION_H */
+

@@ -1,24 +1,21 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "helpers/defines.h"
-#include "ssl/gadgets.h"
-#include "ssl/crtd_message.h"
 #include "ssl/certificate_db.h"
+#include "ssl/crtd_message.h"
 
-#if HAVE_CSTRING
 #include <cstring>
-#endif
-#if HAVE_SSTREAM
-#include <sstream>
-#endif
-#if HAVE_IOSTREAM
 #include <iostream>
-#endif
-#if HAVE_STDEXCEPT
+#include <sstream>
 #include <stdexcept>
-#endif
-#if HAVE_STRING
 #include <string>
-#endif
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
@@ -208,7 +205,13 @@ static bool proccessNewRequest(Ssl::CrtdMessage & request_message, std::string c
     Ssl::EVP_PKEY_Pointer pkey;
     std::string &cert_subject = certProperties.dbKey();
 
-    db.find(cert_subject, cert, pkey);
+    bool dbFailed = false;
+    try {
+        db.find(cert_subject, cert, pkey);
+    } catch (std::runtime_error &err) {
+        dbFailed = true;
+        error = err.what();
+    }
 
     if (cert.get()) {
         if (!Ssl::certificateMatchesProperties(cert.get(), certProperties)) {
@@ -224,15 +227,27 @@ static bool proccessNewRequest(Ssl::CrtdMessage & request_message, std::string c
         if (!Ssl::generateSslCertificate(cert, pkey, certProperties))
             throw std::runtime_error("Cannot create ssl certificate or private key.");
 
-        if (!db.addCertAndPrivateKey(cert, pkey, cert_subject) && db.IsEnabledDiskStore())
-            throw std::runtime_error("Cannot add certificate to db.");
+        if (!dbFailed && db.IsEnabledDiskStore()) {
+            try {
+                if (!db.addCertAndPrivateKey(cert, pkey, cert_subject)) {
+                    dbFailed = true;
+                    error = "Cannot add certificate to db.";
+                }
+            } catch (const std::runtime_error &err) {
+                dbFailed = true;
+                error = err.what();
+            }
+        }
     }
+
+    if (dbFailed)
+        std::cerr << "ssl_crtd helper database '" << db_path  << "' failed: " << error << std::endl;
 
     std::string bufferToWrite;
     if (!Ssl::writeCertAndPrivateKeyToMemory(cert, pkey, bufferToWrite))
         throw std::runtime_error("Cannot write ssl certificate or/and private key to memory.");
 
-    Ssl::CrtdMessage response_message;
+    Ssl::CrtdMessage response_message(Ssl::CrtdMessage::REPLY);
     response_message.setCode("OK");
     response_message.setBody(bufferToWrite);
 
@@ -296,12 +311,15 @@ int main(int argc, char *argv[])
         }
 
         {
-            Ssl::CertificateDb::check(db_path, max_db_size);
+            Ssl::CertificateDb::check(db_path, max_db_size, fs_block_size);
         }
+        // Initialize SSL subsystem
+        SSL_load_error_strings();
+        SSLeay_add_ssl_algorithms();
         // proccess request.
         for (;;) {
             char request[HELPER_INPUT_BUFFER];
-            Ssl::CrtdMessage request_message;
+            Ssl::CrtdMessage request_message(Ssl::CrtdMessage::REQUEST);
             Ssl::CrtdMessage::ParseResult parse_result = Ssl::CrtdMessage::INCOMPLETE;
 
             while (parse_result == Ssl::CrtdMessage::INCOMPLETE) {
@@ -326,3 +344,4 @@ int main(int argc, char *argv[])
     }
     return 0;
 }
+

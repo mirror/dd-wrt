@@ -1,4 +1,12 @@
 #!/bin/sh
+#
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+#
 # Used to setup the configure.ac, autoheader and Makefile.in's if configure
 # has not been generated. This script is only needed for developers when
 # configure has not been run, or if a Makefile.am in a non-configured directory
@@ -123,8 +131,7 @@ echo "libtool  ($ltversion) : ${LIBTOOL_BIN}${ltver}"
 echo "libtool path : $ltpath"
 
 for dir in \
-	"" \
-	lib/libTrie
+	"" 
 do
     if [ -z "$dir" ] || [ -d $dir ]; then
 	if (
@@ -157,7 +164,9 @@ do
 done
 
 # Make a copy of SPONSORS we can package
-sed -e 's/@Squid-[0-9\.]*://' <SPONSORS.list > SPONSORS || (rm -f SPONSORS && exit 1)
+if test -f SPONSORS.list; then
+  sed -e 's/@Squid-[0-9\.]*://' <SPONSORS.list > SPONSORS || (rm -f SPONSORS && exit 1)
+fi
 
 # Fixup autoconf recursion using --silent/--quiet option
 # autoconf should inherit this option whe recursing into subdirectories

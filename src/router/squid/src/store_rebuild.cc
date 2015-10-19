@@ -1,52 +1,29 @@
 /*
- * DEBUG: section 20    Store Rebuild Routines
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 20    Store Rebuild Routines */
 
 #include "squid.h"
 #include "event.h"
 #include "globals.h"
 #include "md5.h"
-#include "StatCounters.h"
-#include "Store.h"
-#include "store_key_md5.h"
-#include "SwapDir.h"
-#include "store_digest.h"
-#include "store_rebuild.h"
-#include "StoreSearch.h"
 #include "SquidConfig.h"
 #include "SquidTime.h"
+#include "StatCounters.h"
+#include "Store.h"
+#include "store_digest.h"
+#include "store_key_md5.h"
+#include "store_rebuild.h"
+#include "StoreSearch.h"
+#include "SwapDir.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+#include <cerrno>
+
 static StoreRebuildData counts;
 
 static struct timeval rebuild_start;
@@ -74,6 +51,7 @@ storeCleanup(void *datanotused)
     static int store_errors = 0;
     static StoreSearchPointer currentSearch;
     static int validated = 0;
+    static int seen = 0;
 
     if (currentSearch == NULL || currentSearch->isDone())
         currentSearch = Store::Root().search(NULL, NULL);
@@ -85,6 +63,8 @@ storeCleanup(void *datanotused)
         StoreEntry *e;
 
         e = currentSearch->currentItem();
+
+        ++seen;
 
         if (EBIT_TEST(e->flags, ENTRY_VALIDATED))
             continue;
@@ -113,6 +93,7 @@ storeCleanup(void *datanotused)
     }
 
     if (currentSearch->isDone()) {
+        debugs(20, 2, "Seen: " << seen << " entries");
         debugs(20, DBG_IMPORTANT, "  Completed Validation Procedure");
         debugs(20, DBG_IMPORTANT, "  Validated " << validated << " Entries");
         debugs(20, DBG_IMPORTANT, "  store_swap_size = " << Store::Root().currentSize() / 1024.0 << " KB");
@@ -243,9 +224,9 @@ storeRebuildProgress(int sd_index, int total, int sofar)
 }
 
 #include "fde.h"
-#include "StoreMetaUnpacker.h"
-#include "StoreMeta.h"
 #include "Generic.h"
+#include "StoreMeta.h"
+#include "StoreMetaUnpacker.h"
 
 struct InitStoreEntry : public unary_function<StoreMeta, void> {
     InitStoreEntry(StoreEntry *anEntry, cache_key *aKey):what(anEntry),index(aKey) {}
@@ -294,8 +275,7 @@ struct InitStoreEntry : public unary_function<StoreMeta, void> {
 };
 
 bool
-storeRebuildLoadEntry(int fd, int diskIndex, MemBuf &buf,
-                      StoreRebuildData &counts)
+storeRebuildLoadEntry(int fd, int diskIndex, MemBuf &buf, StoreRebuildData &)
 {
     if (fd < 0)
         return false;
@@ -317,7 +297,7 @@ storeRebuildLoadEntry(int fd, int diskIndex, MemBuf &buf,
 
 bool
 storeRebuildParseEntry(MemBuf &buf, StoreEntry &tmpe, cache_key *key,
-                       StoreRebuildData &counts,
+                       StoreRebuildData &stats,
                        uint64_t expectedSize)
 {
     int swap_hdr_len = 0;
@@ -341,7 +321,7 @@ storeRebuildParseEntry(MemBuf &buf, StoreEntry &tmpe, cache_key *key,
 
     // TODO: consume parsed metadata?
 
-    debugs(47,7, HERE << "successful swap meta unpacking");
+    debugs(47,7, "successful swap meta unpacking; swap_file_sz=" << tmpe.swap_file_sz);
     memset(key, '\0', SQUID_MD5_DIGEST_LENGTH);
 
     InitStoreEntry visitor(&tmpe, key);
@@ -368,13 +348,12 @@ storeRebuildParseEntry(MemBuf &buf, StoreEntry &tmpe, cache_key *key,
             return false;
         }
     } else if (tmpe.swap_file_sz <= 0) {
-        debugs(47, DBG_IMPORTANT, "WARNING: Ignoring cache entry with " <<
-               "unknown size: " << tmpe);
-        return false;
+        // if caller cannot handle unknown sizes, it must check after the call.
+        debugs(47, 7, "unknown size: " << tmpe);
     }
 
     if (EBIT_TEST(tmpe.flags, KEY_PRIVATE)) {
-        ++ counts.badflags;
+        ++ stats.badflags;
         return false;
     }
 
@@ -382,8 +361,7 @@ storeRebuildParseEntry(MemBuf &buf, StoreEntry &tmpe, cache_key *key,
 }
 
 bool
-storeRebuildKeepEntry(const StoreEntry &tmpe, const cache_key *key,
-                      StoreRebuildData &counts)
+storeRebuildKeepEntry(const StoreEntry &tmpe, const cache_key *key, StoreRebuildData &stats)
 {
     /* this needs to become
      * 1) unpack url
@@ -408,21 +386,22 @@ storeRebuildKeepEntry(const StoreEntry &tmpe, const cache_key *key,
         if (e->lastref >= tmpe.lastref) {
             /* key already exists, old entry is newer */
             /* keep old, ignore new */
-            ++counts.dupcount;
+            ++stats.dupcount;
 
             // For some stores, get() creates/unpacks a store entry. Signal
             // such stores that we will no longer use the get() result:
-            e->lock();
-            e->unlock();
+            e->lock("storeRebuildKeepEntry");
+            e->unlock("storeRebuildKeepEntry");
 
             return false;
         } else {
             /* URL already exists, this swapfile not being used */
             /* junk old, load new */
-            e->release();	/* release old entry */
-            ++counts.dupcount;
+            e->release();   /* release old entry */
+            ++stats.dupcount;
         }
     }
 
     return true;
 }
+

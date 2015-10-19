@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * AUTHOR: Arjan de Vet <Arjan.deVet@adv.iae.nl>
  *
  * Example authentication program for Squid, based on the original
@@ -23,23 +31,16 @@
 #include "rfc1738.h"
 #include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
+#include <cerrno>
+#include <cstring>
 #if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
 #endif
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
 #if HAVE_CRYPT_H
 #include <crypt.h>
-#endif
-#if HAVE_ERRNO_H
-#include <errno.h>
 #endif
 
 static hash_table *hash = NULL;
@@ -126,7 +127,7 @@ main(int argc, char **argv)
     }
     while (fgets(buf, HELPER_INPUT_BUFFER, stdin) != NULL) {
         if ((p = strchr(buf, '\n')) != NULL)
-            *p = '\0';		/* strip \n */
+            *p = '\0';      /* strip \n */
         if (stat(argv[1], &sb) == 0) {
             if (sb.st_mtime != change_time) {
                 read_passwd_file(argv[1]);
@@ -186,3 +187,4 @@ main(int argc, char **argv)
     }
     exit(0);
 }
+

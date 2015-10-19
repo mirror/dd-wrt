@@ -1,23 +1,28 @@
 /*
- * DEBUG: section 16    Cache Manager API
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager API */
 
 #include "squid.h"
 #include "base/TextException.h"
 #include "comm/Connection.h"
-#include "CommCalls.h"
 #include "comm/Write.h"
+#include "CommCalls.h"
 #include "ipc/FdNotes.h"
 #include "mgr/StoreToCommWriter.h"
-#include "StoreClient.h"
 #include "Store.h"
+#include "StoreClient.h"
 
 CBDATA_NAMESPACED_CLASS_INIT(Mgr, StoreToCommWriter);
 
 Mgr::StoreToCommWriter::StoreToCommWriter(const Comm::ConnectionPointer &conn, StoreEntry* anEntry):
-        AsyncJob("Mgr::StoreToCommWriter"),
-        clientConnection(conn), entry(anEntry), sc(NULL), writeOffset(0), closer(NULL)
+    AsyncJob("Mgr::StoreToCommWriter"),
+    clientConnection(conn), entry(anEntry), sc(NULL), writeOffset(0), closer(NULL)
 {
     debugs(16, 6, HERE << clientConnection);
     closer = asyncCall(16, 5, "Mgr::StoreToCommWriter::noteCommClosed",
@@ -112,7 +117,7 @@ void
 Mgr::StoreToCommWriter::noteCommWrote(const CommIoCbParams& params)
 {
     debugs(16, 6, HERE);
-    Must(params.flag == COMM_OK);
+    Must(params.flag == Comm::OK);
     Must(clientConnection != NULL && params.fd == clientConnection->fd);
     Must(params.size != 0);
     writeOffset += params.size;
@@ -138,7 +143,7 @@ Mgr::StoreToCommWriter::swanSong()
             sc = NULL;
         }
         entry->unregisterAbort();
-        entry->unlock();
+        entry->unlock("Mgr::StoreToCommWriter::swanSong");
         entry = NULL;
     }
     close();
@@ -159,3 +164,4 @@ Mgr::StoreToCommWriter::Abort(void* param)
     if (Comm::IsConnOpen(mgrWriter->clientConnection))
         mgrWriter->clientConnection->close();
 }
+

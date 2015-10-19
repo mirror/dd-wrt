@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 50    Log file handling
- * AUTHOR: Adrian Chadd <adrian@squid-cache.org>
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 50    Log file handling */
 
 #include "squid.h"
 #include "cbdata.h"
@@ -38,25 +16,23 @@
 #include "log/Config.h"
 #include "log/File.h"
 #include "log/ModDaemon.h"
-#include "SquidIpc.h"
 #include "SquidConfig.h"
+#include "SquidIpc.h"
 #include "SquidTime.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+#include <cerrno>
 
 /* How many buffers to keep before we say we've buffered too much */
-#define	LOGFILE_MAXBUFS		128
+#define LOGFILE_MAXBUFS     128
 
 /* Size of the logfile buffer */
 /*
  * For optimal performance this should match LOGFILE_BUFSIZ in logfile-daemon.c
  */
-#define	LOGFILE_BUFSZ		32768
+#define LOGFILE_BUFSZ       32768
 
 /* How many seconds between warnings */
-#define	LOGFILE_WARN_TIME	30
+#define LOGFILE_WARN_TIME   30
 
 static LOGWRITE logfile_mod_daemon_writeline;
 static LOGLINESTART logfile_mod_daemon_linestart;
@@ -113,26 +89,29 @@ logfileFreeBuffer(Logfile * lf, logfile_buffer_t * b)
 static void
 logfileHandleWrite(int fd, void *data)
 {
-    Logfile *lf = (Logfile *) data;
-    l_daemon_t *ll = (l_daemon_t *) lf->data;
-    int ret;
-    logfile_buffer_t *b;
+    Logfile *lf = static_cast<Logfile *>(data);
+    l_daemon_t *ll = static_cast<l_daemon_t *>(lf->data);
 
     /*
      * We'll try writing the first entry until its done - if we
      * get a partial write then we'll re-schedule until its completed.
      * Its naive but it'll do for now.
      */
-    b = static_cast<logfile_buffer_t*>(ll->bufs.head->data);
+    if (!ll->bufs.head) // abort if there is nothing pending right now.
+        return;
+
+    logfile_buffer_t *b = static_cast<logfile_buffer_t*>(ll->bufs.head->data);
     assert(b != NULL);
     ll->flush_pending = 0;
 
-    ret = FD_WRITE_METHOD(ll->wfd, b->buf + b->written_len, b->len - b->written_len);
-    debugs(50, 3, "logfileHandleWrite: " << lf->path << ": write returned " << ret);
+    int ret = FD_WRITE_METHOD(ll->wfd, b->buf + b->written_len, b->len - b->written_len);
+    debugs(50, 3, lf->path << ": write returned " << ret);
     if (ret < 0) {
         if (ignoreErrno(errno)) {
             /* something temporary */
-            goto reschedule;
+            Comm::SetSelect(ll->wfd, COMM_SELECT_WRITE, logfileHandleWrite, lf, 0);
+            ll->flush_pending = 1;
+            return;
         }
         debugs(50, DBG_IMPORTANT,"logfileHandleWrite: " << lf->path << ": error writing (" << xstrerror() << ")");
         /* XXX should handle this better */
@@ -153,15 +132,12 @@ logfileHandleWrite(int fd, void *data)
         b = NULL;
     }
     /* Is there more to write? */
-    if (ll->bufs.head == NULL) {
-        goto finish;
-    }
+    if (!ll->bufs.head)
+        return;
     /* there is, so schedule more */
 
-reschedule:
     Comm::SetSelect(ll->wfd, COMM_SELECT_WRITE, logfileHandleWrite, lf, 0);
     ll->flush_pending = 1;
-finish:
     return;
 }
 
@@ -253,7 +229,7 @@ logfile_mod_daemon_open(Logfile * lf, const char *path, size_t bufsz, int fatal_
         args[0] = "(logfile-daemon)";
         args[1] = path;
         args[2] = NULL;
-        localhost.SetLocalhost();
+        localhost.setLocalhost();
         ll->pid = ipcCreate(IPC_STREAM, Log::TheConfig.logfile_daemon, args, "logfile-daemon", localhost, &ll->rfd, &ll->wfd, NULL);
         if (ll->pid < 0)
             fatal("Couldn't start logfile helper");
@@ -368,3 +344,4 @@ logfile_mod_daemon_flush(Logfile * lf)
         return;
     }
 }
+

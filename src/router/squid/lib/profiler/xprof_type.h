@@ -1,40 +1,27 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _PROFILER_XPROF_TYPE_H_
 #define _PROFILER_XPROF_TYPE_H_
 /* AUTO-GENERATED FILE */
 #if USE_XPROF_STATS
 typedef enum {
     XPROF_PROF_UNACCOUNTED,
-    XPROF_HttpHeaderClean,
-    XPROF_HttpHeaderParse,
-    XPROF_HttpHeader_getCc,
-    XPROF_HttpMsg_httpMsgParseStep,
-    XPROF_HttpParserParseReqLine,
-    XPROF_HttpStateData_processReplyBody,
-    XPROF_HttpStateData_processReplyHeader,
-    XPROF_HttpStateData_readReply,
-    XPROF_InvokeHandlers,
-    XPROF_MemBuf_append,
-    XPROF_MemBuf_consume,
-    XPROF_MemBuf_grow,
-    XPROF_MemObject_write,
-    XPROF_PROF_OVERHEAD,
-    XPROF_SignalEngine_checkEvents,
-    XPROF_StoreEntry_write,
-    XPROF_StringAllocAndFill,
-    XPROF_StringAppend,
-    XPROF_StringClean,
-    XPROF_StringInitBuf,
-    XPROF_StringReset,
     XPROF_aclCheckFast,
-    XPROF_aclMatchAclList,
+    XPROF_ACL_matches,
     XPROF_calloc,
     XPROF_clientSocketRecipient,
-    XPROF_commHandleWrite,
     XPROF_comm_accept,
     XPROF_comm_check_incoming,
     XPROF_comm_close,
     XPROF_comm_connect_addr,
     XPROF_comm_handle_ready_fd,
+    XPROF_commHandleWrite,
     XPROF_comm_open,
     XPROF_comm_poll_normal,
     XPROF_comm_poll_prep_pfds,
@@ -55,22 +42,43 @@ typedef enum {
     XPROF_free_const,
     XPROF_hash_lookup,
     XPROF_headersEnd,
+    XPROF_HttpHeaderClean,
+    XPROF_HttpHeader_getCc,
+    XPROF_HttpHeaderParse,
+    XPROF_HttpMsg_httpMsgParseStep,
+    XPROF_HttpParserParseReqLine,
     XPROF_httpRequestFree,
+    XPROF_HttpServer_parseOneRequest,
     XPROF_httpStart,
+    XPROF_HttpStateData_processReplyBody,
+    XPROF_HttpStateData_processReplyHeader,
+    XPROF_HttpStateData_readReply,
+    XPROF_InvokeHandlers,
     XPROF_malloc,
+    XPROF_MemBuf_append,
+    XPROF_MemBuf_consume,
+    XPROF_MemBuf_consumeWhitespace,
+    XPROF_MemBuf_grow,
     XPROF_mem_hdr_write,
-    XPROF_parseHttpRequest,
+    XPROF_MemObject_write,
+    XPROF_PROF_OVERHEAD,
     XPROF_read,
     XPROF_realloc,
     XPROF_recv,
     XPROF_send,
+    XPROF_SignalEngine_checkEvents,
     XPROF_storeClient_kickReads,
     XPROF_storeDirCallback,
+    XPROF_StoreEntry_write,
     XPROF_storeGet,
     XPROF_storeGetMemSpace,
     XPROF_storeMaintainSwapSpace,
     XPROF_storeRelease,
-    XPROF_storeWriteComplete,
+    XPROF_StringAllocAndFill,
+    XPROF_StringAppend,
+    XPROF_StringClean,
+    XPROF_StringInitBuf,
+    XPROF_StringReset,
     XPROF_write,
     XPROF_xcalloc,
     XPROF_xmalloc,
@@ -79,3 +87,4 @@ typedef enum {
 } xprof_type;
 #endif
 #endif
+

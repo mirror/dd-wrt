@@ -1,6 +1,14 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
-#include "rfc2671.h"
 #include "rfc1035.h"
+#include "rfc2671.h"
 
 int
 rfc2671RROptPack(char *buf, size_t sz, ssize_t edns_sz)
@@ -18,3 +26,4 @@ rfc2671RROptPack(char *buf, size_t sz, ssize_t edns_sz)
 
     return rfc1035RRPack(buf, sz, &opt);
 }
+

@@ -1,17 +1,20 @@
-#define SQUID_UNIT_TEST 1
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 #include "squid.h"
-#include "Mem.h"
-#include "testStore.h"
-#include "testStoreEntryStream.h"
 #include "CapturingStoreEntry.h"
+#include "Mem.h"
 #include "Store.h"
 #include "StoreEntryStream.h"
+#include "testStore.h"
+#include "testStoreEntryStream.h"
 
-#if HAVE_IOMANIP
 #include <iomanip>
-#endif
-
 #include <cppunit/TestAssert.h>
 
 CPPUNIT_TEST_SUITE_REGISTRATION( testStoreEntryStream );
@@ -32,7 +35,7 @@ testStoreEntryStream::testGetStream()
 
     CapturingStoreEntry * anEntry = new CapturingStoreEntry();
     {
-        StoreEntryStream stream(anEntry);
+        StoreEntryStream stream(anEntry); // locks and unlocks/deletes anEntry
         CPPUNIT_ASSERT_EQUAL(1, anEntry->_buffer_calls);
         CPPUNIT_ASSERT_EQUAL(0, anEntry->_flush_calls);
 
@@ -53,8 +56,6 @@ testStoreEntryStream::testGetStream()
         CPPUNIT_ASSERT_EQUAL(String("12345677.7 some text   !."),
                              anEntry->_appended_text);
     }
-
-    delete anEntry;
-
     Store::Root(NULL);
 }
+

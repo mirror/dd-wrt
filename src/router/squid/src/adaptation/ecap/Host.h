@@ -1,6 +1,12 @@
 /*
- * DEBUG: section 93    eCAP Interface
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    eCAP Interface */
 
 #ifndef SQUID_ECAP_HOST_H
 #define SQUID_ECAP_HOST_H
@@ -19,7 +25,7 @@ public:
     /* libecap::host::Host API */
     virtual std::string uri() const; // unique across all vendors
     virtual void describe(std::ostream &os) const; // free-format info
-    virtual void noteService(const libecap::weak_ptr<libecap::adapter::Service> &s);
+    virtual void noteVersionedService(const char *libEcapVersion, const libecap::weak_ptr<libecap::adapter::Service> &s);
     virtual std::ostream *openDebug(libecap::LogVerbosity lv);
     virtual void closeDebug(std::ostream *debug);
     typedef libecap::shared_ptr<libecap::Message> MessagePtr;
@@ -48,3 +54,4 @@ extern const libecap::Name metaBypassable; ///< an ecap_service parameter
 } // namespace Adaptation
 
 #endif /* SQUID_ECAP_HOST_H */
+

@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  Stylesheet for Squid Error pages
  Adapted from design by Free CSS Templates
  http://www.freecsstemplates.org
@@ -23,7 +31,7 @@ html body {
 	margin-left: 15px;
 	padding: 10px;
 	padding-left: 100px;
-	background: url('http://www.squid-cache.org/Artwork/SN.png') no-repeat left;
+	background: url('/squid-internal-static/icons/SN.png') no-repeat left;
 }
 
 /* initial title */

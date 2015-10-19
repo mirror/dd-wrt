@@ -1,11 +1,17 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #include "squid.h"
 
 #include "base/TextException.h"
+#include "Debug.h"
 #include "ipc/mem/Page.h"
 #include "ipc/mem/PageStack.h"
 
@@ -13,10 +19,10 @@
 const Ipc::Mem::PageStack::Value Writable = 0;
 
 Ipc::Mem::PageStack::PageStack(const uint32_t aPoolId, const unsigned int aCapacity, const size_t aPageSize):
-        thePoolId(aPoolId), theCapacity(aCapacity), thePageSize(aPageSize),
-        theSize(theCapacity),
-        theLastReadable(prev(theSize)), theFirstWritable(next(theLastReadable)),
-        theItems(aCapacity)
+    thePoolId(aPoolId), theCapacity(aCapacity), thePageSize(aPageSize),
+    theSize(theCapacity),
+    theLastReadable(prev(theSize)), theFirstWritable(next(theLastReadable)),
+    theItems(aCapacity)
 {
     // initially, all pages are free
     for (Offset i = 0; i < theSize; ++i)
@@ -56,6 +62,7 @@ Ipc::Mem::PageStack::pop(PageId &page)
             theFirstWritable = idx; // may lie
             page.pool = thePoolId;
             page.number = value;
+            debugs(54, 9, page << " at " << idx << " size: " << theSize);
             return true;
         }
         // TODO: report suspiciously long loops
@@ -68,6 +75,8 @@ Ipc::Mem::PageStack::pop(PageId &page)
 void
 Ipc::Mem::PageStack::push(PageId &page)
 {
+    debugs(54, 9, page);
+
     if (!page)
         return;
 
@@ -87,6 +96,7 @@ Ipc::Mem::PageStack::push(PageId &page)
             // the enqueued value may already by gone, but that is OK
             theLastReadable = idx; // may lie
             ++theSize;
+            debugs(54, 9, page << " at " << idx << " size: " << theSize);
             page = PageId();
             return;
         }
@@ -127,3 +137,4 @@ Ipc::Mem::PageStack::stackSize() const
 {
     return StackSize(theCapacity);
 }
+

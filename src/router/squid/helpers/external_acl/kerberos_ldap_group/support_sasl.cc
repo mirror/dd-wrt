@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * -----------------------------------------------------------------------------
  *
  * Author: Markus Moeller (markus_moeller at compuserve.com)
@@ -25,34 +33,34 @@
 #include "squid.h"
 #include "util.h"
 
-#ifdef HAVE_LDAP
+#if HAVE_LDAP
 
 #include "support.h"
 
-#ifdef HAVE_SASL_H
+#if HAVE_SASL_H
 #include <sasl.h>
-#elif defined(HAVE_SASL_SASL_H)
+#elif HAVE_SASL_SASL_H
 #include <sasl/sasl.h>
-#elif defined(HAVE_SASL_DARWIN)
+#elif HAVE_SASL_DARWIN
 typedef struct sasl_interact {
-    unsigned long id;		/* same as client/user callback ID */
-    const char *challenge;	/* presented to user (e.g. OTP challenge) */
-    const char *prompt;		/* presented to user (e.g. "Username: ") */
-    const char *defresult;	/* default result string */
-    const void *result;		/* set to point to result */
-    unsigned len;		/* set to length of result */
+    unsigned long id;       /* same as client/user callback ID */
+    const char *challenge;  /* presented to user (e.g. OTP challenge) */
+    const char *prompt;     /* presented to user (e.g. "Username: ") */
+    const char *defresult;  /* default result string */
+    const void *result;     /* set to point to result */
+    unsigned len;       /* set to length of result */
 } sasl_interact_t;
 
-#define SASL_CB_USER         0x4001	/* client user identity to login as */
-#define SASL_CB_AUTHNAME     0x4002	/* client authentication name */
-#define SASL_CB_PASS         0x4004	/* client passphrase-based secret */
-#define SASL_CB_ECHOPROMPT   0x4005	/* challenge and client enterred result */
-#define SASL_CB_NOECHOPROMPT 0x4006	/* challenge and client enterred result */
-#define SASL_CB_GETREALM     0x4008	/* realm to attempt authentication in */
-#define SASL_CB_LIST_END   0	/* end of list */
+#define SASL_CB_USER         0x4001 /* client user identity to login as */
+#define SASL_CB_AUTHNAME     0x4002 /* client authentication name */
+#define SASL_CB_PASS         0x4004 /* client passphrase-based secret */
+#define SASL_CB_ECHOPROMPT   0x4005 /* challenge and client enterred result */
+#define SASL_CB_NOECHOPROMPT 0x4006 /* challenge and client enterred result */
+#define SASL_CB_GETREALM     0x4008 /* realm to attempt authentication in */
+#define SASL_CB_LIST_END   0    /* end of list */
 #endif
 
-#if defined(HAVE_SASL_H) || defined(HAVE_SASL_SASL_H) || defined(HAVE_SASL_DARWIN)
+#if HAVE_SASL_H || HAVE_SASL_SASL_H || HAVE_SASL_DARWIN
 void *lutil_sasl_defaults(
     LDAP * ld,
     char *mech,
@@ -196,18 +204,12 @@ lutil_sasl_freedefs(
 {
     lutilSASLdefaults *defs = (lutilSASLdefaults *) defaults;
 
-    if (defs->mech)
-        xfree(defs->mech);
-    if (defs->realm)
-        xfree(defs->realm);
-    if (defs->authcid)
-        xfree(defs->authcid);
-    if (defs->passwd)
-        xfree(defs->passwd);
-    if (defs->authzid)
-        xfree(defs->authzid);
-    if (defs->resps)
-        xfree(defs->resps);
+    xfree(defs->mech);
+    xfree(defs->realm);
+    xfree(defs->authcid);
+    xfree(defs->passwd);
+    xfree(defs->authzid);
+    xfree(defs->resps);
 
     xfree(defs);
 }
@@ -222,7 +224,7 @@ tool_sasl_bind(LDAP * ld, char *binddn, char *ssl)
     /*
      * Avoid SASL messages
      */
-#ifdef HAVE_SUN_LDAP_SDK
+#if HAVE_SUN_LDAP_SDK
     unsigned sasl_flags = LDAP_SASL_INTERACTIVE;
 #else
     unsigned sasl_flags = LDAP_SASL_QUIET;
@@ -285,3 +287,4 @@ dummy(void)
 
 #endif
 #endif
+

@@ -1,15 +1,22 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_AUTH_BASIC_USER_H
 #define _SQUID_AUTH_BASIC_USER_H
 
 #include "auth/User.h"
 #include "auth/UserRequest.h"
 
-class BasicAuthQueueNode;
-
 namespace Auth
 {
 
 class Config;
+class QueueNode;
 
 namespace Basic
 {
@@ -20,7 +27,7 @@ class User : public Auth::User
 public:
     MEMPROXY_CLASS(Auth::Basic::User);
 
-    User(Auth::Config *);
+    User(Auth::Config *, const char *requestRealm);
     ~User();
     bool authenticated() const;
     bool valid() const;
@@ -31,7 +38,7 @@ public:
 
     char *passwd;
 
-    BasicAuthQueueNode *auth_queue;
+    QueueNode *queue;
 
 private:
     Auth::UserRequest::Pointer currentRequest;
@@ -43,3 +50,4 @@ MEMPROXY_CLASS_INLINE(Auth::Basic::User);
 } // namespace Auth
 
 #endif /* _SQUID_AUTH_BASIC_USER_H */
+
