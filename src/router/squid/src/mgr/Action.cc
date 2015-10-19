@@ -1,14 +1,19 @@
 /*
- * DEBUG: section 16    Cache Manager API
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager API */
 
 #include "squid.h"
 #include "comm/Connection.h"
 #include "HttpReply.h"
 #include "ipc/Port.h"
-#include "mgr/ActionCreator.h"
 #include "mgr/Action.h"
+#include "mgr/ActionCreator.h"
 #include "mgr/ActionParams.h"
 #include "mgr/ActionProfile.h"
 #include "mgr/Command.h"
@@ -79,7 +84,7 @@ Mgr::Action::sendResponse(unsigned int requestId)
     Response response(requestId, this);
     Ipc::TypedMsgHdr message;
     response.pack(message);
-    Ipc::SendMessage(Ipc::coordinatorAddr, message);
+    Ipc::SendMessage(Ipc::Port::CoordinatorAddr(), message);
 }
 
 void
@@ -98,7 +103,7 @@ Mgr::Action::fillEntry(StoreEntry* entry, bool writeHttpHeader)
 
     if (writeHttpHeader) {
         HttpReply *rep = new HttpReply;
-        rep->setHeaders(HTTP_OK, NULL, "text/plain", -1, squid_curtime, squid_curtime);
+        rep->setHeaders(Http::scOkay, NULL, contentType(), -1, squid_curtime, squid_curtime);
         // Allow cachemgr and other XHR scripts access to our version string
         const ActionParams &params = command().params;
         if (params.httpOrigin.size() > 0) {
@@ -118,3 +123,4 @@ Mgr::Action::fillEntry(StoreEntry* entry, bool writeHttpHeader)
     if (atomic())
         entry->complete();
 }
+

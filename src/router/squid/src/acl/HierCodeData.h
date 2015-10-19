@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_ACLHIERCODEDATA_H
 #define SQUID_ACLHIERCODEDATA_H
 
@@ -18,7 +26,7 @@ public:
     ACLHierCodeData &operator= (ACLHierCodeData const &);
     virtual ~ACLHierCodeData();
     bool match(hier_code);
-    wordlist *dump();
+    virtual SBufList dump() const;
     void parse();
     bool empty() const;
     virtual ACLData<hier_code> *clone() const;
@@ -30,3 +38,4 @@ public:
 MEMPROXY_CLASS_INLINE(ACLHierCodeData);
 
 #endif /* SQUID_ACLHIERCODEDATA_H */
+

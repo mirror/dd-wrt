@@ -1,39 +1,17 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_EVENTLOOP_H
 #define SQUID_EVENTLOOP_H
 
-#include "Array.h"
+#include <vector>
 
-#define EVENT_LOOP_TIMEOUT	1000 /* 1s timeout */
+#define EVENT_LOOP_TIMEOUT  1000 /* 1s timeout */
 
 class AsyncEngine;
 class TimeEngine;
@@ -89,6 +67,10 @@ public:
 
     int errcount;
 
+    /// the [main program] loop running now; may be nil
+    /// for simplicity, we assume there are no concurrent loops
+    static EventLoop *Running;
+
 private:
     /** setup state variables prior to running */
     void prepareToRun();
@@ -100,7 +82,7 @@ private:
     bool dispatchCalls();
 
     bool last_loop;
-    typedef Vector<AsyncEngine *> engine_vector;
+    typedef std::vector<AsyncEngine *> engine_vector;
     engine_vector engines;
     TimeEngine * timeService;
     AsyncEngine * primaryEngine;
@@ -110,3 +92,4 @@ private:
 };
 
 #endif /* SQUID_EVENTLOOP_H */
+

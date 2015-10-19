@@ -1,17 +1,21 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_SSL_ERRORDETAILMANAGER_H
 #define _SQUID_SSL_ERRORDETAILMANAGER_H
 
-#include "ssl/gadgets.h"
-#include "ssl/support.h"
-#include "RefCount.h"
+#include "base/RefCount.h"
+#include "HttpRequest.h"
 #include "SquidString.h"
+#include "ssl/support.h"
 
-#if HAVE_MAP
 #include <map>
-#endif
-#if HAVE_STRING
 #include <string>
-#endif
 
 class HttpRequest;
 
@@ -69,7 +73,7 @@ public:
      * \param entry where to store error details
      * \return true on success, false otherwise
      */
-    bool getErrorDetail(Ssl::ssl_error_t value, HttpRequest *request, ErrorDetailEntry &entry);
+    bool getErrorDetail(Ssl::ssl_error_t value, const HttpRequest::Pointer &request, ErrorDetailEntry &entry);
     const char *getDefaultErrorDescr(Ssl::ssl_error_t value); ///< the default error description for a given error
     const char *getDefaultErrorDetail(Ssl::ssl_error_t value); ///< the default error details for a given error
 
@@ -91,3 +95,4 @@ void errorDetailInitialize();
 void errorDetailClean();
 } //namespace Ssl
 #endif
+

@@ -1,8 +1,16 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_HTTP_CONTROL_MSG_H
 #define SQUID_HTTP_CONTROL_MSG_H
 
-#include "HttpReply.h"
 #include "base/AsyncCall.h"
+#include "HttpReply.h"
 
 class HttpControlMsg;
 
@@ -29,14 +37,13 @@ public:
 class HttpControlMsg
 {
 public:
-    typedef HttpMsgPointerT<HttpReply> MsgPtr;
     typedef AsyncCall::Pointer Callback;
 
-    HttpControlMsg(const MsgPtr &aReply, const Callback &aCallback):
-            reply(aReply), cbSuccess(aCallback) {}
+    HttpControlMsg(const HttpReply::Pointer &aReply, const Callback &aCallback):
+        reply(aReply), cbSuccess(aCallback) {}
 
 public:
-    MsgPtr reply; ///< the 1xx message being forwarded
+    HttpReply::Pointer reply; ///< the 1xx message being forwarded
     Callback cbSuccess; ///< called after successfully writing the 1xx message
 
     // We could add an API to notify of send failures as well, but the
@@ -51,3 +58,4 @@ operator <<(std::ostream &os, const HttpControlMsg &msg)
 }
 
 #endif /* SQUID_HTTP_CONTROL_MSG_H */
+

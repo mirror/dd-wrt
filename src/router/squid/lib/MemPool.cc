@@ -1,50 +1,27 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 /*
  * DEBUG: section 63    Low Level Memory Pool Management
  * AUTHOR: Alex Rousskov, Andres Kroonmaa, Robert Collins
- *
- * SQUID Internet Object Cache  http://squid.nlanr.net/Squid/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from the
- *  Internet community.  Development is led by Duane Wessels of the
- *  National Laboratory for Applied Network Research and funded by the
- *  National Science Foundation.  Squid is Copyrighted (C) 1998 by
- *  the Regents of the University of California.  Please see the
- *  COPYRIGHT file for full details.  Squid incorporates software
- *  developed and/or copyrighted by other sources.  Please see the
- *  CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
  */
 
 #include "squid.h"
-#if HAVE_ASSERT_H
-#include <assert.h>
-#endif
+
+#include <cassert>
 
 #include "MemPool.h"
 #include "MemPoolChunked.h"
 #include "MemPoolMalloc.h"
 
-#define FLUSH_LIMIT 1000	/* Flush memPool counters to memMeters after flush limit calls */
+#define FLUSH_LIMIT 1000    /* Flush memPool counters to memMeters after flush limit calls */
 
-#if HAVE_STRING_H
-#include <string.h>
-#endif
+#include <cstring>
 
 /*
  * XXX This is a boundary violation between lib and src.. would be good
@@ -116,8 +93,8 @@ MemPools::idleLimit() const
  * all pools - including those used before main() starts where
  * MemPools::GetInstance().setDefaultPoolChunking() can be called.
  */
-MemPools::MemPools() : pools(NULL), mem_idle_limit(2 * MB),
-        poolCount (0), defaultIsChunked (USE_CHUNKEDMEMPOOLS && !RUNNING_ON_VALGRIND)
+MemPools::MemPools() : pools(NULL), mem_idle_limit(2 << 20 /* 2 MB */),
+    poolCount(0), defaultIsChunked(USE_CHUNKEDMEMPOOLS && !RUNNING_ON_VALGRIND)
 {
     char *cfg = getenv("MEMPOOLS");
     if (cfg)
@@ -324,7 +301,7 @@ memPoolGetGlobalStats(MemPoolGlobalStats * stats)
     return pools_inuse;
 }
 
-MemAllocator::MemAllocator(char const *aLabel) : doZeroOnPush(true), label(aLabel)
+MemAllocator::MemAllocator(char const *aLabel) : doZero(true), label(aLabel)
 {
 }
 
@@ -404,11 +381,11 @@ MemAllocatorProxy::getStats(MemPoolStats * stats)
 }
 
 MemImplementingAllocator::MemImplementingAllocator(char const *aLabel, size_t aSize) : MemAllocator(aLabel),
-        next(NULL),
-        alloc_calls(0),
-        free_calls(0),
-        saved_calls(0),
-        obj_size(RoundedSize(aSize))
+    next(NULL),
+    alloc_calls(0),
+    free_calls(0),
+    saved_calls(0),
+    obj_size(RoundedSize(aSize))
 {
     memPID = ++Pool_id_counter;
 
@@ -445,12 +422,6 @@ MemImplementingAllocator::~MemImplementingAllocator()
     --MemPools::GetInstance().poolCount;
 }
 
-void
-MemAllocator::zeroOnPush(bool doIt)
-{
-    doZeroOnPush = doIt;
-}
-
 MemPoolMeter const &
 MemImplementingAllocator::getMeter() const
 {
@@ -468,3 +439,4 @@ MemImplementingAllocator::objectSize() const
 {
     return obj_size;
 }
+

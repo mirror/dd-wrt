@@ -1,4 +1,11 @@
-/* -*- c++ -*- */
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_SNMP_COEXISTANCE_H
 #define SQUID_SNMP_COEXISTANCE_H
 
@@ -32,11 +39,12 @@
 extern "C" {
 #endif
 
-    int snmp_coexist_V2toV1(struct snmp_pdu *);
-    int snmp_coexist_V1toV2(struct snmp_pdu *);
+int snmp_coexist_V2toV1(struct snmp_pdu *);
+int snmp_coexist_V1toV2(struct snmp_pdu *);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif				/* SQUID_SNMP_COEXISTANCE_H */
+#endif /* SQUID_SNMP_COEXISTANCE_H */
+

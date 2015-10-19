@@ -1,36 +1,12 @@
-
 /*
- * DEBUG: section 19    Store Memory Primitives
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 19    Store Memory Primitives */
 
 #include "squid.h"
 #include "Generic.h"
@@ -50,7 +26,7 @@ char *
 mem_hdr::NodeGet(mem_node * aNode)
 {
     assert(!aNode->write_pending);
-    aNode->write_pending = 1;
+    aNode->write_pending = true;
     return aNode->data;
 }
 
@@ -82,7 +58,7 @@ mem_hdr::endOffset () const
 void
 mem_hdr::freeContent()
 {
-    nodes.destroy(SplayNode<mem_node *>::DefaultFree);
+    nodes.destroy();
     inmem_hi = 0;
     debugs(19, 9, HERE << this << " hi: " << inmem_hi);
 }
@@ -95,6 +71,7 @@ mem_hdr::unlink(mem_node *aNode)
         return false;
     }
 
+    debugs(19, 8, this << " removing " << aNode);
     nodes.remove (aNode, NodeCompare);
     delete aNode;
     return true;
@@ -103,6 +80,7 @@ mem_hdr::unlink(mem_node *aNode)
 int64_t
 mem_hdr::freeDataUpto(int64_t target_offset)
 {
+    debugs(19, 8, this << " up to " << target_offset);
     /* keep the last one to avoid change to other part of code */
     SplayNode<mem_node*> const * theStart;
 
@@ -232,7 +210,7 @@ mem_hdr::debugDump() const
     debugs (19, 0, "mem_hdr::debugDump: lowest offset: " << lowestOffset() << " highest offset + 1: " << endOffset() << ".");
     std::ostringstream result;
     PointerPrinter<mem_node *> foo(result, " - ");
-    for_each (getNodes().begin(), getNodes().end(), foo);
+    getNodes().visit(foo);
     debugs (19, 0, "mem_hdr::debugDump: Current available data is: " << result.str() << ".");
 }
 
@@ -269,7 +247,7 @@ mem_hdr::copy(StoreIOBuffer const &target) const
         debugs(19, DBG_IMPORTANT, "memCopy: could not find start of " << target.range() <<
                " in memory.");
         debugDump();
-        fatal("Squid has attempted to read data from memory that is not present. This is an indication of of (pre-3.0) code that hasn't been updated to deal with sparse objects in memory. Squid should coredump.allowing to review the cause. Immediately preceeding this message is a dump of the available data in the format [start,end). The [ means from the value, the ) means up to the value. I.e. [1,5) means that there are 4 bytes of data, at offsets 1,2,3,4.\n");
+        fatal_dump("Squid has attempted to read data from memory that is not present. This is an indication of of (pre-3.0) code that hasn't been updated to deal with sparse objects in memory. Squid should coredump.allowing to review the cause. Immediately preceding this message is a dump of the available data in the format [start,end). The [ means from the value, the ) means up to the value. I.e. [1,5) means that there are 4 bytes of data, at offsets 1,2,3,4.\n");
         return 0;
     }
 
@@ -313,7 +291,7 @@ mem_hdr::hasContigousContentRange(Range<int64_t> const & range) const
             return true;
     }
 
-    return false;
+    return !range.size(); // empty range is contigous
 }
 
 bool
@@ -368,7 +346,7 @@ mem_hdr::write (StoreIOBuffer const &writeBuffer)
     if (unionNotEmpty(writeBuffer)) {
         debugs(19, DBG_CRITICAL, "mem_hdr::write: writeBuffer: " << writeBuffer.range());
         debugDump();
-        fatal("Attempt to overwrite already in-memory data. Preceeding this there should be a mem_hdr::write output that lists the attempted write, and the currently present data. Please get a 'backtrace full' from this error - using the generated core, and file a bug report with the squid developers including the last 10 lines of cache.log and the backtrace.\n");
+        fatal_dump("Attempt to overwrite already in-memory data. Preceeding this there should be a mem_hdr::write output that lists the attempted write, and the currently present data. Please get a 'backtrace full' from this error - using the generated core, and file a bug report with the squid developers including the last 10 lines of cache.log and the backtrace.\n");
         PROF_stop(mem_hdr_write);
         return false;
     }
@@ -447,3 +425,4 @@ mem_hdr::getNodes() const
 {
     return nodes;
 }
+

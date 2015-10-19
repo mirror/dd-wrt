@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 // Author:  Jens-S. V?ckler <voeckler@rvs.uni-hannover.de>
 //
 // File:    purge.cc
@@ -93,18 +101,17 @@
 #include "squid.h"
 #include "util.h"
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cerrno>
+#include <climits>
+#include <csignal>
+#include <cstdarg>
+#include <cstdlib>
+#include <cstring>
 #include <dirent.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <signal.h>
-#include <errno.h>
 
 #if HAVE_SIGINFO_H
 #include <siginfo.h>
@@ -115,12 +122,12 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "convert.hh"
-#include "socket.hh"
-#include "signal.hh"
-#include "squid-tlv.hh"
-#include "copyout.hh"
 #include "conffile.hh"
+#include "convert.hh"
+#include "copyout.hh"
+#include "signal.hh"
+#include "socket.hh"
+#include "squid-tlv.hh"
 
 #ifndef DEFAULTHOST
 #define DEFAULTHOST "localhost"
@@ -132,7 +139,7 @@
 
 volatile sig_atomic_t term_flag = 0; // 'terminate' is a gcc 2.8.x internal...
 char*  linebuffer = 0;
-size_t buffersize = 16834;
+size_t buffersize = 128*1024;
 static char* copydir = 0;
 static uint32_t debugFlag = 0;
 static unsigned purgeMode = 0;
@@ -156,7 +163,7 @@ struct REList {
 };
 
 REList::REList( const char* what, bool doCase )
-        :next(0),data(xstrdup(what))
+    :next(0),data(xstrdup(what))
 {
     int result = regcomp( &rexp, what,
                           REG_EXTENDED | REG_NOSUB | (doCase ? 0 : REG_ICASE) );
@@ -204,7 +211,8 @@ concat( const char* start, ... )
     // first run: determine size
     unsigned size = strlen(start)+1;
     va_start( ap, start );
-    while ( (s=va_arg(ap,const char*)) != NULL ) size += strlen(s ? s : "");
+    while ( (s=va_arg(ap,const char*)) != NULL )
+        size += strlen(s);
     va_end(ap);
 
     // allocate
@@ -304,10 +312,10 @@ action( int fd, size_t metasize,
         const char* fn, const char* url, const SquidMetaList& meta )
 // purpose: if cmdline-requested, send the purge request to the cache
 // paramtr: fd (IN): open FD for the object file
-//	      metasize (IN): offset into data portion of file (meta data size)
+//        metasize (IN): offset into data portion of file (meta data size)
 //          fn (IN): name of the object file
 //          url (IN): URL string stored in the object file
-//	      meta (IN): list containing further meta data
+//        meta (IN): list containing further meta data
 // returns: true for a successful action, false otherwise. The action
 //          may just print the file, send the purge request or even
 //          remove unwanted files.
@@ -319,7 +327,6 @@ action( int fd, size_t metasize,
     static const char* schablone = "PURGE %s HTTP/1.0\r\nAccept: */*\r\n\r\n";
     struct stat st;
     long size = ( fstat(fd,&st) == -1 ? -1 : long(st.st_size - metasize) );
-    int status = 0;
 
     // if we want to copy out the file, do that first of all.
     if ( ::copydir && *copydir && size > 0 )
@@ -327,6 +334,7 @@ action( int fd, size_t metasize,
                   fn, url, ::copydir, ::envelope );
 
     // do we need to PURGE the file, yes, if purgemode bit#0 was set.
+    int status = 0;
     if ( ::purgeMode & 0x01 ) {
         unsigned long bufsize = strlen(url) + strlen(schablone) + 4;
         char* buffer = new char[bufsize];
@@ -339,8 +347,8 @@ action( int fd, size_t metasize,
             return false;
         }
 
-        int size = strlen(buffer);
-        if ( write( sockfd, buffer, size ) != size ) {
+        int content_size = strlen(buffer);
+        if ( write( sockfd, buffer, content_size ) != content_size ) {
             // error while talking to squid
             fprintf( stderr, "unable to talk to server: %s\n", strerror(errno) );
             close(sockfd);
@@ -348,15 +356,23 @@ action( int fd, size_t metasize,
             return false;
         }
         memset( buffer+8, 0, 4 );
-        if ( read( sockfd, buffer, bufsize ) < 1 ) {
+        int readLen = read(sockfd, buffer, bufsize);
+        if (readLen < 1) {
             // error while reading squid's answer
             fprintf( stderr, "unable to read answer: %s\n", strerror(errno) );
             close(sockfd);
             delete[] buffer;
             return false;
         }
+        buffer[bufsize-1] = '\0';
         close(sockfd);
-        status = strtol(buffer+8,0,10);
+        int64_t s = strtol(buffer+8,0,10);
+        if (s > 0 && s < 1000)
+            status = s;
+        else {
+            // error while reading squid's answer
+            fprintf( stderr, "invalid HTTP status in reply: %s\n", buffer+8);
+        }
         delete[] buffer;
     }
 
@@ -391,7 +407,9 @@ match( const char* fn, const REList* list )
     if ( debugFlag & 0x01 ) fprintf( stderr, "# [3] %s\n", fn );
     int fd = open( fn, O_RDONLY );
     if ( fd != -1 ) {
-        if ( read(fd,::linebuffer,::buffersize-1) > 60 ) {
+        memset(::linebuffer, 0, ::buffersize);
+        size_t readLen = read(fd,::linebuffer,::buffersize-1);
+        if ( readLen > 60 ) {
             ::linebuffer[ ::buffersize-1 ] = '\0'; // force-terminate string
 
             // check the offset into the start of object data. The offset is
@@ -412,6 +430,14 @@ match( const char* fn, const REList* list )
             while ( offset + addon <= datastart ) {
                 unsigned int size = 0;
                 memcpy( &size, linebuffer+offset+sizeof(char), sizeof(unsigned int) );
+                if (size+offset < size) {
+                    fputs("WARNING: file corruption detected. 32-bit overflow in size field.\n", stderr);
+                    break;
+                }
+                if (size+offset > readLen) {
+                    fputs( "WARNING: Partial meta data loaded.\n", stderr );
+                    break;
+                }
                 meta.append( SquidMetaType(*(linebuffer+offset)),
                              size, linebuffer+offset+addon );
                 offset += ( addon + size );
@@ -540,23 +566,23 @@ dirlevel( const char* dirname, const REList* list, bool level=false )
 }
 
 int
-checkForPortOnly( const char* optarg )
+checkForPortOnly( const char* arg )
 // purpose: see if somebody just put in a port instead of a hostname
 // paramtr: optarg (IN): argument from commandline
 // returns: 0..65535 is the valid port number in network byte order,
 //          -1 if not a port
 {
     // if there is a period in there, it must be a valid hostname
-    if ( strchr( optarg, '.' ) != 0 ) return -1;
+    if ( strchr( arg, '.' ) != 0 ) return -1;
 
     // if it is just a number between 0 and 65535, it must be a port
     char* errstr = 0;
-    unsigned long result = strtoul( optarg, &errstr, 0 );
-    if ( result < 65536 && errstr != optarg ) return htons(result);
+    unsigned long result = strtoul( arg, &errstr, 0 );
+    if ( result < 65536 && errstr != arg ) return htons(result);
 
 #if 0
     // one last try, test for a symbolical service name
-    struct servent* service = getservbyname( optarg, "tcp" );
+    struct servent* service = getservbyname( arg, "tcp" );
     return service ? service->s_port : -1;
 #else
     return -1;
@@ -595,8 +621,8 @@ helpMe( void )
 
 void
 parseCommandline( int argc, char* argv[], REList*& head,
-                  char*& conffile, char*& copydir,
-                  struct in_addr& serverHost, unsigned short& serverPort )
+                  char*& conffile, char*& copyDirPath,
+                  struct in_addr& serverHostIp, unsigned short& serverHostPort )
 // paramtr: argc: see ::main().
 //          argv: see ::main().
 // returns: Does terminate the program on errors!
@@ -623,9 +649,9 @@ parseCommandline( int argc, char* argv[], REList*& head,
             break;
         case 'C':
             if ( optarg && *optarg ) {
-                if ( copydir ) xfree( (void*) copydir );
-                copydir = xstrdup(optarg);
-                assert(copydir);
+                if ( copyDirPath ) xfree( (void*) copyDirPath );
+                copyDirPath = xstrdup(optarg);
+                assert(copyDirPath);
             }
             break;
         case 'c':
@@ -716,23 +742,23 @@ parseCommandline( int argc, char* argv[], REList*& head,
                 port = checkForPortOnly( optarg );
                 if ( port == -1 ) {
                     // assume that main() did set the default port
-                    if ( convertHostname(optarg,serverHost) == -1 ) {
+                    if ( convertHostname(optarg,serverHostIp) == -1 ) {
                         fprintf( stderr, "unable to resolve host %s!\n", optarg );
                         exit(1);
                     }
                 } else {
                     // assume that main() did set the default host
-                    serverPort = port;
+                    serverHostPort = port;
                 }
             } else {
                 // colon used, port is extra
                 *colon = 0;
                 ++colon;
-                if ( convertHostname(optarg,serverHost) == -1 ) {
+                if ( convertHostname(optarg,serverHostIp) == -1 ) {
                     fprintf( stderr, "unable to resolve host %s!\n", optarg );
                     exit(1);
                 }
-                if ( convertPortname(colon,serverPort) == -1 ) {
+                if ( convertPortname(colon,serverHostPort) == -1 ) {
                     fprintf( stderr, "unable to resolve port %s!\n", colon );
                     exit(1);
                 }
@@ -770,8 +796,8 @@ parseCommandline( int argc, char* argv[], REList*& head,
     assert( head != 0 );
 
     // make sure that the copy out directory is there and accessible
-    if ( copydir && *copydir )
-        if ( assert_copydir( copydir ) != 0 ) exit(1);
+    if ( copyDirPath && *copyDirPath )
+        if ( assert_copydir( copyDirPath ) != 0 ) exit(1);
 
     // show results
     if ( showme ) {
@@ -784,15 +810,15 @@ parseCommandline( int argc, char* argv[], REList*& head,
         puts( ::verbose ? " + extra verbosity" : "" );
 
         printf( "# Copy-out directory: %s ",
-                copydir ? copydir : "copy-out mode disabled" );
-        if ( copydir )
+                copyDirPath ? copyDirPath : "copy-out mode disabled" );
+        if ( copyDirPath )
             printf( "(%s HTTP header)\n", ::envelope ? "prepend" : "no" );
         else
             puts("");
 
         printf( "# Squid config file : %s\n", conffile );
         printf( "# Cacheserveraddress: %s:%u\n",
-                inet_ntoa( serverHost ), ntohs( serverPort ) );
+                inet_ntoa( serverHostIp ), ntohs( serverHostPort ) );
         printf( "# purge mode        : 0x%02x\n", ::purgeMode );
         printf( "# Regular expression: " );
 
@@ -968,3 +994,4 @@ main( int argc, char* argv[] )
     delete list;
     return 0;
 }
+

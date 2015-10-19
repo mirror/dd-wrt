@@ -1,45 +1,83 @@
 /*
- * DEBUG: section 28    Access Control
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 28    Access Control */
+
 #include "squid.h"
 #include "acl/Acl.h"
 #include "acl/Checklist.h"
+#include "acl/Gadgets.h"
 #include "anyp/PortCfg.h"
+#include "cache_cf.h"
 #include "ConfigParser.h"
 #include "Debug.h"
 #include "dlink.h"
 #include "globals.h"
+#include "profiler/Profiler.h"
 #include "SquidConfig.h"
 
+#include <vector>
+
+const ACLFlag ACLFlags::NoFlags[1] = {ACL_F_END};
+
 const char *AclMatchedName = NULL;
+
+bool ACLFlags::supported(const ACLFlag f) const
+{
+    if (f == ACL_F_REGEX_CASE)
+        return true;
+    return (supported_.find(f) != std::string::npos);
+}
+
+void
+ACLFlags::parseFlags()
+{
+    char *nextToken;
+    while ((nextToken = ConfigParser::PeekAtToken()) != NULL && nextToken[0] == '-') {
+        (void)ConfigParser::NextToken(); //Get token from cfg line
+        //if token is the "--" break flag
+        if (strcmp(nextToken, "--") == 0)
+            break;
+
+        for (const char *flg = nextToken+1; *flg!='\0'; flg++ ) {
+            if (supported(*flg)) {
+                makeSet(*flg);
+            } else {
+                debugs(28, 0, HERE << "Flag '" << *flg << "' not supported");
+                self_destruct();
+            }
+        }
+    }
+
+    /*Regex code needs to parse -i file*/
+    if ( isSet(ACL_F_REGEX_CASE)) {
+        ConfigParser::TokenPutBack("-i");
+        makeUnSet('i');
+    }
+}
+
+const char *
+ACLFlags::flagsStr() const
+{
+    static char buf[64];
+    if (flags_ == 0)
+        return "";
+
+    char *s = buf;
+    *s++ = '-';
+    for (ACLFlag f = 'A'; f <= 'z'; f++) {
+        // ACL_F_REGEX_CASE (-i) flag handled by ACLRegexData class, ignore
+        if (isSet(f) && f != ACL_F_REGEX_CASE)
+            *s++ = f;
+    }
+    *s = '\0';
+    return buf;
+}
 
 void *
 ACL::operator new (size_t byteCount)
@@ -81,8 +119,9 @@ ACL::Factory (char const *type)
 }
 
 ACL::ACL() :
-        cfgline(NULL),
-        next(NULL)
+    cfgline(NULL),
+    next(NULL),
+    registered(false)
 {
     *name = 0;
 }
@@ -90,6 +129,46 @@ ACL::ACL() :
 bool ACL::valid () const
 {
     return true;
+}
+
+bool
+ACL::matches(ACLChecklist *checklist) const
+{
+    PROF_start(ACL_matches);
+    debugs(28, 5, "checking " << name);
+
+    // XXX: AclMatchedName does not contain a matched ACL name when the acl
+    // does not match. It contains the last (usually leaf) ACL name checked
+    // (or is NULL if no ACLs were checked).
+    AclMatchedName = name;
+
+    int result = 0;
+    if (!checklist->hasRequest() && requiresRequest()) {
+        debugs(28, DBG_IMPORTANT, "WARNING: " << name << " ACL is used in " <<
+               "context without an HTTP request. Assuming mismatch.");
+    } else if (!checklist->hasReply() && requiresReply()) {
+        debugs(28, DBG_IMPORTANT, "WARNING: " << name << " ACL is used in " <<
+               "context without an HTTP response. Assuming mismatch.");
+    } else {
+        // have to cast because old match() API is missing const
+        result = const_cast<ACL*>(this)->match(checklist);
+    }
+
+    const char *extra = checklist->asyncInProgress() ? " async" : "";
+    debugs(28, 3, "checked: " << name << " = " << result << extra);
+    PROF_stop(ACL_matches);
+    return result == 1; // true for match; false for everything else
+}
+
+void
+ACL::context(const char *aName, const char *aCfgLine)
+{
+    name[0] = '\0';
+    if (aName)
+        xstrncpy(name, aName, ACL_NAME_SZ-1);
+    safe_free(cfgline);
+    if (aCfgLine)
+        cfgline = xstrdup(aCfgLine);
 }
 
 void
@@ -103,7 +182,7 @@ ACL::ParseAclLine(ConfigParser &parser, ACL ** head)
 
     /* snarf the ACL name */
 
-    if ((t = strtok(NULL, w_space)) == NULL) {
+    if ((t = ConfigParser::NextToken()) == NULL) {
         debugs(28, DBG_CRITICAL, "aclParseAclLine: missing ACL name.");
         parser.destruct();
         return;
@@ -120,7 +199,7 @@ ACL::ParseAclLine(ConfigParser &parser, ACL ** head)
     /* snarf the ACL type */
     const char *theType;
 
-    if ((theType = strtok(NULL, w_space)) == NULL) {
+    if ((theType = ConfigParser::NextToken()) == NULL) {
         debugs(28, DBG_CRITICAL, "aclParseAclLine: missing ACL type.");
         parser.destruct();
         return;
@@ -128,21 +207,21 @@ ACL::ParseAclLine(ConfigParser &parser, ACL ** head)
 
     // Is this ACL going to work?
     if (strcmp(theType, "myip") == 0) {
-        AnyP::PortCfg *p = Config.Sockaddr.http;
-        while (p) {
+        AnyP::PortCfgPointer p = HttpPortList;
+        while (p != NULL) {
             // Bug 3239: not reliable when there is interception traffic coming
-            if (p->intercepted)
+            if (p->flags.natIntercept)
                 debugs(28, DBG_CRITICAL, "WARNING: 'myip' ACL is not reliable for interception proxies. Please use 'myportname' instead.");
             p = p->next;
         }
         debugs(28, DBG_IMPORTANT, "UPGRADE: ACL 'myip' type is has been renamed to 'localip' and matches the IP the client connected to.");
         theType = "localip";
     } else if (strcmp(theType, "myport") == 0) {
-        AnyP::PortCfg *p = Config.Sockaddr.http;
-        while (p) {
+        AnyP::PortCfgPointer p = HttpPortList;
+        while (p != NULL) {
             // Bug 3239: not reliable when there is interception traffic coming
             // Bug 3239: myport - not reliable (yet) when there is interception traffic coming
-            if (p->intercepted)
+            if (p->flags.natIntercept)
                 debugs(28, DBG_CRITICAL, "WARNING: 'myport' ACL is not reliable for interception proxies. Please use 'myportname' instead.");
             p = p->next;
         }
@@ -160,8 +239,7 @@ ACL::ParseAclLine(ConfigParser &parser, ACL ** head)
     if ((A = FindByName(aclname)) == NULL) {
         debugs(28, 3, "aclParseAclLine: Creating ACL '" << aclname << "'");
         A = ACL::Factory(theType);
-        xstrncpy(A->name, aclname, ACL_NAME_SZ);
-        A->cfgline = xstrdup(config_input_line);
+        A->context(aclname, config_input_line);
         new_acl = 1;
     } else {
         if (strcmp (A->typeString(),theType) ) {
@@ -178,7 +256,9 @@ ACL::ParseAclLine(ConfigParser &parser, ACL ** head)
      * Here we set AclMatchedName in case we need to use it in a
      * warning message in aclDomainCompare().
      */
-    AclMatchedName = A->name;	/* ugly */
+    AclMatchedName = A->name;   /* ugly */
+
+    A->flags.parseFlags();
 
     /*split the function here */
     A->parse();
@@ -186,7 +266,7 @@ ACL::ParseAclLine(ConfigParser &parser, ACL ** head)
     /*
      * Clear AclMatchedName from our temporary hack
      */
-    AclMatchedName = NULL;	/* ugly */
+    AclMatchedName = NULL;  /* ugly */
 
     if (!new_acl)
         return;
@@ -200,29 +280,19 @@ ACL::ParseAclLine(ConfigParser &parser, ACL ** head)
                A->cfgline);
     }
 
-    /* append */
-    while (*head)
-        head = &(*head)->next;
-
+    // add to the global list for searching explicit ACLs by name
+    assert(head && *head == Config.aclList);
+    A->next = *head;
     *head = A;
+
+    // register for centralized cleanup
+    aclRegister(A);
 }
 
 bool
 ACL::isProxyAuth() const
 {
     return false;
-}
-
-ACLList::ACLList() : op (1), _acl (NULL), next (NULL)
-{}
-
-void
-ACLList::negated(bool isNegated)
-{
-    if (isNegated)
-        op = 0;
-    else
-        op = 1;
 }
 
 /* ACL result caching routines */
@@ -233,7 +303,7 @@ ACL::matchForCache(ACLChecklist *checklist)
     /* This is a fatal to ensure that cacheMatchAcl calls are _only_
      * made for supported acl types */
     fatal("aclCacheMatchAcl: unknown or unexpected ACL type");
-    return 0;		/* NOTREACHED */
+    return 0;       /* NOTREACHED */
 }
 
 /*
@@ -301,87 +371,15 @@ ACL::requiresRequest() const
     return false;
 }
 
-int
-ACL::checklistMatches(ACLChecklist *checklist)
-{
-    int rv;
-
-    if (!checklist->hasRequest() && requiresRequest()) {
-        debugs(28, DBG_IMPORTANT, "ACL::checklistMatches WARNING: '" << name << "' ACL is used but there is no HTTP request -- not matching.");
-        return 0;
-    }
-
-    if (!checklist->hasReply() && requiresReply()) {
-        debugs(28, DBG_IMPORTANT, "ACL::checklistMatches WARNING: '" << name << "' ACL is used but there is no HTTP reply -- not matching.");
-        return 0;
-    }
-
-    debugs(28, 3, "ACL::checklistMatches: checking '" << name << "'");
-    rv= match(checklist);
-    debugs(28, 3, "ACL::ChecklistMatches: result for '" << name << "' is " << rv);
-    return rv;
-}
-
-bool
-ACLList::matches (ACLChecklist *checklist) const
-{
-    assert (_acl);
-    // XXX: AclMatchedName does not contain a matched ACL name when the acl
-    // does not match (or contains stale name if no ACLs are checked). In
-    // either case, we get misleading debugging and possibly incorrect error
-    // messages. Unfortunately, deny_info's "when none http_access
-    // lines match" exception essentially requires this mess.
-    // TODO: Rework by using an acl-free deny_info for the no-match cases?
-    AclMatchedName = _acl->name;
-    debugs(28, 3, "ACLList::matches: checking " << (op ? null_string : "!") << _acl->name);
-
-    bool result = false;
-    if (_acl->checklistMatches(checklist) == 1) {
-        debugs(28, 5, _acl->name << " matched" << (op ? "." : ", negating."));
-        result = (op != 0);
-    } else if (checklist->finished()) {
-        debugs(28, 5, _acl->name << " failed.");
-        result = false;
-    } else if (checklist->asyncNeeded()) {
-        debugs(28, 5, _acl->name << " needs async lookup");
-        result = false;
-    } else {
-        debugs(28, 5, _acl->name << " mismatched" << (op ? "." : ", negating."));
-        result = (op == 0);
-    }
-
-    debugs(28, 4, (op ? null_string : "!") << _acl->name << " result is " <<
-           (result ? "true" : "false"));
-    return result;
-}
-
 /*********************/
 /* Destroy functions */
 /*********************/
 
 ACL::~ACL()
 {
-    debugs(28, 3, "ACL::~ACL: '" << cfgline << "'");
+    debugs(28, 3, "freeing ACL " << name);
     safe_free(cfgline);
-}
-
-/* to be split into separate files in the future */
-
-CBDATA_CLASS_INIT(acl_access);
-
-void *
-acl_access::operator new (size_t)
-{
-    CBDATA_INIT_TYPE(acl_access);
-    acl_access *result = cbdataAlloc(acl_access);
-    return result;
-}
-
-void
-acl_access::operator delete (void *address)
-{
-    acl_access *t = static_cast<acl_access *>(address);
-    cbdataFree(t);
+    AclMatchedName = NULL; // in case it was pointing to our name
 }
 
 ACL::Prototype::Prototype() : prototype (NULL), typeString (NULL) {}
@@ -391,7 +389,7 @@ ACL::Prototype::Prototype (ACL const *aPrototype, char const *aType) : prototype
     registerMe ();
 }
 
-Vector<ACL::Prototype const *> * ACL::Prototype::Registry;
+std::vector<ACL::Prototype const *> * ACL::Prototype::Registry;
 void *ACL::Prototype::Initialized;
 
 bool
@@ -415,7 +413,7 @@ ACL::Prototype::registerMe ()
     if (!Registry || (Initialized != ((char *)Registry - 5))  ) {
         /* TODO: extract this */
         /* Not initialised */
-        Registry = new Vector <ACL::Prototype const *>;
+        Registry = new std::vector<ACL::Prototype const *>;
         Initialized = (char *)Registry - 5;
     }
 
@@ -436,8 +434,11 @@ ACL::Prototype::Factory (char const *typeToClone)
     debugs(28, 4, "ACL::Prototype::Factory: cloning an object for type '" << typeToClone << "'");
 
     for (iterator i = Registry->begin(); i != Registry->end(); ++i)
-        if (!strcmp (typeToClone, (*i)->typeString))
-            return (*i)->prototype->clone();
+        if (!strcmp (typeToClone, (*i)->typeString)) {
+            ACL *A = (*i)->prototype->clone();
+            A->flags = (*i)->prototype->flags;
+            return A;
+        }
 
     debugs(28, 4, "ACL::Prototype::Factory: cloning failed, no type '" << typeToClone << "' available");
 
@@ -455,3 +456,4 @@ ACL::Initialize()
         a = a->next;
     }
 }
+

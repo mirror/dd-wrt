@@ -1,36 +1,12 @@
-
 /*
- * DEBUG: section 86    ESI processing
- * AUTHOR: Robert Collins
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- ;  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 86    ESI processing */
 
 #include "squid.h"
 
@@ -39,8 +15,8 @@
  */
 #if (USE_SQUID_ESI == 1)
 
-#include "client_side_request.h"
 #include "client_side.h"
+#include "client_side_request.h"
 #include "esi/Include.h"
 #include "esi/VarState.h"
 #include "HttpReply.h"
@@ -114,7 +90,7 @@ esiBufferRecipient (clientStreamNode *node, ClientHttpRequest *http, HttpReply *
         assert(rep == NULL);
     } else {
         if (rep) {
-            if (rep->sline.status != HTTP_OK) {
+            if (rep->sline.status() != Http::scOkay) {
                 rep = NULL;
                 esiStream->include->includeFail (esiStream);
                 esiStream->finished = 1;
@@ -222,7 +198,6 @@ esiBufferRecipient (clientStreamNode *node, ClientHttpRequest *http, HttpReply *
 /* esiStream functions */
 ESIStreamContext::~ESIStreamContext()
 {
-    assert (this);
     freeResources();
 }
 
@@ -233,22 +208,6 @@ ESIStreamContext::freeResources()
     buffer = NULL;
     localbuffer = NULL;
     include = NULL;
-}
-
-void *
-ESIStreamContext::operator new(size_t byteCount)
-{
-    assert (byteCount == sizeof (ESIStreamContext));
-    CBDATA_INIT_TYPE(ESIStreamContext);
-    ESIStreamContext *result = cbdataAlloc(ESIStreamContext);
-    return result;
-}
-
-void
-ESIStreamContext::operator delete (void *address)
-{
-    ESIStreamContext *t = static_cast<ESIStreamContext *>(address);
-    cbdataFree(t);
 }
 
 ESIStreamContext *
@@ -300,21 +259,21 @@ ESIInclude::makeUsable(esiTreeParentPtr newParent, ESIVarState &newVarState) con
 }
 
 ESIInclude::ESIInclude(ESIInclude const &old) :
-        varState(NULL),
-        srcurl(NULL),
-        alturl(NULL),
-        parent(NULL),
-        started(false),
-        sent(false)
+    varState(NULL),
+    srcurl(NULL),
+    alturl(NULL),
+    parent(NULL),
+    started(false),
+    sent(false)
 {
     memset(&flags, 0, sizeof(flags));
     flags.onerrorcontinue = old.flags.onerrorcontinue;
 
     if (old.srcurl)
-        srcurl = xstrdup (old.srcurl);
+        srcurl = xstrdup(old.srcurl);
 
     if (old.alturl)
-        alturl = xstrdup (old.alturl);
+        alturl = xstrdup(old.alturl);
 }
 
 void
@@ -340,10 +299,9 @@ ESIInclude::Start (ESIStreamContext::Pointer stream, char const *url, ESIVarStat
     /* tempUrl is eaten by the request */
     char const *tempUrl = vars->extractChar ();
 
-    debugs(86, 5, "ESIIncludeStart: Starting subrequest with url '" << tempUrl <<
-           "'");
+    debugs(86, 5, "ESIIncludeStart: Starting subrequest with url '" << tempUrl << "'");
 
-    if (clientBeginRequest(METHOD_GET, tempUrl, esiBufferRecipient, esiBufferDetach, stream.getRaw(), &tempheaders, stream->localbuffer->buf, HTTP_REQBUF_SZ)) {
+    if (clientBeginRequest(Http::METHOD_GET, tempUrl, esiBufferRecipient, esiBufferDetach, stream.getRaw(), &tempheaders, stream->localbuffer->buf, HTTP_REQBUF_SZ)) {
         debugs(86, DBG_CRITICAL, "starting new ESI subrequest failed");
     }
 
@@ -351,12 +309,12 @@ ESIInclude::Start (ESIStreamContext::Pointer stream, char const *url, ESIVarStat
 }
 
 ESIInclude::ESIInclude(esiTreeParentPtr aParent, int attrcount, char const **attr, ESIContext *aContext) :
-        varState(NULL),
-        srcurl(NULL),
-        alturl(NULL),
-        parent(aParent),
-        started(false),
-        sent(false)
+    varState(NULL),
+    srcurl(NULL),
+    alturl(NULL),
+    parent(aParent),
+    started(false),
+    sent(false)
 {
     assert (aContext);
     memset(&flags, 0, sizeof(flags));
@@ -370,7 +328,7 @@ ESIInclude::ESIInclude(esiTreeParentPtr aParent, int attrcount, char const **att
             assert (src.getRaw() == NULL);
             src = ESIStreamContextNew (this);
             assert (src.getRaw() != NULL);
-            srcurl = xstrdup ( attr[i+1]);
+            srcurl = xstrdup(attr[i+1]);
         } else if (!strcmp(attr[i],"alt")) {
             /* Start a secondary request for thisNode url */
             /* TODO: make a config parameter to wait on requesting alt's
@@ -381,7 +339,7 @@ ESIInclude::ESIInclude(esiTreeParentPtr aParent, int attrcount, char const **att
             assert (alt.getRaw() == NULL); /* TODO: FIXME */
             alt = ESIStreamContextNew (this);
             assert (alt.getRaw() != NULL);
-            alturl = xstrdup (attr[i+1]);
+            alturl = xstrdup(attr[i+1]);
         } else if (!strcmp(attr[i],"onerror")) {
             if (!strcmp(attr[i+1], "continue")) {
                 flags.onerrorcontinue = 1;
@@ -494,8 +452,6 @@ ESIInclude::dataNeeded() const
 void
 ESIInclude::subRequestDone (ESIStreamContext::Pointer stream, bool success)
 {
-    assert (this);
-
     if (!dataNeeded())
         return;
 
@@ -604,3 +560,4 @@ ESIInclude::subRequestDone (ESIStreamContext::Pointer stream, bool success)
 }
 
 #endif /* USE_SQUID_ESI == 1 */
+

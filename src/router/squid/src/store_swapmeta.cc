@@ -1,35 +1,12 @@
-
 /*
- * DEBUG: section 20    Storage Manager Swapfile Metadata
- * AUTHOR: Kostas Anagnostakis
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 20    Storage Manager Swapfile Metadata */
 
 #include "squid.h"
 #include "md5.h"
@@ -60,15 +37,22 @@ storeSwapTLVFree(tlv * n)
 tlv *
 storeSwapMetaBuild(StoreEntry * e)
 {
-    tlv *TLV = NULL;		/* we'll return this */
+    tlv *TLV = NULL;        /* we'll return this */
     tlv **T = &TLV;
     const char *url;
     const char *vary;
     assert(e->mem_obj != NULL);
     const int64_t objsize = e->mem_obj->expectedReplySize();
     assert(e->swap_status == SWAPOUT_WRITING);
-    url = e->url();
-    debugs(20, 3, "storeSwapMetaBuild: " << url  );
+
+    // e->mem_obj->request may be nil in this context
+    if (e->mem_obj->request)
+        url = e->mem_obj->request->storeId();
+    else
+        url = e->url();
+
+    debugs(20, 3, "storeSwapMetaBuild URL: " << url);
+
     tlv *t = StoreMeta::Factory (STORE_META_KEY,SQUID_MD5_DIGEST_LENGTH, e->key);
 
     if (!t) {
@@ -127,8 +111,8 @@ storeSwapMetaPack(tlv * tlv_list, int *length)
     int j = 0;
     char *buf;
     assert(length != NULL);
-    ++buflen;			/* STORE_META_OK */
-    buflen += sizeof(int);	/* size of header to follow */
+    ++buflen;           /* STORE_META_OK */
+    buflen += sizeof(int);  /* size of header to follow */
 
     for (t = tlv_list; t; t = t->next)
         buflen += sizeof(char) + sizeof(int) + t->length;
@@ -155,3 +139,4 @@ storeSwapMetaPack(tlv * tlv_list, int *length)
     *length = buflen;
     return buf;
 }
+

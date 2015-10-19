@@ -1,10 +1,17 @@
 /*
- * DEBUG: section 93    eCAP Interface
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    eCAP Interface */
+
 #include "squid.h"
+#include "adaptation/ecap/Config.h"
 #include "adaptation/ecap/Host.h"
 #include "adaptation/ecap/ServiceRep.h"
-#include "adaptation/ecap/Config.h"
 
 Adaptation::Ecap::Config Adaptation::Ecap::TheConfig;
 

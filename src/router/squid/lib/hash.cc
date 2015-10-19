@@ -1,49 +1,21 @@
-
 /*
- * DEBUG: section 00    Hash Tables
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 00    Hash Tables */
 
 #include "squid.h"
 #include "hash.h"
 #include "profiler/Profiler.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -51,12 +23,6 @@
 #include <gnumalloc.h>
 #elif HAVE_MALLOC_H
 #include <malloc.h>
-#endif
-#if HAVE_ASSERT_H
-#include <assert.h>
-#endif
-#if HAVE_MATH_H
-#include <math.h>
 #endif
 
 static void hash_next_bucket(hash_table * hid);
@@ -101,22 +67,22 @@ hash4(const void *data, unsigned int size)
         break;
     case 7:
         HASH4;
-        /* FALLTHROUGH */
+    /* FALLTHROUGH */
     case 6:
         HASH4;
-        /* FALLTHROUGH */
+    /* FALLTHROUGH */
     case 5:
         HASH4;
-        /* FALLTHROUGH */
+    /* FALLTHROUGH */
     case 4:
         HASH4;
-        /* FALLTHROUGH */
+    /* FALLTHROUGH */
     case 3:
         HASH4;
-        /* FALLTHROUGH */
+    /* FALLTHROUGH */
     case 2:
         HASH4;
-        /* FALLTHROUGH */
+    /* FALLTHROUGH */
     case 1:
         HASH4;
     }
@@ -409,3 +375,4 @@ main(void)
     exit(0);
 }
 #endif
+

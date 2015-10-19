@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  *      RADIUS
  *      Remote Authentication Dial In User Service
  *
@@ -48,9 +56,13 @@
 #include "squid.h"
 #include "helpers/defines.h"
 #include "md5.h"
-#include "radius.h"
 #include "radius-util.h"
+#include "radius.h"
 
+#include <cctype>
+#include <cerrno>
+#include <cstring>
+#include <ctime>
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -66,12 +78,6 @@
 #if _SQUID_WINDOWS_
 #include <io.h>
 #endif
-#if HAVE_CTYPE_H
-#include <ctype.h>
-#endif
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -81,23 +87,14 @@
 #if HAVE_PWD_H
 #include <pwd.h>
 #endif
-#if HAVE_TIME_H
-#include <time.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
 
 /* AYJ: helper input buffer may be a lot larger than this used to expect... */
-#define MAXPWNAM	254
-#define MAXPASS		254
-#define MAXLINE		254
+#define MAXPWNAM    254
+#define MAXPASS     254
+#define MAXLINE     254
 
 static void md5_calc(uint8_t out[16], void *in, size_t len);
 
@@ -443,7 +440,7 @@ authenticate(int socket_fd, const char *username, const char *passwd)
             }
             FD_ZERO(&readfds);
             FD_SET(socket_fd, &readfds);
-            if (select(socket_fd + 1, &readfds, NULL, NULL, &tv) == 0)	/* Select timeout */
+            if (select(socket_fd + 1, &readfds, NULL, NULL, &tv) == 0)  /* Select timeout */
                 break;
             salen = sizeof(saremote);
             len = recvfrom(socket_fd, recv_buffer, sizeof(i_recv_buffer),
@@ -620,3 +617,4 @@ main(int argc, char **argv)
     close(sockfd);
     exit(1);
 }
+

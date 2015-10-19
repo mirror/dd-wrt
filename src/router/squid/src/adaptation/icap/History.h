@@ -1,8 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_ICAPHISTORY_H
 #define SQUID_ICAPHISTORY_H
 
+#include "base/RefCount.h"
 #include "enums.h"
-#include "RefCount.h"
+#include "LogTags.h"
 #include "SquidString.h"
 
 namespace Adaptation
@@ -27,10 +36,10 @@ public:
     int processingTime() const;
 
     String rfc931; ///< the username from ident
-#if USE_SSL
+#if USE_OPENSSL
     String ssluser; ///< the username from SSL
 #endif
-    log_type logType; ///< the squid request status (TCP_MISS etc)
+    LogTags logType; ///< the squid request status (TCP_MISS etc)
 
     String log_uri; ///< the request uri
     size_t req_sz; ///< the request size
@@ -47,3 +56,4 @@ private:
 } // namespace Adaptation
 
 #endif /*SQUID_HISTORY_H*/
+

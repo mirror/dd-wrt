@@ -1,43 +1,18 @@
 /*
- * DEBUG: section 28    Access Control
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 28    Access Control */
+
 #include "squid.h"
-#include "acl/DomainData.h"
 #include "acl/Checklist.h"
+#include "acl/DomainData.h"
 #include "cache_cf.h"
 #include "Debug.h"
-#include "wordlist.h"
 #include "src/URL.h"
 
 template<class T>
@@ -49,8 +24,10 @@ xRefFree(T &thing)
 
 ACLDomainData::~ACLDomainData()
 {
-    if (domains)
+    if (domains) {
         domains->destroy(xRefFree);
+        delete domains;
+    }
 }
 
 template<class T>
@@ -130,30 +107,27 @@ ACLDomainData::match(char const *host)
 
     debugs(28, 3, "aclMatchDomainList: checking '" << host << "'");
 
-    domains = domains->splay((char *)host, aclHostDomainCompare);
+    char *h = const_cast<char *>(host);
+    char const * const * result = domains->find(h, aclHostDomainCompare);
 
-    debugs(28, 3, "aclMatchDomainList: '" << host << "' " << (splayLastResult ? "NOT found" : "found"));
+    debugs(28, 3, "aclMatchDomainList: '" << host << "' " << (result ? "found" : "NOT found"));
 
-    return !splayLastResult;
+    return (result != NULL);
 }
 
-static void
-aclDumpDomainListWalkee(char * const & node_data, void *outlist)
-{
-    /* outlist is really a wordlist ** */
-    wordlistAdd((wordlist **)outlist, (char const *)node_data);
-}
+struct AclDomainDataDumpVisitor {
+    SBufList contents;
+    void operator() (char * const & node_data) {
+        contents.push_back(SBuf(node_data));
+    }
+};
 
-wordlist *
-ACLDomainData::dump()
+SBufList
+ACLDomainData::dump() const
 {
-    wordlist *wl = NULL;
-    /* damn this is VERY inefficient for long ACL lists... filling
-     * a wordlist this way costs Sum(1,N) iterations. For instance
-     * a 1000-elements list will be filled in 499500 iterations.
-     */
-    domains->walk(aclDumpDomainListWalkee, &wl);
-    return wl;
+    AclDomainDataDumpVisitor visitor;
+    domains->visit(visitor);
+    return visitor.contents;
 }
 
 void
@@ -161,9 +135,12 @@ ACLDomainData::parse()
 {
     char *t = NULL;
 
+    if (!domains)
+        domains = new Splay<char *>();
+
     while ((t = strtokFile())) {
         Tolower(t);
-        domains = domains->insert(xstrdup(t), aclDomainCompare);
+        domains->insert(xstrdup(t), aclDomainCompare);
     }
 }
 
@@ -180,3 +157,4 @@ ACLDomainData::clone() const
     assert (!domains);
     return new ACLDomainData;
 }
+

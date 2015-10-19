@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #include "squid.h"
 #include "base/TextException.h"
@@ -9,12 +14,8 @@
 #include "Debug.h"
 #include "util.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#endif
+#include <cerrno>
+#include <cstring>
 
 CpuAffinitySet::CpuAffinitySet()
 {
@@ -78,3 +79,4 @@ CpuAffinitySet::set(const cpu_set_t &aCpuSet)
 {
     memcpy(&theCpuSet, &aCpuSet, sizeof(theCpuSet));
 }
+

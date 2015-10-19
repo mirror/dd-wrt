@@ -1,12 +1,16 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #ifndef SQUID_IPC_COORDINATOR_H
 #define SQUID_IPC_COORDINATOR_H
 
-#include "Array.h"
 #include "ipc/Messages.h"
 #include "ipc/Port.h"
 #include "ipc/SharedListen.h"
@@ -80,3 +84,4 @@ private:
 } // namespace Ipc
 
 #endif /* SQUID_IPC_COORDINATOR_H */
+

@@ -1,12 +1,16 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "Module.h"
 #if defined(HAVE_FS_UFS) || defined(HAVE_FS_AUFS) || defined(HAVE_FS_DISKD)
 #include "fs/ufs/StoreFSufs.h"
 #include "fs/ufs/UFSSwapDir.h"
-#endif
-
-#if HAVE_FS_COSS
-#include "fs/coss/StoreFScoss.h"
 #endif
 
 #if HAVE_FS_UFS
@@ -24,15 +28,6 @@ static Fs::Ufs::StoreFSufs<Fs::Ufs::UFSSwapDir> *DiskdInstance;
 #if HAVE_FS_ROCK
 #include "fs/rock/RockStoreFileSystem.h"
 static Rock::StoreFileSystem *RockInstance = NULL;
-#endif
-
-/* TODO: Modify coss code to:
- * (a) remove the StoreFScoss::GetInstance method,
- * (b) declare the StoreFScoss::stats  as static and
- * (c) merge the StoreFScoss::stat() method with the static
- *     StoreFScoss::Stats() */
-#if HAVE_FS_COSS
-StoreFScoss &CossInstance = StoreFScoss::GetInstance();
 #endif
 
 void Fs::Init()
@@ -75,3 +70,4 @@ void Fs::Clean()
 #endif
 
 }
+

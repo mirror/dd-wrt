@@ -1,3 +1,10 @@
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+
 include $(top_srcdir)/src/Common.am
 
 man_MANS = basic_sasl_auth.8
@@ -13,4 +20,4 @@ EXTRA_DIST = \
 	basic_sasl_auth.8 \
 	basic_sasl_auth.conf \
 	basic_sasl_auth.pam \
-	config.test
+	required.m4

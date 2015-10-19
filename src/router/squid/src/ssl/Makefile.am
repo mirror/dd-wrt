@@ -1,3 +1,10 @@
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+
 include $(top_srcdir)/src/Common.am
 include $(top_srcdir)/src/TestHeaders.am
 
@@ -11,16 +18,17 @@ EXTRA_DIST = \
 
 if USE_SSL_CRTD
 SSL_CRTD = ssl_crtd
-SSL_CRTD_SOURCE = \
-    helper.cc \
-    helper.h
+man_MANS = ssl_crtd.8
 else
 SSL_CRTD =
-SSL_CRTD_SOURCE =
 endif
 
 ## SSL stuff used by main Squid but not by ssl_crtd
 libsslsquid_la_SOURCES = \
+	bio.cc \
+	bio.h \
+	cert_validate_message.cc \
+	cert_validate_message.h \
 	context_storage.cc \
 	context_storage.h \
 	Config.cc \
@@ -29,13 +37,15 @@ libsslsquid_la_SOURCES = \
 	ErrorDetail.h \
 	ErrorDetailManager.cc \
 	ErrorDetailManager.h \
+	PeerConnector.cc \
+	PeerConnector.h \
 	ProxyCerts.h \
 	ServerBump.cc \
 	ServerBump.h \
 	support.cc \
 	support.h \
-	\
-	$(SSL_CRTD_SOURCE)
+	helper.cc \
+	helper.h
 
 ## SSL stuff used by main Squid and ssl_crtd
 libsslutil_la_SOURCES = \

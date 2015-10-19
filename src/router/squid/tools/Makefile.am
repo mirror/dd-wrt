@@ -1,26 +1,26 @@
-#
-#  Makefile for the Squid Object Cache server
-#
-#  Uncomment and customize the following to suit your needs:
-#
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
 
 include $(top_srcdir)/src/Common.am
 
-AUTOMAKE_OPTIONS = subdir-objects
-
 ## we need our local files too (but avoid -I. at all costs)
-INCLUDES += -I$(srcdir)
+AM_CPPFLAGS += -I$(srcdir)
 
-SUBDIRS = purge
-EXTRA_DIST = 
-man_MANS = 
-DISTCLEANFILES = 
+SUBDIRS = purge squidclient systemd sysvinit
+EXTRA_DIST =
+man_MANS =
+DISTCLEANFILES =
 
-LDADD = \
+LDADD= \
 	$(top_builddir)/src/ip/libip.la \
 	$(top_builddir)/lib/libmiscencoding.la \
 	$(top_builddir)/lib/libmiscutil.la \
 	$(COMPAT_LIB) \
+	$(NETTLELIB) \
 	$(KRB5LIBS) \
 	$(XTRA_LIBS)
 
@@ -51,19 +51,6 @@ EXTRA_DIST += helper-mux.pl helper-mux.README
 
 ## Test Scripts
 EXTRA_DIST += helper-ok-dying.pl helper-ok.pl
-
-## ##### squidclient  #####
-
-bin_PROGRAMS = squidclient
-
-squidclient_SOURCES = squidclient.cc \
-	stub_debug.cc \
-	test_tools.cc \
-	time.cc
-
-EXTRA_DIST += squidclient.1
-man_MANS += squidclient.1
-
 
 
 ## ##### cachemgr.cgi  #####

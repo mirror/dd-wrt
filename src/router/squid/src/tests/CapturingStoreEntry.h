@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_TESTS_CAPTURINGSTORE_ENTRY_H
 #define SQUID_TESTS_CAPTURINGSTORE_ENTRY_H
 
@@ -27,6 +35,8 @@ public:
     }
 
     virtual void append(char const * buf, int len) {
+        if (!buf || len < 0) // old 'String' can't handle these cases
+            return;
         _appended_text.append(buf, len);
     }
 };
@@ -34,3 +44,4 @@ public:
 MEMPROXY_CLASS_INLINE(CapturingStoreEntry);
 
 #endif
+

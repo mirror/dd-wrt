@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "comm/Connection.h"
 #include "comm/IoCallback.h"
@@ -9,13 +17,11 @@
 #include "profiler/Profiler.h"
 #include "SquidTime.h"
 #include "StatCounters.h"
-
 #if USE_DELAY_POOLS
 #include "ClientInfo.h"
 #endif
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+
+#include <cerrno>
 
 void
 Comm::Write(const Comm::ConnectionPointer &conn, MemBuf *mb, AsyncCall::Pointer &callback)
@@ -96,7 +102,9 @@ Comm::HandleWrite(int fd, void *data)
 #endif /* USE_DELAY_POOLS */
 
     /* actually WRITE data */
+    int xerrno = errno = 0;
     len = FD_WRITE_METHOD(fd, state->buf + state->offset, nleft);
+    xerrno = errno;
     debugs(5, 5, HERE << "write() returns " << len);
 
 #if USE_DELAY_POOLS
@@ -127,18 +135,18 @@ Comm::HandleWrite(int fd, void *data)
         if (nleft != 0)
             debugs(5, DBG_IMPORTANT, "FD " << fd << " write failure: connection closed with " << nleft << " bytes remaining.");
 
-        state->finish(nleft ? COMM_ERROR : COMM_OK, errno);
+        state->finish(nleft ? Comm::COMM_ERROR : Comm::OK, 0);
     } else if (len < 0) {
         /* An error */
         if (fd_table[fd].flags.socket_eof) {
-            debugs(50, 2, HERE << "FD " << fd << " write failure: " << xstrerror() << ".");
-            state->finish(nleft ? COMM_ERROR : COMM_OK, errno);
-        } else if (ignoreErrno(errno)) {
-            debugs(50, 9, HERE << "FD " << fd << " write failure: " << xstrerror() << ".");
+            debugs(50, 2, "FD " << fd << " write failure: " << xstrerr(xerrno) << ".");
+            state->finish(nleft ? Comm::COMM_ERROR : Comm::OK, xerrno);
+        } else if (ignoreErrno(xerrno)) {
+            debugs(50, 9, "FD " << fd << " write failure: " << xstrerr(xerrno) << ".");
             state->selectOrQueueWrite();
         } else {
-            debugs(50, 2, HERE << "FD " << fd << " write failure: " << xstrerror() << ".");
-            state->finish(nleft ? COMM_ERROR : COMM_OK, errno);
+            debugs(50, 2, "FD " << fd << " write failure: " << xstrerr(xerrno) << ".");
+            state->finish(nleft ? Comm::COMM_ERROR : Comm::OK, xerrno);
         }
     } else {
         /* A successful write, continue */
@@ -148,9 +156,10 @@ Comm::HandleWrite(int fd, void *data)
             /* Not done, reinstall the write handler and write some more */
             state->selectOrQueueWrite();
         } else {
-            state->finish(nleft ? COMM_OK : COMM_ERROR, errno);
+            state->finish(nleft ? Comm::OK : Comm::COMM_ERROR, 0);
         }
     }
 
     PROF_stop(commHandleWrite);
 }
+

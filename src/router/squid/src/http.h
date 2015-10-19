@@ -1,46 +1,23 @@
-
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_HTTP_H
 #define SQUID_HTTP_H
 
+#include "clients/Client.h"
 #include "comm.h"
 #include "HttpStateFlags.h"
-#include "Server.h"
 
 class ChunkedCodingParser;
 class FwdState;
 class HttpHeader;
 
-class HttpStateData : public ServerStateData
+class HttpStateData : public Client
 {
 
 public:
@@ -64,13 +41,13 @@ public:
     // Determine whether the response is a cacheable representation
     int cacheableReply();
 
-    CachePeer *_peer;		/* CachePeer request made to */
-    int eof;			/* reached end-of-object? */
-    int lastChunk;		/* reached last chunk of a chunk-encoded reply */
+    CachePeer *_peer;       /* CachePeer request made to */
+    int eof;            /* reached end-of-object? */
+    int lastChunk;      /* reached last chunk of a chunk-encoded reply */
     HttpStateFlags flags;
     size_t read_sz;
-    int header_bytes_read;	// to find end of response,
-    int64_t reply_bytes_read;	// without relying on StoreEntry
+    int header_bytes_read;  // to find end of response,
+    int64_t reply_bytes_read;   // without relying on StoreEntry
     int body_bytes_truncated; // positive when we read more than we wanted
     MemBuf *readBuf;
     bool ignoreCacheControl;
@@ -110,6 +87,7 @@ private:
     virtual void closeServer(); // end communication with the server
     virtual bool doneWithServer() const; // did we end communication?
     virtual void abortTransaction(const char *reason); // abnormal termination
+    virtual bool mayReadVirginReplyBody() const;
 
     // consuming request body
     virtual void handleMoreRequestBodyAvailable();
@@ -141,3 +119,4 @@ void httpStart(FwdState *);
 const char *httpMakeVaryMark(HttpRequest * request, HttpReply const * reply);
 
 #endif /* SQUID_HTTP_H */
+

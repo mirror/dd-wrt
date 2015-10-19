@@ -1,58 +1,35 @@
 /*
- * DEBUG: section 43    AIOPS
- * AUTHOR: Stewart Forster <slf@connect.com.au>
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 43    AIOPS */
 
 #ifndef _REENTRANT
 #error "_REENTRANT MUST be defined to build squid async io support."
 #endif
 
 #include "squid.h"
+#include "DiskIO/DiskThreads/CommIO.h"
 #include "DiskThreads.h"
 #include "SquidConfig.h"
-
-#include <stdio.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <errno.h>
-#include <dirent.h>
-#include <signal.h>
-#if HAVE_SCHED_H
-#include <sched.h>
-#endif
-#include "DiskIO/DiskThreads/CommIO.h"
 #include "SquidTime.h"
 #include "Store.h"
 
-#define RIDICULOUS_LENGTH	4096
+#include <cerrno>
+#include <csignal>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <dirent.h>
+#if HAVE_SCHED_H
+#include <sched.h>
+#endif
+
+#define RIDICULOUS_LENGTH   4096
 
 enum _squidaio_thread_status {
     _THREAD_STARTING = 0,
@@ -91,7 +68,7 @@ typedef struct squidaio_request_queue_t {
     squidaio_request_t *volatile head;
     squidaio_request_t *volatile *volatile tailp;
     unsigned long requests;
-    unsigned long blocked;	/* main failed to lock the queue */
+    unsigned long blocked;  /* main failed to lock the queue */
 } squidaio_request_queue_t;
 
 typedef struct squidaio_thread_t squidaio_thread_t;
@@ -124,16 +101,16 @@ static squidaio_thread_t *threads = NULL;
 static int squidaio_initialised = 0;
 
 #define AIO_LARGE_BUFS  16384
-#define AIO_MEDIUM_BUFS	AIO_LARGE_BUFS >> 1
-#define AIO_SMALL_BUFS	AIO_LARGE_BUFS >> 2
-#define AIO_TINY_BUFS	AIO_LARGE_BUFS >> 3
-#define AIO_MICRO_BUFS	128
+#define AIO_MEDIUM_BUFS AIO_LARGE_BUFS >> 1
+#define AIO_SMALL_BUFS  AIO_LARGE_BUFS >> 2
+#define AIO_TINY_BUFS   AIO_LARGE_BUFS >> 3
+#define AIO_MICRO_BUFS  128
 
-static MemAllocator *squidaio_large_bufs = NULL;	/* 16K */
-static MemAllocator *squidaio_medium_bufs = NULL;	/* 8K */
-static MemAllocator *squidaio_small_bufs = NULL;	/* 4K */
-static MemAllocator *squidaio_tiny_bufs = NULL;	/* 2K */
-static MemAllocator *squidaio_micro_bufs = NULL;	/* 128K */
+static MemAllocator *squidaio_large_bufs = NULL;    /* 16K */
+static MemAllocator *squidaio_medium_bufs = NULL;   /* 8K */
+static MemAllocator *squidaio_small_bufs = NULL;    /* 4K */
+static MemAllocator *squidaio_tiny_bufs = NULL; /* 2K */
+static MemAllocator *squidaio_micro_bufs = NULL;    /* 128K */
 
 static int request_queue_len = 0;
 static MemAllocator *squidaio_request_pool = NULL;
@@ -447,7 +424,7 @@ squidaio_thread_loop(void *ptr)
                 squidaio_do_unlink(request);
                 break;
 
-#if AIO_OPENDIR			/* Opendir not implemented yet */
+#if AIO_OPENDIR         /* Opendir not implemented yet */
 
             case _AIO_OP_OPENDIR:
                 squidaio_do_opendir(request);
@@ -463,7 +440,7 @@ squidaio_thread_loop(void *ptr)
                 request->err = EINVAL;
                 break;
             }
-        } else {		/* cancelled */
+        } else {        /* cancelled */
             request->ret = -1;
             request->err = EINTR;
         }
@@ -476,10 +453,10 @@ squidaio_thread_loop(void *ptr)
         pthread_mutex_unlock(&done_queue.mutex);
         CommIO::NotifyIOCompleted();
         ++ threadp->requests;
-    }				/* while forever */
+    }               /* while forever */
 
     return NULL;
-}				/* squidaio_thread_loop */
+}               /* squidaio_thread_loop */
 
 static void
 squidaio_queue_request(squidaio_request_t * request)
@@ -523,13 +500,13 @@ squidaio_queue_request(squidaio_request_t * request)
     }
 
     if (request_queue2.head) {
-        static int filter = 0;
-        static int filter_limit = 8;
+        static uint64_t filter = 0;
+        static uint64_t filter_limit = 8192;
 
         if (++filter >= filter_limit) {
             filter_limit += filter;
             filter = 0;
-            debugs(43, DBG_IMPORTANT, "squidaio_queue_request: WARNING - Queue congestion");
+            debugs(43, DBG_IMPORTANT, "squidaio_queue_request: WARNING - Queue congestion (growing to " << filter_limit << ")");
         }
     }
 
@@ -573,7 +550,7 @@ squidaio_queue_request(squidaio_request_t * request)
         squidaio_sync();
         debugs(43, DBG_CRITICAL, "squidaio_queue_request: Synced");
     }
-}				/* squidaio_queue_request */
+}               /* squidaio_queue_request */
 
 static void
 squidaio_cleanup_request(squidaio_request_t * requestp)
@@ -636,7 +613,7 @@ squidaio_cleanup_request(squidaio_request_t * requestp)
     }
 
     squidaio_request_pool->freeOne(requestp);
-}				/* squidaio_cleanup_request */
+}               /* squidaio_cleanup_request */
 
 int
 squidaio_cancel(squidaio_result_t * resultp)
@@ -653,7 +630,7 @@ squidaio_cancel(squidaio_result_t * resultp)
     }
 
     return 1;
-}				/* squidaio_cancel */
+}               /* squidaio_cancel */
 
 int
 squidaio_open(const char *path, int oflag, mode_t mode, squidaio_result_t * resultp)
@@ -960,7 +937,7 @@ AIO_REPOLL:
         goto AIO_REPOLL;
 
     return resultp;
-}				/* squidaio_poll_done */
+}               /* squidaio_poll_done */
 
 int
 squidaio_operations_pending(void)
@@ -1036,3 +1013,4 @@ squidaio_stats(StoreEntry * sentry)
         threadp = threadp->next;
     }
 }
+

@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 // Author:  Jens-S. V?ckler <voeckler@rvs.uni-hannover.de>
 //
 // File:    copyout.cc
@@ -38,13 +46,10 @@
 #include "squid.h"
 #include "copyout.hh"
 
-//#include <assert.h>
-//#include <sys/types.h>
 #include <sys/stat.h>
-#include <stdio.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 #include <fcntl.h>
-#include <errno.h>
 #include <unistd.h>
 #include <sys/mman.h>
 
@@ -127,7 +132,8 @@ copy_out( size_t filesize, size_t metasize, unsigned debug,
     if ( ptr == 0 || strlen(ptr) < 4 ) return false;
 
     // create filename to store contents into
-    char *filename = new char[ strlen(url) + strlen(copydir) + strlen(index) ];
+    // NP: magic extra 5 bytes for the component delimiter and termination octets
+    char *filename = new char[ strlen(ptr) + strlen(copydir) + strlen(index) +5 ];
     assert( filename != 0 );
     strcpy( filename, copydir );
     strcat( filename, "/" );
@@ -272,3 +278,4 @@ copy_out( size_t filesize, size_t metasize, unsigned debug,
 
     BAUTZ(true);
 }
+

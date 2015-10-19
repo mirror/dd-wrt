@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * A stub implementation of the Debug.h API.
  * For use by test binaries which do not need the full context debugging
  *
@@ -8,10 +16,6 @@
 #include "squid.h"
 #include "Debug.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-
 FILE *debug_log = NULL;
 int Debug::TheDepth = 0;
 
@@ -20,6 +24,7 @@ char *Debug::cache_log= NULL;
 int Debug::rotateNumber = 0;
 int Debug::Levels[MAX_DEBUG_SECTIONS];
 int Debug::level;
+int Debug::sectionLevel;
 int Debug::override_X = 0;
 int Debug::log_stderr = 1;
 bool Debug::log_syslog = false;
@@ -82,6 +87,8 @@ _db_print_stderr(const char *format, va_list args)
     vfprintf(stderr, format, args);
 }
 
+Debug::OutStream *Debug::CurrentDebug(NULL);
+
 std::ostream &
 Debug::getDebugOut()
 {
@@ -92,7 +99,7 @@ Debug::getDebugOut()
         *CurrentDebug << std::endl << "reentrant debuging " << TheDepth << "-{";
     } else {
         assert(!CurrentDebug);
-        CurrentDebug = new std::ostringstream();
+        CurrentDebug = new Debug::OutStream;
         // set default formatting flags
         CurrentDebug->setf(std::ios::fixed);
         CurrentDebug->precision(2);
@@ -128,15 +135,34 @@ Debug::xassert(const char *msg, const char *file, int line)
 
     if (CurrentDebug) {
         *CurrentDebug << "assertion failed: " << file << ":" << line <<
-        ": \"" << msg << "\"";
+                      ": \"" << msg << "\"";
     }
     abort();
 }
-
-std::ostringstream *Debug::CurrentDebug (NULL);
 
 const char*
 SkipBuildPrefix(const char* path)
 {
     return path;
 }
+
+std::ostream &
+Raw::print(std::ostream &os) const
+{
+    if (label_)
+        os << ' ' << label_ << '[' << size_ << ']';
+
+    if (!size_)
+        return os;
+
+    // finalize debugging level if no level was set explicitly via minLevel()
+    const int finalLevel = (level >= 0) ? level :
+                           (size_ > 40 ? DBG_DATA : Debug::sectionLevel);
+    if (finalLevel <= Debug::sectionLevel) {
+        os << (label_ ? '=' : ' ');
+        os.write(data_, size_);
+    }
+
+    return os;
+}
+

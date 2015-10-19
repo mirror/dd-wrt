@@ -1,16 +1,18 @@
 /*
- * DEBUG: section 54    Interprocess Communication
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 54    Interprocess Communication */
 
 #include "squid.h"
 #include "globals.h"
 #include "ipc/Kid.h"
 
-#if HAVE_TIME_H
-#include <time.h>
-#endif
-
+#include <ctime>
 #if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
@@ -18,21 +20,21 @@
 int TheProcessKind = pkOther;
 
 Kid::Kid():
-        badFailures(0),
-        pid(-1),
-        startTime(0),
-        isRunning(false),
-        status(0)
+    badFailures(0),
+    pid(-1),
+    startTime(0),
+    isRunning(false),
+    status(0)
 {
 }
 
 Kid::Kid(const String& kid_name):
-        theName(kid_name),
-        badFailures(0),
-        pid(-1),
-        startTime(0),
-        isRunning(false),
-        status(0)
+    theName(kid_name),
+    badFailures(0),
+    pid(-1),
+    startTime(0),
+    isRunning(false),
+    status(0)
 {
 }
 
@@ -48,7 +50,7 @@ void Kid::start(pid_t cpid)
 }
 
 /// called when kid terminates, sets exiting status
-void Kid::stop(status_type exitStatus)
+void Kid::stop(status_type theExitStatus)
 {
     assert(running());
     assert(startTime != 0);
@@ -62,7 +64,7 @@ void Kid::stop(status_type exitStatus)
     else
         badFailures = 0; // the failures are not "frequent" [any more]
 
-    status = exitStatus;
+    status = theExitStatus;
 }
 
 /// returns true if tracking of kid is stopped
@@ -143,3 +145,4 @@ const String& Kid::name() const
 {
     return theName;
 }
+

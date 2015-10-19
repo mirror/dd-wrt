@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 16    Cache Manager API
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager API */
 
 #ifndef SQUID_MGR_ACTION_H
 #define SQUID_MGR_ACTION_H
@@ -63,6 +68,9 @@ public:
 
     StoreEntry *createStoreEntry() const; ///< creates store entry from params
 
+    ///< Content-Type: header value for this report
+    virtual const char *contentType() const {return "text/plain;charset=utf-8";}
+
 protected:
     /// calculate and keep local action-specific information
     virtual void collect() {}
@@ -84,3 +92,4 @@ private:
 } // namespace Mgr
 
 #endif /* SQUID_MGR_ACTION_H */
+

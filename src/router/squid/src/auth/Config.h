@@ -1,39 +1,19 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
 #ifndef SQUID_AUTH_CONFIG_H
 #define SQUID_AUTH_CONFIG_H
 
 #if USE_AUTH
 
+#include "AccessLogEntry.h"
 #include "auth/UserRequest.h"
-#include "HelperChildConfig.h"
+#include "helper/ChildConfig.h"
 
 class StoreEntry;
 class HttpReply;
@@ -42,6 +22,11 @@ class wordlist;
 
 /* for http_hdr_type parameters-by-value */
 #include "HttpHeader.h"
+
+namespace Format
+{
+class Format;
+}
 
 namespace Auth
 {
@@ -61,18 +46,18 @@ class Config
 {
 
 public:
-    static UserRequest::Pointer CreateAuthUser(const char *proxy_auth);
+    static UserRequest::Pointer CreateAuthUser(const char *proxy_auth, AccessLogEntry::Pointer &al);
 
     static Config *Find(const char *proxy_auth);
-    Config() : authenticateChildren(20), authenticateProgram(NULL) {}
+    Config() : authenticateChildren(20), authenticateProgram(NULL), keyExtras(NULL) {}
 
     virtual ~Config() {}
 
     /**
      * Used by squid to determine whether the auth module has successfully initialised itself with the current configuration.
      *
-     \retval true	Authentication Module loaded and running.
-     \retval false	No Authentication Module loaded.
+     \retval true   Authentication Module loaded and running.
+     \retval false  No Authentication Module loaded.
      */
     virtual bool active() const = 0;
 
@@ -83,10 +68,10 @@ public:
      * linking to a AuthUser object and for storing any needed details to complete
      * authentication in Auth::UserRequest::authenticate().
      *
-     \param proxy_auth	Login Pattern to parse.
-     \retval *		Details needed to authenticate.
+     \param proxy_auth  Login Pattern to parse.
+     \retval *      Details needed to authenticate.
      */
-    virtual UserRequest::Pointer decode(char const *proxy_auth) = 0;
+    virtual UserRequest::Pointer decode(char const *proxy_auth, const char *requestRealm) = 0;
 
     /**
      * squid is finished with this config, release any unneeded resources.
@@ -95,15 +80,15 @@ public:
      *
      \todo we need a 'done for reconfigure' and a 'done permanently' concept.
      */
-    virtual void done() = 0;
+    virtual void done();
 
     /**
      * The configured function is used to see if the auth module has been given valid
      * parameters and is able to handle authentication requests.
      *
-     \retval true	Authentication Module configured ready for use.
-     \retval false	Not configured or Configuration Error.
-     *			No other module functions except Shutdown/Dump/Parse/FreeConfig will be called by Squid.
+     \retval true   Authentication Module configured ready for use.
+     \retval false  Not configured or Configuration Error.
+     *          No other module functions except Shutdown/Dump/Parse/FreeConfig will be called by Squid.
      */
     virtual bool configured() const = 0;
 
@@ -116,8 +101,9 @@ public:
     /**
      * Responsible for writing to the StoreEntry the configuration parameters that a user
      * would put in a config file to recreate the running configuration.
+     * Returns whether the scheme is configured.
      */
-    virtual void dump(StoreEntry *, const char *, Config *) = 0;
+    virtual bool dump(StoreEntry *, const char *, Config *) const;
 
     /** add headers as needed when challenging for auth */
     virtual void fixHeader(UserRequest::Pointer, HttpReply *, http_hdr_type, HttpRequest *) = 0;
@@ -132,17 +118,23 @@ public:
     virtual void registerWithCacheManager(void);
 
     /** parse config options */
-    virtual void parse(Config *, int, char *) = 0;
+    virtual void parse(Config *, int, char *);
 
     /** the http string id */
     virtual const char * type() const = 0;
 
 public:
-    HelperChildConfig authenticateChildren;
+    Helper::ChildConfig authenticateChildren;
     wordlist *authenticateProgram; ///< Helper program to run, includes all parameters
+    String keyExtrasLine;  ///< The format of the request to the auth helper
+    Format::Format *keyExtras; ///< The compiled request format
+
+protected:
+    /// RFC 7235 section 2.2 - Protection Space (Realm)
+    SBuf realm;
 };
 
-typedef Vector<Config *> ConfigVector;
+typedef std::vector<Config *> ConfigVector;
 
 extern ConfigVector TheConfig;
 
@@ -150,3 +142,4 @@ extern ConfigVector TheConfig;
 
 #endif /* USE_AUTH */
 #endif /* SQUID_AUTHCONFIG_H */
+

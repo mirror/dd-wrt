@@ -1,32 +1,11 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
 #ifndef SQUID_SWAPDIR_H
 #define SQUID_SWAPDIR_H
 
@@ -37,6 +16,9 @@
 /* forward decls */
 class RemovalPolicy;
 class MemStore;
+class Transients;
+class RequestFlags;
+class HttpRequestMethod;
 
 /* Store dir configuration routines */
 /* SwapDir *sd, char *path ( + char *opt later when the strtok mess is gone) */
@@ -58,8 +40,17 @@ public:
     virtual void get(String const, STOREGETCLIENT, void * cbdata);
 
     /* Store parent API */
+    virtual void markForUnlink(StoreEntry &e);
     virtual void handleIdleEntry(StoreEntry &e);
-    virtual void maybeTrimMemory(StoreEntry &e, const bool preserveSwappable);
+    virtual void transientsCompleteWriting(StoreEntry &e);
+    virtual void transientsAbandon(StoreEntry &e);
+    virtual int transientReaders(const StoreEntry &e) const;
+    virtual void transientsDisconnect(MemObject &mem_obj);
+    virtual void memoryOut(StoreEntry &e, const bool preserveSwappable);
+    virtual void memoryUnlink(StoreEntry &e);
+    virtual void memoryDisconnect(StoreEntry &e);
+    virtual void allowCollapsing(StoreEntry *e, const RequestFlags &reqFlags, const HttpRequestMethod &reqMethod);
+    virtual void syncCollapsed(const sfileno xitIndex);
 
     virtual void init();
 
@@ -78,23 +69,31 @@ public:
     virtual void getStats(StoreInfoStats &stats) const;
     virtual void stat(StoreEntry &) const;
 
-    virtual void sync();	/* Sync the store prior to shutdown */
+    virtual void sync();    /* Sync the store prior to shutdown */
 
     virtual StoreSearch *search(String const url, HttpRequest *);
 
-    virtual void reference(StoreEntry &);	/* Reference this object */
+    virtual void reference(StoreEntry &);   /* Reference this object */
 
-    virtual bool dereference(StoreEntry &, bool);	/* Unreference this object */
+    virtual bool dereference(StoreEntry &, bool);   /* Unreference this object */
 
     /* the number of store dirs being rebuilt. */
     static int store_dirs_rebuilding;
 
 private:
     void createOneStore(Store &aStore);
-    bool keepForLocalMemoryCache(const StoreEntry &e) const;
+    StoreEntry *find(const cache_key *key);
+    bool keepForLocalMemoryCache(StoreEntry &e) const;
+    bool anchorCollapsed(StoreEntry &collapsed, bool &inSync);
+    bool anchorCollapsedOnDisk(StoreEntry &collapsed, bool &inSync);
 
     StorePointer swapDir; ///< summary view of all disk caches
     MemStore *memStore; ///< memory cache
+
+    /// A shared table of public store entries that do not know whether they
+    /// will belong to a memory cache, a disk cache, or will be uncachable
+    /// when the response header comes. Used for SMP collapsed forwarding.
+    Transients *transients;
 };
 
 /* migrating from the Config based list of swapdirs */
@@ -191,30 +190,30 @@ protected:
 
 public:
     char *path;
-    int index;			/* This entry's index into the swapDirs array */
+    int index;          /* This entry's index into the swapDirs array */
     int disker; ///< disker kid id dedicated to this SwapDir or -1
     RemovalPolicy *repl;
     int removals;
     int scanned;
 
     struct Flags {
-        Flags() : selected(0), read_only(0) {}
-        unsigned int selected:1;
-        unsigned int read_only:1;
+        Flags() : selected(false), read_only(false) {}
+        bool selected;
+        bool read_only;
     } flags;
-    virtual void init() = 0;	/* Initialise the fs */
-    virtual void create();	/* Create a new fs */
-    virtual void dump(StoreEntry &)const;	/* Dump fs config snippet */
-    virtual bool doubleCheck(StoreEntry &);	/* Double check the obj integrity */
-    virtual void statfs(StoreEntry &) const;	/* Dump fs statistics */
-    virtual void maintain();	/* Replacement maintainence */
+    virtual void init() = 0;    /* Initialise the fs */
+    virtual void create();  /* Create a new fs */
+    virtual void dump(StoreEntry &)const;   /* Dump fs config snippet */
+    virtual bool doubleCheck(StoreEntry &); /* Double check the obj integrity */
+    virtual void statfs(StoreEntry &) const;    /* Dump fs statistics */
+    virtual void maintain();    /* Replacement maintainence */
     /// check whether we can store the entry; if we can, report current load
     virtual bool canStore(const StoreEntry &e, int64_t diskSpaceNeeded, int &load) const = 0;
     /* These two are notifications */
-    virtual void reference(StoreEntry &);	/* Reference this object */
-    virtual bool dereference(StoreEntry &, bool);	/* Unreference this object */
-    virtual int callback();	/* Handle pending callbacks */
-    virtual void sync();	/* Sync the store prior to shutdown */
+    virtual void reference(StoreEntry &);   /* Reference this object */
+    virtual bool dereference(StoreEntry &, bool);   /* Unreference this object */
+    virtual int callback(); /* Handle pending callbacks */
+    virtual void sync();    /* Sync the store prior to shutdown */
     virtual StoreIOState::Pointer createStoreIO(StoreEntry &, StoreIOState::STFNCB *, StoreIOState::STIOCB *, void *) = 0;
     virtual StoreIOState::Pointer openStoreIO(StoreEntry &, StoreIOState::STFNCB *, StoreIOState::STIOCB *, void *) = 0;
     virtual void unlink (StoreEntry &);
@@ -244,3 +243,4 @@ public:
 };
 
 #endif /* SQUID_SWAPDIR_H */
+

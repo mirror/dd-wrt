@@ -1,3 +1,10 @@
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
+
 include $(top_srcdir)/src/Common.am
 
 libexec_PROGRAMS = ntlm_smb_lm_auth
@@ -9,9 +16,10 @@ ntlm_smb_lm_auth_LDADD = \
 	$(top_builddir)/lib/ntlmauth/libntlmauth.la \
 	$(top_builddir)/lib/libmiscencoding.la \
 	$(COMPAT_LIB) \
+	$(NETTLELIB) \
 	$(CRYPTLIB) \
 	$(XTRA_LIBS)
 
-INCLUDES += -I$(top_srcdir)/lib
+AM_CPPFLAGS += -I$(top_srcdir)/lib
 
-EXTRA_DIST = config.test
+EXTRA_DIST = required.m4

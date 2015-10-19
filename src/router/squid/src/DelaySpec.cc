@@ -1,39 +1,12 @@
-
 /*
- * DEBUG: section 77    Delay Pools
- * AUTHOR: Robert Collins <robertc@squid-cache.org>
- * Based upon original delay pools code by
- *   David Luyer <david@luyer.net>
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 77    Delay Pools */
 
 #include "squid.h"
 
@@ -68,19 +41,32 @@ DelaySpec::dump (StoreEntry *entry) const
 void
 DelaySpec::parse()
 {
-    int r;
-    char *token;
-    token = strtok(NULL, "/");
-
+    // get the token.
+    char *token = ConfigParser::NextToken();
     if (token == NULL)
         self_destruct();
 
-    if (sscanf(token, "%d", &r) != 1)
+    // no-limit value
+    if (strcmp(token, "none") == 0 || token[0] == '-') {
+        restore_bps = -1;
+        max_bytes = -1;
+        return;
+    }
+
+    // parse the first digits into restore_bps
+    const char *p = NULL;
+    if (!StringToInt(token, restore_bps, &p, 10) && *p != '/') {
+        debugs(77, DBG_CRITICAL, "ERROR: invalid delay rate '" << token << "'. Expecting restore/max or 'none'.");
         self_destruct();
+    }
+    p++; // increment past the '/'
 
-    restore_bps = r;
-
-    max_bytes = GetInteger64();
+    // parse the rest into max_bytes
+    if (!StringToInt64(p, max_bytes, NULL, 10)) {
+        debugs(77, DBG_CRITICAL, "ERROR: restore rate in '" << token << "' is not a number.");
+        self_destruct();
+    }
 }
 
 #endif
+

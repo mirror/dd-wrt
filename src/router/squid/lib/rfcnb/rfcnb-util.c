@@ -1,4 +1,10 @@
-#include "squid.h"
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 /* UNIX RFCNB (RFC1001/RFC1002) NetBIOS implementation
  *
@@ -6,7 +12,6 @@
  * RFCNB Utility Routines ...
  *
  * Copyright (C) Richard Sharpe 1996
- *
  */
 
 /*
@@ -25,11 +30,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "rfcnb/rfcnb.h"
-#include "rfcnb/std-includes.h"
+#include "squid.h"
+#include "rfcnb/rfcnb-io.h"
 #include "rfcnb/rfcnb-priv.h"
 #include "rfcnb/rfcnb-util.h"
-#include "rfcnb/rfcnb-io.h"
+#include "rfcnb/rfcnb.h"
+#include "rfcnb/std-includes.h"
 
 #if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
@@ -362,10 +368,10 @@ RFCNB_Name_To_IP(char *host, struct in_addr *Dest_IP)
 
 /* Disconnect the TCP connection to the server */
 int
-RFCNB_Close(int socket)
+RFCNB_Close(int fd)
 {
 
-    close(socket);
+    close(fd);
 
     /* If we want to do error recovery, here is where we put it */
 
@@ -526,3 +532,4 @@ RFCNB_Session_Req(struct RFCNB_Con *con,
     RFCNB_Free_Pkt(pkt);
     return result;
 }
+

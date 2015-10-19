@@ -1,11 +1,18 @@
-#define SQUID_UNIT_TEST 1
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
 
 #include "squid.h"
-#include "mgr/Action.h"
-#include "Mem.h"
-#include "testCacheManager.h"
 #include "CacheManager.h"
+#include "Mem.h"
+#include "mgr/Action.h"
 #include "Store.h"
+#include "testCacheManager.h"
+#include "unitTestMain.h"
 
 #include <cppunit/TestAssert.h>
 
@@ -59,3 +66,4 @@ testCacheManager::testRegister()
     action->run(sentry, false);
     CPPUNIT_ASSERT_EQUAL(1,(int)sentry->flags);
 }
+

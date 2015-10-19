@@ -1,31 +1,9 @@
-dnl 
-dnl AUTHOR: Squid Web Cache team
-dnl
-dnl SQUID Web Proxy Cache          http://www.squid-cache.org/
-dnl ----------------------------------------------------------
-dnl Squid is the result of efforts by numerous individuals from
-dnl the Internet community; see the CONTRIBUTORS file for full
-dnl details.   Many organizations have provided support for Squid's
-dnl development; see the SPONSORS file for full details.  Squid is
-dnl Copyrighted (C) 2001 by the Regents of the University of
-dnl California; see the COPYRIGHT file for full details.  Squid
-dnl incorporates software developed and/or copyrighted by other
-dnl sources; see the CREDITS file for full details.
-dnl
-dnl This program is free software; you can redistribute it and/or modify
-dnl it under the terms of the GNU General Public License as published by
-dnl the Free Software Foundation; either version 2 of the License, or
-dnl (at your option) any later version.
-dnl
-dnl This program is distributed in the hope that it will be useful,
-dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
-dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-dnl GNU General Public License for more details.
-dnl
-dnl You should have received a copy of the GNU General Public License
-dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
-
+## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+##
+## Squid software is distributed under GPLv2+ license and includes
+## contributions from numerous individuals and organizations.
+## Please see the COPYING and CONTRIBUTORS files for details.
+##
 
 dnl check that strnstr() works fine. On Macos X it can cause a buffer overrun
 dnl sets squid_cv_func_strnstr to "yes" or "no", and defines HAVE_STRNSTR
@@ -180,7 +158,7 @@ AC_DEFUN([SQUID_CHECK_FUNCTIONAL_LIBCAP2],[
 ])
 
 
-dnl Ripped from Samba. Thanks!
+dnl From Samba. Thanks!
 dnl check that we have Unix sockets. Sets squid_cv_unixsocket to either yes or no depending on the check
 
 AC_DEFUN([SQUID_CHECK_UNIX_SOCKET],[
@@ -196,26 +174,6 @@ AC_DEFUN([SQUID_CHECK_UNIX_SOCKET],[
   ]])],[squid_cv_unixsocket=yes],[squid_cv_unixsocket=no])])
 ])
 
-
-dnl checks that the system provides struct mallinfo and mallinfo.mxfast.
-dnl AC_DEFINEs HAVE_STRUCT_MALLINFO  and HAVE_STRUCT_MALLINFO_MXFAST if so
-
-AC_DEFUN([SQUID_HAVE_STRUCT_MALLINFO],[
-AC_CHECK_TYPE(struct mallinfo,AC_DEFINE(HAVE_STRUCT_MALLINFO,1,[The system provides struct mallinfo]),,[
-#if HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#if HAVE_MALLOC_H
-#include <malloc.h>
-#endif])
-AC_CHECK_MEMBERS([struct mallinfo.mxfast],,,[
-#if HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#if HAVE_MALLOC_H
-#include <malloc.h>
-#endif])
-])
 
 dnl check the default FD_SETSIZE size.
 dnl not cached, people are likely to tune this
@@ -661,6 +619,27 @@ SQUID_DEFINE_BOOL(HAVE_STATVFS,$ac_cv_func_statvfs,[set to 1 if our system has s
 ])
 
 
+dnl Check whether this OS defines f_frsize as a member of struct statfs
+AC_DEFUN([SQUID_CHECK_F_FRSIZE_IN_STATFS],[
+AC_CACHE_CHECK([for f_frsize field in struct statfs],
+                ac_cv_have_f_frsize_in_struct_statfs, [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if HAVE_SYS_STATFS_H
+#include <sts/statfs.h>
+#endif
+#if HAVE_SYS_STATVFS_H
+#include <sts/statvfs.h>
+#endif
+#if HAVE_SYS_VFS_H
+#include <sts/vfs.h>
+#endif
+                ]], [[ struct statfs s; s.f_frsize = 0; ]])],[ ac_cv_have_f_frsize_in_struct_statfs="yes" ],[ ac_cv_have_f_frsize_in_struct_statfs="no" 
+        ])
+])
+SQUID_DEFINE_BOOL(HAVE_F_FRSIZE_IN_STATFS,$ac_cv_have_f_frsize_in_struct_statfs,[Define if struct statfs has field f_frsize (Linux 2.6 or later)])
+])
+
+
 dnl check that we can use the libresolv _dns_ttl_ hack
 dnl sets the ac_cv_libresolv_dns_ttl_hack shell variable and defines LIBRESOLV_DNS_TTL_HACK
 
@@ -901,4 +880,92 @@ int main (int argc, char ** argv) {
   ])
   AC_DEFINE_UNQUOTED(RECV_ARG_TYPE,$squid_cv_recv_second_arg_type,
     [Base type of the second argument to recv(2)])
+])
+
+
+dnl check whether Solaris has broken IPFilter headers (Solaris 10 at least does)
+AC_DEFUN([SQUID_CHECK_BROKEN_SOLARIS_IPFILTER],[
+  if test "x$squid_cv_broken_ipfilter_minor_t" = "x"; then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#     include <sys/types.h>
+#     include <sys/time.h>
+#     include <sys/ioccom.h>
+#     include <netinet/in.h>
+
+#     include <netinet/ip_compat.h>
+#     include <netinet/ip_fil.h>
+#     include <netinet/ip_nat.h>
+    ]])],[
+      AC_MSG_RESULT(no)
+      squid_cv_broken_ipfilter_minor_t=0
+    ],[
+      ## on fail, test the hack
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#define minor_t fubaar
+#       include <sys/types.h>
+#       include <sys/time.h>
+#       include <sys/ioccom.h>
+#       include <netinet/in.h>
+#undef minor_t
+#       include <netinet/ip_compat.h>
+#       include <netinet/ip_fil.h>
+#       include <netinet/ip_nat.h>
+      ]])],[
+        AC_MSG_RESULT(yes)
+        squid_cv_broken_ipfilter_minor_t=1
+      ],[
+        AC_MSG_ERROR(unable to make IPFilter work with netinet/ headers)
+      ])
+    ])
+  fi
+
+  AC_DEFINE_UNQUOTED(USE_SOLARIS_IPFILTER_MINOR_T_HACK,$squid_cv_broken_ipfilter_minor_t,
+    [Workaround IPFilter minor_t breakage])
+
+## check for IPFilter headers that require this hack
+## (but first netinet/in.h and sys/ioccom.h which they depend on)
+  AC_CHECK_HEADERS( \
+	netinet/in.h \
+	sys/ioccom.h \
+	ip_compat.h \
+	ip_fil_compat.h \
+	ip_fil.h \
+	ip_nat.h \
+	netinet/ip_compat.h \
+	netinet/ip_fil_compat.h \
+	netinet/ip_fil.h \
+	netinet/ip_nat.h \
+  ,,,[
+#if USE_SOLARIS_IPFILTER_MINOR_T_HACK
+#define minor_t fubar
+#endif
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#if HAVE_SYS_IOCCOM_H
+#include <sys/ioccom.h>
+#endif
+#if USE_SOLARIS_IPFILTER_MINOR_T_HACK
+#undef minor_t
+#endif
+#if HAVE_IP_COMPAT_H
+#include <ip_compat.h>
+#elif HAVE_NETINET_IP_COMPAT_H
+#include <netinet/ip_compat.h>
+#endif
+#if HAVE_IP_FIL_H
+#include <ip_fil.h>
+#elif HAVE_NETINET_IP_FIL_H
+#include <netinet/ip_fil.h>
+#endif
+#if !defined(IPFILTER_VERSION)
+#define IPFILTER_VERSION        5000004
+#endif
+  ])
 ])

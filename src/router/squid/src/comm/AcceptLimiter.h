@@ -1,8 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_SRC_COMM_ACCEPT_LIMITER_H
 #define _SQUID_SRC_COMM_ACCEPT_LIMITER_H
 
-#include "Array.h"
 #include "comm/TcpAcceptor.h"
+
+#include <vector>
 
 namespace Comm
 {
@@ -24,7 +33,7 @@ namespace Comm
  * or to NULL an entry while scanning the list for empty spaces.
  * Side effect: TcpAcceptor->kick() becomes allowed to pull off multiple accept()'s in bunches
  *
- * 2) re-implement as a list instead of vector?
+ * 2) re-implement as a std::queue instead of std::vector
  * storing head/tail pointers for fast push/pop and avoiding the whole shift() overhead
  */
 class AcceptLimiter
@@ -47,9 +56,10 @@ private:
     static AcceptLimiter Instance_;
 
     /** FIFO queue */
-    Vector<TcpAcceptor::Pointer> deferred_;
+    std::vector<TcpAcceptor::Pointer> deferred_;
 };
 
 }; // namepace Comm
 
 #endif /* _SQUID_SRC_COMM_ACCEPT_LIMITER_H */
+

@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_EUI_EUI64_H
 #define _SQUID_EUI_EUI64_H
 
@@ -8,16 +16,9 @@ namespace Ip
 class Address;
 }
 
-#if HAVE_CSTRING
 #include <cstring>
-#endif
 #if HAVE_SYS_EUI64_H
 #include <sys/eui64.h>
-#endif
-
-/* memcpy and friends */
-#if HAVE_STRING_H
-#include <string.h>
 #endif
 
 namespace Eui
@@ -34,9 +35,12 @@ class Eui64
 {
 
 public:
-    Eui64() { clear(); };
-    Eui64(const Eui64 &t) { memcpy(this, &t, sizeof(Eui64)); };
-    ~Eui64() {};
+    Eui64() { clear(); }
+    Eui64(const Eui64 &t) { memcpy(this, &t, sizeof(Eui64)); }
+    Eui64& operator= (const Eui64 &t) {memcpy(this, &t, sizeof(Eui64)); return *this;}
+    bool operator== (const Eui64 &t) const { return (memcmp(eui,t.eui,SZ_EUI64_BUF) == 0); }
+    bool operator< (const Eui64 &t) const { return (memcmp(eui,t.eui,SZ_EUI64_BUF) < 0); }
+    ~Eui64() {}
 
     const unsigned char *get(void);
 
@@ -45,9 +49,9 @@ public:
         if (len < SZ_EUI64_BUF) clear();
         memcpy(eui, src, len);
         return true;
-    };
+    }
 
-    void clear() { memset(eui, 0, SZ_EUI64_BUF); };
+    void clear() { memset(eui, 0, SZ_EUI64_BUF); }
 
     /**
      * Decode an ascii representation of an EUI-64 address.
@@ -68,7 +72,7 @@ public:
      * \retval false        Conversion to ASCII failed.
      * \retval true         Conversion completed successfully.
      */
-    bool encode(char *buf, const int len);
+    bool encode(char *buf, const int len) const;
 
     // lookup an EUI-64 address via IPv6 SLAAC or NDP
     bool lookup(const Ip::Address &c);
@@ -87,3 +91,4 @@ private:
 
 #endif /* USE_SQUID_EUI */
 #endif /* _SQUID_EUI_EUI64_H */
+

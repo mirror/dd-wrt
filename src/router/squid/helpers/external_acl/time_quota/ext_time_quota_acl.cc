@@ -1,4 +1,12 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * ext_time_quota_acl: Squid external acl helper for quota on usage.
  *
  * Copyright (C) 2011 Dr. Tilmann Bubeck <t.bubeck@reinform.de>
@@ -18,22 +26,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
  */
 
-#if HAVE_CONFIG_H
 #include "squid.h"
-#endif
 #include "helpers/defines.h"
 
+#include <cstdarg>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <string.h>
-#include <time.h>
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
@@ -248,10 +253,10 @@ static void parseTime(const char *s, time_t *secs, time_t *start)
 static void readConfig(const char *filename)
 {
     char line[TQ_BUFFERSIZE];        /* the buffer for the lines read
-				   from the dict file */
-    char *cp;			/* a char pointer used to parse
-				   each line */
-    char *username;		/* for the username */
+                   from the dict file */
+    char *cp;           /* a char pointer used to parse
+                   each line */
+    char *username;     /* for the username */
     char *budget;
     char *period;
     FILE *FH;
@@ -447,7 +452,7 @@ int main(int argc, char **argv)
         // we expect the following line syntax: %LOGIN
         const char *user_key = strtok(request, " \n");
         if (!user_key) {
-            SEND_ERR("User name missing");
+            SEND_BH("message=\"User name missing\"");
             continue;
         }
         processActivity(user_key);
@@ -456,3 +461,4 @@ int main(int argc, char **argv)
     shutdown_db();
     return 0;
 }
+

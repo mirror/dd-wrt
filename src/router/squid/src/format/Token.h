@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_FORMAT_TOKEN_H
 #define _SQUID_FORMAT_TOKEN_H
 
@@ -27,18 +35,7 @@ class TokenTableEntry;
 class Token
 {
 public:
-    Token() : type(LFT_NONE),
-            label(NULL),
-            widthMin(-1),
-            widthMax(-1),
-            quote(LOG_QUOTE_NONE),
-            left(0),
-            space(0),
-            zero(0),
-            divisor(0),
-            next(NULL)
-    { data.string = NULL; }
-
+    Token();
     ~Token();
 
     /// Initialize the format token registrations
@@ -52,7 +49,7 @@ public:
 
     ByteCode_t type;
     const char *label;
-    union {
+    struct {
         char *string;
 
         struct {
@@ -60,23 +57,21 @@ public:
             char *element;
             char separator;
         } header;
-        char *timespec;
     } data;
     int widthMin; ///< minimum field width
     int widthMax; ///< maximum field width
     enum Quoting quote;
-    unsigned int left:1;
-    unsigned int space:1;
-    unsigned int zero:1;
-    int divisor;
-    Token *next;	/* todo: move from linked list to array */
+    bool left;
+    bool space;
+    bool zero;
+    int divisor;    // class invariant: MUST NOT be zero.
+    Token *next;    /* todo: move from linked list to array */
 
 private:
     const char *scanForToken(TokenTableEntry const table[], const char *cur);
 };
 
-extern const char *log_tags[];
-
 } // namespace Format
 
 #endif /* _SQUID_FORMAT_TOKEN_H */
+

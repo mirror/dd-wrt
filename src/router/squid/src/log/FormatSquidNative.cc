@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 46    Access Log - Squid format
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 46    Access Log - Squid format */
 
 #include "squid.h"
 #include "AccessLogEntry.h"
@@ -56,7 +34,7 @@ Log::Format::SquidNative(const AccessLogEntry::Pointer &al, Logfile * logfile)
     if (!user)
         user = ::Format::QuoteUrlEncodeUsername(al->cache.extuser);
 
-#if USE_SSL
+#if USE_OPENSSL
     if (!user)
         user = ::Format::QuoteUrlEncodeUsername(al->cache.ssluser);
 #endif
@@ -70,21 +48,27 @@ Log::Format::SquidNative(const AccessLogEntry::Pointer &al, Logfile * logfile)
     char clientip[MAX_IPSTRLEN];
     al->getLogClientIp(clientip, MAX_IPSTRLEN);
 
-    logfilePrintf(logfile, "%9ld.%03d %6d %s %s%s/%03d %" PRId64 " %s %s %s %s%s/%s %s%s",
+    static SBuf method;
+    if (al->_private.method_str)
+        method.assign(al->_private.method_str);
+    else
+        method = al->http.method.image();
+
+    logfilePrintf(logfile, "%9ld.%03d %6d %s %s%s/%03d %" PRId64 " " SQUIDSBUFPH " %s %s %s%s/%s %s%s",
                   (long int) current_time.tv_sec,
                   (int) current_time.tv_usec / 1000,
                   al->cache.msec,
                   clientip,
-                  ::Format::log_tags[al->cache.code],
+                  LogTags_str[al->cache.code],
                   al->http.statusSfx(),
                   al->http.code,
-                  al->cache.replySize,
-                  al->_private.method_str,
+                  al->http.clientReplySz.messageTotal(),
+                  SQUIDSBUFPRINT(method),
                   al->url,
                   user ? user : dash_str,
                   al->hier.ping.timedout ? "TIMEOUT_" : "",
                   hier_code_str[al->hier.code],
-                  al->hier.tcpServer != NULL ? al->hier.tcpServer->remote.NtoA(hierHost, sizeof(hierHost)) : "-",
+                  al->hier.tcpServer != NULL ? al->hier.tcpServer->remote.toStr(hierHost, sizeof(hierHost)) : "-",
                   al->http.content_type,
                   (Config.onoff.log_mime_hdrs?"":"\n"));
 
@@ -98,3 +82,4 @@ Log::Format::SquidNative(const AccessLogEntry::Pointer &al, Logfile * logfile)
         safe_free(erep);
     }
 }
+

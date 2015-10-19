@@ -1,9 +1,17 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_BASE_TIDYPOINTER_H
 #define SQUID_BASE_TIDYPOINTER_H
 
 /**
  * A pointer that deletes the object it points to when the pointer's owner or
- * context is gone. Similar to std::auto_ptr but without confusing assignment
+ * context is gone. Similar to std::unique_ptr but without confusing assignment
  * and with a customizable cleanup method. Prevents memory leaks in
  * the presence of exceptions and processing short cuts.
 */
@@ -13,7 +21,7 @@ public:
     /// Delete callback.
     typedef void DCB (T *t);
     TidyPointer(T *t = NULL)
-            :   raw(t) {}
+        :   raw(t) {}
 public:
     bool operator !() const { return !raw; }
     /// Returns raw and possibly NULL pointer
@@ -58,3 +66,4 @@ template<typename T> void tidyFree(T *p)
 }
 
 #endif // SQUID_BASE_TIDYPOINTER_H
+

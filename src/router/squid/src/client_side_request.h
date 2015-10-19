@@ -1,42 +1,20 @@
 /*
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_CLIENTSIDEREQUEST_H
 #define SQUID_CLIENTSIDEREQUEST_H
 
-#include "HttpHeader.h"
-#include "clientStream.h"
-#include "client_side.h"
 #include "AccessLogEntry.h"
-#include "dlink.h"
-#include "base/AsyncJob.h"
+#include "acl/forward.h"
+#include "client_side.h"
+#include "clientStream.h"
 #include "HttpHeaderRange.h"
+#include "LogTags.h"
 
 #if USE_ADAPTATION
 #include "adaptation/forward.h"
@@ -44,8 +22,6 @@
 class HttpMsg;
 #endif
 
-class acl_access;
-class ACLFilledChecklist;
 class ClientRequestContext;
 class ConnStateData;
 class MemObject;
@@ -55,17 +31,12 @@ int clientBeginRequest(const HttpRequestMethod&, char const *, CSCB *, CSD *, Cl
 
 class ClientHttpRequest
 #if USE_ADAPTATION
-        : public Adaptation::Initiator, // to start adaptation transactions
-        public BodyConsumer     // to receive reply bodies in request satisf. mode
+    : public Adaptation::Initiator, // to start adaptation transactions
+      public BodyConsumer     // to receive reply bodies in request satisf. mode
 #endif
 {
 
 public:
-    void *operator new (size_t);
-    void operator delete (void *);
-#if USE_ADAPTATION
-    void *toCbdata() { return this; }
-#endif
     ClientHttpRequest(ConnStateData *csd);
     ~ClientHttpRequest();
     /* Not implemented - present to prevent synthetic operations */
@@ -95,9 +66,10 @@ public:
      */
     Comm::ConnectionPointer clientConnection;
 
-    HttpRequest *request;		/* Parsed URL ... */
+    HttpRequest *request;       /* Parsed URL ... */
     char *uri;
     char *log_uri;
+    String store_id; /* StoreID for transactions where the request member is nil */
 
     struct {
         int64_t offset;
@@ -105,24 +77,26 @@ public:
         size_t headers_sz;
     } out;
 
-    HttpHdrRangeIter range_iter;	/* data for iterating thru range specs */
-    size_t req_sz;		/* raw request size on input, not current request size */
-    log_type logType;
+    HttpHdrRangeIter range_iter;    /* data for iterating thru range specs */
+    size_t req_sz;      /* raw request size on input, not current request size */
 
-    struct timeval start_time;
+    /// the processing tags associated with this request transaction.
+    // NP: still an enum so each stage altering it must take care when replacing it.
+    LogTags logType;
+
     AccessLogEntry::Pointer al; ///< access.log entry
 
     struct {
-        unsigned int accel:1;
-        unsigned int intercepted:1;
-        unsigned int spoof_client_ip:1;
-        unsigned int internal:1;
-        unsigned int done_copying:1;
-        unsigned int purging:1;
+        bool accel;
+        //bool intercepted; //XXX: it's apparently never used.
+        //bool spoof_client_ip; //XXX: it's apparently never used.
+        bool internal;
+        bool done_copying;
+        bool purging;
     } flags;
 
     struct {
-        http_status status;
+        Http::StatusCode status;
         char *location;
     } redirect;
 
@@ -147,7 +121,7 @@ private:
     StoreEntry *loggingEntry_;
     ConnStateData * conn_;
 
-#if USE_SSL
+#if USE_OPENSSL
     /// whether (and how) the request needs to be bumped
     Ssl::BumpMode sslBumpNeed_;
 
@@ -155,11 +129,11 @@ public:
     /// returns raw sslBump mode value
     Ssl::BumpMode sslBumpNeed() const { return sslBumpNeed_; }
     /// returns true if and only if the request needs to be bumped
-    bool sslBumpNeeded() const { return sslBumpNeed_ == Ssl::bumpServerFirst || sslBumpNeed_ == Ssl::bumpClientFirst; }
+    bool sslBumpNeeded() const { return sslBumpNeed_ == Ssl::bumpServerFirst || sslBumpNeed_ == Ssl::bumpClientFirst || sslBumpNeed_ == Ssl::bumpBump || sslBumpNeed_ == Ssl::bumpPeek || sslBumpNeed_ == Ssl::bumpStare; }
     /// set the sslBumpNeeded state
     void sslBumpNeed(Ssl::BumpMode mode);
     void sslBumpStart();
-    void sslBumpEstablish(comm_err_t errflag);
+    void sslBumpEstablish(Comm::Flag errflag);
 #endif
 
 #if USE_ADAPTATION
@@ -195,7 +169,7 @@ private:
 #endif
 
 private:
-    CBDATA_CLASS(ClientHttpRequest);
+    CBDATA_CLASS2(ClientHttpRequest);
 };
 
 /* client http based routines */
@@ -206,12 +180,12 @@ int clientHttpRequestStatus(int fd, ClientHttpRequest const *http);
 void clientAccessCheck(ClientHttpRequest *);
 
 /* ones that should be elsewhere */
-void redirectStart(ClientHttpRequest *, RH *, void *);
 void tunnelStart(ClientHttpRequest *, int64_t *, int *, const AccessLogEntry::Pointer &al);
 
 #if _USE_INLINE_
-#include "Store.h"
 #include "client_side_request.cci"
+#include "Store.h"
 #endif
 
 #endif /* SQUID_CLIENTSIDEREQUEST_H */
+

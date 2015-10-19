@@ -1,6 +1,12 @@
 /*
- * DEBUG: section 93    Adaptation
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 93    Adaptation */
 
 #include "squid.h"
 #include "adaptation/ServiceConfig.h"
@@ -11,9 +17,9 @@
 #include <set>
 
 Adaptation::ServiceConfig::ServiceConfig():
-        port(-1), method(methodNone), point(pointNone),
-        bypass(false), maxConn(-1), onOverload(srvWait),
-        routing(false), ipv6(false)
+    port(-1), method(methodNone), point(pointNone),
+    bypass(false), maxConn(-1), onOverload(srvWait),
+    routing(false), ipv6(false)
 {}
 
 const char *
@@ -49,10 +55,10 @@ Adaptation::ServiceConfig::parseVectPoint(const char *service_configConfig) cons
     if (q)
         t = q + 1;
 
-    if (!strcasecmp(t, "precache"))
+    if (!strcmp(t, "precache"))
         return Adaptation::pointPreCache;
 
-    if (!strcasecmp(t, "postcache"))
+    if (!strcmp(t, "postcache"))
         return Adaptation::pointPostCache;
 
     return Adaptation::pointNone;
@@ -61,10 +67,8 @@ Adaptation::ServiceConfig::parseVectPoint(const char *service_configConfig) cons
 bool
 Adaptation::ServiceConfig::parse()
 {
-    String method_point;
-
-    ConfigParser::ParseString(&key);
-    ConfigParser::ParseString(&method_point);
+    key = ConfigParser::NextToken();
+    String method_point = ConfigParser::NextToken();
     method = parseMethod(method_point.termedBuf());
     point = parseVectPoint(method_point.termedBuf());
 
@@ -76,7 +80,7 @@ Adaptation::ServiceConfig::parse()
     bool onOverloadSet = false;
     std::set<std::string> options;
 
-    while (char *option = strtok(NULL, w_space)) {
+    while (char *option = ConfigParser::NextToken()) {
         const char *name = option;
         const char *value = "";
         if (strcmp(option, "0") == 0) { // backward compatibility
@@ -311,3 +315,4 @@ Adaptation::ServiceConfig::grokExtension(const char *name, const char *value)
            name << '=' << value);
     return false;
 }
+

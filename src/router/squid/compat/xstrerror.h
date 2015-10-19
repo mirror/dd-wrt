@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_COMPAT_XSTRERROR_H
 #define _SQUID_COMPAT_XSTRERROR_H
 
@@ -19,3 +27,4 @@
 extern const char * xstrerr(int error);
 
 #endif /* _SQUID_COMPAT_XSTRERROR_H */
+

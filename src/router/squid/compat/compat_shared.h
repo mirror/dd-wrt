@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_COMPAT_SHARED_H
 #define _SQUID_COMPAT_SHARED_H
 
@@ -171,8 +179,12 @@ max(A const & lhs, A const & rhs)
  * Signalling flags are apparently not always provided.
  * TODO find out if these can be moved into specific OS portability files.
  */
+#if defined(__cplusplus)
+#include <csignal>
+#else
 #if HAVE_SIGNAL_H
 #include <signal.h>
+#endif
 #endif
 #ifndef SA_RESTART
 #define SA_RESTART 0
@@ -208,15 +220,18 @@ extern "C" {
  * Several function definitions which we provide for security and code safety.
  */
 #include "compat/xalloc.h"
+#include "compat/xis.h"
 #include "compat/xstrerror.h"
 #include "compat/xstring.h"
 #include "compat/xstrto.h"
-#include "compat/xis.h"
 
 /*
  * strtoll() is needed. Squid provides a portable definition.
  */
 #include "compat/strtoll.h"
+
+// memrchr() is a GNU extension. MinGW in particular does not define it.
+#include "compat/memrchr.h"
 
 #if !HAVE_MEMCPY
 #if HAVE_BCOPY
@@ -258,3 +273,4 @@ const char * squid_strnstr(const char *s, const char *find, size_t slen);
 #endif
 
 #endif /* _SQUID_COMPAT_SHARED_H */
+

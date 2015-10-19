@@ -1,35 +1,17 @@
 /*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
+/*
  * AUTHOR: Andrew Doran <ad@interlude.eu.org>
  * AUTHOR: Robert Collins <rbtcollins@hotmail.com>
- * AUTHOR: Guido Serassio: <guido.serassio@acmeconsulting.it>
- *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * AUTHOR: Guido Serassio <guido.serassio@acmeconsulting.it>
  */
+
 /*
  * Example ntlm authentication program for Squid, based on the
  * original proxy_auth code from client_side.c, written by
@@ -56,14 +38,9 @@
 #include "helpers/defines.h"
 #include "ntlmauth/ntlmauth.h"
 #include "ntlmauth/support_bits.cci"
-//#include "util.h"
 
-#if HAVE_STRING_H
-#include <string.h>
-#endif
-#if HAVE_CTYPE_H
-#include <ctype.h>
-#endif
+#include <cctype>
+#include <cstring>
 #if HAVE_CRYPT_H
 #include <crypt.h>
 #endif
@@ -72,15 +49,6 @@
 #endif
 #if HAVE_GETOPT_H
 #include <getopt.h>
-#endif
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
-#if HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#if HAVE_INTTYPES_H
-#include <inttypes.h>
 #endif
 
 /* A couple of harmless helper macros */
@@ -141,7 +109,7 @@ process_options(int argc, char *argv[])
             exit(0);
         case '?':
             opt = optopt;
-            /* fall thru to default */
+        /* fall thru to default */
         default:
             fprintf(stderr, "unknown option: -%c. Exiting\n", opt);
             usage();
@@ -173,14 +141,14 @@ main(int argc, char *argv[])
 
     process_options(argc, argv);
 
-    debug("%s build " __DATE__ ", " __TIME__ " starting up...\n", my_program_name);
+    debug("%s " VERSION " " SQUID_BUILD_INFO " starting up...\n", my_program_name);
 
     while (fgets(buf, HELPER_INPUT_BUFFER, stdin) != NULL) {
-        user[0] = '\0';		/*no user code */
-        domain[0] = '\0';		/*no domain code */
+        user[0] = '\0';     /*no user code */
+        domain[0] = '\0';       /*no domain code */
 
         if ((p = strchr(buf, '\n')) != NULL)
-            *p = '\0';		/* strip \n */
+            *p = '\0';      /* strip \n */
         buflen = strlen(buf);   /* keep this so we only scan the buffer for \0 once per loop */
         if (buflen > 3) {
             decodedLen = base64_decode(decodedBuf, sizeof(decodedBuf), buf+3);
@@ -240,3 +208,4 @@ main(int argc, char *argv[])
     }
     exit(0);
 }
+

@@ -1,68 +1,46 @@
-
 /*
- * DEBUG: section 75    WHOIS protocol
- * AUTHOR: Duane Wessels, Kostas Anagnostakis
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 75    WHOIS protocol */
 
 #include "squid.h"
 #include "comm.h"
+#include "comm/Read.h"
 #include "comm/Write.h"
 #include "errorpage.h"
+#include "FwdState.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
-#include "HttpRequest.h"
-#include "forward.h"
 #include "SquidConfig.h"
 #include "StatCounters.h"
 #include "Store.h"
 #include "tools.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
+#include <cerrno>
 
 #define WHOIS_PORT 43
 
 class WhoisState
 {
-
 public:
-    ~WhoisState();
-    void readReply(const Comm::ConnectionPointer &, char *aBuffer, size_t aBufferLength, comm_err_t flag, int xerrno);
+    void readReply(const Comm::ConnectionPointer &, char *aBuffer, size_t aBufferLength, Comm::Flag flag, int xerrno);
     void setReplyToOK(StoreEntry *sentry);
     StoreEntry *entry;
-    HttpRequest *request;
+    HttpRequest::Pointer request;
     FwdState::Pointer fwd;
-    char buf[BUFSIZ+1];		/* readReply adds terminating NULL */
+    char buf[BUFSIZ+1];     /* readReply adds terminating NULL */
     bool dataWritten;
+
+private:
+    CBDATA_CLASS2(WhoisState);
 };
+
+CBDATA_CLASS_INIT(WhoisState);
 
 static CLCB whoisClose;
 static CTCB whoisTimeout;
@@ -70,15 +48,8 @@ static IOCB whoisReadReply;
 
 /* PUBLIC */
 
-CBDATA_TYPE(WhoisState);
-
-WhoisState::~WhoisState()
-{
-    fwd = NULL;	// refcounted
-}
-
 static void
-whoisWriteComplete(const Comm::ConnectionPointer &, char *buf, size_t size, comm_err_t flag, int xerrno, void *data)
+whoisWriteComplete(const Comm::ConnectionPointer &, char *buf, size_t size, Comm::Flag flag, int xerrno, void *data)
 {
     xfree(buf);
 }
@@ -86,17 +57,15 @@ whoisWriteComplete(const Comm::ConnectionPointer &, char *buf, size_t size, comm
 void
 whoisStart(FwdState * fwd)
 {
-    WhoisState *p;
     char *buf;
     size_t l;
-    CBDATA_INIT_TYPE(WhoisState);
-    p = cbdataAlloc(WhoisState);
+    WhoisState *p = new WhoisState;
     p->request = fwd->request;
     p->entry = fwd->entry;
     p->fwd = fwd;
     p->dataWritten = false;
 
-    p->entry->lock();
+    p->entry->lock("whoisStart");
     comm_add_close_handler(fwd->serverConnection()->fd, whoisClose, p);
 
     l = p->request->urlpath.size() + 3;
@@ -128,7 +97,7 @@ whoisTimeout(const CommTimeoutCbParams &io)
 }
 
 static void
-whoisReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, comm_err_t flag, int xerrno, void *data)
+whoisReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Flag flag, int xerrno, void *data)
 {
     WhoisState *p = (WhoisState *)data;
     p->readReply(conn, buf, len, flag, xerrno);
@@ -139,22 +108,22 @@ WhoisState::setReplyToOK(StoreEntry *sentry)
 {
     HttpReply *reply = new HttpReply;
     sentry->buffer();
-    reply->setHeaders(HTTP_OK, "Gatewaying", "text/plain", -1, -1, -2);
+    reply->setHeaders(Http::scOkay, "Gatewaying", "text/plain", -1, -1, -2);
     sentry->replaceHttpReply(reply);
 }
 
 void
-WhoisState::readReply(const Comm::ConnectionPointer &conn, char *aBuffer, size_t aBufferLength, comm_err_t flag, int xerrno)
+WhoisState::readReply(const Comm::ConnectionPointer &conn, char *aBuffer, size_t aBufferLength, Comm::Flag flag, int xerrno)
 {
-    /* Bail out early on COMM_ERR_CLOSING - close handlers will tidy up for us */
-    if (flag == COMM_ERR_CLOSING)
+    /* Bail out early on Comm::ERR_CLOSING - close handlers will tidy up for us */
+    if (flag == Comm::ERR_CLOSING)
         return;
 
     aBuffer[aBufferLength] = '\0';
     debugs(75, 3, HERE << conn << " read " << aBufferLength << " bytes");
     debugs(75, 5, "{" << aBuffer << "}");
 
-    if (flag != COMM_OK) {
+    if (flag != Comm::OK) {
         debugs(50, 2, HERE  << conn << ": read failure: " << xstrerror() << ".");
 
         if (ignoreErrno(errno)) {
@@ -162,7 +131,7 @@ WhoisState::readReply(const Comm::ConnectionPointer &conn, char *aBuffer, size_t
                                                  CommIoCbPtrFun(whoisReadReply, this));
             comm_read(conn, aBuffer, BUFSIZ, call);
         } else {
-            ErrorState *err = new ErrorState(ERR_READ_ERROR, HTTP_INTERNAL_SERVER_ERROR, fwd->request);
+            ErrorState *err = new ErrorState(ERR_READ_ERROR, Http::scInternalServerError, fwd->request);
             err->xerrno = xerrno;
             fwd->fail(err);
             conn->close();
@@ -192,8 +161,7 @@ WhoisState::readReply(const Comm::ConnectionPointer &conn, char *aBuffer, size_t
     entry->timestampsSet();
     entry->flush();
 
-    if (!EBIT_TEST(entry->flags, RELEASE_REQUEST))
-        entry->setPublicKey();
+    entry->makePublic();
 
     fwd->complete();
     debugs(75, 3, "whoisReadReply: Done: " << entry->url());
@@ -205,6 +173,7 @@ whoisClose(const CommCloseCbParams &params)
 {
     WhoisState *p = (WhoisState *)params.data;
     debugs(75, 3, "whoisClose: FD " << params.fd);
-    p->entry->unlock();
-    cbdataFree(p);
+    p->entry->unlock("whoisClose");
+    delete p;
 }
+

@@ -1,11 +1,16 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_SNMP_CLIENT_H
 #define SQUID_SNMP_CLIENT_H
 
-/*
- * snmp_client.h
- */
 /***********************************************************
-	Copyright 1988, 1989 by Carnegie Mellon University
+    Copyright 1988, 1989 by Carnegie Mellon University
 
                       All Rights Reserved
 
@@ -29,8 +34,8 @@ struct synch_state {
     int waiting;
     int status;
     /* status codes */
-#define STAT_SUCCESS	0
-#define STAT_ERROR	1
+#define STAT_SUCCESS    0
+#define STAT_ERROR  1
 #define STAT_TIMEOUT 2
     int reqid;
     struct snmp_pdu *pdu;
@@ -40,21 +45,22 @@ struct synch_state {
 extern "C" {
 #endif
 
-    extern struct synch_state snmp_synch_state;
+extern struct synch_state snmp_synch_state;
 
-    /* Synchronize Input with Agent */
-    int snmp_synch_input(int, struct snmp_session *, int,
-                         struct snmp_pdu *, void *);
+/* Synchronize Input with Agent */
+int snmp_synch_input(int, struct snmp_session *, int,
+                     struct snmp_pdu *, void *);
 
-    /* Synchronize Response with Agent */
-    int snmp_synch_response(struct snmp_session *, struct snmp_pdu *,
-                            struct snmp_pdu **);
+/* Synchronize Response with Agent */
+int snmp_synch_response(struct snmp_session *, struct snmp_pdu *,
+                        struct snmp_pdu **);
 
-    /* Synchronize Setup */
-    void snmp_synch_setup(struct snmp_session *);
+/* Synchronize Setup */
+void snmp_synch_setup(struct snmp_session *);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif				/* SQUID_SNMP_CLIENT_H */
+#endif              /* SQUID_SNMP_CLIENT_H */
+

@@ -1,13 +1,21 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef _SQUID_SRC_AUTH_NEGOTIATE_USERREQUEST_H
 #define _SQUID_SRC_AUTH_NEGOTIATE_USERREQUEST_H
 
 #include "auth/UserRequest.h"
+#include "helper/forward.h"
 #include "MemPool.h"
 
 class ConnStateData;
 class HttpReply;
 class HttpRequest;
-class helper_stateful_server;
 
 namespace Auth
 {
@@ -26,10 +34,8 @@ public:
     virtual int authenticated() const;
     virtual void authenticate(HttpRequest * request, ConnStateData * conn, http_hdr_type type);
     virtual Direction module_direction();
-    virtual void onConnectionClose(ConnStateData *);
-    virtual void module_start(AUTHCB *, void *);
-
-    virtual void addAuthenticationInfoHeader(HttpReply * rep, int accel);
+    virtual void startHelperLookup(HttpRequest *request, AccessLogEntry::Pointer &al, AUTHCB *, void *);
+    virtual const char *credentialsStr();
 
     virtual const char * connLastHeader();
 
@@ -52,7 +58,7 @@ public:
     HttpRequest *request;
 
 private:
-    static HLPSCB HandleReply;
+    static HLPCB HandleReply;
 };
 
 } // namespace Negotiate
@@ -61,3 +67,4 @@ private:
 MEMPROXY_CLASS_INLINE(Auth::Negotiate::UserRequest);
 
 #endif /* _SQUID_SRC_AUTH_NEGOTIATE_USERREQUEST_H */
+

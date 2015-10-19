@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 38    Network Measurement Database
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 38    Network Measurement Database */
 
 /*
  * XXX XXX XXX
@@ -44,7 +22,7 @@
 #include "disk.h"
 #include "event.h"
 #include "fde.h"
-#include "forward.h"
+#include "FwdState.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
 #include "icmp/net_db.h"
@@ -73,7 +51,7 @@
 #include "ipcache.h"
 #include "StoreClient.h"
 
-#define	NETDB_REQBUF_SZ	4096
+#define NETDB_REQBUF_SZ 4096
 
 typedef enum {
     STATE_NONE,
@@ -126,7 +104,7 @@ static wordlist *peer_names = NULL;
 static void
 netdbHashInsert(netdbEntry * n, Ip::Address &addr)
 {
-    networkFromInaddr(addr).NtoA(n->network, MAX_IPSTRLEN);
+    networkFromInaddr(addr).toStr(n->network, MAX_IPSTRLEN);
     n->hash.key = n->network;
     assert(hash_lookup(addr_table, n->network) == NULL);
     hash_join(addr_table, &n->hash);
@@ -264,7 +242,7 @@ netdbLookupAddr(const Ip::Address &addr)
 {
     netdbEntry *n;
     char *key = new char[MAX_IPSTRLEN];
-    networkFromInaddr(addr).NtoA(key,MAX_IPSTRLEN);
+    networkFromInaddr(addr).toStr(key,MAX_IPSTRLEN);
     n = (netdbEntry *) hash_lookup(addr_table, key);
     delete[] key;
     return n;
@@ -362,8 +340,8 @@ networkFromInaddr(const Ip::Address &in)
     out = in;
 
     /* in IPv6 the 'network' should be the routing section. */
-    if ( in.IsIPv6() ) {
-        out.ApplyMask(64, AF_INET6);
+    if ( in.isIPv6() ) {
+        out.applyMask(64, AF_INET6);
         debugs(14, 5, "networkFromInaddr : Masked IPv6 Address to " << in << "/64 routing part.");
         return out;
     }
@@ -371,7 +349,7 @@ networkFromInaddr(const Ip::Address &in)
 #if USE_CLASSFUL
     struct in_addr b;
 
-    in.GetInAddr(b);
+    in.getInAddr(b);
 
     if (IN_CLASSC(b.s_addr))
         b.s_addr &= IN_CLASSC_NET;
@@ -387,7 +365,7 @@ networkFromInaddr(const Ip::Address &in)
     debugs(14, 5, "networkFromInaddr : Masked IPv4 Address to " << out << "/24.");
 
     /* use /24 for everything under IPv4 */
-    out.ApplyMask(24, AF_INET);
+    out.applyMask(24, AF_INET);
     debugs(14, 5, "networkFromInaddr : Masked IPv4 Address to " << in << "/24.");
 
     return out;
@@ -591,7 +569,7 @@ netdbReloadState(void)
         if (! (addr = q) )
             continue;
 
-        if (netdbLookupAddr(addr) != NULL)	/* no dups! */
+        if (netdbLookupAddr(addr) != NULL)  /* no dups! */
             continue;
 
         if ((q = strtok(NULL, w_space)) == NULL)
@@ -639,7 +617,7 @@ netdbReloadState(void)
         netdbHashInsert(n, addr);
 
         while ((q = strtok(NULL, w_space)) != NULL) {
-            if (netdbLookupHost(q) != NULL)	/* no dups! */
+            if (netdbLookupHost(q) != NULL) /* no dups! */
                 continue;
 
             netdbHostInsert(n, q);
@@ -742,10 +720,10 @@ netdbExchangeHandleReply(void *data, StoreIOBuffer receivedData)
         if ((hdr_sz = headersEnd(p, ex->buf_ofs))) {
             debugs(38, 5, "netdbExchangeHandleReply: hdr_sz = " << hdr_sz);
             rep = ex->e->getReply();
-            assert (0 != rep->sline.status);
-            debugs(38, 3, "netdbExchangeHandleReply: reply status " << rep->sline.status);
+            assert(rep->sline.status() != Http::scNone);
+            debugs(38, 3, "netdbExchangeHandleReply: reply status " << rep->sline.status());
 
-            if (HTTP_OK != rep->sline.status) {
+            if (rep->sline.status() != Http::scOkay) {
                 netdbExchangeDone(ex);
                 return;
             }
@@ -782,7 +760,7 @@ netdbExchangeHandleReply(void *data, StoreIOBuffer receivedData)
 
     while (size >= rec_sz) {
         debugs(38, 5, "netdbExchangeHandleReply: in parsing loop, size = " << size);
-        addr.SetAnyAddr();
+        addr.setAnyAddr();
         hops = rtt = 0.0;
 
         for (o = 0; o < rec_sz;) {
@@ -817,7 +795,7 @@ netdbExchangeHandleReply(void *data, StoreIOBuffer receivedData)
             }
         }
 
-        if (!addr.IsAnyAddr() && rtt > 0)
+        if (!addr.isAnyAddr() && rtt > 0)
             netdbExchangeUpdatePeer(addr, ex->p, rtt, hops);
 
         assert(o == rec_sz);
@@ -887,7 +865,7 @@ netdbExchangeDone(void *data)
     debugs(38, 3, "netdbExchangeDone: " << ex->e->url()  );
     HTTPMSGUNLOCK(ex->r);
     storeUnregister(ex->sc, ex->e, ex);
-    ex->e->unlock();
+    ex->e->unlock("netdbExchangeDone");
     cbdataReferenceDone(ex->p);
     cbdataFree(ex);
 }
@@ -988,23 +966,6 @@ netdbFreeMemory(void)
     peer_names = NULL;
 #endif
 }
-
-#if 0 // AYJ: Looks to be unused code.
-int
-netdbHops(Ip::Address &addr)
-{
-#if USE_ICMP
-    netdbEntry *n = netdbLookupAddr(addr);
-
-    if (n && n->pings_recv) {
-        n->last_use_time = squid_curtime;
-        return (int) (n->hops + 0.5);
-    }
-
-#endif
-    return 256;
-}
-#endif
 
 void
 netdbDump(StoreEntry * sentry)
@@ -1169,7 +1130,7 @@ netdbExchangeUpdatePeer(Ip::Address &addr, CachePeer * e, double rtt, double hop
            std::setfill('0')<< std::setprecision(2) << hops << " hops, " <<
            rtt << " rtt");
 
-    if ( !addr.IsIPv4() ) {
+    if ( !addr.isIPv4() ) {
         debugs(38, 5, "netdbExchangeUpdatePeer: Aborting peer update for '" << addr << "', NetDB cannot handle IPv6.");
         return;
     }
@@ -1188,7 +1149,7 @@ netdbExchangeUpdatePeer(Ip::Address &addr, CachePeer * e, double rtt, double hop
 
     p->hops = hops;
 
-    p->expires = squid_curtime + 3600;	/* XXX ? */
+    p->expires = squid_curtime + 3600;  /* XXX ? */
 
     if (n->n_peers < 2)
         return;
@@ -1232,7 +1193,7 @@ netdbBinaryExchange(StoreEntry * s)
 
     struct in_addr line_addr;
     s->buffer();
-    reply->setHeaders(HTTP_OK, "OK", NULL, -1, squid_curtime, -2);
+    reply->setHeaders(Http::scOkay, "OK", NULL, -1, squid_curtime, -2);
     s->replaceHttpReply(reply);
     rec_sz = 0;
     rec_sz += 1 + sizeof(struct in_addr);
@@ -1246,20 +1207,20 @@ netdbBinaryExchange(StoreEntry * s)
         if (0.0 == n->rtt)
             continue;
 
-        if (n->rtt > 60000)	/* RTT > 1 MIN probably bogus */
+        if (n->rtt > 60000) /* RTT > 1 MIN probably bogus */
             continue;
 
         if (! (addr = n->network) )
             continue;
 
         /* FIXME INET6 : NetDB cannot yet handle IPv6 addresses. Ensure only IPv4 get sent. */
-        if ( !addr.IsIPv4() )
+        if ( !addr.isIPv4() )
             continue;
 
         buf[i] = (char) NETDB_EX_NETWORK;
         ++i;
 
-        addr.GetInAddr(line_addr);
+        addr.getInAddr(line_addr);
         memcpy(&buf[i], &line_addr, sizeof(struct in_addr));
 
         i += sizeof(struct in_addr);
@@ -1298,7 +1259,7 @@ netdbBinaryExchange(StoreEntry * s)
     memFree(buf, MEM_4K_BUF);
 #else
 
-    reply->setHeaders(HTTP_BAD_REQUEST, "Bad Request", NULL, -1, squid_curtime, -2);
+    reply->setHeaders(Http::scBadRequest, "Bad Request", NULL, -1, squid_curtime, -2);
     s->replaceHttpReply(reply);
     storeAppendPrintf(s, "NETDB support not compiled into this Squid cache.\n");
 #endif
@@ -1333,9 +1294,9 @@ netdbExchangeStart(void *data)
 
     HTTPMSGLOCK(ex->r);
     assert(NULL != ex->r);
-    ex->r->http_ver = HttpVersion(1,1);
+    ex->r->http_ver = Http::ProtocolVersion(1,1);
     ex->connstate = STATE_HEADER;
-    ex->e = storeCreateEntry(uri, uri, RequestFlags(), METHOD_GET);
+    ex->e = storeCreateEntry(uri, uri, RequestFlags(), Http::METHOD_GET);
     ex->buf_sz = NETDB_REQBUF_SZ;
     assert(NULL != ex->e);
     ex->sc = storeClientListAdd(ex->e, ex);
@@ -1344,7 +1305,7 @@ netdbExchangeStart(void *data)
     tempBuffer.data = ex->buf;
     storeClientCopy(ex->sc, ex->e, tempBuffer,
                     netdbExchangeHandleReply, ex);
-    ex->r->flags.loopDetected = 1;	/* cheat! -- force direct */
+    ex->r->flags.loopDetected = true;   /* cheat! -- force direct */
 
     if (p->login)
         xstrncpy(ex->r->login, p->login, MAX_LOGIN_SZ);
@@ -1397,13 +1358,13 @@ netdbClosestParent(HttpRequest * request)
 
         p = peerFindByName(h->peername);
 
-        if (NULL == p)		/* not found */
+        if (NULL == p)      /* not found */
             continue;
 
         if (neighborType(p, request) != PEER_PARENT)
             continue;
 
-        if (!peerHTTPOkay(p, request))	/* not allowed */
+        if (!peerHTTPOkay(p, request))  /* not allowed */
             continue;
 
         return p;
@@ -1412,3 +1373,4 @@ netdbClosestParent(HttpRequest * request)
 #endif
     return NULL;
 }
+

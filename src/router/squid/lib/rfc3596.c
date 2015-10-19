@@ -1,65 +1,14 @@
 /*
- * Low level DNS protocol routines
- * AUTHOR: Amos Jeffries, Rafael Martinez Torres
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This code is copyright (C) 2007 by Treehouse Networks Ltd of
- *  New Zealand. It is published and Lisenced as an extension of
- *  squid under the same conditions as the main squid application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- */
-
-/*
- * KNOWN BUGS:
- *
- * UDP replies with TC set should be retried via TCP
- */
-
-/**
- * April 2007
- *
- * Provides RFC3596 functions to handle purely IPv6 DNS.
- * Adds AAAA and IPv6 PTR records.
- * Other IPv6 records are not mentioned by this RFC.
- *
- * IPv4 equivalents are taken care of by the RFC1035 library.
- * Where one protocol lookup must be followed by another, the caller
- * is resposible for the order and handling of the lookups.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #include "squid.h"
-#include "compat/inet_pton.h"
 #include "util.h"
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -76,12 +25,28 @@
 #include <strings.h>
 #endif
 
-#include "rfc3596.h"
 #include "rfc2671.h"
+#include "rfc3596.h"
 
 #ifndef SQUID_RFC1035_H
 #error RFC3596 Library depends on RFC1035
 #endif
+
+/*
+ * Low level DNS protocol routines
+ *
+ * Provides RFC3596 functions to handle purely IPv6 DNS.
+ * Adds AAAA and IPv6 PTR records.
+ * Other IPv6 records are not mentioned by this RFC.
+ *
+ * IPv4 equivalents are taken care of by the RFC1035 library.
+ * Where one protocol lookup must be followed by another, the caller
+ * is resposible for the order and handling of the lookups.
+ *
+ * KNOWN BUGS:
+ *
+ * UDP replies with TC set should be retried via TCP
+ */
 
 /**
  * Builds a message buffer with a QUESTION to lookup records
@@ -205,7 +170,7 @@ rfc3596BuildPTRQuery6(const struct in6_addr addr, char *buf, size_t sz, unsigned
 int
 main(int argc, char *argv[])
 {
-#define PACKET_BUFSZ		1024
+#define PACKET_BUFSZ        1024
     char input[PACKET_BUFSZ];
     char buf[PACKET_BUFSZ];
     char rbuf[PACKET_BUFSZ];
@@ -370,3 +335,4 @@ return 0;
 }
 
 #endif
+

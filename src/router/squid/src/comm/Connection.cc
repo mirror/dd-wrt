@@ -1,9 +1,18 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #include "squid.h"
 #include "CachePeer.h"
 #include "cbdata.h"
 #include "comm.h"
 #include "comm/Connection.h"
 #include "fde.h"
+#include "neighbors.h"
 #include "SquidTime.h"
 
 class CachePeer;
@@ -14,13 +23,15 @@ Comm::IsConnOpen(const Comm::ConnectionPointer &conn)
 }
 
 Comm::Connection::Connection() :
-        local(),
-        remote(),
-        peerType(HIER_NONE),
-        fd(-1),
-        tos(0),
-        flags(COMM_NONBLOCKING),
-        peer_(NULL)
+    local(),
+    remote(),
+    peerType(HIER_NONE),
+    fd(-1),
+    tos(0),
+    nfmark(0),
+    flags(COMM_NONBLOCKING),
+    peer_(NULL),
+    startTime_(squid_curtime)
 {
     *rfc931 = 0; // quick init the head. the rest does not matter.
 }
@@ -42,11 +53,12 @@ Comm::Connection::copyDetails() const
 {
     ConnectionPointer c = new Comm::Connection;
 
-    c->local = local;
-    c->remote = remote;
+    c->setAddrs(local, remote);
     c->peerType = peerType;
     c->tos = tos;
+    c->nfmark = nfmark;
     c->flags = flags;
+    c->startTime_ = startTime_;
 
     // ensure FD is not open in the new copy.
     c->fd = -1;
@@ -62,9 +74,17 @@ Comm::Connection::close()
 {
     if (isOpen()) {
         comm_close(fd);
+        noteClosure();
+    }
+}
+
+void
+Comm::Connection::noteClosure()
+{
+    if (isOpen()) {
         fd = -1;
         if (CachePeer *p=getPeer())
-            -- p->stats.conn_open;
+            peerConnClosed(p);
     }
 }
 
@@ -89,3 +109,4 @@ Comm::Connection::setPeer(CachePeer *p)
         peer_ = cbdataReference(p);
     }
 }
+

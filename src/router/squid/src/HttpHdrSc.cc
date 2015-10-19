@@ -1,38 +1,12 @@
-
 /*
- * DEBUG: section 90    HTTP Cache Control Header
- * AUTHOR: Alex Rousskov
- *         Robert Collins (Surrogate-Control is derived from
- *         		   Cache-Control).
- *         Francesco Chemolli (c++ refactoring)
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 90    HTTP Cache Control Header */
 
 #include "squid.h"
 #include "HttpHdrSc.h"
@@ -44,9 +18,7 @@
 #include "Store.h"
 #include "StrList.h"
 
-#if HAVE_MAP
 #include <map>
-#endif
 
 /* a row in the table used for parsing surrogate-control header and statistics */
 typedef struct {
@@ -63,7 +35,7 @@ static const HttpHeaderFieldAttrs ScAttrs[SC_ENUM_END] = {
     {"no-store-remote", (http_hdr_type)SC_NO_STORE_REMOTE},
     {"max-age", (http_hdr_type)SC_MAX_AGE},
     {"content", (http_hdr_type)SC_CONTENT},
-    {"Other,", (http_hdr_type)SC_OTHER}	/* ',' will protect from matches */
+    {"Other,", (http_hdr_type)SC_OTHER} /* ',' will protect from matches */
 };
 
 HttpHeaderFieldInfo *ScFieldsInfo = NULL;
@@ -117,7 +89,7 @@ HttpHdrSc::parse(const String * str)
 {
     HttpHdrSc * sc=this;
     const char *item;
-    const char *p;		/* '=' parameter */
+    const char *p;      /* '=' parameter */
     const char *pos = NULL;
     const char *target = NULL; /* ;foo */
     const char *temp = NULL; /* temp buffer */
@@ -345,7 +317,7 @@ httpHdrScTargetStatDumper(StoreEntry * sentry, int idx, double val, double size,
 void
 httpHdrScStatDumper(StoreEntry * sentry, int idx, double val, double size, int count)
 {
-    extern const HttpHeaderStat *dump_stat;	/* argh! */
+    extern const HttpHeaderStat *dump_stat; /* argh! */
     const int id = (int) val;
     const int valid_id = id >= 0 && id < SC_ENUM_END;
     const char *name = valid_id ? ScFieldsInfo[id].name.termedBuf() : "INVALID";
@@ -364,9 +336,9 @@ HttpHdrSc::findTarget(const char *target)
     while (node) {
         HttpHdrScTarget *sct = (HttpHdrScTarget *)node->data;
 
-        if (target && sct->target.defined() && !strcmp (target, sct->target.termedBuf()))
+        if (target && sct->target.size() > 0 && !strcmp(target, sct->target.termedBuf()))
             return sct;
-        else if (!target && sct->target.undefined())
+        else if (!target && sct->target.size() == 0)
             return sct;
 
         node = node->next;
@@ -395,3 +367,4 @@ HttpHdrSc::getMergedTarget(const char *ourtarget)
 
     return NULL;
 }
+

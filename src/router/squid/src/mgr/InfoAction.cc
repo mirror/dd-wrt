@@ -1,7 +1,12 @@
 /*
- * DEBUG: section 16    Cache Manager API
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 16    Cache Manager API */
 
 #include "squid.h"
 #include "base/TextException.h"
@@ -9,8 +14,8 @@
 #include "globals.h"
 #include "HttpReply.h"
 #include "ipc/Messages.h"
-#include "ipc/UdsOp.h"
 #include "ipc/TypedMsgHdr.h"
+#include "ipc/UdsOp.h"
 #include "mgr/Filler.h"
 #include "mgr/InfoAction.h"
 #include "mgr/Request.h"
@@ -81,37 +86,13 @@ Mgr::InfoActionData::operator += (const InfoActionData& stats)
     cpu_usage += stats.cpu_usage;
     cpu_usage5 += stats.cpu_usage5;
     cpu_usage60 += stats.cpu_usage60;
-#if HAVE_SBRK
-    proc_data_seg += stats.proc_data_seg;
-#endif
     maxrss += stats.maxrss;
     page_faults += stats.page_faults;
 #if HAVE_MSTATS && HAVE_GNUMALLOC_H
     ms_bytes_total += stats.ms_bytes_total;
     ms_bytes_free += stats.ms_bytes_free;
-#elif HAVE_MALLINFO && HAVE_STRUCT_MALLINFO
-    mp_arena += stats.mp_arena;
-    mp_uordblks += stats.mp_uordblks;
-    mp_ordblks += stats.mp_ordblks;
-    mp_usmblks += stats.mp_usmblks;
-    mp_smblks += stats.mp_smblks;
-    mp_hblkhd += stats.mp_hblkhd;
-    mp_hblks += stats.mp_hblks;
-    mp_fsmblks += stats.mp_fsmblks;
-    mp_fordblks += stats.mp_fordblks;
-#if HAVE_STRUCT_MALLINFO_MXFAST
-    mp_mxfast += stats.mp_mxfast;
-    mp_nlblks += stats.mp_nlblks;
-    mp_grain += stats.mp_grain;
-    mp_uordbytes += stats.mp_uordbytes;
-    mp_allocated += stats.mp_allocated;
-    mp_treeoverhead += stats.mp_treeoverhead;
-#endif
 #endif
     total_accounted += stats.total_accounted;
-#if !(HAVE_MSTATS && HAVE_GNUMALLOC_H) && HAVE_MALLINFO && HAVE_STRUCT_MALLINFO
-    mem_pool_allocated += stats.mem_pool_allocated;
-#endif
     gb_saved_count += stats.gb_saved_count;
     gb_freed_count += stats.gb_freed_count;
     max_fd += stats.max_fd;
@@ -131,8 +112,8 @@ Mgr::InfoAction::Create(const CommandPointer &cmd)
     return new InfoAction(cmd);
 }
 
-Mgr::InfoAction::InfoAction(const CommandPointer &cmd):
-        Action(cmd), data()
+Mgr::InfoAction::InfoAction(const CommandPointer &aCmd):
+    Action(aCmd), data()
 {
     debugs(16, 5, HERE);
 }
@@ -190,3 +171,4 @@ Mgr::InfoAction::unpack(const Ipc::TypedMsgHdr& msg)
     msg.checkType(Ipc::mtCacheMgrResponse);
     msg.getPod(data);
 }
+

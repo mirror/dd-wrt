@@ -1,36 +1,12 @@
 /*
- * DEBUG: section 89    EUI-48 Lookup
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
- *
- * Copyright (c) 2003, Robert Collins <robertc@squid-cache.org>
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 89    EUI-48 Lookup */
 
 #include "squid.h"
 
@@ -41,12 +17,7 @@
 #include "globals.h"
 #include "ip/Address.h"
 
-#if HAVE_ERRNO_H
-#include <errno.h>
-#endif
-#if _SQUID_CYGWIN_
-#include <squid_windows.h>
-#endif
+#include <cerrno>
 
 /* START Legacy includes pattern */
 /* TODO: clean this up so we dont have per-OS requirements.
@@ -62,13 +33,11 @@ struct arpreq {
     struct sockaddr arp_ha;   /* hardware address */
     int arp_flags;            /* flags */
 };
-
-#include <Iphlpapi.h>
+#if HAVE_IPHLPAPI_H
+#include <iphlpapi.h>
+#endif
 #endif
 
-#if HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
 #if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
@@ -132,7 +101,7 @@ Eui::Eui48::decode(const char *asc)
     if (sscanf(asc, "%x:%x:%x:%x:%x:%x", &a1, &a2, &a3, &a4, &a5, &a6) != 6) {
         debugs(28, DBG_CRITICAL, "Decode EUI-48: Invalid ethernet address '" << asc << "'");
         clear();
-        return false;		/* This is not valid address */
+        return false;       /* This is not valid address */
     }
 
     eui[0] = (u_char) a1;
@@ -141,18 +110,23 @@ Eui::Eui48::decode(const char *asc)
     eui[3] = (u_char) a4;
     eui[4] = (u_char) a5;
     eui[5] = (u_char) a6;
+
+    debugs(28, 4, "id=" << (void*)this << " decoded " << asc);
     return true;
 }
 
 bool
-Eui::Eui48::encode(char *buf, const int len)
+Eui::Eui48::encode(char *buf, const int len) const
 {
-    if (len < SZ_EUI48_BUF) return false;
+    if (len < SZ_EUI48_BUF)
+        return false;
 
     snprintf(buf, len, "%02x:%02x:%02x:%02x:%02x:%02x",
              eui[0] & 0xff, eui[1] & 0xff,
              eui[2] & 0xff, eui[3] & 0xff,
              eui[4] & 0xff, eui[5] & 0xff);
+
+    debugs(28, 4, "id=" << (void*)this << " encoded " << buf);
     return true;
 }
 
@@ -160,11 +134,8 @@ Eui::Eui48::encode(char *buf, const int len)
 bool
 Eui::Eui48::lookup(const Ip::Address &c)
 {
-#if !_SQUID_WINDOWS_
-#endif /* !_SQUID_WINDOWS_ */
-
     Ip::Address ipAddr = c;
-    ipAddr.SetPort(0);
+    ipAddr.port(0);
 
 #if _SQUID_LINUX_
 
@@ -201,9 +172,10 @@ Eui::Eui48::lookup(const Ip::Address &c)
     memset(&arpReq, '\0', sizeof(arpReq));
 
     struct sockaddr_in *sa = (struct sockaddr_in*)&arpReq.arp_pa;
-    ipAddr.GetSockAddr(*sa);
+    ipAddr.getSockAddr(*sa);
 
     /* Query ARP table */
+    debugs(28, 4, "id=" << (void*)this << " query ARP table");
     if (ioctl(tmpSocket, SIOCGARP, &arpReq) != -1) {
         /* Skip non-ethernet interfaces */
         close(tmpSocket);
@@ -213,7 +185,7 @@ Eui::Eui48::lookup(const Ip::Address &c)
             return false;
         }
 
-        debugs(28, 4, "Got address "<< std::setfill('0') << std::hex <<
+        debugs(28, 4, "id=" << (void*)this << " got address "<< std::setfill('0') << std::hex <<
                std::setw(2) << (arpReq.arp_ha.sa_data[0] & 0xff)  << ":" <<
                std::setw(2) << (arpReq.arp_ha.sa_data[1] & 0xff)  << ":" <<
                std::setw(2) << (arpReq.arp_ha.sa_data[2] & 0xff)  << ":" <<
@@ -246,27 +218,29 @@ Eui::Eui48::lookup(const Ip::Address &c)
 
     /* Attempt ARP lookup on each interface */
     offset = 0;
-
+    debugs(28, 4, "id=" << (void*)this << " query ARP on each interface (" << ifc.ifc_len << " found)");
     while (offset < ifc.ifc_len) {
 
         ifr = (struct ifreq *) (ifbuffer + offset);
         offset += sizeof(*ifr);
+
+        debugs(28, 4, "id=" << (void*)this << " found interface " << ifr->ifr_name);
+
         /* Skip loopback and aliased interfaces */
-
-        if (0 == strncmp(ifr->ifr_name, "lo", 2))
+        if (!strncmp(ifr->ifr_name, "lo", 2))
             continue;
 
-        if (NULL != strchr(ifr->ifr_name, ':'))
+        if (strchr(ifr->ifr_name, ':'))
             continue;
 
-        debugs(28, 4, "Looking up ARP address for " << ipAddr << " on " << ifr->ifr_name);
+        debugs(28, 4, "id=" << (void*)this << " looking up ARP address for " << ipAddr << " on " << ifr->ifr_name);
 
         /* Set up structures for ARP lookup */
 
         memset(&arpReq, '\0', sizeof(arpReq));
 
         sa = (sockaddr_in*)&arpReq.arp_pa;
-        ipAddr.GetSockAddr(*sa);
+        ipAddr.getSockAddr(*sa);
 
         strncpy(arpReq.arp_dev, ifr->ifr_name, sizeof(arpReq.arp_dev) - 1);
 
@@ -290,10 +264,12 @@ Eui::Eui48::lookup(const Ip::Address &c)
         }
 
         /* Skip non-ethernet interfaces */
-        if (arpReq.arp_ha.sa_family != ARPHRD_ETHER)
+        if (arpReq.arp_ha.sa_family != ARPHRD_ETHER) {
+            debugs(28, 4, "id=" << (void*)this << "... not an Ethernet interface");
             continue;
+        }
 
-        debugs(28, 4, "Got address "<< std::setfill('0') << std::hex <<
+        debugs(28, 4, "id=" << (void*)this << " got address "<< std::setfill('0') << std::hex <<
                std::setw(2) << (arpReq.arp_ha.sa_data[0] & 0xff)  << ":" <<
                std::setw(2) << (arpReq.arp_ha.sa_data[1] & 0xff)  << ":" <<
                std::setw(2) << (arpReq.arp_ha.sa_data[2] & 0xff)  << ":" <<
@@ -331,7 +307,7 @@ Eui::Eui48::lookup(const Ip::Address &c)
     memset(&arpReq, '\0', sizeof(arpReq));
 
     struct sockaddr_in *sa = (struct sockaddr_in*)&arpReq.arp_pa;
-    ipAddr.GetSockAddr(*sa);
+    ipAddr.getSockAddr(*sa);
 
     /* Query ARP table */
     if (ioctl(tmpSocket, SIOCGARP, &arpReq) != -1) {
@@ -360,6 +336,8 @@ Eui::Eui48::lookup(const Ip::Address &c)
 
         set(arpReq.arp_ha.sa_data, 6);
         return true;
+    } else {
+        close(tmpSocket);
     }
 
 #elif _SQUID_FREEBSD_ || _SQUID_NETBSD_ || _SQUID_OPENBSD_ || _SQUID_DRAGONFLY_ || _SQUID_KFREEBSD_
@@ -383,7 +361,7 @@ Eui::Eui48::lookup(const Ip::Address &c)
     memset(&arpReq, '\0', sizeof(arpReq));
 
     struct sockaddr_in *sa = (struct sockaddr_in*)&arpReq.arp_pa;
-    ipAddr.GetSockAddr(*sa);
+    ipAddr.getSockAddr(*sa);
 
     /* Query ARP table */
     mib[0] = CTL_NET;
@@ -534,7 +512,7 @@ Eui::Eui48::lookup(const Ip::Address &c)
     /*
      * Address was not found on any interface
      */
-    debugs(28, 3, HERE << ipAddr << " NOT found");
+    debugs(28, 3, "id=" << (void*)this << ' ' << ipAddr << " NOT found");
 
     clear();
     return false;
@@ -543,3 +521,4 @@ Eui::Eui48::lookup(const Ip::Address &c)
 /* ==== END EUI LOOKUP SUPPORT =============================================== */
 
 #endif /* USE_SQUID_EUI */
+

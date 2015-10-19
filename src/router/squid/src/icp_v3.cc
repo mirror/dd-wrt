@@ -1,34 +1,12 @@
 /*
- * DEBUG: section 12    Internet Cache Protocol (ICP)
- * AUTHOR: Duane Wessels
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 12    Internet Cache Protocol (ICP) */
 
 /**
  \defgroup ServerProtocolICPInternal3 ICPv3 Internals
@@ -36,9 +14,9 @@
  */
 
 #include "squid.h"
-#include "Store.h"
-#include "ICP.h"
 #include "HttpRequest.h"
+#include "ICP.h"
+#include "Store.h"
 
 /// \ingroup ServerProtocolICPInternal3
 class ICP3State : public ICPState, public StoreClient
@@ -46,7 +24,7 @@ class ICP3State : public ICPState, public StoreClient
 
 public:
     ICP3State(icp_common_t &aHeader, HttpRequest *aRequest) :
-            ICPState(aHeader, aRequest) {}
+        ICPState(aHeader, aRequest) {}
 
     ~ICP3State();
     void created (StoreEntry *newEntry);
@@ -58,7 +36,7 @@ doV3Query(int fd, Ip::Address &from, char *buf, icp_common_t header)
 {
     /* We have a valid packet */
     char *url = buf + sizeof(icp_common_t) + sizeof(uint32_t);
-    HttpRequest *icp_request = icpGetRequest (url, header.reqnum, fd, from);
+    HttpRequest *icp_request = icpGetRequest(url, header.reqnum, fd, from);
 
     if (!icp_request)
         return;
@@ -71,14 +49,11 @@ doV3Query(int fd, Ip::Address &from, char *buf, icp_common_t header)
 
     /* The peer is allowed to use this cache */
     ICP3State *state = new ICP3State (header, icp_request);
-
     state->fd = fd;
-
     state->from = from;
+    state->url = xstrdup(url);
 
-    state->url = xstrdup (url);
-
-    StoreEntry::getPublic (state, url, METHOD_GET);
+    StoreEntry::getPublic (state, url, Http::METHOD_GET);
 }
 
 ICP3State::~ICP3State()
@@ -151,3 +126,4 @@ icpHandleIcpV3(int fd, Ip::Address &from, char *buf, int len)
         break;
     }
 }
+

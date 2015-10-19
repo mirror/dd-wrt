@@ -1,40 +1,14 @@
 /*
- * AUTHOR: Harvest Derived
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
 #ifndef SQUID_UTIL_H
 #define SQUID_UTIL_H
 
-#if HAVE_STDIO_H
-#include <stdio.h>
-#endif
 #if HAVE_TIME_H
 #include <time.h>
 #endif
@@ -61,20 +35,6 @@ SQUIDCEXTERN void Tolower(char *);
 #endif
 #endif
 #include "SquidNew.h"
-#endif
-
-#if XMALLOC_TRACE
-#define xmalloc(size) (xmalloc_func="xmalloc",xmalloc_line=__LINE__,xmalloc_file=__FILE__,xmalloc(size))
-#define xfree(ptr) (xmalloc_func="xfree",xmalloc_line=__LINE__,xmalloc_file=__FILE__,xfree(ptr))
-#define xrealloc(ptr,size) (xmalloc_func="xrealloc",xmalloc_line=__LINE__,xmalloc_file=__FILE__,xrealloc(ptr,size))
-#define xcalloc(n,size) (xmalloc_func="xcalloc",xmalloc_line=__LINE__,xmalloc_file=__FILE__,xcalloc(n,size))
-#define xstrdup(ptr) (xmalloc_func="xstrdup",xmalloc_line=__LINE__,xmalloc_file=__FILE__,xstrdup(ptr))
-extern int xmalloc_line;
-extern char *xmalloc_file;
-extern char *xmalloc_func;
-extern int xmalloc_trace;
-extern size_t xmalloc_total;
-extern void xmalloc_find_leaks(void);
 #endif
 
 SQUIDCEXTERN time_t parse_iso3307_time(const char *buf);
@@ -109,25 +69,5 @@ int statMemoryAccounted(void);
 
 SQUIDCEXTERN unsigned int RoundTo(const unsigned int num, const unsigned int what);
 
-/* Windows Port */
-/* win32lib.c */
-#if _SQUID_WINDOWS_
-SQUIDCEXTERN int chroot (const char *);
-#if !HAVE_GETTIMEOFDAY
-SQUIDCEXTERN int gettimeofday(struct timeval * ,void *);
-#endif
-SQUIDCEXTERN int kill(pid_t, int);
-SQUIDCEXTERN int statfs(const char *, struct statfs *);
-SQUIDCEXTERN struct passwd *getpwnam(char *);
-SQUIDCEXTERN struct group *getgrnam(char *);
-SQUIDCEXTERN uid_t geteuid(void);
-SQUIDCEXTERN uid_t getuid(void);
-SQUIDCEXTERN int setuid(uid_t);
-SQUIDCEXTERN int seteuid(uid_t);
-SQUIDCEXTERN gid_t getgid(void);
-SQUIDCEXTERN gid_t getegid(void);
-SQUIDCEXTERN int setgid(gid_t);
-SQUIDCEXTERN int setegid(gid_t);
-SQUIDCEXTERN void WIN32_maperror(unsigned long);
-#endif
 #endif /* SQUID_UTIL_H */
+

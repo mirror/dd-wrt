@@ -1,37 +1,12 @@
-
 /*
- * DEBUG: section 45    Callback Data Registry
- * ORIGINAL AUTHOR: Duane Wessels
- * Modified by Moez Mahfoudh (08/12/2000)
- * History added by Robert Collins (2002-10-25)
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
  *
- * SQUID Web Proxy Cache          http://www.squid-cache.org/
- * ----------------------------------------------------------
- *
- *  Squid is the result of efforts by numerous individuals from
- *  the Internet community; see the CONTRIBUTORS file for full
- *  details.   Many organizations have provided support for Squid's
- *  development; see the SPONSORS file for full details.  Squid is
- *  Copyrighted (C) 2001 by the Regents of the University of
- *  California; see the COPYRIGHT file for full details.  Squid
- *  incorporates software developed and/or copyrighted by other
- *  sources; see the CREDITS file for full details.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
- *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
  */
+
+/* DEBUG: section 45    Callback Data Registry */
 
 /**
  \defgroup CBDATAInternal Callback Data Allocator Internals
@@ -48,15 +23,14 @@
 
 #include "squid.h"
 #include "cbdata.h"
+#include "Generic.h"
 #include "mgr/Registration.h"
 #include "Store.h"
-#if USE_CBDATA_DEBUG
-#include "Stack.h"
-#endif
-#include "Generic.h"
 
-#if HAVE_LIMITS_H
-#include <limits.h>
+#include <climits>
+#if USE_CBDATA_DEBUG
+#include <algorithm>
+#include <vector>
 #endif
 
 #if WITH_VALGRIND
@@ -93,7 +67,7 @@ class cbdata
      * safe access to data - RBC 20030902 */
 public:
 #if HASHED_CBDATA
-    hash_link hash;	// Must be first
+    hash_link hash; // Must be first
 #endif
 
 #if USE_CBDATA_DEBUG
@@ -105,7 +79,7 @@ public:
     void *operator new(size_t size, void *where);
     void operator delete(void *where, void *where2);
 #else
-    MEMPROXY_CLASS(cndata);
+    MEMPROXY_CLASS(cbdata);
 #endif
 
     ~cbdata();
@@ -124,7 +98,7 @@ public:
     dlink_node link;
     const char *file;
     int line;
-    Stack<CBDataCall*> calls;
+    std::vector<CBDataCall*> calls; // used as a stack with random access operator
 #endif
 
     /* cookie used while debugging */
@@ -209,10 +183,11 @@ cbdata_hash(const void *p, unsigned int mod)
 cbdata::~cbdata()
 {
 #if USE_CBDATA_DEBUG
-    CBDataCall *aCall;
 
-    while ((aCall = calls.pop()))
-        delete aCall;
+    while (!calls.empty()) {
+        delete calls.back();
+        calls.pop_back();
+    }
 
 #endif
 
@@ -316,12 +291,12 @@ cbdataInternalAlloc(cbdata_type type)
 
     c->file = file;
     c->line = line;
-    c->calls = Stack<CBDataCall *> ();
+    c->calls = std::vector<CBDataCall *> ();
     c->addHistory("Alloc", file, line);
     dlinkAdd(c, &c->link, &cbdataEntries);
-    debugs(45, 3, "cbdataAlloc: " << p << " " << file << ":" << line);
+    debugs(45, 3, "Allocating " << p << " " << file << ":" << line);
 #else
-    debugs(45, 9, "cbdataAlloc: " << p);
+    debugs(45, 9, "Allocating " << p);
 #endif
 
     return p;
@@ -341,11 +316,9 @@ cbdataInternalFree(void *p)
     c = (cbdata *) (((char *) p) - cbdata::Offset);
 #endif
 #if USE_CBDATA_DEBUG
-
-    debugs(45, 3, "cbdataFree: " << p << " " << file << ":" << line);
+    debugs(45, 3, p << " " << file << ":" << line);
 #else
-
-    debugs(45, 9, "cbdataFree: " << p);
+    debugs(45, 9, p);
 #endif
 
     c->check(__LINE__);
@@ -357,12 +330,12 @@ cbdataInternalFree(void *p)
 #endif
 
     if (c->locks) {
-        debugs(45, 9, "cbdataFree: " << p << " has " << c->locks << " locks, not freeing");
+        debugs(45, 9, p << " has " << c->locks << " locks, not freeing");
         return NULL;
     }
 
     --cbdataCount;
-    debugs(45, 9, "cbdataFree: Freeing " << p);
+    debugs(45, 9, "Freeing " << p);
 #if USE_CBDATA_DEBUG
 
     dlinkDelete(&c->link, &cbdataEntries);
@@ -381,9 +354,15 @@ cbdataInternalFree(void *p)
     cbdata_type theType = c->type;
 #if HASHED_CBDATA
     hash_remove_link(cbdata_htable, &c->hash);
+#if USE_CBDATA_DEBUG
+    debugs(45, 3, "Call delete " << (void*)c << " " << file << ":" << line);
+#endif
     delete c;
     cbdata_index[theType].pool->freeOne((void *)p);
 #else
+#if USE_CBDATA_DEBUG
+    debugs(45, 3, "Call cbdata::~cbdata() " << (void*)c << " " << file << ":" << line);
+#endif
     c->cbdata::~cbdata();
     cbdata_index[theType].pool->freeOne(c);
 #endif
@@ -409,15 +388,10 @@ cbdataInternalLock(const void *p)
 #endif
 
 #if USE_CBDATA_DEBUG
-
-    debugs(45, 3, "cbdataLock: " << p << "=" << (c ? c->locks + 1 : -1) << " " << file << ":" << line);
-
+    debugs(45, 3, p << "=" << (c ? c->locks + 1 : -1) << " " << file << ":" << line);
     c->addHistory("Reference", file, line);
-
 #else
-
-    debugs(45, 9, "cbdataLock: " << p << "=" << (c ? c->locks + 1 : -1));
-
+    debugs(45, 9, p << "=" << (c ? c->locks + 1 : -1));
 #endif
 
     c->check(__LINE__);
@@ -446,15 +420,10 @@ cbdataInternalUnlock(const void *p)
 #endif
 
 #if USE_CBDATA_DEBUG
-
-    debugs(45, 3, "cbdataUnlock: " << p << "=" << (c ? c->locks - 1 : -1) << " " << file << ":" << line);
-
+    debugs(45, 3, p << "=" << (c ? c->locks - 1 : -1) << " " << file << ":" << line);
     c->addHistory("Dereference", file, line);
-
 #else
-
-    debugs(45, 9, "cbdataUnlock: " << p << "=" << (c ? c->locks - 1 : -1));
-
+    debugs(45, 9, p << "=" << (c ? c->locks - 1 : -1));
 #endif
 
     c->check(__LINE__);
@@ -465,12 +434,19 @@ cbdataInternalUnlock(const void *p)
 
     -- c->locks;
 
-    if (c->valid || c->locks)
+    if (c->locks)
         return;
+
+    if (c->valid) {
+#if USE_CBDATA_DEBUG
+        debugs(45, 3, "CBDATA valid with no references ... cbdata=" << p << " " << file << ":" << line);
+#endif
+        return;
+    }
 
     --cbdataCount;
 
-    debugs(45, 9, "cbdataUnlock: Freeing " << p);
+    debugs(45, 9, "Freeing " << p);
 
 #if USE_CBDATA_DEBUG
 
@@ -491,9 +467,15 @@ cbdataInternalUnlock(const void *p)
     cbdata_type theType = c->type;
 #if HASHED_CBDATA
     hash_remove_link(cbdata_htable, &c->hash);
+#if USE_CBDATA_DEBUG
+    debugs(45, 3, "Call delete " << (void*)c << " " << file << ":" << line);
+#endif
     delete c;
     cbdata_index[theType].pool->freeOne((void *)p);
 #else
+#if USE_CBDATA_DEBUG
+    debugs(45, 3, "Call cbdata::~cbdata() " << (void*)c << " " << file << ":" << line);
+#endif
     c->cbdata::~cbdata();
     cbdata_index[theType].pool->freeOne(c);
 #endif
@@ -505,9 +487,9 @@ cbdataReferenceValid(const void *p)
     cbdata *c;
 
     if (p == NULL)
-        return 1;		/* A NULL pointer cannot become invalid */
+        return 1;       /* A NULL pointer cannot become invalid */
 
-    debugs(45, 9, "cbdataReferenceValid: " << p);
+    debugs(45, 9, p);
 
 #if HASHED_CBDATA
     c = (cbdata *) hash_lookup(cbdata_htable, p);
@@ -614,8 +596,8 @@ CBDATA_CLASS_INIT(generic_cbdata);
 struct CBDataCallDumper : public unary_function<CBDataCall, void> {
     CBDataCallDumper (StoreEntry *anEntry):where(anEntry) {}
 
-    void operator()(CBDataCall const &x) {
-        storeAppendPrintf(where, "%s\t%s\t%d\n", x.label, x.file, x.line);
+    void operator()(CBDataCall * const &x) {
+        storeAppendPrintf(where, "%s\t%s\t%d\n", x->label, x->file, x->line);
     }
 
     StoreEntry *where;
@@ -628,7 +610,7 @@ struct CBDataHistoryDumper : public CBDataDumper {
         CBDataDumper::operator()(x);
         storeAppendPrintf(where, "\n");
         storeAppendPrintf(where, "Action\tFile\tLine\n");
-        for_each (x.calls,callDumper);
+        std::for_each (x.calls.begin(), x.calls.end(), callDumper);
         storeAppendPrintf(where, "\n");
     }
 
@@ -646,3 +628,4 @@ cbdataDumpHistory(StoreEntry *sentry)
 }
 
 #endif
+

@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ *
+ * Squid software is distributed under GPLv2+ license and includes
+ * contributions from numerous individuals and organizations.
+ * Please see the COPYING and CONTRIBUTORS files for details.
+ */
+
 #ifndef SQUID_OS_SOLARIS_H
 #define SQUID_OS_SOLARIS_H
 
@@ -20,14 +28,14 @@
 #if defined(i386) || defined(__i386)
 #if !HAVE_PAD128_T
 typedef union {
-    long double	_q;
-    int32_t		_l[4];
+    long double _q;
+    int32_t     _l[4];
 } pad128_t;
 #endif
 #if !HAVE_UPAD128_T
 typedef union {
-    long double	_q;
-    uint32_t	_l[4];
+    long double _q;
+    uint32_t    _l[4];
 } upad128_t;
 #endif
 #endif
@@ -64,12 +72,6 @@ SQUIDCEXTERN int gethostname(char *, int);
 #define __FUNCTION__ ""
 #endif
 
-/* Exclude CPPUnit tests from the allocator restrictions. */
-/* BSD implementation uses these still */
-#if defined(SQUID_UNIT_TEST)
-#define SQUID_NO_STRING_BUFFER_PROTECT 1
-#endif
-
 /* Bug 2500: Solaris 10/11 require s6_addr* defines. */
 //#define s6_addr8   _S6_un._S6_u8
 //#define s6_addr16  _S6_un._S6_u16
@@ -101,8 +103,6 @@ SQUIDCEXTERN int gethostname(char *, int);
 #define _PATH_DEVNULL "/dev/null"
 #endif
 
-/* Solaris 10 does not define strsep() */
-#include "compat/strsep.h"
-
 #endif /* _SQUID_SOLARIS_ */
 #endif /* SQUID_OS_SOALRIS_H */
+
