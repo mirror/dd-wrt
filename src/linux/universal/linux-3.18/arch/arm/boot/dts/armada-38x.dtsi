@@ -364,6 +364,22 @@
 				status = "disabled";
 			};
 
+			crypto@90000 {
+				compatible = "marvell,armada-38x-crypto";
+				reg = <0x90000 0x10000>;
+				reg-names = "regs";
+				interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>,
+					     <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&gateclk 23>, <&gateclk 21>,
+					 <&gateclk 14>, <&gateclk 16>;
+				clock-names = "cesa0", "cesa1",
+					      "cesaz0", "cesaz1";
+				marvell,crypto-srams = <&crypto_sram0>,
+						       <&crypto_sram1>;
+				marvell,crypto-sram-size = <0x800>;
+			};
+
+
 			xor@60800 {
 				compatible = "marvell,orion-xor";
 				reg = <0x60800 0x100
@@ -492,6 +508,25 @@
 				status = "disabled";
 			};
 		};
+		
+		crypto_sram0: sa-sram0 {
+			compatible = "mmio-sram";
+			reg = <MBUS_ID(0x09, 0x19) 0 0x800>;
+			clocks = <&gateclk 23>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 MBUS_ID(0x09, 0x19) 0 0x800>;
+		};
+
+		crypto_sram1: sa-sram1 {
+			compatible = "mmio-sram";
+			reg = <MBUS_ID(0x09, 0x15) 0 0x800>;
+			clocks = <&gateclk 21>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 MBUS_ID(0x09, 0x15) 0 0x800>;
++		};
+
 	};
 
 	clocks {
