@@ -41,7 +41,7 @@ squid-configure:
 	
 squid:
 	make -C squid
-	make -C squid/plugins/squid_radius_auth 
+#	make -C squid/plugins/squid_radius_auth 
 
 squid-install:
 	make  -C squid install DESTDIR=$(INSTALLDIR)/squid	
