@@ -2,6 +2,7 @@ squid-configure:
 	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl -pthread" CPPFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl" CXXFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl" \
 	ac_cv_header_linux_netfilter_ipv4_h=yes \
 	ac_cv_epoll_works=yes \
+	squid_cv_gnu_atomics=no \
 	--datadir=/usr/local/squid \
 	--libexecdir=/usr/lib/squid \
 	--sysconfdir=/etc/squid \
@@ -33,7 +34,7 @@ squid-configure:
 	--disable-auth-negotiate \
 	--disable-auth-ntlm \
 	--disable-auth-digest \
-	--disable-auth-basic \
+	--enable-auth-basic="RADIUS" \
 	--enable-epoll \
 	--with-krb5-config=no \
 	--with-maxfd=4096
@@ -46,7 +47,7 @@ squid-install:
 	make  -C squid install DESTDIR=$(INSTALLDIR)/squid	
 	rm -rf $(INSTALLDIR)/squid/usr/share
 	rm -rf $(INSTALLDIR)/squid/usr/include
-	make -C squid/plugins/squid_radius_auth install DESTDIR=$(INSTALLDIR)/squid
+#	make -C squid/plugins/squid_radius_auth install DESTDIR=$(INSTALLDIR)/squid
 
 squid-clean:
 	make -C squid clean
