@@ -1573,7 +1573,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #elif defined(HAVE_AOSS) && !defined(HAVE_WPS)
 		 "wirelessAoss",
 #elif !defined(HAVE_AOSS) && defined(HAVE_WPS)
-		"wirelessWPS",
+		 "wirelessWPS",
 #endif
 		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},	//
 		{"services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesLighttpd", ""},	//
@@ -2226,45 +2226,80 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 {
-      websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", live_translate("service.dhcp_legend2"));
-      if(nvram_match("lan_proto", "dhcp")){
+	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", live_translate("service.dhcp_legend2"));
+	if (nvram_match("lan_proto", "dhcp")) {
 		websWrite(wp, "%s", live_translate("share.enabled"));
-		if(pidof("dnsmasq") > 0 || pidof("udhcpd") > 0){
+		if (pidof("dnsmasq") > 0 || pidof("udhcpd") > 0) {
 			websWrite(wp, " - %s", live_translate("diag.running"));
 		} else {
 			websWrite(wp, " - %s", live_translate("diag.stopped"));
 		}
-      } else {
+	} else {
 		websWrite(wp, "%s", live_translate("share.disabled"));
-      }
-      websWrite(wp, "&nbsp;</div>");
+	}
+	websWrite(wp, "&nbsp;</div>");
 
 #ifdef HAVE_SAMBA_SERVER
-      websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", live_translate("service.samba3_srv"));
-      if(nvram_match("samba3_enable", "1")){
+	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", live_translate("service.samba3_srv"));
+	if (nvram_match("samba3_enable", "1")) {
 		websWrite(wp, "%s", live_translate("share.enabled"));
-		if(pidof("smbd") > 0){
+		if (pidof("smbd") > 0) {
 			websWrite(wp, " - %s", live_translate("diag.running"));
 		} else {
 			websWrite(wp, " - %s", live_translate("diag.stopped"));
 		}
-      } else {
+	} else {
 		websWrite(wp, "%s", live_translate("share.disabled"));
-      }
-      websWrite(wp, "&nbsp;</div>");
+	}
+	websWrite(wp, "&nbsp;</div>");
 #endif
 }
 
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MVEBU
-	FILE *tempfp;
-	tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
-	if (tempfp) {
+	if (getRouterBrand() == ROUTER_WRT_1900AC) {
+		FILE *tempfp;
 		int cpu;
-		fscanf(tempfp, "%d", &cpu);
-		fclose(tempfp);
-		websWrite(wp, "%d &#176;C ", cpu / 1000);
+		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d", &cpu);
+			fclose(tempfp);
+			websWrite(wp, "%d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
+		}
+		tempfp = fopen("/sys/class/hwmon/hwmon2/temp1_input", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d", &cpu);
+			fclose(tempfp);
+			websWrite(wp, " / WL0 %d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
+		}
+		tempfp = fopen("/sys/class/hwmon/hwmon2/temp2_input", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d", &cpu);
+			fclose(tempfp);
+			websWrite(wp, " / WL1 %d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
+		}
+	} else {
+		FILE *tempfp;
+		int cpu;
+		tempfp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d", &cpu);
+			fclose(tempfp);
+			websWrite(wp, "%d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
+		}
+		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d", &cpu);
+			fclose(tempfp);
+			websWrite(wp, " / WL0 %d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
+		}
+		tempfp = fopen("/sys/class/hwmon/hwmon1/temp2_input", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d", &cpu);
+			fclose(tempfp);
+			websWrite(wp, " / WL1 %d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
+		}
 	}
 	return;
 #endif
