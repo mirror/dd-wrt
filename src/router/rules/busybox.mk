@@ -410,6 +410,7 @@ endif
 	echo "# CONFIG_FEATURE_WGET_OPENSSL is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_WGET_SSL_HELPER is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_MOUNT_OTHERTAB is not set" >> busybox/.config
+	echo "CONFIG_FEATURE_IP_ROUTE_DIR=\"/etc/iproute2\"" >> busybox/.config
 
 	cd busybox && make oldconfig
 	
