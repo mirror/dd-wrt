@@ -1199,15 +1199,14 @@ int internal_getRouterBrand()
 
 		return ROUTER_LINKSYS_EA6900;
 	}
-	
-	
-	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "01") && !strncmp(nvram_safe_get("modelNumber"),"EA6400",6)) {
+
+	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "01") && !strncmp(nvram_safe_get("modelNumber"), "EA6400", 6)) {
 		setRouter("Linksys EA6400");
 
 		return ROUTER_LINKSYS_EA6400;
 	}
 
-	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "01") && !strncmp(nvram_safe_get("modelNumber"),"EA6300",6)) {
+	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "01") && !strncmp(nvram_safe_get("modelNumber"), "EA6300", 6)) {
 		setRouter("Linksys EA6300");
 
 		return ROUTER_LINKSYS_EA6400;
@@ -1321,14 +1320,14 @@ int internal_getRouterBrand()
 		return ROUTER_DLINK_DIR890;
 	}
 
-	if (nvram_match("boardnum","N/A") && nvram_match("boardtype", "0x072F") && !nvram_match("2:devid","0x43c5")
+	if (nvram_match("boardnum", "N/A") && nvram_match("boardtype", "0x072F") && !nvram_match("2:devid", "0x43c5")
 	    && nvram_match("boardrev", "0x1101")
 	    && nvram_match("gpio7", "wps_button")) {
 		setRouter("Dlink-DIR885L");
 		return ROUTER_DLINK_DIR885;
 	}
 
-	if (nvram_match("boardnum","N/A") && nvram_match("boardtype", "0x072F") && nvram_match("2:devid","0x43c5")
+	if (nvram_match("boardnum", "N/A") && nvram_match("boardtype", "0x072F") && nvram_match("2:devid", "0x43c5")
 	    && nvram_match("boardrev", "0x1101")
 	    && nvram_match("gpio7", "wps_button")) {
 		setRouter("Dlink-DIR895L");
@@ -1961,32 +1960,32 @@ int internal_getRouterBrand()
 		return ROUTER_BOARD_FONERA;
 	}
 #elif HAVE_WRT1900AC
-	FILE *fp = fopen("/sys/firmware/devicetree/base/model","rb");
+	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
 	if (!fp) {
-	    fprintf(stderr,"error opening device tree\n");
-	    setRouter("Linksys WRT 1900AC");
-	    return ROUTER_WRT_1900AC;	
+		fprintf(stderr, "error opening device tree\n");
+		setRouter("Linksys WRT 1900AC");
+		return ROUTER_WRT_1900AC;
 	}
 	char vendorstr[32];
 	char modelstr[32];
-	fscanf(fp, "%s %s",&vendorstr[0],&modelstr[0]);
+	fscanf(fp, "%s %s", &vendorstr[0], &modelstr[0]);
 	fclose(fp);
-	if (!strcmp(modelstr,"WRT1200AC")) {
-	    setRouter("Linksys WRT 1200AC");
-	    return ROUTER_WRT_1200AC;	
+	if (!strcmp(modelstr, "WRT1200AC")) {
+		setRouter("Linksys WRT 1200AC");
+		return ROUTER_WRT_1200AC;
 	}
-	if (!strcmp(modelstr,"WRT1900ACv2")) {
-	    setRouter("Linksys WRT 1900ACv2");
-	    return ROUTER_WRT_1900ACV2;	// similar
+	if (!strcmp(modelstr, "WRT1900ACv2")) {
+		setRouter("Linksys WRT 1900ACv2");
+		return ROUTER_WRT_1900ACV2;	// similar
 	}
-	if (!strcmp(modelstr,"WRT1900AC")) {
-	    setRouter("Linksys WRT 1900AC");
-	    return ROUTER_WRT_1900AC;	// similar
+	if (!strcmp(modelstr, "WRT1900AC")) {
+		setRouter("Linksys WRT 1900AC");
+		return ROUTER_WRT_1900AC;	// similar
 	}
 
-	if (!strcmp(modelstr,"WRT1900ACS")) {
-	    setRouter("Linksys WRT 1900ACS");
-	    return ROUTER_WRT_1900ACS;	// similar
+	if (!strcmp(modelstr, "WRT1900ACS")) {
+		setRouter("Linksys WRT 1900ACS");
+		return ROUTER_WRT_1900ACS;	// similar
 	}
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
@@ -3735,7 +3734,7 @@ int internal_getRouterBrand()
 		setRouter("Netgear WNR3500 v2/U/L v1");
 		return ROUTER_NETGEAR_WNR3500L;
 	}
-	
+
 	if (nvram_match("boardnum", "3500L") && nvram_match("boardtype", "0x052b")) {
 		setRouter("Netgear WNR3500L v2");
 		return ROUTER_NETGEAR_WNR3500LV2;
@@ -4053,7 +4052,7 @@ void *getUEnv(char *name)
 #elif HAVE_DIR810L
 #define UOFFSET 0x0
 #elif HAVE_MVEBU
-#define UOFFSET 0x0  
+#define UOFFSET 0x0
 #else
 #define UOFFSET 0x3E000
 #endif
@@ -4069,7 +4068,7 @@ void *getUEnv(char *name)
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 #endif
 	char newname[64];
-	snprintf(newname,64,"%s=",name);
+	snprintf(newname, 64, "%s=", name);
 	fseek(fp, UOFFSET, SEEK_SET);
 	char *mem = safe_malloc(0x2000);
 	fread(mem, 0x2000, 1, fp);
@@ -4372,7 +4371,7 @@ static char *stalist[] = {
 char *getWifi(char *ifname)
 {
 #ifdef HAVE_MVEBU
-  	if (!strncmp(ifname, "ath0", 4))
+	if (!strncmp(ifname, "ath0", 4))
 		return "wlan0";
 	if (!strncmp(ifname, "ath1", 4))
 		return "wlan1";
@@ -4956,7 +4955,11 @@ char *cpustring(void)
 {
 	static char buf[256];
 #ifdef HAVE_MVEBU
-	strcpy(buf, "Marvel Armada");
+	if (getRouterBrand() == ROUTER_WRT_1900AC) {
+		strcpy(buf, "Marvel Armada 370/XP");
+	} else {
+		strcpy(buf, "Marvel Armada 385");
+	}
 	return buf;
 #elif HAVE_UNIWIP
 	strcpy(buf, "FreeScale MPC8314");
@@ -5145,7 +5148,7 @@ int led_control(int type, int act)
 		usb_gpio = 0x004;
 		usb_gpio1 = 0x005;
 		ses_gpio = 0x009;
-	break;
+		break;
 #endif
 	case ROUTER_BOARD_PB42:
 #ifdef HAVE_WA901
@@ -6088,8 +6091,8 @@ int led_control(int type, int act)
 		diag_gpio = 0x007;	// power led amber
 		ses_gpio = 0x001;	// WPS led green
 		connected_gpio = 0x002;	// wan led green
-		wlan1_gpio = 0x000;     // radio 1 blue led
-		usb_gpio = 0x014;       // usb power
+		wlan1_gpio = 0x000;	// radio 1 blue led
+		usb_gpio = 0x014;	// usb power
 		break;
 	case ROUTER_NETGEAR_WNDR3400:
 		power_gpio = 0x003;	//power led green
@@ -6140,19 +6143,19 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_DLINK_DIR885:
 		usb_power = 0x012;
-    		usb_gpio = 0x108;
+		usb_gpio = 0x108;
 		power_gpio = 0x100;
 		diag_gpio = 0x102;
 		diag_gpio_disabled = 0x100;
 		disconnected_gpio = 0x103;
 		connected_gpio = 0x101;
 		wlan0_gpio = 0x10d;
-                wlan1_gpio = 0x10e;
+		wlan1_gpio = 0x10e;
 		break;
 	case ROUTER_DLINK_DIR895:
 		usb_power = 0x015;
 		usb_power1 = 0x012;
-    		usb_gpio = 0x108;
+		usb_gpio = 0x108;
 		usb_gpio1 = 0x10f;
 		power_gpio = 0x100;
 		diag_gpio = 0x102;
@@ -6160,7 +6163,7 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x103;
 		connected_gpio = 0x101;
 		wlan0_gpio = 0x10d;
-                wlan1_gpio = 0x10e;
+		wlan1_gpio = 0x10e;
 		break;
 	case ROUTER_DLINK_DIR890:
 		usb_power = 0x015;
@@ -6228,8 +6231,8 @@ int led_control(int type, int act)
 	case ROUTER_ASUS_AC88U:
 	case ROUTER_ASUS_AC5300:
 		usb_power = 0x009;
-		usb_gpio=  0x110;
-		usb_gpio1= 0x111;
+		usb_gpio = 0x110;
+		usb_gpio1 = 0x111;
 		power_gpio = 0x103;
 		diag_gpio = 0x003;
 		connected_gpio = 0x005;
@@ -6922,7 +6925,7 @@ int is_ath5k(const char *prefix)
 }
 #endif
 #ifdef HAVE_MVEBU
-int is_mvebu(const char *prefix) 
+int is_mvebu(const char *prefix)
 {
 	glob_t globbuf;
 	int count = 0;
