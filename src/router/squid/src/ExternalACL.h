@@ -13,10 +13,8 @@
 #include "base/RefCount.h"
 
 class external_acl;
+class external_acl_data;
 class StoreEntry;
-
-/** \todo CLEANUP: kill this typedef. */
-typedef struct _external_acl_data external_acl_data;
 
 class ExternalACLLookup : public ACLChecklist::AsyncState
 {
@@ -38,10 +36,9 @@ private:
 
 class ACLExternal : public ACL
 {
-
-public:
     MEMPROXY_CLASS(ACLExternal);
 
+public:
     static void ExternalAclLookup(ACLChecklist * ch, ACLExternal *);
 
     ACLExternal(char const *);
@@ -54,6 +51,7 @@ public:
     virtual void parse();
     virtual int match(ACLChecklist *checklist);
     /* This really should be dynamic based on the external class defn */
+    virtual bool requiresAle() const {return true;}
     virtual bool requiresRequest() const {return true;}
 
     /* when requiresRequest is made dynamic, review this too */
@@ -69,8 +67,6 @@ protected:
     external_acl_data *data;
     char const *class_;
 };
-
-MEMPROXY_CLASS_INLINE(ACLExternal);
 
 void parse_externalAclHelper(external_acl **);
 void dump_externalAclHelper(StoreEntry * sentry, const char *name, const external_acl *);

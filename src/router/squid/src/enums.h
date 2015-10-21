@@ -31,34 +31,6 @@ typedef enum {
     PEER_MULTICAST
 } peer_t;
 
-typedef enum {
-    CC_BADHDR = -1,
-    CC_PUBLIC = 0,
-    CC_PRIVATE,
-    CC_NO_CACHE,
-    CC_NO_STORE,
-    CC_NO_TRANSFORM,
-    CC_MUST_REVALIDATE,
-    CC_PROXY_REVALIDATE,
-    CC_MAX_AGE,
-    CC_S_MAXAGE,
-    CC_MAX_STALE,
-    CC_MIN_FRESH,
-    CC_ONLY_IF_CACHED,
-    CC_STALE_IF_ERROR,
-    CC_OTHER,
-    CC_ENUM_END
-} http_hdr_cc_type;
-
-typedef enum {
-    SC_NO_STORE,
-    SC_NO_STORE_REMOTE,
-    SC_MAX_AGE,
-    SC_CONTENT,
-    SC_OTHER,
-    SC_ENUM_END
-} http_hdr_sc_type;
-
 typedef enum _mem_status_t {
     NOT_IN_MEMORY,
     IN_MEMORY
@@ -142,39 +114,6 @@ enum {
     SNMP_C_COMMUNITY
 };
 #endif /* SQUID_SNMP */
-
-typedef enum {
-    MEM_NONE,
-    MEM_2K_BUF,
-    MEM_4K_BUF,
-    MEM_8K_BUF,
-    MEM_16K_BUF,
-    MEM_32K_BUF,
-    MEM_64K_BUF,
-    MEM_ACL_DENY_INFO_LIST,
-    MEM_ACL_NAME_LIST,
-#if USE_CACHE_DIGESTS
-    MEM_CACHE_DIGEST,
-#endif
-    MEM_CLIENT_INFO,
-    MEM_LINK_LIST,
-    MEM_DLINK_NODE,
-    MEM_DREAD_CTRL,
-    MEM_DWRITE_Q,
-    MEM_HTTP_HDR_CONTENT_RANGE,
-    MEM_MD5_DIGEST,
-    MEM_NETDBENTRY,
-    MEM_NET_DB_NAME,
-    MEM_RELIST,
-    // IMPORTANT: leave this here. pools above are initialized early with memInit()
-    MEM_DONTFREE,
-    // following pools are initialized late by their component if needed (or never)
-    MEM_FQDNCACHE_ENTRY,
-    MEM_FWD_SERVER,
-    MEM_IDNS_QUERY,
-    MEM_IPCACHE_ENTRY,
-    MEM_MAX
-} mem_type;
 
 enum {
     STORE_LOG_CREATE,

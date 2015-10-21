@@ -5,7 +5,7 @@
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[3.5.10],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[4.0.1],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -92,20 +92,8 @@ if test "x$squid_host_os" = "solaris" -a "x$GCC" != "x" ; then
 	AC_USE_SYSTEM_EXTENSIONS
 fi
 
-# Guess the compiler type (sets squid_cv_compiler)
-SQUID_CC_GUESS_VARIANT
-
 # Check for C++11 compiler support
-#
-# BUG 3613: when clang -std=c++0x is used, it activates a "strict mode"
-# in the system libraries, which makes some c99 methods unavailable
-# (e.g. strtoll), yet configure detects them as avilable.
-#
-# Similar POSIX issues on MinGW 32-bit and Cygwin
-#
-if ! test "x$squid_host_os" = "xmingw" -o "x$squid_host_os" = "xcygwin" -o "x$squid_cv_compiler" = "xclang"; then
-  AX_CXX_COMPILE_STDCXX_11([noext],[optional])
-fi
+AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
 
 # test for programs
 AC_PROG_RANLIB
@@ -205,6 +193,7 @@ then
   AC_SUBST([LIBADD_DL])
 fi
 
+SQUID_CC_GUESS_VARIANT
 SQUID_CC_GUESS_OPTIONS
 
 dnl find out the exe extension for this platform.
@@ -277,7 +266,7 @@ esac
 )
 AC_SUBST(DEFAULT_LOG_DIR)
 
-DEFAULT_PID_FILE="$localstatedir/run/squid.pid"
+DEFAULT_PID_FILE="$localstatedir/run/@SERVICE_NAME@.pid"
 AC_ARG_WITH(pidfile,
   AS_HELP_STRING([--with-pidfile=PATH],
     [Default location for squid pid file. Default: PREFIX/var/run/squid.pid]), [
@@ -306,21 +295,6 @@ case $withval in
  esac
 ])
 AC_SUBST(DEFAULT_SWAP_DIR)
-
-if test "$squid_cv_compiler" = "gcc"; then
-  GCCVER=`$CC -v 2>&1 | awk '$2 ==  "version" {print $3}'`
-  GCCVER2=`echo $GCCVER | awk '{print $1 * 100}'`
-  case "$host" in
-    i386-*-freebsd*)
-      if test $GCCVER2 -lt 300 ; then
-        AC_MSG_FAILURE([GCC $GCCVER causes a coredump on $host.
-          Please use a more recent GCC version])
-      fi
-      ;;
-    esac
-  unset GCCVER
-  unset GCCVER2
-fi
 
 dnl Set Default CFLAGS
 if test "x$PRESET_CFLAGS" = "x"; then
@@ -377,9 +351,16 @@ else
   SQUID_CXXFLAGS=
 fi
 
+dnl CentOS (and RHEL) still define ntohs() using deprecated C++ features
+SQUID_CC_REQUIRE_ARGUMENT([ac_cv_require_wno_deprecated_register],[-Werror -Wno-deprecated-register],[[#include <arpa/inet.h>]],[[int fox=ntohs(1);]])
+
 if test "x$enable_strict_error_checking" != "xno"; then
   SQUID_CFLAGS="$SQUID_CFLAGS $squid_cv_cc_option_werror"
   SQUID_CXXFLAGS="$SQUID_CXXFLAGS $squid_cv_cxx_option_werror"
+fi
+
+if test "x$ac_cv_require_wno_deprecated_register" = "xyes"; then
+  SQUID_CXXFLAGS="$SQUID_CXXFLAGS -Wno-deprecated-register"
 fi
 
 # squid_cv_cc_arg_pipe is set by SQUID_CC_GUESS_OPTIONS
@@ -425,40 +406,6 @@ SQUID_DEFINE_BOOL(_USE_INLINE_,$enable_inline,
   [Include inline methods into header file])
 # to be used by sub-commands
 export enable_inline
-
-# Check for atomic operations support in the compiler
-AC_CACHE_CHECK([for GNU atomic operations support],[squid_cv_gnu_atomics],[
-AC_RUN_IFELSE([AC_LANG_PROGRAM([[
-#include <stdint.h>
-    int32_t n_32 = 0;
-    uint64_t n_64 = 0;
-]],[[
-    // 32-bit
-    __sync_add_and_fetch(&n_32, 10); // n becomes 10
-    __sync_fetch_and_add(&n_32, 20); // n becomes 30
-    __sync_sub_and_fetch(&n_32, 15); // n becomes 15
-    __sync_bool_compare_and_swap(&n_32, 15, 201); // n becomes 201
-    __sync_fetch_and_and(&n_32, 200); // n becomes 200
-    if (n_32 != 200) return -1;
-
-    // 64-bit
-    __sync_add_and_fetch(&n_64, 10); // n becomes 10
-    __sync_fetch_and_add(&n_64, 20); // n becomes 30
-    __sync_sub_and_fetch(&n_64, 15); // n becomes 15
-    __sync_bool_compare_and_swap(&n_64, 15, 201); // n becomes 201
-    __sync_fetch_and_and(&n_64, 200); // n becomes 200
-    if (n_64 != 200) return -1;
-
-    // seems to be okay.
-    return 0;
-]])],
-[
-	squid_cv_gnu_atomics=yes
-],[
-	squid_cv_gnu_atomics=no
-])
-])
-SQUID_DEFINE_BOOL(HAVE_ATOMIC_OPS,${squid_cv_gnu_atomics:=yes},[Define to 1 if you have GCC __sync_add_and_fetch() and such])
 
 AC_ARG_ENABLE(debug-cbdata,
   AS_HELP_STRING([--enable-debug-cbdata],
@@ -561,8 +508,6 @@ SQUID_DEFINE_BOOL(USE_DISKIO,$squid_opt_enable_diskio,
 dnl Some autoconf.h defines we might enable later...
 AC_ARG_WITH(pthreads,AS_HELP_STRING([--without-pthreads],[Disable POSIX Threads]))
 AC_ARG_WITH(aio, AS_HELP_STRING([--without-aio],[Do not use POSIX AIO. Default: auto-detect]))
-AH_TEMPLATE(USE_DISKIO_AIO, [Whether POSIX AIO support is needed. Automatic])
-AH_TEMPLATE(USE_DISKIO_DISKTHREADS, [Whether pthreads support is needed. Automatic])
 ENABLE_WIN32_AIOPS=0
 squid_opt_use_aio=
 squid_opt_use_diskthreads=
@@ -570,9 +515,13 @@ AIOLIB=
 
 dnl Setup the module paths etc.
 DISK_LIBS=
-DISK_OS_LIBS=
 DISK_MODULES=
 DISK_LINKOBJS=
+AH_TEMPLATE(HAVE_DISKIO_MODULE_AIO, [Whether POSIX AIO Disk I/O module is built])
+AH_TEMPLATE(HAVE_DISKIO_MODULE_BLOCKING, [Whether Blocking Disk I/O module is built])
+AH_TEMPLATE(HAVE_DISKIO_MODULE_DISKDAEMON, [Whether DiskDaemon Disk I/O module is built])
+AH_TEMPLATE(HAVE_DISKIO_MODULE_IPCIO, [Whether IpcIo Disk I/O module is built])
+AH_TEMPLATE(HAVE_DISKIO_MODULE_MMAPPED, [Whether Mmapped Disk I/O module is built])
 for module in $squid_disk_module_candidates none; do
   # maybe not needed
   if test "x$module" = "xnone"; then
@@ -582,20 +531,81 @@ for module in $squid_disk_module_candidates none; do
     AC_MSG_ERROR(disk-io $module does not exist)
   fi
   case "$module" in
+
+    AIO)
+      dnl Check for POSIX AIO availability
+      squid_opt_use_aio="yes"
+      AIOLIB=
+      if test "x$with_aio" != "xno"; then
+        have_aio_header=no
+        AC_CHECK_HEADERS(aio.h,[have_aio_header=yes])
+        dnl On some systems POSIX AIO functions are in librt
+        dnl On some systems POSIX AIO functions are in libaio
+        AC_CHECK_LIB(rt,aio_read,[AIOLIB="-lrt"],AC_CHECK_LIB(aio,aio_read,[AIOLIB="-laio"],[]))
+        dnl Enable AIO if the library and headers are found
+        if test "x$AIOLIB" != "x" && test "x$have_aio_header" = "xyes"; then
+          AC_MSG_NOTICE([Native POSIX AIO support detected.])
+          squid_opt_use_aio="yes"
+        else
+          dnl Windows does things differently. We provide wrappers.
+          dnl TODO: Windows really needs its own DiskIO module or its Overlaped IO
+          case "$squid_host_os" in
+            mingw)
+              squid_opt_use_aio="yes"
+              AC_MSG_NOTICE([Windows being built. Maybe-enable POSIX AIO.])
+              ;;
+            *)
+              AC_MSG_NOTICE([Native POSIX AIO support not detected. AIO automatically disabled.])
+              squid_opt_use_aio="no"
+              ;;
+          esac
+        fi
+      else
+        AC_MSG_NOTICE([POSIX AIO support manually disabled.])
+        squid_opt_use_aio="no"
+      fi
+      dnl Use the POSIX AIO pieces if we actually need them.
+      if test "x$squid_opt_use_aio" = "xyes" ; then
+        DISK_MODULES="$DISK_MODULES AIO"
+        DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/AIO/AIODiskIOModule.o"
+        AC_DEFINE([HAVE_DISKIO_MODULE_AIO],1,[POSIX AIO Disk I/O module is built])
+        case "$squid_host_os" in
+          mingw)
+            ENABLE_WIN32_AIO=1
+            AC_MSG_NOTICE([Replacing AIO DiskIO module with: Windows overlapped I/O support])
+            ;;
+          *)
+            AC_MSG_NOTICE([Enabling AIO DiskIO module])
+            ;;
+        esac
+      else
+        AC_MSG_NOTICE([AIO DiskIO Module disabled. Missing POSIX AIO support.])
+        squid_disk_module_candidates_AIO=no
+      fi
+      ;;
+
+    Blocking)
+      AC_MSG_NOTICE([Enabling Blocking DiskIO module])
+      DISK_MODULES="$DISK_MODULES Blocking"
+      DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/Blocking/BlockingDiskIOModule.o"
+      AC_DEFINE([HAVE_DISKIO_MODULE_BLOCKING],1,[Blocking Disk I/O module is built])
+      ;;
+
     DiskDaemon)
       case "$squid_host_os" in
         mingw)
           AC_MSG_NOTICE(["DiskDaemon not supported on MinGW"])
+          squid_disk_module_candidates_DiskDaemon=no
           ;;
         *)
           AC_MSG_NOTICE([Enabling DiskDaemon DiskIO module])
-          DISK_LIBS="$DISK_LIBS libDiskDaemon.a"
           DISK_MODULES="$DISK_MODULES DiskDaemon"
-          DISK_PROGRAMS="$DISK_PROGRAMS DiskIO/DiskDaemon/diskd"
           DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/DiskDaemon/DiskDaemonDiskIOModule.o"
+          AC_DEFINE([HAVE_DISKIO_MODULE_DISKDAEMON],1,[DiskDaemon Disk I/O module is built])
           ;;
         esac
       ;;
+
     DiskThreads)
       squid_opt_use_diskthreads="yes"
       LIBPTHREADS=
@@ -665,70 +675,26 @@ for module in $squid_disk_module_candidates none; do
           squid_opt_use_diskthreads="no"
         fi
         if test "x$squid_opt_use_diskthreads" = "xyes" ; then
-          AC_DEFINE(USE_DISKIO_DISKTHREADS, 1, [Whether pthreads support is needed. Automatic])
           AC_MSG_NOTICE([Enabling DiskThreads DiskIO module])
-          DISK_LIBS="$DISK_LIBS libDiskThreads.a"
-          DISK_OS_LIBS="$DISK_OS_LIBS $LIBPTHREADS"
           DISK_MODULES="$DISK_MODULES DiskThreads"
           DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/DiskThreads/DiskThreadsDiskIOModule.o"
+          AC_DEFINE([HAVE_DISKIO_MODULE_DISKTHREADS],1,[DiskThreads Disk I/O module is built])
         else
-          AC_DEFINE(USE_DISKIO_DISKTHREADS, 0, [Whether pthreads support is needed. Automatic])
           AC_MSG_NOTICE([Native pthreads support disabled. DiskThreads module automaticaly disabled.])
           SQUID_STATE_ROLLBACK([diskthreads_state])
+          squid_disk_module_candidates_DiskThreads=no
         fi
       ;;
 
-    AIO)
-      dnl Check for POSIX AIO availability
-      squid_opt_use_aio="yes"
-      AIOLIB=
-      if test "x$with_aio" != "xno"; then
-        have_aio_header=no
-        AC_CHECK_HEADERS(aio.h,[have_aio_header=yes])
-        dnl On some systems POSIX AIO functions are in librt
-        dnl On some systems POSIX AIO functions are in libaio
-        AC_CHECK_LIB(rt,aio_read,[AIOLIB="-lrt"],AC_CHECK_LIB(aio,aio_read,[AIOLIB="-laio"],[]))
-        dnl Enable AIO if the library and headers are found
-        if test "x$AIOLIB" != "x" && test "x$have_aio_header" = "xyes"; then
-          AC_MSG_NOTICE([Native POSIX AIO support detected.])
-          squid_opt_use_aio="yes"
-        else
-          dnl Windows does things differently. We provide wrappers.
-          dnl TODO: Windows really needs its own DiskIO module or its Overlaped IO
-          case "$squid_host_os" in
-            mingw)
-              squid_opt_use_aio="yes"
-              AC_MSG_NOTICE([Windows being built. Maybe-enable POSIX AIO.])
-              ;;
-            *)
-              AC_MSG_NOTICE([Native POSIX AIO support not detected. AIO automatically disabled.])
-              squid_opt_use_aio="no"
-              ;;
-          esac
-        fi
+    IpcIo)
+      AC_MSG_NOTICE([Enabling IpcIo DiskIO module])
+      if test "x$ac_cv_search_shm_open" = "xno" ; then
+        AC_MSG_NOTICE([DiskIO IpcIo module requires shared memory support])
+        squid_disk_module_candidates_IpcIo=no
       else
-        AC_MSG_NOTICE([POSIX AIO support manually disabled.])
-        squid_opt_use_aio="no"
-      fi
-      dnl Use the POSIX AIO pieces if we actually need them.
-      if test "x$squid_opt_use_aio" = "xyes" ; then
-        AC_DEFINE(USE_DISKIO_AIO, 1, [Whether POSIX AIO support is needed. Automatic])
-        DISK_MODULES="$DISK_MODULES AIO"
-        DISK_LIBS="$DISK_LIBS libAIO.a"
-        DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/AIO/AIODiskIOModule.o"
-        case "$squid_host_os" in
-          mingw)
-            ENABLE_WIN32_AIO=1
-            AC_MSG_NOTICE([Replacing AIO DiskIO module with: Windows overlapped I/O support])
-            ;;
-          *)
-            AC_MSG_NOTICE([Enabling AIO DiskIO module])
-            DISK_OS_LIBS="$DISK_OS_LIBS $AIOLIB"
-            ;;
-        esac
-      else
-        AC_DEFINE(USE_DISKIO_AIO, 0, [Whether POSIX AIO support is needed. Automatic])
-        AC_MSG_NOTICE([AIO DiskIO Module disabled. Missing POSIX AIO support.])
+        DISK_MODULES="$DISK_MODULES IpcIo"
+        DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/IpcIo/IpcIoDiskIOModule.o"
+        AC_DEFINE([HAVE_DISKIO_MODULE_IPCIO],1,[IpcIo Disk I/O module is built])
       fi
       ;;
 
@@ -737,35 +703,18 @@ for module in $squid_disk_module_candidates none; do
       dnl  OR support windows mmap functions
       if test "x$squid_host_os" = "xmingw" ; then
         AC_MSG_NOTICE([Mmapped DiskIO is not available on Mingw])
+        squid_disk_module_candidates_Mmapped=no
       else
         AC_MSG_NOTICE([Enabling Mmapped DiskIO module])
-        DISK_LIBS="$DISK_LIBS libMmapped.a"
         DISK_MODULES="$DISK_MODULES Mmapped"
         DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/Mmapped/MmappedDiskIOModule.o"
+        AC_DEFINE([HAVE_DISKIO_MODULE_MMAPPED],1,[Mmapped Disk I/O module is built])
       fi
-      ;;
-
-    IpcIo)
-      AC_MSG_NOTICE([Enabling IpcIo DiskIO module])
-      if test "x$ac_cv_search_shm_open" = "xno" ; then
-        AC_MSG_ERROR([DiskIO IpcIo module requires shared memory support])
-      fi
-      DISK_LIBS="$DISK_LIBS libIpcIo.a"
-      DISK_MODULES="$DISK_MODULES IpcIo"
-      DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/IpcIo/IpcIoDiskIOModule.o"
-      AC_DEFINE(USE_DISKIO_IPCIO, 1, [Enable DiskIO IpcIo module.])
-      ;;
-
-    Blocking)
-      AC_MSG_NOTICE([Enabling Blocking DiskIO module])
-      DISK_LIBS="$DISK_LIBS libBlocking.a"
-      DISK_MODULES="$DISK_MODULES Blocking"
-      DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/Blocking/BlockingDiskIOModule.o"
       ;;
 
     *)
       AC_MSG_NOTICE([Enabling $module DiskIO module])
-      DISK_LIBS="$DISK_LIBS lib${module}.a"
+      DISK_LIBS="$DISK_LIBS lib${module}.la"
       DISK_MODULES="$DISK_MODULES ${module}"
       DISK_LINKOBJS="$DISK_LINKOBJS DiskIO/${module}/${module}DiskIOModule.o"
       ;;
@@ -774,11 +723,17 @@ done
 AC_MSG_NOTICE([IO Modules built: $DISK_MODULES])
 AC_SUBST(DISK_MODULES)
 AC_SUBST(DISK_LIBS)
-AC_SUBST(DISK_PROGRAMS)
 AC_SUBST(DISK_LINKOBJS)
-AC_SUBST(DISK_OS_LIBS)
-AM_CONDITIONAL([ENABLE_WIN32_AIOPS], [test "$ENABLE_WIN32_AIOPS" = "1"])
-AM_CONDITIONAL([ENABLE_WIN32_AIO], [test "$ENABLE_WIN32_AIO" = "1"])
+AM_CONDITIONAL([ENABLE_DISKIO_AIO], [test "x$squid_disk_module_candidates_AIO" = "xyes"])
+AC_SUBST(AIOLIB)
+AM_CONDITIONAL([ENABLE_WIN32_AIO], [test "x$squid_disk_module_candidates_AIO" = "xyes" -a "x$ENABLE_WIN32_AIO" = "x1"])
+AM_CONDITIONAL([ENABLE_DISKIO_BLOCKING], [test "x$squid_disk_module_candidates_Blocking" = "xyes"])
+AM_CONDITIONAL([ENABLE_DISKIO_DISKDAEMON], [test "x$squid_disk_module_candidates_DiskDaemon" = "xyes"])
+AM_CONDITIONAL([ENABLE_DISKIO_DISKTHREADS], [test "x$squid_disk_module_candidates_DiskThreads" = "xyes"])
+AC_SUBST(LIBPTHREADS)
+AM_CONDITIONAL([ENABLE_WIN32_AIOPS], [test "x$squid_disk_module_candidates_DiskThreads" = "xyes" -a "x$ENABLE_WIN32_AIOPS" = "x1"])
+AM_CONDITIONAL([ENABLE_DISKIO_IPCIO], [test "x$squid_disk_module_candidates_IpcIo" = "xyes"])
+AM_CONDITIONAL([ENABLE_DISKIO_MMAPPED], [test "x$squid_disk_module_candidates_Mmapped" = "xyes"])
 
 
 dnl Check what Storage formats are wanted.
@@ -1226,6 +1181,30 @@ if test "x$with_nettle" != "xno" ; then
     NETTLELIB="$NETTLELIBDIR -lnettle"
     AC_CHECK_HEADERS(nettle/md5.h)
   ],[with_nettle=no])
+  if test "x$with_nettle" != "xno" ; then
+    # Base64 uses the nettle 3.0 API
+    # which matters on 64-bit systems
+    AC_CHECK_HEADERS(nettle/base64.h)
+    AC_MSG_CHECKING([for Nettle 3.0 API compatibility])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#     include <cstddef>
+#     include <cstdint>
+#     include <nettle/base64.h>
+    ]],[[
+      uint8_t inData[10]; inData[0] = '\0';
+      size_t srcLen = 0;
+      struct base64_decode_ctx ctx;
+      base64_decode_init(&ctx);
+      uint8_t outData[10];
+      size_t dstLen = 0;
+      if (!base64_decode_update(&ctx, &dstLen, outData, srcLen, inData) ||
+              !base64_decode_final(&ctx)) {
+          return 1;
+      }
+    ]])],[AC_MSG_RESULT(yes)
+      AC_DEFINE(HAVE_NETTLE30_BASE64,1,[set to 1 if Nettle 3.0 API will link])
+    ],[AC_MSG_RESULT(no)])
+  fi
 fi
 AC_MSG_NOTICE([Using Nettle cryptographic library: ${with_nettle:=yes}])
 AC_SUBST(NETTLELIB)
@@ -2808,7 +2787,6 @@ AC_CHECK_HEADERS( \
   siginfo.h \
   signal.h \
   stdarg.h \
-  stdbool.h \
   stddef.h \
   stdio.h \
   stdlib.h \
@@ -2957,9 +2935,11 @@ AC_CHECK_SIZEOF(size_t)
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_SIZEOF(size_t)
 
-dnl Some C++0x types we try to use
+dnl Some C++11 types we try to use
 AX_CXX_TYPE_NULLPTR
 AX_CXX_TYPE_UNIQUE_PTR
+AX_CXX_TYPE_UNIFORM_DISTRIBUTIONS
+SQUID_CXX_STD_UNDERLYING_TYPE
 
 dnl On Solaris 9 x86, gcc may includes a "fixed" set of old system include files
 dnl that is incompatible with the updated Solaris header files.
@@ -3273,18 +3253,6 @@ assert(myBar != NULL);
     ;;
   esac
 
-# Remove optimization for GCC 2.95.[123]
-# gcc -O[2] on *BSD and Linux (x86) causes pointers to magically become NULL
-if test "x$GCC" = "xyes"; then
-	GCCVER=`$CC -v 2>&1 | awk '$2 == "version" {print $3}'`
-	case "$GCCVER" in
-	[2.95.[123]])
-		AC_MSG_NOTICE([Removing -O for gcc on $host with GCC $GCCVER])
-		CFLAGS="`echo $CFLAGS | sed -e 's/-O[[0-9]]*//'`"
-		;;
-	esac
-fi
-
 dnl This has to be before AC_CHECK_FUNCS
 # Disable poll() on certain platforms. Override by setting ac_cv_func_poll
 # when running configure.
@@ -3333,7 +3301,6 @@ AC_CHECK_FUNCS(\
 	getspnam \
 	gettimeofday \
 	glob \
-	lrand48 \
 	mallocblksize \
 	mallopt \
 	memcpy \
@@ -3350,7 +3317,6 @@ AC_CHECK_FUNCS(\
 	pthread_setschedparam \
 	pthread_sigmask \
 	putenv \
-	random \
 	regcomp \
 	regexec \
 	regfree \
@@ -3367,8 +3333,6 @@ AC_CHECK_FUNCS(\
 	sigaction \
 	snprintf \
 	socketpair \
-	srand48 \
-	srandom \
 	sysconf \
 	syslog \
 	timegm \
@@ -3376,7 +3340,6 @@ AC_CHECK_FUNCS(\
 )
 dnl ... and some we provide local replacements for
 AC_REPLACE_FUNCS(\
-	drand48 \
 	initgroups \
 	psignal \
 	strerror \
@@ -3384,7 +3347,7 @@ AC_REPLACE_FUNCS(\
 	tempnam \
 )
 
-AC_CHECK_DECLS([getaddrinfo,getnameinfo,inet_ntop,inet_pton],,,[
+AC_CHECK_DECLS([getaddrinfo,getnameinfo,inet_ntop,inet_pton,InetNtopA,InetPtonA],,,[
 /*
  * BSD requires sys/types.h, sys/socket.h, netinet/in.h, netdb.h, arpa/inet.h
  * Linux requires sys/types.h, sys/socket.h, arpa/inet.h
@@ -3791,61 +3754,17 @@ rm -f core
 AC_CONFIG_FILES([
 	Makefile
 	compat/Makefile
-	lib/Makefile
-	lib/ntlmauth/Makefile
-	lib/libTrie/Makefile
-	lib/libTrie/test/Makefile
-	lib/profiler/Makefile
-	lib/rfcnb/Makefile
-	lib/smblib/Makefile
-	lib/snmplib/Makefile
-	scripts/Makefile
-	src/Makefile
-	src/anyp/Makefile
-	src/ftp/Makefile
-	src/base/Makefile
-	src/acl/Makefile
-	src/clients/Makefile
-	src/servers/Makefile
-	src/fs/Makefile
-	src/repl/Makefile
-	src/auth/Makefile
-	src/auth/basic/Makefile
-	src/auth/digest/Makefile
-	src/auth/negotiate/Makefile
-	src/auth/ntlm/Makefile
-	src/adaptation/Makefile
-	src/adaptation/icap/Makefile
-	src/adaptation/ecap/Makefile
-	src/comm/Makefile
-	src/esi/Makefile
-	src/eui/Makefile
-	src/format/Makefile
-	src/helper/Makefile
-	src/http/Makefile
-	src/icmp/Makefile
-	src/ident/Makefile
-	src/ip/Makefile
-	src/log/Makefile
-	src/ipc/Makefile
-	src/ssl/Makefile
-	src/mgr/Makefile
-	src/parser/Makefile
-	src/snmp/Makefile
 	contrib/Makefile
-	icons/Makefile
-	errors/Makefile
-	test-suite/Makefile
 	doc/Makefile
 	doc/manuals/Makefile
 	doc/release-notes/Makefile
+	errors/Makefile
 	helpers/Makefile
 	helpers/basic_auth/Makefile
 	helpers/basic_auth/DB/Makefile
 	helpers/basic_auth/fake/Makefile
 	helpers/basic_auth/getpwnam/Makefile
 	helpers/basic_auth/LDAP/Makefile
-	helpers/basic_auth/MSNT-multi-domain/Makefile
 	helpers/basic_auth/NCSA/Makefile
 	helpers/basic_auth/NIS/Makefile
 	helpers/basic_auth/PAM/Makefile
@@ -3859,14 +3778,6 @@ AC_CONFIG_FILES([
 	helpers/digest_auth/eDirectory/Makefile
 	helpers/digest_auth/file/Makefile
 	helpers/digest_auth/LDAP/Makefile
-	helpers/ntlm_auth/Makefile
-	helpers/ntlm_auth/fake/Makefile
-	helpers/ntlm_auth/smb_lm/Makefile
-	helpers/ntlm_auth/SSPI/Makefile
-	helpers/negotiate_auth/Makefile
-	helpers/negotiate_auth/kerberos/Makefile
-	helpers/negotiate_auth/SSPI/Makefile
-	helpers/negotiate_auth/wrapper/Makefile
 	helpers/external_acl/Makefile
 	helpers/external_acl/AD_group/Makefile
 	helpers/external_acl/delayer/Makefile
@@ -3883,12 +3794,76 @@ AC_CONFIG_FILES([
 	helpers/log_daemon/Makefile
 	helpers/log_daemon/DB/Makefile
 	helpers/log_daemon/file/Makefile
-	helpers/url_rewrite/Makefile
-	helpers/url_rewrite/fake/Makefile
+	helpers/negotiate_auth/Makefile
+	helpers/negotiate_auth/kerberos/Makefile
+	helpers/negotiate_auth/SSPI/Makefile
+	helpers/negotiate_auth/wrapper/Makefile
+	helpers/ntlm_auth/Makefile
+	helpers/ntlm_auth/fake/Makefile
+	helpers/ntlm_auth/smb_lm/Makefile
+	helpers/ntlm_auth/SSPI/Makefile
 	helpers/ssl/Makefile
 	helpers/storeid_rewrite/Makefile
 	helpers/storeid_rewrite/file/Makefile
+	helpers/url_rewrite/Makefile
+	helpers/url_rewrite/fake/Makefile
+	helpers/url_rewrite/LFS/Makefile
+	icons/Makefile
+	lib/Makefile
+	lib/libTrie/Makefile
+	lib/libTrie/test/Makefile
+	lib/ntlmauth/Makefile
+	lib/profiler/Makefile
+	lib/rfcnb/Makefile
+	lib/smblib/Makefile
+	lib/snmplib/Makefile
+	scripts/Makefile
+	src/Makefile
+	src/acl/Makefile
+	src/adaptation/Makefile
+	src/adaptation/icap/Makefile
+	src/adaptation/ecap/Makefile
+	src/anyp/Makefile
+	src/auth/Makefile
+	src/auth/basic/Makefile
+	src/auth/digest/Makefile
+	src/auth/negotiate/Makefile
+	src/auth/ntlm/Makefile
+	src/base/Makefile
+	src/clients/Makefile
+	src/comm/Makefile
+	src/dns/Makefile
+	src/DiskIO/Makefile
+	src/DiskIO/AIO/Makefile
+	src/DiskIO/Blocking/Makefile
+	src/DiskIO/DiskDaemon/Makefile
+	src/DiskIO/DiskThreads/Makefile
+	src/DiskIO/IpcIo/Makefile
+	src/DiskIO/Mmapped/Makefile
+	src/esi/Makefile
+	src/eui/Makefile
+	src/format/Makefile
+	src/fs/Makefile
+	src/ftp/Makefile
+	src/helper/Makefile
+	src/http/Makefile
+	src/http/one/Makefile
+	src/icmp/Makefile
+	src/ident/Makefile
+	src/ip/Makefile
+	src/ipc/Makefile
+	src/log/Makefile
+	src/mem/Makefile
+	src/mgr/Makefile
+	src/parser/Makefile
+	src/repl/Makefile
+	src/security/Makefile
+	src/servers/Makefile
+	src/snmp/Makefile
+	src/ssl/Makefile
+	test-suite/Makefile
 	tools/Makefile
+	tools/helper-mux/Makefile
 	tools/purge/Makefile
 	tools/squidclient/Makefile
 	tools/systemd/Makefile

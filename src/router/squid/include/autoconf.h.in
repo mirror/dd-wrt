@@ -76,9 +76,6 @@
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
-/* Define to 1 if you have GCC __sync_add_and_fetch() and such */
-#undef HAVE_ATOMIC_OPS
-
 /* Basic auth module is built */
 #undef HAVE_AUTH_MODULE_BASIC
 
@@ -170,6 +167,14 @@
    don't. */
 #undef HAVE_DECL_GETNAMEINFO
 
+/* Define to 1 if you have the declaration of `InetNtopA', and to 0 if you
+   don't. */
+#undef HAVE_DECL_INETNTOPA
+
+/* Define to 1 if you have the declaration of `InetPtonA', and to 0 if you
+   don't. */
+#undef HAVE_DECL_INETPTONA
+
 /* Define to 1 if you have the declaration of `inet_ntop', and to 0 if you
    don't. */
 #undef HAVE_DECL_INET_NTOP
@@ -189,6 +194,24 @@
    */
 #undef HAVE_DIRENT_H
 
+/* POSIX AIO Disk I/O module is built */
+#undef HAVE_DISKIO_MODULE_AIO
+
+/* Blocking Disk I/O module is built */
+#undef HAVE_DISKIO_MODULE_BLOCKING
+
+/* DiskDaemon Disk I/O module is built */
+#undef HAVE_DISKIO_MODULE_DISKDAEMON
+
+/* DiskThreads Disk I/O module is built */
+#undef HAVE_DISKIO_MODULE_DISKTHREADS
+
+/* IpcIo Disk I/O module is built */
+#undef HAVE_DISKIO_MODULE_IPCIO
+
+/* Mmapped Disk I/O module is built */
+#undef HAVE_DISKIO_MODULE_MMAPPED
+
 /* Define if you have the GNU dld library. */
 #undef HAVE_DLD
 
@@ -203,9 +226,6 @@
 
 /* Define to 1 if you have the <dl.h> header file. */
 #undef HAVE_DL_H
-
-/* Define to 1 if you have the `drand48' function. */
-#undef HAVE_DRAND48
 
 /* Define if you have the _dyld_func_lookup function. */
 #undef HAVE_DYLD
@@ -529,9 +549,6 @@
 /* Define to 1 if you have the <linux/types.h> header file. */
 #undef HAVE_LINUX_TYPES_H
 
-/* Define to 1 if you have the `lrand48' function. */
-#undef HAVE_LRAND48
-
 /* Define this if a modern libltdl is already installed */
 #undef HAVE_LTDL
 
@@ -643,6 +660,12 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
+/* set to 1 if Nettle 3.0 API will link */
+#undef HAVE_NETTLE30_BASE64
+
+/* Define to 1 if you have the <nettle/base64.h> header file. */
+#undef HAVE_NETTLE_BASE64_H
+
 /* Define to 1 if you have the <nettle/md5.h> header file. */
 #undef HAVE_NETTLE_MD5_H
 
@@ -744,9 +767,6 @@
 
 /* Define to 1 if you have the <pwd.h> header file. */
 #undef HAVE_PWD_H
-
-/* Define to 1 if you have the `random' function. */
-#undef HAVE_RANDOM
 
 /* Define to 1 if you have the `readdir' function. */
 #undef HAVE_READDIR
@@ -864,12 +884,6 @@
 /* SPNEGO support */
 #undef HAVE_SPNEGO
 
-/* Define to 1 if you have the `srand48' function. */
-#undef HAVE_SRAND48
-
-/* Define to 1 if you have the `srandom' function. */
-#undef HAVE_SRANDOM
-
 /* Define if sockaddr_storage has field ss_len */
 #undef HAVE_SS_LEN_IN_SS
 
@@ -882,9 +896,6 @@
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
 
-/* Define to 1 if you have the <stdbool.h> header file. */
-#undef HAVE_STDBOOL_H
-
 /* Define to 1 if you have the <stddef.h> header file. */
 #undef HAVE_STDDEF_H
 
@@ -896,6 +907,15 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* Define if stdlibc support std::underlying_type for enums */
+#undef HAVE_STD_UNDERLYING_TYPE
+
+/* Define if c++11 std::uniform_int_distribution is supported */
+#undef HAVE_STD_UNIFORM_INT_DISTRIBUTION
+
+/* Define if c++11 std::uniform_real_distribution is supported */
+#undef HAVE_STD_UNIFORM_REAL_DISTRIBUTION
 
 /* Define to 1 if you have the `strerror' function. */
 #undef HAVE_STRERROR
@@ -1061,6 +1081,9 @@
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
 
+/* Define to 1 if you have the <tr1/random> header file. */
+#undef HAVE_TR1_RANDOM
+
 /* Define to 1 if std::unique_ptr<T> is supported */
 #undef HAVE_UNIQUE_PTR
 
@@ -1197,6 +1220,9 @@
 
 /* Define if dlsym() requires a leading underscore in symbol names. */
 #undef NEED_USCORE
+
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -1338,15 +1364,6 @@
 
 /* DiskIO modules are expected to be available. */
 #undef USE_DISKIO
-
-/* Whether POSIX AIO support is needed. Automatic */
-#undef USE_DISKIO_AIO
-
-/* Whether pthreads support is needed. Automatic */
-#undef USE_DISKIO_DISKTHREADS
-
-/* Enable DiskIO IpcIo module. */
-#undef USE_DISKIO_IPCIO
 
 /* Disable eCAP support */
 #undef USE_ECAP

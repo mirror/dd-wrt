@@ -45,6 +45,7 @@ public:
 
 class ps_state
 {
+    CBDATA_CLASS(ps_state);
 
 public:
     ps_state();
@@ -52,7 +53,7 @@ public:
 
     // Produce a URL for display identifying the transaction we are
     // trying to locate a peer for.
-    const char * url() const;
+    const SBuf url() const;
 
     HttpRequest *request;
     AccessLogEntry::Pointer al; ///< info for the future access.log entry
@@ -86,8 +87,6 @@ public:
     peer_t hit_type;
     ping_data ping;
     ACLChecklist *acl_checklist;
-private:
-    CBDATA_CLASS2(ps_state);
 };
 
 #endif /* SQUID_PEERSELECTSTATE_H */

@@ -14,11 +14,12 @@
 #include "esi/Element.h"
 
 class ESIContext;
-/* esiLiteral */
 
-struct esiLiteral : public ESIElement {
+class esiLiteral : public ESIElement
+{
     MEMPROXY_CLASS(esiLiteral);
 
+public:
     esiLiteral(ESISegment::Pointer);
     esiLiteral(ESIContext *, const char *s, int len);
     ~esiLiteral();
@@ -40,8 +41,6 @@ struct esiLiteral : public ESIElement {
 private:
     esiLiteral(esiLiteral const &);
 };
-
-MEMPROXY_CLASS_INLINE(esiLiteral);
 
 #endif /* SQUID_ESILITERAL_H */
 

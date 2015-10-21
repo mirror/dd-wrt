@@ -21,7 +21,9 @@
 #include "tools.h"
 
 static const char *hello_string = "hi there\n";
+#ifndef HELLO_BUF_SZ
 #define HELLO_BUF_SZ 32
+#endif
 static char hello_buf[HELLO_BUF_SZ];
 
 static int
@@ -149,10 +151,23 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
             return -1;
         }
 
-        setsockopt(fds[0], SOL_SOCKET, SO_SNDBUF, (void *) &buflen, sizeof(buflen));
-        setsockopt(fds[0], SOL_SOCKET, SO_RCVBUF, (void *) &buflen, sizeof(buflen));
-        setsockopt(fds[1], SOL_SOCKET, SO_SNDBUF, (void *) &buflen, sizeof(buflen));
-        setsockopt(fds[1], SOL_SOCKET, SO_RCVBUF, (void *) &buflen, sizeof(buflen));
+        errno = 0;
+        if (setsockopt(fds[0], SOL_SOCKET, SO_SNDBUF, (void *) &buflen, sizeof(buflen)) == -1)  {
+            debugs(54, DBG_IMPORTANT, "setsockopt failed: " << xstrerror());
+            errno = 0;
+        }
+        if (setsockopt(fds[0], SOL_SOCKET, SO_RCVBUF, (void *) &buflen, sizeof(buflen)) == -1) {
+            debugs(54, DBG_IMPORTANT, "setsockopt failed: " << xstrerror());
+            errno = 0;
+        }
+        if (setsockopt(fds[1], SOL_SOCKET, SO_SNDBUF, (void *) &buflen, sizeof(buflen)) == -1) {
+            debugs(54, DBG_IMPORTANT, "setsockopt failed: " << xstrerror());
+            errno = 0;
+        }
+        if (setsockopt(fds[1], SOL_SOCKET, SO_RCVBUF, (void *) &buflen, sizeof(buflen)) == -1) {
+            debugs(54, DBG_IMPORTANT, "setsockopt failed: " << xstrerror());
+            errno = 0;
+        }
         fd_open(prfd = pwfd = fds[0], FD_PIPE, "IPC UNIX STREAM Parent");
         fd_open(crfd = cwfd = fds[1], FD_PIPE, "IPC UNIX STREAM Parent");
         IPC_CHECK_FAIL(crfd, "child read", "UDS socket");
@@ -244,12 +259,12 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
                 return ipcCloseAllFD(prfd, pwfd, crfd, cwfd);
         }
 
-        memset(hello_buf, '\0', HELLO_BUF_SZ);
-
         if (type == IPC_UDP_SOCKET)
-            x = comm_udp_recv(prfd, hello_buf, HELLO_BUF_SZ - 1, 0);
+            x = comm_udp_recv(prfd, hello_buf, sizeof(hello_buf)-1, 0);
         else
-            x = read(prfd, hello_buf, HELLO_BUF_SZ - 1);
+            x = read(prfd, hello_buf, sizeof(hello_buf)-1);
+        if (x >= 0)
+            hello_buf[x] = '\0';
 
         if (x < 0) {
             debugs(54, DBG_CRITICAL, "ipcCreate: PARENT: hello read test failed");

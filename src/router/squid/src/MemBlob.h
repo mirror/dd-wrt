@@ -13,7 +13,7 @@
 
 #include "base/InstanceId.h"
 #include "base/RefCount.h"
-#include "MemPool.h"
+#include "mem/forward.h"
 
 /// Various MemBlob class-wide statistics.
 class MemBlobStats
@@ -44,11 +44,11 @@ public:
  */
 class MemBlob: public RefCountable
 {
+    MEMPROXY_CLASS(MemBlob);
+
 public:
     typedef RefCount<MemBlob> Pointer;
     typedef uint32_t size_type;
-
-    MEMPROXY_CLASS(MemBlob);
 
     /// obtain a const view of class-wide statistics
     static const MemBlobStats& GetStats();
@@ -119,8 +119,6 @@ private:
     MemBlob(const MemBlob &);
     MemBlob& operator =(const MemBlob &);
 };
-
-MEMPROXY_CLASS_INLINE(MemBlob);
 
 #endif /* SQUID_MEMBLOB_H_ */
 

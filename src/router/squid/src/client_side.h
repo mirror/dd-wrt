@@ -15,8 +15,8 @@
 #include "clientStreamForward.h"
 #include "comm.h"
 #include "helper/forward.h"
+#include "http/forward.h"
 #include "HttpControlMsg.h"
-#include "HttpParser.h"
 #include "ipc/FdNotes.h"
 #include "SBuf.h"
 #if USE_AUTH
@@ -29,7 +29,6 @@
 class ConnStateData;
 class ClientHttpRequest;
 class clientStreamNode;
-class ChunkedCodingParser;
 namespace AnyP
 {
 class PortCfg;
@@ -68,6 +67,7 @@ class PortCfg;
  */
 class ClientSocketContext : public RefCountable
 {
+    CBDATA_CLASS(ClientSocketContext);
 
 public:
     typedef RefCount<ClientSocketContext> Pointer;
@@ -145,8 +145,6 @@ private:
 
     bool mayUseConnection_; /* This request may use the connection. Don't read anymore requests for now */
     bool connRegistered_;
-
-    CBDATA_CLASS2(ClientSocketContext);
 };
 
 class ConnectionDetail;
@@ -189,18 +187,28 @@ public:
     int getConcurrentRequestCount() const;
     bool isOpen() const;
 
+    /// Update flags and timeout after the first byte received
+    void receivedFirstByte();
+
     // HttpControlMsgSink API
     virtual void sendControlMsg(HttpControlMsg msg);
 
     // Client TCP connection details from comm layer.
     Comm::ConnectionPointer clientConnection;
 
+    /**
+     * The transfer protocol currently being spoken on this connection.
+     * HTTP/1 CONNECT and HTTP/2 SETTINGS offers the ability to change
+     * protocols on the fly.
+     */
+    AnyP::ProtocolVersion transferProtocol;
+
     struct In {
         In();
         ~In();
         bool maybeMakeSpaceAvailable();
 
-        ChunkedCodingParser *bodyParser; ///< parses chunked request body
+        Http1::TeChunkedParser *bodyParser; ///< parses chunked request body
         SBuf buf;
     } in;
 
@@ -342,6 +350,14 @@ public:
     /// called by FwdState when it is done bumping the server
     void httpsPeeked(Comm::ConnectionPointer serverConnection);
 
+    /// Splice a bumped client connection on peek-and-splice mode
+    void splice();
+
+    /// Check on_unsupported_protocol access list and splice if required
+    /// \retval true on splice
+    /// \retval false otherwise
+    bool spliceOnError(const err_type err);
+
     /// Start to create dynamic SSL_CTX for host or uses static port SSL context.
     void getSslContextStart();
     /**
@@ -349,7 +365,7 @@ public:
      *
      * \param[in] isNew if generated certificate is new, so we need to add this certificate to storage.
      */
-    void getSslContextDone(SSL_CTX * sslContext, bool isNew = false);
+    void getSslContextDone(Security::ContextPointer sslContext, bool isNew = false);
     /// Callback function. It is called when squid receive message from ssl_crtd.
     static void sslCrtdHandleReplyWrapper(void *data, const Helper::Reply &reply);
     /// Proccess response from ssl_crtd.
@@ -404,6 +420,10 @@ public:
     /// at the beginning of the client I/O buffer
     void fakeAConnectRequest(const char *reason, const SBuf &payload);
 
+    /// client data which may need to forward as-is to server after an
+    /// on_unsupported_protocol tunnel decision.
+    SBuf preservedClientData;
+
     /* Registered Runner API */
     virtual void startShutdown();
     virtual void endingShutdown();
@@ -412,7 +432,7 @@ protected:
     void startDechunkingRequest();
     void finishDechunkingRequest(bool withSuccess);
     void abortChunkedRequestBody(const err_type error);
-    err_type handleChunkedRequestBody(size_t &putSize);
+    err_type handleChunkedRequestBody();
 
     void startPinnedConnectionMonitoring();
     void clientPinnedConnectionRead(const CommIoCbParams &io);
@@ -420,10 +440,10 @@ protected:
     /// parse input buffer prefix into a single transfer protocol request
     /// return NULL to request more header bytes (after checking any limits)
     /// use abortRequestParsing() to handle parsing errors w/o creating request
-    virtual ClientSocketContext *parseOneRequest(Http::ProtocolVersion &ver) = 0;
+    virtual ClientSocketContext *parseOneRequest() = 0;
 
     /// start processing a freshly parsed request
-    virtual void processParsedRequest(ClientSocketContext *context, const Http::ProtocolVersion &ver) = 0;
+    virtual void processParsedRequest(ClientSocketContext *context) = 0;
 
     /// returning N allows a pipeline of 1+N requests (see pipeline_prefetch)
     virtual int pipelinePrefetchMax() const;
@@ -455,6 +475,9 @@ private:
     Auth::UserRequest::Pointer auth_;
 #endif
 
+    /// the parser state for current HTTP/1.x input buffer processing
+    Http1::RequestParserPointer parser_;
+
 #if USE_OPENSSL
     bool switchedToHttps_;
     /// The SSL server host name appears in CONNECT request or the server ip address for the intercepted requests
@@ -474,6 +497,7 @@ private:
 
     AsyncCall::Pointer reader; ///< set when we are reading
 
+    bool receivedFirstByte_; ///< true if at least one byte received on this connection
     SBuf connectionTag_; ///< clt_conn_tag=Tag annotation for client connection
 };
 
@@ -501,9 +525,9 @@ CSCB clientSocketRecipient;
 CSD clientSocketDetach;
 
 /* TODO: Move to HttpServer. Warning: Move requires large code nonchanges! */
-ClientSocketContext *parseHttpRequest(ConnStateData *, HttpParser *, HttpRequestMethod *, Http::ProtocolVersion *);
-void clientProcessRequest(ConnStateData *conn, HttpParser *hp, ClientSocketContext *context, const HttpRequestMethod& method, Http::ProtocolVersion http_ver);
-void clientPostHttpsAccept(ConnStateData *connState);
+ClientSocketContext *parseHttpRequest(ConnStateData *, const Http1::RequestParserPointer &);
+void clientProcessRequest(ConnStateData *, const Http1::RequestParserPointer &, ClientSocketContext *);
+void clientPostHttpsAccept(ConnStateData *);
 
 #endif /* SQUID_CLIENTSIDE_H */
 

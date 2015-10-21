@@ -16,6 +16,7 @@
 #include "fde.h"
 #include "http/StatusCode.h"
 #include "ip/Address.h"
+#include "security/forward.h"
 #if USE_OPENSSL
 #include "ssl/support.h"
 #endif
@@ -34,7 +35,6 @@ namespace Ssl
 {
 class ErrorDetail;
 class CertValidationResponse;
-class PeerConnectorAnswer;
 };
 #endif
 
@@ -57,6 +57,8 @@ class HelperReply;
 
 class FwdState : public RefCountable
 {
+    CBDATA_CLASS(FwdState);
+
 public:
     typedef RefCount<FwdState> Pointer;
     ~FwdState();
@@ -112,9 +114,7 @@ private:
     void completed();
     void retryOrBail();
     ErrorState *makeConnectingError(const err_type type) const;
-#if USE_OPENSSL
-    void connectedToPeer(Ssl::PeerConnectorAnswer &answer);
-#endif
+    void connectedToPeer(Security::EncryptorAnswer &answer);
     static void RegisterWithCacheManager(void);
 
     /// stops monitoring server connection for closure and updates pconn stats
@@ -153,9 +153,6 @@ private:
     /// possible pconn race states
     typedef enum { raceImpossible, racePossible, raceHappened } PconnRace;
     PconnRace pconnRace; ///< current pconn race state
-
-    // NP: keep this last. It plays with private/public
-    CBDATA_CLASS2(FwdState);
 };
 
 void getOutgoingAddress(HttpRequest * request, Comm::ConnectionPointer conn);

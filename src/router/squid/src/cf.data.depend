@@ -48,6 +48,7 @@ icap_access_type	icap_class acl
 icap_class_type		icap_service
 icap_service_type
 icap_service_failure_limit
+icmp
 ecap_service_type
 int
 kb_int64_t
@@ -58,6 +59,7 @@ memcachemode
 note			acl
 obsolete
 onoff
+on_unsupported_protocol	acl
 peer
 peer_access		cache_peer acl
 pipelinePrefetch
@@ -66,6 +68,7 @@ QosConfig
 TokenOrQuotedString
 refreshpattern
 removalpolicy
+securePeerOptions
 size_t
 IpAddress_list
 string
@@ -74,6 +77,7 @@ time_msec
 time_t
 tristate
 uri_whitespace
+UrlHelperTimeout	acl
 u_short
 wccp2_method
 wccp2_amethod

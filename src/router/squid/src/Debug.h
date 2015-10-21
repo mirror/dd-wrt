@@ -11,6 +11,9 @@
 #ifndef SQUID_DEBUG_H
 #define SQUID_DEBUG_H
 
+// XXX should be mem/forward.h once it removes dependencies on typedefs.h
+#include "mem/AllocatorProxy.h"
+
 #include <iostream>
 #undef assert
 #include <sstream>
@@ -71,12 +74,10 @@ private:
     /// with the libc++6 std::ostringstream definitions
     class OutStream : public std::ostringstream
     {
-        // XXX: use MEMPROXY_CLASS() once that no longer pulls in typedefs.h and enums.h and globals.h
+        MEMPROXY_CLASS(OutStream);
     public:
-        void *operator new(size_t size) throw(std::bad_alloc) {return xmalloc(size);}
-        void operator delete(void *address) throw() {xfree(address);}
-        void *operator new[] (size_t size) throw(std::bad_alloc) ; //{return xmalloc(size);}
-        void operator delete[] (void *address) throw() ; // {xfree(address);}
+        void *operator new[] (size_t size) throw(std::bad_alloc) = delete; //{return xmalloc(size);}
+        void operator delete[] (void *address) throw() = delete; // {xfree(address);}
     };
 
     static OutStream *CurrentDebug;
@@ -88,7 +89,12 @@ extern FILE *debug_log;
 size_t BuildPrefixInit();
 const char * SkipBuildPrefix(const char* path);
 
-/* Debug stream */
+/* Debug stream
+ *
+ * Unit tests can enable full debugging to stderr for one
+ * debug section; to enable this, #define ENABLE_DEBUG_SECTION to the
+ * section number before any header
+ */
 #define debugs(SECTION, LEVEL, CONTENT) \
    do { \
         if ((Debug::level = (LEVEL)) <= Debug::Levels[SECTION]) { \

@@ -20,7 +20,6 @@
 #include "fd.h"
 #include "ftp/Parsing.h"
 #include "ip/tools.h"
-#include "Mem.h"
 #include "SquidConfig.h"
 #include "SquidString.h"
 #include "StatCounters.h"
@@ -243,13 +242,23 @@ Ftp::Client::doneWithServer() const
 }
 
 void
-Ftp::Client::failed(err_type error, int xerrno)
+Ftp::Client::failed(err_type error, int xerrno, ErrorState *err)
 {
     debugs(9, 3, "entry-null=" << (entry?entry->isEmpty():0) << ", entry=" << entry);
 
     const char *command, *reply;
-    const Http::StatusCode httpStatus = failedHttpStatus(error);
-    ErrorState *const ftperr = new ErrorState(error, httpStatus, fwd->request);
+    ErrorState *ftperr;
+
+    if (err) {
+        debugs(9, 6, "error=" << err->type << ", code=" << xerrno <<
+               ", status=" << err->httpStatus);
+        error = err->type;
+        ftperr = err;
+    } else {
+        Http::StatusCode httpStatus = failedHttpStatus(error);
+        ftperr = new ErrorState(error, httpStatus, fwd->request);
+    }
+
     ftperr->xerrno = xerrno;
 
     ftperr->ftp.server_msg = ctrl.message;
@@ -274,10 +283,11 @@ Ftp::Client::failed(err_type error, int xerrno)
     if (reply)
         ftperr->ftp.reply = xstrdup(reply);
 
-    fwd->request->detailError(error, xerrno);
-    fwd->fail(ftperr);
-
-    closeServer(); // we failed, so no serverComplete()
+    if (!err) {
+        fwd->request->detailError(error, xerrno);
+        fwd->fail(ftperr);
+        closeServer(); // we failed, so no serverComplete()
+    }
 }
 
 Http::StatusCode
@@ -332,8 +342,8 @@ Ftp::Client::readControlReply(const CommIoCbParams &io)
     debugs(9, 3, "FD " << io.fd << ", Read " << io.size << " bytes");
 
     if (io.size > 0) {
-        kb_incr(&(statCounter.server.all.kbytes_in), io.size);
-        kb_incr(&(statCounter.server.ftp.kbytes_in), io.size);
+        statCounter.server.all.kbytes_in += io.size;
+        statCounter.server.ftp.kbytes_in += io.size;
     }
 
     if (io.flag == Comm::ERR_CLOSING)
@@ -510,6 +520,8 @@ Ftp::Client::handleEpsvReply(Ip::Address &remoteAddr)
             debugs(9, DBG_IMPORTANT, "WARNING: Server at " << ctrl.conn->remote << " sent unknown protocol negotiation hint: " << buf);
             return sendPassive();
         }
+        /* coverity[unreachable] */
+        /* safeguard against possible future bugs in above conditions */
         failed(ERR_FTP_FAILURE, 0);
         return false;
     }
@@ -588,10 +600,10 @@ Ftp::Client::sendEprt()
     /* RFC 2428 defines EPRT as IPv6 equivalent to IPv4 PORT command. */
     /* Which can be used by EITHER protocol. */
     debugs(9, 3, "Listening for FTP data connection on port" << comm_local_port(data.conn->fd) << " or port?" << data.conn->local.port());
-    mb.Printf("EPRT |%d|%s|%d|%s",
-              ( data.conn->local.isIPv6() ? 2 : 1 ),
-              data.conn->local.toStr(buf,MAX_IPSTRLEN),
-              comm_local_port(data.conn->fd), Ftp::crlf );
+    mb.appendf("EPRT |%d|%s|%d|%s",
+               ( data.conn->local.isIPv6() ? 2 : 1 ),
+               data.conn->local.toStr(buf,MAX_IPSTRLEN),
+               comm_local_port(data.conn->fd), Ftp::crlf );
 
     state = SENT_EPRT;
     writeCommand(mb.content());
@@ -648,7 +660,7 @@ Ftp::Client::sendPassive()
     case SENT_EPSV_ALL: /* EPSV ALL resulted in a bad response. Try ther EPSV methods. */
         if (ctrl.conn->local.isIPv6()) {
             debugs(9, 5, "FTP Channel is IPv6 (" << ctrl.conn->remote << ") attempting EPSV 2 after EPSV ALL has failed.");
-            mb.Printf("EPSV 2%s", Ftp::crlf);
+            mb.appendf("EPSV 2%s", Ftp::crlf);
             state = SENT_EPSV_2;
             break;
         }
@@ -657,7 +669,7 @@ Ftp::Client::sendPassive()
     case SENT_EPSV_2: /* EPSV IPv6 failed. Try EPSV IPv4 */
         if (ctrl.conn->local.isIPv4()) {
             debugs(9, 5, "FTP Channel is IPv4 (" << ctrl.conn->remote << ") attempting EPSV 1 after EPSV ALL has failed.");
-            mb.Printf("EPSV 1%s", Ftp::crlf);
+            mb.appendf("EPSV 1%s", Ftp::crlf);
             state = SENT_EPSV_1;
             break;
         } else if (Config.Ftp.epsv_all) {
@@ -669,7 +681,7 @@ Ftp::Client::sendPassive()
 
     case SENT_EPSV_1: /* EPSV options exhausted. Try PASV now. */
         debugs(9, 5, "FTP Channel (" << ctrl.conn->remote << ") rejects EPSV connection attempts. Trying PASV instead.");
-        mb.Printf("PASV%s", Ftp::crlf);
+        mb.appendf("PASV%s", Ftp::crlf);
         state = SENT_PASV;
         break;
 
@@ -681,21 +693,21 @@ Ftp::Client::sendPassive()
         }
         if (!doEpsv) {
             debugs(9, 5, "EPSV support manually disabled. Sending PASV for FTP Channel (" << ctrl.conn->remote <<")");
-            mb.Printf("PASV%s", Ftp::crlf);
+            mb.appendf("PASV%s", Ftp::crlf);
             state = SENT_PASV;
         } else if (Config.Ftp.epsv_all) {
             debugs(9, 5, "EPSV ALL manually enabled. Attempting with FTP Channel (" << ctrl.conn->remote <<")");
-            mb.Printf("EPSV ALL%s", Ftp::crlf);
+            mb.appendf("EPSV ALL%s", Ftp::crlf);
             state = SENT_EPSV_ALL;
         } else {
             if (ctrl.conn->local.isIPv6()) {
                 debugs(9, 5, "FTP Channel (" << ctrl.conn->remote << "). Sending default EPSV 2");
-                mb.Printf("EPSV 2%s", Ftp::crlf);
+                mb.appendf("EPSV 2%s", Ftp::crlf);
                 state = SENT_EPSV_2;
             }
             if (ctrl.conn->local.isIPv4()) {
                 debugs(9, 5, "Channel (" << ctrl.conn->remote <<"). Sending default EPSV 1");
-                mb.Printf("EPSV 1%s", Ftp::crlf);
+                mb.appendf("EPSV 1%s", Ftp::crlf);
                 state = SENT_EPSV_1;
             }
         }
@@ -756,7 +768,7 @@ Ftp::Client::dataCloser()
 
 /// handler called by Comm when FTP data channel is closed unexpectedly
 void
-Ftp::Client::dataClosed(const CommCloseCbParams &io)
+Ftp::Client::dataClosed(const CommCloseCbParams &)
 {
     debugs(9, 4, status());
     if (data.listenConn != NULL) {
@@ -807,8 +819,8 @@ Ftp::Client::writeCommandCallback(const CommIoCbParams &io)
 
     if (io.size > 0) {
         fd_bytes(io.fd, io.size, FD_WRITE);
-        kb_incr(&(statCounter.server.all.kbytes_out), io.size);
-        kb_incr(&(statCounter.server.ftp.kbytes_out), io.size);
+        statCounter.server.all.kbytes_out += io.size;
+        statCounter.server.ftp.kbytes_out += io.size;
     }
 
     if (io.flag == Comm::ERR_CLOSING)
@@ -824,7 +836,7 @@ Ftp::Client::writeCommandCallback(const CommIoCbParams &io)
 
 /// handler called by Comm when FTP control channel is closed unexpectedly
 void
-Ftp::Client::ctrlClosed(const CommCloseCbParams &io)
+Ftp::Client::ctrlClosed(const CommCloseCbParams &)
 {
     debugs(9, 4, status());
     ctrl.clear();
@@ -893,8 +905,8 @@ Ftp::Client::dataRead(const CommIoCbParams &io)
     debugs(9, 3, "FD " << io.fd << " Read " << io.size << " bytes");
 
     if (io.size > 0) {
-        kb_incr(&(statCounter.server.all.kbytes_in), io.size);
-        kb_incr(&(statCounter.server.ftp.kbytes_in), io.size);
+        statCounter.server.all.kbytes_in += io.size;
+        statCounter.server.ftp.kbytes_in += io.size;
     }
 
     if (io.flag == Comm::ERR_CLOSING)
@@ -1019,7 +1031,7 @@ void
 Ftp::Client::sentRequestBody(const CommIoCbParams &io)
 {
     if (io.size > 0)
-        kb_incr(&(statCounter.server.ftp.kbytes_out), io.size);
+        statCounter.server.ftp.kbytes_out += io.size;
     ::Client::sentRequestBody(io);
 }
 

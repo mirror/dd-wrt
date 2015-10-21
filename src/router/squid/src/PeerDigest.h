@@ -12,7 +12,6 @@
 #if USE_CACHE_DIGESTS
 
 #include "cbdata.h"
-/* for CacheDigestGuessStats */
 #include "StatCounters.h"
 
 class Version
@@ -44,7 +43,12 @@ class store_client;
 
 class DigestFetchState
 {
+    CBDATA_CLASS(DigestFetchState);
+
 public:
+    DigestFetchState(PeerDigest *,HttpRequest *);
+    ~DigestFetchState();
+
     PeerDigest *pd;
     StoreEntry *entry;
     StoreEntry *old_entry;
@@ -60,9 +64,8 @@ public:
     struct {
         int msg;
         int bytes;
-    }
+    } sent, recv;
 
-    sent, recv;
     char buf[SM_PAGE_SIZE];
     ssize_t bufofs;
     digest_read_state_t state;
@@ -70,6 +73,7 @@ public:
 
 class PeerDigest
 {
+    CBDATA_CLASS(PeerDigest);
 
 public:
     CachePeer *peer;          /**< pointer back to peer structure, argh */
@@ -101,12 +105,9 @@ public:
 
         struct {
             int msgs;
-            kb_t kbytes;
+            ByteCounter kbytes;
         } sent, recv;
     } stats;
-
-private:
-    CBDATA_CLASS2(PeerDigest);
 };
 
 extern const Version CacheDigestVer;

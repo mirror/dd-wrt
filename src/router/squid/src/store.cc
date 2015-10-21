@@ -48,6 +48,11 @@
 #include "DelayPools.h"
 #endif
 
+/** StoreEntry uses explicit new/delete operators, which set pool chunk size to 2MB
+ * XXX: convert to MEMPROXY_CLASS() API
+ */
+#include "mem/Pool.h"
+
 #include <climits>
 #include <stack>
 
@@ -122,7 +127,7 @@ Store::Root(StorePointer aRoot)
 void
 Store::Stats(StoreEntry * output)
 {
-    assert (output);
+    assert(output);
     Root().stat(*output);
 }
 
@@ -139,7 +144,7 @@ Store::sync()
 {}
 
 void
-Store::unlink (StoreEntry &anEntry)
+Store::unlink(StoreEntry &)
 {
     fatal("Store::unlink on invalid Store\n");
 }
@@ -255,13 +260,13 @@ StoreEntry::bytesWanted (Range<size_t> const aRange, bool ignoreDelayPools) cons
 }
 
 bool
-StoreEntry::checkDeferRead(int fd) const
+StoreEntry::checkDeferRead(int) const
 {
     return (bytesWanted(Range<size_t>(0,INT_MAX)) == 0);
 }
 
 void
-StoreEntry::setNoDelay (bool const newValue)
+StoreEntry::setNoDelay(bool const newValue)
 {
     if (mem_obj)
         mem_obj->setNoDelay(newValue);
@@ -697,20 +702,20 @@ StoreEntry::setPublicKey()
             /* We are allowed to do this typecast */
             HttpReply *rep = new HttpReply;
             rep->setHeaders(Http::scOkay, "Internal marker object", "x-squid-internal/vary", -1, -1, squid_curtime + 100000);
-            vary = mem_obj->getReply()->header.getList(HDR_VARY);
+            vary = mem_obj->getReply()->header.getList(Http::HdrType::VARY);
 
             if (vary.size()) {
                 /* Again, we own this structure layout */
-                rep->header.putStr(HDR_VARY, vary.termedBuf());
+                rep->header.putStr(Http::HdrType::VARY, vary.termedBuf());
                 vary.clean();
             }
 
 #if X_ACCELERATOR_VARY
-            vary = mem_obj->getReply()->header.getList(HDR_X_ACCELERATOR_VARY);
+            vary = mem_obj->getReply()->header.getList(Http::HdrType::HDR_X_ACCELERATOR_VARY);
 
             if (vary.size() > 0) {
                 /* Again, we own this structure layout */
-                rep->header.putStr(HDR_X_ACCELERATOR_VARY, vary.termedBuf());
+                rep->header.putStr(Http::HdrType::HDR_X_ACCELERATOR_VARY, vary.termedBuf());
                 vary.clean();
             }
 
@@ -842,23 +847,61 @@ StoreEntry::append(char const *buf, int len)
 }
 
 void
+StoreEntry::vappendf(const char *fmt, va_list vargs)
+{
+    LOCAL_ARRAY(char, buf, 4096);
+    *buf = 0;
+    int x;
+
+#ifdef VA_COPY
+    va_args ap;
+    /* Fix of bug 753r. The value of vargs is undefined
+     * after vsnprintf() returns. Make a copy of vargs
+     * incase we loop around and call vsnprintf() again.
+     */
+    VA_COPY(ap,vargs);
+    errno = 0;
+    if ((x = vsnprintf(buf, sizeof(buf), fmt, ap)) < 0) {
+        fatal(xstrerr(errno));
+        return;
+    }
+    va_end(ap);
+#else /* VA_COPY */
+    errno = 0;
+    if ((x = vsnprintf(buf, sizeof(buf), fmt, vargs)) < 0) {
+        fatal(xstrerr(errno));
+        return;
+    }
+#endif /*VA_COPY*/
+
+    if (x < static_cast<int>(sizeof(buf))) {
+        append(buf, x);
+        return;
+    }
+
+    // okay, do it the slow way.
+    char *buf2 = new char[x+1];
+    int y = vsnprintf(buf2, x+1, fmt, vargs);
+    assert(y >= 0 && y == x);
+    append(buf2, y);
+    delete[] buf2;
+}
+
+// deprecated. use StoreEntry::appendf() instead.
+void
 storeAppendPrintf(StoreEntry * e, const char *fmt,...)
 {
     va_list args;
     va_start(args, fmt);
-
-    storeAppendVPrintf(e, fmt, args);
+    e->vappendf(fmt, args);
     va_end(args);
 }
 
-/* used be storeAppendPrintf and Packer */
+// deprecated. use StoreEntry::appendf() instead.
 void
 storeAppendVPrintf(StoreEntry * e, const char *fmt, va_list vargs)
 {
-    LOCAL_ARRAY(char, buf, 4096);
-    buf[0] = '\0';
-    vsnprintf(buf, 4096, fmt, vargs);
-    e->append(buf, strlen(buf));
+    e->vappendf(fmt, vargs);
 }
 
 struct _store_check_cachable_hist {
@@ -1177,7 +1220,7 @@ storeGetMemSpace(int size)
  * it becomes active will self register
  */
 void
-Store::Maintain(void *notused)
+Store::Maintain(void *)
 {
     Store::Root().maintain();
 
@@ -1269,7 +1312,7 @@ StoreEntry::release()
 }
 
 static void
-storeLateRelease(void *unused)
+storeLateRelease(void *)
 {
     StoreEntry *e;
     static int n = 0;
@@ -1541,7 +1584,7 @@ StoreEntry::timestampsSet()
 {
     const HttpReply *reply = getReply();
     time_t served_date = reply->date;
-    int age = reply->header.getInt(HDR_AGE);
+    int age = reply->header.getInt(Http::HdrType::AGE);
     /* Compute the timestamp, mimicking RFC2616 section 13.2.3. */
     /* make sure that 0 <= served_date <= squid_curtime */
 
@@ -1694,14 +1737,21 @@ StoreEntry::createMemObject(const char *aUrl, const char *aLogUrl, const HttpReq
     mem_obj->setUris(aUrl, aLogUrl, aMethod);
 }
 
-/* this just sets DELAY_SENDING */
+/** disable sending content to the clients.
+ *
+ * This just sets DELAY_SENDING.
+ */
 void
 StoreEntry::buffer()
 {
     EBIT_SET(flags, DELAY_SENDING);
 }
 
-/* this just clears DELAY_SENDING and Invokes the handlers */
+/** flush any buffered content.
+ *
+ * This just clears DELAY_SENDING and Invokes the handlers
+ * to begin sending anything that may be buffered.
+ */
 void
 StoreEntry::flush()
 {
@@ -1862,12 +1912,9 @@ StoreEntry::replaceHttpReply(HttpReply *rep, bool andStartWriting)
 void
 StoreEntry::startWriting()
 {
-    Packer p;
-
-    /* TODO: when we store headers serparately remove the header portion */
+    /* TODO: when we store headers separately remove the header portion */
     /* TODO: mark the length of the headers ? */
     /* We ONLY want the headers */
-    packerToStoreInit(&p, this);
 
     assert (isEmpty());
     assert(mem_obj);
@@ -1875,13 +1922,13 @@ StoreEntry::startWriting()
     const HttpReply *rep = getReply();
     assert(rep);
 
-    rep->packHeadersInto(&p);
+    buffer();
+    rep->packHeadersInto(this);
     mem_obj->markEndOfReplyHeaders();
     EBIT_CLR(flags, ENTRY_FWD_HDR_WAIT);
 
-    rep->body.packInto(&p);
-
-    packerClean(&p);
+    rep->body.packInto(this);
+    flush();
 }
 
 char const *
@@ -1916,7 +1963,7 @@ StoreEntry::transientsAbandonmentCheck()
 }
 
 void
-StoreEntry::memOutDecision(const bool willCacheInRam)
+StoreEntry::memOutDecision(const bool)
 {
     transientsAbandonmentCheck();
 }
@@ -1996,7 +2043,7 @@ bool
 StoreEntry::hasEtag(ETag &etag) const
 {
     if (const HttpReply *reply = getReply()) {
-        etag = reply->header.getETag(HDR_ETAG);
+        etag = reply->header.getETag(Http::HdrType::ETAG);
         if (etag.str)
             return true;
     }
@@ -2006,14 +2053,14 @@ StoreEntry::hasEtag(ETag &etag) const
 bool
 StoreEntry::hasIfMatchEtag(const HttpRequest &request) const
 {
-    const String reqETags = request.header.getList(HDR_IF_MATCH);
+    const String reqETags = request.header.getList(Http::HdrType::IF_MATCH);
     return hasOneOfEtags(reqETags, false);
 }
 
 bool
 StoreEntry::hasIfNoneMatchEtag(const HttpRequest &request) const
 {
-    const String reqETags = request.header.getList(HDR_IF_NONE_MATCH);
+    const String reqETags = request.header.getList(Http::HdrType::IF_NONE_MATCH);
     // weak comparison is allowed only for HEAD or full-body GET requests
     const bool allowWeakMatch = !request.flags.isRanged &&
                                 (request.method == Http::METHOD_GET || request.method == Http::METHOD_HEAD);
@@ -2024,7 +2071,7 @@ StoreEntry::hasIfNoneMatchEtag(const HttpRequest &request) const
 bool
 StoreEntry::hasOneOfEtags(const String &reqETags, const bool allowWeakMatch) const
 {
-    const ETag repETag = getReply()->header.getETag(HDR_ETAG);
+    const ETag repETag = getReply()->header.getETag(Http::HdrType::ETAG);
     if (!repETag.str)
         return strListIsMember(&reqETags, "*", ',');
 

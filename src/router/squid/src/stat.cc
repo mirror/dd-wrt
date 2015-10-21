@@ -21,6 +21,7 @@
 #include "globals.h"
 #include "HttpRequest.h"
 #include "IoStats.h"
+#include "mem/Pool.h"
 #include "mem_node.h"
 #include "MemBuf.h"
 #include "MemObject.h"
@@ -42,6 +43,8 @@
 #include "store_digest.h"
 #include "StoreClient.h"
 #include "tools.h"
+// for tvSubDsec() which should be in SquidTime.h
+#include "util.h"
 #if USE_AUTH
 #include "auth/UserRequest.h"
 #endif
@@ -65,14 +68,12 @@ typedef int STOBJFLT(const StoreEntry *);
 
 class StatObjectsState
 {
+    CBDATA_CLASS(StatObjectsState);
 
 public:
     StoreEntry *sentry;
     STOBJFLT *filter;
     StoreSearchPointer theSearch;
-
-private:
-    CBDATA_CLASS2(StatObjectsState);
 };
 
 /* LOCALS */
@@ -341,21 +342,17 @@ static void
 statStoreEntry(MemBuf * mb, StoreEntry * e)
 {
     MemObject *mem = e->mem_obj;
-    mb->Printf("KEY %s\n", e->getMD5Text());
-    mb->Printf("\t%s\n", describeStatuses(e));
-    mb->Printf("\t%s\n", storeEntryFlags(e));
-    mb->Printf("\t%s\n", describeTimestamps(e));
-    mb->Printf("\t%d locks, %d clients, %d refs\n",
-               (int) e->locks(),
-               storePendingNClients(e),
-               (int) e->refcount);
-    mb->Printf("\tSwap Dir %d, File %#08X\n",
-               e->swap_dirn, e->swap_filen);
+    mb->appendf("KEY %s\n", e->getMD5Text());
+    mb->appendf("\t%s\n", describeStatuses(e));
+    mb->appendf("\t%s\n", storeEntryFlags(e));
+    mb->appendf("\t%s\n", describeTimestamps(e));
+    mb->appendf("\t%d locks, %d clients, %d refs\n", (int) e->locks(), storePendingNClients(e), (int) e->refcount);
+    mb->appendf("\tSwap Dir %d, File %#08X\n", e->swap_dirn, e->swap_filen);
 
     if (mem != NULL)
         mem->stat (mb);
 
-    mb->Printf("\n");
+    mb->append("\n", 1);
 }
 
 /* process objects list */
@@ -807,7 +804,6 @@ void
 DumpMallocStatistics(StoreEntry* sentry)
 {
 #if XMALLOC_STATISTICS
-
     xm_deltat = current_dtime - xm_time;
     xm_time = current_dtime;
     storeAppendPrintf(sentry, "\nMemory allocation statistics\n");
@@ -1220,7 +1216,7 @@ statRegisterWithCacheManager(void)
 #if USE_AUTH
     Mgr::RegisterAction("username_cache",
                         "Active Cached Usernames",
-                        Auth::User::UsernameCacheStats, 0, 1);
+                        Auth::User::CredentialsCacheStats, 0, 1);
 #endif
 #if DEBUG_OPENFD
     Mgr::RegisterAction("openfd_objects", "Objects with Swapout files open",
@@ -1256,7 +1252,7 @@ statInit(void)
 }
 
 static void
-statAvgTick(void *notused)
+statAvgTick(void *)
 {
     StatCounters *t = &CountHist[0];
     StatCounters *p = &CountHist[1];
@@ -1871,7 +1867,7 @@ statClientRequests(StoreEntry * s)
         }
 
         storeAppendPrintf(s, "uri %s\n", http->uri);
-        storeAppendPrintf(s, "logType %s\n", LogTags_str[http->logType]);
+        storeAppendPrintf(s, "logType %s\n", http->logType.c_str());
         storeAppendPrintf(s, "out.offset %ld, out.size %lu\n",
                           (long int) http->out.offset, (unsigned long int) http->out.size);
         storeAppendPrintf(s, "req_sz %ld\n", (long int) http->req_sz);

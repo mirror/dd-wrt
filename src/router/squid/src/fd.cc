@@ -11,6 +11,7 @@
 #include "squid.h"
 #include "comm/Loops.h"
 #include "Debug.h"
+#include "fatal.h"
 #include "fd.h"
 #include "fde.h"
 #include "globals.h"
@@ -163,7 +164,7 @@ default_write_method(int fd, const char *buf, int len)
 }
 
 int
-msghdr_read_method(int fd, char *buf, int len)
+msghdr_read_method(int fd, char *buf, int)
 {
     PROF_start(read);
     const int i = recvmsg(fd, reinterpret_cast<msghdr*>(buf), MSG_DONTWAIT);

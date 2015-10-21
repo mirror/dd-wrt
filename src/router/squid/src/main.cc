@@ -25,6 +25,7 @@
 #include "CpuAffinity.h"
 #include "disk.h"
 #include "DiskIO/DiskIOModule.h"
+#include "dns/forward.h"
 #include "errorpage.h"
 #include "event.h"
 #include "EventLoop.h"
@@ -47,8 +48,6 @@
 #include "ipc/Kids.h"
 #include "ipc/Strand.h"
 #include "ipcache.h"
-#include "Mem.h"
-#include "MemPool.h"
 #include "mime.h"
 #include "neighbors.h"
 #include "parser/Tokenizer.h"
@@ -62,7 +61,6 @@
 #include "SBufStatsAction.h"
 #include "send-announce.h"
 #include "SquidConfig.h"
-#include "SquidDns.h"
 #include "SquidTime.h"
 #include "stat.h"
 #include "StatCounters.h"
@@ -123,6 +121,9 @@
 #endif
 
 #include <cerrno>
+#if HAVE_GETOPT_H
+#include <getopt.h>
+#endif
 #if HAVE_PATHS_H
 #include <paths.h>
 #endif
@@ -151,6 +152,7 @@ static volatile int do_reconfigure = 0;
 static volatile int do_rotate = 0;
 static volatile int do_shutdown = 0;
 static volatile int shutdown_status = 0;
+static volatile int do_handle_stopped_child = 0;
 
 static int RotateSignal = -1;
 static int ReconfigureSignal = -1;
@@ -185,7 +187,7 @@ class StoreRootEngine : public AsyncEngine
 {
 
 public:
-    int checkEvents(int timeout) {
+    int checkEvents(int) {
         Store::Root().callback();
         return EVENT_IDLE;
     };
@@ -195,6 +197,12 @@ class SignalEngine: public AsyncEngine
 {
 
 public:
+#if KILL_PARENT_OPT
+    SignalEngine(): parentKillNotified(false) {
+        parentPid = getppid();
+    }
+#endif
+
     virtual int checkEvents(int timeout);
 
 private:
@@ -216,16 +224,24 @@ private:
     }
 
     void doShutdown(time_t wait);
+    void handleStoppedChild();
+
+#if KILL_PARENT_OPT
+    bool parentKillNotified;
+    pid_t parentPid;
+#endif
 };
 
 int
-SignalEngine::checkEvents(int timeout)
+SignalEngine::checkEvents(int)
 {
     PROF_start(SignalEngine_checkEvents);
 
     if (do_reconfigure) {
-        mainReconfigureStart();
-        do_reconfigure = 0;
+        if (!reconfiguring && configured_once) {
+            mainReconfigureStart();
+            do_reconfigure = 0;
+        } // else wait until previous reconfigure is done
     } else if (do_rotate) {
         mainRotate();
         do_rotate = 0;
@@ -233,11 +249,10 @@ SignalEngine::checkEvents(int timeout)
         doShutdown(do_shutdown > 0 ? (int) Config.shutdownLifetime : 0);
         do_shutdown = 0;
     }
-    BroadcastSignalIfAny(DebugSignal);
-    BroadcastSignalIfAny(RotateSignal);
-    BroadcastSignalIfAny(ReconfigureSignal);
-    BroadcastSignalIfAny(ShutdownSignal);
-
+    if (do_handle_stopped_child) {
+        do_handle_stopped_child = 0;
+        handleStoppedChild();
+    }
     PROF_stop(SignalEngine_checkEvents);
     return EVENT_IDLE;
 }
@@ -248,32 +263,75 @@ SignalEngine::doShutdown(time_t wait)
     debugs(1, DBG_IMPORTANT, "Preparing for shutdown after " << statCounter.client_http.requests << " requests");
     debugs(1, DBG_IMPORTANT, "Waiting " << wait << " seconds for active connections to finish");
 
-    shutting_down = 1;
+#if KILL_PARENT_OPT
+    if (!IamMasterProcess() && !parentKillNotified && ShutdownSignal > 0 && parentPid > 1) {
+        debugs(1, DBG_IMPORTANT, "Killing master process, pid " << parentPid);
+        if (kill(parentPid, ShutdownSignal) < 0)
+            debugs(1, DBG_IMPORTANT, "kill " << parentPid << ": " << xstrerror());
+        parentKillNotified = true;
+    }
+#endif
+
+    if (shutting_down) {
+#if !KILL_PARENT_OPT
+        // Already a shutdown signal has received and shutdown is in progress.
+        // Shutdown as soon as possible.
+        wait = 0;
+#endif
+    } else {
+        shutting_down = 1;
+
+        /* run the closure code which can be shared with reconfigure */
+        serverConnectionsClose();
+
+        RunRegisteredHere(RegisteredRunner::startShutdown);
+    }
 
 #if USE_WIN32_SERVICE
     WIN32_svcstatusupdate(SERVICE_STOP_PENDING, (wait + 1) * 1000);
 #endif
 
-    /* run the closure code which can be shared with reconfigure */
-    serverConnectionsClose();
-    RunRegisteredHere(RegisteredRunner::startShutdown);
     eventAdd("SquidShutdown", &FinalShutdownRunners, this, (double) (wait + 1), 1, false);
+}
+
+void
+SignalEngine::handleStoppedChild()
+{
+#if !_SQUID_WINDOWS_
+    PidStatus status;
+    pid_t pid;
+
+    do {
+        pid = WaitForAnyPid(status, WNOHANG);
+
+#if HAVE_SIGACTION
+
+    } while (pid > 0);
+
+#else
+
+    }
+    while (pid > 0 || (pid < 0 && errno == EINTR));
+#endif
+#endif
 }
 
 static void
 usage(void)
 {
     fprintf(stderr,
-            "Usage: %s [-cdhvzCFNRVYX] [-n name] [-s | -l facility] [-f config-file] [-[au] port] [-k signal]"
+            "Usage: %s [-cdzCFNRVYX] [-n name] [-s | -l facility] [-f config-file] [-[au] port] [-k signal]"
 #if USE_WIN32_SERVICE
             "[-ir] [-O CommandLine]"
 #endif
+            "\n"
+            "    -h | --help       Print help message.\n"
+            "    -v | --version    Print version details.\n"
             "\n"
             "       -a port   Specify HTTP port number (default: %d).\n"
             "       -d level  Write debugging to stderr also.\n"
             "       -f file   Use given config-file instead of\n"
             "                 %s\n"
-            "       -h        Print help message.\n"
 #if USE_WIN32_SERVICE
             "       -i        Installs as a Windows Service (see -n option).\n"
 #endif
@@ -292,7 +350,6 @@ usage(void)
             "       -s | -l facility\n"
             "                 Enable logging to syslog.\n"
             "       -u port   Specify ICP port number (default: %d), disable with 0.\n"
-            "       -v        Print version.\n"
             "       -z        Create missing swap directories and then exit.\n"
             "       -C        Do not catch fatal signals.\n"
             "       -D        OBSOLETE. Scheduled for removal.\n"
@@ -313,21 +370,30 @@ usage(void)
 /**
  * Parse the parameters received via command line interface.
  *
- \param argc   Number of options received on command line
- \param argv   List of parameters received on command line
+ * \param argc   Number of options received on command line
+ * \param argv   List of parameters received on command line
  */
 static void
 mainParseOptions(int argc, char *argv[])
 {
-    extern char *optarg;
-    int c;
+    int optIndex = 0;
 
+    // short options
+    const char *shortOpStr =
 #if USE_WIN32_SERVICE
-    while ((c = getopt(argc, argv, "CDFNO:RSVYXa:d:f:hik:m::n:rsl:u:vz?")) != -1)
-#else
-    while ((c = getopt(argc, argv, "CDFNRSYXa:d:f:hk:m::n:sl:u:vz?")) != -1)
+        "O:Vir"
 #endif
-    {
+        "CDFNRSYXa:d:f:hk:m::n:sl:u:vz?";
+
+    // long options
+    static struct option squidOptions[] = {
+        {"help",    no_argument, 0, 'h'},
+        {"version", no_argument, 0, 'v'},
+        {0, 0, 0, 0}
+    };
+
+    int c;
+    while ((c = getopt_long(argc, argv, shortOpStr, squidOptions, &optIndex)) != -1) {
 
         switch (c) {
 
@@ -408,7 +474,7 @@ mainParseOptions(int argc, char *argv[])
 
         case 'd':
             /** \par d
-             * Set global option Debug::log_stderr to the number given follwoign the option */
+             * Set global option Debug::log_stderr to the number given following the option */
             Debug::log_stderr = atoi(optarg);
             break;
 
@@ -623,6 +689,21 @@ reconfigure(int sig)
 #endif
 }
 
+/// Shutdown signal handler for master process
+void
+master_shutdown(int sig)
+{
+    do_shutdown = 1;
+    ShutdownSignal = sig;
+
+#if !_SQUID_WINDOWS_
+#if !HAVE_SIGACTION
+    signal(sig, master_shutdown);
+#endif
+#endif
+
+}
+
 void
 shut_down(int sig)
 {
@@ -634,29 +715,20 @@ shut_down(int sig)
 #endif
 
 #if !_SQUID_WINDOWS_
-    const pid_t ppid = getppid();
+#if !HAVE_SIGACTION
+    signal(sig, shut_down);
+#endif
+#endif
+}
 
-    if (!IamMasterProcess() && ppid > 1) {
-        // notify master that we are shutting down
-        if (kill(ppid, SIGUSR1) < 0)
-            debugs(1, DBG_IMPORTANT, "Failed to send SIGUSR1 to master process,"
-                   " pid " << ppid << ": " << xstrerror());
-    }
+void
+sig_child(int sig)
+{
+    do_handle_stopped_child = 1;
 
-#if KILL_PARENT_OPT
-    if (!IamMasterProcess() && ppid > 1) {
-        debugs(1, DBG_IMPORTANT, "Killing master process, pid " << ppid);
-
-        if (kill(ppid, sig) < 0)
-            debugs(1, DBG_IMPORTANT, "kill " << ppid << ": " << xstrerror());
-    }
-#endif /* KILL_PARENT_OPT */
-
-#if SA_RESETHAND == 0
-    signal(SIGTERM, SIG_DFL);
-
-    signal(SIGINT, SIG_DFL);
-
+#if !_SQUID_WINDOWS_
+#if !HAVE_SIGACTION
+    signal(sig, sig_child);
 #endif
 #endif
 }
@@ -742,7 +814,7 @@ mainReconfigureStart(void)
 #if USE_HTCP
     htcpClosePorts();
 #endif
-    dnsShutdown();
+    Dns::Shutdown();
 #if USE_SSL_CRTD
     Ssl::Helper::GetInstance()->Shutdown();
 #endif
@@ -837,7 +909,7 @@ mainReconfigureFinish(void *)
     icapLogOpen();
 #endif
     storeLogOpen();
-    dnsInit();
+    Dns::Init();
 #if USE_SSL_CRTD
     Ssl::Helper::GetInstance()->Init();
 #endif
@@ -886,9 +958,14 @@ mainReconfigureFinish(void *)
             eventDelete(start_announce, NULL);
     }
 
-    writePidFile();     /* write PID file */
+    if (!InDaemonMode())
+        writePidFile(); /* write PID file */
 
     reconfiguring = 0;
+
+    // ignore any pending re-reconfigure signals if shutdown received
+    if (do_shutdown)
+        do_reconfigure = 0;
 }
 
 static void
@@ -991,6 +1068,7 @@ mainInitialize(void)
 
     squid_signal(SIGPIPE, SIG_IGN, SA_RESTART);
     squid_signal(SIGCHLD, sig_child, SA_NODEFER | SA_RESTART);
+    squid_signal(SIGHUP, reconfigure, SA_RESTART);
 
     setEffectiveUser();
 
@@ -1040,7 +1118,7 @@ mainInitialize(void)
 
     parseEtcHosts();
 
-    dnsInit();
+    Dns::Init();
 
 #if USE_SSL_CRTD
     Ssl::Helper::GetInstance()->Init();
@@ -1139,7 +1217,7 @@ mainInitialize(void)
     if (Config.chroot_dir)
         no_suid();
 
-    if (!configured_once)
+    if (!configured_once && !InDaemonMode())
         writePidFile();     /* write PID file */
 
 #if defined(_SQUID_LINUX_THREADS_)
@@ -1156,15 +1234,13 @@ mainInitialize(void)
 
 #endif
 
-    squid_signal(SIGHUP, reconfigure, SA_RESTART);
+    squid_signal(SIGTERM, shut_down, SA_RESTART);
 
-    squid_signal(SIGTERM, shut_down, SA_NODEFER | SA_RESETHAND | SA_RESTART);
-
-    squid_signal(SIGINT, shut_down, SA_NODEFER | SA_RESETHAND | SA_RESTART);
+    squid_signal(SIGINT, shut_down, SA_RESTART);
 
 #ifdef SIGTTIN
 
-    squid_signal(SIGTTIN, shut_down, SA_NODEFER | SA_RESETHAND | SA_RESTART);
+    squid_signal(SIGTTIN, shut_down, SA_RESTART);
 
 #endif
 
@@ -1332,8 +1408,6 @@ SquidMain(int argc, char **argv)
 #endif
 #endif /* HAVE_MALLOPT */
 
-    squid_srandom(time(NULL));
-
     getCurrentTime();
 
     squid_start = current_time;
@@ -1402,6 +1476,7 @@ SquidMain(int argc, char **argv)
         Format::Token::Init(); // XXX: temporary. Use a runners registry of pre-parse runners instead.
 
         try {
+            do_reconfigure = 0; // ignore any early (boot/startup) reconfigure signals
             parse_err = parseConfigFile(ConfigFile);
         } catch (...) {
             // for now any errors are a fatal condition...
@@ -1453,8 +1528,10 @@ SquidMain(int argc, char **argv)
     RunRegisteredHere(RegisteredRunner::useConfig);
     enter_suid();
 
-    if (!opt_no_daemon && Config.workers > 0)
+    if (InDaemonMode() && IamMasterProcess()) {
         watch_child(argv);
+        // NOTREACHED
+    }
 
     if (opt_create_swap_dirs) {
         /* chroot if configured to run inside chroot */
@@ -1620,15 +1697,8 @@ mainStartScript(const char *prog)
         _exit(-1);
     } else {
         do {
-#if _SQUID_NEXT_
-            union wait status;
-            rpid = wait4(cpid, &status, 0, NULL);
-#else
-
-            int status;
-            rpid = waitpid(cpid, &status, 0);
-#endif
-
+            PidStatus status;
+            rpid = WaitForOnePid(cpid, status, 0);
         } while (rpid != cpid);
     }
 }
@@ -1660,19 +1730,35 @@ checkRunningPid(void)
     return 1;
 }
 
+#if !_SQUID_WINDOWS_
+static void
+masterCheckAndBroadcastSignals()
+{
+    // if (do_reconfigure)
+    //     TODO: hot-reconfiguration of the number of kids and PID file location
+
+    if (do_shutdown)
+        shutting_down = 1;
+
+    BroadcastSignalIfAny(DebugSignal);
+    BroadcastSignalIfAny(RotateSignal);
+    BroadcastSignalIfAny(ReconfigureSignal);
+    BroadcastSignalIfAny(ShutdownSignal);
+}
+#endif
+
+static inline bool
+masterSignaled()
+{
+    return (DebugSignal > 0 || RotateSignal > 0 || ReconfigureSignal > 0 || ShutdownSignal > 0);
+}
+
 static void
 watch_child(char *argv[])
 {
 #if !_SQUID_WINDOWS_
     char *prog;
-#if _SQUID_NEXT_
-
-    union wait status;
-#else
-
-    int status;
-#endif
-
+    PidStatus status;
     pid_t pid;
 #ifdef TIOCNOTTY
 
@@ -1680,9 +1766,6 @@ watch_child(char *argv[])
 #endif
 
     int nullfd;
-
-    if (!IamMasterProcess())
-        return;
 
     openlog(APP_SHORTNAME, LOG_PID | LOG_NDELAY | LOG_CONS, LOG_LOCAL4);
 
@@ -1723,8 +1806,24 @@ watch_child(char *argv[])
         dup2(nullfd, 2);
     }
 
-    // handle shutdown notifications from kids
-    squid_signal(SIGUSR1, sig_shutdown, SA_RESTART);
+    writePidFile();
+    enter_suid(); // writePidFile() uses leave_suid()
+
+#if defined(_SQUID_LINUX_THREADS_)
+    squid_signal(SIGQUIT, rotate_logs, 0);
+    squid_signal(SIGTRAP, sigusr2_handle, 0);
+#else
+    squid_signal(SIGUSR1, rotate_logs, 0);
+    squid_signal(SIGUSR2, sigusr2_handle, 0);
+#endif
+
+    squid_signal(SIGHUP, reconfigure, 0);
+
+    squid_signal(SIGTERM, master_shutdown, 0);
+    squid_signal(SIGINT, master_shutdown, 0);
+#ifdef SIGTTIN
+    squid_signal(SIGTTIN, master_shutdown, 0);
+#endif
 
     if (Config.workers > 128) {
         syslog(LOG_ALERT, "Suspiciously high workers value: %d",
@@ -1737,13 +1836,17 @@ watch_child(char *argv[])
 
     // keep [re]starting kids until it is time to quit
     for (;;) {
-        mainStartScript(argv[0]);
-
+        bool mainStartScriptCalled = false;
         // start each kid that needs to be [re]started; once
-        for (int i = TheKids.count() - 1; i >= 0; --i) {
+        for (int i = TheKids.count() - 1; i >= 0 && !shutting_down; --i) {
             Kid& kid = TheKids.get(i);
             if (!kid.shouldRestart())
                 continue;
+
+            if (!mainStartScriptCalled) {
+                mainStartScript(argv[0]);
+                mainStartScriptCalled = true;
+            }
 
             if ((pid = fork()) == 0) {
                 /* child */
@@ -1762,50 +1865,45 @@ watch_child(char *argv[])
         /* parent */
         openlog(APP_SHORTNAME, LOG_PID | LOG_NDELAY | LOG_CONS, LOG_LOCAL4);
 
-        squid_signal(SIGINT, SIG_IGN, SA_RESTART);
+        // If Squid received a signal while checking for dying kids (below) or
+        // starting new kids (above), then do a fast check for a new dying kid
+        // (WaitForAnyPid with the WNOHANG option) and continue to forward
+        // signals to kids. Otherwise, wait for a kid to die or for a signal
+        // to abort the blocking WaitForAnyPid() call.
+        // With the WNOHANG option, we could check whether WaitForAnyPid() was
+        // aborted by a dying kid or a signal, but it is not required: The
+        // next do/while loop will check again for any dying kids.
+        int waitFlag = 0;
+        if (masterSignaled())
+            waitFlag = WNOHANG;
+        pid = WaitForAnyPid(status, waitFlag);
 
-#if _SQUID_NEXT_
-
-        pid = wait3(&status, 0, NULL);
-
-#else
-
-        pid = waitpid(-1, &status, 0);
-
-#endif
-        // Loop to collect all stopped kids before we go to sleep below.
-        do {
-            Kid* kid = TheKids.find(pid);
-            if (kid) {
-                kid->stop(status);
-                if (kid->calledExit()) {
-                    syslog(LOG_NOTICE,
-                           "Squid Parent: %s process %d exited with status %d",
-                           kid->name().termedBuf(),
-                           kid->getPid(), kid->exitStatus());
-                } else if (kid->signaled()) {
-                    syslog(LOG_NOTICE,
-                           "Squid Parent: %s process %d exited due to signal %d with status %d",
-                           kid->name().termedBuf(),
-                           kid->getPid(), kid->termSignal(), kid->exitStatus());
-                } else {
-                    syslog(LOG_NOTICE, "Squid Parent: %s process %d exited",
-                           kid->name().termedBuf(), kid->getPid());
-                }
-                if (kid->hopeless()) {
-                    syslog(LOG_NOTICE, "Squid Parent: %s process %d will not"
-                           " be restarted due to repeated, frequent failures",
-                           kid->name().termedBuf(), kid->getPid());
-                }
+        // check for a stopped kid
+        Kid* kid = pid > 0 ? TheKids.find(pid) : NULL;
+        if (kid) {
+            kid->stop(status);
+            if (kid->calledExit()) {
+                syslog(LOG_NOTICE,
+                       "Squid Parent: %s process %d exited with status %d",
+                       kid->name().termedBuf(),
+                       kid->getPid(), kid->exitStatus());
+            } else if (kid->signaled()) {
+                syslog(LOG_NOTICE,
+                       "Squid Parent: %s process %d exited due to signal %d with status %d",
+                       kid->name().termedBuf(),
+                       kid->getPid(), kid->termSignal(), kid->exitStatus());
             } else {
-                syslog(LOG_NOTICE, "Squid Parent: unknown child process %d exited", pid);
+                syslog(LOG_NOTICE, "Squid Parent: %s process %d exited",
+                       kid->name().termedBuf(), kid->getPid());
             }
-#if _SQUID_NEXT_
-        } while ((pid = wait3(&status, WNOHANG, NULL)) > 0);
-#else
+            if (kid->hopeless()) {
+                syslog(LOG_NOTICE, "Squid Parent: %s process %d will not"
+                       " be restarted due to repeated, frequent failures",
+                       kid->name().termedBuf(), kid->getPid());
+            }
+        } else if (pid > 0) {
+            syslog(LOG_NOTICE, "Squid Parent: unknown child process %d exited", pid);
         }
-        while ((pid = waitpid(-1, &status, WNOHANG)) > 0);
-#endif
 
         if (!TheKids.someRunning() && !TheKids.shouldRestartSome()) {
             leave_suid();
@@ -1814,6 +1912,8 @@ watch_child(char *argv[])
             RunRegisteredHere(RegisteredRunner::finishShutdown);
             enter_suid();
 
+            removePidFile();
+            enter_suid(); // removePidFile() uses leave_suid()
             if (TheKids.someSignaled(SIGINT) || TheKids.someSignaled(SIGTERM)) {
                 syslog(LOG_ALERT, "Exiting due to unexpected forced shutdown");
                 exit(1);
@@ -1827,8 +1927,7 @@ watch_child(char *argv[])
             exit(0);
         }
 
-        squid_signal(SIGINT, SIG_DFL, SA_RESTART);
-        sleep(3);
+        masterCheckAndBroadcastSignals();
     }
 
     /* NOTREACHED */
@@ -1850,7 +1949,7 @@ SquidShutdown()
 #endif
 
     debugs(1, DBG_IMPORTANT, "Shutting down...");
-    dnsShutdown();
+    Dns::Shutdown();
 #if USE_SSL_CRTD
     Ssl::Helper::GetInstance()->Shutdown();
 #endif
@@ -1917,7 +2016,6 @@ SquidShutdown()
     fqdncacheFreeMemory();
     asnFreeMemory();
     clientdbFreeMemory();
-    httpHeaderCleanModule();
     statFreeMemory();
     eventFreeMemory();
     mimeFreeMemory();
@@ -1934,12 +2032,8 @@ SquidShutdown()
 
     memClean();
 
-    if (IamPrimaryProcess()) {
-        if (Config.pidFilename && strcmp(Config.pidFilename, "none") != 0) {
-            enter_suid();
-            safeunlink(Config.pidFilename, 0);
-            leave_suid();
-        }
+    if (!InDaemonMode()) {
+        removePidFile();
     }
 
     debugs(1, DBG_IMPORTANT, "Squid Cache (Version " << version_string << "): Exiting normally.");

@@ -13,14 +13,14 @@
 
 #include "comm/forward.h"
 #include "defines.h"
-#include "hier_code.h"
-#include "ip/Address.h"
-#include "MemPool.h"
-#include "typedefs.h"
 #if USE_SQUID_EUI
 #include "eui/Eui48.h"
 #include "eui/Eui64.h"
 #endif
+#include "hier_code.h"
+#include "ip/Address.h"
+#include "ip/forward.h"
+#include "mem/forward.h"
 #include "SquidTime.h"
 
 #include <iosfwd>
@@ -59,9 +59,9 @@ namespace Comm
  */
 class Connection : public RefCountable
 {
-public:
     MEMPROXY_CLASS(Comm::Connection);
 
+public:
     Connection();
 
     /** Clear the connection properties and close any open socket. */
@@ -99,6 +99,12 @@ public:
 
     /** The time the connection started */
     time_t startTime() const {return startTime_;}
+
+    /** The connection lifetime */
+    time_t lifeTime() const {return squid_curtime - startTime_;}
+
+    /** The time left for this connection*/
+    time_t timeLeft(const time_t idleTimeout) const;
 
     void noteStart() {startTime_ = squid_curtime;}
 private:
@@ -146,8 +152,6 @@ private:
 };
 
 }; // namespace Comm
-
-MEMPROXY_CLASS_INLINE(Comm::Connection);
 
 // NP: Order and namespace here is very important.
 //     * The second define inlines the first.

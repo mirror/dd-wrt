@@ -10,12 +10,15 @@
 
 #ifndef SQUID_DISKTHREADSDISKFILE_H
 #define SQUID_DISKTHREADSDISKFILE_H
+
 #include "cbdata.h"
 #include "DiskIO/DiskFile.h"
 #include "DiskThreads.h"
+#include "typedefs.h" //for DWCB
 
 class DiskThreadsDiskFile : public DiskFile
 {
+    CBDATA_CLASS(DiskThreadsDiskFile);
 
 public:
     DiskThreadsDiskFile(char const *path, DiskThreadsIOStrategy *);
@@ -60,8 +63,6 @@ private:
 
     void readDone(int fd, const char *buf, int len, int errflag, RefCount<ReadRequest> request);
     void writeDone(int fd, int errflag, size_t len, RefCount<WriteRequest> request);
-
-    CBDATA_CLASS2(DiskThreadsDiskFile);
 };
 
 #include "DiskIO/ReadRequest.h"
@@ -69,15 +70,13 @@ private:
 template <class RT>
 class IoResult
 {
+    CBDATA_CLASS(IoResult);
 
 public:
     IoResult(RefCount<DiskThreadsDiskFile> aFile, RefCount<RT> aRequest) : file(aFile), request(aRequest) {}
 
     RefCount<DiskThreadsDiskFile> file;
     RefCount<RT> request;
-
-private:
-    CBDATA_CLASS2(IoResult);
 };
 
 template <class RT>

@@ -9,6 +9,7 @@
 #ifndef SQUID_SWAPDIR_H
 #define SQUID_SWAPDIR_H
 
+#include "mgr/forward.h"
 #include "SquidConfig.h"
 #include "Store.h"
 #include "StoreIOState.h"
@@ -22,6 +23,8 @@ class HttpRequestMethod;
 
 /* Store dir configuration routines */
 /* SwapDir *sd, char *path ( + char *opt later when the strtok mess is gone) */
+
+typedef int STDIRSELECT(const StoreEntry *);
 
 class ConfigOption;
 

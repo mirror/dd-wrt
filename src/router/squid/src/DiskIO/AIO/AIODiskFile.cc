@@ -21,9 +21,10 @@
  */
 
 #include "squid.h"
-#include "AIODiskFile.h"
-#include "AIODiskIOStrategy.h"
+#include "Debug.h"
 #include "disk.h"
+#include "DiskIO/AIO/AIODiskFile.h"
+#include "DiskIO/AIO/AIODiskIOStrategy.h"
 #include "DiskIO/IORequestor.h"
 #include "DiskIO/ReadRequest.h"
 #include "DiskIO/WriteRequest.h"
@@ -51,7 +52,7 @@ AIODiskFile::error(bool const &aBool)
 }
 
 void
-AIODiskFile::open(int flags, mode_t mode, RefCount<IORequestor> callback)
+AIODiskFile::open(int flags, mode_t, RefCount<IORequestor> callback)
 {
     /* Simulate async calls */
 #if _SQUID_WINDOWS_

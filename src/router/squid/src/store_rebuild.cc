@@ -21,6 +21,8 @@
 #include "store_rebuild.h"
 #include "StoreSearch.h"
 #include "SwapDir.h"
+// for tvSubDsec() which should be in SquidTime.h
+#include "util.h"
 
 #include <cerrno>
 
@@ -46,7 +48,7 @@ storeCleanupDoubleCheck(StoreEntry * e)
 }
 
 static void
-storeCleanup(void *datanotused)
+storeCleanup(void *)
 {
     static int store_errors = 0;
     static StoreSearchPointer currentSearch;

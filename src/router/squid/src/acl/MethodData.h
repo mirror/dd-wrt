@@ -11,32 +11,29 @@
 
 #include "acl/Acl.h"
 #include "acl/Data.h"
-#include "CbDataList.h"
-#include "HttpRequestMethod.h"
+#include "http/RequestMethod.h"
 
-/// \ingroup ACLAPI
+#include <list>
+
 class ACLMethodData : public ACLData<HttpRequestMethod>
 {
-
-public:
     MEMPROXY_CLASS(ACLMethodData);
 
-    ACLMethodData();
+public:
+    ACLMethodData() {}
     ACLMethodData(ACLMethodData const &);
     ACLMethodData &operator= (ACLMethodData const &);
     virtual ~ACLMethodData();
     bool match(HttpRequestMethod);
     virtual SBufList dump() const;
     void parse();
-    bool empty() const;
+    bool empty() const {return values.empty();}
     virtual ACLData<HttpRequestMethod> *clone() const;
 
-    CbDataList<HttpRequestMethod> *values;
+    std::list<HttpRequestMethod> values;
 
     static int ThePurgeCount; ///< PURGE methods seen by parse()
 };
-
-MEMPROXY_CLASS_INLINE(ACLMethodData);
 
 #endif /* SQUID_ACLMETHODDATA_H */
 

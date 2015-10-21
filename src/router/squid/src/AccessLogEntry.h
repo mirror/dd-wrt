@@ -14,8 +14,8 @@
 #include "comm/Connection.h"
 #include "HierarchyLogEntry.h"
 #include "http/ProtocolVersion.h"
+#include "http/RequestMethod.h"
 #include "HttpHeader.h"
-#include "HttpRequestMethod.h"
 #include "icp_opcode.h"
 #include "ip/Address.h"
 #include "LogTags.h"
@@ -39,14 +39,23 @@ class AccessLogEntry: public RefCountable
 public:
     typedef RefCount<AccessLogEntry> Pointer;
 
-    AccessLogEntry() : url(NULL), tcpClient(), reply(NULL), request(NULL),
-        adapted_request(NULL) {}
+    AccessLogEntry() :
+        url(nullptr),
+        lastAclName(nullptr),
+        lastAclData(nullptr),
+        reply(nullptr),
+        request(nullptr),
+        adapted_request(nullptr)
+    {}
     ~AccessLogEntry();
 
     /// Fetch the client IP log string into the given buffer.
     /// Knows about several alternate locations of the IP
     /// including indirect forwarded-for IP if configured to log that
     void getLogClientIp(char *buf, size_t bufsz) const;
+
+    /// Fetch the transaction method string (ICP opcode, HTCP opcode or HTTP method)
+    SBuf getLogMethod() const;
 
     const char *url;
 
@@ -63,23 +72,17 @@ public:
     {
 
     public:
-        HttpDetails() : method(Http::METHOD_NONE), code(0), content_type(NULL),
-            timedout(false),
-            aborted(false),
+        HttpDetails() :
+            method(Http::METHOD_NONE),
+            code(0),
+            content_type(NULL),
             clientRequestSz(),
             clientReplySz() {}
 
         HttpRequestMethod method;
         int code;
         const char *content_type;
-        Http::ProtocolVersion version;
-        bool timedout; ///< terminated due to a lifetime or I/O timeout
-        bool aborted; ///< other abnormal termination (e.g., I/O error)
-
-        /// compute suffix for the status access.log field
-        const char *statusSfx() const {
-            return timedout ? "_TIMEDOUT" : (aborted ? "_ABORTED" : "");
-        }
+        AnyP::ProtocolVersion version;
 
         /// counters for the original request received from client
         // TODO calculate header and payload better (by parser)
@@ -140,8 +143,7 @@ public:
         CacheDetails() : caddr(),
             highOffset(0),
             objectSize(0),
-            code (LOG_TAG_NONE),
-            msec(0),
+            code(LOG_TAG_NONE),
             rfc931 (NULL),
             extuser(NULL),
 #if USE_OPENSSL
@@ -151,6 +153,7 @@ public:
         {
             caddr.setNoAddr();
             memset(&start_time, 0, sizeof(start_time));
+            memset(&trTime, 0, sizeof(start_time));
         }
 
         Ip::Address caddr;
@@ -158,13 +161,13 @@ public:
         int64_t objectSize;
         LogTags code;
         struct timeval start_time; ///< The time the master transaction started
-        int msec;
+        struct timeval trTime; ///< The response time
         const char *rfc931;
         const char *extuser;
 #if USE_OPENSSL
 
         const char *ssluser;
-        Ssl::X509_Pointer sslClientCert; ///< cert received from the client
+        Security::CertPointer sslClientCert; ///< cert received from the client
 #endif
         AnyP::PortCfgPointer port;
 
@@ -203,16 +206,9 @@ public:
     } adapt;
 #endif
 
-    // Why is this a sub-class and not a set of real "private:" fields?
-    // TODO: shuffle this to the relevant ICP/HTCP protocol section
-    class Private
-    {
+    const char *lastAclName; ///< string for external_acl_type %ACL format code
+    const char *lastAclData; ///< string for external_acl_type %DATA format code
 
-    public:
-        Private() : method_str(NULL) {}
-
-        const char *method_str;
-    } _private;
     HierarchyLogEntry hier;
     HttpReply *reply;
     HttpRequest *request; //< virgin HTTP request
@@ -231,8 +227,12 @@ public:
     public:
         IcapLogEntry() : reqMethod(Adaptation::methodNone), bytesSent(0), bytesRead(0),
             bodyBytesRead(-1), request(NULL), reply(NULL),
-            outcome(Adaptation::Icap::xoUnknown), trTime(0),
-            ioTime(0), resStatus(Http::scNone), processingTime(0) {}
+            outcome(Adaptation::Icap::xoUnknown), resStatus(Http::scNone)
+        {
+            memset(&trTime, 0, sizeof(trTime));
+            memset(&ioTime, 0, sizeof(ioTime));
+            memset(&processingTime, 0, sizeof(processingTime));
+        }
 
         Ip::Address hostAddr; ///< ICAP server IP address
         String serviceName;        ///< ICAP service name
@@ -253,15 +253,15 @@ public:
          * The timer starts when the ICAP transaction
          *  is created and stops when the result of the transaction is logged
          */
-        int trTime;
+        struct timeval trTime;
         /** \brief Transaction I/O time.
          * The timer starts when the first ICAP request
          * byte is scheduled for sending and stops when the lastbyte of the
          * ICAP response is received.
          */
-        int ioTime;
+        struct timeval ioTime;
         Http::StatusCode resStatus;   ///< ICAP response status code
-        int processingTime;      ///< total ICAP processing time in milliseconds
+        struct timeval processingTime;      ///< total ICAP processing time
     }
     icap;
 #endif

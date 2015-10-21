@@ -35,9 +35,9 @@
  *      the value for MemObject->swap_hdr_sz.
  */
 
+#include "fs/forward.h"
 #include "md5.h"
-#include "MemPool.h"
-#include "typedefs.h"
+#include "mem/forward.h"
 
 /// maintains a 24-bit checksum over integer fields
 class SwapChecksum24
@@ -84,10 +84,9 @@ operator <<(std::ostream &os, const SwapChecksum24 &sum)
  */
 class StoreSwapLogData
 {
-
-public:
     MEMPROXY_CLASS(StoreSwapLogData);
 
+public:
     /// type to use for storing time-related members; must be signed
     typedef int64_t SwappedTime;
 
@@ -176,8 +175,6 @@ public:
      */
     unsigned char key[SQUID_MD5_DIGEST_LENGTH];
 };
-
-MEMPROXY_CLASS_INLINE(StoreSwapLogData);
 
 /// \ingroup FileFormatSwapStateAPI
 /// Swap log starts with this binary structure.

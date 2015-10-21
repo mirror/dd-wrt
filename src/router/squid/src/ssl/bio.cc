@@ -18,7 +18,6 @@
 #include "fde.h"
 #include "globals.h"
 #include "ip/Address.h"
-#include "Mem.h"
 #include "ssl/bio.h"
 
 #if HAVE_OPENSSL_SSL_H
@@ -179,9 +178,6 @@ bool
 Ssl::ClientBio::isClientHello(int state)
 {
     return (
-#if defined(SSL2_ST_GET_CLIENT_HELLO_A)
-               state == SSL2_ST_GET_CLIENT_HELLO_A ||
-#endif
                state == SSL3_ST_SR_CLNT_HELLO_A ||
                state == SSL23_ST_SR_CLNT_HELLO_A ||
                state == SSL23_ST_SR_CLNT_HELLO_B ||
@@ -235,6 +231,7 @@ Ssl::ClientBio::read(char *buf, int size, BIO *table)
             BIO_set_retry_read(table);
             return -1;
         } else if (helloSize < 0) {
+            wrongProtocol = true;
             return -1;
         }
 
@@ -1009,7 +1006,11 @@ Ssl::Bio::sslFeatures::parseV3Hello(const unsigned char *messageContainer, size_
 
     ciphers += 2;
     if (ciphersLen) {
-        const SSL_METHOD *method = SSLv3_method();
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+        const SSL_METHOD *method = TLS_method();
+#else
+        const SSL_METHOD *method = SSLv23_method();
+#endif
         for (size_t i = 0; i < ciphersLen; i += 2) {
             // each cipher in v3/tls  HELLO message is of size 2
             const SSL_CIPHER *c = method->get_cipher_by_char((ciphers + i));
@@ -1106,7 +1107,11 @@ Ssl::Bio::sslFeatures::parseV23Hello(const unsigned char *hello, size_t size)
         return false;
 
     if (ciphersLen) {
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+        const SSL_METHOD *method = TLS_method();
+#else
         const SSL_METHOD *method = SSLv23_method();
+#endif
         for (unsigned int i = 0; i < ciphersLen; i += 3) {
             // The v2 hello messages cipher has 3 bytes.
             // The v2 cipher has the first byte not null
@@ -1148,7 +1153,6 @@ Ssl::Bio::sslFeatures::applyToSSL(SSL *ssl, Ssl::BumpMode bumpMode) const
     // SSL version which can be used to the SSL version used for client hello message.
     // For example will prevent comunnicating with a tls1.0 server if the
     // client sent and tlsv1.2 Hello message.
-    //SSL_set_ssl_method(ssl, Ssl::method(features.toSquidSSLVersion()));
 #if defined(TLSEXT_NAMETYPE_host_name)
     if (!serverName.isEmpty()) {
         SSL_set_tlsext_host_name(ssl, serverName.c_str());
