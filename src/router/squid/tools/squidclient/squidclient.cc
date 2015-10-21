@@ -417,6 +417,9 @@ main(int argc, char *argv[])
             snprintf(buf, BUFSIZ, "Max-Forwards: %d\r\n", max_forwards);
             strcat(msg, buf);
         }
+        struct base64_encode_ctx ctx;
+        base64_encode_init(&ctx);
+        size_t blen;
         if (proxy_user) {
             const char *user = proxy_user;
             const char *password = proxy_password;
@@ -428,9 +431,14 @@ main(int argc, char *argv[])
                 std::cerr << "ERROR: Proxy password missing" << std::endl;
                 exit(1);
             }
-            snprintf(buf, BUFSIZ, "%s:%s", user, password);
-            snprintf(buf, BUFSIZ, "Proxy-Authorization: Basic %s\r\n", old_base64_encode(buf));
+            uint8_t *pwdBuf = new uint8_t[base64_encode_len(strlen(user)+1+strlen(password))];
+            blen = base64_encode_update(&ctx, pwdBuf, strlen(user), reinterpret_cast<const uint8_t*>(user));
+            blen += base64_encode_update(&ctx, pwdBuf+blen, 1, reinterpret_cast<const uint8_t*>(":"));
+            blen += base64_encode_update(&ctx, pwdBuf+blen, strlen(password), reinterpret_cast<const uint8_t*>(password));
+            blen += base64_encode_final(&ctx, pwdBuf+blen);
+            snprintf(buf, BUFSIZ, "Proxy-Authorization: Basic %.*s\r\n", (int)blen, reinterpret_cast<char*>(pwdBuf));
             strcat(msg, buf);
+            delete[] pwdBuf;
         }
         if (www_user) {
             const char *user = www_user;
@@ -443,22 +451,31 @@ main(int argc, char *argv[])
                 std::cerr << "ERROR: WWW password missing" << std::endl;
                 exit(1);
             }
-            snprintf(buf, BUFSIZ, "%s:%s", user, password);
-            snprintf(buf, BUFSIZ, "Authorization: Basic %s\r\n", old_base64_encode(buf));
+            uint8_t *pwdBuf = new uint8_t[base64_encode_len(strlen(user)+1+strlen(password))];
+            blen = base64_encode_update(&ctx, pwdBuf, strlen(user), reinterpret_cast<const uint8_t*>(user));
+            blen += base64_encode_update(&ctx, pwdBuf+blen, 1, reinterpret_cast<const uint8_t*>(":"));
+            blen += base64_encode_update(&ctx, pwdBuf+blen, strlen(password), reinterpret_cast<const uint8_t*>(password));
+            blen += base64_encode_final(&ctx, pwdBuf+blen);
+            snprintf(buf, BUFSIZ, "Authorization: Basic %.*s\r\n", (int)blen, reinterpret_cast<char*>(pwdBuf));
             strcat(msg, buf);
+            delete[] pwdBuf;
         }
 #if HAVE_GSSAPI
         if (www_neg) {
             if (host) {
-                snprintf(buf, BUFSIZ, "Authorization: Negotiate %s\r\n", GSSAPI_token(host));
+                const char *token = GSSAPI_token(host);
+                snprintf(buf, BUFSIZ, "Authorization: Negotiate %s\r\n", token);
                 strcat(msg, buf);
+                delete[] token;
             } else
                 std::cerr << "ERROR: server host missing" << std::endl;
         }
         if (proxy_neg) {
             if (Transport::Config.hostname) {
-                snprintf(buf, BUFSIZ, "Proxy-Authorization: Negotiate %s\r\n", GSSAPI_token(Transport::Config.hostname));
+                const char *token = GSSAPI_token(Transport::Config.hostname);
+                snprintf(buf, BUFSIZ, "Proxy-Authorization: Negotiate %s\r\n", token);
                 strcat(msg, buf);
+                delete[] token;
             } else
                 std::cerr << "ERROR: proxy server host missing" << std::endl;
         }
@@ -561,7 +578,7 @@ main(int argc, char *argv[])
 }
 
 void
-pipe_handler(int sig)
+pipe_handler(int)
 {
     std::cerr << "SIGPIPE received." << std::endl;
 }

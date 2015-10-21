@@ -9,17 +9,15 @@
 #ifndef SQUID_TESTS_CAPTURINGSTORE_ENTRY_H
 #define SQUID_TESTS_CAPTURINGSTORE_ENTRY_H
 
-#include "Mem.h"
 #include "Store.h"
 
 /* class that captures various call data for test analysis */
 
 class CapturingStoreEntry : public StoreEntry
 {
-
-public:
     MEMPROXY_CLASS(CapturingStoreEntry);
 
+public:
     CapturingStoreEntry() : _buffer_calls(0), _flush_calls(0) {}
 
     String _appended_text;
@@ -40,8 +38,6 @@ public:
         _appended_text.append(buf, len);
     }
 };
-
-MEMPROXY_CLASS_INLINE(CapturingStoreEntry);
 
 #endif
 

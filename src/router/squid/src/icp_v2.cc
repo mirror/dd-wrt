@@ -43,12 +43,15 @@
 #include "tools.h"
 #include "wordlist.h"
 
+// for tvSubUsec() which should be in SquidTime.h
+#include "util.h"
+
 #include <cerrno>
 
 static void icpIncomingConnectionOpened(const Comm::ConnectionPointer &conn, int errNo);
 
 /// \ingroup ServerProtocolICPInternal2
-static void icpLogIcp(const Ip::Address &, LogTags, int, const char *, int);
+static void icpLogIcp(const Ip::Address &, const LogTags &, int, const char *, int);
 
 /// \ingroup ServerProtocolICPInternal2
 static void icpHandleIcpV2(int, Ip::Address &, char *, int);
@@ -98,10 +101,10 @@ _icp_common_t::_icp_common_t(char *buf, unsigned int len) :
 icp_opcode
 _icp_common_t::getOpCode() const
 {
-    if (opcode > (char)ICP_END)
+    if (opcode > static_cast<char>(icp_opcode::ICP_END))
         return ICP_INVALID;
 
-    return (icp_opcode)opcode;
+    return static_cast<icp_opcode>(opcode);
 }
 
 /* ICPState */
@@ -156,8 +159,8 @@ ICP2State::created(StoreEntry *newEntry)
     } else {
 #if USE_ICMP
         if (Config.onoff.test_reachability && rtt == 0) {
-            if ((rtt = netdbHostRtt(request->GetHost())) == 0)
-                netdbPingSite(request->GetHost());
+            if ((rtt = netdbHostRtt(request->url.host())) == 0)
+                netdbPingSite(request->url.host());
         }
 #endif /* USE_ICMP */
 
@@ -177,14 +180,14 @@ ICP2State::created(StoreEntry *newEntry)
 
 /// \ingroup ServerProtocolICPInternal2
 static void
-icpLogIcp(const Ip::Address &caddr, LogTags logcode, int len, const char *url, int delay)
+icpLogIcp(const Ip::Address &caddr, const LogTags &logcode, int len, const char *url, int delay)
 {
     AccessLogEntry::Pointer al = new AccessLogEntry();
 
-    if (LOG_TAG_NONE == logcode)
+    if (LOG_TAG_NONE == logcode.oldType)
         return;
 
-    if (LOG_ICP_QUERY == logcode)
+    if (LOG_ICP_QUERY == logcode.oldType)
         return;
 
     clientdbUpdate(caddr, logcode, AnyP::PROTO_ICP, len);
@@ -203,14 +206,14 @@ icpLogIcp(const Ip::Address &caddr, LogTags logcode, int len, const char *url, i
 
     al->cache.code = logcode;
 
-    al->cache.msec = delay;
+    al->cache.trTime.tv_sec = delay;
 
     accessLogLog(al, NULL);
 }
 
 /// \ingroup ServerProtocolICPInternal2
 void
-icpUdpSendQueue(int fd, void *unused)
+icpUdpSendQueue(int fd, void *)
 {
     icpUdpData *q;
 
@@ -275,7 +278,7 @@ int
 icpUdpSend(int fd,
            const Ip::Address &to,
            icp_common_t * msg,
-           LogTags logcode,
+           const LogTags &logcode,
            int delay)
 {
     icpUdpData *queue;
@@ -467,8 +470,8 @@ doV2Query(int fd, Ip::Address &from, char *buf, icp_common_t header)
     }
 #if USE_ICMP
     if (header.flags & ICP_FLAG_SRC_RTT) {
-        rtt = netdbHostRtt(icp_request->GetHost());
-        int hops = netdbHostHops(icp_request->GetHost());
+        rtt = netdbHostRtt(icp_request->url.host());
+        int hops = netdbHostHops(icp_request->url.host());
         src_rtt = ((hops & 0xFFFF) << 16) | (rtt & 0xFFFF);
 
         if (rtt)
@@ -575,7 +578,7 @@ icpPktDump(icp_common_t * pkt)
 #endif
 
 void
-icpHandleUdp(int sock, void *data)
+icpHandleUdp(int sock, void *)
 {
     int *N = &incoming_sockets_accepted;
 
@@ -704,7 +707,7 @@ icpOpenPorts(void)
 }
 
 static void
-icpIncomingConnectionOpened(const Comm::ConnectionPointer &conn, int errNo)
+icpIncomingConnectionOpened(const Comm::ConnectionPointer &conn, int)
 {
     if (!Comm::IsConnOpen(conn))
         fatal("Cannot open ICP Port");
@@ -774,14 +777,14 @@ icpCount(void *buf, int which, size_t len, int delay)
 
     if (SENT == which) {
         ++statCounter.icp.pkts_sent;
-        kb_incr(&statCounter.icp.kbytes_sent, len);
+        statCounter.icp.kbytes_sent += len;
 
         if (ICP_QUERY == icp->opcode) {
             ++statCounter.icp.queries_sent;
-            kb_incr(&statCounter.icp.q_kbytes_sent, len);
+            statCounter.icp.q_kbytes_sent += len;
         } else {
             ++statCounter.icp.replies_sent;
-            kb_incr(&statCounter.icp.r_kbytes_sent, len);
+            statCounter.icp.r_kbytes_sent += len;
             /* this is the sent-reply service time */
             statCounter.icp.replySvcTime.count(delay);
         }
@@ -790,14 +793,14 @@ icpCount(void *buf, int which, size_t len, int delay)
             ++statCounter.icp.hits_sent;
     } else if (RECV == which) {
         ++statCounter.icp.pkts_recv;
-        kb_incr(&statCounter.icp.kbytes_recv, len);
+        statCounter.icp.kbytes_recv += len;
 
         if (ICP_QUERY == icp->opcode) {
             ++statCounter.icp.queries_recv;
-            kb_incr(&statCounter.icp.q_kbytes_recv, len);
+            statCounter.icp.q_kbytes_recv += len;
         } else {
             ++statCounter.icp.replies_recv;
-            kb_incr(&statCounter.icp.r_kbytes_recv, len);
+            statCounter.icp.r_kbytes_recv += len;
             /* statCounter.icp.querySvcTime set in clientUpdateCounters */
         }
 

@@ -217,16 +217,19 @@ typedef enum {
     LFT_SSL_CLIENT_SNI,
     LFT_SSL_SERVER_CERT_SUBJECT,
     LFT_SSL_SERVER_CERT_ISSUER,
+    LFT_SSL_SERVER_CERT_ERRORS,
 #endif
 
     LFT_NOTE,
     LFT_PERCENT,            /* special string cases for escaped chars */
 
     // TODO assign better bytecode names and Token strings for these
+#if USE_OPENSSL
     LFT_EXT_ACL_USER_CERT_RAW,
     LFT_EXT_ACL_USER_CERTCHAIN_RAW,
     LFT_EXT_ACL_USER_CERT,
     LFT_EXT_ACL_USER_CA_CERT,
+#endif
     LFT_EXT_ACL_CLIENT_EUI48,
     LFT_EXT_ACL_CLIENT_EUI64,
     LFT_EXT_ACL_NAME,
@@ -240,6 +243,7 @@ enum Quoting {
     LOG_QUOTE_QUOTES,
     LOG_QUOTE_MIMEBLOB,
     LOG_QUOTE_URL,
+    LOG_QUOTE_SHELL,
     LOG_QUOTE_RAW
 };
 

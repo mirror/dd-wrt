@@ -44,7 +44,7 @@ ReadersId(String id)
 
 InstanceIdDefinitions(Ipc::QueueReader, "ipcQR");
 
-Ipc::QueueReader::QueueReader(): popBlocked(1), popSignal(0),
+Ipc::QueueReader::QueueReader(): popBlocked(true), popSignal(false),
     rateLimit(0), balance(0)
 {
     debugs(54, 7, HERE << "constructed " << id);
@@ -137,7 +137,7 @@ Ipc::BaseMultiQueue::BaseMultiQueue(const int aLocalProcessId):
 }
 
 void
-Ipc::BaseMultiQueue::clearReaderSignal(const int remoteProcessId)
+Ipc::BaseMultiQueue::clearReaderSignal(const int /*remoteProcessId*/)
 {
     QueueReader &reader = localReader();
     debugs(54, 7, "reader: " << reader.id);

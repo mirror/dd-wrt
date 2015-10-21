@@ -13,6 +13,7 @@
 #include "ssl/cert_validate_message.h"
 #include "ssl/ErrorDetail.h"
 #include "ssl/support.h"
+#include "util.h"
 
 void
 Ssl::CertValidationMsg::composeRequest(CertValidationRequest const &vcert)
@@ -94,7 +95,7 @@ Ssl::CertValidationMsg::parseResponse(CertValidationResponse &resp, STACK_OF(X50
                 strncmp(param, param_cert.c_str(), param_cert.length()) == 0) {
             CertItem ci;
             ci.name.assign(param, param_len);
-            X509_Pointer x509;
+            Security::CertPointer x509;
             readCertFromMemory(x509, value);
             ci.setCert(x509.get());
             certs.push_back(ci);

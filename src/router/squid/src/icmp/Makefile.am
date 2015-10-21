@@ -30,6 +30,7 @@ libicmp_core_la_SOURCES = \
 
 # Squid Internal ICMP helper interface
 libicmp_la_SOURCES = \
+	IcmpConfig.cc \
 	IcmpConfig.h \
 	IcmpSquid.h \
 	IcmpSquid.cc \
@@ -43,6 +44,8 @@ COPIED_SOURCE= \
 	SquidConfig.cc \
 	SquidNew.cc \
 	stub_HelperChildConfig.cc \
+	stub_libmem.cc \
+	STUB.h \
 	time.cc
 
 # ICMP lookup helper
@@ -59,7 +62,8 @@ nodist_pinger_SOURCES = $(COPIED_SOURCE)
 pinger_LDFLAGS = $(LIBADD_DL)
 pinger_LDADD=\
 	libicmp-core.la \
-	../ip/libip.la \
+	$(top_builddir)/src/ip/libip.la \
+	$(top_builddir)/src/base/libbase.la \
 	$(COMPAT_LIB) \
 	$(XTRA_LIBS)
 
@@ -81,19 +85,25 @@ CLEANFILES += $(COPIED_SOURCE)
 ## files we need to pull in from other locations
 ## copied like this to avoid subdir-objects collisions on 'make clean'
 debug.cc: $(top_srcdir)/src/debug.cc
-	cp $(top_srcdir)/src/debug.cc .
+	cp $(top_srcdir)/src/debug.cc $@
 
 globals.cc: $(top_srcdir)/src/globals.h
-	cp $(top_builddir)/src/globals.cc .
+	cp $(top_builddir)/src/globals.cc $@
 
 time.cc: $(top_srcdir)/src/time.cc
-	cp $(top_srcdir)/src/time.cc .
+	cp $(top_srcdir)/src/time.cc $@
 
 SquidConfig.cc: $(top_srcdir)/src/SquidConfig.cc
-	cp $(top_srcdir)/src/SquidConfig.cc .
+	cp $(top_srcdir)/src/SquidConfig.cc $@
 
 SquidNew.cc: $(top_srcdir)/src/SquidNew.cc
-	cp $(top_srcdir)/src/SquidNew.cc .
+	cp $(top_srcdir)/src/SquidNew.cc $@
 
 stub_HelperChildConfig.cc: $(top_srcdir)/src/tests/stub_HelperChildConfig.cc
-	cp $(top_srcdir)/src/tests/stub_HelperChildConfig.cc .
+	cp $(top_srcdir)/src/tests/stub_HelperChildConfig.cc $@
+
+stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc STUB.h
+	cp $(top_srcdir)/src/tests/stub_libmem.cc $@
+
+STUB.h: $(top_srcdir)/src/tests/STUB.h
+	cp $(top_srcdir)/src/tests/STUB.h $@

@@ -39,8 +39,13 @@ StatHist::init(unsigned int newCapacity, hbase_f * val_in_, hbase_f * val_out_, 
 }
 
 StatHist::StatHist(const StatHist &src) :
-    capacity_(src.capacity_), min_(src.min_), max_(src.max_),
-    scale_(src.scale_), val_in(src.val_in), val_out(src.val_out)
+    bins(NULL),
+    capacity_(src.capacity_),
+    min_(src.min_),
+    max_(src.max_),
+    scale_(src.scale_),
+    val_in(src.val_in),
+    val_out(src.val_out)
 {
     if (src.bins!=NULL) {
         bins = static_cast<bins_type *>(xcalloc(src.capacity_, sizeof(bins_type)));
@@ -60,7 +65,6 @@ StatHist::count(double v)
 unsigned int
 StatHist::findBin(double v)
 {
-
     v -= min_;      /* offset */
 
     if (v <= 0.0)       /* too small */
@@ -236,7 +240,7 @@ StatHist::enumInit(unsigned int last_enum)
 }
 
 void
-statHistEnumDumper(StoreEntry * sentry, int idx, double val, double size, int count)
+statHistEnumDumper(StoreEntry * sentry, int idx, double val, double, int count)
 {
     if (count)
         storeAppendPrintf(sentry, "%2d\t %5d\t %5d\n",
@@ -244,7 +248,7 @@ statHistEnumDumper(StoreEntry * sentry, int idx, double val, double size, int co
 }
 
 void
-statHistIntDumper(StoreEntry * sentry, int idx, double val, double size, int count)
+statHistIntDumper(StoreEntry * sentry, int, double val, double, int count)
 {
     if (count)
         storeAppendPrintf(sentry, "%9d\t%9d\n", (int) val, count);

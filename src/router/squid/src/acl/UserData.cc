@@ -15,6 +15,7 @@
 #include "Debug.h"
 #include "globals.h"
 #include "SBufAlgos.h"
+#include "util.h"
 
 bool
 ACLUserData::match(char const *user)
@@ -59,14 +60,11 @@ CaseInsensitveSBufCompare(const SBuf &lhs, const SBuf &rhs)
     return (lhs.caseCmp(rhs) < 0);
 }
 
-static bool
-CaseSensitveSBufCompare(const SBuf &lhs, const SBuf &rhs)
+ACLUserData::ACLUserData() :
+    userDataNames()
 {
-    return (lhs < rhs);
-}
-
-ACLUserData::ACLUserData() : userDataNames(CaseSensitveSBufCompare)
-{
+    flags.case_insensitive = false;
+    flags.required = false;
 }
 
 void

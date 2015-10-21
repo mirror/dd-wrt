@@ -16,8 +16,8 @@
 #include "acl/Strategised.h"
 
 class ACLServerNameData : public ACLDomainData {
-public:
     MEMPROXY_CLASS(ACLServerNameData);
+public:
     ACLServerNameData() : ACLDomainData() {}
     virtual bool match(const char *);
     virtual ACLData<char const *> *clone() const;
@@ -45,8 +45,6 @@ private:
 
     ACLServerNameStrategy&operator=(ACLServerNameStrategy const &);
 };
-
-MEMPROXY_CLASS_INLINE(ACLServerNameData);
 
 class ACLServerName
 {

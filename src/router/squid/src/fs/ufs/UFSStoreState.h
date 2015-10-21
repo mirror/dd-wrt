@@ -17,9 +17,11 @@ namespace Fs
 {
 namespace Ufs
 {
-/// \ingroup UFS
+
 class UFSStoreState : public StoreIOState, public IORequestor
 {
+    CBDATA_CLASS(UFSStoreState);
+
 public:
     UFSStoreState(SwapDir * SD, StoreEntry * anEntry, STIOCB * callback_, void *callback_data_);
     ~UFSStoreState();
@@ -44,25 +46,38 @@ protected:
 
     class _queued_read
     {
-    public:
         MEMPROXY_CLASS(UFSStoreState::_queued_read);
+    public:
+        _queued_read() :
+            buf(nullptr),
+            size(0),
+            offset(0),
+            callback(nullptr),
+            callback_data(nullptr)
+        {}
+
         char *buf;
         size_t size;
         off_t offset;
         STRCB *callback;
         void *callback_data;
-
     };
 
     class _queued_write
     {
-    public:
         MEMPROXY_CLASS(UFSStoreState::_queued_write);
+    public:
+        _queued_write() :
+            buf(nullptr),
+            size(0),
+            offset(0),
+            free_func(nullptr)
+        {}
+
         char const *buf;
         size_t size;
         off_t offset;
         FREE *free_func;
-
     };
 
     /** \todo These should be in the IO strategy */
@@ -96,11 +111,7 @@ private:
     void openDone();
     void freePending();
     void doWrite();
-    CBDATA_CLASS2(UFSStoreState);
 };
-
-MEMPROXY_CLASS_INLINE(UFSStoreState::_queued_read);
-MEMPROXY_CLASS_INLINE(UFSStoreState::_queued_write);
 
 } //namespace Ufs
 } //namespace Fs

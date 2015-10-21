@@ -55,10 +55,12 @@
 #define SEND(X) {debug("sending '%s' to squid\n",X); printf(X "\n");}
 #ifdef __GNUC__
 #define SEND2(X,Y...) {debug("sending '" X "' to squid\n",Y); printf(X "\n",Y);}
+#define SEND3(X,Y...) {debug("sending '" X "' to squid\n",Y); printf(X "\n",Y);}
 #define SEND4(X,Y...) {debug("sending '" X "' to squid\n",Y); printf(X "\n",Y);}
 #else
 /* no gcc, no debugging. varargs macros are a gcc extension */
 #define SEND2(X,Y) {debug("sending '" X "' to squid\n",Y); printf(X "\n",Y);}
+#define SEND3(X,Y,Z) {debug("sending '" X "' to squid\n",Y,Z); printf(X "\n",Y,Z);}
 #define SEND4(X,Y,Z,W) {debug("sending '" X "' to squid\n",Y,Z,W); printf(X "\n",Y,Z,W);}
 #endif
 
@@ -125,14 +127,12 @@ main(int argc, char *argv[])
 {
     char buf[HELPER_INPUT_BUFFER];
     int buflen = 0;
-    char decodedBuf[HELPER_INPUT_BUFFER];
+    uint8_t decodedBuf[HELPER_INPUT_BUFFER];
     int decodedLen;
     char user[NTLM_MAX_FIELD_LENGTH], domain[NTLM_MAX_FIELD_LENGTH];
     char *p;
-    ntlmhdr *packet = NULL;
     char helper_command[3];
     int len;
-    char *data = NULL;
 
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
@@ -150,13 +150,20 @@ main(int argc, char *argv[])
         if ((p = strchr(buf, '\n')) != NULL)
             *p = '\0';      /* strip \n */
         buflen = strlen(buf);   /* keep this so we only scan the buffer for \0 once per loop */
-        if (buflen > 3) {
-            decodedLen = base64_decode(decodedBuf, sizeof(decodedBuf), buf+3);
+        ntlmhdr *packet;
+        struct base64_decode_ctx ctx;
+        base64_decode_init(&ctx);
+        size_t dstLen = 0;
+        if (buflen > 3 &&
+                base64_decode_update(&ctx, &dstLen, decodedBuf, buflen-3, reinterpret_cast<const uint8_t*>(buf+3)) &&
+                base64_decode_final(&ctx)) {
+            decodedLen = dstLen;
             packet = (ntlmhdr*)decodedBuf;
         } else {
             packet = NULL;
             decodedLen = 0;
         }
+
         if (buflen > 3 && NTLM_packet_debug_enabled) {
             strncpy(helper_command, buf, 2);
             helper_command[2] = '\0';
@@ -169,7 +176,7 @@ main(int argc, char *argv[])
             char nonce[NTLM_NONCE_LEN];
             ntlm_challenge chal;
             ntlm_make_nonce(nonce);
-            if (buflen > 3) {
+            if (buflen > 3 && packet) {
                 ntlm_negotiate *nego = (ntlm_negotiate *)packet;
                 ntlm_make_challenge(&chal, authenticate_ntlm_domain, NULL, nonce, NTLM_NONCE_LEN, nego->flags);
             } else {
@@ -179,13 +186,20 @@ main(int argc, char *argv[])
             chal.context_high = htole32(0x003a<<16);
 
             len = sizeof(chal) - sizeof(chal.payload) + le16toh(chal.target.maxlen);
-            data = (char *) base64_encode_bin((char *) &chal, len);
+
+            struct base64_encode_ctx eCtx;
+            base64_encode_init(&eCtx);
+            uint8_t *data = (uint8_t*)xcalloc(base64_encode_len(len), 1);
+            size_t blen = base64_encode_update(&eCtx, data, len, reinterpret_cast<uint8_t*>(&chal));
+            blen += base64_encode_final(&eCtx, data+blen);
             if (NTLM_packet_debug_enabled) {
-                printf("TT %s\n", data);
+                printf("TT %.*s\n", (int)blen, data);
                 debug("sending 'TT' to squid with data:\n");
                 hex_dump((unsigned char *)&chal, len);
             } else
-                SEND2("TT %s", data);
+                SEND3("TT %.*s", (int)blen, data);
+            safe_free(data);
+
         } else if (strncmp(buf, "KK ", 3) == 0) {
             if (!packet) {
                 SEND("BH received KK with no data! user=");

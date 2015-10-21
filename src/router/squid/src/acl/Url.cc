@@ -12,16 +12,17 @@
 #include "acl/Checklist.h"
 #include "acl/RegexData.h"
 #include "acl/Url.h"
+#include "HttpRequest.h"
 #include "rfc1738.h"
 #include "src/URL.h"
 
 int
 ACLUrlStrategy::match (ACLData<char const *> * &data, ACLFilledChecklist *checklist, ACLFlags &)
 {
-    char *esc_buf = xstrdup(urlCanonical(checklist->request));
+    char *esc_buf = SBufToCstring(checklist->request->effectiveRequestUri());
     rfc1738_unescape(esc_buf);
     int result = data->match(esc_buf);
-    safe_free(esc_buf);
+    xfree(esc_buf);
     return result;
 }
 

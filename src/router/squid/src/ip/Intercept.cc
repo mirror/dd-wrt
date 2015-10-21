@@ -156,7 +156,7 @@ Ip::Intercept::NetfilterInterception(const Comm::ConnectionPointer &newConn, int
 }
 
 bool
-Ip::Intercept::TproxyTransparent(const Comm::ConnectionPointer &newConn, int silent)
+Ip::Intercept::TproxyTransparent(const Comm::ConnectionPointer &newConn, int)
 {
 #if (LINUX_NETFILTER && defined(IP_TRANSPARENT)) || \
     (PF_TRANSPARENT && defined(SO_BINDANY)) || \
@@ -174,7 +174,7 @@ Ip::Intercept::TproxyTransparent(const Comm::ConnectionPointer &newConn, int sil
 }
 
 bool
-Ip::Intercept::IpfwInterception(const Comm::ConnectionPointer &newConn, int silent)
+Ip::Intercept::IpfwInterception(const Comm::ConnectionPointer &newConn, int)
 {
 #if IPFW_TRANSPARENT
     /* The getsockname() call performed already provided the TCP packet details.

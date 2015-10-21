@@ -17,6 +17,7 @@
 #include "ConfigParser.h"
 #include "Debug.h"
 #include "dlink.h"
+#include "fatal.h"
 #include "globals.h"
 #include "profiler/Profiler.h"
 #include "SquidConfig.h"
@@ -80,14 +81,14 @@ ACLFlags::flagsStr() const
 }
 
 void *
-ACL::operator new (size_t byteCount)
+ACL::operator new (size_t)
 {
     fatal ("unusable ACL::new");
     return (void *)1;
 }
 
 void
-ACL::operator delete (void *address)
+ACL::operator delete (void *)
 {
     fatal ("unusable ACL::delete");
 }
@@ -119,8 +120,17 @@ ACL::Factory (char const *type)
 }
 
 ACL::ACL() :
+    cfgline(nullptr),
+    next(nullptr),
+    registered(false)
+{
+    *name = 0;
+}
+
+ACL::ACL(const ACLFlag flgs[]) :
     cfgline(NULL),
     next(NULL),
+    flags(flgs),
     registered(false)
 {
     *name = 0;
@@ -143,13 +153,20 @@ ACL::matches(ACLChecklist *checklist) const
     AclMatchedName = name;
 
     int result = 0;
-    if (!checklist->hasRequest() && requiresRequest()) {
+    if (!checklist->hasAle() && requiresAle()) {
+        debugs(28, DBG_IMPORTANT, "WARNING: " << name << " ACL is used in " <<
+               "context without an ALE state. Assuming mismatch.");
+    } else if (!checklist->hasRequest() && requiresRequest()) {
         debugs(28, DBG_IMPORTANT, "WARNING: " << name << " ACL is used in " <<
                "context without an HTTP request. Assuming mismatch.");
     } else if (!checklist->hasReply() && requiresReply()) {
         debugs(28, DBG_IMPORTANT, "WARNING: " << name << " ACL is used in " <<
                "context without an HTTP response. Assuming mismatch.");
     } else {
+        // make sure the ALE has as much data as possible
+        if (requiresAle())
+            checklist->syncAle();
+
         // have to cast because old match() API is missing const
         result = const_cast<ACL*>(this)->match(checklist);
     }
@@ -298,7 +315,7 @@ ACL::isProxyAuth() const
 /* ACL result caching routines */
 
 int
-ACL::matchForCache(ACLChecklist *checklist)
+ACL::matchForCache(ACLChecklist *)
 {
     /* This is a fatal to ensure that cacheMatchAcl calls are _only_
      * made for supported acl types */
@@ -333,9 +350,7 @@ ACL::cacheMatchAcl(dlink_list * cache, ACLChecklist *checklist)
         link = link->next;
     }
 
-    auth_match = new acl_proxy_auth_match_cache();
-    auth_match->matchrv = matchForCache (checklist);
-    auth_match->acl_data = this;
+    auth_match = new acl_proxy_auth_match_cache(matchForCache(checklist), this);
     dlinkAddTail(auth_match, &auth_match->link, cache);
     debugs(28, 4, "ACL::cacheMatchAcl: miss for '" << name << "'. Adding result " << auth_match->matchrv);
     return auth_match->matchrv;
@@ -357,6 +372,12 @@ aclCacheMatchFlush(dlink_list * cache)
         dlinkDelete(tmplink, cache);
         delete auth_match;
     }
+}
+
+bool
+ACL::requiresAle() const
+{
+    return false;
 }
 
 bool

@@ -21,14 +21,15 @@ namespace Fs
 namespace Ufs
 {
 
-/// \ingroup UFS
-class RebuildState : public RefCountable
+class RebuildState
 {
+    CBDATA_CLASS(RebuildState);
+
 public:
     static EVH RebuildStep;
 
     RebuildState(RefCount<UFSSwapDir> sd);
-    ~RebuildState();
+    virtual ~RebuildState();
 
     virtual bool error() const;
     virtual bool isDone() const;
@@ -59,7 +60,6 @@ public:
     StoreRebuildData counts;
 
 private:
-    CBDATA_CLASS2(RebuildState);
     void rebuildFromDirectory();
     void rebuildFromSwapLog();
     void rebuildStep();

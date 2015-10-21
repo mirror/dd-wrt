@@ -52,6 +52,10 @@ public:
 /// Manages a control connection from an FTP client.
 class Server: public ConnStateData
 {
+    CBDATA_CLASS(Server);
+    // XXX CBDATA_CLASS expands to nonvirtual toCbdata, AsyncJob::toCbdata
+    //     is pure virtual. breaks build on clang if override is used
+
 public:
     explicit Server(const MasterXaction::Pointer &xact);
     virtual ~Server();
@@ -66,19 +70,19 @@ protected:
     friend void StartListening();
 
     // errors detected before it is possible to create an HTTP request wrapper
-    typedef enum {
-        eekHugeRequest,
-        eekMissingLogin,
-        eekMissingUsername,
-        eekMissingHost,
-        eekUnsupportedCommand,
-        eekInvalidUri,
-        eekMalformedCommand
-    } EarlyErrorKind;
+    enum class EarlyErrorKind {
+        HugeRequest,
+        MissingLogin,
+        MissingUsername,
+        MissingHost,
+        UnsupportedCommand,
+        InvalidUri,
+        MalformedCommand
+    };
 
     /* ConnStateData API */
-    virtual ClientSocketContext *parseOneRequest(Http::ProtocolVersion &ver);
-    virtual void processParsedRequest(ClientSocketContext *context, const Http::ProtocolVersion &ver);
+    virtual ClientSocketContext *parseOneRequest();
+    virtual void processParsedRequest(ClientSocketContext *context);
     virtual void notePeerConnection(Comm::ConnectionPointer conn);
     virtual void clientPinnedConnectionClosed(const CommCloseCbParams &io);
     virtual void handleReply(HttpReply *header, StoreIOBuffer receivedData);
@@ -168,8 +172,6 @@ private:
     AsyncCall::Pointer listener; ///< set when we are passively listening
     AsyncCall::Pointer connector; ///< set when we are actively connecting
     AsyncCall::Pointer reader; ///< set when we are reading FTP data
-
-    CBDATA_CLASS2(Server);
 };
 
 } // namespace Ftp

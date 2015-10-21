@@ -223,7 +223,7 @@ Fs::Ufs::UFSStoreState::doWrite()
 }
 
 void
-Fs::Ufs::UFSStoreState::readCompleted(const char *buf, int len, int errflag, RefCount<ReadRequest> result)
+Fs::Ufs::UFSStoreState::readCompleted(const char *buf, int len, int, RefCount<ReadRequest> result)
 {
     assert (result.getRaw());
     reading = false;
@@ -266,7 +266,7 @@ Fs::Ufs::UFSStoreState::readCompleted(const char *buf, int len, int errflag, Ref
 }
 
 void
-Fs::Ufs::UFSStoreState::writeCompleted(int errflag, size_t len, RefCount<WriteRequest> writeRequest)
+Fs::Ufs::UFSStoreState::writeCompleted(int, size_t len, RefCount<WriteRequest>)
 {
     debugs(79, 3, HERE << "dirno " << swap_dirn << ", fileno " <<
            std::setfill('0') << std::hex << std::uppercase << std::setw(8) << swap_filen <<
@@ -321,14 +321,23 @@ Fs::Ufs::UFSStoreState::doCloseCallback(int errflag)
 
 /* ============= THE REAL UFS CODE ================ */
 
-Fs::Ufs::UFSStoreState::UFSStoreState(SwapDir * SD, StoreEntry * anEntry, STIOCB * callback_, void *callback_data_) : opening (false), creating (false), closing (false), reading(false), writing(false), pending_reads(NULL), pending_writes (NULL)
+Fs::Ufs::UFSStoreState::UFSStoreState(SwapDir * SD, StoreEntry * anEntry, STIOCB * cbIo, void *data) :
+    StoreIOState(NULL, cbIo, data),
+    opening(false),
+    creating(false),
+    closing(false),
+    reading(false),
+    writing(false),
+    pending_reads(NULL),
+    pending_writes(NULL),
+    read_buf(NULL)
 {
+    // StoreIOState inherited members
     swap_filen = anEntry->swap_filen;
     swap_dirn = SD->index;
-    mode = O_BINARY;
-    callback = callback_;
-    callback_data = cbdataReference(callback_data_);
     e = anEntry;
+
+    // our flags
     flags.write_draining = false;
     flags.try_closing = false;
 }

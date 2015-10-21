@@ -9,12 +9,14 @@
 #ifndef SQUID__SRC_CLIENTINFO_H
 #define SQUID__SRC_CLIENTINFO_H
 
+#include "base/ByteCounter.h"
 #include "cbdata.h"
 #include "enums.h"
 #include "hash.h"
 #include "ip/Address.h"
 #include "LogTags.h"
 #include "typedefs.h"
+
 #include <deque>
 
 #if USE_DELAY_POOLS
@@ -31,9 +33,9 @@ public:
     struct {
         int result_hist[LOG_TYPE_MAX];
         int n_requests;
-        kb_t kbytes_in;
-        kb_t kbytes_out;
-        kb_t hit_kbytes_out;
+        ByteCounter kbytes_in;
+        ByteCounter kbytes_out;
+        ByteCounter hit_kbytes_out;
     } Http, Icp;
 
     struct {
@@ -88,6 +90,8 @@ public:
 // a queue of Comm clients waiting for I/O quota controlled by delay pools
 class CommQuotaQueue
 {
+    CBDATA_CLASS(CommQuotaQueue);
+
 public:
     CommQuotaQueue(ClientInfo *info);
     ~CommQuotaQueue();
@@ -108,8 +112,6 @@ private:
     // TODO: optimize using a Ring- or List-based store?
     typedef std::deque<int> Store;
     Store fds; ///< descriptor queue
-
-    CBDATA_CLASS2(CommQuotaQueue);
 };
 #endif /* USE_DELAY_POOLS */
 

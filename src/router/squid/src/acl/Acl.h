@@ -13,7 +13,6 @@
 #include "cbdata.h"
 #include "defines.h"
 #include "dlink.h"
-#include "MemPool.h"
 #include "SBufList.h"
 
 #include <ostream>
@@ -81,9 +80,7 @@ public:
     static ACL *FindByName(const char *name);
 
     ACL();
-    explicit ACL(const ACLFlag flgs[]) : cfgline(NULL), next(NULL), flags(flgs), registered(false) {
-        *name = 0;
-    }
+    explicit ACL(const ACLFlag flgs[]);
     virtual ~ACL();
 
     /// sets user-specified ACL name and squid.conf context
@@ -144,6 +141,8 @@ private:
     /// Matches the actual data in checklist against this ACL.
     virtual int match(ACLChecklist *checklist) = 0; // XXX: missing const
 
+    /// whether our (i.e. shallow) match() requires checklist to have a AccessLogEntry
+    virtual bool requiresAle() const;
     /// whether our (i.e. shallow) match() requires checklist to have a request
     virtual bool requiresRequest() const;
     /// whether our (i.e. shallow) match() requires checklist to have a reply
@@ -214,15 +213,18 @@ operator <<(std::ostream &o, const allow_t a)
 /// \ingroup ACLAPI
 class acl_proxy_auth_match_cache
 {
+    MEMPROXY_CLASS(acl_proxy_auth_match_cache);
 
 public:
-    MEMPROXY_CLASS(acl_proxy_auth_match_cache);
+    acl_proxy_auth_match_cache(int matchRv, void * aclData) :
+        matchrv(matchRv),
+        acl_data(aclData)
+    {}
+
     dlink_node link;
     int matchrv;
     void *acl_data;
 };
-
-MEMPROXY_CLASS_INLINE(acl_proxy_auth_match_cache);
 
 /// \ingroup ACLAPI
 /// XXX: find a way to remove or at least use a refcounted ACL pointer

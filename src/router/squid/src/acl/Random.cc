@@ -9,13 +9,13 @@
 /* DEBUG: section 28    Access Control */
 
 #include "squid.h"
-
 #include "acl/FilledChecklist.h"
 #include "acl/Random.h"
-#include "cache_cf.h"
 #include "Debug.h"
 #include "Parsing.h"
 #include "wordlist.h"
+
+#include <random>
 
 ACL *
 ACLRandom::clone() const
@@ -60,10 +60,9 @@ ACLRandom::valid() const
 void
 ACLRandom::parse()
 {
-    char *t;
     char bufa[256], bufb[256];
 
-    t = strtokFile();
+    char *t = ConfigParser::strtokFile();
     if (!t) {
         debugs(28, DBG_PARSE_NOTE(DBG_IMPORTANT), "ACL random missing pattern");
         return;
@@ -85,7 +84,7 @@ ACLRandom::parse()
     } else if (sscanf(t, "%[0-9]/%[0-9]", bufa, bufb) == 2) {
         int a = xatoi(bufa);
         int b = xatoi(bufb);
-        if (a <= 0 || b <= 0) {
+        if (a <= 0 || b <= 0 || a > b) {
             debugs(28, DBG_CRITICAL, "ERROR: ACL random with bad pattern: '" << t << "'");
             return;
         } else
@@ -102,10 +101,16 @@ ACLRandom::parse()
 }
 
 int
-ACLRandom::match(ACLChecklist *cl)
+ACLRandom::match(ACLChecklist *)
 {
-    // make up the random value
-    double random = ((double)rand() / (double)RAND_MAX);
+    // make up the random value.
+    // The fixed-value default seed is fine because we are
+    // actually matching whether the random value is above
+    // or below the configured threshold ratio.
+    static std::mt19937 mt;
+    static xuniform_real_distribution<> dist(0, 1);
+
+    const double random = dist(mt);
 
     debugs(28, 3, "ACL Random: " << name << " " << pattern << " test: " << data << " > " << random << " = " << ((data > random)?"MATCH":"NO MATCH") );
     return (data > random)?1:0;

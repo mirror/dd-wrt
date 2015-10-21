@@ -9,14 +9,11 @@
 #ifndef SQUID_HTTPHDRSURROGATECONTROLTARGET_H
 #define SQUID_HTTPHDRSURROGATECONTROLTARGET_H
 
-#include "defines.h"
-#include "dlink.h"
-#include "MemPool.h"
-#include "SquidString.h"
-#include "typedefs.h"
+#include "defines.h" //for bit mask operations
+#include "HttpHdrSc.h"
 
+class Packable;
 class StatHist;
-class Packer;
 class StoreEntry;
 
 /** Representation of HTTP Surogate-Control header field targeted directive
@@ -25,6 +22,8 @@ class StoreEntry;
  */
 class HttpHdrScTarget
 {
+    MEMPROXY_CLASS(HttpHdrScTarget);
+
     // parsing is done in HttpHdrSc, need to grant them access.
     friend class HttpHdrSc;
 public:
@@ -80,10 +79,9 @@ public:
     String Target() const { return target; }
 
     void mergeWith(const HttpHdrScTarget * new_sc);
-    void packInto (Packer *p) const;
+    void packInto(Packable *p) const;
     void updateStats(StatHist *) const;
 
-    MEMPROXY_CLASS(HttpHdrScTarget);
 private:
     bool isSet(http_hdr_sc_type id) const {
         assert (id >= SC_NO_STORE && id < SC_ENUM_END);
@@ -102,8 +100,6 @@ private:
     String target;
     dlink_node node;
 };
-
-MEMPROXY_CLASS_INLINE(HttpHdrScTarget);
 
 void httpHdrScTargetStatDumper(StoreEntry * sentry, int idx, double val, double size, int count);
 

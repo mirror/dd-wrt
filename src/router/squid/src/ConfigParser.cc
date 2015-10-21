@@ -23,6 +23,8 @@ std::queue<char *> ConfigParser::CfgLineTokens_;
 std::queue<std::string> ConfigParser::Undo_;
 bool ConfigParser::AllowMacros_ = false;
 bool ConfigParser::ParseQuotedOrToEol_ = false;
+bool ConfigParser::ParseKvPair_ = false;
+ConfigParser::ParsingStates ConfigParser::KvPairState_ = ConfigParser::atParseKey;
 bool ConfigParser::RecognizeQuotedPair_ = false;
 bool ConfigParser::PreviewMode_ = false;
 
@@ -65,9 +67,9 @@ ConfigParser::TokenPutBack(const char *tok)
 char *
 ConfigParser::Undo()
 {
-    LOCAL_ARRAY(char, undoToken, CONFIG_LINE_LIMIT);
+    static char undoToken[CONFIG_LINE_LIMIT];
     if (!Undo_.empty()) {
-        strncpy(undoToken, Undo_.front().c_str(), sizeof(undoToken));
+        xstrncpy(undoToken, Undo_.front().c_str(), sizeof(undoToken));
         undoToken[sizeof(undoToken) - 1] = '\0';
         if (!PreviewMode_)
             Undo_.pop();
@@ -86,7 +88,7 @@ ConfigParser::strtokFile()
     static FILE *wordFile = NULL;
 
     char *t;
-    LOCAL_ARRAY(char, buf, CONFIG_LINE_LIMIT);
+    static char buf[CONFIG_LINE_LIMIT];
 
     if ((t = ConfigParser::Undo()))
         return t;
@@ -124,7 +126,7 @@ ConfigParser::strtokFile()
         }
 
         /* fromFile */
-        if (fgets(buf, CONFIG_LINE_LIMIT, wordFile) == NULL) {
+        if (fgets(buf, sizeof(buf), wordFile) == NULL) {
             /* stop reading from file */
             fclose(wordFile);
             wordFile = NULL;
@@ -216,7 +218,7 @@ ConfigParser::UnQuote(const char *token, const char **next)
 
     if (errorStr) {
         if (PreviewMode_)
-            strncpy(UnQuoted, SQUID_ERROR_TOKEN, sizeof(UnQuoted));
+            xstrncpy(UnQuoted, SQUID_ERROR_TOKEN, sizeof(UnQuoted));
         else {
             debugs(3, DBG_CRITICAL, "FATAL: " << errorStr << ": " << errorPos);
             self_destruct();
@@ -260,7 +262,12 @@ ConfigParser::TokenParse(const char * &nextToken, ConfigParser::TokenType &type)
 
     const char *tokenStart = nextToken;
     const char *sep;
-    if (ConfigParser::ParseQuotedOrToEol_)
+    if (ConfigParser::ParseKvPair_) {
+        if (ConfigParser::KvPairState_ == ConfigParser::atParseKey)
+            sep = "=";
+        else
+            sep = w_space;
+    } else if (ConfigParser::ParseQuotedOrToEol_)
         sep = "\n";
     else if (ConfigParser::RecognizeQuotedPair_)
         sep = w_space "\\";
@@ -437,6 +444,28 @@ ConfigParser::NextQuotedOrToEol()
     }
 
     return token;
+}
+
+bool
+ConfigParser::NextKvPair(char * &key, char * &value)
+{
+    key = value = NULL;
+    ParseKvPair_ = true;
+    KvPairState_ = ConfigParser::atParseKey;
+    if ((key = NextToken()) != NULL) {
+        KvPairState_ = ConfigParser::atParseValue;
+        value = NextQuotedToken();
+    }
+    ParseKvPair_ = false;
+
+    if (!key)
+        return false;
+    if (!value) {
+        debugs(3, DBG_CRITICAL, "Error while parsing key=value token. Value missing after: " << key);
+        return false;
+    }
+
+    return true;
 }
 
 char *

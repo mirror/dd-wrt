@@ -30,6 +30,12 @@ namespace Format
 class TokenTableEntry
 {
 public:
+    TokenTableEntry() : configTag(NULL), tokenType(LFT_NONE), options(0) {}
+    TokenTableEntry(const char *aTag, const ByteCode_t &aType) : configTag(aTag), tokenType(aType), options(0) {}
+    // nothing to destruct configTag is pointer to global const string
+    ~TokenTableEntry() {}
+    TokenTableEntry(const TokenTableEntry& t) : configTag(t.configTag), tokenType(t.tokenType), options(t.options) {}
+
     /// the config file ASCII representation for this token
     /// just the base tag bytes, excluding any option syntax bytes
     const char *configTag;
@@ -39,6 +45,9 @@ public:
 
     /// 32-bit mask? of options affecting the output display of this token
     uint32_t options;
+
+private:
+    TokenTableEntry &operator =(const TokenTableEntry&); // not implemented
 };
 
 } // namespace Format
