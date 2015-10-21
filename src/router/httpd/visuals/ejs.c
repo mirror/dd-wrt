@@ -2275,11 +2275,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	FILE *tempfp;
 	int cpu;
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
-		show_temp(1, 1, "%d.%d &#176;C");
+		show_temp(1, 1, "CPU %d.%d &#176;C");
 		show_temp(2, 1, " / WL0 %d.%d &#176;C");
 		show_temp(2, 2, " / WL1 %d.%d &#176;C");
 	} else {
-		show_temp(0, 1, "%d.%d &#176;C");
+		show_temp(0, 1, "CPU %d.%d &#176;C");
 		show_temp(1, 1, " / WL0 %d.%d &#176;C");
 		show_temp(1, 2, " / WL1 %d.%d &#176;C");
 	}
