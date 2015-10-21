@@ -24,6 +24,8 @@
 #include "SwapDir.h"
 #include "tools.h"
 #include "Transients.h"
+// for tvSubDsec() which should be in SquidTime.h
+#include "util.h"
 
 #include <cerrno>
 #include <climits>
@@ -746,7 +748,7 @@ StoreController::find(const cache_key *key)
 }
 
 void
-StoreController::get(String const key, STOREGETCLIENT aCallback, void *aCallbackData)
+StoreController::get(String const, STOREGETCLIENT, void *)
 {
     fatal("not implemented");
 }
@@ -1077,7 +1079,7 @@ StoreHashIndex::get(const cache_key *key)
 }
 
 void
-StoreHashIndex::get(String const key, STOREGETCLIENT aCallback, void *aCallbackData)
+StoreHashIndex::get(String const, STOREGETCLIENT, void *)
 {
     fatal("not implemented");
 }

@@ -349,7 +349,7 @@ Client::sentRequestBody(const CommIoCbParams &io)
 
     if (io.size > 0) {
         fd_bytes(io.fd, io.size, FD_WRITE);
-        kb_incr(&(statCounter.server.all.kbytes_out), io.size);
+        statCounter.server.all.kbytes_out += io.size;
         // kids should increment their counters
     }
 
@@ -449,7 +449,7 @@ sameUrlHosts(const char *url1, const char *url2)
 
 // purges entries that match the value of a given HTTP [response] header
 static void
-purgeEntriesByHeader(HttpRequest *req, const char *reqUrl, HttpMsg *rep, http_hdr_type hdr)
+purgeEntriesByHeader(HttpRequest *req, const char *reqUrl, HttpMsg *rep, Http::HdrType hdr)
 {
     const char *hdrUrl, *absUrl;
 
@@ -493,11 +493,12 @@ Client::maybePurgeOthers()
         return;
 
     // XXX: should we use originalRequest() here?
-    const char *reqUrl = urlCanonical(request);
-    debugs(88, 5, "maybe purging due to " << request->method << ' ' << reqUrl);
+    SBuf tmp(request->effectiveRequestUri());
+    const char *reqUrl = tmp.c_str();
+    debugs(88, 5, "maybe purging due to " << request->method << ' ' << tmp);
     purgeEntriesByUrl(request, reqUrl);
-    purgeEntriesByHeader(request, reqUrl, theFinalReply, HDR_LOCATION);
-    purgeEntriesByHeader(request, reqUrl, theFinalReply, HDR_CONTENT_LOCATION);
+    purgeEntriesByHeader(request, reqUrl, theFinalReply, Http::HdrType::LOCATION);
+    purgeEntriesByHeader(request, reqUrl, theFinalReply, Http::HdrType::CONTENT_LOCATION);
 }
 
 /// called when we have final (possibly adapted) reply headers; kids extend
@@ -800,7 +801,7 @@ void Client::handleAdaptedBodyProducerAborted()
     if (abortOnBadEntry("entry went bad while waiting for the now-aborted adapted body"))
         return;
 
-    Must(adaptedBodySource != NULL);
+    Must(adaptedBodySource != nullptr);
     if (!adaptedBodySource->exhausted()) {
         debugs(11,5, "waiting to consume the remainder of the aborted adapted body");
         return; // resumeBodyStorage() should eventually consume the rest
@@ -998,8 +999,43 @@ Client::storeReplyBody(const char *data, ssize_t len)
     currentOffset += len;
 }
 
-size_t Client::replyBodySpace(const MemBuf &readBuf,
-                              const size_t minSpace) const
+size_t
+Client::calcBufferSpaceToReserve(size_t space, const size_t wantSpace) const
+{
+    if (space < wantSpace) {
+        const size_t maxSpace = SBuf::maxSize; // absolute best
+        space = min(wantSpace, maxSpace); // do not promise more than asked
+    }
+
+#if USE_ADAPTATION
+    if (responseBodyBuffer) {
+        return 0;   // Stop reading if already overflowed waiting for ICAP to catch up
+    }
+
+    if (virginBodyDestination != NULL) {
+        /*
+         * BodyPipe buffer has a finite size limit.  We
+         * should not read more data from the network than will fit
+         * into the pipe buffer or we _lose_ what did not fit if
+         * the response ends sooner that BodyPipe frees up space:
+         * There is no code to keep pumping data into the pipe once
+         * response ends and serverComplete() is called.
+         */
+        const size_t adaptor_space = virginBodyDestination->buf().potentialSpaceSize();
+
+        debugs(11,9, "Client may read up to min(" <<
+               adaptor_space << ", " << space << ") bytes");
+
+        if (adaptor_space < space)
+            space = adaptor_space;
+    }
+#endif
+
+    return space;
+}
+
+size_t
+Client::replyBodySpace(const MemBuf &readBuf, const size_t minSpace) const
 {
     size_t space = readBuf.spaceSize(); // available space w/o heroic measures
     if (space < minSpace) {

@@ -10,7 +10,6 @@
 #define _SQUID_SRC_AUTH_DIGEST_USERREQUEST_H
 
 #include "auth/UserRequest.h"
-#include "MemPool.h"
 
 class ConnStateData;
 class HttpReply;
@@ -26,15 +25,14 @@ namespace Digest
  */
 class UserRequest : public Auth::UserRequest
 {
-
-public:
     MEMPROXY_CLASS(Auth::Digest::UserRequest);
 
+public:
     UserRequest();
     virtual ~UserRequest();
 
     virtual int authenticated() const;
-    virtual void authenticate(HttpRequest * request, ConnStateData * conn, http_hdr_type type);
+    virtual void authenticate(HttpRequest * request, ConnStateData * conn, Http::HdrType type);
     virtual Direction module_direction();
     virtual void addAuthenticationInfoHeader(HttpReply * rep, int accel);
 #if WAITING_FOR_TE
@@ -68,8 +66,6 @@ private:
 
 } // namespace Digest
 } // namespace Auth
-
-MEMPROXY_CLASS_INLINE(Auth::Digest::UserRequest);
 
 #endif /* _SQUID_SRC_AUTH_DIGEST_USERREQUEST_H */
 

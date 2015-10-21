@@ -9,9 +9,9 @@
 /* DEBUG: section 57    HTTP Status-line */
 
 #include "squid.h"
+#include "base/Packable.h"
 #include "Debug.h"
 #include "http/StatusLine.h"
-#include "Packer.h"
 
 void
 Http::StatusLine::init()
@@ -27,7 +27,7 @@ Http::StatusLine::clean()
 
 /* set values */
 void
-Http::StatusLine::set(const Http::ProtocolVersion &newVersion, const Http::StatusCode newStatus, const char *newReason)
+Http::StatusLine::set(const AnyP::ProtocolVersion &newVersion, const Http::StatusCode newStatus, const char *newReason)
 {
     protocol = AnyP::PROTO_HTTP;
     version = newVersion;
@@ -43,7 +43,7 @@ Http::StatusLine::reason() const
 }
 
 void
-Http::StatusLine::packInto(Packer * p) const
+Http::StatusLine::packInto(Packable * p) const
 {
     assert(p);
 
@@ -57,14 +57,14 @@ Http::StatusLine::packInto(Packer * p) const
         debugs(57, 9, "packing sline " << this << " using " << p << ":");
         debugs(57, 9, "FORMAT=" << IcyStatusLineFormat );
         debugs(57, 9, "ICY " << status() << " " << reason());
-        packerPrintf(p, IcyStatusLineFormat, status(), reason());
+        p->appendf(IcyStatusLineFormat, status(), reason());
         return;
     }
 
     debugs(57, 9, "packing sline " << this << " using " << p << ":");
     debugs(57, 9, "FORMAT=" << Http1StatusLineFormat );
     debugs(57, 9, "HTTP/" << version.major << "." << version.minor << " " << status() << " " << reason());
-    packerPrintf(p, Http1StatusLineFormat, version.major, version.minor, status(), reason());
+    p->appendf(Http1StatusLineFormat, version.major, version.minor, status(), reason());
 }
 
 /*
@@ -72,7 +72,7 @@ Http::StatusLine::packInto(Packer * p) const
  * XXX: Note 'end' currently unused, so NULL-termination assumed.
  */
 bool
-Http::StatusLine::parse(const String &protoPrefix, const char *start, const char *end)
+Http::StatusLine::parse(const String &protoPrefix, const char *start, const char * /*end*/)
 {
     status_ = Http::scInvalidHeader;    /* Squid header parsing error */
 

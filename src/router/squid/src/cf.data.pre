@@ -148,6 +148,61 @@ DOC_START
 	This option is not yet supported by Squid-3.
 DOC_END
 
+# Options removed in 3.6
+NAME: cache_peer_domain cache_host_domain
+TYPE: obsolete
+DOC_START
+	Replace with dstdomain ACLs and cache_peer_access.
+DOC_END
+
+NAME: sslproxy_cafile
+TYPE: obsolete
+DOC_START
+	Remove this line. Use tls_outgoing_options cafile= instead.
+DOC_END
+
+NAME: sslproxy_capath
+TYPE: obsolete
+DOC_START
+	Remove this line. Use tls_outgoing_options capath= instead.
+DOC_END
+
+NAME: sslproxy_cipher
+TYPE: obsolete
+DOC_START
+	Remove this line. Use tls_outgoing_options cipher= instead.
+DOC_END
+
+NAME: sslproxy_client_certificate
+TYPE: obsolete
+DOC_START
+	Remove this line. Use tls_outgoing_options cert= instead.
+DOC_END
+
+NAME: sslproxy_client_key
+TYPE: obsolete
+DOC_START
+	Remove this line. Use tls_outgoing_options key= instead.
+DOC_END
+
+NAME: sslproxy_flags
+TYPE: obsolete
+DOC_START
+	Remove this line. Use tls_outgoing_options flags= instead.
+DOC_END
+
+NAME: sslproxy_options
+TYPE: obsolete
+DOC_START
+	Remove this line. Use tls_outgoing_options options= instead.
+DOC_END
+
+NAME: sslproxy_version
+TYPE: obsolete
+DOC_START
+	Remove this line. Use tls_outgoing_options options= instead.
+DOC_END
+
 # Options removed in 3.5
 NAME: hierarchy_stoplist
 TYPE: obsolete
@@ -457,7 +512,7 @@ DOC_START
 		For Digest there is no default, this parameter is mandatory.
 		For NTLM and Negotiate this parameter is ignored.
 
-	"children" numberofchildren [startup=N] [idle=N] [concurrency=N]
+	"children" numberofchildren [startup=N] [idle=N] [concurrency=N] [queue-size=N]
 
 		The maximum number of authenticator processes to spawn. If
 		you start too few Squid will have to wait for them to process
@@ -481,6 +536,11 @@ DOC_START
 
 		Concurrency must not be set unless it's known the helper
 		supports the input format with channel-ID fields.
+
+		The queue-size= option sets the maximum number of queued
+		requests. If the queued requests exceed queue size for more
+		than 3 minutes then squid aborts its operation.
+		The default value is set to 2*numberofchildren/
 
 		NOTE: NTLM and Negotiate schemes do not support concurrency
 			in the Squid code module even though some helpers can.
@@ -657,11 +717,11 @@ DOC_START
 	Options:
 
 	  ttl=n		TTL in seconds for cached results (defaults to 3600
-	  		for 1 hour)
+			for 1 hour)
 
 	  negative_ttl=n
-	  		TTL for cached negative lookups (default same
-	  		as ttl)
+			TTL for cached negative lookups (default same
+			as ttl)
 
 	  grace=n	Percentage remaining of TTL where a refresh of a
 			cached entry should be initiated without needing to
@@ -690,69 +750,44 @@ DOC_START
 	  concurrency=n	concurrency level per process. Only used with helpers
 			capable of processing more than one query at a time.
 
+	  queue-size=N  The queue-size= option sets the maximum number of queued
+			requests. If the queued requests exceed queue size 
+			the acl is ignored.
+			The default value is set to 2*children-max.
+
 	  protocol=2.5	Compatibility mode for Squid-2.5 external acl helpers.
 
 	  ipv4 / ipv6	IP protocol used to communicate with this helper.
 			The default is to auto-detect IPv6 and use it when available.
 
 
-	FORMAT specifications
+	FORMAT is a series of %macro codes. See logformat directive for a full list
+	of the accepted codes. Although note that at the time of any external ACL
+	being tested data may not be available and thus some %macro expand to '-'.
 
-	  %LOGIN	Authenticated user login name
-	  %un		A user name. Expands to the first available name
-	  		from the following list of information sources:
-			- authenticated user name, like %ul or %LOGIN
-			- user name sent by an external ACL, like %EXT_USER
-			- SSL client name, like %us in logformat
-			- ident user name, like %ui in logformat
-	  %EXT_USER	Username from previous external acl
-	  %EXT_LOG	Log details from previous external acl
-	  %EXT_TAG	Tag from previous external acl
-	  %IDENT	Ident user name
-	  %SRC		Client IP
-	  %SRCPORT	Client source port
-	  %URI		Requested URI
-	  %DST		Requested host
-	  %PROTO	Requested URL scheme
-	  %PORT		Requested port
-	  %PATH		Requested URL path
-	  %METHOD	Request method
-	  %MYADDR	Squid interface address
-	  %MYPORT	Squid http_port number
-	  %PATH		Requested URL-path (including query-string if any)
-	  %USER_CERT	SSL User certificate in PEM format
-	  %USER_CERTCHAIN SSL User certificate chain in PEM format
-	  %USER_CERT_xx	SSL User certificate subject attribute xx
-	  %USER_CA_CERT_xx SSL User certificate issuer attribute xx
-	  %ssl::>sni	SSL client SNI sent to Squid
-	  %ssl::<cert_subject SSL server certificate DN
-	  %ssl::<cert_issuer SSL server certificate issuer DN
-
-	  %>{Header}	HTTP request header "Header"
-	  %>{Hdr:member}
-	  		HTTP request header "Hdr" list member "member"
-	  %>{Hdr:;member}
-	  		HTTP request header list member using ; as
-	  		list separator. ; can be any non-alphanumeric
-			character.
-
-	  %<{Header}	HTTP reply header "Header"
-	  %<{Hdr:member}
-	  		HTTP reply header "Hdr" list member "member"
-	  %<{Hdr:;member}
-	  		HTTP reply header list member using ; as
-	  		list separator. ; can be any non-alphanumeric
-			character.
+	In addition to the logformat codes; when processing external ACLs these
+	additional macros are made available:
 
 	  %ACL		The name of the ACL being tested.
-	  %DATA		The ACL arguments. If not used then any arguments
-			is automatically added at the end of the line
-			sent to the helper.
-			NOTE: this will encode the arguments as one token,
-			whereas the default will pass each separately.
 
-	  %%		The percent sign. Useful for helpers which need
-			an unchanging input format.
+	  %DATA		The ACL arguments. If a logformat encoding modifier
+			is used it will encode the whole set of arguments
+			as a single token.
+
+			If not used; then any arguments are automatically
+			added at the end of the line sent to the helper
+			as separately URL-encoded fields.
+
+	If SSL is enabled, the following formating codes become available:
+
+	  %USER_CERT		SSL User certificate in PEM format
+	  %USER_CERTCHAIN	SSL User certificate chain in PEM format
+	  %USER_CERT_xx		SSL User certificate subject attribute xx
+	  %USER_CA_CERT_xx	SSL User certificate issuer attribute xx
+
+
+	NOTE: all other format codes accepted by older Squid versions
+		are deprecated.
 
 
 	General request syntax:
@@ -820,9 +855,9 @@ DOC_START
 			does not alter existing tags.
 
 	  log=		String to be logged in access.log. Available as
-	  		%ea in logformat specifications.
+			%ea in logformat specifications.
 
-  	  clt_conn_tag= Associates a TAG with the client TCP connection.
+	  clt_conn_tag= Associates a TAG with the client TCP connection.
 			Please see url_rewrite_program related documentation
 			for this kv-pair.
 
@@ -1206,11 +1241,14 @@ NOCOMMENT_START
 # Example rule allowing access from your local networks.
 # Adapt to list your (internal) IP networks from where browsing
 # should be allowed
-acl localnet src 10.0.0.0/8	# RFC1918 possible internal network
-acl localnet src 172.16.0.0/12	# RFC1918 possible internal network
-acl localnet src 192.168.0.0/16	# RFC1918 possible internal network
-acl localnet src fc00::/7       # RFC 4193 local private network range
-acl localnet src fe80::/10      # RFC 4291 link-local (directly plugged) machines
+acl localnet src 0.0.0.1-0.255.255.255	# RFC 1122 "this" network (LAN)
+acl localnet src 10.0.0.0/8		# RFC 1918 local private network (LAN)
+acl localnet src 100.64.0.0/10		# RFC 6598 shared address space (CGN)
+acl localhet src 169.254.0.0/16 	# RFC 3927 link-local (directly plugged) machines
+acl localnet src 172.16.0.0/12		# RFC 1918 local private network (LAN)
+acl localnet src 192.168.0.0/16		# RFC 1918 local private network (LAN)
+acl localnet src fc00::/7       	# RFC 4193 local private network range
+acl localnet src fe80::/10      	# RFC 4291 link-local (directly plugged) machines
 
 acl SSL_ports port 443
 acl Safe_ports port 80		# http
@@ -1673,6 +1711,60 @@ DOC_START
 
 DOC_END
 
+NAME: on_unsupported_protocol
+TYPE: on_unsupported_protocol
+LOC: Config.accessList.on_unsupported_protocol
+DEFAULT: none
+DEFAULT_DOC: Respond with an error message to unidentifiable traffic
+DOC_START
+	Determines Squid behavior when encountering strange requests at the
+	beginning of an accepted TCP connection or the beginning of a bumped
+	CONNECT tunnel. Controlling Squid reaction to unexpected traffic is
+	especially useful in interception environments where Squid is likely
+	to see connections for unsupported protocols that Squid should either
+	terminate or tunnel at TCP level.
+ 
+		on_unsupported_protocol <action> [!]acl ...
+ 
+	The first matching action wins. Only fast ACLs are supported.
+
+	Supported actions are:
+ 
+	tunnel: Establish a TCP connection with the intended server and
+		blindly shovel TCP packets between the client and server.
+
+	respond: Respond with an error message, using the transfer protocol
+		for the Squid port that received the request (e.g., HTTP
+		for connections intercepted at the http_port). This is the
+		default.
+
+	Squid expects the following traffic patterns:
+
+	  http_port: a plain HTTP request
+	  https_port: SSL/TLS handshake followed by an [encrypted] HTTP request
+	  ftp_port: a plain FTP command (no on_unsupported_protocol support yet!)
+	  CONNECT tunnel on http_port: same as https_port
+	  CONNECT tunnel on https_port: same as https_port
+
+	Currently, this directive has effect on intercepted connections and
+	bumped tunnels only. Other cases are not supported because Squid
+	cannot know the intended destination of other traffic.
+
+	For example:
+	  # define what Squid errors indicate receiving non-HTTP traffic:
+	  acl foreignProtocol squid_error ERR_PROTOCOL_UNKNOWN ERR_TOO_BIG
+	  # define what Squid errors indicate receiving nothing:
+	  acl serverTalksFirstProtocol squid_error ERR_REQUEST_START_TIMEOUT
+	  # tunnel everything that does not look like HTTP:
+          on_unsupported_protocol tunnel foreignProtocol
+	  # tunnel if we think the client waits for the server to talk first:
+	  on_unsupported_protocol tunnel serverTalksFirstProtocol
+	  # in all other error cases, just send an HTTP "error page" response:
+	  on_unsupported_protocol respond all
+
+	See also: squid_error ACL
+DOC_END
+
 COMMENT_START
  NETWORK OPTIONS
  -----------------------------------------------------------------------------
@@ -1800,14 +1892,6 @@ DOC_START
 			assumed to be a combined certificate and
 			key file.
 
-	   version=	The version of SSL/TLS supported
-			    1	automatic (default)
-			    2	SSLv2 only
-			    3	SSLv3 only
-			    4	TLSv1.0 only
-			    5	TLSv1.1 only
-			    6	TLSv1.2 only
-
 	   cipher=	Colon separated list of supported ciphers.
 			NOTE: some ciphers such as EDH ciphers depend on
 			      additional settings. If those settings are
@@ -1816,49 +1900,68 @@ DOC_START
 
 	   options=	Various SSL implementation options. The most important
 			being:
-			    NO_SSLv2    Disallow the use of SSLv2
+
 			    NO_SSLv3    Disallow the use of SSLv3
+
 			    NO_TLSv1    Disallow the use of TLSv1.0
+
 			    NO_TLSv1_1  Disallow the use of TLSv1.1
+
 			    NO_TLSv1_2  Disallow the use of TLSv1.2
-			    SINGLE_DH_USE Always create a new key when using
+
+			    SINGLE_DH_USE
+				      Always create a new key when using
 				      temporary/ephemeral DH key exchanges
-			    NO_TICKET Disables TLS tickets extension
+
+			    SINGLE_ECDH_USE
+				      Enable ephemeral ECDH key exchange.
+				      The adopted curve should be specified
+				      using the tls-dh option.
+
+			    NO_TICKET
+				      Disable use of RFC5077 session tickets.
+				      Some servers may have problems
+				      understanding the TLS extension due
+				      to ambiguous specification in RFC4507.
+
 			    ALL       Enable various bug workarounds
 				      suggested as "harmless" by OpenSSL
 				      Be warned that this reduces SSL/TLS
 				      strength to some attacks.
-			See OpenSSL SSL_CTX_set_options documentation for a
-			complete list of options.
+
+			See the OpenSSL SSL_CTX_set_options documentation for a
+			more complete list.
 
 	   clientca=	File containing the list of CAs to use when
 			requesting a client certificate.
 
-	   cafile=	File containing additional CA certificates to
-			use when verifying client certificates. If unset
-			clientca will be used.
+	   tls-cafile=	PEM file containing CA certificates to use when verifying
+			client certificates. If not configured clientca will be
+			used. May be repeated to load multiple files.
 
 	   capath=	Directory containing additional CA certificates
 			and CRL lists to use when verifying client certificates.
+			Requires OpenSSL or LibreSSL.
 
 	   crlfile=	File of additional CRL lists to use when verifying
 			the client certificate, in addition to CRLs stored in
 			the capath. Implies VERIFY_CRL flag below.
 
-	   dhparams=	File containing DH parameters for temporary/ephemeral
-			DH key exchanges. See OpenSSL documentation for details
-			on how to create this file.
-			WARNING: EDH ciphers will be silently disabled if this
-				 option is not set.
+	   tls-dh=[curve:]file
+			File containing DH parameters for temporary/ephemeral DH key
+			exchanges, optionally prefixed by a curve for ephemeral ECDH
+			key exchanges.
+			See OpenSSL documentation for details on how to create the
+			DH parameter file. Supported curves for ECDH can be listed
+			using the "openssl ecparam -list_curves" command.
+			WARNING: EDH and EECDH ciphers will be silently disabled if
+				 this option is not set.
 
 	   sslflags=	Various flags modifying the use of SSL:
 			    DELAYED_AUTH
 				Don't request client certificates
 				immediately, but wait until acl processing
 				requires a certificate (not yet implemented).
-			    NO_DEFAULT_CA
-				Don't use the default CA lists built in
-				to OpenSSL.
 			    NO_SESSION_REUSE
 				Don't allow for session reuse. Each connection
 				will result in a new SSL session.
@@ -1868,6 +1971,9 @@ DOC_START
 			    VERIFY_CRL_ALL
 				Verify CRL lists for all certificates in the
 				client certificate chain.
+
+	   tls-no-default-ca
+			Do not use the system default Trusted CA.
 
 	   sslcontext=	SSL session ID context identifier.
 
@@ -1926,129 +2032,20 @@ TYPE: PortCfg
 DEFAULT: none
 LOC: HttpsPortList
 DOC_START
-	Usage:  [ip:]port cert=certificate.pem [key=key.pem] [mode] [options...]
+	Usage:  [ip:]port [mode] cert=certificate.pem [options]
 
 	The socket address where Squid will listen for client requests made
 	over TLS or SSL connections. Commonly referred to as HTTPS.
 
 	This is most useful for situations where you are running squid in
-	accelerator mode and you want to do the SSL work at the accelerator level.
+	accelerator mode and you want to do the TLS work at the accelerator level.
 
 	You may specify multiple socket addresses on multiple lines,
-	each with their own SSL certificate and/or options.
+	each with their own certificate and/or options.
 
-	Modes:
+	The TLS cert= option is mandatory on HTTPS ports.
 
-	   accel	Accelerator / reverse proxy mode
-
-	   intercept	Support for IP-Layer interception of
-			outgoing requests without browser settings.
-			NP: disables authentication and IPv6 on the port.
-
-	   tproxy	Support Linux TPROXY for spoofing outgoing
-			connections using the client IP address.
-			NP: disables authentication and maybe IPv6 on the port.
-
-	   ssl-bump	For each intercepted connection allowed by ssl_bump
-			ACLs, establish a secure connection with the client and with
-			the server, decrypt HTTPS messages as they pass through
-			Squid, and treat them as unencrypted HTTP messages,
-			becoming the man-in-the-middle.
-
-			An "ssl_bump server-first" match is required to
-			fully enable bumping of intercepted SSL	connections.
-
-			Requires tproxy or intercept.
-
-	Omitting the mode flag causes default forward proxy mode to be used.
-
-
-	See http_port for a list of generic options
-
-
-	SSL Options:
-
-	   cert=	Path to SSL certificate (PEM format).
-
-	   key=		Path to SSL private key file (PEM format)
-			if not specified, the certificate file is
-			assumed to be a combined certificate and
-			key file.
-
-	   version=	The version of SSL/TLS supported
-			    1	automatic (default)
-			    2	SSLv2 only
-			    3	SSLv3 only
-			    4	TLSv1 only
-
-	   cipher=	Colon separated list of supported ciphers.
-
-	   options=	Various SSL engine options. The most important
-			being:
-			    NO_SSLv2  Disallow the use of SSLv2
-			    NO_SSLv3  Disallow the use of SSLv3
-			    NO_TLSv1  Disallow the use of TLSv1
-			    SINGLE_DH_USE Always create a new key when using
-				      temporary/ephemeral DH key exchanges
-			See src/ssl_support.c or OpenSSL SSL_CTX_set_options
-			documentation for a complete list of options.
-
-	   clientca=	File containing the list of CAs to use when
-			requesting a client certificate.
-
-	   cafile=	File containing additional CA certificates to
-			use when verifying client certificates. If unset
-			clientca will be used.
-
-	   capath=	Directory containing additional CA certificates
-			and CRL lists to use when verifying client certificates.
-
-	   crlfile=	File of additional CRL lists to use when verifying
-			the client certificate, in addition to CRLs stored in
-			the capath. Implies VERIFY_CRL flag below.
-
-	   dhparams=	File containing DH parameters for temporary/ephemeral
-			DH key exchanges.
-
-	   sslflags=	Various flags modifying the use of SSL:
-			    DELAYED_AUTH
-				Don't request client certificates
-				immediately, but wait until acl processing
-				requires a certificate (not yet implemented).
-			    NO_DEFAULT_CA
-				Don't use the default CA lists built in
-				to OpenSSL.
-			    NO_SESSION_REUSE
-				Don't allow for session reuse. Each connection
-				will result in a new SSL session.
-			    VERIFY_CRL
-				Verify CRL lists when accepting client
-				certificates.
-			    VERIFY_CRL_ALL
-				Verify CRL lists for all certificates in the
-				client certificate chain.
-
-	   sslcontext=	SSL session ID context identifier.
-
-	   generate-host-certificates[=<on|off>]
-			Dynamically create SSL server certificates for the
-			destination hosts of bumped SSL requests.When
-			enabled, the cert and key options are used to sign
-			generated certificates. Otherwise generated
-			certificate will be selfsigned.
-			If there is CA certificate life time of generated
-			certificate equals lifetime of CA certificate. If
-			generated certificate is selfsigned lifetime is three
-			years.
-			This option is enabled by default when SslBump is used.
-			See the sslBump option above for more information.
-
-	   dynamic_cert_mem_cache_size=SIZE
-			Approximate total RAM size spent on cached generated
-			certificates. If set to zero, caching is disabled. The
-			default value is 4MB.
-
-	See http_port for a list of available options.
+	See http_port for a list of modes and options.
 DOC_END
 
 NAME: ftp_port
@@ -2437,6 +2434,89 @@ DOC_START
 DOC_END
 
 COMMENT_START
+ TLS OPTIONS
+ -----------------------------------------------------------------------------
+COMMENT_END
+
+NAME: tls_outgoing_options
+IFDEF: USE_GNUTLS||USE_OPENSSL
+TYPE: securePeerOptions
+DEFAULT: min-version=1.0
+LOC: Security::ProxyOutgoingConfig
+DOC_START
+	disable		Do not support https:// URLs.
+	
+	cert=/path/to/client/certificate
+			A client TLS certificate to use when connecting.
+	
+	key=/path/to/client/private_key
+			The private TLS key corresponding to the cert= above.
+			If key= is not specified cert= is assumed to reference
+			a PEM file containing both the certificate and the key.
+	
+	cipher=...	The list of valid TLS ciphers to use.
+
+	min-version=1.N
+			The minimum TLS protocol version to permit.
+			To control SSLv3 use the options= parameter.
+			Supported Values: 1.0 (default), 1.1, 1.2
+
+	options=... 	Specify various TLS/SSL implementation options:
+
+			    NO_SSLv3    Disallow the use of SSLv3
+
+			    NO_TLSv1    Disallow the use of TLSv1.0
+
+			    NO_TLSv1_1  Disallow the use of TLSv1.1
+
+			    NO_TLSv1_2  Disallow the use of TLSv1.2
+
+			    SINGLE_DH_USE
+				      Always create a new key when using
+				      temporary/ephemeral DH key exchanges
+
+			    SSL_OP_NO_TICKET
+				      Disable use of RFC5077 session tickets.
+				      Some servers may have problems
+				      understanding the TLS extension due
+				      to ambiguous specification in RFC4507.
+
+			    ALL       Enable various bug workarounds
+				      suggested as "harmless" by OpenSSL
+				      Be warned that this reduces SSL/TLS
+				      strength to some attacks.
+
+			See the OpenSSL SSL_CTX_set_options documentation for a
+			more complete list.
+	
+	cafile=		PEM file containing CA certificates to use when verifying
+			the peer certificate. May be repeated to load multiple files.
+
+	capath=		A directory containing additional CA certificates to
+			use when verifying the peer certificate.
+			Requires OpenSSL or LibreSSL.
+	
+	crlfile=... 	A certificate revocation list file to use when
+			verifying the peer certificate.
+	
+	flags=...	Specify various flags modifying the TLS implementation:
+	
+			DONT_VERIFY_PEER
+				Accept certificates even if they fail to
+				verify.
+			DONT_VERIFY_DOMAIN
+				Don't verify the peer certificate
+				matches the server name
+	
+	no-default-ca	Do not use the system default Trusted CA.
+	
+	domain= 	The peer name as advertised in its certificate.
+			Used for verifying the correctness of the received peer
+			certificate. If not specified the peer hostname will be
+			used.
+DOC_END
+
+COMMENT_START
  SSL OPTIONS
  -----------------------------------------------------------------------------
 COMMENT_END
@@ -2459,108 +2539,6 @@ DEFAULT: none
 DOC_START
 	The OpenSSL engine to use. You will need to set this if you
 	would like to use hardware SSL acceleration for example.
-DOC_END
-
-NAME: sslproxy_client_certificate
-IFDEF: USE_OPENSSL
-DEFAULT: none
-LOC: Config.ssl_client.cert
-TYPE: string
-DOC_START
-	Client SSL Certificate to use when proxying https:// URLs
-DOC_END
-
-NAME: sslproxy_client_key
-IFDEF: USE_OPENSSL
-DEFAULT: none
-LOC: Config.ssl_client.key
-TYPE: string
-DOC_START
-	Client SSL Key to use when proxying https:// URLs
-DOC_END
-
-NAME: sslproxy_version
-IFDEF: USE_OPENSSL
-DEFAULT: 1
-DEFAULT_DOC: automatic SSL/TLS version negotiation
-LOC: Config.ssl_client.version
-TYPE: int
-DOC_START
-	SSL version level to use when proxying https:// URLs
-
-	The versions of SSL/TLS supported:
-
-	    1	automatic (default)
-	    2	SSLv2 only
-	    3	SSLv3 only
-	    4	TLSv1.0 only
-	    5	TLSv1.1 only
-	    6	TLSv1.2 only
-DOC_END
-
-NAME: sslproxy_options
-IFDEF: USE_OPENSSL
-DEFAULT: none
-LOC: Config.ssl_client.options
-TYPE: string
-DOC_START
-	Colon (:) or comma (,) separated list of SSL implementation options
-	to use when proxying https:// URLs
-	
-	The most important being:
-
-	    NO_SSLv2    Disallow the use of SSLv2
-	    NO_SSLv3    Disallow the use of SSLv3
-	    NO_TLSv1    Disallow the use of TLSv1.0
-	    NO_TLSv1_1  Disallow the use of TLSv1.1
-	    NO_TLSv1_2  Disallow the use of TLSv1.2
-	    SINGLE_DH_USE
-		      Always create a new key when using temporary/ephemeral
-		      DH key exchanges
-	    SSL_OP_NO_TICKET
-		      Disable use of RFC5077 session tickets. Some servers
-		      may have problems understanding the TLS extension due
-		      to ambiguous specification in RFC4507.
-	    ALL       Enable various bug workarounds suggested as "harmless"
-		      by OpenSSL. Be warned that this may reduce SSL/TLS
-		      strength to some attacks.
-	
-	See the OpenSSL SSL_CTX_set_options documentation for a
-	complete list of possible options.
-	
-	WARNING: This directive takes a single token. If a space is used
-		 the value(s) after that space are SILENTLY IGNORED.
-DOC_END
-
-NAME: sslproxy_cipher
-IFDEF: USE_OPENSSL
-DEFAULT: none
-LOC: Config.ssl_client.cipher
-TYPE: string
-DOC_START
-	SSL cipher list to use when proxying https:// URLs
-
-	Colon separated list of supported ciphers.
-DOC_END
-
-NAME: sslproxy_cafile
-IFDEF: USE_OPENSSL
-DEFAULT: none
-LOC: Config.ssl_client.cafile
-TYPE: string
-DOC_START
-	file containing CA certificates to use when verifying server
-	certificates while proxying https:// URLs
-DOC_END
-
-NAME: sslproxy_capath
-IFDEF: USE_OPENSSL
-DEFAULT: none
-LOC: Config.ssl_client.capath
-TYPE: string
-DOC_START
-	directory containing CA certificates to use when verifying
-	server certificates while proxying https:// URLs
 DOC_END
 
 NAME: sslproxy_session_ttl
@@ -2682,19 +2660,6 @@ DOC_START
 	ssl_bump splice localhost
 	ssl_bump splice broken_sites
 	ssl_bump bump all
-DOC_END
-
-NAME: sslproxy_flags
-IFDEF: USE_OPENSSL
-DEFAULT: none
-LOC: Config.ssl_client.flags
-TYPE: string
-DOC_START
-	Various flags modifying the use of SSL while proxying https:// URLs:
-	    DONT_VERIFY_PEER	Accept certificates that fail verification.
-				For refined control, see sslproxy_cert_error.
-	    NO_DEFAULT_CA	Don't use the default CA list built in
-				to OpenSSL.
 DOC_END
 
 NAME: sslproxy_cert_error
@@ -2881,6 +2846,13 @@ DOC_START
 	at all times. When traffic begins to rise above what the existing
 	processes can handle this many more will be spawned up to the maximum
 	configured. A minimum setting of 1 is required.
+
+		queue-size=N
+
+	Sets the maximum number of queued requests.
+	If the queued requests exceed queue size for more than 3 minutes
+	squid aborts its operation.
+	The default value is set to 2*numberofchildren.
 	
 	You must have at least one ssl_crtd process.
 DOC_END
@@ -2940,6 +2912,13 @@ DOC_START
 	a request ID in front of the request/response. The request
 	ID from the request must be echoed back with the response
 	to that request.
+
+		queue-size=N
+
+	Sets the maximum number of queued requests.
+	If the queued requests exceed queue size for more than 3 minutes
+	squid aborts its operation.
+	The default value is set to 2*numberofchildren.
 	
 	You must have at least one ssl_crt_validator process.
 DOC_END
@@ -3211,28 +3190,34 @@ DOC_START
 			reference a combined file containing both the
 			certificate and the key.
 	
-	sslversion=1|2|3|4|5|6
-			The SSL version to use when connecting to this peer
-				1 = automatic (default)
-				2 = SSL v2 only
-				3 = SSL v3 only
-				4 = TLS v1.0 only
-				5 = TLS v1.1 only
-				6 = TLS v1.2 only
-	
 	sslcipher=...	The list of valid SSL ciphers to use when connecting
 			to this peer.
-	
+
+	tls-min-version=1.N
+			The minimum TLS protocol version to permit. To control
+			SSLv3 use the ssloptions= parameter.
+			Supported Values: 1.0 (default), 1.1, 1.2
+
 	ssloptions=... 	Specify various SSL implementation options:
 
-			    NO_SSLv2    Disallow the use of SSLv2
 			    NO_SSLv3    Disallow the use of SSLv3
+
 			    NO_TLSv1    Disallow the use of TLSv1.0
+
 			    NO_TLSv1_1  Disallow the use of TLSv1.1
+
 			    NO_TLSv1_2  Disallow the use of TLSv1.2
+
 			    SINGLE_DH_USE
 				      Always create a new key when using
 				      temporary/ephemeral DH key exchanges
+
+			    SSL_OP_NO_TICKET
+				      Disable use of RFC5077 session tickets.
+				      Some servers may have problems
+				      understanding the TLS extension due
+				      to ambiguous specification in RFC4507.
+
 			    ALL       Enable various bug workarounds
 				      suggested as "harmless" by OpenSSL
 				      Be warned that this reduces SSL/TLS
@@ -3241,11 +3226,12 @@ DOC_START
 			See the OpenSSL SSL_CTX_set_options documentation for a
 			more complete list.
 	
-	sslcafile=... 	A file containing additional CA certificates to use
-			when verifying the peer certificate.
+	tls-cafile=	PEM file containing CA certificates to use when verifying
+			the peer certificate. May be repeated to load multiple files.
 	
 	sslcapath=...	A directory containing additional CA certificates to
 			use when verifying the peer certificate.
+			Requires OpenSSL or LibreSSL.
 	
 	sslcrlfile=... 	A certificate revocation list file to use when
 			verifying the peer certificate.
@@ -3255,9 +3241,7 @@ DOC_START
 			DONT_VERIFY_PEER
 				Accept certificates even if they fail to
 				verify.
-			NO_DEFAULT_CA
-				Don't use the default CA list built in
-				to OpenSSL.
+
 			DONT_VERIFY_DOMAIN
 				Don't verify the peer certificate
 				matches the server name
@@ -3273,7 +3257,9 @@ DOC_START
 			See MS KB document Q307347 for details on this header.
 			If set to auto the header will only be added if the
 			request is forwarded as a https:// URL.
-	
+
+	tls-no-default-ca
+			Do not use the system default Trusted CA.	
 	
 	==== GENERAL OPTIONS ====
 	
@@ -3355,53 +3341,20 @@ DOC_START
 	
 DOC_END
 
-NAME: cache_peer_domain cache_host_domain
-TYPE: hostdomain
-DEFAULT: none
-LOC: none
-DOC_START
-	Use to limit the domains for which a neighbor cache will be
-	queried.
-
-	Usage:
-		cache_peer_domain cache-host domain [domain ...]
-		cache_peer_domain cache-host !domain
-
-	For example, specifying
-
-		cache_peer_domain parent.foo.net	.edu
-
-	has the effect such that UDP query packets are sent to
-	'bigserver' only when the requested object exists on a
-	server in the .edu domain.  Prefixing the domainname
-	with '!' means the cache will be queried for objects
-	NOT in that domain.
-
-	NOTE:	* Any number of domains may be given for a cache-host,
-		  either on the same or separate lines.
-		* When multiple domains are given for a particular
-		  cache-host, the first matched domain is applied.
-		* Cache hosts with no domain restrictions are queried
-		  for all requests.
-		* There are no defaults.
-		* There is also a 'cache_peer_access' tag in the ACL
-		  section.
-DOC_END
-
 NAME: cache_peer_access
 TYPE: peer_access
 DEFAULT: none
 LOC: none
 DOC_START
-	Similar to 'cache_peer_domain' but provides more flexibility by
-	using ACL elements.
+	Use to limit the requests for which a neighbor proxy will be
+	queried. Peers with no restrictions are queried for all requests.
 
 	Usage:
 		cache_peer_access cache-host allow|deny [!]aclname ...
 
 	The syntax is identical to 'http_access' and the other lists of
-	ACL elements.  See the comments for 'http_access' below, or
-	the Squid FAQ (http://wiki.squid-cache.org/SquidFaq/SquidAcl).
+	ACL elements.  See the comments for 'http_access', or the
+	Squid FAQ (http://wiki.squid-cache.org/SquidFaq/SquidAcl).
 DOC_END
 
 NAME: neighbor_type_domain
@@ -3969,11 +3922,12 @@ DOC_START
 	modifiers are usually not needed, but can be specified if an explicit
 	output format is desired.
 
-		% ["|[|'|#] [-] [[0]width] [{argument}] formatcode
+		% ["|[|'|#|/] [-] [[0]width] [{arg}] formatcode [{arg}]
 
 		"	output in quoted string format
 		[	output in squid text log format as used by log_mime_hdrs
 		#	output in URL quoted format
+		/	output in shell \-escaped format
 		'	output as-is
 
 		-	left aligned
@@ -3983,7 +3937,8 @@ DOC_START
 			When minimum starts with 0, the field is zero-padded.
 			String values exceeding maximum width are truncated.
 
-		{arg}	argument such as header name etc
+		{arg}	argument such as header name etc. This field may be
+			placed before or after the token, but not both at once.
 
 	Format codes:
 
@@ -4106,7 +4061,6 @@ DOC_START
 				Squid, although most fields are often preserved.
 				Optional header name argument as for >h
 
-
 	    RESPONSE
 
 		[http::]<Hs	HTTP status code received from the next hop
@@ -4136,7 +4090,6 @@ DOC_START
 				transfer encoding and control messages.
 				Generated FTP/Gopher listings are treated as
 				received bodies.
-
 
 	    TIMING
 
@@ -4175,6 +4128,28 @@ DOC_START
 				after the peek, stare, or splice SSL bumping
 				actions.
 
+		ssl::>cert_subject
+				The Subject field of the received client
+				SSL certificate or a dash ('-') if Squid has
+				received an invalid/malformed certificate or
+				no certificate at all. Consider encoding the
+				logged value because Subject often has spaces.
+
+		ssl::>cert_issuer
+				The Issuer field of the received client
+				SSL certificate or a dash ('-') if Squid has
+				received an invalid/malformed certificate or
+				no certificate at all. Consider encoding the
+				logged value because Issuer often has spaces.
+
+		ssl::<cert_errors
+				The list of certificate validation errors
+				detected by Squid (including OpenSSL and
+				certificate validation helper components). The
+				errors are listed in the discovery order. By
+				default, the error codes are separated by ':'.
+				Accepts an optional separator argument.
+
 	If ICAP is enabled, the following code becomes available (as
 	well as ICAP log codes documented with the icap_log option):
 
@@ -4183,7 +4158,7 @@ DOC_START
 				ACLs are checked and when ICAP
 				transaction is in progress.
 
-	If adaptation is enabled the following three codes become available:
+	If adaptation is enabled the following codes become available:
 
 		adapt::<last_h	The header of the last ICAP response or
 				meta-information from the last eCAP
@@ -4212,20 +4187,6 @@ DOC_START
 	You can prefix adapt::*_trs format codes with adaptation
 	service name in curly braces to record response time(s) specific
 	to that service. For example: %{my_service}adapt::sum_trs
-
-	If SSL is enabled, the following formating codes become available:
-
-		%ssl::>cert_subject The Subject field of the received client
-				SSL certificate or a dash ('-') if Squid has
-				received an invalid/malformed certificate or
-				no certificate at all. Consider encoding the
-				logged value because Subject often has spaces.
-
-		%ssl::>cert_issuer The Issuer field of the received client
-				SSL certificate or a dash ('-') if Squid has
-				received an invalid/malformed certificate or
-				no certificate at all. Consider encoding the
-				logged value because Issuer often has spaces.
 
 	The default formats available (which do not need re-defining) are:
 
@@ -4289,6 +4250,15 @@ DOC_START
 				kills the affected worker. The drop action 
 				support has not been tested for modules other
 				than tcp.
+
+	rotate=N		Specifies the number of log file rotations to
+				make when you run 'squid -k rotate'. The default
+				is to obey the logfile_rotate directive. Setting
+				rotate=0 will disable the file name rotation,
+				but the log files are still closed and re-opened.
+				This will enable you to rename the logfiles
+				yourself just before sending the rotate signal.
+				Only supported by the stdio module.
 
 	===== Modules Currently available =====
 	
@@ -4510,12 +4480,19 @@ TYPE: int
 DEFAULT: 10
 LOC: Config.Log.rotateNumber
 DOC_START
-	Specifies the number of logfile rotations to make when you
+	Specifies the default number of logfile rotations to make when you
 	type 'squid -k rotate'. The default is 10, which will rotate
 	with extensions 0 through 9. Setting logfile_rotate to 0 will
 	disable the file name rotation, but the logfiles are still closed
 	and re-opened. This will enable you to rename the logfiles
 	yourself just before sending the rotate signal.
+
+	Note, from Squid-3.1 this option is only a default for cache.log,
+	that log can be rotated separately by using debug_options.
+
+	Note, from Squid-3.6 this option is only a default for access.log
+	recorded by stdio: module. Those logs can be rotated separately by
+	using the rotate=N option on their access_log directive.
 
 	Note, the 'squid -k rotate' command normally sends a USR1
 	signal to the running squid process.  In certain situations
@@ -4524,8 +4501,6 @@ DOC_START
 	in the habit of using 'squid -k rotate' instead of 'kill -USR1
 	<pid>'.
 
-	Note, from Squid-3.1 this option is only a default for cache.log,
-	that log can be rotated separately by using debug_options.
 DOC_END
 
 NAME: mime_table
@@ -4830,10 +4805,10 @@ DOC_START
 DOC_END
 
 NAME: pinger_program
-TYPE: string
-DEFAULT: @DEFAULT_PINGER@
-LOC: Config.pinger.program
 IFDEF: USE_ICMP
+TYPE: icmp
+DEFAULT: @DEFAULT_PINGER@
+LOC: IcmpCfg
 DOC_START
 	Specify the location of the executable for the pinger process.
 DOC_END
@@ -4841,7 +4816,7 @@ DOC_END
 NAME: pinger_enable
 TYPE: onoff
 DEFAULT: on
-LOC: Config.pinger.enable
+LOC: IcmpCfg.enable
 IFDEF: USE_ICMP
 DOC_START
 	Control whether the pinger is active at run-time.
@@ -4966,6 +4941,14 @@ DOC_START
 	used to communicate with the helper is modified to include
 	an ID in front of the request/response. The ID from the request
 	must be echoed back with the response to that request.
+
+		queue-size=N
+
+	Sets the maximum number of queued requests.
+	If the queued requests exceed queue size and redirector_bypass
+	configuration option is set, then redirector is bypassed. Otherwise, if
+	overloading persists squid may abort its operation.
+	The default value is set to 2*numberofchildren.
 DOC_END
 
 NAME: url_rewrite_host_header redirect_rewrites_host_header
@@ -5016,6 +4999,8 @@ DOC_START
 	redirectors for access control, and you enable this option,
 	users may have access to pages they should not
 	be allowed to request.
+	This options sets default queue-size option of the url_rewrite_children
+	to 0.
 DOC_END
 
 NAME: url_rewrite_extras
@@ -5028,6 +5013,29 @@ DOC_START
 	logformat %macros. In theory, any logformat %macro can be used.
 	In practice, a %macro expands as a dash (-) if the helper request is
 	sent before the required macro information is available to Squid.
+DOC_END
+
+NAME: url_rewrite_timeout
+TYPE: UrlHelperTimeout
+LOC: Config.onUrlRewriteTimeout
+DEFAULT: none
+DEFAULT_DOC: Squid waits for the helper response forever
+DOC_START
+	Squid times active requests to redirector. The timeout value and Squid
+	reaction to a timed out request are configurable using the following
+	format:
+
+	url_rewrite_timeout timeout time-units on_timeout=<action> [response=<quoted-response>]
+
+	supported timeout actions:
+		fail	Squid return a ERR_GATEWAY_FAILURE error page
+
+		bypass	Do not re-write the URL
+
+		retry	Send the lookup to the helper again
+
+		use_configured_response
+			Use the <quoted-response> as helper response
 DOC_END
 
 COMMENT_START
@@ -5140,6 +5148,14 @@ DOC_START
 	used to communicate with the helper is modified to include
 	an ID in front of the request/response. The ID from the request
 	must be echoed back with the response to that request.
+
+		queue-size=N
+
+	Sets the maximum number of queued requests.
+	If the queued requests exceed queue size and store_id_bypass
+	configuration option is set, then storeID helper is bypassed. Otherwise,
+	if overloading persists squid may abort its operation.
+	The default value is set to 2*numberofchildren.
 DOC_END
 
 NAME: store_id_access storeurl_rewrite_access
@@ -5169,6 +5185,8 @@ DOC_START
 	are not critical to your caching system.  If you use
 	helpers for critical caching components, and you enable this 
 	option,	users may not get objects from cache.
+	This options sets default queue-size option of the store_id_children
+	to 0.
 DOC_END
 
 COMMENT_START
@@ -5311,9 +5329,7 @@ DOC_START
 		 reload-into-ims
 		 ignore-reload
 		 ignore-no-store
-		 ignore-must-revalidate
 		 ignore-private
-		 ignore-auth
 		 max-stale=NN
 		 refresh-ims
 		 store-stale
@@ -5349,21 +5365,10 @@ DOC_START
 		the HTTP standard. Enabling this feature could make you
 		liable for problems which it causes.
 
-		ignore-must-revalidate ignores any ``Cache-Control: must-revalidate``
-		headers received from a server. Doing this VIOLATES
-		the HTTP standard. Enabling this feature could make you
-		liable for problems which it causes.
-
 		ignore-private ignores any ``Cache-control: private''
 		headers received from a server. Doing this VIOLATES
 		the HTTP standard. Enabling this feature could make you
 		liable for problems which it causes.
-
-		ignore-auth caches responses to requests with authorization,
-		as if the originserver had sent ``Cache-control: public''
-		in the response header. Doing this VIOLATES the HTTP standard.
-		Enabling this feature could make you liable for problems which
-		it causes.
 
 		refresh-ims causes squid to contact the origin server
 		when a client issues an If-Modified-Since request. This
@@ -6099,6 +6104,15 @@ DOC_START
 	connection establishment.
 DOC_END
 
+NAME: request_start_timeout
+TYPE: time_t
+LOC: Config.Timeout.request_start_timeout
+DEFAULT: 5 minutes
+DOC_START
+	How long to wait for the first request byte after initial
+	connection establishment.
+DOC_END
+
 NAME: client_idle_pconn_timeout persistent_request_timeout
 TYPE: time_t
 LOC: Config.Timeout.clientIdlePconn
@@ -6139,6 +6153,31 @@ DOC_START
 	If you seem to have many client connections tying up
 	filedescriptors, we recommend first tuning the read_timeout,
 	request_timeout, persistent_request_timeout and quick_abort values.
+DOC_END
+
+NAME: pconn_lifetime
+COMMENT: time-units
+TYPE: time_t
+LOC: Config.Timeout.pconnLifetime
+DEFAULT: 0 seconds
+DOC_START
+	Desired maximum lifetime of a persistent connection.
+	When set, Squid will close a now-idle persistent connection that
+	exceeded configured lifetime instead of moving the connection into
+	the idle connection pool (or equivalent). No effect on ongoing/active
+	transactions. Connection lifetime is the time period from the
+	connection acceptance or opening time until "now".
+	
+	This limit is useful in environments with long-lived connections
+	where Squid configuration or environmental factors change during a
+	single connection lifetime. If unrestricted, some connections may
+	last for hours and even days, ignoring those changes that should
+	have affected their behavior or their existence.
+	
+	Currently, a new lifetime value supplied via Squid reconfiguration
+	has no effect on already idle connections unless they become busy.
+	
+	When set to '0' this limit is not used.
 DOC_END
 
 NAME: half_closed_clients
@@ -8237,6 +8276,12 @@ DOC_START
 
 	uri: icap://servername:port/servicepath
 		ICAP server and service location.
+	     icaps://servername:port/servicepath
+		The "icap:" URI scheme is used for traditional ICAP server and
+		service location (default port is 1344, connections are not
+		encrypted). The "icaps:" URI scheme is for Secure ICAP
+		services that use SSL/TLS-encrypted ICAP connections (by
+		default, on port 11344).
 
 	ICAP does not allow a single service to handle both REQMOD and RESPMOD
 	transactions. Squid does not enforce that requirement. You can specify
@@ -8302,12 +8347,86 @@ DOC_START
 		Use the given number as the Max-Connections limit, regardless
 		of the Max-Connections value given by the service, if any.
 
+	==== ICAPS / TLS OPTIONS ====
+
+	These options are used for Secure ICAP (icaps://....) services only.
+
+	tls-cert=/path/to/ssl/certificate
+			A client SSL certificate to use when connecting to
+			this icap server.
+
+	tls-key=/path/to/ssl/key
+			The private TLS/SSL key corresponding to sslcert above.
+			If 'tls-key' is not specified 'tls-cert' is assumed to
+			reference a combined PEM format file containing both the
+			certificate and the key.
+
+	tls-cipher=...	The list of valid TLS/SSL ciphers to use when connecting
+			to this icap server.
+
+	tls-min-version=1.N
+			The minimum TLS protocol version to permit. To control
+			SSLv3 use the ssloptions= parameter.
+			Supported Values: 1.0 (default), 1.1, 1.2
+
+	tls-options=...	Specify various OpenSSL library options:
+
+			    NO_SSLv3    Disallow the use of SSLv3
+
+			    NO_TLSv1    Disallow the use of TLSv1.0
+			    NO_TLSv1_1  Disallow the use of TLSv1.1
+			    NO_TLSv1_2  Disallow the use of TLSv1.2
+
+			    SINGLE_DH_USE
+				      Always create a new key when using
+				      temporary/ephemeral DH key exchanges
+
+			    ALL       Enable various bug workarounds
+				      suggested as "harmless" by OpenSSL
+				      Be warned that this reduces SSL/TLS
+				      strength to some attacks.
+
+			See the OpenSSL SSL_CTX_set_options documentation for a
+			more complete list. Options relevant only to SSLv2 are
+			not supported.
+
+	tls-cafile=	PEM file containing CA certificates to use when verifying
+			the icap server certificate.
+			Use to specify intermediate CA certificate(s) if not sent
+			by the server. Or the full CA chain for the server when
+			using the tls-no-default-ca flag.
+			May be repeated to load multiple files.
+
+	tls-capath=...	A directory containing additional CA certificates to
+			use when verifying the icap server certificate.
+			Requires OpenSSL or LibreSSL.
+
+	tls-crlfile=...	A certificate revocation list file to use when
+			verifying the icap server certificate.
+
+	tls-flags=...	Specify various flags modifying the Squid TLS implementation:
+
+			DONT_VERIFY_PEER
+				Accept certificates even if they fail to
+				verify.
+			DONT_VERIFY_DOMAIN
+				Don't verify the icap server certificate
+				matches the server name
+
+	tls-no-default-ca
+			Do no use the system default Trusted CA.
+
+	tls-domain=	The icap server name as advertised in it's certificate.
+			Used for verifying the correctness of the received icap
+			server certificate. If not specified the icap server
+			hostname extracted from ICAP URI will be used.
+
 	Older icap_service format without optional named parameters is
 	deprecated but supported for backward compatibility.
 
 Example:
 icap_service svcBlocker reqmod_precache icap://icap1.mydomain.net:1344/reqmod bypass=0
-icap_service svcLogger reqmod_precache icap://icap2.mydomain.net:1344/respmod routing=on
+icap_service svcLogger reqmod_precache icaps://icap2.mydomain.net:11344/reqmod routing=on
 DOC_END
 
 NAME: icap_class
@@ -9333,6 +9452,35 @@ DOC_START
 
 	Note: Changing this requires a restart of Squid. Also
 	not all I/O types supports large values (eg on Windows).
+DOC_END
+
+NAME: force_request_body_continuation
+TYPE: acl_access
+LOC: Config.accessList.forceRequestBodyContinuation
+DEFAULT: none
+DEFAULT_DOC: Deny, unless rules exist in squid.conf.
+DOC_START
+	This option controls how Squid handles data upload requests from HTTP
+	and FTP agents that require a "Please Continue" control message response
+	to actually send the request body to Squid. It is mostly useful in
+	adaptation environments.
+	
+	When Squid receives an HTTP request with an "Expect: 100-continue"
+	header or an FTP upload command (e.g., STOR), Squid normally sends the
+	request headers or FTP command information to an adaptation service (or
+	peer) and waits for a response. Most adaptation services (and some
+	broken peers) may not respond to Squid at that stage because they may
+	decide to wait for the HTTP request body or FTP data transfer. However,
+	that request body or data transfer may never come because Squid has not
+	responded with the HTTP 100 or FTP 150 (Please Continue) control message
+	to the request sender yet!
+	
+	An allow match tells Squid to respond with the HTTP 100 or FTP 150
+	(Please Continue) control message on its own, before forwarding the
+	request to an adaptation service or peer. Such a response usually forces
+	the request sender to proceed with sending the body. A deny match tells
+	Squid to delay that control response until the origin server confirms
+	that the request body is needed. Delaying is the default behavior.
 DOC_END
 
 EOF

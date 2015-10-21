@@ -19,20 +19,61 @@
 #include "helper/ChildConfig.h"
 #include "helper/forward.h"
 #include "ip/Address.h"
+#include "SBuf.h"
 
+#include <list>
+#include <map>
+
+class Packable;
+class wordlist;
+
+/**
+ * Managers a set of individual helper processes with a common queue of requests.
+ *
+ * With respect to load, a helper goes through these states (roughly):
+ *   idle:   no processes are working on requests (and no requests are queued);
+ *   normal: some, but not all processes are working (and no requests are queued);
+ *   busy:   all processes are working (and some requests are possibly queued);
+ *   full:   all processes are working and at least 2*#processes requests are queued.
+ *
+ * A "busy" helper queues new requests and issues a WARNING every 10 minutes or so.
+ * A "full" helper either drops new requests or keeps queuing them, depending on
+ *   whether the caller can handle dropped requests (trySubmit vs helperSubmit APIs).
+ * An attempt to use a "full" helper that has been "full" for 3+ minutes kills worker.
+ *   Given enough load, all helpers except for external ACL will make such attempts.
+ */
 class helper
 {
+    CBDATA_CLASS(helper);
+
 public:
     inline helper(const char *name) :
         cmdline(NULL),
         id_name(name),
         ipc_type(0),
+        full_time(0),
         last_queue_warn(0),
         last_restart(0),
+        timeout(0),
+        retryTimedOut(false),
+        retryBrokenHelper(false),
         eom('\n') {
         memset(&stats, 0, sizeof(stats));
     }
     ~helper();
+
+    ///< whether at least one more request can be successfully submitted
+    bool queueFull() const;
+
+    ///< If not full, submit request. Otherwise, either kill Squid or return false.
+    bool trySubmit(const char *buf, HLPCB * callback, void *data);
+
+    /// Submits a request to the helper or add it to the queue if none of
+    /// the servers is available.
+    void submitRequest(Helper::Request *r);
+
+    /// Dump some stats about the helper state to a Packable object
+    void packStatsInto(Packable *p, const char *label = NULL) const;
 
 public:
     wordlist *cmdline;
@@ -42,34 +83,43 @@ public:
     Helper::ChildConfig childs;    ///< Configuration settings for number running.
     int ipc_type;
     Ip::Address addr;
+    time_t full_time; ///< when a full helper became full (zero for non-full helpers)
     time_t last_queue_warn;
     time_t last_restart;
+    time_t timeout; ///< Requests timeout
+    bool retryTimedOut; ///< Whether the timed-out requests must retried
+    bool retryBrokenHelper; ///< Whether the requests must retried on BH replies
+    SBuf onTimedOutResponse; ///< The response to use when helper response timedout
     char eom;   ///< The char which marks the end of (response) message, normally '\n'
 
     struct _stats {
         int requests;
         int replies;
+        int timedout;
         int queue_size;
         int avg_svc_time;
     } stats;
 
-private:
-    CBDATA_CLASS2(helper);
+protected:
+    friend void helperSubmit(helper * hlp, const char *buf, HLPCB * callback, void *data);
+    void prepSubmit();
+    void submit(const char *buf, HLPCB * callback, void *data);
 };
 
 class statefulhelper : public helper
 {
+    CBDATA_CLASS(statefulhelper);
+
 public:
-    inline statefulhelper(const char *name) : helper(name), datapool(NULL), IsAvailable(NULL), OnEmptyQueue(NULL) {};
-    inline ~statefulhelper() {};
+    inline statefulhelper(const char *name) : helper(name), datapool(NULL) {}
+    inline ~statefulhelper() {}
 
 public:
     MemAllocator *datapool;
-    HLPSAVAIL *IsAvailable;
-    HLPSONEQ *OnEmptyQueue;
 
 private:
-    CBDATA_CLASS2(statefulhelper);
+    friend void helperStatefulSubmit(statefulhelper * hlp, const char *buf, HLPCB * callback, void *data, helper_stateful_server * lastserver);
+    void submit(const char *buf, HLPCB * callback, void *data, helper_stateful_server *lastserver);
 };
 
 /**
@@ -119,43 +169,57 @@ public:
         bool reserved;
     } flags;
 
+    typedef std::list<Helper::Request *> Requests;
+    Requests requests; ///< requests in order of submission/expiration
+
     struct {
         uint64_t uses;     //< requests sent to this helper
         uint64_t replies;  //< replies received from this helper
         uint64_t pending;  //< queued lookups waiting to be sent to this helper
         uint64_t releases; //< times release() has been called on this helper (if stateful)
+        uint64_t timedout; //< requests which timed-out
     } stats;
     void initStats();
 };
 
 class MemBuf;
+class CommTimeoutCbParams;
 
 class helper_server : public HelperServerBase
 {
+    CBDATA_CLASS(helper_server);
+
 public:
+    uint64_t nextRequestId;
+
     MemBuf *wqueue;
     MemBuf *writebuf;
 
     helper *parent;
-    Helper::Request **requests;
 
-private:
-    CBDATA_CLASS2(helper_server);
+    // STL says storing std::list iterators is safe when changing the list
+    typedef std::map<uint64_t, Requests::iterator> RequestIndex;
+    RequestIndex requestsIndex; ///< maps request IDs to requests
+
+    /// Run over the active requests lists and forces a retry, or timedout reply
+    /// or the configured "on timeout response" for timedout requests.
+    void checkForTimedOutRequests(bool const retry);
+
+    /// Read timeout handler
+    static void requestTimeout(const CommTimeoutCbParams &io);
 };
 
 class helper_stateful_server : public HelperServerBase
 {
+    CBDATA_CLASS(helper_stateful_server);
+
 public:
     /* MemBuf wqueue; */
     /* MemBuf writebuf; */
 
     statefulhelper *parent;
-    Helper::Request *request;
 
     void *data;         /* State data used by the calling routines */
-
-private:
-    CBDATA_CLASS2(helper_stateful_server);
 };
 
 /* helper.c */
@@ -163,8 +227,6 @@ void helperOpenServers(helper * hlp);
 void helperStatefulOpenServers(statefulhelper * hlp);
 void helperSubmit(helper * hlp, const char *buf, HLPCB * callback, void *data);
 void helperStatefulSubmit(statefulhelper * hlp, const char *buf, HLPCB * callback, void *data, helper_stateful_server * lastserver);
-void helperStats(StoreEntry * sentry, helper * hlp, const char *label = NULL);
-void helperStatefulStats(StoreEntry * sentry, statefulhelper * hlp, const char *label = NULL);
 void helperShutdown(helper * hlp);
 void helperStatefulShutdown(statefulhelper * hlp);
 void helperStatefulReleaseServer(helper_stateful_server * srv);

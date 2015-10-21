@@ -52,7 +52,7 @@ Rock::SwapDir::~SwapDir()
 }
 
 StoreSearch *
-Rock::SwapDir::search(String const url, HttpRequest *)
+Rock::SwapDir::search(String const, HttpRequest *)
 {
     assert(false);
     return NULL; // XXX: implement
@@ -405,12 +405,20 @@ Rock::SwapDir::parseSize(const bool reconfig)
 ConfigOption *
 Rock::SwapDir::getOptionTree() const
 {
-    ConfigOptionVector *vector = dynamic_cast<ConfigOptionVector*>(::SwapDir::getOptionTree());
-    assert(vector);
-    vector->options.push_back(new ConfigOptionAdapter<SwapDir>(*const_cast<SwapDir *>(this), &SwapDir::parseSizeOption, &SwapDir::dumpSizeOption));
-    vector->options.push_back(new ConfigOptionAdapter<SwapDir>(*const_cast<SwapDir *>(this), &SwapDir::parseTimeOption, &SwapDir::dumpTimeOption));
-    vector->options.push_back(new ConfigOptionAdapter<SwapDir>(*const_cast<SwapDir *>(this), &SwapDir::parseRateOption, &SwapDir::dumpRateOption));
-    return vector;
+    ConfigOption *copt = ::SwapDir::getOptionTree();
+    ConfigOptionVector *vector = dynamic_cast<ConfigOptionVector*>(copt);
+    if (vector) {
+        // if copt is actually a ConfigOptionVector
+        vector->options.push_back(new ConfigOptionAdapter<SwapDir>(*const_cast<SwapDir *>(this), &SwapDir::parseSizeOption, &SwapDir::dumpSizeOption));
+        vector->options.push_back(new ConfigOptionAdapter<SwapDir>(*const_cast<SwapDir *>(this), &SwapDir::parseTimeOption, &SwapDir::dumpTimeOption));
+        vector->options.push_back(new ConfigOptionAdapter<SwapDir>(*const_cast<SwapDir *>(this), &SwapDir::parseRateOption, &SwapDir::dumpRateOption));
+    } else {
+        // we don't know how to handle copt, as it's not a ConfigOptionVector.
+        // free it (and return nullptr)
+        delete copt;
+        copt = nullptr;
+    }
+    return copt;
 }
 
 bool
@@ -810,7 +818,7 @@ Rock::SwapDir::closeCompleted()
 }
 
 void
-Rock::SwapDir::readCompleted(const char *buf, int rlen, int errflag, RefCount< ::ReadRequest> r)
+Rock::SwapDir::readCompleted(const char *, int rlen, int errflag, RefCount< ::ReadRequest> r)
 {
     ReadRequest *request = dynamic_cast<Rock::ReadRequest*>(r.getRaw());
     assert(request);
@@ -823,7 +831,7 @@ Rock::SwapDir::readCompleted(const char *buf, int rlen, int errflag, RefCount< :
 }
 
 void
-Rock::SwapDir::writeCompleted(int errflag, size_t rlen, RefCount< ::WriteRequest> r)
+Rock::SwapDir::writeCompleted(int errflag, size_t, RefCount< ::WriteRequest> r)
 {
     Rock::WriteRequest *request = dynamic_cast<Rock::WriteRequest*>(r.getRaw());
     assert(request);

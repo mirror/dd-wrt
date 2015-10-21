@@ -1107,9 +1107,8 @@ wccp2ConnectionClose(void)
  * Accept the UDP packet
  */
 static void
-wccp2HandleUdp(int sock, void *not_used)
+wccp2HandleUdp(int sock, void *)
 {
-
     struct wccp2_service_list_t *service_list_ptr;
 
     struct wccp2_router_list_t *router_list_ptr;
@@ -1514,9 +1513,8 @@ wccp2HandleUdp(int sock, void *not_used)
 }
 
 static void
-wccp2HereIam(void *voidnotused)
+wccp2HereIam(void *)
 {
-
     struct wccp2_service_list_t *service_list_ptr;
 
     struct wccp2_router_list_t *router_list_ptr;
@@ -1599,9 +1597,8 @@ wccp2HereIam(void *voidnotused)
 }
 
 static void
-wccp2AssignBuckets(void *voidnotused)
+wccp2AssignBuckets(void *)
 {
-
     struct wccp2_service_list_t *service_list_ptr;
 
     struct wccp2_router_list_t *router_list_ptr;
@@ -2031,7 +2028,7 @@ dump_wccp2_method(StoreEntry * e, const char *label, int v)
 }
 
 void
-free_wccp2_method(int *v)
+free_wccp2_method(int *)
 { }
 
 /**
@@ -2078,8 +2075,8 @@ dump_wccp2_amethod(StoreEntry * e, const char *label, int v)
 }
 
 void
-free_wccp2_amethod(int *v)
-{ }
+free_wccp2_amethod(int *)
+{}
 
 /*
  * Format:
@@ -2087,7 +2084,7 @@ free_wccp2_amethod(int *v)
  * wccp2_service {standard|dynamic} {id} (password=password)
  */
 void
-parse_wccp2_service(void *v)
+parse_wccp2_service(void *)
 {
     char *t;
     int service = 0;
@@ -2138,9 +2135,8 @@ parse_wccp2_service(void *v)
 }
 
 void
-dump_wccp2_service(StoreEntry * e, const char *label, void *v)
+dump_wccp2_service(StoreEntry * e, const char *label, void *)
 {
-
     struct wccp2_service_list_t *srv;
     srv = wccp2_service_list_head;
 
@@ -2161,11 +2157,11 @@ dump_wccp2_service(StoreEntry * e, const char *label, void *v)
 }
 
 void
-free_wccp2_service(void *v)
+free_wccp2_service(void *)
 {}
 
 int
-check_null_wccp2_service(void *v)
+check_null_wccp2_service(void *)
 {
     return !wccp2_service_list_head;
 }
@@ -2265,7 +2261,7 @@ parse_wccp2_service_ports(char *options, int portlist[])
 }
 
 void
-parse_wccp2_service_info(void *v)
+parse_wccp2_service_info(void *)
 {
     char *t, *end;
     int service_id = 0;
@@ -2344,10 +2340,8 @@ parse_wccp2_service_info(void *v)
 }
 
 void
-dump_wccp2_service_info(StoreEntry * e, const char *label, void *v)
+dump_wccp2_service_info(StoreEntry * e, const char *label, void *)
 {
-    char comma;
-
     struct wccp2_service_list_t *srv;
     int flags;
     srv = wccp2_service_list_head;
@@ -2373,102 +2367,102 @@ dump_wccp2_service_info(StoreEntry * e, const char *label, void *v)
         /* flags */
         flags = ntohl(srv->info.service_flags);
 
+        bool comma = false;
         if (flags != 0) {
-            comma = 0;
             storeAppendPrintf(e, " flags=");
 
             if (flags & WCCP2_SERVICE_SRC_IP_HASH) {
-                storeAppendPrintf(e, "%ssrc_ip_hash", comma ? "," : "");
-                comma = 1;
+                storeAppendPrintf(e, "src_ip_hash");
+                comma = true;
             }
 
             if (flags & WCCP2_SERVICE_DST_IP_HASH) {
                 storeAppendPrintf(e, "%sdst_ip_hash", comma ? "," : "");
-                comma = 1;
+                comma = true;
             }
 
             if (flags & WCCP2_SERVICE_SRC_PORT_HASH) {
                 storeAppendPrintf(e, "%ssource_port_hash", comma ? "," : "");
-                comma = 1;
+                comma = true;
             }
 
             if (flags & WCCP2_SERVICE_DST_PORT_HASH) {
                 storeAppendPrintf(e, "%sdst_port_hash", comma ? "," : "");
-                comma = 1;
+                comma = true;
             }
 
             if (flags & WCCP2_SERVICE_PORTS_DEFINED) {
                 storeAppendPrintf(e, "%sports_defined", comma ? "," : "");
-                comma = 1;
+                comma = true;
             }
 
             if (flags & WCCP2_SERVICE_PORTS_SOURCE) {
                 storeAppendPrintf(e, "%sports_source", comma ? "," : "");
-                comma = 1;
+                comma = true;
             }
 
             if (flags & WCCP2_SERVICE_SRC_IP_ALT_HASH) {
                 storeAppendPrintf(e, "%ssrc_ip_alt_hash", comma ? "," : "");
-                comma = 1;
+                comma = true;
             }
 
             if (flags & WCCP2_SERVICE_DST_IP_ALT_HASH) {
                 storeAppendPrintf(e, "%ssrc_ip_alt_hash", comma ? "," : "");
-                comma = 1;
+                comma = true;
             }
 
             if (flags & WCCP2_SERVICE_SRC_PORT_ALT_HASH) {
                 storeAppendPrintf(e, "%ssrc_port_alt_hash", comma ? "," : "");
-                comma = 1;
+                comma = true;
             }
 
             if (flags & WCCP2_SERVICE_DST_PORT_ALT_HASH) {
                 storeAppendPrintf(e, "%sdst_port_alt_hash", comma ? "," : "");
-                comma = 1;
+                //comma = true; // uncomment if more options added
             }
         }
 
         /* ports */
-        comma = 0;
+        comma = false;
 
         if (srv->info.port0 != 0) {
-            storeAppendPrintf(e, "%s%d", comma ? "," : " ports=", ntohs(srv->info.port0));
-            comma = 1;
+            storeAppendPrintf(e, " ports=%d", ntohs(srv->info.port0));
+            comma = true;
         }
 
         if (srv->info.port1 != 0) {
             storeAppendPrintf(e, "%s%d", comma ? "," : "ports=", ntohs(srv->info.port1));
-            comma = 1;
+            comma = true;
         }
 
         if (srv->info.port2 != 0) {
             storeAppendPrintf(e, "%s%d", comma ? "," : "ports=", ntohs(srv->info.port2));
-            comma = 1;
+            comma = true;
         }
 
         if (srv->info.port3 != 0) {
             storeAppendPrintf(e, "%s%d", comma ? "," : "ports=", ntohs(srv->info.port3));
-            comma = 1;
+            comma = true;
         }
 
         if (srv->info.port4 != 0) {
             storeAppendPrintf(e, "%s%d", comma ? "," : "ports=", ntohs(srv->info.port4));
-            comma = 1;
+            comma = true;
         }
 
         if (srv->info.port5 != 0) {
             storeAppendPrintf(e, "%s%d", comma ? "," : "ports=", ntohs(srv->info.port5));
-            comma = 1;
+            comma = true;
         }
 
         if (srv->info.port6 != 0) {
             storeAppendPrintf(e, "%s%d", comma ? "," : "ports=", ntohs(srv->info.port6));
-            comma = 1;
+            comma = true;
         }
 
         if (srv->info.port7 != 0) {
             storeAppendPrintf(e, "%s%d", comma ? "," : "ports=", ntohs(srv->info.port7));
-            comma = 1;
+            // comma = true; // uncomment if more options are added
         }
 
         /* protocol */
@@ -2516,7 +2510,7 @@ wccp2SortCacheList(struct wccp2_cache_list_t *head)
 }
 
 void
-free_wccp2_service_info(void *v)
+free_wccp2_service_info(void *)
 {}
 
 #endif /* USE_WCCPv2 */

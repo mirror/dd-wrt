@@ -8,7 +8,7 @@
 # requires the linuxdoc tools
 if ENABLE_RELEASE_DOCS
 
-DOC= release-3.5
+DOC= release-4
 
 %.ps: %.sgml
 	linuxdoc -B latex -o ps $(DOC)

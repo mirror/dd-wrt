@@ -14,7 +14,6 @@
 #include "fd.h"
 #include "fde.h"
 #include "globals.h"
-#include "Mem.h"
 #include "MemBuf.h"
 #include "profiler/Profiler.h"
 #include "StatCounters.h"
@@ -191,7 +190,7 @@ diskCombineWrites(_fde_disk *fdd)
 
 /* write handler */
 static void
-diskHandleWrite(int fd, void *notused)
+diskHandleWrite(int fd, void *)
 {
     int len = 0;
     fde *F = &fd_table[fd];
@@ -220,8 +219,13 @@ diskHandleWrite(int fd, void *notused)
 
     errno = 0;
 
-    if (fdd->write_q->file_offset != -1)
-        lseek(fd, fdd->write_q->file_offset, SEEK_SET); /* XXX ignore return? */
+    if (fdd->write_q->file_offset != -1) {
+        errno = 0;
+        if (lseek(fd, fdd->write_q->file_offset, SEEK_SET) == -1) {
+            debugs(50, DBG_IMPORTANT, "error in seek for fd " << fd << ": " << xstrerror());
+            // XXX: handle error?
+        }
+    }
 
     len = FD_WRITE_METHOD(fd,
                           fdd->write_q->buf + fdd->write_q->buf_offset,
@@ -422,7 +426,12 @@ diskHandleRead(int fd, void *data)
     {
 #endif
         debugs(6, 3, "diskHandleRead: FD " << fd << " seeking to offset " << ctrl_dat->offset);
-        lseek(fd, ctrl_dat->offset, SEEK_SET);  /* XXX ignore return? */
+        errno = 0;
+        if (lseek(fd, ctrl_dat->offset, SEEK_SET) == -1) {
+            // shouldn't happen, let's detect that
+            debugs(50, DBG_IMPORTANT, "error in seek for fd " << fd << ": " << xstrerror());
+            // XXX handle failures?
+        }
         ++ statCounter.syscalls.disk.seeks;
         F->disk.offset = ctrl_dat->offset;
     }

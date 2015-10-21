@@ -11,17 +11,19 @@
 
 #include "CommRead.h"
 #include "dlink.h"
-#include "HttpRequestMethod.h"
+#include "http/RequestMethod.h"
 #include "RemovalPolicy.h"
 #include "stmem.h"
 #include "StoreIOBuffer.h"
 #include "StoreIOState.h"
+#include "typedefs.h" //for IRCB
 
 #if USE_DELAY_POOLS
 #include "DelayId.h"
 #endif
 
 typedef void STMCB (void *data, StoreIOBuffer wroteBuffer);
+typedef void STABH(void *);
 
 class store_client;
 class HttpRequest;
@@ -29,10 +31,10 @@ class HttpReply;
 
 class MemObject
 {
+    MEMPROXY_CLASS(MemObject);
 
 public:
     static size_t inUseCount();
-    MEMPROXY_CLASS(MemObject);
 
     void dump() const;
     MemObject();
@@ -96,7 +98,6 @@ public:
     int64_t inmem_lo;
     dlink_list clients;
 
-    /** \todo move into .cc or .cci */
     size_t clientCount() const {return nclients;}
 
     bool clientIsFirst(void *sc) const {return (clients.head && sc == clients.head->data);}
@@ -105,8 +106,9 @@ public:
 
     class SwapOut
     {
-
     public:
+        SwapOut() : queue_offset(0), decision(swNeedsCheck) {}
+
         int64_t queue_offset; ///< number of bytes sent to SwapDir for writing
         StoreIOState::Pointer sio;
 
@@ -180,8 +182,6 @@ private:
 
     DeferredReadManager deferredReads;
 };
-
-MEMPROXY_CLASS_INLINE(MemObject);
 
 /** global current memory removal policy */
 extern RemovalPolicy *mem_policy;

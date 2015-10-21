@@ -30,15 +30,13 @@
 
 class UrnState : public StoreClient
 {
+    CBDATA_CLASS(UrnState);
 
 public:
     void created (StoreEntry *newEntry);
     void start (HttpRequest *, StoreEntry *);
-    char *getHost (String &urlpath);
+    char *getHost(const SBuf &urlpath);
     void setUriResFromRequest(HttpRequest *);
-    bool RequestNeedsMenu(HttpRequest *r);
-    void updateRequestURL(HttpRequest *r, char const *newPath, const size_t newPath_len);
-    void createUriResRequest (String &uri);
 
     virtual ~UrnState();
 
@@ -56,8 +54,6 @@ public:
 
 private:
     char *urlres;
-
-    CBDATA_CLASS2(UrnState);
 };
 
 typedef struct {
@@ -73,7 +69,6 @@ typedef struct {
 static STCB urnHandleReply;
 static url_entry *urnParseReply(const char *inbuf, const HttpRequestMethod&);
 static const char *const crlf = "\r\n";
-static QS url_entry_sort;
 
 CBDATA_CLASS_INIT(UrnState);
 
@@ -83,7 +78,7 @@ UrnState::~UrnState()
 }
 
 static url_entry *
-urnFindMinRtt(url_entry * urls, const HttpRequestMethod& m, int *rtt_ret)
+urnFindMinRtt(url_entry * urls, const HttpRequestMethod &, int *rtt_ret)
 {
     int min_rtt = 0;
     url_entry *u = NULL;
@@ -129,60 +124,34 @@ urnFindMinRtt(url_entry * urls, const HttpRequestMethod& m, int *rtt_ret)
 }
 
 char *
-UrnState::getHost (String &urlpath)
+UrnState::getHost(const SBuf &urlpath)
 {
-    char * result;
-    size_t p;
-
     /** FIXME: this appears to be parsing the URL. *very* badly. */
     /*   a proper encapsulated URI/URL type needs to clear this up. */
-    if ((p=urlpath.find(':')) != String::npos) {
-        result=xstrndup(urlpath.rawBuf(),p-1);
-    } else {
-        result = xstrndup(urlpath.rawBuf(),urlpath.size());
-    }
-    return result;
-}
+    size_t p;
+    if ((p = urlpath.find(':')) != SBuf::npos)
+        return SBufToCstring(urlpath.substr(0, p-1));
 
-bool
-UrnState::RequestNeedsMenu(HttpRequest *r)
-{
-    if (r->urlpath.size() < 5)
-        return false;
-    //now we're sure it's long enough
-    return strncasecmp(r->urlpath.rawBuf(), "menu.", 5) == 0;
-}
-
-void
-UrnState::updateRequestURL(HttpRequest *r, char const *newPath, const size_t newPath_len)
-{
-    char *new_path = xstrndup (newPath, newPath_len);
-    r->urlpath = new_path;
-    xfree(new_path);
-}
-
-void
-UrnState::createUriResRequest (String &uri)
-{
-    LOCAL_ARRAY(char, local_urlres, 4096);
-    char *host = getHost (uri);
-    snprintf(local_urlres, 4096, "http://%s/uri-res/N2L?urn:" SQUIDSTRINGPH,
-             host, SQUIDSTRINGPRINT(uri));
-    safe_free(host);
-    safe_free(urlres);
-    urlres = xstrdup(local_urlres);
-    urlres_r = HttpRequest::CreateFromUrl(urlres);
+    return SBufToCstring(urlpath);
 }
 
 void
 UrnState::setUriResFromRequest(HttpRequest *r)
 {
-    if (RequestNeedsMenu(r)) {
-        updateRequestURL(r, r->urlpath.rawBuf() + 5, r->urlpath.size() - 5 );
+    static const SBuf menu(".menu");
+    if (r->url.path().startsWith(menu)) {
+        r->url.path(r->url.path().substr(5)); // strip prefix "menu."
         flags.force_menu = true;
     }
 
-    createUriResRequest (r->urlpath);
+    SBuf uri = r->url.path();
+    LOCAL_ARRAY(char, local_urlres, 4096);
+    char *host = getHost(uri);
+    snprintf(local_urlres, 4096, "http://%s/uri-res/N2L?urn:" SQUIDSBUFPH, host, SQUIDSBUFPRINT(uri));
+    safe_free(host);
+    safe_free(urlres);
+    urlres = xstrdup(local_urlres);
+    urlres_r = HttpRequest::CreateFromUrl(urlres);
 
     if (urlres_r == NULL) {
         debugs(52, 3, "urnStart: Bad uri-res URL " << urlres);
@@ -193,7 +162,7 @@ UrnState::setUriResFromRequest(HttpRequest *r)
         return;
     }
 
-    urlres_r->header.putStr(HDR_ACCEPT, "text/plain");
+    urlres_r->header.putStr(Http::HdrType::ACCEPT, "text/plain");
 }
 
 void
@@ -354,7 +323,7 @@ urnHandleReply(void *data, StoreIOBuffer result)
 
     debugs(53, 3, "urnFindMinRtt: Counted " << i << " URLs");
 
-    if (urls == NULL) {     /* unkown URN error */
+    if (urls == NULL) {     /* unknown URN error */
         debugs(52, 3, "urnTranslateDone: unknown URN " << e->url());
         err = new ErrorState(ERR_URN_RESOLVE, Http::scNotFound, urnState->request.getRaw());
         err->url = xstrdup(e->url());
@@ -368,28 +337,27 @@ urnHandleReply(void *data, StoreIOBuffer result)
     e->buffer();
     mb = new MemBuf;
     mb->init();
-    mb->Printf( "<TITLE>Select URL for %s</TITLE>\n"
-                "<STYLE type=\"text/css\"><!--BODY{background-color:#ffffff;font-family:verdana,sans-serif}--></STYLE>\n"
-                "<H2>Select URL for %s</H2>\n"
-                "<TABLE BORDER=\"0\" WIDTH=\"100%%\">\n", e->url(), e->url());
+    mb->appendf( "<TITLE>Select URL for %s</TITLE>\n"
+                 "<STYLE type=\"text/css\"><!--BODY{background-color:#ffffff;font-family:verdana,sans-serif}--></STYLE>\n"
+                 "<H2>Select URL for %s</H2>\n"
+                 "<TABLE BORDER=\"0\" WIDTH=\"100%%\">\n", e->url(), e->url());
 
     for (i = 0; i < urlcnt; ++i) {
         u = &urls[i];
         debugs(52, 3, "URL {" << u->url << "}");
-        mb->Printf(
+        mb->appendf(
             "<TR><TD><A HREF=\"%s\">%s</A></TD>", u->url, u->url);
 
         if (urls[i].rtt > 0)
-            mb->Printf(
+            mb->appendf(
                 "<TD align=\"right\">%4d <it>ms</it></TD>", u->rtt);
         else
-            mb->Printf("<TD align=\"right\">Unknown</TD>");
+            mb->appendf("<TD align=\"right\">Unknown</TD>");
 
-        mb->Printf(
-            "<TD>%s</TD></TR>\n", u->flags.cached ? "    [cached]" : " ");
+        mb->appendf("<TD>%s</TD></TR>\n", u->flags.cached ? "    [cached]" : " ");
     }
 
-    mb->Printf(
+    mb->appendf(
         "</TABLE>"
         "<HR noshade size=\"1px\">\n"
         "<ADDRESS>\n"
@@ -402,7 +370,7 @@ urnHandleReply(void *data, StoreIOBuffer result)
     if (urnState->flags.force_menu) {
         debugs(51, 3, "urnHandleReply: forcing menu");
     } else if (min_u) {
-        rep->header.putStr(HDR_LOCATION, min_u->url);
+        rep->header.putStr(Http::HdrType::LOCATION, min_u->url);
     }
 
     rep->body.setMb(mb);

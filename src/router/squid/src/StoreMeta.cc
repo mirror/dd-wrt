@@ -157,7 +157,7 @@ StoreMeta::Add(StoreMeta **tail, StoreMeta *aNode)
 }
 
 bool
-StoreMeta::checkConsistency(StoreEntry *e) const
+StoreMeta::checkConsistency(StoreEntry *) const
 {
     switch (getType()) {
 
@@ -184,5 +184,19 @@ StoreMeta::checkConsistency(StoreEntry *e) const
     }
 
     return true;
+}
+
+StoreMeta::StoreMeta(const StoreMeta &s) :
+    length(s.length),
+    value(s.value),
+    next(s.next)
+{}
+
+StoreMeta& StoreMeta::operator=(const StoreMeta &s)
+{
+    length=s.length;
+    value=s.value;
+    next=s.next;
+    return *this;
 }
 

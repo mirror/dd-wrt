@@ -6,10 +6,13 @@
  * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
+/* DEBUG: section 24    SBuf */
+
 #ifndef SQUID_SBUF_H
 #define SQUID_SBUF_H
 
 #include "base/InstanceId.h"
+#include "Debug.h"
 #include "MemBlob.h"
 #include "SBufExceptions.h"
 #include "SquidString.h"
@@ -17,6 +20,7 @@
 #include <climits>
 #include <cstdarg>
 #include <iosfwd>
+#include <iterator>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -50,6 +54,7 @@ public:
     uint64_t assignFast; ///<number of no-copy assignment operations
     uint64_t clear; ///<number of clear operations
     uint64_t append; ///<number of append operations
+    uint64_t moves; ///<number of move constructions/assignments
     uint64_t toStream;  ///<number of write operations to ostreams
     uint64_t setChar; ///<number of calls to setAt
     uint64_t getChar; ///<number of calls to at() and operator[]
@@ -75,6 +80,44 @@ public:
 };
 
 class CharacterSet;
+class SBuf;
+
+/** Forward input iterator for SBufs
+ *
+ * Please note that any operation on the underlying SBuf may invalidate
+ * all iterators over it, resulting in undefined behavior by them.
+ */
+class SBufIterator : public std::iterator<std::input_iterator_tag, char>
+{
+public:
+    friend class SBuf;
+    typedef MemBlob::size_type size_type;
+    bool operator==(const SBufIterator &s) const;
+    bool operator!=(const SBufIterator &s) const;
+
+    char operator*() const { return *iter; }
+    SBufIterator& operator++() { ++iter; return *this; }
+
+protected:
+    SBufIterator(const SBuf &, size_type);
+
+    const char *iter;
+};
+
+/** Reverse input iterator for SBufs
+ *
+ * Please note that any operation on the underlying SBuf may invalidate
+ * all iterators over it, resulting in undefined behavior by them.
+ */
+class SBufReverseIterator : public SBufIterator
+{
+    friend class SBuf;
+public:
+    SBufReverseIterator& operator++() { --iter; return *this;}
+    char operator*() const { return *(iter-1); }
+protected:
+    SBufReverseIterator(const SBuf &s, size_type sz) : SBufIterator(s,sz) {}
+};
 
 /**
  * A String or Buffer.
@@ -86,6 +129,8 @@ class SBuf
 {
 public:
     typedef MemBlob::size_type size_type;
+    typedef SBufIterator iterator;
+    typedef SBufReverseIterator reverse_iterator;
     static const size_type npos = 0xffffffff; // max(uint32_t)
 
     /// Maximum size of a SBuf. By design it MUST be < MAX(size_type)/2. Currently 256Mb.
@@ -94,6 +139,14 @@ public:
     /// create an empty (zero-size) SBuf
     SBuf();
     SBuf(const SBuf &S);
+#if __cplusplus >= 201103L
+    SBuf(SBuf&& S) : store_(std::move(S.store_)), off_(S.off_), len_(S.len_) {
+        ++stats.moves;
+        S.store_=NULL; //RefCount supports NULL, and S is about to be destructed
+        S.off_=0;
+        S.len_=0;
+    }
+#endif
 
     /** Constructor: import c-style string
      *
@@ -105,7 +158,8 @@ public:
      * \note it is the caller's responsibility not to go out of bounds
      * \note bounds is 0 <= pos < length(); caller must pay attention to signedness
      */
-    explicit SBuf(const char *S, size_type n = npos);
+    explicit SBuf(const char *S, size_type n);
+    explicit SBuf(const char *S);
 
     /** Constructor: import SquidString, copying contents.
      *
@@ -129,6 +183,20 @@ public:
      * Current SBuf will share backing store with the assigned one.
      */
     SBuf& operator =(const SBuf & S) {return assign(S);}
+#if __cplusplus >= 201103L
+    SBuf& operator =(SBuf &&S) {
+        ++stats.moves;
+        if (this != &S) {
+            store_ = std::move(S.store_);
+            off_ = S.off_;
+            len_ = S.len_;
+            S.store_ = NULL; //RefCount supports NULL, and S is about to be destructed
+            S.off_ = 0;
+            S.len_ = 0;
+        }
+        return *this;
+    }
+#endif
 
     /** Import a c-string into a SBuf, copying the data.
      *
@@ -140,7 +208,8 @@ public:
      * \note to assign a std::string use the pattern:
      *    assign(stdstr.data(), stdstd.length())
      */
-    SBuf& assign(const char *S, size_type n = npos);
+    SBuf& assign(const char *S, size_type n);
+    SBuf& assign(const char *S) {return assign(S,npos);}
 
     /** Assignment operator. Copy a NULL-terminated c-style string into a SBuf.
      *
@@ -177,7 +246,8 @@ public:
      * \note to append a std::string use the pattern
      *     cstr_append(stdstr.data(), stdstd.length())
      */
-    SBuf& append(const char * S, size_type Ssize = npos);
+    SBuf& append(const char * S, size_type Ssize);
+    SBuf& append(const char * S) { return append(S,npos); }
 
     /** Assignment operation with printf(3)-style definition
      * \note arguments may be evaluated more than once, be careful
@@ -238,29 +308,47 @@ public:
      * \retval <0 argument of the call is smaller than called SBuf
      * \retval 0  argument of the call has the same contents of called SBuf
      */
-    int compare(const SBuf &S, const SBufCaseSensitive isCaseSensitive, const size_type n = npos) const;
+    int compare(const SBuf &S, const SBufCaseSensitive isCaseSensitive, const size_type n) const;
+    int compare(const SBuf &S, const SBufCaseSensitive isCaseSensitive) const {
+        return compare(S, isCaseSensitive, npos);
+    }
 
     /// shorthand version for compare()
-    inline int cmp(const SBuf &S, const size_type n = npos) const {
+    inline int cmp(const SBuf &S, const size_type n) const {
         return compare(S,caseSensitive,n);
+    }
+    inline int cmp(const SBuf &S) const {
+        return compare(S,caseSensitive,npos);
     }
 
     /// shorthand version for case-insensitive compare()
-    inline int caseCmp(const SBuf &S, const size_type n = npos) const {
+    inline int caseCmp(const SBuf &S, const size_type n) const {
         return compare(S,caseInsensitive,n);
+    }
+    inline int caseCmp(const SBuf &S) const {
+        return compare(S,caseInsensitive,npos);
     }
 
     /// Comparison with a C-string.
-    int compare(const char *s, const SBufCaseSensitive isCaseSensitive, const size_type n = npos) const;
+    int compare(const char *s, const SBufCaseSensitive isCaseSensitive, const size_type n) const;
+    int compare(const char *s, const SBufCaseSensitive isCaseSensitive) const {
+        return compare(s,isCaseSensitive,npos);
+    }
 
     /// Shorthand version for C-string compare().
-    inline int cmp(const char *S, const size_type n = npos) const {
+    inline int cmp(const char *S, const size_type n) const {
         return compare(S,caseSensitive,n);
+    }
+    inline int cmp(const char *S) const {
+        return compare(S,caseSensitive,npos);
     }
 
     /// Shorthand version for case-insensitive C-string compare().
-    inline int caseCmp(const char *S, const size_type n = npos) const {
+    inline int caseCmp(const char *S, const size_type n) const {
         return compare(S,caseInsensitive,n);
+    }
+    inline int caseCmp(const char *S) const {
+        return compare(S,caseInsensitive,npos);
     }
 
     /** check whether the entire supplied argument is a prefix of the SBuf.
@@ -508,6 +596,16 @@ public:
      */
     size_type findFirstOf(const CharacterSet &set, size_type startPos = 0) const;
 
+    /** Find last occurrence of character of set in SBuf
+     *
+     * Finds the last occurrence of ANY of the characters in the supplied set in
+     * the SBuf.
+     * \return npos if no character in the set could be found
+     * \param endPos if specified, ignore any occurrences after that position
+     *   if npos, the entire SBuf is searched
+     */
+    size_type findLastOf(const CharacterSet &set, size_type endPos = npos) const;
+
     /** Find first occurrence character NOT in character set
      *
      * \return npos if all characters in the SBuf are from set
@@ -517,6 +615,14 @@ public:
      * TODO: rename to camelCase
      */
     size_type findFirstNotOf(const CharacterSet &set, size_type startPos = 0) const;
+
+    /** Find last occurrence character NOT in character set
+     *
+     * \return npos if all characters in the SBuf are from set
+     * \param endPos if specified, ignore any occurrences after that position
+     *   if npos, then the entire SBuf is searched
+     */
+    size_type findLastNotOf(const CharacterSet &set, size_type endPos = npos) const;
 
     /** sscanf-alike
      *
@@ -540,6 +646,22 @@ public:
 
     /// std::string export function
     std::string toStdString() const { return std::string(buf(),length()); }
+
+    iterator begin() {
+        return iterator(*this, 0);
+    }
+
+    iterator end() {
+        return iterator(*this, length());
+    }
+
+    reverse_iterator rbegin() {
+        return reverse_iterator(*this, length());
+    }
+
+    reverse_iterator rend() {
+        return reverse_iterator(*this, 0);
+    }
 
     // TODO: possibly implement erase() similar to std::string's erase
     // TODO: possibly implement a replace() call
@@ -617,6 +739,65 @@ ToLower(SBuf buf)
 {
     buf.toLower();
     return buf;
+}
+
+/**
+ * Copy an SBuf into a C-string.
+ *
+ * Guarantees that the output is a c-string of length
+ * no more than SBuf::length()+1 by appending a \0 byte
+ * to the C-string copy of the SBuf contents.
+ *
+ * \note The destination c-string memory MUST be of at least
+ *       length()+1 bytes.
+ *
+ * No protection is added to prevent \0 bytes within the string.
+ * Unexpectedly short strings are a problem for the receiver
+ * to deal with if it cares.
+ *
+ * Unlike SBuf::c_str() does not alter the SBuf in any way.
+ */
+inline void
+SBufToCstring(char *d, const SBuf &s)
+{
+    s.copy(d, s.length());
+    d[s.length()] = '\0'; // 0-terminate the destination
+    debugs(1, DBG_DATA, "built c-string '" << d << "' from " << s);
+}
+
+/**
+ * Copy an SBuf into a C-string.
+ *
+ * \see SBufToCstring(char *d, const SBuf &s)
+ *
+ * \returns A dynamically allocated c-string based on SBuf.
+ *          Use xfree() / safe_free() to release the c-string.
+ */
+inline char *
+SBufToCstring(const SBuf &s)
+{
+    char *d = static_cast<char*>(xmalloc(s.length()+1));
+    SBufToCstring(d, s);
+    return d;
+}
+
+inline
+SBufIterator::SBufIterator(const SBuf &s, size_type pos)
+    : iter(s.rawContent()+pos)
+{}
+
+inline bool
+SBufIterator::operator==(const SBufIterator &s) const
+{
+    // note: maybe the sbuf comparison is unnecessary?
+    return iter == s.iter;
+}
+
+inline bool
+SBufIterator::operator!=(const SBufIterator &s) const
+{
+    // note: maybe the sbuf comparison is unnecessary?
+    return iter != s.iter;
 }
 
 #endif /* SQUID_SBUF_H */

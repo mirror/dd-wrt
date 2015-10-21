@@ -13,6 +13,7 @@
 #include "acl/Checklist.h"
 #include "acl/forward.h"
 #include "base/CbcPointer.h"
+#include "err_type.h"
 #include "ip/Address.h"
 #if USE_AUTH
 #include "auth/UserRequest.h"
@@ -28,9 +29,12 @@ class HttpReply;
 
 /** \ingroup ACLAPI
     ACLChecklist filled with specific data, representing Squid and transaction
-    state for access checks along with some data-specific checking methods */
+    state for access checks along with some data-specific checking methods
+ */
 class ACLFilledChecklist: public ACLChecklist
 {
+    CBDATA_CLASS(ACLFilledChecklist);
+
 public:
     ACLFilledChecklist();
     ACLFilledChecklist(const acl_access *, HttpRequest *, const char *ident);
@@ -58,12 +62,14 @@ public:
     // ACLChecklist API
     virtual bool hasRequest() const { return request != NULL; }
     virtual bool hasReply() const { return reply != NULL; }
+    virtual bool hasAle() const { return al != NULL; }
+    virtual void syncAle() const;
 
 public:
     Ip::Address src_addr;
     Ip::Address dst_addr;
     Ip::Address my_addr;
-    CachePeer *dst_peer;
+    SBuf dst_peer_name;
     char *dst_rdns;
 
     HttpRequest *request;
@@ -81,12 +87,14 @@ public:
     /// SSL [certificate validation] errors, in undefined order
     Ssl::CertErrors *sslErrors;
     /// The peer certificate
-    Ssl::X509_Pointer serverCert;
+    Security::CertPointer serverCert;
 #endif
 
-    AccessLogEntry::Pointer al; ///< info for the future access.log entry
+    AccessLogEntry::Pointer al; ///< info for the future access.log, and external ACL
 
     ExternalACLEntryPointer extacl_entry;
+
+    err_type requestErrorType;
 
 private:
     ConnStateData * conn_;          /**< hack for ident and NTLM */
@@ -97,8 +105,6 @@ private:
     ACLFilledChecklist(const ACLFilledChecklist &);
     /// not implemented; will cause link failures if used
     ACLFilledChecklist &operator=(const ACLFilledChecklist &);
-
-    CBDATA_CLASS2(ACLFilledChecklist);
 };
 
 /// convenience and safety wrapper for dynamic_cast<ACLFilledChecklist*>

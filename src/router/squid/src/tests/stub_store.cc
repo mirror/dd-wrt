@@ -85,7 +85,6 @@ void StoreEntry::setReleaseFlag() STUB
 //#if USE_SQUID_ESI
 //ESIElement::Pointer StoreEntry::cachedESITree STUB_RETVAL(NULL)
 //#endif
-void StoreEntry::append(char const *, int len) STUB
 void StoreEntry::buffer() STUB
 void StoreEntry::flush() STUB
 int StoreEntry::unlock(const char *) STUB_RETVAL(0)
@@ -94,6 +93,8 @@ int64_t StoreEntry::contentLen() const STUB_RETVAL(0)
 void StoreEntry::lock(const char *) STUB
 void StoreEntry::touch() STUB
 void StoreEntry::release() STUB
+void StoreEntry::append(char const *, int) STUB
+void StoreEntry::vappendf(const char *, va_list) STUB
 
 NullStoreEntry *NullStoreEntry::getInstance() STUB_RETVAL(NULL)
 const char *NullStoreEntry::getMD5Text() const STUB_RETVAL(NULL)
@@ -136,6 +137,5 @@ void storeFsInit(void) STUB
 void storeFsDone(void) STUB
 void storeReplAdd(const char *, REMOVALPOLICYCREATE *) STUB
 void destroyStoreEntry(void *) STUB
-// in Packer.cc !? void packerToStoreInit(Packer * p, StoreEntry * e) STUB
 void storeGetMemSpace(int size) STUB
 

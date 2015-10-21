@@ -12,6 +12,7 @@
 #include "acl/Checklist.h"
 #include "acl/Data.h"
 #include "acl/Strategised.h"
+#include "dns/forward.h"
 
 class ACLSourceDomainStrategy : public ACLStrategy<char const *>
 {
@@ -40,7 +41,7 @@ public:
 
 private:
     static SourceDomainLookup instance_;
-    static void LookupDone(const char *, const DnsLookupDetails &, void *);
+    static void LookupDone(const char *, const Dns::LookupDetails &, void *);
 };
 
 class ACLSourceDomain

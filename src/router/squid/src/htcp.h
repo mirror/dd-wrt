@@ -11,11 +11,10 @@
 
 #if USE_HTCP
 
+#include "http/forward.h"
 #include "HttpHeader.h"
-#include "HttpRequestMethod.h"
 #include "ip/forward.h"
-
-class HttpRequest;
+#include "store_key_md5.h"
 
 /// \ingroup ServerProtocolHTCP
 class HtcpReplyData

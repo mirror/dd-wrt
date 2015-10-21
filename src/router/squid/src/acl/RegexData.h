@@ -10,16 +10,16 @@
 #define SQUID_ACLREGEXDATA_H
 
 #include "acl/Data.h"
-#include "MemPool.h"
 
-class RegexList;
+#include <list>
+
+class RegexPattern;
 
 class ACLRegexData : public ACLData<char const *>
 {
-
-public:
     MEMPROXY_CLASS(ACLRegexData);
 
+public:
     virtual ~ACLRegexData();
     virtual bool match(char const *user);
     virtual SBufList dump() const;
@@ -28,10 +28,8 @@ public:
     virtual ACLData<char const *> *clone() const;
 
 private:
-    RegexList *data;
+    std::list<RegexPattern> data;
 };
-
-MEMPROXY_CLASS_INLINE(ACLRegexData);
 
 #endif /* SQUID_ACLREGEXDATA_H */
 

@@ -15,7 +15,7 @@ typedef unsigned int HASHHASH(const void *, unsigned int);
 
 class hash_link {
 public:
-    hash_link() : key(NULL), next(NULL) {}
+    hash_link() : key(nullptr), next(nullptr) {}
     void *key;
     hash_link *next;
 };

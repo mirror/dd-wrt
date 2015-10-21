@@ -22,6 +22,22 @@
 
 #include <cerrno>
 
+CBDATA_CLASS_INIT(acl_tos);
+
+acl_tos::~acl_tos()
+{
+    aclDestroyAclList(&aclList);
+    delete next;
+}
+
+CBDATA_CLASS_INIT(acl_nfmark);
+
+acl_nfmark::~acl_nfmark()
+{
+    aclDestroyAclList(&aclList);
+    delete next;
+}
+
 void
 Ip::Qos::getTosFromServer(const Comm::ConnectionPointer &server, fde *clientFde)
 {
@@ -117,7 +133,7 @@ void Ip::Qos::getNfmarkFromServer(const Comm::ConnectionPointer &server, const f
 
 #if USE_LIBNETFILTERCONNTRACK
 int
-Ip::Qos::getNfMarkCallback(enum nf_conntrack_msg_type type,
+Ip::Qos::getNfMarkCallback(enum nf_conntrack_msg_type,
                            struct nf_conntrack *ct,
                            void *data)
 {

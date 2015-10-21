@@ -38,7 +38,7 @@
 
 CBDATA_NAMESPACED_CLASS_INIT(Comm, TcpAcceptor);
 
-Comm::TcpAcceptor::TcpAcceptor(const Comm::ConnectionPointer &newConn, const char *note, const Subscription::Pointer &aSub) :
+Comm::TcpAcceptor::TcpAcceptor(const Comm::ConnectionPointer &newConn, const char *, const Subscription::Pointer &aSub) :
     AsyncJob("Comm::TcpAcceptor"),
     errcode(0),
     isLimited(0),
@@ -47,7 +47,7 @@ Comm::TcpAcceptor::TcpAcceptor(const Comm::ConnectionPointer &newConn, const cha
     listenPort_()
 {}
 
-Comm::TcpAcceptor::TcpAcceptor(const AnyP::PortCfgPointer &p, const char *note, const Subscription::Pointer &aSub) :
+Comm::TcpAcceptor::TcpAcceptor(const AnyP::PortCfgPointer &p, const char *, const Subscription::Pointer &aSub) :
     AsyncJob("Comm::TcpAcceptor"),
     errcode(0),
     isLimited(0),
@@ -132,7 +132,7 @@ Comm::TcpAcceptor::status() const
 
     static MemBuf buf;
     buf.reset();
-    buf.Printf(" FD %d, %s",conn->fd, ipbuf);
+    buf.appendf(" FD %d, %s",conn->fd, ipbuf);
 
     const char *jobStatus = AsyncJob::status();
     buf.append(jobStatus, strlen(jobStatus));
@@ -199,7 +199,7 @@ Comm::TcpAcceptor::setListen()
 /// called when listening descriptor is closed by an external force
 /// such as clientHttpConnectionsClose()
 void
-Comm::TcpAcceptor::handleClosure(const CommCloseCbParams &io)
+Comm::TcpAcceptor::handleClosure(const CommCloseCbParams &)
 {
     closer_ = NULL;
     conn = NULL;
@@ -234,7 +234,7 @@ Comm::TcpAcceptor::doAccept(int fd, void *data)
     } catch (const std::exception &e) {
         fatalf("FATAL: error while accepting new client connection: %s\n", e.what());
     } catch (...) {
-        fatal("FATAL: error while accepting new client connection: [unkown]\n");
+        fatal("FATAL: error while accepting new client connection: [unknown]\n");
     }
 }
 

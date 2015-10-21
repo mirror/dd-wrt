@@ -10,7 +10,7 @@
 #define SQUID_DISKFILE_H
 
 #include "base/RefCount.h"
-#include "typedefs.h"
+#include "SquidTime.h"
 
 class IORequestor;
 
@@ -39,7 +39,7 @@ public:
     typedef RefCount<DiskFile> Pointer;
 
     /// notes supported configuration options; kids must call this first
-    virtual void configure(const Config &cfg) {}
+    virtual void configure(const Config &) {}
 
     virtual void open(int flags, mode_t mode, RefCount<IORequestor> callback) = 0;
     virtual void create(int flags, mode_t mode, RefCount<IORequestor> callback) = 0;

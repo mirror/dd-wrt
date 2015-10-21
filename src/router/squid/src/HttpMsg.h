@@ -11,10 +11,11 @@
 
 #include "base/Lock.h"
 #include "BodyPipe.h"
+#include "enums.h"
+#include "http/forward.h"
 #include "http/ProtocolVersion.h"
 #include "http/StatusCode.h"
 #include "HttpHeader.h"
-#include "HttpRequestMethod.h"
 
 /// common parts of HttpRequest and HttpReply
 class HttpMsg : public RefCountable
@@ -28,7 +29,7 @@ public:
 
     virtual void reset() = 0; // will have body when http*Clean()s are gone
 
-    void packInto(Packer * p, bool full_uri) const;
+    void packInto(Packable * p, bool full_uri) const;
 
     ///< produce a message copy, except for a few connection-specific settings
     virtual HttpMsg *clone() const = 0; ///< \todo rename: not a true copy?
@@ -47,7 +48,7 @@ public:
 public:
     /// HTTP-Version field in the first line of the message.
     /// see RFC 7230 section 3.1
-    Http::ProtocolVersion http_ver;
+    AnyP::ProtocolVersion http_ver;
 
     HttpHeader header;
 
@@ -67,13 +68,16 @@ public:
     // returns true and sets hdr_sz on success
     // returns false and sets *error to zero when needs more data
     // returns false and sets *error to a positive Http::StatusCode on error
-    bool parse(MemBuf *buf, bool eol, Http::StatusCode *error);
+    bool parse(const char *buf, const size_t sz, bool eol, Http::StatusCode *error);
 
     bool parseCharBuf(const char *buf, ssize_t end);
 
     int httpMsgParseStep(const char *buf, int len, int atEnd);
 
     virtual int httpMsgParseError();
+
+    // Parser-NG transitional parsing of mime headers
+    bool parseHeader(Http1::Parser &); // TODO move this function to the parser
 
     virtual bool expectingBody(const HttpRequestMethod&, int64_t&) const = 0;
 
@@ -89,16 +93,14 @@ protected:
      * \retval true   Status line has no serious problems.
      * \retval false  Status line has a serious problem. Correct response is indicated by error.
      */
-    virtual bool sanityCheckStartLine(MemBuf *buf, const size_t hdr_len, Http::StatusCode *error) = 0;
+    virtual bool sanityCheckStartLine(const char *buf, const size_t hdr_len, Http::StatusCode *error) = 0;
 
-    virtual void packFirstLineInto(Packer * p, bool full_uri) const = 0;
+    virtual void packFirstLineInto(Packable * p, bool full_uri) const = 0;
 
     virtual bool parseFirstLine(const char *blk_start, const char *blk_end) = 0;
 
     virtual void hdrCacheInit();
 };
-
-int httpMsgIsolateHeaders(const char **parse_start, int len, const char **blk_start, const char **blk_end);
 
 #define HTTPMSGUNLOCK(a) if (a) { if ((a)->unlock() == 0) delete (a); (a)=NULL; }
 #define HTTPMSGLOCK(a) (a)->lock()

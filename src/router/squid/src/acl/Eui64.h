@@ -19,13 +19,11 @@ namespace Eui
 class Eui64;
 };
 
-/// \ingroup ACLAPI
 class ACLEui64 : public ACL
 {
+    MEMPROXY_CLASS(ACLEui64);
 
 public:
-    MEMPROXY_CLASS(ACLEUI64);
-
     ACLEui64(char const *);
     ACLEui64(ACLEui64 const &);
     ~ACLEui64() {}
@@ -45,8 +43,6 @@ protected:
     Eui64Data_t eui64Data;
     char const *class_;
 };
-
-MEMPROXY_CLASS_INLINE(ACLEui64);
 
 #endif /* SQUID_ACLEUI64_H */
 
