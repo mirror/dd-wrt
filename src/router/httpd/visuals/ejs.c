@@ -2256,7 +2256,7 @@ void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifdef HAVE_MVEBU
-static void show_temp(int mon, int input, char *fmt)
+static void show_temp(webs_t wp, int mon, int input, char *fmt)
 {
 	char sysfs[64];
 	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
@@ -2274,13 +2274,13 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
-		show_temp(1, 1, "CPU %d.%d &#176;C");
-		show_temp(2, 1, " / WL0 %d.%d &#176;C");
-		show_temp(2, 2, " / WL1 %d.%d &#176;C");
+		show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
+		show_temp(wp, 2, 1, " / WL0 %d.%d &#176;C");
+		show_temp(wp, 2, 2, " / WL1 %d.%d &#176;C");
 	} else {
-		show_temp(0, 1, "CPU %d.%d &#176;C");
-		show_temp(1, 1, " / WL0 %d.%d &#176;C");
-		show_temp(1, 2, " / WL1 %d.%d &#176;C");
+		show_temp(wp, 0, 1, "CPU %d.%d &#176;C");
+		show_temp(wp, 1, 1, " / WL0 %d.%d &#176;C");
+		show_temp(wp, 1, 2, " / WL1 %d.%d &#176;C");
 	}
 	return;
 #endif
