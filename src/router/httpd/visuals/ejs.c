@@ -2255,51 +2255,33 @@ void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
+#ifdef HAVE_MVEBU
+static void show_temp(int mon, int input, char *fmt)
+{
+	char sysfs[64];
+	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
+	FILE *tempfp = fopen(sysfs, "rb");
+	if (tempfp) {
+		fscanf(tempfp, "%d", &cpu);
+		fclose(tempfp);
+		websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
+	}
+}
+#endif
+
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MVEBU
+	FILE *tempfp;
+	int cpu;
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
-		FILE *tempfp;
-		int cpu;
-		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &cpu);
-			fclose(tempfp);
-			websWrite(wp, "%d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
-		}
-		tempfp = fopen("/sys/class/hwmon/hwmon2/temp1_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &cpu);
-			fclose(tempfp);
-			websWrite(wp, " / WL0 %d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
-		}
-		tempfp = fopen("/sys/class/hwmon/hwmon2/temp2_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &cpu);
-			fclose(tempfp);
-			websWrite(wp, " / WL1 %d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
-		}
+		show_temp(1, 1, "%d.%d &#176;C");
+		show_temp(2, 1, " / WL0 %d.%d &#176;C");
+		show_temp(2, 2, " / WL1 %d.%d &#176;C");
 	} else {
-		FILE *tempfp;
-		int cpu;
-		tempfp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &cpu);
-			fclose(tempfp);
-			websWrite(wp, "%d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
-		}
-		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &cpu);
-			fclose(tempfp);
-			websWrite(wp, " / WL0 %d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
-		}
-		tempfp = fopen("/sys/class/hwmon/hwmon1/temp2_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &cpu);
-			fclose(tempfp);
-			websWrite(wp, " / WL1 %d.%d &#176;C", cpu / 1000, (cpu % 1000) / 100);
-		}
+		show_temp(0, 1, "%d.%d &#176;C");
+		show_temp(1, 1, " / WL0 %d.%d &#176;C");
+		show_temp(1, 2, " / WL1 %d.%d &#176;C");
 	}
 	return;
 #endif
