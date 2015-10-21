@@ -32,9 +32,9 @@ squid-configure:
 	--enable-useragent-log \
 	--with-openssl=$(TOP)/openssl \
 	--disable-external-acl-helpers \
-	--disable-auth-negotiate \
-	--disable-auth-ntlm \
-	--disable-auth-digest \
+	--enable-auth-negotiate \
+	--enable-auth-ntlm \
+	--enable-auth-digest \
 	--enable-auth-basic="RADIUS" \
 	--enable-epoll \
 	--with-krb5-config=no \
