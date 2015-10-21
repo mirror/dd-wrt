@@ -15,7 +15,6 @@
 #include "acl/DestinationAsn.h"
 #include "acl/DestinationIp.h"
 #include "acl/SourceAsn.h"
-#include "cache_cf.h"
 #include "FwdState.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
@@ -25,7 +24,6 @@
 #include "RequestFlags.h"
 #include "SquidConfig.h"
 #include "Store.h"
-#include "StoreClient.h"
 #include "StoreClient.h"
 
 #define WHOIS_PORT 43
@@ -67,6 +65,8 @@ struct as_info {
 
 class ASState
 {
+    CBDATA_CLASS(ASState);
+
 public:
     ASState();
     ~ASState();
@@ -79,8 +79,6 @@ public:
     int reqofs;
     char reqbuf[AS_REQBUF_SZ];
     bool dataRead;
-private:
-    CBDATA_CLASS2(ASState);
 };
 
 CBDATA_CLASS_INIT(ASState);
@@ -559,7 +557,7 @@ ACLASN::parse()
     char *t = NULL;
 
     for (Tail = curlist; *Tail; Tail = &((*Tail)->next));
-    while ((t = strtokFile())) {
+    while ((t = ConfigParser::strtokFile())) {
         q = new CbDataList<int> (atoi(t));
         *(Tail) = q;
         Tail = &q->next;
@@ -604,7 +602,7 @@ ACLSourceASNStrategy ACLSourceASNStrategy::Instance_;
 int
 ACLDestinationASNStrategy::match (ACLData<MatchType> * &data, ACLFilledChecklist *checklist, ACLFlags &)
 {
-    const ipcache_addrs *ia = ipcache_gethostbyname(checklist->request->GetHost(), IP_LOOKUP_IF_MISS);
+    const ipcache_addrs *ia = ipcache_gethostbyname(checklist->request->url.host(), IP_LOOKUP_IF_MISS);
 
     if (ia) {
         for (int k = 0; k < (int) ia->count; ++k) {
@@ -616,7 +614,7 @@ ACLDestinationASNStrategy::match (ACLData<MatchType> * &data, ACLFilledChecklist
 
     } else if (!checklist->request->flags.destinationIpLookedUp) {
         /* No entry in cache, lookup not attempted */
-        debugs(28, 3, "asnMatchAcl: Can't yet compare '" << AclMatchedName << "' ACL for '" << checklist->request->GetHost() << "'");
+        debugs(28, 3, "can't yet compare '" << AclMatchedName << "' ACL for " << checklist->request->url.host());
         if (checklist->goAsync(DestinationIPLookup::Instance()))
             return -1;
         // else fall through to noaddr match, hiding the lookup failure (XXX)

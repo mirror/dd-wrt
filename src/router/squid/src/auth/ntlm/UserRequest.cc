@@ -8,11 +8,14 @@
 
 #include "squid.h"
 #include "AccessLogEntry.h"
+#include "auth/CredentialsCache.h"
 #include "auth/ntlm/Config.h"
+#include "auth/ntlm/User.h"
 #include "auth/ntlm/UserRequest.h"
 #include "auth/State.h"
 #include "cbdata.h"
 #include "client_side.h"
+#include "fatal.h"
 #include "format/Format.h"
 #include "globals.h"
 #include "helper.h"
@@ -22,14 +25,13 @@
 #include "MemBuf.h"
 #include "SquidTime.h"
 
-Auth::Ntlm::UserRequest::UserRequest()
-{
-    waiting=0;
-    client_blob=0;
-    server_blob=0;
-    authserver=NULL;
-    request=NULL;
-}
+Auth::Ntlm::UserRequest::UserRequest() :
+    authserver(nullptr),
+    server_blob(nullptr),
+    client_blob(nullptr),
+    waiting(0),
+    request(nullptr)
+{}
 
 Auth::Ntlm::UserRequest::~UserRequest()
 {
@@ -114,7 +116,7 @@ Auth::Ntlm::UserRequest::module_direction()
 }
 
 void
-Auth::Ntlm::UserRequest::startHelperLookup(HttpRequest *req, AccessLogEntry::Pointer &al, AUTHCB * handler, void *data)
+Auth::Ntlm::UserRequest::startHelperLookup(HttpRequest *, AccessLogEntry::Pointer &al, AUTHCB * handler, void *data)
 {
     static char buf[MAX_AUTHTOKEN_LEN];
 
@@ -174,7 +176,7 @@ Auth::Ntlm::UserRequest::releaseAuthServer()
 }
 
 void
-Auth::Ntlm::UserRequest::authenticate(HttpRequest * aRequest, ConnStateData * conn, http_hdr_type type)
+Auth::Ntlm::UserRequest::authenticate(HttpRequest * aRequest, ConnStateData * conn, Http::HdrType type)
 {
     /* Check that we are in the client side, where we can generate
      * auth challenges */
@@ -326,23 +328,19 @@ Auth::Ntlm::UserRequest::HandleReply(void *data, const Helper::Reply &reply)
         /* connection is authenticated */
         debugs(29, 4, HERE << "authenticated user " << auth_user_request->user()->username());
         /* see if this is an existing user */
-        AuthUserHashPointer *usernamehash = static_cast<AuthUserHashPointer *>(hash_lookup(proxy_auth_username_cache, auth_user_request->user()->userKey()));
-        Auth::User::Pointer local_auth_user = lm_request->user();
-        while (usernamehash && (usernamehash->user()->auth_type != Auth::AUTH_NTLM ||
-                                strcmp(usernamehash->user()->userKey(), auth_user_request->user()->userKey()) != 0))
-            usernamehash = static_cast<AuthUserHashPointer *>(usernamehash->next);
-        if (usernamehash) {
+        auto local_auth_user = lm_request->user();
+        auto cached_user = Auth::Ntlm::User::Cache()->lookup(auth_user_request->user()->userKey());
+        if (!cached_user) {
+            local_auth_user->addToNameCache();
+        } else {
             /* we can't seamlessly recheck the username due to the
              * challenge-response nature of the protocol.
              * Just free the temporary auth_user after merging as
              * much of it new state into the existing one as possible */
-            usernamehash->user()->absorb(local_auth_user);
+            cached_user->absorb(local_auth_user);
             /* from here on we are working with the original cached credentials. */
-            local_auth_user = usernamehash->user();
+            local_auth_user = cached_user;
             auth_user_request->user(local_auth_user);
-        } else {
-            /* store user in hash's */
-            local_auth_user->addToNameCache();
         }
         /* set these to now because this is either a new login from an
          * existing user or a new user */
@@ -370,6 +368,7 @@ Auth::Ntlm::UserRequest::HandleReply(void *data, const Helper::Reply &reply)
         debugs(29, DBG_IMPORTANT, "ERROR: NTLM Authentication Helper '" << reply.whichServer << "' crashed!.");
     /* continue to the next case */
 
+    case Helper::TimedOut:
     case Helper::BrokenHelper: {
         /* TODO kick off a refresh process. This can occur after a YR or after
          * a KK. If after a YR release the helper and resubmit the request via

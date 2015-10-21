@@ -10,6 +10,7 @@
 
 #include "squid.h"
 #include "disk.h"
+#include "fatal.h"
 #include "fd.h"
 #include "fde.h"
 #include "globals.h"
@@ -76,7 +77,7 @@ logfile_mod_stdio_writeline(Logfile * lf, const char *buf, size_t len)
 }
 
 static void
-logfile_mod_stdio_linestart(Logfile * lf)
+logfile_mod_stdio_linestart(Logfile *)
 {
 }
 
@@ -97,14 +98,13 @@ logfile_mod_stdio_flush(Logfile * lf)
 }
 
 static void
-logfile_mod_stdio_rotate(Logfile * lf)
+logfile_mod_stdio_rotate(Logfile * lf, const int16_t nRotate)
 {
 #ifdef S_ISREG
 
     struct stat sb;
 #endif
 
-    int i;
     char from[MAXPATHLEN];
     char to[MAXPATHLEN];
     l_stdio_t *ll = (l_stdio_t *) lf->data;
@@ -122,7 +122,7 @@ logfile_mod_stdio_rotate(Logfile * lf)
     debugs(0, DBG_IMPORTANT, "Rotate log file " << lf->path);
 
     /* Rotate numbers 0 through N up one */
-    for (i = Config.Log.rotateNumber; i > 1;) {
+    for (int16_t i = nRotate; i > 1;) {
         --i;
         snprintf(from, MAXPATHLEN, "%s.%d", realpath, i - 1);
         snprintf(to, MAXPATHLEN, "%s.%d", realpath, i);
@@ -134,7 +134,7 @@ logfile_mod_stdio_rotate(Logfile * lf)
 
     file_close(ll->fd);     /* always close */
 
-    if (Config.Log.rotateNumber > 0) {
+    if (nRotate > 0) {
         snprintf(to, MAXPATHLEN, "%s.%d", realpath, 0);
         xrename(realpath, to);
     }

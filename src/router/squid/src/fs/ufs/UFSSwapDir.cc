@@ -33,6 +33,7 @@
 
 #include <cerrno>
 #include <cmath>
+#include <random>
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -134,7 +135,6 @@ FreeObject(void *address)
     delete anObject;
 }
 
-static QS rev_int_sort;
 static int
 rev_int_sort(const void *A, const void *B)
 {
@@ -784,7 +784,7 @@ Fs::Ufs::UFSSwapDir::addDiskRestore(const cache_key * key,
                                     time_t lastmod,
                                     uint32_t refcount,
                                     uint16_t newFlags,
-                                    int clean)
+                                    int)
 {
     StoreEntry *e = NULL;
     debugs(47, 5, HERE << storeKeyText(key)  <<
@@ -1054,7 +1054,7 @@ Fs::Ufs::UFSSwapDir::writeCleanDone()
 }
 
 void
-Fs::Ufs::UFSSwapDir::CleanEvent(void *unused)
+Fs::Ufs::UFSSwapDir::CleanEvent(void *)
 {
     static int swap_index = 0;
     int i;
@@ -1097,7 +1097,9 @@ Fs::Ufs::UFSSwapDir::CleanEvent(void *unused)
          * value.  j equals the total number of UFS level 2
          * swap directories
          */
-        swap_index = (int) (squid_random() % j);
+        std::mt19937 mt(static_cast<uint32_t>(getCurrentTime() & 0xFFFFFFFF));
+        xuniform_int_distribution<> dist(0, j);
+        swap_index = dist(mt);
     }
 
     /* if the rebuild is finished, start cleaning directories. */
@@ -1272,7 +1274,7 @@ Fs::Ufs::UFSSwapDir::swappedOut(const StoreEntry &e)
 }
 
 StoreSearch *
-Fs::Ufs::UFSSwapDir::search(String const url, HttpRequest *request)
+Fs::Ufs::UFSSwapDir::search(String const url, HttpRequest *)
 {
     if (url.size())
         fatal ("Cannot search by url yet\n");

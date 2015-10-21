@@ -26,10 +26,9 @@ struct acl_httpstatus_data {
 /// \ingroup ACLAPI
 class ACLHTTPStatus : public ACL
 {
-
-public:
     MEMPROXY_CLASS(ACLHTTPStatus);
 
+public:
     ACLHTTPStatus(char const *);
     ACLHTTPStatus(ACLHTTPStatus const &);
     ~ACLHTTPStatus();
@@ -49,8 +48,6 @@ protected:
     Splay<acl_httpstatus_data*> *data;
     char const *class_;
 };
-
-MEMPROXY_CLASS_INLINE(ACLHTTPStatus);
 
 #endif /* SQUID_ACLHTTPSTATUS_H */
 

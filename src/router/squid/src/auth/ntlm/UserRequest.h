@@ -11,7 +11,6 @@
 
 #include "auth/UserRequest.h"
 #include "helper/forward.h"
-#include "MemPool.h"
 
 class ConnStateData;
 class HttpReply;
@@ -24,14 +23,13 @@ namespace Ntlm
 
 class UserRequest : public Auth::UserRequest
 {
-
-public:
     MEMPROXY_CLASS(Auth::Ntlm::UserRequest);
 
+public:
     UserRequest();
     virtual ~UserRequest();
     virtual int authenticated() const;
-    virtual void authenticate(HttpRequest * request, ConnStateData * conn, http_hdr_type type);
+    virtual void authenticate(HttpRequest * request, ConnStateData * conn, Http::HdrType type);
     virtual Auth::Direction module_direction();
     virtual void startHelperLookup(HttpRequest *req, AccessLogEntry::Pointer &al, AUTHCB *, void *);
     virtual const char *credentialsStr();
@@ -60,8 +58,6 @@ private:
 
 } // namespace Ntlm
 } // namespace Auth
-
-MEMPROXY_CLASS_INLINE(Auth::Ntlm::UserRequest);
 
 #endif /* _SQUID_SRC_AUTH_NTLM_USERREQUEST_H */
 

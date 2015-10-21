@@ -17,6 +17,7 @@
 #include "comm/Connection.h"
 #include "comm/Loops.h"
 #include "comm/UdpOpenDialer.h"
+#include "fatal.h"
 #include "ip/Address.h"
 #include "ip/tools.h"
 #include "snmp/Forwarder.h"
@@ -299,7 +300,7 @@ snmpOpenPorts(void)
 }
 
 static void
-snmpPortOpened(const Comm::ConnectionPointer &conn, int errNo)
+snmpPortOpened(const Comm::ConnectionPointer &conn, int)
 {
     if (!Comm::IsConnOpen(conn))
         fatalf("Cannot open SNMP %s Port",(conn->fd == snmpIncomingConn->fd?"receiving":"sending"));
@@ -339,7 +340,7 @@ snmpClosePorts(void)
  * Accept the UDP packet
  */
 void
-snmpHandleUdp(int sock, void *not_used)
+snmpHandleUdp(int sock, void *)
 {
     static char buf[SNMP_REQUEST_SIZE];
     Ip::Address from;

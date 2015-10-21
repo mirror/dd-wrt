@@ -31,6 +31,8 @@ namespace Ftp
 /// and then relaying FTP replies back to our FTP server.
 class Relay: public Ftp::Client
 {
+    CBDATA_CLASS(Relay);
+
 public:
     explicit Relay(FwdState *const fwdState);
     virtual ~Relay();
@@ -95,8 +97,6 @@ protected:
         char *lastReply; ///< last line of reply: reply status plus message
         int replyCode; ///< the reply status
     } savedReply; ///< set and delayed while we are tracking using PWD
-
-    CBDATA_CLASS2(Relay);
 };
 
 } // namespace Ftp
@@ -396,8 +396,8 @@ Ftp::Relay::createHttpReply(const Http::StatusCode httpStatus, const int64_t cle
     HttpReply *const reply = Ftp::HttpReplyWrapper(ctrl.replycode, ctrl.last_reply, httpStatus, clen);
     if (ctrl.message) {
         for (wordlist *W = ctrl.message; W && W->next; W = W->next)
-            reply->header.putStr(HDR_FTP_PRE, httpHeaderQuoteString(W->key).c_str());
-        // no hdrCacheInit() is needed for after HDR_FTP_PRE addition
+            reply->header.putStr(Http::HdrType::FTP_PRE, httpHeaderQuoteString(W->key).c_str());
+        // no hdrCacheInit() is needed for after Http::HdrType::FTP_PRE addition
     }
     return reply;
 }
@@ -473,16 +473,16 @@ Ftp::Relay::readGreeting()
 void
 Ftp::Relay::sendCommand()
 {
-    if (!fwd->request->header.has(HDR_FTP_COMMAND)) {
+    if (!fwd->request->header.has(Http::HdrType::FTP_COMMAND)) {
         abortTransaction("Internal error: FTP relay request with no command");
         return;
     }
 
     HttpHeader &header = fwd->request->header;
-    assert(header.has(HDR_FTP_COMMAND));
-    const String &cmd = header.findEntry(HDR_FTP_COMMAND)->value;
-    assert(header.has(HDR_FTP_ARGUMENTS));
-    const String &params = header.findEntry(HDR_FTP_ARGUMENTS)->value;
+    assert(header.has(Http::HdrType::FTP_COMMAND));
+    const String &cmd = header.findEntry(Http::HdrType::FTP_COMMAND)->value;
+    assert(header.has(Http::HdrType::FTP_ARGUMENTS));
+    const String &params = header.findEntry(Http::HdrType::FTP_ARGUMENTS)->value;
 
     if (params.size() > 0)
         debugs(9, 5, "command: " << cmd << ", parameters: " << params);
@@ -577,6 +577,8 @@ Ftp::Relay::readDataReply()
     if (ctrl.replycode == 125 || ctrl.replycode == 150) {
         if (serverState() == fssHandleDataRequest)
             forwardPreliminaryReply(&Ftp::Relay::startDataDownload);
+        else if (fwd->request->forcedBodyContinuation /*&& serverState() == fssHandleUploadRequest*/)
+            startDataUpload();
         else // serverState() == fssHandleUploadRequest
             forwardPreliminaryReply(&Ftp::Relay::startDataUpload);
     } else

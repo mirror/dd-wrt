@@ -22,10 +22,9 @@ class Eui48;
 /// \ingroup ACLAPI
 class ACLARP : public ACL
 {
-
-public:
     MEMPROXY_CLASS(ACLARP);
 
+public:
     ACLARP(char const *);
     ACLARP(ACLARP const &);
     ~ACLARP() {}
@@ -45,8 +44,6 @@ protected:
     typedef std::set<Eui::Eui48> AclArpData_t;
     AclArpData_t aclArpData;
 };
-
-MEMPROXY_CLASS_INLINE(ACLARP);
 
 #endif /* SQUID_ACLARP_H */
 

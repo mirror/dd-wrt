@@ -11,6 +11,7 @@
 
 #include "base/RefCount.h"
 #include "cbdata.h"
+#include "dns/forward.h"
 #include "helper/forward.h"
 #include "ipcache.h"
 
@@ -20,11 +21,11 @@
 
 class ACLChecklist;
 class ClientHttpRequest;
-class DnsLookupDetails;
 class ErrorState;
 
 class ClientRequestContext : public RefCountable
 {
+    CBDATA_CLASS(ClientRequestContext);
 
 public:
     ClientRequestContext(ClientHttpRequest *);
@@ -32,7 +33,7 @@ public:
 
     bool httpStateIsValid();
     void hostHeaderVerify();
-    void hostHeaderIpVerify(const ipcache_addrs* ia, const DnsLookupDetails &dns);
+    void hostHeaderIpVerify(const ipcache_addrs* ia, const Dns::LookupDetails &dns);
     void hostHeaderVerifyFailed(const char *A, const char *B);
     void clientAccessCheck();
     void clientAccessCheck2();
@@ -63,15 +64,6 @@ public:
     int redirect_state;
     int store_id_state;
 
-    /**
-     * URL-rewrite/redirect helper may return BH for internal errors.
-     * We attempt to recover by trying the lookup again, but limit the
-     * number of retries to prevent lag and lockups.
-     * This tracks the number of previous failures for the current context.
-     */
-    uint8_t redirect_fail_count;
-    uint8_t store_id_fail_count;
-
     bool host_header_verify_done;
     bool http_access_done;
     bool adapted_http_access_done;
@@ -89,9 +81,6 @@ public:
 #endif
     ErrorState *error; ///< saved error page for centralized/delayed processing
     bool readNextRequest; ///< whether Squid should read after error handling
-
-private:
-    CBDATA_CLASS2(ClientRequestContext);
 };
 
 #endif /* SQUID_CLIENTREQUESTCONTEXT_H */

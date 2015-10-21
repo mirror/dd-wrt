@@ -121,7 +121,7 @@ Auth::Negotiate::Config::type() const
  * Called AFTER parsing the config file
  */
 void
-Auth::Negotiate::Config::init(Auth::Config * scheme)
+Auth::Negotiate::Config::init(Auth::Config *)
 {
     if (authenticateProgram) {
 
@@ -174,7 +174,7 @@ Auth::Negotiate::Config::configured() const
 /* Negotiate Scheme */
 
 void
-Auth::Negotiate::Config::fixHeader(Auth::UserRequest::Pointer auth_user_request, HttpReply *rep, http_hdr_type reqType, HttpRequest * request)
+Auth::Negotiate::Config::fixHeader(Auth::UserRequest::Pointer auth_user_request, HttpReply *rep, Http::HdrType reqType, HttpRequest * request)
 {
     if (!authenticateProgram)
         return;
@@ -244,7 +244,8 @@ Auth::Negotiate::Config::fixHeader(Auth::UserRequest::Pointer auth_user_request,
 static void
 authenticateNegotiateStats(StoreEntry * sentry)
 {
-    helperStatefulStats(sentry, negotiateauthenticators, "Negotiate Authenticator Statistics");
+    if (negotiateauthenticators)
+        negotiateauthenticators->packStatsInto(sentry, "Negotiate Authenticator Statistics");
 }
 
 /*

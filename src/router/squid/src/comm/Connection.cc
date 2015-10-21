@@ -13,6 +13,7 @@
 #include "comm/Connection.h"
 #include "fde.h"
 #include "neighbors.h"
+#include "SquidConfig.h"
 #include "SquidTime.h"
 
 class CachePeer;
@@ -23,14 +24,12 @@ Comm::IsConnOpen(const Comm::ConnectionPointer &conn)
 }
 
 Comm::Connection::Connection() :
-    local(),
-    remote(),
     peerType(HIER_NONE),
     fd(-1),
     tos(0),
     nfmark(0),
     flags(COMM_NONBLOCKING),
-    peer_(NULL),
+    peer_(nullptr),
     startTime_(squid_curtime)
 {
     *rfc931 = 0; // quick init the head. the rest does not matter.
@@ -108,5 +107,15 @@ Comm::Connection::setPeer(CachePeer *p)
     if (p) {
         peer_ = cbdataReference(p);
     }
+}
+
+time_t
+Comm::Connection::timeLeft(const time_t idleTimeout) const
+{
+    if (!Config.Timeout.pconnLifetime)
+        return idleTimeout;
+
+    const time_t lifeTimeLeft = lifeTime() < Config.Timeout.pconnLifetime ? Config.Timeout.pconnLifetime - lifeTime() : 1;
+    return min(lifeTimeLeft, idleTimeout);
 }
 

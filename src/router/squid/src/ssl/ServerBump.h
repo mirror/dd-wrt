@@ -14,6 +14,7 @@
 #include "comm/forward.h"
 #include "HttpRequest.h"
 #include "ip/Address.h"
+#include "security/forward.h"
 
 class ConnStateData;
 class store_client;
@@ -22,11 +23,12 @@ namespace Ssl
 {
 
 /**
-  \ingroup ServerProtocolSSLAPI
  * Maintains bump-server-first related information.
  */
 class ServerBump
 {
+    CBDATA_CLASS(ServerBump);
+
 public:
     explicit ServerBump(HttpRequest *fakeRequest, StoreEntry *e = NULL, Ssl::BumpMode mode = Ssl::bumpServerFirst);
     ~ServerBump();
@@ -34,7 +36,7 @@ public:
     /// faked, minimal request; required by Client API
     HttpRequest::Pointer request;
     StoreEntry *entry; ///< for receiving Squid-generated error messages
-    Ssl::X509_Pointer serverCert; ///< HTTPS server certificate
+    Security::CertPointer serverCert; ///< HTTPS server certificate
     Ssl::CertErrors *sslErrors; ///< SSL [certificate validation] errors
     struct {
         Ssl::BumpMode step1; ///< The SSL bump mode at step1
@@ -46,8 +48,6 @@ public:
 
 private:
     store_client *sc; ///< dummy client to prevent entry trimming
-
-    CBDATA_CLASS2(ServerBump);
 };
 
 } // namespace Ssl

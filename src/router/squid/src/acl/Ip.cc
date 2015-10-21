@@ -12,20 +12,21 @@
 #include "acl/Checklist.h"
 #include "acl/Ip.h"
 #include "cache_cf.h"
+#include "ConfigParser.h"
 #include "Debug.h"
 #include "ip/tools.h"
 #include "MemBuf.h"
 #include "wordlist.h"
 
 void *
-ACLIP::operator new (size_t byteCount)
+ACLIP::operator new (size_t)
 {
     fatal ("ACLIP::operator new: unused");
     return (void *)1;
 }
 
 void
-ACLIP::operator delete (void *address)
+ACLIP::operator delete (void *)
 {
     fatal ("ACLIP::operator delete: unused");
 }
@@ -478,7 +479,7 @@ ACLIP::parse()
 
     flags.parseFlags();
 
-    while (char *t = strtokFile()) {
+    while (char *t = ConfigParser::strtokFile()) {
         acl_ip_data *q = acl_ip_data::FactoryParse(t);
 
         while (q != NULL) {
@@ -522,7 +523,7 @@ ACLIP::empty() const
 }
 
 int
-ACLIP::match(Ip::Address &clientip)
+ACLIP::match(const Ip::Address &clientip)
 {
     static acl_ip_data ClientAddress;
     /*

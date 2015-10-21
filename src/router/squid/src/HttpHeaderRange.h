@@ -9,21 +9,22 @@
 #ifndef SQUID_HTTPHEADERRANGE_H
 #define SQUID_HTTPHEADERRANGE_H
 
-#include "MemPool.h"
-#include "Packer.h"
+#include "mem/forward.h"
 #include "Range.h"
 #include "SquidString.h"
 
 #include <vector>
 
 class HttpReply;
+class Packable;
+
 /* http byte-range-spec */
 
 class HttpHdrRangeSpec
 {
+    MEMPROXY_CLASS(HttpHdrRangeSpec);
 
 public:
-    MEMPROXY_CLASS(HttpHdrRangeSpec);
     typedef Range<int64_t, uint64_t> HttpRange;
     static int64_t const UnknownPosition;
 
@@ -33,13 +34,11 @@ public:
     bool parseInit(const char *field, int flen);
     int canonize(int64_t clen);
     void outputInfo( char const *note) const;
-    void packInto(Packer * p) const;
+    void packInto(Packable * p) const;
     bool mergeWith(const HttpHdrRangeSpec * donor);
     int64_t offset;
     int64_t length;
 };
-
-MEMPROXY_CLASS_INLINE(HttpHdrRangeSpec);
 
 /**
  * There may be more than one byte range specified in the request.
@@ -48,10 +47,9 @@ MEMPROXY_CLASS_INLINE(HttpHdrRangeSpec);
  */
 class HttpHdrRange
 {
-
-public:
     MEMPROXY_CLASS(HttpHdrRange);
 
+public:
     static size_t ParsedCount;
     /* Http Range Header Field */
     static HttpHdrRange *ParseCreate(const String * range_spec);
@@ -73,7 +71,7 @@ public:
     int canonize(HttpReply *rep);
     /* returns true if ranges are valid; inits HttpHdrRange */
     bool parseInit(const String * range_spec);
-    void packInto(Packer * p) const;
+    void packInto(Packable * p) const;
     /* other */
     bool isComplex() const;
     bool willBeComplex() const;
@@ -88,8 +86,6 @@ private:
     void merge (std::vector<HttpHdrRangeSpec *> &basis);
     int64_t clen;
 };
-
-MEMPROXY_CLASS_INLINE(HttpHdrRange);
 
 /**
  * Data for iterating thru range specs

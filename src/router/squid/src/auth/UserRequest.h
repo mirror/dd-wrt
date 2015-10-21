@@ -36,6 +36,8 @@ class HttpRequest;
  */
 class AuthUserIP
 {
+    MEMPROXY_CLASS(AuthUserIP);
+
 public:
     AuthUserIP(const Ip::Address &ip, time_t t) : ipaddr(ip), ip_expiretime(t) {}
 
@@ -49,11 +51,7 @@ public:
      * (user,IP) pair plus authenticate_ip_ttl seconds
      */
     time_t ip_expiretime;
-
-    MEMPROXY_CLASS(AuthUserIP);
 };
-
-MEMPROXY_CLASS_INLINE(AuthUserIP);
 
 // TODO: make auth schedule AsyncCalls?
 typedef void AUTHCB(void*);
@@ -128,7 +126,7 @@ public:
      */
     bool valid() const;
 
-    virtual void authenticate(HttpRequest * request, ConnStateData * conn, http_hdr_type type) = 0;
+    virtual void authenticate(HttpRequest * request, ConnStateData * conn, Http::HdrType type) = 0;
 
     /* template method - what needs to be done next? advertise schemes, challenge, handle error, nothing? */
     virtual Direction module_direction() = 0;
@@ -164,7 +162,7 @@ public:
      *
      * \return Some AUTH_ACL_* state
      */
-    static AuthAclState tryToAuthenticateAndSetAuthUser(UserRequest::Pointer *aUR, http_hdr_type, HttpRequest *, ConnStateData *, Ip::Address &, AccessLogEntry::Pointer &);
+    static AuthAclState tryToAuthenticateAndSetAuthUser(UserRequest::Pointer *aUR, Http::HdrType, HttpRequest *, ConnStateData *, Ip::Address &, AccessLogEntry::Pointer &);
 
     /// Add the appropriate [Proxy-]Authenticate header to the given reply
     static void addReplyAuthHeader(HttpReply * rep, UserRequest::Pointer auth_user_request, HttpRequest * request, int accelerated, int internal);
@@ -220,7 +218,7 @@ protected:
 
 private:
 
-    static AuthAclState authenticate(UserRequest::Pointer * auth_user_request, http_hdr_type headertype, HttpRequest * request, ConnStateData * conn, Ip::Address &src_addr, AccessLogEntry::Pointer &al);
+    static AuthAclState authenticate(UserRequest::Pointer * auth_user_request, Http::HdrType headertype, HttpRequest * request, ConnStateData * conn, Ip::Address &src_addr, AccessLogEntry::Pointer &al);
 
     /** return a message on the 407 error pages */
     char *message;

@@ -14,6 +14,7 @@
 #include "adaptation/icap/Launcher.h"
 #include "adaptation/icap/Xaction.h"
 #include "BodyPipe.h"
+#include "http/one/forward.h"
 
 /*
  * ICAPModXact implements ICAP REQMOD and RESPMOD transaction using
@@ -24,8 +25,6 @@
  * interface. The initiator (or its associate) is expected to send and/or
  * receive the HTTP body.
  */
-
-class ChunkedCodingParser;
 
 namespace Adaptation
 {
@@ -108,6 +107,7 @@ private:
 
 class ModXact: public Xaction, public BodyProducer, public BodyConsumer
 {
+    CBDATA_CLASS(ModXact);
 
 public:
     ModXact(HttpMsg *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp, ServiceRep::Pointer &s);
@@ -249,7 +249,7 @@ private:
     uint64_t virginConsumed;        // virgin data consumed so far
     Preview preview; // use for creating (writing) the preview
 
-    ChunkedCodingParser *bodyParser; // ICAP response body parser
+    Http1::TeChunkedParser *bodyParser; // ICAP response body parser
 
     bool canStartBypass; // enables bypass of transaction failures
     bool protectGroupBypass; // protects ServiceGroup-wide bypass of failures
@@ -316,13 +316,14 @@ private:
     } state;
 
     AccessLogEntry::Pointer alMaster; ///< Master transaction AccessLogEntry
-    CBDATA_CLASS2(ModXact);
 };
 
 // An Launcher that stores ModXact construction info and
 // creates ModXact when needed
 class ModXactLauncher: public Launcher
 {
+    CBDATA_CLASS(ModXactLauncher);
+
 public:
     ModXactLauncher(HttpMsg *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp, Adaptation::ServicePointer s);
 
@@ -337,9 +338,6 @@ protected:
     InOut virgin;
 
     AccessLogEntry::Pointer al;
-
-private:
-    CBDATA_CLASS2(ModXactLauncher);
 };
 
 } // namespace Icap

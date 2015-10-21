@@ -9,19 +9,15 @@
 #ifndef SQUID_STOREMETAOBJSIZE_H
 #define SQUID_STOREMETAOBJSIZE_H
 
-#include "MemPool.h"
 #include "StoreMeta.h"
 
 class StoreMetaObjSize : public StoreMeta
 {
-
-public:
     MEMPROXY_CLASS(StoreMetaObjSize);
 
+public:
     char getType() const {return STORE_META_OBJSIZE;}
 };
-
-MEMPROXY_CLASS_INLINE(StoreMetaObjSize);
 
 #endif /* SQUID_STOREMETAOBJSIZE_H */
 

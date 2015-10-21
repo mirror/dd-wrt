@@ -26,7 +26,6 @@ libcompat_squid_la_SOURCES = \
 	cppunit.h \
 	debug.cc \
 	debug.h \
-	drand48.h \
 	eui64_aton.h \
 	eui64_aton.c \
 	fdsetsize.h \

@@ -7,6 +7,7 @@
  */
 
 #include "squid.h"
+#include "auth/CredentialsCache.h"
 #include "auth/digest/Config.h"
 #include "auth/digest/User.h"
 #include "Debug.h"
@@ -32,7 +33,7 @@ Auth::Digest::User::~User()
         dlinkDelete(tmplink, &nonces);
         authDigestNoncePurge(static_cast < digest_nonce_h * >(tmplink->data));
         authDigestNonceUnlink(static_cast < digest_nonce_h * >(tmplink->data));
-        dlinkNodeDelete(tmplink);
+        delete tmplink;
     }
 }
 
@@ -70,5 +71,18 @@ Auth::Digest::User::currentNonce()
             nonce = NULL;
     }
     return nonce;
+}
+
+CbcPointer<Auth::CredentialsCache>
+Auth::Digest::User::Cache()
+{
+    static CbcPointer<Auth::CredentialsCache> p(new Auth::CredentialsCache("digest","GC Digest user credentials"));
+    return p;
+}
+
+void
+Auth::Digest::User::addToNameCache()
+{
+    Cache()->insert(userKey(), this);
 }
 
