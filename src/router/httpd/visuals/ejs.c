@@ -2262,6 +2262,7 @@ static void show_temp(int mon, int input, char *fmt)
 	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
 	FILE *tempfp = fopen(sysfs, "rb");
 	if (tempfp) {
+		int cpu;
 		fscanf(tempfp, "%d", &cpu);
 		fclose(tempfp);
 		websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
@@ -2272,8 +2273,6 @@ static void show_temp(int mon, int input, char *fmt)
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MVEBU
-	FILE *tempfp;
-	int cpu;
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		show_temp(1, 1, "CPU %d.%d &#176;C");
 		show_temp(2, 1, " / WL0 %d.%d &#176;C");
