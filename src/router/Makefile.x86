@@ -278,6 +278,7 @@ endif
 ifeq ($(CONFIG_LIBRT),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
 endif
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so.1} $(ARCH)-uclibc/target/lib/libatomic.so.1 
 ifeq ($(CONFIG_LIBNSL),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
 endif
@@ -358,6 +359,15 @@ ifneq ($(CONFIG_MUSL),y)
 		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libcrypt.so.0
 
+
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libatomic.a}" \
+		"$(ARCH)-uclibc/target/lib/libatomic.so.1" \
+		${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so.1} \
+		-Wl,-soname=libcrypt.so.0
+
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
@@ -383,7 +393,7 @@ endif
 #	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 
 
-install package: clean_target $(filter-out lib.i486-install,$(obj-install)) $(LINUXDIR)/.config
+install package: clean_target $(filter-out lib.i386-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
 	# Install binaries into target directory
 #	make -C viarhine clean
