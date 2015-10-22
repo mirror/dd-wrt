@@ -4,8 +4,8 @@ squid-configure:
 	ac_cv_header_linux_netfilter_ipv4_h=yes \
 	ac_cv_epoll_works=yes \
 	squid_cv_gnu_atomics=no \
-	--datadir=/usr/local/squid \
-	--libexecdir=/usr/lib/squid \
+	--datadir=/usr/lib/squid \
+	--libexecdir=/usr/libexec/squid \
 	--sysconfdir=/etc/squid \
 	--enable-shared \
 	--enable-static \
