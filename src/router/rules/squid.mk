@@ -32,6 +32,7 @@ squid-configure:
 	--enable-useragent-log \
 	--with-openssl=$(TOP)/openssl \
 	--disable-external-acl-helpers \
+	--disable-arch-native \
 	--enable-auth-negotiate \
 	--enable-auth-ntlm \
 	--enable-auth-digest \
