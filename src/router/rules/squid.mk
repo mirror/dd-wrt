@@ -53,4 +53,4 @@ squid-install:
 
 squid-clean:
 	make -C squid clean
-	make -C squid/plugins/squid_radius_auth clean
+#	make -C squid/plugins/squid_radius_auth clean
