@@ -49,6 +49,7 @@ squid-install:
 	make  -C squid install DESTDIR=$(INSTALLDIR)/squid	
 	rm -rf $(INSTALLDIR)/squid/usr/share
 	rm -rf $(INSTALLDIR)/squid/usr/include
+	chmod 4755 $(INSTALLDIR)/squid/usr/libexec/squid/*
 #	make -C squid/plugins/squid_radius_auth install DESTDIR=$(INSTALLDIR)/squid
 
 squid-clean:
