@@ -1,9 +1,19 @@
+GNU_ATOMICS = no
+
+ifeq ($(ARCH),i386)
+GNU_ATOMICS = yes
+LIB_ATOMIC = -latomic
+endif
+ifeq ($(ARCH),mips)
+GNU_ATOMICS = yes
+LIB_ATOMIC = -latomic
+endif
 squid-configure:
-	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl -lssl -lcrypto -pthread" CPPFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl -lcrypto -lssl" CXXFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl" \
+	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl -lssl -lcrypto -pthread $(LIB_ATOMIC)" CPPFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl -lcrypto -lssl $(LIB_ATOMIC)" CXXFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl  $(LIB_ATOMIC)" \
 	CC="$(ARCH)-linux-uclibc-gcc $(COPTS)" \
 	ac_cv_header_linux_netfilter_ipv4_h=yes \
 	ac_cv_epoll_works=yes \
-	squid_cv_gnu_atomics=no \
+	squid_cv_gnu_atomics=$(GNU_ATOMICS) \
 	--datadir=/usr/lib/squid \
 	--libexecdir=/usr/libexec/squid \
 	--sysconfdir=/etc/squid \
