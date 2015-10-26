@@ -3707,20 +3707,15 @@ void start_sysinit(void)
 	insmod("switch-core");
 	insmod("switch-robo");
 
-	int fd;
-
-	if ((fd = open("/proc/irq/163/smp_affinity", O_RDWR)) >= 0) {
-		close(fd);
 #ifndef HAVE_SAMBA
-		if (!nvram_match("samba3_enable", "1"))
+	if (!nvram_match("samba3_enable", "1"))
 #endif
-		{		// not set txworkq 
-			writeproc("/proc/irq/163/smp_affinity", "2");
-			writeproc("/proc/irq/169/smp_affinity", "2");
-		}
-		writeproc("/proc/irq/111/smp_affinity", "2");
-		writeproc("/proc/irq/112/smp_affinity", "2");
+	{			// not set txworkq 
+		set_smp_affinity(163, 2);
+		set_smp_affinity(169, 2);
 	}
+	set_smp_affinity(111, 2);
+	set_smp_affinity(112, 2);
 
 	/*
 	 * network drivers 

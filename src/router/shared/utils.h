@@ -1156,4 +1156,6 @@ int gratarp_main(char *iface);
 
 int writeproc(char *path, char *value);
 
+int set_smp_affinity(int irq, int cpu);
+
 int writevaproc(char *value, char *fmt, ...);

@@ -47,18 +47,13 @@ void start_samba3(void)
 	FILE *fp;
 	int fd;
 
-#ifdef HAVE_NORTHSTAR
-	if ((fd = open("/proc/irq/163/smp_affinity", O_RDWR)) >= 0) {
-		close(fd);
-		if (!nvram_match("samba3_enable", "1")) {	// not set txworkq 
-			writeproc("/proc/irq/163/smp_affinity", "2");
-			writeproc("/proc/irq/169/smp_affinity", "2");
-		} else {
-			writeproc("/proc/irq/163/smp_affinity", "3");
-			writeproc("/proc/irq/169/smp_affinity", "3");
-		}
+	if (!nvram_match("samba3_enable", "1")) {	// not set txworkq 
+		set_smp_affinity(163, 2);
+		set_smp_affinity(169, 2);
+	} else {
+		set_smp_affinity(163, 3);
+		set_smp_affinity(169, 3);
 	}
-#endif
 
 	if (!nvram_match("samba3_enable", "1")) {
 		if (nvram_match("txworkq", "1")) {

@@ -7026,16 +7026,14 @@ double HTTxRate40_400(unsigned int index)
 
 int writeproc(char *path, char *value)
 {
-/*	FILE *fp;
-	fprintf(stderr,"write %s to %s\n",value,path);
+	FILE *fp;
 	fp = fopen(path, "wb");
 	if (fp == NULL) {
-		fprintf(stderr,"cannot open %s\n",path);
+		fprintf(stderr, "cannot open %s\n", path);
 		return -1;
 	}
-	fprintf(fp,"%s",value);
-	fclose(fp);*/
-	sysprintf("echo \"%s\" > %s", value, path);
+	fprintf(fp, "%s", value);
+	fclose(fp);
 	return 0;
 }
 
@@ -7048,6 +7046,13 @@ int writevaproc(char *value, char *fmt, ...)
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
 	return writeproc(varbuf, value);
+}
+
+int set_smp_affinity(int irq, int cpu)
+{
+	char s_cpu[32];
+	snprintf(s_cpu, sizeof(cpu), "%d", cpu);
+	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", cpu);
 }
 
 /* gartarp */
