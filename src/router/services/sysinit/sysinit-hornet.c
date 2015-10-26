@@ -172,11 +172,11 @@ void start_sysinit(void)
 	setSwitchLED(14, 0x04);
 	setSwitchLED(15, 0x08);
 	setSwitchLED(16, 0x10);
-	set_gpio(17,1);
-	set_gpio(13,1);
-	set_gpio(14,1);
-	set_gpio(15,1);
-	set_gpio(16,1);
+	set_gpio(17, 1);
+	set_gpio(13, 1);
+	set_gpio(14, 1);
+	set_gpio(15, 1);
+	set_gpio(16, 1);
 	setEthLED(17, "eth0");
 #elif HAVE_CARAMBOLA
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");

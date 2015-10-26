@@ -242,7 +242,7 @@ void start_dnsmasq(void)
 		}
 		fprintf(fp, "dhcp-lease-max=%d\n", dhcp_max);
 		if (landhcp())
-			fprintf(fp, "dhcp-option=%s,3,%s\n", nvram_safe_get("lan_ifname"),nvram_safe_get("lan_ipaddr"));
+			fprintf(fp, "dhcp-option=%s,3,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 		for (i = 0; i < mdhcpcount; i++) {
 			if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i)))
 			    == 0)
@@ -278,7 +278,7 @@ void start_dnsmasq(void)
 		} else {
 #ifdef HAVE_UNBOUND
 			if (nvram_match("recursive_dns", "1")) {
-				fprintf(fp, "dhcp-option=%s,6,%s\n",nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+				fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 				for (i = 0; i < mdhcpcount; i++) {
 					if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i)))
 					    == 0)
@@ -308,7 +308,7 @@ void start_dnsmasq(void)
 			// Do new code - multi-subnet range
 			// Assumes that lan_netmask is set accordingly
 			// Assumes that dhcp_num is a multiple of 256
-			fprintf(fp, "dhcp-range=%s,",nvram_safe_get("lan_ifname"));
+			fprintf(fp, "dhcp-range=%s,", nvram_safe_get("lan_ifname"));
 			fprintf(fp, "%d.%d.%d.%d,", ip1 & im1, ip2 & im2, ip3 & im3, dhcpstart);
 			fprintf(fp, "%d.%d.%d.%d,", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
 			fprintf(fp, "%s,", nvram_safe_get("lan_netmask"));

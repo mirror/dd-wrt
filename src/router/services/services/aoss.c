@@ -50,7 +50,7 @@ void start_aoss(void)
 #endif
 	if (nvram_match("aoss_enable", "0")) {
 		stop_aoss();
-#ifdef HAVE_WPS	
+#ifdef HAVE_WPS
 		unlink("/tmp/.wpsdone");
 		if (nvram_match("wps_enabled", "1")) {
 			if (!nvram_match("ath0_net_mode", "disabled")) {

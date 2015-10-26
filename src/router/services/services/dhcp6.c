@@ -53,7 +53,7 @@ void start_dhcp6c(void)
 	char mac[18];
 	getLANMac(mac);
 	if (strlen(mac) == 0)
-		strcpy(mac,nvram_safe_get("et0macaddr_safe"));
+		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 
 	if (ether_atoe(mac, ea)) {
 		/* Generate IAID from the last 7 digits of WAN MAC */
