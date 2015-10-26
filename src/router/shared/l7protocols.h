@@ -277,6 +277,7 @@ l7filters filters_list[] = {
 	{"mp3", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"mpeg", NDPI_ONLY},
+	{"ms_lync", NDPI_ONLY},
 	{"msn", NDPI_ONLY},
 #endif
 	{"msn-filetransfer", L7_ONLY},
@@ -491,6 +492,7 @@ l7filters filters_list[] = {
 	{"tvuplayer", NDPI_ONLY},
 	{"twitch", NDPI_ONLY},
 	{"twitter", NDPI_ONLY},
+	{"ubntac2", NDPI_ONLY},
 	{"ubuntuone", NDPI_ONLY},
 	{"unencryped_jabber", NDPI_ONLY},
 #endif
