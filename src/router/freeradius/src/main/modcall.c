@@ -1,7 +1,7 @@
 /*
  * modcall.c
  *
- * Version:	$Id: f2e15ee118617f0cf27bea190087523fe8f74d34 $
+ * Version:	$Id: ad148a4277e9a175f28e97a64f5a64593725aee5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: f2e15ee118617f0cf27bea190087523fe8f74d34 $")
+RCSID("$Id: ad148a4277e9a175f28e97a64f5a64593725aee5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -619,6 +619,11 @@ redo:
 		 *	MOD_GROUP.
 		 */
 		if (!g->children) {
+			if (c->type == MOD_CASE) {
+				result = RLM_MODULE_NOOP;
+				goto calculate_result;
+			}
+
 			RDEBUG2("%.*s%s %s { ... } # empty sub-section is ignored",
 				depth + 1, modcall_spaces, group_name[c->type], c->name);
 			goto next_sibling;

@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: c1134676814f6b2b9d3254bcf0c17672dcaa89de $
+ * Version:	$Id: b9ee25e0029986ef00a575f38f99799e0f2ea00b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: c1134676814f6b2b9d3254bcf0c17672dcaa89de $")
+RCSID("$Id: b9ee25e0029986ef00a575f38f99799e0f2ea00b $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -53,7 +53,7 @@ const char *ssl_version()
 /** Check built and linked versions of OpenSSL match
  *
  * OpenSSL version number consists of:
- * MMNNFFPPS: major minor fix patch status
+ * MNNFFPPS: major minor fix patch status
  *
  * Where status >= 0 && < 10 means beta, and status 10 means release.
  *
@@ -72,7 +72,7 @@ int ssl_check_version(int allow_vulnerable)
 	/*
 	 *	Status mismatch always triggers error.
 	 */
-	if ((ssl_linked & 0x00000000f) != (ssl_built & 0x00000000f)) {
+	if ((ssl_linked & 0x0000000f) != (ssl_built & 0x0000000f)) {
 	mismatch:
 		radlog(L_ERR, "libssl version mismatch.  built: %lx linked: %lx",
 		       (unsigned long) ssl_built, (unsigned long) ssl_linked);
@@ -85,14 +85,14 @@ int ssl_check_version(int allow_vulnerable)
 	 *	1.0.0 and only allow moving backwards within a patch
 	 *	series.
 	 */
-	if (ssl_built & 0xff) {
-		if ((ssl_built & 0xffff) != (ssl_linked & 0xffff) ||
-		    (ssl_built & 0x0000ff) > (ssl_linked & 0x0000ff)) goto mismatch;
+	if (ssl_built & 0xf0000000) {
+		if ((ssl_built & 0xfffff000) != (ssl_linked & 0xfffff000) ||
+		    (ssl_built & 0x00000ff0) > (ssl_linked & 0x00000ff0)) goto mismatch;
 	/*
 	 *	Before 1.0.0 we require the same major minor and fix version
 	 *	and ignore the patch number.
 	 */
-	} else if ((ssl_built & 0xffffff) != (ssl_linked & 0xffffff)) goto mismatch;
+	} else if ((ssl_built & 0xfffff000) != (ssl_linked & 0xfffff000)) goto mismatch;
 
 	if (!allow_vulnerable) {
 		/* Check for bad versions */
