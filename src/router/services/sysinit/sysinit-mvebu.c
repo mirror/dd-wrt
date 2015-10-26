@@ -163,8 +163,8 @@ void start_sysinit(void)
 		fclose(fp);
 	}
 
-	if (getRouterBoard() == ROUTER_BOARD_WRT1900AC) {
-		set_smp_affinity(88, 2);
+	if (getRouterBoard() == ROUTER_WRT_1900AC) {
+		set_smp_affinity(90, 2);
 		set_smp_affinity(27, 2);
 
 	} else {
