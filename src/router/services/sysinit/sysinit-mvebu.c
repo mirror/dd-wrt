@@ -166,7 +166,6 @@ void start_sysinit(void)
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		set_smp_affinity(90, 2);
 		set_smp_affinity(27, 2);
-
 	} else {
 		set_smp_affinity(65, 2);
 		set_smp_affinity(195, 2);

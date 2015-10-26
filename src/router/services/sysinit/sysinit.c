@@ -1315,37 +1315,7 @@ void start_restore_defaults(void)
 		{"wan_default", "eth0"},
 		{0, 0}
 	};
-#elif HAVE_PICO2
-	struct nvram_param generic[] = {
-		{"lan_ifname", "br0"},
-		{"lan_ifnames", "eth0 ath0 ath1"},
-		{"wan_ifname", "eth0"},
-		{"wan_ifname2", "eth0"},
-		{"wan_ifnames", "eth0"},
-		{"wan_default", "eth0"},
-		{0, 0}
-	};
-#elif HAVE_PICO2HP
-	struct nvram_param generic[] = {
-		{"lan_ifname", "br0"},
-		{"lan_ifnames", "eth0 ath0 ath1"},
-		{"wan_ifname", "eth0"},
-		{"wan_ifname2", "eth0"},
-		{"wan_ifnames", "eth0"},
-		{"wan_default", "eth0"},
-		{0, 0}
-	};
-#elif HAVE_MS2
-	struct nvram_param generic[] = {
-		{"lan_ifname", "br0"},
-		{"lan_ifnames", "eth0 ath0 ath1"},
-		{"wan_ifname", "eth0"},
-		{"wan_ifname2", "eth0"},
-		{"wan_ifnames", "eth0"},
-		{"wan_default", "eth0"},
-		{0, 0}
-	};
-#elif HAVE_BS2HP
+#elif defined(HAVE_PICO2) || defined(HAVE_PICO2HP) || defined(HAVE_MS2) || defined(HAVE_BS2HP)
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
 		{"lan_ifnames", "eth0 ath0 ath1"},
@@ -1695,37 +1665,7 @@ void start_restore_defaults(void)
 		{"wan_default", ""},
 		{0, 0}
 	};
-#elif HAVE_JJAP005
-	struct nvram_param generic[] = {
-		{"lan_ifname", "br0"},
-		{"lan_ifnames", "eth0 eth1 ath0"},
-		{"wan_ifname", "eth1"},
-		{"wan_ifname2", "eth1"},
-		{"wan_ifnames", "eth1"},
-		{"wan_default", "eth1"},
-		{0, 0}
-	};
-#elif HAVE_JJAP501
-	struct nvram_param generic[] = {
-		{"lan_ifname", "br0"},
-		{"lan_ifnames", "eth0 eth1 ath0"},
-		{"wan_ifname", "eth1"},
-		{"wan_ifname2", "eth1"},
-		{"wan_ifnames", "eth1"},
-		{"wan_default", "eth1"},
-		{0, 0}
-	};
-#elif HAVE_AC722
-	struct nvram_param generic[] = {
-		{"lan_ifname", "br0"},
-		{"lan_ifnames", "eth0 eth1 ath0"},
-		{"wan_ifname", "eth1"},
-		{"wan_ifname2", "eth1"},
-		{"wan_ifnames", "eth1"},
-		{"wan_default", "eth1"},
-		{0, 0}
-	};
-#elif HAVE_AC622
+#elif defined(HAVE_JJAP005) || defined(HAVE_JJAP501) || defined(HAVE_AC722) || defined(HAVE_AC622)
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
 		{"lan_ifnames", "eth0 eth1 ath0"},
