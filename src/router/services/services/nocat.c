@@ -136,7 +136,7 @@ int mk_nocat_conf(void)
 	char mac[18];
 	getLANMac(mac);
 	if (strlen(mac) == 0)
-		strcpy(mac,nvram_safe_get("et0macaddr_safe"));
+		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 
 	if (nvram_match("port_swap", "1"))
 		fprintf(fp, "GatewayMAC\t%s\n", nvram_safe_get("et1macaddr"));
