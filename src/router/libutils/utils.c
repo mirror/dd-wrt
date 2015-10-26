@@ -7051,8 +7051,8 @@ int writevaproc(char *value, char *fmt, ...)
 int set_smp_affinity(int irq, int cpu)
 {
 	char s_cpu[32];
-	snprintf(s_cpu, sizeof(cpu), "%d", cpu);
-	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", cpu);
+	snprintf(s_cpu, sizeof(s_cpu), "%d", cpu);
+	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", irq);
 }
 
 /* gartarp */
