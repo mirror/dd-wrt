@@ -748,6 +748,8 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	struct ndpi_packet_struct *packet = &flow->packet;
 	u_int16_t filename_start;
 
+	packet->packet_lines_parsed_complete = 0;
+
 	/* Check if we so far detected the protocol in the request or not. */
 	if (flow->l4.tcp.http_stage == 0) {
 		flow->http_detected = 0;
@@ -872,6 +874,7 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 				NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "HTTP START Found in 2. packet, we will look further for the response....\n");
 				flow->http_detected = 1;
 			}
+
 			return;
 		}
 
