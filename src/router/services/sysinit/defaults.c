@@ -190,7 +190,7 @@ struct nvram_param srouter_defaults[] = {
 	{"lan_hwnames", ""},	/* LAN driver names (e.g. et0) */
 	{"lan_hwaddr", ""},	/* LAN interface MAC address */
 //KONG needs to be modified for marvel
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 	{"wl0_ifname", "ath0"},	/* LAN interface MAC address */
 #else
 	{"wl0_ifname", "eth1"},	/* LAN interface MAC address */
@@ -1031,8 +1031,8 @@ struct nvram_param srouter_defaults[] = {
 	{"ath3_ssid", "hdwifi4"},
 #elif defined(HAVE_ONNET_BLANK)
 #ifdef HAVE_MMS344
-        {"ath0_ssid", "OTAi2.4"},
-        {"ath1_ssid", "OTAi5.8"},
+	{"ath0_ssid", "OTAi2.4"},
+	{"ath1_ssid", "OTAi5.8"},
 #else
 	{"ath0_ssid", "Enterprise WIFI"},
 	{"ath1_ssid", "Enterprise WIFI_1"},
@@ -3033,7 +3033,7 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #ifdef HAVE_ERC
 	{"newhttp_passwd", "$1$2XwGZVRQ$H35EZ6yHCEZiG42sY1QSJ1"},
-//	{"newhttp_passwd", "$1$.V44ffYt$6ttOdlItuYV6uvi..vvoO/"},
+//      {"newhttp_passwd", "$1$.V44ffYt$6ttOdlItuYV6uvi..vvoO/"},
 #endif
 #ifdef HAVE_CARLSONWIRELESS
 	{"newhttp_username", "$1$y5qEiLaV$/2cQErs8qxs./J3pl2l2F."},	/* HTTP username) */
@@ -3043,10 +3043,10 @@ struct nvram_param srouter_defaults[] = {
 	{"newhttp_passwd", "$1$hFOmcfz/$eYEVGPdzfrkGcA6MbUukF."},
 #endif
 #ifdef HAVE_MVEBU
-	 {"ath0_regdomain", "UNITED_STATES"},
-	 {"ath1_regdomain", "UNITED_STATES"},
-	 {"ath0_txpwrdbm","30"},
-	 {"ath1_txpwrdbm","30"},
+	{"ath0_regdomain", "UNITED_STATES"},
+	{"ath1_regdomain", "UNITED_STATES"},
+	{"ath0_txpwrdbm", "30"},
+	{"ath1_txpwrdbm", "30"},
 #endif
 #ifdef HAVE_SPUTNIK_APD
 
@@ -3128,7 +3128,7 @@ struct nvram_param srouter_defaults[] = {
 	{"radio1_on_time", "111111111111111111111111"},	/* Radio timer,always on */
 	{"radio1_timer_enable", "0"},
 	{"radio2_on_time", "111111111111111111111111"},	/* Radio timer,always on */
-	{"radio2_timer_enable", "0"},	
+	{"radio2_timer_enable", "0"},
 #ifdef HAVE_CPUTEMP
 #ifdef HAVE_MVEBU
 	{"hwmon_temp_max", "65"},

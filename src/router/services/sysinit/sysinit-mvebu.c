@@ -100,7 +100,7 @@ void start_sysinit(void)
 	insmod("mii");
 	// crypto drivers
 	insmod("des_generic");
-	insmod("marvell-cesa"); // tested on WRT1900AC v1 so far
+	insmod("marvell-cesa");	// tested on WRT1900AC v1 so far
 	/*
 	 * network drivers 
 	 */
@@ -163,6 +163,14 @@ void start_sysinit(void)
 		fclose(fp);
 	}
 
+	if (getRouterBoard() == ROUTER_BOARD_WRT1900AC) {
+		set_smp_affinity(88, 2);
+		set_smp_affinity(27, 2);
+
+	} else {
+		set_smp_affinity(65, 2);
+		set_smp_affinity(195, 2);
+	}
 	return;
 	cprintf("done\n");
 }
