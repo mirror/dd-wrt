@@ -5,11 +5,11 @@
 #
 #	See the README file in this directory for more information.
 #	
-#	$Id: 6665790d3f8490210c07afeb6d7b0f39023dafb6 $
+#	$Id: 6c3dccc174bf0f995bb7930711ee81d22088ca70 $
 #
 ######################################################################
 
-DH_KEY_SIZE	= 1024
+DH_KEY_SIZE	= 2048
 
 #
 #  Set the passwords
@@ -46,7 +46,7 @@ passwords.mk: server.cnf ca.cnf client.cnf
 #
 ######################################################################
 dh:
-	openssl dhparam -out dh $(DH_KEY_SIZE)
+	openssl gendh -out dh -2 $(DH_KEY_SIZE)
 
 ######################################################################
 #

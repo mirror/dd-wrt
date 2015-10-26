@@ -11,7 +11,7 @@
 #	the "inner-tunnel" virtual server.  You wll likely have to edit
 #	that, too, for authentication to work.
 #
-#	$Id: dd12b60efa3b9e2da32ac23833ac9299a19c43d1 $
+#	$Id: 099f7f05a679af0d5577e39671ee8ad1e5abf407 $
 #
 ######################################################################
 #

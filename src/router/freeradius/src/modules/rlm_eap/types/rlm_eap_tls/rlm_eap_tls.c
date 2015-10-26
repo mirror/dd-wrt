@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: a958d048ac2cd5d3d02d40f02b9411e15064dcb5 $
+ * Version:     $Id: aac26bcb0cfff88376e0bfc3b59d847853b5e317 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: a958d048ac2cd5d3d02d40f02b9411e15064dcb5 $")
+RCSID("$Id: aac26bcb0cfff88376e0bfc3b59d847853b5e317 $")
 
 #include <freeradius-devel/autoconf.h>
 
@@ -120,6 +120,8 @@ static CONF_PARSER module_config[] = {
 	  offsetof(EAP_TLS_CONF, include_length), NULL, "yes" },
 	{ "check_crl", PW_TYPE_BOOLEAN,
 	  offsetof(EAP_TLS_CONF, check_crl), NULL, "no"},
+	{ "check_all_crl", PW_TYPE_BOOLEAN,
+	  offsetof(EAP_TLS_CONF, check_all_crl), NULL, "no"},
 	{ "allow_expired_crl", PW_TYPE_BOOLEAN,
 	  offsetof(EAP_TLS_CONF, allow_expired_crl), NULL, NULL},
 	{ "check_cert_cn", PW_TYPE_STRING_PTR,
@@ -976,6 +978,10 @@ static X509_STORE *init_revocation_store(EAP_TLS_CONF *conf)
 	if (conf->check_crl)
 		X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK);
 #endif
+#ifdef X509_V_FLAG_CRL_CHECK_ALL
+	if (conf->check_all_crl)
+		X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK_ALL);
+#endif
 	return store;
 }
 #endif	/* HAVE_OPENSSL_OCSP_H */
@@ -1240,6 +1246,10 @@ static SSL_CTX *init_tls_ctx(EAP_TLS_CONF *conf)
 	    return NULL;
 	  }
 	  X509_STORE_set_flags(certstore, X509_V_FLAG_CRL_CHECK);
+
+	  if (conf->check_all_crl) {
+		  X509_STORE_set_flags(certstore, X509_V_FLAG_CRL_CHECK_ALL);
+	  }
 	}
 #endif
 
