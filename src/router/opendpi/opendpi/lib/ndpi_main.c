@@ -1131,6 +1131,10 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 58267, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_STARCRAFT, no_master, no_master, "Starcraft", ndpi_build_default_ports(ports_a, 1119, 0, 0, 0, 0),	/* TCP */
 				ndpi_build_default_ports(ports_b, 1119, 0, 0, 0, 0));	/* UDP */
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_UBNTAC2, no_master, no_master, "UBNTAC2", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0),	/* TCP */
+				ndpi_build_default_ports(ports_b, 10001, 0, 0, 0, 0));	/* UDP */
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_MS_LYNC, no_master, no_master, "Lync", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0),	/* TCP */
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0));	/* UDP */
 
 	/* calling function for host and content matched protocols */
 	init_string_based_protocols(ndpi_mod);
@@ -1736,9 +1740,6 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 	/* HTTP */
 	init_http_dissector(ndpi_struct, &a, detection_bitmask);
 
-	/* SKYPE */
-	init_skype_dissector(ndpi_struct, &a, detection_bitmask);
-
 	/* Stracraft */
 	init_starcraft_dissector(ndpi_struct, &a, detection_bitmask);
 
@@ -1762,9 +1763,6 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
 	/* HEP */
 	init_hep_dissector(ndpi_struct, &a, detection_bitmask);
-
-	/* BITTORRENT */
-	init_bittorrent_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* Teredo */
 	init_teredo_dissector(ndpi_struct, &a, detection_bitmask);
@@ -2153,6 +2151,18 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 	/* i23v5 */
 	init_i23v5_dissector(ndpi_struct, &a, detection_bitmask);
 
+	/* UBNTAC2 */
+	init_ubntac2_dissector(ndpi_struct, &a, detection_bitmask);
+
+	/* Put false-positive sensitive protocols at the end */
+
+	/* SKYPE */
+	init_skype_dissector(ndpi_struct, &a, detection_bitmask);
+
+	/* BITTORRENT */
+	init_bittorrent_dissector(ndpi_struct, &a, detection_bitmask);
+
+
 	/* ----------------------------------------------------------------- */
 
 	ndpi_struct->callback_buffer_size = a;
@@ -2181,8 +2191,8 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
 	ndpi_struct->callback_buffer_size_udp = 0;
 	for (a = 0; a < ndpi_struct->callback_buffer_size; a++) {
-		if ((ndpi_struct->callback_buffer[a].ndpi_selection_bitmask & (NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC))
-		    != 0) {
+	if ((ndpi_struct->callback_buffer[a].ndpi_selection_bitmask & (NDPI_SELECTION_BITMASK_PROTOCOL_INT_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC))
+			    != 0) {
 			NDPI_LOG(NDPI_PROTOCOL_UNKNOWN, ndpi_struct, NDPI_LOG_DEBUG, "callback_buffer_size_udp: adding buffer : %u as entry %u\n", a, ndpi_struct->callback_buffer_size_udp);
 
 			memcpy(&ndpi_struct->callback_buffer_udp[ndpi_struct->callback_buffer_size_udp], &ndpi_struct->callback_buffer[a], sizeof(struct ndpi_call_function_struct));
