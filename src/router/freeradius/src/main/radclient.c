@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 65c7a5cdb022612051530f8c79133f93b0f00328 $
+ * Version:	$Id: 4e04d0c5062137e73a08017a1e92597627748b23 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 65c7a5cdb022612051530f8c79133f93b0f00328 $")
+RCSID("$Id: 4e04d0c5062137e73a08017a1e92597627748b23 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/conf.h>
@@ -934,7 +934,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf(radclient_version);
+			printf("%s", radclient_version);
 			exit(0);
 			break;
 		case 'x':
