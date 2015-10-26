@@ -46,17 +46,107 @@
 
 #pragma pack(pop)		/* restore original alignment from stack */
 
+/* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* +++++++++++++++ Cisco data structures +++++++++++++++++++++++ */
+/* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+
+/* Cisco HDLC */
+struct ndpi_chdlc {
+	u_int8_t addr;		/* 0x0F (Unicast) - 0x8F (Broadcast) */
+	u_int8_t ctrl;		/* always 0x00                       */
+	u_int16_t proto_code;	/* protocol type (e.g. 0x0800 IP)    */
+};
+
+/* SLARP - Serial Line ARP http://tinyurl.com/qa54e95 */
+struct ndpi_slarp {
+	/* address requests (0x00)
+	   address replies  (0x01)
+	   keep-alive       (0x02)
+	 */
+	u_int32_t slarp_type;
+	u_int32_t addr_1;
+	u_int32_t addr_2;
+};
+
+/* Cisco Discovery Protocol http://tinyurl.com/qa6yw9l */
+struct ndpi_cdp {
+	u_int8_t version;
+	u_int8_t ttl;
+	u_int16_t checksum;
+	u_int16_t type;
+	u_int16_t length;
+};
+
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* +++++++++++ Ethernet data structures +++++++++++++ */
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
+
 struct ndpi_ethhdr {
 	u_char h_dest[6];	/* destination eth addr */
 	u_char h_source[6];	/* source ether addr    */
 	u_int16_t h_proto;	/* packet type ID field */
 };
 
-struct ndpi_80211q {
-	u_int16_t vlanId;
-	u_int16_t protoType;
-};
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* +++++++++++ ieee802.11 data structures +++++++++++ */
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
+/******* RADIO TAP *******/
+/* radiotap header */
+struct ndpi_radiotap_header {
+	u_int8_t version;	/* set to 0 */
+	u_int8_t pad;
+	u_int16_t len;
+	u_int32_t present;
+	u_int64_t MAC_timestamp;
+	u_int8_t flags;
+
+} __attribute__((__packed__));
+
+/* Beacon frame */
+struct ndpi_beacon {
+	/* header -- 24 byte */
+	u_int16_t fc;
+	u_int16_t duration;
+	u_char rcv_addr[6];
+	u_char trsm_addr[6];
+	u_char bssid[6];
+	u_int16_t seq_ctrl;
+	/* body (variable) */
+	u_int64_t timestamp;	/* 802.11 Timestamp value at frame send */
+	u_int16_t beacon_interval;	/* Interval at which beacons are send */
+	u_int16_t capability;
+  /** List of information elements **/
+	/* union ndpi_80211_info info_element[0]; */
+} __attribute__((packed));
+
+/* Wifi data frame - TODO: specify when addr1 addr2 addr3 is rcv, trams or bssid*/
+struct ndpi_wifi_data_frame {
+	u_int16_t fc;
+	u_int16_t duration;
+	u_char addr1[6];
+	u_char addr2[6];
+	u_char addr3[6];
+	u_int16_t seq_ctrl;
+} __attribute__((packed));
+
+/* Logical-Link Control header */
+struct ndpi_llc_header_proto {
+	u_int8_t dsap;
+	u_int8_t ssap;
+	u_int8_t ctl;
+	/* u_int8_t    pad1; */
+	u_int16_t org;
+	u_int8_t org2;
+	/* u_int8_t    pad2; */
+	u_int16_t ether_IP_type;
+} __attribute__((packed));
+
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ++++++++++++++ IP data structures ++++++++++++++++ */
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
+
+/* IP header */
 struct ndpi_iphdr {
 #if defined(__LITTLE_ENDIAN__)
 	u_int8_t ihl:4, version:4;
@@ -97,22 +187,6 @@ struct ndpi_win_in6_addr {
 		u_int16_t u6_addr16[8];
 		u_int32_t u6_addr32[4];
 	} in6_u;
-#ifdef s6_addr
-#undef s6_addr
-#endif
-
-#ifdef s6_addr16
-#undef s6_addr16
-#endif
-
-#ifdef s6_addr32
-#undef s6_addr32
-#endif
-
-#define s6_addr                 in6_u.u6_addr8
-	// #define s6_addr16               in6_u.u6_addr16
-	// #define s6_addr32               in6_u.u6_addr32
-
 };
 
 #define in6_addr win_in6_addr
@@ -123,8 +197,11 @@ struct ndpi_ip6_ext {
 	u_int8_t ip6e_len;	/* length in units of 8 octets.  */
 };
 
-#define s6_addr16		__u6_addr.__u6_addr16
-#define s6_addr32		__u6_addr.__u6_addr32
+/*
+#define s6_addr		    u6_addr.u6_addr8
+#define s6_addr16		u6_addr.u6_addr16
+#define s6_addr32		u6_addr.u6_addr32
+*/
 #else
 #ifndef __KERNEL__
 #include <arpa/inet.h>
@@ -133,10 +210,10 @@ struct ndpi_ip6_ext {
 
 struct ndpi_in6_addr {
 	union {
-		u_int8_t __u6_addr8[16];
-		u_int16_t __u6_addr16[8];
-		u_int32_t __u6_addr32[4];
-	} __u6_addr;		/* 128-bit IP6 address */
+		u_int8_t u6_addr8[16];
+		u_int16_t u6_addr16[8];
+		u_int32_t u6_addr32[4];
+	} u6_addr;		/* 128-bit IP6 address */
 };
 
 struct ndpi_ip6_hdr {
@@ -152,6 +229,10 @@ struct ndpi_ip6_hdr {
 	struct ndpi_in6_addr ip6_src;
 	struct ndpi_in6_addr ip6_dst;
 };
+
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ++++++++ Transport Layer data structures +++++++++ */
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
 struct ndpi_tcphdr {
 	u_int16_t source;
