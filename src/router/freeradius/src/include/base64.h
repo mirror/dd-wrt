@@ -20,7 +20,7 @@
 # define _FR_BASE64_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(base64_h, "$Id: 645e111906f0ed2a2c6bc2aae04a2cead5b4c48a $")
+RCSIDH(base64_h, "$Id: 6dad9de9bb1a082aed405a499a60cdb42bee0a53 $")
 
 # include <stddef.h>
 

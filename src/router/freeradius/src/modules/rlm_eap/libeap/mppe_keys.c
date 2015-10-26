@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: 0a4174fb731868ca01b2297c1eb05bc8ba1797e1 $
+ * Version:     $Id: a53bf8d7770242d05d36ef07b7add59ffc67f356 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 0a4174fb731868ca01b2297c1eb05bc8ba1797e1 $")
+RCSID("$Id: a53bf8d7770242d05d36ef07b7add59ffc67f356 $")
 
 #include <openssl/hmac.h>
 #include "eap_tls.h"
@@ -184,15 +184,21 @@ void eaptls_gen_mppe_keys(VALUE_PAIR **reply_vps, SSL *s,
  */
 void eapttls_gen_challenge(SSL *s, uint8_t *buffer, size_t size)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10001000L
 	uint8_t out[32], buf[32];
 	uint8_t seed[sizeof(EAPTLS_PRF_CHALLENGE)-1 + 2*SSL3_RANDOM_SIZE];
 	uint8_t *p = seed;
+#endif
 
 	if (!s->s3) {
 		DEBUG("ERROR: No SSLv3 information");
 		return;
 	}
 
+#if OPENSSL_VERSION_NUMBER >= 0x10001000L
+	SSL_export_keying_material(s, buffer, size, EAPTLS_PRF_CHALLENGE,
+				   sizeof(EAPTLS_PRF_CHALLENGE) - 1, NULL, 0, 0);
+#else
 	memcpy(p, EAPTLS_PRF_CHALLENGE, sizeof(EAPTLS_PRF_CHALLENGE)-1);
 	p += sizeof(EAPTLS_PRF_CHALLENGE)-1;
 	memcpy(p, s->s3->client_random, SSL3_RANDOM_SIZE);
@@ -203,6 +209,7 @@ void eapttls_gen_challenge(SSL *s, uint8_t *buffer, size_t size)
 	    seed, sizeof(seed), out, buf, sizeof(out));
 
 	memcpy(buffer, out, size);
+#endif
 }
 
 /*
