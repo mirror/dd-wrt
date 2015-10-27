@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2675 | brainslayer | 2015-10-27 20:52:47 +0100 (Tue, 27 Oct 2015) | 1 line
+
+remove tiremeats performance patch since it decreases performance
+------------------------------------------------------------------------
 r2674 | brainslayer | 2015-10-18 16:14:58 +0200 (Sun, 18 Oct 2015) | 1 line
 
 do not install unused files and firmwares
