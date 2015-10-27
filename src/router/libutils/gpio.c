@@ -40,65 +40,77 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#if defined(HAVE_UNIWIP) || defined(HAVE_OCTEON)
-void set_gpio(int pin, int value)
+#define writeint(fd,a) \
+	    do { \
+		    char strval[32]; \
+		    snprintf(strval,32,"%d",a); \
+		    write(fd,strval,strlen(strval)); \
+	    } while(0);
+
+#define writestr(fd,a) \
+	    do { \
+		    write(fd,a,strlen(a)); \
+	    } while(0);
+
+static void set_linux_gpio(int pin, int value)
 {
 	char str[32];
 	char strdir[64];
-	FILE *fp;
+	int fd;
 	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
 	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
       new_try:;
-	fp = fopen(str, "rb");
-	if (!fp) {
-		fp = fopen("/sys/class/gpio/export", "wb");
-		if (fp) {
-			fprintf(fp, "%d", pin);
-			fclose(fp);
+	fd = open(str, O_RDONLY);
+	if (fd == -1) {
+		fd = open("/sys/class/gpio/export", O_WRONLY);
+		if (fd != -1) {
+			writeint(fd, pin);
+			close(fd);
 		} else {
 			return;	//prevent deadlock
 		}
 		goto new_try;
 	}
-	fclose(fp);
-	fp = fopen(strdir, "wb");
-	if (fp) {
-		fprintf(fp, "out");
-		fclose(fp);
+	close(fd);
+	fd = open(strdir, O_WRONLY);
+	if (fd == -1) {
+		write(fd, "out", strlen("out"));
+		close(fd);
 	}
-	fp = fopen(str, "wb");
-	if (fp) {
-		fprintf(fp, "%d", value);
-		fclose(fp);
+	fd = open(str, O_WRONLY);
+	if (fd == -1) {
+		writeint(fd, value);
+		close(fd);
 	}
 }
 
-int get_gpio(int pin)
+static int get_linux_gpio(int pin)
 {
 
 	char str[32];
 	char strdir[64];
 	FILE *fp;
+	int fd;
 	int val = 0;
 	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
 	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
       new_try:;
 	fp = fopen(str, "rb");
 	if (!fp) {
-		fp = fopen("/sys/class/gpio/export", "wb");
-		if (fp) {
-			fprintf(fp, "%d", pin);
-			fclose(fp);
+		fd = open("/sys/class/gpio/export", O_WRONLY);
+		if (fd != -1) {
+			writeint(fd, pin);
+			close(fd);
 		} else {
 			return 0;	// prevent deadlock
 		}
 		goto new_try;
 	}
 	fclose(fp);
-	fp = fopen(strdir, "wb");
-	if (fp) {
-		fprintf(fp, "in");
-		fclose(fp);
+	fd = open(strdir, O_WRONLY);
+	if (fd != -1) {
+		writestr(fd, "in");
+		close(fd);
 	}
 	fp = fopen(str, "rb");
 	if (fp) {
@@ -107,6 +119,17 @@ int get_gpio(int pin)
 	}
 	return val;
 
+}
+
+#if defined(HAVE_UNIWIP) || defined(HAVE_OCTEON)
+void set_gpio(int pin, int value)
+{
+	set_linux_gpio(pin, value);
+}
+
+int get_gpio(int pin)
+{
+	return get_linux_gpio(pin);
 }
 
 #elif HAVE_WDR4900
@@ -149,72 +172,10 @@ int get_gpio(int gpio)
 }
 
 #elif HAVE_WRT1900AC
-static void i_set_gpio(int pin, int value)
-{
-	char str[32];
-	char strdir[64];
-	FILE *fp;
-	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
-	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
-      new_try:;
-	fp = fopen(str, "rb");
-	if (!fp) {
-		fp = fopen("/sys/class/gpio/export", "wb");
-		if (fp) {
-			fprintf(fp, "%d", pin);
-			fclose(fp);
-		} else {
-			return;	//prevent deadlock
-		}
-		goto new_try;
-	}
-	fclose(fp);
-	fp = fopen(strdir, "wb");
-	if (fp) {
-		fprintf(fp, "out");
-		fclose(fp);
-	}
-	fp = fopen(str, "wb");
-	if (fp) {
-		fprintf(fp, "%d", value);
-		fclose(fp);
-	}
-}
 
 int get_gpio(int pin)
 {
-
-	char str[32];
-	char strdir[64];
-	FILE *fp;
-	int val = 0;
-	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
-	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
-      new_try:;
-	fp = fopen(str, "rb");
-	if (!fp) {
-		fp = fopen("/sys/class/gpio/export", "wb");
-		if (fp) {
-			fprintf(fp, "%d", pin);
-			fclose(fp);
-		} else {
-			return 0;	// prevent deadlock
-		}
-		goto new_try;
-	}
-	fclose(fp);
-	fp = fopen(strdir, "wb");
-	if (fp) {
-		fprintf(fp, "in");
-		fclose(fp);
-	}
-	fp = fopen(str, "rb");
-	if (fp) {
-		fscanf(fp, "%d", &val);
-		fclose(fp);
-	}
-	return val;
-
+	return get_linux_gpio(pin);
 }
 
 void set_gpio(int gpio, int value)
@@ -260,7 +221,7 @@ void set_gpio(int gpio, int value)
 			sysprintf("echo %d > /sys/class/leds/mamba\\:amber\\:wps/brightness", value);
 			break;
 		default:
-			i_set_gpio(gpio, value);
+			set_linux_gpio(gpio, value);
 			break;
 		}
 	}
@@ -301,7 +262,7 @@ void set_gpio(int gpio, int value)
 			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:amber\\:wps/brightness", value);
 			break;
 		default:
-			i_set_gpio(gpio, value);
+			set_linux_gpio(gpio, value);
 			break;
 		}
 
@@ -343,7 +304,7 @@ void set_gpio(int gpio, int value)
 			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:amber\\:wps/brightness", value);
 			break;
 		default:
-			i_set_gpio(gpio, value);
+			set_linux_gpio(gpio, value);
 			break;
 		}
 
@@ -385,7 +346,7 @@ void set_gpio(int gpio, int value)
 			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:amber\\:wps/brightness", value);
 			break;
 		default:
-			i_set_gpio(gpio, value);
+			set_linux_gpio(gpio, value);
 			break;
 		}
 
@@ -394,40 +355,6 @@ void set_gpio(int gpio, int value)
 }
 
 #elif defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
-
-#ifdef HAVE_ERC
-void set_extgpio(int pin, int value)
-{
-	char str[32];
-	char strdir[64];
-	FILE *fp;
-	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
-	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
-      new_try:;
-	fp = fopen(str, "rb");
-	if (!fp) {
-		fp = fopen("/sys/class/gpio/export", "wb");
-		if (fp) {
-			fprintf(fp, "%d", pin);
-			fclose(fp);
-		} else {
-			return;	//prevent deadlock
-		}
-		goto new_try;
-	}
-	fclose(fp);
-	fp = fopen(strdir, "wb");
-	if (fp) {
-		fprintf(fp, "out");
-		fclose(fp);
-	}
-	fp = fopen(str, "wb");
-	if (fp) {
-		fprintf(fp, "%d", value);
-		fclose(fp);
-	}
-}
-#endif
 
 void set_gpio(int gpio, int value)
 {
@@ -440,16 +367,16 @@ void set_gpio(int gpio, int value)
 #endif
 	if (gpio < GPIOMAX) {
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
-		in = fopen(buf, "wb");
-		if (in == NULL)
+		int fd = open(buf, O_WRONLY);
+		if (fd == -1)
 			return;
-		fprintf(in, "1");
-		fclose(in);
+		writestr(fd, "1");
+		close(fd);
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
 	} else
 #ifdef HAVE_ERC
 	if (gpio >= 55) {
-		set_extgpio(gpio, value);
+		set_linux_gpio(gpio, value);
 		return;
 	} else
 #endif
@@ -462,13 +389,13 @@ void set_gpio(int gpio, int value)
 		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 	}
 
-	in = fopen(buf, "wb");
-	if (in == NULL)
+	int fd = open(buf, O_WRONLY);
+	if (fd == -1)
 		return;
-	fprintf(in, "%d", value);
-	fclose(in);
+	writeint(fd, value);
+	close(fd);
 
-//	sysprintf("echo %d > %s", value, buf);
+//      sysprintf("echo %d > %s", value, buf);
 }
 
 int get_gpio(int gpio)
@@ -478,20 +405,21 @@ int get_gpio(int gpio)
 	char buf[64];
 	if (gpio < GPIOMAX) {
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
-		in = fopen(buf, "wb");
-		if (in == NULL)
+		int fd = open(buf, O_WRONLY);
+		if (fd == -1)
 			return -1;
-		fprintf(in, "0");
-		fclose(in);
+		writestr(fd, "0");
+		close(fd);
 		sprintf(buf, "/proc/gpio/%d_in", gpio);
 		in = fopen(buf, "rb");
 	} else {
 		sprintf(buf, "/proc/wl0gpio/%d_dir", (gpio - GPIOMAX));
-		in = fopen(buf, "wb");
-		if (in != NULL) {
-			fprintf(in, "0");
-			fclose(in);
-		}
+
+		int fd = open(buf, O_WRONLY);
+		if (fd == -1)
+			return -1;
+		writestr(fd, "0");
+		close(fd);
 		sprintf(buf, "/proc/wl0gpio/%d_in", (gpio - GPIOMAX));
 		in = fopen(buf, "rb");
 		if (in == NULL) {
@@ -1351,9 +1279,6 @@ int get_gpio(int pin)
 #elif HAVE_VENTANA
 void set_gpio(int pin, int value)
 {
-	char str[32];
-	char strdir[64];
-	FILE *fp;
 	switch (pin) {
 	case 102:
 		sysprintf("echo none > /sys/class/leds/user1/trigger");
@@ -1368,32 +1293,7 @@ void set_gpio(int pin, int value)
 		sysprintf("echo %d > /sys/class/leds/user3/brightness", value ? 255 : 0);
 		break;
 	default:
-		sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
-		sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
-	      new_try:;
-		fp = fopen(str, "rb");
-		if (!fp) {
-			fp = fopen("/sys/class/gpio/export", "wb");
-			if (fp) {
-				fprintf(fp, "%d", pin);
-				fclose(fp);
-			} else {
-				return;	// no export available, prevent deadlock
-
-			}
-			goto new_try;
-		}
-		fclose(fp);
-		fp = fopen(strdir, "wb");
-		if (fp) {
-			fprintf(fp, "out");
-			fclose(fp);
-		}
-		fp = fopen(str, "wb");
-		if (fp) {
-			fprintf(fp, "%d", value);
-			fclose(fp);
-		}
+		set_linux_gpio(pin, value);
 		break;
 	}
 }
@@ -1401,9 +1301,6 @@ void set_gpio(int pin, int value)
 int get_gpio(int pin)
 {
 
-	char str[32];
-	char strdir[64];
-	FILE *fp;
 	int val = 0;
 	switch (pin) {
 	case 102:
@@ -1411,31 +1308,7 @@ int get_gpio(int pin)
 	case 111:
 		break;
 	default:
-		sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
-		sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
-	      new_try:;
-		fp = fopen(str, "rb");
-		if (!fp) {
-			fp = fopen("/sys/class/gpio/export", "wb");
-			if (fp) {
-				fprintf(fp, "%d", pin);
-				fclose(fp);
-			} else {
-				return 0;	// prevent deadlock
-			}
-			goto new_try;
-		}
-		fclose(fp);
-		fp = fopen(strdir, "wb");
-		if (fp) {
-			fprintf(fp, "in");
-			fclose(fp);
-		}
-		fp = fopen(str, "rb");
-		if (fp) {
-			fscanf(fp, "%d", &val);
-			fclose(fp);
-		}
+		val = get_linux_gpio(pin);
 	}
 	return val;
 }
