@@ -7026,14 +7026,14 @@ double HTTxRate40_400(unsigned int index)
 
 int writeproc(char *path, char *value)
 {
-	FILE *fp;
-	fp = fopen(path, "wb");
-	if (fp == NULL) {
+	int fd;
+	fd = open(path, O_WRONLY);
+	if (fd == -1) {
 		fprintf(stderr, "cannot open %s\n", path);
 		return -1;
 	}
-	fprintf(fp, "%s", value);
-	fclose(fp);
+	write(fd, value, strlen(value));
+	close(fd);
 	return 0;
 }
 
