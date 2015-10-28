@@ -119,7 +119,7 @@ static int decompress(webs_t stream, char *pattern, int len, int last)
 		{'s', "<select name="},	//
 		{'u', "<span class="},	//
 		{'z', "<input name="},	//
-		{'m', "document.write(\""},	//
+		{'x', "document.write(\""},	//
 		{'y', "<document."},	//
 		{'m', "<script type=\"text/javascript\">"},	//
 	};
@@ -200,8 +200,9 @@ static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
 			if (pat == '{') {
 				ret = decompress(stream, pattern, len, ret);
 				if (ret) {
-					if (len == 3)
+					if (len == 3) {
 						len = 0;
+					}
 					continue;
 				}
 			}
