@@ -108,8 +108,8 @@ static int decompress(webs_t stream, char *pattern, int len, int last)
 		{'c', "<input class=\"spaceradio\""},	//
 		{'t', "<input class=\"text\""},	//
 		{'p', "<input class=\"num\""},	//
-		{'a', "<input class=\"button\""},	//
-		{'b', "<input class=\\\"button\\\""},	//
+		{'h', "<input class=\"button\""},	//
+		{'g', "<input class=\\\"button\\\""},	//
 		{'d', "<input id="},	//
 		{'f', "<div class=\"setting\""},	//
 		{'e', "<div class="},	//
@@ -136,8 +136,11 @@ static int decompress(webs_t stream, char *pattern, int len, int last)
 		}
 		break;
 	case 3:
-		if (pattern[2] == '}') {
+		if (last && pattern[2] == '}') {
 			websWrite(stream, decode[last - 1].dst);
+			return 1;
+		}else{
+			websWrite(stream, pattern);
 			return 1;
 		}
 		break;
