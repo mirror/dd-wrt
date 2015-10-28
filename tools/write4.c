@@ -33,10 +33,15 @@ main (int argc, char *argv[])
       fclose (in);
 
       len = filter (m, "<input type=", "{i}", len);
-      len = filter (m, "<input class=", "{c}", len);
+      len = filter (m, "<input class=\"spaceradio\"", "{c}", len);
+      len = filter (m, "<input class=\"text\"", "{t}", len);
+      len = filter (m, "<input class=\"num\"", "{p}", len);
+      len = filter (m, "<input class=\\\"button\\\"", "{b}", len);
+      len = filter (m, "<input class=\"button\"", "{a}", len);
       len = filter (m, "<input id=", "{d}", len);
       len = filter (m, "<input name=", "{z}", len);
       len = filter (m, "<script type=\"text/javascript\">", "{m}", len);
+      len = filter (m, "<div class=\"setting\"", "{f}", len);
       len = filter (m, "<div class=", "{e}", len);
       len = filter (m, "<div id=", "{n}", len);
       len = filter (m, "<a href=\"", "{j}", len);
