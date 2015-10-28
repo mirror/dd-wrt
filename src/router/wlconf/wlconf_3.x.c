@@ -1663,6 +1663,7 @@ cprintf("get wl addr\n");
 	/* Get MAC address */
 	(void) wl_hwaddr(name, (uchar *)buf);
 	memcpy(vif_addr, buf, ETHER_ADDR_LEN);
+cprintf("get wl addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 	/* Get instance */
 cprintf("get instance\n");
 	WL_IOCTL(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
@@ -1688,8 +1689,19 @@ cprintf("get instance\n");
 	nvram_set(strcat_r(prefix, "unit", tmp), buf);
 
 cprintf("shut down %s\n",name);
+	
+	int wds_num = 1;
+	int wds_enabled = 0;
+	char wds_var[32];
+	for(wds_num = 1; wds_num <= 10; wds_num++){
+		snprintf(wds_var, sizeof(wds_var), "wl%d_wds%d_enable", unit, wds_num);
+		if( atoi(nvram_default_get(wds_var,"0")) != 0 )
+			wds_enabled = 1;
+	}
+	
 	/* Bring the interface down */
-	WL_IOCTL(name, WLC_DOWN, NULL, 0);
+	if (!wds_enabled) //workaround for driver hang in SDK7 when wds is enabled ticket #4073
+		WL_IOCTL(name, WLC_DOWN, NULL, 0);
 
 cprintf("disable bss %s\n",name);
 	/* Disable all BSS Configs */
@@ -2660,7 +2672,6 @@ cprintf("get caps %s\n",name);
 		if (valid_option)
 			wl_iovar_setint(name, var, val);
 	}
-
 	/* Get current rateset (gmode may have changed) */
 	WL_IOCTL(name, WLC_GET_CURR_RATESET, &rs, sizeof(wl_rateset_t));
 
