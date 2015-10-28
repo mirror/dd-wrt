@@ -36,8 +36,8 @@ main (int argc, char *argv[])
       len = filter (m, "<input class=\"spaceradio\"", "{c}", len);
       len = filter (m, "<input class=\"text\"", "{t}", len);
       len = filter (m, "<input class=\"num\"", "{p}", len);
-      len = filter (m, "<input class=\\\"button\\\"", "{b}", len);
-      len = filter (m, "<input class=\"button\"", "{a}", len);
+      len = filter (m, "<input class=\\\"button\\\"", "{g}", len);
+      len = filter (m, "<input class=\"button\"", "{h}", len);
       len = filter (m, "<input id=", "{d}", len);
       len = filter (m, "<input name=", "{z}", len);
       len = filter (m, "<script type=\"text/javascript\">", "{m}", len);
