@@ -1569,20 +1569,20 @@ inline void osl_prefetch(const void *ptr)
 
 int osl_arch_is_coherent(void)
 {
-#ifdef BCM47XX_CA9
-	return arch_is_coherent();
-#else
+//#ifdef BCM47XX_CA9
+//	return arch_is_coherent();
+//#else
 	return 0;
-#endif
+//#endif
 }
 
 inline int osl_acp_war_enab(void)
 {
-#ifdef BCM47XX_CA9
-	return ACP_WAR_ENAB();
-#else
+//#ifdef BCM47XX_CA9
+//	return ACP_WAR_ENAB();
+//#else
 	return 0;
-#endif /* BCM47XX_CA9 */
+//#endif /* BCM47XX_CA9 */
 }
 
 #endif /* mips */

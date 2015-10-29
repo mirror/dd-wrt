@@ -168,100 +168,15 @@
 #ifndef _hndfwd_h_
 #define _hndfwd_h_
 
-/* Standalone WOFA (mac address dictionary) */
-struct wofa;                    /* WOFA Address Resolution Logic */
-#define WOFA_NOOP               do { /* noop */ } while (0)
-
-#define WOFA_NULL               ((struct wofa *)NULL)
-#define WOFA_FAILURE            (-1)
-#define WOFA_SUCCESS            (0)
-
-#define WOFA_DATA_INVALID        ((uintptr_t)(~0)) /* symbol to data mapping */
-
-
-struct fwder;                   /* Forwarder object */
-#define FWDER_NOOP              do { /* noop */ } while (0)
-
 #define FWDER_NULL              (NULL)
 #define FWDER_FAILURE           (-1)
 #define FWDER_SUCCESS           (0)
 
-#define FWDER_WOFA_INVALID		(WOFA_DATA_INVALID) /* uintptr_t ~0 */
+struct fwder;
 
 #if defined(BCM_GMAC3)
 
-/** WOFA Dictionary and Symbol dimensioning */
-#define WOFA_DICT_SYMBOL_SIZE   (6) /* Size of a Mac Address */
-#define WOFA_DICT_BKT_MAX       (1 << NBBY)
-#define WOFA_DICT_BIN_MAX       (4) /* collision list */
-#define WOFA_DICT_SYMBOLS_MAX   (WOFA_DICT_BKT_MAX * WOFA_DICT_BIN_MAX)
-
-/** WOFA Bloom Filter sizing. */
-#define WOFA_BLOOMFILTER_BITS   (64 * 1024) /* 16bit hash index */
-#define WOFA_BLOOMFILTER_WORDS  (WOFA_BLOOMFILTER_BITS / 32)
-
-/** WOFA Cached recent hit per LAN port|WLAN Interface. */
-#define WOFA_MAX_PORTS          (16 + 1)
-
-
-/** Enable/Disable debugging of the WOFA */
-#if defined(BCMDBG)
-#define WOFA_DEBUG              2
-#else
-#define WOFA_DEBUG              0
-#endif
-
-#define WOFA_ERROR(args)        printk args
-
-/* Formatted Etherned Mac Address display */
-#define __EFMT                  "%02X:%02X:%02X:%02X:%02X:%02X "
-#define __EVAL(e)               *((e) + 0), *((e) + 1), *((e) + 2), \
-	                            *((e) + 3), *((e) + 4), *((e) + 5)
-#if (WOFA_DEBUG >= 1)
-#define WOFA_ASSERT(exp)        ASSERT(exp)
-#define WOFA_WARN(args)         printk args
-#else
-#define WOFA_ASSERT(exp)        WOFA_NOOP
-#define WOFA_WARN(args)         WOFA_NOOP
-#endif /* WOFA_DEBUG < 1 */
-
-#if (WOFA_DEBUG >= 2)
-#define WOFA_TRACE(args)        printk args
-#else
-#define WOFA_TRACE(args)        WOFA_NOOP
-#endif /* WOFA_DEBUG < 2 */
-
-#if (WOFA_DEBUG >= 3)
-#define WOFA_PTRACE(args)       printk args
-#else
-#define WOFA_PTRACE(args)       WOFA_NOOP
-#endif /* WOFA_DEBUG < 3 */
-
-#define WOFA_ALIGN16(sym)       WOFA_ASSERT((((uintptr)sym) & 1) == 0)
-
-/** Enable/Disable statistics in HND WOFA . */
-/* #define WOFA_STATS */
-
-#if defined(WOFA_STATS)
-#define WOFA_STATS_CLR(x)       (x) = 0U
-#define WOFA_STATS_ADD(x, c)    (x) = (x) + (c)
-#define WOFA_STATS_INCR(x)      (x) = (x) + 1
-#else  /* ! WOFA_STATS */
-#define WOFA_STATS_CLR(x)       WOFA_NOOP
-#define WOFA_STATS_ADD(x, c)    WOFA_NOOP
-#define WOFA_STATS_INCR(x)      WOFA_NOOP
-#endif /* ! WOFA_STATS */
-
-struct wofa * wofa_init(void);
-void wofa_fini(struct wofa * wofa);
-int wofa_add(struct wofa * wofa, uint16 * symbol, uintptr_t data);
-int wofa_del(struct wofa * wofa, uint16 * symbol, uintptr_t data);
-int wofa_clr(struct wofa * wofa, uintptr_t data);
-uintptr_t wofa_lkup(struct wofa * wofa, uint16 * symbol, const int port);
-
-struct bcmstrbuf;
-void wofa_dump(struct bcmstrbuf *b, struct wofa * wofa);
-
+#define FWDER_NOOP              do { /* noop */ } while (0)
 
 /** Enable/Disable debugging of the Hnd Forwarder. */
 #if defined(BCMDBG)
@@ -345,8 +260,12 @@ void wofa_dump(struct bcmstrbuf *b, struct wofa * wofa);
 
 /* forward declaration */
 struct fwder;                   /* Forwarder object */
+struct fwder_wofa;              /* Forwarder's WOFA Address Resolution Logic */
 struct sk_buff;
 struct net_device;
+
+typedef uintptr_t wofa_t;       /* WOFA metadata_t */
+#define FWDER_WOFA_INVALID      ((wofa_t)(~0U))
 
 /** Direction of a Hnd Forwarder object.
  * Directions are defined with respect to WLAN MAC processing:
@@ -404,7 +323,7 @@ typedef struct fwder {
 	struct net_device * dev_def;    /* Device to use, when devs_cnt = 1 */
 	int               devs_cnt;     /* Number of HW fwding capable interfaces */
 	dll_t             devs_dll;     /* List of HW switching capable WL ifs */
-	struct wofa       * wofa;       /* WOFA: Software ARL for IntraBSS fwding */
+	struct fwder_wofa * wofa;       /* WOFA: Software ARL for IntraBSS fwding */
 	fwder_mode_t      mode;         /* NIC or DGL operational mode */
 	uint16            dataoff;      /* Offset of start of ethernet header */
 	void              * osh;        /* OS Handler */
@@ -465,18 +384,18 @@ extern fwder_t * fwder_bind(fwder_t * fwder, int unit, int subunit,
 /** Add a station to Upstream Forwarder's WOFA on association/reassociation.
  * Add the wofa metadata against the symbol to be returned on a lookup/
  */
-extern int fwder_reassoc(fwder_t * fwder, uint16 * symbol, uintptr_t data);
+extern int fwder_reassoc(fwder_t * fwder, uint16 * symbol, wofa_t wofa);
 
 /** Delete a station from Upstream Forwarder's WOFA on deassociation.  */
-extern int fwder_deassoc(fwder_t * fwder, uint16 * symbol, uintptr_t data);
+extern int fwder_deassoc(fwder_t * fwder, uint16 * symbol, wofa_t wofa);
 
 /** Flush all entries that have a reference to wofa metadata. */
-extern int fwder_flush(fwder_t * fwder, uintptr_t data);
+extern int fwder_flush(fwder_t * fwder, wofa_t wofa);
 
 /** Lookup for a station assocatied with a forwarder.
  * If not found, returns FWDER_WOFA_INVALID, else return added wofa metadata.
  */
-extern uintptr_t fwder_lookup(fwder_t * fwder, uint16 * symbol, const int port);
+extern wofa_t fwder_lookup(fwder_t * fwder, uint16 * symbol, const int port);
 
 /** Given a downstream forwarder, flood a packet to all bound devices except to
  * the device in the skb. If clone is TRUE, then the original skb is returned.
@@ -571,23 +490,7 @@ fwder_transmit(struct fwder * fwder, struct sk_buff * skbs, int skb_cnt,
 
 #else  /* ! BCM_GMAC3 */
 
-/** Non GMAC3:  WOFA not supported - stubs */
-#define wofa_init()             ({  (WOFA_NULL); })
-#define wofa_fini(wofa)			WOFA_NOOP
-#define wofa_add(wofa, symbol, data)                                           \
-	({ BCM_REFERENCE(wofa); BCM_REFERENCE(symbol); BCM_REFERENCE(data);        \
-	   (WOFA_FAILURE); })
-#define wofa_del(wofa, symbol, data)                                           \
-	({ BCM_REFERENCE(wofa); BCM_REFERENCE(symbol); BCM_REFERENCE(data);        \
-	   (WOFA_FAILURE); })
-#define wofa_clr(wofa, data)                                                   \
-	({ BCM_REFERENCE(wofa); BCM_REFERENCE(data); (WOFA_FAILURE); })
-#define wofa_lkup(wofa, symbol, port)                                          \
-	({ BCM_REFERENCE(wofa); BCM_REFERENCE(symbol); BCM_REFERENCE(port);        \
-	   (WOFA_DATA_INVALID); })
 
-
-/** Non GMAC3:  FWDER not supported - stubs */
 #define fwder_init()            FWDER_NOOP
 #define fwder_exit()            FWDER_NOOP
 
