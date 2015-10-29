@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r2681 | BrainSlayer | 2015-10-29 20:40:16 +0100 (Thu, 29 Oct 2015) | 1 line
+
+update symlinks
+------------------------------------------------------------------------
+r2680 | BrainSlayer | 2015-10-29 20:39:49 +0100 (Thu, 29 Oct 2015) | 1 line
+
+merge newer dhd driver together with older wl which does seem to work better
+------------------------------------------------------------------------
 r2679 | BrainSlayer | 2015-10-29 11:55:37 +0100 (Thu, 29 Oct 2015) | 1 line
 
 fw update for ath10k
