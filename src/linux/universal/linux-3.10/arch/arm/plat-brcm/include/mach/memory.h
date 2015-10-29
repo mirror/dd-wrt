@@ -45,7 +45,7 @@
 
 #if !defined(__ASSEMBLY__)
 extern unsigned int coherence_flag;
-#define ACP_WAR_ENAB()		((coherence_flag & COHERENCE_ACP_WAR) != 0)
+#define ACP_WAR_ENAB()		0 //((coherence_flag & COHERENCE_ACP_WAR) != 0)
 
 //extern unsigned int ddr_phys_offset2_va;
 //#define PHYS_OFFSET2   ((unsigned long)ddr_phys_offset2_va)
