@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2677 | brainslayer | 2015-10-29 05:10:09 +0100 (Thu, 29 Oct 2015) | 1 line
+
+fix small code typo
+------------------------------------------------------------------------
 r2676 | BrainSlayer | 2015-10-29 04:48:15 +0100 (Thu, 29 Oct 2015) | 1 line
 
 update ampdu action api and update mwwifi amsdu state based on peers capabiliies
