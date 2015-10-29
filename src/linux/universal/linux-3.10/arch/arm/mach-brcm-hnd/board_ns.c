@@ -219,6 +219,7 @@ static void __init brcm_setup(void)
 	}
 	
 	printk(KERN_INFO "coherence_win_size = %X\n",coherence_win_sz);
+	printk(KERN_INFO "coherence_flag = %X\n", coherence_flag);
 
 //      if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
 //              sprintf(saved_root_name, "/dev/mtdblock%d", rootfs_mtdblock());

@@ -39,6 +39,10 @@
 extern si_t *bcm947xx_sih;
 extern spinlock_t bcm947xx_sih_lock;
 
+#undef ACP_WAR_ENAB
+
+#define ACP_WAR_ENAB() 0
+ 
 /* Convenience */
 #define sih bcm947xx_sih
 #define sih_lock bcm947xx_sih_lock
@@ -990,7 +994,7 @@ static void __init soc_pcie_hw_init(struct soc_pcie_port *port)
 	__raw_writel(0x1, port->reg_base + SOC_PCIE_CONTROL);
 	mdelay(250);
 
-	if (ACP_WAR_ENAB() || arch_is_coherent()) {
+	if (ACP_WAR_ENAB()) {
 		if (pcie_corerev != BCM53573_PCIE_COREREV) {
 			/* Set ARCACHE = 0xb, AWCACHE = 0x7, ARUSER = 0x1, and AWUSER = 0x1
 			 * ARCACHE=0xb - Cacheable write-back, allocate on write
@@ -1053,14 +1057,14 @@ static void __init soc_pcie_map_init(struct soc_pcie_port *port)
 	 * otherwise DMA bouncing mechanism may be required.
 	 * Also consider DMA mask to limit DMA physical address
 	 */
-	if (arch_is_coherent() && (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == NS_BX_PCIE_COREREV)) {
-		/* Using IARR_2/IMAP_2 is enough since it supports up to 2GB for NS-B0 */
-		addr = PHYS_OFFSET;
-		__raw_writel(addr | 0x1, port->reg_base + SOC_PCIE_SYS_IMAP2(0));
-		__raw_writel(addr | 0x1,	/* 1GB size */
-			     port->reg_base + SOC_PCIE_SYS_IARR(2));
-		return;
-	}
+//	if (arch_is_coherent() && (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == NS_BX_PCIE_COREREV)) {
+//		/* Using IARR_2/IMAP_2 is enough since it supports up to 2GB for NS-B0 */
+//		addr = PHYS_OFFSET;
+//		__raw_writel(addr | 0x1, port->reg_base + SOC_PCIE_SYS_IMAP2(0));
+//		__raw_writel(addr | 0x1,	/* 1GB size */
+//			     port->reg_base + SOC_PCIE_SYS_IARR(2));
+//		return;
+//	}
 
 	size = min(_memsize, SZ_128M);
 	addr = PHYS_OFFSET;
@@ -1453,9 +1457,9 @@ static void bcm5301x_usb_idm_ioctrl(int coreid)
 	uint32 ioctrl_val;
 	uint32 arcache = 0xb, awcache = 0x7, aruser = 0x1, awuser = 0x1;
 
-	if (!arch_is_coherent()) {
+//	if (!arch_is_coherent()) {
 		return;
-	}
+//	}
 
 	if (coreid == USB20H_CORE_ID) {
 		return;
