@@ -42,16 +42,18 @@
  */
 #define CONSISTENT_DMA_SIZE     SZ_128M
 
-/* 2nd physical memory window */
-#define PHYS_OFFSET2		0x80000000
-
 #if !defined(__ASSEMBLY__)
 extern unsigned int coherence_flag;
 #define ACP_WAR_ENAB()		((coherence_flag & COHERENCE_ACP_WAR) != 0)
 
+extern unsigned int ddr_phys_offset2_va;
+#define PHYS_OFFSET2   ((unsigned long)ddr_phys_offset2_va)
+
 extern unsigned int coherence_win_sz;
 #define ACP_WIN_SIZE			(coherence_win_sz)
 #define ACP_WIN_LIMIT			(PHYS_OFFSET + ACP_WIN_SIZE)
+#else
+#define PHYS_OFFSET2             UL(0xa8000000) /* Default value for NS */
 #endif
 
 #if !defined(__ASSEMBLY__) && defined(CONFIG_ZONE_DMA)

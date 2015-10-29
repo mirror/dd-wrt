@@ -1,4 +1,3 @@
-#include <linux/types.h>
 #include <linux/version.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
@@ -70,6 +69,9 @@ EXPORT_SYMBOL(ctf_attach_fn);
 /* To store real PHYS_OFFSET value */
 unsigned int ddr_phys_offset_va = -1;
 EXPORT_SYMBOL(ddr_phys_offset_va);
+
+unsigned int ddr_phys_offset2_va = 0xa8000000;	/* Default value for NS */
+EXPORT_SYMBOL(ddr_phys_offset2_va);
 
 unsigned int coherence_win_sz = SZ_256M;
 EXPORT_SYMBOL(coherence_win_sz);
@@ -220,6 +222,7 @@ static void __init brcm_setup(void)
 	
 	printk(KERN_INFO "coherence_win_size = %X\n",coherence_win_sz);
 	printk(KERN_INFO "coherence_flag = %X\n", coherence_flag);
+	printk(KERN_INFO "ddr_phys_offset2_va =%X\n", ddr_phys_offset2_va);
 
 //      if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
 //              sprintf(saved_root_name, "/dev/mtdblock%d", rootfs_mtdblock());
