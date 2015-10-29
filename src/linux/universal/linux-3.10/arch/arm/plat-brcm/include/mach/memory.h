@@ -51,8 +51,8 @@ extern unsigned int coherence_flag;
 //#define PHYS_OFFSET2   ((unsigned long)ddr_phys_offset2_va)
 
 extern unsigned int coherence_win_sz;
-#define ACP_WIN_SIZE			(coherence_win_sz)
-#define ACP_WIN_LIMIT			(PHYS_OFFSET + ACP_WIN_SIZE)
+//#define ACP_WIN_SIZE			(coherence_win_sz)
+//#define ACP_WIN_LIMIT			(PHYS_OFFSET + ACP_WIN_SIZE)
 #else
 #endif
 
