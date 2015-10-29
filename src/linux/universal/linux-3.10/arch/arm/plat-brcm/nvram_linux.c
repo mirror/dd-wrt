@@ -50,7 +50,7 @@
 #include <nflash.h>
 #endif
 
-int nvram_space = DEF_NVRAM_SPACE;
+int nvram_space = 0x10000;
 
 /* Temp buffer to hold the nvram transfered romboot CFE */
 char __initdata ram_nvram_buf[MAX_NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
@@ -146,7 +146,6 @@ early_nvram_init(void)
 			goto found;
 		}
 	}
-
 	bootdev = soc_boot_dev((void *)sih);
 #ifdef CONFIG_MTD_NFLASH
 	if (bootdev == SOC_BOOTDEV_NANDFLASH) {
@@ -191,7 +190,6 @@ early_nvram_init(void)
 		off = FLASH_MIN;
 		while (off <= lim) {
 			/* Windowed flash access */
-
 			header = (struct nvram_header *)(flash_base + off - (nvram_space*2));
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8)header->crc_ver_init) {
@@ -207,7 +205,8 @@ early_nvram_init(void)
 					remap_cfe=1;
 					goto found;
 				}
-			off += DEF_NVRAM_SPACE;
+			
+			off += 0x10000;
 		}
 	}
 	else {
