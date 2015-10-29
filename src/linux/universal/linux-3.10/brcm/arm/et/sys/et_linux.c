@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: et_linux.c 575708 2015-07-30 20:27:43Z $
+ * $Id: et_linux.c 511018 2014-10-28 09:40:33Z $
  */
 #include <et_cfg.h>
 #define __UNDEF_NO_VERSION__
@@ -114,9 +114,9 @@
 
 #if defined(BCM_GMAC3)
 
-/* Ensure linux_osl.h:FWDER_HWRXOFF matches etc.h:GMAC_FWER_HWRXOFF */
-#if (FWDER_HWRXOFF != GMAC_FWDER_HWRXOFF)
-#error "FWDER_HWRXOFF mismatch with GMAC_FWDER_HWRXOFF"
+/* Ensure linux_osl.h:FWDER_HWRXOFF matches etc.h:HWRXOFF */
+#if (FWDER_HWRXOFF != HWRXOFF)
+#error "FWDER_HWRXOFF mismatch with HWRXOFF"
 #endif
 
 #if defined(ETFA)
@@ -298,7 +298,6 @@ static int et_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
 #ifdef ETFA
 static int et_fa_default_cb(void *dev, ctf_ipc_t *ipc, bool v6, int cmd);
 static int et_fa_normal_cb(void *dev, ctf_ipc_t *ipc, bool v6, int cmd);
-void et_fa_up(et_info_t *et);
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
 static irqreturn_t et_isr(int irq, void *dev_id);
@@ -390,11 +389,7 @@ module_param(passivemode, int, 0);
 static int txworkq = 0;
 module_param(txworkq, int, 0);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 #define ET_TXQ_THRESH_DEFAULT   1536
-#else
-#define ET_TXQ_THRESH_DEFAULT   3300
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36) */
 
 static int et_txq_thresh = ET_TXQ_THRESH_DEFAULT;
 module_param(et_txq_thresh, int, 0);
@@ -404,9 +399,6 @@ module_param(et_rxlazy_timeout, uint, 0);
 
 static uint et_rxlazy_framecnt = ET_RXLAZY_FRAMECNT;
 module_param(et_rxlazy_framecnt, uint, 0);
-
-static uint et_rxlazy_dyn_thresh = 0;
-module_param(et_rxlazy_dyn_thresh, uint, 0);
 
 #ifdef PKTC
 #ifndef HNDCTF
@@ -889,7 +881,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		et->fwdh = fwder_attach(FWDER_UPSTREAM, et->etc->coreunit,
 		                        FWDER_NIC_MODE, et_forward, et->dev, et->osh);
 		if (et->fwdh) {
-			et->fwdh->dataoff = GMAC_FWDER_HWRXOFF;
+			et->fwdh->dataoff = HWRXOFF;
 #ifdef ETFA
 			et->fwdh->dataoff += et->fa_bhdr_sz;
 #endif
@@ -916,10 +908,10 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 #ifdef ETFA
 		if (FA_IS_FA_DEV((fa_t *)et->etc->fa)) {
 			if (getintvar(NULL, "ctf_fa_mode") == CTF_FA_NORMAL) {
-				ctf_fa_register(et->cih, (ctf_fa_cb_t)et_fa_normal_cb, dev);
+				ctf_fa_register(et->cih, et_fa_normal_cb, dev);
 			}
 			else {
-				ctf_fa_register(et->cih, (ctf_fa_cb_t)et_fa_default_cb, dev);
+				ctf_fa_register(et->cih, et_fa_default_cb, dev);
 			}
 		}
 #endif
@@ -931,15 +923,6 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 			/* use large ctf poolsz for platforms with more memory */
 			poolsz = ((num_physpages >= 32767) ? CTFPOOLSZ * 2 :
 			          ((num_physpages >= 8192) ? CTFPOOLSZ : 0));
-#if defined(BCM_GMAC3)
-			/* Atlas-II w/ 256M: 4K sized CTFPOOL
-			 * Need minimum of 3K packets:
-			 *   512 rx ring + 2048 flowring backup queue  + 512 flowring
-			 */
-			if (DEV_FWDER(et->etc) && (num_physpages >= 65535)) {
-				poolsz = CTFPOOLSZ * 4;
-			}
-#endif /* BCM_GMAC3 */
 			if ((poolsz > 0) &&
 			    (osl_ctfpool_init(osh, poolsz, RXBUFSZ+BCMEXTRAHDROOM) < 0)) {
 				ET_ERROR(("et%d: chipattach: ctfpool alloc/init failed\n", unit));
@@ -1247,11 +1230,6 @@ et_module_init(void)
 		et_rxlazy_framecnt = bcm_strtoul(var, NULL, 0);
 	printf("%s: et_rxlazy_framecnt set to 0x%x\n", __FUNCTION__, et_rxlazy_framecnt);
 
-	var = getvar(NULL, "et_rxlazy_dyn_thresh");
-	if (var)
-		et_rxlazy_dyn_thresh = bcm_strtoul(var, NULL, 0);
-	printf("%s: et_rxlazy_dyn_thresh set to %d\n", __FUNCTION__, et_rxlazy_dyn_thresh);
-
 	return pci_module_init(&et_pci_driver);
 }
 
@@ -1348,10 +1326,8 @@ et_free(et_info_t *et)
 	osh = et->osh;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
-	if (et->dev) {
-		free_netdev(et->dev);
-		et->dev = NULL;
-	}
+	free_netdev(et->dev);
+	et->dev = NULL;
 #else
 	MFREE(et->osh, et, sizeof(et_info_t));
 #endif
@@ -1889,7 +1865,7 @@ void
 et_discard(et_info_t *et, void *pkt)
 {
 	void * rxh = PKTDATA(et->osh, pkt);
-	int dataoff = et->etc->hwrxoff;
+	int dataoff = HWRXOFF;
 
 #if defined(ETFA)
 	dataoff += et->fa_bhdr_sz;
@@ -1912,19 +1888,6 @@ _et_watchdog(struct net_device *dev)
 	ET_LOCK(et);
 
 	etc_watchdog(et->etc);
-
-#if defined(BCM_GMAC3)
-	if (DEV_FWDER(et->etc)) {
-		if (et_rxlazy_dyn_thresh > 0) {
-			if ((et->etc->rxframe - et->etc->rxrecord) > et_rxlazy_dyn_thresh) {
-				etc_rxlazy(et->etc, ET_RXLAZY_TIMEOUT, ET_RXLAZY_FRAMECNT);
-			} else {
-				etc_rxlazy(et->etc, et_rxlazy_timeout, et_rxlazy_framecnt);
-			}
-		}
-		et->etc->rxrecord = et->etc->rxframe;
-	}
-#endif
 
 	if (et->set) {
 		/* reschedule one second watchdog timer */
@@ -2163,12 +2126,6 @@ et_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			if (!var->set)
 				get = TRUE;
 
-			if ((var->len == 0) || (var->len > ET_IOCTL_MAXLEN)) {
-				ET_ERROR(("et: et_ioctl: Invalid var len %d\n", var->len));
-				MFREE(et->osh, buf, size);
-				return (-EFAULT);
-			}
-
 			if (!(buffer = (void *) MALLOC(et->osh, var->len))) {
 				ET_ERROR(("et: et_ioctl: out of memory, malloced %d bytes\n",
 					MALLOCED(et->osh)));
@@ -2181,10 +2138,6 @@ et_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 				MFREE(et->osh, buf, size);
 				return (-EFAULT);
 			}
-		} else if (!var->set) {
-			/* Get commands must have a return buffer */
-			MFREE(et->osh, buf, size);
-			return (-EFAULT);
 		}
 	}
 
@@ -2198,7 +2151,7 @@ et_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 		ET_LOCK(et);
 		error = etc_iovar(et->etc, var->cmd, var->set, buffer, var->len);
 		ET_UNLOCK(et);
-		if (!error && get && var->buf && buffer)
+		if (!error && get)
 			error = copy_to_user(var->buf, buffer, var->len);
 
 		if (buffer)
@@ -2347,13 +2300,13 @@ et_set_multicast_list(struct net_device *dev)
 #else	/* >= 2.6.36 */
 		i = 0;
 		netdev_for_each_mc_addr(ha, dev) {
+			i ++;
 			if (i >= MAXMULTILIST) {
 				etc->allmulti = TRUE;
 				i = 0;
 				break;
 			}
 			etc->multicast[i] = *((struct ether_addr *)ha->addr);
-			i++;
 		} /* for each ha */
 #endif /* LINUX_VERSION_CODE */
 		etc->nmulticast = i;
@@ -2759,9 +2712,9 @@ et_rxevent(void * ch, int quota, struct chops *chops, et_info_t *et)
 	int rxcnt;
 	void *rxpkts[ETCQUOTA_MAX];
 #if defined(ETFA)
-	const int dataoff = et->etc->hwrxoff + et->fa_bhdr_sz;
+	const int dataoff = HWRXOFF + et->fa_bhdr_sz;
 #else  /* ! ETFA */
-	const int dataoff = et->etc->hwrxoff;
+	const int dataoff = HWRXOFF;
 #endif /* ! ETFA */
 
 	/* fetch max quota number of pkts from rx ring, and save in rxpkts */
@@ -2786,7 +2739,6 @@ et_rxevent(void * ch, int quota, struct chops *chops, et_info_t *et)
 		/* Bulk decrement pktalloced count. If fwder fails to transfer the pkts,
 		 * then increment pktalloced count before freeing to ctfpool.
 		 */
-		et->etc->rxframe += rxcnt;
 		PKTTOFWDER(et->osh, rxpkts, rxcnt);
 
 		if (fwder_transmit(et->fwdh, (void *)rxpkts, rxcnt, et->dev) != FWDER_SUCCESS) {
@@ -3421,11 +3373,4 @@ et_fa_fs_clean(void)
 #endif /* CONFIG_PROC_FS */
 }
 
-void
-et_fa_up(et_info_t *et)
-{
-	ET_LOCK(et);
-	et_up(et);
-	ET_UNLOCK(et);
-}
 #endif /* ETFA */
