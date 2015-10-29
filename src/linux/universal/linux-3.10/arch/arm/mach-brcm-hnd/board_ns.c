@@ -222,6 +222,7 @@ static void __init brcm_setup(void)
 	
 	printk(KERN_INFO "coherence_win_size = %X\n",coherence_win_sz);
 	printk(KERN_INFO "coherence_flag = %X\n", coherence_flag);
+	printk(KERN_INFO "ddr_phys_offset_va =%X\n", ddr_phys_offset_va);
 	printk(KERN_INFO "ddr_phys_offset2_va =%X\n", ddr_phys_offset2_va);
 
 //      if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
