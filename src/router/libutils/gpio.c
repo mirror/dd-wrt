@@ -40,17 +40,25 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#define writeint(fd,a) \
-	    do { \
-		    char strval[32]; \
-		    snprintf(strval,32,"%d",a); \
-		    write(fd,strval,strlen(strval)); \
-	    } while(0);
+static int writeint(char *path, int fd, int a)
+{
+	int fd = open(path, O_WRONLY);
+	if (fd == -1)
+		return 1;
+	char strval[32];
+	snprintf(strval, 32, "%d", a);
+	write(fd, strval, strlen(strval));
+	close(fd);
+}
 
-#define writestr(fd,a) \
-	    do { \
-		    write(fd,a,strlen(a)); \
-	    } while(0);
+static int writestr(char *path, int fd, char *a)
+{
+	int fd = open(path, O_WRONLY);
+	if (fd == -1)
+		return 1;
+	write(fd, a, strlen(a));
+	close(fd);
+}
 
 static void set_linux_gpio(int pin, int value)
 {
@@ -62,26 +70,13 @@ static void set_linux_gpio(int pin, int value)
       new_try:;
 	fd = open(str, O_RDONLY);
 	if (fd == -1) {
-		fd = open("/sys/class/gpio/export", O_WRONLY);
-		if (fd != -1) {
-			writeint(fd, pin);
-			close(fd);
-		} else {
+		if (writeint("/sys/class/gpio/export", fd, pin))
 			return;	//prevent deadlock
-		}
 		goto new_try;
 	}
 	close(fd);
-	fd = open(strdir, O_WRONLY);
-	if (fd == -1) {
-		writestr(fd,"out");
-		close(fd);
-	}
-	fd = open(str, O_WRONLY);
-	if (fd == -1) {
-		writeint(fd, value);
-		close(fd);
-	}
+	writestr(strdir, fd, "out");
+	writeint(str, fd, value);
 }
 
 static int get_linux_gpio(int pin)
@@ -97,21 +92,12 @@ static int get_linux_gpio(int pin)
       new_try:;
 	fp = fopen(str, "rb");
 	if (!fp) {
-		fd = open("/sys/class/gpio/export", O_WRONLY);
-		if (fd != -1) {
-			writeint(fd, pin);
-			close(fd);
-		} else {
+		if (writeint("/sys/class/gpio/export", fd, pin))
 			return 0;	// prevent deadlock
-		}
 		goto new_try;
 	}
 	fclose(fp);
-	fd = open(strdir, O_WRONLY);
-	if (fd != -1) {
-		writestr(fd, "in");
-		close(fd);
-	}
+	writestr(strdir, fd, "in");
 	fp = fopen(str, "rb");
 	if (fp) {
 		fscanf(fp, "%d", &val);
@@ -367,11 +353,8 @@ void set_gpio(int gpio, int value)
 #endif
 	if (gpio < GPIOMAX) {
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
-		int fd = open(buf, O_WRONLY);
-		if (fd == -1)
+		if (writestr(buf, fd, "1"))
 			return;
-		writestr(fd, "1");
-		close(fd);
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
 	} else
 #ifdef HAVE_ERC
@@ -389,11 +372,7 @@ void set_gpio(int gpio, int value)
 		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 	}
 
-	int fd = open(buf, O_WRONLY);
-	if (fd == -1)
-		return;
-	writeint(fd, value);
-	close(fd);
+	writeint(buf, fd, value);
 
 //      sysprintf("echo %d > %s", value, buf);
 }
@@ -405,21 +384,15 @@ int get_gpio(int gpio)
 	char buf[64];
 	if (gpio < GPIOMAX) {
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
-		int fd = open(buf, O_WRONLY);
-		if (fd == -1)
+		if (writestr(buf, fd, "0"))
 			return -1;
-		writestr(fd, "0");
-		close(fd);
 		sprintf(buf, "/proc/gpio/%d_in", gpio);
 		in = fopen(buf, "rb");
 	} else {
 		sprintf(buf, "/proc/wl0gpio/%d_dir", (gpio - GPIOMAX));
 
-		int fd = open(buf, O_WRONLY);
-		if (fd == -1)
+		if (writestr(buf, fd, "0"))
 			return -1;
-		writestr(fd, "0");
-		close(fd);
 		sprintf(buf, "/proc/wl0gpio/%d_in", (gpio - GPIOMAX));
 		in = fopen(buf, "rb");
 		if (in == NULL) {
