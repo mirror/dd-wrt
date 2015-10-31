@@ -51,7 +51,7 @@ static int writeint(char *path, int a)
 	close(fd);
 }
 
-static int writestr(char *path,char *a)
+static int writestr(char *path, char *a)
 {
 	int fd = open(path, O_WRONLY);
 	if (fd == -1)
