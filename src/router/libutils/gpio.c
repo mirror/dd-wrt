@@ -40,7 +40,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-static int writeint(char *path, int fd, int a)
+static int writeint(char *path, int a)
 {
 	int fd = open(path, O_WRONLY);
 	if (fd == -1)
@@ -51,7 +51,7 @@ static int writeint(char *path, int fd, int a)
 	close(fd);
 }
 
-static int writestr(char *path, int fd, char *a)
+static int writestr(char *path,char *a)
 {
 	int fd = open(path, O_WRONLY);
 	if (fd == -1)
@@ -70,13 +70,13 @@ static void set_linux_gpio(int pin, int value)
       new_try:;
 	fd = open(str, O_RDONLY);
 	if (fd == -1) {
-		if (writeint("/sys/class/gpio/export", fd, pin))
+		if (writeint("/sys/class/gpio/export", pin))
 			return;	//prevent deadlock
 		goto new_try;
 	}
 	close(fd);
-	writestr(strdir, fd, "out");
-	writeint(str, fd, value);
+	writestr(strdir, "out");
+	writeint(str, value);
 }
 
 static int get_linux_gpio(int pin)
@@ -92,12 +92,12 @@ static int get_linux_gpio(int pin)
       new_try:;
 	fp = fopen(str, "rb");
 	if (!fp) {
-		if (writeint("/sys/class/gpio/export", fd, pin))
+		if (writeint("/sys/class/gpio/export", pin))
 			return 0;	// prevent deadlock
 		goto new_try;
 	}
 	fclose(fp);
-	writestr(strdir, fd, "in");
+	writestr(strdir, "in");
 	fp = fopen(str, "rb");
 	if (fp) {
 		fscanf(fp, "%d", &val);
@@ -353,7 +353,7 @@ void set_gpio(int gpio, int value)
 #endif
 	if (gpio < GPIOMAX) {
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
-		if (writestr(buf, fd, "1"))
+		if (writestr(buf, "1"))
 			return;
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
 	} else
@@ -372,7 +372,7 @@ void set_gpio(int gpio, int value)
 		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 	}
 
-	writeint(buf, fd, value);
+	writeint(buf, value);
 
 //      sysprintf("echo %d > %s", value, buf);
 }
@@ -384,14 +384,14 @@ int get_gpio(int gpio)
 	char buf[64];
 	if (gpio < GPIOMAX) {
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
-		if (writestr(buf, fd, "0"))
+		if (writestr(buf, "0"))
 			return -1;
 		sprintf(buf, "/proc/gpio/%d_in", gpio);
 		in = fopen(buf, "rb");
 	} else {
 		sprintf(buf, "/proc/wl0gpio/%d_dir", (gpio - GPIOMAX));
 
-		if (writestr(buf, fd, "0"))
+		if (writestr(buf, "0"))
 			return -1;
 		sprintf(buf, "/proc/wl0gpio/%d_in", (gpio - GPIOMAX));
 		in = fopen(buf, "rb");
