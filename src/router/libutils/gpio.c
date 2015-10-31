@@ -74,7 +74,7 @@ static void set_linux_gpio(int pin, int value)
 	close(fd);
 	fd = open(strdir, O_WRONLY);
 	if (fd == -1) {
-		write(fd, "out", strlen("out"));
+		writestr(fd,"out");
 		close(fd);
 	}
 	fd = open(str, O_WRONLY);
