@@ -2633,7 +2633,7 @@ int internal_getRouterBrand()
 #elif HAVE_WA901V3
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
-	setRouter("TP-Link TL-WR841ND v8");
+	setRouter("TP-Link TL-WA901ND v3");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V8
 	nvram_default_get("ath0_rxantenna", "3");
