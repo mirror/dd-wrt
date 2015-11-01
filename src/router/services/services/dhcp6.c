@@ -49,7 +49,6 @@ void start_dhcp6c(void)
 	if (!nvram_match("ipv6_typ", "ipv6pd"))
 		return;
 	nvram_unset("ipv6_prefix");
-	fprintf(stderr, "dhcp6c start\n");
 	char mac[18];
 	getLANMac(mac);
 	if (strlen(mac) == 0)
@@ -123,8 +122,6 @@ void start_dhcp6s(void)
 		return;
 	if (!nvram_match("dhcp6s_enable", "1"))
 		return;
-
-	fprintf(stderr, "Start dhcp6s start\n");
 
 	if (ether_atoe(nvram_safe_get("lan_hwaddr"), ea)) {
 		/* Generate IAID from the last 7 digits of WAN MAC */
