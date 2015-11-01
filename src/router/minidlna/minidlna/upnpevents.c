@@ -50,7 +50,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include "queue.h"
+#include <sys/queue.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>

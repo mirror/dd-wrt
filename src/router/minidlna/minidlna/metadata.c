@@ -487,20 +487,6 @@ libjpeg_error_handler(j_common_ptr cinfo)
 	return;
 }
 
-//- 20130708 Sungmin add
-static int
-thumb_cache_exists(const char *orig_path, char **cache_file)
-{	
-	if( asprintf(cache_file, "%s/art_cache%s", db_path, orig_path) < 0 )	
-	{		
-		*cache_file = NULL;		
-		return 0;	
-	}	
-	strcpy(strchr(*cache_file, '\0')-4, ".jpg");
-
-	return (!access(*cache_file, F_OK));
-}
-
 int64_t
 GetImageMetadata(const char *path, char *name)
 {
@@ -605,30 +591,8 @@ GetImageMetadata(const char *path, char *name)
 				image_free(imsrc);
 			}
 		}
-		else {
+		else
 			thumb = 1;
-			//- 20130708 Sungmin add
-			if(ed->data && ed->size)
-			{
-				char* art_file;
-				if( !thumb_cache_exists(path, &art_file) )
-				{
-					char cache_dir[MAXPATHLEN];
-					strncpyt(cache_dir, art_file, sizeof(cache_dir));
-					make_dir(dirname(cache_dir), S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-
-					FILE *thumb = fopen(art_file, "wb");
-					//DPRINTF(E_WARN, L_METADATA, " * cache_dir: %s\n", cache_dir);
-					//DPRINTF(E_WARN, L_METADATA, " * thumbnail: %s\n", art_file);
-					if(thumb)
-					{
-						fwrite(ed->data, 1, ed->size, thumb);
-						fclose(thumb);
-					}
-				}
-				free(art_file);
-			}
-		}
 	}
 	//DEBUG DPRINTF(E_DEBUG, L_METADATA, " * thumbnail: %d\n", thumb);
 
@@ -730,16 +694,16 @@ GetVideoMetadata(const char *path, char *name)
 	//dump_format(ctx, 0, NULL, 0);
 	for( i=0; i<ctx->nb_streams; i++)
 	{
-		if( audio_stream == -1 &&
-		    ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO )
+		if( ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO &&
+		    audio_stream == -1 )
 		{
 			audio_stream = i;
 			ac = ctx->streams[audio_stream]->codec;
 			continue;
 		}
-		else if( video_stream == -1 &&
+		else if( ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO &&
 		         !lav_is_thumbnail_stream(ctx->streams[i], &m.thumb_data, &m.thumb_size) &&
-			 ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO )
+		         video_stream == -1 )
 		{
 			video_stream = i;
 			vc = ctx->streams[video_stream]->codec;
