@@ -46,7 +46,7 @@ static int writeint(char *path, int a)
 	if (fd == -1)
 		return 1;
 	char strval[32];
-	snprintf(strval, 32, "%d", a);
+	snprintf(strval, sizeof(strval), "%d", a);
 	write(fd, strval, strlen(strval));
 	close(fd);
 }
@@ -65,8 +65,8 @@ static void set_linux_gpio(int pin, int value)
 	char str[32];
 	char strdir[64];
 	int fd;
-	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
-	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
+	snprintf(str, sizeof(str), "/sys/class/gpio/gpio%d/value", pin);
+	snprintf(strdir, sizeof(strdir), "/sys/class/gpio/gpio%d/direction", pin);
       new_try:;
 	fd = open(str, O_RDONLY);
 	if (fd == -1) {
