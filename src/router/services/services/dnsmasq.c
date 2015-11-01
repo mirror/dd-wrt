@@ -70,16 +70,18 @@ static char *getmdhcp(int count, int index)
 			max = leasetime;
 			leasetime = "3660";
 		}
-		if (count == 0)
+		switch (count) {
+		case 0:
 			return interface;
-		if (count == 1)
+		case 1:
 			return dhcpon;
-		if (count == 2)
+		case 2:
 			return start;
-		if (count == 3)
+		case 3:
 			return max;
-		if (count == 4)
+		case 4:
 			return leasetime;
+		}
 	}
 	return "";
 }
