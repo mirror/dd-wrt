@@ -25,7 +25,7 @@
 #include "libavutil/channel_layout.h"
 #include "config.h"
 
-#define SWR_CH_MAX 32
+#define SWR_CH_MAX 64
 
 #define SQRT3_2      1.22474487139158904909  /* sqrt(3/2) */
 
@@ -119,6 +119,7 @@ struct SwrContext {
     int user_used_ch_count;                         ///< User set used channel count
     int64_t user_in_ch_layout;                      ///< User set input channel layout
     int64_t user_out_ch_layout;                     ///< User set output channel layout
+    enum AVSampleFormat user_int_sample_fmt;        ///< User set internal sample format
 
     struct DitherContext dither;
 
@@ -157,6 +158,7 @@ struct SwrContext {
     int64_t outpts;                                 ///< output PTS
     int64_t firstpts;                               ///< first PTS
     int drop_output;                                ///< number of output samples to drop
+    double delayed_samples_fixup;                   ///< soxr 0.1.1: needed to fixup delayed_samples after flush has been called.
 
     struct AudioConvert *in_convert;                ///< input conversion context
     struct AudioConvert *out_convert;               ///< output conversion context

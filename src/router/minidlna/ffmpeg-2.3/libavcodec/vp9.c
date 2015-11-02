@@ -289,6 +289,7 @@ static void vp9_unref_frame(AVCodecContext *ctx, VP9Frame *f)
 {
     ff_thread_release_buffer(ctx, &f->tf);
     av_buffer_unref(&f->extradata);
+    f->segmentation_map = NULL;
 }
 
 static int vp9_ref_frame(AVCodecContext *ctx, VP9Frame *dst, VP9Frame *src)
@@ -425,7 +426,7 @@ static av_always_inline int inv_recenter_nonneg(int v, int m)
 // differential forward probability updates
 static int update_prob(VP56RangeCoder *c, int p)
 {
-    static const int inv_map_table[254] = {
+    static const int inv_map_table[255] = {
           7,  20,  33,  46,  59,  72,  85,  98, 111, 124, 137, 150, 163, 176,
         189, 202, 215, 228, 241, 254,   1,   2,   3,   4,   5,   6,   8,   9,
          10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  21,  22,  23,  24,
@@ -444,7 +445,7 @@ static int update_prob(VP56RangeCoder *c, int p)
         207, 208, 209, 210, 211, 212, 213, 214, 216, 217, 218, 219, 220, 221,
         222, 223, 224, 225, 226, 227, 229, 230, 231, 232, 233, 234, 235, 236,
         237, 238, 239, 240, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,
-        252, 253,
+        252, 253, 253,
     };
     int d;
 
@@ -474,6 +475,7 @@ static int update_prob(VP56RangeCoder *c, int p)
         if (d >= 65)
             d = (d << 1) - 65 + vp8_rac_get(c);
         d += 64;
+        av_assert2(d < FF_ARRAY_ELEMS(inv_map_table));
     }
 
     return p <= 128 ? 1 + inv_recenter_nonneg(inv_map_table[d], p - 1) :
@@ -499,9 +501,13 @@ static enum AVPixelFormat read_colorspace_details(AVCodecContext *ctx)
             AV_PIX_FMT_GBRP, AV_PIX_FMT_GBRP10, AV_PIX_FMT_GBRP12
         };
         if (ctx->profile & 1) {
-            s->ss_h = s->ss_v = 1;
+            s->ss_h = s->ss_v = 0;
             res = pix_fmt_rgb[bits];
             ctx->color_range = AVCOL_RANGE_JPEG;
+            if (get_bits1(&s->gb)) {
+                av_log(ctx, AV_LOG_ERROR, "Reserved bit set in RGB\n");
+                return AVERROR_INVALIDDATA;
+            }
         } else {
             av_log(ctx, AV_LOG_ERROR, "RGB not supported in profile %d\n",
                    ctx->profile);
@@ -594,7 +600,7 @@ static int decode_frame_header(AVCodecContext *ctx,
                 av_log(ctx, AV_LOG_ERROR, "Invalid sync code\n");
                 return AVERROR_INVALIDDATA;
             }
-            if (ctx->profile == 1) {
+            if (ctx->profile >= 1) {
                 if ((fmt = read_colorspace_details(ctx)) < 0)
                     return fmt;
             } else {
@@ -706,6 +712,7 @@ static int decode_frame_header(AVCodecContext *ctx,
         s->lf_delta.ref[3] = -1;
         s->lf_delta.mode[0] = 0;
         s->lf_delta.mode[1] = 0;
+        memset(s->segmentation.feat, 0, sizeof(s->segmentation.feat));
     }
     s->filter.level = get_bits(&s->gb, 6);
     sharp = get_bits(&s->gb, 3);
@@ -732,6 +739,8 @@ static int decode_frame_header(AVCodecContext *ctx,
     s->uvac_qdelta = get_bits1(&s->gb) ? get_sbits_inv(&s->gb, 4) : 0;
     s->lossless    = s->yac_qi == 0 && s->ydc_qdelta == 0 &&
                      s->uvdc_qdelta == 0 && s->uvac_qdelta == 0;
+    if (s->lossless)
+        ctx->properties |= FF_CODEC_PROPERTY_LOSSLESS;
 
     /* segmentation header info */
     s->segmentation.ignore_refmap = 0;
@@ -752,7 +761,7 @@ static int decode_frame_header(AVCodecContext *ctx,
             av_log(ctx, AV_LOG_WARNING,
                    "Reference segmap (temp=%d,update=%d) enabled on size-change!\n",
                    s->segmentation.temporal, s->segmentation.update_map);
-                s->segmentation.ignore_refmap = 1;
+            s->segmentation.ignore_refmap = 1;
             //return AVERROR_INVALIDDATA;
         }
 
@@ -768,22 +777,17 @@ static int decode_frame_header(AVCodecContext *ctx,
                 s->segmentation.feat[i].skip_enabled = get_bits1(&s->gb);
             }
         }
-    } else {
-        s->segmentation.feat[0].q_enabled    = 0;
-        s->segmentation.feat[0].lf_enabled   = 0;
-        s->segmentation.feat[0].skip_enabled = 0;
-        s->segmentation.feat[0].ref_enabled  = 0;
     }
 
     // set qmul[] based on Y/UV, AC/DC and segmentation Q idx deltas
     for (i = 0; i < (s->segmentation.enabled ? 8 : 1); i++) {
         int qyac, qydc, quvac, quvdc, lflvl, sh;
 
-        if (s->segmentation.feat[i].q_enabled) {
+        if (s->segmentation.enabled && s->segmentation.feat[i].q_enabled) {
             if (s->segmentation.absolute_vals)
-                qyac = s->segmentation.feat[i].q_val;
+                qyac = av_clip_uintp2(s->segmentation.feat[i].q_val, 8);
             else
-                qyac = s->yac_qi + s->segmentation.feat[i].q_val;
+                qyac = av_clip_uintp2(s->yac_qi + s->segmentation.feat[i].q_val, 8);
         } else {
             qyac  = s->yac_qi;
         }
@@ -798,7 +802,7 @@ static int decode_frame_header(AVCodecContext *ctx,
         s->segmentation.feat[i].qmul[1][1] = vp9_ac_qlookup[s->bpp_index][quvac];
 
         sh = s->filter.level >= 32;
-        if (s->segmentation.feat[i].lf_enabled) {
+        if (s->segmentation.enabled && s->segmentation.feat[i].lf_enabled) {
             if (s->segmentation.absolute_vals)
                 lflvl = av_clip_uintp2(s->segmentation.feat[i].lf_val, 6);
             else
@@ -852,7 +856,7 @@ static int decode_frame_header(AVCodecContext *ctx,
         }
     }
 
-    if (s->keyframe || s->errorres || s->intraonly) {
+    if (s->keyframe || s->errorres || (s->intraonly && s->resetctx == 3)) {
         s->prob_ctx[0].p = s->prob_ctx[1].p = s->prob_ctx[2].p =
                            s->prob_ctx[3].p = vp9_default_probs;
         memcpy(s->prob_ctx[0].coef, vp9_default_coef_probs,
@@ -862,6 +866,10 @@ static int decode_frame_header(AVCodecContext *ctx,
         memcpy(s->prob_ctx[2].coef, vp9_default_coef_probs,
                sizeof(vp9_default_coef_probs));
         memcpy(s->prob_ctx[3].coef, vp9_default_coef_probs,
+               sizeof(vp9_default_coef_probs));
+    } else if (s->intraonly && s->resetctx == 2) {
+        s->prob_ctx[c].p = vp9_default_probs;
+        memcpy(s->prob_ctx[c].coef, vp9_default_coef_probs,
                sizeof(vp9_default_coef_probs));
     }
 
@@ -1475,7 +1483,8 @@ static void decode_mode(AVCodecContext *ctx)
     if (!s->segmentation.enabled) {
         b->seg_id = 0;
     } else if (s->keyframe || s->intraonly) {
-        b->seg_id = vp8_rac_get_tree(&s->c, vp9_segmentation_tree, s->prob.seg);
+        b->seg_id = !s->segmentation.update_map ? 0 :
+                    vp8_rac_get_tree(&s->c, vp9_segmentation_tree, s->prob.seg);
     } else if (!s->segmentation.update_map ||
                (s->segmentation.temporal &&
                 vp56_rac_get_prob_branchy(&s->c,
@@ -1523,7 +1532,7 @@ static void decode_mode(AVCodecContext *ctx)
 
     if (s->keyframe || s->intraonly) {
         b->intra = 1;
-    } else if (s->segmentation.feat[b->seg_id].ref_enabled) {
+    } else if (s->segmentation.enabled && s->segmentation.feat[b->seg_id].ref_enabled) {
         b->intra = !s->segmentation.feat[b->seg_id].ref_val;
     } else {
         int c, bit;
@@ -1688,7 +1697,7 @@ static void decode_mode(AVCodecContext *ctx)
             { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 3, 3, 3, 4 },
         };
 
-        if (s->segmentation.feat[b->seg_id].ref_enabled) {
+        if (s->segmentation.enabled && s->segmentation.feat[b->seg_id].ref_enabled) {
             av_assert2(s->segmentation.feat[b->seg_id].ref_val != 0);
             b->comp = 0;
             b->ref[0] = s->segmentation.feat[b->seg_id].ref_val - 1;
@@ -1933,7 +1942,7 @@ static void decode_mode(AVCodecContext *ctx)
         }
 
         if (b->bs <= BS_8x8) {
-            if (s->segmentation.feat[b->seg_id].skip_enabled) {
+            if (s->segmentation.enabled && s->segmentation.feat[b->seg_id].skip_enabled) {
                 b->mode[0] = b->mode[1] = b->mode[2] = b->mode[3] = ZEROMV;
             } else {
                 static const uint8_t off[10] = {
@@ -3988,8 +3997,8 @@ static int vp9_decode_frame(AVCodecContext *ctx, void *frame,
     int size = pkt->size;
     VP9Context *s = ctx->priv_data;
     int res, tile_row, tile_col, i, ref, row, col;
-    int retain_segmap_ref = s->segmentation.enabled && !s->segmentation.update_map
-                            && s->frames[REF_FRAME_SEGMAP].segmentation_map;
+    int retain_segmap_ref = s->frames[REF_FRAME_SEGMAP].segmentation_map &&
+                            (!s->segmentation.enabled || !s->segmentation.update_map);
     ptrdiff_t yoff, uvoff, ls_y, ls_uv;
     AVFrame *f;
     int bytesperpixel;
@@ -4018,7 +4027,7 @@ static int vp9_decode_frame(AVCodecContext *ctx, void *frame,
     data += res;
     size -= res;
 
-    if (!retain_segmap_ref) {
+    if (!retain_segmap_ref || s->keyframe || s->intraonly) {
         if (s->frames[REF_FRAME_SEGMAP].tf.f->data[0])
             vp9_unref_frame(ctx, &s->frames[REF_FRAME_SEGMAP]);
         if (!s->keyframe && !s->intraonly && !s->errorres && s->frames[CUR_FRAME].tf.f->data[0] &&
@@ -4321,6 +4330,7 @@ static int vp9_decode_update_thread_context(AVCodecContext *dst, const AVCodecCo
 
     s->invisible = ssrc->invisible;
     s->keyframe = ssrc->keyframe;
+    s->intraonly = ssrc->intraonly;
     s->ss_v = ssrc->ss_v;
     s->ss_h = ssrc->ss_h;
     s->segmentation.enabled = ssrc->segmentation.enabled;
@@ -4355,7 +4365,7 @@ AVCodec ff_vp9_decoder = {
     .init                  = vp9_decode_init,
     .close                 = vp9_decode_free,
     .decode                = vp9_decode_frame,
-    .capabilities          = CODEC_CAP_DR1 | CODEC_CAP_FRAME_THREADS,
+    .capabilities          = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_FRAME_THREADS,
     .flush                 = vp9_decode_flush,
     .init_thread_copy      = ONLY_IF_THREADS_ENABLED(vp9_decode_init_thread_copy),
     .update_thread_context = ONLY_IF_THREADS_ENABLED(vp9_decode_update_thread_context),
