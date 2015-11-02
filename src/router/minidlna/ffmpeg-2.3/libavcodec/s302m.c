@@ -85,10 +85,6 @@ static int s302m_parse_frame_header(AVCodecContext *avctx, const uint8_t *buf,
         case 8:
             avctx->channel_layout = AV_CH_LAYOUT_5POINT1_BACK | AV_CH_LAYOUT_STEREO_DOWNMIX;
     }
-    avctx->bit_rate    = 48000 * avctx->channels * (avctx->bits_per_raw_sample + 4) +
-                         32 * (48000 / (buf_size * 8 /
-                                        (avctx->channels *
-                                         (avctx->bits_per_raw_sample + 4))));
 
     return frame_size;
 }
@@ -117,6 +113,8 @@ static int s302m_decode_frame(AVCodecContext *avctx, void *data,
     if ((ret = ff_get_buffer(avctx, frame, 0)) < 0)
         return ret;
 
+    avctx->bit_rate = 48000 * avctx->channels * (avctx->bits_per_raw_sample + 4) +
+                      32 * 48000 / frame->nb_samples;
     buf_size = (frame->nb_samples * avctx->channels / 2) * block_size;
 
     if (avctx->bits_per_raw_sample == 24) {
@@ -205,11 +203,11 @@ static int s302m_decode_frame(AVCodecContext *avctx, void *data,
 
 #define FLAGS AV_OPT_FLAG_VIDEO_PARAM|AV_OPT_FLAG_DECODING_PARAM
 static const AVOption s302m_options[] = {
-    {"non_pcm_mode", "Chooses what to do with NON-PCM", offsetof(S302Context, non_pcm_mode), FF_OPT_TYPE_INT, {.i64 = 3}, 0, 3, FLAGS, "non_pcm_mode"},
-    {"copy"        , "Pass NON-PCM through unchanged"     , 0, FF_OPT_TYPE_CONST, {.i64 = 0}, 0, 3, FLAGS, "non_pcm_mode"},
-    {"drop"        , "Drop NON-PCM"                       , 0, FF_OPT_TYPE_CONST, {.i64 = 1}, 0, 3, FLAGS, "non_pcm_mode"},
-    {"decode_copy" , "Decode if possible else passthrough", 0, FF_OPT_TYPE_CONST, {.i64 = 2}, 0, 3, FLAGS, "non_pcm_mode"},
-    {"decode_drop" , "Decode if possible else drop"       , 0, FF_OPT_TYPE_CONST, {.i64 = 3}, 0, 3, FLAGS, "non_pcm_mode"},
+    {"non_pcm_mode", "Chooses what to do with NON-PCM", offsetof(S302Context, non_pcm_mode), AV_OPT_TYPE_INT, {.i64 = 3}, 0, 3, FLAGS, "non_pcm_mode"},
+    {"copy"        , "Pass NON-PCM through unchanged"     , 0, AV_OPT_TYPE_CONST, {.i64 = 0}, 0, 3, FLAGS, "non_pcm_mode"},
+    {"drop"        , "Drop NON-PCM"                       , 0, AV_OPT_TYPE_CONST, {.i64 = 1}, 0, 3, FLAGS, "non_pcm_mode"},
+    {"decode_copy" , "Decode if possible else passthrough", 0, AV_OPT_TYPE_CONST, {.i64 = 2}, 0, 3, FLAGS, "non_pcm_mode"},
+    {"decode_drop" , "Decode if possible else drop"       , 0, AV_OPT_TYPE_CONST, {.i64 = 3}, 0, 3, FLAGS, "non_pcm_mode"},
     {NULL}
 };
 
@@ -227,6 +225,6 @@ AVCodec ff_s302m_decoder = {
     .id             = AV_CODEC_ID_S302M,
     .priv_data_size = sizeof(S302Context),
     .decode         = s302m_decode_frame,
-    .capabilities   = CODEC_CAP_DR1,
+    .capabilities   = AV_CODEC_CAP_DR1,
     .priv_class     = &s302m_class,
 };
