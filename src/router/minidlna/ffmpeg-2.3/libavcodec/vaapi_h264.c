@@ -162,7 +162,8 @@ static void fill_vaapi_RefPicList(VAPictureH264 RefPicList[32],
     unsigned int i, n = 0;
     for (i = 0; i < ref_count; i++)
         if (ref_list[i].reference)
-            fill_vaapi_pic(&RefPicList[n++], ref_list[i].parent, 0);
+            fill_vaapi_pic(&RefPicList[n++], ref_list[i].parent,
+                           ref_list[i].reference);
 
     for (; n < 32; n++)
         init_vaapi_pic(&RefPicList[n]);
@@ -226,7 +227,7 @@ static int vaapi_h264_start_frame(AVCodecContext          *avctx,
                                   av_unused uint32_t       size)
 {
     H264Context * const h = avctx->priv_data;
-    struct vaapi_context * const vactx = avctx->hwaccel_context;
+    FFVAContext * const vactx = ff_vaapi_get_context(avctx);
     VAPictureParameterBufferH264 *pic_param;
     VAIQMatrixBufferH264 *iq_matrix;
 
@@ -291,7 +292,7 @@ static int vaapi_h264_start_frame(AVCodecContext          *avctx,
 /** End a hardware decoding based frame. */
 static int vaapi_h264_end_frame(AVCodecContext *avctx)
 {
-    struct vaapi_context * const vactx = avctx->hwaccel_context;
+    FFVAContext * const vactx = ff_vaapi_get_context(avctx);
     H264Context * const h = avctx->priv_data;
     H264SliceContext *sl = &h->slice_ctx[0];
     int ret;
@@ -317,6 +318,7 @@ static int vaapi_h264_decode_slice(AVCodecContext *avctx,
                                    const uint8_t  *buffer,
                                    uint32_t        size)
 {
+    FFVAContext * const vactx = ff_vaapi_get_context(avctx);
     H264Context * const h = avctx->priv_data;
     H264SliceContext *sl  = &h->slice_ctx[0];
     VASliceParameterBufferH264 *slice_param;
@@ -325,7 +327,7 @@ static int vaapi_h264_decode_slice(AVCodecContext *avctx,
             buffer, size);
 
     /* Fill in VASliceParameterBufferH264. */
-    slice_param = (VASliceParameterBufferH264 *)ff_vaapi_alloc_slice(avctx->hwaccel_context, buffer, size);
+    slice_param = (VASliceParameterBufferH264 *)ff_vaapi_alloc_slice(vactx, buffer, size);
     if (!slice_param)
         return -1;
     slice_param->slice_data_bit_offset          = get_bits_count(&sl->gb) + 8; /* bit buffer started beyond nal_unit_type */
@@ -358,8 +360,11 @@ AVHWAccel ff_h264_vaapi_hwaccel = {
     .name           = "h264_vaapi",
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_H264,
-    .pix_fmt        = AV_PIX_FMT_VAAPI_VLD,
+    .pix_fmt        = AV_PIX_FMT_VAAPI,
     .start_frame    = vaapi_h264_start_frame,
     .end_frame      = vaapi_h264_end_frame,
     .decode_slice   = vaapi_h264_decode_slice,
+    .init           = ff_vaapi_context_init,
+    .uninit         = ff_vaapi_context_fini,
+    .priv_data_size = sizeof(FFVAContext),
 };

@@ -1005,6 +1005,9 @@ static int read_sm_data(AVFormatContext *s, AVIOContext *bc, AVPacket *pkt, int 
         AV_WL32(dst+4, skip_end);
     }
 
+    if (avio_tell(bc) >= maxpos)
+        return AVERROR_INVALIDDATA;
+
     return 0;
 }
 
@@ -1277,6 +1280,8 @@ static int read_seek(AVFormatContext *s, int stream_index,
                             next_node[1]->pos, next_node[1]->pos,
                             next_node[0]->ts, next_node[1]->ts,
                             AVSEEK_FLAG_BACKWARD, &ts, nut_read_timestamp);
+        if (pos < 0)
+            return pos;
 
         if (!(flags & AVSEEK_FLAG_BACKWARD)) {
             dummy.pos    = pos + 16;
