@@ -755,6 +755,10 @@ void __init plat_mem_setup(void)
 		serial_print("AR9344\n");
 		ar71xx_soc = AR71XX_SOC_AR9344;
 		ar71xx_soc_rev = id & AR934X_REV_ID_REVISION_MASK;
+	} else if (is_qca9533_v2()) {
+		serial_print("QCA9533 V2\n");
+		ar71xx_soc = AR71XX_SOC_QCA9533;
+		ar71xx_soc_rev = 2;
 	} else if (is_qca9533()) {
 		serial_print("QCA9533\n");
 		ar71xx_soc = AR71XX_SOC_QCA9533;
