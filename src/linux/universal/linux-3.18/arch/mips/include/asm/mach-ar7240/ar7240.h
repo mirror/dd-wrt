@@ -889,6 +889,8 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_V2) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_REV_1_0))
 
+#define is_qca9533_v2()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_V2)
+
 #define is_qca9556()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9556_REV_1_3) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9556_REV_1_2) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9556_REV_1_1) || \
