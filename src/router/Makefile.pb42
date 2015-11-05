@@ -1808,6 +1808,12 @@ ifeq ($(CONFIG_WR1043V2),y)
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v1-firmware.bin mips-uclibc/tplink-ARCHER-C7v1-firmware.bin
 	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmware.bin mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B ARCHER-C7v1US -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v1-firmwareUS.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v1-firmwareUS.bin mips-uclibc/tplink-ARCHER-C7v1-firmwareUS.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C7v2US -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmwareUS.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmwareUS.bin mips-uclibc/tplink-ARCHER-C7v2-firmwareUS.bin
+
 	-./tools/tplink/mktplinkfw -B ARCHER-C5v1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C5v1-firmware.bin mips-uclibc/tplink-ARCHER-C5v1-firmware.bin
 	-./tools/tplink/mktplinkfw -B TL-WDR4900v2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
