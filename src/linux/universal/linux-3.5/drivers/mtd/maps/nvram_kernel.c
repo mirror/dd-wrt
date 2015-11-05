@@ -53,7 +53,7 @@ struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name, cons
 		return NULL;
 
 	if (!t) {
-		if (!(t = vmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1)))
+		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))
 			return NULL;
 
 		/* Copy name */
@@ -83,7 +83,7 @@ void _nvram_free(struct nvram_tuple *t)
 		nvram_offset = 0;
 		memset(nvram_buf, 0, sizeof(nvram_buf));
 	} else {
-		vfree(t);
+		kfree(t);
 	}
 }
 
@@ -276,7 +276,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 	unsigned long off;
 
 	if ((count + 1) > sizeof(tmp)) {
-		if (!(name = vmalloc(count + 1)))
+		if (!(name = kmalloc(count + 1,GFP_ATOMIC)))
 			return -ENOMEM;
 	}
 
@@ -315,7 +315,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 #endif
 done:
 	if (name != tmp)
-		vfree(name);
+		kfree(name);
 
 	return ret;
 }
@@ -326,7 +326,7 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 	ssize_t ret;
 
 	if (count >= sizeof(tmp)) {
-		if (!(name = vmalloc(count + 1)))
+		if (!(name = kmalloc(count + 1,GFP_ATOMIC)))
 			return -ENOMEM;
 	}
 
@@ -346,7 +346,7 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 		ret = count;
 done:
 	if (name != tmp)
-		vfree(name);
+		kfree(name);
 
 	return ret;
 }
