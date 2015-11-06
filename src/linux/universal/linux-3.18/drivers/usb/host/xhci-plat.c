@@ -129,6 +129,13 @@ static int xhci_plat_probe(struct platform_device *pdev)
 		if (ret)
 			goto disable_clk;
 	}
+	
+	if (of_device_is_compatible(pdev->dev.of_node,
+				     "marvell,armada-380-xhci")) {
+		ret = xhci_mvebu_vbus_init_quirk();
+		if (ret)
+		       goto disable_clk;
+	}
 
 	ret = usb_add_hcd(hcd, irq, IRQF_SHARED);
 	if (ret)
