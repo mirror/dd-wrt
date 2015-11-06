@@ -12,6 +12,7 @@
 #define __LINUX_XHCI_MVEBU_H
 #if IS_ENABLED(CONFIG_USB_XHCI_MVEBU)
 int xhci_mvebu_mbus_init_quirk(struct platform_device *pdev);
+int xhci_mvebu_vbus_init_quirk(void);
 #else
 static inline int xhci_mvebu_mbus_init_quirk(struct platform_device *pdev)
 {
