@@ -11,12 +11,17 @@
 #include <linux/mbus.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
+#include <linux/gpio.h>
+#include <linux/io.h>
+#include <linux/delay.h>
 
 #include "xhci-mvebu.h"
 
 #define USB3_MAX_WINDOWS	4
 #define USB3_WIN_CTRL(w)	(0x0 + ((w) * 8))
 #define USB3_WIN_BASE(w)	(0x4 + ((w) * 8))
+
+#define BLKN_GPIO         50
 
 static void xhci_mvebu_mbus_config(void __iomem *base,
 			const struct mbus_dram_target_info *dram)
@@ -70,3 +75,14 @@ int xhci_mvebu_mbus_init_quirk(struct platform_device *pdev)
 
 	return 0;
 }
+
+int xhci_mvebu_vbus_init_quirk(void)
+{
+        int gpio = BLKN_GPIO;
+
+        gpio_set_value(gpio, GPIOF_OUT_INIT_LOW);
+        mdelay(3000);
+        gpio_set_value(gpio, GPIOF_OUT_INIT_HIGH);
+        return 0;
+}
+
