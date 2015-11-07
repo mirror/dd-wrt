@@ -152,16 +152,6 @@ static void watchdog(void)
 
 			}
 
-			FILE *procfp;
-			procfp = fopen("/proc/irq/28/smp_affinity", "rb");
-			if (procfp) {
-				fscanf(procfp, "%d", &cpu);
-				fclose(procfp);
-				if (cpu != 2) {
-					system("/bin/echo 2 > /proc/irq/27/smp_affinity");
-					system("/bin/echo 2 > /proc/irq/28/smp_affinity");
-				}
-			}
 		}
 #endif
 
