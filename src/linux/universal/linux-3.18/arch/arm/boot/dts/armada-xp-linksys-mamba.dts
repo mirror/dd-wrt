@@ -88,7 +88,7 @@
 				status = "okay";
 
 				mwlwifi {
-					marvell,5ghz = <0>;
+					marvell,2ghz = <0>;
 					marvell,chainmask = <4 4>;
 					marvell,powertable {
 						FCC =
@@ -128,7 +128,7 @@
 				status = "okay";
 
 				mwlwifi {
-					marvell,2ghz = <0>;
+					marvell,5ghz = <0>;
 					marvell,chainmask = <4 4>;
 					marvell,powertable {
 						FCC =
