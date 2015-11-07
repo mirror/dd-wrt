@@ -640,6 +640,7 @@ endif
 	-./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC87U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac87u-firmware.trx
 	-./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC88U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac88u-firmware.trx
 	-./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC5300,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac5300-firmware.trx
+	-./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC3200,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac3200-firmware.trx
 	-./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-N18U,3.0.0.4,$(ARCH)-uclibc/asus_rt-n18u-firmware.trx
 	dd if=$(ARCH)-uclibc/northstar-firmware-squashfs.bin of=$(ARCH)-uclibc/buffalo.trx bs=131072 conv=sync
 	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh buffalo
