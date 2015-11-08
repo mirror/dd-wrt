@@ -406,12 +406,12 @@ void * generate_sysupgrade_image(const struct flash_partition_entry *flash_parts
 
 
 /** Generates an image for CPE210/220/510/520 and writes it to a file */
-static void do_cpe510(const char *support_list, const char *output, const char *kernel_image, const char *rootfs_image, bool add_jffs2_eof, bool sysupgrade) {
+static void do_cpe510(const char *support_list,const char *cfe_name, const char *output, const char *kernel_image, const char *rootfs_image, bool add_jffs2_eof, bool sysupgrade) {
 	struct image_partition_entry parts[7] = {};
 
 	
 	parts[0] = make_partition_table(cpe510_partitions);
-	parts[1] = read_file("fs-uboot", "cfe.bin", false);
+	parts[1] = read_file("fs-uboot", cfe_name, false);
 	parts[2] = read_file("os-image", kernel_image, false);
 	parts[3] = read_file("file-system", rootfs_image, add_jffs2_eof);
 	parts[4] = make_softversion(softversion, sizeof(softversion)-1);
@@ -514,13 +514,13 @@ int main(int argc, char *argv[]) {
 		error(1, 0, "no output filename has been specified");
 
 	if (strcmp(board, "ARCHERC9") == 0)
-		do_cpe510(archerc9_support_list, output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
+		do_cpe510(archerc9_support_list, "archerc9_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "ARCHERC9v2") == 0)
-		do_cpe510(archerc9v2_support_list, output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
+		do_cpe510(archerc9v2_support_list, "archerc9v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "ARCHERC8") == 0)
-		do_cpe510(archerc8_support_list, output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
+		do_cpe510(archerc8_support_list, "archerc8_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "ARCHERC8v2") == 0)
-		do_cpe510(archerc8v2_support_list, output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
+		do_cpe510(archerc8v2_support_list, "archerc8v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else
 		error(1, 0, "unsupported board %s", board);
 
