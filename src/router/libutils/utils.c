@@ -1194,6 +1194,12 @@ int internal_getRouterBrand()
 		return ROUTER_TPLINK_ARCHERC9;
 	}
 
+	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1112") && boardnum == 1) {
+		setRouter("TPLINK Archer C8");
+
+		return ROUTER_TPLINK_ARCHERC9;
+	}
+
 	if (nvram_match("boardtype", "0xD646") && nvram_match("boardrev", "0x1100") && nvram_match("0:devid", "0x43A1")) {
 		setRouter("Linksys EA6900");
 
