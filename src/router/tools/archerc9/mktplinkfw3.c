@@ -415,7 +415,7 @@ static void do_cpe510(const char *support_list, const char *output, const char *
 	parts[2] = read_file("os-image", kernel_image, false);
 	parts[3] = read_file("file-system", rootfs_image, add_jffs2_eof);
 	parts[4] = make_softversion(softversion, sizeof(softversion)-1);
-	parts[5] = make_support_list(support_list, sizeof(cpe510_support_list)-1);
+	parts[5] = make_support_list(support_list, strlen(support_list));
 	size_t len;
 	void *image;
 	if (sysupgrade)
