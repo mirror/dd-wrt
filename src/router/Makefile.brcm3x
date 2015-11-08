@@ -817,6 +817,8 @@ ifeq ($(CONFIG_NOAC),y)
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500v2_VC.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr3500L.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500L.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr3500Lv2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500lv2.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500Lv2.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr3500U.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500U.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr2000v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
