@@ -49,6 +49,7 @@ static void getMac(char *newmac)
 		break;
 	case ROUTER_NETGEAR_R8000:
 	case ROUTER_TRENDNET_TEW828:
+	case ROUTER_DLINK_DIR885:
 		strcpy(newmac, nvram_safe_get("et2macaddr"));
 		break;
 	default:
