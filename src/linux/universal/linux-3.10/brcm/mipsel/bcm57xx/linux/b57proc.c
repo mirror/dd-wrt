@@ -41,7 +41,7 @@ static int bcm5700_netdev_event(struct notifier_block * this, unsigned long even
 	struct net_device * event_dev = (struct net_device *)ptr;
 
 	if (event == NETDEV_CHANGENAME) {
-		if (event_dev->open == bcm5700_open) {
+		if (event_dev->netdev_ops->ndo_open == bcm5700_open) {
 			bcm5700_proc_remove_dev(event_dev);
 			bcm5700_proc_create_dev(event_dev);
 		}
@@ -59,7 +59,6 @@ proc_getdir(char *name, struct proc_dir_entry *proc_dir)
 {
 	struct proc_dir_entry *pde = proc_dir;
 
-	lock_kernel();
 	for (pde=pde->subdir; pde; pde = pde->next) {
 		if (pde->namelen && (strcmp(name, pde->name) == 0)) {
 			/* directory exists */
@@ -75,18 +74,16 @@ proc_getdir(char *name, struct proc_dir_entry *proc_dir)
 		pde = create_proc_entry(name, S_IFDIR, proc_dir);
 #endif
 		if (pde == (struct proc_dir_entry *) 0) {
-			unlock_kernel();
 			return (pde);
 		}
 	}
-	unlock_kernel();
 	return (pde);
 }
 
 int
 bcm5700_proc_create(void)
 {
-	bcm5700_procfs_dir = proc_getdir(NICINFO_PROC_DIR, proc_net);
+	bcm5700_procfs_dir = proc_getdir(NICINFO_PROC_DIR,  init_net.proc_net);
 
 	if (bcm5700_procfs_dir == (struct proc_dir_entry *) 0) {
 		printk(KERN_DEBUG "Could not create procfs nicinfo directory %s\n", NICINFO_PROC_DIR);
@@ -188,7 +185,7 @@ bcm5700_read_pfs(char *page, char **start, off_t off, int count,
 	int *eof, void *data)
 {
 	struct net_device *dev = (struct net_device *) data;
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 	PLM_DEVICE_BLOCK pDevice = &pUmDevice->lm_dev;
 	PT3_STATS_BLOCK pStats = (PT3_STATS_BLOCK) pDevice->pStatsBlkVirt;
 	int len = 0;
@@ -456,7 +453,7 @@ bcm5700_read_pfs(char *page, char **start, off_t off, int count,
 int
 bcm5700_proc_create_dev(struct net_device *dev)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 
 	if (!bcm5700_procfs_dir)
 		return -1;
@@ -473,7 +470,7 @@ bcm5700_proc_create_dev(struct net_device *dev)
 int
 bcm5700_proc_remove_dev(struct net_device *dev)
 {
-	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK) netdev_priv(dev);
 
 	remove_proc_entry(pUmDevice->pfs_name, bcm5700_procfs_dir);
 	return 0;

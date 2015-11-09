@@ -188,6 +188,17 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
 
+/* For CFE builds this gets passed in thru the makefile */
+#if defined(CONFIG_ARM)
+#define NVSIZE                 0x20000
+#define MAX_NVRAM_SPACE		NVSIZE
+#define DEF_NVRAM_SPACE		0x10000
+#else
+#define MAX_NVRAM_SPACE		NVRAM_SPACE
+#define DEF_NVRAM_SPACE		0x10000
+#endif
+
+
 #if !defined(CONFIG_BCM80211AC) && !defined(CONFIG_ARM) && !defined(HAVE_NORTHSTAR)
 #if defined(CONFIG_NVRAM_60K)
 #define NVRAM_SPACE		0xf000
@@ -220,7 +231,6 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define VAR_NAME_VALUE(var) #var "="  VALUE(var)
 #pragma message (VAR_NAME_VALUE(NVRAM_SPACE))
 
-#define MAX_NVRAM_SPACE		NVRAM_SPACE
 #define ROM_ENVRAM_SPACE	0x1000
 #define NVRAM_LZMA_MAGIC	0x4c5a4d41	/* 'LZMA' */
 
