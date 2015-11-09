@@ -32,7 +32,7 @@
 #include <broadcom.h>
 #include <cymac.h>
 
-#ifndef HAVE_IAS
+#if !defined(HAVE_IAS) && !defined(HAVE_BUFFALO)
 char *nvram_selget(webs_t wp, char *name)
 {
 	if (nvram_match("gozila_action", "1")) {
