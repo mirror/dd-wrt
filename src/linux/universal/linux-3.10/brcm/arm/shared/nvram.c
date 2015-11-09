@@ -102,7 +102,7 @@ BCMINITFN(nvram_rehash)(struct nvram_header *header)
 {
 	char buf[] = "0xXXXXXXXX", *name, *value, *end, *eq;
 	char *nvram_space_str = _nvram_get("nvram_space");
-	unsigned long nvram_space = MAX_NVRAM_SPACE;
+	unsigned long nvram_space = DEF_NVRAM_SPACE; // default, not max
 
 	if (nvram_space_str)
 		nvram_space =  bcm_strtoul(nvram_space_str, NULL, 0);
@@ -270,7 +270,6 @@ BCMINITFN(_nvram_commit)(struct nvram_header *header)
 
 	if (nvram_space < DEF_NVRAM_SPACE)
 		nvram_space = DEF_NVRAM_SPACE;
-
 	/* Regenerate header */
 	header->magic = NVRAM_MAGIC;
 	header->crc_ver_init = (NVRAM_VERSION << 8);
