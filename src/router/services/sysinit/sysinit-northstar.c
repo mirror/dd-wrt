@@ -2203,14 +2203,14 @@ void start_sysinit(void)
 		}
 		break;
 	case ROUTER_DLINK_DIR885:
-		if (!strncmp(nvram_safe_get("et0macaddr"), "00:90", 5) || !strncmp(nvram_safe_get("et0macaddr"), "00:00", 5)) {
+		if (!strncmp(nvram_safe_get("et2macaddr"), "00:90", 5) || !strncmp(nvram_safe_get("et2macaddr"), "00:00", 5)) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
 			fread(buf, 1, 24, fp);
 			pclose(fp);
 			buf[24] = 0;
 			fprintf(stderr, "set main mac %s\n", &buf[7]);
-			nvram_set("et0macaddr", &buf[7]);
+			nvram_set("et2macaddr", &buf[7]);
 
 			fp = popen("cat /dev/mtdblock0|grep wlan24mac=", "r");
 			fread(buf, 1, 27, fp);
@@ -2227,6 +2227,8 @@ void start_sysinit(void)
 			nvram_set("1:macaddr", &buf[10]);
 			nvram_commit();
 		}
+		nvram_unset("et0macaddr");
+		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_DLINK_DIR880:
 		if (nvram_get("0:venid") == NULL) {
