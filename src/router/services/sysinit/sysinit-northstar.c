@@ -3709,13 +3709,9 @@ void start_sysinit(void)
 	insmod("switch-core");
 	insmod("switch-robo");
 
-#ifndef HAVE_SAMBA
-	if (!nvram_match("samba3_enable", "1"))
-#endif
-	{			// not set txworkq 
-		set_smp_affinity(163, 2);
-		set_smp_affinity(169, 2);
-	}
+	set_smp_affinity(163, 1); //eth1 and eth2  on core 0
+	set_smp_affinity(169, 2); //eth3 or eth2 core 1
+	
 	set_smp_affinity(111, 2);
 	set_smp_affinity(112, 2);
 
