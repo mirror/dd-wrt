@@ -69,8 +69,8 @@ static void create_pptp_config(char *servername, char *username)
 	/*
 	 * Generate options file 
 	 */
-	if (!(fp = fopen("/tmp/ppp/options", "w"))) {
-		perror("/tmp/ppp/options");
+	if (!(fp = fopen("/tmp/ppp/options.pptp", "w"))) {
+		perror("/tmp/ppp/options.pptp");
 		return;
 	}
 	fprintf(fp, "defaultroute\n");	// Add a default route to the 
@@ -133,7 +133,7 @@ static void create_pptp_config(char *servername, char *username)
 	fprintf(fp, "noipdefault\n");
 	fprintf(fp, "lock\n");
 	fprintf(fp, "noauth\n");
-	fprintf(fp, "debug\n" "logfd 2\n");
+	//fprintf(fp, "debug\n" "logfd 2\n");
 
 	if (nvram_invmatch("pptp_extraoptions", ""))
 		fwritenvram("pptp_extraoptions", fp);
@@ -146,7 +146,7 @@ void start_pptp(int status)
 {
 	int ret;
 	FILE *fp;
-	char *pptp_argv[] = { "pppd",
+	char *pptp_argv[] = { "pppd", "file", "/tmp/ppp/options.pptp",
 		NULL
 	};
 	char username[80], passwd[80];
