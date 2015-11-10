@@ -25,7 +25,7 @@
  */
 
 /* ProFTPD module definitions.
- * $Id: modules.h,v 1.59 2012/04/15 18:04:14 castaglia Exp $
+ * $Id: modules.h,v 1.59 2012-04-15 18:04:14 castaglia Exp $
  */
 
 #ifndef PR_MODULES_H

@@ -23,7 +23,7 @@
  */
 
 /* Variables API implementation
- * $Id: var.c,v 1.8 2013/10/06 05:30:31 castaglia Exp $
+ * $Id: var.c,v 1.8 2013-10-06 05:30:31 castaglia Exp $
  */
 
 #include "conf.h"

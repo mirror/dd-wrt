@@ -27,7 +27,7 @@
  * This module is based in part on code in Alan DeKok's (aland@freeradius.org)
  * mod_auth_radius for Apache, in part on the FreeRADIUS project's code.
  *
- * $Id: mod_radius.c,v 1.72 2014/01/06 18:37:44 castaglia Exp $
+ * $Id: mod_radius.c,v 1.72 2014-01-06 18:37:44 castaglia Exp $
  */
 
 #define MOD_RADIUS_VERSION "mod_radius/0.9.2"

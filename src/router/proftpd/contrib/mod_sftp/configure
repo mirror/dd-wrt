@@ -4166,6 +4166,9 @@ fi
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
+LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+LIBS="-lcrypto -lz $LIBS"
+
 { echo "$as_me:$LINENO: checking whether OpenSSL has crippled AES support" >&5
 echo $ECHO_N "checking whether OpenSSL has crippled AES support... $ECHO_C" >&6; }
 cat >conftest.$ac_ext <<_ACEOF
@@ -4212,6 +4215,7 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 
     { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
+    LIBS="$saved_libs"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -4225,12 +4229,16 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_AES_CRIPPLED_OPENSSL 1
 _ACEOF
 
+    LIBS="$saved_libs"
 
 
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
+
+LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+LIBS="-lcrypto -lz $LIBS"
 
 { echo "$as_me:$LINENO: checking whether OpenSSL supports SHA256" >&5
 echo $ECHO_N "checking whether OpenSSL supports SHA256... $ECHO_C" >&6; }
@@ -4280,6 +4288,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_SHA256_OPENSSL 1
 _ACEOF
 
+    LIBS="$saved_libs"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -4288,12 +4297,16 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
     { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
+    LIBS="$saved_libs"
 
 
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
+
+LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+LIBS="-lcrypto -lz $LIBS"
 
 { echo "$as_me:$LINENO: checking whether OpenSSL supports SHA512" >&5
 echo $ECHO_N "checking whether OpenSSL supports SHA512... $ECHO_C" >&6; }
@@ -4343,6 +4356,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_SHA512_OPENSSL 1
 _ACEOF
 
+    LIBS="$saved_libs"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -4351,6 +4365,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
     { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
+    LIBS="$saved_libs"
 
 
 fi

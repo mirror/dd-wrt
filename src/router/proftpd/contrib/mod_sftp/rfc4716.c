@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: rfc4716.c,v 1.19 2013/06/06 16:45:55 castaglia Exp $
+ * $Id: rfc4716.c,v 1.19 2013-06-06 16:45:55 castaglia Exp $
  */
 
 #include "mod_sftp.h"

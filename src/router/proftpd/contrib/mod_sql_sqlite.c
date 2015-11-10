@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_sqlite -- Support for connecting to SQLite databases
  *
- * Copyright (c) 2004-2013 TJ Saunders
+ * Copyright (c) 2004-2014 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_sql_sqlite.c,v 1.24 2013/10/07 05:51:29 castaglia Exp $
+ * $Id: mod_sql_sqlite.c,v 1.24 2013-10-07 05:51:29 castaglia Exp $
  * $Libraries: -lsqlite3 $
  */
 
@@ -919,7 +919,6 @@ MODRET sql_sqlite_query(cmd_rec *cmd) {
 
 MODRET sql_sqlite_quote(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
-  db_conn_t *conn = NULL;
   modret_t *mr = NULL;
   char *unescaped = NULL;
   char *escaped = NULL;
@@ -947,8 +946,6 @@ MODRET sql_sqlite_quote(cmd_rec *cmd) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_escapestring");
     return mr;
   }
-
-  conn = (db_conn_t *) entry->data;
 
   unescaped = cmd->argv[1];
   tmp = sqlite3_mprintf("%q", unescaped);

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Routines to work with ProFTPD bindings
- * $Id: bindings.c,v 1.52 2013/11/09 23:34:34 castaglia Exp $
- */
+/* Routines to work with ProFTPD bindings */
 
 #include "conf.h"
 
@@ -719,9 +717,9 @@ int pr_ipbind_open(pr_netaddr_t *addr, unsigned int port, conn_t *listen_conn,
       res = pr_namebind_open(nb->nb_name, nb->nb_server->addr,
         nb->nb_server->ServerPort);
       if (res < 0) {
-        pr_log_pri(PR_LOG_NOTICE,
-          "%s:%d: notice: unable to open namebind '%s': %s", __FILE__,
-          __LINE__, nb->nb_name, strerror(errno));
+        pr_trace_msg(trace_channel, 2,
+          "notice: unable to open namebind '%s': %s", nb->nb_name,
+          strerror(errno));
       }
     }
   }
@@ -1176,13 +1174,13 @@ static int init_standalone_bindings(void) {
 
         res = pr_namebind_open(c->argv[0], serv->addr, serv->ServerPort);
         if (res < 0) {
-          pr_log_pri(PR_LOG_NOTICE,
-            "%s:%d: notice: unable to open namebind '%s': %s", __FILE__,
-            __LINE__, (char *) c->argv[0], strerror(errno));
+          pr_trace_msg(trace_channel, 2, 
+            "notice: unable to open namebind '%s': %s", (char *) c->argv[0],
+            strerror(errno));
         }
 
       } else {
-        pr_log_pri(PR_LOG_NOTICE,
+        pr_trace_msg(trace_channel, 2,
           "unable to create namebind for '%s' to %s#%u: %s",
           (char *) c->argv[0], pr_netaddr_get_ipstr(serv->addr),
           serv->ServerPort, strerror(errno));

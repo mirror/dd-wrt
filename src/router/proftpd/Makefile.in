@@ -223,6 +223,9 @@ spec:
 dist: depend distclean spec
 	rm -rf `find . -name CVS`
 	rm -rf `find . -name .cvsignore`
+	rm -rf `find . -name .git`
+	rm -rf `find . -name .gitignore`
+	rm -rf `find . -name .travis.yml`
 	rm -rf `find . -name core`
 	rm -rf `find . -name '*~'`
 	rm -fr `find . -name '*.bak'`

@@ -26,7 +26,7 @@
  * This is mod_dynmasq, contrib software for proftpd 1.2.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_dynmasq.c,v 1.11 2013/10/13 22:51:36 castaglia Exp $
+ * $Id: mod_dynmasq.c,v 1.11 2013-10-13 22:51:36 castaglia Exp $
  */
 
 #include "conf.h"

@@ -2,7 +2,7 @@
  * ProFTPD: mod_shaper -- a module implementing daemon-wide rate throttling
  *                        via IPC
  *
- * Copyright (c) 2004-2013 TJ Saunders
+ * Copyright (c) 2004-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * This is mod_shaper, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_shaper.c,v 1.18 2013/10/13 22:51:36 castaglia Exp $
+ * $Id: mod_shaper.c,v 1.18 2013-10-13 22:51:36 castaglia Exp $
  */
 
 #include "conf.h"
@@ -2292,6 +2292,10 @@ static void shaper_postparse_ev(const void *event_data, void *user_data) {
 
 static void shaper_restart_ev(const void *event_data, void *user_data) {
   register unsigned int i;
+
+  (void) close(shaper_logfd);
+  shaper_logfd = -1;
+  shaper_log_path = NULL;
 
   if (shaper_pool) {
     destroy_pool(shaper_pool);

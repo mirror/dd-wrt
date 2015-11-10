@@ -35,7 +35,7 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lpam$
- * $Id: mod_auth_pam.c,v 1.30 2013/10/13 17:34:01 castaglia Exp $
+ * $Id: mod_auth_pam.c,v 1.30 2013-10-13 17:34:01 castaglia Exp $
  */
 
 #include "conf.h"

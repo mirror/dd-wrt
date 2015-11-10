@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD xferlog(5) logging support.
- * $Id: xferlog.c,v 1.12 2013/02/15 22:39:00 castaglia Exp $
+ * $Id: xferlog.c,v 1.12 2013-02-15 22:39:00 castaglia Exp $
  */
 
 #include "conf.h"

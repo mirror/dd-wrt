@@ -31,7 +31,7 @@
  */
 
 /* sample module for ProFTPD
- * $Id: mod_sample.c,v 1.11 2011/05/23 21:08:34 castaglia Exp $
+ * $Id: mod_sample.c,v 1.11 2011-05-23 21:08:34 castaglia Exp $
  */
 
 #include "conf.h"

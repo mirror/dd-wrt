@@ -23,7 +23,7 @@
  */
 
 /* Children management code
- * $Id: child.c,v 1.9 2013/10/08 07:01:43 castaglia Exp $
+ * $Id: child.c,v 1.9 2013-10-08 07:01:43 castaglia Exp $
  */
 
 #include "conf.h"

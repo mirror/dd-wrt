@@ -23,7 +23,7 @@
  */
 
 /* Scoreboard API tests
- * $Id: scoreboard.c,v 1.10 2013/01/05 03:36:39 castaglia Exp $
+ * $Id: scoreboard.c,v 1.10 2013-01-05 03:36:39 castaglia Exp $
  */
 
 #include "tests.h"

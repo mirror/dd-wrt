@@ -23,7 +23,7 @@
  */
 
 /* Timers API tests
- * $Id: timers.c,v 1.7 2013/09/24 01:21:16 castaglia Exp $
+ * $Id: timers.c,v 1.7 2013-09-24 01:21:16 castaglia Exp $
  */
 
 #include "tests.h"

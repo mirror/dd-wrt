@@ -26,7 +26,7 @@
 /* ProFTPD default path configuration.  Normally, Makefiles generated
  * by the top-level configuration script define the PR_RUN_DIR and
  * PR_CONFIG_FILE_PATH macros, so the two below are typically not used.
- * $Id: default_paths.h,v 1.12 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: default_paths.h,v 1.12 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PROFTPD_PATHS_H

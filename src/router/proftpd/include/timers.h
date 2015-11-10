@@ -23,7 +23,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: timers.h,v 1.18 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: timers.h,v 1.18 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_TIMERS_H

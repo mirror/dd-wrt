@@ -23,7 +23,7 @@
  */
 
 /* Scoreboard routines
- * $Id: scoreboard.h,v 1.22 2012/01/27 01:02:58 castaglia Exp $
+ * $Id: scoreboard.h,v 1.22 2012-01-27 01:02:58 castaglia Exp $
  */
 
 #ifndef PR_SCOREBOARD_H

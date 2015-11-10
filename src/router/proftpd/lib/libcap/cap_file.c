@@ -1,5 +1,5 @@
 /*
- * $Id: cap_file.c,v 1.1 2003/01/03 02:16:17 jwm Exp $
+ * $Id: cap_file.c,v 1.1 2003-01-03 02:16:17 jwm Exp $
  *
  * Copyright (c) 1997 Andrew G Morgan <morgan@linux.kernel.org>
  *
@@ -99,7 +99,7 @@ int cap_set_file(const char *filename, cap_t cap_d)
 
 /*
  * $Log: cap_file.c,v $
- * Revision 1.1  2003/01/03 02:16:17  jwm
+ * Revision 1.1  2003-01-03 02:16:17  jwm
  *
  * Turning mod_linuxprivs into a core module, mod_cap. This is by no means
  * complete.

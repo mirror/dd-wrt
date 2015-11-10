@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Inet support functions, many wrappers for netdb functions
- * $Id: inet.c,v 1.156 2013/10/07 05:51:30 castaglia Exp $
- */
+/* Inet support functions, many wrappers for netdb functions */
 
 #include "conf.h"
 #include "privs.h"
@@ -488,17 +486,10 @@ conn_t *pr_inet_create_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
   conn_t *c = NULL;
 
   c = init_conn(p, fd, bind_addr, port, retry_bind, TRUE);
-
-  if (!is_master) {
-    /* This code is somewhat of a kludge, because error handling should
-     * NOT occur in inet.c, it should be handled by the caller.
-     */
-    if (c == NULL) {
-      pr_session_disconnect(NULL, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
-    }
+  if (c == NULL) {
+    errno = inet_errno;
   }
 
-  errno = inet_errno;
   return c;
 }
 
@@ -766,13 +757,21 @@ int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
   }
 #endif /* IP_TOS */
 
-#ifdef IPV6_TCLASS
+#if defined(PR_USE_IPV6) && defined(IPV6_TCLASS)
   if (pr_netaddr_use_ipv6()) {
     /* Only set TCLASS flags on IPv6 sockets; IPv4 sockets use TOS. */
     if (pr_netaddr_get_family(c->local_addr) == AF_INET6) {
       if (c->listen_fd != -1) {
-        if (setsockopt(c->listen_fd, ip_level, IPV6_TCLASS, (void *) &tos,
-            sizeof(tos)) < 0) {
+        int level, res;
+
+        level = ipv6_proto;
+        res = setsockopt(c->listen_fd, level, IPV6_TCLASS, (void *) &tos,
+          sizeof(tos));
+        if (res < 0
+#ifdef ENOPROTOOPT
+            && errno != ENOPROTOOPT
+#endif /* !ENOPROTOOPT */
+          ) {
           pr_log_pri(PR_LOG_NOTICE, "error setting listen fd IPV6_TCLASS: %s",
             strerror(errno));
         }

@@ -23,7 +23,7 @@
  */
 
 /* TransferRate throttling
- * $Id: throttle.c,v 1.12 2012/12/28 02:56:32 castaglia Exp $
+ * $Id: throttle.c,v 1.12 2012-12-28 02:56:32 castaglia Exp $
  */
 
 #include "conf.h"

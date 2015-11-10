@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: asn1.h,v 1.1 2013/05/15 15:20:26 castaglia Exp $
+ * $Id: asn1.h,v 1.1 2013-05-15 15:20:26 castaglia Exp $
  */
 
 #include "mod_snmp.h"

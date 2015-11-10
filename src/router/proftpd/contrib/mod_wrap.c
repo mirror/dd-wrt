@@ -24,7 +24,7 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lwrap -lnsl$
- * $Id: mod_wrap.c,v 1.28 2013/10/13 22:51:36 castaglia Exp $
+ * $Id: mod_wrap.c,v 1.28 2013-10-13 22:51:36 castaglia Exp $
  */
 
 #define MOD_WRAP_VERSION "mod_wrap/1.2.4"

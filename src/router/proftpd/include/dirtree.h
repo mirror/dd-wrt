@@ -25,7 +25,7 @@
  */
 
 /* Configuration structure, server, command and associated prototypes.
- * $Id: dirtree.h,v 1.88 2013/07/16 19:06:13 castaglia Exp $
+ * $Id: dirtree.h,v 1.88 2013-07-16 19:06:13 castaglia Exp $
  */
 
 #ifndef PR_DIRTREE_H
@@ -126,6 +126,14 @@ typedef struct cmd_struc {
   pr_table_t *notes;		/* Private data for passing/retaining between handlers */
 
   int cmd_id;			/* Index into commands list, for faster comparisons */
+
+  /* If we detect that the client sent commands for a protocol OTHER than
+   * FTP, then this field will be FALSE; the protocol field will identify
+   * the detected protocol.
+   */
+  int is_ftp;
+  const char *protocol;
+
 } cmd_rec;
 
 struct config_struc {

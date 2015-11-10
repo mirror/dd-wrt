@@ -23,7 +23,7 @@
  */
 
 /* String manipulation functions
- * $Id: str.h,v 1.11 2013/11/24 00:45:29 castaglia Exp $
+ * $Id: str.h,v 1.11 2013-11-24 00:45:29 castaglia Exp $
  */
 
 #ifndef PR_STR_H

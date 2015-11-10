@@ -1,5 +1,5 @@
 /*
- * $Id: cap_alloc.c,v 1.3 2008/08/06 17:00:41 castaglia Exp $
+ * $Id: cap_alloc.c,v 1.3 2008-08-06 17:00:41 castaglia Exp $
  *
  * Copyright (c) 1997-8 Andrew G Morgan <morgan@linux.kernel.org>
  *
@@ -123,7 +123,7 @@ int cap_free(void *data_p)
 
 /*
  * $Log: cap_alloc.c,v $
- * Revision 1.3  2008/08/06 17:00:41  castaglia
+ * Revision 1.3  2008-08-06 17:00:41  castaglia
  *
  * Bug#3096 - libcap version errors on newer Linux kernel.  Newer Linux kernels
  * have a _LINUX_CAPABILITY_VERSION_2 macro, and redefine the old

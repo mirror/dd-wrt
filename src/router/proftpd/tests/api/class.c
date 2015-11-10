@@ -24,7 +24,7 @@
 
 /*
  * Class API tests
- * $Id: class.c,v 1.2 2011/05/23 20:50:30 castaglia Exp $
+ * $Id: class.c,v 1.2 2011-05-23 20:50:30 castaglia Exp $
  */
 
 #include "tests.h"

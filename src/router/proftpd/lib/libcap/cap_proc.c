@@ -1,5 +1,5 @@
 /*
- * $Id: cap_proc.c,v 1.2 2008/08/06 17:00:41 castaglia Exp $
+ * $Id: cap_proc.c,v 1.2 2008-08-06 17:00:41 castaglia Exp $
  *
  * Copyright (c) 1997-8 Andrew G Morgan <morgan@linux.kernel.org>
  *
@@ -89,7 +89,7 @@ int capsetp(pid_t pid, cap_t cap_d)
 
 /*
  * $Log: cap_proc.c,v $
- * Revision 1.2  2008/08/06 17:00:41  castaglia
+ * Revision 1.2  2008-08-06 17:00:41  castaglia
  *
  * Bug#3096 - libcap version errors on newer Linux kernel.  Newer Linux kernels
  * have a _LINUX_CAPABILITY_VERSION_2 macro, and redefine the old

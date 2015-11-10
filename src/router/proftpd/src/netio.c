@@ -23,7 +23,7 @@
  */
 
 /* NetIO routines
- * $Id: netio.c,v 1.63 2014/01/06 06:57:16 castaglia Exp $
+ * $Id: netio.c,v 1.63 2014-01-06 06:57:16 castaglia Exp $
  */
 
 #include "conf.h"

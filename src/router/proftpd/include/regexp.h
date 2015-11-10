@@ -23,7 +23,7 @@
  */
 
 /* Regular expression management
- * $Id: regexp.h,v 1.9 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: regexp.h,v 1.9 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_REGEXP_H

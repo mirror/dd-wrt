@@ -2,7 +2,7 @@
  * ProFTPD: mod_sql_postgres -- Support for connecting to Postgres databases.
  * Time-stamp: <1999-10-04 03:21:21 root>
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2013 TJ Saunders
+ * Copyright (c) 2004-2014 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql_postgres.c,v 1.56 2013/10/09 04:57:13 castaglia Exp $
+ * $Id: mod_sql_postgres.c,v 1.56 2013-10-09 04:57:13 castaglia Exp $
  * $Libraries: -lm -lpq $
  */
 
@@ -1387,7 +1387,6 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
  */
 MODRET cmd_checkauth(cmd_rec * cmd) {
   conn_entry_t *entry = NULL;
-  db_conn_t *conn = NULL;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_checkauth");
 
@@ -1405,8 +1404,6 @@ MODRET cmd_checkauth(cmd_rec * cmd) {
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "unknown named connection");
   }
-
-  conn = (db_conn_t *) entry->data;
 
   sql_log(DEBUG_WARN, MOD_SQL_POSTGRES_VERSION
     ": Postgres does not support the 'Backend' SQLAuthType");

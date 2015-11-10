@@ -24,7 +24,7 @@
  * This is mod_exec, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_exec.c,v 1.40 2014/05/02 21:13:33 castaglia Exp $
+ * $Id: mod_exec.c,v 1.40 2014-05-02 21:13:33 castaglia Exp $
  */
 
 #include "conf.h"

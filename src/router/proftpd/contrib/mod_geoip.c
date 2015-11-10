@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_geoip -- a module for looking up country/city/etc for clients
  *
- * Copyright (c) 2010-2013 TJ Saunders
+ * Copyright (c) 2010-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
  * --- DO NOT DELETE BELOW THIS LINE ----
- * $Id: mod_geoip.c,v 1.10 2013/10/13 22:51:36 castaglia Exp $
  * $Libraries: -lGeoIP$
  */
 
@@ -37,7 +36,7 @@
  * module for Apache.
  */
 
-#define MOD_GEOIP_VERSION		"mod_geoip/0.5"
+#define MOD_GEOIP_VERSION		"mod_geoip/0.6"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030402
@@ -135,12 +134,12 @@ static const char *get_geoip_filter_name(int);
 static const char *get_geoip_filter_value(int);
 
 static int check_geoip_filters(geoip_policy_e policy) {
-  int matched_allow_filter = -1, allow_conn = 0;
+  int allow_conn = 0, matched_allow_filter = -1, matched_deny_filter = -1;
 #if PR_USE_REGEX
   config_rec *c;
 
   c = find_config(main_server->conf, CONF_PARAM, "GeoIPAllowFilter", FALSE);
-  while (c) {
+  while (c != NULL) {
     int filter_id, res;
     pr_regex_t *filter_re;
     const char *filter_name, *filter_pattern, *filter_value;
@@ -170,6 +169,9 @@ static int check_geoip_filters(geoip_policy_e policy) {
       filter_pattern);
 
     if (res == 0) {
+      (void) pr_log_writefile(geoip_logfd, MOD_GEOIP_VERSION,
+        "%s filter value '%s' matched GeoIPAllowFilter pattern '%s'",
+        filter_name, filter_value, filter_pattern);
       matched_allow_filter = TRUE;
       break;
     }
@@ -182,12 +184,16 @@ static int check_geoip_filters(geoip_policy_e policy) {
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "GeoIPDenyFilter", FALSE);
-  while (c) {
+  while (c != NULL) {
     int filter_id, res;
     pr_regex_t *filter_re;
     const char *filter_name, *filter_pattern, *filter_value;
 
     pr_signals_handle();
+
+    if (matched_deny_filter == -1) {
+      matched_deny_filter = FALSE;
+    }
 
     filter_id = *((int *) c->argv[0]);
     filter_pattern = c->argv[1];
@@ -211,8 +217,13 @@ static int check_geoip_filters(geoip_policy_e policy) {
       (void) pr_log_writefile(geoip_logfd, MOD_GEOIP_VERSION,
         "%s filter value '%s' matched GeoIPDenyFilter pattern '%s'",
         filter_name, filter_value, filter_pattern);
-      return -1;
+      matched_deny_filter = TRUE;
+      break;
     }
+
+    (void) pr_log_writefile(geoip_logfd, MOD_GEOIP_VERSION,
+      "%s filter value '%s' did not match GeoIPDenyFilter pattern '%s'",
+      filter_name, filter_value, filter_pattern);
 
     c = find_config_next(c, c->next, CONF_PARAM, "GeoIPDenyFilter", FALSE);
   }
@@ -220,7 +231,20 @@ static int check_geoip_filters(geoip_policy_e policy) {
 
   switch (policy) {
     case GEOIP_POLICY_ALLOW_DENY:
-      allow_conn = 0;
+      if (matched_deny_filter == TRUE &&
+          matched_allow_filter != TRUE) {
+        /* If we explicitly matched any deny filters AND have NOT explicitly
+         * matched any allow filters, the connection is rejected, otherwise,
+         * it is allowed.
+         */
+        (void) pr_log_writefile(geoip_logfd, MOD_GEOIP_VERSION,
+          "client matched GeoIPDenyFilter, rejecting connection");
+        allow_conn = -1;
+
+      } else {
+        pr_trace_msg(trace_channel, 9,
+          "allowing client connection (policy 'allow,deny')");
+      }
       break;
 
     case GEOIP_POLICY_DENY_ALLOW:
@@ -228,7 +252,13 @@ static int check_geoip_filters(geoip_policy_e policy) {
         /* If we have not explicitly matched any allow filters, then
          * reject the connection.
          */
+        (void) pr_log_writefile(geoip_logfd, MOD_GEOIP_VERSION,
+          "client did not match any GeoIPAllowFilters, rejecting connection");
         allow_conn = -1;
+
+      } else {
+        pr_trace_msg(trace_channel, 9,
+          "allowing client connection (policy 'deny,allow')");
       }
       break;
   }

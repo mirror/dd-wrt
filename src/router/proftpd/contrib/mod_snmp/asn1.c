@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp ASN.1 support
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: asn1.c,v 1.1 2013/05/15 15:20:25 castaglia Exp $
+ * $Id: asn1.c,v 1.1 2013-05-15 15:20:25 castaglia Exp $
  */
 
 #include "mod_snmp.h"
@@ -242,7 +242,6 @@ static int asn1_read_len(pool *p, unsigned char **buf, size_t *buflen,
 
 int snmp_asn1_read_header(pool *p, unsigned char **buf, size_t *buflen,
     unsigned char *asn1_type, unsigned int *asn1_len, int flags) {
-  size_t orig_buflen;
   unsigned int objlen;
   int res;
 
@@ -257,8 +256,6 @@ int snmp_asn1_read_header(pool *p, unsigned char **buf, size_t *buflen,
     errno = EPERM;
     return -1;
   }
-
-  orig_buflen = *buflen;
 
   /* Type */
   res = asn1_read_type(p, buf, buflen, asn1_type, flags);

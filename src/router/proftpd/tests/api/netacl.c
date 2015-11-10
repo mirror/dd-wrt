@@ -23,7 +23,7 @@
  */
 
 /* NetACL API tests
- * $Id: netacl.c,v 1.4 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: netacl.c,v 1.4 2011-05-23 20:50:31 castaglia Exp $
  */
 
 #include "tests.h"

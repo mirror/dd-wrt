@@ -23,7 +23,7 @@
  */
 
 /* Network address API
- * $Id: netaddr.h,v 1.36 2013/12/23 17:53:42 castaglia Exp $
+ * $Id: netaddr.h,v 1.36 2013-12-23 17:53:42 castaglia Exp $
  */
 
 #ifndef PR_NETADDR_H

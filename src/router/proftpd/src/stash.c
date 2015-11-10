@@ -23,7 +23,7 @@
  */
 
 /* Symbol table hashes
- * $Id: stash.c,v 1.12 2014/02/11 15:17:04 castaglia Exp $
+ * $Id: stash.c,v 1.12 2014-02-11 15:17:04 castaglia Exp $
  */
 
 #include "conf.h"

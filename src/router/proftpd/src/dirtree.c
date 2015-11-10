@@ -25,7 +25,7 @@
  */
 
 /* Read configuration file(s), and manage server/configuration structures.
- * $Id: dirtree.c,v 1.292 2013/10/13 18:06:57 castaglia Exp $
+ * $Id: dirtree.c,v 1.292 2013-10-13 18:06:57 castaglia Exp $
  */
 
 #include "conf.h"

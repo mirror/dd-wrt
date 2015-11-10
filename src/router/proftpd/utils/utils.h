@@ -26,7 +26,7 @@
 
 /* Scoreboard routines.
  *
- * $Id: utils.h,v 1.29 2013/02/15 22:33:23 castaglia Exp $
+ * $Id: utils.h,v 1.29 2013-02-15 22:33:23 castaglia Exp $
  */
 
 #ifndef UTILS_UTILS_H
