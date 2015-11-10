@@ -134,7 +134,7 @@ void start_l2tp(int status)
 			"redial timeout = 15\n"	//
 			"require authentication = %s\n"	//
 			"name = %s\n"	//
-			"pppoptfile = /tmp/ppp/options\n"	//
+			"pppoptfile = /tmp/ppp/options.l2tp\n"	//
 			"length bit = yes\n", nvram_safe_get("l2tp_server_name"), nvram_safe_get("l2tp_server_name"), nvram_match("l2tp_req_chap", "0") ? "no" : "yes", nvram_match("l2tp_ref_pap", "0") ? "no" : "yes",
 			nvram_match("l2tp_req_auth", "0") ? "no" : "yes", username);
 		fclose(fp);
@@ -142,8 +142,8 @@ void start_l2tp(int status)
 		/*
 		 * Generate options file 
 		 */
-		if (!(fp = fopen("/tmp/ppp/options", "w"))) {
-			perror("/tmp/ppp/options");
+		if (!(fp = fopen("/tmp/ppp/options.l2tp", "w"))) {
+			perror("/tmp/ppp/options.l2tp");
 			return;
 		}
 
