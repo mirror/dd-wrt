@@ -28,7 +28,7 @@ obj-$(CONFIG_IPTABLES) += iptables
 obj-$(CONFIG_LIBIPT) += iptables
 obj-$(CONFIG_IPSEC) += ipsec
 obj-$(CONFIG_LIBPCAP) += libpcap
-obj-$(CONFIG_WIVIZ) += wiviz2
+obj-$(CONFIG_WIVIZ) += libpcap wiviz2
 obj-$(CONFIG_TCPDUMP) += tcpdump
 obj-$(CONFIG_KISMETDRONE) += kismet-devel
 obj-$(CONFIG_NETSTATNAT) += netstatnat
@@ -166,6 +166,7 @@ obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_GPSD) += gpsd
 obj-$(CONFIG_PHP5) += php5
 obj-$(CONFIG_FREERADIUS) += freeradius
+obj-$(CONFIG_FREERADIUS3) += talloc freeradius3
 #obj-$(CONFIG_EAD) += ead
 
 obj-$(CONFIG_SCDP) += scdp
@@ -267,7 +268,7 @@ endif
 obj-$(CONFIG_80211AC) += emf
 #obj-y+=anchorfree
 obj-y+=ttraff
-#obj-y+=speedtest
+obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
 obj-y+=configs
 
