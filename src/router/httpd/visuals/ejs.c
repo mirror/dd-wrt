@@ -1574,6 +1574,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		 "wirelessAoss",
 #elif !defined(HAVE_AOSS) && defined(HAVE_WPS)
 		 "wirelessWPS",
+#else
+		 "", // place holder
 #endif
 		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},	//
 		{"services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesLighttpd", ""},	//
