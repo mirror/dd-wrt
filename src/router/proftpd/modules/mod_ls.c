@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Directory listing module for ProFTPD.
- * $Id: mod_ls.c,v 1.207 2014/01/20 19:36:27 castaglia Exp $
+ * $Id: mod_ls.c,v 1.207 2014-01-20 19:36:27 castaglia Exp $
  */
 
 #include "conf.h"
@@ -322,10 +322,17 @@ static int sendline(int flags, char *fmt, ...) {
     listbuflen = (listbuf_ptr - listbuf) + strlen(listbuf_ptr);
 
     if (listbuflen > 0) {
+      int using_ascii = FALSE;
+
       /* Make sure the ASCII flags are cleared from the session flags,
        * so that the pr_data_xfer() function does not try to perform
        * ASCII translation on this data.
        */
+      if (session.sf_flags & SF_ASCII) {
+        using_ascii = TRUE;
+      }
+
+      session.sf_flags &= ~SF_ASCII;
       session.sf_flags &= ~SF_ASCII_OVERRIDE;
 
       res = pr_data_xfer(listbuf, listbuflen);
@@ -341,6 +348,9 @@ static int sendline(int flags, char *fmt, ...) {
           strerror(xerrno));
       }
 
+      if (using_ascii) {
+        session.sf_flags |= SF_ASCII;
+      }
       session.sf_flags |= SF_ASCII_OVERRIDE;
 
       memset(listbuf, '\0', listbufsz);
@@ -1534,7 +1544,7 @@ static void parse_list_opts(char **opt, int *glob_flags, int handle_plus_opts) {
       /* Options are found; skip past the leading whitespace. */
       *opt = ptr;
 
-    } else if (*(*opt + 1) == ' ') {
+    } else if (**opt && *(*opt + 1) == ' ') {
       /* If the next character is a blank space, advance just one character. */
       (*opt)++;
       break;
@@ -1644,7 +1654,7 @@ static void parse_list_opts(char **opt, int *glob_flags, int handle_plus_opts) {
       /* Options are found; skip past the leading whitespace. */
       *opt = ptr;
 
-    } else if (*(*opt + 1) == ' ') {
+    } else if (**opt && *(*opt + 1) == ' ') {
       /* If the next character is a blank space, advance just one character. */
       (*opt)++;
       break;
@@ -2465,10 +2475,7 @@ MODRET ls_stat(cmd_rec *cmd) {
   config_rec *c = NULL;
 
   if (cmd->argc == 1) {
-
-    /* In this case, the client is requesting the current session
-     * status.
-     */
+    /* In this case, the client is requesting the current session status. */
 
     if (!dir_check(cmd->tmp_pool, cmd, cmd->group, session.cwd, NULL)) {
       pr_response_add_err(R_500, "%s: %s", cmd->argv[0], strerror(EPERM));
@@ -2488,8 +2495,7 @@ MODRET ls_stat(cmd_rec *cmd) {
     }
 
     if (session.sf_flags & SF_XFER) {
-      /* Report on the data transfer attributes.
-       */
+      /* Report on the data transfer attributes. */
 
       pr_response_add(R_DUP, _("%s from %s port %u"),
         (session.sf_flags & SF_PASSIVE) ?
@@ -2533,8 +2539,9 @@ MODRET ls_stat(cmd_rec *cmd) {
   }
 
   tmp = get_param_ptr(TOPLEVEL_CONF, "ShowSymlinks", FALSE);
-  if (tmp != NULL)
+  if (tmp != NULL) {
     list_show_symlinks = *tmp;
+  }
 
   list_strict_opts = FALSE;
   list_ndepth.max = list_nfiles.max = list_ndirs.max = 0;
@@ -2571,8 +2578,9 @@ MODRET ls_stat(cmd_rec *cmd) {
      * layer deeper.  For the checks to work, the maxdepth of 2 needs to
      * handled internally as a maxdepth of 3.
      */
-    if (list_ndepth.max)
+    if (list_ndepth.max) {
       list_ndepth.max += 1;
+    }
 
     list_nfiles.max = *((unsigned int *) c->argv[3]);
     list_ndirs.max = *((unsigned int *) c->argv[4]);
@@ -2606,8 +2614,9 @@ MODRET ls_stat(cmd_rec *cmd) {
   }
 
   tmp = get_param_ptr(TOPLEVEL_CONF, "TimesGMT", FALSE);
-  if (tmp != NULL)
+  if (tmp != NULL) {
     list_times_gmt = *tmp;
+  }
 
   opt_C = opt_d = opt_F = opt_R = 0;
   opt_a = opt_l = opt_STAT = 1;
@@ -2753,6 +2762,13 @@ MODRET ls_nlst(cmd_rec *cmd) {
 
   if (list_options) {
     parse_list_opts(&list_options, &glob_flags, TRUE);
+  }
+
+  /* If, after parsing out any options, the target string is empty, assume
+   * the current directory (Bug#4069).
+   */
+  if (*target == '\0') {
+    target = pstrdup(cmd->tmp_pool, ".");
   }
 
   /* If the target starts with '~' ... */

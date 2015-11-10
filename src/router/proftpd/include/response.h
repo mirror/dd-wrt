@@ -23,7 +23,7 @@
  */
 
 /* Command response routines
- * $Id: response.h,v 1.9 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: response.h,v 1.9 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_RESPONSE_H

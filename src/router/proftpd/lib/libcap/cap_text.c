@@ -1,5 +1,5 @@
 /*
- * $Id: cap_text.c,v 1.2 2003/05/15 00:49:13 castaglia Exp $
+ * $Id: cap_text.c,v 1.2 2003-05-15 00:49:13 castaglia Exp $
  *
  * Copyright (c) 1997-8 Andrew G Morgan <morgan@linux.kernel.org>
  * Copyright (c) 1997 Andrew Main <zefram@dcs.warwick.ac.uk>
@@ -309,7 +309,7 @@ char *cap_to_text(cap_t caps, ssize_t *length_p)
 
 /*
  * $Log: cap_text.c,v $
- * Revision 1.2  2003/05/15 00:49:13  castaglia
+ * Revision 1.2  2003-05-15 00:49:13  castaglia
  *
  * Bug#2000 - mod_cap should not use bundled libcap.  This patch updates the
  * bundled libcap; I won't be closing the bug report just yet.

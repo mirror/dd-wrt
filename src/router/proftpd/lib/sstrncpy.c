@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,6 +60,11 @@ int sstrncpy(char *dst, const char *src, size_t n) {
 
   if (n == 0) {
     return 0;
+  }
+
+  /* Avoid attempts to overwrite memory with itself (Bug#4156). */
+  if (dst == src) {
+    return n;
   }
 
 #ifdef HAVE_STRLCPY

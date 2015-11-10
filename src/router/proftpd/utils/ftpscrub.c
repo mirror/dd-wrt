@@ -23,7 +23,7 @@
  */
 
 /* "Scrubs" the scoreboard file, clearing it of old/stale entries.
- * $Id: ftpscrub.c,v 1.3 2011/05/23 20:46:20 castaglia Exp $
+ * $Id: ftpscrub.c,v 1.3 2011-05-23 20:46:20 castaglia Exp $
  */
 
 #include "utils.h"

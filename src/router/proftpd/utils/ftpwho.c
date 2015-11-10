@@ -26,7 +26,7 @@
 
 /* Shows a count of "who" is online via proftpd.  Uses the scoreboard file.
  *
- * $Id: ftpwho.c,v 1.31 2011/11/16 22:30:09 castaglia Exp $
+ * $Id: ftpwho.c,v 1.31 2011-11-16 22:30:09 castaglia Exp $
  */
 
 #include "utils.h"

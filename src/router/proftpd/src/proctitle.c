@@ -23,7 +23,7 @@
  */
 
 /* Proctitle management
- * $Id: proctitle.c,v 1.13 2012/04/15 18:04:15 castaglia Exp $
+ * $Id: proctitle.c,v 1.13 2012-04-15 18:04:15 castaglia Exp $
  */
 
 #include "conf.h"

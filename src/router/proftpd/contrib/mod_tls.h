@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_tls.h,v 1.2 2011/05/23 20:44:41 castaglia Exp $
+ * $Id: mod_tls.h,v 1.2 2011-05-23 20:44:41 castaglia Exp $
  */
 
 #ifndef MOD_TLS_H

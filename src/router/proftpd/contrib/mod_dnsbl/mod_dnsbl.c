@@ -26,7 +26,7 @@
  * This is mod_dnsbl, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_dnsbl.c,v 1.2 2013/10/13 16:48:08 castaglia Exp $
+ * $Id: mod_dnsbl.c,v 1.2 2013-10-13 16:48:08 castaglia Exp $
  */
 
 #include "mod_dnsbl.h"

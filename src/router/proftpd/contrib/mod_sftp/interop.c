@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: interop.c,v 1.16 2013/03/14 21:49:19 castaglia Exp $
+ * $Id: interop.c,v 1.16 2013-03-14 21:49:19 castaglia Exp $
  */
 
 #include "mod_sftp.h"

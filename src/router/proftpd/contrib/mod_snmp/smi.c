@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp SMI routines
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: smi.c,v 1.1 2013/05/15 15:20:27 castaglia Exp $
+ * $Id: smi.c,v 1.1 2013-05-15 15:20:27 castaglia Exp $
  */
 
 #include "mod_snmp.h"
@@ -346,23 +346,15 @@ int snmp_smi_read_vars(pool *p, unsigned char **buf, size_t *buflen,
 
   while (*buflen > 0) {
     unsigned int varlen;
-    unsigned char *hdr_start = NULL, *hdr_end = NULL, *obj_start = NULL;
+    unsigned char *obj_start = NULL;
     size_t obj_startlen = 0;
 
     pr_signals_handle();
-
-    /* Keep track of the buffer, so that we know where the start/end of the
-     * header is.  Which then lets us know how many bytes the header is,
-     * and how that relates to the total varlist length.
-     */
-    hdr_start = *buf;
 
     res = snmp_asn1_read_header(p, buf, buflen, &asn1_type, &varlen, 0);
     if (res < 0) {
       return -1;
     }
-
-    hdr_end = *buf;
 
     /* If this isn't a constructed sequence, error out. */
     if (asn1_type != (SNMP_ASN1_TYPE_SEQUENCE|SNMP_ASN1_CONSTRUCT)) {

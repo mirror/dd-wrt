@@ -24,7 +24,7 @@
  */
 
 /* Module handling routines
- * $Id: modules.c,v 1.64 2013/10/07 05:51:30 castaglia Exp $
+ * $Id: modules.c,v 1.64 2013-10-07 05:51:30 castaglia Exp $
  */
 
 #include "conf.h"

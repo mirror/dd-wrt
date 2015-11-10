@@ -28,7 +28,7 @@
  */
 
 /* ProFTPD support library definitions.
- * $Id: libsupp.h,v 1.17 2013/06/22 04:59:35 castaglia Exp $
+ * $Id: libsupp.h,v 1.17 2013-06-22 04:59:35 castaglia Exp $
  */
 
 #include <glibc-glob.h>

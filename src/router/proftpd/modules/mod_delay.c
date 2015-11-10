@@ -26,7 +26,7 @@
  * This is mod_delay, contrib software for proftpd 1.2.10 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_delay.c,v 1.73 2014/02/09 20:42:23 castaglia Exp $
+ * $Id: mod_delay.c,v 1.73 2014-02-09 20:42:23 castaglia Exp $
  */
 
 #include "conf.h"

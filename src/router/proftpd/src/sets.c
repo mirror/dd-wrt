@@ -24,7 +24,7 @@
  */
 
 /* Generic set manipulation
- * $Id: sets.c,v 1.16 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: sets.c,v 1.16 2011-05-23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"

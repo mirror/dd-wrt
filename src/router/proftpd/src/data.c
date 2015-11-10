@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Data connection management functions
- * $Id: data.c,v 1.152 2013/11/09 23:20:23 castaglia Exp $
+ * $Id: data.c,v 1.152 2013-11-09 23:20:23 castaglia Exp $
  */
 
 #include "conf.h"
@@ -369,6 +369,16 @@ static int data_active_open(char *reason, off_t size) {
   }
 
   session.d = pr_inet_create_conn(session.pool, -1, bind_addr, bind_port, TRUE);
+  if (session.d == NULL) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_425, _("Unable to build data connection: %s"),
+      strerror(xerrno));
+    session.d = NULL;
+
+    errno = xerrno;
+    return -1;
+  }
 
   /* Default remote address to which to connect for an active transfer,
    * if the client has not specified a different address via PORT/EPRT,
@@ -547,6 +557,9 @@ void pr_data_reset(void) {
     destroy_pool(session.d->pool);
   }
 
+  /* Clear any leftover state from previous transfers. */
+  have_dangling_cr = FALSE;
+
   session.d = NULL;
   session.sf_flags &= (SF_ALL^(SF_ABORT|SF_POST_ABORT|SF_XFER|SF_PASSIVE|SF_ASCII_OVERRIDE|SF_EPSV_ALL));
 }
@@ -563,6 +576,9 @@ void pr_data_init(char *filename, int direction) {
 
     session.xfer.direction = direction;
   }
+
+  /* Clear any leftover state from previous transfers. */
+  have_dangling_cr = FALSE;
 }
 
 int pr_data_open(char *filename, char *reason, int direction, off_t size) {
@@ -610,6 +626,7 @@ int pr_data_open(char *filename, char *reason, int direction, off_t size) {
       pr_response_add_err(R_425, _("Unable to build data connection: %s"),
         strerror(session.d->xerrno));
       destroy_pool(session.d->pool);
+      errno = session.d->xerrno;
       session.d = NULL;
       return -1;
     }
@@ -618,6 +635,7 @@ int pr_data_open(char *filename, char *reason, int direction, off_t size) {
       pr_response_add_err(R_425, _("Unable to build data connection: %s"),
         strerror(session.d->xerrno));
       destroy_pool(session.d->pool);
+      errno = session.d->xerrno;
       session.d = NULL;
       return -1;
     }

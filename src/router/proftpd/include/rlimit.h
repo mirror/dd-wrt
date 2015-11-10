@@ -23,7 +23,7 @@
  */
 
 /* Resource limits
- * $Id: rlimit.h,v 1.3 2013/02/06 07:34:54 castaglia Exp $
+ * $Id: rlimit.h,v 1.3 2013-02-06 07:34:54 castaglia Exp $
  */
 
 #ifndef PR_RLIMIT_H

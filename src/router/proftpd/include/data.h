@@ -25,7 +25,7 @@
  */
 
 /* Data connection management prototypes
- * $Id: data.h,v 1.23 2013/01/30 22:37:04 castaglia Exp $
+ * $Id: data.h,v 1.23 2013-01-30 22:37:04 castaglia Exp $
  */
 
 #ifndef PR_DATACONN_H

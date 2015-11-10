@@ -23,7 +23,7 @@
  */
 
 /* Resource limit module
- * $Id: mod_rlimit.c,v 1.8 2014/01/31 17:29:27 castaglia Exp $
+ * $Id: mod_rlimit.c,v 1.8 2014-01-31 17:29:27 castaglia Exp $
  */
 
 #include "conf.h"

@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD Auth API
- * $Id: auth.h,v 1.14 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: auth.h,v 1.14 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_AUTH_H

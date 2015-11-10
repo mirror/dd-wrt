@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: compress.c,v 1.8 2012/12/13 23:05:15 castaglia Exp $
+ * $Id: compress.c,v 1.8 2012-12-13 23:05:15 castaglia Exp $
  */
 
 #include "mod_sftp.h"

@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: kex.c,v 1.39 2013/10/02 06:18:53 castaglia Exp $
+ * $Id: kex.c,v 1.39 2013-10-02 06:18:53 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -193,7 +193,7 @@ static const unsigned char *calculate_h(struct sftp_kex *kex,
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
 
-  bufsz = buflen = 3072;
+  bufsz = buflen = 4096;
 
   /* XXX Is this buffer large enough? Too large? */
   ptr = buf = sftp_msg_getbuf(kex_pool, bufsz);
@@ -394,7 +394,7 @@ static const unsigned char *calculate_kexrsa_h(struct sftp_kex *kex,
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
 
-  bufsz = buflen = 3072;
+  bufsz = buflen = 4096;
 
   /* XXX Is this buffer large enough? Too large? */
   ptr = buf = sftp_msg_getbuf(kex_pool, bufsz);
@@ -2622,7 +2622,7 @@ static int write_dh_gex_group(struct ssh2_packet *pkt, struct sftp_kex *kex,
   }
 
   /* XXX Is this large enough?  Too large? */
-  buflen = bufsz = 2048;
+  buflen = bufsz = 4096;
   ptr = buf = palloc(pkt->pool, bufsz);
 
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_KEX_DH_GEX_GROUP);
@@ -2916,7 +2916,7 @@ static int write_kexrsa_pubkey(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   }
 
   /* XXX Is this buffer large enough?  Too large? */
-  bufsz = buflen = 512;
+  bufsz = buflen = 2048;
   ptr = buf = palloc(kex_pool, bufsz);
 
   /* Write the transient RSA public key into its own buffer, to then be
@@ -2927,7 +2927,7 @@ static int write_kexrsa_pubkey(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   sftp_msg_write_mpint(&buf, &buflen, kex->rsa->n);
 
   /* XXX Is this buffer large enough?  Too large? */
-  bufsz2 = buflen2 = 1024;
+  bufsz2 = buflen2 = 4096;
   ptr2 = buf2 = palloc(pkt->pool, bufsz2);
 
   sftp_msg_write_byte(&buf2, &buflen2, SFTP_SSH2_MSG_KEXRSA_PUBKEY);
@@ -2966,7 +2966,7 @@ static int write_kexrsa_done(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   }
 
   /* XXX Is this buffer large enough?  Too large? */
-  bufsz2 = buflen2 = 512;
+  bufsz2 = buflen2 = 4096;
   ptr2 = buf2 = palloc(kex_pool, bufsz2);
 
   /* Write the transient RSA public key into its own buffer, to then be
@@ -3018,7 +3018,7 @@ static int write_kexrsa_done(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   }
 
   /* XXX Is this buffer large enough?  Too large? */
-  bufsz = buflen = 2048;
+  bufsz = buflen = 4096;
   ptr = buf = palloc(pkt->pool, bufsz);
 
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_KEXRSA_DONE);

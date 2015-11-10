@@ -23,7 +23,7 @@
  */
 
 /* Trace API
- * $Id: trace.h,v 1.8 2013/01/31 20:35:54 castaglia Exp $
+ * $Id: trace.h,v 1.8 2013-01-31 20:35:54 castaglia Exp $
  */
 
 #ifndef PR_TRACE_H

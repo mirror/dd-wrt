@@ -82,6 +82,9 @@
 /* Define if you have struct sockcred.  */
 #undef HAVE_STRUCT_SOCKCRED
 
+/* Define if you have struct sockpeercred.  */
+#undef HAVE_STRUCT_SOCKPEERCRED
+
 /* Define if your spwd structure has member warn */
 #undef HAVE_SPWD_SP_WARN
 

@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: scp.c,v 1.87 2014/01/20 20:49:04 castaglia Exp $
+ * $Id: scp.c,v 1.87 2014-01-20 20:49:04 castaglia Exp $
  */
 
 #include "mod_sftp.h"

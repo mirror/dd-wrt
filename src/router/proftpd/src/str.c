@@ -23,7 +23,7 @@
  */
 
 /* String manipulation functions
- * $Id: str.c,v 1.21 2013/11/24 00:45:30 castaglia Exp $
+ * $Id: str.c,v 1.21 2013-11-24 00:45:30 castaglia Exp $
  */
 
 #include "conf.h"

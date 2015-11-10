@@ -1828,6 +1828,22 @@ AC_CHECK_MEMBER(struct sockcred.sc_uid,
     #endif
   ])
 
+# See:
+#   https://github.com/proftpd/proftpd/issues/75
+AC_CHECK_MEMBER(struct sockpeercred.uid,
+  [AC_DEFINE(HAVE_STRUCT_SOCKPEERCRED, 1, [Define if you have struct sockpeercred])],,
+  [
+    #if HAVE_SYS_TYPES_H
+    # include <sys/types.h>
+    #endif
+    #if HAVE_SYS_SOCKET_H
+    # include <sys/socket.h>
+    #endif
+    #if HAVE_SYS_UIO_H
+    # include <sys/uio.h>
+    #endif
+  ])
+
 dnl IPv4/IPv6-related checks
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
   [AC_DEFINE(SIN_LEN, 1, [Define if you have sockaddr_in.sin_len])],,

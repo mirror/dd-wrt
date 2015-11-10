@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: cipher.c,v 1.18 2014/03/02 06:07:43 castaglia Exp $
+ * $Id: cipher.c,v 1.18 2014-03-02 06:07:43 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -71,7 +71,7 @@ static size_t cipher_blockszs[2] = {
 };
 
 /* Buffer size for reading/writing keys */
-#define SFTP_CIPHER_BUFSZ			1536
+#define SFTP_CIPHER_BUFSZ			4096
 
 static unsigned int read_cipher_idx = 0;
 static unsigned int write_cipher_idx = 0;

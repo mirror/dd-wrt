@@ -23,7 +23,7 @@
  */
 
 /* Pool API tests
- * $Id: pool.c,v 1.5 2013/02/19 15:49:16 castaglia Exp $
+ * $Id: pool.c,v 1.5 2013-02-19 15:49:16 castaglia Exp $
  */
 
 #include "tests.h"

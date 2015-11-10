@@ -27,7 +27,7 @@
 /* Logging, either to syslog or stderr, as well as debug logging
  * and debug levels.
  *
- * $Id: log.h,v 1.38 2013/10/07 01:29:05 castaglia Exp $
+ * $Id: log.h,v 1.38 2013-10-07 01:29:05 castaglia Exp $
  */
 
 #ifndef PR_LOG_H

@@ -25,7 +25,7 @@
  */
 
 /* BSD socket manipulation tools.
- * $Id: inet.h,v 1.40 2013/02/07 15:44:29 castaglia Exp $
+ * $Id: inet.h,v 1.40 2013-02-07 15:44:29 castaglia Exp $
  */
 
 #ifndef PR_INET_H

@@ -23,7 +23,7 @@
  */
 
 /* NetIO API tests
- * $Id: netio.c,v 1.1 2014/01/06 06:58:23 castaglia Exp $
+ * $Id: netio.c,v 1.1 2014-01-06 06:58:23 castaglia Exp $
  */
 
 #include "tests.h"

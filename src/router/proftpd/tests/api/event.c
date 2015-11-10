@@ -23,7 +23,7 @@
  */
 
 /* Event API tests
- * $Id: event.c,v 1.3 2013/01/05 03:36:39 castaglia Exp $
+ * $Id: event.c,v 1.3 2013-01-05 03:36:39 castaglia Exp $
  */
 
 #include "tests.h"

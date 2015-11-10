@@ -25,7 +25,7 @@
  * This is mod_deflate, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_deflate.c,v 1.14 2014/01/03 07:19:01 castaglia Exp $
+ * $Id: mod_deflate.c,v 1.14 2014-01-03 07:19:01 castaglia Exp $
  * $Libraries: -lz $
  */
 

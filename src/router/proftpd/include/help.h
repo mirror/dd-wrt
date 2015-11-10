@@ -23,7 +23,7 @@
  */
 
 /* HELP management
- * $Id: help.h,v 1.2 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: help.h,v 1.2 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_HELP_H

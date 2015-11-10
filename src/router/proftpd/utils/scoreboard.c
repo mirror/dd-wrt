@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD scoreboard support (modified for use by external utilities).
- * $Id: scoreboard.c,v 1.17 2011/05/23 20:46:20 castaglia Exp $
+ * $Id: scoreboard.c,v 1.17 2011-05-23 20:46:20 castaglia Exp $
  */
 
 #include "utils.h"

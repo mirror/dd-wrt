@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: tap.c,v 1.12 2012/02/15 23:50:51 castaglia Exp $
+ * $Id: tap.c,v 1.12 2012-02-15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"

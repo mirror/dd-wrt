@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD bindings support routines.
- * $Id: bindings.h,v 1.14 2012/04/15 18:04:14 castaglia Exp $
+ * $Id: bindings.h,v 1.14 2012-04-15 18:04:14 castaglia Exp $
  */
 
 #include "conf.h"

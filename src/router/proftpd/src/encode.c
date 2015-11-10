@@ -23,7 +23,7 @@
  */
 
 /* UTF8/charset encoding/decoding
- * $Id: encode.c,v 1.33 2012/04/06 16:44:40 castaglia Exp $
+ * $Id: encode.c,v 1.33 2012-04-06 16:44:40 castaglia Exp $
  */
 
 #include "conf.h"

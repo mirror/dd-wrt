@@ -23,7 +23,7 @@
  */
 
 /* Resource limits implementation
- * $Id: rlimit.c,v 1.4 2013/06/06 20:26:11 castaglia Exp $
+ * $Id: rlimit.c,v 1.4 2013-06-06 20:26:11 castaglia Exp $
  */
 
 #include "conf.h"

@@ -23,7 +23,7 @@
  */
 
 /* Compatibility
- * $Id: compat.h,v 1.17 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: compat.h,v 1.17 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_COMPAT_H

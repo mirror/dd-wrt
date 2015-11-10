@@ -22,7 +22,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_quotatab_sql.c,v 1.17 2013/01/21 19:59:59 castaglia Exp $
+ * $Id: mod_quotatab_sql.c,v 1.17 2013-01-21 19:59:59 castaglia Exp $
  */
 
 #include "mod_quotatab.h"

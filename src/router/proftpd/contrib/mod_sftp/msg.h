@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: msg.h,v 1.7 2013/03/28 19:56:13 castaglia Exp $
+ * $Id: msg.h,v 1.7 2013-03-28 19:56:13 castaglia Exp $
  */
 
 #include "mod_sftp.h"

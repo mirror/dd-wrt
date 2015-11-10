@@ -112,6 +112,11 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  auth_file_symlink_segfault_bug4145 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
 };
 
 sub new {
@@ -2035,6 +2040,142 @@ EOC
       # entry.
       $client->login($user, $passwd);
 
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub auth_file_symlink_segfault_bug4145 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/authfile.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/authfile.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/authfile.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $authfiles_parent_dir = File::Spec->rel2abs("$tmpdir/etc");
+  mkpath($authfiles_parent_dir);
+
+  my $authfiles_dir = File::Spec->rel2abs("$authfiles_parent_dir/proftpd");
+  mkpath($authfiles_dir);
+
+  my $auth_user_file = File::Spec->rel2abs("$authfiles_dir/authfile.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$authfiles_dir/authfile.group");
+
+  # Create symlinks using a relative path to the Auth files, to reproduce
+  # Bug#4145.
+  my $cwd = getcwd();
+  unless (chdir($authfiles_dir)) {
+    die("Can't chdir to $authfiles_dir: $!");
+  }
+
+  unless (symlink('authfile.passwd', "passwd.lnk")) {
+    die("Can't symlink '$auth_user_file' to 'passwd.lnk': $!");
+  }
+
+  unless (symlink('authfile.group', "group.lnk")) {
+    die("Can't symlink '$auth_group_file' to 'group.lnk': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  my $auth_user_symlink = File::Spec->rel2abs($authfiles_dir) . "/passwd.lnk";
+  my $auth_group_symlink = File::Spec->rel2abs($authfiles_dir) . "/group.lnk";
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir, $authfiles_parent_dir, $authfiles_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir, $authfiles_parent_dir, $authfiles_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+
+  # Test that mod_auth_file correctly deals with malformed AuthGroupFile
+  # entries (per Bug#3985).
+  auth_group_write($auth_group_file, "yarr:$group", $gid, $user);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_symlink,
+    AuthGroupFile => $auth_group_symlink,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
       $client->quit();
     };
 

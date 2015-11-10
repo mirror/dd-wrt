@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2013 The ProFTPD Project team
+ * Copyright (c) 2003-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Network address routines
- * $Id: netaddr.c,v 1.98 2013/12/23 17:53:42 castaglia Exp $
+ * $Id: netaddr.c,v 1.98 2013-12-23 17:53:42 castaglia Exp $
  */
 
 #include "conf.h"
@@ -761,6 +761,14 @@ static pr_netaddr_t *get_addr_by_device(pool *p, const char *name,
     int found_device = FALSE;
 
     for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+      pr_signals_handle();
+
+      /* Watch out for null ifa_addr, as when a device does not have
+       * an associated address (e.g. due to not be initialized).
+       */
+      if (ifa->ifa_addr == NULL) {
+        continue;
+      }
 
       /* We're only looking for addresses, not stats. */
       if (ifa->ifa_addr->sa_family != AF_INET

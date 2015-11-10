@@ -23,7 +23,7 @@
  */
 
 /* POSIX ACL checking code (aka POSIX.1e hell)
- * $Id: mod_facl.c,v 1.17 2014/05/04 19:26:26 castaglia Exp $
+ * $Id: mod_facl.c,v 1.17 2014-05-04 19:26:26 castaglia Exp $
  */
 
 #include "conf.h"
