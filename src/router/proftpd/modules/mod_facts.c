@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_facts.c,v 1.60 2013/04/16 16:04:43 castaglia Exp $
+ * $Id: mod_facts.c,v 1.60 2013-04-16 16:04:43 castaglia Exp $
  */
 
 #include "conf.h"

@@ -21,7 +21,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_sql_odbc.c,v 1.15 2013/09/25 04:25:54 castaglia Exp $
+ * $Id: mod_sql_odbc.c,v 1.15 2013-09-25 04:25:54 castaglia Exp $
  */
 
 #include "conf.h"

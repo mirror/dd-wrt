@@ -648,12 +648,7 @@ sub displayconnect_multiline {
 sub displayconnect_fs_vars {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/config.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $setup = test_setup($tmpdir, 'config');
 
   my $connect_file = File::Spec->rel2abs("$tmpdir/connect.txt");
 
@@ -670,10 +665,10 @@ sub displayconnect_fs_vars {
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'fsio:20',
 
     DisplayConnect => $connect_file,
@@ -685,7 +680,8 @@ sub displayconnect_fs_vars {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -703,21 +699,18 @@ sub displayconnect_fs_vars {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      $resp_code = $client->response_code();
-      $resp_msg = $client->response_msg(1);
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg(1);
 
       my $expected;
 
       $expected = 220;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = 'Filesystem: (\d+) (\S+)$';
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -728,7 +721,7 @@ sub displayconnect_fs_vars {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -738,15 +731,11 @@ sub displayconnect_fs_vars {
   }
 
   # Stop server
-  server_stop($pid_file);
+  server_stop($setup->{pid_file});
 
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

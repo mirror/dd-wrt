@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth-hostbased.c,v 1.10 2012/03/13 18:58:48 castaglia Exp $
+ * $Id: auth-hostbased.c,v 1.10 2012-03-13 18:58:48 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -171,7 +171,7 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
   if (sftp_blacklist_reject_key(pkt->pool, hostkey_data, hostkey_datalen)) {
     *send_userauth_fail = TRUE;
-    errno = EPERM;
+    errno = EACCES;
     return 0;
   }
 
@@ -183,7 +183,7 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   if (sftp_keystore_verify_host_key(pkt->pool, user, host_fqdn, host_user,
       hostkey_data, hostkey_datalen) < 0) {
     *send_userauth_fail = TRUE;
-    errno = EPERM;
+    errno = EACCES;
     return 0;
   }
 

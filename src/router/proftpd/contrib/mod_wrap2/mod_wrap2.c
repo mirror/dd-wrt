@@ -599,9 +599,8 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
 #ifdef PR_USE_IPV6 
   } else if (pr_netaddr_use_ipv6() &&
              *tok == '[') {
-    char *cp, *tmp;
+    char *cp;
     pr_netaddr_t *acl_addr;
-    unsigned int nmaskbits;
 
     /* IPv6 address */
 
@@ -621,24 +620,34 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
 
     /* Lookup a netaddr for the IPv6 address. */
     acl_addr = pr_netaddr_get_addr(wrap2_pool, tok + 1, NULL);
-    if (!acl_addr) {
+    if (acl_addr == NULL) {
       wrap2_log("unable to resolve IPv6 address '%s'", tok + 1);
       return FALSE;
     }
 
     if (*(cp + 1) != '/') {
-      wrap2_log("bad mask syntax: '%s'", cp + 1);
-      return FALSE;
-    }
+      if (pr_netaddr_cmp(session.c->remote_addr, acl_addr) == 0) {
+        return TRUE;
+      }
 
-    /* Determine the number of mask bits. */
-    nmaskbits = strtol(cp + 2, &tmp, 10);
-    if (tmp && *tmp) {
-      wrap2_log("bad mask syntax: '%s'", tmp);
       return FALSE;
-    }
 
-    return (pr_netaddr_ncmp(session.c->remote_addr, acl_addr, nmaskbits) == 0);
+    } else {
+      unsigned int nmaskbits;
+      char *tmp;
+
+      /* Netmask */
+
+      /* Determine the number of mask bits. */
+      nmaskbits = strtol(cp + 2, &tmp, 10);
+      if (tmp && *tmp) {
+        wrap2_log("bad mask syntax: '%s'", tmp);
+        return FALSE;
+      }
+
+      return (pr_netaddr_ncmp(session.c->remote_addr, acl_addr,
+        nmaskbits) == 0);
+    }
 #endif /* PR_USE_IPV6 */
 
   } else if ((mask = wrap2_strsplit(tok, '/')) != 0) {

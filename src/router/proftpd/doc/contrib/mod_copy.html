@@ -1,5 +1,5 @@
-<!-- $Id: mod_copy.html,v 1.1 2010/03/10 19:20:43 castaglia Exp $ -->
-<!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_copy.html,v $ -->
+<!-- $Id: mod_copy.html,v 1.1 2010-03-10 19:20:43 castaglia Exp $ -->
+<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_copy.html,v $ -->
 
 <html>
 <head>
@@ -27,15 +27,18 @@ ProFTPD 1.3.<i>x</i>, and is not compiled by default.  Installation
 instructions are discussed <a href="#Installation">here</a>.
 
 <p>
-The most current version of <code>mod_copy</code> can be found at:
-<pre>
-  <a href="http://www.castaglia.org/proftpd/">http://www.castaglia.org/proftpd/</a>
-</pre>
+The most current version of <code>mod_copy</code> is distributed with the
+ProFTPD source code.
 
 <h2>Author</h2>
 <p>
 Please contact TJ Saunders &lt;tj <i>at</i> castaglia.org&gt; with any
 questions, concerns, or suggestions regarding this module.
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#CopyEngine">CopyEngine</a>
+</ul>
 
 <h2><code>SITE</code> Commands</h2>
 <ul>
@@ -43,6 +46,21 @@ questions, concerns, or suggestions regarding this module.
   <li><a href="#SITE_CPTO">SITE CPTO</a>
 </ul>
 
+<p>
+<hr>
+<h2><a name="CopyEngine">CopyEngine</a></h2>
+<strong>Syntax:</strong> CopyEngine <em>on|off</em><br>
+<strong>Default:</strong> CopyEngine on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_radius<br>
+<strong>Compatibility:</strong> 1.3.6rc1 and later
+
+<p>
+The <code>CopyEngine</code> directive enables or disables the module's
+handling of <code>SITE COPY</code> <i>et al</i> commands.  If it is set to
+<em>off</em> this module ignores these commands.
+
+<p>
 <hr>
 <h2><a name="SITE_CPFR">SITE CPFR</a></h2>
 This <code>SITE</code> command specifies the source file/directory to use
@@ -118,13 +136,8 @@ your existing server:
 <p>
 <hr><br>
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2010/03/10 19:20:43 $</i><br>
-
-<br><hr>
-
 <font size=2><b><i>
-&copy; Copyright 2009-2010 TJ Saunders<br>
+&copy; Copyright 2009-2015 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

@@ -2,7 +2,7 @@
  * ProFTPD: mod_auth_file - file-based authentication module that supports
  *                          restrictions on the file contents
  *
- * Copyright (c) 2002-2014 The ProFTPD Project team
+ * Copyright (c) 2002-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
- *
- * $Id: mod_auth_file.c,v 1.58 2014/01/22 06:39:59 castaglia Exp $
  */
 
 #include "conf.h"
@@ -172,7 +170,11 @@ static int af_check_file(pool *p, const char *name, const char *path,
     memset(buf, '\0', sizeof(buf));
     res = pr_fsio_readlink(path, buf, sizeof(buf)-1);
     if (res > 0) {
-      path = pstrdup(p, buf);
+
+      /* The path contained in the symlink might itself be relative, thus
+       * we need to make sure that we get an absolute path (Bug#4145).
+       */
+      path = dir_abs_path(p, buf, FALSE);
     }
 
     res = stat(orig_path, &st);

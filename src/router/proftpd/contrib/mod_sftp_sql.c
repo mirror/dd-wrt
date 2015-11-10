@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sftp_sql -- SQL backend module for retrieving authorized keys
  *
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,6 @@
  *
  * This is mod_sftp_sql, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_sftp_sql.c,v 1.8 2013/06/06 23:55:59 castaglia Exp $
  */
 
 #include "conf.h"
@@ -33,9 +31,11 @@
 #include "mod_sftp.h"
 #include "mod_sql.h"
 
-#define MOD_SFTP_SQL_VERSION		"mod_sftp_sql/0.3"
+#define MOD_SFTP_SQL_VERSION		"mod_sftp_sql/0.4"
 
 module sftp_sql_module;
+
+#define SFTP_SQL_BUFSZ		1024
 
 struct sqlstore_key {
   const char *subject;
@@ -79,7 +79,7 @@ static cmd_rec *sqlstore_cmd_create(pool *parent_pool, int argc, ...) {
  * it were text, line by line.
  */
 static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
-  char linebuf[75], *line = "", *data;
+  char linebuf[SFTP_SQL_BUFSZ], *line = "", *data;
   size_t datalen;
 
   data = *blob;
@@ -140,6 +140,14 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
       continue;
     }
 
+    /* Watch out for lines larger than our buffer. */
+    if (linelen > sizeof(linebuf)) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+        "line of key data (%lu bytes) exceeds buffer size, truncating; "
+        "this WILL cause authentication failures", (unsigned long) linelen);
+      linelen = sizeof(linebuf);
+    }
+
     memcpy(linebuf, data, linelen);
     linebuf[linelen-1] = '\0';
 
@@ -198,7 +206,7 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
 
 static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char **blob,
     size_t *bloblen) {
-  char chunk[1024], *data = NULL;
+  char chunk[SFTP_SQL_BUFSZ], *data = NULL;
   BIO *bio = NULL, *b64 = NULL, *bmem = NULL;
   int chunklen;
   long datalen = 0;
@@ -298,16 +306,14 @@ static struct sqlstore_key *sqlstore_get_key_rfc4716(pool *p, char **blob,
     pr_signals_handle();
 
     if (key == NULL &&
-        strncmp(line, SFTP_SSH2_PUBKEY_BEGIN_MARKER,
-          begin_markerlen + 1) == 0) {
+        strncmp(line, SFTP_SSH2_PUBKEY_BEGIN_MARKER, begin_markerlen) == 0) {
       key = pcalloc(p, sizeof(struct sqlstore_key));
       bio = BIO_new(BIO_s_mem());
 
     } else if (key != NULL &&
-               strncmp(line, SFTP_SSH2_PUBKEY_END_MARKER,
-                 end_markerlen + 1) == 0) {
+               strncmp(line, SFTP_SSH2_PUBKEY_END_MARKER, end_markerlen) == 0) {
       if (bio != NULL) {
-        char chunk[1024], *data = NULL;
+        char chunk[SFTP_SQL_BUFSZ], *data = NULL;
         BIO *b64 = NULL, *bmem = NULL;
         int chunklen;
         long datalen = 0;

@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Controls API routines
- * $Id: ctrls.c,v 1.40 2013/05/28 21:02:02 castaglia Exp $
- */
+/* Controls API routines */
 
 #include "conf.h"
 #include "privs.h"
@@ -1117,10 +1115,15 @@ int pr_ctrls_issock_unix(mode_t sock_mode) {
 #if defined(SO_PEERCRED)
 static int ctrls_get_creds_peercred(int sockfd, uid_t *uid, gid_t *gid,
     pid_t *pid) {
+# if defined(HAVE_STRUCT_SOCKPEERCRED)
+  struct sockpeercred cred;
+# else
   struct ucred cred;
-  socklen_t credlen = sizeof(cred);
+# endif /* HAVE_STRUCT_SOCKPEERCRED */
+  socklen_t cred_len;
 
-  if (getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cred, &credlen) < 0) {
+  cred_len = sizeof(cred);
+  if (getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) < 0) {
     int xerrno = errno;
 
     pr_trace_msg(trace_channel, 2,
@@ -1131,14 +1134,17 @@ static int ctrls_get_creds_peercred(int sockfd, uid_t *uid, gid_t *gid,
     return -1;
   }
 
-  if (uid)
+  if (uid) {
     *uid = cred.uid;
+  }
 
-  if (gid)
+  if (gid) {
     *gid = cred.gid;
+  }
 
-  if (pid)
+  if (pid) {
     *pid = cred.pid;
+  }
 
   return 0;
 }

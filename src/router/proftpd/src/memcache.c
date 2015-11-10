@@ -23,7 +23,7 @@
  */
 
 /* Memcache management
- * $Id: memcache.c,v 1.26 2013/01/28 01:21:05 castaglia Exp $
+ * $Id: memcache.c,v 1.26 2013-01-28 01:21:05 castaglia Exp $
  */
 
 #include "conf.h"

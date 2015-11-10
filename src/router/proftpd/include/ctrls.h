@@ -23,7 +23,7 @@
  */
 
 /* Controls API definitions
- * $Id: ctrls.h,v 1.9 2013/02/04 06:46:22 castaglia Exp $
+ * $Id: ctrls.h,v 1.9 2013-02-04 06:46:22 castaglia Exp $
  */
 
 #ifndef PR_CTRLS_H

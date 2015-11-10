@@ -23,7 +23,7 @@
  */
 
 /* Network ACL definitions
- * $Id: netacl.h,v 1.5 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: netacl.h,v 1.5 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_NETACL_H

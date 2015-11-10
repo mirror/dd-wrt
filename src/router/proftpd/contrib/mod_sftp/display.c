@@ -23,7 +23,7 @@
  */
 
 /* Display of files
- * $Id: display.c,v 1.12 2013/09/25 16:08:50 castaglia Exp $
+ * $Id: display.c,v 1.12 2013-09-25 16:08:50 castaglia Exp $
  */
 
 #include "mod_sftp.h"

@@ -23,7 +23,7 @@
  */
 
 /* Transfer rate/throttling functions
- * $Id: throttle.h,v 1.2 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: throttle.h,v 1.2 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_THROTTLE_H

@@ -23,7 +23,7 @@
  */
 
 /* Array API tests
- * $Id: array.c,v 1.2 2011/05/23 20:50:29 castaglia Exp $
+ * $Id: array.c,v 1.2 2011-05-23 20:50:29 castaglia Exp $
  */
 
 #include "tests.h"

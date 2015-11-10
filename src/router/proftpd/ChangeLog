@@ -45963,7 +45963,7 @@
 2003-06-11 19:08  castaglia
 
 	* src/: inet.c, modules.c:
-	  Missing $Id: ChangeLog,v 1.154 2014/05/15 16:20:23 castaglia Exp $ keyword.
+	  Missing $Id: ChangeLog,v 1.154 2014-05-15 16:20:23 castaglia Exp $ keyword.
 
 2003-06-11 15:45  castaglia
 
@@ -47142,7 +47142,7 @@
 
 	* contrib/: mod_sql.c, mod_sql.h, mod_sql_mysql.c,
 	  mod_sql_postgres.c:
-	  Adding $Id: ChangeLog,v 1.154 2014/05/15 16:20:23 castaglia Exp $ tags to the mod_sql files.
+	  Adding $Id: ChangeLog,v 1.154 2014-05-15 16:20:23 castaglia Exp $ tags to the mod_sql files.
 
 2003-03-14 07:54  castaglia
 
@@ -47661,12 +47661,12 @@
 
 	* src/netio.c, src/pool.c, src/sets.c, include/ident.h,
 	  include/timers.h:
-	  Adding more $Id: ChangeLog,v 1.154 2014/05/15 16:20:23 castaglia Exp $ keywords.
+	  Adding more $Id: ChangeLog,v 1.154 2014-05-15 16:20:23 castaglia Exp $ keywords.
 
 2003-02-11 23:34  castaglia
 
 	* src/feat.c:
-	  Added $Id: ChangeLog,v 1.154 2014/05/15 16:20:23 castaglia Exp $ keyword.
+	  Added $Id: ChangeLog,v 1.154 2014-05-15 16:20:23 castaglia Exp $ keyword.
 
 2003-02-10 15:34  castaglia
 

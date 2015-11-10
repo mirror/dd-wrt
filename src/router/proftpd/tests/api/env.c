@@ -23,7 +23,7 @@
  */
 
 /* Env API tests
- * $Id: env.c,v 1.2 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: env.c,v 1.2 2011-05-23 20:50:31 castaglia Exp $
  */
 
 #include "tests.h"

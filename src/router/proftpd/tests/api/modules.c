@@ -23,7 +23,7 @@
  */
 
 /* Modules API tests
- * $Id: modules.c,v 1.3 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: modules.c,v 1.3 2011-05-23 20:50:31 castaglia Exp $
  */
 
 #include "tests.h"

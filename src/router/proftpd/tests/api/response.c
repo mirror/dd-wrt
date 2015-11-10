@@ -23,7 +23,7 @@
  */
 
 /* Response API tests
- * $Id: response.c,v 1.5 2012/07/26 22:40:37 castaglia Exp $
+ * $Id: response.c,v 1.5 2012-07-26 22:40:37 castaglia Exp $
  */
 
 #include "tests.h"

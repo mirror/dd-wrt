@@ -21,7 +21,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: session.c,v 1.16 2013/08/25 21:16:39 castaglia Exp $
+ * $Id: session.c,v 1.16 2013-08-25 21:16:39 castaglia Exp $
  */
 
 #include "conf.h"

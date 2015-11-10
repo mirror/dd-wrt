@@ -23,7 +23,7 @@
  */
 
 /* Memcache support
- * $Id: memcache.h,v 1.12 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: memcache.h,v 1.12 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_MEMCACHE_H

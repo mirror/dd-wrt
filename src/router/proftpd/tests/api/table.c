@@ -23,7 +23,7 @@
  */
 
 /* Table API tests
- * $Id: table.c,v 1.6 2012/01/26 17:55:07 castaglia Exp $
+ * $Id: table.c,v 1.6 2012-01-26 17:55:07 castaglia Exp $
  */
 
 #include "tests.h"

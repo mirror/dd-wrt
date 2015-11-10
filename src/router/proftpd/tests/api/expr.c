@@ -23,7 +23,7 @@
  */
 
 /* Expression API tests
- * $Id: expr.c,v 1.4 2011/12/11 02:14:43 castaglia Exp $
+ * $Id: expr.c,v 1.4 2011-12-11 02:14:43 castaglia Exp $
  */
 
 #include "tests.h"

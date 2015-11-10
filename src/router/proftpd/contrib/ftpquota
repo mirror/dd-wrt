@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
 #
-#  $Id: ftpquota,v 1.6 2013/04/23 23:25:20 castaglia Exp $
+#  $Id: ftpquota,v 1.6 2013-04-23 23:25:20 castaglia Exp $
 # -------------------------------------------------------------------------
 
 use strict;

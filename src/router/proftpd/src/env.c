@@ -23,7 +23,7 @@
  */
 
 /* Environment management
- * $Id: env.c,v 1.11 2013/10/07 01:29:05 castaglia Exp $
+ * $Id: env.c,v 1.11 2013-10-07 01:29:05 castaglia Exp $
  */
 
 #include "conf.h"

@@ -23,7 +23,7 @@
  */
 
 /* Testsuite management
- * $Id: tests.h,v 1.7 2014/01/06 06:58:23 castaglia Exp $
+ * $Id: tests.h,v 1.7 2014-01-06 06:58:23 castaglia Exp $
  */
 
 #ifndef PR_TESTS_H

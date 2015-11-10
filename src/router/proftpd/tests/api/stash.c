@@ -23,7 +23,7 @@
  */
 
 /* Stash API tests
- * $Id: stash.c,v 1.2 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: stash.c,v 1.2 2011-05-23 20:50:31 castaglia Exp $
  */
 
 #include "tests.h"

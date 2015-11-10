@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: utf8.h,v 1.4 2011/05/23 20:40:13 castaglia Exp $
+ * $Id: utf8.h,v 1.4 2011-05-23 20:40:13 castaglia Exp $
  */
 
 #ifndef MOD_SFTP_UTF8_H

@@ -23,7 +23,7 @@
  */
 
 /* Regexp API tests
- * $Id: regexp.c,v 1.4 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: regexp.c,v 1.4 2011-05-23 20:50:31 castaglia Exp $
  */
 
 #include "tests.h"

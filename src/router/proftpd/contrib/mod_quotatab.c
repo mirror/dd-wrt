@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab -- a module for managing FTP byte/file quotas via
  *                          centralized tables
  *
- * Copyright (c) 2001-2013 TJ Saunders
+ * Copyright (c) 2001-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
  * ftp://pooh.urbanrage.com/pub/c/.  This module, however, has been written
  * from scratch to implement quotas in a different way.
  *
- * $Id: mod_quotatab.c,v 1.87 2013/12/09 19:16:13 castaglia Exp $
+ * $Id: mod_quotatab.c,v 1.87 2013-12-09 19:16:13 castaglia Exp $
  */
 
 #include "mod_quotatab.h"
@@ -1706,25 +1706,28 @@ MODRET set_quotatable(cmd_rec *cmd) {
    * given as one string to enhance its similarity to URL syntax.
    */
   tmp = strchr(cmd->argv[1], ':');
-  if (tmp == NULL)
+  if (tmp == NULL) {
     CONF_ERROR(cmd, "badly formatted parameter");
+  }
 
   *tmp++ = '\0';
 
   /* Verify that the requested source type has been registered, and supports
    * the table type (limit or tally).
    */
-  if (strcasecmp(cmd->argv[0], "QuotaLimitTable") == 0)
+  if (strcasecmp(cmd->argv[0], "QuotaLimitTable") == 0) {
     tabflag = QUOTATAB_LIMIT_SRC;
 
-  else if (strcasecmp(cmd->argv[0], "QuotaTallyTable") == 0)
+  } else if (strcasecmp(cmd->argv[0], "QuotaTallyTable") == 0) {
     tabflag = QUOTATAB_TALLY_SRC;
+  }
 
 #if !defined(PR_SHARED_MODULE)
   regtab = quotatab_get_backend(cmd->argv[1], tabflag);
-  if (!regtab)
+  if (!regtab) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unsupported table source type: '",
       cmd->argv[1], "'", NULL));
+  }
 #endif /* PR_SHARED_MODULE */
 
   add_config_param_str(cmd->argv[0], 2, cmd->argv[1], tmp);
@@ -1741,16 +1744,15 @@ static const char *quota_get_bytes_str(void *data, size_t datasz) {
   switch (byte_units) {
     case BYTE:
       /* no calculation needed */
-
       if (bytes > 0.0) {
         char buf[PR_TUNABLE_BUFFER_SIZE];
         memset(buf, '\0', sizeof(buf));
         snprintf(buf, sizeof(buf), "%.2f", bytes);
         res = pstrdup(session.pool, buf);
 
-      } else
+      } else {
         res = pstrdup(session.pool, "(unlimited)");
-
+      }
       break;
 
     case KILO:
@@ -1763,9 +1765,9 @@ static const char *quota_get_bytes_str(void *data, size_t datasz) {
         snprintf(buf, sizeof(buf), "%.2f KB", adj);
         res = pstrdup(session.pool, buf);
 
-      } else
+      } else {
         res = pstrdup(session.pool, "(unlimited)");
-
+      }
       break;
 
     case MEGA:
@@ -1778,9 +1780,9 @@ static const char *quota_get_bytes_str(void *data, size_t datasz) {
         snprintf(buf, sizeof(buf), "%.2f MB", adj);
         res = pstrdup(session.pool, buf);
 
-      } else
+      } else {
         res = pstrdup(session.pool, "(unlimited)");
-
+      }
       break;
 
     case GIGA:
@@ -1793,9 +1795,9 @@ static const char *quota_get_bytes_str(void *data, size_t datasz) {
         snprintf(buf, sizeof(buf), "%.2f GB", adj);
         res = pstrdup(session.pool, buf);
 
-      } else
+      } else {
         res = pstrdup(session.pool, "(unlimited)");
-
+      }
       break;
 
     default:
@@ -1816,8 +1818,9 @@ static const char *quota_get_files_str(void *data, size_t datasz) {
     snprintf(buf, sizeof(buf), "%u", files);
     res = pstrdup(session.pool, buf);
 
-  } else
+  } else {
     res = pstrdup(session.pool, "(unlimited)");
+  }
 
   return res;
 }

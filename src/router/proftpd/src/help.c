@@ -23,7 +23,7 @@
  */
 
 /* HELP management code
- * $Id: help.c,v 1.7 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: help.c,v 1.7 2011-05-23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"

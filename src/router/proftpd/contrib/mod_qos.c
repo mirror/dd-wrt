@@ -25,7 +25,7 @@
  *
  * This is mod_qos, contrib software for proftpd 1.3.x and above.
  *
- * $Id: mod_qos.c,v 1.4 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_qos.c,v 1.4 2011-05-23 20:56:40 castaglia Exp $
  */
 
 #include "conf.h"

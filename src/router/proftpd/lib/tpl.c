@@ -23,7 +23,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define TPL_VERSION 1.5
 
-static const char id[]="$Id: tpl.c,v 1.4 2012/06/18 16:48:30 castaglia Exp $";
+static const char id[]="$Id: tpl.c,v 1.4 2012-06-18 16:48:30 castaglia Exp $";
 
 
 #include <stdlib.h>  /* malloc */

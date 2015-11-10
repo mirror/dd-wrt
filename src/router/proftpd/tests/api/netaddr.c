@@ -23,7 +23,7 @@
  */
 
 /* NetAddr API tests
- * $Id: netaddr.c,v 1.13 2014/01/27 18:31:35 castaglia Exp $
+ * $Id: netaddr.c,v 1.13 2014-01-27 18:31:35 castaglia Exp $
  */
 
 #include "tests.h"

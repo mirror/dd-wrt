@@ -1,5 +1,5 @@
 /*
- * $Id: _makenames.c,v 1.1 2003/01/03 02:16:17 jwm Exp $
+ * $Id: _makenames.c,v 1.1 2003-01-03 02:16:17 jwm Exp $
  *
  * Copyright (c) 1997-8 Andrew G. Morgan <morgan@linux.kernel.org>
  *
@@ -64,7 +64,7 @@ int main(void)
 
 /*
  * $Log: _makenames.c,v $
- * Revision 1.1  2003/01/03 02:16:17  jwm
+ * Revision 1.1  2003-01-03 02:16:17  jwm
  *
  * Turning mod_linuxprivs into a core module, mod_cap. This is by no means
  * complete.

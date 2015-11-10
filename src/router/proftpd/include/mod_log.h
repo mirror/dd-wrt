@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_log.h,v 1.2 2013/11/11 01:34:04 castaglia Exp $
+ * $Id: mod_log.h,v 1.2 2013-11-11 01:34:04 castaglia Exp $
  */
 
 #ifndef MOD_LOG_H

@@ -21,7 +21,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: cmd.h,v 1.7 2012/12/27 22:30:58 castaglia Exp $
+ * $Id: cmd.h,v 1.7 2012-12-27 22:30:58 castaglia Exp $
  */
 
 #ifndef PR_CMD_H
@@ -105,6 +105,16 @@ int pr_cmd_get_id(const char *name_name);
 /* The minimum and maximum command name lengths. */
 #define PR_CMD_MIN_NAMELEN	3
 #define PR_CMD_MAX_NAMELEN	4
+
+/* Returns TRUE if the given command is a known HTTP method, FALSE if not
+ * a known HTTP method, and -1 if there is an error.
+ */
+int pr_cmd_is_http(cmd_rec *c);
+
+/* Returns TRUE if the given command is a known SMTP method, FALSE if not
+ * a known SMTP method, and -1 if there is an error.
+ */
+int pr_cmd_is_smtp(cmd_rec *c);
 
 int pr_cmd_set_name(cmd_rec *, const char *);
 

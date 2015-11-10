@@ -23,7 +23,7 @@
  */
 
 /* Configuration parser
- * $Id: parser.h,v 1.4 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: parser.h,v 1.4 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_PARSER_H

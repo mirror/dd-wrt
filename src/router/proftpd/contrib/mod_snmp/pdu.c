@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: pdu.c,v 1.1 2013/05/15 15:20:27 castaglia Exp $
+ * $Id: pdu.c,v 1.1 2013-05-15 15:20:27 castaglia Exp $
  */
 
 #include "mod_snmp.h"
