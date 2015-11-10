@@ -51,8 +51,8 @@ void start_samba3(void)
 		set_smp_affinity(163, 2);
 		set_smp_affinity(169, 2);
 	} else {
-		set_smp_affinity(163, 3);
-		set_smp_affinity(169, 3);
+		set_smp_affinity(163, 1);
+		set_smp_affinity(169, 2);
 	}
 
 	if (!nvram_match("samba3_enable", "1")) {
