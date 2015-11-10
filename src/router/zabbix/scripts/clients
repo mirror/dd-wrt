@@ -1,13 +1,7 @@
 #!/bin/sh
 
 ARP=`grep 0x2 /proc/net/arp | grep -v $(get_wanface) | wc -l`
-if [ -f /usr/sbin/iw ]
-then
-  WL0=`iw ath0 station dump | grep Station | wc -l`
-  WL1=`iw ath1 station dump | grep Station | wc -l`
-else
-  WL0=`wl -i eth1 assoclist | wc -l`
-  WL1=`wl -i eth2 assoclist | wc -l`
-fi
+WL0=`wl -i eth1 assoclist | wc -l`
+WL1=`wl -i eth2 assoclist | wc -l`
 
 echo `expr $ARP - $WL0 - $WL1`
