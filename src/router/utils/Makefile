@@ -203,6 +203,7 @@ endif
 endif
 endif
 ifeq ($(CONFIG_MADWIFI),y)
+	cd $(INSTALLDIR)/utils/usr/sbin && ln -s wl_atheros wl
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
 #	install -D wprobe/wprobe-util $(INSTALLDIR)/utils/usr/sbin/wprobe-util
 endif
