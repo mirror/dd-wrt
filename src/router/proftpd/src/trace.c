@@ -23,7 +23,7 @@
  */
 
 /* Trace functions
- * $Id: trace.c,v 1.46 2013/02/25 19:40:43 castaglia Exp $
+ * $Id: trace.c,v 1.46 2013-02-25 19:40:43 castaglia Exp $
  */
 
 

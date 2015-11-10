@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp notification routines
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -339,7 +339,7 @@ int snmp_notify_generate(pool *p, int sockfd, const char *community,
   struct snmp_var *notify_varlist = NULL, *head_var = NULL, *tail_var = NULL,
     *iter_var;
   int fd = -1, res;
-  unsigned int var_count;
+  unsigned int var_count = 0;
 
   notify_str = get_notify_str(notify_id);
 

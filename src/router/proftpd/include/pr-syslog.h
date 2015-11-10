@@ -25,7 +25,7 @@
  */
 
 /* ProFTPD internal implemenation of syslog(3) routines
- * $Id: pr-syslog.h,v 1.6 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: pr-syslog.h,v 1.6 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #include "conf.h"

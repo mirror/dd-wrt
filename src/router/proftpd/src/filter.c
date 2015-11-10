@@ -21,7 +21,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: filter.c,v 1.8 2011/12/20 22:56:48 castaglia Exp $
+ * $Id: filter.c,v 1.8 2011-12-20 22:56:48 castaglia Exp $
  */
 
 #include "conf.h"

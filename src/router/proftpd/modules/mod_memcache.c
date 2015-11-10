@@ -23,7 +23,7 @@
  * source distribution.
  *
  * $Libraries: -lmemcached -lmemcachedutil$
- * $Id: mod_memcache.c,v 1.21 2013/10/13 17:34:01 castaglia Exp $
+ * $Id: mod_memcache.c,v 1.21 2013-10-13 17:34:01 castaglia Exp $
  */
 
 #include "conf.h"

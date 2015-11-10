@@ -25,7 +25,7 @@
  */
 
 /* Flexible logging module for proftpd
- * $Id: mod_log.c,v 1.155 2013/11/11 01:34:04 castaglia Exp $
+ * $Id: mod_log.c,v 1.155 2013-11-11 01:34:04 castaglia Exp $
  */
 
 #include "conf.h"

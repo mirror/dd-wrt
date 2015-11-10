@@ -23,7 +23,7 @@
  */
 
 /* Lastlog code
- * $Id: lastlog.c,v 1.5 2013/10/13 18:06:57 castaglia Exp $
+ * $Id: lastlog.c,v 1.5 2013-10-13 18:06:57 castaglia Exp $
  */
 
 #include "conf.h"

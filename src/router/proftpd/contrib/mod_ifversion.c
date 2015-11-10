@@ -26,7 +26,7 @@
  * This is mod_ifversion, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_ifversion.c,v 1.5 2013/02/15 22:46:42 castaglia Exp $
+ * $Id: mod_ifversion.c,v 1.5 2013-02-15 22:46:42 castaglia Exp $
  */
 
 #include "conf.h"

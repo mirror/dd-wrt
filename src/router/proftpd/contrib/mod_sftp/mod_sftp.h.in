@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_sftp.h.in,v 1.30 2014/03/02 22:05:43 castaglia Exp $
+ * $Id: mod_sftp.h.in,v 1.30 2014-03-02 22:05:43 castaglia Exp $
  */
 
 #ifndef MOD_SFTP_H

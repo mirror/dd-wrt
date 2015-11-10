@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2014 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* House initialization and main program loop
- * $Id: main.c,v 1.462 2014/01/25 16:34:09 castaglia Exp $
- */
+/* House initialization and main program loop */
 
 #include "conf.h"
 
@@ -572,6 +570,20 @@ int pr_cmd_read(cmd_rec **res) {
     cmd = make_ftp_cmd(session.pool, cp, flags);
     if (cmd) {
       *res = cmd;
+
+      if (pr_cmd_is_http(cmd) == TRUE) {
+        cmd->is_ftp = FALSE;
+        cmd->protocol = "HTTP";
+
+      } else if (pr_cmd_is_smtp(cmd) == TRUE) {
+        cmd->is_ftp = FALSE;
+        cmd->protocol = "SMTP";
+
+      } else {
+        /* Assume that the client is sending valid FTP commands. */
+        cmd->is_ftp = TRUE;
+        cmd->protocol = "FTP";
+      }
     } 
   }
 
@@ -827,6 +839,20 @@ static void cmd_loop(server_rec *server, conn_t *c) {
     }
 
     if (cmd) {
+
+      /* Detect known commands for other protocols; if found, drop the
+       * connection, lest we be used as part of an attack on a different
+       * protocol server (Bug#4143).
+       */
+      if (cmd->is_ftp == FALSE) {
+        pr_log_pri(PR_LOG_WARNING,
+          "client sent %s command '%s', disconnecting", cmd->protocol,
+          cmd->argv[0]);
+        pr_event_generate("core.bad-protocol", cmd);
+        pr_session_disconnect(NULL, PR_SESS_DISCONNECT_BAD_PROTOCOL,
+          cmd->protocol);
+      }
+ 
       pr_cmd_dispatch(cmd);
       destroy_pool(cmd->pool);
 
@@ -1206,8 +1232,26 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
   pr_signals_unblock();
 
   if (conn == NULL) {
-    pr_log_pri(PR_LOG_ERR, "fatal: unable to open incoming connection: %s",
-      strerror(xerrno));
+    /* There are some errors, e.g. ENOTCONN ("Transport endpoint is not
+     * connected") which can easily happen, as during scans/TCP
+     * probes/healthchecks, commonly done by load balancers, firewalls, and
+     * other clients.  By the time proftpd reaches the point of looking up
+     * the peer data for that connection, the client has disconnected.
+     *
+     * These are normal errors, and thus should not be logged as fatal
+     * conditions.
+     */
+    if (xerrno == ENOTCONN ||
+        xerrno == ECONNABORTED ||
+        xerrno == ECONNRESET) {
+      pr_log_pri(PR_LOG_DEBUG, "unable to open incoming connection: %s",
+        strerror(xerrno));
+
+    } else {
+      pr_log_pri(PR_LOG_ERR, "fatal: unable to open incoming connection: %s",
+        strerror(xerrno));
+    }
+
     exit(1);
   }
 

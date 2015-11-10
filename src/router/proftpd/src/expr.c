@@ -23,7 +23,7 @@
  */
 
 /* Expression API implementation
- * $Id: expr.c,v 1.6 2011/12/11 02:14:43 castaglia Exp $
+ * $Id: expr.c,v 1.6 2011-12-11 02:14:43 castaglia Exp $
  */
 
 #include "conf.h"

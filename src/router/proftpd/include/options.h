@@ -25,7 +25,7 @@
  */
 
 /* User configurable defaults and tunable parameters.
- * $Id: options.h,v 1.36 2014/01/25 16:34:09 castaglia Exp $
+ * $Id: options.h,v 1.36 2014-01-25 16:34:09 castaglia Exp $
  */
 
 #ifndef PR_OPTIONS_H

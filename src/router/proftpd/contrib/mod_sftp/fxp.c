@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp sftp
- * Copyright (c) 2008-2014 TJ Saunders
+ * Copyright (c) 2008-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: fxp.c,v 1.203 2014/01/17 06:11:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -4856,7 +4854,7 @@ static int fxp_handle_ext_space_avail(struct fxp_packet *fxp, char *path) {
   /* Unused bytes available to user. */
   sftp_msg_write_long(&buf, &buflen, (uint64_t) get_user_bytes_unused(&fs));
 
-  fxp_msg_write_short(&buf, &buflen, (uint32_t) fs.f_frsize);
+  sftp_msg_write_int(&buf, &buflen, (uint32_t) fs.f_frsize);
 
   resp = fxp_packet_create(fxp->pool, fxp->channel_id);
   resp->payload = ptr;
@@ -8808,7 +8806,7 @@ static int fxp_handle_readdir(struct fxp_packet *fxp) {
 static int fxp_handle_readlink(struct fxp_packet *fxp) {
   char data[PR_TUNABLE_PATH_MAX + 1];
   unsigned char *buf, *ptr;
-  char *path;
+  char *path, *resolved_path;
   int res;
   uint32_t buflen, bufsz;
   struct fxp_packet *resp;
@@ -8866,8 +8864,8 @@ static int fxp_handle_readlink(struct fxp_packet *fxp) {
   }
 
   /* The path may have been changed by any PRE_CMD handlers. */
-  path = dir_best_path(fxp->pool, cmd->arg);
-  if (path == NULL) {
+  resolved_path = dir_best_path(fxp->pool, cmd->arg);
+  if (resolved_path == NULL) {
     int xerrno = EACCES;
     const char *reason;
     uint32_t status_code;
@@ -8893,12 +8891,12 @@ static int fxp_handle_readlink(struct fxp_packet *fxp) {
     return fxp_packet_write(resp);
   }
 
-  if (!dir_check(fxp->pool, cmd, G_READ, path, NULL)) {
+  if (!dir_check(fxp->pool, cmd, G_READ, resolved_path, NULL)) {
     uint32_t status_code = SSH2_FX_PERMISSION_DENIED;
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "READLINK of '%s' blocked by <Limit %s> configuration", path,
-      cmd->argv[0]);
+      "READLINK of '%s' (resolved to '%s') blocked by <Limit %s> configuration",
+      path, resolved_path, cmd->argv[0]);
 
     pr_trace_msg(trace_channel, 8, "sending response: STATUS %lu '%s'",
       (unsigned long) status_code, fxp_strerror(status_code));
@@ -9063,7 +9061,6 @@ static int fxp_handle_realpath(struct fxp_packet *fxp) {
       if (fxp->payload_sz > 0) {
         composite_path = sftp_msg_read_string(fxp->pool, &fxp->payload,
           &fxp->payload_sz);
-(void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION, "handle_realpath: have composite-path = '%s'", composite_path);
 
         /* XXX One problem with the most recent SFTP Draft is that it does NOT
          * include a count of the number of composite-paths that the client
@@ -9103,6 +9100,10 @@ static int fxp_handle_realpath(struct fxp_packet *fxp) {
   
       pr_trace_msg(trace_channel, 8, "sending response: NAME 1 %s %s",
         path, fxp_strattrs(fxp->pool, &st, &attr_flags));
+
+      sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_NAME);
+      sftp_msg_write_int(&buf, &buflen, fxp->request_id);
+      sftp_msg_write_int(&buf, &buflen, 1);
       fxp_name_write(fxp->pool, &buf, &buflen, path, &st, "nobody",
         "nobody");
     }
@@ -9157,6 +9158,10 @@ static int fxp_handle_realpath(struct fxp_packet *fxp) {
 
         pr_trace_msg(trace_channel, 8, "sending response: NAME 1 %s %s",
           path, fxp_strattrs(fxp->pool, &st, &attr_flags));
+
+        sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_NAME);
+        sftp_msg_write_int(&buf, &buflen, fxp->request_id);
+        sftp_msg_write_int(&buf, &buflen, 1);
         fxp_name_write(fxp->pool, &buf, &buflen, path, &st, "nobody",
           "nobody");
       }
@@ -9212,6 +9217,10 @@ static int fxp_handle_realpath(struct fxp_packet *fxp) {
 
       pr_trace_msg(trace_channel, 8, "sending response: NAME 1 %s %s",
         path, fxp_strattrs(fxp->pool, &st, &attr_flags));
+
+      sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_NAME);
+      sftp_msg_write_int(&buf, &buflen, fxp->request_id);
+      sftp_msg_write_int(&buf, &buflen, 1);
       fxp_name_write(fxp->pool, &buf, &buflen, path, &st, "nobody",
         "nobody");
     }
@@ -9253,6 +9262,10 @@ static int fxp_handle_realpath(struct fxp_packet *fxp) {
 
         pr_trace_msg(trace_channel, 8, "sending response: NAME 1 %s %s",
           path, fxp_strattrs(fxp->pool, &st, &attr_flags));
+
+        sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_NAME);
+        sftp_msg_write_int(&buf, &buflen, fxp->request_id);
+        sftp_msg_write_int(&buf, &buflen, 1);
         fxp_name_write(fxp->pool, &buf, &buflen, path, &st, "nobody",
           "nobody");
       }
@@ -9362,7 +9375,7 @@ static int fxp_handle_remove(struct fxp_packet *fxp) {
 
   path = cmd->arg;
 
-  cmd2 = fxp_cmd_alloc(fxp_pool, C_DELE, path);
+  cmd2 = fxp_cmd_alloc(fxp->pool, C_DELE, path);
   if (pr_cmd_dispatch_phase(cmd2, PRE_CMD, 0) < 0) {
     status_code = SSH2_FX_PERMISSION_DENIED;
 

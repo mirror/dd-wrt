@@ -26,7 +26,7 @@
  * This is mod_sftp_pam, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_sftp_pam.c,v 1.20 2013/10/07 01:29:04 castaglia Exp $
+ * $Id: mod_sftp_pam.c,v 1.20 2013-10-07 01:29:04 castaglia Exp $
  * $Libraries: -lpam $
  */
 

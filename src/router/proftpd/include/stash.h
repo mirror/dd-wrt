@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD symbol table hash ("stash")
- * $Id: stash.h,v 1.3 2012/04/24 23:27:38 castaglia Exp $
+ * $Id: stash.h,v 1.3 2012-04-24 23:27:38 castaglia Exp $
  */
 
 #ifndef PR_STASH_H

@@ -23,7 +23,7 @@
  */
 
 /* Home-on-demand support
- * $Id: mkhome.c,v 1.23 2013/10/09 05:21:06 castaglia Exp $
+ * $Id: mkhome.c,v 1.23 2013-10-09 05:21:06 castaglia Exp $
  */
 
 #include "conf.h"

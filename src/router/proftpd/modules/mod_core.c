@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2014 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Core FTPD module
- * $Id: mod_core.c,v 1.461 2014/05/03 22:18:12 castaglia Exp $
- */
+/* Core FTPD module */
 
 #include "conf.h"
 #include "privs.h"
@@ -1925,7 +1923,7 @@ MODRET set_allowdenyfilter(cmd_rec *cmd) {
 
   c = add_config_param(cmd->argv[0], 1, pre);
   c->flags |= CF_MERGEDOWN;
-  return HANDLED(cmd);
+  return PR_HANDLED(cmd);
 
 #else /* no regular expression support at the moment */
   CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "The ", cmd->argv[0],

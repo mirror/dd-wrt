@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth-kbdint.c,v 1.10 2014/03/02 22:05:43 castaglia Exp $
+ * $Id: auth-kbdint.c,v 1.10 2014-03-02 22:05:43 castaglia Exp $
  */
 
 #include "mod_sftp.h"

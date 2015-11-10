@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD Controls command-line client
- * $Id: ftpdctl.c,v 1.20 2013/07/16 21:36:49 castaglia Exp $
+ * $Id: ftpdctl.c,v 1.20 2013-07-16 21:36:49 castaglia Exp $
  */
 
 #include "conf.h"

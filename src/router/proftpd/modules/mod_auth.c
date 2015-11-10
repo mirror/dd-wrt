@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Authentication module for ProFTPD
- * $Id: mod_auth.c,v 1.317 2013/12/29 20:17:09 castaglia Exp $
+ * $Id: mod_auth.c,v 1.317 2013-12-29 20:17:09 castaglia Exp $
  */
 
 #include "conf.h"
@@ -1847,23 +1847,23 @@ static int auth_scan_scoreboard(void) {
 }
 
 static int have_client_limits(cmd_rec *cmd) {
-  if (find_config(cmd->server->conf, CONF_PARAM, "MaxClientsPerClass", FALSE) != NULL) {
+  if (find_config(TOPLEVEL_CONF, CONF_PARAM, "MaxClientsPerClass", FALSE) != NULL) {
     return TRUE;
   }
 
-  if (find_config(cmd->server->conf, CONF_PARAM, "MaxClientsPerHost", FALSE) != NULL) {
+  if (find_config(TOPLEVEL_CONF, CONF_PARAM, "MaxClientsPerHost", FALSE) != NULL) {
     return TRUE;
   }
 
-  if (find_config(cmd->server->conf, CONF_PARAM, "MaxClientsPerUser", FALSE) != NULL) {
+  if (find_config(TOPLEVEL_CONF, CONF_PARAM, "MaxClientsPerUser", FALSE) != NULL) {
     return TRUE;
   }
 
-  if (find_config(cmd->server->conf, CONF_PARAM, "MaxClients", FALSE) != NULL) {
+  if (find_config(TOPLEVEL_CONF, CONF_PARAM, "MaxClients", FALSE) != NULL) {
     return TRUE;
   }
 
-  if (find_config(cmd->server->conf, CONF_PARAM, "MaxHostsPerUser", FALSE) != NULL) {
+  if (find_config(TOPLEVEL_CONF, CONF_PARAM, "MaxHostsPerUser", FALSE) != NULL) {
     return TRUE;
   }
 

@@ -23,7 +23,7 @@
  */
 
 /* ASCII character checks
- * $Id: ascii.h,v 1.1 2013/02/15 22:33:23 castaglia Exp $
+ * $Id: ascii.h,v 1.1 2013-02-15 22:33:23 castaglia Exp $
  */
 
 #ifndef PR_ASCII_H

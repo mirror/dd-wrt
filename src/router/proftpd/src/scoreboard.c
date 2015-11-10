@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD scoreboard support.
- * $Id: scoreboard.c,v 1.81 2013/12/09 19:16:14 castaglia Exp $
+ * $Id: scoreboard.c,v 1.81 2013-12-09 19:16:14 castaglia Exp $
  */
 
 #include "conf.h"
@@ -208,6 +208,8 @@ static int rlock_scoreboard(void) {
 }
 
 static int unlock_entry(int fd) {
+  unsigned int nattempts = 1;
+
   entry_lock.l_type = F_UNLCK;
   entry_lock.l_whence = SEEK_CUR;
   entry_lock.l_len = sizeof(pr_scoreboard_entry_t);
@@ -215,12 +217,32 @@ static int unlock_entry(int fd) {
   pr_trace_msg("lock", 9, "attempting to unlock scoreboard fd %d entry, "
     "offset %" PR_LU, fd, (pr_off_t) entry_lock.l_start);
 
-  while (fcntl(fd, F_SETLKW, &entry_lock) < 0) {
+  while (fcntl(fd, F_SETLK, &entry_lock) < 0) {
     int xerrno = errno;
 
     if (xerrno == EINTR) {
       pr_signals_handle();
       continue;
+    }
+
+    if (xerrno == EAGAIN) {
+      /* Treat this as an interrupted call, call pr_signals_handle() (which
+       * will delay for a few msecs because of EINTR), and try again.
+       * After MAX_LOCK_ATTEMPTS attempts, give up altogether.
+       */
+
+      nattempts++;
+      if (nattempts <= SCOREBOARD_MAX_LOCK_ATTEMPTS) {
+        errno = EINTR;
+
+        pr_signals_handle();
+
+        errno = 0;
+        pr_trace_msg("lock", 9,
+          "attempt #%u to to unlock scoreboard fd %d entry, offset %" PR_LU,
+          nattempts, fd, (pr_off_t) entry_lock.l_start);
+        continue;
+      }
     }
 
     pr_trace_msg("lock", 3, "unlock of scoreboard fd %d entry failed: %s", fd,
@@ -310,6 +332,8 @@ static int unlock_scoreboard(void) {
 }
 
 static int wlock_entry(int fd) {
+  unsigned int nattempts = 1;
+
   entry_lock.l_type = F_WRLCK;
   entry_lock.l_whence = SEEK_CUR;
   entry_lock.l_len = sizeof(pr_scoreboard_entry_t);
@@ -317,12 +341,32 @@ static int wlock_entry(int fd) {
   pr_trace_msg("lock", 9, "attempting to write-lock scoreboard fd %d entry, "
     "offset %" PR_LU, fd, (pr_off_t) entry_lock.l_start);
 
-  while (fcntl(fd, F_SETLKW, &entry_lock) < 0) {
+  while (fcntl(fd, F_SETLK, &entry_lock) < 0) {
     int xerrno = errno;
 
     if (xerrno == EINTR) {
       pr_signals_handle();
       continue;
+    }
+
+    if (xerrno == EAGAIN) {
+      /* Treat this as an interrupted call, call pr_signals_handle() (which
+       * will delay for a few msecs because of EINTR), and try again.
+       * After MAX_LOCK_ATTEMPTS attempts, give up altogether.
+       */
+
+      nattempts++;
+      if (nattempts <= SCOREBOARD_MAX_LOCK_ATTEMPTS) {
+        errno = EINTR;
+
+        pr_signals_handle();
+
+        errno = 0;
+        pr_trace_msg("lock", 9,
+          "attempt #%u to write-lock scoreboard fd %d entry, offset %" PR_LU,
+          nattempts, fd, (pr_off_t) entry_lock.l_start);
+        continue;
+      }
     }
 
     pr_trace_msg("lock", 3, "write-lock of scoreboard fd %d entry failed: %s",

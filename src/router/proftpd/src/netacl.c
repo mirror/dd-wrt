@@ -23,7 +23,7 @@
  */
 
 /* Network ACL routines
- * $Id: netacl.c,v 1.27 2013/02/15 22:39:00 castaglia Exp $
+ * $Id: netacl.c,v 1.27 2013-02-15 22:39:00 castaglia Exp $
  */
 
 #include "conf.h"

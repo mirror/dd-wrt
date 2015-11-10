@@ -25,7 +25,7 @@
  */
 
 /* Non-specific support functions.
- * $Id: support.h,v 1.39 2011/11/19 02:40:12 castaglia Exp $
+ * $Id: support.h,v 1.39 2011-11-19 02:40:12 castaglia Exp $
  */
 
 #ifndef PR_SUPPORT_H

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2014 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Data transfer module for ProFTPD
- *
- * $Id: mod_xfer.c,v 1.334 2014/04/28 17:11:18 castaglia Exp $
- */
+/* Data transfer module for ProFTPD */
 
 #include "conf.h"
 #include "privs.h"
@@ -54,7 +51,7 @@ static pr_fh_t *retr_fh = NULL;
 static pr_fh_t *stor_fh = NULL;
 static pr_fh_t *displayfilexfer_fh = NULL;
 
-static unsigned char have_prot = FALSE;
+static unsigned char have_rfc2228_data = FALSE;
 static unsigned char have_zmode = FALSE;
 static unsigned char use_sendfile = TRUE;
 static off_t use_sendfile_len = 0;
@@ -610,7 +607,7 @@ static int transmit_sendfile(off_t data_len, off_t *data_offset,
   if (pr_throttle_have_rate() ||
      !(session.xfer.file_size - data_len) ||
      (session.sf_flags & (SF_ASCII|SF_ASCII_OVERRIDE)) ||
-     have_prot || have_zmode ||
+     have_rfc2228_data || have_zmode ||
      !use_sendfile) {
 
     if (!xfer_logged_sendfile_decline_msg) {
@@ -625,7 +622,7 @@ static int transmit_sendfile(off_t data_len, off_t *data_offset,
       } else if (session.sf_flags & (SF_ASCII|SF_ASCII_OVERRIDE)) {
         pr_log_debug(DEBUG10, "declining use of sendfile for ASCII data");
 
-      } else if (have_prot) {
+      } else if (have_rfc2228_data) {
         pr_log_debug(DEBUG10, "declining use of sendfile due to RFC2228 data "
           "channel protections");
 
@@ -971,7 +968,7 @@ static void stor_abort(void) {
 
   } else if (session.xfer.path) {
     delete_stores = get_param_ptr(CURRENT_CONF, "DeleteAbortedStores", FALSE);
-    if (delete_stores == NULL ||
+    if (delete_stores != NULL &&
         *delete_stores == TRUE) {
       pr_log_debug(DEBUG5, "removing aborted file '%s'", session.xfer.path);
       pr_fsio_unlink(session.xfer.path);
@@ -1153,10 +1150,10 @@ MODRET xfer_post_prot(cmd_rec *cmd) {
   CHECK_CMD_ARGS(cmd, 2);
 
   if (strncmp(cmd->argv[1], "C", 2) != 0) {
-    have_prot = TRUE;
+    have_rfc2228_data = TRUE;
 
   } else {
-    have_prot = FALSE;
+    have_rfc2228_data = FALSE;
   }
 
   return PR_DECLINED(cmd);
@@ -3051,7 +3048,7 @@ MODRET set_transferpriority(cmd_rec *cmd) {
   *((int *) c->argv[1]) = prio;
   c->flags |= CF_MERGEDOWN;
 
-  return HANDLED(cmd);
+  return PR_HANDLED(cmd);
 }
 
 /* usage: TransferRate cmds kbps[:free-bytes] ["user"|"group"|"class"
@@ -3419,6 +3416,15 @@ static int xfer_sess_init(void) {
         }
       }
     }
+  }
+
+  /* IF the RFC2228 mechanism is "TLS" at this point in time, then set the flag
+   * to disable use of sendfile; the client is probably an FTPS client using
+   * implicit SSL (Bug#4073).
+   */
+  if (session.rfc2228_mech != NULL &&
+      strncmp(session.rfc2228_mech, "TLS", 4) == 0) {
+    have_rfc2228_data = TRUE;
   }
 
   return 0;

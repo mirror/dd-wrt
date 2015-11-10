@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2013 The ProFTPD Project team
+ * Copyright (c) 2004-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Display of files
- * $Id: display.c,v 1.32 2013/10/07 05:51:30 castaglia Exp $
+ * $Id: display.c,v 1.32 2013-10-07 05:51:30 castaglia Exp $
  */
 
 #include "conf.h"
@@ -32,10 +32,12 @@ static int first_msg_sent = FALSE;
 static const char *first_msg = NULL;
 static const char *prev_msg = NULL;
 
+/* Note: The size provided by pr_fs_getsize2() is in KB, not bytes. */
 static void format_size_str(char *buf, size_t buflen, off_t size) {
-  char *units[] = {"", "K", "M", "G", "T", "P"};
-  unsigned int nunits = 6;
+  char *units[] = {"K", "M", "G", "T", "P"};
+  unsigned int nunits = 5;
   register unsigned int i = 0;
+  int res;
 
   /* Determine the appropriate units label to use. */
   while (size > 1024 &&
@@ -47,7 +49,15 @@ static void format_size_str(char *buf, size_t buflen, off_t size) {
   }
 
   /* Now, prepare the buffer. */
-  snprintf(buf, buflen, "%.3" PR_LU "%sB", (pr_off_t) size, units[i]);
+  res = snprintf(buf, buflen, "%.3" PR_LU "%sB", (pr_off_t) size, units[i]);
+
+  if (res > 2) {
+    /* Check for leading zeroes; it's an aethetic choice. */
+    if (buf[0] == '0' && buf[1] != '.') {
+      memmove(&buf[0], &buf[1], res-1);
+      buf[res-1] = '\0';
+    }
+  }
 }
 
 static int display_add_line(pool *p, const char *resp_code,
@@ -154,6 +164,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
   pr_fsio_fstat(fh, &st);
   fh->fh_iosz = st.st_blksize;
 
+  /* Note: The size provided by pr_fs_getsize() is in KB, not bytes. */
   res = pr_fs_fgetsize(fh->fh_fd, &fs_size);
   if (res < 0 &&
       errno != ENOSYS) {

@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_wrap2.h.in,v 1.10 2011/11/06 21:56:12 castaglia Exp $
+ * $Id: mod_wrap2.h.in,v 1.10 2011-11-06 21:56:12 castaglia Exp $
  */
 
 #ifndef MOD_WRAP2_H

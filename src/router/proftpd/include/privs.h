@@ -24,7 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* $Id: privs.h,v 1.34 2012/01/25 07:20:42 castaglia Exp $
+/* $Id: privs.h,v 1.34 2012-01-25 07:20:42 castaglia Exp $
  */
 
 #ifndef PR_PRIVS_H

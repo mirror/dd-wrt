@@ -26,7 +26,7 @@
 /* Simple utility to create the proftpd shutdown message file, allowing
  * an admin to configure the shutdown, deny, disconnect times and messages.
  *
- * $Id: ftpshut.c,v 1.10 2013/02/15 22:39:01 castaglia Exp $
+ * $Id: ftpshut.c,v 1.10 2013-02-15 22:39:01 castaglia Exp $
  */
 
 #include "conf.h"

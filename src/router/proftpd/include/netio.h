@@ -25,7 +25,7 @@
  */
 
 /* Network IO stream layer
- * $Id: netio.h,v 1.18 2014/01/06 06:57:16 castaglia Exp $
+ * $Id: netio.h,v 1.18 2014-01-06 06:57:16 castaglia Exp $
  */
 
 #ifndef PR_NETIO_H

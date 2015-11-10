@@ -23,7 +23,7 @@
  */
 
 /* Command API tests
- * $Id: cmd.c,v 1.4 2014/01/27 18:25:15 castaglia Exp $
+ * $Id: cmd.c,v 1.4 2014-01-27 18:25:15 castaglia Exp $
  */
 
 #include "tests.h"
@@ -359,7 +359,6 @@ END_TEST
 START_TEST (cmd_get_displayable_str_test) {
   char *ok, *res = NULL;
   cmd_rec *cmd = NULL;
-  size_t len = 0;
 
   res = pr_cmd_get_displayable_str(NULL, NULL);
   fail_unless(res == NULL, "Failed to handle null cmd_rec");

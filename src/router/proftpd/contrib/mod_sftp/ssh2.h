@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: ssh2.h,v 1.7 2013/01/29 07:08:05 castaglia Exp $
+ * $Id: ssh2.h,v 1.7 2013-01-29 07:08:05 castaglia Exp $
  */
 
 #ifndef MOD_SFTP_SSH2_H

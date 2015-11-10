@@ -107,6 +107,10 @@ AC_TRY_LINK(
   ]
 )
 
+dnl Splice out -lsupp, since that library hasn't been built yet
+LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+LIBS="-lcrypto -lz $LIBS"
+
 AC_MSG_CHECKING([whether OpenSSL has crippled AES support])
 AC_TRY_LINK(
   [ #ifdef HAVE_STRING_H
@@ -121,12 +125,18 @@ AC_TRY_LINK(
   ],
   [
     AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
   ],
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_AES_CRIPPLED_OPENSSL, 1, [OpenSSL is missing AES192 and AES256 support])
+    LIBS="$saved_libs"
   ]
 )
+
+dnl Splice out -lsupp, since that library hasn't been built yet
+LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+LIBS="-lcrypto -lz $LIBS"
 
 AC_MSG_CHECKING([whether OpenSSL supports SHA256])
 AC_TRY_LINK(
@@ -140,11 +150,17 @@ AC_TRY_LINK(
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_SHA256_OPENSSL, 1, [OpenSSL supports SHA224/SHA256])
+    LIBS="$saved_libs"
   ],
   [
     AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
   ]
 )
+
+dnl Splice out -lsupp, since that library hasn't been built yet
+LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+LIBS="-lcrypto -lz $LIBS"
 
 AC_MSG_CHECKING([whether OpenSSL supports SHA512])
 AC_TRY_LINK(
@@ -158,9 +174,11 @@ AC_TRY_LINK(
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_SHA512_OPENSSL, 1, [OpenSSL supports SHA384/SHA512])
+    LIBS="$saved_libs"
   ],
   [
     AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
   ]
 )
 

@@ -23,7 +23,7 @@
  */
 
 /* Environment handling
- * $Id: env.h,v 1.3 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: env.h,v 1.3 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_ENV_H

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2014 The ProFTPD Project
+ * Copyright (c) 2001-2015 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* ProFTPD virtual/modular file-system support
- * $Id: fsio.c,v 1.159 2014/02/11 15:17:54 castaglia Exp $
+ * $Id: fsio.c,v 1.159 2014-02-11 15:17:54 castaglia Exp $
  */
 
 #include "conf.h"
@@ -1674,11 +1674,19 @@ pr_fs_match_t *pr_get_fs_match(const char *path, int op) {
 }
 #endif /* PR_USE_REGEX and PR_FS_MATCH */
 
-void pr_fs_setcwd(const char *dir) {
-  pr_fs_resolve_path(dir, cwd, sizeof(cwd)-1, FSIO_DIR_CHDIR);
-  sstrncpy(cwd, dir, sizeof(cwd));
+int pr_fs_setcwd(const char *dir) {
+  if (pr_fs_resolve_path(dir, cwd, sizeof(cwd)-1, FSIO_DIR_CHDIR) < 0) {
+    return -1;
+  }
+
+  if (sstrncpy(cwd, dir, sizeof(cwd)) < 0) {
+    return -1;
+  }
+
   fs_cwd = lookup_dir_fs(cwd, FSIO_DIR_CHDIR);
   cwd[sizeof(cwd) - 1] = '\0';
+
+  return 0;
 }
 
 const char *pr_fs_getcwd(void) {
@@ -2914,8 +2922,9 @@ int pr_fsio_set_use_mkdtemp(int value) {
  * its permissions.
  */
 static int schmod_dir(pool *p, const char *path, mode_t perms, int use_root) {
-  int flags, fd, res, xerrno = 0;
+  int flags, fd, ignore_eacces = FALSE, res, xerrno = 0;
   struct stat st;
+  mode_t dir_mode;
 
   /* We're not using the pool at the moment. */
   (void) p;
@@ -2923,7 +2932,10 @@ static int schmod_dir(pool *p, const char *path, mode_t perms, int use_root) {
   /* Open an fd on the path using O_RDONLY|O_NOFOLLOW, so that we a)
    * avoid symlinks, and b) get an fd on the (hopefully) directory.
    */
-  flags = O_RDONLY|O_NOFOLLOW;
+  flags = O_RDONLY;
+#ifdef O_NOFOLLOW
+  flags |= O_NOFOLLOW;
+#endif
   fd = open(path, flags);
   xerrno = errno;
 
@@ -2966,12 +2978,31 @@ static int schmod_dir(pool *p, const char *path, mode_t perms, int use_root) {
     return -1;
   }
 
+  /* Note that some filesystems (e.g. CIFS) may not actually create a
+   * directory with the expected 0700 mode.  If that is the case, then a
+   * subsequence chmod(2) on that directory will likely fail.  Thus we also
+   * double-check the mode of the directory created via mkdtemp(3), and
+   * attempt to mitigate Bug#4063.
+   */
+  dir_mode = (st.st_mode & ~S_IFMT);
+  if (dir_mode != 0700) {
+    ignore_eacces = TRUE;
+
+    pr_trace_msg(trace_channel, 3,
+      "schmod: path '%s' has mode %04o, expected 0700", path, dir_mode);
+
+    /* This is such an unexpected situation that it warrants some logging. */
+    pr_log_pri(PR_LOG_DEBUG,
+      "NOTICE: directory '%s' has unexpected mode %04o (expected 0700)", path,
+      dir_mode);
+  }
+
   if (use_root) {
     PRIVS_ROOT
   }
 
   res = fchmod(fd, perms);
-  xerrno = xerrno;
+  xerrno = errno;
 
   if (use_root) {
     PRIVS_RELINQUISH
@@ -2994,17 +3025,27 @@ static int schmod_dir(pool *p, const char *path, mode_t perms, int use_root) {
      *
      * Maybe this exception for ENOSYS here should be made configurable?
      */
-    if (xerrno != ENOSYS) {
-      pr_trace_msg(trace_channel, 3,
-        "schmod: unable to set perms %04o on path '%s': %s", perms, path,
-        strerror(xerrno));
-      errno = xerrno;
-      return -1;
+
+    if (xerrno == ENOSYS) {
+      pr_log_debug(DEBUG0, "schmod: unable to set perms %04o on "
+        "path '%s': %s (chmod(2) not supported by underlying filesystem?)",
+        perms, path, strerror(xerrno));
+      return 0;
     }
 
-    pr_log_debug(DEBUG0, "mkdir: unable to set perms %04o on "
-      "path '%s': %s (chmod(2) not supported by underlying filesystem?)",
-      perms, path, strerror(xerrno));
+    if (xerrno == EACCES &&
+        ignore_eacces == TRUE) {
+      pr_log_debug(DEBUG0, "schmod: unable to set perms %04o on "
+        "path '%s': %s (chmod(2) not supported by underlying filesystem?)",
+        perms, path, strerror(xerrno));
+      return 0;
+    }
+
+    pr_trace_msg(trace_channel, 3,
+      "schmod: unable to set perms %04o on path '%s': %s", perms, path,
+      strerror(xerrno));
+    errno = xerrno;
+    return -1;
   }
 
   return 0;

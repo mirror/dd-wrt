@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth-publickey.c,v 1.13 2012/07/10 00:52:20 castaglia Exp $
+ * $Id: auth-publickey.c,v 1.13 2012-07-10 00:52:20 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -262,7 +262,7 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     if (sftp_keystore_verify_user_key(pkt->pool, user, pubkey_data,
         pubkey_len) < 0) {
       *send_userauth_fail = TRUE;
-      errno = EPERM;
+      errno = EACCES;
       return 0;
     }
 
@@ -305,7 +305,7 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
         "failed to verify '%s' signature on public key auth request for "
         "user '%s'", pubkey_algo, orig_user);
       *send_userauth_fail = TRUE;
-      errno = EPERM;
+      errno = EACCES;
       return 0;
     }
   }

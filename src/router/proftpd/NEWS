@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.1597 2014/05/15 16:24:13 castaglia Exp $
+$Id: NEWS,v 1.1597 2014-05-15 16:24:13 castaglia Exp $
 
 -----------------------------------------------------------------------------
   More details on the bugs listed below can be found by using the bug number
@@ -8,6 +8,56 @@ $Id: NEWS,v 1.1597 2014/05/15 16:24:13 castaglia Exp $
 
   where `N' is the bug number.
 -----------------------------------------------------------------------------
+
+1.3.5a - Released 27-May-2015
+--------------------------------
+- Bug 4055 - "error setting listen fd IPV6_TCLASS: Protocol not available" log
+  message.
+- Bug 3944 - Session closed if active data transfer fails due to "Address
+  already in use" error.
+- Bug 4068 - MaxClients directive doesn't work for <Anonymous> sessions.
+- Bug 4069 - NLST -a shows / directory instead of the current directory.
+- Bug 4063 - Unable to create directory on NFS/CIFS partition: Permission
+  denied.
+- Bug 4073 - Polycom VOIP phones unable to use FTPS data transfers.
+- Bug 4077 - ShaperLog not closed/reopened on SIGHUP, causing log rotation
+  problems.
+- Bug 4079 - Invalid response encoding for SFTP space-available request.
+- Bug 4083 - Using SQLDefaultHomedir with null home results in "No such user".
+- Bug 4087 - mod_sftp does not handle "MaxLoginAttempts none" properly.
+- Bug 4089 - mod_sftp does not allow multiple attempts using a given
+  authentication method.
+- Bug 4090 - mod_wrap2_file does not support IPv6 addresses properly.
+- Bug 4091 - Log "Operation not permitted" privs errors at NOTICE rather than
+  ERROR.
+- Bug 4094 - Available space on file system using %f displays wrong value.
+- Bug 4108 - SSL handshakes for data connections sometimes stall for 3-30
+  seconds.
+- Bug 4109 - setsockopt() call for IPV6_TCLASS should use IPPROTO_IPV6.
+- Bug 4112 - Failure to connect using mod_sftp sometimes due to too-small
+  buffers.
+- Bug 4114 - mod_tls should not support SSLv3 by default.
+- Bug 4116 - Report exact SSL/TLS protocol version used in client connections.
+- Bug 4124 - DeleteAbortedStores defaults to "on" for all transfers, not just
+  HiddenStores.
+- Bug 4129 - mod_sql caches incorrect UID/GID when name cannot be retrieved.
+- Bug 4131 - mod_sftp's autoconf script does not detect OpenSSL SHA2 support.
+- Bug 4133 - LDAPUsers directive does not honor uid-number-filter-template
+  parameter.
+- Bug 4137 - GeoIPDenyFilter incorrectly takes precedence over GeoIPAllowFilter.
+- Bug 4140 - SFTP READLINK requests to symlinks to directories fail.
+- Bug 4143 - HTTPS/FTPS protocol confusion leads to XSS.
+- Bug 4145 - Segfault if AuthUserFile is a relative symlink.
+- Bug 4152 - Reduce logging of non-fatal "unable to open incoming connection"
+  errors.
+- Bug 4155 - SSH keys with too-long Comment headers aren't recognized by
+  mod_sftp_sql.
+- Bug 4156 - Segfault handling LIST/NLST FTP command on Mac OS X.
+- Bug 4160 - Malformed response to SSH_FXP_REALPATH with SFTP version 6.
+- Bug 4169 - Unauthenticated copying of files via SITE CPFR/CPTO allowed by
+  mod_copy.
+- Bug 4178 - TLS session reuse requirement for data connections not properly
+  enforced.
 
 1.3.5 - Released 15-May-2014
 --------------------------------
@@ -77,7 +127,6 @@ $Id: NEWS,v 1.1597 2014/05/15 16:24:13 castaglia Exp $
 - Bug 3981 - Null pointer dereference in mod_exec with ExecOption useStdin.
 - Bug 3982 - Normalize log messages and levels.
 - Bug 3888 - Add LDAPLog directive to mod_ldap.
-- Bug 3982 - Normalize log messages and levels.
 - Bug 3986 - Support filesystems which do not support chmod(2)/chown(2),
   e.g. FAT/ExFAT.
 - Bug 3991 - SSL session caching modules use incorrect OpenSSL cache mode flags,

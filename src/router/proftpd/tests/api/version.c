@@ -23,7 +23,7 @@
  */
 
 /* Version API tests
- * $Id: version.c,v 1.2 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: version.c,v 1.2 2011-05-23 20:50:31 castaglia Exp $
  */
 
 #include "tests.h"

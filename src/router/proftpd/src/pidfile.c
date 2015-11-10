@@ -23,7 +23,7 @@
  */
 
 /* Pidfile management
- * $Id: pidfile.c,v 1.5 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: pidfile.c,v 1.5 2011-05-23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"

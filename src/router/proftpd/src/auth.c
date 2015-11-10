@@ -25,7 +25,7 @@
  */
 
 /* Authentication front-end for ProFTPD
- * $Id: auth.c,v 1.102 2013/11/10 01:56:49 castaglia Exp $
+ * $Id: auth.c,v 1.102 2013-11-10 01:56:49 castaglia Exp $
  */
 
 #include "conf.h"

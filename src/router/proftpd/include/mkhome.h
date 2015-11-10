@@ -23,7 +23,7 @@
  */
 
 /* Home-on-demand support
- * $Id: mkhome.h,v 1.3 2012/09/05 16:40:58 castaglia Exp $
+ * $Id: mkhome.h,v 1.3 2012-09-05 16:40:58 castaglia Exp $
  */
 
 #ifndef PR_MKHOME_H

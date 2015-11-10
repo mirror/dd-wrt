@@ -26,7 +26,7 @@
  * This is mod_unique_id, contrib software for proftpd 1.2.x/1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_unique_id.c,v 1.6 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_unique_id.c,v 1.6 2011-05-23 20:56:40 castaglia Exp $
  */
 
 #include "conf.h"

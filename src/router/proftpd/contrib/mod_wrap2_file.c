@@ -2,7 +2,7 @@
  * ProFTPD: mod_wrap2_file -- a mod_wrap2 sub-module for supplying IP-based
  *                            access control data via file-based tables
  *
- * Copyright (c) 2002-2013 TJ Saunders
+ * Copyright (c) 2002-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_wrap2_file.c,v 1.14 2013/12/19 23:19:50 castaglia Exp $
+ * $Id: mod_wrap2_file.c,v 1.14 2013-12-19 23:19:50 castaglia Exp $
  */
 
 #include "mod_wrap2.h"
@@ -47,7 +47,7 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
 
   while (pr_fsio_getline(buf, sizeof(buf), (pr_fh_t *) filetab->tab_handle,
       &lineno) != NULL) {
-    char *res = NULL, *service = NULL;
+    char *ptr, *res = NULL, *service = NULL;
     size_t buflen = strlen(buf);
 
     if (buf[buflen-1] != '\n') {
@@ -56,8 +56,9 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
       continue;
     } 
 
-    if (buf[0] == '#' || buf[strspn(buf, " \t\r\n")] == 0)
+    if (buf[0] == '#' || buf[strspn(buf, " \t\r\n")] == 0) {
       continue;
+    }
 
     buf[buflen-1] = '\0';
 
@@ -66,20 +67,18 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
      * syntax will result in lack of desired results when doing the access
      * checks.
      */
-    res = strchr(buf, ':');
-    if (res == NULL) {
+    ptr = strchr(buf, ':');
+    if (ptr == NULL) {
       wrap2_log("file '%s': badly formatted list of daemon/service names at "
         "line %u", filetab->tab_name, lineno);
       continue;
     }
 
-    service = pstrndup(filetab->tab_pool, buf, (res - buf));
+    service = pstrndup(filetab->tab_pool, buf, (ptr - buf));
 
     if (filetab_service_name &&
         (strcasecmp(filetab_service_name, service) == 0 ||
          strncasecmp("ALL", service, 4) == 0)) {
-      char *ptr = NULL;
-
       if (filetab_daemons_list == NULL) {
         filetab_daemons_list = make_array(filetab->tab_pool, 0, sizeof(char *));
       }
@@ -93,8 +92,9 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
         continue;
       }
 
-      if (filetab_clients_list == NULL)
+      if (filetab_clients_list == NULL) {
         filetab_clients_list = make_array(filetab->tab_pool, 0, sizeof(char *));
+      }
 
       /* Check for another ':' delimiter.  If present, anything following that
        * delimiter is an option/shell command (as per the hosts_access(5) man
@@ -104,23 +104,43 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
        * client names.  Otherwise, a comma- or space-delimited list of names
        * will be treated as a single name, and violate the principle of least
        * surprise for the site admin.
+       *
+       * NOTE: Disable support for options in the file syntax if IPv6 addresses
+       * are present, since the parsing code below is not sufficient for
+       * handling both IPv6 addresses AND options, e.g.:
+       *
+       *  proftpd: [::1] [::2]: <options>
        */
 
-      ptr = wrap2_strsplit(res, ':');    
+      ptr = strchr(res, ':');
       if (ptr != NULL) {
-        if (filetab_options_list == NULL)
-          filetab_options_list = make_array(filetab->tab_pool, 0, 
-            sizeof(char *));
+        char *clients;
+        size_t clients_len;
 
-        /* Skip redundant whitespaces */
-        while (*ptr == ' ' ||
-               *ptr == '\t') {
-          pr_signals_handle();
-          ptr++;
+        clients_len = (ptr - res);
+        clients = pstrndup(filetab->tab_pool, res, clients_len);
+
+        if (strcspn(clients, "[]") == clients_len) {
+          ptr = wrap2_strsplit(res, ':');
+
+          if (filetab_options_list == NULL) {
+            filetab_options_list = make_array(filetab->tab_pool, 0, 
+              sizeof(char *));
+          }
+
+          /* Skip redundant whitespaces */
+          while (*ptr == ' ' ||
+                 *ptr == '\t') {
+            pr_signals_handle();
+            ptr++;
+          }
+
+          *((char **) push_array(filetab_options_list)) =
+            pstrdup(filetab->tab_pool, ptr);
+
+        } else {
+          /* Ignoring options and IPv6 addresses (Bug#4090) for now. */
         }
-
-        *((char **) push_array(filetab_options_list)) =
-          pstrdup(filetab->tab_pool, ptr);
 
       } else {
         /* No options present. */
