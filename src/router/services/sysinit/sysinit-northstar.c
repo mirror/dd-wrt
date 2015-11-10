@@ -3708,13 +3708,6 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "2");
 	insmod("switch-core");
 	insmod("switch-robo");
-
-	set_smp_affinity(163, 1); //eth1 and eth2  on core 0
-	set_smp_affinity(169, 2); //eth3 or eth2 core 1
-	
-	set_smp_affinity(111, 2);
-	set_smp_affinity(112, 2);
-
 	/*
 	 * network drivers 
 	 */
@@ -3735,6 +3728,14 @@ void start_sysinit(void)
 	insmod("dhd");
 #endif
 	insmod("wl");
+
+
+
+
+
+
+	set_smp_affinity(163, 1); //eth1 and eth2  on core 0
+	set_smp_affinity(169, 2); //eth3 or eth2 core 1
 
 	/*
 	 * Set a sane date 

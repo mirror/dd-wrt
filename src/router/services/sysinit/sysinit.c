@@ -2927,7 +2927,10 @@ void start_drivers(void)
 		led_control(LED_USB1, LED_OFF);
 	}
 #endif
-
+#ifdef HAVE_NORTHSTAR
+	set_smp_affinity(111, 2);
+	set_smp_affinity(112, 2);
+#endif
 }
 
 /*
