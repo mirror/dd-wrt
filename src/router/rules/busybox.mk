@@ -411,6 +411,7 @@ endif
 	echo "# CONFIG_FEATURE_WGET_SSL_HELPER is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_MOUNT_OTHERTAB is not set" >> busybox/.config
 	echo "CONFIG_FEATURE_IP_ROUTE_DIR=\"/etc/iproute2\"" >> busybox/.config
+	sed -i 's/\# CONFIG_ASH_OPTIMIZE_FOR_SIZE is not set/CONFIG_ASH_OPTIMIZE_FOR_SIZE=y/g' busybox/.config
 
 	cd busybox && make oldconfig
 	
