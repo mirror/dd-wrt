@@ -386,7 +386,6 @@ DIST_COMMON = $(srcdir)/include/Makemodule.am \
 @BUILD_MESG_TRUE@am__append_112 = term-utils/mesg.1
 @BUILD_WALL_TRUE@am__append_113 = wall
 @BUILD_WALL_TRUE@am__append_114 = term-utils/wall.1
-@BUILD_WALL_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@am__append_115 = install-exec-hook-wall
 @BUILD_WRITE_TRUE@am__append_116 = write
 @BUILD_WRITE_TRUE@am__append_117 = term-utils/write.1
 @BUILD_WRITE_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@am__append_118 = install-exec-hook-write
@@ -11433,9 +11432,6 @@ uninstall-man: uninstall-man1 uninstall-man3 uninstall-man5 \
 
 @BUILD_LIBFDISK_TRUE@uninstall-hook-libfdisk:
 @BUILD_LIBFDISK_TRUE@	rm -f $(DESTDIR)$(libdir)/libfdisk.so*
-@BUILD_WALL_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@install-exec-hook-wall::
-@BUILD_WALL_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@	chgrp tty $(DESTDIR)$(usrbin_execdir)/wall
-@BUILD_WALL_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@	chmod g+s $(DESTDIR)$(usrbin_execdir)/wall
 
 @BUILD_WRITE_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@install-exec-hook-write::
 @BUILD_WRITE_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@	chgrp tty $(DESTDIR)$(usrbin_execdir)/write
