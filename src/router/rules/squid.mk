@@ -2,11 +2,13 @@ GNU_ATOMICS = no
 
 ifeq ($(ARCH),i386)
 GNU_ATOMICS = yes
-LIB_ATOMIC = -latomic
+LIB_ATOMIC=-latomic
+CONFIG_LIBATOMIC=y
 endif
 ifeq ($(ARCH),mips)
 GNU_ATOMICS = yes
-LIB_ATOMIC = -latomic
+LIB_ATOMIC=-latomic
+CONFIG_LIBATOMIC=y
 endif
 squid-configure:
 	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl -lssl -lcrypto -pthread $(LIB_ATOMIC)" CPPFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl -lcrypto -lssl $(LIB_ATOMIC)" CXXFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl  $(LIB_ATOMIC)" \

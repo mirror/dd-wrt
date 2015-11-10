@@ -70,7 +70,7 @@ libmcrypt-configure:
 	$(MAKE) -C libmcrypt
 
 
-php5:
+php5: libxml2 libmcrypt
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
