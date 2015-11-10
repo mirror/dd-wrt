@@ -58,7 +58,6 @@ typedef struct iw_auth_descr
  * Maybe this should go in iwlib.c ?
  */
 
-#ifndef WE_ESSENTIAL
 #define IW_ARRAY_LEN(x) (sizeof(x)/sizeof((x)[0]))
 
 //static const struct iwmask_name iw_enc_mode_name[] = {
@@ -161,11 +160,8 @@ static const char *	iw_ie_key_mgmt_name[] = {
 };
 #define	IW_IE_KEY_MGMT_NUM	IW_ARRAY_LEN(iw_ie_key_mgmt_name)
 
-#endif	/* WE_ESSENTIAL */
-
 /************************* WPA SUBROUTINES *************************/
 
-#ifndef WE_ESSENTIAL
 /*------------------------------------------------------------------*/
 /*
  * Print all names corresponding to a mask.
@@ -431,7 +427,6 @@ iw_print_gen_ie(unsigned char *	buffer,
       offset += buffer[offset+1] + 2;
     }
 }
-#endif	/* WE_ESSENTIAL */
 
 /***************************** SCANNING *****************************/
 /*
@@ -585,12 +580,10 @@ print_scanning_token(struct stream_descr *	stream,	/* Stream of events */
 		     &event->u.qual, iw_range, has_range);
       printf("                    %s\n", buffer);
       break;
-#ifndef WE_ESSENTIAL
     case IWEVGENIE:
       /* Informations Elements are complex, let's do only some of them */
       iw_print_gen_ie(event->u.data.pointer, event->u.data.length);
       break;
-#endif	/* WE_ESSENTIAL */
     case IWEVCUSTOM:
       {
 	char custom[IW_CUSTOM_MAX+1];
@@ -799,7 +792,8 @@ print_scanning_info(int		skfd,
 	  if(iw_get_ext(skfd, ifname, SIOCGIWSCAN, &wrq) < 0)
 	    {
 	      /* Check if buffer was too small (WE-17 only) */
-	      if((errno == E2BIG) && (range.we_version_compiled > 16))
+	      if((errno == E2BIG) && (range.we_version_compiled > 16)
+	         && (buflen < 0xFFFF))
 		{
 		  /* Some driver may return very large scan results, either
 		   * because there are many cells, or because they have many
@@ -814,6 +808,10 @@ print_scanning_info(int		skfd,
 		    buflen = wrq.u.data.length;
 		  else
 		    buflen *= 2;
+
+                 /* wrq.u.data.length is 16 bits so max size is 65535 */
+                 if(buflen > 0xFFFF)
+                   buflen = 0xFFFF;
 
 		  /* Try again */
 		  goto realloc;
@@ -1302,7 +1300,6 @@ print_pm_info(int		skfd,
   return(0);
 }
 
-#ifndef WE_ESSENTIAL
 /************************** TRANSMIT POWER **************************/
 
 /*------------------------------------------------------------------*/
@@ -1405,6 +1402,7 @@ print_txpower_info(int		skfd,
   return(0);
 }
 
+#ifndef WE_ESSENTIAL
 /*********************** RETRY LIMIT/LIFETIME ***********************/
 
 /*------------------------------------------------------------------*/
@@ -2060,8 +2058,8 @@ static const struct iwlist_entry iwlist_cmds[] = {
   { "encryption",	print_keys_info,	0, NULL },
   { "keys",		print_keys_info,	0, NULL },
   { "power",		print_pm_info,		0, NULL },
-#ifndef WE_ESSENTIAL
   { "txpower",		print_txpower_info,	0, NULL },
+#ifndef WE_ESSENTIAL
   { "retry",		print_retry_info,	0, NULL },
   { "ap",		print_ap_info,		0, NULL },
   { "accesspoints",	print_ap_info,		0, NULL },
@@ -2159,6 +2157,7 @@ main(int	argc,
   char **args;			/* Command arguments */
   int count;			/* Number of arguments */
   const iwlist_cmd *iwcmd;
+  int goterr = 0;
 
   if(argc < 2)
     iw_usage(1);
@@ -2206,12 +2205,12 @@ main(int	argc,
 
   /* do the actual work */
   if (dev)
-    (*iwcmd->fn)(skfd, dev, args, count);
+    goterr = (*iwcmd->fn)(skfd, dev, args, count);
   else
     iw_enum_devices(skfd, iwcmd->fn, args, count);
 
   /* Close the socket. */
   iw_sockets_close(skfd);
 
-  return 0;
+  return goterr;
 }

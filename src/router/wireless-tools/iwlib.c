@@ -113,6 +113,7 @@ const struct iw_modul_descr	iw_modul_list[] = {
   { IW_MODUL_11A, "11a", "IEEE 802.11a (5 GHz, up to 54 Mb/s)" },
   { IW_MODUL_11B, "11b", "IEEE 802.11b (2.4 GHz, up to 11 Mb/s)" },
 
+#ifndef WE_ESSENTIAL
   /* Proprietary aggregates */
   { IW_MODUL_TURBO | IW_MODUL_11A, "turboa",
     "Atheros turbo mode at 5 GHz (up to 108 Mb/s)" },
@@ -120,6 +121,7 @@ const struct iw_modul_descr	iw_modul_list[] = {
     "Atheros turbo mode at 2.4 GHz (up to 108 Mb/s)" },
   { IW_MODUL_PBCC | IW_MODUL_11B, "11+",
     "TI 802.11+ (2.4 GHz, up to 22 Mb/s)" },
+#endif
 
   /* Individual modulations */
   { IW_MODUL_OFDM_G, "OFDMg",
@@ -129,6 +131,7 @@ const struct iw_modul_descr	iw_modul_list[] = {
   { IW_MODUL_DS, "DS", "802.11 Direct Sequence (2.4 GHz, up to 2 Mb/s)" },
   { IW_MODUL_FH, "FH", "802.11 Frequency Hopping (2,4 GHz, up to 2 Mb/s)" },
 
+#ifndef WE_ESSENTIAL
   /* Proprietary modulations */
   { IW_MODUL_TURBO, "turbo",
     "Atheros turbo mode, channel bonding (up to 108 Mb/s)" },
@@ -136,6 +139,7 @@ const struct iw_modul_descr	iw_modul_list[] = {
     "TI 802.11+ higher rates (2.4 GHz, up to 22 Mb/s)" },
   { IW_MODUL_CUSTOM, "custom",
     "Driver specific modulation (check driver documentation)" },
+#endif
 };
 
 /* Disable runtime version warning in iw_get_range_info() */
@@ -440,6 +444,7 @@ iw_print_version_info(const char *	toolname)
       return -1;
     }
 
+#ifndef WE_ESSENTIAL
   /* Information about the tools themselves */
   if(toolname != NULL)
     printf("%-8.16s  Wireless-Tools version %d\n", toolname, WT_VERSION);
@@ -452,6 +457,7 @@ iw_print_version_info(const char *	toolname)
   if(we_kernel_version > 15)
     printf("Kernel    Currently compiled with Wireless Extension v%d.\n\n",
 	   we_kernel_version);
+#endif
 
   /* Version for each device */
   iw_enum_devices(skfd, &print_iface_version_info, NULL, 0);
@@ -501,6 +507,7 @@ iw_get_range_info(int		skfd,
       /* Copy stuff at the right place, ignore extra */
       memcpy((char *) range, buffer, sizeof(iwrange));
     }
+#ifndef WE_ESSENTIAL
   else
     {
       /* Zero unknown fields */
@@ -574,6 +581,7 @@ iw_get_range_info(int		skfd,
        * If the driver source has not been updated to the latest, it doesn't
        * matter because the new fields are set to zero */
     }
+#endif
 
   /* Don't complain twice.
    * In theory, the test apply to each individual driver, but usually
@@ -667,6 +675,7 @@ iw_get_basic_config(int			skfd,
 {
   struct iwreq		wrq;
 
+  memset((char *) &wrq, 0, sizeof(struct iwreq));
   memset((char *) info, 0, sizeof(struct wireless_config));
 
   /* Get wireless name */
@@ -1541,6 +1550,7 @@ iw_print_key(char *			buffer,
     }
 }
 
+#ifndef WE_ESSENTIAL
 /*------------------------------------------------------------------*/
 /*
  * Convert a passphrase into a key
@@ -1555,6 +1565,7 @@ iw_pass_key(const char *	input,
   fprintf(stderr, "Error: Passphrase not implemented\n");
   return(-1);
 }
+#endif
 
 /*------------------------------------------------------------------*/
 /*
@@ -1577,12 +1588,14 @@ iw_in_key(const char *		input,
 	keylen = IW_ENCODING_TOKEN_MAX;
       memcpy(key, input + 2, keylen);
     }
+#ifndef WE_ESSENTIAL
   else
     if(!strncmp(input, "p:", 2))
       {
 	/* Second case : as a passphrase (PrismII cards) */
 	return(iw_pass_key(input + 2, key));		/* skip "p:" */
       }
+#endif
     else
       {
 	const char *	p;

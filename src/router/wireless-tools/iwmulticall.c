@@ -81,7 +81,7 @@ extern int
 #define main(args...) main_iwspy(args)
 #include "iwspy.c"
 #undef main
-#endif	/* WE_ESSENTIAL */
+#endif
 
 /* Get iwpriv in there. Mandatory for HostAP and some other drivers. */
 #define main(args...) main_iwpriv(args)
@@ -90,12 +90,14 @@ extern int
 #undef iw_usage
 #undef main
 
+#ifndef WE_ESSENTIAL
 /* Do we really need iwgetid ? Well, it's not like it's a big one */
 #define main(args...) main_iwgetid(args)
 #define iw_usage(args...) iwgetid_usage(args)
 #include "iwgetid.c"
 #undef iw_usage
 #undef main
+#endif
 
 /* iwevent is useless for most people, don't grab it ? */
 
@@ -131,11 +133,13 @@ main(int	argc,
 #ifndef WE_ESSENTIAL
   if(!strcmp(call_name, "iwspy"))
     return(main_iwspy(argc, argv));
-#endif	/* WE_ESSENTIAL */
+#endif
   if(!strcmp(call_name, "iwpriv"))
     return(main_iwpriv(argc, argv));
+#ifndef WE_ESSENTIAL
   if(!strcmp(call_name, "iwgetid"))
     return(main_iwgetid(argc, argv));
+#endif
 
   /* Uh oh... Not supposed to come here. */
   printf("iwmulticall : you are not supposed to call me this way...\n");
