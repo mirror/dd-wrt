@@ -1224,6 +1224,12 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_EA6700;
 	}
 
+	if (nvram_match("boardtype", "0xE646") && nvram_match("boardrev", "0x1200") && nvram_match("boardnum", "20140309")) {
+		setRouter("Linksys EA6350");
+
+		return ROUTER_LINKSYS_EA6350;
+	}
+
 	if (nvram_match("boardtype", "0xF646") && nvram_match("boardrev", "0x1100")) {
 		setRouter("Linksys EA6500 V2");
 
@@ -6023,6 +6029,7 @@ int led_control(int type, int act)
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_LINKSYS_EA6700:
 	case ROUTER_LINKSYS_EA6400:
+	case ROUTER_LINKSYS_EA6350:
 	case ROUTER_LINKSYS_EA6900:
 		usb_power = 0x009;	//usb power on/off
 		usb_power1 = 0x00a;	//usb power on/off
