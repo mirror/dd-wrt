@@ -74,9 +74,11 @@
 #define DEVID53010	0x53010	/* 53010 */
 #define DEVID53011	0x53011	/* 53011 */
 #define DEVID53012	0x53012	/* 53012 */
+#define DEVID53018	0x53018	/* 53018 */
 #define DEVID53019	0x53019	/* 53019 */
+#define DEVID53030	0x53030	/* 53030 */
 #define ROBO_IS_BCM5301X(id) ((id) == DEVID53010 || (id) == DEVID53011 || (id) == DEVID53012 || \
-(id) == DEVID53019)
+(id) == DEVID53018 || (id) == DEVID53019 || (id) == DEVID53030)
 
 /* Private et.o ioctls */
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
@@ -1127,6 +1129,12 @@ static void handle_reset_new(switch_driver * d, char *buf, int nr)
 	}
 }
 
+static int
+s_nvram_match(const char *name, const char *match)
+{
+	const char *value = nvram_get(name);
+	return (value && !strcmp(value, match));
+}
 static int handle_reset(void *driver, char *buf, int nr)
 {
 	int j;
@@ -1145,12 +1153,17 @@ static int handle_reset(void *driver, char *buf, int nr)
 	else
 		handle_reset_old(d, buf, nr);
 
+
 	/* reset ports to a known good state */
 	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665") && !strcmp(boardrev, "0x1101")) {
 		//do nothing
 		printk(KERN_INFO "Netgear R8000 workaround\n");
 	} else if (!strcmp(boardnum,"1234") && !strcmp(boardtype,"0x072F") && !strcmp(boardrev, "0x1202")) {
 		printk(KERN_INFO "Handle TEW828 workaround\n");
+	} else 	if (s_nvram_match("boardnum", "N/A") && s_nvram_match("boardtype", "0x072F") && s_nvram_match("1:devid", "0x43c5")
+	    && s_nvram_match("boardrev", "0x1101")
+	    && s_nvram_match("gpio7", "wps_button")) {
+		printk(KERN_INFO "Handle DIR885 workaround\n");
 	} else {
 		for (j = 0; j < d->ports; j++) {
 			robo_write16(ROBO_CTRL_PAGE, robo.port[j], 0x0000);
