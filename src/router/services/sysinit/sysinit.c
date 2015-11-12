@@ -2428,7 +2428,6 @@ void start_restore_defaults(void)
 		break;
 	case ROUTER_LINKSYS_EA6900:
 	case ROUTER_LINKSYS_EA6700:
-	case ROUTER_LINKSYS_EA6350:
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_ASUS_RTN18U:
 	case ROUTER_ASUS_AC67U:
