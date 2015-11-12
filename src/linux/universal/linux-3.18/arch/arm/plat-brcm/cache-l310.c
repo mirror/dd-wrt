@@ -242,11 +242,11 @@ void __init l310_init(void __iomem *base, u32 aux_val, u32 aux_mask, int irq)
 
 	l2x0_way_mask = (1 << ways) - 1;
 
-	if (ACP_WAR_ENAB() || arch_is_coherent()) {
-		/* Enable L2C filtering */
-		writel_relaxed(PHYS_OFFSET + SZ_1G, l2x0_base + L2X0_ADDR_FILTER_END);
-		writel_relaxed((PHYS_OFFSET | 1), l2x0_base + L2X0_ADDR_FILTER_START);
-	}
+//	if (ACP_WAR_ENAB() || arch_is_coherent()) {
+//		/* Enable L2C filtering */
+//		writel_relaxed(PHYS_OFFSET + SZ_1G, l2x0_base + L2X0_ADDR_FILTER_END);
+//		writel_relaxed((PHYS_OFFSET | 1), l2x0_base + L2X0_ADDR_FILTER_START);
+//	}
 
 	/*
 	 * Check if l2x0 controller is already enabled.

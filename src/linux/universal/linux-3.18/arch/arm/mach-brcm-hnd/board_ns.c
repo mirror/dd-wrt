@@ -1,4 +1,3 @@
-#include <linux/types.h>
 #include <linux/version.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
@@ -25,8 +24,8 @@
 #include <linux/cramfs_fs.h>
 #include <linux/squashfs_fs.h>
 #endif
-#include <linux/memblock.h>
 
+#include <linux/memblock.h>
 #include <typedefs.h>
 #include <osl.h>
 #include <bcmutils.h>
@@ -71,6 +70,9 @@ EXPORT_SYMBOL(ctf_attach_fn);
 /* To store real PHYS_OFFSET value */
 unsigned int ddr_phys_offset_va = -1;
 EXPORT_SYMBOL(ddr_phys_offset_va);
+
+unsigned int ddr_phys_offset2_va = 0xa8000000;	/* Default value for NS */
+EXPORT_SYMBOL(ddr_phys_offset2_va);
 
 unsigned int coherence_win_sz = SZ_256M;
 EXPORT_SYMBOL(coherence_win_sz);
@@ -220,6 +222,9 @@ static void __init brcm_setup(void)
 	}
 	
 	printk(KERN_INFO "coherence_win_size = %X\n",coherence_win_sz);
+	printk(KERN_INFO "coherence_flag = %X\n", coherence_flag);
+	printk(KERN_INFO "ddr_phys_offset_va =%X\n", ddr_phys_offset_va);
+	printk(KERN_INFO "ddr_phys_offset2_va =%X\n", ddr_phys_offset2_va);
 
 //      if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
 //              sprintf(saved_root_name, "/dev/mtdblock%d", rootfs_mtdblock());
@@ -343,7 +348,7 @@ MACHINE_START(BRCM_NS_QT, "Northstar Emulation Model")
 //      IO_BASE_PA,
 //   .io_pg_offst =                             /* for early debug */
 //      (IO_BASE_VA >>18) & 0xfffc,
-.fixup = board_fixup,		/* Opt. early setup_arch() */
+    .fixup = board_fixup,		/* Opt. early setup_arch() */
     .map_io = board_map_io,	/* Opt. from setup_arch() */
     .init_irq = board_init_irq,	/* main.c after setup_arch() */
     .init_time = board_init_timer,	/* main.c after IRQs */
@@ -541,12 +546,6 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("gpio7", "wps_button") && nvram_match("gpio6", "wps_led")) {
-		bootsz = 0x200000;
-	}
-
-	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
-	    && nvram_match("boardrev", "0x1100")
-	    && nvram_match("gpio8","wps_button")) {
 		bootsz = 0x200000;
 	}
 
@@ -800,6 +799,7 @@ static uint lookup_nflash_rootfs_offset(hndnand_t * nfl, struct mtd_info *mtd, i
 	/* Look at every block boundary till 16MB; higher space is reserved for application data. */
 
 	rbsize = blocksize = mtd->erasesize;	//65536;
+
 	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("gpio7", "wps_button")) {
