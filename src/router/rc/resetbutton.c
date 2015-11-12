@@ -1219,6 +1219,7 @@ void period_check(int sig)
 		break;
 	case ROUTER_LINKSYS_EA6900:
 	case ROUTER_LINKSYS_EA6700:
+	case ROUTER_LINKSYS_EA6350:
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_TRENDNET_TEW812:
 		sesgpio = 0x107;	// gpio 7, inversed
