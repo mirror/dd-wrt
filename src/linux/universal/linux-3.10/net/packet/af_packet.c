@@ -2022,7 +2022,7 @@ static int tpacket_fill_skb(struct packet_sock *po, struct sk_buff *skb,
 			return -EINVAL;
 	} else if (dev->hard_header_len) {
 		/* net device doesn't like empty head */
-		if (unlikely(tp_len <= dev->hard_header_len)) {
+		if (unlikely(tp_len < dev->hard_header_len)) {
 			pr_err("packet size is too short (%d < %d)\n",
 			       tp_len, dev->hard_header_len);
 			return -EINVAL;
