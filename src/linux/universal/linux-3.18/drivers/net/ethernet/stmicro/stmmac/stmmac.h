@@ -116,6 +116,12 @@ struct stmmac_priv {
 	int use_riwt;
 	int irq_wake;
 	spinlock_t ptp_lock;
+
+#ifdef CONFIG_DEBUG_FS
+	struct dentry *dbgfs_dir;
+	struct dentry *dbgfs_rings_status;
+	struct dentry *dbgfs_dma_cap;
+#endif
 };
 
 int stmmac_mdio_unregister(struct net_device *ndev);
@@ -137,6 +143,9 @@ void stmmac_disable_eee_mode(struct stmmac_priv *priv);
 bool stmmac_eee_init(struct stmmac_priv *priv);
 
 #ifdef CONFIG_STMMAC_PLATFORM
+#ifdef CONFIG_DWMAC_IPQ806X
+extern const struct stmmac_of_data ipq806x_gmac_data;
+#endif
 #ifdef CONFIG_DWMAC_MESON
 extern const struct stmmac_of_data meson6_dwmac_data;
 #endif
