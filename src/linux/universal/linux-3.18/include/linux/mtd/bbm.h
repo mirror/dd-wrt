@@ -116,6 +116,13 @@ struct nand_bbt_descr {
 #define NAND_BBT_NO_OOB_BBM	0x00080000
 
 /*
+ * Force MTD_OPS_RAW mode when trying to access bad block markes from OOB. To
+ * be used by controllers which can access BBM only when ECC is disabled, i.e,
+ * when in RAW access mode
+ */
+#define NAND_BBT_ACCESS_BBM_RAW	0x00100000
+
+/*
  * Flag set by nand_create_default_bbt_descr(), marking that the nand_bbt_descr
  * was allocated dynamicaly and must be freed in nand_release(). Has no meaning
  * in nand_chip.bbt_options.
