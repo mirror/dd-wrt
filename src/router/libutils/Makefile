@@ -204,7 +204,7 @@ endif
 ifeq ($(CONFIG_QTN),y)
   CFLAGS += -DHAVE_QTN -DRPCOVERRIDE
   OBJS += qtnapi.o 
-  CFLAGS +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc
+  CFLAGS +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc 
   QTNFLAGS =  -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client   -L$(TOP)/qtn/libqcsapi_client/librpc -lrpc
 endif
 ifeq ($(CONFIG_SAMBA3),y)
@@ -289,6 +289,12 @@ ifeq ($(CONFIG_WRT1900AC),y)
 endif
 ifeq ($(CONFIG_MVEBU),y)
   CFLAGS += -DHAVE_MVEBU
+endif
+ifeq ($(CONFIG_IPQ806X),y)
+  CFLAGS += -DHAVE_IPQ806X
+endif
+ifeq ($(CONFIG_R7500),y)
+  CFLAGS += -DHAVE_R7500
 endif
 ifeq ($(CONFIG_MT7620),y)
   CFLAGS += -DHAVE_MT7620
