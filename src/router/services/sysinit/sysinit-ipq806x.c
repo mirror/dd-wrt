@@ -89,15 +89,7 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	insmod("/lib/ath9k/compat.ko");
-	insmod("/lib/ath9k/cfg80211.ko");
-	insmod("/lib/ath9k/mac80211.ko");
-	insmod("/lib/ath9k/ath.ko");
-	insmod("/lib/ath9k/ath9k_hw.ko");
-	insmod("/lib/ath9k/ath9k_common.ko");
-	insmod("/lib/ath9k/ath9k.ko");
-	insmod("/lib/ath9k/ath10k_core.ko");
-	insmod("/lib/ath9k/ath10k_pci.ko");
+	detect_wireless_devices();
 	//insmod("qdpc-host.ko");
 	
 	system("swconfig dev switch0 set reset 1");
