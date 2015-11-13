@@ -16,6 +16,7 @@ if STMMAC_ETH
 config STMMAC_PLATFORM
 	bool "STMMAC Platform bus support"
 	depends on STMMAC_ETH
+	select MFD_SYSCON
 	default y
 	---help---
 	  This selects the platform specific bus support for
@@ -25,6 +26,15 @@ config STMMAC_PLATFORM
 	  If you have a controller with this interface, say Y or M here.
 
 	  If unsure, say N.
+
+config DWMAC_IPQ806X
+	bool "QCA IPQ806x dwmac support"
+	depends on STMMAC_PLATFORM && ARCH_QCOM
+	help
+	  Support for Ethernet controller on QCA IPQ806x SoC.
+
+	  This selects the QCA IPQ806x SoC glue layer support for
+	  the stmmac device driver.
 
 config DWMAC_MESON
 	bool "Amlogic Meson dwmac support"

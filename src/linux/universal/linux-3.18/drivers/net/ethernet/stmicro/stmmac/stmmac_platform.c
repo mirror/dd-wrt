@@ -27,6 +27,7 @@
 #include <linux/of.h>
 #include <linux/of_net.h>
 #include <linux/of_device.h>
+#include <linux/of_mdio.h>
 #include "stmmac.h"
 
 static const struct of_device_id stmmac_dt_ids[] = {
@@ -44,6 +45,9 @@ static const struct of_device_id stmmac_dt_ids[] = {
 #endif
 #ifdef CONFIG_DWMAC_SOCFPGA
 	{ .compatible = "altr,socfpga-stmmac", .data = &socfpga_gmac_data },
+#endif
+#ifdef CONFIG_DWMAC_IPQ806X
+	{ .compatible = "qcom,ipq806x-gmac", .data = &ipq806x_gmac_data },
 #endif
 	/* SoC specific glue layers should come before generic bindings */
 	{ .compatible = "st,spear600-gmac"},
@@ -116,13 +120,18 @@ static int stmmac_probe_config_dt(struct platform_device *pdev,
 	struct device_node *np = pdev->dev.of_node;
 	struct stmmac_dma_cfg *dma_cfg;
 	const struct of_device_id *device;
+	int ret;
 
-	if (!np)
-		return -ENODEV;
+	if (!np) {
+		ret = -ENODEV;
+		goto err;
+	}
 
 	device = of_match_device(stmmac_dt_ids, &pdev->dev);
-	if (!device)
-		return -ENODEV;
+	if (!device) {
+		ret = -ENODEV;
+		goto err;
+	}
 
 	if (device->data) {
 		const struct stmmac_of_data *data = device->data;
@@ -155,13 +164,24 @@ static int stmmac_probe_config_dt(struct platform_device *pdev,
 	/* Default to phy auto-detection */
 	plat->phy_addr = -1;
 
+	/* If we find a phy-handle property, use it as the PHY */
+	plat->phy_node = of_parse_phandle(np, "phy-handle", 0);
+
+	/* If phy-handle is not specified, check if we have a fixed-phy */
+	if (!plat->phy_node && of_phy_is_fixed_link(np)) {
+		if ((of_phy_register_fixed_link(np) < 0))
+			return -ENODEV;
+
+		plat->phy_node = of_node_get(np);
+	}
+
 	/* "snps,phy-addr" is not a standard property. Mark it as deprecated
 	 * and warn of its use. Remove this when phy node support is added.
 	 */
 	if (of_property_read_u32(np, "snps,phy-addr", &plat->phy_addr) == 0)
 		dev_warn(&pdev->dev, "snps,phy-addr property is deprecated\n");
 
-	if (plat->phy_bus_name)
+	if (plat->phy_node || plat->phy_bus_name)
 		plat->mdio_bus_data = NULL;
 	else
 		plat->mdio_bus_data =
@@ -215,8 +235,10 @@ static int stmmac_probe_config_dt(struct platform_device *pdev,
 	if (of_find_property(np, "snps,pbl", NULL)) {
 		dma_cfg = devm_kzalloc(&pdev->dev, sizeof(*dma_cfg),
 				       GFP_KERNEL);
-		if (!dma_cfg)
-			return -ENOMEM;
+		if (!dma_cfg) {
+			ret = -ENOMEM;
+			goto err2;
+		}
 		plat->dma_cfg = dma_cfg;
 		of_property_read_u32(np, "snps,pbl", &dma_cfg->pbl);
 		dma_cfg->fixed_burst =
@@ -231,6 +253,11 @@ static int stmmac_probe_config_dt(struct platform_device *pdev,
 	}
 
 	return 0;
+
+err2:
+	of_node_put(np);
+err:
+	return ret;
 }
 #else
 static int stmmac_probe_config_dt(struct platform_device *pdev,
@@ -257,6 +284,7 @@ static int stmmac_pltfr_probe(struct platform_device *pdev)
 	struct stmmac_priv *priv = NULL;
 	struct plat_stmmacenet_data *plat_dat = NULL;
 	const char *mac = NULL;
+	u8 mtd_mac[ETH_ALEN] = { };
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	addr = devm_ioremap_resource(dev, res);
@@ -285,6 +313,15 @@ static int stmmac_pltfr_probe(struct platform_device *pdev)
 		if (ret) {
 			pr_err("%s: main dt probe failed", __func__);
 			return ret;
+		}
+
+		if (!mac) {
+			ret = of_get_mac_address_mtd(dev->of_node, &mtd_mac);
+			if (ret == -EPROBE_DEFER)
+				return ret;
+
+			if (is_valid_ether_addr(&mtd_mac))
+				mac = mtd_mac;
 		}
 	}
 
