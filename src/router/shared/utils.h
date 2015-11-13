@@ -726,6 +726,8 @@
 
 #define ROUTER_LINKSYS_EA6350 0xf41b
 
+#define ROUTER_NETGEAR_R7500 0xf50f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
