@@ -340,6 +340,125 @@ void set_gpio(int gpio, int value)
 
 }
 
+#elif HAVE_IPQ806X
+static void i_set_gpio(int pin, int value)
+{
+	char str[32];
+	char strdir[64];
+	FILE *fp;
+	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
+      new_try:;
+	fp = fopen(str, "rb");
+	if (!fp) {
+		fp = fopen("/sys/class/gpio/export", "wb");
+		if (fp) {
+			fprintf(fp, "%d", pin);
+			fclose(fp);
+		} else {
+			return;	//prevent deadlock
+		}
+		goto new_try;
+	}
+	fclose(fp);
+	fp = fopen(strdir, "wb");
+	if (fp) {
+		fprintf(fp, "out");
+		fclose(fp);
+	}
+	fp = fopen(str, "wb");
+	if (fp) {
+		fprintf(fp, "%d", value);
+		fclose(fp);
+	}
+}
+
+int get_gpio(int pin)
+{
+
+	char str[32];
+	char strdir[64];
+	FILE *fp;
+	int val = 0;
+	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
+      new_try:;
+	fp = fopen(str, "rb");
+	if (!fp) {
+		fp = fopen("/sys/class/gpio/export", "wb");
+		if (fp) {
+			fprintf(fp, "%d", pin);
+			fclose(fp);
+		} else {
+			return 0;	// prevent deadlock
+		}
+		goto new_try;
+	}
+	fclose(fp);
+	fp = fopen(strdir, "wb");
+	if (fp) {
+		fprintf(fp, "in");
+		fclose(fp);
+	}
+	fp = fopen(str, "rb");
+	if (fp) {
+		fscanf(fp, "%d", &val);
+		fclose(fp);
+	}
+	return val;
+
+}
+
+void set_gpio(int gpio, int value)
+{
+	//value 0 off 255 on
+	if (value == 1)
+		value = 255;
+	//fprintf(stderr, "GPIO %d value %d\n", gpio, value);
+	int brand = getRouterBrand();
+	if (brand == ROUTER_NETGEAR_R7500) {
+		switch (gpio) {
+		case 0:	// power
+			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:power/brightness", value);
+			break;
+		case 1:	// 2G
+			//
+			break;
+		case 2:	// 5G
+			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:wifi5g/brightness", value);
+			break;
+		case 3:	
+			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:esata/brightness", value);
+			break;
+		case 4:
+			sysprintf("echo %d > /sys/class/leds/r7500\\:amber\\:usb1/brightness", value);
+			break;
+		case 5:
+			sysprintf("echo %d > /sys/class/leds/r7500\\:amber\\:usb3/brightness", value);
+			break;
+		case 6:
+			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:wan/brightness", value);
+			break;
+		case 7:
+			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:internet/brightness", value);
+			break;
+		case 8:
+			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:rfkill/brightness", value);
+			break;
+		case 9:
+			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:wps/brightness", value);
+			break;
+		case 10:
+			sysprintf("echo %d > /sys/class/leds/r7500\\:amber\\:status/brightness", value);
+			break;
+		default:
+			i_set_gpio(gpio, value);
+			break;
+		}
+	}
+
+}
+
 #elif defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
 
 void set_gpio(int gpio, int value)
