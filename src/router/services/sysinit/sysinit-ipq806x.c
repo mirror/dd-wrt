@@ -101,13 +101,9 @@ void start_sysinit(void)
 	//insmod("qdpc-host.ko");
 	
 	system("swconfig dev switch0 set reset 1");
-	system("swconfig dev switch0 set enable_vlan 1");
-	if (nvram_match("wan_proto", "disabled") && nvram_match("fullswitch", "1")) {
-		system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
-	} else {
-		system("swconfig dev switch0 vlan 1 set ports \"6t 1 2 3 4\"");
-		system("swconfig dev switch0 vlan 2 set ports \"5t 0\"");
-	}
+	system("swconfig dev switch0 set enable_vlan 0");
+	system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
+	system("swconfig dev switch0 vlan 2 set ports \"5 0\"");
 	system("swconfig dev switch0 set apply");
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");

@@ -1235,11 +1235,11 @@ void start_restore_defaults(void)
 #elif HAVE_IPQ806X
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
-		{"lan_ifnames", "vlan1 vlan2 ath0",},
-		{"wan_ifname", "vlan2"},
-		{"wan_ifname2", "vlan2"},
-		{"wan_ifnames", "vlan2"},
-		{"wan_default", "vlan2"},
+		{"lan_ifnames", "eth0 eth1 ath0",},
+		{"wan_ifname", "eth1"},
+		{"wan_ifname2", "eth1"},
+		{"wan_ifnames", "eth1"},
+		{"wan_default", "eth1"},
 		{0, 0}
 	};
 #elif HAVE_WDR4900
