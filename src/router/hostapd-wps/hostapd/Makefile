@@ -1,4 +1,4 @@
-CFLAGS+ = -MMD $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -MMD $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 CFLAGS += -I../src
