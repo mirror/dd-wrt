@@ -1,7 +1,7 @@
 ifndef CC
 CC=gcc
 endif
-CFLAGS+ = -MMD $(COPTS) -std=gnu89 -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -MMD $(COPTS) -std=gnu89 -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
 # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
