@@ -2000,6 +2000,9 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT 1900ACS");
 		return ROUTER_WRT_1900ACS;	// similar
 	}
+#elif HAVE_R7500
+	setRouter("Netgear R7500");
+	return ROUTER_NETGEAR_R7500;
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;
@@ -4259,7 +4262,7 @@ unsigned int write_gpio(char *device, unsigned int val)
 static char hw_error = 0;
 int diag_led_4704(int type, int act)
 {
-#if defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
 	return 0;
 #else
 	unsigned int control, in, outen, out;
@@ -4306,7 +4309,7 @@ int diag_led_4712(int type, int act)
 {
 	unsigned int control, in, outen, out, ctr_mask, out_mask;
 
-#if defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
 	return 0;
 #else
 
@@ -6326,6 +6329,18 @@ int led_control(int type, int act)
 		//wlan_gpio = 0x10f;    // wifi button led
 		usb_gpio = 0x111;	//usb1 
 		usb_gpio1 = 0x112;	//usb2 
+		break;
+	case ROUTER_NETGEAR_R7500:
+		power_gpio = 0x000;	// power led 
+		diag_gpio = 0x010;	// power led orange     
+		connected_gpio = 0x006;	// wan led
+		//usb_power = 0x000;	// usb enable
+		wlan0_gpio = 0x001;	// radio 0 
+		wlan1_gpio = 0x102;	// radio 1 
+		ses_gpio = 0x009;	// wps led
+		wlan_gpio = 0x008;    // wifi button led
+		usb_gpio = 0x004;	//usb1 
+		usb_gpio1 = 0x005;	//usb2 
 		break;
 	case ROUTER_NETGEAR_R8000:
 		power_gpio = 0x102;	// power led 
