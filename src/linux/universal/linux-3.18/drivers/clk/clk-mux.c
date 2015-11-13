@@ -29,10 +29,36 @@
 
 #define to_clk_mux(_hw) container_of(_hw, struct clk_mux, hw)
 
-static u8 clk_mux_get_parent(struct clk_hw *hw)
+unsigned int clk_mux_get_parent(struct clk_hw *hw, unsigned int val,
+				unsigned int *table, unsigned long flags)
+{
+	int num_parents = __clk_get_num_parents(hw->clk);
+
+	if (table) {
+		int i;
+
+		for (i = 0; i < num_parents; i++)
+			if (table[i] == val)
+				return i;
+		return -EINVAL;
+	}
+
+	if (val && (flags & CLK_MUX_INDEX_BIT))
+		val = ffs(val) - 1;
+
+	if (val && (flags & CLK_MUX_INDEX_ONE))
+		val--;
+
+	if (val >= num_parents)
+		return -EINVAL;
+
+	return val;
+}
+EXPORT_SYMBOL_GPL(clk_mux_get_parent);
+
+static u8 _clk_mux_get_parent(struct clk_hw *hw)
 {
 	struct clk_mux *mux = to_clk_mux(hw);
-	int num_parents = __clk_get_num_parents(hw->clk);
 	u32 val;
 
 	/*
@@ -45,26 +71,27 @@ static u8 clk_mux_get_parent(struct clk_hw *hw)
 	val = clk_readl(mux->reg) >> mux->shift;
 	val &= mux->mask;
 
-	if (mux->table) {
-		int i;
+	return clk_mux_get_parent(hw, val, mux->table, mux->flags);
+}
 
-		for (i = 0; i < num_parents; i++)
-			if (mux->table[i] == val)
-				return i;
-		return -EINVAL;
+unsigned int clk_mux_reindex(u8 index, unsigned int *table,
+			     unsigned long flags)
+{
+	unsigned int val = index;
+
+	if (table) {
+		val = table[val];
+	} else {
+		if (flags & CLK_MUX_INDEX_BIT)
+			val = 1 << index;
+
+		if (flags & CLK_MUX_INDEX_ONE)
+			val++;
 	}
-
-	if (val && (mux->flags & CLK_MUX_INDEX_BIT))
-		val = ffs(val) - 1;
-
-	if (val && (mux->flags & CLK_MUX_INDEX_ONE))
-		val--;
-
-	if (val >= num_parents)
-		return -EINVAL;
 
 	return val;
 }
+EXPORT_SYMBOL_GPL(clk_mux_reindex);
 
 static int clk_mux_set_parent(struct clk_hw *hw, u8 index)
 {
@@ -72,16 +99,7 @@ static int clk_mux_set_parent(struct clk_hw *hw, u8 index)
 	u32 val;
 	unsigned long flags = 0;
 
-	if (mux->table)
-		index = mux->table[index];
-
-	else {
-		if (mux->flags & CLK_MUX_INDEX_BIT)
-			index = (1 << ffs(index));
-
-		if (mux->flags & CLK_MUX_INDEX_ONE)
-			index++;
-	}
+	index = clk_mux_reindex(index, mux->table, mux->flags);
 
 	if (mux->lock)
 		spin_lock_irqsave(mux->lock, flags);
@@ -102,21 +120,21 @@ static int clk_mux_set_parent(struct clk_hw *hw, u8 index)
 }
 
 const struct clk_ops clk_mux_ops = {
-	.get_parent = clk_mux_get_parent,
+	.get_parent = _clk_mux_get_parent,
 	.set_parent = clk_mux_set_parent,
 	.determine_rate = __clk_mux_determine_rate,
 };
 EXPORT_SYMBOL_GPL(clk_mux_ops);
 
 const struct clk_ops clk_mux_ro_ops = {
-	.get_parent = clk_mux_get_parent,
+	.get_parent = _clk_mux_get_parent,
 };
 EXPORT_SYMBOL_GPL(clk_mux_ro_ops);
 
 struct clk *clk_register_mux_table(struct device *dev, const char *name,
 		const char **parent_names, u8 num_parents, unsigned long flags,
 		void __iomem *reg, u8 shift, u32 mask,
-		u8 clk_mux_flags, u32 *table, spinlock_t *lock)
+		u8 clk_mux_flags, unsigned int *table, spinlock_t *lock)
 {
 	struct clk_mux *mux;
 	struct clk *clk;
@@ -177,3 +195,19 @@ struct clk *clk_register_mux(struct device *dev, const char *name,
 				      NULL, lock);
 }
 EXPORT_SYMBOL_GPL(clk_register_mux);
+
+void clk_unregister_mux(struct clk *clk)
+{
+	struct clk_mux *mux;
+	struct clk_hw *hw;
+
+	hw = __clk_get_hw(clk);
+	if (!hw)
+		return;
+
+	mux = to_clk_mux(hw);
+
+	clk_unregister(clk);
+	kfree(mux);
+}
+EXPORT_SYMBOL_GPL(clk_unregister_mux);
