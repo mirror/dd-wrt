@@ -1,4 +1,4 @@
-CFLAGS+ = -MMD $(COPTS) -Wall -D_GNU_SOURCE
+CFLAGS += -MMD $(COPTS) -Wall -D_GNU_SOURCE
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
 
