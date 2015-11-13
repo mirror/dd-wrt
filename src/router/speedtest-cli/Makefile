@@ -20,7 +20,7 @@ LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 #ifeq ($(ARCHITECTURE),openrisc)
 #LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
 LDFLAGS += $(EXTRA_LDFLAGS)
-LDFLAGS	+= -lpthread
+LDFLAGS	+= -lpthread -lm
 
 all: speedtest_cli
 
