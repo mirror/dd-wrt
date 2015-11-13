@@ -396,7 +396,11 @@ static int nand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	} else {
 		ops.len = ops.ooblen = 1;
 	}
-	ops.mode = MTD_OPS_PLACE_OOB;
+
+	if (unlikely(chip->bbt_options & NAND_BBT_ACCESS_BBM_RAW))
+		ops.mode = MTD_OPS_RAW;
+	else
+		ops.mode = MTD_OPS_PLACE_OOB;
 
 	/* Write to first/last page(s) if necessary */
 	if (chip->bbt_options & NAND_BBT_SCANLASTPAGE)
