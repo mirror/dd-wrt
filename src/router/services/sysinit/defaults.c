@@ -2699,6 +2699,8 @@ struct nvram_param srouter_defaults[] = {
 	{"ip_conntrack_max", "32768"},
 #elif HAVE_MVEBU
 	{"ip_conntrack_max", "32768"},
+#elif HAVE_IPQ806X
+	{"ip_conntrack_max", "32768"},
 #elif HAVE_LAGUNA
 	{"ip_conntrack_max", "32768"},
 #elif HAVE_RB600
