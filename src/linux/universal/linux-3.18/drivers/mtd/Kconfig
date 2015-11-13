@@ -187,6 +187,13 @@ config MTD_BCM47XX_PARTS
 	help
 	  This provides partitions parser for devices based on BCM47xx
 	  boards.
+	  
+config MTD_QCOM_SMEM_PARTS
+	tristate "QCOM SMEM partitioning support"
+	depends on QCOM_SMEM
+	help
+	  This provides partitions parser for QCOM devices using SMEM
+	  such as IPQ806x.
 
 comment "User Modules And Translation Layers"
 
