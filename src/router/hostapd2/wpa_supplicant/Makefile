@@ -2,7 +2,7 @@ ifndef CC
 CC=gcc
 endif
 
-CFLAGS+ = -MMD $(COPTS) -Wall 
+CFLAGS  += -MMD $(COPTS) -Wall 
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += -I../src
