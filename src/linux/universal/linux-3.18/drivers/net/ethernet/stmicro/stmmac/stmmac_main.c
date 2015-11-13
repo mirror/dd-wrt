@@ -52,6 +52,7 @@
 #include "stmmac_ptp.h"
 #include "stmmac.h"
 #include <linux/reset.h>
+#include <linux/of_mdio.h>
 
 #define STMMAC_ALIGN(x)	L1_CACHE_ALIGN(x)
 
@@ -118,7 +119,7 @@ static irqreturn_t stmmac_interrupt(int irq, void *dev_id);
 
 #ifdef CONFIG_STMMAC_DEBUG_FS
 static int stmmac_init_fs(struct net_device *dev);
-static void stmmac_exit_fs(void);
+static void stmmac_exit_fs(struct net_device *dev);
 #endif
 
 #define STMMAC_COAL_TIMER(x) (jiffies + usecs_to_jiffies(x))
@@ -818,18 +819,25 @@ static int stmmac_init_phy(struct net_device *dev)
 	priv->speed = 0;
 	priv->oldduplex = -1;
 
-	if (priv->plat->phy_bus_name)
-		snprintf(bus_id, MII_BUS_ID_SIZE, "%s-%x",
-			 priv->plat->phy_bus_name, priv->plat->bus_id);
-	else
-		snprintf(bus_id, MII_BUS_ID_SIZE, "stmmac-%x",
-			 priv->plat->bus_id);
+	if (priv->plat->phy_node) {
+		phydev = of_phy_connect(dev, priv->plat->phy_node,
+					&stmmac_adjust_link, 0, interface);
+	} else {
+		if (priv->plat->phy_bus_name)
+			snprintf(bus_id, MII_BUS_ID_SIZE, "%s-%x",
+				 priv->plat->phy_bus_name, priv->plat->bus_id);
+		else
+			snprintf(bus_id, MII_BUS_ID_SIZE, "stmmac-%x",
+				 priv->plat->bus_id);
 
-	snprintf(phy_id_fmt, MII_BUS_ID_SIZE + 3, PHY_ID_FMT, bus_id,
-		 priv->plat->phy_addr);
-	pr_debug("stmmac_init_phy:  trying to attach to %s\n", phy_id_fmt);
+		snprintf(phy_id_fmt, MII_BUS_ID_SIZE + 3, PHY_ID_FMT, bus_id,
+			 priv->plat->phy_addr);
+		pr_debug("stmmac_init_phy:  trying to attach to %s\n",
+			 phy_id_fmt);
 
-	phydev = phy_connect(dev, phy_id_fmt, &stmmac_adjust_link, interface);
+		phydev = phy_connect(dev, phy_id_fmt, &stmmac_adjust_link,
+				     interface);
+	}
 
 	if (IS_ERR(phydev)) {
 		pr_err("%s: Could not attach to PHY\n", dev->name);
@@ -850,7 +858,7 @@ static int stmmac_init_phy(struct net_device *dev)
 	 * device as well.
 	 * Note: phydev->phy_id is the result of reading the UID PHY registers.
 	 */
-	if (phydev->phy_id == 0) {
+	if (!priv->plat->phy_node && phydev->phy_id == 0) {
 		phy_disconnect(phydev);
 		return -ENODEV;
 	}
@@ -1871,7 +1879,7 @@ static int stmmac_release(struct net_device *dev)
 	netif_carrier_off(dev);
 
 #ifdef CONFIG_STMMAC_DEBUG_FS
-	stmmac_exit_fs();
+	stmmac_exit_fs(dev);
 #endif
 
 	stmmac_release_ptp(priv);
@@ -2459,8 +2467,6 @@ static int stmmac_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 
 #ifdef CONFIG_STMMAC_DEBUG_FS
 static struct dentry *stmmac_fs_dir;
-static struct dentry *stmmac_rings_status;
-static struct dentry *stmmac_dma_cap;
 
 static void sysfs_display_ring(void *head, int size, int extend_desc,
 			       struct seq_file *seq)
@@ -2599,36 +2605,39 @@ static const struct file_operations stmmac_dma_cap_fops = {
 
 static int stmmac_init_fs(struct net_device *dev)
 {
-	/* Create debugfs entries */
-	stmmac_fs_dir = debugfs_create_dir(STMMAC_RESOURCE_NAME, NULL);
+	struct stmmac_priv *priv = netdev_priv(dev);
 
-	if (!stmmac_fs_dir || IS_ERR(stmmac_fs_dir)) {
-		pr_err("ERROR %s, debugfs create directory failed\n",
-		       STMMAC_RESOURCE_NAME);
+	/* Create per netdev entries */
+	priv->dbgfs_dir = debugfs_create_dir(dev->name, stmmac_fs_dir);
+
+	if (!priv->dbgfs_dir || IS_ERR(priv->dbgfs_dir)) {
+		pr_err("ERROR %s/%s, debugfs create directory failed\n",
+		       STMMAC_RESOURCE_NAME, dev->name);
 
 		return -ENOMEM;
 	}
 
 	/* Entry to report DMA RX/TX rings */
-	stmmac_rings_status = debugfs_create_file("descriptors_status",
-						  S_IRUGO, stmmac_fs_dir, dev,
-						  &stmmac_rings_status_fops);
+	priv->dbgfs_rings_status =
+		debugfs_create_file("descriptors_status", S_IRUGO,
+				    priv->dbgfs_dir, dev,
+				    &stmmac_rings_status_fops);
 
-	if (!stmmac_rings_status || IS_ERR(stmmac_rings_status)) {
+	if (!priv->dbgfs_rings_status || IS_ERR(priv->dbgfs_rings_status)) {
 		pr_info("ERROR creating stmmac ring debugfs file\n");
-		debugfs_remove(stmmac_fs_dir);
+		debugfs_remove_recursive(priv->dbgfs_dir);
 
 		return -ENOMEM;
 	}
 
 	/* Entry to report the DMA HW features */
-	stmmac_dma_cap = debugfs_create_file("dma_cap", S_IRUGO, stmmac_fs_dir,
-					     dev, &stmmac_dma_cap_fops);
+	priv->dbgfs_dma_cap = debugfs_create_file("dma_cap", S_IRUGO,
+					    priv->dbgfs_dir,
+					    dev, &stmmac_dma_cap_fops);
 
-	if (!stmmac_dma_cap || IS_ERR(stmmac_dma_cap)) {
+	if (!priv->dbgfs_dma_cap || IS_ERR(priv->dbgfs_dma_cap)) {
 		pr_info("ERROR creating stmmac MMC debugfs file\n");
-		debugfs_remove(stmmac_rings_status);
-		debugfs_remove(stmmac_fs_dir);
+		debugfs_remove_recursive(priv->dbgfs_dir);
 
 		return -ENOMEM;
 	}
@@ -2636,11 +2645,11 @@ static int stmmac_init_fs(struct net_device *dev)
 	return 0;
 }
 
-static void stmmac_exit_fs(void)
+static void stmmac_exit_fs(struct net_device *dev)
 {
-	debugfs_remove(stmmac_rings_status);
-	debugfs_remove(stmmac_dma_cap);
-	debugfs_remove(stmmac_fs_dir);
+	struct stmmac_priv *priv = netdev_priv(dev);
+
+	debugfs_remove_recursive(priv->dbgfs_dir);
 }
 #endif /* CONFIG_STMMAC_DEBUG_FS */
 
@@ -3024,6 +3033,21 @@ static int __init stmmac_init(void)
 	ret = stmmac_register_pci();
 	if (ret)
 		goto err_pci;
+
+#ifdef CONFIG_STMMAC_DEBUG_FS
+	/* Create debugfs main directory if it doesn't exist yet */
+	if (stmmac_fs_dir == NULL) {
+		stmmac_fs_dir = debugfs_create_dir(STMMAC_RESOURCE_NAME, NULL);
+
+		if (!stmmac_fs_dir || IS_ERR(stmmac_fs_dir)) {
+			pr_err("ERROR %s, debugfs create directory failed\n",
+			       STMMAC_RESOURCE_NAME);
+
+			return -ENOMEM;
+		}
+	}
+#endif
+
 	return 0;
 err_pci:
 	stmmac_unregister_platform();
@@ -3034,6 +3058,9 @@ err:
 
 static void __exit stmmac_exit(void)
 {
+#ifdef CONFIG_STMMAC_DEBUG_FS
+	debugfs_remove_recursive(stmmac_fs_dir);
+#endif
 	stmmac_unregister_platform();
 	stmmac_unregister_pci();
 }
