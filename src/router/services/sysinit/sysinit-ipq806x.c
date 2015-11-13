@@ -107,16 +107,13 @@ void start_sysinit(void)
 	system("swconfig dev switch0 set apply");
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
-	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-	eval("vconfig", "add", "eth0", "1");
-	eval("vconfig", "add", "eth0", "2");
 
 	int s;
 	struct ifreq ifr;
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
 
-		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		char macaddr[32];
 
