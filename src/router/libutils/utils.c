@@ -2000,9 +2000,21 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT 1900ACS");
 		return ROUTER_WRT_1900ACS;	// similar
 	}
-#elif HAVE_R7500
-	setRouter("Netgear R7500");
-	return ROUTER_NETGEAR_R7500;
+#elif HAVE_IPQ806X
+	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
+	if (!fp) {
+		fprintf(stderr, "error opening device tree\n");
+		setRouter("Netgear R7500");
+		return ROUTER_NETGEAR_R7500;
+	}
+	char vendorstr[32];
+	char modelstr[32];
+	fscanf(fp, "%s %s", &vendorstr[0], &modelstr[0]);
+	fclose(fp);
+	if (!strcmp(modelstr, "Netgear Nighthawk X4 R7500")) {
+		setRouter("Netgear R7500");
+		return ROUTER_NETGEAR_R7500;
+	}
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;

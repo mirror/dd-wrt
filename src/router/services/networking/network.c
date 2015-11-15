@@ -990,7 +990,7 @@ void start_lan(void)
 			PORTSETUPWAN("eth1");
 		}
 	} 
-	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
@@ -998,7 +998,7 @@ void start_lan(void)
 	MAC_ADD(mac);
 	ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCSIFHWADDR, &ifr);
 #elif HAVE_WDR4900
 	nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
@@ -2925,7 +2925,7 @@ void start_wan(int status)
 		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_IPQ806X
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WDR4900
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
