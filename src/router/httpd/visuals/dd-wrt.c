@@ -2918,7 +2918,8 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	char isolation[32];
 	sprintf(isolation, "%s_isolation", var);
 	nvram_default_get(isolation, "0");
-	showRadio(wp, "wl_basic.isolation", isolation);
+	if(!nvram_match("wan_proto", "disabled"))
+		showRadio(wp, "wl_basic.isolation", isolation);
 
 	char redirect[32];
 	sprintf(redirect, "%s_dns_redirect", var);
@@ -7430,7 +7431,8 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		char isolation[32];
 		sprintf(isolation, "%s_isolation", var);
 		nvram_default_get(isolation, "0");
-		showRadio(wp, "wl_basic.isolation", isolation);
+		if(!nvram_match("wan_proto", "disabled"))
+			showRadio(wp, "wl_basic.isolation", isolation);
 
 		char redirect[32];
 		sprintf(redirect, "%s_dns_redirect", var);
