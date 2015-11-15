@@ -105,7 +105,7 @@ void start_sysinit(void)
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
 
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		char macaddr[32];
 
