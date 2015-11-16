@@ -649,10 +649,9 @@ ar8327_cleanup(struct ar8xxx_priv *priv)
 }
 
 static inline void
-ar8216_sw_reg_set(struct ar8216_priv *priv, int reg, u32 val)
+ar8216_sw_reg_set(struct ar8xxx_priv *priv, int reg, u32 val)
 {
-	lockdep_assert_held(&priv->reg_mutex);
-	priv->write(priv, reg, val);
+	ar8xxx_write(priv, reg, val);
 }
 
 
@@ -691,7 +690,7 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 
 #ifdef CONFIG_ARCH_QCOM
 	if(chip_is_ar8337(priv)) {
-		ar8216_reg_set(priv, AR8327_REG_PAD5_MODE,
+		ar8xxx_reg_set(priv, AR8327_REG_PAD5_MODE,
 			AR8327_PAD_RGMII_RXCLK_DELAY_EN);
 
 		ar8216_sw_reg_set(priv, 0x970, 0x1e864443);
