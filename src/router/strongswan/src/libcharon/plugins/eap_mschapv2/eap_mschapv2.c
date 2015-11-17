@@ -1141,7 +1141,11 @@ METHOD(eap_method_t, process_server, status_t,
 		}
 		case MSCHAPV2_SUCCESS:
 		{
-			return SUCCESS;
+			if (this->msk.ptr)
+			{
+				return SUCCESS;
+			}
+			break;
 		}
 		case MSCHAPV2_FAILURE:
 		{
