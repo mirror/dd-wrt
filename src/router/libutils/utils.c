@@ -2014,6 +2014,9 @@ int internal_getRouterBrand()
 	if (!strcmp(modelstr, "Netgear Nighthawk X4 R7500")) {
 		setRouter("Netgear R7500");
 		return ROUTER_NETGEAR_R7500;
+	} else if (!strcmp(modelstr, "Linksys EA8500 WiFi Router")) {
+		setRouter("Linksys EA8500");
+		return ROUTER_LINKSYS_EA8500;
 	}
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
