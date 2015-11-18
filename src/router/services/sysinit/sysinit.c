@@ -2897,6 +2897,9 @@ void start_drivers(void)
 		rmmod("ehci-platform");
 		rmmod("ehci-hcd");
 		rmmod("fsl-mph-dr-of");
+		rmmod("dwc3-qcom");
+		rmmod("dwc3");
+    		rmmod("phy-qcom-dwc3");
 
 		rmmod("usbcore");
 		rmmod("usb-common");
