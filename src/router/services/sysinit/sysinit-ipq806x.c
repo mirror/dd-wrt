@@ -70,9 +70,6 @@ void start_sysinit(void)
 	/* 
 	 * 
 	 */
-	insmod("usb-common");
-	insmod("dwc3");
-	insmod("dwc3-qcom");
 	insmod("gsp");
 	insmod("slhc");
 	
