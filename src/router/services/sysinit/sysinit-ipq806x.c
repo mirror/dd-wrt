@@ -84,7 +84,6 @@ typedef struct {
 	uint32_t magic_end;
 } ipq_smem_bootconfig_v2_info_t;
 
-
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -130,11 +129,28 @@ void start_sysinit(void)
 
 	}
 	if (ipq_smem_bootconfig_v2_info) {
-		fprintf(stderr,"upgrade in progress: %d\n",ipq_smem_bootconfig_v2_info->upgradeinprogress);
+		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_v2_info->upgradeinprogress);
+		int i;
+		if (ipq_smem_bootconfig_v2_info->upgradeinprogress) {
+			for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
+				if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
+					ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot = !ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot;
+				}
+			}
+		}
 		ipq_smem_bootconfig_v2_info->upgradeinprogress = 0;
 	}
 	if (ipq_smem_bootconfig_info) {
-		fprintf(stderr,"upgrade in progress: %d\n",ipq_smem_bootconfig_info->upgradeinprogress);
+		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_info->upgradeinprogress);
+
+		int i;
+		if (ipq_smem_bootconfig_info->upgradeinprogress) {
+			for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
+				if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+					ipq_smem_bootconfig_info->per_part_entry[i].primaryboot = !ipq_smem_bootconfig_info->per_part_entry[i].primaryboot;
+				}
+			}
+		}
 		ipq_smem_bootconfig_info->upgradeinprogress = 0;
 	}
 	fp = fopen(mtdpath, "wb");
@@ -143,7 +159,7 @@ void start_sysinit(void)
 	}
 	fclose(fp);
 	free(smem);
-	
+
 	/* 
 	 * 
 	 */
