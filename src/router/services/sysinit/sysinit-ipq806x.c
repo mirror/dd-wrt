@@ -51,6 +51,40 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
+#define ALT_PART_NAME_LENGTH 16
+struct per_part_info {
+	char name[ALT_PART_NAME_LENGTH];
+	uint32_t primaryboot;
+	uint32_t upgraded;
+};
+
+#define NUM_ALT_PARTITION 3
+typedef struct {
+#define _SMEM_DUAL_BOOTINFO_MAGIC       0xA5A3A1A0
+	/* Magic number for identification when reading from flash */
+	uint32_t magic;
+	/* upgradeinprogress indicates to attempting the upgrade */
+	uint32_t upgradeinprogress;
+	/* numaltpart indicate number of alt partitions */
+	uint32_t numaltpart;
+
+	struct per_part_info per_part_entry[NUM_ALT_PARTITION];
+} ipq_smem_bootconfig_info_t;
+
+/* version 2 */
+#define SMEM_DUAL_BOOTINFO_MAGIC_START 0xA3A2A1A0
+#define SMEM_DUAL_BOOTINFO_MAGIC_END 0xB3B2B1B0
+
+typedef struct {
+	uint32_t magic_start;
+	uint32_t upgradeinprogress;
+	uint32_t age;
+	uint32_t numaltpart;
+	struct per_part_info per_part_entry[NUM_ALT_PARTITION];
+	uint32_t magic_end;
+} ipq_smem_bootconfig_v2_info_t;
+
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -65,30 +99,72 @@ void start_sysinit(void)
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
-	int brand = getRouterBrand();
 
+	int brand = getRouterBrand();
+	int mtd = getMTD("BOOTCONFIG");
+	char mtdpath[64];
+	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+
+	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
+	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
+
+	unsigned int *smem = (unsigned int *)malloc(0x60000);
+	memset(smem, 0, 0x60000);
+	fp = fopen(mtdpath, "rb");
+	if (fp) {
+		fread(smem, 0x60000, 1, fp);
+		fclose(fp);
+		int i;
+		unsigned int *p = smem;
+		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
+			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
+				ipq_smem_bootconfig_v2_info = p;
+				break;
+			}
+			if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
+				ipq_smem_bootconfig_info = p;
+				break;
+			}
+			p++;
+		}
+
+	}
+	if (ipq_smem_bootconfig_v2_info) {
+		fprintf(stderr,"upgrade in progress: %d\n",ipq_smem_bootconfig_v2_info->upgradeinprogress);
+		ipq_smem_bootconfig_v2_info->upgradeinprogress = 0;
+	}
+	if (ipq_smem_bootconfig_info) {
+		fprintf(stderr,"upgrade in progress: %d\n",ipq_smem_bootconfig_info->upgradeinprogress);
+		ipq_smem_bootconfig_info->upgradeinprogress = 0;
+	}
+	fp = fopen(mtdpath, "wb");
+	if (fp) {
+		fwrite(smem, 0x60000, 1, fp);
+	}
+	fclose(fp);
+	free(smem);
+	
 	/* 
 	 * 
 	 */
 	insmod("gsp");
 	insmod("slhc");
-	
+
 	insmod("regmap-core");
 	insmod("regmap-i2c");
 	insmod("regmap-spi");
 	insmod("leds-tlc59116");
 	insmod("leds-gpio");
 
-
 	insmod("tmp421");
 	insmod("mii");
-	insmod("/lib/modules/3.18.23/stmmac.ko"); //for debugging purposes compiled as module
+	insmod("/lib/modules/3.18.23/stmmac.ko");	//for debugging purposes compiled as module
 	/*
 	 * network drivers 
 	 */
 	detect_wireless_devices();
 	//insmod("qdpc-host.ko");
-	
+
 	system("swconfig dev switch0 set reset 1");
 	system("swconfig dev switch0 set enable_vlan 0");
 	system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
@@ -111,10 +187,8 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 		close(s);
 	}
-	
-	set_gpio(9, 1);	//wps
-	
-	
+
+	set_gpio(9, 1);		//wps
 
 	/*
 	 * Set a sane date 
