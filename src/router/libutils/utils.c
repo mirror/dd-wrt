@@ -2011,10 +2011,13 @@ int internal_getRouterBrand()
 	char modelstr[32];
 	fscanf(fp, "%s %s", &vendorstr[0], &modelstr[0]);
 	fclose(fp);
-	if (!strcmp(modelstr, "Netgear Nighthawk X4 R7500")) {
+	
+	if (!strcmp(modelstr, "Nighthawk")) {
 		setRouter("Netgear R7500");
 		return ROUTER_NETGEAR_R7500;
-	} else if (!strcmp(modelstr, "Linksys EA8500 WiFi Router")) {
+	}
+	
+	if (!strcmp(modelstr, "EA8500")) {
 		setRouter("Linksys EA8500");
 		return ROUTER_LINKSYS_EA8500;
 	}
@@ -6053,6 +6056,15 @@ int led_control(int type, int act)
 		usb_power1 = 0x00a;	//usb power on/off
 		diag_gpio = 0x106;	// white led blink / off to indicate fac.def. 
 		connected_gpio = 0x008;
+		break;
+	case ROUTER_LINKSYS_EA8500:
+		power_gpio = 0x100;	// power led 
+		diag_gpio = 0x109;	// power led orange     
+		connected_gpio = 0x106;	// wan led
+		wlan0_gpio = 0x101;	// radio 0  
+		ses_gpio = 0x108;	// wps led
+		usb_gpio = 0x103;	//usb1 
+		usb_gpio1 = 0x104;	//usb2 
 		break;
 	case ROUTER_ASUS_WL500G:
 		power_gpio = 0x100;
