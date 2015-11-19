@@ -70,6 +70,7 @@
 #define PCIE20_PLR_IATU_LAR		0x914
 #define PCIE20_PLR_IATU_LTAR		0x918
 #define PCIE20_PLR_IATU_UTAR		0x91c
+#define PCIE20_LNK_CAS2		0xA0
 
 #define MSM_PCIE_DEV_CFG_ADDR		0x01000000
 
@@ -107,11 +108,13 @@ struct qcom_pcie {
 	void __iomem		*parf_base;
 	void __iomem		*dwc_base;
 	void __iomem		*cfg_base;
+	struct device		*dev;
 	int			reset_gpio;
 	struct clk		*iface_clk;
 	struct clk		*bus_clk;
 	struct clk		*phy_clk;
 	int			irq_int[4];
+	int			root_bus_nr;
 	struct reset_control	*axi_reset;
 	struct reset_control	*ahb_reset;
 	struct reset_control	*por_reset;
@@ -121,51 +124,6 @@ struct qcom_pcie {
 	struct resource		conf;
 	struct resource		io;
 	struct resource		mem;
-};
-
-static int qcom_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin);
-static int qcom_pcie_setup(int nr, struct pci_sys_data *sys);
-static int msm_pcie_rd_conf(struct pci_bus *bus, u32 devfn, int where,
-			    int size, u32 *val);
-static int msm_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
-			    int where, int size, u32 val);
-
-static struct pci_ops qcom_pcie_ops = {
-	.read = msm_pcie_rd_conf,
-	.write = msm_pcie_wr_conf,
-};
-
-static struct hw_pci qcom_hw_pci[MAX_RC_NUM] = {
-	{
-#ifdef CONFIG_PCI_DOMAINS
-		.domain = 0,
-#endif
-		.ops		= &qcom_pcie_ops,
-		.nr_controllers	= 1,
-		.swizzle	= pci_common_swizzle,
-		.setup		= qcom_pcie_setup,
-		.map_irq	= qcom_pcie_map_irq,
-	},
-	{
-#ifdef CONFIG_PCI_DOMAINS
-		.domain = 1,
-#endif
-		.ops		= &qcom_pcie_ops,
-		.nr_controllers	= 1,
-		.swizzle	= pci_common_swizzle,
-		.setup		= qcom_pcie_setup,
-		.map_irq	= qcom_pcie_map_irq,
-	},
-	{
-#ifdef CONFIG_PCI_DOMAINS
-		.domain = 2,
-#endif
-		.ops		= &qcom_pcie_ops,
-		.nr_controllers	= 1,
-		.swizzle	= pci_common_swizzle,
-		.setup		= qcom_pcie_setup,
-		.map_irq	= qcom_pcie_map_irq,
-	},
 };
 
 static int nr_controllers;
@@ -178,16 +136,20 @@ static inline struct qcom_pcie *sys_to_pcie(struct pci_sys_data *sys)
 
 inline int is_msm_pcie_rc(struct pci_bus *bus)
 {
-	return (bus->number == 0);
+	struct qcom_pcie *dev = sys_to_pcie(bus->sysdata);
+
+	return (bus->number == dev->root_bus_nr);
 }
 
 static int qcom_pcie_is_link_up(struct qcom_pcie *dev)
 {
-	return readl_relaxed(dev->dwc_base + PCIE20_CAP_LINKCTRLSTATUS) & BIT(29);
+	return readl_relaxed(dev->dwc_base + PCIE20_CAP_LINKCTRLSTATUS) &
+			     BIT(29);
 }
 
 inline int msm_pcie_get_cfgtype(struct pci_bus *bus)
 {
+	struct qcom_pcie *dev = sys_to_pcie(bus->sysdata);
 	/*
 	 * http://www.tldp.org/LDP/tlk/dd/pci.html
 	 * Pass it onto the secondary bus interface unchanged if the
@@ -200,10 +162,12 @@ inline int msm_pcie_get_cfgtype(struct pci_bus *bus)
 	 * down stream as CFG1 transactions.
 	 *
 	 */
+	if (bus->parent && (bus->parent->number == dev->root_bus_nr))
+		return PCI_CFG0_RDWR;
 	if (bus->number == 0)
 		return PCI_CFG0_RDWR;
 
-	return PCI_CFG0_RDWR;
+	return PCI_CFG1_RDWR;
 }
 
 void msm_pcie_config_cfgtype(struct pci_bus *bus, u32 devfn)
@@ -316,11 +280,33 @@ static int msm_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
 	return msm_pcie_oper_conf(bus, devfn, WR, where, size, &val);
 }
 
+static struct pci_ops qcom_pcie_ops = {
+	.read = msm_pcie_rd_conf,
+	.write = msm_pcie_wr_conf,
+};
+
 static int qcom_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	struct qcom_pcie *pcie_dev = PCIE_BUS_PRIV_DATA(dev);
 
 	return pcie_dev->irq_int[pin-1];
+}
+
+static struct pci_bus *qcom_pcie_scan_bus(int nr, struct pci_sys_data *sys)
+{
+	struct pci_bus *bus;
+	struct qcom_pcie *qcom_pcie = sys->private_data;
+
+	if (qcom_pcie) {
+		qcom_pcie->root_bus_nr = sys->busnr;
+		bus = pci_scan_root_bus(qcom_pcie->dev, sys->busnr, &qcom_pcie_ops,
+					sys, &sys->resources);
+	} else {
+		bus = NULL;
+		BUG();
+	}
+
+	return bus;
 }
 
 static int qcom_pcie_setup(int nr, struct pci_sys_data *sys)
@@ -340,7 +326,44 @@ static int qcom_pcie_setup(int nr, struct pci_sys_data *sys)
 	return 1;
 }
 
-static inline void qcom_elbi_writel_relaxed(struct qcom_pcie *pcie, u32 val, u32 reg)
+static struct hw_pci qcom_hw_pci[MAX_RC_NUM] = {
+	{
+#ifdef CONFIG_PCI_DOMAINS
+		.domain = 0,
+#endif
+		.ops		= &qcom_pcie_ops,
+		.nr_controllers	= 1,
+		.swizzle	= pci_common_swizzle,
+		.setup		= qcom_pcie_setup,
+		.scan		= qcom_pcie_scan_bus,
+		.map_irq	= qcom_pcie_map_irq,
+	},
+	{
+#ifdef CONFIG_PCI_DOMAINS
+		.domain = 1,
+#endif
+		.ops		= &qcom_pcie_ops,
+		.nr_controllers	= 1,
+		.swizzle	= pci_common_swizzle,
+		.setup		= qcom_pcie_setup,
+		.scan		= qcom_pcie_scan_bus,
+		.map_irq	= qcom_pcie_map_irq,
+	},
+	{
+#ifdef CONFIG_PCI_DOMAINS
+		.domain = 2,
+#endif
+		.ops		= &qcom_pcie_ops,
+		.nr_controllers	= 1,
+		.swizzle	= pci_common_swizzle,
+		.setup		= qcom_pcie_setup,
+		.scan		= qcom_pcie_scan_bus,
+		.map_irq	= qcom_pcie_map_irq,
+	},
+};
+
+static inline void qcom_elbi_writel_relaxed(struct qcom_pcie *pcie,
+					    u32 val, u32 reg)
 {
 	writel_relaxed(val, pcie->elbi_base + reg);
 }
@@ -350,7 +373,8 @@ static inline u32 qcom_elbi_readl_relaxed(struct qcom_pcie *pcie, u32 reg)
 	return readl_relaxed(pcie->elbi_base + reg);
 }
 
-static inline void qcom_parf_writel_relaxed(struct qcom_pcie *pcie, u32 val, u32 reg)
+static inline void qcom_parf_writel_relaxed(struct qcom_pcie *pcie,
+					    u32 val, u32 reg)
 {
 	writel_relaxed(val, pcie->parf_base + reg);
 }
@@ -412,30 +436,21 @@ static void qcom_pcie_config_controller(struct qcom_pcie *dev)
 	/* ensure that hardware registers the configuration */
 	wmb();
 
-	/* 1K PCIE buffer setting */
-	writel_relaxed(0x3, dev->dwc_base + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
+	/* 256B PCIE buffer setting */
+	writel_relaxed(0x1, dev->dwc_base + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
 	writel_relaxed(0x1, dev->dwc_base + PCIE20_AXI_MSTR_RESP_COMP_CTRL1);
 	/* ensure that hardware registers the configuration */
 	wmb();
 }
 
-static int qcom_pcie_probe(struct platform_device *pdev)
+static int qcom_pcie_parse_dt(struct qcom_pcie *qcom_pcie,
+			      struct platform_device *pdev)
 {
-	unsigned long flags;
-	struct qcom_pcie *qcom_pcie;
 	struct device_node *np = pdev->dev.of_node;
 	struct resource *elbi_base, *parf_base, *dwc_base;
-	struct hw_pci *hw;
 	struct of_pci_range range;
 	struct of_pci_range_parser parser;
 	int ret, i;
-	u32 val;
-
-	qcom_pcie = devm_kzalloc(&pdev->dev, sizeof(*qcom_pcie), GFP_KERNEL);
-	if (!qcom_pcie) {
-		dev_err(&pdev->dev, "no memory for qcom_pcie\n");
-		return -ENOMEM;
-	}
 
 	elbi_base = platform_get_resource_byname(pdev, IORESOURCE_MEM, "elbi");
 	qcom_pcie->elbi_base = devm_ioremap_resource(&pdev->dev, elbi_base);
@@ -478,12 +493,6 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 			break;
 		}
 	}
-
-	qcom_pcie->cfg_base = devm_ioremap_resource(&pdev->dev, &qcom_pcie->conf);
-	if (IS_ERR(qcom_pcie->cfg_base)) {
-		dev_err(&pdev->dev, "Failed to ioremap PCIe cfg space\n");
-		return PTR_ERR(qcom_pcie->cfg_base);
-        }
 
 	qcom_pcie->reset_gpio = of_get_named_gpio(np, "reset-gpio", 0);
 	if (!gpio_is_valid(qcom_pcie->reset_gpio)) {
@@ -554,6 +563,37 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 		}
 	}
 
+	return 0;
+}
+
+static int qcom_pcie_probe(struct platform_device *pdev)
+{
+	unsigned long flags;
+	struct qcom_pcie *qcom_pcie;
+	struct device_node *np = pdev->dev.of_node;
+	struct hw_pci *hw;
+	int ret;
+	u32 val;
+	uint32_t force_gen1 = 0;
+
+	qcom_pcie = devm_kzalloc(&pdev->dev, sizeof(*qcom_pcie), GFP_KERNEL);
+	if (!qcom_pcie) {
+		dev_err(&pdev->dev, "no memory for qcom_pcie\n");
+		return -ENOMEM;
+	}
+	qcom_pcie->dev = &pdev->dev;
+
+	ret = qcom_pcie_parse_dt(qcom_pcie, pdev);
+	if (IS_ERR_VALUE(ret))
+		return ret;
+
+	qcom_pcie->cfg_base = devm_ioremap_resource(&pdev->dev,
+						    &qcom_pcie->conf);
+	if (IS_ERR(qcom_pcie->cfg_base)) {
+		dev_err(&pdev->dev, "Failed to ioremap PCIe cfg space\n");
+		return PTR_ERR(qcom_pcie->cfg_base);
+	}
+
 	gpio_set_value(qcom_pcie->reset_gpio, 0);
 	usleep_range(10000, 15000);
 
@@ -579,19 +619,26 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	udelay(1);
 
 	/* enable PCIe clocks and resets */
-	msm_pcie_write_mask(qcom_pcie->parf_base + PCIE20_PARF_PHY_CTRL, BIT(0), 0);
+	msm_pcie_write_mask(qcom_pcie->parf_base + PCIE20_PARF_PHY_CTRL,
+			    BIT(0), 0);
 
 	/* Set Tx Termination Offset */
 	val = qcom_parf_readl_relaxed(qcom_pcie, PCIE20_PARF_PHY_CTRL);
-	val |= PCIE20_PARF_PHY_CTRL_PHY_TX0_TERM_OFFST(7);
+	if (of_device_is_compatible(np, "qcom,pcie-ipq8064-v2"))
+		val |= PCIE20_PARF_PHY_CTRL_PHY_TX0_TERM_OFFST(0);
+	else
+		val |= PCIE20_PARF_PHY_CTRL_PHY_TX0_TERM_OFFST(7);
+
 	qcom_parf_writel_relaxed(qcom_pcie, val, PCIE20_PARF_PHY_CTRL);
 
 	/* PARF programming */
-	qcom_parf_writel_relaxed(qcom_pcie, PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN1(0x18) |
+	qcom_parf_writel_relaxed(qcom_pcie,
+			PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN1(0x18) |
 			PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_3_5DB(0x18) |
 			PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_6DB(0x22),
 			PCIE20_PARF_PCS_DEEMPH);
-	qcom_parf_writel_relaxed(qcom_pcie, PCIE20_PARF_PCS_SWING_TX_SWING_FULL(0x78) |
+	qcom_parf_writel_relaxed(qcom_pcie,
+			PCIE20_PARF_PCS_SWING_TX_SWING_FULL(0x78) |
 			PCIE20_PARF_PCS_SWING_TX_SWING_LOW(0x78),
 			PCIE20_PARF_PCS_SWING);
 	qcom_parf_writel_relaxed(qcom_pcie, (4<<24), PCIE20_PARF_CONFIG_BITS);
@@ -599,7 +646,8 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	wmb();
 
 	/* enable reference clock */
-	msm_pcie_write_mask(qcom_pcie->parf_base + PCIE20_PARF_PHY_REFCLK, BIT(12), BIT(16));
+	msm_pcie_write_mask(qcom_pcie->parf_base + PCIE20_PARF_PHY_REFCLK,
+			    BIT(12), BIT(16));
 
 	/* ensure that access is enabled before proceeding */
 	wmb();
@@ -614,8 +662,20 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	usleep_range(10000, 15000);
 
 	/* de-assert PCIe reset link to bring EP out of reset */
-	gpio_set_value(qcom_pcie->reset_gpio, 1 - 0);
+	gpio_set_value(qcom_pcie->reset_gpio, 1);
 	usleep_range(10000, 15000);
+
+	/*
+	 * Force Gen1 in Gen1 marked PCIe SLOT
+	 */
+	if (of_device_is_compatible(np, "qcom,pcie-ipq8064")) {
+		ret = of_property_read_u32(np, "force_gen1", &force_gen1);
+		if (!ret && force_gen1) {
+			writel_relaxed((readl_relaxed(
+				qcom_pcie->dwc_base + PCIE20_LNK_CAS2) | 1),
+				qcom_pcie->dwc_base + PCIE20_LNK_CAS2);
+		}
+	}
 
 	/* enable link training */
 	val = qcom_elbi_readl_relaxed(qcom_pcie, PCIE20_ELBI_SYS_CTRL);
@@ -628,7 +688,7 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 			(qcom_pcie->dwc_base + PCIE20_CAP_LINKCTRLSTATUS),
 			val, (val & BIT(29)), 10000, 100000);
 
-	printk("link initialized %d\n", ret);
+	dev_info(&pdev->dev, "link initialized %d\n", ret);
 
 	qcom_pcie_config_controller(qcom_pcie);
 
@@ -640,15 +700,13 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	nr_controllers++;
 	spin_unlock_irqrestore(&qcom_hw_pci_lock, flags);
 
-	pci_common_init(hw);
+	pci_common_init_dev(qcom_pcie->dev, hw);
 
 	return 0;
 }
 
 static int __exit qcom_pcie_remove(struct platform_device *pdev)
 {
-	struct qcom_pcie *qcom_pcie = platform_get_drvdata(pdev);
-
 	return 0;
 }
 

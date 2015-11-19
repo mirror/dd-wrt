@@ -14,9 +14,15 @@
 #include <linux/err.h>
 #include <linux/io.h>
 #include <linux/module.h>
+#include <linux/reset.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
+#include <linux/regulator/consumer.h>
+#include <linux/usb/phy.h>
+
+#include "core.h"
+
 
 struct dwc3_qcom {
 	struct device		*dev;
@@ -24,87 +30,135 @@ struct dwc3_qcom {
 	struct clk		*core_clk;
 	struct clk		*iface_clk;
 	struct clk		*sleep_clk;
+
+	struct regulator	*gdsc;
+
+	struct reset_control	*mstr_rst;
 };
 
 static int dwc3_qcom_probe(struct platform_device *pdev)
 {
 	struct device_node *node = pdev->dev.of_node;
-	struct dwc3_qcom *qdwc;
-	int ret;
+	struct dwc3_qcom *mdwc;
+	struct device *dev = &pdev->dev;
+	int ret = 0;
 
-	qdwc = devm_kzalloc(&pdev->dev, sizeof(*qdwc), GFP_KERNEL);
-	if (!qdwc)
+	mdwc = devm_kzalloc(&pdev->dev, sizeof(*mdwc), GFP_KERNEL);
+	if (!mdwc)
 		return -ENOMEM;
 
-	platform_set_drvdata(pdev, qdwc);
+	platform_set_drvdata(pdev, mdwc);
 
-	qdwc->dev = &pdev->dev;
+	mdwc->dev = &pdev->dev;
 
-	qdwc->core_clk = devm_clk_get(qdwc->dev, "core");
-	if (IS_ERR(qdwc->core_clk)) {
-		dev_err(qdwc->dev, "failed to get core clock\n");
-		return PTR_ERR(qdwc->core_clk);
+	mdwc->gdsc = devm_regulator_get(mdwc->dev, "gdsc");
+
+	mdwc->core_clk = devm_clk_get(mdwc->dev, "core");
+	if (IS_ERR(mdwc->core_clk)) {
+		dev_dbg(mdwc->dev, "failed to get core clock\n");
+		return PTR_ERR(mdwc->core_clk);
 	}
 
-	qdwc->iface_clk = devm_clk_get(qdwc->dev, "iface");
-	if (IS_ERR(qdwc->iface_clk)) {
-		dev_dbg(qdwc->dev, "failed to get optional iface clock\n");
-		qdwc->iface_clk = NULL;
+	mdwc->iface_clk = devm_clk_get(mdwc->dev, "iface");
+	if (IS_ERR(mdwc->iface_clk)) {
+		dev_dbg(mdwc->dev, "failed to get iface clock, skipping\n");
+		mdwc->iface_clk = NULL;
 	}
 
-	qdwc->sleep_clk = devm_clk_get(qdwc->dev, "sleep");
-	if (IS_ERR(qdwc->sleep_clk)) {
-		dev_dbg(qdwc->dev, "failed to get optional sleep clock\n");
-		qdwc->sleep_clk = NULL;
+	mdwc->sleep_clk = devm_clk_get(mdwc->dev, "sleep");
+	if (IS_ERR(mdwc->sleep_clk)) {
+		dev_dbg(mdwc->dev, "failed to get sleep clock, skipping\n");
+		mdwc->sleep_clk = NULL;
 	}
 
-	ret = clk_prepare_enable(qdwc->core_clk);
+	if (!IS_ERR(mdwc->gdsc)) {
+		ret = regulator_enable(mdwc->gdsc);
+		if (ret)
+			dev_err(mdwc->dev, "cannot enable gdsc\n");
+	}
+
+	clk_prepare_enable(mdwc->core_clk);
+
+	if (mdwc->iface_clk)
+		clk_prepare_enable(mdwc->iface_clk);
+
+	if (mdwc->sleep_clk)
+		clk_prepare_enable(mdwc->sleep_clk);
+
+	mdwc->mstr_rst = devm_reset_control_get(dev, "usb30_mstr_rst");
+
+	if (!IS_ERR(mdwc->mstr_rst)) {
+		reset_control_deassert(mdwc->mstr_rst);
+	} else {
+		dev_dbg(mdwc->dev, "cannot get handle for master reset control\n");
+	}
+
+	ret = of_platform_populate(node, NULL, NULL, mdwc->dev);
 	if (ret) {
-		dev_err(qdwc->dev, "failed to enable core clock\n");
-		goto err_core;
-	}
-
-	ret = clk_prepare_enable(qdwc->iface_clk);
-	if (ret) {
-		dev_err(qdwc->dev, "failed to enable optional iface clock\n");
-		goto err_iface;
-	}
-
-	ret = clk_prepare_enable(qdwc->sleep_clk);
-	if (ret) {
-		dev_err(qdwc->dev, "failed to enable optional sleep clock\n");
-		goto err_sleep;
-	}
-
-	ret = of_platform_populate(node, NULL, NULL, qdwc->dev);
-	if (ret) {
-		dev_err(qdwc->dev, "failed to register core - %d\n", ret);
-		goto err_clks;
+		dev_err(mdwc->dev, "failed to register core - %d\n", ret);
+		dev_dbg(mdwc->dev, "failed to add create dwc3 core\n");
+		goto dis_clks;
 	}
 
 	return 0;
 
-err_clks:
-	clk_disable_unprepare(qdwc->sleep_clk);
-err_sleep:
-	clk_disable_unprepare(qdwc->iface_clk);
-err_iface:
-	clk_disable_unprepare(qdwc->core_clk);
-err_core:
+dis_clks:
+
+	dev_err(mdwc->dev, "disabling clocks\n");
+
+	if (mdwc->sleep_clk)
+		clk_disable_unprepare(mdwc->sleep_clk);
+
+	if (mdwc->iface_clk)
+		clk_disable_unprepare(mdwc->iface_clk);
+
+	clk_disable_unprepare(mdwc->core_clk);
+
+	if (!IS_ERR(mdwc->gdsc)) {
+		ret = regulator_disable(mdwc->gdsc);
+		if (ret)
+			dev_dbg(mdwc->dev, "cannot disable gdsc\n");
+	}
+
 	return ret;
 }
 
-static int dwc3_qcom_remove(struct platform_device *pdev)
+static int dwc3_qcom_remove_core(struct device *dev, void *c)
 {
-	struct dwc3_qcom *qdwc = platform_get_drvdata(pdev);
+	struct platform_device *pdev = to_platform_device(dev);
 
-	of_platform_depopulate(&pdev->dev);
-
-	clk_disable_unprepare(qdwc->sleep_clk);
-	clk_disable_unprepare(qdwc->iface_clk);
-	clk_disable_unprepare(qdwc->core_clk);
+	of_device_unregister(pdev);
 
 	return 0;
+}
+static int dwc3_qcom_remove(struct platform_device *pdev)
+{
+	int ret = 0;
+	struct device_node *node = pdev->dev.of_node;
+
+	struct dwc3_qcom *mdwc = platform_get_drvdata(pdev);
+
+	if (mdwc->sleep_clk)
+		clk_disable_unprepare(mdwc->sleep_clk);
+
+	if (mdwc->iface_clk)
+		clk_disable_unprepare(mdwc->iface_clk);
+
+	clk_disable_unprepare(mdwc->core_clk);
+
+	if (!IS_ERR(mdwc->gdsc)) {
+		ret = regulator_disable(mdwc->gdsc);
+		if (ret)
+			dev_dbg(mdwc->dev, "cannot disable gdsc\n");
+	}
+
+	if (!IS_ERR(mdwc->mstr_rst)) {
+		reset_control_assert(mdwc->mstr_rst);
+	}
+
+	device_for_each_child(&pdev->dev, NULL, dwc3_qcom_remove_core);
+
+	return ret;
 }
 
 static const struct of_device_id of_dwc3_match[] = {
@@ -118,6 +172,7 @@ static struct platform_driver dwc3_qcom_driver = {
 	.remove		= dwc3_qcom_remove,
 	.driver		= {
 		.name	= "qcom-dwc3",
+		.owner	= THIS_MODULE,
 		.of_match_table	= of_dwc3_match,
 	},
 };
@@ -127,4 +182,3 @@ module_platform_driver(dwc3_qcom_driver);
 MODULE_ALIAS("platform:qcom-dwc3");
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("DesignWare USB3 QCOM Glue Layer");
-MODULE_AUTHOR("Ivan T. Ivanov <iivanov@mm-sol.com>");
