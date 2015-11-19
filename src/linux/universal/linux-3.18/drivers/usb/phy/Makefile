@@ -28,3 +28,5 @@ obj-$(CONFIG_USB_ULPI)			+= phy-ulpi.o
 obj-$(CONFIG_USB_ULPI_VIEWPORT)		+= phy-ulpi-viewport.o
 obj-$(CONFIG_RALINK_USBPHY)		+= ralink-phy.o
 obj-$(CONFIG_KEYSTONE_USB_PHY)		+= phy-keystone.o
+obj-$(CONFIG_USB_QCOM_DWC3_PHY)		+= phy-qcom-hsusb.o
+obj-$(CONFIG_USB_QCOM_DWC3_PHY)		+= phy-qcom-ssusb.o
