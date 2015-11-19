@@ -303,6 +303,7 @@ static void free_desc(unsigned int irq)
 	raw_spin_unlock_irqrestore(&desc->lock, flags);
 }
 
+
 static inline int alloc_descs(unsigned int start, unsigned int cnt, int node,
 			      struct module *owner)
 {
@@ -646,3 +647,20 @@ unsigned int kstat_irqs_usr(unsigned int irq)
 	irq_unlock_sparse();
 	return sum;
 }
+
+
+/**
+ * dynamic_irq_cleanup - cleanup a dynamically allocated irq
+ * @irq:	irq number to initialize
+ */
+
+void dynamic_irq_cleanup(unsigned int irq)
+{
+	struct irq_desc *desc = irq_to_desc(irq);
+	unsigned long flags;
+
+	raw_spin_lock_irqsave(&desc->lock, flags);
+	desc_set_defaults(irq, desc, desc_node(desc), NULL);
+	raw_spin_unlock_irqrestore(&desc->lock, flags);
+}
+

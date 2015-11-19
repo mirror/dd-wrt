@@ -221,4 +221,15 @@ config RALINK_USBPHY
 	  Enable this to support ralink USB phy controller for ralink
 	  SoCs.
 
+config USB_QCOM_DWC3_PHY
+	tristate "Qualcomm USB controller DWC3 PHY wrappers support"
+	depends on (USB || USB_GADGET) && ARCH_QCOM
+	select USB_PHY
+	help
+	  Enable this to support the DWC3 USB PHY transceivers on QCOM chips
+	  with DWC3 USB core. It handles PHY initialization, clock
+	  management required after resetting the hardware and power
+	  management. This driver is required even for peripheral only or
+	  host only mode configurations.
+
 endmenu
