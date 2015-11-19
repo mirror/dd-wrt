@@ -282,7 +282,7 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	//detect_wireless_devices();
+	detect_wireless_devices();
 	//insmod("qdpc-host.ko");
 
 	system("swconfig dev switch0 set reset 1");
