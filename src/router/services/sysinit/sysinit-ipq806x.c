@@ -84,9 +84,6 @@ typedef struct {
 	uint32_t magic_end;
 } ipq_smem_bootconfig_v2_info_t;
 
-
-
-
 void start_finishupgrade(void)
 {
 	int brand = getRouterBrand();
@@ -186,12 +183,10 @@ static void setbootdevice(int dev)
 	if (ipq_smem_bootconfig_v2_info) {
 		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_v2_info->upgradeinprogress);
 		int i;
-		if (ipq_smem_bootconfig_v2_info->upgradeinprogress) {
-			for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
-				if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
-					fprintf(stderr,"set bootdevice from %d to %d\n",ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot,dev);
-					ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot = dev;
-				}
+		for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
+			if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
+				fprintf(stderr, "set bootdevice from %d to %d\n", ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot, dev);
+				ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot = dev;
 			}
 		}
 		ipq_smem_bootconfig_v2_info->upgradeinprogress = 0;
@@ -200,12 +195,10 @@ static void setbootdevice(int dev)
 		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_info->upgradeinprogress);
 
 		int i;
-		if (ipq_smem_bootconfig_info->upgradeinprogress) {
-			for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
-				if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
-					fprintf(stderr,"set bootdevice from %d to %d\n",ipq_smem_bootconfig_info->per_part_entry[i].primaryboot,dev);
-					ipq_smem_bootconfig_info->per_part_entry[i].primaryboot = dev;
-				}
+		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
+			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+				fprintf(stderr, "set bootdevice from %d to %d\n", ipq_smem_bootconfig_info->per_part_entry[i].primaryboot, dev);
+				ipq_smem_bootconfig_info->per_part_entry[i].primaryboot = dev;
 			}
 		}
 		ipq_smem_bootconfig_info->upgradeinprogress = 0;
@@ -217,19 +210,17 @@ static void setbootdevice(int dev)
 	fclose(fp);
 	free(smem);
 
-
 }
 
 void start_bootsecondary(void)
 {
-    setbootdevice(1);
+	setbootdevice(1);
 }
 
 void start_bootprimary(void)
 {
-    setbootdevice(0);
+	setbootdevice(0);
 }
-
 
 void start_sysinit(void)
 {
@@ -245,7 +236,6 @@ void start_sysinit(void)
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
-
 
 	char mtdpath[64];
 	int mtd = getMTD("art");
