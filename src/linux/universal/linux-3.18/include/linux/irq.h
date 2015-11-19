@@ -453,6 +453,8 @@ extern int can_request_irq(unsigned int irq, unsigned long irqflags);
 extern struct irq_chip no_irq_chip;
 extern struct irq_chip dummy_irq_chip;
 
+extern void dynamic_irq_cleanup(unsigned int irq);
+
 extern void
 irq_set_chip_and_handler_name(unsigned int irq, struct irq_chip *chip,
 			      irq_flow_handler_t handle, const char *name);

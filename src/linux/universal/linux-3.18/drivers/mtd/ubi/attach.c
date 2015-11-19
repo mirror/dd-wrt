@@ -843,7 +843,7 @@ static int scan_peb(struct ubi_device *ubi, struct ubi_attach_info *ai,
 			return err;
 
 		if (ec_hdr_has_eof(ech)) {
-			pr_notice("UBI: EOF marker found, PEBs from %d will be erased",
+			ubi_msg("EOF marker found, PEBs from %d will be erased",
 				pnum);
 			ai->eof_found = true;
 		}
