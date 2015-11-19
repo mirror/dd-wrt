@@ -84,24 +84,14 @@ typedef struct {
 	uint32_t magic_end;
 } ipq_smem_bootconfig_v2_info_t;
 
-void start_sysinit(void)
+
+
+
+void start_finishupgrade(void)
 {
-	char buf[PATH_MAX];
-	struct stat tmp_stat;
-	time_t tm = 0;
-	FILE *fp;
-
-	/*
-	 * Setup console 
-	 */
-
-	cprintf("sysinit() klogctl\n");
-	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
-	cprintf("sysinit() get router\n");
-
 	int brand = getRouterBrand();
-	int mtd = getMTD("BOOTCONFIG");
 	char mtdpath[64];
+	int mtd = getMTD("BOOTCONFIG");
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 
 	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
@@ -109,7 +99,7 @@ void start_sysinit(void)
 
 	unsigned int *smem = (unsigned int *)malloc(0x60000);
 	memset(smem, 0, 0x60000);
-	fp = fopen(mtdpath, "rb");
+	FILE *fp = fopen(mtdpath, "rb");
 	if (fp) {
 		fread(smem, 0x60000, 1, fp);
 		fclose(fp);
@@ -160,6 +150,120 @@ void start_sysinit(void)
 	fclose(fp);
 	free(smem);
 
+}
+
+static void setbootdevice(int dev)
+{
+	int brand = getRouterBrand();
+	char mtdpath[64];
+	int mtd = getMTD("BOOTCONFIG");
+	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+
+	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
+	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
+
+	unsigned int *smem = (unsigned int *)malloc(0x60000);
+	memset(smem, 0, 0x60000);
+	FILE *fp = fopen(mtdpath, "rb");
+	if (fp) {
+		fread(smem, 0x60000, 1, fp);
+		fclose(fp);
+		int i;
+		unsigned int *p = smem;
+		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
+			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
+				ipq_smem_bootconfig_v2_info = p;
+				break;
+			}
+			if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
+				ipq_smem_bootconfig_info = p;
+				break;
+			}
+			p++;
+		}
+
+	}
+	if (ipq_smem_bootconfig_v2_info) {
+		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_v2_info->upgradeinprogress);
+		int i;
+		if (ipq_smem_bootconfig_v2_info->upgradeinprogress) {
+			for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
+				if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
+					fprintf(stderr,"set bootdevice from %d to %d\n",ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot,dev);
+					ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot = dev;
+				}
+			}
+		}
+		ipq_smem_bootconfig_v2_info->upgradeinprogress = 0;
+	}
+	if (ipq_smem_bootconfig_info) {
+		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_info->upgradeinprogress);
+
+		int i;
+		if (ipq_smem_bootconfig_info->upgradeinprogress) {
+			for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
+				if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+					fprintf(stderr,"set bootdevice from %d to %d\n",ipq_smem_bootconfig_info->per_part_entry[i].primaryboot,dev);
+					ipq_smem_bootconfig_info->per_part_entry[i].primaryboot = dev;
+				}
+			}
+		}
+		ipq_smem_bootconfig_info->upgradeinprogress = 0;
+	}
+	fp = fopen(mtdpath, "wb");
+	if (fp) {
+		fwrite(smem, 0x60000, 1, fp);
+	}
+	fclose(fp);
+	free(smem);
+
+
+}
+
+void start_bootsecondary(void)
+{
+    setbootdevice(1);
+}
+
+void start_bootprimary(void)
+{
+    setbootdevice(0);
+}
+
+
+void start_sysinit(void)
+{
+	char buf[PATH_MAX];
+	struct stat tmp_stat;
+	time_t tm = 0;
+	FILE *fp;
+
+	/*
+	 * Setup console 
+	 */
+
+	cprintf("sysinit() klogctl\n");
+	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
+	cprintf("sysinit() get router\n");
+
+
+	char mtdpath[64];
+	int mtd = getMTD("art");
+	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+	fp = fopen(mtdpath, "rb");
+	if (fp) {
+		fseek(fp, 0x1000, SEEK_SET);
+		int *smem = malloc(0x8000);
+		fread(smem, 0x8000, 1, fp);
+		fclose(fp);
+		fp = fopen("/tmp/board1.bin", "wb");
+		fwrite(smem, 0x4000, 1, fp);
+		fclose(fp);
+		fp = fopen("/tmp/board2.bin", "wb");
+		fwrite(&smem[0x1000], 0x4000, 1, fp);
+		fclose(fp);
+		free(smem);
+	}
 	/* 
 	 * 
 	 */
@@ -174,11 +278,11 @@ void start_sysinit(void)
 
 	insmod("tmp421");
 	insmod("mii");
-	insmod("/lib/modules/3.18.23/stmmac.ko");	//for debugging purposes compiled as module
+	insmod("stmmac");	//for debugging purposes compiled as module
 	/*
 	 * network drivers 
 	 */
-	detect_wireless_devices();
+	//detect_wireless_devices();
 	//insmod("qdpc-host.ko");
 
 	system("swconfig dev switch0 set reset 1");
