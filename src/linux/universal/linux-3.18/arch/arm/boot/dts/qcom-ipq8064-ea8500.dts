@@ -39,20 +39,18 @@
 				bias-disable;
 			};
 
-			pcie0_pins: pcie0_pinmux {
+			pcie1_pins: pcie1_pinmux {
 				mux {
 					pins = "gpio3";
-					function = "pcie1_rst";
-					drive-strength = <12>;
+					drive-strength = <2>;
 					bias-disable;
 				};
 			};
 
-			pcie1_pins: pcie1_pinmux {
+			pcie2_pins: pcie2_pinmux {
 				mux {
 					pins = "gpio48";
-					function = "pcie2_rst";
-					drive-strength = <12>;
+					drive-strength = <2>;
 					bias-disable;
 				};
 			};
@@ -146,19 +144,30 @@
 			status = "ok";
 		};
 
-		pcie0: pci@1b500000 {
+		pci@1b500000 {
 			status = "ok";
 			reset-gpio = <&qcom_pinmux 3 0>;
-			pinctrl-0 = <&pcie0_pins>;
-			pinctrl-names = "default";
-		};
-
-		pcie1: pci@1b700000 {
-			status = "ok";
-			reset-gpio = <&qcom_pinmux 48 0>;
 			pinctrl-0 = <&pcie1_pins>;
 			pinctrl-names = "default";
+
+			ranges = <0x00000000 0 0x00000000 0x0ff00000 0 0x00100000   /* configuration space */
+				  0x81000000 0 0	  0x0fe00000 0 0x00100000   /* downstream I/O */
+				  0x82000000 0 0x00000000 0x08000000 0 0x07e00000>; /* non-prefetchable memory */
 		};
+
+		pci@1b700000 {
+			status = "ok";
+			reset-gpio = <&qcom_pinmux 48 0>;
+			pinctrl-0 = <&pcie2_pins>;
+			pinctrl-names = "default";
+
+			ranges = <0x00000000 0 0x00000000 0x31f00000 0 0x00100000   /* configuration space */
+				  0x81000000 0 0	  0x31e00000 0 0x00100000   /* downstream I/O */
+				  0x82000000 0 0x00000000 0x2e000000 0 0x03e00000>; /* non-prefetchable memory */
+
+			force_gen1 = <1>;
+		};
+
 
 		nand@1ac00000 {
 			status = "ok";
@@ -217,8 +226,8 @@
 				read-only;
 			};
 
-			ART@c80000 {
-				label = "ART";
+			art@c80000 {
+				label = "art";
 				reg = <0x0c80000 0x0140000>;
 				read-only;
 			};
@@ -243,7 +252,7 @@
 				reg = <0x0f40000 0x0040000>;
 			};
 			
-			linux@f80000 {
+			linux@f80000 { 
 				label = "linux";
 				reg = <0x0f80000 0x2800000>;
 			};
