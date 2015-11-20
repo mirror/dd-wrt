@@ -2021,6 +2021,11 @@ int internal_getRouterBrand()
 		setRouter("Linksys EA8500");
 		return ROUTER_LINKSYS_EA8500;
 	}
+
+	if (!strcmp(modelstr, "TEW-827")) {
+		setRouter("Trendnet TEW-827");
+		return ROUTER_TRENDNET_TEW827;
+	}
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;
