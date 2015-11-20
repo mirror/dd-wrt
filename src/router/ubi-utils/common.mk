@@ -1,6 +1,6 @@
-CC := $(CROSS)gcc
-AR := $(CROSS)ar
-RANLIB := $(CROSS)ranlib
+#CC := $(CROSS)gcc
+#AR := $(CROSS)ar
+#RANLIB := $(CROSS)ranlib
 
 # Stolen from Linux build system
 comma = ,
@@ -12,9 +12,10 @@ WFLAGS := -Wall \
 	$(call cc-option,-Wextra) \
 	$(call cc-option,-Wwrite-strings) \
 	$(call cc-option,-Wno-sign-compare)
-CFLAGS += $(WFLAGS)
+CFLAGS += $(WFLAGS) -I $(TOP)/e2fsprogs/lib -I$(TOP)/lzo/include -I $(TOP)/zlib -DNEED_PRINTF
 SECTION_CFLAGS := $(call cc-option,-ffunction-sections -fdata-sections -Wl$(comma)--gc-sections)
 CFLAGS += $(SECTION_CFLAGS)
+LDFLAGS += -L$(TOP)/e2fsprogs/lib -L$(TOP)/zlib -L$(TOP)/lzo/src/.libs
 
 ifneq ($(WITHOUT_LARGEFILE), 1)
   CPPFLAGS += -D_FILE_OFFSET_BITS=64
