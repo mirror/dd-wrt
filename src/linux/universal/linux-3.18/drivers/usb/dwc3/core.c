@@ -47,6 +47,50 @@
 
 /* -------------------------------------------------------------------------- */
 
+void dwc3_usb2phy_suspend(void *priv,
+				enum usb_device_speed speed, bool suspend)
+{
+	struct dwc3 *dwc = (struct dwc3 *) priv;
+	u32 reg;
+
+	if (speed > USB_SPEED_HIGH)
+		return;
+
+	if (!dwc->enable_usb2susphy_quirk)
+		return;
+
+	if (suspend) {
+		/* Enable Suspend USB2.0 HS/FS/LS PHY (SusPHY) */
+		reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
+		reg |= DWC3_GUSB2PHYCFG_SUSPHY;
+		dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
+	} else {
+		/* Disable Suspend USB2.0 HS/FS/LS PHY (SusPHY) */
+		reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
+		reg &= ~DWC3_GUSB2PHYCFG_SUSPHY;
+		dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
+	}
+}
+
+void dwc3_usb2phy_host_discon(void *priv, bool enable)
+{
+	struct dwc3 *dwc = (struct dwc3 *) priv;
+	u32 reg;
+
+	if (!dwc->enable_usb2_host_discon_quirk)
+		return;
+
+	if (enable) {
+		reg = usb_phy_io_read(dwc->usb2_phy, dwc->phy_misc_reg);
+		reg |= dwc->phy_host_disc_on;
+		usb_phy_io_write(dwc->usb2_phy, reg, dwc->phy_misc_reg);
+	} else {
+		reg = usb_phy_io_read(dwc->usb2_phy, dwc->phy_misc_reg);
+		reg &= ~dwc->phy_host_disc_on;
+		usb_phy_io_write(dwc->usb2_phy, reg, dwc->phy_misc_reg);
+	}
+}
+
 void dwc3_set_mode(struct dwc3 *dwc, u32 mode)
 {
 	u32 reg;
@@ -55,6 +99,16 @@ void dwc3_set_mode(struct dwc3 *dwc, u32 mode)
 	reg &= ~(DWC3_GCTL_PRTCAPDIR(DWC3_GCTL_PRTCAP_OTG));
 	reg |= DWC3_GCTL_PRTCAPDIR(mode);
 	dwc3_writel(dwc->regs, DWC3_GCTL, reg);
+
+	/* Enable Suspend USB2.0 HS/FS/LS PHY (SusPHY) */
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
+	reg |= DWC3_GUSB2PHYCFG_SUSPHY;
+	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
+
+	/* Enable Suspend USB3.0 SS PHY (Suspend_en) */
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(0));
+	reg &= ~DWC3_GUSB3PIPECTL_SUSPHY;
+	dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(0), reg);
 }
 
 /**
@@ -484,6 +538,18 @@ err0:
 
 static void dwc3_core_exit(struct dwc3 *dwc)
 {
+	u32		reg;
+
+	/* Assert USB3 PHY reset */
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(0));
+	reg |= DWC3_GUSB3PIPECTL_PHYSOFTRST;
+	dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(0), reg);
+
+	/* Assert USB2 PHY reset */
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
+	reg |= DWC3_GUSB2PHYCFG_PHYSOFTRST;
+	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
+
 	dwc3_free_scratch_buffers(dwc);
 	usb_phy_shutdown(dwc->usb2_phy);
 	usb_phy_shutdown(dwc->usb3_phy);
@@ -689,12 +755,39 @@ static int dwc3_probe(struct platform_device *pdev)
 		dwc->maximum_speed = of_usb_get_maximum_speed(node);
 
 		dwc->needs_fifo_resize = of_property_read_bool(node, "tx-fifo-resize");
+		dwc->enable_usb2susphy_quirk = of_property_read_bool(node,
+							"usb2-susphy-quirk");
+		dwc->enable_usb2_host_discon_quirk =
+			of_property_read_bool(node, "usb2-host-discon-quirk");
+
+		if ((dwc->enable_usb2_host_discon_quirk) &&
+			(of_property_read_u32(node,
+					"usb2-host-discon-phy-misc-reg",
+					&dwc->phy_misc_reg) ||
+			of_property_read_u32(node, "usb2-host-discon-mask",
+					&dwc->phy_host_disc_on)))
+
+		{
+			dev_err(dev, "missing discon quirk params\n");
+			return -ENODEV;
+		}
+
 		dwc->dr_mode = of_usb_get_dr_mode(node);
 	} else if (pdata) {
 		dwc->maximum_speed = pdata->maximum_speed;
 
 		dwc->needs_fifo_resize = pdata->tx_fifo_resize;
 		dwc->dr_mode = pdata->dr_mode;
+	}
+
+	if (dwc->enable_usb2susphy_quirk) {
+		dwc->susphy.priv = (void *)dwc;
+		dwc->susphy.set_suspend = &dwc3_usb2phy_suspend;
+	}
+
+	if (dwc->enable_usb2susphy_quirk) {
+		dwc->susphy.priv = (void *)dwc;
+		dwc->susphy.set_host_discon = &dwc3_usb2phy_host_discon;
 	}
 
 	/* default to superspeed if no maximum_speed passed */
