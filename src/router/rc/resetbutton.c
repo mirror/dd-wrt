@@ -186,9 +186,13 @@ int getbuttonstate()
 #elif defined(HAVE_IPQ806X)
 int getbuttonstate()
 {
-	int ret;
+	int ret = 0;
 	if (getRouterBrand() == ROUTER_NETGEAR_R7500)
 		ret = get_gpio(54);
+	else
+	if (getRouterBrand() == ROUTER_TRENDNET_TEW827)
+		ret = get_gpio(54);
+	else return 0;
 
 	if (ret == 0)
 		return 1;
