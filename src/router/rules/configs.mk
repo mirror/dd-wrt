@@ -249,6 +249,7 @@ obj-$(CONFIG_NEXTMEDIAEXTRA) += nextmediaextra
 obj-$(CONFIG_LIBQMI) += glib20 libqmi
 obj-$(CONFIG_UQMI) += json-c libubox uqmi
 obj-$(CONFIG_MTDUTILS) += mtd-utils
+obj-$(CONFIG_UBIUTILS) += ubi-utils
 obj-$(CONFIG_STRONGSWAN) += gmp strongswan sqlite
 obj-$(CONFIG_PRIVOXY) += zlib pcre privoxy
 obj-$(CONFIG_VENTANA) += kobs-ng
