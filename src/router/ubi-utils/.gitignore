@@ -1,0 +1,69 @@
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# Normal rules
+#
+.*
+*.gdb
+*.o
+*.a
+*.s
+*.ko
+*.so
+*.mod.c
+*~
+
+#
+# Our programs
+#
+/misc-utils/doc_loadbios
+/misc-utils/docfdisk
+/misc-utils/flash_erase
+/misc-utils/flash_lock
+/misc-utils/flash_otp_dump
+/misc-utils/flash_otp_info
+/misc-utils/flash_otp_lock
+/misc-utils/flash_otp_write
+/misc-utils/flash_unlock
+/misc-utils/flashcp
+/misc-utils/ftl_check
+/misc-utils/ftl_format
+/jffsX-utils/jffs2dump
+/jffsX-utils/jffs2reader
+/jffsX-utils/mkfs.jffs2
+/misc-utils/mtd_debug
+/misc-utils/mtdpart
+/nand-utils/nanddump
+/nand-utils/nandtest
+/nand-utils/nandwrite
+/nand-utils/nftl_format
+/nand-utils/nftldump
+/misc-utils/recv_image
+/nor-utils/rfddump
+/nor-utils/rfdformat
+/misc-utils/serve_image
+/jffsX-utils/sumtool
+
+#
+# Top-level generic files
+#
+
+#
+# git files that we don't want to ignore even it they are dot-files
+#
+!.gitignore
+
+#
+# Generated include files
+#
+/include/version.h
+
+# stgit generated dirs
+patches-*
+*.patch
+
+# cscope files
+cscope.*
+ncscope.*
