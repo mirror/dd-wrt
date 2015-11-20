@@ -53,6 +53,8 @@ int dwc3_host_init(struct dwc3 *dwc)
 #ifdef CONFIG_DWC3_HOST_USB3_LPM_ENABLE
 	pdata.usb3_lpm_capable = 1;
 #endif
+	pdata.usb2_susphy_quirk = dwc->enable_usb2susphy_quirk;
+	pdata.susphy = &dwc->susphy;
 
 	ret = platform_device_add_data(xhci, &pdata, sizeof(pdata));
 	if (ret) {

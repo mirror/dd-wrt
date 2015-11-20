@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -22,14 +22,18 @@
 #include <linux/clk-provider.h>
 #include <linux/slab.h>
 
+#include <asm/smp_plat.h>
+
 #include "clk-krait.h"
 
-static unsigned int sec_mux_map[] = {
+DEFINE_FIXED_DIV_CLK(acpu_aux, 2, "gpll0_vote");
+
+static u8 sec_mux_map[] = {
 	2,
 	0,
 };
 
-static unsigned int pri_mux_map[] = {
+static u8 pri_mux_map[] = {
 	1,
 	2,
 	0,
@@ -38,22 +42,26 @@ static unsigned int pri_mux_map[] = {
 static int
 krait_add_div(struct device *dev, int id, const char *s, unsigned offset)
 {
-	struct krait_div2_clk *div;
+	struct div_clk *div;
 	struct clk_init_data init = {
 		.num_parents = 1,
-		.ops = &krait_div2_clk_ops,
+		.ops = &clk_ops_div,
 		.flags = CLK_SET_RATE_PARENT,
 	};
 	const char *p_names[1];
 	struct clk *clk;
 
-	div = devm_kzalloc(dev, sizeof(*div), GFP_KERNEL);
+	div = devm_kzalloc(dev, sizeof(*dev), GFP_KERNEL);
 	if (!div)
 		return -ENOMEM;
 
-	div->width = 2;
+	div->data.div = 2;
+	div->data.min_div = 2;
+	div->data.max_div = 2;
+	div->ops = &clk_div_ops_kpss_div2;
+	div->mask = 0x3;
 	div->shift = 6;
-	div->lpl = id >= 0;
+	div->priv = (void *)(id >= 0);
 	div->offset = offset;
 	div->hw.init = &init;
 
@@ -79,7 +87,7 @@ static int
 krait_add_sec_mux(struct device *dev, int id, const char *s, unsigned offset,
 		  bool unique_aux)
 {
-	struct krait_mux_clk *mux;
+	struct mux_clk *mux;
 	static const char *sec_mux_list[] = {
 		"acpu_aux",
 		"qsb",
@@ -87,7 +95,7 @@ krait_add_sec_mux(struct device *dev, int id, const char *s, unsigned offset,
 	struct clk_init_data init = {
 		.parent_names = sec_mux_list,
 		.num_parents = ARRAY_SIZE(sec_mux_list),
-		.ops = &krait_mux_clk_ops,
+		.ops = &clk_ops_gen_mux,
 		.flags = CLK_SET_RATE_PARENT,
 	};
 	struct clk *clk;
@@ -97,9 +105,10 @@ krait_add_sec_mux(struct device *dev, int id, const char *s, unsigned offset,
 		return -ENOMEM;
 
 	mux->offset = offset;
-	mux->lpl = id >= 0;
+	mux->priv = (void *)(id >= 0);
 	mux->has_safe_parent = true;
 	mux->safe_sel = 2;
+	mux->ops = &clk_mux_ops_kpss;
 	mux->mask = 0x3;
 	mux->shift = 2;
 	mux->parent_map = sec_mux_map;
@@ -127,14 +136,14 @@ err_aux:
 }
 
 static struct clk *
-krait_add_pri_mux(struct device *dev, int id, const char *s, unsigned offset)
+krait_add_pri_mux(struct device *dev, int id, const char * s, unsigned offset)
 {
-	struct krait_mux_clk *mux;
+	struct mux_clk *mux;
 	const char *p_names[3];
 	struct clk_init_data init = {
 		.parent_names = p_names,
 		.num_parents = ARRAY_SIZE(p_names),
-		.ops = &krait_mux_clk_ops,
+		.ops = &clk_ops_gen_mux,
 		.flags = CLK_SET_RATE_PARENT,
 	};
 	struct clk *clk;
@@ -145,10 +154,11 @@ krait_add_pri_mux(struct device *dev, int id, const char *s, unsigned offset)
 
 	mux->has_safe_parent = true;
 	mux->safe_sel = 0;
+	mux->ops = &clk_mux_ops_kpss;
 	mux->mask = 0x3;
 	mux->shift = 0;
 	mux->offset = offset;
-	mux->lpl = id >= 0;
+	mux->priv = (void *)(id >= 0);
 	mux->parent_map = pri_mux_map;
 	mux->hw.init = &init;
 
@@ -248,12 +258,12 @@ static int krait_cc_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	const struct of_device_id *id;
 	unsigned long cur_rate, aux_rate;
-	int cpu;
+	int i, cpu;
 	struct clk *clk;
 	struct clk **clks;
 	struct clk *l2_pri_mux_clk;
 
-	id = of_match_device(krait_cc_match_table, dev);
+	id = of_match_device(krait_cc_match_table, &pdev->dev);
 	if (!id)
 		return -ENODEV;
 
@@ -263,8 +273,7 @@ static int krait_cc_probe(struct platform_device *pdev)
 		return PTR_ERR(clk);
 
 	if (!id->data) {
-		clk = clk_register_fixed_factor(dev, "acpu_aux",
-						"gpll0_vote", 0, 1, 2);
+		clk = devm_clk_register(dev, &acpu_aux.hw);
 		if (IS_ERR(clk))
 			return PTR_ERR(clk);
 	}
@@ -274,7 +283,8 @@ static int krait_cc_probe(struct platform_device *pdev)
 	if (!clks)
 		return -ENOMEM;
 
-	for_each_possible_cpu(cpu) {
+	for_each_possible_cpu(i) {
+		cpu = cpu_logical_map(i);
 		clk = krait_add_clks(dev, cpu, id->data);
 		if (IS_ERR(clk))
 			return PTR_ERR(clk);
@@ -293,7 +303,8 @@ static int krait_cc_probe(struct platform_device *pdev)
 	 * that the clocks have already been prepared and enabled by the time
 	 * they take over.
 	 */
-	for_each_online_cpu(cpu) {
+	for_each_online_cpu(i) {
+		cpu = cpu_logical_map(i);
 		clk_prepare_enable(l2_pri_mux_clk);
 		WARN(clk_prepare_enable(clks[cpu]),
 			"Unable to turn on CPU%d clock", cpu);
@@ -320,17 +331,18 @@ static int krait_cc_probe(struct platform_device *pdev)
 	clk_set_rate(l2_pri_mux_clk, 2);
 	clk_set_rate(l2_pri_mux_clk, cur_rate);
 	pr_info("L2 @ %lu KHz\n", clk_get_rate(l2_pri_mux_clk) / 1000);
-	for_each_possible_cpu(cpu) {
+	for_each_possible_cpu(i) {
+		cpu = cpu_logical_map(i);
 		clk = clks[cpu];
 		cur_rate = clk_get_rate(clk);
 		if (cur_rate == 1) {
-			pr_info("CPU%d @ QSB rate. Forcing new rate.\n", cpu);
+			pr_info("CPU%d @ QSB rate. Forcing new rate.\n", i);
 			cur_rate = aux_rate;
 		}
 		clk_set_rate(clk, aux_rate);
 		clk_set_rate(clk, 2);
 		clk_set_rate(clk, cur_rate);
-		pr_info("CPU%d @ %lu KHz\n", cpu, clk_get_rate(clk) / 1000);
+		pr_info("CPU%d @ %lu KHz\n", i, clk_get_rate(clk) / 1000);
 	}
 
 	of_clk_add_provider(dev->of_node, krait_of_get, clks);
@@ -341,12 +353,12 @@ static int krait_cc_probe(struct platform_device *pdev)
 static struct platform_driver krait_cc_driver = {
 	.probe = krait_cc_probe,
 	.driver = {
-		.name = "krait-cc",
+		.name = "clock-krait",
 		.of_match_table = krait_cc_match_table,
+		.owner = THIS_MODULE,
 	},
 };
 module_platform_driver(krait_cc_driver);
 
 MODULE_DESCRIPTION("Krait CPU Clock Driver");
 MODULE_LICENSE("GPL v2");
-MODULE_ALIAS("platform:krait-cc");

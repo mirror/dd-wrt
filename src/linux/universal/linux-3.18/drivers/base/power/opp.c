@@ -639,13 +639,13 @@ struct srcu_notifier_head *dev_pm_opp_get_notifier(struct device *dev)
  *
  * Register the initial OPP table with the OPP library for given device.
  */
-int of_init_opp_table(struct device *dev)
+int of_init_opp_table_named(struct device *dev, const char *name)
 {
 	const struct property *prop;
 	const __be32 *val;
 	int nr;
 
-	prop = of_find_property(dev->of_node, "operating-points", NULL);
+	prop = of_find_property(dev->of_node, name, NULL);
 	if (!prop)
 		return -ENODEV;
 	if (!prop->value)

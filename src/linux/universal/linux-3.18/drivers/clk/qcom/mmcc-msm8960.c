@@ -41,6 +41,8 @@
 
 #define F_MN(f, s, _m, _n) { .freq = f, .src = s, .m = _m, .n = _n }
 
+#define F_MN(f, s, _m, _n) { .freq = f, .src = s, .m = _m, .n = _n }
+
 static u8 mmcc_pxo_pll8_pll2_map[] = {
 	[P_PXO]		= 0,
 	[P_PLL8]	= 2,
@@ -2693,6 +2695,7 @@ static struct platform_driver mmcc_msm8960_driver = {
 	.remove		= mmcc_msm8960_remove,
 	.driver		= {
 		.name	= "mmcc-msm8960",
+		.owner	= THIS_MODULE,
 		.of_match_table = mmcc_msm8960_match_table,
 	},
 };
