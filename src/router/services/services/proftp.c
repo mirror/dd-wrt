@@ -193,10 +193,9 @@ void start_ftpsrv(void)
 	fclose(fp);
 	chmod("/tmp/proftpd/etc/passwd", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 #ifdef HAVE_SMP
-	eval("/usr/bin/taskset", "0x2", "proftpd");
-#else
-	eval("proftpd");
+	if (eval("/usr/bin/taskset", "0x2", "proftpd"))
 #endif
+		eval("proftpd");
 	syslog(LOG_INFO, "Proftpd : proftpd server successfully started\n");
 
 	return;
