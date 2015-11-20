@@ -730,6 +730,8 @@
 
 #define ROUTER_LINKSYS_EA8500 0xf60f
 
+#define ROUTER_TRENDNET_TEW827 0xf70f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
