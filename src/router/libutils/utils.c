@@ -6373,6 +6373,10 @@ int led_control(int type, int act)
 		usb_gpio = 0x004;	//usb1 
 		usb_gpio1 = 0x005;	//usb2 
 		break;
+	case ROUTER_TRENDNET_TEW827:
+		power_gpio = 0x135;	// power led 
+		usb_gpio = 0x107; // usb led
+		break;
 	case ROUTER_NETGEAR_R8000:
 		power_gpio = 0x102;	// power led 
 		diag_gpio = 0x103;	// power led orange     
