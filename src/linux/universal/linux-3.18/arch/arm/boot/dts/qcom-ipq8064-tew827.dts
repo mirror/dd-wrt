@@ -223,7 +223,7 @@
 
 			firmware@1340000 {
 				label = "firmware";
-				reg = <0x1340000 0x4000000>;
+				reg = <0x1340000 0x3fc0000>;
 			};
 
 			firmware2@58a0000 {
