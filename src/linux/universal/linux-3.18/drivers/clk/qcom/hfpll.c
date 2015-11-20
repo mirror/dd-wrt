@@ -47,7 +47,7 @@ static const struct of_device_id qcom_hfpll_match_table[] = {
 };
 MODULE_DEVICE_TABLE(of, qcom_hfpll_match_table);
 
-static const struct regmap_config hfpll_regmap_config = {
+static struct regmap_config hfpll_regmap_config = {
 	.reg_bits	= 32,
 	.reg_stride	= 4,
 	.val_bits	= 32,
@@ -99,6 +99,7 @@ static struct platform_driver qcom_hfpll_driver = {
 	.probe		= qcom_hfpll_probe,
 	.driver		= {
 		.name	= "qcom-hfpll",
+		.owner	= THIS_MODULE,
 		.of_match_table = qcom_hfpll_match_table,
 	},
 };

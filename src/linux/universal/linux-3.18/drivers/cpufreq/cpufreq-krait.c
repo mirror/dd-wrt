@@ -23,6 +23,9 @@
 #include <linux/regulator/consumer.h>
 #include <linux/slab.h>
 #include <linux/thermal.h>
+#include <linux/mfd/syscon.h>
+#include <linux/regmap.h>
+#include <soc/qcom/socinfo.h>
 
 static unsigned int transition_latency;
 static unsigned int voltage_tolerance; /* in percentage */
@@ -30,17 +33,17 @@ static unsigned int voltage_tolerance; /* in percentage */
 static struct device *cpu_dev;
 static DEFINE_PER_CPU(struct clk *, krait_cpu_clks);
 static DEFINE_PER_CPU(struct regulator *, krait_supply_core);
+static struct clk *l2_clk;
+static struct regulator *l2_reg;
 static struct cpufreq_frequency_table *freq_table;
 static struct thermal_cooling_device *cdev;
 
 struct cache_points {
 	unsigned long cache_freq;
-	unsigned int cache_volt;
 	unsigned long cpu_freq;
+	unsigned int cache_volt;
 };
 
-static struct regulator *krait_l2_reg;
-static struct clk *krait_l2_clk;
 static struct cache_points *krait_l2_points;
 static int nr_krait_l2_points;
 
@@ -66,7 +69,6 @@ static int krait_parse_cache_points(struct device *dev,
 		dev_err(dev, "%s: Invalid cache points\n", __func__);
 		return -EINVAL;
 	}
-	nr /= 3;
 
 	krait_l2_points = devm_kcalloc(dev, nr, sizeof(*krait_l2_points),
 				       GFP_KERNEL);
@@ -74,7 +76,9 @@ static int krait_parse_cache_points(struct device *dev,
 		return -ENOMEM;
 	nr_krait_l2_points = nr;
 
-	for (i = 0, val = prop->value; i < nr; i++) {
+	val = prop->value;
+	i = 0;
+	while (nr) {
 		unsigned long cache_freq = be32_to_cpup(val++) * 1000;
 		unsigned int cache_volt = be32_to_cpup(val++);
 		unsigned long cpu_freq = be32_to_cpup(val++) * 1000;
@@ -82,6 +86,9 @@ static int krait_parse_cache_points(struct device *dev,
 		krait_l2_points[i].cache_freq = cache_freq;
 		krait_l2_points[i].cache_volt = cache_volt;
 		krait_l2_points[i].cpu_freq = cpu_freq;
+
+		i++;
+		nr -= 3;
 	}
 
 	return 0;
@@ -90,8 +97,7 @@ static int krait_parse_cache_points(struct device *dev,
 static int krait_set_target(struct cpufreq_policy *policy, unsigned int index)
 {
 	struct dev_pm_opp *opp;
-	unsigned long volt = 0, volt_old = 0, tol = 0;
-	unsigned long freq, max_cpu_freq = 0;
+	unsigned long volt = 0, volt_old = 0, tol = 0, l2_rate = 0, freq;
 	unsigned int old_freq, new_freq;
 	long freq_Hz, freq_exact;
 	int ret, i;
@@ -137,10 +143,8 @@ static int krait_set_target(struct cpufreq_policy *policy, unsigned int index)
 	}
 
 	ret = clk_set_rate(cpu_clk, freq_exact);
-	if (ret) {
+	if (ret)
 		pr_err("failed to set clock rate: %d\n", ret);
-		return ret;
-	}
 
 	/* scaling down?  scale voltage after frequency */
 	if (new_freq < old_freq) {
@@ -153,27 +157,25 @@ static int krait_set_target(struct cpufreq_policy *policy, unsigned int index)
 
 	for_each_possible_cpu(cpu) {
 		freq = clk_get_rate(per_cpu(krait_cpu_clks, cpu));
-		max_cpu_freq = max(max_cpu_freq, freq);
+		l2_rate = max(l2_rate, freq);
 	}
 
-	for (i = 0; i < nr_krait_l2_points; i++) {
-		if (max_cpu_freq >= krait_l2_points[i].cpu_freq) {
-			if (krait_l2_reg) {
-				ret = regulator_set_voltage_tol(krait_l2_reg,
+	for (i = 0; i < nr_krait_l2_points; i++)
+		if (l2_rate >= krait_l2_points[i].cpu_freq)
+			break;
+
+	if (i != nr_krait_l2_points) {
+		if (l2_reg) {
+			ret = regulator_set_voltage_tol(l2_reg,
 						krait_l2_points[i].cache_volt,
 						tol);
-				if (ret) {
-					pr_err("failed to scale l2 voltage: %d\n",
-						ret);
-				}
-			}
-			ret = clk_set_rate(krait_l2_clk,
-					krait_l2_points[i].cache_freq);
 			if (ret)
-				pr_err("failed to scale l2 clk: %d\n", ret);
-			break;
+				pr_err("failed to scale l2 voltage: %d\n", ret);
 		}
 
+		ret = clk_set_rate(l2_clk, krait_l2_points[i].cache_freq);
+		if (ret)
+			pr_err("failed to scale l2 clk: %d\n", ret);
 	}
 
 	return ret;
@@ -206,17 +208,73 @@ static struct cpufreq_driver krait_cpufreq_driver = {
 	.attr = cpufreq_generic_attr,
 };
 
+static int krait_cpufreq_get_speed_pvs(struct device_node *np,
+				       u8 *speed, u8 *pvs)
+{
+	struct regmap *regmap;
+	unsigned int val;
+	int ret;
+
+	regmap = syscon_regmap_lookup_by_phandle(np, "qcom,imem");
+	if (IS_ERR(regmap))
+		return PTR_ERR(regmap);
+
+	ret = regmap_read(regmap, 0xC0, &val);
+	if (ret)
+		return ret;
+
+	/*
+	 * If the fuse isn't blown, then setup defaults.
+	 */
+	if (!(val & BIT(31))) {
+		*speed = 0;
+		if (cpu_is_ipq8065() || cpu_is_ipq8069())
+			*pvs = 0;
+		else
+			*pvs = 1;
+		pr_warn("SPEED BIN: Defaulting to 0\n");
+		pr_warn("ACPU PVS: Defaulting to %d\n", *pvs);
+		return 0;
+	}
+
+	*speed = val;
+	if (*speed == 0xF)
+		*speed = val >> 4;
+
+	if (*speed == 0xF) {
+		*speed = 0;
+		pr_warn("SPEED BIN: Unknown value. Defaulting to 0\n");
+	} else {
+		pr_info("SPEED BIN: %d\n", *speed);
+	}
+
+	*pvs = (val >> 10) & 0x7;
+	if (*pvs == 0x7)
+		*pvs = (val >> 13) & 0x7;
+
+	if (*pvs == 0x7) {
+		*pvs = 0;
+		pr_warn("ACPU PVS: Unknown value. Defaulting to 0\n");
+	} else {
+		pr_info("ACPU PVS: %d\n", *pvs);
+	}
+
+	return 0;
+}
+
 static int krait_cpufreq_probe(struct platform_device *pdev)
 {
+	char opp_name[sizeof("operating-points-N-M")];
 	struct device_node *np, *cache;
 	int ret, i;
 	unsigned int cpu;
 	struct device *dev;
 	struct clk *clk;
 	struct regulator *core;
-	unsigned long freq_Hz, freq, max_cpu_freq = 0;
+	unsigned long freq_Hz, freq, max_cpu_freq;
 	struct dev_pm_opp *opp;
 	unsigned long volt, tol;
+	u8 speed = 0, pvs = 0;
 
 	cpu_dev = get_cpu_device(0);
 	if (!cpu_dev) {
@@ -228,6 +286,22 @@ static int krait_cpufreq_probe(struct platform_device *pdev)
 	if (!np) {
 		pr_err("failed to find krait node\n");
 		return -ENOENT;
+	}
+
+	ret = krait_cpufreq_get_speed_pvs(np, &speed, &pvs);
+	if (ret) {
+		pr_err("failed to retrieve chip characteristics\n");
+		goto out_put_node;
+	}
+
+	sprintf(opp_name, "operating-points-%x-%x", speed & 0xF, pvs & 0xF);
+
+	if (dev_pm_opp_get_opp_count(cpu_dev) <= 0) {
+		ret = of_init_opp_table_named(cpu_dev, opp_name);
+		if (ret) {
+			pr_err("failed to init OPP table: %d\n", ret);
+			goto out_put_node;
+		}
 	}
 
 	ret = dev_pm_opp_init_cpufreq_table(cpu_dev, &freq_table);
@@ -247,22 +321,22 @@ static int krait_cpufreq_probe(struct platform_device *pdev)
 
 		vdd = of_parse_phandle(cache, "vdd_dig-supply", 0);
 		if (vdd) {
-			krait_l2_reg = regulator_get(NULL, vdd->name);
-			if (IS_ERR(krait_l2_reg)) {
+			l2_reg = regulator_get(NULL, vdd->name);
+			if (!l2_reg || IS_ERR(l2_reg)) {
 				pr_warn("failed to get l2 vdd_dig supply\n");
-				krait_l2_reg = NULL;
+				l2_reg = NULL;
 			}
 			of_node_put(vdd);
 		}
 
-		krait_l2_clk = of_clk_get(cache, 0);
-		if (!IS_ERR(krait_l2_clk)) {
+		l2_clk = of_clk_get(cache, 0);
+		if (!IS_ERR(l2_clk)) {
 			ret = krait_parse_cache_points(&pdev->dev, cache);
 			if (ret)
-				clk_put(krait_l2_clk);
+				clk_put(l2_clk);
 		}
-		if (IS_ERR(krait_l2_clk) || ret)
-			krait_l2_clk = NULL;
+		if (ret || IS_ERR(l2_clk))
+			l2_clk = NULL;
 	}
 
 	for_each_possible_cpu(cpu) {
@@ -285,7 +359,7 @@ static int krait_cpufreq_probe(struct platform_device *pdev)
 		}
 		per_cpu(krait_supply_core, cpu) = core;
 
-		freq = freq_Hz = clk_get_rate(clk);
+		freq_Hz = clk_get_rate(clk);
 
 		rcu_read_lock();
 		opp = dev_pm_opp_find_freq_ceil(cpu_dev, &freq_Hz);
@@ -314,14 +388,14 @@ static int krait_cpufreq_probe(struct platform_device *pdev)
 
 	for (i = 0; i < nr_krait_l2_points; i++) {
 		if (max_cpu_freq >= krait_l2_points[i].cpu_freq) {
-			if (krait_l2_reg) {
-				ret = regulator_set_voltage_tol(krait_l2_reg,
+			if (l2_reg) {
+				ret = regulator_set_voltage_tol(l2_reg,
 						krait_l2_points[i].cache_volt,
 						tol);
 				if (ret)
 					pr_err("failed to scale l2 voltage: %d\n",
 							ret);
-				ret = regulator_enable(krait_l2_reg);
+				ret = regulator_enable(l2_reg);
 				if (ret)
 					pr_err("failed to enable l2 voltage: %d\n",
 							ret);
@@ -357,8 +431,8 @@ static int krait_cpufreq_probe(struct platform_device *pdev)
 	return 0;
 
 out_free_table:
-	regulator_put(krait_l2_reg);
-	clk_put(krait_l2_clk);
+	regulator_put(l2_reg);
+	clk_put(l2_clk);
 	dev_pm_opp_free_cpufreq_table(cpu_dev, &freq_table);
 out_put_node:
 	of_node_put(np);
@@ -370,8 +444,8 @@ static int krait_cpufreq_remove(struct platform_device *pdev)
 	cpufreq_cooling_unregister(cdev);
 	cpufreq_unregister_driver(&krait_cpufreq_driver);
 	dev_pm_opp_free_cpufreq_table(cpu_dev, &freq_table);
-	clk_put(krait_l2_clk);
-	regulator_put(krait_l2_reg);
+	clk_put(l2_clk);
+	regulator_put(l2_reg);
 
 	return 0;
 }

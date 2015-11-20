@@ -32,6 +32,7 @@
 #include "clk-branch.h"
 #include "clk-hfpll.h"
 #include "reset.h"
+#include "nss-volt-ipq806x.h"
 
 static struct clk_pll pll0 = {
 	.l_reg = 0x30c4,
@@ -110,9 +111,9 @@ static struct hfpll_data hfpll0_data = {
 	.n_reg = 0x3210,
 	.config_reg = 0x3204,
 	.status_reg = 0x321c,
-	.config_val = 0x7845c665,
-	.droop_reg = 0x3214,
-	.droop_val = 0x0108c000,
+        .config_val = 0x7845c665,
+        .droop_reg = 0x3214,
+        .droop_val = 0x0108c000,
 	.min_rate = 600000000UL,
 	.max_rate = 1800000000UL,
 };
@@ -136,9 +137,9 @@ static struct hfpll_data hfpll1_data = {
 	.n_reg = 0x3250,
 	.config_reg = 0x3244,
 	.status_reg = 0x325c,
-	.config_val = 0x7845c665,
-	.droop_reg = 0x3314,
-	.droop_val = 0x0108c000,
+        .config_val = 0x7845c665,
+        .droop_reg = 0x3314,
+        .droop_val = 0x0108c000,
 	.min_rate = 600000000UL,
 	.max_rate = 1800000000UL,
 };
@@ -162,9 +163,9 @@ static struct hfpll_data hfpll_l2_data = {
 	.n_reg = 0x3310,
 	.config_reg = 0x3304,
 	.status_reg = 0x331c,
-	.config_val = 0x7845c665,
-	.droop_reg = 0x3314,
-	.droop_val = 0x0108c000,
+        .config_val = 0x7845c665,
+        .droop_reg = 0x3314,
+        .droop_val = 0x0108c000,
 	.min_rate = 600000000UL,
 	.max_rate = 1800000000UL,
 };
@@ -220,7 +221,9 @@ static struct clk_regmap pll14_vote = {
 
 static struct pll_freq_tbl pll18_freq_tbl[] = {
 	NSS_PLL_RATE(550000000, 44, 0, 1, 0x01495625),
+	NSS_PLL_RATE(600000000, 48, 0, 1, 0x01495625),
 	NSS_PLL_RATE(733000000, 58, 16, 25, 0x014b5625),
+	NSS_PLL_RATE(800000000, 64, 0, 1, 0x01495625),
 };
 
 static struct clk_pll pll18 = {
@@ -248,7 +251,7 @@ static struct clk_pll pll18 = {
 #define P_PLL0	2
 #define P_CXO	2
 #define P_PLL14	3
-#define P_PLL18 4
+#define P_PLL18	4
 
 static const u8 gcc_pxo_pll8_map[] = {
 	[P_PXO]		= 0,
@@ -300,11 +303,11 @@ static const char *gcc_pxo_pll8_pll0_map[] = {
 };
 
 static const u8 gcc_pxo_pll8_pll14_pll18_pll0_map[] = {
-	[P_PXO] = 0 ,
-	[P_PLL8] = 4,
-	[P_PLL0] = 2,
-	[P_PLL14] = 5,
-	[P_PLL18] = 1,
+	[P_PXO]		= 0,
+	[P_PLL8]	= 4,
+	[P_PLL0]	= 2,
+	[P_PLL14]	= 5,
+	[P_PLL18]	= 1,
 };
 
 static const char *gcc_pxo_pll8_pll14_pll18_pll0[] = {
@@ -645,8 +648,8 @@ static struct freq_tbl clk_tbl_gsbi_qup[] = {
 	{ 10800000, P_PXO,  1, 2,  5 },
 	{ 15060000, P_PLL8, 1, 2, 51 },
 	{ 24000000, P_PLL8, 4, 1,  4 },
-	{ 25000000, P_PXO,  1, 0,  0 },
 	{ 25600000, P_PLL8, 1, 1, 15 },
+	{ 27000000, P_PXO,  1, 0,  0 },
 	{ 48000000, P_PLL8, 4, 1,  2 },
 	{ 51200000, P_PLL8, 1, 2, 15 },
 	{ }
@@ -778,7 +781,7 @@ static struct clk_rcg gsbi4_qup_src = {
 			.parent_names = gcc_pxo_pll8,
 			.num_parents = 2,
 			.ops = &clk_rcg_ops,
-			.flags = CLK_SET_PARENT_GATE,
+			.flags = CLK_SET_PARENT_GATE | CLK_IGNORE_UNUSED,
 		},
 	},
 };
@@ -794,7 +797,7 @@ static struct clk_branch gsbi4_qup_clk = {
 			.parent_names = (const char *[]){ "gsbi4_qup_src" },
 			.num_parents = 1,
 			.ops = &clk_branch_ops,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
 		},
 	},
 };
@@ -925,7 +928,7 @@ static struct clk_rcg gsbi7_qup_src = {
 			.parent_names = gcc_pxo_pll8,
 			.num_parents = 2,
 			.ops = &clk_rcg_ops,
-			.flags = CLK_SET_PARENT_GATE | CLK_IGNORE_UNUSED,
+			.flags = CLK_SET_PARENT_GATE,
 		},
 	},
 };
@@ -941,7 +944,7 @@ static struct clk_branch gsbi7_qup_clk = {
 			.parent_names = (const char *[]){ "gsbi7_qup_src" },
 			.num_parents = 1,
 			.ops = &clk_branch_ops,
-			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
+			.flags = CLK_SET_RATE_PARENT,
 		},
 	},
 };
@@ -2290,39 +2293,8 @@ static struct clk_branch usb_fs1_h_clk = {
 	},
 };
 
-static struct clk_branch ebi2_clk = {
-	.hwcg_reg = 0x3b00,
-	.hwcg_bit = 6,
-	.halt_reg = 0x2fcc,
-	.halt_bit = 1,
-	.clkr = {
-		.enable_reg = 0x3b00,
-		.enable_mask = BIT(4),
-		.hw.init = &(struct clk_init_data){
-			.name = "ebi2_clk",
-			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
-		},
-	},
-};
-
-static struct clk_branch ebi2_aon_clk = {
-	.halt_reg = 0x2fcc,
-	.halt_bit = 0,
-	.clkr = {
-		.enable_reg = 0x3b00,
-		.enable_mask = BIT(8),
-		.hw.init = &(struct clk_init_data){
-			.name = "ebi2_always_on_clk",
-			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
-		},
-	},
-};
-
 static const struct freq_tbl clk_tbl_gmac[] = {
-	{ 133000000, P_PLL0, 1,  50, 301 },
-	{ 266000000, P_PLL0, 1, 127, 382 },
+	{ 133000000, P_PLL0, 1, 50, 301 },
 	{ }
 };
 
@@ -2676,7 +2648,9 @@ static const struct freq_tbl clk_tbl_nss[] = {
 	{ 110000000, P_PLL18, 1, 1, 5 },
 	{ 275000000, P_PLL18, 2, 0, 0 },
 	{ 550000000, P_PLL18, 1, 0, 0 },
+	{ 600000000, P_PLL18, 1, 0, 0 },
 	{ 733000000, P_PLL18, 1, 0, 0 },
+	{ 800000000, P_PLL18, 1, 0, 0 },
 	{ }
 };
 
@@ -2728,7 +2702,7 @@ static struct clk_dyn_rcg ubi32_core1_src_clk = {
 			.parent_names = gcc_pxo_pll8_pll14_pll18_pll0,
 			.num_parents = 5,
 			.ops = &clk_dyn_rcg_ops,
-			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE,
+			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE | CLK_IGNORE_UNUSED,
 		},
 	},
 };
@@ -2781,8 +2755,131 @@ static struct clk_dyn_rcg ubi32_core2_src_clk = {
 			.parent_names = gcc_pxo_pll8_pll14_pll18_pll0,
 			.num_parents = 5,
 			.ops = &clk_dyn_rcg_ops,
-			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE,
+			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE | CLK_IGNORE_UNUSED,
 		},
+	},
+};
+
+static int nss_core_clk_set_rate(struct clk_hw *hw, unsigned long rate,
+				 unsigned long parent_rate)
+{
+	int ret;
+
+	/*
+	When ramping up voltage, it needs to be done first. This ensures that
+	the volt required will be available when you step up the frequency.
+	*/
+	ret = nss_ramp_voltage(rate, true);
+	if (ret)
+		return ret;
+
+	ret = clk_dyn_rcg_ops.set_rate(&ubi32_core1_src_clk.clkr.hw, rate,
+				    parent_rate);
+	if (ret)
+		return ret;
+
+	ret = clk_dyn_rcg_ops.set_rate(&ubi32_core2_src_clk.clkr.hw, rate,
+				    parent_rate);
+
+	if (ret)
+		return ret;
+
+	/*
+	When ramping down voltage, it needs to be set first. This ensures that
+	the volt required will be available until you step down the frequency.
+	*/
+	ret = nss_ramp_voltage(rate, false);
+
+	return ret;
+}
+
+static int
+nss_core_clk_set_rate_and_parent(struct clk_hw *hw, unsigned long rate,
+				 unsigned long parent_rate, u8 index)
+{
+	int ret;
+
+	/*
+	When ramping up voltage needs to be done first. This ensures that
+	the voltage required will be available when you step up the frequency.
+	*/
+	ret = nss_ramp_voltage(rate, true);
+	if (ret)
+		return ret;
+
+	ret = clk_dyn_rcg_ops.set_rate_and_parent(
+			&ubi32_core1_src_clk.clkr.hw, rate, parent_rate, index);
+	if (ret)
+		return ret;
+
+	ret = clk_dyn_rcg_ops.set_rate_and_parent(
+			&ubi32_core2_src_clk.clkr.hw, rate, parent_rate, index);
+
+	if (ret)
+		return ret;
+
+	/*
+	When ramping down voltage needs to be done last. This ensures that
+	the voltage required will be available when you step down the frequency.
+	*/
+	ret = nss_ramp_voltage(rate, false);
+
+	return ret;
+}
+
+static long nss_core_clk_determine_rate(struct clk_hw *hw, unsigned long rate,
+				 unsigned long *p_rate, struct clk **p)
+{
+	return clk_dyn_rcg_ops.determine_rate(&ubi32_core1_src_clk.clkr.hw,
+						 rate, p_rate, p);
+}
+
+static unsigned long
+nss_core_clk_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
+{
+	return clk_dyn_rcg_ops.recalc_rate(&ubi32_core1_src_clk.clkr.hw,
+						 parent_rate);
+}
+
+static u8 nss_core_clk_get_parent(struct clk_hw *hw)
+{
+	return clk_dyn_rcg_ops.get_parent(&ubi32_core1_src_clk.clkr.hw);
+}
+
+static int nss_core_clk_set_parent(struct clk_hw *hw, u8 i)
+{
+	int ret;
+
+	ret = clk_dyn_rcg_ops.set_parent(&ubi32_core1_src_clk.clkr.hw, i);
+	if (ret)
+		return ret;
+
+	return clk_dyn_rcg_ops.set_parent(&ubi32_core2_src_clk.clkr.hw, i);
+}
+
+static struct clk *nss_core_clk_get_safe_parent(struct clk_hw *hw)
+{
+	return clk_get_parent_by_index(hw->clk, P_PLL8);
+}
+
+static const struct clk_ops clk_ops_nss_core = {
+	.set_rate = nss_core_clk_set_rate,
+	.set_rate_and_parent = nss_core_clk_set_rate_and_parent,
+	.determine_rate = nss_core_clk_determine_rate,
+	.recalc_rate = nss_core_clk_recalc_rate,
+	.get_parent = nss_core_clk_get_parent,
+	.set_parent = nss_core_clk_set_parent,
+	.get_safe_parent = nss_core_clk_get_safe_parent,
+};
+
+/* Virtual clock for nss core clocks */
+static struct clk_regmap nss_core_clk = {
+	.hw.init = &(struct clk_init_data){
+		.name = "nss_core_clk",
+		.ops = &clk_ops_nss_core,
+		.parent_names = gcc_pxo_pll8_pll14_pll18_pll0,
+		.num_parents = 5,
+		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -2889,11 +2986,6 @@ static struct clk_regmap *gcc_ipq806x_clks[] = {
 	[USB_FS1_XCVR_SRC] = &usb_fs1_xcvr_clk_src.clkr,
 	[USB_FS1_XCVR_CLK] = &usb_fs1_xcvr_clk.clkr,
 	[USB_FS1_SYSTEM_CLK] = &usb_fs1_sys_clk.clkr,
-	[EBI2_CLK] = &ebi2_clk.clkr,
-	[EBI2_AON_CLK] = &ebi2_aon_clk.clkr,
-	[PLL9] = &hfpll0.clkr,
-	[PLL10] = &hfpll1.clkr,
-	[PLL12] = &hfpll_l2.clkr,
 	[GMAC_CORE1_CLK_SRC] = &gmac_core1_src.clkr,
 	[GMAC_CORE1_CLK] = &gmac_core1_clk.clkr,
 	[GMAC_CORE2_CLK_SRC] = &gmac_core2_src.clkr,
@@ -2906,6 +2998,10 @@ static struct clk_regmap *gcc_ipq806x_clks[] = {
 	[UBI32_CORE2_CLK_SRC] = &ubi32_core2_src_clk.clkr,
 	[NSSTCM_CLK_SRC] = &nss_tcm_src.clkr,
 	[NSSTCM_CLK] = &nss_tcm_clk.clkr,
+	[NSS_CORE_CLK] = &nss_core_clk,
+	[PLL9] = &hfpll0.clkr,
+	[PLL10] = &hfpll1.clkr,
+	[PLL12] = &hfpll_l2.clkr,
 };
 
 static const struct qcom_reset_map gcc_ipq806x_resets[] = {
@@ -3092,19 +3188,9 @@ MODULE_DEVICE_TABLE(of, gcc_ipq806x_match_table);
 
 static int gcc_ipq806x_probe(struct platform_device *pdev)
 {
-	struct clk *clk;
 	struct device *dev = &pdev->dev;
 	struct regmap *regmap;
 	int ret;
-
-	/* Temporary until RPM clocks supported */
-	clk = clk_register_fixed_rate(dev, "cxo", NULL, CLK_IS_ROOT, 25000000);
-	if (IS_ERR(clk))
-		return PTR_ERR(clk);
-
-	clk = clk_register_fixed_rate(dev, "pxo", NULL, CLK_IS_ROOT, 25000000);
-	if (IS_ERR(clk))
-		return PTR_ERR(clk);
 
 	ret = qcom_cc_probe(pdev, &gcc_ipq806x_desc);
 	if (ret)

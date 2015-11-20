@@ -30,6 +30,7 @@
 #include <linux/usb/ch9.h>
 #include <linux/usb/gadget.h>
 #include <linux/usb/otg.h>
+#include <linux/usb/suspend.h>
 
 #include <linux/phy/phy.h>
 
@@ -767,10 +768,16 @@ struct dwc3 {
 	unsigned		is_selfpowered:1;
 	unsigned		needs_fifo_resize:1;
 	unsigned		pullups_connected:1;
+	unsigned		enable_usb2susphy_quirk:1;
+	unsigned		enable_usb2_host_discon_quirk:1;
 	unsigned		resize_fifos:1;
 	unsigned		setup_packet_pending:1;
 	unsigned		start_config_issued:1;
 	unsigned		three_stage_setup:1;
+	struct usb_susphy	susphy;
+
+	u32			phy_misc_reg;
+	u32			phy_host_disc_on;
 };
 
 /* -------------------------------------------------------------------------- */

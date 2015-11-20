@@ -467,4 +467,10 @@ config QCOM_ADM
 	  provides DMA capabilities for both general purpose and on-chip
 	  peripheral devices.
 
+config QCOM_ADM_DMA
+	bool "DMA support for akronite"
+	depends on !QCOM_ADM
+	help
+	  Support for Qualcomm Atheros ADM DMA controller in akronite.
+
 endif
