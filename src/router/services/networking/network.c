@@ -856,7 +856,7 @@ void start_lan(void)
 			sprintf(lan_ifnames, "%s %s", nvram_safe_get("lan_default"), nvram_safe_get("wan_default"));
 			strcpy(wan_ifname, "");
 #if defined(HAVE_ERC) && defined(HAVE_CARAMBOLA)
-			nvram_nset("1", "%s_bridged", nvram_safe_get("wan_default")); 
+			nvram_nset("1", "%s_bridged", nvram_safe_get("wan_default"));
 #endif
 		} else {
 			if (nvram_match("fullswitch_set", "1")) {
@@ -866,7 +866,7 @@ void start_lan(void)
 				nvram_unset("fullswitch_set");
 			}
 #if defined(HAVE_ERC) && defined(HAVE_CARAMBOLA)
-			nvram_nset("0", "%s_bridged", nvram_safe_get("wan_default")); 
+			nvram_nset("0", "%s_bridged", nvram_safe_get("wan_default"));
 #endif
 		}
 	}
@@ -981,15 +981,13 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCSIFHWADDR, &ifr);
 #elif HAVE_IPQ806X
-	if (getRouterBrand() == ROUTER_NETGEAR_R7500) {
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
-			PORTSETUPWAN("");
-		} else {
-			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
-			PORTSETUPWAN("eth1");
-		}
-	} 
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("eth1");
+	}
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
