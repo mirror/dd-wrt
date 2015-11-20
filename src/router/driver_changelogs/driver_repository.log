@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2705 | brainslayer | 2015-11-20 22:19:46 +0100 (Fri, 20 Nov 2015) | 1 line
+
+revert patch from ath10k, which causes dma alloc to fail on ipq806x
+------------------------------------------------------------------------
 r2704 | brainslayer | 2015-11-19 22:47:52 +0100 (Thu, 19 Nov 2015) | 1 line
 
 ignore otp result
