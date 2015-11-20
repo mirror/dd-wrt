@@ -274,6 +274,7 @@ include rules/python.mk
 include rules/nmap.mk
 include rules/arpalert.mk
 include rules/unbound.mk
+include rules/ubi-utils.mk
 
 #
 # Generic rules
