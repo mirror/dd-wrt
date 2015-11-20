@@ -7040,9 +7040,11 @@ int is_ath10k(const char *prefix)
 
 double HTTxRate20_800(unsigned int index)
 {
-	static const double vHTTxRate20_800[24] = { 6.5, 13.0, 19.5, 26.0, 39.0, 52.0, 58.5, 65.0, 13.0, 26.0, 39.0,
-		52.0, 78.0, 104.0, 117.0, 130.0,
-		19.5, 39.0, 58.5, 78.0, 117.0, 156.0, 175.5, 195.0
+	static const double vHTTxRate20_800[32] = { 
+		6.5, 13.0, 19.5, 26.0, 39.0, 52.0, 58.5, 65.0, // MCS 0 -8 
+		13.0, 26.0, 39.0,52.0, 78.0, 104.0, 117.0, 130.0, // MCS 8 - 15
+		19.5, 39.0, 58.5, 78.0, 117.0, 156.0, 175.5, 195.0, // MCS 16 - 23
+		26.0, 52.0, 78.0, 104.0, 156.0 ,208.0, 234.0, 260.0. // MCS 24 - 31
 	};
 	if (index > sizeof(HTTxRate20_800) / sizeof(double) - 1) {
 		fprintf(stderr, "utils.c HTTxRate20_800() index overflow\n");
@@ -7053,9 +7055,10 @@ double HTTxRate20_800(unsigned int index)
 
 double HTTxRate20_400(unsigned int index)
 {
-	static const double vHTTxRate20_400[24] = { 7.2, 14.4, 21.7, 28.9, 43.3, 57.8, 65.0, 72.2, 14.444, 28.889,
-		43.333, 57.778, 86.667, 115.556, 130.000, 144.444,
-		21.7, 43.3, 65.0, 86.7, 130.0, 173.3, 195.0, 216.7
+	static const double vHTTxRate20_400[32] = { 7.2, 14.4, 21.7, 28.9, 43.3, 57.8, 65.0, 72.2, //
+		14.444, 28.889,43.333, 57.778, 86.667, 115.556, 130.000, 144.444,//
+		21.7, 43.3, 65.0, 86.7, 130.0, 173.3, 195.0, 216.7, //
+		28.9, 57.8, 86.7, 115.6, 173.3, 231.1, 260.0, 288.9 //
 	};
 	if (index > sizeof(vHTTxRate20_400) / sizeof(double) - 1) {
 		fprintf(stderr, "utils.c HTTxRate20_400() index overflow\n");
@@ -7066,9 +7069,11 @@ double HTTxRate20_400(unsigned int index)
 
 double HTTxRate40_800(unsigned int index)
 {
-	static const double vHTTxRate40_800[25] = { 13.5, 27.0, 40.5, 54.0, 81.0, 108.0, 121.5, 135.0, 27.0, 54.0,
-		81.0, 108.0, 162.0, 216.0, 243.0, 270.0,
-		40.5, 81.0, 121.5, 162.0, 243.0, 324.0, 364.5, 405.0, 6.0
+	static const double vHTTxRate40_800[32] = { 13.5, 27.0, 40.5, 54.0, 81.0, 108.0, 121.5, 135.0, //
+		27.0, 54.0,81.0, 108.0, 162.0, 216.0, 243.0, 270.0, //
+		40.5, 81.0, 121.5, 162.0, 243.0, 324.0, 364.5, 405.0, //
+		54.0, 108.0, 162.0, 216.0 ,324.0, 432.0, 486.0, 540.0, //
+		
 	};
 	if (index > sizeof(vHTTxRate40_800) / sizeof(double) - 1) {
 		fprintf(stderr, "utils.c HTTxRate40_800() index overflow\n");
@@ -7079,9 +7084,10 @@ double HTTxRate40_800(unsigned int index)
 
 double HTTxRate40_400(unsigned int index)
 {
-	static const double vHTTxRate40_400[25] = { 15.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0, 30.0, 60.0,
-		90.0, 120.0, 180.0, 240.0, 270.0, 300.0,
-		45.0, 90.0, 135.0, 180.0, 270.0, 360.0, 405.0, 450.0, 6.7
+	static const double vHTTxRate40_400[32] = { 15.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0, //
+		30.0, 60.0 90.0, 120.0, 180.0, 240.0, 270.0, 300.0,//
+		45.0, 90.0, 135.0, 180.0, 270.0, 360.0, 405.0, 450.0,//
+		60.0, 120.0, 180.0, 240.0, 360.0, 480.0, 540.0, 600.0//
 	};
 	if (index > sizeof(vHTTxRate40_400) / sizeof(double) - 1) {
 		fprintf(stderr, "utils.c HTTxRate40_400() index overflow\n");
@@ -7089,6 +7095,40 @@ double HTTxRate40_400(unsigned int index)
 	}
 	return vHTTxRate40_400[index];
 }
+
+double HTTxRate80_800(unsigned int index)
+{
+	static const double vHTTxRate80_800[32] = 
+	{       
+		29.3,58.5,87.8,117.0,175.5,234.0,263.3,292.5, //
+		58.5,117.0,175.5,234.0,351.0,468.0,526.5,585.0,
+		87.8,175.5, 263.3,351.0,526.5,702.0,0.0,877.5, //
+		117.0,234.0,351.0,468.0,702.0,936.0,1053.0,1170.0
+	};
+	if (index > sizeof(vHTTxRate80_800) / sizeof(double) - 1) {
+		fprintf(stderr, "utils.c HTTxRate80_800() index overflow\n");
+		return 0.0;
+	}
+	return vHTTxRate80_800[index];
+}
+
+
+double HTTxRate80_400(unsigned int index)
+{
+	static const double vHTTxRate80_400[32] = 
+	{       
+		32.5,65.0,97.5,130.0,195.0,260.0,292.5,325.0, //
+		65.0, 130.0, 195.0, 260.0, 390.0, 520.0, 585.0, 650.0, //
+		97.5, 195.0, 292.5, 390.0, 585.0, 780.0, 0.0, 975.0, //
+		130.0, 260.0, 390.0, 520.0, 780.0, 1040.0, 1170.0, 1300.0,
+	};
+	if (index > sizeof(vHTTxRate80_400) / sizeof(double) - 1) {
+		fprintf(stderr, "utils.c HTTxRate80_400() index overflow\n");
+		return 0.0;
+	}
+	return vHTTxRate80_400[index];
+}
+
 
 int writeproc(char *path, char *value)
 {
