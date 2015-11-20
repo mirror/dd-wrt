@@ -456,8 +456,7 @@ void set_gpio(int gpio, int value)
 			break;
 		}
 	}
-	
-	if (brand == ROUTER_LINKSYS_EA8500) {
+	else if (brand == ROUTER_LINKSYS_EA8500) {
 		switch (gpio) {
 		case 0:
 			sysprintf("echo %d > /sys/class/leds/ea8500\\:white\\:power/brightness", value);
@@ -493,6 +492,8 @@ void set_gpio(int gpio, int value)
 			i_set_gpio(gpio, value);
 			break;
 		}
+	} else {
+			i_set_gpio(gpio, value);
 	}
 
 }
