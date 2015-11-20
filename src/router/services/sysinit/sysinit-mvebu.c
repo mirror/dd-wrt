@@ -170,6 +170,14 @@ void start_sysinit(void)
 		set_smp_affinity(65, 2);
 		set_smp_affinity(195, 2);
 	}
+	led_control(LED_POWER, LED_ON);
+	led_control(LED_SES, LED_OFF);
+	led_control(LED_SES2, LED_OFF);
+	led_control(LED_DIAG, LED_OFF);
+	led_control(LED_BRIDGE, LED_OFF);
+	led_control(LED_WLAN0, LED_OFF);
+	led_control(LED_WLAN1, LED_OFF);
+	led_control(LED_CONNECTED, LED_OFF);
 	return;
 	cprintf("done\n");
 }
