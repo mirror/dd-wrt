@@ -370,12 +370,11 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	mkdir -p $(ARCH)-uclibc/target/etc/kaid
 	mkdir -p $(ARCH)-uclibc/target/etc/langpack
 	cd  $(ARCH)-uclibc/target/lib
-	cp ../../opt/etc/preinit $(ARCH)-uclibc/target/etc
-	cp ../../opt/etc/postinit $(ARCH)-uclibc/target/etc
-	#cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
-	cp ../../opt/etc/config/* $(ARCH)-uclibc/target/etc/config
-	cp ../../opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
-	#ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
+	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
+	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.ipq806x optimize-lib
 	# Install modules into filesystem
@@ -425,7 +424,9 @@ endif
 	-rm -rf $(ARCH)-uclibc/ipq806x;
 	-mkdir -p $(ARCH)-uclibc/ipq806x;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7500-uImage;
+	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-TEW827-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500.dtb >> $(ARCH)-uclibc/ipq806x-R7500-uImage;
+	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-tew827.dtb >> $(ARCH)-uclibc/ipq806x-TEW827-uImage;
 	
 
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
@@ -437,24 +438,45 @@ endif
 	( dd if=$(ARCH)-uclibc/ipq806x-R7500-uImage of=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=2048k conv=sync; )
 	
 	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=2097023 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500.uImage.new; )
+
+
+	( dd if=$(ARCH)-uclibc/ipq806x-TEW827-uImage of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=2048k conv=sync; )
+	
+	( dd if=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=2097023 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.new; )
+
 	
 
 	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7500.uImage.new $(ARCH)-uclibc/vmlinux-r7500.uImage.final
+
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-TEW827.uImage.new $(ARCH)-uclibc/vmlinux-TEW827.uImage.final
 	
 	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
 	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
+
+	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-TEW827.uImage.final;
+	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-TEW827.uImage.final;
 	
 	
 	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.final bs=2048k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7500v1.bin
+
+	( dd if=$(ARCH)-uclibc/vmlinux-TEW827.uImage.final bs=2048k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-TEW827.bin
 	
 	./tools/r7500/mkdniimg -B R7500 -v V1.0.0.82 -r "" -H "29764841+0+128+256+3x3+4x4" -i $(ARCH)-uclibc/ddwrt-R7500v1.bin -o $(ARCH)-uclibc/R7500v1-factory-to-ddwrt.img
+
+	./tools/ubi/ubinize-image.sh --kernel $(ARCH)-uclibc/vmlinux-TEW827.uImage.final \
+		$(ARCH)-uclibc/root.squashfs.new \
+		$(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory.ubi \
+		-v -p 128KiB -m 2048
+
+#	cd $(ARCH)-uclibc && ../tools/wrt1900ac/ubinize -v -m 2048 -p 128KiB -s 512 -O 2048 -o root.squashfs.ubi ubinize.cfg && cd ..
+
+#	dd if=$(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory.ubi of=$(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory-final.ubi bs=2M conv=sync
+	cp $(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-tew827-squashfs-nand-factory.ubi
 	
-	../../opt/tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v1.bin $(ARCH)-uclibc/ddwrt-R7500v1.bin 
-	
-	
-	
-	
-	
+
+	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v1.bin $(ARCH)-uclibc/ddwrt-R7500v1.bin 
+	cd tools && ./r7500/mkimage -f sysupgrade-ubi.its $(TOP)/$(ARCH)-uclibc/tew827-upgrade.bin
+	cat tools/tew827.tag >> $(ARCH)-uclibc/tew827-upgrade.bin
 
 
 
