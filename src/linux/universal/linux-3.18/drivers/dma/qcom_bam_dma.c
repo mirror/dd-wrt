@@ -79,6 +79,14 @@ struct bam_async_desc {
 	struct bam_desc_hw desc[0];
 };
 
+/* Register base offset and multplier values.  Use version of map as index */
+static unsigned int ctrl_offs[] = { 0xf80, 0x0 };
+static unsigned int pipe_offs[] = { 0x0, 0x1000 };
+static unsigned int ee_offs[] = { 0x1800, 0x800 };
+static unsigned int evnt_offs[] = { 0x1000, 0x1800 };
+static unsigned int pipe_mult[] = { 0x80, 0x1000 };
+static unsigned int evnt_mult[] = { 0x40, 0x1000 };
+
 enum bam_reg {
 	BAM_CTRL,
 	BAM_REVISION,
@@ -358,6 +366,8 @@ struct bam_device {
 
 	/* execution environment ID, from DT */
 	u32 ee;
+
+	u32 reg_ver;
 
 	const struct reg_offset_data *layout;
 
@@ -1094,6 +1104,9 @@ static int bam_dma_probe(struct platform_device *pdev)
 		return ret;
 	}
 
+	if (of_device_is_compatible(pdev->dev.of_node, "qcom,bam-v1.4.0"))
+		bdev->reg_ver = 1;
+
 	bdev->bamclk = devm_clk_get(bdev->dev, "bam_clk");
 	if (IS_ERR(bdev->bamclk))
 		return PTR_ERR(bdev->bamclk);
@@ -1182,7 +1195,7 @@ static int bam_dma_remove(struct platform_device *pdev)
 	dma_async_device_unregister(&bdev->common);
 
 	/* mask all interrupts for this execution environment */
-	writel_relaxed(0, bam_addr(bdev, 0,  BAM_IRQ_SRCS_MSK_EE));
+	writel_relaxed(0, bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
 
 	devm_free_irq(bdev->dev, bdev->irq, bdev);
 
