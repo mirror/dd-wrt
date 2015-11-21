@@ -327,15 +327,6 @@ void start_sysinit(void)
 	}
 #endif
 
-	led_control(LED_POWER, LED_ON);
-	led_control(LED_SES, LED_OFF);
-	led_control(LED_SES2, LED_OFF);
-	led_control(LED_DIAG, LED_OFF);
-	led_control(LED_BRIDGE, LED_OFF);
-	led_control(LED_WLAN0, LED_OFF);
-	led_control(LED_WLAN1, LED_OFF);
-	led_control(LED_CONNECTED, LED_OFF);
-
 #ifdef HAVE_RS
 	setWirelessLed(0, 2);
 	setWirelessLed(1, 2);

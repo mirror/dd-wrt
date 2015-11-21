@@ -117,14 +117,6 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
-	led_control(LED_POWER, LED_ON);
-	led_control(LED_SES, LED_OFF);
-	led_control(LED_SES2, LED_OFF);
-	led_control(LED_DIAG, LED_OFF);
-	led_control(LED_BRIDGE, LED_OFF);
-	led_control(LED_WLAN0, LED_OFF);
-	led_control(LED_WLAN1, LED_OFF);
-	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_WNR2200
 	set_gpio(38, 1);
 	get_gpio(38);

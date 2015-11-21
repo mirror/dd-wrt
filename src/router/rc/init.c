@@ -468,6 +468,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("devinit");	//init /dev /proc etc.
 	start_service("sysinit");
+	start_service("post_sysinit");
 #ifndef HAVE_MICRO
 	if (console_init())
 		noconsole = 1;
