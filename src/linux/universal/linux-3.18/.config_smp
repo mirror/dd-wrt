@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.18.23 Kernel Configuration
+# Linux/i386 3.18.24 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -3030,6 +3030,7 @@ CONFIG_DMA_OF=y
 CONFIG_ASYNC_TX_DMA=y
 # CONFIG_DMATEST is not set
 CONFIG_DMA_ENGINE_RAID=y
+# CONFIG_QCOM_ADM_DMA is not set
 CONFIG_DCA=m
 # CONFIG_AUXDISPLAY is not set
 CONFIG_UIO=y
