@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2706 | brainslayer | 2015-11-21 17:09:44 +0100 (Sat, 21 Nov 2015) | 1 line
+
+experimental patch to use continues memory with dma mapping
+------------------------------------------------------------------------
 r2705 | brainslayer | 2015-11-20 22:19:46 +0100 (Fri, 20 Nov 2015) | 1 line
 
 revert patch from ath10k, which causes dma alloc to fail on ipq806x
