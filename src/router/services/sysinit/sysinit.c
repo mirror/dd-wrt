@@ -2868,6 +2868,9 @@ void start_drivers(void)
 		eval("stopservice", "samba3");
 		eval("stopservice", "ftpsrv");
 		sysprintf("umount /%s", nvram_default_get("usb_mntpoint", "mnt"));
+		rmmod("phy-qcom-dwc3");
+		rmmod("phy-qcom-hsusb");
+		rmmod("phy-qcom-ssusb");
 		rmmod("usblp");
 		rmmod("printer");
 		rmmod("usb-storage");
@@ -2899,8 +2902,6 @@ void start_drivers(void)
 		rmmod("fsl-mph-dr-of");
 		rmmod("dwc3-qcom");
 		rmmod("dwc3");
-		rmmod("phy-qcom-dwc3");
-
 		rmmod("usbcore");
 		rmmod("usb-common");
 
