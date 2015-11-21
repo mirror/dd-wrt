@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.18.23 Kernel Configuration
+# Linux/powerpc 3.18.24 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -2156,6 +2156,7 @@ CONFIG_DMA_OF=y
 #
 # CONFIG_ASYNC_TX_DMA is not set
 # CONFIG_DMATEST is not set
+# CONFIG_QCOM_ADM_DMA is not set
 # CONFIG_AUXDISPLAY is not set
 # CONFIG_UIO is not set
 # CONFIG_VIRT_DRIVERS is not set
