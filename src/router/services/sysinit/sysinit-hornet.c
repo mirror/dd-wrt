@@ -154,7 +154,6 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-
 #ifdef HAVE_WR741V4
 #ifdef HAVE_SWCONFIG
 #ifndef HAVE_WR710
