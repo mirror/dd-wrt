@@ -361,14 +361,6 @@ void start_sysinit(void)
 		close(s);
 	}
 #endif
-	led_control(LED_POWER, LED_ON);
-	led_control(LED_SES, LED_OFF);
-	led_control(LED_SES2, LED_OFF);
-	led_control(LED_DIAG, LED_OFF);
-	led_control(LED_BRIDGE, LED_OFF);
-	led_control(LED_WLAN0, LED_OFF);
-	led_control(LED_WLAN1, LED_OFF);
-	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_WCRGN
 	set_gpio(0, 1);
 	set_gpio(10, 1);
