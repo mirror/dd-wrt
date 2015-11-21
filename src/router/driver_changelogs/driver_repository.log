@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2707 | brainslayer | 2015-11-21 17:32:17 +0100 (Sat, 21 Nov 2015) | 1 line
+
+boundary check
+------------------------------------------------------------------------
 r2706 | brainslayer | 2015-11-21 17:09:44 +0100 (Sat, 21 Nov 2015) | 1 line
 
 experimental patch to use continues memory with dma mapping
