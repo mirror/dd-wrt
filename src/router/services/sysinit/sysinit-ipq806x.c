@@ -274,7 +274,7 @@ void start_sysinit(void)
 	 */
 	detect_wireless_devices();
 	//insmod("qdpc-host.ko");
-	eval("mount","-t","ubifs","-o","sync","ubi0:rootfs_data","/jffs");
+	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 
 	system("swconfig dev switch0 set reset 1");
 	system("swconfig dev switch0 set enable_vlan 0");

@@ -2899,7 +2899,7 @@ void start_drivers(void)
 		rmmod("fsl-mph-dr-of");
 		rmmod("dwc3-qcom");
 		rmmod("dwc3");
-    		rmmod("phy-qcom-dwc3");
+		rmmod("phy-qcom-dwc3");
 
 		rmmod("usbcore");
 		rmmod("usb-common");
