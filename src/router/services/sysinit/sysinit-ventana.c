@@ -145,14 +145,6 @@ void start_sysinit(void)
 	    || !strncmp(board2, "Gateworks Ventana GW51", 22))
 		eval("gsp_updater", "-f", "/etc/gsc_5100_v44.txt", "44");
 
-	led_control(LED_POWER, LED_ON);
-	led_control(LED_DIAG, LED_OFF);
-	led_control(LED_SES, LED_OFF);
-	led_control(LED_SES2, LED_OFF);
-	led_control(LED_BRIDGE, LED_OFF);
-	led_control(LED_WLAN0, LED_OFF);
-	led_control(LED_WLAN1, LED_OFF);
-	led_control(LED_CONNECTED, LED_OFF);
 	sysprintf("echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 
 	return;
