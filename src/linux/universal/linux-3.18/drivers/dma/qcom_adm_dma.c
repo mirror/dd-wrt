@@ -642,21 +642,17 @@ static void config_datamover(int adm)
 	writel_relaxed(0, DMOV_REG(DMOV_CRCI_CTL(DMOV_SPI_GSBI5_RX_CRCI), adm));
 	writel_relaxed(0, DMOV_REG(DMOV_CRCI_CTL(DMOV_SPI_GSBI5_TX_CRCI), adm));
 
-	/* GSBI2 CRCI Enable */
-	writel_relaxed(0, DMOV_REG(DMOV_CRCI_CTL(DMOV_HSUART_GSBI2_RX_CRCI), adm));
-	writel_relaxed(0, DMOV_REG(DMOV_CRCI_CTL(DMOV_HSUART_GSBI2_TX_CRCI), adm));
-
 	writel_relaxed(DMOV_CI_CONF_RANGE_START(0x40) |	/* EBI1 */
 			DMOV_CI_CONF_RANGE_END(0xb0) |
 			DMOV_CI_CONF_MAX_BURST(0x8),
 		       DMOV_REG(DMOV_CI_CONF(0), adm));
 
-	writel_relaxed(DMOV_CI_CONF_RANGE_START(0x12) |  /* CI1 AXI - SPS*/
-			DMOV_CI_CONF_RANGE_END(0x14) |
+	writel_relaxed(DMOV_CI_CONF_RANGE_START(0x2a) |	/* IMEM */
+			DMOV_CI_CONF_RANGE_END(0x2c) |
 			DMOV_CI_CONF_MAX_BURST(0x8),
 		       DMOV_REG(DMOV_CI_CONF(1), adm));
 
-	writel_relaxed(DMOV_CI_CONF_RANGE_START(0x15) | /* CI2 AHB - CPSS */
+	writel_relaxed(DMOV_CI_CONF_RANGE_START(0x12) |	/* CPSS/SPS */
 			DMOV_CI_CONF_RANGE_END(0x28) |
 			DMOV_CI_CONF_MAX_BURST(0x8),
 		       DMOV_REG(DMOV_CI_CONF(2), adm));

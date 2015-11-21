@@ -7018,6 +7018,7 @@ static inline bool msm_nand_has_bch_ecc_engine(unsigned int hw_id)
  * The flash ID is read and the mtd/chip structures are
  * filled with the appropriate values.
  */
+static
 int msm_nand_scan(struct mtd_info *mtd, int maxchips)
 {
 	struct msm_nand_chip *chip = mtd->priv;
@@ -7332,7 +7333,7 @@ static int msm_nand_probe(struct platform_device *pdev)
 	struct resource *res;
 	int err;
 	struct mtd_part_parser_data ppdata = {};
-	printk(KERN_INFO "%s\n", __func__ );
+
 
 	res = platform_get_resource(pdev,
 					IORESOURCE_MEM, 0);
