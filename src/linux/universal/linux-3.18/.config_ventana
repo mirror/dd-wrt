@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.23 Kernel Configuration
+# Linux/arm 3.18.24 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -3228,6 +3228,7 @@ CONFIG_DMA_OF=y
 #
 # CONFIG_ASYNC_TX_DMA is not set
 # CONFIG_DMATEST is not set
+# CONFIG_QCOM_ADM_DMA is not set
 # CONFIG_AUXDISPLAY is not set
 CONFIG_UIO=m
 # CONFIG_UIO_CIF is not set
