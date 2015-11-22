@@ -34,6 +34,14 @@
 #include <linux/ptp_clock_kernel.h>
 #include <linux/reset.h>
 
+struct stmmac_resources {
+	void __iomem *addr;
+	const char *mac;
+	int wol_irq;
+	int lpi_irq;
+	int irq;
+};
+
 struct stmmac_tx_info {
 	dma_addr_t buf;
 	bool map_as_page;
@@ -97,6 +105,7 @@ struct stmmac_priv {
 	int wolopts;
 	int wol_irq;
 	struct clk *stmmac_clk;
+	struct clk *pclk;
 	struct reset_control *stmmac_rst;
 	int clk_csr;
 	struct timer_list eee_ctrl_timer;
@@ -128,94 +137,16 @@ int stmmac_mdio_unregister(struct net_device *ndev);
 int stmmac_mdio_register(struct net_device *ndev);
 int stmmac_mdio_reset(struct mii_bus *mii);
 void stmmac_set_ethtool_ops(struct net_device *netdev);
-extern const struct stmmac_desc_ops enh_desc_ops;
-extern const struct stmmac_desc_ops ndesc_ops;
-extern const struct stmmac_hwtimestamp stmmac_ptp;
+
 int stmmac_ptp_register(struct stmmac_priv *priv);
 void stmmac_ptp_unregister(struct stmmac_priv *priv);
 int stmmac_resume(struct net_device *ndev);
 int stmmac_suspend(struct net_device *ndev);
 int stmmac_dvr_remove(struct net_device *ndev);
-struct stmmac_priv *stmmac_dvr_probe(struct device *device,
-				     struct plat_stmmacenet_data *plat_dat,
-				     void __iomem *addr);
+int stmmac_dvr_probe(struct device *device,
+		     struct plat_stmmacenet_data *plat_dat,
+		     struct stmmac_resources *res);
 void stmmac_disable_eee_mode(struct stmmac_priv *priv);
 bool stmmac_eee_init(struct stmmac_priv *priv);
-
-#ifdef CONFIG_STMMAC_PLATFORM
-#ifdef CONFIG_DWMAC_IPQ806X
-extern const struct stmmac_of_data ipq806x_gmac_data;
-#endif
-#ifdef CONFIG_DWMAC_MESON
-extern const struct stmmac_of_data meson6_dwmac_data;
-#endif
-#ifdef CONFIG_DWMAC_SUNXI
-extern const struct stmmac_of_data sun7i_gmac_data;
-#endif
-#ifdef CONFIG_DWMAC_STI
-extern const struct stmmac_of_data stih4xx_dwmac_data;
-extern const struct stmmac_of_data stid127_dwmac_data;
-#endif
-#ifdef CONFIG_DWMAC_SOCFPGA
-extern const struct stmmac_of_data socfpga_gmac_data;
-#endif
-extern struct platform_driver stmmac_pltfr_driver;
-static inline int stmmac_register_platform(void)
-{
-	int err;
-
-	err = platform_driver_register(&stmmac_pltfr_driver);
-	if (err)
-		pr_err("stmmac: failed to register the platform driver\n");
-
-	return err;
-}
-
-static inline void stmmac_unregister_platform(void)
-{
-	platform_driver_unregister(&stmmac_pltfr_driver);
-}
-#else
-static inline int stmmac_register_platform(void)
-{
-	pr_debug("stmmac: do not register the platf driver\n");
-
-	return 0;
-}
-
-static inline void stmmac_unregister_platform(void)
-{
-}
-#endif /* CONFIG_STMMAC_PLATFORM */
-
-#ifdef CONFIG_STMMAC_PCI
-extern struct pci_driver stmmac_pci_driver;
-static inline int stmmac_register_pci(void)
-{
-	int err;
-
-	err = pci_register_driver(&stmmac_pci_driver);
-	if (err)
-		pr_err("stmmac: failed to register the PCI driver\n");
-
-	return err;
-}
-
-static inline void stmmac_unregister_pci(void)
-{
-	pci_unregister_driver(&stmmac_pci_driver);
-}
-#else
-static inline int stmmac_register_pci(void)
-{
-	pr_debug("stmmac: do not register the PCI driver\n");
-
-	return 0;
-}
-
-static inline void stmmac_unregister_pci(void)
-{
-}
-#endif /* CONFIG_STMMAC_PCI */
 
 #endif /* __STMMAC_H__ */
