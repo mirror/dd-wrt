@@ -1547,7 +1547,7 @@ static int stmmac_get_hw_features(struct stmmac_priv *priv)
 		priv->dma_cap.eee = (hw_cap & DMA_HW_FEAT_EEESEL) >> 14;
 		priv->dma_cap.av = (hw_cap & DMA_HW_FEAT_AVSEL) >> 15;
 		/* TX and RX csum */
-		priv->dma_cap.tx_coe = (hw_cap & DMA_HW_FEAT_TXCOESEL) >> 16;
+//		priv->dma_cap.tx_coe = (hw_cap & DMA_HW_FEAT_TXCOESEL) >> 16;
 		priv->dma_cap.rx_coe_type1 =
 		    (hw_cap & DMA_HW_FEAT_RXTYP1COE) >> 17;
 		priv->dma_cap.rx_coe_type2 =
