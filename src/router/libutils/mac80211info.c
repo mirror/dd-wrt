@@ -287,9 +287,11 @@ void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 
 void set_ath10kdistance(char *dev, unsigned int distance)
 {
-	unsigned int macclk = is_beeliner(dev) ? 142 : 88;
+	unsigned int isb = is_beeliner(dev);
+	unsigned int macclk = isb ? 142 : 88;
 	unsigned int slot = ((distance + 449) / 450) * 3;
-	slot += 9;		// base time
+	unsigned int baseslot = 9;
+	slot += baseslot;	// base time
 	unsigned int sifs = 16;
 	unsigned int ack = slot + sifs;
 	unsigned int cts = ack;
@@ -298,32 +300,57 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	if (slot == 0)		// too low value. 
 		return;
 
-	ack *= macclk;		// 88Mhz is the core clock of AR9880
-	cts *= macclk;
-	sifs *= macclk;
-	slot *= macclk;
-	if (ack > 0x3fff) {
+	if (!isb) {
+		ack *= macclk;	// 88Mhz is the core clock of AR9880
+		cts *= macclk;
+		slot *= macclk;
+		sifs *= macclk;
+	}
+	if (!isb && ack > 0x3fff) {
 		fprintf(stderr, "invalid ack 0x%08x, max is 0x3fff. truncate it\n", ack);
 		ack = 0x3fff;
+	} else if (isb && ack > 0xffff) {
+		fprintf(stderr, "invalid ack 0x%08x, max is 0xff. truncate it\n", ack);
+		ack = 0xffff;
 	}
-	unsigned int oldack = get_ath10kreg(dev, 0x8014) & 0x3fff;
+
+	unsigned int oldack;
+	if (isb)
+		oldack = get_ath10kreg(dev, 0xf424) & 0xffff;
+	else
+		oldack = get_ath10kreg(dev, 0x8014) & 0x3fff;
+
 	if (oldack != ack) {
-		set_ath10kreg(dev, 0x1070, slot);
-		set_ath10kreg(dev, 0x1030, sifs);
-		set_ath10kreg(dev, 0x8014, (cts << 16 & 0x3fff0000) | (ack & 0x3fff));
+		if (isb) {
+			set_ath10kreg(dev, 0x0040, baseslot);
+			set_ath10kreg(dev, 0xf420, ((sifs << 8) & 0x1ff00) | (slot & 0xff));
+			set_ath10kreg(dev, 0xf424, ack & 0xffff);
+		} else {
+			set_ath10kreg(dev, 0x1070, slot);
+			set_ath10kreg(dev, 0x1030, sifs);
+			set_ath10kreg(dev, 0x8014, ((cts << 16) & 0x3fff0000) | (ack & 0x3fff));
+		}
 	}
+
 }
 
 unsigned int get_ath10kack(char *ifname)
 {
-	unsigned int macclk = is_beeliner(dev) ? 142 : 88;
-	unsigned int ack, slot, sifs;
+	unsigned int isb = is_beeliner(dev);
+	unsigned int macclk = isb ? 142 : 88;
+	unsigned int ack, slot, sifs, baseslot = 9;
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
-	slot = (get_ath10kreg(ifname, 0x1070)) / macclk;
-	sifs = (get_ath10kreg(ifname, 0x1030)) / macclk;
-	ack = (get_ath10kreg(ifname, 0x8014) & 0x3fff) / macclk;
+	if (isb) {
+		baseslot = (get_ath10kreg(ifname, 0x0040));
+		ack = (get_ath10kreg(ifname, 0xf424) & 0xffff);
+		sifs = ((get_ath10kreg(ifname, 0xf420) >> 8) & 0x1ff);
+	} else {
+		slot = (get_ath10kreg(ifname, 0x1070)) / macclk;
+		ack = (get_ath10kreg(ifname, 0x8014) & 0x3fff) / macclk;
+		sifs = (get_ath10kreg(ifname, 0x1030)) / macclk;
+	}
 	ack -= sifs;
-	ack -= 9;
+	ack -= baseslot;
 	return ack;
 }
 
