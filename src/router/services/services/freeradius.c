@@ -94,7 +94,7 @@ void start_freeradius(void)
 #ifdef HAVE_X86
 	system("mount --bind /usr/local /jffs");
 #elif HAVE_IPQ806X
-	eval("mount","-t","ubifs","-o","sync","ubi0:rootfs_data","/jffs");
+	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 #else
 	if (!nvram_match("jffs_mounted", "1") && (freediskSpace("/jffs") < 134217728))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
