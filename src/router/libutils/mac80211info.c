@@ -287,6 +287,7 @@ void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 
 void set_ath10kdistance(char *dev, unsigned int distance)
 {
+	unsigned int macclk = is_beeliner(dev) ? 142 : 88;
 	unsigned int slot = ((distance + 449) / 450) * 3;
 	slot += 9;		// base time
 	unsigned int sifs = 16;
@@ -297,10 +298,10 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	if (slot == 0)		// too low value. 
 		return;
 
-	ack *= 88;		// 88Mhz is the core clock of AR9880
-	cts *= 88;
-	sifs *= 88;
-	slot *= 88;
+	ack *= macclk;		// 88Mhz is the core clock of AR9880
+	cts *= macclk;
+	sifs *= macclk;
+	slot *= macclk;
 	if (ack > 0x3fff) {
 		fprintf(stderr, "invalid ack 0x%08x, max is 0x3fff. truncate it\n", ack);
 		ack = 0x3fff;
@@ -315,11 +316,12 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 
 unsigned int get_ath10kack(char *ifname)
 {
+	unsigned int macclk = is_beeliner(dev) ? 142 : 88;
 	unsigned int ack, slot, sifs;
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
-	slot = (get_ath10kreg(ifname, 0x1070)) / 88;
-	sifs = (get_ath10kreg(ifname, 0x1030)) / 88;
-	ack = (get_ath10kreg(ifname, 0x8014) & 0x3fff) / 88;
+	slot = (get_ath10kreg(ifname, 0x1070)) / macclk;
+	sifs = (get_ath10kreg(ifname, 0x1030)) / macclk;
+	ack = (get_ath10kreg(ifname, 0x8014) & 0x3fff) / macclk;
 	ack -= sifs;
 	ack -= 9;
 	return ack;
