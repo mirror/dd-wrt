@@ -336,7 +336,7 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 
 unsigned int get_ath10kack(char *ifname)
 {
-	unsigned int isb = is_beeliner(dev);
+	unsigned int isb = is_beeliner(ifname);
 	unsigned int macclk = isb ? 142 : 88;
 	unsigned int ack, slot, sifs, baseslot = 9;
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
