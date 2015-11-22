@@ -247,7 +247,7 @@ int is_beeliner(const char *prefix)
 
 unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 {
-	unsigned int baseaddress = is_beeliner(dev) ? 0x30000 : 0x20000;
+	unsigned int baseaddress = is_beeliner(ifname) ? 0x30000 : 0x20000;
 	char file[64];
 	int phy = get_ath9k_phy_ifname(ifname);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
@@ -268,7 +268,7 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 
 void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 {
-	unsigned int baseaddress = is_beeliner(dev) ? 0x30000 : 0x20000;
+	unsigned int baseaddress = is_beeliner(ifname) ? 0x30000 : 0x20000;
 	char file[64];
 	int phy = get_ath9k_phy_ifname(ifname);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
