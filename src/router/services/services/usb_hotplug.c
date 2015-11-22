@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <typedefs.h>
 #include <shutils.h>
 #include <bcmnvram.h>
