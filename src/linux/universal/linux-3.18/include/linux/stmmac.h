@@ -73,6 +73,9 @@
 			| DMA_AXI_BLEN_32 | DMA_AXI_BLEN_64 \
 			| DMA_AXI_BLEN_128 | DMA_AXI_BLEN_256)
 
+#define DMA_AXI_RD_OSR_LMT_SHIFT	16
+#define DMA_AXI_WR_OSR_LMT_SHIFT	20
+
 /* Platfrom data for platform device structure's platform_data field */
 
 struct stmmac_mdio_bus_data {
@@ -115,32 +118,12 @@ struct plat_stmmacenet_data {
 	int maxmtu;
 	int multicast_filter_bins;
 	int unicast_filter_entries;
+	int tx_fifo_size;
+	int rx_fifo_size;
 	void (*fix_mac_speed)(void *priv, unsigned int speed);
 	void (*bus_setup)(void __iomem *ioaddr);
-	void *(*setup)(struct platform_device *pdev);
-	void (*free)(struct platform_device *pdev, void *priv);
 	int (*init)(struct platform_device *pdev, void *priv);
 	void (*exit)(struct platform_device *pdev, void *priv);
-	void *custom_cfg;
-	void *custom_data;
 	void *bsp_priv;
-};
-
-/* of_data for SoC glue layer device tree bindings */
-
-struct stmmac_of_data {
-	int has_gmac;
-	int enh_desc;
-	int tx_coe;
-	int rx_coe;
-	int bugged_jumbo;
-	int pmt;
-	int riwt_off;
-	void (*fix_mac_speed)(void *priv, unsigned int speed);
-	void (*bus_setup)(void __iomem *ioaddr);
-	void *(*setup)(struct platform_device *pdev);
-	void (*free)(struct platform_device *pdev, void *priv);
-	int (*init)(struct platform_device *pdev, void *priv);
-	void (*exit)(struct platform_device *pdev, void *priv);
 };
 #endif
