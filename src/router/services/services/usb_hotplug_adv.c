@@ -174,7 +174,11 @@ static void optimize_block_device(char *devname)
 	memset(blkdev, 0, sizeof(blkdev));
 	strncpy(blkdev, devname, 3);
 	sprintf(read_ahead_conf, READ_AHEAD_CONF, blkdev);
-	sysprintf("echo %d > %s", READ_AHEAD_KB_BUF, read_ahead_conf);
+	int fd = open(read_ahead_conf, O_WRONLY);
+	if (fd == -1)
+		return;
+	write(fd, READ_AHEAD_KB_BUF, strlen(READ_AHEAD_KB_BUF));
+	close(fd);
 }
 
 //Kernel 3.x
