@@ -21,6 +21,7 @@
 #include <string.h>
 #include <errno.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <typedefs.h>
 #include <shutils.h>
