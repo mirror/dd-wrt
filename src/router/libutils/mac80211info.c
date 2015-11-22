@@ -225,16 +225,36 @@ nla_put_failure:
 }
 
 #ifdef HAVE_ATH10K
+int is_beeliner(const char *prefix)
+{
+	char globstring[1024];
+	int devnum;
+	devnum = get_ath9k_phy_ifname(prefix);
+	if (devnum == -1)
+		return 0;
+
+	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
+	FILE *fp = fopen(globstring, "rb");
+	if (!fp)
+		return 0;
+	char buf[32];
+	fscanf(fp, "%s", buf);
+	fclose(buf);
+	if (!strcmp(buf, "0x0040"))
+		return 1;
+	return 0;
+}
+
 unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 {
-
+	unsigned int baseaddress = is_beeliner(dev) ? 0x30000 : 0x20000;
 	char file[64];
 	int phy = get_ath9k_phy_ifname(ifname);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
 		return 0;
-	fprintf(fp, "0x%x", reg);
+	fprintf(fp, "0x%x", baseaddress + reg);
 	fclose(fp);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "rb");
@@ -248,13 +268,14 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 
 void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 {
+	unsigned int baseaddress = is_beeliner(dev) ? 0x30000 : 0x20000;
 	char file[64];
 	int phy = get_ath9k_phy_ifname(ifname);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
 		return;
-	fprintf(fp, "0x%x", reg);
+	fprintf(fp, "0x%x", baseaddress + reg);
 	fclose(fp);
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "wb");
@@ -284,11 +305,11 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 		fprintf(stderr, "invalid ack 0x%08x, max is 0x3fff. truncate it\n", ack);
 		ack = 0x3fff;
 	}
-	unsigned int oldack = get_ath10kreg(dev, 0x28014) & 0x3fff;
+	unsigned int oldack = get_ath10kreg(dev, 0x8014) & 0x3fff;
 	if (oldack != ack) {
-		set_ath10kreg(dev, 0x21070, slot);
-		set_ath10kreg(dev, 0x21030, sifs);
-		set_ath10kreg(dev, 0x28014, (cts << 16 & 0x3fff0000) | (ack & 0x3fff));
+		set_ath10kreg(dev, 0x1070, slot);
+		set_ath10kreg(dev, 0x1030, sifs);
+		set_ath10kreg(dev, 0x8014, (cts << 16 & 0x3fff0000) | (ack & 0x3fff));
 	}
 }
 
@@ -296,9 +317,9 @@ unsigned int get_ath10kack(char *ifname)
 {
 	unsigned int ack, slot, sifs;
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
-	slot = (get_ath10kreg(ifname, 0x21070)) / 88;
-	sifs = (get_ath10kreg(ifname, 0x21030)) / 88;
-	ack = (get_ath10kreg(ifname, 0x28014) & 0x3fff) / 88;
+	slot = (get_ath10kreg(ifname, 0x1070)) / 88;
+	sifs = (get_ath10kreg(ifname, 0x1030)) / 88;
+	ack = (get_ath10kreg(ifname, 0x8014) & 0x3fff) / 88;
 	ack -= sifs;
 	ack -= 9;
 	return ack;
