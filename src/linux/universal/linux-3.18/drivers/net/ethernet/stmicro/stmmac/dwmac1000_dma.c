@@ -31,7 +31,8 @@
 #include "dwmac_dma.h"
 
 static int dwmac1000_dma_init(void __iomem *ioaddr, int pbl, int fb, int mb,
-			      int burst_len, u32 dma_tx, u32 dma_rx, int atds)
+			      int burst_len, u32 dma_tx, u32 dma_rx, int atds,
+			      int aal)
 {
 	u32 value = readl(ioaddr + DMA_BUS_MODE);
 	int limit;
@@ -61,6 +62,10 @@ static int dwmac1000_dma_init(void __iomem *ioaddr, int pbl, int fb, int mb,
 	 */
 	value = DMA_BUS_MODE_PBL | ((pbl << DMA_BUS_MODE_PBL_SHIFT) |
 				    (pbl << DMA_BUS_MODE_RPBL_SHIFT));
+
+	/* Address Aligned Beats */
+	if (aal)
+		value |= DMA_BUS_MODE_AAL;
 
 	/* Set the Fixed burst mode */
 	if (fb)

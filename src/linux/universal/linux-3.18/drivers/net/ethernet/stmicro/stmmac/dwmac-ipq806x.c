@@ -353,6 +353,7 @@ static int ipq806x_gmac_probe(struct platform_device *pdev)
 			       GFP_KERNEL);
 
 	dma_cfg->pbl = 32;
+	dma_cfg->aal = 1;
 	dma_cfg->burst_len = DMA_AXI_BLEN_16 |
 		(7 << DMA_AXI_RD_OSR_LMT_SHIFT) |
 		(7 << DMA_AXI_WR_OSR_LMT_SHIFT);
