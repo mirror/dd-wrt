@@ -91,6 +91,7 @@ struct stmmac_mdio_bus_data {
 
 struct stmmac_dma_cfg {
 	int pbl;
+	int aal;
 	int fixed_burst;
 	int mixed_burst;
 	int burst_len;
