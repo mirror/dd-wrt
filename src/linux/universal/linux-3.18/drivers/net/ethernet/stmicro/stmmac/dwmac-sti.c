@@ -1,4 +1,4 @@
-/**
+/*
  * dwmac-sti.c - STMicroelectronics DWMAC Specific Glue layer
  *
  * Copyright (C) 2003-2014 STMicroelectronics (R&D) Limited
@@ -17,10 +17,14 @@
 #include <linux/stmmac.h>
 #include <linux/phy.h>
 #include <linux/mfd/syscon.h>
+#include <linux/module.h>
 #include <linux/regmap.h>
 #include <linux/clk.h>
 #include <linux/of.h>
+#include <linux/of_device.h>
 #include <linux/of_net.h>
+
+#include "stmmac_platform.h"
 
 #define DWMAC_125MHZ	125000000
 #define DWMAC_50MHZ	50000000
@@ -35,9 +39,8 @@
 #define IS_PHY_IF_MODE_GBIT(iface)	(IS_PHY_IF_MODE_RGMII(iface) || \
 					 iface == PHY_INTERFACE_MODE_GMII)
 
-/* STiH4xx register definitions (STiH415/STiH416/STiH407/STiH410 families) */
-
-/**
+/* STiH4xx register definitions (STiH415/STiH416/STiH407/STiH410 families)
+ *
  * Below table summarizes the clock requirement and clock sources for
  * supported phy interface modes with link speeds.
  * ________________________________________________
@@ -76,9 +79,7 @@
 #define STIH4XX_ETH_SEL_INTERNAL_NOTEXT_PHYCLK	BIT(7)
 #define STIH4XX_ETH_SEL_TXCLK_NOT_CLK125	BIT(6)
 
-/* STiD127 register definitions */
-
-/**
+/* STiD127 register definitions
  *-----------------------
  * src	 |BIT(6)| BIT(7)|
  *-----------------------
@@ -104,13 +105,13 @@
 #define EN_MASK		GENMASK(1, 1)
 #define EN		BIT(1)
 
-/**
+/*
  * 3 bits [4:2]
  *	000-GMII/MII
  *	001-RGMII
  *	010-SGMII
  *	100-RMII
-*/
+ */
 #define MII_PHY_SEL_MASK	GENMASK(4, 2)
 #define ETH_PHY_SEL_RMII	BIT(4)
 #define ETH_PHY_SEL_SGMII	BIT(3)
@@ -123,11 +124,16 @@ struct sti_dwmac {
 	bool ext_phyclk;	/* Clock from external PHY */
 	u32 tx_retime_src;	/* TXCLK Retiming*/
 	struct clk *clk;	/* PHY clock */
-	int ctrl_reg;		/* GMAC glue-logic control register */
+	u32 ctrl_reg;		/* GMAC glue-logic control register */
 	int clk_sel_reg;	/* GMAC ext clk selection register */
 	struct device *dev;
 	struct regmap *regmap;
 	u32 speed;
+	void (*fix_retime_src)(void *priv, unsigned int speed);
+};
+
+struct sti_dwmac_of_data {
+	void (*fix_retime_src)(void *priv, unsigned int speed);
 };
 
 static u32 phy_intf_sels[] = {
@@ -222,8 +228,9 @@ static void stid127_fix_retime_src(void *priv, u32 spd)
 	regmap_update_bits(dwmac->regmap, reg, STID127_RETIME_SRC_MASK, val);
 }
 
-static void sti_dwmac_ctrl_init(struct sti_dwmac *dwmac)
+static int sti_dwmac_init(struct platform_device *pdev, void *priv)
 {
+	struct sti_dwmac *dwmac = priv;
 	struct regmap *regmap = dwmac->regmap;
 	int iface = dwmac->interface;
 	struct device *dev = dwmac->dev;
@@ -241,28 +248,8 @@ static void sti_dwmac_ctrl_init(struct sti_dwmac *dwmac)
 
 	val = (iface == PHY_INTERFACE_MODE_REVMII) ? 0 : ENMII;
 	regmap_update_bits(regmap, reg, ENMII_MASK, val);
-}
 
-static int stix4xx_init(struct platform_device *pdev, void *priv)
-{
-	struct sti_dwmac *dwmac = priv;
-	u32 spd = dwmac->speed;
-
-	sti_dwmac_ctrl_init(dwmac);
-
-	stih4xx_fix_retime_src(priv, spd);
-
-	return 0;
-}
-
-static int stid127_init(struct platform_device *pdev, void *priv)
-{
-	struct sti_dwmac *dwmac = priv;
-	u32 spd = dwmac->speed;
-
-	sti_dwmac_ctrl_init(dwmac);
-
-	stid127_fix_retime_src(priv, spd);
+	dwmac->fix_retime_src(priv, dwmac->speed);
 
 	return 0;
 }
@@ -286,11 +273,6 @@ static int sti_dwmac_parse_data(struct sti_dwmac *dwmac,
 	if (!np)
 		return -EINVAL;
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "sti-ethconf");
-	if (!res)
-		return -ENODATA;
-	dwmac->ctrl_reg = res->start;
-
 	/* clk selection from extra syscfg register */
 	dwmac->clk_sel_reg = -ENXIO;
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "sti-clkconf");
@@ -301,6 +283,12 @@ static int sti_dwmac_parse_data(struct sti_dwmac *dwmac,
 	if (IS_ERR(regmap))
 		return PTR_ERR(regmap);
 
+	err = of_property_read_u32_index(np, "st,syscon", 1, &dwmac->ctrl_reg);
+	if (err) {
+		dev_err(dev, "Can't get sysconfig ctrl offset (%d)\n", err);
+		return err;
+	}
+
 	dwmac->dev = dev;
 	dwmac->interface = of_get_phy_mode(np);
 	dwmac->regmap = regmap;
@@ -310,16 +298,16 @@ static int sti_dwmac_parse_data(struct sti_dwmac *dwmac,
 
 	if (IS_PHY_IF_MODE_GBIT(dwmac->interface)) {
 		const char *rs;
-		dwmac->tx_retime_src = TX_RETIME_SRC_CLKGEN;
 
 		err = of_property_read_string(np, "st,tx-retime-src", &rs);
-		if (err < 0)
+		if (err < 0) {
 			dev_warn(dev, "Use internal clock source\n");
-
-		if (!strcasecmp(rs, "clk_125"))
+			dwmac->tx_retime_src = TX_RETIME_SRC_CLKGEN;
+		} else if (!strcasecmp(rs, "clk_125")) {
 			dwmac->tx_retime_src = TX_RETIME_SRC_CLK_125;
-		else if (!strcasecmp(rs, "txclk"))
+		} else if (!strcasecmp(rs, "txclk")) {
 			dwmac->tx_retime_src = TX_RETIME_SRC_TXCLK;
+		}
 
 		dwmac->speed = SPEED_1000;
 	}
@@ -333,34 +321,80 @@ static int sti_dwmac_parse_data(struct sti_dwmac *dwmac,
 	return 0;
 }
 
-static void *sti_dwmac_setup(struct platform_device *pdev)
+static int sti_dwmac_probe(struct platform_device *pdev)
 {
+	struct plat_stmmacenet_data *plat_dat;
+	const struct sti_dwmac_of_data *data;
+	struct stmmac_resources stmmac_res;
 	struct sti_dwmac *dwmac;
 	int ret;
 
+	data = of_device_get_match_data(&pdev->dev);
+	if (!data) {
+		dev_err(&pdev->dev, "No OF match data provided\n");
+		return -EINVAL;
+	}
+
+	ret = stmmac_get_platform_resources(pdev, &stmmac_res);
+	if (ret)
+		return ret;
+
+	plat_dat = stmmac_probe_config_dt(pdev, &stmmac_res.mac);
+	if (IS_ERR(plat_dat))
+		return PTR_ERR(plat_dat);
+
 	dwmac = devm_kzalloc(&pdev->dev, sizeof(*dwmac), GFP_KERNEL);
 	if (!dwmac)
-		return ERR_PTR(-ENOMEM);
+		return -ENOMEM;
 
 	ret = sti_dwmac_parse_data(dwmac, pdev);
 	if (ret) {
 		dev_err(&pdev->dev, "Unable to parse OF data\n");
-		return ERR_PTR(ret);
+		return ret;
 	}
 
-	return dwmac;
+	dwmac->fix_retime_src = data->fix_retime_src;
+
+	plat_dat->bsp_priv = dwmac;
+	plat_dat->init = sti_dwmac_init;
+	plat_dat->exit = sti_dwmac_exit;
+	plat_dat->fix_mac_speed = data->fix_retime_src;
+
+	ret = sti_dwmac_init(pdev, plat_dat->bsp_priv);
+	if (ret)
+		return ret;
+
+	return stmmac_dvr_probe(&pdev->dev, plat_dat, &stmmac_res);
 }
 
-const struct stmmac_of_data stih4xx_dwmac_data = {
-	.fix_mac_speed = stih4xx_fix_retime_src,
-	.setup = sti_dwmac_setup,
-	.init = stix4xx_init,
-	.exit = sti_dwmac_exit,
+static const struct sti_dwmac_of_data stih4xx_dwmac_data = {
+	.fix_retime_src = stih4xx_fix_retime_src,
 };
 
-const struct stmmac_of_data stid127_dwmac_data = {
-	.fix_mac_speed = stid127_fix_retime_src,
-	.setup = sti_dwmac_setup,
-	.init = stid127_init,
-	.exit = sti_dwmac_exit,
+static const struct sti_dwmac_of_data stid127_dwmac_data = {
+	.fix_retime_src = stid127_fix_retime_src,
 };
+
+static const struct of_device_id sti_dwmac_match[] = {
+	{ .compatible = "st,stih415-dwmac", .data = &stih4xx_dwmac_data},
+	{ .compatible = "st,stih416-dwmac", .data = &stih4xx_dwmac_data},
+	{ .compatible = "st,stid127-dwmac", .data = &stid127_dwmac_data},
+	{ .compatible = "st,stih407-dwmac", .data = &stih4xx_dwmac_data},
+	{ }
+};
+MODULE_DEVICE_TABLE(of, sti_dwmac_match);
+
+static struct platform_driver sti_dwmac_driver = {
+	.probe  = sti_dwmac_probe,
+	.remove = stmmac_pltfr_remove,
+	.driver = {
+		.name           = "sti-dwmac",
+		.pm		= &stmmac_pltfr_pm_ops,
+		.of_match_table = sti_dwmac_match,
+	},
+};
+module_platform_driver(sti_dwmac_driver);
+
+MODULE_AUTHOR("Srinivas Kandagatla <srinivas.kandagatla@st.com>");
+MODULE_DESCRIPTION("STMicroelectronics DWMAC Specific Glue layer");
+MODULE_LICENSE("GPL");
