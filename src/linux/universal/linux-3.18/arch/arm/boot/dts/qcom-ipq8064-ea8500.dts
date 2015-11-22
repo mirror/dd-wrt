@@ -96,6 +96,7 @@
 					bias-disable;
 				};
 			};
+			
 		};
 
 		gsbi@16300000 {
@@ -226,7 +227,7 @@
 				read-only;
 			};
 
-			art@c80000 {
+			art: art@c80000 {
 				label = "art";
 				reg = <0x0c80000 0x0140000>;
 				read-only;
@@ -317,7 +318,7 @@
 			phy-mode = "rgmii";
 			phy-handle = <&phy4>;
 			qcom,id = <1>;
-
+			mtd-mac-address = <&art 6>;
 			pinctrl-0 = <&rgmii2_pins>;
 			pinctrl-names = "default";
 
@@ -327,7 +328,7 @@
 			status = "ok";
 			phy-mode = "sgmii";
 			qcom,id = <2>;
-
+			mtd-mac-address = <&art 0>;
 			fixed-link {
 				speed = <1000>;
 				full-duplex;
@@ -355,39 +356,15 @@
 			gpios = <&qcom_pinmux 65 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
+
 	};
 
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		usb1 {
-			label = "ea8500:amber:usb1";
-			gpios = <&qcom_pinmux 7 0>;
-		};
-
-		usb3 {
-			label = "ea8500:amber:usb3";
-			gpios = <&qcom_pinmux 8 0>;
-		};
-
-		status {
-			label = "ea8500:amber:status";
-			gpios = <&qcom_pinmux 9 0>;
-		};
-
-		internet {
-			label = "ea8500:white:internet";
-			gpios = <&qcom_pinmux 22 0>;
-		};
-
-		wan {
-			label = "ea8500:red:wan";
+		wps {
+			label = "ea8500:green:wps";
 			gpios = <&qcom_pinmux 53 0>;
-		};
-
-		esata {
-			label = "ea8500:white:esata";
-			gpios = <&qcom_pinmux 26 0>;
 		};
 
 		power {
@@ -397,7 +374,7 @@
 		};
 
 		wifi {
-			label = "ea8500:white:wifi";
+			label = "ea8500:green:wifi";
 			gpios = <&qcom_pinmux 54 0>;
 		};
 	};
