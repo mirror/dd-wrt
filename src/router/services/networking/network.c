@@ -4902,6 +4902,21 @@ void stop_hotplug_net(void)
 {
 }
 
+static void writenet(char *path, int cpumask, char *ifname)
+{
+	char dev[64];
+	snprintf(dev, 64, "/sys/class/net/%s/%s", ifname, path);
+
+	int fd = open(dev, O_WRONLY);
+	if (fd == -1)
+		return 1;
+	char mask[32];
+	sprintf(mask, "%x", cpumask);
+	write(fd, mask, strlen(mask));
+	close(fd);
+
+}
+
 void start_hotplug_net(void)
 {
 	char *interface, *action;
@@ -4919,22 +4934,22 @@ void start_hotplug_net(void)
 		if (cpucount > 1) {
 			cpumask = (1 << cpucount) - 1;
 		}
-		sysprintf("echo %x > /sys/class/net/%s/queues/rx-0/rps_cpus", cpumask, interface);
-		sysprintf("echo %x > /sys/class/net/%s/queues/tx-0/xps_cpus", cpumask, interface);
+		writenet("queues/rx-0/rps_cpus", cpumask, interface);
+		writenet("queues/tx-0/xps_cpus", cpumask, interface);
 #ifdef HAVE_ATH10K
 		if (is_ath10k(interface) || is_mvebu(interface)) {
-			sysprintf("echo %x > /sys/class/net/%s/queues/tx-1/xps_cpus", cpumask, interface);
-			sysprintf("echo %x > /sys/class/net/%s/queues/tx-2/xps_cpus", cpumask, interface);
-			sysprintf("echo %x > /sys/class/net/%s/queues/tx-3/xps_cpus", cpumask, interface);
+			writenet("queues/tx-1/xps_cpus", cpumask, interface);
+			writenet("queues/tx-2/xps_cpus", cpumask, interface);
+			writenet("queues/tx-3/xps_cpus", cpumask, interface);
 		}
 #endif
-		sysprintf("echo %d > /sys/class/net/%s/queues/tx-1/xps_cpus", cpumask, interface);
-		sysprintf("echo %d > /sys/class/net/%s/queues/tx-2/xps_cpus", cpumask, interface);
-		sysprintf("echo %d > /sys/class/net/%s/queues/tx-3/xps_cpus", cpumask, interface);
-		sysprintf("echo %d > /sys/class/net/%s/queues/tx-4/xps_cpus", cpumask, interface);
-		sysprintf("echo %d > /sys/class/net/%s/queues/tx-5/xps_cpus", cpumask, interface);
-		sysprintf("echo %d > /sys/class/net/%s/queues/tx-6/xps_cpus", cpumask, interface);
-		sysprintf("echo %d > /sys/class/net/%s/queues/tx-7/xps_cpus", cpumask, interface);
+		writenet("queues/tx-1/xps_cpus", cpumask, interface);
+		writenet("queues/tx-2/xps_cpus", cpumask, interface);
+		writenet("queues/tx-3/xps_cpus", cpumask, interface);
+		writenet("queues/tx-4/xps_cpus", cpumask, interface);
+		writenet("queues/tx-5/xps_cpus", cpumask, interface);
+		writenet("queues/tx-6/xps_cpus", cpumask, interface);
+		writenet("queues/tx-7/xps_cpus", cpumask, interface);
 	}
 #endif
 #ifdef HAVE_MADWIFI
