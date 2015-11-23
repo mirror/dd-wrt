@@ -59,7 +59,7 @@
 -- x IBM Informix Dynamic Server Express Edition v11.50 32-bit on Ubuntu
 -- x IBM Informix Dynamic Server xxx 32-bit on Windows 2003
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -- @author "Patrik Karlsson <patrik@cqure.net>"
 --
 -- @args informix.instance specifies the Informix instance to connect to
@@ -722,8 +722,9 @@ Packet.SQ_INFO =
       end
     end
 
-    data = bin.pack(">SSSSS", Constants.Message.SQ_INFO, 0x0006, #params + 6, 0x000c, 0x0004 )
-    data = data .. params .. bin.pack(">SSS", 0x0000, 0x0000, Constants.Message.SQ_EOT)
+    data = bin.pack(">SSSSSASSS", Constants.Message.SQ_INFO, 0x0006,
+      #params + 6, 0x000c, 0x0004, params, 0x0000, 0x0000,
+      Constants.Message.SQ_EOT)
     return data
   end
 }

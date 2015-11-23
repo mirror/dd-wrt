@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -96,8 +96,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -118,11 +117,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase_misc.c 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: nbase_misc.c 35137 2015-08-18 16:21:25Z gio $ */
 
 #include "nbase.h"
 
@@ -910,4 +909,46 @@ char *executable_path(const char *argv0) {
     path = executable_path_argv0(argv0);
 
   return path;
+}
+
+int sockaddr_storage_inet_pton(const char * ip_str, struct sockaddr_storage * addr)
+{
+  struct sockaddr_in * addrv4p = (struct sockaddr_in *) addr;
+#if HAVE_IPV6
+  struct sockaddr_in6 * addrv6p = (struct sockaddr_in6 *) addr;
+  if ( 1 == inet_pton(AF_INET6, ip_str, &(addrv6p->sin6_addr)) )
+  {
+    addr->ss_family = AF_INET6;
+    return 1;
+  }
+#endif // HAVE_IPV6
+
+  if ( 1 == inet_pton(AF_INET, ip_str, &(addrv4p->sin_addr)) )
+  {
+    addr->ss_family = AF_INET;
+    return 1;
+  }
+
+  return 0;
+}
+
+const char *sockaddr_storage_iptop(const struct sockaddr_storage * addr, char * dst)
+{
+  switch (addr->ss_family){
+  case AF_INET:
+  {
+    const struct sockaddr_in * ipv4_ptr = (const struct sockaddr_in *) addr;
+    return inet_ntop(addr->ss_family, &(ipv4_ptr->sin_addr), dst, INET_ADDRSTRLEN);
+  }
+#if HAVE_IPV6
+  case AF_INET6:
+  {
+    const struct sockaddr_in6 * addrv6p = (struct sockaddr_in6 *) addr;
+    return inet_ntop(addr->ss_family, &(addrv6p->sin6_addr), dst, INET6_ADDRSTRLEN);
+  }
+#endif
+  default:
+  {
+    return NULL;
+  }}
 }

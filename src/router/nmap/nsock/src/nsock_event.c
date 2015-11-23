@@ -1,13 +1,13 @@
 /***************************************************************************
  * nsock_event.c -- Functions dealing with nsock_events (and their         *
- * msevent internal representation.  An event is created when you do       *
+ * struct nevent internal representation.  An event is created when you do       *
  * various calls (for reading, writing, connecting, timers, etc) and is    *
  * provided back to you in the callback when the call completes or         *
  * fails. It is automatically destroyed after the callback returns         *
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2015 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -31,8 +31,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -57,7 +56,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_event.c 32741 2014-02-20 18:44:12Z dmiller $ */
+/* $Id: nsock_event.c 34756 2015-06-27 08:21:53Z henri $ */
 
 #include "nsock_internal.h"
 #include "nsock_log.h"
@@ -73,38 +72,38 @@ extern struct timeval nsock_tod;
 
 /* Find the type of an event that spawned a callback */
 enum nse_type nse_type(nsock_event nse) {
-  msevent *me = (msevent *)nse;
+  struct nevent *me = (struct nevent *)nse;
   return me->type;
 }
 
 enum nse_status nse_status(nsock_event nse) {
-  msevent *me = (msevent *)nse;
+  struct nevent *me = (struct nevent *)nse;
   return me->status;
 }
 
 int nse_eof(nsock_event nse) {
-  msevent *me = (msevent *)nse;
+  struct nevent *me = (struct nevent *)nse;
   return me->eof;
 }
 
 /* Obtains the nsock_iod (see below) associated with the event.  Note that
  * some events (such as timers) don't have an nsock_iod associated with them */
 nsock_iod nse_iod(nsock_event ms_event) {
-  msevent *nse = (msevent *)ms_event;
+  struct nevent *nse = (struct nevent *)ms_event;
   return (nsock_iod) nse->iod;
 }
 
 /* This next function returns the errno style error code -- which is only valid
  * if the status is NSE_STATUS_ERROR */
 int nse_errorcode(nsock_event nse) {
-  msevent *me = (msevent *)nse;
+  struct nevent *me = (struct nevent *)nse;
   return me->errnum;
 }
 
 /* Every event has an ID which will be unique throughout the program's execution
  * unless you use (literally) billions of them */
 nsock_event_id nse_id(nsock_event nse) {
-  msevent *me = (msevent *)nse;
+  struct nevent *me = (struct nevent *)nse;
   return me->id;
 }
 
@@ -112,14 +111,14 @@ nsock_event_id nse_id(nsock_event nse) {
  * provides the buffer that was read in as well as the number of chars read.
  * The buffer should not be modified or free'd */
 char *nse_readbuf(nsock_event nse, int *nbytes) {
-  msevent *me = (msevent *)nse;
+  struct nevent *me = (struct nevent *)nse;
 
   if (nbytes)
     *nbytes = fs_length(&(me->iobuf));
   return fs_str(&(me->iobuf));
 }
 
-static void first_ev_next(msevent *nse, gh_lnode_t **first, int nodeq2) {
+static void first_ev_next(struct nevent *nse, gh_lnode_t **first, int nodeq2) {
   if (!first || !*first)
     return;
 
@@ -128,12 +127,12 @@ static void first_ev_next(msevent *nse, gh_lnode_t **first, int nodeq2) {
 
     next = gh_lnode_next(*first);
     if (next) {
-      msevent *newevent;
+      struct nevent *newevent;
 
       if (nodeq2)
-        newevent = lnode_msevent2(next);
+        newevent = lnode_nevent2(next);
       else
-        newevent = lnode_msevent(next);
+        newevent = lnode_nevent(next);
 
       if (newevent->iod == nse->iod)
         *first = next;
@@ -145,7 +144,7 @@ static void first_ev_next(msevent *nse, gh_lnode_t **first, int nodeq2) {
   }
 }
 
-void update_first_events(msevent *nse) {
+void update_first_events(struct nevent *nse) {
   switch (get_event_id_type(nse->id)) {
     case NSE_TYPE_CONNECT:
     case NSE_TYPE_CONNECT_SSL:
@@ -184,17 +183,17 @@ void update_first_events(msevent *nse) {
  * step.  This function returns zero if the event is not found, nonzero
  * otherwise. */
 int nsock_event_cancel(nsock_pool ms_pool, nsock_event_id id, int notify) {
-  mspool *nsp = (mspool *)ms_pool;
+  struct npool *nsp = (struct npool *)ms_pool;
   enum nse_type type;
   unsigned int i;
   gh_list_t *event_list = NULL, *event_list2 = NULL;
   gh_lnode_t *current, *next;
-  msevent *nse = NULL;
+  struct nevent *nse = NULL;
 
   assert(nsp);
 
   type = get_event_id_type(id);
-  nsock_log_info(nsp, "Event #%li (type %s) cancelled", id, nse_type2str(type));
+  nsock_log_info("Event #%li (type %s) cancelled", id, nse_type2str(type));
 
   /* First we figure out what list it is in */
   switch (type) {
@@ -216,9 +215,9 @@ int nsock_event_cancel(nsock_pool ms_pool, nsock_event_id id, int notify) {
         gh_hnode_t *hnode;
 
         hnode = gh_heap_find(&nsp->expirables, i);
-        nse = container_of(hnode, msevent, expire);
+        nse = container_of(hnode, struct nevent, expire);
         if (nse->id == id)
-          return msevent_cancel(nsp, nse, NULL, NULL, notify);
+          return nevent_delete(nsp, nse, NULL, NULL, notify);
       }
       return 0;
 
@@ -236,7 +235,7 @@ int nsock_event_cancel(nsock_pool ms_pool, nsock_event_id id, int notify) {
   /* Now we try to find the event in the list */
   for (current = gh_list_first_elem(event_list); current != NULL; current = next) {
     next = gh_lnode_next(current);
-    nse = lnode_msevent(current);
+    nse = lnode_nevent(current);
     if (nse->id == id)
       break;
   }
@@ -245,7 +244,7 @@ int nsock_event_cancel(nsock_pool ms_pool, nsock_event_id id, int notify) {
     event_list = event_list2;
     for (current = gh_list_first_elem(event_list); current != NULL; current = next) {
       next = gh_lnode_next(current);
-      nse = lnode_msevent2(current);
+      nse = lnode_nevent2(current);
       if (nse->id == id)
         break;
     }
@@ -253,17 +252,17 @@ int nsock_event_cancel(nsock_pool ms_pool, nsock_event_id id, int notify) {
   if (current == NULL)
     return 0;
 
-  return msevent_cancel(nsp, nse, event_list, current, notify);
+  return nevent_delete(nsp, nse, event_list, current, notify);
 }
 
 /* An internal function for cancelling an event when you already have a pointer
- * to the msevent (use nsock_event_cancel if you just have an ID). The
+ * to the struct nevent (use nsock_event_cancel if you just have an ID). The
  * event_list passed in should correspond to the type of the event. For example,
  * with NSE_TYPE_READ, you would pass in &nsp->read_events;. elem is the list
  * element in event_list which holds the event.  Pass a nonzero for notify if
  * you want the program owning the event to be notified that it has been
  * cancelled */
-int msevent_cancel(mspool *nsp, msevent *nse, gh_list_t *event_list,
+int nevent_delete(struct npool *nsp, struct nevent *nse, gh_list_t *event_list,
                    gh_lnode_t *elem, int notify) {
   if (nse->event_done) {
     /* This event has already been marked for death somewhere else -- it will be
@@ -272,8 +271,8 @@ int msevent_cancel(mspool *nsp, msevent *nse, gh_list_t *event_list,
     return 0;
   }
 
-  nsock_log_info(nsp, "msevent_cancel on event #%li (type %s)",
-                 nse->id, nse_type2str(nse->type));
+  nsock_log_info("%s on event #%li (type %s)", __func__, nse->id,
+                 nse_type2str(nse->type));
 
   /* Now that we found the event... we go through the motions of cleanly
    * cancelling it */
@@ -317,12 +316,12 @@ int msevent_cancel(mspool *nsp, msevent *nse, gh_list_t *event_list,
 
   gh_list_append(&nsp->free_events, &nse->nodeq_io);
 
-  nsock_log_debug_all(nsp, "NSE #%lu: Removing event from list", nse->id);
+  nsock_log_debug_all("NSE #%lu: Removing event from list", nse->id);
 
 #if HAVE_PCAP
 #if PCAP_BSD_SELECT_HACK
   if (nse->type == NSE_TYPE_PCAP_READ) {
-    nsock_log_debug_all(nsp, "PCAP NSE #%lu: CANCEL TEST pcap=%p read=%p curr=%p sd=%i",
+    nsock_log_debug_all("PCAP NSE #%lu: CANCEL TEST pcap=%p read=%p curr=%p sd=%i",
                         nse->id, &nsp->pcap_read_events, &nsp->read_events,
                         event_list,((mspcap *)nse->iod->pcap)->pcap_desc);
 
@@ -334,7 +333,7 @@ int msevent_cancel(mspool *nsp, msevent *nse, gh_list_t *event_list,
       /* event is done, list is read_events and we're in BSD_HACK mode. So unlink
        * event from pcap_read_events */
       gh_list_remove(&nsp->pcap_read_events, &nse->nodeq_pcap);
-      nsock_log_debug_all(nsp, "PCAP NSE #%lu: Removing event from PCAP_READ_EVENTS", nse->id);
+      nsock_log_debug_all("PCAP NSE #%lu: Removing event from PCAP_READ_EVENTS", nse->id);
     }
 
     if (((mspcap *)nse->iod->pcap)->pcap_desc >= 0 && event_list == &nsp->pcap_read_events) {
@@ -342,12 +341,12 @@ int msevent_cancel(mspool *nsp, msevent *nse, gh_list_t *event_list,
        * So unlink event from read_events */
       gh_list_remove(&nsp->read_events, &nse->nodeq_io);
 
-      nsock_log_debug_all(nsp, "PCAP NSE #%lu: Removing event from READ_EVENTS", nse->id);
+      nsock_log_debug_all("PCAP NSE #%lu: Removing event from READ_EVENTS", nse->id);
     }
   }
 #endif
 #endif
-  msevent_dispatch_and_delete(nsp, nse, notify);
+  event_dispatch_and_delete(nsp, nse, notify);
   return 1;
 }
 
@@ -355,7 +354,7 @@ int msevent_cancel(mspool *nsp, msevent *nse, gh_list_t *event_list,
  * nonzero) and then deletes the event.  This function does NOT delete the event
  * from any lists it might be on (eg nsp->read_list etc.) nse->event_done
  * MUST be true when you call this */
-void msevent_dispatch_and_delete(mspool *nsp, msevent *nse, int notify) {
+void event_dispatch_and_delete(struct npool *nsp, struct nevent *nse, int notify) {
   assert(nsp);
   assert(nse);
 
@@ -377,7 +376,7 @@ void msevent_dispatch_and_delete(mspool *nsp, msevent *nse, int notify) {
   /* FIXME: We should be updating stats here ... */
 
   /* Now we clobber the event ... */
-  msevent_delete(nsp, nse);
+  event_delete(nsp, nse);
 }
 
 /* OK -- the idea is that we want the type included in the rightmost two bits
@@ -386,7 +385,7 @@ void msevent_dispatch_and_delete(mspool *nsp, msevent *nse, int notify) {
  * definition of a "correct" wraparound is that it goes from the highest number
  * back to one (not zero) because we don't want event numbers to ever be zero.
  * */
-nsock_event_id get_new_event_id(mspool *ms, enum nse_type type) {
+nsock_event_id get_new_event_id(struct npool *ms, enum nse_type type) {
   int type_code = (int)type;
   unsigned long serial = ms->next_event_serial++;
   unsigned long max_serial_allowed;
@@ -409,31 +408,31 @@ enum nse_type get_event_id_type(nsock_event_id event_id) {
   return (enum nse_type)((event_id & ((1 << TYPE_CODE_NUM_BITS) - 1)));
 }
 
-
-/* Create a new event structure -- must be deleted later with msevent_delete,
- * unless it returns NULL (failure).  NULL can be passed in for the msiod and
- * the userdata if not available */
-msevent *msevent_new(mspool *nsp, enum nse_type type, msiod *msiod, int timeout_msecs,
-                     nsock_ev_handler handler, void *userdata) {
-  msevent *nse;
+/* Create a new event structure -- must be deleted later with event_delete,
+ * unless it returns NULL (failure).  NULL can be passed in for the struct niod
+ * and the userdata if not available */
+struct nevent *event_new(struct npool *nsp, enum nse_type type,
+                           struct niod *iod, int timeout_msecs,
+                           nsock_ev_handler handler, void *userdata) {
+  struct nevent *nse;
   gh_lnode_t *lnode;
 
   /* Bring us up to date for the timeout calculation. */
   gettimeofday(&nsock_tod, NULL);
 
-  if (msiod) {
-    msiod->events_pending++;
-    assert(msiod->state != NSIOD_STATE_DELETED);
+  if (iod) {
+    iod->events_pending++;
+    assert(iod->state != NSIOD_STATE_DELETED);
   }
 
   /* First we check if one is available from the free list ... */
   lnode = gh_list_pop(&nsp->free_events);
   if (!lnode)
-    nse = (msevent *)safe_malloc(sizeof(msevent));
+    nse = (struct nevent *)safe_malloc(sizeof(*nse));
   else
-    nse = lnode_msevent(lnode);
+    nse = lnode_nevent(lnode);
 
-  memset(nse, 0, sizeof(msevent));
+  memset(nse, 0, sizeof(*nse));
 
   nse->id = get_new_event_id(nsp, type);
   nse->type = type;
@@ -451,8 +450,8 @@ msevent *msevent_new(mspool *nsp, enum nse_type type, msiod *msiod, int timeout_
     mspcap *mp;
     int sz;
 
-    assert(msiod != NULL);
-    mp = (mspcap *)msiod->pcap;
+    assert(iod != NULL);
+    mp = (mspcap *)iod->pcap;
     assert(mp);
 
     sz = mp->snaplen+1 + sizeof(nsock_pcap);
@@ -465,27 +464,27 @@ msevent *msevent_new(mspool *nsp, enum nse_type type, msiod *msiod, int timeout_
     TIMEVAL_MSEC_ADD(nse->timeout, nsock_tod, timeout_msecs);
   }
 
-  nse->iod = msiod;
+  nse->iod = iod;
   nse->handler = handler;
   nse->userdata = userdata;
 
   if (nse->iod == NULL)
-    nsock_log_debug(nsp, "msevent_new (IOD #NULL) (EID #%li)", nse->id);
+    nsock_log_debug("%s (IOD #NULL) (EID #%li)", __func__, nse->id);
   else
-    nsock_log_debug(nsp, "msevent_new (IOD #%li) (EID #%li)", nse->iod->id,
+    nsock_log_debug("%s (IOD #%li) (EID #%li)", __func__, nse->iod->id,
                     nse->id);
   return nse;
 }
 
-/* Free an msevent which was allocated with msevent_new, including all internal
+/* Free an struct nevent which was allocated with event_new, including all internal
  * resources.  Note -- we assume that nse->iod->events_pending (if it exists)
- * has ALREADY been decremented (done during msevent_dispatch_and_delete) -- so
- * remember to do this if you call msevent_delete() directly */
-void msevent_delete(mspool *nsp, msevent *nse) {
+ * has ALREADY been decremented (done during event_dispatch_and_delete) -- so
+ * remember to do this if you call event_delete() directly */
+void event_delete(struct npool *nsp, struct nevent *nse) {
   if (nse->iod == NULL)
-    nsock_log_debug(nsp, "msevent_delete (IOD #NULL) (EID #%li)", nse->id);
+    nsock_log_debug("%s (IOD #NULL) (EID #%li)", __func__, nse->id);
   else
-    nsock_log_debug(nsp, "msevent_delete (IOD #%li) (EID #%li)", nse->iod->id, nse->id);
+    nsock_log_debug("%s (IOD #%li) (EID #%li)", __func__, nse->iod->id, nse->id);
 
   /* First free the IOBuf inside it if necessary */
   if (nse->type == NSE_TYPE_READ || nse->type ==  NSE_TYPE_WRITE) {
@@ -494,7 +493,7 @@ void msevent_delete(mspool *nsp, msevent *nse) {
   #if HAVE_PCAP
   if (nse->type == NSE_TYPE_PCAP_READ) {
     fs_free(&nse->iobuf);
-    nsock_log_debug_all(nsp, "PCAP removed %lu", nse->id);
+    nsock_log_debug_all("PCAP removed %lu", nse->id);
   }
   #endif
 
@@ -535,7 +534,7 @@ const char *nse_status2str(enum nse_status status) {
   }
 }
 
-int msevent_timedout(msevent *nse) {
+int event_timedout(struct nevent *nse) {
   if (nse->event_done)
     return 0;
 

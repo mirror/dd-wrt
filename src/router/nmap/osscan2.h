@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -97,8 +97,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -119,7 +118,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -128,12 +127,16 @@
 #ifndef OSSCAN2_H
 #define OSSCAN2_H
 
-#include "nmap.h"
-#include "global_structures.h"
 #include "nbase.h"
+#include <dnet.h>
+
 #include <vector>
 #include <list>
-#include "Target.h"
+#include "timing.h"
+#include "tcpip.h"
+struct FingerPrint;
+struct FingerTest;
+class FingerPrintResultsIPv4;
 class Target;
 
 
@@ -161,11 +164,63 @@ class Target;
 // between probes, leaving 500MS between 1st and 6th.
 #define OS_SEQ_PROBE_DELAY 100
 
+/* How many syn packets do we send to TCP sequence a host? */
+#define NUM_SEQ_SAMPLES 6
+
+/* TCP Timestamp Sequence */
+#define TS_SEQ_UNKNOWN 0
+#define TS_SEQ_ZERO 1 /* At least one of the timestamps we received back was 0 */
+#define TS_SEQ_2HZ 2
+#define TS_SEQ_100HZ 3
+#define TS_SEQ_1000HZ 4
+#define TS_SEQ_OTHER_NUM 5
+#define TS_SEQ_UNSUPPORTED 6 /* System didn't send back a timestamp */
+
+#define IPID_SEQ_UNKNOWN 0
+#define IPID_SEQ_INCR 1  /* simple increment by one each time */
+#define IPID_SEQ_BROKEN_INCR 2 /* Stupid MS -- forgot htons() so it
+                                  counts by 256 on little-endian platforms */
+#define IPID_SEQ_RPI 3 /* Goes up each time but by a "random" positive
+                          increment */
+#define IPID_SEQ_RD 4 /* Appears to select IPID using a "random" distributions (meaning it can go up or down) */
+#define IPID_SEQ_CONSTANT 5 /* Contains 1 or more sequential duplicates */
+#define IPID_SEQ_ZERO 6 /* Every packet that comes back has an IP.ID of 0 (eg Linux 2.4 does this) */
+#define IPID_SEQ_INCR_BY_2 7 /* simple increment by two each time */
+
 
 /******************************************************************************
  * TYPE AND STRUCTURE DEFINITIONS                                             *
  ******************************************************************************/
 
+struct seq_info {
+  int responses;
+  int ts_seqclass; /* TS_SEQ_* defines in nmap.h */
+  int ipid_seqclass; /* IPID_SEQ_* defines in nmap.h */
+  u32 seqs[NUM_SEQ_SAMPLES];
+  u32 timestamps[NUM_SEQ_SAMPLES];
+  int index;
+  u16 ipids[NUM_SEQ_SAMPLES];
+  long lastboot; /* 0 means unknown */
+};
+
+/* Different kinds of Ipids. */
+struct ipid_info {
+  u32 tcp_ipids[NUM_SEQ_SAMPLES];
+  u32 tcp_closed_ipids[NUM_SEQ_SAMPLES];
+  u32 icmp_ipids[NUM_SEQ_SAMPLES];
+};
+
+struct udpprobeinfo {
+  u16 iptl;
+  u16 ipid;
+  u16 ipck;
+  u16 sport;
+  u16 dport;
+  u16 udpck;
+  u16 udplen;
+  u8 patternbyte;
+  struct in_addr target;
+};
 
 typedef enum OFProbeType {
   OFP_UNSET,
@@ -193,6 +248,12 @@ int get_diffs(u32 *ipid_diffs, int numSamples, u32 *ipids, int islocalhost);
 int get_ipid_sequence_16(int numSamples, u32 *ipids, int islocalhost);
 int get_ipid_sequence_32(int numSamples, u32 *ipids, int islocalhost);
 
+const char *ipidclass2ascii(int seqclass);
+const char *tsseqclass2ascii(int seqclass);
+
+/* Convert a TCP sequence prediction difficulty index like 1264386
+   into a difficulty string like "Worthy Challenge */
+const char *seqidx2difficultystr(unsigned long idx);
 /******************************************************************************
  * CLASS DEFINITIONS                                                          *
  ******************************************************************************/
@@ -238,7 +299,7 @@ class OFProbe {
 class HostOsScanStats {
 
  friend class HostOsScan;
- 
+
  public:
   HostOsScanStats(Target *t);
   ~HostOsScanStats();
@@ -528,7 +589,7 @@ class OSScan {
   int chunk_and_do_scan(std::vector<Target *> &Targets, int family);
   int os_scan_ipv4(std::vector<Target *> &Targets);
   int os_scan_ipv6(std::vector<Target *> &Targets);
-        
+
   public:
    OSScan();
    ~OSScan();

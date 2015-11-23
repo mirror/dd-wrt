@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,7 +116,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -134,7 +133,7 @@
 
 extern NpingOps o;
 extern EchoServer es;
-  
+
 EchoServer::EchoServer() {
   this->reset();
 } /* End of EchoServer constructor */
@@ -181,7 +180,7 @@ NEPContext *EchoServer::getClientContext(clientid_t clnt){
 NEPContext *EchoServer::getClientContext(nsock_iod iod){
   nping_print(DBG_4, "%s()", __func__);
   clientid_t *id=NULL;
-  if( (id=(clientid_t *)nsi_getud(iod))==NULL )
+  if( (id=(clientid_t *)nsock_iod_get_udata(iod))==NULL )
     return NULL;
   else
     return this->getClientContext(*id);
@@ -265,7 +264,7 @@ int EchoServer::nep_listen_socket(){
      * this port in a previous execution, not long ago. */
     if( setsockopt(master_sd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int))!=0 )
         nping_warning(QT_3, "Failed to set SO_REUSEADDR on master socket.");
-      
+
     memset(&server_addr6, 0, sizeof(struct sockaddr_in6));
     server_addr6.sin6_addr = (o.spoofSource()) ? o.getIPv6SourceAddress() : in6addr_any;
     server_addr6.sin6_family = AF_INET6;
@@ -297,7 +296,7 @@ int EchoServer::nep_listen_socket(){
     /* Obtain a regular TCP socket for IPv4 */
     if( (master_sd=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))<0 )
         nping_fatal(QT_3, "Could not obtain AF_INET/SOCK_STREAM/IPPROTO_TCP socket");
-        
+
     /* Set SO_REUSEADDR on socket so the bind does not fail if we had used
      * this port in a previous execution, not long ago. */
     if( setsockopt(master_sd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int))!=0 )
@@ -311,7 +310,7 @@ int EchoServer::nep_listen_socket(){
 #ifdef HAVE_SOCKADDR_IN_SIN_LEN
     server_addr4.sin_len = sizeof(struct sockaddr_in);
 #endif
-    
+
     /* Bind to local address and the specified port */
     if( bind(master_sd, (struct sockaddr *)&server_addr4, sizeof(server_addr4)) != 0 ){
         nping_warning(QT_3, "Failed to bind to source address %s. Trying to bind to port %d...", IPtoa(server_addr4.sin_addr), port);
@@ -584,7 +583,7 @@ clientid_t EchoServer::nep_match_headers(IPv4Header *ip4, IPv6Header *ip6, TCPHe
         minimum_score=MIN_ACCEPTABLE_SCORE_ICMP;
     else
         minimum_score=10000;
-        
+
     /* Check if we managed to match packet and client */
     if (candidate>=0 && candidate_score>=minimum_score){
         nping_print(DBG_2, "%s() Packet matched successfully with client #%d", __func__, candidate);
@@ -733,7 +732,7 @@ clientid_t EchoServer::nep_match_packet(const u8 *pkt, size_t pktlen){
                     }
                 }
             break;
-            
+
             default:
                 return CLIENT_NOT_FOUND;
             break;
@@ -1062,7 +1061,7 @@ int EchoServer::nep_packetspec_handler(nsock_pool nsp, nsock_event nse, void *pa
   /* At this point, we consider the NEP session fully established and therefore
    * we update the count of served clients */
   o.stats.addEchoClientServed();
-  
+
   return OP_SUCCESS;
 } /* End of nep_packetspec_handler() */
 
@@ -1089,7 +1088,7 @@ int EchoServer::nep_session_ended_handler(nsock_pool nsp, nsock_event nse, void 
     else
         nping_print(DBG_2, "Deleted client #%d context.", clnt);
   }
-  nsi_delete(nsi, NSOCK_PENDING_SILENT);
+  nsock_iod_delete(nsi, NSOCK_PENDING_SILENT);
 
   /* Exit the server if --once has been set */
   if(o.once()){
@@ -1165,7 +1164,7 @@ int EchoServer::parse_hs_client(u8 *pkt, size_t pktlen, NEPContext *ctx){
   nping_print(DBG_3,"Session Key MAC_S2C:"); print_hexdump(DBG_3,ctx->getMacKeyS2C(), MAC_KEY_LEN);
   nping_print(DBG_3,"Session Key CIPHER_C2S:"); print_hexdump(DBG_3,ctx->getCipherKeyC2S(), MAC_KEY_LEN);
   nping_print(DBG_3,"Session Key CIPHER_S2C:"); print_hexdump(DBG_3,ctx->getCipherKeyS2C(), MAC_KEY_LEN);
-  
+
 
   /* Decrypt the encrypted part of the message before validating the MAC */
   if((next_iv=h.decrypt(ctx->getCipherKeyC2S(), CIPHER_KEY_LEN, ctx->getClientNonce(), TYPE_NEP_HANDSHAKE_CLIENT))==NULL){
@@ -1366,7 +1365,7 @@ int EchoServer::generate_ready(EchoHeader *h, NEPContext *ctx){
   if( (next_iv=h->encrypt(ctx->getCipherKeyS2C(), CIPHER_KEY_LEN, ctx->getNextEncryptionIV()))==NULL )
       return OP_FAILURE;
   ctx->setNextEncryptionIV(next_iv);
-  
+
   return OP_SUCCESS;
 } /* End of generate_ready() */
 
@@ -1392,7 +1391,7 @@ int EchoServer::generate_echo(EchoHeader *h, const u8 *pkt, size_t pktlen, NEPCo
   }else{
     /* Determine where the application data starts */
     int offset=PacketParser::payload_offset(pkt, pktlen, false);
-    
+
     /* If the packet does not have application data, don't touch it */
     if(offset==0){
         nping_print(DBG_3, "No payload found. Echoing the whole packet\n");
@@ -1446,20 +1445,20 @@ int EchoServer::start() {
   int rc;
 
   /* Create a new nsock pool */
-  if ((nsp = nsp_new(NULL)) == NULL)
+  if ((nsp = nsock_pool_new(NULL)) == NULL)
     nping_fatal(QT_3, "Failed to create new pool.  QUITTING.\n");
 
   /* Set nsock trace level */
   gettimeofday(&now, NULL);
   if( o.getDebugging() == DBG_5 )
-    nsock_set_loglevel(nsp, NSOCK_LOG_INFO);
+    nsock_set_loglevel(NSOCK_LOG_INFO);
   else if( o.getDebugging() > DBG_5 )
-    nsock_set_loglevel(nsp, NSOCK_LOG_DBG_ALL);
+    nsock_set_loglevel(NSOCK_LOG_DBG_ALL);
 
   /* Create new IOD for pcap */
-  if ((pcap_nsi = nsi_new(nsp, NULL)) == NULL)
+  if ((pcap_nsi = nsock_iod_new(nsp, NULL)) == NULL)
     nping_fatal(QT_3, "Failed to create new nsock_iod.  QUITTING.\n");
-        
+
   /* Open pcap */
   nping_print(DBG_2,"Opening pcap device %s", o.getDevice());
   Strncpy(pcapdev, o.getDevice(), sizeof(pcapdev));
@@ -1487,11 +1486,11 @@ int EchoServer::start() {
                 return OP_FAILURE;
             }
             *idpnt=this->getNewClientID();
-            if( (client_nsi=nsi_new2(nsp, client_sd, idpnt))==NULL ){
+            if( (client_nsi=nsock_iod_new2(nsp, client_sd, idpnt))==NULL ){
                 nping_warning(QT_2, "Not enough memory for new clients.");
                 return OP_FAILURE;
             }else{
-                close(client_sd); /* nsi_new2() dups the socket */
+                close(client_sd); /* nsock_iod_new2() dups the socket */
             }
 
             /* Stop listening if --once is enabled */

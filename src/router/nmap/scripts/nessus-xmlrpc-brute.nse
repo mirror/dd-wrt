@@ -24,7 +24,7 @@ Performs brute force password auditing against a Nessus vulnerability scanning d
 
 author = "Patrik Karlsson"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"intrusive", "brute"}
 
@@ -83,7 +83,7 @@ Driver =
     local status, response = authenticate(self.host, self.port, username, password)
     if ( status and response ) then
       if ( response:match("^HTTP/1.1 200 OK.*<status>OK</status>") ) then
-        return true, brute.Account:new(username, password, creds.State.VALID)
+        return true, creds.Account:new(username, password, creds.State.VALID)
       elseif ( response:match("^HTTP/1.1 200 OK.*<status>ERROR</status>") ) then
         return false, brute.Error:new("incorrect login")
       end
@@ -96,7 +96,7 @@ Driver =
   disconnect = function( self ) return true end,
 }
 
-local function fail(err) return ("\n  ERROR: %s"):format(err or "") end
+local function fail(err) return stdnse.format_output(false, err) end
 
 action = function(host, port)
 

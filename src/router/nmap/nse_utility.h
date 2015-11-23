@@ -1,7 +1,8 @@
 #ifndef NMAP_NSE_UTILITY_H
 #define NMAP_NSE_UTILITY_H
 
-#include "portlist.h"
+class Port;
+class Target;
 
 #if HAVE_STDINT_H
 #include <stdint.h>
@@ -147,3 +148,4 @@ Target *nseU_gettarget (lua_State *L, int idx);
 Port *nseU_getport (lua_State *L, Target *target, Port *port, int idx);
 
 #endif
+

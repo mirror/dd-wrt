@@ -81,7 +81,7 @@ impact the system, besides showing a message box to the user.
 
 author = "Ron Bowes"
 copyright = "Ron Bowes"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "intrusive"}
 dependencies = {"smb-brute"}
 
@@ -105,10 +105,10 @@ end
 
 function psl_print (psl, lvl)
   -- Print out table header.
-  local result = ""
+  local result = {}
   if lvl == 2 then
-    result = result .. " PID  PPID  Priority Threads Handles\n"
-    result = result .. "----- ----- -------- ------- -------\n"
+    result[#result+1] = " PID  PPID  Priority Threads Handles\n"
+    result[#result+1] = "----- ----- -------- ------- -------\n"
   end
 
   -- Find how many root processes there are.
@@ -129,13 +129,13 @@ function psl_print (psl, lvl)
   -- Print out each root of the tree.
   for i, root in ipairs(roots) do
     local mode = psl_mode(roots, i)
-    result = result .. psl_tree(psl, root, 0, bars, mode, lvl)
+    psl_tree(psl, root, 0, bars, mode, lvl, result)
   end
 
-  return result
+  return table.concat(result)
 end
 
-function psl_tree (psl, pid, column, bars, mode, lvl)
+function psl_tree (psl, pid, column, bars, mode, lvl, result)
   local ps = psl[pid]
 
   -- Delete vertical sibling link.
@@ -146,23 +146,13 @@ function psl_tree (psl, pid, column, bars, mode, lvl)
   -- Print information table.
   local info = ""
   if lvl == 2 then
-    info = info .. string.format("% 5d ", ps.pid)
-    info = info .. string.format("% 5d ", ps.ppid)
-    info = info .. string.format("% 8d ", ps.prio)
-    info = info .. string.format("% 7d ", ps.thrd)
-    info = info .. string.format("% 7d ", ps.hndl)
+    info = string.format("% 5d % 5d % 8d % 7d % 7d ", ps.pid, ps.ppid, ps.prio, ps.thrd, ps.hndl)
   end
 
   -- Print vertical sibling bars.
   local prefix = ""
-  local i = 1
-  for j = 1, column do
-    if bars[i] == j then
-      prefix = prefix .. "|"
-      i = i + 1
-    else
-      prefix = prefix .. " "
-    end
+  for i=1, #bars do
+    prefix = prefix .. string.rep(" ", bars[i] - 1) .. "|"
   end
 
   -- Strings used to separate processes from one another.
@@ -174,7 +164,7 @@ function psl_tree (psl, pid, column, bars, mode, lvl)
   }
 
   -- Format process itself.
-  local result = "\n" .. info .. prefix .. separators[mode] .. ps.name
+  result[#result+1] = "\n" .. info .. prefix .. separators[mode] .. ps.name
 
   -- Find children of the process.
   local children = {}
@@ -194,7 +184,7 @@ function psl_tree (psl, pid, column, bars, mode, lvl)
   -- Format process's children.
   for i, pid in ipairs(children) do
     local mode = psl_mode(children, i)
-    result = result .. psl_tree(psl, pid, column, bars, mode, lvl)
+    psl_tree(psl, pid, column, bars, mode, lvl, result)
   end
 
   return result
@@ -208,11 +198,7 @@ action = function(host)
   -- Get the process list
   local status, result = msrpcperformance.get_performance_data(host, "230")
   if status == false then
-    if nmap.debugging() > 0 then
-      return "ERROR: " .. result
-    else
-      return nil
-    end
+    return stdnse.format_output(false, result)
   end
 
   -- Get the process table

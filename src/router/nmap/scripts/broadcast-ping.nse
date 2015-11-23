@@ -1,9 +1,9 @@
 local bin = require "bin"
 local coroutine = require "coroutine"
+local ipOps = require "ipOps"
 local nmap = require "nmap"
 local packet = require "packet"
 local stdnse = require "stdnse"
-local string = require "string"
 local tab = require "tab"
 local table = require "table"
 local target = require "target"
@@ -12,8 +12,10 @@ local openssl = stdnse.silent_require "openssl"
 
 description = [[
 Sends broadcast pings on a selected interface using raw ethernet packets and
-outputs the responding hosts' IP and MAC addresses or (if requested) adds them as targets.  Root privileges on UNIX are required to run this script since it uses raw sockets.  Most operating systems don't respond to broadcast-ping probes,
-but they can be configured to do so.
+outputs the responding hosts' IP and MAC addresses or (if requested) adds them
+as targets.  Root privileges on UNIX are required to run this script since it
+uses raw sockets.  Most operating systems don't respond to broadcast-ping
+probes, but they can be configured to do so.
 
 The interface on which is broadcasted can be specified using the -e Nmap option
 or the <code>broadcast-ping.interface</code> script-arg. If no interface is
@@ -55,7 +57,7 @@ is 0. The payload is consisted of random bytes.
 --
 
 author = "Gorjan Petrovski"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery","safe","broadcast"}
 
 
@@ -63,14 +65,14 @@ prerule = function()
   if not nmap.is_privileged() then
     nmap.registry[SCRIPT_NAME] = nmap.registry[SCRIPT_NAME] or {}
     if not nmap.registry[SCRIPT_NAME].rootfail then
-      stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+      stdnse.verbose1("not running for lack of privileges.")
     end
     nmap.registry[SCRIPT_NAME].rootfail = true
     return nil
   end
 
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_debug("%s is IPv4 compatible only.", SCRIPT_NAME)
+    stdnse.debug1("is IPv4 compatible only.")
     return false
   end
 
@@ -99,38 +101,33 @@ local icmp_packet = function(srcIP, dstIP, ttl, data_length, mtu, seqNo, icmp_id
     icmp_payload = ""
   end
 
-  local seqNo_hex = stdnse.tohex(seqNo)
-  local icmp_seqNo = bin.pack(">H", string.rep("0",(4-seqNo_hex))..seqNo_hex)
-
   -- Type=08; Code=00; Chksum=0000; ID=icmp_id; SeqNo=icmp_seqNo; Payload=icmp_payload(hex string);
-  local icmp_tmp = bin.pack(">HAAA", "0800 0000", icmp_id, icmp_seqNo, icmp_payload)
+  local icmp_msg = bin.pack(">CCSASA", 8, 0, 0, icmp_id, seqNo, icmp_payload)
 
-  local icmp_checksum = packet.in_cksum(icmp_tmp)
+  local icmp_checksum = packet.in_cksum(icmp_msg)
 
-  local icmp_msg = bin.pack(">HHAAA", "0800", stdnse.tohex(icmp_checksum), icmp_id, icmp_seqNo, icmp_payload)
+  icmp_msg = bin.pack(">CCSASA", 8, 0, icmp_checksum, icmp_id, seqNo, icmp_payload)
 
-
-  --IP Total Length
-  local length_hex =  stdnse.tohex(20 + #icmp_msg)
-  local ip_length = bin.pack(">H", string.rep("0",(4-#length_hex))..length_hex)
-
-  --TTL
-  local ttl_hex = stdnse.tohex(ttl)
-  local ip_ttl = bin.pack(">H", string.rep("0",(2-ttl_hex))..ttl_hex)
 
   --IP header
-  local ip_bin = bin.pack(">HAHAH","4500",ip_length, "0000 4000", ip_ttl,
-    "01 0000 0000 0000 0000 0000")
+  local ip_bin = bin.pack(">ASSACCx10", -- x10 = checksum & addresses
+    "\x45\x00", -- IPv4, no options, no DSCN, no ECN
+    20 + #icmp_msg, -- total length
+    0, -- IP ID
+    "\x40\x00", -- DF
+    ttl,
+    1 -- ICMP
+    )
 
   -- IP+ICMP; Addresses and checksum need to be filled
-  local icmp_bin = bin.pack(">AA",ip_bin, icmp_msg)
+  local icmp_bin = ip_bin .. icmp_msg
 
   --Packet
   local icmp = packet.Packet:new(icmp_bin,#icmp_bin)
   assert(icmp,"Mistake during ICMP packet parsing")
 
-  icmp:ip_set_bin_src(packet.iptobin(srcIP))
-  icmp:ip_set_bin_dst(packet.iptobin(dstIP))
+  icmp:ip_set_bin_src(ipOps.ip_to_str(srcIP))
+  icmp:ip_set_bin_dst(ipOps.ip_to_str(dstIP))
   icmp:ip_count_checksum()
 
   return icmp
@@ -176,7 +173,12 @@ local broadcast_if = function(if_table,icmp_responders)
     local icmp = icmp_packet( source_IP, destination_IP, ttl,
     data_length, mtu, sequence_number, icmp_id)
 
-    local ethernet_icmp = bin.pack("HAHA", "FF FF FF FF FF FF", if_table.mac, "08 00", icmp.buf)
+    local ethernet_icmp = (
+      "\xFF\xFF\xFF\xFF\xFF\xFF" -- dst mac
+      .. if_table.mac -- src mac
+      .. "\x08\x00" -- ethertype IPv4
+      .. icmp.buf -- data
+      )
 
     try( dnet:ethernet_send(ethernet_icmp) )
   end
@@ -197,7 +199,7 @@ local broadcast_if = function(if_table,icmp_responders)
         icmp_responders[icmpreply.ip_src] = mac_pretty
       end
     else
-      stdnse.print_debug("Erroneous ICMP packet received; Cannot parse IP header.")
+      stdnse.debug1("Erroneous ICMP packet received; Cannot parse IP header.")
     end
   end
 
@@ -221,7 +223,7 @@ action = function()
     local interface = interface_opt or interface_arg
     local if_table = nmap.get_interface_info(interface)
     if not if_table or not if_table.address or not if_table.link=="ethernet" then
-      stdnse.print_debug("Interface not supported or not properly configured.")
+      stdnse.debug1("Interface not supported or not properly configured.")
       return false
     end
     table.insert(interfaces, if_table)
@@ -237,7 +239,7 @@ action = function()
   end
 
   if #interfaces == 0 then
-    stdnse.print_debug("No interfaces found.")
+    stdnse.debug1("No interfaces found.")
     return
   end
 

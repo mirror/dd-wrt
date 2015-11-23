@@ -36,17 +36,17 @@ This works by sending a PIM Hello message to the PIM multicast address
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "safe", "broadcast"}
 
 prerule = function()
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_verbose("%s is IPv4 only.", SCRIPT_NAME)
+    stdnse.verbose1("is IPv4 only.")
     return false
   end
   if not nmap.is_privileged() then
-    stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges.")
     return false
   end
   return true
@@ -55,21 +55,16 @@ end
 -- Generates a raw PIM Hello message.
 --@return hello Raw PIM Hello message
 local helloRaw = function()
-  -- Version: 2, Type: Hello (0)
-  local hello_raw = bin.pack(">C", 0x20)
-  -- Reserved
-  hello_raw = hello_raw.. bin.pack(">C", 0x00)
-  -- Checksum: Calculated later
-  hello_raw = hello_raw.. bin.pack(">S", 0x0000)
-  -- Options (TLVs)
-  -- Hold time 1 second
-  hello_raw = hello_raw.. bin.pack(">SSS", 0x01, 0x02, 0x01)
-  -- Generation ID: Random
-  hello_raw = hello_raw.. bin.pack(">SSI", 0x14, 0x04, math.random(23456))
-  -- DR Priority: 1
-  hello_raw = hello_raw.. bin.pack(">SSI", 0x13, 0x04, 0x01)
-  -- State fresh capable: Version = 1, interval = 0, Reserved
-  hello_raw = hello_raw.. bin.pack(">SSCCS", 0x15, 0x04, 0x01, 0x00, 0x00)
+  local hello_raw = bin.pack(">CCSAAAA",
+    0x20, -- Version: 2, Type: Hello (0)
+    0x00, -- Reserved
+    0x0000, -- Checksum: Calculated later
+    -- Options (TLVs)
+    bin.pack(">SSS", 0x01, 0x02, 0x01), -- Hold time 1 second
+    bin.pack(">SSI", 0x14, 0x04, math.random(23456)), -- Generation ID: Random
+    bin.pack(">SSI", 0x13, 0x04, 0x01), -- DR Priority: 1
+    bin.pack(">SSCCS", 0x15, 0x04, 0x01, 0x00, 0x00) -- State fresh capable: Version = 1, interval = 0, Reserved
+    )
   -- Calculate checksum
   hello_raw = hello_raw:sub(1,2) .. bin.pack(">S", packet.in_cksum(hello_raw)) .. hello_raw:sub(5)
 
@@ -135,12 +130,12 @@ local getInterface = function(destination)
   local sock = nmap.new_socket()
   local status, err = sock:connect(destination, "12345", "udp")
   if not status then
-    stdnse.print_verbose("%s: %s", SCRIPT_NAME, err)
+    stdnse.verbose1("%s", err)
     return
   end
   local status, address, _, _, _ = sock:get_info()
   if not status then
-    stdnse.print_verbose("%s: %s", SCRIPT_NAME, err)
+    stdnse.verbose1("%s", err)
     return
   end
   for _, interface in pairs(nmap.list_interfaces()) do
@@ -164,10 +159,10 @@ action = function()
     interface = getInterface(mcast)
   end
   if not interface then
-    return ("\n ERROR: Couldn't get interface for %s"):format(mcast)
+    return stdnse.format_output(false, ("Couldn't get interface for %s"):format(mcast))
   end
 
-  stdnse.print_debug("%s: will send via %s interface.", SCRIPT_NAME, interface.shortname)
+  stdnse.debug1("will send via %s interface.", interface.shortname)
 
   -- Launch listener
   stdnse.new_thread(helloListen, interface, timeout, responses)

@@ -3,7 +3,7 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+# * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
 # * also a registered trademark of Insecure.Com LLC.  This program is free  *
 # * software; you may redistribute and/or modify it under the terms of the  *
 # * GNU General Public License as published by the Free Software            *
@@ -94,8 +94,7 @@
 # *                                                                         *
 # * Source is provided to this software because we believe users have a     *
 # * right to know exactly what a program is going to do before they run it. *
-# * This also allows you to audit the software for security holes (none     *
-# * have been found so far).                                                *
+# * This also allows you to audit the software for security holes.          *
 # *                                                                         *
 # * Source code also allows you to port Nmap to new platforms, fix bugs,    *
 # * and add new features.  You are highly encouraged to send your changes   *
@@ -116,7 +115,7 @@
 # * WITHOUT ANY WARRANTY; without even the implied warranty of              *
 # * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
 # * license file for more details (it's in a COPYING file included with     *
-# * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+# * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
 # *                                                                         *
 # ***************************************************************************/
 
@@ -125,8 +124,13 @@ import os
 import os.path
 import time
 import socket
-import StringIO
 import copy
+
+# Use the faster cStringIO if available, fallback on StringIO if not
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 # Prevent loading PyXML
 import xml
@@ -476,7 +480,7 @@ class ParserBasics(object):
                 }
 
         self.ops = NmapOptions()
-        self._nmap_output = None
+        self._nmap_output = StringIO()
 
     def set_xml_is_temp(self, xml_is_temp):
         # This flag is False if a user has specified his own -oX option - in
@@ -498,10 +502,17 @@ class ParserBasics(object):
         self.ops.target_specs = targets
 
     def get_nmap_output(self):
-        return self._nmap_output
+        return self._nmap_output.getvalue()
 
     def set_nmap_output(self, nmap_output):
-        self._nmap_output = nmap_output
+        self._nmap_output.close()
+        del self._nmap_output
+        self._nmap_output = StringIO()
+        self._nmap_output.write(nmap_output)
+
+    def del_nmap_output(self):
+        self._nmap_output.close()
+        del _nmap_output
 
     def get_debugging_level(self):
         return self.nmap.get('debugging', '')
@@ -612,7 +623,8 @@ in epoch format!")
         return ports
 
     def get_formatted_date(self):
-        return time.strftime("%B %d, %Y - %H:%M", self.get_date())
+        return time.strftime("%B %d, %Y - %H:%M", self.get_date()).decode(
+                locale.getpreferredencoding())
 
     def get_scanner(self):
         return self.nmap['nmaprun'].get('scanner', '')
@@ -732,7 +744,7 @@ in epoch format!")
         return ports
 
     profile_name = property(get_profile_name, set_profile_name)
-    nmap_output = property(get_nmap_output, set_nmap_output)
+    nmap_output = property(get_nmap_output, set_nmap_output, del_nmap_output)
     debugging_level = property(get_debugging_level, set_debugging_level)
     verbose_level = property(get_verbose_level, set_verbose_level)
     scaninfo = property(get_scaninfo, set_scaninfo)
@@ -808,8 +820,8 @@ class NmapParserSAX(ParserBasics, ContentHandler):
     def _parse_nmaprun(self, attrs):
         run_tag = "nmaprun"
 
-        if self._nmap_output is None and "nmap_output" in attrs:
-            self._nmap_output = attrs["nmap_output"]
+        if self.nmap_output == "" and "nmap_output" in attrs:
+            self.nmap_output = attrs["nmap_output"]
         self.nmap[run_tag]["profile_name"] = attrs.get("profile_name", "")
         self.nmap[run_tag]["start"] = attrs.get("start", "")
         self.nmap[run_tag]["args"] = attrs.get("args", "")
@@ -1057,12 +1069,12 @@ class NmapParserSAX(ParserBasics, ContentHandler):
 
     def characters(self, content):
         if self.in_interactive_output:
-            self.nmap_output += content
+            self._nmap_output.write(content)
 
     def write_text(self, f):
         """Write the Nmap text output of this object to the file-like object
         f."""
-        if self._nmap_output is None:
+        if self.nmap_output == "":
             return
         f.write(self.nmap_output)
 
@@ -1086,7 +1098,7 @@ class NmapParserSAX(ParserBasics, ContentHandler):
 
     def get_xml(self):
         """Return a string containing the XML representation of this scan."""
-        buffer = StringIO.StringIO()
+        buffer = StringIO()
         self.write_xml(buffer)
         string = buffer.getvalue()
         buffer.close()
@@ -1100,7 +1112,7 @@ class NmapParserSAX(ParserBasics, ContentHandler):
         fd.close()
 
     def _write_output(self, writer):
-        if self._nmap_output is None:
+        if self.nmap_output == "":
             return
         writer.startElement("output", Attributes({"type": "interactive"}))
         writer.characters(self.nmap_output)
@@ -1356,7 +1368,7 @@ class NmapParserSAX(ParserBasics, ContentHandler):
 class OverrideEntityResolver(EntityResolver):
     """This class overrides the default behavior of xml.sax to download
     remote DTDs, instead returning blank strings"""
-    empty = StringIO.StringIO()
+    empty = StringIO()
 
     def resolveEntity(self, publicId, systemId):
         return OverrideEntityResolver.empty

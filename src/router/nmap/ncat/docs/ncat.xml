@@ -327,7 +327,7 @@
           <option>--ssl</option> except that it also requires verification of
           the server certificate. Ncat comes with a default set of trusted
           certificates in the file
-          <filename>ca-bundle.crt</filename><indexterm><primary><filename>ca-bundle.crt</filename></primary></indexterm>.
+          <filename>ca-bundle.crt</filename>.<indexterm><primary><filename>ca-bundle.crt</filename></primary></indexterm>
           Some operating systems provide a default list of
           trusted certificates; these will also be used if available. Use
           <option>--ssl-trustfile</option> to give a custom list. Use
@@ -335,7 +335,7 @@
           verification failures.</para>
 	  <indexterm><primary>revoked certificates</primary><see>certificate revocation</see></indexterm>
 	  <para>Ncat does not check for revoked
-	  certificates<indexterm><primary>certification revocation</primary></indexterm>.</para>
+	  certificates.<indexterm><primary>certification revocation</primary></indexterm></para>
           <para>This option has no effect in server mode.</para>
         </listitem>
       </varlistentry>
@@ -379,6 +379,20 @@
           certificates of certification authorities, though it may also contain
           server certificates directly. When this option is used, Ncat does not
           use its default certificates.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--ssl-ciphers <replaceable>cipherlist</replaceable></option> (Specify SSL ciphersuites)
+          <indexterm><primary><option>--ssl-ciphers</option> (Ncat option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>This option sets the list of ciphersuites that Ncat will use
+            when connecting to servers or when accepting SSL connections from
+            clients. The syntax is described in the OpenSSL ciphers(1) man
+            page, and defaults to
+            <literal>ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH</literal></para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -763,6 +777,19 @@
 
       <varlistentry>
         <term>
+          <option>--no-shutdown</option> (Do not shutdown into half-duplex mode)
+          <indexterm><primary><option>--no-shutdown</option> (Ncat option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>If this option is passed, Ncat will not invoke shutdown on a
+          socket aftering seeing EOF on stdin. This is provided for
+          backward-compatibility with OpenBSD netcat, which exhibits this
+          behavior when executed with its '-d' option.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
           <option>-t</option>,
           <option>--telnet</option> (Answer Telnet negotiations)
           <indexterm><primary><option>-t</option> (Ncat option)</primary></indexterm>
@@ -922,7 +949,7 @@
     it better by sending bug reports or even writing patches.  If Ncat
     doesn't behave the way you expect, first upgrade to the latest
     version available from <ulink
-    url="http://nmap.org"/>.  If the problem persists,
+    url="https://nmap.org"/>.  If the problem persists,
     do some research to determine whether it has already been
     discovered and addressed.  Try Googling the error message or
     browsing the <citetitle>nmap-dev</citetitle> archives at <ulink
@@ -982,7 +1009,7 @@
   <para>Ncat is (C) 2005&ndash;2012 Insecure.Com LLC. It is distributed
   as free and open source software under the same license terms as our
   Nmap software.  Precise terms and further details are available 
-  <man>from <ulink url="http://nmap.org/man/man-legal.html"/>.</man>
+  <man>from <ulink url="https://nmap.org/man/man-legal.html"/>.</man>
   <notman>in <xref linkend="nmap-copyright"/>.</notman></para>
 </refsect2>
 

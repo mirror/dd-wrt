@@ -65,7 +65,7 @@ saves the results to a KML file, plottable on Google earth and maps.
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"safe", "external", "discovery"}
 
 local arg_kmlfile = stdnse.get_script_args(SCRIPT_NAME .. ".kmlfile")
@@ -94,16 +94,16 @@ local function createKMLFile(filename, coords)
   local header = '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://earth.google.com/kml/2.0"><Document><Placemark><LineString><coordinates>\r\n'
   local footer = '</coordinates></LineString><Style><LineStyle><color>#ff0000ff</color></LineStyle></Style></Placemark></Document></kml>'
 
-  local output = ""
+  local output = {}
   for _, coord in ipairs(coords) do
-    output = output .. ("%s,%s, 0.\r\n"):format(coord.lon, coord.lat)
+    output[#output+1] = ("%s,%s, 0.\r\n"):format(coord.lon, coord.lat)
   end
 
   local f = io.open(filename, "w")
   if ( not(f) ) then
     return false, "Failed to create KML file"
   end
-  f:write(header .. output .. footer)
+  f:write(header .. table.concat(output) .. footer)
   f:close()
 
   return true

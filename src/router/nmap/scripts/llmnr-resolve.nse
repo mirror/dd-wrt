@@ -18,7 +18,7 @@ LLMNR responses that are sent to the local machine with a 5355 UDP source port.
 A hostname to resolve must be provided.
 
 For more information, see:
-    * http://technet.microsoft.com/en-us/library/bb878128.aspx
+* http://technet.microsoft.com/en-us/library/bb878128.aspx
 ]]
 
 ---
@@ -38,7 +38,7 @@ For more information, see:
 
 prerule = function()
   if not nmap.is_privileged() then
-    stdnse.print_verbose("%s not running due to lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running due to lack of privileges.")
     return false
   end
   return true
@@ -46,7 +46,7 @@ end
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "safe", "broadcast"}
 
@@ -55,16 +55,16 @@ categories = {"discovery", "safe", "broadcast"}
 -- @param hostname Hostname to query for.
 -- @return query Raw llmnr query.
 local llmnrQuery = function(hostname)
-  local query = bin.pack(">S", math.random(0,65535)) -- transaction ID
-  query = query .. bin.pack(">S", 0x0000) -- Flags: Standard Query
-  query = query .. bin.pack(">S", 0x0001) -- Questions = 1
-  query = query .. bin.pack(">S", 0x0000) -- Answer RRs = 0
-  query = query .. bin.pack(">S", 0x0000) -- Authority RRs = 0
-  query = query .. bin.pack(">S", 0x0000) -- Additional RRs = 0
-  query = query .. bin.pack(">CAC", #hostname, hostname, 0x00) -- Hostname
-  query = query .. bin.pack(">S", 0x0001) -- Type: Host Address
-  query = query .. bin.pack(">S", 0x0001) -- Class: IN
-  return query
+  return bin.pack(">S6pCS2",
+    math.random(0,65535), -- transaction ID
+    0x0000, -- Flags: Standard Query
+    0x0001, -- Questions = 1
+    0x0000, -- Answer RRs = 0
+    0x0000, -- Authority RRs = 0
+    0x0000, -- Additional RRs = 0
+    hostname, 0x00, -- Hostname
+    0x0001, -- Type: Host Address
+    0x0001) -- Class: IN
 end
 
 --- Sends a llmnr query.
@@ -74,7 +74,7 @@ local llmnrSend = function(query, mcast, mport)
   local sock = nmap.new_socket()
   local status, err = sock:connect(mcast, mport, "udp")
   if not status then
-    stdnse.print_debug("%s: %s", SCRIPT_NAME, err)
+    stdnse.debug1("%s", err)
     return
   end
   sock:send(query)
@@ -112,7 +112,7 @@ local llmnrListen = function(interface, timeout, result)
       -- Message == Response bit
       -- and 1 Question (hostname we requested) and
       if (bit.rshift(flags, 15) == 1) and questions == 0x01 then
-        stdnse.print_debug("%s got response from %s", SCRIPT_NAME, p.ip_src)
+        stdnse.debug1("got response from %s", p.ip_src)
         -- Skip header's 12 bytes
         -- extract host length
         local index, qlen = bin.unpack(">C", llmnr, 13)
@@ -131,7 +131,7 @@ local llmnrListen = function(interface, timeout, result)
         response.address = ipOps.fromdword(response.address)
         table.insert(result, response)
       else
-        stdnse.print_debug("%s skipped llmnr response.", SCRIPT_NAME)
+        stdnse.debug1("skipped llmnr response.")
       end
     end
   end
@@ -146,12 +146,12 @@ local getInterface = function(target)
   local sock = nmap.new_socket()
   local status, err = sock:connect(target, "12345", "udp")
   if not status then
-    stdnse.print_verbose("%s: %s", SCRIPT_NAME, err)
+    stdnse.verbose1("%s", err)
     return
   end
   local status, address, _, _, _ = sock:get_info()
   if not status then
-    stdnse.print_verbose("%s: %s", SCRIPT_NAME, err)
+    stdnse.verbose1("%s", err)
     return
   end
   for _, interface in pairs(nmap.list_interfaces()) do
@@ -172,7 +172,7 @@ action = function()
 
   -- Check if a valid hostname was provided
   if not hostname or #hostname == 0 then
-    stdnse.print_debug("%s no hostname was provided.", SCRIPT_NAME)
+    stdnse.debug1("no hostname was provided.")
     return
   end
 
@@ -184,7 +184,7 @@ action = function()
     interface = getInterface(mcast)
   end
   if not interface then
-    return ("\n ERROR: Couldn't get interface for %s"):format(mcast)
+    return stdnse.format_output(false, ("Couldn't get interface for %s"):format(mcast))
   end
 
   -- Launch listener thread

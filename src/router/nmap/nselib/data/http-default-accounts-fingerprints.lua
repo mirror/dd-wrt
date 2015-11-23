@@ -1,3 +1,4 @@
+local bin = require "bin"
 local http = require "http"
 local table = require "table"
 local url = require "url"
@@ -87,13 +88,58 @@ table.insert(fingerprints, {
     {path = "/cacti/"}
   },
   target_check = function (host, port, path, response)
-    return response.status == 200
+    -- true if the response is HTTP/200 and sets cookie "Cacti"
+    if response.status == 200 then
+      for _, ck in ipairs(response.cookies or {}) do
+        if ck.name:lower() == "cacti" then return true end
+      end
+    end
+    return false
   end,
   login_combos = {
     {username = "admin", password = "admin"}
   },
   login_check = function (host, port, path, user, pass)
     return try_http_post_login(host, port, path, "index.php", "Invalid User Name/Password", {action="login", login_username=user, login_password=pass}, false)
+  end
+})
+
+table.insert(fingerprints, {
+  name = "Xplico",
+  category = "web",
+  paths = {
+    {path = "/users/login"}
+  },
+  target_check = function (host, port, path, response)
+    -- true if the response is HTTP/200 and sets cookie "Xplico"
+    if response.status == 200 then
+      for _, ck in ipairs(response.cookies or {}) do
+        if ck.name:lower() == "xplico" then return true end
+      end
+    end
+    return false
+  end,
+  login_combos = {
+    {username = "admin", password = "xplico"},
+    {username = "xplico", password = "xplico"}
+  },
+  login_check = function (host, port, path, user, pass)
+    -- harvest all hidden fields from the login form
+    local req1 = http.get(host, port, path, {no_cache=true, redirect_ok = false})
+    if req1.status ~= 200 then return false end
+    local html = req1.body and req1.body:match('<form%s+action%s*=%s*"/users/login".->(.-)</form>')
+    if not html then return false end
+    local form = {}
+    for n, v in html:gmatch('<input%s+type%s*=%s*"hidden"%s+name%s*=%s*"(.-)"%s+value%s*=%s*"(.-)"') do
+      form[n] = v
+    end
+    -- add username and password to the form and submit it
+    form["data[User][username]"] = user
+    form["data[User][password]"] = pass
+    local req2 = http.post(host, port, path, {no_cache=true, cookies=req1.cookies}, nil, form)
+    if req2.status ~= 302 then return false end
+    local loc = req2.header["location"]
+    return loc and (loc:match("/admins$") or loc:match("/pols/index$"))
   end
 })
 
@@ -114,6 +160,23 @@ table.insert(fingerprints, {
     {username = "ovwebusr", password = "OvW*busr1"},
     -- http://cve.mitre.org/cgi-bin/cvename.cgi?name=2009-4188
     {username = "j2deployer", password = "j2deployer"}
+  },
+  login_check = function (host, port, path, user, pass)
+    return try_http_basic_login(host, port, path, user, pass, false)
+  end
+})
+
+table.insert(fingerprints, {
+  name = "Adobe LiveCycle Management Console",
+  category = "web",
+  paths = {
+    {path = "/lc/system/console"}
+  },
+  target_check = function (host, port, path, response)
+    return http_auth_realm(response) == "OSGi Management Console"
+  end,
+  login_combos = {
+    {username = "admin", password = "admin"}
   },
   login_check = function (host, port, path, user, pass)
     return try_http_basic_login(host, port, path, user, pass, false)
@@ -214,6 +277,55 @@ table.insert(fingerprints, {
 })
 
 table.insert(fingerprints, {
+  name = "ASUS RT-N10U",
+  category = "routers",
+  paths = {
+    {path = "/as.asp"}
+  },
+  target_check = function (host, port, path, response)
+    return http_auth_realm(response) == "RT-N10U"
+  end,
+  login_combos = {
+    {username = "admin", password = "admin"}
+  },
+  login_check = function (host, port, path, user, pass)
+    return try_http_basic_login(host, port, path, user, pass, false)
+  end
+})
+
+table.insert(fingerprints, {
+  name = "Motorola RF Switch",
+  category = "routers",
+  paths = {
+    {path = "/getfwversion.cgi"}
+  },
+  target_check = function (host, port, path, response)
+    -- true if the response is HTTP/200 and returns a firmware version
+    return response.status == 200
+           and not response.header["server"]
+           and response.header["content-type"] == "text/plain"
+           and response.body
+           and response.body:find("\n%d+%.%d+%.%d+%.%d+%-%w+\n")
+  end,
+  login_combos = {
+    {username = "admin", password = "superuser"}
+  },
+  login_check = function (host, port, path, user, pass)
+    local tohex = function (str)
+                    local _, hex = bin.unpack("H" .. str:len(), str)
+                    return hex:lower()
+                  end
+    local login = ("J20K34NMMT89XPIJ34S login %s %s"):format(tohex(user), tohex(pass))
+    local lpath = url.absolute(path, "usmCgi.cgi/?" .. url.escape(login))
+    local req = http.get(host, port, lpath, {no_cache=true, redirect_ok = false})
+    return req
+           and req.status == 200
+           and req.body
+           and req.body:match("^login 0 ")
+  end
+})
+
+table.insert(fingerprints, {
   name = "Nortel VPN Router",
   category = "routers",
   paths = {
@@ -267,5 +379,71 @@ table.insert(fingerprints, {
   },
   login_check = function (host, port, path, user, pass)
     return try_http_basic_login(host, port, path, user, pass, true)
+  end
+})
+
+---
+--Printers
+---
+table.insert(fingerprints, {
+  name = "Zebra Printer",
+  category = "printer",
+  paths = {
+    {path = "/setgen"}
+  },
+  target_check = function (host, port, path, response)
+    return response.body
+           and response.body:lower():find("<h1>zebra technologies<br>", 1, true)
+  end,
+  login_combos = {
+    {username = "", password = "1234"}
+  },
+  login_check = function (host, port, path, user, pass)
+    local form = {}
+    form["0"] = pass
+    return try_http_post_login(host, port, path, "authorize", "incorrect password", form)
+  end
+})
+
+table.insert(fingerprints, {
+  name = "Zebra Print Server",
+  category = "printer",
+  paths = {
+    {path = "/server/TCPIPGEN.htm"}
+  },
+  target_check = function (host, port, path, response)
+    return http_auth_realm(response) == "Network Print Server"
+           and response.header["server"]
+           and response.header["server"] == "Micro-Web"
+  end,
+  login_combos = {
+    {username = "admin", password = "1234"}
+  },
+  login_check = function (host, port, path, user, pass)
+    return try_http_basic_login(host, port, path, user, pass, false)
+  end
+})
+
+---
+--Remote consoles
+---
+table.insert(fingerprints, {
+  name = "Lantronix SLC",
+  category = "console",
+  paths = {
+    {path = "/scsnetwork.htm"}
+  },
+  target_check = function (host, port, path, response)
+    return response.status == 200
+           and response.header["server"]
+           and response.header["server"]:find("^mini_httpd")
+           and response.body
+           and response.body:find("<title>Lantronix SLC",1,true)
+  end,
+  login_combos = {
+    {username = "sysadmin", password = "PASS"}
+  },
+  login_check = function (host, port, path, user, pass)
+    return try_http_post_login(host, port, path, "./", "%sname%s*=%s*(['\"]?)slcpassword%1[%s>]", {slclogin=user, slcpassword=pass})
   end
 })

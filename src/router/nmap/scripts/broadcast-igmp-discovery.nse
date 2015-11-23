@@ -89,11 +89,11 @@ interfaces.
 
 prerule = function()
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_verbose("%s is IPv4 only.", SCRIPT_NAME)
+    stdnse.verbose1("is IPv4 only.")
     return false
   end
   if ( not(nmap.is_privileged()) ) then
-    stdnse.print_verbose("%s not running due to lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running due to lack of privileges.")
     return false
   end
   return true
@@ -101,7 +101,7 @@ end
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "safe", "broadcast"}
 
@@ -209,33 +209,28 @@ end
 local igmpRaw = function(interface, version)
   -- Only 1, 2 and 3 are valid IGMP versions
   if version ~= 1 and version ~= 2 and version ~= 3 then
-    stdnse.print_debug("IGMP version %s doesn't exist.", version)
+    stdnse.debug1("IGMP version %s doesn't exist.", version)
     return
   end
 
   -- Let's craft an IGMP Membership Query
-  local igmp_raw = bin.pack(">C", 0x11) -- Membership Query, same for all versions
-  if version == 1 then
-    igmp_raw = igmp_raw .. bin.pack(">C", 0x00) -- Unused, 0x00 for version 1 only
-  else
-    igmp_raw = igmp_raw .. bin.pack(">C", 0x16) -- Max response time: 10 Seconds, for version 2 and 3
-  end
-
-  igmp_raw = igmp_raw .. bin.pack(">S", 0x00) -- Checksum, calculated later
-  igmp_raw = igmp_raw .. bin.pack(">I", 0x00) -- Multicast Address: 0.0.0.0
+  local igmp_raw = bin.pack(">CCSI",
+    0x11, -- Membership Query, same for all versions
+    version == 1 and 0 or 0x16, -- Max response time: 10 Seconds, for version 2 and 3
+    0, -- Checksum, calculated later
+    0  -- Multicast Address: 0.0.0.0
+    )
 
   if version == 3 then
-    -- Reserved = 4 bits (Should be zeroed)
-    -- Supress Flag = 1 bit
-    -- QRV (Querier's Robustness Variable) = 3 bits
-    -- all are set to 0
-    igmp_raw = igmp_raw .. bin.pack(">C", 0x00)
-    -- QQIC (Querier's Query Interval Code) in seconds = Set to 0 to get insta replies.
-    igmp_raw = igmp_raw .. bin.pack(">C", 0x10)
-    -- Number of sources (in the next arrays) = 1 ( Our IP only)
-    igmp_raw = igmp_raw .. bin.pack(">S", 0x01)
-    -- Source = Our IP address
-    igmp_raw = igmp_raw .. bin.pack(">I", ipOps.todword(interface.address))
+    igmp_raw = bin.pack(">ACCSI", igmp_raw,
+      0, -- Reserved = 4 bits (Should be zeroed)
+      -- Supress Flag = 1 bit
+      -- QRV (Querier's Robustness Variable) = 3 bits
+      -- all are set to 0
+      0x10, -- QQIC (Querier's Query Interval Code) in seconds = Set to 0 to get insta replies.
+      0x0001, -- Number of sources (in the next arrays) = 1 ( Our IP only)
+      ipOps.todword(interface.address) -- Source = Our IP address
+      )
   end
 
   igmp_raw = igmp_raw:sub(1,2) .. bin.pack(">S", packet.in_cksum(igmp_raw)) .. igmp_raw:sub(5)
@@ -302,14 +297,14 @@ local mgroup_names_fetch = function(filename)
 end
 
 local mgroup_name_identify = function(db, ip)
-  --stdnse.print_debug("%s: '%s'", SCRIPT_NAME, ip)
+  --stdnse.debug1("'%s'", ip)
   for _, mg in ipairs(db) do
     local ip1 = mg[1]
     local ip2 = mg[2]
     local desc = mg[3]
-    --stdnse.print_debug("%s: try: %s <= %s <= %s (%s)", SCRIPT_NAME, ip1, ip, ip2, desc)
+    --stdnse.debug1("try: %s <= %s <= %s (%s)", ip1, ip, ip2, desc)
     if (not ipOps.compare_ip(ip, "lt", ip1) and not ipOps.compare_ip(ip2, "lt", ip)) then
-      --stdnse.print_debug("%s: found! %s <= %s <= %s (%s)", SCRIPT_NAME, ip1, ip, ip2, desc)
+      --stdnse.debug1("found! %s <= %s <= %s (%s)", ip1, ip, ip2, desc)
       return desc
     end
   end
@@ -338,10 +333,10 @@ action = function(host, port)
     -- Get the interface information
     interface = nmap.get_interface_info(interface)
     if not interface then
-      return ("ERROR: Failed to retrieve %s interface information."):format(interface)
+      return stdnse.format_output(false, ("Failed to retrieve %s interface information."):format(interface))
     end
     interfaces = {interface}
-    stdnse.print_debug("%s: Will use %s interface.", SCRIPT_NAME, interface.shortname)
+    stdnse.debug1("Will use %s interface.", interface.shortname)
   else
     local ifacelist = nmap.list_interfaces()
     for _, iface in ipairs(ifacelist) do
@@ -349,7 +344,7 @@ action = function(host, port)
       if iface.address and iface.link=="ethernet" and
         iface.address:match("%d+%.%d+%.%d+%.%d+") then
 
-        stdnse.print_debug("%s: Will use %s interface.", SCRIPT_NAME, iface.shortname)
+        stdnse.debug1("Will use %s interface.", iface.shortname)
         table.insert(interfaces, iface)
       end
     end

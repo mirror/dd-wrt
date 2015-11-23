@@ -11,7 +11,6 @@ local ipOps = require "ipOps"
 local match = require "match"
 local math = require "math"
 local nmap = require "nmap"
-local package = require "package"
 local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
@@ -143,7 +142,7 @@ Attribute = {
       ( attr.type == Attribute.SOURCE_ADDRESS ) or
       ( attr.type == Attribute.CHANGED_ADDRESS ) ) then
       if ( attr.length ~= 8 ) then
-        stdnse.print_debug(2, "Incorrect attribute length")
+        stdnse.debug2("Incorrect attribute length")
       end
       attr.addr = parseAddress(data, pos)
     elseif( attr.type == Attribute.SERVER ) then
@@ -286,9 +285,9 @@ Util = {
   -- @param len number containing the length of the generated random string
   -- @return str containing the random string
   randomString = function(len)
-    local str = ""
-    for i=1, len do str = str .. string.char(math.random(255)) end
-    return str
+    local str = {}
+    for i=1, len do str[i] = string.char(math.random(255)) end
+    return table.concat(str)
   end
 
 }
@@ -323,7 +322,7 @@ Helper = {
     return self.comm:connect()
   end,
 
-  -- Get's the external public IP
+  -- Gets the external public IP
   -- @return status true on success, false on failure
   -- @return result containing the IP as string
   getExternalAddress = function(self)

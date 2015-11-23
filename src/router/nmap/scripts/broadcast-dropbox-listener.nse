@@ -5,9 +5,13 @@ local tab = require "tab"
 local target = require "target"
 
 description = [[
-Listens for the LAN sync information broadcasts that the Dropbox.com client broadcasts every 20 seconds, then prints all the discovered client IP addresses, port numbers, version numbers, display names, and more.
+Listens for the LAN sync information broadcasts that the Dropbox.com client
+broadcasts every 20 seconds, then prints all the discovered client IP
+addresses, port numbers, version numbers, display names, and more.
 
-If the <code>newtargets</code> script argument is given, all discovered Dropbox clients will be added to the Nmap target list rather than just listed in the output.
+If the <code>newtargets</code> script argument is given, all discovered Dropbox
+clients will be added to the Nmap target list rather than just listed in the
+output.
 ]]
 
 ---
@@ -33,7 +37,7 @@ If the <code>newtargets</code> script argument is given, all discovered Dropbox 
 -- 1047/tcp open  neod1
 
 author = "Ron Bowes, Mak Kolybabi, Andrew Orr, Russ Tait Milne"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"broadcast", "safe"}
 
 
@@ -50,7 +54,7 @@ action = function()
   sock:set_timeout(2 * DROPBOX_BROADCAST_PERIOD * 1000)
   local status, result = sock:bind(nil, DROPBOX_PORT)
   if not status then
-    stdnse.print_debug(1, "Could not bind on port %d: %s", DROPBOX_PORT, result)
+    stdnse.debug1("Could not bind on port %d: %s", DROPBOX_PORT, result)
     sock:close()
     return
   end
@@ -78,10 +82,10 @@ action = function()
       -- Get IP address of broadcasting host.
       local status, _, _, ip, _ = sock:get_info()
       if not status then
-        stdnse.print_debug(1, "Failed to get socket info.")
+        stdnse.debug1("Failed to get socket info.")
         break
       end
-      stdnse.print_debug(1, "Received broadcast from host %s (%s).", info.displayname, ip)
+      stdnse.debug1("Received broadcast from host %s (%s).", info.displayname, ip)
 
       -- Check if we've already seen this ID.
       if ids[info.host_int] then
@@ -114,7 +118,7 @@ action = function()
       stdnse.strjoin(", ", info.namespaces)
       )
 
-      stdnse.print_debug(1, "Added host %s.", info.displayname)
+      stdnse.debug1("Added host %s.", info.displayname)
     end
 
     status, result = sock:receive()

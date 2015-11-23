@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: nmap
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 12/09/2012
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 11/10/2015
 .\"    Manual: [FIXME: manual]
 .\"    Source: [FIXME: source]
 .\"  Language: English
 .\"
-.TH "NMAP" "1" "12/09/2012" "[FIXME: source]" "[FIXME: manual]"
+.TH "NMAP" "1" "11/10/2015" "[FIXME: source]" "[FIXME: manual]"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -98,7 +98,7 @@ Cea mai noua versiune de Nmap poate fi obtinuta de la
 .PP
 Aceasta editie inlimba romana a Ghidului de referinta Nmap a fost tradus din versiunea 2991 a textului original aflat la
 \m[blue]\fBoriginal English version\fR\m[]\&\s-2\u[1]\d\s+2de Dan Catalin Vasile
-hardware_cta@yahoo\&.com\&. Traducerea a fost facuta cu scopul de a asigura o intelegere mai buna a functionalitatilor Nmap intai pentru autor si mai apoi pentru toti vorbitorii nativi de limba romana\&. Autorul traducerii nu va poate garanta faptul ca traducerea este la fel de completa cu versiunea actualizata in limba engleza\&. Acest produs poate fi modificat si redistribuit in conditiile stipulate de
+<hardware_cta@yahoo\&.com>\&. Traducerea a fost facuta cu scopul de a asigura o intelegere mai buna a functionalitatilor Nmap intai pentru autor si mai apoi pentru toti vorbitorii nativi de limba romana\&. Autorul traducerii nu va poate garanta faptul ca traducerea este la fel de completa cu versiunea actualizata in limba engleza\&. Acest produs poate fi modificat si redistribuit in conditiile stipulate de
 \m[blue]\fBCreative Commons Attribution License\fR\m[]\&\s-2\u[2]\d\s+2\&. Autorul traducerii va invita de asemenea pe primul site dedicat profesionistilor in securitate informatica din Romania:
 \m[blue]\fBITSecure\fR\m[]\&\s-2\u[3]\d\s+2\&.
 .SH "SUMARUL OPTIUNILOR"
@@ -106,8 +106,6 @@ hardware_cta@yahoo\&.com\&. Traducerea a fost facuta cu scopul de a asigura o in
 Acest sumar al optiunilor este printat cand Nmap este rulat fara nici un argument si ultima versiune este disponibila la
 \m[blue]\fB\%http://www.insecure.org/nmap/data/nmap.usage.txt\fR\m[]\&. Ajuta oamenii sa isi aduca aminte de cele mai comune optiuni, dar nu reprezinta un substitut pentru documentatia in profunzime din restul acestui manual\&. Unele optiuni obscure nici nu sunt incluse aici\&.
 .PP
-
-.sp
 .if n \{\
 .RS 4
 .\}
@@ -563,7 +561,7 @@ deschis|filtrat (open|filtered)\&. Nmap se va comporta in acelasi fel in care o 
 \fB\-sI <host zombie [:port_de_proba]>\fR(Scanare Idle)
 .RS 4
 Aceasta metoda avansata de scanare permite o scanare TCP complet oarba a tintei (insemnand ca nici un pachet nu este trimis tintei de la adresa IP reala)\&. In loc, un canal derivat de atac exploateaza o secventa de fragmentare IPID predictibila a hostului zombie pentru a culege informatii despre porturile deschise pe masina tinta\&. Sistemele IDS vor indica scanarea ca venind de la hostul zombie specificat (care trebuie sa fie functional si sa indeplineasca anumite criterii)\&. Acest tip fascinant de scanare este prea complex pentru a fi descris in acest ghid de referinta, astfel ca am scris un document informativ cu detalii complete disponibil la
-\m[blue]\fB\%http://nmap.org/book/idlescan.html\fR\m[]\&.
+\m[blue]\fB\%https://nmap.org/book/idlescan.html\fR\m[]\&.
 .sp
 In afara faptului ca este extrem de discreta (datorita naturii oarbe), acest tip de scanare permite maparea relatiilor de incredere bazate pe IP intre masini\&. Lista de porturi arata porturile deschise
 \fIdin perspectiva hostului zombie\&.\fRAsa ca puteti incerca scanarea tintei folosind diferiti zombie despre care credeti ca ar putea avea relatii de incredere cu tinta (prin router/filtru de pachete)\&.
@@ -678,8 +676,7 @@ Exclude\&.
 .RS 4
 Cand realizam o detectie a versiunii (
 \fB\-sV\fR), nmap trimite o serie de probe, fiecare cu o valoare atasata, intre 1 si 9, care reprezinta raritatea\&. Probele cu numere mici sunt eficiente impotriva unei arii largi a serviciilor comune, in timp ce acelea cu numere mari sunt mai rar folosite\&. Nivelul de intensitate specifica ce probe trebuie aplicate\&. Cu cat mai mare este numarul, cu atat mai precisa este detectarea versiunii\&. Oricum, scanarea cu intensitate mare dureaza mai mult\&. Intensitatea trebuie sa fie intre 0 si 9\&. Implicit este 7\&. Cand o proba este gasita ca o legatura intre
-nmap\-service\-probes
-si numarul portului, atunci proba este incercata indiferent de nivelul de intensitate\&. Acest lucru asigura faptul ca probele DNS vor fi incercate pentru fiecare port 53 gasit deschis, probele SSL pentru portl 443, etc\&.
+nmap\-service\-probessi numarul portului, atunci proba este incercata indiferent de nivelul de intensitate\&. Acest lucru asigura faptul ca probele DNS vor fi incercate pentru fiecare port 53 gasit deschis, probele SSL pentru portl 443, etc\&.
 .RE
 .PP
 \fB\-\-version\-light\fR(Activeaza modul delicat)
@@ -790,7 +787,6 @@ Daca hosturile fac parte din reteaua interna, o valoare de 100 milisecunde este 
 \fB\-\-initial\-rtt\-timeout\fRsi tripla pentru
 \fB\-\-max\-rtt\-timeout\fR\&. In general, nu setati timpul maxim rtt sub 100 milisecunde\&., indiferent de ce raporteaza pingurile\&. Si nici nu depasiti 1000 milisecunde\&.
 .sp
-
 \fB\-\-min_rtt_timeout\fReste rar folosita si nu este folositoare intr\-o retea pentru care valoarea implicita a Nmap este prea agresiva\&. Din moment ce Nmap reduce timpul de viata al pachetelor pana la minim pentru o retea eficienta, nevoia acestei optiuni nu este uzuala si ar trebui raporta ca o problema in lista de discutii nmap\-dev\&.
 .RE
 .PP
@@ -1251,36 +1247,30 @@ Failed to resolve given hostname/IP: scanme\&.nmap\&.org\&. Aceasta permisiune s
 scanme2\&.nmap\&.org,
 scanme3\&.nmap\&.org, si asa mai departe, desi acestea nu exista inca\&.
 .PP
-
 \fBnmap \-v scanme\&.nmap\&.org\fR
 .PP
 Aceasta linie de comanda scaneaza toate porturile TCP rezervate de pe masina
 scanme\&.nmap\&.org\&. Optiunea
 \fB\-v\fRactiveaza modul de afisare in timp real a rezultateor\&.
 .PP
-
 \fBnmap \-sS \-O scanme\&.nmap\&.org/24\fR
 .PP
 Lanseaza o scanare SYN impotriva tuturor celor 255 masini din reteaua de
 \(lqclasa C\(rqunde isi are locul hostul scanme\&. De asemenea incearca determinarea sistemului de operare a fiecarui host activ\&. Acesta lansare necesita privilegii root din cauza scanarii SYN si a detectarii sistemului de operare\&.
 .PP
-
 \fBnmap \-sV \-p 22,53,110,143,4564 198\&.116\&.0\-255\&.1\-127\fR
 .PP
 Lanseaza enumerarea hosturilor si o scanare TCP in prima jumatate a celor 255 de subretele 198\&.116 de clasa B\&. Testeaza daca sistemul ruleaza sshd, DNS, pop3d, imapd sau portul 4546\&. Pentru fiecare dintre porturile gasite deschise, detectia versiunii este pusa in functiune pentru a se determina aplicatia care ruleaza\&.
 .PP
-
 \fBnmap \-v \-iR 100000 \-P0 \-p 80\fR
 .PP
 Cere Nmapului sa aleaga aleator 100\&.000 tinte si sa le scaneze in cautarea serverelor web (portul 80)\&. Enumerarea hosturilor este dezactivata cu
 \fB\-P0\fRdin moment ce trimiterea unui cuplu de probe pentru a determina daca hostul este activ este o pierdere de timp atata vreme cat se cauta un singur port al fiecarei tinte\&.
 .PP
-
 \fBnmap \-P0 \-p80 \-oX logs/pb\-port80scan\&.xml \-oG logs/pb\-port80scan\&.gnmap 216\&.163\&.128\&.20/20\fR
 .PP
 Scaneaza cele 4096 IPuri dupa servere web (fara ping) si salveaza rezultatele in formatul pentru comanda grep si in formatul XML\&.
 .PP
-
 \fBhost \-l company\&.com | cut \-d \-f 4 | nmap \-v \-iL \-\fR
 .PP
 Realizeaza un transfer de zona DNS pentru a gasi toate hosturile din company\&.com si apoi furnizeaza adresele Nmapului\&. Comanda de mai sus este valabila pentru un sistem Linux \(en alte sisteme beneficiaza de comenzi diferite pentru realizarea transferului DNS\&.
@@ -1289,14 +1279,14 @@ Realizeaza un transfer de zona DNS pentru a gasi toate hosturile din company\&.c
 Asemeni autorului, Nmap nu este perfect\&. Dar ilputeti face mai bun trimitand rapoarte despre problemele aparute si chiar scriind patchuri\&. daca Nmap nu se comporta in modul in care va asteptati, faceti upgradeul la ultima versiune disponibila la
 \m[blue]\fB\%http://www.insecure.org/nmap/\fR\m[]\&. Daca problema persista, faceti munca de cercetare pentru a vedea daca problema a fost descoperita si discutata\&. Incercati cautarea in Google a mesajului de eroare sau navigand prin arhivele Nmap\-dev la
 \m[blue]\fB\%http://seclists.org/\fR\m[]\&. Cititi acest manual in intregime de asemenea\&. Daca nimic nu se rezolva, trimiteti un mail la
-dev@nmap\&.org\&. Va rog sa includeti tot ce ati aflat despre problema, precum si versiunea de Nmap pe care o folositi si sistemul de operare\&. Problemele si intrebarile legate de utilizarea Nmapului trimise la dev@nmap\&.org au sanse mult mai mari de a li se raspunde decat cele trimise direct la Fyodor\&.
+<dev@nmap\&.org>\&. Va rog sa includeti tot ce ati aflat despre problema, precum si versiunea de Nmap pe care o folositi si sistemul de operare\&. Problemele si intrebarile legate de utilizarea Nmapului trimise la dev@nmap\&.org au sanse mult mai mari de a li se raspunde decat cele trimise direct la Fyodor\&.
 .PP
 Patchurile de rezolvare a problemelor sunt si mai bune decat rapoartele despre problema in sine\&. Instructiuni de baza pentru crearea patchurilor sunt disponibile la
 \m[blue]\fB\%http://www.insecure.org/nmap/data/HACKING\fR\m[]\&. Patchurile pot fi trimise la nmap\-dev (recomandat) sau direct la Fyodor\&.
 .SH "AUTOR"
 .PP
 Fyodor
-fyodor@nmap\&.org(
+<fyodor@nmap\&.org>(
 \m[blue]\fB\%http://www.insecure.org\fR\m[])
 .PP
 Sute de oameni au facut contributii importante la Nmap de\-a lungul timpului\&. Ei sunt mentionati in fisierul
@@ -1313,7 +1303,7 @@ Aceasta este traducerea neoficiala a
 .SS "Dreptul de autor si licentiere"
 .PP
 Scanerul de securitate Nmap este (C) 1996\-2005 a Insecure\&.Com LLC\&. Nmap este marca inregistrata a Insecure\&.Com LLC\&. Acest program este software liber; il puteti redistribui si/sau modifica sub termenii Licentei Publice Generale (GNU General Public License) asa cum este publicata de Free Software Foundation; Versiunea 2\&. Aceasta va garanteaza dreptul de folosire, modificare si redistribuire sub anumite conditii\&. Daca doriti sa incorporati tehnologie Nmap in software proprietar, suntem dispusi sa vindem licente alternative (contact
-sales@insecure\&.com)\&. Multi producatori de scanere de securitate au licentiat deja tehnologie Nmap cum ar fi descoperirea hosturilor, scanare de porturi, detectia sistemului de operare si detectia serviciului/versiunii\&.
+<sales@insecure\&.com>)\&. Multi producatori de scanere de securitate au licentiat deja tehnologie Nmap cum ar fi descoperirea hosturilor, scanare de porturi, detectia sistemului de operare si detectia serviciului/versiunii\&.
 .PP
 Notati ca GPL pune restrictii importante asupra
 \(lqproduselor derivate\(rq, desi nu furnizeaza o definitie detaliata a termenului\&. Pentru a evita neintelegerile, consideram ca o aplicatie este
@@ -1385,7 +1375,7 @@ Nu consideram aceste ca restrictii adugate peste GPL ci doar o clarificare a mod
 \(lqprodus derivat\(rqla modulele kernellului Linux\&. Interpretarea noastra se refera doar la Nmap \(en nu vorbim in numele nici unui alt produs GPL\&.
 .PP
 Daca aveti intrebari despre restrictiile licentei GPL in ceea ce priveste folosirea Nmap in produse non\-GPL, sunt bucurosi sa va ajutam\&. Asa cum am mentionat, oferim licente alternative pentru integrarea Nmap in aplicatii si aplicari proprietare\&. Astfel de contracte au fost vandute majoritatii producatorilor de software de securitate si in general includ o licenta perpetua precum si furnizarea prioritara de suport si actualizari, dupa cum ne si ajuta sa finantam dezvoltarea tehnologiei Nmap\&. Va rugam sa trimiteti un email la
-sales@insecure\&.compentru mai multe informatii\&.
+<sales@insecure\&.com>pentru mai multe informatii\&.
 .PP
 Ca o exceptie speciala de la termenii GPL, Insecure\&.Com LLC permite legarea acestui cod cu orice versiune de biblioteca OpenSSL distribuita sub o licenta identica cu cea din fiserul Copying\&.OpenSSL si distribuirea codului legat a celor doua\&. Trebuie sa va supuneti GNU GPL pentru orice cod in afara de OpenSSL\&. Daca modificati acest fisier, puteti extinde aceasta exceptie si asupra fisierului dumneavoastra, desi nu sunteti obligati sa o faceti\&.
 .PP
@@ -1395,7 +1385,7 @@ Daca primiti aceste fisiere cu o alta licenta scrisa sau contract care specifica
 Sursa este furnizata cu acest software deoarece consideram ca utilizatorii au dreptul de a stii exact ce face un program inainte de a\-l rula\&. Acest lucru permite si auditul softwareului in vederea descoperirii gaurilor de securitate (nici una nu a fost descoperita pana acum)\&.
 .PP
 Codul sursa permite portarea Nmap pe noi platforme, rezolvarea problemelor si adaugarea de noi functionalitati\&. Sunteti incurajati sa trimiteti modificarile dumneavoastra la
-fyodor@nmap\&.orgpentru o posibila incorporare in distributia principala\&. Prin trimiterea acestor modificari catre Fyodor sau la una din listele de dezvoltare de la Insecure\&.Org, se presupune ca oferiti lui Fyodor si Insecure\&.Com LLC dreptul neliitat, neexclusiv de reutilizare, modificare si relicentiere a codului\&. Nmap va fi intotdeauna disponibil ca software cu sursa disponibila, dar acest lucru este important din cauza imposibilitatii relicentierii ce a creat probleme devastatoare pentru alte proiecte cu software liber (cum sunt KDE si NASM)\&. Ocazional relicentiam codul catre terti asa cum s\-a discutat mai devreme\&. Daca doriti sa specificati conditii speciale de licentiere a contributiei dumneavoastra, precizati acest lucru cand o trimiteti\&.
+<fyodor@nmap\&.org>pentru o posibila incorporare in distributia principala\&. Prin trimiterea acestor modificari catre Fyodor sau la una din listele de dezvoltare de la Insecure\&.Org, se presupune ca oferiti lui Fyodor si Insecure\&.Com LLC dreptul neliitat, neexclusiv de reutilizare, modificare si relicentiere a codului\&. Nmap va fi intotdeauna disponibil ca software cu sursa disponibila, dar acest lucru este important din cauza imposibilitatii relicentierii ce a creat probleme devastatoare pentru alte proiecte cu software liber (cum sunt KDE si NASM)\&. Ocazional relicentiam codul catre terti asa cum s\-a discutat mai devreme\&. Daca doriti sa specificati conditii speciale de licentiere a contributiei dumneavoastra, precizati acest lucru cand o trimiteti\&.
 .SS "Nici o garantie"
 .PP
 Acest program este distribuit in speranta ca va fi folositor, dar FARA NICI O GARANTIE; fara macar a garantiei de COMERCIABILITATE sau POTRIVIRE PENTRU UN SCOP PARTICULAR\&. Vezi GNU GPL pentru mai multe detalii la

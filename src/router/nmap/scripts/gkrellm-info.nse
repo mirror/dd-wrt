@@ -46,13 +46,13 @@ request.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
 
 portrule = shortport.port_or_service(19150, "gkrellm", "tcp")
 
-local function fail(err) return ("\n  ERROR: %s"):format(err or "") end
+local function fail(err) return stdnse.format_output(false, err) end
 
 local long_names = {
   ["fs_mounts"] = "Mounts",
@@ -78,25 +78,6 @@ local function getOrderPos(tag)
     end
   end
   return 1
-end
-
-local function minutesToUptime(value)
-  local days    = math.floor(value / (60 * 24))
-  local htime   = math.fmod(value, (60 * 24))
-  local hours   = math.floor(htime / 60)
-  local mtime   = math.fmod(htime, 60)
-  local minutes = math.floor(mtime)
-  local output = ""
-  if ( days > 0 ) then
-    output = output .. ("%d days, "):format(days)
-  end
-  if ( hours > 0 ) then
-    output = output .. ("%d hours, "):format(hours)
-  end
-  if ( minutes > 0 ) then
-    output = output .. ("%d minutes"):format(minutes)
-  end
-  return output
 end
 
 local function decodeTag(tag, lines)
@@ -131,7 +112,7 @@ local function decodeTag(tag, lines)
       "version" == tag ) then
     return ("%s: %s"):format(long_names[tag], lines[1])
   elseif ( "uptime" == tag ) then
-    return ("%s: %s"):format(long_names[tag], minutesToUptime(lines[1]))
+    return ("%s: %s"):format(long_names[tag], stdnse.format_time(lines[1] * 60))
   elseif ( "mem" == tag ) then
     local total, used = table.unpack(stdnse.strsplit("%s", lines[1]))
     if ( not(total) or not(used) ) then
@@ -182,7 +163,7 @@ action = function(host, port)
       break
     end
     if ( not(tag:match("^<.*>$")) ) then
-      stdnse.print_debug(2, "Expected tag, got: %s", tag)
+      stdnse.debug2("Expected tag, got: %s", tag)
       break
     else
       tag = tag:match("^<(.*)>$")

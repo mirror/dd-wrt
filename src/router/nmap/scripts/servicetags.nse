@@ -75,7 +75,7 @@ http://arc.opensolaris.org/caselog/PSARC/2006/638/ServiceTag_API_CLI_v07.pdf
 
 author = "Matthew Flanagan"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"default", "discovery", "safe"}
 
@@ -141,7 +141,7 @@ action = function(host, port)
     local try = nmap.new_try(catch)
 
     -- connect to the potential service tags discoverer
-    try(socket:connect(host.ip, port.number, "udp"))
+    try(socket:connect(host, port))
 
     local payload
 

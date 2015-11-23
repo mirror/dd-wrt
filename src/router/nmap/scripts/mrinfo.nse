@@ -65,18 +65,18 @@ Cisco IOS.
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "safe", "broadcast"}
 
 
 prerule = function()
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_verbose("%s is IPv4 only.", SCRIPT_NAME)
+    stdnse.verbose1("is IPv4 only.")
     return false
   end
   if not nmap.is_privileged() then
-    stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges.")
     return false
   end
   return true
@@ -166,19 +166,15 @@ end
 
 -- Function that generates a raw DVMRP Ask Neighbors 2 request.
 local mrinfoRaw = function()
-  -- Type: DVMRP
-  local mrinfo_raw = bin.pack(">C", 0x13)
-  -- Code: Ask Neighbor v2
-  mrinfo_raw = mrinfo_raw.. bin.pack(">C", 0x05)
-  -- Checksum: Calculated later
-  mrinfo_raw = mrinfo_raw.. bin.pack(">S", 0x0000)
-  -- Reserved
-  mrinfo_raw = mrinfo_raw.. bin.pack(">S", 0x000a)
-  -- Version == Cisco IOS 12.4
-  -- Minor version: 4
-  mrinfo_raw = mrinfo_raw.. bin.pack(">C", 0x04)
-  -- Major version: 12
-  mrinfo_raw = mrinfo_raw.. bin.pack(">C", 0x0c)
+  local mrinfo_raw = bin.pack(">CCSSCC",
+    0x13, -- Type: DVMRP
+    0x05, -- Code: Ask Neighbor v2
+    0x0000, -- Checksum: Calculated later
+    0x000a, -- Reserved
+    -- Version == Cisco IOS 12.4
+    0x04, -- Minor version: 4
+    0x0c) -- Major version: 12
+
   -- Calculate checksum
   mrinfo_raw = mrinfo_raw:sub(1,2) .. bin.pack(">S", packet.in_cksum(mrinfo_raw)) .. mrinfo_raw:sub(5)
 
@@ -226,12 +222,12 @@ local getInterface = function(target)
   local sock = nmap.new_socket()
   local status, err = sock:connect(target, "12345", "udp")
   if not status then
-    stdnse.print_verbose("%s: %s", SCRIPT_NAME, err)
+    stdnse.verbose1("%s", err)
     return
   end
   local status, address, _, _, _ = sock:get_info()
   if not status then
-    stdnse.print_verbose("%s: %s", SCRIPT_NAME, err)
+    stdnse.verbose1("%s", err)
     return
   end
   for _, interface in pairs(nmap.list_interfaces()) do
@@ -255,10 +251,10 @@ action = function()
     interface = getInterface(target)
   end
   if not interface then
-    return ("\n ERROR: Couldn't get interface for %s"):format(target)
+    return stdnse.format_output(false, ("Couldn't get interface for %s"):format(target))
   end
 
-  stdnse.print_debug("%s: will send to %s via %s interface.", SCRIPT_NAME, target, interface.shortname)
+  stdnse.debug1("will send to %s via %s interface.", target, interface.shortname)
 
   -- Thread that listens for responses
   stdnse.new_thread(mrinfoListen, interface, timeout, responses)

@@ -1,5 +1,6 @@
 local brute = require "brute"
 local comm = require "comm"
+local creds = require "creds"
 local nmap = require "nmap"
 local pop3 = require "pop3"
 local shortport = require "shortport"
@@ -24,7 +25,7 @@ Tries to log into a POP3 account by guessing usernames and passwords.
 -- |_ Performed 8 scans in 1 seconds, average tps: 8
 
 author = "Philip Pickering, Piotr Olma"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"intrusive", "brute"}
 
@@ -73,13 +74,13 @@ Driver = {
   -- @param password string containing the login password
   -- @return status, true on success, false on failure
   -- @return brute.Error object on failure
-  --         brute.Account object on success
+  --         creds.Account object on success
   login = function(self, username, password)
     local pstatus
     local perror
     pstatus, perror = self.login_function(self.socket, username, password, self.additional)
     if pstatus then
-      return true, brute.Account:new(username, password, "OPEN")
+      return true, creds.Account:new(username, password, creds.State.VALID)
     elseif (perror == pop3.err.pwError) then
       return false, brute.Error:new("Wrong password.")
     elseif (perror == pop3.err.userError) then

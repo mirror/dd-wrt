@@ -1,3 +1,11 @@
+local mysql = require "mysql"
+local nmap = require "nmap"
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+local string = require "string"
+local vulns = require "vulns"
+local openssl = stdnse.silent_require "openssl"
+
 description = [[
 
 Attempts to bypass authentication in MySQL and MariaDB servers by
@@ -70,17 +78,8 @@ Interesting post about this vuln:
 -- @args mysql-vuln-cve2012-2122.socket_timeout Socket timeout. Default: 5s.
 ---
 
-local mysql = require "mysql"
-local nmap = require "nmap"
-local shortport = require "shortport"
-local stdnse = require "stdnse"
-local string = require "string"
-local table = require "table"
-local vulns = require "vulns"
-local openssl = stdnse.silent_require "openssl"
-
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "intrusive", "vuln"}
 
 portrule = shortport.port_or_service(3306, "mysql")
@@ -130,7 +129,7 @@ basically account password protection is as good as nonexistent.
   -- Chance of succeeding is 1/256. Let's try 1,500 to be safe.
   --
   for i=1,iterations do
-    stdnse.print_debug(1, "%s: Connection attempt #%d", SCRIPT_NAME, i)
+    stdnse.debug1("Connection attempt #%d", i)
     try( socket:connect(host, port) )
     response = try( mysql.receiveGreeting(socket) )
     status, response = mysql.loginRequest(socket, {authversion = "post41", charset = response.charset}, mysql_user, mysql_pwd, response.salt)

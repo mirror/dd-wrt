@@ -7,6 +7,7 @@ local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
 local base64 = require "base64"
+local comm = require "comm"
 
 local openssl = stdnse.silent_require "openssl"
 
@@ -131,7 +132,7 @@ gathered keys.
 -- </table>
 
 author = "Sven Klemm" -- comparing keys from known_hosts file added by Piotr Olma and George Chatzisofroniou
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"safe","default","discovery"}
 
 
@@ -174,7 +175,7 @@ local function check_keys(host, keys, f)
           for _,name in ipairs(possible_host_names) do
             local hash = base64.enc(openssl.hmac("SHA1", salt, name))
             if parts_hostname[4] == hash then
-              stdnse.print_debug(2, "%s: found a hash that matches: %s for hostname: %s", SCRIPT_NAME, hash, name)
+              stdnse.debug2("found a hash that matches: %s for hostname: %s", hash, name)
               foundhostname = true
               table.insert(keys_from_file, {name=name, key=("%s %s"):format(parts[2], parts[3]), lnumber=lnumber})
             end
@@ -190,7 +191,7 @@ local function check_keys(host, keys, f)
         end
       else
         if stdnse.contains(possible_host_names, parts[1]) then
-          stdnse.print_debug(2, "Found an entry that matches: %s", parts[1])
+          stdnse.debug2("Found an entry that matches: %s", parts[1])
           table.insert(keys_from_file, ("%s %s"):format(parts[2], parts[3]))
         else
           -- Is the key the same but the clear text hostname isn't?
@@ -265,9 +266,20 @@ end
 --@param host nmap host table
 --@param port nmap port table of the currently probed port
 local function portaction(host, port)
+  if port.version.name_confidence < 8 or port.version.name ~= "ssh" then
+    -- additional check if version scan was not done or if it doesn't think it's SSH.
+    -- Since the fetch_host_key functions don't indicate what failed, we could
+    -- waste a lot of time on e.g. tcpwrapped port 22
+    -- Using opencon instead of get_banner to avoid trying SSL first in some cases
+    local status, banner = comm.opencon(host, port, nil, {recv_before=true})
+    if not string.match(banner, "^SSH") then
+      stdnse.debug1("Service does not appear to be SSH: quitting.")
+      return nil
+    end
+  end
   local output_tab = {}
   local keys = {}
-  local _,key
+  local key
   local format = nmap.registry.args.ssh_hostkey or "hex"
   local all_formats = format:find( 'all', 1, true )
 
@@ -289,7 +301,7 @@ local function portaction(host, port)
   key = ssh2.fetch_host_key( host, port, "ecdsa-sha2-nistp521" )
   if key then table.insert( keys, key ) end
 
-  if #keys < 0 then
+  if #keys == 0 then
     return nil
   end
 
@@ -300,7 +312,7 @@ local function portaction(host, port)
       fingerprint=stdnse.tohex(key.fingerprint),
       type=key.key_type,
       bits=key.bits,
-      key=base64.enc(key.key),
+      key=key.key,
     }
     if format:find( 'hex', 1, true ) or all_formats then
       table.insert( output, ssh1.fingerprint_hex( key.fingerprint, key.algorithm, key.bits ) )
@@ -363,13 +375,13 @@ local function postaction()
   for key, hosts in pairs(hostkeys) do
     if #hostkeys[key] > 1 then
       table.sort(hostkeys[key], function(a, b) return ipOps.compare_ip(a, "lt", b) end)
-      local str = 'Key ' .. key .. ' used by:'
+      local str = {'Key ' .. key .. ' used by:'}
       local tab = {key=revmap[key], hosts={}}
       for _, host in ipairs(hostkeys[key]) do
-        str = str .. '\n  ' .. host
+        str[#str+1] = host
         table.insert(tab.hosts, host)
       end
-      table.insert(output, str)
+      table.insert(output, table.concat(str, "\n  "))
       table.insert(output_tab, tab)
     end
   end

@@ -6,9 +6,9 @@ local ike = require "ike"
 
 
 description=[[
-
-Obtains information (such as vendor and device type where available) from an IKE service by sending four packets to the host.  This scripts tests with both Main and Aggressive Mode and sends multiple transforms per request.
-
+Obtains information (such as vendor and device type where available) from an
+IKE service by sending four packets to the host.  This scripts tests with both
+Main and Aggressive Mode and sends multiple transforms per request.
 ]]
 
 
@@ -25,10 +25,10 @@ Obtains information (such as vendor and device type where available) from an IKE
 
 
 author = "Jesper Kueckelhahn"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe", "version"}
 
-portrule = shortport.port_or_service(500, "isakmp", "udp")
+portrule = shortport.version_port_or_service(500, "isakmp", "udp")
 
 
 -- Test different methods for getting version
@@ -56,45 +56,45 @@ local function get_version(host, port)
 
   -- try aggressive mode (diffie hellman group 2)
   local diffie = 2
-  stdnse.print_debug(1, "Sending Aggressive mode packet ...")
+  stdnse.debug1("Sending Aggressive mode packet ...")
   packet = ike.request(port.number, port.protocol, 'Aggressive', t, diffie, 'vpngroup')
   version = ike.send_request(host, port, packet)
   if version.success then
     return version
   end
-  stdnse.print_debug(1, "Aggressive mode (dh 2) failed")
+  stdnse.debug1("Aggressive mode (dh 2) failed")
 
   -- try aggressive mode (diffie hellman group 1)
   diffie = 1
-  stdnse.print_debug(1, "Sending Aggressive mode packet ...")
+  stdnse.debug1("Sending Aggressive mode packet ...")
   packet = ike.request(port.number, port.protocol, 'Aggressive', t, diffie, 'vpngroup')
   version = ike.send_request(host, port, packet)
   if version.success then
     return version
   end
-  stdnse.print_debug(1, "Aggressive mode (dh 1) failed")
+  stdnse.debug1("Aggressive mode (dh 1) failed")
 
   -- try aggressive mode (diffie hellman group 2, no id)
   -- some checkpoint devices respond to this
   local diffie = 2
-  stdnse.print_debug(1, "Sending Aggressive mode packet ...")
+  stdnse.debug1("Sending Aggressive mode packet ...")
   packet = ike.request(port.number, port.protocol, 'Aggressive', t, diffie, '')
   version = ike.send_request(host, port, packet)
   if version.success then
     return version
   end
-  stdnse.print_debug(1, "Aggressive mode (dh 2, no id) failed")
+  stdnse.debug1("Aggressive mode (dh 2, no id) failed")
 
   -- try main mode
-  stdnse.print_debug(1, "Sending Main mode packet ...")
+  stdnse.debug1("Sending Main mode packet ...")
   packet = ike.request(port.number, port.protocol, 'Main', t, '')
   version = ike.send_request(host, port, packet)
   if version.success then
     return version
   end
-  stdnse.print_debug(1, "Main mode failed")
+  stdnse.debug1("Main mode failed")
 
-  stdnse.print_debug(1, "Version detection not possible")
+  stdnse.debug1("Version detection not possible")
   return false
 end
 
@@ -120,7 +120,7 @@ action = function( host, port )
       nmap.set_port_state(host, port, "open")
     end
   end
-  stdnse.print_debug(1, "Version: %s", port.version.product )
+  stdnse.debug1("Version: %s", port.version.product )
   return
 end
 

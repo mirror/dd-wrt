@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -96,8 +96,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -118,17 +117,24 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.h 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: NmapOps.h 35347 2015-10-26 16:16:02Z dmiller $ */
+
+#ifndef NMAP_OPS_H
+#define NMAP_OPS_H
 
 #include "nmap.h"
-#include "global_structures.h"
 #include "output.h"
 #include <nsock.h>
 #include <string>
+#include <map>
+#include <vector>
+
+struct FingerPrintDB;
+struct FingerMatch;
 
 class NmapOps {
  public:
@@ -372,6 +378,7 @@ class NmapOps {
   char *exclude_spec;
   FILE *inputfd;
   char *portlist; /* Ports list specified by user */
+  char *exclude_portlist; /* exclude-ports list specified by user */
 
   nsock_proxychain proxy_chain;
 
@@ -425,3 +432,4 @@ class NmapOps {
   bool spoof_mac_set;
 };
 
+#endif

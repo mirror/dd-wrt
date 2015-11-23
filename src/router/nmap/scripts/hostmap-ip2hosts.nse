@@ -40,7 +40,7 @@ The script is in the "external" category because it sends target IPs to a third 
 
 author = "Paulino Calderon <calderon@websec.mx>"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"external", "discovery"}
 
@@ -94,7 +94,7 @@ action = function(host)
   local hostnames = {}
   local hostnames_str, output_str
   local output_tab = stdnse.output_table()
-  stdnse.print_debug(1, "Using database: %s", HOSTMAP_BING_SERVER)
+  stdnse.debug1("Using database: %s", HOSTMAP_BING_SERVER)
   hostnames = query_bing(host.ip)
 
   output_tab.hosts = hostnames
@@ -106,7 +106,7 @@ action = function(host)
     if status then
       output_tab.filename = filename
     else
-      stdnse.print_debug(1, "There was an error saving the file %s:%s", filename, err)
+      stdnse.debug1("There was an error saving the file %s:%s", filename, err)
     end
   end
 

@@ -18,7 +18,7 @@ Checks for MySQL servers with an empty password for <code>root</code> or
 -- |_  root account has empty password
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "auth"}
 
 
@@ -40,11 +40,11 @@ action = function( host, port )
 
   for _, v in ipairs( users ) do
     local status, response = socket:connect(host, port)
-    if( not(status) ) then return "  \n  ERROR: Failed to connect to mysql server" end
+    if( not(status) ) then return stdnse.format_output(false, "Failed to connect to mysql server") end
 
     status, response = mysql.receiveGreeting( socket )
     if ( not(status) ) then
-      stdnse.print_debug(3, SCRIPT_NAME)
+      stdnse.debug3("%s", SCRIPT_NAME)
       socket:close()
       return response
     end

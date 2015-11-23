@@ -26,7 +26,7 @@ Performs password guessing against databases supporting the IBM DB2 protocol suc
 -- |_  db2admin:db2admin => Valid credentials
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories={"intrusive", "brute"}
 
 
@@ -74,7 +74,7 @@ doLogin = function( host, port, database, creds, valid_accounts )
     if ( nmap.registry.db2users == nil or nmap.registry.db2users[username] == nil ) then
       helper = drda.Helper:new()
       helper:connect( host, port )
-      stdnse.print_debug( "Trying %s/%s against %s...", username, password, host.ip )
+      stdnse.debug1( "Trying %s/%s against %s...", username, password, host.ip )
       status, response = helper:login( database, username, password )
       helper:close()
 
@@ -136,7 +136,7 @@ action = function( host, port )
   local usernames, passwords, creds
   local database = stdnse.get_script_args('drda-brute.dbname') or "SAMPLE"
   local condvar = nmap.condvar( valid_accounts )
-  local max_threads = stdnse.get_script_args('drda-brute.threads') and tonumber( stdnse.get_script_args('drda-brute.threads') ) or 10
+  local max_threads = tonumber( stdnse.get_script_args('drda-brute.threads') ) or 10
 
   -- Check if the DB specified is valid
   if( not(isValidDb(host, port, database)) ) then
@@ -156,7 +156,7 @@ action = function( host, port )
 
   creds = new_usrpwd_iterator( usernames, passwords )
 
-  stdnse.print_debug("Starting brute force with %d threads", max_threads )
+  stdnse.debug1("Starting brute force with %d threads", max_threads )
 
   for i=1,max_threads do
     local co = stdnse.new_thread( doLogin, host, port, database, creds, valid_accounts )

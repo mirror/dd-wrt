@@ -2,7 +2,6 @@ local creds = require "creds"
 local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
-local table = require "table"
 
 local cassandra = stdnse.silent_require "cassandra"
 
@@ -24,12 +23,15 @@ http://cassandra.apache.org/
 -- |   Cluster name: Test Cluster
 -- |_  Version: 19.10.0
 --
+-- @xmloutput
+-- <elem key="Cluster name">Test Cluster</elem>
+-- <elem key="Version">19.10.0</elem>
 
 -- version 0.1
 -- Created 14/09/2012 - v0.1 - created by Vlatko Kosturjak <kost@linux.hr>
 
 author = "Vlatko Kosturjak"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 dependencies = {"cassandra-brute"}
@@ -52,7 +54,7 @@ function action(host,port)
 
   try( socket:connect(host, port) )
 
-  local results = {}
+  local results = stdnse.output_table()
 
   -- ugliness to allow creds.cassandra to work, as the port is not recognized
   -- as cassandra even when service scan was run, taken from mongodb
@@ -61,7 +63,7 @@ function action(host,port)
   local c = creds.Credentials:new(creds.ALL_DATA, host, port)
   for cred in c:getCredentials(creds.State.VALID + creds.State.PARAM) do
     local status, err = cassandra.login(socket, cred.user, cred.pass)
-    table.insert(results, ("Using credentials: %s"):format(cred.user.."/"..cred.pass))
+    results["Using credentials"] = cred.user.."/"..cred.pass
     if ( not(status) ) then
       return err
     end
@@ -77,7 +79,7 @@ function action(host,port)
   port.version.product='Cassandra'
   port.version.name_confidence = 10
   nmap.set_port_version(host,port)
-  table.insert(results, ("Cluster name: %s"):format(val))
+  results["Cluster name"] = val
 
   local status, val = cassandra.describe_version(socket,cassinc)
   if (not(status)) then
@@ -86,7 +88,7 @@ function action(host,port)
   cassinc = cassinc + 1
   port.version.product='Cassandra ('..val..')'
   nmap.set_port_version(host,port)
-  table.insert(results, ("Version: %s"):format(val))
+  results["Version"] = val
 
-  return stdnse.format_output(true, results)
+  return results
 end

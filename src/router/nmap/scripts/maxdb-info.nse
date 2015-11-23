@@ -31,11 +31,11 @@ Retrieves version and database information from a SAP Max DB database.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = { "default", "version" }
 
 
-portrule = shortport.port_or_service(7210, "maxdb", "tcp")
+portrule = shortport.version_port_or_service(7210, "maxdb", "tcp")
 
 -- Sends and receive a MaxDB packet
 -- @param socket already connected to the server
@@ -45,14 +45,14 @@ portrule = shortport.port_or_service(7210, "maxdb", "tcp")
 local function exchPacket(socket, packet)
   local status, err = socket:send(packet)
   if ( not(status) ) then
-    stdnse.print_debug(2, "Failed to send packet to server")
+    stdnse.debug2("Failed to send packet to server")
     return false, "Failed to send packet to server"
   end
 
   local data
   status, data= socket:receive()
   if ( not(status) ) then
-    stdnse.print_debug(2, "Failed to read packet from server")
+    stdnse.debug2("Failed to read packet from server")
     return false, "Failed to read packet from server"
   end
   local pos, len = bin.unpack("<S", data)
@@ -62,7 +62,7 @@ local function exchPacket(socket, packet)
     local tmp
     status, tmp = socket:receive_bytes(len - #data)
     if ( not(status) ) then
-      stdnse.print_debug(2, "Failed to read packet from server")
+      stdnse.debug2("Failed to read packet from server")
       return false, "Failed to read packet from server"
     end
     data = data .. tmp
@@ -126,6 +126,8 @@ local function parseDatabases(data)
   return tab.dump(result)
 end
 
+local function fail (err) return stdnse.format_output(false, err) end
+
 action = function(host, port)
   -- this could really be more elegant, but it has to do for now
   local handshake   = "5a000000035b000001000000ffffffff000004005a000000000242000409000000400000d03f00000040000070000000000500000004000000020000000300000749343231360004501c2a035201037201097064626d73727600"
@@ -139,17 +141,17 @@ action = function(host, port)
 
   status, data = exchPacket(socket, bin.pack("H", handshake))
   if ( not(status) ) then
-    return "\n  ERROR: Failed to perform handshake with MaxDB server"
+    return fail("Failed to perform handshake with MaxDB server")
   end
 
   status, data = exchPacket(socket, bin.pack("H", dbm_version))
   if ( not(status) ) then
-    return "\n  ERROR: Failed to request version information from server"
+    return fail("Failed to request version information from server")
   end
 
   local version_info = parseVersion(data)
   if ( not(version_info) ) then
-    return "\n  ERROR: Failed to parse version information from server"
+    return fail("Failed to parse version information from server")
   end
 
   local result, filter = {}, {"Version", "Build", "OS", "Instroot", "Sysname"}
@@ -160,7 +162,7 @@ action = function(host, port)
   status, data = exchCommand(socket, bin.pack("H", db_enum))
   socket:close()
   if ( not(status) ) then
-    return "\n  ERROR: Failed to request version information from server"
+    return fail("Failed to request version information from server")
   end
   local dbs = parseDatabases(data)
   table.insert(result, { name = "Databases", dbs } )

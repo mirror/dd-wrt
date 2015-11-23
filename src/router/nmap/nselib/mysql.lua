@@ -3,7 +3,7 @@
 --
 -- http://forge.mysql.com/wiki/MySQL_Internals_ClientServer_Protocol
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 -- @author "Patrik Karlsson <patrik@cqure.net>"
 
@@ -106,7 +106,7 @@ end
 -- <code>status</code> or error message on failure (status == false)
 function receiveGreeting( socket )
 
-  local catch = function() socket:close() stdnse.print_debug("receiveGreeting(): failed") end
+  local catch = function() socket:close() stdnse.debug1("receiveGreeting(): failed") end
   local try = nmap.new_try(catch)
   local data = try( socket:receive_bytes(HEADER_SIZE) )
   local pos, response, tmp, _
@@ -156,7 +156,7 @@ local function createLoginHash(pass, salt)
   local hash_stage1
   local hash_stage2
   local hash_stage3
-  local reply = ""
+  local reply = {}
   local pos, b1, b2, b3, _ = 1, 0, 0, 0
 
   if ( not(HAVE_SSL) ) then
@@ -171,10 +171,10 @@ local function createLoginHash(pass, salt)
     _, b1 = bin.unpack( "C", hash_stage1, pos )
     _, b2 = bin.unpack( "C", hash_stage3, pos )
 
-    reply = reply .. string.char( bit.bxor( b2, b1 ) )
+    reply[pos] = string.char( bit.bxor( b2, b1 ) )
   end
 
-  return reply
+  return table.concat(reply)
 
 end
 
@@ -193,7 +193,7 @@ end
 -- @return response table or error message on failure
 function loginRequest( socket, params, username, password, salt )
 
-  local catch = function() socket:close() stdnse.print_debug("loginRequest(): failed") end
+  local catch = function() socket:close() stdnse.debug1("loginRequest(): failed") end
   local try = nmap.new_try(catch)
   local packetno = 1
   local authversion = params.authversion or "post41"
@@ -218,19 +218,20 @@ function loginRequest( socket, params, username, password, salt )
   local extcapabilities = ExtCapabilities.SupportsMultipleStatments
   extcapabilities = extcapabilities + ExtCapabilities.SupportsMultipleResults
 
-  local packet = bin.pack( "S", clicap )
-  packet = packet .. bin.pack( "S", extcapabilities )
-  packet = packet .. bin.pack( "I", MAXPACKET )
-  packet = packet .. bin.pack( "C", Charset.latin1_COLLATE_latin1_swedish_ci )
-  packet = packet .. bin.pack( "A", string.char(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) )
-  packet = packet .. bin.pack( "z", username )
-
+  local hash = ""
   if ( password ~= nil and password:len() > 0 ) then
-    local hash = createLoginHash( password, salt )
-    packet = packet .. bin.pack( "A", string.char( 0x14 ) .. hash )
-  else
-    packet = packet .. bin.pack( "C", 0 )
+    hash = createLoginHash( password, salt )
   end
+
+  local packet = bin.pack( "SSICAzp",
+    clicap,
+    extcapabilities,
+    MAXPACKET,
+    Charset.latin1_COLLATE_latin1_swedish_ci,
+    string.rep("\0", 23),
+    username,
+    hash
+    )
 
   local tmp = packet:len() + bit.lshift( packetno, 24 )
 
@@ -322,7 +323,7 @@ function decodeField( data, pos )
 
 end
 
---- Decodes the result set header packet into it's sub components
+--- Decodes the result set header packet into its sub components
 --
 -- ref: http://forge.mysql.com/wiki/MySQL_Internals_ClientServer_Protocol#Result_Set_Header_Packet
 --
@@ -330,7 +331,7 @@ end
 -- @return table containing the following <code>header</code>, <code>fields</code> and <code>data</code>
 function decodeQueryResponse( socket )
 
-  local catch = function() socket:close() stdnse.print_debug("decodeQueryResponse(): failed") end
+  local catch = function() socket:close() stdnse.debug1("decodeQueryResponse(): failed") end
   local try = nmap.new_try(catch)
   local data, header, pos
   local rs, blocks = {}, {}
@@ -350,7 +351,7 @@ function decodeQueryResponse( socket )
   rs.header = data:sub( 1, HEADER_SIZE + header.len )
 
   -- abort on MySQL error
-  if rs.header:sub(HEADER_SIZE + 1, HEADER_SIZE + 1) == string.char(0xFF) then
+  if rs.header:sub(HEADER_SIZE + 1, HEADER_SIZE + 1) == "\xFF" then
     -- is this a 4.0 or 4.1 error message
     if rs.header:find("#") then
       return false, rs.header:sub(HEADER_SIZE+10)
@@ -492,7 +493,7 @@ end
 -- @return rows table containing row tables as decoded by <code>decodeDataPackets</code>
 function sqlQuery( socket, query )
 
-  local catch = function() socket:close() stdnse.print_debug("sqlQuery(): failed") end
+  local catch = function() socket:close() stdnse.debug1("sqlQuery(): failed") end
   local try = nmap.new_try(catch)
   local packetno = 0
   local querylen = query:len() + 1

@@ -18,7 +18,7 @@
 --     - This class contains the core functions needed to communicate with VNC
 --
 
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -- @author "Patrik Karlsson <patrik@cqure.net>"
 
 -- Version 0.1
@@ -127,13 +127,13 @@ VNC = {
 
     self.protover = VNC.versions[data]
     if ( not(self.protover) ) then
-      stdnse.print_debug("ERROR: VNC:handshake unsupported version (%s)", data:sub(1,11))
+      stdnse.debug1("ERROR: VNC:handshake unsupported version (%s)", data:sub(1,11))
       return false, ("Unsupported version (%s)"):format(data:sub(1,11))
     end
 
     status = self.socket:send( self.cli_version )
     if ( not(status) ) then
-      stdnse.print_debug("ERROR: VNC:handshake failed to send client version")
+      stdnse.debug1("ERROR: VNC:handshake failed to send client version")
       return false, "ERROR: VNC:handshake failed"
     end
 
@@ -167,7 +167,7 @@ VNC = {
     else
       local status, tmp = self.socket:receive_buf(match.numbytes(1), true)
       if ( not(status) ) then
-        stdnse.print_debug("ERROR: VNC:handshake failed to receive security data")
+        stdnse.debug1("ERROR: VNC:handshake failed to receive security data")
         return false, "ERROR: VNC:handshake failed to receive security data"
       end
 
@@ -178,7 +178,7 @@ VNC = {
       status, tmp = self.socket:receive_buf(match.numbytes(vncsec.count), true)
 
       if ( not(status) ) then
-        stdnse.print_debug("ERROR: VNC:handshake failed to receive security data")
+        stdnse.debug1("ERROR: VNC:handshake failed to receive security data")
         return false, "ERROR: VNC:handshake failed to receive security data"
       end
 
@@ -196,11 +196,7 @@ VNC = {
   -- @param password string containing the password to process
   -- @return password string containing the processed password
   createVNCDESKey = function( self, password )
-    if ( #password < 8 ) then
-      for i=1, (8 - #password) do
-        password = password .. string.char(0x00)
-      end
-    end
+    password = password .. string.rep('\0', 8 - #password)
 
     local newpass = ""
     for i=1, 8 do

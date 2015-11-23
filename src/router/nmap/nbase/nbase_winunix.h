@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,11 +116,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase_winunix.h 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: nbase_winunix.h 34864 2015-07-08 11:58:57Z dmiller $ */
 
 #ifndef NBASE_WINUNIX_H
 #define NBASE_WINUNIX_H
@@ -158,11 +157,18 @@
    Second, because <errno.h> is not defined, the C++0x header
    <system_error> doesn't compile, so we pretend not to have C++0x to
    avoid it. */
+#if _MSC_VER < 1600 /* Breaks on VS2010 and later */
 #define _INC_ERRNO  /* suppress errno.h */
 #define _ERRNO_H_ /* Also for errno.h suppression */
 #define _SYSTEM_ERROR_
 #undef _HAS_CPP0X
 #define _HAS_CPP0X 0
+#else
+/* VS2013: we include errno.h, then redefine the constants we want.
+ * This may work in other versions, but haven't tested (since the other method
+ * has been working just fine). */
+#include <errno.h>
+#endif
 
 /* Suppress winsock.h */
 #define _WINSOCKAPI_
@@ -240,6 +246,8 @@
 #define ENOMEM          WSAENOBUFS
 #undef  ENOTSOCK
 #define ENOTSOCK        WSAENOTSOCK
+#undef  EOPNOTSUPP
+#define EOPNOTSUPP      WSAEOPNOTSUPP
 #undef  EIO
 #define EIO             WSASYSCALLFAILURE
 

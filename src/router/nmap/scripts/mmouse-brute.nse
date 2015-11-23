@@ -29,7 +29,7 @@ http://mobilemouse.com/
 -- @args mmouse-brute.timeout socket timeout for connecting to Mobile Mouse (default 5s)
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -71,7 +71,7 @@ Driver = {
     if (data:match("^CONNECTED\30([^\30]*)") == "NO" ) then
       return false, brute.Error:new( "Incorrect password" )
     elseif ( data:match("^CONNECTED\30([^\30]*)") == "YES" ) then
-      return true, brute.Account:new("", password, creds.State.VALID)
+      return true, creds.Account:new("", password, creds.State.VALID)
     end
 
     local err = brute.Error:new("An unexpected error occurred, retrying ...")

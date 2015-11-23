@@ -15,10 +15,7 @@
 --
 -- The library is driven by the unittest NSE script.
 --
--- @args unittest.run Run tests. Causes <code>unittest.testing()</code> to
---                    return true.
---
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 local stdnse = require "stdnse"
 local string = require "string"
@@ -143,7 +140,8 @@ local am_testing = stdnse.get_script_args('unittest.run')
 ---Check whether tests are being run
 --
 -- Libraries can use this function to avoid the overhead of creating tests if
--- the user hasn't chosen to run them.
+-- the user hasn't chosen to run them. Unittesting is turned on with the
+-- <code>unittest.run</code> script-arg.
 -- @return true if unittests are being run, false otherwise.
 function testing()
   return am_testing
@@ -160,14 +158,18 @@ run_tests = function(to_test)
   end
   local fails = stdnse.output_table()
   for _,lib in ipairs(to_test) do
-    stdnse.print_debug(1, "Testing %s", lib)
-    local thelib = require(lib)
-    local failed = 0
-    if rawget(thelib,"test_suite") ~= nil then
-      failed = thelib.test_suite()
-    end
-    if failed ~= 0 then
-      fails[lib] = failed
+    stdnse.debug1("Testing %s", lib)
+    local status, thelib = pcall(require, lib)
+    if not status then
+      stdnse.debug1("Failed to load %s", lib)
+    else
+      local failed = 0
+      if rawget(thelib,"test_suite") ~= nil then
+        failed = thelib.test_suite()
+      end
+      if failed ~= 0 then
+        fails[lib] = failed
+      end
     end
   end
   return fails
@@ -218,7 +220,7 @@ TestSuite = {
     local passes = 0
     self:setup()
     for _,test in ipairs(self.tests) do
-      stdnse.print_debug(2, "| Test: %s...", test[2])
+      stdnse.debug2("| Test: %s...", test[2])
       local status, note = test[1](self)
       local result
       local lvl = 2
@@ -229,17 +231,17 @@ TestSuite = {
         result = "Fail"
         lvl = 1
         if nmap.debugging() < 2 then
-          stdnse.print_debug(1, "| Test: %s...", test[2])
+          stdnse.debug1("| Test: %s...", test[2])
         end
         failures = failures + 1
       end
       if note then
-        stdnse.print_debug(lvl, "| \\_result: %s (%s)", result, note)
+        stdnse.debug(lvl, "| \\_result: %s (%s)", result, note)
       else
-        stdnse.print_debug(lvl, "| \\_result: %s", result)
+        stdnse.debug(lvl, "| \\_result: %s", result)
       end
     end
-    stdnse.print_debug(1, "|_%d of %d tests passed", passes, #self.tests)
+    stdnse.debug1("|_%d of %d tests passed", passes, #self.tests)
     self:teardown()
     return failures, #self.tests
   end,

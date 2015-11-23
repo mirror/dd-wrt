@@ -1,7 +1,6 @@
 local http = require("http")
 local shortport = require("shortport")
 local stdnse = require("stdnse")
-local strbuf = require("strbuf")
 local string = require("string")
 local table = require("table")
 
@@ -55,7 +54,7 @@ message, and repository description.
 
 categories = { "default", "safe", "vuln" }
 author = "Alex Weber"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 portrule = shortport.http
 
 -- We consider 200 to mean "okay, file exists and we received its contents".
@@ -125,7 +124,7 @@ function action(host, port)
       -- Do the requests.
       replies = http.pipeline_go(host, port, pl_requests)
       if replies == nil then
-        stdnse.print_debug("%s: pipeline_go() error. Aborting.", SCRIPT_NAME)
+        stdnse.debug1("pipeline_go() error. Aborting.")
         return nil
       end
 
@@ -271,11 +270,7 @@ function action(host, port)
 
     -- Show what patterns matched what files
     for name, matches in pairs(info["interesting-matches"] or {}) do
-      local temp = name .. " matched patterns"
-      for _, matched in ipairs(matches) do
-        temp = temp .. " '" .. matched .. "'"
-      end
-      table.insert(new, temp)
+      table.insert(new, ("%s matched patterns '%s'"):format(name, table.concat(matches, "' '")))
     end
 
     if info["repository-description"] then

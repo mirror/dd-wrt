@@ -3,7 +3,7 @@
 --
 -- Large chunks of this code have been ripped right out from <code>snmp.lua</code>.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 -- @author Patrik Karlsson
 --
@@ -12,7 +12,7 @@
 -- Created 01/12/2010 - v0.1 - Created by Patrik Karlsson <patrik@cqure.net>
 -- Revised 01/28/2010 - v0.2 - Adapted to create a framework for SNMP, LDAP and future protocols
 -- Revised 02/02/2010 - v0.3 - Changes: o Re-designed so that ASN1Encoder and ASN1Decoder are separate classes
---                             o Each script or library should now create it's own Encoder and Decoder instance
+--                             o Each script or library should now create its own Encoder and Decoder instance
 --
 
 local bin = require "bin"
@@ -139,7 +139,7 @@ ASN1Decoder = {
     if self.decoder[etype] then
       return self.decoder[etype]( self, encStr, elen, newpos )
     else
-      stdnse.print_debug("no decoder for etype: " .. etype)
+      stdnse.debug1("no decoder for etype: " .. etype)
       return newpos, nil
     end
   end,
@@ -401,7 +401,7 @@ ASN1Encoder = {
         val = math.floor(val/256)
       end
       if lsb > 127 then -- two's complement collision
-        valStr = valStr .. bin.pack("H", "00")
+        valStr = valStr .. "\0"
       end
 
       return string.reverse(valStr)

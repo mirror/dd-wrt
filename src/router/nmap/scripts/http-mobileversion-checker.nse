@@ -22,14 +22,13 @@ Checks if the website holds a mobile version.
 
 categories = {"discovery", "safe"}
 author = "George Chatzisofroniou"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 local http = require "http"
 local target = require "target"
 local shortport = require "shortport"
 local httpspider = require "httpspider"
 local stdnse = require "stdnse"
-local table = require "table"
 
 getLastLoc = function(host, port, useragent)
 

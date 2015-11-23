@@ -1,5 +1,7 @@
 description = [[
-Crawls webservers in search of RFI (remote file inclusion) vulnerabilities. It tests every form field it finds and every parameter of a URL containing a query.
+Crawls webservers in search of RFI (remote file inclusion) vulnerabilities. It
+tests every form field it finds and every parameter of a URL containing a
+query.
 ]]
 
 ---
@@ -16,10 +18,10 @@ Crawls webservers in search of RFI (remote file inclusion) vulnerabilities. It t
 -- |_    inc
 --
 -- @args http-rfi-spider.inclusionurl the url we will try to include, defaults
---       to <code>http://www.yahoo.com/search?p=rfi</code>
+--       to <code>http://tools.ietf.org/html/rfc13?</code>
 -- @args http-rfi-spider.pattern the pattern to search for in <code>response.body</code>
 --       to determine if the inclusion was successful, defaults to
---       <code>'<a href="http://search.yahoo.com/info/submit.html">Submit Your Site</a>'</code>
+--       <code>'20 August 1969'</code>
 -- @args http-rfi-spider.maxdepth the maximum amount of directories beneath
 --       the initial url to spider. A negative value disables the limit.
 --       (default: 3)
@@ -35,7 +37,7 @@ Crawls webservers in search of RFI (remote file inclusion) vulnerabilities. It t
 --
 
 author = "Piotr Olma"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive"}
 
 local shortport = require 'shortport'
@@ -69,39 +71,22 @@ local function generate_safe_postdata(form)
   return postdata
 end
 
-local function generate_get_string(data)
-  local get_str = {"?"}
-  for name,value in pairs(data) do
-    get_str[#get_str+1]=url.escape(name).."="..url.escape(value).."&"
-  end
-  return table.concat(get_str)
-end
-
 -- checks each field of a form to see if it's vulnerable to rfi
 local function check_form(form, host, port, path)
   local vulnerable_fields = {}
   local postdata = generate_safe_postdata(form)
   local sending_function, response
 
-  local action_absolute = string.find(form["action"], "^https?://")
-  -- determine the path where the form needs to be submitted
-  local form_submission_path
-  if action_absolute then
-    form_submission_path = form["action"]
-  else
-    local path_cropped = string.match(path, "(.*/).*")
-    path_cropped = path_cropped and path_cropped or ""
-    form_submission_path = path_cropped..form["action"]
-  end
+  local form_submission_path = url.absolute(path, form.action)
   if form["method"]=="post" then
     sending_function = function(data) return http.post(host, port, form_submission_path, nil, nil, data) end
   else
-    sending_function = function(data) return http.get(host, port, form_submission_path..generate_get_string(data), nil) end
+    sending_function = function(data) return http.get(host, port, form_submission_path.."?"..url.build_query(data), nil) end
   end
 
   for _,field in ipairs(form["fields"]) do
     if rfi_field(field["type"]) then
-      stdnse.print_debug(2, "http-rfi-spider: checking field %s", field["name"])
+      stdnse.debug2("checking field %s", field["name"])
       postdata[field["name"]] = inclusion_url
       response = sending_function(postdata)
       if response and response.body and response.status==200 then
@@ -166,8 +151,8 @@ end
 portrule = shortport.port_or_service( {80, 443}, {"http", "https"}, "tcp", "open")
 
 function action(host, port)
-  inclusion_url = stdnse.get_script_args('http-rfi-spider.inclusionurl') or 'http://www.yahoo.com/search?p=rfi'
-  local pattern_to_search = stdnse.get_script_args('http-rfi-spider.pattern') or '<a href="http://search%.yahoo%.com/info/submit%.html">Submit Your Site</a>'
+  inclusion_url = stdnse.get_script_args('http-rfi-spider.inclusionurl') or 'http://tools.ietf.org/html/rfc13?'
+  local pattern_to_search = stdnse.get_script_args('http-rfi-spider.pattern') or '20 August 1969'
 
   -- once we know the pattern we'll be searching for, we can set up the function
   check_response = function(body) return string.find(body, pattern_to_search) end
@@ -186,7 +171,7 @@ function action(host, port)
 
     if ( not(status) ) then
       if ( r.err ) then
-        return stdnse.format_output(true, ("ERROR: %s"):format(r.reason))
+        return stdnse.format_output(false, r.reason)
       else
         break
       end
@@ -198,7 +183,7 @@ function action(host, port)
       for _,form_plain in ipairs(all_forms) do
         local form = http.parse_form(form_plain)
         local path = r.url.path
-        if form then
+        if form and form.action then
           local vulnerable_fields = check_form(form, host, port, path)
           if #vulnerable_fields > 0 then
             vulnerable_fields["name"] = "Possible RFI in form at path: "..path..", action: "..form["action"].." for fields:"
@@ -208,7 +193,7 @@ function action(host, port)
       end --for
     end --if
 
-    -- now try inclusion by parameters
+    -- now try inclusion by query parameters
     local injectable = {}
     -- search for injectable links (as in sql-injection.nse)
     if r.response.status and r.response.body then
@@ -224,12 +209,10 @@ function action(host, port)
       local new_urls = build_urls(injectable)
       local responses = inject(host, port, new_urls)
       local suspects = check_responses(new_urls, responses)
-      if #suspects > 0 then
-        for p,q in pairs(suspects) do
-          local vulnerable_fields = q
-          vulnerable_fields["name"] = "Possible RFI in parameters at path: "..p.." for queries:"
-          table.insert(return_table, vulnerable_fields)
-        end
+      for p,q in pairs(suspects) do
+        local vulnerable_fields = q
+        vulnerable_fields["name"] = "Possible RFI in parameters at path: "..p.." for queries:"
+        table.insert(return_table, vulnerable_fields)
       end
     end
   end

@@ -27,7 +27,7 @@
 --</code>
 --
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 
 local bin = require "bin"
@@ -39,6 +39,7 @@ local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
 local base32 = require "base32"
+local unittest = require "unittest"
 _ENV = stdnse.module("dns", stdnse.seeall)
 
 get_servers = nmap.get_dns_servers
@@ -284,7 +285,7 @@ local function processResponse( response, dname, dtype, options )
   end
 
   -- nothing worked
-  stdnse.print_debug(1, "dns.query() failed to resolve the requested query%s%s", dname and ": " or ".", dname or "")
+  stdnse.debug1("dns.query() failed to resolve the requested query%s%s", dname and ": " or ".", dname or "")
   return false, "No Answers"
 
 end
@@ -397,7 +398,7 @@ function query(dname, options)
       return processResponse( response[1].data, dname, dtype, options)
     end
   else
-    stdnse.print_debug(1, "dns.query() got zero responses attempting to resolve query%s%s", dname and ": " or ".", dname or "")
+    stdnse.debug1("dns.query() got zero responses attempting to resolve query%s%s", dname and ": " or ".", dname or "")
     return false, "No Answers"
   end
 end
@@ -453,7 +454,7 @@ answerFetcher[types.TXT] = function(dec, retAll)
   if not retAll and dec.answers[1].data then
     return true, string.sub(dec.answers[1].data, 2)
   elseif not retAll then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: TXT")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: TXT")
     return false, "No Answers"
   else
     for _, v in ipairs(dec.answers) do
@@ -465,7 +466,7 @@ answerFetcher[types.TXT] = function(dec, retAll)
     end
   end
   if #answers == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: TXT")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: TXT")
     return false, "No Answers"
   end
   return true, answers
@@ -487,7 +488,7 @@ answerFetcher[types.A] = function(dec, retAll)
     end
   end
   if not retAll or #answers == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: A")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: A")
     return false, "No Answers"
   end
   return true, answers
@@ -504,7 +505,7 @@ answerFetcher[types.CNAME] = function(dec, retAll)
   if not retAll and dec.answers[1].domain then
     return true, dec.answers[1].domain
   elseif not retAll then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: NS, PTR or CNAME")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: NS, PTR or CNAME")
     return false, "No Answers"
   else
     for _, v in ipairs(dec.answers) do
@@ -512,7 +513,7 @@ answerFetcher[types.CNAME] = function(dec, retAll)
     end
   end
   if #answers == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: NS, PTR or CNAME")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: NS, PTR or CNAME")
     return false, "No Answers"
   end
   return true, answers
@@ -532,7 +533,7 @@ answerFetcher[types.MX] = function(dec, retAll)
     if not retAll then break end
   end
   if #mx == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: MX")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: MX")
     return false, "No Answers"
   end
   for _, add in ipairs(dec.add) do
@@ -570,7 +571,7 @@ answerFetcher[types.SRV] = function(dec, retAll)
     end
   end
   if #answers == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: SRV")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: SRV")
     return false, "No Answers"
   end
 
@@ -590,7 +591,7 @@ answerFetcher[types.NSEC] = function(dec, retAll)
     if not retAll then break end
   end
   if #nsec == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: NSEC")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: NSEC")
     return false, "No Answers"
   end
   for _, nsecrec in ipairs(nsec) do
@@ -633,7 +634,7 @@ answerFetcher[types.AAAA] = function(dec, retAll)
     end
   end
   if not retAll or #answers == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: AAAA")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: AAAA")
     return false, "No Answers"
   end
   return true, answers
@@ -653,13 +654,13 @@ function findNiceAnswer(dtype, dec, retAll)
     if answerFetcher[dtype] then
       return answerFetcher[dtype](dec, retAll)
     else
-      stdnse.print_debug(1, "dns.findNiceAnswer() does not have an answerFetcher for dtype %s", tostring(dtype))
+      stdnse.debug1("dns.findNiceAnswer() does not have an answerFetcher for dtype %s", tostring(dtype))
       return false, "Unable to handle response"
     end
   elseif (dec.flags.RC3 and dec.flags.RC4) then
     return false, "No Such Name"
   else
-    stdnse.print_debug(1, "dns.findNiceAnswer() found zero answers in a response, but got an unexpected flags.replycode")
+    stdnse.debug1("dns.findNiceAnswer() found zero answers in a response, but got an unexpected flags.replycode")
     return false, "No Answers"
   end
 end
@@ -682,7 +683,7 @@ additionalFetcher[types.TXT] = function(dec, retAll)
   if not retAll and dec.add[1].data then
     return true, string.sub(dec.add[1].data, 2)
   elseif not retAll then
-    stdnse.print_debug(1, "dns.additionalFetcher found no records of the required type: TXT")
+    stdnse.debug1("dns.additionalFetcher found no records of the required type: TXT")
     return false, "No Answers"
   else
     for _, v in ipairs(dec.add) do
@@ -694,7 +695,7 @@ additionalFetcher[types.TXT] = function(dec, retAll)
     end
   end
   if #answers == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: TXT")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: TXT")
     return false, "No Answers"
   end
   return true, answers
@@ -716,7 +717,7 @@ additionalFetcher[types.A] = function(dec, retAll)
     end
   end
   if not retAll or #answers == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: A")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: A")
     return false, "No Answers"
   end
   return true, answers
@@ -741,7 +742,7 @@ additionalFetcher[types.SRV] = function(dec, retAll)
     end
   end
   if #answers == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: SRV")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: SRV")
     return false, "No Answers"
   end
 
@@ -765,7 +766,7 @@ additionalFetcher[types.AAAA] = function(dec, retAll)
     end
   end
   if not retAll or #answers == 0 then
-    stdnse.print_debug(1, "dns.answerFetcher found no records of the required type: AAAA")
+    stdnse.debug1("dns.answerFetcher found no records of the required type: AAAA")
     return false, "No Answers"
   end
   return true, answers
@@ -784,14 +785,14 @@ function findNiceAdditional(dtype, dec, retAll)
     if additionalFetcher[dtype] then
       return additionalFetcher[dtype](dec, retAll)
     else
-      stdnse.print_debug(1, "dns.findNiceAdditional() does not have an additionalFetcher for dtype %s",
+      stdnse.debug1("dns.findNiceAdditional() does not have an additionalFetcher for dtype %s",
       (type(dtype) == 'string' and dtype) or type(dtype) or "nil")
       return false, "Unable to handle response"
     end
   elseif (dec.flags.RC3 and dec.flags.RC4) then
     return false, "No Such Name"
   else
-    stdnse.print_debug(1, "dns.findNiceAdditional() found zero answers in a response, but got an unexpected flags.replycode")
+    stdnse.debug1("dns.findNiceAdditional() found zero answers in a response, but got an unexpected flags.replycode")
     return false, "No Answers"
   end
 end
@@ -801,15 +802,14 @@ end
 -- @param fqdn containing the fully qualified domain name
 -- @return encQ containing the encoded value
 local function encodeFQDN(fqdn)
-  if ( not(fqdn) or #fqdn == 0 ) then return string.char(0) end
+  if ( not(fqdn) or #fqdn == 0 ) then return "\0" end
 
-  local parts = stdnse.strsplit("%.", fqdn)
-  local encQ = ""
-  for _, part in ipairs(parts) do
-    encQ = encQ .. bin.pack("p", part)
+  local encQ = {}
+  for part in string.gmatch(fqdn, "[^%.]+") do
+    encQ[#encQ+1] = bin.pack("p", part)
   end
-  encQ = encQ .. string.char(0)
-  return encQ
+  encQ[#encQ+1] = "\0"
+  return table.concat(encQ)
 end
 
 ---
@@ -818,12 +818,12 @@ end
 -- @return Encoded question string.
 local function encodeQuestions(questions)
   if type(questions) ~= "table" then return nil end
-  local encQ = ""
+  local encQ = {}
   for _, v in ipairs(questions) do
-    encQ = encQ .. encodeFQDN(v.dname)
-    encQ = encQ .. bin.pack(">SS", v.dtype, v.class)
+    encQ[#encQ+1] = encodeFQDN(v.dname)
+    encQ[#encQ+1] = bin.pack(">SS", v.dtype, v.class)
   end
-  return encQ
+  return table.concat(encQ)
 end
 
 ---
@@ -836,12 +836,12 @@ end
 
 local function encodeUpdates(updates)
   if type(updates) ~= "table" then return nil end
-  local encQ = ""
+  local encQ = {}
   for _, v in ipairs(updates) do
-    encQ = encQ .. encodeFQDN(v.dname)
-    encQ = encQ .. bin.pack(">SSISA", v.dtype, v.class, v.ttl, #v.data, v.data)
+    encQ[#encQ+1] = encodeFQDN(v.dname)
+    encQ[#encQ+1] = bin.pack(">SSISA", v.dtype, v.class, v.ttl, #v.data, v.data)
   end
-  return encQ
+  return table.concat(encQ)
 end
 
 ---
@@ -852,11 +852,11 @@ end
 -- @return Encoded additional string.
 local function encodeAdditional(additional)
   if type(additional) ~= "table" then return nil end
-  local encA = ""
+  local encA = {}
   for _, v in ipairs(additional) do
-    encA = encA .. bin.pack(">xSSISA",  v.type, v.class, v.ttl, v.rdlen, v.rdata)
+    encA[#encA+1] = bin.pack(">xSSISA",  v.type, v.class, v.ttl, v.rdlen, v.rdata)
   end
-  return encA
+  return table.concat(encA)
 end
 
 ---
@@ -1581,4 +1581,12 @@ function update(dname, options)
   return false
 end
 
+if not unittest.testing() then
+  return _ENV
+end
+
+-- Self test
+test_suite = unittest.TestSuite:new()
+
+test_suite:add_test(unittest.equal(encodeFQDN("test.me.com"), "\x04test\x02me\x03com\0"), "encodeFQDN")
 return _ENV;

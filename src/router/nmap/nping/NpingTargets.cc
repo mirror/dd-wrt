@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -96,8 +96,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -118,7 +117,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -279,7 +278,7 @@ int NpingTargets::processSpecs(){
   size_t slen=0;
   bool result=false;
   struct route_nfo rnfo;
-      
+
   memset(&ss, 0, sizeof(struct sockaddr_storage));
   memset(buff, 0, MAX_NPING_HOSTNAME_LEN+1);
 
@@ -332,7 +331,7 @@ int NpingTargets::processSpecs(){
 		  if( o.spoofSource() ){
 			mytarget->setSpoofedSourceSockAddr( o.getSourceSockAddr(), sizeof(struct sockaddr_storage));
 		  }
-		  
+
 		  /* Network interface */  
 		  mytarget->setDeviceNames( rnfo.ii.devname, rnfo.ii.devfullname );
 		  mytarget->setDeviceType( rnfo.ii.device_type );
@@ -359,7 +358,7 @@ int NpingTargets::processSpecs(){
         s6->sin6_family=AF_INET6;        
         mytarget->setSourceSockAddr(&ss, sizeof(struct sockaddr_storage));
     }
-    
+
       /* Insert current target into targets array */
       this->Targets.push_back(mytarget);
   }

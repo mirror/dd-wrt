@@ -79,7 +79,7 @@ unless a specific interface was given using the -e argument to Nmap.
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"broadcast", "safe"}
 
 
@@ -87,7 +87,7 @@ categories = {"broadcast", "safe"}
 
 prerule = function()
   if not nmap.is_privileged() then
-    stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges.")
     return false
   end
   return true
@@ -105,14 +105,14 @@ loadDecoders = function(fname)
   local abs_fname = nmap.fetchfile(fname)
 
   if ( not(abs_fname) ) then
-    return false, ("ERROR: Failed to load decoder definition (%s)"):format(fname)
+    return false, ("Failed to load decoder definition (%s)"):format(fname)
   end
 
   local env = setmetatable({Decoders = {}}, {__index = _G});
   local file = loadfile(abs_fname, "t", env)
   if(not(file)) then
-    stdnse.print_debug("%s: Couldn't load decoder file: %s", SCRIPT_NAME, fname)
-    return false, "ERROR: Couldn't load decoder file: " .. fname
+    stdnse.debug1("Couldn't load decoder file: %s", fname)
+    return false, "Couldn't load decoder file: " .. fname
   end
 
   file()
@@ -120,7 +120,7 @@ loadDecoders = function(fname)
   local d = env.Decoders
 
   if ( d ) then return true, d end
-  return false, "ERROR: Failed to load decoders"
+  return false, "Failed to load decoders"
 end
 
 ---
@@ -161,7 +161,7 @@ sniffInterface = function(iface, Decoders, decodertab)
         -- The packet was decoded successfully but we don't have a valid decoder
         -- Report this
       elseif ( p and p.udp_dport ) then
-        stdnse.print_debug(2, "No decoder for dst port %d", p.udp_dport)
+        stdnse.debug2("No decoder for dst port %d", p.udp_dport)
         -- we don't have a packet, so this is most likely something layer2 based
         -- in that case, check the ether Decoder table for pattern matches
       else
@@ -184,7 +184,7 @@ sniffInterface = function(iface, Decoders, decodertab)
         end
         -- no decoder was found for this layer2 packet
         if ( not(decoded) and #data > 10 ) then
-          stdnse.print_debug(1, "No decoder for packet hex: %s", select(2, bin.unpack("H10", data) ) )
+          stdnse.debug1("No decoder for packet hex: %s", select(2, bin.unpack("H10", data) ) )
         end
       end
     end
@@ -223,6 +223,8 @@ getInterfaces = function(link, up)
   return result
 end
 
+local function fail (err) return stdnse.format_output(false, err) end
+
 action = function()
 
   local DECODERFILE = "nselib/data/packetdecoders.lua"
@@ -234,7 +236,7 @@ action = function()
     local iinfo, err = nmap.get_interface_info(iface)
 
     if ( not(iinfo.address) ) then
-      return "\n  ERROR: The IP address of the interface could not be determined ..."
+      return fail("The IP address of the interface could not be determined")
     end
 
     interfaces = { { name = iface, address = iinfo.address } }
@@ -245,12 +247,12 @@ action = function()
 
   -- make sure we have at least one interface to start sniffing
   if ( #interfaces == 0 ) then
-    return "\n  ERROR: Could not determine any valid interfaces"
+    return fail("Could not determine any valid interfaces")
   end
 
   -- load the decoders from file
   local status, Decoders = loadDecoders(DECODERFILE)
-  if ( not(status) ) then return "\n  " .. Decoders end
+  if ( not(status) ) then return fail(Decoders) end
 
   -- create a local table to handle instantiated decoders
   local decodertab = { udp = {}, ether = {} }

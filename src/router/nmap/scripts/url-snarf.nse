@@ -32,7 +32,7 @@ ctrl+break is issued, by setting the timeout to 0.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"safe"}
 
 
@@ -41,11 +41,11 @@ local arg_iface = nmap.get_interface() or stdnse.get_script_args(SCRIPT_NAME .. 
 prerule = function()
   local has_interface = ( arg_iface ~= nil )
   if not nmap.is_privileged() then
-    stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges.")
     return false
   end
   if ( not(has_interface) ) then
-    stdnse.print_verbose("%s no network interface was supplied, aborting ...", SCRIPT_NAME)
+    stdnse.verbose1("no network interface was supplied, aborting ...")
     return false
   end
   return true

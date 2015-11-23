@@ -1,5 +1,4 @@
 local comm = require "comm"
-local math = require "math"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local string = require "string"
@@ -30,7 +29,7 @@ script argument. The default list of channels is
 
 author = "David Fifield, Ange Gutek"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "vuln", "safe"}
 
@@ -162,13 +161,7 @@ local function irc_compose_message(prefix, command, ...)
 end
 
 local function random_nick()
-  local nick = {}
-
-  for i = 1, 9 do
-    nick[#nick + 1] = string.char(math.random(string.byte("a"), string.byte("z")))
-  end
-
-  return table.concat(nick)
+  return stdnse.generate_random_string(9, "abcdefghijklmnopqrstuvwxyz")
 end
 
 local function splitlines(s)
@@ -305,7 +298,7 @@ function action(host, port)
       if #params >= 2 then
         channels[#channels + 1] = params[2]
       else
-        stdnse.print_debug("Got short " .. RPL_LIST .. "response.")
+        stdnse.debug1("Got short " .. RPL_LIST .. "response.")
       end
     elseif code == RPL_LISTEND then
       break

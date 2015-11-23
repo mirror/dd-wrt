@@ -25,7 +25,7 @@ Daemon (rpcap).
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 portrule = shortport.port_or_service(2002, "rpcap", "tcp")
@@ -46,7 +46,7 @@ Driver = {
   login = function(self, username, password)
     local status, resp = self.helper:login(username, password)
     if ( status ) then
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     end
     return false, brute.Error:new( "Incorrect password" )
   end,

@@ -18,20 +18,22 @@ any site-specific policy.
 
 
 author = "Brandon Enright"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"default", "safe"}
 
 
-portrule = shortport.port_or_service({143}, "imap")
+portrule = shortport.port_or_service({143, 993}, {"imap", "imaps"})
+
+local function fail (err) return stdnse.format_output(false, err) end
 
 action = function(host, port)
   local helper = imap.Helper:new(host, port)
   local status = helper:connect()
-  if ( not(status) ) then return "\n  ERROR: Failed to connect to server" end
+  if ( not(status) ) then return fail("Failed to connect to server") end
 
   local status, capa = helper:capabilities(host, port)
-  if( not(status) ) then return "\n  ERROR: Failed to retrieve capabilities" end
+  if( not(status) ) then return fail("Failed to retrieve capabilities") end
   helper:close()
 
   if type(capa) == "table" then
@@ -43,7 +45,7 @@ action = function(host, port)
     end
     return stdnse.strjoin(" ", capstrings)
   elseif type(capa) == "string" then
-    stdnse.print_debug(1, "%s: '%s' for %s", SCRIPT_NAME, capa, host.ip)
+    stdnse.debug1("'%s' for %s", capa, host.ip)
     return
   else
     return "server doesn't support CAPABILITIES"

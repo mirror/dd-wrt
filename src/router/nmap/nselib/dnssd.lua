@@ -34,7 +34,7 @@
 -- @args dnssd.services string or table containing services to query
 --
 -- @author Patrik Karlsson <patrik@cqure.net>
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 
 local coroutine = require "coroutine"
@@ -190,7 +190,7 @@ Comm = {
     local condvar = nmap.condvar(svcresponse)
     local status, response = dns.query( svc, { port = port, host = host, dtype="PTR", retPkt=true, retAll=true, multiple=multiple, sendCount=1, timeout=2000} )
     if not status then
-      stdnse.print_debug("Failed to query service: %s; Error: %s", svc, response)
+      stdnse.debug1("Failed to query service: %s; Error: %s", svc, response)
       return
     end
     svcresponse[svc] = svcresponse[svc] or {}

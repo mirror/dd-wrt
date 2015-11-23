@@ -25,7 +25,7 @@ service.
 -- Revised 12/02/2009 - v0.2 - Use stdnse.format_ouput for output
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
 
@@ -34,7 +34,7 @@ portrule = shortport.portnumber({8080,80,443}, "tcp")
 
 action = function(host, port)
 
-  local xmldata = citrixxml.request_server_data(host.ip, port.number)
+  local xmldata = citrixxml.request_server_data(host, port)
   local servers = citrixxml.parse_server_data_response(xmldata)
   local response = {}
 

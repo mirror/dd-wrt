@@ -38,7 +38,7 @@ http://www.kb.cert.org/vuls/id/362332
 -- <elem key="Boot line">lanswitchCmm:</elem>
 
 author = "Daniel Miller"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 -- may also be "safe", but need testing to determine
 categories = {"default", "version", "discovery", "vuln"}
 
@@ -47,7 +47,7 @@ categories = {"default", "version", "discovery", "vuln"}
 -- http://www.vxdev.com/docs/vx55man/tornado-api/wdbpcl/wdb.html
 -- http://www.verysource.com/code/2817990_1/wdb.h.html
 -- Metasploit scanner module
--- http://www.metasploit.com/redmine/projects/framework/repository/entry/lib/msf/core/exploit/wdbrpc.rb
+-- https://github.com/rapid7/metasploit-framework/blob/master/lib/msf/core/exploit/wdbrpc.rb
 
 portrule = shortport.version_port_or_service(17185, "wdbrpc", {"udp"} )
 
@@ -89,11 +89,7 @@ local function request(comm, procedure, data)
 end
 
 local function stripnull(str)
-  local e = -1
-  while str:byte(e) == 0 do
-    e = e - 1
-  end
-  return str:sub(1,e)
+  return (str:gsub("\0*$",""))
 end
 
 local function decode_reply(data, pos)
@@ -106,7 +102,7 @@ local function decode_reply(data, pos)
   pos, wdberr = rpc.Util.unmarshall_uint32(data, pos)
   info["error"] = bit.band(wdberr, 0xc0000000)
   if (info["error"] ~= 0x00000000 ) then
-    stdnse.print_debug(1,"Error from decode_reply: %x", info["error"])
+    stdnse.debug1("Error from decode_reply: %x", info["error"])
     return nil, info
   end
   pos, len = rpc.Util.unmarshall_uint32(data, pos)

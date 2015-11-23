@@ -32,7 +32,7 @@ Performs brute force password auditing against SMTP servers using either LOGIN, 
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"brute", "intrusive"}
 
 portrule = shortport.port_or_service({ 25, 465, 587 },
@@ -73,13 +73,13 @@ Driver =
   -- @param username string containing the username
   -- @param password string containing the password
   -- @return status true on success, false on failure
-  -- @return brute.Error on failure and brute.Account on success
+  -- @return brute.Error on failure and creds.Account on success
   login = function( self, username, password )
     local status, err = smtp.login( self.socket, username, password, mech )
     if ( status ) then
       smtp.quit(self.socket)
       ConnectionPool[coroutine.running()] = nil
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     end
     if ( err:match("^ERROR: Failed to .*") ) then
       self.socket:close()
@@ -100,16 +100,17 @@ Driver =
 
 }
 
+local function fail (err) return stdnse.format_output(false, err) end
 
 action = function(host, port)
 
   local socket, response = smtp.connect(host, port, { ssl = true, recv_before = true })
-  if ( not(socket) ) then return "\n  ERROR: Failed to connect to SMTP server" end
+  if ( not(socket) ) then return fail("Failed to connect to SMTP server") end
   local status, response = smtp.ehlo(socket, smtp.get_domain(host))
-  if ( not(status) ) then return "\n  ERROR: EHLO command failed, aborting ..." end
+  if ( not(status) ) then return fail("EHLO command failed, aborting ...") end
   local mechs = smtp.get_auth_mech(response)
   if ( not(mechs) ) then
-    return "\n  ERROR: Failed to retrieve authentication mechanisms form server"
+    return fail("Failed to retrieve authentication mechanisms form server")
   end
   smtp.quit(socket)
 

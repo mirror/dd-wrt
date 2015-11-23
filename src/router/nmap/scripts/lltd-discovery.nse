@@ -41,7 +41,7 @@ http://www.microsoft.com/whdc/connect/Rally/LLTD-spec.mspx
 --
 
 author = "Gorjan Petrovski, Hani Benhabiles"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"broadcast","discovery","safe"}
 
 
@@ -49,14 +49,14 @@ prerule = function()
   if not nmap.is_privileged() then
     nmap.registry[SCRIPT_NAME] = nmap.registry[SCRIPT_NAME] or {}
     if not nmap.registry[SCRIPT_NAME].rootfail then
-      stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+      stdnse.verbose1("not running for lack of privileges.")
     end
     nmap.registry[SCRIPT_NAME].rootfail = true
     return nil
   end
 
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_debug("%s is IPv4 compatible only.", SCRIPT_NAME)
+    stdnse.debug1("is IPv4 compatible only.")
     return false
   end
 
@@ -269,7 +269,7 @@ action = function()
     local interface = interface_opt or interface_arg
     local if_table = nmap.get_interface_info(interface)
     if not if_table or not if_table.address or not if_table.link=="ethernet" then
-      stdnse.print_debug("Interface not supported or not properly configured.")
+      stdnse.debug1("Interface not supported or not properly configured.")
       return false
     end
     table.insert(interfaces, if_table)
@@ -286,7 +286,7 @@ action = function()
   end
 
   if #interfaces == 0 then
-    stdnse.print_debug("No interfaces found.")
+    stdnse.debug1("No interfaces found.")
     return
   end
 

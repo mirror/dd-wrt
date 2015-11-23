@@ -10,17 +10,26 @@
 -- The following code illustrates how a script may add discovered credentials
 -- to the database:
 -- <code>
--- local c = creds.Credentials:new( SCRIPT_NAME, host, port )
+-- local c = creds.Credentials:new( {"myapp"}, host, port )
 -- c:add("patrik", "secret", creds.State.VALID )
 -- </code>
 --
 -- The following code illustrates how a script can return a table of discovered
 -- credentials at the end of execution:
 -- <code>
--- return tostring(creds.Credentials:new(SCRIPT_NAME, host, port))
+-- return tostring(creds.Credentials:new({"myapp"}, host, port))
 -- </code>
 --
--- The following code illustrates how a script may iterate over discovered
+-- Another script can iterate over credential already discovered by other
+-- scripts just by referring to the same tag:
+-- <code>
+-- local c = creds.Credentials:new({"myapp", "yourapp"}, host, port)
+-- for cred in c:getCredentials(creds.State.VALID) do
+--   showContentForUser(cred.user, cred.pass)
+-- end
+-- </code>
+--
+-- The following code illustrates how a script may iterate over all discovered
 -- credentials:
 -- <code>
 -- local c = creds.Credentials:new(creds.ALL_DATA, host, port)
@@ -77,9 +86,9 @@
 -- the filename based on the type requested.
 --
 -- @author "Patrik Karlsson <patrik@cqure.net>"
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
--- Version 0.4
+-- Version 0.5
 -- Created 2011/02/06 - v0.1 - created by Patrik Karlsson <patrik@cqure.net>
 -- Revised 2011/27/06 - v0.2 - revised by Patrik Karlsson <patrik@cqure.net>
 --                * added documentation
@@ -93,6 +102,11 @@
 -- Revised 2011/09/04 - v0.4 - revised by Tom Sellers
 --                * added saveToFile function for saving credential
 --                * table to file in CSV or text formats
+--
+-- Revised 2015/19/08 - v0.5 - Gioacchino Mazzurco <gmazzurco89@gmail.com>
+--                * added multitag support to share credential easier accross
+--                  scripts
+--
 
 local bit = require "bit"
 local coroutine = require "coroutine"
@@ -150,7 +164,7 @@ StateMsg = {
 }
 
 
-ALL_DATA = "all_script_data"
+ALL_DATA = {}
 
 -- The RegStorage class
 RegStorage = {
@@ -168,16 +182,16 @@ RegStorage = {
 
   --- Add credentials to storage
   --
-  -- @param scriptname the name of the script adding the credentials
+  -- @param tags a table containing tags associated with the credentials
   -- @param host host table, name or ip
   -- @param port number containing the port of the service
   -- @param service the name of the service
   -- @param user the name of the user
   -- @param pass the password of the user
   -- @param state of the account
-  add = function( self, scriptname, host, port, service, user, pass, state )
+  add = function( self, tags, host, port, service, user, pass, state )
     local cred = {
-      scriptname = scriptname,
+      tags = tags,
       host = host,
       port = port,
       service = service,
@@ -235,14 +249,71 @@ RegStorage = {
 
 }
 
+Account = {
+  --- Creates a new instance of the Account class
+  --
+  -- @param username containing the user's name
+  -- @param password containing the user's password
+  -- @param state A <code>creds.State</code> account state
+  -- @return A new <code>creds.Account</code> object
+  -- @name Account.new
+  new = function(self, username, password, state)
+    local o = { username = username, password = password, state = StateMsg[state] or state }
+    setmetatable(o, self)
+    self.__index = self
+    return o
+  end,
+
+  --- Converts an account object to a printable script
+  --
+  -- @return string representation of object
+  -- @name Account.__tostring
+  __tostring = function( self )
+    return (
+      (self.username and self.username .. ":" or "") ..
+      (self.password ~= "" and self.password or "<empty>") ..
+      (self.state and " - " .. self.state or "")
+      )
+  end,
+
+  --- Less-than operation for sorting
+  --
+  -- Lexicographic comparison by user, pass, and state
+  __lt = function (a, b)
+    if a.user and b.user and a.user >= b.user then
+      return false
+    elseif a.pass and b.pass and a.pass >= b.pass then
+      return false
+    elseif a.state and b.state and a.state >= b.state then
+      return false
+    end
+    return true
+  end,
+}
+
+
+-- Return a function suitable for use as a __pairs metamethod
+-- which will cause the table to yield its values sorted by key.
+local function sorted_pairs (sortby)
+  return function (t)
+    local order = stdnse.keys(t)
+    table.sort(order, sortby)
+    return coroutine.wrap(function()
+        for i,k in ipairs(order) do
+          coroutine.yield(k, t[k])
+        end
+      end)
+  end
+end
+
 -- The credentials class
 Credentials = {
 
   --- Creates a new instance of the Credentials class
-  -- @param scriptname string containing the name of the script
+  -- @param tags a table containing tags associated with the credentials
   -- @param host table as received by the scripts action method
   -- @param port table as received by the scripts action method
-  new = function(self, scriptname, host, port)
+  new = function(self, tags, host, port)
     local o = {}
     setmetatable(o, self)
     self.__index = self
@@ -251,7 +322,8 @@ Credentials = {
     o.host = host
     o.port = ( port and port.number ) and port.number
     o.service = ( port and port.service ) and port.service
-    o.scriptname = scriptname
+    if ( type(tags) ~= "table" ) then tags = {tags} end
+    o.tags = tags
     return o
   end,
 
@@ -265,19 +337,19 @@ Credentials = {
     assert( self.host, "No host supplied" )
     assert( self.port, "No port supplied" )
     assert( state, "No state supplied")
-    assert( self.scriptname, "No scriptname supplied")
+    assert( self.tags, "No tags supplied")
 
     -- there are cases where we will only get a user or password
     -- so as long we have one of them, we're good
     if ( user or pass ) then
-      self.storage:add( self.scriptname, self.host, self.port, self.service, user, pass, state )
+      self.storage:add( self.tags, self.host, self.port, self.service, user, pass, state )
     end
   end,
 
   --- Returns a credential iterator
   --
   -- @see State
-  -- @param state mask containing values from the <Code>State</code> table
+  -- @param state mask containing values from the <code>State</code> table
   -- @return credential iterator, returning a credential each time it's
   --         called. Unless filtered by the state mask all credentials
   --         for the host, port match are iterated over.
@@ -288,8 +360,8 @@ Credentials = {
   --         <code>pass</code> - string containing the user password
   --         <code>state</code> - a state number
   --         <code>service</code> - string containing the name of the service
-  --         <code>scriptname</code> - string containing the name of the
-  --                                   script that added the credential
+  --         <code>tags</code> - table containing tags associated with
+  --                             the credential
   getCredentials = function(self, state)
     local function next_credential()
       if ( state ) then
@@ -297,9 +369,15 @@ Credentials = {
       end
 
       for cred in self.storage:getAll() do
-        if ( ( self.scriptname == ALL_DATA ) or
-          ( cred.scriptname == self.scriptname ) ) then
+        if ( self.tags == ALL_DATA ) then
           coroutine.yield(cred)
+        end
+        for _,stag in pairs(self.tags) do
+          for _,ctag in pairs(cred.tags) do
+            if(stag == ctag) then
+              coroutine.yield(cred)
+            end
+          end
         end
       end
 
@@ -348,64 +426,49 @@ Credentials = {
   getTable = function(self)
     local result = {}
 
-    for v in self.storage:getAll() do
+    for v in self:getCredentials() do
       local h = ( v.host.ip or v.host )
-      local svc = ("%s/%s"):format(v.port,v.service)
-      local c
-      if ( v.user and #v.user > 0 ) then
-        if StateMsg[v.state] then
-          c = ("%s:%s - %s"):format(v.user, v.pass, StateMsg[v.state])
-        else
-          c = ("%s:%s"):format(v.user, v.pass)
-        end
-      else
-        if StateMsg[v.state] then
-          c = ("%s - %s"):format(v.pass, StateMsg[v.state])
-        else
-          c = ("%s"):format(v.pass)
-        end
-      end
-      local script = v.scriptname
       assert(type(h)=="string", "Could not determine a valid host")
+      local svc = ("%s/%s"):format(v.port,v.service)
 
-      if ( script == self.scriptname or self.scriptname == ALL_DATA ) then
-        result[h] = result[h] or {}
-        result[h][svc] = result[h][svc] or {}
-        table.insert( result[h][svc], c )
-      end
+      result[h] = result[h] or {}
+      result[h][svc] = result[h][svc] or {}
+      table.insert( result[h][svc], Account:new(
+          v.user ~= "" and v.user or nil,
+          v.pass,
+          v.state
+          )
+        )
     end
 
-    local output = {}
-    for hostname, host in pairs(result) do
-      local host_tbl = { name = hostname }
-      for svcname, service in pairs(host) do
-        local svc_tbl = { name = svcname }
-        for _, account in ipairs(service) do
-          table.insert(svc_tbl, account)
-        end
+    for _, host_tbl in pairs(result) do
+      for _, svc_tbl in pairs(host_tbl) do
         -- sort the accounts
-        table.sort( svc_tbl, function(a,b) return a<b end)
-        table.insert( host_tbl, svc_tbl )
+        table.sort( svc_tbl )
       end
       -- sort the services
-      table.sort( host_tbl,
-      function(a,b)
-        return tonumber(a.name:match("^(%d+)")) < tonumber(b.name:match("^(%d+)"))
-      end
-      )
-      table.insert( output, host_tbl )
+      setmetatable(host_tbl, {
+          __pairs = sorted_pairs( function(a,b)
+              return tonumber(a:match("^(%d+)")) < tonumber(b:match("^(%d+)"))
+            end )
+        })
     end
 
     -- sort the IP addresses
-    table.sort( output, function(a, b) return ipOps.compare_ip(a.name, "le", b.name) end )
-    if ( self.host and self.port and #output > 0 ) then
-      output = output[1][1]
-      output.name = nil
-    elseif ( self.host and #output > 0 ) then
-      output = output[1]
-      output.name = nil
+    setmetatable(result, {
+        __pairs = sorted_pairs( function(a, b)
+          return ipOps.compare_ip(a, "le", b)
+        end )
+      })
+
+    local _
+    if ( self.host and next(result) ) then
+      _, result = next(result)
     end
-    return (#output > 0 ) and output
+    if ( self.host and self.port and next(result) ) then
+      _, result = next(result)
+    end
+    return next(result) and result
   end,
 
   -- Saves credentials in the current object to file
@@ -453,7 +516,7 @@ Credentials = {
   -- @return table suitable from <code>stdnse.format_output</code>
   __tostring = function(self)
     local all = self:getTable()
-    if ( all ) then return stdnse.format_output(true, all) end
+    if ( all ) then return tostring(all) end
   end,
 
 }

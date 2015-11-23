@@ -60,7 +60,7 @@ various names of the form <name>.example.com are tried.
 
 author = "Carlos Pantelides"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = { "discovery", "intrusive" }
 
@@ -162,7 +162,7 @@ action = function(host, port)
   else
     status, hostnames = datafiles.parse_file("nselib/data/vhosts-default.lst" , {})
     if not status then
-      stdnse.print_debug(1, "Can not open file with vhosts file names list")
+      stdnse.debug1("Can not open file with vhosts file names list")
       return
     end
   end

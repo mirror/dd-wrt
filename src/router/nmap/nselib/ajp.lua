@@ -3,7 +3,6 @@ local bin = require "bin"
 local http = require "http"
 local match = require "match"
 local nmap = require "nmap"
-local package = require "package"
 local stdnse = require "stdnse"
 local table = require "table"
 local url = require "url"
@@ -415,7 +414,7 @@ Helper = {
 
       local auth = self:getOption(options, "auth")
       if ( not(auth) or not(auth.username) and not(auth.password) ) then
-        stdnse.print_debug(2, "No authentication information")
+        stdnse.debug2("No authentication information")
         return status, result
       end
 
@@ -429,9 +428,9 @@ Helper = {
       end
 
       if ( not(scheme) ) then
-        stdnse.print_debug(2, "Could not find a supported authentication scheme")
+        stdnse.debug2("Could not find a supported authentication scheme")
       elseif ( "basic" ~= scheme ) then
-        stdnse.print_debug(2, "Unsupported authentication scheme: %s", scheme)
+        stdnse.debug2("Unsupported authentication scheme: %s", scheme)
       else
         headers = headers or {}
         headers["Authorization"] = ("Basic %s"):format(base64.enc(auth.username .. ":" .. auth.password))
