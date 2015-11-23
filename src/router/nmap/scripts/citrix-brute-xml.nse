@@ -34,7 +34,7 @@ accounts will be locked.
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -42,8 +42,8 @@ portrule = shortport.portnumber({8080,80,443}, "tcp")
 
 --- Verifies if the credentials (username, password and domain) are valid
 --
--- @param host string, the ip against which to perform
--- @param port number, the port number of the XML service
+-- @param host string or host table against which to perform
+-- @param port number or port table of the XML service
 -- @param username string, the username to authenticate as
 -- @param password string, the password to authenticate with
 -- @param domain string, the Windows domain to authenticate against
@@ -78,7 +78,7 @@ function verify_password( host, port, username, password, domain )
       account.valid = false
       account.message = "Unspecified"
     else
-      stdnse.print_debug("UNKNOWN response: " .. response)
+      stdnse.debug1("UNKNOWN response: " .. response)
       account.valid = false
       account.message = "failed"
     end
@@ -96,14 +96,13 @@ end
 -- @param accounts table containing accounts (tables)
 -- @return string containing the result
 function create_result_from_table(accounts)
+  local result = {}
 
-  local result = ""
-
-  for _, account in ipairs(accounts) do
-    result = result .. "  " .. account.username .. ":" .. account.password .. " => " .. account.message .. "\n"
+  for i, account in ipairs(accounts) do
+    result[i] = ("\n  %s:%s => %s"):format(account.username, account.password, account.message)
   end
 
-  return "\n" .. result
+  return table.concat(result)
 end
 
 action = function(host, port)
@@ -139,19 +138,19 @@ action = function(host, port)
     -- iterate over passwordlist
     while password do
       local result = "Trying " .. username .. "/" .. password .. " "
-      local account = verify_password(host.ip, port.number, username, password, ntdomain)
+      local account = verify_password(host, port, username, password, ntdomain)
 
       if account.valid then
 
         table.insert(valid_accounts, account)
 
         if account.valid then
-          stdnse.print_debug(1, "Trying %s/%s => Login Correct, Info: %s", username, password, account.message)
+          stdnse.debug1("Trying %s/%s => Login Correct, Info: %s", username, password, account.message)
         else
-          stdnse.print_debug(1, "Trying %s/%s => Login Correct", username, password)
+          stdnse.debug1("Trying %s/%s => Login Correct", username, password)
         end
       else
-        stdnse.print_debug(1, "Trying %s/%s => Login Failed, Reason: %s", username, password, account.message)
+        stdnse.debug1("Trying %s/%s => Login Failed, Reason: %s", username, password, account.message)
       end
       password = nextPass()
     end

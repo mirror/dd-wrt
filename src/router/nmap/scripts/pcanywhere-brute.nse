@@ -33,7 +33,7 @@ some time until server becomes available again.
 
 
 author = "Aleksandar Nikolic"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -90,12 +90,12 @@ Driver = {
       if not status and not retry then
         break
       end
-      stdnse.print_debug("in a loop")
+      stdnse.debug1("in a loop")
       stdnse.sleep(2) -- needs relatively big timeout between retries
     end
     if not status or string.find(response,"Please press <Enter>") == nil then
       --probably not pcanywhere
-      stdnse.print_debug(1, "%s: not pcAnywhere", SCRIPT_NAME)
+      stdnse.debug1("not pcAnywhere")
       return false, brute.Error:new( "Probably not pcAnywhere." )
     end
     retry = false
@@ -108,7 +108,7 @@ Driver = {
     status, err = self.socket:send(bin.pack("H","6f620102000000")) -- auth capabilities II
     status, response = self.socket:receive_bytes(0)
     if not status or (string.find(response,"Enter user name") == nil and string.find(response,"Enter login name") == nil) then
-      stdnse.print_debug(1, "%s: handshake failed", SCRIPT_NAME)
+      stdnse.debug1("handshake failed")
       return false, brute.Error:new( "Handshake failed." )
     end
     return true
@@ -118,26 +118,26 @@ Driver = {
     local response
     local err
     local status
-    stdnse.print_debug( "Trying %s/%s ...", user, pass )
+    stdnse.debug1( "Trying %s/%s ...", user, pass )
     -- send username and password
     -- both are prefixed with 0x06, size and are encrypted
-    status, err = self.socket:send(bin.pack("C",0x06) .. bin.pack("C",string.len(user)) .. encrypt(user) ) -- send username
+    status, err = self.socket:send("\x06" .. bin.pack("C",string.len(user)) .. encrypt(user) ) -- send username
     status, response = self.socket:receive_bytes(0)
     if not status or string.find(response,"Enter password") == nil then
-      stdnse.print_debug(1, "%s: Sending username failed", SCRIPT_NAME)
+      stdnse.debug1("Sending username failed")
       return false, brute.Error:new( "Sending username failed." )
     end
     -- send password
-    status, err = self.socket:send(bin.pack("C",0x06) .. bin.pack("C",string.len(pass)) .. encrypt(pass) ) -- send password
+    status, err = self.socket:send("\x06" .. bin.pack("C",string.len(pass)) .. encrypt(pass) ) -- send password
     status, response = self.socket:receive_bytes(0)
     if not status or string.find(response,"Login unsuccessful") or string.find(response,"Invalid login.")then
-      stdnse.print_debug(1, "%s: Incorrect username or password", SCRIPT_NAME)
+      stdnse.debug1("Incorrect username or password")
       return false, brute.Error:new( "Incorrect username or password." )
     end
 
     if status then
       retry = true -- now the server is in "locked mode", we need to retry next connection a few times
-      return true, brute.Account:new( user, pass, creds.State.VALID)
+      return true, creds.Account:new( user, pass, creds.State.VALID)
     end
     return false,brute.Error:new( "Incorrect password" )
   end,

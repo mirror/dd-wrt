@@ -2,7 +2,6 @@ local nmap = require "nmap"
 local shortport = require "shortport"
 local snmp = require "snmp"
 local stdnse = require "stdnse"
-local table = require "table"
 
 description = [[
 Attempts to enumerate Windows Shares through SNMP.
@@ -13,15 +12,17 @@ Attempts to enumerate Windows Shares through SNMP.
 -- nmap -sU -p 161 --script=snmp-win32-shares <target>
 -- @output
 -- | snmp-win32-shares:
--- |   SYSVOL
--- |     C:\WINDOWS\sysvol\sysvol
--- |   NETLOGON
--- |     C:\WINDOWS\sysvol\sysvol\inspectit-labb.local\SCRIPTS
--- |   Webapps
--- |_    C:\Program Files\Apache Software Foundation\Tomcat 5.5\webapps\ROOT
+-- |   SYSVOL: C:\WINDOWS\sysvol\sysvol
+-- |   NETLOGON: C:\WINDOWS\sysvol\sysvol\inspectit-labb.local\SCRIPTS
+-- |_  Webapps: C:\Program Files\Apache Software Foundation\Tomcat 5.5\webapps\ROOT
+--
+-- @xmloutput
+-- <elem key="SYSVOL">C:\WINDOWS\sysvol\sysvol</elem>
+-- <elem key="NETLOGON">C:\WINDOWS\sysvol\sysvol\inspectit-labb.local\SCRIPTS</elem>
+-- <elem key="Webapps">C:\Program Files\Apache Software Foundation\Tomcat 5.5\webapps\ROOT</elem>
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 dependencies = {"snmp-brute"}
 
@@ -38,7 +39,7 @@ portrule = shortport.portnumber(161, "udp", {"open", "open|filtered"})
 -- @param tbl table containing <code>oid</code> and <code>value</code>
 -- @param oid string containing the object id for which the value should be extracted
 -- @return value of relevant type or nil if oid was not found
-function get_value_from_table( tbl, oid )
+local function get_value_from_table( tbl, oid )
 
   for _, v in ipairs( tbl ) do
     if v.oid == oid then
@@ -52,23 +53,20 @@ end
 --- Processes the table and creates the script output
 --
 -- @param tbl table containing <code>oid</code> and <code>value</code>
--- @return table suitable for <code>stdnse.format_output</code>
-function process_answer( tbl )
+-- @return an output table with (sharename, path) pairs
+local function process_answer( tbl )
 
   local share_name = "1.3.6.1.4.1.77.1.2.27.1.1"
   local share_path = "1.3.6.1.4.1.77.1.2.27.1.2"
-  local new_tbl = {}
+  local new_tbl = stdnse.output_table()
 
   for _, v in ipairs( tbl ) do
 
     if ( v.oid:match("^" .. share_name) ) then
-      local item = {}
       local objid = v.oid:gsub( "^" .. share_name, share_path)
       local path = get_value_from_table( tbl, objid )
 
-      item.name = v.value
-      table.insert( item, path )
-      table.insert( new_tbl, item )
+      new_tbl[v.value] = path
     end
 
   end
@@ -80,27 +78,23 @@ end
 
 action = function(host, port)
 
-  local socket = nmap.new_socket()
-  local catch = function() socket:close() end
-  local try = nmap.new_try(catch)
   local data, snmpoid = nil, "1.3.6.1.4.1.77.1.2.27"
   local shares = {}
   local status
 
-  socket:set_timeout(5000)
-  try(socket:connect(host, port))
+  local snmpHelper = snmp.Helper:new(host, port)
+  snmpHelper:connect()
 
-  status, shares = snmp.snmpWalk( socket, snmpoid )
-  socket:close()
+  status, shares = snmpHelper:walk( snmpoid )
 
   if (not(status)) or ( shares == nil ) or ( #shares == 0 ) then
-    return shares
+    return
   end
 
   shares = process_answer( shares )
 
   nmap.set_port_state(host, port, "open")
 
-  return stdnse.format_output( true, shares )
+  return shares
 end
 

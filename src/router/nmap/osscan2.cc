@@ -2,11 +2,11 @@
 /***************************************************************************
  * osscan2.cc -- Routines used for 2nd Generation OS detection via         *
  * TCP/IP fingerprinting.  * For more information on how this works in     *
- * Nmap, see http://nmap.org/osdetect/                                     *
+ * Nmap, see https://nmap.org/osdetect/                                     *
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -97,8 +97,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -119,11 +118,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan2.cc 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: osscan2.cc 35407 2015-11-10 04:26:26Z dmiller $ */
 
 #include "osscan.h"
 #include "osscan2.h"
@@ -132,11 +131,13 @@
 #include "Target.h"
 #include "utils.h"
 #include "FPEngine.h"
+#include "FingerPrintResults.h"
 #include <dnet.h>
 
 #include "struct_ip.h"
 
 #include <list>
+#include <math.h>
 
 extern NmapOps o;
 
@@ -181,7 +182,7 @@ u16 prbWindowSz[] = { 1, 63, 4, 4, 16, 512, 3, 128, 256, 1024, 31337, 32768, 655
 static struct timeval now;
 
 /* Global to store performance info */
-struct scan_performance_vars perf;
+static struct scan_performance_vars perf;
 
 
 /******************************************************************************
@@ -387,6 +388,56 @@ int get_ipid_sequence_16(int numSamples, u32 *ipids, int islocalhost) {
   }
   else {
     return ipid_seq;
+  }
+}
+
+/* Convert a TCP sequence prediction difficulty index like 1264386
+   into a difficulty string like "Worthy Challenge */
+const char *seqidx2difficultystr(unsigned long idx) {
+  return  (idx < 3) ? "Trivial joke" : (idx < 6) ? "Easy" : (idx < 11) ? "Medium" : (idx < 12) ? "Formidable" : (idx < 16) ? "Worthy challenge" : "Good luck!";
+}
+
+const char *ipidclass2ascii(int seqclass) {
+  switch (seqclass) {
+  case IPID_SEQ_CONSTANT:
+    return "Duplicated ipid (!)";
+  case IPID_SEQ_INCR:
+    return "Incremental";
+  case IPID_SEQ_INCR_BY_2:
+    return "Incrementing by 2";
+  case IPID_SEQ_BROKEN_INCR:
+    return "Broken little-endian incremental";
+  case IPID_SEQ_RD:
+    return "Randomized";
+  case IPID_SEQ_RPI:
+    return "Random positive increments";
+  case IPID_SEQ_ZERO:
+    return "All zeros";
+  case IPID_SEQ_UNKNOWN:
+    return "Busy server or unknown class";
+  default:
+    return "ERROR, WTF?";
+  }
+}
+
+const char *tsseqclass2ascii(int seqclass) {
+  switch (seqclass) {
+  case TS_SEQ_ZERO:
+    return "zero timestamp";
+  case TS_SEQ_2HZ:
+    return "2HZ";
+  case TS_SEQ_100HZ:
+    return "100HZ";
+  case TS_SEQ_1000HZ:
+    return "1000HZ";
+  case TS_SEQ_OTHER_NUM:
+    return "other";
+  case TS_SEQ_UNSUPPORTED:
+    return "none returned (unsupported)";
+  case TS_SEQ_UNKNOWN:
+    return "unknown class";
+  default:
+    return "ERROR, WTF?";
   }
 }
 
@@ -1089,6 +1140,30 @@ void HostOsScanStats::initScanStats() {
     target->FPR->osscan_opentcpport = openTCPPort;
   }
 
+  /* We should look at a different port if we know that this port is tcpwrapped */
+  if (o.servicescan && openTCPPort > 0 && target->ports.isTCPwrapped(openTCPPort)) {
+    if (o.debugging) {
+      log_write(LOG_STDOUT, "First choice open TCP port %d is tcpwrapped. ", openTCPPort);
+    }
+    /* Keep moving to other ports until we find one which is not tcpwrapped, or until we run out of ports */
+    while ((tport = target->ports.nextPort(tport, &port, IPPROTO_TCP, PORT_OPEN))) {
+      openTCPPort = tport->portno;
+      if (!target->ports.isTCPwrapped(openTCPPort)) {
+        break;
+      }
+    }
+
+    target->FPR->osscan_opentcpport = openTCPPort;
+
+    if (o.debugging) {
+      if (target->ports.isTCPwrapped(openTCPPort)) {
+        log_write(LOG_STDOUT, "All open TCP ports are found to be tcpwrapped. Using %d for OS detection, but results might not be accurate.\n", openTCPPort);
+      } else {
+        log_write(LOG_STDOUT, "Using non-tcpwrapped port %d for OS detection.\n", openTCPPort);
+      }
+    }
+  }
+
   /* Now we should find a closed TCP port */
   if (target->FPR->osscan_closedtcpport > 0)
     closedTCPPort = target->FPR->osscan_closedtcpport;
@@ -1286,7 +1361,7 @@ bool HostOsScan::nextTimeout(HostOsScanStats *hss, struct timeval *when) {
   }
 
   *when = (firstgood)? now : earliest_to;
-  return (firstgood)? false : true;
+  return !firstgood;
 }
 
 
@@ -2449,7 +2524,7 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
     seq_AVs.push_back(AV);
 
   /* SS: Shared IP ID sequence boolean */
-  if ( (tcp_ipid_seqclass == IPID_SEQ_INCR ||
+  if ((tcp_ipid_seqclass == IPID_SEQ_INCR ||
         tcp_ipid_seqclass == IPID_SEQ_BROKEN_INCR ||
         tcp_ipid_seqclass == IPID_SEQ_RPI) &&
        (icmp_ipid_seqclass == IPID_SEQ_INCR ||
@@ -2459,7 +2534,7 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
        are in the same sequence. */
     AV.attribute = "SS";
     u32 avg = (hss->ipid.tcp_ipids[good_tcp_ipid_num - 1] - hss->ipid.tcp_ipids[0]) / (good_tcp_ipid_num - 1);
-    if ( hss->ipid.icmp_ipids[0] < hss->ipid.tcp_ipids[good_tcp_ipid_num - 1] + 3 * avg) {
+    if (hss->ipid.icmp_ipids[0] < hss->ipid.tcp_ipids[good_tcp_ipid_num - 1] + 3 * avg) {
       AV.value = "S";
     } else {
       AV.value = "O";
@@ -2483,7 +2558,7 @@ void HostOsScan::makeTSeqFP(HostOsScanStats *hss) {
 
       dhz = (double) ts_diffs[i] / (time_usec_diffs[i] / 1000000.0);
       /*       printf("ts incremented by %d in %li usec -- %fHZ\n", ts_diffs[i], time_usec_diffs[i], dhz); */
-      avg_ts_hz += dhz / ( hss->si.responses - 1);
+      avg_ts_hz += dhz / (hss->si.responses - 1);
     }
 
     if (avg_ts_hz > 0 && avg_ts_hz < 5.66) { /* relatively wide range because sampling time so short and frequency so slow */
@@ -3146,7 +3221,7 @@ bool HostOsScan::processTUdpResp(HostOsScanStats *hss, struct ip *ip) {
     if (in_cksum((unsigned short *)ip2, 20) == checksum) {
       AV.value = "G"; /* The "expected" good value */
     } else {
-      AV.value = "I"; /* They fucked it up */
+      AV.value = "I"; /* They modified it */
     }
     *checksumptr = checksum;
   }
@@ -3171,7 +3246,7 @@ bool HostOsScan::processTUdpResp(HostOsScanStats *hss, struct ip *ip) {
   }
   AV.attribute = "RUD";
   if (datastart < dataend)
-    AV.value = "I"; /* They fucked it up */
+    AV.value = "I"; /* They modified it */
   else
     AV.value = "G";
   AVs.push_back(AV);

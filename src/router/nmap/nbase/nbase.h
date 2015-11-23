@@ -5,11 +5,11 @@
  * using libnbase can guarantee the availability of functions like         *
  * (v)snprintf and inet_pton.  This library also provides consistency and  *
  * extended features for some functions.  It was originally written for    *
- * use in the Nmap Security Scanner ( http://nmap.org ).                   *
+ * use in the Nmap Security Scanner ( https://nmap.org ).                   *
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -100,8 +100,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -122,11 +121,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase.h 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: nbase.h 35407 2015-11-10 04:26:26Z dmiller $ */
 
 #ifndef NBASE_H
 #define NBASE_H
@@ -225,6 +224,7 @@
 #undef NDEBUG
 
 /* Integer types */
+#include <stdint.h>
 typedef uint8_t u8;
 typedef int8_t s8;
 typedef uint16_t u16;
@@ -372,6 +372,14 @@ extern "C" int vsnprintf (char *, size_t, const char *, va_list);
 #define inline __inline
 #endif
 
+#if defined(__GNUC__)
+#define NORETURN __attribute__((noreturn))
+#elif defined(_MSC_VER)
+#define NORETURN __declspec(noreturn)
+#else
+#define NORETURN
+#endif
+
 
 static inline int checked_fd_isset(int fd, fd_set *fds) {
 #ifndef WIN32
@@ -477,10 +485,6 @@ int alloc_vsprintf(char **strp, const char *fmt, va_list va)
      __attribute__ ((format (printf, 2, 0)));
 
 char *escape_windows_command_arg(const char *arg);
-
-/* Trivial function that returns nonzero if all characters in str of
-   length strlength are printable (as defined by isprint()) */
-int stringisprintable(const char *str, int strlength);
 
 /* parse_long is like strtol or atoi, but it allows digits only.
    No whitespace, sign, or radix prefix. */

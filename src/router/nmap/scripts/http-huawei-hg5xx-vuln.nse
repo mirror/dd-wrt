@@ -1,17 +1,20 @@
 description = [[
-Detects Huawei modems models HG530x, HG520x, HG510x (and possibly
-others...) vulnerable to a remote credential and information
-disclosure vulnerability. It also extracts the PPPoE credentials and
-other interesting configuration values.
+Detects Huawei modems models HG530x, HG520x, HG510x (and possibly others...)
+vulnerable to a remote credential and information disclosure vulnerability. It
+also extracts the PPPoE credentials and other interesting configuration values.
 
-Attackers can query the URIs "/Listadeparametros.html" and "/wanfun.js" to extract sensitive information
-including PPPoE credentials, firmware version, model, gateway, dns servers and active connections among other values.
+Attackers can query the URIs "/Listadeparametros.html" and "/wanfun.js" to
+extract sensitive information including PPPoE credentials, firmware version,
+model, gateway, dns servers and active connections among other values.
 
-This script exploits two vulnerabilities. One was discovered and reported by Adiaz from Comunidad Underground de Mexico (http://underground.org.mx) and it allows attackers to extract the pppoe password. The configuration disclosure vulnerability was discovered by Pedro Joaquin (http://hakim.ws).
+This script exploits two vulnerabilities. One was discovered and reported by
+Adiaz from Comunidad Underground de Mexico (http://underground.org.mx) and it
+allows attackers to extract the pppoe password. The configuration disclosure
+vulnerability was discovered by Pedro Joaquin (http://hakim.ws).
 
 References:
-*http://websec.ca/advisories/view/Huawei-HG520c-3.10.18.x-information-disclosure
-*http://routerpwn.com/#huawei
+* http://websec.ca/advisories/view/Huawei-HG520c-3.10.18.x-information-disclosure
+* http://routerpwn.com/#huawei
 ]]
 
 ---
@@ -51,7 +54,7 @@ References:
 ---
 
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"exploit","vuln"}
 
 local http = require "http"
@@ -83,7 +86,7 @@ including PPPoE credentials, firmware version, model, gateway, dns servers and a
   -- Identify servers that answer 200 to invalid HTTP requests and exit as these would invalidate the tests
   local _, http_status, _ = http.identify_404(host,port)
   if ( http_status == 200 ) then
-    stdnse.print_debug(1, "%s: Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", SCRIPT_NAME, host.ip, port.number)
+    stdnse.debug1("Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", host.ip, port.number)
     return false
   end
 
@@ -109,7 +112,7 @@ including PPPoE credentials, firmware version, model, gateway, dns servers and a
     if pppoe_user then
       vuln.state = vulns.STATE.EXPLOIT
     else
-      stdnse.print_debug(1, "%s:Username string was not found in this page. Exiting.", SCRIPT_NAME)
+      stdnse.debug1("Username string was not found in this page. Exiting.")
       return vuln_report:make_output(vuln)
     end
 

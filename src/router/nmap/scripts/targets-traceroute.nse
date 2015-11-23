@@ -3,7 +3,9 @@ local string = require "string"
 local target = require "target"
 
 description = [[
-Inserts traceroute hops into the Nmap scanning queue. It only functions if Nmap's <code>--traceroute</code> option is used and the <code>newtargets</code> script argument is given.
+Inserts traceroute hops into the Nmap scanning queue. It only functions if
+Nmap's <code>--traceroute</code> option is used and the <code>newtargets</code>
+script argument is given.
 ]]
 
 ---
@@ -21,7 +23,7 @@ Inserts traceroute hops into the Nmap scanning queue. It only functions if Nmap'
 -- 09/02/2010
 author = "Henri Doreau"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"safe", "discovery"}
 
@@ -30,15 +32,11 @@ hostrule = function(host)
   -- print debug messages because the script relies on
   -- script arguments and traceroute results.
   if not target.ALLOW_NEW_TARGETS then
-    stdnse.print_debug(3,
-      "Skipping %s script, 'newtargets' script argument is missing.",
-      SCRIPT_NAME)
+    stdnse.debug3("Skipping %s script, 'newtargets' script argument is missing.", SCRIPT_NAME)
     return false
   end
   if not host.traceroute then
-    stdnse.print_debug(3,
-      "Skipping %s script because traceroute results are missing.",
-      SCRIPT_NAME)
+    stdnse.debug3("Skipping %s script because traceroute results are missing.", SCRIPT_NAME)
     return false
   end
   return true
@@ -53,10 +51,9 @@ action = function(host)
       local status, ret = target.add(hop.ip)
       if status then
         ntargets = ntargets + ret
-        stdnse.print_debug(3,
-            "TRACEROUTE Scan Hops: Added new target "..host.ip.." from traceroute results")
+        stdnse.debug3("TRACEROUTE Scan Hops: Added new target "..host.ip.." from traceroute results")
       else
-        stdnse.print_debug(3, "TRACEROUTE Scan Hops: " .. ret)
+        stdnse.debug3("TRACEROUTE Scan Hops: " .. ret)
       end
     end
   end

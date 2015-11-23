@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: nmap
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 12/09/2012
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 11/10/2015
 .\"    Manual: [FIXME: manual]
 .\"    Source: [FIXME: source]
 .\"  Language: English
 .\"
-.TH "NMAP" "1" "12/09/2012" "[FIXME: source]" "[FIXME: manual]"
+.TH "NMAP" "1" "11/10/2015" "[FIXME: source]" "[FIXME: manual]"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -102,15 +102,13 @@ Nmap finished: 2 IP addresses (2 hosts up) scanned in 88\&.392 seconds
 .SH "译注"
 .PP
 该Nmap参考指南中文版由Fei Yang
-fyang1024@gmail\&.com和Lei Lililei_721@6611\&.org
+<fyang1024@gmail\&.com>和Lei Li<lilei_721@6611\&.org>
 从\m[blue]\fB英文版本\fR\m[]\&\s-2\u[1]\d\s+2翻译而来。 我们希望这将使全世界使用中文的人们更了解Nmap，但我们不能保证该译本和官方的 英文版本一样完整，也不能保证同步更新。 它可以在\m[blue]\fBCreative Commons Attribution License\fR\m[]\&\s-2\u[2]\d\s+2下被修改并重新发布。
 .SH "选项概要"
 .PP
 当Nmap不带选项运行时，该选项概要会被输出，最新的版本在这里
 \m[blue]\fB\%http://www.insecure.org/nmap/data/nmap.usage.txt\fR\m[]。 它帮助人们记住最常用的选项，但不能替代本手册其余深入的文档，一些晦涩的选项甚至不在这里。
 .PP
-
-.sp
 .if n \{\
 .RS 4
 .\}
@@ -523,7 +521,7 @@ open|filtered。 除了使用您指定的TCP标记位，Nmap会和基本扫描�
 .PP
 \fB\-sI <zombie host[:probeport]>\fR (Idlescan)
 .RS 4
-这种高级的扫描方法允许对目标进行真正的TCP端口盲扫描 (意味着没有报文从您的真实IP地址发送到目标)。相反，side\-channel攻击 利用zombie主机上已知的IP分段ID序列生成算法来窥探目标上开放端口的信息。 IDS系统将显示扫描来自您指定的zombie机(必须运行并且符合一定的标准)。 这种奇妙的扫描类型太复杂了，不能在此完全描述，所以我写一篇非正式的论文， 发布在\m[blue]\fB\%http://nmap.org/book/idlescan.html\fR\m[]。
+这种高级的扫描方法允许对目标进行真正的TCP端口盲扫描 (意味着没有报文从您的真实IP地址发送到目标)。相反，side\-channel攻击 利用zombie主机上已知的IP分段ID序列生成算法来窥探目标上开放端口的信息。 IDS系统将显示扫描来自您指定的zombie机(必须运行并且符合一定的标准)。 这种奇妙的扫描类型太复杂了，不能在此完全描述，所以我写一篇非正式的论文， 发布在\m[blue]\fB\%https://nmap.org/book/idlescan.html\fR\m[]。
 .sp
 除了极端隐蔽(由于它不从真实IP地址发送任何报文)， 该扫描类型可以建立机器间的基于IP的信任关系。 端口列表\fI从zombie 主机的角度。\fR显示开放的端口。 因此您可以尝试用您认为(通过路由器/包过滤规则)可能被信任的 zombies扫描目标。
 .sp
@@ -618,8 +616,7 @@ TCP端口用同样的方法对待。 注意Nmap
 .PP
 \fB\-\-version\-intensity <intensity>\fR (设置 版本扫描强度)
 .RS 4
-当进行版本扫描(\fB\-sV\fR)时，nmap发送一系列探测报文 ，每个报文都被赋予一个1到9之间的值。 被赋予较低值的探测报文对大范围的常见服务有效，而被赋予较高值的报文 一般没什么用。强度水平说明了应该使用哪些探测报文。数值越高， 服务越有可能被正确识别。 然而，高强度扫描花更多时间。强度值必须在0和9之间。 默认是7。当探测报文通过nmap\-service\-probes
-ports指示符 注册到目标端口时，无论什么强度水平，探测报文都会被尝试。这保证了DNS 探测将永远在任何开放的53端口尝试， SSL探测将在443端口尝试，等等。
+当进行版本扫描(\fB\-sV\fR)时，nmap发送一系列探测报文 ，每个报文都被赋予一个1到9之间的值。 被赋予较低值的探测报文对大范围的常见服务有效，而被赋予较高值的报文 一般没什么用。强度水平说明了应该使用哪些探测报文。数值越高， 服务越有可能被正确识别。 然而，高强度扫描花更多时间。强度值必须在0和9之间。 默认是7。当探测报文通过nmap\-service\-probesports指示符 注册到目标端口时，无论什么强度水平，探测报文都会被尝试。这保证了DNS 探测将永远在任何开放的53端口尝试， SSL探测将在443端口尝试，等等。
 .RE
 .PP
 \fB\-\-version\-light\fR (打开轻量级模式)
@@ -651,7 +648,7 @@ Nmap最著名的功能之一是用TCP/IP协议栈fingerprinting进行远程操�
 操作系统检测可以进行其它一些测试，这些测试可以利用处理 过程中收集到的信息。例如运行时间检测，使用TCP时间戳选项(RFC 1323) 来估计主机上次重启的时间，这仅适用于提供这类信息的主机。另一种 是TCP序列号预测分类，用于测试针对远程主机建立一个伪造的TCP连接 的可能难度。这对于利用基于源IP地址的可信关系(rlogin，防火墙过滤等) 或者隐含源地址的攻击非常重要。这一类哄骗攻击现在很少见，但一些 主机仍然存在这方面的漏洞。实际的难度值基于统计采样，因此可能会有 一些波动。通常采用英国的分类较好，如\(lqworthy challenge\(rq或者
 \(lqtrivial joke\(rq。在详细模式(\fB\-v\fR)下只以 普通的方式输出，如果同时使用\fB\-O\fR，还报告IPID序列产生号。 很多主机的序列号是\(lq增加\(rq类别，即在每个发送包的IP头中 增加ID域值， 这对一些先进的信息收集和哄骗攻击来说是个漏洞。
 .PP
-\m[blue]\fB\%http://nmap.org/book/osdetect.html\fR\m[]
+\m[blue]\fB\%https://nmap.org/book/osdetect.html\fR\m[]
 文档使用多种语言描述了版本检测的方式、使用和定制。
 .PP
 采用下列选项启用和控制操作系统检测:
@@ -1053,51 +1050,45 @@ Service scan Timing: About 28\&.00% done; ETC: 16:18 (0:00:15 remaining)
 允许被扫描。但仅允许使用Nmap扫描并禁止测试漏洞或进行DoS攻击。为 保证带宽，对该主机的扫描每天不要超过12次。如果这个免费扫描服务被 滥用，系统将崩溃而且Nmap将报告解析 指定的主机名/IP地址失败：scanme\&.nmap\&.org。这些免 费扫描要求也适用于scanme2\&.nmap\&.org、
 scanme3\&.nmap\&.org等等，虽然这些 主机目前还不存在。
 .PP
-
 \fBnmap \-v scanme\&.nmap\&.org\fR
 .PP
 这个选项扫描主机scanme\&.nmap\&.org中 所有的保留TCP端口。选项\fB\-v\fR启用细节模式。
 .PP
-
 \fBnmap \-sS \-O scanme\&.nmap\&.org/24\fR
 .PP
 进行秘密SYN扫描，对象为主机Saznme所在的\(lqC类\(rq网段 的255台主机。同时尝试确定每台工作主机的操作系统类型。因为进行SYN扫描 和操作系统检测，这个扫描需要有根权限。
 .PP
-
 \fBnmap \-sV \-p 22，53，110，143，4564 198\&.116\&.0\-255\&.1\-127\fR
 .PP
 进行主机列举和TCP扫描，对象为B类188\&.116网段中255个8位子网。这 个测试用于确定系统是否运行了sshd、DNS、imapd或4564端口。如果这些端口 打开，将使用版本检测来确定哪种应用在运行。
 .PP
-
 \fBnmap \-v \-iR 100000 \-P0 \-p 80\fR
 .PP
 随机选择100000台主机扫描是否运行Web服务器(80端口)。由起始阶段 发送探测报文来确定主机是否工作非常浪费时间，而且只需探测主机的一个端口，因 此使用\fB\-P0\fR禁止对主机列表。
 .PP
-
 \fBnmap \-P0 \-p80 \-oX logs/pb\-port80scan\&.xml \-oG logs/pb\-port80scan\&.gnmap 216\&.163\&.128\&.20/20\fR
 .PP
 扫描4096个IP地址，查找Web服务器(不ping)，将结果以Grep和XML格式保存。
 .PP
-
 \fBhost \-l company\&.com | cut \-d \-f 4 | nmap \-v \-iL \-\fR
 .PP
 进行DNS区域传输，以发现company\&.com中的主机，然后将IP地址提供给 Nmap。上述命令用于GNU/Linux \-\- 其它系统进行区域传输时有不同的命令。
 .SH "BUGS"
 .PP
 和作者一样，Nmap也不是完美的，但可以通过发送Bug报告甚至编写 补丁使其更加完善。如果Nmap不能满足要求，首先从\m[blue]\fB\%http://www.insecure.org/nmap/\fR\m[]
-升级最新版本。如果总问题仍然存在，需要进行调查以确定问题是否 已经被解决。在\m[blue]\fB\%http://seclists.org/\fR\m[]尝试搜索出错消息或 浏览Nmap\-dev档案，以及仔细阅读使用手册。如果问题还是不能解决，发送 Bug报告至dev@nmap\&.org。在报告中包含所有 有关问题的信息，以及所使用的Nmap版本、操作系统版本。问题报告以及 Nmap的使用问题发送给dev@nmap\&.org比直接发送给Gyodor能更好回答。
+升级最新版本。如果总问题仍然存在，需要进行调查以确定问题是否 已经被解决。在\m[blue]\fB\%http://seclists.org/\fR\m[]尝试搜索出错消息或 浏览Nmap\-dev档案，以及仔细阅读使用手册。如果问题还是不能解决，发送 Bug报告至<dev@nmap\&.org>。在报告中包含所有 有关问题的信息，以及所使用的Nmap版本、操作系统版本。问题报告以及 Nmap的使用问题发送给dev@nmap\&.org比直接发送给Gyodor能更好回答。
 .PP
 解决Bug的代码补丁比Bug报告更受欢迎，在\m[blue]\fB\%http://www.insecure.org/nmap/data/HACKING\fR\m[]
 可获得建立补丁文件的基本指令。补丁可发送给nmap\-dev(建议) 或直接发给Fyodor。
 .SH "作者"
 .PP
 Fyodor
-fyodor@nmap\&.org
+<fyodor@nmap\&.org>
 (\m[blue]\fB\%http://www.insecure.org\fR\m[])
 .PP
 译者：Fei Yang
-fyang1024@gmail\&.com, Lei Li
-lilei_721@6611\&.org
+<fyang1024@gmail\&.com>, Lei Li
+<lilei_721@6611\&.org>
 .PP
 近年来，上百的人们为Nmap作出了极有价值的贡献，详细信息参见 随Nmap一起发布的CHANGELOG文件， 也可查看\m[blue]\fB\%http://www.insecure.org/nmap/nmap_changelog.html\fR\m[]。
 .SH "法律事项(版权、许可证、担保(缺)、出口限制)"
@@ -1112,7 +1103,7 @@ into [Finnish]\&. It was not written by Insecure\&.Com LLC, and does not legally
 在\m[blue]\fB\%http://www.insecure.org/nmap/\fR\m[]可获得Nmap的最新版本。
 .PP
 Nmap安全扫描器(C) 1996\-2005是Insecure\&.Com LLC的产品。 Nmap也是 Insecure\&.Com LLC的注册商标。这是一个免费软件，按照免费软件联盟V2\&.0的 GNU普通公共许可证的规定，可以重新发布和/或修改。这保证用户在一定的条件 下可以使用、修改和重新发布此软件。如果需要将Nmap嵌入专用软件，我们 会销售相应的许可证(联系
-sales@insecure\&.com)。很多安全 扫描器厂商已经获得了Nmap技术的许可证，如主机发现、端口扫描、OS系统 检测以及服务/版本检测等技术。
+<sales@insecure\&.com>)。很多安全 扫描器厂商已经获得了Nmap技术的许可证，如主机发现、端口扫描、OS系统 检测以及服务/版本检测等技术。
 .PP
 注意，GPL对\(lq衍生工作\(rq有重要的限制，但未给出有关的详细 描述。为避免误解，我们认为如果某个应用进行以下工作时被认为是该许可证的
 \(lq衍生工作\(rq：
@@ -1178,7 +1169,7 @@ nmap\-service\-probes\&.
 .PP
 这些条款并不是在GPL之上增加限制，只是为了明确说明与Nmap(有GPL许可证) 产品有关的\(lq衍生工作\(rq。这类似于Linus Torvalds对Linux内核模 块\(lq衍生工作\(rq的解释。我们的解释仅适用于Nmap \- 不适合其它 GPL产品。
 .PP
-如果对有GPL许可证限制的Nmap应用于非GPL工作有任何问题，我们将提供 相关的帮助。如上述条款所述，我们提供了可选的许可证以集成Nmap到专用应用和设备， 这些合同已被销售给多个安全厂商，通常都包含了永久的许可证以及提供优先支 持、更新，并资助可持续的Nmap技术开发。请发送邮件至sales@insecure\&.com
+如果对有GPL许可证限制的Nmap应用于非GPL工作有任何问题，我们将提供 相关的帮助。如上述条款所述，我们提供了可选的许可证以集成Nmap到专用应用和设备， 这些合同已被销售给多个安全厂商，通常都包含了永久的许可证以及提供优先支 持、更新，并资助可持续的Nmap技术开发。请发送邮件至<sales@insecure\&.com>
 以获得更多信息。
 .PP
 作为GPL的一个特殊例外，Insecure\&.Com LLC授权许可链接该程序的代码 至任何版本的OpenSSL库，这个库的发布符合等同于Copying\&.OpenSSL文件中包含 的许可证，它的发布同时包含了两个内容。除OpenSSL外，在任何方面都必须遵 守GNU GPL。如果改变这个文件，就可能超出该文件的版本，但并不对此负责。
@@ -1187,7 +1178,7 @@ nmap\-service\-probes\&.
 .PP
 Nmap软件提供源代码，这是因为我们认为用户有权在运行之前知道程序的工作 内容，同时也使用户可以检查软件的漏洞(目前还未发现)。
 .PP
-源代码还允许被移植到新的平台、修改Bug以及增加新功能。鼓励用户 向fyodor@nmap\&.org
+源代码还允许被移植到新的平台、修改Bug以及增加新功能。鼓励用户 向<fyodor@nmap\&.org>
 发送更新，以并入正式的发布中。 发送这些更新至Fyodor或Insecure\&.Org开发列表，表明允许Fyodor和Insecure\&.Com LLC 具有无限止的、非独有的权限来使用、修改和重新定义这些代码的许可证。 Nmap将一直以开放代码的方式提供，由于无法进行代码的许可证重新定义从而可能 导致了对其它开放软件项目的破坏问题(如KDEt NASM)，这一点很重要。 偶尔我们会向第三方提供重新定义的代码许可证。如果希望为自己的贡献说明 一个特定的许可证条件，在发送时指明。
 .PP
 本程序的发布只是为了应用，不提供任何担保，也不隐含任何有关 特定目的的商业或适用性担保。在\m[blue]\fB\%http://www.gnu.org/copyleft/gpl.html\fR\m[]

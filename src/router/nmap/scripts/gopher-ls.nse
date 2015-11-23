@@ -25,7 +25,7 @@ Lists files and directories at the root of a gopher service.
 
 
 author = "Toni Ruottu"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 
@@ -56,7 +56,7 @@ action = function( host, port )
   end
 
   local socket = nmap.new_socket()
-  local status, err = socket:connect(host.ip, port.number)
+  local status, err = socket:connect(host, port)
   if not status then
     return
   end

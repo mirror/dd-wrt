@@ -2,7 +2,7 @@
  * ncat_connect.c -- Ncat connect mode.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -93,8 +93,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -115,11 +114,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_connect.c 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: ncat_connect.c 34756 2015-06-27 08:21:53Z henri $ */
 
 #include "base64.h"
 #include "nsock.h"
@@ -211,20 +210,22 @@ static int verify_callback(int ok, X509_STORE_CTX *store)
 
 static void set_ssl_ctx_options(SSL_CTX *ctx)
 {
+    if (o.ssltrustfile == NULL) {
+        ssl_load_default_ca_certs(ctx);
+    } else {
+        if (o.debug)
+            logdebug("Using trusted CA certificates from %s.\n", o.ssltrustfile);
+        if (SSL_CTX_load_verify_locations(ctx, o.ssltrustfile, NULL) != 1) {
+            bye("Could not load trusted certificates from %s.\n%s",
+                o.ssltrustfile, ERR_error_string(ERR_get_error(), NULL));
+        }
+    }
+
     if (o.sslverify) {
         SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
-
-        if (o.ssltrustfile == NULL) {
-            ssl_load_default_ca_certs(ctx);
-        } else {
-            if (o.debug)
-                logdebug("Using trusted CA certificates from %s.\n", o.ssltrustfile);
-            if (SSL_CTX_load_verify_locations(ctx, o.ssltrustfile, NULL) != 1) {
-                bye("Could not load trusted certificates from %s.\n%s",
-                    o.ssltrustfile, ERR_error_string(ERR_get_error(), NULL));
-            }
-        }
     } else {
+        /* Still check verification status and report it */
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, verify_callback);
         if (o.ssl && o.debug)
             logdebug("Not doing certificate verification.\n");
     }
@@ -247,20 +248,20 @@ static void connect_report(nsock_iod nsi)
     union sockaddr_u peer;
     zmem(&peer, sizeof(peer.storage));
 
-    nsi_getlastcommunicationinfo(nsi, NULL, NULL, NULL,
-        &peer.sockaddr, sizeof(peer.storage));
-
+    nsock_iod_get_communication_info(nsi, NULL, NULL, NULL, &peer.sockaddr,
+                                     sizeof(peer.storage));
     if (o.verbose) {
 #ifdef HAVE_OPENSSL
-        if (nsi_checkssl(nsi)) {
+        if (nsock_iod_check_ssl(nsi)) {
             X509 *cert;
             X509_NAME *subject;
             char digest_buf[SHA1_STRING_LENGTH + 1];
             char *fp;
 
-            loguser("SSL connection to %s:%hu.", inet_socktop(&peer), nsi_peerport(nsi));
+            loguser("SSL connection to %s:%hu.", inet_socktop(&peer),
+                    nsock_iod_get_peerport(nsi));
 
-            cert = SSL_get_peer_certificate((SSL *) nsi_getssl(nsi));
+            cert = SSL_get_peer_certificate((SSL *)nsock_iod_get_ssl(nsi));
             ncat_assert(cert != NULL);
 
             subject = X509_get_subject_name(cert);
@@ -284,7 +285,8 @@ static void connect_report(nsock_iod nsi)
                 loguser("Connected to %s.\n", peer.un.sun_path);
             else
 #endif
-                loguser("Connected to %s:%hu.\n", inet_socktop(&peer), nsi_peerport(nsi));
+                loguser("Connected to %s:%hu.\n", inet_socktop(&peer),
+                        nsock_iod_get_peerport(nsi));
         }
 #else
 #if HAVE_SYS_UN_H
@@ -292,7 +294,8 @@ static void connect_report(nsock_iod nsi)
             loguser("Connected to %s.\n", peer.un.sun_path);
         else
 #endif
-            loguser("Connected to %s:%hu.\n", inet_socktop(&peer), nsi_peerport(nsi));
+            loguser("Connected to %s:%hu.\n", inet_socktop(&peer),
+                    nsock_iod_get_peerport(nsi));
 #endif
     }
 }
@@ -418,7 +421,8 @@ static int do_proxy_http(void)
         goto bail;
     }
     code = http_parse_status_line_code(status_line);
-    logdebug("Proxy returned status code %d.\n", code);
+    if (o.debug)
+      logdebug("Proxy returned status code %d.\n", code);
     free(status_line);
     status_line = NULL;
     if (http_read_header(&sockbuf, &header) != 0) {
@@ -459,7 +463,8 @@ static int do_proxy_http(void)
             http_challenge_free(&challenge);
             goto bail;
         }
-        logdebug("Reconnection header:\n%s", request);
+        if (o.debug)
+          logdebug("Reconnection header:\n%s", request);
         if (send(sd, request, n, 0) < 0) {
             loguser("Error sending proxy request: %s.\n", socket_strerror(socket_errno()));
             free(request);
@@ -476,7 +481,8 @@ static int do_proxy_http(void)
             goto bail;
         }
         code = http_parse_status_line_code(status_line);
-        logdebug("Proxy returned status code %d.\n", code);
+        if (o.debug)
+          logdebug("Proxy returned status code %d.\n", code);
         free(status_line);
         status_line = NULL;
         if (http_read_header(&sockbuf, &header) != 0) {
@@ -869,32 +875,32 @@ int ncat_connect(void)
         nsock_set_default_engine("select");
 
     /* Create an nsock pool */
-    if ((mypool = nsp_new(NULL)) == NULL)
+    if ((mypool = nsock_pool_new(NULL)) == NULL)
         bye("Failed to create nsock_pool.");
 
     if (o.debug >= 6)
-        nsock_set_loglevel(mypool, NSOCK_LOG_DBG_ALL);
+        nsock_set_loglevel(NSOCK_LOG_DBG_ALL);
     else if (o.debug >= 3)
-        nsock_set_loglevel(mypool, NSOCK_LOG_DBG);
+        nsock_set_loglevel(NSOCK_LOG_DBG);
     else if (o.debug >= 1)
-        nsock_set_loglevel(mypool, NSOCK_LOG_INFO);
+        nsock_set_loglevel(NSOCK_LOG_INFO);
     else
-        nsock_set_loglevel(mypool, NSOCK_LOG_ERROR);
+        nsock_set_loglevel(NSOCK_LOG_ERROR);
 
     /* Allow connections to broadcast addresses. */
-    nsp_setbroadcast(mypool, 1);
+    nsock_pool_set_broadcast(mypool, 1);
 
 #ifdef HAVE_OPENSSL
-    set_ssl_ctx_options((SSL_CTX *) nsp_ssl_init(mypool));
+    set_ssl_ctx_options((SSL_CTX *) nsock_pool_ssl_init(mypool, 0));
 #endif
 
     if (!o.proxytype) {
         /* A non-proxy connection. Create an iod for a new socket. */
-        cs.sock_nsi = nsi_new(mypool, NULL);
+        cs.sock_nsi = nsock_iod_new(mypool, NULL);
         if (cs.sock_nsi == NULL)
             bye("Failed to create nsock_iod.");
 
-        if (nsi_set_hostname(cs.sock_nsi, o.target) == -1)
+        if (nsock_iod_set_hostname(cs.sock_nsi, o.target) == -1)
             bye("Failed to set hostname on iod.");
 
 #if HAVE_SYS_UN_H
@@ -911,15 +917,38 @@ int ncat_connect(void)
                 strncpy(srcaddr.un.sun_path, tmp_name, sizeof(srcaddr.un.sun_path));
                 free (tmp_name);
             }
-            nsi_set_localaddr(cs.sock_nsi, &srcaddr.storage, SUN_LEN((struct sockaddr_un *)&srcaddr.storage));
+            nsock_iod_set_localaddr(cs.sock_nsi, &srcaddr.storage,
+                                SUN_LEN((struct sockaddr_un *)&srcaddr.storage));
 
             if (o.verbose)
                 loguser("[%s] used as source DGRAM Unix domain socket.\n", srcaddr.un.sun_path);
         }
         else
 #endif
-        if (srcaddr.storage.ss_family != AF_UNSPEC)
-            nsi_set_localaddr(cs.sock_nsi, &srcaddr.storage, sizeof(srcaddr.storage));
+        switch (srcaddr.storage.ss_family) {
+          case AF_UNSPEC:
+            break;
+          case AF_INET:
+            nsock_iod_set_localaddr(cs.sock_nsi, &srcaddr.storage,
+                                    sizeof(srcaddr.in));
+            break;
+#ifdef AF_INET6
+          case AF_INET6:
+            nsock_iod_set_localaddr(cs.sock_nsi, &srcaddr.storage,
+                                    sizeof(srcaddr.in6));
+            break;
+#endif
+#if HAVE_SYS_UN_H
+          case AF_UNIX:
+            nsock_iod_set_localaddr(cs.sock_nsi, &srcaddr.storage,
+                                    SUN_LEN((struct sockaddr_un *)&srcaddr.storage));
+            break;
+#endif
+          default:
+            nsock_iod_set_localaddr(cs.sock_nsi, &srcaddr.storage,
+                                    sizeof(srcaddr.storage));
+            break;
+        }
 
         if (o.numsrcrtes) {
             unsigned char *ipopts = NULL;
@@ -929,7 +958,7 @@ int ncat_connect(void)
                 bye("Sorry, -g can only currently be used with IPv4.");
             ipopts = buildsrcrte(targetss.in.sin_addr, o.srcrtes, o.numsrcrtes, o.srcrteptr, &ipoptslen);
 
-            nsi_set_ipoptions(cs.sock_nsi, ipopts, ipoptslen);
+            nsock_iod_set_ipoptions(cs.sock_nsi, ipopts, ipoptslen);
             free(ipopts); /* Nsock has its own copy */
         }
 
@@ -1003,10 +1032,10 @@ int ncat_connect(void)
 
         /* Once the proxy negotiation is done, Nsock takes control of the
            socket. */
-        cs.sock_nsi = nsi_new2(mypool, connect_socket, NULL);
+        cs.sock_nsi = nsock_iod_new2(mypool, connect_socket, NULL);
 
         /* Create IOD for nsp->stdin */
-        if ((cs.stdin_nsi = nsi_new2(mypool, 0, NULL)) == NULL)
+        if ((cs.stdin_nsi = nsock_iod_new2(mypool, 0, NULL)) == NULL)
             bye("Failed to create stdin nsiod.");
 
         post_connect(mypool, cs.sock_nsi);
@@ -1021,8 +1050,8 @@ int ncat_connect(void)
         gettimeofday(&end_time, NULL);
         time = TIMEVAL_MSEC_SUBTRACT(end_time, start_time) / 1000.0;
         loguser("%lu bytes sent, %lu bytes received in %.2f seconds.\n",
-            nsi_get_write_count(cs.sock_nsi),
-            nsi_get_read_count(cs.sock_nsi), time);
+            nsock_iod_get_write_count(cs.sock_nsi),
+            nsock_iod_get_read_count(cs.sock_nsi), time);
     }
 
 #if HAVE_SYS_UN_H
@@ -1033,7 +1062,7 @@ int ncat_connect(void)
     }
 #endif
 
-    nsp_delete(mypool);
+    nsock_pool_delete(mypool);
 
     return rc == NSOCK_LOOP_ERROR ? 1 : 0;
 }
@@ -1056,10 +1085,10 @@ static void connect_handler(nsock_pool nsp, nsock_event evt, void *data)
     }
 
 #ifdef HAVE_OPENSSL
-    if (nsi_checkssl(cs.sock_nsi)) {
+    if (nsock_iod_check_ssl(cs.sock_nsi)) {
         /* Check the domain name. ssl_post_connect_check prints an
            error message if appropriate. */
-        if (!ssl_post_connect_check((SSL *) nsi_getssl(cs.sock_nsi), o.target))
+        if (!ssl_post_connect_check((SSL *)nsock_iod_get_ssl(cs.sock_nsi), o.target))
             bye("Certificate verification error.");
     }
 #endif
@@ -1067,7 +1096,7 @@ static void connect_handler(nsock_pool nsp, nsock_event evt, void *data)
     connect_report(cs.sock_nsi);
 
     /* Create IOD for nsp->stdin */
-    if ((cs.stdin_nsi = nsi_new2(nsp, 0, NULL)) == NULL)
+    if ((cs.stdin_nsi = nsock_iod_new2(nsp, 0, NULL)) == NULL)
         bye("Failed to create stdin nsiod.");
 
     post_connect(nsp, nse_iod(evt));
@@ -1081,9 +1110,9 @@ static void post_connect(nsock_pool nsp, nsock_iod iod)
     if (o.cmdexec) {
         struct fdinfo info;
 
-        info.fd = nsi_getsd(iod);
+        info.fd = nsock_iod_get_sd(iod);
 #ifdef HAVE_OPENSSL
-        info.ssl = (SSL *) nsi_getssl(iod);
+        info.ssl = (SSL *)nsock_iod_get_ssl(iod);
 #endif
         /* Convert Nsock's non-blocking socket to an ordinary blocking one. It's
            possible for a program to write fast enough that it will get an
@@ -1119,7 +1148,7 @@ static void read_stdin_handler(nsock_pool nsp, nsock_event evt, void *data)
     ncat_assert(type == NSE_TYPE_READ);
 
     if (status == NSE_STATUS_EOF) {
-        shutdown(nsi_getsd(cs.sock_nsi), SHUT_WR);
+        shutdown(nsock_iod_get_sd(cs.sock_nsi), SHUT_WR);
         /* In --send-only mode or non-TCP mode, exit after EOF on stdin. */
         if (o.proto != IPPROTO_TCP || (o.proto == IPPROTO_TCP && o.sendonly))
             nsock_loop_quit(nsp);
@@ -1189,7 +1218,7 @@ static void read_socket_handler(nsock_pool nsp, nsock_event evt, void *data)
         ncat_delay_timer(o.linedelay);
 
     if (o.telnet)
-        dotelnet(nsi_getsd(nse_iod(evt)), (unsigned char *) buf, nbytes);
+        dotelnet(nsock_iod_get_sd(nse_iod(evt)), (unsigned char *) buf, nbytes);
 
     /* Write socket data to stdout */
     Write(STDOUT_FILENO, buf, nbytes);

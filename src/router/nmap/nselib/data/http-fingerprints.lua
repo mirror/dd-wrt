@@ -12,7 +12,7 @@ local table = require "table"
 --   http://www.irvineunderground.org
 --
 -- This file is released under the Nmap license; see:
---  http://nmap.org/book/man-legal.html
+--  https://nmap.org/book/man-legal.html
 --
 -- @args http-fingerprints.nikto-db-path Looks at the given path for nikto database.
 --       It then converts the records in nikto's database into our Lua table format
@@ -3449,6 +3449,21 @@ table.insert(fingerprints, {
     }
   });
 
+table.insert(fingerprints, {
+    category = 'general',
+    probes = {
+      {
+        path = '/console/login/loginForm.jsp',
+        method = 'HEAD'
+      }
+   },
+    matches = {
+      {
+        match = '',
+        output = 'Oracle WebLogic Server Administration Console'
+      }
+    }
+  });
 
 table.insert(fingerprints, {
     category = 'general',
@@ -4601,6 +4616,44 @@ table.insert(fingerprints, {
       }
     }
   });
+
+-- http://www.rapid7.com/db/modules/payload/windows/meterpreter/reverse_hop_http
+-- "GET /hop.php?/control" will grab all pending messages, but is unreliable if
+-- there are no pending messages.
+table.insert(fingerprints, {
+    category = 'security',
+    probes = {
+      {
+        path = '/hop.php?/12345',
+        method = 'GET'
+      },
+    },
+    matches = {
+      {
+        -- TODO: this only works for Meterpreter payloads. Find a more generic means?
+        match = 'METERPRETER_TRANSPORT_HTTP',
+        output = 'Metasploit reverse_hop_http hop point'
+      },
+    }
+  });
+
+-- http://carnal0wnage.attackresearch.com/2015/02/cisco-asa-version-grabber-cve-2014-3398.html
+table.insert(fingerprints, {
+    category = 'security',
+    probes = {
+      {
+        path = '/CSCOSSLC/config-auth',
+        method = 'GET'
+      },
+    },
+    matches = {
+      {
+        match = '<version who="sg">([^<]+)</version>',
+        output = 'Cisco ASA, firmware \\1'
+      },
+    }
+  });
+
 ------------------------------------------------
 ----        MANAGEMENT SOFTWARE             ----
 ------------------------------------------------
@@ -5078,6 +5131,22 @@ table.insert(fingerprints, {
       {
         match = '',
         output = 'XAMPP'
+      }
+    }
+  });
+
+table.insert(fingerprints, {
+    category = 'management',
+    probes = {
+      {
+        path = '/lc/system/console',
+        method = 'HEAD'
+      },
+    },
+    matches = {
+      {
+        match = 'OSGi Management Console',
+        output = 'Adobe LiveCycle Management Console'
       }
     }
   });
@@ -6365,6 +6434,24 @@ table.insert(fingerprints, {
       }
     }
   });
+
+-- HNAP Devices
+table.insert(fingerprints, {
+    category = 'general',
+    probes = {
+      {
+        path = '/HNAP1/',
+        method = 'GET'
+      }
+    },
+    matches = {
+      {
+        match = '<ModelDescription>(.-)</ModelDescription>',
+        output = '\\1'
+      }
+    }
+  });
+
 ------------------------------------------------
 ----               ATTACKS                  ----
 ------------------------------------------------
@@ -6469,6 +6556,9 @@ table.insert(fingerprints, {
       {
         path = '/_vti_txt/',
         method = 'GET'
+      },
+      {
+        path = '/postinfo.html'
       },
       {
         path = '/_vti_bin/_vti_aut/author.dll'
@@ -6851,6 +6941,29 @@ table.insert(fingerprints, {
         match = '200',
         output = 'Seagate BlackArmorNAS 110/220/440 Administrator Password Reset Vulnerability'
       }
+    }
+  });
+
+-- HNAP Authentication Bypass
+table.insert(fingerprints, {
+    category = 'attacks',
+    probes = {
+      {
+        path = '/bsc_lan.php?NO_NEED_AUTH=1&AUTH_GROUP=0',
+        method = 'GET'
+      }
+    },
+    matches = {
+      {
+        dontmatch = '<a href="http://www%.dlink%.com"',
+        match = '^HTTP/1.[01] 200 OK\r\n.*Server: Embedded HTTP Server',
+        output = 'D-Link Router Vulnerable to Authentication Bypass',
+      },
+      {
+        dontmatch = '<a href="http://www%.dlink%.com"',
+        match = '^HTTP/1.[01] 200 OK\r\n.*Server: Virtual Web 0.9',
+        output = 'D-Link Router Vulnerable to Authentication Bypass',
+      },
     }
   });
 
@@ -8255,7 +8368,6 @@ table.insert(fingerprints, {
       }
     }
   });
-
 
 ------------------------------------------------
 ----           UNCATEGORIZED                ----
@@ -11853,7 +11965,7 @@ local f = nmap.fetchfile(nikto_db_path) or io.open(nikto_db_path, "r")
 
 if f then
 
-  stdnse.print_debug(1, "Found nikto db.")
+  stdnse.debug1("Found nikto db.")
 
   local nikto_db = {}
   for l in io.lines(nikto_db_path) do

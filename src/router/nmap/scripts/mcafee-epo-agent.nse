@@ -20,7 +20,7 @@ Check if ePO agent is running on port 8081 or port identified as ePO Agent port.
 
 author = "Didier Stevens, Daniel Miller"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"version", "safe"}
 
@@ -31,15 +31,13 @@ local string = require "string"
 
 portrule = function(host, port)
   if port.version ~= nil and port.version.product ~= nil then
-    return (port.version.product:find("[eE][pP]olicy Orch")
+    return ((port.version.product:find("[eE][pP]olicy Orch")
           or port.version.product:find("[eE]PO [aA]gent"))
+          and nmap.version_intensity() >= 7)
   else
-    return (port.number == 8081 and port.protocol == "tcp")
+    return ((port.number == 8081 and port.protocol == "tcp")
+            and nmap.version_intensity() >= 7)
   end
-end
-
-function string.StartsWith(stringToSearch, stringToFind)
-  return stringToFind == stringToSearch:sub(1, #stringToFind)
 end
 
 function ExtractXMLElement(xmlContent, elementName)
@@ -55,9 +53,9 @@ action = function(host, port)
   data = http.get(host, port, '/', options)
 
   if data.body then
-    stdnse.print_debug(2, "mcafee-epo-agent: data.body:sub = %s", data.body:sub(1, 80))
+    stdnse.debug2("data.body:sub = %s", data.body:sub(1, 80))
 
-    if data.body:StartsWith('<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="FrameworkLog.xsl"?><naLog>') then
+    if data.body:match('^<%?xml .*%?>%s*<naLog>') then
       port.version.hostname = ExtractXMLElement(data.body, "ComputerName")
       epoServerName = ExtractXMLElement(data.body, "ePOServerName") or ""
       port.version.version =  ExtractXMLElement(data.body, "version") or ""

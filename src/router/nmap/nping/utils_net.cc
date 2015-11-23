@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -96,8 +96,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -118,7 +117,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 #include "nping.h"
@@ -596,7 +595,7 @@ int resolveCached(char *host, struct sockaddr_storage *ss, size_t *sslen, int pf
 
   if( ss==NULL || sslen==NULL || host==NULL)
 	nping_fatal(QT_3, "resolveCached(): NULL values supplied");
-	
+
   /* First we check if we have the host already cached */
   for(int i=0; i<MAX_CACHED_HOSTS && i<cached_count; i++){
     if( !strcasecmp( archive[i].hostname , host ) ){ /* Cache hit */
@@ -613,18 +612,18 @@ int resolveCached(char *host, struct sockaddr_storage *ss, size_t *sslen, int pf
   nping_print(DBG_4, "resolveCached(): Cache miss %d for %s\n", misses, host);
 
   if( (result=resolve(host, 0, ss, sslen, pf)) == 0 ){
-	
+
 	  /* Increment count */
 	  if( cached_count < MAX_CACHED_HOSTS )
 		cached_count++;
-		
+
       /* Store info */
 	  memset(&(archive[current_index]), 0, sizeof(cached_host_t) );
 	  strncpy(archive[current_index].hostname, host, MAX_CACHED_HOSTNAME_LEN);
 	  archive[current_index].sslen = *sslen;
 	  memcpy(&(archive[current_index].ss), ss, *sslen);
 
-	
+
 	  /* I run some tests to see what is the best approach when the cache
 	   * is full. The thing is that in Nping, we are likely to call
 	   * this function over and over with specifying the same hosts. Deleting
@@ -635,9 +634,9 @@ int resolveCached(char *host, struct sockaddr_storage *ss, size_t *sslen, int pf
 	  if( current_index < MAX_CACHED_HOSTS-1 )
 		  current_index++;					
 	  return 0;
-	
 
-	
+
+
 	  ///* Watch out for the overflow. If cache is full,  */
 	  //if( cached_count == MAX_CACHED_HOSTS ){
 			//if( way%2==1 ){
@@ -660,7 +659,7 @@ int resolveCached(char *host, struct sockaddr_storage *ss, size_t *sslen, int pf
 	  //else
 		//current_index++;		
 	  //return OP_SUCCESS;
-	
+
   }else{
 		nping_warning(QT_2, "Error resolving %s\n",host);
 		return OP_FAILURE;
@@ -699,7 +698,7 @@ struct hostent *gethostbynameCached(char *host){
   nping_print(DBG_4, "gethostbynameCached(): Cache miss %d for %s", misses, host);
 
   if( (result=gethostbyname(host) ) != NULL ){
-	
+
 	  /* Increment cache entry count */
 	  if( cached_count < MAX_CACHED_HOSTS )
 		cached_count++;
@@ -709,7 +708,7 @@ struct hostent *gethostbynameCached(char *host){
        * one in its place */
       if ( current_index==MAX_CACHED_HOSTS-1 && archive[current_index].h != NULL )
         hostentfree( archive[current_index].h );
-        
+
       /* Store the hostent entry in the cache */   
 	  memset(&(archive[current_index]), 0, sizeof(gethostbynamecached_t) );
 	  strncpy(archive[current_index].hostname, host, MAX_CACHED_HOSTNAME_LEN);
@@ -723,7 +722,7 @@ struct hostent *gethostbynameCached(char *host){
 	  else{
 		  return  archive[current_index].h;
 	  }
-	
+
   }else{
     return NULL;
   }
@@ -961,7 +960,7 @@ int tcppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen,
   struct sockaddr_in6 *d6=(struct sockaddr_in6 *)dst;
   char srcipstring[128];
   char dstipstring[128];
-  
+
  assert(packet);
  assert(dstbuff);
  assert(len>=20);
@@ -972,7 +971,7 @@ int tcppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen,
   if( detail!=LOW_DETAIL && detail!=MEDIUM_DETAIL && detail!=HIGH_DETAIL)
     detail=LOW_DETAIL;
 
-    
+
   /* Determine target IP address */
   if(src!=NULL){
     if( s4->sin_family==AF_INET ){
@@ -1059,7 +1058,7 @@ int tcppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen,
   strncpy((char*)dstbuff, protoinfo, dstlen);
 
   return OP_SUCCESS;
-  
+
 } /* End of tcppackethdrinfo() */
 
 
@@ -1076,7 +1075,7 @@ int udppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen,
   struct sockaddr_in6 *d6=(struct sockaddr_in6 *)dst;
   char srcipstring[128];
   char dstipstring[128];
-  
+
  assert(packet);
  assert(dstbuff);
  assert(len>=8);
@@ -1087,7 +1086,7 @@ int udppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen,
   if( detail!=LOW_DETAIL && detail!=MEDIUM_DETAIL && detail!=HIGH_DETAIL)
     detail=LOW_DETAIL;
 
-    
+
   /* Determine target IP address */
   if(src!=NULL){
     if( s4->sin_family==AF_INET ){
@@ -1131,7 +1130,7 @@ int udppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen,
   strncpy((char*)dstbuff, protoinfo, dstlen);
 
   return OP_SUCCESS;
-  
+
 } /* End of udppackethdrinfo() */
 
 
@@ -1352,7 +1351,7 @@ u8 *getTCPheaderLocation(u8 *pkt, size_t pktLen){
   }
 
   return NULL;
-  
+
 } /* End of getTCPHeaderLocation() */
 
 
@@ -1395,7 +1394,7 @@ u16 *getSrcPortFromIPPacket(u8 *pkt, size_t pktLen){
   if((header=getTCPheaderLocation(pkt, pktLen))==NULL){
     if ((header=getUDPheaderLocation(pkt, pktLen))==NULL)
       return NULL;
-    
+
   }
   pnt=(u16*)&(header[0]);
   port= ntohs(*pnt);
@@ -1458,24 +1457,24 @@ int obtainRawSocket(){
 
   if( o.ipv6() ){
     switch( o.getMode() ){
-        
+
         case TCP:
             protocol = IPPROTO_TCP;
         break;
-        
+
         case UDP:
             protocol = IPPROTO_UDP;
         break;
-        
+
         case ICMP:
             protocol = IPPROTO_ICMPV6;
         break;
-        
+
         case ARP:
             nping_warning(QT_2,"Warning: createRawSocket() should not be called in ARP mode.");
             return 0;
         break;
-        
+
         default:
             nping_fatal(QT_3, "createRawSocket(): NpingOps::getMode() does not return a valid mode. Please report this bug.");
         break;
@@ -1541,7 +1540,7 @@ int getinterfaces_inet6_linux(if6_t *ifbuf, int max_ifaces){
 
   if(ifbuf==NULL || max_ifaces<=0)
     nping_fatal(QT_3,"getinterfaces_inet6_linux() NULL values supplied");
- 
+
   /* TODO: Do we fatal() or should we just error and return OP_FAILURE? */
   if ( !file_is_readable(PATH_PROC_IFINET6) )
     nping_fatal(QT_3, "Couldn't get IPv6 interface information. File %s does not exist or you don't have read permissions.", PATH_PROC_IFINET6);
@@ -1677,7 +1676,7 @@ int getinterfaces_inet6_linux(if6_t *ifbuf, int max_ifaces){
     printf(" %02x", dev_flags); 
     printf(" %8s\n", devname);        
  */
-    
+
   } /* End of loop */
 
   /* Cleanup */
@@ -1735,7 +1734,7 @@ int getroutes_inet6_linux(route6_t *rtbuf, int max_routes){
 
   if(rtbuf==NULL || max_routes<=0)
     nping_fatal(QT_3,"getroutes_inet6_linux() NULL values supplied");
- 
+
   /* TODO: Do we fatal() or should we just error and return OP_FAILURE? */
   if ( !file_is_readable(PATH_PROC_IPV6ROUTE) )
     nping_fatal(QT_3, "Couldn't get IPv6 route information. File %s does not exist or you don't have read permissions.", PATH_PROC_IPV6ROUTE);
@@ -1757,7 +1756,7 @@ int getroutes_inet6_linux(route6_t *rtbuf, int max_routes){
      * TODO: Can interfaces with format eth0:1 appear on /proc/net/ipv6_route?
      * If they can, then we need to change the code to skip the last : */
     removecolon(buffer);
-    
+
     /* 1. Check it has the correct length.  */
     size_t min_len=0;
     min_len += 3*32; /* Three IPv6 addresses in hex */
@@ -1908,12 +1907,12 @@ int getroutes_inet6_linux(route6_t *rtbuf, int max_routes){
  *
     for(i=0; i<16; i++)
         printf("%02x", rtbuf[parsed_routes].dst_net.s6_addr[i]);
-        
+
     printf(" %02x ", rtbuf[parsed_routes].dst_prefix);
 
     for(i=0; i<16; i++)
         printf("%02x", rtbuf[parsed_routes].src_net.s6_addr[i]);
-        
+
     printf(" %02x ", rtbuf[parsed_routes].src_prefix);
 
     for(i=0; i<16; i++)
@@ -1926,7 +1925,7 @@ int getroutes_inet6_linux(route6_t *rtbuf, int max_routes){
     printf(" %8s\n", rtbuf[parsed_routes].devname);        
 */
    parsed_routes++;
-    
+
   } /* End of loop */
 
   /* Cleanup */
@@ -1958,7 +1957,7 @@ route6_t *route_dst_ipv6_linux(const struct sockaddr_storage *const dst){
   u8 zero_addr[16];                  /* Just to compare route to addr "::"     */
   memset(zero_addr, 0, 16);
   dstsin6=(struct sockaddr_in6 *)dst;
-   
+
   if(dst==NULL) return NULL;
   if(dstsin6->sin6_family!=AF_INET6) return NULL;
 

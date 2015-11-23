@@ -11,7 +11,7 @@ the host and the NetBus service itself.
 The extracted host information includes a list of running
 applications, and the hosts sound volume settings.
 
-The extracted service information includes it's access control list
+The extracted service information includes its access control list
 (acl), server information, and setup. The acl is a list of IP
 addresses permitted to access the service. Server information
 contains details about the server installation path, restart
@@ -50,11 +50,37 @@ and an smtp-server used for notification delivery.
 -- |     Wave: 0
 -- |     Synth: 0
 -- |_    Cd: 0
+-- @xmloutput
+-- <table key="ACL">
+--   <elem>127.0.0.1</elem>
+-- </table>
+-- <table key="APPLICATIONS">
+--   <elem>PuTTY Configuration</elem>
+-- </table>
+-- <table key="INFO">
+--   <elem key="Program Path">Z:\home\joeuser\Desktop\Patch.exe</elem>
+--   <elem key="Restart persistent">Yes</elem>
+--   <elem key="Login ID">joeuser</elem>
+--   <elem key="Clients connected to this host">1</elem>
+-- </table>
+-- <table key="SETUP">
+--   <elem key="TCP-port">12345</elem>
+--   <elem key="Log traffic">1</elem>
+--   <elem key="Password">password123</elem>
+--   <elem key="Notify to">admin@example.com</elem>
+--   <elem key="Notify from">spoofed@example.org</elem>
+--   <elem key="SMTP-server">smtp.example.net</elem>
+-- </table>
+-- <table key="VOLUME">
+--   <elem key="Wave">0</elem>
+--   <elem key="Synth">0</elem>
+--   <elem key="Cd">0</elem>
+-- </table>
 --
 -- @args netbus-info.password The password used for authentication
 
 author = "Toni Ruottu"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 
@@ -64,68 +90,63 @@ portrule = shortport.port_or_service (12345, "netbus", {"tcp"})
 
 local function format_acl(acl)
   if acl == nil then
-    return {}
+    return nil
   end
   local payload = string.sub(acl, 9) --skip header
   local fields = stdnse.strsplit("|", payload)
   table.remove(fields, (# fields))
-  fields["name"] = "ACL"
   return fields
 end
 
 local function format_apps(apps)
   if apps == nil then
-    return {}
+    return nil
   end
   local payload = string.sub(apps, 10) --skip header
   local fields = stdnse.strsplit("|", payload)
   table.remove(fields, (# fields))
-  fields["name"] = "APPLICATIONS"
   return fields
 end
 
 local function format_info(info)
   if info == nil then
-    return {}
+    return nil
   end
   local payload = string.sub(info, 6) --skip header
   local fields = stdnse.strsplit("|", payload)
-  fields["name"] = "INFO"
   return fields
 end
 
 local function format_setup(setup)
-  local formatted = {}
   if setup == nil then
-    return formatted
+    return nil
   end
   local fields = stdnse.strsplit(";", setup)
   if # fields < 7 then
-    return formatted
+    return nil
   end
-  formatted["name"] = "SETUP"
-  table.insert(formatted, string.format("TCP-port: %s", fields[2]))
-  table.insert(formatted, string.format("Log traffic: %s", fields[3]))
-  table.insert(formatted, string.format("Password: %s", fields[4]))
-  table.insert(formatted, string.format("Notify to: %s", fields[5]))
-  table.insert(formatted, string.format("Notify from: %s", fields[6]))
-  table.insert(formatted, string.format("SMTP-server: %s", fields[7]))
+  local formatted = stdnse.output_table()
+  formatted["TCP-port"] = fields[2]
+  formatted["Log traffic"] = fields[3]
+  formatted["Password"] = fields[4]
+  formatted["Notify to"] = fields[5]
+  formatted["Notify from"] = fields[6]
+  formatted["SMTP-server"] = fields[7]
   return formatted
 end
 
 local function format_volume(volume)
-  local formatted = {}
   if volume == nil then
-    return formatted
+    return nil
   end
   local fields = stdnse.strsplit(";", volume)
   if # fields < 4 then
-    return formatted
+    return nil
   end
-  formatted["name"] = "VOLUME"
-  table.insert(formatted, string.format("Wave: %s", fields[2]))
-  table.insert(formatted, string.format("Synth: %s", fields[3]))
-  table.insert(formatted, string.format("Cd: %s", fields[4]))
+  local formatted = stdnse.output_table()
+  formatted["Wave"] = fields[2]
+  formatted["Synth"] = fields[3]
+  formatted["Cd"] = fields[4]
   return formatted
 end
 
@@ -140,9 +161,13 @@ action = function( host, port )
   end
   local socket = nmap.new_socket()
   socket:set_timeout(5000)
-  local status, err = socket:connect(host.ip, port.number)
+  local status, err = socket:connect(host, port)
   local buffer, err = stdnse.make_buffer(socket, "\r")
   local _ = buffer()
+  if not (_ and _:match("^NetBus")) then
+    stdnse.debug1("Not NetBus")
+    return nil
+  end
   socket:send(string.format("Password;1;%s\r", password))
   local gotin = buffer()
   if gotin == "Access;0" then
@@ -161,14 +186,14 @@ action = function( host, port )
   local volume = buffer()
   socket:close()
 
-  local response = {}
-  table.insert(response, format_acl(acl))
-  table.insert(response, format_apps(apps))
-  table.insert(response, format_info(info))
-  table.insert(response, format_setup(setup))
-  table.insert(response, format_volume(volume))
+  local response = stdnse.output_table()
+  response["ACL"] = format_acl(acl)
+  response["APPLICATIONS"] = format_apps(apps)
+  response["INFO"] = format_info(info)
+  response["SETUP"] = format_setup(setup)
+  response["VOLUME"] = format_volume(volume)
 
-  return stdnse.format_output(true, response)
+  return response
 end
 
 

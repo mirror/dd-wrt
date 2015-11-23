@@ -1,4 +1,5 @@
 local bin = require "bin"
+local ipOps = require "ipOps"
 local math = require "math"
 local nmap = require "nmap"
 local packet = require "packet"
@@ -9,22 +10,20 @@ local table = require "table"
 description = [[
 Performs simple Path MTU Discovery to target hosts.
 
-TCP or UDP packets are sent to the host with the DF (don't fragment) bit
-set and with varying amounts of data.  If an ICMP Fragmentation Needed
-is received, or no reply is received after retransmissions, the amount
-of data is lowered and another packet is sent.  This continues until
-(assuming no errors occur) a reply from the final host is received,
-indicating the packet reached the host without being fragmented.
+TCP or UDP packets are sent to the host with the DF (don't fragment) bit set
+and with varying amounts of data.  If an ICMP Fragmentation Needed is received,
+or no reply is received after retransmissions, the amount of data is lowered
+and another packet is sent.  This continues until (assuming no errors occur) a
+reply from the final host is received, indicating the packet reached the host
+without being fragmented.
 
 Not all MTUs are attempted so as to not expend too much time or network
 resources.  Currently the relatively short list of MTUs to try contains
 the plateau values from Table 7-1 in RFC 1191, "Path MTU Discovery".
 Using these values significantly cuts down the MTU search space.  On top
 of that, this list is rarely traversed in whole because:
-    * the MTU of the outgoing interface is used as a starting point, and
-    * we can jump down the list when an intermediate router sending a
-      "can't fragment" message includes its next hop MTU (as described
-      in RFC 1191 and required by RFC 1812)
+* the MTU of the outgoing interface is used as a starting point, and
+* we can jump down the list when an intermediate router sending a "can't fragment" message includes its next hop MTU (as described in RFC 1191 and required by RFC 1812)
 ]]
 
 ---
@@ -40,7 +39,7 @@ of that, this list is rarely traversed in whole because:
 
 author = "Kris Katterjohn"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"safe", "discovery"}
 
@@ -153,7 +152,7 @@ end
 -- different hosts
 local check = function(layer3)
   local ip = packet.Packet:new(layer3, layer3:len())
-  return bin.pack('A', ip.ip_bin_dst)
+  return ip.ip_bin_dst
 end
 
 -- Updates a packet's info and calculates checksum
@@ -271,14 +270,14 @@ hostrule = function(host)
   if not nmap.is_privileged() then
     nmap.registry[SCRIPT_NAME] = nmap.registry[SCRIPT_NAME] or {}
     if not nmap.registry[SCRIPT_NAME].rootfail then
-      stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+      stdnse.verbose1("not running for lack of privileges.")
     end
     nmap.registry[SCRIPT_NAME].rootfail = true
     return nil
   end
 
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_debug("%s is IPv4 compatible only.", SCRIPT_NAME)
+    stdnse.debug1("is IPv4 compatible only.")
     return false
   end
   if not (host.interface and host.interface_mtu) then
@@ -300,8 +299,8 @@ action = function(host)
   local pcap = nmap.new_socket()
   local proto = host.registry['pathmtuprobe']['proto']
   local port = host.registry['pathmtuprobe']['port']
-  local saddr = packet.toip(host.bin_ip_src)
-  local daddr = packet.toip(host.bin_ip)
+  local saddr = ipOps.str_to_ip(host.bin_ip_src)
+  local daddr = ipOps.str_to_ip(host.bin_ip)
   local try = nmap.new_try()
   local status, pkt, ip
 
@@ -340,7 +339,7 @@ action = function(host)
         end
       end
 
-      local test = bin.pack('A', pkt.ip_bin_src)
+      local test = pkt.ip_bin_src
       local status, length, _, layer3 = pcap:pcap_receive()
       while status and test ~= check(layer3) do
         status, length, _, layer3 = pcap:pcap_receive()

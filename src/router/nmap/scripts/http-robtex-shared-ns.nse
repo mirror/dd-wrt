@@ -27,7 +27,7 @@ The target must be specified by DNS name, not IP address.
 --
 
 author = "Arturo 'Buanzo' Busleiman"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe", "external"}
 
 local function unescape(s)
@@ -48,13 +48,14 @@ function parse_robtex_response(data)
   end
 
   -- cut out the section we're interested in
-  data = data:match("<span id=\"sharednss\">.-<ul.->(.-)</ul>")
+  data = data:match("<span id=\"shared_pn_mn\">.-<ol.->(.-)</ol>")
 
   -- process each html list item
-  for li in data:gmatch("<li>(.-)</li>") do
-    local domain = li:match("<a.->(.*)</a>")
-    if ( domain ) then
-      table.insert(result, domain)
+  if data then
+    for domain in data:gmatch("<li><code>(.-)</code></li>") do
+      if ( domain ) then
+        table.insert(result, domain)
+      end
     end
   end
 
@@ -88,7 +89,7 @@ action = function(host)
       return
     end
     local url = base_url:format(server)
-    stdnse.print_debug(2, "%s: Querying URL: %s", SCRIPT_NAME, url)
+    stdnse.debug2("Querying URL: %s", url)
     data = fetch_robtex_data(url)
 
     domains = parse_robtex_response(data)

@@ -51,7 +51,7 @@ password.
 --     library
 
 author = "Dhiru Kholia"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 portrule = shortport.port_or_service(1521, "oracle-tns", "tcp", "open")
@@ -91,11 +91,11 @@ Driver =
     local status, data
     repeat
       if ( tries < MAX_RETRIES ) then
-        stdnse.print_debug(2, "%s: Attempting to re-connect (attempt %d of %d)", SCRIPT_NAME, MAX_RETRIES - tries, MAX_RETRIES)
+        stdnse.debug2("Attempting to re-connect (attempt %d of %d)", MAX_RETRIES - tries, MAX_RETRIES)
       end
       status, data = self.helper:Connect()
       if ( not(status) ) then
-        stdnse.print_debug(2, "%s: ERROR: An Oracle %s error occurred", SCRIPT_NAME, data)
+        stdnse.debug2("ERROR: An Oracle %s error occurred", data)
         self.helper:Close()
       else
         break
@@ -117,7 +117,7 @@ Driver =
   -- @param password string containing the login password
   -- @return status, true on success, false on failure
   -- @return brute.Error object on failure
-  --         brute.Account object on success
+  --         creds.Account object on success
   login = function( self, username, password )
     local status, data = self.helper:StealthLogin( username, password )
 
@@ -126,7 +126,7 @@ Driver =
       if ( johnfile ) then
         johnfile:write(("%s:%s\n"):format(username,hash))
       end
-      return true, brute.Account:new(username, hash, creds.State.HASHED)
+      return true, creds.Account:new(username, hash, creds.State.HASHED)
     else
       return false, brute.Error:new( data )
     end
@@ -141,6 +141,7 @@ Driver =
 
 }
 
+local function fail (err) return stdnse.format_output(false, err) end
 
 action = function(host, port)
   local DEFAULT_ACCOUNTS = "nselib/data/oracle-default-accounts.lst"
@@ -150,20 +151,20 @@ action = function(host, port)
   local mode = arg_accounts and "accounts" or "default"
 
   if ( not(sid) ) then
-    return "\n  ERROR: Oracle instance not set (see oracle-brute-stealth.sid or tns.sid)"
+    return fail("Oracle instance not set (see oracle-brute-stealth.sid or tns.sid)")
   end
 
   if ( arg_johnfile ) then
     johnfile = io.open(arg_johnfile, "w")
     if ( not(johnfile) ) then
-      return ("\n  ERROR: Failed to open %s for writing"):format(johnfile)
+      return fail(("Failed to open %s for writing"):format(johnfile))
     end
   end
 
   local helper = tns.Helper:new( host, port, sid )
   local status, result = helper:Connect()
   if ( not(status) ) then
-    return "\n  ERROR: Failed to connect to oracle server"
+    return fail("Failed to connect to oracle server")
   end
   helper:Close()
 
@@ -177,12 +178,12 @@ action = function(host, port)
   if ( mode == "default" ) then
     local f = nmap.fetchfile(DEFAULT_ACCOUNTS)
     if ( not(f) ) then
-      return ("\n  ERROR: Failed to find %s"):format(DEFAULT_ACCOUNTS)
+      return fail(("Failed to find %s"):format(DEFAULT_ACCOUNTS))
     end
 
     f = io.open(f)
     if ( not(f) ) then
-      return ("\n  ERROR: Failed to open %s"):format(DEFAULT_ACCOUNTS)
+      return fail(("Failed to open %s"):format(DEFAULT_ACCOUNTS))
     end
 
     engine.iterator = brute.Iterators.credential_iterator(f)

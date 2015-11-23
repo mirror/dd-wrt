@@ -2,7 +2,7 @@
 -- This Real Time Streaming Protocol (RTSP) library implements only a minimal
 -- subset of the protocol needed by the current scripts.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -- @author Patrik Karlsson <patrik@cqure.net>
 --
 -- The library contains the following classes:
@@ -169,7 +169,7 @@ Client = {
     self.socket:set_timeout(self.timeout)
     local status = self.socket:connect(self.host, self.port)
     if ( not(status) ) then
-      stdnse.print_debug(2, "Failed to connect to the server: %s", self.host.ip)
+      stdnse.debug2("Failed to connect to the server: %s", self.host.ip)
       return false, ("Failed to connect to the server: %s"):format(self.host.ip)
     end
     return true
@@ -210,7 +210,7 @@ Client = {
       -- check if send was successful, in case it wasn't AND
       -- this is our last retry, ABORT
       if ( not(status) and 0 == retries - 1 ) then
-        stdnse.print_debug(2, "Failed to send request to server (%s)", err)
+        stdnse.debug2("Failed to send request to server (%s)", err)
         return false, ("Failed to send request to server (%s)"):format(err)
       -- if send was successful, attempt to receive the response
       elseif ( status ) then
@@ -224,7 +224,7 @@ Client = {
         local status, err = self:connect()
         -- if re-connect fails, BAIL out of here
         if ( not(status) ) then
-          stdnse.print_debug(2, "Failed to reconnect socket to server (%s)", err)
+          stdnse.debug2("Failed to reconnect socket to server (%s)", err)
           return false, ("Failed to reconnect socket to server (%s)"):format(err)
         end
       end
@@ -232,7 +232,7 @@ Client = {
     until( status or retries == 0 )
 
     if( not(status) ) then
-      stdnse.print_debug(2, "Failed to receive response from server (%s)", data)
+      stdnse.debug2("Failed to receive response from server (%s)", data)
       return false, ("Failed to receive response from server (%s)"):format(data)
     end
 

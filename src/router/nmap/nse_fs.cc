@@ -1,6 +1,6 @@
 /*
 ** Note: this is a port of LuaFileSystem for the
-** Nmap project (http://nmap.org).
+** Nmap project (https://nmap.org).
 ** Many functions have been removed, because we only really
 ** need: dir, mkdir, rmdir and possibly link.
  */
@@ -25,16 +25,6 @@
  * http://www.keplerproject.org/luafilesystem/
  *
  **/
-
-#ifndef _WIN32
-#ifndef _AIX
-#define _FILE_OFFSET_BITS 64 /* Linux, Solaris and HP-UX */
-#else
-#define _LARGE_FILES 1 /* AIX */
-#endif
-#endif
-
-#define _LARGEFILE64_SOURCE
 
 extern "C" {
   #include "lauxlib.h"
@@ -320,4 +310,3 @@ LUALIB_API int luaopen_lfs(lua_State *L) {
   set_info (L);
   return 1;
 }
-

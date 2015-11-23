@@ -25,17 +25,17 @@ Lists all discovered credentials (e.g. from brute force and default password che
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"auth", "default", "safe"}
 
 
 postrule = function()
   local all = creds.Credentials:new(creds.ALL_DATA)
   local tab = all:getTable()
-  if ( tab and #tab > 0 ) then return true end
+  if ( tab and next(tab) ) then return true end
 end
 
 action = function()
   local all = creds.Credentials:new(creds.ALL_DATA)
-  return (all and tostring(all) or nil)
+  return all:getTable()
 end

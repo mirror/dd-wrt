@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -96,8 +96,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -118,39 +117,18 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: targets.h 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: targets.h 34816 2015-07-02 04:14:51Z dmiller $ */
 
 #ifndef TARGETS_H
 #define TARGETS_H
 
-#ifdef HAVE_CONFIG_H
-#include "nmap_config.h"
-#else
-#ifdef WIN32
-#include "nmap_winconfig.h"
-#endif /* WIN32 */
-#endif /* HAVE_CONFIG_H */
-
-/* This contains pretty much everything we need ... */
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-
-#if HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h> /* Defines MAXHOSTNAMELEN on BSD*/
-#endif
-
-#include "nmap.h"
-#include "global_structures.h"
-#include "TargetGroup.h"
+#include <list>
+class NetBlock;
+class Target;
 
 class TargetGroup {
 public:
@@ -160,10 +138,7 @@ public:
     this->netblock = NULL;
   }
 
-  ~TargetGroup() {
-    if (this->netblock != NULL)
-      delete this->netblock;
-  }
+  ~TargetGroup();
 
   /* Initializes (or reinitializes) the object with a new expression,
      such as 192.168.0.0/16 , 10.1.0-5.1-254 , or
@@ -235,3 +210,4 @@ int dumpExclude(addrset *exclude_group);
 void returnhost(HostGroupState *hs);
 
 #endif /* TARGETS_H */
+

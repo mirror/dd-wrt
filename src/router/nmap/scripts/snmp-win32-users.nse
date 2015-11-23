@@ -1,7 +1,6 @@
 local nmap = require "nmap"
 local shortport = require "shortport"
 local snmp = require "snmp"
-local stdnse = require "stdnse"
 local table = require "table"
 
 description = [[
@@ -22,10 +21,20 @@ Attempts to enumerate Windows user accounts through SNMP
 -- |   db2admin
 -- |   ldaptest
 -- |_  patrik
+-- @xmloutput
+-- <elem>Administrator</elem>
+-- <elem>Guest</elem>
+-- <elem>IUSR_EDUSRV011</elem>
+-- <elem>IWAM_EDUSRV011</elem>
+-- <elem>SUPPORT_388945a0</elem>
+-- <elem>Tomcat</elem>
+-- <elem>db2admin</elem>
+-- <elem>ldaptest</elem>
+-- <elem>patrik</elem>
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "auth", "safe"}
 dependencies = {"snmp-brute"}
 
@@ -40,8 +49,8 @@ portrule = shortport.portnumber(161, "udp", {"open", "open|filtered"})
 --- Processes the table and creates the script output
 --
 -- @param tbl table containing <code>oid</code> and <code>value</code>
--- @return table suitable for <code>stdnse.format_output</code>
-function process_answer( tbl )
+-- @return table with just the values
+local function process_answer( tbl )
 
   local new_tab = {}
 
@@ -57,18 +66,14 @@ end
 
 action = function(host, port)
 
-  local socket = nmap.new_socket()
-  local catch = function() socket:close() end
-  local try = nmap.new_try(catch)
   local snmpoid = "1.3.6.1.4.1.77.1.2.25"
   local users = {}
   local status
 
-  socket:set_timeout(5000)
-  try(socket:connect(host, port))
+  local snmpHelper = snmp.Helper:new(host, port)
+  snmpHelper:connect()
 
-  status, users = snmp.snmpWalk( socket, snmpoid )
-  socket:close()
+  status, users = snmpHelper:walk( snmpoid )
 
   if( not(status) ) then
     return
@@ -82,6 +87,6 @@ action = function(host, port)
 
   nmap.set_port_state(host, port, "open")
 
-  return stdnse.format_output( true, users )
+  return users
 end
 

@@ -14,7 +14,7 @@ classifies this as a design feature.
 Based on original Metasploit module by mihi.
 
 References:
-* http://dev.metasploit.com/redmine/projects/framework/repository/entry/modules/exploits/multi/misc/java_rmi_server.rb
+* https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/multi/misc/java_rmi_server.rb
 ]];
 
 ---
@@ -32,10 +32,10 @@ References:
 -- |               Default configuration of RMI registry allows loading classes from remote URLs which can lead to remote code executeion.
 -- |
 -- |     References:
--- |_      http://dev.metasploit.com/redmine/projects/framework/repository/entry/modules/exploits/multi/misc/java_rmi_server.rb
+-- |_      https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/multi/misc/java_rmi_server.rb
 
 author = "Aleksandar Nikolic";
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html";
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html";
 categories = {
   "intrusive",
   "vuln"
@@ -50,7 +50,7 @@ portrule = shortport.port_or_service({
   });
 
 action = function (host, port)
-  local registry = rmi.Registry:new(host.ip, port.number);
+  local registry = rmi.Registry:new(host, port);
   registry:_handshake();
   local rmiArgs = rmi.Arguments:new();
   local argsRaw = "75" ..  --TC_ARRAY
@@ -82,7 +82,7 @@ action = function (host, port)
 Default configuration of RMI registry allows loading classes from remote URLs which can lead to remote code executeion.
 ]],
     references = {
-      'http://dev.metasploit.com/redmine/projects/framework/repository/entry/modules/exploits/multi/misc/java_rmi_server.rb',
+      'https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/multi/misc/java_rmi_server.rb',
     },
     exploit_results = {},
   };
@@ -93,7 +93,7 @@ Default configuration of RMI registry allows loading classes from remote URLs wh
   rmiArgs:addRaw(bin.pack("H", argsRaw));
 
   -- reference: java/rmi/dgc/DGCImpl_Stub.java and java/rmi/dgc/DGCImpl_Skel.java
-  -- we are calling DGC's (it's objectId is 2) method with opnum 0
+  -- we are calling DGC's (its objectId is 2) method with opnum 0
   -- DCG's hashcode is f6b6898d8bf28643 hex or -669196253586618813 dec
   local status, j_array = registry.out:writeMethodCall(registry.out, 2, "f6b6898d8bf28643", 0, rmiArgs);
   local status, retByte = registry.out.dis:readByte();

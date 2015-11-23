@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,7 +116,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -143,7 +142,6 @@
 #include <stdlib.h>
 
 #include "nmap_tty.h"
-#include "utils.h"
 #include "NmapOps.h"
 
 extern NmapOps o;
@@ -163,7 +161,8 @@ static void tty_flush(void)
         FlushConsoleInputBuffer(stdinput);
 }
 
-#else
+#else  //!win32
+#include <signal.h>
 #if !defined(O_NONBLOCK) && defined(O_NDELAY)
 #define O_NONBLOCK			O_NDELAY
 #endif
@@ -187,8 +186,8 @@ static int tty_getchar()
         fd_set set;
         struct timeval tv;
 #endif
-        
-        if (tty_fd && tcgetpgrp(tty_fd) == getpid()) {
+
+        if (tty_fd && tcgetpgrp(tty_fd) == getpgrp()) {
 
         // This is so that when the terminal has been disconnected, it will be
         // reconnected when possible. If it slows things down, just remove it
@@ -227,6 +226,37 @@ static void tty_flush(void)
         tcflush(tty_fd, TCIFLUSH);
 }
 
+static void install_handler(int signo, void (*handler) (int signo))
+{
+        struct sigaction sa;
+        sa.sa_handler = handler;
+        sigfillset(&sa.sa_mask); /* block all signals during handler execution */
+        sa.sa_flags = 0;
+        sigaction(signo, &sa, NULL);
+}
+
+static void shutdown_clean(int signo)
+{
+        sigset_t set;
+
+/* We reinstall the default handler and call tty_done */
+        install_handler(signo, SIG_DFL);
+        tty_done();
+
+/* Unblock signo and raise it (thus allowing the default handler to occur) */
+        sigemptyset(&set);
+        sigaddset(&set, signo);
+        sigprocmask(SIG_UNBLOCK, &set, NULL);
+        raise(signo); /* This _should_ kill us */
+        _exit(EXIT_FAILURE); /* If it does not */
+}
+
+static void install_all_handlers() {
+        install_handler(SIGINT, shutdown_clean);
+        install_handler(SIGTERM, shutdown_clean);
+        install_handler(SIGQUIT, shutdown_clean);
+}
+
 /*
  * Initializes the terminal for unbuffered non-blocking input. Also
  * registers tty_done() via atexit().  You need to call this before
@@ -239,13 +269,15 @@ void tty_init()
         if(o.noninteractive)
                 return;
 
+        install_all_handlers();
+
         if (tty_fd)
                 return;
 
         if ((tty_fd = open("/dev/tty", O_RDONLY | O_NONBLOCK)) < 0) return;
 
 #ifndef __CYGWIN32__
-        if (tcgetpgrp(tty_fd) != getpid()) {
+        if (tcgetpgrp(tty_fd) != getpgrp()) {
                 close(tty_fd); return;
         }
 #endif
@@ -307,7 +339,7 @@ bool keyWasPressed()
                 "d/D             Increase/decrease debugging\n"
                 "p/P             Enable/disable packet tracing\n"
                 "anything else   Print status\n"
-                "More help: http://nmap.org/book/man-runtime-interaction.html\n");
+                "More help: https://nmap.org/book/man-runtime-interaction.html\n");
     } else {
        printStatusMessage();
        return true;

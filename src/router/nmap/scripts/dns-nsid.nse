@@ -4,7 +4,6 @@ local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local string = require "string"
-local table = require "table"
 
 description = [[
 Retrieves information from a DNS nameserver by requesting
@@ -39,7 +38,7 @@ References:
 -- <elem key="bind.version">NSD 3.2.15</elem>
 
 author = "John R. Bond"
-license = "Simplified (2-clause) BSD license--See http://nmap.org/svn/docs/licenses/BSD-simplified"
+license = "Simplified (2-clause) BSD license--See https://nmap.org/svn/docs/licenses/BSD-simplified"
 
 categories = {"discovery", "default"}
 

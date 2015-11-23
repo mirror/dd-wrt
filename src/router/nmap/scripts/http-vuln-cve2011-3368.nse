@@ -10,12 +10,12 @@ local openssl = stdnse.silent_require "openssl"
 description = [[
 Tests for the CVE-2011-3368 (Reverse Proxy Bypass) vulnerability in Apache HTTP server's reverse proxy mode.
 The script will run 3 tests:
- o the loopback test, with 3 payloads to handle different rewrite rules
- o the internal hosts test. According to Contextis, we expect a delay before a server error.
- o The external website test. This does not mean that you can reach a LAN ip, but this is a relevant issue anyway.
+* the loopback test, with 3 payloads to handle different rewrite rules
+* the internal hosts test. According to Contextis, we expect a delay before a server error.
+* The external website test. This does not mean that you can reach a LAN ip, but this is a relevant issue anyway.
 
 References:
- * http://www.contextis.com/research/blog/reverseproxybypass/
+* http://www.contextis.com/research/blog/reverseproxybypass/
 ]]
 
 ---
@@ -45,7 +45,7 @@ References:
 --
 
 author = "Ange Gutek, Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "vuln"}
 
 
@@ -84,8 +84,8 @@ servers to remote users who send carefully crafted requests.]],
 
   local bypass_request = http.pipeline_go(host,port, all)
   if ( not(bypass_request) ) then
-    stdnse.print_debug(1, "%s : got no answers from pipelined queries", SCRIPT_NAME)
-    return "\n  ERROR: Got no answers from pipelined queries"
+    stdnse.debug1("got no answers from pipelined queries")
+    return stdnse.format_output(false, "Got no answers from pipelined queries")
   end
 
 
@@ -112,7 +112,7 @@ servers to remote users who send carefully crafted requests.]],
   end
 
   for i=1, #bypass_request, 1 do
-    stdnse.print_debug(1, "%s : test %d returned a %d", SCRIPT_NAME,i,bypass_request[i].status)
+    stdnse.debug1("test %d returned a %d",i,bypass_request[i].status)
 
     -- here a 400 should be the evidence for a patched server.
     if ( bypass_request[i].status == 200 and vuln.state ~= vulns.STATE.VULN )  then
@@ -152,7 +152,7 @@ servers to remote users who send carefully crafted requests.]],
   end
 
   -- TEST 3: The external website test. This does not mean that you can reach a LAN ip, but this is a relevant issue anyway.
-  local external = http.get(host,port, ("@scanme.nmap.org"):format(prefix))
+  local external = http.get(host,port, ("%s@scanme.nmap.org"):format(prefix))
   if ( external.status == 200 and string.match(external.body,"Go ahead and ScanMe") ) then
     vuln.extra_info = "Proxy allows requests to external websites"
   end

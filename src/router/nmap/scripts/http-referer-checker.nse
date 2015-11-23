@@ -22,12 +22,11 @@ third-party entities.
 
 categories = {"discovery", "safe"}
 author = "George Chatzisofroniou"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local table = require "table"
-local string = require "string"
 local httpspider = require "httpspider"
 
 portrule = shortport.port_or_service( {80, 443}, {"http", "https"}, "tcp", "open")
@@ -62,7 +61,7 @@ action = function(host, port)
     local status, r = crawler:crawl()
     if (not(status)) then
       if (r.err) then
-        return stdnse.format_output(true, ("ERROR: %s"):format(r.reason))
+        return stdnse.format_output(false, r.reason)
       else
         break
       end

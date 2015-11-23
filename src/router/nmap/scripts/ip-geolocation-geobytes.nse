@@ -3,7 +3,6 @@ local ipOps = require "ipOps"
 local json = require "json"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
-local table = require "table"
 
 description = [[
 Tries to identify the physical location of an IP address using the
@@ -34,14 +33,14 @@ further requests are made during a scan.
 -- <elem key="country">Canada</elem>
 
 author = "Gorjan Petrovski"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery","external","safe"}
 
 
 hostrule = function(host)
   local is_private, err = ipOps.isPrivate( host.ip )
   if is_private == nil then
-    stdnse.print_debug( "%s Error in Hostrule: %s.", SCRIPT_NAME, err )
+    stdnse.debug1("Error in Hostrule: %s.", err )
     return false
   end
   return not is_private
@@ -52,7 +51,7 @@ end
 -- made so no more requests are made to the server during one scan
 action = function(host)
   if nmap.registry["ip-geolocation-geobytes"] and nmap.registry["ip-geolocation-geobytes"].blocked then
-    stdnse.print_debug("%s: 20 requests per hour Limit Exceeded", SCRIPT_NAME)
+    stdnse.debug1("20 requests per hour Limit Exceeded")
     return nil
   end
   local response = http.get("www.geobytes.com", 80, "/IpLocator.htm?GetLocation&template=json.txt&IpAddress="..host.ip, nil)
@@ -63,7 +62,7 @@ action = function(host)
     if loc.city and loc.city == "Limit Exceeded" then
       if not nmap.registry["ip-geolocation-geobytes"] then nmap.registry["ip-geolocation-geobytes"]={} end
       nmap.registry["ip-geolocation-geobytes"].blocked = true
-      stdnse.print_debug("%s: 20 requests per hour Limit Exceeded", SCRIPT_NAME)
+      stdnse.debug1("20 requests per hour Limit Exceeded")
       return nil
     end
     -- Process output
@@ -80,7 +79,7 @@ action = function(host)
   elseif response.body:match("Limit Exceeded") then
     if not nmap.registry["ip-geolocation-geobytes"] then nmap.registry["ip-geolocation-geobytes"]={} end
     nmap.registry["ip-geolocation-geobytes"].blocked = true
-    stdnse.print_debug("%s: 20 requests per hour Limit Exceeded", SCRIPT_NAME)
+    stdnse.debug1("20 requests per hour Limit Exceeded")
     return nil
   end
   return nil

@@ -67,7 +67,7 @@ result in a large number of accounts being locked out on the database server.
 --     library
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -107,11 +107,11 @@ Driver =
     local status, data
     repeat
       if ( tries < MAX_RETRIES ) then
-        stdnse.print_debug(2, "%s: Attempting to re-connect (attempt %d of %d)", SCRIPT_NAME, MAX_RETRIES - tries, MAX_RETRIES)
+        stdnse.debug2("Attempting to re-connect (attempt %d of %d)", MAX_RETRIES - tries, MAX_RETRIES)
       end
       status, data = self.helper:Connect()
       if ( not(status) ) then
-        stdnse.print_debug(2, "%s: ERROR: An Oracle %s error occurred", SCRIPT_NAME, data)
+        stdnse.debug2("ERROR: An Oracle %s error occurred", data)
         self.helper:Close()
       else
         break
@@ -133,7 +133,7 @@ Driver =
   -- @param password string containing the login password
   -- @return status, true on success, false on failure
   -- @return brute.Error object on failure
-  --         brute.Account object on success
+  --         creds.Account object on success
   login = function( self, username, password )
     local status, data = self.helper:Login( username, password )
 
@@ -144,17 +144,17 @@ Driver =
     if ( status ) then
       self.helper:Close()
       ConnectionPool[coroutine.running()] = nil
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     -- Check for account locked message
     elseif ( data:match("ORA[-]28000") ) then
-      return true, brute.Account:new(username, password, creds.State.LOCKED)
+      return true, creds.Account:new(username, password, creds.State.LOCKED)
     -- Check for account is SYSDBA message
     elseif ( data:match("ORA[-]28009") ) then
       sysdba[username] = true
-      return true, brute.Account:new(username .. " as sysdba", password, creds.State.VALID)
+      return true, creds.Account:new(username .. " as sysdba", password, creds.State.VALID)
     -- check for any other message
     elseif ( data:match("ORA[-]%d+")) then
-      stdnse.print_debug(3, "username: %s, password: %s, error: %s", username, password, data )
+      stdnse.debug3("username: %s, password: %s, error: %s", username, password, data )
       return false, brute.Error:new(data)
     -- any other errors are likely communication related, attempt to re-try
     else
@@ -176,6 +176,7 @@ Driver =
 
 }
 
+local function fail (err) return stdnse.format_output(false, err) end
 
 action = function(host, port)
   local DEFAULT_ACCOUNTS = "nselib/data/oracle-default-accounts.lst"
@@ -185,13 +186,13 @@ action = function(host, port)
   local mode = "default"
 
   if ( not(sid) ) then
-    return "\n  ERROR: Oracle instance not set (see oracle-brute.sid or tns.sid)"
+    return fail("Oracle instance not set (see oracle-brute.sid or tns.sid)")
   end
 
   local helper = tns.Helper:new( host, port, sid )
   local status, result = helper:Connect()
   if ( not(status) ) then
-    return "\n  ERROR: Failed to connect to oracle server"
+    return fail("Failed to connect to oracle server")
   end
   helper:Close()
 
@@ -207,12 +208,12 @@ action = function(host, port)
   if ( mode == "default" ) then
     f = nmap.fetchfile(DEFAULT_ACCOUNTS)
     if ( not(f) ) then
-      return ("\n  ERROR: Failed to find %s"):format(DEFAULT_ACCOUNTS)
+      return fail(("Failed to find %s"):format(DEFAULT_ACCOUNTS))
     end
 
     f = io.open(f)
     if ( not(f) ) then
-      return ("\n  ERROR: Failed to open %s"):format(DEFAULT_ACCOUNTS)
+      return fail(("Failed to open %s"):format(DEFAULT_ACCOUNTS))
     end
 
     engine.iterator = brute.Iterators.credential_iterator(f)

@@ -1,7 +1,7 @@
 ---
 -- Utility functions for manipulating and comparing IP addresses.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 local bin = require "bin"
 local bit = require "bit"
@@ -9,8 +9,6 @@ local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
 local type     = type
-local table    = table
-local string   = string
 local ipairs   = ipairs
 local tonumber = tonumber
 local unittest = require "unittest"
@@ -162,7 +160,7 @@ end
 --@return The string representing the address.
 fromdword = function( ip )
   if type( ip ) ~= "number" then
-    stdnse.print_debug(1, "Error in ipOps.todword: Expected IPv4 address.")
+    stdnse.debug1("Error in ipOps.fromdword: Expected 32-bit number.")
     return nil
   end
 
@@ -509,7 +507,7 @@ get_last_ip = function( ip, prefix )
 end
 
 ---
--- Converts an IP address into an opaque string.
+-- Converts an IP address into an opaque string (big-endian)
 -- @param ip  String representing an IPv4 or IPv6 address.
 -- @param family (optional) Address family to convert to. "ipv6" converts IPv4
 -- addresses to IPv4-mapped IPv6.
@@ -542,6 +540,28 @@ ip_to_str = function( ip, family )
   return table.concat( t )
 end
 
+---
+-- Converts an opaque string (big-endian) into an IP address
+--
+-- @param ip Opaque string representing an IP address. If length 4, then IPv4
+--           is assumed. If length 16, then IPv6 is assumed.
+-- @return IP address in readable notation (or <code>nil</code> in case of an
+--         error)
+-- @return String error message in case of an error
+str_to_ip = function (ip)
+  if #ip == 4 then
+    local _, a, b, c, d = bin.unpack("C4", ip)
+    return ("%d.%d.%d.%d"):format(a, b, c, d)
+  elseif #ip == 16 then
+    local _, a, b, c, d, e, f, g, h = bin.unpack(">S8", ip)
+    local full = ("%x:%x:%x:%x:%x:%x:%x:%x"):format(a, b, c, d, e, f, g, h)
+    full = full:gsub(":[:0]+", "::", 1) -- Collapse the first (should be longest?) series of :0:
+    full = full:gsub("^0::", "::", 1) -- handle special case of ::1
+    return full
+  else
+    return nil, "Invalid length"
+  end
+end
 
 ---
 -- Converts an IP address into a string representing the address as binary
@@ -635,8 +655,7 @@ end
 -- Converts a string of hexadecimal digits into the corresponding string of
 -- binary digits.
 --
--- Each hex digit results in four bits. This function is really just a wrapper
--- around <code>stdnse.tobinary</code>.
+-- Each hex digit results in four bits.
 -- @param hex  String representing a hexadecimal number.
 -- @usage
 -- bin_string = ipOps.hex_to_bin( "F00D" )
@@ -649,13 +668,9 @@ hex_to_bin = function( hex )
     return nil, "Error in ipOps.hex_to_bin: Expected string representing a hexadecimal number."
   end
 
-  local t, mask, binchar = {}, "0000"
-  for hexchar in string.gmatch( hex, "%x" ) do
-      binchar = stdnse.tobinary( tonumber( hexchar, 16 ) )
-      t[#t+1] = mask:sub( 1, # mask  - # binchar  ) .. binchar
-  end
-  return table.concat( t )
-
+  local d = bin.pack("H", hex)
+  local _, b = bin.unpack("B" .. #d, d)
+  return b:sub(1, #hex * 4)
 end
 
 --Ignore the rest if we are not testing.
@@ -668,6 +683,9 @@ test_suite:add_test(unittest.is_true(isPrivate("192.168.123.123")), "192.168.123
 test_suite:add_test(unittest.is_false(isPrivate("1.1.1.1")), "1.1.1.1 is not private")
 test_suite:add_test(unittest.equal(todword("65.66.67.68"),0x41424344), "todword")
 test_suite:add_test(unittest.equal(fromdword(0xffffffff),"255.255.255.255"), "fromdword")
+test_suite:add_test(unittest.equal(str_to_ip("\x01\x02\x03\x04"),"1.2.3.4"), "str_to_ip (ipv4)")
+test_suite:add_test(unittest.equal(str_to_ip("\0\x01\xbe\xef\0\0\0\0\0\0\x02\x03\0\0\0\x01"),"1:beef::203:0:1"), "str_to_ip (ipv6)")
+test_suite:add_test(unittest.equal(str_to_ip(("\0"):rep(15) .. "\x01"),"::1"), "str_to_ip (ipv6)")
 test_suite:add_test(function()
   local parts, err = get_parts_as_number("8.255.0.1")
   if parts == nil then return false, err end

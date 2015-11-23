@@ -27,7 +27,7 @@ lifetime (a few seconds)
 
 See also:
 * RFC 4862, IPv6 Stateless Address Autoconfiguration, especially section 5.5.3.
-* http://dev.metasploit.com/redmine/projects/framework/repository/changes/modules/auxiliary/scanner/discovery/ipv6_neighbor_router_advertisement.rb
+* https://github.com/rapid7/metasploit-framework/blob/master/modules/auxiliary/scanner/discovery/ipv6_neighbor_router_advertisement.rb
 ]]
 
 ---
@@ -42,7 +42,7 @@ See also:
 
 author = "David Fifield, Xu Weilin"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery","broadcast"}
 
@@ -64,9 +64,9 @@ local function get_random_ula_prefix(local_scope)
   local global_id = string.char(math.random(256)-1,math.random(256)-1,math.random(256)-1,math.random(256)-1,math.random(256)-1)
 
   if local_scope then
-    ula_prefix = packet.ip6tobin("fd00::")
+    ula_prefix = ipOps.ip_to_str("fd00::")
   else
-    ula_prefix = packet.ip6tobin("fc00::")
+    ula_prefix = ipOps.ip_to_str("fc00::")
   end
   ula_prefix = string.sub(ula_prefix,1,1) .. global_id .. string.sub(ula_prefix,7,-1)
   return ula_prefix,64
@@ -87,7 +87,7 @@ local function build_router_advert(mac_src,prefix,prefix_len,valid_time,preferre
   local prefix_option_msg = string.char(prefix_len, 0xc0) .. --flags: Onlink, Auto
     packet.set_u32("....",0,valid_time) ..
     packet.set_u32("....",0,preferred_time) ..
-    string.char(0,0,0,0) .. --unknown
+    "\0\0\0\0" .. --unknown
     prefix
   local icmpv6_prefix_option = packet.Packet:set_icmpv6_option(packet.ND_OPT_PREFIX_INFORMATION,prefix_option_msg)
   local icmpv6_src_link_option = packet.Packet:set_icmpv6_option(packet.ND_OPT_SOURCE_LINKADDR,mac_src)
@@ -104,14 +104,14 @@ local function get_interfaces()
   if interface_name then
     -- single interface defined
     local if_table = nmap.get_interface_info(interface_name)
-    if if_table and packet.ip6tobin(if_table.address) and if_table.link == "ethernet" then
+    if if_table and ipOps.ip_to_str(if_table.address) and if_table.link == "ethernet" then
       interfaces[#interfaces + 1] = if_table
     else
-      stdnse.print_debug("Interface not supported or not properly configured.")
+      stdnse.debug1("Interface not supported or not properly configured.")
     end
   else
     for _, if_table in ipairs(nmap.list_interfaces()) do
-      if packet.ip6tobin(if_table.address) and if_table.link == "ethernet" then
+      if ipOps.ip_to_str(if_table.address) and if_table.link == "ethernet" then
         table.insert(interfaces, if_table)
       end
     end
@@ -121,13 +121,13 @@ local function get_interfaces()
 end
 
 local function single_interface_broadcast(if_nfo, results)
-  stdnse.print_debug("Starting " .. SCRIPT_NAME .. " on " .. if_nfo.device)
+  stdnse.debug1("Starting " .. SCRIPT_NAME .. " on " .. if_nfo.device)
 
   local condvar = nmap.condvar(results)
   local src_mac = if_nfo.mac
-  local src_ip6 = packet.ip6tobin(if_nfo.address)
+  local src_ip6 = ipOps.ip_to_str(if_nfo.address)
   local dst_mac = packet.mactobin("33:33:00:00:00:01")
-  local dst_ip6 = packet.ip6tobin("ff02::1")
+  local dst_ip6 = ipOps.ip_to_str("ff02::1")
 
   ----------------------------------------------------------------------------
   --SLAAC-based host discovery probe
@@ -149,7 +149,9 @@ local function single_interface_broadcast(if_nfo, results)
 
   -- preferred_lifetime <= valid_lifetime.
   -- Nmap will get the whole IPv6 addresses of each host if the two parameters are both longer than 5 seconds.
-  -- Sometimes it makes sense to regard the several addresses of a host as different hosts, as the host's administrator may apply different firewall configurations on them.
+  -- Sometimes it makes sense to regard the several addresses of a host as
+  -- different hosts, as the host's administrator may apply different firewall
+  -- configurations on them.
   local valid_lifetime = 6
   local preferred_lifetime = 6
 
@@ -168,8 +170,8 @@ local function single_interface_broadcast(if_nfo, results)
   try(dnet:ethernet_send(probe.frame_buf))
 
   local expected_mac_dst_prefix = packet.mactobin("33:33:ff:00:00:00")
-  local expected_ip6_src = packet.ip6tobin("::")
-  local expected_ip6_dst_prefix = packet.ip6tobin("ff02::1:0:0")
+  local expected_ip6_src = ipOps.ip_to_str("::")
+  local expected_ip6_dst_prefix = ipOps.ip_to_str("ff02::1:0:0")
 
   pcap:set_timeout(1000)
   local pcap_timeout_count = 0
@@ -188,11 +190,13 @@ local function single_interface_broadcast(if_nfo, results)
         local reply = packet.Packet:new(layer3)
         if reply.ip_bin_src == expected_ip6_src and
           string.sub(expected_ip6_dst_prefix,1,12) == string.sub(reply.ip_bin_dst,1,12) then
-          local ula_target_addr_str = packet.toipv6(reply.ns_target)
+          local ula_target_addr_str = ipOps.str_to_ip(reply.ns_target)
           local identifier = get_identifier(reply.ns_target)
           --Filter out the reduplicative identifiers.
-          --A host will send several NS packets with the same interface identifier if it receives several RA packets with different prefix during the discovery phase.
-          local actual_addr_str = packet.toipv6(actual_prefix .. identifier)
+          --A host will send several NS packets with the same interface
+          --identifier if it receives several RA packets with different prefix
+          --during the discovery phase.
+          local actual_addr_str = ipOps.str_to_ip(actual_prefix .. identifier)
           if not results[actual_addr_str] then
             if target.ALLOW_NEW_TARGETS then
               target.add(actual_addr_str)

@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2015 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -30,8 +30,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -56,7 +55,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_ssl.c 31562 2013-07-28 22:05:05Z fyodor $ */
+/* $Id: nsock_ssl.c 34754 2015-06-27 08:21:22Z henri $ */
 
 
 #include "nsock.h"
@@ -81,8 +80,7 @@
 
 extern struct timeval nsock_tod;
 
-/* Create an SSL_CTX and do initialization that is common to nsp_ssl_init and
- * nsp_ssl_init_max_speed. */
+/* Create an SSL_CTX and do initialization that is common to all init modes. */
 static SSL_CTX *ssl_init_common() {
   SSL_CTX *ctx;
 
@@ -104,81 +102,45 @@ static SSL_CTX *ssl_init_common() {
 
   return ctx;
 }
-#endif /* HAVE_OPENSSL */
 
 /* Initializes an Nsock pool to create SSL connections. This sets an internal
  * SSL_CTX, which is like a template that sets options for all connections that
  * are made from it. The connections made from this context will use only secure
  * ciphers but no server certificate verification is done. Returns the SSL_CTX
  * so you can set your own options. */
-nsock_ssl_ctx nsp_ssl_init(nsock_pool ms_pool) {
-#if HAVE_OPENSSL
-  mspool *ms = (mspool *)ms_pool;
+nsock_ssl_ctx nsock_pool_ssl_init(nsock_pool ms_pool, int flags) {
+  struct npool *ms = (struct npool *)ms_pool;
   char rndbuf[128];
 
   if (ms->sslctx == NULL)
     ms->sslctx = ssl_init_common();
 
-  /* get_random_bytes may or may not provide high-quality randomness. Add it to
+  /* Get_random_bytes may or may not provide high-quality randomness. Add it to
    * the entropy pool without increasing the entropy estimate (third argument of
    * RAND_add is 0). We rely on OpenSSL's entropy gathering, called implicitly
    * by RAND_status, to give us what we need, or else bail out if it fails. */
   get_random_bytes(rndbuf, sizeof(rndbuf));
   RAND_add(rndbuf, sizeof(rndbuf), 0);
-  if (!RAND_status())
-    fatal("nsp_ssl_init: Failed to seed OpenSSL PRNG (RAND_status returned false).");
 
-  /* By default, do no server certificate verification. To enable it, do
-   * something like:
-   *    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
-   *
-   *  on the SSL_CTX returned. If you do, it is then up to the application to
-   *  load trusted certificates with SSL_CTX_load_verify_locations or
-   *  SSL_CTX_set_default_verify_paths, or else every connection will fail. It
-   *  is also up to the application to do any further checks such as domain name
-   *  validation. */
-  SSL_CTX_set_verify(ms->sslctx, SSL_VERIFY_NONE, NULL);
+  if (!(flags & NSOCK_SSL_MAX_SPEED)) {
+    if (!RAND_status())
+      fatal("%s: Failed to seed OpenSSL PRNG"
+            " (RAND_status returned false).", __func__);
+  }
 
   /* SSL_OP_ALL sets bug-compatibility for pretty much everything.
    * SSL_OP_NO_SSLv2 disables the less-secure SSLv2 while allowing us to use the
    * SSLv2-compatible SSLv23_client_method. */
-  SSL_CTX_set_options(ms->sslctx, SSL_OP_ALL|SSL_OP_NO_SSLv2);
-
-  if (!SSL_CTX_set_cipher_list(ms->sslctx, CIPHERS_SECURE)) {
-    fatal("Unable to set OpenSSL cipher list: %s",
-          ERR_error_string(ERR_get_error(), NULL));
-  }
-  return ms->sslctx;
-#else
-  fatal("%s called with no OpenSSL support", __func__);
-#endif
-}
-
-/* Initializes an Nsock pool to create SSL connections that emphasize speed over
- * security. Insecure ciphers are used when they are faster and no certificate
- * verification is done. Returns the SSL_CTX so you can set your own options. */
-nsock_ssl_ctx nsp_ssl_init_max_speed(nsock_pool ms_pool) {
-#if HAVE_OPENSSL
-  mspool *ms = (mspool *)ms_pool;
-  char rndbuf[128];
-
-  if (ms->sslctx == NULL)
-    ms->sslctx = ssl_init_common();
-
-  /* get_random_bytes may or may not provide high-quality randomness. */
-  get_random_bytes(rndbuf, sizeof(rndbuf));
-  RAND_seed(rndbuf, sizeof(rndbuf));
-
   SSL_CTX_set_verify(ms->sslctx, SSL_VERIFY_NONE, NULL);
-  SSL_CTX_set_options(ms->sslctx, SSL_OP_ALL);
-  if (!SSL_CTX_set_cipher_list(ms->sslctx, CIPHERS_FAST)) {
+  SSL_CTX_set_options(ms->sslctx, flags & NSOCK_SSL_MAX_SPEED ?
+                                  SSL_OP_ALL : SSL_OP_ALL|SSL_OP_NO_SSLv2);
+
+  if (!SSL_CTX_set_cipher_list(ms->sslctx, flags & NSOCK_SSL_MAX_SPEED ?
+                                           CIPHERS_FAST : CIPHERS_SECURE))
     fatal("Unable to set OpenSSL cipher list: %s",
           ERR_error_string(ERR_get_error(), NULL));
-  }
+
   return ms->sslctx;
-#else
-  fatal("%s called with no OpenSSL support", __func__);
-#endif
 }
 
 /* Check server certificate verification, after a connection is established. We
@@ -189,8 +151,7 @@ nsock_ssl_ctx nsp_ssl_init_max_speed(nsock_pool ms_pool) {
  * SSL object is SSL_VERIFY_NONE, or if OpenSSL is disabled, this function
  * always returns true. */
 int nsi_ssl_post_connect_verify(const nsock_iod nsockiod) {
-#if HAVE_OPENSSL
-  msiod *iod = (msiod *)nsockiod;
+  struct niod *iod = (struct niod *)nsockiod;
 
   assert(iod->ssl != NULL);
   if (SSL_get_verify_mode(iod->ssl) != SSL_VERIFY_NONE) {
@@ -207,7 +168,17 @@ int nsi_ssl_post_connect_verify(const nsock_iod nsockiod) {
       /* Something wrong with verification. */
       return 0;
   }
-#endif
   return 1;
 }
 
+#else /* NOT HAVE_OPENSSL */
+
+nsock_ssl_ctx nsock_pool_ssl_init(nsock_pool ms_pool, int flags) {
+  fatal("%s called with no OpenSSL support", __func__);
+}
+
+int nsi_ssl_post_connect_verify(const nsock_iod nsockiod) {
+  return 1;
+}
+
+#endif

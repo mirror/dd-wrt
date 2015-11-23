@@ -1,4 +1,5 @@
 local coroutine = require "coroutine"
+local ipOps = require "ipOps"
 local nmap = require "nmap"
 local packet = require "packet"
 local stdnse = require "stdnse"
@@ -28,7 +29,7 @@ packet.
 
 author = "David Fifield, Xu Weilin"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery","broadcast"}
 
@@ -45,12 +46,8 @@ local function build_invalid_extension_header(nxt_hdr)
   -- bits; that instructs the receiver to send a Parameter Problem.
   -- Option type 0x80 is unallocated; see
   -- http://www.iana.org/assignments/ipv6-parameters/.
-  local ex_invalid_opt = string.char(0x80,0x01,0x00,0x00,0x00,0x00)
-  local ext_header =
-    string.char(nxt_hdr) .. --next header
-    string.char(0) .. -- length 8
-    ex_invalid_opt
-  return ext_header
+  return string.char(nxt_hdr, 0) .. --next header, length 8
+  "\x80\x01\x00\x00\x00\x00"
 end
 
 local function get_interfaces()
@@ -62,14 +59,14 @@ local function get_interfaces()
   if interface_name then
     -- single interface defined
     local if_table = nmap.get_interface_info(interface_name)
-    if if_table and packet.ip6tobin(if_table.address) and if_table.link == "ethernet" then
+    if if_table and ipOps.ip_to_str(if_table.address) and if_table.link == "ethernet" then
       interfaces[#interfaces + 1] = if_table
     else
-      stdnse.print_debug("Interface not supported or not properly configured.")
+      stdnse.debug1("Interface not supported or not properly configured.")
     end
   else
     for _, if_table in ipairs(nmap.list_interfaces()) do
-      if packet.ip6tobin(if_table.address) and if_table.link == "ethernet" then
+      if ipOps.ip_to_str(if_table.address) and if_table.link == "ethernet" then
         table.insert(interfaces, if_table)
       end
     end
@@ -79,13 +76,13 @@ local function get_interfaces()
 end
 
 local function single_interface_broadcast(if_nfo, results)
-  stdnse.print_debug("Starting " .. SCRIPT_NAME .. " on " .. if_nfo.device)
+  stdnse.debug1("Starting " .. SCRIPT_NAME .. " on " .. if_nfo.device)
 
   local condvar = nmap.condvar(results)
   local src_mac = if_nfo.mac
-  local src_ip6 = packet.ip6tobin(if_nfo.address)
+  local src_ip6 = ipOps.ip_to_str(if_nfo.address)
   local dst_mac = packet.mactobin("33:33:00:00:00:01")
-  local dst_ip6 = packet.ip6tobin("ff02::1")
+  local dst_ip6 = ipOps.ip_to_str("ff02::1")
 
   ----------------------------------------------------------------------------
   --Multicast invalid destination exheader probe
@@ -117,7 +114,7 @@ local function single_interface_broadcast(if_nfo, results)
   probe.icmpv6_type = 254
   probe.icmpv6_code = 0
   -- Add a non-empty payload too.
-  probe.icmpv6_payload = string.char(0x00, 0x00, 0x00, 0x00)
+  probe.icmpv6_payload = "\x00\x00\x00\x00"
   probe:build_icmpv6_header()
 
   probe.exheader = build_invalid_extension_header(packet.IPPROTO_ICMPV6)

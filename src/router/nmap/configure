@@ -644,7 +644,6 @@ NBASEDIR
 LIBLINEAR_DIST_CLEAN
 LIBLINEAR_CLEAN
 LIBLINEAR_BUILD
-LIBLINEAR_DEPENDS
 LIBLINEARDIR
 LIBLINEAR_LIBS
 NSE_CHECK
@@ -652,26 +651,22 @@ INSTALLNSE
 LUA_DIST_CLEAN
 LUA_CLEAN
 LUA_BUILD
-LUA_DEPENDS
 LIBLUADIR
 LIBLUA_LIBS
 DNET_DIST_CLEAN
 DNET_CLEAN
 DNET_BUILD
-DNET_DEPENDS
 LIBDNETDIR
 LIBDNET_LIBS
 PCRE_DIST_CLEAN
 PCRE_CLEAN
 PCRE_BUILD
-PCRE_DEPENDS
 LIBPCREDIR
 LIBPCRE_LIBS
 LIBPCAP_LIBS
 PCAP_DIST_CLEAN
 PCAP_CLEAN
 PCAP_BUILD
-PCAP_DEPENDS
 OPENSSL_LIBS
 NPING_DIST_CLEAN
 NPING_CLEAN
@@ -690,6 +685,7 @@ ZENMAPDIR
 NDIFF_DIST_CLEAN
 NDIFF_CLEAN
 NDIFF_CHECK
+UNINSTALLNDIFF
 INSTALLNDIFF
 BUILDNDIFF
 NDIFFDIR
@@ -707,6 +703,7 @@ GREP
 CPP
 LUA_CFLAGS
 STRIP
+AWK
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
@@ -1443,7 +1440,7 @@ Optional Packages:
                           and DIR/lib. This is NOT RECOMMENDED because we have
                           made many important fixes to our included libdnet,
                           as described at
-                          http://nmap.org/svn/libdnet-stripped/NMAP_MODIFICATIONS
+                          ./libdnet-stripped/NMAP_MODIFICATIONS
   --with-libdnet=included Use the libdnet version included with Nmap (default)
   --with-liblua=DIR       Use an existing (compiled) lua lib from DIR/include
                           and DIR/lib.
@@ -2396,6 +2393,9 @@ $as_echo "$USE_NLS" >&6; }
 
 
 
+trace_use=""
+trace_no_use=""
+
 
 # Check whether --with-localdirs was given.
 if test "${with_localdirs+set}" = set; then :
@@ -2414,12 +2414,15 @@ fi
 
 
 if test "$user_localdirs" = 1; then
+  trace_use="$trace_use localdirs"
    if test -d /usr/local/lib; then
      LDFLAGS="$LDFLAGS -L/usr/local/lib"
      fi
    if test -d /usr/local/include; then
      CPPFLAGS="$CPPFLAGS -I/usr/local/include"
    fi
+else
+  trace_no_use="$trace_no_use localdirs"
 fi
 
 if test "${top_nmap_srcdir+set}" != set; then
@@ -4350,6 +4353,49 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
+for ac_prog in gawk mawk nawk awk
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_AWK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$AWK"; then
+  ac_cv_prog_AWK="$AWK" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_AWK="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+AWK=$ac_cv_prog_AWK
+if test -n "$AWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AWK" >&5
+$as_echo "$AWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$AWK" && break
+done
+
+
 
 if test -n "$GXX"; then
   # -fno-strict-aliasing disables strict-aliasing optimizations that assume
@@ -4360,6 +4406,7 @@ fi
 # Remember that all following tests will run with this CXXFLAGS by default
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __func__" >&5
 $as_echo_n "checking for __func__... " >&6; }
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -4522,36 +4569,45 @@ needs_cpp_precomp=no
 
 LUA_CFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN"
 
+
+
 case "$host" in
   *alpha-dec-osf*)
-    $as_echo "#define DEC 1" >>confdefs.h
+
+$as_echo "#define DEC 1" >>confdefs.h
 
     ;;
   *-netbsd* | *-knetbsd*-gnu)
-    $as_echo "#define NETBSD 1" >>confdefs.h
+
+$as_echo "#define NETBSD 1" >>confdefs.h
 
     LDFLAGS="-Wl,-E $LDFLAGS" # needed for nse-C-module support
     ;;
   *-openbsd*)
-    $as_echo "#define OPENBSD 1" >>confdefs.h
+
+$as_echo "#define OPENBSD 1" >>confdefs.h
 
     LDFLAGS="-Wl,-E $LDFLAGS" # needed for nse-C-module support
     ;;
   *-freebsd* | *-kfreebsd*-gnu | *-dragonfly*)
-    $as_echo "#define FREEBSD 1" >>confdefs.h
+
+$as_echo "#define FREEBSD 1" >>confdefs.h
 
     LDFLAGS="-Wl,-E $LDFLAGS" # needed for nse-C-module support
     ;;
   *-bsdi*)
-    $as_echo "#define BSDI 1" >>confdefs.h
+
+$as_echo "#define BSDI 1" >>confdefs.h
 
     ;;
   *-sgi-irix5* | *-sgi-irix6*)
-    $as_echo "#define IRIX 1" >>confdefs.h
+
+$as_echo "#define IRIX 1" >>confdefs.h
 
     ;;
   *-hpux*)
-    $as_echo "#define HPUX 1" >>confdefs.h
+
+$as_echo "#define HPUX 1" >>confdefs.h
 
     # To link with libnet and NM (/usr/lib/libnm.sl) library
     # on HP-UX 11.11 (other versions?) Mikhail Zakharov (zmey20000@yahoo.com)
@@ -4743,7 +4799,8 @@ fi
     $as_echo "#define SOLARIS 1" >>confdefs.h
 
     # Solaris 11 and later use BPF packet capture rather than DLPI.
-    $as_echo "#define SOLARIS_BPF_PCAP_CAPTURE 1" >>confdefs.h
+
+$as_echo "#define SOLARIS_BPF_PCAP_CAPTURE 1" >>confdefs.h
 
     ;;
   *-solaris2.0*)
@@ -4791,18 +4848,22 @@ fi
 
     ;;
   *-sunos4*)
-    $as_echo "#define SUNOS 1" >>confdefs.h
 
-    $as_echo "#define SPRINTF_RETURNS_STRING 1" >>confdefs.h
+$as_echo "#define SUNOS 1" >>confdefs.h
+
+
+$as_echo "#define SPRINTF_RETURNS_STRING 1" >>confdefs.h
 
     ;;
   *-linux*)
-    $as_echo "#define LINUX 1" >>confdefs.h
+
+$as_echo "#define LINUX 1" >>confdefs.h
 
     LDFLAGS="-Wl,-E $LDFLAGS" # needed for nse-C-module support
     ;;
   *-apple-darwin*)
-    $as_echo "#define MACOSX 1" >>confdefs.h
+
+$as_echo "#define MACOSX 1" >>confdefs.h
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lm" >&5
 $as_echo_n "checking for main in -lm... " >&6; }
@@ -5430,7 +5491,8 @@ $as_echo_n "checking if AF_INET6 IPPROTO_RAW sockets include the packet header..
   # This should be replaced with a better test, if possible.
   case "$host" in
     *-linux*)
-      $as_echo "#define HAVE_IPV6_IPPROTO_RAW 1" >>confdefs.h
+
+$as_echo "#define HAVE_IPV6_IPPROTO_RAW 1" >>confdefs.h
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -5442,19 +5504,7 @@ $as_echo "no" >&6; }
   esac
 
 
-NDIFFDIR=ndiff
 
-# Do they want Ndiff?
-
-# Check whether --with-ndiff was given.
-if test "${with_ndiff+set}" = set; then :
-  withval=$with_ndiff;
-else
-  with_ndiff=check
-fi
-
-
-if test "$with_ndiff" != "no"; then
 
 
 
@@ -5494,7 +5544,7 @@ if ${am_cv_pathless_PYTHON+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-	for am_cv_pathless_PYTHON in python python2 python3 python3.2 python3.1 python3.0 python2.7  python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 none; do
+	for am_cv_pathless_PYTHON in python2 python2.7 python2.6 python2.5 python2.4 python none; do
 	  test "$am_cv_pathless_PYTHON" = none && break
 	  prog="import sys
 # split strings by '.' and convert to numeric.  Append some zeros
@@ -5566,16 +5616,7 @@ fi
 
 
   if test "$PYTHON" = :; then
-      if test "$with_ndiff" = "check"; then
-     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not building Ndiff because Python 2.4 or later was not found" >&5
-$as_echo "$as_me: WARNING: Not building Ndiff because Python 2.4 or later was not found" >&2;}
-   else
-     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "--with-ndiff requires Python 2.4 or later
-See \`config.log' for more details" "$LINENO" 5; }
-   fi
-   with_ndiff=no
+      HAVE_PYTHON=false
   else
 
 
@@ -5686,24 +5727,57 @@ $as_echo "$am_cv_python_pyexecdir" >&6; }
   pkgpyexecdir=\${pyexecdir}/$PACKAGE
 
 
-
+    HAVE_PYTHON=true
   fi
 
 
+HAVE_PYTHON2=false
+if test $HAVE_PYTHON && test "x${PYTHON_VERSION%%.*}" = "x2"; then
+    HAVE_PYTHON2=true
+fi
+
+NDIFFDIR=ndiff
+
+# Do they want Ndiff?
+
+# Check whether --with-ndiff was given.
+if test "${with_ndiff+set}" = set; then :
+  withval=$with_ndiff;
+else
+  with_ndiff=check
+fi
+
+if $HAVE_PYTHON2 ; then : ;
+else
+  if test "$with_ndiff" = "check" ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not building Ndiff because Python 2.x with x>=4 was not found" >&5
+$as_echo "$as_me: WARNING: Not building Ndiff because Python 2.x with x>=4 was not found" >&2;}
+  elif test "$with_ndiff" = "yes"; then
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "--with-ndiff requires Python 2.x with x>=4
+See \`config.log' for more details" "$LINENO" 5; }
+  fi
+  with_ndiff=no
 fi
 if test "$with_ndiff" = "no"; then
+  trace_no_use="$trace_no_use ndiff"
   BUILDNDIFF=""
   INSTALLNDIFF=""
+  UNINSTALLNDIFF=""
   NDIFF_CHECK=""
   NDIFF_CLEAN=""
   NDIFF_DIST_CLEAN=""
 else
+  trace_use="$trace_use ndiff"
   BUILDNDIFF=build-ndiff
   INSTALLNDIFF=install-ndiff
-  NDIFF_CHECK="ndiff_check"
-  NDIFF_CLEAN=ndiff_clean
-  NDIFF_DIST_CLEAN=ndiff_dist_clean
+  UNINSTALLNDIFF=uninstall-ndiff
+  NDIFF_CHECK="check-ndiff"
+  NDIFF_CLEAN=clean-ndiff
+  NDIFF_DIST_CLEAN=distclean-ndiff
 fi
+
 
 
 
@@ -5723,244 +5797,21 @@ else
 fi
 
 
-if test "$with_zenmap" != "no"; then
-
-
-
-
-
-
-        if test -n "$PYTHON"; then
-      # If the user set $PYTHON, use it and don't search something else.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $PYTHON version >= 2.4" >&5
-$as_echo_n "checking whether $PYTHON version >= 2.4... " >&6; }
-      prog="import sys
-# split strings by '.' and convert to numeric.  Append some zeros
-# because we need at least 4 digits for the hex conversion.
-# map returns an iterator in Python 3.0 and a list in 2.x
-minver = list(map(int, '2.4'.split('.'))) + [0, 0, 0]
-minverhex = 0
-# xrange is not present in Python 3.0 and range returns an iterator
-for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[i]
-sys.exit(sys.hexversion < minverhex)"
-  if { echo "$as_me:$LINENO: $PYTHON -c "$prog"" >&5
-   ($PYTHON -c "$prog") >&5 2>&5
-   ac_status=$?
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); }; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+if $HAVE_PYTHON2 ; then : ;
 else
-  as_fn_error $? "too old" "$LINENO" 5
-fi
-      am_display_PYTHON=$PYTHON
-    else
-      # Otherwise, try each interpreter until we find one that satisfies
-      # VERSION.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a Python interpreter with version >= 2.4" >&5
-$as_echo_n "checking for a Python interpreter with version >= 2.4... " >&6; }
-if ${am_cv_pathless_PYTHON+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	for am_cv_pathless_PYTHON in python python2 python3 python3.2 python3.1 python3.0 python2.7  python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 none; do
-	  test "$am_cv_pathless_PYTHON" = none && break
-	  prog="import sys
-# split strings by '.' and convert to numeric.  Append some zeros
-# because we need at least 4 digits for the hex conversion.
-# map returns an iterator in Python 3.0 and a list in 2.x
-minver = list(map(int, '2.4'.split('.'))) + [0, 0, 0]
-minverhex = 0
-# xrange is not present in Python 3.0 and range returns an iterator
-for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[i]
-sys.exit(sys.hexversion < minverhex)"
-  if { echo "$as_me:$LINENO: $am_cv_pathless_PYTHON -c "$prog"" >&5
-   ($am_cv_pathless_PYTHON -c "$prog") >&5 2>&5
-   ac_status=$?
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); }; then :
-  break
-fi
-	done
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_pathless_PYTHON" >&5
-$as_echo "$am_cv_pathless_PYTHON" >&6; }
-      # Set $PYTHON to the absolute path of $am_cv_pathless_PYTHON.
-      if test "$am_cv_pathless_PYTHON" = none; then
-	PYTHON=:
-      else
-        # Extract the first word of "$am_cv_pathless_PYTHON", so it can be a program name with args.
-set dummy $am_cv_pathless_PYTHON; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PYTHON+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PYTHON in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PYTHON="$PYTHON" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PYTHON="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-PYTHON=$ac_cv_path_PYTHON
-if test -n "$PYTHON"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON" >&5
-$as_echo "$PYTHON" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-      fi
-      am_display_PYTHON=$am_cv_pathless_PYTHON
-    fi
-
-
-  if test "$PYTHON" = :; then
-      if test "$with_zenmap" = "check"; then
-     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not building Zenmap because Python 2.4 or later was not found" >&5
-$as_echo "$as_me: WARNING: Not building Zenmap because Python 2.4 or later was not found" >&2;}
-   else
-     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+  if test "$with_zenmap" = "check"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not building Zenmap because Python 2.x with x>=4 was not found" >&5
+$as_echo "$as_me: WARNING: Not building Zenmap because Python 2.x with x>=4 was not found" >&2;}
+  elif test "$with_zenmap" = "yes"; then
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "--with-zenmap requires Python 2.4 or later
+as_fn_error $? "--with-zenmap requires Python 2.x with x>=4
 See \`config.log' for more details" "$LINENO" 5; }
-   fi
-   with_zenmap=no
-  else
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $am_display_PYTHON version" >&5
-$as_echo_n "checking for $am_display_PYTHON version... " >&6; }
-if ${am_cv_python_version+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  am_cv_python_version=`$PYTHON -c "import sys; sys.stdout.write(sys.version[:3])"`
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_python_version" >&5
-$as_echo "$am_cv_python_version" >&6; }
-  PYTHON_VERSION=$am_cv_python_version
-
-
-
-  PYTHON_PREFIX='${prefix}'
-
-  PYTHON_EXEC_PREFIX='${exec_prefix}'
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $am_display_PYTHON platform" >&5
-$as_echo_n "checking for $am_display_PYTHON platform... " >&6; }
-if ${am_cv_python_platform+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  am_cv_python_platform=`$PYTHON -c "import sys; sys.stdout.write(sys.platform)"`
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_python_platform" >&5
-$as_echo "$am_cv_python_platform" >&6; }
-  PYTHON_PLATFORM=$am_cv_python_platform
-
-
-
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $am_display_PYTHON script directory" >&5
-$as_echo_n "checking for $am_display_PYTHON script directory... " >&6; }
-if ${am_cv_python_pythondir+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "x$prefix" = xNONE
-     then
-       am_py_prefix=$ac_default_prefix
-     else
-       am_py_prefix=$prefix
-     fi
-     am_cv_python_pythondir=`$PYTHON -c "import sys; from distutils import sysconfig; sys.stdout.write(sysconfig.get_python_lib(0,0,prefix='$am_py_prefix'))" 2>/dev/null`
-     case $am_cv_python_pythondir in
-     $am_py_prefix*)
-       am__strip_prefix=`echo "$am_py_prefix" | sed 's|.|.|g'`
-       am_cv_python_pythondir=`echo "$am_cv_python_pythondir" | sed "s,^$am__strip_prefix,$PYTHON_PREFIX,"`
-       ;;
-     *)
-       case $am_py_prefix in
-         /usr|/System*) ;;
-         *)
-	  am_cv_python_pythondir=$PYTHON_PREFIX/lib/python$PYTHON_VERSION/site-packages
-	  ;;
-       esac
-       ;;
-     esac
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_python_pythondir" >&5
-$as_echo "$am_cv_python_pythondir" >&6; }
-  pythondir=$am_cv_python_pythondir
-
-
-
-  pkgpythondir=\${pythondir}/$PACKAGE
-
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $am_display_PYTHON extension module directory" >&5
-$as_echo_n "checking for $am_display_PYTHON extension module directory... " >&6; }
-if ${am_cv_python_pyexecdir+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "x$exec_prefix" = xNONE
-     then
-       am_py_exec_prefix=$am_py_prefix
-     else
-       am_py_exec_prefix=$exec_prefix
-     fi
-     am_cv_python_pyexecdir=`$PYTHON -c "import sys; from distutils import sysconfig; sys.stdout.write(sysconfig.get_python_lib(1,0,prefix='$am_py_exec_prefix'))" 2>/dev/null`
-     case $am_cv_python_pyexecdir in
-     $am_py_exec_prefix*)
-       am__strip_prefix=`echo "$am_py_exec_prefix" | sed 's|.|.|g'`
-       am_cv_python_pyexecdir=`echo "$am_cv_python_pyexecdir" | sed "s,^$am__strip_prefix,$PYTHON_EXEC_PREFIX,"`
-       ;;
-     *)
-       case $am_py_exec_prefix in
-         /usr|/System*) ;;
-         *)
-	   am_cv_python_pyexecdir=$PYTHON_EXEC_PREFIX/lib/python$PYTHON_VERSION/site-packages
-	   ;;
-       esac
-       ;;
-     esac
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_python_pyexecdir" >&5
-$as_echo "$am_cv_python_pyexecdir" >&6; }
-  pyexecdir=$am_cv_python_pyexecdir
-
-
-
-  pkgpyexecdir=\${pyexecdir}/$PACKAGE
-
-
-
   fi
-
-
+  with_zenmap=no
 fi
 if test "$with_zenmap" = "no"; then
+  trace_no_use="$trace_no_use zenmap"
   BUILDZENMAP=""
   INSTALLZENMAP=""
   UNINSTALLZENMAP=""
@@ -5968,12 +5819,13 @@ if test "$with_zenmap" = "no"; then
   ZENMAP_CLEAN=""
   ZENMAP_DIST_CLEAN=""
 else
+  trace_use="$trace_use zenmap"
   BUILDZENMAP=build-zenmap
   INSTALLZENMAP=install-zenmap
   UNINSTALLZENMAP=uninstall-zenmap
-  ZENMAP_CHECK=zenmap_check
-  ZENMAP_CLEAN=zenmap_clean
-  ZENMAP_DIST_CLEAN=zenmap_dist_clean
+  ZENMAP_CHECK=check-zenmap
+  ZENMAP_CLEAN=clean-zenmap
+  ZENMAP_DIST_CLEAN=distclean-zenmap
 fi
 
 
@@ -5996,17 +5848,19 @@ fi
 
 
 if test "$with_nping" = "no"; then
+  trace_no_use="$trace_no_use nping"
   BUILDNPING=""
   INSTALLNPING=""
   UNINSTALLNPING=""
   NPING_CLEAN=""
   NPING_DIST_CLEAN=""
 else
+  trace_use="$trace_use nping"
   BUILDNPING=build-nping
   INSTALLNPING=install-nping
   UNINSTALLNPING=uninstall-nping
-  NPING_CLEAN=nping_clean
-  NPING_DIST_CLEAN=nping_dist_clean
+  NPING_CLEAN=clean-nping
+  NPING_DIST_CLEAN=distclean-nping
 
 
 subdirs="$subdirs nping"
@@ -6163,9 +6017,13 @@ fi
 
 OPENSSL_LIBS=
 if test "$use_openssl" = "yes"; then
-  $as_echo "#define HAVE_OPENSSL 1" >>confdefs.h
+  trace_use="$trace_use openssl"
+
+$as_echo "#define HAVE_OPENSSL 1" >>confdefs.h
 
   OPENSSL_LIBS="-lssl -lcrypto"
+else
+  trace_no_use="$trace_no_use openssl"
 fi
 
 
@@ -6278,8 +6136,8 @@ fi
 $as_echo "$ac_cv_lib_pcap_pcap_datalink" >&6; }
 if test "x$ac_cv_lib_pcap_pcap_datalink" = xyes; then :
   have_libpcap=yes
-	LIBPCAP_INC=$with_libpcap/include
-	LIBPCAP_LIB=$with_libpcap/lib
+        LIBPCAP_INC=$with_libpcap/include
+        LIBPCAP_LIB=$with_libpcap/lib
 fi
 
 fi
@@ -6426,80 +6284,60 @@ if test $have_libpcap != yes; then
     CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/$libpcapdir"
   fi
   LIBPCAP_LIBS='$(LIBPCAPDIR)/libpcap.a'
-  PCAP_DEPENDS='$(LIBPCAPDIR)/libpcap.a'
-  PCAP_BUILD="pcap_build"
-  PCAP_CLEAN="pcap_clean"
-  PCAP_DIST_CLEAN="pcap_dist_clean"
-  $as_echo "#define PCAP_INCLUDED 1" >>confdefs.h
+  PCAP_BUILD="build-pcap"
+  PCAP_CLEAN="clean-pcap"
+  PCAP_DIST_CLEAN="distclean-pcap"
 
+$as_echo "#define PCAP_INCLUDED 1" >>confdefs.h
 
-  # libpcap can require libnl
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing nl_handle_alloc" >&5
-$as_echo_n "checking for library containing nl_handle_alloc... " >&6; }
-if ${ac_cv_search_nl_handle_alloc+:} false; then :
+else
+  # We assume our included libpcap doesn't need this check-and-define
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if PCAP_NETMASK_UNKNOWN is defined/handled by libpcap" >&5
+$as_echo_n "checking if PCAP_NETMASK_UNKNOWN is defined/handled by libpcap... " >&6; }
+  if ${ac_cv_have_pcap_netmask_unknown+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char nl_handle_alloc ();
+      #include <pcap.h>
+
 int
 main ()
 {
-return nl_handle_alloc ();
+
+      int i = PCAP_NETMASK_UNKNOWN;
+
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' nl; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_have_pcap_netmask_unknown=yes
+else
+  ac_cv_have_pcap_netmask_unknown=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+  if test $ac_cv_have_pcap_netmask_unknown = no; then
+
+$as_echo "#define PCAP_NETMASK_UNKNOWN 0" >>confdefs.h
+
   fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_nl_handle_alloc=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_nl_handle_alloc+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_nl_handle_alloc+:} false; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_pcap_netmask_unknown" >&5
+$as_echo "$ac_cv_have_pcap_netmask_unknown" >&6; }
 
-else
-  ac_cv_search_nl_handle_alloc=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_nl_handle_alloc" >&5
-$as_echo "$ac_cv_search_nl_handle_alloc" >&6; }
-ac_res=$ac_cv_search_nl_handle_alloc
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
-fi
 
-else
-  $as_echo "#define HAVE_LIBPCAP 1" >>confdefs.h
+$as_echo "#define HAVE_LIBPCAP 1" >>confdefs.h
 
   LIBPCAP_LIBS="-lpcap"
-  PCAP_DEPENDS=""
   PCAP_BUILD=""
   PCAP_CLEAN=""
   PCAP_DIST_CLEAN=""
 fi
-
 
 
 
@@ -6633,11 +6471,11 @@ if test $have_pcre != yes ; then
 
   CPPFLAGS="-I\$(top_srcdir)/$LIBPCREDIR $CPPFLAGS"
   LIBPCRE_LIBS="$LIBPCREDIR/libpcre.a"
-  PCRE_DEPENDS="$LIBPCREDIR/libpcre.a"
-  PCRE_BUILD="pcre_build"
-  PCRE_CLEAN="pcre_clean"
-  PCRE_DIST_CLEAN="pcre_dist_clean"
-  $as_echo "#define PCRE_INCLUDED 1" >>confdefs.h
+  PCRE_BUILD="build-pcre"
+  PCRE_CLEAN="clean-pcre"
+  PCRE_DIST_CLEAN="distclean-pcre"
+
+$as_echo "#define PCRE_INCLUDED 1" >>confdefs.h
 
 else
 # We only need to check for and use this if we are NOT using included pcre
@@ -6654,12 +6492,10 @@ fi
 done
 
   LIBPCRE_LIBS="-lpcre"
-  PCRE_DEPENDS=""
   PCRE_BUILD=""
   PCRE_CLEAN=""
   PCRE_DIST_CLEAN=""
 fi
-
 
 
 
@@ -6701,20 +6537,18 @@ if test $have_dnet != yes ; then
 
   CPPFLAGS="-I\$(top_srcdir)/$LIBDNETDIR/include $CPPFLAGS"
   LIBDNET_LIBS="\$(top_srcdir)/$LIBDNETDIR/src/.libs/libdnet.a"
-  DNET_DEPENDS="\$(top_srcdir)/$LIBDNETDIR/src/.libs/libdnet.a"
-  DNET_BUILD="dnet_build"
-  DNET_CLEAN="dnet_clean"
-  DNET_DIST_CLEAN="dnet_dist_clean"
-  $as_echo "#define DNET_INCLUDED 1" >>confdefs.h
+  DNET_BUILD="build-dnet"
+  DNET_CLEAN="clean-dnet"
+  DNET_DIST_CLEAN="distclean-dnet"
+
+$as_echo "#define DNET_INCLUDED 1" >>confdefs.h
 
 else
   LIBDNET_LIBS="-ldnet"
-  DNET_DEPENDS=""
   DNET_BUILD=""
   DNET_CLEAN=""
   DNET_DIST_CLEAN=""
 fi
-
 
 
 
@@ -6738,11 +6572,10 @@ if test "${with_liblua+set}" = set; then :
   included)
     CPPFLAGS="-I\$(top_srcdir)/$LIBLUADIR $CPPFLAGS"
     LIBLUA_LIBS="\$(top_srcdir)/$LIBLUADIR/liblua.a"
-    LUA_DEPENDS="\$(top_srcdir)/$LIBLUADIR/liblua.a"
-    LUA_BUILD="lua_build"
-    LUA_CLEAN="lua_clean"
-    LUA_DIST_CLEAN="lua_dist_clean"
-	have_lua="yes"
+    LUA_BUILD="build-lua"
+    LUA_CLEAN="clean-lua"
+    LUA_DIST_CLEAN="distclean-lua"
+      have_lua="yes"
 
   ;;
   no)
@@ -6817,15 +6650,16 @@ fi
 
 # They don't want lua
 if test "$no_lua" = "yes"; then
+  trace_no_use="$trace_no_use lua"
   CPPFLAGS="-DNOLUA $CPPFLAGS"
   LIBLUA_LIBS=""
-  LUA_DEPENDS=""
   LUA_BUILD=""
   LUA_CLEAN=""
   LUA_DIST_CLEAN=""
   INSTALLNSE=""
 
 else
+  trace_use="$trace_use lua"
 
   # If they didn't specify it, we try to find it
   if test $have_lua != yes; then
@@ -7003,7 +6837,6 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-    LUA_DEPENDS=""
     LUA_BUILD=""
     LUA_CLEAN=""
     LUA_DIST_CLEAN=""
@@ -7015,11 +6848,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 $as_echo "no" >&6; }
     CPPFLAGS="-I\$(top_srcdir)/$LIBLUADIR $CPPFLAGS"
     LIBLUA_LIBS="\$(top_srcdir)/$LIBLUADIR/liblua.a"
-    LUA_DEPENDS="\$(top_srcdir)/$LIBLUADIR/liblua.a"
-    LUA_BUILD="lua_build"
-    LUA_CLEAN="lua_clean"
-    LUA_DIST_CLEAN="lua_dist_clean"
-    $as_echo "#define LUA_INCLUDED 1" >>confdefs.h
+    LUA_BUILD="build-lua"
+    LUA_CLEAN="clean-lua"
+    LUA_DIST_CLEAN="distclean-lua"
+
+$as_echo "#define LUA_INCLUDED 1" >>confdefs.h
 
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -7027,9 +6860,8 @@ $as_echo "yes" >&6; }
   fi
 
   INSTALLNSE="install-nse"
-  NSE_CHECK="nse_check"
+  NSE_CHECK="check-nse"
 fi
-
 
 
 
@@ -7054,10 +6886,9 @@ if test "${with_liblinear+set}" = set; then :
   included)
     CPPFLAGS="-I\$(top_srcdir)/$LIBLINEARDIR $CPPFLAGS"
     LIBLINEAR_LIBS="\$(top_srcdir)/$LIBLINEARDIR/liblinear.a"
-    LIBLINEAR_DEPENDS="\$(top_srcdir)/$LIBLINEARDIR/liblinear.a"
-    LIBLINEAR_BUILD="liblinear_build"
-    LIBLINEAR_CLEAN="liblinear_clean"
-    LIBLINEAR_DIST_CLEAN="liblinear_dist_clean"
+    LIBLINEAR_BUILD="build-liblinear"
+    LIBLINEAR_CLEAN="clean-liblinear"
+    LIBLINEAR_DIST_CLEAN="distclean-liblinear"
     have_liblinear=yes
   ;;
   *)
@@ -7125,7 +6956,6 @@ fi
 done
 
 
-  LIBLINEAR_DEPENDS=""
   LIBLINEAR_BUILD=""
   LIBLINEAR_CLEAN=""
   LIBLINEAR_DIST_CLEAN=""
@@ -7137,17 +6967,16 @@ if test $have_liblinear != yes; then
 $as_echo "no" >&6; }
   CPPFLAGS="-I\$(top_srcdir)/$LIBLINEARDIR $CPPFLAGS"
   LIBLINEAR_LIBS="\$(top_srcdir)/$LIBLINEARDIR/liblinear.a"
-  LIBLINEAR_DEPENDS="\$(top_srcdir)/$LIBLINEARDIR/liblinear.a"
-  LIBLINEAR_BUILD="liblinear_build"
-  LIBLINEAR_CLEAN="liblinear_clean"
-  LIBLINEAR_DIST_CLEAN="liblinear_dist_clean"
-  $as_echo "#define LIBLINEAR_INCLUDED 1" >>confdefs.h
+  LIBLINEAR_BUILD="build-liblinear"
+  LIBLINEAR_CLEAN="clean-liblinear"
+  LIBLINEAR_DIST_CLEAN="distclean-liblinear"
+
+$as_echo "#define LIBLINEAR_INCLUDED 1" >>confdefs.h
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 fi
-
 
 
 
@@ -7385,6 +7214,7 @@ $as_echo "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if struct in_addr is a wacky huge structure (some Sun boxes)" >&5
 $as_echo_n "checking if struct in_addr is a wacky huge structure (some Sun boxes)... " >&6; }
 
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <netinet/in.h>
@@ -7466,7 +7296,8 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_struct_icmp_exists" >&5
 $as_echo "$ac_cv_struct_icmp_exists" >&6; }
 if test $ac_cv_struct_icmp_exists = yes ; then
-        $as_echo "#define HAVE_STRUCT_ICMP 1" >>confdefs.h
+
+$as_echo "#define HAVE_STRUCT_ICMP 1" >>confdefs.h
 
 fi
 
@@ -7504,7 +7335,8 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_struct_ip_exists" >&5
 $as_echo "$ac_cv_struct_ip_exists" >&6; }
 if test $ac_cv_struct_ip_exists = yes ; then
-        $as_echo "#define HAVE_STRUCT_IP 1" >>confdefs.h
+
+$as_echo "#define HAVE_STRUCT_IP 1" >>confdefs.h
 
 fi
 
@@ -7543,7 +7375,8 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ip_has_ip_sum" >&5
 $as_echo "$ac_cv_ip_has_ip_sum" >&6; }
 if test $ac_cv_ip_has_ip_sum = yes ; then
-        $as_echo "#define HAVE_IP_IP_SUM 1" >>confdefs.h
+
+$as_echo "#define HAVE_IP_IP_SUM 1" >>confdefs.h
 
 fi
 
@@ -7627,7 +7460,7 @@ if test "${with_libnbase+set}" = set; then :
     ;;
   esac
 else
-  NBASE_BUILD="nbase_build"
+  NBASE_BUILD="build-nbase"
 NBASEDIR="nbase"
 
 fi
@@ -7645,8 +7478,8 @@ subdirs="$subdirs nbase"
 
 
 NSOCKDIR="nsock"
-NSOCK_BUILD="nsock_build"
-NSOCK_CHECK="nsock_check"
+NSOCK_BUILD="build-nsock"
+NSOCK_CHECK="check-nsock"
 
 # Check whether --with-libnsock was given.
 if test "${with_libnsock+set}" = set; then :
@@ -7687,6 +7520,7 @@ fi
 
 
 if test "$with_ncat" = "no"; then
+  trace_no_use="$trace_no_use ncat"
   NCAT_BUILD=""
   NCAT_CHECK=""
   NCAT_INSTALL=""
@@ -7694,12 +7528,13 @@ if test "$with_ncat" = "no"; then
   NCAT_CLEAN=""
   NCAT_DIST_CLEAN=""
 else
-  NCAT_BUILD="ncat_build"
-  NCAT_CHECK="ncat_check"
+  trace_use="$trace_use ncat"
+  NCAT_BUILD="build-ncat"
+  NCAT_CHECK="check-ncat"
   NCAT_INSTALL="install-ncat"
   NCAT_UNINSTALL="uninstall-ncat"
-  NCAT_CLEAN="ncat_clean"
-  NCAT_DIST_CLEAN="ncat_dist_clean"
+  NCAT_CLEAN="clean-ncat"
+  NCAT_DIST_CLEAN="distclean-ncat"
   subdirs="$subdirs ncat"
 
 fi
@@ -7942,12 +7777,14 @@ See \`config.log' for more details" "$LINENO" 5; }
 fi
 
 if test "$with_nmap_update" = "no"; then
+  trace_no_use="$trace_no_use nmap-update"
   NMAP_UPDATE_BUILD=""
   NMAP_UPDATE_INSTALL=""
   NMAP_UPDATE_UNINSTALL=""
   NMAP_UPDATE_CLEAN=""
   NMAP_UPDATE_DIST_CLEAN=""
 else
+  trace_use="$trace_use nmap-update"
   subdirs="$subdirs nmap-update"
 
   NMAP_UPDATE_BUILD="build-nmap-update"
@@ -8546,6 +8383,7 @@ gives unlimited permission to copy, distribute and modify it."
 ac_pwd='$ac_pwd'
 srcdir='$srcdir'
 INSTALL='$INSTALL'
+AWK='$AWK'
 test -n "\$AWK" || AWK=awk
 _ACEOF
 
@@ -9391,8 +9229,33 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+
 # Krad ASCII ART#!#@$!@#$
-if test -f docs/leet-nmap-ascii-art.txt; then
-	cat docs/leet-nmap-ascii-art.txt
+# Randomly store the name of one of the ASCII Art files in FILENAME
+FILENAME=`ls $srcdir/docs/leet-nmap-ascii-art*.txt 2>/dev/null | $AWK '
+    BEGIN {
+        srand();
+    }
+
+    {
+        lines[++d] = $0
+    }
+
+    END {
+        # This makes AWKs random numbers more random
+        print lines[int(rand()*49139)%d+1];
+    }
+    '`
+# Print the file to screen, if any such file exists (i.e. $FILENAME is not empty)
+if test "$FILENAME"; then
+  cat "$FILENAME"
 fi
-echo "Configuration complete.  Type make (or gmake on some *BSD machines) to compile."
+echo "  NMAP IS A POWERFUL TOOL -- USE CAREFULLY AND RESPONSIBLY"
+
+echo "Configured with:$trace_use"
+echo "Configured without:$trace_no_use"
+echo "Type make (or gmake on some *BSD machines) to compile."
+
+if test "x$use_openssl" = "xno" && test "x$with_openssl" != "xno"; then
+  echo "WARNING: You are compiling without OpenSSL"
+fi

@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -96,8 +96,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -118,11 +117,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: services.cc 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: services.cc 34574 2015-06-03 13:01:29Z dmiller $ */
 
 #include "nmap.h"
 #include "services.h"
@@ -234,7 +233,7 @@ static int nmap_services_init() {
       continue;
 
     res = sscanf(line, "%127s %hu/%15s %31s", servicename, &portno, proto, ratio_str);
-    
+
     if (res == 3) {
       ratio = 0;
     } else if (res == 4) {
@@ -245,13 +244,13 @@ static int nmap_services_init() {
 
         if (ratio_n < 0 || ratio_d < 0)
           fatal("%s:%d contains an invalid negative value", filename, lineno);
-        
+
         if (ratio_n > ratio_d)
           fatal("%s:%d has a ratio %g. All ratios must be < 1", filename, lineno, (double)ratio_n/ratio_d);
-        
+
         if (ratio_d == 0)
           fatal("%s:%d has a ratio denominator of 0 causing a division by 0 error", filename, lineno);
-        
+
         ratio = (double)ratio_n / ratio_d;
         ratio_format = 1;
       } else if (strncmp(ratio_str, "0.", 2) == 0) {
@@ -325,7 +324,7 @@ void free_services() {
   services_initialized = 0;
 }
 
-  
+
 /* Adds ports whose names match mask and one or more protocols
  * specified by range_type to porttbl. Increases the respective
  * protocol counts in ports.
@@ -338,7 +337,7 @@ int addportsfromservmask(char *mask, u8 *porttbl, int range_type) {
 
   if (!services_initialized && nmap_services_init() == -1)
     fatal("%s: Couldn't get port numbers", __func__);
-  
+
   for (i = service_table.begin(); i != service_table.end(); i++) {
     service_node& current = i->second;
     if (wildtest(mask, current.s_name)) {
@@ -424,10 +423,13 @@ static bool is_port_member(const struct scan_lists *ptsdata, const struct servic
 // If level is 1 or above, we treat it as a "top ports" directive
 // and return the N highest ratio ports (where N==level).
 //
+// If the fourth parameter is not NULL, then the specified ports
+// are excluded first and only then are the top N ports taken
+//
 // This function doesn't support IP protocol scan so only call this
 // function if o.TCPScan() || o.UDPScan() || o.SCTPScan()
 
-void gettoppts(double level, char *portlist, struct scan_lists * ports) {
+void gettoppts(double level, char *portlist, struct scan_lists * ports, char *exclude_ports) {
   int ti=0, ui=0, si=0;
   struct scan_lists ptsdata = { 0 };
   bool ptsdata_initialized = false;
@@ -466,7 +468,14 @@ void gettoppts(double level, char *portlist, struct scan_lists * ports) {
   if (portlist){
     getpts(portlist, &ptsdata);
     ptsdata_initialized = true;
+  } else if (exclude_ports) {
+    getpts("-", &ptsdata);
+    ptsdata_initialized = true;
   }
+
+  if (ptsdata_initialized && exclude_ports)
+    removepts(exclude_ports, &ptsdata);
+
   if (level < 1) {
     for (i = services_by_ratio.begin(); i != services_by_ratio.end(); i++) {
       current = &(*i);
@@ -566,4 +575,3 @@ void gettoppts(double level, char *portlist, struct scan_lists * ports) {
   else if (o.debugging && level >= 1)
     log_write(LOG_STDOUT, "PORTS: Using top %d ports found open (TCP:%d, UDP:%d, SCTP:%d)\n", (int) level, ports->tcp_count, ports->udp_count, ports->sctp_count);
 }
-

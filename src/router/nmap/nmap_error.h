@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,11 +116,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_error.h 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: nmap_error.h 34704 2015-06-22 14:12:36Z dmiller $ */
 
 #ifndef NMAP_ERROR_H
 #define NMAP_ERROR_H
@@ -145,7 +144,6 @@
 #endif
 
 #include <stdarg.h>
-#include <stdio.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -155,20 +153,12 @@
 extern "C" {
 #endif
 
-#ifdef WIN32
-__declspec(noreturn)
-#endif
-void fatal(const char *fmt, ...)
-     __attribute__ ((noreturn))
+NORETURN void fatal(const char *fmt, ...)
      __attribute__ ((format (printf, 1, 2)));
 void error(const char *fmt, ...)
      __attribute__ ((format (printf, 1, 2)));
 
-#ifdef WIN32
-__declspec(noreturn)
-#endif
-void pfatal(const char *err, ...)
-     __attribute__ ((noreturn))
+NORETURN void pfatal(const char *err, ...)
      __attribute__ ((format (printf, 1, 2)));
 void gh_perror(const char *err, ...)
      __attribute__ ((format (printf, 1, 2)));

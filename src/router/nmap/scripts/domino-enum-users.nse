@@ -41,7 +41,7 @@ Attempts to discover valid IBM Lotus Domino users and download their ID files by
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "auth"}
 
 
@@ -109,7 +109,7 @@ action = function(host, port)
       if ( status ) then
         table.insert(result, ("Successfully stored \"%s\" in %s"):format(username, filename) )
       else
-        stdnse.print_debug( err )
+        stdnse.debug1("%s", err)
         table.insert(result, ("Failed to store \"%s\" to %s"):format(username, filename) )
       end
     elseif( status and data ) then

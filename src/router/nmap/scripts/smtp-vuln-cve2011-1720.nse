@@ -44,7 +44,7 @@ Reference:
 -- @args smtp.domain Define the domain to be used in the SMTP EHLO command.
 
 author = "Djalal Harouni"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "vuln"}
 
 
@@ -90,17 +90,17 @@ local AUTH_VULN = {
 -- the auth_mlist table, and returns all the available auth
 -- mechanisms as a string.
 local function chk_auth_mechanisms(ehlo_res, auth_mlist)
-  local mlist, mstr = smtp.get_auth_mech(ehlo_res), ""
+  local mlist = smtp.get_auth_mech(ehlo_res)
 
   if mlist then
     for _, mech in ipairs(mlist) do
-      mstr = mstr.." "..mech
       if AUTH_VULN[mech] then
         auth_mlist[mech] = mech
       end
     end
+    return table.concat(mlist, " ")
   end
-  return mstr
+  return ""
 end
 
 -- Close any remaining connection
@@ -210,13 +210,13 @@ local function check_smtpd(smtp_opts)
 
     -- maybe vulnerable
     if next(auth_mech_list) then
-      local auth_tests = ""
+      local auth_tests = {}
 
       for mech in pairs(auth_mech_list) do
         for mkill in pairs(AUTH_VULN[mech].killby) do
 
           if auth_mech_list[mkill] then
-            auth_tests = auth_tests.." "..mech
+            auth_tests[#auth_tests+1] = mech
 
             local probe = AUTH_VULN[mech].killby[mkill].probe
 
@@ -229,7 +229,7 @@ local function check_smtpd(smtp_opts)
               if ret then
                 vuln.state = vulns.STATE.VULN
                 table.insert(vuln.check_results,
-                  string.format("AUTH tests:%s", auth_tests))
+                  string.format("AUTH tests: %s", table.concat(auth_tests, " ")))
                 table.insert(vuln.check_results,
                   string.format("VULNERABLE (%s => %s)", mech, mkill))
                 return smtp_finish(nil, true)
@@ -242,12 +242,11 @@ local function check_smtpd(smtp_opts)
         end
       end
 
-      table.insert(vuln.check_results, string.format("AUTH tests:%s",
-        auth_tests))
+      table.insert(vuln.check_results, string.format("AUTH tests: %s",
+        table.concat(auth_tests, " ")))
     end
   else
-    stdnse.print_debug(2, "%s: Authentication is not available",
-      SCRIPT_NAME)
+    stdnse.debug2("Authentication is not available")
     table.insert(vuln.check_results, "Authentication is not available")
   end
 
@@ -280,7 +279,7 @@ than PLAIN and LOGIN.]],
   local report = vulns.Report:new(SCRIPT_NAME, host, port)
   local status, err = check_smtpd(smtp_opts)
   if not status then
-    stdnse.print_debug(1, "%s: %s", SCRIPT_NAME, err)
+    stdnse.debug1("%s", err)
     return nil
   end
   return report:make_output(smtp_opts.vuln)

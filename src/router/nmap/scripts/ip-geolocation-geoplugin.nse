@@ -22,14 +22,14 @@ is no limit on lookups using this service.
 --
 
 author = "Gorjan Petrovski"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery","external","safe"}
 
 
 hostrule = function(host)
   local is_private, err = ipOps.isPrivate( host.ip )
   if is_private == nil then
-    stdnse.print_debug( "%s Error in Hostrule: %s.", SCRIPT_NAME, err )
+    stdnse.debug1("Error in Hostrule: %s.", err )
     return false
   end
   return not is_private

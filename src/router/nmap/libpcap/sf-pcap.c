@@ -123,25 +123,57 @@ static const char rcsid[] _U_ =
 static int pcap_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **datap);
 
 /*
+ * Private data for reading pcap savefiles.
+ */
+typedef enum {
+	NOT_SWAPPED,
+	SWAPPED,
+	MAYBE_SWAPPED
+} swapped_type_t;
+
+typedef enum {
+	PASS_THROUGH,
+	SCALE_UP,
+	SCALE_DOWN
+} tstamp_scale_type_t;
+
+struct pcap_sf {
+	size_t hdrsize;
+	swapped_type_t lengths_swapped;
+	tstamp_scale_type_t scale_type;
+};
+
+/*
  * Check whether this is a pcap savefile and, if it is, extract the
  * relevant information from the header.
  */
-int
-pcap_check_header(pcap_t *p, bpf_u_int32 magic, FILE *fp, char *errbuf)
+pcap_t *
+pcap_check_header(bpf_u_int32 magic, FILE *fp, u_int precision, char *errbuf,
+    int *err)
 {
 	struct pcap_file_header hdr;
 	size_t amt_read;
+	pcap_t *p;
+	int swapped = 0;
+	struct pcap_sf *ps;
+
+	/*
+	 * Assume no read errors.
+	 */
+	*err = 0;
 
 	/*
 	 * Check whether the first 4 bytes of the file are the magic
 	 * number for a pcap savefile, or for a byte-swapped pcap
 	 * savefile.
 	 */
-	if (magic != TCPDUMP_MAGIC && magic != KUZNETZOV_TCPDUMP_MAGIC) {
+	if (magic != TCPDUMP_MAGIC && magic != KUZNETZOV_TCPDUMP_MAGIC &&
+	    magic != NSEC_TCPDUMP_MAGIC) {
 		magic = SWAPLONG(magic);
-		if (magic != TCPDUMP_MAGIC && magic != KUZNETZOV_TCPDUMP_MAGIC)
-			return (0);	/* nope */
-		p->sf.swapped = 1;
+		if (magic != TCPDUMP_MAGIC && magic != KUZNETZOV_TCPDUMP_MAGIC &&
+		    magic != NSEC_TCPDUMP_MAGIC)
+			return (NULL);	/* nope */
+		swapped = 1;
 	}
 
 	/*
@@ -162,13 +194,14 @@ pcap_check_header(pcap_t *p, bpf_u_int32 magic, FILE *fp, char *errbuf)
 			    (unsigned long)sizeof(hdr),
 			    (unsigned long)amt_read);
 		}
-		return (-1);
+		*err = 1;
+		return (NULL);
 	}
 
 	/*
 	 * If it's a byte-swapped capture file, byte-swap the header.
 	 */
-	if (p->sf.swapped) {
+	if (swapped) {
 		hdr.version_major = SWAPSHORT(hdr.version_major);
 		hdr.version_minor = SWAPSHORT(hdr.version_minor);
 		hdr.thiszone = SWAPLONG(hdr.thiszone);
@@ -180,16 +213,81 @@ pcap_check_header(pcap_t *p, bpf_u_int32 magic, FILE *fp, char *errbuf)
 	if (hdr.version_major < PCAP_VERSION_MAJOR) {
 		snprintf(errbuf, PCAP_ERRBUF_SIZE,
 		    "archaic pcap savefile format");
-		return (-1);
+		*err = 1;
+		return (NULL);
 	}
-	p->sf.version_major = hdr.version_major;
-	p->sf.version_minor = hdr.version_minor;
+
+	/*
+	 * OK, this is a good pcap file.
+	 * Allocate a pcap_t for it.
+	 */
+	p = pcap_open_offline_common(errbuf, sizeof (struct pcap_sf));
+	if (p == NULL) {
+		/* Allocation failed. */
+		*err = 1;
+		return (NULL);
+	}
+	p->swapped = swapped;
+	p->version_major = hdr.version_major;
+	p->version_minor = hdr.version_minor;
 	p->tzoff = hdr.thiszone;
 	p->snapshot = hdr.snaplen;
 	p->linktype = linktype_to_dlt(LT_LINKTYPE(hdr.linktype));
 	p->linktype_ext = LT_LINKTYPE_EXT(hdr.linktype);
 
-	p->sf.next_packet_op = pcap_next_packet;
+	p->next_packet_op = pcap_next_packet;
+
+	ps = p->priv;
+
+	p->opt.tstamp_precision = precision;
+
+	/*
+	 * Will we need to scale the timestamps to match what the
+	 * user wants?
+	 */
+	switch (precision) {
+
+	case PCAP_TSTAMP_PRECISION_MICRO:
+		if (magic == NSEC_TCPDUMP_MAGIC) {
+			/*
+			 * The file has nanoseconds, the user
+			 * wants microseconds; scale the
+			 * precision down.
+			 */
+			ps->scale_type = SCALE_DOWN;
+		} else {
+			/*
+			 * The file has microseconds, the
+			 * user wants microseconds; nothing to do.
+			 */
+			ps->scale_type = PASS_THROUGH;
+		}
+		break;
+
+	case PCAP_TSTAMP_PRECISION_NANO:
+		if (magic == NSEC_TCPDUMP_MAGIC) {
+			/*
+			 * The file has nanoseconds, the
+			 * user wants nanoseconds; nothing to do.
+			 */
+			ps->scale_type = PASS_THROUGH;
+		} else {
+			/*
+			 * The file has microoseconds, the user
+			 * wants nanoseconds; scale the
+			 * precision up.
+			 */
+			ps->scale_type = SCALE_UP;
+		}
+		break;
+
+	default:
+		snprintf(errbuf, PCAP_ERRBUF_SIZE,
+		    "unknown time stamp resolution %u", precision);
+		free(p);
+		*err = 1;
+		return (NULL);
+	}
 
 	/*
 	 * We interchanged the caplen and len fields at version 2.3,
@@ -205,19 +303,19 @@ pcap_check_header(pcap_t *p, bpf_u_int32 magic, FILE *fp, char *errbuf)
 
 	case 2:
 		if (hdr.version_minor < 3)
-			p->sf.lengths_swapped = SWAPPED;
+			ps->lengths_swapped = SWAPPED;
 		else if (hdr.version_minor == 3)
-			p->sf.lengths_swapped = MAYBE_SWAPPED;
+			ps->lengths_swapped = MAYBE_SWAPPED;
 		else
-			p->sf.lengths_swapped = NOT_SWAPPED;
+			ps->lengths_swapped = NOT_SWAPPED;
 		break;
 
 	case 543:
-		p->sf.lengths_swapped = SWAPPED;
+		ps->lengths_swapped = SWAPPED;
 		break;
 
 	default:
-		p->sf.lengths_swapped = NOT_SWAPPED;
+		ps->lengths_swapped = NOT_SWAPPED;
 		break;
 	}
 
@@ -239,7 +337,7 @@ pcap_check_header(pcap_t *p, bpf_u_int32 magic, FILE *fp, char *errbuf)
 		 * data ourselves and read from that buffer in order to
 		 * make that work.
 		 */
-		p->sf.hdrsize = sizeof(struct pcap_sf_patched_pkthdr);
+		ps->hdrsize = sizeof(struct pcap_sf_patched_pkthdr);
 
 		if (p->linktype == DLT_EN10MB) {
 			/*
@@ -265,7 +363,7 @@ pcap_check_header(pcap_t *p, bpf_u_int32 magic, FILE *fp, char *errbuf)
 			p->snapshot += 14;
 		}
 	} else
-		p->sf.hdrsize = sizeof(struct pcap_sf_pkthdr);
+		ps->hdrsize = sizeof(struct pcap_sf_pkthdr);
 
 	/*
 	 * Allocate a buffer for the packet data.
@@ -273,17 +371,21 @@ pcap_check_header(pcap_t *p, bpf_u_int32 magic, FILE *fp, char *errbuf)
 	p->bufsize = p->snapshot;
 	if (p->bufsize <= 0) {
 		/*
-		 * Bogus snapshot length; use 64KiB as a fallback.
+		 * Bogus snapshot length; use the maximum as a fallback.
 		 */
-		p->bufsize = 65536;
+		p->bufsize = MAXIMUM_SNAPLEN;
 	}
 	p->buffer = malloc(p->bufsize);
 	if (p->buffer == NULL) {
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "out of memory");
-		return (-1);
+		free(p);
+		*err = 1;
+		return (NULL);
 	}
 
-	return (1);
+	p->cleanup_op = sf_cleanup;
+
+	return (p);
 }
 
 /*
@@ -294,8 +396,9 @@ pcap_check_header(pcap_t *p, bpf_u_int32 magic, FILE *fp, char *errbuf)
 static int
 pcap_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 {
+	struct pcap_sf *ps = p->priv;
 	struct pcap_sf_patched_pkthdr sf_hdr;
-	FILE *fp = p->sf.rfile;
+	FILE *fp = p->rfile;
 	size_t amt_read;
 	bpf_u_int32 t;
 
@@ -306,8 +409,8 @@ pcap_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 	 * unpatched libpcap we only read as many bytes as the regular
 	 * header has.
 	 */
-	amt_read = fread(&sf_hdr, 1, p->sf.hdrsize, fp);
-	if (amt_read != p->sf.hdrsize) {
+	amt_read = fread(&sf_hdr, 1, ps->hdrsize, fp);
+	if (amt_read != ps->hdrsize) {
 		if (ferror(fp)) {
 			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
 			    "error reading dump file: %s",
@@ -317,7 +420,7 @@ pcap_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 			if (amt_read != 0) {
 				snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
 				    "truncated dump file; tried to read %lu header bytes, only got %lu",
-				    (unsigned long)p->sf.hdrsize,
+				    (unsigned long)ps->hdrsize,
 				    (unsigned long)amt_read);
 				return (-1);
 			}
@@ -326,7 +429,7 @@ pcap_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 		}
 	}
 
-	if (p->sf.swapped) {
+	if (p->swapped) {
 		/* these were written in opposite byte order */
 		hdr->caplen = SWAPLONG(sf_hdr.caplen);
 		hdr->len = SWAPLONG(sf_hdr.len);
@@ -338,8 +441,34 @@ pcap_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 		hdr->ts.tv_sec = sf_hdr.ts.tv_sec;
 		hdr->ts.tv_usec = sf_hdr.ts.tv_usec;
 	}
+
+	switch (ps->scale_type) {
+
+	case PASS_THROUGH:
+		/*
+		 * Just pass the time stamp through.
+		 */
+		break;
+
+	case SCALE_UP:
+		/*
+		 * File has microseconds, user wants nanoseconds; convert
+		 * it.
+		 */
+		hdr->ts.tv_usec = hdr->ts.tv_usec * 1000;
+		break;
+
+	case SCALE_DOWN:
+		/*
+		 * File has nanoseconds, user wants microseconds; convert
+		 * it.
+		 */
+		hdr->ts.tv_usec = hdr->ts.tv_usec / 1000;
+		break;
+	}
+
 	/* Swap the caplen and len fields, if necessary. */
-	switch (p->sf.lengths_swapped) {
+	switch (ps->lengths_swapped) {
 
 	case NOT_SWAPPED:
 		break;
@@ -371,7 +500,7 @@ pcap_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 		static u_char *tp = NULL;
 		static size_t tsize = 0;
 
-		if (hdr->caplen > 65535) {
+		if (hdr->caplen > MAXIMUM_SNAPLEN) {
 			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
 			    "bogus savefile header");
 			return (-1);
@@ -430,33 +559,18 @@ pcap_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char **data)
 	}
 	*data = p->buffer;
 
-	if (p->sf.swapped) {
-		/*
-		 * Convert pseudo-headers from the byte order of
-		 * the host on which the file was saved to our
-		 * byte order, as necessary.
-		 */
-		switch (p->linktype) {
-
-		case DLT_USB_LINUX:
-			swap_linux_usb_header(hdr, *data, 0);
-			break;
-
-		case DLT_USB_LINUX_MMAPPED:
-			swap_linux_usb_header(hdr, *data, 1);
-			break;
-		}
-	}
+	if (p->swapped)
+		swap_pseudo_headers(p->linktype, hdr, *data);
 
 	return (0);
 }
 
 static int
-sf_write_header(FILE *fp, int linktype, int thiszone, int snaplen)
+sf_write_header(pcap_t *p, FILE *fp, int linktype, int thiszone, int snaplen)
 {
 	struct pcap_file_header hdr;
 
-	hdr.magic = TCPDUMP_MAGIC;
+	hdr.magic = p->opt.tstamp_precision == PCAP_TSTAMP_PRECISION_NANO ? NSEC_TCPDUMP_MAGIC : TCPDUMP_MAGIC;
 	hdr.version_major = PCAP_VERSION_MAJOR;
 	hdr.version_minor = PCAP_VERSION_MINOR;
 
@@ -507,7 +621,7 @@ pcap_setup_dump(pcap_t *p, int linktype, FILE *f, const char *fname)
 	else
 		setbuf(f, NULL);
 #endif
-	if (sf_write_header(f, linktype, p->tzoff, p->snapshot) == -1) {
+	if (sf_write_header(p, f, linktype, p->tzoff, p->snapshot) == -1) {
 		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "Can't write to %s: %s",
 		    fname, pcap_strerror(errno));
 		if (f != stdout)
@@ -568,7 +682,7 @@ pcap_dump_open(pcap_t *p, const char *fname)
  */
 pcap_dumper_t *
 pcap_dump_fopen(pcap_t *p, FILE *f)
-{	
+{
 	int linktype;
 
 	linktype = dlt_to_linktype(p->linktype);
@@ -581,6 +695,168 @@ pcap_dump_fopen(pcap_t *p, FILE *f)
 	linktype |= p->linktype_ext;
 
 	return (pcap_setup_dump(p, linktype, f, "stream"));
+}
+
+pcap_dumper_t *
+pcap_dump_open_append(pcap_t *p, const char *fname)
+{
+	FILE *f;
+	int linktype;
+	int amt_read;
+	struct pcap_file_header ph;
+
+	linktype = dlt_to_linktype(p->linktype);
+	if (linktype == -1) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "%s: link-layer type %d isn't supported in savefiles",
+		    fname, linktype);
+		return (NULL);
+	}
+	if (fname[0] == '-' && fname[1] == '\0')
+		return (pcap_setup_dump(p, linktype, stdout, "standard output"));
+
+#if !defined(WIN32) && !defined(MSDOS)
+	f = fopen(fname, "r+");
+#else
+	f = fopen(fname, "rb+");
+#endif
+	if (f == NULL) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "%s: %s",
+		    fname, pcap_strerror(errno));
+		return (NULL);
+	}
+
+	/*
+	 * Try to read a pcap header.
+	 */
+	amt_read = fread(&ph, 1, sizeof (ph), f);
+	if (amt_read != sizeof (ph)) {
+		if (ferror(f)) {
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "%s: %s",
+			    fname, pcap_strerror(errno));
+			fclose(f);
+			return (NULL);
+		} else if (feof(f) && amt_read > 0) {
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "%s: truncated pcap file header", fname);
+			fclose(f);
+			return (NULL);
+		}
+	}
+
+#if defined(WIN32) || defined(MSDOS)
+	/*
+	 * We turn off buffering.
+	 * XXX - why?  And why not on the standard output?
+	 */
+	setbuf(f, NULL);
+#endif
+
+	/*
+	 * If a header is already present and:
+	 *
+	 *	it's not for a pcap file of the appropriate resolution
+	 *	and the right byte order for this machine;
+	 *
+	 *	the link-layer header types don't match;
+	 *
+	 *	the snapshot lengths don't match;
+	 *
+	 * return an error.
+	 */
+	if (amt_read > 0) {
+		/*
+		 * A header is already present.
+		 * Do the checks.
+		 */
+		switch (ph.magic) {
+
+		case TCPDUMP_MAGIC:
+			if (p->opt.tstamp_precision != PCAP_TSTAMP_PRECISION_MICRO) {
+				snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+				    "%s: different time stamp precision, cannot append to file", fname);
+				fclose(f);
+				return (NULL);
+			}
+			break;
+
+		case NSEC_TCPDUMP_MAGIC:
+			if (p->opt.tstamp_precision != PCAP_TSTAMP_PRECISION_NANO) {
+				snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+				    "%s: different time stamp precision, cannot append to file", fname);
+				fclose(f);
+				return (NULL);
+			}
+			break;
+
+		case SWAPLONG(TCPDUMP_MAGIC):
+		case SWAPLONG(NSEC_TCPDUMP_MAGIC):
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "%s: different byte order, cannot append to file", fname);
+			fclose(f);
+			return (NULL);
+
+		case KUZNETZOV_TCPDUMP_MAGIC:
+		case SWAPLONG(KUZNETZOV_TCPDUMP_MAGIC):
+		case NAVTEL_TCPDUMP_MAGIC:
+		case SWAPLONG(NAVTEL_TCPDUMP_MAGIC):
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "%s: not a pcap file to which we can append", fname);
+			fclose(f);
+			return (NULL);
+
+		default:
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "%s: not a pcap file", fname);
+			fclose(f);
+			return (NULL);
+		}
+
+		/*
+		 * Good version?
+		 */
+		if (ph.version_major != PCAP_VERSION_MAJOR ||
+		    ph.version_minor != PCAP_VERSION_MINOR) {
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "%s: version is %u.%u, cannot append to file", fname,
+			    ph.version_major, ph.version_minor);
+			fclose(f);
+			return (NULL);
+		}
+		if (linktype != ph.linktype) {
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "%s: different linktype, cannot append to file", fname);
+			fclose(f);
+			return (NULL);
+		}
+		if (p->snapshot != ph.snaplen) {
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+			    "%s: different snaplen, cannot append to file", fname);
+			fclose(f);
+			return (NULL);
+		}
+	} else {
+		/*
+		 * A header isn't present; attempt to write it.
+		 */
+		if (sf_write_header(p, f, linktype, p->tzoff, p->snapshot) == -1) {
+			snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "Can't write to %s: %s",
+			    fname, pcap_strerror(errno));
+			(void)fclose(f);
+			return (NULL);
+		}
+	}
+
+	/*
+	 * Start writing at the end of the file.
+	 */
+	if (fseek(f, 0, SEEK_END) == -1) {
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "Can't seek to end of %s: %s",
+		    fname, pcap_strerror(errno));
+		(void)fclose(f);
+		return (NULL);
+	}
+	return ((pcap_dumper_t *)f);
 }
 
 FILE *

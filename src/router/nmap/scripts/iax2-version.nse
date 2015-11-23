@@ -6,7 +6,9 @@ local string = require "string"
 description = [[
 Detects the UDP IAX2 service.
 
-The script sends an Inter-Asterisk eXchange (IAX) Revision 2 Control Frame POKE request and checks for a proper response.  This protocol is used to enable VoIP connections between servers as well as client-server communication.
+The script sends an Inter-Asterisk eXchange (IAX) Revision 2 Control Frame POKE
+request and checks for a proper response.  This protocol is used to enable VoIP
+connections between servers as well as client-server communication.
 ]]
 
 ---
@@ -18,7 +20,7 @@ The script sends an Inter-Asterisk eXchange (IAX) Revision 2 Control Frame POKE 
 
 author = "Ferdy Riphagen"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"version"}
 
@@ -27,24 +29,22 @@ portrule = shortport.version_port_or_service(4569, nil, "udp")
 
 action = function(host, port)
   -- see http://www.cornfed.com/iax.pdf for all options.
-  local poke = string.char(0x80, 0x00, 0x00, 0x00)
-  poke = poke .. string.char(0x00, 0x00, 0x00, 0x00)
-  poke = poke .. string.char(0x00, 0x00, 0x06, 0x1e)
+  local poke = "\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06\x1e"
 
-  local status, recv = comm.exchange(host, port, poke, {proto=port.protocol,timeout=10000})
+  local status, recv = comm.exchange(host, port, poke, {timeout=10000})
 
   if not status then
     return
   end
 
   if (#recv) == 12 then
-    local byte11 = string.format("%02X", string.byte(recv, 11))
-    local byte12 = string.format("%02X", string.byte(recv, 12))
+    local byte11 = string.byte(recv, 11)
+    local byte12 = string.byte(recv, 12)
 
     -- byte11 must be \x06 IAX Control Frame
     -- and byte12 must be \x03 or \x04
-    if ((byte11 == "06") and
-      (byte12 == ("03" or "04")))
+    if ((byte11 == 6) and
+      (byte12 == 3 or byte12 == 4))
     then
       nmap.set_port_state(host, port, "open")
       port.version.name = "iax2"

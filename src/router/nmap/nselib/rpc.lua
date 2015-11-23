@@ -66,7 +66,7 @@
 -- When multiple versions exists for a specific RPC program the library
 -- always attempts to connect using the highest available version.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 -- @author "Patrik Karlsson <patrik@cqure.net>"
 --
@@ -150,9 +150,10 @@ Comm = {
   --
   -- @param host table
   -- @param port table
+  -- @param timeout [optional] socket timeout in ms
   -- @return status boolean true on success, false on failure
   -- @return string containing error message (if status is false)
-  Connect = function(self, host, port)
+  Connect = function(self, host, port, timeout)
     local status, err, socket
     status, err = self:ChkProgram()
     if (not(status)) then
@@ -162,12 +163,18 @@ Comm = {
     if (not(status)) then
       return status, err
     end
+    timeout = timeout or stdnse.get_timeout(host, 10000)
+    local new_socket = function(...)
+      local socket = nmap.new_socket(...)
+      socket:set_timeout(timeout)
+      return socket
+    end
     if ( port.protocol == "tcp" ) then
       if nmap.is_privileged() then
         -- Try to bind to a reserved port
         for i = 1, 10, 1 do
           local resvport = math.random(1, 1024)
-          socket = nmap.new_socket()
+          socket = new_socket()
           status, err = socket:bind(nil, resvport)
           if status then
             status, err = socket:connect(host, port)
@@ -176,7 +183,7 @@ Comm = {
           end
         end
       else
-        socket = nmap.new_socket()
+        socket = new_socket()
         status, err = socket:connect(host, port)
       end
     else
@@ -184,7 +191,7 @@ Comm = {
         -- Try to bind to a reserved port
         for i = 1, 10, 1 do
           local resvport = math.random(1, 1024)
-          socket = nmap.new_socket("udp")
+          socket = new_socket("udp")
           status, err = socket:bind(nil, resvport)
           if status then
             status, err = socket:connect(host, port)
@@ -193,7 +200,7 @@ Comm = {
           end
         end
       else
-        socket = nmap.new_socket("udp")
+        socket = new_socket("udp")
         status, err = socket:connect(host, port)
       end
     end
@@ -367,8 +374,7 @@ Comm = {
       local tmp
       status, tmp = self:GetAdditionalBytes( data, pos, HEADER_LEN - ( data:len() - pos ) )
       if not status then
-        stdnse.print_debug(4,
-          string.format("Comm.DecodeHeader: failed to call GetAdditionalBytes"))
+        stdnse.debug4("Comm.DecodeHeader: failed to call GetAdditionalBytes")
         return -1, nil
       end
       data = data .. tmp
@@ -387,8 +393,7 @@ Comm = {
     if header.verifier.length - 8 > 0 then
       status, data = self:GetAdditionalBytes( data, pos, header.verifier.length - 8 )
       if not status then
-        stdnse.print_debug(4,
-          string.format("Comm.DecodeHeader: failed to call GetAdditionalBytes"))
+        stdnse.debug4("Comm.DecodeHeader: failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, header.verifier.data = bin.unpack("A" .. header.verifier.length - 8, data, pos )
@@ -1365,10 +1370,10 @@ NFS = {
   CheckStat = function (self, procedurename, version, status)
     if (status ~= NFS.StatCode[version].NFS_OK) then
       if (NFS.StatMsg[status]) then
-        stdnse.print_debug(4,
+        stdnse.debug4(
           string.format("%s failed: %s", procedurename, NFS.StatMsg[status]))
       else
-        stdnse.print_debug(4,
+        stdnse.debug4(
           string.format("%s failed: code %d", procedurename, status))
       end
 
@@ -1438,7 +1443,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes( data, pos, 4 )
     if (not(status)) then
-      stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -1452,7 +1457,7 @@ NFS = {
       response.attributes = {}
       status, data = comm:GetAdditionalBytes( data, pos, 4 )
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
@@ -1462,7 +1467,7 @@ NFS = {
       end
       status, data = comm:GetAdditionalBytes( data, pos, 84 )
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, attrib = Util.unmarshall_nfsattr(data, pos, comm.version)
@@ -1470,7 +1475,7 @@ NFS = {
       -- opaque data
       status, data = comm:GetAdditionalBytes( data, pos, 8 )
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, _ = bin.unpack(">L", data, pos)
@@ -1481,7 +1486,7 @@ NFS = {
       local entry = {}
       status, data = comm:GetAdditionalBytes( data, pos, 4 )
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
@@ -1493,14 +1498,14 @@ NFS = {
       if ( 3 == comm.version ) then
         status, data = comm:GetAdditionalBytes( data, pos, 8 )
         if (not(status)) then
-          stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+          stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
         pos, entry.fileid = Util.unmarshall_uint64(data, pos )
       else
         status, data = comm:GetAdditionalBytes( data, pos, 4 )
         if (not(status)) then
-          stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+          stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
         pos, entry.fileid = Util.unmarshall_uint32(data, pos)
@@ -1508,14 +1513,14 @@ NFS = {
 
       status, data = comm:GetAdditionalBytes( data, pos, 4 )
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
       pos, entry.length = Util.unmarshall_uint32(data, pos)
       status, data = comm:GetAdditionalBytes( data, pos, entry.length )
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
@@ -1523,14 +1528,14 @@ NFS = {
       if ( 3 == comm.version ) then
         status, data = comm:GetAdditionalBytes( data, pos, 8 )
         if (not(status)) then
-          stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+          stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
         pos, entry.cookie = Util.unmarshall_uint64(data, pos)
       else
         status, data = comm:GetAdditionalBytes(  data, pos, 4 )
         if (not(status)) then
-          stdnse.print_debug(4, "NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
+          stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
         pos, entry.cookie = Util.unmarshall_uint32(data, pos)
@@ -1590,7 +1595,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes(data, pos, 4)
     if not status then
-      stdnse.print_debug(4, "NFS.LookUpDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -1602,20 +1607,20 @@ NFS = {
     if (comm.version == 3) then
       status, data = comm:GetAdditionalBytes( data, pos, 4)
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.LookUpDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       _, len = Util.unmarshall_uint32(data, pos)
       status, data = comm:GetAdditionalBytes( data, pos, len + 4)
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.LookUpDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, lookup.fhandle = bin.unpack( "A" .. len + 4, data, pos)
 
       status, data = comm:GetAdditionalBytes( data, pos, 4)
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.LookUpDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
@@ -1624,17 +1629,17 @@ NFS = {
       if (value_follows ~= 0) then
         status, data = comm:GetAdditionalBytes(data, pos, 84)
         if (not(status)) then
-          stdnse.print_debug(4, "NFS.LookUpDecode: Failed to call GetAdditionalBytes")
+          stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
         pos, lookup.attributes = Util.unmarshall_nfsattr(data, pos, comm.version)
       else
-        stdnse.print_debug(4, "NFS.LookUpDecode: File Attributes follow failed")
+        stdnse.debug4("NFS.LookUpDecode: File Attributes follow failed")
       end
 
       status, data = comm:GetAdditionalBytes( data, pos, 4)
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.LookUpDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
@@ -1643,30 +1648,30 @@ NFS = {
       if (value_follows ~= 0) then
         status, data = comm:GetAdditionalBytes(data, pos, 84)
         if (not(status)) then
-          stdnse.print_debug(4, "NFS.LookUpDecode: Failed to call GetAdditionalBytes")
+          stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
         pos, lookup.dir_attributes = Util.unmarshall_nfsattr(data, pos, comm.version)
       else
-        stdnse.print_debug(4, "NFS.LookUpDecode: File Attributes follow failed")
+        stdnse.debug4("NFS.LookUpDecode: File Attributes follow failed")
       end
 
     elseif (comm.version < 3) then
       status, data = comm:GetAdditionalBytes( data, pos, 32)
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.LookUpDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, lookup.fhandle = bin.unpack("A32", data, pos)
       status, data = comm:GetAdditionalBytes( data, pos, 64 )
       if (not(status)) then
-        stdnse.print_debug(4, "NFS.LookUpDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, lookup.attributes = Util.unmarshall_nfsattr(data, pos, comm.version)
 
     else
-      stdnse.print_debug("NFS.LookUpDecode: NFS unsupported version %d", comm.version)
+      stdnse.debug1("NFS.LookUpDecode: NFS unsupported version %d", comm.version)
       return -1, nil
     end
 
@@ -1711,7 +1716,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes(data, pos, 4)
     if not status then
-      stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -1722,19 +1727,19 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes(data, pos, 4)
     if not status then
-      stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
     pos, value_follows = bin.unpack(">I", data, pos)
     if value_follows == 0 then
-      stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Attributes follow failed")
+      stdnse.debug4("NFS.ReadDirPlusDecode: Attributes follow failed")
       return -1, nil
     end
 
     status, data = comm:GetAdditionalBytes( data, pos, 84 )
     if not status then
-      stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -1743,7 +1748,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes(data, pos, 8)
     if not status then
-      stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
     pos, _ = bin.unpack(">L", data, pos)
@@ -1753,7 +1758,7 @@ NFS = {
       local entry, len = {}
       status, data = comm:GetAdditionalBytes(data, pos, 4)
       if not status then
-        stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
@@ -1764,7 +1769,7 @@ NFS = {
       end
       status, data = comm:GetAdditionalBytes(data, pos, 8)
       if not status then
-        stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, entry.fileid = bin.unpack(">L", data, pos)
@@ -1772,27 +1777,27 @@ NFS = {
       status, data = comm:GetAdditionalBytes(data, pos, 4)
 
       if not status then
-        stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
       pos, entry.length = bin.unpack(">I", data, pos)
       status, data = comm:GetAdditionalBytes( data, pos, entry.length )
       if not status then
-        stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
       pos, entry.name = Util.unmarshall_vopaque(entry.length, data, pos)
       status, data = comm:GetAdditionalBytes(data, pos, 8)
       if not status then
-        stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, entry.cookie = bin.unpack(">L", data, pos)
       status, data = comm:GetAdditionalBytes(data, pos, 4)
       if not status then
-        stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
@@ -1801,18 +1806,18 @@ NFS = {
       if (value_follows ~= 0) then
         status, data = comm:GetAdditionalBytes(data, pos, 84)
         if not status then
-          stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+          stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
         pos, entry.attributes = Util.unmarshall_nfsattr(data, pos, comm.version)
       else
-        stdnse.print_debug(4, "NFS.ReadDirPlusDecode: %s Attributes follow failed",
+        stdnse.debug4("NFS.ReadDirPlusDecode: %s Attributes follow failed",
           entry.name)
       end
 
       status, data = comm:GetAdditionalBytes(data, pos, 4)
       if not status then
-        stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
 
@@ -1821,19 +1826,19 @@ NFS = {
       if (value_follows ~= 0) then
         status, data = comm:GetAdditionalBytes(data, pos, 4)
         if not status then
-          stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+          stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
 
         _, len = bin.unpack(">I", data, pos)
         status, data = comm:GetAdditionalBytes(data, pos, len + 4)
         if not status then
-          stdnse.print_debug(4, "NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
+          stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
         pos, entry.fhandle = bin.unpack( "A" .. len + 4, data, pos )
       else
-        stdnse.print_debug(4, "NFS.ReadDirPlusDecode: %s handle follow failed",
+        stdnse.debug4("NFS.ReadDirPlusDecode: %s handle follow failed",
           entry.name)
       end
       table.insert(response.entries, entry)
@@ -1889,7 +1894,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes(data, pos, 4)
     if not status then
-      stdnse.print_debug(4, "NFS.FsStatDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.FsStatDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -1903,17 +1908,17 @@ NFS = {
     if (value_follows ~= 0) then
       status, data = comm:GetAdditionalBytes(data, pos, 84)
       if not status then
-        stdnse.print_debug(4, "NFS.FsStatDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.FsStatDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, fsstat.attributes = Util.unmarshall_nfsattr(data, pos, comm.version)
     else
-      stdnse.print_debug(4, "NFS.FsStatDecode: Attributes follow failed")
+      stdnse.debug4("NFS.FsStatDecode: Attributes follow failed")
     end
 
     status, data = comm:GetAdditionalBytes( data, pos, 52)
     if not status then
-      stdnse.print_debug(4, "NFS.FsStatDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.FsStatDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -1938,9 +1943,8 @@ NFS = {
       return false, "FsStat: No filehandle received"
     end
 
-    data = bin.pack("A", file_handle)
     packet = comm:EncodePacket(nil, NFS.Procedure[comm.version].FSSTAT,
-      {type = Portmap.AuthType.UNIX}, data)
+      {type = Portmap.AuthType.UNIX}, file_handle)
 
     if (not(comm:SendPacket(packet))) then
       return false, "FsStat: Failed to send data"
@@ -1968,7 +1972,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes(data, pos, 4)
     if not status then
-      stdnse.print_debug(4, "NFS.FsInfoDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.FsInfoDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -1982,17 +1986,17 @@ NFS = {
     if (value_follows ~= 0) then
       status, data = comm:GetAdditionalBytes(data, pos, 84)
       if not status then
-        stdnse.print_debug(4, "NFS.FsInfoDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.FsInfoDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, fsinfo.attributes = Util.unmarshall_nfsattr(data, pos, comm.version)
     else
-      stdnse.print_debug(4, "NFS.FsInfoDecode: Attributes follow failed")
+      stdnse.debug4("NFS.FsInfoDecode: Attributes follow failed")
     end
 
     status, data = comm:GetAdditionalBytes(data, pos, 48)
     if not status then
-      stdnse.print_debug(4, "NFS.FsStatDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.FsStatDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -2050,7 +2054,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes(data, pos, 4)
     if not status then
-      stdnse.print_debug(4, "NFS.PathConfDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.PathConfDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -2064,17 +2068,17 @@ NFS = {
     if (value_follows ~= 0) then
       status, data = comm:GetAdditionalBytes(data, pos, 84)
       if not status then
-        stdnse.print_debug(4, "NFS.PathConfDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.PathConfDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, pconf.attributes = Util.unmarshall_nfsattr(data, pos, comm.version)
     else
-      stdnse.print_debug(4, "NFS.PathConfDecode: Attributes follow failed")
+      stdnse.debug4("NFS.PathConfDecode: Attributes follow failed")
     end
 
     status, data = comm:GetAdditionalBytes(data, pos, 24)
     if not status then
-      stdnse.print_debug(4, "NFS.PathConfDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.PathConfDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -2129,7 +2133,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes(data, pos, 4)
     if not status then
-      stdnse.print_debug(4, "NFS.AccessDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.AccessDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -2143,17 +2147,17 @@ NFS = {
     if (value_follows ~= 0) then
       status, data = comm:GetAdditionalBytes(data, pos, 84)
       if not status then
-        stdnse.print_debug(4, "NFS.AccessDecode: Failed to call GetAdditionalBytes")
+        stdnse.debug4("NFS.AccessDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
       pos, access.attributes = Util.unmarshall_nfsattr(data, pos, comm.version)
     else
-      stdnse.print_debug(4, "NFS.AccessDecode: Attributes follow failed")
+      stdnse.debug4("NFS.AccessDecode: Attributes follow failed")
     end
 
     status, data = comm:GetAdditionalBytes(data, pos, 4)
     if not status then
-      stdnse.print_debug(4, "NFS.AccessDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("NFS.AccessDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -2267,7 +2271,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes( data, pos, 4 )
     if (not(status)) then
-      stdnse.print_debug(4, "GetAttrDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("GetAttrDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -2281,11 +2285,11 @@ NFS = {
     elseif (comm.version == 3) then
       status, data = comm:GetAdditionalBytes( data, pos, 84 )
     else
-      stdnse.print_debug(4, "GetAttrDecode: Unsupported version")
+      stdnse.debug4("GetAttrDecode: Unsupported version")
       return -1, nil
     end
     if ( not(status) ) then
-      stdnse.print_debug(4, "GetAttrDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("GetAttrDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
     return Util.unmarshall_nfsattr(data, pos, comm.version)
@@ -2344,7 +2348,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes( data, pos, 4 )
     if (not(status)) then
-      stdnse.print_debug(4, "StatFsDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("StatFsDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
 
@@ -2355,7 +2359,7 @@ NFS = {
 
     status, data = comm:GetAdditionalBytes( data, pos, 20 )
     if (not(status)) then
-      stdnse.print_debug(4, "StatFsDecode: Failed to call GetAdditionalBytes")
+      stdnse.debug4("StatFsDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
     pos, statfs.transfer_size, statfs.block_size,
@@ -2383,20 +2387,20 @@ Helper = {
 
     status, mountd = Helper.GetProgramInfo( host, port, "mountd")
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.ShowMounts: GetProgramInfo failed")
+      stdnse.debug4("rpc.Helper.ShowMounts: GetProgramInfo failed")
       return status, "rpc.Helper.ShowMounts: GetProgramInfo failed"
     end
 
     mnt_comm = Comm:new('mountd', mountd.version)
     status, result = mnt_comm:Connect(host, mountd.port)
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.ShowMounts: %s", result)
+      stdnse.debug4("rpc.Helper.ShowMounts: %s", result)
       return false, result
     end
     status, mounts = mnt:Export(mnt_comm)
     mnt_comm:Disconnect()
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.ShowMounts: %s", mounts)
+      stdnse.debug4("rpc.Helper.ShowMounts: %s", mounts)
     end
     return status, mounts
   end,
@@ -2421,7 +2425,7 @@ Helper = {
 
     status, mountd = Helper.GetProgramInfo( host, port, "mountd")
     if not status then
-      stdnse.print_debug(4, "rpc.Helper.MountPath: GetProgramInfo failed")
+      stdnse.debug4("rpc.Helper.MountPath: GetProgramInfo failed")
       return nil, "rpc.Helper.MountPath: GetProgramInfo failed"
     end
 
@@ -2429,14 +2433,14 @@ Helper = {
 
     status, err = mnt_comm:Connect(host, mountd.port)
     if not status then
-      stdnse.print_debug(4, "rpc.Helper.MountPath: %s", err)
+      stdnse.debug4("rpc.Helper.MountPath: %s", err)
       return nil, err
     end
 
     status, fhandle = mnt:Mount(mnt_comm, path)
     if not status then
       mnt_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.MountPath: %s", fhandle)
+      stdnse.debug4("rpc.Helper.MountPath: %s", fhandle)
       return nil, fhandle
     end
 
@@ -2459,7 +2463,7 @@ Helper = {
     local status, ret = mnt:Unmount(mnt_comm, path)
     mnt_comm:Disconnect()
     if not status then
-      stdnse.print_debug(4, "rpc.Helper.UnmountPath: %s", ret)
+      stdnse.debug4("rpc.Helper.UnmountPath: %s", ret)
       return nil, ret
     end
 
@@ -2482,14 +2486,14 @@ Helper = {
 
     status, nfsd = Helper.GetProgramInfo(host, port, "nfs")
     if not status then
-      stdnse.print_debug(4, "rpc.Helper.NfsOpen: GetProgramInfo failed")
+      stdnse.debug4("rpc.Helper.NfsOpen: GetProgramInfo failed")
       return nil, "rpc.Helper.NfsOpen: GetProgramInfo failed"
     end
 
     nfs_comm = Comm:new('nfs', nfsd.version)
     status, err = nfs_comm:Connect(host, nfsd.port)
     if not status then
-      stdnse.print_debug(4, "rpc.Helper.NfsProc: %s", err)
+      stdnse.debug4("rpc.Helper.NfsProc: %s", err)
       return nil, err
     end
 
@@ -2508,7 +2512,7 @@ Helper = {
   NfsClose = function(nfs_comm)
     local status, ret = nfs_comm:Disconnect()
     if not status then
-      stdnse.print_debug(4, "rpc.Helper.NfsClose: %s", ret)
+      stdnse.debug4("rpc.Helper.NfsClose: %s", ret)
       return nil, ret
     end
 
@@ -2532,13 +2536,13 @@ Helper = {
 
     status, mountd = Helper.GetProgramInfo( host, port, "mountd", 2)
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.ExportStats: GetProgramInfo failed")
+      stdnse.debug4("rpc.Helper.ExportStats: GetProgramInfo failed")
       return status, "rpc.Helper.ExportStats: GetProgramInfo failed"
     end
 
     status, nfsd = Helper.GetProgramInfo( host, port, "nfs", 2)
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.ExportStats: GetProgramInfo failed")
+      stdnse.debug4("rpc.Helper.ExportStats: GetProgramInfo failed")
       return status, "rpc.Helper.ExportStats: GetProgramInfo failed"
     end
     mnt_comm = Comm:new('mountd', mountd.version)
@@ -2546,20 +2550,20 @@ Helper = {
 
     -- TODO: recheck the version mismatch when adding NFSv4
     if (nfs_comm.version <= 2  and mnt_comm.version > 2) then
-      stdnse.print_debug(4,"rpc.Helper.ExportStats: versions mismatch, nfs v%d - mount v%d",
+      stdnse.debug4("rpc.Helper.ExportStats: versions mismatch, nfs v%d - mount v%d",
         nfs_comm.version, mnt_comm.version)
       return false, string.format("versions mismatch, nfs v%d - mount v%d",
         nfs_comm.version, mnt_comm.version)
     end
     status, result = mnt_comm:Connect(host, mountd.port)
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.ExportStats: %s", result)
+      stdnse.debug4("rpc.Helper.ExportStats: %s", result)
       return status, result
     end
     status, result = nfs_comm:Connect(host, nfsd.port)
     if ( not(status) ) then
       mnt_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.ExportStats: %s", result)
+      stdnse.debug4("rpc.Helper.ExportStats: %s", result)
       return status, result
     end
 
@@ -2567,14 +2571,14 @@ Helper = {
     if ( not(status) ) then
       mnt_comm:Disconnect()
       nfs_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.ExportStats: %s", fhandle)
+      stdnse.debug4("rpc.Helper.ExportStats: %s", fhandle)
       return status, fhandle
     end
     status, stats = nfs:StatFs(nfs_comm, fhandle)
     if ( not(status) ) then
       mnt_comm:Disconnect()
       nfs_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.ExportStats: %s", stats)
+      stdnse.debug4("rpc.Helper.ExportStats: %s", stats)
       return status, stats
     end
 
@@ -2582,7 +2586,7 @@ Helper = {
     mnt_comm:Disconnect()
     nfs_comm:Disconnect()
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.ExportStats: %s", fhandle)
+      stdnse.debug4("rpc.Helper.ExportStats: %s", fhandle)
       return status, fhandle
     end
     return true, stats
@@ -2604,13 +2608,13 @@ Helper = {
 
     status, mountd = Helper.GetProgramInfo( host, port, "mountd")
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.Dir: GetProgramInfo failed")
+      stdnse.debug4("rpc.Helper.Dir: GetProgramInfo failed")
       return status, "rpc.Helper.Dir: GetProgramInfo failed"
     end
 
     status, nfsd = Helper.GetProgramInfo( host, port, "nfs")
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.Dir: GetProgramInfo failed")
+      stdnse.debug4("rpc.Helper.Dir: GetProgramInfo failed")
       return status, "rpc.Helper.Dir: GetProgramInfo failed"
     end
 
@@ -2619,21 +2623,21 @@ Helper = {
 
     -- TODO: recheck the version mismatch when adding NFSv4
     if (nfs_comm.version <= 2  and mnt_comm.version > 2) then
-      stdnse.print_debug(4, "rpc.Helper.Dir: versions mismatch, nfs v%d - mount v%d",
+      stdnse.debug4("rpc.Helper.Dir: versions mismatch, nfs v%d - mount v%d",
         nfs_comm.version, mnt_comm.version)
       return false, string.format("versions mismatch, nfs v%d - mount v%d",
         nfs_comm.version, mnt_comm.version)
     end
     status, result = mnt_comm:Connect(host, mountd.port)
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.Dir: %s", result)
+      stdnse.debug4("rpc.Helper.Dir: %s", result)
       return status, result
     end
 
     status, result = nfs_comm:Connect(host, nfsd.port)
     if ( not(status) ) then
       mnt_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.Dir: %s", result)
+      stdnse.debug4("rpc.Helper.Dir: %s", result)
       return status, result
     end
 
@@ -2641,7 +2645,7 @@ Helper = {
     if ( not(status) ) then
       mnt_comm:Disconnect()
       nfs_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.Dir: %s", fhandle)
+      stdnse.debug4("rpc.Helper.Dir: %s", fhandle)
       return status, fhandle
     end
 
@@ -2649,7 +2653,7 @@ Helper = {
     if ( not(status) ) then
       mnt_comm:Disconnect()
       nfs_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.Dir: %s", dirs)
+      stdnse.debug4("rpc.Helper.Dir: %s", dirs)
       return status, dirs
     end
 
@@ -2657,7 +2661,7 @@ Helper = {
     mnt_comm:Disconnect()
     nfs_comm:Disconnect()
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.Dir: %s", fhandle)
+      stdnse.debug4("rpc.Helper.Dir: %s", fhandle)
       return status, fhandle
     end
     return true, dirs
@@ -2680,13 +2684,13 @@ Helper = {
 
     status, mountd = Helper.GetProgramInfo( host, port, "mountd")
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.GetAttributes: GetProgramInfo failed")
+      stdnse.debug4("rpc.Helper.GetAttributes: GetProgramInfo failed")
       return status, "rpc.Helper.GetAttributes: GetProgramInfo failed"
     end
 
     status, nfsd = Helper.GetProgramInfo( host, port, "nfs")
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.GetAttributes: GetProgramInfo failed")
+      stdnse.debug4("rpc.Helper.GetAttributes: GetProgramInfo failed")
       return status, "rpc.Helper.GetAttributes: GetProgramInfo failed"
     end
 
@@ -2695,7 +2699,7 @@ Helper = {
 
     -- TODO: recheck the version mismatch when adding NFSv4
     if (nfs_comm.version <= 2  and mnt_comm.version > 2) then
-      stdnse.print_debug(4, "rpc.Helper.GetAttributes: versions mismatch, nfs v%d - mount v%d",
+      stdnse.debug4("rpc.Helper.GetAttributes: versions mismatch, nfs v%d - mount v%d",
         nfs_comm.version, mnt_comm.version)
       return false, string.format("versions mismatch, nfs v%d - mount v%d",
         nfs_comm.version, mnt_comm.version)
@@ -2703,14 +2707,14 @@ Helper = {
 
     status, result = mnt_comm:Connect(host, mountd.port)
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.GetAttributes: %s", result)
+      stdnse.debug4("rpc.Helper.GetAttributes: %s", result)
       return status, result
     end
 
     status, result = nfs_comm:Connect(host, nfsd.port)
     if ( not(status) ) then
       mnt_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.GetAttributes: %s", result)
+      stdnse.debug4("rpc.Helper.GetAttributes: %s", result)
       return status, result
     end
 
@@ -2718,7 +2722,7 @@ Helper = {
     if ( not(status) ) then
       mnt_comm:Disconnect()
       nfs_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.GetAttributes: %s", fhandle)
+      stdnse.debug4("rpc.Helper.GetAttributes: %s", fhandle)
       return status, fhandle
     end
 
@@ -2726,7 +2730,7 @@ Helper = {
     if ( not(status) ) then
       mnt_comm:Disconnect()
       nfs_comm:Disconnect()
-      stdnse.print_debug(4, "rpc.Helper.GetAttributes: %s", attribs)
+      stdnse.debug4("rpc.Helper.GetAttributes: %s", attribs)
       return status, attribs
     end
 
@@ -2735,7 +2739,7 @@ Helper = {
     mnt_comm:Disconnect()
     nfs_comm:Disconnect()
     if ( not(status) ) then
-      stdnse.print_debug(4, "rpc.Helper.GetAttributes: %s", fhandle)
+      stdnse.debug4("rpc.Helper.GetAttributes: %s", fhandle)
       return status, fhandle
     end
 
@@ -2769,7 +2773,7 @@ Helper = {
     status, result = comm:Connect(host, port)
     if (not(status)) then
       mutex "done"
-      stdnse.print_debug(4, "rpc.Helper.RpcInfo: %s", result)
+      stdnse.debug4("rpc.Helper.RpcInfo: %s", result)
       return status, result
     end
 
@@ -2778,7 +2782,7 @@ Helper = {
 
     mutex "done"
     if (not(status)) then
-      stdnse.print_debug(4, "rpc.Helper.RpcInfo: %s", result)
+      stdnse.debug4("rpc.Helper.RpcInfo: %s", result)
     end
 
     return status, result
@@ -2800,14 +2804,14 @@ Helper = {
 
     status, result = comm:Connect(host, port)
     if (not(status)) then
-      stdnse.print_debug(4, "rpc.Helper.GetPortForProgram: %s", result)
+      stdnse.debug4("rpc.Helper.GetPortForProgram: %s", result)
       return status, result
     end
 
     status, result = portmap:GetPort(comm, program, protocol, 1 )
     comm:Disconnect()
     if (not(status)) then
-      stdnse.print_debug(4, "rpc.Helper.GetPortForProgram: %s", result)
+      stdnse.debug4("rpc.Helper.GetPortForProgram: %s", result)
     end
 
     return status, result
@@ -2942,7 +2946,7 @@ Util =
     if Util.FileType[code] then
       return Util.FileType[code].char
     else
-      stdnse.print_debug(1,"FtypeToChar: Unknown file type, mode: %o", mode)
+      stdnse.debug1("FtypeToChar: Unknown file type, mode: %o", mode)
       return ""
     end
   end,
@@ -2956,7 +2960,7 @@ Util =
     if Util.FileType[code] then
       return Util.FileType[code].str
     else
-      stdnse.print_debug(1,"FtypeToString: Unknown file type, mode: %o", mode)
+      stdnse.debug1("FtypeToString: Unknown file type, mode: %o", mode)
       return ""
     end
   end,
@@ -2972,12 +2976,12 @@ Util =
       code = bit.bxor(mode, code)
     else
       code = mode
-      stdnse.print_debug(1,"FmodeToOctalString: Unknown file type, mode: %o", mode)
+      stdnse.debug1("FmodeToOctalString: Unknown file type, mode: %o", mode)
     end
     return stdnse.tooctal(code)
   end,
 
-  --- Converts a numeric ACL to it's character equivalent eg. (rwxr-xr-x)
+  --- Converts a numeric ACL to its character equivalent eg. (rwxr-xr-x)
   --
   -- @param mode number containing the ACL mode
   -- @return string containing the ACL characters
@@ -3178,7 +3182,7 @@ Util =
       pos, attr.fsid = Util.unmarshall_uint64(data, pos)
       pos, attr.fileid = Util.unmarshall_nfsfileid3(data, pos)
     else
-      stdnse.print_debug(4, "unmarshall_nfsattr: unsupported NFS version %d",
+      stdnse.debug4("unmarshall_nfsattr: unsupported NFS version %d",
         nfsversion)
       return -1, nil
     end
@@ -3374,7 +3378,7 @@ Util =
     return df, nil
   end,
 
-  --- Converts a RPC program name to it's equivalent number
+  --- Converts a RPC program name to its equivalent number
   --
   -- @param prog_name string containing the name of the RPC program
   -- @return num number containing the program ID
@@ -3396,7 +3400,7 @@ Util =
     return
   end,
 
-  --- Converts the RPC program number to it's equivalent name
+  --- Converts the RPC program number to its equivalent name
   --
   -- @param num number containing the RPC program identifier
   -- @return string containing the RPC program name

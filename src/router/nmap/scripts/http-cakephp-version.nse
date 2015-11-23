@@ -1,8 +1,13 @@
 description = [[
-Obtains the CakePHP version of a web application built with the CakePHP framework by fingerprinting default files shipped with the CakePHP framework.
+Obtains the CakePHP version of a web application built with the CakePHP
+framework by fingerprinting default files shipped with the CakePHP framework.
 
-This script queries the files 'vendors.php', 'cake.generic.css', 'cake.icon.png' and 'cake.icon.gif' to try to obtain the version of the CakePHP installation.
-Since installations that had been upgraded are prone to false positives due to old files that aren't removed, the script displays 3 different versions:
+This script queries the files 'vendors.php', 'cake.generic.css',
+'cake.icon.png' and 'cake.icon.gif' to try to obtain the version of the CakePHP
+installation.
+
+Since installations that had been upgraded are prone to false positives due to
+old files that aren't removed, the script displays 3 different versions:
 * Codebase: Taken from the existence of vendors.php (1.1.x or 1.2.x if it does and 1.3.x otherwise)
 * Stylesheet: Taken from cake.generic.css
 * Icon: Taken from cake.icon.gif or cake.icon.png
@@ -22,7 +27,7 @@ For more information about CakePHP visit: http://www.cakephp.org/.
 -- | Version of stylesheet: 1.2.6
 
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery","safe"}
 
 local http = require "http"
@@ -62,7 +67,7 @@ action = function(host, port)
   -- Identify servers that answer 200 to invalid HTTP requests and exit as these would invalidate the tests
   local _, http_status, _ = http.identify_404(host,port)
   if ( http_status == 200 ) then
-    stdnse.print_debug(1, "%s: Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", SCRIPT_NAME, host.ip, port.number)
+    stdnse.debug1("Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", host.ip, port.number)
     return false
   end
 

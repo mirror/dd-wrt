@@ -2,7 +2,7 @@
 -- Library methods for handling Cassandra Thrift communication as client
 --
 -- @author Vlatko Kosturjak
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 -- Version 0.1
 --
@@ -11,7 +11,6 @@ local bin = require "bin"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local string = require "string"
-local table = require "table"
 _ENV = stdnse.module("cassandra", stdnse.seeall)
 
 --[[
@@ -25,33 +24,28 @@ _ENV = stdnse.module("cassandra", stdnse.seeall)
 ]]--
 
 -- Protocol magic strings
-CASSANDRAREQ = string.char(0x80,0x01,0x00,0x01)
-CASSANDRARESP = string.char(0x80,0x01,0x00,0x02)
-CASSLOGINMAGIC = string.char(0x00, 0x00,0x00,0x01,0x0c,0x00,0x01,0x0d,0x00,0x01,0x0b,0x0b,0x00,0x00,0x00,0x02)
-LOGINSUCC = string.char(0x00,0x00,0x00,0x01,0x00)
-LOGINFAIL = string.char(0x00,0x00,0x00,0x01,0x0b)
-LOGINACC = string.char(0x00,0x00,0x00,0x01,0x0c)
-
---Returns string in format length+string itself
---@param str to format
---@return str : string in format length+string itself
-function pack4str (str)
-        return (bin.pack(">I",string.len(str)) .. str)
-end
+CASSANDRAREQ = "\x80\x01\x00\x01"
+CASSANDRARESP = "\x80\x01\x00\x02"
+CASSLOGINMAGIC = "\x00\x00\x00\x01\x0c\x00\x01\x0d\x00\x01\x0b\x0b\x00\x00\x00\x02"
+LOGINSUCC = "\x00\x00\x00\x01\x00"
+LOGINFAIL = "\x00\x00\x00\x01\x0b"
+LOGINACC = "\x00\x00\x00\x01\x0c"
 
 --Returns string in cassandra format for login
 --@param username to put in format
 --@param password to put in format
 --@return str : string in cassandra format for login
 function loginstr (username, password)
-        local str = CASSANDRAREQ .. pack4str ("login")
-        str = str .. CASSLOGINMAGIC
-        str = str .. pack4str("username")
-        str = str .. pack4str(username)
-        str = str .. pack4str("password")
-        str = str .. pack4str(password)
-        str = str .. string.char (0x00, 0x00) -- add two null on the end
-        return str
+  return bin.pack("A>aAaaaaA",
+    CASSANDRAREQ,
+    "login",
+    CASSLOGINMAGIC,
+    "username",
+    username,
+    "password",
+    password,
+    "\x00\x00" -- add two null on the end
+    )
 end
 
 --Invokes command over socket and returns the response
@@ -61,10 +55,12 @@ end
 --@return status : true if ok; false if bad
 --@return result : value if status ok, error msg if bad
 function cmdstr (command,cnt)
-        local str = CASSANDRAREQ .. pack4str (command)
-        str = str .. bin.pack(">I",cnt)
-        str = str .. string.char (0x00) -- add null on the end
-        return str
+  return bin.pack("A>aIA",
+    CASSANDRAREQ,
+    command,
+    cnt,
+    "\x00" -- add null on the end
+    )
 end
 
 --Invokes command over socket and returns the response
@@ -103,7 +99,7 @@ function sendcmd (socket, command, cnt)
   end
 
   -- magic response starts at 5th byte for 4 bytes, 4 byte for length + length of string command
-  if (string.sub(response,5,8+4+string.len(command)) ~= CASSANDRARESP..pack4str(command)) then
+  if (string.sub(response,5,8+4+string.len(command)) ~= bin.pack("A>a", CASSANDRARESP, command)) then
     return false, "protocol response error"
   end
 
@@ -120,7 +116,7 @@ function describe_cluster_name (socket,cnt)
   local status,resp = sendcmd(socket,cname,cnt)
 
   if (not(status)) then
-    stdnse.print_debug(1, "sendcmd"..resp)
+    stdnse.debug1("sendcmd"..resp)
     return false, "error in communication"
   end
 
@@ -144,7 +140,7 @@ function describe_version (socket,cnt)
   local status,resp = sendcmd(socket,cname,cnt)
 
   if (not(status)) then
-    stdnse.print_debug(1, "sendcmd"..resp)
+    stdnse.debug1("sendcmd"..resp)
     return false, "error in communication"
   end
 
@@ -171,34 +167,34 @@ function login (socket,username,password)
 
   local status, err = socket:send(bin.pack(">I",string.len(loginstr)))
   if ( not(status) ) then
-          stdnse.print_debug(3, "cannot send len "..combo)
+          stdnse.debug3("cannot send len "..combo)
           return false, "Failed to connect to server"
   end
 
   status, err = socket:send(loginstr)
   if ( not(status) ) then
-          stdnse.print_debug(3, "Sent packet for "..combo)
+          stdnse.debug3("Sent packet for "..combo)
           return false, err
   end
 
   local response
   status, response = socket:receive_bytes(22)
   if ( not(status) ) then
-          stdnse.print_debug(3, "Receive packet for "..combo)
+          stdnse.debug3("Receive packet for "..combo)
           return false, err
   end
   local _, size = bin.unpack(">I", response, 1)
 
   local loginresp = string.sub(response,5,17)
-  if (loginresp ~= CASSANDRARESP..pack4str("login")) then
+  if (loginresp ~= bin.pack("A>a", CASSANDRARESP, "login")) then
     return false, "protocol error"
   end
 
   local magic = string.sub(response,18,22)
-  stdnse.print_debug(3, "packet for "..combo)
-  stdnse.print_debug(3, "packet hex: %s", stdnse.tohex(response) )
-  stdnse.print_debug(3, "size packet hex: %s", stdnse.tohex(size) )
-  stdnse.print_debug(3, "magic packet hex: %s", stdnse.tohex(magic) )
+  stdnse.debug3("packet for "..combo)
+  stdnse.debug3("packet hex: %s", stdnse.tohex(response) )
+  stdnse.debug3("size packet hex: %s", stdnse.tohex(size) )
+  stdnse.debug3("magic packet hex: %s", stdnse.tohex(magic) )
 
   if (magic == LOGINSUCC) then
     return true

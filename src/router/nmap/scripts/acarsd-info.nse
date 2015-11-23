@@ -41,7 +41,7 @@ For more information about acarsd, see:
 --
 
 author = "Brendan Coles"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"safe","discovery"}
 
 
@@ -52,24 +52,23 @@ action = function(host, port)
   local result = {}
 
   -- Set timeout
-  local timeout = tonumber(nmap.registry.args[SCRIPT_NAME .. '.timeout'])
+  local timeout = stdnse.parse_timespec(stdnse.get_script_args(SCRIPT_NAME .. ".timeout"))
   if not timeout or timeout < 0 then timeout = 10 end
 
   -- Set bytes
-  local bytes = tonumber(nmap.registry.args[SCRIPT_NAME .. '.bytes'])
-  if not bytes then bytes = 512 else tonumber(bytes) end
+  local bytes = tonumber(nmap.registry.args[SCRIPT_NAME .. '.bytes']) or 512
 
   -- Connect and retrieve acarsd info in XML format over TCP
-  stdnse.print_debug(1, "%s: Connecting to %s:%s [Timeout: %ss]", SCRIPT_NAME, host.targetname or host.ip, port.number, timeout)
+  stdnse.debug1("Connecting to %s:%s [Timeout: %ss]", host.targetname or host.ip, port.number, timeout)
   local status, data = comm.get_banner(host, port, {timeout=timeout*1000,bytes=bytes})
   if not status or not data then
-    stdnse.print_debug(1, "%s: Retrieving data from %s:%s failed [Timeout expired]", SCRIPT_NAME, host.targetname or host.ip, port.number)
+    stdnse.debug1("Retrieving data from %s:%s failed [Timeout expired]", host.targetname or host.ip, port.number)
     return
   end
 
   -- Check if retrieved data is valid acarsd data
   if not string.match(data, "acarsd") then
-    stdnse.print_debug(1, "%s: %s:%s is not an acarsd Daemon.", SCRIPT_NAME, host.targetname or host.ip, port.number)
+    stdnse.debug1("%s:%s is not an acarsd Daemon.", host.targetname or host.ip, port.number)
     return
   end
 
@@ -85,7 +84,7 @@ action = function(host, port)
   -- Check for unrestricted access -- Parse daemon info
   else
 
-    stdnse.print_debug(1, "%s: Parsing data from %s:%s", SCRIPT_NAME, host.targetname or host.ip, port.number)
+    stdnse.debug1("Parsing data from %s:%s", host.targetname or host.ip, port.number)
     local vars = {
       {"Version","Version"},
       {"API Version","APIVersion"},

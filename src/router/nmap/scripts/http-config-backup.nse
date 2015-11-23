@@ -59,7 +59,7 @@ http://www.feross.org/cmsploit/.
 --
 
 author = "Riccardo Cecolin";
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html";
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html";
 categories = { "auth", "intrusive" };
 
 
@@ -215,15 +215,15 @@ action = function (host, port)
           if save then
             local status, err = write_file(save .. filename, response.body);
             if status then
-              stdnse.print_debug(1, "%s saved", filename);
+              stdnse.debug1("%s saved", filename);
             else
-              stdnse.print_debug(1, "error saving %s", err);
+              stdnse.debug1("error saving %s", err);
             end
           end
 
           table.insert(backups, url_path .. " " .. response["status-line"]);
         else
-          stdnse.print_debug(1, SCRIPT_NAME .. ": %s: found but not matching: %s",
+          stdnse.debug1("%s: found but not matching: %s",
             host.targetname or host.ip, url_path);
         end
       end

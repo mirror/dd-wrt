@@ -26,7 +26,7 @@ Performs brute force password auditing against the MongoDB database.
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 local arg_db = stdnse.get_script_args(SCRIPT_NAME .. ".db") or "admin"
@@ -49,7 +49,7 @@ Driver = {
   login = function(self, username, password)
     local status, resp = mongodb.login(self.sock, arg_db, username, password)
     if ( status ) then
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     elseif ( resp ~= "Authentication failed" ) then
       local err = brute.Error:new( resp )
       err:setRetry( true )

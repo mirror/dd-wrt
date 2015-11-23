@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,7 +116,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -339,8 +338,8 @@
 
 /* General tunable defines  **************************************************/
 #define NPING_NAME "Nping"
-#define NPING_URL "http://nmap.org/nping"
-#define NPING_VERSION "0.6.47"
+#define NPING_URL "https://nmap.org/nping"
+#define NPING_VERSION "0.7.00"
 
 
 #define DEFAULT_VERBOSITY VB_0
@@ -432,7 +431,7 @@
 #define PAYLOAD_ECHO_BYTES_IN_DOUBT 40
 
 #define NSOCK_INFINITE -1
-    
+
 /* Prototypes for nping.cc shared functions */
 char *getBPFFilterString();
 

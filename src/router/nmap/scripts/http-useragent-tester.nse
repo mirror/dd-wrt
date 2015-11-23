@@ -44,7 +44,7 @@ Checks if various crawling utilities are allowed by the host.
 
 categories = {"discovery", "safe"}
 author = "George Chatzisofroniou"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 local http = require "http"
 local target = require "target"
@@ -57,7 +57,7 @@ getLastLoc = function(host, port, useragent)
 
   local options
 
-  options = {header={}, no_cache=true, redirect_ok=function(host,port)
+  options = {header={}, no_cache=true, bypass_cache=true, redirect_ok=function(host,port)
       local c = 3
       return function(url)
         if ( c==0 ) then return false end
@@ -69,7 +69,7 @@ getLastLoc = function(host, port, useragent)
 
   options['header']['User-Agent'] = useragent
 
-  stdnse.print_debug(2, "Making a request with User-Agent: " .. useragent)
+  stdnse.debug2("Making a request with User-Agent: " .. useragent)
 
   local response = http.get(host, port, '/', options)
 
@@ -91,7 +91,9 @@ action = function(host, port)
   -- We don't crawl any site. We initialize a crawler to use its iswithinhost method.
   local crawler = httpspider.Crawler:new(host, port, '/', { scriptname = SCRIPT_NAME } )
 
-  local HTTPlibs = {"libwww",
+  local HTTPlibs = {
+    http.USER_AGENT,
+    "libwww",
     "lwp-trivial",
     "libcurl-agent/1.0",
     "PHP/",

@@ -131,7 +131,7 @@ local ALL  = 'ALL'
 function string_to_unicode(string, do_null)
   local i
 
-  stdnse.print_debug(4, "MSRPC: Entering string_to_unicode(string = %s)", string)
+  stdnse.debug4("MSRPC: Entering string_to_unicode(string = %s)", string)
 
   if(do_null == nil) then
     do_null = false
@@ -143,7 +143,7 @@ function string_to_unicode(string, do_null)
   end
 
   if(string == nil) then
-    stdnse.print_debug(1, "MSRPC: WARNING: couldn't convert value to string in string_to_unicode()")
+    stdnse.debug1("MSRPC: WARNING: couldn't convert value to string in string_to_unicode()")
   end
 
 
@@ -159,7 +159,7 @@ function string_to_unicode(string, do_null)
     result = result .. "\0\0"
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving string_to_unicode()")
+  stdnse.debug4("MSRPC: Leaving string_to_unicode()")
 
   return result
 end
@@ -174,12 +174,12 @@ end
 --@return (pos, string) The new position and the string read, again imitating <code>bin.unpack</code>. If there was an
 --        attempt to read off the end of the string, then 'nil' is returned for both parameters.
 function unicode_to_string(buffer, pos, length, do_null)
-  stdnse.print_debug(4, "MSRPC: Entering unicode_to_string(pos = %d, length = %d)", pos, length)
+  stdnse.debug4("MSRPC: Entering unicode_to_string(pos = %d, length = %d)", pos, length)
 
   local endpos = pos + length * 2 - 1
 
   if endpos > #buffer then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a string in unicode_to_string(), this likely means we are reading a packet incorrectly. Please report! (pos = %d, #buffer = %d, endpos = %d)", pos, #buffer, endpos)
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a string in unicode_to_string(), this likely means we are reading a packet incorrectly. Please report! (pos = %d, #buffer = %d, endpos = %d)", pos, #buffer, endpos)
 
     return nil, nil
   end
@@ -193,7 +193,7 @@ function unicode_to_string(buffer, pos, length, do_null)
   -- Align to 4-byte boundary
   endpos = endpos + (endpos + 1 - pos) % 4
 
-  stdnse.print_debug(4, "MSRPC: Leaving unicode_to_string()")
+  stdnse.debug4("MSRPC: Leaving unicode_to_string()")
 
   return endpos + 1, str
 end
@@ -246,7 +246,7 @@ end
 local function marshall_ptr(location, func, args, value)
   local result = ""
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_ptr(location = %s)", location)
+  stdnse.debug4("MSRPC: Entering marshall_ptr(location = %s)", location)
 
   -- If we're marshalling the HEAD section, add a REFERENT_ID.
   if(location == HEAD or location == ALL) then
@@ -266,7 +266,7 @@ local function marshall_ptr(location, func, args, value)
     end
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_ptr()")
+  stdnse.debug4("MSRPC: Leaving marshall_ptr()")
 
   return result
 end
@@ -307,7 +307,7 @@ end
 --        the result is <code>nil</code> for null pointers, or the data for
 --        valid pointers.
 local function unmarshall_ptr(location, data, pos, func, args, result)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_ptr()")
   if(args == nil) then
     args = {}
   end
@@ -316,7 +316,7 @@ local function unmarshall_ptr(location, data, pos, func, args, result)
     local referent_id
     pos, referent_id = bin.unpack("<I", data, pos)
     if(referent_id == nil) then
-      stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_ptr(). Please report!")
+      stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_ptr(). Please report!")
     end
 
     if(location == HEAD) then
@@ -369,7 +369,7 @@ end
 --@return A string representing the marshalled data.
 local function marshall_basetype(location, func, args)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_basetype()")
+  stdnse.debug4("MSRPC: Entering marshall_basetype()")
 
   if(location == HEAD or location == ALL) then
     result = bin.pack("<A", func(table.unpack(args)))
@@ -377,7 +377,7 @@ local function marshall_basetype(location, func, args)
     result = ""
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_basetype()")
+  stdnse.debug4("MSRPC: Leaving marshall_basetype()")
 
   return result
 end
@@ -408,7 +408,7 @@ function marshall_array(array)
   local i
   local result = ""
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_array()")
+  stdnse.debug4("MSRPC: Entering marshall_array()")
 
   -- The max count is always at the front of the array (at least, in my tests). It is possible that
   -- this won't always hold true, so if you're having an issue that you've traced back to this function,
@@ -431,7 +431,7 @@ function marshall_array(array)
     result = result .. func(BODY, table.unpack(args))
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_array()")
+  stdnse.debug4("MSRPC: Leaving marshall_array()")
   return result
 end
 
@@ -468,7 +468,7 @@ local function unmarshall_array(data, pos, count, func, args)
   local size
   local result = {}
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_array()")
+  stdnse.debug4("MSRPC: Entering unmarshall_array()")
 
   if(args == nil) then
     args = {}
@@ -476,7 +476,7 @@ local function unmarshall_array(data, pos, count, func, args)
 
   local pos, max_count = bin.unpack("<I", data, pos)
   if(max_count == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_array(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_array(). Please report!")
   end
 
   -- Unmarshall the header, which will be referent_ids and base types.
@@ -491,7 +491,7 @@ local function unmarshall_array(data, pos, count, func, args)
     pos, result[i] = func(BODY, data, pos, result[i], table.unpack(args))
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_array()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_array()")
 
   return pos, result
 end
@@ -519,7 +519,7 @@ end
 local function unmarshall_struct(data, pos, func, args)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_struct()")
+  stdnse.debug4("MSRPC: Entering unmarshall_struct()")
 
   if(args == nil) then
     args = {}
@@ -527,7 +527,7 @@ local function unmarshall_struct(data, pos, func, args)
 
   pos, result = func(ALL, data, pos, nil, args)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_struct()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_struct()")
 
   return pos, result
 end
@@ -553,7 +553,7 @@ function marshall_unicode(str, do_null, max_length)
   local buffer_length
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_unicode()")
+  stdnse.debug4("MSRPC: Entering marshall_unicode()")
 
   if(do_null == nil) then
     do_null = false
@@ -576,7 +576,7 @@ function marshall_unicode(str, do_null, max_length)
     string_to_unicode(str, do_null, true)
     )
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_unicode()")
+  stdnse.debug4("MSRPC: Leaving marshall_unicode()")
 
   return result
 end
@@ -589,7 +589,6 @@ end
 function marshall_ascii(str, max_length)
   local buffer_length
   local result
-  local padding = ""
 
   buffer_length = #str + 1
 
@@ -597,9 +596,7 @@ function marshall_ascii(str, max_length)
     max_length = buffer_length
   end
 
-  while((#(str .. string.char(0 .. padding)) % 4) ~= 0) do
-    padding = padding .. string.char(0)
-  end
+  local padding = string.rep('\0', (4 - (buffer_length % 4)) % 4)
 
   result = bin.pack("<IIIzA",
     max_length,
@@ -622,11 +619,11 @@ end
 function marshall_unicode_ptr(str, do_null, max_length)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_unicode()")
+  stdnse.debug4("MSRPC: Entering marshall_unicode()")
 
   result = marshall_ptr(ALL, marshall_unicode, {str, do_null, max_length}, str)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_unicode()")
+  stdnse.debug4("MSRPC: Leaving marshall_unicode()")
 
   return result
 end
@@ -658,7 +655,7 @@ function unmarshall_unicode(data, pos, do_null)
   local ptr, str
   local max, offset, actual
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_unicode()")
+  stdnse.debug4("MSRPC: Entering unmarshall_unicode()")
 
   if(do_null == nil) then
     do_null = false
@@ -666,12 +663,12 @@ function unmarshall_unicode(data, pos, do_null)
 
   pos, max, offset, actual = bin.unpack("<III", data, pos)
   if(actual == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_unicode(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_unicode(). Please report!")
   end
 
   pos, str = unicode_to_string(data, pos, actual, do_null, true)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_unicode()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_unicode()")
 
   return pos, str
 end
@@ -685,9 +682,9 @@ end
 function unmarshall_unicode_ptr(data, pos, do_null)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_unicode_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_unicode_ptr()")
   pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_unicode, {do_null})
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_unicode_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_unicode_ptr()")
 
   return pos, result
 end
@@ -733,14 +730,15 @@ end
 function marshall_int64(int64)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int64()")
+  stdnse.debug4("MSRPC: Entering marshall_int64()")
   result = bin.pack("<L", int64)
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int64()")
+  stdnse.debug4("MSRPC: Leaving marshall_int64()")
 
   return result
 end
 
---- Marshall an int32, which has the following format:
+--- Marshall an int32
+--
 -- <code>     [in]            uint32           var</code>
 --
 -- This is simply an integer inserted into the buffer, nothing fancy.
@@ -749,9 +747,9 @@ end
 function marshall_int32(int32)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int32()")
+  stdnse.debug4("MSRPC: Entering marshall_int32()")
   result = bin.pack("<I", int32)
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int32()")
+  stdnse.debug4("MSRPC: Leaving marshall_int32()")
 
   return result
 end
@@ -774,7 +772,8 @@ function marshall_int32_array(data)
   return result
 end
 
---- Marshall an int16, which has the following format:
+--- Marshall an int16
+--
 -- <code>     [in]            uint16           var</code>
 --
 -- This is simply an integer inserted into the buffer, nothing fancy.
@@ -784,7 +783,7 @@ end
 function marshall_int16(int16, pad)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int16()")
+  stdnse.debug4("MSRPC: Entering marshall_int16()")
 
   if(pad == false) then
     return bin.pack("<S", int16)
@@ -792,12 +791,13 @@ function marshall_int16(int16, pad)
 
   result = bin.pack("<SS", int16, 0)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int16()")
+  stdnse.debug4("MSRPC: Leaving marshall_int16()")
 
   return result
 end
 
---- Marshall an int8, which has the following format:
+--- Marshall an int8
+--
 -- <code>     [in]            uint8           var</code>
 --
 -- This is simply an integer inserted into the buffer, nothing fancy.
@@ -808,14 +808,14 @@ end
 function marshall_int8(int8, pad)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int8()")
+  stdnse.debug4("MSRPC: Entering marshall_int8()")
 
   if(pad == false) then
     return bin.pack("<C", int8)
   end
 
   result = bin.pack("<CCS", int8, 0, 0)
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int8()")
+  stdnse.debug4("MSRPC: Leaving marshall_int8()")
 
   return result
 end
@@ -828,12 +828,12 @@ end
 function unmarshall_int64(data, pos)
   local value
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_int64()")
+  stdnse.debug4("MSRPC: Entering unmarshall_int64()")
   pos, value = bin.unpack("<l", data, pos)
   if(value == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_int64(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_int64(). Please report!")
   end
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_int64()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_int64()")
 
   return pos, value
 end
@@ -848,7 +848,7 @@ function unmarshall_int32(data, pos)
 
   pos, value = bin.unpack("<I", data, pos)
   if(value == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_int32(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_int32(). Please report!")
   end
 
   return pos, value
@@ -863,18 +863,18 @@ end
 function unmarshall_int16(data, pos, pad)
   local value
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_int16()")
+  stdnse.debug4("MSRPC: Entering unmarshall_int16()")
 
   pos, value = bin.unpack("<S", data, pos)
   if(value == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_int16(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_int16(). Please report!")
   end
 
   if(pad == nil or pad == true) then
     pos = pos + 2
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_int16()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_int16()")
 
   return pos, value
 end
@@ -888,23 +888,25 @@ end
 function unmarshall_int8(data, pos, pad)
   local value
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_int8()")
+  stdnse.debug4("MSRPC: Entering unmarshall_int8()")
 
   pos, value = bin.unpack("<C", data, pos)
   if(value == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_int8(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_int8(). Please report!")
   end
 
   if(pad == nil or pad == true) then
     pos = pos + 3
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_int8()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_int8()")
 
   return pos, value
 end
 
---- Marshall a pointer to an int64. If the pointer is null, it simply marshalls the
+--- Marshall a pointer to an int64.
+--
+-- If the pointer is null, it simply marshalls the
 -- integer '0'. Otherwise, it uses a referent id followed by the integer.
 --
 --@param int64 The value of the integer pointer
@@ -912,14 +914,15 @@ end
 function marshall_int64_ptr(int64)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int64_ptr()")
+  stdnse.debug4("MSRPC: Entering marshall_int64_ptr()")
   result = marshall_ptr(ALL, marshall_int64, {int64}, int64)
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int64_ptr()")
+  stdnse.debug4("MSRPC: Leaving marshall_int64_ptr()")
 
   return result
 end
 
---- Marshall a pointer to an int32, which has the following format:
+--- Marshall a pointer to an int32
+--
 -- <code>     [in,out]   uint32 *ptr</code>
 --
 -- If the pointer is null, it simply marshalls the integer '0'. Otherwise,
@@ -930,14 +933,15 @@ end
 function marshall_int32_ptr(int32)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int32_ptr()")
+  stdnse.debug4("MSRPC: Entering marshall_int32_ptr()")
   result = marshall_ptr(ALL, marshall_int32, {int32}, int32)
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int32_ptr()")
+  stdnse.debug4("MSRPC: Leaving marshall_int32_ptr()")
 
   return result
 end
 
---- Marshall a pointer to an int16, which has the following format:
+--- Marshall a pointer to an int16
+--
 -- <code>     [in,out]   uint16 *ptr</code>
 --
 -- If the pointer is null, it simply marshalls the integer '0'. Otherwise,
@@ -949,14 +953,15 @@ end
 function marshall_int16_ptr(int16, pad)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int16_ptr()")
+  stdnse.debug4("MSRPC: Entering marshall_int16_ptr()")
   result = marshall_ptr(ALL, marshall_int16, {int16, pad}, int16)
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int16_ptr()")
+  stdnse.debug4("MSRPC: Leaving marshall_int16_ptr()")
 
   return result
 end
 
---- Marshall a pointer to an int8, which has the following format:
+--- Marshall a pointer to an int8
+--
 -- <code>     [in,out]   uint8 *ptr</code>
 --
 -- If the pointer is null, it simply marshalls the integer '0'. Otherwise,
@@ -968,9 +973,9 @@ end
 function marshall_int8_ptr(int8, pad)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int8_ptr()")
+  stdnse.debug4("MSRPC: Entering marshall_int8_ptr()")
   result = marshall_ptr(ALL, marshall_int8, {int8, pad}, int8)
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int8_ptr()")
+  stdnse.debug4("MSRPC: Leaving marshall_int8_ptr()")
 
   return result
 end
@@ -983,9 +988,9 @@ end
 function unmarshall_int32_ptr(data, pos)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_int32_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_int32_ptr()")
   pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_int32, {})
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_int32_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_int32_ptr()")
 
   return pos, result
 end
@@ -999,9 +1004,9 @@ end
 function unmarshall_int16_ptr(data, pos, pad)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_int16_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_int16_ptr()")
   pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_int16, {pad})
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_int16_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_int16_ptr()")
 
   return pos, result
 end
@@ -1015,9 +1020,9 @@ end
 function unmarshall_int8_ptr(data, pos, pad)
   local result
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_int8_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_int8_ptr()")
   pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_int8, {pad})
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_int8_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_int8_ptr()")
 
   return pos, result
 end
@@ -1029,17 +1034,15 @@ end
 --       <code>data</code>.
 --@return A string representing the marshalled data.
 function marshall_int8_array(data, max_length)
-  local result = ""
-
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int8_array()")
+  stdnse.debug4("MSRPC: Entering marshall_int8_array()")
 
   if(max_length == nil) then
     max_length = #data
   end
 
-  result = result .. bin.pack("<IIIA", max_length, 0, #data, data)
+  local result = bin.pack("<IIa", max_length, 0, data)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int8_array()")
+  stdnse.debug4("MSRPC: Leaving marshall_int8_array()")
 
   return result
 end
@@ -1055,16 +1058,16 @@ function unmarshall_int8_array(data, pos, pad)
   local max, offset, actual
   local str
 
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_int8_array()")
+  stdnse.debug4("MSRPC: Entering unmarshall_int8_array()")
 
   pos, max, offset, actual = bin.unpack("<III", data, pos)
   if(actual == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_int8_array(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_int8_array(). Please report!")
   end
 
   pos, str = bin.unpack("<A"..actual, data, pos)
   if(str == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_int8_array() [2]. Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_int8_array() [2]. Please report!")
   end
 
   -- Do the alignment (note the "- 1", it's there because of 1-based arrays)
@@ -1074,7 +1077,7 @@ function unmarshall_int8_array(data, pos, pad)
     end
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_int8_array()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_int8_array()")
 
   return pos, str
 end
@@ -1087,11 +1090,11 @@ end
 --@return A string representing the marshalled data.
 function marshall_int8_array_ptr(data, max_length)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_int8_array_ptr()")
+  stdnse.debug4("MSRPC: Entering marshall_int8_array_ptr()")
 
   result = marshall_ptr(ALL, marshall_int8_array, {data, max_length}, data)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_int8_array_ptr()")
+  stdnse.debug4("MSRPC: Leaving marshall_int8_array_ptr()")
   return result
 end
 
@@ -1105,11 +1108,11 @@ end
 --@return (pos, str) The position, and the resulting string, which cannot be nil.
 function unmarshall_int8_array_ptr(data, pos, pad)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_int8_array_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_int8_array_ptr()")
 
   pos, str = unmarshall_ptr(ALL, data, pos, unmarshall_int8_array, {pad})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_int8_array_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_int8_array_ptr()")
   return pos, str
 end
 
@@ -1156,7 +1159,7 @@ end
 --@return A string representing the marshalled data.
 function marshall_NTTIME(time)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_NTTIME()")
+  stdnse.debug4("MSRPC: Entering marshall_NTTIME()")
 
   if(time == 0) then
     result = bin.pack("<L", 0)
@@ -1164,7 +1167,7 @@ function marshall_NTTIME(time)
     result = bin.pack("<L", (time + 11644473600) * 10000000)
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_NTTIME()")
+  stdnse.debug4("MSRPC: Leaving marshall_NTTIME()")
   return result
 end
 
@@ -1175,18 +1178,18 @@ end
 --@return (pos, time) The new position, and the time in seconds since 1970.
 function unmarshall_NTTIME(data, pos)
   local time
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_NTTIME()")
+  stdnse.debug4("MSRPC: Entering unmarshall_NTTIME()")
 
   pos, time = bin.unpack("<L", data, pos)
   if(time == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_NTTIME(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_NTTIME(). Please report!")
   end
 
   if(time ~= 0) then
     time = (time / 10000000) - 11644473600
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_NTTIME()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_NTTIME()")
   return pos, time
 end
 
@@ -1196,11 +1199,11 @@ end
 --@return A string representing the marshalled data.
 function marshall_NTTIME_ptr(time)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_NTTIME_ptr()")
+  stdnse.debug4("MSRPC: Entering marshall_NTTIME_ptr()")
 
   result = marshall_ptr(ALL, marshall_NTTIME, {time}, time)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_NTTIME_ptr()")
+  stdnse.debug4("MSRPC: Leaving marshall_NTTIME_ptr()")
   return result
 end
 
@@ -1211,16 +1214,17 @@ end
 --@return (pos, time) The new position, and the time in seconds since 1970.
 function unmarshall_NTTIME_ptr(data, pos)
   local time
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_NTTIME_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_NTTIME_ptr()")
 
   pos, time = unmarshall_ptr(ALL, data, pos, unmarshall_NTTIME, {})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_NTTIME_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_NTTIME_ptr()")
   return pos, time
 end
 
----Unmarshall a SYSTEMTIME structure, converting it to a standard representation. The structure is a
--- follows:
+---Unmarshall a SYSTEMTIME structure, converting it to a standard representation.
+--
+--The structure is as follows:
 --
 -- <code>
 --   typedef struct _SYSTEMTIME {
@@ -1244,7 +1248,7 @@ function unmarshall_SYSTEMTIME(data, pos)
 
   pos, date['year'], date['month'], _, date['day'], date['hour'], date['min'], date['sec'], _ = bin.unpack("<SSSSSSSS", data, pos)
   if(date['sec'] == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_SYSTEMTIME(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_SYSTEMTIME(). Please report!")
   end
 
   return pos, os.time(date)
@@ -1262,12 +1266,12 @@ end
 --@return (pos, val) The new position, and the result in seconds.
 function unmarshall_hyper(data, pos)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_hyper()")
+  stdnse.debug4("MSRPC: Entering unmarshall_hyper()")
 
   pos, result = unmarshall_int64(data, pos)
   result = result / -10000000
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_hyper()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_hyper()")
   return pos, result
 end
 
@@ -1284,7 +1288,7 @@ end
 --@return A string representing the marshalled data.
 local function marshall_Enum32(val, table)
   local result = 0
-  stdnse.print_debug(4, "MSRPC: Entering marshall_Enum32()")
+  stdnse.debug4("MSRPC: Entering marshall_Enum32()")
 
   local vals = stdnse.strsplit("|", val)
   local i
@@ -1295,7 +1299,7 @@ local function marshall_Enum32(val, table)
 
   result = marshall_int32(result)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_Enum32()")
+  stdnse.debug4("MSRPC: Leaving marshall_Enum32()")
   return result
 end
 
@@ -1309,7 +1313,7 @@ end
 --@param default The default value to return if the lookup was unsuccessful.
 --@return (pos, policy_handle) The new position, and a table representing the policy_handle.
 local function unmarshall_Enum32(data, pos, table, default)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_Enum32()")
+  stdnse.debug4("MSRPC: Entering unmarshall_Enum32()")
 
   if(default == nil) then
     default = "<unknown>"
@@ -1323,7 +1327,7 @@ local function unmarshall_Enum32(data, pos, table, default)
     end
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_Enum32()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_Enum32()")
   return pos, default
 end
 
@@ -1338,7 +1342,7 @@ end
 --@param pad     [optional] If set, will ensure that we end up on an even multiple of 4. Default: true.
 --@return (pos, policy_handle) The new position, and a table representing the policy_handle.
 local function unmarshall_Enum16(data, pos, table, default, pad)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_Enum16()")
+  stdnse.debug4("MSRPC: Entering unmarshall_Enum16()")
 
   if(default == nil) then
     default = "<unknown>"
@@ -1352,7 +1356,7 @@ local function unmarshall_Enum16(data, pos, table, default, pad)
     end
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_Enum16()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_Enum16()")
   return pos, default
 end
 
@@ -1370,7 +1374,7 @@ end
 --@return A string representing the marshalled data.
 local function marshall_Enum8(val, table, pad)
   local result = 0
-  stdnse.print_debug(4, "MSRPC: Entering marshall_Enum8()")
+  stdnse.debug4("MSRPC: Entering marshall_Enum8()")
 
   local vals = stdnse.strsplit("|", val)
   local i
@@ -1381,7 +1385,7 @@ local function marshall_Enum8(val, table, pad)
 
   result = marshall_int8(result, pad)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_Enum8()")
+  stdnse.debug4("MSRPC: Leaving marshall_Enum8()")
   return result
 end
 
@@ -1398,7 +1402,7 @@ local function unmarshall_Enum32_array(data, pos, table)
   local array = {}
   local i, v
   local val
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_Enum32_array()")
+  stdnse.debug4("MSRPC: Entering unmarshall_Enum32_array()")
 
   pos, val = unmarshall_int32(data, pos)
 
@@ -1408,7 +1412,7 @@ local function unmarshall_Enum32_array(data, pos, table)
     end
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_Enum32_array()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_Enum32_array()")
   return pos, array
 end
 
@@ -1419,14 +1423,14 @@ end
 --@return (pos, data) The new position in the packet, and a string representing the raw data.
 function unmarshall_raw(data, pos, length)
   local val
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_raw()")
+  stdnse.debug4("MSRPC: Entering unmarshall_raw()")
 
   pos, val = bin.unpack(string.format("A%d", length), data, pos)
   if(val == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_raw(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_raw(). Please report!")
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_raw()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_raw()")
   return pos, val
 end
 
@@ -1452,11 +1456,11 @@ end
 --@return A string representing the marshalled data.
 local function marshall_guid(guid)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_guid()")
+  stdnse.debug4("MSRPC: Entering marshall_guid()")
 
   result = bin.pack("<ISSAA", guid['time_low'], guid['time_high'], guid['time_hi_and_version'], guid['clock_seq'], guid['node'])
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_guid()")
+  stdnse.debug4("MSRPC: Leaving marshall_guid()")
   return result
 end
 
@@ -1467,14 +1471,14 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 local function unmarshall_guid(data, pos)
   local guid = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_guid()")
+  stdnse.debug4("MSRPC: Entering unmarshall_guid()")
 
   pos, guid['time_low'], guid['time_high'], guid['time_hi_and_version'], guid['clock_seq'], guid['node'] = bin.unpack("<ISSA2A6", data, pos)
   if(guid['node'] == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_guid(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_guid(). Please report!")
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_guid()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_guid()")
   return pos, guid
 end
 
@@ -1491,11 +1495,11 @@ end
 --@return A string representing the marshalled data.
 function marshall_policy_handle(policy_handle)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_policy_handle()")
+  stdnse.debug4("MSRPC: Entering marshall_policy_handle()")
 
   result = bin.pack("<IA", policy_handle['handle_type'], marshall_guid(policy_handle['uuid']))
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_policy_handle()")
+  stdnse.debug4("MSRPC: Leaving marshall_policy_handle()")
   return result
 end
 
@@ -1506,12 +1510,12 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_policy_handle(data, pos)
   local policy_handle = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_policy_handle()")
+  stdnse.debug4("MSRPC: Entering unmarshall_policy_handle()")
 
   pos, policy_handle['handle_type'] = unmarshall_int32(data, pos)
   pos, policy_handle['uuid']        = unmarshall_guid(data, pos)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_policy_handle()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_policy_handle()")
   return pos, policy_handle
 end
 
@@ -1520,7 +1524,7 @@ end
 -- (dependencies: MISC)
 ----------------------------------
 
----Unmarshall a struct with the following definition:
+---Unmarshall a dom_sid struct
 --
 --<code>
 --    typedef [public,gensize,noprint,noejs,nosize] struct {
@@ -1546,7 +1550,7 @@ function unmarshall_dom_sid2(data, pos)
   -- Note that authority is big endian (I guess it's an array, not really an integer like we're handling it)
   pos, sid['authority_high'], sid['authority_low'] = bin.unpack(">SI", data, pos)
   if(sid['authority_low'] == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Ran off the end of a packet in unmarshall_dom_sid2(). Please report!")
+    stdnse.debug1("MSRPC: ERROR: Ran off the end of a packet in unmarshall_dom_sid2(). Please report!")
   end
   sid['authority'] = bit.bor(bit.lshift(sid['authority_high'], 32), sid['authority_low'])
 
@@ -1574,7 +1578,7 @@ function unmarshall_dom_sid2_ptr(data, pos)
   return unmarshall_ptr(ALL, data, pos, unmarshall_dom_sid2, {})
 end
 
----Marshall a struct with the following definition:
+---Marshall a dom_sid struct
 --
 --<code>
 --    typedef [public,gensize,noprint,noejs,nosize] struct {
@@ -1591,15 +1595,15 @@ function marshall_dom_sid2(sid)
   local pos_next
   local sid_array = {}
   local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_dom_sid2()")
+  stdnse.debug4("MSRPC: Entering marshall_dom_sid2()")
 
 
   if(string.find(sid, "^S%-") == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Invalid SID encountered: %s\n", sid)
+    stdnse.debug1("MSRPC: ERROR: Invalid SID encountered: %s\n", sid)
     return nil
   end
   if(string.find(sid, "%-%d+$") == nil) then
-    stdnse.print_debug(1, "MSRPC: ERROR: Invalid SID encountered: %s\n", sid)
+    stdnse.debug1("MSRPC: ERROR: Invalid SID encountered: %s\n", sid)
     return nil
   end
 
@@ -1633,7 +1637,7 @@ function marshall_dom_sid2(sid)
     result = result .. bin.pack("<I", sid_array['sub_auths'][i])
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_dom_sid2()")
+  stdnse.debug4("MSRPC: Leaving marshall_dom_sid2()")
   return result
 end
 
@@ -1672,7 +1676,7 @@ end
 local function marshall_lsa_String_internal(location, str, max_length, do_null)
   local length
   local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_String_internal()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_String_internal()")
 
   -- Handle default max lengths
   if(max_length == nil) then
@@ -1701,7 +1705,7 @@ local function marshall_lsa_String_internal(location, str, max_length, do_null)
     result = result .. bin.pack("<A", marshall_ptr(BODY, marshall_unicode, {str, do_null, max_length}, str))
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_String_internal()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_String_internal()")
   return result
 end
 
@@ -1721,7 +1725,7 @@ end
 local function unmarshall_lsa_String_internal(location, data, pos, result)
   local length, size
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_String_internal()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_String_internal()")
 
   if(location == HEAD or location == ALL) then
     pos, length = unmarshall_int16(data, pos, false)
@@ -1734,7 +1738,7 @@ local function unmarshall_lsa_String_internal(location, data, pos, result)
     pos, str = unmarshall_ptr(BODY, data, pos, unmarshall_unicode, {false}, result)
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_String_internal()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_String_internal()")
   return pos, str
 end
 
@@ -1747,11 +1751,11 @@ end
 --@return A string representing the marshalled data.
 function marshall_lsa_String(str, max_length)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_String()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_String()")
 
   result = marshall_lsa_String_internal(ALL, str, max_length)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_String()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_String()")
   return result
 end
 
@@ -1763,7 +1767,7 @@ end
 function marshall_lsa_String_array(strings)
   local array = {}
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_String_array()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_String_array()")
 
   for i = 1, #strings, 1 do
     array[i] = {}
@@ -1773,7 +1777,7 @@ function marshall_lsa_String_array(strings)
 
   result = marshall_array(array)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_String_array()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_String_array()")
   return result
 end
 
@@ -1791,8 +1795,8 @@ function marshall_lsa_String_array2(strings)
   end
 
   result = marshall_int32(1000) -- Max length
-  result = result .. marshall_int32(0) -- Offset
-  result = result .. marshall_array(array)
+  .. marshall_int32(0) -- Offset
+  .. marshall_array(array)
 
   --require 'nsedebug'
   --nsedebug.print_hex(result)
@@ -1836,11 +1840,11 @@ local lsa_SidType_str =
 --        found.
 function marshall_lsa_SidType(sid_type)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_SidType()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_SidType()")
 
   result = marshall_Enum32(sid_type, lsa_SidType)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_SidType()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_SidType()")
   return result
 end
 
@@ -1851,26 +1855,26 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_lsa_SidType(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_SidType()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_SidType()")
 
   pos, str = unmarshall_Enum16(data, pos, lsa_SidType)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_SidType()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_SidType()")
   return pos, str
 end
 
 ---Convert a <code>lsa_SidType</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function lsa_SidType_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering lsa_SidType_tostr()")
+  stdnse.debug4("MSRPC: Entering lsa_SidType_tostr()")
 
   result = lsa_SidType_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving lsa_SidType_tostr()")
+  stdnse.debug4("MSRPC: Leaving lsa_SidType_tostr()")
   return result
 end
 
@@ -1902,11 +1906,11 @@ local lsa_LookupNamesLevel_str =
 --        found.
 function marshall_lsa_LookupNamesLevel(names_level)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_LookupNamesLevel()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_LookupNamesLevel()")
 
   result = marshall_Enum32(names_level, lsa_LookupNamesLevel)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_LookupNamesLevel()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_LookupNamesLevel()")
   return result
 end
 
@@ -1917,30 +1921,30 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_lsa_LookupNamesLevel(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_LookupNamesLevel()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_LookupNamesLevel()")
 
   pos, str = unmarshall_Enum32(data, pos, lsa_LookupNamesLevel)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_LookupNamesLevel()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_LookupNamesLevel()")
   return pos, str
 end
 
 ---Convert a <code>lsa_LookupNamesLevel</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function lsa_LookupNamesLevel_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering lsa_LookupNamesLevel_tostr()")
+  stdnse.debug4("MSRPC: Entering lsa_LookupNamesLevel_tostr()")
 
   result = lsa_LookupNamesLevel_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving lsa_LookupNamesLevel_tostr()")
+  stdnse.debug4("MSRPC: Leaving lsa_LookupNamesLevel_tostr()")
   return result
 end
 
----Marshall a struct with the following definition:
+---Marshall a lsa_TranslatedSid2 struct
 --
 --<code>
 --    typedef struct {
@@ -1962,7 +1966,7 @@ end
 --@return A string representing the marshalled data.
 local function marshall_lsa_TranslatedSid2(location, sid_type, rid, sid_index, unknown)
   local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_TranslatedSid2()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_TranslatedSid2()")
 
   -- Set some default values
   if(sid_type == nil)  then sid_type  = "SID_NAME_USE_NONE" end
@@ -1971,20 +1975,20 @@ local function marshall_lsa_TranslatedSid2(location, sid_type, rid, sid_index, u
   if(unknown == nil)   then unknown   = 0 end
 
   if(location == HEAD or location == ALL) then
-    result = result .. marshall_lsa_SidType(sid_type)
-    result = result .. marshall_int32(rid)
-    result = result .. marshall_int32(sid_index)
-    result = result .. marshall_int32(unknown)
+    result = marshall_lsa_SidType(sid_type)
+    .. marshall_int32(rid)
+    .. marshall_int32(sid_index)
+    .. marshall_int32(unknown)
   end
 
   if(location == BODY or location == ALL) then
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_TranslatedSid2()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_TranslatedSid2()")
   return result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a lsa_TranslatedSid2 struct
 --
 --<code>
 --    typedef struct {
@@ -2025,7 +2029,7 @@ local function unmarshall_lsa_TranslatedSid2(location, data, pos, result)
   return pos, result
 end
 
----Marshall a struct with the following definition:
+---Marshall a lsa_TranslatedName2 struct
 --
 --<code>
 --    typedef struct {
@@ -2047,7 +2051,7 @@ end
 --@return A string representing the marshalled data.
 local function marshall_lsa_TranslatedName2(location, sid_type, name, sid_index, unknown)
   local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_TranslatedName2()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_TranslatedName2()")
 
   -- Set some default values
   if(sid_type == nil)  then sid_type  = "SID_NAME_USE_NONE" end
@@ -2056,17 +2060,17 @@ local function marshall_lsa_TranslatedName2(location, sid_type, name, sid_index,
   if(unknown == nil)   then unknown   = 0 end
 
   if(location == HEAD or location == ALL) then
-    result = result .. marshall_lsa_SidType(sid_type)
-    result = result .. marshall_lsa_String_internal(HEAD, name)
-    result = result .. marshall_int32(sid_index)
-    result = result .. marshall_int32(unknown)
+    result = marshall_lsa_SidType(sid_type)
+    .. marshall_lsa_String_internal(HEAD, name)
+    .. marshall_int32(sid_index)
+    .. marshall_int32(unknown)
   end
 
   if(location == BODY or location == ALL) then
     result = result .. marshall_lsa_String_internal(BODY, name)
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_TranslatedName2()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_TranslatedName2()")
   return result
 end
 
@@ -2082,7 +2086,7 @@ end
 --                anything.
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 local function unmarshall_lsa_TranslatedName2(location, data, pos, result)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_TranslatedName2()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_TranslatedName2()")
   if(result == nil) then
     result = {}
   end
@@ -2099,12 +2103,12 @@ local function unmarshall_lsa_TranslatedName2(location, data, pos, result)
     pos, result['name']      = unmarshall_lsa_String_internal(BODY, data, pos, result['name'])
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_TranslatedName2()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_TranslatedName2()")
   return pos, result
 end
 
 
----Marshall a struct with the following definition:
+---Marshall a lsa_TransSidArray2 struct
 --
 --<code>
 --    typedef struct {
@@ -2116,11 +2120,9 @@ end
 --@param sids An array of SIDs to translate (as strings)
 --@return A string representing the marshalled data.
 function marshall_lsa_TransSidArray2(sids)
-  local result = ""
   local array = {}
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_TransSidArray2()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_TransSidArray2()")
 
-  result = result .. marshall_int32(#sids)
 
   for i = 1, #sids, 1 do
     array[i] = {}
@@ -2128,13 +2130,14 @@ function marshall_lsa_TransSidArray2(sids)
     array[i]['args'] = {sids[i]['sid_type'], sids[i]['rid'], sids[i]['sid_index'], sids[i]['unknown']}
   end
 
-  result = result .. marshall_ptr(ALL, marshall_array, {array}, array)
+  local result = marshall_int32(#sids)
+  .. marshall_ptr(ALL, marshall_array, {array}, array)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_TransSidArray2()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_TransSidArray2()")
   return result
 end
 
----Marshall a struct with the following definition:
+---Marshall a lsa_StringLarge struct
 --
 --<code>
 --    typedef [public] struct {
@@ -2158,7 +2161,7 @@ end
 local function unmarshall_lsa_StringLarge(location, data, pos, result)
   local length, size
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_StringLarge()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_StringLarge()")
 
   if(location == HEAD or location == ALL) then
     pos, length = unmarshall_int16(data, pos, false)
@@ -2171,11 +2174,11 @@ local function unmarshall_lsa_StringLarge(location, data, pos, result)
     pos, str = unmarshall_ptr(BODY, data, pos, unmarshall_unicode, {false}, result)
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_StringLarge()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_StringLarge()")
   return pos, str
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a lsa_DomainInfo struct
 --
 --<code>
 --    typedef struct {
@@ -2196,7 +2199,7 @@ end
 --                anything.
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 local function unmarshall_lsa_DomainInfo(location, data, pos, result)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_DomainInfo()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_DomainInfo()")
   if(result == nil) then
     result = {}
   end
@@ -2211,11 +2214,11 @@ local function unmarshall_lsa_DomainInfo(location, data, pos, result)
     pos, result['sid']  = unmarshall_ptr(BODY, data, pos, unmarshall_dom_sid2, {}, result['sid'])
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_DomainInfo()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_DomainInfo()")
   return pos, result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a lsa_RefDomainList struct
 --
 --<code>
 --    typedef struct {
@@ -2230,7 +2233,7 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_lsa_RefDomainList(data, pos)
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_RefDomainList()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_RefDomainList()")
 
   -- Head
   pos, result['count'] = unmarshall_int32(data, pos)
@@ -2240,7 +2243,7 @@ function unmarshall_lsa_RefDomainList(data, pos)
   -- Body
   pos, result['domains'] = unmarshall_ptr(BODY, data, pos, unmarshall_array, {result['count'], unmarshall_lsa_DomainInfo, {}}, result['domains'])
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_RefDomainList()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_RefDomainList()")
   return pos, result
 end
 
@@ -2252,15 +2255,15 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_lsa_RefDomainList_ptr(data, pos)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_RefDomainList_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_RefDomainList_ptr()")
 
   pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_lsa_RefDomainList, nil)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_RefDomainList_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_RefDomainList_ptr()")
   return pos, result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a lsa_TransSidArray2 struct
 --
 --<code>
 --    typedef struct {
@@ -2274,16 +2277,16 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_lsa_TransSidArray2(data, pos)
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_TransSidArray2()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_TransSidArray2()")
 
   pos, result['count'] = unmarshall_int32(data, pos)
   pos, result['sid']   = unmarshall_ptr(ALL, data, pos, unmarshall_array, {result['count'], unmarshall_lsa_TranslatedSid2, {}})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_TransSidArray2()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_TransSidArray2()")
   return pos, result
 end
 
----Marshall a struct with the following definition:
+---Marshall a lsa_QosInfo struct
 --
 --<code>
 --    typedef struct {
@@ -2299,19 +2302,18 @@ end
 --
 --@return A string representing the marshalled data.
 function marshall_lsa_QosInfo()
-  local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_QosInfo()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_QosInfo()")
 
-  result = result .. marshall_int32(12)
-  result = result .. marshall_int16(2, false)
-  result = result .. marshall_int8(1, false)
-  result = result .. marshall_int8(0, false)
+  local result = marshall_int32(12)
+  .. marshall_int16(2, false)
+  .. marshall_int8(1, false)
+  .. marshall_int8(0, false)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_QosInfo()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_QosInfo()")
   return result
 end
 
----Marshall a struct with the following definition:
+---Marshall a lsa_ObjectAttribute struct
 --
 --<code>
 --    typedef struct {
@@ -2329,21 +2331,20 @@ end
 --
 --@return A string representing the marshalled data.
 function marshall_lsa_ObjectAttribute()
-  local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_ObjectAttribute()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_ObjectAttribute()")
 
-  result = result .. marshall_int32(24)
-  result = result .. marshall_int32(0)  -- Null'ing out these pointers for now. Maybe we'll need them in the future...
-  result = result .. marshall_int32(0)
-  result = result .. marshall_int32(0)
-  result = result .. marshall_int32(0)
-  result = result .. marshall_ptr(ALL, marshall_lsa_QosInfo, {})
+  local result = marshall_int32(24)
+  .. marshall_int32(0)  -- Null'ing out these pointers for now. Maybe we'll need them in the future...
+  .. marshall_int32(0)
+  .. marshall_int32(0)
+  .. marshall_int32(0)
+  .. marshall_ptr(ALL, marshall_lsa_QosInfo, {})
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_ObjectAttribute()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_ObjectAttribute()")
   return result
 end
 
----Marshall a struct with the following definition:
+---Marshall a lsa_SidPtr struct
 --
 --<code>
 --    typedef struct {
@@ -2359,15 +2360,15 @@ end
 --@return A string representing the marshalled data.
 local function marshall_lsa_SidPtr(location, sid)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_SidPtr()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_SidPtr()")
 
   result = marshall_ptr(location, marshall_dom_sid2, {sid}, sid)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_SidPtr()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_SidPtr()")
   return result
 end
 
----Marshall a struct with the following definition:
+---Marshall a lsa_SidArray struct
 --
 --<code>
 --    typedef [public] struct {
@@ -2379,10 +2380,7 @@ end
 --@param sids The array of SIDs to marshall (as strings).
 --@return A string representing the marshalled data.
 function marshall_lsa_SidArray(sids)
-  local result = ""
   local array = {}
-
-  result = result .. marshall_int32(#sids)
 
   for i = 1, #sids, 1 do
     array[i] = {}
@@ -2390,15 +2388,19 @@ function marshall_lsa_SidArray(sids)
     array[i]['args'] = {sids[i]}
   end
 
-  result = result .. marshall_ptr(ALL, marshall_array, {array}, array)
+  local result = marshall_int32(#sids)
+  .. marshall_ptr(ALL, marshall_array, {array}, array)
 
   return result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a lsa_SidPtr struct
+--
+--<code>
 --    typedef struct {
 --        dom_sid2 *sid;
 --    } lsa_SidPtr;
+--</code>
 --
 --@param location The part of the pointer wanted, either HEAD (for the data itself), BODY
 --                (for nothing, since this isn't a pointer), or ALL (for the data). Generally, unless the
@@ -2415,7 +2417,7 @@ function unmarshall_lsa_SidPtr(location, data, pos, result)
   return unmarshall_ptr(location, data, pos, unmarshall_dom_sid2, {}, result)
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a lsa_SidArray struct
 --
 --    typedef [public] struct {
 --        [range(0,1000)] uint32 num_sids;
@@ -2434,7 +2436,7 @@ function unmarshall_lsa_SidArray(data, pos)
   return pos, sidarray
 end
 
----Marshall a struct with the following definition:
+---Marshall a lsa_TransNameArray2 struct
 --
 --<code>
 --    typedef struct {
@@ -2448,7 +2450,7 @@ end
 function marshall_lsa_TransNameArray2(names)
   local result = ""
   local array = {}
-  stdnse.print_debug(4, "MSRPC: Entering marshall_lsa_TransNameArray2()")
+  stdnse.debug4("MSRPC: Entering marshall_lsa_TransNameArray2()")
 
   if(names == nil) then
     result = result .. marshall_int32(0)
@@ -2465,7 +2467,7 @@ function marshall_lsa_TransNameArray2(names)
 
   result = result .. marshall_ptr(ALL, marshall_array, {array}, array)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_lsa_TransNameArray2()")
+  stdnse.debug4("MSRPC: Leaving marshall_lsa_TransNameArray2()")
   return result
 end
 
@@ -2477,12 +2479,12 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_lsa_TransNameArray2(data, pos)
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_lsa_TransNameArray2()")
+  stdnse.debug4("MSRPC: Entering unmarshall_lsa_TransNameArray2()")
 
   pos, result['count'] = unmarshall_int32(data, pos)
   pos, result['names'] = unmarshall_ptr(ALL, data, pos, unmarshall_array, {result['count'], unmarshall_lsa_TranslatedName2, {}})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_lsa_TransNameArray2()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_lsa_TransNameArray2()")
   return pos, result
 end
 
@@ -2532,11 +2534,11 @@ local winreg_AccessMask_str =
 --@return A string representing the marshalled data.
 function marshall_winreg_AccessMask(accessmask)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_winreg_AccessMask()")
+  stdnse.debug4("MSRPC: Entering marshall_winreg_AccessMask()")
 
   result = marshall_Enum32(accessmask, winreg_AccessMask)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_winreg_AccessMask()")
+  stdnse.debug4("MSRPC: Leaving marshall_winreg_AccessMask()")
   return result
 end
 
@@ -2547,26 +2549,26 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_winreg_AccessMask(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_winreg_AccessMask()")
+  stdnse.debug4("MSRPC: Entering unmarshall_winreg_AccessMask()")
 
   pos, str = unmarshall_Enum32(data, pos, winreg_AccessMask)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_winreg_AccessMask()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_winreg_AccessMask()")
   return pos, str
 end
 
 ---Convert a <code>winreg_AccessMask</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function winreg_AccessMask_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering winreg_AccessMask_tostr()")
+  stdnse.debug4("MSRPC: Entering winreg_AccessMask_tostr()")
 
   result = winreg_AccessMask_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving winreg_AccessMask_tostr()")
+  stdnse.debug4("MSRPC: Leaving winreg_AccessMask_tostr()")
   return result
 end
 
@@ -2612,11 +2614,11 @@ winreg_Type_str =
 --        found.
 function marshall_winreg_Type(winregtype)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_winreg_Type()")
+  stdnse.debug4("MSRPC: Entering marshall_winreg_Type()")
 
   result = marshall_Enum32(winregtype, winreg_Type)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_winreg_Type()")
+  stdnse.debug4("MSRPC: Leaving marshall_winreg_Type()")
   return result
 end
 
@@ -2627,11 +2629,11 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_winreg_Type(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_winreg_Type()")
+  stdnse.debug4("MSRPC: Entering unmarshall_winreg_Type()")
 
   pos, str = unmarshall_Enum32(data, pos, winreg_Type)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_winreg_Type()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_winreg_Type()")
   return pos, str
 end
 
@@ -2643,11 +2645,11 @@ end
 --        found.
 function marshall_winreg_Type_ptr(winreg_type)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_winreg_Type_ptr()")
+  stdnse.debug4("MSRPC: Entering marshall_winreg_Type_ptr()")
 
   result = marshall_ptr(ALL, marshall_winreg_Type, {winreg_type}, winreg_type)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_winreg_Type_ptr()")
+  stdnse.debug4("MSRPC: Leaving marshall_winreg_Type_ptr()")
   return result
 end
 
@@ -2658,26 +2660,26 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_winreg_Type_ptr(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_winreg_Type_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_winreg_Type_ptr()")
 
   pos, str = unmarshall_ptr(ALL, data, pos, unmarshall_winreg_Type, {})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_winreg_Type_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_winreg_Type_ptr()")
   return pos, str
 end
 
 ---Convert a <code>winreg_Type</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function winreg_Type_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering winreg_Type_tostr()")
+  stdnse.debug4("MSRPC: Entering winreg_Type_tostr()")
 
   result = winreg_Type_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving winreg_Type_tostr()")
+  stdnse.debug4("MSRPC: Leaving winreg_Type_tostr()")
   return result
 end
 
@@ -2700,7 +2702,7 @@ end
 --@return A string representing the marshalled data.
 function marshall_winreg_StringBuf(table, max_length)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_winreg_StringBuf()")
+  stdnse.debug4("MSRPC: Entering marshall_winreg_StringBuf()")
 
   local name = table['name']
   local length
@@ -2728,7 +2730,7 @@ function marshall_winreg_StringBuf(table, max_length)
     result = bin.pack("<SSA", length * 2, max_length * 2, marshall_ptr(ALL, marshall_unicode, {name, true, max_length}, name))
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_winreg_StringBuf()")
+  stdnse.debug4("MSRPC: Leaving marshall_winreg_StringBuf()")
   return result
 end
 
@@ -2740,14 +2742,14 @@ end
 function unmarshall_winreg_StringBuf(data, pos)
   local length, size
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_winreg_StringBuf()")
+  stdnse.debug4("MSRPC: Entering unmarshall_winreg_StringBuf()")
 
   pos, length = unmarshall_int16(data, pos, false)
   pos, size   = unmarshall_int16(data, pos, false)
 
   pos, str = unmarshall_ptr(ALL, data, pos, unmarshall_unicode, {true})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_winreg_StringBuf()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_winreg_StringBuf()")
   return pos, str
 end
 
@@ -2759,11 +2761,11 @@ end
 --@return A string representing the marshalled data.
 function marshall_winreg_StringBuf_ptr(table, max_length)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_winreg_StringBuf_ptr()")
+  stdnse.debug4("MSRPC: Entering marshall_winreg_StringBuf_ptr()")
 
   result = marshall_ptr(ALL, marshall_winreg_StringBuf, {table, max_length}, table)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_winreg_StringBuf_ptr()")
+  stdnse.debug4("MSRPC: Leaving marshall_winreg_StringBuf_ptr()")
   return result
 end
 
@@ -2774,11 +2776,11 @@ end
 --@return (pos, str) The new position and the string.
 function unmarshall_winreg_StringBuf_ptr(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_winreg_StringBuf_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_winreg_StringBuf_ptr()")
 
   pos, str = unmarshall_ptr(ALL, data, pos, unmarshall_winreg_StringBuf, {})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_winreg_StringBuf_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_winreg_StringBuf_ptr()")
   return pos, str
 end
 
@@ -2790,11 +2792,11 @@ end
 --@return A string representing the marshalled data.
 function marshall_winreg_String(table, max_length)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_winreg_String()")
+  stdnse.debug4("MSRPC: Entering marshall_winreg_String()")
 
   result = marshall_winreg_StringBuf(table, max_length)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_winreg_String()")
+  stdnse.debug4("MSRPC: Leaving marshall_winreg_String()")
   return result
 end
 
@@ -2805,11 +2807,11 @@ end
 --@return (pos, str) The new position and the string.
 function unmarshall_winreg_String(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_winreg_String()")
+  stdnse.debug4("MSRPC: Entering unmarshall_winreg_String()")
 
   pos, str = unmarshall_winreg_StringBuf(data, pos)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_winreg_String()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_winreg_String()")
   return pos, str
 end
 
@@ -2859,11 +2861,11 @@ local srvsvc_ShareType_str =
 --        found.
 function marshall_srvsvc_ShareType(sharetype)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_ShareType()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_ShareType()")
 
   result = marshall_Enum32(sharetype, srvsvc_ShareType)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_ShareType()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_ShareType()")
   return result
 end
 
@@ -2874,26 +2876,26 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_srvsvc_ShareType(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_ShareType()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_ShareType()")
 
   pos, str = unmarshall_Enum32(data, pos, srvsvc_ShareType)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_ShareType()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_ShareType()")
   return pos, str
 end
 
 ---Convert a <code>srvsvc_ShareType</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function srvsvc_ShareType_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering srvsvc_ShareType_tostr()")
+  stdnse.debug4("MSRPC: Entering srvsvc_ShareType_tostr()")
 
   result = srvsvc_ShareType_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving srvsvc_ShareType_tostr()")
+  stdnse.debug4("MSRPC: Leaving srvsvc_ShareType_tostr()")
   return result
 end
 
@@ -2913,11 +2915,11 @@ end
 --@return A string representing the marshalled data.
 local function marshall_srvsvc_NetShareInfo0(location, name)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetShareInfo0()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetShareInfo0()")
 
   result = marshall_ptr(location, marshall_unicode, {name, true}, name)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetShareInfo0()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetShareInfo0()")
   return result
 end
 
@@ -2935,7 +2937,7 @@ end
 --                anything.
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 local function unmarshall_srvsvc_NetShareInfo0(location, data, pos, result)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_NetShareInfo0()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_NetShareInfo0()")
   if(result == nil) then
     result = {}
   end
@@ -2948,7 +2950,7 @@ local function unmarshall_srvsvc_NetShareInfo0(location, data, pos, result)
     pos, result['name'] = unmarshall_ptr(BODY, data, pos, unmarshall_unicode, {true}, result['name'])
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_NetShareInfo0()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_NetShareInfo0()")
   return pos, result
 end
 
@@ -2972,14 +2974,14 @@ end
 --@return A string representing the marshalled data.
 local function marshall_srvsvc_NetShareInfo1(location, name, sharetype, comment)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetShareInfo1()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetShareInfo1()")
   local name      = marshall_ptr(location, marshall_unicode, {name, true}, name)
   local sharetype = marshall_basetype(location, marshall_srvsvc_ShareType, {sharetype})
   local comment   = marshall_ptr(location, marshall_unicode, {comment, true}, comment)
 
   result = bin.pack("<AAA", name, sharetype, comment)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetShareInfo1()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetShareInfo1()")
   return result
 end
 
@@ -2998,7 +3000,7 @@ end
 --                anything.
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 local function unmarshall_srvsvc_NetShareInfo1(location, data, pos, result)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_NetShareInfo1()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_NetShareInfo1()")
   if(result == nil) then
     result = {}
   end
@@ -3014,7 +3016,7 @@ local function unmarshall_srvsvc_NetShareInfo1(location, data, pos, result)
     pos, result['comment'] = unmarshall_ptr(BODY, data, pos, unmarshall_unicode, {true}, result['comment'])
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_NetShareInfo1()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_NetShareInfo1()")
   return pos, result
 end
 
@@ -3049,7 +3051,7 @@ end
 --@return A string representing the marshalled data.
 local function marshall_srvsvc_NetShareInfo2(location, name, sharetype, comment, permissions, max_users, current_users, path, password)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetShareInfo2()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetShareInfo2()")
   local name          = marshall_ptr(location, marshall_unicode, {name,    true},   name)
   local sharetype     = marshall_basetype(location, marshall_srvsvc_ShareType, {sharetype})
   local comment       = marshall_ptr(location, marshall_unicode, {comment, true},   comment)
@@ -3061,7 +3063,7 @@ local function marshall_srvsvc_NetShareInfo2(location, name, sharetype, comment,
 
   result =  name .. sharetype .. comment .. permissions .. max_users .. current_users .. path .. password
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetShareInfo2()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetShareInfo2()")
   return result
 end
 
@@ -3080,7 +3082,7 @@ end
 --                anything.
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 local function unmarshall_srvsvc_NetShareInfo2(location, data, pos, result)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_NetShareInfo2()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_NetShareInfo2()")
   if(result == nil) then
     result = {}
   end
@@ -3103,11 +3105,13 @@ local function unmarshall_srvsvc_NetShareInfo2(location, data, pos, result)
     pos, result['password'] = unmarshall_ptr(BODY, data, pos, unmarshall_unicode, {true}, result['password'])
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_NetShareInfo2()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_NetShareInfo2()")
   return pos, result
 end
 
----Marshall a NetShareCtr (container) type 0. It is a simple array with the following definition:
+---Marshall a NetShareCtr (container) type 0.
+--
+--It is a simple array with the following definition:
 --
 --<code>
 --     typedef struct {
@@ -3121,7 +3125,7 @@ end
 function marshall_srvsvc_NetShareCtr0(NetShareCtr0)
   local i
   local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetShareCtr0()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetShareCtr0()")
 
   if(NetShareCtr0 == nil) then
     result = result .. bin.pack("<I", 0)
@@ -3146,7 +3150,7 @@ function marshall_srvsvc_NetShareCtr0(NetShareCtr0)
     result = result .. marshall_ptr(ALL, marshall_array, {marshall}, marshall) -- array
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetShareCtr0()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetShareCtr0()")
   return result
 end
 
@@ -3158,17 +3162,19 @@ end
 function unmarshall_srvsvc_NetShareCtr0(data, pos)
   local count
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_NetShareCtr0()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_NetShareCtr0()")
 
   pos, count = unmarshall_int32(data, pos)
 
   pos, result['array'] = unmarshall_ptr(ALL, data, pos, unmarshall_array, {count, unmarshall_srvsvc_NetShareInfo0, {}})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_NetShareCtr0()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_NetShareCtr0()")
   return pos, result
 end
 
----Marshall a NetShareCtr (container) type 1. It is a simple array with the following definition:
+---Marshall a NetShareCtr (container) type 1.
+--
+--It is a simple array with the following definition:
 --
 --<code>
 --    typedef struct {
@@ -3182,7 +3188,7 @@ end
 function marshall_srvsvc_NetShareCtr1(NetShareCtr1)
   local i
   local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetShareCtr1()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetShareCtr1()")
 
   if(NetShareCtr1 == nil) then
     result = result .. bin.pack("<I", 0)
@@ -3207,12 +3213,14 @@ function marshall_srvsvc_NetShareCtr1(NetShareCtr1)
     result = result .. marshall_ptr(ALL, marshall_array, {marshall}, marshall) -- array
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetShareCtr1()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetShareCtr1()")
   return result
 end
 
 
----Marshall a NetShareCtr (container) type 2. It is a simple array with the following definition:
+---Marshall a NetShareCtr (container) type 2.
+--
+--It is a simple array with the following definition:
 --
 --<code>
 --    typedef struct {
@@ -3226,7 +3234,7 @@ end
 function marshall_srvsvc_NetShareCtr2(NetShareCtr2)
   local i
   local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetShareCtr2()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetShareCtr2()")
 
   if(NetShareCtr2 == nil) then
     result = result .. bin.pack("<I", 0)
@@ -3252,7 +3260,7 @@ function marshall_srvsvc_NetShareCtr2(NetShareCtr2)
     result = result .. marshall_ptr(ALL, marshall_array, {marshall}, marshall) -- array
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetShareCtr2()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetShareCtr2()")
   return result
 end
 
@@ -3284,7 +3292,7 @@ end
 --@return A string representing the marshalled data, or 'nil' if it couldn't be marshalled.
 function marshall_srvsvc_NetShareCtr(level, data)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetShareCtr()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetShareCtr()")
 
   if(level == 0) then
     result = bin.pack("<IA", level, marshall_ptr(ALL, marshall_srvsvc_NetShareCtr0, {data}, data))
@@ -3293,11 +3301,11 @@ function marshall_srvsvc_NetShareCtr(level, data)
   elseif(level == 2) then
     result = bin.pack("<IA", level, marshall_ptr(ALL, marshall_srvsvc_NetShareCtr2, {data}, data))
   else
-    stdnse.print_debug(1, "MSRPC: ERROR: Script requested an unknown level for srvsvc_NetShareCtr: %d", level)
+    stdnse.debug1("MSRPC: ERROR: Script requested an unknown level for srvsvc_NetShareCtr: %d", level)
     result = nil
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetShareCtr()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetShareCtr()")
   return result
 end
 
@@ -3311,18 +3319,18 @@ end
 function unmarshall_srvsvc_NetShareCtr(data, pos)
   local level
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srv_NetShareCtr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srv_NetShareCtr()")
 
   pos, level = unmarshall_int32(data, pos)
 
   if(level == 0) then
     pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_srvsvc_NetShareCtr0, {})
   else
-    stdnse.print_debug(1, "MSRPC: ERROR: Server returned an unknown level for srvsvc_NetShareCtr: %d", level)
+    stdnse.debug1("MSRPC: ERROR: Server returned an unknown level for srvsvc_NetShareCtr: %d", level)
     pos, result = nil, nil
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srv_NetShareCtr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srv_NetShareCtr()")
   return pos, result
 end
 
@@ -3354,7 +3362,7 @@ end
 function unmarshall_srvsvc_NetShareInfo(data, pos)
   local level
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_NetShareInfo()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_NetShareInfo()")
   pos, level = unmarshall_int32(data, pos)
 
   if(level == 0) then
@@ -3364,11 +3372,11 @@ function unmarshall_srvsvc_NetShareInfo(data, pos)
   elseif(level == 2) then
     pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_struct, {unmarshall_srvsvc_NetShareInfo2, {}})
   else
-    stdnse.print_debug(1, "MSRPC: ERROR: Invalid level returned by NetShareInfo: %d\n", level)
+    stdnse.debug1("MSRPC: ERROR: Invalid level returned by NetShareInfo: %d\n", level)
     pos, result = nil, nil
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_NetShareInfo()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_NetShareInfo()")
   return pos, result
 end
 
@@ -3394,7 +3402,7 @@ end
 --@return A string representing the marshalled data.
 local function marshall_srvsvc_NetSessInfo10(location, client, user, time, idle_time)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetShareInfo10()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetShareInfo10()")
   local client    = marshall_ptr(location, marshall_unicode, {client, true}, client)
   local user      = marshall_ptr(location, marshall_unicode, {user, true}, user)
   local time      = marshall_basetype(location, marshall_int32, {time})
@@ -3402,7 +3410,7 @@ local function marshall_srvsvc_NetSessInfo10(location, client, user, time, idle_
 
   result = bin.pack("<AAAA", client, user, time, idle_time)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetShareInfo10()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetShareInfo10()")
   return result
 end
 
@@ -3420,7 +3428,7 @@ end
 --                anything.
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 local function unmarshall_srvsvc_NetSessInfo10(location, data, pos, result)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_NetSessInfo10()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_NetSessInfo10()")
   if(result == nil) then
     result = {}
   end
@@ -3437,11 +3445,13 @@ local function unmarshall_srvsvc_NetSessInfo10(location, data, pos, result)
     pos, result['user']   = unmarshall_ptr(BODY, data, pos, unmarshall_unicode, {true}, result['user'])
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_NetSessInfo10()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_NetSessInfo10()")
   return pos, result
 end
 
----Marshall a NetSessCtr (session container) type 10. It is a simple array with the following definition:
+---Marshall a NetSessCtr (session container) type 10.
+--
+--It is a simple array with the following definition:
 --
 --<code>
 --    typedef struct {
@@ -3455,7 +3465,7 @@ end
 function marshall_srvsvc_NetSessCtr10(NetSessCtr10)
   local i
   local result = ""
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetSessCtr10()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetSessCtr10()")
 
   if(NetSessCtr10 == nil) then
     result = result .. bin.pack("<I", 0)
@@ -3480,7 +3490,7 @@ function marshall_srvsvc_NetSessCtr10(NetSessCtr10)
     result = result .. marshall_ptr(ALL, marshall_array, {marshall}, marshall) -- array
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetSessCtr10()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetSessCtr10()")
   return result
 end
 
@@ -3492,13 +3502,13 @@ end
 function unmarshall_srvsvc_NetSessCtr10(data, pos)
   local count
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_NetSessCtr10()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_NetSessCtr10()")
 
   pos, count = unmarshall_int32(data, pos)
 
   pos, result['array'] = unmarshall_ptr(ALL, data, pos, unmarshall_array, {count, unmarshall_srvsvc_NetSessInfo10, {}})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_NetSessCtr10()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_NetSessCtr10()")
   return pos, result
 end
 
@@ -3524,16 +3534,16 @@ end
 --@return A string representing the marshalled data.
 function marshall_srvsvc_NetSessCtr(level, data)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_srvsvc_NetShareCtr()")
+  stdnse.debug4("MSRPC: Entering marshall_srvsvc_NetShareCtr()")
 
   if(level == 10) then
     result = bin.pack("<IA", level, marshall_ptr(ALL, marshall_srvsvc_NetSessCtr10, {data}, data))
   else
-    stdnse.print_debug(1, "MSRPC: ERROR: Script requested an unknown level for srvsvc_NetSessCtr")
+    stdnse.debug1("MSRPC: ERROR: Script requested an unknown level for srvsvc_NetSessCtr")
     result = nil
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_srvsvc_NetShareCtr()")
+  stdnse.debug4("MSRPC: Leaving marshall_srvsvc_NetShareCtr()")
   return result
 end
 
@@ -3546,18 +3556,18 @@ end
 function unmarshall_srvsvc_NetSessCtr(data, pos)
   local level
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_NetSessCtr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_NetSessCtr()")
 
   pos, level = bin.unpack("<I", data, pos)
 
   if(level == 10) then
     pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_srvsvc_NetSessCtr10, {})
   else
-    stdnse.print_debug(1, "MSRPC: ERROR: Invalid level returned by NetSessCtr: %d\n", level)
+    stdnse.debug1("MSRPC: ERROR: Invalid level returned by NetSessCtr: %d\n", level)
     pos, result = nil, nil
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_NetSessCtr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_NetSessCtr()")
   return pos, result
 end
 
@@ -3593,7 +3603,7 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_srvsvc_Statistics(data, pos)
   local response = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_Statistics()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_Statistics()")
 
   pos, response['start']          = unmarshall_int32(data, pos)
   pos, response['fopens']         = unmarshall_int32(data, pos)
@@ -3613,7 +3623,7 @@ function unmarshall_srvsvc_Statistics(data, pos)
   pos, response['reqbufneed']     = unmarshall_int32(data, pos)
   pos, response['bigbufneed']     = unmarshall_int32(data, pos)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_Statistics()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_Statistics()")
   return pos, response
 end
 
@@ -3627,11 +3637,11 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_srvsvc_Statistics_ptr(data, pos)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_srvsvc_Statistics_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_srvsvc_Statistics_ptr()")
 
   pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_srvsvc_Statistics, {})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_srvsvc_Statistics_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_srvsvc_Statistics_ptr()")
   return pos, result
 end
 
@@ -3669,11 +3679,11 @@ local samr_ConnectAccessMask_str =
 --        found.
 function marshall_samr_ConnectAccessMask(accessmask)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_samr_ConnectAccessMask()")
+  stdnse.debug4("MSRPC: Entering marshall_samr_ConnectAccessMask()")
 
   result = marshall_Enum32(accessmask, samr_ConnectAccessMask)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_samr_ConnectAccessMask()")
+  stdnse.debug4("MSRPC: Leaving marshall_samr_ConnectAccessMask()")
   return result
 end
 
@@ -3684,26 +3694,26 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_samr_ConnectAccessMask(data, pos)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_ConnectAccessMask()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_ConnectAccessMask()")
 
   pos, result = unmarshall_Enum32(data, pos, samr_ConnectAccessMask)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_ConnectAccessMask()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_ConnectAccessMask()")
   return pos, result
 end
 
 ---Convert a <code>samr_ConnectAccessMask</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function samr_ConnectAccessMask_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering samr_ConnectAccessMask_tostr()")
+  stdnse.debug4("MSRPC: Entering samr_ConnectAccessMask_tostr()")
 
   result = samr_ConnectAccessMask_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving samr_ConnectAccessMask_tostr()")
+  stdnse.debug4("MSRPC: Leaving samr_ConnectAccessMask_tostr()")
   return result
 end
 
@@ -3744,11 +3754,11 @@ local samr_DomainAccessMask_str =
 --        found.
 function marshall_samr_DomainAccessMask(accessmask)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_samr_DomainAccessMask()")
+  stdnse.debug4("MSRPC: Entering marshall_samr_DomainAccessMask()")
 
   result = marshall_Enum32(accessmask, samr_DomainAccessMask)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_samr_DomainAccessMask()")
+  stdnse.debug4("MSRPC: Leaving marshall_samr_DomainAccessMask()")
   return result
 end
 
@@ -3759,26 +3769,26 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_samr_DomainAccessMask(data, pos)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_DomainAccessMask()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_DomainAccessMask()")
 
   pos, result = unmarshall_Enum32(data, pos, samr_DomainAccessMask)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_DomainAccessMask()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_DomainAccessMask()")
   return pos, result
 end
 
 ---Convert a <code>samr_DomainAccessMask</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function samr_DomainAccessMask_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering samr_DomainAccessMask_tostr()")
+  stdnse.debug4("MSRPC: Entering samr_DomainAccessMask_tostr()")
 
   result = samr_DomainAccessMask_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving samr_DomainAccessMask_tostr()")
+  stdnse.debug4("MSRPC: Leaving samr_DomainAccessMask_tostr()")
   return result
 end
 
@@ -3837,11 +3847,11 @@ local samr_AcctFlags_str =
 --        found.
 function marshall_samr_AcctFlags(flags)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_samr_AcctFlags()")
+  stdnse.debug4("MSRPC: Entering marshall_samr_AcctFlags()")
 
   result = marshall_Enum32(flags, samr_AcctFlags)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_samr_AcctFlags()")
+  stdnse.debug4("MSRPC: Leaving marshall_samr_AcctFlags()")
   return result
 end
 
@@ -3852,26 +3862,26 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_samr_AcctFlags(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_AcctFlags()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_AcctFlags()")
 
   pos, str = unmarshall_Enum32_array(data, pos, samr_AcctFlags)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_AcctFlags()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_AcctFlags()")
   return pos, str
 end
 
 ---Convert a <code>samr_AcctFlags</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function samr_AcctFlags_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering samr_AcctFlags_tostr()")
+  stdnse.debug4("MSRPC: Entering samr_AcctFlags_tostr()")
 
   result = samr_AcctFlags_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving samr_AcctFlags_tostr()")
+  stdnse.debug4("MSRPC: Leaving samr_AcctFlags_tostr()")
   return result
 end
 
@@ -3902,11 +3912,11 @@ local samr_PasswordProperties_str =
 --        found.
 function marshall_samr_PasswordProperties(properties)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_samr_PasswordProperties()")
+  stdnse.debug4("MSRPC: Entering marshall_samr_PasswordProperties()")
 
   result = marshall_Enum32(properties, samr_PasswordProperties)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_samr_PasswordProperties()")
+  stdnse.debug4("MSRPC: Leaving marshall_samr_PasswordProperties()")
   return result
 end
 
@@ -3917,31 +3927,31 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_samr_PasswordProperties(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_PasswordProperties()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_PasswordProperties()")
 
   pos, str = unmarshall_Enum32_array(data, pos, samr_PasswordProperties)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_PasswordProperties()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_PasswordProperties()")
   return pos, str
 end
 
 ---Convert a <code>samr_PasswordProperties</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function samr_PasswordProperties_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering samr_PasswordProperties_tostr()")
+  stdnse.debug4("MSRPC: Entering samr_PasswordProperties_tostr()")
 
   result = samr_PasswordProperties_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving samr_PasswordProperties_tostr()")
+  stdnse.debug4("MSRPC: Leaving samr_PasswordProperties_tostr()")
   return result
 end
 
 
----Unmarshall a struct with the following definition:
+---Unmarshall a samr_SamEntry struct
 --
 --<code>
 --    typedef struct {
@@ -3962,7 +3972,7 @@ end
 --                anything.
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 local function unmarshall_samr_SamEntry(location, data, pos, result)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_SamEntry()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_SamEntry()")
   if(result == nil) then
     result = {}
   end
@@ -3977,11 +3987,11 @@ local function unmarshall_samr_SamEntry(location, data, pos, result)
     pos, result['name']      = unmarshall_lsa_String_internal(BODY, data, pos, result['name'])
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_SamEntry()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_SamEntry()")
   return pos, result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a samr_SamArray struct
 --
 --<code>
 --    typedef struct {
@@ -3995,12 +4005,12 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_samr_SamArray(data, pos)
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_SamArray()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_SamArray()")
 
   pos, result['count']   = unmarshall_int32(data, pos)
   pos, result['entries'] = unmarshall_ptr(ALL, data, pos, unmarshall_array, {result['count'], unmarshall_samr_SamEntry, {}})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_SamArray()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_SamArray()")
   return pos, result
 end
 
@@ -4012,15 +4022,15 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_samr_SamArray_ptr(data, pos)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_SamArray_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_SamArray_ptr()")
 
   pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_samr_SamArray, {})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_SamArray_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_SamArray_ptr()")
   return pos, result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a samr_DispEntryGeneral struct
 --
 --<code>
 --    typedef struct {
@@ -4045,7 +4055,7 @@ end
 --                anything.
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 local function unmarshall_samr_DispEntryGeneral(location, data, pos, result)
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_DispEntryGeneral()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_DispEntryGeneral()")
   if(result == nil) then
     result = {}
   end
@@ -4066,11 +4076,11 @@ local function unmarshall_samr_DispEntryGeneral(location, data, pos, result)
     pos, result['full_name']    = unmarshall_lsa_String_internal(BODY, data, pos, result['full_name'])
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_DispEntryGeneral()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_DispEntryGeneral()")
   return pos, result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a samr_DispInfoGeneral struct
 --
 --<code>
 --    typedef struct {
@@ -4084,17 +4094,17 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_samr_DispInfoGeneral(data, pos)
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_DispInfoGeneral()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_DispInfoGeneral()")
 
   pos, result['count']   = unmarshall_int32(data, pos)
   pos, result['entries'] = unmarshall_ptr(ALL, data, pos, unmarshall_array, {result['count'], unmarshall_samr_DispEntryGeneral, {}})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_DispInfoGeneral()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_DispInfoGeneral()")
   return pos, result
 end
 
 
----Unmarshall a struct with the following definition:
+---Unmarshall a samr_DispInfo struct
 --
 --<code>
 --    typedef [switch_type(uint16)] union {
@@ -4113,22 +4123,22 @@ end
 function unmarshall_samr_DispInfo(data, pos)
   local level
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_DispInfo()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_DispInfo()")
 
   pos, level = unmarshall_int16(data, pos)
 
   if(level == 1) then
     pos, result = unmarshall_samr_DispInfoGeneral(data, pos)
   else
-    stdnse.print_debug(1, "MSRPC: ERROR: Server returned an unknown level for samr_DispInfo: %d", level)
+    stdnse.debug1("MSRPC: ERROR: Server returned an unknown level for samr_DispInfo: %d", level)
     pos, result = nil, nil
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_DispInfo()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_DispInfo()")
   return pos, result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a samr_DomInfo1 struct
 --
 --<code>
 --  typedef struct {
@@ -4146,7 +4156,7 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_samr_DomInfo1(data, pos)
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_DomInfo1()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_DomInfo1()")
 
   pos, result['min_password_length']     = unmarshall_int16(data, pos, false)
   pos, result['password_history_length'] = unmarshall_int16(data, pos, false)
@@ -4154,11 +4164,11 @@ function unmarshall_samr_DomInfo1(data, pos)
   pos, result['max_password_age']        = unmarshall_hyper(data, pos)
   pos, result['min_password_age']        = unmarshall_hyper(data, pos)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_DomInfo1()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_DomInfo1()")
   return pos, result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a samr_DomInfo8 struct
 --
 --<code>
 --  typedef struct {
@@ -4172,16 +4182,16 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_samr_DomInfo8(data, pos)
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_DomInfo8()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_DomInfo8()")
 
   pos, result['sequence_num']       = unmarshall_hyper(data, pos)
   pos, result['domain_create_time'] = unmarshall_NTTIME(data, pos)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_DomInfo8()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_DomInfo8()")
   return pos, result
 end
 
----Unmarshall a struct with the following definition:
+---Unmarshall a samr_DomInfo12 struct
 --
 --<code>
 --  typedef struct {
@@ -4196,17 +4206,17 @@ end
 --@return (pos, result) The new position in <code>data</code>, and a table representing the datatype.
 function unmarshall_samr_DomInfo12(data, pos)
   local result = {}
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_DomInfo12()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_DomInfo12()")
 
   pos, result['lockout_duration']  = unmarshall_hyper(data, pos)
   pos, result['lockout_window']    = unmarshall_hyper(data, pos)
   pos, result['lockout_threshold'] = unmarshall_int16(data, pos)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_DomInfo12()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_DomInfo12()")
   return pos, result
 end
 
----Unmarshall a union with the following definition:
+---Unmarshall a samr_DomainInfo union
 --
 --<code>
 --  typedef [switch_type(uint16)] union {
@@ -4232,7 +4242,7 @@ end
 function unmarshall_samr_DomainInfo(data, pos)
   local level
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_DomainInfo()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_DomainInfo()")
 
   pos, level = unmarshall_int16(data, pos)
 
@@ -4243,11 +4253,11 @@ function unmarshall_samr_DomainInfo(data, pos)
   elseif(level == 12) then
     pos, result = unmarshall_samr_DomInfo12(data, pos)
   else
-    stdnse.print_debug(1, "MSRPC: ERROR: Server returned an unknown level for samr_DomainInfo: %d", level)
+    stdnse.debug1("MSRPC: ERROR: Server returned an unknown level for samr_DomainInfo: %d", level)
     pos, result = nil, nil
   end
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_DomainInfo()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_DomainInfo()")
   return pos, result
 end
 
@@ -4260,15 +4270,15 @@ end
 --                <code>nil</code> if there was an error.
 function unmarshall_samr_DomainInfo_ptr(data, pos)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_samr_DomainInfo_ptr()")
+  stdnse.debug4("MSRPC: Entering unmarshall_samr_DomainInfo_ptr()")
 
   pos, result = unmarshall_ptr(ALL, data, pos, unmarshall_samr_DomainInfo, {})
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_samr_DomainInfo_ptr()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_samr_DomainInfo_ptr()")
   return pos, result
 end
 
----Unmarshall a structure with the following definition:
+---Unmarshall a samr_Ids struct
 --
 --<code>
 --    typedef struct {
@@ -4328,11 +4338,11 @@ local svcctl_ControlCode_str =
 --        found.
 function marshall_svcctl_ControlCode(flags)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_svcctl_ControlCode()")
+  stdnse.debug4("MSRPC: Entering marshall_svcctl_ControlCode()")
 
   result = marshall_Enum32(flags, svcctl_ControlCode)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_svcctl_ControlCode()")
+  stdnse.debug4("MSRPC: Leaving marshall_svcctl_ControlCode()")
   return result
 end
 
@@ -4343,26 +4353,26 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_svcctl_ControlCode(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_svcctl_ControlCode()")
+  stdnse.debug4("MSRPC: Entering unmarshall_svcctl_ControlCode()")
 
   pos, str = unmarshall_Enum32_array(data, pos, svcctl_ControlCode)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_svcctl_ControlCode()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_svcctl_ControlCode()")
   return pos, str
 end
 
 ---Convert a <code>svcctl_ControlCode</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function svcctl_ControlCode_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering svcctl_ControlCode_tostr()")
+  stdnse.debug4("MSRPC: Entering svcctl_ControlCode_tostr()")
 
   result = svcctl_ControlCode_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving svcctl_ControlCode_tostr()")
+  stdnse.debug4("MSRPC: Leaving svcctl_ControlCode_tostr()")
   return result
 end
 
@@ -4386,11 +4396,11 @@ local svcctl_Type =
 --        found.
 function marshall_svcctl_Type(flags)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_svcctl_Type()")
+  stdnse.debug4("MSRPC: Entering marshall_svcctl_Type()")
 
   result = marshall_Enum32(flags, svcctl_Type)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_svcctl_Type()")
+  stdnse.debug4("MSRPC: Leaving marshall_svcctl_Type()")
   return result
 end
 
@@ -4401,26 +4411,26 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_svcctl_Type(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_svcctl_Type()")
+  stdnse.debug4("MSRPC: Entering unmarshall_svcctl_Type()")
 
   pos, str = unmarshall_Enum32_array(data, pos, svcctl_Type)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_svcctl_Type()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_svcctl_Type()")
   return pos, str
 end
 
 --[[Convert a <code>svcctl_Type</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function svcctl_Type_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering svcctl_Type_tostr()")
+  stdnse.debug4("MSRPC: Entering svcctl_Type_tostr()")
 
   result = svcctl_Type_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving svcctl_Type_tostr()")
+  stdnse.debug4("MSRPC: Leaving svcctl_Type_tostr()")
   return result
 end]]--
 
@@ -4440,11 +4450,11 @@ local svcctl_State =
 --        found.
 function marshall_svcctl_State(flags)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_svcctl_State()")
+  stdnse.debug4("MSRPC: Entering marshall_svcctl_State()")
 
   result = marshall_Enum32(flags, svcctl_State)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_svcctl_State()")
+  stdnse.debug4("MSRPC: Leaving marshall_svcctl_State()")
   return result
 end
 
@@ -4455,32 +4465,33 @@ end
 --@return (pos, str) The new position, and the string representing the datatype.
 function unmarshall_svcctl_State(data, pos)
   local str
-  stdnse.print_debug(4, "MSRPC: Entering unmarshall_svcctl_State()")
+  stdnse.debug4("MSRPC: Entering unmarshall_svcctl_State()")
 
   pos, str = unmarshall_Enum32_array(data, pos, svcctl_State)
 
-  stdnse.print_debug(4, "MSRPC: Leaving unmarshall_svcctl_State()")
+  stdnse.debug4("MSRPC: Leaving unmarshall_svcctl_State()")
   return pos, str
 end
 
 --[[Convert a <code>svcctl_State</code> value to a string that can be shown to the user. This is
--- based on the <code>_str</table> table.
+-- based on the <code>_str</code> table.
 --
 --@param val The string value (returned by the <code>unmarshall_</code> function) to convert.
 --@return A string suitable for displaying to the user, or <code>nil</code> if it wasn't found.
 function svcctl_State_tostr(val)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering svcctl_State_tostr()")
+  stdnse.debug4("MSRPC: Entering svcctl_State_tostr()")
 
   result = svcctl_State_str[val]
 
-  stdnse.print_debug(4, "MSRPC: Leaving svcctl_State_tostr()")
+  stdnse.debug4("MSRPC: Leaving svcctl_State_tostr()")
   return result
 end]]--
 
 
----Unmarshall a SERVICE_STATUS struct, converting it to a table. The structure is as
--- follows:
+---Unmarshall a SERVICE_STATUS struct, converting it to a table.
+--
+-- The structure is as follows:
 --
 -- <code>
 --    typedef struct {
@@ -4556,11 +4567,11 @@ local atsvc_DaysOfMonth =
 --        found.
 function marshall_atsvc_DaysOfMonth(flags)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_atsvc_DaysOfMonth()")
+  stdnse.debug4("MSRPC: Entering marshall_atsvc_DaysOfMonth()")
 
   result = marshall_Enum32(flags, atsvc_DaysOfMonth)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_atsvc_DaysOfMonth()")
+  stdnse.debug4("MSRPC: Leaving marshall_atsvc_DaysOfMonth()")
   return result
 end
 
@@ -4581,11 +4592,11 @@ local atsvc_Flags =
 --        found.
 function marshall_atsvc_Flags(flags)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_atsvc_Flags()")
+  stdnse.debug4("MSRPC: Entering marshall_atsvc_Flags()")
 
   result = marshall_Enum8(flags, atsvc_Flags, false)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_atsvc_Flags()")
+  stdnse.debug4("MSRPC: Leaving marshall_atsvc_Flags()")
   return result
 end
 
@@ -4608,15 +4619,17 @@ local atsvc_DaysOfWeek =
 --        found.
 function marshall_atsvc_DaysOfWeek(flags)
   local result
-  stdnse.print_debug(4, "MSRPC: Entering marshall_atsvc_DaysOfWeek()")
+  stdnse.debug4("MSRPC: Entering marshall_atsvc_DaysOfWeek()")
 
   result = marshall_Enum8(flags, atsvc_DaysOfWeek, false)
 
-  stdnse.print_debug(4, "MSRPC: Leaving marshall_atsvc_DaysOfWeek()")
+  stdnse.debug4("MSRPC: Leaving marshall_atsvc_DaysOfWeek()")
   return result
 end
 
----Marshall a JobInfo struct. The structure is as follows:
+---Marshall a JobInfo struct.
+--
+--The structure is as follows:
 --
 --<code>
 --    typedef struct {
@@ -4633,14 +4646,12 @@ end
 --               file.
 --@param time The time at which to run the job, in milliseconds from midnight.
 function marshall_atsvc_JobInfo(command, time)
-  local result = ""
-
-  result = result .. marshall_int32(time)                       -- Job time
-  result = result .. marshall_int32(0)                          -- Day of month
-  result = result .. marshall_int8(0, false)                    -- Day of week
-  result = result .. marshall_atsvc_Flags("JOB_NONINTERACTIVE") -- Flags
-  result = result .. marshall_int16(0, false)                   -- Padding
-  result = result .. marshall_unicode_ptr(command, true)        -- Command
+  local result = marshall_int32(time)                       -- Job time
+  .. marshall_int32(0)                          -- Day of month
+  .. marshall_int8(0, false)                    -- Day of week
+  .. marshall_atsvc_Flags("JOB_NONINTERACTIVE") -- Flags
+  .. marshall_int16(0, false)                   -- Padding
+  .. marshall_unicode_ptr(command, true)        -- Command
 
   return result
 end

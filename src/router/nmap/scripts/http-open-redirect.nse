@@ -2,7 +2,6 @@ local http = require "http"
 local httpspider = require "httpspider"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
-local string = require "string"
 local table = require "table"
 local url = require "url"
 
@@ -37,14 +36,16 @@ responds with a http redirect (3XX) to the target.  Risks of open redirects are 
 --
 
 author = "Martin Holst Swende"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "intrusive"}
 
 
 portrule = shortport.http
 
+local redirect_canary = "http://scanme.nmap.org/"
+
 local function dbg(str,...)
-  stdnse.print_debug(2,"http-open-redirect:"..str, ...)
+  stdnse.debug2(str, ...)
 end
 local function dbgt(tbl)
   for k,v in pairs(tbl) do
@@ -74,10 +75,9 @@ local function checkLocationEcho(query, destination)
   local q = url.parse_query(query);
   -- Check the values (and keys) and see if they are reflected in the location header
   for k,v in pairs(q) do
-    local s,f = string.find(destination, v)
-    if s == 1 then
+    if destination:sub(1, #v) == v then
       -- Build a new URL
-      q[k] = "http%3A%2f%2fscanme.nmap.org%2f";
+      q[k] = redirect_canary;
       return url.build_query(q)
     end
   end
@@ -97,7 +97,7 @@ action = function(host, port)
     -- most of them are "legitimate" and should not be reason to abort
     if ( not(status) ) then
       if ( r.err ) then
-        return stdnse.format_output(true, "ERROR: %s", r.reason)
+        return stdnse.format_output(false, r.reason)
       else
         break
       end
@@ -123,7 +123,7 @@ action = function(host, port)
           dbg("Checking potential open redirect: %s:%s%s", host,port,url);
           local testResponse = http.get(host, port, url);
           --dbgt(testResponse)
-          if isRedirect(testResponse.status) and testResponse.header.location == "http://scanme.nmap.org/" then
+          if isRedirect(testResponse.status) and testResponse.header.location == redirect_canary then
             table.insert(results, ("%s://%s:%s%s"):format(parsed.scheme, host, port,url))
           end
         end

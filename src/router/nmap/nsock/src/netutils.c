@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2015 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -28,8 +28,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -54,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: netutils.c 31562 2013-07-28 22:05:05Z fyodor $ */
+/* $Id: netutils.c 34574 2015-06-03 13:01:29Z dmiller $ */
 
 #include "netutils.h"
 #include "error.h"
@@ -185,7 +184,7 @@ static char *get_addr_string(const struct sockaddr_storage *ss, size_t sslen) {
  * In case we have support for UNIX domain sockets, function returns
  * string containing path to UNIX socket if the address family is AF_UNIX,
  * otherwise it returns string containing "<address>:<port>". */
-char *get_peeraddr_string(const msiod *iod) {
+char *get_peeraddr_string(const struct niod *iod) {
   if (iod->peerlen > 0)
     return get_addr_string(&iod->peer, iod->peerlen);
   else
@@ -193,6 +192,6 @@ char *get_peeraddr_string(const msiod *iod) {
 }
 
 /* Get the local bind address string. */
-char *get_localaddr_string(const msiod *iod) {
+char *get_localaddr_string(const struct niod *iod) {
   return get_addr_string(&iod->local, iod->locallen);
 }

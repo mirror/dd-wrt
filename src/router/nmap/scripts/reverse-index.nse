@@ -3,7 +3,9 @@ local stdnse = require "stdnse"
 local table = require "table"
 
 description = [[
-Creates a reverse index at the end of scan output showing which hosts run a particular service.  This is in addition to Nmap's normal output listing the services on each host.
+Creates a reverse index at the end of scan output showing which hosts run a
+particular service.  This is in addition to Nmap's normal output listing the
+services on each host.
 ]]
 
 ---
@@ -27,7 +29,7 @@ Creates a reverse index at the end of scan output showing which hosts run a part
 -- Version 0.1
 -- Created 11/22/2011 - v0.1 - created by Patrik Karlsson
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = { "safe" }
 
 -- the postrule displays the reverse-index once all hosts are scanned

@@ -4,11 +4,11 @@
  * libnetutil, a library that provides network-related functions or        *
  * classes that make it easier to handle things like network interfaces,   *
  * routing tables, raw packet manipulation, etc. The lib was originally    *
- * written for use in the Nmap Security Scanner ( http://nmap.org ).       *
+ * written for use in the Nmap Security Scanner ( https://nmap.org ).       *
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -99,8 +99,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -121,7 +120,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -139,7 +138,7 @@ extern "C" {
 #endif
 
 #include "dnet.h"
-
+#include <nbase.h>
 
 /* It is VERY important to never change the value of these two constants. 
  * Specially, OP_FAILURE should never be positive, as some pieces of code take
@@ -163,8 +162,15 @@ struct abstract_ip_hdr {
   u32 ipid; /* IPv4 IP ID or IPv6 flow label. */
 };
 
-void netutil_fatal(const char *str, ...)
-     __attribute__ ((noreturn))
+#if defined(__GNUC__)
+#define NORETURN __attribute__((noreturn))
+#elif defined(_MSC_VER)
+#define NORETURN __declspec(noreturn)
+#else
+#define NORETURN
+#endif
+
+NORETURN void netutil_fatal(const char *str, ...)
      __attribute__ ((format (printf, 1, 2)));
 
 int netutil_error(const char *str, ...)

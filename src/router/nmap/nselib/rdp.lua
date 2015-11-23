@@ -4,7 +4,7 @@
 --
 --
 -- @author "Patrik Karlsson <patrik@cqure.net>"
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 
 local bin = require("bin")
@@ -68,15 +68,19 @@ Packet = {
     end,
 
     __tostring = function(self)
-      local len = (self.code ~= 0xF0 and #self.data + 1 or 2)
-      local data = bin.pack("CC",
-        len,
-        self.code or 0
-      )
-
-      if ( self.code == 0xF0 ) then
-        data = data .. bin.pack("C", 0x80) -- EOT
+      local len, eot
+      if self.code == 0xF0 then
+        eot = "\x80"
+        len = 2
+      else
+        eot = ""
+        len = #self.data + 1
       end
+      local data = bin.pack("CCA",
+        len,
+        self.code or 0,
+        eot
+      )
 
       return data .. self.data
     end,
@@ -326,7 +330,7 @@ Comm = {
 
     local pos, itut_code = bin.unpack("C", data, 6)
     if ( itut_code == 0xD0 ) then
-      stdnse.print_debug(2, "RDP: Received ConnectionConfirm response")
+      stdnse.debug2("RDP: Received ConnectionConfirm response")
       return true, Response.ConnectionConfirm.parse(data)
     elseif ( itut_code == 0xF0 ) then
       return true, Response.MCSConnectResponse.parse(data)

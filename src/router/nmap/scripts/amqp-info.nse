@@ -34,15 +34,15 @@ See http://www.rabbitmq.com/extensions.html for details on the
 
 author = "Sebastian Dragomir"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"default", "discovery", "safe", "version"}
 
 
-portrule = shortport.port_or_service(5672, "amqp", "tcp", "open")
+portrule = shortport.version_port_or_service(5672, "amqp", "tcp", "open")
 
 action = function(host, port)
-  local cli = amqp.AMQP:new( host.ip, port.number )
+  local cli = amqp.AMQP:new( host, port )
 
   local status, data = cli:connect()
   if not status then return "Unable to open connection: " .. data end

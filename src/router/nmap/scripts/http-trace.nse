@@ -4,7 +4,8 @@ local shortport = require "shortport"
 local stdnse = require "stdnse"
 
 description = [[
-Sends an HTTP TRACE request and shows if the method TRACE is enabled. If debug is enabled, it returns the header fields that were modified in the response.
+Sends an HTTP TRACE request and shows if the method TRACE is enabled. If debug
+is enabled, it returns the header fields that were modified in the response.
 ]]
 
 ---
@@ -25,7 +26,7 @@ Sends an HTTP TRACE request and shows if the method TRACE is enabled. If debug i
 
 author = "Paulino Calderon <calderon@websec.mx>"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"vuln", "discovery", "safe"}
 

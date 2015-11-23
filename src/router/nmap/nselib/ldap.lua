@@ -2,7 +2,7 @@
 -- Library methods for handling LDAP.
 --
 -- @author Patrik Karlsson
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 -- Credit goes out to Martin Swende who provided me with the initial code that got me started writing this.
 --
@@ -108,7 +108,7 @@ tagEncoder['table'] = function(self, val)
   for _, v in ipairs(val) do
     encVal = encVal .. encode(v) -- todo: buffer?
   end
-  local tableType = bin.pack("H", "30")
+  local tableType = "\x30"
   if (val["_snmp"]) then
     tableType = bin.pack("H", val["_snmp"])
   end
@@ -203,7 +203,7 @@ function encodeLDAPOp( appno, isConstructed, data )
   local encoded_str = ""
   local asn1_type = asn1.BERtoInt( asn1.BERCLASS.Application, isConstructed, appno )
 
-  encoded_str = encode( { _ldaptype = bin.pack("A", string.format("%X", asn1_type)), data } )
+  encoded_str = encode( { _ldaptype = string.format("%X", asn1_type), data } )
   return encoded_str
 end
 
@@ -225,7 +225,7 @@ end
 function searchRequest( socket, params )
 
   local searchResEntries = { errorMessage="", resultCode = 0}
-  local catch = function() socket:close() stdnse.print_debug("SearchRequest failed") end
+  local catch = function() socket:close() stdnse.debug1("SearchRequest failed") end
   local try = nmap.new_try(catch)
   local attributes = params.attributes
   local request = encode(params.baseObject)
@@ -343,7 +343,7 @@ end
 -- @return err string containing error message
 function bindRequest( socket, params )
 
-  local catch = function() socket:close() stdnse.print_debug("bindRequest failed") end
+  local catch = function() socket:close() stdnse.debug1("bindRequest failed") end
   local try = nmap.new_try(catch)
   local ldapAuth = encode( { _ldaptype = 80, params.password } )
   local bindReq = encode( params.version ) .. encode( params.username ) .. ldapAuth
@@ -396,15 +396,14 @@ end
 function unbindRequest( socket )
 
   local ldapMsg, packet
-  local catch = function() socket:close() stdnse.print_debug("bindRequest failed") end
+  local catch = function() socket:close() stdnse.debug1("bindRequest failed") end
   local try = nmap.new_try(catch)
 
   local encoder = asn1.ASN1Encoder:new()
   encoder:registerTagEncoders(tagEncoder)
 
   ldapMessageId = ldapMessageId +1
-  ldapMsg = encode( ldapMessageId )
-  ldapMsg = ldapMsg .. encodeLDAPOp( APPNO.UnbindRequest, false, nil)
+  ldapMsg = encode( ldapMessageId ) .. encodeLDAPOp( APPNO.UnbindRequest, false, nil)
   packet = encoder:encodeSeq( ldapMsg )
   try( socket:send( packet ) )
   return true, ""
@@ -513,7 +512,7 @@ function createFilter( filter )
     filter_str = filter_str .. obj .. val
 
   end
-  return encode( { _ldaptype=bin.pack("A", string.format("%X", asn1_type)), filter_str } )
+  return encode( { _ldaptype=string.format("%X", asn1_type), filter_str } )
 end
 
 --- Converts a search result as received from searchRequest to a "result" table

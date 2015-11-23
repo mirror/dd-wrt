@@ -808,7 +808,7 @@ int main(int argc, char *argv[])
 UPDATE CHANNEL %s HAS EXPIRED:\n\
 \n\
 The channel %s has expired and won't receive any more\n\
-updates.  Visit http://nmap.org for a newer Nmap release with \n\
+updates.  Visit https://nmap.org for a newer Nmap release with \n\
 supported updates.\n\
 ", successful_channel, successful_channel);
 	}
@@ -1104,7 +1104,7 @@ static int rename_file(const char *from_filename, const char *to_filename)
 
 	/* Windows rename doesn't remove the destination if it exists. */
 	errno = 0;
-	rc = unlink(to_filename);
+	rc = _unlink(to_filename);
 	if (rc == -1 && errno != ENOENT)
 		return -1;
 

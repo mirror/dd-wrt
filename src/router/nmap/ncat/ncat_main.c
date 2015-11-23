@@ -3,7 +3,7 @@
  * to mode-specific functions.                                             *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -94,8 +94,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -116,11 +115,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_main.c 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: ncat_main.c 35432 2015-11-15 14:08:02Z dmiller $ */
 
 #include "nsock.h"
 #include "ncat.h"
@@ -287,6 +286,7 @@ int main(int argc, char *argv[])
         {"source-port",     required_argument,  NULL,         'p'},
         {"source",          required_argument,  NULL,         's'},
         {"send-only",       no_argument,        &o.sendonly,  1},
+        {"no-shutdown",     no_argument,        &o.noshutdown,1},
         {"broker",          no_argument,        NULL,         0},
         {"chat",            no_argument,        NULL,         0},
         {"talk",            no_argument,        NULL,         0},
@@ -306,12 +306,19 @@ int main(int argc, char *argv[])
         {"proxy-auth",      required_argument,  NULL,         0},
         {"nsock-engine",    required_argument,  NULL,         0},
         {"test",            no_argument,        NULL,         0},
-#ifdef HAVE_OPENSSL
         {"ssl",             no_argument,        &o.ssl,       1},
+#ifdef HAVE_OPENSSL
         {"ssl-cert",        required_argument,  NULL,         0},
         {"ssl-key",         required_argument,  NULL,         0},
         {"ssl-verify",      no_argument,        NULL,         0},
         {"ssl-trustfile",   required_argument,  NULL,         0},
+        {"ssl-ciphers",     required_argument,  NULL,         0},
+#else
+        {"ssl-cert",        optional_argument,  NULL,         0},
+        {"ssl-key",         optional_argument,  NULL,         0},
+        {"ssl-verify",      no_argument,        NULL,         0},
+        {"ssl-trustfile",   optional_argument,  NULL,         0},
+        {"ssl-ciphers",     optional_argument,  NULL,         0},
 #endif
         {0, 0, 0, 0}
     };
@@ -366,20 +373,23 @@ int main(int argc, char *argv[])
             o.execmode = EXEC_PLAIN;
             break;
         case 'g': {
-            char *a = strtok(optarg, ",");
-            do {
+            char *from = optarg;
+            char *a = NULL;
+            while (o.numsrcrtes < 8 && (a = strtok(from, ",")))
+            {
                 union sockaddr_u addr;
                 size_t sslen;
                 int rc;
+                from = NULL;
 
                 rc = resolve(a, 0, &addr.storage, &sslen, AF_INET);
                 if (rc != 0) {
                     bye("Sorry, could not resolve source route hop \"%s\": %s.",
                     a, gai_strerror(rc));
                 }
-                o.srcrtes[o.numsrcrtes] = addr.in.sin_addr;
-            } while (o.numsrcrtes++ <= 8 && (a = strtok(NULL, ",")));
-            if (o.numsrcrtes > 8)
+                o.srcrtes[o.numsrcrtes++] = addr.in.sin_addr;
+            }
+            if (strtok(from, ","))
                 bye("Sorry, you gave too many source route hops.");
             break;
         }
@@ -513,6 +523,21 @@ int main(int argc, char *argv[])
                 /* If they list a trustfile assume they want certificate
                    verification. */
                 o.sslverify = 1;
+            } else if (strcmp(long_options[option_index].name, "ssl-ciphers") == 0) {
+                o.ssl = 1;
+                o.sslciphers = Strdup(optarg);
+            }
+#else
+            else if (strcmp(long_options[option_index].name, "ssl-cert") == 0) {
+                bye("OpenSSL isn't compiled in. The --ssl-cert option cannot be chosen.");
+            } else if (strcmp(long_options[option_index].name, "ssl-key") == 0) {
+                bye("OpenSSL isn't compiled in. The --ssl-key option cannot be chosen.");
+            } else if (strcmp(long_options[option_index].name, "ssl-verify") == 0) {
+                bye("OpenSSL isn't compiled in. The --ssl-verify option cannot be chosen.");
+            } else if (strcmp(long_options[option_index].name, "ssl-trustfile") == 0) {
+                bye("OpenSSL isn't compiled in. The --ssl-trustfile option cannot be chosen.");
+            } else if (strcmp(long_options[option_index].name, "ssl-ciphers") == 0) {
+                bye("OpenSSL isn't compiled in. The --ssl-ciphers option cannot be chosen.");
             }
 #endif
 #ifdef HAVE_LUA
@@ -600,6 +625,7 @@ int main(int argc, char *argv[])
 "      --ssl-key              Specify SSL private key (PEM) for listening\n"
 "      --ssl-verify           Verify trust and domain name of certificates\n"
 "      --ssl-trustfile        PEM file containing trusted SSL certificates\n"
+"      --ssl-ciphers          Cipherlist containing SSL ciphers to use\n"
 #endif
 "      --version              Display Ncat's version information and exit\n"
 "\n"
@@ -614,6 +640,11 @@ int main(int argc, char *argv[])
             bye("Unrecognised option.");
         }
     }
+
+#ifndef HAVE_OPENSSL
+    if (o.ssl)
+        bye("OpenSSL isn't compiled in. The --ssl option cannot be chosen.");
+#endif
 
     if (o.normlog)
         o.normlogfd = ncat_openlog(o.normlog, o.append);

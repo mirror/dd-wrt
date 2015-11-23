@@ -48,23 +48,34 @@ database can specify their own criteria for accepting a page as valid.
 -- @args http-enum.fingerprintfile  Specify a different file to read fingerprints from.
 -- @args http-enum.category         Set to a category (as defined in the fingerprints file). Some options are 'attacks',
 --                                  'database', 'general', 'microsoft', 'printer', etc.
+-- @args http-fingerprints.nikto-db-path Looks at the given path for nikto database.
+--       It then converts the records in nikto's database into our Lua table format
+--       and adds them to our current fingerprints if they don't exist already.
+--       Unfortunately, our current implementation has some limitations:
+--          * It doesn't support records with more than one 'dontmatch' patterns for
+--            a probe.
+--          * It doesn't support logical AND for the 'match' patterns.
+--          * It doesn't support sending additional headers for a probe.
+--       That means, if a nikto fingerprint needs one of the above features, it
+--       won't be loaded. At the time of writing this, 6546 out of the 6573 Nikto
+--       fingerprints are being loaded successfully.  This runtime Nikto fingerprint integration was suggested by Nikto co-author Chris Sullo as described at http://seclists.org/nmap-dev/2013/q4/292
 --
 -- @output
 -- Interesting ports on test.skullsecurity.org (208.81.2.52):
 -- PORT   STATE SERVICE REASON
 -- 80/tcp open  http    syn-ack
--- |  http-enum:
--- |  |  /icons/: Icons and images
--- |  |  /images/: Icons and images
--- |  |  /robots.txt: Robots file
--- |  |  /sw/auth/login.aspx: Citrix WebTop
--- |  |  /images/outlook.jpg: Outlook Web Access
--- |  |  /nfservlets/servlet/SPSRouterServlet/: netForensics
--- |_ |_ /nfservlets/servlet/SPSRouterServlet/: netForensics
+-- | http-enum:
+-- |   /icons/: Icons and images
+-- |   /images/: Icons and images
+-- |   /robots.txt: Robots file
+-- |   /sw/auth/login.aspx: Citrix WebTop
+-- |   /images/outlook.jpg: Outlook Web Access
+-- |   /nfservlets/servlet/SPSRouterServlet/: netForensics
+-- |_  /nfservlets/servlet/SPSRouterServlet/: netForensics
 
 author = "Ron Bowes, Andrew Orr, Rob Nicholls"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "intrusive", "vuln"}
 
@@ -171,7 +182,7 @@ local function get_fingerprints(fingerprint_file, category)
   -- There might be a race condition here, where multiple scripts will read the file and set this variable, but the impact
   -- of that would be minimal (and definitely isn't security)
   if(nmap.registry.http_fingerprints ~= nil) then
-    stdnse.print_debug(1, "http-enum: Using cached HTTP fingerprints")
+    stdnse.debug1("Using cached HTTP fingerprints")
     return nmap.registry.http_fingerprints
   end
 
@@ -181,11 +192,11 @@ local function get_fingerprints(fingerprint_file, category)
     filename_full = fingerprint_file
   end
 
-  stdnse.print_debug("http-enum: Loading fingerprint database: %s", filename_full)
+  stdnse.debug1("Loading fingerprint database: %s", filename_full)
   local env = setmetatable({fingerprints = {}}, {__index = _G})
   local file = loadfile(filename_full, "t", env)
   if(not(file)) then
-    stdnse.print_debug("http-enum: Couldn't load configuration file: %s", filename_full)
+    stdnse.debug1("Couldn't load configuration file: %s", filename_full)
     return false, "Couldn't load fingerprint file: " .. filename_full
   end
 
@@ -353,7 +364,7 @@ action = function(host, port)
   if(not(status)) then
     return stdnse.format_output(false, fingerprints)
   end
-  stdnse.print_debug(1, "http-enum: Loaded %d fingerprints", #fingerprints)
+  stdnse.debug1("Loaded %d fingerprints", #fingerprints)
 
   -- Check what response we get for a 404
   local result, result_404, known_404 = http.identify_404(host, port)
@@ -380,7 +391,7 @@ action = function(host, port)
 
   local results_nopipeline = {}
   -- Loop through the fingerprints
-  stdnse.print_debug(1, "http-enum: Searching for entries under path '%s' (change with 'http-enum.basepath' argument)", basepath)
+  stdnse.debug1("Searching for entries under path '%s' (change with 'http-enum.basepath' argument)", basepath)
   for i = 1, #fingerprints, 1 do
     -- Add each path. The order very much matters here.
     for j = 1, #fingerprints[i].probes, 1 do
@@ -402,7 +413,7 @@ action = function(host, port)
 
   -- Check for http.pipeline error
   if(results == nil) then
-    stdnse.print_debug(1, "http-enum: http.pipeline_go encountered an error")
+    stdnse.debug1("http.pipeline_go encountered an error")
     return stdnse.format_output(false, "http.pipeline_go encountered an error")
   end
 
@@ -475,7 +486,7 @@ action = function(host, port)
             output = output .. " (" .. http.get_status_string(result) .. ")"
           end
 
-          stdnse.print_debug(1, "Found a valid page! %s", output)
+          stdnse.debug1("Found a valid page! %s", output)
 
           table.insert(response, output)
         end

@@ -66,27 +66,27 @@ who contributed!
 -- @output
 -- Clean machine (results printed only if extra verbosity ("-vv")is specified):
 -- Host script results:
--- |  p2p-conficker: Checking for Conficker.C or higher...
--- |  | Check 1 (port 44329/tcp): CLEAN (Couldn't connect)
--- |  | Check 2 (port 33824/tcp): CLEAN (Couldn't connect)
--- |  | Check 3 (port 31380/udp): CLEAN (Failed to receive data)
--- |  | Check 4 (port 52600/udp): CLEAN (Failed to receive data)
--- |_ |_ 0/4 checks: Host is CLEAN or ports are blocked
+-- | p2p-conficker: Checking for Conficker.C or higher...
+-- |   Check 1 (port 44329/tcp): CLEAN (Couldn't connect)
+-- |   Check 2 (port 33824/tcp): CLEAN (Couldn't connect)
+-- |   Check 3 (port 31380/udp): CLEAN (Failed to receive data)
+-- |   Check 4 (port 52600/udp): CLEAN (Failed to receive data)
+-- |_  0/4 checks: Host is CLEAN or ports are blocked
 --
 -- Infected machine (results always printed):
 -- Host script results:
--- |  p2p-conficker: Checking for Conficker.C or higher...
--- |  | Check 1 (port 18707/tcp): INFECTED (Received valid data)
--- |  | Check 2 (port 65273/tcp): INFECTED (Received valid data)
--- |  | Check 3 (port 11722/udp): INFECTED (Received valid data)
--- |  | Check 4 (port 12690/udp): INFECTED (Received valid data)
--- |_ |_ 4/4 checks: Host is likely INFECTED
+-- | p2p-conficker: Checking for Conficker.C or higher...
+-- |   Check 1 (port 18707/tcp): INFECTED (Received valid data)
+-- |   Check 2 (port 65273/tcp): INFECTED (Received valid data)
+-- |   Check 3 (port 11722/udp): INFECTED (Received valid data)
+-- |   Check 4 (port 12690/udp): INFECTED (Received valid data)
+-- |_  4/4 checks: Host is likely INFECTED
 --
 -----------------------------------------------------------------------
 
 author = "Ron Bowes (with research from Symantec Security Response)"
 copyright = "Ron Bowes"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default","safe"}
 
 
@@ -218,7 +218,7 @@ local function prng_generate_ports(ip, seed)
   local i
   local magic = 0x015A4E35
 
-  stdnse.print_debug(1, "Conficker: Generating ports based on ip (0x%08x) and seed (%d)", ip, seed)
+  stdnse.debug1("Conficker: Generating ports based on ip (0x%08x) and seed (%d)", ip, seed)
 
   v1 = -(ip + 1)
   repeat
@@ -274,7 +274,7 @@ local function p2p_checksum(data)
   local pos, i
   local hash = #data
 
-  stdnse.print_debug(2, "Conficker: Calculating checksum for %d-byte buffer", #data)
+  stdnse.debug2("Conficker: Calculating checksum for %d-byte buffer", #data)
 
   -- Get the first character
   pos, i = bin.unpack("<C", data)
@@ -301,7 +301,7 @@ end
 --@return The encrypted (or decrypted) data.
 local function p2p_cipher(packet, key1, key2)
   local i
-  local buf = ""
+  local buf = {}
 
   for i = 1, #packet, 1 do
     -- Do a 64-bit rotate on key1:key2
@@ -311,7 +311,7 @@ local function p2p_cipher(packet, key1, key2)
     local k = bit.band(key1, 0x0FF)
 
     -- Xor the current character and add it to the encrypted buffer
-    buf = buf .. string.char(bit.bxor(string.byte(packet, i), k))
+    buf[i] = string.char(bit.bxor(string.byte(packet, i), k))
 
     -- Update the key with 'k'
     key1 = key1 + k
@@ -323,7 +323,7 @@ local function p2p_cipher(packet, key1, key2)
     end
   end
 
-  return buf
+  return table.concat(buf)
 end
 
 ---Decrypt the packet, verify it, and parse it. This function will fail with an error if the packet can't be
@@ -457,9 +457,7 @@ local function p2p_create_packet(protocol, do_encryption)
   end
 
   -- Add the key and flags that are always present (and skip over the boring stuff)
-  local packet = ""
-  packet = packet .. bin.pack("<II", key1, key2)
-  packet = packet .. bin.pack("<S", flags)
+  local packet = bin.pack("<IIS", key1, key2, flags)
 
   -- Generate the checksum for the packet
   local hash = p2p_checksum(packet)
@@ -470,7 +468,7 @@ local function p2p_create_packet(protocol, do_encryption)
 
   -- Add the length in front if it's TCP
   if(protocol == "tcp") then
-    packet = bin.pack("<SA", #packet, packet)
+    packet = bin.pack("<P", packet)
   end
 
   return true, packet
@@ -607,7 +605,7 @@ action = function(host)
   udp_ports[generated_ports[2]] = true
   udp_ports[generated_ports[4]] = true
 
-  table.insert(response, string.format("Checking for Conficker.C or higher..."))
+  table.insert(response, "Checking for Conficker.C or higher...")
 
   -- Check the TCP ports
   for port in pairs(tcp_ports) do
@@ -635,7 +633,7 @@ action = function(host)
       table.insert(response, string.format("Check %d (port %d/%s): INFECTED (%s)", checks, port, "udp", reason))
       count = count + 1
     else
-      table.insert(response, string.format("| Check %d (port %d/%s): CLEAN (%s)", checks, port, "udp", reason))
+      table.insert(response, string.format("Check %d (port %d/%s): CLEAN (%s)", checks, port, "udp", reason))
     end
   end
 

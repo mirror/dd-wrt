@@ -93,7 +93,7 @@ be disabled using the <code>mssql.scanned-ports-only</code> script argument.
 --    - Added compatibility with changes in mssql.lua
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
 
@@ -112,10 +112,8 @@ local function process_instance( instance )
   local done_dbs = {}
   local db_limit, tbl_limit
 
-  local DB_COUNT = stdnse.get_script_args( {'ms-sql-tables.maxdb', 'mssql-tables.maxdb'} )
-    and tonumber( stdnse.get_script_args( {'ms-sql-tables.maxdb', 'mssql-tables.maxdb'} ) ) or 5
-  local TABLE_COUNT = stdnse.get_script_args( {'ms-sql-tables.maxtables', 'mssql-tables.maxtables' } )
-    and tonumber( stdnse.get_script_args( {'ms-sql-tables.maxtables', 'mssql-tables.maxtables' } ) ) or 2
+  local DB_COUNT = tonumber( stdnse.get_script_args( {'ms-sql-tables.maxdb', 'mssql-tables.maxdb'} ) ) or 5
+  local TABLE_COUNT = tonumber( stdnse.get_script_args( {'ms-sql-tables.maxtables', 'mssql-tables.maxtables' } ) ) or 2
   local keywords_filter = ""
 
   if ( DB_COUNT <= 0 ) then
@@ -129,9 +127,10 @@ local function process_instance( instance )
     tbl_limit = string.format( "TOP %d", TABLE_COUNT )
   end
 
+  local keywords_arg = stdnse.get_script_args( {'ms-sql-tables.keywords', 'mssql-tables.keywords' } )
   -- Build the keyword filter
-  if ( stdnse.get_script_args( {'ms-sql-tables.keywords', 'mssql-tables.keywords' } ) ) then
-    local keywords = stdnse.get_script_args( {'ms-sql-tables.keywords', 'mssql-tables.keywords' } )
+  if keywords_arg then
+    local keywords = keywords_arg
     local tmp_tbl = {}
 
     if( type(keywords) == 'string' ) then
@@ -186,7 +185,7 @@ local function process_instance( instance )
             query = query:format( v[1], v[1], v[1], tbl_limit, v[1], keywords_filter)
             status, tables = helper:Query( query )
             if ( not(status) ) then
-              stdnse.print_debug(tables)
+              stdnse.debug1("%s", tables)
             else
               local item = {}
               item = mssql.Util.FormatOutputTable( tables, true )
@@ -207,8 +206,8 @@ local function process_instance( instance )
     local pos = 1
     local restrict_tbl = {}
 
-    if ( stdnse.get_script_args( {'ms-sql-tables.keywords', 'mssql-tables.keywords' } ) ) then
-      local tmp = stdnse.get_script_args( {'ms-sql-tables.keywords', 'mssql-tables.keywords' } )
+    if keywords_arg then
+      local tmp = keywords_arg
       if ( type(tmp) == 'table' ) then
         tmp = stdnse.strjoin(',', tmp)
       end

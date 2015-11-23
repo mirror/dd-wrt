@@ -21,7 +21,7 @@ Discovers Sybase Anywhere servers on the LAN by sending broadcast discovery mess
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = { "broadcast", "safe" }
 
 prerule = function() return ( nmap.address_family() == "inet") end
@@ -73,14 +73,14 @@ Ping = {
       len = bit.band(len, 0x0000FFFF)
 
       if ( len ~= #self.data ) then
-        stdnse.print_debug(2, "The packet length was reported as %d, expected %d", len, #self.data)
+        stdnse.debug2("The packet length was reported as %d, expected %d", len, #self.data)
         return
       end
 
       local connectionless_tds
       pos, connectionless_tds = bin.unpack("p", self.data, 9)
       if ( connectionless_tds ~= "CONNECTIONLESS_TDS" ) then
-        stdnse.print_debug(2, "Did not find the expected CONNECTIONLESS_TDS header")
+        stdnse.debug2("Did not find the expected CONNECTIONLESS_TDS header")
         return
       end
 
@@ -171,7 +171,7 @@ action = function()
   local status, instances = helper:ping()
 
   if ( not(status) ) then
-    return ("\n  ERROR: %s"):format(instances)
+    return stdnse.format_output(false, instances)
   end
 
   -- if we don't have any instances, silently abort

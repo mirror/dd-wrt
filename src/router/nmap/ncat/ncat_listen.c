@@ -2,7 +2,7 @@
  * ncat_listen.c -- --listen mode.                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -93,8 +93,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -115,11 +114,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_listen.c 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: ncat_listen.c 35435 2015-11-15 14:18:33Z dmiller $ */
 
 #include "ncat.h"
 
@@ -261,6 +260,22 @@ static int ncat_listen_stream(int proto)
         setup_ssl_listen();
 #endif
 
+/* Not sure if this problem exists on Windows, but fcntl and /dev/null don't */
+#ifndef WIN32
+    /* Check whether stdin is closed. Because we treat this fd specially, we
+     * can't risk it being reopened for an incoming connection, so we'll hold
+     * it open instead. */
+    if (fcntl(STDIN_FILENO, F_GETFD) == -1 && errno == EBADF) {
+      logdebug("stdin is closed, attempting to reserve STDIN_FILENO\n");
+      rc = open("/dev/null", O_RDONLY);
+      if (rc >= 0 && rc != STDIN_FILENO) {
+        /* Oh well, we tried */
+        logdebug("Couldn't reserve STDIN_FILENO\n");
+        close(rc);
+      }
+    }
+#endif
+
     /* We need a list of fds to keep current fdmax. The second parameter is a
        number added to the supplied connection limit, that will compensate
        maxfds for the added by default listen and stdin sockets. */
@@ -355,7 +370,6 @@ static int ncat_listen_stream(int proto)
                 case NCAT_SSL_HANDSHAKE_COMPLETED:
                     /* Clear from sslpending_fds once ssl is established */
                     FD_CLR(i, &sslpending_fds);
-                    rm_fd(&client_fdlist, i);
                     post_handle_connection(*fdi);
                     break;
                 case NCAT_SSL_HANDSHAKE_PENDING_WRITE:
@@ -395,7 +409,7 @@ static int ncat_listen_stream(int proto)
                                receiving anything, we can quit here. */
                             return 0;
                         }
-                        shutdown_sockets(SHUT_WR);
+                        if (!o.noshutdown) shutdown_sockets(SHUT_WR);
                     }
                     if (rc < 0)
                         return 1;
@@ -530,6 +544,10 @@ static void post_handle_connection(struct fdinfo sinfo)
             /* add to our lists */
             FD_SET(sinfo.fd, &master_readfds);
             /* add it to our list of fds for maintaining maxfd */
+#ifdef HAVE_OPENSSL
+            /* Don't add it twice (see handle_connection above) */
+            if (!o.ssl)
+#endif
             if (add_fdinfo(&client_fdlist, &sinfo) < 0)
                 bye("add_fdinfo() failed.");
         }
@@ -669,6 +687,22 @@ static int ncat_listen_dgram(int proto)
     /* Ignore the SIGPIPE that occurs when a client disconnects suddenly and we
        send data to it before noticing. */
     Signal(SIGPIPE, SIG_IGN);
+#endif
+
+/* Not sure if this problem exists on Windows, but fcntl and /dev/null don't */
+#ifndef WIN32
+    /* Check whether stdin is closed. Because we treat this fd specially, we
+     * can't risk it being reopened for an incoming connection, so we'll hold
+     * it open instead. */
+    if (fcntl(STDIN_FILENO, F_GETFD) == -1 && errno == EBADF) {
+      logdebug("stdin is closed, attempting to reserve STDIN_FILENO\n");
+      i = open("/dev/null", O_RDONLY);
+      if (i >= 0 && i != STDIN_FILENO) {
+        /* Oh well, we tried */
+        logdebug("Couldn't reserve STDIN_FILENO\n");
+        close(i);
+      }
+    }
 #endif
 
     /* set for selecting udp listening sockets */
@@ -856,11 +890,16 @@ static int ncat_listen_dgram(int proto)
 
             if (FD_ISSET(STDIN_FILENO, &fds)) {
                 nbytes = Read(STDIN_FILENO, buf, sizeof(buf));
-                if (nbytes < 0) {
-                    loguser("%s.\n", strerror(errno));
-                    return 1;
-                } else if (nbytes == 0) {
-                    return 0;
+                if (nbytes <= 0) {
+                    if (nbytes < 0 && o.verbose) {
+                        logdebug("Error reading from stdin: %s\n", strerror(errno));
+                    } else if (nbytes == 0 && o.debug) {
+                        logdebug("EOF on stdin\n");
+                    }
+                    FD_CLR(STDIN_FILENO, &read_fds);
+                    if (nbytes < 0)
+                        return 1;
+                    continue;
                 }
                 if (o.crlf)
                     fix_line_endings((char *) buf, &nbytes, &tempbuf, &crlf_state);
