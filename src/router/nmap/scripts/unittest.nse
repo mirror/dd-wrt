@@ -6,6 +6,9 @@ Runs unit tests on all NSE libraries.
 ]]
 
 ---
+-- @args unittest.run Run tests. Causes <code>unittest.testing()</code> to
+--                    return true.
+--
 -- @args unittest.tests Run tests from only these libraries (defaults to all)
 --
 -- @usage
@@ -18,7 +21,7 @@ Runs unit tests on all NSE libraries.
 
 author = "Daniel Miller"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"safe"}
 

@@ -2,7 +2,6 @@ local bin = require "bin"
 local http = require "http"
 local nmap = require "nmap"
 local os = require "os"
-local package = require "package"
 local stdnse = require "stdnse"
 local tab = require "tab"
 local table = require "table"
@@ -267,7 +266,7 @@ IPP = {
         end
 
         if ( not(group) ) then
-          stdnse.print_debug(2, "Unexpected tag: %d", tag)
+          stdnse.debug2("Unexpected tag: %d", tag)
           return
         end
 

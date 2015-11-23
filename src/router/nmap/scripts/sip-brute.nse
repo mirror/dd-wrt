@@ -6,7 +6,8 @@ local sip = require "sip"
 local stdnse = require "stdnse"
 
 description = [[
-Performs brute force password auditing against Session Initiation Protocol (SIP - http://en.wikipedia.org/wiki/Session_Initiation_Protocol) accounts.  This protocol is most commonly associated with VoIP sessions.
+Performs brute force password auditing against Session Initiation Protocol
+(SIP) accounts. This protocol is most commonly associated with VoIP sessions.
 ]]
 
 ---
@@ -25,7 +26,7 @@ Performs brute force password auditing against Session Initiation Protocol (SIP 
 -- Created 04/03/2011 - v0.1 - created by Patrik Karlsson <patrik@cqure.net>
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -65,7 +66,7 @@ Driver = {
       end
       return false, brute.Error:new( "Incorrect password" )
     end
-    return true, brute.Account:new(username, password, creds.State.VALID)
+    return true, creds.Account:new(username, password, creds.State.VALID)
   end,
 
   disconnect = function(self) return self.helper:close() end,
@@ -81,7 +82,7 @@ local function checkBadUser(host, port)
   local pass = "badpass-" .. math.random(10000)
   local helper = sip.Helper:new(host, port, { expires = 0 })
 
-  stdnse.print_debug(2, "Checking bad user: %s/%s", user, pass)
+  stdnse.debug2("Checking bad user: %s/%s", user, pass)
   local status, err = helper:connect()
   if ( not(status) ) then return false, "ERROR: Failed to connect" end
 

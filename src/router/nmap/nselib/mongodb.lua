@@ -2,7 +2,7 @@
 -- Library methods for handling MongoDB, creating and parsing packets.
 --
 -- @author Martin Holst Swende
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 -- Version 0.2
 --
@@ -28,11 +28,11 @@ local arg_DB = stdnse.get_script_args("mongodb.db")
 -- Some lazy shortcuts
 
 local function dbg(str,...)
-  stdnse.print_debug(3, "MngoDb:"..str, ...)
+  stdnse.debug3("MngoDb:"..str, ...)
 end
---local dbg =stdnse.print_debug
+--local dbg =stdnse.debug1
 
-local err =stdnse.print_debug
+local err =stdnse.debug1
 
 ----------------------------------------------------------------------
 -- First of all comes a Bson parsing library. This can easily be moved out into a separate library should other
@@ -41,13 +41,13 @@ local err =stdnse.print_debug
 -- Library methods for handling the BSON format
 --
 -- For more documentation about the BSON format,
----and more details about it's implementations, check out the
+---and more details about its implementations, check out the
 -- python BSON implementation which is available at
 -- http://github.com/mongodb/mongo-python-driver/blob/master/pymongo/bson.py
 -- and licensed under the Apache License, Version 2.0 http://www.apache.org/licenses/LICENSE-2.0)
 --
 -- @author Martin Holst Swende
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 -- Version 0.1
 
@@ -55,7 +55,7 @@ local err =stdnse.print_debug
 --module("bson", package.seeall)
 --require("bin")
 local function dbg_err(str,...)
-  stdnse.print_debug("Bson-ERR:"..str, ...)
+  stdnse.debug1("Bson-ERR:"..str, ...)
 end
 --local err =stdnse.log_error
 
@@ -88,16 +88,16 @@ local function _element_to_bson(key, value)
   if type(value) == 'string' then
     local cstring = bin.pack("z",value) -- null-terminated string
     local length = bin.pack("<i", cstring:len())
-    local op = bin.pack('H','02')
+    local op = "\x02"
     return true, op .. name .. length .. cstring
   elseif type(value) =='table' then
-    return true, bin.pack('H','02') .. name .. toBson(value)
+    return true, "\x02" .. name .. toBson(value)
   elseif type(value)== 'boolean' then
-    return true, bin.pack('H','08') + name + bin.pack('H',value and '01' or '00')
+    return true, "\x08" .. name .. (value and '\x01' or '\0')
   elseif type(value) == 'number' then
-    --return bin.pack('H','10').. name .. bin.pack("<i", value)
+    --return "\x10" .. name .. bin.pack("<i", value)
     -- Use 01 - double for - works better than 10
-    return true, bin.pack('H','01') .. name .. bin.pack("<d", value)
+    return true, '\x01' .. name .. bin.pack("<d", value)
   end
 
   local _ = ("cannot convert value of type %s to bson"):format(type(value))
@@ -140,7 +140,7 @@ function toBson(dict)
   end
   dbg("Packet length is %d",length)
   --Final pack
-  return true, bin.pack("I", length) .. elements .. bin.pack('H',"00")
+  return true, bin.pack("I", length) .. elements .. "\0"
 end
 
 -- Reads a null-terminated string. If length is supplied, it is just cut
@@ -151,7 +151,7 @@ end
 --@return the remaining data (*without* null-char)
 local function get_c_string(data,length)
   if not length then
-    local index = data:find(string.char(0))
+    local index = data:find('\0')
     if index == nil then
       error({code="C-string did not contain NULL char"})
     end
@@ -558,7 +558,7 @@ function query(socket, data)
   --Create an error handler
   local catch = function()
     socket:close()
-    stdnse.print_debug("Query failed")
+    stdnse.debug1("Query failed")
   end
   local try = nmap.new_try(catch)
 

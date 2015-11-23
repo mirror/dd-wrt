@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,11 +116,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: portlist.h 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: portlist.h 35347 2015-10-26 16:16:02Z dmiller $ */
 
 #ifndef PORTLIST_H
 #define PORTLIST_H
@@ -132,6 +131,8 @@
 #endif
 
 #include "portreasons.h"
+
+#include <vector>
 
 /* port states */
 #define PORT_UNKNOWN 0
@@ -216,7 +217,7 @@ class Port {
 
  private:
   /* This is allocated only on demand by PortList::setServiceProbeResults
-     Pto save memory for the many closed or filtered ports that don't need it. */
+     to save memory for the many closed or filtered ports that don't need it. */
   serviceDeductions *service;
 };
 
@@ -247,7 +248,7 @@ class PortList {
   int forgetPort(u16 portno, u8 protocol);
   bool portIsDefault(u16 portno, u8 protocol);
   /* Saves an identification string for the target containing these
-     ports (an IP addrss might be a good example, but set what you
+     ports (an IP address might be a good example, but set what you
      want).  Only used when printing new port updates.  Optional.  A
      copy is made. */
   void setIdStr(const char *id);
@@ -320,6 +321,9 @@ class PortList {
   int numPorts() const;
   bool hasOpenPorts() const;
 
+  /* Returns true if service scan is done and portno is found to be tcpwrapped, false otherwise */
+  bool isTCPwrapped(u16 portno) const;
+
  private:
   void mapPort(u16 *portno, u8 *protocol) const;
   /* Get Port structure from PortList structure.*/
@@ -346,3 +350,4 @@ class PortList {
 };
 
 #endif
+

@@ -10,6 +10,7 @@ extern "C" {
 #include "nmap.h"
 #include "nmap_error.h"
 #include "NmapOps.h"
+#include "FingerPrintResults.h"
 #include "Target.h"
 #include "TargetGroup.h"
 #include "portlist.h"
@@ -70,6 +71,7 @@ void set_portinfo (lua_State *L, const Target *target, const Port *port)
   nseU_setsfield(L, -1, "protocol", IPPROTO2STR(port->proto));
   nseU_setsfield(L, -1, "state", statenum2str(port->state));
   nseU_setsfield(L, -1, "reason", reason_str(port->reason.reason_id, 1));
+  nseU_setnfield(L, -1, "reason_ttl", port->reason.ttl);
   lua_newtable(L);
   set_version(L, &sd);
   lua_setfield(L, -2, "version");
@@ -150,6 +152,9 @@ void set_hostinfo(lua_State *L, Target *currenths) {
   nseU_setsfield(L, -1, "ip", currenths->targetipstr());
   nseU_setsfield(L, -1, "name", currenths->HostName());
   nseU_setsfield(L, -1, "targetname", currenths->TargetName());
+  nseU_setsfield(L, -1, "reason", reason_str(currenths->reason.reason_id, SINGULAR));
+  nseU_setnfield(L, -1, "reason_ttl", currenths->reason.ttl);
+
   if (currenths->directlyConnectedOrUnset() != -1)
     nseU_setbfield(L, -1, "directly_connected", currenths->directlyConnected());
   if (currenths->MACAddress())
@@ -484,7 +489,7 @@ static int l_get_port_state (lua_State *L)
 }
 
 /* this function must be used by version category scripts or any other
- * lua code to check if a given port with it's protocol are in the
+ * lua code to check if a given port with its protocol are in the
  * exclude directive found in the nmap-service-probes file.
  * */
 static int l_port_is_excluded (lua_State *L)
@@ -568,6 +573,7 @@ static int l_set_port_version (lua_State *L)
     *hostname       = (lua_getfield(L, 4, "hostname"),   lua_tostring(L, -1)),
     *ostype         = (lua_getfield(L, 4, "ostype"),     lua_tostring(L, -1)),
     *devicetype     = (lua_getfield(L, 4, "devicetype"), lua_tostring(L, -1)),
+    *service_fp     = (lua_getfield(L, 4, "service_fp"), lua_tostring(L, -1)),
     *service_tunnel = (lua_getfield(L, 4, "service_tunnel"),
                                                          lua_tostring(L, -1));
   if (service_tunnel == NULL || strcmp(service_tunnel, "none") == 0)
@@ -590,7 +596,8 @@ static int l_set_port_version (lua_State *L)
   target->ports.setServiceProbeResults(p->portno, p->proto,
       probestate, name, tunnel, product,
       version, extrainfo, hostname, ostype, devicetype,
-      (cpe.size() > 0) ? &cpe : NULL, NULL);
+      (cpe.size() > 0) ? &cpe : NULL,
+      probestate==PROBESTATE_FINISHED_HARDMATCHED ? NULL : service_fp);
   return 0;
 }
 
@@ -631,6 +638,50 @@ static int l_new_try (lua_State *L)
 {
   lua_settop(L, 1);
   lua_pushcclosure(L, new_try_finalize, 1);
+  return 1;
+}
+
+static int l_get_version_intensity (lua_State *L)
+{
+  static int intensity = -1;
+
+  const int max_intensity = 9;
+
+  bool selected_by_name;
+  nse_selectedbyname(L);
+  selected_by_name = lua_toboolean(L, -1);
+  lua_pop(L,1);
+
+  if (selected_by_name) {
+    lua_pushnumber(L, max_intensity);
+    return 1;
+  }
+
+  if (intensity < 0) {
+    int is_script_intensity_set;
+    int script_intensity;
+
+    lua_getglobal(L, "nmap");
+    lua_getfield(L, -1, "registry");
+    lua_getfield(L, -1, "args");
+    lua_getfield(L, -1, "script-intensity");
+
+    script_intensity = lua_tointegerx(L, lua_gettop(L), &is_script_intensity_set);
+
+    lua_pop(L, 4);
+
+    if (is_script_intensity_set) {
+      if (script_intensity < 0 || script_intensity > 9)
+        error("Warning: Valid values of script arg script-intensity are between "
+              "0 and 9. Using %d nevertheless.\n", script_intensity);
+      intensity = script_intensity;
+    } else {
+      intensity = o.version_intensity;
+    }
+  }
+
+  lua_pushnumber(L, intensity);
+
   return 1;
 }
 
@@ -912,6 +963,7 @@ int luaopen_nmap (lua_State *L)
     {"clock", l_clock},
     {"log_write", l_log_write},
     {"new_try", l_new_try},
+    {"version_intensity", l_get_version_intensity},
     {"verbosity", l_get_verbosity},
     {"debugging", l_get_debugging},
     {"have_ssl", l_get_have_ssl},

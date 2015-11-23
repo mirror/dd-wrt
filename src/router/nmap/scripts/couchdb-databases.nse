@@ -33,14 +33,12 @@ http://wiki.apache.org/couchdb/HTTP_database_API.
 -- TODO : Authentication not implemented
 
 author = "Martin Holst Swende"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
 portrule = shortport.port_or_service({5984})
 -- Some lazy shortcuts
-local function dbg(str,...)
-  stdnse.print_debug("couchdb-get-tables:"..str, ...)
-end
+local dbg = stdnse.debug1
 
 local DISCARD = {}
 --- Removes uninteresting data from the table

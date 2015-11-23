@@ -20,10 +20,6 @@
  *
  *  Optimization module for tcpdump intermediate representation.
  */
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/libpcap/optimize.c,v 1.91 2008-01-02 04:16:46 guy Exp $ (LBL)";
-#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -112,51 +108,9 @@ static int cur_mark;
 static void opt_init(struct block *);
 static void opt_cleanup(void);
 
-static void make_marks(struct block *);
-static void mark_code(struct block *);
-
 static void intern_blocks(struct block *);
 
-static int eq_slist(struct slist *, struct slist *);
-
-static void find_levels_r(struct block *);
-
-static void find_levels(struct block *);
-static void find_dom(struct block *);
-static void propedom(struct edge *);
-static void find_edom(struct block *);
-static void find_closure(struct block *);
-static int atomuse(struct stmt *);
-static int atomdef(struct stmt *);
-static void compute_local_ud(struct block *);
-static void find_ud(struct block *);
-static void init_val(void);
-static int F(int, int, int);
-static inline void vstore(struct stmt *, int *, int, int);
-static void opt_blk(struct block *, int);
-static int use_conflict(struct block *, struct block *);
-static void opt_j(struct edge *);
-static void or_pullup(struct block *);
-static void and_pullup(struct block *);
-static void opt_blks(struct block *, int);
-static inline void link_inedge(struct edge *, struct block *);
 static void find_inedges(struct block *);
-static void opt_root(struct block **);
-static void opt_loop(struct block *, int);
-static void fold_op(struct stmt *, int, int);
-static inline struct slist *this_op(struct slist *);
-static void opt_not(struct block *);
-static void opt_peep(struct block *);
-static void opt_stmt(struct stmt *, int[], int);
-static void deadstmt(struct stmt *, struct stmt *[]);
-static void opt_deadstores(struct block *);
-static struct block *fold_edge(struct block *, struct edge *);
-static inline int eq_blk(struct block *, struct block *);
-static int slength(struct slist *);
-static int count_blocks(struct block *);
-static void number_blks_r(struct block *);
-static int count_stmts(struct block *);
-static int convert_code_r(struct block *);
 #ifdef BDEBUG
 static void opt_dump(struct block *);
 #endif
@@ -232,8 +186,7 @@ static uset all_edge_sets;
 #endif
 
 static void
-find_levels_r(b)
-	struct block *b;
+find_levels_r(struct block *b)
 {
 	int level;
 
@@ -261,8 +214,7 @@ find_levels_r(b)
  * with the 'link' field of the struct block.
  */
 static void
-find_levels(root)
-	struct block *root;
+find_levels(struct block *root)
 {
 	memset((char *)levels, 0, n_blocks * sizeof(*levels));
 	unMarkAll();
@@ -274,8 +226,7 @@ find_levels(root)
  * Assumes graph has been leveled.
  */
 static void
-find_dom(root)
-	struct block *root;
+find_dom(struct block *root)
 {
 	int i;
 	struct block *b;
@@ -305,8 +256,7 @@ find_dom(root)
 }
 
 static void
-propedom(ep)
-	struct edge *ep;
+propedom(struct edge *ep)
 {
 	SET_INSERT(ep->edom, ep->id);
 	if (ep->succ) {
@@ -320,8 +270,7 @@ propedom(ep)
  * Assumes graph has been leveled and predecessors established.
  */
 static void
-find_edom(root)
-	struct block *root;
+find_edom(struct block *root)
 {
 	int i;
 	uset x;
@@ -350,8 +299,7 @@ find_edom(root)
  * Assumes graph has been leveled.
  */
 static void
-find_closure(root)
-	struct block *root;
+find_closure(struct block *root)
 {
 	int i;
 	struct block *b;
@@ -381,8 +329,7 @@ find_closure(root)
  * The implementation should probably change to an array access.
  */
 static int
-atomuse(s)
-	struct stmt *s;
+atomuse(struct stmt *s)
 {
 	register int c = s->code;
 
@@ -427,8 +374,7 @@ atomuse(s)
  * The implementation should probably change to an array access.
  */
 static int
-atomdef(s)
-	struct stmt *s;
+atomdef(struct stmt *s)
 {
 	if (s->code == NOP)
 		return -1;
@@ -464,8 +410,7 @@ atomdef(s)
  * register by a predecessor block of this block.
  */
 static void
-compute_local_ud(b)
-	struct block *b;
+compute_local_ud(struct block *b)
 {
 	struct slist *s;
 	atomset def = 0, use = 0, kill = 0;
@@ -526,8 +471,7 @@ compute_local_ud(b)
  * Assume graph is already leveled.
  */
 static void
-find_ud(root)
-	struct block *root;
+find_ud(struct block *root)
 {
 	int i, maxlevel;
 	struct block *p;
@@ -582,7 +526,7 @@ struct valnode *vnode_base;
 struct valnode *next_vnode;
 
 static void
-init_val()
+init_val(void)
 {
 	curval = 0;
 	next_vnode = vnode_base;
@@ -592,9 +536,7 @@ init_val()
 
 /* Because we really don't have an IR, this stuff is a little messy. */
 static int
-F(code, v0, v1)
-	int code;
-	int v0, v1;
+F(int code, int v0, int v1)
 {
 	u_int hash;
 	int val;
@@ -625,11 +567,7 @@ F(code, v0, v1)
 }
 
 static inline void
-vstore(s, valp, newval, alter)
-	struct stmt *s;
-	int *valp;
-	int newval;
-	int alter;
+vstore(struct stmt *s, int *valp, int newval, int alter)
 {
 	if (alter && *valp == newval)
 		s->code = NOP;
@@ -637,10 +575,12 @@ vstore(s, valp, newval, alter)
 		*valp = newval;
 }
 
+/*
+ * Do constant-folding on binary operators.
+ * (Unary operators are handled elsewhere.)
+ */
 static void
-fold_op(s, v0, v1)
-	struct stmt *s;
-	int v0, v1;
+fold_op(struct stmt *s, int v0, int v1)
 {
 	bpf_u_int32 a, b;
 
@@ -666,6 +606,12 @@ fold_op(s, v0, v1)
 		a /= b;
 		break;
 
+	case BPF_MOD:
+		if (b == 0)
+			bpf_error("modulus by zero");
+		a %= b;
+		break;
+
 	case BPF_AND:
 		a &= b;
 		break;
@@ -674,16 +620,16 @@ fold_op(s, v0, v1)
 		a |= b;
 		break;
 
+	case BPF_XOR:
+		a ^= b;
+		break;
+
 	case BPF_LSH:
 		a <<= b;
 		break;
 
 	case BPF_RSH:
 		a >>= b;
-		break;
-
-	case BPF_NEG:
-		a = -a;
 		break;
 
 	default:
@@ -695,8 +641,7 @@ fold_op(s, v0, v1)
 }
 
 static inline struct slist *
-this_op(s)
-	struct slist *s;
+this_op(struct slist *s)
 {
 	while (s != 0 && s->s.code == NOP)
 		s = s->next;
@@ -704,8 +649,7 @@ this_op(s)
 }
 
 static void
-opt_not(b)
-	struct block *b;
+opt_not(struct block *b)
 {
 	struct block *tmp = JT(b);
 
@@ -714,8 +658,7 @@ opt_not(b)
 }
 
 static void
-opt_peep(b)
-	struct block *b;
+opt_peep(struct block *b)
 {
 	struct slist *s;
 	struct slist *next, *last;
@@ -978,10 +921,7 @@ opt_peep(b)
  * evaluation and code transformations weren't folded together.
  */
 static void
-opt_stmt(s, val, alter)
-	struct stmt *s;
-	int val[];
-	int alter;
+opt_stmt(struct stmt *s, int val[], int alter)
 {
 	int op;
 	int v;
@@ -1044,8 +984,10 @@ opt_stmt(s, val, alter)
 	case BPF_ALU|BPF_SUB|BPF_K:
 	case BPF_ALU|BPF_MUL|BPF_K:
 	case BPF_ALU|BPF_DIV|BPF_K:
+	case BPF_ALU|BPF_MOD|BPF_K:
 	case BPF_ALU|BPF_AND|BPF_K:
 	case BPF_ALU|BPF_OR|BPF_K:
+	case BPF_ALU|BPF_XOR|BPF_K:
 	case BPF_ALU|BPF_LSH|BPF_K:
 	case BPF_ALU|BPF_RSH|BPF_K:
 		op = BPF_OP(s->code);
@@ -1056,7 +998,7 @@ opt_stmt(s, val, alter)
 				 * fixup the generated math code */
 				if (op == BPF_ADD ||
 				    op == BPF_LSH || op == BPF_RSH ||
-				    op == BPF_OR) {
+				    op == BPF_OR || op == BPF_XOR) {
 					s->code = NOP;
 					break;
 				}
@@ -1079,8 +1021,10 @@ opt_stmt(s, val, alter)
 	case BPF_ALU|BPF_SUB|BPF_X:
 	case BPF_ALU|BPF_MUL|BPF_X:
 	case BPF_ALU|BPF_DIV|BPF_X:
+	case BPF_ALU|BPF_MOD|BPF_X:
 	case BPF_ALU|BPF_AND|BPF_X:
 	case BPF_ALU|BPF_OR|BPF_X:
+	case BPF_ALU|BPF_XOR|BPF_X:
 	case BPF_ALU|BPF_LSH|BPF_X:
 	case BPF_ALU|BPF_RSH|BPF_X:
 		op = BPF_OP(s->code);
@@ -1107,12 +1051,12 @@ opt_stmt(s, val, alter)
 		 */
 		if (alter && vmap[val[A_ATOM]].is_const
 		    && vmap[val[A_ATOM]].const_val == 0) {
-			if (op == BPF_ADD || op == BPF_OR) {
+			if (op == BPF_ADD || op == BPF_OR || op == BPF_XOR) {
 				s->code = BPF_MISC|BPF_TXA;
 				vstore(s, &val[A_ATOM], val[X_ATOM], alter);
 				break;
 			}
-			else if (op == BPF_MUL || op == BPF_DIV ||
+			else if (op == BPF_MUL || op == BPF_DIV || op == BPF_MOD ||
 				 op == BPF_AND || op == BPF_LSH || op == BPF_RSH) {
 				s->code = BPF_LD|BPF_IMM;
 				s->k = 0;
@@ -1166,9 +1110,7 @@ opt_stmt(s, val, alter)
 }
 
 static void
-deadstmt(s, last)
-	register struct stmt *s;
-	register struct stmt *last[];
+deadstmt(register struct stmt *s, register struct stmt *last[])
 {
 	register int atom;
 
@@ -1192,8 +1134,7 @@ deadstmt(s, last)
 }
 
 static void
-opt_deadstores(b)
-	register struct block *b;
+opt_deadstores(register struct block *b)
 {
 	register struct slist *s;
 	register int atom;
@@ -1213,9 +1154,7 @@ opt_deadstores(b)
 }
 
 static void
-opt_blk(b, do_stmts)
-	struct block *b;
-	int do_stmts;
+opt_blk(struct block *b, int do_stmts)
 {
 	struct slist *s;
 	struct edge *p;
@@ -1319,8 +1258,7 @@ opt_blk(b, do_stmts)
  * from 'b'.
  */
 static int
-use_conflict(b, succ)
-	struct block *b, *succ;
+use_conflict(struct block *b, struct block *succ)
 {
 	int atom;
 	atomset use = succ->out_use;
@@ -1336,9 +1274,7 @@ use_conflict(b, succ)
 }
 
 static struct block *
-fold_edge(child, ep)
-	struct block *child;
-	struct edge *ep;
+fold_edge(struct block *child, struct edge *ep)
 {
 	int sense;
 	int aval0, aval1, oval0, oval1;
@@ -1390,8 +1326,7 @@ fold_edge(child, ep)
 }
 
 static void
-opt_j(ep)
-	struct edge *ep;
+opt_j(struct edge *ep)
 {
 	register int i, k;
 	register struct block *target;
@@ -1446,8 +1381,7 @@ opt_j(ep)
 
 
 static void
-or_pullup(b)
-	struct block *b;
+or_pullup(struct block *b)
 {
 	int val, at_top;
 	struct block *pull;
@@ -1539,8 +1473,7 @@ or_pullup(b)
 }
 
 static void
-and_pullup(b)
-	struct block *b;
+and_pullup(struct block *b)
 {
 	int val, at_top;
 	struct block *pull;
@@ -1631,9 +1564,7 @@ and_pullup(b)
 }
 
 static void
-opt_blks(root, do_stmts)
-	struct block *root;
-	int do_stmts;
+opt_blks(struct block *root, int do_stmts)
 {
 	int i, maxlevel;
 	struct block *p;
@@ -1670,17 +1601,14 @@ opt_blks(root, do_stmts)
 }
 
 static inline void
-link_inedge(parent, child)
-	struct edge *parent;
-	struct block *child;
+link_inedge(struct edge *parent, struct block *child)
 {
 	parent->next = child->in_edges;
 	child->in_edges = parent;
 }
 
 static void
-find_inedges(root)
-	struct block *root;
+find_inedges(struct block *root)
 {
 	int i;
 	struct block *b;
@@ -1701,8 +1629,7 @@ find_inedges(root)
 }
 
 static void
-opt_root(b)
-	struct block **b;
+opt_root(struct block **b)
 {
 	struct slist *tmp, *s;
 
@@ -1726,9 +1653,7 @@ opt_root(b)
 }
 
 static void
-opt_loop(root, do_stmts)
-	struct block *root;
-	int do_stmts;
+opt_loop(struct block *root, int do_stmts)
 {
 
 #ifdef BDEBUG
@@ -1758,8 +1683,7 @@ opt_loop(root, do_stmts)
  * Optimize the filter code in its dag representation.
  */
 void
-bpf_optimize(rootp)
-	struct block **rootp;
+bpf_optimize(struct block **rootp)
 {
 	struct block *root;
 
@@ -1786,8 +1710,7 @@ bpf_optimize(rootp)
 }
 
 static void
-make_marks(p)
-	struct block *p;
+make_marks(struct block *p)
 {
 	if (!isMarked(p)) {
 		Mark(p);
@@ -1803,8 +1726,7 @@ make_marks(p)
  * only for nodes that are alive.
  */
 static void
-mark_code(p)
-	struct block *p;
+mark_code(struct block *p)
 {
 	cur_mark += 1;
 	make_marks(p);
@@ -1815,8 +1737,7 @@ mark_code(p)
  * the accumulator.
  */
 static int
-eq_slist(x, y)
-	struct slist *x, *y;
+eq_slist(struct slist *x, struct slist *y)
 {
 	while (1) {
 		while (x && x->s.code == NOP)
@@ -1835,8 +1756,7 @@ eq_slist(x, y)
 }
 
 static inline int
-eq_blk(b0, b1)
-	struct block *b0, *b1;
+eq_blk(struct block *b0, struct block *b1)
 {
 	if (b0->s.code == b1->s.code &&
 	    b0->s.k == b1->s.k &&
@@ -1847,8 +1767,7 @@ eq_blk(b0, b1)
 }
 
 static void
-intern_blocks(root)
-	struct block *root;
+intern_blocks(struct block *root)
 {
 	struct block *p;
 	int i, j;
@@ -1891,7 +1810,7 @@ intern_blocks(root)
 }
 
 static void
-opt_cleanup()
+opt_cleanup(void)
 {
 	free((void *)vnode_base);
 	free((void *)vmap);
@@ -1904,11 +1823,10 @@ opt_cleanup()
 /*
  * Return the number of stmts in 's'.
  */
-static int
-slength(s)
-	struct slist *s;
+static u_int
+slength(struct slist *s)
 {
-	int n = 0;
+	u_int n = 0;
 
 	for (; s; s = s->next)
 		if (s->s.code != NOP)
@@ -1921,8 +1839,7 @@ slength(s)
  * All nodes should be initially unmarked.
  */
 static int
-count_blocks(p)
-	struct block *p;
+count_blocks(struct block *p)
 {
 	if (p == 0 || isMarked(p))
 		return 0;
@@ -1935,8 +1852,7 @@ count_blocks(p)
  * the basic blocks, and entering them into the 'blocks' array.`
  */
 static void
-number_blks_r(p)
-	struct block *p;
+number_blks_r(struct block *p)
 {
 	int n;
 
@@ -1970,11 +1886,10 @@ number_blks_r(p)
  *
  *	an extra long jump if the false branch requires it (p->longjf).
  */
-static int
-count_stmts(p)
-	struct block *p;
+static u_int
+count_stmts(struct block *p)
 {
-	int n;
+	u_int n;
 
 	if (p == 0 || isMarked(p))
 		return 0;
@@ -1989,8 +1904,7 @@ count_stmts(p)
  * from the total number of blocks and/or statements.
  */
 static void
-opt_init(root)
-	struct block *root;
+opt_init(struct block *root)
 {
 	bpf_u_int32 *p;
 	int i, n, max_stmts;
@@ -2088,8 +2002,7 @@ int bids[1000];
  * properly.
  */
 static int
-convert_code_r(p)
-	struct block *p;
+convert_code_r(struct block *p)
 {
 	struct bpf_insn *dst;
 	struct slist *src;
@@ -2261,11 +2174,9 @@ filled:
  * done with the filter program.  See the pcap man page.
  */
 struct bpf_insn *
-icode_to_fcode(root, lenp)
-	struct block *root;
-	int *lenp;
+icode_to_fcode(struct block *root, u_int *lenp)
 {
-	int n;
+	u_int n;
 	struct bpf_insn *fp;
 
 	/*
@@ -2333,8 +2244,92 @@ install_bpf_program(pcap_t *p, struct bpf_program *fp)
 
 #ifdef BDEBUG
 static void
-opt_dump(root)
-	struct block *root;
+dot_dump_node(struct block *block, struct bpf_program *prog, FILE *out)
+{
+	int icount, noffset;
+	int i;
+
+	if (block == NULL || isMarked(block))
+		return;
+	Mark(block);
+
+	icount = slength(block->stmts) + 1 + block->longjt + block->longjf;
+	noffset = min(block->offset + icount, (int)prog->bf_len);
+
+	fprintf(out, "\tblock%d [shape=ellipse, id=\"block-%d\" label=\"BLOCK%d\\n", block->id, block->id, block->id);
+	for (i = block->offset; i < noffset; i++) {
+		fprintf(out, "\\n%s", bpf_image(prog->bf_insns + i, i));
+	}
+	fprintf(out, "\" tooltip=\"");
+	for (i = 0; i < BPF_MEMWORDS; i++)
+		if (block->val[i] != 0)
+			fprintf(out, "val[%d]=%d ", i, block->val[i]);
+	fprintf(out, "val[A]=%d ", block->val[A_ATOM]);
+	fprintf(out, "val[X]=%d", block->val[X_ATOM]);
+	fprintf(out, "\"");
+	if (JT(block) == NULL)
+		fprintf(out, ", peripheries=2");
+	fprintf(out, "];\n");
+
+	dot_dump_node(JT(block), prog, out);
+	dot_dump_node(JF(block), prog, out);
+}
+static void
+dot_dump_edge(struct block *block, FILE *out)
+{
+	if (block == NULL || isMarked(block))
+		return;
+	Mark(block);
+
+	if (JT(block)) {
+		fprintf(out, "\t\"block%d\":se -> \"block%d\":n [label=\"T\"]; \n",
+				block->id, JT(block)->id);
+		fprintf(out, "\t\"block%d\":sw -> \"block%d\":n [label=\"F\"]; \n",
+			   block->id, JF(block)->id);
+	}
+	dot_dump_edge(JT(block), out);
+	dot_dump_edge(JF(block), out);
+}
+/* Output the block CFG using graphviz/DOT language
+ * In the CFG, block's code, value index for each registers at EXIT,
+ * and the jump relationship is show.
+ *
+ * example DOT for BPF `ip src host 1.1.1.1' is:
+    digraph BPF {
+    	block0 [shape=ellipse, id="block-0" label="BLOCK0\n\n(000) ldh      [12]\n(001) jeq      #0x800           jt 2	jf 5" tooltip="val[A]=0 val[X]=0"];
+    	block1 [shape=ellipse, id="block-1" label="BLOCK1\n\n(002) ld       [26]\n(003) jeq      #0x1010101       jt 4	jf 5" tooltip="val[A]=0 val[X]=0"];
+    	block2 [shape=ellipse, id="block-2" label="BLOCK2\n\n(004) ret      #68" tooltip="val[A]=0 val[X]=0", peripheries=2];
+    	block3 [shape=ellipse, id="block-3" label="BLOCK3\n\n(005) ret      #0" tooltip="val[A]=0 val[X]=0", peripheries=2];
+    	"block0":se -> "block1":n [label="T"];
+    	"block0":sw -> "block3":n [label="F"];
+    	"block1":se -> "block2":n [label="T"];
+    	"block1":sw -> "block3":n [label="F"];
+    }
+ *
+ *  After install graphviz on http://www.graphviz.org/, save it as bpf.dot
+ *  and run `dot -Tpng -O bpf.dot' to draw the graph.
+ */
+static void
+dot_dump(struct block *root)
+{
+	struct bpf_program f;
+	FILE *out = stdout;
+
+	memset(bids, 0, sizeof bids);
+	f.bf_insns = icode_to_fcode(root, &f.bf_len);
+
+	fprintf(out, "digraph BPF {\n");
+	unMarkAll();
+	dot_dump_node(root, &f, out);
+	unMarkAll();
+	dot_dump_edge(root, out);
+	fprintf(out, "}\n");
+
+	free((char *)f.bf_insns);
+}
+
+static void
+plain_dump(struct block *root)
 {
 	struct bpf_program f;
 
@@ -2344,4 +2339,17 @@ opt_dump(root)
 	putchar('\n');
 	free((char *)f.bf_insns);
 }
+static void
+opt_dump(struct block *root)
+{
+	/* if optimizer debugging is enabled, output DOT graph
+	 * `dflag=4' is equivalent to -dddd to follow -d/-dd/-ddd
+     * convention in tcpdump command line
+	 */
+	if (dflag > 3)
+		dot_dump(root);
+	else
+		plain_dump(root);
+}
+
 #endif

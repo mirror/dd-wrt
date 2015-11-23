@@ -66,7 +66,7 @@
 -- on both Linux and Windows. For details regarding what versions where tested
 -- please consult the matrix below.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -- @author "Patrik Karlsson <patrik@cqure.net>"
 --
 -- @args tns.sid specifies the Oracle instance to connect to
@@ -1137,7 +1137,7 @@ Packet.QueryResponseAck = {
         pos, marker = bin.unpack("C", data, pos)
       end
       if ( marker ~= 0x07 ) then
-        stdnse.print_debug(2, "Encountered unknown marker: %d", marker)
+        stdnse.debug2("Encountered unknown marker: %d", marker)
         break
       end
 
@@ -1216,7 +1216,7 @@ Marshaller = {
       else
         -- Otherwise, it's a bit more involved:
         -- First, write the multiple-chunk indicator
-        result = result .. bin.pack( "C", 0xFE )
+        result = result .. "\xFE"
 
         -- Loop through the string, chunk by chunk
         while ( #value > 0 ) do
@@ -1235,7 +1235,7 @@ Marshaller = {
         end
 
         -- put a null byte at the end
-        result = result .. bin.pack( "C", 0 )
+        result = result .. '\0'
       end
     end
 
@@ -1456,11 +1456,7 @@ Crypt = {
     local key = bin.pack("H", "0123456789abcdef")
 
     -- do padding
-    if ( #uspw % 8 > 0 ) then
-      for i=1,(8-(#uspw % 8)) do
-        uspw = uspw .. "\0"
-      end
-    end
+    uspw = uspw .. string.rep('\0', (8 - (#uspw % 8)) % 8)
 
     local iv2 = openssl.encrypt( "DES-CBC", key, nil, uspw, false ):sub(-8)
     local enc = openssl.encrypt( "DES-CBC", iv2, nil, uspw, false ):sub(-8)
@@ -1624,7 +1620,7 @@ Helper = {
     end
 
     if ( not(status) ) then
-      stdnse.print_debug(2, "ERROR: Version %s is not yet supported", self.os)
+      stdnse.debug2("ERROR: Version %s is not yet supported", self.os)
       return false, ("ERROR: Connect to version %s is not yet supported"):format(self.os)
     end
 
@@ -1781,7 +1777,7 @@ Helper = {
     end
 
     if ( not(status) ) then
-      stdnse.print_debug(2, "ERROR: Version %s is not yet supported", self.os)
+      stdnse.debug2("ERROR: Version %s is not yet supported", self.os)
       return false, ("ERROR: Querying version %s is not yet supported"):format(self.os)
     end
 

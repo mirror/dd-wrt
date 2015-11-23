@@ -7,7 +7,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -98,8 +98,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -120,7 +119,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -239,7 +238,7 @@ int NpingTarget::getTargetSockAddr(struct sockaddr_storage *ss, size_t *ss_len) 
   memcpy(ss, &targetsock, targetsocklen);
   *ss_len = targetsocklen;
   return 0;
-  
+
 } /* End of getTargetSockAddr() */
 
 
@@ -623,7 +622,7 @@ int NpingTarget::setNamedHost(bool val){
 
 bool NpingTarget::isNamedHost(){
   assert(this->namedhost==1 || this->namedhost==0 );
-  return (this->namedhost==1) ? true : false;
+  return (this->namedhost==1);
 } /* End of isNamedHost() */
 
 
@@ -952,7 +951,7 @@ int NpingTarget::setProbeRecvTCP(u16 sport, u16 dport){
           /* Update stats info */
           diff= TIMEVAL_SUBTRACT(this->sentprobes[i].recv, this->sentprobes[i].sent);
           this->updateRTTs(diff);
-  
+
         return OP_SUCCESS;
     }
   }

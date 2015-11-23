@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -97,8 +97,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -119,18 +118,17 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: service_scan.h 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: service_scan.h 35347 2015-10-26 16:16:02Z dmiller $ */
 
 #ifndef SERVICE_SCAN_H
 #define SERVICE_SCAN_H
 
-#include "nmap.h"
-#include "global_structures.h"
 #include "portlist.h"
+#include "nmap.h"
 
 #include <vector>
 
@@ -142,6 +140,7 @@
 
 /**********************  DEFINES/ENUMS ***********************************/
 #define DEFAULT_SERVICEWAITMS 5000
+#define DEFAULT_TCPWRAPPEDMS 2000   // connections closed after this timeout are not considered "tcpwrapped"
 #define DEFAULT_CONNECT_TIMEOUT 5000
 #define DEFAULT_CONNECT_SSL_TIMEOUT 8000  // includes connect() + ssl negotiation
 #define SERVICEMATCH_REGEX 1
@@ -265,6 +264,8 @@ class ServiceProbe {
                                    // probe (e.g. an SMTP probe would commonly identify port 25)
 // Amount of time to wait after a connection succeeds (or packet sent) for a responses.
   int totalwaitms;
+  // If the connection succeeds but closes before this time, it's tcpwrapped.
+  int tcpwrappedms;
 
   // Parses the "probe " line in the nmap-service-probes file.  Pass the rest of the line
   // after "probe ".  The format better be:

@@ -44,7 +44,7 @@
 -- There is some documentation at
 -- http://publib.boulder.ibm.com/infocenter/dzichelp/v2r2/topic/com.ibm.db29.doc.drda/db2z_drda.htm.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -- @author "Patrik Karlsson <patrik@cqure.net>"
 --
 
@@ -191,11 +191,11 @@ DRDA = {
   -- @return err string containing the error message if status is false
   addParameter = function( self, param )
     if ( not(self.DDM) ) then
-      stdnse.print_debug("drda.DRDA.addParameter: DDM must be set prior to adding parameters")
+      stdnse.debug1("drda.DRDA.addParameter: DDM must be set prior to adding parameters")
       return false, "DDM must be set prior to adding parameters"
     end
     if ( not(param) ) then
-      stdnse.print_debug("drda.DRDA.addParameter: Param cannot be nil")
+      stdnse.debug1("drda.DRDA.addParameter: Param cannot be nil")
       return false, "Param cannot be nil"
     end
 
@@ -226,7 +226,7 @@ DRDA = {
   -- @return data containing the object instance
   __tostring = function(self)
     if ( not(self.DDM) ) then
-      stdnse.print_debug("drda.DRDA.toString: DDM cannot be nil")
+      stdnse.debug1("drda.DRDA.toString: DDM cannot be nil")
       return nil
     end
 
@@ -258,7 +258,7 @@ DRDA = {
     -- first read atleast enough so that we can populate the DDM
     local status, data = db2socket:receive_buf( match.numbytes(DDM_SIZE), true )
     if ( not(status) ) then
-      stdnse.print_debug("drda.DRDA.receive: %s", data)
+      stdnse.debug1("drda.DRDA.receive: %s", data)
       return false, ("Failed to read at least %d bytes from socket"):format(DDM_SIZE)
     end
 
@@ -306,11 +306,7 @@ DRDAParameter = {
   --
   -- @return data string containing the DRDA Parameter
   __tostring = function( self )
-    local data = bin.pack(">SS", self.Length, self.CodePoint )
-    if ( self.Data ) then
-      data = data .. bin.pack("A", self.Data)
-    end
-    return data
+    return bin.pack(">SSA", self.Length, self.CodePoint, self.Data or "" )
   end,
 
   --- Builds a DRDA Parameter from a string
@@ -600,14 +596,14 @@ Helper = {
     local drda_excsat = Command.EXCSAT( "", "", "", mgrlvlls, "" )
     local drda_accsec = Command.ACCSEC( secmec, database )
     local drda_secchk = Command.SECCHK( secmec, database, username, password )
-    local drda_accrdb = Command.ACCRDB( database, string.char(0x24,0x07), "DNC10060", nil, "QTDSQLASC",  crrtkn, tdovr)
+    local drda_accrdb = Command.ACCRDB( database, "\x24\x07", "DNC10060", nil, "QTDSQLASC",  crrtkn, tdovr)
 
     local status, packet = self.comm:exchDRDAPacket( DRDAPacket:new( { drda_excsat, drda_accsec } ) )
     if( not(status) ) then return false, packet end
 
     if ( packet:getDRDAByCodePoint( CodePoint.RDBNFNRM ) or
         packet:getDRDAByCodePoint( CodePoint.RDBAFLRM ) ) then
-      stdnse.print_debug("drda.Helper.login: ERROR: RDB not found")
+      stdnse.debug1("drda.Helper.login: ERROR: RDB not found")
       return false, "ERROR: Database not found"
     end
 
@@ -618,12 +614,12 @@ Helper = {
 
     local param = drda:getParameter( CodePoint.SECMEC )
     if ( not(param) ) then
-      stdnse.print_debug("drda.Helper.login: ERROR: Response did not contain any valid security mechanisms")
+      stdnse.debug1("drda.Helper.login: ERROR: Response did not contain any valid security mechanisms")
       return false, "ERROR: Response did not contain any valid security mechanisms"
     end
 
     if ( select(2, bin.unpack(">S", param:getData())) ~= SecMec.USER_PASSWORD ) then
-      stdnse.print_debug("drda.Helper.login: ERROR: Securite Mechanism not supported")
+      stdnse.debug1("drda.Helper.login: ERROR: Securite Mechanism not supported")
       return false, "ERROR: Security mechanism not supported"
     end
 
@@ -706,13 +702,13 @@ Comm = {
     local status, err = self.socket:send( tostring(packet) )
 
     if ( not(status) ) then
-      stdnse.print_debug("drda.Helper.login: ERROR: DB2Socket error: %s", err )
+      stdnse.debug1("drda.Helper.login: ERROR: DB2Socket error: %s", err )
       return false, ("ERROR: DB2Socket error: %s"):format( err )
     end
 
     status, drda = self:recvDRDA()
     if( not(status) ) then
-      stdnse.print_debug("drda.Helper.login: ERROR: DB2Socket error: %s", drda )
+      stdnse.debug1("drda.Helper.login: ERROR: DB2Socket error: %s", drda )
       return false, ("ERROR: DB2Socket error: %s"):format( drda )
     end
     return true, DRDAPacket:new( drda )
@@ -751,13 +747,10 @@ StringUtil =
   -- @param ascii string containing the ASCII value
   -- @return string containing the EBCDIC value
   toEBCDIC = function( ascii )
-    local ret = ""
-
-    for i=1, #ascii do
-      local val = ascii.byte(ascii,i) + 1
-      ret = ret .. a2e_tbl:sub(val, val)
-    end
-    return ret
+    return string.gsub(ascii, ".", function(a)
+        local val = a:byte() + 1
+        return a2e_tbl:sub(val, val)
+      end)
   end,
 
   --- Converts an EBCDIC string to ASCII
@@ -765,13 +758,10 @@ StringUtil =
   -- @param ebcdic string containing EBCDIC value
   -- @return string containing ASCII value
   toASCII = function( ebcdic )
-    local ret = ""
-
-    for i=1, #ebcdic do
-      local val = ebcdic.byte(ebcdic,i) + 1
-      ret = ret .. e2a_tbl:sub(val, val)
-    end
-    return ret
+    return string.gsub(ebcdic, ".", function(e)
+        local val = e:byte() + 1
+        return e2a_tbl:sub(val, val)
+      end)
   end,
 
   --- Pads a string with a character
@@ -781,13 +771,7 @@ StringUtil =
   -- @param len the total length of the finished string
   -- @return str string containing the padded string
   padWithChar = function( str, chr, len )
-    if ( len < #str ) then
-      return str
-    end
-    for i=1, (len - #str) do
-      str = str .. chr
-    end
-    return str
+    return str .. string.rep(chr, len - #str)
   end,
 }
 

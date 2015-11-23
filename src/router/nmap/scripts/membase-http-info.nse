@@ -36,13 +36,13 @@ does not require any credentials.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
 
 portrule = shortport.port_or_service(8091, "http", "tcp")
 
-local function fail(err) return ("\n  ERROR: %s"):format(err) end
+local function fail(err) return stdnse.format_output(false, err) end
 
 local filter = {
   ["parsed[1]['nodes'][1]['os']"] = { name = "OS" },
@@ -124,7 +124,7 @@ action = function(host, port)
   -- Identify servers that answer 200 to invalid HTTP requests and exit as these would invalidate the tests
   local _, http_status, _ = http.identify_404(host,port)
   if ( http_status == 200 ) then
-    stdnse.print_debug(1, "%s: Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", SCRIPT_NAME, host.ip, port.number)
+    stdnse.debug1("Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", host.ip, port.number)
     return false
   end
 

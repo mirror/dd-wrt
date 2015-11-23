@@ -26,7 +26,7 @@ Performs brute force password auditing against Couchbase Membase servers.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -58,7 +58,7 @@ Driver = {
       err:setRetry( true )
       return false, err
     end
-    return true, brute.Account:new( arg_bucketname or username, password, creds.State.VALID)
+    return true, creds.Account:new( arg_bucketname or username, password, creds.State.VALID)
   end,
 
   disconnect = function(self)
@@ -68,7 +68,7 @@ Driver = {
 }
 
 
-local function fail(err) return ("\n  ERROR: %s"):format(err) end
+local function fail(err) return stdnse.format_output(false, err) end
 
 local function getMechs(host, port)
   local helper = membase.Helper:new(host, port)
@@ -79,7 +79,7 @@ local function getMechs(host, port)
 
   local status, response = helper:getSASLMechList()
   if ( not(status) ) then
-    stdnse.print_debug(2, "%s: Received unexpected response: %s", SCRIPT_NAME, response)
+    stdnse.debug2("Received unexpected response: %s", response)
     return false, "Received unexpected response"
   end
 

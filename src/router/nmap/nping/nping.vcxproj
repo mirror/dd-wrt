@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,11 +19,13 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120_xp</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -144,7 +146,6 @@
     <ClCompile Include="NpingTarget.cc" />
     <ClCompile Include="NpingTargets.cc" />
     <ClCompile Include="output.cc" />
-    <ClCompile Include="PacketDiff.cc" />
     <ClCompile Include="ProbeMode.cc" />
     <ClCompile Include="stats.cc" />
     <ClCompile Include="utils.cc" />
@@ -166,7 +167,6 @@
     <ClInclude Include="NpingTarget.h" />
     <ClInclude Include="NpingTargets.h" />
     <ClInclude Include="output.h" />
-    <ClInclude Include="PacketDiff.h" />
     <ClInclude Include="ProbeMode.h" />
     <ClInclude Include="stats.h" />
     <ClInclude Include="utils.h" />

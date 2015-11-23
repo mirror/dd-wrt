@@ -32,7 +32,7 @@ Performs brute force password auditing against IMAP servers using either LOGIN, 
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"brute", "intrusive"}
 
 portrule = shortport.port_or_service({143,993}, {"imap","imaps"})
@@ -72,13 +72,13 @@ Driver =
   -- @param username string containing the username
   -- @param password string containing the password
   -- @return status true on success, false on failure
-  -- @return brute.Error on failure and brute.Account on success
+  -- @return brute.Error on failure and creds.Account on success
   login = function( self, username, password )
     local status, err = self.helper:login( username, password, mech )
     if ( status ) then
       self.helper:close()
       self.helper:connect()
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     end
     if ( err:match("^ERROR: Failed to .* data$") ) then
       self.helper:close()
@@ -99,6 +99,7 @@ Driver =
 
 }
 
+local function fail (err) return stdnse.format_output(false, err) end
 
 action = function(host, port)
 
@@ -106,9 +107,9 @@ action = function(host, port)
   -- authentication mechanisms can be determined
   local helper = imap.Helper:new(host, port)
   local status = helper:connect()
-  if (not(status)) then return "\n  ERROR: Failed to connect to the server." end
+  if (not(status)) then return fail("Failed to connect to the server.") end
   local status, capabilities = helper:capabilities()
-  if (not(status)) then return "\n  ERROR: Failed to retrieve capabilities." end
+  if (not(status)) then return fail("Failed to retrieve capabilities.") end
 
   -- check if an authentication mechanism was provided or try
   -- try them in the mech_prio order
@@ -129,7 +130,7 @@ action = function(host, port)
 
   -- if no mechanisms were found, abort
   if ( not(mech) ) then
-    return "\n  ERROR: No suitable authentication mechanism was found"
+    return fail("No suitable authentication mechanism was found")
   end
 
   local engine = brute.Engine:new(Driver, host, port)

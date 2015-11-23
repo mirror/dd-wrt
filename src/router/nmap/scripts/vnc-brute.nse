@@ -32,7 +32,7 @@ Performs brute force password auditing against VNC servers.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -52,7 +52,7 @@ Driver =
 
   connect = function( self )
     local status, data
-    self.vnc = vnc.VNC:new( self.host.ip, self.port.number )
+    self.vnc = vnc.VNC:new( self.host, self.port )
     status, data = self.vnc:connect()
     if ( not(status) ) then
       local err = brute.Error:new( "VNC connect failed" )
@@ -68,7 +68,7 @@ Driver =
   -- @param password string containing the login password
   -- @return status, true on success, false on failure
   -- @return brute.Error object on failure
-  --         brute.Account object on success
+  --         creds.Account object on success
   login = function( self, username, password )
 
     local status, data = self.vnc:handshake()
@@ -87,7 +87,7 @@ Driver =
     status, data = self.vnc:login( nil, password )
 
     if ( status ) then
-      return true, brute.Account:new("", password, creds.State.VALID)
+      return true, creds.Account:new("", password, creds.State.VALID)
     elseif ( not( data:match("Authentication failed") ) ) then
       local err = brute.Error:new( data )
       -- This might be temporary, set the retry flag
@@ -104,7 +104,7 @@ Driver =
   end,
 
   check = function( self )
-    local vnc = vnc.VNC:new( self.host.ip, self.port.number )
+    local vnc = vnc.VNC:new( self.host, self.port )
     local status, data
 
     status, data = vnc:connect()

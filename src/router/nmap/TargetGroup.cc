@@ -7,7 +7,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -98,8 +98,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -120,20 +119,21 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: TargetGroup.cc 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: TargetGroup.cc 34815 2015-07-02 03:09:29Z dmiller $ */
 
 #include "tcpip.h"
 #include "TargetGroup.h"
 #include "NmapOps.h"
 #include "nmap_error.h"
-#include "global_structures.h"
+#include "nmap.h"
 #include "libnetutil/netutil.h"
 
 #include <sstream>
+#include <errno.h>
 
 #define BITVECTOR_BITS (sizeof(bitvector_t) * CHAR_BIT)
 #define BIT_SET(v, n) ((v)[(n) / BITVECTOR_BITS] |= 1UL << ((n) % BITVECTOR_BITS))
@@ -295,10 +295,20 @@ bail:
   return NULL;
 }
 
+/* Returns the first address which matches the address family af */
+static const struct sockaddr_storage *first_af_address(const std::list<struct sockaddr_storage> *addrs, int af) {
+  for (std::list<struct sockaddr_storage>::const_iterator it = addrs->begin(), end = addrs->end(); it != end; ++it) {
+    if (it->ss_family == af) {
+      return &*it;
+    }
+  }
+  return NULL;
+}
+
 bool NetBlock::is_resolved_address(const struct sockaddr_storage *ss) const {
   if (this->resolvedaddrs.empty())
     return false;
-  return sockaddr_storage_equal(&*this->resolvedaddrs.begin(), ss);
+  return sockaddr_storage_equal(first_af_address(&this->resolvedaddrs, ss->ss_family), ss);
 }
 
 NetBlockIPv4Ranges::NetBlockIPv4Ranges() {
@@ -535,7 +545,7 @@ static void make_ipv6_netmask(struct in6_addr *mask, int bits) {
 
   i = 0;
   /* 0 < bits <= 128, so this loop goes at most 15 times. */
-  for ( ; bits > 8; bits -= 8)
+  for (; bits > 8; bits -= 8)
     mask->s6_addr[i++] = 0xFF;
   mask->s6_addr[i] = 0xFF << (8 - bits);
 }
@@ -549,8 +559,13 @@ static void ipv6_or_mask(struct in6_addr *a, const struct in6_addr *mask, const 
 }
 
 void NetBlockIPv6Netmask::apply_netmask(int bits) {
+#ifdef _AIX
+  const struct in6_addr zeros = { { { 0x00, 0x00, 0x00, 0x00 } } };
+  const struct in6_addr ones = { { { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff } } };
+#else
   const struct in6_addr zeros = { { { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} } };
   const struct in6_addr ones = { { { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff} } };
+#endif
   struct in6_addr mask;
 
   if (bits > 128)
@@ -606,10 +621,11 @@ NetBlock *NetBlockHostname::resolve() const {
   struct addrinfo *addrs, *addr;
   std::list<struct sockaddr_storage> resolvedaddrs;
   NetBlock *netblock;
+  const struct sockaddr_storage *sp = NULL;
   struct sockaddr_storage ss;
   size_t sslen;
 
-  addrs = resolve_all(this->hostname.c_str(), this->af);
+  addrs = resolve_all(this->hostname.c_str(), AF_UNSPEC);
   for (addr = addrs; addr != NULL; addr = addr->ai_next) {
     if (addr->ai_addrlen < sizeof(ss)) {
       memcpy(&ss, addr->ai_addr, addr->ai_addrlen);
@@ -622,7 +638,22 @@ NetBlock *NetBlockHostname::resolve() const {
   if (resolvedaddrs.empty())
     return NULL;
 
-  ss = *resolvedaddrs.begin();
+  sp = first_af_address(&resolvedaddrs, this->af);
+  if (sp == NULL || sp->ss_family != this->af) {
+    switch (this->af) {
+      case AF_INET:
+        error("Warning: Hostname %s resolves, but not to any IPv4 address. Try scanning with -6", this->hostname.c_str());
+        break;
+      case AF_INET6:
+        error("Warning: Hostname %s resolves, but not to any IPv6 address. Try scanning without -6", this->hostname.c_str());
+        break;
+      default:
+        error("Warning: Unknown address family: %d", this->af);
+        break;
+    }
+    return NULL;
+  }
+  ss = *sp;
   sslen = sizeof(ss);
 
   if (resolvedaddrs.size() > 1 && o.verbose > 1) {

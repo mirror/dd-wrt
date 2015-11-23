@@ -2,8 +2,6 @@ local stdnse = require "stdnse"
 local shortport = require "shortport"
 local dns = require "dns"
 local base32 = require "base32"
-local msrpc = require "msrpc" -- just for random string generation
-local math = require "math"
 local bin = require "bin"
 local nmap = require "nmap"
 local string = require "string"
@@ -73,7 +71,7 @@ References:
 -- |_  Total hashes found: 8
 
 author = "Aleksandar Nikolic, John R. Bond"
-license = "Simplified (2-clause) BSD license--See http://nmap.org/svn/docs/licenses/BSD-simplified"
+license = "Simplified (2-clause) BSD license--See https://nmap.org/svn/docs/licenses/BSD-simplified"
 categories = {"discovery", "intrusive"}
 
 portrule = shortport.port_or_service(53, "domain", {"tcp", "udp"})
@@ -168,25 +166,21 @@ local function empty(t)
   return not next(t)
 end
 
-local function random_string()
-  return msrpc.random_crap(8,"etaoinshrdlucmfw")
-end
-
 -- generate a random hash with domains suffix
--- return both domain and it's hash
+-- return both domain and its hash
 local function generate_hash(domain, iter, salt)
-  local rand_str = random_string()
+  local rand_str = stdnse.generate_random_string(8, "etaoinshrdlucmfw")
   local random_domain = rand_str .. "." .. domain
-  local packed_domain = ""
-  for word in string.gmatch(domain,"[^%.]+") do
-    packed_domain = packed_domain .. bin.pack("c",string.len(word)) .. word
+  local packed_domain = {}
+  for word in string.gmatch(random_domain, "[^%.]+") do
+    packed_domain[#packed_domain+1] = bin.pack("p", word)
   end
-  local to_hash = bin.pack("c",string.len(rand_str)) .. rand_str .. packed_domain .. bin.pack("c",0) .. bin.pack("H",salt)
+  salt = bin.pack("H", salt)
+  local to_hash = bin.pack("AxA", table.concat(packed_domain), salt)
   iter = iter - 1
   local hash = openssl.sha1(to_hash)
   for i=0,iter do
-    hash = hash .. bin.pack("H",salt)
-    hash = openssl.sha1(hash)
+    hash = openssl.sha1(hash .. salt)
   end
   return string.lower(base32.enc(hash,true)), random_domain
 end
@@ -220,12 +214,12 @@ local function query_for_hashes(host,subdomain,domain)
       local h2 = string.lower(nsec3.hash.base32)
       if not stdnse.contains(all_results,"nexthash " .. h1 .. " " .. h2) then
         table.insert(all_results, "nexthash " .. h1 .. " " .. h2)
-        stdnse.print_debug("nexthash " .. h1 .. " " .. h2)
+        stdnse.debug1("nexthash " .. h1 .. " " .. h2)
       end
       ranges[h1] = h2
     end
   else
-    stdnse.print_debug(1, "DNS error: %s", result)
+    stdnse.debug1("DNS error: %s", result)
   end
   return ranges
 end
@@ -239,7 +233,7 @@ local function enum(host, port, domain)
   local todo = {}
   local dnssec, status, result = false, false, "No Answer"
   local result = {}
-  local subdomain = msrpc.random_crap(8,"etaoinshrdlucmfw")
+  local subdomain = stdnse.generate_random_string(8, "etaoinshrdlucmfw")
   local full_domain = join({subdomain, domain})
   local iter
   local salt
@@ -258,11 +252,11 @@ local function enum(host, port, domain)
       local h2 = string.lower(nsec3.hash.base32)
       if table_size(todo) == 0 then
         table.insert(all_results, "domain " .. domain)
-        stdnse.print_debug("domain " .. domain)
+        stdnse.debug1("domain " .. domain)
         table.insert(all_results, "salt " .. salt)
-        stdnse.print_debug("salt " .. salt)
+        stdnse.debug1("salt " .. salt)
         table.insert(all_results, "iterations " .. iter)
-        stdnse.print_debug("iterations " .. iter)
+        stdnse.debug1("iterations " .. iter)
         if h1 < h2 then
           todo[h2] = h1
         else
@@ -299,7 +293,7 @@ local function enum(host, port, domain)
         end -- for
       end -- else
       table.insert(all_results, "nexthash " .. h1 .. " " .. h2)
-      stdnse.print_debug("nexthash " .. h1 .. " " .. h2)
+      stdnse.debug1("nexthash " .. h1 .. " " .. h2)
     end
   end
 
@@ -342,7 +336,7 @@ local function enum(host, port, domain)
             end
           end
           --if changed then
-          --  stdnse.print_debug("break[]")
+          --  stdnse.debug1("break[]")
           --break
           --  end
         end

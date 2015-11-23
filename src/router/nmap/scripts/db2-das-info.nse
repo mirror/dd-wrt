@@ -63,7 +63,7 @@ requested.
 
 author = "Patrik Karlsson, Tom Sellers"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"safe", "discovery", "version"}
 
@@ -130,7 +130,7 @@ function parse_db2_packet(packet)
   local response = {}
 
   if packet.header.data_len < info_length_offset then
-    stdnse.print_debug( "db2-das-info: packet too short to be DB2 response...")
+    stdnse.debug1("packet too short to be DB2 response...")
     return
   end
 
@@ -140,9 +140,9 @@ function parse_db2_packet(packet)
   response.info = packet.data:sub(info_offset, info_offset + response.info_length - (info_offset-info_length_offset))
 
   if(nmap.debugging() > 3)  then
-    stdnse.print_debug("db2-das-info: version: %s", response.version)
-    stdnse.print_debug("db2-das-info: info_length: %d", response.info_length)
-    stdnse.print_debug("db2-das-info: response.info:len(): %d", response.info:len())
+    stdnse.debug1("version: %s", response.version)
+    stdnse.debug1("info_length: %d", response.info_length)
+    stdnse.debug1("response.info:len(): %d", response.info:len())
   end
 
   return response
@@ -172,7 +172,7 @@ function read_db2_packet(socket)
   local ENDIANESS_OFFSET = 23
 
   local catch = function()
-    stdnse.print_debug("%s", "db2-das-info: ERROR communicating with DB2 server")
+    stdnse.debug1("ERROR communicating with DB2 server")
     socket:close()
   end
 
@@ -183,9 +183,9 @@ function read_db2_packet(socket)
 
   packet.header.raw = buf:sub(1, header_len)
 
-  if packet.header.raw:sub(1, 10) == string.char(0x00, 0x00, 0x00, 0x00, 0x44, 0x42, 0x32, 0x44, 0x41, 0x53) then
+  if packet.header.raw:sub(1, 10) == "\x00\x00\x00\x00\x44\x42\x32\x44\x41\x53" then
 
-    stdnse.print_debug("db2-das-info: Got DB2DAS packet")
+    stdnse.debug1("Got DB2DAS packet")
 
     local _, endian = bin.unpack( "A2", packet.header.raw, ENDIANESS_OFFSET )
 
@@ -198,20 +198,20 @@ function read_db2_packet(socket)
     total_len = header_len + packet.header.data_len
 
     if(nmap.debugging() > 3) then
-      stdnse.print_debug("db2-das-info: data_len: %d", packet.header.data_len)
-      stdnse.print_debug("db2-das-info: buf_len: %d", buf:len())
-      stdnse.print_debug("db2-das-info: total_len: %d", total_len)
+      stdnse.debug1("data_len: %d", packet.header.data_len)
+      stdnse.debug1("buf_len: %d", buf:len())
+      stdnse.debug1("total_len: %d", total_len)
     end
 
     -- do we have all data as specified by data_len?
     while total_len > buf:len() do
       -- if not read additional bytes
       if(nmap.debugging() > 3)  then
-        stdnse.print_debug("db2-das-info: Reading %d additional bytes", total_len - buf:len())
+        stdnse.debug1("Reading %d additional bytes", total_len - buf:len())
       end
       local tmp = try( socket:receive_bytes( total_len - buf:len() ) )
       if(nmap.debugging() > 3)  then
-        stdnse.print_debug("db2-das-info: Read %d bytes", tmp:len())
+        stdnse.debug1("Read %d bytes", tmp:len())
       end
       buf = buf .. tmp
     end
@@ -219,7 +219,7 @@ function read_db2_packet(socket)
     packet.data = buf:sub(header_len + 1)
 
   else
-    stdnse.print_debug("db2-das-info: Unknown packet, aborting ...")
+    stdnse.debug1("Unknown packet, aborting ...")
     return
   end
 
@@ -235,7 +235,7 @@ end
 function send_db2_packet( socket, packet )
 
   local catch = function()
-    stdnse.print_debug("%s", "db2-das-info: ERROR communicating with DB2 server")
+    stdnse.debug1("ERROR communicating with DB2 server")
     socket:close()
   end
 
@@ -266,12 +266,12 @@ function create_das_packet( magic, data )
 
   packet.header = {}
 
-  packet.header.raw = string.char(0x00, 0x00, 0x00, 0x00, 0x44, 0x42, 0x32, 0x44, 0x41, 0x53, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20)
-  packet.header.raw = packet.header.raw .. string.char(0x01, 0x04, 0x00, 0x00, 0x00, 0x10, 0x39, 0x7a, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
-  packet.header.raw = packet.header.raw .. string.char(0x00, 0x00, 0x00, 0x00 )
-  packet.header.raw = packet.header.raw .. bin.pack("C", magic)
-  packet.header.raw = packet.header.raw .. bin.pack("S", data_len)
-  packet.header.raw = packet.header.raw .. string.char(0x00, 0x00)
+  packet.header.raw = "\x00\x00\x00\x00\x44\x42\x32\x44\x41\x53\x20\x20\x20\x20\x20\x20"
+  .. "\x01\x04\x00\x00\x00\x10\x39\x7a\x00\x05\x00\x00\x00\x00\x00\x00"
+  .. "\x00\x00\x00\x00"
+  .. bin.pack("C", magic)
+  .. bin.pack("S", data_len)
+  .. "\x00\x00"
 
   packet.header.data_len = data_len
   packet.data = data
@@ -290,7 +290,7 @@ action = function(host, port)
 
   -- do some exception handling / cleanup
   local catch = function()
-    stdnse.print_debug("%s", "db2-das-info: ERROR communicating with " .. host.ip .. " on port " .. port.number)
+    stdnse.debug1("ERROR communicating with " .. host.ip .. " on port " .. port.number)
     socket:close()
   end
 
@@ -304,7 +304,7 @@ action = function(host, port)
   -- ************************************************************************************
   -- Transaction block 1
   -- ************************************************************************************
-  local data = string.char(0x00, 0x00, 0x00, 0x0d, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4a, 0x00)
+  local data = "\x00\x00\x00\x0d\x00\x00\x00\x0c\x00\x00\x00\x4a\x00"
 
   --try(socket:send(query))
   local db2packet = create_das_packet(0x02, data)
@@ -315,10 +315,10 @@ action = function(host, port)
   -- ************************************************************************************
   -- Transaction block 2
   -- ************************************************************************************
-  data = string.char(0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x0c, 0x00, 0x00, 0x00, 0x08, 0x59, 0xe7, 0x1f, 0x4b, 0x79, 0xf0, 0x90, 0x72, 0x85, 0xe0, 0x8f)
-  data = data .. string.char(0x3e, 0x38, 0x45, 0x38, 0xe3, 0xe5, 0x12, 0xc4, 0x3b, 0xe9, 0x7d, 0xe2, 0xf5, 0xf0, 0x78, 0xcc)
-  data = data .. string.char(0x81, 0x6f, 0x87, 0x5f, 0x91)
+  data = "\x00\x00\x00\x2c\x00\x00\x00"
+  .. "\x0c\x00\x00\x00\x08\x59\xe7\x1f\x4b\x79\xf0\x90\x72\x85\xe0\x8f"
+  .. "\x3e\x38\x45\x38\xe3\xe5\x12\xc4\x3b\xe9\x7d\xe2\xf5\xf0\x78\xcc"
+  .. "\x81\x6f\x87\x5f\x91"
 
   db2packet = create_das_packet(0x05, data)
 
@@ -328,12 +328,12 @@ action = function(host, port)
   -- ************************************************************************************
   -- Transaction block 3
   -- ************************************************************************************
-  data = string.char(0x00, 0x00, 0x00, 0x0d, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4a, 0x01, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x10, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4c, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x20, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x04, 0xb8, 0x64, 0x62, 0x32)
-  data = data .. string.char(0x64, 0x61, 0x73, 0x4b, 0x6e, 0x6f, 0x77, 0x6e, 0x44, 0x73, 0x63, 0x76, 0x00, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x20, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x04, 0xb8, 0x64, 0x62, 0x32)
-  data = data .. string.char(0x4b, 0x6e, 0x6f, 0x77, 0x6e, 0x44, 0x73, 0x63, 0x76, 0x53, 0x72, 0x76, 0x00)
+  data = "\x00\x00\x00\x0d\x00\x00\x00\x0c\x00\x00\x00\x4a\x01\x00\x00\x00"
+  .. "\x10\x00\x00\x00\x0c\x00\x00\x00\x4c\xff\xff\xff\xff\x00\x00\x00"
+  .. "\x20\x00\x00\x00\x0c\x00\x00\x00\x04\x00\x00\x04\xb8\x64\x62\x32"
+  .. "\x64\x61\x73\x4b\x6e\x6f\x77\x6e\x44\x73\x63\x76\x00\x00\x00\x00"
+  .. "\x20\x00\x00\x00\x0c\x00\x00\x00\x04\x00\x00\x04\xb8\x64\x62\x32"
+  .. "\x4b\x6e\x6f\x77\x6e\x44\x73\x63\x76\x53\x72\x76\x00"
 
   db2packet = create_das_packet(0x0a, data)
   send_db2_packet( socket, db2packet )
@@ -342,34 +342,34 @@ action = function(host, port)
   -- ************************************************************************************
   -- Transaction block 4
   -- ************************************************************************************
-  data = string.char(0x00, 0x00, 0x00, 0x0d, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4a, 0x01, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x20, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03)
-  data = data .. string.char(0x48, 0x00, 0x00, 0x00, 0x00, 0x4a, 0xfb, 0x42, 0x90, 0x00, 0x00, 0x24, 0x93, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x10, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4c, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x10, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4c, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x20, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x04, 0xb8, 0x64, 0x62, 0x32)
-  data = data .. string.char(0x4b, 0x6e, 0x6f, 0x77, 0x6e, 0x44, 0x73, 0x63, 0x76, 0x53, 0x72, 0x76, 0x00, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x20, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x04, 0xb8, 0x64, 0x62, 0x32)
-  data = data .. string.char(0x64, 0x61, 0x73, 0x4b, 0x6e, 0x6f, 0x77, 0x6e, 0x44, 0x73, 0x63, 0x76, 0x00, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x0c, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x0c, 0x00, 0x00, 0x00, 0x4c, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x0c, 0x00, 0x00, 0x00, 0x4c, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x11, 0x00, 0x00, 0x00)
-  data = data .. string.char(0x0c, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x04, 0xb8, 0x00)
+  data = "\x00\x00\x00\x0d\x00\x00\x00\x0c\x00\x00\x00\x4a\x01\x00\x00\x00"
+  .. "\x20\x00\x00\x00\x0c\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x03"
+  .. "\x48\x00\x00\x00\x00\x4a\xfb\x42\x90\x00\x00\x24\x93\x00\x00\x00"
+  .. "\x10\x00\x00\x00\x0c\x00\x00\x00\x4c\xff\xff\xff\xff\x00\x00\x00"
+  .. "\x10\x00\x00\x00\x0c\x00\x00\x00\x4c\xff\xff\xff\xff\x00\x00\x00"
+  .. "\x20\x00\x00\x00\x0c\x00\x00\x00\x04\x00\x00\x04\xb8\x64\x62\x32"
+  .. "\x4b\x6e\x6f\x77\x6e\x44\x73\x63\x76\x53\x72\x76\x00\x00\x00\x00"
+  .. "\x20\x00\x00\x00\x0c\x00\x00\x00\x04\x00\x00\x04\xb8\x64\x62\x32"
+  .. "\x64\x61\x73\x4b\x6e\x6f\x77\x6e\x44\x73\x63\x76\x00\x00\x00\x00"
+  .. "\x0c\x00\x00\x00\x0c\x00\x00\x00\x04\x00\x00\x00\x10\x00\x00\x00"
+  .. "\x0c\x00\x00\x00\x4c\xff\xff\xff\xff\x00\x00\x00\x10\x00\x00\x00"
+  .. "\x0c\x00\x00\x00\x4c\xff\xff\xff\xff\x00\x00\x00\x11\x00\x00\x00"
+  .. "\x0c\x00\x00\x00\x04\x00\x00\x04\xb8\x00"
 
   db2packet = create_das_packet(0x06, data)
   send_db2_packet( socket, db2packet )
 
-  data = string.char( 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x04, 0x00)
-  data = data .. string.char(0x00, 0x04, 0xb8, 0x64, 0x62, 0x32, 0x64, 0x61, 0x73, 0x4b, 0x6e, 0x6f, 0x77, 0x6e, 0x44, 0x73)
-  data = data .. string.char(0x63, 0x76, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x04, 0x00)
-  data = data .. string.char(0x00, 0x04, 0xb8, 0x64, 0x62, 0x32, 0x4b, 0x6e, 0x6f, 0x77, 0x6e, 0x44, 0x73, 0x63, 0x76, 0x53)
-  data = data .. string.char(0x72, 0x76, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4c, 0x00)
-  data = data .. string.char(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4c, 0x00)
-  data = data .. string.char(0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4c, 0x00)
-  data = data .. string.char(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x08, 0x00)
-  data = data .. string.char(0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x4c, 0x00, 0x00, 0x00, 0x01, 0x00)
-  data = data .. string.char(0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x0c, 0x00)
-  data = data .. string.char(0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x18)
+  data =  "\x00\x00\x00\x20\x00\x00\x00\x0c\x00\x00\x00\x04\x00"
+  .. "\x00\x04\xb8\x64\x62\x32\x64\x61\x73\x4b\x6e\x6f\x77\x6e\x44\x73"
+  .. "\x63\x76\x00\x00\x00\x00\x20\x00\x00\x00\x0c\x00\x00\x00\x04\x00"
+  .. "\x00\x04\xb8\x64\x62\x32\x4b\x6e\x6f\x77\x6e\x44\x73\x63\x76\x53"
+  .. "\x72\x76\x00\x00\x00\x00\x10\x00\x00\x00\x0c\x00\x00\x00\x4c\x00"
+  .. "\x00\x00\x00\x00\x00\x00\x10\x00\x00\x00\x0c\x00\x00\x00\x4c\x00"
+  .. "\x00\x00\x01\x00\x00\x00\x10\x00\x00\x00\x0c\x00\x00\x00\x4c\x00"
+  .. "\x00\x00\x00\x00\x00\x00\x0c\x00\x00\x00\x0c\x00\x00\x00\x08\x00"
+  .. "\x00\x00\x10\x00\x00\x00\x0c\x00\x00\x00\x4c\x00\x00\x00\x01\x00"
+  .. "\x00\x00\x18\x00\x00\x00\x0c\x00\x00\x00\x08\x00\x00\x00\x0c\x00"
+  .. "\x00\x00\x0c\x00\x00\x00\x18"
 
   db2packet = create_das_packet(0x06, data)
   send_db2_packet( socket, db2packet )
@@ -417,7 +417,7 @@ action = function(host, port)
 
   if (db2profile ~= nil ) then
     result = "DB2 Administration Server Settings\r\n"
-    result = result .. extract_server_profile( db2response.info )
+    .. extract_server_profile( db2response.info )
 
     -- Set port information
     port.version.name = "ibm-db2"

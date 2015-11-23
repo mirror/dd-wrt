@@ -43,7 +43,7 @@ the script against).
 --
 
 author = "Gorjan Petrovski"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -51,7 +51,7 @@ categories = {"intrusive", "brute"}
 -- which is specified by the ports script argument
 portrule = function(host, port)
   if not stdnse.get_script_args(SCRIPT_NAME .. ".ports") then
-    stdnse.print_debug(3,"Skipping '%s' %s, 'ports' argument is missing.",SCRIPT_NAME, SCRIPT_TYPE)
+    stdnse.debug3("Skipping '%s' %s, 'ports' argument is missing.",SCRIPT_NAME, SCRIPT_TYPE)
     return false
   end
 
@@ -59,7 +59,7 @@ portrule = function(host, port)
 
   --print out a debug message if port 31337/udp is open
   if port.number==31337 and port.protocol == "udp" and not(ports) then
-    stdnse.print_debug("Port 31337/udp is open. Possibility of version detection and password bruteforcing using the backorifice-brute script")
+    stdnse.debug1("Port 31337/udp is open. Possibility of version detection and password bruteforcing using the backorifice-brute script")
     return false
   end
 
@@ -106,7 +106,7 @@ local backorifice =
 
     encrypted_ping = self:BOcrypt(PING_PACKET,seed)
 
-    status, response = self.socket:sendto(self.host.ip, self.port.number, encrypted_ping)
+    status, response = self.socket:sendto(self.host, self.port, encrypted_ping)
     if not(status) then
       return false, response
     end
@@ -261,7 +261,7 @@ local Driver =
   -- @param username string containing username which is disregarded
   -- @param password string containing login password
   -- @return brute.Error object on failure
-  --         brute.Account object on success
+  --         creds.Account object on success
   login = function( self, username, password )
     local status, msg = self.bo:try_password(password,nil)
     if status then
@@ -272,7 +272,7 @@ local Driver =
         nmap.registry.credentials['backorifice'] = {}
       end
       table.insert( nmap.registry.credentials.backorifice, { password = password } )
-      return true, brute.Account:new("", password, creds.State.VALID)
+      return true, creds.Account:new("", password, creds.State.VALID)
     else
       -- The only indication that the password is incorrect is a timeout
       local err = brute.Error:new( "Incorrect password" )

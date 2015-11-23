@@ -26,7 +26,7 @@
 --
 --
 -- @author "Patrik Karlsson <patrik@cqure.net>"
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 -- Version 0.2
 -- Created 2010/11/18 - v0.1 - created by Patrik Karlsson <patrik@cqure.net>
@@ -126,8 +126,6 @@ Packet = {
       local pad = 4 - ((#kvps + 48) % 4)
       pad = ( pad == 4 ) and 0 or pad
 
-      for i=1, pad do kvps = kvps .. "\0" end
-
       local len = bit.lshift( self.total_ahs_len, 24 ) + self.data_seg_len
       local flags = bit.lshift( ( self.flags.transit or 0 ), 7 )
       flags = flags + bit.lshift( ( self.flags.continue or 0 ), 6)
@@ -136,12 +134,12 @@ Packet = {
 
       local opcode = self.opcode + bit.lshift((self.immediate or 0), 6)
 
-      local data = bin.pack(">CCCCICSCSSISSIILLA", opcode,
+      local data = bin.pack(">CCCCICSCSSISSIILLAA", opcode,
       flags, self.ver_max, self.ver_min, len,
       bit.lshift( self.isid.t, 6 ) + bit.band( self.isid.a, 0x3f),
       self.isid.b, self.isid.c, self.isid.d, self.tsih,
       self.initiator_task_tag, self.cid, reserved, self.cmdsn,
-      self.expstatsn, reserved, reserved, kvps )
+      self.expstatsn, reserved, reserved, kvps, string.rep('\0', pad) )
 
       return data
     end
@@ -271,7 +269,7 @@ Packet = {
       flags = flags + bit.lshift( (self.flags.continue or 0), 6 )
 
       local kvps = tostring(self.kvp)
-      for i=1, (#kvps % 2) do kvps = kvps .. "\0" end
+      kvps = kvps .. string.rep('\0', #kvps % 2)
       self.data_seg_len = #kvps
 
       local len = bit.lshift( self.total_ahs_len, 24 ) + self.data_seg_len
@@ -308,6 +306,7 @@ Packet = {
 
       repeat
         local status, header = s:receive_buf(match.numbytes(48), true)
+        if not status then return status, header end
         local pos, _, flags, _, _, len = bin.unpack(">CCCCI", header)
         local cont = ( bit.band(flags, 0x40) == 0x40 )
 
@@ -348,7 +347,7 @@ Packet = {
           table.insert(resp.records, record)
           break
         else
-          stdnse.print_debug("ERROR: iscsi.TextResponse: Unknown target record (%s)", k)
+          stdnse.debug1("ERROR: iscsi.TextResponse: Unknown target record (%s)", k)
         end
       end
 
@@ -423,6 +422,7 @@ Packet = {
 }
 
 --- The communication class handles socket reads and writes
+--
 -- In addition it keeps track of both immediate packets and the amount of read
 -- packets and updates cmdsn and expstatsn accordingly.
 Comm = {
@@ -669,7 +669,7 @@ Helper = {
     end
 
     if ( resp.status_code ~= 0 ) then
-      stdnse.print_debug(3, "ERROR: iscsi.Helper.login: Authentication failed (error code: %d)", resp.status_code)
+      stdnse.debug3("ERROR: iscsi.Helper.login: Authentication failed (error code: %d)", resp.status_code)
       return false, resp
     elseif ( auth_method:upper()=="NONE" ) then
       return true, resp

@@ -76,14 +76,11 @@ Attempts to retrieve information about the domain name of the target
 ---
 
 author = "George Chatzisofroniou"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "external", "safe"}
 
-local io = require "io"
 local ipOps = require "ipOps"
-local math = require "math"
 local nmap = require "nmap"
-local os = require "os"
 local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
@@ -91,7 +88,7 @@ local table = require "table"
 hostrule = function( host )
   local is_private, err = ipOps.isPrivate( host.ip )
   if is_private == nil then
-    stdnse.print_debug( "%s Error in Hostrule: %s.", SCRIPT_NAME, err )
+    stdnse.debug1("Error in Hostrule: %s.", err )
     return false
   end
 
@@ -127,7 +124,7 @@ action = function( host )
       result = {}
       local socket = nmap.new_socket()
       local catch = function()
-        stdnse.print_debug( "fail")
+        stdnse.debug1( "fail")
         socket:close()
       end
 

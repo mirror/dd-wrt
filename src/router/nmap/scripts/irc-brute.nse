@@ -1,10 +1,8 @@
 local brute = require "brute"
 local comm = require "comm"
 local creds = require "creds"
-local math = require "math"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
-local string = require "string"
 
 description=[[
 Performs brute force password auditing against IRC (Internet Relay Chat) servers.
@@ -31,7 +29,7 @@ Performs brute force password auditing against IRC (Internet Relay Chat) servers
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories={"brute","intrusive"}
 
 portrule = shortport.port_or_service({6666,6667,6697,6679},{"irc","ircs"})
@@ -80,7 +78,7 @@ Driver = {
     until(not(status))
 
     if (success) then
-      return true, brute.Account:new("", password, creds.State.VALID)
+      return true, creds.Account:new("", password, creds.State.VALID)
     end
     return false, brute.Error:new("Incorrect password")
   end,
@@ -89,11 +87,7 @@ Driver = {
 }
 
 local function random_nick()
-  local nick = ""
-  for i = 0, 8, 1 do
-    nick = nick .. string.char(math.random(97, 122)) -- lowercase ascii
-  end
-  return nick
+  return stdnse.generate_random_string(9, "abcdefghijklmnopqrstuvwxyz")
 end
 
 local function needsPassword(host, port)

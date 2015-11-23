@@ -29,9 +29,7 @@ Remember each fingerprint must have:
 * <code>login_check</code> - Login function of the target
 
 In addition, a fingerprint may have:
-* <code>target_check</code> - Target validation function. If defined, it will be
-                              called to validate the target before attempting
-                              any logins.
+* <code>target_check</code> - Target validation function. If defined, it will be called to validate the target before attempting any logins.
 
 Default fingerprint file: /nselib/data/http-default-accounts-fingerprints.lua
 This script was based on http-enum.
@@ -40,28 +38,26 @@ This script was based on http-enum.
 ---
 -- @usage
 -- nmap -p80 --script http-default-accounts host/ip
+--
 -- @output
 -- PORT   STATE SERVICE REASON
 -- 80/tcp open  http    syn-ack
 -- |_http-default-accounts: [Cacti] credentials found -> admin:admin Path:/cacti/
--- Final times for host: srtt: 94615 rttvar: 71012  to: 378663
 --
 -- @args http-default-accounts.basepath Base path to append to requests. Default: "/"
--- @args http-default-accounts.fingerprintfile Fingerprint filename. Default:http-default-accounts-fingerprints.lua
+-- @args http-default-accounts.fingerprintfile Fingerprint filename. Default: http-default-accounts-fingerprints.lua
 -- @args http-default-accounts.category Selects a category of fingerprints to use.
---
--- Other useful arguments relevant to this script:
--- http.pipeline Sets max number of petitions in the same request.
--- http.useragent User agent for HTTP requests
---
+
 -- Revision History
 -- 2013-08-13 nnposter
 --   * added support for target_check()
+-- 2014-04-27
+--   * changed category from safe to intrusive
 ---
 
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
-categories = {"discovery", "auth", "safe"}
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
+categories = {"discovery", "auth", "intrusive"}
 
 portrule = shortport.http
 
@@ -146,7 +142,7 @@ local function load_fingerprints(filename, cat)
 
   -- Check if fingerprints are cached
   if(nmap.registry.http_default_accounts_fingerprints ~= nil) then
-    stdnse.print_debug(1, "%s: Loading cached fingerprints", SCRIPT_NAME)
+    stdnse.debug(1, "Loading cached fingerprints")
     return nmap.registry.http_default_accounts_fingerprints
   end
 
@@ -158,11 +154,11 @@ local function load_fingerprints(filename, cat)
   end
 
   -- Load the file
-  stdnse.print_debug(1, "%s: Loading fingerprints: %s", SCRIPT_NAME, filename_full)
+  stdnse.debug(1, "Loading fingerprints: %s", filename_full)
   local env = setmetatable({fingerprints = {}}, {__index = _G});
   file = loadfile(filename_full, "t", env)
   if( not(file) ) then
-    stdnse.print_debug(1, "%s: Couldn't load the file: %s", SCRIPT_NAME, filename_full)
+    stdnse.debug(1, "Couldn't load the file: %s", filename_full)
     return false, "Couldn't load fingerprint file: " .. filename_full
   end
   file()
@@ -236,7 +232,7 @@ action = function(host, port)
   -- Identify servers that answer 200 to invalid HTTP requests and exit as these would invalidate the tests
   local _, http_status, _ = http.identify_404(host,port)
   if ( http_status == 200 ) then
-    stdnse.print_debug(1, "%s: Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", SCRIPT_NAME, host.ip, port.number)
+    stdnse.debug(1, "Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", host.ip, port.number)
     return nil
   end
 
@@ -245,14 +241,14 @@ action = function(host, port)
   if(not(status)) then
     return stdnse.format_output(false, fingerprints)
   end
-  stdnse.print_debug(1, "%s: %d fingerprints were loaded", SCRIPT_NAME, #fingerprints)
+  stdnse.debug(1, "%d fingerprints were loaded", #fingerprints)
 
   --Format basepath: Removes or adds slashs
   basepath = format_basepath(basepath)
 
   -- Add requests to the http pipeline
   requests = {}
-  stdnse.print_debug(1, "%s: Trying known locations under path '%s' (change with '%s.basepath' argument)", SCRIPT_NAME, basepath, SCRIPT_NAME)
+  stdnse.debug(1, "Trying known locations under path '%s' (change with '%s.basepath' argument)", basepath, SCRIPT_NAME)
   for i = 1, #fingerprints, 1 do
     for j = 1, #fingerprints[i].paths, 1 do
       requests = http.pipeline_add(basepath .. fingerprints[i].paths[j].path, nil, requests, 'GET')
@@ -262,7 +258,8 @@ action = function(host, port)
   -- Nuclear launch detected!
   results = http.pipeline_go(host, port, requests, nil)
   if results == nil then
-    return "[ERROR] HTTP request table is empty. This should not happen since we at least made one request."
+    return stdnse.format_output(false,
+      "HTTP request table is empty. This should not happen since we at least made one request.")
   end
 
   -- Record 404 response, later it will be used to determine if page exists
@@ -276,7 +273,7 @@ action = function(host, port)
 
   for i, fingerprint in ipairs(fingerprints) do
     local credentials_found = false
-    stdnse.print_debug(1, "%s: Processing %s", SCRIPT_NAME, fingerprint.name)
+    stdnse.debug(1, "Processing %s", fingerprint.name)
     for _, probe in ipairs(fingerprint.paths) do
 
       if (results[j] and not(credentials_found)) then
@@ -287,12 +284,12 @@ action = function(host, port)
           or fingerprint.target_check(host, port, path, results[j]))
         then
           for _, login_combo in ipairs(fingerprint.login_combos) do
-            stdnse.print_debug(2, "%s: Trying login combo -> %s:%s", SCRIPT_NAME, login_combo["username"], login_combo["password"])
+            stdnse.debug(2, "Trying login combo -> %s:%s", login_combo["username"], login_combo["password"])
             --Check default credentials
             if( fingerprint.login_check(host, port, path, login_combo["username"], login_combo["password"]) ) then
 
               --Valid credentials found
-              stdnse.print_debug(1, "%s:[%s] valid default credentials found.", SCRIPT_NAME, fingerprint.name)
+              stdnse.debug(1, "[%s] valid default credentials found.", fingerprint.name)
               output_lns[#output_lns + 1] = string.format("[%s] credentials found -> %s:%s Path:%s",
                                           fingerprint.name, login_combo["username"], login_combo["password"], path)
               -- Add to http credentials table

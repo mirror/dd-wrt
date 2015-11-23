@@ -27,7 +27,7 @@ Extracts a list of Citrix servers from the ICA Browser service.
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
 
@@ -70,7 +70,7 @@ action = function(host, port)
 
   --
   -- Packets were intercepted from the Citrix Program Neighborhood client
-  -- They are used to query a server for it's list of published applications
+  -- They are used to query a server for its list of published applications
   --
   -- We're really not interested in the responses to the first two packets
   -- The third response contains the list of published applications
@@ -126,7 +126,7 @@ action = function(host, port)
   -- if it is set to zero (0) we have more response packets to process
   -- if it is set to one (1) we have arrived at the last packet of our journey
   --
-  while packet:sub(31,31) ~= string.char(0x01) do
+  while packet:sub(31,31) ~= "\x01" do
     packet = try( socket:receive() )
     local tmp_table = process_server_response( packet )
 

@@ -262,7 +262,8 @@ _find_adapter_address(intf_t *intf, const char *device)
 	n = atoi(p);
 
 	for (a = intf->iftable; a != NULL; a = a->Next) {
-		if (intf->ifcombo[type].idx[n].ipv4 == a->IfIndex &&
+		if ( intf->ifcombo[type].idx != NULL &&
+		    intf->ifcombo[type].idx[n].ipv4 == a->IfIndex &&
 		    intf->ifcombo[type].idx[n].ipv6 == a->Ipv6IfIndex) {
 			return a;
 		}
@@ -425,6 +426,9 @@ intf_get_pcap_devname(const char *intf_name, char *pcapdev, int pcapdevlen)
 	pcap_if_t *pcapdevs;
 	pcap_if_t *pdev, *selected;
 	intf_t *intf;
+	char errbuf[PCAP_ERRBUF_SIZE];
+	HANDLE pcapMutex;
+	DWORD wait;
 
 	if ((intf = intf_open()) == NULL)
 		return (-1);
@@ -439,10 +443,20 @@ intf_get_pcap_devname(const char *intf_name, char *pcapdev, int pcapdevlen)
 		return (-1);
 	}
 
-	if (pcap_findalldevs(&pcapdevs, NULL) == -1) {
+  pcapMutex = CreateMutex(NULL, 0, "Global\\DnetPcapHangAvoidanceMutex");
+  wait = WaitForSingleObject(pcapMutex, INFINITE);
+	if (pcap_findalldevs(&pcapdevs, errbuf) == -1) {
+    if (wait == WAIT_ABANDONED || wait == WAIT_OBJECT_0) {
+      ReleaseMutex(pcapMutex);
+    }
+    CloseHandle(pcapMutex);
 		intf_close(intf);
 		return (-1);
 	}
+  if (wait == WAIT_ABANDONED || wait == WAIT_OBJECT_0) {
+    ReleaseMutex(pcapMutex);
+  }
+  CloseHandle(pcapMutex);
 
 	/* Loop through all the pcap devices until we find a match. */
 	selected = NULL;

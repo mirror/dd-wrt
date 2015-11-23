@@ -26,7 +26,7 @@ For more information, see:
 -- to <code>{"/jmx-console/"}</code>.
 
 author = "Hani Benhabiles"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"safe", "auth", "vuln"}
 
 local http = require "http"
@@ -48,7 +48,7 @@ action = function(host, port)
   -- Identify servers that answer 200 to invalid HTTP requests and exit as these would invalidate the tests
   local _, http_status, _ = http.identify_404(host,port)
   if ( http_status == 200 ) then
-    stdnse.print_debug(1, "%s: Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", SCRIPT_NAME, host.ip, port.number)
+    stdnse.debug1("Exiting due to ambiguous response from web server on %s:%s. All URIs return status 200.", host.ip, port.number)
     return false
   end
 

@@ -58,7 +58,7 @@
 -- * The library does database authentication only. No OS authentication or use of the integrated security model is supported.
 -- * Queries using SELECT, INSERT, DELETE and EXEC of procedures have been tested while developing scripts.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 -- @author "Patrik Karlsson <patrik@cqure.net>, Chris Woodbury"
 --
@@ -136,6 +136,7 @@ _ENV = stdnse.module("mssql", stdnse.seeall)
 --
 --                             (Tom Sellers)
 -- Updated 10/01/2012 - v0.7 - added support for 2012 and later service packs for 2005, 2008 and 2008 R2 (Rob Nicholls)
+-- Updated 02/06/2015 - v0.8 - added support for 2014 and later service packs for older versions (Rob Nicholls)
 
 local HAVE_SSL, openssl = pcall(require, "openssl")
 
@@ -293,7 +294,7 @@ SqlServerVersionInfo =
     elseif versionNumber:match( "^%d+%.%d+%.%d+" ) then
       major, minor, revision = versionNumber:match( "^(%d+)%.(%d+)%.(%d+)" )
     else
-      stdnse.print_debug( 1, "%s: SetVersionNumber: versionNumber is not in correct format: %s", "MSSQL", versionNumber or "nil" )
+      stdnse.debug1("%s: SetVersionNumber: versionNumber is not in correct format: %s", "MSSQL", versionNumber or "nil" )
     end
 
     self:SetVersion( major, minor, revision, subBuild, source )
@@ -320,7 +321,7 @@ SqlServerVersionInfo =
     local VERSION_LOOKUP_TABLE = {
       ["^6%.0"] = "6.0", ["^6%.5"] = "6.5", ["^7%.0"] = "7.0",
       ["^8%.0"] = "2000", ["^9%.0"] = "2005", ["^10%.0"] = "2008",
-      ["^10%.50"] = "2008 R2", ["^11%.0"] = "2012",
+      ["^10%.50"] = "2008 R2", ["^11%.0"] = "2012", ["^12%.0"] = "2014",
     }
 
     local product = ""
@@ -359,11 +360,13 @@ SqlServerVersionInfo =
 
     local SP_LOOKUP_TABLE_2005 = { {1399, "RTM"}, {2047, "SP1"}, {3042, "SP2"}, {4035, "SP3"}, {5000, "SP4"}, }
 
-    local SP_LOOKUP_TABLE_2008 = { {1600, "RTM"}, {2531, "SP1"}, {4000, "SP2"}, {5500, "SP3"}, }
+    local SP_LOOKUP_TABLE_2008 = { {1600, "RTM"}, {2531, "SP1"}, {4000, "SP2"}, {5500, "SP3"}, {6000, "SP4"}, }
 
-    local SP_LOOKUP_TABLE_2008R2 = { {1600, "RTM"}, {2500, "SP1"}, {4000, "SP2"}, }
+    local SP_LOOKUP_TABLE_2008R2 = { {1600, "RTM"}, {2500, "SP1"}, {4000, "SP2"}, {6000, "SP3"}, }
 
-    local SP_LOOKUP_TABLE_2012 = { {2100, "RTM"}, }
+    local SP_LOOKUP_TABLE_2012 = { {2100, "RTM"}, {3000, "SP1"}, {5058, "SP2"}, }
+
+    local SP_LOOKUP_TABLE_2014 = { {2000, "RTM"}, {4050, "SP1"}, }
 
 
     if ( not self.brandedVersion ) then
@@ -378,6 +381,7 @@ SqlServerVersionInfo =
     elseif self.brandedVersion == "2008" then spLookupTable = SP_LOOKUP_TABLE_2008
     elseif self.brandedVersion == "2008 R2" then spLookupTable = SP_LOOKUP_TABLE_2008R2
     elseif self.brandedVersion == "2012" then spLookupTable = SP_LOOKUP_TABLE_2012
+    elseif self.brandedVersion == "2014" then spLookupTable = SP_LOOKUP_TABLE_2014
     end
 
     return spLookupTable
@@ -534,7 +538,7 @@ SSRP =
 
       table.insert( instanceStrings, instanceString )
     until (not firstInstanceEnd)
-    stdnse.print_debug( 2, "%s: SSRP Substrings:\n  %s", SSRP.DEBUG_ID, stdnse.strjoin( "\n  ", instanceStrings ) )
+    stdnse.debug2("%s: SSRP Substrings:\n  %s", SSRP.DEBUG_ID, stdnse.strjoin( "\n  ", instanceStrings ) )
 
     local instances = {}
     for _, instanceString in ipairs( instanceStrings ) do
@@ -556,7 +560,7 @@ SSRP =
       if status then
         pipeName = namedpipes.make_pipe_name( host.ip, pipeSubPath )
       elseif pipeName ~= nil then
-        stdnse.print_debug( 1, "%s: Invalid pipe name:\n%s", SSRP.DEBUG_ID, pipeName )
+        stdnse.debug1("%s: Invalid pipe name:\n%s", SSRP.DEBUG_ID, pipeName )
       end
       instance.pipeName = pipeName
 
@@ -574,11 +578,11 @@ SSRP =
     pos, messageType, dataLength = bin.unpack("<CS", responseData, 1)
     -- extract the response data (i.e. everything after the 3-byte header)
     responseData = responseData:sub(4)
-    stdnse.print_debug( 2, "%s: SSRP Data: %s", SSRP.DEBUG_ID, responseData )
+    stdnse.debug2("%s: SSRP Data: %s", SSRP.DEBUG_ID, responseData )
     if ( messageType ~= SSRP.MESSAGE_TYPE.ServerResponse or
         dataLength ~= responseData:len() ) then
 
-      stdnse.print_debug( 2, "%s: Invalid SSRP response. Type: 0x%02x, Length: %d, Actual length: %d",
+      stdnse.debug2("%s: Invalid SSRP response. Type: 0x%02x, Length: %d, Actual length: %d",
         SSRP.DEBUG_ID, messageType, dataLength, responseData:len() )
     else
       instances = SSRP._ParseSsrpString( host, responseData )
@@ -599,7 +603,7 @@ SSRP =
     port = port or SSRP.PORT
 
     if ( SCANNED_PORTS_ONLY and nmap.get_port_state( host, port ) == nil ) then
-      stdnse.print_debug( 2, "%s: Discovery disallowed: scanned-ports-only is set and port %d was not scanned", SSRP.DEBUG_ID, port.number )
+      stdnse.debug2("%s: Discovery disallowed: scanned-ports-only is set and port %d was not scanned", SSRP.DEBUG_ID, port.number )
       return false, "Discovery disallowed: scanned-ports-only"
     end
 
@@ -607,7 +611,7 @@ SSRP =
     socket:set_timeout(5000)
 
     if ( port.number ~= SSRP.PORT.number ) then
-      stdnse.print_debug( 1, "%s: DiscoverInstances() called with non-standard port (%d)", SSRP.DEBUG_ID, port.number )
+      stdnse.debug1("%s: DiscoverInstances() called with non-standard port (%d)", SSRP.DEBUG_ID, port.number )
     end
 
     local status, err = socket:connect( host, port )
@@ -644,7 +648,7 @@ SSRP =
     local instances_all = {}
 
     if ( port.number ~= SSRP.PORT.number ) then
-      stdnse.print_debug( 1, "%S: DiscoverInstances_Broadcast() called with non-standard port (%d)", SSRP.DEBUG_ID, port.number )
+      stdnse.debug1("%S: DiscoverInstances_Broadcast() called with non-standard port (%d)", SSRP.DEBUG_ID, port.number )
     end
 
     local status, err = socket:sendto(host, port, bin.pack( "C", SSRP.MESSAGE_TYPE.ClientBroadcast ))
@@ -938,7 +942,7 @@ ColumnData =
         coldata = coldata .. '-' .. nextdata
 
       else
-        stdnse.print_debug("Unhandled length (%d) for GUIDTYPE", len)
+        stdnse.debug1("Unhandled length (%d) for GUIDTYPE", len)
         return pos + len, 'Unsupported Data'
       end
 
@@ -1046,7 +1050,7 @@ ColumnData =
       elseif ( len == 8 ) then
         pos, coldata = bin.unpack("<L", data, pos)
       else
-        stdnse.print_debug("Unhandled length (%d) for DECIMALNTYPE", len)
+        stdnse.debug1("Unhandled length (%d) for DECIMALNTYPE", len)
         return pos + len, 'Unsupported Data'
       end
 
@@ -1444,7 +1448,7 @@ Token =
     local ttype
     pos, ttype = bin.unpack("C", data, pos)
     if ( not(Token.Parse[ttype]) ) then
-      stdnse.print_debug( 1, "%s: No parser for token type 0x%X", "MSSQL", ttype )
+      stdnse.debug1("%s: No parser for token type 0x%X", "MSSQL", ttype )
       return -1, ("No parser for token type: 0x%X"):format( ttype )
     end
 
@@ -1636,32 +1640,32 @@ PreLoginPacket =
       end
       expectedOptionLength = OPTION_LENGTH_SERVER[ optionType ]
       if ( not expectedOptionLength ) then
-        stdnse.print_debug( 2, "%s: Unrecognized pre-login option type: %s", "MSSQL", optionType )
+        stdnse.debug2("%s: Unrecognized pre-login option type: %s", "MSSQL", optionType )
         expectedOptionLength = -1
       end
 
       pos, optionPos, optionLength = bin.unpack(">SS", bytes, pos)
       if not (optionPos and optionLength) then
-        stdnse.print_debug( 2, "%s: Could not unpack optionPos and optionLength.", "MSSQL" )
+        stdnse.debug2("%s: Could not unpack optionPos and optionLength.", "MSSQL" )
         return false, "Invalid pre-login response"
       end
 
       optionPos = optionPos + 1 -- convert from 0-based index to 1-based index
       if ( (optionPos + optionLength) > (#bytes + 1) ) then
-        stdnse.print_debug( 2, "%s: Pre-login response: pos+len for option type %s is beyond end of data.", "MSSQL", optionType )
-        stdnse.print_debug( 2, "%s:   (optionPos: %s) (optionLength: %s)", "MSSQL", optionPos, optionLength )
+        stdnse.debug2("%s: Pre-login response: pos+len for option type %s is beyond end of data.", "MSSQL", optionType )
+        stdnse.debug2("%s:   (optionPos: %s) (optionLength: %s)", "MSSQL", optionPos, optionLength )
         return false, "Invalid pre-login response"
       end
 
 
       if ( optionLength ~= expectedOptionLength and expectedOptionLength ~= -1 ) then
-        stdnse.print_debug( 2, "%s: Option data is incorrect size in pre-login response. ", "MSSQL" )
-        stdnse.print_debug( 2, "%s:   (optionType: %s) (optionLength: %s)", "MSSQL", optionType, optionLength )
+        stdnse.debug2("%s: Option data is incorrect size in pre-login response. ", "MSSQL" )
+        stdnse.debug2("%s:   (optionType: %s) (optionLength: %s)", "MSSQL", optionType, optionLength )
         return false, "Invalid pre-login response"
       end
       optionData = bytes:sub( optionPos, optionPos + optionLength - 1 )
       if #optionData ~= optionLength then
-        stdnse.print_debug( 2, "%s: Could not read sufficient bytes from version data.", "MSSQL" )
+        stdnse.debug2("%s: Could not read sufficient bytes from version data.", "MSSQL" )
         return false, "Invalid pre-login response"
       end
 
@@ -1732,7 +1736,7 @@ LoginPacket =
   library = "mssql.lua",
   locale = "",
   database = "master", --nil,
-  MAC = string.char(0x00,0x00,0x00,0x00,0x00,0x00), -- should contain client MAC, jTDS uses all zeroes
+  MAC = "\x00\x00\x00\x00\x00\x00", -- should contain client MAC, jTDS uses all zeroes
 
   new = function(self,o)
     o = o or {}
@@ -1903,15 +1907,15 @@ NTAuthenticationPacket = {
     local sessionkey_offset = hostname_offset + #hostname
 
     local data = bin.pack("<AISSI", ntlmssp, NTLMSSP_AUTH, #lm_response, #lm_response, lm_response_offset)
-    data = data .. bin.pack("<SSI", #ntlm_response, #ntlm_response, ntlm_response_offset)
-    data = data .. bin.pack("<SSI", #domain, #domain, domain_offset)
-    data = data .. bin.pack("<SSI", #user, #user, username_offset)
-    data = data .. bin.pack("<SSI", #hostname, #hostname, hostname_offset)
-    data = data .. bin.pack("<SSI", #sessionkey, #sessionkey, sessionkey_offset)
-    data = data .. bin.pack("<I", flags)
-    data = data .. bin.pack("A", domain)
-    data = data .. bin.pack("A", user )
-    data = data .. lm_response .. ntlm_response
+    .. bin.pack("<SSI", #ntlm_response, #ntlm_response, ntlm_response_offset)
+    .. bin.pack("<SSI", #domain, #domain, domain_offset)
+    .. bin.pack("<SSI", #user, #user, username_offset)
+    .. bin.pack("<SSI", #hostname, #hostname, hostname_offset)
+    .. bin.pack("<SSI", #sessionkey, #sessionkey, sessionkey_offset)
+    .. bin.pack("<I", flags)
+    .. bin.pack("A", domain)
+    .. bin.pack("A", user )
+    .. lm_response .. ntlm_response
 
     return PacketType.NTAuthentication, data
   end,
@@ -1961,14 +1965,14 @@ TDSStream = {
     end
 
     local status, result, connectionType, errorMessage
-    stdnse.print_debug( 3, "%s: Connection preferences for %s: %s",
+    stdnse.debug3("%s: Connection preferences for %s: %s",
     "MSSQL", instanceInfo:GetName(), stdnse.strjoin( ", ", connectionPreference ) )
 
     for _, connectionType in ipairs( connectionPreference ) do
       if connectionType == "TCP" then
 
         if not ( instanceInfo.port ) then
-          stdnse.print_debug( 3, "%s: Cannot connect to %s via TCP because port table is not set.",
+          stdnse.debug3("%s: Cannot connect to %s via TCP because port table is not set.",
           "MSSQL", instanceInfo:GetName() )
           result = "No TCP port for this instance"
         else
@@ -1979,7 +1983,7 @@ TDSStream = {
       elseif connectionType == "Named Pipes" or connectionType == "NP" then
 
         if not ( instanceInfo.pipeName ) then
-          stdnse.print_debug( 3, "%s: Cannot connect to %s via named pipes because pipe name is not set.",
+          stdnse.debug3("%s: Cannot connect to %s via named pipes because pipe name is not set.",
           "MSSQL", instanceInfo:GetName() )
           result = "No named pipe for this instance"
         else
@@ -1988,7 +1992,7 @@ TDSStream = {
         end
 
       else
-        stdnse.print_debug( 1, "%s: Unknown connection preference: %s", "MSSQL", connectionType )
+        stdnse.debug1("%s: Unknown connection preference: %s", "MSSQL", connectionType )
         return false, ("ERROR: Unknown connection preference: %s"):format(connectionType)
       end
 
@@ -2023,7 +2027,7 @@ TDSStream = {
     if ( self._socket ) then return false, "Already connected via TCP" end
 
     if ( SCANNED_PORTS_ONLY and smb.get_port( host ) == nil ) then
-      stdnse.print_debug( 2, "%s: Connection disallowed: scanned-ports-only is set and no SMB port is available", "MSSQL" )
+      stdnse.debug2("%s: Connection disallowed: scanned-ports-only is set and no SMB port is available", "MSSQL" )
       return false, "Connection disallowed: scanned-ports-only"
     end
 
@@ -2050,7 +2054,7 @@ TDSStream = {
     if ( self._pipe ) then return false, "Already connected via named pipes" end
 
     if ( SCANNED_PORTS_ONLY and nmap.get_port_state( host, port ) == nil ) then
-      stdnse.print_debug( 2, "%s: Connection disallowed: scanned-ports-only is set and port %d was not scanned", "MSSQL", port.number )
+      stdnse.debug2("%s: Connection disallowed: scanned-ports-only is set and port %d was not scanned", "MSSQL", port.number )
       return false, "Connection disallowed: scanned-ports-only"
     end
 
@@ -2075,7 +2079,7 @@ TDSStream = {
 
     if ( not(status) ) then
       self._socket = nil
-      stdnse.print_debug( 2, "%s: Socket connection failed on %s:%s", "MSSQL", host.ip, port.number )
+      stdnse.debug2("%s: Socket connection failed on %s:%s", "MSSQL", host.ip, port.number )
       return false, "Socket connection failed"
     end
     self._name = string.format( "%s:%s", host.ip, port.number )
@@ -2191,7 +2195,7 @@ TDSStream = {
 
       -- TDS packet validity check: packet at least as long as the TDS header
       if ( readBuffer:len() < 8 ) then
-        stdnse.print_debug( 2, "%s: Receiving (%s): packet is invalid length", "MSSQL", self._name )
+        stdnse.debug2("%s: Receiving (%s): packet is invalid length", "MSSQL", self._name )
         return false, "Server returned invalid packet"
       end
 
@@ -2201,7 +2205,7 @@ TDSStream = {
 
       -- TDS packet validity check: packet type is Response (0x4)
       if ( packetType ~= PacketType.Response ) then
-        stdnse.print_debug( 2, "%s: Receiving (%s): Expected type 0x4 (response), but received type 0x%x",
+        stdnse.debug2("%s: Receiving (%s): Expected type 0x4 (response), but received type 0x%x",
           "MSSQL", self._name, packetType )
         return false, "Server returned invalid packet"
       end
@@ -2228,7 +2232,7 @@ TDSStream = {
 
       -- TDS packet validity check: packet length matches length from header
       if ( packetLength ~= (thisPacketData:len() + 8) ) then
-        stdnse.print_debug( 2, "%s: Receiving (%s): Header reports length %d, actual length is %d",
+        stdnse.debug2("%s: Receiving (%s): Header reports length %d, actual length is %d",
           "MSSQL", self._name, packetLength, thisPacketData:len()  )
         return false, "Server returned invalid packet"
       end
@@ -2490,7 +2494,7 @@ Helper =
         Helper.AddOrMergeInstance( instance )
         table.insert( instances_host, instance )
       else
-        stdnse.print_debug( 3, "DiscoverBySmb \n pipe: %s\n result: %s", pipeSubPath, tostring( result ) )
+        stdnse.debug3("DiscoverBySmb \n pipe: %s\n result: %s", pipeSubPath, tostring( result ) )
       end
     end
 
@@ -2853,7 +2857,7 @@ Helper =
     status, response = tdsStream:ConnectEx( instanceInfo )
 
     if ( not status ) then
-      stdnse.print_debug( 2, "%s: Connection to %s failed: %s", "MSSQL", instanceInfo:GetName(), response or "" )
+      stdnse.debug2("%s: Connection to %s failed: %s", "MSSQL", instanceInfo:GetName(), response or "" )
       return false, "Connect failed"
     end
 
@@ -2873,12 +2877,12 @@ Helper =
       if status then
         version = preLoginResponse.versionInfo
       else
-        stdnse.print_debug( 2, "%s: Parsing of pre-login packet from %s failed: %s",
+        stdnse.debug2("%s: Parsing of pre-login packet from %s failed: %s",
           "MSSQL", instanceInfo:GetName(), preLoginResponse or "" )
         return false, "Parsing failed"
       end
     else
-      stdnse.print_debug( 2, "%s: Receive for %s failed: %s", "MSSQL", instanceInfo:GetName(), response or "" )
+      stdnse.debug2("%s: Receive for %s failed: %s", "MSSQL", instanceInfo:GetName(), response or "" )
       return false, "Receive failed"
     end
 
@@ -2925,7 +2929,7 @@ Helper =
       end
 
       if ( not Helper.WasDiscoveryPerformed( host ) ) then
-        stdnse.print_debug( 2, "%s: Discovery has not been performed prior to GetTargetInstances() call. Performing discovery now.", "MSSQL" )
+        stdnse.debug2("%s: Discovery has not been performed prior to GetTargetInstances() call. Performing discovery now.", "MSSQL" )
         Helper.Discover( host )
       end
 
@@ -3064,27 +3068,23 @@ Auth = {
   -- @return string containing the encrypted password
   TDS7CryptPass = function(password)
     local xormask = 0x5a5a
-    local result = ""
 
-    for i=1, password:len() do
-      local c = bit.bxor( string.byte( password:sub( i, i ) ), xormask )
+    return password:gsub(".", function(i)
+      local c = bit.bxor( string.byte( i ), xormask )
       local m1= bit.band( bit.rshift( c, 4 ), 0x0F0F )
       local m2= bit.band( bit.lshift( c, 4 ), 0xF0F0 )
-      result = result .. bin.pack("S", bit.bor( m1, m2 ) )
-    end
-    return result
+      return bin.pack("S", bit.bor( m1, m2 ) )
+    end)
   end,
 
   LmResponse = function( password, nonce )
 
     if ( not(HAVE_SSL) ) then
-      stdnse.print_debug("ERROR: Nmap is missing OpenSSL")
+      stdnse.debug1("ERROR: Nmap is missing OpenSSL")
       return
     end
 
-    if(#password < 14) then
-      password = password .. string.rep(string.char(0), 14 - #password)
-    end
+    password = password .. string.rep('\0', 14 - #password)
 
     password = password:upper()
 
@@ -3098,9 +3098,7 @@ Auth = {
 
     local result = openssl.encrypt("DES", key1, nil, nonce) .. openssl.encrypt("DES", key2, nil, nonce)
 
-    if(#result < 21) then
-      result = result .. string.rep(string.char(0), 21 - #result)
-    end
+    result = result .. string.rep('\0', 21 - #result)
 
     str1 = string.sub(result, 1, 7)
     str2 = string.sub(result, 8, 14)
@@ -3137,7 +3135,7 @@ Util =
   -- @return string containing a two byte representation of str where a zero
   --         byte character has been tagged on to each character.
   ToWideChar = function( str )
-    return str:gsub("(.)", "%1" .. string.char(0x00) )
+    return str:gsub("(.)", "%1\0" )
   end,
 
 

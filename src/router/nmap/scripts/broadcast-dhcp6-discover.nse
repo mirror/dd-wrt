@@ -32,18 +32,18 @@ to a privileged port (udp/546).
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"broadcast", "safe"}
 
 
 prerule = function()
   if not nmap.is_privileged() then
-    stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges.")
     return false
   end
 
   if nmap.address_family() ~= 'inet6' then
-    stdnse.print_debug("%s is IPv6 compatible only.", SCRIPT_NAME)
+    stdnse.debug1("is IPv6 compatible only.")
     return false
   end
   return true

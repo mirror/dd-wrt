@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,11 +116,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: portlist.cc 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: portlist.cc 34574 2015-06-03 13:01:29Z dmiller $ */
 
 
 #include "nmap.h"
@@ -722,8 +721,6 @@ int PortList::forgetPort(u16 portno, u8 protocol) {
   state_counts_proto[protocol][answer->state]--;
   state_counts_proto[protocol][default_port_state[protocol].state]++;
 
-  delete answer;
-
   port_list[protocol][portno] = NULL;
 
   if (o.verbose) {
@@ -733,6 +730,7 @@ int PortList::forgetPort(u16 portno, u8 protocol) {
     log_flush(LOG_STDOUT);
   }
 
+  delete answer;
   return 0;
 }
 
@@ -894,6 +892,35 @@ bool PortList::hasOpenPorts() const {
     getStateCounts(PORT_UNFILTERED) != 0;
 }
 
+/* Returns true if service scan is done and portno is found to be tcpwrapped, false otherwise */
+bool PortList::isTCPwrapped(u16 portno) const {
+  const Port *port = lookupPort(portno, IPPROTO_TCP);
+  if (port == NULL) {
+    if (o.debugging > 1) {
+      log_write(LOG_STDOUT, "PortList::isTCPwrapped(%d) requested but port not in list\n", portno);
+    }
+    return false;
+  } else if (!o.servicescan) {
+    if (o.debugging > 1) {
+      log_write(LOG_STDOUT, "PortList::isTCPwrapped(%d) requested but service scan was never asked to be done\n", portno);
+    }
+    return false;
+  } else if (port->service == NULL) {
+    if (o.debugging > 1) {
+      log_write(LOG_STDOUT, "PortList::isTCPwrapped(%d) requested but port has not been service scanned yet\n", portno);
+    }
+    return false;
+  } else if (port->service->name == NULL) {
+    // no service match and port not listed in services file
+    if (o.debugging > 1) {
+      log_write(LOG_STDOUT, "PortList::isTCPwrapped(%d) requested but service has no name\n", portno);
+    }
+    return false;
+  } else {
+    return (strcmp(port->service->name,"tcpwrapped")==0);
+  }
+}
+
 int PortList::setStateReason(u16 portno, u8 proto, reason_t reason, u8 ttl,
   const struct sockaddr_storage *ip_addr) {
     Port *answer = NULL;
@@ -943,4 +970,3 @@ void random_port_cheat(u16 *ports, int portcount) {
     }
   }
 }
-

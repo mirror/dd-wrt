@@ -1,5 +1,6 @@
 local brute = require "brute"
 local coroutine = require "coroutine"
+local creds = require "creds"
 local cvs = require "cvs"
 local io = require "io"
 local nmap = require "nmap"
@@ -38,7 +39,7 @@ With knowledge of the correct repository name, usernames and passwords can be gu
 --                             library [Aleksandar Nikolic]
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -68,7 +69,7 @@ Driver =
       -- script can use them later.
       self.host.registry.cvs_repos = self.host.registry.cvs_repos or {}
       table.insert(self.host.registry.cvs_repos, password)
-      return true, brute.Account:new(username, password, 0)
+      return true, creds.Account:new(username, password, 0)
     end
     return false, brute.Error:new( "Incorrect password" )
   end,
@@ -99,7 +100,7 @@ action = function(host, port)
   if ( repofile ) then
     f = io.open( repofile, "r" )
     if ( not(f) ) then
-      return ("\n  ERROR: Failed to open repository file: %s"):format(repofile)
+      return stdnse.format_output(false, ("Failed to open repository file: %s"):format(repofile))
     end
   end
 

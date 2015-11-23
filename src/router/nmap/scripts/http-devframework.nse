@@ -9,7 +9,7 @@ While the script does some guessing, note that overall there's no way to
 determine what technologies a given site is using.
 
 You can help improve this script by adding new entries to
-nselib/data/http-tools-fingerprints.lua
+nselib/data/http-devframework-fingerprints.lua
 
 Each entry must have:
 * <code>rapidDetect</code> - Callback function that is called in the beginning
@@ -39,13 +39,11 @@ Note that the <code>consumingDetect</code> callback will not take place only if
 
 categories = {"discovery", "intrusive"}
 author = "George Chatzisofroniou"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
-local table = require "table"
-local string = require "string"
 local httpspider = require "httpspider"
 local _G = require "_G"
 
@@ -59,12 +57,12 @@ local function loadFingerprints(filename, cat)
   filename = nmap.fetchfile('nselib/data/' .. filename) or filename
 
   -- Load the file
-  stdnse.print_debug(1, "%s: Loading fingerprints: %s", SCRIPT_NAME, filename)
+  stdnse.debug1("Loading fingerprints: %s", filename)
   local env = setmetatable({fingerprints = {}}, {__index = _G});
   file = loadfile(filename, "t", env)
 
   if( not(file) ) then
-    stdnse.print_debug(1, "%s: Couldn't load the file: %s", SCRIPT_NAME, filename)
+    stdnse.debug1("Couldn't load the file: %s", filename)
     return
   end
 
@@ -119,7 +117,7 @@ action = function(host, port)
     -- most of them are "legitimate" and should not be reason to abort
     if (not(status)) then
       if (r.err) then
-        return stdnse.format_output(true, ("ERROR: %s"):format(r.reason))
+        return stdnse.format_output(false, r.reason)
       else
         break
       end

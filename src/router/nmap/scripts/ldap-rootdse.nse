@@ -3,7 +3,6 @@ local ldap = require "ldap"
 local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
-local string = require "string"
 
 description = [[
 Retrieves the LDAP root DSA-specific Entry (DSE)
@@ -91,7 +90,7 @@ Retrieves the LDAP root DSA-specific Entry (DSE)
 
 author = "Patrik Karlsson"
 copyright = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 dependencies = {"ldap-brute"}
 
@@ -105,7 +104,7 @@ function action(host,port)
 
   -- In order to discover what protocol to use (SSL/TCP) we need to send a few bytes to the server
   -- An anonymous bind should do it
-  local ldap_anonymous_bind = string.char( 0x30, 0x0c, 0x02, 0x01, 0x01, 0x60, 0x07, 0x02, 0x01, 0x03, 0x04, 0x00, 0x80, 0x00 )
+  local ldap_anonymous_bind = "\x30\x0c\x02\x01\x01\x60\x07\x02\x01\x03\x04\x00\x80\x00"
   local _
   socket, _, opt = comm.tryssl( host, port, ldap_anonymous_bind, nil )
 

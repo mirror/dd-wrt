@@ -2,7 +2,7 @@
  * ncat_core.c -- Contains option definitions and miscellaneous functions. *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -93,8 +93,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -115,11 +114,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_core.c 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: ncat_core.c 35432 2015-11-15 14:08:02Z dmiller $ */
 
 #include "ncat.h"
 #include "util.h"
@@ -169,6 +168,7 @@ void options_init(void)
     o.keepopen = 0;
     o.sendonly = 0;
     o.recvonly = 0;
+    o.noshutdown = 0;
     o.telnet = 0;
     o.linedelay = 0;
     o.chat = 0;
@@ -207,6 +207,7 @@ void options_init(void)
     o.sslkey = NULL;
     o.sslverify = 0;
     o.ssltrustfile = NULL;
+    o.sslciphers = NULL;
 #endif
 }
 
@@ -569,6 +570,13 @@ void setup_environment(struct fdinfo *info)
     if (getpeername(info->fd, &su.sockaddr, &alen) != 0) {
         bye("getpeername failed: %s", socket_strerror(socket_errno()));
     }
+#ifdef HAVE_SYS_UN_H
+    if (su.sockaddr.sa_family == AF_UNIX) {
+        /* say localhost to keep it backwards compatible */
+        setenv_portable("NCAT_REMOTE_ADDR", "localhost");
+        setenv_portable("NCAT_REMOTE_PORT", "");
+    } else
+#endif
     if (getnameinfo((struct sockaddr *)&su, alen, ip, sizeof(ip),
             port, sizeof(port), NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
         setenv_portable("NCAT_REMOTE_ADDR", ip);
@@ -580,6 +588,13 @@ void setup_environment(struct fdinfo *info)
     if (getsockname(info->fd, (struct sockaddr *)&su, &alen) < 0) {
         bye("getsockname failed: %s", socket_strerror(socket_errno()));
     }
+#ifdef HAVE_SYS_UN_H
+    if (su.sockaddr.sa_family == AF_UNIX) {
+        /* say localhost to keep it backwards compatible, else su.un.sun_path */
+        setenv_portable("NCAT_LOCAL_ADDR", "localhost");
+        setenv_portable("NCAT_LOCAL_PORT", "");
+    } else
+#endif
     if (getnameinfo((struct sockaddr *)&su, alen, ip, sizeof(ip),
             port, sizeof(port), NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
         setenv_portable("NCAT_LOCAL_ADDR", ip);

@@ -32,7 +32,7 @@
 -- fetched from the registry (afaik) but not currently implemented. Some object ids are static : the registry is always 0
 --
 -- @author Martin Holst Swende
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -- @see java 1.4 RMI-spec: http://java.sun.com/j2se/1.4.2/docs/guide/rmi/
 -- @see java 5 RMI-spec: http://java.sun.com/j2se/1.5.0/docs/guide/rmi/spec/rmiTOC.html
 -- @see java 6 RMI-spec : http://java.sun.com/javase/6/docs/technotes/guides/rmi/index.html
@@ -53,7 +53,7 @@ _ENV = stdnse.module("rmi", stdnse.seeall)
 
 local function dbg(str,...)
   local arg={...}
-  stdnse.print_debug(3,"RMI:"..str, table.unpack(arg))
+  stdnse.debug3("RMI:"..str, table.unpack(arg))
 end
 -- Convenience function to both print an error message and return <false, msg>
 -- Example usage :
@@ -62,7 +62,7 @@ end
 -- end
 local function doh(str,...)
   local arg={...}
-  stdnse.print_debug("RMI-ERR:"..tostring(str), table.unpack(arg))
+  stdnse.debug1("RMI-ERR:"..tostring(str), table.unpack(arg))
   return false, str
 end
 
@@ -553,12 +553,11 @@ JavaField = {
   getValue = function( self ) return self.value end,
 
   __tostring = function( self )
-    local data = tostring(self.type) .. " " .. tostring(self.name)
     if self.value ~= nil then
-      data = data .." = " .. tostring(self.value)
+      return string.format("%s %s = %s", self.type, self.name, self.value)
+    else
+      return string.format("%s %s", self.type, self.name)
     end
-
-    return data
   end,
   toTable = function(self)
     local data = {tostring(self.type) .. " " .. tostring(self.name)}
@@ -571,8 +570,7 @@ JavaField = {
           table.insert(data, self.value)
         end
       else
-        --TODO: FIXME This is illegal, but I don't know what the intent was:
-        data = data .." = " .. tostring(self.value) --FIXME
+        table.insert(data, self.value)
       end
     end
     return data
@@ -1156,16 +1154,9 @@ end
 -- returns the string with all non-printable chars
 -- coded as hex
 function makeStringReadable(data)
-  local r = ""
-  for i=1,#data,1 do
-    local x = data:byte(i)
-    if x > 31 and x <127 then
-      r = r .. data:sub(i,i)
-    else
-      r = r .. ("\\x%x"):format(x)
-    end
-  end
-  return r
+  return data:gsub("[\x00-\x1f\x7f-\xff]", function (x)
+      return ("\\x%02x"):format(x:byte())
+    end)
 end
 
 function readNonProxyDesc(dis)

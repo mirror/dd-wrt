@@ -38,7 +38,7 @@ old authentication mechanism from versions 4.x and earlier.
 -- @args mysql-enum.timeout socket timeout for connecting to MySQL (default 5s)
 
 author = "Aleksandar Nikolic"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 portrule = shortport.port_or_service(3306, "mysql")
@@ -77,7 +77,7 @@ Driver = {
       end
       return false,brute.Error:new(response)
     end
-    stdnse.print_debug( "Trying %s ...", pass)
+    stdnse.debug1( "Trying %s ...", pass)
     local auth_string = bin.pack("H","0000018d00000000") .. pass .. bin.pack("H","00504e5f5155454d4500"); -- old authentication method
     local err
     status, err = self.socket:send(bin.pack("c",string.len(auth_string)-3) .. auth_string) --send initial auth
@@ -87,7 +87,7 @@ Driver = {
     end
     if string.find(response,"Access denied for user") == nil then
       -- found it
-      return true, brute.Account:new( pass, nil, creds.State.VALID)
+      return true, creds.Account:new( pass, nil, creds.State.VALID)
     else
       return false,brute.Error:new( "Incorrect username" )
     end

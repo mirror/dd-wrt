@@ -16,6 +16,13 @@ Determines which methods are supported by the RTSP (real time streaming protocol
 -- | rtsp-methods:
 -- |_  DESCRIBE, SETUP, PLAY, TEARDOWN, OPTIONS
 --
+-- @xmloutput
+-- <elem>DESCRIBE</elem>
+-- <elem>SETUP</elem>
+-- <elem>PLAY</elem>
+-- <elem>TEARDOWN</elem>
+-- <elem>OPTIONS</elem>
+--
 -- @args rtsp-methods.path the path to query, defaults to "*" which queries
 --       the server itself, rather than a specific url.
 --
@@ -25,7 +32,7 @@ Determines which methods are supported by the RTSP (real time streaming protocol
 -- Created 23/10/2011 - v0.1 - created by Patrik Karlsson <patrik@cqure.net>
 --
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "safe"}
 
 
@@ -36,7 +43,7 @@ action = function(host, port)
   local helper = rtsp.Helper:new(host, port)
   local status = helper:connect()
   if ( not(status) ) then
-    stdnse.print_debug(2, "ERROR: Failed to connect to RTSP server")
+    stdnse.debug2("ERROR: Failed to connect to RTSP server")
     return
   end
 
@@ -44,6 +51,7 @@ action = function(host, port)
   status, response = helper:options(path)
   helper:close()
   if ( status ) then
-    return stdnse.format_output(true, response.headers['Public'])
+    local opts = response.headers['Public']
+    return stdnse.strsplit(",%s*", opts), opts
   end
 end

@@ -1,7 +1,6 @@
 local pop3 = require "pop3"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
-local string = require "string"
 local table = require "table"
 
 description = [[
@@ -19,7 +18,7 @@ server version may be available.
 -- |_ pop3-capabilities: USER CAPA RESP-CODES UIDL PIPELINING STLS TOP SASL(PLAIN)
 
 author = "Philip Pickering"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"default","discovery","safe"}
 
@@ -40,7 +39,7 @@ action = function(host, port)
     end
     return stdnse.strjoin(" ", capstrings)
   elseif type(err) == "string" then
-    stdnse.print_debug(1, "%s: '%s' for %s", SCRIPT_NAME, err, host.ip)
+    stdnse.debug1("'%s' for %s", err, host.ip)
     return
   else
     return "server doesn't support CAPA"

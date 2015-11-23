@@ -3,7 +3,7 @@
 -- NetBIOS name requests.
 --
 -- @author Ron Bowes <ron@skullsecurity.net>
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 local bin = require "bin"
 local bit = require "bit"
@@ -41,7 +41,7 @@ types = {
 --        (eg. "\x20FEEFFDFEDBCACACACACACACACACAAA\x08insecure\x03org")
 function name_encode(name, scope)
 
-  stdnse.print_debug(3, "Encoding name '%s'", name)
+  stdnse.debug3("Encoding name '%s'", name)
   -- Truncate or pad the string to 16 bytes
   if(#name >= 16) then
     name = string.sub(name, 1, 16)
@@ -51,34 +51,33 @@ function name_encode(name, scope)
       padding = "\0"
     end
 
-    repeat
-      name = name .. padding
-    until #name == 16
+    name = name .. string.rep(padding, 16 - #name)
   end
 
   -- Convert to uppercase
   name = string.upper(name)
 
   -- Do the L1 encoding
-  local L1_encoded = ""
+  local L1_encoded = {}
   for i=1, #name, 1 do
     local b = string.byte(name, i)
-    L1_encoded = L1_encoded .. string.char(bit.rshift(bit.band(b, 0xF0), 4) + 0x41)
-    L1_encoded = L1_encoded .. string.char(bit.rshift(bit.band(b, 0x0F), 0) + 0x41)
+    L1_encoded[i*2-1] = string.char(bit.rshift(bit.band(b, 0xF0), 4) + 0x41)
+    L1_encoded[i*2]   = string.char(bit.rshift(bit.band(b, 0x0F), 0) + 0x41)
   end
 
   -- Do the L2 encoding
-  local L2_encoded = string.char(32) .. L1_encoded
+  local L2_encoded = { string.char(32), table.concat(L1_encoded) }
 
   if scope ~= nil then
     -- Split the scope at its periods
     local piece
     for piece in string.gmatch(scope, "[^.]+") do
-      L2_encoded = L2_encoded .. string.char(#piece) .. piece
+      L2_encoded[#L2_encoded+1] = string.char(#piece) .. piece
     end
   end
 
-  stdnse.print_debug(3, "=> '%s'", L2_encoded)
+  L2_encoded = table.concat(L2_encoded)
+  stdnse.debug3("=> '%s'", L2_encoded)
   return L2_encoded
 end
 
@@ -98,15 +97,14 @@ function name_decode(encoded_name)
   local len = string.byte(encoded_name, 1)
   local i
 
-  stdnse.print_debug(3, "Decoding name '%s'", encoded_name)
+  stdnse.debug3("Decoding name '%s'", encoded_name)
 
-  for i = 2, len + 1, 2 do
-    local ch = 0
-    ch = bit.bor(ch, bit.lshift(string.byte(encoded_name, i)     - 0x41, 4))
-    ch = bit.bor(ch, bit.lshift(string.byte(encoded_name, i + 1) - 0x41, 0))
-
-    name = name .. string.char(ch)
-  end
+  name = name:gsub("(.)(.)", function (a, b)
+      local ch = 0
+      ch = bit.bor(ch, bit.lshift(string.byte(a) - 0x41, 4))
+      ch = bit.bor(ch, bit.lshift(string.byte(b) - 0x41, 0))
+      return string.char(ch)
+    end)
 
   -- Decode the scope
   local pos = 34
@@ -121,7 +119,7 @@ function name_decode(encoded_name)
     scope = string.sub(scope, 1, #scope - 1)
   end
 
-  stdnse.print_debug(3, "=> '%s'", name)
+  stdnse.debug3("=> '%s'", name)
 
   return name, scope
 end
@@ -272,12 +270,12 @@ function do_nbstat(host)
   local statistics
   local reg
   if type(host) == "string" then --ip
-    stdnse.print_debug(3, "Performing nbstat on host '%s'", host)
+    stdnse.debug3("Performing nbstat on host '%s'", host)
     nmap.registry.netbios = nmap.registry.netbios or {}
     nmap.registry.netbios[host] = nmap.registry.netbios[host] or {}
     reg = nmap.registry.netbios[host]
   else
-    stdnse.print_debug(3, "Performing nbstat on host '%s'", host.ip)
+    stdnse.debug3("Performing nbstat on host '%s'", host.ip)
     if host.registry.netbios == nil and
       nmap.registry.netbios ~= nil and
       nmap.registry.netbios[host.ip] ~= nil then
@@ -289,7 +287,7 @@ function do_nbstat(host)
 
   -- Check if it's cached in the registry for this host
   if(reg["nbstat_names"] ~= nil) then
-    stdnse.print_debug(3, " |_ [using cached value]")
+    stdnse.debug3(" |_ [using cached value]")
     return true, reg["nbstat_names"], reg["nbstat_statistics"]
   end
 
@@ -301,9 +299,7 @@ function do_nbstat(host)
   0,       -- Answers
   0,       -- Authority
   0        -- Extra
-  )
-
-  query = query .. bin.pack(">zSS",
+  ) .. bin.pack(">zSS",
   encoded_name, -- Encoded name
   0x0021,       -- Query type (0x21 = NBSTAT)
   0x0001        -- Class = IN

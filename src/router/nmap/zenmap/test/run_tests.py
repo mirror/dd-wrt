@@ -11,5 +11,8 @@ if __name__ == "__main__":
         sys.exit(0)
 
     os.chdir("..")
-    suite = unittest.defaultTestLoader.discover(start_dir=glob.glob("build/lib.*")[0], pattern="*.py")
+    suite = unittest.defaultTestLoader.discover(
+            start_dir=glob.glob("build/lib.*")[0],
+            pattern="*.py"
+            )
     unittest.TextTestRunner().run(suite)

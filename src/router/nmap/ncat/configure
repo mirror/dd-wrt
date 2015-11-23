@@ -2323,6 +2323,10 @@ ac_config_headers="$ac_config_headers config.h"
 
 
 
+
+
+
+
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
   if test -f "$ac_dir/install-sh"; then
@@ -4668,12 +4672,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypto_BIO_int_ctrl" >&5
 $as_echo "$ac_cv_lib_crypto_BIO_int_ctrl" >&6; }
 if test "x$ac_cv_lib_crypto_BIO_int_ctrl" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBCRYPTO 1
-_ACEOF
-
-  LIBS="-lcrypto $LIBS"
-
+   use_openssl="yes"
 else
    use_openssl="no"
 	   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Failed to find libcrypto so OpenSSL will not be used.
@@ -4722,12 +4721,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ssl_SSL_new" >&5
 $as_echo "$ac_cv_lib_ssl_SSL_new" >&6; }
 if test "x$ac_cv_lib_ssl_SSL_new" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSSL 1
-_ACEOF
-
-  LIBS="-lssl $LIBS"
-
+   use_openssl="yes"
 else
    use_openssl="no"
 	   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Failed to find libssl so OpenSSL will not be used.
@@ -5021,9 +5015,9 @@ else
     CPPFLAGS="$CPPFLAGS -I$libpcapdir"
   fi
   PCAP_DEPENDS='$(LIBPCAPDIR)/libpcap.a'
-  PCAP_BUILD="pcap_build"
-  PCAP_CLEAN="pcap_clean"
-  PCAP_DIST_CLEAN="pcap_dist_clean"
+  PCAP_BUILD="build-pcap"
+  PCAP_CLEAN="clean-pcap"
+  PCAP_DIST_CLEAN="distclean-pcap"
 fi
 
 
@@ -5190,9 +5184,9 @@ if test "${with_liblua+set}" = set; then :
     CPPFLAGS="-I\$(top_srcdir)/$LIBLUADIR $CPPFLAGS"
     LIBLUA_LIBS="\$(top_srcdir)/$LIBLUADIR/liblua.a"
     LUA_DEPENDS="\$(top_srcdir)/$LIBLUADIR/liblua.a"
-    LUA_BUILD="lua_build"
-    LUA_CLEAN="lua_clean"
-    LUA_DIST_CLEAN="lua_dist_clean"
+    LUA_BUILD="build-lua"
+    LUA_CLEAN="clean-lua"
+    LUA_DIST_CLEAN="distclean-lua"
 	have_lua="yes"
 
   ;;
@@ -5669,9 +5663,9 @@ $as_echo "no" >&6; }
     CPPFLAGS="-I\$(top_srcdir)/$LIBLUADIR $CPPFLAGS"
     LIBLUA_LIBS="\$(top_srcdir)/$LIBLUADIR/liblua.a"
     LUA_DEPENDS="\$(top_srcdir)/$LIBLUADIR/liblua.a"
-    LUA_BUILD="lua_build"
-    LUA_CLEAN="lua_clean"
-    LUA_DIST_CLEAN="lua_dist_clean"
+    LUA_BUILD="build-lua"
+    LUA_CLEAN="clean-lua"
+    LUA_DIST_CLEAN="distclean-lua"
     $as_echo "#define LUA_INCLUDED 1" >>confdefs.h
 
   else

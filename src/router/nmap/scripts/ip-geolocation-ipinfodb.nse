@@ -29,23 +29,23 @@ needs to be obtained through free registration for this service:
 --
 
 author = "Gorjan Petrovski"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery","external","safe"}
 
 
 hostrule = function(host)
   local is_private, err = ipOps.isPrivate( host.ip )
   if is_private == nil then
-    stdnse.print_debug( "%s not running: Error in Hostrule: %s.", SCRIPT_NAME, err )
+    stdnse.debug1("not running: Error in Hostrule: %s.", err )
     return false
   elseif is_private then
-    stdnse.print_debug("%s not running: Private IP address of target: %s", SCRIPT_NAME, host.ip)
+    stdnse.debug1("not running: Private IP address of target: %s", host.ip)
     return false
   end
 
   local api_key = stdnse.get_script_args(SCRIPT_NAME..".apikey")
   if not (type(api_key)=="string") then
-    stdnse.print_debug("%s not running: No IPInfoDB API key specified.", SCRIPT_NAME)
+    stdnse.debug1("not running: No IPInfoDB API key specified.")
     return false
   end
 
@@ -58,11 +58,11 @@ local ipinfodb = function(ip)
   local response = http.get("api.ipinfodb.com", 80, "/v3/ip-city/?key="..api_key.."&format=json".."&ip="..ip, nil)
   local stat, loc = json.parse(response.body)
   if not stat then
-    stdnse.print_debug("No response, possibly a network problem.")
+    stdnse.debug1("No response, possibly a network problem.")
     return nil
   end
   if loc.statusMessage and loc.statusMessage == "Invalid API key." then
-    stdnse.print_debug(loc.statusMessage)
+    stdnse.debug1(loc.statusMessage)
     return nil
   end
 

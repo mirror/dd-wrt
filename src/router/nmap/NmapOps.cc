@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -96,8 +96,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -118,16 +117,17 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.cc 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: NmapOps.cc 34816 2015-07-02 04:14:51Z dmiller $ */
 #include "nmap.h"
 #include "nbase.h"
 #include "NmapOps.h"
+#include "osscan.h"
 #include "services.h"
-#include "utils.h"
+#include "nmap_error.h"
 #ifdef WIN32
 #include "winfix.h"
 #endif
@@ -166,6 +166,10 @@ NmapOps::~NmapOps() {
   if (portlist) {
     free(portlist);
     portlist = NULL;
+  }
+  if (exclude_portlist) {
+    free(exclude_portlist);
+    exclude_portlist = NULL;
   }
   if (proxy_chain) {
     nsock_proxychain_delete(proxy_chain);
@@ -382,6 +386,7 @@ void NmapOps::Initialize() {
   inputfd = NULL;
   idleProxy = NULL;
   portlist = NULL;
+  exclude_portlist = NULL;
   proxy_chain = NULL;
 }
 
@@ -566,11 +571,11 @@ dialog where you can start NPF if you have administrator privileges.";
   }
 
   if (af() == AF_INET6 && (generate_random_ips|numdecoys|bouncescan|fragscan)) {
-    fatal("Sorry -- IPv6 support is currently only available for TCP, UDP, and SCTP port scans and list scan (-sL).  OS detection, random targets and decoys are also not supported with IPv6.  Further support is under consideration.");
+    fatal("Random targets, decoys, FTP bounce scan, and fragmentation are not supported with IPv6.");
   }
 
   if(ipoptions && osscan)
-    error("WARNING: Ip options are NOT used while OS scanning!");
+    error("WARNING: IP options are NOT used while OS scanning!");
 
 #ifndef NOLUA
   /* Make sure nmap.registry.args is available (even if it's empty) */
@@ -625,7 +630,7 @@ void NmapOps::setMinHostGroupSz(unsigned int sz) {
 
 void NmapOps::setMaxHostGroupSz(unsigned int sz) {
   if (sz < min_host_group_sz)
-    fatal("Maximum host group size may not be set to less than the maximum size (currently %d)\n", min_host_group_sz);
+    fatal("Maximum host group size may not be set to less than the minimum size (currently %d)\n", min_host_group_sz);
   if (sz <= 0)
     fatal("Max host size must be at least 1");
   max_host_group_sz = sz;

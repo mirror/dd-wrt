@@ -29,7 +29,7 @@ NPING_STAGING_DIR = Nping
 NMAP_UPDATE_BUILD_DIR = nmap-update-build
 NMAP_UPDATE_STAGING_DIR = nmap-update
 
-MACPORTS_PREFIX=$(HOME)/macports-10.5
+MACPORTS_PREFIX=$(HOME)/macports-10.8
 PREFIX = /usr/local
 
 PACKAGEMAKER = /Developer/usr/bin/packagemaker
@@ -49,10 +49,10 @@ UNIVERSAL_CXX = g++
 # turn uses the arch value to decide which of its bootstrappers to
 # install.
 UNIVERSAL_ARCHFLAGS = -arch i386
-UNIVERSAL_CPPFLAGS = -isysroot /Developer/SDKs/MacOSX10.5.sdk
-UNIVERSAL_CFLAGS = $(UNIVERSAL_CPPFLAGS) -mmacosx-version-min=10.5 $(UNIVERSAL_ARCHFLAGS)
+UNIVERSAL_CPPFLAGS = -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk
+UNIVERSAL_CFLAGS = $(UNIVERSAL_CPPFLAGS) -mmacosx-version-min=10.8 $(UNIVERSAL_ARCHFLAGS)
 UNIVERSAL_CXXFLAGS = $(UNIVERSAL_CFLAGS)
-UNIVERSAL_LDFLAGS = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 $(UNIVERSAL_ARCHFLAGS)
+UNIVERSAL_LDFLAGS = -Wl,-syslibroot,/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk -mmacosx-version-min=10.8 $(UNIVERSAL_ARCHFLAGS)
 
 CC = $(UNIVERSAL_CC)
 CXX = $(UNIVERSAL_CXX)
@@ -63,48 +63,52 @@ CFLAGS += $(UNIVERSAL_CFLAGS)
 CXXFLAGS += $(UNIVERSAL_CXXFLAGS)
 LDFLAGS += $(UNIVERSAL_LDFLAGS)
 
-PYTHON = /usr/bin/python
+PYTHON = $(MACPORTS_PREFIX)/bin/python2.7
+OPENSSL_STATIC = $(MACPORTS_PREFIX)/lib/libssl.a $(MACPORTS_PREFIX)/lib/libcrypto.a $(MACPORTS_PREFIX)/lib/libz.a
 
 $(IMAGE_NAME): $(IMAGE_STAGING_DIR)/$(PKG_NAME)
 	rm -f $@
 	hdiutil create -imagekey zlib-level=9 -srcfolder $(IMAGE_STAGING_DIR) $@
 
-$(IMAGE_STAGING_DIR)/$(PKG_NAME): stage-nmap stage-ncat stage-ndiff stage-zenmap stage-nping stage-nmap-update COPYING.formatted
+$(IMAGE_STAGING_DIR)/$(PKG_NAME): check-nmap check-ncat check-ndiff check-zenmap check-nping check-nmap-update COPYING.formatted
 	mkdir -p $(IMAGE_STAGING_DIR)
 	cp -rf $(EXTRA_DIST) $(IMAGE_STAGING_DIR)/
 	$(PACKAGEMAKER) --doc nmap.pmdoc --title "Nmap $(NMAP_VERSION)" --no-relocate -o $@
 
+check-%: stage-%
+	if (find $* -perm -a+x -type f | xargs otool -L | grep "$(MACPORTS_PREFIX)"); then false; else echo "Libs are clean"; fi
+
 export-%:
 	rm -rf $*
 # Using @BASE discards local changes.
-	svn export ..@BASE $*
+	svn export .. $*
 
 stage-nmap: export-$(NMAP_BUILD_DIR)
-	cd $(NMAP_BUILD_DIR) && ./configure --without-zenmap --without-ncat --without-ndiff --without-nping --without-nmap-update $(CONFIGURE_ARGS)
-	make -C $(NMAP_BUILD_DIR)
+	cd $(NMAP_BUILD_DIR) && ./configure --without-zenmap --without-ncat --without-ndiff --without-nping --without-nmap-update --with-openssl="$(MACPORTS_PREFIX)" $(CONFIGURE_ARGS)
+	make -C $(NMAP_BUILD_DIR) OPENSSL_LIBS="$(OPENSSL_STATIC)"
 	rm -rf $(NMAP_STAGING_DIR)
-	make -C $(NMAP_BUILD_DIR) install DESTDIR="`pwd`/$(NMAP_STAGING_DIR)"
+	make -C $(NMAP_BUILD_DIR) install DESTDIR="`pwd`/$(NMAP_STAGING_DIR)" OPENSSL_LIBS="$(OPENSSL_STATIC)"
 
 stage-ncat: export-$(NCAT_BUILD_DIR)
-	cd $(NCAT_BUILD_DIR) && ./configure --without-zenmap --with-ncat --without-ndiff --without-nping --without-nmap-update $(CONFIGURE_ARGS)
-	make -C $(NCAT_BUILD_DIR)
+	cd $(NCAT_BUILD_DIR) && ./configure --without-zenmap --with-ncat --without-ndiff --without-nping --without-nmap-update --with-openssl="$(MACPORTS_PREFIX)" $(CONFIGURE_ARGS)
+	make -d -C $(NCAT_BUILD_DIR) build-ncat OPENSSL_LIBS="$(OPENSSL_STATIC)"
 	rm -rf $(NCAT_STAGING_DIR)
-	make -C $(NCAT_BUILD_DIR) install-ncat DESTDIR="`pwd`/$(NCAT_STAGING_DIR)"
+	make -d -C $(NCAT_BUILD_DIR) install-ncat DESTDIR="`pwd`/$(NCAT_STAGING_DIR)" OPENSSL_LIBS="$(OPENSSL_STATIC)"
 
 stage-nping: export-$(NPING_BUILD_DIR)
-# Link against the local MacPorts openssl because the 10.4u SDK doesn't
-# have EVP_sha256, used by Nping. We let configure find the libraries
-# dynamically, then link with the static libraries with "make".
 	cd $(NPING_BUILD_DIR) && ./configure --without-zenmap --without-ncat --without-ndiff --with-nping --without-nmap-update --with-openssl="$(MACPORTS_PREFIX)" $(CONFIGURE_ARGS)
-	make -C $(NPING_BUILD_DIR) OPENSSL_LIBS="$(MACPORTS_PREFIX)/lib/libssl.a $(MACPORTS_PREFIX)/lib/libcrypto.a $(MACPORTS_PREFIX)/lib/libz.a"
+	make -C $(NPING_BUILD_DIR) build-nping OPENSSL_LIBS="$(OPENSSL_STATIC)"
 	rm -rf $(NPING_STAGING_DIR)
-	make -C $(NPING_BUILD_DIR) install-nping DESTDIR="`pwd`/$(NPING_STAGING_DIR)"
+	make -C $(NPING_BUILD_DIR) install-nping DESTDIR="`pwd`/$(NPING_STAGING_DIR)" OPENSSL_LIBS="$(OPENSSL_STATIC)"
 
 stage-nmap-update: export-$(NMAP_UPDATE_BUILD_DIR)
-	cd $(NMAP_UPDATE_BUILD_DIR) && ./configure --without-zenmap --without-ncat --without-ndiff --without-nping --with-nmap-update --with-apr=$(MACPORTS_PREFIX) --with-subversion=$(MACPORTS_PREFIX) $(CONFIGURE_ARGS)
-	make -C $(NMAP_UPDATE_BUILD_DIR)
+	cd $(NMAP_UPDATE_BUILD_DIR) && ./configure --without-zenmap --without-ncat --without-ndiff --without-nping --with-nmap-update --with-apr=$(MACPORTS_PREFIX) --with-subversion=$(MACPORTS_PREFIX) --with-openssl="$(MACPORTS_PREFIX)" $(CONFIGURE_ARGS)
+	make -C $(NMAP_UPDATE_BUILD_DIR) build-nmap-update OPENSSL_LIBS="$(OPENSSL_STATIC)"
 	rm -rf $(NMAP_UPDATE_STAGING_DIR)
-	make -C $(NMAP_UPDATE_BUILD_DIR) install-nmap-update DESTDIR="`pwd`/$(NMAP_UPDATE_STAGING_DIR)"
+	make -C $(NMAP_UPDATE_BUILD_DIR) install-nmap-update DESTDIR="`pwd`/$(NMAP_UPDATE_STAGING_DIR)" OPENSSL_LIBS="$(OPENSSL_STATIC)"
+	install_name_tool -change "$(MACPORTS_PREFIX)/lib/libapr-1.0.dylib" "/usr/lib/libapr-1.0.dylib" "$(NMAP_UPDATE_STAGING_DIR)/usr/local/bin/nmap-update"
+	install_name_tool -change "$(MACPORTS_PREFIX)/lib/libsvn_client-1.0.dylib" "/usr/lib/libsvn_client-1.0.dylib" "$(NMAP_UPDATE_STAGING_DIR)/usr/local/bin/nmap-update"
+	install_name_tool -change "$(MACPORTS_PREFIX)/lib/libsvn_subr-1.0.dylib" "/usr/lib/libsvn_subr-1.0.dylib" "$(NMAP_UPDATE_STAGING_DIR)/usr/local/bin/nmap-update"
 
 # make-bundle.sh uses these to build its authorization wrapper.
 export CC ARCHFLAGS CPPFLAGS CFLAGS CXXFLAGS LDFLAGS
@@ -116,10 +120,10 @@ stage-zenmap: export-$(ZENMAP_BUILD_DIR)
 	cp -rf $(ZENMAP_BUILD_DIR)/zenmap/dist/Zenmap.app $(ZENMAP_STAGING_DIR)/Applications/
 
 stage-ndiff: export-$(NDIFF_BUILD_DIR)
-	cd $(NDIFF_BUILD_DIR) && ./configure --without-zenmap --without-ncat --with-ndiff --without-nping $(CONFIGURE_ARGS)
-	make -C $(NDIFF_BUILD_DIR) build-ndiff
-	rm -rf $(NDIFF_STAGING_DIR)
-	make -C $(NDIFF_BUILD_DIR) install-ndiff DESTDIR="`pwd`/$(NDIFF_STAGING_DIR)"
+	mkdir -p $(NDIFF_STAGING_DIR)/usr/local/bin
+	mkdir -p $(NDIFF_STAGING_DIR)/usr/local/share/man/man1
+	cp $(NDIFF_BUILD_DIR)/ndiff/ndiff.py $(NDIFF_STAGING_DIR)/usr/local/bin/ndiff
+	cp $(NDIFF_BUILD_DIR)/ndiff/docs/ndiff.1 $(NDIFF_STAGING_DIR)/usr/local/share/man/man1/
 
 COPYING.formatted:
 # Use the license formatter from the Windows installer.

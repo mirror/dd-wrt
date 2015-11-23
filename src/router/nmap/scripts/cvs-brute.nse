@@ -33,7 +33,7 @@ Performs brute force password auditing against CVS pserver authentication.
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 dependencies = {"cvs-brute-repository"}
 
@@ -58,12 +58,12 @@ Driver =
   login = function( self, username, password )
     local status, err = self.helper:login( self.repo, username, password )
     if ( status ) then
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     end
 
     -- This error seems to indicate that the user does not exist
     if ( err:match("E PAM start error%: Critical error %- immediate abort\0$") ) then
-      stdnse.print_debug(2, "%s: The user %s does not exist", SCRIPT_NAME, username)
+      stdnse.debug2("The user %s does not exist", username)
       local err = brute.Error:new("Account invalid")
       err:setInvalidAccount(username)
       return false, err
@@ -91,7 +91,7 @@ action = function(host, port)
   local repo = stdnse.get_script_args("cvs-brute.repo") and
     { stdnse.get_script_args("cvs-brute.repo") } or
     getDiscoveredRepos(host)
-  if ( not(repo) ) then return "\n  ERROR: No CVS repository specified (see cvs-brute.repo)" end
+  if ( not(repo) ) then stdnse.verbose1("ERROR: No CVS repository specified (see cvs-brute.repo)") end
 
   local status, result
 

@@ -1,13 +1,14 @@
 --- A library supporting parsing and generating a limited subset of the Cisco' EIGRP packets.
 --
 -- @author "Hani Benhabiles"
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -- Version 0.1
 --  19/07/2012 - First version.
 
 local bin = require "bin"
 local table = require "table"
 local stdnse = require "stdnse"
+local strbuf = require "strbuf"
 local ipOps = require "ipOps"
 local packet = require "packet"
 _ENV = stdnse.module("eigrp", stdnse.seeall)
@@ -93,11 +94,11 @@ EIGRP = {
   -- @return response table Structured eigrp packet.
   parse = function(eigrp_raw)
     if type(eigrp_raw) ~= 'string' then
-      stdnse.print_debug("eigrp.lua: parse input should be string.")
+      stdnse.debug1("eigrp.lua: parse input should be string.")
       return
     end
     if #eigrp_raw < 20 then
-      stdnse.print_debug("eigrp.lua: raw packet size lower then 20.")
+      stdnse.debug1("eigrp.lua: raw packet size lower then 20.")
       return
     end
     local tlv
@@ -118,7 +119,7 @@ EIGRP = {
       index, tlv.length = bin.unpack(">S", eigrp_raw, index)
       if tlv.length == 0x00 then
         -- In case someone wants to DoS us :)
-        stdnse.print_debug("eigrp.lua: stopped parsing due to null TLV length.")
+        stdnse.debug1("eigrp.lua: stopped parsing due to null TLV length.")
         break
       end
       if tlv.type == TLV.PARAM then
@@ -153,19 +154,19 @@ EIGRP = {
         index = index + tlv.length - 8
       elseif tlv.type == TLV.STUB then
         -- TODO
-        stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+        stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         index = index + tlv.length - 4
       elseif tlv.type == TLV.TERM then
         -- TODO
-        stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+        stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         index = index + tlv.length - 4
       elseif tlv.type == TLV.TIDLIST then
         -- TODO
-        stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+        stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         index = index + tlv.length - 4
       elseif tlv.type == TLV.REQ then
         -- TODO
-        stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+        stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         index = index + tlv.length - 4
       elseif tlv.type == TLV.INT then
         -- Internal Route
@@ -215,22 +216,22 @@ EIGRP = {
         tlv.dst = dst[1] .. '.' .. dst[2] .. '.' .. dst[3] .. '.' .. dst[4]
       elseif tlv.type == TLV.COM then
         -- TODO
-        stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+        stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         index = index + tlv.length - 4
       elseif tlv.type == TLV.INT6 then
         -- TODO
-        stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+        stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         index = index + tlv.length - 4
       elseif tlv.type == TLV.EXT6 then
         -- TODO
-        stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+        stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         index = index + tlv.length - 4
       elseif tlv.type == TLV.COM6 then
         -- TODO
-        stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+        stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         index = index + tlv.length - 4
       else
-        stdnse.print_debug("eigrp.lua: eigrp.lua: TLV type %d unknown.", tlv.type)
+        stdnse.debug1("eigrp.lua: eigrp.lua: TLV type %d unknown.", tlv.type)
         index = index + tlv.length - 4
       end
       table.insert(eigrp_packet.tlvs, tlv)
@@ -244,7 +245,7 @@ EIGRP = {
     if type(tlv) == 'table' then
       table.insert(self.tlvs, tlv)
     else
-      stdnse.print_debug("eigrp.lua: TLV should be a table, not %s", type(tlv))
+      stdnse.debug1("eigrp.lua: TLV should be a table, not %s", type(tlv))
     end
   end,
 
@@ -308,7 +309,8 @@ EIGRP = {
     --- Converts the request to a string suitable to be sent over a socket.
     -- @return data string containing the complete request to send over the socket
     __tostring = function(self)
-      local data = bin.pack(">C", self.ver) -- Version 2
+      local data = strbuf.new()
+      data = data .. bin.pack(">C", self.ver) -- Version 2
       data = data .. bin.pack(">C", self.opcode) -- Opcode: Hello
 
       -- If checksum not manually.
@@ -332,10 +334,10 @@ EIGRP = {
           data = data .. bin.pack(">S", tlv.htime)
         elseif tlv.type == TLV.AUTH then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.SEQ then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.SWVER then
           data = data .. bin.pack(">S", TLV.SWVER)
           data = data .. bin.pack(">S", 0x0008)
@@ -343,41 +345,42 @@ EIGRP = {
           data = data .. bin.pack(">CC", tonumber(tlv.majtlv), tonumber(tlv.mintlv))
         elseif tlv.type == TLV.MSEQ then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.STUB then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.TERM then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.TIDLIST then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.REQ then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.INT then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.EXT then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.COM then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.INT6 then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.EXT6 then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         elseif tlv.type == TLV.COM6 then
           -- TODO
-          stdnse.print_debug("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d skipped due to no parser.", tlv.type)
         else
-          stdnse.print_debug("eigrp.lua: TLV type %d unknown.", tlv.type)
+          stdnse.debug1("eigrp.lua: TLV type %d unknown.", tlv.type)
         end
       end
+      data = strbuf.dump(data)
       -- In the end, correct the checksum if not manually set
       if not self.checksum then
         data = data:sub(1,2) .. bin.pack(">S", packet.in_cksum(data)) .. data:sub(5)

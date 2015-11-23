@@ -5,7 +5,6 @@ local stdnse = require "stdnse"
 local base64 = require "base64"
 local smbauth = require "smbauth"
 local string = require "string"
-local table = require "table"
 
 
 description = [[
@@ -47,7 +46,7 @@ available.
 
 
 author = "Justin Cacak"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 

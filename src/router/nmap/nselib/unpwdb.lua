@@ -63,7 +63,7 @@
 -- 30 minutes. The default depends on the timing template level (see the module
 -- description). Use the value <code>0</code> to disable the time limit.
 -- @author Kris Katterjohn 06/2008
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 local io = require "io"
 local nmap = require "nmap"
@@ -134,8 +134,9 @@ table_iterator = function(table)
   end
 end
 
---- Returns the suggested number of seconds to attempt a brute force attack,
--- based on the <code>unpwdb.timelimit</code> script argument, Nmap's timing
+--- Returns the suggested number of seconds to attempt a brute force attack
+--
+-- Based on the <code>unpwdb.timelimit</code> script argument, Nmap's timing
 -- values (<code>-T4</code> etc.) and whether or not a user-defined list is
 -- used.
 --
@@ -209,9 +210,10 @@ local passwords_raw = function()
   return true, table_iterator(passtable)
 end
 
---- Wraps time and count limits around an iterator. When either limit expires,
--- starts returning <code>nil</code>. Calling the iterator with an argument of
--- "reset" resets the count.
+--- Wraps time and count limits around an iterator.
+--
+-- When either limit expires, starts returning <code>nil</code>. Calling the
+-- iterator with an argument of "reset" resets the count.
 -- @param time_limit Time limit in seconds. Use 0 or <code>nil</code> for no limit.
 -- @param count_limit Count limit in seconds. Use 0 or <code>nil</code> for no limit.
 -- @return boolean Status.
@@ -286,7 +288,7 @@ passwords = function(time_limit, count_limit)
   return true, limited_iterator(iterator, time_limit, count_limit)
 end
 
---- Returns a new iterator that iterates trough it's consecutive iterators,
+--- Returns a new iterator that iterates through its consecutive iterators,
 -- basically concatenating them.
 -- @param iter1 First iterator to concatenate.
 -- @param iter2 Second iterator to concatenate.
@@ -310,20 +312,22 @@ function concat_iterators (iter1, iter2)
   return iterator
 end
 
---- Returns a new iterator that filters it's results based on the filter.
+--- Returns a new iterator that filters its results based on the filter.
 -- @param iterator Iterator that needs to be filtered
 -- @param filter Function that returns bool, which serves as a filter
 -- @return function The filtered iterator.
 function filter_iterator (iterator, filter)
-  local function helper (...)
-    if filter(...) then
-      return ...
+  return function (command)
+    if command == "reset" then
+      iterator "reset"
+    else
+      local val = iterator(command)
+      while val and not filter(val) do
+        val = iterator(command)
+      end
+      return val
     end
   end
-  local function filter (command)
-    return helper(iterator(command))
-  end
-  return filter
 end
 
 return _ENV;

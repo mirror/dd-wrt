@@ -20,6 +20,7 @@ local math = require "math"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local string = require "string"
+local strbuf = require "strbuf"
 local table = require "table"
 _ENV = stdnse.module("dhcp", stdnse.seeall)
 
@@ -56,7 +57,7 @@ request_types_str[8] = "DHCPINFORM"
 local function read_ip(data, pos, length)
   if(length ~= 4) then
     if((length % 4) ~= 0) then
-      stdnse.print_debug(1, "dhcp-discover: Invalid length for an ip address (%d)", length)
+      stdnse.debug1("dhcp-discover: Invalid length for an ip address (%d)", length)
       pos = pos + length
 
       return pos, nil
@@ -98,7 +99,7 @@ end
 --@return The value of the field, or nil if the field length was wrong.
 local function read_1_byte(data, pos, length)
   if(length ~= 1) then
-    stdnse.print_debug(1, "dhcp-discover: Invalid length for data (%d; should be %d)", length, 1)
+    stdnse.debug1("dhcp-discover: Invalid length for data (%d; should be %d)", length, 1)
     pos = pos + length
     return pos, nil
   end
@@ -118,7 +119,7 @@ local function read_message_type(data, pos, length)
 
   pos, value = read_1_byte(data, pos, length)
   if(value == nil) then
-    stdnse.print_debug(1, "dhcp-discover: Couldn't read the 1-byte message type")
+    stdnse.debug1("dhcp-discover: Couldn't read the 1-byte message type")
     return pos, nil
   end
 
@@ -138,7 +139,7 @@ local function read_boolean(data, pos, length)
   pos, result = read_1_byte(data, pos, length)
 
   if(result == nil) then
-    stdnse.print_debug(1, "dhcp-discover: Couldn't read the 1-byte boolean")
+    stdnse.debug1("dhcp-discover: Couldn't read the 1-byte boolean")
     return pos, nil
   elseif(result == 0) then
     return pos, "false"
@@ -156,7 +157,7 @@ end
 --@return The value of the field, or nil if the field length was wrong.
 local function read_2_bytes(data, pos, length)
   if(length ~= 2) then
-    stdnse.print_debug(1, "dhcp-discover: Invalid length for data (%d; should be %d)", length, 2)
+    stdnse.debug1("dhcp-discover: Invalid length for data (%d; should be %d)", length, 2)
     pos = pos + length
     return pos, nil
   end
@@ -174,7 +175,7 @@ end
 --@return The value of the field, or nil if the field length was wrong.
 local function read_2_bytes_list(data, pos, length)
   if((length % 2) ~= 0) then
-    stdnse.print_debug(1, "dhcp-discover: Invalid length for data (%d; should be multiple of %d)", length, 2)
+    stdnse.debug1("dhcp-discover: Invalid length for data (%d; should be multiple of %d)", length, 2)
     pos = pos + length
 
     return pos, nil
@@ -200,7 +201,7 @@ end
 --@return The value of the field, or nil if the field length was wrong.
 local function read_4_bytes(data, pos, length)
   if(length ~= 4) then
-    stdnse.print_debug(1, "dhcp-discover: Invalid length for data (%d; should be %d)", length, 4)
+    stdnse.debug1("dhcp-discover: Invalid length for data (%d; should be %d)", length, 4)
     pos = pos + length
     return pos, nil
   end
@@ -218,30 +219,13 @@ end
 local function read_time(data, pos, length)
   local result
   if(length ~= 4) then
-    stdnse.print_debug(1, "dhcp-discover: Invalid length for data (%d; should be %d)", length, 4)
+    stdnse.debug1("dhcp-discover: Invalid length for data (%d; should be %d)", length, 4)
     pos = pos + length
     return pos, nil
   end
   pos, result = bin.unpack(">I", data, pos)
 
-  -- This code was mostly taken from snmp-sysdescr.nse. It should probably be abstracted into stdnse.lua [TODO]
-  local days, hours, minutes, seconds, htime, mtime, stime
-  days = math.floor(result / 86400)
-  htime = math.fmod(result, 86400)
-  hours = math.floor(htime / 3600)
-  mtime = math.fmod(htime, 3600)
-  minutes = math.floor(mtime / 60)
-  seconds = math.fmod(mtime, 60)
-
-  local dayLabel
-
-  if days == 1 then
-    dayLabel = "day"
-  else
-    dayLabel = "days"
-  end
-
-  return pos, string.format("%d %s, %d:%02d:%02d", days, dayLabel, hours, minutes, seconds)
+  return pos, stdnse.format_time(result)
 end
 
 ---Read a list of static routes. Each of them are a pair of IP addresses, a destination and a
@@ -254,7 +238,7 @@ end
 --@return The value of the field, or nil if the field length was wrong.
 local function read_static_route(data, pos, length)
   if((length % 8) ~= 0) then
-    stdnse.print_debug(1, "dhcp-discover: Invalid length for data (%d; should be multiple of %d)", length, 8)
+    stdnse.debug1("dhcp-discover: Invalid length for data (%d; should be multiple of %d)", length, 8)
     pos = pos + length
 
     return pos, nil
@@ -281,7 +265,7 @@ end
 --@return The value of the field, or nil if the field length was wrong.
 local function read_policy_filter(data, pos, length)
   if((length % 8) ~= 0) then
-    stdnse.print_debug(1, "dhcp-discover: Invalid length for data (%d; should be multiple of %d)", length, 8)
+    stdnse.debug1("dhcp-discover: Invalid length for data (%d; should be multiple of %d)", length, 8)
     pos = pos + length
 
     return pos, nil
@@ -417,7 +401,7 @@ end
 --@return status (true or false)
 --@return The parsed response, as a table.
 function dhcp_build(request_type, ip_address, mac_address, options, request_options, overrides, lease_time, transaction_id)
-  local packet = ''
+  local packet = strbuf.new()
 
   -- Set up the default overrides
   if(overrides == nil) then
@@ -446,9 +430,9 @@ function dhcp_build(request_type, ip_address, mac_address, options, request_opti
   packet = packet .. bin.pack("<I", overrides['yiaddr'] or 0)                                  -- yiaddr
   packet = packet .. bin.pack("<I", overrides['siaddr'] or 0)                                  -- siaddr
   packet = packet .. bin.pack("<I", overrides['giaddr'] or 0)                                  -- giaddr
-  packet = packet .. mac_address .. string.rep(string.char(0), 16 - #mac_address)              -- chaddr (MAC address)
-  packet = packet .. (overrides['sname'] or string.rep(string.char(0), 64))                    -- sname
-  packet = packet .. (overrides['file'] or string.rep(string.char(0), 128))                    -- file
+  packet = packet .. mac_address .. string.rep('\0', 16 - #mac_address)                        -- chaddr (MAC address)
+  packet = packet .. (overrides['sname'] or string.rep('\0', 64))                              -- sname
+  packet = packet .. (overrides['file'] or string.rep('\0', 128))                              -- file
   packet = packet .. bin.pack(">I", overrides['cookie'] or 0x63825363)                         -- Magic cookie
 
   -- Options
@@ -468,7 +452,7 @@ function dhcp_build(request_type, ip_address, mac_address, options, request_opti
 
   packet = packet .. bin.pack(">C", 0xFF)                                                      -- Termination
 
-  return true, packet
+  return true, strbuf.dump(packet)
 end
 
 ---Parse a DHCP packet (either a request or a response) and return the results
@@ -536,22 +520,22 @@ function dhcp_parse(data, transaction_id)
     -- Verify we got a valid code (if we didn't, we're probably in big trouble)
     local value
     if(action == nil) then
-      stdnse.print_debug(1, "dhcp-discover: Unknown option: %d", option)
+      stdnse.debug1("dhcp-discover: Unknown option: %d", option)
       pos = pos + length
     else
       -- Call the function to parse the option, and insert the result into our results table
 
-      stdnse.print_debug(2, "dhcp-discover: Attempting to parse %s", action['name'])
+      stdnse.debug2("dhcp-discover: Attempting to parse %s", action['name'])
       pos, value = action['func'](data, pos, length)
 
       if(nmap.verbosity() == 0 and action.default == false) then
-        stdnse.print_debug(1, "dhcp-discover: Server returned unrequested option (%s => %s)", action['name'], value)
+        stdnse.debug1("dhcp-discover: Server returned unrequested option (%s => %s)", action['name'], value)
 
       else
         if(value) then
           table.insert(result['options'], {name=action['name'], value=value})
         else
-          stdnse.print_debug(1, "dhcp-discover: Couldn't determine value for %s", action['name']);
+          stdnse.debug1("dhcp-discover: Couldn't determine value for %s", action['name']);
         end
       end
     end
@@ -566,7 +550,7 @@ function dhcp_parse(data, transaction_id)
       elseif(value == 3) then
         data = data .. result['file'] .. result['sname']
       else
-        stdnse.print_debug(1, "dhcp-discover: Warning: 'Option Overload' gave an unsupported value: %d", value)
+        stdnse.debug1("dhcp-discover: Warning: 'Option Overload' gave an unsupported value: %d", value)
       end
     end
   end
@@ -624,7 +608,7 @@ function make_request(target, request_type, ip_address, mac_address, options, re
   -- Generate the packet
   local status, packet = dhcp_build(request_type, bin.pack(">I", ipOps.todword(ip_address)), mac_address, options, request_options, overrides, lease_time, transaction_id)
   if(not(status)) then
-    stdnse.print_debug(1, "dhcp: Couldn't build packet: " .. packet)
+    stdnse.debug1("dhcp: Couldn't build packet: " .. packet)
     return false, "Couldn't build packet: "  .. packet
   end
 
@@ -635,7 +619,7 @@ function make_request(target, request_type, ip_address, mac_address, options, re
   -- Send the packet and get the response
   local status, response = dhcp_send(socket, target, packet)
   if(not(status)) then
-    stdnse.print_debug(1, "dhcp: Couldn't send packet: " .. response)
+    stdnse.debug1("dhcp: Couldn't send packet: " .. response)
     return false, "Couldn't send packet: "  .. response
   end
 
@@ -643,14 +627,14 @@ function make_request(target, request_type, ip_address, mac_address, options, re
   socket:close()
 
   if ( not(status) ) then
-    stdnse.print_debug(1, "dhcp: Couldn't receive packet: " .. response)
+    stdnse.debug1("dhcp: Couldn't receive packet: " .. response)
     return false, "Couldn't receive packet: "  .. response
   end
 
   -- Parse the response
   local status, parsed = dhcp_parse(response, transaction_id)
   if(not(status)) then
-    stdnse.print_debug(1, "dhcp: Couldn't parse response: " .. parsed)
+    stdnse.debug1("dhcp: Couldn't parse response: " .. parsed)
     return false, "Couldn't parse response: "  .. parsed
   end
 

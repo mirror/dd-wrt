@@ -32,14 +32,14 @@ to be on the LAN.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"safe", "discovery"}
 
 local arg_target = stdnse.get_script_args(SCRIPT_NAME .. ".target")
 
 hostrule = function(host)
   if ( not(host.mac_addr) ) then
-    stdnse.print_debug( "%s: Failed to determine hosts remote MAC address", SCRIPT_NAME )
+    stdnse.debug1("Failed to determine hosts remote MAC address" )
   end
   return (arg_target ~= nil and host.mac_addr ~= nil)
 end
@@ -56,8 +56,8 @@ icmpEchoRequest = function(ifname, host, addr)
   local probe = packet.Frame:new()
   probe.mac_src = iface.mac
   probe.mac_dst = host.mac_addr
-  probe.ip_bin_src = packet.iptobin(iface.address)
-  probe.ip_bin_dst = packet.iptobin(addr)
+  probe.ip_bin_src = ipOps.ip_to_str(iface.address)
+  probe.ip_bin_dst = ipOps.ip_to_str(addr)
   probe.echo_id = 0x1234
   probe.echo_seq = 6
   probe.echo_data = "Nmap host discovery."
@@ -72,7 +72,7 @@ icmpEchoRequest = function(ifname, host, addr)
   return status
 end
 
-local function fail(err) return ("\n  ERROR: %s"):format(err or "") end
+local function fail(err) return stdnse.format_output(false, err) end
 
 action = function(host)
 
@@ -93,7 +93,7 @@ action = function(host)
   end
 
   if ( target == host.ip ) then
-    return ("\n  ERROR: Target can not be the same as the scanned host")
+    return fail("Target can not be the same as the scanned host")
   end
 
   if (icmpEchoRequest(ifname, host, target)) then

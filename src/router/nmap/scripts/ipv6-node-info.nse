@@ -1,6 +1,7 @@
 local bin = require "bin"
 local bit = require "bit"
 local dns = require "dns"
+local ipOps = require "ipOps"
 local nmap = require "nmap"
 local packet = require "packet"
 local stdnse = require "stdnse"
@@ -30,7 +31,17 @@ hostnames)".
 -- | ipv6-node-info:
 -- |   Hostnames: mac-mini.local
 -- |   IPv6 addresses: fe80::a8bb:ccff:fedd:eeff, 2001:db8:1234:1234::3
--- |_  IPv4 addresses: (actually hostnames) mac-mini.local
+-- |_  IPv4 addresses: mac-mini.local
+--
+-- @xmloutput
+-- <elem key="Hostnames">mac-mini.local</elem>
+-- <table key="IPv6 addresses">
+--   <elem>fe80::a8bb:ccff:fedd:eeff</elem>
+--   <elem>2001:db8:1234:1234::3</elem>
+-- </table>
+-- <table key="IPv4 addresses">
+--   <elem>mac-mini.local</elem>
+-- </table>
 
 categories = {"default", "discovery", "safe"}
 
@@ -147,27 +158,31 @@ local function stringify_noop(flags, data)
   return "replied"
 end
 
+local commasep = {
+  __tostring = function (t)
+    return stdnse.strjoin(", ", t)
+  end
+}
+
 -- RFC 4620, section 6.3.
 local function stringify_nodename(flags, data)
   local status, names
-  local text
 
   status, names = try_decode_nodenames(data)
   if empty(names) then
     return
   end
-  text = stdnse.strjoin(", ", names)
   if not status then
-    text = text .. " (parsing error)"
+    names[#names+1] = "(parsing error)"
   end
 
-  return text
+  setmetatable(names, commasep)
+  return names
 end
 
 -- RFC 4620, section 6.3.
 local function stringify_nodeaddresses(flags, data)
   local ttl, binaddr
-  local text
   local addrs = {}
   local pos = nil
 
@@ -176,18 +191,18 @@ local function stringify_nodeaddresses(flags, data)
     if not ttl then
       break
     end
-    addrs[#addrs + 1] = packet.toipv6(binaddr)
+    addrs[#addrs + 1] = ipOps.str_to_ip(binaddr)
   end
   if empty(addrs) then
     return
   end
 
-  text = stdnse.strjoin(", ", addrs)
   if bit.band(flags, 0x01) ~= 0 then
-    text = text .. " (more omitted for space reasons)"
+    addrs[#addrs+1] = "(more omitted for space reasons)"
   end
 
-  return text
+  setmetatable(addrs, commasep)
+  return addrs
 end
 
 -- RFC 4620, section 6.4.
@@ -202,14 +217,14 @@ end
 local function stringify_nodeipv4addresses(flags, data)
   local status, names
   local ttl, binaddr
-  local text
   local addrs = {}
   local pos = nil
 
   -- Check for DNS names.
   status, names = try_decode_nodenames(data .. "\0\0")
   if status then
-    return "(actually hostnames) " .. stdnse.strjoin(", ", names)
+    setmetatable(names, commasep)
+    return names
   end
 
   -- Okay, looks like it's really IP addresses.
@@ -218,18 +233,18 @@ local function stringify_nodeipv4addresses(flags, data)
     if not ttl then
       break
     end
-    addrs[#addrs + 1] = packet.toip(binaddr)
+    addrs[#addrs + 1] = ipOps.str_to_ip(binaddr)
   end
   if empty(addrs) then
     return
   end
 
-  text = stdnse.strjoin(", ", addrs)
   if bit.band(flags, 0x01) ~= 0 then
-    text = text .. " (more omitted for space reasons)"
+    addrs[#addrs+1] = "(more omitted for space reasons)"
   end
 
-  return text
+  setmetatable(addrs, commasep)
+  return addrs
 end
 
 local STRINGIFY = {
@@ -253,7 +268,7 @@ local function handle_received_packet(buf)
 
   if not STRINGIFY[qtype] then
     -- This is a not a qtype we sent or know about.
-    stdnse.print_debug(1, "Got NI reply with unknown qtype %d from %s", qtype, p.ip6_src)
+    stdnse.debug1("Got NI reply with unknown qtype %d from %s", qtype, p.ip6_src)
     return
   end
 
@@ -279,14 +294,14 @@ local function format_results(results)
   }
   local output
 
-  output = {}
+  output = stdnse.output_table()
   for _, qtype in ipairs(QTYPE_ORDER) do
     if results[qtype] then
-      output[#output + 1] = QTYPE_STRINGS[qtype] .. ": " .. results[qtype]
+      output[QTYPE_STRINGS[qtype]] = results[qtype]
     end
   end
 
-  return stdnse.format_output(true, output)
+  return output
 end
 
 function action(host)

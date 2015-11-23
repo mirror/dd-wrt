@@ -14,7 +14,7 @@
 --    - This class contains the core functions needed to communicate with AMQP
 --
 
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -- @author "Sebastian Dragomir <velorien@gmail.com>"
 
 -- Version 0.1
@@ -25,7 +25,6 @@ local bin = require "bin"
 local match = require "match"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
-local string = require "string"
 local table = require "table"
 _ENV = stdnse.module("amqp", stdnse.seeall);
 
@@ -40,9 +39,9 @@ AMQP = {
 
   -- version strings the client supports
   client_version_strings = {
-    ["0-8"] = string.char(0x01) .. string.char(0x01) .. string.char(0x08) .. string.char(0x00),
-    ["0-9"] = string.char(0x00) .. string.char(0x00) .. string.char(0x09) .. string.char(0x00),
-    ["0-9-1"] = string.char(0x00) .. string.char(0x00) .. string.char(0x09) .. string.char(0x01)
+    ["0-8"] = "\x01\x01\x08\x00",
+    ["0-9"] = "\x00\x00\x09\x00",
+    ["0-9-1"] = "\x00\x00\x09\x01"
   },
 
   new = function(self, host, port)
@@ -249,7 +248,7 @@ AMQP = {
     -- parse frame header
     local frametype, chnumber, framesize, method
     _, frametype, chnumber, framesize, method = bin.unpack(">CSII", tmp)
-    stdnse.print_debug("frametype: %d, chnumber: %d, framesize: %d, method: %d", frametype, chnumber, framesize, method)
+    stdnse.debug1("frametype: %d, chnumber: %d, framesize: %d, method: %d", frametype, chnumber, framesize, method)
 
     if (frametype ~= 1) then
       return false, ("ERROR: AQMP:handshake expected header (1) frame, but was %d"):format(frametype)

@@ -64,7 +64,7 @@ http://www.gamers.org/dEngine/quake/QDP/qnp.html
 categories = {"default", "discovery", "safe", "version"}
 author = "Ulrik Haugen"
 copyright = "Linköpings universitet 2014, Ulrik Haugen 2014"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 
 --- Proceed with action on open/open|filtered udp ports in interval
@@ -74,6 +74,7 @@ function portrule(host, port)
   and port.protocol == 'udp'
   and ((26000 <= port.number and port.number <= 26004)
     or port.service == 'quake')
+  and nmap.version_intensity() >= 7
 end
 
 
@@ -134,8 +135,7 @@ local function get_player_info(host, port, id)
     id - 1)            -- player number (0 indexed)
   -- iptables -m u32 --u32 '0x1c=0x80000006&&0x1d&0xff=0x03'
 
-  local status, rep_pl = comm.exchange(host, port, req_pl,
-    { proto = port.protocol })
+  local status, rep_pl = comm.exchange(host, port, req_pl)
   assert_w_table(status, "No response to request for player info")
 
   player_info.player_ratio = string.format("%d/%d=%f",
@@ -200,8 +200,7 @@ local function get_server_info(host, port)
     net_protocol_released)     -- net protocol version
   -- iptables -m u32 --u32 '0x1c=0x8000000c&&0x20=0x02515541&&0x24=0x4b450003'
 
-  local status, rep_pl = comm.exchange(host, port, req_pl,
-    { proto = port.protocol })
+  local status, rep_pl = comm.exchange(host, port, req_pl)
   assert_w_table(status, "No response to request for server info")
 
   nmap.set_port_state(host, port, 'open')

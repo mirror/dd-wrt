@@ -4,11 +4,12 @@ local stdnse = require "stdnse"
 local string = require "string"
 
 description = [[
-Displays the contents of the "generator" meta tag of a web page (default: /) if there is one.
+Displays the contents of the "generator" meta tag of a web page (default: /)
+if there is one.
 ]]
 
 author = "Michael Kohl"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 ---
@@ -42,24 +43,8 @@ categories = {"default", "discovery", "safe"}
 --   + improve redirect pattern
 --   + update documentation
 --   + add changelog
-
--- TODO:
--- more generic generator pattern
-
-
--- helper function
-local follow_redirects = function(host, port, path, n)
-  local pattern = "^[hH][tT][tT][pP]/1.[01] 30[12]"
-  local response = http.get(host, port, path)
-
-  while (response['status-line'] or ""):match(pattern) and n > 0 do
-    n = n - 1
-    local loc = response.header['location']
-    response = http.get_url(loc)
-  end
-
-  return response
-end
+-- 2014-07-29 Fabian Affolter <fabian@affolter-engineering.ch>:
+--   + update generator pattern
 
 portrule = shortport.http
 
@@ -69,15 +54,15 @@ action = function(host, port)
   local redirects = tonumber(stdnse.get_script_args('http-generator.redirects')) or 3
 
   -- Worst case: <meta name=Generator content="Microsoft Word 11">
-  local pattern = '<meta name="?generator"? content="([^\"]*)" ?/?>'
+  local pattern = '<meta name=[\"\']?generator[\"\']? content=[\"\']([^\"\']*)[\"\'] ?/?>'
 
-  -- make pattern case-insensitive
+  -- Make pattern case-insensitive
   pattern = pattern:gsub("%a", function (c)
       return string.format("[%s%s]", string.lower(c),
         string.upper(c))
     end)
 
-  response = follow_redirects(host, port, path, redirects)
+  response = http.get(host, port, path, {redirect_ok=redirects})
   if ( response and response.body ) then
     return response.body:match(pattern)
   end

@@ -27,7 +27,7 @@ Performs brute force password auditing against a Metasploit RPC server using the
 --
 
 author = "Vlatko Kosturjak"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -51,7 +51,7 @@ Driver =
   end,
 
   login = function( self, username, password )
-    local xmlreq='<?xml version="1.0" ?><methodCall><methodName>auth.login</methodName><params><param><value><string>'..username..'</string></value></param><param><value><string>'..password.."</string></value></param></params></methodCall>\n"..string.char(0)
+    local xmlreq='<?xml version="1.0" ?><methodCall><methodName>auth.login</methodName><params><param><value><string>'..username..'</string></value></param><param><value><string>'..password.."</string></value></param></params></methodCall>\n\0"
     local status, err = self.socket:send(xmlreq)
 
     if ( not ( status ) ) then
@@ -65,14 +65,14 @@ Driver =
     status, response = self.socket:receive_buf("\r?\n", false)
 
     if (response == nil or string.match(response,"<name>faultString</name><value><string>authentication error</string>")) then
-      stdnse.print_debug(2, "metasploit-xmlrpc-brute: Bad login: %s/%s", username, password)
+      stdnse.debug2("Bad login: %s/%s", username, password)
       return false, brute.Error:new( "Bad login" )
     elseif (string.match(response,"<name>result</name><value><string>success</string></value>")) then
 
-      stdnse.print_debug(1, "metasploit-xmlrpc-brute: Good login: %s/%s", username, password)
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      stdnse.debug1("Good login: %s/%s", username, password)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     end
-    stdnse.print_debug(1, "metasploit-xmlrpc-brute: WARNING: Unhandled response: %s", response)
+    stdnse.debug1("WARNING: Unhandled response: %s", response)
     return false, brute.Error:new( "unhandled response" )
   end,
 
@@ -84,10 +84,10 @@ Driver =
 action = function(host, port)
 
   -- first determine whether we need SSL or not
-  local xmlreq='<?xml version="1.0" ?><methodCall><methodName>core.version</methodName></methodCall>\n'..string.char(0)
+  local xmlreq='<?xml version="1.0" ?><methodCall><methodName>core.version</methodName></methodCall>\n\0'
   local socket, _, opts = comm.tryssl(host, port, xmlreq, { recv_first = false } )
   if ( not(socket) ) then
-    return "\n  ERROR: Failed to determine whether SSL was needed or not"
+    return stdnse.format_output(false, "Failed to determine whether SSL was needed or not")
   end
 
   local engine = brute.Engine:new(Driver, host, port, opts)

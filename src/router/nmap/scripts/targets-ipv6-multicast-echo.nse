@@ -1,4 +1,5 @@
 local coroutine = require "coroutine"
+local ipOps = require "ipOps"
 local nmap = require "nmap"
 local packet = require "packet"
 local stdnse = require "stdnse"
@@ -25,7 +26,7 @@ on a LAN without needing to individually ping each IPv6 address.
 
 author = "David Fifield, Xu Weilin"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery","broadcast"}
 
@@ -43,14 +44,14 @@ local function get_interfaces()
   if interface_name then
     -- single interface defined
     local if_table = nmap.get_interface_info(interface_name)
-    if if_table and packet.ip6tobin(if_table.address) and if_table.link == "ethernet" then
+    if if_table and ipOps.ip_to_str(if_table.address) and if_table.link == "ethernet" then
       interfaces[#interfaces + 1] = if_table
     else
-      stdnse.print_debug("Interface not supported or not properly configured.")
+      stdnse.debug1("Interface not supported or not properly configured.")
     end
   else
     for _, if_table in ipairs(nmap.list_interfaces()) do
-      if packet.ip6tobin(if_table.address) and if_table.link == "ethernet" then
+      if ipOps.ip_to_str(if_table.address) and if_table.link == "ethernet" then
         table.insert(interfaces, if_table)
       end
     end
@@ -60,13 +61,13 @@ local function get_interfaces()
 end
 
 local function single_interface_broadcast(if_nfo, results)
-  stdnse.print_debug("Starting " .. SCRIPT_NAME .. " on " .. if_nfo.device)
+  stdnse.debug1("Starting " .. SCRIPT_NAME .. " on " .. if_nfo.device)
 
   local condvar = nmap.condvar(results)
   local src_mac = if_nfo.mac
-  local src_ip6 = packet.ip6tobin(if_nfo.address)
+  local src_ip6 = ipOps.ip_to_str(if_nfo.address)
   local dst_mac = packet.mactobin("33:33:00:00:00:01")
-  local dst_ip6 = packet.ip6tobin("ff02::1")
+  local dst_ip6 = ipOps.ip_to_str("ff02::1")
 
   ----------------------------------------------------------------------------
   --Multicast echo ping probe

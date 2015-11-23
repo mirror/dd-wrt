@@ -2,7 +2,7 @@
 -- Standard Nmap Scripting Engine functions. This module contains various handy
 -- functions that are too small to justify modules of their own.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -- @class module
 -- @name stdnse
 
@@ -29,18 +29,29 @@ local print = print;
 local type = type
 
 local ceil = math.ceil
+local floor = math.floor
+local fmod = math.fmod
 local max = math.max
+local random = math.random
 
 local format = string.format;
 local rep = string.rep
+local match = string.match
+local find = string.find
+local sub = string.sub
+local gsub = string.gsub
+local char = string.char
+local byte = string.byte
 
 local concat = table.concat;
 local insert = table.insert;
+local remove = table.remove;
 local pack = table.pack;
 local unpack = table.unpack;
 
 local difftime = os.difftime;
 local time = os.time;
+local date = os.date;
 
 local EMPTY = {}; -- Empty constant table
 
@@ -57,18 +68,60 @@ _ENV = require "strict" {};
 -- @usage stdnse.sleep(1.5)
 _ENV.sleep = nmap.socket.sleep;
 
+-- These stub functions get overwritten by the script run loop in nse_main.lua
+-- These empty stubs will be used if a library calls stdnse.debug while loading
+_ENV.getid = function () return end
+_ENV.getinfo = function () return end
+_ENV.gethostport = function () return end
+
+local function debug (level, ...)
+  if type(level) ~= "number" then
+    return debug(1, level, ...)
+  end
+  local current = nmap.debugging()
+  if level <= current then
+    local host, port = gethostport()
+    local prefix = ( (current >= 2 and getinfo or getid)() or "")
+    .. (host and " "..host.ip .. (port and ":"..port.number or "") or "")
+    if prefix ~= "" then
+      nmap.log_write("stdout", "[" .. prefix .. "] " .. format(...))
+    else
+      nmap.log_write("stdout", format(...))
+    end
+  end
+end
+
 ---
 -- Prints a formatted debug message if the current debugging level is greater
 -- than or equal to a given level.
 --
--- This is a convenience wrapper around
--- <code>nmap.log_write</code>. The first optional numeric
--- argument, <code>level</code>, is used as the debugging level necessary
--- to print the message (it defaults to 1 if omitted). All remaining arguments
--- are processed with Lua's <code>string.format</code> function.
+-- This is a convenience wrapper around <code>nmap.log_write</code>. The first
+-- optional numeric argument, <code>level</code>, is used as the debugging level
+-- necessary to print the message (it defaults to 1 if omitted). All remaining
+-- arguments are processed with Lua's <code>string.format</code> function.
+--
+-- If known, the output includes some context based information: the script
+-- identifier and the target ip/port (if there is one). If the debug level is
+-- at least 2, it also prints the base thread identifier and whether it is a
+-- worker thread or the master thread.
+--
+-- @class function
+-- @name debug
 -- @param level Optional debugging level.
 -- @param fmt Format string.
 -- @param ... Arguments to format.
+_ENV.debug = debug
+
+--Aliases for particular debug levels
+function debug1 (...) return debug(1, ...) end
+function debug2 (...) return debug(2, ...) end
+function debug3 (...) return debug(3, ...) end
+function debug4 (...) return debug(4, ...) end
+function debug5 (...) return debug(5, ...) end
+
+---
+-- Deprecated version of debug(), kept for now to prevent the script id from being
+-- printed twice. Scripts should use debug() and not pass SCRIPT_NAME
 print_debug = function(level, fmt, ...)
   local l, d = tonumber(level), nmap.debugging();
   if l and l <= d then
@@ -78,18 +131,58 @@ print_debug = function(level, fmt, ...)
   end
 end
 
+local function verbose (level, ...)
+  if type(level) ~= "number" then
+    return verbose(1, level, ...)
+  end
+  local current = nmap.verbosity()
+  if level <= current then
+    local prefix
+    if current >= 2 then
+      local host, port = gethostport()
+      prefix = (getid() or "")
+      .. (host and " "..host.ip .. (port and ":"..port.number or "") or "")
+    else
+      prefix = getid() or ""
+    end
+    if prefix ~= "" then
+      nmap.log_write("stdout", "[" .. prefix .. "] " .. format(...))
+    else
+      nmap.log_write("stdout", format(...))
+    end
+  end
+end
+
 ---
 -- Prints a formatted verbosity message if the current verbosity level is greater
 -- than or equal to a given level.
 --
--- This is a convenience wrapper around
--- <code>nmap.log_write</code>. The first optional numeric
--- argument, <code>level</code>, is used as the verbosity level necessary
--- to print the message (it defaults to 1 if omitted). All remaining arguments
--- are processed with Lua's <code>string.format</code> function.
+-- This is a convenience wrapper around <code>nmap.log_write</code>. The first
+-- optional numeric argument, <code>level</code>, is used as the verbosity level
+-- necessary to print the message (it defaults to 1 if omitted). All remaining
+-- arguments are processed with Lua's <code>string.format</code> function.
+--
+-- If known, the output includes some context based information: the script
+-- identifier. If the verbosity level is at least 2, it also prints the target
+-- ip/port (if there is one)
+--
+-- @class function
+-- @name verbose
 -- @param level Optional verbosity level.
 -- @param fmt Format string.
 -- @param ... Arguments to format.
+_ENV.verbose = verbose
+
+--Aliases for particular verbosity levels
+function verbose1 (...) return verbose(1, ...) end
+function verbose2 (...) return verbose(2, ...) end
+function verbose3 (...) return verbose(3, ...) end
+function verbose4 (...) return verbose(4, ...) end
+function verbose5 (...) return verbose(5, ...) end
+
+---
+-- Deprecated version of verbose(), kept for now to prevent the script id from being
+-- printed twice. Scripts should use verbose() and not pass SCRIPT_NAME
 print_verbose = function(level, fmt, ...)
   local l, d = tonumber(level), nmap.verbosity();
   if l and l <= d then
@@ -98,7 +191,6 @@ print_verbose = function(level, fmt, ...)
     nmap.log_write("stdout", format(level, fmt, ...));
   end
 end
-
 
 --- Join a list of strings with a separator string.
 --
@@ -142,10 +234,11 @@ function strsplit(pattern, text)
 end
 
 --- Generate a random string.
+--
 -- You can either provide your own charset or the function will use
 -- a default one which is [A-Z].
 -- @param len Length of the string we want to generate.
--- @param charset Charset that will be used to generate the string.
+-- @param charset Charset that will be used to generate the string. String or table
 -- @return A random string of length <code>len</code> consisting of
 -- characters from <code>charset</code> if one was provided, otherwise
 -- <code>charset</code> defaults to [A-Z] letters.
@@ -154,15 +247,22 @@ function generate_random_string(len, charset)
   local ascii_A = 65
   local ascii_Z = 90
   if charset then
-    for i=1,len do
-      t[i]=charset[math.random(#charset)]
+    if type(charset) == "string" then
+      for i=1,len do
+        local r = random(#charset)
+        t[i] = sub(charset, r, r)
+      end
+    else
+      for i=1,len do
+        t[i]=charset[random(#charset)]
+      end
     end
   else
     for i=1,len do
-      t[i]=string.char(math.random(ascii_A,ascii_Z))
+      t[i]=char(random(ascii_A,ascii_Z))
     end
   end
-  return table.concat(t)
+  return concat(t)
 end
 
 --- Return a wrapper closure around a socket that buffers socket reads into
@@ -357,19 +457,19 @@ function parse_timespec(timespec)
   local n, unit, t, m
   local multipliers = {[""] = 1, s = 1, m = 60, h = 60 * 60, ms = 0.001}
 
-  n, unit = string.match(timespec, "^([%d.]+)(.*)$")
+  n, unit = match(timespec, "^([%d.]+)(.*)$")
   if not n then
-    return nil, string.format("Can't parse time specification \"%s\"", timespec)
+    return nil, format("Can't parse time specification \"%s\"", timespec)
   end
 
   t = tonumber(n)
   if not t then
-    return nil, string.format("Can't parse time specification \"%s\" (bad number \"%s\")", timespec, n)
+    return nil, format("Can't parse time specification \"%s\" (bad number \"%s\")", timespec, n)
   end
 
   m = multipliers[unit]
   if not m then
-    return nil, string.format("Can't parse time specification \"%s\" (bad unit \"%s\")", timespec, unit)
+    return nil, format("Can't parse time specification \"%s\" (bad unit \"%s\")", timespec, unit)
   end
 
   return t * m
@@ -381,11 +481,11 @@ end
 -- correct?
 local function utc_offset(t)
   -- What does the calendar say locally?
-  local localtime = os.date("*t", t)
+  local localtime = date("*t", t)
   -- What does the calendar say in UTC?
-  local gmtime = os.date("!*t", t)
+  local gmtime = date("!*t", t)
   -- Interpret both as local calendar dates and find the difference.
-  return difftime(os.time(localtime), os.time(gmtime))
+  return difftime(time(localtime), time(gmtime))
 end
 --- Convert a date table into an integer timestamp.
 --
@@ -405,7 +505,7 @@ end
 -- </code>
 function date_to_timestamp(date, offset)
   offset = offset or 0
-  return os.time(date) + utc_offset(os.time(date)) - offset
+  return time(date) + utc_offset(time(date)) - offset
 end
 
 local function format_tz(offset)
@@ -421,11 +521,11 @@ local function format_tz(offset)
     sign = "+"
   end
   -- Truncate to minutes.
-  offset = math.floor(offset / 60)
-  hh = math.floor(offset / 60)
-  mm = math.floor(math.fmod(offset, 60))
+  offset = floor(offset / 60)
+  hh = floor(offset / 60)
+  mm = floor(fmod(offset, 60))
 
-  return string.format("%s%02d:%02d", sign, hh, mm)
+  return format("%s%02d:%02d", sign, hh, mm)
 end
 --- Format a date and time (and optional time zone) for structured output.
 --
@@ -446,13 +546,46 @@ end
 -- This function should be used for all dates emitted as part of NSE structured
 -- output.
 function format_timestamp(t, offset)
-  local tz_string = format_tz(offset)
-  offset = offset or 0
-  return os.date("!%Y-%m-%dT%H:%M:%S", t + offset) .. tz_string
+  if type(t) == "table" then
+    return format(
+      "%d-%02d-%02dT%02d:%02d:%02d",
+      t.year, t.month, t.day, t.hour, t.min, t.sec
+      )
+  else
+    local tz_string = format_tz(offset)
+    offset = offset or 0
+    return date("!%Y-%m-%dT%H:%M:%S", t + offset) .. tz_string
+  end
+end
+
+--- Format a time interval into a string
+--
+-- String is in the same format as format_difftime
+-- @param interval A time interval
+-- @param unit The time unit division as a number. If <code>interval</code> is
+--             in milliseconds, this is 1000 for instance. Default: 1 (seconds)
+-- @return The time interval in string format
+function format_time(interval, unit)
+  unit = unit or 1
+  local precision = floor(math.log(unit, 10))
+
+  local sec = (interval % (60 * unit)) / unit
+  interval = floor(interval / (60 * unit))
+  local min = interval % 60
+  interval = floor(interval / 60)
+  local hr = interval % 24
+  interval = floor(interval / 24)
+
+  local s = format("%dd%02dh%02dm%02.".. precision .."fs",
+    interval, hr, min, sec)
+  -- trim off leading 0 and "empty" units
+  return match(s, "([1-9].*)") or format("%0.".. precision .."fs", 0)
 end
 
 --- Format the difference between times <code>t2</code> and <code>t1</code>
--- into a string in one of the forms (signs may vary):
+-- into a string
+--
+-- String is in one of the forms (signs may vary):
 -- * 0s
 -- * -4s
 -- * +2m38s
@@ -500,33 +633,10 @@ function format_difftime(t2, t1)
     yeardiff = 0
   end
 
-  local s, sec, min
-  s = ""
-  -- Seconds (pad to two digits).
-  sec = d % 60
-  d = math.floor(d / 60)
-  if d == 0 and yeardiff == 0 then
-    return sign .. string.format("%gs", sec) .. s
-  end
-  s = string.format("%02gs", sec) .. s
-  -- Minutes (pad to two digits).
-  min = d % 60
-  d = math.floor(d / 60)
-  if d == 0 and yeardiff == 0 then
-    return sign .. string.format("%dm", min) .. s
-  end
-  s = string.format("%02dm", min) .. s
-  -- Hours.
-  s = string.format("%dh", d % 24) .. s
-  d = math.floor(d / 24)
-  if d == 0 and yeardiff == 0 then
-    return sign .. s
-  end
-  -- Days.
-  s = string.format("%dd", d) .. s
+  local s = format_time(d)
   if yeardiff == 0 then return sign .. s end
   -- Years.
-  s = string.format("%dy", yeardiff) .. s
+  s = format("%dy", yeardiff) .. s
   return sign .. s
 end
 
@@ -543,24 +653,8 @@ function clock_us()
 end
 
 ---Get the indentation symbols at a given level.
-local function format_get_indent(indent, at_end)
-  local str = ""
-  local had_continue = false
-
-  if(not(at_end)) then
-    str = rep('  ', #indent) -- Was: "|  "
-  else
-    for i = #indent, 1, -1 do
-      if(indent[i] and not(had_continue)) then
-        str = str .. "  " -- Was: "|_ "
-      else
-        had_continue = true
-        str = str .. "  " -- Was: "|  "
-      end
-    end
-  end
-
-  return str
+local function format_get_indent(indent)
+  return rep("  ", #indent)
 end
 
 local function splitlines(s)
@@ -569,16 +663,16 @@ local function splitlines(s)
 
   while i <= #s do
     local b, e
-    b, e = string.find(s, "\r?\n", i)
+    b, e = find(s, "\r?\n", i)
     if not b then
       break
     end
-    result[#result + 1] = string.sub(s, i, b - 1)
+    result[#result + 1] = sub(s, i, b - 1)
     i = e + 1
   end
 
   if i <= #s then
-    result[#result + 1] = string.sub(s, i)
+    result[#result + 1] = sub(s, i)
   end
 
   return result
@@ -651,7 +745,7 @@ local function format_output_sub(status, data, indent)
 
       for j, line in ipairs(lines) do
         insert(output, format("%s  %s%s\n",
-          format_get_indent(indent, i == #data and j == #lines),
+          format_get_indent(indent),
           prefix, line))
       end
     end
@@ -1150,12 +1244,12 @@ function output_table ()
     __newindex = function (_, k, v)
       if t[k] == nil and v ~= nil then
         -- New key?
-        table.insert(order, k)
+        insert(order, k)
       elseif v == nil then
         -- Deleting an existing key?
         for i, key in ipairs(order) do
           if key == k then
-            table.remove(order, i)
+            remove(order, i)
             break
           end
         end
@@ -1243,8 +1337,8 @@ function filename_escape(s)
   elseif s == ".." then
     return "%2e%2e"
   else
-    return (string.gsub(s, FILESYSTEM_UNSAFE, function (c)
-      return string.format("%%%02x", string.byte(c))
+    return (gsub(s, FILESYSTEM_UNSAFE, function (c)
+      return format("%%%02x", byte(c))
     end))
   end
 end
@@ -1263,5 +1357,53 @@ function contains(tab, item)
   return false, nil
 end
 
+--- Returns a conservative timeout for a host
+--
+-- If the host parameter is a NSE host table with a <code>times.timeout</code>
+-- attribute, then the return value is the host timeout scaled according to the
+-- max_timeout. The scaling factor is defined by a linear formula such that
+-- (max_timeout=8000, scale=2) and (max_timeout=1000, scale=1)
+--
+-- @param host The host object to base the timeout on. If this is anything but
+--             a host table, the max_timeout is returned.
+-- @param max_timeout The maximum timeout in milliseconds. This is the default
+--                    timeout used if there is no host.times.timeout. Default: 8000
+-- @param min_timeout The minimum timeout in milliseconds that will be
+--                    returned. Default: 1000
+-- @return The timeout in milliseconds, suitable for passing to set_timeout
+-- @usage
+-- assert(host.times.timeout == 1.3)
+--  assert(get_timeout() == 8000)
+--  assert(get_timeout(nil, 5000) == 5000)
+--  assert(get_timeout(host) == 2600)
+--  assert(get_timeout(host, 10000, 3000) == 3000)
+function get_timeout(host, max_timeout, min_timeout)
+  max_timeout = max_timeout or 8000
+  local t = type(host) == "table" and host.times and host.times.timeout
+  if not t then
+    return max_timeout
+  end
+  t = t * (max_timeout + 6000) / 7
+  min_timeout = min_timeout or 1000
+  if t < min_timeout then
+    return min_timeout
+  elseif t > max_timeout then
+    return max_timeout
+  end
+  return t
+end
+
+--- Returns the keys of a table as an array
+-- @param t The table
+-- @return A table of keys
+function keys(t)
+  local ret = {}
+  local k, v = next(t)
+  while k do
+    ret[#ret+1] = k
+    k, v = next(t, k)
+  end
+  return ret
+end
 
 return _ENV;

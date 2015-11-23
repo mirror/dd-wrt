@@ -6,7 +6,9 @@ local shortport = require "shortport"
 local stdnse = require "stdnse"
 
 description=[[
-Performs brute force password auditing against the classic UNIX rlogin (remote login) service.  This script must be run in privileged mode on UNIX because it must bind to a low source port number.
+Performs brute force password auditing against the classic UNIX rlogin (remote
+login) service.  This script must be run in privileged mode on UNIX because it
+must bind to a low source port number.
 ]]
 
 ---
@@ -29,7 +31,7 @@ Performs brute force password auditing against the classic UNIX rlogin (remote l
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"brute", "intrusive"}
 
 portrule = shortport.port_or_service(513, "login", "tcp")
@@ -76,7 +78,7 @@ Driver = {
       self.socket:close()
     end
     if ( not(status) ) then
-      stdnse.print_debug(3, "ERROR: failed to connect to server")
+      stdnse.debug3("ERROR: failed to connect to server")
     end
     return status
   end,
@@ -92,7 +94,7 @@ Driver = {
       return false, err
     end
     if ( data ~= "\0" ) then
-      stdnse.print_debug(2, "ERROR: Expected null byte")
+      stdnse.debug2("ERROR: Expected null byte")
       local err = brute.Error:new( "Expected null byte" )
       err:setRetry( true )
       return false, err
@@ -105,7 +107,7 @@ Driver = {
       return false, err
     end
     if ( data ~= "Password: " ) then
-      stdnse.print_debug(2, "ERROR: Expected password prompt")
+      stdnse.debug2("ERROR: Expected password prompt")
       local err = brute.Error:new( "Expected password prompt" )
       err:setRetry( true )
       return false, err
@@ -130,7 +132,7 @@ Driver = {
       return false, brute.Error:new( "Incorrect password" )
     end
 
-    return true, brute.Account:new(username, password, creds.State.VALID)
+    return true, creds.Account:new(username, password, creds.State.VALID)
   end,
 
   disconnect = function(self)
@@ -144,7 +146,8 @@ arg_timeout = (arg_timeout or 10) * 1000
 action = function(host, port)
 
   if ( not(nmap.is_privileged()) ) then
-    return "\n  ERROR: rlogin-brute needs Nmap to be run in privileged mode"
+    stdnse.verbose1("Script must be run in privileged mode. Skipping.")
+    return stdnse.format_output(false, "rlogin-brute needs Nmap to be run in privileged mode")
   end
 
   local options = {

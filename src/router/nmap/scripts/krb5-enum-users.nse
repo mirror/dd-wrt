@@ -44,7 +44,7 @@ It needs a valid Kerberos REALM in order to operate.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"auth", "intrusive"}
 
 
@@ -52,7 +52,7 @@ portrule = shortport.port_or_service( 88, {"kerberos-sec"}, {"udp","tcp"}, {"ope
 
 -- This an embryo of a Kerberos 5 packet creation and parsing class. It's very
 -- tiny class and holds only the necessary functions to support this script.
--- This class be factored out into it's own library, once more scripts make use
+-- This class be factored out into its own library, once more scripts make use
 -- of it.
 KRB5 = {
 
@@ -163,13 +163,13 @@ KRB5 = {
   -- @param names table containing a list of names to encode
   -- @return princ string containing an encoded principal
   encodePrincipal = function(self, encoder, name_type, names )
-    local princ = ""
+    local princ = {}
 
-    for _, n in ipairs(names) do
-      princ = princ .. encoder:encode( { _type = 'GeneralString', n } )
+    for i, n in ipairs(names) do
+      princ[i] = encoder:encode( { _type = 'GeneralString', n } )
     end
 
-    princ = self:encodeSequence(encoder, 0x30, princ)
+    princ = self:encodeSequence(encoder, 0x30, table.concat(princ))
     princ = self:encodeSequence(encoder, 0xa1, princ)
     princ = encoder:encode( name_type ) .. princ
 
@@ -193,16 +193,16 @@ KRB5 = {
     local encoder = asn1.ASN1Encoder:new()
     encoder:registerTagEncoders(KRB5.tagEncoder)
 
-    local data = ""
+    local data = {}
 
     -- encode encryption types
     for _,enctype in ipairs(KRB5.EncryptionTypes) do
       for k, v in pairs( enctype ) do
-        data = data .. encoder:encode(v)
+        data[#data+1] = encoder:encode(v)
       end
     end
 
-    data = self:encodeSequence(encoder, 0x30, data )
+    data = self:encodeSequence(encoder, 0x30, table.concat(data) )
     data = self:encodeSequence(encoder, 0xA8, data )
 
     -- encode nonce
@@ -231,7 +231,7 @@ KRB5 = {
     data = bin.pack(">I", kdc_options) .. data
 
     -- add padding
-    data = bin.pack("C", 0) .. data
+    data = '\0' .. data
 
     -- hmm, wonder what this is
     data = bin.pack("H", "A0070305") .. data
@@ -360,6 +360,8 @@ local function checkUserThread( host, port, realm, user, result )
   condvar "signal"
 end
 
+local function fail (err) return stdnse.format_output(false, err) end
+
 action = function( host, port )
 
   local realm = stdnse.get_script_args("krb5-enum-users.realm")
@@ -368,17 +370,17 @@ action = function( host, port )
 
   -- did the user supply a realm
   if ( not(realm) ) then
-    return "ERROR: No Kerberos REALM was supplied, aborting ..."
+    return fail("No Kerberos REALM was supplied, aborting ...")
   end
 
   -- does the realm appear to exist
   if ( not(isValidRealm(host, port, realm)) ) then
-    return "ERROR: Invalid Kerberos REALM, aborting ..."
+    return fail("Invalid Kerberos REALM, aborting ...")
   end
 
   -- load our user database from unpwdb
   local status, usernames = unpwdb.usernames()
-  if( not(status) ) then return "ERROR: Failed to load unpwdb usernames" end
+  if( not(status) ) then return fail("Failed to load unpwdb usernames") end
 
   -- start as many threads as there are names in the list
   local threads = {}

@@ -122,7 +122,7 @@ Request = {
     -- Converts a FindNode Request to a string
     __tostring = function(self)
       local data = tostring(self.header)
-      data = data .. bin.pack(">CAII", self.id_length, self.node_id, self.status, self.dht_size)
+      .. bin.pack(">CAII", self.id_length, self.node_id, self.status, self.dht_size)
       return data
     end,
   }
@@ -167,7 +167,7 @@ Response = {
         self.length = 16 + 2 + 1
         pos, self.ip = bin.unpack("H16", self.data, pos)
       else
-        stdnse.print_debug("Unknown address type (length: %d)", addr_len)
+        stdnse.debug1("Unknown address type (length: %d)", addr_len)
         return false, "Unknown address type"
       end
       pos, self.port = bin.unpack(">S", self.data, pos)
@@ -306,7 +306,7 @@ Response = {
     fromString = function(data)
       local find = Response.FIND_NODE:new(data)
       if ( find.header.proto_version < 13 ) then
-        stdnse.print_debug("ERROR: Unsupported version %d", find.header.proto_version)
+        stdnse.debug1("ERROR: Unsupported version %d", find.header.proto_version)
         return false
       end
 
@@ -390,7 +390,7 @@ Response = {
       return Response.ERROR.fromString(data)
     end
 
-    stdnse.print_debug("ERROR: Unknown response received from server")
+    stdnse.debug1("ERROR: Unknown response received from server")
     return false, "Failed to parse response"
   end,
 

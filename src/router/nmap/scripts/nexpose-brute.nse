@@ -7,7 +7,13 @@ local stdnse = require "stdnse"
 local openssl = stdnse.silent_require "openssl"
 
 description=[[
-Performs brute force password auditing against a Nexpose vulnerability scanner using the API 1.1.  By default it only tries three guesses per username to avoid target account lockout.
+Performs brute force password auditing against a Nexpose vulnerability scanner
+using the API 1.1.
+
+As the Nexpose application enforces account lockout after 4 incorrect login
+attempts, the script performs only 3 guesses per default. This can be
+altered by supplying the <code>brute.guesses</code> argument a different
+value or 0 (zero) to guess the whole dictionary.
 ]]
 
 ---
@@ -23,14 +29,10 @@ Performs brute force password auditing against a Nexpose vulnerability scanner u
 -- |   Statistics
 -- |_    Performed 5 guesses in 1 seconds, average tps: 5
 --
--- As the Nexpose application enforces account lockout after 4 incorrect login
--- attempts, the script performs only 3 guesses per default. This can be
--- altered by supplying the <code>brute.guesses</code> argument a different
--- value or 0 (zero) to guess the whole dictionary.
 
 author = "Vlatko Kosturjak"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"intrusive", "brute"}
 
@@ -59,13 +61,13 @@ Driver =
     end
 
     if (response.body == nil or response.body:match('<LoginResponse.*success="0"')) then
-      stdnse.print_debug(2, "nexpose-brute: Bad login: %s/%s", username, password)
+      stdnse.debug2("Bad login: %s/%s", username, password)
       return false, brute.Error:new( "Bad login" )
     elseif (response.body:match('<LoginResponse.*success="1"')) then
-      stdnse.print_debug(1, "nexpose-brute: Good login: %s/%s", username, password)
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      stdnse.debug1("Good login: %s/%s", username, password)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     end
-    stdnse.print_debug(1, "nexpose-brute: WARNING: Unhandled response: %s", response.body)
+    stdnse.debug1("WARNING: Unhandled response: %s", response.body)
     return false, brute.Error:new( "incorrect response from server" )
   end,
 

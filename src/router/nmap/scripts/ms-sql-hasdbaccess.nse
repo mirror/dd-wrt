@@ -69,7 +69,7 @@ be disabled using the <code>mssql.scanned-ports-only</code> script argument.
 --                 added compatibility with changes in mssql.lua (Chris Woodbury)
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"auth", "discovery","safe"}
 
 
@@ -87,8 +87,7 @@ local function process_instance( instance )
   local output = {}
   local exclude_dbs = { "'master'", "'tempdb'", "'model'", "'msdb'" }
 
-  local RS_LIMIT = stdnse.get_script_args( {'mssql-hasdbaccess.limit', 'ms-sql-hasdbaccess.limit' } )
-    and tonumber(stdnse.get_script_args( {'mssql-hasdbaccess.limit', 'ms-sql-hasdbaccess.limit' } )) or 5
+  local RS_LIMIT = tonumber(stdnse.get_script_args( {'mssql-hasdbaccess.limit', 'ms-sql-hasdbaccess.limit' } )) or 5
 
   if ( RS_LIMIT <= 0 ) then
     limit = ""

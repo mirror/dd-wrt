@@ -5,6 +5,8 @@ local shortport = require "shortport"
 local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
+local lpeg = require "lpeg"
+local U = require "lpeg-utility"
 
 description = [[
 Gets the time and configuration variables from an NTP server. We send two
@@ -25,7 +27,7 @@ documentation of the protocol.
 -- nmap -sU -p 123 --script ntp-info <target>
 -- @output
 -- PORT    STATE SERVICE VERSION
--- 123/udp open  ntp     NTP v4
+-- 123/udp open  ntp     NTP v4.2.4p4@1.1520-o
 -- | ntp-info:
 -- |   receive time stamp: Sat Dec 12 16:22:41 2009
 -- |   version: ntpd 4.2.4p4@1.1520-o Wed May 13 21:06:31 UTC 2009 (1)
@@ -56,7 +58,7 @@ documentation of the protocol.
 -- <elem key="wander">0.000</elem>
 
 author = "Richard Sammet"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 
@@ -70,13 +72,21 @@ local TIMEOUT = 5000
 -- Only these fields from the response are displayed with default verbosity.
 local DEFAULT_FIELDS = {"version", "processor", "system", "refid", "stratum"}
 
+-- comma-space-separated key=value pairs with optional quotes
+local kvmatch = U.localize( {
+    lpeg.V "space"^0 * lpeg.V "kv" * lpeg.P ","^-1,
+    kv = lpeg.V "key" * lpeg.P "="^-1 * lpeg.V "value",
+    key = lpeg.C( (lpeg.V "alnum" + lpeg.S "_-.")^1 ),
+    value = U.escaped_quote() + lpeg.C((lpeg.P(1) - ",")^0),
+  } )
+
 action = function(host, port)
   local status
   local buftres, bufrlres
   local output = stdnse.output_table()
 
-  -- This is a ntp v4 mode3 (client) date/time request.
-  local treq = string.char(0xe3, 0x00, 0x04, 0xfa, 0x00, 0x01, 0x00, 0x00,
+  -- This is a ntp v2 mode3 (client) date/time request.
+  local treq = string.char(0xd3, 0x00, 0x04, 0xfa, 0x00, 0x01, 0x00, 0x00,
                            0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -88,11 +98,8 @@ action = function(host, port)
   local rlreq = string.char(0x16, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
                             0x00, 0x00, 0x00, 0x00)
 
-  status, buftres = comm.exchange(host, port, treq, {proto=port.protocol, timeout=TIMEOUT})
-  if not status then
-    -- Don't try the second probe if this one didn't work.
-    return nil
-  else
+  status, buftres = comm.exchange(host, port, treq, {timeout=TIMEOUT})
+  if status then
     local _, sec, frac, tstamp
 
     _, sec, frac = bin.unpack(">II", buftres, 33)
@@ -104,7 +111,7 @@ action = function(host, port)
     output["receive time stamp"] = stdnse.format_timestamp(tstamp)
   end
 
-  status, bufrlres = comm.exchange(host, port, rlreq, {proto=port.protocol, timeout=TIMEOUT})
+  status, bufrlres = comm.exchange(host, port, rlreq, {timeout=TIMEOUT})
 
   if status then
     -- This only looks at the first fragment of what can possibly be several
@@ -115,17 +122,35 @@ action = function(host, port)
     -- preceded by a 2-byte length.
     _, data = bin.unpack(">P", bufrlres, 11)
 
-    -- This parsing is not quite right with respect to quoted strings.
-    -- Backslash escapes should be interpreted inside strings and commas should
-    -- be allowed inside them.
-    for k, q, v in string.gmatch(data, "%s*([%w_]+)=(\"?)([^,\"\r\n]*)%2,?") do
+    -- loop over capture pairs which represent (key, value)
+    local function accumulate_output (...)
+      local k, v = ...
+      if k == nil then return end
       output[k] = v
+      return accumulate_output(select(3, ...))
     end
+
+    -- do the match and accumulate the captures
+    local list = kvmatch^0 / accumulate_output
+    list:match(data)
   end
 
   if(#output > 0) then
-    stdnse.print_debug("Test len: %d", #output)
+    stdnse.debug1("Test len: %d", #output)
     nmap.set_port_state(host, port, "open")
+    if output['version'] then
+      -- Look for the version string from the official ntpd and format it
+      -- in a manner similar to the output of the standard Nmap version detection
+      local version_num = string.match(output['version'],"^ntpd ([^ ]+)")
+      if version_num then
+        port.version.version = "v" .. version_num
+        nmap.set_port_version(host, port, "hardmatched")
+      end
+    end
+    if output['system'] then
+      port.version.ostype = output['system']
+      nmap.set_port_version(host, port, "hardmatched")
+    end
     if nmap.verbosity() < 1 then
       local mt = getmetatable(output)
       mt["__tostring"] = function(t)

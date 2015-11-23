@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -97,8 +97,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -119,11 +118,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.h 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: nmap.h 35399 2015-11-09 18:52:02Z dmiller $ */
 
 #ifndef NMAP_H
 #define NMAP_H
@@ -152,80 +151,17 @@
 #include <unistd.h>
 #endif
 
-#ifdef STDC_HEADERS
-#include <stdlib.h>
-#else
-void *malloc();
-void *realloc();
-#endif
-
-#if STDC_HEADERS || HAVE_STRING_H
-#include <string.h>
-#if !STDC_HEADERS && HAVE_MEMORY_H
-#include <memory.h>
-#endif
-#endif
-#if HAVE_STRINGS_H
-#include <strings.h>
-#endif
-
 #ifdef HAVE_BSTRING_H
 #include <bstring.h>
 #endif
-
-#include <ctype.h>
-#include <sys/types.h>
-
-#ifndef WIN32	/* from nmapNT -- seems to work */
-#include <sys/wait.h>
-#endif /* !WIN32 */
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h> /* Defines MAXHOSTNAMELEN on BSD*/
 #endif
 
-#include <stdio.h>
-
 #if HAVE_RPC_TYPES_H
+/* Is this needed any more since rpcgrind was converted to NSE? */
 #include <rpc/types.h>
-#endif
-
-#if HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-
-#include <sys/stat.h>
-
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-
-#include <errno.h>
-
-#if HAVE_NETDB_H
-#include <netdb.h>
-#endif
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-
-#include <fcntl.h>
-#include <stdarg.h>
-
-#ifdef HAVE_PWD_H
-#include <pwd.h>
-#endif
-
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
 #endif
 
 /* For systems without SCTP in netinet/in.h, such as MacOS X */
@@ -236,12 +172,7 @@ void *realloc();
 /* Keep assert() defined for security reasons */
 #undef NDEBUG
 
-#include <math.h>
 #include <assert.h>
-
-#if HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
-#endif
 
 /*#include <net/if_arp.h> *//* defines struct arphdr needed for if_ether.h */
 // #if HAVE_NET_IF_H
@@ -262,13 +193,13 @@ void *realloc();
 #ifndef NMAP_VERSION
 /* Edit this definition only within the quotes, because it is read from this
    file by the makefiles. */
-#define NMAP_VERSION "6.47"
-#define NMAP_NUM_VERSION "6.0.47.0"
+#define NMAP_VERSION "7.00"
+#define NMAP_NUM_VERSION "7.0.0.0"
 #endif
 /* The version number of updates retrieved by the nmap-update
    program. It can be different (but should always be the same or
    earlier) than NMAP_VERSION. */
-#define NMAP_UPDATE_CHANNEL "6.00"
+#define NMAP_UPDATE_CHANNEL "6.49"
 
 #define NMAP_XMLOUTPUTVERSION "1.04"
 
@@ -300,6 +231,10 @@ void *realloc();
 #define MAX_DECOYS 128 /* How many decoys are allowed? */
 
 #define MAXFALLBACKS 20 /* How many comma separated fallbacks are allowed in the service-probes file? */
+
+/* TCP Options for TCP SYN probes: MSS 1460 */
+#define TCP_SYN_PROBE_OPTIONS "\x02\x04\x05\xb4"
+#define TCP_SYN_PROBE_OPTIONS_LEN (sizeof(TCP_SYN_PROBE_OPTIONS)-1)
 
 /* Default maximum send delay between probes to the same host */
 #ifndef MAX_TCP_SCAN_DELAY
@@ -380,32 +315,9 @@ void *realloc();
 /* For nonroot. */
 #define DEFAULT_PING_CONNECT_PORT_SPEC "80,443"
 
-/* How many syn packets do we send to TCP sequence a host? */
-#define NUM_SEQ_SAMPLES 6
-
 /* The max length of each line of the subject fingerprint when
    wrapped. */
 #define FP_RESULT_WRAP_LINE_LEN 74
-
-/* TCP Timestamp Sequence */
-#define TS_SEQ_UNKNOWN 0
-#define TS_SEQ_ZERO 1 /* At least one of the timestamps we received back was 0 */
-#define TS_SEQ_2HZ 2
-#define TS_SEQ_100HZ 3
-#define TS_SEQ_1000HZ 4
-#define TS_SEQ_OTHER_NUM 5
-#define TS_SEQ_UNSUPPORTED 6 /* System didn't send back a timestamp */
-
-#define IPID_SEQ_UNKNOWN 0
-#define IPID_SEQ_INCR 1  /* simple increment by one each time */
-#define IPID_SEQ_BROKEN_INCR 2 /* Stupid MS -- forgot htons() so it
-                                  counts by 256 on little-endian platforms */
-#define IPID_SEQ_RPI 3 /* Goes up each time but by a "random" positive
-                          increment */
-#define IPID_SEQ_RD 4 /* Appears to select IPID using a "random" distributions (meaning it can go up or down) */
-#define IPID_SEQ_CONSTANT 5 /* Contains 1 or more sequential duplicates */
-#define IPID_SEQ_ZERO 6 /* Every packet that comes back has an IP.ID of 0 (eg Linux 2.4 does this) */
-#define IPID_SEQ_INCR_BY_2 7 /* simple increment by two each time */
 
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 64
@@ -419,13 +331,36 @@ void *realloc();
 #  define recvfrom6_t int
 #endif
 
-/********************** LOCAL INCLUDES *****************************/
-
-#include "global_structures.h"
-
 /***********************STRUCTURES**********************************/
 
-/* Moved to global_structures.h */
+/* The various kinds of port/protocol scans we can have
+ * Each element is to point to an array of port/protocol numbers
+ */
+struct scan_lists {
+        /* The "synprobes" are also used when doing a connect() ping */
+        unsigned short *syn_ping_ports;
+        unsigned short *ack_ping_ports;
+        unsigned short *udp_ping_ports;
+        unsigned short *sctp_ping_ports;
+        unsigned short *proto_ping_ports;
+        int syn_ping_count;
+        int ack_ping_count;
+        int udp_ping_count;
+        int sctp_ping_count;
+        int proto_ping_count;
+        //the above fields are only used for host discovery
+        //the fields below are only used for port scanning
+        unsigned short *tcp_ports;
+        int tcp_count;
+        unsigned short *udp_ports;
+        int udp_count;
+        unsigned short *sctp_ports;
+        int sctp_count;
+        unsigned short *prots;
+        int prot_count;
+};
+
+typedef enum { STYPE_UNKNOWN, HOST_DISCOVERY, ACK_SCAN, SYN_SCAN, FIN_SCAN, XMAS_SCAN, UDP_SCAN, CONNECT_SCAN, NULL_SCAN, WINDOW_SCAN, SCTP_INIT_SCAN, SCTP_COOKIE_ECHO_SCAN, MAIMON_SCAN, IPPROT_SCAN, PING_SCAN, PING_SCAN_ARP, IDLE_SCAN, BOUNCE_SCAN, SERVICE_SCAN, OS_SCAN, SCRIPT_PRE_SCAN, SCRIPT_SCAN, SCRIPT_POST_SCAN, TRACEROUTE, PING_SCAN_ND }stype;
 
 /***********************PROTOTYPES**********************************/
 
@@ -436,6 +371,7 @@ void printinteractiveusage();
 void getpts(const char *expr, struct scan_lists * ports); /* someone stole the name getports()! */
 void getpts_simple(const char *origexpr, int range_type,
                    unsigned short **list, int *count);
+void removepts(const char *expr, struct scan_lists * ports);
 void free_scan_lists(struct scan_lists *ports);
 
 /* Renamed main so that interactive mode could preprocess when necessary */
@@ -447,15 +383,10 @@ void nmap_free_mem();
 const char *statenum2str(int state);
 const char *scantype2str(stype scantype);
 void reaper(int signo);
-char *seqreport(struct seq_info *seq);
-const char *ipidclass2ascii(int seqclass);
-const char *tsseqclass2ascii(int seqclass);
 
-/* Convert a TCP sequence prediction difficulty index like 1264386
-   into a difficulty string like "Worthy Challenge */
-const char *seqidx2difficultystr(unsigned long idx);
 int nmap_fetchfile(char *filename_returned, int bufferlen, const char *file);
 int nmap_fileexistsandisreadable(const char* pathname);
 int gather_logfile_resumption_state(char *fname, int *myargc, char ***myargv);
 
 #endif /* NMAP_H */
+

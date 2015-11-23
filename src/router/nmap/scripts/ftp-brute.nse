@@ -32,7 +32,7 @@ Based on old ftp-brute.nse script by Diman Todorov, Vlatko Kosturjak and Ron Bow
 --       having a delayed response on incorrect login attempts. (default: 5s)
 
 author = "Aleksandar Nikolic"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 portrule = shortport.port_or_service(21, "ftp")
@@ -71,7 +71,7 @@ Driver = {
       return false, brute.Error:new("Couldn't send login: " .. err)
     end
 
-    status, err = self.socket:send("PASS " .. pass .. "\n\n")
+    status, err = self.socket:send("PASS " .. pass .. "\r\n")
     if(not(status)) then
       return false, brute.Error:new("Couldn't send login: " .. err)
     end
@@ -82,16 +82,16 @@ Driver = {
 
     -- Loop over the lines
     while(line)do
-      stdnse.print_debug("Received: %s", line)
+      stdnse.debug1("Received: %s", line)
       if(string.match(line, "^230")) then
-        stdnse.print_debug(1, "ftp-brute: Successful login: %s/%s", user, pass)
-        return true, brute.Account:new( user, pass, creds.State.VALID)
+        stdnse.debug1("Successful login: %s/%s", user, pass)
+        return true, creds.Account:new( user, pass, creds.State.VALID)
       elseif(string.match(line, "^530")) then
         return false,  brute.Error:new( "Incorrect password" )
       elseif(string.match(line, "^220")) then
       elseif(string.match(line, "^331")) then
       else
-        stdnse.print_debug(1, "ftp-brute: WARNING: Unhandled response: %s", line)
+        stdnse.debug1("WARNING: Unhandled response: %s", line)
         local err = brute.Error:new("Unhandled response")
         err:setRetry(true)
         return false, err

@@ -1,4 +1,4 @@
-Nmap 6.47 ( http://nmap.org )
+Nmap 7.00 ( https://nmap.org )
 Usage: nmap [Scan Type(s)] [Options] {target specification}
 TARGET SPECIFICATION:
   Can pass hostnames, IP addresses, networks, etc.
@@ -30,6 +30,7 @@ SCAN TECHNIQUES:
 PORT SPECIFICATION AND SCAN ORDER:
   -p <port ranges>: Only scan specified ports
     Ex: -p22; -p1-65535; -p U:53,111,137,T:21-25,80,139,8080,S:9
+  --exclude-ports <port ranges>: Exclude the specified ports from scanning
   -F: Fast mode - Scan fewer ports than the default scan
   -r: Scan ports consecutively - don't randomize
   --top-ports <number>: Scan <number> most common ports
@@ -42,7 +43,7 @@ SERVICE/VERSION DETECTION:
   --version-trace: Show detailed version scan activity (for debugging)
 SCRIPT SCAN:
   -sC: equivalent to --script=default
-  --script=<Lua scripts>: <Lua scripts> is a comma separated list of 
+  --script=<Lua scripts>: <Lua scripts> is a comma separated list of
            directories, script-files or script-categories
   --script-args=<n1=v1,[n2=v2,...]>: provide arguments to scripts
   --script-args-file=filename: provide NSE script args in a file
@@ -75,6 +76,8 @@ FIREWALL/IDS EVASION AND SPOOFING:
   -e <iface>: Use specified interface
   -g/--source-port <portnum>: Use given port number
   --proxies <url1,[url2],...>: Relay connections through HTTP/SOCKS4 proxies
+  --data <hex string>: Append a custom payload to sent packets
+  --data-string <string>: Append a custom ASCII string to sent packets
   --data-length <num>: Append random data to sent packets
   --ip-options <options>: Send packets with specified ip options
   --ttl <val>: Set IP time-to-live field
@@ -90,7 +93,6 @@ OUTPUT:
   --open: Only show open (or possibly open) ports
   --packet-trace: Show all packets sent and received
   --iflist: Print host interfaces and routes (for debugging)
-  --log-errors: Log errors/warnings to the normal-format output file
   --append-output: Append to rather than clobber specified output files
   --resume <filename>: Resume an aborted scan
   --stylesheet <path/URL>: XSL stylesheet to transform XML output to HTML
@@ -109,4 +111,4 @@ EXAMPLES:
   nmap -v -A scanme.nmap.org
   nmap -v -sn 192.168.0.0/16 10.0.0.0/8
   nmap -v -iR 10000 -Pn -p 80
-SEE THE MAN PAGE (http://nmap.org/book/man.html) FOR MORE OPTIONS AND EXAMPLES
+SEE THE MAN PAGE (https://nmap.org/book/man.html) FOR MORE OPTIONS AND EXAMPLES

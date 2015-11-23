@@ -1,6 +1,6 @@
 local http = require "http"
 local nmap = require "nmap"
-local pcre = require "pcre"
+local re = require "re"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local table = require "table"
@@ -42,19 +42,28 @@ Supported IDs:
 -- |   thisisphotobomb.memebase.com:80/
 -- |_  memebase.com:80/
 
-author = "Hani Benhabiles, Daniel Miller"
+author = "Hani Benhabiles, Daniel Miller, Patrick Donnelly"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"safe", "discovery"}
 
 
 -- these are the regular expressions for affiliate IDs
 local AFFILIATE_PATTERNS = {
-  ["Google Analytics ID"] = "(?P<id>UA-[0-9]{6,9}-[0-9]{1,2})",
-  ["Google Adsense ID"] = "(?P<id>pub-[0-9]{16,16})",
-  ["Amazon Associates ID"] = "http://(www%.amazon%.com/[^\"']*[\\?&;]tag|rcm%.amazon%.com/[^\"']*[\\?&;]t)=(?P<id>\\w+-\\d+)",
+  ["Google Analytics ID"] = re.compile [[{| ({'UA-' [%d]^6 [%d]^-3 '-' [%d][%d]?} / .)* |}]],
+  ["Google Adsense ID"] = re.compile [[{| ({'pub-' [%d]^16} / .)* |}]],
+  ["Amazon Associates ID"] = re.compile [[
+  body <- {| (uri / .)* |}
+  uri <- 'http://' ('www.amazon.com/' ([\?&;] 'tag=' tag / [^"'])*) / ('rcm.amazon.com/' ([\?&;] 't=' tag / [^"'])*)
+  tag <- {[%w]+ '-' [%d]+}
+]],
 }
+
+local URL_SHORTENERS = {
+  ["amzn.to"] = re.compile [[{| ( 'http://' ('www.')? 'amzn.to' {'/' ([%a%d])+ } / .)*|}]]
+}
+
 
 portrule = shortport.http
 
@@ -82,14 +91,30 @@ portaction = function(host, port)
     return
   end
 
+  local followed = {}
+
+  for shortener, pattern in pairs(URL_SHORTENERS) do
+    for i, shortened in ipairs(pattern:match(body)) do
+      stdnse.debug1("Found shortened Url: " .. shortened)
+      local response = http.get(shortener, 80, shortened)
+      stdnse.debug1("status code: %d", response.status)
+      if (response.status == 301 or response.status == 302) and response.header['location'] then
+        followed[#followed + 1] = response.header['location']
+      end
+    end
+  end
+  followed = table.concat(followed, "\n")
+
   -- Here goes affiliate matching
-  for name, re in pairs(AFFILIATE_PATTERNS) do
-    local regex = pcre.new(re, 0, "C")
-    local limit, limit2, matches = regex:match(body)
-    if limit ~= nil then
-      local affiliateid = matches["id"]
-      result[#result + 1] = name .. ": " .. affiliateid
-      add_key_to_registry(host, port, url_path, result[#result])
+  for name, pattern in pairs(AFFILIATE_PATTERNS) do
+    local ids = {}
+    for i, id in ipairs(pattern:match(body..followed)) do
+      if not ids[id] then
+        result[#result + 1] = name .. ": " .. id
+        stdnse.debug1("found id:" .. result[#result])
+        add_key_to_registry(host, port, url_path, result[#result])
+        ids[id] = true
+      end
     end
   end
 

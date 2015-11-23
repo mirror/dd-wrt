@@ -22,7 +22,7 @@
 -- typing Enter at the end of a line. <code>tab.addrow</code> adds a whole row
 -- at a time and calls <code>tab.nextrow</code> automatically.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 local stdnse = require "stdnse"
 local strbuf = require "strbuf"
@@ -71,9 +71,10 @@ function addrow(t, ...)
   nextrow(t)
 end
 
---- Move on to the next row in the table. If this is not called
--- then previous column values will be over-written by subsequent
--- values.
+--- Move on to the next row in the table.
+--
+-- If this is not called then previous column values will be over-written by
+-- subsequent values.
 -- @param t The table.
 function nextrow(t)
   assert(t)

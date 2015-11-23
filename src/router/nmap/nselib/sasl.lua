@@ -34,7 +34,7 @@
 -- and they can also use the low level functions to customize their
 -- encoding functions.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 -- Version 0.2
 -- Created 07/17/2011 - v0.1 - Created by Djalal Harouni
@@ -51,7 +51,7 @@ _ENV = stdnse.module("sasl", stdnse.seeall)
 
 local HAVE_SSL, openssl = pcall(require, 'openssl')
 if ( not(HAVE_SSL) ) then
-  stdnse.print_debug(1,
+  stdnse.debug1(
   "sasl.lua: OpenSSL not present, SASL support limited.")
 end
 local MECHANISMS = { }
@@ -143,14 +143,14 @@ if HAVE_SSL then
       end
 
       local response = "username=\"" .. self.username .. "\""
-      response = response .. (",%s=\"%s\""):format("realm", realm)
-      response = response .. (",%s=\"%s\""):format("nonce", self.challnvs.nonce)
-      response = response .. (",%s=\"%s\""):format("cnonce", cnonce)
-      response = response .. (",%s=%08d"):format("nc", self.nc)
-      response = response .. (",%s=%s"):format("qop", "auth")
-      response = response .. (",%s=\"%s\""):format("digest-uri", uri)
-      response = response .. (",%s=%s"):format("response", digest)
-      response = response .. (",%s=%s"):format("charset", "utf-8")
+      .. (",%s=\"%s\""):format("realm", realm)
+      .. (",%s=\"%s\""):format("nonce", self.challnvs.nonce)
+      .. (",%s=\"%s\""):format("cnonce", cnonce)
+      .. (",%s=%08d"):format("nc", self.nc)
+      .. (",%s=%s"):format("qop", "auth")
+      .. (",%s=\"%s\""):format("digest-uri", uri)
+      .. (",%s=%s"):format("response", digest)
+      .. (",%s=%s"):format("charset", "utf-8")
 
       -- response_table is used in http library because the request should
       -- be a little bit different then the string generated above
@@ -348,7 +348,7 @@ function check_mechanism(mechanism)
       lmech = mechanism
       lcallback = MECHANISMS[mechanism]
     else
-      stdnse.print_debug(3,
+      stdnse.debug3(
         "sasl library does not support '%s' mechanism", mechanism)
     end
   end
