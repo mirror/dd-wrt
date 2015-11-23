@@ -1,11 +1,11 @@
 /***************************************************************************
  * osscan.h -- Routines used for OS detection via TCP/IP fingerprinting.   *
  * For more information on how this works in Nmap, see my paper at         *
- * http://nmap.org/osdetect/                                               *
+ * https://nmap.org/osdetect/                                               *
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -96,8 +96,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -118,19 +117,20 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan.h 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: osscan.h 35407 2015-11-10 04:26:26Z dmiller $ */
 
 #ifndef OSSCAN_H
 #define OSSCAN_H
 
-#include "nmap.h"
-#include "global_structures.h"
-#include "FingerPrintResults.h"
-#include "Target.h"
+#include <nbase.h>
+#include <vector>
+
+class Target;
+class FingerPrintResultsIPv4;
 
 #define OSSCAN_SUCCESS 0
 #define OSSCAN_NOMATCHES -1
@@ -139,9 +139,71 @@
 /* We won't even consider matches with a lower accuracy than this */
 #define OSSCAN_GUESS_THRESHOLD 0.85
 
+/* The method used to calculate the Target::distance, included in OS
+   fingerprints. */
+enum dist_calc_method {
+        DIST_METHOD_NONE,
+        DIST_METHOD_LOCALHOST,
+        DIST_METHOD_DIRECT,
+        DIST_METHOD_ICMP,
+        DIST_METHOD_TRACEROUTE
+};
+
 /**********************  STRUCTURES  ***********************************/
 
-/* moved to global_structures.h */
+struct AVal {
+  const char *attribute;
+  const char *value;
+
+  bool operator<(const AVal& other) const {
+    return strcmp(attribute, other.attribute) < 0;
+  }
+};
+
+struct OS_Classification {
+  const char *OS_Vendor;
+  const char *OS_Family;
+  const char *OS_Generation; /* Can be NULL if unclassified */
+  const char *Device_Type;
+  std::vector<const char *> cpe;
+};
+
+/* A description of an operating system: a human-readable name and a list of
+   classifications. */
+struct FingerMatch {
+  int line; /* For reference prints, the line # in nmap-os-db */
+  char *OS_name;
+  std::vector<OS_Classification> OS_class;
+
+  FingerMatch() {
+    line = -1;
+    OS_name = NULL;
+  }
+};
+
+struct FingerTest {
+  const char *name;
+  std::vector<struct AVal> results;
+  bool operator<(const FingerTest& other) const {
+    return strcmp(name, other.name) < 0;
+  }
+};
+
+struct FingerPrint {
+  FingerMatch match;
+  std::vector<FingerTest> tests;
+  FingerPrint();
+  void sort();
+};
+/* This structure contains the important data from the fingerprint
+   database (nmap-os-db) */
+struct FingerPrintDB {
+  FingerPrint *MatchPoints;
+  std::vector<FingerPrint *> prints;
+
+  FingerPrintDB();
+  ~FingerPrintDB();
+};
 
 /**********************  PROTOTYPES  ***********************************/
 

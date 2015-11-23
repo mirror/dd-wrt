@@ -2,8 +2,6 @@ local smb = require "smb"
 local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
-local math = require "math"
-local os = require "os"
 
 description = [[
 Attempts to determine the operating system, computer name, domain, workgroup, and current
@@ -72,7 +70,7 @@ will speed up the script on targets that do not allow guest access.
 -- <elem key="forest_dns">test.local</elem>
 
 author = "Ron Bowes"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 dependencies = {"smb-brute"}
 
@@ -107,6 +105,12 @@ function make_cpe(result)
     parts = {"o", "microsoft", "windows_server_2008"}
   elseif string.match(os, "^Windows 7") then
     parts = {"o", "microsoft", "windows_7"}
+  elseif string.match(os, "^Windows 8%f[^%d.]") then
+    parts = {"o", "microsoft", "windows_8"}
+  elseif string.match(os, "^Windows 8.1") then
+    parts = {"o", "microsoft", "windows_8.1"}
+  elseif string.match(os, "^Windows 10%f[^%d.]") then
+    parts = {"o", "microsoft", "windows_10"}
   elseif string.match(os, "^Windows Server.*2012") then
     parts = {"o", "microsoft", "windows_server_2012"}
   end

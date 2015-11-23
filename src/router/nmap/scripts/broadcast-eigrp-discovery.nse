@@ -70,17 +70,17 @@ through all valid ethernet interfaces simultaneously.
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "broadcast", "safe"}
 
 prerule = function()
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_verbose("%s is IPv4 only.", SCRIPT_NAME)
+    stdnse.verbose1("is IPv4 only.")
     return false
   end
   if not nmap.is_privileged() then
-    stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges.")
     return false
   end
   return true
@@ -192,6 +192,8 @@ local asListener = function(interface, timeout, astab)
   condvar("signal")
 end
 
+local function fail (err) return stdnse.format_output(false, err) end
+
 action = function()
   -- Get script arguments
   local as = stdnse.get_script_args(SCRIPT_NAME .. ".as")
@@ -205,7 +207,7 @@ action = function()
   -- K params should be of length 6
   -- Cisco routers ignore eigrp packets that don't have matching K parameters
   if #kparams < 6 or #kparams > 6 then
-    return "\n ERROR: kparams should be of size 6."
+    return fail("kparams should be of size 6.")
   else
     k = {}
     k[1] = string.sub(kparams, 1,1)
@@ -221,10 +223,10 @@ action = function()
     -- If an interface was provided, get its information
     interface = nmap.get_interface_info(interface)
     if not interface then
-      return ("\n ERROR: Failed to retrieve %s interface information."):format(interface)
+      return fail(("Failed to retrieve %s interface information."):format(interface))
     end
     interfaces = {interface}
-    stdnse.print_debug("%s: Will use %s interface.", SCRIPT_NAME, interface.shortname)
+    stdnse.debug1("Will use %s interface.", interface.shortname)
   else
     local ifacelist = nmap.list_interfaces()
     for _, iface in ipairs(ifacelist) do
@@ -232,7 +234,7 @@ action = function()
       if iface.address and iface.link=="ethernet" and
         iface.address:match("%d+%.%d+%.%d+%.%d+") then
 
-        stdnse.print_debug("%s: Will use %s interface.", SCRIPT_NAME, iface.shortname)
+        stdnse.debug1("Will use %s interface.", iface.shortname)
         table.insert(interfaces, iface)
       end
     end
@@ -243,7 +245,7 @@ action = function()
   if not as then
     -- We use a table for condvar
     local astab = {}
-    stdnse.print_debug("%s: No A.S value provided, will sniff for one.", SCRIPT_NAME)
+    stdnse.debug1("No A.S value provided, will sniff for one.")
     -- We should iterate over interfaces
     for _, interface in pairs(interfaces) do
       local co = stdnse.new_thread(asListener, interface, timeout, astab)
@@ -261,10 +263,10 @@ action = function()
     until next(lthreads) == nil;
 
     if #astab > 0 then
-      stdnse.print_debug("Will use %s A.S value.", astab[1])
+      stdnse.debug1("Will use %s A.S value.", astab[1])
       as = astab[1]
     else
-      return "\n ERROR: Couldn't get an A.S value."
+      return fail("Couldn't get an A.S value.")
     end
   end
 

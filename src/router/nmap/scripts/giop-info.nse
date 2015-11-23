@@ -1,14 +1,13 @@
 local giop = require "giop"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
-local table = require "table"
 
 description = [[
 Queries a CORBA naming server for a list of objects.
 ]]
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 ---
@@ -19,6 +18,23 @@ categories = {"default", "discovery", "safe"}
 -- |   Object: Hello
 -- |   Context: Test
 -- |_  Object: GoodBye
+--
+-- @xmloutput
+-- <table>
+--   <enum key="enum">0</enum>
+--   <enum key="id">Hello</enum>
+--   <enum key="kind">18</enum>
+-- </table>
+-- <table>
+--   <enum key="enum">1</enum>
+--   <enum key="id">Test</enum>
+--   <enum key="kind">0</enum>
+-- </table>
+-- <table>
+--   <enum key="enum">0</enum>
+--   <enum key="id">Goodbye</enum>
+--   <enum key="kind">18</enum>
+-- </table>
 
 
 -- Version 0.1
@@ -28,34 +44,38 @@ categories = {"default", "discovery", "safe"}
 
 portrule = shortport.port_or_service( {2809,1050,1049} , "giop", "tcp", "open")
 
+local fmt_meta = {
+  __tostring = function (t)
+    local tmp = "Unknown"
+    if ( t.enum == 0 ) then
+      tmp = "Object"
+    elseif( t.enum == 1 ) then
+      tmp = "Context"
+    end
+
+    -- TODO: Handle t.kind? May require IDL.
+    return ("%s: %s"):format(tmp, t.id)
+  end
+}
+
+local function fail (err) return stdnse.format_output(false, err) end
 action = function(host, port)
 
   local helper = giop.Helper:new( host, port )
   local ctx, objs, status, err
-  local result = {}
 
   status, err = helper:Connect()
   if ( not(status) ) then return err end
 
   status, ctx = helper:GetNamingContext()
-  if ( not(status) ) then return "  \n  ERROR: " .. ctx end
+  if ( not(status) ) then return fail(ctx) end
 
   status, objs = helper:ListObjects(ctx)
-  if ( not(status) ) then return "  \n  ERROR: " .. objs end
+  if ( not(status) ) then return fail(objs) end
 
   for _, obj in ipairs( objs ) do
-    local tmp = ""
-
-    if ( obj.enum == 0 ) then
-      tmp = "Object: "
-    elseif( obj.enum == 1 ) then
-      tmp = "Context: "
-    else
-      tmp = "Unknown: "
-    end
-
-    table.insert(result, tmp .. obj.id )
+    setmetatable(obj, fmt_meta)
   end
 
-  return stdnse.format_output(true, result)
+  return objs
 end

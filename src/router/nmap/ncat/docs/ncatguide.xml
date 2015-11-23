@@ -427,6 +427,24 @@ Content-Type: text/html; charset=UTF-8
   checking.
   </para>
 
+  <para>
+    <indexterm><primary>SSL ciphers</primary><secondary>in Ncat</secondary></indexterm>
+    SSL connections depend on the client and server agreeing on a common
+    ciphersuite: a combination of key exchange, symmetric cipher, and message
+    integrity mechanism. The choice of which ciphersuites to offer (as a
+    client) or accept (as a server) is a matter of choice between the greatest
+    compatibility and the greatest security. The default set, expressed as an
+    OpenSSL cipherlist, is
+    <literal>ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH</literal>, a reasonable balance
+    between the two ends of the spectrum. To set a different priority or
+    initial choice, use the <option>--ssl-ciphers</option> option.
+    <indexterm><primary><option>--ssl-ciphers</option> (Ncat option)</primary></indexterm>
+    <literallayout>
+      <command>ncat --ssl-ciphers <replaceable>HIGH:!aNULL:!eNULL</replaceable> <replaceable>server</replaceable> 443</command>
+    </literallayout>
+  </para>
+    <indexterm><primary><option>--ssl-ciphers</option> (Ncat option)</primary></indexterm>
+
   <indexterm><primary>SSL</primary><secondary>in Ncat</secondary></indexterm>
   <indexterm><primary>certificate</primary><secondary>automatic generation of</secondary></indexterm>
   <indexterm><primary>certificate</primary><seealso><option>--ssl-cert</option></seealso></indexterm>
@@ -449,7 +467,7 @@ Content-Type: text/html; charset=UTF-8
     <indexterm><primary><option>--ssl</option> (Ncat option)</primary><secondary>example of</secondary></indexterm>
 <screen>
 $ <userinput>ncat -v --listen --ssl</userinput>
-Ncat ( http://nmap.org/ncat )
+Ncat ( https://nmap.org/ncat )
 Generating a temporary 1024-bit RSA key. Use --ssl-key and --ssl-cert to use a <continuation/>permanent one.
 SHA-1 fingerprint: F0:13:BF:FB:2D:AA:76:88:22:60:3E:17:93:29:3E:0E:6B:92:C0:2F
 </screen>
@@ -817,7 +835,7 @@ Protocol mismatch.
   options. Each of these takes a comma-separated list of host
   specifications. The syntax is almost identical to that recognized by Nmap for
   targets
-  (see <ulink url="http://nmap.org/book/man-target-specification.html">the section called <quote>Target Specification</quote></ulink>).
+  (see <ulink url="https://nmap.org/book/man-target-specification.html">the section called <quote>Target Specification</quote></ulink>).
   <!-- (see <xref linkend="host-discovery-specify-targets"/>). -->
   This includes IPv4 and IPv6 addresses, hostnames, IPv4 octet ranges,
   and CIDR netmasks. In Ncat (unlike Nmap), CIDR netmasks are supported for IPv6
@@ -1467,11 +1485,11 @@ Hello. This short message is being sent by Ncat.
     <para>
     Continuing the example from <xref linkend="ncat-listen"/>, we can
     create a simple HTTP server that serves the
-    <literal>index.html<literal> file using the following command:
+    <literal>index.html</literal> file using the following command:
     </para>
 
 <literallayout>
-<command>nc -lk -p 8080 --sh-exec "echo -e 'HTTP/1.1 200 OK\r\n'; cat index.html"<command>
+<command>nc -lk -p 8080 --sh-exec "echo -e 'HTTP/1.1 200 OK\r\n'; cat index.html"</command>
 </literallayout>
 
     <para>
@@ -1508,7 +1526,7 @@ https://svn.nmap.org/nmap-exp/d33tah/lua-exec-examples/ncat/scripts/httpd.lua
     <para>
     Once you have downloaded it, simply run Ncat in listening mode. Assuming
     that your working directory contains the httpd.lua script, simply run:
-    <para>
+    </para>
 
 <literallayout>
 <command>ncat --lua-exec httpd.lua --listen 8080 --keep-open</command>
@@ -1859,7 +1877,7 @@ host1$ <userinput>ncat --send-only host2 &lt; log.txt</userinput>
   <indexterm><primary><option>--script</option></primary><secondary>example of</secondary></indexterm>
 <screen>
 # <userinput>nmap -sSU -p 13 --script=daytime localhost</userinput>
-Starting Nmap ( http://nmap.org )
+Starting Nmap ( https://nmap.org )
 
 Nmap scan report for localhost (127.0.0.1)
 PORT   STATE SERVICE

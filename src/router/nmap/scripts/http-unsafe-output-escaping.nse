@@ -40,15 +40,13 @@ indication of potential XSS vulnerability.
 --
 
 author = "Martin Holst Swende"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "intrusive"}
 
 
 portrule = shortport.http
 
-local function dbg(str,...)
-  stdnse.print_debug(2,"%s:"..str, SCRIPT_NAME, ...)
-end
+local dbg = stdnse.debug2
 
 local function getHostPort(parsed)
   local host, port = parsed.host, parsed.port
@@ -80,7 +78,7 @@ local function getReflected(parsed, r)
 end
 
 local function addPayload(v)
-  return v.."ghz%3Ehzx%22zxc%27xcv"
+  return v.."ghz>hzx\"zxc'xcv"
 end
 
 local function createMinedLinks(reflected_values, all_values)
@@ -133,7 +131,7 @@ action = function(host, port)
     -- most of them are "legitimate" and should not be reason to abort
     if ( not(status) ) then
       if ( r.err ) then
-        return stdnse.format_output(true, "ERROR: %s", r.reason)
+        return stdnse.format_output(false, r.reason)
       else
         break
       end

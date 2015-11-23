@@ -24,7 +24,7 @@ where status of the queued file may be checked.
 
 ---
 -- @usage
--- nmap --script http-virustotal --script-args='apikey="<key>",checksum="275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f"'
+-- nmap --script http-virustotal --script-args='http-virustotal.apikey="<key>",http-virustotal.checksum="275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f"'
 --
 -- @output
 -- Pre-scan script results:
@@ -81,16 +81,16 @@ where status of the queued file may be checked.
 -- |     ViRobot               EICAR-test                      20120405  2012.4.5.5025
 -- |_    VirusBuster           EICAR_test_file                 20120404  14.2.11.0
 --
--- @args apikey an API key acquired from the virustotal web page
--- @args upload true if the file should be uploaded and scanned, false if a
+-- @args http-virustotal.apikey an API key acquired from the virustotal web page
+-- @args http-virustotal.upload true if the file should be uploaded and scanned, false if a
 --       checksum should be calculated of the local file (default: false)
--- @args filename the full path of the file to checksum or upload
--- @args checksum a SHA1, SHA256, MD5 checksum of a file to check
+-- @args http-virustotal.filename the full path of the file to checksum or upload
+-- @args http-virustotal.checksum a SHA1, SHA256, MD5 checksum of a file to check
 --
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories={"safe", "malware", "external"}
 
 
@@ -125,12 +125,12 @@ local function requestFileScan(filename)
   local shortfile = filename:match("^.*[\\/](.*)$")
   local boundary = "----------------------------nmapboundary"
   local header = { ["Content-Type"] = ("multipart/form-data; boundary=%s"):format(boundary) }
-  local postdata = ("--%s\r\n"):format(boundary)
-  postdata = postdata .. "Content-Disposition: form-data; name=\"apikey\"\r\n\r\n"
-  postdata = postdata .. arg_apiKey .. "\r\n"
-  postdata = postdata .. ("--%s\r\n" ..
-    "Content-Disposition: form-data; name=\"file\"; filename=\"%s\"\r\n" ..
-    "Content-Type: text/plain\r\n\r\n%s\r\n--%s--\r\n"):format(boundary, shortfile, str, boundary)
+  local postdata = ("--%s\r\n"
+  .. 'Content-Disposition: form-data; name="apikey"\r\n\r\n'
+  .. "%s\r\n"
+  .. "--%s\r\n"
+  .. 'Content-Disposition: form-data; name="file"; filename="%s"\r\n'
+  .. "Content-Type: text/plain\r\n\r\n%s\r\n--%s--\r\n"):format(boundary, arg_apiKey, boundary, shortfile, str, boundary)
 
   local host = "www.virustotal.com"
   local port = { number = 80, protocol = "tcp" }
@@ -208,7 +208,7 @@ local function parseScanReport(report)
   return result
 end
 
-local function fail(err) return ("\n  ERROR: %s"):format(err or "") end
+local function fail(err) return stdnse.format_output(false, err) end
 
 action = function()
 

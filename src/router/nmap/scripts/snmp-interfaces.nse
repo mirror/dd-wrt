@@ -37,7 +37,7 @@ successfully added.
 --
 
 author = "Thomas Buchanan, Kris Katterjohn"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 dependencies = {"snmp-brute"}
 
@@ -54,9 +54,7 @@ dependencies = {"snmp-brute"}
 
 prerule = function()
   if not stdnse.get_script_args({"snmp-interfaces.host", "host"}) then
-    stdnse.print_debug(3,
-    "Skipping '%s' %s, 'snmp-interfaces.host' argument is missing.",
-    SCRIPT_NAME, SCRIPT_TYPE)
+    stdnse.debug3("Skipping '%s' %s, 'snmp-interfaces.host' argument is missing.", SCRIPT_NAME, SCRIPT_TYPE)
     return false
   end
 
@@ -392,9 +390,6 @@ end
 
 action = function(host, port)
 
-  local socket = nmap.new_socket()
-  local catch = function() socket:close() end
-  local try = nmap.new_try(catch)
   -- IF-MIB - used to look up network interfaces
   local if_oid = "1.3.6.1.2.1.2.2.1"
   -- IP-MIB - used to determine IP address information
@@ -413,34 +408,32 @@ action = function(host, port)
 
     srvport = stdnse.get_script_args({"snmp-interfaces.port", "port"})
     if srvport then
-      srvport = tonumber(srvport)
+      srvport = { number=tonumber(srvport), protocol="udp" }
     else
-      srvport = 161
+      srvport = { number=tonumber(srvport), protocol="udp" }
     end
   else
     srvhost = host.ip
     srvport = port.number
   end
 
-  socket:set_timeout(5000)
-  try(socket:connect(srvhost, srvport, "udp"))
+  local snmpHelper = snmp.Helper:new(host, port)
+  snmpHelper:connect()
 
   -- retrieve network interface information from IF-MIB
-  status, interfaces = snmp.snmpWalk( socket, if_oid )
-  socket:close()
+  status, interfaces = snmpHelper:walk(if_oid)
 
   if (not(status)) or ( interfaces == nil ) or ( #interfaces == 0 ) then
     return
   end
 
-  stdnse.print_debug("SNMP walk of IF-MIB returned %d lines", #interfaces)
+  stdnse.debug1("SNMP walk of IF-MIB returned %d lines", #interfaces)
 
   -- build a table of network interfaces from the IF-MIB table
   interfaces = process_interfaces( interfaces )
 
   -- retrieve IP address information from IP-MIB
-  try(socket:connect(srvhost, srvport, "udp"))
-  status, ips = snmp.snmpWalk( socket, ip_oid )
+  status, ips = snmpHelper:walk( ip_oid )
 
   -- associate that IP address information with the correct interface
   if (not(status)) or ( ips ~= nil ) and ( #ips ~= 0 ) then
@@ -461,7 +454,7 @@ action = function(host, port)
       if st then
         sum = sum + 1
       else
-        stdnse.print_debug("Couldn't add target " .. i .. ": " .. err)
+        stdnse.debug1("Couldn't add target " .. i .. ": " .. err)
       end
     end
 

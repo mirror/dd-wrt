@@ -54,7 +54,7 @@ strings to determine whether the payloads were successful.
 
 categories = {"intrusive", "exploit", "vuln"}
 author = "George Chatzisofroniou"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 local http = require "http"
 local io = require "io"
@@ -101,9 +101,9 @@ local makeRequests = function(host, port, submission, fields, fieldvalues)
       end
     end
 
-    stdnse.print_debug(2, "Making a POST request to " .. submission .. ": ")
+    stdnse.debug2("Making a POST request to " .. submission .. ": ")
     for i, content in pairs(postdata) do
-      stdnse.print_debug(2, i .. ": " .. content)
+      stdnse.debug2(i .. ": " .. content)
     end
     local response = http.post(host, port, submission, { no_cache = true }, nil, postdata)
   end
@@ -183,7 +183,7 @@ action = function(host, port)
       -- most of them are "legitimate" and should not be reason to abort
       if ( not(status) ) then
         if ( r.err ) then
-          return stdnse.format_output(true, ("ERROR: %s"):format(r.reason))
+          return stdnse.format_output(false, r.reason)
         else
           break
         end
@@ -202,7 +202,7 @@ action = function(host, port)
 
         form = http.parse_form(form)
 
-        if form then
+        if form and form.action then
 
           local action_absolute = string.find(form["action"], "https*://")
 
@@ -247,7 +247,7 @@ action = function(host, port)
       -- most of them are "legitimate" and should not be reason to abort
       if ( not(status) ) then
         if ( r.err ) then
-          return stdnse.format_output(true, ("ERROR: %s"):format(r.reason))
+          return stdnse.format_output(false, r.reason)
         else
           break
         end

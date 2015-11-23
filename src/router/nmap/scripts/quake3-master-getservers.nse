@@ -27,7 +27,7 @@ Queries Quake3-style master servers for game servers (many games other than Quak
 --       less, all files are shown. The default value is 10.
 
 author = "Toni Ruottu"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 portrule = shortport.port_or_service ({20110, 20510, 27950, 30710}, "quake3-master", {"udp"})
@@ -73,7 +73,7 @@ local KNOWN_PROTOCOLS = {
 local function getservers(host, port, q3protocol)
   local socket = nmap.new_socket()
   socket:set_timeout(10000)
-  local status, err = socket:connect(host.ip, port.number, "udp")
+  local status, err = socket:connect(host, port)
   if not status then
     return {}
   end

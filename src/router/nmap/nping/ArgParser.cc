@@ -8,7 +8,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -99,8 +99,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -121,7 +120,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -189,7 +188,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"arp-reply", no_argument, 0, 0},
   {"rarp-request", no_argument, 0, 0},
   {"rarp-reply", no_argument, 0, 0},
-  
+
    /* TCP/UDP */
   {"source-port", required_argument, 0, 'g'},
   {"dest-port", required_argument, 0, 'p'},
@@ -300,7 +299,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"nsock-engine", required_argument, 0, 0},
   {"no-capture", no_argument, 0, 'N'},
   {"hide-sent", no_argument, 0, 'H'},
-    
+
   /* Output */
   {"verbose", optional_argument, 0, 'v'},
   {"reduce-verbosity", optional_argument, 0, 'q'},
@@ -352,7 +351,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     } else if (optcmp(long_options[option_index].name, "traceroute") == 0 ||
                optcmp(long_options[option_index].name, "tr") == 0) {
         o.enableTraceroute();
-    
+
     /* Now shortcuts that we support but that are not actual modes */
     } else if (optcmp(long_options[option_index].name, "arp-request") == 0) {
         if( o.issetMode() && o.getMode()!=ARP)
@@ -517,7 +516,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
                                 nping_fatal(QT_3, "Invalid TCP flag supplied (%c). If you want to specify flags using a number you must add prefix \"0x\"", optarg[f]);
                             else
                                 nping_fatal(QT_3, "Invalid TCP flag supplied: %c", optarg[f]);
-                        
+
                     }
                 }
             }
@@ -833,7 +832,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
             nping_fatal(QT_3,"IPv6 Flow Label must be a number between 0 and 1048575");
         }
 
-         
+
 /* PACKET PAYLOAD OPTIONS  ***************************************************/
     /* Hexadecimal payload specification */
     } else if (optcmp(long_options[option_index].name, "data") == 0 ){
@@ -977,7 +976,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     case '4': /* IPv4 */
         o.setIPVersion(IP_VERSION_4);
     break; /* case '4': */
-    
+
     case '6': /* IPv6 */
         o.setIPVersion(IP_VERSION_6);
     break; /* case '6': */
@@ -1049,7 +1048,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         printUsage();
         exit(1);
     break; /* case 'h': */    
-    
+
     case 'h': /* Help */
         printUsage();
         exit(0);
@@ -1138,7 +1137,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         o.increaseVerbosity();
     }
     break; /* case 'v': */
-    
+
     case 'q': /* Reduce verbosity */
       if (optarg){
         if (isdigit(optarg[0])){
@@ -1835,12 +1834,12 @@ int ArgParser::atoEtherType(char *opt, u16 *type){
 
 
 int ArgParser::parseICMPTimestamp(char *optarg, u32 *dst){
-    
+
 long diff=0;
 
   if(optarg==NULL || dst==NULL)
     nping_fatal(QT_3, "parseICMPTimestamp(): NULL pointer supplied.");
-    
+
   if( meansRandom(optarg) ){
     while( (*dst=get_random_u32()) == 0);
   }
@@ -1875,6 +1874,6 @@ long diff=0;
     else
         *dst=diff;
   }       
-    
+
   return OP_SUCCESS;    
 } /* End of parseICMPTimestamp() */

@@ -52,6 +52,9 @@ local SELECTED_BY_NAME = "NSE_SELECTED_BY_NAME";
 local FORMAT_TABLE = "NSE_FORMAT_TABLE";
 local FORMAT_XML = "NSE_FORMAT_XML";
 
+-- Unique value indicating the action function is going to run.
+local ACTION_STARTING = {};
+
 -- This is a limit on the number of script instance threads running at once. It
 -- exists only to limit memory use when there are many open ports. It doesn't
 -- count worker threads started by scripts.
@@ -115,10 +118,12 @@ local gsub = string.gsub;
 local lower = string.lower;
 local match = string.match;
 local sub = string.sub;
+local upper = string.upper;
 
 local table = require "table";
 local concat = table.concat;
 local insert = table.insert;
+local pack = table.pack;
 local remove = table.remove;
 local sort = table.sort;
 local unpack = table.unpack;
@@ -136,6 +141,20 @@ do -- Add loader to look in nselib/?.lua (nselib/ can be in multiple places)
   end
   insert(package.searchers, 1, loader);
 end
+
+local lpeg = require "lpeg";
+local U = require "lpeg-utility"
+local locale = lpeg.locale;
+local P = lpeg.P;
+local R = lpeg.R;
+local S = lpeg.S;
+local V = lpeg.V;
+local C = lpeg.C;
+local Cb = lpeg.Cb;
+local Cc = lpeg.Cc;
+local Cf = lpeg.Cf;
+local Cg = lpeg.Cg;
+local Ct = lpeg.Ct;
 
 local nmap = require "nmap";
 local lfs = require "lfs";
@@ -254,6 +273,12 @@ local function host_copy(t)
   local h = tcopy(t)
   h.registry = t.registry
   return h
+end
+
+-- Return a pattern which matches a "keyword" literal, case insensitive.
+local function K (a)
+  local insensitize = Cf((P(1) / function (a) return S(lower(a)..upper(a)) end)^1, function (a, b) return a * b end);
+  return assert(insensitize:match(a)) * #(V "space" + S"()," + P(-1)); -- "keyword" token
 end
 
 local REQUIRE_ERROR = {};
@@ -379,7 +404,6 @@ do
 
   -- Register scripts in the timeouts list to track their timeouts.
   function Thread:start (timeouts)
-    self:d("Starting %THREAD_AGAINST.");
     if self.host then
       timeouts[self.host] = timeouts[self.host] or {};
       timeouts[self.host][self.co] = true;
@@ -415,7 +439,7 @@ do
   function Script:new_thread (rule, ...)
     local script_type = assert(NSE_SCRIPT_RULES[rule]);
     if not self[rule] then return nil end -- No rule for this script?
-    local script_closure_generator = self.script_closure_generator;
+
     -- Rebuild the environment for the running thread.
     local env = {
         SCRIPT_PATH = self.filename,
@@ -423,50 +447,46 @@ do
         SCRIPT_TYPE = script_type,
     };
     setmetatable(env, {__index = _G});
-    local script_closure = script_closure_generator(env);
-    local unique_value = {}; -- to test valid yield
-    local function main (_ENV, ...)
-      script_closure(); -- loads script globals
-      return action(yield(unique_value, _ENV[rule](...)));
+    local forced = self.forced_to_run;
+    local script_closure_generator = self.script_closure_generator;
+    local function main (...)
+      local _ENV = env; -- change the environment
+      -- Load the script's globals in the same Lua thread the action and rule
+      -- functions will execute in.
+      script_closure_generator(_ENV)();
+      if forced or _ENV[rule](...) then
+        yield(ACTION_STARTING)
+        return action(...)
+      end
     end
-    -- This thread allows us to load the script's globals in the
-    -- same Lua thread the action and rule functions will execute in.
+
     local co = create(main);
-    local s, value, rule_return = resume(co, env, ...);
-    if s and value ~= unique_value then
-      print_debug(1,
-    "A thread for %s yielded unexpectedly in the file or %s function:\n%s\n",
-          self.filename, rule, traceback(co));
-    elseif s and (rule_return or self.forced_to_run) then
-      local thread = {
-        close_handlers = {},
-        co = co,
-        env = env,
-        identifier = tostring(co),
-        info = format("'%s' (%s)", self.short_basename, tostring(co));
-        parent = nil, -- placeholder
-        script = self,
-        type = script_type,
-        worker = false,
-      };
-      thread.parent = thread;
-      setmetatable(thread, Thread)
-      return thread;
-    elseif not s then
-      log_error("A thread for %s failed to load in %s function:\n%s\n",
-          self.filename, rule, traceback(co, tostring(value)));
-    end
-    return nil;
+    local thread = {
+      action_started = false,
+      args = pack(...),
+      close_handlers = {},
+      co = co,
+      env = env,
+      identifier = tostring(co),
+      info = format("%s M:%s", self.id, match(tostring(co), "^thread: 0?[xX]?(.*)"));
+      parent = nil, -- placeholder
+      script = self,
+      type = script_type,
+      worker = false,
+    };
+    thread.parent = thread;
+    setmetatable(thread, Thread)
+    return thread;
   end
 
   function Thread:new_worker (main, ...)
     local co = create(main);
     print_debug(2, "%s spawning new thread (%s).", self.parent.info, tostring(co));
     local thread = {
-      args = {n = select("#", ...), ...},
+      args = pack(...),
       close_handlers = {},
       co = co,
-      info = format("'%s' worker (%s)", self.short_basename, tostring(co));
+      info = format("%s W:%s", self.id, match(tostring(co), "^thread: 0?[xX]?(.*)"));
       parent = self,
       worker = true,
     };
@@ -477,8 +497,36 @@ do
     return thread, info;
   end
 
-  function Thread:resume ()
-    return resume(self.co, unpack(self.args, 1, self.args.n));
+  function Thread:resume (timeouts)
+    local ok, r1, r2 = resume(self.co, unpack(self.args, 1, self.args.n));
+    local status = status(self.co);
+    if ok and r1 == ACTION_STARTING then
+      self:d("Starting %THREAD_AGAINST.");
+      self.action_started = true
+      return self:resume(timeouts);
+    elseif not ok then
+      if debugging() > 0 then
+        self:d("%THREAD_AGAINST threw an error!\n%s\n", traceback(self.co, tostring(r1)));
+      else
+        self:set_output("ERROR: Script execution failed (use -d to debug)");
+      end
+      self:close(timeouts, r1);
+      return false
+    elseif status == "suspended" then
+      if r1 == NSE_YIELD_VALUE then
+        return true
+      else
+        self:d("%THREAD yielded unexpectedly and cannot be resumed.");
+        self:close(timeouts, "yielded unexpectedly and cannot be resumed");
+        return false
+      end
+    elseif status == "dead" then
+      if self.action_started then
+        self:set_output(r1, r2);
+        self:d("Finished %THREAD_AGAINST.");
+      end
+      self:close(timeouts);
+    end
   end
 
   function Thread:__index (key)
@@ -639,14 +687,7 @@ local function get_chosen_scripts (rules)
     "\tplease update using: nmap --script-updatedb");
 
   local chosen_scripts, files_loaded = {}, {};
-  local entry_rules, used_rules, forced_rules = {}, {}, {};
-
-  -- Tokens that are allowed in script rules (--script)
-  local protected_lua_tokens = {
-    ["and"] = true,
-    ["or"] = true,
-    ["not"] = true,
-  };
+  local used_rules, forced_rules = {}, {};
 
   -- Was this category selection forced to run (e.g. "+script").
   -- Return:
@@ -661,16 +702,6 @@ local function get_chosen_scripts (rules)
     end
   end
 
-  -- Globalize all names in str that are not protected_lua_tokens
-  local function globalize (str)
-    local lstr = lower(str);
-    if protected_lua_tokens[lstr] then
-      return lstr;
-    else
-      return 'm("'..str..'")';
-    end
-  end
-
   for i, rule in ipairs(rules) do
     rule = match(rule, "^%s*(.-)%s*$"); -- strip surrounding whitespace
     local original_rule = rule;
@@ -679,80 +710,66 @@ local function get_chosen_scripts (rules)
     forced_rules[rule] = forced;
     -- Here we escape backslashes which might appear in Windows filenames.
     rule = gsub(rule, "\\([^\\])", "\\\\%1");
-    -- Globalize all `names`, all visible characters not ',', '(', ')', and ';'
-    local globalized_rule =
-        gsub(rule, "[\033-\039\042-\043\045-\058\060-\126]+", globalize);
-    -- Precompile the globalized rule
-    local env = {m = nil};
-    local compiled_rule, err = load("return "..globalized_rule, "rule", "t", env);
-    if not compiled_rule then
-      err = err:match("rule\"]:%d+:(.+)$"); -- remove (luaL_)where in code
-      error("Bad script rule:\n\t"..original_rule.." -> "..err);
-    end
-    -- These are used to reference and check all the rules later.
-    entry_rules[globalized_rule] = {
-      original_rule = rule,
-      compiled_rule = compiled_rule,
-      env = env,
-    };
+    rules[i] = rule;
   end
 
   -- Checks if a given script, script_entry, should be loaded. A script_entry
   -- should be in the form: { filename = "name.nse", categories = { ... } }
   function db_env.Entry (script_entry)
-    local categories, filename = script_entry.categories, script_entry.filename;
-    assert(type(categories) == "table" and type(filename) == "string",
-        "script database appears corrupt, try `nmap --script-updatedb`");
-    local escaped_basename = match(filename, "([^/\\]-)%.nse$") or
-                             match(filename, "([^/\\]-)$");
-
-    local r_categories = {all = true}; -- A reverse table of categories
-    for i, category in ipairs(categories) do
-      assert(type(category) == "string", "bad entry in script database");
-      r_categories[lower(category)] = true; -- Lowercase the entry
-    end
-
+    local categories = rawget(script_entry, "categories");
+    local filename = rawget(script_entry, "filename");
+    assert(type(categories) == "table" and type(filename) == "string", "script database appears corrupt, try `nmap --script-updatedb`");
+    local escaped_basename = match(filename, "([^/\\]-)%.nse$") or match(filename, "([^/\\]-)$");
+    local selected_by_name = false;
     -- The script selection parameters table.
     local script_params = {};
 
-    -- A matching function for each script rule.
-    -- If the pattern directly matches a category (e.g. "all"), then
-    -- we return true. Otherwise we test if it is a filename or if
-    -- the script_entry.filename matches the pattern.
-    local function m (pattern)
-      -- Check categories
-      if r_categories[lower(pattern)] then
-        script_params.selection = "category";
-        return true;
-      end
-
-      -- Check filename with wildcards
-      pattern = gsub(pattern, "%.nse$", ""); -- remove optional extension
-      pattern = gsub(pattern, "[%^%$%(%)%%%.%[%]%+%-%?]", "%%%1"); -- esc magic
-      pattern = gsub(pattern, "%*", ".*"); -- change to Lua wildcard
-      pattern = "^"..pattern.."$"; -- anchor to beginning and end
-      if find(escaped_basename, pattern) then
-        script_params.selection = "name";
-        script_params.verbosity = true;
-        return true;
-      end
-
-      return false;
+    -- Test if path is a glob pattern that matches script_entry.filename.
+    local function match_script (path)
+      path = gsub(path, "%.nse$", ""); -- remove optional extension
+      path = gsub(path, "[%^%$%(%)%%%.%[%]%+%-%?]", "%%%1"); -- esc magic
+      path = gsub(path, "%*", ".*"); -- change to Lua wildcard
+      path = "^"..path.."$"; -- anchor to beginning and end
+      local found = not not find(escaped_basename, path);
+      selected_by_name = selected_by_name or found;
+      return found;
     end
 
-    for globalized_rule, rule_table in pairs(entry_rules) do
-      -- Clear and set the environment of the compiled script rule
-      rule_table.env.m = m;
-      local status, found = pcall(rule_table.compiled_rule)
-      rule_table.env.m = nil;
-      if not status then
-        error("Bad script rule:\n\t"..rule_table.original_rule..
-              " -> script rule expression not supported.");
-      end
-      -- The script rule matches a category or a pattern
-      if found then
-        used_rules[rule_table.original_rule] = true;
-        script_params.forced = not not forced_rules[rule_table.original_rule];
+    local T = locale {
+      V "space"^0 * V "expression" * V "space"^0 * P(-1);
+
+      expression = V "disjunct" + V "conjunct" + V "value";
+      disjunct = (V "conjunct" + V "value") * V "space"^0 * K "or" * V "space"^0 * V "expression" / function (a, b) return a or b end;
+      conjunct = V "value" * V "space"^0 * K "and" * V "space"^0 * V "expression" / function (a, b) return a and b end;
+      value = K "not" * V "space"^0 * V "value" / function (a) return not a end +
+              P "(" * V "space"^0 * V "expression" * V "space"^0 * P ")" +
+              K "true" * Cc(true) +
+              K "false" * Cc(false) +
+              V "category" +
+              V "path";
+
+      category = K "all" * Cc(true); -- pseudo-category "all" matches everything
+      path = R("\033\039", "\042\126")^1 / match_script; -- all graphical characters not '(', ')'
+    };
+
+    for i, category in ipairs(categories) do
+      assert(type(category) == "string", "bad entry in script database");
+      T.category = T.category + K(category) * Cc(true);
+    end
+
+    T = P(T);
+
+    for i, rule in ipairs(rules) do
+      selected_by_name = false;
+      if T:match(rule) then
+        used_rules[rule] = true;
+        script_params.forced = not not forced_rules[rule];
+        if selected_by_name then
+          script_params.selection = "name"
+          script_params.verbosity = true
+        else
+          script_params.selection = "category"
+        end
         local t, path = cnse.fetchscript(filename);
         if t == "file" then
           if not files_loaded[path] then
@@ -844,7 +861,8 @@ local function run (threads_iter, hosts)
   -- running scripts may be resumed at any time. waiting scripts are
   -- yielded until Nsock wakes them. After being awakened with
   -- nse_restore, waiting threads become pending and later are moved all
-  -- at once back to running.
+  -- at once back to running. pending is used because we cannot modify
+  -- running during traversal.
   local running, waiting, pending = {}, {}, {};
   local all = setmetatable({}, {__mode = "kv"}); -- base coroutine to Thread
   local current; -- The currently running Thread.
@@ -869,7 +887,7 @@ local function run (threads_iter, hosts)
       co = base.co;
       if waiting[co] then -- ignore a thread not waiting
         pending[co], waiting[co] = waiting[co], nil;
-        pending[co].args = {n = select("#", ...), ...};
+        pending[co].args = pack(...);
       end
     end
   end
@@ -905,20 +923,23 @@ local function run (threads_iter, hosts)
   rawset(stdnse, "base", function ()
     return current and current.co;
   end);
-
-  while threads_iter and num_threads < CONCURRENCY_LIMIT do
-    local thread = threads_iter()
-    if not thread then
-      threads_iter = nil;
-      break;
+  rawset(stdnse, "gettid", function ()
+    return current and current.identifier;
+  end);
+  rawset(stdnse, "getid", function ()
+    return current and current.id;
+  end);
+  rawset(stdnse, "getinfo", function ()
+    return current and current.info;
+  end);
+  rawset(stdnse, "gethostport", function ()
+    if current then
+        return current.host, current.port;
     end
-    all[thread.co], running[thread.co], total = thread, thread, total+1;
-    num_threads = num_threads + 1;
-    thread:start(timeouts);
-  end
-  if num_threads == 0 then
-    return
-  end
+  end);
+  rawset(stdnse, "isworker", function ()
+    return current and current.worker;
+  end);
 
   local progress = cnse.scan_progress_meter(NAME);
 
@@ -938,16 +959,16 @@ local function run (threads_iter, hosts)
 
     local nr, nw = table_size(running), table_size(waiting);
     if cnse.key_was_pressed() then
-      print_verbose(1, "Active NSE Script Threads: %d (%d waiting)\n",
+      print_verbose(1, "Active NSE Script Threads: %d (%d waiting)",
           nr+nw, nw);
       progress("printStats", 1-(nr+nw)/total);
       if debugging() >= 2 then
         for co, thread in pairs(running) do
-          thread:d("Running: %THREAD\n\t%s",
+          thread:d("Running: %THREAD_AGAINST\n\t%s",
               (gsub(traceback(co), "\n", "\n\t")));
         end
         for co, thread in pairs(waiting) do
-          thread:d("Waiting: %THREAD\n\t%s",
+          thread:d("Waiting: %THREAD_AGAINST\n\t%s",
               (gsub(traceback(co), "\n", "\n\t")));
         end
       end
@@ -975,29 +996,10 @@ local function run (threads_iter, hosts)
       current, running[co] = thread, nil;
       thread:start_time_out_clock();
 
-      -- Threads may have zero, one, or two return values.
-      local s, r1, r2 = thread:resume();
-      if not s then -- script error...
+      if thread:resume(timeouts) then
+        waiting[co] = thread;
+      else
         all[co], num_threads = nil, num_threads-1;
-        if debugging() > 0 then
-          thread:d("%THREAD_AGAINST threw an error!\n%s\n", traceback(co, tostring(r1)));
-        else
-          thread:set_output("ERROR: Script execution failed (use -d to debug)");
-        end
-        thread:close(timeouts, r1);
-      elseif status(co) == "suspended" then
-        if r1 == NSE_YIELD_VALUE then
-          waiting[co] = thread;
-        else
-          all[co], num_threads = nil, num_threads-1;
-          thread:d("%THREAD yielded unexpectedly and cannot be resumed.");
-          thread:close();
-        end
-      elseif status(co) == "dead" then
-        all[co], num_threads = nil, num_threads-1;
-        thread:set_output(r1, r2);
-        thread:d("Finished %THREAD_AGAINST.");
-        thread:close(timeouts);
       end
       current = nil;
     end
@@ -1155,85 +1157,56 @@ local function script_help_xml(chosen_scripts)
   cnse.xml_newline();
 end
 
-do -- Load script arguments (--script-args)
-  local args = cnse.scriptargs or "";
-  print_debug(1, "Script Arguments seen from CLI: %s", args);
+nmap.registry.args = {};
+do
+  local args = {};
 
-  -- Parse a string in 'str' at 'start'.
-  local function parse_string (str, start)
-    -- Unquoted
-    local uqi, uqj, uqm = find(str,
-        "^%s*([^'\"%s{},=][^{},=]-)%s*[},=]", start);
-    -- Quoted
-    local qi, qj, q, qm = find(str, "^%s*(['\"])(.-[^\\])%1%s*[},=]", start);
-    -- Empty Quote
-    local eqi, eqj = find(str, "^%s*(['\"])%1%s*[},=]", start);
-    if uqi then
-      return uqm, uqj-1;
-    elseif qi then
-      return gsub(qm, "\\"..q, q), qj-1;
-    elseif eqi then
-      return "", eqj-1;
-    else
-      error("Value around '"..sub(str, start, start+10)..
-          "' is invalid or is unterminated by a valid separator");
-    end
-  end
-  -- Takes 'str' at index 'start' and parses a table.
-  -- Returns the table and the place in the string it finished reading.
-  local function parse_table (str, start)
-    local _, j = find(str, "^%s*{", start);
-    local t = {}; -- table we return
-    local tmp, nc; -- temporary and next character inspected
-
-    while true do
-      j = j+1; -- move past last token
-
-      _, j, nc = find(str, "^%s*(%S)", j);
-
-      if nc == "}" then -- end of table
-        return t, j;
-      else -- try to read key/value pair, or array value
-        local av = false; -- this is an array value?
-        if nc == "{" then -- array value
-          av, tmp, j = true, parse_table(str, j);
-        else
-          tmp, j = parse_string(str, j);
-        end
-        nc = sub(str, j+1, j+1); -- next token
-        if not av and nc == "=" then -- key/value?
-          _, j, nc = find(str, "^%s*(%S)", j+2);
-          if nc == "{" then
-            t[tmp], j = parse_table(str, j);
-          else -- regular string
-            t[tmp], j = parse_string(str, j);
-          end
-          nc = sub(str, j+1, j+1); -- next token
-        else -- not key/value pair, save array value
-          t[#t+1] = tmp;
-        end
-        if nc == "," then j = j+1 end -- skip "," token
-      end
-    end
-  end
-  nmap.registry.args = parse_table("{"..args.."}", 1);
-  -- Check if user wants to read scriptargs from a file
-  if cnse.scriptargsfile ~= nil then --scriptargsfile path/to/file
+  if cnse.scriptargsfile then
     local t, path = cnse.fetchfile_absolute(cnse.scriptargsfile)
     assert(t == 'file', format("%s is not a file", path))
-    local argfile = assert(open(path, 'r'));
-    local argstring = argfile:read("*a")
-    argstring = gsub(argstring,"\n",",")
-    local tmpargs = parse_table("{"..argstring.."}",1)
-    for k,v in pairs(nmap.registry.args) do
-      tmpargs[k] = v
-    end
-    nmap.registry.args = tmpargs
+    print_debug(1, "Loading script-args from file `%s'", cnse.scriptargsfile);
+    args[#args+1] = assert(assert(open(path, 'r')):read "*a"):gsub("\n", ","):gsub(",*$", "");
   end
-  if debugging() >= 2 then
-    local out = {}
-    rawget(stdnse, "pretty_printer")(nmap.registry.args, function (s) out[#out+1] = s end)
-    print_debug(2, "%s", concat(out))
+
+  if cnse.scriptargs then -- Load script arguments (--script-args)
+    print_debug(1, "Arguments from CLI: %s", cnse.scriptargs);
+    args[#args+1] = cnse.scriptargs;
+  end
+
+  args = concat(args, ",");
+  if #args > 0 then
+    print_debug(1, "Arguments parsed: %s", args);
+    local function set (t, a, b)
+      if b == nil then
+        insert(t, a);
+        return t;
+       else
+        return rawset(t, a, b);
+      end
+    end
+    local parser = locale {
+      V "space"^0 * V "table" * V "space"^0,
+      table = Cf(Ct "" * P "{" * V "space"^0 * (V "fieldlst")^-1 * V "space"^0 * P "}", set);
+      fieldlst = V "field" * (V "space"^0 * P "," * V "space"^0 * V "field")^0;
+      field = V "kv" + V "av";
+      kv = Cg(V "string" * V "space"^0 * P "=" * V "space"^0 * V "value");
+      av = Cg(V "value");
+      value = V "table" + V "string";
+      string = V "qstring" + V "uqstring";
+      qstring = U.escaped_quote('"') + U.escaped_quote("'");
+      uqstring = V "space"^0 * C((P(1) - V "space"^0 * S ",{}=")^0) * V "space"^0; -- everything but ',{}=', do not capture final space
+    };
+    parser = assert(P(parser));
+    nmap.registry.args = parser:match("{"..args.."}");
+    if not nmap.registry.args then
+      log_write("stdout", "args = "..args);
+      error "arguments did not parse!"
+    end
+    if debugging() >= 2 then
+      local out = {}
+      rawget(stdnse, "pretty_printer")(nmap.registry.args, function (s) out[#out+1] = s end)
+      print_debug(2, "%s", concat(out))
+    end
   end
 end
 
@@ -1341,10 +1314,6 @@ local function main (hosts, scantype)
     print_verbose(1, "Script Post-scanning.");
   end
 
-  -- These functions do not exist until we are executing action functions.
-  rawset(stdnse, "new_thread", nil)
-  rawset(stdnse, "base", nil)
-
   for runlevel, scripts in ipairs(runlevels) do
     -- This iterator is passed to the run function. It returns one new script
     -- thread on demand until exhausted.
@@ -1354,8 +1323,7 @@ local function main (hosts, scantype)
         for _, script in ipairs(scripts) do
            local thread = script:new_thread("prerule");
            if thread then
-             thread.args = {n = 0};
-             yield(thread);
+             yield(thread)
            end
         end
       -- activate hostrule and portrule scripts
@@ -1365,7 +1333,7 @@ local function main (hosts, scantype)
           for _, script in ipairs(scripts) do
             local thread = script:new_thread("hostrule", host_copy(host));
             if thread then
-              thread.args, thread.host = {n = 1, host_copy(host)}, host;
+              thread.host = host;
               yield(thread);
             end
           end
@@ -1374,7 +1342,7 @@ local function main (hosts, scantype)
             for _, script in ipairs(scripts) do
               local thread = script:new_thread("portrule", host_copy(host), tcopy(port));
               if thread then
-                thread.args, thread.host, thread.port = {n = 2, host_copy(host), tcopy(port)}, host, port;
+                thread.host, thread.port = host, port;
                 yield(thread);
               end
             end
@@ -1385,7 +1353,6 @@ local function main (hosts, scantype)
         for _, script in ipairs(scripts) do
           local thread = script:new_thread("postrule");
           if thread then
-            thread.args = {n = 0};
             yield(thread);
           end
         end

@@ -3,7 +3,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2015 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -27,8 +27,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -53,7 +52,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: engine_kqueue.c 31737 2013-08-10 23:59:30Z henri $ */
+/* $Id: engine_kqueue.c 34756 2015-06-27 08:21:53Z henri $ */
 
 #ifdef HAVE_CONFIG_H
 #include "nsock_config.h"
@@ -77,12 +76,12 @@
 
 
 /* --- ENGINE INTERFACE PROTOTYPES --- */
-static int kqueue_init(mspool *nsp);
-static void kqueue_destroy(mspool *nsp);
-static int kqueue_iod_register(mspool *nsp, msiod *iod, int ev);
-static int kqueue_iod_unregister(mspool *nsp, msiod *iod);
-static int kqueue_iod_modify(mspool *nsp, msiod *iod, int ev_set, int ev_clr);
-static int kqueue_loop(mspool *nsp, int msec_timeout);
+static int kqueue_init(struct npool *nsp);
+static void kqueue_destroy(struct npool *nsp);
+static int kqueue_iod_register(struct npool *nsp, struct niod *iod, int ev);
+static int kqueue_iod_unregister(struct npool *nsp, struct niod *iod);
+static int kqueue_iod_modify(struct npool *nsp, struct niod *iod, int ev_set, int ev_clr);
+static int kqueue_loop(struct npool *nsp, int msec_timeout);
 
 
 /* ---- ENGINE DEFINITION ---- */
@@ -98,20 +97,20 @@ struct io_engine engine_kqueue = {
 
 
 /* --- INTERNAL PROTOTYPES --- */
-static void iterate_through_event_lists(mspool *nsp, int evcount);
+static void iterate_through_event_lists(struct npool *nsp, int evcount);
 
 /* defined in nsock_core.c */
-void process_iod_events(mspool *nsp, msiod *nsi, int ev);
-void process_event(mspool *nsp, gh_list_t *evlist, msevent *nse, int ev);
-void process_expired_events(mspool *nsp);
+void process_iod_events(struct npool *nsp, struct niod *nsi, int ev);
+void process_event(struct npool *nsp, gh_list_t *evlist, struct nevent *nse, int ev);
+void process_expired_events(struct npool *nsp);
 #if HAVE_PCAP
 #ifndef PCAP_CAN_DO_SELECT
-int pcap_read_on_nonselect(mspool *nsp);
+int pcap_read_on_nonselect(struct npool *nsp);
 #endif
 #endif
 
 /* defined in nsock_event.c */
-void update_first_events(msevent *nse);
+void update_first_events(struct nevent *nse);
 
 
 extern struct timeval nsock_tod;
@@ -128,7 +127,7 @@ struct kqueue_engine_info {
 };
 
 
-int kqueue_init(mspool *nsp) {
+int kqueue_init(struct npool *nsp) {
   struct kqueue_engine_info *kinfo;
 
   kinfo = (struct kqueue_engine_info *)safe_malloc(sizeof(struct kqueue_engine_info));
@@ -143,7 +142,7 @@ int kqueue_init(mspool *nsp) {
   return 1;
 }
 
-void kqueue_destroy(mspool *nsp) {
+void kqueue_destroy(struct npool *nsp) {
   struct kqueue_engine_info *kinfo = (struct kqueue_engine_info *)nsp->engine_data;
 
   assert(kinfo != NULL);
@@ -152,7 +151,7 @@ void kqueue_destroy(mspool *nsp) {
   free(kinfo);
 }
 
-int kqueue_iod_register(mspool *nsp, msiod *iod, int ev) {
+int kqueue_iod_register(struct npool *nsp, struct niod *iod, int ev) {
   struct kqueue_engine_info *kinfo = (struct kqueue_engine_info *)nsp->engine_data;
 
   assert(!IOD_PROPGET(iod, IOD_REGISTERED));
@@ -162,13 +161,13 @@ int kqueue_iod_register(mspool *nsp, msiod *iod, int ev) {
   
   kqueue_iod_modify(nsp, iod, ev, EV_NONE);
 
-  if (nsi_getsd(iod) > kinfo->maxfd)
-    kinfo->maxfd = nsi_getsd(iod);
+  if (nsock_iod_get_sd(iod) > kinfo->maxfd)
+    kinfo->maxfd = nsock_iod_get_sd(iod);
 
   return 1;
 }
 
-int kqueue_iod_unregister(mspool *nsp, msiod *iod) {
+int kqueue_iod_unregister(struct npool *nsp, struct niod *iod) {
   struct kqueue_engine_info *kinfo = (struct kqueue_engine_info *)nsp->engine_data;
 
   /* some IODs can be unregistered here if they're associated to an event that was
@@ -177,7 +176,7 @@ int kqueue_iod_unregister(mspool *nsp, msiod *iod) {
     kqueue_iod_modify(nsp, iod, EV_NONE, EV_READ|EV_WRITE);
     IOD_PROPCLR(iod, IOD_REGISTERED);
 
-    if (nsi_getsd(iod) == kinfo->maxfd)
+    if (nsock_iod_get_sd(iod) == kinfo->maxfd)
       kinfo->maxfd--;
   }
   iod->watched_events = EV_NONE;
@@ -186,7 +185,7 @@ int kqueue_iod_unregister(mspool *nsp, msiod *iod) {
 
 #define EV_SETFLAG(_set, _ev) (((_set) & (_ev)) ? (EV_ADD|EV_ENABLE) : (EV_ADD|EV_DISABLE))
 
-int kqueue_iod_modify(mspool *nsp, msiod *iod, int ev_set, int ev_clr) {
+int kqueue_iod_modify(struct npool *nsp, struct niod *iod, int ev_set, int ev_clr) {
   struct kevent kev[2];
   int new_events, i;
   struct kqueue_engine_info *kinfo = (struct kqueue_engine_info *)nsp->engine_data;
@@ -203,11 +202,11 @@ int kqueue_iod_modify(mspool *nsp, msiod *iod, int ev_set, int ev_clr) {
 
   i = 0;
   if ((ev_set ^ ev_clr) & EV_READ) {
-    EV_SET(&kev[i], nsi_getsd(iod), EVFILT_READ, EV_SETFLAG(ev_set, EV_READ), 0, 0, (void *)iod);
+    EV_SET(&kev[i], nsock_iod_get_sd(iod), EVFILT_READ, EV_SETFLAG(ev_set, EV_READ), 0, 0, (void *)iod);
     i++;
   }
   if ((ev_set ^ ev_clr) & EV_WRITE) {
-    EV_SET(&kev[i], nsi_getsd(iod), EVFILT_WRITE, EV_SETFLAG(ev_set, EV_WRITE), 0, 0, (void *)iod);
+    EV_SET(&kev[i], nsock_iod_get_sd(iod), EVFILT_WRITE, EV_SETFLAG(ev_set, EV_WRITE), 0, 0, (void *)iod);
     i++;
   }
 
@@ -218,7 +217,7 @@ int kqueue_iod_modify(mspool *nsp, msiod *iod, int ev_set, int ev_clr) {
   return 1;
 }
 
-int kqueue_loop(mspool *nsp, int msec_timeout) {
+int kqueue_loop(struct npool *nsp, int msec_timeout) {
   int results_left = 0;
   int event_msecs; /* msecs before an event goes off */
   int combined_msecs;
@@ -238,9 +237,9 @@ int kqueue_loop(mspool *nsp, int msec_timeout) {
   }
 
   do {
-    msevent *nse;
+    struct nevent *nse;
 
-    nsock_log_debug_all(nsp, "wait for events");
+    nsock_log_debug_all("wait for events");
 
     nse = next_expirable_event(nsp);
     if (!nse)
@@ -291,7 +290,7 @@ int kqueue_loop(mspool *nsp, int msec_timeout) {
   } while (results_left == -1 && sock_err == EINTR); /* repeat only if signal occurred */
 
   if (results_left == -1 && sock_err != EINTR) {
-    nsock_log_error(nsp, "nsock_loop error %d: %s", sock_err, socket_strerror(sock_err));
+    nsock_log_error("nsock_loop error %d: %s", sock_err, socket_strerror(sock_err));
     nsp->errnum = sock_err;
     return -1;
   }
@@ -304,7 +303,7 @@ int kqueue_loop(mspool *nsp, int msec_timeout) {
 
 /* ---- INTERNAL FUNCTIONS ---- */
 
-static inline int get_evmask(msiod *nsi, const struct kevent *kev) {
+static inline int get_evmask(struct niod *nsi, const struct kevent *kev) {
   int evmask = EV_NONE;
 
   /* generate the corresponding event mask with nsock event flags */
@@ -333,15 +332,15 @@ static inline int get_evmask(msiod *nsi, const struct kevent *kev) {
 /* Iterate through all the event lists (such as connect_events, read_events,
  * timer_events, etc) and take action for those that have completed (due to
  * timeout, i/o, etc) */
-void iterate_through_event_lists(mspool *nsp, int evcount) {
+void iterate_through_event_lists(struct npool *nsp, int evcount) {
   int n;
   struct kqueue_engine_info *kinfo = (struct kqueue_engine_info *)nsp->engine_data;
-  msiod *nsi;
+  struct niod *nsi;
 
   for (n = 0; n < evcount; n++) {
     struct kevent *kev = &kinfo->events[n];
 
-    nsi = (msiod *)kev->udata;
+    nsi = (struct niod *)kev->udata;
 
     /* process all the pending events for this IOD */
     process_iod_events(nsp, nsi, get_evmask(nsi, kev));
@@ -352,7 +351,7 @@ void iterate_through_event_lists(mspool *nsp, int evcount) {
   for (n = 0; n < evcount; n++) {
     struct kevent *kev = &kinfo->events[n];
 
-    nsi = (msiod *)kev->udata;
+    nsi = (struct niod *)kev->udata;
 
     if (nsi->state == NSIOD_STATE_DELETED) {
       if (IOD_PROPGET(nsi, IOD_PROCESSED)) {

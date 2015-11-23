@@ -63,7 +63,7 @@ This is similar to the mtrace utility provided in Cisco IOS.
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "safe", "broadcast"}
 
@@ -102,11 +102,11 @@ FWD_CODE = {
 
 prerule = function()
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_verbose("%s is IPv4 only.", SCRIPT_NAME)
+    stdnse.verbose1("is IPv4 only.")
     return false
   end
   if not nmap.is_privileged() then
-    stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges.")
     return false
   end
   return true
@@ -119,15 +119,17 @@ end
 --@param receiver Receiver of the response.
 --@return data Raw Traceroute Query.
 local traceRaw = function(fromip, toip, group, receiver)
-  local data = bin.pack(">C", 0x1f) -- Type: Traceroute Query
-  local data = data .. bin.pack(">C", 0x20) -- Hops: 32
-  local data = data .. bin.pack(">S", 0x0000) -- Checksum: To be set later
-  local data = data .. bin.pack(">I", ipOps.todword(group)) -- Multicast group
-  local data = data .. bin.pack(">I", ipOps.todword(fromip)) -- Source
-  local data = data .. bin.pack(">I", ipOps.todword(toip)) -- Destination
-  local data = data .. bin.pack(">I", ipOps.todword(receiver)) -- Receiver
-  local data = data .. bin.pack(">C", 0x40) -- TTL
-  local data = data .. bin.pack(">CS", 0x00, math.random(123456)) -- Query ID
+  local data = bin.pack(">CCSIIIICCS",
+    0x1f, -- Type: Traceroute Query
+    0x20, -- Hops: 32
+    0x0000, -- Checksum: To be set later
+    ipOps.todword(group), -- Multicast group
+    ipOps.todword(fromip), -- Source
+    ipOps.todword(toip), -- Destination
+    ipOps.todword(receiver), -- Receiver
+    0x40, -- TTL
+    0x00, math.random(123456) -- Query ID
+    )
 
   -- We calculate checksum
   data = data:sub(1,2) .. bin.pack(">S", packet.in_cksum(data)) .. data:sub(5)
@@ -214,7 +216,7 @@ local traceParse = function(data)
     if index >= #data then
       break
     elseif #data - index < 31 then
-      stdnse.print_verbose("%s malformed traceroute response.", SCRIPT_NAME)
+      stdnse.verbose1("malformed traceroute response.")
       return
     end
 
@@ -303,12 +305,12 @@ local getInterface = function(target)
   local sock = nmap.new_socket()
   local status, err = sock:connect(target, "12345", "udp")
   if not status then
-    stdnse.print_verbose("%s: %s", SCRIPT_NAME, err)
+    stdnse.verbose1("%s", err)
     return
   end
   local status, address, _, _, _ = sock:get_info()
   if not status then
-    stdnse.print_verbose("%s: %s", SCRIPT_NAME, err)
+    stdnse.verbose1("%s", err)
     return
   end
   for _, interface in pairs(nmap.list_interfaces()) do
@@ -330,7 +332,7 @@ action = function()
 
   -- Source address from which to traceroute
   if not fromip then
-    stdnse.print_verbose("%s: A source IP must be provided through fromip argument.", SCRIPT_NAME)
+    stdnse.verbose1("A source IP must be provided through fromip argument.")
     return
   end
 
@@ -342,14 +344,14 @@ action = function()
     interface = getInterface(firsthop)
   end
   if not interface then
-    return ("\n ERROR: Couldn't get interface for %s"):format(firsthop)
+    return stdnse.format_output(false, ("Couldn't get interface for %s"):format(firsthop))
   end
 
   -- Destination defaults to our own host
   toip = toip or interface.address
 
-  stdnse.print_debug("%s: Traceroute group %s from %s to %s.", SCRIPT_NAME, group, fromip, toip)
-  stdnse.print_debug("%s: will send to %s via %s interface.", SCRIPT_NAME, firsthop, interface.shortname)
+  stdnse.debug1("Traceroute group %s from %s to %s.", group, fromip, toip)
+  stdnse.debug1("will send to %s via %s interface.", firsthop, interface.shortname)
 
   -- Thread that listens for responses
   stdnse.new_thread(traceListener, interface, timeout, responses)

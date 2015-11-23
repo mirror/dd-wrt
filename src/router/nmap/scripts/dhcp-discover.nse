@@ -45,13 +45,24 @@ Some of the more useful fields:
 -- Interesting ports on 192.168.1.1:
 -- PORT   STATE SERVICE
 -- 67/udp open  dhcps
--- |  dhcp-discover:
--- |  |  DHCP Message Type: DHCPACK
--- |  |  Server Identifier: 192.168.1.1
--- |  |  IP Address Lease Time: 1 day, 0:00:00
--- |  |  Subnet Mask: 255.255.255.0
--- |  |  Router: 192.168.1.1
--- |_ |_ Domain Name Server: 208.81.7.10, 208.81.7.14
+-- | dhcp-discover:
+-- |   DHCP Message Type: DHCPACK
+-- |   Server Identifier: 192.168.1.1
+-- |   IP Address Lease Time: 1 day, 0:00:00
+-- |   Subnet Mask: 255.255.255.0
+-- |   Router: 192.168.1.1
+-- |_  Domain Name Server: 208.81.7.10, 208.81.7.14
+--
+-- @xmloutput
+-- <elem key="DHCP Message Type">DHCPACK</elem>
+-- <elem key="Server Identifier">192.168.1.1</elem>
+-- <elem key="IP Address Lease Time">1 day, 0:00:00</elem>
+-- <elem key="Subnet Mask">255.255.255.0</elem>
+-- <elem key="Router">192.168.1.1</elem>
+-- <table key="Domain Name Server">
+--   <elem>208.81.7.10</elem>
+--   <elem>208.81.7.14</elem>
+-- </table>
 --
 
 --
@@ -65,7 +76,7 @@ Some of the more useful fields:
 
 author = "Ron Bowes"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "safe"}
 
@@ -73,7 +84,7 @@ categories = {"discovery", "safe"}
 -- We want to run against a specific host if UDP/67 is open
 function portrule(host, port)
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_debug("%s is IPv4 compatible only.", SCRIPT_NAME)
+    stdnse.debug1("is IPv4 compatible only.")
     return false
   end
 
@@ -95,11 +106,12 @@ local function go(host, port)
     -- Generate the MAC address, if it's random
     local mac_addr = host.mac_addr_src
     if(nmap.registry.args.randomize_mac == 'true' or nmap.registry.args.randomize_mac == '1') then
-      stdnse.print_debug(2, "dhcp-discover: Generating a random MAC address")
-      mac_addr = ""
+      stdnse.debug2("Generating a random MAC address")
+      mac_addr = {}
       for j=1, 6, 1 do
-        mac_addr = mac_addr .. string.char(math.random(1, 255))
+        mac_addr[i] = string.char(math.random(1, 255))
       end
+      mac_addr = table.concat(mac_addr)
     end
 
     local iface, err = nmap.get_interface_info(host.interface)
@@ -109,7 +121,7 @@ local function go(host, port)
 
     local status, result = dhcp.make_request(host.ip, request_type, iface.address, mac_addr)
     if( not(status) ) then
-      stdnse.print_debug(1, "dhcp-discover: Couldn't send DHCP request: %s", result)
+      stdnse.debug1("Couldn't send DHCP request: %s", result)
       return false, result
     end
 
@@ -119,6 +131,12 @@ local function go(host, port)
   -- Done!
   return true, results
 end
+
+local commasep = {
+  __tostring = function (t)
+    return table.concat(t, ", ")
+  end
+}
 
 action = function(host, port)
   local status, results = go(host, port)
@@ -137,35 +155,29 @@ action = function(host, port)
     nmap.set_port_state(host, port, "open")
   end
 
-  local response = {}
+  local response = stdnse.output_table()
 
   -- Display the results
   for i, result in ipairs(results) do
-    local result_table = {}
+    local result_table = stdnse.output_table()
 
     if ( nmap.registry.args.dhcptype and
       "DHCPINFORM" ~= nmap.registry.args.dhcptype ) then
-      table.insert(result_table, string.format("IP Offered: %s", result.yiaddr_str))
+      result_table["IP Offered"] = result.yiaddr_str
     end
     for _, v in ipairs(result.options) do
-      if(type(v['value']) == 'table') then
-        table.insert(result_table, string.format("%s: %s", v['name'], stdnse.strjoin(", ", v['value'])))
-      else
-        table.insert(result_table, string.format("%s: %s\n", v['name'], v['value']))
+      if(type(v.value) == 'table') then
+        setmetatable(v.value, commasep)
       end
+      result_table[ v.name ] = v.value
     end
 
     if(#results == 1) then
       response = result_table
     else
-      result_table['name'] = string.format("Result %d of %d", i, #results)
-      table.insert(response, result_table)
+      response[string.format("Response %d of %d", i, #results)] = result_table
     end
   end
 
-  return stdnse.format_output(true, response)
+  return response
 end
-
-
-
-

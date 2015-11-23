@@ -21,7 +21,7 @@ and login to the service by typing Password;1; into the console.
 -- |_netbus-auth-bypass: Vulnerable
 
 author = "Toni Ruottu"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"auth", "safe", "vuln"}
 
 
@@ -32,12 +32,16 @@ portrule = shortport.port_or_service (12345, "netbus", {"tcp"})
 action = function( host, port )
 
   local socket = nmap.new_socket()
-  local status, err = socket:connect(host.ip, port.number)
+  local status, err = socket:connect(host, port)
   if not status then
     return
   end
   local buffer, _ = stdnse.make_buffer(socket, "\r")
-  buffer() --discard banner
+  _ = buffer()
+  if not (_ and _:match("^NetBus")) then
+    stdnse.debug1("Not NetBus")
+    return nil
+  end
 
   -- The first argument of Password is the super-login bit.
   -- On vulnerable servers any password will do as long as

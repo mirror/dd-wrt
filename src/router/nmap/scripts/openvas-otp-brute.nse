@@ -25,7 +25,7 @@ Performs brute force password auditing against a OpenVAS vulnerability scanner d
 
 author = "Vlatko Kosturjak"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"intrusive", "brute"}
 
@@ -85,15 +85,15 @@ Driver =
     status, line = self.socket:receive_buf("\r?\n", false)
 
     if (line == nil or string.match(line,"Bad login")) then
-      stdnse.print_debug(2, "openvas-otp-brute: Bad login: %s/%s", username, password)
+      stdnse.debug2("Bad login: %s/%s", username, password)
       return false, brute.Error:new( "Bad login" )
     elseif (string.match(line,"SERVER <|>")) then
 
-      stdnse.print_debug(1, "openvas-otp-brute: Good login: %s/%s", username, password)
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      stdnse.debug1("Good login: %s/%s", username, password)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     end
 
-    stdnse.print_debug(1, "openvas-otp-brute: WARNING: Unhandled response: %s", line)
+    stdnse.debug1("WARNING: Unhandled response: %s", line)
     return false, brute.Error:new( "unhandled response" )
   end,
 

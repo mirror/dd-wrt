@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,15 +116,18 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: utils.cc 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: utils.cc 34812 2015-07-01 21:25:39Z dmiller $ */
 
 #include "nmap.h"
 #include "utils.h"
 #include "NmapOps.h"
+
+#include <fcntl.h>
+#include <errno.h>
 
 extern NmapOps o;
 
@@ -495,6 +497,77 @@ void bintohexstr(char *buf, int buflen, char *src, int srclen) {
     bp += Snprintf(buf + bp, buflen - bp, "\n");
 }
 
+/** Returns a buffer that contains the binary equivalent to the supplied
+ *  hex spec or NULL in case of error.
+ *  @warning Returned pointer points to a static buffer that subsequent calls
+ *  will overwrite. */
+u8 *parse_hex_string(char *str, size_t *outlen) {
+  char auxbuff[4096];
+  static u8 dst[16384];
+  size_t dstlen=16384;
+  unsigned int i=0, j=0;
+  char *start=NULL;
+
+  if(str==NULL || outlen==NULL)
+    return NULL;
+  /* This catches the empty string possibility "" */
+  if(strlen(str) == 0)
+    return NULL;
+  else
+    memset(auxbuff,0,4096);
+
+  /* String should be treated as a hex number in this format: 0xAABBCCDDEE...
+   * We process it the way it is specified, we don't perform byte order
+   * conversions so if the users says 0x00AA we write dst[0]=0x00, dst[1]==0xAA
+   * no matter the endianness of the host system. */
+  if( !strncmp("0x", str, 2) ) {
+    /* This catches the case of an empty "0x" */
+    if(strlen(str) == 2)
+      return NULL;
+    start=str+2;
+  }
+  /* String should be treated as list of hex char in this format: \x00\xFF\x0A*/
+  else if( !strncmp("\\x", str, 2) ) {
+    /* This catches the case of an empty "\x" */
+    if(strlen(str) == 2)
+      return NULL;
+    /* Copy all interesting bytes to an aux array, discard "\x" */
+    for(i=0; i<strlen(str) && j<4095; i++) {
+      if( str[i]!='\\' && str[i]!='x' && str[i]!='X')
+        auxbuff[j++]=str[i];
+    }
+    auxbuff[j]='\0'; /* NULL terminate the string */
+    start=auxbuff;
+  }
+  /* It must be a hex number in this format: AABBCCDDEE (without 0x or \x) */
+  else {
+    start=str;
+  }
+
+  /*OK, here we should have "start" pointing to the beginning of a string
+   * in the format AABBCCDDEE... */
+  /* Check if all we've got are hex chars */
+  for(i=0; i<strlen(start); i++) {
+    if( !isxdigit(start[i]) )
+      return NULL;
+  }
+  /* Check if we have an even number of hex chars */
+  if( strlen(start)%2 != 0 )
+    return NULL;
+
+  /* We are ready to parse this string */
+  for(i=0, j=0; j<dstlen && i<strlen(start)-1; i+=2) {
+    char twobytes[3];
+    twobytes[0]=start[i];
+    twobytes[1]=start[i+1];
+    twobytes[2]='\0';
+    dst[j++]=(u8)strtol(twobytes, NULL, 16);
+  }
+  /* Store final length */
+  *outlen=j;
+  return dst;
+}
+
 /* Get the CPE part (first component of the URL, should be "a", "h", or "o") as
    a character: 'a', 'h', or 'o'. Returns -1 on error. */
 int cpe_get_part(const char *cpe) {
@@ -514,16 +587,28 @@ int cpe_get_part(const char *cpe) {
 }
 
 
+#ifndef WIN32
+static int open2mmap_flags(int open_flags)
+{
+  switch (open_flags) {
+    case O_RDONLY: return PROT_READ;
+    case O_RDWR:   return PROT_READ | PROT_WRITE;
+    case O_WRONLY: return PROT_WRITE;
+    default:
+      return -1;
+  }
+}
+
 /* mmap() an entire file into the address space. Returns a pointer to the
    beginning of the file. The mmap'ed length is returned inside the length
    parameter. If there is a problem, NULL is returned, the value of length is
    undefined, and errno is set to something appropriate. The user is responsible
    for doing an munmap(ptr, length) when finished with it. openflags should be
    O_RDONLY or O_RDWR, or O_WRONLY. */
-#ifndef WIN32
 char *mmapfile(char *fname, int *length, int openflags) {
   struct stat st;
   int fd;
+  int mmap_flags;
   char *fileptr;
 
   if (!length || !fname) {
@@ -533,8 +618,9 @@ char *mmapfile(char *fname, int *length, int openflags) {
 
   *length = -1;
 
-  if (stat(fname, &st) == -1) {
-    errno = ENOENT;
+  mmap_flags = open2mmap_flags(openflags);
+  if (mmap_flags == -1) {
+    errno = EINVAL;
     return NULL;
   }
 
@@ -543,9 +629,12 @@ char *mmapfile(char *fname, int *length, int openflags) {
     return NULL;
   }
 
-  fileptr = (char *)mmap(0, st.st_size, (openflags == O_RDONLY) ? PROT_READ :
-                         (openflags == O_RDWR) ? (PROT_READ | PROT_WRITE)
-                         : PROT_WRITE, MAP_SHARED, fd, 0);
+  if (fstat(fd, &st) == -1) {
+    close(fd);
+    return NULL;
+  }
+
+  fileptr = (char *)mmap(0, st.st_size, mmap_flags, MAP_SHARED, fd, 0);
 
   close(fd);
 

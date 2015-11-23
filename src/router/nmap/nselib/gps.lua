@@ -1,6 +1,5 @@
 local bit = require "bit"
 local os = require "os"
-local package = require "package"
 local stdnse = require "stdnse"
 local string = require "string"
 _ENV = stdnse.module("gps", stdnse.seeall)
@@ -98,7 +97,7 @@ NMEA = {
       return true, e
     else
       local err = ("No parser for prefix: %s"):format(prefix)
-      stdnse.print_debug(2, err)
+      stdnse.debug2("%s", err)
       return false, err
     end
 

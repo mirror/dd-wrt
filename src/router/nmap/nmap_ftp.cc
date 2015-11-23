@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,11 +116,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_ftp.cc 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: nmap_ftp.cc 34574 2015-06-03 13:01:29Z dmiller $ */
 #include "nmap_ftp.h"
 #include "output.h"
 #include "NmapOps.h"
@@ -131,7 +130,7 @@
 extern NmapOps o;
 
 struct ftpinfo get_default_ftpinfo(void) {
-#if (defined(IN_ADDR_DEEPSTRUCT) || defined( SOLARIS))
+#if (defined(IN_ADDR_DEEPSTRUCT) || defined(SOLARIS))
   /* Note that struct in_addr in solaris is 3 levels deep just to store an
    * unsigned int! */
   struct ftpinfo ftp = { FTPUSER, FTPPASS, "",  { { { 0 } } } , 21, 0};
@@ -342,7 +341,7 @@ void bounce_scan(Target *target, u16 *portarray, int numports,
               if (o.debugging)
                 log_write(LOG_STDOUT, "result of LIST: %s", recvbuf);
               if (!strncmp(recvbuf, "500", 3)) {
-                /* fuck, we are not aligned properly */
+                /* oh dear, we are not aligned properly */
                 if (o.verbose || o.debugging)
                   error("FTP command misalignment detected ... correcting.");
                 res = recvtime(sd, recvbuf, 2048, 10, NULL);

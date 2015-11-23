@@ -22,7 +22,7 @@ Attempts to discover master browsers and the domains they manage.
 -- Created 06/14/2011 - v0.1 - created by Patrik Karlsson <patrik@cqure.net>
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"broadcast", "safe"}
 
 
@@ -60,7 +60,7 @@ action = function()
       if ( srv_name and domain_name ) then
         tab.addrow(outtab, v.peer, srv_name, domain_name)
       else
-        stdnse.print_debug(3, "No server name or domain name was found")
+        stdnse.debug3("No server name or domain name was found")
       end
     end
   end

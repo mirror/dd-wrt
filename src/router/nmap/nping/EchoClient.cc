@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -95,8 +95,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -117,7 +116,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -175,7 +174,7 @@ int EchoClient::start(NpingTarget *target, u16 port){
   }else{
     /* Extract the nsock pool handler and store it here */
     this->nsp=this->probe.getNsockPool();
-    this->nsi=nsi_new(this->nsp, NULL);
+    this->nsi=nsock_iod_new(this->nsp, NULL);
   }
 
   /* Schedule a TCP connection attempt */
@@ -224,7 +223,7 @@ int EchoClient::nep_connect(NpingTarget *target, u16 port){
   struct sockaddr_in *s4=(struct sockaddr_in *)&ss;
   struct sockaddr_in6 *s6=(struct sockaddr_in6 *)&ss;
   enum nsock_loopstatus loopstatus;
-  
+
   if(target==NULL)
     nping_fatal(QT_3, "nep_connect(): NULL parameter supplied.");
   else
@@ -242,7 +241,7 @@ int EchoClient::nep_connect(NpingTarget *target, u16 port){
     #endif
 
    /* Try to bind the IOD to the IP address supplied by the user */
-   nsi_set_localaddr(this->nsi, o.getSourceSockAddr(&src), sizeof(sockaddr_in6));
+   nsock_iod_set_localaddr(this->nsi, o.getSourceSockAddr(&src), sizeof(sockaddr_in6));
 
    /* Schedule a connect event */
    nsock_connect_tcp(this->nsp, this->nsi, connect_done_handler, ECHO_CONNECT_TIMEOUT,
@@ -259,7 +258,7 @@ int EchoClient::nep_connect(NpingTarget *target, u16 port){
 #endif
 
    /* Try to bind the IOD to the IP address supplied by the user */
-   nsi_set_localaddr(this->nsi, o.getSourceSockAddr(&src), sizeof(sockaddr_in));
+   nsock_iod_set_localaddr(this->nsi, o.getSourceSockAddr(&src), sizeof(sockaddr_in));
 
    /* Schedule a connect event */
    nsock_connect_tcp(this->nsp, this->nsi, connect_done_handler, ECHO_CONNECT_TIMEOUT,
@@ -279,7 +278,7 @@ int EchoClient::nep_handshake(){
   nping_print(DBG_4, "%s()", __func__);
   enum nsock_loopstatus loopstatus;
   EchoHeader h;
-  
+
   /* Receive NEP_HANDSHAKE_SERVER message */
   nsock_readbytes(this->nsp, this->nsi, recv_hs_server_handler, ECHO_READ_TIMEOUT, NULL, NEP_HANDSHAKE_SERVER_LEN);
   loopstatus=nsock_loop(this->nsp, ECHO_READ_TIMEOUT-1);
@@ -313,7 +312,7 @@ int EchoClient::nep_handshake(){
   loopstatus=nsock_loop(this->nsp, ECHO_READ_TIMEOUT-1);
   if(loopstatus!=NSOCK_LOOP_QUIT)
     return OP_FAILURE;
-  
+
   nping_print(DBG_1, "===NEP Handshake completed successfully===");
   return OP_SUCCESS;
 } /* End of nep_handshake() */
@@ -735,7 +734,7 @@ int EchoClient::generate_packet_spec(EchoHeader *h){
   h->setTimestamp();
   h->setIPVersion( o.getIPVersion()==AF_INET6 ? 0x06: 0x04 );
   h->setPacketCount( (o.getPacketCount()>0xFFFF) ? 0xFFFF : o.getPacketCount() );
-    
+
   /** Insert packet field specifiers */
   if(o.ipv6()){ /* AF_INET6 */
     /* Traffic class */
@@ -858,7 +857,7 @@ int EchoClient::nep_echoed_packet_handler(nsock_pool nsp, nsock_event nse, void 
       }
       return OP_FAILURE;
   }
-  
+
   /* Read the remaining data */
   if( (recvbuff=(u8 *)nse_readbuf(nse, &recvbytes))==NULL ){
     nping_print(DBG_4,"nep_echoed_packet_handler(): nse_readbuf failed!\n");

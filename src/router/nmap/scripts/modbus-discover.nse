@@ -30,40 +30,49 @@ Information about MODBUS protocol and security issues:
 -- PORT    STATE SERVICE
 -- 502/tcp open  modbus
 -- | modbus-discover:
--- |   Positive response for sid = 0x64
--- |     SLAVE ID DATA: \xFA\xFFPM710PowerMeter
--- |     DEVICE IDENTIFICATION: Schneider Electric PM710 v03.110
--- |_  Positive error response for sid = 0x96 (GATEWAY TARGET DEVICE FAILED TO RESPONSE)
+-- |   sid 0x64:
+-- |     Slave ID data: \xFA\xFFPM710PowerMeter
+-- |     Device identification: Schneider Electric PM710 v03.110
+-- |   sid 0x96:
+-- |_    error: GATEWAY TARGET DEVICE FAILED TO RESPONSE
+--
+-- @xmloutput
+-- <table key="sid 0x64">
+--   <elem key="Slave ID data">\xFA\xFFPM710PowerMeter</elem>
+--   <elem key="Device identification">Schneider Electric PM710 v03.110</elem>
+-- </table>
+-- <table key="sid 0x96">
+--   <elem key="error">GATEWAY TARGET DEVICE FAILED TO RESPONSE</elem>
+-- </table>
 
 -- Version 0.2 - /12.12.10/ - script cleanup
 -- Version 0.3 - /13.12.10/ - several bugfixes
 
 author = "Alexander Rudakov"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "intrusive"}
 
 
-portrule = shortport.portnumber(502, "tcp")
+portrule = shortport.port_or_service(502, "modbus")
 
 local form_rsid = function(sid, functionId, data)
   local payload_len = 2
   if  ( #data > 0 ) then
     payload_len = payload_len + #data
   end
-  return bin.pack('CCCCC', 0x00, 0x00, 0x00, 0x00, 0x00) .. bin.pack('C', payload_len) .. bin.pack('C', sid) .. bin.pack('C', functionId) .. data
+  return "\0\0\0\0\0" .. bin.pack('CCC', payload_len, sid, functionId) .. data
 end
 
-discover_device_id_recursive = function(host, port, sid, start_id)
-  local rsid = form_rsid(sid, 0x2B, bin.pack('H', "0E 01")..bin.pack('C', start_id))
+discover_device_id_recursive = function(host, port, sid, start_id, objects_table)
+  local rsid = form_rsid(sid, 0x2B, "\x0E\x01" .. bin.pack('C', start_id))
   local status, result = comm.exchange(host, port, rsid)
-  local objects_table = {}
   if ( status and (#result >= 8)) then
     local ret_code = string.byte(result, 8)
     if ( ret_code == 0x2B and #result >= 15 ) then
       local more_follows = string.byte(result, 12)
       local next_object_id = string.byte(result, 13)
       local number_of_objects = string.byte(result, 14)
-      stdnse.print_debug(1, "more = 0x%x, next_id = 0x%x, obj_number = 0x%x", more_follows, next_object_id, number_of_objects)
+      stdnse.debug1("more = 0x%x, next_id = 0x%x, obj_number = 0x%x", more_follows, next_object_id, number_of_objects)
       local offset = 15
       for i = start_id, (number_of_objects - 1) do
         local object_id = string.byte(result, offset)
@@ -71,16 +80,13 @@ discover_device_id_recursive = function(host, port, sid, start_id)
         -- error data format --
         if object_len == nil then break end
         local object_value = string.sub(result, offset + 2, offset + 1 + object_len)
-        stdnse.print_debug(1, "Object id = 0x%x, value = %s", object_id, object_value)
+        stdnse.debug1("Object id = 0x%x, value = %s", object_id, object_value)
         table.insert(objects_table, object_id + 1, object_value)
         offset = offset + 2 + object_len
       end
       if ( more_follows == 0xFF and next_object_id ~= 0x00 ) then
-        stdnse.print_debug(1, "Has more objects")
-        local recursive_table = discover_device_id_recursive(host, port, sid, next_object_id)
-        for k,v in pairs(recursive_table) do
-          table.insert(objects_table, k, v)
-        end
+        stdnse.debug1("Has more objects")
+        return discover_device_id_recursive(host, port, sid, next_object_id, objects_table)
       end
     end
   end
@@ -88,18 +94,7 @@ discover_device_id_recursive = function(host, port, sid, start_id)
 end
 
 local discover_device_id = function(host, port, sid)
-  return discover_device_id_recursive(host, port, sid, 0x0)
-end
-
-local form_device_id_string = function(device_table)
-  local ret_string = "DEVICE IDENTIFICATION: "
-  for i = 1, #device_table do
-    if ( device_table[i] ~= nil ) then
-      ret_string = ret_string..device_table[i]
-      if ( i < #device_table ) then ret_string = ret_string.." " end
-    end
-  end
-  return ret_string
+  return discover_device_id_recursive(host, port, sid, 0x0, {})
 end
 
 local extract_slave_id = function(response)
@@ -125,35 +120,36 @@ action = function(host, port)
   -- If false, stop after first sid.
   local aggressive = stdnse.get_script_args('modbus-discover.aggressive')
 
-  local opts = {timeout=2000}
-  local results = {}
+  local opts = {request_timeout=2000}
+  local results = stdnse.output_table()
 
   for sid = 1, 246 do
-    stdnse.print_debug(3, "Sending command with sid = %d", sid)
+    stdnse.debug3("Sending command with sid = %d", sid)
     local rsid = form_rsid(sid, 0x11, "")
 
     local status, result = comm.exchange(host, port, rsid, opts)
     if ( status and (#result >= 8) ) then
       local ret_code = string.byte(result, 8)
       if ( ret_code == (0x11) or ret_code == (0x11 + 128) ) then
-        local sid_table = {}
+        local sid_table = stdnse.output_table()
         if ret_code == (0x11) then
-          table.insert(results, ("Positive response for sid = 0x%x"):format(sid))
           local slave_id = extract_slave_id(result)
-          if ( slave_id ~= nil ) then table.insert(sid_table, "SLAVE ID DATA: "..slave_id) end
+          sid_table["Slave ID data"] = slave_id or "<unknown>"
         elseif ret_code == (0x11 + 128) then
           local exception_code = string.byte(result, 9)
           local exception_string = modbus_exception_codes[exception_code]
-          if ( exception_string == nil ) then exception_string = "UNKNOWN EXCEPTION" end
-          table.insert(results, ("Positive error response for sid = 0x%x (%s)"):format(sid, exception_string))
+          if ( exception_string == nil ) then
+            exception_string = ("Unknown exception (0x%x)"):format(exception_code)
+          end
+          sid_table["error"] = exception_string
         end
 
         local device_table = discover_device_id(host, port, sid)
         if ( #device_table > 0 ) then
-          table.insert(sid_table, form_device_id_string(device_table))
+          sid_table["Device identification"] = table.concat(device_table, " ")
         end
         if ( #sid_table > 0 ) then
-          table.insert(results, sid_table)
+          results[("sid 0x%x"):format(sid)] = sid_table
         end
         if ( not aggressive ) then break end
       end
@@ -164,7 +160,6 @@ action = function(host, port)
     port.state = "open"
     port.version.name = "modbus"
     nmap.set_port_version(host, port)
+    return results
   end
-
-  return stdnse.format_output(true, results)
 end

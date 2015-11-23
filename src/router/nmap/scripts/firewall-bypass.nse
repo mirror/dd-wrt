@@ -5,16 +5,21 @@ local string = require "string"
 local packet = require "packet"
 
 description = [[
-Detects a vulnerability in netfilter and other firewalls that use helpers to dynamically open ports for protocols such as ftp and sip.
+Detects a vulnerability in netfilter and other firewalls that use helpers to
+dynamically open ports for protocols such as ftp and sip.
 
-The script works by spoofing a packet from the target server asking for opening a related connection to a target port which will be
-fulfilled by the firewall through the adequate protocol helper port. The attacking machine should be on the same network segment as the
-firewall for this to work. The script supports ftp helper on both IPv4 and IPv6. Real path filter is used to prevent such attacks.
+The script works by spoofing a packet from the target server asking for opening
+a related connection to a target port which will be fulfilled by the firewall
+through the adequate protocol helper port. The attacking machine should be on
+the same network segment as the firewall for this to work. The script supports
+ftp helper on both IPv4 and IPv6. Real path filter is used to prevent such
+attacks.
 
 Based on work done by Eric Leblond.
 
 For more information, see:
-    * http://home.regit.org/2012/03/playing-with-network-layers-to-bypass-firewalls-filtering-policy/
+
+* http://home.regit.org/2012/03/playing-with-network-layers-to-bypass-firewalls-filtering-policy/
 ]]
 
 ---
@@ -38,7 +43,7 @@ For more information, see:
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"vuln", "intrusive"}
 
@@ -56,7 +61,7 @@ ftp_helper = {
     local status, _ = testsock:connect(host.ip, helperport)
     testsock:close()
     if not status then
-      stdnse.print_debug("%s Unable to connect to %s helper port.", SCRIPT_NAME, helperport)
+      stdnse.debug1("Unable to connect to %s helper port.", helperport)
       return false
     end
     return true
@@ -73,12 +78,12 @@ ftp_helper = {
       bit.band(bit.rshift(targetport, 8), 0xff) ..
       "," .. bit.band(targetport, 0xff) ..
       ")\r\n"
-      ethertype = string.char(0x08, 0x00) -- Ethernet Type: IPv4
+      ethertype = "\x08\0" -- Ethernet Type: IPv4
 
     else
       -- IPv6 payload
       payload = "229 Extended Passive Mode OK (|||" .. targetport .. "|)\r\n"
-      ethertype = string.char(0x86, 0xdd) -- Ethernet Type: IPv6
+      ethertype = "\x86\xdd" -- Ethernet Type: IPv6
     end
 
     helperport = helperport or 21
@@ -111,14 +116,14 @@ ftp_helper = {
       if isIp4 then
         if not p:ip_parse() then
           -- An error happened
-          stdnse.print_debug("%s Couldn't parse IPv4 sniffed packet.", SCRIPT_NAME)
+          stdnse.debug1("Couldn't parse IPv4 sniffed packet.")
           sniffer:pcap_close()
           return false
         end
       else
         if not p:ip6_parse() then
           -- An error happened
-          stdnse.print_debug("%s Couldn't parse IPv6 sniffed packet.", SCRIPT_NAME)
+          stdnse.debug1("Couldn't parse IPv6 sniffed packet.")
           sniffer:pcap_close()
           return false
         end
@@ -168,7 +173,7 @@ ftp_helper = {
     local status, _ = socket:connect(host.ip, helperport)
     if not status then
       -- Problem connecting to helper port
-      stdnse.print_debug("%s Problem connecting to helper port %s.", SCRIPT_NAME, tostring(helperport))
+      stdnse.debug1("Problem connecting to helper port %s.", tostring(helperport))
       return
     end
 
@@ -192,7 +197,7 @@ hostrule = function(host)
   if not nmap.is_privileged() then
     nmap.registry[SCRIPT_NAME] = nmap.registry[SCRIPT_NAME] or {}
     if not nmap.registry[SCRIPT_NAME].rootfail then
-      stdnse.print_verbose("%s lacks privileges.", SCRIPT_NAME )
+      stdnse.verbose1("lacks privileges." )
       nmap.registry[SCRIPT_NAME].rootfail = true
     end
     return false
@@ -203,7 +208,7 @@ hostrule = function(host)
   end
 
   if helper and not helpers[helper] then
-    stdnse.print_debug("%s %s helper not supported at the moment.", SCRIPT_NAME, helper)
+    stdnse.debug1("%s helper not supported at the moment.", helper)
     return false
   end
 
@@ -221,7 +226,7 @@ action = function(host, port)
     testsock:set_timeout(1000)
     local status, _ = testsock:connect(host.ip, targetport)
     if status then
-      stdnse.print_debug("%s %s target port already open.", SCRIPT_NAME, targetport)
+      stdnse.debug1("%s target port already open.", targetport)
       return nil
     end
     testsock:close()
@@ -231,10 +236,10 @@ action = function(host, port)
     local port = nmap.get_ports(host, nil, "tcp", "filtered") or nmap.get_ports(host, nil, "tcp", "closed")
     if port then
       targetport = port.number
-      stdnse.print_debug("%s %s chosen as target port.", SCRIPT_NAME, targetport)
+      stdnse.debug1("%s chosen as target port.", targetport)
     else
       -- No closed or filtered ports to check on.
-      stdnse.print_debug("%s Target port not specified and no closed or filtered port found.", SCRIPT_NAME)
+      stdnse.debug1("Target port not specified and no closed or filtered port found.")
       return
     end
   end
@@ -250,13 +255,13 @@ action = function(host, port)
     for i, helper in pairs(helpers) do
       if helper.should_run(host, helperport) then
         helpername = i
-        stdnse.print_debug("%s %s chosen as helper.", SCRIPT_NAME, helpername)
+        stdnse.debug1("%s chosen as helper.", helpername)
         helper.attack(host, helperport, targetport)
         break
       end
     end
     if not helpername then
-      stdnse.print_debug("%s no suitable helper found.", SCRIPT_NAME)
+      stdnse.debug1("no suitable helper found.")
       return nil
     end
   end

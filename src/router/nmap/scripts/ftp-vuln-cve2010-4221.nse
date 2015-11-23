@@ -46,7 +46,7 @@ Reference:
 --
 
 author = "Djalal Harouni"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "vuln"}
 
 
@@ -106,8 +106,7 @@ local function kill_proftpd(socket)
   local killed = false
   local TELNET_KILL = '\000'..'\255' -- TELNET_DUMMY..TELNET_IAC
 
-  stdnse.print_debug(2, "%s: sending evil TELNET_IAC commands.",
-                        SCRIPT_NAME)
+  stdnse.debug2("sending evil TELNET_IAC commands.")
   local st, ret = socket:send(string.rep(TELNET_KILL, 4069)..
                         '\255'..string.rep("Nmap", 256).."\n")
   if not st then
@@ -118,8 +117,7 @@ local function kill_proftpd(socket)
   st, ret = socket:receive_lines(1)
   if not st then
     if ret == "EOF" then -- "connection closed"
-      stdnse.print_debug(2, "%s: remote proftpd child was killed.",
-                            SCRIPT_NAME)
+      stdnse.debug2("remote proftpd child was killed.")
       killed = true
     else
       return st, ret
@@ -196,7 +194,7 @@ execute arbitrary code.]],
 
   local status, err = check_proftpd(ftp_opts)
   if not status then
-    stdnse.print_debug(1, "%s: %s", SCRIPT_NAME, err)
+    stdnse.debug1("%s", err)
     return nil
   end
   return report:make_output(ftp_opts.vuln)

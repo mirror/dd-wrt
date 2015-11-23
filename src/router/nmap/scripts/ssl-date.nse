@@ -1,6 +1,7 @@
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local table = require "table"
+local math = require "math"
 local nmap = require "nmap"
 local os = require "os"
 local string = require "string"
@@ -12,21 +13,13 @@ Retrieves a target host's time and date from its TLS ServerHello response.
 
 
 In many TLS implementations, the first four bytes of server randomness
-are a Unix timestamp.
+are a Unix timestamp. The script will test whether this is indeed true
+and report the time only if it passes this test.
 
 Original idea by Jacob Appelbaum and his TeaTime and tlsdate tools:
 * https://github.com/ioerror/TeaTime
 * https://github.com/ioerror/tlsdate
 ]]
-
-author = "Aleksandar Nikolic"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
-categories = {"discovery", "safe", "default"}
-
-portrule = function(host, port)
-  return shortport.ssl(host, port) or sslcert.isPortSupported(port)
-end
-
 
 ---
 -- @usage
@@ -41,9 +34,24 @@ end
 -- <elem key="date">2012-08-02T18:29:31+00:00</elem>
 -- <elem key="delta">4</elem>
 
---
--- most of the code snatched from tls-nextprotoneg until we decide if we want a separate library
---
+author = "Aleksandar Nikolic, nnposter"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
+categories = {"discovery", "safe", "default"}
+
+portrule = function(host, port)
+  return shortport.ssl(host, port) or sslcert.isPortSupported(port)
+end
+
+-- Miscellaneous script-wide constants
+local conn_timeout = 5         -- connection timeout (seconds)
+local max_clock_skew = 90*60   -- maximum acceptable difference between target
+                               --   and scanner clocks to avoid additional
+                               --   testing (seconds)
+local max_clock_jitter = 5     -- maximum acceptable target clock jitter
+                               --   Logically should be 50-100% of conn_timeout
+                               --   (seconds)
+local detail_debug = 2         -- debug level for printing detailed steps
+
 
 --- Function that sends a client hello packet
 -- target host and returns the response
@@ -55,26 +63,18 @@ local client_hello = function(host, port)
   local sock, status, response, err, cli_h
 
   -- Craft Client Hello
-  cli_h = tls.client_hello({
-    ["protocol"] = "TLSv1.0",
-    ["ciphers"] = {
-      "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-      "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-      "TLS_RSA_WITH_RC4_128_MD5",
-    },
-    ["compressors"] = {"NULL"},
-  })
+  cli_h = tls.client_hello()
 
   -- Connect to the target server
   local specialized_function = sslcert.getPrepareTLSWithoutReconnect(port)
 
   if not specialized_function then
     sock = nmap.new_socket()
-    sock:set_timeout(5000)
+    sock:set_timeout(1000 * conn_timeout)
     status, err = sock:connect(host, port)
     if not status then
       sock:close()
-      stdnse.print_debug("Can't send: %s", err)
+      stdnse.debug("Can't send: %s", err)
       return false
     end
   else
@@ -88,7 +88,7 @@ local client_hello = function(host, port)
   -- Send Client Hello to the target server
   status, err = sock:send(cli_h)
   if not status then
-    stdnse.print_debug("Couldn't send: %s", err)
+    stdnse.debug("Couldn't send: %s", err)
     sock:close()
     return false
   end
@@ -96,7 +96,7 @@ local client_hello = function(host, port)
   -- Read response
   status, response, err = tls.record_buffer(sock)
   if not status then
-    stdnse.print_debug("Couldn't receive: %s", err)
+    stdnse.debug("Couldn't receive: %s", err)
     sock:close()
     return false
   end
@@ -108,7 +108,7 @@ end
 local extract_time = function(response)
   local i, record = tls.record_read(response, 0)
   if record == nil then
-    stdnse.print_debug("%s: Unknown response from server", SCRIPT_NAME)
+    stdnse.debug("Unknown response from server")
     return nil
   end
 
@@ -119,27 +119,94 @@ local extract_time = function(response)
       end
     end
   end
-  stdnse.print_debug("%s: Server response was not server_hello", SCRIPT_NAME)
+  stdnse.debug("Server response was not server_hello")
   return nil
 end
 
-action = function(host, port)
-  local status, response
 
+---
+-- Retrieve a timestamp from a TLS port and compare it to the scanner clock
+--
+-- @param host TLS host
+-- @param port TLS port
+-- @return Timestamp sample object or nil (if the operation failed)
+local get_time_sample = function (host, port)
   -- Send crafted client hello
-  status, response = client_hello(host, port)
-  local now = os.time()
-  if status and response then
-    -- extract time from response
-    local result
-    status, result = extract_time(response)
-    if status then
-      local output = {
-        date = stdnse.format_timestamp(result, 0),
-        delta = os.difftime(result, now),
-      }
-      return output, string.format("%s; %s from local time.", output.date,
-        stdnse.format_difftime(os.date("!*t",result),os.date("!*t", now)))
+  local rstatus, response = client_hello(host, port)
+  local stm = os.time()
+  if not (rstatus and response) then return nil end
+  -- extract time from response
+  local tstatus, ttm = extract_time(response)
+  if not tstatus then return nil end
+  stdnse.debug(detail_debug, "TLS sample: %s", stdnse.format_timestamp(ttm, 0))
+  return {target=ttm, scanner=stm, delta=os.difftime(ttm, stm)}
+end
+
+
+local result = { STAGNANT = "stagnant",
+                 ACCEPTED = "accepted",
+                 REJECTED = "rejected" }
+
+---
+-- Obtain a new timestamp sample and validate it against a reference sample
+--
+-- @param host TLS host
+-- @param port TLS port
+-- @param reftm Reference timestamp sample
+-- @return Result code
+-- @return New timestamp sample object or nil (if the operation failed)
+local test_time_sample = function (host, port, reftm)
+  local tm = get_time_sample(host, port)
+  if not tm then return nil end
+  local tchange = os.difftime(tm.target, reftm.target)
+  local schange = os.difftime(tm.scanner, reftm.scanner)
+  local status =
+           -- clock cannot run backwards or drift rapidly
+           (tchange < 0 or math.abs(tchange - schange) > max_clock_jitter)
+             and result.REJECTED
+           -- the clock did not advance
+           or tchange == 0
+             and result.STAGNANT
+           -- plausible enough
+           or result.ACCEPTED
+  stdnse.debug(detail_debug, "TLS sample verdict: %s", status)
+  return status, tm
+end
+
+
+action = function(host, port)
+  local tm = get_time_sample(host, port)
+  if not tm then
+    return stdnse.format_output(false, "Unable to obtain data from the target")
+  end
+  if math.abs(tm.delta) > max_clock_skew then
+    -- The target clock differs substantially from the scanner
+    -- Let's take another sample to eliminate cases where the TLS field
+    -- contains either random or fixed data instead of the timestamp
+    local reftm = tm
+    local status
+    status, tm = test_time_sample(host, port, reftm)
+    if status and status == result.STAGNANT then
+      -- The target clock did not advance between the two samples (reftm, tm)
+      -- Let's wait long enough for the target clock to advance
+      -- and then re-take the second sample
+      stdnse.sleep(1.1)
+      status, tm = test_time_sample(host, port, reftm)
+    end
+    if not status then
+      return stdnse.format_output(false, "Unable to obtain data from the target")
+    end
+    if status ~= result.ACCEPTED then
+      return {}, "TLS randomness does not represent time"
     end
   end
+
+  local output = {
+                 date = stdnse.format_timestamp(tm.target, 0),
+                 delta = tm.delta,
+                 }
+  return output,
+         string.format("%s; %s from scanner time.", output.date,
+                 stdnse.format_difftime(os.date("!*t", tm.target),
+                                        os.date("!*t", tm.scanner)))
 end

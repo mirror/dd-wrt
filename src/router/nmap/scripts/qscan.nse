@@ -1,4 +1,5 @@
 local bin = require "bin"
+local ipOps = require "ipOps"
 local math = require "math"
 local nmap = require "nmap"
 local packet = require "packet"
@@ -32,11 +33,19 @@ for Nmap.
 -- @usage
 -- nmap --script qscan --script-args qscan.confidence=0.95,qscan.delay=200ms,qscan.numtrips=10 target
 --
--- @args confidence Confidence level: <code>0.75</code>, <code>0.9</code>, <code>0.95</code>, <code>0.975</code>, <code>0.99</code>, <code>0.995</code>, or <code>0.9995</code>.
--- @args delay Average delay between packet sends. This is a number followed by <code>ms</code> for milliseconds or <code>s</code> for seconds. (<code>m</code> and <code>h</code> are also supported but are too long for timeouts.) The actual delay will randomly vary between 50% and 150% of the time specified. Default: <code>200ms</code>.
+-- @args confidence Confidence level: <code>0.75</code>, <code>0.9</code>,
+--       <code>0.95</code>, <code>0.975</code>, <code>0.99</code>,
+--       <code>0.995</code>, or <code>0.9995</code>.
+-- @args delay Average delay between packet sends. This is a number followed by
+--       <code>ms</code> for milliseconds or <code>s</code> for seconds.
+--       (<code>m</code> and <code>h</code> are also supported but are too long
+--       for timeouts.) The actual delay will randomly vary between 50% and
+--       150% of the time specified. Default: <code>200ms</code>.
 -- @args numtrips Number of round-trip times to try to get.
--- @args numopen Maximum number of open ports to probe (default 8). A negative number disables the limit.
--- @args numclosed Maximum number of closed ports to probe (default 1). A negative number disables the limit.
+-- @args numopen Maximum number of open ports to probe (default 8). A negative
+--       number disables the limit.
+-- @args numclosed Maximum number of closed ports to probe (default 1). A
+--       negative number disables the limit.
 --
 -- @output
 -- | qscan:
@@ -54,7 +63,7 @@ for Nmap.
 
 author = "Kris Katterjohn"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"safe", "discovery"}
 
@@ -365,7 +374,7 @@ hostrule = function(host)
   if not nmap.is_privileged() then
     nmap.registry[SCRIPT_NAME] = nmap.registry[SCRIPT_NAME] or {}
     if not nmap.registry[SCRIPT_NAME].rootfail then
-      stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+      stdnse.verbose1("not running for lack of privileges.")
     end
     nmap.registry[SCRIPT_NAME].rootfail = true
     return nil
@@ -374,7 +383,7 @@ hostrule = function(host)
   local numopen, numclosed = NUMOPEN, NUMCLOSED
 
   if nmap.address_family() ~= 'inet' then
-    stdnse.print_debug("%s is IPv4 compatible only.", SCRIPT_NAME)
+    stdnse.debug1("is IPv4 compatible only.")
     return false
   end
   if not host.interface then
@@ -402,8 +411,8 @@ end
 action = function(host)
   local sock = nmap.new_dnet()
   local pcap = nmap.new_socket()
-  local saddr = packet.toip(host.bin_ip_src)
-  local daddr = packet.toip(host.bin_ip)
+  local saddr = ipOps.str_to_ip(host.bin_ip_src)
+  local daddr = ipOps.str_to_ip(host.bin_ip)
   local start
   local rtt
   local stats = {}

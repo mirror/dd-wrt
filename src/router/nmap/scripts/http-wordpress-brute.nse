@@ -52,7 +52,7 @@ Wordpress default uri and form names:
 --
 
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -87,13 +87,13 @@ Driver = {
 
   login = function( self, username, password )
     -- Note the no_cache directive
-    stdnse.print_debug(2, "HTTP POST %s%s\n", self.host, self.uri)
+    stdnse.debug2("HTTP POST %s%s\n", self.host, self.uri)
     local response = http.post( self.host, self.port, self.uri, { no_cache = true }, nil, { [self.options.uservar] = username, [self.options.passvar] = password } )
                 -- This redirect is taking us to /wp-admin
     if response.status == 302 then
       local c = creds.Credentials:new( SCRIPT_NAME, self.host, self.port )
       c:add(username, password, creds.State.VALID )
-      return true, brute.Account:new( username, password, "OPEN")
+      return true, creds.Account:new( username, password, creds.State.VALID)
     end
 
     return false, brute.Error:new( "Incorrect password" )
@@ -105,13 +105,13 @@ Driver = {
 
   check = function( self )
     local response = http.get( self.host, self.port, self.uri )
-    stdnse.print_debug(1, "HTTP GET %s%s", stdnse.get_hostname(self.host),self.uri)
+    stdnse.debug1("HTTP GET %s%s", stdnse.get_hostname(self.host),self.uri)
     -- Check if password field is there
     if ( response.status == 200 and response.body:match('type=[\'"]password[\'"]')) then
-      stdnse.print_debug(1, "Initial check passed. Launching brute force attack")
+      stdnse.debug1("Initial check passed. Launching brute force attack")
       return true
     else
-      stdnse.print_debug(1, "Initial check failed. Password field wasn't found")
+      stdnse.debug1("Initial check failed. Password field wasn't found")
     end
 
     return false

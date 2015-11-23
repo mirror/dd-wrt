@@ -3,7 +3,7 @@
 -- formatting key fingerprints.
 --
 -- @author Sven Klemm <sven@c3d2.de>
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 
 local bin = require "bin"
@@ -41,7 +41,8 @@ check_packet_length = function( buffer )
 end
 
 --- Receives a complete SSH packet, even if fragmented
---  this function is an abstraction layer to deal with
+--
+--  This function is an abstraction layer to deal with
 --  checking the packet size to know if there is any more
 --  data to receive.
 --
@@ -106,7 +107,8 @@ fetch_host_key = function(host, port)
       fp_input = mod:tobin()..exp:tobin()
 
       return {exp=exp,mod=mod,bits=host_key_bits,key_type='rsa1',fp_input=fp_input,
-              full_key=exp:todec()..' '..mod:todec(),algorithm="RSA1",
+              full_key=('%d %s %s'):format(host_key_bits, exp:todec(), mod:todec()),
+              key=('%s %s'):format(exp:todec(), mod:todec()), algorithm="RSA1",
               fingerprint=openssl.md5(fp_input)}
     end
   end

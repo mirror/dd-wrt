@@ -3,7 +3,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -94,8 +94,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -116,7 +115,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -225,7 +224,10 @@ static u16 global_id;
 static std::map<struct HopIdent, Hop *> hop_cache;
 /* A list of timedout hops, which are not kept in hop_cache, so we can delete
    all hops on occasion. */
-static std::list<Hop *> timedout_hops;
+/* This would be stack-allocated except for a weird bug on AIX that causes
+ * infinite loops when trying to traverse the list. For some reason,
+ * dynamically allocating it fixes the bug. */
+static std::list<Hop *> *timedout_hops = NULL;
 /* The TTL at which we start sending probes if we don't have a distance
    estimate. This is updated after each host group on the assumption that hosts
    across groups will not differ much in distance. Having this closer to the
@@ -743,8 +745,8 @@ public:
     ack = 0;
     if ((pspec.pd.tcp.flags & TH_SYN) == TH_SYN) {
       /* MSS 1460 bytes. */
-      tcpopts = "\x02\x04\x05\xb4";
-      tcpoptslen = 4;
+      tcpopts = TCP_SYN_PROBE_OPTIONS;
+      tcpoptslen = TCP_SYN_PROBE_OPTIONS_LEN;
     } else if ((pspec.pd.tcp.flags & TH_ACK) == TH_ACK) {
       ack = get_random_u32();
     }
@@ -995,14 +997,14 @@ static Hop *hop_cache_lookup(u8 ttl, const struct sockaddr_storage *addr) {
 
 static void hop_cache_insert(Hop *hop) {
   if (hop->addr.ss_family == 0) {
-    timedout_hops.push_back(hop);
+    timedout_hops->push_back(hop);
   } else {
     hop_cache[HopIdent(hop->ttl, hop->addr)] = hop;
   }
 }
 
 static unsigned int hop_cache_size() {
-  return hop_cache.size() + timedout_hops.size();
+  return hop_cache.size() + timedout_hops->size();
 }
 
 void traceroute_hop_cache_clear() {
@@ -1012,9 +1014,10 @@ void traceroute_hop_cache_clear() {
   for (map_iter = hop_cache.begin(); map_iter != hop_cache.end(); map_iter++)
     delete map_iter->second;
   hop_cache.clear();
-  for (list_iter = timedout_hops.begin(); list_iter != timedout_hops.end(); list_iter++)
+  if (!timedout_hops) return;
+  for (list_iter = timedout_hops->begin(); list_iter != timedout_hops->end(); list_iter++)
     delete *list_iter;
-  timedout_hops.clear();
+  timedout_hops->clear();
 }
 
 /* Merge two hop chains together and return the head of the merged chain. This
@@ -1081,7 +1084,7 @@ static Hop *merge_hops(const struct sockaddr_storage *tag, Hop *a, Hop *b) {
     p->parent = a;
   else if (b != NULL)
     p->parent = b;
-  for ( ; p != NULL; p = p->parent)
+  for (; p != NULL; p = p->parent)
     p->tag = *tag;
 
   return head.parent;
@@ -1208,6 +1211,7 @@ static bool decode_reply(const void *ip, unsigned int len, Reply *reply) {
     return false;
 
   reply->from_addr = hdr.src;
+  reply->ttl = hdr.ttl;
 
   if (hdr.version == 4 && hdr.proto == IPPROTO_ICMP) {
     /* ICMP responses comprise all the TTL exceeded messages we expect from all
@@ -1561,6 +1565,10 @@ static int traceroute_remote(std::vector<Target *> targets) {
 
   if (targets.empty())
     return 1;
+
+  if (timedout_hops == NULL) {
+    timedout_hops = new std::list<Hop *>;
+  }
 
   TracerouteState global_state(targets);
 

@@ -1,6 +1,5 @@
 local http = require "http"
 local nmap = require "nmap"
-local pcre = require "pcre"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local table = require "table"
@@ -8,22 +7,23 @@ local table = require "table"
 description = [[
 Exploits the Max-Forwards HTTP header to detect the presence of reverse proxies.
 
-The script works by sending HTTP requests with values of the Max-Forwards HTTP header varying
-from 0 to 2 and checking for any anomalies in certain response values such as the status code,
-Server, Content-Type and Content-Length HTTP headers and body values such as the html title.
+The script works by sending HTTP requests with values of the Max-Forwards HTTP
+header varying from 0 to 2 and checking for any anomalies in certain response
+values such as the status code, Server, Content-Type and Content-Length HTTP
+headers and body values such as the HTML title.
 
 Based on the work of:
 * Nicolas Gregoire (nicolas.gregoire@agarri.fr)
 * Julien Cayssol (tools@aqwz.com)
 
 For more information, see:
-    * http://www.agarri.fr/kom/archives/2011/11/12/traceroute-like_http_scanner/index.html
+* http://www.agarri.fr/kom/archives/2011/11/12/traceroute-like_http_scanner/index.html
 ]]
 
 ---
 -- @args http-traceroute.path The path to send requests to. Defaults to <code>/</code>.
 -- @args http-traceroute.method HTTP request method to use. Defaults to <code>GET</code>.
--- among other values, TRACE is probably the most interesting.
+-- Among other values, TRACE is probably the most interesting.
 --
 -- @usage
 -- nmap --script=http-traceroute <targets>
@@ -59,7 +59,7 @@ For more information, see:
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"discovery", "safe"}
 
@@ -69,29 +69,15 @@ portrule = shortport.service("http")
 --- Attempts to extract the html title
 -- from an HTTP response body.
 --@param responsebody Response's body.
-local extract_title = function(responsebody)
-  local title = ''
-  local titlere = '<title>(?P<title>.*)</title>'
-  local regex = pcre.new(titlere, 0, "C")
-  local limit, limit2, matches = regex:match(responsebody)
-  if limit ~= nil then
-    title = matches["title"]
-  end
-  return title
+local function extract_title (responsebody)
+  return responsebody:match "<title>(.-)</title>"
 end
 
 --- Attempts to extract the X-Forwarded-For header
 -- from an HTTP response body in case of TRACE requests.
 --@param responsebody Response's body.
-local extract_xfwd = function(responsebody)
-  local xfwd = ''
-  local xfwdre = '(?P<xfwd>X-Forwarded-For: .*)'
-  local regex = pcre.new(xfwdre, 0, "C")
-  local limit, limit2, matches = regex:match(responsebody)
-  if limit ~= nil then
-    xfwd = matches["xfwd"]
-  end
-  return xfwd
+local function extract_xfwd (responsebody)
+  return responsebody:match "X-Forwarded-For: [^\r\n]*"
 end
 
 ---  Check for differences in response headers, status code

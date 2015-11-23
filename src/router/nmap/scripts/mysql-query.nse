@@ -31,7 +31,7 @@ Runs a query against a MySQL database and returns the results as a table.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"auth", "discovery", "safe"}
 
 
@@ -44,7 +44,7 @@ local arg_password  = stdnse.get_script_args(SCRIPT_NAME .. ".password") or ""
 local arg_query     = stdnse.get_script_args(SCRIPT_NAME .. ".query")
 local arg_noheaders = stdnse.get_script_args(SCRIPT_NAME .. ".noheaders") or false
 
-local function fail(err) return ("\n  ERROR: %s"):format(err or "") end
+local function fail(err) return stdnse.format_output(false, err) end
 
 local function getCredentials()
   -- first, let's see if the script has any credentials as arguments?
@@ -74,13 +74,13 @@ end
 
 action = function(host, port)
   if ( not(arg_query) ) then
-    stdnse.print_debug(2, "No query was given, aborting ...")
+    stdnse.debug2("No query was given, aborting ...")
     return
   end
 
   local creds = getCredentials()
   if ( not(creds) ) then
-    stdnse.print_debug(2, "No credentials were supplied, aborting ...")
+    stdnse.debug2("No credentials were supplied, aborting ...")
     return
   end
 
@@ -114,5 +114,5 @@ action = function(host, port)
       socket:close()
     end
   end
-  return stdnse.format_output(true, (last_error and ("ERROR: %s"):format(last_error) or result))
+  return stdnse.format_output(not last_error, last_error or result)
 end

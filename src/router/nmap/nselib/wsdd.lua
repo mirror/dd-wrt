@@ -29,7 +29,7 @@
 -- </code>
 --
 -- @author "Patrik Karlsson <patrik@cqure.net>"
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 
 local bin = require "bin"
@@ -165,9 +165,9 @@ Decoders = {
   -- @return status true on success, false on failure
   -- @return err string containing the error message
   ['error'] = function( data )
-    local response = "Failed to decode response from device: "
     local err = data:match("<SOAP.-ENV:Reason><SOAP.-ENV:Text>(.-)<")
-    response = response .. (err or "Unknown error")
+    local response = "Failed to decode response from device: "
+    .. (err or "Unknown error")
 
     return true, response
   end,
@@ -255,7 +255,7 @@ Comm = {
       local _, ip
       status, _, _, ip, _ = self.socket:get_info()
       if( not(status) ) then
-        stdnse.print_debug( 3, "wsdd.recvProbeMatches: ERROR: Failed to get socket info" )
+        stdnse.debug3("wsdd.recvProbeMatches: ERROR: Failed to get socket info" )
         return false, "ERROR: Failed to get socket info"
       end
 

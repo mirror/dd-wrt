@@ -4,7 +4,6 @@ local math = require "math"
 local nmap = require "nmap"
 local packet = require "packet"
 local stdnse = require "stdnse"
-local string = require "string"
 local table = require "table"
 
 description = [[
@@ -28,7 +27,7 @@ header.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"broadcast", "safe"}
 
 
@@ -52,7 +51,7 @@ ATAoE = {
         minor = 0xff,
         error = 0,
         cmd = ATAoE.Cmd.QUERY_CONFIG_INFORMATION,
-        tag = tag or createRandomTag(),
+        tag = tag or math.random(0,0xffffffff),
       }
       setmetatable(o, self)
       self.__index = self
@@ -98,13 +97,6 @@ ATAoE = {
   }
 }
 
--- Creates a random AoE header tag
-function createRandomTag()
-  local str = ""
-  for i=1, 4 do str = str .. string.char(math.random(255)) end
-  return select(2, bin.unpack(">I", str))
-end
-
 -- Send a Config Info Request to the ethernet broadcast address
 -- @param iface table as returned by nmap.get_interface_info()
 local function sendConfigInfoRequest(iface)
@@ -125,24 +117,22 @@ local function sendConfigInfoRequest(iface)
   dnet:ethernet_close()
 end
 
-local function fail(err) return ("\n  ERROR: %s"):format(err or "") end
-
 action = function()
 
   local iname = nmap.get_interface()
   if ( not(iname) ) then
-    stdnse.print_debug("%s: No interface supplied, use -e", SCRIPT_NAME)
+    stdnse.verbose1("No interface supplied, use -e")
     return
   end
 
   if ( not(nmap.is_privileged()) ) then
-    stdnse.print_debug("%s: not running for lack of privileges", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges")
     return
   end
 
   local iface = nmap.get_interface_info(iname)
   if ( not(iface) ) then
-    return fail("Failed to retrieve interface information")
+    return stdnse.format_output(false, "Failed to retrieve interface information")
   end
 
   local pcap = nmap.new_socket()

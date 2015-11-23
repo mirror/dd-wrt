@@ -3,7 +3,7 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+# * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
 # * also a registered trademark of Insecure.Com LLC.  This program is free  *
 # * software; you may redistribute and/or modify it under the terms of the  *
 # * GNU General Public License as published by the Free Software            *
@@ -94,8 +94,7 @@
 # *                                                                         *
 # * Source is provided to this software because we believe users have a     *
 # * right to know exactly what a program is going to do before they run it. *
-# * This also allows you to audit the software for security holes (none     *
-# * have been found so far).                                                *
+# * This also allows you to audit the software for security holes.          *
 # *                                                                         *
 # * Source code also allows you to port Nmap to new platforms, fix bugs,    *
 # * and add new features.  You are highly encouraged to send your changes   *
@@ -116,7 +115,7 @@
 # * WITHOUT ANY WARRANTY; without even the implied warranty of              *
 # * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
 # * license file for more details (it's in a COPYING file included with     *
-# * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+# * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
 # *                                                                         *
 # ***************************************************************************/
 
@@ -216,16 +215,18 @@ class NmapOutputViewer (gtk.VBox):
     def go_to_host(self, host):
         """Go to host line on nmap output result"""
         buff = self.text_view.get_buffer()
-        start_iter, end_iter = buff.get_bounds()
+        start_iter = buff.get_start_iter()
 
-        output = buff.get_text(start_iter, end_iter).split("\n")
-        re_host = re.compile(r'^Nmap scan report for %s\s*$' % re.escape(host))
+        found_tuple = start_iter.forward_search(
+                "\nNmap scan report for %s\n" % host, gtk.TEXT_SEARCH_TEXT_ONLY
+                )
+        if found_tuple is None:
+                return
 
-        for i in xrange(len(output)):
-            if re_host.match(output[i]):
-                self.text_view.scroll_to_iter(
-                        buff.get_iter_at_line(i), 0, True, 0, 0)
-                break
+        found = found_tuple[0]
+        if not found.forward_line():
+            return
+        self.text_view.scroll_to_iter(found, 0, True, 0, 0)
 
     def show_output_properties(self, widget):
         nmap_out_prop = NmapOutputProperties(self.text_view)
@@ -294,8 +295,11 @@ class NmapOutputViewer (gtk.VBox):
 
     def show_nmap_output(self, output):
         """Show the string (or unicode) output in the output display."""
-        self.text_view.get_buffer().set_text(output)
-        self.apply_highlighting()
+        try:
+            self.text_view.get_buffer().set_text(output)
+            self.apply_highlighting()
+        except MemoryError:
+            self.show_large_output_message(self.command_execution)
 
     def set_command_execution(self, command):
         """Set the live running command whose output is shown by this display.
@@ -307,6 +311,31 @@ class NmapOutputViewer (gtk.VBox):
         else:
             self.output_file_pointer = None
         self.refresh_output()
+
+    def show_large_output_message(self, command=None):
+        buf = self.text_view.get_buffer()
+        try:
+            running = (command is not None and command.scan_state() is True)
+        except:
+            running = False
+            complete = False
+        else:
+            complete = not running
+        if running:
+            buf.set_text("Warning: You have insufficient resources for Zenmap "
+                "to be able to display the complete output from Nmap here. \n"
+                "Zenmap will continue to run the scan to completion. However,"
+                " some features of Zenmap might not work as expected.")
+        elif complete:
+            buf.set_text("Warning: You have insufficient resources for Zenmap "
+                "to be able to display the complete output from Nmap here. \n"
+                "The scan has completed. However, some features of Zenmap "
+                "might not work as expected.")
+        else:
+            buf.set_text("Warning: You have insufficient resources for Zenmap "
+                "to be able to display the complete output from Nmap here. \n"
+                "The scan has been stopped. Some features of Zenmap might not "
+                "work as expected.")
 
     def refresh_output(self, widget=None):
         """Update the output from the latest output of the command associated
@@ -320,7 +349,13 @@ class NmapOutputViewer (gtk.VBox):
         # Seek to the end of the most recent read.
         self.command_execution.stdout_file.seek(self.output_file_pointer)
         pos = self.command_execution.stdout_file.tell()
-        new_output = self.command_execution.stdout_file.read()
+
+        try:
+            new_output = self.command_execution.stdout_file.read()
+        except MemoryError:
+            self.show_large_output_message(self.command_execution)
+            return
+
         self.output_file_pointer = self.command_execution.stdout_file.tell()
         # print "read %d -> %d %d" % (
         #         pos, self.output_file_pointer, len(new_output))
@@ -333,10 +368,14 @@ class NmapOutputViewer (gtk.VBox):
             buf = self.text_view.get_buffer()
             prev_end_mark = buf.create_mark(
                     None, buf.get_end_iter(), left_gravity=True)
-            buf.insert(buf.get_end_iter(), new_output)
-            # Highlight the new text.
-            self.apply_highlighting(
-                    buf.get_iter_at_mark(prev_end_mark), buf.get_end_iter())
+            try:
+                buf.insert(buf.get_end_iter(), new_output)
+                # Highlight the new text.
+                self.apply_highlighting(
+                        buf.get_iter_at_mark(prev_end_mark), buf.get_end_iter())
+            except MemoryError:
+                self.show_large_output_message(self.command_execution)
+                return
 
             if at_end:
                 # If we were already scrolled to the bottom, scroll back to the

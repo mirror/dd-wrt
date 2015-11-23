@@ -1,4 +1,5 @@
 local bin = require "bin"
+local ipOps = require "ipOps"
 local coroutine = require "coroutine"
 local nmap = require "nmap"
 local packet = require "packet"
@@ -8,7 +9,11 @@ local table = require "table"
 local target = require "target"
 
 description = [[
-Attempts to discover available IPv6 hosts on the LAN by sending an MLD (multicast listener discovery) query to the link-local multicast address (ff02::1) and listening for any responses.  The query's maximum response delay set to 0 to provoke hosts to respond immediately rather than waiting for other responses from their multicast group.
+Attempts to discover available IPv6 hosts on the LAN by sending an MLD
+(multicast listener discovery) query to the link-local multicast address
+(ff02::1) and listening for any responses.  The query's maximum response delay
+set to 0 to provoke hosts to respond immediately rather than waiting for other
+responses from their multicast group.
 ]]
 
 ---
@@ -28,7 +33,7 @@ Attempts to discover available IPv6 hosts on the LAN by sending an MLD (multicas
 --
 
 author = "niteesh"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery","broadcast"}
 
 
@@ -36,7 +41,7 @@ local arg_timeout = stdnse.parse_timespec(stdnse.get_script_args(SCRIPT_NAME .. 
 
 prerule = function()
   if ( not(nmap.is_privileged()) ) then
-    stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges.")
     return false
   end
   return true
@@ -52,14 +57,14 @@ local function get_interfaces()
   if interface_name then
     -- single interface defined
     local if_table = nmap.get_interface_info(interface_name)
-    if if_table and packet.ip6tobin(if_table.address) and if_table.link == "ethernet" then
+    if if_table and ipOps.ip_to_str(if_table.address) and if_table.link == "ethernet" then
       interfaces[#interfaces + 1] = if_table
     else
-      stdnse.print_debug("Interface not supported or not properly configured.")
+      stdnse.debug1("Interface not supported or not properly configured.")
     end
   else
     for _, if_table in ipairs(nmap.list_interfaces()) do
-      if packet.ip6tobin(if_table.address) and if_table.link == "ethernet" then
+      if ipOps.ip_to_str(if_table.address) and if_table.link == "ethernet" then
         table.insert(interfaces, if_table)
       end
     end
@@ -69,13 +74,13 @@ local function get_interfaces()
 end
 
 local function single_interface_broadcast(if_nfo, results)
-  stdnse.print_debug(2, "Starting " .. SCRIPT_NAME .. " on " .. if_nfo.device)
+  stdnse.debug2("Starting " .. SCRIPT_NAME .. " on " .. if_nfo.device)
   local condvar = nmap.condvar(results)
   local src_mac = if_nfo.mac
-  local src_ip6 = packet.ip6tobin(if_nfo.address)
+  local src_ip6 = ipOps.ip_to_str(if_nfo.address)
   local dst_mac = packet.mactobin("33:33:00:00:00:01")
-  local dst_ip6 = packet.ip6tobin("ff02::1")
-  local gen_qry = packet.ip6tobin("::")
+  local dst_ip6 = ipOps.ip_to_str("ff02::1")
+  local gen_qry = ipOps.ip_to_str("::")
 
   local dnet = nmap.new_dnet()
   local pcap = nmap.new_socket()

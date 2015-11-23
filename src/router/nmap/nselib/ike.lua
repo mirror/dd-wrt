@@ -1,11 +1,32 @@
+---
+--A very basic IKE library.
+--
+--The current functionality includes:
+--  1. Generating a Main or Aggressive Mode IKE request packet with a variable amount of transforms and a vpn group.
+--  2. Sending a packet
+--  3. Receiving the response
+--  4. Parsing the response for VIDs
+--  5. Searching for the VIDs in 'ike-fingerprints.lua'
+--  6. returning a parsed info table
+--
+--This library is meant for extension, which could include:
+--  1. complete parsing of the response packet (might allow for better fingerprinting)
+--  2. adding more options to the request packet
+--     vendor field (might give better fingerprinting of services, e.g. Checkpoint)
+--  3. backoff pattern analyses
+--  ...
+--
+--An a implementation resembling 'ike-scan' could be built.
+--
+--@author Jesper Kueckelhahn
+--@license Same as Nmap--See https://nmap.org/book/man-legal.html
+
 local _G = require "_G"
 local bin = require "bin"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
-local math = require "math"
-local io = require "io"
 
 
 description = [[
@@ -106,7 +127,7 @@ local function load_fingerprints()
 
   -- Check if fingerprints are cached
   if(nmap.registry.ike_fingerprints ~= nil) then
-    stdnse.print_debug(1, "ike: Loading cached fingerprints")
+    stdnse.debug1("ike: Loading cached fingerprints")
     return nmap.registry.ike_fingerprints
   end
 
@@ -115,11 +136,11 @@ local function load_fingerprints()
   filename_full = nmap.fetchfile('nselib/data/ike-fingerprints.lua')
 
   -- Load the file
-  stdnse.print_debug(1, "ike: Loading fingerprints: %s", filename_full)
+  stdnse.debug1("ike: Loading fingerprints: %s", filename_full)
   local env = setmetatable({fingerprints = {}}, {__index = _G});
   file = loadfile(filename_full, "t", env)
   if( not(file) ) then
-    stdnse.print_debug(1, "ike: Couldn't load the file: %s", filename_full)
+    stdnse.debug1("ike: Couldn't load the file: %s", filename_full)
     return false, "Couldn't load fingerprint file: " .. filename_full
   end
   file()
@@ -137,12 +158,7 @@ end
 -- generate a random hex-string of length 'length'
 --
 local function generate_random(length)
-  local rnd = ""
-
-  for i=1, length do
-    rnd = rnd .. string.format("%.2X", math.random(255))
-  end
-  return rnd
+  return stdnse.generate_random_string(length * 2, '0123456789ABCDEF')
 end
 
 
@@ -175,9 +191,9 @@ local function extract_payloads(packet)
 
     -- debug
     if PAYLOADS[np] == 'VID' then
-      stdnse.print_debug(2, 'IKE: Found IKE Header: %s: %s - %s', np, PAYLOADS[np], payload)
+      stdnse.debug2('IKE: Found IKE Header: %s: %s - %s', np, PAYLOADS[np], payload)
     else
-      stdnse.print_debug(2, 'IKE: Found IKE Header: %s: %s', np, PAYLOADS[np])
+      stdnse.debug2('IKE: Found IKE Header: %s: %s', np, PAYLOADS[np])
     end
 
     -- Store payload
@@ -241,7 +257,7 @@ local function lookup(vendor_ids)
             local debug_string = ''
             if row.vendor  ~= nil then debug_string = debug_string .. row.vendor .. ' ' end
             if row.version ~= nil then debug_string = debug_string .. row.version       end
-            stdnse.print_debug(2, "IKE: Fingerprint: %s matches %s", vendor_id,  debug_string)
+            stdnse.debug2("IKE: Fingerprint: %s matches %s", vendor_id,  debug_string)
 
             -- Only store the first match
             if info.vendor == nil then
@@ -251,7 +267,7 @@ local function lookup(vendor_ids)
 
           elseif row.category == 'attribute' then
             info.attribs[ #info.attribs + 1] = row
-            stdnse.print_debug(2, "IKE: Attribute: %s matches %s", vendor_id, row.text)
+            stdnse.debug2("IKE: Attribute: %s matches %s", vendor_id, row.text)
             break
           end
         end
@@ -280,7 +296,7 @@ local function lookup(vendor_ids)
         if info.vendor.vendor  ~= nil then debug_string = debug_string .. info.vendor.vendor  .. ' ' end
         if info.vendor.version ~= nil then debug_string = debug_string .. info.vendor.version .. ' ' end
         if info.vendor.ostype  ~= nil then debug_string = debug_string .. info.vendor.ostype         end
-        stdnse.print_debug(2, 'IKE: No vendor match, but ordering match found: %s', debug_string)
+        stdnse.debug2('IKE: No vendor match, but ordering match found: %s', debug_string)
 
         return info
 
@@ -292,7 +308,7 @@ local function lookup(vendor_ids)
         debug_string = ''
         if info.vendor.vendor ~= nil then debug_string = debug_string .. info.vendor.vendor  .. ' to ' end
         if row.ostype ~= nil then debug_string = debug_string .. row.ostype end
-        stdnse.print_debug(2, 'IKE: Vendor and ordering match. OS updated: %s', debug_string)
+        stdnse.debug2('IKE: Vendor and ordering match. OS updated: %s', debug_string)
 
         return info
 
@@ -302,7 +318,7 @@ local function lookup(vendor_ids)
         debug_string = ''
         if info.vendor.vendor ~= nil then debug_string = debug_string .. info.vendor.vendor  .. ' vs ' end
         if row.vendor ~= nil then debug_string = debug_string .. row.vendor end
-        stdnse.print_debug(2, 'IKE: Found an ordering match, but vendors do not match. %s', debug_string)
+        stdnse.debug2('IKE: Found an ordering match, but vendors do not match. %s', debug_string)
 
       end
     end

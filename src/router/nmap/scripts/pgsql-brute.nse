@@ -33,7 +33,7 @@ Performs password guessing against PostgreSQL.
 --  o SSL can be denied per host or network level
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -82,7 +82,7 @@ action = function( host, port )
     elseif ( tonumber(nmap.registry.args['pgsql.version']) == 3 ) then
       pg = pgsql.v3
     else
-      stdnse.print_debug("pgsql-brute: Unsupported version %s", nmap.registry.args['pgsql.version'])
+      stdnse.debug1("Unsupported version %s", nmap.registry.args['pgsql.version'])
       return
     end
   else
@@ -105,7 +105,7 @@ action = function( host, port )
   for username in usernames do
     ssl_enable = not(nossl)
     for password in passwords do
-      stdnse.print_debug("Trying %s/%s ...", username, password )
+      stdnse.debug1("Trying %s/%s ...", username, password )
       local socket = connectSocket( host, port, ssl_enable )
       status, response = pg.sendStartup(socket, username, username)
 
@@ -126,10 +126,10 @@ action = function( host, port )
         status, response = pg.sendStartup(socket, username, username)
         if (not(status)) then
           if ( response:match("no pg_hba.conf entry for host") ) then
-            stdnse.print_debug("The host was denied access to db \"%s\" as user \"%s\", aborting ...", username, username )
+            stdnse.debug1("The host was denied access to db \"%s\" as user \"%s\", aborting ...", username, username )
             break
           else
-            stdnse.print_debug("pgsql-brute: sendStartup returned: %s", response )
+            stdnse.debug1("sendStartup returned: %s", response )
             break
           end
         end

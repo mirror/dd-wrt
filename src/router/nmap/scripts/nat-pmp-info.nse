@@ -1,7 +1,6 @@
 local natpmp = require "natpmp"
 local nmap = require "nmap"
 local shortport = require "shortport"
-local stdnse = require "stdnse"
 
 description = [[
 Gets the routers WAN IP using the NAT Port Mapping Protocol (NAT-PMP).
@@ -20,9 +19,14 @@ The NAT-PMP protocol is supported by a broad range of routers including:
 ---
 --@usage
 -- nmap -sU -p 5351 --script=nat-pmp-info <target>
+-- @output
+-- | nat-pmp-info:
+-- |_  WAN IP: 192.0.2.13
+-- @xmloutput
+-- <elem key="WAN IP">192.0.2.13</elem>
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 
@@ -37,6 +41,6 @@ action = function(host, port)
     port.version.name = "nat-pmp"
     nmap.set_port_version(host, port)
 
-    return stdnse.format_output(true, ("WAN IP: %s"):format(response.ip))
+    return {["WAN IP"] = response.ip}
   end
 end

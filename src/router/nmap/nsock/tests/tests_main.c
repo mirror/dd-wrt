@@ -1,10 +1,11 @@
 /*
  * Nsock regression test suite
- * Same license as nmap -- see http://nmap.org/book/man-legal.html
+ * Same license as nmap -- see https://nmap.org/book/man-legal.html
  */
 
 
 #include "test-common.h"
+#include "string.h"
 
 
 #ifndef WIN32
@@ -30,12 +31,15 @@ extern const struct test_case TestTimer;
 extern const struct test_case TestLogLevels;
 extern const struct test_case TestErrLevels;
 extern const struct test_case TestConnectTCP;
+extern const struct test_case TestConnectFailure;
 extern const struct test_case TestGHLists;
 extern const struct test_case TestGHHeaps;
 extern const struct test_case TestHeapOrdering;
 extern const struct test_case TestCancelTCP;
 extern const struct test_case TestCancelUDP;
+#ifdef HAVE_OPENSSL
 extern const struct test_case TestCancelSSL;
+#endif
 
 
 static const struct test_case *TestCases[] = {
@@ -48,6 +52,7 @@ static const struct test_case *TestCases[] = {
   &TestErrLevels,
   /* ---- connect.c */
   &TestConnectTCP,
+  &TestConnectFailure,
   /* ---- ghlists.c */
   &TestGHLists,
   /* ---- ghheaps.c */
@@ -56,7 +61,9 @@ static const struct test_case *TestCases[] = {
   /* ---- cancel.c */
   &TestCancelTCP,
   &TestCancelUDP,
+#ifdef HAVE_OPENSSL
   &TestCancelSSL,
+#endif
   NULL
 };
 
@@ -79,6 +86,7 @@ static int test_case_run(const struct test_case *test) {
 #ifdef WIN32
 static int win_init(void) {
   WSADATA data;
+  int rc;
 
   rc = WSAStartup(MAKEWORD(2, 2), &data);
   if (rc)
@@ -90,6 +98,15 @@ static int win_init(void) {
 
 int main(int ac, char **av) {
   int rc, i;
+
+  /* simple "do we have ssl" check for run_tests.sh */
+  if (ac == 2 && !strncmp(av[1], "--ssl", 5)) {
+#ifdef HAVE_SSL
+    return 0;
+#else
+    return 1;
+#endif
+  }
 
 #ifdef WIN32
   win_init();

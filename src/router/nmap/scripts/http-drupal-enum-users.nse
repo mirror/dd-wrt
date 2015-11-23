@@ -5,7 +5,7 @@ local stdnse = require "stdnse"
 local table = require "table"
 
 description = [[
-Enumerates Drupal users by exploiting a an information disclosure vulnerability
+Enumerates Drupal users by exploiting an information disclosure vulnerability
 in Views, Drupal's most popular module.
 
 Requests to admin/views/ajax/autocomplete/user/STRING return all usernames that
@@ -13,7 +13,7 @@ begin with STRING. The script works by iterating STRING over letters to extract
 all usernames.
 
 For more information,see:
- * http://www.madirish.net/node/465
+* http://www.madirish.net/node/465
 ]]
 
 ---
@@ -32,7 +32,7 @@ For more information,see:
 -- @args http-drupal-enum-users.root base path. Defaults to "/"
 
 author = "Hani Benhabiles"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "intrusive"}
 
 
@@ -60,7 +60,7 @@ action = function(host, port)
   -- send requests
   local pipeline_responses = http.pipeline_go(host, port, allrequests)
   if not pipeline_responses then
-    stdnse.print_debug(1, "%s: No answers from pipelined requests", SCRIPT_NAME)
+    stdnse.debug1("No answers from pipelined requests")
     return nil
   end
 

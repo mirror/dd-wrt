@@ -9,7 +9,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -100,8 +100,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -122,11 +121,11 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: idle_scan.cc 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: idle_scan.cc 34903 2015-07-14 03:08:17Z dmiller $ */
 
 /* IPv6 fragment ID sequence algorithms. http://seclists.org/nmap-dev/2013/q3/369.
         Android 4.1 (Linux 3.0.15) | Per host, incremental (1)
@@ -152,6 +151,8 @@
         Windows 8 Enterprise 32 bit | Global, incremental by 2
 */
 
+#include "libnetutil/npacket.h"
+
 #include "idle_scan.h"
 #include "timing.h"
 #include "osscan2.h"
@@ -159,7 +160,7 @@
 #include "NmapOps.h"
 #include "services.h"
 #include "Target.h"
-#include "utils.h"
+#include "nmap_error.h"
 #include "output.h"
 
 #include "struct_ip.h"
@@ -219,7 +220,7 @@ int ipv6_get_fragment_id(const struct ip6_hdr *ip6, unsigned int len) {
     p += (*(p + 1) + 1) * 8;
   }
 
-  if ( hdr != IP_PROTO_FRAGMENT ||  (p + 2 + sizeof(ip6_ext_data_fragment)) > end)
+  if (hdr != IP_PROTO_FRAGMENT ||  (p + 2 + sizeof(ip6_ext_data_fragment)) > end)
     return -1;
 
   frag_header = (struct ip6_ext_data_fragment *)( p + 2 );
@@ -281,7 +282,7 @@ static int ipid_proxy_probe(struct idle_proxy_info *proxy, int *probes_sent,
                   o.ipoptions, o.ipoptionslen,
                   base_port + tries, proxy->probe_port,
                   seq_base + (packet_send_count++ * 500) + 1, ack, 0, TH_SYN | TH_ACK, 0, 0,
-                  (u8 *) "\x02\x04\x05\xb4", 4,
+                  (u8 *) TCP_SYN_PROBE_OPTIONS, TCP_SYN_PROBE_OPTIONS_LEN,
                   NULL, 0);
     else {
       ipv6_packet = build_tcp_raw_ipv6(proxy->host.v6sourceip(), proxy->host.v6hostip(),
@@ -289,7 +290,7 @@ static int ipid_proxy_probe(struct idle_proxy_info *proxy, int *probes_sent,
                         o.ttl,
                         base_port + tries, proxy->probe_port,
                         seq_base + (packet_send_count++ * 500) + 1, ack, 0, TH_SYN | TH_ACK, 0, 0,
-                        (u8 *) "\x02\x04\x05\xb4", 4,
+                        (u8 *) TCP_SYN_PROBE_OPTIONS, TCP_SYN_PROBE_OPTIONS_LEN,
                         NULL, 0,
                         &packetlen);
       proxy->host.TargetSockAddr(&ss, &sslen);
@@ -313,7 +314,7 @@ static int ipid_proxy_probe(struct idle_proxy_info *proxy, int *probes_sent,
       gettimeofday(&tv_end, NULL);
       if (ip) {
         if (o.af() == AF_INET) {
-          if (bytes < ( 4 * ip->ip_hl) + 14U)
+          if (bytes < (4 * ip->ip_hl) + 14U)
             continue;
           if (ip->ip_p == IPPROTO_TCP)
             tcp = ((struct tcp_hdr *) (((char *) ip) + 4 * ip->ip_hl));
@@ -344,7 +345,7 @@ static int ipid_proxy_probe(struct idle_proxy_info *proxy, int *probes_sent,
               else if (o.af() == AF_INET6)
                 inet_ntop(AF_INET6, &(ip6->ip6_src), straddr, sizeof(straddr));
               error("Received unexpected response packet from %s during IP ID zombie probing:", straddr);
-              readtcppacket( (unsigned char *) ip, MIN(ntohs(ip->ip_len), bytes));
+              readtcppacket((unsigned char *) ip, MIN(ntohs(ip->ip_len), bytes));
             }
             continue;
           }
@@ -591,15 +592,23 @@ static void initialize_idleproxy(struct idle_proxy_info *proxy, char *proxyName,
   }
 
   /* If we have a : in IPv4 or [] in IPv6, we strip them off */
-  if (o.af() == AF_INET && strchr(proxyName, ':') != NULL )
-    strncpy(name, proxyName , MIN(strcspn(proxyName,":") , sizeof(name)));
-  else if (o.af() == AF_INET6 && strchr(proxyName, '[') != NULL && strchr(proxyName, ']') != NULL)
-    strncpy(name, strchr(proxyName, '[') + 1, MIN(strcspn(proxyName,"]") - strcspn(proxyName, "[") - 1, sizeof(name)));
+  if (o.af() == AF_INET && q != NULL ) {
+    /* I'm lazy, using a size_t we already had around */
+    sslen = MIN(strcspn(proxyName,":"), sizeof(name) - 1);
+    strncpy(name, proxyName, sslen);
+    /* Ensure NULL termination */
+    name[sslen] = '\0';
+  }
+  else if (o.af() == AF_INET6 && strchr(proxyName, '[') != NULL && strchr(proxyName, ']') != NULL) {
+    sslen = MIN(strcspn(proxyName,"]") - strcspn(proxyName, "[") - 1, sizeof(name) - 1);
+    strncpy(name, strchr(proxyName, '[') + 1, sslen);
+    name[sslen] = '\0';
+  }
   else
     strncpy(name, proxyName, sizeof(name));
 
   if (q) {
-    *q++ = '\0';
+    q++;
     proxy->probe_port = strtoul(q, &endptr, 10);
     if (*q == 0 || !endptr || *endptr != '\0' || !proxy->probe_port) {
       fatal("Invalid port number given in IP ID zombie specification: %s", proxyName);
@@ -719,7 +728,7 @@ static void initialize_idleproxy(struct idle_proxy_info *proxy, char *proxyName,
                    o.ipoptions, o.ipoptionslen,
                    o.magic_port + probes_sent + 1, proxy->probe_port,
                    sequence_base + probes_sent + 1, ack, 0, TH_SYN | TH_ACK, 0, 0,
-                   (u8 *) "\x02\x04\x05\xb4", 4,
+                   (u8 *) TCP_SYN_PROBE_OPTIONS, TCP_SYN_PROBE_OPTIONS_LEN,
                    NULL, 0);
     else if (o.af() == AF_INET6) {
       ipv6_packet = build_tcp_raw_ipv6(proxy->host.v6sourceip(), proxy->host.v6hostip(),
@@ -727,7 +736,7 @@ static void initialize_idleproxy(struct idle_proxy_info *proxy, char *proxyName,
                                        o.ttl,
                                        o.magic_port + probes_sent + 1, proxy->probe_port,
                                        sequence_base + probes_sent + 1, ack, 0, TH_SYN | TH_ACK, 0, 0,
-                                       (u8 *) "\x02\x04\x05\xb4", 4,
+                                       (u8 *) TCP_SYN_PROBE_OPTIONS, TCP_SYN_PROBE_OPTIONS_LEN,
                                        NULL, 0,
                                        &packetlen);
       res = send_ip_packet(proxy->rawsd, proxy->ethptr, &ss, ipv6_packet, packetlen);
@@ -767,7 +776,7 @@ static void initialize_idleproxy(struct idle_proxy_info *proxy, char *proxyName,
           continue; /* probably a duplicate */
         }
         lastipid = ip->ip_id;
-        if (bytes < ( 4 * ip->ip_hl) + 14U)
+        if (bytes < (4 * ip->ip_hl) + 14U)
           continue;
 
         if (ip->ip_p == IPPROTO_TCP) {
@@ -913,16 +922,16 @@ static void initialize_idleproxy(struct idle_proxy_info *proxy, char *proxyName,
                     o.ipoptions, o.ipoptionslen,
                     o.magic_port, proxy->probe_port,
                     sequence_base + probes_sent + 1, ack, 0, TH_SYN | TH_ACK, 0, 0,
-                    (u8 *) "\x02\x04\x05\xb4",
-                    4, NULL, 0);
+                    (u8 *) TCP_SYN_PROBE_OPTIONS,
+                    TCP_SYN_PROBE_OPTIONS_LEN, NULL, 0);
       } else {
         ipv6_packet = build_tcp_raw_ipv6(target->v6hostip(), proxy->host.v6hostip(),
                                          0x00, 0x0000,
                                          o.ttl,
                                          o.magic_port, proxy->probe_port,
                                          sequence_base + probes_sent + 1, ack, 0, TH_SYN | TH_ACK, 0, 0,
-                                         (u8 *) "\x02\x04\x05\xb4",
-                                         4, NULL, 0,
+                                         (u8 *) TCP_SYN_PROBE_OPTIONS,
+                                         TCP_SYN_PROBE_OPTIONS_LEN, NULL, 0,
                                          &packetlen);
         res = send_ip_packet(proxy->rawsd, proxy->ethptr, &ss, ipv6_packet, packetlen);
         if (res == -1)
@@ -1081,20 +1090,20 @@ static int idlescan_countopen2(struct idle_proxy_info *proxy,
        but doing it the straightforward way (using the same decoys as
        we use in probing the proxy box is risky.  I'll have to think
        about this more. */
-   if ( o.af() == AF_INET ) {
+   if (o.af() == AF_INET ) {
       send_tcp_raw(proxy->rawsd, eth.ethsd ? &eth : NULL,
                    proxy->host.v4hostip(), target->v4hostip(),
                    o.ttl, false,
                    o.ipoptions, o.ipoptionslen,
                    proxy->probe_port, ports[pr0be], seq, 0, 0, TH_SYN, 0, 0,
-                   (u8 *) "\x02\x04\x05\xb4", 4,
+                   (u8 *) TCP_SYN_PROBE_OPTIONS, TCP_SYN_PROBE_OPTIONS_LEN,
                    o.extra_payload, o.extra_payload_length);
    } else {
         packet = build_tcp_raw_ipv6(proxy->host.v6hostip(), target->v6hostip(),
                                     0x00, 0x0000,
                                     o.ttl,
                                     proxy->probe_port, ports[pr0be], seq, 0, 0, TH_SYN, 0, 0,
-                                    (u8 *) "\x02\x04\x05\xb4", 4,
+                                    (u8 *) TCP_SYN_PROBE_OPTIONS, TCP_SYN_PROBE_OPTIONS_LEN,
                                     o.extra_payload, o.extra_payload_length,
                                     &packetlen);
         res = send_ip_packet(proxy->rawsd, eth.ethsd ? &eth : NULL, &ss, packet, packetlen);

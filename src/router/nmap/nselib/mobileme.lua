@@ -1,6 +1,5 @@
 local http = require "http"
 local json = require "json"
-local package = require "package"
 local stdnse = require "stdnse"
 local table = require "table"
 _ENV = stdnse.module("mobileme", stdnse.seeall)
@@ -75,12 +74,12 @@ MobileMe = {
     if ( response.status == 200 ) then
       local status, resp = json.parse(response.body)
       if ( not(status) ) then
-        stdnse.print_debug(2, "Failed to parse JSON response from server")
+        stdnse.debug2("Failed to parse JSON response from server")
         return false, "Failed to parse JSON response from server"
       end
 
       if ( resp.statusCode ~= "200" ) then
-        stdnse.print_debug(2, "Failed to send message to server")
+        stdnse.debug2("Failed to send message to server")
         return false, "Failed to send message to server"
       end
     end
@@ -138,7 +137,7 @@ MobileMe = {
     return true, parsed_json
   end,
 
-  -- Get's a list of devices
+  -- Gets a list of devices
   -- @return devices table containing a list of devices
   getDevices = function(self)
     if ( not(self.devices) ) then
@@ -166,7 +165,7 @@ Helper = {
     return o
   end,
 
-  -- Get's the geolocation from each device
+  -- Gets the geolocation from each device
   --
   -- @return status true on success, false on failure
   -- @return result table containing a table of device locations

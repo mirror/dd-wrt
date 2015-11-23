@@ -1,11 +1,10 @@
 ---
 -- Simple Mail Transfer Protocol (SMTP) operations.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 local base64 = require "base64"
 local comm = require "comm"
-local nmap = require "nmap"
 local sasl = require "sasl"
 local stdnse = require "stdnse"
 local string = require "string"
@@ -227,12 +226,12 @@ check_reply = function(cmd, reply)
         return true, reply
       end
     else
-      stdnse.print_debug(3,
+      stdnse.debug3(
           "SMTP: check_smtp_reply failed: %s not supported", cmd)
       return false, string.format("SMTP: %s %s", cmd, reply)
     end
   end
-  stdnse.print_debug(3,
+  stdnse.debug3(
       "SMTP: check_smtp_reply failed: %s %s", cmd, reply)
   return false, string.format("SMTP: %s %s", cmd, reply)
 end
@@ -259,14 +258,14 @@ query = function(socket, cmd, data, lines)
   local st, ret = socket:send(string.format("%s\r\n", cmd))
   if not st then
     socket:close()
-    stdnse.print_debug(3, "SMTP: failed to send %s request.", cmd)
+    stdnse.debug3("SMTP: failed to send %s request.", cmd)
     return st, string.format("SMTP failed to send %s request.", cmd)
   end
 
   st, ret = socket:receive_lines(lines or 1)
   if not st then
     socket:close()
-    stdnse.print_debug(3, "SMTP %s: failed to receive data: %s.",
+    stdnse.debug3("SMTP %s: failed to receive data: %s.",
                     cmd, (ERROR_MESSAGES[ret] or 'unspecified error'))
     return st, string.format("SMTP %s: failed to receive data: %s",
                     cmd, (ERROR_MESSAGES[ret] or 'unspecified error'))
@@ -288,39 +287,16 @@ end
 -- @return response The response received on success and when
 --   the recv_before is set, or the error message on failures.
 connect = function(host, port, opts)
+  local socket, _, ret
   if opts.ssl then
-    local socket, _, _, ret = comm.tryssl(host, port, '', opts)
-    if not socket then
-      return socket, (ERROR_MESSAGES[ret] or 'unspecified error')
-    end
-    return socket, ret
+    socket, _, _, ret = comm.tryssl(host, port, '', opts)
   else
-    local timeout, recv, lines
-    local socket = nmap.new_socket()
-
-    if opts then
-      recv = opts.recv_before
-      timeout = opts.timeout
-      lines = opts.lines
-    end
-    socket:set_timeout(timeout or 8000)
-
-    local st, ret = socket:connect(host, port, port.protocol)
-    if not st then
-      socket:close()
-      return st, (ERROR_MESSAGES[ret] or 'unspecified error')
-    end
-
-    if recv then
-      st, ret = socket:receive_lines(lines or 1)
-      if not st then
-        socket:close()
-        return st, (ERROR_MESSAGES[ret] or 'unspecified error')
-      end
-    end
-
-  return socket, ret
+    socket, _, ret = comm.opencon(host, port, nil, opts)
   end
+  if not socket then
+    return socket, (ERROR_MESSAGES[ret] or 'unspecified error')
+  end
+  return socket, ret
 end
 
 --- Switches the plain text connection to be protected by the TLS protocol
@@ -580,7 +556,7 @@ end
 --
 -- @param socket connected to server.
 quit = function(socket)
-  stdnse.print_debug(3, "SMTP: sending 'QUIT'.")
+  stdnse.debug3("SMTP: sending 'QUIT'.")
   socket:send("QUIT\r\n")
   socket:close()
 end

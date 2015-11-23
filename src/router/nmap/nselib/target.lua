@@ -7,7 +7,7 @@
 -- able to add new targets. Post-scanning scripts (postrule) are not
 -- allowed to add new targets.
 --
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 --
 -- @args newtargets  If specified, lets NSE scripts add new targets.
 -- @args max-newtargets  Sets the number of the maximum allowed
@@ -82,7 +82,7 @@ add = function (...)
   -- Force the check here, but it would be better if scripts
   -- check ALLOW_NEW_TARGETS before calling target.add()
   if not ALLOW_NEW_TARGETS then
-    stdnse.print_debug(1,
+    stdnse.debug1(
         "ERROR: to add targets run with --script-args 'newtargets'")
     return false, "to add targets run with --script-args 'newtargets'"
   end
@@ -97,7 +97,7 @@ add = function (...)
   new_targets.count = calc_max_targets(new_targets.count)
 
   if new_targets.count == 0 then
-    stdnse.print_debug(3,
+    stdnse.debug3(
         "Warning: Maximum new targets reached, no more new targets.")
     return false, "Maximum new targets reached, no more new targets."
   end
@@ -105,7 +105,7 @@ add = function (...)
   local hosts, err = nmap.add_targets(table.unpack(new_targets,1,new_targets.count))
 
   if hosts == 0 then
-    stdnse.print_debug(3, "%s", err)
+    stdnse.debug3("%s", err)
     return false, err
   end
 

@@ -5,7 +5,7 @@
 -- The library consists of an OSPF class that contains code to handle OSPFv2 packets.
 --
 -- @author "Patrik Karlsson <patrik@cqure.net>"
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 local bin = require "bin"
 local bit = require "bit"
@@ -72,7 +72,7 @@ OSPF = {
         _, header.auth_data.hash = bin.unpack(">H"..header.auth_data.length, data, header.length+1)
       else
         -- Shouldn't happen
-        stdnse.print_debug("Unknown authentication type " .. header.auth_type)
+        stdnse.debug1("Unknown authentication type " .. header.auth_type)
         return nil
       end
       header.router_id = ipOps.fromdword(header.router_id)
@@ -98,15 +98,17 @@ OSPF = {
     end,
 
     __tostring = function(self)
-      local hdr = bin.pack(">CCS", self.ver, self.type, self.length )
-      hdr = hdr .. bin.pack(">IISS", ipOps.todword(self.router_id), self.area_id, self.chksum, self.auth_type)
+      local auth
       if self.auth_type == 0x00 then
-        hdr = hdr .. bin.pack(">L", 0x00)
+        auth = bin.pack(">L", 0x00)
       elseif self.auth_type == 0x01 then
-        hdr = hdr .. bin.pack(">A8", self.auth_data.password)
+        auth = bin.pack(">A8", self.auth_data.password)
       elseif self.auth_type == 0x02 then
-        hdr = hdr .. bin.pack(">A".. self.auth_data.length, self.auth_data.hash)
+        auth = bin.pack(">A".. self.auth_data.length, self.auth_data.hash)
       end
+      local hdr = bin.pack(">CCS", self.ver, self.type, self.length )
+      .. bin.pack(">IISS", ipOps.todword(self.router_id), self.area_id, self.chksum, self.auth_type)
+      .. auth
       return hdr
     end,
 
@@ -188,7 +190,7 @@ OSPF = {
       hello.BDR = ipOps.fromdword(hello.BDR)
 
       if ( ( #data - pos + 1 ) % 4 ~= 0 ) then
-        stdnse.print_debug(2, "Unexpected OSPF packet length, aborting ...")
+        stdnse.debug2("Unexpected OSPF packet length, aborting ...")
         return
       end
 

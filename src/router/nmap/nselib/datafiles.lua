@@ -8,7 +8,7 @@
 -- the function result. On failure, they return false and an error message.
 -- @author Kris Katterjohn 03/2008
 -- @author jah 08/2008
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 local io = require "io"
 local nmap = require "nmap"
@@ -137,6 +137,7 @@ end
 -- taken by <code>parse_lines</code>.
 -- @param filename Name of the file to parse.
 -- @param ... A table of capture patterns.
+-- @return Boolean status, false on failure
 -- @return A table whose structure mirrors that of the capture table,
 -- filled in with captured values.
 function parse_file(filename, ...)
@@ -225,7 +226,7 @@ function parse_lines(lines, data_struct)
         _, ret[index] = parse_lines( lines, value )
       else
         -- TEMP
-        stdnse.print_debug( "Error in datafiles.parse_lines: Index with type %s has unexpected value %s", type(index), type(value))
+        stdnse.debug1("Error in datafiles.parse_lines: Index with type %s has unexpected value %s", type(index), type(value))
       end
     elseif type(index) == "string" or type(index) == "function"  then
       if type( value ) == "string" or type( value ) == "function" then
@@ -235,7 +236,7 @@ function parse_lines(lines, data_struct)
       end
     else
       -- TEMP
-      stdnse.print_debug( "Error in datafiles.parse_lines: Index with type %s has unexpected value %s", type(index), type(value))
+      stdnse.debug1("Error in datafiles.parse_lines: Index with type %s has unexpected value %s", type(index), type(value))
     end
   end
 

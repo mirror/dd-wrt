@@ -2,6 +2,7 @@ local proxy = require "proxy"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local string = require "string"
+local table = require "table"
 local url = require "url"
 
 description=[[
@@ -41,7 +42,7 @@ the target to retrieve a web page from www.google.com.
 --   * If google is used, script checks for Server: gws
 
 author = "Arturo 'Buanzo' Busleiman"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "external", "safe"}
 
 --- Performs the custom test, with user's arguments
@@ -53,14 +54,14 @@ categories = {"default", "discovery", "external", "safe"}
 -- @return response String with supported methods
 function custom_test(host, port, test_url, pattern)
   local lstatus = false
-  local response = ""
+  local response = {}
   -- if pattern is not used, result for test is code check result.
   -- otherwise it is pattern check result.
 
   -- strip hostname
   if not string.match(test_url, "^http://.*") then
     test_url = "http://" .. test_url
-    stdnse.print_debug("URL missing scheme. URL concatenated to http://")
+    stdnse.debug1("URL missing scheme. URL concatenated to http://")
   end
   local url_table = url.parse(test_url)
   local hostname = url_table.host
@@ -70,17 +71,17 @@ function custom_test(host, port, test_url, pattern)
   local conn_status = proxy.test_connect(host, port, "http", hostname)
   if get_status then
     lstatus = true
-    response = response .. " GET"
+    response[#response+1] = "GET"
   end
   if head_status then
     lstatus = true
-    response = response .. " HEAD"
+    response[#response+1] = "HEAD"
   end
   if conn_status then
     lstatus = true
-    response = response .. " CONNECTION"
+    response[#response+1] = "CONNECTION"
   end
-  if lstatus then response = "Methods supported: " .. response end
+  if lstatus then response = "Methods supported: " .. table.concat(response, " ") end
   return lstatus, response
 end
 
@@ -101,7 +102,6 @@ end
 function default_test(host, port)
   local fstatus = false
   local cstatus = false
-  local response = ""
   local get_status, head_status, conn_status
   local get_r1, get_r2, get_r3
   local get_cstatus, head_cstatus
@@ -123,20 +123,20 @@ function default_test(host, port)
   -- pattern.
   -- if it was using the same flag, program could return without testing GET/HEAD
   -- once more before returning
-
-  if get_status then fstatus = true; response = response .. " GET" end
-  if head_status then fstatus = true; response = response .. " HEAD" end
-  if conn_status then cstatus = true; response = response .. " CONNECTION" end
+  local response = {}
+  if get_status then fstatus = true; response[#response+1] = "GET" end
+  if head_status then fstatus = true; response[#response+1] = "HEAD" end
+  if conn_status then cstatus = true; response[#response+1] = "CONNECTION" end
 
   -- if proxy is open, return it!
-  if fstatus then return fstatus, "Methods supported: " .. response end
+  if fstatus then return fstatus, "Methods supported: " .. table.concat(response, " ") end
 
   -- if we receive a invalid response, but with a valid
   -- response code, we should make a next attempt.
   -- if we do not receive any valid status code,
   -- there is no reason to keep testing... the proxy is probably not open
   if not (get_cstatus or head_cstatus or conn_status) then return false, nil end
-  stdnse.print_debug("Test 1 - Google Web Server\nReceived valid status codes, but pattern does not match")
+  stdnse.debug1("Test 1 - Google Web Server\nReceived valid status codes, but pattern does not match")
 
   test_url = "http://www.wikipedia.org"
   hostname = "www.wikipedia.org"
@@ -145,18 +145,18 @@ function default_test(host, port)
   head_status, _, head_cstatus = proxy.test_head(host, port, "http", test_url, hostname, pattern)
   conn_status = proxy.test_connect(host, port, "http", hostname)
 
-  if get_status then fstatus = true; response = response .. " GET" end
-  if head_status then fstatus = true; response = response .. " HEAD" end
+  if get_status then fstatus = true; response[#response+1] = "GET" end
+  if head_status then fstatus = true; response[#response+1] = "HEAD" end
   if conn_status then
-    if not cstatus then response = response .. " CONNECTION" end
+    if not cstatus then response[#response+1] = "CONNECTION" end
     cstatus = true
   end
 
-  if fstatus then return fstatus, "Methods supported: "  .. response end
+  if fstatus then return fstatus, "Methods supported: "  .. table.concat(response, " ") end
 
   -- same valid code checking as above
   if not (get_cstatus or head_cstatus or conn_status) then return false, nil end
-  stdnse.print_debug("Test 2 - Wikipedia.org\nReceived valid status codes, but pattern does not match")
+  stdnse.debug1("Test 2 - Wikipedia.org\nReceived valid status codes, but pattern does not match")
 
   test_url = "http://www.computerhistory.org"
   hostname = "www.computerhistory.org"
@@ -164,15 +164,15 @@ function default_test(host, port)
   get_status, get_r3, get_cstatus = proxy.test_get(host, port, "http", test_url, hostname, pattern)
   conn_status = proxy.test_connect(host, port, "http", hostname)
 
-  if get_status then fstatus = true; response = response .. " GET" end
+  if get_status then fstatus = true; response[#response+1] = "GET" end
   if conn_status then
-    if not cstatus then response = response .. " CONNECTION" end
+    if not cstatus then response[#response+1] = "CONNECTION" end
     cstatus = true
   end
 
-  if fstatus then return fstatus, "Methods supported:" .. response end
+  if fstatus then return fstatus, "Methods supported:" .. table.concat(response, " ") end
   if not get_cstatus then
-    stdnse.print_debug("Test 3 - Computer History\nReceived valid status codes, but pattern does not match")
+    stdnse.debug1("Test 3 - Computer History\nReceived valid status codes, but pattern does not match")
   end
 
   -- Check if GET is being redirected
@@ -181,7 +181,7 @@ function default_test(host, port)
   end
 
   -- Check if at least CONNECTION worked
-  if cstatus then return true, "Methods supported:" .. response end
+  if cstatus then return true, "Methods supported:" .. table.concat(response, " ") end
 
   -- Nothing works...
   return false, nil

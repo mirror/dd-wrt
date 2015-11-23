@@ -4,8 +4,6 @@
 #include <vector>
 #include <list>
 #include <string>
-#include <string.h>
-#include <iostream>
 
 extern "C" {
   #include "lua.h"
@@ -14,7 +12,6 @@ extern "C" {
 }
 
 #include "nmap.h"
-#include "global_structures.h"
 
 class ScriptResult
 {
@@ -74,3 +71,4 @@ void close_nse (void);
 #define SCRIPT_ENGINE_EXTENSION ".nse"
 
 #endif
+

@@ -7,9 +7,6 @@
 -- the brute.threads argument, it defaults to 10.
 --
 -- The library contains the following classes:
--- * <code>Account</code>
--- ** Implements a simple account class, that converts account "states" to common text representation.
--- ** The state can be either of the following: OPEN, LOCKED or DISABLED
 -- * <code>Engine</code>
 -- ** The actual engine doing the brute-forcing .
 -- * <code>Error</code>
@@ -31,7 +28,7 @@
 --
 -- The <code>login</code> method does not need a lot of explanation. The login
 -- function should return two parameters. If the login was successful it should
--- return true and an <code>Account</code>. If the login was a failure it
+-- return true and a <code>creds.Account</code>. If the login was a failure it
 -- should return false and an <code>Error</code>. The driver can signal the
 -- Engine to retry a set of credentials by calling the Error objects
 -- <code>setRetry</code> method. It may also signal the Engine to abort all
@@ -106,7 +103,7 @@
 --     status, data = self.socket:receive_bytes(1)
 --
 --     if ( data:match("SUCCESS") ) then
---       return true, brute.Account:new(username, password, "OPEN")
+--       return true, creds.Account:new(username, password, creds.State.VALID)
 --     end
 --     return false, brute.Error:new( "login failed" )
 --   end,
@@ -165,7 +162,7 @@
 --       lockouts.
 --
 -- @author "Patrik Karlsson <patrik@cqure.net>"
--- @copyright Same as Nmap--See http://nmap.org/book/man-legal.html
+-- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 --
 -- Version 0.73
@@ -266,7 +263,7 @@ Options = {
     end
 
     if ( not(supported) ) then
-      stdnse.print_debug("ERROR: brute.options.setMode: mode %s not supported", mode)
+      stdnse.debug1("ERROR: brute.options.setMode: mode %s not supported", mode)
       return false, "Unsupported mode"
     else
       self.mode = mode
@@ -288,41 +285,6 @@ Options = {
 }
 
 -- The account object which is to be reported back from each driver
-Account =
-{
-  --- Creates a new instance of the Account class
-  --
-  -- @param username containing the user's name
-  -- @param password containing the user's password
-  -- @param state containing the account state and should be one of the
-  --        following <code>OPEN</code>, <code>LOCKED</code>,
-  --        <code>DISABLED</code>.
-  new = function(self, username, password, state)
-    local o = { username = username, password = password, state = state }
-    setmetatable(o, self)
-    self.__index = self
-    return o
-  end,
-
-  --- Converts an account object to a printable script
-  --
-  -- @return string representation of object
-  toString = function( self )
-    local c
-    if ( #self.username > 0 ) then
-      c = ("%s:%s"):format( self.username, #self.password > 0 and self.password or "<empty>" )
-    else
-      c = ("%s"):format( ( self.password and #self.password > 0 ) and self.password or "<empty>" )
-    end
-    if ( creds.StateMsg[self.state] ) then
-      return ( "%s - %s"):format(c, creds.StateMsg[self.state] )
-    else
-      return ("%s"):format(c)
-    end
-  end,
-
-}
-
 -- The Error class, is currently only used to flag for retries
 -- It also contains the error message, if one was returned from the driver.
 Error =
@@ -535,7 +497,7 @@ Engine =
         end
 
         local msg = ( retries ~= self.options.max_retries ) and "Re-trying" or "Trying"
-        stdnse.print_debug(2, "%s %s against %s:%d", msg, c, self.host.ip, self.port.number )
+        stdnse.debug2("%s %s against %s:%d", msg, c, self.host.ip, self.port.number )
         status, response = driver:login( username, password )
 
         driver:disconnect()
@@ -581,10 +543,10 @@ Engine =
             creds.Credentials:new( self.options.script_name, self.host, self.port ):add(response.username, response.password, response.state )
           else
             self.credstore = self.credstore or {}
-            table.insert(self.credstore, response:toString() )
+            table.insert(self.credstore, tostring(response) )
           end
 
-          stdnse.print_debug("Discovered account: %s", response:toString())
+          stdnse.debug1("Discovered account: %s", tostring(response))
 
           -- if we're running in passonly mode, and want to continue guessing
           -- we will have a problem as the username is always the same.
@@ -618,7 +580,7 @@ Engine =
         interval_start = os.time()
         local tps = self.counter / ( os.time() - self.starttime )
         table.insert(self.tps, tps )
-        stdnse.print_debug(2, "threads=%d,tps=%d", self:activeThreads(), tps )
+        stdnse.debug2("threads=%d,tps=%d", self:activeThreads(), tps )
       end
 
       -- if delay was specified, do sleep
@@ -740,13 +702,12 @@ Engine =
       valid_accounts = self.credstore
     end
 
-    local result = {}
+    local result = stdnse.output_table()
     -- Did we find any accounts, if so, do formatting
     if ( valid_accounts and #valid_accounts > 0 ) then
-      valid_accounts.name = self.options.title or "Accounts"
-      table.insert( result, valid_accounts )
+      result[self.options.title or "Accounts"] = valid_accounts
     else
-      table.insert( result, {"No valid accounts found", name="Accounts"} )
+      result.Accounts = "No valid accounts found"
     end
 
     -- calculate the average tps
@@ -757,27 +718,21 @@ Engine =
     local tps = ( sum == 0 ) and ( self.counter / time_diff ) or ( sum / #self.tps )
 
     -- Add the statistics to the result
-    local stats = {}
-    table.insert(stats, ("Performed %d guesses in %d seconds, average tps: %d"):format( self.counter, time_diff, tps ) )
-    stats.name = "Statistics"
-    table.insert( result, stats )
+    result.Statistics = ("Performed %d guesses in %d seconds, average tps: %d"):format( self.counter, time_diff, tps )
 
     if ( self.options.max_guesses > 0 ) then
       -- we only display a warning if the guesses are equal to max_guesses
       for user, guesses in pairs(self.account_guesses) do
         if ( guesses == self.options.max_guesses ) then
-          table.insert( result, { name = "Information",
-          ("Guesses restricted to %d tries per account to avoid lockout"):format(self.options.max_guesses) } )
+          result.Information = ("Guesses restricted to %d tries per account to avoid lockout"):format(self.options.max_guesses)
           break
         end
       end
     end
 
-    result = ( #result ) and stdnse.format_output( true, result ) or ""
-
     -- Did any error occur? If so add this to the result.
     if ( self.error ) then
-      result = result .. ("  \n ERROR: %s"):format( self.error )
+      result.ERROR = self.error
       return false, result
     end
     return true, result

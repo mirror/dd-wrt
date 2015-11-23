@@ -29,7 +29,7 @@ In order to avoid this problem try:
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -52,7 +52,7 @@ Driver = {
   login = function(self, username, password)
     local status, resp = self.helper:regRelease(username, password)
     if ( status ) then
-      return true, brute.Account:new( username, password, creds.State.VALID )
+      return true, creds.Account:new( username, password, creds.State.VALID )
     elseif ( resp == "Release failed" ) then
       return false, brute.Error:new( "Incorrect password" )
     else

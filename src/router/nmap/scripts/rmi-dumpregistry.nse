@@ -147,7 +147,7 @@ Some apps give away the classpath, which this scripts catches in so-called "Cust
 --@version 0.5
 
 author = "Martin Holst Swende"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"default", "discovery", "safe"}
 
 portrule = shortport.port_or_service({1098, 1099, 1090, 8901, 8902, 8903}, {"java-rmi", "rmiregistry"})
@@ -155,11 +155,11 @@ portrule = shortport.port_or_service({1098, 1099, 1090, 8901, 8902, 8903}, {"jav
 -- Some lazy shortcuts
 
 local function dbg(str,...)
-  stdnse.print_debug(3,"RMI-DUMPREG:"..str, ...)
+  stdnse.debug3("RMI-DUMPREG:"..str, ...)
 end
 
 local function dbg_err(str, ... )
-  stdnse.print_debug("RMI-DUMPREG-ERR:"..str, ...)
+  stdnse.debug1("RMI-DUMPREG-ERR:"..str, ...)
 end
 
 -- Function to split a string
@@ -201,7 +201,7 @@ end
 
 function action(host,port, args)
 
-  local registry= rmi.Registry:new( host.ip, port.number)
+  local registry= rmi.Registry:new( host, port )
 
 
   local status, j_array = registry:list()

@@ -39,7 +39,7 @@ Performs brute force password auditing against Subversion source code control se
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 portrule = shortport.port_or_service(3690, "svnserve", "tcp", "open")
@@ -70,7 +70,7 @@ svn =
     self.socket = nmap.new_socket()
 
     local result
-    status, result = self.socket:connect(self.host.ip, self.port.number, "tcp")
+    status, result = self.socket:connect(self.host, self.port)
     if( not(status) ) then
       return false, result
     end
@@ -199,7 +199,7 @@ Driver =
   -- @param password string containing the login password
   -- @return status, true on success, false on failure
   -- @return brute.Error object on failure
-  --         brute.Account object on success
+  --         creds.Account object on success
   login = function( self, username, password )
     local status, msg
 
@@ -213,7 +213,7 @@ Driver =
       self.invalid_users[username] = true
       return false, brute.Error:new("Username not found")
     elseif ( status and msg:match("success") ) then
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     else
       return false, brute.Error:new( "Incorrect password" )
     end

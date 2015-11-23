@@ -34,7 +34,7 @@ Attempts to enumerate RTSP media URLS by testing for common paths on devices suc
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"brute", "intrusive"}
 
 
@@ -74,7 +74,7 @@ local function processURL(host, port, url_iter, result)
     local status = helper:connect()
 
     if ( not(status) ) then
-      stdnse.print_debug(2, "ERROR: Connecting to RTSP server url: %s", url)
+      stdnse.debug2("ERROR: Connecting to RTSP server url: %s", url)
       table.insert(result, { url = url, status = -1 } )
       break
     end
@@ -82,7 +82,7 @@ local function processURL(host, port, url_iter, result)
     local response
     status, response = helper:describe(url)
     if ( not(status) ) then
-      stdnse.print_debug(2, "ERROR: Sending DESCRIBE request to url: %s", url)
+      stdnse.debug2("ERROR: Sending DESCRIBE request to url: %s", url)
       table.insert(result, { url = url, status = -1 } )
       break
     end
@@ -115,7 +115,7 @@ action = function(host, port)
 
   local url_iter = urlIterator(f)
   if ( not(url_iter) ) then
-    return stdnse.format_output(false, ("Could not open the URL dictionary: "):format(f))
+    return stdnse.format_output(false, ("Could not open the URL dictionary: %s"):format(f))
   end
 
   local threads = {}

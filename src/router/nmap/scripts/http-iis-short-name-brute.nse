@@ -46,7 +46,7 @@ References:
 ---
 
 author = "Jesper Kueckelhahn, Paulino Calderon"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 local stdnse    = require "stdnse"
@@ -95,7 +95,7 @@ local function findExtension(host, port, path, ext)
   if charInExtension(host, port, path, ext) then
   -- currently only support for ext of length 3
     if ext:len() == 3 then
-      stdnse.print_debug(1, "Added file: %s", path .. ext)
+      stdnse.debug1("Added file: %s", path .. ext)
       table.insert(files, path .. ext)
     else
       for c in chars:gmatch(".") do
@@ -114,10 +114,10 @@ local function findName(host, port, path, number)
         errors = errors+1
       end
       if errors>10 then
-        stdnse.print_debug(1, "%s:False positive detected. Exiting.", SCRIPT_NAME)
+        stdnse.debug1("False positive detected. Exiting.")
         errors_max=true
       else
-        stdnse.print_debug(1, "Added folder: %s", path .. "~" .. number)
+        stdnse.debug1("Added folder: %s", path .. "~" .. number)
         table.insert(folders, path .. "~" .. number)
 
         -- increase the number ('~1' to '~2')
@@ -139,7 +139,7 @@ local function findName(host, port, path, number)
 
   -- recurse if the path is valid and the length of path is not 6
   if not (path:len() == 6) and cont and not(errors_max) then
-    stdnse.print_debug(1, "Testing: %s", path .. "~" .. number)
+    stdnse.debug1("Testing: %s", path .. "~" .. number)
     for c in chars:gmatch(".") do findName(host, port, path .. c, number) end
   end
 end

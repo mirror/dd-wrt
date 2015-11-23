@@ -1,12 +1,12 @@
 local comm = require "comm"
 local coroutine = require "coroutine"
+local creds = require "creds"
 local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local strbuf = require "strbuf"
 local string = require "string"
 local brute = require "brute"
-local pcre = require "pcre"
 
 description = [[
 Performs brute-force password auditing against telnet servers.
@@ -33,7 +33,7 @@ Performs brute-force password auditing against telnet servers.
 --                              (default: "true")
 
 author = "nnposter"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {'brute', 'intrusive'}
 
 portrule = shortport.port_or_service(23, 'telnet')
@@ -52,19 +52,13 @@ local login_debug = 2     -- debug level for printing attempted credentials
 local detail_debug = 3    -- debug level for printing individual login steps
                           --                          and thread-level info
 
-local pcreptn = {}        -- cache of compiled PCRE patterns
-
-
 ---
 -- Print debug messages, prepending them with the script name
 --
--- @param level Verbosity level (mandatory, unlike stdnse.print_debug).
+-- @param level Verbosity level
 -- @param fmt Format string.
 -- @param ... Arguments to format.
-local print_debug = function (level, fmt, ...)
-  stdnse.print_debug(level, "%s: " .. fmt, SCRIPT_NAME, ...)
-end
-
+local debug = stdnse.debug
 
 ---
 -- Decide whether a given string (presumably received from a telnet server)
@@ -73,10 +67,9 @@ end
 -- @param str The string to analyze
 -- @return Verdict (true or false)
 local is_username_prompt = function (str)
-  pcreptn.username_prompt = pcreptn.username_prompt
-    or pcre.new("\\b(?:username|login)\\s*:\\s*$",
-      pcre.flags().CASELESS, "C")
-  return pcreptn.username_prompt:match(str)
+  local lcstr = str:lower()
+  return lcstr:find("%f[%w]username%s*:%s*$")
+      or lcstr:find("%f[%w]login%s*:%s*$")
 end
 
 
@@ -87,10 +80,9 @@ end
 -- @param str The string to analyze
 -- @return Verdict (true or false)
 local is_password_prompt = function (str)
-  pcreptn.password_prompt = pcreptn.password_prompt
-    or pcre.new("\\bpass(?:word|code)\\s*:\\s*$",
-      pcre.flags().CASELESS, "C")
-  return pcreptn.password_prompt:match(str)
+  local lcstr = str:lower()
+  return lcstr:find("%f[%w]password%s*:%s*$")
+      or lcstr:find("%f[%w]passcode%s*:%s*$")
 end
 
 
@@ -101,14 +93,15 @@ end
 -- @param str The string to analyze
 -- @return Verdict (true or false)
 local is_login_success = function (str)
-  pcreptn.login_success = pcreptn.login_success
-  or pcre.new("[/>%$#]\\s*$" -- general prompt
-    .. "|^Last login\\s*:" -- linux telnetd
-    .. "|^(?-i:[A-Z]):\\\\" -- Windows telnet
-    .. "|Main(?:\\s|\\x1B\\[\\d+;\\d+H)Menu\\b" -- Netgear RM356
-    .. "|^Enter Terminal Emulation:\\s*$", -- Hummingbird telnetd
-  pcre.flags().CASELESS, "C")
-  return pcreptn.login_success:match(str)
+  if str:find("^[A-Z]:\\") then                         -- Windows telnet
+    return true
+  end
+  local lcstr = str:lower()
+  return lcstr:find("[/>%%%$#]%s*$")                    -- general prompt
+      or lcstr:find("^last login%s*:")                  -- linux telnetd
+      or lcstr:find("main%smenu%f[^%w]")                -- Netgear RM356
+      or lcstr:find("main\x1B%[%d+;%d+hmenu%f[^%w]")    -- Netgear RM356
+      or lcstr:find("^enter terminal emulation:%s*$")   -- Hummingbird telnetd
 end
 
 
@@ -119,10 +112,12 @@ end
 -- @param str The string to analyze
 -- @return Verdict (true or false)
 local is_login_failure = function (str)
-  pcreptn.login_failure = pcreptn.login_failure
-    or pcre.new("\\b(?:incorrect|failed|denied|invalid|bad)\\b",
-      pcre.flags().CASELESS, "C")
-  return pcreptn.login_failure:match(str)
+  local lcstr = str:lower()
+  return lcstr:find("%f[%w]incorrect%f[^%w]")
+      or lcstr:find("%f[%w]failed%f[^%w]")
+      or lcstr:find("%f[%w]denied%f[^%w]")
+      or lcstr:find("%f[%w]invalid%f[^%w]")
+      or lcstr:find("%f[%w]bad%f[^%w]")
 end
 
 
@@ -461,7 +456,7 @@ Driver.methods.connect_autosize = function (self)
   end
   -- let's park the thread here till all the functioning threads finish
   self.target:inuse(false)
-  print_debug(detail_debug, "Retiring %s", tostring(coroutine.running()))
+  debug(detail_debug, "Retiring %s", tostring(coroutine.running()))
   while not self.target:idle() do self.thread_exit("wait") end
   -- pretend that it connected
   self.conn = Connection.GHOST
@@ -510,7 +505,7 @@ end
 --
 -- @param self Driver object
 -- @return Status (true or false)
--- @return instance of brute.Account if the operation was successful;
+-- @return instance of creds.Account if the operation was successful;
 --         instance of brute.Error otherwise
 Driver.methods.login = function (self, username, password)
   assert(self.conn, "Attempt to use disconnected driver")
@@ -521,7 +516,7 @@ Driver.methods.login = function (self, username, password)
   local loc = " in " .. tostring(coroutine.running())
 
   local connection_error = function (msg)
-    print_debug(detail_debug, msg .. loc)
+    debug(detail_debug, msg .. loc)
     local err = brute.Error:new(msg)
     err:setRetry(true)
     return false, err
@@ -529,7 +524,7 @@ Driver.methods.login = function (self, username, password)
 
   local passonly_error = function ()
     local msg = "Password prompt encountered"
-    print_debug(critical_debug, msg .. loc)
+    debug(critical_debug, msg .. loc)
     local err = brute.Error:new(msg)
     err:setAbort(true)
     return false, err
@@ -537,7 +532,7 @@ Driver.methods.login = function (self, username, password)
 
   local username_error = function ()
     local msg = "Invalid username encountered"
-    print_debug(detail_debug, msg .. loc)
+    debug(detail_debug, msg .. loc)
     local err = brute.Error:new(msg)
     err:setInvalidAccount(username)
     return false, err
@@ -545,23 +540,23 @@ Driver.methods.login = function (self, username, password)
 
   local login_error = function ()
     local msg = "Login failed"
-    print_debug(detail_debug, msg .. loc)
+    debug(detail_debug, msg .. loc)
     return false, brute.Error:new(msg)
   end
 
   local login_success = function ()
     local msg = "Login succeeded"
-    print_debug(detail_debug, msg .. loc)
-    return true, brute.Account:new(username, password, "OPEN")
+    debug(detail_debug, msg .. loc)
+    return true, creds.Account:new(username, password, creds.State.VALID)
   end
 
   local login_no_password = function ()
     local msg = "Login succeeded without password"
-    print_debug(detail_debug, msg .. loc)
-    return true, brute.Account:new(username, "<none>", "OPEN")
+    debug(detail_debug, msg .. loc)
+    return true, creds.Account:new(username, "", creds.State.VALID)
   end
 
-  print_debug(detail_debug, "Login attempt %s:%s%s", username, password, loc)
+  debug(detail_debug, "Login attempt %s:%s%s", username, password, loc)
 
   if conn == Connection.GHOST then
     -- reached when auto-sizing is enabled and all worker threads
@@ -580,7 +575,7 @@ Driver.methods.login = function (self, username, password)
     if is_username_prompt(line) then
       -- being prompted for a username
       conn:discard_line()
-      print_debug(detail_debug, "Sending username" .. loc)
+      debug(detail_debug, "Sending username" .. loc)
       if not conn:send_line(username) then
         return connection_error(conn.error)
       end
@@ -616,7 +611,7 @@ Driver.methods.login = function (self, username, password)
     elseif is_password_prompt(line) then
       -- being prompted for a password
       conn:discard_line()
-      print_debug(detail_debug, "Sending password" .. loc)
+      debug(detail_debug, "Sending password" .. loc)
       if not conn:send_line(password) then
         return connection_error(conn.error)
       end

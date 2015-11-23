@@ -8,6 +8,7 @@
 
 local stdnse = require "stdnse"
 local bin = require "bin"
+local math = require "math"
 local os = require "os"
 local table = require "table"
 _ENV = stdnse.module("tls", stdnse.seeall)
@@ -20,6 +21,7 @@ PROTOCOLS = {
   ["TLSv1.1"]     = 0x0302,
   ["TLSv1.2"]     = 0x0303
 }
+HIGHEST_PROTOCOL = "TLSv1.2"
 
 --
 -- TLS Record Types
@@ -68,6 +70,7 @@ TLS_ALERT_REGISTRY = {
   ["protocol_version"]                    = 70,
   ["insufficient_security"]               = 71,
   ["internal_error"]                      = 80,
+  ["inappropriate_fallback"]              = 86,
   ["user_canceled"]                       = 90,
   ["no_renegotiation"]                    = 100,
   ["unsupported_extension"]               = 110,
@@ -151,6 +154,24 @@ EC_POINT_FORMATS = {
 }
 
 ---
+-- RFC 5246 section 7.4.1.4.1. Signature Algorithms
+HashAlgorithms = {
+  none = 0,
+  md5 = 1,
+  sha1 = 2,
+  sha224 = 3,
+  sha256 = 4,
+  sha384 = 5,
+  sha512 = 6,
+}
+SignatureAlgorithms = {
+  anonymous = 0,
+  rsa = 1,
+  dsa = 2,
+  ecdsa = 3,
+}
+
+---
 -- Extensions
 -- RFC 6066, draft-agl-tls-nextprotoneg-03
 -- https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml
@@ -210,6 +231,16 @@ EXTENSION_HELPERS = {
       list[#list+1] = bin.pack(">C", EC_POINT_FORMATS[format])
     end
     return bin.pack(">p", table.concat(list))
+  end,
+  ["signature_algorithms"] = function(signature_algorithms)
+    local list = {}
+    for _, pair in ipairs(signature_algorithms) do
+      list[#list+1] = bin.pack(">CC",
+        HashAlgorithms[pair[1]] or pair[1],
+        SignatureAlgorithms[pair[2]] or pair[2]
+        )
+    end
+    return bin.pack(">P", table.concat(list))
   end,
   ["next_protocol_negotiation"] = tostring,
 }
@@ -325,19 +356,19 @@ CIPHERS = {
 ["TLS_DHE_RSA_WITH_AES_256_CBC_SHA256"]            =  0x006B,
 ["TLS_DH_anon_WITH_AES_128_CBC_SHA256"]            =  0x006C,
 ["TLS_DH_anon_WITH_AES_256_CBC_SHA256"]            =  0x006D,
-["TLS_DHE_DSS_WITH_3DES_EDE_CBC_RMD"]       =  0x0072,  --draft-ietf-tls-openpgp-keys-05
-["TLS_DHE_DSS_WITH_AES_128_CBC_RMD"]        =  0x0073,  --draft-ietf-tls-openpgp-keys-05
-["TLS_DHE_DSS_WITH_AES_256_CBC_RMD"]        =  0x0074,  --draft-ietf-tls-openpgp-keys-05
-["TLS_DHE_RSA_WITH_3DES_EDE_CBC_RMD"]       =  0x0077,  --draft-ietf-tls-openpgp-keys-05
-["TLS_DHE_RSA_WITH_AES_128_CBC_RMD"]        =  0x0078,  --draft-ietf-tls-openpgp-keys-05
-["TLS_DHE_RSA_WITH_AES_256_CBC_RMD"]        =  0x0079,  --draft-ietf-tls-openpgp-keys-05
-["TLS_RSA_WITH_3DES_EDE_CBC_RMD"]           =  0x007C,  --draft-ietf-tls-openpgp-keys-05
-["TLS_RSA_WITH_AES_128_CBC_RMD"]            =  0x007D,  --draft-ietf-tls-openpgp-keys-05
-["TLS_RSA_WITH_AES_256_CBC_RMD"]            =  0x007E,  --draft-ietf-tls-openpgp-keys-05
-["TLS_GOSTR341094_WITH_28147_CNT_IMIT"]     =  0x0080,  --draft-chudov-cryptopro-cptls-04
-["TLS_GOSTR341001_WITH_28147_CNT_IMIT"]     =  0x0081,  --draft-chudov-cryptopro-cptls-04
-["TLS_GOSTR341094_WITH_NULL_GOSTR3411"]     =  0x0082,  --draft-chudov-cryptopro-cptls-04
-["TLS_GOSTR341001_WITH_NULL_GOSTR3411"]     =  0x0083,  --draft-chudov-cryptopro-cptls-04
+["TLS_DHE_DSS_WITH_3DES_EDE_CBC_RMD-draft"]       =  0x0072,  --draft-ietf-tls-openpgp-keys-05
+["TLS_DHE_DSS_WITH_AES_128_CBC_RMD-draft"]        =  0x0073,  --draft-ietf-tls-openpgp-keys-05
+["TLS_DHE_DSS_WITH_AES_256_CBC_RMD-draft"]        =  0x0074,  --draft-ietf-tls-openpgp-keys-05
+["TLS_DHE_RSA_WITH_3DES_EDE_CBC_RMD-draft"]       =  0x0077,  --draft-ietf-tls-openpgp-keys-05
+["TLS_DHE_RSA_WITH_AES_128_CBC_RMD-draft"]        =  0x0078,  --draft-ietf-tls-openpgp-keys-05
+["TLS_DHE_RSA_WITH_AES_256_CBC_RMD-draft"]        =  0x0079,  --draft-ietf-tls-openpgp-keys-05
+["TLS_RSA_WITH_3DES_EDE_CBC_RMD-draft"]           =  0x007C,  --draft-ietf-tls-openpgp-keys-05
+["TLS_RSA_WITH_AES_128_CBC_RMD-draft"]            =  0x007D,  --draft-ietf-tls-openpgp-keys-05
+["TLS_RSA_WITH_AES_256_CBC_RMD-draft"]            =  0x007E,  --draft-ietf-tls-openpgp-keys-05
+["TLS_GOSTR341094_WITH_28147_CNT_IMIT-draft"]     =  0x0080,  --draft-chudov-cryptopro-cptls-04
+["TLS_GOSTR341001_WITH_28147_CNT_IMIT-draft"]     =  0x0081,  --draft-chudov-cryptopro-cptls-04
+["TLS_GOSTR341094_WITH_NULL_GOSTR3411-draft"]     =  0x0082,  --draft-chudov-cryptopro-cptls-04
+["TLS_GOSTR341001_WITH_NULL_GOSTR3411-draft"]     =  0x0083,  --draft-chudov-cryptopro-cptls-04
 ["TLS_RSA_WITH_CAMELLIA_256_CBC_SHA"]              =  0x0084,
 ["TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA"]           =  0x0085,
 ["TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA"]           =  0x0086,
@@ -398,7 +429,6 @@ CIPHERS = {
 ["TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256"]       =  0x00BD,
 ["TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256"]       =  0x00BE,
 ["TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256"]       =  0x00BF,
-["TLS_EMPTY_RENEGOTIATION_INFO_SCSV"]              =  0x00FF,
 ["TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256"]           =  0x00C0,
 ["TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256"]        =  0x00C1,
 ["TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256"]        =  0x00C2,
@@ -583,6 +613,14 @@ CIPHERS = {
 ["SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"]             =  0xFEFF,
 }
 
+DEFAULT_CIPHERS = {
+  "TLS_RSA_WITH_AES_128_CBC_SHA", -- mandatory TLSv1.2
+  "TLS_RSA_WITH_3DES_EDE_CBC_SHA", -- mandatory TLSv1.1
+  "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA", -- mandatory TLSv1.0
+  "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", -- DHE with strong AES
+  "TLS_RSA_WITH_RC4_128_MD5", -- Weak and old, but likely supported on old stuff
+}
+
 local function find_key(t, value)
   local k, v
 
@@ -595,14 +633,489 @@ local function find_key(t, value)
   return nil
 end
 
+-- Keep this local to enforce use of the cipher_info function
+local cipher_info_cache = {
+  -- pre-populate the special cases that break the parser below
+  ["TLS_ECDH_anon_NULL_WITH_SHA-draft"] = {
+    kex = "ECDH", dh = true, ec = true,
+    server_auth = "anon",
+    cipher = "NULL",
+    hash = "SHA",
+    draft = true
+  },
+  ["TLS_ECMQV_ECDSA_NULL_SHA-draft"] = {
+    kex = "ECMQV", ec = true,
+    server_auth = "ECDSA",
+    cipher = "NULL",
+    hash = "SHA",
+    draft = true
+  },
+  ["TLS_ECMQV_ECNRA_NULL_SHA-draft"] = {
+    kex = "ECMQV", ec = true,
+    server_auth = "ECNRA",
+    cipher = "NULL",
+    hash = "SHA",
+    draft = true
+  },
+  ["TLS_GOSTR341094_WITH_28147_CNT_IMIT-draft"] = {
+    kex = "GOSTR341094",
+    server_auth = "GOSTR341094",
+    cipher = "GOST28147",
+    hash = "IMIT_GOST28147",
+    draft = true
+  },
+  ["TLS_GOSTR341001_WITH_28147_CNT_IMIT-draft"] = {
+    kex = "GOSTR341001",
+    server_auth = "GOSTR341001",
+    cipher = "GOST28147",
+    hash = "IMIT_GOST28147",
+    draft = true
+  },
+  ["TLS_GOSTR341094_WITH_NULL_GOSTR3411-draft"] = {
+    kex = "GOSTR341094",
+    server_auth = "GOSTR341094",
+    cipher = "NULL",
+    hash = "HMAC_GOSTR3411",
+    draft = true
+  },
+  ["TLS_GOSTR341001_WITH_NULL_GOSTR3411-draft"] = {
+    kex = "GOSTR341001",
+    server_auth = "GOSTR341001",
+    cipher = "NULL",
+    hash = "HMAC_GOSTR3411",
+    draft = true
+  },
+}
+
+
+-- A couple helpers for server_key_exchange parsing
+local function unpack_dhparams (blob, pos)
+  local p, g, y
+  pos, p, g, y = bin.unpack(">PPP", blob, pos)
+  return pos, {p=p, g=g, y=y}, #p * 8
+end
+
+local function unpack_ecdhparams (blob, pos)
+  local eccurvetype
+  pos, eccurvetype = bin.unpack("C", blob, pos)
+  local ret = {}
+  local strength
+  if eccurvetype == 1 then
+    local p, a, b, base, order, cofactor
+    pos, p, a, b, base, order, cofactor = bin.unpack("pppppp", blob, pos)
+    strength = math.log(order, 2)
+    ret.curve_params = {
+      ec_curve_type = "explicit_prime",
+      prime_p=p, curve={a=a, b=b}, base=base, order=order, cofactor=cofactor
+    }
+  elseif eccurvetype == 2 then
+    local p = {}
+    local m, basis
+    pos, m, basis = bin.unpack(">SC", blob, pos)
+    if basis == 1 then -- ec_trinomial
+      pos, p.k = bin.unpack("p", blob, pos)
+    elseif basis == 2 then -- ec_pentanomial
+      pos, p.k1, p.k2, p.k3 = bin.unpack("ppp", blob, pos)
+    end
+    local a, b, base, order, cofactor
+    pos, a, b, base, order, cofactor = bin.unpack("ppppp", blob, pos)
+    strength = math.log(order, 2)
+    ret.curve_params = {
+      ec_curve_type = "explicit_char2",
+      m=m, basis=basis, field=p, curve={a=a, b=b}, base=base, order=order, cofactor=cofactor
+    }
+  elseif eccurvetype == 3 then
+    local curve
+    pos, curve = bin.unpack(">S", blob, pos)
+    ret.curve_params = {
+      ec_curve_type = "namedcurve",
+      curve = find_key(ELLIPTIC_CURVES, curve)
+    }
+    local size = ret.curve_params.curve:match("(%d+)[rk]%d$")
+    if size then
+      strength = tonumber(size)
+    end
+  end
+  pos, ret.public = bin.unpack("p", blob, pos)
+  return pos, ret, strength
+end
+
+local function unpack_signed (blob, pos, protocol)
+  if pos > #blob then -- not-signed
+    return pos, nil
+  end
+  local hash_alg, sig_alg, sig
+  -- TLSv1.2 changed to allow arbitrary hash and sig algorithms
+  if protocol and PROTOCOLS[protocol] >= 0x0303 then
+    pos, hash_alg, sig_alg, sig = bin.unpack("CC>P", blob, pos)
+  else
+    pos, sig = bin.unpack(">P", blob, pos)
+  end
+  return pos, {hash_algorithm=hash_alg, signature_algorithm=sig_alg, signature=sig}
+end
+
+--- Get the strength-equivalent RSA key size
+--
+-- Based on NIST SP800-57 part 1 rev 3
+-- @param ktype Key type ("dh", "ec", "rsa", "dsa")
+-- @param bits Size of key in bits
+-- @return Size in bits of RSA key with equivalent strength
+function rsa_equiv (ktype, bits)
+  if ktype == "rsa" or ktype == "dsa" or ktype == "dh" then
+    return bits
+  elseif ktype == "ec" then
+    if bits < 160 then
+      return 512 -- Possibly down to 0, but details not published
+    elseif bits < 224 then
+      return 1024
+    elseif bits < 256 then
+      return 2048
+    elseif bits < 384 then
+      return 3072
+    elseif bits < 512 then
+      return 7680
+    else -- 512+
+      return 15360
+    end
+  end
+  return nil
+end
+
+KEX_ALGORITHMS = {}
+
+-- RFC 5246
+KEX_ALGORITHMS.NULL = { anon = true }
+KEX_ALGORITHMS.DH_anon = {
+  anon = true,
+  type = "dh",
+  server_key_exchange = function (blob, protocol)
+    local pos
+    local ret = {}
+    pos, ret.dhparams, ret.strength = unpack_dhparams(blob)
+    return ret
+  end
+}
+KEX_ALGORITHMS.DH_anon_EXPORT = {
+  anon=true,
+  export=true,
+  type = "dh",
+  server_key_exchange = KEX_ALGORITHMS.DH_anon.server_key_exchange
+}
+KEX_ALGORITHMS.ECDH_anon = {
+  anon=true,
+  type = "ec",
+  server_key_exchange = function (blob, protocol)
+    local pos
+    local ret = {}
+    pos, ret.ecdhparams, ret.strength = unpack_ecdhparams(blob)
+    return ret
+  end
+}
+KEX_ALGORITHMS.ECDH_anon_EXPORT = {
+  anon=true,
+  export=true,
+  type = "ec",
+  server_key_exchange = KEX_ALGORITHMS.ECDH_anon.server_key_exchange
+}
+
+KEX_ALGORITHMS.RSA = {
+  pubkey="rsa",
+}
+-- http://www-archive.mozilla.org/projects/security/pki/nss/ssl/fips-ssl-ciphersuites.html
+KEX_ALGORITHMS.RSA_FIPS = KEX_ALGORITHMS.RSA
+KEX_ALGORITHMS.RSA_EXPORT = {
+  export=true,
+  pubkey="rsa",
+  type = "rsa",
+  server_key_exchange = function (blob, protocol)
+    local pos
+    local ret = {rsa={}}
+    pos, ret.rsa.modulus, ret.rsa.exponent = bin.unpack(">PP", blob)
+    pos, ret.signed = unpack_signed(blob, pos)
+    ret.strength = #ret.rsa.modulus
+    return ret
+  end
+}
+KEX_ALGORITHMS.RSA_EXPORT1024 = KEX_ALGORITHMS.RSA_EXPORT
+KEX_ALGORITHMS.DHE_RSA={
+  pubkey="rsa",
+  type = "dh",
+  server_key_exchange = function (blob, protocol)
+    local pos
+    local ret = {}
+    pos, ret.dhparams, ret.strength = unpack_dhparams(blob)
+    pos, ret.signed = unpack_signed(blob, pos)
+    return ret
+  end
+}
+KEX_ALGORITHMS.DHE_RSA_EXPORT={
+  export=true,
+  pubkey="rsa",
+  type = "dh",
+  server_key_exchange = KEX_ALGORITHMS.DHE_RSA.server_key_exchange
+}
+KEX_ALGORITHMS.DHE_DSS={
+  pubkey="dsa",
+  type = "dh",
+  server_key_exchange = KEX_ALGORITHMS.DHE_RSA.server_key_exchange
+}
+KEX_ALGORITHMS.DHE_DSS_EXPORT={
+  export=true,
+  pubkey="dsa",
+  type = "dh",
+  server_key_exchange = KEX_ALGORITHMS.DHE_RSA.server_key_exchange
+}
+KEX_ALGORITHMS.DHE_DSS_EXPORT1024 = KEX_ALGORITHMS.DHE_DSS_EXPORT1024
+
+KEX_ALGORITHMS.DH_DSS={
+  pubkey="dh",
+}
+KEX_ALGORITHMS.DH_DSS_EXPORT={
+  export=true,
+  pubkey="dh",
+}
+KEX_ALGORITHMS.DH_RSA={
+  pubkey="dh",
+}
+KEX_ALGORITHMS.DH_RSA_EXPORT={
+  export=true,
+  pubkey="dh",
+}
+
+KEX_ALGORITHMS.ECDHE_RSA={
+  pubkey="rsa",
+  type = "ec",
+  server_key_exchange = function (blob, protocol)
+    local pos
+    local ret = {}
+    pos, ret.ecdhparams, ret.strength = unpack_ecdhparams(blob)
+    pos, ret.signed = unpack_signed(blob, pos)
+    return ret
+  end
+}
+KEX_ALGORITHMS.ECDHE_ECDSA={
+  pubkey="ec",
+  type = "ec",
+  server_key_exchange = KEX_ALGORITHMS.ECDHE_RSA.server_key_exchange
+}
+KEX_ALGORITHMS.ECDH_ECDSA={
+  pubkey="ec",
+}
+KEX_ALGORITHMS.ECDH_RSA={
+  pubkey="ec",
+}
+
+-- draft-ietf-tls-ecc-00
+KEX_ALGORITHMS.ECDH_ECNRA={
+  pubkey="ec",
+}
+KEX_ALGORITHMS.ECMQV_ECDSA={
+  pubkey="ec",
+  type = "ecmqv",
+  server_key_exchange = function (blob, protocol)
+    local pos
+    local ret = {}
+    pos, ret.mqvparams = bin.unpack("p", blob)
+    return ret
+  end
+}
+KEX_ALGORITHMS.ECMQV_ECNRA={
+  pubkey="ec",
+}
+
+-- rfc4279
+KEX_ALGORITHMS.PSK = {
+  type = "psk",
+  server_key_exchange = function (blob, protocol)
+    local pos, hint = bin.unpack(">P", blob)
+    return {psk_identity_hint=hint}
+  end
+}
+KEX_ALGORITHMS.RSA_PSK = {
+  pubkey="rsa",
+  type = "psk",
+  server_key_exchange = KEX_ALGORITHMS.PSK.server_key_exchange
+}
+KEX_ALGORITHMS.DHE_PSK = {
+  type = "dh",
+  server_key_exchange = function (blob, protocol)
+    local pos
+    local ret = {}
+    pos, ret.psk_identity_hint = bin.unpack(">P", blob)
+    pos, ret.dhparams, ret.strength = unpack_dhparams(blob, pos)
+    return ret
+  end
+}
+--nomenclature change
+KEX_ALGORITHMS.PSK_DHE = KEX_ALGORITHMS.DHE_PSK
+
+--rfc5489
+KEX_ALGORITHMS.ECDHE_PSK={
+  type = "ec",
+  server_key_exchange = function (blob, protocol)
+    local pos
+    local ret = {}
+    pos, ret.psk_identity_hint = bin.unpack(">P", blob)
+    pos, ret.ecdhparams, ret.strength = unpack_ecdhparams(blob, pos)
+    return ret
+  end
+}
+
+-- RFC 5054
+KEX_ALGORITHMS.SRP_SHA = {
+  type = "srp",
+  server_key_exchange = function (blob, protocol)
+    local pos
+    local ret = {srp={}}
+    pos, ret.srp.N, ret.srp.g, ret.srp.s, ret.srp.B = bin.unpack(">PPpP", blob)
+    pos, ret.signed = unpack_signed(blob, pos)
+    ret.strength = #ret.srp.N
+    return ret
+  end
+}
+KEX_ALGORITHMS.SRP_SHA_DSS = {
+  pubkey="dsa",
+  type = "srp",
+  server_key_exchange = KEX_ALGORITHMS.SRP_SHA.server_key_exchange
+}
+KEX_ALGORITHMS.SRP_SHA_RSA = {
+  pubkey="rsa",
+  type = "srp",
+  server_key_exchange = KEX_ALGORITHMS.SRP_SHA.server_key_exchange
+}
+
+-- RFC 6101
+KEX_ALGORITHMS.FORTEZZA_KEA={}
+
+-- RFC 4491
+KEX_ALGORITHMS.GOSTR341001={}
+KEX_ALGORITHMS.GOSTR341094={}
+
+-- RFC 2712
+KEX_ALGORITHMS.KRB5={}
+KEX_ALGORITHMS.KRB5_EXPORT={
+  export=true,
+}
+
+
+--- Get info about a cipher suite
+--
+--  Returned table has "kex", "cipher", "mode", "size", and
+--  "hash" keys, as well as boolean flag "draft". The "draft"
+--  flag is only supported for some suites that have different enumeration
+--  values in draft versus final RFC.
+-- @param c The cipher suite name, e.g. TLS_RSA_WITH_AES_128_GCM_SHA256
+-- @return A table of info as described above.
+function cipher_info (c)
+  local info = cipher_info_cache[c]
+  if info then return info end
+  info = {}
+  local tokens = stdnse.strsplit("_", c)
+  local i = 1
+  if tokens[i] ~= "TLS" and tokens[i] ~= "SSL" then
+    stdnse.debug2("cipher_info: Not a TLS ciphersuite: %s", c)
+    return nil
+  end
+  -- kex, cipher, size, mode, hash
+  i = i + 1
+  while tokens[i] and tokens[i] ~= "WITH" do
+    i = i + 1
+  end
+  info.kex = table.concat(tokens, "_", 2, i-1)
+
+  if tokens[i] and tokens[i] ~= "WITH" then
+    stdnse.debug2("cipher_info: Can't parse (no WITH): %s", c)
+    return nil
+  end
+
+  -- cipher
+  i = i + 1
+  local t = tokens[i]
+  info.cipher = t
+  if t == "3DES" then
+    i = i + 1 -- 3DES_EDE
+  end
+
+  -- key size
+  if t == "3DES" then -- NIST SP 800-57
+    info.size = 112
+  elseif t == "CHACHA20" then
+    info.size = 256
+  elseif t == "IDEA" then
+    info.size = 128
+  elseif t == "SEED" then
+    info.size = 128
+  elseif t == "FORTEZZA" then
+    info.size = 80
+  elseif t == "DES" then
+    info.size = 56
+  elseif t == "RC2" or t == "DES40" then
+    info.size = 40
+  elseif t == "NULL" then
+    info.size = 0
+  else
+    i = i + 1
+    info.size = tonumber(tokens[i])
+  end
+
+  -- stream ciphers don't have a mode
+  if info.cipher == "RC4" then
+    info.mode = "stream"
+  elseif info.cipher == "CHACHA20" then
+    i = i + 1
+    info.cipher = "CHACHA20-POLY1305"
+    info.mode = "stream"
+  elseif info.cipher ~= "NULL" then
+    i = i + 1
+    info.mode = tokens[i]
+  end
+
+  -- export key size override
+  if info.export and tonumber(tokens[i+1]) then
+    i = i + 1
+    info.size = tonumber(tokens[i])
+  end
+
+  -- hash
+  if info.mode == "CCM" then
+    info.hash = "SHA256"
+  else
+    i = i + 1
+    t = (tokens[i]):match("(.*)%-draft$")
+    if t then
+      info.draft = true
+    else
+      t = tokens[i]
+    end
+    info.hash = t
+  end
+
+  cipher_info_cache[c] = info
+  return info
+end
+
+SCSVS = {
+["TLS_EMPTY_RENEGOTIATION_INFO_SCSV"]              =  0x00FF, -- rfc5746
+["TLS_FALLBACK_SCSV"]                              =  0x5600, -- draft-ietf-tls-downgrade-scsv-00
+}
+
+-- Helper function to unpack a 3-byte integer value
+local function unpack_3byte (buffer, pos)
+  local low, high
+  pos, high, low = bin.unpack("C>S", buffer, pos)
+  return pos, low + high * 0x10000
+end
+
 ---
 -- Read a SSL/TLS record
--- @param buffer The read buffer
--- @param i      The position in the buffer to start reading
+-- @param buffer   The read buffer
+-- @param i        The position in the buffer to start reading
+-- @param fragment Message fragment left over from previous record (nil if none)
 -- @return The current position in the buffer
 -- @return The record that was read, as a table
-function record_read(buffer, i)
+function record_read(buffer, i, fragment)
   local b, h, len
+  local add = 0
 
   ------------
   -- Header --
@@ -618,13 +1131,13 @@ function record_read(buffer, i)
   local j, typ, proto = bin.unpack(">CS", buffer, i)
   local name = find_key(TLS_CONTENTTYPE_REGISTRY, typ)
   if name == nil then
-    stdnse.print_debug("Unknown TLS ContentType: %d", typ)
+    stdnse.debug1("Unknown TLS ContentType: %d", typ)
     return j, nil
   end
   h["type"] = name
   name = find_key(PROTOCOLS, proto)
   if name == nil then
-    stdnse.print_debug("Unknown TLS Protocol: 0x%x", typ)
+    stdnse.debug1("Unknown TLS Protocol: 0x%04x", proto)
     return j, nil
   end
   h["protocol"] = name
@@ -637,6 +1150,14 @@ function record_read(buffer, i)
     return i, nil
   end
 
+  -- Adjust buffer and length to account for message fragment left over
+  -- from last record.
+  if fragment then
+    add = #fragment
+    len = len + add
+    buffer = buffer:sub(1, j - 1) .. fragment .. buffer:sub(j, -1)
+  end
+
   -- Convert to human-readable form.
 
   ----------
@@ -644,12 +1165,11 @@ function record_read(buffer, i)
   ----------
 
   h["body"] = {}
-  while j < len do
+
+  while j <= len do
     -- RFC 2246, 6.2.1 "multiple client messages of the same ContentType may
     -- be coalesced into a single TLSPlaintext record"
-    -- TODO: implement reading of fragmented records
     b = {}
-    table.insert(h["body"], b)
     if h["type"] == "alert" then
       -- Parse body.
       j, b["level"] = bin.unpack("C", buffer, j)
@@ -658,16 +1178,30 @@ function record_read(buffer, i)
       -- Convert to human-readable form.
       b["level"] = find_key(TLS_ALERT_LEVELS, b["level"])
       b["description"] = find_key(TLS_ALERT_REGISTRY, b["description"])
+
+      table.insert(h["body"], b)
     elseif h["type"] == "handshake" then
+
+      -- Check for message fragmentation.
+      if len - j < 3 then
+        h.fragment = buffer:sub(j, len)
+        return len + 1 - add, h
+      end
+
       -- Parse body.
       j, b["type"] = bin.unpack("C", buffer, j)
-      local blen, blen_upper
-      j, blen_upper, blen = bin.unpack("C>S", buffer, j)
-      blen = blen + blen_upper * 0x10000
-      local msg_end = j + blen
+      local msg_end
+      j, msg_end = unpack_3byte(buffer, j)
+      msg_end = msg_end + j
 
       -- Convert to human-readable form.
       b["type"] = find_key(TLS_HANDSHAKETYPE_REGISTRY, b["type"])
+
+      -- Check for message fragmentation.
+      if msg_end > len + 1 then
+        h.fragment = buffer:sub(j - 4, len)
+        return len + 1 - add, h
+      end
 
       if b["type"] == "server_hello" then
         -- Parse body.
@@ -696,23 +1230,41 @@ function record_read(buffer, i)
         b["protocol"] = find_key(PROTOCOLS, b["protocol"])
         b["cipher"] = find_key(CIPHERS, b["cipher"])
         b["compressor"] = find_key(COMPRESSORS, b["compressor"])
+      elseif b["type"] == "certificate" then
+        local cert_end
+        j, cert_end = unpack_3byte(buffer, j)
+        cert_end = cert_end + j
+        if cert_end > msg_end then
+          stdnse.debug2("server_certificate length > handshake body length!")
+        end
+        b["certificates"] = {}
+        while j < cert_end do
+          local cert_len, cert
+          j, cert_len = unpack_3byte(buffer, j)
+          j, cert = bin.unpack("A" .. cert_len, buffer, j)
+          -- parse these with sslcert.parse_ssl_certificate
+          table.insert(b["certificates"], cert)
+        end
       else
         -- TODO: implement other handshake message types
-        stdnse.print_debug(2, "Unknown handshake message type: %s", b["type"])
-        j = msg_end
+        stdnse.debug2("Unknown handshake message type: %s", b["type"])
+        j, b["data"] = bin.unpack("A" .. msg_end - j, buffer, j)
       end
+
+      table.insert(h["body"], b)
     elseif h["type"] == "heartbeat" then
       j, b["type"], b["payload_length"] = bin.unpack("C>S", buffer, j)
       j, b["payload"], b["padding"] = bin.unpack("PP", buffer, j)
+      table.insert(h["body"], b)
     else
-      stdnse.print_debug("Unknown message type: %s", h["type"])
+      stdnse.debug1("Unknown message type: %s", h["type"])
     end
   end
 
   -- Ignore unparsed bytes.
-  j = len+1
+  j = len + 1
 
-  return j, h
+  return j - add, h
 end
 
 ---
@@ -733,6 +1285,24 @@ function record_write(type, protocol, b)
   })
 end
 
+-- Claim to support every hash and signature algorithm combination (TLSv1.2 only)
+--
+local signature_algorithms_all
+do
+  local sigalgs = {}
+  for hash, _ in pairs(HashAlgorithms) do
+    for sig, _ in pairs(SignatureAlgorithms) do
+      -- RFC 5246 7.4.1.4.1.
+      -- The "anonymous" value is meaningless in this context but used in
+      -- Section 7.4.3.  It MUST NOT appear in this extension.
+      if sig ~= "anonymous" then
+        sigalgs[#sigalgs+1] = {hash, sig}
+      end
+    end
+  end
+  signature_algorithms_all = EXTENSION_HELPERS["signature_algorithms"](sigalgs)
+end
+
 ---
 -- Build a client_hello message
 --
@@ -745,6 +1315,7 @@ end
 -- @return The client_hello record as a string
 function client_hello(t)
   local b, ciphers, compressor, compressors, h, len
+  t = t or {}
 
   ----------
   -- Body --
@@ -752,7 +1323,8 @@ function client_hello(t)
 
   b = {}
   -- Set the protocol.
-  table.insert(b, bin.pack(">S", PROTOCOLS[t["protocol"]]))
+  local protocol = t["protocol"] or HIGHEST_PROTOCOL
+  table.insert(b, bin.pack(">S", PROTOCOLS[protocol]))
 
   -- Set the random data.
   table.insert(b, bin.pack(">I", os.time()))
@@ -761,18 +1333,20 @@ function client_hello(t)
   table.insert(b, stdnse.generate_random_string(28))
 
   -- Set the session ID.
-  table.insert(b, bin.pack("C", 0))
+  table.insert(b, '\0')
 
   -- Cipher suites.
   ciphers = {}
-  if t["ciphers"] ~= nil then
-    -- Add specified ciphers.
-    for _, cipher in pairs(t["ciphers"]) do
-      table.insert(ciphers, bin.pack(">S", CIPHERS[cipher]))
+  -- Add specified ciphers.
+  for _, cipher in pairs(t["ciphers"] or DEFAULT_CIPHERS) do
+    if type(cipher) == "string" then
+      cipher = CIPHERS[cipher] or SCSVS[cipher]
     end
-  else
-    -- Use NULL cipher
-    table.insert(ciphers, bin.pack(">S", CIPHERS["TLS_NULL_WITH_NULL_NULL"]))
+    if type(cipher) == "number" and cipher >= 0 and cipher <= 0xffff then
+      table.insert(ciphers, bin.pack(">S", cipher))
+    else
+      stdnse.debug1("Unknown cipher in client_hello: %s", cipher)
+    end
   end
   table.insert(b, bin.pack(">P", table.concat(ciphers)))
 
@@ -791,18 +1365,26 @@ function client_hello(t)
   table.insert(b, bin.pack(">p", table.concat(compressors)))
 
   -- TLS extensions
-  if PROTOCOLS[t["protocol"]] and
-      PROTOCOLS[t["protocol"]] ~= PROTOCOLS["SSLv3"] then
+  if PROTOCOLS[protocol] and protocol ~= "SSLv3" then
     local extensions = {}
     if t["extensions"] ~= nil then
+      -- Do we need to add the signature_algorithms extension?
+      local need_sigalg = (protocol == "TLSv1.2")
       -- Add specified extensions.
       for extension, data in pairs(t["extensions"]) do
         if type(extension) == "number" then
           table.insert(extensions, bin.pack(">S", extension))
         else
+          if extension == "signature_algorithms" then
+            need_sigalg = false
+          end
           table.insert(extensions, bin.pack(">S", EXTENSIONS[extension]))
         end
         table.insert(extensions, bin.pack(">P", data))
+      end
+      if need_sigalg then
+        table.insert(extensions, bin.pack(">S", EXTENSIONS["signature_algorithms"]))
+        table.insert(extensions, bin.pack(">P", signature_algorithms_all))
       end
     end
     -- Extensions are optional
@@ -829,7 +1411,8 @@ function client_hello(t)
 
   table.insert(h, b)
 
-  return record_write("handshake", t["protocol"], table.concat(h))
+  -- Record layer version should be SSLv3 (lowest compatible record version)
+  return record_write("handshake", "SSLv3", table.concat(h))
 end
 
 local function read_atleast(s, n)

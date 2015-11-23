@@ -25,7 +25,7 @@ virtually hosted sites.
 
 
 author = "Eddie Bell, Piotr Olma"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "vuln"}
 
 ---
@@ -78,7 +78,7 @@ local function check_injection_response(response)
   if errorstrings then
     for _,e in ipairs(errorstrings) do
       if string.find(body, e) then
-        stdnse.print_debug(2, "%s: error string matched: %s", SCRIPT_NAME, e)
+        stdnse.debug2("error string matched: %s", e)
         return true
       end
     end
@@ -102,7 +102,7 @@ local function build_injection_vector(urls)
 
       for k, v in pairs(qtab) do
         old_qtab = qtab[k];
-        qtab[k] = qtab[k] ..  "'%20OR%20sqlspider"
+        qtab[k] = qtab[k] ..  "' OR sqlspider"
 
         utab.query = url.build_query(qtab)
         urlstr = url.build(utab)
@@ -192,7 +192,7 @@ local function check_form(form, host, port, path)
 
   for _,field in ipairs(form["fields"]) do
     if sqli_field(field["type"]) then
-      stdnse.print_debug(2, "%s: checking field %s", SCRIPT_NAME, field["name"])
+      stdnse.debug2("checking field %s", field["name"])
       postdata[field["name"]] = "' OR sqlspider"
       response = sending_function(postdata)
       if response and response.body and response.status==200 then
@@ -235,7 +235,7 @@ action = function(host, port)
     local status, r = crawler:crawl()
     if (not(status)) then
       if (r.err) then
-        return stdnse.format_output(true, "ERROR: %s", r.reason)
+        return stdnse.format_output(false, r.reason)
       else
         break
       end
@@ -247,7 +247,7 @@ action = function(host, port)
       for _,form_plain in ipairs(all_forms) do
         local form = http.parse_form(form_plain)
         local path = r.url.path
-        if form then
+        if form and form.action then
           local vulnerable_fields = check_form(form, host, port, path)
           if #vulnerable_fields > 0 then
             vulnerable_fields["name"] = "Form at path: "..path..", form's action: "..form["action"]..". Fields that might be vulnerable:"
@@ -270,7 +270,7 @@ action = function(host, port)
   -- try to inject
   local results_queries = {}
   if #injectable > 0 then
-    stdnse.print_debug(1, "%s: Testing %d suspicious URLs", SCRIPT_NAME, #injectable)
+    stdnse.debug1("Testing %d suspicious URLs", #injectable)
     local injectableQs = build_injection_vector(injectable)
     local responses = inject(host, port, injectableQs)
     results_queries = check_responses(injectableQs, responses)

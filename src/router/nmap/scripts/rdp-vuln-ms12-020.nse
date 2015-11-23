@@ -65,7 +65,7 @@ Original check by by Worawit Wang (sleepya).
 -- |_      http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2012-0002
 
 author = "Aleksandar Nikolic, based on python script by sleepya"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "vuln"}
 
 
@@ -186,7 +186,7 @@ action = function(host, port)
   status, response = socket:receive_bytes(0)
   if response ~= bin.pack("H","0300000b06d00000123400") then
     --probably not rdp at all
-    stdnse.print_debug(1, "%s: not RDP", SCRIPT_NAME)
+    stdnse.debug1("not RDP")
     return nil
   end
   status, err = socket:send(connectInitial)

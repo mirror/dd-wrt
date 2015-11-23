@@ -29,7 +29,7 @@ Retrieves a list of Git projects, owners and descriptions from a gitweb (web int
 --       (default: /)
 
 author = "riemann"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
 
@@ -56,8 +56,7 @@ action = function(host, port)
 
   if not response or not response.status or response.status ~= 200 or
     not response.body then
-    stdnse.print_debug(1, "%s: Failed to retrieve file: %s",
-      SCRIPT_NAME, path)
+    stdnse.debug1("Failed to retrieve file: %s", path)
     return
   end
 

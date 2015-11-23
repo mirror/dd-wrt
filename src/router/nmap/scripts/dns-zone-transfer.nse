@@ -11,7 +11,6 @@ local string = require "string"
 local tab = require "tab"
 local table = require "table"
 local target = require "target"
-local packet = require "packet"
 
 description = [[
 Requests a zone transfer (AXFR) from a DNS server.
@@ -85,7 +84,7 @@ Useful resources
 
 
 author = "Eddie Bell"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {'intrusive', 'discovery'}
 
 -- DNS options
@@ -101,16 +100,12 @@ prerule = function()
   )
 
   if not dns_opts.domain then
-    stdnse.print_debug(3,
-    "Skipping '%s' %s, 'dnszonetransfer.domain' argument is missing.",
-    SCRIPT_NAME, SCRIPT_TYPE)
+    stdnse.debug3("Skipping '%s' %s, 'dnszonetransfer.domain' argument is missing.", SCRIPT_NAME, SCRIPT_TYPE)
     return false
   end
 
   if not dns_opts.server then
-    stdnse.print_debug(3,
-      "Skipping '%s' %s, 'dnszonetransfer.server' argument is missing.",
-      SCRIPT_NAME, SCRIPT_TYPE)
+    stdnse.debug3("Skipping '%s' %s, 'dnszonetransfer.server' argument is missing.", SCRIPT_NAME, SCRIPT_TYPE)
     return false
   end
 
@@ -131,9 +126,7 @@ portrule = function(host, port)
         dns_opts.domain = host.name
       else
         -- can't do anything without a hostname
-        stdnse.print_debug(3,
-          "Skipping '%s' %s, 'dnszonetransfer.domain' argument is missing.",
-          SCRIPT_NAME, SCRIPT_TYPE)
+        stdnse.debug3("Skipping '%s' %s, 'dnszonetransfer.domain' argument is missing.", SCRIPT_NAME, SCRIPT_TYPE)
         return false
       end
     end
@@ -264,7 +257,7 @@ end
 --- Retrieve type specific data (rdata) from dns packets
 local RD = {
   A = function(data, offset)
-    return offset+4, packet.toip(data:sub(offset, offset+3))
+    return offset+4, ipOps.str_to_ip(data:sub(offset, offset+3))
   end,
   NS = parse_domain,
   MD = parse_domain, -- obsolete per rfc1035, use MX
@@ -290,7 +283,7 @@ local RD = {
   WKS = function(data, offset)
     local len, ip, proto, svcs
     len = bto16(data, offset-2) - 5 -- length of bit field
-    ip = packet.toip(data:sub(offset, offset+3))
+    ip = ipOps.str_to_ip(data:sub(offset, offset+3))
     proto = string.byte(data, offset+4)
     offset = offset + 5
     svcs = {}
@@ -362,13 +355,13 @@ local RD = {
     return offset, string.format("%s %s %s", lat, long, alt)
   end,
   AAAA = function(data, offset)
-    return offset+16, packet.toipv6(data:sub(offset, offset+15))
+    return offset+16, ipOps.str_to_ip(data:sub(offset, offset+15))
   end,
   LOC = function(data, offset)
     local version, siz, hp, vp, lat, lon, alt
     version = string.byte(data, offset)
     if version ~= 0 then
-      stdnse.print_debug(2, "Unknown LOC RR version: %d", version)
+      stdnse.debug2("Unknown LOC RR version: %d", version)
       return offset, ''
     end
     siz = string.byte(data, offset+1)
@@ -425,7 +418,7 @@ local RD = {
     local prefix, addr, name
     prefix = string.byte(data, offset)
     local pbytes = bit.rshift(prefix,3)
-    addr = packet.toipv6(string.rep("\000", pbytes) .. data:sub(offset+1, 16-pbytes))
+    addr = ipOps.str_to_ip(string.rep("\000", pbytes) .. data:sub(offset+1, 16-pbytes))
     offset, name = parse_domain(data, offset + 17 - pbytes)
     return offset, string.format("%d %s %s", prefix, addr, name)
   end,
@@ -600,9 +593,7 @@ function add_zone_info(response)
     end
 
     -- parse all available resource records
-    stdnse.print_debug(3,
-      "Script %s: parsing ANCOUNT == %d, NSCOUNT == %d, ARCOUNT == %d",
-      SCRIPT_NAME, answers, auth_answers, add_answers)
+    stdnse.debug3("Script %s: parsing ANCOUNT == %d, NSCOUNT == %d, ARCOUNT == %d", answers, auth_answers, add_answers)
     RR['Node Names'] = {}
     offset = parse_records(answers, data, RR, offset)
     offset = parse_records(auth_answers, data, RR, offset)
@@ -616,7 +607,7 @@ function add_zone_info(response)
   for rdata in pairs(RR['Node Names']) do
     status, ret = target.add(rdata)
     if not status then
-      stdnse.print_debug(3, "Error: failed to add all Node Names.")
+      stdnse.debug3("Error: failed to add all Node Names.")
       break
     end
     newhosts_count = newhosts_count + ret
@@ -638,8 +629,7 @@ function add_zone_info(response)
         if dns_opts.addall or not ipOps.isPrivate(rdata) then
           status, ret = target.add(rdata)
           if not status then
-            stdnse.print_debug(3,
-              "Error: failed to add all 'A' records.")
+            stdnse.debug3("Error: failed to add all 'A' records.")
             break
           end
           newhosts_count = newhosts_count + ret
@@ -649,8 +639,7 @@ function add_zone_info(response)
       for rdata in pairs(RR[rectype]) do
         status, ret = target.add(rdata)
         if not status then
-          stdnse.print_debug(3,
-            "Error: failed to add all '%s' records.", rectype)
+          stdnse.debug3("Error: failed to add all '%s' records.", rectype)
           break
         end
         newhosts_count = newhosts_count + ret
@@ -704,9 +693,7 @@ function dump_zone_info(table, response)
     end
 
     -- parse all available resource records
-    stdnse.print_debug(3,
-        "Script %s: parsing ANCOUNT == %d, NSCOUNT == %d, ARCOUNT == %d",
-        SCRIPT_NAME, answers, auth_answers, add_answers)
+    stdnse.debug3("parsing ANCOUNT == %d, NSCOUNT == %d, ARCOUNT == %d", answers, auth_answers, add_answers)
     offset = parse_records_table(answers, data, table, offset)
     offset = parse_records_table(auth_answers, data, table, offset)
     offset = parse_records_table(add_answers, data, table, offset)

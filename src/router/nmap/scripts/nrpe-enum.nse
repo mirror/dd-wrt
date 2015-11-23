@@ -10,7 +10,8 @@ local tab = require "tab"
 -- vim: set filetype=lua :
 
 description = [[
-Queries Nagios Remote Plugin Executor (NRPE) daemons to obtain information such as load averages, process counts, logged in user information, etc.
+Queries Nagios Remote Plugin Executor (NRPE) daemons to obtain information such
+as load averages, process counts, logged in user information, etc.
 
 This script attempts to execute the stock list of commands that are
 enabled. User-supplied arguments are not supported.
@@ -34,7 +35,7 @@ enabled. User-supplied arguments are not supported.
 -- |_check_zombie_procs  OK        PROCS OK: 0 processes with STATE = Z
 
 author = "Mak Kolybabi"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "intrusive"}
 
 
@@ -130,7 +131,7 @@ local nrpe_open = function(host, port)
       return true, sock
     end
 
-    stdnse.print_debug(2, "Can't connect using %s: %s", proto, err)
+    stdnse.debug2("Can't connect using %s: %s", proto, err)
     sock:close()
   end
 
@@ -139,22 +140,17 @@ end
 
 local nrpe_write = function(cmd)
   -- Create request packet, before checksum.
-  local pkt = ""
-  pkt = pkt .. bin.pack(">S", 2)
-  pkt = pkt .. bin.pack(">S", 1)
-  pkt = pkt .. bin.pack(">I", 0)
-  pkt = pkt .. bin.pack(">S", 0)
-  pkt = pkt .. bin.pack("A", cmd)
-  pkt = pkt .. string.char(0x00):rep(1024 - #cmd)
-  pkt = pkt .. bin.pack(">S", 0)
+  local pkt = bin.pack(">SSISAAS",
+   2,
+   1,
+   0,
+   0,
+   cmd,
+   string.rep("\0", 1024 - #cmd),
+   0)
 
   -- Calculate the checksum, and insert it into the packet.
-  pkt = bin.pack(
-  "A>IA",
-  string.char(pkt:byte(1, 4)),
-  crc32(pkt),
-  string.char(pkt:byte(9, #pkt))
-  )
+  pkt = pkt:sub(1,4) .. bin.pack(">I", crc32(pkt)) .. pkt:sub(9)
 
   return pkt
 end
@@ -183,7 +179,7 @@ local nrpe_check = function(host, port, cmd)
   -- Send query.
   local status, err = sock:send(nrpe_write(cmd))
   if not status then
-    stdnse.print_debug(1, "Failed to send NRPE query for command %s: %s", cmd, err)
+    stdnse.debug1("Failed to send NRPE query for command %s: %s", cmd, err)
     sock:close()
     return false, nil
   end
@@ -191,7 +187,7 @@ local nrpe_check = function(host, port, cmd)
   -- Receive response.
   local status, resp = sock:receive()
   if not status then
-    stdnse.print_debug(1, "Can't read NRPE response: %s", resp)
+    stdnse.debug1("Can't read NRPE response: %s", resp)
     sock:close()
     return false, nil
   end

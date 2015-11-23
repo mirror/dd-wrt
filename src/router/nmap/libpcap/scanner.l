@@ -1,10 +1,3 @@
-%top{
-/* Must come first for _LARGE_FILE_API on AIX. */
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-}
-
 %{
 /*
  * Copyright (c) 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
@@ -26,11 +19,6 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/libpcap/scanner.l,v 1.112 2008-02-06 10:21:30 guy Exp $ (LBL)";
-#endif
 
 #ifdef WIN32
 #include <pcap-stdinc.h>
@@ -209,20 +197,8 @@ vrrp		return VRRP;
 carp		return CARP;
 radio		return RADIO;
 
-ip6		{
-#ifdef INET6
-		return IPV6;
-#else
-		bpf_error("%s not supported", yytext);
-#endif
-		}
-icmp6		{
-#ifdef INET6
-		return ICMPV6;
-#else
-		bpf_error("%s not supported", yytext);
-#endif
-		}
+ip6		return IPV6;
+icmp6		return ICMPV6;
 ah		return AH;
 esp		return ESP;
 
@@ -299,6 +275,7 @@ vlan		return VLAN;
 mpls		return MPLS;
 pppoed		return PPPOED;
 pppoes		return PPPOES;
+geneve		return GENEVE;
 
 lane		return LANE;
 llc		return LLC;
@@ -326,13 +303,20 @@ fisu		return FISU;
 lssu		return LSSU;
 lsu		return LSSU;
 msu		return MSU;
+hfisu		return HFISU;
+hlssu		return HLSSU;
+hmsu		return HMSU;
 sio		return SIO;
 opc		return OPC;
 dpc		return DPC;
 sls		return SLS;
+hsio		return HSIO;
+hopc		return HOPC;
+hdpc		return HDPC;
+hsls		return HSLS;
 
 [ \r\n\t]		;
-[+\-*/:\[\]!<>()&|=]	return yytext[0];
+[+\-*/%:\[\]!<>()&|\^=]	return yytext[0];
 ">="			return GEQ;
 "<="			return LEQ;
 "!="			return NEQ;
@@ -340,8 +324,12 @@ sls		return SLS;
 "<<"			return LSH;
 ">>"			return RSH;
 ${B}			{ yylval.e = pcap_ether_aton(((char *)yytext)+1);
+			  if (yylval.e == NULL)
+				bpf_error("malloc");
 			  return AID; }
 {MAC}			{ yylval.e = pcap_ether_aton((char *)yytext);
+			  if (yylval.e == NULL)
+				bpf_error("malloc");
 			  return EID; }
 {N}			{ yylval.i = stoi((char *)yytext); return NUM; }
 ({N}\.{N})|({N}\.{N}\.{N})|({N}\.{N}\.{N}\.{N})	{

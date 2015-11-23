@@ -30,22 +30,20 @@ mode to operate.
 -- |_    Host-Uniq: 7f8552a0
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"broadcast", "safe"}
 
 
 prerule = function()
   if not nmap.is_privileged() then
-    stdnse.print_verbose("%s not running for lack of privileges.", SCRIPT_NAME)
+    stdnse.verbose1("not running for lack of privileges.")
     return false
   end
   return true
 end
 
 local function fail(err)
-  if ( err ) then
-    return ("\n  ERROR: %s"):format(err)
-  end
+  return stdnse.format_output(false, err)
 end
 
 local function discoverPPPoE(helper)

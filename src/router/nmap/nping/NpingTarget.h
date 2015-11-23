@@ -7,7 +7,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -98,8 +98,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -120,7 +119,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
@@ -163,16 +162,16 @@ class NpingTarget {
 
     struct sockaddr_storage nexthopsock;  /**< Next Hop address              */
     size_t nexthopsocklen;
-    
+
     char targetipstring[INET6_ADDRSTRLEN];
     bool targetipstring_set;
 
     u8 MACaddress[6];         /**< Target MAC Address                        */
     bool MACaddress_set;
-    
+
     u8 SrcMACaddress[6];      /**< Source MAC Address                        */
     bool SrcMACaddress_set;
-    
+
     u8 NextHopMACaddress[6];  /**< Next Hop MAC Address                      */
     bool NextHopMACaddress_set;
 
@@ -190,13 +189,13 @@ class NpingTarget {
     void Initialize();
     void FreeInternal();
     void generateIPString();
-  
+
   public:
-  
+
     NpingTarget();
     ~NpingTarget();
     void Recycle();
-  
+
     /* Target IP address */
     int getTargetSockAddr(struct sockaddr_storage *ss, size_t *ss_len);
     int setTargetSockAddr(struct sockaddr_storage *ss, size_t ss_len);
@@ -205,7 +204,7 @@ class NpingTarget {
     struct in6_addr getIPv6Address();
     const struct in6_addr *getIPv6Address_aux();
     u8 *getIPv6Address_u8();
-    
+
     /* Source address used to reach the target */
     int getSourceSockAddr(struct sockaddr_storage *ss, size_t *ss_len);
     int setSourceSockAddr(struct sockaddr_storage *ss, size_t ss_len);
@@ -219,7 +218,7 @@ class NpingTarget {
     struct in6_addr getIPv6SourceAddress();  
     const struct in6_addr *getIPv6SourceAddress_aux();
     u8 *getIPv6SourceAddress_u8();
-    
+
     /* Info about host proximity */
     void setDirectlyConnected(bool connected);
     bool isDirectlyConnected();
@@ -236,7 +235,7 @@ class NpingTarget {
     const u8 *getMACAddress();
     bool determineNextHopMACAddress();
     bool determineTargetMACAddress();
-    
+
     /* Source MAC address */
     int setSrcMACAddress(const u8 *addy);
     const u8 *getSrcMACAddress();
@@ -247,7 +246,7 @@ class NpingTarget {
     const char *getDeviceFullName();
     int setDeviceType(devtype type);
     devtype getDeviceType();
- 
+
     /* Resolved Host name */
     const char *getResolvedHostName();
     void setResolvedHostName(char *name);

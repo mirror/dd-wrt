@@ -29,7 +29,7 @@ Shows NFS exports, like the <code>showmount -e</code> command.
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 dependencies = {"rpc-grind"}
 
@@ -55,7 +55,7 @@ local function get_exports(host, port)
   local mnt_comm = rpc.Comm:new('mountd', mountver)
   local status, result = mnt_comm:Connect(host, port)
   if ( not(status) ) then
-    stdnse.print_debug(4, "get_exports: %s", result)
+    stdnse.debug4("get_exports: %s", result)
     return false, result
   end
   host.registry.nfs.mountver = mountver
@@ -63,7 +63,7 @@ local function get_exports(host, port)
   local status, mounts = mnt:Export(mnt_comm)
   mnt_comm:Disconnect()
   if ( not(status) ) then
-    stdnse.print_debug(4, "get_exports: %s", mounts)
+    stdnse.debug4("get_exports: %s", mounts)
   end
   return status, mounts
 end
@@ -84,8 +84,7 @@ action = function(host, port)
     end
 
     for _, v in ipairs( mounts ) do
-        local entry = v.name
-        entry = entry .. " " .. stdnse.strjoin(" ", v)
+        local entry = v.name .. " " .. stdnse.strjoin(" ", v)
         table.insert( result, entry )
     end
 

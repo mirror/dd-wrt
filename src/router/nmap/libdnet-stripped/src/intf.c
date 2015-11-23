@@ -20,6 +20,10 @@
 # include <sys/sockio.h>
 #endif
 /* XXX - AIX */
+#ifdef HAVE_GETKERNINFO
+#include <sys/ndd_var.h>
+#include <sys/kinfo.h>
+#endif
 #ifndef IP_MULTICAST
 # define IP_MULTICAST
 #endif
@@ -477,6 +481,11 @@ static int
 _intf_get_noalias(intf_t *intf, struct intf_entry *entry)
 {
 	struct ifreq ifr;
+#ifdef HAVE_GETKERNINFO
+  int size;
+  struct kinfo_ndd *nddp;
+  void *end;
+#endif
 
 	/* Get interface index. */
 	entry->intf_index = if_nametoindex(entry->intf_name);
@@ -517,7 +526,39 @@ _intf_get_noalias(intf_t *intf, struct intf_entry *entry)
 				return (-1);
 		}
 	} else if (entry->intf_type == INTF_TYPE_ETH) {
-#if defined(SIOCGIFHWADDR)
+#if defined(HAVE_GETKERNINFO)
+	  /* AIX also defines SIOCGIFHWADDR, but it fails silently?
+	   * This is the method IBM recommends here:
+	   * http://www-01.ibm.com/support/knowledgecenter/ssw_aix_53/com.ibm.aix.progcomm/doc/progcomc/skt_sndother_ex.htm%23ssqinc2joyc?lang=en
+	   */
+	  /* How many bytes will be returned? */
+    size = getkerninfo(KINFO_NDD, 0, 0, 0);
+    if (size <= 0) {
+      return -1;
+    }
+    nddp = (struct kinfo_ndd *)malloc(size);
+
+    if (!nddp) {
+      return -1;
+    }
+    /* Get all Network Device Driver (NDD) info */
+    if (getkerninfo(KINFO_NDD, nddp, &size, 0) < 0) {
+      free(nddp);
+      return -1;
+    }
+    /* Loop over the returned values until we find a match */
+    end = (void *)nddp + size;
+    while ((void *)nddp < end) {
+      if (!strcmp(nddp->ndd_alias, entry->intf_name) ||
+          !strcmp(nddp->ndd_name, entry->intf_name)) {
+        addr_pack(&entry->intf_link_addr, ADDR_TYPE_ETH, ETH_ADDR_BITS,
+            nddp->ndd_addr, ETH_ADDR_LEN);
+        break;
+      } else
+        nddp++;
+    }
+    free(nddp);
+#elif defined(SIOCGIFHWADDR)
 		if (ioctl(intf->fd, SIOCGIFHWADDR, &ifr) < 0)
 			return (-1);
 		if (addr_ston(&ifr.ifr_addr, &entry->intf_link_addr) < 0)
@@ -912,6 +953,8 @@ intf_loop(intf_t *intf, intf_handler callback, void *arg)
 	struct lifreq *lifr, *llifr, *plifr;
 	char *p, ebuf[BUFSIZ];
 	int ret;
+	struct lifreq lifrflags;
+	memset(&lifrflags, 0, sizeof(struct lifreq));
 
 	entry = (struct intf_entry *)ebuf;
 
@@ -955,14 +998,15 @@ intf_loop(intf_t *intf, intf_handler callback, void *arg)
 		 * underlying physical interfaces instead. This works as long as
 		 * the physical interface's test address is on the same subnet
 		 * as the IPMP interface's address. */
-		if (ioctl(intf->fd, SIOCGLIFFLAGS, lifr) >= 0)
+		strlcpy(lifrflags.lifr_name, lifr->lifr_name, sizeof(lifrflags.lifr_name));
+		if (ioctl(intf->fd, SIOCGLIFFLAGS, &lifrflags) >= 0)
 			;
-		else if (intf->fd6 != -1 && ioctl(intf->fd6, SIOCGLIFFLAGS, lifr) >= 0)
+		else if (intf->fd6 != -1 && ioctl(intf->fd6, SIOCGLIFFLAGS, &lifrflags) >= 0)
 			;
 		else
 			return (-1);
 #ifdef IFF_IPMP
-		if (lifr->lifr_flags & IFF_IPMP) {
+		if (lifrflags.lifr_flags & IFF_IPMP) {
 			continue;
 		}
 #endif

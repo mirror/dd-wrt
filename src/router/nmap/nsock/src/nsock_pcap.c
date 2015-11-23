@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2013 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2015 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -28,8 +28,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -54,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_pcap.c 32741 2014-02-20 18:44:12Z dmiller $ */
+/* $Id: nsock_pcap.c 34756 2015-06-27 08:21:53Z henri $ */
 
 #include "nsock.h"
 #include "nsock_internal.h"
@@ -103,20 +102,20 @@ extern struct timeval nsock_tod;
     "You can probably use \"-PN -sT localhost\" though.\n\n"
 
 
-static int nsock_pcap_set_filter(mspool *nsp, pcap_t *pt, const char *device,
+static int nsock_pcap_set_filter(struct npool *nsp, pcap_t *pt, const char *device,
                                  const char *bpf) {
   struct bpf_program fcode;
   int rc;
 
-  rc = pcap_compile(pt, &fcode, (char *)bpf, 1, 0);
+  rc = pcap_compile(pt, &fcode, (char *)bpf, 1, PCAP_NETMASK_UNKNOWN);
   if (rc) {
-    nsock_log_error(nsp, "Error compiling pcap filter: %s", pcap_geterr(pt));
+    nsock_log_error("Error compiling pcap filter: %s", pcap_geterr(pt));
     return rc;
   }
 
   rc = pcap_setfilter(pt, &fcode);
   if (rc) {
-    nsock_log_error(nsp, "Failed to set the pcap filter: %s", pcap_geterr(pt));
+    nsock_log_error("Failed to set the pcap filter: %s", pcap_geterr(pt));
     return rc;
   }
 
@@ -198,12 +197,12 @@ static int nsock_pcap_get_l3_offset(pcap_t *pt, int *dl) {
   return (offset);
 }
 
-static int nsock_pcap_try_open(mspool *nsp, mspcap *mp, const char *dev,
+static int nsock_pcap_try_open(struct npool *nsp, mspcap *mp, const char *dev,
                                int snaplen, int promisc, int timeout_ms,
                                char *errbuf) {
     mp->pt = pcap_open_live(dev, snaplen, promisc, timeout_ms, errbuf);
     if (!mp->pt) {
-      nsock_log_error(nsp, "pcap_open_live(%s, %d, %d, %d) failed with error: %s",
+      nsock_log_error("pcap_open_live(%s, %d, %d, %d) failed with error: %s",
                       dev, snaplen, promisc, timeout_ms, errbuf);
       return -1;
     }
@@ -220,8 +219,8 @@ static int nsock_pcap_try_open(mspool *nsp, mspcap *mp, const char *dev,
  * if error occurred. */
 int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
                     int snaplen, int promisc, const char *bpf_fmt, ...) {
-  msiod *nsi = (msiod *)nsiod;
-  mspool *ms = (mspool *)nsp;
+  struct niod *nsi = (struct niod *)nsiod;
+  struct npool *ms = (struct npool *)nsp;
   mspcap *mp = (mspcap *)nsi->pcap;
   char errbuf[PCAP_ERRBUF_SIZE];
   char bpf[4096];
@@ -246,7 +245,7 @@ int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
   gettimeofday(&nsock_tod, NULL);
 
   if (mp) {
-    nsock_log_error(ms, "This nsi already has pcap device opened");
+    nsock_log_error("This nsi already has pcap device opened");
     return -1;
   }
 
@@ -258,11 +257,11 @@ int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
   va_end(ap);
 
   if (rc >= (int)sizeof(bpf)) {
-    nsock_log_error(ms, "Too-large bpf filter argument");
+    nsock_log_error("Too-large bpf filter argument");
     return -1;
   }
 
-  nsock_log_info(ms, "PCAP requested on device '%s' with berkeley filter '%s' "
+  nsock_log_info("PCAP requested on device '%s' with berkeley filter '%s' "
                  "(promisc=%i snaplen=%i to_ms=%i) (IOD #%li)",
                  pcap_device,bpf, promisc, snaplen, to_ms, nsi->id);
 
@@ -271,16 +270,16 @@ int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
     rc = nsock_pcap_try_open(ms, mp, pcap_device, snaplen, promisc, to_ms, errbuf);
     if (rc) {
       failed++;
-      nsock_log_error(ms, "Will wait %d seconds then retry.", 4 * failed);
+      nsock_log_error("Will wait %d seconds then retry.", 4 * failed);
       sleep(4 * failed);
     }
   } while (rc && failed < PCAP_OPEN_MAX_RETRIES);
 
   if (rc) {
-    nsock_log_error(ms, "pcap_open_live(%s, %d, %d, %d) failed %d times.",
+    nsock_log_error("pcap_open_live(%s, %d, %d, %d) failed %d times.",
                     pcap_device, snaplen, promisc, to_ms, failed);
-    nsock_log_error(ms, PCAP_FAILURE_EXPL_MESSAGE);
-    nsock_log_error(ms, "Can't open pcap! Are you root?");
+    nsock_log_error(PCAP_FAILURE_EXPL_MESSAGE);
+    nsock_log_error("Can't open pcap! Are you root?");
     return -1;
   }
 
@@ -328,16 +327,16 @@ int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
     if (mp->pcap_desc < 0)
 #endif
     {
-      nsock_log_error(ms, "Failed to set pcap descriptor on device %s "
+      nsock_log_error("Failed to set pcap descriptor on device %s "
                       "to nonblocking mode: %s", pcap_device, errbuf);
       return -1;
     }
     /* in other case, we can accept blocking pcap */
-    nsock_log_info(ms, "Failed to set pcap descriptor on device %s "
+    nsock_log_info("Failed to set pcap descriptor on device %s "
                    "to nonblocking state: %s", pcap_device, errbuf);
   }
 
-  if (ms->loglevel <= NSOCK_LOG_INFO) {
+  if (NsockLogLevel <= NSOCK_LOG_INFO) {
     #if PCAP_BSD_SELECT_HACK
       int bsd_select_hack = 1;
     #else
@@ -350,7 +349,7 @@ int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
       int recv_timeval_valid = 0;
     #endif
 
-    nsock_log_info(ms, "PCAP created successfully on device '%s' "
+    nsock_log_info("PCAP created successfully on device '%s' "
                    "(pcap_desc=%i bsd_hack=%i to_valid=%i l3_offset=%i) (IOD #%li)",
                    pcap_device, mp->pcap_desc, bsd_select_hack,
                    recv_timeval_valid, mp->l3_offset, nsi->id);
@@ -362,22 +361,22 @@ int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
 nsock_event_id nsock_pcap_read_packet(nsock_pool nsp, nsock_iod nsiod,
                                       nsock_ev_handler handler,
                                       int timeout_msecs, void *userdata) {
-  msiod *nsi = (msiod *)nsiod;
-  mspool *ms = (mspool *)nsp;
-  msevent *nse;
+  struct niod *nsi = (struct niod *)nsiod;
+  struct npool *ms = (struct npool *)nsp;
+  struct nevent *nse;
 
-  nse = msevent_new(ms, NSE_TYPE_PCAP_READ, nsi, timeout_msecs, handler, userdata);
+  nse = event_new(ms, NSE_TYPE_PCAP_READ, nsi, timeout_msecs, handler, userdata);
   assert(nse);
 
-  nsock_log_info(ms, "Pcap read request from IOD #%li  EID %li", nsi->id, nse->id);
+  nsock_log_info("Pcap read request from IOD #%li  EID %li", nsi->id, nse->id);
 
-  nsp_add_event(ms, nse);
+  nsock_pool_add_event(ms, nse);
 
   return nse->id;
 }
 
 /* Remember that pcap descriptor is in nonblocking state. */
-int do_actual_pcap_read(msevent *nse) {
+int do_actual_pcap_read(struct nevent *nse) {
   mspcap *mp = (mspcap *)nse->iod->pcap;
   nsock_pcap npp;
   nsock_pcap *n;
@@ -387,7 +386,7 @@ int do_actual_pcap_read(msevent *nse) {
 
   memset(&npp, 0, sizeof(nsock_pcap));
 
-  nsock_log_debug_all(nse->iod->nsp, "PCAP %s TEST (IOD #%li) (EID #%li)",
+  nsock_log_debug_all("PCAP %s TEST (IOD #%li) (EID #%li)",
                       __func__, nse->iod->id, nse->id);
 
   assert(fs_length(&(nse->iobuf)) == 0);
@@ -411,8 +410,7 @@ int do_actual_pcap_read(msevent *nse) {
       n = (nsock_pcap *)fs_str(&(nse->iobuf));
       n->packet = (unsigned char *)fs_str(&(nse->iobuf)) + sizeof(npp);
 
-      nsock_log_debug_all(nse->iod->nsp,
-                          "PCAP %s READ (IOD #%li) (EID #%li) size=%i",
+      nsock_log_debug_all("PCAP %s READ (IOD #%li) (EID #%li) size=%i",
                           __func__, nse->iod->id, nse->id, pkt_header->caplen);
       rc = 1;
       break;
@@ -437,8 +435,8 @@ int do_actual_pcap_read(msevent *nse) {
 void nse_readpcap(nsock_event nsev, const unsigned char **l2_data, size_t *l2_len,
                   const unsigned char **l3_data, size_t *l3_len,
                   size_t *packet_len, struct timeval *ts) {
-  msevent *nse = (msevent *)nsev;
-  msiod  *iod = nse->iod;
+  struct nevent *nse = (struct nevent *)nsev;
+  struct niod  *iod = nse->iod;
   mspcap *mp = (mspcap *)iod->pcap;
   nsock_pcap *n;
   size_t l2l;
@@ -477,16 +475,16 @@ void nse_readpcap(nsock_event nsev, const unsigned char **l2_data, size_t *l2_le
   return;
 }
 
-int nsi_pcap_linktype(nsock_iod nsiod) {
-  msiod *nsi = (msiod *)nsiod;
+int nsock_iod_linktype(nsock_iod iod) {
+  struct niod *nsi = (struct niod *)iod;
   mspcap *mp = (mspcap *)nsi->pcap;
 
   assert(mp);
   return (mp->datalink);
 }
 
-int nsi_is_pcap(nsock_iod nsiod) {
-  msiod *nsi = (msiod *)nsiod;
+int nsock_iod_is_pcap(nsock_iod iod) {
+  struct niod *nsi = (struct niod *)iod;
   mspcap *mp = (mspcap *)nsi->pcap;
 
   return (mp != NULL);

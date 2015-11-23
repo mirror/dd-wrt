@@ -27,7 +27,7 @@ Performs brute force password auditing against an iPhoto Library.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -76,7 +76,7 @@ Driver = {
     end
 
     if ( data:match("^HTTP/1.1 200 OK") ) then
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     end
 
     return false, brute.Error:new( "Incorrect password" )

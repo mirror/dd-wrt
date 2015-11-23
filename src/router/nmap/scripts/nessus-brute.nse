@@ -30,7 +30,7 @@ Performs brute force password auditing against a Nessus vulnerability scanning d
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 
@@ -128,7 +128,7 @@ Driver =
     end
 
     if ( line:match("SERVER <|> PREFERENCES_ERRORS <|>") ) then
-      return true, brute.Account:new(username, password, creds.State.VALID)
+      return true, creds.Account:new(username, password, creds.State.VALID)
     end
 
     return false, brute.Error:new( "Incorrect password" )

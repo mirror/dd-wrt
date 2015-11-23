@@ -2,7 +2,6 @@ local nmap = require "nmap"
 local shortport = require "shortport"
 local sip = require "sip"
 local stdnse = require "stdnse"
-local table = require "table"
 
 description = [[
 Enumerates a SIP Server's allowed methods (INVITE, OPTIONS, SUBSCRIBE, etc.)
@@ -19,11 +18,22 @@ the value of the Allow header in the response.
 -- 5060/udp open  sip
 -- | sip-methods:
 -- |_  INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO
+--
+-- @xmloutput
+-- <elem>INVITE</elem>
+-- <elem>ACK</elem>
+-- <elem>CANCEL</elem>
+-- <elem>OPTIONS</elem>
+-- <elem>BYE</elem>
+-- <elem>REFER</elem>
+-- <elem>SUBSCRIBE</elem>
+-- <elem>NOTIFY</elem>
+-- <elem>INFO</elem>
 
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"default", "safe", "discovery"}
 
@@ -35,7 +45,7 @@ action = function(host, port)
   session = sip.Session:new(host, port)
   status = session:connect()
   if not status then
-    return "ERROR: Failed to connect to the SIP server."
+    return stdnse.format_output(false, "Failed to connect to the SIP server.")
   end
 
   status, response = session:options()
@@ -48,7 +58,7 @@ action = function(host, port)
     -- Check if allow header exists in response
     local allow = response:getHeader("allow")
     if allow then
-      return stdnse.format_output(true, allow)
+      return stdnse.strsplit(",%s*", allow), allow
     end
   end
 end

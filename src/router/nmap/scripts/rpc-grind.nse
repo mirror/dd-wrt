@@ -37,7 +37,7 @@ Any other accept state is an incorrect behaviour.
 
 author = "Hani Benhabiles"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"version"}
 
@@ -52,7 +52,7 @@ portrule = function(host, port)
     -- different than rpcbind.
     return false
   end
-  return true
+  return nmap.version_intensity() >= 7
 end
 
 --- Function that determines if the target port of host uses RPC protocol.
@@ -78,7 +78,7 @@ local isRPC = function(host, port)
     rpcConn = rpc.Comm:new("rpcbind", 2)
     status, err = rpcConn:Connect(host, port)
     if not status then
-      stdnse.print_debug("%s: %s", SCRIPT_NAME, err)
+      stdnse.debug1("%s", err)
       return
     end
 
@@ -87,14 +87,14 @@ local isRPC = function(host, port)
     data = rpcConn:EncodePacket(xid)
     status, err = rpcConn:SendPacket(data)
     if not status then
-      stdnse.print_debug("%s SendPacket(): %s", SCRIPT_NAME, err)
+      stdnse.debug1("SendPacket(): %s", err)
       return
     end
 
     -- And check response
     status, data = rpcConn:ReceivePacket()
     if not status then
-      stdnse.print_debug("%s: isRPC didn't receive response.", SCRIPT_NAME)
+      stdnse.debug1("isRPC didn't receive response.")
       return
     else
       -- If we got response, set port to open
@@ -110,7 +110,7 @@ local isRPC = function(host, port)
       end
     end
   end
-  stdnse.print_debug("%s: RPC checking function response data is not RPC.", SCRIPT_NAME)
+  stdnse.debug1("RPC checking function response data is not RPC.")
 end
 
 -- Function that iterates over the nmap-rpc file and
@@ -121,14 +121,14 @@ local rpcIterator = function()
   -- Check if nmap-rpc file is present.
   local path = nmap.fetchfile("nmap-rpc")
   if not path then
-    stdnse.print_debug("%s: Could not find nmap-rpc file.", SCRIPT_NAME)
+    stdnse.debug1("Could not find nmap-rpc file.")
     return false
   end
 
   -- And is readable
   local nmaprpc, _, _ = io.open( path, "r" )
   if not nmaprpc then
-    stdnse.print_debug("%s: Could not open nmap-rpc for reading.", SCRIPT_NAME)
+    stdnse.debug1("Could not open nmap-rpc for reading.")
     return false
   end
 
@@ -168,7 +168,7 @@ local rpcGrinder = function(host, port, iterator, result)
   status, err = rpcConn:Connect(host, port)
 
   if not status then
-    stdnse.print_debug("%s Connect(): %s", SCRIPT_NAME, err)
+    stdnse.debug1("Connect(): %s", err)
     condvar "signal";
     return
   end
@@ -183,14 +183,14 @@ local rpcGrinder = function(host, port, iterator, result)
     packet = rpcConn:EncodePacket(xid)
     status, err = rpcConn:SendPacket(packet)
     if not status then
-      stdnse.print_debug("%s SendPacket(): %s", SCRIPT_NAME, err)
+      stdnse.debug1("SendPacket(): %s", err)
       condvar "signal";
       return
     end
 
     status, data = rpcConn:ReceivePacket()
     if not status then
-      stdnse.print_debug("%s ReceivePacket(): %s", SCRIPT_NAME, data)
+      stdnse.debug1("ReceivePacket(): %s", data)
       condvar "signal";
       return
     end
@@ -199,7 +199,7 @@ local rpcGrinder = function(host, port, iterator, result)
     if type(response) == 'table' then
       if xid ~= response.xid then
         -- Shouldn't happen.
-        stdnse.print_debug("%s: XID mismatch.", SCRIPT_NAME)
+        stdnse.debug1("XID mismatch.")
       end
       -- Look at accept state
       -- Not supported version means that we used the right program number
@@ -212,7 +212,7 @@ local rpcGrinder = function(host, port, iterator, result)
 
         -- Otherwise, an Accept state other than Program unavailable is not normal behaviour.
       elseif response.accept_state ~= rpc.Portmap.AcceptState.PROG_UNAVAIL then
-        stdnse.print_debug("%s: returned %s accept state for %s program number.",SCRIPT_NAME, response.accept_state, number)
+        stdnse.debug1("returned %s accept state for %s program number.", response.accept_state, number)
       end
     end
   end
@@ -224,7 +224,7 @@ action = function(host, port)
   local result, lthreads = {}, {}
 
   if not isRPC(host, port) then
-    stdnse.print_debug("Target port %s is not a RPC port.", port.number)
+    stdnse.debug1("Target port %s is not a RPC port.", port.number)
     return
   end
   local threads = tonumber(stdnse.get_script_args(SCRIPT_NAME .. ".threads")) or 4
@@ -262,7 +262,7 @@ action = function(host, port)
     end
     nmap.set_port_version(host, port, "hardmatched")
   else
-    stdnse.print_debug("Couldn't determine the target RPC service. Running a service not in nmap-rpc ?")
+    stdnse.debug1("Couldn't determine the target RPC service. Running a service not in nmap-rpc ?")
   end
   return nil
 end

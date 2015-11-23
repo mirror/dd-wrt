@@ -62,7 +62,7 @@ the system, besides showing a message box to the user.
 
 author = "Ron Bowes"
 copyright = "Ron Bowes"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery","intrusive"}
 dependencies = {"smb-brute"}
 
@@ -211,7 +211,7 @@ local function winreg_enum_rids(host)
 
   -- Convert the SID to the name of the user
   local results = {}
-  stdnse.print_debug(3, "MSRPC: Found %d SIDs that might be logged in", #elements)
+  stdnse.debug3("MSRPC: Found %d SIDs that might be logged in", #elements)
   for i = 1, #elements, 1 do
     if(elements[i]['name'] ~= nil) then
       local sid = elements[i]['name']
@@ -223,7 +223,7 @@ local function winreg_enum_rids(host)
 
         if(status == false) then
           -- It may not succeed, if it doesn't that's ok
-          stdnse.print_debug(3, "MSRPC: Lookup failed")
+          stdnse.debug3("MSRPC: Lookup failed")
         else
           -- Create the result array
           local result = {}
@@ -304,23 +304,15 @@ action = function(host)
         local time = sessions[i]['time']
         if(time == 0) then
           time = "[just logged in, it's probably you]"
-        elseif(time > 60 * 60 * 24) then
-          time = string.format("%dd%dh%02dm%02ds", time / (60*60*24), (time % (60*60*24)) / 3600, (time % 3600) / 60, time % 60)
-        elseif(time > 60 * 60) then
-          time = string.format("%dh%02dm%02ds", time / 3600, (time % 3600) / 60, time % 60)
         else
-          time = string.format("%02dm%02ds", time / 60, time % 60)
+          time = stdnse.format_time(time)
         end
 
         local idle_time = sessions[i]['idle_time']
         if(idle_time == 0) then
           idle_time = "[not idle]"
-        elseif(idle_time > 60 * 60 * 24) then
-          idle_time = string.format("%dd%dh%02dm%02ds", idle_time / (60*60*24), (idle_time % (60*60*24)) / 3600, (idle_time % 3600) / 60, idle_time % 60)
-        elseif(idle_time > 60 * 60) then
-          idle_time = string.format("%dh%02dm%02ds", idle_time / 3600, (idle_time % 3600) / 60, idle_time % 60)
         else
-          idle_time = string.format("%02dm%02ds", idle_time / 60, idle_time % 60)
+          idle_time = stdnse.format_time(idle_time)
         end
 
         table.insert(sessions_output, string.format("%s is connected from %s for %s, idle for %s", sessions[i]['user'], sessions[i]['client'], time, idle_time))

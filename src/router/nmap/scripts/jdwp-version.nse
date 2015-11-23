@@ -13,7 +13,7 @@ Documentation for JDWP is available at
 http://java.sun.com/javase/6/docs/technotes/guides/jpda/jdwp-spec.html
 ]]
 author = "Michael Schierl <schierlm@gmx.de>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"version"}
 
 ---
@@ -28,6 +28,7 @@ portrule = function(host, port)
   return port.service == "tcpwrapped"
     and port.protocol == "tcp" and port.state == "open"
     and not(shortport.port_is_excluded(port.number,port.protocol))
+    and nmap.version_intensity() >= 7
 end
 
 action = function(host, port)

@@ -31,7 +31,7 @@ Attempts to list all users on a MySQL server.
 
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"auth", "intrusive"}
 
 
@@ -69,7 +69,7 @@ action = function( host, port )
     end
   -- last, no dice, we don't have any credentials at all
   else
-    stdnse.print_debug("No credentials supplied, aborting ...")
+    stdnse.debug1("No credentials supplied, aborting ...")
     return
   end
 

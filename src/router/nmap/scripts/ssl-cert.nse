@@ -1,5 +1,4 @@
 local nmap = require "nmap"
-local os = require "os"
 local shortport = require "shortport"
 local sslcert = require "sslcert"
 local stdnse = require "stdnse"
@@ -29,6 +28,7 @@ With <code>-v</code> it adds the issuer name and fingerprints.
 /organizationName=VeriSign, Inc./countryName=US
 | Public Key type: rsa
 | Public Key bits: 2048
+| Signature Algorithm: sha1WithRSAEncryption
 | Not valid before: 2011-03-23 00:00:00
 | Not valid after:  2013-04-01 23:59:59
 | MD5:   bf47 ceca d861 efa7 7d14 88ad 4a73 cb5b
@@ -50,6 +50,7 @@ certificate.
 /organizationalUnitName=Terms of use at https://www.verisign.com/rpa (c)06
 | Public Key type: rsa
 | Public Key bits: 2048
+| Signature Algorithm: sha1WithRSAEncryption
 | Not valid before: 2011-03-23 00:00:00
 | Not valid after:  2013-04-01 23:59:59
 | MD5:   bf47 ceca d861 efa7 7d14 88ad 4a73 cb5b
@@ -95,6 +96,7 @@ certificate.
 --   <elem key="type">rsa</elem>
 --   <elem key="bits">2048</elem>
 -- </table>
+-- <elem key="sig_algo">sha1WithRSAEncryption</elem>
 -- <table key="validity">
 --   <elem key="notBefore">2011-03-23T00:00:00+00:00</elem>
 --   <elem key="notAfter">2013-04-01T23:59:59+00:00</elem>
@@ -110,7 +112,7 @@ certificate.
 
 author = "David Fifield"
 
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = { "default", "safe", "discovery" }
 
@@ -137,7 +139,7 @@ function date_to_string(date)
   if type(date) == "string" then
     return string.format("Can't parse; string is \"%s\"", date)
   else
-    return stdnse.format_timestamp(stdnse.date_to_timestamp(date, 0), 0)
+    return stdnse.format_timestamp(date)
   end
 end
 
@@ -188,12 +190,13 @@ local function output_tab(cert)
   o.subject = name_to_table(cert.subject)
   o.issuer = name_to_table(cert.issuer)
   o.pubkey = cert.pubkey
+  o.sig_algo = cert.sig_algorithm
   o.validity = {}
   for k, v in pairs(cert.validity) do
     if type(v)=="string" then
       o.validity[k] = v
     else
-      o.validity[k] = stdnse.format_timestamp(stdnse.date_to_timestamp(v, 0), 0)
+      o.validity[k] = stdnse.format_timestamp(v)
     end
   end
   o.md5 = stdnse.tohex(cert:digest("md5"))
@@ -214,6 +217,7 @@ local function output_str(cert)
   if nmap.verbosity() > 0 then
     lines[#lines + 1] = "Public Key type: " .. cert.pubkey.type
     lines[#lines + 1] = "Public Key bits: " .. cert.pubkey.bits
+    lines[#lines + 1] = "Signature Algorithm: " .. cert.sig_algorithm
   end
 
   lines[#lines + 1] = "Not valid before: " ..

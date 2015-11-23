@@ -32,7 +32,7 @@ accessible or not.
 --
 
 author = "Patrik Karlsson"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"discovery", "safe"}
 
 hostrule = function(host)
@@ -57,7 +57,7 @@ end
 
 local function discoverDAC(host, name, result)
   local condvar = nmap.condvar(result)
-  stdnse.print_debug(2, "Discovering DAC port on instance: %s", name)
+  stdnse.debug2("Discovering DAC port on instance: %s", name)
   local port = mssql.Helper.DiscoverDACPort( host, name )
   if ( port ) then
     if ( checkPort(host, port) ) then
