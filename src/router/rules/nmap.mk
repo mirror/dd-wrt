@@ -13,7 +13,7 @@ nmap-configure:
 		CPPFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="-L$(TOP)/libpcap -L$(TOP)/openssl  $(COPTS)" PCAP_ROOT="$(TOP)/libpcap  -ffunction-sections -fdata-sections -Wl,--gc-sections"
+		LDFLAGS="-L$(TOP)/libpcap -L$(TOP)/openssl $(COPTS) -lssl -lcrypto" PCAP_ROOT="$(TOP)/libpcap  -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 nmap:
 	make -C nmap $(NMAP_EXTRAFLAGS) clean
