@@ -149,7 +149,7 @@ void start_finishupgrade(void)
 
 }
 
-void calcchecksum(void *caldata)
+void calcchecksum(void *caldata) // works on little endian only so far. so consider to fix it when using on big endian systems
 {
 	int i;
 	unsigned short *cdata = (unsigned short *)caldata;
