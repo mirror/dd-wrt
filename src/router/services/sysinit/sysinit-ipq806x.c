@@ -281,6 +281,15 @@ void start_sysinit(void)
 	system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
 	system("swconfig dev switch0 vlan 2 set ports \"5 0\"");
 	system("swconfig dev switch0 set apply");
+	int board = getRouterBoard();
+	switch (board) {
+	case ROUTER_TRENDNET_TEW827:
+		eval("ifconfig", "eth0", "hw", "ether", getUEnv("wan_mac"));
+		eval("ifconfig", "eth1", "hw", "ether", getUEnv("lan_mac"));
+		break;
+	default:
+		break;
+	}
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
 
