@@ -260,13 +260,16 @@ void start_sysinit(void)
 		fread(smem, 0x8000, 1, fp);
 
 		fclose(fp);
-//		if (maddr && board == ROUTER_TRENDNET_TEW827) {	// board calibration data with real mac addresses
-//			int i;
-//			for (i = 0; i < 6; i++) {
-//				smem[i + 6] = newmac[i];
-//				smem[i + 6 + 0x4000] = newmac[i];
-//			}
-//		}
+		if (maddr && board == ROUTER_TRENDNET_TEW827) {	// board calibration data with real mac addresses
+			int i;
+			for (i = 0; i < 6; i++) {
+				smem[i + 6] = newmac[i];
+				smem[i + 6 + 0x4000] = newmac[i];
+			}
+		}
+		unsigned short *len = (unsigned short *)&smem[0];
+		unsigned short *crc = (unsigned short *)&smem[2];
+
 
 		fp = fopen("/tmp/board1.bin", "wb");
 		fwrite(smem, 0x4000, 1, fp);
