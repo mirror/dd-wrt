@@ -981,7 +981,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCSIFHWADDR, &ifr);
 #elif HAVE_IPQ806X
-	int board = getRouterBoard();
+	int board = getRouterBrand();
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
 		if (getSTA() || getWET() || CANBRIDGE()) {

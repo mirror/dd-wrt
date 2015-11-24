@@ -233,12 +233,14 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 
+	fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
 	char mtdpath[64];
-	int board = getRouterBoard();
+	fprintf(stderr, "%s:%d\n", __func__, __LINE__);
+	int board = getRouterBrand();
 	// this is for TEW827 only. i dont know how it works for other boards. offsets might be different
 	int mtd = getMTD("art");
 	char *maddr = NULL;
@@ -248,9 +250,9 @@ void start_sysinit(void)
 		int newmac[6];
 		if (board == ROUTER_TRENDNET_TEW827) {
 			maddr = getUEnv("lan_mac");
-			
+
 			if (maddr)
-			    sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
+				sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
 		}
 
 		fseek(fp, 0x1000, SEEK_SET);
@@ -305,8 +307,8 @@ void start_sysinit(void)
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
 		if (maddr) {
-		eval("ifconfig", "eth0", "hw", "ether", getUEnv("wan_mac"));
-		eval("ifconfig", "eth1", "hw", "ether", getUEnv("lan_mac"));
+			eval("ifconfig", "eth0", "hw", "ether", getUEnv("wan_mac"));
+			eval("ifconfig", "eth1", "hw", "ether", getUEnv("lan_mac"));
 		}
 		break;
 	default:
