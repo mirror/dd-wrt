@@ -149,6 +149,24 @@ void start_finishupgrade(void)
 
 }
 
+void calcchecksum(void *caldata)
+{
+int i;
+unsigned char *bin = (unsigned char*)caldata;
+unsigned short *cdata = (unsigned short*)caldata;
+unsigned short *ptr_eeprom = (unsigned short*)caldata;
+    cdata[1]=0; // clear checksum for calculation
+    int size = cdata[0];
+    unsigned short crc = 0;
+    for (i=0;i<size;i+=2) {
+        crc ^= *ptr_eeprom;
+        ptr_eeprom++;
+    }
+    crc = ~crc;
+fprintf(stderr, "checksum is %x:%x\n",bin[2],bin[3]);
+cdata[1] = crc;
+}
+
 static void setbootdevice(int dev)
 {
 	int brand = getRouterBrand();
@@ -260,6 +278,8 @@ void start_sysinit(void)
 		fread(smem, 0x8000, 1, fp);
 
 		fclose(fp);
+		calcchecksum(smem);
+		calcchecksum(&smem[0x4000]);
 		if (maddr && board == ROUTER_TRENDNET_TEW827) {	// board calibration data with real mac addresses
 			int i;
 			for (i = 0; i < 6; i++) {
@@ -267,10 +287,8 @@ void start_sysinit(void)
 				smem[i + 6 + 0x4000] = newmac[i];
 			}
 		}
-		unsigned short *len = (unsigned short *)&smem[0];
-		unsigned short *crc = (unsigned short *)&smem[2];
-
-
+		calcchecksum(smem);
+		calcchecksum(&smem[0x4000]);
 		fp = fopen("/tmp/board1.bin", "wb");
 		fwrite(smem, 0x4000, 1, fp);
 		fclose(fp);
