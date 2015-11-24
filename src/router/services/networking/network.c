@@ -981,23 +981,33 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCSIFHWADDR, &ifr);
 #elif HAVE_IPQ806X
-	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
-		PORTSETUPWAN("");
-	} else {
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
-		PORTSETUPWAN("eth1");
+	int board = getRouterBoard();
+	switch (board) {
+	case ROUTER_TRENDNET_TEW827:
+		if (getSTA() || getWET() || CANBRIDGE()) {
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+			PORTSETUPWAN("");
+		} else {
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+			PORTSETUPWAN("eth0");
+		}
+		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+		break;
+	default:
+		if (getSTA() || getWET() || CANBRIDGE()) {
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+			PORTSETUPWAN("");
+		} else {
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+			PORTSETUPWAN("eth1");
+		}
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		break;
 	}
-	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
-	MAC_ADD(mac);
-	ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
-	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-	ioctl(s, SIOCSIFHWADDR, &ifr);
 #elif HAVE_WDR4900
 	nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1011,11 +1021,6 @@ void start_lan(void)
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
-	MAC_ADD(mac);
-	ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
-	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
-	ioctl(s, SIOCSIFHWADDR, &ifr);
 #elif HAVE_RB600
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
 	if (getSTA() || getWET() || CANBRIDGE()) {
