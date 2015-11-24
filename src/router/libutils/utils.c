@@ -6379,7 +6379,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_TRENDNET_TEW827:
 		power_gpio = 0x135;	// power led 
-		usb_gpio = 0x107; // usb led
+		usb_gpio = 0x107;	// usb led
 		break;
 	case ROUTER_NETGEAR_R8000:
 		power_gpio = 0x102;	// power led 
@@ -6624,7 +6624,8 @@ int insmod(char *module)
 	int ret;
 	wordlist = module;
 	foreach(word, wordlist, next) {
-		ret |= eval("insmod", word);
+		_evalpid((char[]) {
+			 word, NULL}, ">/dev/null", 0, NULL);
 	}
 	return ret;
 }
@@ -6635,7 +6636,8 @@ void rmmod(char *module)
 	char *next, *wordlist;
 	wordlist = module;
 	foreach(word, wordlist, next) {
-		eval("rmmod", word);
+		_evalpid((char[]) {
+			 word, NULL}, ">/dev/null", 0, NULL);
 	}
 }
 
