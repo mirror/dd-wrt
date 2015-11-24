@@ -274,6 +274,7 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 				perror(path);
 			else {
 				dup2(fd, STDOUT_FILENO);
+				dup2(fd, STDERR_FILENO);
 				close(fd);
 			}
 		}
