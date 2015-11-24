@@ -241,14 +241,16 @@ void start_sysinit(void)
 	int board = getRouterBoard();
 	// this is for TEW827 only. i dont know how it works for other boards. offsets might be different
 	int mtd = getMTD("art");
+	char *maddr = NULL;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 	fp = fopen(mtdpath, "rb");
 	if (fp) {
-
 		int newmac[6];
 		if (board == ROUTER_TRENDNET_TEW827) {
-			char *maddr = getUEnv("lan_mac");
-			sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
+			maddr = getUEnv("lan_mac");
+			
+			if (maddr)
+			    sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
 		}
 
 		fseek(fp, 0x1000, SEEK_SET);
@@ -256,7 +258,7 @@ void start_sysinit(void)
 		fread(smem, 0x8000, 1, fp);
 
 		fclose(fp);
-		if (board == ROUTER_TRENDNET_TEW827) {	// board calibration data with real mac addresses
+		if (maddr && board == ROUTER_TRENDNET_TEW827) {	// board calibration data with real mac addresses
 			int i;
 			for (i = 0; i < 6; i++) {
 				smem[i + 6] = newmac[i];
@@ -302,8 +304,10 @@ void start_sysinit(void)
 	system("swconfig dev switch0 set apply");
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
+		if (maddr) {
 		eval("ifconfig", "eth0", "hw", "ether", getUEnv("wan_mac"));
 		eval("ifconfig", "eth1", "hw", "ether", getUEnv("lan_mac"));
+		}
 		break;
 	default:
 		break;
