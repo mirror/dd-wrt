@@ -4078,7 +4078,7 @@ static char *getUEnvExt(char *name)
 
 #endif
 
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) || defined(HAVE_DIR810L) || defined(HAVE_MVEBU)
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) || defined(HAVE_DIR810L) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
 void *getUEnv(char *name)
 {
 
@@ -4096,6 +4096,8 @@ void *getUEnv(char *name)
 #define UOFFSET 0x0
 #elif HAVE_MVEBU
 #define UOFFSET 0x0
+#elif HAVE_IPQ806X
+#define UOFFSET 0x0
 #else
 #define UOFFSET 0x3E000
 #endif
@@ -4107,6 +4109,8 @@ void *getUEnv(char *name)
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
 #elif HAVE_MVEBU
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
+#elif HAVE_IPQ806X
+	FILE *fp = fopen("/dev/mtdblock/3", "rb");
 #else
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 #endif
