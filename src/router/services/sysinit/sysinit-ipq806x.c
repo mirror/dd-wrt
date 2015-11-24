@@ -249,13 +249,11 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 
-	fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
 	char mtdpath[64];
-	fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	int board = getRouterBrand();
 	// this is for TEW827 only. i dont know how it works for other boards. offsets might be different
 	int mtd = getMTD("art");
