@@ -86,7 +86,6 @@ typedef struct {
 
 void start_finishupgrade(void)
 {
-	int brand = getRouterBrand();
 	char mtdpath[64];
 	int mtd = getMTD("BOOTCONFIG");
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
@@ -149,7 +148,7 @@ void start_finishupgrade(void)
 
 }
 
-void calcchecksum(void *caldata) // works on little endian only so far. so consider to fix it when using on big endian systems
+void calcchecksum(void *caldata)	// works on little endian only so far. so consider to fix it when using on big endian systems
 {
 	int i;
 	unsigned short *cdata = (unsigned short *)caldata;
@@ -165,9 +164,65 @@ void calcchecksum(void *caldata) // works on little endian only so far. so consi
 	cdata[1] = crc;
 }
 
+static int getbootdevice(void)
+{
+	char mtdpath[64];
+	int mtd = getMTD("BOOTCONFIG");
+	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+
+	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
+	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
+
+	unsigned int *smem = (unsigned int *)malloc(0x60000);
+	memset(smem, 0, 0x60000);
+	FILE *fp = fopen(mtdpath, "rb");
+	if (fp) {
+		fread(smem, 0x60000, 1, fp);
+		fclose(fp);
+		int i;
+		unsigned int *p = smem;
+		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
+			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
+				ipq_smem_bootconfig_v2_info = p;
+				break;
+			}
+			if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
+				ipq_smem_bootconfig_info = p;
+				break;
+			}
+			p++;
+		}
+
+	}
+	if (ipq_smem_bootconfig_v2_info) {
+		int i;
+		for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
+			if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
+				free(smem);
+				if (ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot)
+					return 1;
+				else
+					return 0;
+			}
+		}
+	}
+	if (ipq_smem_bootconfig_info) {
+		int i;
+		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
+			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+				free(smem);
+				if (ipq_smem_bootconfig_info->per_part_entry[i].primaryboot)
+					return 1;
+				else
+					return 0;
+			}
+		}
+	}
+	free(smem);
+}
+
 static void setbootdevice(int dev)
 {
-	int brand = getRouterBrand();
 	char mtdpath[64];
 	int mtd = getMTD("BOOTCONFIG");
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
@@ -325,6 +380,11 @@ void start_sysinit(void)
 			eval("ifconfig", "eth0", "hw", "ether", getUEnv("wan_mac"));
 			eval("ifconfig", "eth1", "hw", "ether", getUEnv("lan_mac"));
 		}
+		start_finishupgrade();
+		if (getbootdevice())
+			nvram_set("bootpartition", "1");
+		else
+			nvram_set("bootpartition", "0");
 		break;
 	default:
 		break;
