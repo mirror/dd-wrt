@@ -4913,7 +4913,7 @@ static void writenet(char *path, int cpumask, char *ifname)
 	snprintf(dev, 64, "/sys/class/net/%s/%s", ifname, path);
 
 	int fd = open(dev, O_WRONLY);
-	if (fd == -1)
+	if (fd < 0)
 		return 1;
 	char mask[32];
 	sprintf(mask, "%x", cpumask);
