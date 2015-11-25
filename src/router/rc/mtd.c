@@ -595,7 +595,7 @@ int mtd_write(const char *path, const char *mtd)
 #ifndef NETGEAR_CRC_FAKE
 	calculate_checksum(0, NULL, 0);	// init
 #endif
-#if defined(HAVE_MVEBU)		// erase all blocks first
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)		// erase all blocks first
 
 	mtd_erase(mtd);
 #endif
@@ -688,7 +688,7 @@ int mtd_write(const char *path, const char *mtd)
 				badblocks += mtd_info.erasesize;
 				continue;
 			}
-#if !defined(HAVE_MVEBU)	// we do not need to erase again. it has been done before
+#if !defined(HAVE_MVEBU) && !defined(HAVE_IPQ806X)	// we do not need to erase again. it has been done before
 
 			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 				fprintf(stderr, "\nerase/write failed\n");
