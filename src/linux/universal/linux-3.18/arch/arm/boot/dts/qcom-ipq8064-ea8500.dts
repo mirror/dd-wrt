@@ -54,6 +54,13 @@
 					bias-disable;
 				};
 			};
+			
+			switch_reset: switch_reset {
+				rst {
+					pins = "gpio63";
+					output-low;
+				};
+			};
 
 			nand_pins: nand_pins {
 				mux {
@@ -290,7 +297,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			gpios = <&qcom_pinmux 1 0 &qcom_pinmux 0 0>;
-			pinctrl-0 = <&mdio0_pins>;
+			pinctrl-0 = <&mdio0_pins &switch_reset>;
 			pinctrl-names = "default";
 
 			phy0: ethernet-phy@0 {
@@ -318,7 +325,6 @@
 			phy-mode = "rgmii";
 			phy-handle = <&phy4>;
 			qcom,id = <1>;
-			mtd-mac-address = <&art 6>;
 			pinctrl-0 = <&rgmii2_pins>;
 			pinctrl-names = "default";
 
@@ -328,7 +334,6 @@
 			status = "ok";
 			phy-mode = "sgmii";
 			qcom,id = <2>;
-			mtd-mac-address = <&art 0>;
 			fixed-link {
 				speed = <1000>;
 				full-duplex;
