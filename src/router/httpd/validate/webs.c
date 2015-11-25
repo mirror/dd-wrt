@@ -3039,6 +3039,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	copymergetonv(wp, "%s_relayd_gw_ipaddr", prefix);
 #endif
 #ifdef HAVE_IFL
+#ifdef HAVE_NEXTMEDIA
+        copytonv(wp, "%s_label", prefix);
+#endif
 	copytonv(wp, "%s_note", prefix);
 #endif
 #ifdef HAVE_MADWIFI
