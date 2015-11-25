@@ -216,11 +216,6 @@
 				read-only;
 			};
 
-			ubi@1340000 {
-				label = "ubi";
-				reg = <0x1340000 0x4000000>; /*  */
-			};
-
 			firmware@1340000 {
 				label = "linux";
 				reg = <0x1340000 0x4000000>;
