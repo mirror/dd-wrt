@@ -166,6 +166,15 @@ void start_hotplug_usb(void)
 #define READ_AHEAD_KB_BUF	1024
 #define READ_AHEAD_CONF	"/sys/block/%s/queue/read_ahead_kb"
 
+static int writestr(char *path, char *a)
+{
+	int fd = open(path, O_WRONLY);
+	if (fd < 0)
+		return 1;
+	write(fd, a, strlen(a));
+	close(fd);
+}
+
 static void optimize_block_device(char *devname)
 {
 	char blkdev[8] = { 0 };
@@ -175,11 +184,7 @@ static void optimize_block_device(char *devname)
 	memset(blkdev, 0, sizeof(blkdev));
 	strncpy(blkdev, devname, 3);
 	sprintf(read_ahead_conf, READ_AHEAD_CONF, blkdev);
-	int fd = open(read_ahead_conf, O_WRONLY);
-	if (fd == -1)
-		return;
-	write(fd, READ_AHEAD_KB_BUF, strlen(READ_AHEAD_KB_BUF));
-	close(fd);
+	writestr(read_ahead_conf,READ_AHEAD_KB_BUF);
 }
 
 //Kernel 3.x
