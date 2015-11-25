@@ -293,6 +293,30 @@ void start_bootprimary(void)
 	setbootdevice(0);
 }
 
+void *get_deviceinfo(char *var)
+{
+	static char res[256];
+	memset(res, 0, sizeof(res));
+	FILE *fp = fopen("/dev/mtdblock/12", "rb");
+	char newname[64];
+	snprintf(newname, 64, "%s=", var);
+	char *mem = safe_malloc(0x2000);
+	fread(mem, 0x2000, 1, fp);
+	fclose(fp);
+	int s = (0x2000 - 1) - strlen(newname);
+	int i;
+	int l = strlen(newname);
+	for (i = 0; i < s; i++) {
+		if (!strncmp(mem + i, newname, l)) {
+			strncpy(res, mem + i + l, 17);
+			free(mem);
+			return res;
+		}
+	}
+	free(mem);
+	return NULL;
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -317,11 +341,14 @@ void start_sysinit(void)
 	fp = fopen(mtdpath, "rb");
 	if (fp) {
 		int newmac[6];
-		if (board == ROUTER_TRENDNET_TEW827) {
+		if (board == ROUTER_TRENDNET_TEW827)
 			maddr = getUEnv("lan_mac");
-
-			if (maddr)
-				sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
+		if (board == ROUTER_LINKSYS_EA8500)
+			maddr = get_deviceinfo("hw_mac_addr");
+		
+		if (maddr){
+			fprintf(stderr, "sysinit using mac %s\n", maddr);
+			sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
 		}
 
 		fseek(fp, 0x1000, SEEK_SET);
@@ -329,7 +356,7 @@ void start_sysinit(void)
 		fread(smem, 0x8000, 1, fp);
 
 		fclose(fp);
-		if (maddr && board == ROUTER_TRENDNET_TEW827) {	// board calibration data with real mac addresses
+		if (maddr && (board == ROUTER_TRENDNET_TEW827 || board == ROUTER_LINKSYS_EA8500)) {	// board calibration data with real mac addresses
 			int i;
 			for (i = 0; i < 6; i++) {
 				smem[i + 6] = newmac[i];
@@ -338,6 +365,7 @@ void start_sysinit(void)
 		}
 		calcchecksum(smem);
 		calcchecksum(&smem[0x4000]);
+		
 		fp = fopen("/tmp/board1.bin", "wb");
 		fwrite(smem, 0x4000, 1, fp);
 		fclose(fp);
@@ -374,6 +402,7 @@ void start_sysinit(void)
 	system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
 	system("swconfig dev switch0 vlan 2 set ports \"5 0\"");
 	system("swconfig dev switch0 set apply");
+		
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
 		if (maddr) {
@@ -386,9 +415,17 @@ void start_sysinit(void)
 		else
 			nvram_set("bootpartition", "0");
 		break;
+	case ROUTER_LINKSYS_EA8500:
+		if (maddr) {
+			eval("ifconfig", "eth1", "hw", "ether", get_deviceinfo("hw_mac_addr"));
+			eval("ifconfig", "eth0", "hw", "ether", get_deviceinfo("hw_mac_addr"));
+			nvram_set("lan_hwaddr", get_deviceinfo("hw_mac_addr"));
+		}
+		break;
 	default:
 		break;
 	}
+	
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
 
@@ -406,7 +443,6 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 		close(s);
 	}
-
 	set_gpio(9, 1);		//wps
 
 	/*
@@ -414,7 +450,7 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
-	//nvram_set("wl1_ifname", "ath1");
+	nvram_set("wl1_ifname", "ath1");
 }
 
 int check_cfe_nv(void)
