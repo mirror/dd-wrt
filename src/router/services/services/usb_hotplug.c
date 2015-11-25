@@ -104,7 +104,7 @@ void start_hotplug_usb(void)
 }
 
 /* Optimize performance */
-#define READ_AHEAD_KB_BUF	1024
+#define READ_AHEAD_KB_BUF	"1024"
 #define READ_AHEAD_CONF	"/sys/block/%s/queue/read_ahead_kb"
 static int writestr(char *path, char *a)
 {
