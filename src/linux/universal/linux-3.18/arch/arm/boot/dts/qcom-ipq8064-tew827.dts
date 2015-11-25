@@ -222,12 +222,12 @@
 			};
 
 			firmware@1340000 {
-				label = "firmware";
+				label = "linux";
 				reg = <0x1340000 0x4000000>;
 			};
 
 			firmware2@58a0000 {
-				label = "firmware2";
+				label = "linux2";
 				reg = <0x58a0000 0x4000000>;
 			};
 
