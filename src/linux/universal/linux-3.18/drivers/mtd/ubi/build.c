@@ -1250,6 +1250,7 @@ static int getbootdevice(void)
 	struct mtd_info *mtd;
 	size_t len;
 	int i;
+	int ret = -1;
 	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
 	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
 	unsigned int *smem, *p;
@@ -1279,28 +1280,26 @@ static int getbootdevice(void)
 	if (ipq_smem_bootconfig_v2_info) {
 		for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
 			if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
-				vfree(smem);
 				if (ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot)
-					return 1;
+					ret = 1;
 				else
-					return 0;
+					ret = 0;
 			}
 		}
 	}
 	if (ipq_smem_bootconfig_info) {
 		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
 			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
-				vfree(smem);
 				if (ipq_smem_bootconfig_info->per_part_entry[i].primaryboot)
-					return 1;
+					ret = 1;
 				else
-					return 0;
+					ret = 0;
 			}
 		}
 	}
 	vfree(smem);
 	printk(KERN_INFO "no valid bootconfig found, use default\n");
-	return -1;
+	return ret;
 }
 
 /*
