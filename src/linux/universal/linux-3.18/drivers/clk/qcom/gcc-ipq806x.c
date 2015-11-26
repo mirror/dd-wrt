@@ -2857,9 +2857,9 @@ static int nss_core_clk_set_parent(struct clk_hw *hw, u8 i)
 	return clk_dyn_rcg_ops.set_parent(&ubi32_core2_src_clk.clkr.hw, i);
 }
 
-static struct clk *nss_core_clk_get_safe_parent(struct clk_hw *hw)
+static struct clk_hw *nss_core_clk_get_safe_parent(struct clk_hw *hw)
 {
-	return clk_get_parent_by_index(hw->clk, P_PLL8);
+	return __clk_get_hw(clk_get_parent_by_index(hw->clk, P_PLL8));
 }
 
 static const struct clk_ops clk_ops_nss_core = {
