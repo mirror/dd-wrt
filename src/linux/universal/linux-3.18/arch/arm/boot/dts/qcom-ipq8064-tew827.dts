@@ -144,28 +144,14 @@
 			status = "ok";
 		};
 
-		pci@1b500000 {
+		pcie0: pci@1b500000 {
 			status = "ok";
-			reset-gpio = <&qcom_pinmux 3 0>;
-			pinctrl-0 = <&pcie1_pins>;
-			pinctrl-names = "default";
-
-			ranges = <0x00000000 0 0x00000000 0x0ff00000 0 0x00100000   /* configuration space */
-				  0x81000000 0 0	  0x0fe00000 0 0x00100000   /* downstream I/O */
-				  0x82000000 0 0x00000000 0x08000000 0 0x07e00000>; /* non-prefetchable memory */
+			phy-tx0-term-offset = <7>;
 		};
 
-		pci@1b700000 {
+		pcie1: pci@1b700000 {
 			status = "ok";
-			reset-gpio = <&qcom_pinmux 48 0>;
-			pinctrl-0 = <&pcie2_pins>;
-			pinctrl-names = "default";
-
-			ranges = <0x00000000 0 0x00000000 0x31f00000 0 0x00100000   /* configuration space */
-				  0x81000000 0 0	  0x31e00000 0 0x00100000   /* downstream I/O */
-				  0x82000000 0 0x00000000 0x2e000000 0 0x03e00000>; /* non-prefetchable memory */
-
-			force_gen1 = <1>;
+			phy-tx0-term-offset = <7>;
 		};
 
 
