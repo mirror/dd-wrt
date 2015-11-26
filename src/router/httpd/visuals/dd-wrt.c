@@ -2360,11 +2360,14 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				        || nvram_nmatch("n2-only", "%s_net_mode", prefix)
 				        || nvram_nmatch("bg-mixed", "%s_net_mode", prefix)
 				        || nvram_nmatch("ng-mixed", "%s_net_mode", prefix)
+				        || nvram_nmatch("b-only", "%s_net_mode", prefix)
 				        || nvram_nmatch("g-only", "%s_net_mode", prefix)) {
 				                checkband=2;
 				}
 				if (nvram_nmatch("a-only", "%s_net_mode", prefix)
 				        || nvram_nmatch("na-only", "%s_net_mode", prefix)
+				        || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+				        || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
 				        || nvram_nmatch("n5-only", "%s_net_mode", prefix)) {
 				                checkband=5;
 				}
