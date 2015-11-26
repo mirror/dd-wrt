@@ -38,13 +38,6 @@
 				function = "gsbi4";
 				bias-disable;
 			};
-			
-			switch_reset: switch_reset {
-				rst {
-					pins = "gpio63";
-					output-low;
-				};
-			};
 
 			nand_pins: nand_pins {
 				mux {
@@ -142,6 +135,11 @@
 		};
 
 		pcie1: pci@1b700000 {
+			status = "ok";
+			phy-tx0-term-offset = <7>;
+		};
+		
+		pcie2: pci@1b900000 {
 			status = "ok";
 			phy-tx0-term-offset = <7>;
 		};
@@ -266,7 +264,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			gpios = <&qcom_pinmux 1 0 &qcom_pinmux 0 0>;
-			pinctrl-0 = <&mdio0_pins &switch_reset>;
+			pinctrl-0 = <&mdio0_pins>;
 			pinctrl-names = "default";
 
 			phy0: ethernet-phy@0 {
