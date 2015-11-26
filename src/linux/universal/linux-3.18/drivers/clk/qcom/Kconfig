@@ -98,28 +98,3 @@ config KRAITCC
 config KRAIT_CLOCKS
 	bool
 	select KRAIT_L2_ACCESSORS
-
-config IPQ_GCC_40XX
-	tristate "IPQ40XX Global Clock Controller"
-	depends on COMMON_CLK_QCOM
-	help
-	  Support for the global clock controller on IPQ40xx devices.
-	  Say Y if you want to use peripheral devices
-	  such as UART, SPI,
-	  i2c, USB, SD/eMMC, SATA, PCIe, etc.
-
-config IPQ_ADCC_40XX
-	tristate "IPQ40XX Audio Clock Controller"
-	depends on COMMON_CLK_QCOM
-	help
-	  Support for the audio clock controller on IPQ40xx devices.
-	  Say Y if you want to use Audio Clocks
-	  these are used for clks like TXM,RXM, TXB, and RXB
-	  Also, this is used for selecting the pads as the sources.
-
-config DUMMY_CLK
-	bool "Dummy clock controller"
-	depends on COMMON_CLK_QCOM
-	help
-	  Enable this if you are working on presil with no Clock controller
-	  modelled.

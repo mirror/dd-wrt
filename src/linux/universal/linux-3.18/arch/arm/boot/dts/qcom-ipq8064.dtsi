@@ -740,35 +740,38 @@
 			compatible = "qcom,adm";
 			reg = <0x18300000 0x100000>;
 			interrupts = <0 170 0>;
-			#dma-cells = <2>;
+			#dma-cells = <1>;
 
 			clocks = <&gcc ADM0_CLK>, <&gcc ADM0_PBUS_CLK>;
 			clock-names = "core", "iface";
 
 			resets = <&gcc ADM0_RESET>,
-				<&gcc ADM0_PBUS_RESET>,
-				<&gcc ADM0_C0_RESET>,
-				<&gcc ADM0_C1_RESET>,
-				<&gcc ADM0_C2_RESET>;
+				 <&gcc ADM0_PBUS_RESET>,
+				 <&gcc ADM0_C0_RESET>,
+				 <&gcc ADM0_C1_RESET>,
+				 <&gcc ADM0_C2_RESET>;
 			reset-names = "clk", "pbus", "c0", "c1", "c2";
 			qcom,ee = <0>;
 
 			status = "disabled";
-
 		};
 
 		nand@1ac00000 {
-			compatible = "qcom,qcom_nand";
+			compatible = "qcom,ebi2-nandc";
 			reg = <0x1ac00000 0x800>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 
-			clocks = <&gcc EBI2_CLK>;
-			clock-names = "core_clk";
+			clocks = <&gcc EBI2_CLK>,
+				 <&gcc EBI2_AON_CLK>;
+			clock-names = "core", "aon";
 
+			dmas = <&adm_dma 3>;
+			dma-names = "rxtx";
+			qcom,cmd-crci = <15>;
+			qcom,data-crci = <3>;
 
 			status = "disabled";
 		};
+
 
 		nss_common: syscon@03000000 {
 			compatible = "syscon";

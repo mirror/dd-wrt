@@ -39,22 +39,6 @@
 				bias-disable;
 			};
 
-			pcie1_pins: pcie1_pinmux {
-				mux {
-					pins = "gpio3";
-					drive-strength = <2>;
-					bias-disable;
-				};
-			};
-
-			pcie2_pins: pcie2_pinmux {
-				mux {
-					pins = "gpio48";
-					drive-strength = <2>;
-					bias-disable;
-				};
-			};
-
 			nand_pins: nand_pins {
 				mux {
 					pins = "gpio34", "gpio35", "gpio36",
