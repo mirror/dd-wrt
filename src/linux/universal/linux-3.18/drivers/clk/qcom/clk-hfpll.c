@@ -11,8 +11,7 @@
  * GNU General Public License for more details.
  */
 #include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/init.h>
+#include <linux/export.h>
 #include <linux/regmap.h>
 #include <linux/delay.h>
 #include <linux/err.h>
@@ -76,7 +75,6 @@ static void __clk_hfpll_enable(struct clk_hw *hw)
 	 * H/W requires a 5us delay between disabling the bypass and
 	 * de-asserting the reset. Delay 10us just to be safe.
 	 */
-	mb();
 	udelay(10);
 
 	/* De-assert active-low PLL reset. */
@@ -88,15 +86,11 @@ static void __clk_hfpll_enable(struct clk_hw *hw)
 			regmap_read(regmap, hd->status_reg, &val);
 		} while (!(val & BIT(hd->lock_bit)));
 	} else {
-		mb();
 		udelay(60);
 	}
 
 	/* Enable PLL output. */
 	regmap_update_bits(regmap, hd->mode_reg, PLL_OUTCTRL, PLL_OUTCTRL);
-
-	/* Make sure the enable is done before returning. */
-	mb();
 }
 
 /* Enable an already-configured HFPLL. */
@@ -117,9 +111,8 @@ static int clk_hfpll_enable(struct clk_hw *hw)
 	return 0;
 }
 
-static void __clk_hfpll_disable(struct clk_hw *hw)
+static void __clk_hfpll_disable(struct clk_hfpll *h)
 {
-	struct clk_hfpll *h = to_clk_hfpll(hw);
 	struct hfpll_data const *hd = h->d;
 	struct regmap *regmap = h->clkr.regmap;
 
@@ -137,7 +130,7 @@ static void clk_hfpll_disable(struct clk_hw *hw)
 	unsigned long flags;
 
 	spin_lock_irqsave(&h->lock, flags);
-	__clk_hfpll_disable(hw);
+	__clk_hfpll_disable(h);
 	spin_unlock_irqrestore(&h->lock, flags);
 }
 
@@ -177,7 +170,7 @@ static int clk_hfpll_set_rate(struct clk_hw *hw, unsigned long rate,
 
 	enabled = __clk_is_enabled(hw->clk);
 	if (enabled)
-		__clk_hfpll_disable(hw);
+		__clk_hfpll_disable(h);
 
 	/* Pick the right VCO. */
 	if (hd->user_reg && hd->user_vco_mask) {
