@@ -285,7 +285,7 @@ static int __cpuinit set_enabled(const char *val, const struct kernel_param *kp)
 
 	ret = param_set_bool(val, kp);
 	if (!enabled) {
-		ktm_status == false;
+		ktm_status = false;
 		disable_msm_thermal();
 	} else {
 		if (ktm_status == false) {
