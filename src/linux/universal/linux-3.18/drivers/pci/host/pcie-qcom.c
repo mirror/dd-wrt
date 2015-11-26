@@ -152,20 +152,10 @@ writel_masked(void __iomem *addr, u32 clear_mask, u32 set_mask)
 
 static void qcom_ep_reset_assert_deassert(struct qcom_pcie *pcie, int assert)
 {
-	int val, active_low;
-
 	if (IS_ERR_OR_NULL(pcie->reset))
 		return;
 
-	active_low = gpiod_is_active_low(pcie->reset);
-
-	if (assert)
-		val = !!active_low;
-	else
-		val = !active_low;
-
-	gpiod_set_value(pcie->reset, val);
-
+	gpiod_set_value(pcie->reset, assert);
 	usleep_range(PERST_DELAY_MIN_US, PERST_DELAY_MAX_US);
 }
 
@@ -291,6 +281,7 @@ static int qcom_pcie_enable_resources_v0(struct qcom_pcie *pcie)
 		dev_err(dev, "cannot deassert ahb reset\n");
 		goto err_reset_ahb;
 	}
+	udelay(1);
 
 	return 0;
 
@@ -596,8 +587,8 @@ static void qcom_pcie_prog_viewport_mem2_outbound(struct qcom_pcie *pcie)
 	writel(upper_32_bits(pp->mem_bus_addr),
 	       pcie->dbi + PCIE20_PLR_IATU_UTAR);
 
-	/* 1K PCIE buffer setting */
-	writel(0x3, pcie->dbi + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
+	/* 256B PCIE buffer setting */
+	writel(0x1, pcie->dbi + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
 	writel(0x1, pcie->dbi + PCIE20_AXI_MSTR_RESP_COMP_CTRL1);
 }
 
@@ -609,6 +600,8 @@ static void qcom_pcie_host_init_v0(struct pcie_port *pp)
 	int ret;
 
 	qcom_ep_reset_assert(pcie);
+
+	reset_control_assert(res->ahb_reset);
 
 	ret = qcom_pcie_enable_resources_v0(pcie);
 	if (ret)
