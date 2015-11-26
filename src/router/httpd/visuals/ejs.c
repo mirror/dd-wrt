@@ -1575,7 +1575,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #elif !defined(HAVE_AOSS) && defined(HAVE_WPS)
 		 "wirelessWPS",
 #else
-		 "", // place holder
+		 "",		// place holder
 #endif
 		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},	//
 		{"services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesLighttpd", ""},	//
@@ -2272,6 +2272,27 @@ static void show_temp(webs_t wp, int mon, int input, char *fmt)
 }
 #endif
 
+#ifdef HAVE_IPQ806X
+static void show_temp(webs_t wp, char *fmt)
+{
+	char sysfs[64];
+	int mon;
+	float temperature = 0.0f;
+	for (mon = 0; mon < 11; mon++) {
+		snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp1_input", mon);
+		FILE *tempfp = fopen(sysfs, "rb");
+		if (tempfp) {
+			int cpu;
+			fscanf(tempfp, "%d", &cpu);
+			fclose(tempfp);
+			temperature += cpu;
+		}
+	}
+	temperature /= mon;
+	websWrite(wp, fmt, temperature);
+}
+#endif
+
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MVEBU
@@ -2285,6 +2306,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		show_temp(wp, 1, 2, " / WL1 %d.%d &#176;C");
 	}
 	return;
+#endif
+#ifdef HAVE_IPQ806X
+	show_temp(wp, "CPU %4.2f");
 #endif
 #ifdef HAVE_BCMMODERN
 
