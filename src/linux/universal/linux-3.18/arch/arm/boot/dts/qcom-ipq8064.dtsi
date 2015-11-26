@@ -255,6 +255,12 @@
 			};
 		};
 
+		rng@1a500000 {
+			compatible = "qcom,prng";
+			reg = <0x1a500000 0x200>;
+			clocks = <&gcc PRNG_CLK>;
+			clock-names = "core";
+		};
 
 		qcom,msm-imem@2A03F000 {
 			compatible = "qcom,msm-imem";
@@ -537,6 +543,28 @@
 			compatible = "qcom,ssbi";
 			reg = <0x00500000 0x1000>;
 			qcom,controller-type = "pmic-arbiter";
+		};
+
+		tsens: tsens-ipq806x {
+			compatible = "qcom,ipq806x-tsens";
+			reg = <0x900000 0x3678>, <0x700000 0x420>;
+			reg-names = "tsens_physical", "tsens_eeprom_physical";
+			interrupts = <0 178 0>;
+			qcom,sensors = <11>;
+			qcom,tsens_factor = <1000>;
+			qcom,slope = <1176 1176 1154 1176 1111 1132 1132 1199 1132 1199 1132>;
+		};
+
+		qcom,msm-thermal {
+			compatible = "qcom,msm-thermal";
+			qcom,sensor-id = <0>;
+			qcom,poll-ms = <250>;
+			qcom,limit-temp = <105>;
+			qcom,temp-hysteresis = <10>;
+			qcom,freq-step = <2>;
+			qcom,core-limit-temp = <115>;
+			qcom,core-temp-hysteresis = <10>;
+			qcom,core-control-mask = <0xe>;
 		};
 
 		gcc: clock-controller@900000 {
