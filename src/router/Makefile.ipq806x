@@ -68,7 +68,7 @@ export BASEOPT:=-Os
 #ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fhonour-copts -msoft-float
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9  -mfloat-abi=soft -fpic -fno-caller-saves 
-export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=neon-vfpv4 -mfloat-abi=softfp -fno-caller-saves 
+export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=neon-vfpv4 -mfloat-abi=hard -fno-caller-saves 
 #endif
 
 
@@ -466,7 +466,7 @@ endif
 	./tools/ubi/ubinize-image.sh --kernel $(ARCH)-uclibc/vmlinux-TEW827.uImage.final \
 		$(ARCH)-uclibc/root.squashfs.new \
 		$(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory.ubi \
-		-v -p 128KiB -m 2048
+		-v -p 128KiB -m 2048 -s 512 -O 2048
 
 #	cd $(ARCH)-uclibc && ../tools/wrt1900ac/ubinize -v -m 2048 -p 128KiB -s 512 -O 2048 -o root.squashfs.ubi ubinize.cfg && cd ..
 
@@ -474,7 +474,8 @@ endif
 	cp $(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-tew827-squashfs-nand-factory.ubi
 	
 
-	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v1.bin $(ARCH)-uclibc/ddwrt-R7500v1.bin 
+	./tools/trx_n -m 50000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v1.bin $(ARCH)-uclibc/ddwrt-R7500v1.bin 
+	./tools/trx_n -m 50000000 -o $(ARCH)-uclibc/ddwrt-trendnet-tew827.bin $(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory.ubi
 	cd tools && ./r7500/mkimage -f sysupgrade-ubi.its $(TOP)/$(ARCH)-uclibc/tew827-upgrade.bin
 	cat tools/tew827.tag >> $(ARCH)-uclibc/tew827-upgrade.bin
 
