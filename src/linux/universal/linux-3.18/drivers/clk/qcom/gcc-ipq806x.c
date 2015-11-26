@@ -220,7 +220,9 @@ static struct clk_regmap pll14_vote = {
 
 static struct pll_freq_tbl pll18_freq_tbl[] = {
 	NSS_PLL_RATE(550000000, 44, 0, 1, 0x01495625),
+	NSS_PLL_RATE(600000000, 48, 0, 1, 0x01495625),
 	NSS_PLL_RATE(733000000, 58, 16, 25, 0x014b5625),
+	NSS_PLL_RATE(800000000, 64, 0, 1, 0x01495625),
 };
 
 static struct clk_pll pll18 = {
@@ -778,7 +780,7 @@ static struct clk_rcg gsbi4_qup_src = {
 			.parent_names = gcc_pxo_pll8,
 			.num_parents = 2,
 			.ops = &clk_rcg_ops,
-			.flags = CLK_SET_PARENT_GATE,
+			.flags = CLK_SET_PARENT_GATE | CLK_IGNORE_UNUSED,
 		},
 	},
 };
@@ -794,7 +796,7 @@ static struct clk_branch gsbi4_qup_clk = {
 			.parent_names = (const char *[]){ "gsbi4_qup_src" },
 			.num_parents = 1,
 			.ops = &clk_branch_ops,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
 		},
 	},
 };
@@ -1005,7 +1007,7 @@ static struct clk_branch gsbi5_h_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "gsbi5_h_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			.flags = CLK_IS_ROOT | CLK_IGNORE_UNUSED,
 		},
 	},
 };
@@ -2290,36 +2292,6 @@ static struct clk_branch usb_fs1_h_clk = {
 	},
 };
 
-static struct clk_branch ebi2_clk = {
-	.hwcg_reg = 0x3b00,
-	.hwcg_bit = 6,
-	.halt_reg = 0x2fcc,
-	.halt_bit = 1,
-	.clkr = {
-		.enable_reg = 0x3b00,
-		.enable_mask = BIT(4),
-		.hw.init = &(struct clk_init_data){
-			.name = "ebi2_clk",
-			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
-		},
-	},
-};
-
-static struct clk_branch ebi2_aon_clk = {
-	.halt_reg = 0x2fcc,
-	.halt_bit = 0,
-	.clkr = {
-		.enable_reg = 0x3b00,
-		.enable_mask = BIT(8),
-		.hw.init = &(struct clk_init_data){
-			.name = "ebi2_always_on_clk",
-			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
-		},
-	},
-};
-
 static const struct freq_tbl clk_tbl_gmac[] = {
 	{ 133000000, P_PLL0, 1,  50, 301 },
 	{ 266000000, P_PLL0, 1, 127, 382 },
@@ -2676,7 +2648,9 @@ static const struct freq_tbl clk_tbl_nss[] = {
 	{ 110000000, P_PLL18, 1, 1, 5 },
 	{ 275000000, P_PLL18, 2, 0, 0 },
 	{ 550000000, P_PLL18, 1, 0, 0 },
+	{ 600000000, P_PLL18, 1, 0, 0 },
 	{ 733000000, P_PLL18, 1, 0, 0 },
+	{ 800000000, P_PLL18, 1, 0, 0 },
 	{ }
 };
 
@@ -2889,8 +2863,6 @@ static struct clk_regmap *gcc_ipq806x_clks[] = {
 	[USB_FS1_XCVR_SRC] = &usb_fs1_xcvr_clk_src.clkr,
 	[USB_FS1_XCVR_CLK] = &usb_fs1_xcvr_clk.clkr,
 	[USB_FS1_SYSTEM_CLK] = &usb_fs1_sys_clk.clkr,
-	[EBI2_CLK] = &ebi2_clk.clkr,
-	[EBI2_AON_CLK] = &ebi2_aon_clk.clkr,
 	[PLL9] = &hfpll0.clkr,
 	[PLL10] = &hfpll1.clkr,
 	[PLL12] = &hfpll_l2.clkr,
@@ -3092,20 +3064,10 @@ MODULE_DEVICE_TABLE(of, gcc_ipq806x_match_table);
 
 static int gcc_ipq806x_probe(struct platform_device *pdev)
 {
-	struct clk *clk;
 	struct device *dev = &pdev->dev;
 	struct regmap *regmap;
 	int ret;
 
-	/* Temporary until RPM clocks supported */
-/*	clk = clk_register_fixed_rate(dev, "cxo", NULL, CLK_IS_ROOT, 25000000);
-	if (IS_ERR(clk))
-		return PTR_ERR(clk);
-
-	clk = clk_register_fixed_rate(dev, "pxo", NULL, CLK_IS_ROOT, 25000000);
-	if (IS_ERR(clk))
-		return PTR_ERR(clk);
-*/
 	ret = qcom_cc_probe(pdev, &gcc_ipq806x_desc);
 	if (ret)
 		return ret;
