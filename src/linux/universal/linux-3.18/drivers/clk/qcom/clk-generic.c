@@ -65,7 +65,7 @@ static void mux_disable(struct clk_hw *hw)
 		return mux->ops->disable(mux);
 }
 
-static struct clk *mux_get_safe_parent(struct clk_hw *hw)
+static struct clk_hw *mux_get_safe_parent(struct clk_hw *hw)
 {
 	int i;
 	struct mux_clk *mux = to_mux_clk(hw);
@@ -80,7 +80,7 @@ static struct clk *mux_get_safe_parent(struct clk_hw *hw)
 			if (mux->safe_sel == mux->parent_map[i])
 				break;
 
-	return clk_get_parent_by_index(hw->clk, i);
+	return __clk_get_hw(clk_get_parent_by_index(hw->clk, i));
 }
 
 const struct clk_ops clk_ops_gen_mux = {
