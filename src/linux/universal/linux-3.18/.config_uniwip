@@ -2156,7 +2156,6 @@ CONFIG_DMA_OF=y
 #
 # CONFIG_ASYNC_TX_DMA is not set
 # CONFIG_DMATEST is not set
-# CONFIG_QCOM_ADM_DMA is not set
 # CONFIG_AUXDISPLAY is not set
 # CONFIG_UIO is not set
 # CONFIG_VIRT_DRIVERS is not set
