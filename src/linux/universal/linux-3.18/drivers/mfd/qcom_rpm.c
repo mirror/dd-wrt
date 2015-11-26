@@ -328,11 +328,11 @@ static const struct qcom_rpm_resource ipq806x_rpm_resource_table[] = {
 	[QCOM_RPM_PXO_CLK] =			{ 26, 10, 6, 1 },
 	[QCOM_RPM_APPS_FABRIC_CLK] =		{ 27, 11, 8, 1 },
 	[QCOM_RPM_SYS_FABRIC_CLK] =		{ 28, 12, 9, 1 },
-	[QCOM_RPM_NSS_FABRIC_0_CLK] =		{ 29, 13, 10, 1 },
+	[QCOM_RPM_NSS_FABRIC_0_CLK] =		{ 29, 13, 91, 1 },
 	[QCOM_RPM_DAYTONA_FABRIC_CLK] =		{ 30, 14, 11, 1 },
 	[QCOM_RPM_SFPB_CLK] =			{ 31, 15, 12, 1 },
 	[QCOM_RPM_CFPB_CLK] =			{ 32, 16, 13, 1 },
-	[QCOM_RPM_NSS_FABRIC_1_CLK] =		{ 33, 17, 14, 1 },
+	[QCOM_RPM_NSS_FABRIC_1_CLK] =		{ 33, 17, 91, 1 },
 	[QCOM_RPM_EBI1_CLK] =			{ 34, 18, 16, 1 },
 	[QCOM_RPM_APPS_FABRIC_HALT] =		{ 35, 19, 18, 2 },
 	[QCOM_RPM_APPS_FABRIC_MODE] =		{ 37, 20, 19, 3 },
@@ -373,9 +373,10 @@ static const struct of_device_id qcom_rpm_of_match[] = {
 MODULE_DEVICE_TABLE(of, qcom_rpm_of_match);
 
 int qcom_rpm_write(struct qcom_rpm *rpm,
-		   int state,
-		   int resource,
-		   u32 *buf, size_t count)
+		int state,
+		int resource,
+		u32 *buf,
+		size_t count)
 {
 	const struct qcom_rpm_resource *res;
 	const struct qcom_rpm_data *data = rpm->data;
@@ -534,17 +535,20 @@ static int qcom_rpm_probe(struct platform_device *pdev)
 	fw_version[2] = readl(RPM_STATUS_REG(rpm, 2));
 	if (fw_version[0] != rpm->data->version) {
 		dev_err(&pdev->dev,
-			"RPM version %u.%u.%u incompatible with driver version %u",
+			"RPM version %u.%u.%u:%u:%u incompatible with driver version %u",
 			fw_version[0],
 			fw_version[1],
-			fw_version[2],
+			((fw_version[2] >> 24) & 0xff),
+			((fw_version[2] >> 16) & 0xff),
+			(fw_version[2] & 0xffff),
 			rpm->data->version);
 		return -EFAULT;
 	}
 
-	dev_info(&pdev->dev, "RPM firmware %u.%u.%u\n", fw_version[0],
-							fw_version[1],
-							fw_version[2]);
+	dev_info(&pdev->dev, "RPM firmware %u.%u.%u\n",
+				((fw_version[2] >> 24) & 0xff),
+				((fw_version[2] >> 16) & 0xff),
+				(fw_version[2] & 0xffff));
 
 	ret = devm_request_irq(&pdev->dev,
 			       irq_ack,
@@ -590,15 +594,8 @@ static int qcom_rpm_probe(struct platform_device *pdev)
 	return of_platform_populate(pdev->dev.of_node, NULL, NULL, &pdev->dev);
 }
 
-static int qcom_rpm_remove(struct platform_device *pdev)
-{
-	of_platform_depopulate(&pdev->dev);
-	return 0;
-}
-
 static struct platform_driver qcom_rpm_driver = {
 	.probe = qcom_rpm_probe,
-	.remove = qcom_rpm_remove,
 	.driver  = {
 		.name  = "qcom_rpm",
 		.of_match_table = qcom_rpm_of_match,
