@@ -3098,14 +3098,14 @@ static int gcc_ipq806x_probe(struct platform_device *pdev)
 	int ret;
 
 	/* Temporary until RPM clocks supported */
-	clk = clk_register_fixed_rate(dev, "cxo", NULL, CLK_IS_ROOT, 25000000);
+/*	clk = clk_register_fixed_rate(dev, "cxo", NULL, CLK_IS_ROOT, 25000000);
 	if (IS_ERR(clk))
 		return PTR_ERR(clk);
 
 	clk = clk_register_fixed_rate(dev, "pxo", NULL, CLK_IS_ROOT, 25000000);
 	if (IS_ERR(clk))
 		return PTR_ERR(clk);
-
+*/
 	ret = qcom_cc_probe(pdev, &gcc_ipq806x_desc);
 	if (ret)
 		return ret;
