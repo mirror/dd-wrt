@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2015, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -34,80 +34,80 @@
 #include "virt-dma.h"
 
 /* ADM registers - calculated from channel number and security domain */
-#define HI_CH_CMD_PTR(chan, ee)		(4*chan + 0x20800*ee)
-#define HI_CH_RSLT(chan, ee)		(0x40 + 4*chan + 0x20800*ee)
-#define HI_CH_FLUSH_STATE0(chan, ee)	(0x80 + 4*chan + 0x20800*ee)
-#define HI_CH_FLUSH_STATE1(chan, ee)	(0xc0 + 4*chan + 0x20800*ee)
-#define HI_CH_FLUSH_STATE2(chan, ee)	(0x100 + 4*chan + 0x20800*ee)
-#define HI_CH_FLUSH_STATE3(chan, ee)	(0x140 + 4*chan + 0x20800*ee)
-#define HI_CH_FLUSH_STATE4(chan, ee)	(0x180 + 4*chan + 0x20800*ee)
-#define HI_CH_FLUSH_STATE5(chan, ee)	(0x1c0 + 4*chan + 0x20800*ee)
-#define HI_CH_STATUS_SD(chan, ee)	(0x200 + 4*chan + 0x20800*ee)
-#define HI_CH_CONF(chan)		(0x240 + 4*chan)
-#define HI_CH_RSLT_CONF(chan, ee)	(0x300 + 4*chan + 0x20800*ee)
-#define HI_SEC_DOMAIN_IRQ_STATUS(ee)	(0x380 + 0x20800*ee)
-#define HI_CI_CONF(ci)			(0x390 + 4*ci)
-#define HI_CRCI_CONF0			0x3d0
-#define HI_CRCI_CONF1			0x3d4
-#define HI_GP_CTL			0x3d8
-#define HI_CRCI_CTL(crci, ee)		(0x400 + 0x4*crci + 0x20800*ee)
+#define ADM_CHAN_MULTI			0x4
+#define ADM_CI_MULTI			0x4
+#define ADM_CRCI_MULTI			0x4
+#define ADM_EE_MULTI			0x800
+#define ADM_CHAN_OFFS(chan)		(ADM_CHAN_MULTI * chan)
+#define ADM_EE_OFFS(ee)			(ADM_EE_MULTI * ee)
+#define ADM_CHAN_EE_OFFS(chan, ee)	(ADM_CHAN_OFFS(chan) + ADM_EE_OFFS(ee))
+#define ADM_CHAN_OFFS(chan)		(ADM_CHAN_MULTI * chan)
+#define ADM_CI_OFFS(ci)			(ADM_CHAN_OFF(ci))
+#define ADM_CH_CMD_PTR(chan, ee)	(ADM_CHAN_EE_OFFS(chan, ee))
+#define ADM_CH_RSLT(chan, ee)		(0x40 + ADM_CHAN_EE_OFFS(chan, ee))
+#define ADM_CH_FLUSH_STATE0(chan, ee)	(0x80 + ADM_CHAN_EE_OFFS(chan, ee))
+#define ADM_CH_STATUS_SD(chan, ee)	(0x200 + ADM_CHAN_EE_OFFS(chan, ee))
+#define ADM_CH_CONF(chan)		(0x240 + ADM_CHAN_OFFS(chan))
+#define ADM_CH_RSLT_CONF(chan, ee)	(0x300 + ADM_CHAN_EE_OFFS(chan, ee))
+#define ADM_SEC_DOMAIN_IRQ_STATUS(ee)	(0x380 + ADM_EE_OFFS(ee))
+#define ADM_CI_CONF(ci)			(0x390 + ci * ADM_CI_MULTI)
+#define ADM_GP_CTL			0x3d8
+#define ADM_CRCI_CTL(crci, ee)		(0x400 + crci * ADM_CRCI_MULTI + \
+						ADM_EE_OFFS(ee))
 
 /* channel status */
-#define CH_STATUS_VALID	BIT(1)
+#define ADM_CH_STATUS_VALID	BIT(1)
 
 /* channel result */
-#define CH_RSLT_VALID	BIT(31)
-#define CH_RSLT_ERR	BIT(3)
-#define CH_RSLT_FLUSH	BIT(2)
-#define CH_RSLT_TPD	BIT(1)
+#define ADM_CH_RSLT_VALID	BIT(31)
+#define ADM_CH_RSLT_ERR		BIT(3)
+#define ADM_CH_RSLT_FLUSH	BIT(2)
+#define ADM_CH_RSLT_TPD		BIT(1)
 
 /* channel conf */
-#define CH_CONF_MPU_DISABLE	BIT(11)
-#define CH_CONF_PERM_MPU_CONF	BIT(9)
-#define CH_CONF_FLUSH_RSLT_EN	BIT(8)
-#define CH_CONF_FORCE_RSLT_EN	BIT(7)
-#define CH_CONF_IRQ_EN		BIT(6)
+#define ADM_CH_CONF_SHADOW_EN		BIT(12)
+#define ADM_CH_CONF_MPU_DISABLE		BIT(11)
+#define ADM_CH_CONF_PERM_MPU_CONF	BIT(9)
+#define ADM_CH_CONF_FORCE_RSLT_EN	BIT(7)
+#define ADM_CH_CONF_SEC_DOMAIN(ee)	(((ee & 0x3) << 4) | ((ee & 0x4) << 11))
 
 /* channel result conf */
-#define CH_RSLT_CONF_FLUSH_EN	BIT(1)
-#define CH_RSLT_CONF_IRQ_EN	BIT(0)
+#define ADM_CH_RSLT_CONF_FLUSH_EN	BIT(1)
+#define ADM_CH_RSLT_CONF_IRQ_EN		BIT(0)
 
 /* CRCI CTL */
-#define CRCI_CTL_MUX_SEL	BIT(18)
-#define CRCI_CTL_RST		BIT(17)
+#define ADM_CRCI_CTL_MUX_SEL	BIT(18)
+#define ADM_CRCI_CTL_RST	BIT(17)
 
 /* CI configuration */
-#define CI_RANGE_END(x)		(x << 24)
-#define CI_RANGE_START(x)	(x << 16)
-#define CI_BURST_4_WORDS	0x4
-#define CI_BURST_8_WORDS	0x8
+#define ADM_CI_RANGE_END(x)	(x << 24)
+#define ADM_CI_RANGE_START(x)	(x << 16)
+#define ADM_CI_BURST_4_WORDS	BIT(2)
+#define ADM_CI_BURST_8_WORDS	BIT(3)
 
 /* GP CTL */
-#define GP_CTL_LP_EN		BIT(12)
-#define GP_CTL_LP_CNT(x)	(x << 8)
+#define ADM_GP_CTL_LP_EN	BIT(12)
+#define ADM_GP_CTL_LP_CNT(x)	(x << 8)
 
 /* Command pointer list entry */
-#define CPLE_LP			BIT(31)
-#define CPLE_CMD_PTR_LIST	BIT(29)
+#define ADM_CPLE_LP		BIT(31)
+#define ADM_CPLE_CMD_PTR_LIST	BIT(29)
 
 /* Command list entry */
-#define CMD_LC			BIT(31)
-#define CMD_DST_CRCI(n)		(((n) & 0xf) << 7)
-#define CMD_SRC_CRCI(n)		(((n) & 0xf) << 3)
+#define ADM_CMD_LC		BIT(31)
+#define ADM_CMD_DST_CRCI(n)	(((n) & 0xf) << 7)
+#define ADM_CMD_SRC_CRCI(n)	(((n) & 0xf) << 3)
 
-#define CMD_TYPE_SINGLE		0x0
-#define CMD_TYPE_BOX		0x3
+#define ADM_CMD_TYPE_SINGLE	0x0
+#define ADM_CMD_TYPE_BOX	0x3
 
-#define ADM_DESC_ALIGN	8
-#define ADM_MAX_XFER	(SZ_64K-1)
-#define ADM_MAX_ROWS	(SZ_64K-1)
+#define ADM_CRCI_MUX_SEL	BIT(4)
+#define ADM_DESC_ALIGN		8
+#define ADM_MAX_XFER		(SZ_64K-1)
+#define ADM_MAX_ROWS		(SZ_64K-1)
+#define ADM_MAX_CHANNELS	16
 
-/* Command Pointer List Entry */
-#define CMD_LP		BIT(31)
-#define CMD_PT_MASK	(0x3 << 29)
-#define CMD_ADDR_MASK	0x3fffffff
-
-struct adm_desc_hw {
+struct adm_desc_hw_box {
 	u32 cmd;
 	u32 src_addr;
 	u32 dst_addr;
@@ -116,9 +116,11 @@ struct adm_desc_hw {
 	u32 row_offset;
 };
 
-struct adm_cmd_ptr_list {
-	u32 cple;			/* command ptr list entry */
-	struct adm_desc_hw desc[0];
+struct adm_desc_hw_single {
+	u32 cmd;
+	u32 src_addr;
+	u32 dst_addr;
+	u32 len;
 };
 
 struct adm_async_desc {
@@ -130,8 +132,11 @@ struct adm_async_desc {
 	dma_addr_t dma_addr;
 	size_t dma_len;
 
-	struct adm_cmd_ptr_list *cpl;
-	u32 num_desc;
+	void *cpl;
+	dma_addr_t cp_addr;
+	u32 crci;
+	u32 mux;
+	u32 blk_size;
 };
 
 struct adm_chan {
@@ -140,9 +145,6 @@ struct adm_chan {
 
 	/* parsed from DT */
 	u32 id;			/* channel id */
-	u32 crci_mux;		/* determines primary/secondary crci mux */
-	u32 crci;		/* CRCI to be used for transfers */
-	u32 blk_size;		/* block size for CRCI, default 16 byte */
 
 	struct adm_async_desc *curr_txd;
 	struct dma_slave_config slave;
@@ -163,7 +165,6 @@ struct adm_device {
 	struct dma_device common;
 	struct device_dma_parameters dma_parms;
 	struct adm_chan *channels;
-	u32 num_channels;
 
 	u32 ee;
 
@@ -178,16 +179,6 @@ struct adm_device {
 };
 
 /**
- * adm_alloc_chan - Allocates channel resources for DMA channel
- *
- * This function is effectively a stub, as we don't need to setup any resources
- */
-static int adm_alloc_chan(struct dma_chan *chan)
-{
-	return 0;
-}
-
-/**
  * adm_free_chan - Frees dma resources associated with the specific channel
  *
  * Free all allocated descriptors associated with this channel
@@ -197,6 +188,151 @@ static void adm_free_chan(struct dma_chan *chan)
 {
 	/* free all queued descriptors */
 	vchan_free_chan_resources(to_virt_chan(chan));
+}
+
+/**
+ * adm_get_blksize - Get block size from burst value
+ *
+ */
+static int adm_get_blksize(unsigned int burst)
+{
+	int ret;
+
+	switch (burst) {
+	case 16:
+	case 32:
+	case 64:
+	case 128:
+		ret = ffs(burst>>4) - 1;
+		break;
+	case 192:
+		ret = 4;
+		break;
+	case 256:
+		ret = 5;
+		break;
+	default:
+		ret = -EINVAL;
+		break;
+	}
+
+	return ret;
+}
+
+/**
+ * adm_process_fc_descriptors - Process descriptors for flow controlled xfers
+ *
+ * @achan: ADM channel
+ * @desc: Descriptor memory pointer
+ * @sg: Scatterlist entry
+ * @crci: CRCI value
+ * @burst: Burst size of transaction
+ * @direction: DMA transfer direction
+ */
+static void *adm_process_fc_descriptors(struct adm_chan *achan,
+	void *desc, struct scatterlist *sg, u32 crci, u32 burst,
+	enum dma_transfer_direction direction)
+{
+	struct adm_desc_hw_box *box_desc = NULL;
+	struct adm_desc_hw_single *single_desc;
+	u32 remainder = sg_dma_len(sg);
+	u32 rows, row_offset, crci_cmd;
+	u32 mem_addr = sg_dma_address(sg);
+	u32 *incr_addr = &mem_addr;
+	u32 *src, *dst;
+
+	if (direction == DMA_DEV_TO_MEM) {
+		crci_cmd = ADM_CMD_SRC_CRCI(crci);
+		row_offset = burst;
+		src = &achan->slave.src_addr;
+		dst = &mem_addr;
+	} else {
+		crci_cmd = ADM_CMD_DST_CRCI(crci);
+		row_offset = burst << 16;
+		src = &mem_addr;
+		dst = &achan->slave.dst_addr;
+	}
+
+	while (remainder >= burst) {
+		box_desc = desc;
+		box_desc->cmd = ADM_CMD_TYPE_BOX | crci_cmd;
+		box_desc->row_offset = row_offset;
+		box_desc->src_addr = *src;
+		box_desc->dst_addr = *dst;
+
+		rows = remainder / burst;
+		rows = min_t(u32, rows, ADM_MAX_ROWS);
+		box_desc->num_rows = rows << 16 | rows;
+		box_desc->row_len = burst << 16 | burst;
+
+		*incr_addr += burst * rows;
+		remainder -= burst * rows;
+		desc += sizeof(*box_desc);
+	}
+
+	/* if leftover bytes, do one single descriptor */
+	if (remainder) {
+		single_desc = desc;
+		single_desc->cmd = ADM_CMD_TYPE_SINGLE | crci_cmd;
+		single_desc->len = remainder;
+		single_desc->src_addr = *src;
+		single_desc->dst_addr = *dst;
+		desc += sizeof(*single_desc);
+
+		if (sg_is_last(sg))
+			single_desc->cmd |= ADM_CMD_LC;
+	} else {
+		if (box_desc && sg_is_last(sg))
+			box_desc->cmd |= ADM_CMD_LC;
+	}
+
+	return desc;
+}
+
+/**
+ * adm_process_non_fc_descriptors - Process descriptors for non-fc xfers
+ *
+ * @achan: ADM channel
+ * @desc: Descriptor memory pointer
+ * @sg: Scatterlist entry
+ * @direction: DMA transfer direction
+ */
+static void *adm_process_non_fc_descriptors(struct adm_chan *achan,
+	void *desc, struct scatterlist *sg,
+	enum dma_transfer_direction direction)
+{
+	struct adm_desc_hw_single *single_desc;
+	u32 remainder = sg_dma_len(sg);
+	u32 mem_addr = sg_dma_address(sg);
+	u32 *incr_addr = &mem_addr;
+	u32 *src, *dst;
+
+	if (direction == DMA_DEV_TO_MEM) {
+		src = &achan->slave.src_addr;
+		dst = &mem_addr;
+	} else {
+		src = &mem_addr;
+		dst = &achan->slave.dst_addr;
+	}
+
+	do {
+		single_desc = desc;
+		single_desc->cmd = ADM_CMD_TYPE_SINGLE;
+		single_desc->src_addr = *src;
+		single_desc->dst_addr = *dst;
+		single_desc->len = (remainder > ADM_MAX_XFER) ?
+				ADM_MAX_XFER : remainder;
+
+		remainder -= single_desc->len;
+		*incr_addr += single_desc->len;
+		desc += sizeof(*single_desc);
+	} while (remainder);
+
+	/* set last command if this is the end of the whole transaction */
+	if (sg_is_last(sg))
+		single_desc->cmd |= ADM_CMD_LC;
+
+	return desc;
 }
 
 /**
@@ -218,41 +354,51 @@ static struct dma_async_tx_descriptor *adm_prep_slave_sg(struct dma_chan *chan,
 	struct adm_device *adev = achan->adev;
 	struct adm_async_desc *async_desc;
 	struct scatterlist *sg;
-	u32 i, rows, num_desc = 0, idx = 0, desc_offset;
-	struct adm_desc_hw *desc;
-	struct adm_cmd_ptr_list *cpl;
-	u32 burst = ADM_MAX_XFER;
-
+	u32 i, burst;
+	u32 single_count = 0, box_count = 0, crci = 0;
+	void *desc;
+	u32 *cple;
+	int blk_size = 0;
 
 	if (!is_slave_direction(direction)) {
 		dev_err(adev->dev, "invalid dma direction\n");
 		return NULL;
 	}
 
-	/* if using CRCI flow control, validate burst settings */
-	if (achan->slave.device_fc) {
-		burst = (direction == DMA_MEM_TO_DEV) ?
-			achan->slave.dst_maxburst :
-			achan->slave.src_maxburst;
+	/*
+	 * get burst value from slave configuration
+	 */
+	burst = (direction == DMA_MEM_TO_DEV) ?
+		achan->slave.dst_maxburst :
+		achan->slave.src_maxburst;
 
-		if (!burst) {
-			dev_err(adev->dev, "invalid burst value w/ crci: %d\n",
+	/* if using flow control, validate burst and crci values */
+	if (achan->slave.device_fc) {
+
+		blk_size = adm_get_blksize(burst);
+		if (blk_size < 0) {
+			dev_err(adev->dev, "invalid burst value: %d\n",
 				burst);
+			return ERR_PTR(-EINVAL);
+		}
+
+		crci = achan->slave.slave_id & 0xf;
+		if (!crci || achan->slave.slave_id > 0x1f) {
+			dev_err(adev->dev, "invalid crci value\n");
 			return ERR_PTR(-EINVAL);
 		}
 	}
 
 	/* iterate through sgs and compute allocation size of structures */
 	for_each_sg(sgl, sg, sg_len, i) {
-
-		/* calculate boxes using burst */
-		rows = DIV_ROUND_UP(sg_dma_len(sg), burst);
-		num_desc += DIV_ROUND_UP(rows, ADM_MAX_ROWS);
-
-		/* flow control requires length as a multiple of burst */
-		if (achan->slave.device_fc && (sg_dma_len(sg) % burst)) {
-			dev_err(adev->dev, "length is not multiple of burst\n");
-			return ERR_PTR(-EINVAL);
+		if (achan->slave.device_fc) {
+			box_count += DIV_ROUND_UP(sg_dma_len(sg) / burst,
+						  ADM_MAX_ROWS);
+			if (sg_dma_len(sg) % burst)
+				single_count++;
+		} else {
+			single_count += DIV_ROUND_UP(sg_dma_len(sg),
+						     ADM_MAX_XFER);
 		}
 	}
 
@@ -260,124 +406,45 @@ static struct dma_async_tx_descriptor *adm_prep_slave_sg(struct dma_chan *chan,
 	if (!async_desc)
 		return ERR_PTR(-ENOMEM);
 
-	async_desc->dma_len = num_desc * sizeof(*desc) + sizeof(*cpl) +
-				2*ADM_DESC_ALIGN;
+	if (crci)
+		async_desc->mux = achan->slave.slave_id & ADM_CRCI_MUX_SEL ?
+					ADM_CRCI_CTL_MUX_SEL : 0;
+	async_desc->crci = crci;
+	async_desc->blk_size = blk_size;
+	async_desc->dma_len = single_count * sizeof(struct adm_desc_hw_single) +
+				box_count * sizeof(struct adm_desc_hw_box) +
+				sizeof(*cple) + 2 * ADM_DESC_ALIGN;
+
 	async_desc->cpl = dma_alloc_writecombine(adev->dev, async_desc->dma_len,
-			&async_desc->dma_addr, GFP_NOWAIT);
+				&async_desc->dma_addr, GFP_NOWAIT);
 
 	if (!async_desc->cpl) {
 		kfree(async_desc);
 		return ERR_PTR(-ENOMEM);
 	}
 
-	async_desc->num_desc = num_desc;
 	async_desc->adev = adev;
-	cpl = PTR_ALIGN(async_desc->cpl, ADM_DESC_ALIGN);
-	desc = PTR_ALIGN(&cpl->desc[0], ADM_DESC_ALIGN);
-	desc_offset = (u32)desc - (u32)async_desc->cpl;
+
+	/* both command list entry and descriptors must be 8 byte aligned */
+	cple = PTR_ALIGN(async_desc->cpl, ADM_DESC_ALIGN);
+	desc = PTR_ALIGN(cple + 1, ADM_DESC_ALIGN);
 
 	/* init cmd list */
-	cpl->cple = CPLE_LP;
-	cpl->cple |= (async_desc->dma_addr + desc_offset) >> 3;
+	*cple = ADM_CPLE_LP;
+	*cple |= (desc - async_desc->cpl + async_desc->dma_addr) >> 3;
 
 	for_each_sg(sgl, sg, sg_len, i) {
-		unsigned int remainder = sg_dma_len(sg);
-		unsigned int curr_offset = 0;
-		unsigned int row_len;
+		async_desc->length += sg_dma_len(sg);
 
-		do {
-			desc[idx].cmd = CMD_TYPE_BOX;
-			desc[idx].row_offset = 0;
-
-			if (direction == DMA_DEV_TO_MEM) {
-				desc[idx].dst_addr = sg_dma_address(sg) +
-							curr_offset;
-				desc[idx].src_addr = achan->slave.src_addr;
-				desc[idx].cmd |= CMD_SRC_CRCI(achan->crci);
-				desc[idx].row_offset = burst;
-			} else {
-				desc[idx].src_addr = sg_dma_address(sg) +
-							curr_offset;
-				desc[idx].dst_addr = achan->slave.dst_addr;
-				desc[idx].cmd |= CMD_DST_CRCI(achan->crci);
-				desc[idx].row_offset = burst << 16;
-			}
-
-			if (remainder < burst) {
-				rows = 1;
-				row_len = remainder;
-			} else {
-				rows = remainder / burst;
-				rows = min_t(u32, rows, ADM_MAX_ROWS);
-				row_len = burst;
-			}
-
-			desc[idx].num_rows = rows << 16 | rows;
-			desc[idx].row_len = row_len << 16 | row_len;
-
-			remainder -= row_len * rows;
-			async_desc->length += row_len * rows;
-			curr_offset += row_len * rows;
-
-			idx++;
-		} while (remainder > 0);
+		if (achan->slave.device_fc)
+			desc = adm_process_fc_descriptors(achan, desc, sg, crci,
+							burst, direction);
+		else
+			desc = adm_process_non_fc_descriptors(achan, desc, sg,
+							   direction);
 	}
-
-	/* set last command flag */
-	desc[idx - 1].cmd |= CMD_LC;
-
-	/* reset channel error */
-	achan->error = 0;
 
 	return vchan_tx_prep(&achan->vc, &async_desc->vd, flags);
-}
-
-/**
- * adm_slave_config - set slave configuration for channel
- * @chan: dma channel
- * @cfg: slave configuration
- *
- * Sets slave configuration for channel
- *
- */
-static int adm_slave_config(struct adm_chan *achan,
-		struct dma_slave_config *cfg)
-{
-	int ret = 0;
-	u32 burst;
-
-	memcpy(&achan->slave, cfg, sizeof(*cfg));
-
-	/* set channel CRCI burst, if applicable */
-	if (achan->crci) {
-		burst = max_t(u32, cfg->src_maxburst, cfg->dst_maxburst);
-
-		switch (burst) {
-		case 16:
-			achan->blk_size = 0;
-			break;
-		case 32:
-			achan->blk_size = 1;
-			break;
-		case 64:
-			achan->blk_size = 2;
-			break;
-		case 128:
-			achan->blk_size = 3;
-			break;
-		case 192:
-			achan->blk_size = 4;
-			break;
-		case 256:
-			achan->blk_size = 5;
-			break;
-		default:
-			ret = -EINVAL;
-			break;
-		}
-	}
-
-	return ret;
 }
 
 /**
@@ -388,56 +455,37 @@ static int adm_slave_config(struct adm_chan *achan,
  * No callbacks are done
  *
  */
-static void adm_terminate_all(struct adm_chan *achan)
+static int adm_terminate_all(struct dma_chan *chan)
 {
+	struct adm_chan *achan = to_adm_chan(chan);
 	struct adm_device *adev = achan->adev;
 	unsigned long flags;
 	LIST_HEAD(head);
 
-	/* send flush command to terminate current transaction */
-	writel_relaxed(0x0,
-		adev->regs + HI_CH_FLUSH_STATE0(achan->id, adev->ee));
-
 	spin_lock_irqsave(&achan->vc.lock, flags);
 	vchan_get_all_descriptors(&achan->vc, &head);
+
+	/* send flush command to terminate current transaction */
+	writel_relaxed(0x0,
+		adev->regs + ADM_CH_FLUSH_STATE0(achan->id, adev->ee));
+
 	spin_unlock_irqrestore(&achan->vc.lock, flags);
 
 	vchan_dma_desc_free_list(&achan->vc, &head);
+
+	return 0;
 }
 
-/**
- * adm_control - DMA device control
- * @chan: dma channel
- * @cmd: control cmd
- * @arg: cmd argument
- *
- * Perform DMA control command
- *
- */
-static int adm_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
-	unsigned long arg)
+static int adm_slave_config(struct dma_chan *chan, struct dma_slave_config *cfg)
 {
 	struct adm_chan *achan = to_adm_chan(chan);
 	unsigned long flag;
-	int ret = 0;
 
-	switch (cmd) {
-	case DMA_SLAVE_CONFIG:
-		spin_lock_irqsave(&achan->vc.lock, flag);
-		ret = adm_slave_config(achan, (struct dma_slave_config *)arg);
-		spin_unlock_irqrestore(&achan->vc.lock, flag);
-		break;
+	spin_lock_irqsave(&achan->vc.lock, flag);
+	memcpy(&achan->slave, cfg, sizeof(struct dma_slave_config));
+	spin_unlock_irqrestore(&achan->vc.lock, flag);
 
-	case DMA_TERMINATE_ALL:
-		adm_terminate_all(achan);
-		break;
-
-	default:
-		ret = -ENXIO;
-		break;
-	};
-
-	return ret;
+	return 0;
 }
 
 /**
@@ -449,7 +497,6 @@ static void adm_start_dma(struct adm_chan *achan)
 	struct virt_dma_desc *vd = vchan_next_desc(&achan->vc);
 	struct adm_device *adev = achan->adev;
 	struct adm_async_desc *async_desc;
-	u32 val;
 
 	lockdep_assert_held(&achan->vc.lock);
 
@@ -462,32 +509,35 @@ static void adm_start_dma(struct adm_chan *achan)
 	async_desc = container_of(vd, struct adm_async_desc, vd);
 	achan->curr_txd = async_desc;
 
+	/* reset channel error */
+	achan->error = 0;
+
 	if (!achan->initialized) {
 		/* enable interrupts */
-		writel(CH_CONF_IRQ_EN | CH_CONF_FLUSH_RSLT_EN |
-			CH_CONF_FORCE_RSLT_EN | CH_CONF_PERM_MPU_CONF |
-			CH_CONF_MPU_DISABLE,
-			adev->regs + HI_CH_CONF(achan->id));
+		writel(ADM_CH_CONF_SHADOW_EN |
+		       ADM_CH_CONF_PERM_MPU_CONF |
+		       ADM_CH_CONF_MPU_DISABLE |
+		       ADM_CH_CONF_SEC_DOMAIN(adev->ee),
+		       adev->regs + ADM_CH_CONF(achan->id));
 
-		writel(CH_RSLT_CONF_IRQ_EN | CH_RSLT_CONF_FLUSH_EN,
-			adev->regs + HI_CH_RSLT_CONF(achan->id, adev->ee));
+		writel(ADM_CH_RSLT_CONF_IRQ_EN | ADM_CH_RSLT_CONF_FLUSH_EN,
+			adev->regs + ADM_CH_RSLT_CONF(achan->id, adev->ee));
 
 		achan->initialized = 1;
 	}
 
-	/* set the crci block size */
-	if (achan->crci)
-		writel(achan->crci_mux | achan->blk_size,
-			adev->regs + HI_CRCI_CTL(achan->crci, adev->ee));
+	/* set the crci block size if this transaction requires CRCI */
+	if (async_desc->crci) {
+		writel(async_desc->mux | async_desc->blk_size,
+			adev->regs + ADM_CRCI_CTL(async_desc->crci, adev->ee));
+	}
 
 	/* make sure IRQ enable doesn't get reordered */
 	wmb();
 
-	val = ALIGN(async_desc->dma_addr, ADM_DESC_ALIGN) >> 3;
-	val |= CPLE_CMD_PTR_LIST;
-
 	/* write next command list out to the CMD FIFO */
-	writel(val, adev->regs + HI_CH_CMD_PTR(achan->id, adev->ee));
+	writel(ALIGN(async_desc->dma_addr, ADM_DESC_ALIGN) >> 3,
+		adev->regs + ADM_CH_CMD_PTR(achan->id, adev->ee));
 }
 
 /**
@@ -505,28 +555,29 @@ static irqreturn_t adm_dma_irq(int irq, void *data)
 	unsigned long flags;
 
 	srcs = readl_relaxed(adev->regs +
-			HI_SEC_DOMAIN_IRQ_STATUS(adev->ee));
+			ADM_SEC_DOMAIN_IRQ_STATUS(adev->ee));
 
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < ADM_MAX_CHANNELS; i++) {
 		struct adm_chan *achan = &adev->channels[i];
 		u32 status, result;
+
 		if (srcs & BIT(i)) {
 			status = readl_relaxed(adev->regs +
-				HI_CH_STATUS_SD(i, adev->ee));
+				ADM_CH_STATUS_SD(i, adev->ee));
 
 			/* if no result present, skip */
-			if (!(status & CH_STATUS_VALID))
+			if (!(status & ADM_CH_STATUS_VALID))
 				continue;
 
 			result = readl_relaxed(adev->regs +
-				HI_CH_RSLT(i, adev->ee));
+				ADM_CH_RSLT(i, adev->ee));
 
 			/* no valid results, skip */
-			if (!(result & CH_RSLT_VALID))
+			if (!(result & ADM_CH_RSLT_VALID))
 				continue;
 
 			/* flag error if transaction was flushed or failed */
-			if (result & (CH_RSLT_ERR | CH_RSLT_FLUSH))
+			if (result & (ADM_CH_RSLT_ERR | ADM_CH_RSLT_FLUSH))
 				achan->error = 1;
 
 			spin_lock_irqsave(&achan->vc.lock, flags);
@@ -588,41 +639,6 @@ static enum dma_status adm_tx_status(struct dma_chan *chan, dma_cookie_t cookie,
 		return DMA_ERROR;
 
 	return ret;
-}
-
-static struct dma_chan *adm_dma_xlate(struct of_phandle_args *dma_spec,
-	struct of_dma *of)
-{
-	struct adm_device *adev = container_of(of->of_dma_data,
-			struct adm_device, common);
-	struct adm_chan *achan;
-	struct dma_chan *chan;
-	unsigned int request;
-	unsigned int crci;
-
-	if (dma_spec->args_count != 2) {
-		dev_err(adev->dev, "incorrect number of dma arguments\n");
-		return NULL;
-	}
-
-	request = dma_spec->args[0];
-	if (request >= adev->num_channels)
-		return NULL;
-
-	crci = dma_spec->args[1];
-
-	chan = dma_get_slave_channel(&(adev->channels[request].vc.chan));
-
-	if (!chan)
-		return NULL;
-
-	achan = to_adm_chan(chan);
-
-	/* lower 4 bits denotes crci port, upper bits denote mux setting */
-	achan->crci = crci & 0xf;
-	achan->crci_mux = (crci >> 4) ? CRCI_CTL_MUX_SEL : 0;
-
-	return chan;
 }
 
 /**
@@ -707,37 +723,43 @@ static int adm_dma_probe(struct platform_device *pdev)
 	}
 
 	adev->iface_clk = devm_clk_get(adev->dev, "iface");
-	if (IS_ERR(adev->iface_clk))
-		return PTR_ERR(adev->iface_clk);
+	if (IS_ERR(adev->iface_clk)) {
+		ret = PTR_ERR(adev->iface_clk);
+		goto err_disable_core_clk;
+	}
 
 	ret = clk_prepare_enable(adev->iface_clk);
 	if (ret) {
 		dev_err(adev->dev, "failed to prepare/enable iface clock\n");
-		return ret;
+		goto err_disable_core_clk;
 	}
 
 	adev->clk_reset = devm_reset_control_get(&pdev->dev, "clk");
 	if (IS_ERR(adev->clk_reset)) {
 		dev_err(adev->dev, "failed to get ADM0 reset\n");
-		return PTR_ERR(adev->clk_reset);
+		ret = PTR_ERR(adev->clk_reset);
+		goto err_disable_clks;
 	}
 
 	adev->c0_reset = devm_reset_control_get(&pdev->dev, "c0");
 	if (IS_ERR(adev->c0_reset)) {
 		dev_err(adev->dev, "failed to get ADM0 C0 reset\n");
-		return PTR_ERR(adev->c0_reset);
+		ret = PTR_ERR(adev->c0_reset);
+		goto err_disable_clks;
 	}
 
 	adev->c1_reset = devm_reset_control_get(&pdev->dev, "c1");
 	if (IS_ERR(adev->c1_reset)) {
 		dev_err(adev->dev, "failed to get ADM0 C1 reset\n");
-		return PTR_ERR(adev->c1_reset);
+		ret = PTR_ERR(adev->c1_reset);
+		goto err_disable_clks;
 	}
 
 	adev->c2_reset = devm_reset_control_get(&pdev->dev, "c2");
 	if (IS_ERR(adev->c2_reset)) {
 		dev_err(adev->dev, "failed to get ADM0 C2 reset\n");
-		return PTR_ERR(adev->c2_reset);
+		ret = PTR_ERR(adev->c2_reset);
+		goto err_disable_clks;
 	}
 
 	reset_control_assert(adev->clk_reset);
@@ -750,39 +772,39 @@ static int adm_dma_probe(struct platform_device *pdev)
 	reset_control_deassert(adev->c1_reset);
 	reset_control_deassert(adev->c2_reset);
 
-	adev->num_channels = 16;
-
-	adev->channels = devm_kcalloc(adev->dev, adev->num_channels,
+	adev->channels = devm_kcalloc(adev->dev, ADM_MAX_CHANNELS,
 				sizeof(*adev->channels), GFP_KERNEL);
 
 	if (!adev->channels) {
 		ret = -ENOMEM;
-		goto err_disable_clk;
+		goto err_disable_clks;
 	}
 
 	/* allocate and initialize channels */
 	INIT_LIST_HEAD(&adev->common.channels);
 
-	for (i = 0; i < adev->num_channels; i++)
+	for (i = 0; i < ADM_MAX_CHANNELS; i++)
 		adm_channel_init(adev, &adev->channels[i], i);
 
 	/* reset CRCIs */
 	for (i = 0; i < 16; i++)
-		writel(CRCI_CTL_RST, adev->regs + HI_CRCI_CTL(i, adev->ee));
+		writel(ADM_CRCI_CTL_RST, adev->regs +
+			ADM_CRCI_CTL(i, adev->ee));
 
 	/* configure client interfaces */
-	writel(CI_RANGE_START(0x40) | CI_RANGE_END(0xb0) | CI_BURST_8_WORDS,
-		adev->regs + HI_CI_CONF(0));
-	writel(CI_RANGE_START(0x2a) | CI_RANGE_END(0x2c) | CI_BURST_8_WORDS,
-		adev->regs + HI_CI_CONF(1));
-	writel(CI_RANGE_START(0x12) | CI_RANGE_END(0x28) | CI_BURST_8_WORDS,
-		adev->regs + HI_CI_CONF(2));
-	writel(GP_CTL_LP_EN | GP_CTL_LP_CNT(0xf), adev->regs + HI_GP_CTL);
+	writel(ADM_CI_RANGE_START(0x40) | ADM_CI_RANGE_END(0xb0) |
+		ADM_CI_BURST_8_WORDS, adev->regs + ADM_CI_CONF(0));
+	writel(ADM_CI_RANGE_START(0x2a) | ADM_CI_RANGE_END(0x2c) |
+		ADM_CI_BURST_8_WORDS, adev->regs + ADM_CI_CONF(1));
+	writel(ADM_CI_RANGE_START(0x12) | ADM_CI_RANGE_END(0x28) |
+		ADM_CI_BURST_8_WORDS, adev->regs + ADM_CI_CONF(2));
+	writel(ADM_GP_CTL_LP_EN | ADM_GP_CTL_LP_CNT(0xf),
+		adev->regs + ADM_GP_CTL);
 
 	ret = devm_request_irq(adev->dev, adev->irq, adm_dma_irq,
 			0, "adm_dma", adev);
 	if (ret)
-		goto err_disable_clk;
+		goto err_disable_clks;
 
 	platform_set_drvdata(pdev, adev);
 
@@ -795,21 +817,22 @@ static int adm_dma_probe(struct platform_device *pdev)
 	dma_cap_set(DMA_PRIVATE, adev->common.cap_mask);
 
 	/* initialize dmaengine apis */
-	adev->common.device_alloc_chan_resources = adm_alloc_chan;
 	adev->common.device_free_chan_resources = adm_free_chan;
 	adev->common.device_prep_slave_sg = adm_prep_slave_sg;
-	adev->common.device_control = adm_control;
 	adev->common.device_issue_pending = adm_issue_pending;
 	adev->common.device_tx_status = adm_tx_status;
+	adev->common.device_terminate_all = adm_terminate_all;
+	adev->common.device_config = adm_slave_config;
 
 	ret = dma_async_device_register(&adev->common);
 	if (ret) {
 		dev_err(adev->dev, "failed to register dma async device\n");
-		goto err_disable_clk;
+		goto err_disable_clks;
 	}
 
-	ret = of_dma_controller_register(pdev->dev.of_node, adm_dma_xlate,
-					&adev->common);
+	ret = of_dma_controller_register(pdev->dev.of_node,
+					 of_dma_xlate_by_chan_id,
+					 &adev->common);
 	if (ret)
 		goto err_unregister_dma;
 
@@ -817,9 +840,10 @@ static int adm_dma_probe(struct platform_device *pdev)
 
 err_unregister_dma:
 	dma_async_device_unregister(&adev->common);
-err_disable_clk:
-	clk_disable_unprepare(adev->core_clk);
+err_disable_clks:
 	clk_disable_unprepare(adev->iface_clk);
+err_disable_core_clk:
+	clk_disable_unprepare(adev->core_clk);
 
 	return ret;
 }
@@ -833,17 +857,16 @@ static int adm_dma_remove(struct platform_device *pdev)
 	of_dma_controller_free(pdev->dev.of_node);
 	dma_async_device_unregister(&adev->common);
 
-	devm_free_irq(adev->dev, adev->irq, adev);
-
-	for (i = 0; i < adev->num_channels; i++) {
+	for (i = 0; i < ADM_MAX_CHANNELS; i++) {
 		achan = &adev->channels[i];
-		writel(CH_CONF_FLUSH_RSLT_EN,
-			adev->regs + HI_CH_CONF(achan->id));
-		writel(CH_RSLT_CONF_FLUSH_EN,
-			adev->regs + HI_CH_RSLT_CONF(achan->id, adev->ee));
 
-		adm_terminate_all(&adev->channels[i]);
+		/* mask IRQs for this channel/EE pair */
+		writel(0, adev->regs + ADM_CH_RSLT_CONF(achan->id, adev->ee));
+
+		adm_terminate_all(&adev->channels[i].vc.chan);
 	}
+
+	devm_free_irq(adev->dev, adev->irq, adev);
 
 	clk_disable_unprepare(adev->core_clk);
 	clk_disable_unprepare(adev->iface_clk);
@@ -862,7 +885,6 @@ static struct platform_driver adm_dma_driver = {
 	.remove = adm_dma_remove,
 	.driver = {
 		.name = "adm-dma-engine",
-		.owner = THIS_MODULE,
 		.of_match_table = adm_of_match,
 	},
 };

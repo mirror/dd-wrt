@@ -51,4 +51,4 @@ obj-$(CONFIG_NBPFAXI_DMA) += nbpfaxi.o
 obj-$(CONFIG_DMA_SUN6I) += sun6i-dma.o
 obj-$(CONFIG_QCOM_BAM_DMA) += qcom_bam_dma.o
 obj-$(CONFIG_QCOM_ADM) += qcom_adm.o
-obj-$(CONFIG_QCOM_ADM_DMA) += qcom_adm_dma.o
+#obj-$(CONFIG_QCOM_ADM_DMA) += qcom_adm_dma.o

@@ -39,24 +39,6 @@
 				bias-disable;
 			};
 
-			pcie0_pins: pcie0_pinmux {
-				mux {
-					pins = "gpio3";
-					function = "pcie1_rst";
-					drive-strength = <12>;
-					bias-disable;
-				};
-			};
-
-			pcie1_pins: pcie1_pinmux {
-				mux {
-					pins = "gpio48";
-					function = "pcie2_rst";
-					drive-strength = <12>;
-					bias-disable;
-				};
-			};
-
 			nand_pins: nand_pins {
 				mux {
 					pins = "gpio34", "gpio35", "gpio36",
@@ -148,16 +130,12 @@
 
 		pcie0: pci@1b500000 {
 			status = "ok";
-			reset-gpio = <&qcom_pinmux 3 0>;
-			pinctrl-0 = <&pcie0_pins>;
-			pinctrl-names = "default";
+			phy-tx0-term-offset = <7>;
 		};
 
 		pcie1: pci@1b700000 {
 			status = "ok";
-			reset-gpio = <&qcom_pinmux 48 0>;
-			pinctrl-0 = <&pcie1_pins>;
-			pinctrl-names = "default";
+			phy-tx0-term-offset = <7>;
 		};
 
 		nand@1ac00000 {

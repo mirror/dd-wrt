@@ -79,105 +79,35 @@ struct bam_async_desc {
 	struct bam_desc_hw desc[0];
 };
 
-/* Register base offset and multplier values.  Use version of map as index */
-static unsigned int ctrl_offs[] = { 0xf80, 0x0 };
-static unsigned int pipe_offs[] = { 0x0, 0x1000 };
-static unsigned int ee_offs[] = { 0x1800, 0x800 };
-static unsigned int evnt_offs[] = { 0x1000, 0x1800 };
-static unsigned int pipe_mult[] = { 0x80, 0x1000 };
-static unsigned int evnt_mult[] = { 0x40, 0x1000 };
-
-enum bam_reg {
-	BAM_CTRL,
-	BAM_REVISION,
-	BAM_NUM_PIPES,
-	BAM_DESC_CNT_TRSHLD,
-	BAM_IRQ_SRCS,
-	BAM_IRQ_SRCS_MSK,
-	BAM_IRQ_SRCS_UNMASKED,
-	BAM_IRQ_STTS,
-	BAM_IRQ_CLR,
-	BAM_IRQ_EN,
-	BAM_CNFG_BITS,
-	BAM_IRQ_SRCS_EE,
-	BAM_IRQ_SRCS_MSK_EE,
-	BAM_P_CTRL,
-	BAM_P_RST,
-	BAM_P_HALT,
-	BAM_P_IRQ_STTS,
-	BAM_P_IRQ_CLR,
-	BAM_P_IRQ_EN,
-	BAM_P_EVNT_DEST_ADDR,
-	BAM_P_EVNT_REG,
-	BAM_P_SW_OFSTS,
-	BAM_P_DATA_FIFO_ADDR,
-	BAM_P_DESC_FIFO_ADDR,
-	BAM_P_EVNT_GEN_TRSHLD,
-	BAM_P_FIFO_SIZES,
-};
-
-struct reg_offset_data {
-	u32 base_offset;
-	unsigned int pipe_mult, evnt_mult, ee_mult;
-};
-
-static const struct reg_offset_data bam_v1_3_reg_info[] = {
-	[BAM_CTRL]		= { 0x0F80, 0x00, 0x00, 0x00 },
-	[BAM_REVISION]		= { 0x0F84, 0x00, 0x00, 0x00 },
-	[BAM_NUM_PIPES]		= { 0x0FBC, 0x00, 0x00, 0x00 },
-	[BAM_DESC_CNT_TRSHLD]	= { 0x0F88, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_SRCS]		= { 0x0F8C, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_SRCS_MSK]	= { 0x0F90, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_SRCS_UNMASKED]	= { 0x0FB0, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_STTS]		= { 0x0F94, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_CLR]		= { 0x0F98, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_EN]		= { 0x0F9C, 0x00, 0x00, 0x00 },
-	[BAM_CNFG_BITS]		= { 0x0FFC, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_SRCS_EE]	= { 0x1800, 0x00, 0x00, 0x80 },
-	[BAM_IRQ_SRCS_MSK_EE]	= { 0x1804, 0x00, 0x00, 0x80 },
-	[BAM_P_CTRL]		= { 0x0000, 0x80, 0x00, 0x00 },
-	[BAM_P_RST]		= { 0x0004, 0x80, 0x00, 0x00 },
-	[BAM_P_HALT]		= { 0x0008, 0x80, 0x00, 0x00 },
-	[BAM_P_IRQ_STTS]	= { 0x0010, 0x80, 0x00, 0x00 },
-	[BAM_P_IRQ_CLR]		= { 0x0014, 0x80, 0x00, 0x00 },
-	[BAM_P_IRQ_EN]		= { 0x0018, 0x80, 0x00, 0x00 },
-	[BAM_P_EVNT_DEST_ADDR]	= { 0x102C, 0x00, 0x40, 0x00 },
-	[BAM_P_EVNT_REG]	= { 0x1018, 0x00, 0x40, 0x00 },
-	[BAM_P_SW_OFSTS]	= { 0x1000, 0x00, 0x40, 0x00 },
-	[BAM_P_DATA_FIFO_ADDR]	= { 0x1024, 0x00, 0x40, 0x00 },
-	[BAM_P_DESC_FIFO_ADDR]	= { 0x101C, 0x00, 0x40, 0x00 },
-	[BAM_P_EVNT_GEN_TRSHLD]	= { 0x1028, 0x00, 0x40, 0x00 },
-	[BAM_P_FIFO_SIZES]	= { 0x1020, 0x00, 0x40, 0x00 },
-};
-
-static const struct reg_offset_data bam_v1_4_reg_info[] = {
-	[BAM_CTRL]		= { 0x0000, 0x00, 0x00, 0x00 },
-	[BAM_REVISION]		= { 0x0004, 0x00, 0x00, 0x00 },
-	[BAM_NUM_PIPES]		= { 0x003C, 0x00, 0x00, 0x00 },
-	[BAM_DESC_CNT_TRSHLD]	= { 0x0008, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_SRCS]		= { 0x000C, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_SRCS_MSK]	= { 0x0010, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_SRCS_UNMASKED]	= { 0x0030, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_STTS]		= { 0x0014, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_CLR]		= { 0x0018, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_EN]		= { 0x001C, 0x00, 0x00, 0x00 },
-	[BAM_CNFG_BITS]		= { 0x007C, 0x00, 0x00, 0x00 },
-	[BAM_IRQ_SRCS_EE]	= { 0x0800, 0x00, 0x00, 0x80 },
-	[BAM_IRQ_SRCS_MSK_EE]	= { 0x0804, 0x00, 0x00, 0x80 },
-	[BAM_P_CTRL]		= { 0x1000, 0x1000, 0x00, 0x00 },
-	[BAM_P_RST]		= { 0x1004, 0x1000, 0x00, 0x00 },
-	[BAM_P_HALT]		= { 0x1008, 0x1000, 0x00, 0x00 },
-	[BAM_P_IRQ_STTS]	= { 0x1010, 0x1000, 0x00, 0x00 },
-	[BAM_P_IRQ_CLR]		= { 0x1014, 0x1000, 0x00, 0x00 },
-	[BAM_P_IRQ_EN]		= { 0x1018, 0x1000, 0x00, 0x00 },
-	[BAM_P_EVNT_DEST_ADDR]	= { 0x102C, 0x00, 0x1000, 0x00 },
-	[BAM_P_EVNT_REG]	= { 0x1018, 0x00, 0x1000, 0x00 },
-	[BAM_P_SW_OFSTS]	= { 0x1000, 0x00, 0x1000, 0x00 },
-	[BAM_P_DATA_FIFO_ADDR]	= { 0x1824, 0x00, 0x1000, 0x00 },
-	[BAM_P_DESC_FIFO_ADDR]	= { 0x181C, 0x00, 0x1000, 0x00 },
-	[BAM_P_EVNT_GEN_TRSHLD]	= { 0x1828, 0x00, 0x1000, 0x00 },
-	[BAM_P_FIFO_SIZES]	= { 0x1820, 0x00, 0x1000, 0x00 },
-};
+#define BAM_CTRL			0x0000
+#define BAM_REVISION			0x0004
+#define BAM_SW_REVISION			0x0080
+#define BAM_NUM_PIPES			0x003C
+#define BAM_TIMER			0x0040
+#define BAM_TIMER_CTRL			0x0044
+#define BAM_DESC_CNT_TRSHLD		0x0008
+#define BAM_IRQ_SRCS			0x000C
+#define BAM_IRQ_SRCS_MSK		0x0010
+#define BAM_IRQ_SRCS_UNMASKED		0x0030
+#define BAM_IRQ_STTS			0x0014
+#define BAM_IRQ_CLR			0x0018
+#define BAM_IRQ_EN			0x001C
+#define BAM_CNFG_BITS			0x007C
+#define BAM_IRQ_SRCS_EE(ee)		(0x0800 + ((ee) * 0x80))
+#define BAM_IRQ_SRCS_MSK_EE(ee)		(0x0804 + ((ee) * 0x80))
+#define BAM_P_CTRL(pipe)		(0x1000 + ((pipe) * 0x1000))
+#define BAM_P_RST(pipe)			(0x1004 + ((pipe) * 0x1000))
+#define BAM_P_HALT(pipe)		(0x1008 + ((pipe) * 0x1000))
+#define BAM_P_IRQ_STTS(pipe)		(0x1010 + ((pipe) * 0x1000))
+#define BAM_P_IRQ_CLR(pipe)		(0x1014 + ((pipe) * 0x1000))
+#define BAM_P_IRQ_EN(pipe)		(0x1018 + ((pipe) * 0x1000))
+#define BAM_P_EVNT_DEST_ADDR(pipe)	(0x182C + ((pipe) * 0x1000))
+#define BAM_P_EVNT_REG(pipe)		(0x1818 + ((pipe) * 0x1000))
+#define BAM_P_SW_OFSTS(pipe)		(0x1800 + ((pipe) * 0x1000))
+#define BAM_P_DATA_FIFO_ADDR(pipe)	(0x1824 + ((pipe) * 0x1000))
+#define BAM_P_DESC_FIFO_ADDR(pipe)	(0x181C + ((pipe) * 0x1000))
+#define BAM_P_EVNT_TRSHLD(pipe)		(0x1828 + ((pipe) * 0x1000))
+#define BAM_P_FIFO_SIZES(pipe)		(0x1820 + ((pipe) * 0x1000))
 
 /* BAM CTRL */
 #define BAM_SW_RST			BIT(0)
@@ -367,33 +297,12 @@ struct bam_device {
 	/* execution environment ID, from DT */
 	u32 ee;
 
-	u32 reg_ver;
-
-	const struct reg_offset_data *layout;
-
 	struct clk *bamclk;
 	int irq;
 
 	/* dma start transaction tasklet */
 	struct tasklet_struct task;
 };
-
-/**
- * bam_addr - returns BAM register address
- * @bdev: bam device
- * @pipe: pipe instance (ignored when register doesn't have multiple instances)
- * @reg:  register enum
- */
-static inline void __iomem *bam_addr(struct bam_device *bdev, u32 pipe,
-		enum bam_reg reg)
-{
-	const struct reg_offset_data r = bdev->layout[reg];
-
-	return bdev->regs + r.base_offset +
-		r.pipe_mult * pipe +
-		r.evnt_mult * pipe +
-		r.ee_mult * bdev->ee;
-}
 
 /**
  * bam_reset_channel - Reset individual BAM DMA channel
@@ -408,8 +317,8 @@ static void bam_reset_channel(struct bam_chan *bchan)
 	lockdep_assert_held(&bchan->vc.lock);
 
 	/* reset channel */
-	writel_relaxed(1, bam_addr(bdev, bchan->id, BAM_P_RST));
-	writel_relaxed(0, bam_addr(bdev, bchan->id, BAM_P_RST));
+	writel_relaxed(1, bdev->regs + BAM_P_RST(bchan->id));
+	writel_relaxed(0, bdev->regs + BAM_P_RST(bchan->id));
 
 	/* don't allow cpu to reorder BAM register accesses done after this */
 	wmb();
@@ -438,18 +347,17 @@ static void bam_chan_init_hw(struct bam_chan *bchan,
 	 * because we allocated 1 more descriptor (8 bytes) than we can use
 	 */
 	writel_relaxed(ALIGN(bchan->fifo_phys, sizeof(struct bam_desc_hw)),
-			bam_addr(bdev, bchan->id, BAM_P_DESC_FIFO_ADDR));
-	writel_relaxed(BAM_DESC_FIFO_SIZE,
-			bam_addr(bdev, bchan->id, BAM_P_FIFO_SIZES));
+			bdev->regs + BAM_P_DESC_FIFO_ADDR(bchan->id));
+	writel_relaxed(BAM_DESC_FIFO_SIZE, bdev->regs +
+			BAM_P_FIFO_SIZES(bchan->id));
 
 	/* enable the per pipe interrupts, enable EOT, ERR, and INT irqs */
-	writel_relaxed(P_DEFAULT_IRQS_EN,
-			bam_addr(bdev, bchan->id, BAM_P_IRQ_EN));
+	writel_relaxed(P_DEFAULT_IRQS_EN, bdev->regs + BAM_P_IRQ_EN(bchan->id));
 
 	/* unmask the specific pipe and EE combo */
-	val = readl_relaxed(bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
+	val = readl_relaxed(bdev->regs + BAM_IRQ_SRCS_MSK_EE(bdev->ee));
 	val |= BIT(bchan->id);
-	writel_relaxed(val, bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
+	writel_relaxed(val, bdev->regs + BAM_IRQ_SRCS_MSK_EE(bdev->ee));
 
 	/* don't allow cpu to reorder the channel enable done below */
 	wmb();
@@ -459,7 +367,7 @@ static void bam_chan_init_hw(struct bam_chan *bchan,
 	if (dir == DMA_DEV_TO_MEM)
 		val |= P_DIRECTION;
 
-	writel_relaxed(val, bam_addr(bdev, bchan->id, BAM_P_CTRL));
+	writel_relaxed(val, bdev->regs + BAM_P_CTRL(bchan->id));
 
 	bchan->initialized = 1;
 
@@ -524,12 +432,12 @@ static void bam_free_chan(struct dma_chan *chan)
 	bchan->fifo_virt = NULL;
 
 	/* mask irq for pipe/channel */
-	val = readl_relaxed(bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
+	val = readl_relaxed(bdev->regs + BAM_IRQ_SRCS_MSK_EE(bdev->ee));
 	val &= ~BIT(bchan->id);
-	writel_relaxed(val, bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
+	writel_relaxed(val, bdev->regs + BAM_IRQ_SRCS_MSK_EE(bdev->ee));
 
 	/* disable irq */
-	writel_relaxed(0, bam_addr(bdev, bchan->id, BAM_P_IRQ_EN));
+	writel_relaxed(0, bdev->regs + BAM_P_IRQ_EN(bchan->id));
 }
 
 /**
@@ -675,14 +583,14 @@ static int bam_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
 	switch (cmd) {
 	case DMA_PAUSE:
 		spin_lock_irqsave(&bchan->vc.lock, flag);
-		writel_relaxed(1, bam_addr(bdev, bchan->id, BAM_P_HALT));
+		writel_relaxed(1, bdev->regs + BAM_P_HALT(bchan->id));
 		bchan->paused = 1;
 		spin_unlock_irqrestore(&bchan->vc.lock, flag);
 		break;
 
 	case DMA_RESUME:
 		spin_lock_irqsave(&bchan->vc.lock, flag);
-		writel_relaxed(0, bam_addr(bdev, bchan->id, BAM_P_HALT));
+		writel_relaxed(0, bdev->regs + BAM_P_HALT(bchan->id));
 		bchan->paused = 0;
 		spin_unlock_irqrestore(&bchan->vc.lock, flag);
 		break;
@@ -718,7 +626,7 @@ static u32 process_channel_irqs(struct bam_device *bdev)
 	unsigned long flags;
 	struct bam_async_desc *async_desc;
 
-	srcs = readl_relaxed(bam_addr(bdev, 0, BAM_IRQ_SRCS_EE));
+	srcs = readl_relaxed(bdev->regs + BAM_IRQ_SRCS_EE(bdev->ee));
 
 	/* return early if no pipe/channel interrupts are present */
 	if (!(srcs & P_IRQ))
@@ -731,9 +639,11 @@ static u32 process_channel_irqs(struct bam_device *bdev)
 			continue;
 
 		/* clear pipe irq */
-		pipe_stts = readl_relaxed(bam_addr(bdev, i, BAM_P_IRQ_STTS));
+		pipe_stts = readl_relaxed(bdev->regs +
+			BAM_P_IRQ_STTS(i));
 
-		writel_relaxed(pipe_stts, bam_addr(bdev, i, BAM_P_IRQ_CLR));
+		writel_relaxed(pipe_stts, bdev->regs +
+				BAM_P_IRQ_CLR(i));
 
 		spin_lock_irqsave(&bchan->vc.lock, flags);
 		async_desc = bchan->curr_txd;
@@ -784,12 +694,12 @@ static irqreturn_t bam_dma_irq(int irq, void *data)
 		tasklet_schedule(&bdev->task);
 
 	if (srcs & BAM_IRQ)
-		clr_mask = readl_relaxed(bam_addr(bdev, 0, BAM_IRQ_STTS));
+		clr_mask = readl_relaxed(bdev->regs + BAM_IRQ_STTS);
 
 	/* don't allow reorder of the various accesses to the BAM registers */
 	mb();
 
-	writel_relaxed(clr_mask, bam_addr(bdev, 0, BAM_IRQ_CLR));
+	writel_relaxed(clr_mask, bdev->regs + BAM_IRQ_CLR);
 
 	return IRQ_HANDLED;
 }
@@ -853,7 +763,7 @@ static void bam_apply_new_config(struct bam_chan *bchan,
 	else
 		maxburst = bchan->slave.dst_maxburst;
 
-	writel_relaxed(maxburst, bam_addr(bdev, 0, BAM_DESC_CNT_TRSHLD));
+	writel_relaxed(maxburst, bdev->regs + BAM_DESC_CNT_TRSHLD);
 
 	bchan->reconfigure = 0;
 }
@@ -920,7 +830,7 @@ static void bam_start_dma(struct bam_chan *bchan)
 	/* ensure descriptor writes and dma start not reordered */
 	wmb();
 	writel_relaxed(bchan->tail * sizeof(struct bam_desc_hw),
-			bam_addr(bdev, bchan->id, BAM_P_EVNT_REG));
+			bdev->regs + BAM_P_EVNT_REG(bchan->id));
 }
 
 /**
@@ -1008,44 +918,43 @@ static int bam_init(struct bam_device *bdev)
 	u32 val;
 
 	/* read revision and configuration information */
-	val = readl_relaxed(bam_addr(bdev, 0, BAM_REVISION)) >> NUM_EES_SHIFT;
+	val = readl_relaxed(bdev->regs + BAM_REVISION) >> NUM_EES_SHIFT;
 	val &= NUM_EES_MASK;
 
 	/* check that configured EE is within range */
 	if (bdev->ee >= val)
 		return -EINVAL;
 
-	val = readl_relaxed(bam_addr(bdev, 0, BAM_NUM_PIPES));
+	val = readl_relaxed(bdev->regs + BAM_NUM_PIPES);
 	bdev->num_channels = val & BAM_NUM_PIPES_MASK;
 
 	/* s/w reset bam */
 	/* after reset all pipes are disabled and idle */
-	val = readl_relaxed(bam_addr(bdev, 0, BAM_CTRL));
+	val = readl_relaxed(bdev->regs + BAM_CTRL);
 	val |= BAM_SW_RST;
-	writel_relaxed(val, bam_addr(bdev, 0, BAM_CTRL));
+	writel_relaxed(val, bdev->regs + BAM_CTRL);
 	val &= ~BAM_SW_RST;
-	writel_relaxed(val, bam_addr(bdev, 0, BAM_CTRL));
+	writel_relaxed(val, bdev->regs + BAM_CTRL);
 
 	/* make sure previous stores are visible before enabling BAM */
 	wmb();
 
 	/* enable bam */
 	val |= BAM_EN;
-	writel_relaxed(val, bam_addr(bdev, 0, BAM_CTRL));
+	writel_relaxed(val, bdev->regs + BAM_CTRL);
 
 	/* set descriptor threshhold, start with 4 bytes */
-	writel_relaxed(DEFAULT_CNT_THRSHLD,
-			bam_addr(bdev, 0, BAM_DESC_CNT_TRSHLD));
+	writel_relaxed(DEFAULT_CNT_THRSHLD, bdev->regs + BAM_DESC_CNT_TRSHLD);
 
 	/* Enable default set of h/w workarounds, ie all except BAM_FULL_PIPE */
-	writel_relaxed(BAM_CNFG_BITS_DEFAULT, bam_addr(bdev, 0, BAM_CNFG_BITS));
+	writel_relaxed(BAM_CNFG_BITS_DEFAULT, bdev->regs + BAM_CNFG_BITS);
 
 	/* enable irqs for errors */
 	writel_relaxed(BAM_ERROR_EN | BAM_HRESP_ERR_EN,
-			bam_addr(bdev, 0, BAM_IRQ_EN));
+				bdev->regs + BAM_IRQ_EN);
 
 	/* unmask global bam interrupt */
-	writel_relaxed(BAM_IRQ_MSK, bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
+	writel_relaxed(BAM_IRQ_MSK, bdev->regs + BAM_IRQ_SRCS_MSK_EE(bdev->ee));
 
 	return 0;
 }
@@ -1060,18 +969,9 @@ static void bam_channel_init(struct bam_device *bdev, struct bam_chan *bchan,
 	bchan->vc.desc_free = bam_dma_free_desc;
 }
 
-static const struct of_device_id bam_of_match[] = {
-	{ .compatible = "qcom,bam-v1.3.0", .data = &bam_v1_3_reg_info },
-	{ .compatible = "qcom,bam-v1.4.0", .data = &bam_v1_4_reg_info },
-	{}
-};
-
-MODULE_DEVICE_TABLE(of, bam_of_match);
-
 static int bam_dma_probe(struct platform_device *pdev)
 {
 	struct bam_device *bdev;
-	const struct of_device_id *match;
 	struct resource *iores;
 	int ret, i;
 
@@ -1080,14 +980,6 @@ static int bam_dma_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	bdev->dev = &pdev->dev;
-
-	match = of_match_node(bam_of_match, pdev->dev.of_node);
-	if (!match) {
-		dev_err(&pdev->dev, "Unsupported BAM module\n");
-		return -ENODEV;
-	}
-
-	bdev->layout = match->data;
 
 	iores = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	bdev->regs = devm_ioremap_resource(&pdev->dev, iores);
@@ -1103,9 +995,6 @@ static int bam_dma_probe(struct platform_device *pdev)
 		dev_err(bdev->dev, "Execution environment unspecified\n");
 		return ret;
 	}
-
-	if (of_device_is_compatible(pdev->dev.of_node, "qcom,bam-v1.4.0"))
-		bdev->reg_ver = 1;
 
 	bdev->bamclk = devm_clk_get(bdev->dev, "bam_clk");
 	if (IS_ERR(bdev->bamclk))
@@ -1195,7 +1084,7 @@ static int bam_dma_remove(struct platform_device *pdev)
 	dma_async_device_unregister(&bdev->common);
 
 	/* mask all interrupts for this execution environment */
-	writel_relaxed(0, bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
+	writel_relaxed(0, bdev->regs + BAM_IRQ_SRCS_MSK_EE(bdev->ee));
 
 	devm_free_irq(bdev->dev, bdev->irq, bdev);
 
@@ -1214,6 +1103,12 @@ static int bam_dma_remove(struct platform_device *pdev)
 
 	return 0;
 }
+
+static const struct of_device_id bam_of_match[] = {
+	{ .compatible = "qcom,bam-v1.4.0", },
+	{}
+};
+MODULE_DEVICE_TABLE(of, bam_of_match);
 
 static struct platform_driver bam_dma_driver = {
 	.probe = bam_dma_probe,
