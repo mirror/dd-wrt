@@ -37,7 +37,11 @@
 #  define HOST_TO_BE16(x)	(x)
 #endif
 
+#ifndef HAVE_MICRO
+#define MIN_BUF_SIZE    65536
+#else
 #define MIN_BUF_SIZE    4096
+#endif
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
