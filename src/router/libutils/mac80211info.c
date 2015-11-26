@@ -852,6 +852,11 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							    && ieee80211_mhz2ieee(freq_mhz) > 11 && ieee80211_mhz2ieee(freq_mhz) < 14 && nvram_default_match("region", "SA", ""))
 								continue;
 #endif
+							if (checkband == 2 && freq_mhz > 4000)
+								continue;
+							if (checkband == 5 && freq_mhz < 4000)
+								continue;
+
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
 							list[count].freq = freq_mhz;
 							// todo: wenn wir das ueberhaupt noch verwenden
