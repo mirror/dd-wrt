@@ -328,11 +328,11 @@ static const struct qcom_rpm_resource ipq806x_rpm_resource_table[] = {
 	[QCOM_RPM_PXO_CLK] =			{ 26, 10, 6, 1 },
 	[QCOM_RPM_APPS_FABRIC_CLK] =		{ 27, 11, 8, 1 },
 	[QCOM_RPM_SYS_FABRIC_CLK] =		{ 28, 12, 9, 1 },
-	[QCOM_RPM_NSS_FABRIC_0_CLK] =		{ 29, 13, 91, 1 },
+	[QCOM_RPM_NSS_FABRIC_0_CLK] =		{ 29, 13, 10, 1 },
 	[QCOM_RPM_DAYTONA_FABRIC_CLK] =		{ 30, 14, 11, 1 },
 	[QCOM_RPM_SFPB_CLK] =			{ 31, 15, 12, 1 },
 	[QCOM_RPM_CFPB_CLK] =			{ 32, 16, 13, 1 },
-	[QCOM_RPM_NSS_FABRIC_1_CLK] =		{ 33, 17, 91, 1 },
+	[QCOM_RPM_NSS_FABRIC_1_CLK] =		{ 33, 17, 14, 1 },
 	[QCOM_RPM_EBI1_CLK] =			{ 34, 18, 16, 1 },
 	[QCOM_RPM_APPS_FABRIC_HALT] =		{ 35, 19, 18, 2 },
 	[QCOM_RPM_APPS_FABRIC_MODE] =		{ 37, 20, 19, 3 },
@@ -373,10 +373,9 @@ static const struct of_device_id qcom_rpm_of_match[] = {
 MODULE_DEVICE_TABLE(of, qcom_rpm_of_match);
 
 int qcom_rpm_write(struct qcom_rpm *rpm,
-		int state,
-		int resource,
-		u32 *buf,
-		size_t count)
+		   int state,
+		   int resource,
+		   u32 *buf, size_t count)
 {
 	const struct qcom_rpm_resource *res;
 	const struct qcom_rpm_data *data = rpm->data;
