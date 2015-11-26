@@ -50,7 +50,7 @@ struct rpm_reg_parts {
 };
 
 #define FORCE_MODE_IS_2_BITS(reg) \
-	(((reg)->parts->fm.mask >> (reg)->parts->fm.shift) == 3)
+	((vreg->parts->fm.mask >> vreg->parts->fm.shift) == 3)
 
 struct qcom_rpm_reg {
 	struct qcom_rpm *rpm;
@@ -651,7 +651,7 @@ static int rpm_reg_probe(struct platform_device *pdev)
 	struct regulator_init_data *initdata;
 	const struct qcom_rpm_reg *template;
 	const struct of_device_id *match;
-	struct regulator_config config = { };
+	struct regulator_config config = { 0 };
 	struct regulator_dev *rdev;
 	struct qcom_rpm_reg *vreg;
 	const char *key;
