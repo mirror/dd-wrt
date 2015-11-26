@@ -2351,13 +2351,26 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				// temp must be replaced with the actual selected country
 				char regdomain[16];
 				char *country;
+				int checkband=255;
 				sprintf(regdomain, "%s_regdomain", prefix);
 				country = nvram_default_get(regdomain, "UNITED_STATES");
 				// temp end
 
+				if (nvram_nmatch("ng-only", "%s_net_mode", prefix)
+				        || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+				        || nvram_nmatch("bg-mixed", "%s_net_mode", prefix)
+				        || nvram_nmatch("ng-mixed", "%s_net_mode", prefix)
+				        || nvram_nmatch("g-only", "%s_net_mode", prefix)) {
+				                checkband=2;
+				}
+				if (nvram_nmatch("a-only", "%s_net_mode", prefix)
+				        || nvram_nmatch("na-only", "%s_net_mode", prefix)
+				        || nvram_nmatch("n5-only", "%s_net_mode", prefix)) {
+				                checkband=5;
+				}
 				if (nvram_nmatch("80", "%s_channelbw", prefix))
 					channelbw = 80;
-				chan = mac80211_get_channels(prefix, getIsoName(country), channelbw, 0xff);
+				chan = mac80211_get_channels(prefix, getIsoName(country), channelbw, checkband);
 				/* if (chan == NULL)
 				   chan =
 				   list_channels_ath9k(dev, "DE", 40,
