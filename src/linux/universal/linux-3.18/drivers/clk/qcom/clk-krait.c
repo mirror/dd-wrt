@@ -25,41 +25,46 @@
 #include "clk-krait.h"
 
 /* Secondary and primary muxes share the same cp15 register */
-static DEFINE_SPINLOCK(kpss_clock_reg_lock);
+static DEFINE_SPINLOCK(krait_clock_reg_lock);
 
 #define LPL_SHIFT	8
-static void __kpss_mux_set_sel(struct mux_clk *mux, int sel)
+static void __krait_mux_set_sel(struct krait_mux_clk *mux, int sel)
 {
 	unsigned long flags;
 	u32 regval;
 
-	spin_lock_irqsave(&kpss_clock_reg_lock, flags);
+	spin_lock_irqsave(&krait_clock_reg_lock, flags);
 	regval = krait_get_l2_indirect_reg(mux->offset);
 	regval &= ~(mux->mask << mux->shift);
 	regval |= (sel & mux->mask) << mux->shift;
-	if (mux->priv) {
+	if (mux->lpl) {
 		regval &= ~(mux->mask << (mux->shift + LPL_SHIFT));
 		regval |= (sel & mux->mask) << (mux->shift + LPL_SHIFT);
 	}
 	krait_set_l2_indirect_reg(mux->offset, regval);
-	spin_unlock_irqrestore(&kpss_clock_reg_lock, flags);
+	spin_unlock_irqrestore(&krait_clock_reg_lock, flags);
 
 	/* Wait for switch to complete. */
 	mb();
 	udelay(1);
 }
 
-static int kpss_mux_set_sel(struct mux_clk *mux, int sel)
+static int krait_mux_set_parent(struct clk_hw *hw, u8 index)
 {
+	struct krait_mux_clk *mux = to_krait_mux_clk(hw);
+	u32 sel;
+
+	sel = clk_mux_reindex(index, mux->parent_map, 0);
 	mux->en_mask = sel;
 	/* Don't touch mux if CPU is off as it won't work */
-	if (__clk_is_enabled(mux->hw.clk))
-		__kpss_mux_set_sel(mux, sel);
+	if (__clk_is_enabled(hw->clk))
+		__krait_mux_set_sel(mux, sel);
 	return 0;
 }
 
-static int kpss_mux_get_sel(struct mux_clk *mux)
+static u8 krait_mux_get_parent(struct clk_hw *hw)
 {
+	struct krait_mux_clk *mux = to_krait_mux_clk(hw);
 	u32 sel;
 
 	sel = krait_get_l2_indirect_reg(mux->offset);
@@ -67,55 +72,95 @@ static int kpss_mux_get_sel(struct mux_clk *mux)
 	sel &= mux->mask;
 	mux->en_mask = sel;
 
-	return sel;
+	return clk_mux_get_parent(hw, sel, mux->parent_map, 0);
 }
 
-static int kpss_mux_enable(struct mux_clk *mux)
+static struct clk_hw *krait_mux_get_safe_parent(struct clk_hw *hw)
 {
-	__kpss_mux_set_sel(mux, mux->en_mask);
+	int i;
+	struct krait_mux_clk *mux = to_krait_mux_clk(hw);
+	int num_parents = __clk_get_num_parents(hw->clk);
+
+	i = mux->safe_sel;
+	for (i = 0; i < num_parents; i++)
+		if (mux->safe_sel == mux->parent_map[i])
+			break;
+
+	return __clk_get_hw(clk_get_parent_by_index(hw->clk, i));
+}
+
+static int krait_mux_enable(struct clk_hw *hw)
+{
+	struct krait_mux_clk *mux = to_krait_mux_clk(hw);
+
+	__krait_mux_set_sel(mux, mux->en_mask);
+
 	return 0;
 }
 
-static void kpss_mux_disable(struct mux_clk *mux)
+static void krait_mux_disable(struct clk_hw *hw)
 {
-	__kpss_mux_set_sel(mux, mux->safe_sel);
+	struct krait_mux_clk *mux = to_krait_mux_clk(hw);
+
+	__krait_mux_set_sel(mux, mux->safe_sel);
 }
 
-const struct clk_mux_ops clk_mux_ops_kpss = {
-	.enable = kpss_mux_enable,
-	.disable = kpss_mux_disable,
-	.set_mux_sel = kpss_mux_set_sel,
-	.get_mux_sel = kpss_mux_get_sel,
+const struct clk_ops krait_mux_clk_ops = {
+	.enable = krait_mux_enable,
+	.disable = krait_mux_disable,
+	.set_parent = krait_mux_set_parent,
+	.get_parent = krait_mux_get_parent,
+	.determine_rate = __clk_mux_determine_rate_closest,
+	.get_safe_parent = krait_mux_get_safe_parent,
 };
-EXPORT_SYMBOL_GPL(clk_mux_ops_kpss);
+EXPORT_SYMBOL_GPL(krait_mux_clk_ops);
 
-/*
- * The divider can divide by 2, 4, 6 and 8. But we only really need div-2. So
- * force it to div-2 during handoff and treat it like a fixed div-2 clock.
- */
-static int kpss_div2_get_div(struct div_clk *div)
+/* The divider can divide by 2, 4, 6 and 8. But we only really need div-2. */
+static long krait_div2_round_rate(struct clk_hw *hw, unsigned long rate,
+				  unsigned long *parent_rate)
 {
+	*parent_rate = __clk_round_rate(__clk_get_parent(hw->clk), rate * 2);
+	return DIV_ROUND_UP(*parent_rate, 2);
+}
+
+static int krait_div2_set_rate(struct clk_hw *hw, unsigned long rate,
+			unsigned long parent_rate)
+{
+	struct krait_div2_clk *d = to_krait_div2_clk(hw);
 	unsigned long flags;
-	u32 regval;
-	int val;
+	u32 val;
+	u32 mask = BIT(d->width) - 1;
 
-	spin_lock_irqsave(&kpss_clock_reg_lock, flags);
-	regval = krait_get_l2_indirect_reg(div->offset);
-	val = (regval >> div->shift) & div->mask;
-	regval &= ~(div->mask << div->shift);
-	if (div->priv)
-		regval &= ~(div->mask << (div->shift + LPL_SHIFT));
-	krait_set_l2_indirect_reg(div->offset, regval);
-	spin_unlock_irqrestore(&kpss_clock_reg_lock, flags);
+	if (d->lpl)
+		mask = mask << (d->shift + LPL_SHIFT) | mask << d->shift;
 
-	val = (val + 1) * 2;
-	WARN(val != 2, "Divider %s was configured to div-%d instead of 2!\n",
-		__clk_get_name(div->hw.clk), val);
+	spin_lock_irqsave(&krait_clock_reg_lock, flags);
+	val = krait_get_l2_indirect_reg(d->offset);
+	val &= ~mask;
+	krait_set_l2_indirect_reg(d->offset, val);
+	spin_unlock_irqrestore(&krait_clock_reg_lock, flags);
 
-	return 2;
+	return 0;
 }
 
-const struct clk_div_ops clk_div_ops_kpss_div2 = {
-	.get_div = kpss_div2_get_div,
+static unsigned long
+krait_div2_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
+{
+	struct krait_div2_clk *d = to_krait_div2_clk(hw);
+	u32 mask = BIT(d->width) - 1;
+	u32 div;
+
+	div = krait_get_l2_indirect_reg(d->offset);
+	div >>= d->shift;
+	div &= mask;
+	div = (div + 1) * 2;
+
+	return DIV_ROUND_UP(parent_rate, div);
+}
+
+const struct clk_ops krait_div2_clk_ops = {
+	.round_rate = krait_div2_round_rate,
+	.set_rate = krait_div2_set_rate,
+	.recalc_rate = krait_div2_recalc_rate,
 };
-EXPORT_SYMBOL_GPL(clk_div_ops_kpss_div2);
+EXPORT_SYMBOL_GPL(krait_div2_clk_ops);

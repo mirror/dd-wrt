@@ -19,11 +19,6 @@
 
 #include <linux/regulator/consumer.h>
 
-static struct regulator *nss_reg;
-static u32 nss_core_vdd_nominal;
-static u32 nss_core_vdd_high;
-static u32 nss_core_threshold_freq;
-
 int nss_ramp_voltage(unsigned long rate, bool ramp_up);
 
 #endif
