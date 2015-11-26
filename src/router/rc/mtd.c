@@ -603,10 +603,7 @@ int mtd_write(const char *path, const char *mtd)
 #ifndef NETGEAR_CRC_FAKE
 	calculate_checksum(0, NULL, 0);	// init
 #endif
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)	// erase all blocks first
-
-	mtd_erase(mtd);
-#endif
+	int first = 0;
 	/* 
 	 * Write file or URL to MTD device 
 	 */
@@ -629,6 +626,13 @@ int mtd_write(const char *path, const char *mtd)
 		// else
 		// count +=
 		// http_get (path, &buf[off], len - off, erase_info.start + off);
+
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)	// erase all blocks first
+		if (!first) {
+			mtd_erase(mtd);
+			first = 1;
+		}
+#endif
 
 		/* 
 		 * for debug 
