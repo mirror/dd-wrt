@@ -2308,7 +2308,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	return;
 #endif
 #ifdef HAVE_IPQ806X
-	show_temp(wp, "CPU %4.2f");
+	show_temp(wp, "CPU %4.2f &#176;C");
+	return;
 #endif
 #ifdef HAVE_BCMMODERN
 
