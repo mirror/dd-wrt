@@ -235,7 +235,7 @@ endif
 ifneq ($(CONFIG_MUSL),y)
 	cp ${shell $(ARCH)-openwrt-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 else
-	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-arm.so.1
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-armhf.so.1
 endif
 	cp ${shell $(ARCH)-openwrt-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 ifeq ($(CONFIG_LIBDL),y)
@@ -347,7 +347,7 @@ else
 		--sysroot $(TARGETDIR) \
 		-L /lib \
 		-L /usr/lib \
-		--ldlib /lib/ld-musl-arm.so.1 \
+		--ldlib /lib/ld-musl-armhf.so.1 \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 
