@@ -688,28 +688,6 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	/* Updating HOL registers and RGMII delay settings
 	with the values suggested by QCA switch team */
 
-#ifdef CONFIG_ARCH_QCOM
-	if(chip_is_ar8337(priv)) {
-		ar8xxx_reg_set(priv, AR8327_REG_PAD5_MODE,
-			AR8327_PAD_RGMII_RXCLK_DELAY_EN);
-
-		ar8216_sw_reg_set(priv, 0x970, 0x1e864443);
-		ar8216_sw_reg_set(priv, 0x974, 0x000001c6);
-		ar8216_sw_reg_set(priv, 0x978, 0x19008643);
-		ar8216_sw_reg_set(priv, 0x97c, 0x000001c6);
-		ar8216_sw_reg_set(priv, 0x980, 0x19008643);
-		ar8216_sw_reg_set(priv, 0x984, 0x000001c6);
-		ar8216_sw_reg_set(priv, 0x988, 0x19008643);
-		ar8216_sw_reg_set(priv, 0x98c, 0x000001c6);
-		ar8216_sw_reg_set(priv, 0x990, 0x19008643);
-		ar8216_sw_reg_set(priv, 0x994, 0x000001c6);
-		ar8216_sw_reg_set(priv, 0x998, 0x1e864443);
-		ar8216_sw_reg_set(priv, 0x99c, 0x000001c6);
-		ar8216_sw_reg_set(priv, 0x9a0, 0x1e864443);
-		ar8216_sw_reg_set(priv, 0x9a4, 0x000001c6);
-
-	}
-#endif
 }
 
 static void
