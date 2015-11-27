@@ -1255,7 +1255,7 @@ static int getbootdevice(void)
 	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
 	unsigned int *smem, *p;
 	mtd = open_mtd_device("BOOTCONFIG");
-	if (!mtd)
+	if (IS_ERR(mtd))
 	    return -1;
 
 	smem = (unsigned int *)vmalloc(0x60000);
