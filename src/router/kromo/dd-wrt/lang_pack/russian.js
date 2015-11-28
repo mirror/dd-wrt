@@ -1408,8 +1408,6 @@ service.radiooff_bootoff="Отключить Wi-Fi при загрузке";
 service.radiooff_legend_aoss="Функция кнопки AOSS";
 service.radiooff_srv_aoss="AOSS";
 service.radiooff_srv_disabled="Не использовать";
-service.radiooff_stealthswitch="Отключение индикаторов";
-service.stealthmode="Ночной режим"
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="Кнопка SES / AOSS / EZ-SETUP";
