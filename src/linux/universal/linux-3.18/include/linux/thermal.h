@@ -323,7 +323,7 @@ void thermal_zone_of_sensor_unregister(struct device *dev,
 static inline struct thermal_zone_device *
 thermal_zone_of_sensor_register(struct device *dev, int id,
 				void *data, int (*get_temp)(void *, long *),
-				int (*get_trend)(void *, long *));
+				int (*get_trend)(void *, long *))
 {
 	return NULL;
 }
