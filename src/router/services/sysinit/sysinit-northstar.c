@@ -3156,12 +3156,7 @@ void start_sysinit(void)
 			nvram_set("devpath0", "pci/1/1/");
 			nvram_set("devpath1", "pci/2/1/");
 		}
-		nvram_set("partialboots", "0");
-		nvram_commit();
 	case ROUTER_LINKSYS_EA6400:
-		nvram_set("partialboots", "0");
-		nvram_commit();
-		break;
 	case ROUTER_LINKSYS_EA6350:
 		nvram_set("partialboots", "0");
 		nvram_commit();
