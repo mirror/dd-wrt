@@ -2174,15 +2174,6 @@ BTRFS_SETGET_FUNCS(file_extent_encryption, struct btrfs_file_extent_item,
 BTRFS_SETGET_FUNCS(file_extent_other_encoding, struct btrfs_file_extent_item,
 		   other_encoding, 16);
 
-/* this returns the number of file bytes represented by the inline item.
- * If an item is compressed, this is the uncompressed size
- */
-static inline u32 btrfs_file_extent_inline_len(struct extent_buffer *eb,
-					       struct btrfs_file_extent_item *e)
-{
-	return btrfs_file_extent_ram_bytes(eb, e);
-}
-
 /*
  * this returns the number of bytes used by the item on disk, minus the
  * size of any extent headers.  If a file is compressed on disk, this is
@@ -2195,6 +2186,29 @@ static inline u32 btrfs_file_extent_inline_item_len(struct extent_buffer *eb,
 	offset = offsetof(struct btrfs_file_extent_item, disk_bytenr);
 	return btrfs_item_size(eb, e) - offset;
 }
+
+/* this returns the number of file bytes represented by the inline item.
+ * If an item is compressed, this is the uncompressed size
+ */
+static inline u32 btrfs_file_extent_inline_len(struct extent_buffer *eb,
+					       int slot,
+					       struct btrfs_file_extent_item *fi)
+{
+	/*
+	 * return the space used on disk if this item isn't
+	 * compressed or encoded
+	 */
+	if (btrfs_file_extent_compression(eb, fi) == 0 &&
+	    btrfs_file_extent_encryption(eb, fi) == 0 &&
+	    btrfs_file_extent_other_encoding(eb, fi) == 0) {
+		return btrfs_file_extent_inline_item_len(eb,
+							 btrfs_item_nr(eb, slot));
+	}
+
+	/* otherwise use the ram bytes field */
+	return btrfs_file_extent_ram_bytes(eb, fi);
+}
+
 
 static inline struct btrfs_root *btrfs_sb(struct super_block *sb)
 {
@@ -2482,6 +2496,13 @@ static inline int btrfs_insert_empty_item(struct btrfs_trans_handle *trans,
 }
 
 int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path);
+static inline int btrfs_next_item(struct btrfs_root *root, struct btrfs_path *p)
+{
+	++p->slots[0];
+	if (p->slots[0] >= btrfs_header_nritems(p->nodes[0]))
+		return btrfs_next_leaf(root, p);
+	return 0;
+}
 int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
 int btrfs_leaf_free_space(struct btrfs_root *root, struct extent_buffer *leaf);
 void btrfs_drop_snapshot(struct btrfs_root *root,
