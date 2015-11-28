@@ -573,8 +573,7 @@ endif
 	./tools/trx -m 40000000 -o tools/tplink/kernel.hdr0 $(ARCH)-uclibc/vmlinuz.lzma
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC9 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc9.bin
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC9v2 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc9v2.bin
-	cd tools/tplink && ./mktplinkfw3_us -B ARCHERC9 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc9_us.bin
-	cd tools/tplink && ./mktplinkfw3_us -B ARCHERC9v2 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc9v2_us.bin
+	cd tools/tplink && ./mktplinkfw3 -B ARCHERC1900 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc1900.bin
 	cd tools/tplink && ./mktplinkfw3 -B ARCHERC8 -k kernel.hdr0 -r ../../arm-uclibc/root.fs -o ../../$(ARCH)-uclibc/archerc8.bin
 
 	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir868.img -i $(ARCH)-uclibc/vmlinuz.lzma -i $(ARCH)-uclibc/root.fs
