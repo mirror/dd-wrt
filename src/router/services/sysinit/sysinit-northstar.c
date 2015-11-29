@@ -2449,7 +2449,7 @@ void start_sysinit(void)
 
 		break;
 	case ROUTER_DLINK_DIR860:
-		if (nvram_get("devpath0") == NULL || nvram_match("0:maxp2ga","0x50")) {
+		if (nvram_get("devpath0") == NULL || nvram_match("0:maxp2ga0","0x50")) {
 			nvram_set("devpath0", "pci/1/1/");
 			nvram_set("devpath1", "pci/2/1/");
 
