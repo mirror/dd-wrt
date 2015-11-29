@@ -2449,7 +2449,7 @@ void start_sysinit(void)
 
 		break;
 	case ROUTER_DLINK_DIR860:
-		if (nvram_get("devpath0") == NULL) {
+		if (nvram_get("devpath0") == NULL || nvram_match("0:maxp2ga","0x50")) {
 			nvram_set("devpath0", "pci/1/1/");
 			nvram_set("devpath1", "pci/2/1/");
 
@@ -2510,8 +2510,8 @@ void start_sysinit(void)
 				{"ledbh8", "11"},
 				{"ledbh9", "11"},
 				{"leddc", "0xffff"},
-				{"maxp2ga0", "0x50"},
-				{"maxp2ga1", "0x50"},
+				{"maxp2ga0", "0x60"},
+				{"maxp2ga1", "0x60"},
 				{"mcs2gpo0", "0x7777"},
 				{"mcs2gpo1", "0x9777"},
 				{"mcs2gpo2", "0x7777"},
@@ -2581,9 +2581,9 @@ void start_sysinit(void)
 				{"maxp2ga0", "66"},
 				{"maxp2ga1", "66"},
 				{"maxp2ga2", "66"},
-				{"maxp5ga0", "78,78,78,78"},
-				{"maxp5ga1", "78,78,78,78"},
-				{"maxp5ga2", "78,78,78,78"},
+				{"maxp5ga0", "102,102,102,102"},
+				{"maxp5ga1", "102,102,102,102"},
+				{"maxp5ga2", "102,102,102,102"},
 				{"mcsbw1605ghpo", "0"},
 				{"mcsbw1605glpo", "0"},
 				{"mcsbw1605gmpo", "0"},
@@ -2738,7 +2738,7 @@ void start_sysinit(void)
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR865:
 
-		if (nvram_get("pci/1/1/venid") == NULL) {
+		if (nvram_get("pci/1/1/venid") == NULL || nvram_match("0:maxp2a0","0x56")) {
 
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
@@ -2764,9 +2764,9 @@ void start_sysinit(void)
 			nvram_set("pci/1/1/macaddr", &buf[10]);
 
 			struct nvram_param dir868_1_1params[] = {
-				{"maxp2ga0", "0x56"},
-				{"maxp2ga1", "0x56"},
-				{"maxp2ga2", "0x56"},
+				{"maxp2ga0", "0x60"},
+				{"maxp2ga1", "0x60"},
+				{"maxp2ga2", "0x60"},
 				{"cckbw202gpo", "0x0000"},
 				{"cckbw20ul2gpo", "0x0000"},
 				{"legofdmbw202gpo", "0x00000000"},
@@ -2911,7 +2911,7 @@ void start_sysinit(void)
 				{"rxgains5gelnagaina0", "1"},
 				{"rxgains5gtrisoa0", "7"},
 				{"rxgains5gtrelnabypa0", "1"},
-				{"maxp5ga0", "92,92,92,92"},
+				{"maxp5ga0", "102,102,102,102"},
 				{"pa5ga0", "0xff26,0x188e,0xfcf0,0xff2a,0x18ee,0xfcec,0xff21,0x18b4,0xfcec,0xff23,0x1930,0xfcdd"},
 				{"maxp2ga1", "76"},
 				{"pa2ga1", "0xfe80,0x1472,0xfabc"},
@@ -2927,7 +2927,7 @@ void start_sysinit(void)
 				{"rxgains5gelnagaina1", "1"},
 				{"rxgains5gtrisoa1", "6"},
 				{"rxgains5gtrelnabypa1", "1"},
-				{"maxp5ga1", "92,92,92,92"},
+				{"maxp5ga1", "102,102,102,102"},
 				{"pa5ga1", "0xff35,0x1a3c,0xfccc,0xff31,0x1a06,0xfccf,0xff2b,0x1a54,0xfcc5,0xff30,0x1ad5,0xfcb9"},
 				{"maxp2ga2", "76"},
 				{"pa2ga2", "0xfe82,0x14bf,0xfad9"},
@@ -2943,7 +2943,7 @@ void start_sysinit(void)
 				{"rxgains5gelnagaina2", "1"},
 				{"rxgains5gtrisoa2", "5"},
 				{"rxgains5gtrelnabypa2", "1"},
-				{"maxp5ga2", "92,92,92,92"},
+				{"maxp5ga2", "102,102,102,102"},
 				{"pa5ga2", "0xff2e,0x197b,0xfcd8,0xff2d,0x196e,0xfcdc,0xff30,0x1a7d,0xfcc2,0xff2e,0x1ac6,0xfcb4"},
 				{0, 0}
 			};
