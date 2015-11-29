@@ -2738,7 +2738,7 @@ void start_sysinit(void)
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR865:
 
-		if (nvram_get("pci/1/1/venid") == NULL || nvram_match("0:maxp2a0","0x56")) {
+		if (nvram_get("pci/1/1/venid") == NULL || nvram_match("0:maxp2ga0","0x56")) {
 
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
