@@ -2231,7 +2231,7 @@ void start_sysinit(void)
 		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_DLINK_DIR880:
-		if (nvram_get("0:venid") == NULL) {
+		if (nvram_get("0:venid") == NULL || nvram_match("0:maxp2ga0","94")) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
 			fread(buf, 1, 24, fp);
@@ -2299,9 +2299,9 @@ void start_sysinit(void)
 				{"ofdmlrbw202gpo", "0"},
 				{"devid", "0x43a1"},
 				{"dot11agofdmhrbw202gpo", "0x0"},
-				{"maxp2ga0", "94"},
-				{"maxp2ga1", "94"},
-				{"maxp2ga2", "94"},
+				{"maxp2ga0", "102"},
+				{"maxp2ga1", "102"},
+				{"maxp2ga2", "102"},
 				{"rxgainerr2ga0", "63"},
 				{"rxgainerr2ga1", "31"},
 				{"rxgainerr2ga2", "31"},
@@ -2323,10 +2323,10 @@ void start_sysinit(void)
 				{"measpower1", "0x7f"},
 				{"measpower2", "0x7f"},
 				{"tssiposslope2g", "1"},
-				{"ledbh13", "7"},
-				{"ledbh0", "11"},
-				{"ledbh1", "11"},
-				{"ledbh2", "11"},
+				{"ledbh13", "8B"},
+				{"ledbh0", "8B"},
+				{"ledbh1", "8B"},
+				{"ledbh2", "8B"},
 				{0, 0}
 			};
 			struct nvram_param dir880_1params[] = {
@@ -2358,9 +2358,9 @@ void start_sysinit(void)
 				{"measpower1", "0x7f"},
 				{"measpower2", "0x7f"},
 				{"sb40and80lr5ghpo", "0"},
-				{"maxp5ga0", "94,94,94,94"},
-				{"maxp5ga1", "94,94,94,94"},
-				{"maxp5ga2", "94,94,94,94"},
+				{"maxp5ga0", "102,102,102,102"},
+				{"maxp5ga1", "102,102,102,102"},
+				{"maxp5ga2", "102,102,102,102"},
 				{"sar5g", "15"},
 				{"gainctrlsph", "0"},
 				{"aga0", "71"},
@@ -2422,10 +2422,10 @@ void start_sysinit(void)
 				{"mcsbw1605gmpo", "0"},
 				{"mcslr5gmpo", "0"},
 				{"pa5ga2", "0xff3d,0x1aee,0xfcc1,0xff33,0x1a56,0xfcc4,0xff3f,0x1b04,0xfcc1,0xff47,0x1b48,0xfcc2"},
-				{"ledbh14", "7"},
-				{"ledbh0", "11"},
-				{"ledbh1", "11"},
-				{"ledbh2", "11"},
+				{"ledbh14", "8B"},
+				{"ledbh0", "8B"},
+				{"ledbh1", "8B"},
+				{"ledbh2", "8B"},
 				{0, 0}
 			};
 
