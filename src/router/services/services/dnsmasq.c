@@ -193,8 +193,6 @@ void start_dnsmasq(void)
 	if (nvram_match("dnsmasq_strict", "1"))
 		fprintf(fp, "strict-order\n");
 
-	fprintf(fp, "cache-size=1500\n");
-
 #ifdef HAVE_UNBOUND
 	if (nvram_match("recursive_dns", "1")) {
 		fprintf(fp, "port=0\n");
@@ -392,7 +390,7 @@ void start_dnsmasq(void)
 	dns_to_resolv();
 
 	chmod("/etc/lease_update.sh", 0700);
-	eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf");
+	eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf", "--cache-size=1500");
 	dd_syslog(LOG_INFO, "dnsmasq : dnsmasq daemon successfully started\n");
 
 	cprintf("done\n");
