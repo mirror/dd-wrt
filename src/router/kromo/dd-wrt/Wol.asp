@@ -317,7 +317,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.remove"); %></th>
 									</tr>
 									<tr>
-										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" onblur="valid_macs_17(this)" value="" /></td>
+										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" onblur="valid_macs_17(this)" value="" onchange="this.value=this.value.toUpperCase()" /></td>
 										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value="" /></td>
 										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" onblur="valid_ip_str(this, wol.broadcast)" value="" /></td>
 										<td></td>
