@@ -137,6 +137,14 @@ static const unsigned char archerc9v2_support_list[] =
 	"special_id:00000000)\n"
 	"\x00";
 
+static const unsigned char archerc1900_support_list[] =
+	"\x00\x00\x00\x4b\x00\x00\x00\x00"
+	"SupportList:\n"
+	"(product_name:ArcherC1900\n"
+	"product_ver:1.0.0\n"
+	"special_id:55534100)\n"
+	"\x00";
+
 static const unsigned char archerc8_support_list[] =
 	"\x00\x00\x00\x4b\x00\x00\x00\x00"
 	"SupportList:\n"
@@ -515,6 +523,8 @@ int main(int argc, char *argv[]) {
 
 	if (strcmp(board, "ARCHERC9") == 0)
 		do_cpe510(archerc9_support_list,sizeof(archerc9_support_list), "archerc9_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
+	else if (strcmp(board, "ARCHERC1900") == 0)
+		do_cpe510(archerc1900_support_list,sizeof(archerc1900_support_list), "archerc9v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "ARCHERC9v2") == 0)
 		do_cpe510(archerc9v2_support_list,sizeof(archerc9v2_support_list), "archerc9v2_cfe.bin", output, kernel_image, rootfs_image, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "ARCHERC8") == 0)
