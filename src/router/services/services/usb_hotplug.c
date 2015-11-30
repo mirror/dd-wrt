@@ -287,6 +287,8 @@ static int usb_process_path(char *path, char *fs, char *target)
 	}
 #ifdef HAVE_80211AC
 	writeproc("/proc/sys/vm/min_free_kbytes", "16384");
+#elif HAVE_IPQ806X
+	writeproc("/proc/sys/vm/min_free_kbytes", "65536");
 #else
 	writeproc("/proc/sys/vm/min_free_kbytes", "4096");
 #endif
