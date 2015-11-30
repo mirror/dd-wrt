@@ -2786,7 +2786,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 	/*
 	 * Handle Website Blocking by URL Address 
 	 */
-	for (i = 0; i < 15; i++) {
+	for (i = 0; i < 14; i++) {
 		char filter_host[] = "hostXXX";
 		char *host;
 
@@ -2811,7 +2811,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 	/*
 	 * Handle Website Blocking by Keyword 
 	 */
-	for (i = 0; i < 14; i++) {
+	for (i = 0; i < 15; i++) {
 		char filter_url[] = "urlXXX";
 		char *url;
 
