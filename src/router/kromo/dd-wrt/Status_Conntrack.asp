@@ -12,7 +12,7 @@ function openGeotool(IP) {
 	var left = Math.floor(screen.availWidth * .66) - 10;
 	var width = 920;
 	var height = 700;
-	var win = window.open("http://iplookup.flagfox.net/?ip=" + IP, 'Geotool', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	var win = window.open("https://iplookup.flagfox.net/?ip=" + IP, 'Geotool', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
 	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
 	win.focus();
 }
