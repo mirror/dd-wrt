@@ -2323,10 +2323,10 @@ void start_sysinit(void)
 				{"measpower1", "0x7f"},
 				{"measpower2", "0x7f"},
 				{"tssiposslope2g", "1"},
-				{"ledbh13", "8B"},
-				{"ledbh0", "8B"},
-				{"ledbh1", "8B"},
-				{"ledbh2", "8B"},
+				{"ledbh13", "0x8B"},
+				{"ledbh0", "0x8B"},
+				{"ledbh1", "0x8B"},
+				{"ledbh2", "0x8B"},
 				{0, 0}
 			};
 			struct nvram_param dir880_1params[] = {
@@ -2422,10 +2422,10 @@ void start_sysinit(void)
 				{"mcsbw1605gmpo", "0"},
 				{"mcslr5gmpo", "0"},
 				{"pa5ga2", "0xff3d,0x1aee,0xfcc1,0xff33,0x1a56,0xfcc4,0xff3f,0x1b04,0xfcc1,0xff47,0x1b48,0xfcc2"},
-				{"ledbh14", "8B"},
-				{"ledbh0", "8B"},
-				{"ledbh1", "8B"},
-				{"ledbh2", "8B"},
+				{"ledbh14", "0x8B"},
+				{"ledbh0", "0x8B"},
+				{"ledbh1", "0x8B"},
+				{"ledbh2", "0x8B"},
 				{0, 0}
 			};
 
