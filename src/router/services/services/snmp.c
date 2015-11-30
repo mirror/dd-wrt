@@ -63,6 +63,13 @@ void start_snmp(void)
 	if (strlen(nvram_safe_get("snmpd_rwcommunity")) > 0)
 		fprintf(fp, "rwcommunity %s\n", nvram_safe_get("snmpd_rwcommunity"));
 	fprintf(fp, "sysservices 9\n");
+#ifdef HAVE_NEXTMEDIA
+	if (strlen(nvram_safe_get("rc_custom")) != 0) {
+	create_rc_file("rc_custom");
+		fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /tmp/.rc_custom\n");
+	}
+	else 
+#endif
 	fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 
 	fclose(fp);
