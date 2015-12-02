@@ -1256,8 +1256,13 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
+	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev","0x1103") && nvram_mach("boardtype","0x0665")) {
+		setRouter("Asus RT-AC68U B1");
+		return ROUTER_ASUS_AC67U;
+	}
+
 	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev","0x1103")) {
-		setRouter("Asus RT-AC68U rev 2");
+		setRouter("Asus RT-AC68U C1");
 		return ROUTER_ASUS_AC67U;
 	}
 
@@ -1267,7 +1272,12 @@ int internal_getRouterBrand()
 	}
 
 	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev","0x1103")) {
-		setRouter("Asus RT-AC68U rev 2");
+		setRouter("Asus RT-AC68U C1");
+		return ROUTER_ASUS_AC67U;
+	}
+
+	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev","0x1103") && nvram_mach("boardtype","0x0665")) {
+		setRouter("Asus RT-AC68U B1");
 		return ROUTER_ASUS_AC67U;
 	}
 
@@ -6289,6 +6299,7 @@ int led_control(int type, int act)
 		usb_power = 0x009;	//usb power on/off
 		usb_power1 = 0x00a;	//usb power on/off
 		usb_gpio = 0x10e;
+		usb_gpio1 = 0x100;
 		diag_gpio = 0x003;
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
