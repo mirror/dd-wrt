@@ -295,6 +295,9 @@ static char *filter[] = {
 	"wltest",
 	"wps_lock_forever_cnt",
 	"xtalfreq",
+	"cpurev",
+	"color",
+	"PA",
 	NULL
 };
 
@@ -447,6 +450,7 @@ int nvram_backup(char *filename)
 	}
 #endif
 	char *buf = (char *)malloc(NVRAMSPACE);
+	memset(buf,0,NVRAMSPACE);
 
 	nvram_getall(buf, NVRAMSPACE);
 	char *p = buf;
