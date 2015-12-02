@@ -1251,8 +1251,13 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("productid", "RT-AC68U")) {
+	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev","0x1100") {
 		setRouter("Asus RT-AC68U");
+		return ROUTER_ASUS_AC67U;
+	}
+
+	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev","0x1103") {
+		setRouter("Asus RT-AC68U rev 2");
 		return ROUTER_ASUS_AC67U;
 	}
 
