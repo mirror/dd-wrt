@@ -1082,7 +1082,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 			else
 				bcm947xx_nflash_parts[nparts].name = "rootfs";
 			bcm947xx_nflash_parts[nparts].size = image_second_offset - shift;
-		} 
+		} else
 #endif
 		{
 			bcm947xx_nflash_parts[nparts].name = "rootfs";
