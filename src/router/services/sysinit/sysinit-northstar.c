@@ -1959,7 +1959,7 @@ void start_sysinit(void)
 		}
 		break;
 	case ROUTER_ASUS_AC67U:
-		if (!nvram_match("bl_version", "1.0.1.1"))
+		if (!nvram_match("bl_version", "1.0.1.1") && nvram_match("boardrev","0x1100")) // filter rev 2
 			nvram_set("clkfreq", "800,666");
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
