@@ -944,8 +944,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 	}
 
 //	if (boardnum == 20140309 && nvram_match("boardtype","0xE646") && nvram_match("boardrev","0x1200")) {
-//		bootossz = 0x4000000;	
-//		nvsz = 0x100000;
+//		bootossz = 0x1f00000;	
 //	}
 
 	if (((boardnum == 1) || (nvram_get("boardnum") == NULL)) && nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && !strncmp(nvram_safe_get("modelNumber"),"EA6400",6)) {
@@ -1081,7 +1080,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 			else
 				bcm947xx_nflash_parts[nparts].name = "rootfs";
 			bcm947xx_nflash_parts[nparts].size = image_second_offset - shift;
-		} 
+		} else
 #endif
 		{
 			bcm947xx_nflash_parts[nparts].name = "rootfs";
