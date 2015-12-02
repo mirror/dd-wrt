@@ -1276,24 +1276,30 @@ static int getbootdevice(void)
 		}
 		p++;
 	}
-
+	
 	if (ipq_smem_bootconfig_v2_info) {
+		int upgrade = ipq_smem_bootconfig_v2_info->upgradeinprogress;
 		for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
 			if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
 				if (ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot)
 					ret = 1;
 				else
 					ret = 0;
+				if (upgrade && ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded)
+					ret = !!ret;
 			}
 		}
 	}
 	if (ipq_smem_bootconfig_info) {
+		int upgrade = ipq_smem_bootconfig_info->upgradeinprogress;
 		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
 			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
 				if (ipq_smem_bootconfig_info->per_part_entry[i].primaryboot)
 					ret = 1;
 				else
 					ret = 0;
+				if (upgrade && ipq_smem_bootconfig_info->per_part_entry[i].upgraded)
+					ret = !!ret;
 			}
 		}
 	}
