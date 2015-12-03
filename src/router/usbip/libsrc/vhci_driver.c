@@ -4,13 +4,16 @@
 
 #include "usbip_common.h"
 #include "vhci_driver.h"
+#include <limits.h>
+#include <netdb.h>
 
 #undef  PROGNAME
 #define PROGNAME "libusbip"
 
 struct usbip_vhci_driver *vhci_driver;
 
-static struct usbip_imported_device *imported_device_init(struct usbip_imported_device *idev, char *busid)
+static struct usbip_imported_device *
+imported_device_init(struct usbip_imported_device *idev, char *busid)
 {
 	struct sysfs_device *sudev;
 
@@ -29,14 +32,16 @@ static struct usbip_imported_device *imported_device_init(struct usbip_imported_
 		if (!strncmp(cdev->dev_path, idev->udev.path,
 			     strlen(idev->udev.path))) {
 			struct usbip_class_device *new_cdev;
-
-			/* alloc and copy because dlist is linked from only one list */
+			/*
+			 * alloc and copy because dlist is linked
+			 * from only one list
+			 */
 			new_cdev = calloc(1, sizeof(*new_cdev));
 			if (!new_cdev)
 				goto err;
 
 			memcpy(new_cdev, cdev, sizeof(*new_cdev));
-			dlist_unshift(idev->cdev_list, (void*) new_cdev);
+			dlist_unshift(idev->cdev_list, (void *) new_cdev);
 		}
 	}
 
@@ -59,14 +64,17 @@ static int parse_status(char *value)
 
 
 	/* skip a header line */
-	c = strchr(value, '\n') + 1;
+	c = strchr(value, '\n');
+	if (!c)
+		return -1;
+	c++;
 
 	while (*c != '\0') {
 		int port, status, speed, devid;
 		unsigned long socket;
 		char lbusid[SYSFS_BUS_ID_SIZE];
 
-		ret = sscanf(c, "%d %d %d %x %lx %s\n",
+		ret = sscanf(c, "%d %d %d %x %lx %31s\n",
 				&port, &status, &speed,
 				&devid, &socket, lbusid);
 
@@ -98,7 +106,8 @@ static int parse_status(char *value)
 				return -1;
 			}
 
-			if (idev->status != VDEV_ST_NULL && idev->status != VDEV_ST_NOTASSIGNED) {
+			if (idev->status != VDEV_ST_NULL
+			    && idev->status != VDEV_ST_NOTASSIGNED) {
 				idev = imported_device_init(idev, lbusid);
 				if (!idev) {
 					dbg("imported_device_init failed");
@@ -109,7 +118,10 @@ static int parse_status(char *value)
 
 
 		/* go to the next line */
-		c = strchr(c, '\n') + 1;
+		c = strchr(c, '\n');
+		if (!c)
+			break;
+		c++;
 	}
 
 	dbg("exit");
@@ -120,8 +132,10 @@ static int parse_status(char *value)
 
 static int check_usbip_device(struct sysfs_class_device *cdev)
 {
-	char class_path[SYSFS_PATH_MAX]; /* /sys/class/video4linux/video0/device */
-	char dev_path[SYSFS_PATH_MAX];	 /* /sys/devices/platform/vhci_hcd/usb6/6-1:1.1 */
+	/* /sys/class/video4linux/video0/device */
+	char class_path[SYSFS_PATH_MAX];
+	/* /sys/devices/platform/vhci_hcd/usb6/6-1:1.1 */
+	char dev_path[SYSFS_PATH_MAX];
 	int ret;
 	struct usbip_class_device *usbip_cdev;
 
@@ -218,7 +232,7 @@ static int refresh_class_device_list(void)
 
 	sysfs_close_list(cname_list);
 
-	/* seach under /sys/block */
+	/* search under /sys/block */
 	ret = search_class_for_usbip_device(SYSFS_BLOCK_NAME);
 	if (ret < 0)
 		return -1;
@@ -264,11 +278,17 @@ static int get_nports(void)
 	    attr_status->method, attr_status->value);
 
 	/* skip a header line */
-	c = strchr(attr_status->value, '\n') + 1;
+	c = strchr(attr_status->value, '\n');
+	if (!c)
+		return 0;
+	c++;
 
 	while (*c != '\0') {
 		/* go to the next line */
-		c = strchr(c, '\n') + 1;
+		c = strchr(c, '\n');
+		if (!c)
+			return nports;
+		c++;
 		nports += 1;
 	}
 
@@ -277,25 +297,25 @@ static int get_nports(void)
 
 static int get_hc_busid(char *sysfs_mntpath, char *hc_busid)
 {
-        struct sysfs_driver *sdriver;
-        char sdriver_path[SYSFS_PATH_MAX];
+	struct sysfs_driver *sdriver;
+	char sdriver_path[SYSFS_PATH_MAX];
 
 	struct sysfs_device *hc_dev;
 	struct dlist *hc_devs;
 
 	int found = 0;
 
-        snprintf(sdriver_path, SYSFS_PATH_MAX, "%s/%s/%s/%s/%s", sysfs_mntpath,
-		 SYSFS_BUS_NAME, USBIP_VHCI_BUS_TYPE, SYSFS_DRIVERS_NAME,
-		 USBIP_VHCI_DRV_NAME);
+	snprintf(sdriver_path, SYSFS_PATH_MAX, "%s/%s/%s/%s/%s", sysfs_mntpath,
+	SYSFS_BUS_NAME, USBIP_VHCI_BUS_TYPE, SYSFS_DRIVERS_NAME,
+	USBIP_VHCI_DRV_NAME);
 
-        sdriver = sysfs_open_driver_path(sdriver_path);
-        if (!sdriver) {
+	sdriver = sysfs_open_driver_path(sdriver_path);
+	if (!sdriver) {
 		dbg("sysfs_open_driver_path failed: %s", sdriver_path);
-                dbg("make sure " USBIP_CORE_MOD_NAME ".ko and "
+		dbg("make sure " USBIP_CORE_MOD_NAME ".ko and "
 		    USBIP_VHCI_DRV_NAME ".ko are loaded!");
-                return -1;
-        }
+		return -1;
+	}
 
 	hc_devs = sysfs_get_driver_devices(sdriver);
 	if (!hc_devs) {
@@ -319,6 +339,29 @@ err:
 	return -1;
 }
 
+static int read_record(int rhport, char *host, char *port, char *busid)
+{
+	FILE *file;
+	char path[PATH_MAX+1];
+
+	snprintf(path, PATH_MAX, VHCI_STATE_PATH"/port%d", rhport);
+
+	file = fopen(path, "r");
+	if (!file) {
+		err("fopen");
+		return -1;
+	}
+
+	if (fscanf(file, "%s %s %s\n", host, port, busid) != 3) {
+		err("fscanf");
+		fclose(file);
+		return -1;
+	}
+
+	fclose(file);
+
+	return 0;
+}
 
 /* ---------------------------------------------------------------------- */
 
@@ -514,6 +557,48 @@ int usbip_vhci_detach_device(uint8_t port)
 	}
 
 	dbg("detached port: %d", port);
+
+	return 0;
+}
+
+int usbip_vhci_imported_device_dump(struct usbip_imported_device *idev)
+{
+	char product_name[100];
+	char host[NI_MAXHOST] = "unknown host";
+	char serv[NI_MAXSERV] = "unknown port";
+	char remote_busid[SYSFS_BUS_ID_SIZE];
+	int ret;
+	int read_record_error = 0;
+
+	if (idev->status == VDEV_ST_NULL || idev->status == VDEV_ST_NOTASSIGNED)
+		return 0;
+
+	ret = read_record(idev->port, host, serv, remote_busid);
+	if (ret) {
+		err("read_record");
+		read_record_error = 1;
+	}
+
+	printf("Port %02d: <%s> at %s\n", idev->port,
+	       usbip_status_string(idev->status),
+	       usbip_speed_string(idev->udev.speed));
+
+	usbip_names_get_product(product_name, sizeof(product_name),
+				idev->udev.idVendor, idev->udev.idProduct);
+
+	printf("       %s\n",  product_name);
+
+	if (!read_record_error) {
+		printf("%10s -> usbip://%s:%s/%s\n", idev->udev.busid,
+		       host, serv, remote_busid);
+		printf("%10s -> remote bus/dev %03d/%03d\n", " ",
+		       idev->busnum, idev->devnum);
+	} else {
+		printf("%10s -> unknown host, remote port and remote busid\n",
+		       idev->udev.busid);
+		printf("%10s -> remote bus/dev %03d/%03d\n", " ",
+		       idev->busnum, idev->devnum);
+	}
 
 	return 0;
 }
