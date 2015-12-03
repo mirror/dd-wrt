@@ -5178,7 +5178,11 @@ void show_addconfig(webs_t wp, char *prefix)
 	websWrite(wp, "<textarea cols=\"60\" rows=\"4\" id=\"%s_config\" name=\"%s_config\"></textarea>\n", vvar, vvar);
 	websWrite(wp, "<script type=\"text/javascript\">\n");
 	websWrite(wp, "//<![CDATA[\n");
-	websWrite(wp, "var %s_config = fix_cr( '%s' );\n", vvar, nvram_nget("%s_config", prefix));
+	websWrite(wp, "var %s_config = fix_cr( '",vvar);
+	char varname[32];
+	sprintf(varname,"%s_config",prefix);
+	tf_webWriteESCNV(wp, varname);	
+	websWrite(wp, "' );\n");
 	websWrite(wp, "document.getElementById(\"%s_config\").value = %s_config;\n", vvar, vvar);
 	websWrite(wp, "//]]>\n");
 	websWrite(wp, "</script>\n");
