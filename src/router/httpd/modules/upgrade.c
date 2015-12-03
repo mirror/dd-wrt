@@ -95,6 +95,73 @@ typedef struct {
 	unsigned int crc32;
 } ralink_firmware_header;
 
+static char *allmagics[] = {
+	CODE_PATTERN_WRT54G,
+	CODE_PATTERN_WRT54GS,
+	CODE_PATTERN_WRH54G,
+	CODE_PATTERN_WRT150N,
+	CODE_PATTERN_WRT160N,
+	CODE_PATTERN_WRT300N,
+	CODE_PATTERN_WRT300NV11,
+	CODE_PATTERN_WRT310N,
+	CODE_PATTERN_WRT350N,
+	CODE_PATTERN_WRTSL54GS,
+	CODE_PATTERN_WRT54G3G,
+	CODE_PATTERN_WRT54G3GV,
+	CODE_PATTERN_WRT610N,
+	CODE_PATTERN_WRT54GSV4,
+	CODE_PATTERN_WRT320N,
+	CODE_PATTERN_VALET_M10,
+	CODE_PATTERN_VALET_M20,
+	CODE_PATTERN_E900,
+	CODE_PATTERN_E800,
+	CODE_PATTERN_E1000,
+	CODE_PATTERN_E1200V1,
+	CODE_PATTERN_E1200V2,
+	CODE_PATTERN_E1500,
+	CODE_PATTERN_E1550,
+	CODE_PATTERN_E2000,
+	CODE_PATTERN_E2500,
+	CODE_PATTERN_E3000,
+	CODE_PATTERN_E3200,
+	CODE_PATTERN_E4200,
+	CODE_PATTERN_NV60K,
+	CODE_PATTERN_NV64K,
+	NULL
+};
+
+static char *nv60k[] = {
+	CODE_PATTERN_E1550,
+	CODE_PATTERN_E2000,
+	CODE_PATTERN_E2500,
+	CODE_PATTERN_E3000,
+	CODE_PATTERN_E3200,
+	CODE_PATTERN_E4200,
+	CODE_PATTERN_NV60K,
+	NULL
+};
+
+static char *nv64k[] = {
+	CODE_PATTERN_E900,
+	CODE_PATTERN_E800,
+	CODE_PATTERN_E1200V1,
+	CODE_PATTERN_E1200V2,
+	CODE_PATTERN_E1500,
+	CODE_PATTERN_NV64K,
+	NULL
+};
+
+static int checkmagic(char *magic, char *check[])
+{
+	int cnt;
+	while (check[cnt]) {
+		if (!memcmp(magic, check[cnt], 4))
+			return 0;
+		cnt++;
+	}
+	return -1;
+}
+
 int
 // sys_upgrade(char *url, FILE *stream, int *total)
 sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
@@ -414,23 +481,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			if (brand == ROUTER_LINKSYS_E1550 || (brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307"))	//E2000
 			    || brand == ROUTER_LINKSYS_E2500 || (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300"))	//E3000
 			    || brand == ROUTER_LINKSYS_E3200 || brand == ROUTER_LINKSYS_E4200) {
-				if (memcmp(&buf[0], &CODE_PATTERN_E1550, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_E2500, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)) {
+				if (checkmagic(&buf[0], nv60k)) {
 					cprintf("image not compatible with nv60k router!\n");
 					goto err;	// must be there, otherwise fail here
 				}
 			} else if (brand == ROUTER_NETGEAR_WNDR4000 || brand == ROUTER_NETGEAR_WNDR3400 || brand == ROUTER_LINKSYS_E900 || brand == ROUTER_LINKSYS_E800 || brand == ROUTER_LINKSYS_E1500) {
-				if (memcmp(&buf[0], &CODE_PATTERN_E900, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_E800, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_E1200V1, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_E1200V2, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_E1500, 4)
-				    && memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
+				if (checkmagic(&buf[0], nv64k)) {
 					cprintf("image not compatible with nv64k router!\n");
 					goto err;	// must be there, otherwise fail here
 				}
@@ -441,37 +497,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				}
 			}
 #endif
-			if (memcmp(&buf[0], &CODE_PATTERN_WRT54G, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT54GS, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRH54G, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT150N, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT160N, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT300N, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT300NV11, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT310N, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT350N, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRTSL54GS, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT54G3G, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT54G3GV, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT610N, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT54GSV4, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT320N, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_VALET_M10, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_VALET_M20, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E900, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E800, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E1000, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E1200V1, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E1200V2, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E1500, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E1550, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E2500, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
+			if (checkmagic(&buf[0], allmagics)) {
 				cprintf("code pattern error!\n");
 				goto write_data;
 			}
