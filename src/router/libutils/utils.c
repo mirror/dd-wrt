@@ -1271,15 +1271,16 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
+	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev","0x1103") && nvram_match("boardtype","0x0665")) {
+		setRouter("Asus RT-AC68U B1");
+		return ROUTER_ASUS_AC67U;
+	}
+
 	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev","0x1103")) {
 		setRouter("Asus RT-AC68U C1");
 		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev","0x1103") && nvram_match("boardtype","0x0665")) {
-		setRouter("Asus RT-AC68U B1");
-		return ROUTER_ASUS_AC67U;
-	}
 
 	if (nvram_match("productid", "RT-AC87U") || nvram_match("model", "RT-AC87U")) {
 		setRouter("Asus RT-AC87U");
