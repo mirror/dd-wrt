@@ -245,7 +245,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 		insmod("crc16 mbcache jbd2 ext4");
 	}
 	if (!strcmp(fs, "btrfs")) {
-		insmod("libcrc32c lzo_compress lzo_decompress raid6_pq xor btrfs");
+		insmod("libcrc32c lzo_compress lzo_decompress raid6_pq xor-neon xor btrfs");
 	}
 #endif
 	if (!strcmp(fs, "vfat")) {
