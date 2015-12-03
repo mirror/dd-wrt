@@ -72,6 +72,7 @@ const char *usbip_speed_string(int num)
 void dump_usb_interface(struct usbip_usb_interface *uinf)
 {
 	char buff[100];
+
 	usbip_names_get_class(buff, sizeof(buff),
 			uinf->bInterfaceClass,
 			uinf->bInterfaceSubClass,
@@ -82,7 +83,6 @@ void dump_usb_interface(struct usbip_usb_interface *uinf)
 void dump_usb_device(struct usbip_usb_device *udev)
 {
 	char buff[100];
-
 
 	dbg("%-20s = %s", "path",  udev->path);
 	dbg("%-20s = %s", "busid", udev->busid);
@@ -246,7 +246,7 @@ int usbip_names_init(char *f)
 	return names_init(f);
 }
 
-void usbip_names_free()
+void usbip_names_free(void)
 {
 	names_free();
 }
