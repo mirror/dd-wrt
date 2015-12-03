@@ -2424,6 +2424,7 @@ void start_lan(void)
 		eval("ifconfig", wifi, "hw", "ether", nvram_safe_get("def_whwaddr"));
 //              eval("ifconfig", wifi, "up");
 	}
+	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 	configure_wifi();
 #endif
 #endif
