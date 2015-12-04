@@ -20,7 +20,6 @@
 #include "../config.h"
 #endif
 
-#define _GNU_SOURCE
 #include <errno.h>
 #include <unistd.h>
 #include <netdb.h>
