@@ -78,6 +78,7 @@ void start_snmp(void)
 #ifdef HAVE_NEXTMEDIA
 		}
 	else {
+		fclose(fp);
 		sysprintf("cat /jffs/custom_snmp/snmpd.tail >> " SNMP_CONF_FILE);
 		}
 	}
