@@ -47,6 +47,12 @@ void start_snmp(void)
 
 	if (!nvram_invmatch("snmpd_enable", "0"))
 		return;
+#ifdef HAVE_NEXTMEDIA
+	if (f_exists("/jffs/etc/snmpd.conf")) {
+		sysprintf("ln -s /jffs/etc/snmpd.conf " SNMP_CONF_FILE);
+		}
+	else {
+#endif
 
 	fp = fopen(SNMP_CONF_FILE, "w");
 	if (NULL == fp)
@@ -64,15 +70,18 @@ void start_snmp(void)
 		fprintf(fp, "rwcommunity %s\n", nvram_safe_get("snmpd_rwcommunity"));
 	fprintf(fp, "sysservices 9\n");
 #ifdef HAVE_NEXTMEDIA
-	if (strlen(nvram_safe_get("rc_custom")) != 0) {
-	create_rc_file("rc_custom");
-		fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /tmp/.rc_custom\n");
-	}
-	else 
+	if (! f_exists("/jffs/custom_snmp/snmpd.tail")) {
 #endif
-	fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
+		fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 
-	fclose(fp);
+		fclose(fp);
+#ifdef HAVE_NEXTMEDIA
+		}
+	else {
+		sysprintf("cat /jffs/custom_snmp/snmpd.tail >> " SNMP_CONF_FILE);
+		}
+	}
+#endif
 	_evalpid(snmpd_argv, NULL, 0, &pid);
 
 	cprintf("done\n");
