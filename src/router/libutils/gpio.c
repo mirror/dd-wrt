@@ -462,31 +462,10 @@ void set_gpio(int gpio, int value)
 			sysprintf("echo %d > /sys/class/leds/ea8500\\:white\\:power/brightness", value);
 			break;
 		case 1:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:white\\:wifi/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/ea8500\\:green\\:wifi/brightness", value);
 			break;
-		case 2:	
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:white\\:esata/brightness", value);
-			break;
-		case 3:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:amber\\:usb1/brightness", value);
-			break;
-		case 4:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:amber\\:usb3/brightness", value);
-			break;
-		case 5:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:red\\:wan/brightness", value);
-			break;
-		case 6:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:white\\:internet/brightness", value);
-			break;
-		case 7:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:white\\:rfkill/brightness", value);
-			break;
-		case 8:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:white\\:wps/brightness", value);
-			break;
-		case 9:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:amber\\:status/brightness", value);
+		case 2:
+			sysprintf("echo %d > /sys/class/leds/ea8500\\:green\\:wps/brightness", value);
 			break;
 		default:
 			i_set_gpio(gpio, value);
