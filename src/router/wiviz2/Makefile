@@ -9,7 +9,7 @@ ifeq ($(CONFIG_ATH9K),y)
 LIBS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
-CCOPTS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -lgcc_s
+CCOPTS=$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -lgcc_s
 INCLUDE=../libpcap
 SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
