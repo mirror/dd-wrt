@@ -4136,7 +4136,13 @@ void *getUEnv(char *name)
 #elif HAVE_MVEBU
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
 #elif HAVE_IPQ806X
-	FILE *fp = fopen("/dev/mtdblock/3", "rb");
+	int brand = getRouterBrand();
+	FILE *fp;
+	if (brand == ROUTER_LINKSYS_EA8500) {
+		fp = fopen("/dev/mtdblock/10", "rb");
+	} else {
+		fp = fopen("/dev/mtdblock/3", "rb"); 
+	}
 #else
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 #endif
@@ -6093,12 +6099,9 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		power_gpio = 0x100;	// power led 
-		diag_gpio = 0x109;	// power led orange     
-		connected_gpio = 0x106;	// wan led
+		diag_gpio = 0x000;	// power led orange     
 		wlan0_gpio = 0x101;	// radio 0  
-		ses_gpio = 0x108;	// wps led
-		usb_gpio = 0x103;	//usb1 
-		usb_gpio1 = 0x104;	//usb2 
+		ses_gpio = 0x102;	// wps led
 		break;
 	case ROUTER_ASUS_WL500G:
 		power_gpio = 0x100;
