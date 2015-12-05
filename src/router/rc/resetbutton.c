@@ -189,9 +189,10 @@ int getbuttonstate()
 	int ret = 0;
 	if (getRouterBrand() == ROUTER_NETGEAR_R7500)
 		ret = get_gpio(54);
-	else
-	if (getRouterBrand() == ROUTER_TRENDNET_TEW827)
+	else if (getRouterBrand() == ROUTER_TRENDNET_TEW827)
 		ret = get_gpio(54);
+	else if (getRouterBrand() == ROUTER_LINKSYS_EA8500)
+		ret = get_gpio(68);
 	else return 0;
 
 	if (ret == 0)
@@ -1376,6 +1377,10 @@ void period_check(int sig)
 	case ROUTER_LINKSYS_EA6500:
 		sesgpio = 0x104;	// gpio 4, inversed
 		break;
+	case ROUTER_LINKSYS_EA8500:
+		sesgpio = 0x165;
+		break;
+		
 #endif
 	default:
 		sesgpio = 0xfff;	// gpio unknown, disabled
