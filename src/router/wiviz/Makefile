@@ -4,7 +4,7 @@
 #CC=~/buildroot/staging_dir_mipsel/bin/mipsel-linux-gcc
 LIBS=../libpcap_noring/libpcap.a
 
-CCOPTS=$(COPTS) 
+CCOPTS=$(COPTS) $(MIPS16_OPT)
 INCLUDE=../libpcap_noring
 SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
