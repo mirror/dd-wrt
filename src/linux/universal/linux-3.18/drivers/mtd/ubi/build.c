@@ -1304,7 +1304,11 @@ static int getbootdevice(void)
 		}
 	}
 	vfree(smem);
-	printk(KERN_INFO "no valid bootconfig found, use default\n");
+	if (ret == -1)
+	    printk(KERN_INFO "no valid bootconfig found, use default\n");
+	else
+	    printk(KERN_INFO "boot from partition %d\n",ret);
+
 	return ret;
 }
 
