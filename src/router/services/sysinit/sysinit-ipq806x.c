@@ -397,12 +397,28 @@ void start_sysinit(void)
 	detect_wireless_devices();
 	//insmod("qdpc-host.ko");
 	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
+	
+	switch (board) {
+	case ROUTER_LINKSYS_EA8500:
+		system("swconfig dev switch0 set reset 1");
+		system("swconfig dev switch0 set enable_vlan 1");
+		system("swconfig dev switch0 vlan 1 set ports \"0t 1 2 3 4\"");
+		system("swconfig dev switch0 vlan 2 set ports \"0t 5\"");
+		system("swconfig dev switch0 set apply");
+		eval("ifconfig", "eth0", "up");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		break;
+	default:
+		system("swconfig dev switch0 set reset 1");
+		system("swconfig dev switch0 set enable_vlan 0");
+		system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
+		system("swconfig dev switch0 vlan 2 set ports \"5 0\"");
+		system("swconfig dev switch0 set apply");
+	      break;
+	}
 
-	system("swconfig dev switch0 set reset 1");
-	system("swconfig dev switch0 set enable_vlan 0");
-	system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
-	system("swconfig dev switch0 vlan 2 set ports \"5 0\"");
-	system("swconfig dev switch0 set apply");
 		
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
@@ -444,7 +460,8 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 		close(s);
 	}
-	set_gpio(9, 1);		//wps
+
+	//eval("ifconfig", "eth1", "down");
 
 	/*
 	 * Set a sane date 
