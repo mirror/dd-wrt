@@ -31,7 +31,9 @@ form {
   margin:0;
 }
 input.num {
-  text-align:right;
+  padding-left: 1px;
+  padding-right: 1px;
+  text-align:center;
 }
 #wrapper {
   position:relative;
