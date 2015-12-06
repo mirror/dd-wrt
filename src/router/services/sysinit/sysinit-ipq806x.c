@@ -438,6 +438,7 @@ void start_sysinit(void)
 			eval("ifconfig", "eth0", "hw", "ether", get_deviceinfo("hw_mac_addr"));
 			nvram_set("lan_hwaddr", get_deviceinfo("hw_mac_addr"));
 		}
+		eval("mtd", "resetbc", "s_env");
 		break;
 	default:
 		break;
