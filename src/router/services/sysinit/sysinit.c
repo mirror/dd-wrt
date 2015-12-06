@@ -1235,11 +1235,20 @@ void start_restore_defaults(void)
 #elif HAVE_IPQ806X
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
-		{"lan_ifnames", "eth0 eth1 ath0",},
+		{"lan_ifnames", "eth0 eth1 ath0 ath1",},
 		{"wan_ifname", "eth0"},
 		{"wan_ifname2", "eth0"},
 		{"wan_ifnames", "eth0"},
 		{"wan_default", "eth0"},
+		{0, 0}
+	};
+	struct nvram_param ea8500[] = {
+		{"lan_ifname", "br0"},
+		{"lan_ifnames", "van1 vlan2 ath0 ath1",},
+		{"wan_ifname", "vlan2"},
+		{"wan_ifname2", "vlan2"},
+		{"wan_ifnames", "vlan2"},
+		{"wan_default", "vlan2"},
 		{0, 0}
 	};
 #elif HAVE_WDR4900
@@ -2002,6 +2011,8 @@ void start_restore_defaults(void)
     || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8)  || defined(HAVE_OCTEON)
 	int brand = getRouterBrand();
 	linux_overrides = generic;
+	if( brand == ROUTER_LINKSYS_EA8500 )
+		linux_overrides = ea8500;
 
 	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
 		// nvram_invmatch("os_name", 
