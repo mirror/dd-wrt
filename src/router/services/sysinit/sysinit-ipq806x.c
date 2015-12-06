@@ -394,9 +394,34 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	detect_wireless_devices();
+	
 	//insmod("qdpc-host.ko");
 	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
+	
+	switch (board) {
+	case ROUTER_TRENDNET_TEW827:
+		if (maddr) {
+			eval("ifconfig", "eth0", "hw", "ether", getUEnv("wan_mac"));
+			eval("ifconfig", "eth1", "hw", "ether", getUEnv("lan_mac"));
+		}
+		start_finishupgrade();
+		if (getbootdevice())
+			nvram_set("bootpartition", "1");
+		else
+			nvram_set("bootpartition", "0");
+		break;
+	case ROUTER_LINKSYS_EA8500:
+		if (maddr) {
+			eval("ifconfig", "eth1", "hw", "ether", get_deviceinfo("hw_mac_addr"));
+			eval("ifconfig", "eth0", "hw", "ether", get_deviceinfo("hw_mac_addr"));
+			nvram_set("lan_hwaddr", get_deviceinfo("hw_mac_addr"));
+			nvram_commit();
+		}
+		eval("mtd", "resetbc", "s_env");
+		break;
+	default:
+		break;
+	}
 	
 	switch (board) {
 	case ROUTER_LINKSYS_EA8500:
@@ -420,32 +445,12 @@ void start_sysinit(void)
 	}
 
 		
-	switch (board) {
-	case ROUTER_TRENDNET_TEW827:
-		if (maddr) {
-			eval("ifconfig", "eth0", "hw", "ether", getUEnv("wan_mac"));
-			eval("ifconfig", "eth1", "hw", "ether", getUEnv("lan_mac"));
-		}
-		start_finishupgrade();
-		if (getbootdevice())
-			nvram_set("bootpartition", "1");
-		else
-			nvram_set("bootpartition", "0");
-		break;
-	case ROUTER_LINKSYS_EA8500:
-		if (maddr) {
-			eval("ifconfig", "eth1", "hw", "ether", get_deviceinfo("hw_mac_addr"));
-			eval("ifconfig", "eth0", "hw", "ether", get_deviceinfo("hw_mac_addr"));
-			nvram_set("lan_hwaddr", get_deviceinfo("hw_mac_addr"));
-		}
-		eval("mtd", "resetbc", "s_env");
-		break;
-	default:
-		break;
-	}
+
 	
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
+	
+	detect_wireless_devices();
 
 	int s;
 	struct ifreq ifr;
@@ -462,7 +467,13 @@ void start_sysinit(void)
 		close(s);
 	}
 
-	//eval("ifconfig", "eth1", "down");
+	switch (board) {
+	case ROUTER_LINKSYS_EA8500:
+		eval("ifconfig", "eth1", "down");
+		break;
+	default:
+		break;
+	}
 
 	/*
 	 * Set a sane date 
