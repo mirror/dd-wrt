@@ -267,24 +267,28 @@ int mtd_write(const char *path, const char *mtd)
 	 */
 	unsigned int trxhd = STORE32_LE(TRX_MAGIC);
 
-#if defined(HAVE_MVEBU)
-	char *part = getUEnv("boot_part");
-	if (part) {
-		fprintf(stderr, "boot partiton is %s\n", part);
-		if (!strcmp(part, "2")) {
-			mtd = "linux";
-			eval("ubootenv", "set", "boot_part", "1");
-		} else {
-			mtd = "linux2";
-			eval("ubootenv", "set", "boot_part", "2");
-		}
-		fprintf(stderr, "flash to partition %s\n", mtd);
-	} else {
-		fprintf(stderr, "no boot partition info found\n");
-	}
-#endif
-
+	char *part;
 	switch (brand) {
+	case ROUTER_WRT_1900AC:
+	case ROUTER_WRT_1200AC:
+	case ROUTER_WRT_1900ACV2:
+	case ROUTER_WRT_1900ACS:
+	case ROUTER_LINKSYS_EA8500:
+		part = getUEnv("boot_part");
+		if (part) {
+			fprintf(stderr, "boot partiton is %s\n", part);
+			if (!strcmp(part, "2")) {
+				mtd = "linux";
+				eval("ubootenv", "set", "boot_part", "1");
+			} else {
+				mtd = "linux2";
+				eval("ubootenv", "set", "boot_part", "2");
+			}
+			fprintf(stderr, "flash to partition %s\n", mtd);
+		} else {
+			fprintf(stderr, "no boot partition info found\n");
+		}
+		break;
 	case ROUTER_TRENDNET_TEW827:
 		if (nvram_match("bootpartition", "0")) {
 			mtd = "linux2";
