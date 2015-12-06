@@ -993,6 +993,16 @@ void start_lan(void)
 		}
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
+	case ROUTER_LINKSYS_EA8500:
+		if (getSTA() || getWET() || CANBRIDGE()) {
+			nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
+			PORTSETUPWAN("");
+		} else {
+			nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
+			PORTSETUPWAN("vlan2");
+		}
+		strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
+		break;
 	default:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
@@ -2928,8 +2938,11 @@ void start_wan(int status)
 	else
 		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_IPQ806X
-	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
+	char *pppoe_wan_ifname;
+	if (getRouterBrand() == ROUTER_LINKSYS_EA8500)
+		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+	else
+		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WDR4900
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
