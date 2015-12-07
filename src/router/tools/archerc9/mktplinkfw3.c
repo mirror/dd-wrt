@@ -124,41 +124,42 @@ static const struct flash_partition_entry cpe510_partitions[] = {
 static const unsigned char archerc9_support_list[] =
 	"\x00\x00\x00\x4b\x00\x00\x00\x00"
 	"SupportList:\n"
-	"(product_name:ArcherC9\n"
-	"product_ver:1.0.0\n"
-	"special_id:00000000)\n"
+	"{product_name:ArcherC9,"
+	"product_ver:1.0.0,"
+	"special_id:00000000}\n"
 	"\x00";
 
 static const unsigned char archerc9v2_support_list[] =
 	"\x00\x00\x00\x4b\x00\x00\x00\x00"
 	"SupportList:\n"
-	"(product_name:ArcherC9\n"
-	"product_ver:2.0.0\n"
-	"special_id:00000000)\n"
+	"{product_name:ArcherC9,"
+	"product_ver:2.0.0,"
+	"special_id:00000000}\n"
 	"\x00";
 
 static const unsigned char archerc1900_support_list[] =
 	"\x00\x00\x00\x4b\x00\x00\x00\x00"
 	"SupportList:\n"
-	"(product_name:ArcherC1900\n"
-	"product_ver:1.0.0\n"
-	"special_id:55534100)\n"
+	"{product_name:ArcherC1900,"
+	"product_ver:1.0.0,"
+	"language=US,"
+	"special_id:55534100}"
 	"\x00";
 
 static const unsigned char archerc8_support_list[] =
 	"\x00\x00\x00\x4b\x00\x00\x00\x00"
 	"SupportList:\n"
-	"(product_name:ArcherC8\n"
-	"product_ver:1.0.0\n"
-	"special_id:00000000)\n"
+	"{product_name:ArcherC8,"
+	"product_ver:1.0.0,"
+	"special_id:00000000}\n"
 	"\x00";
 
 static const unsigned char archerc8v2_support_list[] =
 	"\x00\x00\x00\x4b\x00\x00\x00\x00"
 	"SupportList:\n"
-	"(product_name:ArcherC8\n"
-	"product_ver:2.0.0\n"
-	"special_id:00000000)\n"
+	"{product_name:ArcherC8,"
+	"product_ver:2.0.0,"
+	"special_id:00000000}"
 	"\x00";
 
 static const unsigned char softversion[] =
