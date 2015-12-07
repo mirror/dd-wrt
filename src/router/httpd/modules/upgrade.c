@@ -153,7 +153,7 @@ static char *nv64k[] = {
 
 static int checkmagic(char *magic, char *check[])
 {
-	int cnt;
+	int cnt=0;
 	while (check[cnt]) {
 		if (!memcmp(magic, check[cnt], 4))
 			return 0;
