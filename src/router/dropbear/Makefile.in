@@ -40,12 +40,12 @@ SVROBJS=svr-kex.o svr-auth.o sshpty.o \
 CLIOBJS=cli-main.o cli-auth.o cli-authpasswd.o cli-kex.o \
 		cli-session.o cli-runopts.o cli-chansession.o \
 		cli-authpubkey.o cli-tcpfwd.o cli-channel.o cli-authinteract.o \
-		cli-agentfwd.o 
+		cli-agentfwd.o list.o
 
 CLISVROBJS=common-session.o packet.o common-algo.o common-kex.o \
 			common-channel.o common-chansession.o termcodes.o loginrec.o \
 			tcp-accept.o listener.o process-packet.o \
-			common-runopts.o circbuffer.o curve25519-donna.o list.o netio.o
+			common-runopts.o circbuffer.o curve25519-donna.o
 
 KEYOBJS=dropbearkey.o
 
@@ -140,7 +140,7 @@ insmulti%: dropbearmulti
 	$(INSTALL) -d $(DESTDIR)$(mandir)/man1
 	if test -e $*.1; then $(INSTALL) -m 644 $*.1 $(DESTDIR)$(mandir)/man1/$*.1; fi
 
-# dropbear should go in sbin, so it needs a separate rule
+# dropbear should go in sbin, so it needs a seperate rule
 inst_dropbear: dropbear
 	$(INSTALL) -d $(DESTDIR)$(sbindir)
 	$(INSTALL) dropbear$(EXEEXT) $(DESTDIR)$(sbindir)
