@@ -4349,11 +4349,7 @@ $as_echo "$as_me: Using uClibc - login() and logout() probably don't work, so we
 fi
 
 
-ac_fn_c_check_func "$LINENO" "crypt" "ac_cv_func_crypt"
-if test "x$ac_cv_func_crypt" = xyes; then :
-  found_crypt_func=here
-fi
-
+# Checks for libraries.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for crypt in -lcrypt" >&5
 $as_echo_n "checking for crypt in -lcrypt... " >&6; }
 if ${ac_cv_lib_crypt_crypt+:} false; then :
@@ -4391,18 +4387,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypt_crypt" >&5
 $as_echo "$ac_cv_lib_crypt_crypt" >&6; }
 if test "x$ac_cv_lib_crypt_crypt" = xyes; then :
-
-	CRYPTLIB="-lcrypt"
-	found_crypt_func=here
-
+  CRYPTLIB="-lcrypt"
 fi
 
 
-if test "t$found_crypt_func" = there; then
-
-$as_echo "#define HAVE_CRYPT 1" >>confdefs.h
-
-fi
 
 # Check if zlib is needed
 
@@ -5348,7 +5336,7 @@ else
 int
 main ()
 {
- if (sizeof(struct sockaddr_storage)) return 0
+ struct sockaddr_storage s;
   ;
   return 0;
 }
@@ -5384,7 +5372,7 @@ else
 int
 main ()
 {
- if (sizeof(struct sockaddr_in6)) return 0
+ struct sockaddr_in6 s; s.sin6_family = 0;
   ;
   return 0;
 }
@@ -5421,7 +5409,7 @@ else
 int
 main ()
 {
- if (sizeof(struct in6_addr)) return 0
+ struct in6_addr s; s.s6_addr[0] = 0;
   ;
   return 0;
 }
@@ -5459,7 +5447,7 @@ else
 int
 main ()
 {
- if (sizeof(struct addrinfo)) return 0
+ struct addrinfo s; s.ai_flags = AI_PASSIVE;
   ;
   return 0;
 }
@@ -6709,7 +6697,7 @@ _ACEOF
 
 rm -f conftest*
 
-for ac_func in dup2 getpass getspnam getusershell memset putenv select socket strdup clearenv strlcpy strlcat daemon basename _getpty getaddrinfo freeaddrinfo getnameinfo fork writev
+for ac_func in dup2 getspnam getusershell memset putenv select socket strdup clearenv strlcpy strlcat daemon basename _getpty getaddrinfo freeaddrinfo getnameinfo fork writev
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -8149,21 +8137,6 @@ $as_echo "$as_me: Using bundled libtomcrypt and libtommath" >&6;}
 else
 { $as_echo "$as_me:${as_lineno-$LINENO}: Using system libtomcrypt and libtommath" >&5
 $as_echo "$as_me: Using system libtomcrypt and libtommath" >&6;}
-fi
-
-
-if test "x$ac_cv_func_getpass" != xyes; then
-{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
-$as_echo "$as_me: " >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}: getpass() not available, dbclient will only have public-key authentication" >&5
-$as_echo "$as_me: getpass() not available, dbclient will only have public-key authentication" >&6;}
-fi
-
-if test "t$found_crypt_func" != there; then
-{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
-$as_echo "$as_me: " >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}: crypt() not available, dropbear server will not have password authentication" >&5
-$as_echo "$as_me: crypt() not available, dropbear server will not have password authentication" >&6;}
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: " >&5

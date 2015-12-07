@@ -2,8 +2,8 @@
  * Copyright (c) 2002,2003 Matt Johnston
  * All rights reserved. See LICENSE for the license. */
 
-#ifndef DROPBEAR_OPTIONS_H_
-#define DROPBEAR_OPTIONS_H_
+#ifndef _OPTIONS_H_
+#define _OPTIONS_H_
 
 /* Define compile-time options below - the "#ifndef DROPBEAR_XXX .... #endif"
  * parts are to allow for commandline -DDROPBEAR_XXX options etc. */
@@ -81,7 +81,7 @@ much traffic. */
 
 /* Enable "Netcat mode" option. This will forward standard input/output
  * to a remote TCP-forwarded connection */
-#define ENABLE_CLI_NETCAT
+// #define ENABLE_CLI_NETCAT
 
 /* Whether to support "-c" and "-m" flags to choose ciphers/MACs at runtime */
 //#define ENABLE_USER_ALGO_LIST
@@ -91,26 +91,21 @@ much traffic. */
  * Including multiple keysize variants the same cipher 
  * (eg AES256 as well as AES128) will result in a minimal size increase.*/
 #define DROPBEAR_AES128
-/* #define DROPBEAR_3DES */
+#define DROPBEAR_3DES
 #define DROPBEAR_AES256
 /* Compiling in Blowfish will add ~6kB to runtime heap memory usage */
 /*#define DROPBEAR_BLOWFISH*/
-#define DROPBEAR_TWOFISH256
-#define DROPBEAR_TWOFISH128
+/*#define DROPBEAR_TWOFISH256*/
+/*#define DROPBEAR_TWOFISH128*/
 
 /* Enable CBC mode for ciphers. This has security issues though
  * is the most compatible with older SSH implementations */
-/* #define DROPBEAR_ENABLE_CBC_MODE */
+#define DROPBEAR_ENABLE_CBC_MODE
 
 /* Enable "Counter Mode" for ciphers. This is more secure than normal
- * CBC mode against certain attacks. It is recommended for security
- * and forwards compatibility */
+ * CBC mode against certain attacks. This adds around 1kB to binary 
+ * size and is recommended for most cases */
 #define DROPBEAR_ENABLE_CTR_MODE
-
-/* Twofish counter mode is disabled by default because it 
-has not been tested for interoperability with other SSH implementations.
-If you test it please contact the Dropbear author */
-/* #define DROPBEAR_TWOFISH_CTR */
 
 /* You can compile with no encryption if you want. In some circumstances
  * this could be safe security-wise, though make sure you know what
@@ -146,7 +141,7 @@ If you test it please contact the Dropbear author */
  * Removing either of these won't save very much space.
  * SSH2 RFC Draft requires dss, recommends rsa */
 #define DROPBEAR_RSA
-/* #define DROPBEAR_DSS */
+#define DROPBEAR_DSS
 /* ECDSA is significantly faster than RSA or DSS. Compiling in ECC
  * code (either ECDSA or ECDH) increases binary size - around 30kB
  * on x86-64 */
@@ -222,8 +217,8 @@ If you test it please contact the Dropbear author */
 #define ENABLE_CLI_INTERACT_AUTH
 
 /* A default argument for dbclient -i <privatekey>. 
-Homedir is prepended unless path begins with / */
-#define DROPBEAR_DEFAULT_CLI_AUTHKEY ".ssh/id_dropbear"
+   leading "~" is expanded */
+#define DROPBEAR_DEFAULT_CLI_AUTHKEY "~/.ssh/id_dropbear"
 
 /* This variable can be used to set a password for client
  * authentication on the commandline. Beware of platforms
@@ -239,12 +234,6 @@ Homedir is prepended unless path begins with / */
  * should be run with DISPLAY set and no tty. The program should
  * return the password on standard output */
 /*#define ENABLE_CLI_ASKPASS_HELPER*/
-
-/* Save a network roundtrip by sendng a real auth request immediately after
- * sending a query for the available methods.  It is at the expense of < 100
- * bytes of extra network traffic. This is not yet enabled by default since it
- * could cause problems with non-compliant servers */
-/* #define DROPBEAR_CLI_IMMEDIATE_AUTH */
 
 /* Source for randomness. This must be able to provide hundreds of bytes per SSH
  * connection without blocking. In addition /dev/random is used for seeding
@@ -294,7 +283,7 @@ Homedir is prepended unless path begins with / */
 
 /* This is used by the scp binary when used as a client binary. If you're
  * not using the Dropbear client, you'll need to change it */
-#define DROPBEAR_PATH_SSH_PROGRAM "/usr/bin/dbclient"
+#define _PATH_SSH_PROGRAM "/usr/bin/dbclient"
 
 /* Whether to log commands executed by a client. This only logs the 
  * (single) command sent to the server, not what a user did in a 
@@ -342,4 +331,4 @@ be overridden at runtime with -I. 0 disables idle timeouts */
  * in sysoptions.h */
 #include "sysoptions.h"
 
-#endif /* DROPBEAR_OPTIONS_H_ */
+#endif /* _OPTIONS_H_ */

@@ -22,8 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE. */
 
-#ifndef DROPBEAR_RUNOPTS_H_
-#define DROPBEAR_RUNOPTS_H_
+#ifndef _RUNOPTS_H_
+#define _RUNOPTS_H_
 
 #include "includes.h"
 #include "signkey.h"
@@ -33,8 +33,7 @@
 
 typedef struct runopts {
 
-#if defined(ENABLE_SVR_REMOTETCPFWD) || defined(ENABLE_CLI_LOCALTCPFWD) \
-    || defined(ENABLE_CLI_REMOTETCPFWD)
+#if defined(ENABLE_SVR_REMOTETCPFWD) || defined(ENABLE_CLI_LOCALTCPFWD)
 	int listen_fwd_all;
 #endif
 	unsigned int recv_window;
@@ -72,8 +71,7 @@ typedef struct svr_runopts {
 	int forkbg;
 	int usingsyslog;
 
-	/* ports and addresses are arrays of the portcount 
-	listening ports. strings are malloced. */
+	/* ports is an array of the portcount listening ports */
 	char *ports[DROPBEAR_MAX_PORTS];
 	unsigned int portcount;
 	char *addresses[DROPBEAR_MAX_PORTS];
@@ -172,4 +170,4 @@ void parse_ciphers_macs();
 
 void print_version(void);
 
-#endif /* DROPBEAR_RUNOPTS_H_ */
+#endif /* _RUNOPTS_H_ */

@@ -22,9 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE. */
 
-#ifndef DROPBEAR_ALGO_H_
+#ifndef _ALGO_H_
 
-#define DROPBEAR_ALGO_H_
+#define _ALGO_H_
 
 #include "includes.h"
 #include "buffer.h"
@@ -35,7 +35,7 @@
 
 struct Algo_Type {
 
-	const char *name; /* identifying name */
+	const unsigned char *name; /* identifying name */
 	char val; /* a value for this cipher, or -1 for invalid */
 	const void *data; /* algorithm specific data */
 	char usable; /* whether we can use this algorithm */
@@ -134,4 +134,4 @@ enum {
 	DROPBEAR_COMP_ZLIB_DELAY,
 };
 
-#endif /* DROPBEAR_ALGO_H_ */
+#endif /* _ALGO_H_ */
