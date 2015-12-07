@@ -40,7 +40,7 @@ POSSIBILITY OF SUCH DAMAGE.
 	encoding='UTF-8'
 >
 <g id='graph'>
-	<rect id='bg' x1='0' y1='0' width='600' height='300' fill='white' />
+	<rect id='bg' x1='0' y1='0' width='600' height='300' fill='white' fill-opacity='0.0'/>
 
 	<text id='graph_in_lbl'  x='60' y='15' fill='green' text-anchor='end'>In</text>
 	<text id='graph_out_lbl' x='60' y='35' fill='red' text-anchor='end'>Out</text>
