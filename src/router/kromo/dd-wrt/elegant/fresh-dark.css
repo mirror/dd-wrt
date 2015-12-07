@@ -8,6 +8,12 @@ body a {
 body a:visited {
 	color: #eee;
 }
+body a:link {
+	color: #999;
+}
+body a:hover {
+	color: #fff;
+}
 body, body.gui, .popup {
 	color: #999; /* default text color */
 	background: #111111; /* same as header */
