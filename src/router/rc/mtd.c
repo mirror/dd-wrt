@@ -269,6 +269,7 @@ int mtd_write(const char *path, const char *mtd)
 
 	char *part;
 	switch (brand) {
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
 	case ROUTER_WRT_1900AC:
 	case ROUTER_WRT_1200AC:
 	case ROUTER_WRT_1900ACV2:
@@ -289,6 +290,7 @@ int mtd_write(const char *path, const char *mtd)
 			fprintf(stderr, "no boot partition info found\n");
 		}
 		break;
+#endif
 	case ROUTER_TRENDNET_TEW827:
 		if (nvram_match("bootpartition", "0")) {
 			mtd = "linux2";
