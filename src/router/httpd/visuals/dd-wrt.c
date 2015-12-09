@@ -1120,6 +1120,14 @@ void ej_show_security(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
+void ej_getWET(webs_t wp, int argc, char_t ** argv)
+{
+	if (getWET())
+		websWrite(wp, "1");
+	    else
+		websWrite(wp, "0");
+}
+
 void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
