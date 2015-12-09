@@ -62,9 +62,9 @@ function reloadIt() {
 
 
 addEvent(window, "load", function() {
-	setElementVisible("wan_show", "<% nvg("wl0_mode"); %>" != "wet" && "<% nvg("wl0_mode"); %>" != "apstawet");
-	setElementVisible("wan_showtraff", "<% nvg("ttraff_enable"); %>" == "1" && ("<% nvg("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet" && "<% nvram_get("wan_proto"); %>" != "disabled" || "<% nvram_get("ttraff_iface"); %>" != "") );
-	setElementVisible("wan_showdisabled", "<% nvg("wl0_mode"); %>" == "wet" || "<% nvg("wl0_mode"); %>" == "apstawet");
+	setElementVisible("wan_show", "<% getWET(); %>" == "0");
+	setElementVisible("wan_showtraff", "<% nvg("ttraff_enable"); %>" == "1" && ("<% getWET(); %>" == "0" && "<% nvram_get("wan_proto"); %>" != "disabled" || "<% nvram_get("ttraff_iface"); %>" != "") );
+	setElementVisible("wan_showdisabled", "<% getWET(); %>" == "1");
 	setElementVisible("wan_info", "<% nvg("wan_proto"); %>" != "disabled");
 	setElementVisible("wan_dhcp", "<% nvg("wan_proto"); %>" == "dhcp");
 	setElementVisible("wan_connection", "<% nvg("wan_proto"); %>" != "dhcp" && "<% nvg("wan_proto"); %>" != "static");
