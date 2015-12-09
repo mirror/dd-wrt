@@ -412,9 +412,9 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		if (maddr) {
-			eval("ifconfig", "eth1", "hw", "ether", get_deviceinfo("hw_mac_addr"));
-			eval("ifconfig", "eth0", "hw", "ether", get_deviceinfo("hw_mac_addr"));
-			nvram_set("lan_hwaddr", get_deviceinfo("hw_mac_addr"));
+			eval("ifconfig", "eth1", "hw", "ether", maddr);
+			eval("ifconfig", "eth0", "hw", "ether", maddr);
+			nvram_set("lan_hwaddr", maddr);
 			nvram_commit();
 		}
 		eval("mtd", "resetbc", "s_env");
