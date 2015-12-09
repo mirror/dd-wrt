@@ -56,11 +56,14 @@ static void getMac(char *newmac)
 		strcpy(newmac, nvram_safe_get("et0macaddr"));
 		break;
 	}
+	
 }
 
 void getLANMac(char *newmac)
 {
+
 	getMac(newmac);
+
 #ifndef HAVE_BUFFALO
 
 	if (nvram_match("port_swap", "1")) {
@@ -130,7 +133,7 @@ void getWirelessMac(char *newmac, int instance)
 
 	}
 #endif
-#ifdef HAVE_MVEBU
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
 	if (instance < 0)
 		instance = 0;
 
