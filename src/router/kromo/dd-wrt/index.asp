@@ -43,7 +43,7 @@ function mtu_enable_disable(F,I) {
 }
 
 function valid_value(F) {
-	if (!('<% nvg("wl0_mode"); %>' == 'wet') && !('<% nvg("wl0_mode"); %>' == 'apstawet')) {
+	if (!('<% getWET(); %>' == '1')) {
 		if (F.now_proto.value == "pptp" || F.now_proto.value == "static") {
 			pptp_dhcp = "";
 	
