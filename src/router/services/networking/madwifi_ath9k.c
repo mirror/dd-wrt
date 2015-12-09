@@ -219,9 +219,8 @@ void configure_single_ath9k(int count)
 
 	char macaddr[32];
 	// interface is created at this point, so that should work
-#ifdef HAVE_MVEBU
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
 	getWirelessMac(macaddr, count);
-	eval("ifconfig", dev, "hw", "ether", macaddr);
 #else
 	getMacAddr(dev, macaddr);
 #endif
