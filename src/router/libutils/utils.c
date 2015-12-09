@@ -6100,7 +6100,7 @@ int led_control(int type, int act)
 	case ROUTER_LINKSYS_EA8500:
 		power_gpio = 0x100;	// power led 
 		diag_gpio = 0x000;	// power led orange     
-		wlan0_gpio = 0x101;	// radio 0  
+		wlan0_gpio = 0x001;	// radio 0  
 		ses_gpio = 0x102;	// wps led
 		break;
 	case ROUTER_ASUS_WL500G:
