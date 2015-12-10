@@ -30,6 +30,8 @@
 #include "ipsecmast.h"
 #include "misc.h"    /* for IPADDY macro */
 
+#include <math.h>
+
 char hostname[256];
 struct sockaddr_in server, from;        /* Server and transmitter structs */
 int server_socket;              /* Server socket */
@@ -136,7 +138,7 @@ int init_network (void)
     return 0;
 }
 
-inline void extract (void *buf, int *tunnel, int *call)
+static inline void extract (void *buf, int *tunnel, int *call)
 {
     /*
      * Extract the tunnel and call #'s, and fix the order of the 
@@ -156,7 +158,7 @@ inline void extract (void *buf, int *tunnel, int *call)
     }
 }
 
-inline void fix_hdr (void *buf)
+static inline void fix_hdr (void *buf)
 {
     /*
      * Fix the byte order of the header
@@ -265,9 +267,9 @@ void control_xmit (void *b)
     else
     {
         /*
-           * FIXME:  How about adaptive timeouts?
+           * Adaptive timeout with exponential backoff
          */
-        tv.tv_sec = 1;
+        tv.tv_sec = 1*pow(2, buf->retries-1);
         tv.tv_usec = 0;
         schedule (tv, control_xmit, buf);
 #ifdef DEBUG_CONTROL_XMIT
@@ -664,34 +666,13 @@ void network_thread ()
                 {
                     /* Got some payload to send */
                     int result;
-                    recycle_payload (buf, sc->container->peer);
-/*
-#ifdef DEBUG_FLOW_MORE
-                    l2tp_log (LOG_DEBUG, "%s: rws = %d, pSs = %d, pLr = %d\n",
-                         __FUNCTION__, sc->rws, sc->pSs, sc->pLr);
-#endif
-		    if ((sc->rws>0) && (sc->pSs > sc->pLr + sc->rws) && !sc->rbit) {
-#ifdef DEBUG_FLOW
-						log(LOG_DEBUG, "%s: throttling payload (call = %d, tunnel = %d, Lr = %d, Ss = %d, rws = %d)!\n",__FUNCTION__,
-								 sc->cid, sc->container->tid, sc->pLr, sc->pSs, sc->rws); 
-#endif
-						sc->throttle = -1;
-						We unthrottle in handle_packet if we get a payload packet, 
-						valid or ZLB, but we also schedule a dethrottle in which
-						case the R-bit will be set
-						FIXME: Rate Adaptive timeout? 						
-						tv.tv_sec = 2;
-						tv.tv_usec = 0;
-						sc->dethrottle = schedule(tv, dethrottle, sc); 					
-					} else */
-/*					while ((result=read_packet(buf,sc->fd,sc->frame & SYNC_FRAMING))>0) { */
-                    while ((result =
-                            read_packet (buf, sc->fd, SYNC_FRAMING)) > 0)
+
+                    while ((result = read_packet (sc)) > 0)
                     {
-                        add_payload_hdr (sc->container, sc, buf);
+                        add_payload_hdr (sc->container, sc, sc->ppp_buf);
                         if (gconfig.packet_dump)
                         {
-                            do_packet_dump (buf);
+                            do_packet_dump (sc->ppp_buf);
                         }
 
 
@@ -701,10 +682,10 @@ void network_thread ()
                             deschedule (sc->zlb_xmit);
                             sc->zlb_xmit = NULL;
                         }
-                        sc->tx_bytes += buf->len;
+                        sc->tx_bytes += sc->ppp_buf->len;
                         sc->tx_pkts++;
-                        udp_xmit (buf, st);
-                        recycle_payload (buf, sc->container->peer);
+                        udp_xmit (sc->ppp_buf, st);
+                        recycle_payload (sc->ppp_buf, sc->container->peer);
                     }
                     if (result != 0)
                     {
