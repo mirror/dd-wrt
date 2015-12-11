@@ -138,7 +138,7 @@ static const unsigned char archerc9v2_support_list[] =
 	"\x00";
 
 static const unsigned char archerc1900_support_list[] =
-	"\x00\x00\x00\x4b\x00\x00\x00\x00"
+	"\x00\x00\x00\x5a\x00\x00\x00\x00"
 	"SupportList:\n"
 	"{product_name:ArcherC1900,"
 	"product_ver:1.0.0,"
@@ -164,7 +164,8 @@ static const unsigned char archerc8v2_support_list[] =
 
 static const unsigned char softversion[] =
 	"\x00\x00\x00\x0c\x00\x00\x00\x00"
-	"\xff\x03\x0f\x1b\x20\x14\x10\x13\x00\x00\xd1\x10\x00";
+	"\xff\x03\x0f\x1b\x20\x15\x10\x09\x00\x00\xef\xef\x00";
+
 
 
 /** Allocates a new image partition */
