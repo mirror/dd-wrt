@@ -341,72 +341,10 @@ void set_gpio(int gpio, int value)
 }
 
 #elif HAVE_IPQ806X
-static void i_set_gpio(int pin, int value)
+
+int get_gpio(int gpio)
 {
-	char str[32];
-	char strdir[64];
-	FILE *fp;
-	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
-	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
-      new_try:;
-	fp = fopen(str, "rb");
-	if (!fp) {
-		fp = fopen("/sys/class/gpio/export", "wb");
-		if (fp) {
-			fprintf(fp, "%d", pin);
-			fclose(fp);
-		} else {
-			return;	//prevent deadlock
-		}
-		goto new_try;
-	}
-	fclose(fp);
-	fp = fopen(strdir, "wb");
-	if (fp) {
-		fprintf(fp, "out");
-		fclose(fp);
-	}
-	fp = fopen(str, "wb");
-	if (fp) {
-		fprintf(fp, "%d", value);
-		fclose(fp);
-	}
-}
-
-int get_gpio(int pin)
-{
-
-	char str[32];
-	char strdir[64];
-	FILE *fp;
-	int val = 0;
-	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
-	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
-      new_try:;
-	fp = fopen(str, "rb");
-	if (!fp) {
-		fp = fopen("/sys/class/gpio/export", "wb");
-		if (fp) {
-			fprintf(fp, "%d", pin);
-			fclose(fp);
-		} else {
-			return 0;	// prevent deadlock
-		}
-		goto new_try;
-	}
-	fclose(fp);
-	fp = fopen(strdir, "wb");
-	if (fp) {
-		fprintf(fp, "in");
-		fclose(fp);
-	}
-	fp = fopen(str, "rb");
-	if (fp) {
-		fscanf(fp, "%d", &val);
-		fclose(fp);
-	}
-	return val;
-
+	return get_linux_gpio(gpio);
 }
 
 void set_gpio(int gpio, int value)
@@ -427,7 +365,7 @@ void set_gpio(int gpio, int value)
 		case 2:	// 5G
 			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:wifi5g/brightness", value);
 			break;
-		case 3:	
+		case 3:
 			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:esata/brightness", value);
 			break;
 		case 4:
@@ -452,11 +390,10 @@ void set_gpio(int gpio, int value)
 			sysprintf("echo %d > /sys/class/leds/r7500\\:amber\\:status/brightness", value);
 			break;
 		default:
-			i_set_gpio(gpio, value);
+			set_linux_gpio(gpio, value);
 			break;
 		}
-	}
-	else if (brand == ROUTER_LINKSYS_EA8500) {
+	} else if (brand == ROUTER_LINKSYS_EA8500) {
 		switch (gpio) {
 		case 0:
 			sysprintf("echo %d > /sys/class/leds/ea8500\\:white\\:power/brightness", value);
@@ -468,11 +405,11 @@ void set_gpio(int gpio, int value)
 			sysprintf("echo %d > /sys/class/leds/ea8500\\:green\\:wps/brightness", value);
 			break;
 		default:
-			i_set_gpio(gpio, value);
+			set_linux_gpio(gpio, value);
 			break;
 		}
 	} else {
-			i_set_gpio(gpio, value);
+		set_linux_gpio(gpio, value);
 	}
 
 }
