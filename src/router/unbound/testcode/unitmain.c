@@ -36,7 +36,7 @@
 /**
  * \file
  * Unit test main program. Calls all the other unit tests.
- * Exits with code 1 on a failure. 0 if all unit tests are successfull.
+ * Exits with code 1 on a failure. 0 if all unit tests are successful.
  */
 
 #include "config.h"
@@ -61,8 +61,8 @@
 #include "nss.h"
 #endif
 
-#include "ldns/rrdef.h"
-#include "ldns/keyraw.h"
+#include "sldns/rrdef.h"
+#include "sldns/keyraw.h"
 #include "util/log.h"
 #include "testcode/unitmain.h"
 
