@@ -217,6 +217,12 @@
 
 #define PSPRETEND_DEFAULT_THRESHOLD 5
 
+#ifdef __CONFIG_DHDAP__
+extern int dhd_probe(char *name);
+extern int dhd_iovar_setint(char *ifname, char *iovar, int val);
+extern int dhd_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val);
+#endif
+
 /* prototypes */
 struct bsscfg_list *wlconf_get_bsscfgs(char* ifname, char* prefix);
 int wlconf(char *name);
@@ -1711,7 +1717,7 @@ cprintf("disable bss %s\n",name);
 		setbuf.enable = 0;
 #ifdef __CONFIG_DHDAP__
 		if (is_dhd) {
-			ret = dhd_iovar_setint(name, "bss", setbuf.bsscfg_idx, setbuf.enable);
+			ret = dhd_bssiovar_setint(name, "bss", setbuf.bsscfg_idx, setbuf.enable);
 		}else{
 #endif
 		ret = wl_iovar_set(name, "bss", &setbuf, sizeof(setbuf));
@@ -3314,7 +3320,7 @@ wlconf_down(char *name)
 			setbuf.enable = 0;
 #ifdef __CONFIG_DHDAP__
 			if (is_dhd) {
-				ret = dhd_iovar_setint(name, "bss", setbuf.bsscfg_idx, setbuf.enable);
+				ret = dhd_bssiovar_setint(name, "bss", setbuf.bsscfg_idx, setbuf.enable);
 					}else{
 #endif
 				ret = wl_iovar_set(name, "bss", &setbuf, sizeof(setbuf));
