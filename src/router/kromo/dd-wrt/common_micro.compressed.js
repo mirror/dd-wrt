@@ -905,7 +905,7 @@ if(_5a.elements[i].className=="no-check"){
 }else{
 if(_5a.elements[i].type=="text"){
 if(chars=invalidTextValue(_5a.elements[i].value)){
-alert(errmsg.err112.replace("<invchars>",chars).replace("<fieldname>",getInputLabel("input",elements[i].name)));
+alert(errmsg.err112.replace("<invchars>",chars).replace("<fieldname>",getInputLabel("input",_5a.elements[i].name)));
 _5a.elements[i].style.border="solid 2px #f00";
 _5a.elements[i].focus();
 return false;
