@@ -42,6 +42,21 @@ typedef unsigned long long _u64;
 #define CONTROL_PIPE "/var/run/xl2tpd/l2tp-control"
 #define CONTROL_PIPE_MESSAGE_SIZE 1024
 
+/* Control pip request types */
+#define CONTROL_PIPE_REQ_LAC_REMOVE 'r'
+#define CONTROL_PIPE_REQ_LAC_ADD_MODIFY 'a'
+#define CONTROL_PIPE_REQ_LAC_STATUS 's'
+#define CONTROL_PIPE_REQ_LAC_DISCONNECT 'd'
+#define CONTROL_PIPE_REQ_LAC_HANGUP 'h'
+#define CONTROL_PIPE_REQ_LAC_OUTGOING_CALL 'o'
+#define CONTROL_PIPE_REQ_LAC_CONNECT 'c'
+#define CONTROL_PIPE_REQ_TUNNEL 't'
+
+#define CONTROL_PIPE_REQ_LNS_ADD_MODIFY 'z' /* Create or modify an existing LNS */
+#define CONTROL_PIPE_REQ_LNS_STATUS 'y'     /* Get status of LNS */
+#define CONTROL_PIPE_REQ_AVAILABLE 'x'     /* Get status of LNS */
+#define CONTROL_PIPE_REQ_LNS_REMOVE 'w'     /* Get status of LNS */
+
 #define BINARY "xl2tpd"
 #define SERVER_VERSION "xl2tpd-1.3.6"
 #define VENDOR_NAME "xelerance.com"

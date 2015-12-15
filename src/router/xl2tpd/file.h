@@ -176,4 +176,5 @@ extern int init_config ();      /* Read in the config file */
 extern int parse_one_option (char *word, char *value, int context, void *item);
 /* Allocate memory and filled up new lac */
 extern struct lac *new_lac ();
+extern struct lns *new_lns ();
 #endif

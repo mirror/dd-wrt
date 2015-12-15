@@ -30,6 +30,9 @@
 #define ERROR_LEVEL 1
 #define DEBUG_LEVEL 2
 
+#define TUNNEL_REQUIRED 1
+#define TUNNEL_NOT_REQUIRED 0
+
 int log_level = ERROR_LEVEL;
 
 void print_error (int level, const char *fmt, ...);
@@ -41,18 +44,40 @@ struct command_t
 {
     char *name;
     int (*handler) (FILE*, char* tunnel, int optc, char *optv[]);
+    int requires_tunnel;
 };
 
-int command_add (FILE*, char* tunnel, int optc, char *optv[]);
-int command_connect (FILE*, char* tunnel, int optc, char *optv[]);
-int command_disconnect (FILE*, char* tunnel, int optc, char *optv[]);
-int command_remove (FILE*, char* tunnel, int optc, char *optv[]);
+int command_add_lac (FILE*, char* tunnel, int optc, char *optv[]);
+int command_connect_lac (FILE*, char* tunnel, int optc, char *optv[]);
+int command_disconnect_lac (FILE*, char* tunnel, int optc, char *optv[]);
+int command_remove_lac (FILE*, char* tunnel, int optc, char *optv[]);
+int command_add_lns (FILE*, char* tunnel, int optc, char *optv[]);
+int command_status_lac (FILE*, char* tunnel, int optc, char *optv[]);
+int command_status_lns (FILE*, char* tunnel, int optc, char *optv[]);
+int command_remove_lns (FILE*, char* tunnel, int optc, char *optv[]);
+int command_available (FILE*, char* tunnel, int optc, char *optv[]);
 
 struct command_t commands[] = {
-    {"add", &command_add},
-    {"connect", &command_connect},
-    {"disconnect", &command_disconnect},
-    {"remove", &command_remove},
+    /* Keep this command mapping for backwards compat */
+    {"add", &command_add_lac, TUNNEL_REQUIRED},
+    {"connect", &command_connect_lac, TUNNEL_REQUIRED},
+    {"disconnect", &command_disconnect_lac, TUNNEL_REQUIRED},
+    {"remove", &command_remove_lac, TUNNEL_REQUIRED},
+
+    /* LAC commands */
+    {"add-lac", &command_add_lac, TUNNEL_REQUIRED},
+    {"connect-lac", &command_connect_lac, TUNNEL_REQUIRED},
+    {"disconnect-lac", &command_disconnect_lac, TUNNEL_REQUIRED},
+    {"remove-lac", &command_remove_lac, TUNNEL_REQUIRED},
+
+    /* LNS commands */
+    {"add-lns", &command_add_lns, TUNNEL_REQUIRED},
+    {"remove-lns", &command_remove_lns, TUNNEL_REQUIRED},
+
+    /* Generic commands */
+    {"status", &command_status_lac, TUNNEL_REQUIRED},
+    {"status-lns", &command_status_lns, TUNNEL_REQUIRED},
+    {"available", &command_available, TUNNEL_NOT_REQUIRED},
     {NULL, NULL}
 };
 
@@ -64,7 +89,7 @@ void usage()
             "    -c\tspecifies xl2tpd control file\n"
             "    -d\tspecify xl2tpd-control to run in debug mode\n"
             "--help\tshows extended help\n"
-            "Available commands: add, connect, disconnect, remove\n"
+            "Available commands: add, connect, disconnect, remove, add-lns\n"
     );
 }
 
@@ -85,6 +110,7 @@ void help()
         "\tremove\tremoves lac configuration from xl2tpd.\n"
         "\t\txl2tpd disconnects the tunnel before removing.\n"
         "\n"
+        "\tadd-lns\tadds new or modify existing lns configuration.\n"
         "See xl2tpd-control man page for more help\n"
     );
 }
@@ -145,20 +171,22 @@ int main (int argc, char *argv[])
     }
     
     /* get tunnel name */
-    if (i >= argc)
-    {
-        print_error (ERROR_LEVEL, "error: tunnel name not specified\n");
-        usage();
-        return -1;
-    }
-    tunnel_name = argv[i++];    
-    /* check tunnel name for whitespaces */
-    if (strstr (tunnel_name, " "))
-    {
-        print_error (ERROR_LEVEL,
-            "error: tunnel name shouldn't include spaces\n");
-        usage();        
-        return -1;
+    if(command->requires_tunnel){
+        if (i >= argc)
+        {
+            print_error (ERROR_LEVEL, "error: tunnel name not specified\n");
+            usage();
+            return -1;
+        }
+        tunnel_name = argv[i++];    
+        /* check tunnel name for whitespaces */
+        if (strstr (tunnel_name, " "))
+        {
+            print_error (ERROR_LEVEL,
+                "error: tunnel name shouldn't include spaces\n");
+            usage();        
+            return -1;
+        }
     }
     
     char buf[CONTROL_PIPE_MESSAGE_SIZE] = "";
@@ -299,14 +327,14 @@ int read_result(int result_fd, char* buf, ssize_t size)
 }
 
 int command_add
-(FILE* mesf, char* tunnel, int optc, char *optv[])
+(FILE* mesf, char* tunnel, int optc, char *optv[], int reqopt)
 {
     if (optc <= 0)
     {
         print_error (ERROR_LEVEL, "error: tunnel configuration expected\n");
         return -1;
     }
-    fprintf (mesf, "a %s ", tunnel);
+    fprintf (mesf, "%c %s ", reqopt, tunnel);
     int i;
     int wait_key = 1;
     for (i = 0; i < optc; i++)
@@ -336,10 +364,23 @@ int command_add
     return 0;
 }
 
-int command_connect
+int command_add_lac
 (FILE* mesf, char* tunnel, int optc, char *optv[])
 {
-    fprintf (mesf, "c %s", tunnel);
+    return command_add(mesf, tunnel, optc, optv, CONTROL_PIPE_REQ_LAC_ADD_MODIFY);
+}
+
+int command_add_lns
+(FILE* mesf, char* tunnel, int optc, char *optv[])
+{
+    return command_add(mesf, tunnel, optc, optv, CONTROL_PIPE_REQ_LNS_ADD_MODIFY);
+}
+
+
+int command_connect_lac
+(FILE* mesf, char* tunnel, int optc, char *optv[])
+{
+    fprintf (mesf, "%c %s", CONTROL_PIPE_REQ_LAC_CONNECT, tunnel);
     /* try to read authname and password from opts */
     if (optc > 0) {
         if (optc == 1)
@@ -350,17 +391,45 @@ int command_connect
     return 0;
 }
 
-int command_disconnect
+int command_disconnect_lac
 (FILE* mesf, char* tunnel, int optc, char *optv[])
 {
-    fprintf (mesf, "d %s", tunnel);
+    fprintf (mesf, "%c %s", CONTROL_PIPE_REQ_LAC_DISCONNECT, tunnel);
     return 0;
 }
 
-int command_remove
+int command_remove_lac
 (FILE* mesf, char* tunnel, int optc, char *optv[])
 {
-    fprintf (mesf, "r %s", tunnel);
+    fprintf (mesf, "%c %s", CONTROL_PIPE_REQ_LAC_REMOVE, tunnel);
+    return 0;
+}
+
+int command_status_lns
+(FILE* mesf, char* tunnel, int optc, char *optv[])
+{
+    fprintf (mesf, "%c %s", CONTROL_PIPE_REQ_LNS_STATUS, tunnel);
+    return 0;
+}
+
+int command_status_lac
+(FILE* mesf, char* tunnel, int optc, char *optv[])
+{
+    fprintf (mesf, "%c %s", CONTROL_PIPE_REQ_LAC_STATUS, tunnel);
+    return 0;
+}
+
+int command_available
+(FILE* mesf, char* tunnel, int optc, char *optv[])
+{
+    fprintf (mesf, "%c %s", CONTROL_PIPE_REQ_AVAILABLE, tunnel);
+    return 0;
+}
+
+int command_remove_lns
+(FILE* mesf, char* tunnel, int optc, char *optv[])
+{
+    fprintf (mesf, "%c %s", CONTROL_PIPE_REQ_LNS_REMOVE, tunnel);
     return 0;
 }
 
