@@ -222,6 +222,11 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 
+#ifdef HAVE_ERC
+	start_drivers();
+	eval("/usr/sbin/interay");
+#endif
+
 	return;
 	cprintf("done\n");
 }
