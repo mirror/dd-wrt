@@ -669,7 +669,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6839, "sierra", "3", "4", 1, NULL, "Sierra MC8781 (modem)"},	//
 	{0x1199, 0x683a, "sierra", "3", "4", 1, NULL, "Sierra MC8785 (modem)"},	//
 	{0x1199, 0x683b, "sierra", "3", "4", 1, NULL, "Sierra MC8785 Composite (modem)"},	//
-	{0x1199, 0x683c, "sierra", "3", "3", 1 | QMI, &reset_mc, "Sierra MC8790 Composite"},	//
+	{0x1199, 0x683c, "sierra", "3", "3", 1, NULL, "Sierra MC8790 Composite"},	//
 	{0x1199, 0x683d, "sierra", "3", "3", 1, &reset_mc, "Sierra MC8791 Composite"},	//
 	{0x1199, 0x683e, "sierra", "3", "3", 1, &reset_mc, "Sierra MC8790"},	//
 	{0x1199, 0x6850, "sierra", "2", "0", 1, NULL, "Sierra AC880 (modem)"},	//
