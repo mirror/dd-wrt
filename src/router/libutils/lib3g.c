@@ -453,10 +453,10 @@ static struct DEVICES devicelist[] = {
 	{0x05c6, 0x6500, "option", "2", "0", 0 | GENERIC, NULL, "Venus VT-80n (modem)"},	//
 	{0x05c6, 0x6503, "option", "0", "0", 0, &modeswitch_std_eject, "Generic Qualcomm (cdrom)"},	//
 	{0x05c6, 0x9000, "option", "1", "2", 0 | QMI, NULL, "SIMCom SIM5218 (modem)"},	//
-//      {0x05c6, 0x9011, "qcserial", "1", "2", 0 | QMI, NULL, "Qualcomm HS-USB (modem)"},       //
-//      {0x05c6, 0x9024, "qcserial", "0", "0", 0, &modeswitch_std_eject, "ASB TL131 TD-LTE (cdrom)"},   //
+        {0x05c6, 0x9011, "qcserial", "1", "2", 0 | QMI, NULL, "Qualcomm HS-USB (modem)"},       //
+        {0x05c6, 0x9024, "qcserial", "0", "0", 0, &modeswitch_std_eject, "ASB TL131 TD-LTE (cdrom)"},   //
 	{0x05c6, 0x9025, "option", "2", "0", 0 | QMI, NULL, "ASB TL131 TD-LTE (modem)"},	//
-//      {0x05c6, 0x9046, "qcserial", "1", "2", 0 | QMI, NULL, "Qualcomm HS-USB (modem)"},       //
+        {0x05c6, 0x9046, "qcserial", "1", "2", 0 | QMI, NULL, "Qualcomm HS-USB (modem)"},       //
 	{0x05c6, 0xf000, "option", "0", "0", 0, &modeswitch_std_eject, "Generic Qualcomm (cdrom)"},	//
 
 // D-Link
