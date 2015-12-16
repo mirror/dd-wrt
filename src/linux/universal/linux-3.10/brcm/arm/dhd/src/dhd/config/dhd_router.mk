@@ -39,7 +39,7 @@ ifeq ($(BCMQT),1)
 endif
 
 # Common Flags
-#DHDFLAGS        += -Werror
+DHDFLAGS        += -Werror
 DHDFLAGS        += -DLINUX
 DHDFLAGS        += -DBCMDRIVER
 DHDFLAGS        += -DBCMDONGLEHOST
@@ -49,15 +49,17 @@ DHDFLAGS        += -DPCIE_FULL_DONGLE
 DHDFLAGS        += -DBCMPCIE
 DHDFLAGS        += -DCUSTOM_DPC_PRIO_SETTING=-1
 DHDFLAGS        += -DBCM_ROUTER_DHD
-#DHDFLAGS        += -DDHD_DEBUG
+DHDFLAGS        += -DDHD_DEBUG
 DHDFLAGS        += -DBCMEMBEDIMAGE=\"rtecdc_router.h\"
 DHDFLAGS        += -DDHD_UNICAST_DHCP
 DHDFLAGS        += -DDHD_L2_FILTER
 DHDFLAGS        += -DQOS_MAP_SET
 DHDFLAGS        += -DDHD_PSTA
+DHDFLAGS        += -DDHD_WET
+DHDFLAGS        += -DDHD_MCAST_REGEN
 
 #M2M host memory allocation
-#DHDFLAGS		+= -DBCM_HOST_MEM_SCB -DDMA_HOST_BUFFER_LEN=0x200000
+DHDFLAGS		+= -DBCM_HOST_MEM_SCB -DDMA_HOST_BUFFER_LEN=0x80000
 
 ifeq ($(BCM_BUZZZ),1)
 DHDFLAGS        += -DBCM_BUZZZ
@@ -70,11 +72,11 @@ endif
 # DHDFLAGS        += -DBCM_INDX_DMA
 
 # WMF Specific Flags
-ifneq ($(CONFIG_EMF_ENABLED),)
+#ifneq ($(CONFIG_EMF_ENABLED),)
 DHDFLAGS        += -DDHD_WMF
 DHDFLAGS        += -DDHD_IGMP_UCQUERY
 DHDFLAGS        += -DDHD_UCAST_UPNP
-endif
+#endif
 
 # DHD Include Paths
 DHDIFLAGS       += -I$(SRCBASE_DHD)/include
@@ -85,6 +87,7 @@ DHDIFLAGS       += -I$(SRCBASE_DHD)/shared/bcmwifi/include
 DHDIFLAGS       += -I$(SRCBASE_DHD)/dhd/sys
 DHDIFLAGS       += -I$(SRCBASE_DHD)/dongle/include
 DHDIFLAGS       += -I$(SRCBASE_DHD)/wl/sys
+
 
 # DHD Source files - For pciefd-msgbuf target
 DHDFILES_SRC    := src/shared/aiutils.c
@@ -111,11 +114,12 @@ DHDFILES_SRC    += src/dhd/sys/dhd_msgbuf.c
 DHDFILES_SRC    += src/dhd/sys/dhd_flowring.c
 DHDFILES_SRC    += src/dhd/sys/dhd_pcie.c
 DHDFILES_SRC    += src/dhd/sys/dhd_pcie_linux.c
-ifneq ($(CONFIG_EMF_ENABLED),)
+#ifneq ($(CONFIG_EMF_ENABLED)),)
 DHDFILES_SRC    += src/dhd/sys/dhd_wmf_linux.c
-endif
+#endif
 DHDFILES_SRC    += src/dhd/sys/dhd_l2_filter.c
 DHDFILES_SRC    += src/dhd/sys/dhd_psta.c
+DHDFILES_SRC    += src/dhd/sys/dhd_wet.c
 
 DHD_OBJS := $(sort $(patsubst %.c,%.o,$(addprefix $(SRCBASE_OFFSET)/,$(patsubst src/%,%,$(DHDFILES_SRC)))))
 
