@@ -1253,6 +1253,8 @@ static void wlconf_set_txbf(char *name, char *prefix)
 	wlc_rev_info_t rev;
 	uint32 txbf_bfe_cap = 0;
 	uint32 txbf_bfr_cap = 0;
+	uint32 txbf_imp = 0;
+	uint32 mu_features = 0;
 	wl_txbf_rateset_t rs;
 	int ret = 0;
 
