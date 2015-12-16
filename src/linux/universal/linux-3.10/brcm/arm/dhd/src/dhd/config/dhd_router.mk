@@ -39,7 +39,7 @@ ifeq ($(BCMQT),1)
 endif
 
 # Common Flags
-DHDFLAGS        += -Werror
+#DHDFLAGS        += -Werror
 DHDFLAGS        += -DLINUX
 DHDFLAGS        += -DBCMDRIVER
 DHDFLAGS        += -DBCMDONGLEHOST
