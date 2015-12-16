@@ -1157,12 +1157,10 @@ wlconf_aburn_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int
 				if (phytype == PHY_TYPE_AC) {
 					WL_IOVAR_SETINT(name, "amsdu", amsdu_option_val);
 #ifdef __CONFIG_DHDAP__
-					/* 43602 dhdap, ampdu_mpdu=32 gives good tput with amsdu */
-					/* Only for 43602 dhdap, ampdu_mpdu=32 gives good tput
-					 * with amsdu but on BCM4365_CHIP it gets worst 20~30Mbps.
+					/* For dhdap, ampdu_mpdu=32 gives good tput in
+					 * multiple radio with amsdu.
 					 */
-					if (is_dhd && rev.chipnum == BCM43602_CHIP_ID)
- 						WL_IOVAR_SETINT(name, "ampdu_mpdu", 32);
+ 					WL_IOVAR_SETINT(name, "ampdu_mpdu", 32);
 #endif
 				} else if (ampdu_option_val == OFF) {
 					WL_IOVAR_SETINT(name, "ampdu", OFF);
@@ -1267,7 +1265,7 @@ static void wlconf_set_txbf(char *name, char *prefix)
 
 		if (txbf_bfr_cap) {
 			/* Turning TxBF on (order matters) */
-			WL_IOVAR_SETINT(name, "txbf_bfr_cap", 1);
+			WL_IOVAR_SETINT(name, "txbf_bfr_cap", txbf_bfr_cap);
 			WL_IOVAR_SETINT(name, "txbf", 1);
 		} else {
 			/* Similarly, turning TxBF off in reverse order */
@@ -1279,9 +1277,19 @@ static void wlconf_set_txbf(char *name, char *prefix)
 	if ((str = nvram_get(strcat_r(prefix, "txbf_bfe_cap", tmp))) != NULL) {
 		txbf_bfe_cap = atoi(str);
 
-		WL_IOVAR_SETINT(name, "txbf_bfe_cap", txbf_bfe_cap ? 1 : 0);
+		WL_IOVAR_SETINT(name, "txbf_bfe_cap", txbf_bfe_cap);
 	}
 
+	if ((str = nvram_get(strcat_r(prefix, "txbf_imp", tmp))) != NULL) {
+		txbf_imp = atoi(str);
+
+		WL_IOVAR_SETINT(name, "txbf_imp", txbf_imp);
+	}
+
+	if ((str = nvram_get(strcat_r(prefix, "mu_features", tmp))) != NULL) {
+		mu_features = strtoul(str, NULL, 0);
+		WL_IOVAR_SETINT(name, "mu_features", mu_features);
+	}
 }
 
 /* Set up TxBF timer. Called when i/f is up. */
@@ -1843,6 +1851,11 @@ cprintf("set apsta flag %s\n",name);
 	/* Set mode: WET */
 cprintf("set wet flag %s\n",name);
 //fprintf(stderr, "set wet flag %s\n",name);
+#ifdef __CONFIG_DHDAP__ 
+	if (is_dhd) {
+		dhd_iovar_setint(name, "wet", wet);
+	} else
+#endif
 	WL_IOCTL(name, WLC_SET_WET, &wet, sizeof(wet));
 
 cprintf("set spoof flag %s\n",name);
@@ -2028,8 +2041,18 @@ cprintf("set bsscfg %s\n",name);
 		
 		if (wet) {
 			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix,
-							 "mcast_regen_bss_enable", tmp)));
-			WL_BSSIOVAR_SETINT(name, "mcast_regen_bss_enable", bsscfg->idx, val);
+					"mcast_regen_bss_enable", tmp)));
+#ifdef __CONFIG_DHDAP__
+			if (is_dhd) {
+				DHD_BSSIOVAR_SETINT(name, "mcast_regen_bss_enable",
+					bsscfg->idx, val);
+			} else {
+#endif /* __CONFIG_DHDAP__ */
+				WL_BSSIOVAR_SETINT(name, "mcast_regen_bss_enable",
+					bsscfg->idx, val);
+#ifdef __CONFIG_DHDAP__
+			}
+#endif /* __CONFIG_DHDAP__ */
 		}
 
 cprintf("set rxchain pwrsave %s\n",name);
@@ -2606,6 +2629,10 @@ cprintf("set wme %s\n",name);
 		    val = atoi(str);
 		}
 		WL_BSSIOVAR_SETINT(name, "mode_reqd", bsscfg->idx, val);
+		val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix, "bsscfg_class", tmp)));
+		if (val > 0) {
+			WL_BSSIOVAR_SETINT(name, "bsscfg_class", bsscfg->idx, val);
+		}
 	}
 
 
@@ -2980,6 +3007,24 @@ cprintf("%d\n",__LINE__);
 		WL_IOVAR_SETINT(name, "taf_rule", val);
 	}
 
+#ifdef __CONFIG_DHDAP__
+	if (is_dhd) {
+		val = atoi(nvram_safe_get(strcat_r(prefix, "scb_alloc", tmp)));
+		if (val > 0) {
+			WL_IOVAR_SETINT(name, "scb_alloc", val);
+		}
+
+		val = atoi(nvram_safe_get(strcat_r(prefix, "scb_alloc_class", tmp)));
+		if (val > 0) {
+			WL_IOVAR_SETINT(name, "scb_alloc_class", val);
+		}
+
+		val = atoi(nvram_safe_get(strcat_r(prefix, "scb_alloc_min_mem", tmp)));
+		if (val > 0) {
+			WL_IOVAR_SETINT(name, "scb_alloc_min_mem", val);
+		}
+	}
+#endif /* __CONFIG_DHDAP__ */
 
 cprintf("set up %s\n",name);
 	/* Bring the interface back up */
