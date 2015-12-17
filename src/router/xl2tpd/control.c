@@ -327,10 +327,8 @@ int control_finish (struct tunnel *t, struct call *c)
 
                 if (t->fc & ASYNC_FRAMING)
                     c->frame = ASYNC_FRAMING;
-                else if (t->fc & SYNC_FRAMING)
-                    c->frame = SYNC_FRAMING;
                 else
-                    c->frame = ASYNC_FRAMING;
+                    c->frame = SYNC_FRAMING;
                 buf = new_outgoing (t);
                 add_message_type_avp (buf, OCRQ);
 #ifdef TEST_HIDDEN
@@ -807,10 +805,9 @@ int control_finish (struct tunnel *t, struct call *c)
         c->state = ICCN;
         if (t->fc & ASYNC_FRAMING)
             c->frame = ASYNC_FRAMING;
-        else if (t->fc & SYNC_FRAMING)
-            c->frame = SYNC_FRAMING;
         else
-            c->frame = ASYNC_FRAMING;
+            c->frame = SYNC_FRAMING;
+
         buf = new_outgoing (t);
         add_message_type_avp (buf, ICCN);
         if (t->hbit)
@@ -997,7 +994,6 @@ int control_finish (struct tunnel *t, struct call *c)
             po = add_opt (po, "ipparam");
             po = add_opt (po, IPADDY (t->peer.sin_addr));
         }
-
         start_pppd (c, po);
         opt_destroy (po);
         l2tp_log (LOG_NOTICE,
@@ -1143,7 +1139,7 @@ int control_finish (struct tunnel *t, struct call *c)
     return 0;
 }
 
-static inline int check_control (const struct buffer *buf, struct tunnel *t,
+inline int check_control (const struct buffer *buf, struct tunnel *t,
                           struct call *c)
 {
     /*
@@ -1279,7 +1275,7 @@ static inline int check_control (const struct buffer *buf, struct tunnel *t,
     return 0;
 }
 
-static inline int check_payload (struct buffer *buf, struct tunnel *t,
+inline int check_payload (struct buffer *buf, struct tunnel *t,
                           struct call *c)
 {
     /*
@@ -1385,7 +1381,7 @@ static inline int check_payload (struct buffer *buf, struct tunnel *t,
 #endif
     return 0;
 }
-static inline int expand_payload (struct buffer *buf, struct tunnel *t,
+inline int expand_payload (struct buffer *buf, struct tunnel *t,
                            struct call *c)
 {
     /*
@@ -1565,7 +1561,7 @@ void send_zlb (void *data)
     toss (buf);
 }
 
-static inline int write_packet (struct buffer *buf, struct tunnel *t, struct call *c,
+inline int write_packet (struct buffer *buf, struct tunnel *t, struct call *c,
                          int convert)
 {
     /*
@@ -1580,7 +1576,7 @@ static inline int write_packet (struct buffer *buf, struct tunnel *t, struct cal
 
     if (c->fd < 0)
     {
-        if (DEBUG)
+        if (DEBUG || 1)
             l2tp_log (LOG_DEBUG, "%s: tty is not open yet.\n", __FUNCTION__);
         return -EIO;
     }
