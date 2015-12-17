@@ -23,9 +23,19 @@
 #include <mach/io_map.h>
 #include <plat/plat-bcm5301x.h>
 
+#include <typedefs.h>
+#include <siutils.h>
+#include <bcmdevs.h>
+
 #ifdef CONFIG_PROC_FS
 #define DMU_PROC_NAME	"dmu"
 #endif /* CONFIG_PROC_FS */
+
+/* Global SB handle */
+extern si_t *bcm947xx_sih;
+
+/* Convenience */
+#define sih bcm947xx_sih
 
 static struct resource dmu_regs = {
 	.name = "dmu_regs",

@@ -12,6 +12,7 @@
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/serial_8250.h>
+#include <linux/proc_fs.h>
 #include <asm/hardware/cache-l2x0.h>
 #include <asm/mach/map.h>
 #include <asm/clkdev.h>
@@ -283,3 +284,48 @@ static int  __init bcm5301_pl310_init( void )
 }
 early_initcall( bcm5301_pl310_init );
 #endif
+
+#ifdef CONFIG_PROC_FS
+#define BCM_CHIPINFO_PROC_NAME	"bcm_chipinfo"
+static ssize_t chipinfo_read_proc(struct file *file, char __user *buf,
+			  size_t count, loff_t *ppos)
+{
+	int len;
+	off_t pos, begin;
+	u32 reg, val;
+	void __iomem *reg_map;
+	char buffer[256];
+	len = 0;
+	pos = begin = 0;
+
+	reg = SOC_CHIPCOMON_A_BASE_PA;
+	reg_map = ioremap_nocache(reg, 4);
+	val = readl(reg_map);
+	iounmap((void *)reg_map);
+
+	len += sprintf(&buffer[len], "ChipID: 0x%x\n", val & 0xffff);
+	len += sprintf(&buffer[len], "ChipRevision: 0x%x\n", (val >> 16) & 0xf);
+	len += sprintf(&buffer[len], "PackageOption: 0x%x\n", (val >> 20) & 0xf);
+
+	return simple_read_from_buffer(buf, count, ppos, buffer, len);
+}
+
+static const struct file_operations chipinfo_fops = {
+	.read = chipinfo_read_proc,
+	.llseek = default_llseek,
+};
+
+static void __init chipinfo_proc_init(void)
+{
+	struct proc_dir_entry *chip_info;
+
+	chip_info = proc_create_data(BCM_CHIPINFO_PROC_NAME, 0, NULL, &chipinfo_fops, NULL);
+	if (!chip_info) {
+		printk(KERN_ERR "%s: Create proc entry failed.\n", __FUNCTION__);
+		return;
+	}
+}
+
+
+module_init(chipinfo_proc_init);
+#endif /* CONFIG_PROC_FS */
