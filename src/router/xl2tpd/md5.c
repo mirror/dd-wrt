@@ -1,6 +1,6 @@
 #ifdef FREEBSD
 # include <machine/endian.h>
-#elif defined(OPENBSD) || defined(NETBSD)
+#elif defined(OPENBSD)
 # define __BSD_VISIBLE 0
 # include <machine/endian.h>
 #elif defined(LINUX)

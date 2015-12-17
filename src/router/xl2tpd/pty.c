@@ -41,7 +41,7 @@
 #define PTY01 "0123456789abcdef"
 #endif
 
-#if defined(FREEBSD) || defined(NETBSD)
+#ifdef FREEBSD
 #define PTY00 "/dev/ptyXX"
 #define PTY10 "p"
 #define PTY01 "0123456789abcdefghijklmnopqrstuv"
