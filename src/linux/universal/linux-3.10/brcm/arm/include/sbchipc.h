@@ -254,6 +254,7 @@ typedef volatile struct {
 	uint32	SECI_statusmask;
 	uint32	SECI_rxnibchanged;
 
+#if !defined(BCMDONGLEHOST)
 	union {				/* 0x140 */
 		/* Enhanced Coexistence Interface (ECI) registers (corerev >= 21) */
 		struct eci_prerev35	lt35;
@@ -262,6 +263,9 @@ typedef volatile struct {
 		struct flash_config	flashconf;
 		uint32	PAD[20];
 	} eci;
+#else
+	uint32	PAD[20];
+#endif /* !defined(BCMDONGLEHOST) */
 
 	/* SROM interface (corerev >= 32) */
 	uint32	sromcontrol;		/* 0x190 */
@@ -3363,6 +3367,7 @@ typedef volatile struct {
 /* PMU resource up transition time in ILP cycles */
 #define PMURES_UP_TRANSITION	2
 
+#if !defined(BCMDONGLEHOST)
 /*
 * Information from BT to WLAN over eci_inputlo, eci_inputmi &
 * eci_inputhi register.  Rev >=21
@@ -3456,6 +3461,8 @@ typedef volatile struct {
 #define ECI_MACCTRL_BITS	0xbffb0000
 #define ECI_MACCTRLLO_BITS	0x1
 #define ECI_MACCTRLHI_BITS	0xFF
+
+#endif /* !defined(BCMDONGLEHOST) */
 
 /* SECI configuration */
 #define SECI_MODE_UART			0x0
