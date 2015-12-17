@@ -20,8 +20,6 @@ typedef unsigned long long _u64;
 #define _L2TP_H
 
 #define MAXSTRLEN 120           /* Maximum length of common strings */
-                                /* FIXME: MAX_RECV_SIZE, what is it? */
-#define MAX_RECV_SIZE 4096      /* Biggest packet we'll accept */
 
 #include <netinet/in.h>
 #include <termios.h>
@@ -41,21 +39,6 @@ typedef unsigned long long _u64;
 
 #define CONTROL_PIPE "/var/run/xl2tpd/l2tp-control"
 #define CONTROL_PIPE_MESSAGE_SIZE 1024
-
-/* Control pip request types */
-#define CONTROL_PIPE_REQ_LAC_REMOVE 'r'
-#define CONTROL_PIPE_REQ_LAC_ADD_MODIFY 'a'
-#define CONTROL_PIPE_REQ_LAC_STATUS 's'
-#define CONTROL_PIPE_REQ_LAC_DISCONNECT 'd'
-#define CONTROL_PIPE_REQ_LAC_HANGUP 'h'
-#define CONTROL_PIPE_REQ_LAC_OUTGOING_CALL 'o'
-#define CONTROL_PIPE_REQ_LAC_CONNECT 'c'
-#define CONTROL_PIPE_REQ_TUNNEL 't'
-
-#define CONTROL_PIPE_REQ_LNS_ADD_MODIFY 'z' /* Create or modify an existing LNS */
-#define CONTROL_PIPE_REQ_LNS_STATUS 'y'     /* Get status of LNS */
-#define CONTROL_PIPE_REQ_AVAILABLE 'x'     /* Get status of LNS */
-#define CONTROL_PIPE_REQ_LNS_REMOVE 'w'     /* Get status of LNS */
 
 #define BINARY "xl2tpd"
 #define SERVER_VERSION "xl2tpd-1.3.6"
@@ -126,6 +109,8 @@ struct payload_hdr
 #define MIN_PAYLOAD_HDR_LEN 6
 
 #define UDP_LISTEN_PORT  1701
+                                /* FIXME: MAX_RECV_SIZE, what is it? */
+#define MAX_RECV_SIZE 4096      /* Biggest packet we'll accept */
 
 #define OUR_L2TP_VERSION 0x100  /* We support version 1, revision 0 */
 
@@ -231,7 +216,7 @@ extern void destroy_tunnel (struct tunnel *);
 extern struct buffer *new_payload (struct sockaddr_in);
 extern void recycle_payload (struct buffer *, struct sockaddr_in);
 extern void add_payload_hdr (struct tunnel *, struct call *, struct buffer *);
-extern int read_packet (struct call *);
+extern int read_packet (struct buffer *, int, int);
 extern void udp_xmit (struct buffer *buf, struct tunnel *t);
 extern void control_xmit (void *);
 extern int ppd;
