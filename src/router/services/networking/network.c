@@ -416,6 +416,9 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 static int enable_dhcprelay(char *ifname)
 {
 	char name[80], *next;
+#ifdef HAVE_DHDAP
+	int is_dhd;
+#endif				/* __CONFIG_DHDAP__ */
 
 	dprintf("%s\n", ifname);
 
@@ -448,8 +451,16 @@ static int enable_dhcprelay(char *ifname)
 				uint32 ip;
 
 				inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&ip);
-				if (wl_iovar_setint(name, "wet_host_ipv4", ip))
-					perror("wet_host_ipv4");
+#ifdef HAVE_DHDAP
+				is_dhd = !dhd_probe(name);
+				if (is_dhd) {
+					dhd_iovar_setint(name, "wet_host_ipv4", ip);
+				} else
+#endif				/* __CONFIG_DHDAP__ */
+				{
+					if (wl_iovar_setint(name, "wet_host_ipv4", ip))
+						perror("wet_host_ipv4");
+				}
 				break;
 			}
 		}
@@ -810,6 +821,9 @@ void start_lan(void)
 	struct ifreq ifr;
 	static unsigned char mac[20];
 	int s;
+#ifdef HAVE_DHDAP
+	int is_dhd;
+#endif /*__CONFIG_DHDAP__ */
 	static char eabuf[32];
 	static char lan_ifname[64];	//= strdup(nvram_safe_get("lan_ifname"));
 	static char wan_ifname[64];	//= strdup(nvram_safe_get("wan_ifname"));
@@ -2238,7 +2252,16 @@ void start_lan(void)
 					/* Enable host DHCP relay */
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					if (nvram_match("lan_dhcp", "1")) {
-						wl_iovar_set(name, "wet_host_mac", ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+#ifdef HAVE_DHDAP
+						is_dhd = !dhd_probe(name);
+						if (is_dhd) {
+							char macbuf[sizeof("wet_host_mac") + 1 + ETHER_ADDR_LEN];
+							dhd_iovar_setbuf(name, "wet_host_mac", ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN, macbuf, sizeof(macbuf));
+						} else
+#endif				/* __CONFIG_DHDAP__ */
+						{
+							wl_iovar_set(name, "wet_host_mac", ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+						}
 					}
 					/* Enable WET DHCP relay if requested */
 					if (nvram_match("dhcp_relay", "1"))	// seems to fix some dhcp problems, also Netgear does it this way
