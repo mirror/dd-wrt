@@ -1789,7 +1789,7 @@ int internal_getRouterBrand()
 		if (!strcmp(hw, "B1"))
 			setRouter("Dlink DIR-810L B1");
 		else if (!strcmp(hw, "A1"))
-			setRouter("Dlink DIR-810L B1");
+			setRouter("Dlink DIR-810L A1");
 		else if (!strcmp(hw, "C1"))
 			setRouter("Dlink DIR-810L C1");
 		else
