@@ -1251,36 +1251,35 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev","0x1100")) {
+	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev", "0x1100")) {
 		setRouter("Asus RT-AC68U");
 		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev","0x1103") && nvram_match("boardtype","0x0665")) {
+	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev", "0x1103") && nvram_match("boardtype", "0x0665")) {
 		setRouter("Asus RT-AC68U B1");
 		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev","0x1103")) {
+	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev", "0x1103")) {
 		setRouter("Asus RT-AC68U C1");
 		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev","0x1100")) {
+	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev", "0x1100")) {
 		setRouter("Asus RT-AC68U");
 		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev","0x1103") && nvram_match("boardtype","0x0665")) {
+	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev", "0x1103") && nvram_match("boardtype", "0x0665")) {
 		setRouter("Asus RT-AC68U B1");
 		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev","0x1103")) {
+	if (nvram_match("model", "RT-AC68U") && nvram_match("boardrev", "0x1103")) {
 		setRouter("Asus RT-AC68U C1");
 		return ROUTER_ASUS_AC67U;
 	}
-
 
 	if (nvram_match("productid", "RT-AC87U") || nvram_match("model", "RT-AC87U")) {
 		setRouter("Asus RT-AC87U");
@@ -4141,7 +4140,7 @@ void *getUEnv(char *name)
 	if (brand == ROUTER_LINKSYS_EA8500) {
 		fp = fopen("/dev/mtdblock/10", "rb");
 	} else {
-		fp = fopen("/dev/mtdblock/3", "rb"); 
+		fp = fopen("/dev/mtdblock/3", "rb");
 	}
 #else
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
@@ -5051,6 +5050,30 @@ char *cpustring(void)
 	return buf;
 #elif HAVE_VENTANA
 	strcpy(buf, "FreeScale i.MX6 Quad/DualLite");
+	return buf;
+#elif HAVE_NORTHSTAR
+	FILE *fp = fopen("/proc/bcm_chipinfo", "rb");
+	if (!fp) {
+		strcpy(buf, "Broadcom BCM470X");
+		return buf;
+	}
+	int chipid;
+	int chiprevision;
+	int packageoption;
+	fscanf(fp, "%*s %X\n", &chipid);
+	fscanf(fp, "%*s %X\n", &chiprevision);
+	fscanf(fp, "%*s %X\n", &packageoption);
+	fclose(fp);
+	if (chipid == 53030 || chipid == 53010 || chipid == 53011 || chipid == 53012 || chipid == 53018 || chipid == 53019) {	// 53030
+		if (packageoption == 0)
+			strcpy(buf, "Broadcom BCM4709");
+		if (packageoption == 1)
+			strcpy(buf, "Broadcom BCM4707");
+		if (packageoption == 2)
+			strcpy(buf, "Broadcom BCM4708");
+	} else
+		strcpy(buf, "Broadcom BCM470X");
+
 	return buf;
 #else
 	FILE *fcpu = fopen("/proc/cpuinfo", "r");
@@ -7112,7 +7135,6 @@ double HTTxRate40_800(unsigned int index)
 		27.0, 54.0, 81.0, 108.0, 162.0, 216.0, 243.0, 270.0,	//
 		40.5, 81.0, 121.5, 162.0, 243.0, 324.0, 364.5, 405.0,	//
 		54.0, 108.0, 162.0, 216.0, 324.0, 432.0, 486.0, 540.0	//
-
 	};
 	if (index > sizeof(vHTTxRate40_800) / sizeof(double) - 1) {
 		fprintf(stderr, "utils.c HTTxRate40_800() index overflow\n");
