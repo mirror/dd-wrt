@@ -158,7 +158,7 @@ typedef void (*gci_gpio_handler_t)(uint32 stat, void *arg);
 #define GPIO_OUT_7_EN_MASK 0x80
 
 
-#if defined(WLOFFLD)
+#if defined(BCMDONGLEHOST) || defined(WLOFFLD)
 /* CR4 specific defines used by the host driver */
 #define SI_CR4_CAP			(0x04)
 #define SI_CR4_BANKIDX		(0x40)
@@ -173,7 +173,7 @@ typedef void (*gci_gpio_handler_t)(uint32 stat, void *arg);
 #define	SICF_CPUHALT		(0x0020)
 #define	ARMCR4_BSZ_MASK		0x3f
 #define	ARMCR4_BSZ_MULT		8192
-#endif 
+#endif /* BCMDONGLEHOST */
 
 #include <osl_decl.h>
 /* === exported functions === */
@@ -214,8 +214,10 @@ extern uint si_findcoreidx(si_t *sih, uint coreid, uint coreunit);
 extern void *si_setcoreidx(si_t *sih, uint coreidx);
 extern void *si_setcore(si_t *sih, uint coreid, uint coreunit);
 #ifdef WLC_LOW
+#if !defined(BCMDONGLEHOST)
 extern uint si_corereg_ifup(si_t *sih, uint core_id, uint regoff, uint mask, uint val);
 extern void si_lowpwr_opt(si_t *sih);
+#endif /* !defined(BCMDONGLEHOST */
 #endif /* WLC_LOW */
 extern void *si_switch_core(si_t *sih, uint coreid, uint *origidx, uint *intr_val);
 extern void si_restore_core(si_t *sih, uint coreid, uint intr_val);
@@ -309,7 +311,7 @@ extern uint16 si_d11_devid(si_t *sih);
 extern int si_corepciid(si_t *sih, uint func, uint16 *pcivendor, uint16 *pcidevice,
 	uint8 *pciclass, uint8 *pcisubclass, uint8 *pciprogif, uint8 *pciheader);
 
-#if defined(BCMECICOEX)
+#if (defined(BCMECICOEX) && !defined(BCMDONGLEHOST))
 extern bool si_eci(si_t *sih);
 extern int si_eci_init(si_t *sih);
 extern void si_eci_notify_bt(si_t *sih, uint32 mask, uint32 val, bool interrupt);
@@ -398,7 +400,9 @@ extern void si_pcie_power_save_enable(si_t *sih, bool enable);
 #endif /* __CONFIG_USBAP__ */
 extern void si_pcie_extendL1timer(si_t *sih, bool extend);
 extern int si_pci_fixcfg(si_t *sih);
+#ifndef BCMDONGLEHOST
 extern bool si_ldo_war(si_t *sih, uint devid);
+#endif
 extern void si_chippkg_set(si_t *sih, uint);
 
 extern void si_chipcontrl_btshd0_4331(si_t *sih, bool on);
@@ -461,13 +465,15 @@ extern int si_pcie_configspace_get(si_t *sih, uint8 *buf, uint size);
 char *si_getnvramflvar(si_t *sih, const char *name);
 #endif /* DONGLEBUILD */
 
+#ifndef BCMDONGLEHOST
 extern void si_muxenab(si_t *sih, uint32 w);
 extern void si_clear_backplane_to(si_t *sih);
+#endif /* !BCMDONGLEHOST */
 
-#if defined(WLOFFLD)
+#if defined(BCMDONGLEHOST) || defined(WLOFFLD)
 extern uint32 si_tcm_size(si_t *sih);
 extern bool si_has_flops(si_t *sih);
-#endif 
+#endif /* BCMDONGLEHOST */
 
 extern int si_set_sromctl(si_t *sih, uint32 value);
 extern uint32 si_get_sromctl(si_t *sih);
