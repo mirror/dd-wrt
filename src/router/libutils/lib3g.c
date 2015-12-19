@@ -1466,7 +1466,7 @@ char *get3GControlDevice(void)
 		devicecount++;
 	}
 	//not found, use generic implementation (all drivers)
-	insmod("cdc-acm cdc-wdm usbnet qmi_wwan usbserial usb_wwan sierra option");
+	insmod("cdc-acm cdc-wdm usbnet qmi_wwan usbserial usb_wwan sierra option zte_ev qcserial");
 	return ttsdevice;
 }
 
