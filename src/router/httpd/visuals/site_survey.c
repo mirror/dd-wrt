@@ -187,9 +187,9 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%f(b/g/n/ac)", speed);
+				sprintf(rates, "%0.1f(b/g/n/ac)", speed);
 			} else {
-				sprintf(rates, "%f(a/n/ac)", speed);
+				sprintf(rates, "%0.1f(a/n/ac)", speed);
 			}
 
 		} else if (site_survey_lists[i].channel & 0x2000) {
@@ -216,9 +216,9 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%f%s", speed, rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
+				sprintf(rates, "%0.1f%s", speed, rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
 			} else {
-				sprintf(rates, "%f%s", speed, rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%0.1f%s", speed, rc < 14 ? "(a)" : "(a/n)");
 			}
 
 		} else {
