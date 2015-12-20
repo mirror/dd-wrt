@@ -20,6 +20,22 @@
 
 #include "nvram_linux.h"
 
+void *MALLOC(size_t size)
+{
+	void *ptr = kmalloc(size, GFP_ATOMIC);
+	if (!ptr)
+		ptr = vmalloc(size);
+	return ptr;
+}
+
+void MFREE(void *ptr)
+{
+	if (is_vmalloc_addr(ptr))
+		vfree(ptr);
+	else
+		kfree(ptr);
+}
+
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 
@@ -53,7 +69,7 @@ struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name, cons
 		return NULL;
 
 	if (!t) {
-		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1,GFP_ATOMIC)))
+		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))
 			return NULL;
 
 		/* Copy name */
@@ -83,7 +99,7 @@ void _nvram_free(struct nvram_tuple *t)
 		nvram_offset = 0;
 		memset(nvram_buf, 0, sizeof(nvram_buf));
 	} else {
-		kfree(t);
+		MFREE(t);
 	}
 }
 
@@ -96,10 +112,10 @@ int nvram_set(const char *name, const char *value)
 	spin_lock_irqsave(&nvram_lock, flags);
 	if ((ret = _nvram_set(name, value))) {
 		/* Consolidate space and try again */
-		if ((header = vmalloc(NVRAM_SPACE))) {
+		if ((header = MALLOC(NVRAM_SPACE))) {
 			if (_nvram_commit(header) == 0)
 				ret = _nvram_set(name, value);
-			vfree(header);
+			MFREE(header);
 		}
 	}
 	spin_unlock_irqrestore(&nvram_lock, flags);
@@ -171,7 +187,7 @@ int nvram_commit(void)
 
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
-	if (!(buf = vmalloc(erasesize))) {
+	if (!(buf = MALLOC(erasesize))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -245,7 +261,7 @@ int nvram_commit(void)
 
 done:
 	mutex_unlock(&nvram_sem);
-	vfree(buf);
+	MFREE(buf);
 	return ret;
 }
 
@@ -276,7 +292,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 	unsigned long off;
 
 	if ((count + 1) > sizeof(tmp)) {
-		if (!(name = vmalloc(count + 1)))
+		if (!(name = MALLOC(count + 1)))
 			return -ENOMEM;
 	}
 
@@ -315,7 +331,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 #endif
 done:
 	if (name != tmp)
-		vfree(name);
+		MFREE(name);
 
 	return ret;
 }
@@ -326,7 +342,7 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 	ssize_t ret;
 
 	if (count >= sizeof(tmp)) {
-		if (!(name = vmalloc(count + 1)))
+		if (!(name = MALLOC(count + 1)))
 			return -ENOMEM;
 	}
 
@@ -346,7 +362,7 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 		ret = count;
 done:
 	if (name != tmp)
-		vfree(name);
+		MFREE(name);
 
 	return ret;
 }

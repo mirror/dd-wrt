@@ -64,6 +64,22 @@ int cfenvram = 0;
 static int cfe_env;
 extern char *cfe_env_get(char *nv_buf, const char *name);
 
+void *MALLOC(size_t size)
+{
+	void *ptr = kmalloc(size, GFP_ATOMIC);
+	if (!ptr)
+		ptr = vmalloc(size);
+	return ptr;
+}
+
+void MFREE(void *ptr)
+{
+	if (is_vmalloc_addr(ptr))
+		vfree(ptr);
+	else
+		kfree(ptr);
+}
+
 #ifdef MODULE
 
 #define early_nvram_get(name) nvram_get(name)
@@ -486,7 +502,7 @@ struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name, cons
 		return NULL;
 
 	if (!t) {
-		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))
+		if (!(t = MALLOC(sizeof(struct nvram_tuple) + strlen(name) + 1)))
 			return NULL;
 
 		/* Copy name */
@@ -511,7 +527,7 @@ void _nvram_free(struct nvram_tuple *t)
 	if (!t)
 		nvram_offset = 0;
 	else
-		kfree(t);
+		MFREE(t);
 }
 
 int nvram_init(void *sih)
@@ -528,10 +544,10 @@ int nvram_set(const char *name, const char *value)
 	spin_lock_irqsave(&nvram_lock, flags);
 	if ((ret = _nvram_set(name, value))) {
 		/* Consolidate space and try again */
-		if ((header = vmalloc(NVRAMSIZEREAL))) {
+		if ((header = MALLOC(NVRAMSIZEREAL))) {
 			if (_nvram_commit(header) == 0)
 				ret = _nvram_set(name, value);
-			vfree(header);
+			MFREE(header);
 		}
 	}
 	spin_unlock_irqrestore(&nvram_lock, flags);
@@ -588,7 +604,7 @@ int nvram_nflash_commit(void)
 	unsigned long flags;
 	u_int32_t offset;
 
-	if (!(buf = vmalloc(NVRAMSIZEREAL))) {
+	if (!(buf = MALLOC(NVRAMSIZEREAL))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -619,7 +635,7 @@ int nvram_nflash_commit(void)
 
 done:
 	mutex_unlock(&nvram_sem);
-	vfree(buf);
+	MFREE(buf);
 	return ret;
 }
 #endif				/* NFLASH_SUPPORT */
@@ -653,7 +669,7 @@ int nvram_commit(void)
 #endif
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAMSIZEREAL, nvram_mtd->erasesize);
-	if (!(buf = vmalloc(erasesize))) {
+	if (!(buf = MALLOC(erasesize))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -757,7 +773,7 @@ int nvram_commit(void)
 
 done:
 	mutex_unlock(&nvram_sem);
-	vfree(buf);
+	MFREE(buf);
 	return ret;
 }
 
@@ -790,18 +806,10 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 	char tmp[100], *name = tmp, *value;
 	ssize_t ret;
 	unsigned long off;
-	int v_alloc = 0;
 
-	if (count > 65536 * 2)
-		v_alloc = 1;
 	if (count > sizeof(tmp)) {
-		if (v_alloc) {
-			if (!(name = vmalloc(count)))
-				return -ENOMEM;
-		} else {
-			if (!(name = kmalloc(count, GFP_ATOMIC)))
-				return -ENOMEM;
-		}
+		if (!(name = MALLOC(count)))
+			return -ENOMEM;
 	}
 
 	if (copy_from_user(name, buf, count)) {
@@ -840,10 +848,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 
 done:
 	if (name != tmp) {
-		if (v_alloc)
-			vfree(name);
-		else
-			kfree(name);
+		MFREE(name);
 	}
 
 	return ret;
@@ -853,21 +858,10 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 {
 	char tmp[100], *name = tmp, *value;
 	ssize_t ret;
-	int v_alloc = 0;
 
-	if (count > 65536 * 2)
-		v_alloc = 1;
-
-	if (count >= sizeof(tmp)) {
-		if (v_alloc) {
-			if (!(name = vmalloc(count + 1)))
-				return -ENOMEM;
-
-		} else {
-			if (!(name = kmalloc(count + 1, GFP_ATOMIC)))
-				return -ENOMEM;
-		}
-
+	if (count >= sizeof(tmp)) {		
+		if (!(name = MALLOC(count + 1)))
+			return -ENOMEM;
 	}
 
 	if (copy_from_user(name, buf, count)) {
@@ -884,10 +878,7 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 
 done:
 	if (name != tmp) {
-		if (v_alloc)
-			vfree(name);
-		else
-			kfree(name);
+		MFREE(name);
 	}
 
 	return ret;
@@ -1025,7 +1016,7 @@ static int dev_nvram_init(void)
 	if (nvram_mtd_cfe != NULL && cfenvram) {
 		printk(KERN_INFO "check if nvram copy is required CFE Size is %d\n", NVRAMSIZE);
 		int len;
-		char *buf = vmalloc(NVRAMSIZEREAL);
+		char *buf = MALLOC(NVRAMSIZEREAL);
 		if (buf == NULL) {
 			printk(KERN_ERR "mem allocation error");
 			goto done_nofree;
@@ -1072,7 +1063,7 @@ static int dev_nvram_init(void)
 //      bcm947xx_machine_restart(NULL);
 
 		      done:;
-			vfree(buf);
+			MFREE(buf);
 		      done_nofree:;
 		}
 	}
