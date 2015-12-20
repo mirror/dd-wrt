@@ -445,7 +445,6 @@ static void __init ap136_gmac_setup(void)
 
 
 static struct ar8327_pad_cfg db120_ar8327_pad0_cfg = {
-	.mac06_exchange_en = true,
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
 	.rxclk_delay_en = true,
@@ -501,7 +500,6 @@ static struct mdio_board_info db120_mdio0_info[] = {
 };
 
 static struct ar8327_pad_cfg wdr4300_ar8327_pad0_cfg = {
-	.mac06_exchange_en = true,
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
 	.rxclk_delay_en = true,
@@ -539,7 +537,6 @@ static struct mdio_board_info wdr4300_mdio0_info[] = {
 
 
 static struct ar8327_pad_cfg ap152_ar8337_pad0_cfg = {
-	.mac06_exchange_en = true,
 	.mode = AR8327_PAD_MAC_SGMII,
 	.txclk_delay_en = true,
 	.rxclk_delay_en = true,
@@ -567,7 +564,7 @@ static struct mdio_board_info ap152_mdio0_info[] = {
 };
 
 static struct ar8327_pad_cfg wpj344_ar8327_pad0_cfg = {
-	.mac06_exchange_en = false,
+	.mac06_exchange_dis = true,
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
 	.rxclk_delay_en = true,
@@ -1125,7 +1122,6 @@ int __init ar7240_platform_init(void)
 	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
 	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
 
-	ap136_ar8327_pad0_cfg.mac06_exchange_en = true;
 	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_eth0_pll_data.pll_1000 = 0x56000000;
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
