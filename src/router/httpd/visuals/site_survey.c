@@ -75,7 +75,7 @@ float getfloatrate(int rate, int bw)
 			result = 3466.7f;
 		break;
 	}
-
+	return result;
 }
 
 static struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
