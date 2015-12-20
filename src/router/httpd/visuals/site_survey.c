@@ -245,9 +245,9 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
-				sprintf(rates, "%f%s", speed, rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
+				sprintf(rates, "%0.1f%s", speed, rc == 4 ? "(b)" : rc < 14 ? "(b/g)" : "(b/g/n)");
 			} else {
-				sprintf(rates, "%f%s", speed, rc < 14 ? "(a)" : "(a/n)");
+				sprintf(rates, "%0.1f%s", speed, rc < 14 ? "(a)" : "(a/n)");
 			}
 		}
 
