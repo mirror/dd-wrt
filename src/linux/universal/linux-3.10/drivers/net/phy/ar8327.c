@@ -509,6 +509,8 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 
 	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
+	if (priv->chip_ver != AR8XXX_VER_AR8337)
+		cfg->mac06_exchange_en = false;
 
 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
 	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
