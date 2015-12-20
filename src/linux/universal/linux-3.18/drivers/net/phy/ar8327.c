@@ -124,9 +124,6 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 		break;
 	}
 
-	if (cfg->mac06_exchange_en)
-		t |= AR8337_PAD_MAC06_EXCHANGE_EN;
-
 	return t;
 }
 
@@ -509,11 +506,12 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 
 	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
-	if (priv->chip_ver != AR8XXX_VER_AR8337)
-		cfg->mac06_exchange_en = false;
 
 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
+	if (chip_is_ar8337(priv) && !pdata->pad0_cfg->mac06_exchange_dis)
+	    t |= AR8337_PAD_MAC06_EXCHANGE_EN;
 	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
+
 	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
 	ar8xxx_write(priv, AR8327_REG_PAD5_MODE, t);
 	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
@@ -650,13 +648,6 @@ ar8327_cleanup(struct ar8xxx_priv *priv)
 	ar8327_leds_cleanup(priv);
 }
 
-static inline void
-ar8216_sw_reg_set(struct ar8xxx_priv *priv, int reg, u32 val)
-{
-	ar8xxx_write(priv, reg, val);
-}
-
-
 static void
 ar8327_init_globals(struct ar8xxx_priv *priv)
 {
@@ -686,10 +677,6 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	/* Disable EEE on all phy's due to stability issues */
 	for (i = 0; i < AR8XXX_NUM_PHYS; i++)
 		data->eee[i] = false;
-
-	/* Updating HOL registers and RGMII delay settings
-	with the values suggested by QCA switch team */
-
 }
 
 static void
