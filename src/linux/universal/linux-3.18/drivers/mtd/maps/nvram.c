@@ -331,7 +331,7 @@ int _nvram_init(void)
 	if ((ret = _nvram_read(header)) == 0 && header->magic == NVRAM_MAGIC)
 		nvram_rehash(header);
 
-	MFREE(header, NVRAM_SPACE);
+	MFREE(header);
 	return ret;
 }
 
