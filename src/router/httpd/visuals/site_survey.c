@@ -92,7 +92,6 @@ void ej_list_fbn(webs_t wp, int argc, char_t ** argv)
 void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
-	char buf[10] = { 0 };
 	char *rates = NULL;
 	char *name;
 
@@ -171,10 +170,14 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			int speed = 0;
 			int rc = site_survey_lists[i].rate_count;
 			switch (rc) {
+			case 11:
 			case 4:
+				rc = 4;
 				speed = 11;
 				break;
 			case 12:
+			case 54:
+				rc = 12;
 				speed = 54;
 				break;
 			case 13:
@@ -195,10 +198,14 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			int speed = 0;
 			int rc = site_survey_lists[i].rate_count;
 			switch (rc) {
+			case 11:
 			case 4:
+				rc = 4;
 				speed = 11;
 				break;
 			case 12:
+			case 54:
+				rc = 12;
 				speed = 54;
 				break;
 			case 13:
