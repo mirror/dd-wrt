@@ -48,13 +48,13 @@ float getfloatrate(int rate, int bw)
 		if (bw == 80)
 			result = 433.3f;
 		if (bw == 160)
-			result = 466.7f;
+			result = 866.7f;
 		break;
 	case 300:
 		if (bw == 20)
-			result = 72.2f;
+			result = 144.4f;
 		if (bw == 80)
-			result = 466.7f;
+			result = 866.7f;
 		if (bw == 160)
 			result = 1733.3f;
 		break;
@@ -64,7 +64,7 @@ float getfloatrate(int rate, int bw)
 		if (bw == 80)
 			result = 1300.0f;
 		if (bw == 160)
-			result = 2340.0f;
+			result = 2340.0f; // this rate is not specified
 		break;
 	case 600:
 		if (bw == 20)
@@ -179,11 +179,12 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			switch (cbw) {
 			case 0:
 				speed = getfloatrate((int)speed, 80);
+				break;
 			case 0x100:
 			case 0x200:
 				speed = getfloatrate((int)speed, 160);
+				break;
 			}
-
 			rates = strbuf;
 
 			if ((site_survey_lists[i].channel & 0xff) < 15) {
@@ -197,8 +198,8 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			float speed = 0;
 			int rc = site_survey_lists[i].rate_count;
 			switch (rc) {
-			case 11:
 			case 4:
+			case 11:
 				rc = 4;
 				speed = 11.0f;
 				break;
@@ -225,8 +226,8 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			float speed = 0;
 			int rc = site_survey_lists[i].rate_count;
 			switch (rc) {
-			case 11:
 			case 4:
+			case 11:
 				rc = 4;
 				speed = 11.0f;
 				break;
@@ -240,7 +241,6 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 				break;
 			default:
 				speed = getfloatrate(rc, 20);
-				break;
 			}
 			rates = strbuf;
 
