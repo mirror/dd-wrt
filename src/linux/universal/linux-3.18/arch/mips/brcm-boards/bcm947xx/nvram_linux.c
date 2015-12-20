@@ -64,7 +64,7 @@ int cfenvram = 0;
 static int cfe_env;
 extern char *cfe_env_get(char *nv_buf, const char *name);
 
-void *MALLOC(size_t size)
+void *MMALLOC(size_t size)
 {
 	void *ptr = kmalloc(size, GFP_ATOMIC);
 	if (!ptr)
@@ -72,7 +72,7 @@ void *MALLOC(size_t size)
 	return ptr;
 }
 
-void MFREE(void *ptr)
+void MMFREE(void *ptr)
 {
 	if (is_vmalloc_addr(ptr))
 		vfree(ptr);
@@ -502,7 +502,7 @@ struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name, cons
 		return NULL;
 
 	if (!t) {
-		if (!(t = MALLOC(sizeof(struct nvram_tuple) + strlen(name) + 1)))
+		if (!(t = MMALLOC(sizeof(struct nvram_tuple) + strlen(name) + 1)))
 			return NULL;
 
 		/* Copy name */
@@ -527,7 +527,7 @@ void _nvram_free(struct nvram_tuple *t)
 	if (!t)
 		nvram_offset = 0;
 	else
-		MFREE(t);
+		MMFREE(t);
 }
 
 int nvram_init(void *sih)
@@ -544,10 +544,10 @@ int nvram_set(const char *name, const char *value)
 	spin_lock_irqsave(&nvram_lock, flags);
 	if ((ret = _nvram_set(name, value))) {
 		/* Consolidate space and try again */
-		if ((header = MALLOC(NVRAMSIZEREAL))) {
+		if ((header = MMALLOC(NVRAMSIZEREAL))) {
 			if (_nvram_commit(header) == 0)
 				ret = _nvram_set(name, value);
-			MFREE(header);
+			MMFREE(header);
 		}
 	}
 	spin_unlock_irqrestore(&nvram_lock, flags);
@@ -604,7 +604,7 @@ int nvram_nflash_commit(void)
 	unsigned long flags;
 	u_int32_t offset;
 
-	if (!(buf = MALLOC(NVRAMSIZEREAL))) {
+	if (!(buf = MMALLOC(NVRAMSIZEREAL))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -635,7 +635,7 @@ int nvram_nflash_commit(void)
 
 done:
 	mutex_unlock(&nvram_sem);
-	MFREE(buf);
+	MMFREE(buf);
 	return ret;
 }
 #endif				/* NFLASH_SUPPORT */
@@ -669,7 +669,7 @@ int nvram_commit(void)
 #endif
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAMSIZEREAL, nvram_mtd->erasesize);
-	if (!(buf = MALLOC(erasesize))) {
+	if (!(buf = MMALLOC(erasesize))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -773,7 +773,7 @@ int nvram_commit(void)
 
 done:
 	mutex_unlock(&nvram_sem);
-	MFREE(buf);
+	MMFREE(buf);
 	return ret;
 }
 
@@ -808,7 +808,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 	unsigned long off;
 
 	if (count > sizeof(tmp)) {
-		if (!(name = MALLOC(count)))
+		if (!(name = MMALLOC(count)))
 			return -ENOMEM;
 	}
 
@@ -848,7 +848,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 
 done:
 	if (name != tmp) {
-		MFREE(name);
+		MMFREE(name);
 	}
 
 	return ret;
@@ -860,7 +860,7 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 	ssize_t ret;
 
 	if (count >= sizeof(tmp)) {		
-		if (!(name = MALLOC(count + 1)))
+		if (!(name = MMALLOC(count + 1)))
 			return -ENOMEM;
 	}
 
@@ -878,7 +878,7 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 
 done:
 	if (name != tmp) {
-		MFREE(name);
+		MMFREE(name);
 	}
 
 	return ret;
@@ -1016,7 +1016,7 @@ static int dev_nvram_init(void)
 	if (nvram_mtd_cfe != NULL && cfenvram) {
 		printk(KERN_INFO "check if nvram copy is required CFE Size is %d\n", NVRAMSIZE);
 		int len;
-		char *buf = MALLOC(NVRAMSIZEREAL);
+		char *buf = MMALLOC(NVRAMSIZEREAL);
 		if (buf == NULL) {
 			printk(KERN_ERR "mem allocation error");
 			goto done_nofree;
@@ -1063,7 +1063,7 @@ static int dev_nvram_init(void)
 //      bcm947xx_machine_restart(NULL);
 
 		      done:;
-			MFREE(buf);
+			MMFREE(buf);
 		      done_nofree:;
 		}
 	}
