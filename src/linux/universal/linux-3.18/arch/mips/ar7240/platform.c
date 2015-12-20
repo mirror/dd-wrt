@@ -1124,6 +1124,7 @@ int __init ar7240_platform_init(void)
 	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
 	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
 	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
+
 	ap136_ar8327_pad0_cfg.mac06_exchange_en = true;
 	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_eth0_pll_data.pll_1000 = 0x56000000;
