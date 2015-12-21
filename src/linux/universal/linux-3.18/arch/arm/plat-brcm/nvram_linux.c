@@ -434,7 +434,7 @@ nvram_set(const char *name, const char *value)
 		if ((header = MMALLOC(nvram_space))) {
 			if (_nvram_commit(header) == 0)
 				ret = _nvram_set(name, value);
-			MMALLOC(header);
+			MMFREE(header);
 		}
 	}
 	spin_unlock_irqrestore(&nvram_lock, flags);
