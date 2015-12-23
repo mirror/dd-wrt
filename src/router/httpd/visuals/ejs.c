@@ -2560,36 +2560,37 @@ void ej_show_voltage(webs_t wp, int argc, char_t ** argv)
 static void showencstatus(webs_t wp, char *prefix)
 {
 	char akm[64];
-
+	char *enc = NULL;
 	sprintf(akm, "%s_akm", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n", prefix);
 	websWrite(wp, "<script type=\"text/javascript\">");
-	if (nvram_match(akm, "disabled")) {
-		websWrite(wp, "Capture(share.disabled)");
-		websWrite(wp, "</script>");
-	} else {
+	if (nvram_match(akm, "psk"))
+		enc = "WPA Personal";
+	if (nvram_match(akm, "wpa"))
+		enc = "WPA Enterprise";
+	if (nvram_match(akm, "psk2"))
+		enc = "WPA2 Personal";
+	if (nvram_match(akm, "wpa2"))
+		enc = "WPA2 Enterprise";
+	if (nvram_match(akm, "psk psk2"))
+		enc = "WPA2 Personal Mixed";
+	if (nvram_match(akm, "wpa wpa2"))
+		enc = "WPA Enterprise Mixed";
+	if (nvram_match(akm, "radius"))
+		enc = "RADIUS";
+	if (nvram_match(akm, "wep"))
+		enc = "WEP";
+	if (nvram_match(akm, "8021X"))
+		enc = "802.1x";
+	if (enc) {
 		websWrite(wp, "Capture(share.enabled)");
 		websWrite(wp, "</script>,&nbsp;");
+		websWrite(wp, enc);
+	} else {
+		websWrite(wp, "Capture(share.disabled)");
+		websWrite(wp, "</script>");
 
-		if (nvram_match(akm, "psk"))
-			websWrite(wp, "WPA Personal");
-		if (nvram_match(akm, "wpa"))
-			websWrite(wp, "WPA Enterprise");
-		if (nvram_match(akm, "psk2"))
-			websWrite(wp, "WPA2 Personal");
-		if (nvram_match(akm, "wpa2"))
-			websWrite(wp, "WPA2 Enterprise");
-		if (nvram_match(akm, "psk psk2"))
-			websWrite(wp, "WPA2 Personal Mixed");
-		if (nvram_match(akm, "wpa wpa2"))
-			websWrite(wp, "WPA Enterprise Mixed");
-		if (nvram_match(akm, "radius"))
-			websWrite(wp, "RADIUS");
-		if (nvram_match(akm, "wep"))
-			websWrite(wp, "WEP");
-		if (nvram_match(akm, "8021X"))
-			websWrite(wp, "802.1x");
 	}
 
 	websWrite(wp, "\n</div>\n");
@@ -2645,7 +2646,9 @@ void ej_getencryptionstatus(webs_t wp, int argc, char_t ** argv)
 	char *mode = nvram_safe_get("wifi_display");
 
 	showencstatus(wp, mode);
-} void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
+}
+
+void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
 {
 	char var[32];
 	char m[32];
