@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r2764 | BrainSlayer | 2015-12-23 01:12:48 +0100 (Wed, 23 Dec 2015) | 1 line
+
+sync hnddma driver
+------------------------------------------------------------------------
+r2763 | BrainSlayer | 2015-12-23 01:12:13 +0100 (Wed, 23 Dec 2015) | 1 line
+
+wireless driver config adjustments for broadcom, testing on e4200 right now
+------------------------------------------------------------------------
 r2762 | BrainSlayer | 2015-12-22 17:00:39 +0100 (Tue, 22 Dec 2015) | 1 line
 
 fix ps poll handling
