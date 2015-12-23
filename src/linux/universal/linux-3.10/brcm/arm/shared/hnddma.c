@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hnddma.c 524987 2015-01-08 14:34:41Z $
+ * $Id: hnddma.c 584680 2015-09-08 09:31:39Z $
  */
 
 #include <bcm_cfg.h>
@@ -69,6 +69,11 @@ static uint dma_msg_level =
 #define	MAXNAMEL	8		/* 8 char names */
 
 #define	DI_INFO(dmah)	((dma_info_t *)(uintptr)dmah)
+
+#define DESCR_DEADBEEF
+#if defined(__mips__) || defined(BCM47XX_CA9)
+#undef DESCR_DEADBEEF
+#endif
 
 /* SplitRX Feature for D11 <TCM,DDR> split pkt reception in Full Dongle Mode */
 #if (!defined(__mips__) && !defined(BCM47XX_CA9))
@@ -1337,29 +1342,37 @@ _dma_rx(dma_info_t *di)
 #if defined(D11_SPLIT_RX_FD)
 	uint tcm_maxsize = 0;		/* max size of tcm descriptor */
 #endif
+	void *data;
 
 next_frame:
 	head = _dma_getnextrxp(di, FALSE);
 	if (head == NULL)
 		return (NULL);
 
+	data = PKTDATA(di->osh, head);
+
 #if (!defined(__mips__) && !defined(BCM47XX_CA9) && !defined(__NetBSD__))
 	if (di->hnddma.dmactrlflags & DMA_CTRL_SDIO_RXGLOM) {
 		/* In case of glommed pkt get length from hwheader */
-		len = ltoh16(*((uint16 *)(PKTDATA(di->osh, head)) + di->rxoffset/2 + 2)) + 4;
+		len = ltoh16(*((uint16 *)(data) + di->rxoffset/2 + 2)) + 4;
 
-		*(uint16 *)(PKTDATA(di->osh, head)) = (uint16)len;
+		*(uint16 *)(data) = (uint16)len;
 	} else {
-		len = ltoh16(*(uint16 *)(PKTDATA(di->osh, head)));
+		len = ltoh16(*(uint16 *)(data));
 	}
-#else
+#else  /* !__mips__ && !BCM47XX_CA9 && !__NetBSD__ */
 	{
 	int read_count = 0;
 	for (read_count = 200; read_count; read_count--) {
-		len = ltoh16(*(uint16 *)PKTDATA(di->osh, head));
+		len = ltoh16(*(uint16 *)(data));
 		if (len != 0)
 			break;
-		DMA_MAP(di->osh, PKTDATA(di->osh, head), sizeof(uint16), DMA_RX, NULL, NULL);
+#if defined(BCM_GMAC3)
+		if (PKTISFWDERBUF(di->osh, head)) {
+			OSL_CACHE_INV_LINE(data);
+		} else
+#endif /* BCM_GMAC3 */
+			DMA_MAP(di->osh, data, sizeof(uint16), DMA_RX, NULL, NULL);
 		OSL_DELAY(1);
 	}
 
@@ -1370,7 +1383,7 @@ next_frame:
 	}
 
 	}
-#endif /* defined(__mips__) */
+#endif /* !__mips__ && !BCM47XX_CA9 && !__NetBSD__ */
 	DMA_TRACE(("%s: dma_rx len %d\n", di->name, len));
 
 	/* set actual length */
@@ -1574,11 +1587,14 @@ _dma_rxfill(dma_info_t *di)
 #if defined(linux) && (defined(BCM47XX_CA9) || defined(__mips__)) && defined(BCM_GMAC3)
 		/* Packets tagged as FWDER_BUF are ensured to only have FWDER_PKTMAPSZ
 		 * (at most) in the cache, with the first 2Bytes dirty in cache.
+		 * FWDER_BUF tagged packets are placed in NON ACP address space. Non
+		 * FWDER_BUF packets are placed into ACP region and avail of HW cache
+		 * coherency via ACP.
 		 */
 		if (PKTISFWDERBUF(di->osh, p)) {
-			pa = DMA_MAP(di->osh, PKTDATA(di->osh, p), FWDER_PKTMAPSZ, DMA_TX,
-			             NULL, NULL);
-			PKTCLRFWDERBUF(di->osh, p);
+			void *va = PKTDATA(di->osh, p);
+			pa = virt_to_phys_noacp(va); /* map to non acp address space */
+			OSL_CACHE_FLUSH_LINE(va); /* 1 cache line */
 		} else {
 			/* cache flush first 2Byte length */
 			DMA_MAP(di->osh, PKTDATA(di->osh, p), sizeof(uint16), DMA_TX, NULL, NULL);
@@ -2515,7 +2531,6 @@ dma32_txfast(dma_info_t *di, void *p0, bool commit)
 #else
 		pa = DMA_MAP(di->osh, data, len, DMA_TX, p, &di->txp_dmah[txout]);
 #endif /* BCM_SECURE_DMA */
-
 		if (DMASGLIST_ENAB) {
 			map = &di->txp_dmah[txout];
 
@@ -2656,14 +2671,15 @@ dma32_getnexttxp(dma_info_t *di, txd_range_t range)
 		}
 
 		for (j = nsegs; j > 0; j--) {
+#if defined(DESCR_DEADBEEF)
 			W_SM(&di->txd32[i].addr, 0xdeadbeef);
+#endif
 
 			txp = di->txp[i];
 			di->txp[i] = NULL;
 			if (j > 1)
 				i = NEXTTXD(i);
 		}
-
 #ifdef BCM_SECURE_DMA
 		SECURE_DMA_UNMAP(di->osh, pa, size, DMA_TX, NULL, NULL, &di->sec_cma_info_tx, 0);
 #else
@@ -2721,11 +2737,11 @@ dma32_getnextrxp(dma_info_t *di, bool forceall)
 #ifdef BCM_SECURE_DMA
 	SECURE_DMA_UNMAP(di->osh, pa, di->rxbufsize, DMA_RX, NULL, NULL, &di->sec_cma_info_rx, 0);
 #else
-	DMA_UNMAP(di->osh, pa,
-	          di->rxbufsize, DMA_RX, rxp, &di->rxp_dmah[i]);
+	DMA_UNMAP(di->osh, pa, di->rxbufsize, DMA_RX, rxp, &di->rxp_dmah[i]);
 #endif
-
+#if defined(DESCR_DEADBEEF)
 	W_SM(&di->rxd32[i].addr, 0xdeadbeef);
+#endif
 
 	di->rxin = NEXTRXD(i);
 
@@ -2776,8 +2792,10 @@ dma32_txrotate(dma_info_t *di)
 		W_SM(&di->txd32[new].ctrl, BUS_SWAP32(w));
 		W_SM(&di->txd32[new].addr, R_SM(&di->txd32[old].addr));
 
+#if defined(DESCR_DEADBEEF)
 		/* zap the old tx dma descriptor address field */
 		W_SM(&di->txd32[old].addr, BUS_SWAP32(0xdeadbeef));
+#endif /* DESCR_DEADBEEF */
 
 		/* move the corresponding txp[] entry */
 		ASSERT(di->txp[new] == NULL);
@@ -3213,7 +3231,6 @@ dma64_txunframed(dma_info_t *di, void *buf, uint len, bool commit)
 
 	if (len == 0)
 		return 0;
-
 #ifdef BCM_SECURE_DMA
 	pa = SECURE_DMA_MAP(di->osh, buf, len, DMA_TX, NULL, NULL, &di->sec_cma_info_tx, 0);
 #else
@@ -3322,8 +3339,8 @@ dma64_txfast(dma_info_t *di, void *p0, bool commit)
 		/* get physical address of buffer start */
 		if (DMASGLIST_ENAB)
 			bzero(&di->txp_dmah[txout], sizeof(hnddma_seg_map_t));
-
 #ifdef BCM_SECURE_DMA
+
 		if (DMASGLIST_ENAB) {
 			pa = SECURE_DMA_MAP(di->osh, data, len, DMA_TX, p, &di->txp_dmah[txout],
 				&di->sec_cma_info_tx, 0);
@@ -3562,7 +3579,7 @@ dma64_getnexttxp(dma_info_t *di, txd_range_t range)
 #endif /* PCIE_PHANTOM_DEV */
 
 		for (j = nsegs; j > 0; j--) {
-#if ((!defined(__mips__) && !defined(BCM47XX_CA9)) || defined(__NetBSD__))
+#if defined(DESCR_DEADBEEF)
 			W_SM(&di->txd64[i].addrlow, 0xdeadbeef);
 			W_SM(&di->txd64[i].addrhigh, 0xdeadbeef);
 #endif
@@ -3576,6 +3593,7 @@ dma64_getnexttxp(dma_info_t *di, txd_range_t range)
 #if ((!defined(__mips__) && !defined(BCM47XX_CA9)) || defined(__NetBSD__))
 		DMA_UNMAP(di->osh, pa, size, DMA_TX, txp, map);
 #endif
+
 #ifdef BCM_SECURE_DMA
 		SECURE_DMA_UNMAP(di->osh, pa, size, DMA_TX, NULL, NULL, &di->sec_cma_info_tx, 0);
 #endif
@@ -3633,8 +3651,13 @@ nextframe:
 
 #if (defined(__mips__) || defined(BCM47XX_CA9)) && !defined(_CFE_)
 	{
-		/* Prcessor prefetch of 1 x 32B cacheline carrying 30B HWRXOFF */
+		/* Processor prefetch of 1 x 32B cacheline carrying HWRXOFF */
 		uint8 * addr = PKTDATA(di->osh, rxp);
+#if defined(BCM_GMAC3)
+		if (PKTISFWDERBUF(di->osh, rxp)) {
+			OSL_CACHE_INV_LINE(addr);
+		}
+#endif
 		bcm_prefetch_32B(addr, 1);
 	}
 #endif /* (__mips__ || BCM47XX_CA9) && !_CFE_ */
@@ -3649,12 +3672,13 @@ nextframe:
 #ifdef BCM_SECURE_DMA
 	SECURE_DMA_UNMAP(di->osh, pa, di->rxbufsize, DMA_RX, NULL, NULL, &di->sec_cma_info_rx, 0);
 #else
-	DMA_UNMAP(di->osh, pa,
-	          di->rxbufsize, DMA_RX, rxp, &di->rxp_dmah[i]);
+	DMA_UNMAP(di->osh, pa, di->rxbufsize, DMA_RX, rxp, &di->rxp_dmah[i]);
 #endif
 
+#if defined(DESCR_DEADBEEF)
 	W_SM(&di->rxd64[i].addrlow, 0xdeadbeef);
 	W_SM(&di->rxd64[i].addrhigh, 0xdeadbeef);
+#endif /* DESCR_DEADBEEF */
 
 #endif /* SGLIST_RX_SUPPORT */
 
@@ -3734,9 +3758,11 @@ dma64_txrotate(dma_info_t *di)
 		W_SM(&di->txd64[new].addrlow, R_SM(&di->txd64[old].addrlow));
 		W_SM(&di->txd64[new].addrhigh, R_SM(&di->txd64[old].addrhigh));
 
+#if defined(DESCR_DEADBEEF)
 		/* zap the old tx dma descriptor address field */
 		W_SM(&di->txd64[old].addrlow, BUS_SWAP32(0xdeadbeef));
 		W_SM(&di->txd64[old].addrhigh, BUS_SWAP32(0xdeadbeef));
+#endif /* DESCR_DEADBEEF */
 
 		/* move the corresponding txp[] entry */
 		ASSERT(di->txp[new] == NULL);
