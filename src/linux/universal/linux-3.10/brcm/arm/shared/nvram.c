@@ -26,9 +26,7 @@
 #include <bcmendian.h>
 #include <bcmnvram.h>
 #include <sbsdram.h>
-
-extern void *MMALLOC(size_t size);
-extern void MMFREE(void *addr);
+#include <linux/vmalloc.h>
 
 #ifdef MAX_NVRAM_SPACE
 // nothign
@@ -327,7 +325,7 @@ BCMINITFN(_nvram_init)(void *sih)
 	int ret;
 	printk(KERN_INFO "max nvram space = %d\n",MAX_NVRAM_SPACE);
 
-	if (!(header = (struct nvram_header *) MMALLOC(MAX_NVRAM_SPACE))) {
+	if (!(header = (struct nvram_header *) vmalloc(MAX_NVRAM_SPACE))) {
 		printf("nvram_init: out of memory\n");
 		return -12; /* -ENOMEM */
 	}
@@ -336,7 +334,7 @@ BCMINITFN(_nvram_init)(void *sih)
 	    header->magic == NVRAM_MAGIC)
 		nvram_rehash(header);
 
-	MMFREE(header);
+	vfree(header);
 	return ret;
 }
 
