@@ -19,7 +19,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: wlioctl.h 586916 2015-09-16 21:09:07Z $
+ * $Id: wlioctl.h 575627 2015-07-30 11:49:42Z $
  */
 
 #ifndef _wlioctl_h_
@@ -65,13 +65,6 @@ typedef struct {
 	uint32 num;
 	chanspec_t list[1];
 } chanspec_list_t;
-
-#define DFS_SCAN_S_IDLE				-1
-#define DFS_SCAN_S_RADAR_FREE			0
-#define DFS_SCAN_S_RADAR_FOUND			1
-#define DFS_SCAN_S_INPROGESS			2
-#define DFS_SCAN_S_SCAN_ABORTED			3
-#define DFS_SCAN_S_SCAN_MODESW_INPROGRESS	4
 
 /* DFS Forced param */
 typedef struct wl_dfs_forced_params {
@@ -370,9 +363,7 @@ typedef struct wl_bss_config {
 #define DLOAD_FLAG_VER_MASK		0xf000	/* Downloader version mask */
 #define DLOAD_FLAG_VER_SHIFT	12	/* Downloader version shift */
 
-#define DL_CRC_NOT_INUSE	0x0001
-#define DL_BEGIN		0x0002
-#define DL_END			0x0004
+#define DL_CRC_NOT_INUSE 			0x0001
 
 /* generic download types & flags */
 enum {
@@ -907,7 +898,7 @@ typedef struct wl_rm_rep {
 #define WL_RM_REP_FIXED_LEN	8
 
 
-#if defined(BCMSUP_PSK) || defined(BCMDONGLEHOST)
+#if defined(BCMSUP_PSK)
 typedef enum sup_auth_status {
 	/* Basic supplicant authentication states */
 	WLC_SUP_DISCONNECTED = 0,
@@ -1606,30 +1597,6 @@ typedef struct {
 	/* chanspec cleared used to be a uint, add another to uint16 to maintain size */
 	uint16 pad;
 } wl_dfs_status_t;
-
-typedef struct {
-	uint state;		/* noted by WL_DFS_CACSTATE_XX */
-	uint duration;		/* time spent in ms in state */
-	chanspec_t chanspec;	/* chanspec of this core */
-	chanspec_t chanspec_last_cleared; /* chanspec last cleared for operation by scanning */
-	uint16 sub_type;	/* currently just the index of the core or the respective PLL */
-	uint16 pad;
-} wl_dfs_sub_status_t;
-
-#define WL_DFS_STATUS_ALL_VERSION	(1)
-typedef struct {
-	uint16 version;		/* version field; current max version 1 */
-	uint16 num_sub_status;
-	wl_dfs_sub_status_t  dfs_sub_status[1]; /* struct array of length num_sub_status */
-} wl_dfs_status_all_t;
-
-#define WL_DFS_AP_MOVE_VERSION	(1)
-typedef struct wl_dfs_ap_move_status {
-	int8 version;            /* version field; current max version 1 */
-	int8 move_status;        /* DFS move status */
-	chanspec_t chanspec;     /* New AP Chanspec */
-	wl_dfs_status_all_t scan_status; /* status; see dfs_status_all for wl_dfs_status_all_t */
-} wl_dfs_ap_move_status_t;
 
 /* data structure used in 'radar_status' wl interface, which is use to query radar det status */
 typedef struct {
@@ -4499,7 +4466,6 @@ typedef struct wl_txcal_params {
 	uint8 gidx_stop;
 } wl_txcal_params_t;
 
-#if !defined(BCMDONGLEHOST) || defined(WLTEST)
 typedef struct wl_sslpnphy_papd_debug_data {
 	uint8 psat_pwr;
 	uint8 psat_indx;
@@ -4532,7 +4498,6 @@ typedef struct wl_sslpnphy_percal_debug_data {
 	uint exit_route;
 	int32 volt_winner;
 } wl_sslpnphy_percal_debug_data_t;
-#endif 
 
 typedef enum {
 	wowl_pattern_type_bitmap = 0,
@@ -6701,8 +6666,7 @@ typedef enum wl_stamon_cfg_cmd_type {
 	STAMON_CFG_CMD_DEL = 0,
 	STAMON_CFG_CMD_ADD = 1,
 	STAMON_CFG_CMD_ENB = 2,
-	STAMON_CFG_CMD_DSB = 3,
-	STAMON_CFG_CMD_CNT = 4
+	STAMON_CFG_CMD_DSB = 3
 } wl_stamon_cfg_cmd_type_t;
 
 typedef struct wlc_stamon_sta_config {
