@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2767 | brainslayer | 2015-12-24 01:51:15 +0100 (Thu, 24 Dec 2015) | 1 line
+
+take care about nvram patch
+------------------------------------------------------------------------
 r2766 | brainslayer | 2015-12-24 01:46:58 +0100 (Thu, 24 Dec 2015) | 1 line
 
 switch back to previous driver, but using new dhd
