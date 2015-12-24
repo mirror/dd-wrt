@@ -47,7 +47,6 @@ extern int	otp_status(void *oh);
 extern int	otp_size(void *oh);
 extern uint16	otp_read_bit(void *oh, uint offset);
 extern void*	otp_init(si_t *sih);
-#if !defined(BCMDONGLEHOST)
 extern int	otp_newcis(void *oh);
 extern int	otp_read_region(si_t *sih, int region, uint16 *data, uint *wlen);
 extern int	otp_read_word(si_t *sih, uint wn, uint16 *data);
@@ -59,14 +58,13 @@ extern int	otp_cis_append_region(si_t *sih, int region, char *vars, int count);
 extern int	otp_lock(si_t *sih);
 extern int	otp_nvwrite(void *oh, uint16 *data, uint wlen);
 #endif /* BCMNVRAMW */
-#endif /* !defined(BCMDONGLEHOST) */
 
 #if defined(WLTEST)
 extern int	otp_dump(void *oh, int arg, char *buf, uint size);
 extern int	otp_dumpstats(void *oh, int arg, char *buf, uint size);
 #endif 
 
-#if !defined(BCMDONGLEHOST) && defined(BCMNVRAMW)
+#if defined(BCMNVRAMW)
 #define otp_write_rde(oh, rde, bit, val)	ipxotp_write_rde(oh, rde, bit, val)
 extern int	ipxotp_write_rde(void *oh, int rde, uint bit, uint val);
 extern int otp_write_bits(void *oh, uint offset, int bits, uint8* data);
@@ -79,6 +77,6 @@ extern int otp_write_ones(void *oh, uint off, uint bits);
 extern int otp_write_ones_old(void *oh, uint off, uint bits);
 #endif
 
-#endif /* !defined(BCMDONGLEHOST) && defined(BCMNVRAMW) */
+#endif 
 
 #endif /* _bcmotp_h_ */

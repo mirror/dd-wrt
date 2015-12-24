@@ -21,7 +21,6 @@
 #ifndef _hndpmu_h_
 #define _hndpmu_h_
 
-#if !defined(BCMDONGLEHOST)
 #define SET_LDO_VOLTAGE_LDO1		1
 #define SET_LDO_VOLTAGE_LDO2		2
 #define SET_LDO_VOLTAGE_LDO3		3
@@ -92,8 +91,6 @@ typedef void (*si_pmu_callback_t)(void* arg);
 extern uint32 si_mac_clk(si_t *sih, osl_t *osh);
 extern void si_pmu_switch_on_PARLDO(si_t *sih, osl_t *osh);
 extern int si_pmu_fvco_pllreg(si_t *sih, uint32 *fvco, uint32 *pllreg);
-
-#endif /* !defined(BCMDONGLEHOST) */
 
 extern void si_pmu_otp_power(si_t *sih, osl_t *osh, bool on, uint32* min_res_mask);
 extern void si_sdiod_drive_strength_init(si_t *sih, osl_t *osh, uint32 drivestrength);

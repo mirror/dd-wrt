@@ -17,7 +17,7 @@
  *
  * Dependencies: proto/bcmeth.h
  *
- * $Id: bcmevent.h 566959 2015-06-26 08:57:35Z $
+ * $Id: bcmevent.h 477020 2014-05-12 09:39:58Z $
  *
  */
 
@@ -230,11 +230,9 @@ typedef BWL_PRE_PACKED_STRUCT struct bcm_event {
 #define WLC_E_BCMC_CREDIT_SUPPORT	127	/* credit check for BCMC supported */
 #define WLC_E_AUTHORIZED	136	/* a STA been authroized for traffic */
 #define WLC_E_PROBREQ_MSG_RX	137 /* probe req with wl_event_rx_frame_data_t header */
-#define WLC_E_PEER_TIMEOUT	138 /* silently drop a STA because of inactivity */
-#define WLC_E_PRE_ASSOC_RSEP_IND	139
-#define WLC_E_LAST			140	/* highest val + 1 for range checking */
-#if (WLC_E_LAST > 140)
-#error "WLC_E_LAST: Invalid value for last event; must be <= 140."
+#define WLC_E_LAST			138	/* highest val + 1 for range checking */
+#if (WLC_E_LAST > 138)
+#error "WLC_E_LAST: Invalid value for last event; must be <= 138."
 #endif /* WLC_E_LAST */
 
 /* define an API for getting the string name of an event */

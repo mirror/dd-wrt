@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: et_linux.c 584164 2015-09-04 07:40:24Z $
+ * $Id: et_linux.c 575708 2015-07-30 20:27:43Z $
  */
 #include <et_cfg.h>
 #define __UNDEF_NO_VERSION__
@@ -220,7 +220,6 @@ typedef struct et_info {
 #ifdef ETFA
 	spinlock_t	fa_lock;	/* lock for fa cache protection */
 #endif
-	bool		dev_registered;	/* netdev registed done */
 } et_info_t;
 
 static int et_found = 0;
@@ -450,7 +449,9 @@ is_pkt_chainable(et_info_t *et, void * pkt, void *pkthdr, uint8 prio,
 
 			if (et->brc_hot &&
 			    CTF_HOTBRC_CMP(et->brc_hot, evh->ether_dhost, (void*)et->dev) &&
-			    (evh->vlan_type == HTON16(ETHER_TYPE_8021Q))) {
+			    (evh->vlan_type == HTON16(ETHER_TYPE_8021Q)) &&
+			    ((evh->ether_type == HTON16(ETHER_TYPE_IP)) ||
+			     (evh->ether_type == HTON16(ETHER_TYPE_IPV6)))) {
 
 				return TRUE;
 			}
@@ -458,7 +459,12 @@ is_pkt_chainable(et_info_t *et, void * pkt, void *pkthdr, uint8 prio,
 		} else {
 
 			/* Packets are received without VLAN Tag on GMAC forwarders */
-			return !ETHER_ISMULTI(eh);
+
+			if ((eh->ether_type == HTON16(ETHER_TYPE_IP)) ||
+			    (eh->ether_type == HTON16(ETHER_TYPE_IPV6))) {
+
+				return TRUE;
+			}
 		}
 	}
 
@@ -480,6 +486,8 @@ is_pkt_chainable(et_info_t *et, void * pkt, void * pkthdr, uint8 prio,
 	    CTF_HOTBRC_CMP(et->brc_hot, evh, (void *)et->dev) &&
 	    (prio == cd->h_prio) &&
 	    (evh->vlan_type == HTON16(ETHER_TYPE_8021Q)) &&
+	    ((evh->ether_type == HTON16(ETHER_TYPE_IP)) ||
+	     (evh->ether_type == HTON16(ETHER_TYPE_IPV6))) &&
 	    (!RXH_FLAGS(et->etc, PKTDATA(et->osh, pkt)))) {
 
 		return TRUE;
@@ -866,11 +874,6 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	et->fwdh = (struct fwder *)NULL;
 
 	if (DEV_FWDER(et->etc)) { /* Attach driver to forwarder */
-
-		if (ddr_aliasing_enabled() && !getintvar(NULL, "pacp_tx_off")) {
-			osl_flag_set(osh, OSL_FWDERBUF);
-		}
-
 		/* Ethernet network interface uses "ethXX". Use "fwdXX" instead */
 		strncpy(dev->name, DEV_FWDER_NAME, 3);
 
@@ -1057,7 +1060,6 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		dev->netdev_ops = NULL;
 		goto fail;
 	}
-	et->dev_registered = TRUE;
 
 #ifdef __ARM_ARCH_7A__
 	dev->features = (NETIF_F_SG | NETIF_F_FRAGLIST | NETIF_F_ALL_CSUM);
@@ -1295,7 +1297,7 @@ et_free(et_info_t *et)
 		ctf_dev_unregister(et->cih, et->dev);
 #endif /* HNDCTF */
 
-	if (et->dev_registered) {
+	if (et->dev) {
 		if (et->dev->netdev_ops)
 			unregister_netdev(et->dev);
 
@@ -1308,7 +1310,6 @@ et_free(et_info_t *et)
 #endif
 		et->dev = NULL;
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36) */
-		et->dev_registered = FALSE;
 	}
 
 #ifdef CTFPOOL
@@ -1698,11 +1699,10 @@ et_sendnext(et_info_t *et)
 			PKTCLRCHAINED(et->osh, p);
 			/* replicate vlan header contents from curr frame */
 			if ((n != NULL) && (vlan_type == HTON16(ETHER_TYPE_8021Q))) {
-				uint8 *n_evh = PKTPUSH(et->osh, n, VLAN_TAG_LEN);
-
-				/* Retain orig ether_type */
-				bcopy(PKTDATA(et->osh, p), n_evh,
-					OFFSETOF(struct ethervlan_header, ether_type));
+				uint8 *n_evh;
+				n_evh = PKTPUSH(et->osh, n, VLAN_TAG_LEN);
+				*(struct ethervlan_header *)n_evh =
+				*(struct ethervlan_header *)PKTDATA(et->osh, p);
 			} else if (n == NULL)
 				PKTCSETFLAG(p, 1);
 
@@ -2478,9 +2478,7 @@ et_sendup_chain_error_handler(et_info_t *et, struct sk_buff *skb, uint sz, int32
 		PKTCSETLEN(skb, PKTLEN(et->etc->osh, skb));
 
 		if (et_ctf_forward(et, skb) == BCME_OK) {
-			/* partial packets of this chain can be forwarded by CTF */
-			ET_ERROR(("et%d: unexpected forwarding\n", et->etc->unit));
-			continue;
+			ET_ERROR(("et%d: shall not happen\n", et->etc->unit));
 		}
 
 		if (et->etc->qos)
