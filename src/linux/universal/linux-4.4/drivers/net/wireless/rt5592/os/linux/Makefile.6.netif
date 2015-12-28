@@ -1,0 +1,123 @@
+include $(RT28xx_DIR)/os/linux/config.mk
+
+#ifdef CONFIG_AP_SUPPORT
+ifeq ($(RT28xx_MODE),AP)
+MOD_NAME = rtnet$(MODULE)ap
+endif
+#endif // CONFIG_AP_SUPPORT //
+
+
+
+obj-m := $(MOD_NAME).o
+
+#ifdef CONFIG_AP_SUPPORT
+ifeq ($(RT28xx_MODE),AP)
+$(MOD_NAME)-objs := \
+	../../ap/ap_mbss_inf.o\
+	../../os/linux/ap_ioctl.o\
+	../../os/linux/rt_main_dev.o
+
+ifeq ($(HAS_CFG80211_SUPPORT),y)
+$(MOD_NAME)-objs += \
+	../../os/linux/cfg80211.o
+endif
+
+ifeq ($(HAS_WDS),y)
+$(MOD_NAME)-objs += \
+	../../ap/ap_wds_inf.o
+endif
+
+ifeq ($(HAS_APCLI),y)
+$(MOD_NAME)-objs += \
+	../../ap/ap_apcli_inf.o
+endif
+
+ifeq ($(HAS_MESH_SUPPORT),y)
+$(MOD_NAME)-objs += \
+	../../common/mesh_inf.o
+endif
+
+endif
+#endif // CONFIG_AP_SUPPORT //
+
+
+
+#chip related
+
+
+
+
+#ifdef RT3090
+ifneq ($(findstring 3090,$(CHIPSET)),)
+$(MOD_NAME)-objs += \
+	../../os/linux/rt_pci_rbus.o\
+	../../os/linux/pci_main_dev.o
+endif
+#endif // RT3090 //
+
+
+
+
+#ifdef RT3390
+ifneq ($(findstring 3390,$(CHIPSET)),)
+$(MOD_NAME)-objs += \
+	../../os/linux/rt_pci_rbus.o\
+	../../os/linux/pci_main_dev.o
+endif
+#endif // RT3390 //
+
+
+
+
+#ifdef RTMP_MAC_PCI
+#ifdef RT3593
+ifneq ($(findstring 3593,$(CHIPSET)),)
+$(MOD_NAME)-objs += \
+	../../os/linux/rt_pci_rbus.o\
+	../../os/linux/pci_main_dev.o
+endif
+#endif // RT3593 //
+#endif // RTMP_MAC_PCI //
+
+
+
+#ifdef RTMP_MAC_PCI
+#ifdef RT5592
+ifneq ($(findstring 5592,$(CHIPSET)),)
+$(MOD_NAME)-objs += \
+        ../../common/rt_pci_rbus.o\
+        ../../os/linux/pci_main_dev.o
+endif
+#endif // RT5592 //
+#endif // RTMP_MAC_PCI //
+
+clean:
+	rm -f ../../common/*.o
+	rm -f ../../common/.*.{cmd,flags,d}
+	rm -f ../../os/linux/*.{o,ko,mod.{o,c}}
+	rm -f ../../os/linux/.*.{cmd,flags,d}
+	rm -fr ../../os/linux/.tmp_versions
+	rm -f ../../os/linux/Module.symvers
+	rm -f ../../os/linux/Modules.symvers
+	rm -f ../../os/linux/Module.markers
+	rm -f ../../os/linux/modules.order
+	rm -f ../../chips/*.o
+	rm -f ../../chips/.*.{cmd,flags,d}
+ifeq ($(RT28xx_MODE),AP)
+	rm -f ../../ap/*.o
+	rm -f ../../ap/.*.{cmd,flags,d}
+else
+ifeq ($(RT28xx_MODE),STA)
+	rm -f ../../sta/*.o
+	rm -f ../../sta/.*.{cmd,flags,d}
+endif
+endif
+
+install:
+	install -d $(LINUX_SRC_MODULE)
+	install -m 644 -c $(addsuffix .ko,$(MOD_NAME)) $(LINUX_SRC_MODULE)
+	/sbin/depmod -a ${shell uname -r}
+
+uninstall:
+	rm -rf $(addprefix $(LINUX_SRC_MODULE),$(addsuffix .ko,$(MOD_NAME)))
+	/sbin/depmod -a ${shell uname -r}

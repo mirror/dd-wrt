@@ -1,0 +1,94 @@
+config RLT_AP_SUPPORT
+	tristate "MediaTek RLT WiFi AP Support"
+#	depends on NET_RADIO 
+	select WIRELESS_EXT
+	select WEXT_SPY
+	select WEXT_PRIV
+
+config WDS_SUPPORT
+	bool "WDS"
+	depends on RLT_AP_SUPPORT
+
+config MBSS_SUPPORT
+	bool "MBSSID"
+	depends on RLT_AP_SUPPORT
+
+config NEW_MBSSID_MODE
+	bool "New MBSSID Mode"
+	depends on RLT_AP_SUPPORT || RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || RALINK_RT6352 || RALINK_MT7620
+	depends on MBSS_SUPPORT
+	default n
+
+config ENHANCE_NEW_MBSSID_MODE
+    	bool "Enhanced MBSSID Mode"
+    	depends on NEW_MBSSID_MODE
+    	default n
+
+config APCLI_SUPPORT
+	bool "AP-Client Support"
+	depends on RLT_AP_SUPPORT
+
+config APCLI_CERT_SUPPORT
+        bool "AP-Client TGn Cert Support"
+	depends on RLT_AP_SUPPORT
+        depends on APCLI_SUPPORT
+        default n
+
+config MAC_REPEATER_SUPPORT
+	bool "MAC Repeater Support"
+	depends on RLT_AP_SUPPORT || RALINK_RT6352 || RALINK_MT7620
+	depends on APCLI_SUPPORT
+	default n
+
+config DFS_SUPPORT
+	bool "DFS Support"
+	depends on RLT_AP_SUPPORT
+	select RALINK_TIMER_DFS
+
+config LLTD_SUPPORT
+	bool "LLTD (Link Layer Topology Discovery Protocol)"
+	depends on RLT_AP_SUPPORT
+	default n
+
+config NINTENDO_AP
+	bool "Nintendo AP Support"
+	depends on RLT_AP_SUPPORT
+	default n
+
+config COC_SUPPORT
+	bool "CoC Support"
+	depends on RLT_AP_SUPPORT
+	default n
+
+config DELAYED_TCP_ACK_SUPPORT
+        bool "Delayed TCP ACK Support"
+        depends on RLT_AP_SUPPORT
+        default n
+
+#config MESH_SUPPORT
+#       bool "MESH Support"
+#       depends on RLT_AP_SUPPORT
+
+#config DOT11R_FT_SUPPORT
+#       bool "802.11r Fast BSS Transition"
+#       depends on RLT_AP_SUPPORT
+
+#config DOT11K_RRM_SUPPORT
+#       bool "802.11k Radio Resource Management"
+#       depends on RLT_AP_SUPPORT
+
+#config RT2860V2_SNMP
+#	bool "Net-SNMP Support"
+#	depends on RLT_AP_SUPPORT
+
+#config MCAST_RATE_SPECIFIC
+#	bool "User specific tx rate of mcast pkt"
+#	depends on RLT_AP_SUPPORT
+
+#config EXT_BUILD_CHANNEL_LIST
+#	bool "Extension Channel List"
+#	depends on RLT_AP_SUPPORT
+
+#config AUTO_CH_SELECT_ENHANCE
+#	bool "Auto Channel Selection Enhancement"
+#	depends on RLT_AP_SUPPORT
