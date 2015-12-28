@@ -1,0 +1,34 @@
+menuconfig ARCH_QCOM
+	bool "Qualcomm Support" if ARCH_MULTI_V7
+	select ARCH_SUPPORTS_BIG_ENDIAN
+	select ARM_GIC
+	select ARM_AMBA
+	select PINCTRL
+	select QCOM_SCM if SMP
+	select PCI_DOMAINS if PCI
+	help
+	  Support for Qualcomm's devicetree based systems.
+
+config MSM_PCIE
+	bool "MSM PCIe Controller driver"
+	depends on PCI && PCI_MSI
+	select PCI_DOMAINS
+	help
+	  Enables the PCIe functionality by configures PCIe core on
+	  MSM chipset and by enabling the ARM PCI framework extension.
+
+if ARCH_QCOM
+
+config ARCH_MSM8X60
+	bool "Enable support for MSM8X60"
+	select CLKSRC_QCOM
+
+config ARCH_MSM8960
+	bool "Enable support for MSM8960"
+	select CLKSRC_QCOM
+
+config ARCH_MSM8974
+	bool "Enable support for MSM8974"
+	select HAVE_ARM_ARCH_TIMER
+
+endif

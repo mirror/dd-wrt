@@ -1,0 +1,157 @@
+config RTPCI_AP
+	tristate "Ralink RTPCI 802.11n AP support"
+	select WIRELESS_EXT
+	select WEXT_SPY
+	select WEXT_PRIV
+
+config  RTPCI_AP_LED
+	bool "LED Support"
+	depends on RTPCI_AP
+
+config  RTPCI_AP_WSC
+	bool "WPS support including WPS2.0" 
+	depends on RTPCI_AP
+	default y
+
+config  RTPCI_AP_WSC_V2
+		bool "WSC 2.0(WiFi Simple Config 2.0)"
+	depends on RTPCI_AP_WSC
+	default y
+
+config  RTPCI_AP_LLTD
+	bool "LLTD (Link Layer Topology Discovery Protocol)"
+	depends on RTPCI_AP
+
+config  RTPCI_AP_WDS
+	bool "WDS support"
+	depends on RTPCI_AP
+
+config RTPCI_AP_MBSS
+	bool "MBSS support"
+	depends on RTPCI_AP
+	default y
+
+config RTPCI_AP_NEW_MBSS_MODE
+	bool "New MBSS support"
+	depends on RTPCI_AP_MBSS
+	default y
+
+config  RTPCI_AP_APCLI
+	bool "AP-Client Support"
+	depends on RTPCI_AP
+
+config RTPCI_AP_IGMP_SNOOP
+	bool "IGMP snoop support"
+	depends on RTPCI_AP
+
+config  RTPCI_AP_NETIF_BLOCK
+	bool "NETIF Block"
+	depends on RTPCI_AP
+	help
+	Support Net interface block while Tx-Sw queue full
+
+config  RTPCI_AP_DFS
+	bool "DFS support"
+	depends on RTPCI_AP
+	#select RALINK_TIMER_DFS
+
+config  RTPCI_AP_CARRIER
+	bool "Carrier Detection support"
+	depends on RTPCI_AP
+	#select RALINK_TIMER_DFS
+
+config  RTPCI_AP_DLS
+	bool "DLS ((Direct-Link Setup) Support"
+	depends on RTPCI_AP
+
+config  RTPCI_AP_IDS
+	bool "IDS (Intrusion Detection System) Support"
+	depends on RTPCI_AP
+
+config  RTPCI_AP_FLASH
+	bool "Flash Support"
+	depends on RTPCI_AP
+
+config RTPCI_AP_WAPI
+	bool "WAPI support"
+	depends on RTPCI_AP
+
+#config  RTPCI_GREENAP
+#	bool "Green AP Support"
+#	depends on RTPCI_AP
+
+config RTPCI_80211N_DRAFT3
+	bool "802.11n Draft3 support"
+	depends on RTPCI_AP
+	default y
+
+config  RTPCI_MC_SUPPORT
+    bool "Multiple Card Support"
+    depends on RTPCI_AP
+
+config  RTPCI_EXT_CHANNEL_LIST
+	bool "Extension Channel List"
+	depends on RTPCI_AP
+
+# Chip related
+config RT3090_AP_INCLUDE
+	bool "RT3090 support"
+	depends on RTPCI_AP
+
+config RT3593_AP_INCLUDE
+	bool "RT3593 support"
+	depends on RTPCI_AP
+
+config RTPCI_AP_HIGH_POWER
+	bool "High Power Support"
+	depends on RTPCI_AP && RT3593_AP_INCLUDE
+
+config RTPCI_AP_VIDEO_TURBINE
+	bool "Video Turbine support"
+	depends on RTPCI_AP && RT3593_AP_INCLUDE
+
+config RTPCI_TXBF_SUPPORT
+	bool "Tx Beamforming support"
+	depends on RTPCI_AP && RT3593_AP_INCLUDE
+
+config RT5392_AP_INCLUDE
+	bool "RT5392 support"
+	depends on RTPCI_AP
+
+config RT5592_AP_INCLUDE
+	bool "RT5592 support"
+	depends on RTPCI_AP
+	default y
+
+config RT5592_EP_SUPPORT
+	bool "RT5592 External PA support"
+	depends on RT5592_AP_INCLUDE
+
+# ATE
+config RTPCI_AP_ATE
+	bool "ATE support"
+	depends on RTPCI_AP
+
+config RT3090_AP_ATE
+	bool "RT3090 ATE support"
+	depends on RTPCI_AP_ATE && RT3090_AP_INCLUDE
+
+config RT3593_AP_ATE
+	bool "RT3593 ATE support"
+	depends on RTPCI_AP_ATE && RT3593_AP_INCLUDE
+
+config RT5392_AP_ATE
+	bool "RT5392 ATE support"
+	depends on RTPCI_AP_ATE && RT5392_AP_INCLUDE
+
+config RT5592_AP_ATE
+	bool "RT5592 ATE support"
+	depends on RTPCI_AP_ATE && RT5592_AP_INCLUDE
+	default y
+
+# QA
+config RTPCI_AP_QA
+	bool "QA tool support"
+	depends on RTPCI_AP_ATE
+	default y
+
