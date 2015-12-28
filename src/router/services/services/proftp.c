@@ -116,7 +116,12 @@ void start_ftpsrv(void)
 		"AllowOverwrite  on\n"
 		"AllowRetrieveRestart  on\n"
 		"AllowStoreRestart  on\n"
-		"<Limit SITE_CHMOD>\n" "  DenyAll\n" "</Limit>\n" "DelayEngine     off\n" "WtmpLog         off\n" "DefaultRoot     ~\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("proftpd_port"));
+		"<Limit SITE_CHMOD>\n" 
+		"  DenyAll\n" 
+		"</Limit>\n" 
+		"DelayEngine     off\n" 
+		"WtmpLog         off\n" 
+		"DefaultRoot     ~\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("proftpd_port"));
 
 	samba3shares = getsamba3shares();
 	for (cs = samba3shares; cs; cs = csnext) {
@@ -139,7 +144,7 @@ void start_ftpsrv(void)
 			goto nextshare;
 		}
 
-		fprintf(fp, "<Directory      /%s/*>\n", cs->label);
+		fprintf(fp, "<Directory      \"/%s/*\">\n", cs->label);
 
 		fprintf(fp, "   <Limit WRITE>\n");
 		fprintf(fp, "%s", !strcmp(cs->access_perms, "ro") ? "DenyAll\n" : "\n");
@@ -150,9 +155,9 @@ void start_ftpsrv(void)
 			samba3users = getsamba3users();
 			for (cu = samba3users; cu; cu = cunext) {
 				if (!strcmp(csu->username, cu->username) && (cu->sharetype & SHARETYPE_FTP)) {
-					fprintf(fp, "AllowUser %s\n", csu->username);
-					sysprintf("mkdir -p /tmp/proftpd/users/%s/%s", cu->username, cs->label);
-					sysprintf("mount --bind %s/%s /tmp/proftpd/users/%s/%s", cs->mp, cs->sd, cu->username, cs->label);
+					fprintf(fp, "AllowUser \"%s\"\n", csu->username);
+					sysprintf("mkdir -p \"/tmp/proftpd/users/%s/%s\"", cu->username, cs->label);
+					sysprintf("mount --bind \"%s/%s\" \"/tmp/proftpd/users/%s/%s\"", cs->mp, cs->sd, cu->username, cs->label);
 				}
 				cunext = cu->next;
 				free(cu);
@@ -185,10 +190,16 @@ void start_ftpsrv(void)
 	// Anonymous ftp - read only
 	if (nvram_match("proftpd_anon", "1")) {
 		fprintf(fp,
-			"<Anonymous      /%s>\n"
+			"<Anonymous      \"/%s\">\n"
 			"User           ftp\n"
 			"Group          root\n"
-			"UserAlias      anonymous ftp\n" "<Directory *>\n" "  <Limit WRITE>\n" "    DenyAll\n" "  </Limit>\n" "</Directory>\n" "</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
+			"UserAlias      anonymous ftp\n" 
+			"<Directory *>\n" 
+			"  <Limit WRITE>\n" 
+			"    DenyAll\n" 
+			"  </Limit>\n" 
+			"</Directory>\n" 
+			"</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
 	}
 	fclose(fp);
 	chmod("/tmp/proftpd/etc/passwd", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
