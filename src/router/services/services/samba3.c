@@ -146,8 +146,8 @@ void start_samba3(void)
 			}
 			if (strlen(cs->label)) {
 				fprintf(fp, "[%s]\n", cs->label);
-				fprintf(fp, "comment = %s\n", cs->label);
-				fprintf(fp, "path = %s/%s\n", cs->mp, cs->sd);
+				fprintf(fp, "comment = \"%s\"\n", cs->label);
+				fprintf(fp, "path = \"%s/%s\"\n", cs->mp, cs->sd);
 				fprintf(fp, "read only = %s\n", !strcmp(cs->access_perms, "ro") ? "Yes" : "No");
 				fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "Yes" : "No");
 				if (!cs->public) {
