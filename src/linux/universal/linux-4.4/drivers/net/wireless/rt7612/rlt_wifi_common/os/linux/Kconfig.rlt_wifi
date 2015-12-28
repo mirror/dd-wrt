@@ -1,0 +1,244 @@
+config WIFI_BASIC_FUNC
+	bool "Basic Functions"
+	select WIRELESS_EXT
+	select WEXT_SPY
+	select WEXT_PRIV
+        
+config WSC_INCLUDED
+	bool "WSC(WiFi Simple Config)"
+	depends on WIFI_DRIVER
+    	default y
+
+config WSC_V2_SUPPORT
+	bool "WSC V2(WiFi Simple Config Version 2.0)"
+	depends on WIFI_DRIVER
+    	default y
+
+config WSC_NFC_SUPPORT
+	bool "WSC out-of-band(NFC)"
+        depends on WIFI_DRIVER
+    	default n
+
+config DOT11N_DRAFT3
+	bool "802.11n Draft3"
+	depends on WIFI_DRIVER
+    	default n
+    
+config DOT11_VHT_AC
+	bool "802.11ac"
+	depends on WIFI_DRIVER
+    	default n
+    
+config DOT11W_PMF_SUPPORT
+	bool "PMF Support"
+	depends on WIFI_DRIVER
+    	default n
+
+config TXBF_SUPPORT
+    	bool "Tx Bean Forming Support"
+    	depends on WIFI_DRIVER
+    	default n
+
+#config WMM_ACM_SUPPORT
+#	bool "WMM ACM"
+#	depends on WIFI_DRIVER
+#   	default n
+	
+config LLTD_SUPPORT
+	bool "LLTD (Link Layer Topology Discovery Protocol)"
+	depends on WIFI_DRIVER
+    	default n
+
+config QOS_DLS_SUPPORT
+	bool "802.11e DLS ((Direct-Link Setup) Support"
+	depends on WIFI_DRIVER
+    	default n
+
+config WAPI_SUPPORT
+	bool "WAPI Support"
+	depends on WIFI_DRIVER
+    	default n
+
+config CARRIER_DETECTION_SUPPORT
+	bool "Carrier Detect"
+	depends on WIFI_DRIVER
+    	default n
+
+config ED_MONITOR_SUPPORT
+        bool "ED CCA Monitor Support"
+        depends on WIFI_DRIVER
+        default n
+
+config IGMP_SNOOP_SUPPORT
+	bool "IGMP Snooping"
+	depends on WIFI_DRIVER
+    	default n
+
+config BLOCK_NET_IF
+	bool "NETIF Block"
+	depends on WIFI_DRIVER
+    	default n
+
+#config VIDEO_TURBINE_SUPPORT
+#	bool "Video Turbine support"
+#	depends on WIFI_DRIVER
+#   	default n
+
+#config RA_CLASSIFIER
+#	tristate "Ralink Flow Classifier"
+#	depends on WIFI_DRIVER
+#	default n
+
+config RATE_ADAPTION
+    	bool "New Rate Adaptation Support"
+    	depends on WIFI_DRIVER
+    	default n
+
+config NEW_RATE_ADAPT_SUPPORT
+    	bool "Intelligent Rate Adaption"
+	depends on RATE_ADAPTION
+    	depends on WIFI_DRIVER
+    	default y
+
+config AGS_SUPPORT
+	bool "Adaptive Group Switching"
+	depends on RATE_ADAPTION
+	depends on WIFI_DRIVER
+    	default n
+    
+config IDS_SUPPORT
+	bool "IDS(Intrusion Detection System) Support"
+	depends on WIFI_DRIVER
+    	default n
+
+config WIFI_WORK_QUEUE
+	bool "Work Queue"
+	depends on WIFI_DRIVER
+    	default n
+
+config WIFI_SKB_RECYCLE
+    	bool "SKB Recycle(Linux)"
+    	depends on WIFI_DRIVER
+    	default n
+
+config RTMP_FLASH_SUPPORT
+	bool "Flash Support"
+	depends on WIFI_DRIVER
+    	default n
+
+config LED_CONTROL_SUPPORT
+	bool "LED Control Support"
+	depends on WIFI_DRIVER
+    	default n
+
+config SINGLE_SKU_V2
+    	bool "Single SKU V2"
+    	depends on WIFI_DRIVER || RALINK_RT6352
+    	default n
+
+config HW_ANTENNA_DIVERSITY
+	bool "Antenna Diversity Support"
+	depends on RLT_AP_SUPPORT || RLT_STA_SUPPORT
+	depends on RALINK_RT5350
+    	default n
+
+config ATE_SUPPORT
+	bool "ATE/QA Support"
+	depends on WIFI_DRIVER
+    	default n
+
+config  RT2860V2_AP_32B_DESC
+	bool "32 Byte Descriptor Support"
+	depends on WIFI_DRIVER
+	depends on RALINK_RT6352 || RALINK_MT7620
+	default n
+
+config RT2860V2_AP_MEMORY_OPTIMIZATION
+	bool "Memory Optimization"
+	depends on WIFI_DRIVER
+    	default n
+
+config RTMP_INTERNAL_TX_ALC
+    	bool "TSSI Compensation"
+    	depends on WIFI_DRIVER
+    	depends on RALINK_RT3350 || RALINK_RT3352 || RALINK_RT5350 || RALINK_RT6352
+	default n
+    
+config RTMP_TEMPERATURE_CALIBRATION
+    	bool "Temperature Calibration"
+    	depends on WIFI_DRIVER
+    	depends on RALINK_RT6352
+    	default n
+
+config HOTSPOT
+	bool "Passpoint-R1 Support"
+	depends on WIFI_DRIVER
+    	default n
+
+config CO_CLOCK_SUPPORT
+        bool "co-clock Support"
+        depends on WIFI_DRIVER
+    	default n
+
+menu "PA/LNA Settings of 1st Card"
+config FIRST_CARD_EXTERNAL_PA
+        bool "External Power Amplifier(PA)"
+        depends on WIFI_DRIVER
+    default n
+
+config FIRST_CARD_EXTERNAL_LNA
+        bool "External Low-Noise Amplifier(LNA)"
+        depends on WIFI_DRIVER
+    default n
+endmenu
+
+menu "PA/LNA Settings of 2nd Card"
+config SECOND_CARD_EXTERNAL_PA
+        bool "External Power Amplifier(PA)"
+        depends on WIFI_DRIVER
+    default n
+
+config SECOND_CARD_EXTERNAL_LNA
+        bool "External Low-Noise Amplifier(LNA)"
+        depends on WIFI_DRIVER
+    default n
+endmenu
+
+#
+# Section for chip architectures
+#
+# "RLT MAC Support"
+config RLT_MAC
+	bool
+	depends on WIFI_DRIVER
+    	default n
+
+config RLT_BBP
+    	bool
+
+config RLT_RF
+    	bool
+
+# "RTMP MAC Support"
+config RTMP_MAC
+	bool
+	depends on WIFI_DRIVER
+    	default n
+
+config RTMP_BBP
+    	bool
+
+config RTMP_RF
+    	bool
+
+#
+# Section for interfaces
+#
+config RTMP_PCI_SUPPORT
+    	bool
+
+config RTMP_USB_SUPPORT
+    	bool
+
+config RTMP_RBUS_SUPPORT
+    	bool

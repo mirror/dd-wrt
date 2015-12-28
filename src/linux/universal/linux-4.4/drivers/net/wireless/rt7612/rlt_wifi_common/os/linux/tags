@@ -1,0 +1,1198 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+AP_E2PROM_IOCTL_PostCtrl	rt_profile.c	/^VOID AP_E2PROM_IOCTL_PostCtrl($/;"	f	signature:( IN RTMP_IOCTL_INPUT_STRUCT *wrq, IN PSTRING msg)
+AP_WDS_KeyNameMakeUp	rt_profile.c	/^VOID AP_WDS_KeyNameMakeUp($/;"	f	signature:( IN STRING *pKey, IN UINT32 KeyMaxSize, IN INT KeyId)
+AdapterBlockAllocateMemory	rt_linux.c	/^NDIS_STATUS AdapterBlockAllocateMemory(VOID *handle, VOID **ppAd, UINT32 SizeOfpAd)$/;"	f	signature:(VOID *handle, VOID **ppAd, UINT32 SizeOfpAd)
+AdapterBlockAllocateMemory	rt_linux_symb.c	/^EXPORT_SYMBOL(AdapterBlockAllocateMemory);$/;"	v
+BBUPollingModeClose	bb_soc.c	/^VOID BBUPollingModeClose(IN RTMP_ADAPTER *pAd){$/;"	f	signature:(IN RTMP_ADAPTER *pAd)
+BBUPollingModeInit	bb_soc.c	/^VOID BBUPollingModeInit(IN RTMP_ADAPTER *pAd){$/;"	f	signature:(IN RTMP_ADAPTER *pAd)
+BBUPollingModeStart	bb_soc.c	/^VOID BBUPollingModeStart(IN RTMP_ADAPTER *pAd){$/;"	f	signature:(IN RTMP_ADAPTER *pAd)
+BBUPrepareMAC	bb_soc.c	/^VOID BBUPrepareMAC(IN RTMP_ADAPTER *pAd, PUCHAR macaddr ){$/;"	f	signature:(IN RTMP_ADAPTER *pAd, PUCHAR macaddr )
+BBU_PCIE_Init	bb_soc.c	/^VOID BBU_PCIE_Init(){$/;"	f
+BG_FTPH_Init	br_ftph.c	/^VOID BG_FTPH_Init(VOID)$/;"	f
+BG_FTPH_Init	rt_linux_symb.c	/^EXPORT_SYMBOL(BG_FTPH_Init);$/;"	v
+BG_FTPH_PacketFromApHandle	br_ftph.c	/^UINT32 BG_FTPH_PacketFromApHandle($/;"	f	signature:( IN PNDIS_PACKET pPacket)
+BG_FTPH_PacketFromApHandle	br_ftph.c	/^UINT32 BG_FTPH_PacketFromApHandle(PNDIS_PACKET pPacket);$/;"	p	file:	signature:(PNDIS_PACKET pPacket)
+BG_FTPH_Remove	br_ftph.c	/^VOID BG_FTPH_Remove(VOID)$/;"	f
+BG_FTPH_Remove	rt_linux_symb.c	/^EXPORT_SYMBOL(BG_FTPH_Remove);$/;"	v
+CC	config.mk	/^CC := $(CROSS_COMPILE)gcc$/;"	m
+CFG80211CB	cfg80211drv.c	30;"	d	file:
+CFG80211DBG	cfg80211drv.c	33;"	d	file:
+CFG80211DBG	cfg80211drv.c	35;"	d	file:
+CFG80211DRV_Connect	cfg80211drv.c	/^BOOLEAN CFG80211DRV_Connect($/;"	f	signature:( VOID *pAdOrg, VOID *pData)
+CFG80211DRV_IoctlHandle	cfg80211drv.c	/^INT CFG80211DRV_IoctlHandle($/;"	f	signature:( IN VOID *pAdSrc, IN RTMP_IOCTL_INPUT_STRUCT *wrq, IN INT cmd, IN USHORT subcmd, IN VOID *pData, IN ULONG Data)
+CFG80211DRV_KeyAdd	cfg80211drv.c	/^BOOLEAN CFG80211DRV_KeyAdd($/;"	f	signature:( VOID *pAdOrg, VOID *pData)
+CFG80211DRV_OpsChgVirtualInf	cfg80211drv.c	/^BOOLEAN CFG80211DRV_OpsChgVirtualInf($/;"	f	signature:( VOID *pAdOrg, VOID *pFlgFilter, UINT8 IfType)
+CFG80211DRV_OpsJoinIbss	cfg80211drv.c	/^BOOLEAN CFG80211DRV_OpsJoinIbss($/;"	f	signature:( VOID *pAdOrg, VOID *pData)
+CFG80211DRV_OpsLeave	cfg80211drv.c	/^BOOLEAN CFG80211DRV_OpsLeave($/;"	f	signature:( VOID *pAdOrg)
+CFG80211DRV_OpsScan	cfg80211drv.c	/^BOOLEAN CFG80211DRV_OpsScan($/;"	f	signature:( VOID *pAdOrg)
+CFG80211DRV_OpsSetChannel	cfg80211drv.c	/^BOOLEAN CFG80211DRV_OpsSetChannel($/;"	f	signature:( VOID *pAdOrg, VOID *pData)
+CFG80211DRV_RegNotify	cfg80211drv.c	/^VOID CFG80211DRV_RegNotify($/;"	f	signature:( VOID *pAdOrg, VOID *pData)
+CFG80211DRV_StaGet	cfg80211drv.c	/^BOOLEAN CFG80211DRV_StaGet($/;"	f	signature:( VOID *pAdOrg, VOID *pData)
+CFG80211DRV_SurveyGet	cfg80211drv.c	/^VOID CFG80211DRV_SurveyGet($/;"	f	signature:( VOID *pAdOrg, VOID *pData)
+CFG80211OS_BandInfoGet	rt_linux.c	/^BOOLEAN CFG80211OS_BandInfoGet($/;"	f	signature:( IN VOID *pCB, IN VOID *pWiphyOrg, OUT VOID **ppBand24, OUT VOID **ppBand5)
+CFG80211OS_BandInfoGet	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_BandInfoGet);$/;"	v
+CFG80211OS_ChanInfoGet	rt_linux.c	/^BOOLEAN CFG80211OS_ChanInfoGet($/;"	f	signature:( IN VOID *pCB, IN VOID *pWiphyOrg, IN UINT32 IdBand, IN UINT32 IdChan, OUT UINT32 *pChanId, OUT UINT32 *pPower, OUT BOOLEAN *pFlgIsRadar)
+CFG80211OS_ChanInfoGet	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_ChanInfoGet);$/;"	v
+CFG80211OS_ChanInfoInit	rt_linux.c	/^BOOLEAN CFG80211OS_ChanInfoInit($/;"	f	signature:( IN VOID *pCB, IN UINT32 InfoIndex, IN UCHAR ChanId, IN UCHAR MaxTxPwr, IN BOOLEAN FlgIsNMode, IN BOOLEAN FlgIsBW20M)
+CFG80211OS_ChanInfoInit	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_ChanInfoInit);$/;"	v
+CFG80211OS_ChanNumGet	rt_linux.c	/^UINT32 CFG80211OS_ChanNumGet($/;"	f	signature:( IN VOID *pCB, IN VOID *pWiphyOrg, IN UINT32 IdBand)
+CFG80211OS_ChanNumGet	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_ChanNumGet);$/;"	v
+CFG80211OS_ConnectResultInform	rt_linux.c	/^void CFG80211OS_ConnectResultInform($/;"	f	signature:( IN VOID *pCB, IN UCHAR *pBSSID, IN UCHAR *pReqIe, IN UINT32 ReqIeLen, IN UCHAR *pRspIe, IN UINT32 RspIeLen, IN UCHAR FlgIsSuccess)
+CFG80211OS_ConnectResultInform	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_ConnectResultInform);$/;"	v
+CFG80211OS_RegHint	rt_linux.c	/^VOID CFG80211OS_RegHint($/;"	f	signature:( IN VOID *pCB, IN UCHAR *pCountryIe, IN ULONG CountryIeLen)
+CFG80211OS_RegHint	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_RegHint);$/;"	v
+CFG80211OS_RegHint11D	rt_linux.c	/^VOID CFG80211OS_RegHint11D($/;"	f	signature:( IN VOID *pCB, IN UCHAR *pCountryIe, IN ULONG CountryIeLen)
+CFG80211OS_RegHint11D	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_RegHint11D);$/;"	v
+CFG80211OS_ScanEnd	rt_linux.c	/^VOID CFG80211OS_ScanEnd($/;"	f	signature:( IN VOID *pCB, IN BOOLEAN FlgIsAborted)
+CFG80211OS_ScanEnd	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_ScanEnd);$/;"	v
+CFG80211OS_Scaning	rt_linux.c	/^VOID CFG80211OS_Scaning($/;"	f	signature:( IN VOID *pCB, IN UINT32 ChanId, IN UCHAR *pFrame, IN UINT32 FrameLen, IN INT32 RSSI, IN BOOLEAN FlgIsNMode, IN UINT8 BW)
+CFG80211OS_Scaning	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_Scaning);$/;"	v
+CFG80211OS_SupBandReInit	rt_linux.c	/^BOOLEAN CFG80211OS_SupBandReInit($/;"	f	signature:( IN VOID *pCB, IN CFG80211_BAND *pBandInfo)
+CFG80211OS_SupBandReInit	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_SupBandReInit);$/;"	v
+CFG80211OS_UnRegister	rt_linux.c	/^VOID CFG80211OS_UnRegister($/;"	f	signature:( IN VOID *pCB, IN VOID *pNetDevOrg)
+CFG80211OS_UnRegister	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211OS_UnRegister);$/;"	v
+CFG80211_BeaconCountryRegionParse	cfg80211drv.c	/^VOID CFG80211_BeaconCountryRegionParse($/;"	f	signature:( IN VOID *pAdCB, IN NDIS_802_11_VARIABLE_IEs *pVIE, IN UINT16 LenVIE)
+CFG80211_ConnectResultInform	cfg80211drv.c	/^VOID CFG80211_ConnectResultInform($/;"	f	signature:( IN VOID *pAdCB, IN UCHAR *pBSSID, IN UCHAR *pReqIe, IN UINT32 ReqIeLen, IN UCHAR *pRspIe, IN UINT32 RspIeLen, IN UCHAR FlgIsSuccess)
+CFG80211_NUM_OF_CHAN_5GHZ	cfg80211.c	126;"	d	file:
+CFG80211_Ops	cfg80211.c	/^struct cfg80211_ops CFG80211_Ops = {$/;"	v	typeref:struct:cfg80211_ops
+CFG80211_OpsChannelSet	cfg80211.c	/^static int CFG80211_OpsChannelSet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pDev, IN struct ieee80211_channel *pChan, IN enum nl80211_channel_type ChannelType)
+CFG80211_OpsConnect	cfg80211.c	/^static int CFG80211_OpsConnect($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN struct cfg80211_connect_params *pSme)
+CFG80211_OpsDisconnect	cfg80211.c	/^static int CFG80211_OpsDisconnect($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN u16 ReasonCode)
+CFG80211_OpsIbssJoin	cfg80211.c	/^static int CFG80211_OpsIbssJoin($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN struct cfg80211_ibss_params *pParams)
+CFG80211_OpsIbssLeave	cfg80211.c	/^static int CFG80211_OpsIbssLeave($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev)
+CFG80211_OpsKeyAdd	cfg80211.c	/^static int CFG80211_OpsKeyAdd($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN UINT8 KeyIdx, IN bool Pairwise, IN const UINT8 *pMacAddr, IN struct key_params *pParams)
+CFG80211_OpsKeyDefaultSet	cfg80211.c	/^static int CFG80211_OpsKeyDefaultSet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN UINT8 KeyIdx, IN bool Unicast, IN bool Multicast)
+CFG80211_OpsKeyDel	cfg80211.c	/^static int CFG80211_OpsKeyDel($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN UINT8 KeyIdx, IN bool Pairwise, IN const UINT8 *pMacAddr)
+CFG80211_OpsKeyGet	cfg80211.c	/^static int CFG80211_OpsKeyGet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN UINT8 KeyIdx, IN bool Pairwise, IN const UINT8 *pMacAddr, IN void *pCookie, IN void (*pCallback)(void *cookie, struct key_params *))
+CFG80211_OpsPmksaDel	cfg80211.c	/^static int CFG80211_OpsPmksaDel($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN struct cfg80211_pmksa *pPmksa)
+CFG80211_OpsPmksaFlush	cfg80211.c	/^static int CFG80211_OpsPmksaFlush($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev)
+CFG80211_OpsPmksaSet	cfg80211.c	/^static int CFG80211_OpsPmksaSet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN struct cfg80211_pmksa *pPmksa)
+CFG80211_OpsPwrMgmt	cfg80211.c	/^static int CFG80211_OpsPwrMgmt($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN bool FlgIsEnabled, IN int Timeout)
+CFG80211_OpsRFKill	cfg80211.c	/^static int CFG80211_OpsRFKill($/;"	f	file:	signature:( IN struct wiphy *pWiphy)
+CFG80211_OpsScan	cfg80211.c	/^static int CFG80211_OpsScan($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN struct cfg80211_scan_request *pRequest)
+CFG80211_OpsStaDump	cfg80211.c	/^static int CFG80211_OpsStaDump($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN int Idx, IN UINT8 *pMac, IN struct station_info *pSinfo)
+CFG80211_OpsStaGet	cfg80211.c	/^static int CFG80211_OpsStaGet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN UINT8 *pMac, IN struct station_info *pSinfo)
+CFG80211_OpsSurveyGet	cfg80211.c	/^static int CFG80211_OpsSurveyGet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNdev, IN int Idx, IN struct survey_info *pSurvey)
+CFG80211_OpsTxPwrGet	cfg80211.c	/^static int CFG80211_OpsTxPwrGet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN int *pdBm)
+CFG80211_OpsTxPwrSet	cfg80211.c	/^static int CFG80211_OpsTxPwrSet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN enum nl80211_tx_power_setting Type, IN int dBm)
+CFG80211_OpsTxPwrSet	cfg80211.c	/^static int CFG80211_OpsTxPwrSet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN enum tx_power_setting Type, IN int dBm)
+CFG80211_OpsVirtualInfChg	cfg80211.c	/^static int CFG80211_OpsVirtualInfChg($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct net_device *pNetDevIn, IN enum nl80211_iftype Type, IN u32 *pFlags, struct vif_params *pParams)
+CFG80211_OpsWiphyParamsSet	cfg80211.c	/^static int CFG80211_OpsWiphyParamsSet($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN UINT32 Changed)
+CFG80211_RFKillStatusUpdate	cfg80211.c	/^VOID CFG80211_RFKillStatusUpdate($/;"	f	signature:( IN PVOID pAd, IN BOOLEAN active)
+CFG80211_RegHint	cfg80211drv.c	/^VOID CFG80211_RegHint($/;"	f	signature:( IN VOID *pAdCB, IN UCHAR *pCountryIe, IN ULONG CountryIeLen)
+CFG80211_RegHint11D	cfg80211drv.c	/^VOID CFG80211_RegHint11D($/;"	f	signature:( IN VOID *pAdCB, IN UCHAR *pCountryIe, IN ULONG CountryIeLen)
+CFG80211_RegNotifier	cfg80211.c	/^static INT32 CFG80211_RegNotifier($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN enum reg_set_by Request)
+CFG80211_RegNotifier	cfg80211.c	/^static INT32 CFG80211_RegNotifier($/;"	f	file:	signature:( IN struct wiphy *pWiphy, IN struct regulatory_request *pRequest)
+CFG80211_RegNotifier	cfg80211.c	/^static INT32 CFG80211_RegNotifier($/;"	p	file:	signature:( IN struct wiphy *pWiphy, IN enum reg_set_by Request)
+CFG80211_RegNotifier	cfg80211.c	/^static INT32 CFG80211_RegNotifier($/;"	p	file:	signature:( IN struct wiphy *pWiphy, IN struct regulatory_request *pRequest)
+CFG80211_RegRuleApply	cfg80211drv.c	/^VOID CFG80211_RegRuleApply($/;"	f	signature:( IN VOID *pAdCB, IN VOID *pWiphy, IN UCHAR *pAlpha2)
+CFG80211_Register	cfg80211.c	/^BOOLEAN CFG80211_Register($/;"	f	signature:( IN VOID *pAd, IN struct device *pDev, IN struct net_device *pNetDev)
+CFG80211_ScanEnd	cfg80211drv.c	/^VOID CFG80211_ScanEnd($/;"	f	signature:( IN VOID *pAdCB, IN BOOLEAN FlgIsAborted)
+CFG80211_Scaning	cfg80211drv.c	/^VOID CFG80211_Scaning($/;"	f	signature:( IN VOID *pAdCB, IN UINT32 BssIdx, IN UINT32 ChanId, IN UCHAR *pFrame, IN UINT32 FrameLen, IN INT32 RSSI)
+CFG80211_SupBandInit	rt_linux.c	/^BOOLEAN CFG80211_SupBandInit($/;"	f	signature:( IN VOID *pCB, IN CFG80211_BAND *pBandInfo, IN VOID *pWiphyOrg, IN VOID *pChannelsOrg, IN VOID *pRatesOrg)
+CFG80211_SupBandInit	rt_linux_symb.c	/^EXPORT_SYMBOL(CFG80211_SupBandInit);$/;"	v
+CFG80211_SupBandReInit	cfg80211drv.c	/^BOOLEAN CFG80211_SupBandReInit($/;"	f	signature:( IN VOID *pAdCB)
+CFG80211_UnRegister	cfg80211drv.c	/^VOID CFG80211_UnRegister($/;"	f	signature:( IN VOID *pAdOrg, IN VOID *pNetDev)
+CFG80211_WdevAlloc	cfg80211.c	/^static struct wireless_dev *CFG80211_WdevAlloc($/;"	f	file:	signature:( IN CFG80211_CB *pCfg80211_CB, IN CFG80211_BAND *pBandInfo, IN VOID *pAd, IN struct device *pDev)
+CFLAGS	config.mk	/^	CFLAGS := $(WFLAGS) -Wundef -fno-strict-aliasing -fno-common -ffreestanding -Os -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe -msoft-float  -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic$/;"	m
+CFLAGS	config.mk	/^	CFLAGS := $(WFLAGS) -Wundef -fno-strict-aliasing -fno-common -ffreestanding -Os -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe -msoft-float  -mabi=32 -march=mips32r2 -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic$/;"	m
+CFLAGS	config.mk	/^	CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-common -pipe -mpreferred-stack-boundary=2 -march=i686 -DMODULE -DMODVERSIONS -include $(LINUX_SRC)\/include\/linux\/modversions.h $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^	CFLAGS := -nostdinc -iwithprefix include -D__KERNEL__ -I$(LINUX_SRC)\/include  -Wall -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Os -fno-omit-frame-pointer -fno-omit-frame-pointer -mapcs -mno-sched-prolog -mlittle-endian -mabi=apcs-gnu -D__LINUX_ARM_ARCH__=5 -march=armv5te -mtune=arm9tdmi -msoft-float -Uarm -Wdeclaration-after-statement -c -o $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^	CFLAGS := -v -D__KERNEL__ -DMODULE -I$(LINUX_SRC)\/include -mbig-endian -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common -Uarm -fno-common -pipe -mapcs-32 -D__LINUX_ARM_ARCH__=5 -mcpu=xscale -mtune=xscale -malignment-traps -msoft-float $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^        CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-common -pipe -mpreferred-stack-boundary=2 -march=mips -DMODULE -DMODVERSIONS -include $(LINUX_SRC)\/include\/linux\/modversions.h $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^CFLAGS := $(WFLAGS) -Wundef -fno-strict-aliasing -fno-common -fno-pic -ffreestanding -Os -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe -msoft-float  -mabi=32 -mlong-calls -march=mips32r2 -march=mips32r2 -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic$/;"	m
+CFLAGS	config.mk	/^CFLAGS := $(WFLAGS) -Wundef -fno-strict-aliasing -fno-common -fno-pic -ffreestanding -Os -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe -msoft-float  -mabi=32 -mlong-calls -march=mips32r2 -mtune=34kc -march=mips32r2 -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic$/;"	m
+CFLAGS	config.mk	/^CFLAGS := $(WFLAGS) -nostdinc -iwithprefix include -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -I $(LINUX_SRC)\/include\/asm\/gcc -G 0 -mno-abicalls -fno-pic -pipe  -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap -I$(LINUX_SRC)\/include\/asm-mips\/mach-bcm963xx -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic  -Os -fomit-frame-pointer -Wdeclaration-after-statement  -DMODULE -mlong-calls$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -DMODULE -I$(LINUX_SRC)\/include -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-common -G 0 -mno-abicalls -fno-pic -march=4kc -mips32 -Wa,--trap -pipe -mlong-calls $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -DMODULE=1 -I$(LINUX_SRC)\/include -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common -DCONFIG_IFX_ALG_QOS -DCONFIG_WAN_VLAN_SUPPORT -fomit-frame-pointer -DIFX_PPPOE_FRAME -G 0 -fno-pic -mno-abicalls -mlong-calls -pipe -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap -nostdinc -iwithprefix include $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(CROSS_COMPILE_INCLUDE)\/include -I$(LINUX_SRC)\/include -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common -fno-common -pipe -fno-builtin -D__linux__ -DNO_MM -mapcs-32 -march=armv4 -mtune=arm7tdmi -msoft-float -DMODULE -mshort-load-bytes -nostdinc -iwithprefix -DMODULE $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -I$(LINUX_SRC)\/include\/asm\/gcc -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -DEM86XX_CHIP=EM86XX_CHIPID_TANGO2 -DEM86XX_REVISION=6 -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic -I$(RT2860_DIR)\/include -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -ffreestanding -O2     -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe  -mabi=32 -march=mips32r2 -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap -DMODULE $(WFLAGS) -DSIGMA863X_PLATFORM -DEXPORT_SYMTAB -DPLATFORM_BL2348$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -I$(LINUX_SRC)\/include\/asm\/gcc -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -DEM86XX_CHIP=EM86XX_CHIPID_TANGO2 -DEM86XX_REVISION=6 -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic -I$(RT2860_DIR)\/include -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -ffreestanding -O2     -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe  -mabi=32 -march=mips32r2 -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap -DMODULE $(WFLAGS) -DSIGMA863X_PLATFORM -DEXPORT_SYMTAB$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -I$(LINUX_SRC)\/include\/asm\/gcc -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -DEM86XX_CHIP=EM86XX_CHIPID_TANGO2 -DEM86XX_REVISION=6 -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic -I$(RT2860_DIR)\/include -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -ffreestanding -O2     -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe  -mabi=32 -march=mips32r2 -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap -DMODULE $(WFLAGS) -DSIGMA863X_PLATFORM$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -I$(LINUX_SRC)\/include\/asm\/gcc -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -ffreestanding -O2 -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe -march=lx4189 -Wa, -DMODULE $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -I$(LINUX_SRC)\/include\/asm\/gcc -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -ffreestanding -O2 -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe -mips32r2 -Wa, -DMODULE $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -Wall -O2 -Wundef -Wstrict-prototypes -Wno-trigraphs -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-aliasing -fno-common -fomit-frame-pointer -ffreestanding -m4-nofpu -o $(WFLAGS) $/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common -Uarm -fno-common -pipe -mapcs-32 -D__LINUX_ARM_ARCH__=4 -march=armv4  -mshort-load-bytes -msoft-float -Uarm -DMODULE -DMODVERSIONS -include $(LINUX_SRC)\/include\/linux\/modversions.h $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe  -finline-limit=100000 -march=mips2 -mabi=32 -Wa,--trap -DLINUX -nostdinc -iwithprefix include $(WFLAGS)$/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -mlittle-endian -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -O3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-omit-frame-pointer -mapcs -mno-sched-prolog -mabi=apcs-gnu -mno-thumb-interwork -D__LINUX_ARM_ARCH__=5 -march=armv5te -mtune=arm926ej-s --param max-inline-insns-single=40000  -Uarm -Wdeclaration-after-statement -Wno-pointer-sign -DMODULE $(WFLAGS) $/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -mlittle-endian -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -O3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-omit-frame-pointer -mapcs -mno-sched-prolog -mno-thumb-interwork -D__LINUX_ARM_ARCH__=5 -march=armv5te -mtune=arm926ej-s --param max-inline-insns-single=40000  -Uarm -Wdeclaration-after-statement -Wno-pointer-sign -DMODULE $(WFLAGS) $/;"	m
+CFLAGS	config.mk	/^CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic -I$(LINUX_SRC)\/include -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe  -finline-limit=100000 -march=mips2 -mabi=32 -Wa,--trap -DLINUX -nostdinc -iwithprefix include $(WFLAGS)$/;"	m
+CHIPSET_DAT	config.mk	/^CHIPSET_DAT = 2860$/;"	m
+CHIPSET_DAT	config.mk	/^CHIPSET_DAT = 2870$/;"	m
+Cfg80211_Chan	cfg80211.c	/^static const UCHAR Cfg80211_Chan[] = {$/;"	v	file:
+Cfg80211_Chan	rt_linux.c	/^UCHAR Cfg80211_Chan[] = {$/;"	v
+Cfg80211_Chan	rt_linux_symb.c	/^EXPORT_SYMBOL(Cfg80211_Chan);$/;"	v
+Cfg80211_SupRate	cfg80211.c	/^const struct ieee80211_rate Cfg80211_SupRate[12] = {$/;"	v	typeref:struct:ieee80211_rate
+Cfg80211_SupRate	rt_linux.c	/^const struct ieee80211_rate Cfg80211_SupRate[12] = {$/;"	v	typeref:struct:ieee80211_rate
+CipherSuites	cfg80211.c	/^static const UINT32 CipherSuites[] = {$/;"	v	file:
+CipherSuites	rt_linux.c	/^static const UINT32 CipherSuites[] = {$/;"	v	file:
+ClonePacket	rt_linux.c	/^PNDIS_PACKET ClonePacket($/;"	f	signature:( IN VOID *pReserved, IN PNDIS_PACKET pPacket, IN PUCHAR pData, IN ULONG DataSize)
+ClonePacket	rt_linux_symb.c	/^EXPORT_SYMBOL(ClonePacket);$/;"	v
+Control	rt_linux.c	/^	UCHAR Control;		\/* reference to IEEE Std 802.2 *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+DA	rt_linux.c	/^	UCHAR DA[ETH_ALEN];	\/* broadcast MAC address *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+DAT_FILE_NAME	Makefile	/^DAT_FILE_NAME = conf\/RT$(CHIPSET_DAT)AP.dat$/;"	m
+DAT_FILE_NAME	Makefile	/^DAT_FILE_NAME = conf\/RT$(CHIPSET_DAT)STA.dat$/;"	m
+DAT_PATH	Makefile	/^DAT_PATH = \/etc\/Wireless\/RT$(CHIPSET_DAT)AP$/;"	m
+DAT_PATH	Makefile	/^DAT_PATH = \/etc\/Wireless\/RT$(CHIPSET_DAT)STA$/;"	m
+DEVEXIT	pci_main_dev.c	37;"	d	file:
+DEVEXIT	pci_main_dev.c	42;"	d	file:
+DEVEXIT_P	pci_main_dev.c	38;"	d	file:
+DEVEXIT_P	pci_main_dev.c	43;"	d	file:
+DEVINIT	pci_main_dev.c	39;"	d	file:
+DEVINIT	pci_main_dev.c	44;"	d	file:
+DEVINITDATA	pci_main_dev.c	/^static struct pci_device_id rt_pci_tbl[] DEVINITDATA =$/;"	v	typeref:struct:rt_pci_tbl	file:
+DEVINITDATA	pci_main_dev.c	40;"	d	file:
+DEVINITDATA	pci_main_dev.c	45;"	d	file:
+DSAP	rt_linux.c	/^	UCHAR DSAP;		\/* null *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+DriverBuildDay	sta_ioctl.c	/^    UINT        DriverBuildDay;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+DriverBuildMonth	sta_ioctl.c	/^    UINT        DriverBuildMonth;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+DriverBuildYear	sta_ioctl.c	/^    UINT        DriverBuildYear;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+DriverVersionW	sta_ioctl.c	/^    UCHAR       DriverVersionW;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+DriverVersionX	sta_ioctl.c	/^    UCHAR       DriverVersionX;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+DriverVersionY	sta_ioctl.c	/^    UCHAR       DriverVersionY;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+DriverVersionZ	sta_ioctl.c	/^    UCHAR       DriverVersionZ;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+DuplicatePacket	rt_linux.c	/^PNDIS_PACKET DuplicatePacket($/;"	f	signature:( IN PNET_DEV pNetDev, IN PNDIS_PACKET pPacket, IN UCHAR FromWhichBSSID)
+DuplicatePacket	rt_linux_symb.c	/^EXPORT_SYMBOL(DuplicatePacket);$/;"	v
+EXTRA_CFLAGS	config.mk	/^	EXTRA_CFLAGS := $(WFLAGS) $/;"	m
+EXTRA_CFLAGS	config.mk	/^	EXTRA_CFLAGS := $(WFLAGS) -mabi=64 $(WFLAGS)$/;"	m
+EXTRA_CFLAGS	config.mk	/^        EXTRA_CFLAGS := $(WFLAGS) $/;"	m
+EXTRA_CFLAGS	config.mk	/^        EXTRA_CFLAGS := $(WFLAGS)$/;"	m
+EXTRA_CFLAGS	config.mk	/^        EXTRA_CFLAGS := -v $(WFLAGS) -mbig-endian$/;"	m
+EXTRA_CFLAGS	config.mk	/^EXTRA_CFLAGS := $(WFLAGS) -I$(RT28xx_DIR)\/include$/;"	m
+EXTRA_CFLAGS	config.mk	/^EXTRA_CFLAGS := -D__KERNEL__ -DMODULE=1 -I$(LINUX_SRC)\/include -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common -DCONFIG_IFX_ALG_QOS -DCONFIG_WAN_VLAN_SUPPORT -fomit-frame-pointer -DIFX_PPPOE_FRAME -G 0 -fno-pic -mno-abicalls -mlong-calls -pipe -finline-limit=100000 -mabi=32 -G 0 -mno-abicalls -fno-pic -pipe -msoft-float -march=xlr -ffreestanding  -march=xlr -Wa,--trap, -nostdinc -iwithprefix include $(WFLAGS)$/;"	m
+EXTRA_CFLAGS	config.mk	/^EXTRA_CFLAGS := -D__KERNEL__ -DMODULE=1 -I$(LINUX_SRC)\/include -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common -DCONFIG_IFX_ALG_QOS -DCONFIG_WAN_VLAN_SUPPORT -fomit-frame-pointer -DIFX_PPPOE_FRAME -G 0 -fno-pic -mno-abicalls -mlong-calls -pipe -finline-limit=100000 -mabi=64 -G 0 -mno-abicalls -fno-pic -pipe -msoft-float -march=xlr -ffreestanding  -march=xlr -Wa,--trap, -nostdinc -iwithprefix include $(WFLAGS)$/;"	m
+EXTRA_CFLAGS	config.mk	/^EXTRA_CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)\/include -I$(LINUX_SRC)\/include\/asm\/gcc -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -I$(LINUX_SRC)\/include\/asm-mips\/mach-tango2 -DEM86XX_CHIP=EM86XX_CHIPID_TANGO2 -DEM86XX_REVISION=6 -I$(LINUX_SRC)\/include\/asm-mips\/mach-generic -I$(RT2860_DIR)\/include -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -ffreestanding -O2     -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic -pipe  -mabi=32 -march=74kc -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap -DMODULE $(WFLAGS) -DSIGMA863X_PLATFORM -DEXPORT_SYMTAB -DPLATFORM_BL23570$/;"	m
+ExpandPacket	rt_linux.c	/^PNDIS_PACKET ExpandPacket($/;"	f	signature:( IN VOID *pReserved, IN PNDIS_PACKET pPacket, IN UINT32 ext_head_len, IN UINT32 ext_tail_len)
+ExpandPacket	rt_linux_symb.c	/^EXPORT_SYMBOL(ExpandPacket);$/;"	v
+FIRST_AP_PROFILE_PATH	rt_profile.c	51;"	d	file:
+FIRST_CHIP_ID	rt_profile.c	52;"	d	file:
+FIRST_EEPROM_FILE_PATH	rt_profile.c	50;"	d	file:
+FlashRead	rt_linux.c	/^int32_t FlashRead($/;"	p	file:	signature:( uint32_t *dst, uint32_t *src, uint32_t count)
+FlashWrite	rt_linux.c	/^int32_t FlashWrite($/;"	p	file:	signature:( uint16_t *source, uint16_t *destination, uint32_t numBytes)
+FlgIsUtilInit	rt_linux.c	/^BOOLEAN FlgIsUtilInit = FALSE;$/;"	v
+GLOBAL_AP_VIDEO_CONFIG	rt_proc.c	/^AP_VIDEO_STRUCT GLOBAL_AP_VIDEO_CONFIG;$/;"	v
+GROUP_KEY_NO	sta_ioctl.c	56;"	d	file:
+GetSpecInfoIdxFromBssid	vr_ikans.c	/^static INT32 GetSpecInfoIdxFromBssid(PRTMP_ADAPTER pAd, INT32 FromWhichBSSID)$/;"	f	file:	signature:(PRTMP_ADAPTER pAd, INT32 FromWhichBSSID)
+HAS_ANDES_FIRMWARE_SUPPORT	config.mk	/^HAS_ANDES_FIRMWARE_SUPPORT=n$/;"	m
+HAS_ANDROID_SUPPORT	config.mk	/^HAS_ANDROID_SUPPORT=n$/;"	m
+HAS_ANTENNA_DIVERSITY_SUPPORT	config.mk	/^HAS_ANTENNA_DIVERSITY_SUPPORT=n$/;"	m
+HAS_APCLI	config.mk	/^HAS_APCLI=n$/;"	m
+HAS_APCLI_WPA_SUPPLICANT	config.mk	/^HAS_APCLI_WPA_SUPPLICANT=n$/;"	m
+HAS_ATE	config.mk	/^HAS_ATE=n$/;"	m
+HAS_AUTO_CH_SELECT_ENHANCE	config.mk	/^HAS_AUTO_CH_SELECT_ENHANCE=n$/;"	m
+HAS_BGFP_OPEN_SUPPORT	config.mk	/^HAS_BGFP_OPEN_SUPPORT=n$/;"	m
+HAS_BGFP_SUPPORT	config.mk	/^HAS_BGFP_SUPPORT=n$/;"	m
+HAS_BLOCK_NET_IF	config.mk	/^HAS_BLOCK_NET_IF=n$/;"	m
+HAS_BT_COEXISTENCE_SUPPORT	config.mk	/^HAS_BT_COEXISTENCE_SUPPORT=n$/;"	m
+HAS_CFG80211_SUPPORT	config.mk	/^HAS_CFG80211_SUPPORT=n$/;"	m
+HAS_CLIENT_WDS_SUPPORT	config.mk	/^HAS_CLIENT_WDS_SUPPORT=n$/;"	m
+HAS_CSO_SUPPORT	config.mk	/^HAS_CSO_SUPPORT=n$/;"	m
+HAS_CS_SUPPORT	config.mk	/^HAS_CS_SUPPORT=n$/;"	m
+HAS_DFS_SUPPORT	config.mk	/^HAS_DFS_SUPPORT=n$/;"	m
+HAS_DOT11K_RRM_SUPPORT	config.mk	/^HAS_DOT11K_RRM_SUPPORT=n$/;"	m
+HAS_DOT11N_DRAFT3_SUPPORT	config.mk	/^HAS_DOT11N_DRAFT3_SUPPORT=y$/;"	m
+HAS_DOT11R_FT_SUPPORT	config.mk	/^HAS_DOT11R_FT_SUPPORT=n$/;"	m
+HAS_DOT11V_WNM_SUPPORT	config.mk	/^HAS_DOT11V_WNM_SUPPORT=n$/;"	m
+HAS_DOT11W_PMF_SUPPORT	config.mk	/^HAS_DOT11W_PMF_SUPPORT=n$/;"	m
+HAS_DOT11Z_TDLS_SUPPORT	config.mk	/^HAS_DOT11Z_TDLS_SUPPORT=n$/;"	m
+HAS_DOT11_N_SUPPORT	config.mk	/^HAS_DOT11_N_SUPPORT=y$/;"	m
+HAS_DOT11_VHT_SUPPORT	config.mk	/^HAS_DOT11_VHT_SUPPORT=y$/;"	m
+HAS_DPA_S_SUPPORT	config.mk	/^HAS_DPA_S_SUPPORT=n$/;"	m
+HAS_DPA_T_SUPPORT	config.mk	/^HAS_DPA_T_SUPPORT=n$/;"	m
+HAS_EASY_CONFIG_SETUP_SUPPORT	config.mk	/^HAS_EASY_CONFIG_SETUP_SUPPORT=n$/;"	m
+HAS_ETH_CONVERT_SUPPORT	config.mk	/^HAS_ETH_CONVERT_SUPPORT=n$/;"	m
+HAS_EXT_BUILD_CHANNEL_LIST	config.mk	/^HAS_EXT_BUILD_CHANNEL_LIST=n$/;"	m
+HAS_FPGA_MODE	config.mk	/^HAS_FPGA_MODE=y$/;"	m
+HAS_GPL_ALGORITHM_SUPPORT	config.mk	/^HAS_GPL_ALGORITHM_SUPPORT=n$/;"	m
+HAS_GREENAP_SUPPORT	config.mk	/^HAS_GREENAP_SUPPORT=n$/;"	m
+HAS_HDR_TRANS_SUPPORT	config.mk	/^HAS_HDR_TRANS_SUPPORT=n$/;"	m
+HAS_HE_BD_SUPPORT	config.mk	/^HAS_HE_BD_SUPPORT=n$/;"	m
+HAS_HOSTAPD_SUPPORT	config.mk	/^HAS_HOSTAPD_SUPPORT=n$/;"	m
+HAS_HW_COEXISTENCE_SUPPORT	config.mk	/^HAS_HW_COEXISTENCE_SUPPORT=n$/;"	m
+HAS_IDS_SUPPORT	config.mk	/^HAS_IDS_SUPPORT=n$/;"	m
+HAS_IFUP_IN_PROBE_SUPPORT	config.mk	/^HAS_IFUP_IN_PROBE_SUPPORT=n$/;"	m
+HAS_IGMP_SNOOP_SUPPORT	config.mk	/^HAS_IGMP_SNOOP_SUPPORT=n$/;"	m
+HAS_INTEL_L2SD_TOGGLE_SCAN_SUPPORT	config.mk	/^HAS_INTEL_L2SD_TOGGLE_SCAN_SUPPORT=n$/;"	m
+HAS_INTEL_WFD_SUPPORT	config.mk	/^HAS_INTEL_WFD_SUPPORT=n$/;"	m
+HAS_IWSC_SUPPORT	config.mk	/^HAS_IWSC_SUPPORT=y$/;"	m
+HAS_KTHREAD_SUPPORT	config.mk	/^HAS_KTHREAD_SUPPORT=n$/;"	m
+HAS_LED_CONTROL_SUPPORT	config.mk	/^HAS_LED_CONTROL_SUPPORT=n$/;"	m
+HAS_LLTD	config.mk	/^HAS_LLTD=n$/;"	m
+HAS_MAC_REPEATER_SUPPORT	config.mk	/^HAS_MAC_REPEATER_SUPPORT=n$/;"	m
+HAS_MCAST_RATE_SPECIFIC_SUPPORT	config.mk	/^HAS_MCAST_RATE_SPECIFIC_SUPPORT=n$/;"	m
+HAS_MC_SUPPORT	config.mk	/^HAS_MC_SUPPORT=n$/;"	m
+HAS_MESH_SUPPORT	config.mk	/^HAS_MESH_SUPPORT=n$/;"	m
+HAS_MICROWAVE_OVEN_SUPPORT	config.mk	/^HAS_MICROWAVE_OVEN_SUPPORT=n$/;"	m
+HAS_MSI_SUPPORT	config.mk	/^HAS_MSI_SUPPORT=n$/;"	m
+HAS_MULTI_CHANNEL	config.mk	/^HAS_MULTI_CHANNEL=n$/;"	m
+HAS_MULTI_INF	config.mk	/^HAS_MULTI_INF=n$/;"	m
+HAS_NATIVE_WPA_SUPPLICANT_SUPPORT	config.mk	/^HAS_NATIVE_WPA_SUPPLICANT_SUPPORT=n$/;"	m
+HAS_NEW_RATE_ADAPT_SUPPORT	config.mk	/^HAS_NEW_RATE_ADAPT_SUPPORT=n$/;"	m
+HAS_NEW_RATE_ADAPT_SUPPORT	config.mk	/^HAS_NEW_RATE_ADAPT_SUPPORT=y$/;"	m
+HAS_NEW_WOW_SUPPORT	config.mk	/^HAS_NEW_WOW_SUPPORT=n$/;"	m
+HAS_NINTENDO	config.mk	/^HAS_NINTENDO=n$/;"	m
+HAS_OSABL_FUNC_SUPPORT	config.mk	/^HAS_OSABL_FUNC_SUPPORT=y$/;"	m
+HAS_OSABL_OS_AP_SUPPORT	config.mk	/^HAS_OSABL_OS_AP_SUPPORT=y$/;"	m
+HAS_OSABL_OS_PCI_SUPPORT	config.mk	/^HAS_OSABL_OS_PCI_SUPPORT=y$/;"	m
+HAS_OSABL_OS_RBUS_SUPPORT	config.mk	/^HAS_OSABL_OS_RBUS_SUPPORT=n$/;"	m
+HAS_OSABL_OS_STA_SUPPORT	config.mk	/^HAS_OSABL_OS_STA_SUPPORT=y$/;"	m
+HAS_OSABL_OS_USB_SUPPORT	config.mk	/^HAS_OSABL_OS_USB_SUPPORT=y$/;"	m
+HAS_P2P_ODD_MAC_ADJUST	config.mk	/^HAS_P2P_ODD_MAC_ADJUST=n$/;"	m
+HAS_P2P_ODD_MAC_ADJUST	config.mk	/^HAS_P2P_ODD_MAC_ADJUST=y$/;"	m
+HAS_P2P_SPECIFIC_WIRELESS_EVENT	config.mk	/^HAS_P2P_SPECIFIC_WIRELESS_EVENT=n$/;"	m
+HAS_P2P_SPECIFIC_WIRELESS_EVENT	config.mk	/^HAS_P2P_SPECIFIC_WIRELESS_EVENT=y$/;"	m
+HAS_P2P_SUPPORT	config.mk	/^HAS_P2P_SUPPORT=n$/;"	m
+HAS_P2P_SUPPORT	config.mk	/^HAS_P2P_SUPPORT=y$/;"	m
+HAS_QA_SUPPORT	config.mk	/^HAS_QA_SUPPORT=y$/;"	m
+HAS_QOS_DLS_SUPPORT	config.mk	/^HAS_QOS_DLS_SUPPORT=n$/;"	m
+HAS_RATE_ADAPT_AGS_SUPPORT	config.mk	/^HAS_RATE_ADAPT_AGS_SUPPORT=n$/;"	m
+HAS_RESOURCE_BOOT_ALLOC	config.mk	/^HAS_RESOURCE_BOOT_ALLOC=n$/;"	m
+HAS_RESOURCE_PRE_ALLOC	config.mk	/^HAS_RESOURCE_PRE_ALLOC=n$/;"	m
+HAS_RFKILL_HW_SUPPORT	config.mk	/^HAS_RFKILL_HW_SUPPORT=n$/;"	m
+HAS_RLT_BBP	config.mk	/^HAS_RLT_BBP=y$/;"	m
+HAS_RLT_MAC	config.mk	/^HAS_RLT_MAC=y$/;"	m
+HAS_RLT_RF	config.mk	/^HAS_RLT_RF=y$/;"	m
+HAS_RSSI_FEEDBACK	config.mk	/^HAS_RSSI_FEEDBACK=n$/;"	m
+HAS_RT2880_RT2860_COEXIST	config.mk	/^HAS_RT2880_RT2860_COEXIST=n$/;"	m
+HAS_RTMP_BBP	config.mk	/^HAS_RTMP_BBP=y$/;"	m
+HAS_RTMP_FLASH_SUPPORT	config.mk	/^HAS_RTMP_FLASH_SUPPORT=n$/;"	m
+HAS_RX_CSO_SUPPORT	config.mk	/^HAS_RX_CSO_SUPPORT=y$/;"	m
+HAS_SINGLE_SKU_SUPPORT	config.mk	/^HAS_SINGLE_SKU_SUPPORT=n$/;"	m
+HAS_SINGLE_SKU_V2_SUPPORT	config.mk	/^HAS_SINGLE_SKU_V2_SUPPORT=n$/;"	m
+HAS_SNIFFER_SUPPORT	config.mk	/^HAS_SNIFFER_SUPPORT=y$/;"	m
+HAS_SNMP_SUPPORT	config.mk	/^HAS_SNMP_SUPPORT=n$/;"	m
+HAS_STATS_COUNT	config.mk	/^HAS_STATS_COUNT=y$/;"	m
+HAS_STREAM_MODE_SUPPORT	config.mk	/^HAS_STREAM_MODE_SUPPORT=n$/;"	m
+HAS_SWITCH_CHANNEL_OFFLOAD	config.mk	/^HAS_SWITCH_CHANNEL_OFFLOAD=n$/;"	m
+HAS_TSO_SUPPORT	config.mk	/^HAS_TSO_SUPPORT=n$/;"	m
+HAS_TSSI_ANTENNA_VARIATION	config.mk	/^HAS_TSSI_ANTENNA_VARIATION=n$/;"	m
+HAS_TXBF_SUPPORT	config.mk	/^HAS_TXBF_SUPPORT=n$/;"	m
+HAS_TXRX_SW_ANTDIV_SUPPORT	config.mk	/^HAS_TXRX_SW_ANTDIV_SUPPORT=n$/;"	m
+HAS_USB_BULK_BUF_ALIGMENT	config.mk	/^HAS_USB_BULK_BUF_ALIGMENT=n$/;"	m
+HAS_USB_FIRMWARE_MULTIBYTE_WRITE	config.mk	/^HAS_USB_FIRMWARE_MULTIBYTE_WRITE=n$/;"	m
+HAS_USB_SUPPORT_SELECTIVE_SUSPEND	config.mk	/^HAS_USB_SUPPORT_SELECTIVE_SUSPEND=n$/;"	m
+HAS_WAPI_SUPPORT	config.mk	/^HAS_WAPI_SUPPORT=n$/;"	m
+HAS_WDS	config.mk	/^HAS_WDS=n$/;"	m
+HAS_WFA_WFD_SUPPORT	config.mk	/^HAS_WFA_WFD_SUPPORT=n$/;"	m
+HAS_WFD_SUPPORT	config.mk	/^HAS_WFD_SUPPORT=n$/;"	m
+HAS_WIDI_SUPPORT	config.mk	/^HAS_WIDI_SUPPORT=n$/;"	m
+HAS_WIFI_LED_SHARE	config.mk	/^HAS_WIFI_LED_SHARE=n$/;"	m
+HAS_WIFI_TEST	config.mk	/^HAS_WIFI_TEST=y$/;"	m
+HAS_WMM_ACM_SUPPORT	config.mk	/^HAS_WMM_ACM_SUPPORT=n$/;"	m
+HAS_WOW_IFDOWN_SUPPORT	config.mk	/^HAS_WOW_IFDOWN_SUPPORT=n$/;"	m
+HAS_WOW_SUPPORT	config.mk	/^HAS_WOW_SUPPORT=n$/;"	m
+HAS_WPA_SUPPLICANT	config.mk	/^HAS_WPA_SUPPLICANT=y$/;"	m
+HAS_WSC	config.mk	/^HAS_WSC=y$/;"	m
+HAS_WSC_LED	config.mk	/^HAS_WSC_LED=n$/;"	m
+HAS_WSC_V2	config.mk	/^HAS_WSC_V2=y$/;"	m
+HAS_XLINK	config.mk	/^HAS_XLINK=n$/;"	m
+IAPP_L2_UpdatePostCtrl	rt_profile.c	/^VOID IAPP_L2_UpdatePostCtrl($/;"	f	signature:( IN PRTMP_ADAPTER pAd, IN UINT8 *mac_p, IN INT bssid)
+IKANOS_DataFrameRx	vr_ikans.c	/^void IKANOS_DataFrameRx(RTMP_ADAPTER *pAd, struct sk_buff *pSkb)$/;"	f	signature:(RTMP_ADAPTER *pAd, struct sk_buff *pSkb)
+IKANOS_DataFramesTx	vr_ikans.c	/^INT32 IKANOS_DataFramesTx(struct sk_buff *pSkb, struct net_device *pNetDev)$/;"	f	signature:(struct sk_buff *pSkb, struct net_device *pNetDev)
+IKANOS_PERAP_ID	vr_ikans.c	32;"	d	file:
+IKANOS_WlanDataFramesTx	vr_ikans.c	/^static INT32 IKANOS_WlanDataFramesTx(void *_pAdBuf, struct net_device *pNetDev)$/;"	f	file:	signature:(void *_pAdBuf, struct net_device *pNetDev)
+IKANOS_WlanDataFramesTx	vr_ikans.c	/^static INT32 IKANOS_WlanDataFramesTx(void *_pAdBuf, struct net_device *pNetDev);$/;"	p	file:	signature:(void *_pAdBuf, struct net_device *pNetDev)
+IKANOS_WlanPktFromAp	vr_ikans.c	/^static void IKANOS_WlanPktFromAp(apPreHeader_t *pFrame)$/;"	f	file:	signature:(apPreHeader_t *pFrame)
+IKANOS_WlanPktFromAp	vr_ikans.c	/^static void IKANOS_WlanPktFromAp(apPreHeader_t *pFrame);$/;"	p	file:	signature:(apPreHeader_t *pFrame)
+IWE_STREAM_ADD_EVENT	sta_ioctl.c	59;"	d	file:
+IWE_STREAM_ADD_EVENT	sta_ioctl.c	63;"	d	file:
+IWE_STREAM_ADD_POINT	sta_ioctl.c	60;"	d	file:
+IWE_STREAM_ADD_POINT	sta_ioctl.c	64;"	d	file:
+IWE_STREAM_ADD_VALUE	sta_ioctl.c	61;"	d	file:
+IWE_STREAM_ADD_VALUE	sta_ioctl.c	65;"	d	file:
+IW_AUTH_KEY_MGMT_WPS	sta_ioctl.c	3557;"	d	file:
+InitHWCoexistence	rt_main_dev.c	/^VOID InitHWCoexistence(VOID *pAd);$/;"	p	file:	signature:(VOID *pAd)
+InitUSBDevice	rt_usb.c	/^void InitUSBDevice(RT_CMD_USB_INIT *config, VOID *ad_src)$/;"	f	signature:(RT_CMD_USB_INIT *config, VOID *ad_src)
+K0_TO_K1	vr_ikans.c	33;"	d	file:
+LD	config.mk	/^LD := $(CROSS_COMPILE)ld$/;"	m
+LMR_FRAME_GET	rt_usb.c	625;"	d	file:
+Len	rt_linux.c	/^	USHORT Len;		\/* 8 octets *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+MAC80211_PAD_GET	cfg80211.c	259;"	d	file:
+MAX_WEP_KEY_SIZE	sta_ioctl.c	2158;"	d	file:
+MIN_WEP_KEY_SIZE	sta_ioctl.c	2159;"	d	file:
+MODULE_BDLT	vr_bdlt.c	19;"	d	file:
+MODULE_IKANOS	vr_ikans.c	19;"	d	file:
+MOD_NAME	Makefile	/^MOD_NAME = $(MODULE)_ap$/;"	m
+MOD_NAME	Makefile	/^MOD_NAME = $(MODULE)_apsta$/;"	m
+MOD_NAME	Makefile	/^MOD_NAME = $(MODULE)_sta$/;"	m
+MTD_NUM_FACTORY	rt_linux.c	308;"	d	file:
+MTD_NUM_FACTORY	rt_linux.c	310;"	d	file:
+MainVirtualIF_close	rt_main_dev.c	/^int MainVirtualIF_close(IN struct net_device *net_dev)$/;"	f	signature:(IN struct net_device *net_dev)
+MainVirtualIF_open	rt_main_dev.c	/^int MainVirtualIF_open(struct net_device *net_dev)$/;"	f	signature:(struct net_device *net_dev)
+N	ap_ioctl.c	91;"	d	file:
+N	sta_ioctl.c	4868;"	d	file:
+NR_WEP_KEYS	sta_ioctl.c	52;"	d	file:
+OS_CLEAR_BIT	rt_linux.c	/^void OS_CLEAR_BIT(int bit, unsigned long *flags)$/;"	f	signature:(int bit, unsigned long *flags)
+OS_CLEAR_BIT	rt_linux_symb.c	/^EXPORT_SYMBOL(OS_CLEAR_BIT);$/;"	v
+OS_NumOfMemAlloc	rt_linux.c	/^ULONG OS_NumOfMemAlloc = 0, OS_NumOfMemFree = 0;$/;"	v
+OS_NumOfMemAlloc	rt_linux_symb.c	/^EXPORT_SYMBOL(OS_NumOfMemAlloc);$/;"	v
+OS_NumOfMemFree	rt_linux.c	/^ULONG OS_NumOfMemAlloc = 0, OS_NumOfMemFree = 0;$/;"	v
+OS_NumOfMemFree	rt_linux_symb.c	/^EXPORT_SYMBOL(OS_NumOfMemFree);$/;"	v
+OS_NumOfPktAlloc	rt_linux.c	/^ULONG OS_NumOfPktAlloc = 0, OS_NumOfPktFree = 0;$/;"	v
+OS_NumOfPktAlloc	rt_linux_symb.c	/^EXPORT_SYMBOL(OS_NumOfPktAlloc);$/;"	v
+OS_NumOfPktFree	rt_linux.c	/^ULONG OS_NumOfPktAlloc = 0, OS_NumOfPktFree = 0;$/;"	v
+OS_NumOfPktFree	rt_linux_symb.c	/^EXPORT_SYMBOL(OS_NumOfPktFree);$/;"	v
+OS_SET_BIT	rt_linux.c	/^void OS_SET_BIT(int bit, unsigned long *flags)$/;"	f	signature:(int bit, unsigned long *flags)
+OS_SET_BIT	rt_linux_symb.c	/^EXPORT_SYMBOL(OS_SET_BIT);$/;"	v
+OS_SPIN_LOCK	rt_linux.c	/^void OS_SPIN_LOCK(NDIS_SPIN_LOCK *lock)$/;"	f	signature:(NDIS_SPIN_LOCK *lock)
+OS_SPIN_LOCK_IRQ	rt_linux.c	/^void OS_SPIN_LOCK_IRQ(NDIS_SPIN_LOCK *lock)$/;"	f	signature:(NDIS_SPIN_LOCK *lock)
+OS_SPIN_LOCK_IRQSAVE	rt_linux.c	/^void OS_SPIN_LOCK_IRQSAVE(NDIS_SPIN_LOCK *lock, unsigned long *flags)$/;"	f	signature:(NDIS_SPIN_LOCK *lock, unsigned long *flags)
+OS_SPIN_UNLOCK	rt_linux.c	/^void OS_SPIN_UNLOCK(NDIS_SPIN_LOCK *lock)$/;"	f	signature:(NDIS_SPIN_LOCK *lock)
+OS_SPIN_UNLOCK_IRQ	rt_linux.c	/^void OS_SPIN_UNLOCK_IRQ(NDIS_SPIN_LOCK *lock)$/;"	f	signature:(NDIS_SPIN_LOCK *lock)
+OS_SPIN_UNLOCK_IRQRESTORE	rt_linux.c	/^void OS_SPIN_UNLOCK_IRQRESTORE(NDIS_SPIN_LOCK *lock, unsigned long *flags)$/;"	f	signature:(NDIS_SPIN_LOCK *lock, unsigned long *flags)
+OS_TEST_BIT	rt_linux.c	/^int OS_TEST_BIT(int bit, unsigned long *flags)$/;"	f	signature:(int bit, unsigned long *flags)
+OS_TEST_BIT	rt_linux_symb.c	/^EXPORT_SYMBOL(OS_TEST_BIT);$/;"	v
+PF_NOFREEZE	usb_main_dev.c	29;"	d	file:
+PHONY	Makefile	/^PHONY := clean install uninstall$/;"	m
+PRISM_TYPE	sta_ioctl.c	658;"	d	file:
+PROCREG_DIR	rt_proc.c	40;"	d	file:
+PROCREG_DIR	rt_proc.c	44;"	d	file:
+PROCREG_DIR	rt_proc.c	48;"	d	file:
+PROCREG_DIR	rt_proc.c	52;"	d	file:
+PROCREG_DIR	rt_proc.c	56;"	d	file:
+PROCREG_DIR	rt_proc.c	60;"	d	file:
+PRT_IAPP_L2_UPDATE_FRAME	rt_linux.c	/^} RT_IAPP_L2_UPDATE_FRAME, *PRT_IAPP_L2_UPDATE_FRAME;$/;"	t	typeref:struct:_RT_IAPP_L2_UPDATE_FRAME	file:
+PRT_VERSION_INFO	sta_ioctl.c	/^} RT_VERSION_INFO, *PRT_VERSION_INFO;$/;"	t	typeref:struct:_RT_VERSION_INFO	file:
+PeriodicPollingModeDetect	bb_soc.c	/^BUILD_TIMER_FUNCTION(PeriodicPollingModeDetect);$/;"	v
+PeriodicPollingModeDetect	bb_soc.c	/^VOID PeriodicPollingModeDetect($/;"	f	signature:( IN PVOID SystemSpecific1, IN PVOID FunctionContext, IN PVOID SystemSpecific2, IN PVOID SystemSpecific3)
+PollingModeIsr	bb_soc.c	/^VOID PollingModeIsr(struct work_struct *work)$/;"	f	signature:(struct work_struct *work)
+RADIOTAP_TYPE	sta_ioctl.c	657;"	d	file:
+RALINK_ET_DrvInfoGet	rt_linux.c	/^static void RALINK_ET_DrvInfoGet($/;"	f	file:	signature:( struct net_device *pDev, struct ethtool_drvinfo *pInfo)
+RALINK_Ethtool_Ops	rt_linux.c	/^static struct ethtool_ops RALINK_Ethtool_Ops = {$/;"	v	typeref:struct:ethtool_ops	file:
+RALINK_FP_Handle	br_ftph.c	/^UINT32 (*RALINK_FP_Handle)(PNDIS_PACKET pPacket);$/;"	v
+RT28xx_get_ether_stats	rt_main_dev.c	/^struct net_device_stats *RT28xx_get_ether_stats(struct net_device *net_dev)$/;"	f	signature:(struct net_device *net_dev)
+RT28xx_get_ether_stats	rt_main_dev.c	/^struct net_device_stats *RT28xx_get_ether_stats(struct net_device *net_dev);$/;"	p	file:	signature:(struct net_device *net_dev)
+RT28xx_get_wds_ether_stats	rt_main_dev.c	/^struct net_device_stats *RT28xx_get_wds_ether_stats($/;"	f	signature:( IN PNET_DEV net_dev)
+RTDebugFunc	rt_linux.c	/^ULONG RTDebugFunc = 0;$/;"	v
+RTDebugFunc	rt_linux_symb.c	/^EXPORT_SYMBOL(RTDebugFunc);$/;"	v
+RTDebugLevel	rt_linux.c	/^ULONG RTDebugLevel = RT_DEBUG_TRACE;$/;"	v
+RTDebugLevel	rt_linux_symb.c	/^EXPORT_SYMBOL(RTDebugLevel);$/;"	v
+RTMPAllocateNdisPacket	rt_linux.c	/^NDIS_STATUS RTMPAllocateNdisPacket($/;"	f	signature:( IN VOID *pReserved, OUT PNDIS_PACKET *ppPacket, IN UCHAR *pHeader, IN UINT HeaderLen, IN UCHAR *pData, IN UINT DataLen)
+RTMPAllocateNdisPacket	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMPAllocateNdisPacket);$/;"	v
+RTMPFindHostPCIDev	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMPFindHostPCIDev);$/;"	v
+RTMPFindHostPCIDev	rt_rbus_pci_util.c	/^VOID *RTMPFindHostPCIDev(VOID *pPciDevSrc)$/;"	f	signature:(VOID *pPciDevSrc)
+RTMPFreeAdapter	rt_profile.c	/^VOID RTMPFreeAdapter(VOID *pAdSrc)$/;"	f	signature:(VOID *pAdSrc)
+RTMPFreeNdisPacket	rt_linux.c	/^VOID RTMPFreeNdisPacket(VOID *pReserved, PNDIS_PACKET pPacket)$/;"	f	signature:(VOID *pReserved, PNDIS_PACKET pPacket)
+RTMPFreeNdisPacket	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMPFreeNdisPacket);$/;"	v
+RTMPHandleInterrupt	rt_rbus_pci_drv.c	/^VOID RTMPHandleInterrupt(VOID *pAdSrc)$/;"	f	signature:(VOID *pAdSrc)
+RTMPInitPCIeDevice	rt_rbus_pci_drv.c	/^VOID RTMPInitPCIeDevice($/;"	f	signature:( IN RT_CMD_PCIE_INIT *pConfig, IN VOID *pAdSrc)
+RTMPInitPCIeLinkCtrlValue	rt_rbus_pci_drv.c	/^VOID RTMPInitPCIeLinkCtrlValue($/;"	f	signature:( IN PRTMP_ADAPTER pAd)
+RTMPL2FrameTxAction	rt_linux.c	/^BOOLEAN RTMPL2FrameTxAction($/;"	f	signature:( IN VOID * pCtrlBkPtr, IN PNET_DEV pNetDev, IN RTMP_CB_8023_PACKET_ANNOUNCE _announce_802_3_packet, IN UCHAR apidx, IN PUCHAR pData, IN UINT32 data_len, IN UCHAR OpMode)
+RTMPL2FrameTxAction	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMPL2FrameTxAction);$/;"	v
+RTMPMsecsToJiffies	rt_linux.c	/^ULONG RTMPMsecsToJiffies(UINT32 m)$/;"	f	signature:(UINT32 m)
+RTMPMsecsToJiffies	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMPMsecsToJiffies);$/;"	v
+RTMPPCIeLinkCtrlSetting	rt_rbus_pci_drv.c	/^VOID RTMPPCIeLinkCtrlSetting($/;"	f	signature:( IN PRTMP_ADAPTER pAd, IN USHORT Max)
+RTMPPCIeLinkCtrlValueRestore	rt_rbus_pci_drv.c	/^VOID RTMPPCIeLinkCtrlValueRestore($/;"	f	signature:( IN PRTMP_ADAPTER pAd, IN UCHAR Level)
+RTMPReadParametersHook	rt_profile.c	/^NDIS_STATUS	RTMPReadParametersHook(RTMP_ADAPTER *pAd)$/;"	f	signature:(RTMP_ADAPTER *pAd)
+RTMPSendPackets	rt_profile.c	/^int RTMPSendPackets($/;"	f	signature:( IN NDIS_HANDLE dev_hnd, IN PPNDIS_PACKET pkt_list, IN UINT pkt_cnt, IN UINT32 pkt_total_len, IN RTMP_NET_ETH_CONVERT_DEV_SEARCH Func)
+RTMP_AP_IoctlPrepare	rt_profile.c	/^INT RTMP_AP_IoctlPrepare(RTMP_ADAPTER *pAd, VOID *pCB)$/;"	f	signature:(RTMP_ADAPTER *pAd, VOID *pCB)
+RTMP_AllocateFirstTxBuffer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_AllocateFirstTxBuffer);$/;"	v
+RTMP_AllocateFirstTxBuffer	rt_rbus_pci_util.c	/^void RTMP_AllocateFirstTxBuffer($/;"	f	signature:( IN PPCI_DEV pPciDev, IN UINT Index, IN ULONG Length, IN BOOLEAN Cached, OUT PVOID *VirtualAddress, OUT PNDIS_PHYSICAL_ADDRESS phy_addr)
+RTMP_AllocateFragPacketBuffer	rt_linux.c	/^PNDIS_PACKET RTMP_AllocateFragPacketBuffer(VOID *dummy, ULONG len)$/;"	f	signature:(VOID *dummy, ULONG len)
+RTMP_AllocateFragPacketBuffer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_AllocateFragPacketBuffer);$/;"	v
+RTMP_AllocateRxPacketBuffer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_AllocateRxPacketBuffer);$/;"	v
+RTMP_AllocateRxPacketBuffer	rt_rbus_pci_util.c	/^PNDIS_PACKET RTMP_AllocateRxPacketBuffer($/;"	f	signature:( IN VOID *pReserved, IN VOID *pPciDev, IN ULONG Length, IN BOOLEAN Cached, OUT VOID **VirtualAddress, OUT PNDIS_PHYSICAL_ADDRESS phy_addr)
+RTMP_DRV_OPS_FUNCTION	rt_symb.c	/^EXPORT_SYMBOL(RTMP_DRV_OPS_FUNCTION);$/;"	v
+RTMP_FreeFirstTxBuffer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_FreeFirstTxBuffer);$/;"	v
+RTMP_FreeFirstTxBuffer	rt_rbus_pci_util.c	/^void RTMP_FreeFirstTxBuffer($/;"	f	signature:( IN PPCI_DEV pPciDev, IN ULONG Length, IN BOOLEAN Cached, IN VOID *VirtualAddress, IN NDIS_PHYSICAL_ADDRESS phy_addr)
+RTMP_GetCurrentSystemTick	rt_linux.c	/^void RTMP_GetCurrentSystemTick(ULONG *pNow)$/;"	f	signature:(ULONG *pNow)
+RTMP_GetCurrentSystemTick	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_GetCurrentSystemTick);$/;"	v
+RTMP_GetCurrentSystemTime	rt_linux.c	/^void RTMP_GetCurrentSystemTime(LARGE_INTEGER * time)$/;"	f	signature:(LARGE_INTEGER * time)
+RTMP_GetCurrentSystemTime	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_GetCurrentSystemTime);$/;"	v
+RTMP_IndicateMediaState	rt_profile.c	/^void RTMP_IndicateMediaState($/;"	f	signature:( IN PRTMP_ADAPTER pAd, IN NDIS_MEDIA_STATE media_state)
+RTMP_MODULE_OS	ap_ioctl.c	26;"	d	file:
+RTMP_MODULE_OS	cfg80211.c	114;"	d	file:
+RTMP_MODULE_OS	pci_main_dev.c	29;"	d	file:
+RTMP_MODULE_OS	rbus_main_dev.c	30;"	d	file:
+RTMP_MODULE_OS	rt_linux.c	31;"	d	file:
+RTMP_MODULE_OS	rt_linux_symb.c	15;"	d	file:
+RTMP_MODULE_OS	rt_main_dev.c	30;"	d	file:
+RTMP_MODULE_OS	rt_pci_rbus.c	29;"	d	file:
+RTMP_MODULE_OS	rt_rbus_pci_util.c	15;"	d	file:
+RTMP_MODULE_OS	rt_usb_util.c	15;"	d	file:
+RTMP_MODULE_OS	sta_ioctl.c	31;"	d	file:
+RTMP_MODULE_OS	usb_main_dev.c	15;"	d	file:
+RTMP_MODULE_OS	vr_bdlt.c	16;"	d	file:
+RTMP_MODULE_OS	vr_ikans.c	16;"	d	file:
+RTMP_MODULE_OS_UTIL	rt_linux.c	32;"	d	file:
+RTMP_MODULE_OS_UTIL	rt_linux_symb.c	16;"	d	file:
+RTMP_MODULE_OS_UTIL	rt_rbus_pci_util.c	16;"	d	file:
+RTMP_MODULE_OS_UTIL	rt_usb_util.c	16;"	d	file:
+RTMP_MODULE_OS_UTIL	vr_bdlt.c	17;"	d	file:
+RTMP_MODULE_OS_UTIL	vr_ikans.c	17;"	d	file:
+RTMP_OS_Add_Timer	rt_linux.c	/^VOID RTMP_OS_Add_Timer(NDIS_MINIPORT_TIMER *pTimerOrg, ULONG timeout)$/;"	f	signature:(NDIS_MINIPORT_TIMER *pTimerOrg, ULONG timeout)
+RTMP_OS_Add_Timer	rt_linux.c	/^VOID RTMP_OS_Add_Timer(NDIS_MINIPORT_TIMER *pTimerOrg, unsigned long timeout)$/;"	f	signature:(NDIS_MINIPORT_TIMER *pTimerOrg, unsigned long timeout)
+RTMP_OS_Add_Timer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_OS_Add_Timer);$/;"	v
+RTMP_OS_Alloc_Rsc	rt_linux.c	/^BOOLEAN RTMP_OS_Alloc_Rsc($/;"	f	signature:( LIST_HEADER *pRscList, VOID *pRscSrc, UINT32 RscLen)
+RTMP_OS_Alloc_Rsc	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_OS_Alloc_Rsc);$/;"	v
+RTMP_OS_Alloc_RscOnly	rt_linux.c	/^BOOLEAN RTMP_OS_Alloc_RscOnly(VOID *pRscSrc, UINT32 RscLen)$/;"	f	signature:(VOID *pRscSrc, UINT32 RscLen)
+RTMP_OS_Alloc_RscOnly	rt_linux.c	/^BOOLEAN RTMP_OS_Alloc_RscOnly(VOID *pRscSrc, UINT32 RscLen);$/;"	p	file:	signature:(VOID *pRscSrc, UINT32 RscLen)
+RTMP_OS_Del_Timer	rt_linux.c	/^VOID RTMP_OS_Del_Timer(NDIS_MINIPORT_TIMER *pTimerOrg, BOOLEAN *pCancelled)$/;"	f	signature:(NDIS_MINIPORT_TIMER *pTimerOrg, BOOLEAN *pCancelled)
+RTMP_OS_Del_Timer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_OS_Del_Timer);$/;"	v
+RTMP_OS_Free_Rscs	rt_linux.c	/^VOID RTMP_OS_Free_Rscs(LIST_HEADER *pRscList)$/;"	f	signature:(LIST_HEADER *pRscList)
+RTMP_OS_Free_Rscs	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_OS_Free_Rscs);$/;"	v
+RTMP_OS_Init_Timer	rt_linux.c	/^VOID RTMP_OS_Init_Timer($/;"	f	signature:( VOID *pReserved, NDIS_MINIPORT_TIMER *pTimerOrg, TIMER_FUNCTION function, PVOID data, LIST_HEADER *pTimerList)
+RTMP_OS_Init_Timer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_OS_Init_Timer);$/;"	v
+RTMP_OS_Mod_Timer	rt_linux.c	/^VOID RTMP_OS_Mod_Timer(NDIS_MINIPORT_TIMER *pTimerOrg, ULONG timeout)$/;"	f	signature:(NDIS_MINIPORT_TIMER *pTimerOrg, ULONG timeout)
+RTMP_OS_Mod_Timer	rt_linux.c	/^VOID RTMP_OS_Mod_Timer(NDIS_MINIPORT_TIMER *pTimerOrg, unsigned long timeout)$/;"	f	signature:(NDIS_MINIPORT_TIMER *pTimerOrg, unsigned long timeout)
+RTMP_OS_Mod_Timer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_OS_Mod_Timer);$/;"	v
+RTMP_OS_Release_Timer	rt_linux.c	/^VOID RTMP_OS_Release_Timer(NDIS_MINIPORT_TIMER *pTimerOrg)$/;"	f	signature:(NDIS_MINIPORT_TIMER *pTimerOrg)
+RTMP_OS_Release_Timer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_OS_Release_Timer);$/;"	v
+RTMP_OS_Remove_Rsc	rt_linux.c	/^BOOLEAN RTMP_OS_Remove_Rsc($/;"	f	signature:( LIST_HEADER *pRscList, VOID *pRscSrc)
+RTMP_OS_Remove_Rsc	rt_linux.c	/^BOOLEAN RTMP_OS_Remove_Rsc(LIST_HEADER *pRscList, VOID *pRscSrc);$/;"	p	file:	signature:(LIST_HEADER *pRscList, VOID *pRscSrc)
+RTMP_PCI_Readb	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_PCI_Readb);$/;"	v
+RTMP_PCI_Readb	rt_rbus_pci_util.c	/^ULONG RTMP_PCI_Readb(VOID *pAddr)$/;"	f	signature:(VOID *pAddr)
+RTMP_PCI_Readl	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_PCI_Readl);$/;"	v
+RTMP_PCI_Readl	rt_rbus_pci_util.c	/^ULONG RTMP_PCI_Readl(VOID *pAddr)$/;"	f	signature:(VOID *pAddr)
+RTMP_PCI_Readw	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_PCI_Readw);$/;"	v
+RTMP_PCI_Readw	rt_rbus_pci_util.c	/^ULONG RTMP_PCI_Readw(VOID *pAddr)$/;"	f	signature:(VOID *pAddr)
+RTMP_PCI_Writeb	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_PCI_Writeb);$/;"	v
+RTMP_PCI_Writeb	rt_rbus_pci_util.c	/^VOID RTMP_PCI_Writeb(ULONG Value, VOID *pAddr)$/;"	f	signature:(ULONG Value, VOID *pAddr)
+RTMP_PCI_Writel	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_PCI_Writel);$/;"	v
+RTMP_PCI_Writel	rt_rbus_pci_util.c	/^VOID RTMP_PCI_Writel(ULONG Value, VOID *pAddr)$/;"	f	signature:(ULONG Value, VOID *pAddr)
+RTMP_PCI_Writew	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_PCI_Writew);$/;"	v
+RTMP_PCI_Writew	rt_rbus_pci_util.c	/^VOID RTMP_PCI_Writew(ULONG Value, VOID *pAddr)$/;"	f	signature:(ULONG Value, VOID *pAddr)
+RTMP_QueryPacketInfo	rt_linux.c	/^void RTMP_QueryPacketInfo($/;"	f	signature:( IN PNDIS_PACKET pPacket, OUT PACKET_INFO *info, OUT UCHAR **pSrcBufVA, OUT UINT *pSrcBufLen)
+RTMP_QueryPacketInfo	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_QueryPacketInfo);$/;"	v
+RTMP_SetPeriodicTimer	rt_linux.c	/^VOID RTMP_SetPeriodicTimer(NDIS_MINIPORT_TIMER *pTimerOrg, ULONG timeout)$/;"	f	signature:(NDIS_MINIPORT_TIMER *pTimerOrg, ULONG timeout)
+RTMP_SetPeriodicTimer	rt_linux.c	/^VOID RTMP_SetPeriodicTimer(NDIS_MINIPORT_TIMER *pTimerOrg, unsigned long timeout)$/;"	f	signature:(NDIS_MINIPORT_TIMER *pTimerOrg, unsigned long timeout)
+RTMP_SetPeriodicTimer	rt_linux_symb.c	/^EXPORT_SYMBOL(RTMP_SetPeriodicTimer);$/;"	v
+RTMP_Usb_AutoPM_Get_Interface	rt_usb_util.c	/^EXPORT_SYMBOL(RTMP_Usb_AutoPM_Get_Interface);$/;"	v
+RTMP_Usb_AutoPM_Get_Interface	rt_usb_util.c	/^int RTMP_Usb_AutoPM_Get_Interface ($/;"	f	signature:( IN VOID *pUsb_Devsrc, IN VOID *intfsrc)
+RTMP_Usb_AutoPM_Put_Interface	rt_usb_util.c	/^EXPORT_SYMBOL(RTMP_Usb_AutoPM_Put_Interface);$/;"	v
+RTMP_Usb_AutoPM_Put_Interface	rt_usb_util.c	/^int RTMP_Usb_AutoPM_Put_Interface ($/;"	f	signature:( IN VOID *pUsb_Devsrc, IN VOID *intfsrc)
+RTMPrt3xSetPCIePowerLinkCtrl	rt_rbus_pci_drv.c	/^VOID RTMPrt3xSetPCIePowerLinkCtrl($/;"	f	signature:( IN PRTMP_ADAPTER pAd)
+RTPCICmdThread	rt_rbus_pci_drv.c	/^INT RTPCICmdThread($/;"	f	signature:( IN ULONG Context)
+RTPktOffsetCB	rt_linux.c	/^ULONG RTPktOffsetData = 0, RTPktOffsetLen = 0, RTPktOffsetCB = 0;$/;"	v
+RTPktOffsetCB	rt_linux_symb.c	/^EXPORT_SYMBOL(RTPktOffsetCB);$/;"	v
+RTPktOffsetData	rt_linux.c	/^ULONG RTPktOffsetData = 0, RTPktOffsetLen = 0, RTPktOffsetCB = 0;$/;"	v
+RTPktOffsetData	rt_linux_symb.c	/^EXPORT_SYMBOL(RTPktOffsetData);$/;"	v
+RTPktOffsetLen	rt_linux.c	/^ULONG RTPktOffsetData = 0, RTPktOffsetLen = 0, RTPktOffsetCB = 0;$/;"	v
+RTPktOffsetLen	rt_linux_symb.c	/^EXPORT_SYMBOL(RTPktOffsetLen);$/;"	v
+RTUSBBulkCmdRspEventComplete	usb_main_dev.c	/^USBHST_STATUS RTUSBBulkCmdRspEventComplete(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)$/;"	f	signature:(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)
+RTUSBBulkOutDataPacketComplete	usb_main_dev.c	/^USBHST_STATUS RTUSBBulkOutDataPacketComplete(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)$/;"	f	signature:(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)
+RTUSBBulkOutMLMEPacketComplete	usb_main_dev.c	/^USBHST_STATUS RTUSBBulkOutMLMEPacketComplete(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)$/;"	f	signature:(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)
+RTUSBBulkOutNullFrameComplete	usb_main_dev.c	/^USBHST_STATUS RTUSBBulkOutNullFrameComplete(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)$/;"	f	signature:(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)
+RTUSBBulkOutPsPollComplete	usb_main_dev.c	/^USBHST_STATUS RTUSBBulkOutPsPollComplete(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)$/;"	f	signature:(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)
+RTUSBBulkOutRTSFrameComplete	usb_main_dev.c	/^USBHST_STATUS RTUSBBulkOutRTSFrameComplete(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)$/;"	f	signature:(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)
+RTUSBBulkRxComplete	usb_main_dev.c	/^USBHST_STATUS RTUSBBulkRxComplete(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)$/;"	f	signature:(URBCompleteStatus Status, purbb_t pURB, pregs *pt_regs)
+RTUSBCmdThread	rt_usb.c	/^INT RTUSBCmdThread($/;"	f	signature:( IN ULONG Context)
+RT_CFG80211_DEBUG	cfg80211drv.c	29;"	d	file:
+RT_CONFIG_IF_OPMODE_ON_AP	rt_linux.c	44;"	d	file:
+RT_CONFIG_IF_OPMODE_ON_AP	rt_linux.c	48;"	d	file:
+RT_CONFIG_IF_OPMODE_ON_AP	rt_linux.c	51;"	d	file:
+RT_CONFIG_IF_OPMODE_ON_STA	rt_linux.c	45;"	d	file:
+RT_CONFIG_IF_OPMODE_ON_STA	rt_linux.c	49;"	d	file:
+RT_CONFIG_IF_OPMODE_ON_STA	rt_linux.c	52;"	d	file:
+RT_IAPP_L2_UPDATE_FRAME	rt_linux.c	/^} RT_IAPP_L2_UPDATE_FRAME, *PRT_IAPP_L2_UPDATE_FRAME;$/;"	t	typeref:struct:_RT_IAPP_L2_UPDATE_FRAME	file:
+RT_RateSize	rt_linux_symb.c	/^EXPORT_SYMBOL(RT_RateSize);$/;"	v
+RT_VERSION_INFO	sta_ioctl.c	/^} RT_VERSION_INFO, *PRT_VERSION_INFO;$/;"	t	typeref:struct:_RT_VERSION_INFO	file:
+RtPrivIoctlSetVal	rt_linux_symb.c	/^EXPORT_SYMBOL(RtPrivIoctlSetVal);$/;"	v
+RtmpAllocDescBuf	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpAllocDescBuf);$/;"	v
+RtmpAllocDescBuf	rt_rbus_pci_util.c	/^void RtmpAllocDescBuf($/;"	f	signature:( IN PPCI_DEV pPciDev, IN UINT Index, IN ULONG Length, IN BOOLEAN Cached, OUT VOID **VirtualAddress, OUT PNDIS_PHYSICAL_ADDRESS phy_addr)
+RtmpDevPrivFlagsGet	rt_linux.c	/^USHORT RtmpDevPrivFlagsGet(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+RtmpDevPrivFlagsGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpDevPrivFlagsGet);$/;"	v
+RtmpDevPrivFlagsSet	rt_linux.c	/^VOID RtmpDevPrivFlagsSet(VOID *pDev, USHORT PrivFlags)$/;"	f	signature:(VOID *pDev, USHORT PrivFlags)
+RtmpDrvAllE2PPrint	rt_linux.c	/^VOID RtmpDrvAllE2PPrint($/;"	f	signature:( IN VOID *pReserved, IN USHORT *pMacContent, IN UINT32 AddrEnd, IN UINT32 AddrStep)
+RtmpDrvAllE2PPrint	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpDrvAllE2PPrint);$/;"	v
+RtmpDrvAllMacPrint	rt_linux.c	/^VOID RtmpDrvAllMacPrint($/;"	f	signature:( IN VOID *pReserved, IN UINT32 *pBufMac, IN UINT32 AddrStart, IN UINT32 AddrEnd, IN UINT32 AddrStep)
+RtmpDrvAllMacPrint	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpDrvAllMacPrint);$/;"	v
+RtmpDrvAllRFPrint	rt_linux.c	/^VOID RtmpDrvAllRFPrint($/;"	f	signature:( IN VOID *pReserved, IN UCHAR *pBuf, IN UINT32 BufLen)
+RtmpDrvAllRFPrint	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpDrvAllRFPrint);$/;"	v
+RtmpDrvMaxRateGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpDrvMaxRateGet);$/;"	v
+RtmpDrvNetOps	rt_main_dev.c	/^RTMP_NET_ABL_OPS RtmpDrvNetOps, *pRtmpDrvNetOps = &RtmpDrvNetOps;$/;"	v
+RtmpDrvOps	rt_main_dev.c	/^RTMP_DRV_ABL_OPS RtmpDrvOps, *pRtmpDrvOps = &RtmpDrvOps;$/;"	v
+RtmpDrvUsbBulkOutDataPacketComplete	usb_main_dev.c	/^RTMP_DRV_USB_COMPLETE_HANDLER RtmpDrvUsbBulkOutDataPacketComplete = NULL;$/;"	v
+RtmpDrvUsbBulkOutMLMEPacketComplete	usb_main_dev.c	/^RTMP_DRV_USB_COMPLETE_HANDLER RtmpDrvUsbBulkOutMLMEPacketComplete = NULL;$/;"	v
+RtmpDrvUsbBulkOutNullFrameComplete	usb_main_dev.c	/^RTMP_DRV_USB_COMPLETE_HANDLER RtmpDrvUsbBulkOutNullFrameComplete = NULL;$/;"	v
+RtmpDrvUsbBulkOutPsPollComplete	usb_main_dev.c	/^RTMP_DRV_USB_COMPLETE_HANDLER RtmpDrvUsbBulkOutPsPollComplete = NULL;$/;"	v
+RtmpDrvUsbBulkOutRTSFrameComplete	usb_main_dev.c	/^RTMP_DRV_USB_COMPLETE_HANDLER RtmpDrvUsbBulkOutRTSFrameComplete = NULL;$/;"	v
+RtmpDrvUsbBulkRxComplete	usb_main_dev.c	/^RTMP_DRV_USB_COMPLETE_HANDLER RtmpDrvUsbBulkRxComplete = NULL;$/;"	v
+RtmpFlashRead	rt_linux.c	/^void RtmpFlashRead($/;"	f	signature:( UCHAR *p, ULONG a, ULONG b)
+RtmpFlashRead	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpFlashRead);$/;"	v
+RtmpFlashWrite	rt_linux.c	/^void RtmpFlashWrite($/;"	f	signature:( UCHAR * p, ULONG a, ULONG b)
+RtmpFlashWrite	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpFlashWrite);$/;"	v
+RtmpFreeDescBuf	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpFreeDescBuf);$/;"	v
+RtmpFreeDescBuf	rt_rbus_pci_util.c	/^void RtmpFreeDescBuf($/;"	f	signature:( IN PPCI_DEV pPciDev, IN ULONG Length, IN VOID *VirtualAddress, IN NDIS_PHYSICAL_ADDRESS phy_addr)
+RtmpMeshDown	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpMeshDown);$/;"	v
+RtmpMgmtTaskExit	rt_rbus_pci_drv.c	/^VOID RtmpMgmtTaskExit($/;"	f	signature:( IN RTMP_ADAPTER *pAd)
+RtmpMgmtTaskExit	rt_usb.c	/^VOID RtmpMgmtTaskExit($/;"	f	signature:( IN RTMP_ADAPTER *pAd)
+RtmpMgmtTaskInit	rt_rbus_pci_drv.c	/^NDIS_STATUS RtmpMgmtTaskInit(IN RTMP_ADAPTER *pAd)$/;"	f	signature:(IN RTMP_ADAPTER *pAd)
+RtmpMgmtTaskInit	rt_usb.c	/^NDIS_STATUS	 RtmpMgmtTaskInit($/;"	f	signature:( IN RTMP_ADAPTER *pAd)
+RtmpNetEthConvertDevSearch	rt_main_dev.c	/^VOID *RtmpNetEthConvertDevSearch(VOID *net_dev_, UCHAR *pData)$/;"	f	signature:(VOID *net_dev_, UCHAR *pData)
+RtmpNetOpsInit	usb_main_dev.c	/^VOID RtmpNetOpsInit(VOID *pDrvNetOpsSrc)$/;"	f	signature:(VOID *pDrvNetOpsSrc)
+RtmpNetOpsSet	usb_main_dev.c	/^VOID RtmpNetOpsSet(VOID *pDrvNetOpsSrc)$/;"	f	signature:(VOID *pDrvNetOpsSrc)
+RtmpNetTaskExit	rt_rbus_pci_drv.c	/^void RtmpNetTaskExit(IN RTMP_ADAPTER *pAd)$/;"	f	signature:(IN RTMP_ADAPTER *pAd)
+RtmpNetTaskExit	rt_usb.c	/^void RtmpNetTaskExit(IN RTMP_ADAPTER *pAd)$/;"	f	signature:(IN RTMP_ADAPTER *pAd)
+RtmpNetTaskInit	rt_rbus_pci_drv.c	/^NDIS_STATUS RtmpNetTaskInit(IN RTMP_ADAPTER *pAd)$/;"	f	signature:(IN RTMP_ADAPTER *pAd)
+RtmpNetTaskInit	rt_usb.c	/^NDIS_STATUS RtmpNetTaskInit($/;"	f	signature:( IN RTMP_ADAPTER *pAd)
+RtmpOSFSInfoChange	rt_linux.c	/^void RtmpOSFSInfoChange(RTMP_OS_FS_INFO *pOSFSInfoOrg, BOOLEAN bSet)$/;"	f	signature:(RTMP_OS_FS_INFO *pOSFSInfoOrg, BOOLEAN bSet)
+RtmpOSFSInfoChange	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSFSInfoChange);$/;"	v
+RtmpOSFileClose	rt_linux.c	/^int RtmpOSFileClose(RTMP_OS_FD osfd)$/;"	f	signature:(RTMP_OS_FD osfd)
+RtmpOSFileClose	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSFileClose);$/;"	v
+RtmpOSFileOpen	rt_linux.c	/^RTMP_OS_FD RtmpOSFileOpen(char *pPath, int flag, int mode)$/;"	f	signature:(char *pPath, int flag, int mode)
+RtmpOSFileOpen	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSFileOpen);$/;"	v
+RtmpOSFileRead	rt_linux.c	/^int RtmpOSFileRead(RTMP_OS_FD osfd, char *pDataPtr, int readLen)$/;"	f	signature:(RTMP_OS_FD osfd, char *pDataPtr, int readLen)
+RtmpOSFileRead	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSFileRead);$/;"	v
+RtmpOSFileSeek	rt_linux.c	/^void RtmpOSFileSeek(RTMP_OS_FD osfd, int offset)$/;"	f	signature:(RTMP_OS_FD osfd, int offset)
+RtmpOSFileSeek	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSFileSeek);$/;"	v
+RtmpOSFileWrite	rt_linux.c	/^int RtmpOSFileWrite(RTMP_OS_FD osfd, char *pDataPtr, int writeLen)$/;"	f	signature:(RTMP_OS_FD osfd, char *pDataPtr, int writeLen)
+RtmpOSFileWrite	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSFileWrite);$/;"	v
+RtmpOSIRQRelease	rt_linux.c	/^int RtmpOSIRQRelease($/;"	f	signature:( IN PNET_DEV pNetDev, IN UINT32 infType, IN PPCI_DEV pci_dev, IN BOOLEAN *pHaveMsi)
+RtmpOSIRQRelease	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSIRQRelease);$/;"	v
+RtmpOSIRQRequest	rt_main_dev.c	/^int RtmpOSIRQRequest(IN PNET_DEV pNetDev)$/;"	f	signature:(IN PNET_DEV pNetDev)
+RtmpOSNetDevAddrSet	rt_linux.c	/^int RtmpOSNetDevAddrSet($/;"	f	signature:( IN UCHAR OpMode, IN PNET_DEV pNetDev, IN PUCHAR pMacAddr, IN PUCHAR dev_name)
+RtmpOSNetDevAddrSet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSNetDevAddrSet);$/;"	v
+RtmpOSNetDevAlloc	rt_linux.c	/^INT RtmpOSNetDevAlloc($/;"	f	signature:( IN PNET_DEV *new_dev_p, IN UINT32 privDataSize)
+RtmpOSNetDevAttach	rt_linux.c	/^int RtmpOSNetDevAttach($/;"	f	signature:( IN UCHAR OpMode, IN PNET_DEV pNetDev, IN RTMP_OS_NETDEV_OP_HOOK *pDevOpHook)
+RtmpOSNetDevAttach	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSNetDevAttach);$/;"	v
+RtmpOSNetDevClose	rt_linux.c	/^void RtmpOSNetDevClose(PNET_DEV pNetDev)$/;"	f	signature:(PNET_DEV pNetDev)
+RtmpOSNetDevClose	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSNetDevClose);$/;"	v
+RtmpOSNetDevCreate	rt_linux.c	/^PNET_DEV RtmpOSNetDevCreate($/;"	f	signature:( IN INT32 MC_RowID, IN UINT32 *pIoctlIF, IN INT devType, IN INT devNum, IN INT privMemSize, IN PSTRING pNamePrefix)
+RtmpOSNetDevCreate	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSNetDevCreate);$/;"	v
+RtmpOSNetDevDestory	rt_linux.c	/^INT RtmpOSNetDevDestory(VOID *pReserved, PNET_DEV pNetDev)$/;"	f	signature:(VOID *pReserved, PNET_DEV pNetDev)
+RtmpOSNetDevDetach	rt_linux.c	/^void RtmpOSNetDevDetach(PNET_DEV pNetDev)$/;"	f	signature:(PNET_DEV pNetDev)
+RtmpOSNetDevDetach	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSNetDevDetach);$/;"	v
+RtmpOSNetDevFree	rt_linux.c	/^void RtmpOSNetDevFree(PNET_DEV pNetDev)$/;"	f	signature:(PNET_DEV pNetDev)
+RtmpOSNetDevFree	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSNetDevFree);$/;"	v
+RtmpOSNetDevGetByName	rt_linux.c	/^PNET_DEV RtmpOSNetDevGetByName(PNET_DEV pNetDev, PSTRING pDevName)$/;"	f	signature:(PNET_DEV pNetDev, PSTRING pDevName)
+RtmpOSNetDevIsUp	rt_linux.c	/^BOOLEAN RtmpOSNetDevIsUp(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+RtmpOSNetDevIsUp	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSNetDevIsUp);$/;"	v
+RtmpOSNetDevOpsAlloc	rt_linux.c	/^INT RtmpOSNetDevOpsAlloc(PVOID *pNetDevOps)$/;"	f	signature:(PVOID *pNetDevOps)
+RtmpOSNetDevRequestName	rt_linux.c	/^static int RtmpOSNetDevRequestName($/;"	f	file:	signature:( IN INT32 MC_RowID, IN UINT32 *pIoctlIF, IN PNET_DEV dev, IN PSTRING pPrefixStr, IN INT devIdx)
+RtmpOSNetDeviceRefPut	rt_linux.c	/^void RtmpOSNetDeviceRefPut(PNET_DEV pNetDev)$/;"	f	signature:(PNET_DEV pNetDev)
+RtmpOSNetPktAlloc	rt_linux.c	/^PNDIS_PACKET RtmpOSNetPktAlloc(VOID *dummy, int size)$/;"	f	signature:(VOID *dummy, int size)
+RtmpOSNetPktAlloc	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSNetPktAlloc);$/;"	v
+RtmpOSNotifyRawData	rt_linux.c	/^INT RtmpOSNotifyRawData($/;"	f	signature:( IN PNET_DEV pNetDev, IN PUCHAR buff, IN INT len, IN ULONG type, IN USHORT protocol)
+RtmpOSNotifyRawData	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSNotifyRawData);$/;"	v
+RtmpOSTaskAlloc	rt_linux.c	/^BOOLEAN RtmpOSTaskAlloc(RTMP_OS_TASK *pTask, LIST_HEADER *pTaskList)$/;"	f	signature:(RTMP_OS_TASK *pTask, LIST_HEADER *pTaskList)
+RtmpOSTaskAlloc	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSTaskAlloc);$/;"	v
+RtmpOSTaskAttach	rt_linux.c	/^NDIS_STATUS RtmpOSTaskAttach($/;"	f	signature:( RTMP_OS_TASK *pTask, RTMP_OS_TASK_CALLBACK fn, ULONG arg)
+RtmpOSTaskAttach	rt_linux.c	/^NDIS_STATUS RtmpOSTaskAttach($/;"	f	signature:( RTMP_OS_TASK *pTaskOrg, RTMP_OS_TASK_CALLBACK fn, ULONG arg)
+RtmpOSTaskAttach	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSTaskAttach);$/;"	v
+RtmpOSTaskCustomize	rt_linux.c	/^VOID RtmpOSTaskCustomize(RTMP_OS_TASK *pTaskOrg)$/;"	f	signature:(RTMP_OS_TASK *pTaskOrg)
+RtmpOSTaskCustomize	rt_linux.c	/^void RtmpOSTaskCustomize(RTMP_OS_TASK *pTask)$/;"	f	signature:(RTMP_OS_TASK *pTask)
+RtmpOSTaskCustomize	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSTaskCustomize);$/;"	v
+RtmpOSTaskFree	rt_linux.c	/^VOID RtmpOSTaskFree(RTMP_OS_TASK *pTaskOrg)$/;"	f	signature:(RTMP_OS_TASK *pTaskOrg)
+RtmpOSTaskFree	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSTaskFree);$/;"	v
+RtmpOSTaskInit	rt_linux.c	/^NDIS_STATUS RtmpOSTaskInit($/;"	f	signature:( RTMP_OS_TASK *pTask, PSTRING pTaskName, VOID *pPriv, LIST_HEADER *pTaskList, LIST_HEADER *pSemList)
+RtmpOSTaskInit	rt_linux.c	/^NDIS_STATUS RtmpOSTaskInit($/;"	f	signature:( RTMP_OS_TASK *pTaskOrg, PSTRING pTaskName, VOID *pPriv, LIST_HEADER *pTaskList, LIST_HEADER *pSemList)
+RtmpOSTaskInit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSTaskInit);$/;"	v
+RtmpOSTaskKill	rt_linux.c	/^NDIS_STATUS RtmpOSTaskKill(RTMP_OS_TASK *pTask)$/;"	f	signature:(RTMP_OS_TASK *pTask)
+RtmpOSTaskKill	rt_linux.c	/^NDIS_STATUS RtmpOSTaskKill(RTMP_OS_TASK *pTaskOrg)$/;"	f	signature:(RTMP_OS_TASK *pTaskOrg)
+RtmpOSTaskKill	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSTaskKill);$/;"	v
+RtmpOSTaskNotifyToExit	rt_linux.c	/^INT RtmpOSTaskNotifyToExit(RTMP_OS_TASK *pTask)$/;"	f	signature:(RTMP_OS_TASK *pTask)
+RtmpOSTaskNotifyToExit	rt_linux.c	/^INT RtmpOSTaskNotifyToExit(RTMP_OS_TASK *pTaskOrg)$/;"	f	signature:(RTMP_OS_TASK *pTaskOrg)
+RtmpOSTaskNotifyToExit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSTaskNotifyToExit);$/;"	v
+RtmpOSTaskWait	rt_linux.c	/^BOOLEAN RtmpOSTaskWait(VOID *pReserved, RTMP_OS_TASK * pTask, INT32 *pStatus)$/;"	f	signature:(VOID *pReserved, RTMP_OS_TASK * pTask, INT32 *pStatus)
+RtmpOSTaskWait	rt_linux.c	/^BOOLEAN RtmpOSTaskWait(VOID *pReserved, RTMP_OS_TASK *pTaskOrg, INT32 *pStatus)$/;"	f	signature:(VOID *pReserved, RTMP_OS_TASK *pTaskOrg, INT32 *pStatus)
+RtmpOSTaskWait	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSTaskWait);$/;"	v
+RtmpOSWidiNotify	rt_linux.c	/^INT RtmpOSWidiNotify($/;"	f	signature:( IN PNET_DEV pNetDev, IN PUCHAR buff, IN INT len, IN ULONG type)
+RtmpOSWidiNotify	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSWidiNotify);$/;"	v
+RtmpOSWirelessEventTranslate	rt_linux.c	/^static UINT32 RtmpOSWirelessEventTranslate(IN UINT32 eventType)$/;"	f	file:	signature:(IN UINT32 eventType)
+RtmpOSWrielessEventSend	rt_linux.c	/^int RtmpOSWrielessEventSend($/;"	f	signature:( IN PNET_DEV pNetDev, IN UINT32 eventType, IN INT flags, IN PUCHAR pSrcMac, IN PUCHAR pData, IN UINT32 dataLen)
+RtmpOSWrielessEventSend	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSWrielessEventSend);$/;"	v
+RtmpOSWrielessEventSendExt	rt_linux.c	/^int RtmpOSWrielessEventSendExt($/;"	f	signature:( IN PNET_DEV pNetDev, IN UINT32 eventType, IN INT flags, IN PUCHAR pSrcMac, IN PUCHAR pData, IN UINT32 dataLen, IN UINT32 family)
+RtmpOSWrielessEventSendExt	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOSWrielessEventSendExt);$/;"	v
+RtmpOsAllocateLock	rt_linux.c	/^BOOLEAN RtmpOsAllocateLock(NDIS_SPIN_LOCK *pLock, LIST_HEADER *pLockList)$/;"	f	signature:(NDIS_SPIN_LOCK *pLock, LIST_HEADER *pLockList)
+RtmpOsAllocateLock	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsAllocateLock);$/;"	v
+RtmpOsAtomicDec	rt_linux.c	/^VOID RtmpOsAtomicDec(RTMP_OS_ATOMIC *pAtomicSrc)$/;"	f	signature:(RTMP_OS_ATOMIC *pAtomicSrc)
+RtmpOsAtomicDec	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsAtomicDec);$/;"	v
+RtmpOsAtomicDestroy	rt_linux.c	/^VOID RtmpOsAtomicDestroy(RTMP_OS_ATOMIC *pAtomic)$/;"	f	signature:(RTMP_OS_ATOMIC *pAtomic)
+RtmpOsAtomicDestroy	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsAtomicDestroy);$/;"	v
+RtmpOsAtomicInit	rt_linux.c	/^BOOLEAN RtmpOsAtomicInit(RTMP_OS_ATOMIC *pAtomic, LIST_HEADER *pAtomicList)$/;"	f	signature:(RTMP_OS_ATOMIC *pAtomic, LIST_HEADER *pAtomicList)
+RtmpOsAtomicInit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsAtomicInit);$/;"	v
+RtmpOsAtomicInterlockedExchange	rt_linux.c	/^VOID RtmpOsAtomicInterlockedExchange($/;"	f	signature:( RTMP_OS_ATOMIC *pAtomicSrc, LONG Value)
+RtmpOsAtomicInterlockedExchange	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsAtomicInterlockedExchange);$/;"	v
+RtmpOsAtomicRead	rt_linux.c	/^LONG RtmpOsAtomicRead(RTMP_OS_ATOMIC *pAtomicSrc)$/;"	f	signature:(RTMP_OS_ATOMIC *pAtomicSrc)
+RtmpOsAtomicRead	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsAtomicRead);$/;"	v
+RtmpOsCheckTaskLegality	rt_linux.c	/^BOOLEAN RtmpOsCheckTaskLegality(RTMP_OS_TASK *pTaskOrg)$/;"	f	signature:(RTMP_OS_TASK *pTaskOrg)
+RtmpOsCheckTaskLegality	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsCheckTaskLegality);$/;"	v
+RtmpOsCmdDisplayLenCheck	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsCmdDisplayLenCheck);$/;"	v
+RtmpOsCmdUp	rt_linux.c	/^VOID RtmpOsCmdUp(RTMP_OS_TASK *pCmdQTask)$/;"	f	signature:(RTMP_OS_TASK *pCmdQTask)
+RtmpOsCmdUp	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsCmdUp);$/;"	v
+RtmpOsComplete	rt_linux.c	/^VOID RtmpOsComplete(RTMP_OS_COMPLETION *pCompletion)$/;"	f	signature:(RTMP_OS_COMPLETION *pCompletion)
+RtmpOsComplete	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsComplete);$/;"	v
+RtmpOsCopyFromUser	rt_linux.c	/^ULONG RtmpOsCopyFromUser(VOID *to, const void *from, ULONG n)$/;"	f	signature:(VOID *to, const void *from, ULONG n)
+RtmpOsCopyFromUser	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsCopyFromUser);$/;"	v
+RtmpOsCopyToUser	rt_linux.c	/^ULONG RtmpOsCopyToUser(VOID *to, const void *from, ULONG n)$/;"	f	signature:(VOID *to, const void *from, ULONG n)
+RtmpOsCopyToUser	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsCopyToUser);$/;"	v
+RtmpOsDCacheFlush	rt_linux.c	/^VOID RtmpOsDCacheFlush($/;"	f	signature:( IN ULONG AddrStart, IN ULONG Size)
+RtmpOsDCacheFlush	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsDCacheFlush);$/;"	v
+RtmpOsExitCompletion	rt_linux.c	/^VOID RtmpOsExitCompletion(RTMP_OS_COMPLETION *pCompletion)$/;"	f	signature:(RTMP_OS_COMPLETION *pCompletion)
+RtmpOsExitCompletion	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsExitCompletion);$/;"	v
+RtmpOsFileIsErr	rt_linux.c	/^INT32 RtmpOsFileIsErr(IN VOID *pFile)$/;"	f	signature:(IN VOID *pFile)
+RtmpOsFileIsErr	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsFileIsErr);$/;"	v
+RtmpOsFreeSpinLock	rt_linux.c	/^VOID RtmpOsFreeSpinLock(NDIS_SPIN_LOCK *pLockOrg)$/;"	f	signature:(NDIS_SPIN_LOCK *pLockOrg)
+RtmpOsFreeSpinLock	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsFreeSpinLock);$/;"	v
+RtmpOsGetNetDevName	rt_linux.c	/^char *RtmpOsGetNetDevName(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+RtmpOsGetNetDevName	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetNetDevName);$/;"	v
+RtmpOsGetNetDevPriv	rt_linux.c	/^VOID *RtmpOsGetNetDevPriv(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+RtmpOsGetNetDevPriv	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetNetDevPriv);$/;"	v
+RtmpOsGetNetDevWdev	rt_linux.c	/^VOID *RtmpOsGetNetDevWdev(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+RtmpOsGetNetDevWdev	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetNetDevWdev);$/;"	v
+RtmpOsGetNetIfIndex	rt_linux.c	/^UINT32 RtmpOsGetNetIfIndex(IN VOID *pDev) {$/;"	f	signature:(IN VOID *pDev)
+RtmpOsGetNetIfIndex	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetNetIfIndex);$/;"	v
+RtmpOsGetPid	rt_linux.c	/^VOID RtmpOsGetPid(IN ULONG *pDst,$/;"	f	signature:(IN ULONG *pDst, IN ULONG PID)
+RtmpOsGetPid	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetPid);$/;"	v
+RtmpOsGetSystemUpTime	rt_linux.c	/^VOID RtmpOsGetSystemUpTime(ULONG *pTime)$/;"	f	signature:(ULONG *pTime)
+RtmpOsGetSystemUpTime	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetSystemUpTime);$/;"	v
+RtmpOsGetUnaligned	rt_linux.c	/^UINT16 RtmpOsGetUnaligned(UINT16 *pWord)$/;"	f	signature:(UINT16 *pWord)
+RtmpOsGetUnaligned	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetUnaligned);$/;"	v
+RtmpOsGetUnaligned32	rt_linux.c	/^UINT32 RtmpOsGetUnaligned32(UINT32 *pWord)$/;"	f	signature:(UINT32 *pWord)
+RtmpOsGetUnaligned32	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetUnaligned32);$/;"	v
+RtmpOsGetUnalignedlong	rt_linux.c	/^ULONG RtmpOsGetUnalignedlong(ULONG *pWord)$/;"	f	signature:(ULONG *pWord)
+RtmpOsGetUnalignedlong	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetUnalignedlong);$/;"	v
+RtmpOsGetUsbDevProductID	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetUsbDevProductID);$/;"	v
+RtmpOsGetUsbDevProductID	rt_usb_util.c	/^UINT32 RtmpOsGetUsbDevProductID(IN VOID *pUsbDev) {$/;"	f	signature:(IN VOID *pUsbDev)
+RtmpOsGetUsbDevVendorID	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsGetUsbDevVendorID);$/;"	v
+RtmpOsGetUsbDevVendorID	rt_usb_util.c	/^UINT32 RtmpOsGetUsbDevVendorID(IN VOID *pUsbDev) {$/;"	f	signature:(IN VOID *pUsbDev)
+RtmpOsHtonl	rt_linux.c	/^UINT32 RtmpOsHtonl(UINT32 Value)$/;"	f	signature:(UINT32 Value)
+RtmpOsHtonl	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsHtonl);$/;"	v
+RtmpOsHtons	rt_linux.c	/^UINT16 RtmpOsHtons(UINT16 Value)$/;"	f	signature:(UINT16 Value)
+RtmpOsHtons	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsHtons);$/;"	v
+RtmpOsInitCompletion	rt_linux.c	/^VOID RtmpOsInitCompletion(RTMP_OS_COMPLETION *pCompletion)$/;"	f	signature:(RTMP_OS_COMPLETION *pCompletion)
+RtmpOsInitCompletion	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsInitCompletion);$/;"	v
+RtmpOsIntLock	rt_linux.c	/^VOID RtmpOsIntLock(NDIS_SPIN_LOCK *pLockOrg, ULONG *pIrqFlags)$/;"	f	signature:(NDIS_SPIN_LOCK *pLockOrg, ULONG *pIrqFlags)
+RtmpOsIntLock	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsIntLock);$/;"	v
+RtmpOsIntUnLock	rt_linux.c	/^VOID RtmpOsIntUnLock(NDIS_SPIN_LOCK *pLockOrg, ULONG IrqFlags)$/;"	f	signature:(NDIS_SPIN_LOCK *pLockOrg, ULONG IrqFlags)
+RtmpOsIntUnLock	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsIntUnLock);$/;"	v
+RtmpOsIsInInterrupt	rt_linux.c	/^INT32 RtmpOsIsInInterrupt(VOID)$/;"	f
+RtmpOsIsInInterrupt	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsIsInInterrupt);$/;"	v
+RtmpOsIsPktCloned	rt_linux.c	/^INT RtmpOsIsPktCloned(PNDIS_PACKET pNetPkt)$/;"	f	signature:(PNDIS_PACKET pNetPkt)
+RtmpOsIsPktCloned	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsIsPktCloned);$/;"	v
+RtmpOsMaxScanDataGet	rt_linux.c	/^ULONG RtmpOsMaxScanDataGet(VOID)$/;"	f
+RtmpOsMaxScanDataGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsMaxScanDataGet);$/;"	v
+RtmpOsMlmeUp	rt_linux.c	/^VOID RtmpOsMlmeUp(IN RTMP_OS_TASK *pMlmeQTask)$/;"	f	signature:(IN RTMP_OS_TASK *pMlmeQTask)
+RtmpOsMlmeUp	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsMlmeUp);$/;"	v
+RtmpOsMsDelay	rt_linux.c	/^VOID RtmpOsMsDelay(ULONG msec)$/;"	f	signature:(ULONG msec)
+RtmpOsMsDelay	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsMsDelay);$/;"	v
+RtmpOsNetDevGetPhyAddr	rt_linux.c	/^unsigned char *RtmpOsNetDevGetPhyAddr(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+RtmpOsNetDevGetPhyAddr	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsNetDevGetPhyAddr);$/;"	v
+RtmpOsNetPrivGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsNetPrivGet);$/;"	v
+RtmpOsNetQueueStart	rt_linux.c	/^VOID RtmpOsNetQueueStart(PNET_DEV pDev)$/;"	f	signature:(PNET_DEV pDev)
+RtmpOsNetQueueStart	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsNetQueueStart);$/;"	v
+RtmpOsNetQueueStop	rt_linux.c	/^VOID RtmpOsNetQueueStop(PNET_DEV pDev)$/;"	f	signature:(PNET_DEV pDev)
+RtmpOsNetQueueStop	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsNetQueueStop);$/;"	v
+RtmpOsNetQueueWake	rt_linux.c	/^VOID RtmpOsNetQueueWake(PNET_DEV pDev)$/;"	f	signature:(PNET_DEV pDev)
+RtmpOsNetQueueWake	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsNetQueueWake);$/;"	v
+RtmpOsNtohl	rt_linux.c	/^UINT32 RtmpOsNtohl(UINT32 Value)$/;"	f	signature:(UINT32 Value)
+RtmpOsNtohl	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsNtohl);$/;"	v
+RtmpOsNtohs	rt_linux.c	/^UINT16 RtmpOsNtohs(UINT16 Value)$/;"	f	signature:(UINT16 Value)
+RtmpOsNtohs	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsNtohs);$/;"	v
+RtmpOsOpsInit	rt_linux.c	/^VOID RtmpOsOpsInit(RTMP_OS_ABL_OPS *pOps)$/;"	f	signature:(RTMP_OS_ABL_OPS *pOps)
+RtmpOsOpsInit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsOpsInit);$/;"	v
+RtmpOsPciConfigReadDWord	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPciConfigReadDWord);$/;"	v
+RtmpOsPciConfigReadDWord	rt_rbus_pci_util.c	/^int RtmpOsPciConfigReadDWord(VOID *pDev, UINT32 Offset, UINT32 *pValue)$/;"	f	signature:(VOID *pDev, UINT32 Offset, UINT32 *pValue)
+RtmpOsPciConfigReadWord	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPciConfigReadWord);$/;"	v
+RtmpOsPciConfigReadWord	rt_rbus_pci_util.c	/^int RtmpOsPciConfigReadWord(VOID *pDev, UINT32 Offset, UINT16 *pValue)$/;"	f	signature:(VOID *pDev, UINT32 Offset, UINT16 *pValue)
+RtmpOsPciConfigWriteDWord	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPciConfigWriteDWord);$/;"	v
+RtmpOsPciConfigWriteDWord	rt_rbus_pci_util.c	/^int RtmpOsPciConfigWriteDWord(VOID *pDev, UINT32 Offset, UINT32 Value)$/;"	f	signature:(VOID *pDev, UINT32 Offset, UINT32 Value)
+RtmpOsPciConfigWriteWord	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPciConfigWriteWord);$/;"	v
+RtmpOsPciConfigWriteWord	rt_rbus_pci_util.c	/^int RtmpOsPciConfigWriteWord(VOID *pDev, UINT32 Offset, UINT16 Value)$/;"	f	signature:(VOID *pDev, UINT32 Offset, UINT16 Value)
+RtmpOsPciFindCapability	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPciFindCapability);$/;"	v
+RtmpOsPciFindCapability	rt_rbus_pci_util.c	/^int RtmpOsPciFindCapability(VOID *pDev, INT Cap)$/;"	f	signature:(VOID *pDev, INT Cap)
+RtmpOsPciMsiDisable	rt_rbus_pci_util.c	/^VOID RtmpOsPciMsiDisable(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+RtmpOsPciMsiEnable	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPciMsiEnable);$/;"	v
+RtmpOsPciMsiEnable	rt_rbus_pci_util.c	/^int RtmpOsPciMsiEnable(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+RtmpOsPktBodyCopy	rt_linux.c	/^VOID RtmpOsPktBodyCopy($/;"	f	signature:( PNET_DEV pNetDev, PNDIS_PACKET pNetPkt, ULONG ThisFrameLen, PUCHAR pData)
+RtmpOsPktBodyCopy	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktBodyCopy);$/;"	v
+RtmpOsPktClone	rt_linux.c	/^PNDIS_PACKET RtmpOsPktClone(PNDIS_PACKET pNetPkt)$/;"	f	signature:(PNDIS_PACKET pNetPkt)
+RtmpOsPktClone	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktClone);$/;"	v
+RtmpOsPktCopy	rt_linux.c	/^PNDIS_PACKET RtmpOsPktCopy(PNDIS_PACKET pNetPkt)$/;"	f	signature:(PNDIS_PACKET pNetPkt)
+RtmpOsPktCopy	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktCopy);$/;"	v
+RtmpOsPktDataPtrAssign	rt_linux.c	/^VOID RtmpOsPktDataPtrAssign(PNDIS_PACKET pNetPkt, UCHAR *pData)$/;"	f	signature:(PNDIS_PACKET pNetPkt, UCHAR *pData)
+RtmpOsPktDataPtrAssign	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktDataPtrAssign);$/;"	v
+RtmpOsPktHeadBufExtend	rt_linux.c	/^PUCHAR RtmpOsPktHeadBufExtend(PNDIS_PACKET pNetPkt, UINT Len)$/;"	f	signature:(PNDIS_PACKET pNetPkt, UINT Len)
+RtmpOsPktHeadBufExtend	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktHeadBufExtend);$/;"	v
+RtmpOsPktIappMakeUp	rt_linux.c	/^PNDIS_PACKET RtmpOsPktIappMakeUp($/;"	f	signature:( IN PNET_DEV pNetDev, IN UINT8 *pMac)
+RtmpOsPktIappMakeUp	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktIappMakeUp);$/;"	v
+RtmpOsPktInit	rt_linux.c	/^VOID RtmpOsPktInit($/;"	f	signature:( IN PNDIS_PACKET pNetPkt, IN PNET_DEV pNetDev, IN UCHAR *pData, IN USHORT DataSize)
+RtmpOsPktInit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktInit);$/;"	v
+RtmpOsPktLenAssign	rt_linux.c	/^VOID RtmpOsPktLenAssign(PNDIS_PACKET pNetPkt, LONG Len)$/;"	f	signature:(PNDIS_PACKET pNetPkt, LONG Len)
+RtmpOsPktLenAssign	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktLenAssign);$/;"	v
+RtmpOsPktNatMagicTag	rt_linux.c	/^VOID RtmpOsPktNatMagicTag(IN PNDIS_PACKET pNetPkt)$/;"	f	signature:(IN PNDIS_PACKET pNetPkt)
+RtmpOsPktNatNone	rt_linux.c	/^VOID RtmpOsPktNatNone(IN PNDIS_PACKET pNetPkt)$/;"	f	signature:(IN PNDIS_PACKET pNetPkt)
+RtmpOsPktNetDevGet	rt_linux.c	/^PNET_DEV RtmpOsPktNetDevGet(VOID *pPkt)$/;"	f	signature:(VOID *pPkt)
+RtmpOsPktNetDevGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktNetDevGet);$/;"	v
+RtmpOsPktOffsetInit	rt_linux.c	/^BOOLEAN RtmpOsPktOffsetInit(VOID)$/;"	f
+RtmpOsPktOffsetInit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktOffsetInit);$/;"	v
+RtmpOsPktProtocolAssign	rt_linux.c	/^VOID RtmpOsPktProtocolAssign(PNDIS_PACKET pNetPkt)$/;"	f	signature:(PNDIS_PACKET pNetPkt)
+RtmpOsPktProtocolAssign	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktProtocolAssign);$/;"	v
+RtmpOsPktRcvHandle	rt_linux.c	/^VOID RtmpOsPktRcvHandle(PNDIS_PACKET pNetPkt)$/;"	f	signature:(PNDIS_PACKET pNetPkt)
+RtmpOsPktRcvHandle	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktRcvHandle);$/;"	v
+RtmpOsPktReserve	rt_linux.c	/^VOID RtmpOsPktReserve(PNDIS_PACKET pNetPkt, UINT Len)$/;"	f	signature:(PNDIS_PACKET pNetPkt, UINT Len)
+RtmpOsPktReserve	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktReserve);$/;"	v
+RtmpOsPktTailAdjust	rt_linux.c	/^VOID RtmpOsPktTailAdjust(PNDIS_PACKET pNetPkt, UINT removedTagLen)$/;"	f	signature:(PNDIS_PACKET pNetPkt, UINT removedTagLen)
+RtmpOsPktTailAdjust	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktTailAdjust);$/;"	v
+RtmpOsPktTailBufExtend	rt_linux.c	/^PUCHAR RtmpOsPktTailBufExtend(PNDIS_PACKET pNetPkt, UINT Len)$/;"	f	signature:(PNDIS_PACKET pNetPkt, UINT Len)
+RtmpOsPktTailBufExtend	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsPktTailBufExtend);$/;"	v
+RtmpOsSemaDestory	rt_linux.c	/^BOOLEAN RtmpOsSemaDestory(RTMP_OS_SEM *pSemOrg)$/;"	f	signature:(RTMP_OS_SEM *pSemOrg)
+RtmpOsSemaDestory	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSemaDestory);$/;"	v
+RtmpOsSemaInit	rt_linux.c	/^BOOLEAN RtmpOsSemaInit(RTMP_OS_SEM *pSem, LIST_HEADER *pSemList)$/;"	f	signature:(RTMP_OS_SEM *pSem, LIST_HEADER *pSemList)
+RtmpOsSemaInit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSemaInit);$/;"	v
+RtmpOsSemaInitLocked	rt_linux.c	/^BOOLEAN RtmpOsSemaInitLocked(RTMP_OS_SEM *pSem, LIST_HEADER *pSemList)$/;"	f	signature:(RTMP_OS_SEM *pSem, LIST_HEADER *pSemList)
+RtmpOsSemaInitLocked	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSemaInitLocked);$/;"	v
+RtmpOsSemaWaitInterruptible	rt_linux.c	/^INT32 RtmpOsSemaWaitInterruptible(RTMP_OS_SEM *pSemOrg)$/;"	f	signature:(RTMP_OS_SEM *pSemOrg)
+RtmpOsSemaWaitInterruptible	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSemaWaitInterruptible);$/;"	v
+RtmpOsSemaWakeUp	rt_linux.c	/^VOID RtmpOsSemaWakeUp(RTMP_OS_SEM *pSemOrg)$/;"	f	signature:(RTMP_OS_SEM *pSemOrg)
+RtmpOsSemaWakeUp	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSemaWakeUp);$/;"	v
+RtmpOsSendWirelessEvent	rt_linux.c	/^VOID RtmpOsSendWirelessEvent($/;"	f	signature:( IN VOID *pAd, IN USHORT Event_flag, IN PUCHAR pAddr, IN UCHAR BssIdx, IN CHAR Rssi, IN RTMP_OS_SEND_WLAN_EVENT pFunc)
+RtmpOsSendWirelessEvent	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSendWirelessEvent);$/;"	v
+RtmpOsSetNetDevPriv	rt_linux.c	/^VOID RtmpOsSetNetDevPriv(VOID *pDev, VOID *pPriv)$/;"	f	signature:(VOID *pDev, VOID *pPriv)
+RtmpOsSetNetDevPriv	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSetNetDevPriv);$/;"	v
+RtmpOsSetNetDevType	rt_linux.c	/^VOID RtmpOsSetNetDevType(VOID *pDev, USHORT Type)$/;"	f	signature:(VOID *pDev, USHORT Type)
+RtmpOsSetNetDevType	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSetNetDevType);$/;"	v
+RtmpOsSetNetDevTypeMonitor	rt_linux.c	/^VOID RtmpOsSetNetDevTypeMonitor(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+RtmpOsSetNetDevTypeMonitor	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSetNetDevTypeMonitor);$/;"	v
+RtmpOsSetNetDevWdev	rt_linux.c	/^VOID RtmpOsSetNetDevWdev(VOID *net_dev, VOID *wdev)$/;"	f	signature:(VOID *net_dev, VOID *wdev)
+RtmpOsSetNetDevWdev	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSetNetDevWdev);$/;"	v
+RtmpOsSetPktNetDev	rt_linux.c	/^VOID RtmpOsSetPktNetDev(VOID *pPkt, VOID *pDev)$/;"	f	signature:(VOID *pPkt, VOID *pDev)
+RtmpOsSetPktNetDev	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSetPktNetDev);$/;"	v
+RtmpOsSimpleStrtol	rt_linux.c	/^long RtmpOsSimpleStrtol(const char *cp, char **endp, unsigned int base)$/;"	f	signature:(const char *cp, char **endp, unsigned int base)
+RtmpOsSimpleStrtol	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSimpleStrtol);$/;"	v
+RtmpOsSpinLockBh	rt_linux.c	/^VOID RtmpOsSpinLockBh(NDIS_SPIN_LOCK *pLockOrg)$/;"	f	signature:(NDIS_SPIN_LOCK *pLockOrg)
+RtmpOsSpinLockBh	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSpinLockBh);$/;"	v
+RtmpOsSpinLockIrq	rt_linux.c	/^void RtmpOsSpinLockIrq(NDIS_SPIN_LOCK *lock)$/;"	f	signature:(NDIS_SPIN_LOCK *lock)
+RtmpOsSpinLockIrq	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSpinLockIrq);$/;"	v
+RtmpOsSpinLockIrqSave	rt_linux.c	/^void RtmpOsSpinLockIrqSave(NDIS_SPIN_LOCK *lock, unsigned long *flags)$/;"	f	signature:(NDIS_SPIN_LOCK *lock, unsigned long *flags)
+RtmpOsSpinLockIrqSave	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSpinLockIrqSave);$/;"	v
+RtmpOsSpinUnLockBh	rt_linux.c	/^VOID RtmpOsSpinUnLockBh(NDIS_SPIN_LOCK *pLockOrg)$/;"	f	signature:(NDIS_SPIN_LOCK *pLockOrg)
+RtmpOsSpinUnLockBh	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSpinUnLockBh);$/;"	v
+RtmpOsSpinUnlockIrq	rt_linux.c	/^void RtmpOsSpinUnlockIrq(NDIS_SPIN_LOCK *lock)$/;"	f	signature:(NDIS_SPIN_LOCK *lock)
+RtmpOsSpinUnlockIrq	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSpinUnlockIrq);$/;"	v
+RtmpOsSpinUnlockIrqRestore	rt_linux.c	/^void RtmpOsSpinUnlockIrqRestore(NDIS_SPIN_LOCK *lock, unsigned long *flags)$/;"	f	signature:(NDIS_SPIN_LOCK *lock, unsigned long *flags)
+RtmpOsSpinUnlockIrqRestore	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsSpinUnlockIrqRestore);$/;"	v
+RtmpOsStatsAlloc	rt_linux.c	/^BOOLEAN RtmpOsStatsAlloc($/;"	f	signature:( IN VOID **ppStats, IN VOID **ppIwStats)
+RtmpOsStatsAlloc	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsStatsAlloc);$/;"	v
+RtmpOsTaskDataGet	rt_linux.c	/^VOID *RtmpOsTaskDataGet(RTMP_OS_TASK *pTaskOrg)$/;"	f	signature:(RTMP_OS_TASK *pTaskOrg)
+RtmpOsTaskDataGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTaskDataGet);$/;"	v
+RtmpOsTaskIsKilled	rt_linux.c	/^INT32 RtmpOsTaskIsKilled(RTMP_OS_TASK *pTaskOrg)$/;"	f	signature:(RTMP_OS_TASK *pTaskOrg)
+RtmpOsTaskIsKilled	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTaskIsKilled);$/;"	v
+RtmpOsTaskPidInit	rt_linux.c	/^VOID RtmpOsTaskPidInit(RTMP_OS_PID *pPid)$/;"	f	signature:(RTMP_OS_PID *pPid)
+RtmpOsTaskPidInit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTaskPidInit);$/;"	v
+RtmpOsTaskWakeUp	rt_linux.c	/^VOID RtmpOsTaskWakeUp(RTMP_OS_TASK *pTask)$/;"	f	signature:(RTMP_OS_TASK *pTask)
+RtmpOsTaskWakeUp	rt_linux.c	/^VOID RtmpOsTaskWakeUp(RTMP_OS_TASK *pTaskOrg)$/;"	f	signature:(RTMP_OS_TASK *pTaskOrg)
+RtmpOsTaskWakeUp	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTaskWakeUp);$/;"	v
+RtmpOsTaskletDataAssign	rt_linux.c	/^VOID RtmpOsTaskletDataAssign(RTMP_NET_TASK_STRUCT *pTasklet, ULONG Data)$/;"	f	signature:(RTMP_NET_TASK_STRUCT *pTasklet, ULONG Data)
+RtmpOsTaskletDataAssign	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTaskletDataAssign);$/;"	v
+RtmpOsTaskletInit	rt_linux.c	/^BOOLEAN RtmpOsTaskletInit($/;"	f	signature:( RTMP_NET_TASK_STRUCT *pTasklet, VOID (*pFunc) (unsigned long data), ULONG Data, LIST_HEADER *pTaskletList)
+RtmpOsTaskletInit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTaskletInit);$/;"	v
+RtmpOsTaskletKill	rt_linux.c	/^BOOLEAN RtmpOsTaskletKill(RTMP_NET_TASK_STRUCT *pTasklet)$/;"	f	signature:(RTMP_NET_TASK_STRUCT *pTasklet)
+RtmpOsTaskletKill	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTaskletKill);$/;"	v
+RtmpOsTaskletSche	rt_linux.c	/^BOOLEAN RtmpOsTaskletSche(RTMP_NET_TASK_STRUCT *pTasklet)$/;"	f	signature:(RTMP_NET_TASK_STRUCT *pTasklet)
+RtmpOsTaskletSche	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTaskletSche);$/;"	v
+RtmpOsTickUnitGet	rt_linux.c	/^UINT32 RtmpOsTickUnitGet(VOID)$/;"	f
+RtmpOsTickUnitGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTickUnitGet);$/;"	v
+RtmpOsTimerAfter	rt_linux.c	/^UINT32 RtmpOsTimerAfter(ULONG a, ULONG b)$/;"	f	signature:(ULONG a, ULONG b)
+RtmpOsTimerAfter	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTimerAfter);$/;"	v
+RtmpOsTimerBefore	rt_linux.c	/^UINT32 RtmpOsTimerBefore(ULONG a, ULONG b)$/;"	f	signature:(ULONG a, ULONG b)
+RtmpOsTimerBefore	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsTimerBefore);$/;"	v
+RtmpOsUsbContextGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsUsbContextGet);$/;"	v
+RtmpOsUsbContextGet	rt_usb_util.c	/^VOID *RtmpOsUsbContextGet($/;"	f	signature:( IN VOID *pUrb)
+RtmpOsUsbDmaMapping	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsUsbDmaMapping);$/;"	v
+RtmpOsUsbDmaMapping	rt_usb_util.c	/^VOID RtmpOsUsbDmaMapping($/;"	f	signature:( IN VOID *pUrb)
+RtmpOsUsbInitHTTxDesc	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsUsbInitHTTxDesc);$/;"	v
+RtmpOsUsbInitHTTxDesc	rt_usb_util.c	/^VOID RtmpOsUsbInitHTTxDesc($/;"	f	signature:( IN VOID *pUrbSrc, IN VOID *pUsb_Dev, IN UINT BulkOutEpAddr, IN PUCHAR pSrc, IN ULONG BulkOutSize, IN USB_COMPLETE_HANDLER Func, IN VOID *pTxContext, IN ra_dma_addr_t TransferDma)
+RtmpOsUsbInitRxDesc	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsUsbInitRxDesc);$/;"	v
+RtmpOsUsbInitRxDesc	rt_usb_util.c	/^VOID	RtmpOsUsbInitRxDesc($/;"	f	signature:( IN VOID *pUrbSrc, IN VOID *pUsb_Dev, IN UINT BulkInEpAddr, IN UCHAR *pTransferBuffer, IN UINT32 BufSize, IN USB_COMPLETE_HANDLER Func, IN VOID *pRxContext, IN ra_dma_addr_t TransferDma)
+RtmpOsUsbStatusGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsUsbStatusGet);$/;"	v
+RtmpOsUsbStatusGet	rt_usb_util.c	/^NTSTATUS RtmpOsUsbStatusGet($/;"	f	signature:( IN VOID *pUrb)
+RtmpOsUsbUrbDataGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsUsbUrbDataGet);$/;"	v
+RtmpOsUsbUrbDataGet	rt_usb_util.c	/^VOID *RtmpOsUsbUrbDataGet($/;"	f	signature:( IN VOID *pUrb)
+RtmpOsUsbUrbLenGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsUsbUrbLenGet);$/;"	v
+RtmpOsUsbUrbLenGet	rt_usb_util.c	/^ULONG RtmpOsUsbUrbLenGet($/;"	f	signature:( IN VOID *pUrb)
+RtmpOsUsbUrbStatusGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsUsbUrbStatusGet);$/;"	v
+RtmpOsUsbUrbStatusGet	rt_usb_util.c	/^NTSTATUS RtmpOsUsbUrbStatusGet($/;"	f	signature:( IN VOID *pUrb)
+RtmpOsVfree	rt_linux.c	/^VOID RtmpOsVfree(VOID *pMem)$/;"	f	signature:(VOID *pMem)
+RtmpOsVfree	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsVfree);$/;"	v
+RtmpOsVmalloc	rt_linux.c	/^VOID *RtmpOsVmalloc(ULONG Size)$/;"	f	signature:(ULONG Size)
+RtmpOsVmalloc	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsVmalloc);$/;"	v
+RtmpOsWait	rt_linux.c	/^VOID RtmpOsWait(UINT32 Time)$/;"	f	signature:(UINT32 Time)
+RtmpOsWait	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsWait);$/;"	v
+RtmpOsWaitForCompletionTimeout	rt_linux.c	/^ULONG RtmpOsWaitForCompletionTimeout(RTMP_OS_COMPLETION *pCompletion, ULONG Timeout)$/;"	f	signature:(RTMP_OS_COMPLETION *pCompletion, ULONG Timeout)
+RtmpOsWaitForCompletionTimeout	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsWaitForCompletionTimeout);$/;"	v
+RtmpOsWirelessExtVerGet	rt_linux.c	/^UINT RtmpOsWirelessExtVerGet(VOID)$/;"	f
+RtmpOsWirelessExtVerGet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsWirelessExtVerGet);$/;"	v
+RtmpOsWlanEventSet	rt_linux.c	/^VOID RtmpOsWlanEventSet($/;"	f	signature:( IN VOID *pReserved, IN BOOLEAN *pCfgWEnt, IN BOOLEAN FlgIsWEntSup)
+RtmpOsWlanEventSet	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpOsWlanEventSet);$/;"	v
+RtmpPhyNetDevExit	rt_main_dev.c	/^BOOLEAN RtmpPhyNetDevExit(VOID *pAd, PNET_DEV net_dev)$/;"	f	signature:(VOID *pAd, PNET_DEV net_dev)
+RtmpPhyNetDevInit	rt_main_dev.c	/^PNET_DEV RtmpPhyNetDevInit(VOID *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevHook)$/;"	f	signature:(VOID *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevHook)
+RtmpThreadPidKill	rt_linux.c	/^INT32 RtmpThreadPidKill(RTMP_OS_PID PID)$/;"	f	signature:(RTMP_OS_PID PID)
+RtmpThreadPidKill	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpThreadPidKill);$/;"	v
+RtmpUtilInit	rt_linux.c	/^VOID RtmpUtilInit(VOID)$/;"	f
+RtmpUtilInit	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpUtilInit);$/;"	v
+RtmpusecDelay	rt_linux.c	/^VOID RtmpusecDelay(ULONG usec)$/;"	f	signature:(ULONG usec)
+RtmpusecDelay	rt_linux_symb.c	/^EXPORT_SYMBOL(RtmpusecDelay);$/;"	v
+SA	rt_linux.c	/^	UCHAR SA[ETH_ALEN];	\/* the MAC address of the STA that has just associated$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+SA_SHIRQ	rt_main_dev.c	39;"	d	file:
+SECOND_AP_PROFILE_PATH	rt_profile.c	55;"	d	file:
+SECOND_CHIP_ID	rt_profile.c	56;"	d	file:
+SECOND_EEPROM_FILE_PATH	rt_profile.c	54;"	d	file:
+SECOND_INF_APCLI_DEV_NAME	rt_profile.c	43;"	d	file:
+SECOND_INF_MAIN_DEV_NAME	rt_profile.c	40;"	d	file:
+SECOND_INF_MBSSID_DEV_NAME	rt_profile.c	41;"	d	file:
+SECOND_INF_MESH_DEV_NAME	rt_profile.c	44;"	d	file:
+SECOND_INF_P2P_DEV_NAME	rt_profile.c	45;"	d	file:
+SECOND_INF_WDS_DEV_NAME	rt_profile.c	42;"	d	file:
+SSAP	rt_linux.c	/^	UCHAR SSAP;		\/* null *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+STA_DRIVER_VERSION	pci_main_dev.c	/^MODULE_VERSION(STA_DRIVER_VERSION);$/;"	v
+STA_DRIVER_VERSION	usb_main_dev.c	/^MODULE_VERSION(STA_DRIVER_VERSION);$/;"	v
+STA_MonPktSend	rt_profile.c	/^void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)$/;"	f	signature:(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
+SendAssocIEsToWpaSupplicant	rt_linux_symb.c	/^EXPORT_SYMBOL(SendAssocIEsToWpaSupplicant);$/;"	v
+SendSignalToDaemon	rt_linux.c	/^VOID SendSignalToDaemon($/;"	f	signature:( IN INT sig, RTMP_OS_PID pid, unsigned long pid_no)
+TKIP_TX_MIC_SIZE	rt_linux.c	735;"	d	file:
+USBDevConfigInit	usb_main_dev.c	/^static BOOLEAN USBDevConfigInit(struct usb_device *dev, struct usb_interface *intf, VOID *pAd)$/;"	f	file:	signature:(struct usb_device *dev, struct usb_interface *intf, VOID *pAd)
+USBDevConfigInit	usb_main_dev.c	/^static BOOLEAN USBDevConfigInit(struct usb_device *dev, struct usb_interface *intf, VOID *pAd);$/;"	p	file:	signature:(struct usb_device *dev, struct usb_interface *intf, VOID *pAd)
+UtilSemLock	rt_linux.c	/^OS_NDIS_SPIN_LOCK UtilSemLock;$/;"	v
+VLAN_8023_Header_Copy	rt_linux.c	/^UCHAR VLAN_8023_Header_Copy($/;"	f	signature:( IN USHORT VLAN_VID, IN USHORT VLAN_Priority, IN PUCHAR pHeader802_3, IN UINT HdrLen, OUT PUCHAR pData, IN UCHAR FromWhichBSSID, IN UCHAR *TPID)
+VLAN_8023_Header_Copy	rt_linux_symb.c	/^EXPORT_SYMBOL(VLAN_8023_Header_Copy);$/;"	v
+VR_IKANOS_FP_Init	vr_ikans.c	/^void VR_IKANOS_FP_Init(UINT8 BssNum, UINT8 *pApMac)$/;"	f	signature:(UINT8 BssNum, UINT8 *pApMac)
+WEP_LARGE_KEY_LEN	sta_ioctl.c	54;"	d	file:
+WEP_SMALL_KEY_LEN	sta_ioctl.c	53;"	d	file:
+WFLAGS	config.mk	/^WFLAGS := -g -DAGGREGATION_SUPPORT -DPIGGYBACK_SUPPORT -DWMM_SUPPORT  -DLINUX -Wall -Wstrict-prototypes -Wno-trigraphs -DENHANCED_STAT_DISPLAY$/;"	m
+WpaSendMicFailureToWpaSupplicant	rt_linux_symb.c	/^EXPORT_SYMBOL(WpaSendMicFailureToWpaSupplicant);$/;"	v
+XIDInfo	rt_linux.c	/^	UCHAR XIDInfo[3];	\/* reference to IEEE Std 802.2 *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+_RT_IAPP_L2_UPDATE_FRAME	rt_linux.c	/^typedef struct GNU_PACKED _RT_IAPP_L2_UPDATE_FRAME {$/;"	s	file:
+_RT_IAPP_L2_UPDATE_FRAME::Control	rt_linux.c	/^	UCHAR Control;		\/* reference to IEEE Std 802.2 *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+_RT_IAPP_L2_UPDATE_FRAME::DA	rt_linux.c	/^	UCHAR DA[ETH_ALEN];	\/* broadcast MAC address *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+_RT_IAPP_L2_UPDATE_FRAME::DSAP	rt_linux.c	/^	UCHAR DSAP;		\/* null *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+_RT_IAPP_L2_UPDATE_FRAME::Len	rt_linux.c	/^	USHORT Len;		\/* 8 octets *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+_RT_IAPP_L2_UPDATE_FRAME::SA	rt_linux.c	/^	UCHAR SA[ETH_ALEN];	\/* the MAC address of the STA that has just associated$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+_RT_IAPP_L2_UPDATE_FRAME::SSAP	rt_linux.c	/^	UCHAR SSAP;		\/* null *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+_RT_IAPP_L2_UPDATE_FRAME::XIDInfo	rt_linux.c	/^	UCHAR XIDInfo[3];	\/* reference to IEEE Std 802.2 *\/$/;"	m	struct:_RT_IAPP_L2_UPDATE_FRAME	file:	access:public
+_RT_VERSION_INFO	sta_ioctl.c	/^typedef struct GNU_PACKED _RT_VERSION_INFO{$/;"	s	file:
+_RT_VERSION_INFO::DriverBuildDay	sta_ioctl.c	/^    UINT        DriverBuildDay;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+_RT_VERSION_INFO::DriverBuildMonth	sta_ioctl.c	/^    UINT        DriverBuildMonth;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+_RT_VERSION_INFO::DriverBuildYear	sta_ioctl.c	/^    UINT        DriverBuildYear;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+_RT_VERSION_INFO::DriverVersionW	sta_ioctl.c	/^    UCHAR       DriverVersionW;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+_RT_VERSION_INFO::DriverVersionX	sta_ioctl.c	/^    UCHAR       DriverVersionX;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+_RT_VERSION_INFO::DriverVersionY	sta_ioctl.c	/^    UCHAR       DriverVersionY;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+_RT_VERSION_INFO::DriverVersionZ	sta_ioctl.c	/^    UCHAR       DriverVersionZ;$/;"	m	struct:_RT_VERSION_INFO	file:	access:public
+__RTMP_OS_Add_Timer	rt_linux.c	/^static inline VOID __RTMP_OS_Add_Timer($/;"	f	file:	signature:( IN OS_NDIS_MINIPORT_TIMER * pTimer, IN unsigned long timeout)
+__RTMP_OS_Del_Timer	rt_linux.c	/^static inline VOID __RTMP_OS_Del_Timer($/;"	f	file:	signature:( IN OS_NDIS_MINIPORT_TIMER * pTimer, OUT BOOLEAN *pCancelled)
+__RTMP_OS_Init_Timer	rt_linux.c	/^static inline VOID __RTMP_OS_Init_Timer($/;"	f	file:	signature:( IN VOID *pReserved, IN OS_NDIS_MINIPORT_TIMER * pTimer, IN TIMER_FUNCTION function, IN PVOID data)
+__RTMP_OS_Mod_Timer	rt_linux.c	/^static inline VOID __RTMP_OS_Mod_Timer($/;"	f	file:	signature:( IN OS_NDIS_MINIPORT_TIMER * pTimer, IN unsigned long timeout)
+__RTMP_OS_Release_Timer	rt_linux.c	/^static inline VOID __RTMP_OS_Release_Timer($/;"	f	file:	signature:( IN OS_NDIS_MINIPORT_TIMER * pTimer)
+__RTMP_SetPeriodicTimer	rt_linux.c	/^static inline VOID __RTMP_SetPeriodicTimer($/;"	f	file:	signature:( IN OS_NDIS_MINIPORT_TIMER * pTimer, IN unsigned long timeout)
+__RtmpOSFSInfoChange	rt_linux.c	/^static inline void __RtmpOSFSInfoChange(OS_FS_INFO * pOSFSInfo, BOOLEAN bSet)$/;"	f	file:	signature:(OS_FS_INFO * pOSFSInfo, BOOLEAN bSet)
+__RtmpOSTaskAttach	rt_linux.c	/^static inline NDIS_STATUS __RtmpOSTaskAttach($/;"	f	file:	signature:( IN OS_TASK *pTask, IN RTMP_OS_TASK_CALLBACK fn, IN ULONG arg)
+__RtmpOSTaskCustomize	rt_linux.c	/^static inline void __RtmpOSTaskCustomize(OS_TASK *pTask)$/;"	f	file:	signature:(OS_TASK *pTask)
+__RtmpOSTaskInit	rt_linux.c	/^static inline NDIS_STATUS __RtmpOSTaskInit($/;"	f	file:	signature:( IN OS_TASK *pTask, IN PSTRING pTaskName, IN VOID *pPriv, IN LIST_HEADER *pSemList)
+__RtmpOSTaskKill	rt_linux.c	/^static inline NDIS_STATUS __RtmpOSTaskKill(OS_TASK *pTask)$/;"	f	file:	signature:(OS_TASK *pTask)
+__RtmpOSTaskNotifyToExit	rt_linux.c	/^static inline INT __RtmpOSTaskNotifyToExit(OS_TASK *pTask)$/;"	f	file:	signature:(OS_TASK *pTask)
+__RtmpOSTaskWait	rt_linux.c	/^BOOLEAN __RtmpOSTaskWait($/;"	f	signature:( IN VOID *pReserved, IN OS_TASK *pTask, IN INT32 *pStatus)
+ac0_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ac0_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+ac0_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ac0_dma_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+ac1_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ac1_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+ac1_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ac1_dma_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+ac2_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ac2_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+ac2_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ac2_dma_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+ac3_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ac3_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+ac3_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ac3_dma_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+alloc_netdev	rt_linux.c	/^struct net_device *alloc_netdev($/;"	f	signature:( int sizeof_priv, const char *mask, void (*setup) (struct net_device *))
+announce_802_3_packet	rt_profile.c	/^void announce_802_3_packet($/;"	f	signature:( IN VOID *pAdSrc, IN PNDIS_PACKET pPacket, IN UCHAR OpMode)
+ap_privtab	ap_ioctl.c	/^struct iw_priv_args ap_privtab[] = {$/;"	v	typeref:struct:iw_priv_args
+ate_ac0_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ate_ac0_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+ate_ac0_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void ate_ac0_dma_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+chip_id	rt_profile.c	/^	INT chip_id;$/;"	m	struct:dev_id_name_map	file:	access:public
+chip_name	rt_profile.c	/^	PSTRING chip_name;$/;"	m	struct:dev_id_name_map	file:	access:public
+def_to_str	rt_profile.c	48;"	d	file:
+dev_id_name_map	rt_profile.c	/^struct dev_id_name_map{$/;"	s	file:
+dev_id_name_map::chip_id	rt_profile.c	/^	INT chip_id;$/;"	m	struct:dev_id_name_map	file:	access:public
+dev_id_name_map::chip_name	rt_profile.c	/^	PSTRING chip_name;$/;"	m	struct:dev_id_name_map	file:	access:public
+dev_type_name_map	rt_profile.c	/^struct dev_type_name_map{$/;"	s	file:
+dev_type_name_map::prefix	rt_profile.c	/^	PSTRING prefix[2];$/;"	m	struct:dev_type_name_map	file:	access:public
+dev_type_name_map::type	rt_profile.c	/^	INT type;$/;"	m	struct:dev_type_name_map	file:	access:public
+dfs_tasklet	rt_rbus_pci_drv.c	/^void dfs_tasklet(unsigned long data)$/;"	f	signature:(unsigned long data)
+dslStateChg	bb_soc.c	/^static UCHAR dslStateChg=0;$/;"	v	file:
+dump_nonlinear_pkt	rt_main_dev.c	/^VOID dump_nonlinear_pkt(struct sk_buff *skb)$/;"	f	signature:(struct sk_buff *skb)
+dump_skb_info	rt_main_dev.c	/^VOID dump_skb_info(struct sk_buff *skb)$/;"	f	signature:(struct sk_buff *skb)
+dump_urb	rt_linux_symb.c	/^EXPORT_SYMBOL(dump_urb);$/;"	v
+dump_urb	rt_usb_util.c	/^void dump_urb(VOID *purb_org)$/;"	f	signature:(VOID *purb_org)
+duplicate_pkt	rt_linux.c	/^PNDIS_PACKET duplicate_pkt($/;"	f	signature:( IN PNET_DEV pNetDev, IN PUCHAR pHeader802_3, IN UINT HdrLen, IN PUCHAR pData, IN ULONG DataSize, IN UCHAR FromWhichBSSID)
+duplicate_pkt	rt_linux_symb.c	/^EXPORT_SYMBOL(duplicate_pkt);$/;"	v
+duplicate_pkt_with_TKIP_MIC	rt_linux.c	/^PNDIS_PACKET duplicate_pkt_with_TKIP_MIC($/;"	f	signature:( IN VOID *pReserved, IN PNDIS_PACKET pPacket)
+duplicate_pkt_with_TKIP_MIC	rt_linux_symb.c	/^EXPORT_SYMBOL(duplicate_pkt_with_TKIP_MIC);$/;"	v
+duplicate_pkt_with_VLAN	rt_linux.c	/^PNDIS_PACKET duplicate_pkt_with_VLAN($/;"	f	signature:( IN PNET_DEV pNetDev, IN USHORT VLAN_VID, IN USHORT VLAN_Priority, IN PUCHAR pHeader802_3, IN UINT HdrLen, IN PUCHAR pData, IN ULONG DataSize, IN UCHAR FromWhichBSSID, IN UCHAR *TPID)
+duplicate_pkt_with_VLAN	rt_linux_symb.c	/^EXPORT_SYMBOL(duplicate_pkt_with_VLAN);$/;"	v
+entry_wl_video_ClassifierEnable	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+entry_wl_video_Enable	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+entry_wl_video_HighTxMode	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+entry_wl_video_TxBASize	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+entry_wl_video_TxLifeTime	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+entry_wl_video_TxLifeTimeMode	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+entry_wl_video_TxPwr	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+entry_wl_video_TxRetryLimit	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+entry_wl_video_Update	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:proc_dir_entry	file:
+entry_wl_video_VideoMCS	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+entry_wl_video_VideoMCSEnable	rt_proc.c	/^static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;$/;"	v	typeref:struct:	file:
+fifo_statistic_full_tasklet	rt_rbus_pci_drv.c	/^static void fifo_statistic_full_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+fifo_statistic_full_tasklet	rt_rbus_pci_drv.c	/^void fifo_statistic_full_tasklet(unsigned long data)$/;"	f	signature:(unsigned long data)
+get_dev_config_idx	rt_profile.c	/^static INT get_dev_config_idx(RTMP_ADAPTER *pAd)$/;"	f	file:	signature:(RTMP_ADAPTER *pAd)
+get_dev_name_prefix	rt_profile.c	/^UCHAR *get_dev_name_prefix(RTMP_ADAPTER *pAd, INT dev_type)$/;"	f	signature:(RTMP_ADAPTER *pAd, INT dev_type)
+get_dev_profile	rt_profile.c	/^static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)$/;"	f	file:	signature:(RTMP_ADAPTER *pAd)
+get_netdev_from_bssid	rt_profile.c	/^PNET_DEV get_netdev_from_bssid(RTMP_ADAPTER *pAd, UCHAR FromWhichBSSID)$/;"	f	signature:(RTMP_ADAPTER *pAd, UCHAR FromWhichBSSID)
+get_sniffer_mode	rt_linux.c	/^UCHAR get_sniffer_mode(VOID *pDev)$/;"	f	signature:(VOID *pDev)
+get_sniffer_mode	rt_linux_symb.c	/^EXPORT_SYMBOL(get_sniffer_mode);$/;"	v
+hcca_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void hcca_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+hcca_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void hcca_dma_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+hex_dump	rt_linux.c	/^void hex_dump(char *str, UCHAR *pSrcBufVA, UINT SrcBufLen)$/;"	f	signature:(char *str, UCHAR *pSrcBufVA, UINT SrcBufLen)
+hex_dump	rt_linux_symb.c	/^EXPORT_SYMBOL(hex_dump);$/;"	v
+hostname	rt_main_dev.c	/^PSTRING hostname = "";	\/* default CMPC *\/$/;"	v
+id_name_list	rt_profile.c	/^static const struct dev_id_name_map id_name_list[]=$/;"	v	typeref:struct:dev_id_name_map	file:
+ifx_ra_start_xmit	inf_ppa.c	/^int ifx_ra_start_xmit(struct net_device *rx_dev, struct net_device *tx_dev, struct sk_buff *skb, int len)$/;"	f	signature:(struct net_device *rx_dev, struct net_device *tx_dev, struct sk_buff *skb, int len)
+ip_hdr	rt_main_dev.c	981;"	d	file:
+ip_sum_str	rt_main_dev.c	/^static char *ip_sum_str[]={"none", "unncessary", "complete", "partial"};$/;"	v	file:
+ipv6_hdr	rt_main_dev.c	980;"	d	file:
+linux_pci_map_single	rt_linux_symb.c	/^EXPORT_SYMBOL(linux_pci_map_single);$/;"	v
+linux_pci_map_single	rt_rbus_pci_util.c	/^ra_dma_addr_t linux_pci_map_single(void *pPciDev, void *ptr, size_t size, int sd_idx, int direction)$/;"	f	signature:(void *pPciDev, void *ptr, size_t size, int sd_idx, int direction)
+linux_pci_unmap_single	rt_linux_symb.c	/^EXPORT_SYMBOL(linux_pci_unmap_single);$/;"	v
+linux_pci_unmap_single	rt_rbus_pci_util.c	/^void linux_pci_unmap_single(void *pPciDev, ra_dma_addr_t radma_addr, size_t size, int direction)$/;"	f	signature:(void *pPciDev, ra_dma_addr_t radma_addr, size_t size, int direction)
+mac	rt_main_dev.c	/^PSTRING mac = "";		\/* default 00:00:00:00:00:00 *\/$/;"	v
+mgmt_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void mgmt_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+mgmt_dma_done_tasklet	rt_rbus_pci_drv.c	/^static void mgmt_dma_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+mode	rt_main_dev.c	/^PSTRING mode = "";		\/* supported mode: normal\/ate\/monitor;  default: normal *\/$/;"	v
+netdev_priv	rt_linux.c	/^static inline void *netdev_priv(struct net_device *dev)$/;"	f	file:	signature:(struct net_device *dev)
+netdev_priv_set	rt_linux.c	/^static inline void netdev_priv_set(struct net_device *dev, void *priv)$/;"	f	file:	signature:(struct net_device *dev, void *priv)
+obj-m	Makefile	/^obj-m := $(MOD_NAME).o$/;"	m
+obj_ap	Makefile	/^obj_ap :=$/;"	m
+obj_cmm	Makefile	/^obj_cmm := \\$/;"	m
+obj_mac	Makefile	/^obj_mac := ..\/..\/mac\/rtmp_mac.o$/;"	m
+obj_p2p	Makefile	/^obj_p2p :=$/;"	m
+obj_phy	Makefile	/^obj_phy := ..\/..\/phy\/phy.o	\\$/;"	m
+obj_sta	Makefile	/^obj_sta :=$/;"	m
+obj_vht	Makefile	/^obj_vht :=$/;"	m
+obj_wsc	Makefile	/^obj_wsc :=$/;"	m
+os_alloc_mem	rt_linux.c	/^NDIS_STATUS os_alloc_mem($/;"	f	signature:( IN VOID *pReserved, OUT UCHAR **mem, IN ULONG size)
+os_alloc_mem	rt_linux_symb.c	/^EXPORT_SYMBOL(os_alloc_mem);$/;"	v
+os_alloc_mem_suspend	rt_linux.c	/^NDIS_STATUS os_alloc_mem_suspend($/;"	f	signature:( IN VOID *pReserved, OUT UCHAR **mem, IN ULONG size)
+os_alloc_mem_suspend	rt_linux_symb.c	/^EXPORT_SYMBOL(os_alloc_mem_suspend);$/;"	v
+os_free_mem	rt_linux.c	/^NDIS_STATUS os_free_mem($/;"	f	signature:( IN VOID *pReserved, IN PVOID mem)
+os_free_mem	rt_linux_symb.c	/^EXPORT_SYMBOL(os_free_mem);$/;"	v
+pIkanosAd	vr_ikans.c	/^PRTMP_ADAPTER	pIkanosAd;$/;"	v
+pRtmpDrvNetOps	rt_main_dev.c	/^RTMP_NET_ABL_OPS RtmpDrvNetOps, *pRtmpDrvNetOps = &RtmpDrvNetOps;$/;"	v
+pRtmpDrvOps	rt_main_dev.c	/^RTMP_DRV_ABL_OPS RtmpDrvOps, *pRtmpDrvOps = &RtmpDrvOps;$/;"	v
+pToUpperLayerPktSent	vr_bdlt.c	/^EXPORT_SYMBOL(pToUpperLayerPktSent);$/;"	v
+pToUpperLayerPktSent	vr_bdlt.c	/^int (*pToUpperLayerPktSent)(struct sk_buff *pSkb) = netif_rx ;$/;"	v
+pm_message_t	pci_main_dev.c	141;"	d	file:
+pm_message_t	usb_main_dev.c	530;"	d	file:
+prefix	rt_profile.c	/^	PSTRING prefix[2];$/;"	m	struct:dev_type_name_map	file:	access:public
+prefix_map	rt_profile.c	/^static struct dev_type_name_map prefix_map[] =$/;"	v	typeref:struct:dev_type_name_map	file:
+print_int_count	rt_rbus_pci_drv.c	/^int print_int_count = 0;$/;"	v
+privtab	sta_ioctl.c	/^struct iw_priv_args privtab[] = {$/;"	v	typeref:struct:iw_priv_args
+proc_ralink_wl	rt_proc.c	/^struct proc_dir_entry *proc_ralink_wl, *proc_ralink_wl_video;$/;"	v	typeref:struct:proc_dir_entry
+proc_ralink_wl_video	rt_proc.c	/^struct proc_dir_entry *proc_ralink_wl, *proc_ralink_wl_video;$/;"	v	typeref:struct:
+process_nbns_packet	rt_profile.c	/^static INT process_nbns_packet($/;"	f	file:	signature:( IN PRTMP_ADAPTER pAd, IN struct sk_buff *skb)
+ra_mtd_read	rt_linux.c	/^extern int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf);$/;"	p	file:	signature:(int num, loff_t from, size_t len, u_char *buf)
+ra_mtd_read_nm	rt_linux.c	/^extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf);$/;"	p	file:	signature:(char *name, loff_t from, size_t len, u_char *buf)
+ra_mtd_write	rt_linux.c	/^extern int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf);$/;"	p	file:	signature:(int num, loff_t to, size_t len, const u_char *buf)
+ra_mtd_write_nm	rt_linux.c	/^extern int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf);$/;"	p	file:	signature:(char *name, loff_t to, size_t len, const u_char *buf)
+ralinkrate	rt_linux_symb.c	/^EXPORT_SYMBOL(ralinkrate);$/;"	v
+rausb_alloc_urb	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_alloc_urb);$/;"	v
+rausb_alloc_urb	rt_usb_util.c	/^struct urb *rausb_alloc_urb(int iso_packets)$/;"	f	signature:(int iso_packets)
+rausb_autopm_get_interface	rt_usb_util.c	/^int  rausb_autopm_get_interface( void *intf)$/;"	f	signature:( void *intf)
+rausb_autopm_put_interface	rt_usb_util.c	/^void rausb_autopm_put_interface( void *intf)$/;"	f	signature:( void *intf)
+rausb_buffer_alloc	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_buffer_alloc);$/;"	v
+rausb_buffer_alloc	rt_usb_util.c	/^void *rausb_buffer_alloc(VOID *dev,$/;"	f	signature:(VOID *dev, size_t size, ra_dma_addr_t *dma)
+rausb_buffer_free	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_buffer_free);$/;"	v
+rausb_buffer_free	rt_usb_util.c	/^void rausb_buffer_free(VOID *dev,$/;"	f	signature:(VOID *dev, size_t size, void *addr, ra_dma_addr_t dma)
+rausb_control_msg	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_control_msg);$/;"	v
+rausb_control_msg	rt_usb_util.c	/^int rausb_control_msg(VOID *dev,$/;"	f	signature:(VOID *dev, unsigned int pipe, __u8 request, __u8 requesttype, __u16 value, __u16 index, void *data, __u16 size, int timeout)
+rausb_deregister	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_deregister);$/;"	v
+rausb_deregister	rt_usb_util.c	/^void rausb_deregister(VOID * driver)$/;"	f	signature:(VOID * driver)
+rausb_fill_bulk_urb	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_fill_bulk_urb);$/;"	v
+rausb_fill_bulk_urb	rt_usb_util.c	/^void rausb_fill_bulk_urb(void *urb,$/;"	f	signature:(void *urb, void *dev, unsigned int pipe, void *transfer_buffer, int buffer_length, USB_COMPLETE_HANDLER complete_fn, void *context)
+rausb_free_urb	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_free_urb);$/;"	v
+rausb_free_urb	rt_usb_util.c	/^void rausb_free_urb(VOID *urb)$/;"	f	signature:(VOID *urb)
+rausb_get_dev	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_get_dev);$/;"	v
+rausb_get_dev	rt_usb_util.c	/^struct usb_device *rausb_get_dev(VOID *dev)$/;"	f	signature:(VOID *dev)
+rausb_kill_urb	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_kill_urb);$/;"	v
+rausb_kill_urb	rt_usb_util.c	/^void rausb_kill_urb(VOID *urb)$/;"	f	signature:(VOID *urb)
+rausb_put_dev	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_put_dev);$/;"	v
+rausb_put_dev	rt_usb_util.c	/^void rausb_put_dev(VOID *dev)$/;"	f	signature:(VOID *dev)
+rausb_rcvbulkpipe	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_rcvbulkpipe);$/;"	v
+rausb_rcvbulkpipe	rt_usb_util.c	/^unsigned int rausb_rcvbulkpipe(void *dev, ULONG address)$/;"	f	signature:(void *dev, ULONG address)
+rausb_rcvctrlpipe	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_rcvctrlpipe);$/;"	v
+rausb_rcvctrlpipe	rt_usb_util.c	/^unsigned int rausb_rcvctrlpipe(VOID *dev, ULONG address)$/;"	f	signature:(VOID *dev, ULONG address)
+rausb_register	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_register);$/;"	v
+rausb_register	rt_usb_util.c	/^int rausb_register(VOID * new_driver)$/;"	f	signature:(VOID * new_driver)
+rausb_sndbulkpipe	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_sndbulkpipe);$/;"	v
+rausb_sndbulkpipe	rt_usb_util.c	/^unsigned int rausb_sndbulkpipe(void *dev, ULONG address)$/;"	f	signature:(void *dev, ULONG address)
+rausb_sndctrlpipe	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_sndctrlpipe);$/;"	v
+rausb_sndctrlpipe	rt_usb_util.c	/^unsigned int rausb_sndctrlpipe(VOID *dev, ULONG address)$/;"	f	signature:(VOID *dev, ULONG address)
+rausb_submit_urb	rt_usb_util.c	/^EXPORT_SYMBOL(rausb_submit_urb);$/;"	v
+rausb_submit_urb	rt_usb_util.c	/^int rausb_submit_urb(VOID *urb)$/;"	f	signature:(VOID *urb)
+replace_upper_layer_packet_destination	vr_bdlt.c	/^EXPORT_SYMBOL(replace_upper_layer_packet_destination);$/;"	v
+replace_upper_layer_packet_destination	vr_bdlt.c	/^VOID replace_upper_layer_packet_destination(VOID *pXiDestination)$/;"	f	signature:(VOID *pXiDestination)
+rt2860_int_disable	rt_rbus_pci_drv.c	/^static inline void rt2860_int_disable(PRTMP_ADAPTER pAd, unsigned int mode)$/;"	f	file:	signature:(PRTMP_ADAPTER pAd, unsigned int mode)
+rt2860_int_enable	rt_rbus_pci_drv.c	/^static inline void rt2860_int_enable(PRTMP_ADAPTER pAd, unsigned int mode)$/;"	f	file:	signature:(PRTMP_ADAPTER pAd, unsigned int mode)
+rt2860_interrupt	rt_pci_rbus.c	/^rt2860_interrupt(int irq, void *dev_instance)$/;"	f	signature:(int irq, void *dev_instance)
+rt2860_interrupt	rt_pci_rbus.c	/^rt2860_interrupt(int irq, void *dev_instance);$/;"	p	file:	signature:(int irq, void *dev_instance)
+rt2870_disconnect	usb_main_dev.c	/^static void rt2870_disconnect(struct usb_device *dev, VOID *pAd)$/;"	f	file:	signature:(struct usb_device *dev, VOID *pAd)
+rt2870_probe	usb_main_dev.c	/^static int rt2870_probe($/;"	f	file:	signature:( struct usb_interface *intf, struct usb_device *usb_dev, const USB_DEVICE_ID *dev_id, VOID **ppAd)
+rt2880_dev	rbus_main_dev.c	/^static struct net_device *rt2880_dev = NULL;$/;"	v	typeref:struct:net_device	file:
+rt2880_module_exit	rbus_main_dev.c	/^VOID __exit rt2880_module_exit(void)$/;"	f	signature:(void)
+rt2880_module_exit	rbus_main_dev.c	/^module_exit(rt2880_module_exit);$/;"	v
+rt2880_module_init	rbus_main_dev.c	/^int __init rt2880_module_init(void)$/;"	f	signature:(void)
+rt2880_module_init	rbus_main_dev.c	/^module_init(rt2880_module_init);$/;"	v
+rt28xx_ap_ioctl	ap_ioctl.c	/^INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)$/;"	f	signature:(struct net_device *net_dev, struct ifreq *rq, int cmd)
+rt28xx_ap_iw_handler_def	ap_ioctl.c	/^const struct iw_handler_def rt28xx_ap_iw_handler_def =$/;"	v	typeref:struct:iw_handler_def
+rt28xx_close	rt_main_dev.c	/^int rt28xx_close(VOID *dev)$/;"	f	signature:(VOID *dev)
+rt28xx_close	rt_main_dev.c	/^int rt28xx_close(VOID *net_dev);$/;"	p	file:	signature:(VOID *net_dev)
+rt28xx_get_wireless_stats	rt_main_dev.c	/^struct iw_statistics *rt28xx_get_wireless_stats(struct net_device *net_dev)$/;"	f	signature:(struct net_device *net_dev)
+rt28xx_ioctl	rt_main_dev.c	/^INT rt28xx_ioctl(PNET_DEV net_dev, struct ifreq *rq, INT cmd)$/;"	f	signature:(PNET_DEV net_dev, struct ifreq *rq, INT cmd)
+rt28xx_iw_handler_def	sta_ioctl.c	/^const struct iw_handler_def rt28xx_iw_handler_def =$/;"	v	typeref:struct:iw_handler_def
+rt28xx_open	rt_main_dev.c	/^int rt28xx_open(VOID *dev)$/;"	f	signature:(VOID *dev)
+rt28xx_open	rt_main_dev.c	/^int rt28xx_open(VOID *net_dev);$/;"	p	file:	signature:(VOID *net_dev)
+rt28xx_packet_xmit	rt_main_dev.c	/^int rt28xx_packet_xmit(void *pkt)$/;"	f	signature:(void *pkt)
+rt28xx_send_packets	inf_ppa.c	/^extern INT rt28xx_send_packets(struct sk_buff *skb_p, struct net_device *net_dev);$/;"	p	file:	signature:(struct sk_buff *skb_p, struct net_device *net_dev)
+rt28xx_send_packets	rt_main_dev.c	/^INT rt28xx_send_packets(IN struct sk_buff *skb_p, IN struct net_device *net_dev);$/;"	p	file:	signature:(IN struct sk_buff *skb_p, IN struct net_device *net_dev)
+rt28xx_send_packets	rt_main_dev.c	/^int rt28xx_send_packets(struct sk_buff *skb, struct net_device *ndev)$/;"	f	signature:(struct sk_buff *skb, struct net_device *ndev)
+rt28xx_send_packets	vr_ikans.c	/^extern INT rt28xx_send_packets(struct sk_buff *skb_p, struct net_device	*net_dev);$/;"	p	file:	signature:(struct sk_buff *skb_p, struct net_device *net_dev)
+rt28xx_sta_ioctl	sta_ioctl.c	/^INT rt28xx_sta_ioctl(struct net_device *net_dev, struct ifreq *rq, INT cmd)$/;"	f	signature:(struct net_device *net_dev, struct ifreq *rq, INT cmd)
+rt28xx_tso_xmit	rt_main_dev.c	/^INT rt28xx_tso_xmit(struct sk_buff *skb)$/;"	f	signature:(struct sk_buff *skb)
+rt_handler	sta_ioctl.c	/^static const iw_handler rt_handler[] =$/;"	v	file:
+rt_ioctl_giwap	sta_ioctl.c	/^int rt_ioctl_giwap(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct sockaddr *ap_addr, char *extra)
+rt_ioctl_giwauth	sta_ioctl.c	/^int rt_ioctl_giwauth(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_giwencode	sta_ioctl.c	/^rt_ioctl_giwencode(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *erq, char *key)
+rt_ioctl_giwencodeext	sta_ioctl.c	/^rt_ioctl_giwencodeext(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_giwessid	sta_ioctl.c	/^int rt_ioctl_giwessid(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *data, char *essid)
+rt_ioctl_giwfrag	sta_ioctl.c	/^int rt_ioctl_giwfrag(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_param *frag, char *extra)
+rt_ioctl_giwfreq	sta_ioctl.c	/^int rt_ioctl_giwfreq(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_freq *freq, char *extra)
+rt_ioctl_giwgenie	sta_ioctl.c	/^int rt_ioctl_giwgenie(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_giwmode	sta_ioctl.c	/^int rt_ioctl_giwmode(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, __u32 *mode, char *extra)
+rt_ioctl_giwname	sta_ioctl.c	/^rt_ioctl_giwname(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, char *name, char *extra)
+rt_ioctl_giwnickn	sta_ioctl.c	/^int rt_ioctl_giwnickn(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *data, char *nickname)
+rt_ioctl_giwpriv	sta_ioctl.c	/^int rt_ioctl_giwpriv(	$/;"	f	signature:( struct net_device *dev, struct iw_request_info *info, struct iw_point *dwrq, char *extra)
+rt_ioctl_giwrange	sta_ioctl.c	/^int rt_ioctl_giwrange(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *data, char *extra)
+rt_ioctl_giwrate	sta_ioctl.c	/^int rt_ioctl_giwrate(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_giwrts	sta_ioctl.c	/^int rt_ioctl_giwrts(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_param *rts, char *extra)
+rt_ioctl_giwscan	sta_ioctl.c	/^int rt_ioctl_giwscan(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *data, char *extra)
+rt_ioctl_giwsens	sta_ioctl.c	/^int rt_ioctl_giwsens(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, char *name, char *extra)
+rt_ioctl_iwaplist	sta_ioctl.c	/^int rt_ioctl_iwaplist(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *data, char *extra)
+rt_ioctl_setparam	sta_ioctl.c	/^int rt_ioctl_setparam(struct net_device *dev, struct iw_request_info *info,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, void *w, char *extra)
+rt_ioctl_siwap	sta_ioctl.c	/^int rt_ioctl_siwap(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct sockaddr *ap_addr, char *extra)
+rt_ioctl_siwauth	sta_ioctl.c	/^int rt_ioctl_siwauth(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_siwencode	sta_ioctl.c	/^int rt_ioctl_siwencode(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *erq, char *extra)
+rt_ioctl_siwencodeext	sta_ioctl.c	/^int rt_ioctl_siwencodeext(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_siwessid	sta_ioctl.c	/^int rt_ioctl_siwessid(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *data, char *essid)
+rt_ioctl_siwfrag	sta_ioctl.c	/^int rt_ioctl_siwfrag(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_param *frag, char *extra)
+rt_ioctl_siwfreq	sta_ioctl.c	/^int rt_ioctl_siwfreq(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_freq *freq, char *extra)
+rt_ioctl_siwgenie	sta_ioctl.c	/^int rt_ioctl_siwgenie(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_siwmlme	sta_ioctl.c	/^int rt_ioctl_siwmlme(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_siwmode	sta_ioctl.c	/^int rt_ioctl_siwmode(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, __u32 *mode, char *extra)
+rt_ioctl_siwnickn	sta_ioctl.c	/^int rt_ioctl_siwnickn(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *data, char *nickname)
+rt_ioctl_siwpmksa	sta_ioctl.c	/^int rt_ioctl_siwpmksa(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_siwrate	sta_ioctl.c	/^int rt_ioctl_siwrate(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wrqu, char *extra)
+rt_ioctl_siwrts	sta_ioctl.c	/^int rt_ioctl_siwrts(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_param *rts, char *extra)
+rt_ioctl_siwscan	cfg80211.c	/^extern int rt_ioctl_siwscan(struct net_device *dev,$/;"	p	file:	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wreq, char *extra)
+rt_ioctl_siwscan	sta_ioctl.c	/^int rt_ioctl_siwscan(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, union iwreq_data *wreq, char *extra)
+rt_ioctl_siwsens	sta_ioctl.c	/^int rt_ioctl_siwsens(struct net_device *dev,$/;"	f	signature:(struct net_device *dev, struct iw_request_info *info, char *name, char *extra)
+rt_pci_cleanup_module	pci_main_dev.c	/^module_exit(rt_pci_cleanup_module);$/;"	v
+rt_pci_cleanup_module	pci_main_dev.c	/^void __exit rt_pci_cleanup_module(void)$/;"	f	signature:(void)
+rt_pci_driver	pci_main_dev.c	/^static struct pci_driver rt_pci_driver =$/;"	v	typeref:struct:pci_driver	file:
+rt_pci_init_module	pci_main_dev.c	/^int __init rt_pci_init_module(void)$/;"	f	signature:(void)
+rt_pci_init_module	pci_main_dev.c	/^module_init(rt_pci_init_module);$/;"	v
+rt_pci_probe	pci_main_dev.c	/^static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pci_id)$/;"	f	file:	signature:(struct pci_dev *pdev, const struct pci_device_id *pci_id)
+rt_pci_remove	pci_main_dev.c	/^static VOID DEVEXIT rt_pci_remove(struct pci_dev *pci_dev)$/;"	f	file:	signature:(struct pci_dev *pci_dev)
+rt_pci_resume	pci_main_dev.c	/^static int rt_pci_resume(struct pci_dev *pci_dev)$/;"	f	file:	signature:(struct pci_dev *pci_dev)
+rt_pci_suspend	pci_main_dev.c	/^static int rt_pci_suspend(struct pci_dev *pci_dev, pm_message_t state)$/;"	f	file:	signature:(struct pci_dev *pci_dev, pm_message_t state)
+rt_priv_handlers	sta_ioctl.c	/^static const iw_handler rt_priv_handlers[] = {$/;"	v	file:
+rt_private_get_statistics	sta_ioctl.c	/^rt_private_get_statistics(struct net_device *dev, struct iw_request_info *info,$/;"	f	file:	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *wrq, char *extra)
+rt_private_ioctl_bbp	sta_ioctl.c	/^rt_private_ioctl_bbp(struct net_device *dev, struct iw_request_info *info,$/;"	f	file:	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *wrq, char *extra)
+rt_private_set_wsc_string_item	sta_ioctl.c	/^rt_private_set_wsc_string_item(struct net_device *dev, struct iw_request_info *info,$/;"	f	file:	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *dwrq, char *extra)
+rt_private_set_wsc_u32_item	sta_ioctl.c	/^rt_private_set_wsc_u32_item(struct net_device *dev, struct iw_request_info *info,$/;"	f	file:	signature:(struct net_device *dev, struct iw_request_info *info, u32 *uwrq, char *extra)
+rt_private_show	sta_ioctl.c	/^rt_private_show(struct net_device *dev, struct iw_request_info *info,$/;"	f	file:	signature:(struct net_device *dev, struct iw_request_info *info, struct iw_point *wrq, PSTRING extra)
+rtmp_clone_mac	rt_profile.c	/^static inline BOOLEAN rtmp_clone_mac($/;"	f	file:	signature:( RTMP_ADAPTER *pAd, UCHAR *pkt, RTMP_NET_ETH_CONVERT_DEV_SEARCH Func)
+rtstrchr	rt_linux_symb.c	/^EXPORT_SYMBOL(rtstrchr);$/;"	v
+rtusb_ac0_dma_done_tasklet	rt_usb.c	/^static void rtusb_ac0_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_ac1_dma_done_tasklet	rt_usb.c	/^static void rtusb_ac1_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_ac2_dma_done_tasklet	rt_usb.c	/^static void rtusb_ac2_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_ac3_dma_done_tasklet	rt_usb.c	/^static void rtusb_ac3_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_ate_ac0_dma_done_tasklet	rt_usb.c	/^static void rtusb_ate_ac0_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_dataout_complete	rt_usb.c	/^static void rtusb_dataout_complete(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_disconnect	usb_main_dev.c	/^static void rtusb_disconnect(struct usb_device *dev, void *ptr)$/;"	f	file:	signature:(struct usb_device *dev, void *ptr)
+rtusb_disconnect	usb_main_dev.c	/^static void rtusb_disconnect(struct usb_interface *intf)$/;"	f	file:	signature:(struct usb_interface *intf)
+rtusb_driver	usb_main_dev.c	/^struct usb_driver rtusb_driver = {$/;"	v	typeref:struct:usb_driver
+rtusb_exit	usb_main_dev.c	/^VOID __exit rtusb_exit(void)$/;"	f	signature:(void)
+rtusb_exit	usb_main_dev.c	/^module_exit(rtusb_exit);$/;"	v
+rtusb_hcca_dma_done_tasklet	rt_usb.c	/^static void rtusb_hcca_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_init	usb_main_dev.c	/^INT __init rtusb_init(void)$/;"	f	signature:(void)
+rtusb_init	usb_main_dev.c	/^module_init(rtusb_init);$/;"	v
+rtusb_mgmt_dma_done_tasklet	rt_usb.c	/^static void rtusb_mgmt_dma_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_null_frame_done_tasklet	rt_usb.c	/^static void rtusb_null_frame_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_probe	usb_main_dev.c	/^static int rtusb_probe(struct usb_interface *intf, const USB_DEVICE_ID *id)$/;"	f	file:	signature:(struct usb_interface *intf, const USB_DEVICE_ID *id)
+rtusb_probe	usb_main_dev.c	/^static void *rtusb_probe(struct usb_device *dev, UINT inf, const USB_DEVICE_ID *id)$/;"	f	file:	signature:(struct usb_device *dev, UINT inf, const USB_DEVICE_ID *id)
+rtusb_pspoll_frame_done_tasklet	rt_usb.c	/^static void rtusb_pspoll_frame_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rtusb_reject_pending_pkts	usb_main_dev.c	/^VOID rtusb_reject_pending_pkts(VOID *pAd)$/;"	f	signature:(VOID *pAd)
+rtusb_resume	usb_main_dev.c	/^static int rtusb_resume(struct usb_interface *intf)$/;"	f	file:	signature:(struct usb_interface *intf)
+rtusb_suspend	usb_main_dev.c	/^static int rtusb_suspend(struct usb_interface *intf, pm_message_t state)$/;"	f	file:	signature:(struct usb_interface *intf, pm_message_t state)
+rtusb_vendor_specific_check	usb_main_dev.c	/^VOID rtusb_vendor_specific_check(struct usb_device *dev, VOID *pAd)$/;"	f	signature:(struct usb_device *dev, VOID *pAd)
+rx1_done_tasklet	rt_rbus_pci_drv.c	/^static void rx1_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+rx1_done_tasklet	rt_rbus_pci_drv.c	/^static void rx1_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+rx_done_tasklet	rt_rbus_pci_drv.c	/^__IMEM void rx_done_tasklet(unsigned long data)$/;"	f	signature:(unsigned long data)
+rx_done_tasklet	rt_rbus_pci_drv.c	/^__IMEM void rx_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+rx_done_tasklet	rt_rbus_pci_drv.c	/^static void rx_done_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+rx_done_tasklet	rt_usb.c	/^static void rx_done_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+schedule_dfs_task	rt_rbus_pci_drv.c	/^void schedule_dfs_task(PRTMP_ADAPTER pAd)$/;"	f	signature:(PRTMP_ADAPTER pAd)
+send_prism_monitor_packets	rt_linux_symb.c	/^EXPORT_SYMBOL(send_prism_monitor_packets);$/;"	v
+send_radiotap_monitor_packets	rt_linux_symb.c	/^EXPORT_SYMBOL(send_radiotap_monitor_packets);$/;"	v
+set_quality	sta_ioctl.c	/^static void set_quality(VOID *pAd,$/;"	f	file:	signature:(VOID *pAd, struct iw_quality *iq, RT_CMD_STA_IOCTL_BSS *pBss)
+set_sniffer_mode	rt_linux.c	/^VOID set_sniffer_mode(VOID *net_dev, UCHAR sniffer_mode)$/;"	f	signature:(VOID *net_dev, UCHAR sniffer_mode)
+set_sniffer_mode	rt_linux_symb.c	/^EXPORT_SYMBOL(set_sniffer_mode);$/;"	v
+skb_copy_to_linear_data_offset	rt_main_dev.c	985;"	d	file:
+skb_mac_header	rt_main_dev.c	988;"	d	file:
+skb_network_header	rt_main_dev.c	983;"	d	file:
+skb_network_header_len	rt_main_dev.c	987;"	d	file:
+skb_network_offset	rt_main_dev.c	982;"	d	file:
+skb_tail_pointer	rt_main_dev.c	984;"	d	file:
+skb_transport_header	rt_main_dev.c	979;"	d	file:
+skb_transport_offset	rt_main_dev.c	978;"	d	file:
+tbtt_tasklet	rt_profile.c	/^void tbtt_tasklet(unsigned long data)$/;"	f	signature:(unsigned long data)
+tcp_hdr	rt_main_dev.c	976;"	d	file:
+tcp_hdrlen	rt_main_dev.c	977;"	d	file:
+type	rt_profile.c	/^	INT type;$/;"	m	struct:dev_type_name_map	file:	access:public
+uapsd_eosp_sent_tasklet	rt_rbus_pci_drv.c	/^static void uapsd_eosp_sent_tasklet(unsigned long data)$/;"	f	file:	signature:(unsigned long data)
+uapsd_eosp_sent_tasklet	rt_rbus_pci_drv.c	/^static void uapsd_eosp_sent_tasklet(unsigned long data);$/;"	p	file:	signature:(unsigned long data)
+video_ClassifierEnable_get	rt_proc.c	/^ssize_t video_ClassifierEnable_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_ClassifierEnable_set	rt_proc.c	/^ssize_t video_ClassifierEnable_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_Enable_get	rt_proc.c	/^ssize_t video_Enable_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_Enable_set	rt_proc.c	/^ssize_t video_Enable_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_HighTxMode_get	rt_proc.c	/^ssize_t video_HighTxMode_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_HighTxMode_set	rt_proc.c	/^ssize_t video_HighTxMode_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_TxBASize_get	rt_proc.c	/^ssize_t video_TxBASize_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_TxBASize_set	rt_proc.c	/^ssize_t video_TxBASize_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_TxLifeTimeMode_get	rt_proc.c	/^ssize_t video_TxLifeTimeMode_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_TxLifeTimeMode_set	rt_proc.c	/^ssize_t video_TxLifeTimeMode_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_TxLifeTime_get	rt_proc.c	/^ssize_t video_TxLifeTime_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_TxLifeTime_set	rt_proc.c	/^ssize_t video_TxLifeTime_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_TxPwr_get	rt_proc.c	/^ssize_t video_TxPwr_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_TxPwr_set	rt_proc.c	/^ssize_t video_TxPwr_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_TxRetryLimit_get	rt_proc.c	/^ssize_t video_TxRetryLimit_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_TxRetryLimit_set	rt_proc.c	/^ssize_t video_TxRetryLimit_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_Update_get	rt_proc.c	/^ssize_t video_Update_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_Update_set	rt_proc.c	/^ssize_t video_Update_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_VideoMCSEnable_get	rt_proc.c	/^ssize_t video_VideoMCSEnable_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_VideoMCSEnable_set	rt_proc.c	/^ssize_t video_VideoMCSEnable_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+video_VideoMCS_get	rt_proc.c	/^ssize_t video_VideoMCS_get(char *page, char **start, off_t off, int count,$/;"	f	signature:(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+video_VideoMCS_set	rt_proc.c	/^ssize_t video_VideoMCS_set(struct file *file, const char __user * buffer,$/;"	f	signature:(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
+wext_notify_event_assoc	rt_linux_symb.c	/^EXPORT_SYMBOL(wext_notify_event_assoc);$/;"	v
+wifi_drv_cleanup_module	multi_main_dev.c	/^module_exit(wifi_drv_cleanup_module);$/;"	v
+wifi_drv_cleanup_module	multi_main_dev.c	/^static void __exit wifi_drv_cleanup_module(void)$/;"	f	file:	signature:(void)
+wifi_drv_init_module	multi_main_dev.c	/^module_init(wifi_drv_init_module);$/;"	v
+wifi_drv_init_module	multi_main_dev.c	/^static int __init wifi_drv_init_module(void)$/;"	f	file:	signature:(void)
+wl_proc_exit	rt_proc.c	/^int wl_proc_exit(void)$/;"	f	signature:(void)
+wl_proc_exit	rt_proc.c	/^int wl_proc_exit(void);$/;"	p	file:	signature:(void)
+wl_proc_init	rt_proc.c	/^int wl_proc_init(void)$/;"	f	signature:(void)
+wl_proc_init	rt_proc.c	/^int wl_proc_init(void);$/;"	p	file:	signature:(void)
+wl_video_proc_exit	rt_proc.c	/^int wl_video_proc_exit(void)$/;"	f	signature:(void)
+wl_video_proc_init	rt_proc.c	/^int wl_video_proc_init(void)$/;"	f	signature:(void)
+wlan_802_11_to_802_3_packet	rt_linux.c	/^void wlan_802_11_to_802_3_packet($/;"	f	signature:( IN PNET_DEV pNetDev, IN UCHAR OpMode, IN USHORT VLAN_VID, IN USHORT VLAN_Priority, IN PNDIS_PACKET pRxPacket, IN UCHAR *pData, IN ULONG DataSize, IN PUCHAR pHeader802_3, IN UCHAR FromWhichBSSID, IN UCHAR *TPID)
+wlan_802_11_to_802_3_packet	rt_linux_symb.c	/^EXPORT_SYMBOL(wlan_802_11_to_802_3_packet);$/;"	v
+xdef_to_str	rt_profile.c	47;"	d	file:

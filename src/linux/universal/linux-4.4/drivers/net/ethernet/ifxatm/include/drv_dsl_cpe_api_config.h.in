@@ -1,0 +1,169 @@
+/* src/include/drv_dsl_cpe_api_config.h.in.  Generated from configure.in by autoheader.  */
+
+/* Channels per line to support */
+#undef DSL_CHANNELS_PER_LINE
+
+/* Enable building only library file */
+#undef DSL_CPE_API_LIBRARY_BUILD_2_6
+
+/* Include DSL DELT static data support */
+#undef DSL_CPE_STATIC_DELT_DATA
+
+/* ADSL data led flash frequency */
+#undef DSL_DATA_LED_FLASH_FREQUENCY
+
+/* Debug level = local */
+#undef DSL_DBG_MAX_LEVEL_PRE
+
+/* Preselection of max. debug level = no (using default) */
+#undef DSL_DBG_MAX_LEVEL_SET
+
+/* Disabled debug prints */
+#undef DSL_DEBUG_DISABLE
+
+/* Maximum DSL devices to support */
+#undef DSL_DRV_MAX_DEVICE_NUMBER
+
+/* Include ADSL LED support */
+#undef INCLUDE_ADSL_LED
+
+/* Include deprecated functions */
+#undef INCLUDE_DEPRECATED
+
+/* Include Device Exception Codes */
+#undef INCLUDE_DEVICE_EXCEPTION_CODES
+
+/* Include ADSL MIB support */
+#undef INCLUDE_DSL_ADSL_MIB
+
+/* Include DSL BONDING support */
+#undef INCLUDE_DSL_BONDING
+
+/* Include DSL CEOC support */
+#undef INCLUDE_DSL_CEOC
+
+/* Include configuration get support */
+#undef INCLUDE_DSL_CONFIG_GET
+
+/* Add DANUBE support */
+#undef INCLUDE_DSL_CPE_API_DANUBE
+
+/* Include IFXOS support */
+#undef INCLUDE_DSL_CPE_API_IFXOS_SUPPORT
+
+/* Add VINAX support */
+#undef INCLUDE_DSL_CPE_API_VINAX
+
+/* Include Misc Line Status support */
+#undef INCLUDE_DSL_CPE_MISC_LINE_STATUS
+
+/* Include DSL PM channel counters support */
+#undef INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS
+
+/* Include DSL PM channel extended counters support */
+#undef INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS
+
+/* Include DSL PM channel thresholds support */
+#undef INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS
+
+/* Include PM config support */
+#undef INCLUDE_DSL_CPE_PM_CONFIG
+
+/* Include DSL PM datapath counters support */
+#undef INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS
+
+/* Include DSL PM datapath failure counters support */
+#undef INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS
+
+/* Include DSL PM datapath thresholds support */
+#undef INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS
+
+/* Include DSL PM history support */
+#undef INCLUDE_DSL_CPE_PM_HISTORY
+
+/* Include DSL PM line counters support */
+#undef INCLUDE_DSL_CPE_PM_LINE_COUNTERS
+
+/* Include DSL PM line event showtime counters support */
+#undef INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS
+
+/* Include DSL PM line failure counters support */
+#undef INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS
+
+/* Include DSL PM line thresholds support */
+#undef INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS
+
+/* Include DSL PM optional parameters support */
+#undef INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS
+
+/* Include DSL PM retransmission counters support */
+#undef INCLUDE_DSL_CPE_PM_RETX_COUNTERS
+
+/* Include DSL PM retransmission thresholds support */
+#undef INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS
+
+/* Include DSL PM showtime counters support */
+#undef INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS
+
+/* Include DSL PM total counters support */
+#undef INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS
+
+/* Include ADSL showtime event logging support */
+#undef INCLUDE_DSL_CPE_TRACE_BUFFER
+
+/* Include DELT support */
+#undef INCLUDE_DSL_DELT
+
+/* Include FW memory free support */
+#undef INCLUDE_DSL_FIRMWARE_MEMORY_FREE
+
+/* Include Framing Parameters support */
+#undef INCLUDE_DSL_FRAMING_PARAMETERS
+
+/* Include G997 alarm support */
+#undef INCLUDE_DSL_G997_ALARM
+
+/* Include G997 Framing Parameters support */
+#undef INCLUDE_DSL_G997_FRAMING_PARAMETERS
+
+/* Include G997 Line Inventory support */
+#undef INCLUDE_DSL_G997_LINE_INVENTORY
+
+/* Include G997 per tone values support */
+#undef INCLUDE_DSL_G997_PER_TONE
+
+/* Include G997 status support */
+#undef INCLUDE_DSL_G997_STATUS
+
+/* Include DSL PM support */
+#undef INCLUDE_DSL_PM
+
+/* Include Resource Statistics support */
+#undef INCLUDE_DSL_RESOURCE_STATISTICS
+
+/* Include System Interface configuration support */
+#undef INCLUDE_DSL_SYSTEM_INTERFACE
+
+/* Include FW request support */
+#undef INCLUDE_FW_REQUEST_SUPPORT
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Version number of package */
+#undef VERSION
