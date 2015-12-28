@@ -1,0 +1,36 @@
+Index: Makefile
+===================================================================
+--- Makefile	(revision 23600)
++++ Makefile	(working copy)
+@@ -100,11 +100,11 @@
+ obj-$(CONFIG_SOC_IMX6Q) += clk-imx6q.o mach-imx6q.o
+ obj-$(CONFIG_SOC_IMX6SL) += clk-imx6sl.o mach-imx6sl.o
+ 
+-ifeq ($(CONFIG_PM),y)
++#ifeq ($(CONFIG_PM),y)
+ obj-$(CONFIG_SOC_IMX6Q) += pm-imx6q.o headsmp.o
+ # i.MX6SL reuses i.MX6Q code
+ obj-$(CONFIG_SOC_IMX6SL) += pm-imx6q.o headsmp.o
+-endif
++#endif
+ 
+ # i.MX5 based machines
+ obj-$(CONFIG_MACH_MX51_BABBAGE) += mach-mx51_babbage.o
+Index: pm-imx6q.c
+===================================================================
+--- pm-imx6q.c	(revision 23600)
++++ pm-imx6q.c	(working copy)
+@@ -168,6 +168,7 @@
+ 
+ 	return 0;
+ }
++#ifdef CONFIG_PM
+ 
+ static int imx6q_suspend_finish(unsigned long val)
+ {
+@@ -231,3 +232,4 @@
+ 
+ 	suspend_set_ops(&imx6q_pm_ops);
+ }
++#endif
+\ No newline at end of file
