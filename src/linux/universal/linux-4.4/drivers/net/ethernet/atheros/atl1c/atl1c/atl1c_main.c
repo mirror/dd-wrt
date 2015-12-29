@@ -2088,8 +2088,8 @@ static int atl1c_xmit_frame(struct sk_buff *skb, struct net_device *netdev)
 		return NETDEV_TX_OK;
 	}
 
-	if (unlikely(adapter->vlgrp && vlan_tx_tag_present(skb))) {
-		u16 vlan = vlan_tx_tag_get(skb);
+	if (unlikely(adapter->vlgrp && skb_vlan_tag_present(skb))) {
+		u16 vlan = skb_vlan_tag_get(skb);
 		__le16 tag;
 
 		vlan = cpu_to_le16(vlan);

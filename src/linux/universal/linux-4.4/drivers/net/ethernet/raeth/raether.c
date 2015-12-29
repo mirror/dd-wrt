@@ -846,11 +846,11 @@ static inline int rt2880_eth_send(struct net_device* dev, struct sk_buff *skb, i
 #endif
 
 #ifdef CONFIG_RAETH_HW_VLAN_TX
-	if(vlan_tx_tag_present(skb)) {
+	if(skb_vlan_tag_present(skb)) {
 #if defined (CONFIG_RALINK_MT7621)
-	    ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.VLAN_TAG = 0x10000 | vlan_tx_tag_get(skb);
+	    ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.VLAN_TAG = 0x10000 | skb_vlan_tag_get(skb);
 #else
-	    ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.VPRI_VIDX = 0x80 | (vlan_tx_tag_get(skb) >> 13) << 4 | (vlan_tx_tag_get(skb) & 0xF);
+	    ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.VPRI_VIDX = 0x80 | (skb_vlan_tag_get(skb) >> 13) << 4 | (skb_vlan_tag_get(skb) & 0xF);
 #endif
 	}else {
 #if defined (CONFIG_RALINK_MT7621)
@@ -910,7 +910,7 @@ static inline int rt2880_eth_send(struct net_device* dev, struct sk_buff *skb, i
 #endif
 
 #ifdef CONFIG_RAETH_HW_VLAN_TX
-	if(vlan_tx_tag_present(skb)) {
+	if(skb_vlan_tag_present(skb)) {
 	    ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.VPRI_VIDX = 0x80 | (vlan_tx_tag_get(skb) >> 9) | (vlan_tx_tag_get(skb) & 0xF);
 	}else {
 	    ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.VPRI_VIDX = 0;
