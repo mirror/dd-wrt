@@ -22,13 +22,6 @@
 #endif
 #endif
 
-#ifdef _WIN32
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
-#endif
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -74,6 +67,7 @@
 #endif
 
 #ifdef _WIN32
+#include <winsock2.h>
 #include <io.h>
 #include <process.h>
 #include <direct.h>
@@ -87,8 +81,9 @@
 #endif
 
 #include "crypto.h"
+#include "crypto_format.h"
 #include "tortls.h"
-#include "../common/torlog.h"
+#include "torlog.h"
 #include "container.h"
 #include "torgzip.h"
 #include "address.h"
@@ -96,7 +91,9 @@
 #include "ht.h"
 #include "replaycache.h"
 #include "crypto_curve25519.h"
+#include "crypto_ed25519.h"
 #include "tor_queue.h"
+#include "util_format.h"
 
 /* These signals are defined to help handle_control_signal work.
  */
@@ -793,17 +790,34 @@ typedef struct rend_data_t {
   /** Onion address (without the .onion part) that a client requests. */
   char onion_address[REND_SERVICE_ID_LEN_BASE32+1];
 
+  /** Descriptor ID for each replicas computed from the onion address. If
+   * the onion address is empty, this array MUST be empty. We keep them so
+   * we know when to purge our entry in the last hsdir request table. */
+  char descriptor_id[REND_NUMBER_OF_NON_CONSECUTIVE_REPLICAS][DIGEST_LEN];
+
   /** (Optional) descriptor cookie that is used by a client. */
   char descriptor_cookie[REND_DESC_COOKIE_LEN];
 
   /** Authorization type for accessing a service used by a client. */
   rend_auth_type_t auth_type;
 
+  /** Descriptor ID for a client request. The control port command HSFETCH
+   * uses this. It's set if the descriptor query should only use this
+   * descriptor ID. */
+  char desc_id_fetch[DIGEST_LEN];
+
   /** Hash of the hidden service's PK used by a service. */
   char rend_pk_digest[DIGEST_LEN];
 
   /** Rendezvous cookie used by both, client and service. */
   char rend_cookie[REND_COOKIE_LEN];
+
+  /** List of HSDir fingerprints on which this request has been sent to.
+   * This contains binary identity digest of the directory. */
+  smartlist_t *hsdirs_fp;
+
+  /** Number of streams associated with this rendezvous circuit. */
+  int nr_streams;
 } rend_data_t;
 
 /** Time interval for tracking replays of DH public keys received in
@@ -1141,6 +1155,8 @@ typedef struct entry_port_cfg_t {
   /** When both no-auth and user/pass are advertised by a SOCKS client, select
    * no-auth. */
   unsigned int socks_prefer_no_auth : 1;
+  /** When ISO_SOCKSAUTH is in use, Keep-Alive circuits indefinitely. */
+  unsigned int socks_iso_keep_alive : 1;
 
   /* Client port types only: */
   unsigned int ipv4_traffic : 1;
@@ -1336,6 +1352,8 @@ typedef struct listener_connection_t {
  * in the v3 handshake.  The subject key must be a 1024-bit RSA key; it
  * must be signed by the identity key */
 #define OR_CERT_TYPE_AUTH_1024 3
+/** DOCDOC */
+#define OR_CERT_TYPE_RSA_ED_CROSSCERT 7
 /**@}*/
 
 /** The one currently supported type of AUTHENTICATE cell.  It contains
@@ -1411,9 +1429,9 @@ typedef struct or_handshake_state_t {
    * @{
    */
   /** The cert for the key that's supposed to sign the AUTHENTICATE cell */
-  tor_cert_t *auth_cert;
+  tor_x509_cert_t *auth_cert;
   /** A self-signed identity certificate */
-  tor_cert_t *id_cert;
+  tor_x509_cert_t *id_cert;
   /**@}*/
 } or_handshake_state_t;
 
@@ -1731,6 +1749,9 @@ typedef struct control_connection_t {
    * connection. */
   unsigned int is_owning_control_connection:1;
 
+  /** List of ephemeral onion services belonging to this connection. */
+  smartlist_t *ephemeral_onion_services;
+
   /** If we have sent an AUTHCHALLENGE reply on this connection and
    * have not received a successful AUTHENTICATE command, points to
    * the value which the client must send to authenticate itself;
@@ -2003,6 +2024,8 @@ typedef int16_t country_t;
 /** Information about another onion router in the network. */
 typedef struct {
   signed_descriptor_t cache_info;
+  /** A SHA256-digest of the extrainfo (if any) */
+  char extra_info_digest256[DIGEST256_LEN];
   char *nickname; /**< Human-readable OR name. */
 
   uint32_t addr; /**< IPv4 address of OR, in host order. */
@@ -2020,6 +2043,11 @@ typedef struct {
   crypto_pk_t *identity_pkey;  /**< Public RSA key for signing. */
   /** Public curve25519 key for onions */
   curve25519_public_key_t *onion_curve25519_pkey;
+  /** Certificate for ed25519 signing key */
+  struct tor_cert_st *signing_key_cert;
+  /** What's the earliest expiration time on all the certs in this
+   * routerinfo? */
+  time_t cert_expiration_time;
 
   char *platform; /**< What software/operating system is this OR using? */
 
@@ -2079,8 +2107,12 @@ typedef struct {
 /** Information needed to keep and cache a signed extra-info document. */
 typedef struct extrainfo_t {
   signed_descriptor_t cache_info;
+  /** SHA256 digest of this document */
+  uint8_t digest256[DIGEST256_LEN];
   /** The router's nickname. */
   char nickname[MAX_NICKNAME_LEN+1];
+  /** Certificate for ed25519 signing key */
+  struct tor_cert_st *signing_key_cert;
   /** True iff we found the right key for this extra-info, verified the
    * signature, and found it to be bad. */
   unsigned int bad_sig : 1;
@@ -2131,9 +2163,6 @@ typedef struct routerstatus_t {
    * if the number of traits we care about ever becomes incredibly big. */
   unsigned int version_known:1;
 
-  /** True iff this router is a version that, if it caches directory info,
-   * we can get microdescriptors from. */
-  unsigned int version_supports_microdesc_cache:1;
   /** True iff this router has a version that allows it to accept EXTEND2
    * cells */
   unsigned int version_supports_extend2_cells:1;
@@ -2228,6 +2257,8 @@ typedef struct microdesc_t {
   crypto_pk_t *onion_pkey;
   /** As routerinfo_t.onion_curve25519_pkey */
   curve25519_public_key_t *onion_curve25519_pkey;
+  /** Ed25519 identity key, if included. */
+  ed25519_public_key_t *ed25519_identity_pkey;
   /** As routerinfo_t.ipv6_add */
   tor_addr_t ipv6_addr;
   /** As routerinfo_t.ipv6_orport */
@@ -2342,9 +2373,13 @@ typedef struct vote_routerstatus_t {
   char *version; /**< The version that the authority says this router is
                   * running. */
   unsigned int has_measured_bw:1; /**< The vote had a measured bw */
+  unsigned int has_ed25519_listing:1; /** DOCDOC */
+  unsigned int ed25519_reflects_consensus:1; /** DOCDOC */
   uint32_t measured_bw_kb; /**< Measured bandwidth (capacity) of the router */
   /** The hash or hashes that the authority claims this microdesc has. */
   vote_microdesc_hash_t *microdesc;
+  /** Ed25519 identity for this router, or zero if it has none. */
+  uint8_t ed25519_id[ED25519_PUBKEY_LEN];
 } vote_routerstatus_t;
 
 /** A signature of some document by an authority. */
@@ -2844,6 +2879,11 @@ typedef struct circuit_t {
    * circuits entered certain states.  This usage probably won't
    * interfere with this field's primary purpose, but we should
    * document it more thoroughly to make sure of that.
+   *
+   * XXX027 The SocksPort option KeepaliveIsolateSOCKSAuth will artificially
+   * adjust this value forward each time a suitable stream is attached to an
+   * already constructed circuit, potentially keeping the circuit alive
+   * indefinitely.
    */
   time_t timestamp_dirty;
 
@@ -3325,6 +3365,9 @@ typedef struct port_cfg_t {
   uint8_t type; /**< One of CONN_TYPE_*_LISTENER */
   unsigned is_unix_addr : 1; /**< True iff this is an AF_UNIX address. */
 
+  unsigned is_group_writable : 1;
+  unsigned is_world_writable : 1;
+
   entry_port_cfg_t entry_cfg;
 
   server_port_cfg_t server_cfg;
@@ -3368,7 +3411,8 @@ typedef struct {
   /** What should the tor process actually do? */
   enum {
     CMD_RUN_TOR=0, CMD_LIST_FINGERPRINT, CMD_HASH_PASSWORD,
-    CMD_VERIFY_CONFIG, CMD_RUN_UNITTESTS, CMD_DUMP_CONFIG
+    CMD_VERIFY_CONFIG, CMD_RUN_UNITTESTS, CMD_DUMP_CONFIG,
+    CMD_KEYGEN
   } command;
   char *command_arg; /**< Argument for command-line option. */
 
@@ -3386,8 +3430,6 @@ typedef struct {
   char *Nickname; /**< OR only: nickname of this onion router. */
   char *Address; /**< OR only: configured address for this onion router. */
   char *PidFile; /**< Where to store PID of Tor process. */
-
-  int DynamicDHGroups; /**< Dynamic generation of prime moduli for use in DH.*/
 
   routerset_t *ExitNodes; /**< Structure containing nicknames, digests,
                            * country codes and IP address patterns of ORs to
@@ -3560,10 +3602,7 @@ typedef struct {
   int PublishHidServDescriptors;
   int FetchServerDescriptors; /**< Do we fetch server descriptors as normal? */
   int FetchHidServDescriptors; /**< and hidden service descriptors? */
-  int HidServDirectoryV2; /**< Do we participate in the HS DHT? */
 
-  int VoteOnHidServDirectoriesV2; /**< As a directory authority, vote on
-                                   * assignment of the HSDir flag? */
   int MinUptimeHidServDirectoryV2; /**< As directory authority, accept hidden
                                     * service directories after what time? */
 
@@ -3751,6 +3790,7 @@ typedef struct {
                                      * number of servers per IP address shared
                                      * with an authority. */
   int AuthDirHasIPv6Connectivity; /**< Boolean: are we on IPv6?  */
+  int AuthDirPinKeys; /**< Boolean: Do we enforce key-pinning? */
 
   /** If non-zero, always vote the Fast flag for any relay advertising
    * this amount of capacity or more. */
@@ -4062,15 +4102,18 @@ typedef struct {
   /** Relays in a testing network which should be voted Exit
    * regardless of exit policy. */
   routerset_t *TestingDirAuthVoteExit;
+  int TestingDirAuthVoteExitIsStrict;
 
   /** Relays in a testing network which should be voted Guard
    * regardless of uptime and bandwidth. */
   routerset_t *TestingDirAuthVoteGuard;
+  int TestingDirAuthVoteGuardIsStrict;
 
   /** Relays in a testing network which should be voted HSDir
-   * regardless of uptime and ORPort connectivity.
+   * regardless of uptime and DirPort.
    * Respects VoteOnHidServDirectoriesV2. */
   routerset_t *TestingDirAuthVoteHSDir;
+  int TestingDirAuthVoteHSDirIsStrict;
 
   /** Enable CONN_BW events.  Only altered on testing networks. */
   int TestingEnableConnBwEvent;
@@ -4246,6 +4289,33 @@ typedef struct {
    * XXXX Eventually, the default will be 0. */
   int ExitRelay;
 
+  /** For how long (seconds) do we declare our singning keys to be valid? */
+  int SigningKeyLifetime;
+  /** For how long (seconds) do we declare our link keys to be valid? */
+  int TestingLinkCertLifetime;
+  /** For how long (seconds) do we declare our auth keys to be valid? */
+  int TestingAuthKeyLifetime;
+
+  /** How long before signing keys expire will we try to make a new one? */
+  int TestingSigningKeySlop;
+  /** How long before link keys expire will we try to make a new one? */
+  int TestingLinkKeySlop;
+  /** How long before auth keys expire will we try to make a new one? */
+  int TestingAuthKeySlop;
+
+  /** Force use of offline master key features: never generate a master
+   * ed25519 identity key except from tor --keygen */
+  int OfflineMasterKey;
+
+  enum {
+    FORCE_PASSPHRASE_AUTO=0,
+    FORCE_PASSPHRASE_ON,
+    FORCE_PASSPHRASE_OFF
+  } keygen_force_passphrase;
+  int use_keygen_passphrase_fd;
+  int keygen_passphrase_fd;
+  int change_key_passphrase;
+  char *master_key_fname;
 } or_options_t;
 
 /** Persistent state for an onion router, as saved to disk. */
@@ -4810,12 +4880,13 @@ typedef struct rend_encoded_v2_service_descriptor_t {
  * introduction point.  See also rend_intro_point_t.unreachable_count. */
 #define MAX_INTRO_POINT_REACHABILITY_FAILURES 5
 
-/** The maximum number of distinct INTRODUCE2 cells which a hidden
- * service's introduction point will receive before it begins to
- * expire.
- *
- * XXX023 Is this number at all sane? */
-#define INTRO_POINT_LIFETIME_INTRODUCTIONS 16384
+/** The minimum and maximum number of distinct INTRODUCE2 cells which a
+ * hidden service's introduction point will receive before it begins to
+ * expire. */
+#define INTRO_POINT_MIN_LIFETIME_INTRODUCTIONS 16384
+/* Double the minimum value so the interval is [min, min * 2]. */
+#define INTRO_POINT_MAX_LIFETIME_INTRODUCTIONS \
+  (INTRO_POINT_MIN_LIFETIME_INTRODUCTIONS * 2)
 
 /** The minimum number of seconds that an introduction point will last
  * before expiring due to old age.  (If it receives
@@ -4829,6 +4900,11 @@ typedef struct rend_encoded_v2_service_descriptor_t {
  *
  * XXX023 Should this be configurable? */
 #define INTRO_POINT_LIFETIME_MAX_SECONDS (24*60*60)
+
+/** The maximum number of circuit creation retry we do to an intro point
+ * before giving up. We try to reuse intro point that fails during their
+ * lifetime so this is a hard limit on the amount of time we do that. */
+#define MAX_INTRO_POINT_CIRCUIT_RETRIES 3
 
 /** Introduction point information.  Used both in rend_service_t (on
  * the service side) and in rend_service_descriptor_t (on both the
@@ -4854,11 +4930,6 @@ typedef struct rend_intro_point_t {
    * included in the last HS descriptor we generated. */
   unsigned int listed_in_last_desc : 1;
 
-  /** (Service side only) Flag indicating that
-   * rend_service_note_removing_intro_point has been called for this
-   * intro point. */
-  unsigned int rend_service_note_removing_intro_point_called : 1;
-
   /** (Service side only) A replay cache recording the RSA-encrypted parts
    * of INTRODUCE2 cells this intro point's circuit has received.  This is
    * used to prevent replay attacks. */
@@ -4868,6 +4939,12 @@ typedef struct rend_intro_point_t {
    * intro point.
    */
   int accepted_introduce2_count;
+
+  /** (Service side only) Number of maximum INTRODUCE2 cells that this IP
+   * will accept. This is a random value between
+   * INTRO_POINT_MIN_LIFETIME_INTRODUCTIONS and
+   * INTRO_POINT_MAX_LIFETIME_INTRODUCTIONS. */
+  int max_introductions;
 
   /** (Service side only) The time at which this intro point was first
    * published, or -1 if this intro point has not yet been
@@ -4879,15 +4956,16 @@ typedef struct rend_intro_point_t {
    * point should expire. */
   time_t time_to_expire;
 
-  /** (Service side only) The time at which we decided that this intro
-   * point should start expiring, or -1 if this intro point is not yet
-   * expiring.
-   *
-   * This field also serves as a flag to indicate that we have decided
-   * to expire this intro point, in case intro_point_should_expire_now
-   * flaps (perhaps due to a clock jump; perhaps due to other
-   * weirdness, or even a (present or future) bug). */
-  time_t time_expiring;
+  /** (Service side only) The amount of circuit creation we've made to this
+   * intro point. This is incremented every time we do a circuit relaunch on
+   * this object which is triggered when the circuit dies but the node is
+   * still in the consensus. After MAX_INTRO_POINT_CIRCUIT_RETRIES, we give
+   * up on it. */
+  unsigned int circuit_retries;
+
+  /** (Service side only) Set if this intro point has an established circuit
+   * and unset if it doesn't. */
+  unsigned int circuit_established:1;
 } rend_intro_point_t;
 
 #define REND_PROTOCOL_VERSION_BITMASK_WIDTH 16
@@ -4912,15 +4990,6 @@ typedef struct rend_service_descriptor_t {
    * to know which uploads succeeded and which not). */
   smartlist_t *successful_uploads;
 } rend_service_descriptor_t;
-
-/** A cached rendezvous descriptor. */
-typedef struct rend_cache_entry_t {
-  size_t len; /**< Length of <b>desc</b> */
-  time_t last_served; /**< When did we last write this one to somebody?
-                       * (HSDir only) */
-  char *desc; /**< Service descriptor */
-  rend_service_descriptor_t *parsed; /**< Parsed value of 'desc' */
-} rend_cache_entry_t;
 
 /********************************* routerlist.c ***************************/
 
@@ -5043,6 +5112,8 @@ typedef enum was_router_added_t {
   /* Router descriptor was rejected because it was older than
    * OLD_ROUTER_DESC_MAX_AGE. */
   ROUTER_WAS_TOO_OLD = -7, /* note contrast with 'NOT_NEW' */
+  /* DOCDOC */
+  ROUTER_CERTS_EXPIRED = -8
 } was_router_added_t;
 
 /********************************* routerparse.c ************************/

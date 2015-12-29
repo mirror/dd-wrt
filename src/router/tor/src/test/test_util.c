@@ -3611,6 +3611,49 @@ test_util_di_ops(void *arg)
   ;
 }
 
+static void
+test_util_di_map(void *arg)
+{
+  (void)arg;
+  di_digest256_map_t *dimap = NULL;
+  uint8_t key1[] = "Robert Anton Wilson            ";
+  uint8_t key2[] = "Martin Gardner, _Fads&fallacies";
+  uint8_t key3[] = "Tom Lehrer, _Be Prepared_.     ";
+  uint8_t key4[] = "Ursula Le Guin,_A Wizard of... ";
+
+  char dflt_entry[] = "'You have made a good beginning', but no more";
+
+  tt_int_op(32, ==, sizeof(key1));
+  tt_int_op(32, ==, sizeof(key2));
+  tt_int_op(32, ==, sizeof(key3));
+
+  tt_ptr_op(dflt_entry, ==, dimap_search(dimap, key1, dflt_entry));
+
+  char *str1 = tor_strdup("You are precisely as big as what you love"
+                          " and precisely as small as what you allow"
+                          " to annoy you.");
+  char *str2 = tor_strdup("Let us hope that Lysenko's success in Russia will"
+                          " serve for many generations to come as another"
+                          " reminder to the world of how quickly and easily"
+                          " a science can be corrupted when ignorant"
+                          " political leaders deem themselves competent"
+                          " to arbitrate scientific disputes");
+  char *str3 = tor_strdup("Don't write naughty words on walls "
+                          "if you can't spell.");
+
+  dimap_add_entry(&dimap, key1, str1);
+  dimap_add_entry(&dimap, key2, str2);
+  dimap_add_entry(&dimap, key3, str3);
+
+  tt_ptr_op(str1, ==, dimap_search(dimap, key1, dflt_entry));
+  tt_ptr_op(str3, ==, dimap_search(dimap, key3, dflt_entry));
+  tt_ptr_op(str2, ==, dimap_search(dimap, key2, dflt_entry));
+  tt_ptr_op(dflt_entry, ==, dimap_search(dimap, key4, dflt_entry));
+
+ done:
+  dimap_free(dimap, tor_free_);
+}
+
 /**
  * Test counting high bits
  */
@@ -4111,26 +4154,6 @@ test_util_laplace(void *arg)
   ;
 }
 
-static void
-test_util_strclear(void *arg)
-{
-  static const char *vals[] = { "", "a", "abcdef", "abcdefgh", NULL };
-  int i;
-  char *v = NULL;
-  (void)arg;
-
-  for (i = 0; vals[i]; ++i) {
-    size_t n;
-    v = tor_strdup(vals[i]);
-    n = strlen(v);
-    tor_strclear(v);
-    tt_assert(tor_mem_is_zero(v, n+1));
-    tor_free(v);
-  }
- done:
-  tor_free(v);
-}
-
 #define UTIL_LEGACY(name)                                               \
   { #name, test_util_ ## name , 0, NULL, NULL }
 
@@ -4288,19 +4311,36 @@ test_util_hostname_validation(void *arg)
   tt_assert(string_is_valid_hostname("stanford.edu"));
   tt_assert(string_is_valid_hostname("multiple-words-with-hypens.jp"));
 
-  // Subdomain name cannot start with '-'.
+  // Subdomain name cannot start with '-' or '_'.
   tt_assert(!string_is_valid_hostname("-torproject.org"));
   tt_assert(!string_is_valid_hostname("subdomain.-domain.org"));
   tt_assert(!string_is_valid_hostname("-subdomain.domain.org"));
+  tt_assert(!string_is_valid_hostname("___abc.org"));
 
   // Hostnames cannot contain non-alphanumeric characters.
   tt_assert(!string_is_valid_hostname("%%domain.\\org."));
   tt_assert(!string_is_valid_hostname("***x.net"));
-  tt_assert(!string_is_valid_hostname("___abc.org"));
   tt_assert(!string_is_valid_hostname("\xff\xffxyz.org"));
   tt_assert(!string_is_valid_hostname("word1 word2.net"));
 
+  // Test workaround for nytimes.com stupidity, technically invalid,
+  // but we allow it since they are big, even though they are failing to
+  // comply with a ~30 year old standard.
+  tt_assert(string_is_valid_hostname("core3_euw1.fabrik.nytimes.com"));
+
+  // Firefox passes FQDNs with trailing '.'s  directly to the SOCKS proxy,
+  // which is redundant since the spec states DOMAINNAME addresses are fully
+  // qualified.  While unusual, this should be tollerated.
+  tt_assert(string_is_valid_hostname("core9_euw1.fabrik.nytimes.com."));
+  tt_assert(!string_is_valid_hostname("..washingtonpost.is.better.com"));
+  tt_assert(!string_is_valid_hostname("so.is..ft.com"));
+  tt_assert(!string_is_valid_hostname("..."));
+
   // XXX: do we allow single-label DNS names?
+  // We shouldn't for SOCKS (spec says "contains a fully-qualified domain name"
+  // but only test pathologically malformed traling '.' cases for now.
+  tt_assert(!string_is_valid_hostname("."));
+  tt_assert(!string_is_valid_hostname(".."));
 
   done:
   return;
@@ -4320,6 +4360,58 @@ test_util_ipv4_validation(void *arg)
 
   done:
   return;
+}
+
+static void
+test_util_writepid(void *arg)
+{
+  (void) arg;
+
+  char *contents = NULL;
+  const char *fname = get_fname("tmp_pid");
+  unsigned long pid;
+  char c;
+
+  write_pidfile(fname);
+
+  contents = read_file_to_str(fname, 0, NULL);
+  tt_assert(contents);
+
+  int n = sscanf(contents, "%lu\n%c", &pid, &c);
+  tt_int_op(n, OP_EQ, 1);
+
+#ifdef _WIN32
+  tt_uint_op(pid, OP_EQ, _getpid());
+#else
+  tt_uint_op(pid, OP_EQ, getpid());
+#endif
+
+ done:
+  tor_free(contents);
+}
+
+static void
+test_util_get_avail_disk_space(void *arg)
+{
+  (void) arg;
+  int64_t val;
+
+  /* No answer for nonexistent directory */
+  val = tor_get_avail_disk_space("/akljasdfklsajdklasjkldjsa");
+  tt_i64_op(val, OP_EQ, -1);
+
+  /* Try the current directory */
+  val = tor_get_avail_disk_space(".");
+
+#if !defined(HAVE_STATVFS) && !defined(_WIN32)
+  tt_i64_op(val, OP_EQ, -1); /* You don't have an implementation for this */
+#else
+  tt_i64_op(val, OP_GT, 0); /* You have some space. */
+  tt_i64_op(val, OP_LT, ((int64_t)1)<<56); /* You don't have a zebibyte */
+#endif
+
+ done:
+  ;
 }
 
 struct testcase_t util_tests[] = {
@@ -4346,9 +4438,9 @@ struct testcase_t util_tests[] = {
   UTIL_LEGACY(path_is_relative),
   UTIL_LEGACY(strtok),
   UTIL_LEGACY(di_ops),
+  UTIL_TEST(di_map, 0),
   UTIL_TEST(round_to_next_multiple_of, 0),
   UTIL_TEST(laplace, 0),
-  UTIL_TEST(strclear, 0),
   UTIL_TEST(find_str_at_start_of_line, 0),
   UTIL_TEST(string_is_C_identifier, 0),
   UTIL_TEST(asprintf, 0),
@@ -4389,6 +4481,8 @@ struct testcase_t util_tests[] = {
   UTIL_TEST(max_mem, 0),
   UTIL_TEST(hostname_validation, 0),
   UTIL_TEST(ipv4_validation, 0),
+  UTIL_TEST(writepid, 0),
+  UTIL_TEST(get_avail_disk_space, 0),
   END_OF_TESTCASES
 };
 

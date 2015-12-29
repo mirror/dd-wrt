@@ -1128,7 +1128,7 @@ circuit_build_needed_circs(time_t now)
   /* make sure any hidden services have enough intro points
    * HS intro point streams only require an internal circuit */
   if (router_have_consensus_path() != CONSENSUS_PATH_UNKNOWN)
-    rend_services_introduce();
+    rend_consider_services_intro_points();
 
   circuit_expire_old_circs_as_needed(now);
 
@@ -1189,17 +1189,31 @@ circuit_detach_stream(circuit_t *circ, edge_connection_t *conn)
 
   if (CIRCUIT_IS_ORIGIN(circ)) {
     origin_circuit_t *origin_circ = TO_ORIGIN_CIRCUIT(circ);
+    int removed = 0;
     if (conn == origin_circ->p_streams) {
       origin_circ->p_streams = conn->next_stream;
-      return;
+      removed = 1;
+    } else {
+      for (prevconn = origin_circ->p_streams;
+           prevconn && prevconn->next_stream && prevconn->next_stream != conn;
+           prevconn = prevconn->next_stream)
+        ;
+      if (prevconn && prevconn->next_stream) {
+        prevconn->next_stream = conn->next_stream;
+        removed = 1;
+      }
     }
+    if (removed) {
+      log_debug(LD_APP, "Removing stream %d from circ %u",
+                conn->stream_id, (unsigned)circ->n_circ_id);
 
-    for (prevconn = origin_circ->p_streams;
-         prevconn && prevconn->next_stream && prevconn->next_stream != conn;
-         prevconn = prevconn->next_stream)
-      ;
-    if (prevconn && prevconn->next_stream) {
-      prevconn->next_stream = conn->next_stream;
+      /* If the stream was removed, and it was a rend stream, decrement the
+       * number of streams on the circuit associated with the rend service.
+       */
+      if (circ->purpose == CIRCUIT_PURPOSE_S_REND_JOINED) {
+        tor_assert(origin_circ->rend_data);
+        origin_circ->rend_data->nr_streams--;
+      }
       return;
     }
   } else {
@@ -1755,12 +1769,12 @@ circuit_launch_by_extend_info(uint8_t purpose,
 
       switch (purpose) {
         case CIRCUIT_PURPOSE_C_ESTABLISH_REND:
-        case CIRCUIT_PURPOSE_S_ESTABLISH_INTRO:
           /* it's ready right now */
           break;
         case CIRCUIT_PURPOSE_C_INTRODUCING:
         case CIRCUIT_PURPOSE_S_CONNECT_REND:
         case CIRCUIT_PURPOSE_C_GENERAL:
+        case CIRCUIT_PURPOSE_S_ESTABLISH_INTRO:
           /* need to add a new hop */
           tor_assert(extend_info);
           if (circuit_extend_to_new_exit(circ, extend_info) < 0)
@@ -1832,6 +1846,12 @@ circuit_get_open_circ_or_launch(entry_connection_t *conn,
 
   tor_assert(conn);
   tor_assert(circp);
+  if (ENTRY_TO_CONN(conn)->state != AP_CONN_STATE_CIRCUIT_WAIT) {
+    connection_t *c = ENTRY_TO_CONN(conn);
+    log_err(LD_BUG, "Connection state mismatch: wanted "
+            "AP_CONN_STATE_CIRCUIT_WAIT, but got %d (%s)",
+            c->state, conn_state_to_string(c->type, c->state));
+  }
   tor_assert(ENTRY_TO_CONN(conn)->state == AP_CONN_STATE_CIRCUIT_WAIT);
   check_exit_policy =
       conn->socks_request->command == SOCKS_COMMAND_CONNECT &&
@@ -2149,7 +2169,7 @@ link_apconn_to_circ(entry_connection_t *apconn, origin_circuit_t *circ,
      * that an attempt to connect to a hidden service just
      * succeeded.  Tell rendclient.c. */
     rend_client_note_connection_attempt_ended(
-                    ENTRY_TO_EDGE_CONN(apconn)->rend_data->onion_address);
+                    ENTRY_TO_EDGE_CONN(apconn)->rend_data);
   }
 
   if (cpath) { /* we were given one; use it */
@@ -2264,8 +2284,15 @@ connection_ap_handshake_attach_chosen_circuit(entry_connection_t *conn,
 
   base_conn->state = AP_CONN_STATE_CIRCUIT_WAIT;
 
-  if (!circ->base_.timestamp_dirty)
-    circ->base_.timestamp_dirty = time(NULL);
+  if (!circ->base_.timestamp_dirty ||
+      ((conn->entry_cfg.isolation_flags & ISO_SOCKSAUTH) &&
+       (conn->entry_cfg.socks_iso_keep_alive) &&
+       (conn->socks_request->usernamelen ||
+        conn->socks_request->passwordlen))) {
+    /* When stream isolation is in use and controlled by an application
+     * we are willing to keep using the stream. */
+    circ->base_.timestamp_dirty = approx_time();
+  }
 
   pathbias_count_use_attempt(circ);
 
@@ -2404,6 +2431,18 @@ connection_ap_handshake_attach_circuit(entry_connection_t *conn)
       if (connection_ap_handshake_send_begin(conn) < 0)
         return 0; /* already marked, let them fade away */
       return 1;
+    }
+
+    /* At this point we need to re-check the state, since it's possible that
+     * our call to circuit_get_open_circ_or_launch() changed the connection's
+     * state from "CIRCUIT_WAIT" to "RENDDESC_WAIT" because we decided to
+     * re-fetch the descriptor.
+     */
+    if (ENTRY_TO_CONN(conn)->state != AP_CONN_STATE_CIRCUIT_WAIT) {
+      log_info(LD_REND, "This connection is no longer ready to attach; its "
+               "state changed."
+               "(We probably have to re-fetch its descriptor.)");
+      return 0;
     }
 
     if (rendcirc && (rendcirc->base_.purpose ==

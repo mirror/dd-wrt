@@ -1053,6 +1053,10 @@ circuit_note_clock_jumped(int seconds_elapsed)
                               "CLOCK_JUMPED");
   circuit_mark_all_unused_circs();
   circuit_mark_all_dirty_circs_as_unusable();
+  if (seconds_elapsed < 0) {
+    /* Restart all the timers in case we jumped a long way into the past. */
+    reset_all_main_loop_timers();
+  }
 }
 
 /** Take the 'extend' <b>cell</b>, pull out addr/port plus the onion
@@ -1396,9 +1400,12 @@ onionskin_answer(or_circuit_t *circ,
   log_debug(LD_CIRC,"Finished sending '%s' cell.",
             circ->is_first_hop ? "created_fast" : "created");
 
-  /* Ignore the local bit when testing - many test networks run on local
-   * addresses */
-  if ((!channel_is_local(circ->p_chan) || get_options()->TestingTorNetwork)
+  /* Ignore the local bit when ExtendAllowPrivateAddresses is set:
+   * it violates the assumption that private addresses are local.
+   * Also, many test networks run on local addresses, and
+   * TestingTorNetwork sets ExtendAllowPrivateAddresses. */
+  if ((!channel_is_local(circ->p_chan)
+       || get_options()->ExtendAllowPrivateAddresses)
       && !channel_is_outgoing(circ->p_chan)) {
     /* record that we could process create cells from a non-local conn
      * that we didn't initiate; presumably this means that create cells
