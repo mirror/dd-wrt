@@ -217,17 +217,20 @@ static inline struct imq_net *imq_pernet(struct net *net)
 
 static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num);
 
-static unsigned int imq_nf_hook(const struct nf_hook_ops *hook_ops,
-				struct sk_buff *pskb,
-				const struct net_device *indev,
-				const struct net_device *outdev,
-				int (*okfn)(struct sk_buff *));
+static unsigned int imq_nf_hook(void *priv,
+			       struct sk_buff *skb,
+			       const struct nf_hook_state *state);
+
+//static unsigned int imq_nf_hook(const struct nf_hook_ops *hook_ops,
+//				struct sk_buff *pskb,
+//				const struct net_device *indev,
+//				const struct net_device *outdev,
+//				int (*okfn)(struct sk_buff *));
 
 static struct nf_hook_ops imq_ops[] = {
 	{
 	/* imq_ingress_ipv4 */
 		.hook		= imq_nf_hook,
-		.owner		= THIS_MODULE,
 		.pf		= PF_INET,
 		.hooknum	= NF_INET_PRE_ROUTING,
 #if defined(CONFIG_IMQ_BEHAVIOR_BA) || defined(CONFIG_IMQ_BEHAVIOR_BB)
@@ -239,7 +242,6 @@ static struct nf_hook_ops imq_ops[] = {
 	{
 	/* imq_egress_ipv4 */
 		.hook		= imq_nf_hook,
-		.owner		= THIS_MODULE,
 		.pf		= PF_INET,
 		.hooknum	= NF_INET_POST_ROUTING,
 #if defined(CONFIG_IMQ_BEHAVIOR_AA) || defined(CONFIG_IMQ_BEHAVIOR_BA)
@@ -252,7 +254,6 @@ static struct nf_hook_ops imq_ops[] = {
 	{
 	/* imq_ingress_ipv6 */
 		.hook		= imq_nf_hook,
-		.owner		= THIS_MODULE,
 		.pf		= PF_INET6,
 		.hooknum	= NF_INET_PRE_ROUTING,
 #if defined(CONFIG_IMQ_BEHAVIOR_BA) || defined(CONFIG_IMQ_BEHAVIOR_BB)
@@ -264,7 +265,6 @@ static struct nf_hook_ops imq_ops[] = {
 	{
 	/* imq_egress_ipv6 */
 		.hook		= imq_nf_hook,
-		.owner		= THIS_MODULE,
 		.pf		= PF_INET6,
 		.hooknum	= NF_INET_POST_ROUTING,
 #if defined(CONFIG_IMQ_BEHAVIOR_AA) || defined(CONFIG_IMQ_BEHAVIOR_BA)
@@ -535,9 +535,8 @@ static struct nf_queue_entry *nf_queue_entry_dup(struct nf_queue_entry *e)
 {
 	struct nf_queue_entry *entry = kmemdup(e, e->size, GFP_ATOMIC);
 	if (entry) {
-		if (nf_queue_entry_get_refs(entry))
-			return entry;
-		kfree(entry);
+		nf_queue_entry_get_refs(entry);
+		return entry;
 	}
 	return NULL;
 }
@@ -645,7 +644,7 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num)
 
 	skb = entry->skb;
 
-	switch (entry->pf) {
+	switch (entry->state.pf) {
 	case NFPROTO_IPV4:
 		skb->protocol = htons(ETH_P_IP);
 		break;
@@ -753,7 +752,7 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 
 	/* backup skb->cb, as qdisc layer will overwrite it */
 	skb_save_cb(skb_shared);
-	qdisc_enqueue_root(skb_shared, q); /* might kfree_skb */
+	qdisc_enqueue(skb_shared, q); /* might kfree_skb */
 
 	if (likely(atomic_read(&skb_shared->users) == users + 1)) {
 		kfree_skb(skb_shared); /* decrease reference count by one */
@@ -794,13 +793,11 @@ packet_not_eaten_by_imq_dev:
 	return -1;
 }
 
-static unsigned int imq_nf_hook(const struct nf_hook_ops *hook_ops,
-				struct sk_buff *pskb,
-				const struct net_device *indev,
-				const struct net_device *outdev,
-				int (*okfn)(struct sk_buff *))
+static unsigned int imq_nf_hook(void *priv,
+			       struct sk_buff *skb,
+			       const struct nf_hook_state *state)
 {
-	return (pskb->imq_flags & IMQ_F_ENQUEUE) ? NF_IMQ_QUEUE : NF_ACCEPT;
+	return (skb->imq_flags & IMQ_F_ENQUEUE) ? NF_IMQ_QUEUE : NF_ACCEPT;
 }
 
 static int imq_close(struct net_device *dev)

@@ -128,12 +128,12 @@ struct xt_match *xtnu_request_find_match(unsigned int af, const char *name,
 }
 EXPORT_SYMBOL_GPL(xtnu_request_find_match);
 
-int xtnu_ip_route_me_harder(struct sk_buff **pskb, unsigned int addr_type)
+/*int xtnu_ip_route_me_harder(struct sk_buff **pskb, unsigned int addr_type)
 {
 	return ip_route_me_harder(*pskb, addr_type);
 }
 EXPORT_SYMBOL_GPL(xtnu_ip_route_me_harder);
-
+*/
 int xtnu_skb_make_writable(struct sk_buff **pskb, unsigned int len)
 {
 	return skb_make_writable(*pskb, len);

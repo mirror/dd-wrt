@@ -1800,7 +1800,7 @@ static int get_dir_index_using_name(struct super_block *s, long long
 
 static int squashfs_readdir(struct file *file, struct dir_context *ctx)
 {
-	struct inode *i = file->f_dentry->d_inode;
+	struct inode *i = file_inode(file);
 	struct squashfs_sb_info *msblk = i->i_sb->s_fs_info;
 	struct squashfs_super_block *sblk = &msblk->sblk;
 	long long next_block = SQUASHFS_I(i)->start_block +

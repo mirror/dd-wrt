@@ -67,7 +67,7 @@ extern unsigned char cns3xxx_fiq_start, cns3xxx_fiq_end;
 static void __iomem *scu_base;
 static int hasfiq = 0;
 
-static inline void __cpuinit cns3xxx_set_fiq_regs(unsigned int cpu)
+static inline void cns3xxx_set_fiq_regs(unsigned int cpu)
 {
 	struct pt_regs FIQ_regs;
 	struct fiq_req *fiq_req = &per_cpu(fiq_data, !cpu);
@@ -102,7 +102,7 @@ static void __init cns3xxx_init_fiq(void)
  * observers, irrespective of whether they're taking part in coherency
  * or not.  This is necessary for the hotplug code to work reliably.
  */
-static void __cpuinit write_pen_release(int val)
+static void write_pen_release(int val)
 {
 	pen_release = val;
 	smp_wmb();
@@ -163,7 +163,7 @@ static int FIQcompatible(void)
 }
 
 
-static void __cpuinit cns3xxx_secondary_init(unsigned int cpu)
+static void cns3xxx_secondary_init(unsigned int cpu)
 {
 	/*
 	 * Setup Secondary Core FIQ regs
@@ -184,7 +184,7 @@ static void __cpuinit cns3xxx_secondary_init(unsigned int cpu)
 	spin_unlock(&boot_lock);
 }
 
-static int __cpuinit cns3xxx_boot_secondary(unsigned int cpu, struct task_struct *idle)
+static int cns3xxx_boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
 	unsigned long timeout;
 

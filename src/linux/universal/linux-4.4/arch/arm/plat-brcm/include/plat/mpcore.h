@@ -36,7 +36,7 @@ extern void __init
 	unsigned int timer_irq);
 
 extern void __iomem * scu_base_addr(void);
-extern void __cpuinit mpcore_cpu_init(void);
+extern void mpcore_cpu_init(void);
 extern void plat_wake_secondary_cpu( 
 	unsigned cpus, void (* _sec_entry_va)(void) );
 

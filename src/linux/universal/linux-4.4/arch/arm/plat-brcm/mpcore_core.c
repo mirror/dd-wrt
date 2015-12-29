@@ -123,7 +123,7 @@ void __init mpcore_init_timer( unsigned long perphclk_freq )
 /*
  * For SMP - initialize GIC CPU interface for secondary cores
  */
-void __cpuinit mpcore_cpu_init(void)
+void mpcore_cpu_init(void)
 {
 	/* Initialize the GIC CPU interface for the next processor */
 //	gic_secondary_init(0);

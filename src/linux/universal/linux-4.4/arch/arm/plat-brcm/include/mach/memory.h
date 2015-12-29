@@ -14,6 +14,8 @@
 
 #define PLAT_PHYS_OFFSET             UL(CONFIG_DRAM_BASE)
 
+#define PADDR_ACP_AX		(0x80000000)
+#define PADDR_ACP_BX		(0x40000000)
 #define PADDR_ACE_BCM53573	(0x00000000)
 #define PADDR_ACE1_BCM53573	(0x80000000)
 
@@ -39,17 +41,19 @@
  * to program the PAX inbound mapping registers.
  */
 #define CONSISTENT_DMA_SIZE     SZ_128M
-
-/* 2nd physical memory window */
-#define PHYS_OFFSET2		0x80000000
+#define PHYS_OFFSET2             UL(0x8000000) /* Default value for NS */
 
 #if !defined(__ASSEMBLY__)
 extern unsigned int coherence_flag;
-#define ACP_WAR_ENAB()		((coherence_flag & COHERENCE_ACP_WAR) != 0)
+#define ACP_WAR_ENAB()		0 //((coherence_flag & COHERENCE_ACP_WAR) != 0)
+
+//extern unsigned int ddr_phys_offset2_va;
+//#define PHYS_OFFSET2   ((unsigned long)ddr_phys_offset2_va)
 
 extern unsigned int coherence_win_sz;
-#define ACP_WIN_SIZE			(coherence_win_sz)
-#define ACP_WIN_LIMIT			(PHYS_OFFSET + ACP_WIN_SIZE)
+//#define ACP_WIN_SIZE			(coherence_win_sz)
+//#define ACP_WIN_LIMIT			(PHYS_OFFSET + ACP_WIN_SIZE)
+#else
 #endif
 
 #if !defined(__ASSEMBLY__) && defined(CONFIG_ZONE_DMA)
