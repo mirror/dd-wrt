@@ -2,7 +2,7 @@
  * Broadcom SDIO/PCMCIA
  * Software-specific definitions shared between device and host side
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmsdpcm.h 314495 2012-02-12 07:56:39Z $
+ * $Id: bcmsdpcm.h 414375 2013-07-24 15:51:11Z $
  */
 
 #ifndef	_bcmsdpcm_h_
@@ -140,16 +140,23 @@
 #define SDPCM_GLOMDESC(p)	(((uint8 *)p)[1] & 0x80)
 
 /* For TEST_CHANNEL packets, define another 4-byte header */
-#define SDPCM_TEST_HDRLEN	4	/* Generally: Cmd(1), Ext(1), Len(2);
-					 * Semantics of Ext byte depend on command.
-					 * Len is current or requested frame length, not
-					 * including test header; sent little-endian.
-					 */
-#define SDPCM_TEST_DISCARD	0x01	/* Receiver discards. Ext is a pattern id. */
-#define SDPCM_TEST_ECHOREQ	0x02	/* Echo request. Ext is a pattern id. */
-#define SDPCM_TEST_ECHORSP	0x03	/* Echo response. Ext is a pattern id. */
-#define SDPCM_TEST_BURST	0x04	/* Receiver to send a burst. Ext is a frame count */
-#define SDPCM_TEST_SEND		0x05	/* Receiver sets send mode. Ext is boolean on/off */
+#define SDPCM_TEST_HDRLEN		4	/* Generally: Cmd(1), Ext(1), Len(2);
+						 * Semantics of Ext byte depend on command.
+						 * Len is current or requested frame length, not
+						 * including test header; sent little-endian.
+						 */
+#define SDPCM_TEST_PKT_CNT_FLD_LEN	4	/* Packet count filed legth */
+#define SDPCM_TEST_DISCARD		0x01	/* Receiver discards. Ext is a pattern id. */
+#define SDPCM_TEST_ECHOREQ		0x02	/* Echo request. Ext is a pattern id. */
+#define SDPCM_TEST_ECHORSP		0x03	/* Echo response. Ext is a pattern id. */
+#define SDPCM_TEST_BURST		0x04	/* Receiver to send a burst. Ext is a frame count
+						 * (Backward compatabilty) Set frame count in a
+						 * 4 byte filed adjacent to the HDR
+						 */
+#define SDPCM_TEST_SEND			0x05	/* Receiver sets send mode. Ext is boolean on/off
+						 * Set frame count in a 4 byte filed adjacent to
+						 * the HDR
+						 */
 
 /* Handy macro for filling in datagen packets with a pattern */
 #define SDPCM_TEST_FILL(byteno, id)	((uint8)(id + byteno))

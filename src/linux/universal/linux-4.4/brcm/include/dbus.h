@@ -2,7 +2,7 @@
  * Dongle BUS interface Abstraction layer
  *   target serial buses like USB, SDIO, SPI, etc.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: dbus.h 331695 2012-05-07 10:05:24Z $
+ * $Id: dbus.h 431375 2013-10-23 12:51:40Z $
  */
 
 #ifndef __DBUS_H__
@@ -34,7 +34,6 @@
 #define DBUSTRACE(args)
 #define DBUSERR(args)
 #define DBUSINFO(args)
-#define DBUSTRACE(args)
 #define DBUSDBGLOCK(args)
 #endif
 
@@ -70,8 +69,11 @@ enum {
 #define ERR_CBMASK_RXFAIL		0x00000002
 #define ERR_CBMASK_ALL			0xFFFFFFFF
 
-#define DBUS_CBCTL_WRITE		0
-#define DBUS_CBCTL_READ			1
+#define DBUS_CBCTL_WRITE			0
+#define DBUS_CBCTL_READ				1
+#if defined(INTR_EP_ENABLE)
+#define DBUS_CBINTR_POLL			2
+#endif /* defined(INTR_EP_ENABLE) */
 
 #define DBUS_TX_RETRY_LIMIT		3		/* retries for failed txirb */
 #define DBUS_TX_TIMEOUT_INTERVAL	250		/* timeout for txirb complete, in ms */
@@ -143,8 +145,21 @@ typedef struct {
 /*
  * Configurable BUS parameters
  */
+enum {
+	DBUS_CONFIG_ID_RXCTL_DEFERRES = 1,
+	DBUS_CONFIG_ID_TXRXQUEUE
+};
 typedef struct {
-	bool rxctl_deferrespok;
+	uint32 config_id;
+	union {
+		bool rxctl_deferrespok;
+		struct {
+			int maxrxq;
+			int rxbufsize;
+			int maxtxq;
+			int txbufsize;
+		} txrxqueue;
+	};
 } dbus_config_t;
 
 /*
@@ -242,6 +257,8 @@ typedef struct {
 
 	int (*readreg)(void *bus, uint32 regaddr, int datalen, uint32 *value);
 
+	int  (*set_device_speed)(void *bus, uint8 speed);
+
 	/* Add from the bottom */
 } dbus_intf_t;
 
@@ -288,15 +305,17 @@ extern int dbus_stop(dbus_pub_t *pub);
 extern int dbus_shutdown(dbus_pub_t *pub);
 extern void dbus_flowctrl_rx(dbus_pub_t *pub, bool on);
 
+extern int dbus_send_txdata(dbus_pub_t *dbus, void *pktbuf);
 extern int dbus_send_buf(dbus_pub_t *pub, uint8 *buf, int len, void *info);
 extern int dbus_send_pkt(dbus_pub_t *pub, void *pkt, void *info);
 extern int dbus_send_ctl(dbus_pub_t *pub, uint8 *buf, int len);
 extern int dbus_recv_ctl(dbus_pub_t *pub, uint8 *buf, int len);
 extern int dbus_recv_bulk(dbus_pub_t *pub, uint32 ep_idx);
-
+extern int dbus_poll_intr(dbus_pub_t *pub);
 extern int dbus_get_stats(dbus_pub_t *pub, dbus_stats_t *stats);
 extern int dbus_get_attrib(dbus_pub_t *pub, dbus_attrib_t *attrib);
 extern int dbus_get_device_speed(dbus_pub_t *pub);
+extern int dbus_set_device_speed(dbus_pub_t *pub, uint8 speed);
 extern int dbus_set_config(dbus_pub_t *pub, dbus_config_t *config);
 extern int dbus_get_config(dbus_pub_t *pub, dbus_config_t *config);
 extern void * dbus_get_devinfo(dbus_pub_t *pub);

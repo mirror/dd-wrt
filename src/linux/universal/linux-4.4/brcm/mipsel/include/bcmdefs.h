@@ -294,7 +294,7 @@ typedef struct  {
  */
 #define MAX_DMA_SEGS 32
 #elif defined(linux)
-#define MAX_DMA_SEGS 8
+#define MAX_DMA_SEGS 32
 #else
 #define MAX_DMA_SEGS 4
 #endif
