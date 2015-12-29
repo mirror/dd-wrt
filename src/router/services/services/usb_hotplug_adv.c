@@ -454,7 +454,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		eval("mkdir", "-p", dev_dir);
 		// e.g. /mnt /tmp/devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1:1.0/part1
 		sprintf(sym_link, "%s/%s", dev_dir, part);
-		eval("ln", "-s", mount_mount, sym_link);
+		eval("ln", "-s", mount_point, sym_link);
 	}
 
 	/* lets start mounting */
