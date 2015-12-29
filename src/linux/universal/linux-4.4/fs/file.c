@@ -198,7 +198,6 @@ static int expand_fdtable(struct files_struct *files, int nr)
 	smp_wmb();
 	return 1;
 }
-EXPORT_SYMBOL_GPL(expand_files);
 
 /*
  * Expand files.
@@ -242,6 +241,7 @@ repeat:
 	wake_up_all(&files->resize_wait);
 	return expanded;
 }
+EXPORT_SYMBOL_GPL(expand_files);
 
 static inline void __set_close_on_exec(int fd, struct fdtable *fdt)
 {

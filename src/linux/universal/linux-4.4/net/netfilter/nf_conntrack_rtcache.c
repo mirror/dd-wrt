@@ -125,11 +125,9 @@ static void nf_conn_rtcache_dst_obsolete(struct nf_conn_rtcache *rtc,
 	rtc->cached_dst[dir].iif = -1;
 }
 
-static unsigned int nf_rtcache_in(const struct nf_hook_ops *ops,
-				  struct sk_buff *skb,
-				  const struct net_device *in,
-				  const struct net_device *out,
-				  int (*okfn)(struct sk_buff *))
+static unsigned int nf_rtcache_in(void *priv,
+			       struct sk_buff *skb,
+			       const struct nf_hook_state *state)
 {
 	struct nf_conn_rtcache *rtc;
 	enum ip_conntrack_info ctinfo;
@@ -158,32 +156,30 @@ static unsigned int nf_rtcache_in(const struct nf_hook_ops *ops,
 	 */
 	dir = CTINFO2DIR(ctinfo);
 	iif = nf_conn_rtcache_iif_get(rtc, dir);
-	if (in->ifindex != iif) {
+	if (state->in->ifindex != iif) {
 		pr_debug("ct %p, iif %d, cached iif %d, skip cached entry\n",
-			 ct, iif, in->ifindex);
+			 ct, iif, state->in->ifindex);
 		return NF_ACCEPT;
 	}
 	dst = nf_conn_rtcache_dst_get(rtc, dir);
 	if (dst == NULL)
 		return NF_ACCEPT;
 
-	cookie = nf_rtcache_get_cookie(ops->pf, dst);
+	cookie = nf_rtcache_get_cookie(state->pf, dst);
 
 	dst = dst_check(dst, cookie);
 	pr_debug("obtained dst %p for skb %p, cookie %d\n", dst, skb, cookie);
 	if (likely(dst))
-		skb_dst_set_noref_force(skb, dst);
+		skb_dst_set_noref(skb, dst);
 	else
 		nf_conn_rtcache_dst_obsolete(rtc, dir);
 
 	return NF_ACCEPT;
 }
 
-static unsigned int nf_rtcache_forward(const struct nf_hook_ops *ops,
-				       struct sk_buff *skb,
-				       const struct net_device *in,
-				       const struct net_device *out,
-				       int (*okfn)(struct sk_buff *))
+static unsigned int nf_rtcache_forward(void *priv,
+			       struct sk_buff *skb,
+			       const struct nf_hook_state *state)
 {
 	struct nf_conn_rtcache *rtc;
 	enum ip_conntrack_info ctinfo;
@@ -209,11 +205,11 @@ static unsigned int nf_rtcache_forward(const struct nf_hook_ops *ops,
 	dir = CTINFO2DIR(ctinfo);
 	iif = nf_conn_rtcache_iif_get(rtc, dir);
 	pr_debug("ct %p, skb %p, dir %d, iif %d, cached iif %d\n",
-		 ct, skb, dir, iif, in->ifindex);
-	if (likely(in->ifindex == iif))
+		 ct, skb, dir, iif, state->in->ifindex);
+	if (likely(state->in->ifindex == iif))
 		return NF_ACCEPT;
 
-	nf_conn_rtcache_dst_set(ops->pf, rtc, skb_dst(skb), dir, in->ifindex);
+	nf_conn_rtcache_dst_set(state->pf, rtc, skb_dst(skb), dir, state->in->ifindex);
 	return NF_ACCEPT;
 }
 
@@ -253,14 +249,12 @@ static struct notifier_block nf_rtcache_notifier = {
 static struct nf_hook_ops rtcache_ops[] = {
 	{
 		.hook		= nf_rtcache_in,
-		.owner		= THIS_MODULE,
 		.pf		= NFPROTO_IPV4,
 		.hooknum	= NF_INET_PRE_ROUTING,
 		.priority       = NF_IP_PRI_LAST,
 	},
 	{
 		.hook           = nf_rtcache_forward,
-		.owner          = THIS_MODULE,
 		.pf             = NFPROTO_IPV4,
 		.hooknum        = NF_INET_FORWARD,
 		.priority       = NF_IP_PRI_LAST,
@@ -268,14 +262,12 @@ static struct nf_hook_ops rtcache_ops[] = {
 #if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
 	{
 		.hook		= nf_rtcache_in,
-		.owner		= THIS_MODULE,
 		.pf		= NFPROTO_IPV6,
 		.hooknum	= NF_INET_PRE_ROUTING,
 		.priority       = NF_IP_PRI_LAST,
 	},
 	{
 		.hook           = nf_rtcache_forward,
-		.owner          = THIS_MODULE,
 		.pf             = NFPROTO_IPV6,
 		.hooknum        = NF_INET_FORWARD,
 		.priority       = NF_IP_PRI_LAST,

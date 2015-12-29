@@ -272,14 +272,14 @@ static inline u8 ip_tunnel_ecn_encap(u8 tos, const struct iphdr *iph,
 	return INET_ECN_encapsulate(tos, inner);
 }
 
-#define __IPTUNNEL_XMIT_COMPAT(stats1, stats2) do {				\
+#define __IPTUNNEL_XMIT_COMPAT(net, sk, stats1, stats2) do {				\
 	int err;							\
 	int pkt_len = skb->len - skb_transport_offset(skb);		\
 									\
 	skb->ip_summed = CHECKSUM_NONE;					\
-	ip_select_ident(skb, NULL);				\
+	ip_select_ident(net, skb, NULL);				\
 									\
-	err = ip_local_out(skb);					\
+	err = ip_local_out(net, sk, skb);					\
 	if (likely(net_xmit_eval(err) == 0)) {				\
 		(stats1)->tx_bytes += pkt_len;				\
 		(stats1)->tx_packets++;					\

@@ -11,7 +11,6 @@
 #include <linux/linkage.h>
 #include <linux/init.h>
 
-	__CPUINIT
 
 /*
  * Realview/Versatile Express specific entry point for secondary CPUs.

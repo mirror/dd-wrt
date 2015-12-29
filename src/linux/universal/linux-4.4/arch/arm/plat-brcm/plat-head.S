@@ -306,7 +306,6 @@ _chiprev:
  * provides a "holding pen" into which all secondary cores are held
  * until we're ready for them to initialise.
  */
-	__CPUINIT
 ENTRY(platform_secondary_startup)
 	/*
 	 * Get hardware CPU id of ours

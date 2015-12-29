@@ -98,11 +98,7 @@ void __init gptimer_clocksource_init(u32 freq)
 	clocksource_register_hz(cs,freq);
 }
 
-
-void gtimer_set_mode(
-	enum clock_event_mode mode,
-	struct clock_event_device *evt
-	)
+static int gtimer_set_periodic(struct clock_event_device *evt)
 {
 	u32 ctrl, period;
 	u64 count;
@@ -114,8 +110,6 @@ void gtimer_set_mode(
 	ctrl &= ~( 	GTIMER_CTRL_CMP_EN | 
 			GTIMER_CTRL_IRQ_EN | 
 			GTIMER_CTRL_AUTO_EN);
-	switch (mode) {
-	case CLOCK_EVT_MODE_PERIODIC:
 		period = ticks_per_jiffy;
 		count = gptimer_count_read( NULL );
 		count += period ;
@@ -126,20 +120,62 @@ void gtimer_set_mode(
 		ctrl |= GTIMER_CTRL_CMP_EN |
 			GTIMER_CTRL_IRQ_EN |
 			GTIMER_CTRL_AUTO_EN ;
-		break;
-
-	case CLOCK_EVT_MODE_ONESHOT:
-		/* period set, and timer enabled in 'next_event' hook */
-		break;
-
-	case CLOCK_EVT_MODE_UNUSED:
-	case CLOCK_EVT_MODE_SHUTDOWN:
-	default:
-		break;
-	}
 	/* Apply the new mode */
 	writel(ctrl, gtimer_base + GTIMER_CTRL);
+	return 0;
 }
+
+static int gtimer_set_oneshot(struct clock_event_device *evt)
+{
+	u32 ctrl, period;
+	u64 count;
+
+	/* Get current register with global enable and prescaler */
+	ctrl = readl( gtimer_base + GTIMER_CTRL );
+
+	/* Clear the mode-related bits */
+	ctrl &= ~( 	GTIMER_CTRL_CMP_EN | 
+			GTIMER_CTRL_IRQ_EN | 
+			GTIMER_CTRL_AUTO_EN);
+	/* Apply the new mode */
+	writel(ctrl, gtimer_base + GTIMER_CTRL);
+	return 0;
+}
+
+static int gtimer_shutdown(struct clock_event_device *evt)
+{
+	u32 ctrl, period;
+	u64 count;
+
+	/* Get current register with global enable and prescaler */
+	ctrl = readl( gtimer_base + GTIMER_CTRL );
+
+	/* Clear the mode-related bits */
+	ctrl &= ~( 	GTIMER_CTRL_CMP_EN | 
+			GTIMER_CTRL_IRQ_EN | 
+			GTIMER_CTRL_AUTO_EN);
+	/* Apply the new mode */
+	writel(ctrl, gtimer_base + GTIMER_CTRL);
+	return 0;
+}
+
+static int gtimer_resume(struct clock_event_device *evt)
+{
+	u32 ctrl, period;
+	u64 count;
+
+	/* Get current register with global enable and prescaler */
+	ctrl = readl( gtimer_base + GTIMER_CTRL );
+
+	/* Clear the mode-related bits */
+	ctrl &= ~( 	GTIMER_CTRL_CMP_EN | 
+			GTIMER_CTRL_IRQ_EN | 
+			GTIMER_CTRL_AUTO_EN);
+	/* Apply the new mode */
+	writel(ctrl, gtimer_base + GTIMER_CTRL);
+	return 0;
+}
+
 
 static int gtimer_set_next_event(
 	unsigned long next,
@@ -170,11 +206,13 @@ static struct clock_event_device gtimer_clockevent = {
 	.name		= "mpcore_gtimer",
 	.shift		= 20,
 	.features       = CLOCK_EVT_FEAT_PERIODIC,
-	.set_mode	= gtimer_set_mode,
 	.set_next_event	= gtimer_set_next_event,
+	.set_state_shutdown	= gtimer_shutdown,
+	.set_state_periodic	= gtimer_set_periodic,
+	.tick_resume		= gtimer_resume,
+	.set_state_oneshot	= gtimer_set_oneshot,
 	.rating		= 300,
 	.cpumask	= cpu_all_mask,
-//	.cpumask	= cpumask_of(0),
 };
 
 
@@ -200,8 +238,7 @@ irqreturn_t gtimer_interrupt(int irq, void *dev_id)
 
 static struct irqaction gtimer_irq = {
 	.name		= "mpcore_gtimer",
-	.flags		= IRQF_DISABLED | IRQF_TIMER | IRQF_PERCPU,
-//	.flags		= IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL,
+	.flags		= IRQF_TIMER | IRQF_PERCPU,
 	.handler	= gtimer_interrupt,
 };
 
@@ -224,7 +261,7 @@ static void __init gtimer_clockevents_init(u32 freq, unsigned timer_irq)
 	clockevents_register_device(evt);
 }
 
-static u32 notrace read_sched_clock(void)
+static u64 notrace read_sched_clock(void)
 {
 	return  gptimer_count_read(NULL);
 }

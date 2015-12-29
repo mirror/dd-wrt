@@ -13,6 +13,7 @@
 #include <linux/delay.h>
 #include <linux/serial_8250.h>
 #include <linux/proc_fs.h>
+#include <linux/module.h>
 #include <asm/hardware/cache-l2x0.h>
 #include <asm/mach/map.h>
 #include <asm/clkdev.h>
