@@ -1,7 +1,7 @@
 /*
  * RPC module header file
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcm_rpc.h 314581 2012-02-13 17:54:04Z $
+ * $Id: bcm_rpc.h 319426 2012-03-08 01:36:03Z $
  */
 
 #ifndef _BCM_RPC_H_
@@ -53,6 +53,7 @@ extern struct rpc_transport_info *bcm_rpc_tp_get(struct rpc_info *rpc);
 
 /* get original os handle */
 extern osl_t* bcm_rpc_osh_get(struct rpc_info *rpci);
+
 
 /* callback for: data_rx, down, resync */
 extern void bcm_rpc_rxcb_init(struct rpc_info *rpc, void *ctx, rpc_dispatch_cb_t cb,
