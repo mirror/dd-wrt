@@ -41,7 +41,7 @@ static void rt288x_halt(void)
 		cpu_wait();
 }
 
-unsigned int __cpuinit get_c0_compare_irq(void)
+unsigned int get_c0_compare_irq(void)
 {
 	return CP0_LEGACY_COMPARE_IRQ;
 }

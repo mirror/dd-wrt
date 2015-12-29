@@ -98,6 +98,7 @@ config MIPS_BRCM
         select IRQ_CPU
 	select CEVT_R4K
 	select CSRC_R4K
+	select IRQ_MIPS_CPU
         select SYS_SUPPORTS_32BIT_KERNEL
         select SYS_SUPPORTS_KGDB
         select SYS_HAS_CPU_MIPS32_R1
@@ -174,6 +175,7 @@ config ATHEROS
 	select GENERIC_GPIO
 	select SYS_SUPPORTS_BIG_ENDIAN
 	select SYS_SUPPORTS_32BIT_KERNEL
+	select IRQ_MIPS_CPU
 
 
 
@@ -610,6 +612,7 @@ config RALINK_OPENWRT
 	bool "Ralink based machines"
 	select CEVT_R4K
 	select CSRC_R4K
+	select IRQ_MIPS_CPU
 	select BOOT_RAW
 	select DMA_NONCOHERENT
 	select IRQ_MIPS_CPU
@@ -886,6 +889,7 @@ config MIKROTIK_RB532
 	select IRQ_MIPS_CPU
 	select SYS_HAS_CPU_MIPS32_R1
 	select SYS_SUPPORTS_32BIT_KERNEL
+	select IRQ_MIPS_CPU
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 	select SWAP_IO_SPACE
 	select BOOT_RAW
@@ -964,6 +968,7 @@ config MACH_HORNET
     bool "Support for Atheros HORNET based board"
 	select DMA_NONCOHERENT
 	select IRQ_CPU
+	select IRQ_MIPS_CPU
 	select CEVT_R4K
 	select CSRC_R4K
 	select DMA_NONCOHERENT
@@ -997,6 +1002,7 @@ config  MACH_AR7100
 	select SYS_HAS_CPU_MIPS32_R1
 	select SYS_HAS_CPU_MIPS32_R2
 	select SYS_SUPPORTS_MIPS16
+	select IRQ_MIPS_CPU
 	select SYS_SUPPORTS_32BIT_KERNEL
 	select SYS_SUPPORTS_BIG_ENDIAN
 	select SYS_HAS_EARLY_PRINTK
@@ -1046,6 +1052,7 @@ config  MACH_AR7240
 	select HW_HAS_PCI
 	select IRQ_CPU
 	select ARCH_REQUIRE_GPIOLIB
+	select IRQ_MIPS_CPU
 #	select ARCH_REQUIRE_GPIOLIB
 	select SYS_HAS_CPU_MIPS32_R1
 	select SYS_HAS_CPU_MIPS32_R2

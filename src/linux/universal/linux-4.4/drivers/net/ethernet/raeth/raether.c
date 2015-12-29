@@ -2833,7 +2833,7 @@ int ei_open(struct net_device *dev)
         }
 
 	spin_lock_irqsave(&(ei_local->page_lock), flags);
-	err = request_irq( dev->irq, ei_interrupt, IRQF_DISABLED, dev->name, dev);	// try to fix irq in open
+	err = request_irq( dev->irq, ei_interrupt, 0, dev->name, dev);	// try to fix irq in open
 	
 	if (err)
 	    return err;
@@ -2851,7 +2851,7 @@ int ei_open(struct net_device *dev)
 	*((volatile u32 *)(RALINK_INTCL_BASE + 0x34)) = (1<<17);
 	*((volatile u32 *)(ESW_IMR)) &= ~(ESW_INT_ALL);
 	INIT_WORK(&ei_local->kill_sig_wq, kill_sig_workq);
-	err = request_irq(25, esw_interrupt, IRQF_DISABLED, "Ralink_ESW", dev);
+	err = request_irq(25, esw_interrupt, 0, "Ralink_ESW", dev);
 	
 	if (err)
 	    return err;
