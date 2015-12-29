@@ -14,6 +14,7 @@
 #define _BR_PRIVATE_H
 
 #include <linux/netdevice.h>
+#include <linux/netfilter.h>
 #include <linux/if_bridge.h>
 #include <linux/netpoll.h>
 #include <linux/u64_stats_sync.h>
@@ -907,10 +908,10 @@ static inline void br_nf_core_fini(void) {}
 static inline int
 BR_HOOK(uint8_t pf, unsigned int hook, struct net *net, struct sock *sk, struct sk_buff *skb,
 	struct net_device *in, struct net_device *out,
-	int (*okfn)(struct sk_buff *))
+	int (*okfn)(struct net *, struct sock *, struct sk_buff *))
 {
 	if (!br_netfilter_run_hooks())
-		return okfn(skb);
+		return okfn(net, sk, skb);
 
 	return NF_HOOK(pf, hook, net, sk, skb, in, out, okfn);
 }

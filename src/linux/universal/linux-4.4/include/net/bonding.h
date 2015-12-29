@@ -156,6 +156,7 @@ struct slave {
 	struct net_device *dev; /* first - useful for panic debug */
 	struct bonding *bond; /* our master */
 	int    delay;
+	unsigned int  weight;
 	/* all three in jiffies */
 	unsigned long last_link_up;
 	unsigned long last_rx;

@@ -70,7 +70,7 @@ static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff
 {
 	char *page;
 	int len = 0;
-	void *data =  PDE_DATA(file->f_dentry->d_inode);
+	void *data =  PDE_DATA(file_inode(file));
 
 	if ((page = kmalloc(SWITCH_MAX_BUFSZ, GFP_KERNEL)) == NULL)
 		return -ENOBUFS;
@@ -100,7 +100,7 @@ static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff
 
 static ssize_t switch_proc_write(struct file *file, const char *buf, size_t count, void *data)
 {
-	void *proc_data = PDE_DATA(file->f_dentry->d_inode);
+	void *proc_data = PDE_DATA(file_inode(file));
 	char *page;
 	int ret = -EINVAL;
 

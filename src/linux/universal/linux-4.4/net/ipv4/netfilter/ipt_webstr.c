@@ -71,6 +71,8 @@
 #define SPARQ_LOG(format, args...)
 #endif
 
+#define strnicmp strncasecmp
+
 typedef struct httpinfo {
     char host[BUFSIZE + 1];
     int hostlen;
