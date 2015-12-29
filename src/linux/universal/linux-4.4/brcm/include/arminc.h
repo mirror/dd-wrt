@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment for standalone ARM programs.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: arminc.h 341899 2012-06-29 04:06:38Z $
+ * $Id: arminc.h 425360 2013-09-24 00:06:24Z $
  */
 
 #ifndef	_ARMINC_H
@@ -78,8 +78,22 @@ var:	.word	val
 
 #endif	/* _LANGUAGE_ASSEMBLY */
 
+/*
+ * Macro to count leading zeroes
+ *
+ */
+#if defined(__GNUC__)
+#define CLZ(x) __builtin_clzl(x)
+#elif defined(__arm__)
+#define CLZ(x) __clz(x)
+#else
+#ifndef WLOFFLD
+#error "No buitlin CLZ known on this compiler platform"
+#endif /* WLOFFLD */
+#endif /* __GNUC__ */
 
-#if defined(__ARM_ARCH_7M__)	    /* Cortex-M3 */
+
+#if defined(__ARM_ARCH_7M__)	/* Cortex-M3 */
 
 /* Data Watchpoint and Trigger */
 #define CM3_DWT_CTRL		0xe0001000
@@ -206,7 +220,7 @@ var:	.word	val
 #define CM3_TROFF_PC	24
 #define CM3_TROFF_xPSR	28
 
-#elif defined(__ARM_ARCH_7A__)	  /* Cortex-A9 */
+#elif defined(__ARM_ARCH_7A__)	/* Cortex-A9 */
 /* Fields in cpsr */
 #define	PS_USR		0x00000010		/* Mode: User */
 #define	PS_FIQ		0x00000011		/* Mode: FIQ */

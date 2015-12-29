@@ -15,7 +15,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: et_linux.h 493132 2014-07-25 05:06:17Z $
+ * $Id: et_linux.h 575708 2015-07-30 20:27:43Z $
  */
 
 #ifndef _et_linux_h_
@@ -35,6 +35,10 @@
 #endif /* CONFIG_RAM_SIZE ... */
 
 #if defined(BCM_GMAC3)
+
+#undef NRXBUFPOST
+#define NRXBUFPOST 511
+
 /*
  * To ensure that a 2K slab is used,                                  2048
  * Linux Add-ons: skb_shared_info=264, NET_SKB_PAD=32, align=32        352
@@ -114,4 +118,7 @@
 #define RXBURSTLEN		128	/* burst length for dma writes */
 #endif
 
+#define ET_IOCTL_MAXLEN		(127*1024)	/* max length ioctl buffer required;
+						 * must be at least ET_DUMP_BUF_LEN
+						 */
 #endif	/* _et_linux_h_ */

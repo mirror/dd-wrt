@@ -4,7 +4,7 @@
  *
  * Definitions subject to change without notice.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -18,7 +18,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmcdc.h 291086 2011-10-21 01:17:24Z $
+ * $Id: bcmcdc.h 318308 2012-03-02 02:23:42Z $
  */
 #ifndef _bcmcdc_h_
 #define	_bcmcdc_h_
@@ -68,26 +68,46 @@ typedef struct cdc_ioctl {
  *   The BDC header is used on data packets to convey priority across USB.
  */
 
+struct bdc_header {
+	uint8	flags;			/* Flags */
+	uint8	priority;		/* 802.1d Priority 0:2 bits, 4:7 USB flow control info */
+	uint8	flags2;
+	uint8	dataOffset;		/* Offset from end of BDC header to packet data, in
+					 * 4-byte words.  Leaves room for optional headers.
+					 */
+};
+
 #define	BDC_HEADER_LEN		4
 
-#define BDC_PROTO_VER_1		1	/* Old Protocol version */
-#define BDC_PROTO_VER		2	/* Protocol version */
-
+/* flags field bitmap */
+#define BDC_FLAG_80211_PKT	0x01	/* Packet is in 802.11 format (dongle -> host) */
+#define BDC_FLAG_SUM_GOOD	0x04	/* Dongle has verified good RX checksums */
+#define BDC_FLAG_SUM_NEEDED	0x08	/* Dongle needs to do TX checksums: host->device */
+#define BDC_FLAG_EVENT_MSG	0x08	/* Payload contains an event msg: device->host */
 #define BDC_FLAG_VER_MASK	0xf0	/* Protocol version mask */
 #define BDC_FLAG_VER_SHIFT	4	/* Protocol version shift */
 
-#define BDC_FLAG__UNUSED	0x03	/* Unassigned */
-#define BDC_FLAG_SUM_GOOD	0x04	/* Dongle has verified good RX checksums */
-#define BDC_FLAG_SUM_NEEDED	0x08	/* Dongle needs to do TX checksums */
+/* priority field bitmap */
+#define BDC_PRIORITY_MASK	0x07
+#define BDC_PRIORITY_FC_MASK	0xf0	/* flow control info mask */
+#define BDC_PRIORITY_FC_SHIFT	4	/* flow control info shift */
 
-#define BDC_PRIORITY_MASK	0x7
-
-#define BDC_FLAG2_FC_FLAG	0x10	/* flag to indicate if pkt contains */
-									/* FLOW CONTROL info only */
-#define BDC_PRIORITY_FC_SHIFT	4		/* flow control info shift */
-
-#define BDC_FLAG2_IF_MASK	0x0f	/* APSTA: interface on which the packet was received */
+/* flags2 field bitmap */
+#define BDC_FLAG2_IF_MASK	0x0f	/* interface index (host <-> dongle) */
 #define BDC_FLAG2_IF_SHIFT	0
+#define BDC_FLAG2_FC_FLAG	0x10	/* flag to indicate if pkt contains */
+					/* FLOW CONTROL info only */
+
+/* version numbers */
+#define BDC_PROTO_VER_1		1	/* Old Protocol version */
+#define BDC_PROTO_VER		2	/* Protocol version */
+
+/* flags2.if field access macros */
+#define BDC_GET_IF_IDX(hdr) \
+	((int)((((hdr)->flags2) & BDC_FLAG2_IF_MASK) >> BDC_FLAG2_IF_SHIFT))
+#define BDC_SET_IF_IDX(hdr, idx) \
+	((hdr)->flags2 = (((hdr)->flags2 & ~BDC_FLAG2_IF_MASK) | ((idx) << BDC_FLAG2_IF_SHIFT)))
+
 #define BDC_FLAG2_PAD_MASK		0xf0
 #define BDC_FLAG_PAD_MASK		0x03
 #define BDC_FLAG2_PAD_SHIFT		2
@@ -102,21 +122,5 @@ typedef struct cdc_ioctl {
 	(((idx) & BDC_FLAG2_PAD_IDX) << BDC_FLAG2_PAD_SHIFT))); \
 	((hdr)->flags = (((hdr)->flags & ~BDC_FLAG_PAD_MASK) | \
 	(((idx) & BDC_FLAG_PAD_IDX) << BDC_FLAG_PAD_SHIFT)))
-
-#define BDC_GET_IF_IDX(hdr) \
-	((int)((((hdr)->flags2) & BDC_FLAG2_IF_MASK) >> BDC_FLAG2_IF_SHIFT))
-#define BDC_SET_IF_IDX(hdr, idx) \
-	((hdr)->flags2 = (((hdr)->flags2 & ~BDC_FLAG2_IF_MASK) | ((idx) << BDC_FLAG2_IF_SHIFT)))
-
-struct bdc_header {
-	uint8	flags;			/* Flags */
-	uint8	priority;		/* 802.1d Priority 0:2 bits, 4:7 USB flow control info */
-	uint8	flags2;
-	uint8	dataOffset;		/* Offset from end of BDC header to packet data, in
-					 * 4-byte words.  Leaves room for optional headers.
-					 */
-};
-
-#define BDC_PROTO_VER_1		1	/* Old Protocol version */
 
 #endif /* _bcmcdc_h_ */

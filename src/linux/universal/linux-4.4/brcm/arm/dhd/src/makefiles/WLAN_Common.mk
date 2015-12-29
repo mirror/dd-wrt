@@ -14,6 +14,9 @@
 # OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
+#
+# <<Broadcom-WL-IPTag/Open:>>
+#
 # $Id: Makefile 506823 2014-10-07 12:59:32Z $
 #
 ifdef _WLAN_COMMON_MK
@@ -279,34 +282,37 @@ endif
 # Global include/source path
 WLAN_StdSrcDirs = src/shared src/wl/sys src/wl/phy src/bcmcrypto
 WLAN_StdSrcDirs += $(PHY_MOD_SRC_DIRS)
-WLAN_StdIncDirs = src/include components/shared components/shared/devctrl_if
+WLAN_StdIncDirs = src/include components/shared
 WLAN_StdIncDirs += $(PHY_MOD_INC_DIRS)
+WLAN_StdIncDirs += src/wl/proxd/src
+WLAN_StdIncDirs += src/wl/proxd/include
 WLAN_SrcIncDirs = src/shared src/wl/sys src/wl/phy src/bcmcrypto
-WLAN_SrcIncDirs += src/wl/keymgmt/src src/wl/iocv/src src/wl/ndis/src src/wl/shim/src
+WLAN_SrcIncDirs += src/wl/keymgmt/src src/wl/iocv/src src/wl/ndis/src components/drivers/wl/shim/src
 WLAN_SrcIncDirs += $(PHY_SRC_INC_DIRS)
+WLAN_SrcIncDirs += src/wl/proxd/src
 
 WLAN_StdSrcDirsR	 = $(addprefix $(WLAN_TreeBaseR)/,$(WLAN_StdSrcDirs))
 WLAN_StdIncDirsR	 = $(addprefix $(WLAN_TreeBaseR)/,$(WLAN_StdIncDirs))
 WLAN_SrcIncDirsR	 = $(addprefix $(WLAN_TreeBaseR)/,$(WLAN_SrcIncDirs))
-WLAN_StdIncPathR	 = $(addprefix -I,$(WLAN_StdIncDirsR))
+WLAN_StdIncPathR	 = $(addprefix -I,$(wildcard $(WLAN_StdIncDirsR)))
 WLAN_IncDirsR		 = $(WLAN_StdIncDirsR) $(WLAN_SrcIncDirsR)
-WLAN_IncPathR		 = $(addprefix -I,$(WLAN_IncDirsR))
+WLAN_IncPathR		 = $(addprefix -I,$(wildcard $(WLAN_IncDirsR)))
 
 WLAN_StdSrcDirsA	 = $(addprefix $(WLAN_TreeBaseA)/,$(WLAN_StdSrcDirs))
 WLAN_StdIncDirsA	 = $(addprefix $(WLAN_TreeBaseA)/,$(WLAN_StdIncDirs))
 WLAN_SrcIncDirsA	 = $(addprefix $(WLAN_TreeBaseA)/,$(WLAN_SrcIncDirs))
-WLAN_StdIncPathA	 = $(addprefix -I,$(WLAN_StdIncDirsA))
+WLAN_StdIncPathA	 = $(addprefix -I,$(wildcard $(WLAN_StdIncDirsA)))
 WLAN_IncDirsA		 = $(WLAN_StdIncDirsA) $(WLAN_SrcIncDirsA)
-WLAN_IncPathA		 = $(addprefix -I,$(WLAN_IncDirsA))
+WLAN_IncPathA		 = $(addprefix -I,$(wildcard $(WLAN_IncDirsA)))
 
 # Public convenience macros based on WLAN_ComponentPathsInUse list.
 WLAN_ComponentSrcDirsR	 = $(addprefix $(WLAN_TreeBaseR)/,$(WLAN_ComponentSrcPathsInUse))
 WLAN_ComponentIncDirsR	 = $(addprefix $(WLAN_TreeBaseR)/,$(WLAN_ComponentIncPathsInUse))
-WLAN_ComponentIncPathR	 = $(addprefix -I,$(WLAN_ComponentIncDirsR))
+WLAN_ComponentIncPathR	 = $(addprefix -I,$(wildcard $(WLAN_ComponentIncDirsR)))
 
 WLAN_ComponentSrcDirsA	 = $(addprefix $(WLAN_TreeBaseA)/,$(WLAN_ComponentSrcPathsInUse))
 WLAN_ComponentIncDirsA	 = $(addprefix $(WLAN_TreeBaseA)/,$(WLAN_ComponentIncPathsInUse))
-WLAN_ComponentIncPathA	 = $(addprefix -I,$(WLAN_ComponentIncDirsA))
+WLAN_ComponentIncPathA	 = $(addprefix -I,$(wildcard $(WLAN_ComponentIncDirsA)))
 
 WLAN_ComponentSrcDirs	 = $(WLAN_ComponentSrcDirsA)
 WLAN_ComponentIncDirs	 = $(WLAN_ComponentIncDirsA)
@@ -391,6 +397,8 @@ ifneq (,$(wildcard $(addsuffix /wl/clm/private/wlc_clm_data.xml,$2 $2/../../src 
   $$(sort $1/wlc_clm_data$4.c ./wlc_clm_data$4.c): \
       wlc_clm_data.xml $2/wl/clm/include/wlc_clm_data.h $$(wildcard $2/wl/clm/bin/ClmCompiler.py) $$(if $$(CLM_TYPE),$$(CLM_TYPE).clm) ; \
     $$(strip $$(abspath $$(<D)/../../../tools/build/ClmCompiler) \
+      --clmapi_include_dir $$(firstword $$(wildcard $$(addsuffix src/wl/clm/include, $2/../ $2/../../ $2/../../../ ))) \
+      --print_options --bcmwifi_include_dir $$(firstword $$(wildcard $$(addsuffix shared/bcmwifi/include, $2/ $2/../../src/ $2/../../../src/ ))) \
       $$(if $$(CLM_TYPE),--config_file $$(lastword $$^) $3,$$(if $3,$3,$$(CLMCOMPDEFFLAGS))) \
       $(CLMCOMPEXTFLAGS) $$< $$@ $$(call wlan_copy_to_gen,$$@,$2))
 else

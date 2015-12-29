@@ -3,7 +3,7 @@
  *   HOST may glue it to DBUS layer
  *   CLIENT may glue it to its bus driver
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcm_rpc_tp.h 365477 2012-10-29 22:36:46Z $
+ * $Id: bcm_rpc_tp.h 431375 2013-10-23 12:51:40Z $
  */
 
 #ifndef _bcm_rpc_tp_h_
@@ -47,19 +47,7 @@
 #define BCM_RPC_TP_DNGL_AGG_MAX_BYTE	4000    /* max agg bytes */
 #endif /* BCM_RPC_NOCOPY || BCM_RPC_RXNOCOPY */
 
-
-/* only used by windows */
-#define BCM_RPC_TP_DNGL_AGG_MAX_SFRAME_4360 12
-#define BCM_RPC_TP_DNGL_AGG_MAX_BYTE_4360	16000    /* max agg bytes */
-#define BCM_RPC_TP_DNGL_AGG_DEFAULT_4360	(((BCM_RPC_TP_DNGL_AGG_MAX_SFRAME_4360)\
-	 << BCM_RPC_TP_HOST_AGG_SHIFT) | BCM_RPC_TP_DNGL_AGG_MAX_BYTE_4360)
-
-#ifndef WLMEDIA_LARGE_DNGL_AGG
-/* rxbufsize for dbus_attach, linux only for now */
-#define DBUS_RX_BUFFER_SIZE_RPC    (BCM_RPC_TP_DNGL_AGG_MAX_BYTE)
-#else
-#define DBUS_RX_BUFFER_SIZE_RPC    (BCM_RPC_TP_DNGL_AGG_MAX_BYTE_4360)
-#endif
+#define BCM_RPC_TP_DNGL_AGG_MAX_BYTE_4360	16000
 
 #define BCM_RPC_TP_HOST_AGG_MAX_SFRAME  3	/* max agg subframes, AMPDU only, 3 is enough */
 #define BCM_RPC_TP_HOST_AGG_MAX_BYTE    3400    /* max agg bytes; to fit 2+ tcp/udp pkts. Each one:
@@ -67,20 +55,37 @@
 						 * Need to be in sync with dongle usb rx dma
 						 *  rxbufsize(USBBULK_RXBUF_GIANT in usbdev_sb.c)
 						 */
-/*
- * 43236 has not problem handling scattering and can handle larger aggregation size
+
+/* chip specific AMPDU_MPDU should be defined in chipid makefile.
+ * if not defined in chipid makefile defaults defined below will be used
  */
-#define BCM_RPC_TP_HOST_AGG_DEFAULT_SFRAME_43236	 8
-#define BCM_RPC_TP_HOST_AGG_DEFAULT_BYTE_43236		0x3e00	/* 15872 */
-#define BCM_RPC_TP_HOST_AGG_DEFAULT_43236	(((BCM_RPC_TP_HOST_AGG_DEFAULT_SFRAME_43236)\
-	 << BCM_RPC_TP_HOST_AGG_SHIFT) | BCM_RPC_TP_HOST_AGG_DEFAULT_BYTE_43236)
+#ifndef BCM_AMPDU_MPDU
+#define BCM_AMPDU_MPDU			16
+#endif
+/* chip specific HOST/DNGL_DEFAULT_SFRAME/BYTE constants should be defined in chipid makefile
+ * if not defined in chipid makefile defaults defined below will be used
+ */
+#ifndef BCM_RPC_TP_HOST_AGG_DEFAULT_SFRAME
+#define BCM_RPC_TP_HOST_AGG_DEFAULT_SFRAME	3
+#endif
+#ifndef BCM_RPC_TP_HOST_AGG_DEFAULT_BYTE
+#define BCM_RPC_TP_HOST_AGG_DEFAULT_BYTE	3400
+#endif
+#ifndef BCM_RPC_TP_DNGL_AGG_DEFAULT_SFRAME
+#define BCM_RPC_TP_DNGL_AGG_DEFAULT_SFRAME	3
+#endif
+#ifndef BCM_RPC_TP_DNGL_AGG_DEFAULT_BYTE
+#define BCM_RPC_TP_DNGL_AGG_DEFAULT_BYTE	3400
+#endif
+#define BCM_RPC_TP_HOST_AGG_DEFAULT	(((BCM_RPC_TP_HOST_AGG_DEFAULT_SFRAME)\
+	<< BCM_RPC_TP_HOST_AGG_SHIFT) | BCM_RPC_TP_HOST_AGG_DEFAULT_BYTE)
+#define BCM_RPC_TP_DNGL_AGG_DEFAULT	(((BCM_RPC_TP_DNGL_AGG_DEFAULT_SFRAME)\
+	<< BCM_RPC_TP_HOST_AGG_SHIFT) | BCM_RPC_TP_DNGL_AGG_DEFAULT_BYTE)
 
+/* rxbufsize for dbus_attach, linux only for now */
+#define DBUS_RX_BUFFER_SIZE_RPC    (BCM_RPC_TP_DNGL_AGG_MAX_BYTE)
 
-#define BCM_RPC_TP_HOST_AGG_DEFAULT_SFRAME_4360	 12
-#define BCM_RPC_TP_HOST_AGG_DEFAULT_BYTE_4360 0x6A80	/* 27264 */
-#define BCM_RPC_TP_HOST_AGG_DEFAULT_4360	(((BCM_RPC_TP_HOST_AGG_DEFAULT_SFRAME_4360)\
-	 << BCM_RPC_TP_HOST_AGG_SHIFT) | BCM_RPC_TP_HOST_AGG_DEFAULT_BYTE_4360)
-#if (defined(NDIS) && (NDISVER >= 0x0600) && 0) || defined WLMEDIA_LARGE_DNGL_AGG
+#if (defined(NDIS) && (NDISVER >= 0x0600) && 0)
 /* TP-DBUS pkts flowcontrol */
 #ifndef BCM_RPC_TP_DBUS_NTXQ
 #define BCM_RPC_TP_DBUS_NTXQ	512	/* queue size for TX on bulk OUT, aggregation possible */
@@ -100,6 +105,14 @@
 
 #define BCM_RPC_TP_DBUS_NRXQ_PKT	(BCM_RPC_TP_DBUS_NRXQ * BCM_RPC_TP_DNGL_AGG_MAX_SFRAME)
 #define BCM_RPC_TP_DBUS_NTXQ_PKT	(BCM_RPC_TP_DBUS_NTXQ * BCM_RPC_TP_HOST_AGG_MAX_SFRAME)
+
+#define BCM_RPC_TP_PADHEAD_SHIFT 24
+#define BCM_RPC_TP_PADEND_SHIFT 16
+#define BCM_RPC_TP_PADHEAD_MASK 0xff
+#define BCM_RPC_TP_PADEND_MASK 0xff
+#define BCM_RPC_TP_LEN_MASK 0xffff
+#define BCM_RPC_TP_HOST_TMOUT 10 /* in ms */
+#define BCM_RPC_TP_DNGL_TMOUT 5 /* in ms */
 
 typedef struct rpc_transport_info rpc_tp_info_t;
 
@@ -142,14 +155,17 @@ extern void bcm_rpc_buf_next_set(rpc_tp_info_t * rpcb, rpc_buf_t* b, rpc_buf_t *
 extern unsigned char* bcm_rpc_buf_data(rpc_tp_info_t * rpcb, rpc_buf_t* b);
 extern unsigned char* bcm_rpc_buf_push(rpc_tp_info_t * rpcb, rpc_buf_t* b, uint delta);
 extern unsigned char* bcm_rpc_buf_pull(rpc_tp_info_t * rpcb, rpc_buf_t* b, uint delta);
+extern rpc_buf_t * bcm_rpc_buf_pktdup(rpc_tp_info_t * rpcb, rpc_buf_t* b);
 extern void bcm_rpc_tp_buf_release(rpc_tp_info_t * rpcb, rpc_buf_t *buf);
 extern void bcm_rpc_tp_buf_cnt_adjust(rpc_tp_info_t * rpcb, int adjust);
 #ifdef WLC_HIGH
 /* RPC call_with_return */
 extern int bcm_rpc_tp_recv_rtn(rpc_tp_info_t *rpcb);
 extern int bcm_rpc_tp_get_device_speed(rpc_tp_info_t *rpc_th);
+extern int bcm_rpc_tp_set_device_speed(rpc_tp_info_t *rpc_th, uint8 speed);
 extern void bcm_rpc_tp_get_vidpid(rpc_tp_info_t *rpc_th, uint16 *dnglvid, uint16 *dnglpid);
 extern void* bcm_rpc_tp_get_devinfo(rpc_tp_info_t *rpc_th);
+extern int bcm_rpc_tp_set_config(rpc_tp_info_t *rpc_th, void *config);
 #ifdef BCMDBG
 extern int bcm_rpc_tp_dump(rpc_tp_info_t *rpcb, struct bcmstrbuf *b);
 #endif
@@ -189,5 +205,10 @@ extern void bcm_rpc_tp_agg_limit_get(rpc_tp_info_t *rpc_th, uint8 *sf, uint16 *b
 #define RPC_TP_MSG_HOST_DEA_VAL		0x0008	/* DNGL TP deag msg */
 
 extern void bcm_rpc_tp_msglevel_set(rpc_tp_info_t *rpc_th, uint8 msglevel, bool high_low);
+#ifdef BCM_FD_AGGR
+extern void bcm_rpc_dbus_recv_aggrpkt(void *handle, void *pkt, int len);
+extern void bcm_rpc_dbus_recv_aggrbuf(void *handle, uint8 *buf, int len);
+#endif
+extern uint32 bcm_rpc_tp_agg_get(rpc_tp_info_t *rpcb);
 
 #endif /* _bcm_rpc_tp_h_ */
