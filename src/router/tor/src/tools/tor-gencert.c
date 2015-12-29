@@ -28,10 +28,11 @@
 #endif
 
 #include "compat.h"
-#include "../common/util.h"
-#include "../common/torlog.h"
+#include "util.h"
+#include "torlog.h"
 #include "crypto.h"
 #include "address.h"
+#include "util_format.h"
 
 #define IDENTITY_KEY_BITS 3072
 #define SIGNING_KEY_BITS 2048
@@ -186,8 +187,7 @@ parse_commandline(int argc, char **argv)
         return 1;
       in.s_addr = htonl(addr);
       tor_inet_ntoa(&in, b, sizeof(b));
-      address = tor_malloc(INET_NTOA_BUF_LEN+32);
-      tor_snprintf(address, INET_NTOA_BUF_LEN+32, "%s:%d", b, (int)port);
+      tor_asprintf(&address, "%s:%d", b, (int)port);
     } else if (!strcmp(argv[i], "--create-identity-key")) {
       make_new_id = 1;
     } else if (!strcmp(argv[i], "--passphrase-fd")) {
@@ -486,7 +486,8 @@ generate_certificate(void)
                           EVP_PKEY_get1_RSA(signing_key),
                           RSA_PKCS1_PADDING);
   signed_len = strlen(buf);
-  base64_encode(buf+signed_len, sizeof(buf)-signed_len, signature, r);
+  base64_encode(buf+signed_len, sizeof(buf)-signed_len, signature, r,
+                BASE64_ENCODE_MULTILINE);
 
   strlcat(buf,
           "-----END ID SIGNATURE-----\n"
@@ -501,7 +502,8 @@ generate_certificate(void)
                           RSA_PKCS1_PADDING);
   strlcat(buf, "-----BEGIN SIGNATURE-----\n", sizeof(buf));
   signed_len = strlen(buf);
-  base64_encode(buf+signed_len, sizeof(buf)-signed_len, signature, r);
+  base64_encode(buf+signed_len, sizeof(buf)-signed_len, signature, r,
+                BASE64_ENCODE_MULTILINE);
   strlcat(buf, "-----END SIGNATURE-----\n", sizeof(buf));
 
   if (!(f = fopen(certificate_file, "w"))) {
@@ -532,7 +534,7 @@ main(int argc, char **argv)
     fprintf(stderr, "Couldn't initialize crypto library.\n");
     return 1;
   }
-  if (crypto_seed_rng(1)) {
+  if (crypto_seed_rng()) {
     fprintf(stderr, "Couldn't seed RNG.\n");
     goto done;
   }
@@ -564,6 +566,7 @@ main(int argc, char **argv)
   tor_free(identity_key_file);
   tor_free(signing_key_file);
   tor_free(certificate_file);
+  tor_free(address);
 
   crypto_global_cleanup();
   return r;

@@ -23,6 +23,7 @@
 #include "relay.h"
 #include "rendclient.h"
 #include "rendcommon.h"
+#include "rendservice.h"
 #include "rephist.h"
 #include "router.h"
 #include "routerlist.h"
@@ -2102,14 +2103,23 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
       control_event_hs_descriptor_failed(conn->rend_data, \
                                          conn->identity_digest, \
                                          reason) )
+    #define SEND_HS_DESC_FAILED_CONTENT() ( \
+      control_event_hs_descriptor_content(conn->rend_data->onion_address, \
+                                          conn->requested_resource, \
+                                          conn->identity_digest, \
+                                          NULL) )
     tor_assert(conn->rend_data);
     log_info(LD_REND,"Received rendezvous descriptor (size %d, status %d "
              "(%s))",
              (int)body_len, status_code, escaped(reason));
     switch (status_code) {
       case 200:
+      {
+        rend_cache_entry_t *entry = NULL;
+
         switch (rend_cache_store_v2_desc_as_client(body,
-                                  conn->requested_resource, conn->rend_data)) {
+                                  conn->requested_resource, conn->rend_data,
+                                  &entry)) {
           case RCS_BADDESC:
           case RCS_NOTDIR: /* Impossible */
             log_warn(LD_REND,"Fetching v2 rendezvous descriptor failed. "
@@ -2117,25 +2127,41 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
             /* We'll retry when connection_about_to_close_connection()
              * cleans this dir conn up. */
             SEND_HS_DESC_FAILED_EVENT("BAD_DESC");
+            SEND_HS_DESC_FAILED_CONTENT();
             break;
           case RCS_OKAY:
           default:
+          {
+            char service_id[REND_SERVICE_ID_LEN_BASE32 + 1];
+            /* Should never be NULL here for an OKAY returned code. */
+            tor_assert(entry);
+            rend_get_service_id(entry->parsed->pk, service_id);
+
             /* success. notify pending connections about this. */
             log_info(LD_REND, "Successfully fetched v2 rendezvous "
                      "descriptor.");
-            control_event_hs_descriptor_received(conn->rend_data,
+            control_event_hs_descriptor_received(service_id,
+                                                 conn->rend_data,
                                                  conn->identity_digest);
+            control_event_hs_descriptor_content(service_id,
+                                                conn->requested_resource,
+                                                conn->identity_digest,
+                                                body);
             conn->base_.purpose = DIR_PURPOSE_HAS_FETCHED_RENDDESC_V2;
-            rend_client_desc_trynow(conn->rend_data->onion_address);
+            rend_client_desc_trynow(service_id);
+            memwipe(service_id, 0, sizeof(service_id));
             break;
+          }
         }
         break;
+      }
       case 404:
         /* Not there. We'll retry when
          * connection_about_to_close_connection() cleans this conn up. */
         log_info(LD_REND,"Fetching v2 rendezvous descriptor failed: "
                          "Retrying at another directory.");
         SEND_HS_DESC_FAILED_EVENT("NOT_FOUND");
+        SEND_HS_DESC_FAILED_CONTENT();
         break;
       case 400:
         log_warn(LD_REND, "Fetching v2 rendezvous descriptor failed: "
@@ -2143,6 +2169,7 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
                  "v2 rendezvous query? Retrying at another directory.",
                  escaped(reason));
         SEND_HS_DESC_FAILED_EVENT("QUERY_REJECTED");
+        SEND_HS_DESC_FAILED_CONTENT();
         break;
       default:
         log_warn(LD_REND, "Fetching v2 rendezvous descriptor failed: "
@@ -2152,11 +2179,15 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
                  status_code, escaped(reason), conn->base_.address,
                  conn->base_.port);
         SEND_HS_DESC_FAILED_EVENT("UNEXPECTED");
+        SEND_HS_DESC_FAILED_CONTENT();
         break;
     }
   }
 
   if (conn->base_.purpose == DIR_PURPOSE_UPLOAD_RENDDESC_V2) {
+    #define SEND_HS_DESC_UPLOAD_FAILED_EVENT(reason) ( \
+      control_event_hs_descriptor_upload_failed(conn->identity_digest, \
+                                                reason) )
     log_info(LD_REND,"Uploaded rendezvous descriptor (status %d "
              "(%s))",
              status_code, escaped(reason));
@@ -2165,17 +2196,21 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
         log_info(LD_REND,
                  "Uploading rendezvous descriptor: finished with status "
                  "200 (%s)", escaped(reason));
+        control_event_hs_descriptor_uploaded(conn->identity_digest);
+        rend_service_desc_has_uploaded(conn->rend_data);
         break;
       case 400:
         log_warn(LD_REND,"http status 400 (%s) response from dirserver "
                  "'%s:%d'. Malformed rendezvous descriptor?",
                  escaped(reason), conn->base_.address, conn->base_.port);
+        SEND_HS_DESC_UPLOAD_FAILED_EVENT("UPLOAD_REJECTED");
         break;
       default:
         log_warn(LD_REND,"http status %d (%s) response unexpected (server "
                  "'%s:%d').",
                  status_code, escaped(reason), conn->base_.address,
                  conn->base_.port);
+        SEND_HS_DESC_UPLOAD_FAILED_EVENT("UNEXPECTED");
         break;
     }
   }
@@ -3060,13 +3095,12 @@ directory_handle_command_get(dir_connection_t *conn, const char *headers,
     goto done;
   }
 
-  if (options->HidServDirectoryV2 &&
-      connection_dir_is_encrypted(conn) &&
+  if (connection_dir_is_encrypted(conn) &&
        !strcmpstart(url,"/tor/rendezvous2/")) {
     /* Handle v2 rendezvous descriptor fetch request. */
     const char *descp;
     const char *query = url + strlen("/tor/rendezvous2/");
-    if (strlen(query) == REND_DESC_ID_V2_LEN_BASE32) {
+    if (rend_valid_descriptor_id(query)) {
       log_info(LD_REND, "Got a v2 rendezvous descriptor request for ID '%s'",
                safe_str(escaped(query)));
       switch (rend_cache_lookup_v2_desc_as_dir(query, &descp)) {
@@ -3205,8 +3239,7 @@ directory_handle_command_post(dir_connection_t *conn, const char *headers,
   log_debug(LD_DIRSERV,"rewritten url as '%s'.", escaped(url));
 
   /* Handle v2 rendezvous service publish request. */
-  if (options->HidServDirectoryV2 &&
-      connection_dir_is_encrypted(conn) &&
+  if (connection_dir_is_encrypted(conn) &&
       !strcmpstart(url,"/tor/rendezvous2/publish")) {
     switch (rend_cache_store_v2_desc_as_dir(body)) {
       case RCS_NOTDIR:
@@ -3446,6 +3479,9 @@ find_dl_schedule_and_len(download_status_t *dls, int server)
     default:
       tor_assert(0);
   }
+
+  /* Impossible, but gcc will fail with -Werror without a `return`. */
+  return NULL;
 }
 
 /** Called when an attempt to download <b>dls</b> has failed with HTTP status

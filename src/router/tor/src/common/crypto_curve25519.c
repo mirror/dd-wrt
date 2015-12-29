@@ -11,8 +11,11 @@
 #include "container.h"
 #include "crypto.h"
 #include "crypto_curve25519.h"
+#include "crypto_format.h"
 #include "util.h"
 #include "torlog.h"
+
+#include "ed25519/donna/ed25519_donna_tor.h"
 
 /* ==============================
    Part 1: wrap a suitable curve25519 implementation as curve25519_impl
@@ -29,6 +32,10 @@ int curve25519_donna(uint8_t *mypublic,
 #include <nacl/crypto_scalarmult_curve25519.h>
 #endif
 #endif
+
+static void pick_curve25519_basepoint_impl(void);
+
+static int curve25519_use_ed = -1;
 
 STATIC int
 curve25519_impl(uint8_t *output, const uint8_t *secret,
@@ -48,6 +55,34 @@ curve25519_impl(uint8_t *output, const uint8_t *secret,
 #endif
   memwipe(bp, 0, sizeof(bp));
   return r;
+}
+
+STATIC int
+curve25519_basepoint_impl(uint8_t *output, const uint8_t *secret)
+{
+  int r = 0;
+  if (PREDICT_UNLIKELY(curve25519_use_ed == -1)) {
+    pick_curve25519_basepoint_impl();
+  }
+
+  /* TODO: Someone should benchmark curved25519_scalarmult_basepoint versus
+   * an optimized NaCl build to see which should be used when compiled with
+   * NaCl available.  I suspected that the ed25519 optimization always wins.
+   */
+  if (PREDICT_LIKELY(curve25519_use_ed == 1)) {
+    curved25519_scalarmult_basepoint_donna(output, secret);
+    r = 0;
+  } else {
+    static const uint8_t basepoint[32] = {9};
+    r = curve25519_impl(output, secret, basepoint);
+  }
+  return r;
+}
+
+void
+curve25519_set_impl_params(int use_ed)
+{
+  curve25519_use_ed = use_ed;
 }
 
 /* ==============================
@@ -113,9 +148,7 @@ void
 curve25519_public_key_generate(curve25519_public_key_t *key_out,
                                const curve25519_secret_key_t *seckey)
 {
-  static const uint8_t basepoint[32] = {9};
-
-  curve25519_impl(key_out->public_key, seckey->secret_key, basepoint);
+  curve25519_basepoint_impl(key_out->public_key, seckey->secret_key);
 }
 
 int
@@ -126,95 +159,6 @@ curve25519_keypair_generate(curve25519_keypair_t *keypair_out,
     return -1;
   curve25519_public_key_generate(&keypair_out->pubkey, &keypair_out->seckey);
   return 0;
-}
-
-/** Write the <b>datalen</b> bytes from <b>data</b> to the file named
- * <b>fname</b> in the tagged-data format.  This format contains a
- * 32-byte header, followed by the data itself.  The header is the
- * NUL-padded string "== <b>typestring</b>: <b>tag</b> ==".  The length
- * of <b>typestring</b> and <b>tag</b> must therefore be no more than
- * 24.
- **/
-int
-crypto_write_tagged_contents_to_file(const char *fname,
-                                     const char *typestring,
-                                     const char *tag,
-                                     const uint8_t *data,
-                                     size_t datalen)
-{
-  char header[32];
-  smartlist_t *chunks = smartlist_new();
-  sized_chunk_t ch0, ch1;
-  int r = -1;
-
-  memset(header, 0, sizeof(header));
-  if (tor_snprintf(header, sizeof(header),
-                   "== %s: %s ==", typestring, tag) < 0)
-    goto end;
-  ch0.bytes = header;
-  ch0.len = 32;
-  ch1.bytes = (const char*) data;
-  ch1.len = datalen;
-  smartlist_add(chunks, &ch0);
-  smartlist_add(chunks, &ch1);
-
-  r = write_chunks_to_file(fname, chunks, 1, 0);
-
- end:
-  smartlist_free(chunks);
-  return r;
-}
-
-/** Read a tagged-data file from <b>fname</b> into the
- * <b>data_out_len</b>-byte buffer in <b>data_out</b>. Check that the
- * typestring matches <b>typestring</b>; store the tag into a newly allocated
- * string in <b>tag_out</b>. Return -1 on failure, and the number of bytes of
- * data on success. */
-ssize_t
-crypto_read_tagged_contents_from_file(const char *fname,
-                                      const char *typestring,
-                                      char **tag_out,
-                                      uint8_t *data_out,
-                                      ssize_t data_out_len)
-{
-  char prefix[33];
-  char *content = NULL;
-  struct stat st;
-  ssize_t r = -1;
-  size_t st_size = 0;
-
-  *tag_out = NULL;
-  st.st_size = 0;
-  content = read_file_to_str(fname, RFTS_BIN|RFTS_IGNORE_MISSING, &st);
-  if (! content)
-    goto end;
-  if (st.st_size < 32 || st.st_size > 32 + data_out_len)
-    goto end;
-  st_size = (size_t)st.st_size;
-
-  memcpy(prefix, content, 32);
-  prefix[32] = 0;
-  /* Check type, extract tag. */
-  if (strcmpstart(prefix, "== ") || strcmpend(prefix, " ==") ||
-      ! tor_mem_is_zero(prefix+strlen(prefix), 32-strlen(prefix)))
-    goto end;
-
-  if (strcmpstart(prefix+3, typestring) ||
-      3+strlen(typestring) >= 32 ||
-      strcmpstart(prefix+3+strlen(typestring), ": "))
-    goto end;
-
-  *tag_out = tor_strndup(prefix+5+strlen(typestring),
-                         strlen(prefix)-8-strlen(typestring));
-
-  memcpy(data_out, content+32, st_size-32);
-  r = st_size - 32;
-
- end:
-  if (content)
-    memwipe(content, 0, st_size);
-  tor_free(content);
-  return r;
 }
 
 /** DOCDOC */
@@ -281,5 +225,86 @@ curve25519_handshake(uint8_t *output,
                      const curve25519_public_key_t *pkey)
 {
   curve25519_impl(output, skey->secret_key, pkey->public_key);
+}
+
+/** Check whether the ed25519-based curve25519 basepoint optimization seems to
+ * be working. If so, return 0; otherwise return -1. */
+static int
+curve25519_basepoint_spot_check(void)
+{
+  static const uint8_t alicesk[32] = {
+    0x77,0x07,0x6d,0x0a,0x73,0x18,0xa5,0x7d,
+    0x3c,0x16,0xc1,0x72,0x51,0xb2,0x66,0x45,
+    0xdf,0x4c,0x2f,0x87,0xeb,0xc0,0x99,0x2a,
+    0xb1,0x77,0xfb,0xa5,0x1d,0xb9,0x2c,0x2a
+  };
+  static const uint8_t alicepk[32] = {
+    0x85,0x20,0xf0,0x09,0x89,0x30,0xa7,0x54,
+    0x74,0x8b,0x7d,0xdc,0xb4,0x3e,0xf7,0x5a,
+    0x0d,0xbf,0x3a,0x0d,0x26,0x38,0x1a,0xf4,
+    0xeb,0xa4,0xa9,0x8e,0xaa,0x9b,0x4e,0x6a
+  };
+  const int loop_max=200;
+  int save_use_ed = curve25519_use_ed;
+  unsigned char e1[32] = { 5 };
+  unsigned char e2[32] = { 5 };
+  unsigned char x[32],y[32];
+  int i;
+  int r=0;
+
+  /* Check the most basic possible sanity via the test secret/public key pair
+   * used in "Cryptography in NaCl - 2. Secret keys and public keys".  This
+   * may catch catastrophic failures on systems where Curve25519 is expensive,
+   * without requiring a ton of key generation.
+   */
+  curve25519_use_ed = 1;
+  r |= curve25519_basepoint_impl(x, alicesk);
+  if (fast_memneq(x, alicepk, 32))
+    goto fail;
+
+  /* Ok, the optimization appears to produce passable results, try a few more
+   * values, maybe there's something subtle wrong.
+   */
+  for (i = 0; i < loop_max; ++i) {
+    curve25519_use_ed = 0;
+    r |= curve25519_basepoint_impl(x, e1);
+    curve25519_use_ed = 1;
+    r |= curve25519_basepoint_impl(y, e2);
+    if (fast_memneq(x,y,32))
+      goto fail;
+    memcpy(e1, x, 32);
+    memcpy(e2, x, 32);
+  }
+
+  goto end;
+ fail:
+  r = -1;
+ end:
+  curve25519_use_ed = save_use_ed;
+  return r;
+}
+
+/** Choose whether to use the ed25519-based curve25519-basepoint
+ * implementation. */
+static void
+pick_curve25519_basepoint_impl(void)
+{
+  curve25519_use_ed = 1;
+
+  if (curve25519_basepoint_spot_check() == 0)
+    return;
+
+  log_warn(LD_CRYPTO, "The ed25519-based curve25519 basepoint "
+           "multiplication seems broken; using the curve25519 "
+           "implementation.");
+  curve25519_use_ed = 0;
+}
+
+/** Initialize the curve25519 implementations. This is necessary if you're
+ * going to use them in a multithreaded setting, and not otherwise. */
+void
+curve25519_init(void)
+{
+  pick_curve25519_basepoint_impl();
 }
 

@@ -141,8 +141,7 @@ entry_guard_set_status(entry_guard_t *e, const node_t *node,
   }
 
   if (node) {
-    int is_dir = node_is_dir(node) && node->rs &&
-      node->rs->version_supports_microdesc_cache;
+    int is_dir = node_is_dir(node);
     if (options->UseBridges && node_is_a_configured_bridge(node))
       is_dir = 1;
     if (e->is_dir_cache != is_dir) {
@@ -398,10 +397,10 @@ add_an_entry_guard(const node_t *chosen, int reset_status, int prepend,
         entry->bad_since = 0;
         entry->can_retry = 1;
       }
-      entry->is_dir_cache = node->rs &&
-                            node->rs->version_supports_microdesc_cache;
+      entry->is_dir_cache = node_is_dir(node);
       if (get_options()->UseBridges && node_is_a_configured_bridge(node))
         entry->is_dir_cache = 1;
+
       return NULL;
     }
   } else if (!for_directory) {
@@ -432,8 +431,7 @@ add_an_entry_guard(const node_t *chosen, int reset_status, int prepend,
            node_describe(node));
   strlcpy(entry->nickname, node_get_nickname(node), sizeof(entry->nickname));
   memcpy(entry->identity, node->identity, DIGEST_LEN);
-  entry->is_dir_cache = node_is_dir(node) && node->rs &&
-                        node->rs->version_supports_microdesc_cache;
+  entry->is_dir_cache = node_is_dir(node);
   if (get_options()->UseBridges && node_is_a_configured_bridge(node))
     entry->is_dir_cache = 1;
 
@@ -442,7 +440,8 @@ add_an_entry_guard(const node_t *chosen, int reset_status, int prepend,
    * don't all select them on the same day, and b) avoid leaving a
    * precise timestamp in the state file about when we first picked
    * this guard. For details, see the Jan 2010 or-dev thread. */
-  entry->chosen_on_date = time(NULL) - crypto_rand_int(3600*24*30);
+  time_t now = time(NULL);
+  entry->chosen_on_date = crypto_rand_time_range(now - 3600*24*30, now);
   entry->chosen_by_version = tor_strdup(VERSION);
 
   /* Are we picking this guard because all of our current guards are
@@ -571,22 +570,6 @@ remove_obsolete_entry_guards(time_t now)
     } else if (tor_version_parse(ver, &v)) {
       msg = "does not seem to be from any recognized version of Tor";
       version_is_bad = 1;
-    } else {
-      char *tor_ver = NULL;
-      tor_asprintf(&tor_ver, "Tor %s", ver);
-      if ((tor_version_as_new_as(tor_ver, "0.1.0.10-alpha") &&
-           !tor_version_as_new_as(tor_ver, "0.1.2.16-dev")) ||
-          (tor_version_as_new_as(tor_ver, "0.2.0.0-alpha") &&
-           !tor_version_as_new_as(tor_ver, "0.2.0.6-alpha")) ||
-          /* above are bug 440; below are bug 1217 */
-          (tor_version_as_new_as(tor_ver, "0.2.1.3-alpha") &&
-           !tor_version_as_new_as(tor_ver, "0.2.1.23")) ||
-          (tor_version_as_new_as(tor_ver, "0.2.2.0-alpha") &&
-           !tor_version_as_new_as(tor_ver, "0.2.2.7-alpha"))) {
-        msg = "was selected without regard for guard bandwidth";
-        version_is_bad = 1;
-      }
-      tor_free(tor_ver);
     }
     if (!version_is_bad && entry->chosen_on_date + guard_lifetime < now) {
       /* It's been too long since the date listed in our state file. */
@@ -989,39 +972,6 @@ entry_list_is_constrained(const or_options_t *options)
   return 0;
 }
 
-/** Return true iff this node can answer directory questions about
- * microdescriptors. */
-static int
-node_understands_microdescriptors(const node_t *node)
-{
-  tor_assert(node);
-  if (node->rs && node->rs->version_supports_microdesc_cache)
-    return 1;
-  if (node->ri && tor_version_supports_microdescriptors(node->ri->platform))
-    return 1;
-  return 0;
-}
-
-/** Return true iff <b>node</b> is able to answer directory questions
- * of type <b>dirinfo</b>. Always returns true if <b>dirinfo</b> is
- * NO_DIRINFO (zero). */
-static int
-node_can_handle_dirinfo(const node_t *node, dirinfo_type_t dirinfo)
-{
-  /* Checking dirinfo for any type other than microdescriptors isn't required
-     yet, since we only choose directory guards that can support microdescs,
-     routerinfos, and networkstatuses, AND we don't use directory guards if
-     we're configured to do direct downloads of anything else. The only case
-     where we might have a guard that doesn't know about a type of directory
-     information is when we're retrieving directory information from a
-     bridge. */
-
-  if ((dirinfo & MICRODESC_DIRINFO) &&
-      !node_understands_microdescriptors(node))
-    return 0;
-  return 1;
-}
-
 /** Pick a live (up and listed) entry guard from entry_guards. If
  * <b>state</b> is non-NULL, this is for a specific circuit --
  * make sure not to pick this circuit's exit or any node in the
@@ -1077,6 +1027,8 @@ populate_live_entry_guards(smartlist_t *live_entry_guards,
   int retval = 0;
   entry_is_live_flags_t entry_flags = 0;
 
+  (void) dirinfo_type;
+
   { /* Set the flags we want our entry node to have */
     if (need_uptime) {
       entry_flags |= ENTRY_NEED_UPTIME;
@@ -1108,9 +1060,6 @@ populate_live_entry_guards(smartlist_t *live_entry_guards,
         continue; /* don't pick the same node for entry and exit */
       if (smartlist_contains(exit_family, node))
         continue; /* avoid relays that are family members of our exit */
-      if (dirinfo_type != NO_DIRINFO &&
-          !node_can_handle_dirinfo(node, dirinfo_type))
-        continue; /* this node won't be able to answer our dir questions */
       smartlist_add(live_entry_guards, (void*)node);
       if (!entry->made_contact) {
         /* Always start with the first not-yet-contacted entry
@@ -1491,8 +1440,9 @@ entry_guards_parse_state(or_state_t *state, int set, char **msg)
        }
      } else {
        if (state_version) {
+         time_t now = time(NULL);
+         e->chosen_on_date = crypto_rand_time_range(now - 3600*24*30, now);
          e->chosen_by_version = tor_strdup(state_version);
-         e->chosen_on_date = time(NULL) - crypto_rand_int(3600*24*30);
        }
      }
      if (e->path_bias_disabled && !e->bad_since)
@@ -2484,11 +2434,9 @@ any_bridge_supports_microdescriptors(void)
   SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, e) {
     node = node_get_by_id(e->identity);
     if (node && node->is_running &&
-        node_is_bridge(node) && node_is_a_configured_bridge(node) &&
-        node_understands_microdescriptors(node)) {
+        node_is_bridge(node) && node_is_a_configured_bridge(node)) {
       /* This is one of our current bridges, and we know enough about
-       * it to know that it will be able to answer our microdescriptor
-       * questions. */
+       * it to know that it will be able to answer our questions. */
        return 1;
     }
   } SMARTLIST_FOREACH_END(e);

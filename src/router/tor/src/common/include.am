@@ -11,9 +11,7 @@ noinst_LIBRARIES += \
 	src/common/libor-event-testing.a
 endif
 
-EXTRA_DIST+= \
-  src/common/common_sha1.i	\
-  src/common/Makefile.nmake
+EXTRA_DIST += src/common/Makefile.nmake
 
 #CFLAGS  = -Wall -Wpointer-arith -O2
 AM_CPPFLAGS += -I$(srcdir)/src/common -Isrc/common -I$(srcdir)/src/ext/trunnel -I$(srcdir)/src/trunnel
@@ -45,12 +43,19 @@ endif
 endif
 
 LIBDONNA += $(LIBED25519_REF10)
+LIBDONNA += $(LIBED25519_DONNA)
 
 if THREADS_PTHREADS
 threads_impl_source=src/common/compat_pthreads.c
 endif
 if THREADS_WIN32
 threads_impl_source=src/common/compat_winthreads.c
+endif
+
+if BUILD_READPASSPHRASE_C
+readpassphrase_source=src/ext/readpassphrase.c
+else
+readpassphrase_source=
 endif
 
 LIBOR_A_SOURCES = \
@@ -63,14 +68,17 @@ LIBOR_A_SOURCES = \
   src/common/log.c					\
   src/common/memarea.c					\
   src/common/util.c					\
-  src/common/util_codedigest.c				\
+  src/common/util_format.c				\
   src/common/util_process.c				\
   src/common/sandbox.c					\
   src/common/workqueue.c				\
   src/ext/csiphash.c					\
   src/ext/trunnel/trunnel.c				\
   $(libor_extra_source)					\
-  $(threads_impl_source)
+  $(threads_impl_source)				\
+  $(readpassphrase_source)
+
+src/common/log.o: micro-revision.i
 
 LIBOR_CRYPTO_A_SOURCES = \
   src/common/aes.c		\
@@ -96,9 +104,9 @@ src_common_libor_testing_a_SOURCES = $(LIBOR_A_SOURCES)
 src_common_libor_crypto_testing_a_SOURCES = $(LIBOR_CRYPTO_A_SOURCES)
 src_common_libor_event_testing_a_SOURCES = $(LIBOR_EVENT_A_SOURCES)
 
-src_common_libor_testing_a_CPPFLAGS = -DTOR_UNIT_TESTS $(AM_CPPFLAGS)
-src_common_libor_crypto_testing_a_CPPFLAGS = -DTOR_UNIT_TESTS $(AM_CPPFLAGS)
-src_common_libor_event_testing_a_CPPFLAGS = -DTOR_UNIT_TESTS $(AM_CPPFLAGS)
+src_common_libor_testing_a_CPPFLAGS = $(AM_CPPFLAGS) $(TEST_CPPFLAGS)
+src_common_libor_crypto_testing_a_CPPFLAGS = $(AM_CPPFLAGS) $(TEST_CPPFLAGS)
+src_common_libor_event_testing_a_CPPFLAGS = $(AM_CPPFLAGS) $(TEST_CPPFLAGS)
 src_common_libor_testing_a_CFLAGS = $(AM_CFLAGS) $(TEST_CFLAGS)
 src_common_libor_crypto_testing_a_CFLAGS = $(AM_CFLAGS) $(TEST_CFLAGS)
 src_common_libor_event_testing_a_CFLAGS = $(AM_CFLAGS) $(TEST_CFLAGS)
@@ -115,6 +123,7 @@ COMMONHEADERS = \
   src/common/crypto.h				\
   src/common/crypto_curve25519.h		\
   src/common/crypto_ed25519.h			\
+  src/common/crypto_format.h			\
   src/common/crypto_pwbox.h			\
   src/common/crypto_s2k.h			\
   src/common/di_ops.h				\
@@ -128,22 +137,9 @@ COMMONHEADERS = \
   src/common/torlog.h				\
   src/common/tortls.h				\
   src/common/util.h				\
+  src/common/util_format.h			\
   src/common/util_process.h			\
   src/common/workqueue.h
 
 noinst_HEADERS+= $(COMMONHEADERS)
-
-DISTCLEANFILES+= src/common/common_sha1.i
-
-src/common/common_sha1.i: $(libor_SOURCES) $(libor_crypto_a_SOURCES) $(COMMONHEADERS)
-	$(AM_V_GEN)if test "@SHA1SUM@" != none; then \
-	  (cd "$(srcdir)" && "@SHA1SUM@" $(src_common_libor_SOURCES) $(src_common_libor_crypto_a_SOURCES) $(COMMONHEADERS)) | "@SED@" -n 's/^\(.*\)$$/"\1\\n"/p' > $@; \
-	elif test "@OPENSSL@" != none; then \
-	  (cd "$(srcdir)" && "@OPENSSL@" sha1 $(src_common_libor_SOURCES) $(src_Common_libor_crypto_a_SOURCES) $(COMMONHEADERS)) | "@SED@" -n 's/SHA1(\(.*\))= \(.*\)/"\2  \1\\n"/p' > $@; \
-	else \
-	  rm $@; \
-	  touch $@; \
-	fi
-
-src/common/util_codedigest.o: src/common/common_sha1.i
 

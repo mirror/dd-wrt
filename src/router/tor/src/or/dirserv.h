@@ -84,7 +84,8 @@ int authdir_wants_to_reject_router(routerinfo_t *ri, const char **msg,
                                    int complain,
                                    int *valid_out);
 uint32_t dirserv_router_get_status(const routerinfo_t *router,
-                                   const char **msg);
+                                   const char **msg,
+                                   int severity);
 void dirserv_set_node_flags_from_authoritative_status(node_t *node,
                                                       uint32_t authstatus);
 
@@ -107,6 +108,8 @@ cached_dir_t *new_cached_dir(char *s, time_t published);
 int validate_recommended_package_line(const char *line);
 
 #ifdef DIRSERV_PRIVATE
+
+STATIC void dirserv_set_routerstatus_testing(routerstatus_t *rs);
 
 /* Put the MAX_MEASUREMENT_AGE #define here so unit tests can see it */
 #define MAX_MEASUREMENT_AGE (3*24*60*60) /* 3 days */

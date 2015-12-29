@@ -206,9 +206,6 @@ test_buffer_pullup(void *arg)
   stuff = tor_malloc(16384);
   tmp = tor_malloc(16384);
 
-  /* Note: this test doesn't check the nulterminate argument to buf_pullup,
-     since nothing actually uses it.  We should remove it some time. */
-
   buf = buf_new_with_capacity(3000); /* rounds up to next power of 2. */
 
   tt_assert(buf);
@@ -218,7 +215,7 @@ test_buffer_pullup(void *arg)
 
   /* There are a bunch of cases for pullup.  One is the trivial case. Let's
      mess around with an empty buffer. */
-  buf_pullup(buf, 16, 1);
+  buf_pullup(buf, 16);
   buf_get_first_chunk_data(buf, &cp, &sz);
   tt_ptr_op(cp, OP_EQ, NULL);
   tt_uint_op(sz, OP_EQ, 0);
@@ -240,7 +237,7 @@ test_buffer_pullup(void *arg)
    * can get tested. */
   tt_int_op(fetch_from_buf(tmp, 3000, buf), OP_EQ, 3000);
   tt_mem_op(tmp,OP_EQ, stuff, 3000);
-  buf_pullup(buf, 2048, 0);
+  buf_pullup(buf, 2048);
   assert_buf_ok(buf);
   buf_get_first_chunk_data(buf, &cp, &sz);
   tt_ptr_op(cp, OP_NE, NULL);
@@ -263,7 +260,7 @@ test_buffer_pullup(void *arg)
   tt_ptr_op(cp, OP_NE, NULL);
   tt_int_op(sz, OP_LE, 4096);
 
-  buf_pullup(buf, 12500, 0);
+  buf_pullup(buf, 12500);
   assert_buf_ok(buf);
   buf_get_first_chunk_data(buf, &cp, &sz);
   tt_ptr_op(cp, OP_NE, NULL);
@@ -286,7 +283,7 @@ test_buffer_pullup(void *arg)
   write_to_buf(stuff, 4000, buf);
   write_to_buf(stuff+4000, 4000, buf);
   fetch_from_buf(tmp, 100, buf); /* dump 100 bytes from first chunk */
-  buf_pullup(buf, 16000, 0); /* Way too much. */
+  buf_pullup(buf, 16000); /* Way too much. */
   assert_buf_ok(buf);
   buf_get_first_chunk_data(buf, &cp, &sz);
   tt_ptr_op(cp, OP_NE, NULL);
@@ -698,6 +695,58 @@ test_buffers_zlib_fin_at_chunk_end(void *arg)
   tor_free(msg);
 }
 
+const uint8_t *tls_read_ptr;
+int n_remaining;
+int next_reply_val[16];
+
+static int
+mock_tls_read(tor_tls_t *tls, char *cp, size_t len)
+{
+  (void)tls;
+  int rv = next_reply_val[0];
+  if (rv > 0) {
+    int max = rv > (int)len ? (int)len : rv;
+    if (max > n_remaining)
+      max = n_remaining;
+    memcpy(cp, tls_read_ptr, max);
+    rv = max;
+    n_remaining -= max;
+    tls_read_ptr += max;
+  }
+
+  memmove(next_reply_val, next_reply_val + 1, 15*sizeof(int));
+  return rv;
+}
+
+static void
+test_buffers_tls_read_mocked(void *arg)
+{
+  uint8_t *mem;
+  buf_t *buf;
+  (void)arg;
+
+  mem = tor_malloc(64*1024);
+  crypto_rand((char*)mem, 64*1024);
+  tls_read_ptr = mem;
+  n_remaining = 64*1024;
+
+  MOCK(tor_tls_read, mock_tls_read);
+
+  buf = buf_new();
+
+  next_reply_val[0] = 1024;
+  tt_int_op(128, ==, read_to_buf_tls(NULL, 128, buf));
+
+  next_reply_val[0] = 5000;
+  next_reply_val[1] = 5000;
+  tt_int_op(6000, ==, read_to_buf_tls(NULL, 6000, buf));
+
+ done:
+  UNMOCK(tor_tls_read);
+  tor_free(mem);
+  buf_free(buf);
+}
+
 struct testcase_t buffer_tests[] = {
   { "basic", test_buffers_basic, TT_FORK, NULL, NULL },
   { "copy", test_buffer_copy, TT_FORK, NULL, NULL },
@@ -710,6 +759,8 @@ struct testcase_t buffer_tests[] = {
   { "zlib_fin_with_nil", test_buffers_zlib_fin_with_nil, TT_FORK, NULL, NULL },
   { "zlib_fin_at_chunk_end", test_buffers_zlib_fin_at_chunk_end, TT_FORK,
     NULL, NULL},
+  { "tls_read_mocked", test_buffers_tls_read_mocked, 0,
+    NULL, NULL },
   END_OF_TESTCASES
 };
 
