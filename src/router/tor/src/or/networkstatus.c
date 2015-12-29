@@ -856,8 +856,8 @@ update_consensus_networkstatus_fetch_time_impl(time_t now, int flav)
         dl_interval = interval/2;
       }
     } else {
-      /* We're an ordinary client or a bridge. Give all the caches enough
-       * time to download the consensus. */
+      /* We're an ordinary client, a bridge, or a hidden service.
+       * Give all the caches enough time to download the consensus. */
       start = (time_t)(c->fresh_until + (interval*3)/4);
       /* But download the next one well before this one is expired. */
       dl_interval = ((c->valid_until - start) * 7 )/ 8;
@@ -1678,7 +1678,7 @@ networkstatus_getinfo_by_purpose(const char *purpose_string, time_t now)
     if (bridge_auth && ri->purpose == ROUTER_PURPOSE_BRIDGE)
       dirserv_set_router_is_running(ri, now);
     /* then generate and write out status lines for each of them */
-    set_routerstatus_from_routerinfo(&rs, node, ri, now, 0, 0);
+    set_routerstatus_from_routerinfo(&rs, node, ri, now, 0);
     smartlist_add(statuses, networkstatus_getinfo_helper_single(&rs));
   } SMARTLIST_FOREACH_END(ri);
 

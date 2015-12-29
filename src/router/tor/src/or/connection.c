@@ -586,6 +586,13 @@ connection_free_(connection_t *conn)
     control_connection_t *control_conn = TO_CONTROL_CONN(conn);
     tor_free(control_conn->safecookie_client_hash);
     tor_free(control_conn->incoming_cmd);
+    if (control_conn->ephemeral_onion_services) {
+      SMARTLIST_FOREACH(control_conn->ephemeral_onion_services, char *, cp, {
+        memwipe(cp, 0, strlen(cp));
+        tor_free(cp);
+      });
+      smartlist_free(control_conn->ephemeral_onion_services);
+    }
   }
 
   /* Probably already freed by connection_free. */
@@ -647,8 +654,8 @@ connection_free_(connection_t *conn)
 
 /** Make sure <b>conn</b> isn't in any of the global conn lists; then free it.
  */
-void
-connection_free(connection_t *conn)
+MOCK_IMPL(void,
+connection_free,(connection_t *conn))
 {
   if (!conn)
     return;
@@ -972,7 +979,7 @@ unix_socket_purpose_to_string(int purpose)
  * <b>path</b>.  Return 0 if we should go ahead and -1 if we shouldn't. */
 static int
 check_location_for_unix_socket(const or_options_t *options, const char *path,
-                               int purpose)
+                               int purpose, const port_cfg_t *port)
 {
   int r = -1;
   char *p = NULL;
@@ -987,10 +994,13 @@ check_location_for_unix_socket(const or_options_t *options, const char *path,
     goto done;
   }
 
-  if ((purpose == UNIX_SOCKET_PURPOSE_CONTROL_SOCKET &&
-       options->ControlSocketsGroupWritable) ||
-      (purpose == UNIX_SOCKET_PURPOSE_SOCKS_SOCKET &&
-       options->SocksSocketsGroupWritable)) {
+  if (port->is_world_writable) {
+    /* World-writable sockets can go anywhere. */
+    r = 0;
+    goto done;
+  }
+
+  if (port->is_group_writable) {
     flags |= CPD_GROUP_OK;
   }
 
@@ -1004,7 +1014,7 @@ check_location_for_unix_socket(const or_options_t *options, const char *path,
              "who can list a socket can connect to it, so Tor is being "
              "careful.)",
              unix_socket_purpose_to_string(purpose), escpath, escdir,
-             options->ControlSocketsGroupWritable ? " and group" : "");
+             port->is_group_writable ? " and group" : "");
     tor_free(escpath);
     tor_free(escdir);
     goto done;
@@ -1078,6 +1088,7 @@ connection_listener_new(const struct sockaddr *listensockaddr,
   connection_t *conn = NULL;
   tor_socket_t s = TOR_INVALID_SOCKET;  /* the socket we're going to make */
   or_options_t const *options = get_options();
+  (void) options; /* Windows doesn't use this. */
 #if defined(HAVE_PWD_H) && defined(HAVE_SYS_UN_H)
   const struct passwd *pw = NULL;
 #endif
@@ -1085,11 +1096,6 @@ connection_listener_new(const struct sockaddr *listensockaddr,
   int start_reading = 0;
   static int global_next_session_group = SESSION_GROUP_FIRST_AUTO;
   tor_addr_t addr;
-
-  if (get_n_open_sockets() >= options->ConnLimit_-1) {
-    warn_too_many_conns();
-    return NULL;
-  }
 
   if (listensockaddr->sa_family == AF_INET ||
       listensockaddr->sa_family == AF_INET6) {
@@ -1106,8 +1112,13 @@ connection_listener_new(const struct sockaddr *listensockaddr,
       is_stream ? SOCK_STREAM : SOCK_DGRAM,
       is_stream ? IPPROTO_TCP: IPPROTO_UDP);
     if (!SOCKET_OK(s)) {
-      log_warn(LD_NET, "Socket creation failed: %s",
-               tor_socket_strerror(tor_socket_errno(-1)));
+      int e = tor_socket_errno(s);
+      if (ERRNO_IS_RESOURCE_LIMIT(e)) {
+        warn_too_many_conns();
+      } else {
+        log_warn(LD_NET, "Socket creation failed: %s",
+                 tor_socket_strerror(e));
+      }
       goto err;
     }
 
@@ -1198,7 +1209,7 @@ connection_listener_new(const struct sockaddr *listensockaddr,
     if (check_location_for_unix_socket(options, address,
           (type == CONN_TYPE_CONTROL_LISTENER) ?
            UNIX_SOCKET_PURPOSE_CONTROL_SOCKET :
-           UNIX_SOCKET_PURPOSE_SOCKS_SOCKET) < 0) {
+           UNIX_SOCKET_PURPOSE_SOCKS_SOCKET, port_cfg) < 0) {
         goto err;
     }
 
@@ -1215,7 +1226,12 @@ connection_listener_new(const struct sockaddr *listensockaddr,
 
     s = tor_open_socket_nonblocking(AF_UNIX, SOCK_STREAM, 0);
     if (! SOCKET_OK(s)) {
-      log_warn(LD_NET,"Socket creation failed: %s.", strerror(errno));
+      int e = tor_socket_errno(s);
+      if (ERRNO_IS_RESOURCE_LIMIT(e)) {
+        warn_too_many_conns();
+      } else {
+        log_warn(LD_NET,"Socket creation failed: %s.", strerror(e));
+      }
       goto err;
     }
 
@@ -1241,24 +1257,23 @@ connection_listener_new(const struct sockaddr *listensockaddr,
     }
 #endif
 
-    if ((type == CONN_TYPE_CONTROL_LISTENER &&
-         options->ControlSocketsGroupWritable) ||
-        (type == CONN_TYPE_AP_LISTENER &&
-         options->SocksSocketsGroupWritable)) {
-      /* We need to use chmod; fchmod doesn't work on sockets on all
-       * platforms. */
-      if (chmod(address, 0660) < 0) {
-        log_warn(LD_FS,"Unable to make %s group-writable.", address);
-        goto err;
+    {
+      unsigned mode;
+      const char *status;
+      if (port_cfg->is_world_writable) {
+        mode = 0666;
+        status = "world-writable";
+      } else if (port_cfg->is_group_writable) {
+        mode = 0660;
+        status = "group-writable";
+      } else {
+        mode = 0600;
+        status = "private";
       }
-    } else if ((type == CONN_TYPE_CONTROL_LISTENER &&
-                !(options->ControlSocketsGroupWritable)) ||
-               (type == CONN_TYPE_AP_LISTENER &&
-                !(options->SocksSocketsGroupWritable))) {
       /* We need to use chmod; fchmod doesn't work on sockets on all
        * platforms. */
-      if (chmod(address, 0600) < 0) {
-        log_warn(LD_FS,"Unable to make %s group-writable.", address);
+      if (chmod(address, mode) < 0) {
+        log_warn(LD_FS,"Unable to make %s %s.", address, status);
         goto err;
       }
     }
@@ -1407,7 +1422,7 @@ static int
 connection_handle_listener_read(connection_t *conn, int new_type)
 {
   tor_socket_t news; /* the new socket */
-  connection_t *newconn;
+  connection_t *newconn = 0;
   /* information about the remote peer when connecting to other routers */
   struct sockaddr_storage addrbuf;
   struct sockaddr *remote = (struct sockaddr*)&addrbuf;
@@ -1423,7 +1438,7 @@ connection_handle_listener_read(connection_t *conn, int new_type)
     int e = tor_socket_errno(conn->s);
     if (ERRNO_IS_ACCEPT_EAGAIN(e)) {
       return 0; /* he hung up before we could accept(). that's fine. */
-    } else if (ERRNO_IS_ACCEPT_RESOURCE_LIMIT(e)) {
+    } else if (ERRNO_IS_RESOURCE_LIMIT(e)) {
       warn_too_many_conns();
       return 0;
     }
@@ -1617,12 +1632,6 @@ connection_connect_sockaddr(connection_t *conn,
   tor_assert(sa);
   tor_assert(socket_error);
 
-  if (get_n_open_sockets() >= get_options()->ConnLimit_-1) {
-    warn_too_many_conns();
-    *socket_error = SOCK_ERRNO(ENOBUFS);
-    return -1;
-  }
-
   if (get_options()->DisableNetwork) {
     /* We should never even try to connect anyplace if DisableNetwork is set.
      * Warn if we do, and refuse to make the connection. */
@@ -1640,9 +1649,13 @@ connection_connect_sockaddr(connection_t *conn,
 
   s = tor_open_socket_nonblocking(protocol_family, SOCK_STREAM, proto);
   if (! SOCKET_OK(s)) {
-    *socket_error = tor_socket_errno(-1);
-    log_warn(LD_NET,"Error creating network socket: %s",
-             tor_socket_strerror(*socket_error));
+    *socket_error = tor_socket_errno(s);
+    if (ERRNO_IS_RESOURCE_LIMIT(*socket_error)) {
+      warn_too_many_conns();
+    } else {
+      log_warn(LD_NET,"Error creating network socket: %s",
+               tor_socket_strerror(*socket_error));
+    }
     return -1;
   }
 
@@ -3774,7 +3787,7 @@ connection_fetch_from_buf_line(connection_t *conn, char *data,
   }
 }
 
-/** As fetch_from_buf_http, but fetches from a conncetion's input buffer_t or
+/** As fetch_from_buf_http, but fetches from a connection's input buffer_t or
  * its bufferevent as appropriate. */
 int
 connection_fetch_from_buf_http(connection_t *conn,
@@ -4193,34 +4206,6 @@ connection_write_to_buf_impl_,(const char *string, size_t len,
     conn->outbuf_flushlen += buf_datalen(conn->outbuf) - old_datalen;
   } else {
     conn->outbuf_flushlen += len;
-
-    /* Should we try flushing the outbuf now? */
-    if (conn->in_flushed_some) {
-      /* Don't flush the outbuf when the reason we're writing more stuff is
-       * _because_ we flushed the outbuf.  That's unfair. */
-      return;
-    }
-
-    if (conn->type == CONN_TYPE_CONTROL &&
-               !connection_is_rate_limited(conn) &&
-               conn->outbuf_flushlen-len < 1<<16 &&
-               conn->outbuf_flushlen >= 1<<16) {
-      /* just try to flush all of it */
-    } else
-      return; /* no need to try flushing */
-
-    if (connection_handle_write(conn, 0) < 0) {
-      if (!conn->marked_for_close) {
-        /* this connection is broken. remove it. */
-        log_warn(LD_BUG, "unhandled error on write for "
-                 "conn (type %d, fd %d); removing",
-                 conn->type, (int)conn->s);
-        tor_fragile_assert();
-        /* do a close-immediate here, so we don't try to flush */
-        connection_close_immediate(conn);
-      }
-      return;
-    }
   }
 }
 
@@ -4440,25 +4425,12 @@ alloc_http_authenticator(const char *authenticator)
   /* an authenticator in Basic authentication
    * is just the string "username:password" */
   const size_t authenticator_length = strlen(authenticator);
-  /* The base64_encode function needs a minimum buffer length
-   * of 66 bytes. */
-  const size_t base64_authenticator_length = (authenticator_length/48+1)*66;
+  const size_t base64_authenticator_length =
+      base64_encode_size(authenticator_length, 0) + 1;
   char *base64_authenticator = tor_malloc(base64_authenticator_length);
   if (base64_encode(base64_authenticator, base64_authenticator_length,
-                    authenticator, authenticator_length) < 0) {
+                    authenticator, authenticator_length, 0) < 0) {
     tor_free(base64_authenticator); /* free and set to null */
-  } else {
-    int i = 0, j = 0;
-    ssize_t len = strlen(base64_authenticator);
-
-    /* remove all newline occurrences within the string */
-    for (i=0; i < len; ++i) {
-      if ('\n' != base64_authenticator[i]) {
-        base64_authenticator[j] = base64_authenticator[i];
-        ++j;
-      }
-    }
-    base64_authenticator[j]='\0';
   }
   return base64_authenticator;
 }

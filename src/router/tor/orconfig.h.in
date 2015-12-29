@@ -62,6 +62,14 @@
    don't. */
 #undef HAVE_DECL_MLOCKALL
 
+/* Define to 1 if you have the declaration of `SecureZeroMemory', and to 0 if
+   you don't. */
+#undef HAVE_DECL_SECUREZEROMEMORY
+
+/* Define to 1 if you have the declaration of `_getwch', and to 0 if you
+   don't. */
+#undef HAVE_DECL__GETWCH
+
 /* Define to 1 if you have the <dmalloc.h> header file. */
 #undef HAVE_DMALLOC_H
 
@@ -86,20 +94,11 @@
 /* Define to 1 if you have the `eventfd' function. */
 #undef HAVE_EVENTFD
 
-/* Define to 1 if you have the `event_base_loopexit' function. */
-#undef HAVE_EVENT_BASE_LOOPEXIT
-
-/* Define to 1 if you have the `event_get_method' function. */
-#undef HAVE_EVENT_GET_METHOD
-
-/* Define to 1 if you have the `event_get_version' function. */
-#undef HAVE_EVENT_GET_VERSION
-
 /* Define to 1 if you have the `event_get_version_number' function. */
 #undef HAVE_EVENT_GET_VERSION_NUMBER
 
-/* Define to 1 if you have the `event_set_log_callback' function. */
-#undef HAVE_EVENT_SET_LOG_CALLBACK
+/* Define to 1 if you have the `EVP_PBE_scrypt' function. */
+#undef HAVE_EVP_PBE_SCRYPT
 
 /* Define to 1 if you have the `evutil_secure_rng_init' function. */
 #undef HAVE_EVUTIL_SECURE_RNG_INIT
@@ -140,6 +139,9 @@
 
 /* Define to 1 if you have the `getifaddrs' function. */
 #undef HAVE_GETIFADDRS
+
+/* Define to 1 if you have the `getpass' function. */
+#undef HAVE_GETPASS
 
 /* Define to 1 if you have the `getresgid' function. */
 #undef HAVE_GETRESGID
@@ -272,6 +274,12 @@
 /* Define to 1 if you have the <pwd.h> header file. */
 #undef HAVE_PWD_H
 
+/* Define to 1 if you have the `readpassphrase' function. */
+#undef HAVE_READPASSPHRASE
+
+/* Define to 1 if you have the <readpassphrase.h> header file. */
+#undef HAVE_READPASSPHRASE_H
+
 /* Define to 1 if you have the `rint' function. */
 #undef HAVE_RINT
 
@@ -295,6 +303,24 @@
 
 /* Define to 1 if the system has the type `ssize_t'. */
 #undef HAVE_SSIZE_T
+
+/* Define to 1 if you have the `SSL_CIPHER_find' function. */
+#undef HAVE_SSL_CIPHER_FIND
+
+/* Define to 1 if you have the `SSL_get_client_ciphers' function. */
+#undef HAVE_SSL_GET_CLIENT_CIPHERS
+
+/* Define to 1 if you have the `SSL_get_client_random' function. */
+#undef HAVE_SSL_GET_CLIENT_RANDOM
+
+/* Define to 1 if you have the `SSL_get_server_random' function. */
+#undef HAVE_SSL_GET_SERVER_RANDOM
+
+/* Define to 1 if you have the `SSL_SESSION_get_master_key' function. */
+#undef HAVE_SSL_SESSION_GET_MASTER_KEY
+
+/* Define to 1 if you have the `statvfs' function. */
+#undef HAVE_STATVFS
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -402,6 +428,9 @@
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
 
+/* Define to 1 if you have the <sys/statvfs.h> header file. */
+#undef HAVE_SYS_STATVFS_H
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
@@ -431,6 +460,9 @@
 
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
+
+/* Define to 1 if you have the `TLS_method' function. */
+#undef HAVE_TLS_METHOD
 
 /* Define to 1 if you have the <ucontext.h> header file. */
 #undef HAVE_UCONTEXT_H
@@ -471,15 +503,6 @@
 
 /* Define to 1 iff malloc(0) returns a pointer */
 #undef MALLOC_ZERO_WORKS
-
-/* Define to 1 if we are building with UPnP. */
-#undef MINIUPNPC
-
-/* libminiupnpc version 1.5 found */
-#undef MINIUPNPC15
-
-/* Define to 1 if we are building with nat-pmp. */
-#undef NAT_PMP
 
 /* Define to 1 iff memset(0) sets pointers to NULL */
 #undef NULL_REP_IS_ZERO_BYTES
@@ -634,14 +657,21 @@
 /* Define on some platforms to activate x_r() functions in time.h */
 #undef _REENTRANT
 
-/* Define to `unsigned short' if <sys/types.h> does not define. */
-#undef u_int16_t
 
-/* Define to `unsigned long' if <sys/types.h> does not define. */
-#undef u_int32_t
+#ifdef _WIN32
+/* Defined to access windows functions and definitions for >=WinXP */
+# ifndef WINVER
+#  define WINVER 0x0501
+# endif
 
-/* Define to `unsigned long long' if <sys/types.h> does not define. */
-#undef u_int64_t
+/* Defined to access _other_ windows functions and definitions for >=WinXP */
+# ifndef _WIN32_WINNT
+#  define _WIN32_WINNT 0x0501
+# endif
 
-/* Define to `unsigned char' if <sys/types.h> does not define. */
-#undef u_int8_t
+/* Defined to avoid including some windows headers as part of Windows.h */
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN 1
+# endif
+#endif
+

@@ -38,6 +38,7 @@ void smartlist_reverse(smartlist_t *sl);
 void smartlist_string_remove(smartlist_t *sl, const char *element);
 int smartlist_contains(const smartlist_t *sl, const void *element);
 int smartlist_contains_string(const smartlist_t *sl, const char *element);
+int smartlist_pos(const smartlist_t *sl, const void *element);
 int smartlist_string_pos(const smartlist_t *, const char *elt);
 int smartlist_contains_string_case(const smartlist_t *sl, const char *element);
 int smartlist_contains_int_as_string(const smartlist_t *sl, int num);
@@ -108,9 +109,10 @@ void smartlist_sort_digests(smartlist_t *sl);
 void smartlist_sort_digests256(smartlist_t *sl);
 void smartlist_sort_pointers(smartlist_t *sl);
 
-char *smartlist_get_most_frequent_string(smartlist_t *sl);
-char *smartlist_get_most_frequent_string_(smartlist_t *sl, int *count_out);
-char *smartlist_get_most_frequent_digest256(smartlist_t *sl);
+const char *smartlist_get_most_frequent_string(smartlist_t *sl);
+const char *smartlist_get_most_frequent_string_(smartlist_t *sl,
+                                                int *count_out);
+const uint8_t *smartlist_get_most_frequent_digest256(smartlist_t *sl);
 
 void smartlist_uniq_strings(smartlist_t *sl);
 void smartlist_uniq_digests(smartlist_t *sl);
@@ -360,7 +362,7 @@ char *smartlist_join_strings2(smartlist_t *sl, const char *join,
 DECLARE_MAP_FNS(strmap_t, const char *, strmap_);
 /* Map from const char[DIGEST_LEN] to void *. Implemented with a hash table. */
 DECLARE_MAP_FNS(digestmap_t, const char *, digestmap_);
-/* Map from const uint8_t[DIGEST_LEN] to void *. Implemented with a hash
+/* Map from const uint8_t[DIGEST256_LEN] to void *. Implemented with a hash
  * table. */
 DECLARE_MAP_FNS(digest256map_t, const uint8_t *, digest256map_);
 

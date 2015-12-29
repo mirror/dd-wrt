@@ -14,15 +14,19 @@
 #define NETWORKSTATUS_PRIVATE
 #include "or.h"
 #include "config.h"
+#include "crypto_ed25519.h"
 #include "directory.h"
 #include "dirserv.h"
 #include "dirvote.h"
 #include "hibernate.h"
 #include "networkstatus.h"
 #include "router.h"
+#include "routerkeys.h"
 #include "routerlist.h"
 #include "routerparse.h"
+#include "routerset.h"
 #include "test.h"
+#include "torcert.h"
 
 static void
 test_dir_nicknames(void *arg)
@@ -87,8 +91,10 @@ test_dir_formats(void *arg)
   routerinfo_t *rp1 = NULL, *rp2 = NULL;
   addr_policy_t *ex1, *ex2;
   routerlist_t *dir1 = NULL, *dir2 = NULL;
+  uint8_t *rsa_cc = NULL;
   or_options_t *options = get_options_mutable();
   const addr_policy_t *p;
+  time_t now = time(NULL);
 
   (void)arg;
   pk1 = pk_generate(0);
@@ -127,14 +133,32 @@ test_dir_formats(void *arg)
   ex2->prt_min = ex2->prt_max = 24;
   r2 = tor_malloc_zero(sizeof(routerinfo_t));
   r2->addr = 0x0a030201u; /* 10.3.2.1 */
+  ed25519_keypair_t kp1, kp2;
+  ed25519_secret_key_from_seed(&kp1.seckey,
+                          (const uint8_t*)"YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY");
+  ed25519_public_key_generate(&kp1.pubkey, &kp1.seckey);
+  ed25519_secret_key_from_seed(&kp2.seckey,
+                          (const uint8_t*)"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+  ed25519_public_key_generate(&kp2.pubkey, &kp2.seckey);
+  r2->signing_key_cert = tor_cert_create(&kp1,
+                                         CERT_TYPE_ID_SIGNING,
+                                         &kp2.pubkey,
+                                         now, 86400,
+                                         CERT_FLAG_INCLUDE_SIGNING_KEY);
+  char cert_buf[256];
+  base64_encode(cert_buf, sizeof(cert_buf),
+                (const char*)r2->signing_key_cert->encoded,
+                r2->signing_key_cert->encoded_len,
+                BASE64_ENCODE_MULTILINE);
   r2->platform = tor_strdup(platform);
   r2->cache_info.published_on = 5;
   r2->or_port = 9005;
   r2->dir_port = 0;
   r2->onion_pkey = crypto_pk_dup_key(pk2);
-  r2->onion_curve25519_pkey = tor_malloc_zero(sizeof(curve25519_public_key_t));
-  curve25519_public_from_base64(r2->onion_curve25519_pkey,
-                                "skyinAnvardNostarsNomoonNowindormistsorsnow");
+  curve25519_keypair_t r2_onion_keypair;
+  curve25519_keypair_generate(&r2_onion_keypair, 0);
+  r2->onion_curve25519_pkey = tor_memdup(&r2_onion_keypair.pubkey,
+                                         sizeof(curve25519_public_key_t));
   r2->identity_pkey = crypto_pk_dup_key(pk1);
   r2->bandwidthrate = r2->bandwidthburst = r2->bandwidthcapacity = 3000;
   r2->exit_policy = smartlist_new();
@@ -150,7 +174,7 @@ test_dir_formats(void *arg)
   /* XXXX025 router_dump_to_string should really take this from ri.*/
   options->ContactInfo = tor_strdup("Magri White "
                                     "<magri@elsewhere.example.com>");
-  buf = router_dump_router_to_string(r1, pk2);
+  buf = router_dump_router_to_string(r1, pk2, NULL, NULL, NULL);
   tor_free(options->ContactInfo);
   tt_assert(buf);
 
@@ -183,7 +207,7 @@ test_dir_formats(void *arg)
   tt_str_op(buf,OP_EQ, buf2);
   tor_free(buf);
 
-  buf = router_dump_router_to_string(r1, pk2);
+  buf = router_dump_router_to_string(r1, pk2, NULL, NULL, NULL);
   tt_assert(buf);
   cp = buf;
   rp1 = router_parse_entry_from_string((const char*)cp,NULL,1,0,NULL,NULL);
@@ -201,7 +225,19 @@ test_dir_formats(void *arg)
 
   strlcpy(buf2,
           "router Fred 10.3.2.1 9005 0 0\n"
-          "platform Tor "VERSION" on ", sizeof(buf2));
+          "identity-ed25519\n"
+          "-----BEGIN ED25519 CERT-----\n", sizeof(buf2));
+  strlcat(buf2, cert_buf, sizeof(buf2));
+  strlcat(buf2, "-----END ED25519 CERT-----\n", sizeof(buf2));
+  strlcat(buf2, "master-key-ed25519 ", sizeof(buf2));
+  {
+    char k[ED25519_BASE64_LEN+1];
+    tt_assert(ed25519_public_to_base64(k, &r2->signing_key_cert->signing_key)
+              >= 0);
+    strlcat(buf2, k, sizeof(buf2));
+    strlcat(buf2, "\n", sizeof(buf2));
+  }
+  strlcat(buf2, "platform Tor "VERSION" on ", sizeof(buf2));
   strlcat(buf2, get_uname(), sizeof(buf2));
   strlcat(buf2, "\n"
           "protocols Link 1 2 Circuit 1\n"
@@ -215,19 +251,56 @@ test_dir_formats(void *arg)
   strlcat(buf2, pk2_str, sizeof(buf2));
   strlcat(buf2, "signing-key\n", sizeof(buf2));
   strlcat(buf2, pk1_str, sizeof(buf2));
-  strlcat(buf2, "hidden-service-dir\n", sizeof(buf2));
-  strlcat(buf2, "ntor-onion-key "
-          "skyinAnvardNostarsNomoonNowindormistsorsnow=\n", sizeof(buf2));
-  strlcat(buf2, "accept *:80\nreject 18.0.0.0/8:24\n", sizeof(buf2));
-  strlcat(buf2, "router-signature\n", sizeof(buf2));
+  int rsa_cc_len;
+  rsa_cc = make_tap_onion_key_crosscert(pk2,
+                                        &kp1.pubkey,
+                                        pk1,
+                                        &rsa_cc_len);
+  tt_assert(rsa_cc);
+  base64_encode(cert_buf, sizeof(cert_buf), (char*)rsa_cc, rsa_cc_len,
+                BASE64_ENCODE_MULTILINE);
+  strlcat(buf2, "onion-key-crosscert\n"
+          "-----BEGIN CROSSCERT-----\n", sizeof(buf2));
+  strlcat(buf2, cert_buf, sizeof(buf2));
+  strlcat(buf2, "-----END CROSSCERT-----\n", sizeof(buf2));
+  int ntor_cc_sign;
+  {
+    tor_cert_t *ntor_cc = NULL;
+    ntor_cc = make_ntor_onion_key_crosscert(&r2_onion_keypair,
+                                          &kp1.pubkey,
+                                          r2->cache_info.published_on,
+                                          MIN_ONION_KEY_LIFETIME,
+                                          &ntor_cc_sign);
+    tt_assert(ntor_cc);
+    base64_encode(cert_buf, sizeof(cert_buf),
+                (char*)ntor_cc->encoded, ntor_cc->encoded_len,
+                BASE64_ENCODE_MULTILINE);
+    tor_cert_free(ntor_cc);
+  }
+  tor_snprintf(buf2+strlen(buf2), sizeof(buf2)-strlen(buf2),
+               "ntor-onion-key-crosscert %d\n"
+               "-----BEGIN ED25519 CERT-----\n"
+               "%s"
+               "-----END ED25519 CERT-----\n", ntor_cc_sign, cert_buf);
 
-  buf = router_dump_router_to_string(r2, pk1);
+  strlcat(buf2, "hidden-service-dir\n", sizeof(buf2));
+  strlcat(buf2, "ntor-onion-key ", sizeof(buf2));
+  base64_encode(cert_buf, sizeof(cert_buf),
+                (const char*)r2_onion_keypair.pubkey.public_key, 32,
+                BASE64_ENCODE_MULTILINE);
+  strlcat(buf2, cert_buf, sizeof(buf2));
+  strlcat(buf2, "accept *:80\nreject 18.0.0.0/8:24\n", sizeof(buf2));
+  strlcat(buf2, "router-sig-ed25519 ", sizeof(buf2));
+
+  buf = router_dump_router_to_string(r2, pk1, pk2, &r2_onion_keypair, &kp2);
+  tt_assert(buf);
   buf[strlen(buf2)] = '\0'; /* Don't compare the sig; it's never the same
                              * twice */
-  tt_str_op(buf,OP_EQ, buf2);
+
+  tt_str_op(buf, OP_EQ, buf2);
   tor_free(buf);
 
-  buf = router_dump_router_to_string(r2, pk1);
+  buf = router_dump_router_to_string(r2, pk1, NULL, NULL, NULL);
   cp = buf;
   rp2 = router_parse_entry_from_string((const char*)cp,NULL,1,0,NULL,NULL);
   tt_assert(rp2);
@@ -280,6 +353,7 @@ test_dir_formats(void *arg)
   if (rp2)
     routerinfo_free(rp2);
 
+  tor_free(rsa_cc);
   tor_free(buf);
   tor_free(pk1_str);
   tor_free(pk2_str);
@@ -293,7 +367,7 @@ test_dir_formats(void *arg)
 #include "failing_routerdescs.inc"
 
 static void
-test_dir_routerparse_bad(void *arg)
+test_dir_routerinfo_parsing(void *arg)
 {
   (void) arg;
 
@@ -317,6 +391,8 @@ test_dir_routerparse_bad(void *arg)
 
   CHECK_OK(EX_RI_MINIMAL);
   CHECK_OK(EX_RI_MAXIMAL);
+
+  CHECK_OK(EX_RI_MINIMAL_ED);
 
   /* good annotations prepended */
   routerinfo_free(ri);
@@ -376,8 +452,28 @@ test_dir_routerparse_bad(void *arg)
   CHECK_FAIL(EX_RI_BAD_FAMILY, 0);
   CHECK_FAIL(EX_RI_ZERO_ORPORT, 0);
 
+  CHECK_FAIL(EX_RI_ED_MISSING_CROSSCERT, 0);
+  CHECK_FAIL(EX_RI_ED_MISSING_CROSSCERT2, 0);
+  CHECK_FAIL(EX_RI_ED_MISSING_CROSSCERT_SIGN, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_SIG1, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_SIG2, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_SIG3, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_SIG4, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_CROSSCERT1, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_CROSSCERT3, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_CROSSCERT4, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_CROSSCERT5, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_CROSSCERT6, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_CROSSCERT7, 0);
+  CHECK_FAIL(EX_RI_ED_MISPLACED1, 0);
+  CHECK_FAIL(EX_RI_ED_MISPLACED2, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_CERT1, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_CERT2, 0);
+  CHECK_FAIL(EX_RI_ED_BAD_CERT3, 0);
+
   /* This is allowed; we just ignore it. */
   CHECK_OK(EX_RI_BAD_EI_DIGEST);
+  CHECK_OK(EX_RI_BAD_EI_DIGEST2);
 
 #undef CHECK_FAIL
 #undef CHECK_OK
@@ -433,19 +529,33 @@ test_dir_extrainfo_parsing(void *arg)
   tt_assert(ei->pending_sig);
   CHECK_OK(EX_EI_MAXIMAL);
   tt_assert(ei->pending_sig);
+  CHECK_OK(EX_EI_GOOD_ED_EI);
+  tt_assert(ei->pending_sig);
 
   map = (struct digest_ri_map_t *)digestmap_new();
   ADD(EX_EI_MINIMAL);
   ADD(EX_EI_MAXIMAL);
+  ADD(EX_EI_GOOD_ED_EI);
   ADD(EX_EI_BAD_FP);
   ADD(EX_EI_BAD_NICKNAME);
   ADD(EX_EI_BAD_TOKENS);
   ADD(EX_EI_BAD_START);
   ADD(EX_EI_BAD_PUBLISHED);
 
+  ADD(EX_EI_ED_MISSING_SIG);
+  ADD(EX_EI_ED_MISSING_CERT);
+  ADD(EX_EI_ED_BAD_CERT1);
+  ADD(EX_EI_ED_BAD_CERT2);
+  ADD(EX_EI_ED_BAD_SIG1);
+  ADD(EX_EI_ED_BAD_SIG2);
+  ADD(EX_EI_ED_MISPLACED_CERT);
+  ADD(EX_EI_ED_MISPLACED_SIG);
+
   CHECK_OK(EX_EI_MINIMAL);
   tt_assert(!ei->pending_sig);
   CHECK_OK(EX_EI_MAXIMAL);
+  tt_assert(!ei->pending_sig);
+  CHECK_OK(EX_EI_GOOD_ED_EI);
   tt_assert(!ei->pending_sig);
 
   CHECK_FAIL(EX_EI_BAD_SIG1,1);
@@ -456,6 +566,15 @@ test_dir_extrainfo_parsing(void *arg)
   CHECK_FAIL(EX_EI_BAD_TOKENS,0);
   CHECK_FAIL(EX_EI_BAD_START,0);
   CHECK_FAIL(EX_EI_BAD_PUBLISHED,0);
+
+  CHECK_FAIL(EX_EI_ED_MISSING_SIG,0);
+  CHECK_FAIL(EX_EI_ED_MISSING_CERT,0);
+  CHECK_FAIL(EX_EI_ED_BAD_CERT1,0);
+  CHECK_FAIL(EX_EI_ED_BAD_CERT2,0);
+  CHECK_FAIL(EX_EI_ED_BAD_SIG1,0);
+  CHECK_FAIL(EX_EI_ED_BAD_SIG2,0);
+  CHECK_FAIL(EX_EI_ED_MISPLACED_CERT,0);
+  CHECK_FAIL(EX_EI_ED_MISPLACED_SIG,0);
 
 #undef CHECK_OK
 #undef CHECK_FAIL
@@ -1394,6 +1513,7 @@ generate_ri_from_rs(const vote_routerstatus_t *vrs)
   static time_t published = 0;
 
   r = tor_malloc_zero(sizeof(routerinfo_t));
+  r->cert_expiration_time = TIME_MAX;
   memcpy(r->cache_info.identity_digest, rs->identity_digest, DIGEST_LEN);
   memcpy(r->cache_info.signed_descriptor_digest, rs->descriptor_digest,
          DIGEST_LEN);
@@ -2860,6 +2980,281 @@ test_dir_fmt_control_ns(void *arg)
   tor_free(s);
 }
 
+static int mock_get_options_calls = 0;
+static or_options_t *mock_options = NULL;
+
+static void
+reset_options(or_options_t *options, int *get_options_calls)
+{
+  memset(options, 0, sizeof(or_options_t));
+  options->TestingTorNetwork = 1;
+
+  *get_options_calls = 0;
+}
+
+static const or_options_t *
+mock_get_options(void)
+{
+  ++mock_get_options_calls;
+  tor_assert(mock_options);
+  return mock_options;
+}
+
+static void
+reset_routerstatus(routerstatus_t *rs,
+                   const char *hex_identity_digest,
+                   int32_t ipv4_addr)
+{
+  memset(rs, 0, sizeof(routerstatus_t));
+  base16_decode(rs->identity_digest, sizeof(rs->identity_digest),
+                hex_identity_digest, HEX_DIGEST_LEN);
+  /* A zero address matches everything, so the address needs to be set.
+   * But the specific value is irrelevant. */
+  rs->addr = ipv4_addr;
+}
+
+#define ROUTER_A_ID_STR    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+#define ROUTER_A_IPV4      0xAA008801
+#define ROUTER_B_ID_STR    "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+#define ROUTER_B_IPV4      0xBB008801
+
+#define ROUTERSET_ALL_STR  "*"
+#define ROUTERSET_A_STR    ROUTER_A_ID_STR
+#define ROUTERSET_NONE_STR ""
+
+/*
+ * Test that dirserv_set_routerstatus_testing sets router flags correctly
+ * Using "*"  sets flags on A and B
+ * Using "A"  sets flags on A
+ * Using ""   sets flags on Neither
+ * If the router is not included:
+ *   - if *Strict is set, the flag is set to 0,
+ *   - otherwise, the flag is not modified. */
+static void
+test_dir_dirserv_set_routerstatus_testing(void *arg)
+{
+  (void)arg;
+
+  /* Init options */
+  mock_options = malloc(sizeof(or_options_t));
+  reset_options(mock_options, &mock_get_options_calls);
+
+  MOCK(get_options, mock_get_options);
+
+  /* Init routersets */
+  routerset_t *routerset_all  = routerset_new();
+  routerset_parse(routerset_all,  ROUTERSET_ALL_STR,  "All routers");
+
+  routerset_t *routerset_a    = routerset_new();
+  routerset_parse(routerset_a,    ROUTERSET_A_STR,    "Router A only");
+
+  routerset_t *routerset_none = routerset_new();
+  /* Routersets are empty when provided by routerset_new(),
+   * so this is not strictly necessary */
+  routerset_parse(routerset_none, ROUTERSET_NONE_STR, "No routers");
+
+  /* Init routerstatuses */
+  routerstatus_t *rs_a = malloc(sizeof(routerstatus_t));
+  reset_routerstatus(rs_a, ROUTER_A_ID_STR, ROUTER_A_IPV4);
+
+  routerstatus_t *rs_b = malloc(sizeof(routerstatus_t));
+  reset_routerstatus(rs_b, ROUTER_B_ID_STR, ROUTER_B_IPV4);
+
+  /* Sanity check that routersets correspond to routerstatuses.
+   * Return values are {2, 3, 4} */
+
+  /* We want 3 ("*" means match all addresses) */
+  tt_assert(routerset_contains_routerstatus(routerset_all,  rs_a, 0) == 3);
+  tt_assert(routerset_contains_routerstatus(routerset_all,  rs_b, 0) == 3);
+
+  /* We want 4 (match id_digest [or nickname]) */
+  tt_assert(routerset_contains_routerstatus(routerset_a,    rs_a, 0) == 4);
+  tt_assert(routerset_contains_routerstatus(routerset_a,    rs_b, 0) == 0);
+
+  tt_assert(routerset_contains_routerstatus(routerset_none, rs_a, 0) == 0);
+  tt_assert(routerset_contains_routerstatus(routerset_none, rs_b, 0) == 0);
+
+  /* Check that "*" sets flags on all routers: Exit
+   * Check the flags aren't being confused with each other */
+  reset_options(mock_options, &mock_get_options_calls);
+  reset_routerstatus(rs_a, ROUTER_A_ID_STR, ROUTER_A_IPV4);
+  reset_routerstatus(rs_b, ROUTER_B_ID_STR, ROUTER_B_IPV4);
+
+  mock_options->TestingDirAuthVoteExit = routerset_all;
+  mock_options->TestingDirAuthVoteExitIsStrict = 0;
+
+  dirserv_set_routerstatus_testing(rs_a);
+  tt_assert(mock_get_options_calls == 1);
+  dirserv_set_routerstatus_testing(rs_b);
+  tt_assert(mock_get_options_calls == 2);
+
+  tt_assert(rs_a->is_exit == 1);
+  tt_assert(rs_b->is_exit == 1);
+  /* Be paranoid - check no other flags are set */
+  tt_assert(rs_a->is_possible_guard == 0);
+  tt_assert(rs_b->is_possible_guard == 0);
+  tt_assert(rs_a->is_hs_dir == 0);
+  tt_assert(rs_b->is_hs_dir == 0);
+
+  /* Check that "*" sets flags on all routers: Guard & HSDir
+   * Cover the remaining flags in one test */
+  reset_options(mock_options, &mock_get_options_calls);
+  reset_routerstatus(rs_a, ROUTER_A_ID_STR, ROUTER_A_IPV4);
+  reset_routerstatus(rs_b, ROUTER_B_ID_STR, ROUTER_B_IPV4);
+
+  mock_options->TestingDirAuthVoteGuard = routerset_all;
+  mock_options->TestingDirAuthVoteGuardIsStrict = 0;
+  mock_options->TestingDirAuthVoteHSDir = routerset_all;
+  mock_options->TestingDirAuthVoteHSDirIsStrict = 0;
+
+  dirserv_set_routerstatus_testing(rs_a);
+  tt_assert(mock_get_options_calls == 1);
+  dirserv_set_routerstatus_testing(rs_b);
+  tt_assert(mock_get_options_calls == 2);
+
+  tt_assert(rs_a->is_possible_guard == 1);
+  tt_assert(rs_b->is_possible_guard == 1);
+  tt_assert(rs_a->is_hs_dir == 1);
+  tt_assert(rs_b->is_hs_dir == 1);
+  /* Be paranoid - check exit isn't set */
+  tt_assert(rs_a->is_exit == 0);
+  tt_assert(rs_b->is_exit == 0);
+
+  /* Check routerset A sets all flags on router A,
+   * but leaves router B unmodified */
+  reset_options(mock_options, &mock_get_options_calls);
+  reset_routerstatus(rs_a, ROUTER_A_ID_STR, ROUTER_A_IPV4);
+  reset_routerstatus(rs_b, ROUTER_B_ID_STR, ROUTER_B_IPV4);
+
+  mock_options->TestingDirAuthVoteExit = routerset_a;
+  mock_options->TestingDirAuthVoteExitIsStrict = 0;
+  mock_options->TestingDirAuthVoteGuard = routerset_a;
+  mock_options->TestingDirAuthVoteGuardIsStrict = 0;
+  mock_options->TestingDirAuthVoteHSDir = routerset_a;
+  mock_options->TestingDirAuthVoteHSDirIsStrict = 0;
+
+  dirserv_set_routerstatus_testing(rs_a);
+  tt_assert(mock_get_options_calls == 1);
+  dirserv_set_routerstatus_testing(rs_b);
+  tt_assert(mock_get_options_calls == 2);
+
+  tt_assert(rs_a->is_exit == 1);
+  tt_assert(rs_b->is_exit == 0);
+  tt_assert(rs_a->is_possible_guard == 1);
+  tt_assert(rs_b->is_possible_guard == 0);
+  tt_assert(rs_a->is_hs_dir == 1);
+  tt_assert(rs_b->is_hs_dir == 0);
+
+  /* Check routerset A unsets all flags on router B when Strict is set */
+  reset_options(mock_options, &mock_get_options_calls);
+  reset_routerstatus(rs_b, ROUTER_B_ID_STR, ROUTER_B_IPV4);
+
+  mock_options->TestingDirAuthVoteExit = routerset_a;
+  mock_options->TestingDirAuthVoteExitIsStrict = 1;
+  mock_options->TestingDirAuthVoteGuard = routerset_a;
+  mock_options->TestingDirAuthVoteGuardIsStrict = 1;
+  mock_options->TestingDirAuthVoteHSDir = routerset_a;
+  mock_options->TestingDirAuthVoteHSDirIsStrict = 1;
+
+  rs_b->is_exit = 1;
+  rs_b->is_possible_guard = 1;
+  rs_b->is_hs_dir = 1;
+
+  dirserv_set_routerstatus_testing(rs_b);
+  tt_assert(mock_get_options_calls == 1);
+
+  tt_assert(rs_b->is_exit == 0);
+  tt_assert(rs_b->is_possible_guard == 0);
+  tt_assert(rs_b->is_hs_dir == 0);
+
+  /* Check routerset A doesn't modify flags on router B without Strict set */
+  reset_options(mock_options, &mock_get_options_calls);
+  reset_routerstatus(rs_b, ROUTER_B_ID_STR, ROUTER_B_IPV4);
+
+  mock_options->TestingDirAuthVoteExit = routerset_a;
+  mock_options->TestingDirAuthVoteExitIsStrict = 0;
+  mock_options->TestingDirAuthVoteGuard = routerset_a;
+  mock_options->TestingDirAuthVoteGuardIsStrict = 0;
+  mock_options->TestingDirAuthVoteHSDir = routerset_a;
+  mock_options->TestingDirAuthVoteHSDirIsStrict = 0;
+
+  rs_b->is_exit = 1;
+  rs_b->is_possible_guard = 1;
+  rs_b->is_hs_dir = 1;
+
+  dirserv_set_routerstatus_testing(rs_b);
+  tt_assert(mock_get_options_calls == 1);
+
+  tt_assert(rs_b->is_exit == 1);
+  tt_assert(rs_b->is_possible_guard == 1);
+  tt_assert(rs_b->is_hs_dir == 1);
+
+  /* Check the empty routerset zeroes all flags
+   * on routers A & B with Strict set */
+  reset_options(mock_options, &mock_get_options_calls);
+  reset_routerstatus(rs_b, ROUTER_B_ID_STR, ROUTER_B_IPV4);
+
+  mock_options->TestingDirAuthVoteExit = routerset_none;
+  mock_options->TestingDirAuthVoteExitIsStrict = 1;
+  mock_options->TestingDirAuthVoteGuard = routerset_none;
+  mock_options->TestingDirAuthVoteGuardIsStrict = 1;
+  mock_options->TestingDirAuthVoteHSDir = routerset_none;
+  mock_options->TestingDirAuthVoteHSDirIsStrict = 1;
+
+  rs_b->is_exit = 1;
+  rs_b->is_possible_guard = 1;
+  rs_b->is_hs_dir = 1;
+
+  dirserv_set_routerstatus_testing(rs_b);
+  tt_assert(mock_get_options_calls == 1);
+
+  tt_assert(rs_b->is_exit == 0);
+  tt_assert(rs_b->is_possible_guard == 0);
+  tt_assert(rs_b->is_hs_dir == 0);
+
+  /* Check the empty routerset doesn't modify any flags
+   * on A or B without Strict set */
+  reset_options(mock_options, &mock_get_options_calls);
+  reset_routerstatus(rs_a, ROUTER_A_ID_STR, ROUTER_A_IPV4);
+  reset_routerstatus(rs_b, ROUTER_B_ID_STR, ROUTER_B_IPV4);
+
+  mock_options->TestingDirAuthVoteExit = routerset_none;
+  mock_options->TestingDirAuthVoteExitIsStrict = 0;
+  mock_options->TestingDirAuthVoteGuard = routerset_none;
+  mock_options->TestingDirAuthVoteGuardIsStrict = 0;
+  mock_options->TestingDirAuthVoteHSDir = routerset_none;
+  mock_options->TestingDirAuthVoteHSDirIsStrict = 0;
+
+  rs_b->is_exit = 1;
+  rs_b->is_possible_guard = 1;
+  rs_b->is_hs_dir = 1;
+
+  dirserv_set_routerstatus_testing(rs_a);
+  tt_assert(mock_get_options_calls == 1);
+  dirserv_set_routerstatus_testing(rs_b);
+  tt_assert(mock_get_options_calls == 2);
+
+  tt_assert(rs_a->is_exit == 0);
+  tt_assert(rs_a->is_possible_guard == 0);
+  tt_assert(rs_a->is_hs_dir == 0);
+  tt_assert(rs_b->is_exit == 1);
+  tt_assert(rs_b->is_possible_guard == 1);
+  tt_assert(rs_b->is_hs_dir == 1);
+
+ done:
+  free(mock_options);
+  mock_options = NULL;
+
+  UNMOCK(get_options);
+
+  routerset_free(routerset_all);
+  routerset_free(routerset_a);
+  routerset_free(routerset_none);
+
+  free(rs_a);
+  free(rs_b);
+}
+
 static void
 test_dir_http_handling(void *args)
 {
@@ -3108,7 +3503,7 @@ test_dir_packages(void *arg)
 struct testcase_t dir_tests[] = {
   DIR_LEGACY(nicknames),
   DIR_LEGACY(formats),
-  DIR(routerparse_bad, 0),
+  DIR(routerinfo_parsing, 0),
   DIR(extrainfo_parsing, 0),
   DIR(parse_router_list, TT_FORK),
   DIR(load_routers, TT_FORK),
@@ -3125,6 +3520,7 @@ struct testcase_t dir_tests[] = {
   DIR_LEGACY(clip_unmeasured_bw_kb),
   DIR_LEGACY(clip_unmeasured_bw_kb_alt),
   DIR(fmt_control_ns, 0),
+  DIR(dirserv_set_routerstatus_testing, 0),
   DIR(http_handling, 0),
   DIR(purpose_needs_anonymity, 0),
   DIR(fetch_type, 0),

@@ -3,7 +3,7 @@ dnl Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson
 dnl Copyright (c) 2007-2015, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
-AC_INIT([tor],[0.2.6.9])
+AC_INIT([tor],[0.2.7.6])
 AC_CONFIG_SRCDIR([src/or/main.c])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE
@@ -26,23 +26,23 @@ CPPFLAGS="$CPPFLAGS -I\${top_srcdir}/src/common"
 
 #XXXX020 We should make these enabled or not, before 0.2.0.x-final
 AC_ARG_ENABLE(openbsd-malloc,
-   AS_HELP_STRING(--enable-openbsd-malloc, Use malloc code from openbsd.  Linux only))
+   AS_HELP_STRING(--enable-openbsd-malloc, [use malloc code from OpenBSD.  Linux only]))
 AC_ARG_ENABLE(instrument-downloads,
-   AS_HELP_STRING(--enable-instrument-downloads, Instrument downloads of directory resources etc.))
+   AS_HELP_STRING(--enable-instrument-downloads, [instrument downloads of directory resources etc.]))
 AC_ARG_ENABLE(static-openssl,
-   AS_HELP_STRING(--enable-static-openssl, Link against a static openssl library. Requires --with-openssl-dir))
+   AS_HELP_STRING(--enable-static-openssl, [link against a static openssl library. Requires --with-openssl-dir]))
 AC_ARG_ENABLE(static-libevent,
-   AS_HELP_STRING(--enable-static-libevent, Link against a static libevent library. Requires --with-libevent-dir))
+   AS_HELP_STRING(--enable-static-libevent, [link against a static libevent library. Requires --with-libevent-dir]))
 AC_ARG_ENABLE(static-zlib,
-   AS_HELP_STRING(--enable-static-zlib, Link against a static zlib library. Requires --with-zlib-dir))
+   AS_HELP_STRING(--enable-static-zlib, [link against a static zlib library. Requires --with-zlib-dir]))
 AC_ARG_ENABLE(static-tor,
-   AS_HELP_STRING(--enable-static-tor, Create an entirely static Tor binary. Requires --with-openssl-dir and --with-libevent-dir and --with-zlib-dir))
+   AS_HELP_STRING(--enable-static-tor, [create an entirely static Tor binary. Requires --with-openssl-dir and --with-libevent-dir and --with-zlib-dir]))
 AC_ARG_ENABLE(unittests,
-   AS_HELP_STRING(--disable-unittests, [Don't build unit tests for Tor. Risky!]))
+   AS_HELP_STRING(--disable-unittests, [don't build unit tests for Tor. Risky!]))
 AC_ARG_ENABLE(coverage,
-   AS_HELP_STRING(--enable-coverage, [Enable coverage support in the unit-test build]))
+   AS_HELP_STRING(--enable-coverage, [enable coverage support in the unit-test build]))
 AC_ARG_ENABLE(system-torrc,
-   AS_HELP_STRING(--disable-system-torrc, [Don't look for a system-wide torrc file]))
+   AS_HELP_STRING(--disable-system-torrc, [don't look for a system-wide torrc file]))
 
 AM_CONDITIONAL(UNITTESTS_ENABLED, test x$enable_unittests != xno)
 AM_CONDITIONAL(COVERAGE_ENABLED, test x$enable_coverage = xyes)
@@ -66,7 +66,7 @@ if test x$enable_instrument_downloads = xyes; then
 fi
 
 AC_ARG_ENABLE(transparent,
-     AS_HELP_STRING(--disable-transparent, disable transparent proxy support),
+     AS_HELP_STRING(--disable-transparent, [disable transparent proxy support]),
      [case "${enableval}" in
         yes) transparent=true ;;
         no)  transparent=false ;;
@@ -74,34 +74,16 @@ AC_ARG_ENABLE(transparent,
       esac], [transparent=true])
 
 AC_ARG_ENABLE(asciidoc,
-     AS_HELP_STRING(--disable-asciidoc, don't use asciidoc (disables building of manpages)),
+     AS_HELP_STRING(--disable-asciidoc, [don't use asciidoc (disables building of manpages)]),
      [case "${enableval}" in
         yes) asciidoc=true ;;
         no)  asciidoc=false ;;
         *) AC_MSG_ERROR(bad value for --disable-asciidoc) ;;
       esac], [asciidoc=true])
 
-# By default, we're not ready to ship a NAT-PMP aware Tor
-AC_ARG_ENABLE(nat-pmp,
-     AS_HELP_STRING(--enable-nat-pmp, enable NAT-PMP support),
-     [case "${enableval}" in
-        yes) natpmp=true ;;
-        no)  natpmp=false ;;
-        * ) AC_MSG_ERROR(bad value for --enable-nat-pmp) ;;
-      esac], [natpmp=false])
-
-# By default, we're not ready to ship a UPnP aware Tor
-AC_ARG_ENABLE(upnp,
-     AS_HELP_STRING(--enable-upnp, enable UPnP support),
-     [case "${enableval}" in
-        yes) upnp=true ;;
-        no)  upnp=false ;;
-        * ) AC_MSG_ERROR(bad value for --enable-upnp) ;;
-      esac], [upnp=false])
-
 # systemd notify support
 AC_ARG_ENABLE(systemd,
-      AS_HELP_STRING(--enable-systemd, enable systemd notification support),
+      AS_HELP_STRING(--enable-systemd, [enable systemd notification support]),
       [case "${enableval}" in
         yes) systemd=true ;;
         no)  systemd=false ;;
@@ -148,24 +130,24 @@ case $host in
 esac
 
 AC_ARG_ENABLE(gcc-warnings,
-     AS_HELP_STRING(--enable-gcc-warnings, enable verbose warnings))
+     AS_HELP_STRING(--enable-gcc-warnings, [enable verbose warnings]))
 AC_ARG_ENABLE(gcc-warnings-advisory,
      AS_HELP_STRING(--enable-gcc-warnings-advisory, [enable verbose warnings, excluding -Werror]))
 
 dnl Others suggest '/gs /safeseh /nxcompat /dynamicbase' for non-gcc on Windows
 AC_ARG_ENABLE(gcc-hardening,
-    AS_HELP_STRING(--disable-gcc-hardening, disable compiler security checks))
+    AS_HELP_STRING(--disable-gcc-hardening, [disable compiler security checks]))
 
 AC_ARG_ENABLE(expensive-hardening,
-    AS_HELP_STRING(--enable-expensive-hardening, enable more expensive compiler hardening; makes Tor slower))
+    AS_HELP_STRING(--enable-expensive-hardening, [enable more expensive compiler hardening; makes Tor slower]))
 
 dnl Linker hardening options
 dnl Currently these options are ELF specific - you can't use this with MacOSX
 AC_ARG_ENABLE(linker-hardening,
-    AS_HELP_STRING(--disable-linker-hardening, disable linker security fixups))
+    AS_HELP_STRING(--disable-linker-hardening, [disable linker security fixups]))
 
 AC_ARG_ENABLE(local-appdata,
-   AS_HELP_STRING(--enable-local-appdata, default to host local application data paths on Windows))
+   AS_HELP_STRING(--enable-local-appdata, [default to host local application data paths on Windows]))
 if test "$enable_local_appdata" = "yes"; then
   AC_DEFINE(ENABLE_LOCAL_APPDATA, 1,
             [Defined if we default to host local appdata paths on Windows])
@@ -173,22 +155,22 @@ fi
 
 # Tor2web mode flag
 AC_ARG_ENABLE(tor2web-mode,
-     AS_HELP_STRING(--enable-tor2web-mode, support tor2web non-anonymous mode),
+     AS_HELP_STRING(--enable-tor2web-mode, [support tor2web non-anonymous mode]),
 [if test x$enableval = xyes; then
     CFLAGS="$CFLAGS -D ENABLE_TOR2WEB_MODE=1"
 fi])
 
 AC_ARG_ENABLE(bufferevents,
-     AS_HELP_STRING(--enable-bufferevents, use Libevent's buffered IO.))
+     AS_HELP_STRING(--enable-bufferevents, [use Libevent's buffered IO]))
 
 AC_ARG_ENABLE(tool-name-check,
-     AS_HELP_STRING(--disable-tool-name-check, check for sanely named toolchain when cross-compiling))
+     AS_HELP_STRING(--disable-tool-name-check, [check for sanely named toolchain when cross-compiling]))
 
 AC_ARG_ENABLE(seccomp,
-     AS_HELP_STRING(--disable-seccomp, do not attempt to use libseccomp))
+     AS_HELP_STRING(--disable-seccomp, [do not attempt to use libseccomp]))
 
 AC_ARG_ENABLE(libscrypt,
-     AS_HELP_STRING(--disable-libscrypt, do not attempt to use libscrypt))
+     AS_HELP_STRING(--disable-libscrypt, [do not attempt to use libscrypt]))
 
 dnl check for the correct "ar" when cross-compiling
 AN_MAKEVAR([AR], [AC_PROG_AR])
@@ -214,6 +196,8 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
+
+AC_PATH_PROG([PERL], [perl])
 
 dnl autoconf 2.59 appears not to support AC_PROG_SED
 AC_CHECK_PROG([SED],[sed],[sed],[/bin/false])
@@ -281,12 +265,9 @@ if test "$tor_cv_c_c99_designated_init" != "yes"; then
   AC_MSG_ERROR([Your compiler doesn't support c99 designated initializers. This is required as of Tor 0.2.6.x])
 fi
 
-AC_PATH_PROG([SHA1SUM], [sha1sum], none)
-AC_PATH_PROG([OPENSSL], [openssl], none)
-
 TORUSER=_tor
 AC_ARG_WITH(tor-user,
-        [  --with-tor-user=NAME    Specify username for tor daemon ],
+        AS_HELP_STRING(--with-tor-user=NAME, [specify username for tor daemon]),
         [
            TORUSER=$withval
         ]
@@ -295,7 +276,7 @@ AC_SUBST(TORUSER)
 
 TORGROUP=_tor
 AC_ARG_WITH(tor-group,
-        [  --with-tor-group=NAME   Specify group name for tor daemon ],
+        AS_HELP_STRING(--with-tor-group=NAME, [specify group name for tor daemon]),
         [
            TORGROUP=$withval
         ]
@@ -336,6 +317,26 @@ bwin32=true; AC_MSG_RESULT([yes]),
 bwin32=false; AC_MSG_RESULT([no]))
 fi
 
+AH_BOTTOM([
+#ifdef _WIN32
+/* Defined to access windows functions and definitions for >=WinXP */
+# ifndef WINVER
+#  define WINVER 0x0501
+# endif
+
+/* Defined to access _other_ windows functions and definitions for >=WinXP */
+# ifndef _WIN32_WINNT
+#  define _WIN32_WINNT 0x0501
+# endif
+
+/* Defined to avoid including some windows headers as part of Windows.h */
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN 1
+# endif
+#endif
+])
+
+
 AM_CONDITIONAL(BUILD_NT_SERVICES, test x$bwin32 = xtrue)
 
 dnl Enable C99 when compiling with MIPSpro
@@ -359,6 +360,7 @@ AC_SEARCH_LIBS(socket, [socket network])
 AC_SEARCH_LIBS(gethostbyname, [nsl])
 AC_SEARCH_LIBS(dlopen, [dl])
 AC_SEARCH_LIBS(inet_aton, [resolv])
+AC_SEARCH_LIBS(backtrace, [execinfo])
 saved_LIBS="$LIBS"
 AC_SEARCH_LIBS([clock_gettime], [rt])
 if test "$LIBS" != "$saved_LIBS"; then
@@ -387,6 +389,7 @@ AC_CHECK_FUNCS(
         ftime \
         getaddrinfo \
         getifaddrs \
+        getpass \
         getrlimit \
         gettimeofday \
         gmtime_r \
@@ -400,9 +403,11 @@ AC_CHECK_FUNCS(
 	pipe \
 	pipe2 \
         prctl \
+	readpassphrase \
         rint \
         sigaction \
         socketpair \
+	statvfs \
         strlcat \
         strlcpy \
 	strnlen \
@@ -422,6 +427,16 @@ if test "$bwin32" != true; then
   AC_CHECK_FUNCS(pthread_create)
 fi
 
+if test "$bwin32" = true; then
+  AC_CHECK_DECLS([SecureZeroMemory, _getwch], , , [
+#include <windows.h>
+#include <conio.h>
+#include <wchar.h>
+                 ])
+fi
+
+AM_CONDITIONAL(BUILD_READPASSPHRASE_C, test x$ac_cv_func_readpassphrase = xno && test $bwin32 = false)
+
 dnl ------------------------------------------------------
 dnl Where do you live, libevent?  And how do we call you?
 
@@ -438,15 +453,6 @@ fi
 AC_SUBST(TOR_LIB_WS32)
 AC_SUBST(TOR_LIB_GDI)
 AC_SUBST(TOR_LIB_IPHLPAPI)
-
-dnl We need to do this before we try our disgusting hack below.
-AC_CHECK_HEADERS([sys/types.h])
-
-dnl This is a disgusting hack so we safely include older libevent headers.
-AC_CHECK_TYPE(u_int64_t, unsigned long long)
-AC_CHECK_TYPE(u_int32_t, unsigned long)
-AC_CHECK_TYPE(u_int16_t, unsigned short)
-AC_CHECK_TYPE(u_int8_t, unsigned char)
 
 tor_libevent_pkg_redhat="libevent"
 tor_libevent_pkg_debian="libevent-dev"
@@ -488,13 +494,10 @@ save_CPPFLAGS="$CPPFLAGS"
 LIBS="-levent $STATIC_LIBEVENT_FLAGS $TOR_LIB_WS32 $LIBS"
 LDFLAGS="$TOR_LDFLAGS_libevent $LDFLAGS"
 CPPFLAGS="$TOR_CPPFLAGS_libevent $CPPFLAGS"
-AC_CHECK_FUNCS([event_get_version \
-                event_get_version_number \
-                event_get_method \
-                event_set_log_callback \
+AC_CHECK_FUNCS([event_get_version_number \
                 evutil_secure_rng_set_urandom_device_file \
                 evutil_secure_rng_init \
-                event_base_loopexit])
+               ])
 AC_CHECK_MEMBERS([struct event.min_heap_idx], , ,
 [#include <event.h>
 ])
@@ -597,7 +600,7 @@ tor_openssl_devpkg_debian="libssl-dev"
 
 ALT_openssl_WITHVAL=""
 AC_ARG_WITH(ssl-dir,
-  [  --with-ssl-dir=PATH    Obsolete alias for --with-openssl-dir ],
+  AS_HELP_STRING(--with-ssl-dir=PATH, [obsolete alias for --with-openssl-dir]),
   [
       if test "x$withval" != xno && test "x$withval" != "x" ; then
          ALT_openssl_WITHVAL="$withval"
@@ -623,9 +626,55 @@ else
 fi
 AC_SUBST(TOR_OPENSSL_LIBS)
 
+dnl Now check for particular openssl functions.
+save_LIBS="$LIBS"
+save_LDFLAGS="$LDFLAGS"
+save_CPPFLAGS="$CPPFLAGS"
+LIBS="$TOR_OPENSSL_LIBS $LIBS"
+LDFLAGS="$TOR_LDFLAGS_openssl $LDFLAGS"
+CPPFLAGS="$TOR_CPPFLAGS_openssl $CPPFLAGS"
+
+AC_TRY_COMPILE([
+#include <openssl/opensslv.h>
+#if OPENSSL_VERSION_NUMBER < 0x1000000fL
+#error "too old"
+#endif
+   ], [],
+   [ : ],
+   [ AC_ERROR([OpenSSL is too old. We require 1.0.0 or later. You can specify a path to a newer one with --with-openssl-dir.]) ])
+
+AC_TRY_COMPILE([
+#include <openssl/opensslv.h>
+#include <openssl/evp.h>
+#if defined(OPENSSL_NO_EC) || defined(OPENSSL_NO_ECDH) || defined(OPENSSL_NO_ECDSA)
+#error "no ECC"
+#endif
+#if !defined(NID_X9_62_prime256v1) || !defined(NID_secp224r1)
+#error "curves unavailable"
+#endif
+   ], [],
+   [ : ],
+   [ AC_ERROR([OpenSSL is built without full ECC support, including curves P256 and P224. You can specify a path to one with ECC support with --with-openssl-dir.]) ])
+
 AC_CHECK_MEMBERS([struct ssl_method_st.get_cipher_by_char], , ,
 [#include <openssl/ssl.h>
 ])
+
+AC_CHECK_FUNCS([ \
+		SSL_SESSION_get_master_key \
+		SSL_get_server_random \
+                SSL_get_client_ciphers \
+                SSL_get_client_random \
+		SSL_CIPHER_find \
+		TLS_method
+	       ])
+
+dnl Check if OpenSSL has scrypt implementation.
+AC_CHECK_FUNCS([ EVP_PBE_scrypt ])
+
+LIBS="$save_LIBS"
+LDFLAGS="$save_LDFLAGS"
+CPPFLAGS="$save_CPPFLAGS"
 
 dnl ------------------------------------------------------
 dnl Where do you live, zlib?  And how do we call you?
@@ -725,65 +774,6 @@ dnl for us, as GCC 4.6 and later do at many optimization levels), then
 dnl we should try to add -fasynchronous-unwind-tables so that our backtrace
 dnl code will work.
 TOR_CHECK_CFLAGS(-fasynchronous-unwind-tables)
-
-dnl ------------------------------------------------------
-dnl Where do you live, libnatpmp?  And how do we call you?
-dnl There are no packages for Debian or Redhat as of this patch
-
-if test "$natpmp" = "true"; then
-    AC_DEFINE(NAT_PMP, 1, [Define to 1 if we are building with nat-pmp.])
-    TOR_SEARCH_LIBRARY(libnatpmp, $trylibnatpmpdir, [-lnatpmp $TOR_LIB_WS32 $TOR_LIB_IPHLPAPI],
-        [#include <natpmp.h>],
-        [#ifdef _WIN32
-         #define STATICLIB
-         #endif
-         #include <natpmp.h>],
-        [   int r;
-            natpmp_t natpmp;
-            natpmpresp_t response;
-            r = initnatpmp(&natpmp, 0, 0);],
-            [printf("initnatpmp() returned %d (%s)\n", r, r?"FAILED":"SUCCESS");
-            exit(0);],
-        [--with-libnatpmp-dir],
-        [/usr/lib/])
-fi
-
-
-dnl ------------------------------------------------------
-dnl Where do you live, libminiupnpc?  And how do we call you?
-dnl There are no packages for Debian or Redhat as of this patch
-
-if test "$upnp" = "true"; then
-    AC_DEFINE(MINIUPNPC, 1, [Define to 1 if we are building with UPnP.])
-
-    dnl Before we call TOR_SEARCH_LIBRARY we'll do a quick compile test
-    dnl to see if we have miniupnpc-1.5 or -1.6
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <miniupnpc/miniupnpc.h>],
-        [upnpDiscover(1, 0, 0, 0);exit(0);])],[miniupnpc15="true"],[miniupnpc15="false"])
-
-    if test "$miniupnpc15" = "true" ; then
-        AC_DEFINE([MINIUPNPC15],[1],[libminiupnpc version 1.5 found])
-        TOR_SEARCH_LIBRARY(libminiupnpc, $trylibminiupnpcdir, [-lminiupnpc $TOR_LIB_WS32 $TOR_LIB_IPHLPAPI],
-            [#include <miniupnpc/miniwget.h>
-             #include <miniupnpc/miniupnpc.h>
-             #include <miniupnpc/upnpcommands.h>],
-            [void upnpDiscover(int delay, const char * multicastif,
-             const char * minissdpdsock, int sameport);],
-            [upnpDiscover(1, 0, 0, 0); exit(0);],
-            [--with-libminiupnpc-dir],
-            [/usr/lib/])
-    else
-        TOR_SEARCH_LIBRARY(libminiupnpc, $trylibminiupnpcdir, [-lminiupnpc $TOR_LIB_WS32 $TOR_LIB_IPHLPAPI],
-            [#include <miniupnpc/miniwget.h>
-             #include <miniupnpc/miniupnpc.h>
-             #include <miniupnpc/upnpcommands.h>],
-            [void upnpDiscover(int delay, const char * multicastif,
-             const char * minissdpdsock, int sameport, int ipv6, int * error);],
-            [upnpDiscover(1, 0, 0, 0, 0, 0); exit(0);],
-            [--with-libminiupnpc-dir],
-            [/usr/lib/])
-    fi
-fi
 
 dnl ============================================================
 dnl Check for libseccomp
@@ -939,6 +929,7 @@ AC_CHECK_HEADERS(
         netinet/in.h \
         netinet/in6.h \
         pwd.h \
+	readpassphrase.h \
         stdint.h \
 	sys/eventfd.h \
         sys/file.h \
@@ -950,6 +941,7 @@ AC_CHECK_HEADERS(
         sys/resource.h \
         sys/select.h \
         sys/socket.h \
+	sys/statvfs.h \
 	sys/sysctl.h \
         sys/syslimits.h \
         sys/time.h \
@@ -979,6 +971,9 @@ AC_CHECK_HEADERS(net/pfvar.h, net_pfvar_found=1, net_pfvar_found=0,
 #endif
 #ifdef HAVE_NET_IF_H
 #include <net/if.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
 #endif])
 
 AC_CHECK_HEADERS(linux/if.h,[],[],
@@ -1092,7 +1087,7 @@ AC_CHECK_SIZEOF(pid_t)
 
 AC_CHECK_TYPES([uint, u_char, ssize_t])
 
-AC_PC_FROM_UCONTEXT([/bin/true])
+AC_PC_FROM_UCONTEXT([:])
 
 dnl used to include sockaddr_storage, but everybody has that.
 AC_CHECK_TYPES([struct in6_addr, struct sockaddr_in6, sa_family_t], , ,
@@ -1111,12 +1106,8 @@ AC_CHECK_TYPES([struct in6_addr, struct sockaddr_in6, sa_family_t], , ,
 #ifdef _WIN32
 #define _WIN32_WINNT 0x0501
 #define WIN32_LEAN_AND_MEAN
-#if defined(_MSC_VER) && (_MSC_VER < 1300)
-#include <winsock.h>
-#else
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#endif
 #endif
 ])
 AC_CHECK_MEMBERS([struct in6_addr.s6_addr32, struct in6_addr.s6_addr16, struct sockaddr_in.sin_len, struct sockaddr_in6.sin6_len], , ,
@@ -1135,9 +1126,6 @@ AC_CHECK_MEMBERS([struct in6_addr.s6_addr32, struct in6_addr.s6_addr16, struct s
 #ifdef _WIN32
 #define _WIN32_WINNT 0x0501
 #define WIN32_LEAN_AND_MEAN
-#if defined(_MSC_VER) && (_MSC_VER < 1300)
-#include <winsock.h>
-#else
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #endif
@@ -1315,7 +1303,7 @@ fi
 # Whether we should use the dmalloc memory allocation debugging library.
 AC_MSG_CHECKING(whether to use dmalloc (debug memory allocation library))
 AC_ARG_WITH(dmalloc,
-[  --with-dmalloc          Use debug memory allocation library. ],
+AS_HELP_STRING(--with-dmalloc, [use debug memory allocation library]),
 [if [[ "$withval" = "yes" ]]; then
   dmalloc=1
   AC_MSG_RESULT(yes)
@@ -1333,7 +1321,7 @@ if [[ $dmalloc -eq 1 ]]; then
 fi
 
 AC_ARG_WITH(tcmalloc,
-[  --with-tcmalloc         Use tcmalloc memory allocation library. ],
+AS_HELP_STRING(--with-tcmalloc, [use tcmalloc memory allocation library]),
 [ tcmalloc=yes ], [ tcmalloc=no ])
 
 if test x$tcmalloc = xyes ; then
@@ -1363,7 +1351,7 @@ AC_CHECK_DECLS([mlockall], , , [
 
 # Allow user to specify an alternate syslog facility
 AC_ARG_WITH(syslog-facility,
-[  --with-syslog-facility=LOG syslog facility to use (default=LOG_DAEMON)],
+AS_HELP_STRING(--with-syslog-facility=LOG, [syslog facility to use (default=LOG_DAEMON)]),
 syslog_facility="$withval", syslog_facility="LOG_DAEMON")
 AC_DEFINE_UNQUOTED(LOGFACILITY,$syslog_facility,[name of the syslog facility])
 AC_SUBST(LOGFACILITY)
@@ -1661,6 +1649,8 @@ AC_CONFIG_FILES([
         contrib/dist/tor.service
         src/config/torrc.sample
         src/config/torrc.minimal
+        scripts/maint/checkOptionDocs.pl
+        scripts/maint/updateVersions.pl
 ])
 
 if test x$asciidoc = xtrue && test "$ASCIIDOC" = "none" ; then
@@ -1682,7 +1672,3 @@ if test x$asciidoc = xtrue && test "$ASCIIDOC" = "none" ; then
 fi
 
 AC_OUTPUT
-
-if test -x /usr/bin/perl && test -x ./scripts/maint/updateVersions.pl ; then
-  ./scripts/maint/updateVersions.pl
-fi

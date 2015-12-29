@@ -232,7 +232,8 @@
 #define USING_TWOS_COMPLEMENT
 
 /* Version number of package */
-#define VERSION "0.2.6.9"
+#define VERSION "0.2.7.6"
+
 
 
 #define HAVE_STRUCT_SOCKADDR_IN6
@@ -254,3 +255,8 @@
 #ifndef STDERR_FILENO
 #define STDERR_FILENO 2
 #endif
+
+#define WINVER 0x0501
+#define _WIN32_WINNT 0x0501
+#define WIN32_LEAN_AND_MEAN 1
+

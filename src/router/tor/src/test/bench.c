@@ -19,11 +19,9 @@ const char tor_git_revision[] = "";
 #include "relay.h"
 #include <openssl/opensslv.h>
 #include <openssl/evp.h>
-#ifndef OPENSSL_NO_EC
 #include <openssl/ec.h>
 #include <openssl/ecdh.h>
 #include <openssl/obj_mac.h>
-#endif
 
 #include "config.h"
 #include "crypto_curve25519.h"
@@ -179,7 +177,7 @@ bench_onion_TAP(void)
 }
 
 static void
-bench_onion_ntor(void)
+bench_onion_ntor_impl(void)
 {
   const int iters = 1<<10;
   int i;
@@ -237,7 +235,20 @@ bench_onion_ntor(void)
 }
 
 static void
-bench_ed25519(void)
+bench_onion_ntor(void)
+{
+  int ed;
+
+  for (ed = 0; ed <= 1; ++ed) {
+    printf("Ed25519-based basepoint multiply = %s.\n",
+           (ed == 0) ? "disabled" : "enabled");
+    curve25519_set_impl_params(ed);
+    bench_onion_ntor_impl();
+  }
+}
+
+static void
+bench_ed25519_impl(void)
 {
   uint64_t start, end;
   const int iters = 1<<12;
@@ -291,6 +302,19 @@ bench_ed25519(void)
   end = perftime();
   printf("Blind a public key: %.2f usec\n",
          MICROCOUNT(start, end, iters));
+}
+
+static void
+bench_ed25519(void)
+{
+  int donna;
+
+  for (donna = 0; donna <= 1; ++donna) {
+    printf("Ed25519-donna = %s.\n",
+           (donna == 0) ? "disabled" : "enabled");
+    ed25519_set_impl_params(donna);
+    bench_ed25519_impl();
+  }
 }
 
 static void
@@ -502,9 +526,6 @@ bench_dh(void)
          "      %f millisec each.\n", NANOCOUNT(start, end, iters)/1e6);
 }
 
-#if (!defined(OPENSSL_NO_EC)                    \
-     && OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,0,0))
-#define HAVE_EC_BENCHMARKS
 static void
 bench_ecdh_impl(int nid, const char *name)
 {
@@ -554,7 +575,6 @@ bench_ecdh_p224(void)
 {
   bench_ecdh_impl(NID_secp224r1, "P-224");
 }
-#endif
 
 typedef void (*bench_fn)(void);
 
@@ -577,10 +597,8 @@ static struct benchmark_t benchmarks[] = {
   ENT(cell_aes),
   ENT(cell_ops),
   ENT(dh),
-#ifdef HAVE_EC_BENCHMARKS
   ENT(ecdh_p256),
   ENT(ecdh_p224),
-#endif
   {NULL,NULL,0}
 };
 
@@ -625,7 +643,7 @@ main(int argc, const char **argv)
 
   reset_perftime();
 
-  crypto_seed_rng(1);
+  crypto_seed_rng();
   crypto_init_siphash_key();
   options = options_new();
   init_logging(1);

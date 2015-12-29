@@ -14,6 +14,7 @@ const char tor_git_revision[] = "";
 
 #include "orconfig.h"
 #include "or.h"
+#include "control.h"
 #include "config.h"
 #include "rephist.h"
 #include "backtrace.h"
@@ -237,6 +238,7 @@ main(int c, const char **v)
   update_approx_time(time(NULL));
   options = options_new();
   tor_threads_init();
+  control_initialize_event_queue();
   init_logging(1);
   configure_backtrace_handler(get_version());
 
@@ -269,8 +271,8 @@ main(int c, const char **v)
     printf("Can't initialize crypto subsystem; exiting.\n");
     return 1;
   }
-  crypto_set_tls_dh_prime(NULL);
-  crypto_seed_rng(1);
+  crypto_set_tls_dh_prime();
+  crypto_seed_rng();
   rep_hist_init();
   network_init();
   setup_directory();

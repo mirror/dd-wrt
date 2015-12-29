@@ -61,6 +61,10 @@ char *options_get_datadir_fname2_suffix(const or_options_t *options,
  * get_datadir_fname2_suffix.  */
 #define get_datadir_fname2(sub1,sub2) \
   get_datadir_fname2_suffix((sub1), (sub2), NULL)
+/** Return a newly allocated string containing datadir/sub1/sub2 relative to
+ * opts.  See get_datadir_fname2_suffix.  */
+#define options_get_datadir_fname2(opts,sub1,sub2)                      \
+  options_get_datadir_fname2_suffix((opts),(sub1), (sub2), NULL)
 /** Return a newly allocated string containing datadir/sub1suffix.  See
  * get_datadir_fname2_suffix. */
 #define get_datadir_fname_suffix(sub1, suffix) \
@@ -91,7 +95,6 @@ int getinfo_helper_config(control_connection_t *conn,
                           const char *question, char **answer,
                           const char **errmsg);
 
-const char *tor_get_digests(void);
 uint32_t get_effective_bwrate(const or_options_t *options);
 uint32_t get_effective_bwburst(const or_options_t *options);
 
@@ -145,6 +148,12 @@ STATIC int options_validate(or_options_t *old_options,
 STATIC int parse_transport_line(const or_options_t *options,
                                 const char *line, int validate_only,
                                 int server);
+STATIC int consider_adding_dir_servers(const or_options_t *options,
+                                       const or_options_t *old_options);
+MOCK_DECL(STATIC void, add_default_fallback_dir_servers, (void));
+STATIC int
+parse_dir_fallback_line(const char *line,
+                        int validate_only);
 #endif
 
 #endif

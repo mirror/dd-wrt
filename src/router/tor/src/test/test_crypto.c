@@ -14,6 +14,8 @@
 #include "crypto_ed25519.h"
 #include "ed25519_vectors.inc"
 
+#include <openssl/evp.h>
+
 extern const char AUTHORITY_SIGNKEY_3[];
 extern const char AUTHORITY_SIGNKEY_A_DIGEST[];
 extern const char AUTHORITY_SIGNKEY_A_DIGEST256[];
@@ -72,7 +74,7 @@ test_crypto_rng(void *arg)
 
   /* Try out RNG. */
   (void)arg;
-  tt_assert(! crypto_seed_rng(0));
+  tt_assert(! crypto_seed_rng());
   crypto_rand(data1, 100);
   crypto_rand(data2, 100);
   tt_mem_op(data1,OP_NE, data2,100);
@@ -101,6 +103,30 @@ test_crypto_rng(void *arg)
     tor_free(host);
   }
   tt_assert(allok);
+ done:
+  ;
+}
+
+static void
+test_crypto_rng_range(void *arg)
+{
+  int got_smallest = 0, got_largest = 0;
+  int i;
+
+  (void)arg;
+  for (i = 0; i < 1000; ++i) {
+    int x = crypto_rand_int_range(5,9);
+    tt_int_op(x, OP_GE, 5);
+    tt_int_op(x, OP_LT, 9);
+    if (x == 5)
+      got_smallest = 1;
+    if (x == 8)
+      got_largest = 1;
+  }
+
+  /* These fail with probability 1/10^603. */
+  tt_assert(got_smallest);
+  tt_assert(got_largest);
  done:
   ;
 }
@@ -571,6 +597,42 @@ test_crypto_pk_fingerprints(void *arg)
   tor_free(mem_op_hex_tmp);
 }
 
+static void
+test_crypto_pk_base64(void *arg)
+{
+  crypto_pk_t *pk1 = NULL;
+  crypto_pk_t *pk2 = NULL;
+  char *encoded = NULL;
+
+  (void)arg;
+
+  /* Test Base64 encoding a key. */
+  pk1 = pk_generate(0);
+  tt_assert(pk1);
+  tt_int_op(0, OP_EQ, crypto_pk_base64_encode(pk1, &encoded));
+  tt_assert(encoded);
+
+  /* Test decoding a valid key. */
+  pk2 = crypto_pk_base64_decode(encoded, strlen(encoded));
+  tt_assert(pk2);
+  tt_assert(crypto_pk_cmp_keys(pk1,pk2) == 0);
+  crypto_pk_free(pk2);
+
+  /* Test decoding a invalid key (not Base64). */
+  static const char *invalid_b64 = "The key is in another castle!";
+  pk2 = crypto_pk_base64_decode(invalid_b64, strlen(invalid_b64));
+  tt_assert(!pk2);
+
+  /* Test decoding a truncated Base64 blob. */
+  pk2 = crypto_pk_base64_decode(encoded, strlen(encoded)/2);
+  tt_assert(!pk2);
+
+ done:
+  crypto_pk_free(pk1);
+  crypto_pk_free(pk2);
+  tor_free(encoded);
+}
+
 /** Sanity check for crypto pk digests  */
 static void
 test_crypto_digests(void *arg)
@@ -601,6 +663,22 @@ test_crypto_digests(void *arg)
   crypto_pk_free(k);
 }
 
+/** Encode src into dest with OpenSSL's EVP Encode interface, returning the
+ * length of the encoded data in bytes.
+ */
+static int
+base64_encode_evp(char *dest, char *src, size_t srclen)
+{
+  const unsigned char *s = (unsigned char*)src;
+  EVP_ENCODE_CTX ctx;
+  int len, ret;
+
+  EVP_EncodeInit(&ctx);
+  EVP_EncodeUpdate(&ctx, (unsigned char *)dest, &len, s, (int)srclen);
+  EVP_EncodeFinal(&ctx, (unsigned char *)(dest + len), &ret);
+  return ret+ len;
+}
+
 /** Run unit tests for misc crypto formatting functionality (base64, base32,
  * fingerprints, etc) */
 static void
@@ -618,17 +696,26 @@ test_crypto_formats(void *arg)
   /* Base64 tests */
   memset(data1, 6, 1024);
   for (idx = 0; idx < 10; ++idx) {
-    i = base64_encode(data2, 1024, data1, idx);
+    i = base64_encode(data2, 1024, data1, idx, 0);
     tt_int_op(i, OP_GE, 0);
+    tt_int_op(i, OP_EQ, strlen(data2));
     j = base64_decode(data3, 1024, data2, i);
     tt_int_op(j,OP_EQ, idx);
+    tt_mem_op(data3,OP_EQ, data1, idx);
+
+    i = base64_encode_nopad(data2, 1024, (uint8_t*)data1, idx);
+    tt_int_op(i, OP_GE, 0);
+    tt_int_op(i, OP_EQ, strlen(data2));
+    tt_assert(! strchr(data2, '='));
+    j = base64_decode_nopad((uint8_t*)data3, 1024, data2, i);
+    tt_int_op(j, OP_EQ, idx);
     tt_mem_op(data3,OP_EQ, data1, idx);
   }
 
   strlcpy(data1, "Test string that contains 35 chars.", 1024);
   strlcat(data1, " 2nd string that contains 35 chars.", 1024);
 
-  i = base64_encode(data2, 1024, data1, 71);
+  i = base64_encode(data2, 1024, data1, 71, 0);
   tt_int_op(i, OP_GE, 0);
   j = base64_decode(data3, 1024, data2, i);
   tt_int_op(j,OP_EQ, 71);
@@ -646,6 +733,20 @@ test_crypto_formats(void *arg)
   tt_int_op(99,OP_EQ, data3[DIGEST_LEN+1]);
 
   tt_assert(digest_from_base64(data3, "###") < 0);
+
+  for (i = 0; i < 256; i++) {
+    /* Test the multiline format Base64 encoder with 0 .. 256 bytes of
+     * output against OpenSSL.
+     */
+    const size_t enclen = base64_encode_size(i, BASE64_ENCODE_MULTILINE);
+    data1[i] = i;
+    j = base64_encode(data2, 1024, data1, i, BASE64_ENCODE_MULTILINE);
+    tt_int_op(j, OP_EQ, enclen);
+    j = base64_encode_evp(data3, data1, i);
+    tt_int_op(j, OP_EQ, enclen);
+    tt_mem_op(data2, OP_EQ, data3, enclen);
+    tt_int_op(j, OP_EQ, strlen(data2));
+  }
 
   /* Encoding SHA256 */
   crypto_rand(data2, DIGEST256_LEN);
@@ -1024,6 +1125,29 @@ test_crypto_curve25519_impl(void *arg)
 }
 
 static void
+test_crypto_curve25519_basepoint(void *arg)
+{
+  uint8_t secret[32];
+  uint8_t public1[32];
+  uint8_t public2[32];
+  const int iters = 2048;
+  int i;
+  (void) arg;
+
+  for (i = 0; i < iters; ++i) {
+    crypto_rand((char*)secret, 32);
+    curve25519_set_impl_params(1); /* Use optimization */
+    curve25519_basepoint_impl(public1, secret);
+    curve25519_set_impl_params(0); /* Disable optimization */
+    curve25519_basepoint_impl(public2, secret);
+    tt_mem_op(public1, OP_EQ, public2, 32);
+  }
+
+ done:
+  ;
+}
+
+static void
 test_crypto_curve25519_wrappers(void *arg)
 {
   curve25519_public_key_t pubkey1, pubkey2;
@@ -1172,6 +1296,8 @@ test_crypto_ed25519_simple(void *arg)
   tt_int_op(0, OP_EQ, ed25519_public_key_generate(&pub2, &sec1));
 
   tt_mem_op(pub1.pubkey, OP_EQ, pub2.pubkey, sizeof(pub1.pubkey));
+  tt_assert(ed25519_pubkey_eq(&pub1, &pub2));
+  tt_assert(ed25519_pubkey_eq(&pub1, &pub1));
 
   memcpy(&kp1.pubkey, &pub1, sizeof(pub1));
   memcpy(&kp1.seckey, &sec1, sizeof(sec1));
@@ -1191,6 +1317,7 @@ test_crypto_ed25519_simple(void *arg)
   /* Wrong public key doesn't work. */
   tt_int_op(0, OP_EQ, ed25519_public_key_generate(&pub2, &sec2));
   tt_int_op(-1, OP_EQ, ed25519_checksig(&sig2, msg, msg_len, &pub2));
+  tt_assert(! ed25519_pubkey_eq(&pub1, &pub2));
 
   /* Wrong message doesn't work. */
   tt_int_op(0, OP_EQ, ed25519_checksig(&sig2, msg, msg_len, &pub1));
@@ -1329,9 +1456,10 @@ test_crypto_ed25519_test_vectors(void *arg)
 static void
 test_crypto_ed25519_encode(void *arg)
 {
-  char buf[ED25519_BASE64_LEN+1];
+  char buf[ED25519_SIG_BASE64_LEN+1];
   ed25519_keypair_t kp;
   ed25519_public_key_t pk;
+  ed25519_signature_t sig1, sig2;
   char *mem_op_hex_tmp = NULL;
   (void) arg;
 
@@ -1341,6 +1469,11 @@ test_crypto_ed25519_encode(void *arg)
   tt_int_op(ED25519_BASE64_LEN, OP_EQ, strlen(buf));
   tt_int_op(0, OP_EQ, ed25519_public_from_base64(&pk, buf));
   tt_mem_op(kp.pubkey.pubkey, OP_EQ, pk.pubkey, ED25519_PUBKEY_LEN);
+
+  tt_int_op(0, OP_EQ, ed25519_sign(&sig1, (const uint8_t*)"ABC", 3, &kp));
+  tt_int_op(0, OP_EQ, ed25519_signature_to_base64(buf, &sig1));
+  tt_int_op(0, OP_EQ, ed25519_signature_from_base64(&sig2, buf));
+  tt_mem_op(sig1.sig, OP_EQ, sig2.sig, ED25519_SIG_LEN);
 
   /* Test known value. */
   tt_int_op(0, OP_EQ, ed25519_public_from_base64(&pk,
@@ -1504,6 +1637,77 @@ test_crypto_ed25519_testvectors(void *arg)
 }
 
 static void
+test_crypto_ed25519_fuzz_donna(void *arg)
+{
+  const unsigned iters = 1024;
+  uint8_t msg[1024];
+  unsigned i;
+  (void)arg;
+
+  tt_assert(sizeof(msg) == iters);
+  crypto_rand((char*) msg, sizeof(msg));
+
+  /* Fuzz Ed25519-donna vs ref10, alternating the implementation used to
+   * generate keys/sign per iteration.
+   */
+  for (i = 0; i < iters; ++i) {
+    const int use_donna = i & 1;
+    uint8_t blinding[32];
+    curve25519_keypair_t ckp;
+    ed25519_keypair_t kp, kp_blind, kp_curve25519;
+    ed25519_public_key_t pk, pk_blind, pk_curve25519;
+    ed25519_signature_t sig, sig_blind;
+    int bit = 0;
+
+    crypto_rand((char*) blinding, sizeof(blinding));
+
+    /* Impl. A:
+     *  1. Generate a keypair.
+     *  2. Blinded the keypair.
+     *  3. Sign a message (unblinded).
+     *  4. Sign a message (blinded).
+     *  5. Generate a curve25519 keypair, and convert it to Ed25519.
+     */
+    ed25519_set_impl_params(use_donna);
+    tt_int_op(0, OP_EQ, ed25519_keypair_generate(&kp, i&1));
+    tt_int_op(0, OP_EQ, ed25519_keypair_blind(&kp_blind, &kp, blinding));
+    tt_int_op(0, OP_EQ, ed25519_sign(&sig, msg, i, &kp));
+    tt_int_op(0, OP_EQ, ed25519_sign(&sig_blind, msg, i, &kp_blind));
+
+    tt_int_op(0, OP_EQ, curve25519_keypair_generate(&ckp, i&1));
+    tt_int_op(0, OP_EQ, ed25519_keypair_from_curve25519_keypair(
+            &kp_curve25519, &bit, &ckp));
+
+    /* Impl. B:
+     *  1. Validate the public key by rederiving it.
+     *  2. Validate the blinded public key by rederiving it.
+     *  3. Validate the unblinded signature (and test a invalid signature).
+     *  4. Validate the blinded signature.
+     *  5. Validate the public key (from Curve25519) by rederiving it.
+     */
+    ed25519_set_impl_params(!use_donna);
+    tt_int_op(0, OP_EQ, ed25519_public_key_generate(&pk, &kp.seckey));
+    tt_mem_op(pk.pubkey, OP_EQ, kp.pubkey.pubkey, 32);
+
+    tt_int_op(0, OP_EQ, ed25519_public_blind(&pk_blind, &kp.pubkey, blinding));
+    tt_mem_op(pk_blind.pubkey, OP_EQ, kp_blind.pubkey.pubkey, 32);
+
+    tt_int_op(0, OP_EQ, ed25519_checksig(&sig, msg, i, &pk));
+    sig.sig[0] ^= 15;
+    tt_int_op(-1, OP_EQ, ed25519_checksig(&sig, msg, sizeof(msg), &pk));
+
+    tt_int_op(0, OP_EQ, ed25519_checksig(&sig_blind, msg, i, &pk_blind));
+
+    tt_int_op(0, OP_EQ, ed25519_public_key_from_curve25519_public_key(
+            &pk_curve25519, &ckp.pubkey, bit));
+    tt_mem_op(pk_curve25519.pubkey, OP_EQ, kp_curve25519.pubkey.pubkey, 32);
+  }
+
+ done:
+  ;
+}
+
+static void
 test_crypto_siphash(void *arg)
 {
   /* From the reference implementation, taking
@@ -1605,11 +1809,13 @@ test_crypto_siphash(void *arg)
 struct testcase_t crypto_tests[] = {
   CRYPTO_LEGACY(formats),
   CRYPTO_LEGACY(rng),
+  { "rng_range", test_crypto_rng_range, 0, NULL, NULL },
   { "aes_AES", test_crypto_aes, TT_FORK, &passthrough_setup, (void*)"aes" },
   { "aes_EVP", test_crypto_aes, TT_FORK, &passthrough_setup, (void*)"evp" },
   CRYPTO_LEGACY(sha),
   CRYPTO_LEGACY(pk),
   { "pk_fingerprints", test_crypto_pk_fingerprints, TT_FORK, NULL, NULL },
+  { "pk_base64", test_crypto_pk_base64, TT_FORK, NULL, NULL },
   CRYPTO_LEGACY(digests),
   CRYPTO_LEGACY(dh),
   { "aes_iv_AES", test_crypto_aes_iv, TT_FORK, &passthrough_setup,
@@ -1621,6 +1827,8 @@ struct testcase_t crypto_tests[] = {
   { "hkdf_sha256", test_crypto_hkdf_sha256, 0, NULL, NULL },
   { "curve25519_impl", test_crypto_curve25519_impl, 0, NULL, NULL },
   { "curve25519_impl_hibit", test_crypto_curve25519_impl, 0, NULL, (void*)"y"},
+  { "curve25519_basepoint",
+    test_crypto_curve25519_basepoint, TT_FORK, NULL, NULL },
   { "curve25519_wrappers", test_crypto_curve25519_wrappers, 0, NULL, NULL },
   { "curve25519_encode", test_crypto_curve25519_encode, 0, NULL, NULL },
   { "curve25519_persist", test_crypto_curve25519_persist, 0, NULL, NULL },
@@ -1630,6 +1838,8 @@ struct testcase_t crypto_tests[] = {
   { "ed25519_convert", test_crypto_ed25519_convert, 0, NULL, NULL },
   { "ed25519_blinding", test_crypto_ed25519_blinding, 0, NULL, NULL },
   { "ed25519_testvectors", test_crypto_ed25519_testvectors, 0, NULL, NULL },
+  { "ed25519_fuzz_donna", test_crypto_ed25519_fuzz_donna, TT_FORK, NULL,
+    NULL },
   { "siphash", test_crypto_siphash, 0, NULL, NULL },
   END_OF_TESTCASES
 };
