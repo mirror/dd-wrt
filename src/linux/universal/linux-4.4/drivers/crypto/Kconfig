@@ -165,7 +165,7 @@ config CRYPTO_DEV_MV_CESA
 	select CRYPTO_AES
 	select CRYPTO_BLKCIPHER
 	select CRYPTO_HASH
-+	select CRYPTO_HASH2
+	select CRYPTO_HASH2
 	select SRAM
 	help
 	  This driver allows you to utilize the Cryptographic Engines and
