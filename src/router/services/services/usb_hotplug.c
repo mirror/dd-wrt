@@ -264,7 +264,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 		insmod("isofs");
 	}
 	if (target)
-		sysprintf("mkdir -p /tmp/mnt/%s", target);
+		sysprintf("mkdir -p \"/tmp/mnt/%s\"", target);
 	else
 		mkdir("/tmp/mnt", 0700);
 #ifdef HAVE_NTFS3G
