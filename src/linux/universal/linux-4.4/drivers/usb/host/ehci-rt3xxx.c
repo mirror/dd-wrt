@@ -167,7 +167,7 @@ static int rt3xxx_ehci_probe(struct platform_device *pdev)
 	// change port0 to host mode
 	rt_set_host();
 
-	retval = usb_add_hcd(hcd, irq, IRQF_DISABLED | IRQF_SHARED);
+	retval = usb_add_hcd(hcd, irq, IRQF_SHARED);
 	if (retval)
 		goto fail_add_hcd;
 

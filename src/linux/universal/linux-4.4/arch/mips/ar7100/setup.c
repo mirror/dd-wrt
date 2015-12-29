@@ -272,12 +272,12 @@ void __init ar7100_serial_setup(void)
 
 }
 
-unsigned int __cpuinit get_c0_compare_irq(void)
+unsigned int get_c0_compare_irq(void)
 {
 	return CP0_LEGACY_COMPARE_IRQ;
 }
 
-unsigned int __cpuinit get_c0_compare_int(void)
+unsigned int get_c0_compare_int(void)
 {
 	//printk("%s: returning timer irq : %d\n",__func__, AR7240_CPU_IRQ_TIMER);
 	return AR7100_CPU_IRQ_TIMER;

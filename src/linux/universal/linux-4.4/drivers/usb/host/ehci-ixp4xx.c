@@ -13,7 +13,7 @@
 
 #include <linux/platform_device.h>
 
-static void ehci_port_power (struct ehci_hcd *ehci, int is_on)
+static int ehci_port_power (struct ehci_hcd *ehci, int port, int is_on)
 {
 	unsigned port;
 
@@ -52,7 +52,7 @@ static int ixp4xx_ehci_init(struct usb_hcd *hcd)
 	if (retval)
 		return retval;
 
-	ehci_port_power(ehci, 0);
+	ehci_port_power(ehci,0,  0);
 
 	return retval;
 }

@@ -263,7 +263,7 @@ static int
 ar2315_wdt_probe(struct platform_device *dev)
 {
 	int ret = 0;
-	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt, IRQF_DISABLED, "ar2315_wdt", NULL);
+	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt, 0, "ar2315_wdt", NULL);
 	if (ret) {
 		printk(KERN_ERR "wdt: IRQ %d is not free.\n", AR531X_MISC_IRQ_WATCHDOG);
 		goto out;

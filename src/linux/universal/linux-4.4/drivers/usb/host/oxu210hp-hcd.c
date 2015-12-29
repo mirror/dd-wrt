@@ -2362,7 +2362,7 @@ static void ehci_turn_off_all_ports(struct oxu_hcd *oxu)
 		writel(PORT_RWC_BITS, &oxu->regs->port_status[port]);
 }
 
-static void ehci_port_power(struct oxu_hcd *oxu, int is_on)
+static int ehci_port_power(struct oxu_hcd *oxu, int port, int is_on)
 {
 	unsigned port;
 
@@ -2762,7 +2762,7 @@ static void oxu_stop(struct usb_hcd *hcd)
 	struct oxu_hcd *oxu = hcd_to_oxu(hcd);
 
 	/* Turn off port power on all root hub ports. */
-	ehci_port_power(oxu, 0);
+	ehci_port_power(oxu, 0,  0);
 
 	/* no more interrupts ... */
 	del_timer_sync(&oxu->watchdog);

@@ -805,7 +805,7 @@ static int ar2313_init(struct net_device *dev)
 	 */
 	ecode =
 		request_irq(dev->irq, &ar2313_interrupt,
-					IRQF_SHARED | IRQF_DISABLED | IRQF_SAMPLE_RANDOM,
+					IRQF_SHARED | IRQF_SAMPLE_RANDOM,
 					dev->name, dev);
 	if (ecode) {
 		printk(KERN_WARNING "%s: %s: Requested IRQ %d is busy\n",
