@@ -1,3 +1,10 @@
+/*
+ * $ Copyright Broadcom Corporation $
+ *
+ *
+ * <<Broadcom-WL-IPTag/Proprietary:>>
+ */
+
 OUTPUT_ARCH(TARGET_ARCH)
 ENTRY(startup)
 SECTIONS {

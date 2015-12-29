@@ -1,7 +1,7 @@
 /*
  * Broadcom device-specific manifest constants.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmdevs.h 364668 2012-10-24 22:55:30Z $
+ * $Id: bcmdevs.h 544468 2015-03-27 09:51:33Z $
  */
 
 #ifndef	_BCMDEVS_H
@@ -59,9 +59,15 @@
 #define BCM_DNGL_BL_PID_4360	0xbd1d
 #define BCM_DNGL_BL_PID_43143	0xbd1e
 #define BCM_DNGL_BL_PID_43242	0xbd1f
+#define BCM_DNGL_BL_PID_43342	0xbd21
 #define BCM_DNGL_BL_PID_4335	0xbd20
 #define BCM_DNGL_BL_PID_43341	0xbd22
 #define BCM_DNGL_BL_PID_4350    0xbd23
+#define BCM_DNGL_BL_PID_4345    0xbd24
+#define BCM_DNGL_BL_PID_4349	0xbd25
+#define BCM_DNGL_BL_PID_4354	0xbd26
+#define BCM_DNGL_BL_PID_43569	0xbd27
+#define BCM_DNGL_BL_PID_43909	0xbd28
 
 #define BCM_DNGL_BDC_PID	0x0bdc
 #define BCM_DNGL_JTAG_PID	0x4a44
@@ -130,6 +136,8 @@
 #define BCM4330_D11N5G_ID       0x4362          /* 4330 802.11n 5G device */
 #define BCM4336_D11N_ID		0x4343		/* 4336 802.11n 2.4GHz device */
 #define BCM6362_D11N_ID		0x435f		/* 6362 802.11n dualband device */
+#define BCM6362_D11N2G_ID	0x433f		/* 6362 802.11n 2.4Ghz band id */
+#define BCM6362_D11N5G_ID	0x434f		/* 6362 802.11n 5Ghz band id */
 #define BCM4331_D11N_ID		0x4331		/* 4331 802.11n dualband id */
 #define BCM4331_D11N2G_ID	0x4332		/* 4331 802.11n 2.4Ghz band id */
 #define BCM4331_D11N5G_ID	0x4333		/* 4331 802.11n 5Ghz band id */
@@ -149,15 +157,33 @@
 #define BCM4334_D11N_ID		0x4380		/* 4334 802.11n dualband device */
 #define BCM4334_D11N2G_ID	0x4381		/* 4334 802.11n 2.4G device */
 #define BCM4334_D11N5G_ID	0x4382		/* 4334 802.11n 5G device */
+#define BCM43342_D11N_ID	0x4383		/* 43342 802.11n dualband device */
+#define BCM43342_D11N2G_ID	0x4384		/* 43342 802.11n 2.4G device */
+#define BCM43342_D11N5G_ID	0x4385		/* 43342 802.11n 5G device */
+#define BCM43341_D11N_ID	0x4386		/* 43341 802.11n dualband device */
+#define BCM43341_D11N2G_ID	0x4387		/* 43341 802.11n 2.4G device */
+#define BCM43341_D11N5G_ID	0x4388		/* 43341 802.11n 5G device */
 #define BCM4360_D11AC_ID	0x43a0
 #define BCM4360_D11AC2G_ID	0x43a1
 #define BCM4360_D11AC5G_ID	0x43a2
+#define BCM4345_D11AC_ID	0x43ab		/* 4345 802.11ac dualband device */
+#define BCM4345_D11AC2G_ID	0x43ac		/* 4345 802.11ac 2.4G device */
+#define BCM4345_D11AC5G_ID	0x43ad		/* 4345 802.11ac 5G device */
 #define BCM4335_D11AC_ID	0x43ae
 #define BCM4335_D11AC2G_ID	0x43af
 #define BCM4335_D11AC5G_ID	0x43b0
 #define BCM4352_D11AC_ID	0x43b1		/* 4352 802.11ac dualband device */
 #define BCM4352_D11AC2G_ID	0x43b2		/* 4352 802.11ac 2.4G device */
 #define BCM4352_D11AC5G_ID	0x43b3		/* 4352 802.11ac 5G device */
+#define BCM43602_D11AC_ID	0x43ba		/* ac dualband PCI devid SPROM programmed */
+#define BCM43602_D11AC2G_ID	0x43bb		/* 43602 802.11ac 2.4G device */
+#define BCM43602_D11AC5G_ID	0x43bc		/* 43602 802.11ac 5G device */
+#define BCM53573_D11AC_ID	0x43b4		/* 53573 802.11ac dualband device */
+#define BCM53573_D11AC2G_ID	0x43b5		/* 53573 802.11ac 2.4G device */
+#define BCM53573_D11AC5G_ID	0x43b6		/* 53573 802.11ac 5G device */
+#define BCM47189_D11AC_ID	0x43c6		/* 47189 802.11ac dualband device */
+#define BCM47189_D11AC2G_ID	0x43c7		/* 47189 802.11ac 2.4G device */
+#define BCM47189_D11AC5G_ID	0x43c8		/* 47189 802.11ac 5G device */
 
 /* PCI Subsystem ID */
 #define BCM943228HMB_SSID_VEN1	0x0607
@@ -175,6 +201,42 @@
 #define BCM4350_D11AC2G_ID	0x43a4
 #define BCM4350_D11AC5G_ID	0x43a5
 
+#define BCM43556_D11AC_ID	0x43b7
+#define BCM43556_D11AC2G_ID	0x43b8
+#define BCM43556_D11AC5G_ID	0x43b9
+
+#define BCM43558_D11AC_ID	0x43c0
+#define BCM43558_D11AC2G_ID	0x43c1
+#define BCM43558_D11AC5G_ID	0x43c2
+
+#define BCM43566_D11AC_ID	0x43d3
+#define BCM43566_D11AC2G_ID	0x43d4
+#define BCM43566_D11AC5G_ID	0x43d5
+
+#define BCM43568_D11AC_ID	0x43d6
+#define BCM43568_D11AC2G_ID	0x43d7
+#define BCM43568_D11AC5G_ID	0x43d8
+
+#define BCM43569_D11AC_ID	0x43d9
+#define BCM43569_D11AC2G_ID	0x43da
+#define BCM43569_D11AC5G_ID	0x43db
+
+#define BCM4354_D11AC_ID	0x43df		/* 4354 802.11ac dualband device */
+#define BCM4354_D11AC2G_ID	0x43e0		/* 4354 802.11ac 2.4G device */
+#define BCM4354_D11AC5G_ID	0x43e1		/* 4354 802.11ac 5G device */
+
+
+#define BCM4365_D11AC_ID	0x43ca
+#define BCM4365_D11AC2G_ID	0x43cb
+#define BCM4365_D11AC5G_ID	0x43cc
+
+#define BCM4366_D11AC_ID	0x43c3
+#define BCM4366_D11AC2G_ID	0x43c4
+#define BCM4366_D11AC5G_ID	0x43c5
+
+#define BCM4356_D11AC_ID	0x43ec		/* 4356 802.11ac dualband device */
+#define BCM4356_D11AC2G_ID	0x43ed		/* 4356 802.11ac 2.4G device */
+#define BCM4356_D11AC5G_ID	0x43ee		/* 4356 802.11ac 5G device */
 
 #define	BCMGPRS_UART_ID		0x4333		/* Uart id used by 4306/gprs card */
 #define	BCMGPRS2_UART_ID	0x4344		/* Uart id used by 4306/gprs card */
@@ -275,20 +337,49 @@
 #define	BCM43243_CHIP_ID	43243		/* 43243 chipcommon chipid */
 #define BCM4334_CHIP_ID		0x4334		/* 4334 chipcommon chipid */
 #define BCM4335_CHIP_ID		0x4335		/* 4335 chipcommon chipid */
+#define BCM4339_CHIP_ID		0x4339		/* 4339 chipcommon chipid */
 #define BCM4360_CHIP_ID		0x4360          /* 4360 chipcommon chipid */
 #define BCM4352_CHIP_ID		0x4352          /* 4352 chipcommon chipid */
 #define BCM43526_CHIP_ID	0xAA06
+#define BCM43340_CHIP_ID	43340		/* 43340 chipcommon chipid */
 #define BCM43341_CHIP_ID	43341		/* 43341 chipcommon chipid */
 #define BCM43342_CHIP_ID	43342		/* 43342 chipcommon chipid */
 #define BCM4350_CHIP_ID		0x4350          /* 4350 chipcommon chipid */
+#define BCM4354_CHIP_ID		0x4354          /* 4354 chipcommon chipid */
+#define BCM4356_CHIP_ID		0x4356          /* 4356 chipcommon chipid */
+#define BCM43556_CHIP_ID	0xAA24          /* 43556 chipcommon chipid */
+#define BCM43558_CHIP_ID	0xAA26          /* 43558 chipcommon chipid */
+#define BCM43566_CHIP_ID	0xAA2E          /* 43566 chipcommon chipid */
+#define BCM43568_CHIP_ID	0xAA30          /* 43568 chipcommon chipid */
+#define BCM43569_CHIP_ID	0xAA31          /* 43569 chipcommon chipid */
+#define BCM43570_CHIP_ID	0xAA32          /* 43570 chipcommon chipid */
+#define BCM4350_CHIP(chipid)	((CHIPID(chipid) == BCM4350_CHIP_ID) || \
+				(CHIPID(chipid) == BCM4354_CHIP_ID) || \
+				(CHIPID(chipid) == BCM4356_CHIP_ID) || \
+				(CHIPID(chipid) == BCM43556_CHIP_ID) || \
+				(CHIPID(chipid) == BCM43558_CHIP_ID) || \
+				(CHIPID(chipid) == BCM43566_CHIP_ID) || \
+				(CHIPID(chipid) == BCM43568_CHIP_ID) || \
+				(CHIPID(chipid) == BCM43569_CHIP_ID) || \
+				(CHIPID(chipid) == BCM43570_CHIP_ID)) /* 4350 variations */
+#define BCM4345_CHIP_ID		0x4345		/* 4345 chipcommon chipid */
+#define BCM43602_CHIP_ID	0xaa52		/* 43602 chipcommon chipid */
+#define BCM43462_CHIP_ID	0xa9c6		/* 43462 chipcommon chipid */
 
+#define BCM4365_CHIP_ID		0x4365		/* 4365 chipcommon chipid */
+#define BCM4366_CHIP_ID		0x4366		/* 4366 chipcommon chipid */
+#define BCM4365_CHIP(chipid)	((CHIPID(chipid) == BCM4365_CHIP_ID) || \
+				(CHIPID(chipid) == BCM4366_CHIP_ID))
 #define	BCM4342_CHIP_ID		4342		/* 4342 chipcommon chipid (OTP, RBBU) */
 #define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
 #define	BCM4704_CHIP_ID		0x4704		/* 4704 chipcommon chipid */
 #define	BCM4706_CHIP_ID		0x5300		/* 4706 chipcommon chipid */
 #define BCM4707_CHIP_ID		53010		/* 4707 chipcommon chipid */
+#define BCM47094_CHIP_ID	53030		/* 47094 chipcommon chipid */
 #define BCM53018_CHIP_ID	53018		/* 53018 chipcommon chipid */
-#define BCM4707_CHIP(chipid)	(((chipid) == BCM4707_CHIP_ID) || ((chipid) == BCM53018_CHIP_ID))
+#define BCM4707_CHIP(chipid)	(((chipid) == BCM4707_CHIP_ID) || \
+				((chipid) == BCM53018_CHIP_ID) || \
+				((chipid) == BCM47094_CHIP_ID))
 #define	BCM4710_CHIP_ID		0x4710		/* 4710 chipid */
 #define	BCM4712_CHIP_ID		0x4712		/* 4712 chipcommon chipid */
 #define	BCM4716_CHIP_ID		0x4716		/* 4716 chipcommon chipid */
@@ -303,6 +394,9 @@
 #define	BCM5356_CHIP_ID		0x5356		/* 5356 chipcommon chipid */
 #define	BCM5357_CHIP_ID		0x5357		/* 5357 chipcommon chipid */
 #define	BCM53572_CHIP_ID	53572		/* 53572 chipcommon chipid */
+#define	BCM53573_CHIP_ID	53573		/* 53573 chipcommon chipid */
+#define BCM53573_CHIP(chipid)	(CHIPID(chipid) == BCM53573_CHIP_ID)
+#define BCM53573_CHIP_GRPID	BCM53573_CHIP_ID
 
 /* Package IDs */
 #define	BCM4303_PKG_ID		2		/* 4303 package id */
@@ -375,7 +469,7 @@
 #define	BFL_CCKHIPWR		0x00000040  /* Can do high-power CCK transmission */
 #define	BFL_ENETADM		0x00000080  /* Board has ADMtek switch */
 #define	BFL_ENETVLAN		0x00000100  /* Board has VLAN capability */
-#define	BFL_UNUSED		0x00000200
+#define	BFL_LTECOEX		0x00000200  /* LTE Coex enabled */
 #define BFL_NOPCI		0x00000400  /* Board leaves PCI floating */
 #define BFL_FEM			0x00000800  /* Board supports the Front End Module */
 #define BFL_EXTLNA		0x00001000  /* Board has an external LNA in 2.4GHz band */
@@ -424,7 +518,9 @@
 #define BFL2_2G_SPUR_WAR	0x00002000  /* WAR to reduce and avoid clock-harmonic spurs in 2G */
 #define BFL2_BPHY_ALL_TXCORES	0x00004000  /* Transmit bphy frames using all tx cores */
 #define BFL2_FCC_BANDEDGE_WAR	0x00008000  /* Activates WAR to improve FCC bandedge performance */
+#define BFL2_DAC_SPUR_IMPROVEMENT 0x00008000       /* Reducing DAC Spurs */
 #define BFL2_GPLL_WAR2	        0x00010000  /* Flag to widen G-band PLL loop b/w */
+#define BFL2_REDUCED_PA_TURNONTIME 0x00010000  /* Flag to reduce PA turn on Time */
 #define BFL2_IPALVLSHIFT_3P3    0x00020000
 #define BFL2_INTERNDET_TXIQCAL  0x00040000  /* Use internal envelope detector for TX IQCAL */
 #define BFL2_XTALBUFOUTEN       0x00080000  /* Keep the buffered Xtal output from radio on */
@@ -457,18 +553,63 @@
 #define BFL_SROM11_BTCOEX  0x00000001  /* Board supports BTCOEX */
 #define BFL_SROM11_WLAN_BT_SH_XTL  0x00000002  /* bluetooth and wlan share same crystal */
 #define BFL_SROM11_EXTLNA	0x00001000  /* Board has an external LNA in 2.4GHz band */
+#define BFL_SROM11_EPA_TURNON_TIME     0x00018000  /* 2 bits for different PA turn on times */
+#define BFL_SROM11_EPA_TURNON_TIME_SHIFT  15
 #define BFL_SROM11_EXTLNA_5GHz	0x10000000  /* Board has an external LNA in 5GHz band */
 #define BFL_SROM11_GAINBOOSTA01	0x20000000  /* 5g Gainboost for core0 and core1 */
 #define BFL2_SROM11_APLL_WAR	0x00000002  /* Flag to implement alternative A-band PLL settings */
 #define BFL2_SROM11_ANAPACTRL_2G  0x00100000  /* 2G ext PAs are ctrl-ed by analog PA ctrl lines */
 #define BFL2_SROM11_ANAPACTRL_5G  0x00200000  /* 5G ext PAs are ctrl-ed by analog PA ctrl lines */
-#define BFL2_SROM11_SINGLEANT_CCK	0x00002000  /* Tx CCK pkts on Ant 0 only */
+#define BFL2_SROM11_SINGLEANT_CCK	0x00001000  /* Tx CCK pkts on Ant 0 only */
 
 /* boardflags3 */
-#define BFL3_FEMCTRL_SUB	0x00000007  /* acphy, subrevs of femctrl on top of srom_femctrl */
-#define BFL3_RCAL_WAR		0x00000008  /* acphy, rcal war active on this board (4335a0) */
-#define BFL3_TXGAINTBLID	0x00000070  /* acphy, txgain table id */
-#define BFL3_TXGAINTBLID_SHIFT	0x4         /* acphy, txgain table id shift bit */
+#define BFL3_FEMCTRL_SUB	  0x00000007  /* acphy, subrevs of femctrl on top of srom_femctrl */
+#define BFL3_RCAL_WAR		  0x00000008  /* acphy, rcal war active on this board (4335a0) */
+#define BFL3_TXGAINTBLID	  0x00000070  /* acphy, txgain table id */
+#define BFL3_TXGAINTBLID_SHIFT	  0x4         /* acphy, txgain table id shift bit */
+#define BFL3_TSSI_DIV_WAR	  0x00000080  /* acphy, Seperate paparam for 20/40/80 */
+#define BFL3_TSSI_DIV_WAR_SHIFT	  0x7         /* acphy, Seperate paparam for 20/40/80 shift bit */
+#define BFL3_FEMTBL_FROM_NVRAM    0x00000100  /* acphy, femctrl table is read from nvram */
+#define BFL3_FEMTBL_FROM_NVRAM_SHIFT 0x8         /* acphy, femctrl table is read from nvram */
+#define BFL3_AGC_CFG_2G           0x00000200  /* acphy, gain control configuration for 2G */
+#define BFL3_AGC_CFG_5G           0x00000400  /* acphy, gain control configuration for 5G */
+#define BFL3_PPR_BIT_EXT          0x00000800  /* acphy, bit position for 1bit extension for ppr */
+#define BFL3_PPR_BIT_EXT_SHIFT    11          /* acphy, bit shift for 1bit extension for ppr */
+#define BFL3_BBPLL_SPR_MODE_DIS	  0x00001000  /* acphy, disables bbpll spur modes */
+#define BFL3_RCAL_OTP_VAL_EN      0x00002000  /* acphy, to read rcal_trim value from otp */
+#define BFL3_2GTXGAINTBL_BLANK	  0x00004000  /* acphy, blank the first X ticks of 2g gaintbl */
+#define BFL3_2GTXGAINTBL_BLANK_SHIFT 14       /* acphy, blank the first X ticks of 2g gaintbl */
+#define BFL3_5GTXGAINTBL_BLANK	  0x00008000  /* acphy, blank the first X ticks of 5g gaintbl */
+#define BFL3_5GTXGAINTBL_BLANK_SHIFT 15       /* acphy, blank the first X ticks of 5g gaintbl */
+#define BFL3_PHASETRACK_MAX_ALPHABETA	  0x00010000  /* acphy, to max out alpha,beta to 511 */
+#define BFL3_PHASETRACK_MAX_ALPHABETA_SHIFT 16       /* acphy, to max out alpha,beta to 511 */
+/* acphy, to use backed off gaintbl for lte-coex */
+#define BFL3_LTECOEX_GAINTBL_EN           0x00060000
+/* acphy, to use backed off gaintbl for lte-coex */
+#define BFL3_LTECOEX_GAINTBL_EN_SHIFT 17
+#define BFL3_5G_SPUR_WAR          0x00080000  /* acphy, enable spur WAR in 5G band */
+
+/* acphy: lpmode2g and lpmode_5g related boardflags */
+#define BFL3_ACPHY_LPMODE_2G	  0x00300000  /* bits 20:21 for lpmode_2g choice */
+#define BFL3_ACPHY_LPMODE_2G_SHIFT	  20
+
+#define BFL3_ACPHY_LPMODE_5G	  0x00C00000  /* bits 22:23 for lpmode_5g choice */
+#define BFL3_ACPHY_LPMODE_5G_SHIFT	  22
+
+/* acphy, gain control configuration2 (dec c1gainsettlectr and inc c2thresh) */
+#define BFL3_AGC_CFG2_2G          0x01000000  /* acphy, gain control configuration2 for 2G */
+#define BFL3_EXT_LPO_ISCLOCK      0x02000000  /* External LPO is clock, not x-tal */
+#define BFL3_FORCE_INT_LPO_SEL    0x04000000  /* Force internal lpo */
+#define BFL3_FORCE_EXT_LPO_SEL    0x08000000  /* Force external lpo */
+
+#define BFL3_EN_BRCM_IMPBF        0x10000000  /* acphy, Allow BRCM Implicit TxBF */
+#define BFL3_AGC_CFG2_5G          0x20000000  /* acphy, gain control configuration2 for 5G */
+#define BFL3_AVVMID_FROM_NVRAM    0x40000000  /* Read Av Vmid from NVRAM  */
+#define BFL3_VLIN_EN_FROM_NVRAM    0x80000000  /* Read Vlin En from NVRAM  */
+
+#define BFL3_AVVMID_FROM_NVRAM_SHIFT   30   /* Read Av Vmid from NVRAM  */
+#define BFL3_VLIN_EN_FROM_NVRAM_SHIFT   31   /* Enable Vlin  from NVRAM  */
+
 
 /* board specific GPIO assignment, gpio 0-3 are also customer-configurable led */
 #define	BOARD_GPIO_BTC3W_IN	0x850	/* bit 4 is RF_ACTIVE, bit 6 is STATUS, bit 11 is PRI */
@@ -844,10 +985,26 @@
 /* 4335 Boards */
 #define BCM94335X52             0x0114
 
+/* 4345 Boards */
+#define BCM94345_SSID           0x0687
+
 /* 4360 Boards */
+#define BCM94360X52C            0X0117
+#define BCM94360X52D            0X0137
 #define BCM94360X29C            0X0112
+#define BCM94360X29CP2          0X0134
 #define BCM94360X51             0x0111
+#define BCM94360X51P2           0x0129
+#define BCM94360X51A            0x0135
+#define BCM94360X51B            0x0136
 #define BCM94360CS              0x061B
+#define BCM94360J28_D11AC2G     0x0c00
+#define BCM94360J28_D11AC5G     0x0c01
+#define BCM94360USBH5_D11AC5G   0x06aa
+
+/* 4350 Boards */
+#define BCM94350X52B            0X0116
+#define BCM94350X14             0X0131
 
 /* 43217 Boards */
 #define BCM943217BU_SSID	0x05d5
@@ -858,8 +1015,21 @@
 #define BCM943142HM_SSID	0x05e0
 #endif /* LINUX_POSTMOGRIFY_REMOVAL */
 
+/* 43341 Boards */
+#define BCM943341WLABGS_SSID	0x062d
+
 /* 43342 Boards */
 #define BCM943342FCAGBI_SSID	0x0641
+
+/* 43602 Boards, unclear yet what boards will be created. */
+#define BCM943602RSVD1_SSID	0x06a5
+#define BCM943602RSVD2_SSID	0x06a6
+#define BCM943602X87            0X0133
+#define BCM943602X238           0X0132
+
+/* 4354 board types */
+#define BCM94354WLSAGBI_SSID 0x06db
+#define BCM94354Z_SSID       0x0707
 
 /* # of GPIO pins */
 #define GPIO_NUMPINS		32
@@ -881,6 +1051,8 @@
 #define RDL_RAM_BASE_43242  0x60000000
 #define RDL_RAM_SIZE_43143  0x70000
 #define RDL_RAM_BASE_43143  0x60000000
+#define RDL_RAM_SIZE_4350  0xC0000
+#define RDL_RAM_BASE_4350  0x180800
 
 /* generic defs for nvram "muxenab" bits
 * Note: these differ for 4335a0. refer bcmchipc.h for specific mux options.

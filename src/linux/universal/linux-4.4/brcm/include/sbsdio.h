@@ -4,7 +4,7 @@
  *
  * SDIO core support 1bit, 4 bit SDIO mode as well as SPI mode.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -18,7 +18,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbsdio.h 241182 2011-02-17 21:50:03Z $
+ * $Id: sbsdio.h 383835 2013-02-07 23:32:39Z $
  */
 
 #ifndef	_SBSDIO_H
@@ -49,12 +49,17 @@
 #define SBSDIO_FUNC1_WFRAMEBCHI		0x1001A		/* Write Frame Byte Count High */
 #define SBSDIO_FUNC1_RFRAMEBCLO		0x1001B		/* Read Frame Byte Count Low */
 #define SBSDIO_FUNC1_RFRAMEBCHI		0x1001C		/* Read Frame Byte Count High */
+#define SBSDIO_FUNC1_MESBUSYCTRL	0x1001D		/* MesBusyCtl at 0x1001D (rev 11) */
 
 #define SBSDIO_FUNC1_MISC_REG_START	0x10000 	/* f1 misc register start */
 #define SBSDIO_FUNC1_MISC_REG_LIMIT	0x1001C 	/* f1 misc register end */
 
 /* Sdio Core Rev 12 */
 #define SBSDIO_FUNC1_WAKEUPCTRL			0x1001E
+#define SBSDIO_FUNC1_WCTRL_ALPWAIT_MASK		0x1
+#define SBSDIO_FUNC1_WCTRL_ALPWAIT_SHIFT	0
+#define SBSDIO_FUNC1_WCTRL_HTWAIT_MASK		0x2
+#define SBSDIO_FUNC1_WCTRL_HTWAIT_SHIFT		1
 #define SBSDIO_FUNC1_SLEEPCSR			0x1001F
 #define SBSDIO_FUNC1_SLEEPCSR_KSO_MASK		0x1
 #define SBSDIO_FUNC1_SLEEPCSR_KSO_SHIFT		0
@@ -85,6 +90,13 @@
 							 * to wait before sending data to host
 							 */
 
+/* SBSDIO_MESBUSYCTRL */
+/* When RX FIFO has less entries than this & MBE is set
+ * => busy signal is asserted between data blocks.
+*/
+#define SBSDIO_MESBUSYCTRL_MASK		0x7f
+#define SBSDIO_MESBUSYCTRL_ENAB		0x80		/* Enable busy capability for MES access */
+
 /* SBSDIO_DEVICE_CTL */
 #define SBSDIO_DEVCTL_SETBUSY		0x01		/* 1: device will assert busy signal when
 							 * receiving CMD53
@@ -99,11 +111,9 @@
 							 * external pads in tri-state; requires
 							 * sdio bus power cycle to clear (rev 9)
 							 */
-#define SBSDIO_DEVCTL_SB_RST_CTL	0x30		/* Force SD->SB reset mapping (rev 11) */
-#define SBSDIO_DEVCTL_RST_CORECTL	0x00		/*   Determined by CoreControl bit */
-#define SBSDIO_DEVCTL_RST_BPRESET	0x10		/*   Force backplane reset */
-#define SBSDIO_DEVCTL_RST_NOBPRESET	0x20		/*   Force no backplane reset */
-
+#define SBSDIO_DEVCTL_EN_F2_BLK_WATERMARK 0x10  /* Enable function 2 tx for each block */
+#define SBSDIO_DEVCTL_F2WM_ENAB		0x10		/* Enable F2 Watermark */
+#define SBSDIO_DEVCTL_NONDAT_PADS_ISO 	0x20		/* Isolate sdio clk and cmd (non-data) */
 
 /* SBSDIO_FUNC1_CHIPCLKCSR */
 #define SBSDIO_FORCE_ALP		0x01		/* Force ALP request to backplane */
@@ -117,6 +127,7 @@
 /* In rev8, actual avail bits followed original docs */
 #define SBSDIO_Rev8_HT_AVAIL		0x40
 #define SBSDIO_Rev8_ALP_AVAIL		0x80
+#define SBSDIO_CSR_MASK			0x1F
 
 #define SBSDIO_AVBITS			(SBSDIO_HT_AVAIL | SBSDIO_ALP_AVAIL)
 #define SBSDIO_ALPAV(regval)		((regval) & SBSDIO_AVBITS)
