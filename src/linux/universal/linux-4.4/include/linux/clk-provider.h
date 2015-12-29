@@ -202,7 +202,6 @@ struct clk_ops {
 					  struct clk_rate_request *req);
 	int		(*set_parent)(struct clk_hw *hw, u8 index);
 	u8		(*get_parent)(struct clk_hw *hw);
-	struct clk_hw	*(*get_safe_parent)(struct clk_hw *hw);
 	int		(*set_rate)(struct clk_hw *hw, unsigned long rate,
 				    unsigned long parent_rate);
 	int		(*set_rate_and_parent)(struct clk_hw *hw,
@@ -449,11 +448,6 @@ struct clk_mux {
 extern const struct clk_ops clk_mux_ops;
 extern const struct clk_ops clk_mux_ro_ops;
 
-unsigned int clk_mux_get_parent(struct clk_hw *hw, unsigned int val,
-				unsigned int *table, unsigned long flags);
-unsigned int clk_mux_reindex(u8 index, unsigned int *table,
-			     unsigned long flags);
-
 struct clk *clk_register_mux(struct device *dev, const char *name,
 		const char * const *parent_names, u8 num_parents,
 		unsigned long flags,
@@ -464,7 +458,7 @@ struct clk *clk_register_mux_table(struct device *dev, const char *name,
 		const char * const *parent_names, u8 num_parents,
 		unsigned long flags,
 		void __iomem *reg, u8 shift, u32 mask,
-		u8 clk_mux_flags, unsigned int *table, spinlock_t *lock);
+		u8 clk_mux_flags, u32 *table, spinlock_t *lock);
 
 void clk_unregister_mux(struct clk *clk);
 

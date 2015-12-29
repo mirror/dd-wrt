@@ -2983,8 +2983,8 @@ static int iegbe_transfer_dhcp_info(struct iegbe_adapter *adapter,
 {
 	struct iegbe_hw *hw =  &adapter->hw;
 	u16 length, offset;
-	if (vlan_tx_tag_present(skb)) {
-		if (!((vlan_tx_tag_get(skb) == hw->mng_cookie.vlan_id) &&
+	if (skb_vlan_tag_present(skb)) {
+		if (!((skb_vlan_tag_get(skb) == hw->mng_cookie.vlan_id) &&
 			( hw->mng_cookie.status &
 			  E1000_MNG_DHCP_COOKIE_STATUS_VLAN_SUPPORT)) )
 			return 0;
@@ -3166,9 +3166,9 @@ static int iegbe_xmit_frame(struct sk_buff *skb, struct net_device *netdev)
 		}
 	}
 
-	if (unlikely(iegbe_vlan_used(adapter) && vlan_tx_tag_present(skb))) {
+	if (unlikely(iegbe_vlan_used(adapter) && skb_vlan_tag_present(skb))) {
 		tx_flags |= E1000_TX_FLAGS_VLAN;
-		tx_flags |= (vlan_tx_tag_get(skb) << E1000_TX_FLAGS_VLAN_SHIFT);
+		tx_flags |= (skb_vlan_tag_get(skb) << E1000_TX_FLAGS_VLAN_SHIFT);
 	}
 
 	first = tx_ring->next_to_use;
