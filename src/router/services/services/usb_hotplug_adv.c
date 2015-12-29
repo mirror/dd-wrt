@@ -184,7 +184,7 @@ static void optimize_block_device(char *devname)
 	memset(blkdev, 0, sizeof(blkdev));
 	strncpy(blkdev, devname, 3);
 	sprintf(read_ahead_conf, READ_AHEAD_CONF, blkdev);
-	writestr(read_ahead_conf,READ_AHEAD_KB_BUF);
+	writestr(read_ahead_conf, READ_AHEAD_KB_BUF);
 }
 
 //Kernel 3.x
@@ -446,15 +446,15 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	}
 
 	if (strcmp(fs, "swap"))	//don't create dir as swap is not mounted to a dir
-		sysprintf("mkdir -p %s", mount_point);
+		eval("mkdir", "-p", mount_point);
 
 	if (host != -1) {
 		/* at the time the kernel (2.6) notifies us, the part entries are gone thus we map devicepath to mounted partitions so we can umount them later on */
 		sprintf(dev_dir, "/tmp/%s", devpath);
-		sysprintf("mkdir -p %s", dev_dir);
+		eval("mkdir", "-p", dev_dir);
 		// e.g. /mnt /tmp/devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1:1.0/part1
-		sprintf(sym_link, "%s %s/%s", mount_point, dev_dir, part);
-		sysprintf("ln -s %s", sym_link);
+		sprintf(sym_link, "%s/%s", dev_dir, part);
+		eval("ln", "-s", mount_mount, sym_link);
 	}
 
 	/* lets start mounting */
