@@ -140,6 +140,9 @@ static size_t pending_startup_messages_len;
  * configured. */
 static int queue_startup_messages = 1;
 
+/** True iff __PRETTY_FUNCTION__ includes parenthesized arguments. */
+static int pretty_fn_has_parens = 0;
+
 /** Don't store more than this many bytes of messages while waiting for the
  * logs to get configured. */
 #define MAX_STARTUP_MSG_LEN (1<<16)
@@ -263,6 +266,13 @@ log_tor_version(logfile_t *lf, int reset)
   return 0;
 }
 
+const char bug_suffix[] = " (on Tor " VERSION
+#ifndef _MSC_VER
+  " "
+#include "micro-revision.i"
+#endif
+  ")";
+
 /** Helper: Format a log message into a fixed-sized buffer. (This is
  * factored out of <b>logv</b> so that we never format a message more
  * than once.)  Return a pointer to the first character of the message
@@ -306,7 +316,9 @@ format_msg(char *buf, size_t buf_len,
   }
 
   if (funcname && should_log_function_name(domain, severity)) {
-    r = tor_snprintf(buf+n, buf_len-n, "%s(): ", funcname);
+    r = tor_snprintf(buf+n, buf_len-n,
+                     pretty_fn_has_parens ? "%s: " : "%s(): ",
+                     funcname);
     if (r<0)
       n = strlen(buf);
     else
@@ -341,6 +353,13 @@ format_msg(char *buf, size_t buf_len,
       }
     }
   }
+
+  if (domain == LD_BUG &&
+      buf_len - n > strlen(bug_suffix)+1) {
+    memcpy(buf+n, bug_suffix, strlen(bug_suffix));
+    n += strlen(bug_suffix);
+  }
+
   buf[n]='\n';
   buf[n+1]='\0';
   *msg_len_out = n+1;
@@ -655,9 +674,7 @@ tor_log_get_logfile_names(smartlist_t *out)
   UNLOCK_LOGS();
 }
 
-/** Output a message to the log, prefixed with a function name <b>fn</b>. */
-#ifdef __GNUC__
-/** GCC-based implementation of the log_fn backend, used when we have
+/** Implementation of the log_fn backend, used when we have
  * variadic macros. All arguments are as for log_fn, except for
  * <b>fn</b>, which is the name of the calling functions. */
 void
@@ -687,98 +704,6 @@ log_fn_ratelim_(ratelim_t *ratelim, int severity, log_domain_mask_t domain,
   va_end(ap);
   tor_free(m);
 }
-#else
-/** @{ */
-/** Variant implementation of log_fn, log_debug, log_info,... for C compilers
- * without variadic macros.  In this case, the calling function sets
- * log_fn_function_name_ to the name of the function, then invokes the
- * appropriate log_fn_, log_debug_, etc. */
-const char *log_fn_function_name_=NULL;
-void
-log_fn_(int severity, log_domain_mask_t domain, const char *format, ...)
-{
-  va_list ap;
-  if (severity > log_global_min_severity_)
-    return;
-  va_start(ap,format);
-  logv(severity, domain, log_fn_function_name_, NULL, format, ap);
-  va_end(ap);
-  log_fn_function_name_ = NULL;
-}
-void
-log_fn_ratelim_(ratelim_t *ratelim, int severity, log_domain_mask_t domain,
-                const char *format, ...)
-{
-  va_list ap;
-  char *m;
-  if (severity > log_global_min_severity_)
-    return;
-  m = rate_limit_log(ratelim, approx_time());
-  if (m == NULL)
-      return;
-  va_start(ap, format);
-  logv(severity, domain, log_fn_function_name_, m, format, ap);
-  va_end(ap);
-  tor_free(m);
-}
-void
-log_debug_(log_domain_mask_t domain, const char *format, ...)
-{
-  va_list ap;
-  /* For GCC we do this check in the macro. */
-  if (PREDICT_LIKELY(LOG_DEBUG > log_global_min_severity_))
-    return;
-  va_start(ap,format);
-  logv(LOG_DEBUG, domain, log_fn_function_name_, NULL, format, ap);
-  va_end(ap);
-  log_fn_function_name_ = NULL;
-}
-void
-log_info_(log_domain_mask_t domain, const char *format, ...)
-{
-  va_list ap;
-  if (LOG_INFO > log_global_min_severity_)
-    return;
-  va_start(ap,format);
-  logv(LOG_INFO, domain, log_fn_function_name_, NULL, format, ap);
-  va_end(ap);
-  log_fn_function_name_ = NULL;
-}
-void
-log_notice_(log_domain_mask_t domain, const char *format, ...)
-{
-  va_list ap;
-  if (LOG_NOTICE > log_global_min_severity_)
-    return;
-  va_start(ap,format);
-  logv(LOG_NOTICE, domain, log_fn_function_name_, NULL, format, ap);
-  va_end(ap);
-  log_fn_function_name_ = NULL;
-}
-void
-log_warn_(log_domain_mask_t domain, const char *format, ...)
-{
-  va_list ap;
-  if (LOG_WARN > log_global_min_severity_)
-    return;
-  va_start(ap,format);
-  logv(LOG_WARN, domain, log_fn_function_name_, NULL, format, ap);
-  va_end(ap);
-  log_fn_function_name_ = NULL;
-}
-void
-log_err_(log_domain_mask_t domain, const char *format, ...)
-{
-  va_list ap;
-  if (LOG_ERR > log_global_min_severity_)
-    return;
-  va_start(ap,format);
-  logv(LOG_ERR, domain, log_fn_function_name_, NULL, format, ap);
-  va_end(ap);
-  log_fn_function_name_ = NULL;
-}
-/** @} */
-#endif
 
 /** Free all storage held by <b>victim</b>. */
 static void
@@ -925,6 +850,11 @@ init_logging(int disable_startup_queue)
     tor_mutex_init(&log_mutex);
     log_mutex_initialized = 1;
   }
+#ifdef __GNUC__
+  if (strchr(__PRETTY_FUNCTION__, '(')) {
+    pretty_fn_has_parens = 1;
+  }
+#endif
   if (pending_cb_messages == NULL)
     pending_cb_messages = smartlist_new();
   if (disable_startup_queue)

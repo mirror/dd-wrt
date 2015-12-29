@@ -55,7 +55,7 @@
 #define MIN_SUPPORTED_CONSENSUS_METHOD 13
 
 /** The highest consensus method that we currently support. */
-#define MAX_SUPPORTED_CONSENSUS_METHOD 20
+#define MAX_SUPPORTED_CONSENSUS_METHOD 21
 
 /** Lowest consensus method where microdesc consensuses omit any entry
  * with no microdesc. */
@@ -85,6 +85,13 @@
 /** Lowest consensus method where authorities may include
  * GuardFraction information in microdescriptors. */
 #define MIN_METHOD_FOR_GUARDFRACTION 20
+
+/** Lowest consensus method where authorities may include an "id" line for
+ * ed25519 identities in microdescriptors. */
+#define MIN_METHOD_FOR_ED25519_ID_IN_MD 21
+/** Lowest consensus method where authorities vote on ed25519 ids and ensure
+ * ed25519 id consistency. */
+#define MIN_METHOD_FOR_ED25519_ID_VOTING MIN_METHOD_FOR_ED25519_ID_IN_MD
 
 /** Default bandwidth to clip unmeasured bandwidths to using method >=
  * MIN_METHOD_TO_CLIP_UNMEASURED_BW.  (This is not a consensus method; do not
@@ -138,8 +145,7 @@ const cached_dir_t *dirvote_get_vote(const char *fp, int flags);
 void set_routerstatus_from_routerinfo(routerstatus_t *rs,
                                       node_t *node,
                                       routerinfo_t *ri, time_t now,
-                                      int listbadexits,
-                                      int vote_on_hsdirs);
+                                      int listbadexits);
 networkstatus_t *
 dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
                                         authority_cert_t *cert);

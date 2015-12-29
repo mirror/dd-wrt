@@ -18,6 +18,8 @@
 #include <event.h>
 #endif
 
+#define MAX_INFLIGHT (1<<16)
+
 static int opt_verbose = 0;
 static int opt_n_threads = 8;
 static int opt_n_items = 10000;
@@ -68,7 +70,7 @@ mark_handled(int serial)
 #endif
 }
 
-static int
+static workqueue_reply_t
 workqueue_do_rsa(void *state, void *work)
 {
   rsa_work_t *rw = work;
@@ -96,7 +98,7 @@ workqueue_do_rsa(void *state, void *work)
   return WQ_RPL_REPLY;
 }
 
-static int
+static workqueue_reply_t
 workqueue_do_shutdown(void *state, void *work)
 {
   (void)state;
@@ -106,7 +108,7 @@ workqueue_do_shutdown(void *state, void *work)
   return WQ_RPL_SHUTDOWN;
 }
 
-static int
+static workqueue_reply_t
 workqueue_do_ecdh(void *state, void *work)
 {
   ecdh_work_t *ew = work;
@@ -119,6 +121,14 @@ workqueue_do_ecdh(void *state, void *work)
   memcpy(ew->u.msg, output, CURVE25519_OUTPUT_LEN);
   ++st->n_handled;
   mark_handled(ew->serial);
+  return WQ_RPL_REPLY;
+}
+
+static workqueue_reply_t
+workqueue_shutdown_error(void *state, void *work)
+{
+  (void)state;
+  (void)work;
   return WQ_RPL_REPLY;
 }
 
@@ -154,6 +164,7 @@ static int n_sent = 0;
 static int rsa_sent = 0;
 static int ecdh_sent = 0;
 static int n_received = 0;
+static int no_shutdown = 0;
 
 #ifdef TRACK_RESPONSES
 bitarray_t *received;
@@ -170,6 +181,14 @@ handle_reply(void *arg)
 
   tor_free(arg);
   ++n_received;
+}
+
+/* This should never get called. */
+static void
+handle_reply_shutdown(void *arg)
+{
+  (void)arg;
+  no_shutdown = 1;
 }
 
 static workqueue_entry_t *
@@ -212,6 +231,7 @@ add_n_work_items(threadpool_t *tp, int n)
   while (n_queued++ < n) {
     ent = add_work(tp);
     if (! ent) {
+      puts("Z");
       tor_event_base_loopexit(tor_libevent_get_base(), NULL);
       return -1;
     }
@@ -285,6 +305,13 @@ replysock_readable_cb(tor_socket_t sock, short what, void *arg)
     shutting_down = 1;
     threadpool_queue_update(tp, NULL,
                              workqueue_do_shutdown, NULL, NULL);
+    // Anything we add after starting the shutdown must not be executed.
+    threadpool_queue_work(tp, workqueue_shutdown_error,
+                          handle_reply_shutdown, NULL);
+    {
+      struct timeval limit = { 2, 0 };
+      tor_event_base_loopexit(tor_libevent_get_base(), &limit);
+    }
   }
 }
 
@@ -293,14 +320,16 @@ help(void)
 {
   puts(
      "Options:\n"
-     "    -N <items>    Run this many items of work\n"
-     "    -T <threads>  Use this many threads\n"
-     "    -I <inflight> Have no more than this many requests queued at once\n"
-     "    -L <lowwater> Add items whenever fewer than this many are pending\n"
-     "    -C <cancel>   Try to cancel N items of every batch that we add\n"
-     "    -R <ratio>    Make one out of this many items be a slow (RSA) one\n"
-     "    --no-{eventfd2,eventfd,pipe2,pipe,socketpair}\n"
-     "                  Disable one of the alert_socket backends.");
+     "  -h            Display this information\n"
+     "  -v            Be verbose\n"
+     "  -N <items>    Run this many items of work\n"
+     "  -T <threads>  Use this many threads\n"
+     "  -I <inflight> Have no more than this many requests queued at once\n"
+     "  -L <lowwater> Add items whenever fewer than this many are pending\n"
+     "  -C <cancel>   Try to cancel N items of every batch that we add\n"
+     "  -R <ratio>    Make one out of this many items be a slow (RSA) one\n"
+     "  --no-{eventfd2,eventfd,pipe2,pipe,socketpair}\n"
+     "                Disable one of the alert_socket backends.");
 }
 
 int
@@ -346,17 +375,23 @@ main(int argc, char **argv)
       return 1;
     }
   }
+
   if (opt_n_threads < 1 ||
       opt_n_items < 1 || opt_n_inflight < 1 || opt_n_lowwater < 0 ||
-      opt_n_cancel > opt_n_inflight ||
+      opt_n_cancel > opt_n_inflight || opt_n_inflight > MAX_INFLIGHT ||
       opt_ratio_rsa < 0) {
     help();
     return 1;
   }
 
+  if (opt_n_inflight > opt_n_items) {
+      opt_n_inflight = opt_n_items;
+  }
+
   init_logging(1);
+  network_init();
   crypto_global_init(1, NULL, NULL);
-  crypto_seed_rng(1);
+  crypto_seed_rng();
 
   rq = replyqueue_new(as_flags);
   tor_assert(rq);
@@ -390,7 +425,7 @@ main(int argc, char **argv)
   }
 
   {
-    struct timeval limit = { 30, 0 };
+    struct timeval limit = { 180, 0 };
     tor_event_base_loopexit(tor_libevent_get_base(), &limit);
   }
 
@@ -401,6 +436,9 @@ main(int argc, char **argv)
     printf("%d+%d vs %d\n", n_received, n_successful_cancel, n_sent);
     puts("FAIL");
     return 1;
+  } else if (no_shutdown) {
+    puts("Accepted work after shutdown\n");
+    puts("FAIL");
   } else {
     puts("OK");
     return 0;

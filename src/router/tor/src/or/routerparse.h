@@ -19,7 +19,7 @@ int router_get_extrainfo_hash(const char *s, size_t s_len, char *digest);
 #define DIROBJ_MAX_SIG_LEN 256
 char *router_get_dirobj_signature(const char *digest,
                                   size_t digest_len,
-                                  crypto_pk_t *private_key);
+                                  const crypto_pk_t *private_key);
 int router_append_dirobj_signature(char *buf, size_t buf_len,
                                    const char *digest,
                                    size_t digest_len,
@@ -41,10 +41,9 @@ extrainfo_t *extrainfo_parse_entry_from_string(const char *s, const char *end,
                              int cache_copy, struct digest_ri_map_t *routermap,
                              int *can_dl_again_out);
 MOCK_DECL(addr_policy_t *, router_parse_addr_policy_item_from_string,
-    (const char *s, int assume_action));
+         (const char *s, int assume_action, int *malformed_list));
 version_status_t tor_version_is_obsolete(const char *myversion,
                                          const char *versionlist);
-int tor_version_supports_microdescriptors(const char *platform);
 int tor_version_as_new_as(const char *platform, const char *cutoff);
 int tor_version_parse(const char *s, tor_version_t *out);
 int tor_version_compare(tor_version_t *a, tor_version_t *b);
@@ -91,6 +90,8 @@ STATIC int routerstatus_parse_guardfraction(const char *guardfraction_str,
                                             vote_routerstatus_t *vote_rs,
                                             routerstatus_t *rs);
 #endif
+
+#define ED_DESC_SIGNATURE_PREFIX "Tor router descriptor signature v1"
 
 #endif
 

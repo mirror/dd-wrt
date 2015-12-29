@@ -1127,6 +1127,7 @@ extern struct testcase_t circuitlist_tests[];
 extern struct testcase_t circuitmux_tests[];
 extern struct testcase_t config_tests[];
 extern struct testcase_t container_tests[];
+extern struct testcase_t controller_tests[];
 extern struct testcase_t controller_event_tests[];
 extern struct testcase_t crypto_tests[];
 extern struct testcase_t dir_tests[];
@@ -1136,6 +1137,8 @@ extern struct testcase_t guardfraction_tests[];
 extern struct testcase_t extorport_tests[];
 extern struct testcase_t hs_tests[];
 extern struct testcase_t introduce_tests[];
+extern struct testcase_t keypin_tests[];
+extern struct testcase_t link_handshake_tests[];
 extern struct testcase_t logging_tests[];
 extern struct testcase_t microdesc_tests[];
 extern struct testcase_t nodelist_tests[];
@@ -1155,6 +1158,7 @@ extern struct testcase_t socks_tests[];
 extern struct testcase_t status_tests[];
 extern struct testcase_t thread_tests[];
 extern struct testcase_t util_tests[];
+extern struct testcase_t dns_tests[];
 
 struct testgroup_t testgroups[] = {
   { "", test_array },
@@ -1171,7 +1175,8 @@ struct testgroup_t testgroups[] = {
   { "circuitmux/", circuitmux_tests },
   { "config/", config_tests },
   { "container/", container_tests },
-  { "control/", controller_event_tests },
+  { "control/", controller_tests },
+  { "control/event/", controller_event_tests },
   { "crypto/", crypto_tests },
   { "dir/", dir_tests },
   { "dir/md/", microdesc_tests },
@@ -1181,6 +1186,8 @@ struct testgroup_t testgroups[] = {
   { "extorport/", extorport_tests },
   { "hs/", hs_tests },
   { "introduce/", introduce_tests },
+  { "keypin/", keypin_tests },
+  { "link-handshake/", link_handshake_tests },
   { "nodelist/", nodelist_tests },
   { "oom/", oom_tests },
   { "options/", options_tests },
@@ -1198,6 +1205,7 @@ struct testgroup_t testgroups[] = {
   { "util/", util_tests },
   { "util/logging/", logging_tests },
   { "util/thread/", thread_tests },
+  { "dns/", dns_tests },
   END_OF_GROUPS
 };
 

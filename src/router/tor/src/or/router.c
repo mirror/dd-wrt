@@ -26,9 +26,11 @@
 #include "relay.h"
 #include "rephist.h"
 #include "router.h"
+#include "routerkeys.h"
 #include "routerlist.h"
 #include "routerparse.h"
 #include "statefile.h"
+#include "torcert.h"
 #include "transports.h"
 #include "routerset.h"
 
@@ -204,6 +206,8 @@ set_server_identity_key(crypto_pk_t *k)
 static void
 assert_identity_keys_ok(void)
 {
+  if (1)
+    return;
   tor_assert(client_identitykey);
   if (public_server_mode(get_options())) {
     /* assert that we have set the client and server keys to be equal */
@@ -683,7 +687,9 @@ router_initialize_tls_context(void)
   if (!lifetime) { /* we should guess a good ssl cert lifetime */
 
     /* choose between 5 and 365 days, and round to the day */
-    lifetime = 5*24*3600 + crypto_rand_int(361*24*3600);
+    unsigned int five_days = 5*24*3600;
+    unsigned int one_year = 365*24*3600;
+    lifetime = crypto_rand_int_range(five_days, one_year);
     lifetime -= lifetime % (24*3600);
 
     if (crypto_rand_int(2)) {
@@ -761,6 +767,46 @@ router_write_fingerprint(int hashed)
   return result;
 }
 
+static int
+init_keys_common(void)
+{
+  if (!key_lock)
+    key_lock = tor_mutex_new();
+
+  /* There are a couple of paths that put us here before we've asked
+   * openssl to initialize itself. */
+  if (crypto_global_init(get_options()->HardwareAccel,
+                         get_options()->AccelName,
+                         get_options()->AccelDir)) {
+    log_err(LD_BUG, "Unable to initialize OpenSSL. Exiting.");
+    return -1;
+  }
+
+  return 0;
+}
+
+int
+init_keys_client(void)
+{
+  crypto_pk_t *prkey;
+  if (init_keys_common() < 0)
+    return -1;
+
+  if (!(prkey = crypto_pk_new()))
+    return -1;
+  if (crypto_pk_generate_key(prkey)) {
+    crypto_pk_free(prkey);
+    return -1;
+  }
+  set_client_identity_key(prkey);
+  /* Create a TLS context. */
+  if (router_initialize_tls_context() < 0) {
+    log_err(LD_GENERAL,"Error creating TLS context for Tor client.");
+    return -1;
+  }
+  return 0;
+}
+
 /** Initialize all OR private keys, and the TLS context, as necessary.
  * On OPs, this only initializes the tls context. Return 0 on success,
  * or -1 if Tor should die.
@@ -780,35 +826,13 @@ init_keys(void)
   int v3_digest_set = 0;
   authority_cert_t *cert = NULL;
 
-  if (!key_lock)
-    key_lock = tor_mutex_new();
-
-  /* There are a couple of paths that put us here before we've asked
-   * openssl to initialize itself. */
-  if (crypto_global_init(get_options()->HardwareAccel,
-                         get_options()->AccelName,
-                         get_options()->AccelDir)) {
-    log_err(LD_BUG, "Unable to initialize OpenSSL. Exiting.");
-    return -1;
-  }
-
   /* OP's don't need persistent keys; just make up an identity and
    * initialize the TLS context. */
   if (!server_mode(options)) {
-    if (!(prkey = crypto_pk_new()))
-      return -1;
-    if (crypto_pk_generate_key(prkey)) {
-      crypto_pk_free(prkey);
-      return -1;
-    }
-    set_client_identity_key(prkey);
-    /* Create a TLS context. */
-    if (router_initialize_tls_context() < 0) {
-      log_err(LD_GENERAL,"Error creating TLS context for Tor client.");
-      return -1;
-    }
-    return 0;
+    return init_keys_client();
   }
+  if (init_keys_common() < 0)
+    return -1;
   /* Make sure DataDirectory exists, and is private. */
   if (check_private_dir(options->DataDirectory, CPD_CREATE, options->User)) {
     return -1;
@@ -860,6 +884,10 @@ init_keys(void)
     }
     set_client_identity_key(prkey);
   }
+
+  /* 1d. Load all ed25519 keys */
+  if (load_ed_keys(options,now) < 0)
+    return -1;
 
   /* 2. Read onion key.  Make it if none is found. */
   keydir = get_datadir_fname2("keys", "secret_onion_key");
@@ -923,6 +951,13 @@ init_keys(void)
   /* 3. Initialize link key and TLS context. */
   if (router_initialize_tls_context() < 0) {
     log_err(LD_GENERAL,"Error initializing TLS context");
+    return -1;
+  }
+
+  /* 3b. Get an ed25519 link certificate.  Note that we need to do this
+   * after we set up the TLS context */
+  if (generate_ed_link_cert(options, now) < 0) {
+    log_err(LD_GENERAL,"Couldn't make link cert");
     return -1;
   }
 
@@ -1802,12 +1837,15 @@ router_pick_published_address(const or_options_t *options, uint32_t *addr)
   return 0;
 }
 
-/** If <b>force</b> is true, or our descriptor is out-of-date, rebuild a fresh
- * routerinfo, signed server descriptor, and extra-info document for this OR.
- * Return 0 on success, -1 on temporary error.
+/** Build a fresh routerinfo, signed server descriptor, and extra-info document
+ * for this OR. Set r to the generated routerinfo, e to the generated
+ * extra-info document. Return 0 on success, -1 on temporary error. Failure to
+ * generate an extra-info document is not an error and is indicated by setting
+ * e to NULL. Caller is responsible for freeing generated documents if 0 is
+ * returned.
  */
 int
-router_rebuild_descriptor(int force)
+router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
 {
   routerinfo_t *ri;
   extrainfo_t *ei;
@@ -1816,19 +1854,10 @@ router_rebuild_descriptor(int force)
   int hibernating = we_are_hibernating();
   const or_options_t *options = get_options();
 
-  if (desc_clean_since && !force)
-    return 0;
-
-  if (router_pick_published_address(options, &addr) < 0 ||
-      router_get_advertised_or_port(options) == 0) {
-    /* Stop trying to rebuild our descriptor every second. We'll
-     * learn that it's time to try again when ip_address_changed()
-     * marks it dirty. */
-    desc_clean_since = time(NULL);
+  if (router_pick_published_address(options, &addr) < 0) {
+    log_warn(LD_CONFIG, "Don't know my address while generating descriptor");
     return -1;
   }
-
-  log_info(LD_OR, "Rebuilding relay descriptor%s", force ? " (forced)" : "");
 
   ri = tor_malloc_zero(sizeof(routerinfo_t));
   ri->cache_info.routerlist_index = -1;
@@ -1876,6 +1905,8 @@ router_rebuild_descriptor(int force)
     routerinfo_free(ri);
     return -1;
   }
+  ri->signing_key_cert = tor_cert_dup(get_master_signing_key_cert());
+
   get_platform_str(platform, sizeof(platform));
   ri->platform = tor_strdup(platform);
 
@@ -1891,7 +1922,7 @@ router_rebuild_descriptor(int force)
     /* DNS is screwed up; don't claim to be an exit. */
     policies_exit_policy_append_reject_star(&ri->exit_policy);
   } else {
-    policies_parse_exit_policy_from_options(options,ri->addr,
+    policies_parse_exit_policy_from_options(options,ri->addr,&ri->ipv6_addr,1,
                                             &ri->exit_policy);
   }
   ri->policy_is_reject_star =
@@ -1966,10 +1997,12 @@ router_rebuild_descriptor(int force)
   ei->cache_info.is_extrainfo = 1;
   strlcpy(ei->nickname, get_options()->Nickname, sizeof(ei->nickname));
   ei->cache_info.published_on = ri->cache_info.published_on;
+  ei->signing_key_cert = tor_cert_dup(get_master_signing_key_cert());
   memcpy(ei->cache_info.identity_digest, ri->cache_info.identity_digest,
          DIGEST_LEN);
   if (extrainfo_dump_to_string(&ei->cache_info.signed_descriptor_body,
-                               ei, get_server_identity_key()) < 0) {
+                               ei, get_server_identity_key(),
+                               get_master_signing_keypair()) < 0) {
     log_warn(LD_BUG, "Couldn't generate extra-info descriptor.");
     extrainfo_free(ei);
     ei = NULL;
@@ -1979,6 +2012,10 @@ router_rebuild_descriptor(int force)
     router_get_extrainfo_hash(ei->cache_info.signed_descriptor_body,
                               ei->cache_info.signed_descriptor_len,
                               ei->cache_info.signed_descriptor_digest);
+    crypto_digest256((char*) ei->digest256,
+                     ei->cache_info.signed_descriptor_body,
+                     ei->cache_info.signed_descriptor_len,
+                     DIGEST_SHA256);
   }
 
   /* Now finish the router descriptor. */
@@ -1986,12 +2023,18 @@ router_rebuild_descriptor(int force)
     memcpy(ri->cache_info.extra_info_digest,
            ei->cache_info.signed_descriptor_digest,
            DIGEST_LEN);
+    memcpy(ri->extra_info_digest256,
+           ei->digest256,
+           DIGEST256_LEN);
   } else {
     /* ri was allocated with tor_malloc_zero, so there is no need to
      * zero ri->cache_info.extra_info_digest here. */
   }
-  if (! (ri->cache_info.signed_descriptor_body = router_dump_router_to_string(
-                                           ri, get_server_identity_key()))) {
+  if (! (ri->cache_info.signed_descriptor_body =
+          router_dump_router_to_string(ri, get_server_identity_key(),
+                                       get_onion_key(),
+                                       get_current_curve25519_keypair(),
+                                       get_master_signing_keypair())) ) {
     log_warn(LD_BUG, "Couldn't generate router descriptor.");
     routerinfo_free(ri);
     extrainfo_free(ei);
@@ -2022,6 +2065,41 @@ router_rebuild_descriptor(int force)
 
   if (ei) {
     tor_assert(! routerinfo_incompatible_with_extrainfo(ri, ei, NULL, NULL));
+  }
+
+  *r = ri;
+  *e = ei;
+  return 0;
+}
+
+/** If <b>force</b> is true, or our descriptor is out-of-date, rebuild a fresh
+ * routerinfo, signed server descriptor, and extra-info document for this OR.
+ * Return 0 on success, -1 on temporary error.
+ */
+int
+router_rebuild_descriptor(int force)
+{
+  routerinfo_t *ri;
+  extrainfo_t *ei;
+  uint32_t addr;
+  const or_options_t *options = get_options();
+
+  if (desc_clean_since && !force)
+    return 0;
+
+  if (router_pick_published_address(options, &addr) < 0 ||
+      router_get_advertised_or_port(options) == 0) {
+    /* Stop trying to rebuild our descriptor every second. We'll
+     * learn that it's time to try again when ip_address_changed()
+     * marks it dirty. */
+    desc_clean_since = time(NULL);
+    return -1;
+  }
+
+  log_info(LD_OR, "Rebuilding relay descriptor%s", force ? " (forced)" : "");
+
+  if (router_build_fresh_descriptor(&ri, &ei) < 0) {
+    return -1;
   }
 
   routerinfo_free(desc_routerinfo);
@@ -2297,22 +2375,28 @@ get_platform_str(char *platform, size_t len)
  */
 char *
 router_dump_router_to_string(routerinfo_t *router,
-                             crypto_pk_t *ident_key)
+                             const crypto_pk_t *ident_key,
+                             const crypto_pk_t *tap_key,
+                             const curve25519_keypair_t *ntor_keypair,
+                             const ed25519_keypair_t *signing_keypair)
 {
   char *address = NULL;
   char *onion_pkey = NULL; /* Onion key, PEM-encoded. */
   char *identity_pkey = NULL; /* Identity key, PEM-encoded. */
-  char digest[DIGEST_LEN];
+  char digest[DIGEST256_LEN];
   char published[ISO_TIME_LEN+1];
   char fingerprint[FINGERPRINT_LEN+1];
-  int has_extra_info_digest;
-  char extra_info_digest[HEX_DIGEST_LEN+1];
+  char *extra_info_line = NULL;
   size_t onion_pkeylen, identity_pkeylen;
   char *family_line = NULL;
   char *extra_or_address = NULL;
   const or_options_t *options = get_options();
   smartlist_t *chunks = NULL;
   char *output = NULL;
+  const int emit_ed_sigs = signing_keypair && router->signing_key_cert;
+  char *ed_cert_line = NULL;
+  char *rsa_tap_cc_line = NULL;
+  char *ntor_cc_line = NULL;
 
   /* Make sure the identity key matches the one in the routerinfo. */
   if (!crypto_pk_eq_keys(ident_key, router->identity_pkey)) {
@@ -2320,11 +2404,45 @@ router_dump_router_to_string(routerinfo_t *router,
              "match router's public key!");
     goto err;
   }
+  if (emit_ed_sigs) {
+    if (!router->signing_key_cert->signing_key_included ||
+        !ed25519_pubkey_eq(&router->signing_key_cert->signed_key,
+                           &signing_keypair->pubkey)) {
+      log_warn(LD_BUG, "Tried to sign a router descriptor with a mismatched "
+               "ed25519 key chain %d",
+               router->signing_key_cert->signing_key_included);
+      goto err;
+    }
+  }
 
   /* record our fingerprint, so we can include it in the descriptor */
   if (crypto_pk_get_fingerprint(router->identity_pkey, fingerprint, 1)<0) {
     log_err(LD_BUG,"Error computing fingerprint");
     goto err;
+  }
+
+  if (emit_ed_sigs) {
+    /* Encode ed25519 signing cert */
+    char ed_cert_base64[256];
+    char ed_fp_base64[ED25519_BASE64_LEN+1];
+    if (base64_encode(ed_cert_base64, sizeof(ed_cert_base64),
+                      (const char*)router->signing_key_cert->encoded,
+                      router->signing_key_cert->encoded_len,
+                      BASE64_ENCODE_MULTILINE) < 0) {
+      log_err(LD_BUG,"Couldn't base64-encode signing key certificate!");
+      goto err;
+    }
+    if (ed25519_public_to_base64(ed_fp_base64,
+                                 &router->signing_key_cert->signing_key)<0) {
+      log_err(LD_BUG,"Couldn't base64-encode identity key\n");
+      goto err;
+    }
+    tor_asprintf(&ed_cert_line, "identity-ed25519\n"
+                 "-----BEGIN ED25519 CERT-----\n"
+                 "%s"
+                 "-----END ED25519 CERT-----\n"
+                 "master-key-ed25519 %s\n",
+                 ed_cert_base64, ed_fp_base64);
   }
 
   /* PEM-encode the onion key */
@@ -2341,6 +2459,69 @@ router_dump_router_to_string(routerinfo_t *router,
     goto err;
   }
 
+  /* Cross-certify with RSA key */
+  if (tap_key && router->signing_key_cert &&
+      router->signing_key_cert->signing_key_included) {
+    char buf[256];
+    int tap_cc_len = 0;
+    uint8_t *tap_cc =
+      make_tap_onion_key_crosscert(tap_key,
+                                   &router->signing_key_cert->signing_key,
+                                   router->identity_pkey,
+                                   &tap_cc_len);
+    if (!tap_cc) {
+      log_warn(LD_BUG,"make_tap_onion_key_crosscert failed!");
+      goto err;
+    }
+
+    if (base64_encode(buf, sizeof(buf), (const char*)tap_cc, tap_cc_len,
+                      BASE64_ENCODE_MULTILINE) < 0) {
+      log_warn(LD_BUG,"base64_encode(rsa_crosscert) failed!");
+      tor_free(tap_cc);
+      goto err;
+    }
+    tor_free(tap_cc);
+
+    tor_asprintf(&rsa_tap_cc_line,
+                 "onion-key-crosscert\n"
+                 "-----BEGIN CROSSCERT-----\n"
+                 "%s"
+                 "-----END CROSSCERT-----\n", buf);
+  }
+
+  /* Cross-certify with onion keys */
+  if (ntor_keypair && router->signing_key_cert &&
+      router->signing_key_cert->signing_key_included) {
+    int sign = 0;
+    char buf[256];
+    /* XXXX Base the expiration date on the actual onion key expiration time?*/
+    tor_cert_t *cert =
+      make_ntor_onion_key_crosscert(ntor_keypair,
+                                &router->signing_key_cert->signing_key,
+                                router->cache_info.published_on,
+                                MIN_ONION_KEY_LIFETIME, &sign);
+    if (!cert) {
+      log_warn(LD_BUG,"make_ntor_onion_key_crosscert failed!");
+      goto err;
+    }
+    tor_assert(sign == 0 || sign == 1);
+
+    if (base64_encode(buf, sizeof(buf),
+                      (const char*)cert->encoded, cert->encoded_len,
+                      BASE64_ENCODE_MULTILINE)<0) {
+      log_warn(LD_BUG,"base64_encode(ntor_crosscert) failed!");
+      tor_cert_free(cert);
+      goto err;
+    }
+    tor_cert_free(cert);
+
+    tor_asprintf(&ntor_cc_line,
+                 "ntor-onion-key-crosscert %d\n"
+                 "-----BEGIN ED25519 CERT-----\n"
+                 "%s"
+                 "-----END ED25519 CERT-----\n", sign, buf);
+  }
+
   /* Encode the publication time. */
   format_iso_time(published, router->cache_info.published_on);
 
@@ -2353,12 +2534,19 @@ router_dump_router_to_string(routerinfo_t *router,
     family_line = tor_strdup("");
   }
 
-  has_extra_info_digest =
-    ! tor_digest_is_zero(router->cache_info.extra_info_digest);
-
-  if (has_extra_info_digest) {
+  if (!tor_digest_is_zero(router->cache_info.extra_info_digest)) {
+    char extra_info_digest[HEX_DIGEST_LEN+1];
     base16_encode(extra_info_digest, sizeof(extra_info_digest),
                   router->cache_info.extra_info_digest, DIGEST_LEN);
+    if (!tor_digest256_is_zero(router->extra_info_digest256)) {
+      char d256_64[BASE64_DIGEST256_LEN+1];
+      digest256_to_base64(d256_64, router->extra_info_digest256);
+      tor_asprintf(&extra_info_line, "extra-info-digest %s %s\n",
+                   extra_info_digest, d256_64);
+    } else {
+      tor_asprintf(&extra_info_line, "extra-info-digest %s\n",
+                   extra_info_digest);
+    }
   }
 
   if (router->ipv6_orport &&
@@ -2380,20 +2568,23 @@ router_dump_router_to_string(routerinfo_t *router,
   smartlist_add_asprintf(chunks,
                     "router %s %s %d 0 %d\n"
                     "%s"
+                    "%s"
                     "platform %s\n"
                     "protocols Link 1 2 Circuit 1\n"
                     "published %s\n"
                     "fingerprint %s\n"
                     "uptime %ld\n"
                     "bandwidth %d %d %d\n"
-                    "%s%s%s%s"
+                    "%s%s"
                     "onion-key\n%s"
                     "signing-key\n%s"
+                    "%s%s"
                     "%s%s%s%s",
     router->nickname,
     address,
     router->or_port,
     decide_to_advertise_dirport(options, router->dir_port),
+    ed_cert_line ? ed_cert_line : "",
     extra_or_address ? extra_or_address : "",
     router->platform,
     published,
@@ -2402,15 +2593,15 @@ router_dump_router_to_string(routerinfo_t *router,
     (int) router->bandwidthrate,
     (int) router->bandwidthburst,
     (int) router->bandwidthcapacity,
-    has_extra_info_digest ? "extra-info-digest " : "",
-    has_extra_info_digest ? extra_info_digest : "",
-    has_extra_info_digest ? "\n" : "",
+    extra_info_line ? extra_info_line : "",
     (options->DownloadExtraInfo || options->V3AuthoritativeDir) ?
                          "caches-extra-info\n" : "",
     onion_pkey, identity_pkey,
+    rsa_tap_cc_line ? rsa_tap_cc_line : "",
+    ntor_cc_line ? ntor_cc_line : "",
     family_line,
     we_are_hibernating() ? "hibernating 1\n" : "",
-    options->HidServDirectoryV2 ? "hidden-service-dir\n" : "",
+    "hidden-service-dir\n",
     options->AllowSingleHopExits ? "allow-single-hop-exits\n" : "");
 
   if (options->ContactInfo && strlen(options->ContactInfo)) {
@@ -2424,7 +2615,7 @@ router_dump_router_to_string(routerinfo_t *router,
     char kbuf[128];
     base64_encode(kbuf, sizeof(kbuf),
                   (const char *)router->onion_curve25519_pkey->public_key,
-                  CURVE25519_PUBKEY_LEN);
+                  CURVE25519_PUBKEY_LEN, BASE64_ENCODE_MULTILINE);
     smartlist_add_asprintf(chunks, "ntor-onion-key %s", kbuf);
   }
 
@@ -2450,7 +2641,24 @@ router_dump_router_to_string(routerinfo_t *router,
     tor_free(p6);
   }
 
-  /* Sign the descriptor */
+  /* Sign the descriptor with Ed25519 */
+  if (emit_ed_sigs)  {
+    smartlist_add(chunks, tor_strdup("router-sig-ed25519 "));
+    crypto_digest_smartlist_prefix(digest, DIGEST256_LEN,
+                                   ED_DESC_SIGNATURE_PREFIX,
+                                   chunks, "", DIGEST_SHA256);
+    ed25519_signature_t sig;
+    char buf[ED25519_SIG_BASE64_LEN+1];
+    if (ed25519_sign(&sig, (const uint8_t*)digest, DIGEST256_LEN,
+                     signing_keypair) < 0)
+      goto err;
+    if (ed25519_signature_to_base64(buf, &sig) < 0)
+      goto err;
+
+    smartlist_add_asprintf(chunks, "%s\n", buf);
+  }
+
+  /* Sign the descriptor with RSA */
   smartlist_add(chunks, tor_strdup("router-signature\n"));
 
   crypto_digest_smartlist(digest, DIGEST_LEN, chunks, "", DIGEST_SHA1);
@@ -2502,6 +2710,10 @@ router_dump_router_to_string(routerinfo_t *router,
   tor_free(onion_pkey);
   tor_free(identity_pkey);
   tor_free(extra_or_address);
+  tor_free(ed_cert_line);
+  tor_free(rsa_tap_cc_line);
+  tor_free(ntor_cc_line);
+  tor_free(extra_info_line);
 
   return output;
 }
@@ -2645,7 +2857,8 @@ load_stats_file(const char *filename, const char *end_line, time_t now,
  * success, negative on failure. */
 int
 extrainfo_dump_to_string(char **s_out, extrainfo_t *extrainfo,
-                         crypto_pk_t *ident_key)
+                         crypto_pk_t *ident_key,
+                         const ed25519_keypair_t *signing_keypair)
 {
   const or_options_t *options = get_options();
   char identity[HEX_DIGEST_LEN+1];
@@ -2655,20 +2868,46 @@ extrainfo_dump_to_string(char **s_out, extrainfo_t *extrainfo,
   int result;
   static int write_stats_to_extrainfo = 1;
   char sig[DIROBJ_MAX_SIG_LEN+1];
-  char *s, *pre, *contents, *cp, *s_dup = NULL;
+  char *s = NULL, *pre, *contents, *cp, *s_dup = NULL;
   time_t now = time(NULL);
   smartlist_t *chunks = smartlist_new();
   extrainfo_t *ei_tmp = NULL;
+  const int emit_ed_sigs = signing_keypair && extrainfo->signing_key_cert;
+  char *ed_cert_line = NULL;
 
   base16_encode(identity, sizeof(identity),
                 extrainfo->cache_info.identity_digest, DIGEST_LEN);
   format_iso_time(published, extrainfo->cache_info.published_on);
   bandwidth_usage = rep_hist_get_bandwidth_lines();
+  if (emit_ed_sigs) {
+    if (!extrainfo->signing_key_cert->signing_key_included ||
+        !ed25519_pubkey_eq(&extrainfo->signing_key_cert->signed_key,
+                           &signing_keypair->pubkey)) {
+      log_warn(LD_BUG, "Tried to sign a extrainfo descriptor with a "
+               "mismatched ed25519 key chain %d",
+               extrainfo->signing_key_cert->signing_key_included);
+      goto err;
+    }
+    char ed_cert_base64[256];
+    if (base64_encode(ed_cert_base64, sizeof(ed_cert_base64),
+                      (const char*)extrainfo->signing_key_cert->encoded,
+                      extrainfo->signing_key_cert->encoded_len,
+                      BASE64_ENCODE_MULTILINE) < 0) {
+      log_err(LD_BUG,"Couldn't base64-encode signing key certificate!");
+      goto err;
+    }
+    tor_asprintf(&ed_cert_line, "identity-ed25519\n"
+                 "-----BEGIN ED25519 CERT-----\n"
+                 "%s"
+                 "-----END ED25519 CERT-----\n", ed_cert_base64);
+  } else {
+    ed_cert_line = tor_strdup("");
+  }
 
-  tor_asprintf(&pre, "extra-info %s %s\npublished %s\n%s",
+  tor_asprintf(&pre, "extra-info %s %s\n%spublished %s\n%s",
                extrainfo->nickname, identity,
+               ed_cert_line,
                published, bandwidth_usage);
-  tor_free(bandwidth_usage);
   smartlist_add(chunks, pre);
 
   if (geoip_is_loaded(AF_INET))
@@ -2726,6 +2965,23 @@ extrainfo_dump_to_string(char **s_out, extrainfo_t *extrainfo,
     }
   }
 
+  if (emit_ed_sigs) {
+    char digest[DIGEST256_LEN];
+    smartlist_add(chunks, tor_strdup("router-sig-ed25519 "));
+    crypto_digest_smartlist_prefix(digest, DIGEST256_LEN,
+                                   ED_DESC_SIGNATURE_PREFIX,
+                                   chunks, "", DIGEST_SHA256);
+    ed25519_signature_t sig;
+    char buf[ED25519_SIG_BASE64_LEN+1];
+    if (ed25519_sign(&sig, (const uint8_t*)digest, DIGEST256_LEN,
+                     signing_keypair) < 0)
+      goto err;
+    if (ed25519_signature_to_base64(buf, &sig) < 0)
+      goto err;
+
+    smartlist_add_asprintf(chunks, "%s\n", buf);
+  }
+
   smartlist_add(chunks, tor_strdup("router-signature\n"));
   s = smartlist_join_strings(chunks, "", 0, NULL);
 
@@ -2774,7 +3030,8 @@ extrainfo_dump_to_string(char **s_out, extrainfo_t *extrainfo,
                            "adding statistics to this or any future "
                            "extra-info descriptors.");
       write_stats_to_extrainfo = 0;
-      result = extrainfo_dump_to_string(s_out, extrainfo, ident_key);
+      result = extrainfo_dump_to_string(s_out, extrainfo, ident_key,
+                                        signing_keypair);
       goto done;
     } else {
       log_warn(LD_BUG, "We just generated an extrainfo descriptor we "
@@ -2796,7 +3053,9 @@ extrainfo_dump_to_string(char **s_out, extrainfo_t *extrainfo,
   SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
   smartlist_free(chunks);
   tor_free(s_dup);
+  tor_free(ed_cert_line);
   extrainfo_free(ei_tmp);
+  tor_free(bandwidth_usage);
 
   return result;
 }

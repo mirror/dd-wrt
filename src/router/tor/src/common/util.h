@@ -45,6 +45,13 @@
 #error "Sorry; we don't support building with NDEBUG."
 #endif
 
+/* Don't use assertions during coverage. It leads to tons of unreached
+ * branches which in reality are only assertions we didn't hit. */
+#ifdef TOR_COVERAGE
+#define tor_assert(a) STMT_BEGIN                                        \
+  (void)(a);                                                            \
+  STMT_END
+#else
 /** Like assert(3), but send assertion failures to the log as well as to
  * stderr. */
 #define tor_assert(expr) STMT_BEGIN                                     \
@@ -52,6 +59,7 @@
     tor_assertion_failed_(SHORT_FILE__, __LINE__, __func__, #expr);     \
     abort();                                                            \
   } STMT_END
+#endif
 
 void tor_assertion_failed_(const char *fname, unsigned int line,
                            const char *func, const char *expr);
@@ -209,7 +217,6 @@ int strcasecmpstart(const char *s1, const char *s2) ATTR_NONNULL((1,2));
 int strcmpend(const char *s1, const char *s2) ATTR_NONNULL((1,2));
 int strcasecmpend(const char *s1, const char *s2) ATTR_NONNULL((1,2));
 int fast_memcmpstart(const void *mem, size_t memlen, const char *prefix);
-void tor_strclear(char *s);
 
 void tor_strstrip(char *s, const char *strip) ATTR_NONNULL((1,2));
 long tor_parse_long(const char *s, int base, long min,
@@ -256,10 +263,6 @@ void smartlist_add_asprintf(struct smartlist_t *sl, const char *pattern, ...)
 void smartlist_add_vasprintf(struct smartlist_t *sl, const char *pattern,
                              va_list args)
   CHECK_PRINTF(2, 0);
-
-int hex_decode_digit(char c);
-void base16_encode(char *dest, size_t destlen, const char *src, size_t srclen);
-int base16_decode(char *dest, size_t destlen, const char *src, size_t srclen);
 
 /* Time helpers */
 long tv_udiff(const struct timeval *start, const struct timeval *end);
@@ -411,7 +414,7 @@ int path_is_relative(const char *filename);
 /* Process helpers */
 void start_daemon(void);
 void finish_daemon(const char *desired_cwd);
-void write_pidfile(char *filename);
+void write_pidfile(const char *filename);
 
 /* Port forwarding */
 void tor_check_port_forwarding(const char *filename,
@@ -467,12 +470,15 @@ struct process_handle_t {
   /** One of the PROCESS_STATUS_* values */
   int status;
 #ifdef _WIN32
+  HANDLE stdin_pipe;
   HANDLE stdout_pipe;
   HANDLE stderr_pipe;
   PROCESS_INFORMATION pid;
 #else
+  int stdin_pipe;
   int stdout_pipe;
   int stderr_pipe;
+  FILE *stdin_handle;
   FILE *stdout_handle;
   FILE *stderr_handle;
   pid_t pid;
@@ -562,8 +568,6 @@ STATIC int format_helper_exit_status(unsigned char child_state,
 #endif
 
 #endif
-
-const char *libor_get_digests(void);
 
 #define ARRAY_LENGTH(x) ((sizeof(x)) / sizeof(x[0]))
 

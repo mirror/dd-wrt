@@ -1167,7 +1167,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="ControlPort"></a> <strong>ControlPort</strong> <em>PORT</em>|<strong>unix:</strong><em>path</em>|<strong>auto</strong>
+<a id="ControlPort"></a> <strong>ControlPort</strong> <em>PORT</em>|<strong>unix:</strong><em>path</em>|<strong>auto</strong> [<em>flags</em>]
 </dt>
 <dd>
 <p>
@@ -1180,7 +1180,33 @@ option name with a forward slash.</p></div>
     method is sufficient to authenticate to Tor.) This
     option is required for many Tor controllers; most use the value of 9051.
     Set it to "auto" to have Tor pick a port for you. (Default: 0)
+<br />
 </p>
+</dd>
+<dt class="hdlist1">
+Recognized flags are
+</dt>
+<dd>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<strong>GroupWritable</strong>
+</dt>
+<dd>
+<p>
+        Unix domain sockets only: makes the socket get created as
+        group-writable.
+</p>
+</dd>
+<dt class="hdlist1">
+<strong>WorldWritable</strong>
+</dt>
+<dd>
+<p>
+        Unix domain sockets only: makes the socket get created as
+        world-writable.
+</p>
+</dd>
+</dl></div>
 </dd>
 <dt class="hdlist1">
 <a id="ControlListenAddress"></a> <strong>ControlListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
@@ -1331,17 +1357,6 @@ option name with a forward slash.</p></div>
     directories, the directory authorities also work as fallbacks. They are
     chosen with their regular weights, multiplied by this number, which
     should be 1.0 or less. (Default: 1.0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DynamicDHGroups"></a> <strong>DynamicDHGroups</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    If this option is set to 1, when running as a server, generate our
-    own Diffie-Hellman group instead of using the one from Apache&#8217;s mod_ssl.
-    This option may help circumvent censorship based on static
-    Diffie-Hellman parameters. (Default: 0)
 </p>
 </dd>
 </dl></div>
@@ -2252,7 +2267,9 @@ Using a wildcard to match only part of a string (as in *ample.com) is
     Feel free to reuse a circuit that was first used at most NUM seconds ago,
     but never attach a new stream to a circuit that is too old.  For hidden
     services, this applies to the <em>last</em> time a circuit was used, not the
-    first.  (Default: 10 minutes)
+    first. Circuits with streams constructed with SOCKS authentication via
+    SocksPorts that have <strong>KeepAliveIsolateSOCKSAuth</strong> ignore this value.
+    (Default: 10 minutes)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2300,6 +2317,13 @@ Using a wildcard to match only part of a string (as in *ample.com) is
     connections via SOCKS. Set it to "auto" to have Tor pick a port for
     you. This directive can be specified multiple times to bind
     to multiple addresses/ports. (Default: 9050)<br />
+<br />
+        NOTE: Although this option allows you to specify an IP address
+        other than localhost, you should do so only with extreme caution.
+        The SOCKS protocol is unencrypted and (as we use it)
+        unauthenticated, so exposing it in this way could leak your
+        information to anybody watching your network, and allow anybody
+        to use your computer as an open proxy.<br />
 <br />
     The <em>isolation flags</em> arguments give Tor rules for which streams
     received on this SOCKSPort are allowed to share circuits with one
@@ -2355,6 +2379,15 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
+<strong>KeepAliveIsolateSOCKSAuth</strong>
+</dt>
+<dd>
+<p>
+        If <strong>IsolateSOCKSAuth</strong> is enabled, keep alive circuits that have
+        streams with SOCKS authentication set indefinitely.
+</p>
+</dd>
+<dt class="hdlist1">
 <strong>SessionGroup=</strong><em>INT</em>
 </dt>
 <dd>
@@ -2402,14 +2435,6 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 <p>
         Tells exits that, if a host has both an IPv4 and an IPv6 address,
         we would prefer to connect to it via IPv6. (IPv4 is the default.)<br />
-<br />
-        NOTE: Although this option allows you to specify an IP address
-        other than localhost, you should do so only with extreme caution.
-        The SOCKS protocol is unencrypted and (as we use it)
-        unauthenticated, so exposing it in this way could leak your
-        information to anybody watching your network, and allow anybody
-        to use your computer as an open proxy.<br />
-<br />
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2428,6 +2453,24 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 <p>
         Tells the client to remember IPv6 DNS answers we receive from exit
         nodes via this connection.
+</p>
+</dd>
+<dt class="hdlist1">
+<strong>GroupWritable</strong>
+</dt>
+<dd>
+<p>
+        Unix domain sockets only: makes the socket get created as
+        group-writable.
+</p>
+</dd>
+<dt class="hdlist1">
+<strong>WorldWritable</strong>
+</dt>
+<dd>
+<p>
+        Unix domain sockets only: makes the socket get created as
+        world-writable.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2933,7 +2976,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 <p>
     If true, Tor downloads and caches "extra-info" documents. These documents
     contain information about servers other than the information in their
-    regular router descriptors. Tor does not use this information for anything
+    regular server descriptors. Tor does not use this information for anything
     itself; to save bandwidth, leave this option turned off. (Default: 0)
 </p>
 </dd>
@@ -3196,8 +3239,8 @@ is non-zero):</p></div>
 <p>
     Sets the relay to act as a "bridge" with respect to relaying connections
     from bridge users to the Tor network. It mainly causes Tor to publish a
-    server descriptor to the bridge database, rather than publishing a relay
-    descriptor to the public directory authorities.
+    server descriptor to the bridge database, rather than
+    to the public directory authorities.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3238,22 +3281,41 @@ is non-zero):</p></div>
 <dd>
 <p>
     Set an exit policy for this server. Each policy is of the form
-    "<strong>accept</strong>|<strong>reject</strong> <em>ADDR</em>[/<em>MASK</em>][:<em>PORT</em>]". If /<em>MASK</em> is
+    "<strong>accept[6]</strong>|<strong>reject[6]</strong>  <em>ADDR</em>[/<em>MASK</em>][:<em>PORT</em>]". If /<em>MASK</em> is
     omitted then this policy just applies to the host given. Instead of giving
-    a host or network you can also use "*" to denote the universe (0.0.0.0/0).
+    a host or network you can also use "*" to denote the universe (0.0.0.0/0
+    and ::/128), or *4 to denote all IPv4 addresses, and *6 to denote all
+    IPv6 addresses.
     <em>PORT</em> can be a single port number, an interval of ports
     "<em>FROM_PORT</em>-<em>TO_PORT</em>", or "*". If <em>PORT</em> is omitted, that means
     "*".<br />
 <br />
     For example, "accept 18.7.22.69:*,reject 18.0.0.0/8:*,accept *:*" would
-    reject any traffic destined for MIT except for web.mit.edu, and accept
-    anything else.<br />
+    reject any IPv4 traffic destined for MIT except for web.mit.edu, and accept
+    any other IPv4 or IPv6 traffic.<br />
 <br />
-    To specify all internal and link-local networks (including 0.0.0.0/8,
-    169.254.0.0/16,    127.0.0.0/8,    192.168.0.0/16, 10.0.0.0/8, and
-    172.16.0.0/12), you can use the "private" alias instead of an address.
-    These addresses are rejected by default (at the beginning of your exit
-    policy), along with your public IP address, unless you set the
+    Tor also allows IPv6 exit policy entries. For instance, "reject6 [FC00::]/7:*"
+    rejects all destinations that share 7 most significant bit prefix with
+    address FC00::. Respectively, "accept6 [C000::]/3:*" accepts all destinations
+    that share 3 most significant bit prefix with address C000::.<br />
+<br />
+    accept6 and reject6 only produce IPv6 exit policy entries. Using an IPv4
+    address with accept6 or reject6 is ignored and generates a warning.
+    accept/reject allows either IPv4 or IPv6 addresses. Use *4 as an IPv4
+    wildcard address, and *6 as an IPv6 wildcard address. accept/reject *
+    expands to matching IPv4 and IPv6 wildcard address rules.<br />
+<br />
+    To specify all IPv4 and IPv6 internal and link-local networks (including
+    0.0.0.0/8, 169.254.0.0/16, 127.0.0.0/8, 192.168.0.0/16, 10.0.0.0/8,
+    172.16.0.0/12, [::]/8, [FC00::]/7, [FE80::]/10, [FEC0::]/10, [FF00::]/8,
+    and [::]/127), you can use the "private" alias instead of an address.
+    ("private" always produces rules for IPv4 and IPv6 addresses, even when
+    used with accept6/reject6.)<br />
+<br />
+    Private addresses are rejected by default (at the beginning of your exit
+    policy), along with the configured primary public IPv4 and IPv6 addresses,
+    and any public IPv4 and IPv6 addresses on any interface on the relay.
+    These private addresses are rejected unless you set the
     ExitPolicyRejectPrivate config option to 0. For example, once you&#8217;ve done
     that, you could allow HTTP to 127.0.0.1 and block all other connections to
     internal networks with "accept 127.0.0.1:80,reject private:*", though that
@@ -3261,18 +3323,17 @@ is non-zero):</p></div>
     public (external) IP address. See RFC 1918 and RFC 3330 for more details
     about internal and reserved IP address space.<br />
 <br />
-    Tor also allow IPv6 exit policy entries. For instance, "reject6 [FC00::]/7:*"
-    rejects all destinations that share 7 most significant bit prefix with
-    address FC00::. Respectively, "accept6 [C000::]/3:*" accepts all destinations
-    that share 3 most significant bit prefix with address C000::.<br />
-<br />
     This directive can be specified multiple times so you don&#8217;t have to put it
     all on one line.<br />
 <br />
     Policies are considered first to last, and the first match wins. If you
-    want to _replace_ the default exit policy, end your exit policy with
-    either a reject *:* or an accept *:*. Otherwise, you&#8217;re _augmenting_
-    (prepending to) the default exit policy. The default exit policy is:<br />
+    want to allow the same ports on IPv4 and IPv6, write your rules using
+    accept/reject *. If you want to allow different ports on IPv4 and IPv6,
+    write your IPv6 rules using accept6/reject6 *6, and your IPv4 rules using
+    accept/reject *4. If you want to _replace_ the default exit policy, end
+    your exit policy with either a reject *:* or an accept *:*. Otherwise,
+    you&#8217;re _augmenting_ (prepending to) the default exit policy. The default
+    exit policy is:<br />
 </p>
 <div class="literalblock">
 <div class="content">
@@ -3288,14 +3349,22 @@ reject *:6699
 reject *:6881-6999
 accept *:*</code></pre>
 </div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Since the default exit policy uses accept/reject *, it applies to both
+IPv4 and IPv6 addresses.</code></pre>
+</div></div>
 </dd>
 <dt class="hdlist1">
 <a id="ExitPolicyRejectPrivate"></a> <strong>ExitPolicyRejectPrivate</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
-    Reject all private (local) networks, along with your own public IP address,
-    at the beginning of your exit policy. See above entry on ExitPolicy.
+    Reject all private (local) networks, along with your own configured public
+    IPv4 and IPv6 addresses, at the beginning of your exit policy. Also reject
+    any public IPv4 and IPv6 addresses on any interface on the relay. (If
+    IPv6Exit is not set, all IPv6 addresses will be rejected anyway.)
+    See above entry on ExitPolicy.
     (Default: 1)
 </p>
 </dd>
@@ -3669,8 +3738,14 @@ that it supports NoAdvertise and explicit addresses.</code></pre>
 </dt>
 <dd>
 <p>
-    When this option is enabled, Tor writes statistics on the mean time that
-    cells spend in circuit queues to disk every 24 hours. (Default: 0)
+    Relays only.
+    When this option is enabled, Tor collects statistics about cell
+    processing (i.e. mean time a cell is spending in a queue, mean
+    number of cells in a queue and mean number of processed cells per
+    circuit) and writes them into disk every 24 hours. Onion router
+    operators may use the statistics for performance monitoring.
+    If ExtraInfoStatistics is enabled, it will published as part of
+    extra-info document. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3678,9 +3753,13 @@ that it supports NoAdvertise and explicit addresses.</code></pre>
 </dt>
 <dd>
 <p>
+    Relays and bridges only.
     When this option is enabled, a Tor directory writes statistics on the
     number and response time of network status requests to disk every 24
-    hours. (Default: 1)
+    hours. Enables relay and bridge operators to monitor how much their
+    server is being used by clients to learn about Tor network.
+    If ExtraInfoStatistics is enabled, it will published as part of
+    extra-info document. (Default: 1)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3688,8 +3767,13 @@ that it supports NoAdvertise and explicit addresses.</code></pre>
 </dt>
 <dd>
 <p>
+    Relays only.
     When this option is enabled, Tor writes statistics on the number of
-    directly connecting clients to disk every 24 hours. (Default: 0)
+    directly connecting clients to disk every 24 hours. Enables relay
+    operators to monitor how much inbound traffic that originates from
+    Tor clients passes through their server to go further down the
+    Tor network. If ExtraInfoStatistics is enabled, it will be published
+    as part of extra-info document. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3697,8 +3781,13 @@ that it supports NoAdvertise and explicit addresses.</code></pre>
 </dt>
 <dd>
 <p>
-    When this option is enabled, Tor writes statistics on the number of relayed
-    bytes and opened stream per exit port to disk every 24 hours. (Default: 0)
+    Exit relays only.
+    When this option is enabled, Tor writes statistics on the number of
+    relayed bytes and opened stream per exit port to disk every 24 hours.
+    Enables exit relay operators to measure and monitor amounts of traffic
+    that leaves Tor network through their exit node. If ExtraInfoStatistics
+    is enabled, it will be published as part of extra-info document.
+    (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3706,8 +3795,13 @@ that it supports NoAdvertise and explicit addresses.</code></pre>
 </dt>
 <dd>
 <p>
-    When this option is enabled, Tor writes statistics on the bidirectional use
-    of connections to disk every 24 hours. (Default: 0)
+    Relays only.
+    When this option is enabled, Tor writes statistics on the amounts of
+    traffic it passes between itself and other relays to disk every 24
+    hours. Enables relay operators to monitor how much their relay is
+    being used as middle node in the circuit. If ExtraInfoStatistics is
+    enabled, it will be published as part of extra-info document.
+    (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3715,11 +3809,12 @@ that it supports NoAdvertise and explicit addresses.</code></pre>
 </dt>
 <dd>
 <p>
+    Relays only.
     When this option is enabled, a Tor relay writes obfuscated
     statistics on its role as hidden-service directory, introduction
     point, or rendezvous point to disk every 24 hours. If
     ExtraInfoStatistics is also enabled, these statistics are further
-    published to the directory authorities. (Default: 0)
+    published to the directory authorities. (Default: 1)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3755,6 +3850,28 @@ that it supports NoAdvertise and explicit addresses.</code></pre>
     affects some queues, so the actual process size will be larger than
     this.  If this option is set to 0, Tor will try to pick a reasonable
     default based on your system&#8217;s physical memory.  (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="SigningKeyLifetime"></a> <strong>SigningKeyLifetime</strong> <em>N</em> <strong>days</strong>|<strong>weeks</strong>|<strong>months</strong>
+</dt>
+<dd>
+<p>
+    For how long should each Ed25519 signing key be valid?  Tor uses a
+    permanent master identity key that can be kept offline, and periodically
+    generates new "signing" keys that it uses online.  This option
+    configures their lifetime.
+    (Default: 30 days)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="OfflineMasterKey"></a> <strong>OfflineMasterKey</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If non-zero, the Tor relay will never generate or load its master secret
+    key.  Instead, you&#8217;ll have to use "tor --keygen" to manage the master
+    secret key. (Default: 0)
 </p>
 </dd>
 </dl></div>
@@ -3917,7 +4034,7 @@ on the public Tor network.</p></div>
 <dd>
 <p>
     When this option is set in addition to <strong>AuthoritativeDirectory</strong>, Tor
-    accepts and serves router descriptors, but it caches and serves the main
+    accepts and serves server descriptors, but it caches and serves the main
     networkstatus documents rather than generating its own. (Default: 0)
 </p>
 </dd>
@@ -3956,9 +4073,9 @@ on the public Tor network.</p></div>
 </dt>
 <dd>
 <p>
-    If set to 1, Tor will accept router descriptors with arbitrary "Address"
+    If set to 1, Tor will accept server descriptors with arbitrary "Address"
     elements. Otherwise, if the address is not an IP address or is a private IP
-    address, it will reject the router descriptor. (Default: 0)
+    address, it will reject the server descriptor. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4059,6 +4176,18 @@ on the public Tor network.</p></div>
     Authoritative directories only. If non-zero, this advertised capacity
     or more is always sufficient to satisfy the bandwidth requirement
     for the Guard flag. (Default: 250 KBytes)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AuthDirPinKeys"></a> <strong>AuthDirPinKeys</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    Authoritative directories only. If non-zero, do not allow any relay to
+    publish a descriptor if any other relay has reserved its &lt;Ed25519,RSA&gt;
+    identity keypair. In all cases, Tor records every keypair it accepts
+    in a journal if it is new, or if it differs from the most recently
+    accepted pinning for one of the keys it contains. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4216,8 +4345,8 @@ on the public Tor network.</p></div>
     option multiple times; each time applies to the service using the most
     recent HiddenServiceDir. By default, this option maps the virtual port to
     the same port on 127.0.0.1 over TCP. You may override the target port,
-    address, or both by specifying a target of addr, port, or addr:port.
-    (You can specify an IPv6 target as [addr]:port.)
+    address, or both by specifying a target of addr, port, addr:port, or
+    <strong>unix:</strong><em>path</em>.  (You can specify an IPv6 target as [addr]:port.)
     You may also have multiple lines with  the same VIRTPORT: when a user
     connects to that VIRTPORT, one of the TARGETs from those lines will be
     chosen at random.
@@ -4272,6 +4401,26 @@ on the public Tor network.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="HiddenServiceMaxStreams"></a> <strong>HiddenServiceMaxStreams</strong> <em>N</em>
+</dt>
+<dd>
+<p>
+   The maximum number of simultaneous streams (connections) per rendezvous
+   circuit. (Setting this to 0 will allow an unlimited number of simultanous
+   streams.) (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HiddenServiceMaxStreamsCloseCircuit"></a> <strong>HiddenServiceMaxStreamsCloseCircuit</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+   If set to 1, then exceeding <strong>HiddenServiceMaxStreams</strong> will cause the
+   offending rendezvous circuit to be torn down, as opposed to stream creation
+   requests that exceed the limit being silently ignored. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="RendPostPeriod"></a> <strong>RendPostPeriod</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
 </dt>
 <dd>
@@ -4290,6 +4439,15 @@ on the public Tor network.</p></div>
     hidden service directory and hostname file. If the option is set to 0,
     only owner is able to read the hidden service directory. (Default: 0)
     Has no effect on Windows.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HiddenServiceNumIntroductionPoints"></a> <strong>HiddenServiceNumIntroductionPoints</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    Number of introduction points the hidden service will have. You can&#8217;t
+    have more than 10. (Default: 3)
 </p>
 </dd>
 </dl></div>
@@ -4403,7 +4561,7 @@ TestingEnableTbEmptyEvent 1</code></pre>
 </dt>
 <dd>
 <p>
-    Clients try downloading router descriptors from directory caches after this
+    Clients try downloading server descriptors from directory caches after this
     time. Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default:
     10 minutes)
 </p>
@@ -4501,7 +4659,7 @@ TestingEnableTbEmptyEvent 1</code></pre>
 </dt>
 <dd>
 <p>
-    Try this often to download a router descriptor before giving up.
+    Try this often to download a server descriptor before giving up.
     Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 8)
 </p>
 </dd>
@@ -4539,6 +4697,19 @@ TestingEnableTbEmptyEvent 1</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="TestingDirAuthVoteExitIsStrict"></a> <strong>TestingDirAuthVoteExitIsStrict</strong> <strong>0</strong>|<strong>1</strong> 
+</dt>
+<dd>
+<p>
+    If True (1), a node will never receive the Exit flag unless it is specified
+    in the <strong>TestingDirAuthVoteExit</strong> list, regardless of its uptime, bandwidth,
+    or exit policy.
+<br />
+    In order for this option to have any effect, <strong>TestingTorNetwork</strong>
+    has to be set.
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="TestingDirAuthVoteGuard"></a> <strong>TestingDirAuthVoteGuard</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
@@ -4553,17 +4724,41 @@ TestingEnableTbEmptyEvent 1</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="TestingDirAuthVoteGuardIsStrict"></a> <strong>TestingDirAuthVoteGuardIsStrict</strong> <strong>0</strong>|<strong>1</strong> 
+</dt>
+<dd>
+<p>
+    If True (1), a node will never receive the Guard flag unless it is specified
+    in the <strong>TestingDirAuthVoteGuard</strong> list, regardless of its uptime and bandwidth.
+<br />
+    In order for this option to have any effect, <strong>TestingTorNetwork</strong>
+    has to be set.
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="TestingDirAuthVoteHSDir"></a> <strong>TestingDirAuthVoteHSDir</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
     A list of identity fingerprints and country codes and
     address patterns of nodes to vote HSDir for regardless of their
-    uptime and ORPort connectivity. See the <strong>ExcludeNodes</strong> option for more
+    uptime and DirPort. See the <strong>ExcludeNodes</strong> option for more
     information on how to specify nodes.
 <br />
     In order for this option to have any effect, <strong>TestingTorNetwork</strong>
     and <strong>VoteOnHidServDirectoriesV2</strong> both have to be set.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingDirAuthVoteHSDirIsStrict"></a> <strong>TestingDirAuthVoteHSDirIsStrict</strong> <strong>0</strong>|<strong>1</strong> 
+</dt>
+<dd>
+<p>
+    If True (1), a node will never receive the HSDir flag unless it is specified
+    in the <strong>TestingDirAuthVoteHSDir</strong> list, regardless of its uptime and DirPort.
+<br />
+    In order for this option to have any effect, <strong>TestingTorNetwork</strong>
+    has to be set.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4604,6 +4799,42 @@ TestingEnableTbEmptyEvent 1</code></pre>
     Sets a lower-bound for assigning an exit flag when running as an
     authority on a testing network. Overrides the usual default lower bound
     of 4 KB. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingLinkCertLifetime"></a> <strong>TestingLinkCertifetime</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>|<strong>months</strong>
+</dt>
+<dd>
+<p>
+    Overrides the default lifetime for the certificates used to authenticate
+    our X509 link cert with our ed25519 signing key.
+    (Default: 2 days)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingAuthKeyLifetime"></a> <strong>TestingAuthKeyLifetime</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>|<strong>months</strong>
+</dt>
+<dd>
+<p>
+    Overrides the default lifetime for a signing Ed25519 TLS Link authentication
+    key.
+    (Default: 2 days)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingLinkKeySlop"></a> <strong>TestingLinkKeySlop</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dt class="hdlist1">
+<a id="TestingAuthKeySlop"></a> <strong>TestingAuthKeySlop</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dt class="hdlist1">
+<a id="TestingSigningKeySlop"></a> <strong>TestingSigningKeySlop</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    How early before the official expiration of a an Ed25519 signing key do
+    we replace it and issue a new key?
+    (Default: 3 hours for link and auth; 1 day for signing.)
 </p>
 </dd>
 </dl></div>
@@ -4805,7 +5036,7 @@ What version of Tor generated the state file
 </li>
 <li>
 <p>
-A short history of bandwidth usage, as produced in the router
+A short history of bandwidth usage, as produced in the server
             descriptors.
 </p>
 </li>
@@ -4902,7 +5133,7 @@ A short history of bandwidth usage, as produced in the router
 </dt>
 <dd>
 <p>
-    Onion router descriptors that Tor was unable to parse are dumped to this
+    Onion server descriptors that Tor was unable to parse are dumped to this
     file. Only used for debugging.
 </p>
 </dd>
@@ -5033,7 +5264,7 @@ A short history of bandwidth usage, as produced in the router
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-03-11 13:32:49 EDT
+Last updated 2015-12-08 12:35:17 EST
 </div>
 </div>
 </body>

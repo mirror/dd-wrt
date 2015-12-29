@@ -102,8 +102,7 @@ connection_mark_unattached_ap_,(entry_connection_t *conn, int endreason,
    * but we should fix it someday anyway. */
   if ((edge_conn->on_circuit != NULL || edge_conn->edge_has_sent_end) &&
       connection_edge_is_rendezvous_stream(edge_conn)) {
-    rend_client_note_connection_attempt_ended(
-                                    edge_conn->rend_data->onion_address);
+    rend_client_note_connection_attempt_ended(edge_conn->rend_data);
   }
 
   if (base_conn->marked_for_close) {
@@ -1499,61 +1498,76 @@ connection_ap_handshake_rewrite_and_attach(entry_connection_t *conn,
       return -1;
     }
 
+    /* Look up if we have client authorization configured for this hidden
+     * service.  If we do, associate it with the rend_data. */
+    rend_service_authorization_t *client_auth =
+      rend_client_lookup_service_authorization(socks->address);
+
+    const char *cookie = NULL;
+    rend_auth_type_t auth_type = REND_NO_AUTH;
+    if (client_auth) {
+      log_info(LD_REND, "Using previously configured client authorization "
+               "for hidden service request.");
+      auth_type = client_auth->auth_type;
+      cookie = client_auth->descriptor_cookie;
+    }
+
     /* Fill in the rend_data field so we can start doing a connection to
      * a hidden service. */
     rend_data_t *rend_data = ENTRY_TO_EDGE_CONN(conn)->rend_data =
-      tor_malloc_zero(sizeof(rend_data_t));
-    strlcpy(rend_data->onion_address, socks->address,
-            sizeof(rend_data->onion_address));
+      rend_data_client_create(socks->address, NULL, cookie, auth_type);
+    if (rend_data == NULL) {
+      return -1;
+    }
     log_info(LD_REND,"Got a hidden service request for ID '%s'",
              safe_str_client(rend_data->onion_address));
 
-    /* see if we already have a hidden service descriptor cached for this
-     * address. */
+    /* Lookup the given onion address. If invalid, stop right now else we
+     * might have it in the cache or not, it will be tested later on. */
+    unsigned int refetch_desc = 0;
     rend_cache_entry_t *entry = NULL;
     const int rend_cache_lookup_result =
       rend_cache_lookup_entry(rend_data->onion_address, -1, &entry);
     if (rend_cache_lookup_result < 0) {
-      /* We should already have rejected this address! */
-      log_warn(LD_BUG,"Invalid service name '%s'",
-               safe_str_client(rend_data->onion_address));
-      connection_mark_unattached_ap(conn, END_STREAM_REASON_TORPROTOCOL);
-      return -1;
+      switch (-rend_cache_lookup_result) {
+      case EINVAL:
+        /* We should already have rejected this address! */
+        log_warn(LD_BUG,"Invalid service name '%s'",
+            safe_str_client(rend_data->onion_address));
+        connection_mark_unattached_ap(conn, END_STREAM_REASON_TORPROTOCOL);
+        return -1;
+      case ENOENT:
+        refetch_desc = 1;
+        break;
+      default:
+        log_warn(LD_BUG, "Unknown cache lookup error %d",
+            rend_cache_lookup_result);
+        return -1;
+      }
     }
 
     /* Help predict this next time. We're not sure if it will need
      * a stable circuit yet, but we know we'll need *something*. */
     rep_hist_note_used_internal(now, 0, 1);
 
-    /* Look up if we have client authorization configured for this hidden
-     * service.  If we do, associate it with the rend_data. */
-    rend_service_authorization_t *client_auth =
-      rend_client_lookup_service_authorization(
-                                          rend_data->onion_address);
-    if (client_auth) {
-      log_info(LD_REND, "Using previously configured client authorization "
-                        "for hidden service request.");
-      memcpy(rend_data->descriptor_cookie,
-             client_auth->descriptor_cookie, REND_DESC_COOKIE_LEN);
-      rend_data->auth_type = client_auth->auth_type;
-    }
-
-    /* Now, we either launch an attempt to connect to the hidden service,
-     * or we launch an attempt to look up its descriptor, depending on
-     * whether we had the descriptor. */
-    if (rend_cache_lookup_result == 0) {
+    /* Now we have a descriptor but is it usable or not? If not, refetch.
+     * Also, a fetch could have been requested if the onion address was not
+     * found in the cache previously. */
+    if (refetch_desc || !rend_client_any_intro_points_usable(entry)) {
       base_conn->state = AP_CONN_STATE_RENDDESC_WAIT;
       log_info(LD_REND, "Unknown descriptor %s. Fetching.",
-               safe_str_client(rend_data->onion_address));
+          safe_str_client(rend_data->onion_address));
       rend_client_refetch_v2_renddesc(rend_data);
-    } else { /* rend_cache_lookup_result > 0 */
-      base_conn->state = AP_CONN_STATE_CIRCUIT_WAIT;
-      log_info(LD_REND, "Descriptor is here. Great.");
-      if (connection_ap_handshake_attach_circuit(conn) < 0) {
-        if (!base_conn->marked_for_close)
-          connection_mark_unattached_ap(conn, END_STREAM_REASON_CANT_ATTACH);
-        return -1;
-      }
+      return 0;
+    }
+
+    /* We have the descriptor so launch a connection to the HS. */
+    base_conn->state = AP_CONN_STATE_CIRCUIT_WAIT;
+    log_info(LD_REND, "Descriptor is here. Great.");
+    if (connection_ap_handshake_attach_circuit(conn) < 0) {
+      if (!base_conn->marked_for_close)
+        connection_mark_unattached_ap(conn, END_STREAM_REASON_CANT_ATTACH);
+      return -1;
     }
     return 0;
   }
@@ -2114,8 +2128,9 @@ connection_ap_handshake_send_begin(entry_connection_t *ap_conn)
   }
 
   log_info(LD_APP,
-           "Sending relay cell %d to begin stream %d.",
+           "Sending relay cell %d on circ %u to begin stream %d.",
            (int)ap_conn->use_begindir,
+           (unsigned)circ->base_.n_circ_id,
            edge_conn->stream_id);
 
   begin_type = ap_conn->use_begindir ?
@@ -2845,6 +2860,8 @@ connection_exit_begin_conn(cell_t *cell, circuit_t *circ)
     n_stream->on_circuit = circ;
     origin_circ->p_streams = n_stream;
     assert_circuit_ok(circ);
+
+    origin_circ->rend_data->nr_streams++;
 
     connection_exit_connect(n_stream);
 

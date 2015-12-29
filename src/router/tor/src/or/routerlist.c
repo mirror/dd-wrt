@@ -13,6 +13,7 @@
 
 #define ROUTERLIST_PRIVATE
 #include "or.h"
+#include "crypto_ed25519.h"
 #include "circuitstats.h"
 #include "config.h"
 #include "connection.h"
@@ -37,7 +38,9 @@
 #include "routerlist.h"
 #include "routerparse.h"
 #include "routerset.h"
-#include "../common/sandbox.h"
+#include "sandbox.h"
+#include "torcert.h"
+
 // #define DEBUG_ROUTERLIST
 
 /****************************************************************************/
@@ -1498,11 +1501,14 @@ router_pick_directory_server_impl(dirinfo_type_t type, int flags,
     if ((type & EXTRAINFO_DIRINFO) &&
         !router_supports_extrainfo(node->identity, is_trusted_extrainfo))
       continue;
-    if ((type & MICRODESC_DIRINFO) && !is_trusted &&
-        !node->rs->version_supports_microdesc_cache)
+    /* Don't make the same node a guard twice */
+    if (for_guard && node->using_as_guard) {
       continue;
-    if (for_guard && node->using_as_guard)
-      continue; /* Don't make the same node a guard twice. */
+    }
+    /* Ensure that a directory guard is actually a guard node. */
+    if (for_guard && !node->is_possible_guard) {
+      continue;
+    }
     if (try_excluding &&
         routerset_contains_routerstatus(options->ExcludeNodes, status,
                                         country)) {
@@ -2663,6 +2669,7 @@ routerinfo_free(routerinfo_t *router)
   tor_free(router->onion_curve25519_pkey);
   if (router->identity_pkey)
     crypto_pk_free(router->identity_pkey);
+  tor_cert_free(router->signing_key_cert);
   if (router->declared_family) {
     SMARTLIST_FOREACH(router->declared_family, char *, s, tor_free(s));
     smartlist_free(router->declared_family);
@@ -2681,6 +2688,7 @@ extrainfo_free(extrainfo_t *extrainfo)
 {
   if (!extrainfo)
     return;
+  tor_cert_free(extrainfo->signing_key_cert);
   tor_free(extrainfo->cache_info.signed_descriptor_body);
   tor_free(extrainfo->pending_sig);
 
@@ -3290,6 +3298,13 @@ router_add_to_routerlist(routerinfo_t *router, const char **msg,
   id_digest = router->cache_info.identity_digest;
 
   old_router = router_get_mutable_by_digest(id_digest);
+
+  /* Make sure that it isn't expired. */
+  if (router->cert_expiration_time < approx_time()) {
+    routerinfo_free(router);
+    *msg = "Some certs on this router are expired.";
+    return ROUTER_CERTS_EXPIRED;
+  }
 
   /* Make sure that we haven't already got this exact descriptor. */
   if (sdmap_get(routerlist->desc_digest_map,
@@ -4004,12 +4019,10 @@ update_all_descriptor_downloads(time_t now)
 void
 routerlist_retry_directory_downloads(time_t now)
 {
+  (void)now;
   router_reset_status_download_failures();
   router_reset_descriptor_download_failures();
-  if (get_options()->DisableNetwork)
-    return;
-  update_networkstatus_downloads(now);
-  update_all_descriptor_downloads(now);
+  reschedule_directory_downloads();
 }
 
 /** Return true iff <b>router</b> does not permit exit streams.
@@ -4897,7 +4910,7 @@ routerinfo_incompatible_with_extrainfo(const routerinfo_t *ri,
                                        signed_descriptor_t *sd,
                                        const char **msg)
 {
-  int digest_matches, r=1;
+  int digest_matches, digest256_matches, r=1;
   tor_assert(ri);
   tor_assert(ei);
   if (!sd)
@@ -4910,6 +4923,12 @@ routerinfo_incompatible_with_extrainfo(const routerinfo_t *ri,
 
   digest_matches = tor_memeq(ei->cache_info.signed_descriptor_digest,
                            sd->extra_info_digest, DIGEST_LEN);
+  /* Set digest256_matches to 1 if the digest is correct, or if no
+   * digest256 was in the ri. */
+  digest256_matches = tor_memeq(ei->digest256,
+                                ri->extra_info_digest256, DIGEST256_LEN);
+  digest256_matches |=
+    tor_mem_is_zero(ri->extra_info_digest256, DIGEST256_LEN);
 
   /* The identity must match exactly to have been generated at the same time
    * by the same router. */
@@ -4917,6 +4936,11 @@ routerinfo_incompatible_with_extrainfo(const routerinfo_t *ri,
                  ei->cache_info.identity_digest,
                  DIGEST_LEN)) {
     if (msg) *msg = "Extrainfo nickname or identity did not match routerinfo";
+    goto err; /* different servers */
+  }
+
+  if (! tor_cert_opt_eq(ri->signing_key_cert, ei->signing_key_cert)) {
+    if (msg) *msg = "Extrainfo signing key cert didn't match routerinfo";
     goto err; /* different servers */
   }
 
@@ -4944,6 +4968,17 @@ routerinfo_incompatible_with_extrainfo(const routerinfo_t *ri,
     if (msg) *msg = "Extrainfo published time did not match routerdesc";
     r = -1;
     goto err;
+  }
+
+  if (!digest256_matches && !digest_matches) {
+    if (msg) *msg = "Neither digest256 or digest matched "
+               "digest from routerdesc";
+    goto err;
+  }
+
+  if (!digest256_matches) {
+    if (msg) *msg = "Extrainfo digest did not match digest256 from routerdesc";
+    goto err; /* Digest doesn't match declared value. */
   }
 
   if (!digest_matches) {
@@ -5156,11 +5191,6 @@ hid_serv_acting_as_directory(void)
   const routerinfo_t *me = router_get_my_routerinfo();
   if (!me)
     return 0;
-  if (!get_options()->HidServDirectoryV2) {
-    log_info(LD_REND, "We are not acting as hidden service directory, "
-                      "because we have not been configured as such.");
-    return 0;
-  }
   return 1;
 }
 
