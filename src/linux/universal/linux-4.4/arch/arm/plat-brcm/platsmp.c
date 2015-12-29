@@ -40,7 +40,7 @@ static inline unsigned int get_core_count(void)
 	return 1;
 }
 
-static void __cpuinit write_pen_release(int val)
+static void write_pen_release(int val)
 {
 	pen_release = val;
 	smp_wmb();
@@ -52,7 +52,7 @@ static void __cpuinit write_pen_release(int val)
 
 static DEFINE_SPINLOCK(boot_lock);
 
-static void __cpuinit brcm_secondary_init(unsigned int cpu)
+static void brcm_secondary_init(unsigned int cpu)
 {
 
 	trace_hardirqs_off();
@@ -77,7 +77,7 @@ static void __cpuinit brcm_secondary_init(unsigned int cpu)
 	spin_unlock(&boot_lock);
 }
 
-static int __cpuinit brcm_boot_secondary(unsigned int cpu, struct task_struct *idle)
+static int brcm_boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
     	unsigned long timeout;
 	/*
