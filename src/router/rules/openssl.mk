@@ -96,7 +96,7 @@ OPENSSL_NO_CIPHERS:= no-rc5 no-idea no-md2 no-mdc2 no-sha0 no-smime \
 ifeq ($(CONFIG_XSCALE),y)
 OPENSSL_OPTIONS:= no-err no-hw threads no-sse2 no-perlasm zlib-dynamic -DHAVE_CRYPTODEV
 else
-OPENSSL_OPTIONS:= no-err no-hw threads no-ssl2 no-ssl3 zlib-dynamic no-ec no-ec2m
+OPENSSL_OPTIONS:= no-err no-hw threads no-ssl2 no-ssl3 zlib-dynamic no-ec2m
 endif
 
 
