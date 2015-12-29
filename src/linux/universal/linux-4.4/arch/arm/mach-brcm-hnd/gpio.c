@@ -63,7 +63,7 @@ static int gpio_release(struct inode *inode, struct file *file)
 static ssize_t gpio_read(struct file *file, char *buf, size_t count, loff_t * ppos)
 {
 	u32 val;
-	switch (MINOR(file->f_dentry->d_inode->i_rdev)) {
+	switch (MINOR(file_inode(file)->i_rdev)) {
 	case 0:
 		val = si_gpioin(gpio_sih);
 		break;
@@ -120,7 +120,7 @@ static ssize_t gpio_write(struct file *file, const char *buf, size_t count, loff
 
 	if (get_user(val, (u32 *)buf))
 		return -EFAULT;
-	switch (MINOR(file->f_dentry->d_inode->i_rdev)) {
+	switch (MINOR(file_inode(file)->i_rdev)) {
 	case 0:
 		return -EACCES;
 	case 1:

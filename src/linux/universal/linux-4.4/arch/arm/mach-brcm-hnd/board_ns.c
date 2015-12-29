@@ -7,6 +7,8 @@
 #include <asm/mach/arch.h>
 #include <asm/mach/time.h>
 #include <asm/clkdev.h>
+#include <asm/cacheflush.h>
+#include <asm/hardware/cache-l2x0.h>
 
 #include <mach/clkdev.h>
 #include <mach/memory.h>
