@@ -172,7 +172,7 @@ plat_irq_dispatch(void)
 	}
 }
 
-unsigned int __cpuinit
+unsigned int
 get_c0_compare_int(void)
 {
 	return CP0_LEGACY_COMPARE_IRQ;

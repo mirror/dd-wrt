@@ -862,7 +862,7 @@ static int ks8695eth_hook_irqs(struct platform_device *pdev, struct net_device *
 	while ((res = platform_get_resource(pdev, IORESOURCE_IRQ, i))) {
 		set_irq_flags(res->start, IRQF_VALID | IRQF_NOAUTOEN);
 
-		ret = request_irq(res->start, ks8695eth_interrupt, IRQF_DISABLED | IRQF_SHARED, res->name, dev);
+		ret = request_irq(res->start, ks8695eth_interrupt, IRQF_SHARED, res->name, dev);
 		if (ret) {
 			printk(KERN_ERR "%s: return_irq %u failed\n", dev->name, res->start);
 			return -EBUSY;

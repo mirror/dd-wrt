@@ -87,7 +87,7 @@ static int usb_hcd_ar7240_probe(const struct hc_driver *driver,
 
 	ohci_hcd_init(hcd_to_ohci(hcd));
 
-	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED);
+	ret = usb_add_hcd(hcd, irq, 0);
 	if (ret)
 		goto err_stop_hcd;
 

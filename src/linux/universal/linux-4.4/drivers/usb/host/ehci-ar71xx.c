@@ -151,10 +151,10 @@ ar7100_start_ehc(struct platform_device *dev)
             ar9130_reg_rd(AR9130_USB_CONFIG));
 }
 
-static void ehci_port_power (struct ehci_hcd *ehci, int is_on)
+static int drv_ehci_port_power (struct usb_hcd *hcd, int p, bool is_on)
 {
-	unsigned port;
-
+	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
+int port;
 	if (!HCS_PPC (ehci->hcs_params))
 		return;
 
@@ -189,7 +189,7 @@ static int ehci_ar71xx_init(struct usb_hcd *hcd)
 	if (ret)
 		return ret;
 
-	ehci_port_power(ehci, 0);
+	ehci_port_power(ehci, 0, 0);
 
 	return 0;
 }
@@ -213,7 +213,7 @@ static int ehci_ar91xx_init(struct usb_hcd *hcd)
 	ehci->sbrn = 0x20;
 	ehci_reset(ehci);
 
-	ehci_port_power(ehci, 0);
+	ehci_port_power(ehci, 0, 0);
 
 	return 0;
 }
@@ -349,7 +349,7 @@ static int ehci_ar71xx_probe(const struct hc_driver *driver,
 	
 	}
 
-	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED | IRQF_SHARED);
+	ret = usb_add_hcd(hcd, irq, IRQF_SHARED);
 	if (ret)
 		goto err_iounmap;
 
@@ -386,6 +386,7 @@ static const struct hc_driver ehci_ar71xx_hc_driver = {
 	.start			= ehci_run,
 	.stop			= ehci_stop,
 	.shutdown		= ehci_shutdown,
+	.port_power		= drv_ehci_port_power,
 
 	.urb_enqueue		= ehci_urb_enqueue,
 	.urb_dequeue		= ehci_urb_dequeue,
@@ -417,6 +418,7 @@ static const struct hc_driver ehci_ar91xx_hc_driver = {
 	.start			= ehci_run,
 	.stop			= ehci_stop,
 	.shutdown		= ehci_shutdown,
+	.port_power		= drv_ehci_port_power,
 
 	.urb_enqueue		= ehci_urb_enqueue,
 	.urb_dequeue		= ehci_urb_dequeue,
