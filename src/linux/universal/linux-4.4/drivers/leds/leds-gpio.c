@@ -43,7 +43,7 @@ static void gpio_led_work(struct work_struct *work)
 					led_dat->new_level, NULL, NULL);
 		led_dat->blinking = 0;
 	} else
-		gpio_direction_output(led_dat->gpio, led_dat->new_level); // in case its set to KEEP, direction must be configured too
+		gpiod_direction_output(led_dat->gpiod, led_dat->new_level); // in case its set to KEEP, direction must be configured too
 }
 
 static void gpio_led_set(struct led_classdev *led_cdev,
@@ -71,7 +71,7 @@ static void gpio_led_set(struct led_classdev *led_cdev,
 							 NULL, NULL);
 			led_dat->blinking = 0;
 		} else
-		    gpio_direction_output(led_dat->gpio, level); // in case its set to KEEP, direction must be configured too
+		    gpiod_direction_output(led_dat->gpiod, level); // in case its set to KEEP, direction must be configured too
 	}
 }
 
@@ -140,7 +140,7 @@ static int create_gpio_led(const struct gpio_led *template,
 		led_dat->cdev.flags |= LED_CORE_SUSPENDRESUME;
 
 	if (template->default_state != LEDS_GPIO_DEFSTATE_KEEP)  // KEEP means KEEP, this also affects output/input state
-		ret = gpio_direction_output(led_dat->gpio, led_dat->active_low ^ state);
+		ret = gpiod_direction_output(led_dat->gpiod, gpiod_is_active_low(led_dat) ^ state);
 	if (ret < 0)
 		return ret;
 

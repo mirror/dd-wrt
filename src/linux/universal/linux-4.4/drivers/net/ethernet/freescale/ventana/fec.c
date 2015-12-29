@@ -1884,7 +1884,7 @@ fec_probe(struct platform_device *pdev)
 			if (i && irq < 0)
 				break;
 			ret = request_irq(irq, fec_enet_interrupt,
-					IRQF_DISABLED, pdev->name, ndev);
+					0, pdev->name, ndev);
 			if (ret) {
 				while (--i >= 0) {
 					irq = platform_get_irq(pdev, i);

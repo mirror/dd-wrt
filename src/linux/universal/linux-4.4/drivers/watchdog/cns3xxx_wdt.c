@@ -384,7 +384,7 @@ static int cns3xxx_wdt_probe(struct platform_device *dev)
 		goto err_misc;
 	}
 
-	ret = request_irq(wdt->irq, cns3xxx_wdt_fire, IRQF_DISABLED,
+	ret = request_irq(wdt->irq, cns3xxx_wdt_fire, 0,
 			dev->name, wdt);
 	if (ret) {
 		dev_printk(KERN_ERR, wdt->dev,

@@ -240,7 +240,7 @@ plat_time_init(void)
 	ar2315_time_init();
 }
 
-unsigned int __cpuinit
+unsigned int 
 get_c0_compare_int(void)
 {
 	return CP0_LEGACY_COMPARE_IRQ;

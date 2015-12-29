@@ -107,7 +107,7 @@ void __init plat_time_init(void)
 	mips_hpt_frequency = mips_cpu_feq/2;
 }
 
-unsigned int __cpuinit get_c0_compare_irq(void)
+unsigned int get_c0_compare_irq(void)
 {
 	return CP0_LEGACY_COMPARE_IRQ;
 }
