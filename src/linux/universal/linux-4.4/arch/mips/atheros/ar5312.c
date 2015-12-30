@@ -100,8 +100,7 @@ ar5312_misc_intr_disable(struct irq_data *irq)
 static void
 ar5312_misc_intr_end(struct irq_data *irq)
 {
-	if (!(irq_desc[irq->irq].status_use_accessors & (IRQF_DISABLED)))
-		ar5312_misc_intr_enable(irq);
+	ar5312_misc_intr_enable(irq);
 }
 
 static struct irq_chip ar5312_misc_intr_controller = {
@@ -132,14 +131,12 @@ static irqreturn_t ar5312_ahb_proc_handler(int cpl, void *dev_id)
 
 static struct irqaction ar5312_ahb_proc_interrupt  = {
 	.handler = ar5312_ahb_proc_handler,
-	.flags   = IRQF_DISABLED,
 	.name    = "ar5312_ahb_proc_interrupt",
 };
 
 
 static struct irqaction cascade  = {
 	.handler = no_action,
-	.flags   = IRQF_DISABLED,
 	.name    = "cascade",
 };
 
