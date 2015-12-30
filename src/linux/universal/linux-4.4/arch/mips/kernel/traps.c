@@ -765,7 +765,7 @@ static int simulate_fp(struct pt_regs *regs, unsigned int opcode,
 		       unsigned long old_epc, unsigned long old_ra)
 {
 	union mips_instruction inst = { .word = opcode };
-	void __user *fault_addr;
+	void __user *fault_addr = NULL;
 	unsigned long fcr31;
 	int sig;
 
@@ -819,7 +819,7 @@ static int simulate_fp(struct pt_regs *regs, unsigned int opcode,
 asmlinkage void do_fpe(struct pt_regs *regs, unsigned long fcr31)
 {
 	enum ctx_state prev_state;
-	void __user *fault_addr;
+	void __user *fault_addr = NULL;
 	int sig;
 
 	prev_state = exception_enter();
@@ -1345,7 +1345,7 @@ asmlinkage void do_cpu(struct pt_regs *regs)
 	enum ctx_state prev_state;
 	unsigned int __user *epc;
 	unsigned long old_epc, old31;
-	void __user *fault_addr;
+	void __user *fault_addr = NULL;
 	unsigned int opcode;
 	unsigned long fcr31;
 	unsigned int cpid;
