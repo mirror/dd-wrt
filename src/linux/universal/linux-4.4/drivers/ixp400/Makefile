@@ -82,6 +82,7 @@ endif
 
 EXTRA_CFLAGS += \
 	-DSIMLINUX \
+	-D__BIG_ENDIAN \
 	-D__linux \
 	-DIX_TARGET=linuxbe \
 	-DIX_UTOPIAMODE=0 \

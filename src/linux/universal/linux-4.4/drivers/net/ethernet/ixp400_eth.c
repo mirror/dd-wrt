@@ -114,6 +114,8 @@
 #include <IxErrHdlAcc.h>
 #include <IxParityENAcc.h>
 
+#define __get_cpu_var(var)	(*this_cpu_ptr(&(var)))
+
 #ifdef CONFIG_XSCALE_PMU_TIMER
 /* We want to use interrupts from the XScale PMU timer to
  * drive our NPE Queue Dispatcher loop.  But if this #define
