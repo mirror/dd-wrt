@@ -28,7 +28,7 @@
 #include <asm/time.h>
 #include <asm/irq.h>
 #include <asm/io.h>
-#include <asm/gpio.h>
+#include <gpio.h>
 
 #include <ar231x_platform.h>
 #include <ar2315_regs.h>
@@ -171,8 +171,7 @@ static void ar2315_gpio_intr_disable(struct irq_data *irq)
 static void
 ar2315_gpio_intr_end(struct irq_data *irq)
 {
-	if (!(irq_desc[irq->irq].status_use_accessors & (IRQF_DISABLED)))
-		ar2315_gpio_intr_enable(irq);
+	ar2315_gpio_intr_enable(irq);
 }
 
 static struct irq_chip ar2315_gpio_intr_controller = {
@@ -250,8 +249,7 @@ ar2315_misc_intr_disable(struct irq_data *irq)
 static void
 ar2315_misc_intr_end(struct irq_data *irq)
 {
-	if (!(irq_desc[irq->irq].status_use_accessors & (IRQF_DISABLED)))
-		ar2315_misc_intr_enable(irq);
+	ar2315_misc_intr_enable(irq);
 }
 
 
@@ -277,13 +275,11 @@ static irqreturn_t ar2315_ahb_proc_handler(int cpl, void *dev_id)
 
 static struct irqaction ar2315_ahb_proc_interrupt  = {
 	.handler	= ar2315_ahb_proc_handler,
-	.flags		= IRQF_DISABLED,
 	.name		= "ar2315_ahb_proc_interrupt",
 };
 
 static struct irqaction cascade  = {
 	.handler	= no_action,
-	.flags		= IRQF_DISABLED,
 	.name		= "cascade",
 };
 
