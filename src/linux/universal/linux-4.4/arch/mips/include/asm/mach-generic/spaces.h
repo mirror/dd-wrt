@@ -44,7 +44,7 @@
  * Memory above this physical address will be considered highmem.
  */
 #ifndef HIGHMEM_START
-#define HIGHMEM_START		_AC(0x20000000, UL)
+#define HIGHMEM_START		_AC(0x10000000, UL)
 #endif
 
 #endif /* CONFIG_32BIT */
