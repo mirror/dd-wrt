@@ -275,15 +275,16 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	if (sk_memalloc_socks() && (flags & SKB_ALLOC_RX))
 		gfp_mask |= __GFP_MEMALLOC;
 
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
+
 	/* Get the HEAD */
 	skb = kmem_cache_alloc_node(cache, gfp_mask & ~__GFP_DMA, node);
 	if (!skb)
 		goto out;
 	prefetchw(skb);
 
-#ifdef CONFIG_ARCH_IXP4XX 
-	gfp_mask |= GFP_DMA;
-#endif
 
 	/* We do our best to align skb_shared_info on a separate cache
 	 * line. It usually works because kmalloc(X > SMP_CACHE_BYTES) gives
@@ -517,6 +518,7 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 	struct sk_buff *skb = NULL;
 	unsigned int fragsz = SKB_DATA_ALIGN(length + NET_SKB_PAD) +
 			      SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+
 
 #ifdef CONFIG_ARCH_IXP4XX 
 	gfp_mask |= GFP_DMA;
