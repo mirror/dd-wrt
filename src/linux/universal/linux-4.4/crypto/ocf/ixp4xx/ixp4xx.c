@@ -45,7 +45,7 @@
 #include <linux/wait.h>
 #include <linux/crypto.h>
 #include <linux/interrupt.h>
-#include <asm/scatterlist.h>
+#include <linux/scatterlist.h>
 
 #include <IxTypes.h>
 #include <IxOsBuffMgt.h>

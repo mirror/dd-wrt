@@ -58,7 +58,6 @@
 
 #if defined (__BIG_ENDIAN)
 #define IX_OSAL_BE_MAPPING
-
 #endif /* Global switch */
 
 

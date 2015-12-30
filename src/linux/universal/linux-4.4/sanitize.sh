@@ -26,6 +26,16 @@ do
 	    cp .config $i
     fi
 
+    grep "CONFIG_ARCH_IXP4XX" $i
+    if [ $? -eq 0 ] 
+	then 
+	    echo COPY $i
+	    cp $i .config
+	    sed -i 's/\# CONFIG_CPU_BIG_ENDIAN is not set/CONFIG_CPU_BIG_ENDIAN=y/g' .config	    
+	    make oldconfig ARCH=arm
+	    cp .config $i
+    fi
+
     grep "CONFIG_PPC32=y" $i
     if [ $? -eq 0 ] 
 	then 
