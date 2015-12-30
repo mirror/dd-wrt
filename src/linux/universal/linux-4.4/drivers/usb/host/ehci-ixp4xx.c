@@ -13,7 +13,7 @@
 
 #include <linux/platform_device.h>
 
-static int ehci_port_power (struct ehci_hcd *ehci, int port, int is_on)
+static int drv_ehci_port_power (struct ehci_hcd *ehci, int p, int is_on)
 {
 	unsigned port;
 
@@ -64,6 +64,7 @@ static const struct hc_driver ixp4xx_ehci_hc_driver = {
 	.irq			= ehci_irq,
 	.flags			= HCD_MEMORY | HCD_USB2,
 	.reset			= ixp4xx_ehci_init,
+	.port_power		= drv_ehci_port_power,
 	.start			= ehci_run,
 	.stop			= ehci_stop,
 	.shutdown		= ehci_shutdown,
