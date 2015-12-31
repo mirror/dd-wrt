@@ -916,6 +916,10 @@ static int acm_probe(struct usb_interface *intf,
 
 	/* normal quirks */
 	quirks = (unsigned long)id->driver_info;
+
+	if (quirks == IGNORE_DEVICE)
+		return -ENODEV;
+
 	num_rx_buf = (quirks == SINGLE_RX_URB) ? 1 : ACM_NR;
 
 	/* handle quirks deadly to normal probing*/
@@ -1660,6 +1664,11 @@ static const struct usb_device_id acm_ids[] = {
 	/* Support for Droids MuIn LCD */
 	{ USB_DEVICE(0x04d8, 0x000b),
 	.driver_info = NO_DATA_INTERFACE,
+	},
+
+	/* Exclude Infineon Flash Loader utility */
+	{ USB_DEVICE(0x058b, 0x0041),
+	.driver_info = IGNORE_DEVICE,
 	},
 
 	/* control interfaces without any protocol set */
