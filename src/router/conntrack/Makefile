@@ -83,6 +83,9 @@ endif
 ifeq ($(CONFIG_OCTEON),y)
 MODULE:=conntrack.26
 endif
+ifeq ($(CONFIG_IPQ806X),y)
+MODULE:=conntrack.26
+endif
 ifeq ($(CONFIG_AP83),y)
 MODULE:=conntrack.26
 endif
