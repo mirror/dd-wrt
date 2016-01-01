@@ -836,8 +836,9 @@ static unsigned int seq_print_ndpi(struct seq_file *s,
        if(dir != IP_CT_DIR_REPLY) return 0;
 
        ct_ndpi = nf_ct_ext_find_ndpi(ct);
-       return ct_ndpi && ct_ndpi->proto ?
-               seq_printf(s,"ndpi=%s ",prot_short_str[ct_ndpi->proto]): 0;
+       if (ct_ndpi && ct_ndpi->proto)
+               seq_printf(s,"ndpi=%s ",prot_short_str[ct_ndpi->proto]);
+       return 0;       
 }
 #endif
 
