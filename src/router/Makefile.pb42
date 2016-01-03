@@ -358,6 +358,12 @@ ifeq ($(CONFIG_DIR859),y)
 else
 	echo "# CONFIG_DIR859 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WZR450HP2),y)
+	echo CONFIG_WZR450HP2=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_WZR450HP2 is not set" >> $(LINUXDIR)/.config
+endif
+
 ifeq ($(CONFIG_AP135),y)
 	echo CONFIG_AP135=y >> $(LINUXDIR)/.config
 ifneq ($(CONFIG_MMS344),y)
@@ -1803,12 +1809,23 @@ endif
 ifeq ($(CONFIG_WDR4300),y)
 	-./tools/tplink/mktplinkfw -B TL-WDR4300 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4300-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4300-firmware.bin mips-uclibc/tplink-TL-WDR4300-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B TL-WDR4300_US -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4300_US-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4300_US-firmware.bin mips-uclibc/tplink-TL-WDR4300_US-firmware.bin
+
 	-./tools/tplink/mktplinkfw -B TL-WDR4310 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4310-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4310-firmware.bin mips-uclibc/tplink-TL-WDR4310-firmware.bin
 	-./tools/tplink/mktplinkfw -B TL-WDR3600 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3600-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3600-firmware.bin mips-uclibc/tplink-TL-WDR3600-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B TL-WDR3600_US -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3600_US-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3600_US-firmware.bin mips-uclibc/tplink-TL-WDR3600_US-firmware.bin
+
 	-./tools/tplink/mktplinkfw -B TL-WDR3500 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3500-firmware.bin mips-uclibc/tplink-TL-WDR3500-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B TL-WDR3500_US -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500_US-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3500_US-firmware.bin mips-uclibc/tplink-TL-WDR3500_US-firmware.bin
 endif
 ifeq ($(CONFIG_WR1043V2),y)
 	-./tools/tplink/mktplinkfw -B TL-WR1043NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WR1043V2-firmware.bin
