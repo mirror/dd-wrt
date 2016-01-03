@@ -54,6 +54,8 @@ static void early_nvram_init(void)
 	struct nvram_header *header;
 	int i;
 	int len;
+	char *wr;
+	loff_t offs;
 	mm_segment_t old_fs = get_fs();
 	set_fs(get_ds());
 	srcf = filp_open("/usr/local/nvram/nvram.bin", O_RDONLY, 0);
@@ -69,7 +71,13 @@ static void early_nvram_init(void)
 		return;
 	}			/* End of if */
 	char *buffer = MALLOC(NVRAM_SPACE);
-	len = srcf->f_op->read(srcf, buffer, NVRAM_SPACE, &srcf->f_pos);
+	wr = buffer;
+	offs = 0;
+	for (i = 0; i < (NVRAM_SPACE / PAGE_SIZE); i++) {
+		len = kernel_read(srcf,  srcf->f_pos + offs, wr, PAGE_SIZE);
+		offs += len;
+		wr += PAGE_SIZE;
+	}
 
 	/* windowed flash access */
 	header = (struct nvram_header *)buffer;
@@ -137,6 +145,9 @@ int _nvram_read(char *buf)
 	struct nvram_header *header = (struct nvram_header *)buf;
 	size_t len;
 	struct file *srcf;
+	char *wr;
+	loff_t offs;
+	int i;
 
 	mm_segment_t old_fs = get_fs();
 	set_fs(get_ds());
@@ -152,21 +163,15 @@ int _nvram_read(char *buf)
 		set_fs(old_fs);
 		return 0;
 	}
-	if ((srcf->f_op == NULL) || (srcf->f_op->read == NULL) || (srcf->f_op->write == NULL)) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (filesystem not ready/mounted)\n");
-		/* Maybe we can recover some data from early initialization */
-		memcpy(buf, nvram_buf, NVRAM_SPACE);
-		memset(buf, 0, NVRAM_SPACE);
-		header->magic = NVRAM_MAGIC;
-		header->len = 0;
-		filp_close(srcf, NULL);
-		set_fs(old_fs);
-		return 0;
-	}			/* End of if */
-	len = srcf->f_op->read(srcf, buf, NVRAM_SPACE, &srcf->f_pos);
-
-	if (len != NVRAM_SPACE || header->magic != NVRAM_MAGIC) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error)\n");
+	wr = buf;
+	offs = 0;
+	for (i = 0; i < (NVRAM_SPACE / PAGE_SIZE); i++) {
+		len = kernel_read(srcf,  srcf->f_pos + offs, wr, PAGE_SIZE);
+		offs += len;
+		wr += PAGE_SIZE;
+	}
+	if (offs != NVRAM_SPACE || header->magic != NVRAM_MAGIC) {
+		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %d\n",offs);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
@@ -175,7 +180,7 @@ int _nvram_read(char *buf)
 	}
 	filp_close(srcf, NULL);
 	set_fs(old_fs);
-	if (len != NVRAM_SPACE)
+	if (offs != NVRAM_SPACE)
 		return -1;
 	return 0;
 }
@@ -270,10 +275,11 @@ int nvram_unset(const char *name)
 
 int nvram_commit(void)
 {
-	char *buf;
+	char *buf,*wr;
 	size_t erasesize, len;
 	int ret;
 	int i;
+	loff_t offs;
 	struct nvram_header *header;
 	unsigned long flags;
 	u_int32_t offset;
@@ -308,24 +314,22 @@ int nvram_commit(void)
 
 	mm_segment_t old_fs = get_fs();
 	set_fs(get_ds());
-	srcf = filp_open("/usr/local/nvram/nvram.bin", O_CREAT | 2 | O_LARGEFILE, 0600);
+	srcf = filp_open("/usr/local/nvram/nvram.bin", O_CREAT | O_RDWR | O_LARGEFILE, 0600);
 	if (IS_ERR(srcf)) {
+		printk(KERN_EMERG "Open error\n");
 		ret = -EIO;
 		set_fs(old_fs);
 		goto done;
 	}
-	if ((srcf->f_op == NULL) || (srcf->f_op->read == NULL) || (srcf->f_op->write == NULL)) {
-		ret = -EIO;
-		filp_close(srcf, NULL);
-		set_fs(old_fs);
-		goto done;
-	}
-	char *wr = buf;
+
+	wr = buf;
+	offs = 0;
 	for (i = 0; i < (NVRAM_SPACE / PAGE_SIZE); i++) {
-		len = srcf->f_op->write(srcf, wr, PAGE_SIZE, &srcf->f_pos);
+		len = kernel_write(srcf, wr, PAGE_SIZE, srcf->f_pos + offs);
+		offs += len;
 		wr += PAGE_SIZE;
 	}
-	printk(KERN_EMERG "nvram_commit: %d bytes written\n", len);
+	printk(KERN_EMERG "nvram_commit: %d bytes written\n", offs);
 	filp_close(srcf, NULL);
 	set_fs(old_fs);
 done:
