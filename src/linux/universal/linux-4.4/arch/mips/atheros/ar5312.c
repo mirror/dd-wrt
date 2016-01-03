@@ -28,7 +28,7 @@
 #include <asm/time.h>
 #include <asm/irq.h>
 #include <asm/io.h>
-#include <gpio.h>
+#include <linux/gpio.h>
 
 #include <ar231x_platform.h>
 #include <ar5312_regs.h>
