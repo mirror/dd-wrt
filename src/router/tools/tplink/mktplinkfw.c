@@ -53,7 +53,9 @@
 #define HWID_TL_MR3220		0x32200001
 #define HWID_TL_MR3420		0x34200001
 #define HWID_TL_WR743ND_V1	0x07430001
+#define HWID_TL_WR743ND_V2	0x07430002
 #define HWID_TL_WA901ND_V1	0x09010001
+#define HWID_TL_WA901ND_V3	0x09010003
 #define HWID_TL_WA901ND_V2	0x09010002
 #define HWID_TL_WA801ND_V1	0x08010001
 #define HWID_TL_WR840N_V1	0x08400001
@@ -66,6 +68,7 @@
 #define HWID_TL_WNRT627_V1	0x08410007
 #define HWID_TL_WR841ND_V8	0x08410008
 #define HWID_TL_WR841ND_V9	0x08410009
+#define HWID_TL_WR841ND_V10	0x08410010
 #define HWID_TL_WR941ND_V2	0x09410002
 #define HWID_TL_WR941ND_V4	0x09410004
 #define HWID_TL_WR1043ND_V1	0x10430001
@@ -97,7 +100,7 @@ struct fw_header {
 	char		fw_version[36];
 	uint32_t	hw_id;		/* hardware id */
 	uint32_t	hw_rev;		/* hardware revision */
-	uint32_t	unk1;
+	uint32_t	area_code;
 	uint8_t		md5sum1[MD5SUM_LEN];
 	uint32_t	unk2;
 	uint8_t		md5sum2[MD5SUM_LEN];
@@ -121,6 +124,7 @@ struct board_info {
 	char		*id;
 	uint32_t	hw_id;
 	uint32_t	hw_rev;
+	uint32_t	area_code;
 	uint32_t	fw_max_len;
 	uint32_t	kernel_la;
 	uint32_t	kernel_ep;
@@ -247,6 +251,14 @@ static struct board_info boards[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
 	},	{
+		.id		= "TL-WR743NDv2",
+		.hw_id		= HWID_TL_WR743ND_V2,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	},	{
 		.id		= "TL-WR703Nv1",
 		.hw_id		= HWID_TL_WR703N_V1,
 		.hw_rev		= 1,
@@ -359,8 +371,24 @@ static struct board_info boards[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
 	}, {
+		.id		= "TL-WA901NDv3",
+		.hw_id		= HWID_TL_WA901ND_V3,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
 		.id		= "TL-WR841NDv9",
 		.hw_id		= HWID_TL_WR841ND_V9,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
+		.id		= "TL-WR841NDv10",
+		.hw_id		= HWID_TL_WR841ND_V10,
 		.hw_rev		= 1,
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
@@ -423,6 +451,15 @@ static struct board_info boards[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
 	}, {
+		.id		= "ARCHER-C7v1US",
+		.hw_id		= HWID_ARCHERC7_V1,
+		.area_code	= 1,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x7b0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
 		.id		= "ARCHER-C7v1",
 		.hw_id		= HWID_ARCHERC7_V1,
 		.hw_rev		= 1,
@@ -455,8 +492,42 @@ static struct board_info boards[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
 	}, {
+		.id		= "ARCHER-C7v2Israel",
+		.hw_id		= HWID_ARCHERC7_V2,
+		.hw_rev		= 0x494C0001,
+		.fw_max_len	= 0xfb0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
+		.id		= "ARCHER-C7v2US",
+		.hw_id		= HWID_ARCHERC7_V2,
+		.hw_rev		= 1,
+		.area_code	= 1,
+		.fw_max_len	= 0xfb0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
 		.id		= "ARCHER-C5v1",
 		.hw_id		= HWID_ARCHERC5_V1,
+		.hw_rev		= 1,
+		.fw_max_len	= 0xfb0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
+		.id		= "ARCHER-C5v1Israel",
+		.hw_id		= HWID_ARCHERC5_V1,
+		.hw_rev		= 0x494C0001,
+		.fw_max_len	= 0xfb0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
+		.id		= "ARCHER-C5v1US",
+		.hw_id		= HWID_ARCHERC5_V1,
+		.area_code	= 1,
 		.hw_rev		= 1,
 		.fw_max_len	= 0xfb0000,
 		.kernel_la	= 0x80060000,
@@ -466,6 +537,15 @@ static struct board_info boards[] = {
 		.id		= "TL-WDR4300",
 		.hw_id		= HWID_TL_WDR4300_V1,
 		.hw_rev		= 1,
+		.fw_max_len	= 0x7b0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0x100000,
+	}, {
+		.id		= "TL-WDR4300_US",
+		.hw_id		= HWID_TL_WDR4300_V1,
+		.hw_rev		= 1,
+		.area_code	= 1,
 		.fw_max_len	= 0x7b0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
@@ -498,6 +578,24 @@ static struct board_info boards[] = {
 		.id		= "TL-WDR3600",
 		.hw_id		= HWID_TL_WDR3600_V1,
 		.hw_rev		= 1,
+		.fw_max_len	= 0x7b0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0x100000,
+	}, {
+		.id		= "TL-WDR3600_US",
+		.hw_id		= HWID_TL_WDR3600_V1,
+		.hw_rev		= 1,
+		.area_code	= 1,
+		.fw_max_len	= 0x7b0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0x100000,
+	}, {
+		.id		= "TL-WDR3500_US",
+		.hw_id		= HWID_TL_WDR3500_V1,
+		.hw_rev		= 1,
+		.area_code	= 1,
 		.fw_max_len	= 0x7b0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
@@ -714,7 +812,8 @@ static void fill_header(char *buf, int len)
 	strncpy(hdr->fw_version, version, sizeof(hdr->fw_version));
 	hdr->hw_id = HOST_TO_BE32(board->hw_id);
 	hdr->hw_rev = HOST_TO_BE32(board->hw_rev);
-
+	hdr->area_code = HOST_TO_BE32(board->area_code);
+	
 	if (boot_info.file_size == 0)
 		memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
 	else
