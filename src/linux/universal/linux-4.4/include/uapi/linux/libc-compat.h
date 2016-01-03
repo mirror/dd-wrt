@@ -49,7 +49,7 @@
 #define _UAPI_LIBC_COMPAT_H
 
 /* We have included glibc headers... */
-#if defined(__GLIBC__)
+#if 1 //defined(__GLIBC__)
 
 /* Coordinate with glibc netinet/in.h header. */
 #if defined(_NETINET_IN_H)
