@@ -277,7 +277,7 @@ static void __init intel_scu_i2c_device_register(int bus,
 }
 
 /* Called by IPC driver */
-void __init intel_scu_devices_create(void)
+void intel_scu_devices_create(void)
 {
 	int i;
 
