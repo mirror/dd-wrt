@@ -24,6 +24,7 @@
 #ifndef EBTABLES_U_H
 #define EBTABLES_U_H
 #include <netinet/in.h>
+#include <linux/if.h>
 #include <linux/netfilter_bridge/ebtables.h>
 #include <linux/netfilter/x_tables.h>
 
