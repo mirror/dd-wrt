@@ -623,6 +623,30 @@ static __init ath79_setup_ar933x_phy4_switch(bool mac, bool mdio)
 	iounmap(base);
 }
 
+void __init ath79_setup_ar934x_eth_cfg(u32 mask)
+{
+	void __iomem *base;
+	u32 t;
+
+	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+
+	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+
+	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 |
+	       AR934X_ETH_CFG_MII_GMAC0 |
+	       AR934X_ETH_CFG_GMII_GMAC0 |
+	       AR934X_ETH_CFG_SW_ONLY_MODE |
+	       AR934X_ETH_CFG_SW_PHY_SWAP);
+
+	t |= mask;
+
+	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+	/* flush write */
+	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+}
+
 
 #if !defined(CONFIG_MACH_HORNET) && !defined(CONFIG_WASP_SUPPORT)
 static void *getCalData(int slot)
@@ -794,6 +818,9 @@ printk(KERN_INFO "found nothing\n");
 return NULL;
 }
 
+void __init ap91_wmac_disable_2ghz(void);
+void __init ap91_wmac_disable_5ghz(void);
+
 int __init ar7240_platform_init(void)
 {
 	int ret;
@@ -838,7 +865,11 @@ int __init ar7240_platform_init(void)
 	u32 t;
 
     #if !defined(CONFIG_WDR4300) && !defined(CONFIG_AP135) && !defined(CONFIG_UBNTXW) && !defined(CONFIG_DAP2230)
-    #ifdef CONFIG_DIR825C1
+    #ifdef CONFIG_JWAP606
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);
+    #elif CONFIG_DIR825C1
 	#ifdef CONFIG_DIR859
 	dir825b1_read_ascii_mac(mac0, DIR859_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR859_MAC_LOCATION_1);
@@ -918,6 +949,10 @@ int __init ar7240_platform_init(void)
     #elif CONFIG_WR841V9
        ath79_setup_ar933x_phy4_switch(false, false);
 
+    #elif CONFIG_JWAP606
+
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 | 0x14000);
+	
     #elif CONFIG_WR841V8
 	//swap phy
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
@@ -999,6 +1034,19 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_JWAP606
+	ap91_wmac_disable_2ghz();
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.speed = SPEED_1000;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_pll_data.pll_1000 = 0x0e000000;
+	ar71xx_add_device_eth(0);
+	
     #elif CONFIG_DAP3310
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
