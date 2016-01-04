@@ -466,7 +466,7 @@ else
 	echo "# CONFIG_MMS344 is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_JWAP606),y)
-	echo CONFIG_MMS344=y >> $(LINUXDIR)/.config
+	echo CONFIG_JWAP606=y >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_DIR862),y)
 	echo CONFIG_DIR862=y >> $(LINUXDIR)/.config
