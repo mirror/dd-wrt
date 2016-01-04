@@ -29,6 +29,17 @@ static struct ath9k_platform_data ar9xxx_wmac_data = {
 	.led_pin = -1,
 };
 
+
+void __init ath79_wmac_disable_2ghz(void)
+{
+	ar9xxx_wmac_data.disable_2ghz = true;
+}
+
+void __init ath79_wmac_disable_5ghz(void)
+{
+	ar9xxx_wmac_data.disable_5ghz = true;
+}
+
 static char ar9xxx_wmac_mac[6];
 
 static struct resource ar9xxx_wmac_resources[] = {
