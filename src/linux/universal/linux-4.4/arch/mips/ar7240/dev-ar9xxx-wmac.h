@@ -16,5 +16,7 @@
 #define _AR71XX_DEV_AR9XXX_WMAC_H
 
 void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
+void __init ath79_wmac_disable_2ghz(void);
+void __init ath79_wmac_disable_5ghz(void);
 
 #endif /* _AR71XX_DEV_AR9XXX_WMAC_H */

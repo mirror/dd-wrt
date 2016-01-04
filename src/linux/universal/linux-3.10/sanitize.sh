@@ -7,7 +7,13 @@ do
 	then 
 	    echo COPY $i
 	    cp $i .config
-	    make oldconfig ARCH=i386
+	    grep "CONFIG_X86_64=y" $i
+	    if [ $? -eq 0 ] 
+		then 
+		    make oldconfig ARCH=x86_64
+		else
+		    make oldconfig ARCH=i386
+		fi
 	    cp .config $i
     fi
 
@@ -53,12 +59,17 @@ do
 	    echo CONFIG_MMS344=y >> .config
 	    echo CONFIG_DIR862=y >> .config
 	    echo CONFIG_ERC=y >> .config
+	    echo CONFIG_DAP3662=y >> .config
+	    echo CONFIG_DAP2230=y >> .config
+	    echo CONFIG_DAP2330=y >> .config
+	    echo CONFIG_JWAP606=y >> .config
 	    echo CONFIG_WR710=y >> .config
 	    make oldconfig ARCH=mips
-	    sed -i 's/\CONFIG_WR710=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WR710=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR841V9=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WPE72=y/ /g' .config	    
+	    sed -i 's/\CONFIG_JWAP606=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DIR615I=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WA901=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WDR4300=y/ /g' .config	    
@@ -75,6 +86,9 @@ do
 	    sed -i 's/\CONFIG_MMS344=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DIR862=y/ /g' .config	    
 	    sed -i 's/\CONFIG_ERC=y/ /g' .config	    
+	    sed -i 's/\CONFIG_DAP3662=y/ /g' .config	    
+	    sed -i 's/\CONFIG_DAP2230=y/ /g' .config	    
+	    sed -i 's/\CONFIG_DAP2330=y/ /g' .config	    
 	    cp .config $i
     fi
 done

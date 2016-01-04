@@ -51,6 +51,17 @@ void ap91_set_tx_gain_buffalo(void)
 	wmac_data.tx_gain_buffalo = true;
 }
 
+void __init ap91_wmac_disable_2ghz(void)
+{
+	wmac_data.disable_2ghz = true;
+}
+
+void __init ap91_wmac_disable_5ghz(void)
+{
+	wmac_data.disable_5ghz = true;
+}
+
+
 int pcibios_init(void);
 
 void ap91_pci_init(u8 *cal_data, u8 *mac_addr)
