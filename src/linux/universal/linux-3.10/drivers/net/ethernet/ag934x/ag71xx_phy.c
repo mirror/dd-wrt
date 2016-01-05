@@ -146,9 +146,11 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 		return -ENODEV;
 	}
 
+#ifndef CONFIG_JWAP606
 	if (ag->mii_bus->phy_map[phyadd]->phy_id == 0x4dd072 && phyadd == 1)
+#endif
 	{
-	printk(KERN_INFO "fixup Atheros F1 Phy\n");
+	printk(KERN_INFO "fixup Atheros F1 Phy on phyaddr %d\n", phyadd);
 	ag71xx_mdio_mii_write(ag->mii_bus->priv, phyadd, 0x1d, 0);
 	ag71xx_mdio_mii_write(ag->mii_bus->priv, phyadd, 0x1e, 0x82ee);
 	ag71xx_mdio_mii_write(ag->mii_bus->priv, phyadd, 0x1d, 5);
