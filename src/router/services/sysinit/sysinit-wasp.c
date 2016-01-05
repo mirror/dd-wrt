@@ -87,6 +87,8 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+#elif defined (HAVE_JWAP606)
+	// nothing
 #elif defined (HAVE_DAP3662)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -158,19 +160,19 @@ void start_sysinit(void)
 	}
 #endif
 
-#if defined(HAVE_MMS344) && !defined(HAVE_DIR862)
+#ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
+#if defined(HAVE_MMS344) && !defined(HAVE_DIR862)
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 #elif defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500)
-	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 #else
-	eval("ifconfig", "eth0", "up");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
+#endif
 #endif
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
@@ -240,6 +242,9 @@ void start_sysinit(void)
 
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);
+	setWirelessLed(1, 14);
+#elif  HAVE_JWAP606
+	setWirelessLed(0, 14);
 	setWirelessLed(1, 14);
 #elif  HAVE_WR1043V2
 	setWirelessLed(0, 12);
