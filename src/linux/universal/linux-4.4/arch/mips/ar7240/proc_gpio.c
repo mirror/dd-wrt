@@ -73,10 +73,11 @@ static ssize_t gpio_proc_read(struct file *file, char __user * buffer, size_t si
 	buf[1] = 0;
 	return simple_read_from_buffer(buffer, size, ppos, buf, sizeof(buf));
 }
-
+static int allowaccess = 0;
 static ssize_t gpio_proc_info_read(struct file *file, char __user * buffer, size_t size, loff_t * ppos)
 {
 	char buf[512];
+	allowaccess = 1;
 	sprintf(buf,	"GPIO_IN   %#08X \n"
 		        "GPIO_OUT  %#08X \n"
 			"GPIO_SET  %#08X \n" 
@@ -206,6 +207,8 @@ void set_wmac_gpio(int gpio, int val)
 	register gpio_words wl0;
 	int shift;
 	int addr;
+	if (!allowaccess)
+	    return;
 
 	unsigned int output = GPIOOUT_WMAC_ADDR;
 
@@ -234,6 +237,8 @@ void set_wl0_gpio(int gpio, int val)
 	register gpio_words wl0;
 	int shift;
 	int addr;
+	if (!allowaccess)
+	    return;
 #ifndef CONFIG_MACH_HORNET
 	if (ath_nopcie)
 		return;
@@ -280,6 +285,8 @@ int get_wl0_gpio(int gpio)
 {
 	u32 gpio_shift;
 	gpio_shift = 2 * gpio;
+	if (!allowaccess)
+	    return;
 
 	unsigned int output = GPIOOUT_WL0_ADDR;
 	if (is_ar9300)
@@ -299,6 +306,8 @@ int get_wmac_gpio(int gpio)
 {
 	u32 gpio_shift;
 	gpio_shift = 2 * gpio;
+	if (!allowaccess)
+	    return;
 	ar7240_reg_rmw(GPIOOUT_WMAC_ADDR, (AR9287_GPIO_OE_OUT_DRV_NO << gpio_shift), (AR9287_GPIO_OE_OUT_DRV << gpio_shift));
 
 	return (MS(ar7240_reg_rd(GPIOIN_WMAC_ADDR), AR9300_GPIO_IN_VAL) & (1 << gpio)) != 0;
