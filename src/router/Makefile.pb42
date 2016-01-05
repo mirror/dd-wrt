@@ -467,6 +467,7 @@ else
 endif
 ifeq ($(CONFIG_JWAP606),y)
 	echo CONFIG_JWAP606=y >> $(LINUXDIR)/.config
+	sed -i 's/\# # CONFIG_AT803X_PHY is not set/CONFIG_AT803X_PHY=y/g' $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_DIR862),y)
 	echo CONFIG_DIR862=y >> $(LINUXDIR)/.config

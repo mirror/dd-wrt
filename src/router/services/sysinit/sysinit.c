@@ -1595,6 +1595,16 @@ void start_restore_defaults(void)
 		{"wan_default", ""},
 		{0, 0}
 	};
+#elif HAVE_JWAP606
+	struct nvram_param generic[] = {
+		{"lan_ifname", "br0"},
+		{"lan_ifnames", "eth0 ath0 ath1"},
+		{"wan_ifname", ""},
+		{"wan_ifname2", ""},
+		{"wan_ifnames", ""},
+		{"wan_default", ""},
+		{0, 0}
+	};
 #elif HAVE_WASP
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
