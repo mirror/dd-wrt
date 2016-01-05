@@ -1330,6 +1330,18 @@ void start_lan(void)
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif HAVE_JWAP606
+	nvram_setz(lan_ifnames, "eth0 ath0 ath1");
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		PORTSETUPWAN("");
+	} else {
+		PORTSETUPWAN("eth0");
+	}
+	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WASP
 	nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -3097,6 +3109,9 @@ void start_wan(int status)
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_WZR450HP2
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
+#elif HAVE_JWAP606
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WASP

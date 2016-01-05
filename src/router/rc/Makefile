@@ -454,6 +454,9 @@ endif
 ifeq ($(CONFIG_JWAP003),y)
 CFLAGS += -DHAVE_JWAP003
 endif
+ifeq ($(CONFIG_JWAP606),y)
+CFLAGS += -DHAVE_JWAP606
+endif
 ifeq ($(CONFIG_WR941),y)
 CFLAGS += -DHAVE_WR941
 endif

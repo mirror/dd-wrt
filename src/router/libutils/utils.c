@@ -2230,6 +2230,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_JWAP606
+	setRouter("JJPlus JWAP606");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR825C1
 	setRouter("Dlink DIR825-C1");
 	nvram_default_get("ath0_rxantenna", "3");
@@ -5787,6 +5794,16 @@ int led_control(int type, int act)
 		connected_gpio = 0x110;
 
 		diag_gpio = 0x00f;
+		break;
+#elif HAVE_JWAP606
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x10b;
+		connected_gpio = 0x10d;
+		disconnected_gpio = 0x10d;
+		power_gpio = 0x10b;
+//              usb_power = 0x01a;
+//		usb_gpio = 0x10b;
+//              ses_gpio = 0x11b;
 		break;
 #elif HAVE_DIR825C1
 	case ROUTER_BOARD_WHRHPGN:
