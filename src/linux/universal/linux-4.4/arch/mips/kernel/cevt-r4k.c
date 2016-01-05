@@ -226,6 +226,13 @@ int r4k_clockevent_init(void)
 
 	clockevents_register_device(cd);
 
+	if (cp0_timer_irq_installed)
+		return 0;
+
+	cp0_timer_irq_installed = 1;
+
+	setup_irq(irq, &c0_compare_irqaction);
+
 	return 0;
 }
 
