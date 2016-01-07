@@ -1352,7 +1352,7 @@ int internal_getRouterBrand()
 		return ROUTER_DLINK_DIR895;
 	}
 
-	if (nvram_match("boardnum", "N/A") && nvram_match("boardtype", "0x072F") && nvram_match("1:devid", "0x43c5")
+	if ((boardnum == 24 || nvram_match("boardnum", "N/A")) && nvram_match("boardtype", "0x072F") && nvram_match("1:devid", "0x43c5")
 	    && nvram_match("boardrev", "0x1101")
 	    && nvram_match("gpio7", "wps_button")) {
 		setRouter("Dlink-DIR885L");
