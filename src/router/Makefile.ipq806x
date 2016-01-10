@@ -114,6 +114,9 @@ build_date:
 
 kernel:
 	cp $(LINUXDIR)/.config_ipq806x $(LINUXDIR)/.config
+ifeq ($(CONFIG_R7500),y)
+	cp $(LINUXDIR)/.config_r7500 $(LINUXDIR)/.config
+endif
 
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
@@ -441,7 +444,7 @@ endif
 	
 	( dd if=$(ARCH)-uclibc/root.squashfs of=$(ARCH)-uclibc/root.squashfs.new bs=2k conv=sync; )
 
-	./tools/r7500/mkimage -A arm -O linux -T filesystem -C none -a 0x42208000 -e 0x42208000 -n 'Fakeroot' -s $(ARCH)-uclibc/rootfs.dummy
+	./tools/r7500/mkimage -A arm -O linux -T filesystem -C none -a 0x42208000 -e 0x42208000 -n 'DD-WRT - Fakeroot' -s $(ARCH)-uclibc/rootfs.dummy
 	
 	( dd if=$(ARCH)-uclibc/ipq806x-R7500-uImage of=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=2048k conv=sync; )
 	
@@ -482,7 +485,8 @@ endif
 	cat tools/ea8500/ea8500.tag >> $(ARCH)-uclibc/ddwrt-EA8500.bin
 	cp $(ARCH)-uclibc/ddwrt-EA8500.bin $(ARCH)-uclibc/EA8500-factory-to-ddwrt.img
 	
-	./tools/r7500/mkdniimg -B R7500 -v V1.0.0.82 -r "" -H "29764841+0+128+256+3x3+4x4" -i $(ARCH)-uclibc/ddwrt-R7500v1.bin -o $(ARCH)-uclibc/R7500v1-factory-to-ddwrt.img
+	#beware max image size is 24MB
+	./tools/r7500/mkdniimg -B R7500 -v 1.0.0.94 -r "" -H "29764841+0+128+256+3x3+4x4" -i $(ARCH)-uclibc/ddwrt-R7500v1.bin -o $(ARCH)-uclibc/R7500v1-factory-to-ddwrt.img
 
 	./tools/ubi/ubinize-image.sh --kernel $(ARCH)-uclibc/vmlinux-TEW827.uImage.final \
 		$(ARCH)-uclibc/root.squashfs.new \
