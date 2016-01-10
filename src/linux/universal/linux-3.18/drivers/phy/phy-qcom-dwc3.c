@@ -399,6 +399,8 @@ static struct phy_ops qcom_dwc3_phy_ops = {
 static const struct of_device_id qcom_dwc3_phy_table[] = {
 	{ .compatible = "qcom,dwc3-hs-usb-phy", },
 	{ .compatible = "qcom,dwc3-ss-usb-phy", },
+	{ .compatible = "qcom,dwc3-hsphy", },
+	{ .compatible = "qcom,dwc3-ssphy", },
 	{ /* Sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, qcom_dwc3_phy_table);
@@ -424,16 +426,16 @@ static int qcom_dwc3_phy_probe(struct platform_device *pdev)
 
 	phy_dwc3->ref_clk = devm_clk_get(phy_dwc3->dev, "ref");
 	if (IS_ERR(phy_dwc3->ref_clk)) {
-		dev_dbg(phy_dwc3->dev, "cannot get reference clock\n");
+		printk(KERN_INFO "cannot get reference clock\n");
 		return PTR_ERR(phy_dwc3->ref_clk);
 	}
 
 	if (of_device_is_compatible(pdev->dev.of_node,
-			"qcom,dwc3-hs-usb-phy")) {
+			"qcom,dwc3-hs-usb-phy") || of_device_is_compatible(pdev->dev.of_node,"qcom,dwc3-hsphy")) {
 		clk_set_rate(phy_dwc3->ref_clk, 60000000);
 		phy_dwc3->phy_init = qcom_dwc3_hs_phy_init;
 	} else if (of_device_is_compatible(pdev->dev.of_node,
-			"qcom,dwc3-ss-usb-phy")) {
+			"qcom,dwc3-ss-usb-phy") || of_device_is_compatible(pdev->dev.of_node,"qcom,dwc3-ssphy")) {
 		phy_dwc3->phy_init = qcom_dwc3_ss_phy_init;
 		phy_dwc3->phy_exit = qcom_dwc3_ss_phy_exit;
 		clk_set_rate(phy_dwc3->ref_clk, 125000000);
@@ -444,7 +446,7 @@ static int qcom_dwc3_phy_probe(struct platform_device *pdev)
 
 	phy_dwc3->xo_clk = devm_clk_get(phy_dwc3->dev, "xo");
 	if (IS_ERR(phy_dwc3->xo_clk)) {
-		dev_dbg(phy_dwc3->dev, "cannot get TCXO clock\n");
+		printk(KERN_INFO "cannot get TCXO clock\n");
 		phy_dwc3->xo_clk = NULL;
 	}
 

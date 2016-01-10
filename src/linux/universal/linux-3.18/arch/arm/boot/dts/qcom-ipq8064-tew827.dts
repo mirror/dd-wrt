@@ -110,6 +110,9 @@
 
 		phy@100f8830 {		/* USB3 port 1 SS phy */
 			status = "ok";
+			rx_eq = <2>;
+			tx_deamp_3_5db = <32>;
+			mpll = <0xa0>;
 		};
 
 		phy@110f8800 {		/* USB3 port 0 HS phy */
@@ -118,6 +121,9 @@
 
 		phy@110f8830 {		/* USB3 port 0 SS phy */
 			status = "ok";
+			rx_eq = <2>;
+			tx_deamp_3_5db = <32>;
+			mpll = <0xa0>;
 		};
 
 		usb30@0 {
