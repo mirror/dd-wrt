@@ -246,7 +246,7 @@ void writeradiusclientdb(struct radiusclientdb *db)
 		else
 			db->users[i].passwordsize = 0;
 
-		db->users[i].fieldlen = sizeof(struct radiusclient) + db->users[i].usersize + db->users[i].passwordsize - (sizeof(char *) * 2);
+		db->users[i].fieldlen = sizeof(struct radiusclient) + db->users[i].clientsize + db->users[i].passwordsize - (sizeof(char *) * 2);
 
 		writeword(db->users[i].fieldlen, fp);
 		writeword(db->users[i].clientsize, fp);
