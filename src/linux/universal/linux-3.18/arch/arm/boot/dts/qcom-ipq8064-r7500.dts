@@ -27,7 +27,7 @@
 	};
 
 	chosen {
-		bootargs = "rootfstype=squashfs noinitrd";
+		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock5";
 		linux,stdout-path = "serial0:115200n8";
 	};
 
@@ -130,12 +130,10 @@
 
 		pcie0: pci@1b500000 {
 			status = "ok";
-			phy-tx0-term-offset = <7>;
 		};
 
 		pcie1: pci@1b700000 {
 			status = "ok";
-			phy-tx0-term-offset = <7>;
 		};
 
 		nand@1ac00000 {
