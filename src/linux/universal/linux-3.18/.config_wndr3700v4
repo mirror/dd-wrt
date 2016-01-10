@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.24 Kernel Configuration
+# Linux/mips 3.18.25 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -934,6 +934,7 @@ CONFIG_MTD_CFI_I2=y
 #
 # CONFIG_MTD_DOCG3 is not set
 CONFIG_DIR825C1=y
+ 
  
  
  
