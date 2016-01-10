@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <linux/types.h>	/* For __beXX types in userland */
+#include <sys/types.h>
 
 #ifdef LIBIPVS_USE_NL
 #include <netlink/netlink.h>
