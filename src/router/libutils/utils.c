@@ -5061,6 +5061,9 @@ char *cpustring(void)
 		strcpy(buf, "Marvel Armada 385");
 	}
 	return buf;
+#elif HAVE_IPQ806X
+	strcpy(buf, "QCA IPQ8064");
+	return buf;
 #elif HAVE_UNIWIP
 	strcpy(buf, "FreeScale MPC8314");
 	return buf;
