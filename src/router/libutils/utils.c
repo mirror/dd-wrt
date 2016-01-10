@@ -2324,8 +2324,8 @@ int internal_getRouterBrand()
 	typedef struct UBNTDEV {
 		char *devicename;	// device name 
 		unsigned short devid;	// pci subdevice id
-		char *rxchain;	// rx chainmask
-		char *txchain;	// tx chainmask
+		unsigned char rxchain;	// rx chainmask
+		unsigned char txchain;	// tx chainmask
 		int dddev;	// dd-wrt device id
 		int offset;	// frequency offset
 		int poffset;
@@ -2338,92 +2338,101 @@ int internal_getRouterBrand()
 #define M10 (- (5540 - 10322))
 	struct UBNTDEV dev[] = {
 
-		{"Ubiquiti NanoBeam M2 XW", 0xe2c2, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
-		{"Ubiquiti NanoBeam M5 XW", 0xe3e5, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
-		{"Ubiquiti NanoBeam M5 XW", 0xe4e5, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
-		{"Ubiquiti NanoBeam M5 XW", 0xe815, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
-		{"Ubiquiti NanoBeam M5 XW", 0xe825, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
+		{"NanoBeam M2 XW", 0xe2c2, 3, 3, ROUTER_BOARD_NS2M, 0, 10},	//
+		{"NanoBeam M5 XW", 0xe3e5, 3, 3, ROUTER_BOARD_NS2M, 0, 10},	//
+		{"NanoBeam M5 XW", 0xe4e5, 3, 3, ROUTER_BOARD_NS2M, 0, 10},	//
+		{"NanoBeam M5 XW", 0xe815, 3, 3, ROUTER_BOARD_NS2M, 0, 10},	//
+		{"NanoBeam M5 XW", 0xe825, 3, 3, ROUTER_BOARD_NS2M, 0, 10},	//
 
-		{"Ubiquiti NanoStation M2", 0xe002, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
-		{"Ubiquiti NanoStation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
-		{"Ubiquiti NanoStation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-		{"Ubiquiti NanoStation M6", 0xe006, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-		{"Ubiquiti NanoStation M5", 0xe805, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-		{"Ubiquiti NanoStation M5 XW", 0xe855, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-		{"Ubiquiti NanoStation M3", 0xe035, "3", "3", ROUTER_BOARD_NS5M, M35, 10},	//
-		{"Ubiquiti NanoStation M365", 0xe003, "3", "3", ROUTER_BOARD_NS5M, M365, 10},	//
-		{"Ubiquiti NanoStation M900", 0xe2b9, "3", "3", ROUTER_BOARD_NS5M, M900, 10},	//
-//              {"Ubiquiti NanoStation M900 GPS", 0xe0b9, "3", "3", ROUTER_BOARD_NS5M, M900},       //
-		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
-		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
-		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
-		{"Ubiquiti Rocket M2", 0xe1c2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
-		{"Ubiquiti Rocket M2 Titanium XW", 0xe1d2, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{"Ubiquiti Rocket M5 Titanium XW", 0xe4d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Rocket M5", 0xe1b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Rocket M5 XW", 0xe6b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Rocket M5", 0xe8b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Rocket M5", 0xe1c5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Rocket M5 Titanium XW", 0xe1d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{"Ubiquiti Rocket M6", 0xe1b6, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Rocket M3", 0xe1c3, "3", "3", ROUTER_BOARD_R5M, M35, 10},	//
-		{"Ubiquiti Rocket M3", 0xe1e3, "3", "3", ROUTER_BOARD_R5M, M35, 10},	//
-		{"Ubiquiti Rocket M5 X3 XW", 0xe3b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Rocket M365", 0xe1b3, "3", "3", ROUTER_BOARD_R5M, M365, 10},	//
-		{"Ubiquiti Rocket M365", 0xe1d3, "3", "3", ROUTER_BOARD_R5M, M365, 10},	//
-		{"Ubiquiti Rocket M900", 0xe1b9, "3", "3", ROUTER_BOARD_R2M, M900, 10},	//
-		{"Ubiquiti Rocket M900", 0xe1d9, "3", "3", ROUTER_BOARD_R2M, M900, 10},	//
-		{"Ubiquiti Airbeam 5", 0xe1e5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti Bullet M5", 0xe205, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti Bullet M2 Titanium", 0xe2d2, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{"Ubiquiti Bullet M5 Titanium", 0xe2d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{"Ubiquiti Airgrid M2", 0xe212, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti Airgrid M2", 0xe242, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti Airgrid M2HP", 0xe252, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti Airgrid M5", 0xe215, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti Airgrid M5", 0xe245, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti Airgrid M5", 0xe255, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti Airgrid M5 XW", 0xe835, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti AirRouter", 0xe4a2, "1", "1", ROUTER_BOARD_AIRROUTER, 0, 10},	//
-		{"Ubiquiti AirRouter", 0xe4b2, "1", "1", ROUTER_BOARD_AIRROUTER, 0, 10},	//
-		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti Airwire", 0xe405, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti Airwire", 0xe4a5, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti Loco M5", 0xe0a5, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-		{"Ubiquiti Loco M5", 0xe8a5, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-		{"Ubiquiti Loco M5 XW", 0xe845, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-		{"Ubiquiti Loco M2", 0xe0a2, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-//              {"Ubiquiti Loco M2", 0xe8a2, "3", "3", ROUTER_BOARD_NS5M, 0},   //
-		{"Ubiquiti Loco M900", 0xe009, "3", "3", ROUTER_BOARD_NS5M, M900, 10},	//
-		{"Ubiquiti NanoStation M900 Sector", 0xe0b9, "3", "3", ROUTER_BOARD_NS5M, M900, 10},	//
-		{"Ubiquiti LiteStation M25", 0xe115, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-		{"Ubiquiti LiteStation M5", 0xe2a5, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
-		{"Ubiquiti PowerAP N", 0xe402, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
-		{"Ubiquiti Simple AP", 0xe4a2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
-		{"Ubiquiti PowerBridge M3", 0xe2a3, "3", "3", ROUTER_BOARD_R5M, M35, 10},	//
-		{"Ubiquiti PowerBridge M5", 0xe1a5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti PowerBridge M10", 0xe110, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti PowerBridge M5 X3", 0xe3a5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti PowerBridge M365", 0xe1a3, "3", "3", ROUTER_BOARD_R5M, M365, 10},	//
-		{"Ubiquiti Rocket M10", 0xe110, "3", "3", ROUTER_BOARD_R5M, M10, 10},	// 
-		{"Ubiquiti NanoBridge M3", 0xe243, "3", "3", ROUTER_BOARD_BS5M, M35, 10},	//
-		{"Ubiquiti NanoBridge M365", 0xe233, "3", "3", ROUTER_BOARD_BS5M, M365, 10},	//
-		{"Ubiquiti NanoBridge M900", 0xe239, "3", "3", ROUTER_BOARD_BS5M, M900, 10},	//
-		{"Ubiquiti NanoBridge M5", 0xe235, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti NanoBridge M5", 0xe2b5, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti NanoBridge M5", 0xe2e5, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti NanoBridge M2", 0xe232, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti NanoBridge M2", 0xe2b2, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti PicoStation M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti PicoStation M5", 0xe305, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti 3G Station", 0xe6a2, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti 3G Station Professional", 0xe6b2, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti 3G Station Outdoor", 0xe6c2, "3", "3", ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Ubiquiti WispStation M5", 0xe345, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Ubiquiti UniFi AP", 0xe502, "3", "3", ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"NanoStation M2", 0xe002, 3, 3, ROUTER_BOARD_NS2M, 0, 10},	//
+		{"NanoStation M2", 0xe012, 3, 3, ROUTER_BOARD_NS2M, 0, 10},	//
+		{"NanoStation M5", 0xe005, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+		{"NanoStation M6", 0xe006, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+		{"NanoStation M5", 0xe805, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+		{"NanoStation M5 XW", 0xe855, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+		{"NanoStation M3", 0xe035, 3, 3, ROUTER_BOARD_NS5M, M35, 10},	//
+		{"NanoStation M365", 0xe003, 3, 3, ROUTER_BOARD_NS5M, M365, 10},	//
+		{"NanoStation M900", 0xe2b9, 3, 3, ROUTER_BOARD_NS5M, M900, 10},	//
+//              {"NanoStation M900 GPS", 0xe0b9, 3, 3, ROUTER_BOARD_NS5M, M900},       //
+		{"Rocket M2", 0xe102, 3, 3, ROUTER_BOARD_R2M, 0, 10},	//
+		{"Rocket M2", 0xe112, 3, 3, ROUTER_BOARD_R2M, 0, 10},	//
+		{"Rocket M2", 0xe1b2, 3, 3, ROUTER_BOARD_R2M, 0, 10},	//
+		{"Rocket M2", 0xe1c2, 3, 3, ROUTER_BOARD_R2M, 0, 10},	//
+		{"Rocket M2 Titanium XW", 0xe1d2, 3, 3, ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Rocket M5 Titanium XW", 0xe4d5, 3, 3, ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Rocket M5", 0xe105, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"Rocket M5", 0xe1b5, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"Rocket M5 XW", 0xe6b5, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"Rocket M5", 0xe8b5, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"Rocket M5", 0xe1c5, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"Rocket M5 Titanium XW", 0xe1d5, 3, 3, ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Rocket M6", 0xe1b6, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"Rocket M3", 0xe1c3, 3, 3, ROUTER_BOARD_R5M, M35, 10},	//
+		{"Rocket M3", 0xe1e3, 3, 3, ROUTER_BOARD_R5M, M35, 10},	//
+		{"Rocket M5 X3 XW", 0xe3b5, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"Rocket M365", 0xe1b3, 3, 3, ROUTER_BOARD_R5M, M365, 10},	//
+		{"Rocket M365", 0xe1d3, 3, 3, ROUTER_BOARD_R5M, M365, 10},	//
+		{"Rocket M900", 0xe1b9, 3, 3, ROUTER_BOARD_R2M, M900, 10},	//
+		{"Rocket M900", 0xe1d9, 3, 3, ROUTER_BOARD_R2M, M900, 10},	//
+		{"Airbeam 5", 0xe1e5, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"Bullet M2", 0xe202, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Bullet M5", 0xe205, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Bullet M2 Titanium", 0xe2d2, 3, 3, ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Bullet M5 Titanium", 0xe2d5, 3, 3, ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Airgrid M2", 0xe212, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Airgrid M2", 0xe242, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Airgrid M2HP", 0xe252, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Airgrid M5", 0xe215, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Airgrid M5", 0xe245, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Airgrid M5", 0xe255, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Airgrid M5 XW", 0xe835, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"AirRouter", 0xe4a2, 1, 1, ROUTER_BOARD_AIRROUTER, 0, 10},	//
+		{"AirRouter", 0xe4b2, 1, 1, ROUTER_BOARD_AIRROUTER, 0, 10},	//
+		{"Pico M2", 0xe302, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Pico M5", 0xe305, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Airwire", 0xe405, 3, 3, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Airwire", 0xe4a5, 3, 3, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Loco M5", 0xe0a5, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+		{"Loco M5", 0xe8a5, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+		{"Loco M5 XW", 0xe845, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+		{"Loco M2", 0xe0a2, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+//              {"Loco M2", 0xe8a2, 3, 3, ROUTER_BOARD_NS5M, 0},   //
+		{"Loco M900", 0xe009, 3, 3, ROUTER_BOARD_NS5M, M900, 10},	//
+		{"NanoStation M900 Sector", 0xe0b9, 3, 3, ROUTER_BOARD_NS5M, M900, 10},	//
+		{"LiteStation M25", 0xe115, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+		{"LiteStation M5", 0xe2a5, 3, 3, ROUTER_BOARD_NS5M, 0, 10},	//
+		{"PowerAP N", 0xe402, 3, 3, ROUTER_BOARD_NS2M, 0, 10},	//
+		{"Simple AP", 0xe4a2, 3, 3, ROUTER_BOARD_R2M, 0, 10},	//
+		{"PowerBridge M3", 0xe2a3, 3, 3, ROUTER_BOARD_R5M, M35, 10},	//
+		{"PowerBridge M5", 0xe1a5, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"PowerBridge M10", 0xe110, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"PowerBridge M5 X3", 0xe3a5, 3, 3, ROUTER_BOARD_R5M, 0, 10},	//
+		{"PowerBridge M365", 0xe1a3, 3, 3, ROUTER_BOARD_R5M, M365, 10},	//
+		{"Rocket M10", 0xe110, 3, 3, ROUTER_BOARD_R5M, M10, 10},	// 
+		{"NanoBridge M3", 0xe243, 3, 3, ROUTER_BOARD_BS5M, M35, 10},	//
+		{"NanoBridge M365", 0xe233, 3, 3, ROUTER_BOARD_BS5M, M365, 10},	//
+		{"NanoBridge M900", 0xe239, 3, 3, ROUTER_BOARD_BS5M, M900, 10},	//
+		{"NanoBridge M5", 0xe235, 3, 3, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"NanoBridge M5", 0xe2b5, 3, 3, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"NanoBridge M5", 0xe2e5, 3, 3, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"NanoBridge M2", 0xe232, 3, 3, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"NanoBridge M2", 0xe2b2, 3, 3, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"PicoStation M2", 0xe302, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"PicoStation M5", 0xe305, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"3G Station", 0xe6a2, 3, 3, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"3G Station Professional", 0xe6b2, 3, 3, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"3G Station Outdoor", 0xe6c2, 3, 3, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"WispStation M5", 0xe345, 3, 3, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"UniFi UAP", 0xe502, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP-PRO", 0xe507, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP-LR", 0xe512, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP-Outdoor", 0xe532, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP-Outdoor 5G", 0xe515, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP-AC", 0xe902, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP-Outdoor+", 0xe562, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP-AC v2", 0xe912, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP v2", 0xe572, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP-LR v2", 0xe582, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{NULL, 0, NULL, NULL, 0},	//
 	};
 
@@ -2470,8 +2479,12 @@ int internal_getRouterBrand()
 	int devcnt = 0;
 	while (dev[devcnt].devicename != NULL) {
 		if (dev[devcnt].devid == device) {
-			nvram_default_get("ath0_rxantenna", dev[devcnt].rxchain);
-			nvram_default_get("ath0_txantenna", dev[devcnt].txchain);
+			char rxchain[16];
+			char txchain[16];
+			sprintf(rxchain, "%d", dev[devcnt].rxchain);
+			sprintf(txchain, "%d", dev[devcnt].txchain);
+			nvram_default_get("ath0_rxantenna", rxchain);
+			nvram_default_get("ath0_txantenna", txchain);
 			if (dev[devcnt].offset) {
 				char foff[32];
 				sprintf(foff, "%d", dev[devcnt].offset);
@@ -2483,7 +2496,9 @@ int internal_getRouterBrand()
 				nvram_set("ath0_poweroffset", poff);
 			}
 			setRouter(dev[devcnt].devicename);
-			return dev[devcnt].dddev;
+			static char devicename[64];
+			sprintf(devicename, "Ubiquiti %s", dev[devcnt].dddev);
+			return devicename;
 		}
 		devcnt++;
 	}
@@ -5802,7 +5817,7 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x10d;
 		power_gpio = 0x10b;
 //              usb_power = 0x01a;
-//		usb_gpio = 0x10b;
+//              usb_gpio = 0x10b;
 //              ses_gpio = 0x11b;
 		break;
 #elif HAVE_DIR825C1
