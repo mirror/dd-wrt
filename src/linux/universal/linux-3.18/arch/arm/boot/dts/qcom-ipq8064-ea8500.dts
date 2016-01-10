@@ -27,7 +27,7 @@
 	};
 
 	chosen {
-		bootargs = "rootfstype=squashfs noinitrd";
+		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd";
 		linux,stdout-path = "serial0:115200n8";
 	};
 
@@ -253,7 +253,7 @@
 			};
 			
 			syscfg@5f80000 {
-				label = "syscfg";
+				label = "ddwrt";
 				reg = <0x5f80000 0x2080000>;
 			};
 
@@ -347,6 +347,7 @@
 		wps {
 			label = "ea8500:green:wps";
 			gpios = <&qcom_pinmux 53 0>;
+			default-state = "on";
 		};
 
 		power {
@@ -358,6 +359,7 @@
 		wifi {
 			label = "ea8500:green:wifi";
 			gpios = <&qcom_pinmux 54 0>;
+			default-state = "on";
 		};
 	};
 };
