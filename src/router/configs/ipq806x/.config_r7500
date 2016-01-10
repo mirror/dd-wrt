@@ -5,6 +5,7 @@
 #
 # Base Features
 #
+CONFIG_IPVS=y
 CONFIG_UNBOUND=y
 CONFIG_HWMON=y
 CONFIG_CPUTEMP=y
