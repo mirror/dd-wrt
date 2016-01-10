@@ -35,8 +35,8 @@ ARCH		= $(shell uname -m)
 RPMSOURCEDIR	= $(shell rpm --eval '%_sourcedir')
 RPMSPECDIR	= $(shell rpm --eval '%_specdir')
 
-CC		= gcc
-INCLUDE		=
+#CC		= gcc
+#INCLUDE		=
 SBIN		= $(BUILD_ROOT)/sbin
 MANDIR		= usr/man
 MAN		= $(BUILD_ROOT)/$(MANDIR)/man8
@@ -45,12 +45,7 @@ MKDIR		= mkdir
 INSTALL		= install
 STATIC_LIBS	= libipvs/libipvs.a
 
-ifeq "${ARCH}" "sparc64"
-    CFLAGS = -Wall -Wunused -Wstrict-prototypes -g -m64 -pipe -mcpu=ultrasparc -mcmodel=medlow
-else
-    CFLAGS = -Wall -Wunused -Wstrict-prototypes -g
-endif
-
+CFLAGS = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 #####################################
 # No servicable parts below this line
@@ -62,27 +57,16 @@ RPMBUILD = $(shell				\
 		echo "/bin/rpm";		\
 	fi )
 
-ifeq (,$(FORCE_GETOPT))
-LIB_SEARCH = /lib64 /usr/lib64 /usr/local/lib64 /lib /usr/lib /usr/local/lib
-POPT_LIB = $(shell for i in $(LIB_SEARCH); do \
-  if [ -f $$i/libpopt.a ]; then \
-    if nm $$i/libpopt.a | fgrep -q poptGetContext; then \
-	echo "-lpopt"; \
-	break; \
-    fi; \
-  fi; \
-done)
-endif
 
 ifneq (,$(POPT_LIB))
 POPT_DEFINE = -DHAVE_POPT
 endif
 
-OBJS		= ipvsadm.o config_stream.o dynamic_array.o
+OBJS		= ipvsadm.o config_stream.o dynamic_array.o popt.o popthelp.o poptparse.o poptint.o
 LIBS		= $(POPT_LIB)
-ifneq (0,$(HAVE_NL))
-LIBS		+= -lnl
-endif
+#ifneq (0,$(HAVE_NL))
+#LIBS		+= -lnl
+#endif
 DEFINES		= -DVERSION=\"$(VERSION)\" -DSCHEDULERS=\"$(SCHEDULERS)\" \
 		  -DPE_LIST=\"$(PE_LIST)\" $(POPT_DEFINE)
 DEFINES		+= $(shell if [ ! -f ../ip_vs.h ]; then	\

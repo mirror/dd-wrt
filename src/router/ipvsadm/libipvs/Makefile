@@ -1,10 +1,10 @@
 # Makefile for libipvs
 
-CC		= gcc
-CFLAGS		= -Wall -Wunused -Wstrict-prototypes -g -fPIC
-ifneq (0,$(HAVE_NL))
-CFLAGS		+= -DLIBIPVS_USE_NL
-endif
+#CC		= gcc
+CFLAGS = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections
+#ifneq (0,$(HAVE_NL))
+#CFLAGS		+= -DLIBIPVS_USE_NL
+#endif
 
 INCLUDE		+= $(shell if [ -f ../../ip_vs.h ]; then	\
 		     echo "-I../../."; fi;)
