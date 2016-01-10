@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.24 Kernel Configuration
+# Linux/arm 3.18.25 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -317,7 +317,7 @@ CONFIG_CPU_CP15_MMU=y
 # CONFIG_ARCH_PHYS_ADDR_T_64BIT is not set
 # CONFIG_ARM_THUMB is not set
 # CONFIG_ARM_THUMBEE is not set
-# CONFIG_ARM_VIRT_EXT is not set
+CONFIG_ARM_VIRT_EXT=y
 CONFIG_SWP_EMULATE=y
 # CONFIG_CPU_ICACHE_DISABLE is not set
 # CONFIG_CPU_DCACHE_DISABLE is not set
