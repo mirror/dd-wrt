@@ -339,6 +339,7 @@ void start_sysinit(void)
 	int mtd = getMTD("art");
 	char *maddr = NULL;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+	if(board != ROUTER_NETGEAR_R7500)
 	fp = fopen(mtdpath, "rb");
 	if (fp) {
 		int newmac[6];
@@ -346,7 +347,7 @@ void start_sysinit(void)
 			maddr = getUEnv("lan_mac");
 		if (board == ROUTER_LINKSYS_EA8500)
 			maddr = get_deviceinfo("hw_mac_addr");
-		
+
 		if (maddr){
 			fprintf(stderr, "sysinit using mac %s\n", maddr);
 			sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
