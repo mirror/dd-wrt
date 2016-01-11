@@ -1292,6 +1292,7 @@ management.ipv6_dhcp6s_cust="Dhcp6s custom";
 management.ipv6_dhcp6s_conf="Dhcp6s config";
 management.ipv6_tun_end_ipv4="Tunnel Endpoint IPv4 Address";
 management.ipv6_tun_client_addr="Tunnel Client IPv6 Address";
+management.ipv6_tun_upd_url="Tunnel Update URL";
 management.jffs_legend="JFFS2 Support";
 management.jffs_srv="Internal Flash Storage";
 management.jffs_clean="Clean Internal Flash Storage";
@@ -2609,6 +2610,7 @@ wl_basic.wdsap="WDS AP";
 wl_basic.mixed="Mixed";
 wl_basic.bft="Explicit Beamforming";
 wl_basic.bfr="Implicit Beamforming";
+wl_basic.atf="Airtime Fairness";
 wl_basic.shortgi="Short GI";
 wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Short Preamble";
@@ -2692,7 +2694,7 @@ wl_basic.lower="lower";
 
 //help container
 var hwl_basic=new Object();
-hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.<br/><b>Note :</b> when changing wireless mode, some advanced parameters are succeptible to be modified (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Attention: It is recommended that you press <em>Apply Settings</em> after you change a value in order to update the fileds with the corresponding parameters.";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ACK timing. 0 disables ack timing completely for Broadcom firmwares. On Atheros based firmware, 0 enables auto ACK timing mode.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
