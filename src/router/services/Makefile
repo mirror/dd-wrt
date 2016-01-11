@@ -1579,7 +1579,7 @@ include $(TOP)/rules/generic.mk
 CFLAGS_EXTRA += $(DD_CFLAGS)
 
 CFLAGS += $(CFLAGS_EXTRA) $(MAD_FLAGS)
-HCFLAGS += $(CFLAGS_EXTRA) $(MIPS16_OPT)
+HCFLAGS += $(CFLAGS_EXTRA)
 
 vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/shared $(SRCBASE)/rts/src
 
