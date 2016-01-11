@@ -15,7 +15,7 @@ DEFINES		= $(shell if [ ! -f ../../ip_vs.h ]; then	\
 STATIC_LIB	= libipvs.a
 SHARED_LIB	= libipvs.so
 
-all:		$(STATIC_LIB) $(SHARED_LIB)
+all:		$(STATIC_LIB)
 
 $(STATIC_LIB):	libipvs.o ip_vs_nl_policy.o
 		ar rv $@ $^

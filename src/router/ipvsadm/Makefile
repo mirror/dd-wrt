@@ -37,10 +37,10 @@ RPMSPECDIR	= $(shell rpm --eval '%_specdir')
 
 #CC		= gcc
 #INCLUDE		=
-SBIN		= $(BUILD_ROOT)/sbin
-MANDIR		= usr/man
-MAN		= $(BUILD_ROOT)/$(MANDIR)/man8
-INIT		= $(BUILD_ROOT)/etc/rc.d/init.d
+SBIN		= $(BUILD_ROOT)$(INSTALLDIR)/sbin
+MANDIR		= $(INSTALLDIR)/usr/man
+MAN		= $(BUILD_ROOT)$(INSTALLDIR)/$(MANDIR)/man8
+INIT		= $(BUILD_ROOT)$(INSTALLDIR)/etc/rc.d/init.d
 MKDIR		= mkdir
 INSTALL		= install
 STATIC_LIBS	= libipvs/libipvs.a
@@ -88,12 +88,12 @@ install:        all
 		$(INSTALL) -m 0755 ipvsadm $(SBIN)
 		$(INSTALL) -m 0755 ipvsadm-save $(SBIN)
 		$(INSTALL) -m 0755 ipvsadm-restore $(SBIN)
-		[ -d $(MAN) ] || $(MKDIR) -p $(MAN)
-		$(INSTALL) -m 0644 ipvsadm.8 $(MAN)
-		$(INSTALL) -m 0644 ipvsadm-save.8 $(MAN)
-		$(INSTALL) -m 0644 ipvsadm-restore.8 $(MAN)
-		[ -d $(INIT) ] || $(MKDIR) -p $(INIT)
-		$(INSTALL) -m 0755 ipvsadm.sh $(INIT)/ipvsadm
+#		[ -d $(MAN) ] || $(MKDIR) -p $(MAN)
+#		$(INSTALL) -m 0644 ipvsadm.8 $(MAN)
+#		$(INSTALL) -m 0644 ipvsadm-save.8 $(MAN)
+#		$(INSTALL) -m 0644 ipvsadm-restore.8 $(MAN)
+#		[ -d $(INIT) ] || $(MKDIR) -p $(INIT)
+#		$(INSTALL) -m 0755 ipvsadm.sh $(INIT)/ipvsadm
 
 clean:
 		rm -f ipvsadm $(NAME).spec $(NAME)-$(VERSION).tar.gz
