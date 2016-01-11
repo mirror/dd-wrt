@@ -15,8 +15,14 @@
 /* Define to 1 if you have the `chroot' function. */
 #undef HAVE_CHROOT
 
-/* Define to 1 if you have the <crypt.h> header file. */
+/* crypt */
+#undef HAVE_CRYPT
+
+/* crypt.h */
 #undef HAVE_CRYPT_H
+
+/* crypt_r */
+#undef HAVE_CRYPT_R
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -32,6 +38,12 @@
 
 /* Define to 1 if you have the <ev.h> header file. */
 #undef HAVE_EV_H
+
+/* Define to 1 if you have the `explicit_bzero' function. */
+#undef HAVE_EXPLICIT_BZERO
+
+/* BSD extended attributes */
+#undef HAVE_EXTATTR
 
 /* Define to 1 if you have the `FAMNoExists' function. */
 #undef HAVE_FAMNOEXISTS
@@ -108,9 +120,6 @@
 /* libbz2 */
 #undef HAVE_LIBBZ2
 
-/* libcrypt */
-#undef HAVE_LIBCRYPT
-
 /* libdl */
 #undef HAVE_LIBDL
 
@@ -131,6 +140,9 @@
 
 /* Have libssl */
 #undef HAVE_LIBSSL
+
+/* Have libunwind support */
+#undef HAVE_LIBUNWIND
 
 /* libxml2 */
 #undef HAVE_LIBXML2
@@ -167,6 +179,9 @@
 
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
+
+/* Define to 1 if you have the `memset_s' function. */
+#undef HAVE_MEMSET_S
 
 /* Define to 1 if you have the `mmap' function. */
 #undef HAVE_MMAP
@@ -301,6 +316,9 @@
 /* Define to 1 if you have the <sys/event.h> header file. */
 #undef HAVE_SYS_EVENT_H
 
+/* Define to 1 if you have the <sys/extattr.h> header file. */
+#undef HAVE_SYS_EXTATTR_H
+
 /* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H
 
@@ -327,9 +345,6 @@
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
-
-/* Define to 1 if you have the <sys/syslimits.h> header file. */
-#undef HAVE_SYS_SYSLIMITS_H
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 #undef HAVE_SYS_TIME_H
@@ -366,6 +381,9 @@
 
 /* Define to 1 if you have the <vfork.h> header file. */
 #undef HAVE_VFORK_H
+
+/* weak symbols are supported */
+#undef HAVE_WEAK_SYMBOLS
 
 /* Define to 1 if `fork' works. */
 #undef HAVE_WORKING_FORK
