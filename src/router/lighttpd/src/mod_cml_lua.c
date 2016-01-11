@@ -102,13 +102,14 @@ static int c_to_lua_push(lua_State *L, int tbl, const char *key, size_t key_len,
 
 static int cache_export_get_params(lua_State *L, int tbl, buffer *qrystr) {
 	size_t is_key = 1;
-	size_t i;
+	size_t i, len;
 	char *key = NULL, *val = NULL;
 
 	key = qrystr->ptr;
 
 	/* we need the \0 */
-	for (i = 0; i < qrystr->used; i++) {
+	len = buffer_string_length(qrystr);
+	for (i = 0; i <= len; i++) {
 		switch(qrystr->ptr[i]) {
 		case '=':
 			if (is_key) {
@@ -129,8 +130,8 @@ static int cache_export_get_params(lua_State *L, int tbl, buffer *qrystr) {
 				qrystr->ptr[i] = '\0';
 
 				c_to_lua_push(L, tbl,
-					      key, strlen(key),
-					      val, strlen(val));
+					key, strlen(key),
+					val, strlen(val));
 			}
 
 			key = qrystr->ptr + i + 1;
@@ -260,7 +261,7 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 	c_to_lua_push(L, header_tbl, CONST_STR_LEN("SCRIPT_NAME"), CONST_BUF_LEN(con->uri.path));
 	c_to_lua_push(L, header_tbl, CONST_STR_LEN("SCRIPT_FILENAME"), CONST_BUF_LEN(con->physical.path));
 	c_to_lua_push(L, header_tbl, CONST_STR_LEN("DOCUMENT_ROOT"), CONST_BUF_LEN(con->physical.doc_root));
-	if (!buffer_is_empty(con->request.pathinfo)) {
+	if (!buffer_string_is_empty(con->request.pathinfo)) {
 		c_to_lua_push(L, header_tbl, CONST_STR_LEN("PATH_INFO"), CONST_BUF_LEN(con->request.pathinfo));
 	}
 
@@ -276,7 +277,7 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 	header_tbl = lua_gettop(L);
 	lua_gettable(L, LUA_GLOBALSINDEX);
 
-	buffer_copy_string_buffer(b, con->uri.query);
+	buffer_copy_buffer(b, con->uri.query);
 	cache_export_get_params(L, header_tbl, b);
 	buffer_reset(b);
 
@@ -346,7 +347,7 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 
 				/* the file is relative, make it absolute */
 				if (s[0] != '/') {
-					buffer_copy_string_buffer(b, p->basedir);
+					buffer_copy_buffer(b, p->basedir);
 					buffer_append_string(b, lua_tostring(L, -1));
 				} else {
 					buffer_copy_string(b, lua_tostring(L, -1));
@@ -358,7 +359,7 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 					switch(errno) {
 					case ENOENT:
 						/* a file is missing, call the handler to generate it */
-						if (!buffer_is_empty(p->trigger_handler)) {
+						if (!buffer_string_is_empty(p->trigger_handler)) {
 							ret = 1; /* cache-miss */
 
 							log_error_write(srv, __FILE__, __LINE__, "s",
@@ -398,7 +399,6 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 		if (ret == 0) {
 			data_string *ds;
 			char timebuf[sizeof("Sat, 23 Jul 2005 21:20:01 GMT")];
-			buffer tbuf;
 
 			con->file_finished = 1;
 
@@ -411,17 +411,11 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 				strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S GMT", gmtime(&mtime));
 
 				response_header_overwrite(srv, con, CONST_STR_LEN("Last-Modified"), timebuf, sizeof(timebuf) - 1);
-
-				tbuf.ptr = timebuf;
-				tbuf.used = sizeof(timebuf);
-				tbuf.size = sizeof(timebuf);
-			} else {
-				tbuf.ptr = ds->value->ptr;
-				tbuf.used = ds->value->used;
-				tbuf.size = ds->value->size;
+				ds = (data_string *)array_get_element(con->response.headers, "Last-Modified");
+				force_assert(NULL != ds);
 			}
 
-			if (HANDLER_FINISHED == http_response_handle_cachable(srv, con, &tbuf)) {
+			if (HANDLER_FINISHED == http_response_handle_cachable(srv, con, ds->value)) {
 				/* ok, the client already has our content,
 				 * no need to send it again */
 
@@ -433,12 +427,12 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 		}
 	}
 
-	if (ret == 1 && !buffer_is_empty(p->trigger_handler)) {
+	if (ret == 1 && !buffer_string_is_empty(p->trigger_handler)) {
 		/* cache-miss */
-		buffer_copy_string_buffer(con->uri.path, p->baseurl);
+		buffer_copy_buffer(con->uri.path, p->baseurl);
 		buffer_append_string_buffer(con->uri.path, p->trigger_handler);
 
-		buffer_copy_string_buffer(con->physical.path, p->basedir);
+		buffer_copy_buffer(con->physical.path, p->basedir);
 		buffer_append_string_buffer(con->physical.path, p->trigger_handler);
 
 		chunkqueue_reset(con->write_queue);

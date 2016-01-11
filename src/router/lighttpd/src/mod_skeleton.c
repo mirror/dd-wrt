@@ -65,7 +65,7 @@ INIT_FUNC(mod_skeleton_init) {
 	return p;
 }
 
-/* detroy the plugin data */
+/* destroy the plugin data */
 FREE_FUNC(mod_skeleton_free) {
 	plugin_data *p = p_d;
 
@@ -79,7 +79,7 @@ FREE_FUNC(mod_skeleton_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
-			if (!s) continue;
+			if (NULL == s) continue;
 
 			array_free(s->match);
 
@@ -111,6 +111,7 @@ SETDEFAULTS_FUNC(mod_skeleton_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -120,7 +121,7 @@ SETDEFAULTS_FUNC(mod_skeleton_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}

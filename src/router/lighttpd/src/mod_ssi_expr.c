@@ -35,7 +35,7 @@ void ssi_val_free(ssi_val_t *s) {
 
 int ssi_val_tobool(ssi_val_t *B) {
 	if (B->type == SSI_TYPE_STRING) {
-		return B->str->used > 1 ? 1 : 0;
+		return !buffer_string_is_empty(B->str);
 	} else {
 		return B->bo;
 	}
@@ -215,9 +215,9 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 			tid = TK_VALUE;
 
 			if (NULL != (ds = (data_string *)array_get_element(p->ssi_cgi_env, token->ptr))) {
-				buffer_copy_string_buffer(token, ds->value);
+				buffer_copy_buffer(token, ds->value);
 			} else if (NULL != (ds = (data_string *)array_get_element(p->ssi_vars, token->ptr))) {
-				buffer_copy_string_buffer(token, ds->value);
+				buffer_copy_buffer(token, ds->value);
 			} else {
 				buffer_copy_string_len(token, CONST_STR_LEN(""));
 			}
@@ -291,6 +291,7 @@ int ssi_eval_expr(server *srv, connection *con, plugin_data *p, const char *expr
 	/* default context */
 
 	pParser = ssiexprparserAlloc( malloc );
+	force_assert(pParser);
 	token = buffer_init();
 	while((1 == (ret = ssi_expr_tokenizer(srv, con, p, &t, &token_id, token))) && context.ok) {
 		ssiexprparser(pParser, token_id, token, &context);

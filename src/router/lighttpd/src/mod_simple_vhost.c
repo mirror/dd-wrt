@@ -92,6 +92,7 @@ SETDEFAULTS_FUNC(mod_simple_vhost_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -114,7 +115,7 @@ SETDEFAULTS_FUNC(mod_simple_vhost_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -124,18 +125,18 @@ SETDEFAULTS_FUNC(mod_simple_vhost_set_defaults) {
 
 static int build_doc_root(server *srv, connection *con, plugin_data *p, buffer *out, buffer *host) {
 	stat_cache_entry *sce = NULL;
-	force_assert(p->conf.server_root->used > 1);
+	force_assert(!buffer_string_is_empty(p->conf.server_root));
 
-	buffer_prepare_copy(out, 128);
-	buffer_copy_string_buffer(out, p->conf.server_root);
+	buffer_string_prepare_copy(out, 127);
+	buffer_copy_buffer(out, p->conf.server_root);
 
-	if (host->used) {
+	if (!buffer_string_is_empty(host)) {
 		/* a hostname has to start with a alpha-numerical character
 		 * and must not contain a slash "/"
 		 */
 		char *dp;
 
-		BUFFER_APPEND_SLASH(out);
+		buffer_append_slash(out);
 
 		if (NULL == (dp = strchr(host->ptr, ':'))) {
 			buffer_append_string_buffer(out, host);
@@ -143,13 +144,13 @@ static int build_doc_root(server *srv, connection *con, plugin_data *p, buffer *
 			buffer_append_string_len(out, host->ptr, dp - host->ptr);
 		}
 	}
-	BUFFER_APPEND_SLASH(out);
+	buffer_append_slash(out);
 
-	if (p->conf.document_root->used > 2 && p->conf.document_root->ptr[0] == '/') {
-		buffer_append_string_len(out, p->conf.document_root->ptr + 1, p->conf.document_root->used - 2);
+	if (buffer_string_length(p->conf.document_root) > 1 && p->conf.document_root->ptr[0] == '/') {
+		buffer_append_string_len(out, p->conf.document_root->ptr + 1, buffer_string_length(p->conf.document_root) - 1);
 	} else {
 		buffer_append_string_buffer(out, p->conf.document_root);
-		BUFFER_APPEND_SLASH(out);
+		buffer_append_slash(out);
 	}
 
 	if (HANDLER_ERROR == stat_cache_get_entry(srv, con, out, &sce)) {
@@ -227,38 +228,38 @@ static handler_t mod_simple_vhost_docroot(server *srv, connection *con, void *p_
 	/* build_doc_root() requires a server_root; skip module if simple-vhost.server-root is not set
 	 * or set to an empty string (especially don't cache any results!)
 	 */
-	if (p->conf.server_root->used < 2) return HANDLER_GO_ON;
+	if (buffer_string_is_empty(p->conf.server_root)) return HANDLER_GO_ON;
 
-	if (p->conf.docroot_cache_key->used &&
-	    con->uri.authority->used &&
+	if (!buffer_string_is_empty(p->conf.docroot_cache_key) &&
+	    !buffer_string_is_empty(con->uri.authority) &&
 	    buffer_is_equal(p->conf.docroot_cache_key, con->uri.authority)) {
 		/* cache hit */
-		buffer_copy_string_buffer(con->server_name,       p->conf.docroot_cache_servername);
-		buffer_copy_string_buffer(con->physical.doc_root, p->conf.docroot_cache_value);
+		buffer_copy_buffer(con->server_name,       p->conf.docroot_cache_servername);
+		buffer_copy_buffer(con->physical.doc_root, p->conf.docroot_cache_value);
 	} else {
 		/* build document-root */
-		if ((con->uri.authority->used == 0) ||
+		if (buffer_string_is_empty(con->uri.authority) ||
 		    build_doc_root(srv, con, p, p->doc_root, con->uri.authority)) {
 			/* not found, fallback the default-host */
 			if (0 == build_doc_root(srv, con, p,
 					   p->doc_root,
 					   p->conf.default_host)) {
 				/* default host worked */
-				buffer_copy_string_buffer(con->server_name, p->conf.default_host);
-				buffer_copy_string_buffer(con->physical.doc_root, p->doc_root);
+				buffer_copy_buffer(con->server_name, p->conf.default_host);
+				buffer_copy_buffer(con->physical.doc_root, p->doc_root);
 				/* do not cache default host */
 			}
 			return HANDLER_GO_ON;
 		}
 
 		/* found host */
-		buffer_copy_string_buffer(con->server_name, con->uri.authority);
-		buffer_copy_string_buffer(con->physical.doc_root, p->doc_root);
+		buffer_copy_buffer(con->server_name, con->uri.authority);
+		buffer_copy_buffer(con->physical.doc_root, p->doc_root);
 
 		/* copy to cache */
-		buffer_copy_string_buffer(p->conf.docroot_cache_key,        con->uri.authority);
-		buffer_copy_string_buffer(p->conf.docroot_cache_value,      p->doc_root);
-		buffer_copy_string_buffer(p->conf.docroot_cache_servername, con->server_name);
+		buffer_copy_buffer(p->conf.docroot_cache_key,        con->uri.authority);
+		buffer_copy_buffer(p->conf.docroot_cache_value,      p->doc_root);
+		buffer_copy_buffer(p->conf.docroot_cache_servername, con->server_name);
 	}
 
 	return HANDLER_GO_ON;

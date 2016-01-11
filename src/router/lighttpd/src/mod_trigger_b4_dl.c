@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <string.h>
 
+#if (defined(HAVE_GDBM_H) || defined(HAVE_MEMCACHE_H)) && defined(HAVE_PCRE_H)
+
 #if defined(HAVE_GDBM_H)
 # include <gdbm.h>
 #endif
@@ -89,7 +91,7 @@ FREE_FUNC(mod_trigger_b4_dl_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
-			if (!s) continue;
+			if (NULL == s) continue;
 
 			buffer_free(s->db_filename);
 			buffer_free(s->download_url);
@@ -146,6 +148,7 @@ SETDEFAULTS_FUNC(mod_trigger_b4_dl_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 #if defined(HAVE_PCRE_H)
 		const char *errptr;
@@ -171,11 +174,11 @@ SETDEFAULTS_FUNC(mod_trigger_b4_dl_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 #if defined(HAVE_GDBM_H)
-		if (!buffer_is_empty(s->db_filename)) {
+		if (!buffer_string_is_empty(s->db_filename)) {
 			if (NULL == (s->db = gdbm_open(s->db_filename->ptr, 4096, GDBM_WRCREAT | GDBM_NOLOCK, S_IRUSR | S_IWUSR, 0))) {
 				log_error_write(srv, __FILE__, __LINE__, "s",
 						"gdbm-open failed");
@@ -185,7 +188,7 @@ SETDEFAULTS_FUNC(mod_trigger_b4_dl_set_defaults) {
 		}
 #endif
 #if defined(HAVE_PCRE_H)
-		if (!buffer_is_empty(s->download_url)) {
+		if (!buffer_string_is_empty(s->download_url)) {
 			if (NULL == (s->download_regex = pcre_compile(s->download_url->ptr,
 								      0, &errptr, &erroff, NULL))) {
 
@@ -196,7 +199,7 @@ SETDEFAULTS_FUNC(mod_trigger_b4_dl_set_defaults) {
 			}
 		}
 
-		if (!buffer_is_empty(s->trigger_url)) {
+		if (!buffer_string_is_empty(s->trigger_url)) {
 			if (NULL == (s->trigger_regex = pcre_compile(s->trigger_url->ptr,
 								     0, &errptr, &erroff, NULL))) {
 
@@ -320,7 +323,7 @@ URIHANDLER_FUNC(mod_trigger_b4_dl_uri_handler) {
 
 	if (con->mode != DIRECT) return HANDLER_GO_ON;
 
-	if (con->uri.path->used == 0) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
 
 	mod_trigger_b4_dl_patch_connection(srv, con, p);
 
@@ -356,7 +359,7 @@ URIHANDLER_FUNC(mod_trigger_b4_dl_uri_handler) {
 	}
 
 	/* check if URL is a trigger -> insert IP into DB */
-	if ((n = pcre_exec(p->conf.trigger_regex, NULL, con->uri.path->ptr, con->uri.path->used - 1, 0, 0, ovec, 3 * N)) < 0) {
+	if ((n = pcre_exec(p->conf.trigger_regex, NULL, CONST_BUF_LEN(con->uri.path), 0, 0, ovec, 3 * N)) < 0) {
 		if (n != PCRE_ERROR_NOMATCH) {
 			log_error_write(srv, __FILE__, __LINE__, "sd",
 					"execution error while matching:", n);
@@ -383,11 +386,12 @@ URIHANDLER_FUNC(mod_trigger_b4_dl_uri_handler) {
 # endif
 # if defined(HAVE_MEMCACHE_H)
 		if (p->conf.mc) {
-			size_t i;
-			buffer_copy_string_buffer(p->tmp_buf, p->conf.mc_namespace);
+			size_t i, len;
+			buffer_copy_buffer(p->tmp_buf, p->conf.mc_namespace);
 			buffer_append_string(p->tmp_buf, remote_ip);
 
-			for (i = 0; i < p->tmp_buf->used - 1; i++) {
+			len = buffer_string_length(p->tmp_buf);
+			for (i = 0; i < len; i++) {
 				if (p->tmp_buf->ptr[i] == ' ') p->tmp_buf->ptr[i] = '-';
 			}
 
@@ -407,7 +411,7 @@ URIHANDLER_FUNC(mod_trigger_b4_dl_uri_handler) {
 	}
 
 	/* check if URL is a download -> check IP in DB, update timestamp */
-	if ((n = pcre_exec(p->conf.download_regex, NULL, con->uri.path->ptr, con->uri.path->used - 1, 0, 0, ovec, 3 * N)) < 0) {
+	if ((n = pcre_exec(p->conf.download_regex, NULL, CONST_BUF_LEN(con->uri.path), 0, 0, ovec, 3 * N)) < 0) {
 		if (n != PCRE_ERROR_NOMATCH) {
 			log_error_write(srv, __FILE__, __LINE__, "sd",
 					"execution error while matching: ", n);
@@ -469,12 +473,13 @@ URIHANDLER_FUNC(mod_trigger_b4_dl_uri_handler) {
 # if defined(HAVE_MEMCACHE_H)
 		if (p->conf.mc) {
 			void *r;
-			size_t i;
+			size_t i, len;
 
-			buffer_copy_string_buffer(p->tmp_buf, p->conf.mc_namespace);
+			buffer_copy_buffer(p->tmp_buf, p->conf.mc_namespace);
 			buffer_append_string(p->tmp_buf, remote_ip);
 
-			for (i = 0; i < p->tmp_buf->used - 1; i++) {
+			len = buffer_string_length(p->tmp_buf);
+			for (i = 0; i < len; i++) {
 				if (p->tmp_buf->ptr[i] == ' ') p->tmp_buf->ptr[i] = '-';
 			}
 
@@ -591,3 +596,15 @@ int mod_trigger_b4_dl_plugin_init(plugin *p) {
 
 	return 0;
 }
+
+#else
+
+#pragma message("(either gdbm or libmemcache) and pcre are required, but were not found")
+
+int mod_trigger_b4_dl_plugin_init(plugin *p);
+int mod_trigger_b4_dl_plugin_init(plugin *p) {
+	UNUSED(p);
+	return -1;
+}
+
+#endif

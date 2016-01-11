@@ -40,6 +40,8 @@ FREE_FUNC(mod_access_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
+			if (NULL == s) continue;
+
 			array_free(s->access_deny);
 
 			free(s);
@@ -64,6 +66,7 @@ SETDEFAULTS_FUNC(mod_access_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -73,7 +76,7 @@ SETDEFAULTS_FUNC(mod_access_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -125,25 +128,25 @@ URIHANDLER_FUNC(mod_access_uri_handler) {
 	int s_len;
 	size_t k;
 
-	if (con->uri.path->used == 0) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
 
 	mod_access_patch_connection(srv, con, p);
 
-	s_len = con->uri.path->used - 1;
+	s_len = buffer_string_length(con->uri.path);
 
 	if (con->conf.log_request_handling) {
- 		log_error_write(srv, __FILE__, __LINE__, "s", 
+		log_error_write(srv, __FILE__, __LINE__, "s",
 				"-- mod_access_uri_handler called");
 	}
 
 	for (k = 0; k < p->conf.access_deny->used; k++) {
 		data_string *ds = (data_string *)p->conf.access_deny->data[k];
-		int ct_len = ds->value->used - 1;
+		int ct_len = buffer_string_length(ds->value);
 		int denied = 0;
 
 
 		if (ct_len > s_len) continue;
-		if (ds->value->used == 0) continue;
+		if (buffer_is_empty(ds->value)) continue;
 
 		/* if we have a case-insensitive FS we have to lower-case the URI here too */
 
