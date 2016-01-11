@@ -156,6 +156,8 @@ build_date:
 drop-sections	= .comment
 strip-flags	= $(addprefix --remove-section=,$(drop-sections))
 
+include kernel-features.mk
+
 kernel:
         # Also build kernel
 	# Also build kernel

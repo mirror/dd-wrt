@@ -139,6 +139,7 @@ all: install_headers build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
 
+include kernel-features.mk
 
 kernel:
 	# Also build kernel
