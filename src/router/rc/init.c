@@ -550,10 +550,10 @@ int main(int argc, char **argv)
 	set_ip_forward('1');
 	set_tcp_params();
 #ifdef HAVE_JFFS2
-	start_service("jffs2");
+	start_service_force("jffs2");
 #endif
 #ifdef HAVE_MMC
-	start_service("mmc");
+	start_service_force("mmc");
 #endif
 
 	start_service("mkfiles");
@@ -811,11 +811,13 @@ int main(int argc, char **argv)
 			{
 				start_service_force("radio_off");
 				start_service_force("radio_on");
+				
 			}
 			start_service_f("radio_timer");
 #ifdef HAVE_EMF
 			start_service("emf");
 #endif
+			
 			cprintf("run rc file\n");
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
@@ -854,7 +856,6 @@ int main(int argc, char **argv)
 #ifdef HAVE_SYSLOG
 			startstop_f("syslog");
 #endif
-
 			system("/etc/postinit&");
 			start_service_f("httpd");
 			led_control(LED_DIAG, LED_OFF);
