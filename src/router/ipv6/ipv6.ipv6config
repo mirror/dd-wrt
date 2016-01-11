@@ -55,6 +55,11 @@
 					<input size="2" maxlength="2" class="text" name="ipv6_tun_client_addr_pref" value="<% nvram_get("ipv6_tun_client_addr_pref"); %>" />
 				</select>
 			</div>
+			<div class="setting">
+				<div class="label"><% tran("management.ipv6_tun_upd_url"); %></div>
+					<input size="46" maxlength="150" class="text" name="ipv6_tun_upd_url" value="<% nvram_get("ipv6_tun_upd_url"); %>" />
+				</select>
+			</div>
 		</div>
 		<!-- end only 6in4 selected-->
 		<div class="setting">
