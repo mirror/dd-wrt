@@ -4283,6 +4283,9 @@ if (has_beamforming(prefix)) {
 	char wl_bfr[16];
 	sprintf(wl_bfr, "%s_itxbf", prefix);
 	showRadio(wp, "wl_basic.bfr", wl_bfr);
+	char wl_atf[16];
+	sprintf(wl_atf, "%s_atf", prefix);
+	showRadio(wp, "wl_basic.atf", wl_atf);
 }
 #endif
 #endif
