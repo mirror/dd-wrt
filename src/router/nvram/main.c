@@ -28,6 +28,8 @@ static void usage(void)
 
 #ifdef NVRAM_SPACE_256
 #define NVRAMSPACE NVRAM_SPACE_256
+#elif HAVE_NVRAM_128
+#define NVRAMSPACE 0x20000
 #elif HAVE_MVEBU
 #define NVRAMSPACE 0x10000
 #elif HAVE_IPQ806X
