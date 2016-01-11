@@ -582,9 +582,12 @@ int wlconf_up(char *name)
 	eval("wl", "-i", name, "txpwr1", "-m", "-o", pwr);
 #endif
 #ifdef HAVE_80211AC
-	if (val == 71)		// if user did not change txpwr set this to radio defaults - DAU Modus
+	val = atoi(nvram_nget("wl%d_txpwrusr", instance));
+	if (val == 1)
 		eval("wl", "-i", name, "txpwr1", "-1");
 #endif
+	eval("wl", "-i", name , "roam_delta", nvram_default_get("roam_delta", "15"));
+	
 	/*
 	 * Set txant 
 	 */
