@@ -37,7 +37,7 @@ RPMSPECDIR	= $(shell rpm --eval '%_specdir')
 
 #CC		= gcc
 #INCLUDE		=
-SBIN		= $(BUILD_ROOT)$(INSTALLDIR)/sbin
+SBIN		= $(BUILD_ROOT)$(INSTALLDIR)/usr/sbin
 MANDIR		= $(INSTALLDIR)/usr/man
 MAN		= $(BUILD_ROOT)$(INSTALLDIR)/$(MANDIR)/man8
 INIT		= $(BUILD_ROOT)$(INSTALLDIR)/etc/rc.d/init.d
