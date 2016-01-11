@@ -63,6 +63,8 @@ FREE_FUNC(mod_staticfile_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
+			if (NULL == s) continue;
+
 			array_free(s->exclude_ext);
 
 			free(s);
@@ -94,6 +96,7 @@ SETDEFAULTS_FUNC(mod_staticfile_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -107,7 +110,7 @@ SETDEFAULTS_FUNC(mod_staticfile_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -285,20 +288,18 @@ static int http_response_parse_range(server *srv, connection *con, plugin_data *
 		if (!error) {
 			if (multipart) {
 				/* write boundary-header */
-				buffer *b;
-
-				b = chunkqueue_get_append_buffer(con->write_queue);
+				buffer *b = buffer_init();
 
 				buffer_copy_string_len(b, CONST_STR_LEN("\r\n--"));
 				buffer_append_string(b, boundary);
 
 				/* write Content-Range */
 				buffer_append_string_len(b, CONST_STR_LEN("\r\nContent-Range: bytes "));
-				buffer_append_off_t(b, start);
+				buffer_append_int(b, start);
 				buffer_append_string_len(b, CONST_STR_LEN("-"));
-				buffer_append_off_t(b, end);
+				buffer_append_int(b, end);
 				buffer_append_string_len(b, CONST_STR_LEN("/"));
-				buffer_append_off_t(b, sce->st.st_size);
+				buffer_append_int(b, sce->st.st_size);
 
 				buffer_append_string_len(b, CONST_STR_LEN("\r\nContent-Type: "));
 				buffer_append_string_buffer(b, content_type);
@@ -306,8 +307,9 @@ static int http_response_parse_range(server *srv, connection *con, plugin_data *
 				/* write END-OF-HEADER */
 				buffer_append_string_len(b, CONST_STR_LEN("\r\n\r\n"));
 
-				con->response.content_length += b->used - 1;
-
+				con->response.content_length += buffer_string_length(b);
+				chunkqueue_append_buffer(con->write_queue, b);
+				buffer_free(b);
 			}
 
 			chunkqueue_append_file(con->write_queue, con->physical.path, start, end - start + 1);
@@ -320,15 +322,15 @@ static int http_response_parse_range(server *srv, connection *con, plugin_data *
 
 	if (multipart) {
 		/* add boundary end */
-		buffer *b;
-
-		b = chunkqueue_get_append_buffer(con->write_queue);
+		buffer *b = buffer_init();
 
 		buffer_copy_string_len(b, "\r\n--", 4);
 		buffer_append_string(b, boundary);
 		buffer_append_string_len(b, "--\r\n", 4);
 
-		con->response.content_length += b->used - 1;
+		con->response.content_length += buffer_string_length(b);
+		chunkqueue_append_buffer(con->write_queue, b);
+		buffer_free(b);
 
 		/* set header-fields */
 
@@ -341,11 +343,11 @@ static int http_response_parse_range(server *srv, connection *con, plugin_data *
 		/* add Content-Range-header */
 
 		buffer_copy_string_len(p->range_buf, CONST_STR_LEN("bytes "));
-		buffer_append_off_t(p->range_buf, start);
+		buffer_append_int(p->range_buf, start);
 		buffer_append_string_len(p->range_buf, CONST_STR_LEN("-"));
-		buffer_append_off_t(p->range_buf, end);
+		buffer_append_int(p->range_buf, end);
 		buffer_append_string_len(p->range_buf, CONST_STR_LEN("/"));
-		buffer_append_off_t(p->range_buf, sce->st.st_size);
+		buffer_append_int(p->range_buf, sce->st.st_size);
 
 		response_header_insert(srv, con, CONST_STR_LEN("Content-Range"), CONST_BUF_LEN(p->range_buf));
 	}
@@ -364,8 +366,8 @@ URIHANDLER_FUNC(mod_staticfile_subrequest) {
 
 	/* someone else has done a decision for us */
 	if (con->http_status != 0) return HANDLER_GO_ON;
-	if (con->uri.path->used == 0) return HANDLER_GO_ON;
-	if (con->physical.path->used == 0) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->physical.path)) return HANDLER_GO_ON;
 
 	/* someone else has handled this request */
 	if (con->mode != DIRECT) return HANDLER_GO_ON;
@@ -382,7 +384,7 @@ URIHANDLER_FUNC(mod_staticfile_subrequest) {
 
 	mod_staticfile_patch_connection(srv, con, p);
 
-	if (p->conf.disable_pathinfo && 0 != con->request.pathinfo->used) {
+	if (p->conf.disable_pathinfo && !buffer_string_is_empty(con->request.pathinfo)) {
 		if (con->conf.log_request_handling) {
 			log_error_write(srv, __FILE__, __LINE__,  "s",  "-- NOT handling file as static file, pathinfo forbidden");
 		}
@@ -393,9 +395,9 @@ URIHANDLER_FUNC(mod_staticfile_subrequest) {
 	for (k = 0; k < p->conf.exclude_ext->used; k++) {
 		ds = (data_string *)p->conf.exclude_ext->data[k];
 
-		if (ds->value->used == 0) continue;
+		if (buffer_is_empty(ds->value)) continue;
 
-		if (buffer_is_equal_right_len(con->physical.path, ds->value, ds->value->used - 1)) {
+		if (buffer_is_equal_right_len(con->physical.path, ds->value, buffer_string_length(ds->value))) {
 			if (con->conf.log_request_handling) {
 				log_error_write(srv, __FILE__, __LINE__,  "s",  "-- NOT handling file as static file, extension forbidden");
 			}
@@ -449,7 +451,7 @@ URIHANDLER_FUNC(mod_staticfile_subrequest) {
 	/* set response content-type, if not set already */
 
 	if (NULL == array_get_element(con->response.headers, "Content-Type")) {
-		if (buffer_is_empty(sce->content_type)) {
+		if (buffer_string_is_empty(sce->content_type)) {
 			/* we are setting application/octet-stream, but also announce that
 			 * this header field might change in the seconds few requests 
 			 *
@@ -469,7 +471,7 @@ URIHANDLER_FUNC(mod_staticfile_subrequest) {
 	}
 
 	if (allow_caching) {
-		if (p->conf.etags_used && con->etag_flags != 0 && !buffer_is_empty(sce->etag)) {
+		if (p->conf.etags_used && con->etag_flags != 0 && !buffer_string_is_empty(sce->etag)) {
 			if (NULL == array_get_element(con->response.headers, "ETag")) {
 				/* generate e-tag */
 				etag_mutate(con->physical.etag, sce->etag);

@@ -60,7 +60,7 @@ FREE_FUNC(mod_auth_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			mod_auth_plugin_config *s = p->config_storage[i];
 
-			if (!s) continue;
+			if (NULL == s) continue;
 
 			array_free(s->auth_require);
 			buffer_free(s->auth_plain_groupfile);
@@ -206,18 +206,18 @@ static handler_t mod_auth_uri_handler(server *srv, connection *con, void *p_d) {
 	for (k = 0; k < p->conf.auth_require->used; k++) {
 		buffer *require = p->conf.auth_require->data[k]->key;
 
-		if (require->used == 0) continue;
-		if (con->uri.path->used < require->used) continue;
+		if (buffer_is_empty(require)) continue;
+		if (buffer_string_length(con->uri.path) < buffer_string_length(require)) continue;
 
 		/* if we have a case-insensitive FS we have to lower-case the URI here too */
 
 		if (con->conf.force_lowercase_filenames) {
-			if (0 == strncasecmp(con->uri.path->ptr, require->ptr, require->used - 1)) {
+			if (0 == strncasecmp(con->uri.path->ptr, require->ptr, buffer_string_length(require))) {
 				auth_required = 1;
 				break;
 			}
 		} else {
-			if (0 == strncmp(con->uri.path->ptr, require->ptr, require->used - 1)) {
+			if (0 == strncmp(con->uri.path->ptr, require->ptr, buffer_string_length(require))) {
 				auth_required = 1;
 				break;
 			}
@@ -248,7 +248,7 @@ static handler_t mod_auth_uri_handler(server *srv, connection *con, void *p_d) {
 
 	/* try to get Authorization-header */
 
-	if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Authorization")) && ds->value->used) {
+	if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Authorization")) && !buffer_is_empty(ds->value)) {
 		char *auth_realm;
 
 		http_authorization = ds->value->ptr;
@@ -279,7 +279,7 @@ static handler_t mod_auth_uri_handler(server *srv, connection *con, void *p_d) {
 				}
 			} else {
 				log_error_write(srv, __FILE__, __LINE__, "ss",
-						"unknown authentification type:",
+						"unknown authentication type:",
 						http_authorization);
 			}
 		}
@@ -324,7 +324,7 @@ static handler_t mod_auth_uri_handler(server *srv, connection *con, void *p_d) {
 			buffer_copy_string(ds->key, "REMOTE_USER");
 			array_insert_unique(con->environment, (data_unset *)ds);
 		}
-		buffer_copy_string_buffer(ds->value, p->auth_user);
+		buffer_copy_buffer(ds->value, p->auth_user);
 
 		/* AUTH_TYPE environment */
 
@@ -367,10 +367,10 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(mod_auth_plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		mod_auth_plugin_config *s;
 		size_t n;
 		data_array *da;
-		array *ca;
 
 		s = calloc(1, sizeof(mod_auth_plugin_config));
 		s->auth_plain_groupfile = buffer_init();
@@ -413,13 +413,12 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 		cv[14].destination = &(s->auth_debug);
 
 		p->config_storage[i] = s;
-		ca = ((data_config *)srv->config_context->data[i])->value;
 
-		if (0 != config_insert_values_global(srv, ca, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 
-		if (s->auth_backend_conf->used) {
+		if (!buffer_string_is_empty(s->auth_backend_conf)) {
 			if (0 == strcmp(s->auth_backend_conf->ptr, "htpasswd")) {
 				s->auth_backend = AUTH_BACKEND_HTPASSWD;
 			} else if (0 == strcmp(s->auth_backend_conf->ptr, "htdigest")) {
@@ -436,7 +435,7 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 		}
 
 #ifdef USE_LDAP
-		if (s->auth_ldap_filter->used) {
+		if (!buffer_string_is_empty(s->auth_ldap_filter)) {
 			char *dollar;
 
 			/* parse filter */
@@ -453,7 +452,7 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 #endif
 
 		/* no auth.require for this section */
-		if (NULL == (da = (data_array *)array_get_element(ca, "auth.require"))) continue;
+		if (NULL == (da = (data_array *)array_get_element(config->value, "auth.require"))) continue;
 
 		if (da->type != TYPE_ARRAY) continue;
 
@@ -535,7 +534,7 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 				data_array *a;
 
 				a = data_array_init();
-				buffer_copy_string_buffer(a->key, da_file->key);
+				buffer_copy_buffer(a->key, da_file->key);
 
 				ds = data_string_init();
 
@@ -562,7 +561,7 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 			}
 		}
 
-		switch(s->auth_ldap_hostname->used) {
+		switch(s->auth_backend) {
 		case AUTH_BACKEND_LDAP: {
 			handler_t ret = auth_ldap_init(srv, s);
 			if (ret == HANDLER_ERROR)
@@ -588,7 +587,7 @@ handler_t auth_ldap_init(server *srv, mod_auth_plugin_config *s) {
 	}
 #endif
 
-	if (s->auth_ldap_hostname->used) {
+	if (!buffer_string_is_empty(s->auth_ldap_hostname)) {
 		/* free old context */
 		if (NULL != s->ldap) ldap_unbind_s(s->ldap);
 
@@ -608,7 +607,7 @@ handler_t auth_ldap_init(server *srv, mod_auth_plugin_config *s) {
 		if (s->auth_ldap_starttls) {
 			/* if no CA file is given, it is ok, as we will use encryption
 				* if the server requires a CAfile it will tell us */
-			if (!buffer_is_empty(s->auth_ldap_cafile)) {
+			if (!buffer_string_is_empty(s->auth_ldap_cafile)) {
 				if (LDAP_OPT_SUCCESS != (ret = ldap_set_option(NULL, LDAP_OPT_X_TLS_CACERTFILE,
 								s->auth_ldap_cafile->ptr))) {
 					log_error_write(srv, __FILE__, __LINE__, "ss",
@@ -627,7 +626,7 @@ handler_t auth_ldap_init(server *srv, mod_auth_plugin_config *s) {
 
 
 		/* 1. */
-		if (s->auth_ldap_binddn->used) {
+		if (!buffer_string_is_empty(s->auth_ldap_binddn)) {
 			if (LDAP_SUCCESS != (ret = ldap_simple_bind_s(s->ldap, s->auth_ldap_binddn->ptr, s->auth_ldap_bindpw->ptr))) {
 				log_error_write(srv, __FILE__, __LINE__, "ss", "ldap:", ldap_err2string(ret));
 

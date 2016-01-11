@@ -69,6 +69,8 @@ FREE_FUNC(mod_ssi_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
+			if (NULL == s) continue;
+
 			array_free(s->ssi_extension);
 			buffer_free(s->content_type);
 
@@ -111,6 +113,7 @@ SETDEFAULTS_FUNC(mod_ssi_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -122,7 +125,7 @@ SETDEFAULTS_FUNC(mod_ssi_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -172,33 +175,13 @@ static int ssi_env_add_request_headers(server *srv, connection *con, plugin_data
 
 		ds = (data_string *)con->request.headers->data[i];
 
-		if (ds->value->used && ds->key->used) {
-			size_t j;
-			buffer_reset(srv->tmp_buf);
-
+		if (!buffer_is_empty(ds->value) && !buffer_is_empty(ds->key)) {
 			/* don't forward the Authorization: Header */
 			if (0 == strcasecmp(ds->key->ptr, "AUTHORIZATION")) {
 				continue;
 			}
 
-			if (0 != strcasecmp(ds->key->ptr, "CONTENT-TYPE")) {
-				buffer_copy_string_len(srv->tmp_buf, CONST_STR_LEN("HTTP_"));
-				srv->tmp_buf->used--;
-			}
-
-			buffer_prepare_append(srv->tmp_buf, ds->key->used + 2);
-			for (j = 0; j < ds->key->used - 1; j++) {
-				char c = '_';
-				if (light_isalpha(ds->key->ptr[j])) {
-					/* upper-case */
-					c = ds->key->ptr[j] & ~32;
-				} else if (light_isdigit(ds->key->ptr[j])) {
-					/* copy */
-					c = ds->key->ptr[j];
-				}
-				srv->tmp_buf->ptr[srv->tmp_buf->used++] = c;
-			}
-			srv->tmp_buf->ptr[srv->tmp_buf->used] = '\0';
+			buffer_copy_string_encoded_cgi_varnames(srv->tmp_buf, CONST_BUF_LEN(ds->key), 1);
 
 			ssi_env_add(p->ssi_cgi_env, srv->tmp_buf->ptr, ds->value->ptr);
 		}
@@ -209,24 +192,8 @@ static int ssi_env_add_request_headers(server *srv, connection *con, plugin_data
 
 		ds = (data_string *)con->environment->data[i];
 
-		if (ds->value->used && ds->key->used) {
-			size_t j;
-
-			buffer_reset(srv->tmp_buf);
-			buffer_prepare_append(srv->tmp_buf, ds->key->used + 2);
-
-			for (j = 0; j < ds->key->used - 1; j++) {
-				char c = '_';
-				if (light_isalpha(ds->key->ptr[j])) {
-					/* upper-case */
-					c = ds->key->ptr[j] & ~32;
-				} else if (light_isdigit(ds->key->ptr[j])) {
-					/* copy */
-					c = ds->key->ptr[j];
-				}
-				srv->tmp_buf->ptr[srv->tmp_buf->used++] = c;
-			}
-			srv->tmp_buf->ptr[srv->tmp_buf->used] = '\0';
+		if (!buffer_is_empty(ds->value) && !buffer_is_empty(ds->key)) {
+			buffer_copy_string_encoded_cgi_varnames(srv->tmp_buf, CONST_BUF_LEN(ds->key), 0);
 
 			ssi_env_add(p->ssi_cgi_env, srv->tmp_buf->ptr, ds->value->ptr);
 		}
@@ -236,7 +203,7 @@ static int ssi_env_add_request_headers(server *srv, connection *con, plugin_data
 }
 
 static int build_ssi_cgi_vars(server *srv, connection *con, plugin_data *p) {
-	char buf[32];
+	char buf[LI_ITOSTRING_LENGTH];
 
 	server_socket *srv_sock = con->srv_socket;
 
@@ -263,7 +230,7 @@ static int build_ssi_cgi_vars(server *srv, connection *con, plugin_data *p) {
 		     );
 	ssi_env_add(p->ssi_cgi_env, CONST_STRING("GATEWAY_INTERFACE"), "CGI/1.1");
 
-	LI_ltostr(buf,
+	li_utostr(buf,
 #ifdef HAVE_IPV6
 	       ntohs(srv_sock->addr.plain.sa_family ? srv_sock->addr.ipv6.sin6_port : srv_sock->addr.ipv4.sin_port)
 #else
@@ -279,8 +246,7 @@ static int build_ssi_cgi_vars(server *srv, connection *con, plugin_data *p) {
 	if (con->request.content_length > 0) {
 		/* CGI-SPEC 6.1.2 and FastCGI spec 6.3 */
 
-		/* request.content_length < SSIZE_MAX, see request.c */
-		LI_ltostr(buf, con->request.content_length);
+		li_itostr(buf, con->request.content_length);
 		ssi_env_add(p->ssi_cgi_env, CONST_STRING("CONTENT_LENGTH"), buf);
 	}
 
@@ -301,7 +267,7 @@ static int build_ssi_cgi_vars(server *srv, connection *con, plugin_data *p) {
 	 * parameter.
 	 */
 
-	if (con->request.pathinfo->used) {
+	if (!buffer_string_is_empty(con->request.pathinfo)) {
 		ssi_env_add(p->ssi_cgi_env, CONST_STRING("PATH_INFO"), con->request.pathinfo->ptr);
 	}
 
@@ -309,7 +275,7 @@ static int build_ssi_cgi_vars(server *srv, connection *con, plugin_data *p) {
 	ssi_env_add(p->ssi_cgi_env, CONST_STRING("DOCUMENT_ROOT"), con->physical.doc_root->ptr);
 
 	ssi_env_add(p->ssi_cgi_env, CONST_STRING("REQUEST_URI"), con->request.uri->ptr);
-	ssi_env_add(p->ssi_cgi_env, CONST_STRING("QUERY_STRING"), con->uri.query->used ? con->uri.query->ptr : "");
+	ssi_env_add(p->ssi_cgi_env, CONST_STRING("QUERY_STRING"), buffer_is_empty(con->uri.query) ? "" : con->uri.query->ptr);
 	ssi_env_add(p->ssi_cgi_env, CONST_STRING("REQUEST_METHOD"), get_http_method_name(con->request.http_method));
 	ssi_env_add(p->ssi_cgi_env, CONST_STRING("REDIRECT_STATUS"), "200");
 	ssi_env_add(p->ssi_cgi_env, CONST_STRING("SERVER_PROTOCOL"), get_http_version_name(con->request.http_version));
@@ -431,77 +397,72 @@ static int process_ssi_stmt(server *srv, connection *con, plugin_data *p, const 
 		case SSI_ECHO_USER_NAME: {
 			struct passwd *pw;
 
-			b = chunkqueue_get_append_buffer(con->write_queue);
+			b = buffer_init();
 #ifdef HAVE_PWD_H
 			if (NULL == (pw = getpwuid(sce->st.st_uid))) {
-				buffer_copy_long(b, sce->st.st_uid);
+				buffer_copy_int(b, sce->st.st_uid);
 			} else {
 				buffer_copy_string(b, pw->pw_name);
 			}
 #else
-			buffer_copy_long(b, sce->st.st_uid);
+			buffer_copy_int(b, sce->st.st_uid);
 #endif
+			chunkqueue_append_buffer(con->write_queue, b);
+			buffer_free(b);
 			break;
 		}
 		case SSI_ECHO_LAST_MODIFIED:	{
 			time_t t = sce->st.st_mtime;
 
-			b = chunkqueue_get_append_buffer(con->write_queue);
 			if (0 == strftime(buf, sizeof(buf), p->timefmt->ptr, localtime(&t))) {
-				buffer_copy_string_len(b, CONST_STR_LEN("(none)"));
+				chunkqueue_append_mem(con->write_queue, CONST_STR_LEN("(none)"));
 			} else {
-				buffer_copy_string(b, buf);
+				chunkqueue_append_mem(con->write_queue, buf, strlen(buf));
 			}
 			break;
 		}
 		case SSI_ECHO_DATE_LOCAL: {
 			time_t t = time(NULL);
 
-			b = chunkqueue_get_append_buffer(con->write_queue);
 			if (0 == strftime(buf, sizeof(buf), p->timefmt->ptr, localtime(&t))) {
-				buffer_copy_string_len(b, CONST_STR_LEN("(none)"));
+				chunkqueue_append_mem(con->write_queue, CONST_STR_LEN("(none)"));
 			} else {
-				buffer_copy_string(b, buf);
+				chunkqueue_append_mem(con->write_queue, buf, strlen(buf));
 			}
 			break;
 		}
 		case SSI_ECHO_DATE_GMT: {
 			time_t t = time(NULL);
 
-			b = chunkqueue_get_append_buffer(con->write_queue);
 			if (0 == strftime(buf, sizeof(buf), p->timefmt->ptr, gmtime(&t))) {
-				buffer_copy_string_len(b, CONST_STR_LEN("(none)"));
+				chunkqueue_append_mem(con->write_queue, CONST_STR_LEN("(none)"));
 			} else {
-				buffer_copy_string(b, buf);
+				chunkqueue_append_mem(con->write_queue, buf, strlen(buf));
 			}
 			break;
 		}
 		case SSI_ECHO_DOCUMENT_NAME: {
 			char *sl;
 
-			b = chunkqueue_get_append_buffer(con->write_queue);
 			if (NULL == (sl = strrchr(con->physical.path->ptr, '/'))) {
-				buffer_copy_string_buffer(b, con->physical.path);
+				chunkqueue_append_mem(con->write_queue, CONST_BUF_LEN(con->physical.path));
 			} else {
-				buffer_copy_string(b, sl + 1);
+				chunkqueue_append_mem(con->write_queue, sl + 1, strlen(sl + 1));
 			}
 			break;
 		}
 		case SSI_ECHO_DOCUMENT_URI: {
-			b = chunkqueue_get_append_buffer(con->write_queue);
-			buffer_copy_string_buffer(b, con->uri.path);
+			chunkqueue_append_mem(con->write_queue, CONST_BUF_LEN(con->uri.path));
 			break;
 		}
 		default: {
 			data_string *ds;
 			/* check if it is a cgi-var */
 
-			b = chunkqueue_get_append_buffer(con->write_queue);
-
 			if (NULL != (ds = (data_string *)array_get_element(p->ssi_cgi_env, var_val))) {
-				buffer_copy_string_buffer(b, ds->value);
+				chunkqueue_append_mem(con->write_queue, CONST_BUF_LEN(ds->value));
 			} else {
-				buffer_copy_string_len(b, CONST_STR_LEN("(none)"));
+				chunkqueue_append_mem(con->write_queue, CONST_STR_LEN("(none)"));
 			}
 
 			break;
@@ -575,7 +536,7 @@ static int process_ssi_stmt(server *srv, connection *con, plugin_data *p, const 
 
 			/* we have an uri */
 
-			buffer_copy_string_buffer(p->stat_fn, con->physical.doc_root);
+			buffer_copy_buffer(p->stat_fn, con->physical.doc_root);
 			buffer_append_string_buffer(p->stat_fn, srv->tmp_buf);
 		}
 
@@ -584,7 +545,7 @@ static int process_ssi_stmt(server *srv, connection *con, plugin_data *p, const 
 
 			switch (ssicmd) {
 			case SSI_FSIZE:
-				b = chunkqueue_get_append_buffer(con->write_queue);
+				b = buffer_init();
 				if (p->sizefmt) {
 					int j = 0;
 					const char *abr[] = { " B", " kB", " MB", " GB", " TB", NULL };
@@ -593,18 +554,19 @@ static int process_ssi_stmt(server *srv, connection *con, plugin_data *p, const 
 
 					for (j = 0; s > 1024 && abr[j+1]; s /= 1024, j++);
 
-					buffer_copy_off_t(b, s);
+					buffer_copy_int(b, s);
 					buffer_append_string(b, abr[j]);
 				} else {
-					buffer_copy_off_t(b, st.st_size);
+					buffer_copy_int(b, st.st_size);
 				}
+				chunkqueue_append_buffer(con->write_queue, b);
+				buffer_free(b);
 				break;
 			case SSI_FLASTMOD:
-				b = chunkqueue_get_append_buffer(con->write_queue);
 				if (0 == strftime(buf, sizeof(buf), p->timefmt->ptr, localtime(&t))) {
-					buffer_copy_string_len(b, CONST_STR_LEN("(none)"));
+					chunkqueue_append_mem(con->write_queue, CONST_STR_LEN("(none)"));
 				} else {
-					buffer_copy_string(b, buf);
+					chunkqueue_append_mem(con->write_queue, buf, strlen(buf));
 				}
 				break;
 			case SSI_INCLUDE:
@@ -612,7 +574,7 @@ static int process_ssi_stmt(server *srv, connection *con, plugin_data *p, const 
 
 				/* Keep the newest mtime of included files */
 				if (st.st_mtime > include_file_last_mtime)
-				  include_file_last_mtime = st.st_mtime;
+					include_file_last_mtime = st.st_mtime;
 
 				break;
 			}
@@ -684,7 +646,7 @@ static int process_ssi_stmt(server *srv, connection *con, plugin_data *p, const 
 	case SSI_PRINTENV:
 		if (p->if_is_false) break;
 
-		b = chunkqueue_get_append_buffer(con->write_queue);
+		b = buffer_init();
 		for (i = 0; i < p->ssi_vars->used; i++) {
 			data_string *ds = (data_string *)p->ssi_vars->data[p->ssi_vars->sorted[i]];
 
@@ -701,6 +663,8 @@ static int process_ssi_stmt(server *srv, connection *con, plugin_data *p, const 
 			buffer_append_string_encoded(b, CONST_BUF_LEN(ds->value), ENCODING_MINIMAL_XML);
 			buffer_append_string_len(b, CONST_STR_LEN("\n"));
 		}
+		chunkqueue_append_buffer(con->write_queue, b);
+		buffer_free(b);
 
 		break;
 	case SSI_EXEC: {
@@ -783,26 +747,23 @@ static int process_ssi_stmt(server *srv, connection *con, plugin_data *p, const 
 					int toread;
 					/* read everything from client and paste it into the output */
 					was_interrupted = 0;
-	
+
 					while(1) {
 						if (ioctl(from_exec_fds[0], FIONREAD, &toread)) {
 							log_error_write(srv, __FILE__, __LINE__, "s",
 								"unexpected end-of-file (perhaps the ssi-exec process died)");
 							return -1;
 						}
-	
+
 						if (toread > 0) {
-							b = chunkqueue_get_append_buffer(con->write_queue);
-	
-							buffer_prepare_copy(b, toread + 1);
-	
-							if ((r = read(from_exec_fds[0], b->ptr, b->size - 1)) < 0) {
-								/* read failed */
-								break;
-							} else {
-								b->used = r;
-								b->ptr[b->used++] = '\0';
-							}
+							char *mem;
+							size_t mem_len;
+
+							chunkqueue_get_memory(con->write_queue, &mem, &mem_len, 0, toread);
+							r = read(from_exec_fds[0], mem, mem_len);
+							chunkqueue_use_memory(con->write_queue, r > 0 ? r : 0);
+
+							if (r < 0) break; /* read failed */
 						} else {
 							break;
 						}
@@ -1071,7 +1032,7 @@ static int mod_ssi_handle_request(server *srv, connection *con, plugin_data *p) 
 	con->file_finished = 1;
 	con->mode = p->id;
 
-	if (p->conf.content_type->used <= 1) {
+	if (buffer_string_is_empty(p->conf.content_type)) {
 		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
 	} else {
 		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(p->conf.content_type));
@@ -1142,16 +1103,16 @@ URIHANDLER_FUNC(mod_ssi_physical_path) {
 
 	if (con->mode != DIRECT) return HANDLER_GO_ON;
 
-	if (con->physical.path->used == 0) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->physical.path)) return HANDLER_GO_ON;
 
 	mod_ssi_patch_connection(srv, con, p);
 
 	for (k = 0; k < p->conf.ssi_extension->used; k++) {
 		data_string *ds = (data_string *)p->conf.ssi_extension->data[k];
 
-		if (ds->value->used == 0) continue;
+		if (buffer_is_empty(ds->value)) continue;
 
-		if (buffer_is_equal_right_len(con->physical.path, ds->value, ds->value->used - 1)) {
+		if (buffer_is_equal_right_len(con->physical.path, ds->value, buffer_string_length(ds->value))) {
 			/* handle ssi-request */
 
 			if (mod_ssi_handle_request(srv, con, p)) {

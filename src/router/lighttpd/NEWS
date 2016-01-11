@@ -2,7 +2,74 @@
 ====
 NEWS
 ====
-- 1.4.35
+
+- 1.4.39
+  * [core] fix memset_s call (fixes #2698)
+  * [chunk] fix use after free / double free (fixes #2700)
+
+- 1.4.38 - 2015-12-05
+  * [stat-cache] fix handling of collisions, might have returned wrong data (fixes #2669)
+  * [core] allocate at least 4k buffer for incoming data
+  * [core] fix search for header end if split across chunks (fixes #2670)
+  * [core] check configparserAlloc() result with force_assert
+  * [mod_auth] implement and use safe_memclear, using memset_s or explicit_bzero if available (thx loganaden)
+  * [core] don't buffer request bodies smaller than 64k on disk
+  * add force_assert for many allocations and function results
+  * [mod_secdownload] use a hopefully constant time comparison to check hash (fixes #2679)
+  * [config] check config option scope; warn if server option is given in conditional
+  * [core] revert increase of temp file size back to 1MB, provide a configure option "server.upload-temp-file-size" instead (fixes #2680)
+  * [core] add '~' to safe characters in ENCODING_REL_URI/ENCODING_REL_URI_PART encoding
+  * [core] encode path with ENCODING_REL_URI in redirect to directory (fixes #2661, thx gstrauss)
+  * [mod_secdownload] add required algorithm option; old behaviour available as "md5", new options "hmac-sha1" and "hmac-sha256"
+  * [mod_fastcgi/mod_scgi] zero sockaddr structs before use (fixes #2691, thx Kyle J. McKay)
+  * [network] add darwin-sendfile backend (fixes #2687, thx Kyle J. McKay)
+  * [core] show correct crypt support result (fixes #2690, thx Kyle J. McKay)
+
+- 1.4.37 - 2015-08-30
+  * [mod_proxy] remove debug log line from error log (fixes #2659)
+  * [mod_dirlisting] fix dir-listing.set-footer not showing
+  * fix out-of-filedescriptors when uploading "large" files (fixes #2660, thx rmilecki)
+  * increase upload temporary chunk file size from 1MB to 16MB
+  * fix undefined integer shift
+  * rewrite network sendfile/mmap/writev/write backends
+  * fix some unchecked return value warnings
+  * [kqueue] fix kevent call
+  * [autoconf] define HAVE_CRYPT when crypt() is present
+  * [bsd xattr] fix compile break with BSD extended attributes in stat_cache
+  * [mod_cgi] rewrite mmap and generic (post body) send error handling
+  * [mmap] fix mmap alignment
+  * [plugins] when modules are linked statically still only load the modules given in the config
+  * [mmap] handle SIGBUS in network; those get triggered if the file gets smaller during reading
+  * fix some warnings found by coverity ("leak" in setup phase, not catching too long unix socket paths in mod_proxy)
+
+- 1.4.36 - 2015-07-26
+  * use keep-alive timeout while waiting for HTTP headers; use always the read timeout while waiting for the HTTP body
+  * fix bad shift in conditional netmask ".../0" handling
+  * add more mime types and a script to generate mime.conf (fixes #2579)
+  * add support for (Free)BSD extended attributes
+  * [build] use fortify flags with "extra-warnings"
+  * [mod_dirlisting,mod_redirect,mod_rewrite] abort config parsing if pcre-compile fails or isn't available
+  * [ssl] disable SSL3.0 by default
+  * fixed typo in example config found by openSUSE user (boo# 907709)
+  * [network] fix compile break in calculation of sockaddr_un size if SUN_LEN is not defined (fixes #2609)
+  * [connections] fix bug in connection state handling
+  * print backtrace in assert logging with libunwind
+  * major refactoring of internal buffer/chunk handling
+  * [mod_auth] use crypt_r instead of crypt if available
+  * fix error message for T_CONFIG_ARRAY config values if an entry value is not a string
+  * fix segfaults in many plugins if they failed configuration
+  * escape all strings for logging (fixes #2646 log file injection, reported by Jaanus Kääp)
+  * fix hex escape in accesslog (fixes #2559)
+  * show extforward re-run warning only with debug.log-request-handling (fixes #2561)
+  * parse If-None-Match for ETag validation (fixes #2578)
+  * fix memory leak in mod_status when no counters are set (found by coverity)
+  * [mod_magnet] fix segfault when accessing not existing lighty.req_env[] entry (found by coverity)
+  * fix segfault when temp file for upload couldn't be created (found by coverity)
+  * mime.conf: add some new mime types, remove .dat, .sha1, .md5, update .vcf
+  * [mod_proxy] add unix domain socket support (fixes #2653)
+  * [configfile] fix reading uninitialized variable (found by Willian B.)
+
+- 1.4.35 - 2014-03-12
   * [network/ssl] fix build error if TLSEXT is disabled
   * [mod_fastcgi] fix use after free (only triggered if fastcgi debug is active)
   * [mod_rrdtool] fix invalid read (string not null terminated)
@@ -22,7 +89,7 @@ NEWS
   * check length of unix domain socket filenames
   * fix SQL injection / host name validation (thx Jann Horn)
 
-- 1.4.34
+- 1.4.34 - 2014-01-20
   * [mod_auth] explicitly link ssl for SHA1 (fixes #2517)
   * [mod_extforward] fix compilation without IPv6, (not) using undefined var (fixes #2515, thx mm)
   * [ssl] fix SNI handling; only use key+cert from SNI specific config (fixes #2525, CVE-2013-4508)
@@ -539,10 +606,10 @@ NEWS
   * ignore empty packets from STDERR stream. #998
   * fix a crash for files with an mtime of 0 reported by cubiq on irc [1519]
     CVE-2007-1870
-  * allow empty passwords with ldap (J�rg Sonnenberger) [1516]
+  * allow empty passwords with ldap (Jörg Sonnenberger) [1516]
   * mod_scgi.c segfault fix #964 [1501]
   * Added round-robin support to mod_fastcgi [1500]
-  * Handle DragonFlyBSD the same way as Freebsd (J�rg Sonnenberger) [1492,1676]
+  * Handle DragonFlyBSD the same way as Freebsd (Jörg Sonnenberger) [1492,1676]
   * added now and weeks support to mod_expire. #943
   * fix cpu hog in certain requests [1473] CVE-2007-1869
   * fix for handling hostnames with trailing dot [1406]

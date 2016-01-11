@@ -167,12 +167,11 @@ FREE_FUNC(mod_proxy_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
-			if (s) {
+			if (NULL == s) continue;
 
-				array_free(s->extensions);
+			array_free(s->extensions);
 
-				free(s);
-			}
+			free(s);
 		}
 		free(p->config_storage);
 	}
@@ -197,8 +196,8 @@ SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
-		array *ca;
 
 		s = malloc(sizeof(plugin_config));
 		s->extensions    = array_init();
@@ -211,13 +210,12 @@ SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
 		buffer_reset(p->balance_buf);
 
 		p->config_storage[i] = s;
-		ca = ((data_config *)srv->config_context->data[i])->value;
 
-		if (0 != config_insert_values_global(srv, ca, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 
-		if (buffer_is_empty(p->balance_buf)) {
+		if (buffer_string_is_empty(p->balance_buf)) {
 			s->balance = PROXY_BALANCE_FAIR;
 		} else if (buffer_is_equal_string(p->balance_buf, CONST_STR_LEN("fair"))) {
 			s->balance = PROXY_BALANCE_FAIR;
@@ -231,7 +229,7 @@ SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
 			return HANDLER_ERROR;
 		}
 
-		if (NULL != (du = array_get_element(ca, "proxy.server"))) {
+		if (NULL != (du = array_get_element(config->value, "proxy.server"))) {
 			size_t j;
 			data_array *da = (data_array *)du;
 
@@ -292,17 +290,17 @@ SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
 
 					df->port = 80;
 
-					buffer_copy_string_buffer(df->key, da_host->key);
+					buffer_copy_buffer(df->key, da_host->key);
 
 					pcv[0].destination = df->host;
 					pcv[1].destination = &(df->port);
 
-					if (0 != config_insert_values_internal(srv, da_host->value, pcv)) {
+					if (0 != config_insert_values_internal(srv, da_host->value, pcv, T_CONFIG_SCOPE_CONNECTION)) {
 						df->free((data_unset*) df);
 						return HANDLER_ERROR;
 					}
 
-					if (buffer_is_empty(df->host)) {
+					if (buffer_string_is_empty(df->host)) {
 						log_error_write(srv, __FILE__, __LINE__, "sbbbs",
 								"missing key (string):",
 								da->key,
@@ -319,7 +317,7 @@ SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
 					if (NULL == (dfa = (data_array *)array_get_element(s->extensions, da_ext->key->ptr))) {
 						dfa = data_array_init();
 
-						buffer_copy_string_buffer(dfa->key, da_ext->key);
+						buffer_copy_buffer(dfa->key, da_ext->key);
 
 						array_insert_unique(dfa->value, (data_unset *)df);
 						array_insert_unique(s->extensions, (data_unset *)dfa);
@@ -362,6 +360,9 @@ static void proxy_connection_close(server *srv, handler_ctx *hctx) {
 static int proxy_establish_connection(server *srv, handler_ctx *hctx) {
 	struct sockaddr *proxy_addr;
 	struct sockaddr_in proxy_addr_in;
+#if defined(HAVE_SYS_UN_H)
+	struct sockaddr_un proxy_addr_un;
+#endif
 #if defined(HAVE_IPV6) && defined(HAVE_INET_PTON)
 	struct sockaddr_in6 proxy_addr_in6;
 #endif
@@ -372,6 +373,22 @@ static int proxy_establish_connection(server *srv, handler_ctx *hctx) {
 	int proxy_fd       = hctx->fd;
 
 
+#if defined(HAVE_SYS_UN_H)
+	if (strstr(host->host->ptr, "/")) {
+		if (buffer_string_length(host->host) + 1 > sizeof(proxy_addr_un.sun_path)) {
+			log_error_write(srv, __FILE__, __LINE__, "sB",
+				"ERROR: Unix Domain socket filename too long:",
+				host->host);
+			return -1;
+		}
+
+		memset(&proxy_addr_un, 0, sizeof(proxy_addr_un));
+		proxy_addr_un.sun_family = AF_UNIX;
+		strcpy(proxy_addr_un.sun_path, host->host->ptr);
+		servlen = sizeof(proxy_addr_un);
+		proxy_addr = (struct sockaddr *) &proxy_addr_un;
+	} else
+#endif
 #if defined(HAVE_IPV6) && defined(HAVE_INET_PTON)
 	if (strstr(host->host->ptr, ":")) {
 		memset(&proxy_addr_in6, 0, sizeof(proxy_addr_in6));
@@ -417,27 +434,27 @@ static int proxy_establish_connection(server *srv, handler_ctx *hctx) {
 }
 
 static void proxy_set_header(connection *con, const char *key, const char *value) {
-    data_string *ds_dst;
+	data_string *ds_dst;
 
-    if (NULL == (ds_dst = (data_string *)array_get_unused_element(con->request.headers, TYPE_STRING))) {
-          ds_dst = data_string_init();
-    }
+	if (NULL == (ds_dst = (data_string *)array_get_unused_element(con->request.headers, TYPE_STRING))) {
+		ds_dst = data_string_init();
+	}
 
-    buffer_copy_string(ds_dst->key, key);
-    buffer_copy_string(ds_dst->value, value);
-    array_insert_unique(con->request.headers, (data_unset *)ds_dst);
+	buffer_copy_string(ds_dst->key, key);
+	buffer_copy_string(ds_dst->value, value);
+	array_insert_unique(con->request.headers, (data_unset *)ds_dst);
 }
 
 static void proxy_append_header(connection *con, const char *key, const char *value) {
-    data_string *ds_dst;
+	data_string *ds_dst;
 
-    if (NULL == (ds_dst = (data_string *)array_get_unused_element(con->request.headers, TYPE_STRING))) {
-          ds_dst = data_string_init();
-    }
+	if (NULL == (ds_dst = (data_string *)array_get_unused_element(con->request.headers, TYPE_STRING))) {
+		ds_dst = data_string_init();
+	}
 
-    buffer_copy_string(ds_dst->key, key);
-    buffer_append_string(ds_dst->value, value);
-    array_insert_unique(con->request.headers, (data_unset *)ds_dst);
+	buffer_copy_string(ds_dst->key, key);
+	buffer_append_string(ds_dst->value, value);
+	array_insert_unique(con->request.headers, (data_unset *)ds_dst);
 }
 
 
@@ -449,7 +466,7 @@ static int proxy_create_env(server *srv, handler_ctx *hctx) {
 
 	/* build header */
 
-	b = chunkqueue_get_append_buffer(hctx->wb);
+	b = buffer_init();
 
 	/* request line */
 	buffer_copy_string(b, get_http_method_name(con->request.http_method));
@@ -461,8 +478,7 @@ static int proxy_create_env(server *srv, handler_ctx *hctx) {
 	proxy_append_header(con, "X-Forwarded-For", (char *)inet_ntop_cache_get_ip(srv, &(con->dst_addr)));
 	/* http_host is NOT is just a pointer to a buffer
 	 * which is NULL if it is not set */
-	if (con->request.http_host &&
-	    !buffer_is_empty(con->request.http_host)) {
+	if (!buffer_string_is_empty(con->request.http_host)) {
 		proxy_set_header(con, "X-Host", con->request.http_host->ptr);
 	}
 	proxy_set_header(con, "X-Forwarded-Proto", con->uri.scheme->ptr);
@@ -473,7 +489,7 @@ static int proxy_create_env(server *srv, handler_ctx *hctx) {
 
 		ds = (data_string *)con->request.headers->data[i];
 
-		if (ds->value->used && ds->key->used) {
+		if (!buffer_is_empty(ds->value) && !buffer_is_empty(ds->key)) {
 			if (buffer_is_equal_string(ds->key, CONST_STR_LEN("Connection"))) continue;
 			if (buffer_is_equal_string(ds->key, CONST_STR_LEN("Proxy-Connection"))) continue;
 
@@ -486,60 +502,15 @@ static int proxy_create_env(server *srv, handler_ctx *hctx) {
 
 	buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
 
-	hctx->wb->bytes_in += b->used - 1;
+	chunkqueue_append_buffer(hctx->wb, b);
+	buffer_free(b);
+
 	/* body */
 
 	if (con->request.content_length) {
 		chunkqueue *req_cq = con->request_content_queue;
-		chunk *req_c;
-		off_t offset;
 
-		/* something to send ? */
-		for (offset = 0, req_c = req_cq->first; offset != req_cq->bytes_in; req_c = req_c->next) {
-			off_t weWant = req_cq->bytes_in - offset;
-			off_t weHave = 0;
-
-			/* we announce toWrite octects
-			 * now take all the request_content chunk that we need to fill this request
-			 * */
-
-			switch (req_c->type) {
-			case FILE_CHUNK:
-				weHave = req_c->file.length - req_c->offset;
-
-				if (weHave > weWant) weHave = weWant;
-
-				chunkqueue_append_file(hctx->wb, req_c->file.name, req_c->offset, weHave);
-
-				req_c->offset += weHave;
-				req_cq->bytes_out += weHave;
-
-				hctx->wb->bytes_in += weHave;
-
-				break;
-			case MEM_CHUNK:
-				/* append to the buffer */
-				weHave = req_c->mem->used - 1 - req_c->offset;
-
-				if (weHave > weWant) weHave = weWant;
-
-				b = chunkqueue_get_append_buffer(hctx->wb);
-				buffer_append_memory(b, req_c->mem->ptr + req_c->offset, weHave);
-				b->used++; /* add virtual \0 */
-
-				req_c->offset += weHave;
-				req_cq->bytes_out += weHave;
-
-				hctx->wb->bytes_in += weHave;
-
-				break;
-			default:
-				break;
-			}
-
-			offset += weHave;
-		}
-
+		chunkqueue_steal(hctx->wb, req_cq, req_cq->bytes_in);
 	}
 
 	return 0;
@@ -561,7 +532,7 @@ static int proxy_response_parse(server *srv, connection *con, plugin_data *p, bu
 
 	/* \r\n -> \0\0 */
 
-	buffer_copy_string_buffer(p->parse_response, in);
+	buffer_copy_buffer(p->parse_response, in);
 
 	for (s = p->parse_response->ptr; NULL != (ns = strstr(s, "\r\n")); s = ns + 2) {
 		char *key, *value;
@@ -665,19 +636,13 @@ static int proxy_demux_response(server *srv, handler_ctx *hctx) {
 
 	if (p->conf.debug) {
 		log_error_write(srv, __FILE__, __LINE__, "sd",
-			       "proxy - have to read:", b);
+				"proxy - have to read:", b);
 	}
 
 	if (b > 0) {
-		if (hctx->response->used == 0) {
-			/* avoid too small buffer */
-			buffer_prepare_append(hctx->response, b + 1);
-			hctx->response->used = 1;
-		} else {
-			buffer_prepare_append(hctx->response, b);
-		}
+		buffer_string_prepare_append(hctx->response, b);
 
-		if (-1 == (r = read(hctx->fd, hctx->response->ptr + hctx->response->used - 1, b))) {
+		if (-1 == (r = read(hctx->fd, hctx->response->ptr + buffer_string_length(hctx->response), buffer_string_space(hctx->response)))) {
 			if (errno == EAGAIN) return 0;
 			log_error_write(srv, __FILE__, __LINE__, "sds",
 					"unexpected end-of-file (perhaps the proxy process died):",
@@ -688,8 +653,7 @@ static int proxy_demux_response(server *srv, handler_ctx *hctx) {
 		/* this should be catched by the b > 0 above */
 		force_assert(r);
 
-		hctx->response->used += r;
-		hctx->response->ptr[hctx->response->used - 1] = '\0';
+		buffer_commit(hctx->response, r);
 
 #if 0
 		log_error_write(srv, __FILE__, __LINE__, "sdsbs",
@@ -698,19 +662,19 @@ static int proxy_demux_response(server *srv, handler_ctx *hctx) {
 
 		if (0 == con->got_response) {
 			con->got_response = 1;
-			buffer_prepare_copy(hctx->response_header, 128);
+			buffer_string_prepare_copy(hctx->response_header, 1023);
 		}
 
 		if (0 == con->file_started) {
 			char *c;
 
 			/* search for the \r\n\r\n in the string */
-			if (NULL != (c = buffer_search_string_len(hctx->response, "\r\n\r\n", 4))) {
+			if (NULL != (c = buffer_search_string_len(hctx->response, CONST_STR_LEN("\r\n\r\n")))) {
 				size_t hlen = c - hctx->response->ptr + 4;
-				size_t blen = hctx->response->used - hlen - 1;
+				size_t blen = buffer_string_length(hctx->response) - hlen;
 				/* found */
 
-				buffer_append_string_len(hctx->response_header, hctx->response->ptr, c - hctx->response->ptr + 4);
+				buffer_append_string_len(hctx->response_header, hctx->response->ptr, hlen);
 #if 0
 				log_error_write(srv, __FILE__, __LINE__, "sb", "Header:", hctx->response_header);
 #endif
@@ -724,23 +688,21 @@ static int proxy_demux_response(server *srv, handler_ctx *hctx) {
 				}
 
 				con->file_started = 1;
-				if (blen) {
-					http_chunk_append_mem(srv, con, c + 4, blen + 1);
-				}
-				hctx->response->used = 0;
+				if (blen > 0) http_chunk_append_mem(srv, con, c + 4, blen);
+				buffer_reset(hctx->response);
 				joblist_append(srv, con);
 			}
 		} else {
-			http_chunk_append_mem(srv, con, hctx->response->ptr, hctx->response->used);
+			http_chunk_append_buffer(srv, con, hctx->response);
 			joblist_append(srv, con);
-			hctx->response->used = 0;
+			buffer_reset(hctx->response);
 		}
 
 	} else {
 		/* reading from upstream done */
 		con->file_finished = 1;
 
-		http_chunk_append_mem(srv, con, NULL, 0);
+		http_chunk_close(srv, con);
 		joblist_append(srv, con);
 
 		fin = 1;
@@ -756,8 +718,7 @@ static handler_t proxy_write_request(server *srv, handler_ctx *hctx) {
 
 	int ret;
 
-	if (!host ||
-	    (!host->host->used || !host->port)) return -1;
+	if (!host || buffer_string_is_empty(host->host) || !host->port) return -1;
 
 	switch(hctx->state) {
 	case PROXY_STATE_CONNECT:
@@ -772,19 +733,27 @@ static handler_t proxy_write_request(server *srv, handler_ctx *hctx) {
 		break;
 
 	case PROXY_STATE_INIT:
+#if defined(HAVE_SYS_UN_H)
+		if (strstr(host->host->ptr,"/")) {
+			if (-1 == (hctx->fd = socket(AF_UNIX, SOCK_STREAM, 0))) {
+				log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed: ", strerror(errno));
+				return HANDLER_ERROR;
+			}
+		} else
+#endif
 #if defined(HAVE_IPV6) && defined(HAVE_INET_PTON)
 		if (strstr(host->host->ptr,":")) {
-		    if (-1 == (hctx->fd = socket(AF_INET6, SOCK_STREAM, 0))) {
-			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed: ", strerror(errno));
-			return HANDLER_ERROR;
-		    }
+			if (-1 == (hctx->fd = socket(AF_INET6, SOCK_STREAM, 0))) {
+				log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed: ", strerror(errno));
+				return HANDLER_ERROR;
+			}
 		} else
 #endif
 		{
-		    if (-1 == (hctx->fd = socket(AF_INET, SOCK_STREAM, 0))) {
-			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed: ", strerror(errno));
-			return HANDLER_ERROR;
-		    }
+			if (-1 == (hctx->fd = socket(AF_INET, SOCK_STREAM, 0))) {
+				log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed: ", strerror(errno));
+				return HANDLER_ERROR;
+			}
 		}
 		hctx->fde_ndx = -1;
 
@@ -1092,7 +1061,7 @@ static handler_t proxy_handle_fdevent(server *srv, void *ctx, int revents) {
 		}
 
 		if (!con->file_finished) {
-			http_chunk_append_mem(srv, con, NULL, 0);
+			http_chunk_close(srv, con);
 		}
 
 		con->file_finished = 1;
@@ -1130,13 +1099,8 @@ static handler_t mod_proxy_check_extension(server *srv, connection *con, void *p
 	mod_proxy_patch_connection(srv, con, p);
 
 	fn = con->uri.path;
-
-	if (fn->used == 0) {
-		return HANDLER_ERROR;
-	}
-
-	s_len = fn->used - 1;
-
+	if (buffer_string_is_empty(fn)) return HANDLER_ERROR;
+	s_len = buffer_string_length(fn);
 
 	path_info_offset = 0;
 
@@ -1151,9 +1115,9 @@ static handler_t mod_proxy_check_extension(server *srv, connection *con, void *p
 
 		ext = (data_array *)p->conf.extensions->data[k];
 
-		if (ext->key->used == 0) continue;
+		if (buffer_is_empty(ext->key)) continue;
 
-		ct_len = ext->key->used - 1;
+		ct_len = buffer_string_length(ext->key);
 
 		if (s_len < ct_len) continue;
 

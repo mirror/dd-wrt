@@ -54,7 +54,7 @@ FREE_FUNC(mod_flv_streaming_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
-			if (!s) continue;
+			if (NULL == s) continue;
 
 			array_free(s->extensions);
 
@@ -87,6 +87,7 @@ SETDEFAULTS_FUNC(mod_flv_streaming_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -96,7 +97,7 @@ SETDEFAULTS_FUNC(mod_flv_streaming_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -136,13 +137,14 @@ static int mod_flv_streaming_patch_connection(server *srv, connection *con, plug
 
 static int split_get_params(array *get_params, buffer *qrystr) {
 	size_t is_key = 1;
-	size_t i;
+	size_t i, len;
 	char *key = NULL, *val = NULL;
 
 	key = qrystr->ptr;
 
 	/* we need the \0 */
-	for (i = 0; i < qrystr->used; i++) {
+	len = buffer_string_length(qrystr);
+	for (i = 0; i <= len; i++) {
 		switch(qrystr->ptr[i]) {
 		case '=':
 			if (is_key) {
@@ -191,30 +193,29 @@ URIHANDLER_FUNC(mod_flv_streaming_path_handler) {
 
 	if (con->mode != DIRECT) return HANDLER_GO_ON;
 
-	if (buffer_is_empty(con->physical.path)) return HANDLER_GO_ON;
+	if (buffer_string_is_empty(con->physical.path)) return HANDLER_GO_ON;
 
 	mod_flv_streaming_patch_connection(srv, con, p);
 
-	s_len = con->physical.path->used - 1;
+	s_len = buffer_string_length(con->physical.path);
 
 	for (k = 0; k < p->conf.extensions->used; k++) {
 		data_string *ds = (data_string *)p->conf.extensions->data[k];
-		int ct_len = ds->value->used - 1;
+		int ct_len = buffer_string_length(ds->value);
 
 		if (ct_len > s_len) continue;
-		if (ds->value->used == 0) continue;
+		if (buffer_is_empty(ds->value)) continue;
 
 		if (0 == strncmp(con->physical.path->ptr + s_len - ct_len, ds->value->ptr, ct_len)) {
 			data_string *get_param;
 			stat_cache_entry *sce = NULL;
-			buffer *b;
 			int start;
 			char *err = NULL;
 			/* if there is a start=[0-9]+ in the header use it as start,
 			 * otherwise send the full file */
 
 			array_reset(p->get_params);
-			buffer_copy_string_buffer(p->query_str, con->uri.query);
+			buffer_copy_buffer(p->query_str, con->uri.query);
 			split_get_params(p->get_params, p->query_str);
 
 			if (NULL == (get_param = (data_string *)array_get_element(p->get_params, "start"))) {
@@ -222,7 +223,7 @@ URIHANDLER_FUNC(mod_flv_streaming_path_handler) {
 			}
 
 			/* too short */
-			if (get_param->value->used < 2) return HANDLER_GO_ON;
+			if (buffer_string_is_empty(get_param->value)) return HANDLER_GO_ON;
 
 			/* check if it is a number */
 			start = strtol(get_param->value->ptr, &err, 10);
@@ -242,10 +243,9 @@ URIHANDLER_FUNC(mod_flv_streaming_path_handler) {
 			}
 
 			/* we are safe now, let's build a flv header */
-			b = chunkqueue_get_append_buffer(con->write_queue);
-			buffer_copy_string_len(b, CONST_STR_LEN("FLV\x1\x1\0\0\0\x9\0\0\0\x9"));
-
+			http_chunk_append_mem(srv, con, CONST_STR_LEN("FLV\x1\x1\0\0\0\x9\0\0\0\x9"));
 			http_chunk_append_file(srv, con, con->physical.path, start, sce->st.st_size - start);
+			http_chunk_close(srv, con);
 
 			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("video/x-flv"));
 

@@ -366,7 +366,7 @@ static void show_version (void) {
 "Build-Date: " __DATE__ " " __TIME__ "\n";
 ;
 #undef TEXT_SSL
-	write(STDOUT_FILENO, b, strlen(b));
+	write_all(STDOUT_FILENO, b, strlen(b));
 }
 
 static void show_features (void) {
@@ -422,6 +422,11 @@ static void show_features (void) {
 #else
       "\t- freebsd-sendfile\n"
 #endif
+#if defined USE_DARWIN_SENDFILE
+      "\t+ darwin-sendfile\n"
+#else
+      "\t- darwin-sendfile\n"
+#endif
 #if defined USE_SOLARIS_SENDFILEV
       "\t+ solaris-sendfilev\n"
 #else
@@ -454,7 +459,7 @@ static void show_features (void) {
 #else
       "\t- bzip2 support\n"
 #endif
-#ifdef HAVE_LIBCRYPT
+#if defined(HAVE_CRYPT) || defined(HAVE_CRYPT_R) || defined(HAVE_LIBCRYPT)
       "\t+ crypt support\n"
 #else
       "\t- crypt support\n"
@@ -535,7 +540,7 @@ static void show_help (void) {
 ;
 #undef TEXT_SSL
 #undef TEXT_IPV6
-	write(STDOUT_FILENO, b, strlen(b));
+	write_all(STDOUT_FILENO, b, strlen(b));
 }
 
 int main (int argc, char **argv) {
@@ -666,7 +671,7 @@ int main (int argc, char **argv) {
 #endif
 
 	/* check document-root */
-	if (srv->config_storage[0]->document_root->used <= 1) {
+	if (buffer_string_is_empty(srv->config_storage[0]->document_root)) {
 		log_error_write(srv, __FILE__, __LINE__, "s",
 				"document-root is not set\n");
 
@@ -686,7 +691,7 @@ int main (int argc, char **argv) {
 	}
 
 	/* open pid file BEFORE chroot */
-	if (srv->srvconf.pid_file->used) {
+	if (!buffer_string_is_empty(srv->srvconf.pid_file)) {
 		if (-1 == (pid_fd = open(srv->srvconf.pid_file->ptr, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) {
 			struct stat st;
 			if (errno != EEXIST) {
@@ -780,7 +785,7 @@ int main (int argc, char **argv) {
 
 #ifdef HAVE_PWD_H
 		/* set user and group */
-		if (srv->srvconf.username->used) {
+		if (!buffer_string_is_empty(srv->srvconf.username)) {
 			if (NULL == (pwd = getpwnam(srv->srvconf.username->ptr))) {
 				log_error_write(srv, __FILE__, __LINE__, "sb",
 						"can't find username", srv->srvconf.username);
@@ -794,7 +799,7 @@ int main (int argc, char **argv) {
 			}
 		}
 
-		if (srv->srvconf.groupname->used) {
+		if (!buffer_string_is_empty(srv->srvconf.groupname)) {
 			if (NULL == (grp = getgrnam(srv->srvconf.groupname->ptr))) {
 				log_error_write(srv, __FILE__, __LINE__, "sb",
 					"can't find groupname", srv->srvconf.groupname);
@@ -828,13 +833,13 @@ int main (int argc, char **argv) {
 				log_error_write(srv, __FILE__, __LINE__, "ss", "setgroups failed: ", strerror(errno));
 				return -1;
 			}
-			if (srv->srvconf.username->used) {
+			if (!buffer_string_is_empty(srv->srvconf.username)) {
 				initgroups(srv->srvconf.username->ptr, grp->gr_gid);
 			}
 		}
 #endif
 #ifdef HAVE_CHROOT
-		if (srv->srvconf.changeroot->used) {
+		if (!buffer_string_is_empty(srv->srvconf.changeroot)) {
 			tzset();
 
 			if (-1 == chroot(srv->srvconf.changeroot->ptr)) {
@@ -999,10 +1004,13 @@ int main (int argc, char **argv) {
 
 	/* write pid file */
 	if (pid_fd != -1) {
-		buffer_copy_long(srv->tmp_buf, getpid());
+		buffer_copy_int(srv->tmp_buf, getpid());
 		buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN("\n"));
-		force_assert(srv->tmp_buf->used > 0);
-		write(pid_fd, srv->tmp_buf->ptr, srv->tmp_buf->used - 1);
+		if (-1 == write_all(pid_fd, CONST_BUF_LEN(srv->tmp_buf))) {
+			log_error_write(srv, __FILE__, __LINE__, "ss", "Couldn't write pid file:", strerror(errno));
+			close(pid_fd);
+			return -1;
+		}
 		close(pid_fd);
 		pid_fd = -1;
 	}
@@ -1263,7 +1271,9 @@ int main (int argc, char **argv) {
 			min_ts = time(NULL);
 
 			if (min_ts != srv->cur_ts) {
+#ifdef DEBUG_CONNECTION_STATES
 				int cs = 0;
+#endif
 				connections *conns = srv->conns;
 				handler_t r;
 
@@ -1296,23 +1306,25 @@ int main (int argc, char **argv) {
 
 					if (con->state == CON_STATE_READ ||
 					    con->state == CON_STATE_READ_POST) {
-						if (con->request_count == 1) {
+						if (con->request_count == 1 || con->state == CON_STATE_READ_POST) {
 							if (srv->cur_ts - con->read_idle_ts > con->conf.max_read_idle) {
 								/* time - out */
-#if 0
-								log_error_write(srv, __FILE__, __LINE__, "sd",
-										"connection closed - read-timeout:", con->fd);
-#endif
+								if (con->conf.log_request_handling) {
+									log_error_write(srv, __FILE__, __LINE__, "sd",
+										"connection closed - read timeout:", con->fd);
+								}
+
 								connection_set_state(srv, con, CON_STATE_ERROR);
 								changed = 1;
 							}
 						} else {
 							if (srv->cur_ts - con->read_idle_ts > con->keep_alive_idle) {
 								/* time - out */
-#if 0
-								log_error_write(srv, __FILE__, __LINE__, "sd",
-										"connection closed - read-timeout:", con->fd);
-#endif
+								if (con->conf.log_request_handling) {
+									log_error_write(srv, __FILE__, __LINE__, "sd",
+										"connection closed - keep-alive timeout:", con->fd);
+								}
+
 								connection_set_state(srv, con, CON_STATE_ERROR);
 								changed = 1;
 							}
@@ -1367,7 +1379,7 @@ int main (int argc, char **argv) {
 					con->bytes_written_cur_second = 0;
 					*(con->conf.global_bytes_per_second_cnt_ptr) = 0;
 
-#if 0
+#if DEBUG_CONNECTION_STATES
 					if (cs == 0) {
 						fprintf(stderr, "connection-state: ");
 						cs = 1;
@@ -1380,7 +1392,9 @@ int main (int argc, char **argv) {
 #endif
 				}
 
+#ifdef DEBUG_CONNECTION_STATES
 				if (cs == 1) fprintf(stderr, "\n");
+#endif
 			}
 		}
 
@@ -1423,8 +1437,8 @@ int main (int argc, char **argv) {
 
 						/* network_close() will cleanup after us */
 
-						if (srv->srvconf.pid_file->used &&
-						    srv->srvconf.changeroot->used == 0) {
+						if (!buffer_string_is_empty(srv->srvconf.pid_file) &&
+						    buffer_string_is_empty(srv->srvconf.changeroot)) {
 							if (0 != unlink(srv->srvconf.pid_file->ptr)) {
 								if (errno != EACCES && errno != EPERM) {
 									log_error_write(srv, __FILE__, __LINE__, "sbds",
@@ -1540,8 +1554,8 @@ int main (int argc, char **argv) {
 		srv->joblist->used = 0;
 	}
 
-	if (srv->srvconf.pid_file->used &&
-	    srv->srvconf.changeroot->used == 0 &&
+	if (!buffer_string_is_empty(srv->srvconf.pid_file) &&
+	    buffer_string_is_empty(srv->srvconf.changeroot) &&
 	    0 == graceful_shutdown) {
 		if (0 != unlink(srv->srvconf.pid_file->ptr)) {
 			if (errno != EACCES && errno != EPERM) {

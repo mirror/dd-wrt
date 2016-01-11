@@ -43,7 +43,7 @@ INIT_FUNC(mod_expire_init) {
 
 	p->expire_tstmp = buffer_init();
 
-	buffer_prepare_copy(p->expire_tstmp, 255);
+	buffer_string_prepare_copy(p->expire_tstmp, 255);
 
 	return p;
 }
@@ -62,7 +62,8 @@ FREE_FUNC(mod_expire_free) {
 		size_t i;
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
-			if (!s) continue;
+
+			if (NULL == s) continue;
 
 			array_free(s->expire_url);
 			free(s);
@@ -90,7 +91,7 @@ static int mod_expire_get_offset(server *srv, plugin_data *p, buffer *expire, ti
 	 * e.g. 'access 1 years'
 	 */
 
-	if (expire->used == 0) {
+	if (buffer_string_is_empty(expire)) {
 		log_error_write(srv, __FILE__, __LINE__, "s",
 				"empty:");
 		return -1;
@@ -224,6 +225,7 @@ SETDEFAULTS_FUNC(mod_expire_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -233,7 +235,7 @@ SETDEFAULTS_FUNC(mod_expire_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 
@@ -288,22 +290,21 @@ URIHANDLER_FUNC(mod_expire_path_handler) {
 	int s_len;
 	size_t k;
 
-	if (con->uri.path->used == 0) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
 
 	mod_expire_patch_connection(srv, con, p);
 
-	s_len = con->uri.path->used - 1;
+	s_len = buffer_string_length(con->uri.path);
 
 	for (k = 0; k < p->conf.expire_url->used; k++) {
 		data_string *ds = (data_string *)p->conf.expire_url->data[k];
-		int ct_len = ds->key->used - 1;
+		int ct_len = buffer_string_length(ds->key);
 
 		if (ct_len > s_len) continue;
-		if (ds->key->used == 0) continue;
+		if (buffer_is_empty(ds->key)) continue;
 
 		if (0 == strncmp(con->uri.path->ptr, ds->key->ptr, ct_len)) {
 			time_t ts, expires;
-			size_t len;
 			stat_cache_entry *sce = NULL;
 
 			/* if stat fails => sce == NULL, ignore return value */
@@ -332,21 +333,15 @@ URIHANDLER_FUNC(mod_expire_path_handler) {
 			/* expires should be at least srv->cur_ts */
 			if (expires < srv->cur_ts) expires = srv->cur_ts;
 
-			if (0 == (len = strftime(p->expire_tstmp->ptr, p->expire_tstmp->size - 1,
-					   "%a, %d %b %Y %H:%M:%S GMT", gmtime(&(expires))))) {
-				/* could not set expire header, out of mem */
-
-				return HANDLER_GO_ON;
-			}
-
-			p->expire_tstmp->used = len + 1;
+			buffer_string_prepare_copy(p->expire_tstmp, 255);
+			buffer_append_strftime(p->expire_tstmp, "%a, %d %b %Y %H:%M:%S GMT", gmtime(&(expires)));
 
 			/* HTTP/1.0 */
 			response_header_overwrite(srv, con, CONST_STR_LEN("Expires"), CONST_BUF_LEN(p->expire_tstmp));
 
 			/* HTTP/1.1 */
 			buffer_copy_string_len(p->expire_tstmp, CONST_STR_LEN("max-age="));
-			buffer_append_long(p->expire_tstmp, expires - srv->cur_ts); /* as expires >= srv->cur_ts the difference is >= 0 */
+			buffer_append_int(p->expire_tstmp, expires - srv->cur_ts); /* as expires >= srv->cur_ts the difference is >= 0 */
 
 			response_header_append(srv, con, CONST_STR_LEN("Cache-Control"), CONST_BUF_LEN(p->expire_tstmp));
 
