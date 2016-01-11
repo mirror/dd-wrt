@@ -1442,7 +1442,7 @@ OBJS += privoxy.o
 endif
 
 ifeq ($(CONFIG_WEBSERVER),y)
-CFLAGS_EXTRA += -DHAVE_WEBSERVER
+CFLAGS_EXTRA += -DHAVE_WEBSERVER -DHAVE_CURL
 OBJS += lighttpd.o
 endif
 
@@ -1579,7 +1579,7 @@ include $(TOP)/rules/generic.mk
 CFLAGS_EXTRA += $(DD_CFLAGS)
 
 CFLAGS += $(CFLAGS_EXTRA) $(MAD_FLAGS)
-HCFLAGS += $(CFLAGS_EXTRA)
+HCFLAGS += $(CFLAGS_EXTRA) $(MIPS16_OPT)
 
 vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/shared $(SRCBASE)/rts/src
 
