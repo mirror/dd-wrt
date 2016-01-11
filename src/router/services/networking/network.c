@@ -586,8 +586,8 @@ int wlconf_up(char *name)
 	if (val == 1)
 		eval("wl", "-i", name, "txpwr1", "-1");
 #endif
-	eval("wl", "-i", name , "roam_delta", nvram_default_get("roam_delta", "15"));
-	
+	eval("wl", "-i", name, "roam_delta", nvram_default_get("roam_delta", "15"));
+
 	/*
 	 * Set txant 
 	 */
@@ -4747,11 +4747,13 @@ void start_wan_done(char *wan_ifname)
 	start_duallink();
 #endif
 #endif
+	if (nvram_match("ipv6_enable", "1") && nvram_match("ipv6_typ", "ipv6in4")) {
 #ifdef HAVE_CURL
-	if ( nvram_match("ipv6_enable", "1") && nvram_match("ipv6_typ", "ipv6in4") ) {
-		eval("/usr/bin/curl", "-s", "-k", nvram_safe_get("ipv6_tun_upd_url"), "-o",  "/tmp/tunnelstat" );
-	}
+		eval("/usr/bin/curl", "-s", "-k", nvram_safe_get("ipv6_tun_upd_url"), "-o", "/tmp/tunnelstat");
+#else
+		eval("wget", nvram_safe_get("ipv6_tun_upd_url"), "-O", "/tmp/tunnelstat");
 #endif
+	}
 }
 
 void stop_wan(void)
