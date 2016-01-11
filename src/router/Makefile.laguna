@@ -155,6 +155,8 @@ kernelsource:
 	cd $(LINUXDIR)/../ && tar -xvjf $(LINUXDIR)/../linux-$(KERNELVERSION).tar.bz2
 	cd $(LINUXDIR)/../ && ./patch $(KERNELVERSION)
 
+include kernel-features.mk
+
 kernel:
 	# Also build kernel
 ifeq ($(CONFIG_LAGUNA),y)
@@ -164,11 +166,7 @@ else
 	cp $(LINUXDIR)/.config_laguna$(DD_LAGUNA_NOSMP) $(LINUXDIR)/.config
 endif
 endif
-ifeq ($(CONFIG_EOP_TUNNEL),y)
-	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
-else
-	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
-endif
+	$(kernelfeatures)
 ifeq ($(CONFIG_USBIP),y)
 	sed -i 's/\# CONFIG_USBIP_CORE is not set/CONFIG_USBIP_CORE=m/g' $(LINUXDIR)/.config
 	echo "CONFIG_USBIP_VHCI_HCD=m" >> $(LINUXDIR)/.config

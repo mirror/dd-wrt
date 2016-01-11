@@ -169,6 +169,8 @@ build_date:
 drop-sections	= .comment
 strip-flags	= $(addprefix --remove-section=,$(drop-sections))
 
+include kernel-features.mk
+
 kernel:
         # Also build kernel
 	# Also build kernel
@@ -264,11 +266,7 @@ ifeq ($(CONFIG_SOLO51),y)
 endif
 
 
-ifeq ($(CONFIG_EOP_TUNNEL),y)
-	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
-else
-	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
-endif
+	$(kernelfeatures)
 ifneq ($(CONFIG_SAMBA),y)
 	sed -i 's/\CONFIG_CIFS=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config
 	sed -i 's/\CONFIG_NETWORK_FILESYSTEMS=y/# CONFIG_NETWORK_FILESYSTEMS is not set/g' $(LINUXDIR)/.config

@@ -155,6 +155,7 @@ all: install_headers build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
 
+include kernel-features.mk
 
 kernel:
         # Also build kernel
@@ -165,11 +166,7 @@ ifeq ($(CONFIG_UNIWIP),y)
 	-cp $(LINUXDIR)/.config_uniwip $(LINUXDIR)/.config
 endif
 
-ifeq ($(CONFIG_EOP_TUNNEL),y)
-	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
-else
-	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
-endif
+	$(kernelfeatures)
 ifeq ($(CONFIG_USBIP),y)
 	sed -i 's/\# CONFIG_USBIP_CORE is not set/CONFIG_USBIP_CORE=m/g' $(LINUXDIR)/.config
 	echo "CONFIG_USBIP_VHCI_HCD=m" >> $(LINUXDIR)/.config
