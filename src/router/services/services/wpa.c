@@ -364,8 +364,11 @@ void start_nas(void)
 			sleep(1);
 		}
 
-		if ((radiostate & WL_RADIO_SW_DISABLE) != 0)	// radio turned off
+		if ((radiostate & WL_RADIO_SW_DISABLE) != 0){	// radio turned off
+			fprintf(stderr, "Radio: %d currently turned off\n", c);
 			continue;
+		}
+		
 		char wlname[32];
 
 		sprintf(wlname, "wl%d", c);
@@ -414,9 +417,7 @@ void start_nas_single(char *type, char *prefix)
 					 * disabled) */
 	char *sec_mode = { 0 };	/* -w N = security mode bitmask (N = 1: WEP,
 				 * 2: TKIP, 4: AES) */
-	char *key = { 0 }, *iface = {
-	0}, *mode = {
-	0};
+	char *key = { 0 }, *iface = { 0 }, *mode = { 0 };
 
 	if (!strcmp(prefix, "wl0")) {
 		led_control(LED_SEC0, LED_OFF);
