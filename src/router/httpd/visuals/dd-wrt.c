@@ -6158,6 +6158,8 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 				c = strdup(nvram_safe_get("et1macaddr"));
 			else if (getRouterBrand() == ROUTER_NETGEAR_R8000)
 				c = strdup(nvram_safe_get("et2macaddr"));
+			else if (getRouterBrand() == ROUTER_NETGEAR_R8500)
+				c = strdup(nvram_safe_get("et2macaddr"));
 			else
 				c = strdup(nvram_safe_get("et0macaddr"));
 		}
