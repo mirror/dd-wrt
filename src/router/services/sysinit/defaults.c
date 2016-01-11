@@ -2073,6 +2073,9 @@ struct nvram_param srouter_defaults[] = {
 	{"wl0_txpwr", "71"},
 	{"wl1_txpwr", "71"},
 	{"wl2_txpwr", "71"},
+	{"wl0_txpwrusr", "1"},
+	{"wl1_txpwrusr", "1"},
+	{"wl2_txpwrusr", "1"},
 #endif
 #endif
 
@@ -2180,6 +2183,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ipv6_pf_len", "64"},
 	{"ipv6_mtu", ""},
 	{"ipv6_tun_client_addr_pref", "64"},
+	{"ipv6_tun_upd_url", "See tunnelbroker account"},
 	{"radvd_enable", "1"},
 	{"radvd_custom", "0"},
 	{"radvd_conf", ""},
