@@ -1047,7 +1047,7 @@ void setRegulationDomain(char *reg)
 
 	strncpy(ccode, getIsoName(reg), 3);
 
-	if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE")) {
+	if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB")) {
 		strcpy(ccode0, "EU");
 		strcpy(rrev0, "66");
 		strcpy(ccode1, "EU");
@@ -1075,7 +1075,15 @@ void setRegulationDomain(char *reg)
 	}
 
 	//fprintf(stderr, "setRegulationDomain ccode: %s rrev: %s\n", ccode, rrev);
-
+	nvram_set("wl_country_rev", rrev0);
+	nvram_set("wl0_country_rev", rrev0);
+	nvram_set("wl1_country_rev", rrev1);
+	nvram_set("wl2_country_rev", rrev1);
+	nvram_set("wl_country_code", ccode0);
+	nvram_set("wl0_country_code", ccode0);
+	nvram_set("wl1_country_code", ccode1);
+	nvram_set("wl2_country_code", ccode1);
+	
 	switch (getRouterBrand()) {
 	case ROUTER_D1800H:
 		nvram_set("wl_country_rev", rrev1);	//DH1800 wl0 is 5G so needs to be inverted
@@ -1088,8 +1096,6 @@ void setRegulationDomain(char *reg)
 		nvram_set("pci/2/1/regrev", rrev0);
 		nvram_set("pci/1/1/ccode", ccode1);
 		nvram_set("pci/2/1/ccode", ccode0);
-		return;
-	case ROUTER_NETGEAR_R8000:
 		return;
 	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_WNDR4500:
@@ -1110,6 +1116,21 @@ void setRegulationDomain(char *reg)
 		nvram_set("pci/1/1/ccode", ccode0);
 		nvram_set("pci/2/1/ccode", ccode1);
 		break;
+	case ROUTER_NETGEAR_R8000:
+	case ROUTER_NETGEAR_R8500:
+		nvram_set("0:regrev", rrev1);
+		nvram_set("1:regrev", rrev0);
+		nvram_set("2:regrev", rrev1);
+		nvram_set("0:ccode", ccode1);
+		nvram_set("1:ccode", ccode0);
+		nvram_set("2:ccode", ccode1);
+		nvram_set("wl0_country_rev", rrev1);
+		nvram_set("wl1_country_rev", rrev0);
+		nvram_set("wl2_country_rev", rrev1);
+		nvram_set("wl0_country_code", ccode1);
+		nvram_set("wl1_country_code", ccode0);
+		nvram_set("wl2_country_code", ccode1);
+		break;
 	default:
 		nvram_set("0:regrev", rrev0);
 		nvram_set("1:regrev", rrev1);
@@ -1119,13 +1140,6 @@ void setRegulationDomain(char *reg)
 		nvram_set("2:ccode", ccode1);
 	}
 
-	nvram_set("wl_country_rev", rrev0);
-	nvram_set("wl0_country_rev", rrev0);
-	nvram_set("wl1_country_rev", rrev1);
-	nvram_set("wl2_country_rev", rrev1);
-	nvram_set("wl_country_code", ccode0);
-	nvram_set("wl0_country_code", ccode0);
-	nvram_set("wl1_country_code", ccode1);
-	nvram_set("wl2_country_code", ccode1);
+
 
 }
