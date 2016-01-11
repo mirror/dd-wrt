@@ -1463,6 +1463,12 @@ int internal_getRouterBrand()
 		setRouter("Netgear R8000");
 		return ROUTER_NETGEAR_R8000;
 	}
+	
+	if (boardnum == 32 && nvram_match("boardtype", "0x072F")
+	    && nvram_match("boardrev", "0x1101")) {
+		setRouter("Netgear R8500");
+		return ROUTER_NETGEAR_R8500;
+	}
 
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
@@ -6474,11 +6480,24 @@ int led_control(int type, int act)
 		diag_gpio = 0x103;	// power led orange     
 		connected_gpio = 0x109;	// wan led green
 		usb_power = 0x000;	// usb enable
-		wlan0_gpio = 0x10d;	// radio 0 
+		wlan0_gpio = 0x10d;	// radio 2G 
 		wlan1_gpio = 0x10c;	// radio 5G-1 
 		wlan2_gpio = 0x110;	// radio 5G-2
 		ses_gpio = 0x10e;	// wps led
 		wlan_gpio = 0x10f;	// wifi button led
+		usb_gpio = 0x111;	//usb1 
+		usb_gpio1 = 0x112;	//usb2 
+		break;
+	case ROUTER_NETGEAR_R8500:
+		power_gpio = 0x102;	// power led 
+		diag_gpio = 0x10f;	//      
+		connected_gpio = 0x109;	// wan led white 1Gb amber 100Mb
+		usb_power = 0x000;	// usb enable
+		wlan0_gpio = 0x10b;	// radio 5G-1
+		wlan1_gpio = 0x10d;	// radio 2G 
+		wlan2_gpio = 0x10c;	// radio 5G-2
+		ses_gpio = 0x10e;	// wps led
+		wlan_gpio = 0x014;	// wifi button led
 		usb_gpio = 0x111;	//usb1 
 		usb_gpio1 = 0x112;	//usb2 
 		break;
