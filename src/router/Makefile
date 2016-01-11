@@ -119,6 +119,7 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 
 all: clean_target $(obj-y) $(LINUXDIR)/.config kernel
 
+include kernel-features.mk
 
 kernel:
 	# Also build kernel
@@ -139,11 +140,7 @@ else
 endif
 endif
 endif
-ifeq ($(CONFIG_EOP_TUNNEL),y)
-	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
-else
-	echo "# CONFIG_NET_ETHERIP" is not set >> $(LINUXDIR)/.config
-endif
+	$(kernelfeatures)
 ifeq ($(CONFIG_V25),y)
 	echo CONFIG_V25=y >> $(LINUXDIR)/.config
 else
