@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # libtool - Provide generalized library-building support services.
-# Generated automatically by config.status (lighttpd) 1.4.34
+# Generated automatically by config.status (lighttpd) 1.4.39
 # Libtool was configured on host opensuse.site:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #
@@ -40,7 +40,7 @@ available_tags=""
 # ### BEGIN LIBTOOL CONFIG
 
 # A sed program that does not truncate output.
-SED="/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/sed"
+SED="/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-4.8-linaro_musl-1.1.5_eabi/bin//sed"
 
 # Sed that helps us avoid accidentally triggering echo(1) options like -n.
 Xsed="$SED -e 1s/^X//"
@@ -86,8 +86,8 @@ host_os=linux-gnu
 
 # The build system.
 build_alias=
-build=x86_64-unknown-linux-uclibc
-build_os=linux-uclibc
+build=x86_64-unknown-linux-gnu
+build_os=linux-gnu
 
 # A BSD- or MS-compatible name lister.
 NM="arm-linux-uclibc-nm"
@@ -272,10 +272,10 @@ finish_eval=""
 hardcode_into_libs=yes
 
 # Compile-time system search path for libraries.
-sys_lib_search_path_spec="/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3 /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/lib64/gcc /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/arm-openwrt-linux-uclibcgnueabi/lib "
+sys_lib_search_path_spec="/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-4.8-linaro_musl-1.1.5_eabi/lib64/gcc/arm-openwrt-linux-muslgnueabi/4.8.3 /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-4.8-linaro_musl-1.1.5_eabi/lib64/gcc /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-4.8-linaro_musl-1.1.5_eabi/arm-openwrt-linux-muslgnueabi/lib "
 
 # Run-time system search path for libraries.
-sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/local/lib64 /usr/local/lib /usr/lib64/apper /usr/lib64/xorg/modules /usr/X11R6/lib64 /usr/X11R6/lib "
+sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/local/lib64 /usr/local/lib /usr/lib64/apper /usr/lib64/graphviz /usr/lib64/graphviz/sharp /usr/lib64/graphviz/java /usr/lib64/graphviz/perl /usr/lib64/graphviz/php /usr/lib64/graphviz/ocaml /usr/lib64/graphviz/python /usr/lib64/graphviz/lua /usr/lib64/graphviz/tcl /usr/lib64/graphviz/guile /usr/lib64/graphviz/ruby /usr/lib64/wx-2.8-stl "
 
 # Whether dlopen is supported.
 dlopen_support=yes
@@ -317,7 +317,7 @@ pic_flag=" -fPIC -DPIC"
 wl="-Wl,"
 
 # Compiler flag to prevent dynamic linking.
-link_static_flag="-static"
+link_static_flag=""
 
 # Does compiler simultaneously support -c and -o options?
 compiler_c_o="yes"

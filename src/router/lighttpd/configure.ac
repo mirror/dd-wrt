@@ -1,7 +1,7 @@
 dnl                                               -*- Autoconf -*-
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
-AC_INIT([lighttpd], [1.4.34], [contact@lighttpd.net])
+AC_INIT([lighttpd], [1.4.39], [contact@lighttpd.net])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -18,10 +18,47 @@ m4_define([serial_tests], [
       esac])
 ])
 
-AM_INIT_AUTOMAKE([-Wall -Wno-portability -Wno-override foreign dist-bzip2 tar-ustar] serial_tests)
+AM_INIT_AUTOMAKE([-Wall -Wno-portability -Wno-override foreign dist-xz tar-ustar] serial_tests)
 
 dnl enable with --enable-silent-rules or make V=0 (needs automake >= 1.11)
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+
+
+dnl @synopsis TRY_CFLAGS [compiler flags]
+dnl @summary check whether compiler supports given flags and adds them to CFLAGS
+AC_DEFUN([TRY_CFLAGS],
+[dnl
+  AC_MSG_CHECKING([if $CC supports $1])
+  AC_LANG_PUSH([C])
+  ac_try_cflags_saved_cflags="${CFLAGS}"
+  CFLAGS="${CFLAGS} $1"
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+    [AC_MSG_RESULT([yes])],
+    [
+      AC_MSG_ERROR([no])
+      CFLAGS="${ac_try_cflags_saved_cflags}"
+    ]
+  )
+  AC_LANG_POP([C])
+])
+
+dnl @synopsis TRY_LDFLAGS [linker flags]
+dnl @summary check whether linker supports given flags and adds them to LDFLAGS
+AC_DEFUN([TRY_LDFLAGS],
+[dnl
+  AC_MSG_CHECKING([if $LD supports $1])
+  AC_LANG_PUSH([C])
+  ac_try_ldflags_saved_ldflags="${LDFLAGS}"
+  LDFLAGS="${LDFLAGS} $1"
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
+    [AC_MSG_RESULT([yes])],
+    [
+      AC_MSG_ERROR([no])
+      LDFLAGS="${ac_try_ldflags_saved_cflags}"
+    ]
+  )
+  AC_LANG_POP([C])
+])
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -70,7 +107,7 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netinet/in.h stdlib.h string.h \
 sys/socket.h sys/time.h unistd.h sys/sendfile.h sys/uio.h \
 getopt.h sys/epoll.h sys/select.h poll.h sys/poll.h sys/devpoll.h sys/filio.h \
-sys/mman.h sys/event.h port.h pwd.h sys/syslimits.h \
+sys/mman.h sys/event.h port.h pwd.h \
 sys/resource.h sys/un.h syslog.h sys/prctl.h uuid/uuid.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -218,14 +255,23 @@ AC_ARG_WITH(attr, AC_HELP_STRING([--with-attr],[enable extended attribute suppor
 [WITH_ATTR=$withval],[WITH_ATTR=no])
 AC_MSG_RESULT($withval)
 if test "$WITH_ATTR" != "no"; then
- AC_CHECK_LIB(attr, attr_get, [
-	AC_CHECK_HEADERS([attr/attributes.h],[
-		ATTR_LIB=-lattr
-		AC_DEFINE([HAVE_XATTR], [1], [libattr])
-		AC_DEFINE([HAVE_ATTR_ATTRIBUTES_H], [1])
-	])
- ])
- AC_SUBST(ATTR_LIB)
+  # libattr (linux only?)
+  AC_CHECK_LIB(attr, attr_get, [
+    AC_CHECK_HEADERS([attr/attributes.h],[
+      ATTR_LIB=-lattr
+      AC_DEFINE([HAVE_XATTR], [1], [libattr])
+      AC_DEFINE([HAVE_ATTR_ATTRIBUTES_H], [1])
+    ])
+  ])
+  AC_SUBST(ATTR_LIB)
+
+  # (Free)BSD extattr
+  AC_CHECK_FUNC([extattr_get_file], [
+    AC_CHECK_HEADERS([sys/extattr.h],[
+      AC_DEFINE([HAVE_EXTATTR], [1], [BSD extended attributes])
+      AC_DEFINE([HAVE_SYS_EXTATTR_H], [1])
+    ])
+  ])
 fi
 
 dnl openssl on solaris needs -lsocket -lnsl
@@ -254,6 +300,17 @@ AC_ARG_WITH(valgrind, AC_HELP_STRING([--with-valgrind],[enable internal support 
 AC_MSG_RESULT([$WITH_VALGRIND])
 if test "$WITH_VALGRIND" != "no"; then
  AC_CHECK_HEADERS([valgrind/valgrind.h])
+fi
+
+dnl Checking for libunwind
+AC_MSG_CHECKING(for libunwind)
+AC_ARG_WITH(libunwind,
+    AC_HELP_STRING([--with-libunwind],[Include libunwind support for backtraces on assert failures]),
+    [WITH_LIBUNWIND=$withval],[WITH_LIBUNWIND=no])
+
+if test "$WITH_LIBUNWIND" != "no"; then
+  PKG_CHECK_MODULES(LIBUNWIND, libunwind)
+  AC_DEFINE(HAVE_LIBUNWIND, 1, [Have libunwind support])
 fi
 
 dnl Check for openssl
@@ -385,7 +442,7 @@ if test "$WITH_FAM" != "no"; then
   LIBS=$FAM_LIBS
   AC_CHECK_FUNCS([FAMNoExists])
   LIBS=$OLD_LIBS
-  
+
   if test x$FAM_LIBS = x; then
      AC_MSG_ERROR([fam/gamin-headers and/or libs where not found, install them or build with --without-fam])
   fi
@@ -397,30 +454,29 @@ AC_ARG_WITH(webdav-props, AC_HELP_STRING([--with-webdav-props],[properties in mo
 AC_MSG_RESULT([$WITH_WEBDAV_PROPS])
 
 if test "$WITH_WEBDAV_PROPS" != "no"; then
- PKG_CHECK_MODULES(XML, libxml-2.0, [
+  PKG_CHECK_MODULES(XML, libxml-2.0, [
     AC_DEFINE([HAVE_LIBXML2], [1], [libxml2])
     AC_DEFINE([HAVE_LIBXML_H], [1], [libxml.h])
- ])
- PKG_CHECK_MODULES(SQLITE, sqlite3, [
+  ])
+  PKG_CHECK_MODULES(SQLITE, sqlite3, [
     AC_DEFINE([HAVE_SQLITE3], [1], [libsqlite3])
     AC_DEFINE([HAVE_SQLITE3_H], [1], [sqlite3.h])
- ])
+  ])
 
- AC_MSG_CHECKING(for locks in mod_webdav)
- AC_ARG_WITH(webdav-locks, AC_HELP_STRING([--with-webdav-locks],[locks in mod_webdav]),
- [WITH_WEBDAV_LOCKS=$withval],[WITH_WEBDAV_LOCKS=no])
- AC_MSG_RESULT([$WITH_WEBDAV_LOCKS])
+  AC_MSG_CHECKING(for locks in mod_webdav)
+  AC_ARG_WITH(webdav-locks, AC_HELP_STRING([--with-webdav-locks],[locks in mod_webdav]),
+  [WITH_WEBDAV_LOCKS=$withval],[WITH_WEBDAV_LOCKS=no])
+  AC_MSG_RESULT([$WITH_WEBDAV_LOCKS])
 
- if test "$WITH_WEBDAV_LOCKS" != "no"; then
-   AC_CHECK_LIB(uuid, uuid_unparse, [
-         AC_CHECK_HEADERS([uuid/uuid.h],[
-                 UUID_LIBS=-luuid
-                 AC_DEFINE([HAVE_UUID], [1], [libuuid])
-		 AC_DEFINE([HAVE_UUID_H], [1], [uuid/uuid.h is available])
-         ])
- ])
-
- fi
+  if test "$WITH_WEBDAV_LOCKS" != "no"; then
+    AC_CHECK_LIB(uuid, uuid_unparse, [
+      AC_CHECK_HEADERS([uuid/uuid.h],[
+        UUID_LIBS=-luuid
+        AC_DEFINE([HAVE_UUID], [1], [libuuid])
+        AC_DEFINE([HAVE_UUID_H], [1], [uuid/uuid.h is available])
+      ])
+    ])
+  fi
 fi
 AC_SUBST(UUID_LIBS)
 
@@ -488,19 +544,28 @@ if test "$WITH_LUA" != "no"; then
  AC_SUBST(LUA_LIBS)
 fi
 
+dnl search for crypt_r and (fallback) for crypt
 save_LIBS=$LIBS
-AC_SEARCH_LIBS(crypt,crypt,[
+LIBS=
+AC_SEARCH_LIBS([crypt_r],[crypt],[
+  AC_DEFINE([HAVE_CRYPT_R], [1], [crypt_r])
   AC_CHECK_HEADERS([crypt.h],[
-    AC_DEFINE([HAVE_CRYPT_H], [1])
+    AC_DEFINE([HAVE_CRYPT_H], [1], [crypt.h])
   ])
 
-  AC_DEFINE([HAVE_LIBCRYPT], [1], [libcrypt])
-  if test "$ac_cv_search_crypt" != no; then
-    test "$ac_cv_search_crypt" = "none required" || CRYPT_LIB="$ac_cv_search_crypt"
-  fi
+  CRYPT_LIB=$LIBS
+],[
+  AC_SEARCH_LIBS([crypt],[crypt],[
+    AC_DEFINE([HAVE_CRYPT], [1], [crypt])
+    AC_CHECK_HEADERS([crypt.h],[
+      AC_DEFINE([HAVE_CRYPT_H], [1], [crypt.h])
+    ])
+
+    CRYPT_LIB=$LIBS
+  ])
 ])
 LIBS=$save_LIBS
-AC_SUBST(CRYPT_LIB)
+AC_SUBST([CRYPT_LIB])
 
 save_LIBS=$LIBS
 AC_SEARCH_LIBS(sendfilev,sendfile,[
@@ -521,7 +586,18 @@ AC_CHECK_FUNCS([dup2 getcwd inet_ntoa inet_ntop memset mmap munmap strchr \
 		  strdup strerror strstr strtol sendfile  getopt socket lstat \
 		  gethostbyname poll epoll_ctl getrlimit chroot \
 		  getuid select signal pathconf madvise posix_fadvise posix_madvise \
-		  writev sigaction sendfile64 send_file kqueue port_create localtime_r gmtime_r])
+		  writev sigaction sendfile64 send_file kqueue port_create localtime_r gmtime_r \
+		  memset_s explicit_bzero])
+
+AC_MSG_CHECKING(if weak symbols are supported)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+		__attribute__((weak)) void __dummy(void *x) { }
+		void f(void *x) { __dummy(x); }
+	]])],
+	[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE([HAVE_WEAK_SYMBOLS], [1], [weak symbols are supported])
+	],[AC_MSG_RESULT(no)])
 
 AC_MSG_CHECKING(for Large File System support)
 AC_ARG_ENABLE(lfs,
@@ -613,7 +689,8 @@ AM_CONDITIONAL(CHECK_WITH_FASTCGI, test "x$fastcgi_found" = xyes)
 
 dnl check for extra compiler options (warning options)
 if test "${GCC}" = "yes"; then
-    CFLAGS="${CFLAGS} -Wall -W -Wshadow -pedantic -std=gnu99"
+  TRY_CFLAGS([-Wall -W -Wshadow -pedantic])
+  TRY_CFLAGS([-std=gnu99])
 fi
 
 AC_ARG_ENABLE(extra-warnings,
@@ -625,7 +702,8 @@ AC_ARG_ENABLE(extra-warnings,
   esac],[extrawarnings=false])
 
 if test x$extrawarnings = xtrue; then
-    CFLAGS="${CFLAGS} -g -O2 -g2 -Wall -Wmissing-declarations -Wdeclaration-after-statement -Wno-pointer-sign -Wcast-align -Winline -Wsign-compare -Wnested-externs -Wpointer-arith -Wl,--as-needed -Wformat-security"
+  TRY_CFLAGS([-g -O2 -g2 -Wall -Wmissing-declarations -Wdeclaration-after-statement -Wcast-align -Wsign-compare -Wnested-externs -Wpointer-arith -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security])
+  TRY_LDFLAGS([-Wl,--as-needed])
 fi
 
 dnl build version-id
