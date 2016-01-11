@@ -216,6 +216,7 @@ addEvent(window, "load", function() {
 	setRadioTable();
 	setWMM("<%% nvg("%s_wme"); %%>");
 	show_layer_ext(document.wireless.%s_wme, 'idwl_wme', <%% nvem("%s_wme", "on", "1", "0"); %%> == 1);
+	show_layer_ext(document.wireless.%s_txpwrusr, 'idtxpwr', <%% nvem("%s_txpwrusr", "0", "1", "0"); %%> == 1);
 	show_layer_ext(document.wireless.radio%d_timer_enable, 'radio', <%% nvem("radio%d_timer_enable", "1", "1", "0"); %%> == 1);
 	initWlTimer('<%% nvg("radio%d_on_time"); %%>');
 	show_layer_ext(document.wireless.%s_nmcsidx, 'id%s_nmcsidx', <%% nvem("%s_phytype", "n", "1", "0"); %%> == 1 || <%% nvem("%s_phytype", "s", "1", "0"); %%> == 1 || <%% nvram_else_match("%s_phytype", "h", "1", "0"); %%> == 1);
@@ -479,10 +480,20 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_basic.TXpower"); %%></div>
+									<input class="spaceradio" type="radio" name="%s_txpwrusr" value="1" <%% nvc("%s_txpwrusr", "1"); %%> onclick="show_layer_ext(this, 'idtxpwr', false)" /><%% tran("share.auto"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_txpwrusr" value="0" <%% nvc("%s_txpwrusr", "0"); %%> onclick="show_layer_ext(this, 'idtxpwr', true)"/><%% tran("share.manual"); %%>
+									<span class="default"><script type="text/javascript">
+									//<![CDATA[
+									document.write("(" + share.deflt + ": " + share.auto + ")");
+									//]]>
+									</script></span>
+								</div>
+								<div class="setting" id="idtxpwr">
+									<div class="label">&nbsp;</div>
 									<input class="num" name="%s_txpwr" size="6" maxlength="3" onblur="valid_range(this,1,1000,wl_basic.TXpower)" value="<%% nvram_selget("%s_txpwr"); %%>" />
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
-									document.write("(" + share.deflt + ": <%% show_defwpower(); %%>, " + share.range + ": 1 - 1000mW)");
+									document.write("(" + share.range + ": 1 - 1000mW)");
 									//]]>
 									</script></span>
 								</div>
