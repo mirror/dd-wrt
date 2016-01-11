@@ -19,4 +19,5 @@
  "ipv6_tun_end_ipv4" "tunnel remote endpoint ipv4"  "NULL"  "TRUE" "0"
  "ipv6_tun_client_addr" "tunnel client ipv6 address"  "NULL"  "TRUE" "0"
  "ipv6_tun_client_addr_pref" "tunnel ipv6 prefix"  "NULL"  "TRUE" "0"
+ "ipv6_tun_upd_url" "tunnel update url"  "NULL"  "TRUE" "0"
  
