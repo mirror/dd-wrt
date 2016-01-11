@@ -4747,6 +4747,11 @@ void start_wan_done(char *wan_ifname)
 	start_duallink();
 #endif
 #endif
+#ifdef HAVE_CURL
+	if ( nvram_match("ipv6_enable", "1") && nvram_match("ipv6_typ", "ipv6in4") ) {
+		eval("/usr/bin/curl", "-s", "-k", nvram_safe_get("ipv6_tun_upd_url"), "-o",  "/tmp/tunnelstat" );
+	}
+#endif
 }
 
 void stop_wan(void)
