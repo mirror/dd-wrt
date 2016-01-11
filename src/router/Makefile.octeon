@@ -168,6 +168,7 @@ kernelsource:
 	cd $(LINUXDIR)/../ && tar -xvjf $(LINUXDIR)/../linux-$(KERNELVERSION).tar.bz2
 	cd $(LINUXDIR)/../ && ./patch $(KERNELVERSION)
 
+include kernel-features.mk
 
 kernel:
         # Also build kernel
@@ -187,11 +188,7 @@ ifeq ($(CONFIG_USBBOOT),y)
 	sed -i 's/root=\/dev\/mmcblk0p2/root=\/dev\/sda2/g' $(LINUXDIR)/.config
 	sed -i 's/CONFIG_MMC_OCTEON=y/CONFIG_MMC_OCTEON=m/g' $(LINUXDIR)/.config
 endif
-ifeq ($(CONFIG_EOP_TUNNEL),y)
-	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
-else
-	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
-endif
+	$(kernelfeatures)
 ifeq ($(CONFIG_IPETH),y)
 	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
 endif
