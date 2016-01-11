@@ -1,6 +1,5 @@
-#! /usr/bin/perl -w
-
 package LightyTest;
+
 use strict;
 use IO::Socket;
 use Test::More;
@@ -9,11 +8,47 @@ use Cwd 'abs_path';
 use POSIX qw(:sys_wait_h dup2);
 use Errno qw(EADDRINUSE);
 
+sub find_program {
+	my @DEFAULT_PATHS = ('/usr/bin/', '/usr/local/bin/');
+	my ($envname, $program) = @_;
+	my $location;
+
+	if (defined $ENV{$envname}) {
+		$location = $ENV{$envname};
+	} else {
+		$location = `which "$program" 2>/dev/null`;
+		chomp $location;
+		if (! -x $location) {
+			for my $path (@DEFAULT_PATHS) {
+				$location = $path . $program;
+				last if -x $location;
+			}
+		}
+	}
+
+	if (-x $location) {
+		$ENV{$envname} = $location;
+		return 1;
+	} else {
+		delete $ENV{$envname};
+		return 0;
+	}
+}
+
+BEGIN {
+	our $HAVE_PHP = find_program('PHP', 'php-cgi');
+	our $HAVE_PERL = find_program('PERL', 'perl');
+	if (!$HAVE_PERL) {
+		die "Couldn't find path to perl, but it obviously seems to be running";
+	}
+}
+
 sub mtime {
 	my $file = shift;
 	my @stat = stat $file;
 	return @stat ? $stat[9] : 0;
 }
+
 sub new {
 	my $class = shift;
 	my $self = {};
@@ -58,10 +93,10 @@ sub listening_on {
 	my $self = shift;
 	my $port = shift;
 
-	my $remote = 
- 	  IO::Socket::INET->new(Proto    => "tcp",
-				PeerAddr => "127.0.0.1",
-				PeerPort => $port) or return 0;
+	my $remote = IO::Socket::INET->new(
+		Proto    => "tcp",
+		PeerAddr => "127.0.0.1",
+		PeerPort => $port) or return 0;
 
 	close $remote;
 
@@ -87,7 +122,7 @@ sub wait_for_port_with_proc {
 	my $self = shift;
 	my $port = shift;
 	my $child = shift;
-	my $timeout = 5*10; # 5 secs, select waits 0.1 s
+	my $timeout = 10*10; # 10 secs (valgrind might take a while), select waits 0.1 s
 
 	while (0 == $self->listening_on($port)) {
 		select(undef, undef, undef, 0.1);
@@ -125,13 +160,13 @@ sub start_proc {
 
 	my @cmdline = ($self->{LIGHTTPD_PATH}, "-D", "-f", $self->{SRCDIR}."/".$self->{CONFIGFILE}, "-m", $self->{MODULES_PATH});
 	if (defined $ENV{"TRACEME"} && $ENV{"TRACEME"} eq 'strace') {
-		@cmdline = (qw(strace -tt -s 512 -o strace), @cmdline);
+		@cmdline = (qw(strace -tt -s 4096 -o strace -f -v), @cmdline);
 	} elsif (defined $ENV{"TRACEME"} && $ENV{"TRACEME"} eq 'truss') {
 		@cmdline = (qw(truss -a -l -w all -v all -o strace), @cmdline);
 	} elsif (defined $ENV{"TRACEME"} && $ENV{"TRACEME"} eq 'gdb') {
 		@cmdline = ('gdb', '--batch', '--ex', 'run', '--ex', 'bt full', '--args', @cmdline);
 	} elsif (defined $ENV{"TRACEME"} && $ENV{"TRACEME"} eq 'valgrind') {
-		@cmdline = (qw(valgrind --tool=memcheck --show-reachable=yes --leak-check=yes --log-file=valgrind), @cmdline);
+		@cmdline = (qw(valgrind --tool=memcheck --track-origins=yes --show-reachable=yes --leak-check=yes --log-file=valgrind.%p), @cmdline);
 	}
 	# diag("\nstarting lighttpd at :".$self->{PORT}.", cmdline: ".@cmdline );
 	my $child = fork();
@@ -165,14 +200,15 @@ sub handle_http {
 	my $slow = defined $t->{SLOWREQUEST};
 	my $is_debug = $ENV{"TRACE_HTTP"};
 
-	my $remote = 
- 	  IO::Socket::INET->new(Proto    => "tcp",
-				PeerAddr => $host,
-				PeerPort => $self->{PORT});
+	my $remote =
+		IO::Socket::INET->new(
+			Proto    => "tcp",
+			PeerAddr => $host,
+			PeerPort => $self->{PORT});
 
 	if (not defined $remote) {
 		diag("\nconnect failed: $!");
-	       	return -1;
+		return -1;
 	}
 
 	$remote->autoflush(1);
@@ -187,7 +223,6 @@ sub handle_http {
 			print $remote $_.$BLANK;
 			diag("\n<< ".$_) if $is_debug;
 		}
-		shutdown($remote, 1); # I've stopped writing data
 	} else {
 		diag("\nsending request header to ".$host.":".$self->{PORT}) if $is_debug;
 		foreach(@request) {
@@ -208,7 +243,7 @@ sub handle_http {
 			print $remote "\012";
 			select(undef, undef, undef, 0.1);
 		}
-	
+
 	}
 	diag("\n... done") if $is_debug;
 
@@ -221,7 +256,7 @@ sub handle_http {
 		diag(">> ".$_) if $is_debug;
 	}
 	diag("\n... done") if $is_debug;
-	
+
 	close $remote;
 
 	my $full_response = $lines;
@@ -250,8 +285,8 @@ sub handle_http {
 					(my $h = $1) =~ tr/[A-Z]/[a-z]/;
 
 					if (defined $resp_hdr{$h}) {
-# 						diag(sprintf("\nheader '%s' is duplicated: '%s' and '%s'\n",
-# 						             $h, $resp_hdr{$h}, $2));
+#						diag(sprintf("\nheader '%s' is duplicated: '%s' and '%s'\n",
+#						             $h, $resp_hdr{$h}, $2));
 						$resp_hdr{$h} .= ', '.$2;
 					} else {
 						$resp_hdr{$h} = $2;
@@ -307,7 +342,7 @@ sub handle_http {
 				return -1;
 			}
 		}
-		
+
 		if (defined $href->{'-HTTP-Content'}) {
 			if (defined $resp_body && $resp_body ne '') {
 				diag(sprintf("\nbody failed: expected empty body, got '%s'", $resp_body));
@@ -334,7 +369,7 @@ sub handle_http {
 				$k = substr($k, 1);
 				$key_inverted = 1;
 				$verify_value = 0; ## skip the value check
-                        }
+			}
 
 			if ($key_inverted) {
 				if (defined $resp_hdr{$k}) {
@@ -351,13 +386,15 @@ sub handle_http {
 			if ($verify_value) {
 				if ($href->{$_} =~ /^\/(.+)\/$/) {
 					if ($resp_hdr{$k} !~ /$1/) {
-						diag(sprintf("\nresponse-header failed: expected '%s', got '%s', regex: %s", 
-					             $href->{$_}, $resp_hdr{$k}, $1));
+						diag(sprintf(
+							"\nresponse-header failed: expected '%s', got '%s', regex: %s",
+							$href->{$_}, $resp_hdr{$k}, $1));
 						return -1;
 					}
 				} elsif ($href->{$_} ne $resp_hdr{$k}) {
-					diag(sprintf("\nresponse-header failed: expected '%s', got '%s'",
-					     $href->{$_}, $resp_hdr{$k}));
+					diag(sprintf(
+						"\nresponse-header failed: expected '%s', got '%s'",
+						$href->{$_}, $resp_hdr{$k}));
 					return -1;
 				}
 			}

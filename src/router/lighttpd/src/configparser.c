@@ -64,11 +64,11 @@ data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2) {
   if (op1->type != op2->type) {
     if (op1->type == TYPE_STRING && op2->type == TYPE_INTEGER) {
       data_string *ds = (data_string *)op1;
-      buffer_append_long(ds->value, ((data_integer*)op2)->value);
+      buffer_append_int(ds->value, ((data_integer*)op2)->value);
       return op1;
     } else if (op1->type == TYPE_INTEGER && op2->type == TYPE_STRING) {
       data_string *ds = data_string_init();
-      buffer_append_long(ds->value, ((data_integer*)op1)->value);
+      buffer_append_int(ds->value, ((data_integer*)op1)->value);
       buffer_append_string_buffer(ds->value, ((data_string*)op2)->value);
       op1->free(op1);
       return (data_unset *)ds;
@@ -841,7 +841,7 @@ static void yy_reduce(
 #line 146 "../../src/configparser.y"
 {
   if (ctx->ok) {
-    buffer_copy_string_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
+    buffer_copy_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
     if (strncmp(yymsp[-2].minor.yy43->ptr, "env.", sizeof("env.") - 1) == 0) {
       fprintf(stderr, "Setting env variable is not supported in conditional %d %s: %s\n",
           ctx->current->context_ndx,
@@ -883,7 +883,7 @@ static void yy_reduce(
       ctx->ok = 0;
     }
     else {
-      buffer_copy_string_buffer(du->key, yymsp[-2].minor.yy43);
+      buffer_copy_buffer(du->key, yymsp[-2].minor.yy43);
       array_replace(vars, du);
     }
     yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
@@ -893,12 +893,12 @@ static void yy_reduce(
       ctx->ok = 0;
     }
     else {
-      buffer_copy_string_buffer(du->key, yymsp[-2].minor.yy43);
+      buffer_copy_buffer(du->key, yymsp[-2].minor.yy43);
       array_insert_unique(ctx->current->value, du);
     }
     yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
   } else {
-    buffer_copy_string_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
+    buffer_copy_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
     array_insert_unique(ctx->current->value, yymsp[0].minor.yy41);
   }
   buffer_free(yymsp[-2].minor.yy43);
@@ -979,7 +979,7 @@ static void yy_reduce(
 #line 263 "../../src/configparser.y"
 {
   yygotominor.yy41 = (data_unset *)data_string_init();
-  buffer_copy_string_buffer(((data_string *)(yygotominor.yy41))->value, yymsp[0].minor.yy0);
+  buffer_copy_buffer(((data_string *)(yygotominor.yy41))->value, yymsp[0].minor.yy0);
   buffer_free(yymsp[0].minor.yy0);
   yymsp[0].minor.yy0 = NULL;
 }
@@ -1074,7 +1074,7 @@ static void yy_reduce(
       case 24:
 #line 322 "../../src/configparser.y"
 {
-  buffer_copy_string_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
+  buffer_copy_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
   buffer_free(yymsp[-2].minor.yy43);
   yymsp[-2].minor.yy43 = NULL;
 
@@ -1191,7 +1191,7 @@ static void yy_reduce(
   }
 
   b = buffer_init();
-  buffer_copy_string_buffer(b, ctx->current->key);
+  buffer_copy_buffer(b, ctx->current->key);
   buffer_append_string(b, "/");
   buffer_append_string_buffer(b, yymsp[-5].minor.yy0);
   buffer_append_string_buffer(b, yymsp[-3].minor.yy43);
@@ -1227,9 +1227,9 @@ static void yy_reduce(
 
     dc = data_config_init();
 
-    buffer_copy_string_buffer(dc->key, b);
-    buffer_copy_string_buffer(dc->op, op);
-    buffer_copy_string_buffer(dc->comp_key, yymsp[-5].minor.yy0);
+    buffer_copy_buffer(dc->key, b);
+    buffer_copy_buffer(dc->op, op);
+    buffer_copy_buffer(dc->comp_key, yymsp[-5].minor.yy0);
     buffer_append_string_len(dc->comp_key, CONST_STR_LEN("[\""));
     buffer_append_string_buffer(dc->comp_key, yymsp[-3].minor.yy43);
     buffer_append_string_len(dc->comp_key, CONST_STR_LEN("\"]"));
@@ -1358,7 +1358,7 @@ static void yy_reduce(
       yygotominor.yy43 = buffer_init_buffer(((data_string*)yymsp[0].minor.yy41)->value);
     } else if (yymsp[0].minor.yy41->type == TYPE_INTEGER) {
       yygotominor.yy43 = buffer_init();
-      buffer_copy_long(yygotominor.yy43, ((data_integer *)yymsp[0].minor.yy41)->value);
+      buffer_copy_int(yygotominor.yy43, ((data_integer *)yymsp[0].minor.yy41)->value);
     } else {
       fprintf(stderr, "operand must be string");
       ctx->ok = 0;

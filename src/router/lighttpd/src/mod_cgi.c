@@ -5,6 +5,7 @@
 #include "connections.h"
 #include "joblist.h"
 #include "http_chunk.h"
+#include "network_backends.h"
 
 #include "plugin.h"
 
@@ -127,6 +128,8 @@ FREE_FUNC(mod_cgi_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
+			if (NULL == s) continue;
+
 			array_free(s->cgi);
 
 			free(s);
@@ -158,8 +161,10 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 	if (!p) return HANDLER_ERROR;
 
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	force_assert(p->config_storage);
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -173,7 +178,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -196,9 +201,11 @@ static int cgi_pid_add(server *srv, plugin_data *p, pid_t pid) {
 	if (r->size == 0) {
 		r->size = 16;
 		r->ptr = malloc(sizeof(*r->ptr) * r->size);
+		force_assert(r->ptr);
 	} else if (r->used == r->size) {
 		r->size += 16;
 		r->ptr = realloc(r->ptr, sizeof(*r->ptr) * r->size);
+		force_assert(r->ptr);
 	}
 
 	r->ptr[r->used++] = pid;
@@ -235,7 +242,7 @@ static int cgi_response_parse(server *srv, connection *con, plugin_data *p, buff
 
 	UNUSED(srv);
 
-	buffer_copy_string_buffer(p->parse_response, in);
+	buffer_copy_buffer(p->parse_response, in);
 
 	for (s = p->parse_response->ptr;
 	     NULL != (ns = strchr(s, '\n'));
@@ -344,13 +351,13 @@ static int cgi_demux_response(server *srv, handler_ctx *hctx) {
 		int toread;
 
 #if defined(__WIN32)
-		buffer_prepare_copy(hctx->response, 4 * 1024);
+		buffer_string_prepare_copy(hctx->response, 4 * 1024);
 #else
 		if (ioctl(con->fd, FIONREAD, &toread) || toread == 0 || toread <= 4*1024) {
-			buffer_prepare_copy(hctx->response, 4 * 1024);
+			buffer_string_prepare_copy(hctx->response, 4 * 1024);
 		} else {
 			if (toread > MAX_READ_LIMIT) toread = MAX_READ_LIMIT;
-			buffer_prepare_copy(hctx->response, toread + 1);
+			buffer_string_prepare_copy(hctx->response, toread);
 		}
 #endif
 
@@ -370,14 +377,13 @@ static int cgi_demux_response(server *srv, handler_ctx *hctx) {
 			con->file_finished = 1;
 
 			/* send final chunk */
-			http_chunk_append_mem(srv, con, NULL, 0);
+			http_chunk_close(srv, con);
 			joblist_append(srv, con);
 
 			return FDEVENT_HANDLED_FINISHED;
 		}
 
-		hctx->response->ptr[n] = '\0';
-		hctx->response->used = n+1;
+		buffer_commit(hctx->response, n);
 
 		/* split header from body */
 
@@ -385,7 +391,7 @@ static int cgi_demux_response(server *srv, handler_ctx *hctx) {
 			int is_header = 0;
 			int is_header_end = 0;
 			size_t last_eol = 0;
-			size_t i;
+			size_t i, header_len;
 
 			buffer_append_string_buffer(hctx->response_header, hctx->response);
 
@@ -412,8 +418,9 @@ static int cgi_demux_response(server *srv, handler_ctx *hctx) {
 			
 			/* nph (non-parsed headers) */
 			if (0 == strncmp(hctx->response_header->ptr, "HTTP/1.", 7)) is_header = 1;
-				
-			for (i = 0; !is_header_end && i < hctx->response_header->used - 1; i++) {
+
+			header_len = buffer_string_length(hctx->response_header);
+			for (i = 0; !is_header_end && i < header_len; i++) {
 				char c = hctx->response_header->ptr[i];
 
 				switch (c) {
@@ -458,31 +465,30 @@ static int cgi_demux_response(server *srv, handler_ctx *hctx) {
 						con->response.transfer_encoding = HTTP_TRANSFER_ENCODING_CHUNKED;
 					}
 
-					http_chunk_append_mem(srv, con, hctx->response_header->ptr, hctx->response_header->used);
+					http_chunk_append_buffer(srv, con, hctx->response_header);
 					joblist_append(srv, con);
 				} else {
 					const char *bstart;
 					size_t blen;
-					
+
+					/* the body starts after the EOL */
+					bstart = hctx->response_header->ptr + i;
+					blen = header_len - i;
+
 					/**
 					 * i still points to the char after the terminating EOL EOL
 					 *
 					 * put it on the last \n again
 					 */
 					i--;
-					
-					/* the body starts after the EOL */
-					bstart = hctx->response_header->ptr + (i + 1);
-					blen = (hctx->response_header->used - 1) - (i + 1);
-					
+
 					/* string the last \r?\n */
 					if (i > 0 && (hctx->response_header->ptr[i - 1] == '\r')) {
 						i--;
 					}
 
-					hctx->response_header->ptr[i] = '\0';
-					hctx->response_header->used = i + 1; /* the string + \0 */
-					
+					buffer_string_set_length(hctx->response_header, i);
+
 					/* parse the response header */
 					cgi_response_parse(srv, con, p, hctx->response_header);
 
@@ -493,7 +499,7 @@ static int cgi_demux_response(server *srv, handler_ctx *hctx) {
 					}
 
 					if (blen > 0) {
-						http_chunk_append_mem(srv, con, bstart, blen + 1);
+						http_chunk_append_mem(srv, con, bstart, blen);
 						joblist_append(srv, con);
 					}
 				}
@@ -501,7 +507,7 @@ static int cgi_demux_response(server *srv, handler_ctx *hctx) {
 				con->file_started = 1;
 			}
 		} else {
-			http_chunk_append_mem(srv, con, hctx->response->ptr, hctx->response->used);
+			http_chunk_append_buffer(srv, con, hctx->response);
 			joblist_append(srv, con);
 		}
 
@@ -668,27 +674,17 @@ static handler_t cgi_handle_fdevent(server *srv, void *ctx, int revents) {
 	/* perhaps this issue is already handled */
 	if (revents & FDEVENT_HUP) {
 		/* check if we still have a unfinished header package which is a body in reality */
-		if (con->file_started == 0 &&
-		    hctx->response_header->used) {
+		if (con->file_started == 0 && !buffer_string_is_empty(hctx->response_header)) {
 			con->file_started = 1;
-			http_chunk_append_mem(srv, con, hctx->response_header->ptr, hctx->response_header->used);
-			joblist_append(srv, con);
+			http_chunk_append_buffer(srv, con, hctx->response_header);
 		}
 
 		if (con->file_finished == 0) {
-			http_chunk_append_mem(srv, con, NULL, 0);
-			joblist_append(srv, con);
+			http_chunk_close(srv, con);
 		}
-
 		con->file_finished = 1;
 
-		if (chunkqueue_is_empty(con->write_queue)) {
-			/* there is nothing left to write */
-			connection_set_state(srv, con, CON_STATE_RESPONSE_END);
-		} else {
-			/* used the write-handler to finish the request on demand */
-
-		}
+		joblist_append(srv, con);
 
 # if 0
 		log_error_write(srv, __FILE__, __LINE__, "sddd", "got HUP from cgi", con->fd, hctx->fd, revents);
@@ -717,6 +713,7 @@ static int cgi_env_add(char_array *env, const char *key, size_t key_len, const c
 	if (!key || !val) return -1;
 
 	dst = malloc(key_len + val_len + 2);
+	force_assert(dst);
 	memcpy(dst, key, key_len);
 	dst[key_len] = '=';
 	memcpy(dst + key_len + 1, val, val_len);
@@ -725,12 +722,93 @@ static int cgi_env_add(char_array *env, const char *key, size_t key_len, const c
 	if (env->size == 0) {
 		env->size = 16;
 		env->ptr = malloc(env->size * sizeof(*env->ptr));
+		force_assert(env->ptr);
 	} else if (env->size == env->used) {
 		env->size += 16;
 		env->ptr = realloc(env->ptr, env->size * sizeof(*env->ptr));
+		force_assert(env->ptr);
 	}
 
 	env->ptr[env->used++] = dst;
+
+	return 0;
+}
+
+/* returns: 0: continue, -1: fatal error, -2: connection reset */
+/* similar to network_write_file_chunk_mmap, but doesn't use send on windows (because we're on pipes),
+ * also mmaps and sends complete chunk instead of only small parts - the files
+ * are supposed to be temp files with reasonable chunk sizes.
+ *
+ * Also always use mmap; the files are "trusted", as we created them.
+ */
+static int cgi_write_file_chunk_mmap(server *srv, connection *con, int fd, chunkqueue *cq) {
+	chunk* const c = cq->first;
+	off_t offset, toSend, file_end;
+	ssize_t r;
+	size_t mmap_offset, mmap_avail;
+	const char *data;
+
+	force_assert(NULL != c);
+	force_assert(FILE_CHUNK == c->type);
+	force_assert(c->offset >= 0 && c->offset <= c->file.length);
+
+	offset = c->file.start + c->offset;
+	toSend = c->file.length - c->offset;
+	file_end = c->file.start + c->file.length; /* offset to file end in this chunk */
+
+	if (0 == toSend) {
+		chunkqueue_remove_finished_chunks(cq);
+		return 0;
+	}
+
+	if (0 != network_open_file_chunk(srv, con, cq)) return -1;
+
+	/* (re)mmap the buffer if range is not covered completely */
+	if (MAP_FAILED == c->file.mmap.start
+		|| offset < c->file.mmap.offset
+		|| file_end > (off_t)(c->file.mmap.offset + c->file.mmap.length)) {
+
+		if (MAP_FAILED != c->file.mmap.start) {
+			munmap(c->file.mmap.start, c->file.mmap.length);
+			c->file.mmap.start = MAP_FAILED;
+		}
+
+		c->file.mmap.offset = mmap_align_offset(offset);
+		c->file.mmap.length = file_end - c->file.mmap.offset;
+
+		if (MAP_FAILED == (c->file.mmap.start = mmap(NULL, c->file.mmap.length, PROT_READ, MAP_SHARED, c->file.fd, c->file.mmap.offset))) {
+			log_error_write(srv, __FILE__, __LINE__, "ssbdoo", "mmap failed:",
+				strerror(errno), c->file.name, c->file.fd, c->file.mmap.offset, (off_t) c->file.mmap.length);
+			return -1;
+		}
+	}
+
+	force_assert(offset >= c->file.mmap.offset);
+	mmap_offset = offset - c->file.mmap.offset;
+	force_assert(c->file.mmap.length > mmap_offset);
+	mmap_avail = c->file.mmap.length - mmap_offset;
+	force_assert(toSend <= (off_t) mmap_avail);
+
+	data = c->file.mmap.start + mmap_offset;
+
+	if ((r = write(fd, data, toSend)) < 0) {
+		switch (errno) {
+		case EAGAIN:
+		case EINTR:
+			return 0;
+		case EPIPE:
+		case ECONNRESET:
+			return -2;
+		default:
+			log_error_write(srv, __FILE__, __LINE__, "ssd",
+				"write failed:", strerror(errno), fd);
+			return -1;
+		}
+	}
+
+	if (r >= 0) {
+		chunkqueue_mark_written(cq, r);
+	}
 
 	return 0;
 }
@@ -748,7 +826,7 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 
 #ifndef __WIN32
 
-	if (cgi_handler->used > 1) {
+	if (!buffer_string_is_empty(cgi_handler)) {
 		/* stat the exec file */
 		if (-1 == (stat(cgi_handler->ptr, &st))) {
 			log_error_write(srv, __FILE__, __LINE__, "sbss",
@@ -777,7 +855,7 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 		char **args;
 		int argc;
 		int i = 0;
-		char buf[32];
+		char buf[LI_ITOSTRING_LENGTH];
 		size_t n;
 		char_array env;
 		char *c;
@@ -809,8 +887,8 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 			cgi_env_add(&env, CONST_STR_LEN("SERVER_SOFTWARE"), CONST_BUF_LEN(con->conf.server_tag));
 		}
 
-		if (!buffer_is_empty(con->server_name)) {
-			size_t len = con->server_name->used - 1;
+		if (!buffer_string_is_empty(con->server_name)) {
+			size_t len = buffer_string_length(con->server_name);
 
 			if (con->server_name->ptr[0] == '[') {
 				const char *colon = strstr(con->server_name->ptr, "]:");
@@ -823,23 +901,25 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 			cgi_env_add(&env, CONST_STR_LEN("SERVER_NAME"), con->server_name->ptr, len);
 		} else {
 #ifdef HAVE_IPV6
-			s = inet_ntop(srv_sock->addr.plain.sa_family,
-				      srv_sock->addr.plain.sa_family == AF_INET6 ?
-				      (const void *) &(srv_sock->addr.ipv6.sin6_addr) :
-				      (const void *) &(srv_sock->addr.ipv4.sin_addr),
-				      b2, sizeof(b2)-1);
+			s = inet_ntop(
+				srv_sock->addr.plain.sa_family,
+				srv_sock->addr.plain.sa_family == AF_INET6 ?
+				(const void *) &(srv_sock->addr.ipv6.sin6_addr) :
+				(const void *) &(srv_sock->addr.ipv4.sin_addr),
+				b2, sizeof(b2)-1);
 #else
 			s = inet_ntoa(srv_sock->addr.ipv4.sin_addr);
 #endif
+			force_assert(s);
 			cgi_env_add(&env, CONST_STR_LEN("SERVER_NAME"), s, strlen(s));
 		}
 		cgi_env_add(&env, CONST_STR_LEN("GATEWAY_INTERFACE"), CONST_STR_LEN("CGI/1.1"));
 
 		s = get_http_version_name(con->request.http_version);
-
+		force_assert(s);
 		cgi_env_add(&env, CONST_STR_LEN("SERVER_PROTOCOL"), s, strlen(s));
 
-		LI_ltostr(buf,
+		li_utostr(buf,
 #ifdef HAVE_IPV6
 			ntohs(srv_sock->addr.plain.sa_family == AF_INET6 ? srv_sock->addr.ipv6.sin6_port : srv_sock->addr.ipv4.sin_port)
 #else
@@ -851,14 +931,16 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 		switch (srv_sock->addr.plain.sa_family) {
 #ifdef HAVE_IPV6
 		case AF_INET6:
-			s = inet_ntop(srv_sock->addr.plain.sa_family,
-			              (const void *) &(srv_sock->addr.ipv6.sin6_addr),
-			              b2, sizeof(b2)-1);
+			s = inet_ntop(
+				srv_sock->addr.plain.sa_family,
+				(const void *) &(srv_sock->addr.ipv6.sin6_addr),
+				b2, sizeof(b2)-1);
 			break;
 		case AF_INET:
-			s = inet_ntop(srv_sock->addr.plain.sa_family,
-			              (const void *) &(srv_sock->addr.ipv4.sin_addr),
-			              b2, sizeof(b2)-1);
+			s = inet_ntop(
+				srv_sock->addr.plain.sa_family,
+				(const void *) &(srv_sock->addr.ipv4.sin_addr),
+				b2, sizeof(b2)-1);
 			break;
 #else
 		case AF_INET:
@@ -869,19 +951,21 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 			s = "";
 			break;
 		}
+		force_assert(s);
 		cgi_env_add(&env, CONST_STR_LEN("SERVER_ADDR"), s, strlen(s));
 
 		s = get_http_method_name(con->request.http_method);
+		force_assert(s);
 		cgi_env_add(&env, CONST_STR_LEN("REQUEST_METHOD"), s, strlen(s));
 
-		if (!buffer_is_empty(con->request.pathinfo)) {
+		if (!buffer_string_is_empty(con->request.pathinfo)) {
 			cgi_env_add(&env, CONST_STR_LEN("PATH_INFO"), CONST_BUF_LEN(con->request.pathinfo));
 		}
 		cgi_env_add(&env, CONST_STR_LEN("REDIRECT_STATUS"), CONST_STR_LEN("200"));
-		if (!buffer_is_empty(con->uri.query)) {
+		if (!buffer_string_is_empty(con->uri.query)) {
 			cgi_env_add(&env, CONST_STR_LEN("QUERY_STRING"), CONST_BUF_LEN(con->uri.query));
 		}
-		if (!buffer_is_empty(con->request.orig_uri)) {
+		if (!buffer_string_is_empty(con->request.orig_uri)) {
 			cgi_env_add(&env, CONST_STR_LEN("REQUEST_URI"), CONST_BUF_LEN(con->request.orig_uri));
 		}
 
@@ -889,14 +973,16 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 		switch (con->dst_addr.plain.sa_family) {
 #ifdef HAVE_IPV6
 		case AF_INET6:
-			s = inet_ntop(con->dst_addr.plain.sa_family,
-			              (const void *) &(con->dst_addr.ipv6.sin6_addr),
-			              b2, sizeof(b2)-1);
+			s = inet_ntop(
+				con->dst_addr.plain.sa_family,
+				(const void *) &(con->dst_addr.ipv6.sin6_addr),
+				b2, sizeof(b2)-1);
 			break;
 		case AF_INET:
-			s = inet_ntop(con->dst_addr.plain.sa_family,
-			              (const void *) &(con->dst_addr.ipv4.sin_addr),
-			              b2, sizeof(b2)-1);
+			s = inet_ntop(
+				con->dst_addr.plain.sa_family,
+				(const void *) &(con->dst_addr.ipv4.sin_addr),
+				b2, sizeof(b2)-1);
 			break;
 #else
 		case AF_INET:
@@ -907,9 +993,10 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 			s = "";
 			break;
 		}
+		force_assert(s);
 		cgi_env_add(&env, CONST_STR_LEN("REMOTE_ADDR"), s, strlen(s));
 
-		LI_ltostr(buf,
+		li_utostr(buf,
 #ifdef HAVE_IPV6
 			ntohs(con->dst_addr.plain.sa_family == AF_INET6 ? con->dst_addr.ipv6.sin6_port : con->dst_addr.ipv4.sin_port)
 #else
@@ -922,8 +1009,7 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 			cgi_env_add(&env, CONST_STR_LEN("HTTPS"), CONST_STR_LEN("on"));
 		}
 
-		/* request.content_length < SSIZE_MAX, see request.c */
-		LI_ltostr(buf, con->request.content_length);
+		li_itostr(buf, con->request.content_length);
 		cgi_env_add(&env, CONST_STR_LEN("CONTENT_LENGTH"), buf, strlen(buf));
 		cgi_env_add(&env, CONST_STR_LEN("SCRIPT_FILENAME"), CONST_BUF_LEN(con->physical.path));
 		cgi_env_add(&env, CONST_STR_LEN("SCRIPT_NAME"), CONST_BUF_LEN(con->uri.path));
@@ -949,30 +1035,8 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 
 			ds = (data_string *)con->request.headers->data[n];
 
-			if (ds->value->used && ds->key->used) {
-				size_t j;
-
-				buffer_reset(p->tmp_buf);
-
-				if (0 != strcasecmp(ds->key->ptr, "CONTENT-TYPE")) {
-					buffer_copy_string_len(p->tmp_buf, CONST_STR_LEN("HTTP_"));
-					p->tmp_buf->used--; /* strip \0 after HTTP_ */
-				}
-
-				buffer_prepare_append(p->tmp_buf, ds->key->used + 2);
-
-				for (j = 0; j < ds->key->used - 1; j++) {
-					char cr = '_';
-					if (light_isalpha(ds->key->ptr[j])) {
-						/* upper-case */
-						cr = ds->key->ptr[j] & ~32;
-					} else if (light_isdigit(ds->key->ptr[j])) {
-						/* copy */
-						cr = ds->key->ptr[j];
-					}
-					p->tmp_buf->ptr[p->tmp_buf->used++] = cr;
-				}
-				p->tmp_buf->ptr[p->tmp_buf->used++] = '\0';
+			if (!buffer_is_empty(ds->value) && !buffer_is_empty(ds->key)) {
+				buffer_copy_string_encoded_cgi_varnames(p->tmp_buf, CONST_BUF_LEN(ds->key), 1);
 
 				cgi_env_add(&env, CONST_BUF_LEN(p->tmp_buf), CONST_BUF_LEN(ds->value));
 			}
@@ -983,25 +1047,8 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 
 			ds = (data_string *)con->environment->data[n];
 
-			if (ds->value->used && ds->key->used) {
-				size_t j;
-
-				buffer_reset(p->tmp_buf);
-
-				buffer_prepare_append(p->tmp_buf, ds->key->used + 2);
-
-				for (j = 0; j < ds->key->used - 1; j++) {
-					char cr = '_';
-					if (light_isalpha(ds->key->ptr[j])) {
-						/* upper-case */
-						cr = ds->key->ptr[j] & ~32;
-					} else if (light_isdigit(ds->key->ptr[j])) {
-						/* copy */
-						cr = ds->key->ptr[j];
-					}
-					p->tmp_buf->ptr[p->tmp_buf->used++] = cr;
-				}
-				p->tmp_buf->ptr[p->tmp_buf->used++] = '\0';
+			if (!buffer_is_empty(ds->value) && !buffer_is_empty(ds->key)) {
+				buffer_copy_string_encoded_cgi_varnames(p->tmp_buf, CONST_BUF_LEN(ds->key), 0);
 
 				cgi_env_add(&env, CONST_BUF_LEN(p->tmp_buf), CONST_BUF_LEN(ds->value));
 			}
@@ -1017,9 +1064,10 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 		/* set up args */
 		argc = 3;
 		args = malloc(sizeof(*args) * argc);
+		force_assert(args);
 		i = 0;
 
-		if (cgi_handler->used > 1) {
+		if (!buffer_string_is_empty(cgi_handler)) {
 			args[i++] = cgi_handler->ptr;
 		}
 		args[i++] = con->physical.path->ptr;
@@ -1058,10 +1106,9 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 		close(to_cgi_fds[0]);
 		close(to_cgi_fds[1]);
 		return -1;
-		break;
 	default: {
 		handler_ctx *hctx;
-		/* father */
+		/* parent proces */
 
 		close(from_cgi_fds[1]);
 		close(to_cgi_fds[0]);
@@ -1072,81 +1119,63 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 
 			assert(chunkqueue_length(cq) == (off_t)con->request.content_length);
 
+			/* NOTE: yes, this is synchronous sending of CGI post data;
+			 * if you need something asynchronous (recommended with large
+			 * request bodies), use mod_fastcgi + fcgi-cgi.
+			 *
+			 * Also: windows doesn't support select() on pipes - wouldn't be
+			 * easy to fix for all platforms.
+			 */
+
 			/* there is content to send */
 			for (c = cq->first; c; c = cq->first) {
-				int r = 0;
+				int r = -1;
 
-				/* copy all chunks */
 				switch(c->type) {
 				case FILE_CHUNK:
-
-					if (c->file.mmap.start == MAP_FAILED) {
-						if (-1 == c->file.fd &&  /* open the file if not already open */
-						    -1 == (c->file.fd = open(c->file.name->ptr, O_RDONLY))) {
-							log_error_write(srv, __FILE__, __LINE__, "ss", "open failed: ", strerror(errno));
-
-							close(from_cgi_fds[0]);
-							close(to_cgi_fds[1]);
-							return -1;
-						}
-
-						c->file.mmap.length = c->file.length;
-
-						if (MAP_FAILED == (c->file.mmap.start = mmap(NULL,  c->file.mmap.length, PROT_READ, MAP_SHARED, c->file.fd, 0))) {
-							log_error_write(srv, __FILE__, __LINE__, "ssbd", "mmap failed: ",
-									strerror(errno), c->file.name,  c->file.fd);
-
-							close(from_cgi_fds[0]);
-							close(to_cgi_fds[1]);
-							return -1;
-						}
-
-						close(c->file.fd);
-						c->file.fd = -1;
-
-						/* chunk_reset() or chunk_free() will cleanup for us */
-					}
-
-					if ((r = write(to_cgi_fds[1], c->file.mmap.start + c->offset, c->file.length - c->offset)) < 0) {
-						switch(errno) {
-						case ENOSPC:
-							con->http_status = 507;
-							break;
-						case EINTR:
-							continue;
-						default:
-							con->http_status = 403;
-							break;
-						}
-					}
+					r = cgi_write_file_chunk_mmap(srv, con, to_cgi_fds[1], cq);
 					break;
+
 				case MEM_CHUNK:
-					if ((r = write(to_cgi_fds[1], c->mem->ptr + c->offset, c->mem->used - c->offset - 1)) < 0) {
+					if ((r = write(to_cgi_fds[1], c->mem->ptr + c->offset, buffer_string_length(c->mem) - c->offset)) < 0) {
 						switch(errno) {
-						case ENOSPC:
-							con->http_status = 507;
-							break;
+						case EAGAIN:
 						case EINTR:
-							continue;
+							/* ignore and try again */
+							r = 0;
+							break;
+						case EPIPE:
+						case ECONNRESET:
+							/* connection closed */
+							r = -2;
+							break;
 						default:
-							con->http_status = 403;
+							/* fatal error */
+							log_error_write(srv, __FILE__, __LINE__, "ss", "write failed due to: ", strerror(errno)); 
+							r = -1;
 							break;
 						}
+					} else if (r > 0) {
+						chunkqueue_mark_written(cq, r);
 					}
-					break;
-				case UNUSED_CHUNK:
 					break;
 				}
 
-				if (r > 0) {
-					c->offset += r;
-					cq->bytes_out += r;
-				} else {
-					log_error_write(srv, __FILE__, __LINE__, "ss", "write() failed due to: ", strerror(errno)); 
-					con->http_status = 500;
+				switch (r) {
+				case -1:
+					/* fatal error */
+					close(from_cgi_fds[0]);
+					close(to_cgi_fds[1]);
+					return -1;
+				case -2:
+					/* connection reset */
+					log_error_write(srv, __FILE__, __LINE__, "s", "failed to send post data to cgi, connection closed by CGI");
+					/* skip all remaining data */
+					chunkqueue_mark_written(cq, chunkqueue_length(cq));
+					break;
+				default:
 					break;
 				}
-				chunkqueue_remove_finished_chunks(cq);
 			}
 		}
 
@@ -1237,7 +1266,7 @@ URIHANDLER_FUNC(cgi_is_handled) {
 
 	if (con->mode != DIRECT) return HANDLER_GO_ON;
 
-	if (fn->used == 0) return HANDLER_GO_ON;
+	if (buffer_is_empty(fn)) return HANDLER_GO_ON;
 
 	mod_cgi_patch_connection(srv, con, p);
 
@@ -1245,13 +1274,13 @@ URIHANDLER_FUNC(cgi_is_handled) {
 	if (!S_ISREG(sce->st.st_mode)) return HANDLER_GO_ON;
 	if (p->conf.execute_x_only == 1 && (sce->st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) == 0) return HANDLER_GO_ON;
 
-	s_len = fn->used - 1;
+	s_len = buffer_string_length(fn);
 
 	for (k = 0; k < p->conf.cgi->used; k++) {
 		data_string *ds = (data_string *)p->conf.cgi->data[k];
-		size_t ct_len = ds->key->used - 1;
+		size_t ct_len = buffer_string_length(ds->key);
 
-		if (ds->key->used == 0) continue;
+		if (buffer_is_empty(ds->key)) continue;
 		if (s_len < ct_len) continue;
 
 		if (0 == strncmp(fn->ptr + s_len - ct_len, ds->key->ptr, ct_len)) {

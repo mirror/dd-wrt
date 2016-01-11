@@ -71,7 +71,7 @@ FREE_FUNC(mod_magnet_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
-			if (!s) continue;
+			if (NULL == s) continue;
 
 			array_free(s->url_raw);
 			array_free(s->physical_path);
@@ -106,6 +106,7 @@ SETDEFAULTS_FUNC(mod_magnet_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -117,7 +118,7 @@ SETDEFAULTS_FUNC(mod_magnet_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -189,17 +190,12 @@ static int magnet_array_next(lua_State *L) {
 
 	if (pos >= a->used) return 0;
 	if (NULL != (du = a->data[pos])) {
-		if (du->key->used) {
-			lua_pushlstring(L, du->key->ptr, du->key->used - 1);
-		}
-		else {
-			lua_pushlstring(L, "", 0);
-		}
+		lua_pushlstring(L, CONST_BUF_LEN(du->key));
 		switch (du->type) {
 			case TYPE_STRING:
 				ds = (data_string *)du;
-				if (ds->value && ds->value->used) {
-					lua_pushlstring(L, ds->value->ptr, ds->value->used - 1);
+				if (!buffer_is_empty(ds->value)) {
+					lua_pushlstring(L, CONST_BUF_LEN(ds->value));
 				} else {
 					lua_pushnil(L);
 				}
@@ -252,8 +248,9 @@ static int magnet_stat(lua_State *L) {
 	const char *s = luaL_checkstring(L, 1);
 	server *srv;
 	connection *con;
-	buffer sb;
+	buffer *sb;
 	stat_cache_entry *sce = NULL;
+	handler_t res;
 
 	lua_pushstring(L, "lighty.srv");
 	lua_gettable(L, LUA_REGISTRYINDEX);
@@ -265,12 +262,12 @@ static int magnet_stat(lua_State *L) {
 	con = lua_touserdata(L, -1);
 	lua_pop(L, 1);
 
-	sb.ptr = (char *)s;
-	sb.used = sb.size = strlen(s) + 1;
-	
-	if (HANDLER_GO_ON != stat_cache_get_entry(srv, con, &sb, &sce)) {
-		lua_pushnil(L);
+	sb = buffer_init_string(s);
+	res = stat_cache_get_entry(srv, con, sb, &sce);
+	buffer_free(sb);
 
+	if (HANDLER_GO_ON != res) {
+		lua_pushnil(L);
 		return 1;
 	}
 
@@ -319,20 +316,20 @@ static int magnet_stat(lua_State *L) {
 	lua_setfield(L, -2, "st_ino");
 
 
-	if (!buffer_is_empty(sce->etag)) {
+	if (!buffer_string_is_empty(sce->etag)) {
 		/* we have to mutate the etag */
 		buffer *b = buffer_init();
 		etag_mutate(b, sce->etag);
 
-		lua_pushlstring(L, b->ptr, b->used - 1);
+		lua_pushlstring(L, CONST_BUF_LEN(b));
 		buffer_free(b);
 	} else {
 		lua_pushnil(L);
 	}
 	lua_setfield(L, -2, "etag");
 
-	if (!buffer_is_empty(sce->content_type)) {
-		lua_pushlstring(L, sce->content_type->ptr, sce->content_type->used - 1);
+	if (!buffer_string_is_empty(sce->content_type)) {
+		lua_pushlstring(L, CONST_BUF_LEN(sce->content_type));
 	} else {
 		lua_pushnil(L);
 	}
@@ -369,8 +366,8 @@ static int magnet_reqhdr_get(lua_State *L) {
 	lua_pop(L, 1);
 
 	if (NULL != (ds = (data_string *)array_get_element(con->request.headers, key))) {
-		if (ds->value->used) {
-			lua_pushlstring(L, ds->value->ptr, ds->value->used - 1);
+		if (!buffer_is_empty(ds->value)) {
+			lua_pushlstring(L, CONST_BUF_LEN(ds->value));
 		} else {
 			lua_pushnil(L);
 		}
@@ -555,8 +552,8 @@ static int magnet_env_get(lua_State *L) {
 
 	dest = magnet_env_get_buffer(srv, con, key);
 
-	if (dest && dest->used) {
-		lua_pushlstring(L, dest->ptr, dest->used - 1);
+	if (!buffer_is_empty(dest)) {
+		lua_pushlstring(L, CONST_BUF_LEN(dest));
 	} else {
 		lua_pushnil(L);
 	}
@@ -617,8 +614,8 @@ static int magnet_env_next(lua_State *L) {
 	lua_pushstring(L, magnet_env[pos].name);
 
 	dest = magnet_env_get_buffer_by_id(srv, con, magnet_env[pos].type);
-	if (dest && dest->used) {
-		lua_pushlstring(L, dest->ptr, dest->used - 1);
+	if (!buffer_is_empty(dest)) {
+		lua_pushlstring(L, CONST_BUF_LEN(dest));
 	} else {
 		lua_pushnil(L);
 	}
@@ -649,7 +646,8 @@ static int magnet_cgi_get(lua_State *L) {
 	con = lua_touserdata(L, -1);
 	lua_pop(L, 1);
 
-	if (NULL != (ds = (data_string *)array_get_element(con->environment, key)) && ds->value->used)
+	ds = (data_string *)array_get_element(con->environment, key);
+	if (NULL != ds && !buffer_is_empty(ds->value))
 		lua_pushlstring(L, CONST_BUF_LEN(ds->value));
 	else
 		lua_pushnil(L);
@@ -759,7 +757,7 @@ static int magnet_attach_content(server *srv, connection *con, plugin_data *p, l
 				size_t s_len = 0;
 				const char *s = lua_tolstring(L, -1, &s_len);
 
-				chunkqueue_append_mem(con->write_queue, s, s_len + 1);
+				chunkqueue_append_mem(con->write_queue, s, s_len);
 			} else if (lua_istable(L, -1)) {
 				lua_getfield(L, -1, "filename");
 				lua_getfield(L, -2, "length");
@@ -1066,7 +1064,7 @@ static handler_t magnet_attract_array(server *srv, connection *con, plugin_data 
 		data_string *ds = (data_string *)files->data[i];
 		handler_t ret;
 
-		if (buffer_is_empty(ds->value)) continue;
+		if (buffer_string_is_empty(ds->value)) continue;
 
 		ret = magnet_attract(srv, con, p, ds->value);
 
@@ -1112,6 +1110,9 @@ int mod_magnet_plugin_init(plugin *p) {
 }
 
 #else
+
+#pragma message("lua is required, but was not found")
+
 int mod_magnet_plugin_init(plugin *p);
 int mod_magnet_plugin_init(plugin *p) {
 	UNUSED(p);

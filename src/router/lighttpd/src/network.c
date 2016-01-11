@@ -187,10 +187,10 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 	srv_socket->fde_ndx = -1;
 
 	srv_socket->srv_token = buffer_init();
-	buffer_copy_string_buffer(srv_socket->srv_token, host_token);
+	buffer_copy_buffer(srv_socket->srv_token, host_token);
 
 	b = buffer_init();
-	buffer_copy_string_buffer(b, host_token);
+	buffer_copy_buffer(b, host_token);
 
 	/* ipv4:port
 	 * [ipv6]:port
@@ -349,6 +349,8 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 
 		break;
 	case AF_UNIX:
+		memset(&srv_socket->addr, 0, sizeof(struct sockaddr_un));
+		srv_socket->addr.un.sun_family = AF_UNIX;
 		{
 			size_t hostlen = strlen(host) + 1;
 			if (hostlen > sizeof(srv_socket->addr.un.sun_path)) {
@@ -356,15 +358,14 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 				goto error_free_socket;
 			}
 			memcpy(srv_socket->addr.un.sun_path, host, hostlen);
-		}
-		srv_socket->addr.un.sun_family = AF_UNIX;
 
-#ifdef SUN_LEN
-		addr_len = SUN_LEN(&srv_socket->addr.un);
+#if defined(SUN_LEN)
+			addr_len = SUN_LEN(&srv_socket->addr.un);
 #else
-		/* stevens says: */
-		addr_len = hostlen + sizeof(srv_socket->addr.un.sun_family);
+			/* stevens says: */
+			addr_len = hostlen + sizeof(srv_socket->addr.un.sun_family);
 #endif
+		}
 
 		/* check if the socket exists and try to connect to it. */
 		if (-1 != (fd = connect(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len))) {
@@ -517,9 +518,7 @@ typedef enum {
 	NETWORK_BACKEND_UNSET,
 	NETWORK_BACKEND_WRITE,
 	NETWORK_BACKEND_WRITEV,
-	NETWORK_BACKEND_LINUX_SENDFILE,
-	NETWORK_BACKEND_FREEBSD_SENDFILE,
-	NETWORK_BACKEND_SOLARIS_SENDFILEV
+	NETWORK_BACKEND_SENDFILE,
 } network_backend_t;
 
 #ifdef USE_OPENSSL
@@ -674,20 +673,23 @@ int network_init(server *srv) {
 		const char *name;
 	} network_backends[] = {
 		/* lowest id wins */
+#if defined USE_SENDFILE
+		{ NETWORK_BACKEND_SENDFILE,   "sendfile" },
+#endif
 #if defined USE_LINUX_SENDFILE
-		{ NETWORK_BACKEND_LINUX_SENDFILE,       "linux-sendfile" },
+		{ NETWORK_BACKEND_SENDFILE,   "linux-sendfile" },
 #endif
 #if defined USE_FREEBSD_SENDFILE
-		{ NETWORK_BACKEND_FREEBSD_SENDFILE,     "freebsd-sendfile" },
+		{ NETWORK_BACKEND_SENDFILE,   "freebsd-sendfile" },
 #endif
 #if defined USE_SOLARIS_SENDFILEV
-		{ NETWORK_BACKEND_SOLARIS_SENDFILEV,	"solaris-sendfilev" },
+		{ NETWORK_BACKEND_SENDFILE,   "solaris-sendfilev" },
 #endif
 #if defined USE_WRITEV
-		{ NETWORK_BACKEND_WRITEV,		"writev" },
+		{ NETWORK_BACKEND_WRITEV,     "writev" },
 #endif
-		{ NETWORK_BACKEND_WRITE,		"write" },
-		{ NETWORK_BACKEND_UNSET,        	NULL }
+		{ NETWORK_BACKEND_WRITE,      "write" },
+		{ NETWORK_BACKEND_UNSET,       NULL }
 	};
 
 #ifdef USE_OPENSSL
@@ -700,7 +702,7 @@ int network_init(server *srv) {
 		long ssloptions =
 			SSL_OP_ALL | SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION | SSL_OP_NO_COMPRESSION;
 
-		if (buffer_is_empty(s->ssl_pemfile) && buffer_is_empty(s->ssl_ca_file)) continue;
+		if (buffer_string_is_empty(s->ssl_pemfile) && buffer_string_is_empty(s->ssl_ca_file)) continue;
 
 		if (srv->ssl_is_init == 0) {
 			SSL_load_error_strings();
@@ -715,7 +717,7 @@ int network_init(server *srv) {
 			}
 		}
 
-		if (!buffer_is_empty(s->ssl_pemfile)) {
+		if (!buffer_string_is_empty(s->ssl_pemfile)) {
 #ifdef OPENSSL_NO_TLSEXT
 			data_config *dc = (data_config *)srv->config_context->data[i];
 			if (COMP_HTTP_HOST == dc->comp) {
@@ -728,7 +730,7 @@ int network_init(server *srv) {
 		}
 
 
-		if (!buffer_is_empty(s->ssl_ca_file)) {
+		if (!buffer_string_is_empty(s->ssl_ca_file)) {
 			s->ssl_ca_file_cert_names = SSL_load_client_CA_file(s->ssl_ca_file->ptr);
 			if (NULL == s->ssl_ca_file_cert_names) {
 				log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
@@ -736,7 +738,7 @@ int network_init(server *srv) {
 			}
 		}
 
-		if (buffer_is_empty(s->ssl_pemfile) || !s->ssl_enabled) continue;
+		if (buffer_string_is_empty(s->ssl_pemfile) || !s->ssl_enabled) continue;
 
 		if (NULL == (s->ssl_ctx = SSL_CTX_new(SSLv23_server_method()))) {
 			log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
@@ -783,7 +785,7 @@ int network_init(server *srv) {
 			}
 		}
 
-		if (!buffer_is_empty(s->ssl_cipher_list)) {
+		if (!buffer_string_is_empty(s->ssl_cipher_list)) {
 			/* Disable support for low encryption ciphers */
 			if (SSL_CTX_set_cipher_list(s->ssl_ctx, s->ssl_cipher_list->ptr) != 1) {
 				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
@@ -798,7 +800,7 @@ int network_init(server *srv) {
 
 #ifndef OPENSSL_NO_DH
 		/* Support for Diffie-Hellman key exchange */
-		if (!buffer_is_empty(s->ssl_dh_file)) {
+		if (!buffer_string_is_empty(s->ssl_dh_file)) {
 			/* DH parameters from file */
 			bio = BIO_new_file((char *) s->ssl_dh_file->ptr, "r");
 			if (bio == NULL) {
@@ -831,7 +833,7 @@ int network_init(server *srv) {
 		SSL_CTX_set_options(s->ssl_ctx,SSL_OP_SINGLE_DH_USE);
 		DH_free(dh);
 #else
-		if (!buffer_is_empty(s->ssl_dh_file)) {
+		if (!buffer_string_is_empty(s->ssl_dh_file)) {
 			log_error_write(srv, __FILE__, __LINE__, "ss", "SSL: openssl compiled without DH support, can't load parameters from", s->ssl_dh_file->ptr);
 		}
 #endif
@@ -839,7 +841,7 @@ int network_init(server *srv) {
 #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
 #ifndef OPENSSL_NO_ECDH
 		/* Support for Elliptic-Curve Diffie-Hellman key exchange */
-		if (!buffer_is_empty(s->ssl_ec_curve)) {
+		if (!buffer_string_is_empty(s->ssl_ec_curve)) {
 			/* OpenSSL only supports the "named curves" from RFC 4492, section 5.1.1. */
 			nid = OBJ_sn2nid((char *) s->ssl_ec_curve->ptr);
 			if (nid == 0) {
@@ -865,7 +867,7 @@ int network_init(server *srv) {
 		for (j = 0; j < srv->config_context->used; j++) {
 			specific_config *s1 = srv->config_storage[j];
 
-			if (!buffer_is_empty(s1->ssl_ca_file)) {
+			if (!buffer_string_is_empty(s1->ssl_ca_file)) {
 				if (1 != SSL_CTX_load_verify_locations(s->ssl_ctx, s1->ssl_ca_file->ptr, NULL)) {
 					log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
 							ERR_error_string(ERR_get_error(), NULL), s1->ssl_ca_file);
@@ -925,9 +927,9 @@ int network_init(server *srv) {
 
 	b = buffer_init();
 
-	buffer_copy_string_buffer(b, srv->srvconf.bindhost);
+	buffer_copy_buffer(b, srv->srvconf.bindhost);
 	buffer_append_string_len(b, CONST_STR_LEN(":"));
-	buffer_append_long(b, srv->srvconf.port);
+	buffer_append_int(b, srv->srvconf.port);
 
 	if (0 != network_server_init(srv, b, srv->config_storage[0])) {
 		buffer_free(b);
@@ -943,7 +945,7 @@ int network_init(server *srv) {
 	backend = network_backends[0].nb;
 
 	/* match name against known types */
-	if (!buffer_is_empty(srv->srvconf.network_backend)) {
+	if (!buffer_string_is_empty(srv->srvconf.network_backend)) {
 		for (i = 0; network_backends[i].name; i++) {
 			/**/
 			if (buffer_is_equal_string(srv->srvconf.network_backend, network_backends[i].name, strlen(network_backends[i].name))) {
@@ -966,24 +968,14 @@ int network_init(server *srv) {
 	case NETWORK_BACKEND_WRITE:
 		srv->network_backend_write = network_write_chunkqueue_write;
 		break;
-#ifdef USE_WRITEV
+#if defined(USE_WRITEV)
 	case NETWORK_BACKEND_WRITEV:
 		srv->network_backend_write = network_write_chunkqueue_writev;
 		break;
 #endif
-#ifdef USE_LINUX_SENDFILE
-	case NETWORK_BACKEND_LINUX_SENDFILE:
-		srv->network_backend_write = network_write_chunkqueue_linuxsendfile;
-		break;
-#endif
-#ifdef USE_FREEBSD_SENDFILE
-	case NETWORK_BACKEND_FREEBSD_SENDFILE:
-		srv->network_backend_write = network_write_chunkqueue_freebsdsendfile;
-		break;
-#endif
-#ifdef USE_SOLARIS_SENDFILEV
-	case NETWORK_BACKEND_SOLARIS_SENDFILEV:
-		srv->network_backend_write = network_write_chunkqueue_solarissendfilev;
+#if defined(USE_SENDFILE)
+	case NETWORK_BACKEND_SENDFILE:
+		srv->network_backend_write = network_write_chunkqueue_sendfile;
 		break;
 #endif
 	default:

@@ -26,6 +26,36 @@
 # define O_LARGEFILE 0
 #endif
 
+/* retry write on EINTR or when not all data was written */
+ssize_t write_all(int fd, const void* buf, size_t count) {
+	ssize_t written = 0;
+
+	while (count > 0) {
+		ssize_t r = write(fd, buf, count);
+		if (r < 0) {
+			switch (errno) {
+			case EINTR:
+				/* try again */
+				break;
+			default:
+				/* fail - repeating probably won't help */
+				return -1;
+			}
+		} else if (0 == r) {
+			/* really shouldn't happen... */
+			errno = EIO;
+			return -1;
+		} else {
+			force_assert(r <= (ssize_t) count);
+			written += r;
+			buf = r + (char const*) buf;
+			count -= r;
+		}
+	}
+
+	return written;
+}
+
 /* Close fd and _try_ to get a /dev/null for it instead.
  * close() alone may trigger some bugs when a
  * process opens another file and gets fd = STDOUT_FILENO or STDERR_FILENO
@@ -152,7 +182,7 @@ int log_error_open(server *srv) {
 
 	if (srv->srvconf.errorlog_use_syslog) {
 		srv->errorlog_mode = ERRORLOG_SYSLOG;
-	} else if (!buffer_is_empty(srv->srvconf.errorlog_file)) {
+	} else if (!buffer_string_is_empty(srv->srvconf.errorlog_file)) {
 		const char *logfile = srv->srvconf.errorlog_file->ptr;
 
 		if (-1 == (srv->errorlog_fd = open_logfile_or_pipe(srv, logfile))) {
@@ -170,7 +200,7 @@ int log_error_open(server *srv) {
 		srv->errorlog_fd = -1;
 	}
 
-	if (!buffer_is_empty(srv->srvconf.breakagelog_file)) {
+	if (!buffer_string_is_empty(srv->srvconf.breakagelog_file)) {
 		int breakage_fd;
 		const char *logfile = srv->srvconf.breakagelog_file->ptr;
 
@@ -267,50 +297,50 @@ static void log_buffer_append_printf(buffer *out, const char *fmt, va_list ap) {
 		switch(*fmt) {
 		case 's':           /* string */
 			s = va_arg(ap, char *);
-			buffer_append_string(out, s);
+			buffer_append_string_c_escaped(out, s, (NULL != s) ? strlen(s) : 0);
 			buffer_append_string_len(out, CONST_STR_LEN(" "));
 			break;
 		case 'b':           /* buffer */
 			b = va_arg(ap, buffer *);
-			buffer_append_string_buffer(out, b);
+			buffer_append_string_c_escaped(out, CONST_BUF_LEN(b));
 			buffer_append_string_len(out, CONST_STR_LEN(" "));
 			break;
 		case 'd':           /* int */
 			d = va_arg(ap, int);
-			buffer_append_long(out, d);
+			buffer_append_int(out, d);
 			buffer_append_string_len(out, CONST_STR_LEN(" "));
 			break;
 		case 'o':           /* off_t */
 			o = va_arg(ap, off_t);
-			buffer_append_off_t(out, o);
+			buffer_append_int(out, o);
 			buffer_append_string_len(out, CONST_STR_LEN(" "));
 			break;
 		case 'x':           /* int (hex) */
 			d = va_arg(ap, int);
 			buffer_append_string_len(out, CONST_STR_LEN("0x"));
-			buffer_append_long_hex(out, d);
+			buffer_append_uint_hex(out, d);
 			buffer_append_string_len(out, CONST_STR_LEN(" "));
 			break;
 		case 'S':           /* string */
 			s = va_arg(ap, char *);
-			buffer_append_string(out, s);
+			buffer_append_string_c_escaped(out, s, (NULL != s) ? strlen(s) : 0);
 			break;
 		case 'B':           /* buffer */
 			b = va_arg(ap, buffer *);
-			buffer_append_string_buffer(out, b);
+			buffer_append_string_c_escaped(out, CONST_BUF_LEN(b));
 			break;
 		case 'D':           /* int */
 			d = va_arg(ap, int);
-			buffer_append_long(out, d);
+			buffer_append_int(out, d);
 			break;
 		case 'O':           /* off_t */
 			o = va_arg(ap, off_t);
-			buffer_append_off_t(out, o);
+			buffer_append_int(out, o);
 			break;
 		case 'X':           /* int (hex) */
 			d = va_arg(ap, int);
 			buffer_append_string_len(out, CONST_STR_LEN("0x"));
-			buffer_append_long_hex(out, d);
+			buffer_append_uint_hex(out, d);
 			break;
 		case '(':
 		case ')':
@@ -332,14 +362,13 @@ static int log_buffer_prepare(buffer *b, server *srv, const char *filename, unsi
 		if (-1 == srv->errorlog_fd) return -1;
 		/* cache the generated timestamp */
 		if (srv->cur_ts != srv->last_generated_debug_ts) {
-			buffer_prepare_copy(srv->ts_debug_str, 255);
-			strftime(srv->ts_debug_str->ptr, srv->ts_debug_str->size - 1, "%Y-%m-%d %H:%M:%S", localtime(&(srv->cur_ts)));
-			srv->ts_debug_str->used = strlen(srv->ts_debug_str->ptr) + 1;
+			buffer_string_prepare_copy(srv->ts_debug_str, 255);
+			buffer_append_strftime(srv->ts_debug_str, "%Y-%m-%d %H:%M:%S", localtime(&(srv->cur_ts)));
 
 			srv->last_generated_debug_ts = srv->cur_ts;
 		}
 
-		buffer_copy_string_buffer(b, srv->ts_debug_str);
+		buffer_copy_buffer(b, srv->ts_debug_str);
 		buffer_append_string_len(b, CONST_STR_LEN(": ("));
 		break;
 	case ERRORLOG_SYSLOG:
@@ -350,7 +379,7 @@ static int log_buffer_prepare(buffer *b, server *srv, const char *filename, unsi
 
 	buffer_append_string(b, filename);
 	buffer_append_string_len(b, CONST_STR_LEN("."));
-	buffer_append_long(b, line);
+	buffer_append_int(b, line);
 	buffer_append_string_len(b, CONST_STR_LEN(") "));
 
 	return 0;
@@ -362,8 +391,7 @@ static void log_write(server *srv, buffer *b) {
 	case ERRORLOG_FILE:
 	case ERRORLOG_FD:
 		buffer_append_string_len(b, CONST_STR_LEN("\n"));
-		force_assert(b->used > 0);
-		write(srv->errorlog_fd, b->ptr, b->used - 1);
+		write_all(srv->errorlog_fd, CONST_BUF_LEN(b));
 		break;
 	case ERRORLOG_SYSLOG:
 		syslog(LOG_ERR, "%s", b->ptr);
@@ -387,11 +415,11 @@ int log_error_write(server *srv, const char *filename, unsigned int line, const 
 
 int log_error_write_multiline_buffer(server *srv, const char *filename, unsigned int line, buffer *multiline, const char *fmt, ...) {
 	va_list ap;
-	size_t prefix_used;
+	size_t prefix_len;
 	buffer *b = srv->errorlog_buf;
 	char *pos, *end, *current_line;
 
-	if (multiline->used < 2) return 0;
+	if (buffer_string_is_empty(multiline)) return 0;
 
 	if (-1 == log_buffer_prepare(b, srv, filename, line)) return 0;
 
@@ -399,20 +427,19 @@ int log_error_write_multiline_buffer(server *srv, const char *filename, unsigned
 	log_buffer_append_printf(b, fmt, ap);
 	va_end(ap);
 
-	prefix_used = b->used;
+	prefix_len = buffer_string_length(b);
 
 	current_line = pos = multiline->ptr;
-	end = multiline->ptr + multiline->used;
+	end = multiline->ptr + buffer_string_length(multiline);
 
-	for ( ; pos < end ; ++pos) {
+	for ( ; pos <= end ; ++pos) {
 		switch (*pos) {
 		case '\n':
 		case '\r':
 		case '\0': /* handles end of string */
 			if (current_line < pos) {
 				/* truncate to prefix */
-				b->used = prefix_used;
-				b->ptr[b->used - 1] = '\0';
+				buffer_string_set_length(b, prefix_len);
 
 				buffer_append_string_len(b, current_line, pos - current_line);
 				log_write(srv, b);

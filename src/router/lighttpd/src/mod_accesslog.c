@@ -160,16 +160,23 @@ INIT_FUNC(mod_accesslog_init) {
 	return p;
 }
 
+static void accesslog_write_all(server *srv, const buffer *filename, int fd, const void* buf, size_t count) {
+	if (-1 == write_all(fd, buf, count)) {
+		log_error_write(srv, __FILE__, __LINE__, "sbs",
+			"writing access log entry failed:", filename, strerror(errno));
+	}
+}
+
 static void accesslog_append_escaped(buffer *dest, buffer *str) {
 	char *ptr, *start, *end;
 
 	/* replaces non-printable chars with \xHH where HH is the hex representation of the byte */
 	/* exceptions: " => \", \ => \\, whitespace chars => \n \t etc. */
-	if (str->used == 0) return;
-	buffer_prepare_append(dest, str->used - 1);
+	if (buffer_string_is_empty(str)) return;
+	buffer_string_prepare_append(dest, buffer_string_length(str));
 
-	for (ptr = start = str->ptr, end = str->ptr + str->used - 1; ptr < end; ptr++) {
-		char const c = *ptr;
+	for (ptr = start = str->ptr, end = str->ptr + buffer_string_length(str); ptr < end; ptr++) {
+		unsigned char const c = (unsigned char) *ptr;
 		if (c >= ' ' && c <= '~' && c != '"' && c != '\\') {
 			/* nothing to change, add later as one block */
 		} else {
@@ -223,9 +230,9 @@ static void accesslog_append_escaped(buffer *dest, buffer *str) {
 static int accesslog_parse_format(server *srv, format_fields *fields, buffer *format) {
 	size_t i, j, k = 0, start = 0;
 
-	if (format->used == 0) return -1;
+	if (buffer_is_empty(format)) return -1;
 
-	for (i = 0; i < format->used - 1; i++) {
+	for (i = 0; i < buffer_string_length(format); i++) {
 		switch(format->ptr[i]) {
 		case '%':
 			if (i > 0 && start != i) {
@@ -297,11 +304,11 @@ static int accesslog_parse_format(server *srv, format_fields *fields, buffer *fo
 			case '{':
 				/* go forward to } */
 
-				for (k = i+2; k < format->used - 1; k++) {
+				for (k = i+2; k < buffer_string_length(format); k++) {
 					if (format->ptr[k] == '}') break;
 				}
 
-				if (k == format->used - 1) {
+				if (k == buffer_string_length(format)) {
 					log_error_write(srv, __FILE__, __LINE__, "s", "%{ has to be terminated by a }");
 					return -1;
 				}
@@ -414,11 +421,11 @@ FREE_FUNC(mod_accesslog_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
-			if (!s) continue;
+			if (NULL == s) continue;
 
-			if (s->access_logbuffer->used) {
+			if (!buffer_string_is_empty(s->access_logbuffer)) {
 				if (s->log_access_fd != -1) {
-					write(s->log_access_fd, s->access_logbuffer->ptr, s->access_logbuffer->used - 1);
+					accesslog_write_all(srv, s->access_logfile, s->log_access_fd, CONST_BUF_LEN(s->access_logbuffer));
 				}
 			}
 
@@ -469,6 +476,7 @@ SETDEFAULTS_FUNC(log_access_open) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -490,11 +498,11 @@ SETDEFAULTS_FUNC(log_access_open) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 
-		if (i == 0 && buffer_is_empty(s->format)) {
+		if (i == 0 && buffer_string_is_empty(s->format)) {
 			/* set a default logfile string */
 
 			buffer_copy_string_len(s->format, CONST_STR_LEN("%h %V %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""));
@@ -502,7 +510,7 @@ SETDEFAULTS_FUNC(log_access_open) {
 
 		/* parse */
 
-		if (s->format->used) {
+		if (!buffer_is_empty(s->format)) {
 			size_t j, count;
 
 			s->parsed_format = calloc(1, sizeof(*(s->parsed_format)));
@@ -523,7 +531,7 @@ SETDEFAULTS_FUNC(log_access_open) {
 			for (j = 0; j < s->parsed_format->used; j++) {
 				if (FIELD_FORMAT == s->parsed_format->ptr[j]->type) {
 					if (FORMAT_TIMESTAMP == s->parsed_format->ptr[j]->field) {
-						if (!buffer_is_empty(s->parsed_format->ptr[j]->string)) {
+						if (!buffer_string_is_empty(s->parsed_format->ptr[j]->string)) {
 							buffer_copy_string(s->ts_accesslog_fmt_str, s->parsed_format->ptr[j]->string->ptr);
 						}
 
@@ -558,7 +566,7 @@ SETDEFAULTS_FUNC(log_access_open) {
 		}
 
 		s->append_tz_offset = 0;
-		if (buffer_is_empty(s->ts_accesslog_fmt_str)) {
+		if (buffer_string_is_empty(s->ts_accesslog_fmt_str)) {
 #if defined(HAVE_STRUCT_TM_GMTOFF)
 			BUFFER_COPY_STRING_CONST(s->ts_accesslog_fmt_str, "[%d/%b/%Y:%H:%M:%S ");
 			s->append_tz_offset = 1;
@@ -572,7 +580,7 @@ SETDEFAULTS_FUNC(log_access_open) {
 			continue;
 		}
 
-		if (s->access_logfile->used < 2) continue;
+		if (buffer_string_is_empty(s->access_logfile)) continue;
 
 		if (-1 == (s->log_access_fd = open_logfile_or_pipe(srv, s->access_logfile->ptr)))
 			return HANDLER_ERROR;
@@ -591,17 +599,17 @@ SIGHUP_FUNC(log_access_cycle) {
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s = p->config_storage[i];
 
-		if (s->access_logbuffer->used) {
+		if (!buffer_string_is_empty(s->access_logbuffer)) {
 			if (s->log_access_fd != -1) {
-				write(s->log_access_fd, s->access_logbuffer->ptr, s->access_logbuffer->used - 1);
+				accesslog_write_all(srv, s->access_logfile, s->log_access_fd, CONST_BUF_LEN(s->access_logbuffer));
 			}
 
 			buffer_reset(s->access_logbuffer);
 		}
 
-		if (s->use_syslog == 0 &&
-		    s->access_logfile->used > 1 &&
-		    s->access_logfile->ptr[0] != '|') {
+		if (s->use_syslog == 0
+			&& !buffer_string_is_empty(s->access_logfile)
+			&& s->access_logfile->ptr[0] != '|') {
 
 			if (-1 != s->log_access_fd) close(s->log_access_fd);
 
@@ -691,8 +699,8 @@ REQUESTDONE_FUNC(log_access_write) {
 		b = p->conf.access_logbuffer;
 	}
 
-	if (b->used == 0) {
-		buffer_copy_string_len(b, CONST_STR_LEN(""));
+	if (buffer_is_empty(b)) {
+		buffer_string_set_length(b, 0);
 	}
 
 	for (j = 0; j < p->conf.parsed_format->used; j++) {
@@ -711,15 +719,14 @@ REQUESTDONE_FUNC(log_access_write) {
 					long scd, hrs, min;
 #endif
 
-					buffer_prepare_copy(p->conf.ts_accesslog_str, 255);
+					buffer_string_prepare_copy(p->conf.ts_accesslog_str, 255);
 #if defined(HAVE_STRUCT_TM_GMTOFF)
 # ifdef HAVE_LOCALTIME_R
 					localtime_r(&(srv->cur_ts), &tm);
-					strftime(p->conf.ts_accesslog_str->ptr, p->conf.ts_accesslog_str->size - 1, p->conf.ts_accesslog_fmt_str->ptr, &tm);
+					buffer_append_strftime(p->conf.ts_accesslog_str, p->conf.ts_accesslog_fmt_str->ptr, &tm);
 # else /* HAVE_LOCALTIME_R */
-					strftime(p->conf.ts_accesslog_str->ptr, p->conf.ts_accesslog_str->size - 1, p->conf.ts_accesslog_fmt_str->ptr, localtime_r(&(srv->cur_ts)));
+					buffer_append_strftime(p->conf.ts_accesslog_str, p->conf.ts_accesslog_fmt_str->ptr, localtime(&(srv->cur_ts)));
 # endif /* HAVE_LOCALTIME_R */
-					p->conf.ts_accesslog_str->used = strlen(p->conf.ts_accesslog_str->ptr) + 1;
 
 					if (p->conf.append_tz_offset) {
 						buffer_append_string_len(p->conf.ts_accesslog_str, tm.tm_gmtoff >= 0 ? "+" : "-", 1);
@@ -730,20 +737,19 @@ REQUESTDONE_FUNC(log_access_write) {
 
 						/* hours */
 						if (hrs < 10) buffer_append_string_len(p->conf.ts_accesslog_str, CONST_STR_LEN("0"));
-						buffer_append_long(p->conf.ts_accesslog_str, hrs);
+						buffer_append_int(p->conf.ts_accesslog_str, hrs);
 
 						if (min < 10) buffer_append_string_len(p->conf.ts_accesslog_str, CONST_STR_LEN("0"));
-						buffer_append_long(p->conf.ts_accesslog_str, min);
+						buffer_append_int(p->conf.ts_accesslog_str, min);
 						buffer_append_string_len(p->conf.ts_accesslog_str, CONST_STR_LEN("]"));
 					}
 #else /* HAVE_STRUCT_TM_GMTOFF */
 # ifdef HAVE_GMTIME_R
 					gmtime_r(&(srv->cur_ts), &tm);
-					strftime(p->conf.ts_accesslog_str->ptr, p->conf.ts_accesslog_str->size - 1, p->conf.ts_accesslog_fmt_str->ptr, &tm);
+					buffer_append_strftime(p->conf.ts_accesslog_str, p->conf.ts_accesslog_fmt_str->ptr, &tm);
 # else /* HAVE_GMTIME_R */
-					strftime(p->conf.ts_accesslog_str->ptr, p->conf.ts_accesslog_str->size - 1, p->conf.ts_accesslog_fmt_str->ptr, gmtime(&(srv->cur_ts)));
+					buffer_append_strftime(p->conf.ts_accesslog_str, p->conf.ts_accesslog_fmt_str->ptr, gmtime(&(srv->cur_ts)));
 # endif /* HAVE_GMTIME_R */
-					p->conf.ts_accesslog_str->used = strlen(p->conf.ts_accesslog_str->ptr) + 1;
 #endif /* HAVE_STRUCT_TM_GMTOFF */
 
 					*(p->conf.last_generated_accesslog_ts_ptr) = srv->cur_ts;
@@ -765,24 +771,24 @@ REQUESTDONE_FUNC(log_access_write) {
 				buffer_append_string_len(b, CONST_STR_LEN("-"));
 				break;
 			case FORMAT_REMOTE_USER:
-				if (NULL != (ds = (data_string *)array_get_element(con->environment, "REMOTE_USER")) && ds->value->used > 1) {
+				if (NULL != (ds = (data_string *)array_get_element(con->environment, "REMOTE_USER")) && !buffer_string_is_empty(ds->value)) {
 					accesslog_append_escaped(b, ds->value);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
 				break;
 			case FORMAT_REQUEST_LINE:
-				if (con->request.request_line->used) {
+				if (!buffer_string_is_empty(con->request.request_line)) {
 					accesslog_append_escaped(b, con->request.request_line);
 				}
 				break;
 			case FORMAT_STATUS:
-				buffer_append_long(b, con->http_status);
+				buffer_append_int(b, con->http_status);
 				break;
 
 			case FORMAT_BYTES_OUT_NO_HEADER:
 				if (con->bytes_written > 0) {
-					buffer_append_off_t(b,
+					buffer_append_int(b,
 							    con->bytes_written - con->bytes_header <= 0 ? 0 : con->bytes_written - con->bytes_header);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
@@ -810,7 +816,7 @@ REQUESTDONE_FUNC(log_access_write) {
 				}
 				break;
 			case FORMAT_FILENAME:
-				if (con->physical.path->used > 1) {
+				if (!buffer_string_is_empty(con->physical.path)) {
 					buffer_append_string_buffer(b, con->physical.path);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
@@ -818,30 +824,30 @@ REQUESTDONE_FUNC(log_access_write) {
 				break;
 			case FORMAT_BYTES_OUT:
 				if (con->bytes_written > 0) {
-					buffer_append_off_t(b, con->bytes_written);
+					buffer_append_int(b, con->bytes_written);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
 				break;
 			case FORMAT_BYTES_IN:
 				if (con->bytes_read > 0) {
-					buffer_append_off_t(b, con->bytes_read);
+					buffer_append_int(b, con->bytes_read);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
 				break;
 			case FORMAT_TIME_USED:
-				buffer_append_long(b, srv->cur_ts - con->request_start);
+				buffer_append_int(b, srv->cur_ts - con->request_start);
 				break;
 			case FORMAT_SERVER_NAME:
-				if (con->server_name->used > 1) {
+				if (!buffer_string_is_empty(con->server_name)) {
 					buffer_append_string_buffer(b, con->server_name);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
 				break;
 			case FORMAT_HTTP_HOST:
-				if (con->uri.authority->used > 1) {
+				if (!buffer_string_is_empty(con->uri.authority)) {
 					accesslog_append_escaped(b, con->uri.authority);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
@@ -849,7 +855,7 @@ REQUESTDONE_FUNC(log_access_write) {
 				break;
 			case FORMAT_REQUEST_PROTOCOL:
 				buffer_append_string_len(b,
-						     con->request.http_version == HTTP_VERSION_1_1 ? "HTTP/1.1" : "HTTP/1.0", 8);
+					con->request.http_version == HTTP_VERSION_1_1 ? "HTTP/1.1" : "HTTP/1.0", 8);
 				break;
 			case FORMAT_REQUEST_METHOD:
 				buffer_append_string(b, get_http_method_name(con->request.http_method));
@@ -869,7 +875,7 @@ REQUESTDONE_FUNC(log_access_write) {
 					if (colon) {
 						buffer_append_string(b, colon+1);
 					} else {
-						buffer_append_long(b, srv->srvconf.port);
+						buffer_append_int(b, srv->srvconf.port);
 					}
 				}
 				break;
@@ -904,19 +910,19 @@ REQUESTDONE_FUNC(log_access_write) {
 	buffer_append_string_len(b, CONST_STR_LEN("\n"));
 
 	if (p->conf.use_syslog ||  /* syslog doesn't cache */
-	    (p->conf.access_logfile->used && p->conf.access_logfile->ptr[0] == '|') || /* pipes don't cache */
+	    (!buffer_string_is_empty(p->conf.access_logfile) && p->conf.access_logfile->ptr[0] == '|') || /* pipes don't cache */
 	    newts ||
-	    b->used > BUFFER_MAX_REUSE_SIZE) {
+	    buffer_string_length(b) >= BUFFER_MAX_REUSE_SIZE) {
 		if (p->conf.use_syslog) {
 #ifdef HAVE_SYSLOG_H
-			if (b->used > 2) {
+			if (!buffer_string_is_empty(b)) {
 				/* syslog appends a \n on its own */
-				syslog(p->conf.syslog_level, "%*s", (int) b->used - 2, b->ptr);
+				buffer_string_set_length(b, buffer_string_length(b) - 1);
+				syslog(p->conf.syslog_level, "%s", b->ptr);
 			}
 #endif
 		} else if (p->conf.log_access_fd != -1) {
-			force_assert(b->used > 0);
-			write(p->conf.log_access_fd, b->ptr, b->used - 1);
+			accesslog_write_all(srv, p->conf.access_logfile, p->conf.log_access_fd, CONST_BUF_LEN(b));
 		}
 		buffer_reset(b);
 	}

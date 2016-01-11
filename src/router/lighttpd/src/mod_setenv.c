@@ -67,6 +67,8 @@ FREE_FUNC(mod_setenv_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
+			if (NULL == s) continue;
+
 			array_free(s->request_header);
 			array_free(s->response_header);
 			array_free(s->environment);
@@ -99,6 +101,7 @@ SETDEFAULTS_FUNC(mod_setenv_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -112,7 +115,7 @@ SETDEFAULTS_FUNC(mod_setenv_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -185,8 +188,8 @@ URIHANDLER_FUNC(mod_setenv_uri_handler) {
 			ds_dst = data_string_init();
 		}
 
-		buffer_copy_string_buffer(ds_dst->key, ds->key);
-		buffer_copy_string_buffer(ds_dst->value, ds->value);
+		buffer_copy_buffer(ds_dst->key, ds->key);
+		buffer_copy_buffer(ds_dst->value, ds->value);
 
 		array_insert_unique(con->request.headers, (data_unset *)ds_dst);
 	}
@@ -199,8 +202,8 @@ URIHANDLER_FUNC(mod_setenv_uri_handler) {
 			ds_dst = data_string_init();
 		}
 
-		buffer_copy_string_buffer(ds_dst->key, ds->key);
-		buffer_copy_string_buffer(ds_dst->value, ds->value);
+		buffer_copy_buffer(ds_dst->key, ds->key);
+		buffer_copy_buffer(ds_dst->value, ds->value);
 
 		array_insert_unique(con->environment, (data_unset *)ds_dst);
 	}

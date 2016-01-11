@@ -22,13 +22,12 @@
  * this is a dirlisting for a lighttpd plugin
  */
 
-
-#ifdef HAVE_SYS_SYSLIMITS_H
-#include <sys/syslimits.h>
-#endif
-
 #ifdef HAVE_ATTR_ATTRIBUTES_H
 #include <attr/attributes.h>
+#endif
+
+#ifdef HAVE_SYS_EXTATTR_H
+#include <sys/extattr.h>
 #endif
 
 #include "version.h"
@@ -120,7 +119,7 @@ static int excludes_buffer_append(excludes_buffer *exb, buffer *string) {
 	}
 
 	exb->ptr[exb->used]->string = buffer_init();
-	buffer_copy_string_buffer(exb->ptr[exb->used]->string, string);
+	buffer_copy_buffer(exb->ptr[exb->used]->string, string);
 
 	exb->used++;
 
@@ -194,47 +193,6 @@ FREE_FUNC(mod_dirlisting_free) {
 	return HANDLER_GO_ON;
 }
 
-static int parse_config_entry(server *srv, plugin_config *s, array *ca, const char *option) {
-	data_unset *du;
-
-	if (NULL != (du = array_get_element(ca, option))) {
-		data_array *da;
-		size_t j;
-
-		if (du->type != TYPE_ARRAY) {
-			log_error_write(srv, __FILE__, __LINE__, "sss",
-				"unexpected type for key: ", option, "array of strings");
-
-			return HANDLER_ERROR;
-		}
-
-		da = (data_array *)du;
-
-		for (j = 0; j < da->value->used; j++) {
-			if (da->value->data[j]->type != TYPE_STRING) {
-				log_error_write(srv, __FILE__, __LINE__, "sssbs",
-					"unexpected type for key: ", option, "[",
-					da->value->data[j]->key, "](string)");
-
-				return HANDLER_ERROR;
-			}
-
-			if (0 != excludes_buffer_append(s->excludes,
-				    ((data_string *)(da->value->data[j]))->value)) {
-#ifdef HAVE_PCRE_H
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-						"pcre-compile failed for", ((data_string *)(da->value->data[j]))->value);
-#else
-				log_error_write(srv, __FILE__, __LINE__, "s",
-						"pcre support is missing, please install libpcre and the headers");
-#endif
-			}
-		}
-	}
-
-	return 0;
-}
-
 /* handle plugin config and check values */
 
 #define CONFIG_EXCLUDE          "dir-listing.exclude"
@@ -281,8 +239,9 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
-		array *ca;
+		data_unset *du_excludes;
 
 		s = calloc(1, sizeof(plugin_config));
 		s->excludes = excludes_buffer_init();
@@ -316,13 +275,48 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 		cv[13].destination = &(s->auto_layout);
 
 		p->config_storage[i] = s;
-		ca = ((data_config *)srv->config_context->data[i])->value;
 
-		if (0 != config_insert_values_global(srv, ca, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 
-		parse_config_entry(srv, s, ca, CONFIG_EXCLUDE);
+		if (NULL != (du_excludes = array_get_element(config->value, CONFIG_EXCLUDE))) {
+			array *excludes_list;
+			size_t j;
+
+			if (du_excludes->type != TYPE_ARRAY) {
+				log_error_write(srv, __FILE__, __LINE__, "sss",
+					"unexpected type for key: ", CONFIG_EXCLUDE, "array of strings");
+				return HANDLER_ERROR;
+			}
+
+			excludes_list = ((data_array*)du_excludes)->value;
+
+#ifndef HAVE_PCRE_H
+			if (excludes_list->used > 0) {
+				log_error_write(srv, __FILE__, __LINE__, "sss",
+					"pcre support is missing for: ", CONFIG_EXCLUDE, ", please install libpcre and the headers");
+				return HANDLER_ERROR;
+			}
+#else
+			for (j = 0; j < excludes_list->used; j++) {
+				data_unset *du_exclude = excludes_list->data[j];
+
+				if (du_exclude->type != TYPE_STRING) {
+					log_error_write(srv, __FILE__, __LINE__, "sssbs",
+						"unexpected type for key: ", CONFIG_EXCLUDE, "[",
+						du_exclude->key, "](string)");
+					return HANDLER_ERROR;
+				}
+
+				if (0 != excludes_buffer_append(s->excludes, ((data_string*)(du_exclude))->value)) {
+					log_error_write(srv, __FILE__, __LINE__, "sb",
+						"pcre-compile failed for", ((data_string*)(du_exclude))->value);
+					return HANDLER_ERROR;
+				}
+			}
+#endif
+		}
 	}
 
 	return HANDLER_GO_ON;
@@ -469,7 +463,8 @@ static int http_list_directory_sizefmt(char *buf, off_t size) {
 		u++;
 	}
 
-	out   += LI_ltostr(out, size);
+	li_itostr(out, size);
+	out += strlen(out);
 	out[0] = '.';
 	out[1] = remain + '0';
 	out[2] = *u;
@@ -491,7 +486,7 @@ static void http_list_directory_header(server *srv, connection *con, plugin_data
 		buffer_append_string_encoded(out, CONST_BUF_LEN(con->uri.path), ENCODING_MINIMAL_XML);
 		buffer_append_string_len(out, CONST_STR_LEN("</title>\n"));
 
-		if (p->conf.external_css->used > 1) {
+		if (!buffer_string_is_empty(p->conf.external_css)) {
 			buffer_append_string_len(out, CONST_STR_LEN("<link rel=\"stylesheet\" type=\"text/css\" href=\""));
 			buffer_append_string_buffer(out, p->conf.external_css);
 			buffer_append_string_len(out, CONST_STR_LEN("\" />\n"));
@@ -539,8 +534,8 @@ static void http_list_directory_header(server *srv, connection *con, plugin_data
 		stream s;
 		/* if we have a HEADER file, display it in <pre class="header"></pre> */
 
-		buffer_copy_string_buffer(p->tmp_buf, con->physical.path);
-		BUFFER_APPEND_SLASH(p->tmp_buf);
+		buffer_copy_buffer(p->tmp_buf, con->physical.path);
+		buffer_append_slash(p->tmp_buf);
 		buffer_append_string_len(p->tmp_buf, CONST_STR_LEN("HEADER.txt"));
 
 		if (-1 != stream_open(&s, p->tmp_buf)) {
@@ -592,8 +587,8 @@ static void http_list_directory_footer(server *srv, connection *con, plugin_data
 		stream s;
 		/* if we have a README file, display it in <pre class="readme"></pre> */
 
-		buffer_copy_string_buffer(p->tmp_buf,  con->physical.path);
-		BUFFER_APPEND_SLASH(p->tmp_buf);
+		buffer_copy_buffer(p->tmp_buf,  con->physical.path);
+		buffer_append_slash(p->tmp_buf);
 		buffer_append_string_len(p->tmp_buf, CONST_STR_LEN("README.txt"));
 
 		if (-1 != stream_open(&s, p->tmp_buf)) {
@@ -613,7 +608,7 @@ static void http_list_directory_footer(server *srv, connection *con, plugin_data
 			"<div class=\"foot\">"
 		));
 
-		if (p->conf.set_footer->used > 1) {
+		if (!buffer_string_is_empty(p->conf.set_footer)) {
 			buffer_append_string_buffer(out, p->conf.set_footer);
 		} else if (buffer_is_empty(con->conf.server_tag)) {
 			buffer_append_string_len(out, CONST_STR_LEN(PACKAGE_DESC));
@@ -644,7 +639,7 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 	size_t k;
 	const char *content_type;
 	long name_max;
-#ifdef HAVE_XATTR
+#if defined(HAVE_XATTR) || defined(HAVE_EXTATTR)
 	char attrval[128];
 	int attrlen;
 #endif
@@ -652,9 +647,9 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 	struct tm tm;
 #endif
 
-	if (dir->used == 0) return -1;
+	if (buffer_string_is_empty(dir)) return -1;
 
-	i = dir->used - 1;
+	i = buffer_string_length(dir);
 
 #ifdef HAVE_PATHCONF
 	if (0 >= (name_max = pathconf(dir->ptr, _PC_NAME_MAX))) {
@@ -671,8 +666,8 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 	name_max = NAME_MAX;
 #endif
 
-	path = malloc(dir->used + name_max);
-	force_assert(path);
+	path = malloc(buffer_string_length(dir) + name_max + 1);
+	force_assert(NULL != path);
 	strcpy(path, dir->ptr);
 	path_file = path + i;
 
@@ -783,9 +778,9 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 
 	if (files.used) http_dirls_sort(files.ent, files.used);
 
-	out = chunkqueue_get_append_buffer(con->write_queue);
+	out = buffer_init();
 	buffer_copy_string_len(out, CONST_STR_LEN("<?xml version=\"1.0\" encoding=\""));
-	if (buffer_is_empty(p->conf.encoding)) {
+	if (buffer_string_is_empty(p->conf.encoding)) {
 		buffer_append_string_len(out, CONST_STR_LEN("iso-8859-1"));
 	} else {
 		buffer_append_string_buffer(out, p->conf.encoding);
@@ -820,12 +815,19 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 		tmp = files.ent[i];
 
 		content_type = NULL;
-#ifdef HAVE_XATTR
-
+#if defined(HAVE_XATTR)
 		if (con->conf.use_xattr) {
 			memcpy(path_file, DIRLIST_ENT_NAME(tmp), tmp->namelen + 1);
 			attrlen = sizeof(attrval) - 1;
 			if (attr_get(path, "Content-Type", attrval, &attrlen, 0) == 0) {
+				attrval[attrlen] = '\0';
+				content_type = attrval;
+			}
+		}
+#elif defined(HAVE_EXTATTR)
+		if (con->conf.use_xattr) {
+			memcpy(path_file, DIRLIST_ENT_NAME(tmp), tmp->namelen + 1);
+			if(-1 != (attrlen = extattr_get_file(path, EXTATTR_NAMESPACE_USER, "Content-Type", attrval, sizeof(attrval)-1))) {
 				attrval[attrlen] = '\0';
 				content_type = attrval;
 			}
@@ -838,10 +840,10 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 				data_string *ds = (data_string *)con->conf.mimetypes->data[k];
 				size_t ct_len;
 
-				if (ds->key->used == 0)
+				if (buffer_is_empty(ds->key))
 					continue;
 
-				ct_len = ds->key->used - 1;
+				ct_len = buffer_string_length(ds->key);
 				if (tmp->namelen < ct_len)
 					continue;
 
@@ -882,7 +884,7 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 	http_list_directory_footer(srv, con, p, out);
 
 	/* Insert possible charset to Content-Type */
-	if (buffer_is_empty(p->conf.encoding)) {
+	if (buffer_string_is_empty(p->conf.encoding)) {
 		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
 	} else {
 		buffer_copy_string_len(p->content_charset, CONST_STR_LEN("text/html; charset="));
@@ -891,6 +893,8 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 	}
 
 	con->file_finished = 1;
+	chunkqueue_append_buffer(con->write_queue, out);
+	buffer_free(out);
 
 	return 0;
 }
@@ -915,9 +919,9 @@ URIHANDLER_FUNC(mod_dirlisting_subrequest) {
 
 	if (con->mode != DIRECT) return HANDLER_GO_ON;
 
-	if (con->physical.path->used == 0) return HANDLER_GO_ON;
-	if (con->uri.path->used == 0) return HANDLER_GO_ON;
-	if (con->uri.path->ptr[con->uri.path->used - 2] != '/') return HANDLER_GO_ON;
+	if (buffer_is_empty(con->physical.path)) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
+	if (con->uri.path->ptr[buffer_string_length(con->uri.path) - 1] != '/') return HANDLER_GO_ON;
 
 	mod_dirlisting_patch_connection(srv, con, p);
 

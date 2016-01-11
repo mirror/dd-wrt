@@ -33,14 +33,14 @@ int http_response_write_header(server *srv, connection *con) {
 	int have_date = 0;
 	int have_server = 0;
 
-	b = chunkqueue_get_prepend_buffer(con->write_queue);
+	b = buffer_init();
 
 	if (con->request.http_version == HTTP_VERSION_1_1) {
 		buffer_copy_string_len(b, CONST_STR_LEN("HTTP/1.1 "));
 	} else {
 		buffer_copy_string_len(b, CONST_STR_LEN("HTTP/1.0 "));
 	}
-	buffer_append_long(b, con->http_status);
+	buffer_append_int(b, con->http_status);
 	buffer_append_string_len(b, CONST_STR_LEN(" "));
 	buffer_append_string(b, get_http_status_name(con->http_status));
 
@@ -70,7 +70,7 @@ int http_response_write_header(server *srv, connection *con) {
 
 		ds = (data_string *)con->response.headers->data[i];
 
-		if (ds->value->used && ds->key->used &&
+		if (!buffer_is_empty(ds->value) && !buffer_is_empty(ds->key) &&
 		    0 != strncasecmp(ds->key->ptr, CONST_STR_LEN("X-LIGHTTPD-")) &&
 			0 != strncasecmp(ds->key->ptr, CONST_STR_LEN("X-Sendfile"))) {
 			if (0 == strcasecmp(ds->key->ptr, "Date")) have_date = 1;
@@ -97,12 +97,9 @@ int http_response_write_header(server *srv, connection *con) {
 
 		/* cache the generated timestamp */
 		if (srv->cur_ts != srv->last_generated_date_ts) {
-			buffer_prepare_copy(srv->ts_date_str, 255);
+			buffer_string_prepare_copy(srv->ts_date_str, 255);
 
-			strftime(srv->ts_date_str->ptr, srv->ts_date_str->size - 1,
-				 "%a, %d %b %Y %H:%M:%S GMT", gmtime(&(srv->cur_ts)));
-
-			srv->ts_date_str->used = strlen(srv->ts_date_str->ptr) + 1;
+			buffer_append_strftime(srv->ts_date_str, "%a, %d %b %Y %H:%M:%S GMT", gmtime(&(srv->cur_ts)));
 
 			srv->last_generated_date_ts = srv->cur_ts;
 		}
@@ -113,7 +110,7 @@ int http_response_write_header(server *srv, connection *con) {
 	if (!have_server) {
 		if (buffer_is_empty(con->conf.server_tag)) {
 			buffer_append_string_len(b, CONST_STR_LEN("\r\nServer: " PACKAGE_DESC));
-		} else if (con->conf.server_tag->used > 1) {
+		} else if (!buffer_string_is_empty(con->conf.server_tag)) {
 			buffer_append_string_len(b, CONST_STR_LEN("\r\nServer: "));
 			buffer_append_string_encoded(b, CONST_BUF_LEN(con->conf.server_tag), ENCODING_HTTP_HEADER);
 		}
@@ -121,12 +118,14 @@ int http_response_write_header(server *srv, connection *con) {
 
 	buffer_append_string_len(b, CONST_STR_LEN("\r\n\r\n"));
 
-
-	con->bytes_header = b->used - 1;
+	con->bytes_header = buffer_string_length(b);
 
 	if (con->conf.log_response_header) {
 		log_error_write(srv, __FILE__, __LINE__, "sSb", "Response-Header:", "\n", b);
 	}
+
+	chunkqueue_prepend_buffer(con->write_queue, b);
+	buffer_free(b);
 
 	return 0;
 }
@@ -181,7 +180,7 @@ static void https_add_ssl_entries(connection *con) {
 				buffer_copy_string(ds->key, "REMOTE_USER");
 				array_insert_unique(con->environment, (data_unset *)ds);
 			}
-			buffer_copy_string_buffer(ds->value, envds->value);
+			buffer_copy_buffer(ds->value, envds->value);
 		}
 		array_insert_unique(con->environment, (data_unset *)envds);
 	}
@@ -199,11 +198,10 @@ static void https_add_ssl_entries(connection *con) {
 			}
 
 			buffer_copy_string_len(envds->key, CONST_STR_LEN("SSL_CLIENT_CERT"));
-			buffer_prepare_copy(envds->value, n+1);
+			buffer_string_prepare_copy(envds->value, n);
 			BIO_read(bio, envds->value->ptr, n);
 			BIO_free(bio);
-			envds->value->ptr[n] = '\0';
-			envds->value->used = n+1;
+			buffer_commit(envds->value, n);
 			array_insert_unique(con->environment, (data_unset *)envds);
 		}
 	}
@@ -227,7 +225,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 	}
 
 	/* no decision yet, build conf->filename */
-	if (con->mode == DIRECT && con->physical.path->used == 0) {
+	if (con->mode == DIRECT && buffer_is_empty(con->physical.path)) {
 		char *qstr;
 
 		/* we only come here when we have the parse the full request again
@@ -278,7 +276,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		} else {
 			buffer_copy_string_len(con->uri.scheme, CONST_STR_LEN("http"));
 		}
-		buffer_copy_string_buffer(con->uri.authority, con->request.http_host);
+		buffer_copy_buffer(con->uri.authority, con->request.http_host);
 		buffer_to_lower(con->uri.authority);
 
 		config_patch_connection(srv, con, COMP_HTTP_SCHEME);    /* Scheme:      */
@@ -292,8 +290,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 
 		/** their might be a fragment which has to be cut away */
 		if (NULL != (qstr = strchr(con->request.uri->ptr, '#'))) {
-			con->request.uri->used = qstr - con->request.uri->ptr;
-			con->request.uri->ptr[con->request.uri->used++] = '\0';
+			buffer_string_set_length(con->request.uri, qstr - con->request.uri->ptr);
 		}
 
 		/** extract query string from request.uri */
@@ -302,7 +299,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 			buffer_copy_string_len(con->uri.path_raw, con->request.uri->ptr, qstr - con->request.uri->ptr);
 		} else {
 			buffer_reset     (con->uri.query);
-			buffer_copy_string_buffer(con->uri.path_raw, con->request.uri);
+			buffer_copy_buffer(con->uri.path_raw, con->request.uri);
 		}
 
 		/* decode url to path
@@ -314,9 +311,9 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		if (con->request.http_method == HTTP_METHOD_OPTIONS &&
 		    con->uri.path_raw->ptr[0] == '*' && con->uri.path_raw->ptr[1] == '\0') {
 			/* OPTIONS * ... */
-			buffer_copy_string_buffer(con->uri.path, con->uri.path_raw);
+			buffer_copy_buffer(con->uri.path, con->uri.path_raw);
 		} else {
-			buffer_copy_string_buffer(srv->tmp_buf, con->uri.path_raw);
+			buffer_copy_buffer(srv->tmp_buf, con->uri.path_raw);
 			buffer_urldecode_path(srv->tmp_buf);
 			buffer_path_simplify(con->uri.path, srv->tmp_buf);
 		}
@@ -430,8 +427,8 @@ handler_t http_response_prepare(server *srv, connection *con) {
 
 		/* set a default */
 
-		buffer_copy_string_buffer(con->physical.doc_root, con->conf.document_root);
-		buffer_copy_string_buffer(con->physical.rel_path, con->uri.path);
+		buffer_copy_buffer(con->physical.doc_root, con->conf.document_root);
+		buffer_copy_buffer(con->physical.rel_path, con->uri.path);
 
 #if defined(__WIN32) || defined(__CYGWIN__)
 		/* strip dots from the end and spaces
@@ -449,23 +446,18 @@ handler_t http_response_prepare(server *srv, connection *con) {
 
 		if (con->physical.rel_path->used > 1) {
 			buffer *b = con->physical.rel_path;
+			size_t len = buffer_string_length(b);
 			size_t i;
 
-			if (b->used > 2 &&
-			    b->ptr[b->used-2] == '/' &&
-			    (b->ptr[b->used-3] == ' ' ||
-			     b->ptr[b->used-3] == '.')) {
-				b->ptr[b->used--] = '\0';
+			/* strip trailing " /" or "./" once */
+			if (len > 1 &&
+			    b->ptr[len - 1] == '/' &&
+			    (b->ptr[len - 2] == ' ' || b->ptr[len - 2] == '.')) {
+				len -= 2;
 			}
-
-			for (i = b->used - 2; b->used > 1; i--) {
-				if (b->ptr[i] == ' ' ||
-				    b->ptr[i] == '.') {
-					b->ptr[b->used--] = '\0';
-				} else {
-					break;
-				}
-			}
+			/* strip all trailing " " and "." */
+			while (len > 0 &&  ( ' ' == b->ptr[len-1] || '.' == b->ptr[len-1] ) ) --len;
+			buffer_string_set_length(b, len);
 		}
 #endif
 
@@ -500,8 +492,8 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		}
 
 		/* the docroot plugins might set the servername, if they don't we take http-host */
-		if (buffer_is_empty(con->server_name)) {
-			buffer_copy_string_buffer(con->server_name, con->uri.authority);
+		if (buffer_string_is_empty(con->server_name)) {
+			buffer_copy_buffer(con->server_name, con->uri.authority);
 		}
 
 		/**
@@ -510,12 +502,12 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		 *
 		 */
 
-		buffer_copy_string_buffer(con->physical.basedir, con->physical.doc_root);
-		buffer_copy_string_buffer(con->physical.path, con->physical.doc_root);
-		BUFFER_APPEND_SLASH(con->physical.path);
-		if (con->physical.rel_path->used &&
+		buffer_copy_buffer(con->physical.basedir, con->physical.doc_root);
+		buffer_copy_buffer(con->physical.path, con->physical.doc_root);
+		buffer_append_slash(con->physical.path);
+		if (!buffer_string_is_empty(con->physical.rel_path) &&
 		    con->physical.rel_path->ptr[0] == '/') {
-			buffer_append_string_len(con->physical.path, con->physical.rel_path->ptr + 1, con->physical.rel_path->used - 2);
+			buffer_append_string_len(con->physical.path, con->physical.rel_path->ptr + 1, buffer_string_length(con->physical.rel_path) - 1);
 		} else {
 			buffer_append_string_buffer(con->physical.path, con->physical.rel_path);
 		}
@@ -587,7 +579,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 			};
 #endif
 			if (S_ISDIR(sce->st.st_mode)) {
-				if (con->uri.path->ptr[con->uri.path->used - 2] != '/') {
+				if (con->uri.path->ptr[buffer_string_length(con->uri.path) - 1] != '/') {
 					/* redirect to .../ */
 
 					http_response_redirect_to_directory(srv, con);
@@ -645,13 +637,13 @@ handler_t http_response_prepare(server *srv, connection *con) {
 
 			/* not found, perhaps PATHINFO */
 
-			buffer_copy_string_buffer(srv->tmp_buf, con->physical.path);
+			buffer_copy_buffer(srv->tmp_buf, con->physical.path);
 
 			do {
 				if (slash) {
 					buffer_copy_string_len(con->physical.path, srv->tmp_buf->ptr, slash - srv->tmp_buf->ptr);
 				} else {
-					buffer_copy_string_buffer(con->physical.path, srv->tmp_buf);
+					buffer_copy_buffer(con->physical.path, srv->tmp_buf);
 				}
 
 				if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce)) {
@@ -670,7 +662,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 				}
 
 				if (slash) pathinfo = slash;
-			} while ((found == 0) && (slash != NULL) && ((size_t)(slash - srv->tmp_buf->ptr) > (con->physical.basedir->used - 2)));
+			} while ((found == 0) && (slash != NULL) && ((size_t)(slash - srv->tmp_buf->ptr) > (buffer_string_length(con->physical.basedir) - 1)));
 
 			if (found == 0) {
 				/* no it really doesn't exists */
@@ -709,8 +701,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 				 * shorten uri.path
 				 */
 
-				con->uri.path->used -= strlen(pathinfo);
-				con->uri.path->ptr[con->uri.path->used - 1] = '\0';
+				buffer_string_set_length(con->uri.path, buffer_string_length(con->uri.path) - strlen(pathinfo));
 			}
 
 			if (con->conf.log_request_handling) {
