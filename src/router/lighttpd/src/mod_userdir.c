@@ -60,6 +60,8 @@ FREE_FUNC(mod_userdir_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
+			if (NULL == s) continue;
+
 			array_free(s->include_user);
 			array_free(s->exclude_user);
 			buffer_free(s->path);
@@ -99,6 +101,7 @@ SETDEFAULTS_FUNC(mod_userdir_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -120,7 +123,7 @@ SETDEFAULTS_FUNC(mod_userdir_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -181,14 +184,14 @@ URIHANDLER_FUNC(mod_userdir_docroot_handler) {
 	struct passwd *pwd = NULL;
 #endif
 
-	if (con->uri.path->used == 0) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
 
 	mod_userdir_patch_connection(srv, con, p);
 
 	/* enforce the userdir.path to be set in the config, ugly fix for #1587;
 	 * should be replaced with a clean .enabled option in 1.5
 	 */
-	if (!p->conf.active || p->conf.path->used == 0) return HANDLER_GO_ON;
+	if (!p->conf.active || buffer_is_empty(p->conf.path)) return HANDLER_GO_ON;
 
 	/* /~user/foo.html -> /home/user/public_html/foo.html */
 
@@ -209,7 +212,7 @@ URIHANDLER_FUNC(mod_userdir_docroot_handler) {
 
 	buffer_copy_string_len(p->username, con->uri.path->ptr + 2, rel_url - (con->uri.path->ptr + 2));
 
-	if (buffer_is_empty(p->conf.basepath)
+	if (buffer_string_is_empty(p->conf.basepath)
 #ifdef HAVE_PWD_H
 	    && NULL == (pwd = getpwnam(p->username->ptr))
 #endif
@@ -245,7 +248,7 @@ URIHANDLER_FUNC(mod_userdir_docroot_handler) {
 
 	/* we build the physical path */
 
-	if (buffer_is_empty(p->conf.basepath)) {
+	if (buffer_string_is_empty(p->conf.basepath)) {
 #ifdef HAVE_PWD_H
 		buffer_copy_string(p->temp_path, pwd->pw_dir);
 #endif
@@ -272,18 +275,18 @@ URIHANDLER_FUNC(mod_userdir_docroot_handler) {
 			buffer_to_lower(p->username);
 		}
 
-		buffer_copy_string_buffer(p->temp_path, p->conf.basepath);
-		BUFFER_APPEND_SLASH(p->temp_path);
+		buffer_copy_buffer(p->temp_path, p->conf.basepath);
+		buffer_append_slash(p->temp_path);
 		if (p->conf.letterhomes) {
 			buffer_append_string_len(p->temp_path, p->username->ptr, 1);
-			BUFFER_APPEND_SLASH(p->temp_path);
+			buffer_append_slash(p->temp_path);
 		}
 		buffer_append_string_buffer(p->temp_path, p->username);
 	}
-	BUFFER_APPEND_SLASH(p->temp_path);
+	buffer_append_slash(p->temp_path);
 	buffer_append_string_buffer(p->temp_path, p->conf.path);
 
-	if (buffer_is_empty(p->conf.basepath)) {
+	if (buffer_string_is_empty(p->conf.basepath)) {
 		struct stat st;
 		int ret;
 
@@ -293,16 +296,16 @@ URIHANDLER_FUNC(mod_userdir_docroot_handler) {
 		}
 	}
 
-	buffer_copy_string_buffer(con->physical.basedir, p->temp_path);
+	buffer_copy_buffer(con->physical.basedir, p->temp_path);
 
 	/* the physical rel_path is basically the same as uri.path;
 	 * but it is converted to lowercase in case of force_lowercase_filenames and some special handling
 	 * for trailing '.', ' ' and '/' on windows
 	 * we assume that no docroot/physical handler changed this
 	 * (docroot should only set the docroot/server name, phyiscal should only change the phyiscal.path;
-	 *  the exception mod_secure_download doesn't work with userdir anyway)
+	 *  the exception mod_secdownload doesn't work with userdir anyway)
 	 */
-	BUFFER_APPEND_SLASH(p->temp_path);
+	buffer_append_slash(p->temp_path);
 	/* if no second '/' is found, we assume that it was stripped from the uri.path for the special handling
 	 * on windows.
 	 * we do not care about the trailing slash here on windows, as we already ensured it is a directory
@@ -313,7 +316,7 @@ URIHANDLER_FUNC(mod_userdir_docroot_handler) {
 	if (NULL != (rel_url = strchr(con->physical.rel_path->ptr + 2, '/'))) {
 		buffer_append_string(p->temp_path, rel_url + 1); /* skip the / */
 	}
-	buffer_copy_string_buffer(con->physical.path, p->temp_path);
+	buffer_copy_buffer(con->physical.path, p->temp_path);
 
 	buffer_reset(p->temp_path);
 

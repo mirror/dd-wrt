@@ -65,6 +65,8 @@ FREE_FUNC(mod_rrd_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
+			if (NULL == s) continue;
+
 			buffer_free(s->path_rrdtool_bin);
 			buffer_free(s->path_rrd);
 
@@ -264,22 +266,22 @@ static int mod_rrdtool_create_rrd(server *srv, plugin_data *p, plugin_config *s)
 		"RRA:MIN:0.5:24:775 "
 		"RRA:MIN:0.5:288:797\n"));
 
-	if (-1 == (safe_write(p->write_fd, p->cmd->ptr, p->cmd->used - 1))) {
+	if (-1 == (safe_write(p->write_fd, CONST_BUF_LEN(p->cmd)))) {
 		log_error_write(srv, __FILE__, __LINE__, "ss",
 			"rrdtool-write: failed", strerror(errno));
 
 		return HANDLER_ERROR;
 	}
 
-	buffer_prepare_copy(p->resp, 4096);
-	if (-1 == (r = safe_read(p->read_fd, p->resp->ptr, p->resp->size))) {
+	buffer_string_prepare_copy(p->resp, 4095);
+	if (-1 == (r = safe_read(p->read_fd, p->resp->ptr, p->resp->size - 1))) {
 		log_error_write(srv, __FILE__, __LINE__, "ss",
 			"rrdtool-read: failed", strerror(errno));
 
 		return HANDLER_ERROR;
 	}
 
-	p->resp->used = r;
+	buffer_commit(p->resp, r);
 
 	if (p->resp->ptr[0] != 'O' ||
 		p->resp->ptr[1] != 'K') {
@@ -337,9 +339,9 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
 	size_t i;
 
 	config_values_t cv[] = {
-		{ "rrdtool.binary",              NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },
-		{ "rrdtool.db-name",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
-		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+		{ "rrdtool.binary",  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 0 */
+		{ "rrdtool.db-name", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 1 */
+		{ NULL,              NULL, T_CONFIG_UNSET,  T_CONFIG_SCOPE_UNSET      }
 	};
 
 	if (!p) return HANDLER_ERROR;
@@ -348,6 +350,7 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -362,11 +365,11 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 
-		if (i > 0 && !buffer_is_empty(s->path_rrdtool_bin)) {
+		if (i > 0 && !buffer_string_is_empty(s->path_rrdtool_bin)) {
 			/* path_rrdtool_bin is a global option */
 
 			log_error_write(srv, __FILE__, __LINE__, "s",
@@ -382,7 +385,7 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
 
 	/* check for dir */
 
-	if (buffer_is_empty(p->conf.path_rrdtool_bin)) {
+	if (buffer_string_is_empty(p->conf.path_rrdtool_bin)) {
 		log_error_write(srv, __FILE__, __LINE__, "s",
 				"rrdtool.binary has to be set");
 		return HANDLER_ERROR;
@@ -409,7 +412,7 @@ TRIGGER_FUNC(mod_rrd_trigger) {
 		plugin_config *s = p->config_storage[i];
 		int r;
 
-		if (buffer_is_empty(s->path_rrd)) continue;
+		if (buffer_string_is_empty(s->path_rrd)) continue;
 
 		/* write the data down every minute */
 
@@ -418,14 +421,14 @@ TRIGGER_FUNC(mod_rrd_trigger) {
 		buffer_copy_string_len(p->cmd, CONST_STR_LEN("update "));
 		buffer_append_string_buffer(p->cmd, s->path_rrd);
 		buffer_append_string_len(p->cmd, CONST_STR_LEN(" N:"));
-		buffer_append_off_t(p->cmd, s->bytes_read);
+		buffer_append_int(p->cmd, s->bytes_read);
 		buffer_append_string_len(p->cmd, CONST_STR_LEN(":"));
-		buffer_append_off_t(p->cmd, s->bytes_written);
+		buffer_append_int(p->cmd, s->bytes_written);
 		buffer_append_string_len(p->cmd, CONST_STR_LEN(":"));
-		buffer_append_long(p->cmd, s->requests);
+		buffer_append_int(p->cmd, s->requests);
 		buffer_append_string_len(p->cmd, CONST_STR_LEN("\n"));
 
-		if (-1 == (r = safe_write(p->write_fd, p->cmd->ptr, p->cmd->used - 1))) {
+		if (-1 == (r = safe_write(p->write_fd, CONST_BUF_LEN(p->cmd)))) {
 			p->rrdtool_running = 0;
 
 			log_error_write(srv, __FILE__, __LINE__, "ss",
@@ -434,7 +437,7 @@ TRIGGER_FUNC(mod_rrd_trigger) {
 			return HANDLER_ERROR;
 		}
 
-		buffer_prepare_copy(p->resp, 4096);
+		buffer_string_prepare_copy(p->resp, 4095);
 		if (-1 == (r = safe_read(p->read_fd, p->resp->ptr, p->resp->size - 1))) {
 			p->rrdtool_running = 0;
 
@@ -444,8 +447,7 @@ TRIGGER_FUNC(mod_rrd_trigger) {
 			return HANDLER_ERROR;
 		}
 
-		p->resp->used = r + 1;
-		p->resp->ptr[r] = '\0';
+		buffer_commit(p->resp, r);
 
 		if (p->resp->ptr[0] != 'O' ||
 		    p->resp->ptr[1] != 'K') {

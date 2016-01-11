@@ -45,7 +45,7 @@ FREE_FUNC(mod_alias_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
-			if(!s) continue;
+			if (NULL == s) continue;
 
 			array_free(s->alias);
 
@@ -75,6 +75,7 @@ SETDEFAULTS_FUNC(mod_alias_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -83,7 +84,7 @@ SETDEFAULTS_FUNC(mod_alias_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 		if (s->alias->used >= 2) {
@@ -95,10 +96,10 @@ SETDEFAULTS_FUNC(mod_alias_set_defaults) {
 				for (k = j + 1; k < a->used; k ++) {
 					const buffer *key = a->data[a->sorted[k]]->key;
 
-					if (key->used < prefix->used) {
+					if (buffer_string_length(key) < buffer_string_length(prefix)) {
 						break;
 					}
-					if (memcmp(key->ptr, prefix->ptr, prefix->used - 1) != 0) {
+					if (memcmp(key->ptr, prefix->ptr, buffer_string_length(prefix)) != 0) {
 						break;
 					}
 					/* ok, they have same prefix. check position */
@@ -151,32 +152,32 @@ PHYSICALPATH_FUNC(mod_alias_physical_handler) {
 	char *uri_ptr;
 	size_t k;
 
-	if (con->physical.path->used == 0) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->physical.path)) return HANDLER_GO_ON;
 
 	mod_alias_patch_connection(srv, con, p);
 
 	/* not to include the tailing slash */
-	basedir_len = (con->physical.basedir->used - 1);
+	basedir_len = buffer_string_length(con->physical.basedir);
 	if ('/' == con->physical.basedir->ptr[basedir_len-1]) --basedir_len;
-	uri_len = con->physical.path->used - 1 - basedir_len;
+	uri_len = buffer_string_length(con->physical.path) - basedir_len;
 	uri_ptr = con->physical.path->ptr + basedir_len;
 
 	for (k = 0; k < p->conf.alias->used; k++) {
 		data_string *ds = (data_string *)p->conf.alias->data[k];
-		int alias_len = ds->key->used - 1;
+		int alias_len = buffer_string_length(ds->key);
 
 		if (alias_len > uri_len) continue;
-		if (ds->key->used == 0) continue;
+		if (buffer_is_empty(ds->key)) continue;
 
 		if (0 == (con->conf.force_lowercase_filenames ?
 					strncasecmp(uri_ptr, ds->key->ptr, alias_len) :
 					strncmp(uri_ptr, ds->key->ptr, alias_len))) {
 			/* matched */
 
-			buffer_copy_string_buffer(con->physical.basedir, ds->value);
-			buffer_copy_string_buffer(srv->tmp_buf, ds->value);
+			buffer_copy_buffer(con->physical.basedir, ds->value);
+			buffer_copy_buffer(srv->tmp_buf, ds->value);
 			buffer_append_string(srv->tmp_buf, uri_ptr + alias_len);
-			buffer_copy_string_buffer(con->physical.path, srv->tmp_buf);
+			buffer_copy_buffer(con->physical.path, srv->tmp_buf);
 
 			return HANDLER_GO_ON;
 		}

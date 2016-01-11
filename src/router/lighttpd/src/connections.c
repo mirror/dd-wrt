@@ -197,31 +197,22 @@ static void dump_packet(const unsigned char *data, size_t len) {
 
 static int connection_handle_read_ssl(server *srv, connection *con) {
 #ifdef USE_OPENSSL
-	int r, ssl_err, len, count = 0, read_offset, toread;
-	buffer *b = NULL;
+	int r, ssl_err, len, count = 0;
+	char *mem = NULL;
+	size_t mem_len = 0;
 
 	if (!con->srv_socket->is_ssl) return -1;
 
 	ERR_clear_error();
 	do {
-		if (NULL != con->read_queue->last) {
-			b = con->read_queue->last->mem;
-		}
+		chunkqueue_get_memory(con->read_queue, &mem, &mem_len, 0, SSL_pending(con->ssl));
+#if 0
+		/* overwrite everything with 0 */
+		memset(mem, 0, mem_len);
+#endif
 
-		if (NULL == b || b->size - b->used < 1024) {
-			b = chunkqueue_get_append_buffer(con->read_queue);
-			len = SSL_pending(con->ssl);
-			if (len < 4*1024) len = 4*1024; /* always alloc >= 4k buffer */
-			buffer_prepare_copy(b, len + 1);
-
-			/* overwrite everything with 0 */
-			memset(b->ptr, 0, b->size);
-		}
-
-		read_offset = (b->used > 0) ? b->used - 1 : 0;
-		toread = b->size - 1 - read_offset;
-
-		len = SSL_read(con->ssl, b->ptr + read_offset, toread);
+		len = SSL_read(con->ssl, mem, mem_len);
+		chunkqueue_use_memory(con->read_queue, len > 0 ? len : 0);
 
 		if (con->renegotiations > 1 && con->conf.ssl_disable_client_renegotiation) {
 			log_error_write(srv, __FILE__, __LINE__, "s", "SSL: renegotiation initiated by client, killing connection");
@@ -230,15 +221,10 @@ static int connection_handle_read_ssl(server *srv, connection *con) {
 		}
 
 		if (len > 0) {
-			if (b->used > 0) b->used--;
-			b->used += len;
-			b->ptr[b->used++] = '\0';
-
 			con->bytes_read += len;
-
 			count += len;
 		}
-	} while (len == toread && count < MAX_READ_LIMIT);
+	} while (len == (ssize_t) mem_len && count < MAX_READ_LIMIT);
 
 
 	if (len < 0) {
@@ -331,14 +317,13 @@ static int connection_handle_read_ssl(server *srv, connection *con) {
 /* 0: everything ok, -1: error, -2: con closed */
 static int connection_handle_read(server *srv, connection *con) {
 	int len;
-	buffer *b;
-	int toread, read_offset;
+	char *mem = NULL;
+	size_t mem_len = 0;
+	int toread;
 
 	if (con->srv_socket->is_ssl) {
 		return connection_handle_read_ssl(srv, con);
 	}
-
-	b = (NULL != con->read_queue->last) ? con->read_queue->last->mem : NULL;
 
 	/* default size for chunks is 4kb; only use bigger chunks if FIONREAD tells
 	 *  us more than 4kb is available
@@ -346,43 +331,60 @@ static int connection_handle_read(server *srv, connection *con) {
 	 *  if it has >= 1kb free
 	 */
 #if defined(__WIN32)
-	if (NULL == b || b->size - b->used < 1024) {
-		b = chunkqueue_get_append_buffer(con->read_queue);
-		buffer_prepare_copy(b, 4 * 1024);
-	}
+	chunkqueue_get_memory(con->read_queue, &mem, &mem_len, 0, 4096);
 
-	read_offset = (b->used == 0) ? 0 : b->used - 1;
-	len = recv(con->fd, b->ptr + read_offset, b->size - 1 - read_offset, 0);
-#else
+	len = recv(con->fd, mem, mem_len, 0);
+#else /* __WIN32 */
 	if (ioctl(con->fd, FIONREAD, &toread) || toread == 0 || toread <= 4*1024) {
-		if (NULL == b || b->size - b->used < 1024) {
-			b = chunkqueue_get_append_buffer(con->read_queue);
-			buffer_prepare_copy(b, 4 * 1024);
-		}
-	} else {
-		if (toread > MAX_READ_LIMIT) toread = MAX_READ_LIMIT;
-		b = chunkqueue_get_append_buffer(con->read_queue);
-		buffer_prepare_copy(b, toread + 1);
+		toread = 4096;
 	}
+	else if (toread > MAX_READ_LIMIT) {
+		toread = MAX_READ_LIMIT;
+	}
+	chunkqueue_get_memory(con->read_queue, &mem, &mem_len, 0, toread);
 
-	read_offset = (b->used == 0) ? 0 : b->used - 1;
-	len = read(con->fd, b->ptr + read_offset, b->size - 1 - read_offset);
-#endif
+	len = read(con->fd, mem, mem_len);
+#endif /* __WIN32 */
+
+	chunkqueue_use_memory(con->read_queue, len > 0 ? len : 0);
 
 	if (len < 0) {
 		con->is_readable = 0;
 
-		if (errno == EAGAIN) return 0;
-		if (errno == EINTR) {
+#if defined(__WIN32)
+		{
+			int lastError = WSAGetLastError();
+			switch (lastError) {
+			case EAGAIN:
+				return 0;
+			case EINTR:
+				/* we have been interrupted before we could read */
+				con->is_readable = 1;
+				return 0;
+			case ECONNRESET:
+				/* suppress logging for this error, expected for keep-alive */
+				break;
+			default:
+				log_error_write(srv, __FILE__, __LINE__, "sd", "connection closed - recv failed: ", lastError);
+				break;
+			}
+		}
+#else /* __WIN32 */
+		switch (errno) {
+		case EAGAIN:
+			return 0;
+		case EINTR:
 			/* we have been interrupted before we could read */
 			con->is_readable = 1;
 			return 0;
-		}
-
-		if (errno != ECONNRESET) {
-			/* expected for keep-alive */
+		case ECONNRESET:
+			/* suppress logging for this error, expected for keep-alive */
+			break;
+		default:
 			log_error_write(srv, __FILE__, __LINE__, "ssd", "connection closed - read failed: ", strerror(errno), errno);
+			break;
 		}
+#endif /* __WIN32 */
 
 		connection_set_state(srv, con, CON_STATE_ERROR);
 
@@ -394,15 +396,11 @@ static int connection_handle_read(server *srv, connection *con) {
 		/* pipelining */
 
 		return -2;
-	} else if ((size_t)len < b->size - 1) {
+	} else if (len != (ssize_t) mem_len) {
 		/* we got less then expected, wait for the next fd-event */
 
 		con->is_readable = 0;
 	}
-
-	if (b->used > 0) b->used--;
-	b->used += len;
-	b->ptr[b->used++] = '\0';
 
 	con->bytes_read += len;
 #if 0
@@ -426,7 +424,7 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 			 * 403 is from the response handler when noone else catched it
 			 *
 			 * */
-			if ((!con->http_status || con->http_status == 200) && con->uri.path->used &&
+			if ((!con->http_status || con->http_status == 200) && !buffer_string_is_empty(con->uri.path) &&
 			    con->uri.path->ptr[0] != '*') {
 				response_header_insert(srv, con, CONST_STR_LEN("Allow"), CONST_STR_LEN("OPTIONS, GET, HEAD, POST"));
 
@@ -473,11 +471,11 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 		buffer_reset(con->physical.path);
 
 		/* try to send static errorfile */
-		if (!buffer_is_empty(con->conf.errorfile_prefix)) {
+		if (!buffer_string_is_empty(con->conf.errorfile_prefix)) {
 			stat_cache_entry *sce = NULL;
 
-			buffer_copy_string_buffer(con->physical.path, con->conf.errorfile_prefix);
-			buffer_append_long(con->physical.path, con->http_status);
+			buffer_copy_buffer(con->physical.path, con->conf.errorfile_prefix);
+			buffer_append_int(con->physical.path, con->http_status);
 			buffer_append_string_len(con->physical.path, CONST_STR_LEN(".html"));
 
 			if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce)) {
@@ -494,7 +492,7 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 			buffer_reset(con->physical.path);
 
 			con->file_finished = 1;
-			b = chunkqueue_get_append_buffer(con->write_queue);
+			b = buffer_init();
 
 			/* build default error-page */
 			buffer_copy_string_len(b, CONST_STR_LEN(
@@ -504,7 +502,7 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 					   "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n"
 					   " <head>\n"
 					   "  <title>"));
-			buffer_append_long(b, con->http_status);
+			buffer_append_int(b, con->http_status);
 			buffer_append_string_len(b, CONST_STR_LEN(" - "));
 			buffer_append_string(b, get_http_status_name(con->http_status));
 
@@ -513,7 +511,7 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 					     " </head>\n"
 					     " <body>\n"
 					     "  <h1>"));
-			buffer_append_long(b, con->http_status);
+			buffer_append_int(b, con->http_status);
 			buffer_append_string_len(b, CONST_STR_LEN(" - "));
 			buffer_append_string(b, get_http_status_name(con->http_status));
 
@@ -521,6 +519,10 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 					     " </body>\n"
 					     "</html>\n"
 					     ));
+
+			http_chunk_append_buffer(srv, con, b);
+			buffer_free(b);
+			http_chunk_close(srv, con);
 
 			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
 		}
@@ -554,7 +556,7 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 				/* qlen = 0 is important for Redirects (301, ...) as they MAY have
 				 * a content. Browsers are waiting for a Content otherwise
 				 */
-				buffer_copy_off_t(srv->tmp_buf, qlen);
+				buffer_copy_int(srv->tmp_buf, qlen);
 
 				response_header_overwrite(srv, con, CONST_STR_LEN("Content-Length"), CONST_BUF_LEN(srv->tmp_buf));
 			}
@@ -687,7 +689,10 @@ connection *connection_init(server *srv) {
 	con->write_queue = chunkqueue_init();
 	con->read_queue = chunkqueue_init();
 	con->request_content_queue = chunkqueue_init();
-	chunkqueue_set_tempdirs(con->request_content_queue, srv->srvconf.upload_tempdirs);
+	chunkqueue_set_tempdirs(
+		con->request_content_queue,
+		srv->srvconf.upload_tempdirs,
+		srv->srvconf.upload_temp_file_size);
 
 	con->request.headers      = array_init();
 	con->response.headers     = array_init();
@@ -895,42 +900,7 @@ static int connection_handle_read_state(server *srv, connection *con)  {
 		}
 	}
 
-	/* the last chunk might be empty */
-	for (c = cq->first; c;) {
-		if (cq->first == c && c->mem->used == 0) {
-			/* the first node is empty */
-			/* ... and it is empty, move it to unused */
-
-			cq->first = c->next;
-			if (cq->first == NULL) cq->last = NULL;
-
-			c->next = cq->unused;
-			cq->unused = c;
-			cq->unused_chunks++;
-
-			c = cq->first;
-		} else if (c->next && c->next->mem->used == 0) {
-			chunk *fc;
-			/* next node is the last one */
-			/* ... and it is empty, move it to unused */
-
-			fc = c->next;
-			c->next = fc->next;
-
-			fc->next = cq->unused;
-			cq->unused = fc;
-			cq->unused_chunks++;
-
-			/* the last node was empty */
-			if (c->next == NULL) {
-				cq->last = c;
-			}
-
-			c = c->next;
-		} else {
-			c = c->next;
-		}
-	}
+	chunkqueue_remove_finished_chunks(cq);
 
 	/* we might have got several packets at once
 	 */
@@ -949,15 +919,12 @@ static int connection_handle_read_state(server *srv, connection *con)  {
 		last_offset = 0;
 
 		for (c = cq->first; c; c = c->next) {
-			buffer b;
 			size_t i;
+			size_t len = buffer_string_length(c->mem) - c->offset;
+			const char *b = c->mem->ptr + c->offset;
 
-			b.ptr = c->mem->ptr + c->offset;
-			b.used = c->mem->used - c->offset;
-			if (b.used > 0) b.used--; /* buffer "used" includes terminating zero */
-
-			for (i = 0; i < b.used; i++) {
-				char ch = b.ptr[i];
+			for (i = 0; i < len; ++i) {
+				char ch = b[i];
 
 				if ('\r' == ch) {
 					/* chec if \n\r\n follows */
@@ -967,13 +934,11 @@ static int connection_handle_read_state(server *srv, connection *con)  {
 					int header_end_match_pos = 1;
 
 					for ( ; cc; cc = cc->next, j = 0 ) {
-						buffer bb;
-						bb.ptr = cc->mem->ptr + cc->offset;
-						bb.used = cc->mem->used - cc->offset;
-						if (bb.used > 0) bb.used--; /* buffer "used" includes terminating zero */
+						size_t bblen = buffer_string_length(cc->mem) - cc->offset;
+						const char *bb = cc->mem->ptr + cc->offset;
 
-						for ( ; j < bb.used; j++) {
-							ch = bb.ptr[j];
+						for ( ; j < bblen; j++) {
+							ch = bb[j];
 
 							if (ch == header_end[header_end_match_pos]) {
 								header_end_match_pos++;
@@ -998,25 +963,17 @@ found_header_end:
 			buffer_reset(con->request.request);
 
 			for (c = cq->first; c; c = c->next) {
-				buffer b;
-
-				b.ptr = c->mem->ptr + c->offset;
-				b.used = c->mem->used - c->offset;
+				size_t len = buffer_string_length(c->mem) - c->offset;
 
 				if (c == last_chunk) {
-					b.used = last_offset + 1;
+					len = last_offset;
 				}
 
-				buffer_append_string_buffer(con->request.request, &b);
+				buffer_append_string_len(con->request.request, c->mem->ptr + c->offset, len);
+				c->offset += len;
+				cq->bytes_out += len;
 
-				if (c == last_chunk) {
-					c->offset += last_offset;
-
-					break;
-				} else {
-					/* the whole packet was copied */
-					c->offset = c->mem->used - 1;
-				}
+				if (c == last_chunk) break;
 			}
 
 			connection_set_state(srv, con, CON_STATE_REQUEST_END);
@@ -1029,119 +986,14 @@ found_header_end:
 		}
 		break;
 	case CON_STATE_READ_POST:
-		for (c = cq->first; c && (dst_cq->bytes_in != (off_t)con->request.content_length); c = c->next) {
-			off_t weWant, weHave, toRead;
-
-			weWant = con->request.content_length - dst_cq->bytes_in;
-
-			force_assert(c->mem->used);
-
-			weHave = c->mem->used - c->offset - 1;
-
-			toRead = weHave > weWant ? weWant : weHave;
-
-			/* the new way, copy everything into a chunkqueue whcih might use tempfiles */
-			if (con->request.content_length > 64 * 1024) {
-				chunk *dst_c = NULL;
-				/* copy everything to max 1Mb sized tempfiles */
-
-				/*
-				 * if the last chunk is
-				 * - smaller than 1Mb (size < 1Mb)
-				 * - not read yet (offset == 0)
-				 * -> append to it
-				 * otherwise
-				 * -> create a new chunk
-				 *
-				 * */
-
-				if (dst_cq->last &&
-				    dst_cq->last->type == FILE_CHUNK &&
-				    dst_cq->last->file.is_temp &&
-				    dst_cq->last->offset == 0) {
-					/* ok, take the last chunk for our job */
-
-			 		if (dst_cq->last->file.length < 1 * 1024 * 1024) {
-						dst_c = dst_cq->last;
-
-						if (dst_c->file.fd == -1) {
-							/* this should not happen as we cache the fd, but you never know */
-							dst_c->file.fd = open(dst_c->file.name->ptr, O_WRONLY | O_APPEND);
-							fd_close_on_exec(dst_c->file.fd);
-						}
-					} else {
-						/* the chunk is too large now, close it */
-						dst_c = dst_cq->last;
-
-						if (dst_c->file.fd != -1) {
-							close(dst_c->file.fd);
-							dst_c->file.fd = -1;
-						}
-						dst_c = chunkqueue_get_append_tempfile(dst_cq);
-					}
-				} else {
-					dst_c = chunkqueue_get_append_tempfile(dst_cq);
-				}
-
-				/* we have a chunk, let's write to it */
-
-				if (dst_c->file.fd == -1) {
-					/* we don't have file to write to,
-					 * EACCES might be one reason.
-					 *
-					 * Instead of sending 500 we send 413 and say the request is too large
-					 *  */
-
-					log_error_write(srv, __FILE__, __LINE__, "sbs",
-							"denying upload as opening to temp-file for upload failed:",
-							dst_c->file.name, strerror(errno));
-
-					con->http_status = 413; /* Request-Entity too large */
-					con->keep_alive = 0;
-					connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-
-					break;
-				}
-
-				if (toRead != write(dst_c->file.fd, c->mem->ptr + c->offset, toRead)) {
-					/* write failed for some reason ... disk full ? */
-					log_error_write(srv, __FILE__, __LINE__, "sbs",
-							"denying upload as writing to file failed:",
-							dst_c->file.name, strerror(errno));
-
-					con->http_status = 413; /* Request-Entity too large */
-					con->keep_alive = 0;
-					connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-
-					close(dst_c->file.fd);
-					dst_c->file.fd = -1;
-
-					break;
-				}
-
-				dst_c->file.length += toRead;
-
-				if (dst_cq->bytes_in + toRead == (off_t)con->request.content_length) {
-					/* we read everything, close the chunk */
-					close(dst_c->file.fd);
-					dst_c->file.fd = -1;
-				}
-			} else {
-				buffer *b;
-
-				if (dst_cq->last &&
-				    dst_cq->last->type == MEM_CHUNK) {
-					b = dst_cq->last->mem;
-				} else {
-					b = chunkqueue_get_append_buffer(dst_cq);
-					/* prepare buffer size for remaining POST data; is < 64kb */
-					buffer_prepare_copy(b, con->request.content_length - dst_cq->bytes_in + 1);
-				}
-				buffer_append_string_len(b, c->mem->ptr + c->offset, toRead);
-			}
-
-			c->offset += toRead;
-			dst_cq->bytes_in += toRead;
+		if (con->request.content_length <= 64*1024) {
+			/* don't buffer request bodies <= 64k on disk */
+			chunkqueue_steal(dst_cq, cq, con->request.content_length - dst_cq->bytes_in);
+		}
+		else if (0 != chunkqueue_steal_with_tempfiles(srv, dst_cq, cq, con->request.content_length - dst_cq->bytes_in )) {
+			con->http_status = 413; /* Request-Entity too large */
+			con->keep_alive = 0;
+			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
 		}
 
 		/* Content is ready */
@@ -1430,17 +1282,17 @@ int connection_state_machine(server *srv, connection *con) {
 						/* 404 error-handler */
 
 						if (con->in_error_handler == 0 &&
-						    (!buffer_is_empty(con->conf.error_handler) ||
-						     !buffer_is_empty(con->error_handler))) {
+						    (!buffer_string_is_empty(con->conf.error_handler) ||
+						     !buffer_string_is_empty(con->error_handler))) {
 							/* call error-handler */
 
 							con->error_handler_saved_status = con->http_status;
 							con->http_status = 0;
 
-							if (buffer_is_empty(con->error_handler)) {
-								buffer_copy_string_buffer(con->request.uri, con->conf.error_handler);
+							if (buffer_string_is_empty(con->error_handler)) {
+								buffer_copy_buffer(con->request.uri, con->conf.error_handler);
 							} else {
-								buffer_copy_string_buffer(con->request.uri, con->error_handler);
+								buffer_copy_buffer(con->request.uri, con->error_handler);
 							}
 							buffer_reset(con->physical.path);
 
@@ -1632,20 +1484,16 @@ int connection_state_machine(server *srv, connection *con) {
 
 			/* only try to write if we have something in the queue */
 			if (!chunkqueue_is_empty(con->write_queue)) {
-#if 0
-				log_error_write(srv, __FILE__, __LINE__, "dsd",
-						con->fd,
-						"packets to write:",
-						con->write_queue->used);
-#endif
-			}
-			if (!chunkqueue_is_empty(con->write_queue) && con->is_writable) {
-				if (-1 == connection_handle_write(srv, con)) {
-					log_error_write(srv, __FILE__, __LINE__, "ds",
-							con->fd,
-							"handle write failed.");
-					connection_set_state(srv, con, CON_STATE_ERROR);
+				if (con->is_writable) {
+					if (-1 == connection_handle_write(srv, con)) {
+						log_error_write(srv, __FILE__, __LINE__, "ds",
+								con->fd,
+								"handle write failed.");
+						connection_set_state(srv, con, CON_STATE_ERROR);
+					}
 				}
+			} else if (con->file_finished) {
+				connection_set_state(srv, con, CON_STATE_RESPONSE_END);
 			}
 
 			break;

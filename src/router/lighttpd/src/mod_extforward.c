@@ -135,7 +135,7 @@ FREE_FUNC(mod_extforward_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
-			if (!s) continue;
+			if (NULL == s) continue;
 
 			array_free(s->forwarder);
 			array_free(s->headers);
@@ -168,6 +168,7 @@ SETDEFAULTS_FUNC(mod_extforward_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -179,7 +180,7 @@ SETDEFAULTS_FUNC(mod_extforward_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -236,7 +237,7 @@ static void put_string_into_array_len(array *ary, const char *str, int len)
 static array *extract_forward_array(buffer *pbuffer)
 {
 	array *result = array_init();
-	if (pbuffer->used > 0) {
+	if (!buffer_string_is_empty(pbuffer)) {
 		char *base, *curr;
 		/* state variable, 0 means not in string, 1 means in string */
 		int in_str = 0;
@@ -445,8 +446,10 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 		if (sock.plain.sa_family != AF_UNSPEC) {
 			/* we found the remote address, modify current connection and save the old address */
 			if (con->plugin_ctx[p->id]) {
-				log_error_write(srv, __FILE__, __LINE__, "s", 
-						"patching an already patched connection!");
+				if (con->conf.log_request_handling) {
+					log_error_write(srv, __FILE__, __LINE__, "s",
+						"-- mod_extforward_uri_handler already patched this connection, resetting state");
+				}
 				handler_ctx_free(con->plugin_ctx[p->id]);
 				con->plugin_ctx[p->id] = NULL;
 			}
@@ -456,7 +459,7 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 			con->dst_addr = sock;
 			con->dst_addr_buf = buffer_init();
 			buffer_copy_string(con->dst_addr_buf, real_remote_addr);
-		
+
 			if (con->conf.log_request_handling) {
 				log_error_write(srv, __FILE__, __LINE__, "ss",
 						"patching con->dst_addr_buf for the accesslog:", real_remote_addr);

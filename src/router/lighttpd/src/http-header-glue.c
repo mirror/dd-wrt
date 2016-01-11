@@ -123,9 +123,9 @@ int http_response_redirect_to_directory(server *srv, connection *con) {
 
 	o = buffer_init();
 
-	buffer_copy_string_buffer(o, con->uri.scheme);
+	buffer_copy_buffer(o, con->uri.scheme);
 	buffer_append_string_len(o, CONST_STR_LEN("://"));
-	if (con->uri.authority->used) {
+	if (!buffer_is_empty(con->uri.authority)) {
 		buffer_append_string_buffer(o, con->uri.authority);
 	} else {
 		/* get the name of the currently connected socket */
@@ -197,13 +197,13 @@ int http_response_redirect_to_directory(server *srv, connection *con) {
 			}
 			if (default_port != srv->srvconf.port) {
 				buffer_append_string_len(o, CONST_STR_LEN(":"));
-				buffer_append_long(o, srv->srvconf.port);
+				buffer_append_int(o, srv->srvconf.port);
 			}
 		}
 	}
-	buffer_append_string_buffer(o, con->uri.path);
+	buffer_append_string_encoded(o, CONST_BUF_LEN(con->uri.path), ENCODING_REL_URI);
 	buffer_append_string_len(o, CONST_STR_LEN("/"));
-	if (!buffer_is_empty(con->uri.query)) {
+	if (!buffer_string_is_empty(con->uri.query)) {
 		buffer_append_string_len(o, CONST_STR_LEN("?"));
 		buffer_append_string_buffer(o, con->uri.query);
 	}
@@ -235,19 +235,20 @@ buffer * strftime_cache_get(server *srv, time_t last_mod) {
 	}
 
 	srv->mtime_cache[i].mtime = last_mod;
-	buffer_prepare_copy(srv->mtime_cache[i].str, 1024);
+	buffer_string_prepare_copy(srv->mtime_cache[i].str, 1023);
 	tm = gmtime(&(srv->mtime_cache[i].mtime));
-	srv->mtime_cache[i].str->used = strftime(srv->mtime_cache[i].str->ptr,
-						 srv->mtime_cache[i].str->size - 1,
-						 "%a, %d %b %Y %H:%M:%S GMT", tm);
-	srv->mtime_cache[i].str->used++;
+	buffer_append_strftime(srv->mtime_cache[i].str, "%a, %d %b %Y %H:%M:%S GMT", tm);
 
 	return srv->mtime_cache[i].str;
 }
 
 
 int http_response_handle_cachable(server *srv, connection *con, buffer *mtime) {
+	int head_or_get =
+		(  HTTP_METHOD_GET  == con->request.http_method
+		|| HTTP_METHOD_HEAD == con->request.http_method);
 	UNUSED(srv);
+
 	/*
 	 * 14.26 If-None-Match
 	 *    [...]
@@ -258,12 +259,12 @@ int http_response_handle_cachable(server *srv, connection *con, buffer *mtime) {
 	 *    return a 304 (Not Modified) response.
 	 */
 
-	/* last-modified handling */
 	if (con->request.http_if_none_match) {
-		if (etag_is_equal(con->physical.etag, con->request.http_if_none_match)) {
-			if (con->request.http_method == HTTP_METHOD_GET ||
-			    con->request.http_method == HTTP_METHOD_HEAD) {
-
+		/* use strong etag checking for now: weak comparison must not be used
+		 * for ranged requests
+		 */
+		if (etag_is_equal(con->physical.etag, con->request.http_if_none_match, 0)) {
+			if (head_or_get) {
 				con->http_status = 304;
 				return HANDLER_FINISHED;
 			} else {
@@ -272,9 +273,8 @@ int http_response_handle_cachable(server *srv, connection *con, buffer *mtime) {
 				return HANDLER_FINISHED;
 			}
 		}
-	} else if (con->request.http_if_modified_since &&
-	           (con->request.http_method == HTTP_METHOD_GET ||
-	            con->request.http_method == HTTP_METHOD_HEAD)) {
+	} else if (con->request.http_if_modified_since && head_or_get) {
+		/* last-modified handling */
 		size_t used_len;
 		char *semicolon;
 

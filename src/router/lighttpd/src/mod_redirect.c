@@ -47,6 +47,8 @@ FREE_FUNC(mod_redirect_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
+			if (NULL == s) continue;
+
 			pcre_keyvalue_buffer_free(s->redirect);
 
 			free(s);
@@ -79,9 +81,9 @@ SETDEFAULTS_FUNC(mod_redirect_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 		size_t j;
-		array *ca;
 		data_unset *du;
 		data_array *da;
 
@@ -93,13 +95,12 @@ SETDEFAULTS_FUNC(mod_redirect_set_defaults) {
 		cv[1].destination = &(s->redirect_code);
 
 		p->config_storage[i] = s;
-		ca = ((data_config *)srv->config_context->data[i])->value;
 
-		if (0 != config_insert_values_global(srv, ca, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 
-		if (NULL == (du = array_get_element(ca, "url.redirect"))) {
+		if (NULL == (du = array_get_element(config->value, "url.redirect"))) {
 			/* no url.redirect defined */
 			continue;
 		}
@@ -129,6 +130,7 @@ SETDEFAULTS_FUNC(mod_redirect_set_defaults) {
 
 				log_error_write(srv, __FILE__, __LINE__, "sb",
 						"pcre-compile failed for", da->value->data[j]->key);
+				return HANDLER_ERROR;
 			}
 		}
 	}
@@ -182,7 +184,7 @@ static handler_t mod_redirect_uri_handler(server *srv, connection *con, void *p_
 
 	mod_redirect_patch_connection(srv, con, p);
 
-	buffer_copy_string_buffer(p->match_buf, con->request.uri);
+	buffer_copy_buffer(p->match_buf, con->request.uri);
 
 	for (i = 0; i < p->conf.redirect->used; i++) {
 		pcre *match;
@@ -197,9 +199,9 @@ static handler_t mod_redirect_uri_handler(server *srv, connection *con, void *p_
 		match       = kv->key;
 		extra       = kv->key_extra;
 		pattern     = kv->value->ptr;
-		pattern_len = kv->value->used - 1;
+		pattern_len = buffer_string_length(kv->value);
 
-		if ((n = pcre_exec(match, extra, p->match_buf->ptr, p->match_buf->used - 1, 0, 0, ovec, 3 * N)) < 0) {
+		if ((n = pcre_exec(match, extra, CONST_BUF_LEN(p->match_buf), 0, 0, ovec, 3 * N)) < 0) {
 			if (n != PCRE_ERROR_NOMATCH) {
 				log_error_write(srv, __FILE__, __LINE__, "sd",
 						"execution error while matching: ", n);

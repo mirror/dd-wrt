@@ -24,7 +24,7 @@
 /* handle global options */
 
 /* parse config array */
-int config_insert_values_internal(server *srv, array *ca, const config_values_t cv[]) {
+int config_insert_values_internal(server *srv, array *ca, const config_values_t cv[], config_scope_type_t scope) {
 	size_t i;
 	data_unset *du;
 
@@ -34,6 +34,14 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
 			/* no found */
 
 			continue;
+		}
+
+		if ((T_CONFIG_SCOPE_SERVER == cv[i].scope)
+		    && (T_CONFIG_SCOPE_SERVER != scope)) {
+			/* server scope options should only be set in server scope, not in conditionals */
+			log_error_write(srv, __FILE__, __LINE__, "ss",
+				"DEPRECATED: don't set server options in conditionals, variable:",
+				cv[i].key);
 		}
 
 		switch (cv[i].type) {
@@ -46,19 +54,19 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
 					if (da->value->data[j]->type == TYPE_STRING) {
 						data_string *ds = data_string_init();
 
-						buffer_copy_string_buffer(ds->value, ((data_string *)(da->value->data[j]))->value);
+						buffer_copy_buffer(ds->value, ((data_string *)(da->value->data[j]))->value);
 						if (!da->is_index_key) {
 							/* the id's were generated automaticly, as we copy now we might have to renumber them
 							 * this is used to prepend server.modules by mod_indexfile as it has to be loaded
 							 * before mod_fastcgi and friends */
-							buffer_copy_string_buffer(ds->key, ((data_string *)(da->value->data[j]))->key);
+							buffer_copy_buffer(ds->key, ((data_string *)(da->value->data[j]))->key);
 						}
 
 						array_insert_unique(cv[i].destination, (data_unset *)ds);
 					} else {
-						log_error_write(srv, __FILE__, __LINE__, "sssd",
-								"the key of an array can only be a string or a integer, variable:",
-								cv[i].key, "type:", da->value->data[j]->type);
+						log_error_write(srv, __FILE__, __LINE__, "sssbsd",
+								"the value of an array can only be a string, variable:",
+								cv[i].key, "[", da->value->data[j]->key, "], type:", da->value->data[j]->type);
 
 						return -1;
 					}
@@ -73,7 +81,7 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
 			if (du->type == TYPE_STRING) {
 				data_string *ds = (data_string *)du;
 
-				buffer_copy_string_buffer(cv[i].destination, ds->value);
+				buffer_copy_buffer(cv[i].destination, ds->value);
 			} else {
 				log_error_write(srv, __FILE__, __LINE__, "ssss", cv[i].key, "should have been a string like ... = \"...\"");
 
@@ -135,7 +143,6 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
 					}
 				}
 
-
 				log_error_write(srv, __FILE__, __LINE__, "ssb", "got a string but expected an integer:", cv[i].key, ds->value);
 
 				return -1;
@@ -185,7 +192,7 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
 	return 0;
 }
 
-int config_insert_values_global(server *srv, array *ca, const config_values_t cv[]) {
+int config_insert_values_global(server *srv, array *ca, const config_values_t cv[], config_scope_type_t scope) {
 	size_t i;
 	data_unset *du;
 
@@ -202,12 +209,12 @@ int config_insert_values_global(server *srv, array *ca, const config_values_t cv
 		touched = data_string_init();
 
 		buffer_copy_string_len(touched->value, CONST_STR_LEN(""));
-		buffer_copy_string_buffer(touched->key, du->key);
+		buffer_copy_buffer(touched->key, du->key);
 
 		array_insert_unique(srv->config_touched, (data_unset *)touched);
 	}
 
-	return config_insert_values_internal(srv, ca, cv);
+	return config_insert_values_internal(srv, ca, cv, scope);
 }
 
 static unsigned short sock_addr_get_port(sock_addr *addr) {
@@ -285,7 +292,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 	case COMP_HTTP_HOST: {
 		char *ck_colon = NULL, *val_colon = NULL;
 
-		if (!buffer_is_empty(con->uri.authority)) {
+		if (!buffer_string_is_empty(con->uri.authority)) {
 
 			/*
 			 * append server-port to the HTTP_POST if necessary
@@ -301,9 +308,9 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 
 				if (NULL != ck_colon && NULL == val_colon) {
 					/* condition "host:port" but client send "host" */
-					buffer_copy_string_buffer(srv->cond_check_buf, l);
+					buffer_copy_buffer(srv->cond_check_buf, l);
 					buffer_append_string_len(srv->cond_check_buf, CONST_STR_LEN(":"));
-					buffer_append_long(srv->cond_check_buf, sock_addr_get_port(&(srv_sock->addr)));
+					buffer_append_int(srv->cond_check_buf, sock_addr_get_port(&(srv_sock->addr)));
 					l = srv->cond_check_buf;
 				} else if (NULL != val_colon && NULL == ck_colon) {
 					/* condition "host" but client send "host:port" */
@@ -315,7 +322,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 				break;
 			}
 #if defined USE_OPENSSL && ! defined OPENSSL_NO_TLSEXT
-		} else if (!buffer_is_empty(con->tlsext_server_name)) {
+		} else if (!buffer_string_is_empty(con->tlsext_server_name)) {
 			l = con->tlsext_server_name;
 #endif
 		} else {
@@ -357,6 +364,12 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 				return COND_RESULT_FALSE;
 			}
 
+			if (nm_bits > 32 || nm_bits < 0) {
+				log_error_write(srv, __FILE__, __LINE__, "sbs", "ERROR: invalid netmask:", dc->string, err);
+
+				return COND_RESULT_FALSE;
+			}
+
 			/* take IP convert to the native */
 			buffer_copy_string_len(srv->cond_check_buf, dc->string->ptr, nm_slash - dc->string->ptr);
 #ifdef __WIN32
@@ -375,7 +388,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 #endif
 
 			/* build netmask */
-			nm = htonl(~((1 << (32 - nm_bits)) - 1));
+			nm = nm_bits ? htonl(~((1 << (32 - nm_bits)) - 1)) : 0;
 
 			if ((val_inp.s_addr & nm) == (con->dst_addr.ipv4.sin_addr.s_addr & nm)) {
 				return (dc->cond == CONFIG_COND_EQ) ? COND_RESULT_TRUE : COND_RESULT_FALSE;
@@ -485,7 +498,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 #ifndef elementsof
 #define elementsof(x) (sizeof(x) / sizeof(x[0]))
 #endif
-		n = pcre_exec(dc->regex, dc->regex_study, l->ptr, l->used - 1, 0, 0,
+		n = pcre_exec(dc->regex, dc->regex_study, CONST_BUF_LEN(l), 0, 0,
 				cache->matches, elementsof(cache->matches));
 
 		cache->patterncount = n;

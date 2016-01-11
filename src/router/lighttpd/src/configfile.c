@@ -26,138 +26,158 @@ static int config_insert(server *srv) {
 	buffer *stat_cache_string;
 
 	config_values_t cv[] = {
-		{ "server.bind",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 0 */
-		{ "server.errorlog",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 1 */
-		{ "server.errorfile-prefix",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
-		{ "server.chroot",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
-		{ "server.username",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 4 */
-		{ "server.groupname",            NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 5 */
-		{ "server.port",                 NULL, T_CONFIG_SHORT,  T_CONFIG_SCOPE_SERVER },      /* 6 */
-		{ "server.tag",                  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 7 */
-		{ "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 8 */
-		{ "server.modules",              NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_SERVER },       /* 9 */
+		{ "server.bind",                       NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 0 */
+		{ "server.errorlog",                   NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 1 */
+		{ "server.errorfile-prefix",           NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 2 */
+		{ "server.chroot",                     NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 3 */
+		{ "server.username",                   NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 4 */
+		{ "server.groupname",                  NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 5 */
+		{ "server.port",                       NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_SERVER     }, /* 6 */
+		{ "server.tag",                        NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 7 */
+		{ "server.use-ipv6",                   NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 8 */
+		{ "server.modules",                    NULL, T_CONFIG_ARRAY,   T_CONFIG_SCOPE_SERVER     }, /* 9 */
 
-		{ "server.event-handler",        NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 10 */
-		{ "server.pid-file",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 11 */
-		{ "server.max-request-size",     NULL, T_CONFIG_INT, T_CONFIG_SCOPE_CONNECTION },     /* 12 */
-		{ "server.max-worker",           NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 13 */
-		{ "server.document-root",        NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 14 */
-		{ "server.force-lowercase-filenames", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },/* 15 */
-		{ "debug.log-condition-handling", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },    /* 16 */
-		{ "server.max-keep-alive-requests", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },/* 17 */
-		{ "server.name",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 18 */
-		{ "server.max-keep-alive-idle",  NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 19 */
+		{ "server.event-handler",              NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 10 */
+		{ "server.pid-file",                   NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 11 */
+		{ "server.max-request-size",           NULL, T_CONFIG_INT,     T_CONFIG_SCOPE_SERVER     }, /* 12 */
+		{ "server.max-worker",                 NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_SERVER     }, /* 13 */
+		{ "server.document-root",              NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 14 */
+		{ "server.force-lowercase-filenames",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 15 */
+		{ "debug.log-condition-handling",      NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 16 */
+		{ "server.max-keep-alive-requests",    NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 17 */
+		{ "server.name",                       NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 18 */
+		{ "server.max-keep-alive-idle",        NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 19 */
 
-		{ "server.max-read-idle",        NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 20 */
-		{ "server.max-write-idle",       NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 21 */
-		{ "server.error-handler-404",    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 22 */
-		{ "server.max-fds",              NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 23 */
+		{ "server.max-read-idle",              NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 20 */
+		{ "server.max-write-idle",             NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 21 */
+		{ "server.error-handler-404",          NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 22 */
+		{ "server.max-fds",                    NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_SERVER     }, /* 23 */
 #ifdef HAVE_LSTAT
-		{ "server.follow-symlink",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 24 */
+		{ "server.follow-symlink",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 24 */
 #else
 		{ "server.follow-symlink",
-		  "Your system lacks lstat(). We can not differ symlinks from files."
-		  "Please remove server.follow-symlinks from your config.",
-		  T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET }, /* 24 */
+			"Your system lacks lstat(). We can not differ symlinks from files."
+			"Please remove server.follow-symlinks from your config.",
+			T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET },
 #endif
-		{ "server.kbytes-per-second",    NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 25 */
-		{ "connection.kbytes-per-second", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },  /* 26 */
-		{ "mimetype.use-xattr",          NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 27 */
-		{ "mimetype.assign",             NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },   /* 28 */
-		{ "ssl.pemfile",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 29 */
+		{ "server.kbytes-per-second",          NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 25 */
+		{ "connection.kbytes-per-second",      NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 26 */
+		{ "mimetype.use-xattr",                NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 27 */
+		{ "mimetype.assign",                   NULL, T_CONFIG_ARRAY,   T_CONFIG_SCOPE_CONNECTION }, /* 28 */
+		{ "ssl.pemfile",                       NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 29 */
 
-		{ "ssl.engine",                  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 30 */
+		{ "ssl.engine",                        NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 30 */
+		{ "debug.log-file-not-found",          NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 31 */
+		{ "debug.log-request-handling",        NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 32 */
+		{ "debug.log-response-header",         NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 33 */
+		{ "debug.log-request-header",          NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 34 */
+		{ "debug.log-ssl-noise",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 35 */
+		{ "server.protocol-http11",            NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 36 */
+		{ "debug.log-request-header-on-error", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 37 */
+		{ "debug.log-state-handling",          NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 38 */
+		{ "ssl.ca-file",                       NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 39 */
 
-		{ "debug.log-file-not-found",    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 31 */
-		{ "debug.log-request-handling",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 32 */
-		{ "debug.log-response-header",   NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 33 */
-		{ "debug.log-request-header",    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 34 */
-		{ "debug.log-ssl-noise",         NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 35 */
+		{ "server.errorlog-use-syslog",        NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 40 */
+		{ "server.range-requests",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 41 */
+		{ "server.stat-cache-engine",          NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 42 */
+		{ "server.max-connections",            NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_SERVER     }, /* 43 */
+		{ "server.network-backend",            NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 44 */
+		{ "server.upload-dirs",                NULL, T_CONFIG_ARRAY,   T_CONFIG_SCOPE_SERVER     }, /* 45 */
+		{ "server.core-files",                 NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 46 */
+		{ "ssl.cipher-list",                   NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 47 */
+		{ "ssl.use-sslv2",                     NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 48 */
+		{ "etag.use-inode",                    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 49 */
 
-		{ "server.protocol-http11",      NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 36 */
-		{ "debug.log-request-header-on-error", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER }, /* 37 */
-		{ "debug.log-state-handling",    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 38 */
-		{ "ssl.ca-file",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 39 */
+		{ "etag.use-mtime",                    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 50 */
+		{ "etag.use-size",                     NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 51 */
+		{ "server.reject-expect-100-with-417", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 52 */
+		{ "debug.log-timeouts",                NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 53 */
+		{ "server.defer-accept",               NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 54 */
+		{ "server.breakagelog",                NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 55 */
+		{ "ssl.verifyclient.activate",         NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 56 */
+		{ "ssl.verifyclient.enforce",          NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 57 */
+		{ "ssl.verifyclient.depth",            NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 58 */
+		{ "ssl.verifyclient.username",         NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 59 */
 
-		{ "server.errorlog-use-syslog",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 40 */
-		{ "server.range-requests",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 41 */
-		{ "server.stat-cache-engine",    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 42 */
-		{ "server.max-connections",      NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 43 */
-		{ "server.network-backend",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 44 */
-		{ "server.upload-dirs",          NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },   /* 45 */
-		{ "server.core-files",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 46 */
-		{ "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 47 */
-		{ "ssl.use-sslv2",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 48 */
-		{ "etag.use-inode",              NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 49 */
-		{ "etag.use-mtime",              NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 50 */
-		{ "etag.use-size",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 51 */
-		{ "server.reject-expect-100-with-417",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER }, /* 52 */
-		{ "debug.log-timeouts",          NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 53 */
-		{ "server.defer-accept",         NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 54 */
-		{ "server.breakagelog",          NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 55 */
-		{ "ssl.verifyclient.activate",   NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 56 */
-		{ "ssl.verifyclient.enforce",    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 57 */
-		{ "ssl.verifyclient.depth",      NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_SERVER },     /* 58 */
-		{ "ssl.verifyclient.username",   NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER },     /* 59 */
-		{ "ssl.verifyclient.exportcert", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 60 */
+		{ "ssl.verifyclient.exportcert",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 60 */
+		{ "server.set-v6only",                 NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 61 */
+		{ "ssl.use-sslv3",                     NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 62 */
+		{ "ssl.dh-file",                       NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 63 */
+		{ "ssl.ec-curve",                      NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 64 */
+		{ "ssl.disable-client-renegotiation",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 65 */
+		{ "ssl.honor-cipher-order",            NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 66 */
+		{ "ssl.empty-fragments",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 67 */
+		{ "server.upload-temp-file-size",      NULL, T_CONFIG_INT,     T_CONFIG_SCOPE_SERVER     }, /* 68 */
 
-		{ "server.set-v6only",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 61 */
-		{ "ssl.use-sslv3",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 62 */
-		{ "ssl.dh-file",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 63 */
-		{ "ssl.ec-curve",                NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 64 */
-		{ "ssl.disable-client-renegotiation", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },/* 65 */
-		{ "ssl.honor-cipher-order",      NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 66 */
-		{ "ssl.empty-fragments",         NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 67 */
+		{ "server.host",
+			"use server.bind instead",
+			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "server.docroot",
+			"use server.document-root instead",
+			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "server.virtual-root",
+			"load mod_simple_vhost and use simple-vhost.server-root instead",
+			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "server.virtual-default-host",
+			"load mod_simple_vhost and use simple-vhost.default-host instead",
+			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "server.virtual-docroot",
+			"load mod_simple_vhost and use simple-vhost.document-root instead",
+			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "server.userid",
+			"use server.username instead",
+			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "server.groupid",
+			"use server.groupname instead",
+			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "server.use-keep-alive",
+			"use server.max-keep-alive-requests = 0 instead",
+			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "server.force-lower-case-files",
+			"use server.force-lowercase-filenames instead",
+			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
 
-		{ "server.host",                 "use server.bind instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.docroot",              "use server.document-root instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.virtual-root",         "load mod_simple_vhost and use simple-vhost.server-root instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.virtual-default-host", "load mod_simple_vhost and use simple-vhost.default-host instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.virtual-docroot",      "load mod_simple_vhost and use simple-vhost.document-root instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.userid",               "use server.username instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.groupid",              "use server.groupname instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.use-keep-alive",       "use server.max-keep-alive-requests = 0 instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.force-lower-case-files",       "use server.force-lowercase-filenames instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-
-		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+		{ NULL,                                NULL, T_CONFIG_UNSET,   T_CONFIG_SCOPE_UNSET      }
 	};
 
-
-	/* 0 */
+	/* all T_CONFIG_SCOPE_SERVER options */
 	cv[0].destination = srv->srvconf.bindhost;
 	cv[1].destination = srv->srvconf.errorlog_file;
 	cv[3].destination = srv->srvconf.changeroot;
 	cv[4].destination = srv->srvconf.username;
 	cv[5].destination = srv->srvconf.groupname;
 	cv[6].destination = &(srv->srvconf.port);
-
 	cv[9].destination = srv->srvconf.modules;
+
 	cv[10].destination = srv->srvconf.event_handler;
 	cv[11].destination = srv->srvconf.pid_file;
-
+	cv[12].destination = &(srv->srvconf.max_request_size);
 	cv[13].destination = &(srv->srvconf.max_worker);
+
 	cv[23].destination = &(srv->srvconf.max_fds);
+
 	cv[37].destination = &(srv->srvconf.log_request_header_on_error);
 	cv[38].destination = &(srv->srvconf.log_state_handling);
 
 	cv[40].destination = &(srv->srvconf.errorlog_use_syslog);
-
 	stat_cache_string = buffer_init();
 	cv[42].destination = stat_cache_string;
+	cv[43].destination = &(srv->srvconf.max_conns);
 	cv[44].destination = srv->srvconf.network_backend;
 	cv[45].destination = srv->srvconf.upload_tempdirs;
 	cv[46].destination = &(srv->srvconf.enable_cores);
 
-	cv[43].destination = &(srv->srvconf.max_conns);
-	cv[12].destination = &(srv->srvconf.max_request_size);
 	cv[52].destination = &(srv->srvconf.reject_expect_100_with_417);
 	cv[55].destination = srv->srvconf.breakagelog_file;
+
+	cv[68].destination = &(srv->srvconf.upload_temp_file_size);
 
 	srv->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
 
 	force_assert(srv->config_storage);
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		specific_config *s;
 
 		s = calloc(1, sizeof(specific_config));
@@ -182,7 +202,7 @@ static int config_insert(server *srv) {
 		s->ssl_honor_cipher_order = 1;
 		s->ssl_empty_fragments = 0;
 		s->ssl_use_sslv2 = 0;
-		s->ssl_use_sslv3 = 1;
+		s->ssl_use_sslv3 = 0;
 		s->use_ipv6      = 0;
 		s->set_v6only    = 1;
 		s->defer_accept  = 0;
@@ -206,74 +226,70 @@ static int config_insert(server *srv) {
 		s->ssl_verifyclient_export_cert = 0;
 		s->ssl_disable_client_renegotiation = 1;
 
+		/* all T_CONFIG_SCOPE_CONNECTION options */
 		cv[2].destination = s->errorfile_prefix;
-
 		cv[7].destination = s->server_tag;
 		cv[8].destination = &(s->use_ipv6);
-		cv[61].destination = &(s->set_v6only);
-		cv[54].destination = &(s->defer_accept);
 
-
-		/* 13 max-worker */
 		cv[14].destination = s->document_root;
 		cv[15].destination = &(s->force_lowercase_filenames);
 		cv[16].destination = &(s->log_condition_handling);
 		cv[17].destination = &(s->max_keep_alive_requests);
 		cv[18].destination = s->server_name;
 		cv[19].destination = &(s->max_keep_alive_idle);
+
 		cv[20].destination = &(s->max_read_idle);
 		cv[21].destination = &(s->max_write_idle);
 		cv[22].destination = s->error_handler;
 #ifdef HAVE_LSTAT
 		cv[24].destination = &(s->follow_symlink);
 #endif
-		/* 23 -> max-fds */
 		cv[25].destination = &(s->global_kbytes_per_second);
 		cv[26].destination = &(s->kbytes_per_second);
 		cv[27].destination = &(s->use_xattr);
 		cv[28].destination = s->mimetypes;
 		cv[29].destination = s->ssl_pemfile;
-		cv[30].destination = &(s->ssl_enabled);
 
+		cv[30].destination = &(s->ssl_enabled);
 		cv[31].destination = &(s->log_file_not_found);
 		cv[32].destination = &(s->log_request_handling);
 		cv[33].destination = &(s->log_response_header);
 		cv[34].destination = &(s->log_request_header);
 		cv[35].destination = &(s->log_ssl_noise);
-		cv[53].destination = &(s->log_timeouts);
-
 		cv[36].destination = &(s->allow_http11);
 		cv[39].destination = s->ssl_ca_file;
-		cv[41].destination = &(s->range_requests);
 
+		cv[41].destination = &(s->range_requests);
 		cv[47].destination = s->ssl_cipher_list;
 		cv[48].destination = &(s->ssl_use_sslv2);
-		cv[62].destination = &(s->ssl_use_sslv3);
-		cv[63].destination = s->ssl_dh_file;
-		cv[64].destination = s->ssl_ec_curve;
-		cv[66].destination = &(s->ssl_honor_cipher_order);
-		cv[67].destination = &(s->ssl_empty_fragments);
-
 		cv[49].destination = &(s->etag_use_inode);
+
 		cv[50].destination = &(s->etag_use_mtime);
 		cv[51].destination = &(s->etag_use_size);
-
-		/* ssl.verify */
+		cv[53].destination = &(s->log_timeouts);
+		cv[54].destination = &(s->defer_accept);
 		cv[56].destination = &(s->ssl_verifyclient);
 		cv[57].destination = &(s->ssl_verifyclient_enforce);
 		cv[58].destination = &(s->ssl_verifyclient_depth);
 		cv[59].destination = s->ssl_verifyclient_username;
+
 		cv[60].destination = &(s->ssl_verifyclient_export_cert);
+		cv[61].destination = &(s->set_v6only);
+		cv[62].destination = &(s->ssl_use_sslv3);
+		cv[63].destination = s->ssl_dh_file;
+		cv[64].destination = s->ssl_ec_curve;
 		cv[65].destination = &(s->ssl_disable_client_renegotiation);
+		cv[66].destination = &(s->ssl_honor_cipher_order);
+		cv[67].destination = &(s->ssl_empty_fragments);
 
 		srv->config_storage[i] = s;
 
-		if (0 != (ret = config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv))) {
+		if (0 != (ret = config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION))) {
 			break;
 		}
 	}
 
-	if (buffer_is_empty(stat_cache_string)) {
+	if (buffer_string_is_empty(stat_cache_string)) {
 		srv->srvconf.stat_cache_engine = STAT_CACHE_ENGINE_SIMPLE;
 	} else if (buffer_is_equal_string(stat_cache_string, CONST_STR_LEN("simple"))) {
 		srv->srvconf.stat_cache_engine = STAT_CACHE_ENGINE_SIMPLE;
@@ -323,7 +339,7 @@ int config_setup_connection(server *srv, connection *con) {
 	PATCH(global_bytes_per_second_cnt);
 
 	con->conf.global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
-	buffer_copy_string_buffer(con->server_name, s->server_name);
+	buffer_copy_buffer(con->server_name, s->server_name);
 
 	PATCH(log_request_header);
 	PATCH(log_response_header);
@@ -442,7 +458,7 @@ int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
 				PATCH(follow_symlink);
 #endif
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.name"))) {
-				buffer_copy_string_buffer(con->server_name, s->server_name);
+				buffer_copy_buffer(con->server_name, s->server_name);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.tag"))) {
 				PATCH(server_tag);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("connection.kbytes-per-second"))) {
@@ -512,7 +528,7 @@ typedef struct {
 
 #if 0
 static int tokenizer_open(server *srv, tokenizer_t *t, buffer *basedir, const char *fn) {
-	if (buffer_is_empty(basedir) ||
+	if (buffer_string_is_empty(basedir) ||
 			(fn[0] == '/' || fn[0] == '\\') ||
 			(fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\'))) {
 		t->file = buffer_init_string(fn);
@@ -931,10 +947,11 @@ static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
 	int ret;
 
 	pParser = configparserAlloc( malloc );
+	force_assert(pParser);
 	lasttoken = buffer_init();
 	token = buffer_init();
 	while((1 == (ret = config_tokenizer(srv, t, &token_id, token))) && context->ok) {
-		buffer_copy_string_buffer(lasttoken, token);
+		buffer_copy_buffer(lasttoken, token);
 		configparser(pParser, token_id, token, context);
 
 		token = buffer_init();
@@ -986,7 +1003,7 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
 	int ret;
 	buffer *filename;
 
-	if (buffer_is_empty(context->basedir) ||
+	if (buffer_string_is_empty(context->basedir) ||
 			(fn[0] == '/' || fn[0] == '\\') ||
 			(fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\'))) {
 		filename = buffer_init_string(fn);
@@ -996,14 +1013,9 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
 	}
 
 	if (0 != stream_open(&s, filename)) {
-		if (s.size == 0) {
-			/* the file was empty, nothing to parse */
-			ret = 0;
-		} else {
-			log_error_write(srv, __FILE__, __LINE__, "sbss",
-					"opening configfile ", filename, "failed:", strerror(errno));
-			ret = -1;
-		} 
+		log_error_write(srv, __FILE__, __LINE__, "sbss",
+				"opening configfile ", filename, "failed:", strerror(errno));
+		ret = -1;
 	} else {
 		tokenizer_init(&t, filename, s.start, s.size);
 		ret = config_parse(srv, context, &t);
@@ -1050,29 +1062,39 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 
 	if (NULL == (oldpwd = getCWD())) {
 		log_error_write(srv, __FILE__, __LINE__, "s",
-				"cannot get cwd", strerror(errno));
+			"cannot get cwd", strerror(errno));
 		return -1;
+	}
+
+	if (!buffer_string_is_empty(context->basedir)) {
+		if (0 != chdir(context->basedir->ptr)) {
+			log_error_write(srv, __FILE__, __LINE__, "sbs",
+				"cannot change directory to", context->basedir, strerror(errno));
+			free(oldpwd);
+			return -1;
+		}
 	}
 
 	source = buffer_init_string(cmd);
 	out = buffer_init();
 
-	if (!buffer_is_empty(context->basedir)) {
-		chdir(context->basedir->ptr);
-	}
-
 	if (0 != proc_open_buffer(cmd, NULL, out, NULL)) {
 		log_error_write(srv, __FILE__, __LINE__, "sbss",
-				"opening", source, "failed:", strerror(errno));
+			"opening", source, "failed:", strerror(errno));
 		ret = -1;
 	} else {
-		tokenizer_init(&t, source, out->ptr, out->used);
+		tokenizer_init(&t, source, CONST_BUF_LEN(out));
 		ret = config_parse(srv, context, &t);
 	}
 
 	buffer_free(source);
 	buffer_free(out);
-	chdir(oldpwd);
+	if (0 != chdir(oldpwd)) {
+		log_error_write(srv, __FILE__, __LINE__, "sss",
+			"cannot change directory to", oldpwd, strerror(errno));
+		free(oldpwd);
+		return -1;
+	}
 	free(oldpwd);
 	return ret;
 }
@@ -1128,9 +1150,9 @@ int config_read(server *srv, const char *fn) {
 	array_insert_unique(srv->config, (data_unset *)dpid);
 
 	dcwd = data_string_init();
-	buffer_prepare_copy(dcwd->value, 1024);
+	buffer_string_prepare_copy(dcwd->value, 1023);
 	if (NULL != getcwd(dcwd->value->ptr, dcwd->value->size - 1)) {
-		dcwd->value->used = strlen(dcwd->value->ptr) + 1;
+		buffer_commit(dcwd->value, strlen(dcwd->value->ptr));
 		buffer_copy_string_len(dcwd->key, CONST_STR_LEN("var.CWD"));
 		array_insert_unique(srv->config, (data_unset *)dcwd);
 	} else {
@@ -1173,7 +1195,7 @@ int config_read(server *srv, const char *fn) {
 
 		prepends = (data_array *)configparser_merge_data((data_unset *)prepends, (data_unset *)modules);
 		force_assert(NULL != prepends);
-		buffer_copy_string_buffer(prepends->key, modules->key);
+		buffer_copy_buffer(prepends->key, modules->key);
 		array_replace(srv->config, (data_unset *)prepends);
 		modules->free((data_unset *)modules);
 		modules = prepends;
@@ -1255,7 +1277,7 @@ int config_set_defaults(server *srv) {
 		{ FDEVENT_HANDLER_UNSET,          NULL }
 	};
 
-	if (!buffer_is_empty(srv->srvconf.changeroot)) {
+	if (!buffer_string_is_empty(srv->srvconf.changeroot)) {
 		if (-1 == stat(srv->srvconf.changeroot->ptr, &st1)) {
 			log_error_write(srv, __FILE__, __LINE__, "sb",
 					"server.chroot doesn't exist:", srv->srvconf.changeroot);
@@ -1268,14 +1290,14 @@ int config_set_defaults(server *srv) {
 		}
 	}
 
-	if (buffer_is_empty(s->document_root)) {
+	if (buffer_string_is_empty(s->document_root)) {
 		log_error_write(srv, __FILE__, __LINE__, "s",
 				"a default document-root has to be set");
 
 		return -1;
 	}
 
-	buffer_copy_string_buffer(srv->tmp_buf, s->document_root);
+	buffer_copy_buffer(srv->tmp_buf, s->document_root);
 
 	buffer_to_lower(srv->tmp_buf);
 
@@ -1288,7 +1310,7 @@ int config_set_defaults(server *srv) {
 			is_lower = buffer_is_equal(srv->tmp_buf, s->document_root);
 
 			/* lower-case existed, check upper-case */
-			buffer_copy_string_buffer(srv->tmp_buf, s->document_root);
+			buffer_copy_buffer(srv->tmp_buf, s->document_root);
 
 			buffer_to_upper(srv->tmp_buf);
 
@@ -1320,7 +1342,7 @@ int config_set_defaults(server *srv) {
 		srv->srvconf.port = s->ssl_enabled ? 443 : 80;
 	}
 
-	if (srv->srvconf.event_handler->used == 0) {
+	if (buffer_string_is_empty(srv->srvconf.event_handler)) {
 		/* choose a good default
 		 *
 		 * the event_handler list is sorted by 'goodness'
@@ -1356,7 +1378,7 @@ int config_set_defaults(server *srv) {
 	}
 
 	if (s->ssl_enabled) {
-		if (buffer_is_empty(s->ssl_pemfile)) {
+		if (buffer_string_is_empty(s->ssl_pemfile)) {
 			/* PEM file is require */
 
 			log_error_write(srv, __FILE__, __LINE__, "s",

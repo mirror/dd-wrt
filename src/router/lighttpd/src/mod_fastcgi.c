@@ -52,13 +52,6 @@
 
 #include "version.h"
 
-#define FCGI_ENV_ADD_CHECK(ret, con) \
-	if (ret == -1) { \
-		con->http_status = 400; \
-		con->file_finished = 1; \
-		return -1; \
-	};
-
 /*
  *
  * TODO:
@@ -318,7 +311,6 @@ typedef struct {
 	buffer *fcgi_env;
 
 	buffer *path;
-	buffer *parse_response;
 
 	buffer *statuskey;
 
@@ -391,7 +383,7 @@ static void fastcgi_status_copy_procname(buffer *b, fcgi_extension_host *host, f
 	buffer_append_string_buffer(b, host->id);
 	if (proc) {
 		buffer_append_string_len(b, CONST_STR_LEN("."));
-		buffer_append_long(b, proc->id);
+		buffer_append_int(b, proc->id);
 	}
 }
 
@@ -637,7 +629,7 @@ static int fastcgi_extension_insert(fcgi_exts *ext, buffer *key, fcgi_extension_
 		force_assert(fe);
 		fe->key = buffer_init();
 		fe->last_used_ndx = -1;
-		buffer_copy_string_buffer(fe->key, key);
+		buffer_copy_buffer(fe->key, key);
 
 		/* */
 
@@ -679,7 +671,6 @@ INIT_FUNC(mod_fastcgi_init) {
 	p->fcgi_env = buffer_init();
 
 	p->path = buffer_init();
-	p->parse_response = buffer_init();
 
 	p->statuskey = buffer_init();
 
@@ -694,7 +685,6 @@ FREE_FUNC(mod_fastcgi_free) {
 
 	buffer_free(p->fcgi_env);
 	buffer_free(p->path);
-	buffer_free(p->parse_response);
 	buffer_free(p->statuskey);
 
 	if (p->config_storage) {
@@ -703,7 +693,7 @@ FREE_FUNC(mod_fastcgi_free) {
 			plugin_config *s = p->config_storage[i];
 			fcgi_exts *exts;
 
-			if (!s) continue;
+			if (NULL == s) continue;
 
 			exts = s->exts;
 
@@ -724,7 +714,7 @@ FREE_FUNC(mod_fastcgi_free) {
 						}
 
 						if (proc->is_local &&
-						    !buffer_is_empty(proc->unixsocket)) {
+						    !buffer_string_is_empty(proc->unixsocket)) {
 							unlink(proc->unixsocket->ptr);
 						}
 					}
@@ -734,7 +724,7 @@ FREE_FUNC(mod_fastcgi_free) {
 							kill(proc->pid, host->kill_signal);
 						}
 						if (proc->is_local &&
-						    !buffer_is_empty(proc->unixsocket)) {
+						    !buffer_string_is_empty(proc->unixsocket)) {
 							unlink(proc->unixsocket->ptr);
 						}
 					}
@@ -794,7 +784,7 @@ static int parse_binpath(char_array *env, buffer *b) {
 	/* search for spaces */
 
 	start = b->ptr;
-	for (i = 0; i < b->used - 1; i++) {
+	for (i = 0; i < buffer_string_length(b); i++) {
 		switch(b->ptr[i]) {
 		case ' ':
 		case '\t':
@@ -868,24 +858,23 @@ static int fcgi_spawn_connection(server *srv,
 				"new proc, socket:", proc->port, proc->unixsocket);
 	}
 
-	if (!buffer_is_empty(proc->unixsocket)) {
-		memset(&fcgi_addr, 0, sizeof(fcgi_addr));
-
+	if (!buffer_string_is_empty(proc->unixsocket)) {
 #ifdef HAVE_SYS_UN_H
+		memset(&fcgi_addr_un, 0, sizeof(fcgi_addr_un));
 		fcgi_addr_un.sun_family = AF_UNIX;
-		if (proc->unixsocket->used > sizeof(fcgi_addr_un.sun_path)) {
+		if (buffer_string_length(proc->unixsocket) + 1 > sizeof(fcgi_addr_un.sun_path)) {
 			log_error_write(srv, __FILE__, __LINE__, "sB",
 					"ERROR: Unix Domain socket filename too long:",
 					proc->unixsocket);
 			return -1;
 		}
-		memcpy(fcgi_addr_un.sun_path, proc->unixsocket->ptr, proc->unixsocket->used);
+		memcpy(fcgi_addr_un.sun_path, proc->unixsocket->ptr, buffer_string_length(proc->unixsocket) + 1);
 
 #ifdef SUN_LEN
 		servlen = SUN_LEN(&fcgi_addr_un);
 #else
 		/* stevens says: */
-		servlen = proc->unixsocket->used + sizeof(fcgi_addr_un.sun_family);
+		servlen = buffer_string_length(proc->unixsocket) + 1 + sizeof(fcgi_addr_un.sun_family);
 #endif
 		socket_type = AF_UNIX;
 		fcgi_addr = (struct sockaddr *) &fcgi_addr_un;
@@ -899,9 +888,10 @@ static int fcgi_spawn_connection(server *srv,
 		return -1;
 #endif
 	} else {
+		memset(&fcgi_addr_in, 0, sizeof(fcgi_addr_in));
 		fcgi_addr_in.sin_family = AF_INET;
 
-		if (buffer_is_empty(host->host)) {
+		if (buffer_string_is_empty(host->host)) {
 			fcgi_addr_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 		} else {
 			struct hostent *he;
@@ -937,13 +927,13 @@ static int fcgi_spawn_connection(server *srv,
 		fcgi_addr = (struct sockaddr *) &fcgi_addr_in;
 
 		buffer_copy_string_len(proc->connection_name, CONST_STR_LEN("tcp:"));
-		if (!buffer_is_empty(host->host)) {
+		if (!buffer_string_is_empty(host->host)) {
 			buffer_append_string_buffer(proc->connection_name, host->host);
 		} else {
 			buffer_append_string_len(proc->connection_name, CONST_STR_LEN("localhost"));
 		}
 		buffer_append_string_len(proc->connection_name, CONST_STR_LEN(":"));
-		buffer_append_long(proc->connection_name, proc->port);
+		buffer_append_int(proc->connection_name, proc->port);
 	}
 
 	if (-1 == (fcgi_fd = socket(socket_type, SOCK_STREAM, 0))) {
@@ -958,7 +948,7 @@ static int fcgi_spawn_connection(server *srv,
 		int val;
 
 		if (errno != ENOENT &&
-		    !buffer_is_empty(proc->unixsocket)) {
+		    !buffer_string_is_empty(proc->unixsocket)) {
 			unlink(proc->unixsocket->ptr);
 		}
 
@@ -1182,8 +1172,8 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
-		array *ca;
 
 		s = malloc(sizeof(plugin_config));
 		s->exts          = fastcgi_extensions_init();
@@ -1195,9 +1185,8 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 		cv[2].destination = s->ext_mapping;
 
 		p->config_storage[i] = s;
-		ca = ((data_config *)srv->config_context->data[i])->value;
 
-		if (0 != config_insert_values_global(srv, ca, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			goto error;
 		}
 
@@ -1205,7 +1194,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 		 * <key> = ( ... )
 		 */
 
-		if (NULL != (du = array_get_element(ca, "fastcgi.server"))) {
+		if (NULL != (du = array_get_element(config->value, "fastcgi.server"))) {
 			size_t j;
 			data_array *da = (data_array *)du;
 
@@ -1285,7 +1274,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 					host = fastcgi_host_init();
 					buffer_reset(fcgi_mode);
 
-					buffer_copy_string_buffer(host->id, da_host->key);
+					buffer_copy_buffer(host->id, da_host->key);
 
 					host->check_local  = 1;
 					host->max_procs    = 4;
@@ -1315,12 +1304,12 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 					fcv[14].destination = &(host->kill_signal);
 					fcv[15].destination = &(host->fix_root_path_name);
 
-					if (0 != config_insert_values_internal(srv, da_host->value, fcv)) {
+					if (0 != config_insert_values_internal(srv, da_host->value, fcv, T_CONFIG_SCOPE_CONNECTION)) {
 						goto error;
 					}
 
-					if ((!buffer_is_empty(host->host) || host->port) &&
-					    !buffer_is_empty(host->unixsocket)) {
+					if ((!buffer_string_is_empty(host->host) || host->port) &&
+					    !buffer_string_is_empty(host->unixsocket)) {
 						log_error_write(srv, __FILE__, __LINE__, "sbsbsbs",
 								"either host/port or socket have to be set in:",
 								da->key, "= (",
@@ -1330,11 +1319,11 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 						goto error;
 					}
 
-					if (!buffer_is_empty(host->unixsocket)) {
+					if (!buffer_string_is_empty(host->unixsocket)) {
 						/* unix domain socket */
 						struct sockaddr_un un;
 
-						if (host->unixsocket->used > sizeof(un.sun_path) - 2) {
+						if (buffer_string_length(host->unixsocket) + 1 > sizeof(un.sun_path) - 2) {
 							log_error_write(srv, __FILE__, __LINE__, "sbsbsbs",
 									"unixsocket is too long in:",
 									da->key, "= (",
@@ -1346,8 +1335,8 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 					} else {
 						/* tcp/ip */
 
-						if (buffer_is_empty(host->host) &&
-						    buffer_is_empty(host->bin_path)) {
+						if (buffer_string_is_empty(host->host) &&
+						    buffer_string_is_empty(host->bin_path)) {
 							log_error_write(srv, __FILE__, __LINE__, "sbsbsbs",
 									"host or binpath have to be set in:",
 									da->key, "= (",
@@ -1366,7 +1355,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 						}
 					}
 
-					if (!buffer_is_empty(host->bin_path)) {
+					if (!buffer_string_is_empty(host->bin_path)) {
 						/* a local socket + self spawning */
 						size_t pno;
 
@@ -1386,12 +1375,12 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 							proc->id = host->num_procs++;
 							host->max_id++;
 
-							if (buffer_is_empty(host->unixsocket)) {
+							if (buffer_string_is_empty(host->unixsocket)) {
 								proc->port = host->port + pno;
 							} else {
-								buffer_copy_string_buffer(proc->unixsocket, host->unixsocket);
+								buffer_copy_buffer(proc->unixsocket, host->unixsocket);
 								buffer_append_string_len(proc->unixsocket, CONST_STR_LEN("-"));
-								buffer_append_long(proc->unixsocket, pno);
+								buffer_append_int(proc->unixsocket, pno);
 							}
 
 							if (s->debug) {
@@ -1425,10 +1414,10 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 						host->active_procs++;
 						proc->state = PROC_STATE_RUNNING;
 
-						if (buffer_is_empty(host->unixsocket)) {
+						if (buffer_string_is_empty(host->unixsocket)) {
 							proc->port = host->port;
 						} else {
-							buffer_copy_string_buffer(proc->unixsocket, host->unixsocket);
+							buffer_copy_buffer(proc->unixsocket, host->unixsocket);
 						}
 
 						fastcgi_status_init(srv, p->statuskey, host, proc);
@@ -1438,12 +1427,12 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 						host->max_procs = 1;
 					}
 
-					if (!buffer_is_empty(fcgi_mode)) {
+					if (!buffer_string_is_empty(fcgi_mode)) {
 						if (strcmp(fcgi_mode->ptr, "responder") == 0) {
 							host->mode = FCGI_RESPONDER;
 						} else if (strcmp(fcgi_mode->ptr, "authorizer") == 0) {
 							host->mode = FCGI_AUTHORIZER;
-							if (buffer_is_empty(host->docroot)) {
+							if (buffer_string_is_empty(host->docroot)) {
 								log_error_write(srv, __FILE__, __LINE__, "s",
 										"ERROR: docroot is required for authorizer mode.");
 								goto error;
@@ -1585,6 +1574,8 @@ static handler_t fcgi_connection_reset(server *srv, connection *con, void *p_d) 
 
 static int fcgi_env_add(buffer *env, const char *key, size_t key_len, const char *val, size_t val_len) {
 	size_t len;
+	char len_enc[8];
+	size_t len_enc_len = 0;
 
 	if (!key || !val) return -1;
 
@@ -1593,7 +1584,7 @@ static int fcgi_env_add(buffer *env, const char *key, size_t key_len, const char
 	len += key_len > 127 ? 4 : 1;
 	len += val_len > 127 ? 4 : 1;
 
-	if (env->used + len >= FCGI_MAX_LENGTH) {
+	if (buffer_string_length(env) + len >= FCGI_MAX_LENGTH) {
 		/**
 		 * we can't append more headers, ignore it
 		 */
@@ -1605,33 +1596,32 @@ static int fcgi_env_add(buffer *env, const char *key, size_t key_len, const char
 	 *
 	 * HINT: this can't happen as FCGI_MAX_LENGTH is only 16bit
 	 */
-	if (key_len > 0x7fffffff) key_len = 0x7fffffff;
-	if (val_len > 0x7fffffff) val_len = 0x7fffffff;
+	force_assert(key_len < 0x7fffffffu);
+	force_assert(val_len < 0x7fffffffu);
 
-	buffer_prepare_append(env, len);
+	buffer_string_prepare_append(env, len);
 
 	if (key_len > 127) {
-		env->ptr[env->used++] = ((key_len >> 24) & 0xff) | 0x80;
-		env->ptr[env->used++] = (key_len >> 16) & 0xff;
-		env->ptr[env->used++] = (key_len >> 8) & 0xff;
-		env->ptr[env->used++] = (key_len >> 0) & 0xff;
+		len_enc[len_enc_len++] = ((key_len >> 24) & 0xff) | 0x80;
+		len_enc[len_enc_len++] = (key_len >> 16) & 0xff;
+		len_enc[len_enc_len++] = (key_len >> 8) & 0xff;
+		len_enc[len_enc_len++] = (key_len >> 0) & 0xff;
 	} else {
-		env->ptr[env->used++] = (key_len >> 0) & 0xff;
+		len_enc[len_enc_len++] = (key_len >> 0) & 0xff;
 	}
 
 	if (val_len > 127) {
-		env->ptr[env->used++] = ((val_len >> 24) & 0xff) | 0x80;
-		env->ptr[env->used++] = (val_len >> 16) & 0xff;
-		env->ptr[env->used++] = (val_len >> 8) & 0xff;
-		env->ptr[env->used++] = (val_len >> 0) & 0xff;
+		len_enc[len_enc_len++] = ((val_len >> 24) & 0xff) | 0x80;
+		len_enc[len_enc_len++] = (val_len >> 16) & 0xff;
+		len_enc[len_enc_len++] = (val_len >> 8) & 0xff;
+		len_enc[len_enc_len++] = (val_len >> 0) & 0xff;
 	} else {
-		env->ptr[env->used++] = (val_len >> 0) & 0xff;
+		len_enc[len_enc_len++] = (val_len >> 0) & 0xff;
 	}
 
-	memcpy(env->ptr + env->used, key, key_len);
-	env->used += key_len;
-	memcpy(env->ptr + env->used, val, val_len);
-	env->used += val_len;
+	buffer_append_string_len(env, len_enc, len_enc_len);
+	buffer_append_string_len(env, key, key_len);
+	buffer_append_string_len(env, val, val_len);
 
 	return 0;
 }
@@ -1670,29 +1660,28 @@ static connection_result_t fcgi_establish_connection(server *srv, handler_ctx *h
 	fcgi_proc *proc   = hctx->proc;
 	int fcgi_fd       = hctx->fd;
 
-	memset(&fcgi_addr, 0, sizeof(fcgi_addr));
-
-	if (!buffer_is_empty(proc->unixsocket)) {
+	if (!buffer_string_is_empty(proc->unixsocket)) {
 #ifdef HAVE_SYS_UN_H
 		/* use the unix domain socket */
+		memset(&fcgi_addr_un, 0, sizeof(fcgi_addr_un));
 		fcgi_addr_un.sun_family = AF_UNIX;
-		if (proc->unixsocket->used > sizeof(fcgi_addr_un.sun_path)) {
+		if (buffer_string_length(proc->unixsocket) + 1 > sizeof(fcgi_addr_un.sun_path)) {
 			log_error_write(srv, __FILE__, __LINE__, "sB",
 					"ERROR: Unix Domain socket filename too long:",
 					proc->unixsocket);
 			return -1;
 		}
-		memcpy(fcgi_addr_un.sun_path, proc->unixsocket->ptr, proc->unixsocket->used);
+		memcpy(fcgi_addr_un.sun_path, proc->unixsocket->ptr, buffer_string_length(proc->unixsocket) + 1);
 
 #ifdef SUN_LEN
 		servlen = SUN_LEN(&fcgi_addr_un);
 #else
 		/* stevens says: */
-		servlen = proc->unixsocket->used + sizeof(fcgi_addr_un.sun_family);
+		servlen = buffer_string_length(proc->unixsocket) + 1 + sizeof(fcgi_addr_un.sun_family);
 #endif
 		fcgi_addr = (struct sockaddr *) &fcgi_addr_un;
 
-		if (buffer_is_empty(proc->connection_name)) {
+		if (buffer_string_is_empty(proc->connection_name)) {
 			/* on remote spawing we have to set the connection-name now */
 			buffer_copy_string_len(proc->connection_name, CONST_STR_LEN("unix:"));
 			buffer_append_string_buffer(proc->connection_name, proc->unixsocket);
@@ -1701,8 +1690,9 @@ static connection_result_t fcgi_establish_connection(server *srv, handler_ctx *h
 		return CONNECTION_DEAD;
 #endif
 	} else {
+		memset(&fcgi_addr_in, 0, sizeof(fcgi_addr_in));
 		fcgi_addr_in.sin_family = AF_INET;
-		if (!buffer_is_empty(host->host)) {
+		if (!buffer_string_is_empty(host->host)) {
 			if (0 == inet_aton(host->host->ptr, &(fcgi_addr_in.sin_addr))) {
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
 						"converting IP address failed for", host->host,
@@ -1718,16 +1708,16 @@ static connection_result_t fcgi_establish_connection(server *srv, handler_ctx *h
 
 		fcgi_addr = (struct sockaddr *) &fcgi_addr_in;
 
-		if (buffer_is_empty(proc->connection_name)) {
+		if (buffer_string_is_empty(proc->connection_name)) {
 			/* on remote spawing we have to set the connection-name now */
 			buffer_copy_string_len(proc->connection_name, CONST_STR_LEN("tcp:"));
-			if (!buffer_is_empty(host->host)) {
+			if (!buffer_string_is_empty(host->host)) {
 				buffer_append_string_buffer(proc->connection_name, host->host);
 			} else {
 				buffer_append_string_len(proc->connection_name, CONST_STR_LEN("localhost"));
 			}
 			buffer_append_string_len(proc->connection_name, CONST_STR_LEN(":"));
-			buffer_append_long(proc->connection_name, proc->port);
+			buffer_append_int(proc->connection_name, proc->port);
 		}
 	}
 
@@ -1769,6 +1759,12 @@ static connection_result_t fcgi_establish_connection(server *srv, handler_ctx *h
 	return CONNECTION_OK;
 }
 
+#define FCGI_ENV_ADD_CHECK(ret, con) \
+	if (ret == -1) { \
+		con->http_status = 400; \
+		con->file_finished = 1; \
+		return -1; \
+	};
 static int fcgi_env_add_request_headers(server *srv, connection *con, plugin_data *p) {
 	size_t i;
 
@@ -1777,28 +1773,8 @@ static int fcgi_env_add_request_headers(server *srv, connection *con, plugin_dat
 
 		ds = (data_string *)con->request.headers->data[i];
 
-		if (ds->value->used && ds->key->used) {
-			size_t j;
-			buffer_reset(srv->tmp_buf);
-
-			if (0 != strcasecmp(ds->key->ptr, "CONTENT-TYPE")) {
-				buffer_copy_string_len(srv->tmp_buf, CONST_STR_LEN("HTTP_"));
-				srv->tmp_buf->used--;
-			}
-
-			buffer_prepare_append(srv->tmp_buf, ds->key->used + 2);
-			for (j = 0; j < ds->key->used - 1; j++) {
-				char c = '_';
-				if (light_isalpha(ds->key->ptr[j])) {
-					/* upper-case */
-					c = ds->key->ptr[j] & ~32;
-				} else if (light_isdigit(ds->key->ptr[j])) {
-					/* copy */
-					c = ds->key->ptr[j];
-				}
-				srv->tmp_buf->ptr[srv->tmp_buf->used++] = c;
-			}
-			srv->tmp_buf->ptr[srv->tmp_buf->used++] = '\0';
+		if (!buffer_is_empty(ds->value) && !buffer_is_empty(ds->key)) {
+			buffer_copy_string_encoded_cgi_varnames(srv->tmp_buf, CONST_BUF_LEN(ds->key), 1);
 
 			FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_BUF_LEN(srv->tmp_buf), CONST_BUF_LEN(ds->value)),con);
 		}
@@ -1809,23 +1785,8 @@ static int fcgi_env_add_request_headers(server *srv, connection *con, plugin_dat
 
 		ds = (data_string *)con->environment->data[i];
 
-		if (ds->value->used && ds->key->used) {
-			size_t j;
-			buffer_reset(srv->tmp_buf);
-
-			buffer_prepare_append(srv->tmp_buf, ds->key->used + 2);
-			for (j = 0; j < ds->key->used - 1; j++) {
-				char c = '_';
-				if (light_isalpha(ds->key->ptr[j])) {
-					/* upper-case */
-					c = ds->key->ptr[j] & ~32;
-				} else if (light_isdigit(ds->key->ptr[j])) {
-					/* copy */
-					c = ds->key->ptr[j];
-				}
-				srv->tmp_buf->ptr[srv->tmp_buf->used++] = c;
-			}
-			srv->tmp_buf->ptr[srv->tmp_buf->used++] = '\0';
+		if (!buffer_is_empty(ds->value) && !buffer_is_empty(ds->key)) {
+			buffer_copy_string_encoded_cgi_varnames(srv->tmp_buf, CONST_BUF_LEN(ds->key), 0);
 
 			FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_BUF_LEN(srv->tmp_buf), CONST_BUF_LEN(ds->value)), con);
 		}
@@ -1834,13 +1795,11 @@ static int fcgi_env_add_request_headers(server *srv, connection *con, plugin_dat
 	return 0;
 }
 
-
 static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 	FCGI_BeginRequestRecord beginRecord;
 	FCGI_Header header;
-	buffer *b;
 
-	char buf[32];
+	char buf[LI_ITOSTRING_LENGTH];
 	const char *s;
 #ifdef HAVE_IPV6
 	char b2[INET6_ADDRSTRLEN + 1];
@@ -1863,12 +1822,8 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 	beginRecord.body.flags = 0;
 	memset(beginRecord.body.reserved, 0, sizeof(beginRecord.body.reserved));
 
-	b = chunkqueue_get_append_buffer(hctx->wb);
-
-	buffer_copy_memory(b, (const char *)&beginRecord, sizeof(beginRecord));
-
 	/* send FCGI_PARAMS */
-	buffer_prepare_copy(p->fcgi_env, 1024);
+	buffer_string_prepare_copy(p->fcgi_env, 1023);
 
 
 	if (buffer_is_empty(con->conf.server_tag)) {
@@ -1877,8 +1832,8 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("SERVER_SOFTWARE"), CONST_BUF_LEN(con->conf.server_tag)),con)
 	}
 
-	if (con->server_name->used) {
-		size_t len = con->server_name->used - 1;
+	if (!buffer_is_empty(con->server_name)) {
+		size_t len = buffer_string_length(con->server_name);
 
 		if (con->server_name->ptr[0] == '[') {
 			const char *colon = strstr(con->server_name->ptr, "]:");
@@ -1904,7 +1859,7 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 
 	FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("GATEWAY_INTERFACE"), CONST_STR_LEN("CGI/1.1")),con)
 
-	LI_ltostr(buf,
+	li_utostr(buf,
 #ifdef HAVE_IPV6
 	       ntohs(srv_sock->addr.plain.sa_family ? srv_sock->addr.ipv6.sin6_port : srv_sock->addr.ipv4.sin_port)
 #else
@@ -1924,7 +1879,7 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 	}
 	FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("SERVER_ADDR"), s, strlen(s)),con)
 
-	LI_ltostr(buf,
+	li_utostr(buf,
 #ifdef HAVE_IPV6
 	       ntohs(con->dst_addr.plain.sa_family ? con->dst_addr.ipv6.sin6_port : con->dst_addr.ipv4.sin_port)
 #else
@@ -1940,8 +1895,7 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 	if (con->request.content_length > 0 && host->mode != FCGI_AUTHORIZER) {
 		/* CGI-SPEC 6.1.2 and FastCGI spec 6.3 */
 
-		/* request.content_length < SSIZE_MAX, see request.c */
-		LI_ltostr(buf, con->request.content_length);
+		li_itostr(buf, con->request.content_length);
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("CONTENT_LENGTH"), buf, strlen(buf)),con)
 	}
 
@@ -1955,15 +1909,15 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("SCRIPT_NAME"), CONST_BUF_LEN(con->uri.path)),con)
 
-		if (!buffer_is_empty(con->request.pathinfo)) {
+		if (!buffer_string_is_empty(con->request.pathinfo)) {
 			FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("PATH_INFO"), CONST_BUF_LEN(con->request.pathinfo)),con)
 
 			/* PATH_TRANSLATED is only defined if PATH_INFO is set */
 
-			if (!buffer_is_empty(host->docroot)) {
-				buffer_copy_string_buffer(p->path, host->docroot);
+			if (!buffer_string_is_empty(host->docroot)) {
+				buffer_copy_buffer(p->path, host->docroot);
 			} else {
-				buffer_copy_string_buffer(p->path, con->physical.basedir);
+				buffer_copy_buffer(p->path, con->physical.basedir);
 			}
 			buffer_append_string_buffer(p->path, con->request.pathinfo);
 			FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("PATH_TRANSLATED"), CONST_BUF_LEN(p->path)),con)
@@ -1980,19 +1934,19 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 	 * parameter.
 	 */
 
-	if (!buffer_is_empty(host->docroot)) {
+	if (!buffer_string_is_empty(host->docroot)) {
 		/*
 		 * rewrite SCRIPT_FILENAME
 		 *
 		 */
 
-		buffer_copy_string_buffer(p->path, host->docroot);
+		buffer_copy_buffer(p->path, host->docroot);
 		buffer_append_string_buffer(p->path, con->uri.path);
 
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("SCRIPT_FILENAME"), CONST_BUF_LEN(p->path)),con)
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("DOCUMENT_ROOT"), CONST_BUF_LEN(host->docroot)),con)
 	} else {
-		buffer_copy_string_buffer(p->path, con->physical.path);
+		buffer_copy_buffer(p->path, con->physical.path);
 
 		/* cgi.fix_pathinfo need a broken SCRIPT_FILENAME to find out what PATH_INFO is itself
 		 *
@@ -2006,7 +1960,7 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("DOCUMENT_ROOT"), CONST_BUF_LEN(con->physical.basedir)),con)
 	}
 
-	if (host->strip_request_uri->used > 1) {
+	if (!buffer_string_is_empty(host->strip_request_uri)) {
 		/* we need at least one char to strip off */
 		/**
 		 * /app1/index/list
@@ -2016,18 +1970,18 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 		 * /index/list
 		 *
 		 */
-		if ('/' != host->strip_request_uri->ptr[host->strip_request_uri->used - 2]) {
+		if ('/' != host->strip_request_uri->ptr[buffer_string_length(host->strip_request_uri) - 1]) {
 			/* fix the user-input to have / as last char */
 			buffer_append_string_len(host->strip_request_uri, CONST_STR_LEN("/"));
 		}
 
-		if (con->request.orig_uri->used >= host->strip_request_uri->used &&
-		    0 == strncmp(con->request.orig_uri->ptr, host->strip_request_uri->ptr, host->strip_request_uri->used - 1)) {
+		if (buffer_string_length(con->request.orig_uri) >= buffer_string_length(host->strip_request_uri) &&
+		    0 == strncmp(con->request.orig_uri->ptr, host->strip_request_uri->ptr, buffer_string_length(host->strip_request_uri))) {
 			/* the left is the same */
 
-			fcgi_env_add(p->fcgi_env, CONST_STR_LEN("REQUEST_URI"),
-					con->request.orig_uri->ptr + (host->strip_request_uri->used - 2),
-					con->request.orig_uri->used - (host->strip_request_uri->used - 2) - 1);
+			FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("REQUEST_URI"),
+					con->request.orig_uri->ptr + (buffer_string_length(host->strip_request_uri) - 1),
+					buffer_string_length(con->request.orig_uri) - (buffer_string_length(host->strip_request_uri) - 1)), con);
 		} else {
 			FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("REQUEST_URI"), CONST_BUF_LEN(con->request.orig_uri)),con)
 		}
@@ -2037,7 +1991,7 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 	if (!buffer_is_equal(con->request.uri, con->request.orig_uri)) {
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("REDIRECT_URI"), CONST_BUF_LEN(con->request.uri)),con)
 	}
-	if (!buffer_is_empty(con->uri.query)) {
+	if (!buffer_string_is_empty(con->uri.query)) {
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("QUERY_STRING"), CONST_BUF_LEN(con->uri.query)),con)
 	} else {
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("QUERY_STRING"), CONST_STR_LEN("")),con)
@@ -2055,138 +2009,50 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 
 	FCGI_ENV_ADD_CHECK(fcgi_env_add_request_headers(srv, con, p), con);
 
-	fcgi_header(&(header), FCGI_PARAMS, request_id, p->fcgi_env->used, 0);
-	buffer_append_memory(b, (const char *)&header, sizeof(header));
-	buffer_append_memory(b, (const char *)p->fcgi_env->ptr, p->fcgi_env->used);
+	{
+		buffer *b = buffer_init();
 
-	fcgi_header(&(header), FCGI_PARAMS, request_id, 0, 0);
-	buffer_append_memory(b, (const char *)&header, sizeof(header));
+		buffer_copy_string_len(b, (const char *)&beginRecord, sizeof(beginRecord));
 
-	b->used++; /* add virtual \0 */
-	hctx->wb->bytes_in += b->used - 1;
+		fcgi_header(&(header), FCGI_PARAMS, request_id, buffer_string_length(p->fcgi_env), 0);
+		buffer_append_string_len(b, (const char *)&header, sizeof(header));
+		buffer_append_string_buffer(b, p->fcgi_env);
+
+		fcgi_header(&(header), FCGI_PARAMS, request_id, 0, 0);
+		buffer_append_string_len(b, (const char *)&header, sizeof(header));
+
+		chunkqueue_append_buffer(hctx->wb, b);
+		buffer_free(b);
+	}
 
 	if (con->request.content_length) {
 		chunkqueue *req_cq = con->request_content_queue;
-		chunk *req_c;
 		off_t offset;
 
 		/* something to send ? */
-		for (offset = 0, req_c = req_cq->first; offset != req_cq->bytes_in; ) {
+		for (offset = 0; offset != req_cq->bytes_in; ) {
 			off_t weWant = req_cq->bytes_in - offset > FCGI_MAX_LENGTH ? FCGI_MAX_LENGTH : req_cq->bytes_in - offset;
-			off_t written = 0;
-			off_t weHave = 0;
 
 			/* we announce toWrite octets
 			 * now take all the request_content chunks that we need to fill this request
 			 * */
 
-			b = chunkqueue_get_append_buffer(hctx->wb);
 			fcgi_header(&(header), FCGI_STDIN, request_id, weWant, 0);
-			buffer_copy_memory(b, (const char *)&header, sizeof(header));
-			hctx->wb->bytes_in += sizeof(header);
+			chunkqueue_append_mem(hctx->wb, (const char *)&header, sizeof(header));
 
 			if (p->conf.debug > 10) {
 				log_error_write(srv, __FILE__, __LINE__, "soso", "tosend:", offset, "/", req_cq->bytes_in);
 			}
 
-			for (written = 0; written != weWant; ) {
-				if (p->conf.debug > 10) {
-					log_error_write(srv, __FILE__, __LINE__, "soso", "chunk:", written, "/", weWant);
-				}
+			chunkqueue_steal(hctx->wb, req_cq, weWant);
 
-				switch (req_c->type) {
-				case FILE_CHUNK:
-					weHave = req_c->file.length - req_c->offset;
-
-					if (weHave > weWant - written) weHave = weWant - written;
-
-					if (p->conf.debug > 10) {
-						log_error_write(srv, __FILE__, __LINE__, "soSosOsb",
-							"sending", weHave, "bytes from (",
-							req_c->offset, "/", req_c->file.length, ")",
-							req_c->file.name);
-					}
-
-					force_assert(weHave != 0);
-
-					chunkqueue_append_file(hctx->wb, req_c->file.name, req_c->offset, weHave);
-
-					req_c->offset += weHave;
-					req_cq->bytes_out += weHave;
-					written += weHave;
-
-					hctx->wb->bytes_in += weHave;
-
-					/* steal the tempfile
-					 *
-					 * This is tricky:
-					 * - we reference the tempfile from the request-content-queue several times
-					 *   if the req_c is larger than FCGI_MAX_LENGTH
-					 * - we can't simply cleanup the request-content-queue as soon as possible
-					 *   as it would remove the tempfiles
-					 * - the idea is to 'steal' the tempfiles and attach the is_temp flag to the last
-					 *   referencing chunk of the fastcgi-write-queue
-					 *
-					 *  */
-
-					if (req_c->offset == req_c->file.length) {
-						chunk *c;
-
-						if (p->conf.debug > 10) {
-							log_error_write(srv, __FILE__, __LINE__, "s", "next chunk");
-						}
-						c = hctx->wb->last;
-
-						force_assert(c->type == FILE_CHUNK);
-						force_assert(req_c->file.is_temp == 1);
-
-						c->file.is_temp = 1;
-						req_c->file.is_temp = 0;
-
-						chunkqueue_remove_finished_chunks(req_cq);
-
-						req_c = req_cq->first;
-					}
-
-					break;
-				case MEM_CHUNK:
-					/* append to the buffer */
-					weHave = req_c->mem->used - 1 - req_c->offset;
-
-					if (weHave > weWant - written) weHave = weWant - written;
-
-					buffer_append_memory(b, req_c->mem->ptr + req_c->offset, weHave);
-
-					req_c->offset += weHave;
-					req_cq->bytes_out += weHave;
-					written += weHave;
-
-					hctx->wb->bytes_in += weHave;
-
-					if (req_c->offset == (off_t) req_c->mem->used - 1) {
-						chunkqueue_remove_finished_chunks(req_cq);
-
-						req_c = req_cq->first;
-					}
-
-					break;
-				default:
-					break;
-				}
-			}
-
-			b->used++; /* add virtual \0 */
 			offset += weWant;
 		}
 	}
 
-	b = chunkqueue_get_append_buffer(hctx->wb);
 	/* terminate STDIN */
 	fcgi_header(&(header), FCGI_STDIN, request_id, 0, 0);
-	buffer_copy_memory(b, (const char *)&header, sizeof(header));
-	b->used++; /* add virtual \0 */
-
-	hctx->wb->bytes_in += sizeof(header);
+	chunkqueue_append_mem(hctx->wb, (const char *)&header, sizeof(header));
 
 	return 0;
 }
@@ -2201,17 +2067,15 @@ static int fcgi_response_parse(server *srv, connection *con, plugin_data *p, buf
 
 	UNUSED(srv);
 
-	buffer_copy_string_buffer(p->parse_response, in);
-
 	/* search for \n */
-	for (s = p->parse_response->ptr; NULL != (ns = strchr(s, '\n')); s = ns + 1) {
+	for (s = in->ptr; NULL != (ns = strchr(s, '\n')); s = ns + 1) {
 		char *key, *value;
 		int key_len;
 		data_string *ds = NULL;
 
 		/* a good day. Someone has read the specs and is sending a \r\n to us */
 
-		if (ns > p->parse_response->ptr &&
+		if (ns > in->ptr &&
 		    *(ns-1) == '\r') {
 			*(ns-1) = '\0';
 		}
@@ -2381,7 +2245,7 @@ range_success: ;
 		}
 
 		buffer_copy_string_len(dcls->key, "Content-Length", sizeof("Content-Length")-1);
-		buffer_copy_off_t(dcls->value, sendfile2_content_length);
+		buffer_copy_int(dcls->value, sendfile2_content_length);
 		dcls = (data_string*) array_replace(con->response.headers, (data_unset *)dcls);
 		if (dcls) dcls->free((data_unset*)dcls);
 
@@ -2407,7 +2271,7 @@ typedef struct {
 } fastcgi_response_packet;
 
 static int fastcgi_get_packet(server *srv, handler_ctx *hctx, fastcgi_response_packet *packet) {
-	chunk *	c;
+	chunk *c;
 	size_t offset;
 	size_t toread;
 	FCGI_Header *header;
@@ -2423,26 +2287,21 @@ static int fastcgi_get_packet(server *srv, handler_ctx *hctx, fastcgi_response_p
 	offset = 0; toread = 8;
 	/* get at least the FastCGI header */
 	for (c = hctx->rb->first; c; c = c->next) {
-		size_t weHave = c->mem->used - c->offset - 1;
+		size_t weHave = buffer_string_length(c->mem) - c->offset;
 
 		if (weHave > toread) weHave = toread;
 
-		if (packet->b->used == 0) {
-			buffer_copy_string_len(packet->b, c->mem->ptr + c->offset, weHave);
-		} else {
-			buffer_append_string_len(packet->b, c->mem->ptr + c->offset, weHave);
-		}
+		buffer_append_string_len(packet->b, c->mem->ptr + c->offset, weHave);
 		toread -= weHave;
 		offset = weHave; /* skip offset bytes in chunk for "real" data */
 
 		if (0 == toread) break;
 	}
 
-	if ((packet->b->used == 0) ||
-	    (packet->b->used - 1 < sizeof(FCGI_Header))) {
+	if (buffer_string_length(packet->b) < sizeof(FCGI_Header)) {
 		/* no header */
 		if (hctx->plugin_data->conf.debug) {
-			log_error_write(srv, __FILE__, __LINE__, "sdsds", "FastCGI: header too small:", packet->b->used, "bytes <", sizeof(FCGI_Header), "bytes, waiting for more data");
+			log_error_write(srv, __FILE__, __LINE__, "sdsds", "FastCGI: header too small:", buffer_string_length(packet->b), "bytes <", sizeof(FCGI_Header), "bytes, waiting for more data");
 		}
 
 		buffer_free(packet->b);
@@ -2459,13 +2318,13 @@ static int fastcgi_get_packet(server *srv, handler_ctx *hctx, fastcgi_response_p
 	packet->padding = header->paddingLength;
 
 	/* ->b should only be the content */
-	buffer_copy_string_len(packet->b, CONST_STR_LEN("")); /* used == 1 */
+	buffer_string_set_length(packet->b, 0);
 
 	if (packet->len) {
 		/* copy the content */
-		for (; c && (packet->b->used < packet->len + 1); c = c->next) {
-			size_t weWant = packet->len - (packet->b->used - 1);
-			size_t weHave = c->mem->used - c->offset - offset - 1;
+		for (; c && (buffer_string_length(packet->b) < packet->len); c = c->next) {
+			size_t weWant = packet->len - buffer_string_length(packet->b);
+			size_t weHave = buffer_string_length(c->mem) - c->offset - offset;
 
 			if (weHave > weWant) weHave = weWant;
 
@@ -2475,31 +2334,17 @@ static int fastcgi_get_packet(server *srv, handler_ctx *hctx, fastcgi_response_p
 			offset = 0;
 		}
 
-		if (packet->b->used < packet->len + 1) {
+		if (buffer_string_length(packet->b) < packet->len) {
 			/* we didn't get the full packet */
 
 			buffer_free(packet->b);
 			return -1;
 		}
 
-		packet->b->used -= packet->padding;
-		packet->b->ptr[packet->b->used - 1] = '\0';
+		buffer_string_set_length(packet->b, buffer_string_length(packet->b) - packet->padding);
 	}
 
-	/* tag the chunks as read */
-	toread = packet->len + sizeof(FCGI_Header);
-	for (c = hctx->rb->first; c && toread; c = c->next) {
-		if (c->mem->used - c->offset - 1 <= toread) {
-			/* we read this whole buffer, move it to unused */
-			toread -= c->mem->used - c->offset - 1;
-			c->offset = c->mem->used - 1; /* everthing has been written */
-		} else {
-			c->offset += toread;
-			toread = 0;
-		}
-	}
-
-	chunkqueue_remove_finished_chunks(hctx->rb);
+	chunkqueue_mark_written(hctx->rb, packet->len + sizeof(FCGI_Header));
 
 	return 0;
 }
@@ -2526,38 +2371,21 @@ static int fcgi_demux_response(server *srv, handler_ctx *hctx) {
 		return -1;
 	}
 
-	/* init read-buffer */
-
 	if (toread > 0) {
-		buffer *b;
-		chunk *cq_first = hctx->rb->first;
-		chunk *cq_last = hctx->rb->last;
+		char *mem;
+		size_t mem_len;
 
-		b = chunkqueue_get_append_buffer(hctx->rb);
-		buffer_prepare_copy(b, toread + 1);
+		chunkqueue_get_memory(hctx->rb, &mem, &mem_len, 0, toread);
+		r = read(hctx->fd, mem, mem_len);
+		chunkqueue_use_memory(hctx->rb, r > 0 ? r : 0);
 
-		/* append to read-buffer */
-		if (-1 == (r = read(hctx->fd, b->ptr, toread))) {
-			if (errno == EAGAIN) {
-				/* roll back the last chunk allocation,
-                                   and continue on next iteration        */
-				buffer_free(hctx->rb->last->mem);
-				free(hctx->rb->last);
-				hctx->rb->first = cq_first;
-				hctx->rb->last = cq_last;
-				return 0;
-			}
+		if (-1 == r) {
+			if (errno == EAGAIN) return 0;
 			log_error_write(srv, __FILE__, __LINE__, "sds",
 					"unexpected end-of-file (perhaps the fastcgi process died):",
 					fcgi_fd, strerror(errno));
 			return -1;
 		}
-
-		/* this should be catched by the b > 0 above */
-		force_assert(r);
-
-		b->used = r + 1; /* one extra for the fake \0 */
-		b->ptr[b->used - 1] = '\0';
 	} else {
 		log_error_write(srv, __FILE__, __LINE__, "ssdsb",
 				"unexpected end-of-file (perhaps the fastcgi process died):",
@@ -2587,7 +2415,6 @@ static int fcgi_demux_response(server *srv, handler_ctx *hctx) {
 			/* is the header already finished */
 			if (0 == con->file_started) {
 				char *c;
-				size_t blen;
 				data_string *ds;
 
 				/* search for header terminator
@@ -2598,20 +2425,18 @@ static int fcgi_demux_response(server *srv, handler_ctx *hctx) {
 				 * search for \n\n
 				 */
 
-				if (hctx->response_header->used == 0) {
-					buffer_copy_string_buffer(hctx->response_header, packet.b);
-				} else {
-					buffer_append_string_buffer(hctx->response_header, packet.b);
-				}
+				buffer_append_string_buffer(hctx->response_header, packet.b);
 
 				if (NULL != (c = buffer_search_string_len(hctx->response_header, CONST_STR_LEN("\r\n\r\n")))) {
-					blen = hctx->response_header->used - (c - hctx->response_header->ptr) - 4;
-					hctx->response_header->used = (c - hctx->response_header->ptr) + 3;
-					c += 4; /* point the the start of the response */
+					char *hend = c + 4; /* header end == body start */
+					size_t hlen = hend - hctx->response_header->ptr;
+					buffer_copy_string_len(packet.b, hend, buffer_string_length(hctx->response_header) - hlen);
+					buffer_string_set_length(hctx->response_header, hlen);
 				} else if (NULL != (c = buffer_search_string_len(hctx->response_header, CONST_STR_LEN("\n\n")))) {
-					blen = hctx->response_header->used - (c - hctx->response_header->ptr) - 2;
-					hctx->response_header->used = c - hctx->response_header->ptr + 2;
-					c += 2; /* point the the start of the response */
+					char *hend = c + 2; /* header end == body start */
+					size_t hlen = hend - hctx->response_header->ptr;
+					buffer_copy_string_len(packet.b, hend, buffer_string_length(hctx->response_header) - hlen);
+					buffer_string_set_length(hctx->response_header, hlen);
 				} else {
 					/* no luck, no header found */
 					break;
@@ -2650,7 +2475,7 @@ static int fcgi_demux_response(server *srv, handler_ctx *hctx) {
 						joblist_append(srv, con);
 
 						buffer_copy_string_len(dcls->key, "Content-Length", sizeof("Content-Length")-1);
-						buffer_copy_off_t(dcls->value, sce->st.st_size);
+						buffer_copy_int(dcls->value, sce->st.st_size);
 						dcls = (data_string*) array_replace(con->response.headers, (data_unset *)dcls);
 						if (dcls) dcls->free((data_unset*)dcls);
 
@@ -2668,24 +2493,24 @@ static int fcgi_demux_response(server *srv, handler_ctx *hctx) {
 				}
 
 
-				if (hctx->send_content_body && blen > 1) {
+				if (hctx->send_content_body && buffer_string_length(packet.b) > 0) {
 					/* enable chunked-transfer-encoding */
 					if (con->request.http_version == HTTP_VERSION_1_1 &&
 					    !(con->parsed_response & HTTP_CONTENT_LENGTH)) {
 						con->response.transfer_encoding = HTTP_TRANSFER_ENCODING_CHUNKED;
 					}
 
-					http_chunk_append_mem(srv, con, c, blen);
+					http_chunk_append_buffer(srv, con, packet.b);
 					joblist_append(srv, con);
 				}
-			} else if (hctx->send_content_body && packet.b->used > 1) {
+			} else if (hctx->send_content_body && !buffer_string_is_empty(packet.b)) {
 				if (con->request.http_version == HTTP_VERSION_1_1 &&
 				    !(con->parsed_response & HTTP_CONTENT_LENGTH)) {
 					/* enable chunked-transfer-encoding */
 					con->response.transfer_encoding = HTTP_TRANSFER_ENCODING_CHUNKED;
 				}
 
-				http_chunk_append_mem(srv, con, packet.b->ptr, packet.b->used);
+				http_chunk_append_buffer(srv, con, packet.b);
 				joblist_append(srv, con);
 			}
 			break;
@@ -2703,7 +2528,7 @@ static int fcgi_demux_response(server *srv, handler_ctx *hctx) {
 			    !(con->http_status == 0 ||
 			      con->http_status == 200)) {
 				/* send chunk-end if necessary */
-				http_chunk_append_mem(srv, con, NULL, 0);
+				http_chunk_close(srv, con);
 				joblist_append(srv, con);
 			}
 
@@ -2820,7 +2645,7 @@ static int fcgi_restart_dead_procs(server *srv, plugin_data *p, fcgi_extension_h
 			/* local procs get restarted by us,
 			 * remote ones hopefully by the admin */
 
-			if (!buffer_is_empty(host->bin_path)) {
+			if (!buffer_string_is_empty(host->bin_path)) {
 				/* we still have connections bound to this proc,
 				 * let them terminate first */
 				if (proc->load != 0) break;
@@ -2874,7 +2699,7 @@ static handler_t fcgi_write_request(server *srv, handler_ctx *hctx) {
 		log_error_write(srv, __FILE__, __LINE__, "s", "fatal error: host = NULL");
 		return HANDLER_ERROR;
 	}
-	if ((!host->port && !host->unixsocket->used)) {
+	if ((!host->port && buffer_string_is_empty(host->unixsocket))) {
 		log_error_write(srv, __FILE__, __LINE__, "s", "fatal error: neither host->port nor host->unixsocket is set");
 		return HANDLER_ERROR;
 	}
@@ -2947,7 +2772,7 @@ static handler_t fcgi_write_request(server *srv, handler_ctx *hctx) {
 			if (proc->load < hctx->proc->load) hctx->proc = proc;
 		}
 
-		ret = host->unixsocket->used ? AF_UNIX : AF_INET;
+		ret = buffer_string_is_empty(host->unixsocket) ? AF_INET : AF_UNIX;
 
 		if (-1 == (hctx->fd = socket(ret, SOCK_STREAM, 0))) {
 			if (errno == EMFILE ||
@@ -3066,8 +2891,8 @@ static handler_t fcgi_write_request(server *srv, handler_ctx *hctx) {
 					"fcgi-request is already in use:", hctx->request_id);
 		}
 
-		/* fall through */
 		if (-1 == fcgi_create_env(srv, hctx, hctx->request_id)) return HANDLER_ERROR;
+
 		fcgi_set_state(srv, hctx, FCGI_STATE_WRITE);
 		/* fall through */
 	case FCGI_STATE_WRITE:
@@ -3264,10 +3089,10 @@ static handler_t fcgi_handle_fdevent(server *srv, void *ctx, int revents) {
 				 * now to handle authorized request.
 				 */
 
-				buffer_copy_string_buffer(con->physical.doc_root, host->docroot);
-				buffer_copy_string_buffer(con->physical.basedir, host->docroot);
+				buffer_copy_buffer(con->physical.doc_root, host->docroot);
+				buffer_copy_buffer(con->physical.basedir, host->docroot);
 
-				buffer_copy_string_buffer(con->physical.path, host->docroot);
+				buffer_copy_buffer(con->physical.path, host->docroot);
 				buffer_append_string_buffer(con->physical.path, con->uri.path);
 				fcgi_connection_close(srv, hctx);
 
@@ -3486,9 +3311,9 @@ static handler_t fcgi_check_extension(server *srv, connection *con, void *p_d, i
 
 	fn = uri_path_handler ? con->uri.path : con->physical.path;
 
-	if (buffer_is_empty(fn)) return HANDLER_GO_ON;
+	if (buffer_string_is_empty(fn)) return HANDLER_GO_ON;
 
-	s_len = fn->used - 1;
+	s_len = buffer_string_length(fn);
 
 	fcgi_patch_connection(srv, con, p);
 
@@ -3505,9 +3330,9 @@ static handler_t fcgi_check_extension(server *srv, connection *con, void *p_d, i
 		data_string *ds = (data_string *)p->conf.ext_mapping->data[k];
 		size_t ct_len; /* length of the config entry */
 
-		if (ds->key->used == 0) continue;
+		if (buffer_is_empty(ds->key)) continue;
 
-		ct_len = ds->key->used - 1;
+		ct_len = buffer_string_length(ds->key);
 
 		if (s_len < ct_len) continue;
 
@@ -3533,18 +3358,20 @@ static handler_t fcgi_check_extension(server *srv, connection *con, void *p_d, i
 	}
 
 	if (extension == NULL) {
+		size_t uri_path_len = buffer_string_length(con->uri.path);
+
 		/* check if extension matches */
 		for (k = 0; k < p->conf.exts->used; k++) {
 			size_t ct_len; /* length of the config entry */
 			fcgi_extension *ext = p->conf.exts->exts[k];
 
-			if (ext->key->used == 0) continue;
+			if (buffer_is_empty(ext->key)) continue;
 
-			ct_len = ext->key->used - 1;
+			ct_len = buffer_string_length(ext->key);
 
 			/* check _url_ in the form "/fcgi_pattern" */
 			if (ext->key->ptr[0] == '/') {
-				if ((ct_len <= con->uri.path->used -1) &&
+				if ((ct_len <= uri_path_len) &&
 				    (strncmp(con->uri.path->ptr, ext->key->ptr, ct_len) == 0)) {
 					extension = ext;
 					break;
@@ -3659,17 +3486,14 @@ static handler_t fcgi_check_extension(server *srv, connection *con, void *p_d, i
 				/* the rewrite is only done for /prefix/? matches */
 				if (host->fix_root_path_name && extension->key->ptr[0] == '/' && extension->key->ptr[1] == '\0') {
 					buffer_copy_string(con->request.pathinfo, con->uri.path->ptr);
-					con->uri.path->used = 1;
-					con->uri.path->ptr[con->uri.path->used - 1] = '\0';
+					buffer_string_set_length(con->uri.path, 0);
 				} else if (extension->key->ptr[0] == '/' &&
-					con->uri.path->used > extension->key->used &&
-					NULL != (pathinfo = strchr(con->uri.path->ptr + extension->key->used - 1, '/'))) {
+					buffer_string_length(con->uri.path) > buffer_string_length(extension->key) &&
+					NULL != (pathinfo = strchr(con->uri.path->ptr + buffer_string_length(extension->key), '/'))) {
 					/* rewrite uri.path and pathinfo */
 
 					buffer_copy_string(con->request.pathinfo, pathinfo);
-
-					con->uri.path->used -= con->request.pathinfo->used - 1;
-					con->uri.path->ptr[con->uri.path->used - 1] = '\0';
+					buffer_string_set_length(con->uri.path, buffer_string_length(con->uri.path) - buffer_string_length(con->request.pathinfo));
 				}
 			}
 		}

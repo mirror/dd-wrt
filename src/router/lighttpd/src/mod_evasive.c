@@ -58,6 +58,8 @@ FREE_FUNC(mod_evasive_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
+			if (NULL == s) continue;
+
 			free(s);
 		}
 		free(p->config_storage);
@@ -81,6 +83,7 @@ SETDEFAULTS_FUNC(mod_evasive_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -92,7 +95,7 @@ SETDEFAULTS_FUNC(mod_evasive_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -138,7 +141,7 @@ URIHANDLER_FUNC(mod_evasive_uri_handler) {
 	size_t conns_by_ip = 0;
 	size_t j;
 
-	if (con->uri.path->used == 0) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
 
 	mod_evasive_patch_connection(srv, con, p);
 

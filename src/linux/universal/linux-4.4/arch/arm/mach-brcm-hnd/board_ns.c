@@ -584,6 +584,12 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		maxsize = 0x200000;
 		size = maxsize;
 	}
+	
+	if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x072F")
+	    && nvram_match("boardrev", "0x1301")) {
+		maxsize = 0x200000;
+		size = maxsize;
+	}
 
 	bootdev = soc_boot_dev((void *)sih);
 	knldev = soc_knl_dev((void *)sih);
@@ -1100,6 +1106,14 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 		}
 
 		nparts++;
+
+		if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x072F") && nvram_match("boardrev", "0x1101")) {
+			
+			bcm947xx_nflash_parts[nparts].name = "board_data";
+			bcm947xx_nflash_parts[nparts].size = 0x80000;
+			bcm947xx_nflash_parts[nparts].offset = 0x7400000;
+			nparts++;
+		}
 		
 		if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1301")) {
 			
@@ -1117,8 +1131,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 			nparts++;
 		}
 		
-		if ( nvram_match("boardnum","679") && nvram_match("boardtype", "0x0646") 
-		    && (nvram_match("boardrev", "0x1110")) ) {
+		if (nvram_match("boardnum","679") && nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1110") ) {
 			bcm947xx_nflash_parts[nparts].name = "board_data";
 			bcm947xx_nflash_parts[nparts].size = 0x20000;
 			bcm947xx_nflash_parts[nparts].offset = 0x200000;

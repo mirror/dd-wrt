@@ -1,4 +1,4 @@
-AM_CFLAGS = $(FAM_CFLAGS)
+AM_CFLAGS = $(FAM_CFLAGS) $(LIBUNWIND_CFLAGS)
 
 noinst_PROGRAMS=proc_open lemon # simple-fcgi #graphic evalo bench ajp ssl error_test adserver gen-license
 sbin_PROGRAMS=lighttpd lighttpd-angel
@@ -56,28 +56,30 @@ BUILT_SOURCES = parsers versionstamp
 MAINTAINERCLEANFILES = configparser.c configparser.h mod_ssi_exprparser.c mod_ssi_exprparser.h
 CLEANFILES = versionstamp.h versionstamp.h.tmp
 
-common_src=buffer.c log.c \
-      keyvalue.c chunk.c  \
-      http_chunk.c stream.c fdevent.c \
-      stat_cache.c plugin.c joblist.c etag.c array.c \
-      data_string.c data_count.c data_array.c \
-      data_integer.c md5.c data_fastcgi.c \
-      fdevent_select.c fdevent_libev.c \
-      fdevent_poll.c fdevent_linux_sysepoll.c \
-      fdevent_solaris_devpoll.c fdevent_solaris_port.c \
-      fdevent_freebsd_kqueue.c \
-      data_config.c bitset.c \
-      inet_ntop_cache.c crc32.c \
-      connections-glue.c \
-      configfile-glue.c \
-      http-header-glue.c \
-      network_write.c network_linux_sendfile.c \
-      network_freebsd_sendfile.c network_writev.c \
-      network_solaris_sendfilev.c network_openssl.c \
-      splaytree.c status_counter.c
+common_src=base64.c buffer.c log.c \
+	keyvalue.c chunk.c  \
+	http_chunk.c stream.c fdevent.c \
+	stat_cache.c plugin.c joblist.c etag.c array.c \
+	data_string.c data_count.c data_array.c \
+	data_integer.c md5.c data_fastcgi.c \
+	fdevent_select.c fdevent_libev.c \
+	fdevent_poll.c fdevent_linux_sysepoll.c \
+	fdevent_solaris_devpoll.c fdevent_solaris_port.c \
+	fdevent_freebsd_kqueue.c \
+	data_config.c \
+	inet_ntop_cache.c crc32.c \
+	connections-glue.c \
+	configfile-glue.c \
+	http-header-glue.c \
+	network_write.c network_linux_sendfile.c \
+	network_write_mmap.c network_write_no_mmap.c \
+	network_freebsd_sendfile.c network_writev.c \
+	network_solaris_sendfilev.c network_openssl.c \
+	splaytree.c status_counter.c \
+	safe_memclear.c network_darwin_sendfile.c
 
 src = server.c response.c connections.c network.c \
-      configfile.c configparser.c request.c proc_open.c
+	configfile.c configparser.c request.c proc_open.c
 
 lib_LTLIBRARIES =
 
@@ -196,7 +198,7 @@ mod_ssi_la_LDFLAGS = -module -export-dynamic -avoid-version
 mod_ssi_la_LIBADD = $(common_libadd) $(PCRE_LIB)
 
 lib_LTLIBRARIES += mod_secdownload.la
-mod_secdownload_la_SOURCES = mod_secure_download.c
+mod_secdownload_la_SOURCES = mod_secdownload.c
 mod_secdownload_la_LDFLAGS = -module -export-dynamic -avoid-version
 mod_secdownload_la_LIBADD = $(common_libadd)
 
@@ -266,45 +268,37 @@ mod_accesslog_la_LDFLAGS = -module -export-dynamic -avoid-version
 mod_accesslog_la_LIBADD = $(common_libadd)
 
 
-hdr = server.h buffer.h network.h log.h keyvalue.h \
-      response.h request.h fastcgi.h chunk.h \
-      settings.h http_chunk.h \
-      md5.h http_auth.h stream.h \
-      fdevent.h connections.h base.h stat_cache.h \
-      plugin.h mod_auth.h \
-      etag.h joblist.h array.h crc32.h \
-      network_backends.h configfile.h bitset.h \
-      mod_ssi.h mod_ssi_expr.h inet_ntop_cache.h \
-      configparser.h mod_ssi_exprparser.h \
-      sys-mmap.h sys-socket.h mod_cml.h mod_cml_funcs.h \
-      splaytree.h proc_open.h status_counter.h \
-      mod_magnet_cache.h \
-      version.h
+hdr = server.h base64.h buffer.h network.h log.h keyvalue.h \
+	response.h request.h fastcgi.h chunk.h \
+	settings.h http_chunk.h \
+	md5.h http_auth.h stream.h \
+	fdevent.h connections.h base.h stat_cache.h \
+	plugin.h mod_auth.h \
+	etag.h joblist.h array.h crc32.h \
+	network_backends.h configfile.h \
+	mod_ssi.h mod_ssi_expr.h inet_ntop_cache.h \
+	configparser.h mod_ssi_exprparser.h \
+	sys-mmap.h sys-socket.h mod_cml.h mod_cml_funcs.h \
+	safe_memclear.h splaytree.h proc_open.h status_counter.h \
+	mod_magnet_cache.h \
+	version.h
 
 DEFS= @DEFS@ -DHAVE_VERSION_H -DLIBRARY_DIR="\"$(libdir)\"" -DSBIN_DIR="\"$(sbindir)\""
 
 lighttpd_SOURCES = $(src)
-lighttpd_LDADD = $(PCRE_LIB) $(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) $(common_libadd) $(SSL_LIB) $(FAM_LIBS) $(LIBEV_LIBS)
+lighttpd_LDADD = $(PCRE_LIB) $(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) $(common_libadd) $(SSL_LIB) $(FAM_LIBS) $(LIBEV_LIBS) $(LIBUNWIND_LIBS)
 lighttpd_LDFLAGS = -export-dynamic
 lighttpd_CCPFLAGS = $(FAM_CFLAGS) $(LIBEV_CFLAGS)
 
 proc_open_SOURCES = proc_open.c buffer.c
+proc_open_LDADD = $(LIBUNWIND_LIBS)
 proc_open_CPPFLAGS= -DDEBUG_PROC_OPEN
 
-#gen_license_SOURCES = license.c md5.c buffer.c gen_license.c
-
-#ssl_SOURCES = ssl.c
-
-
-#adserver_SOURCES = buffer.c iframe.c
-#adserver_LDADD = -lfcgi -lmysqlclient
-
-#error_test_SOURCES = error_test.c
-
-#evalo_SOURCES = buffer.c eval.c
-#bench_SOURCES = buffer.c bench.c
-#ajp_SOURCES = ajp.c
-
 noinst_HEADERS   = $(hdr)
-EXTRA_DIST = mod_skeleton.c configparser.y mod_ssi_exprparser.y lempar.c SConscript
-
+EXTRA_DIST = \
+	mod_skeleton.c \
+	configparser.y \
+	mod_ssi_exprparser.y \
+	lempar.c \
+	SConscript \
+	CMakeLists.txt config.h.cmake

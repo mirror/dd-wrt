@@ -51,7 +51,7 @@ FREE_FUNC(mod_indexfile_free) {
 		for (i = 0; i < srv->config_context->used; i++) {
 			plugin_config *s = p->config_storage[i];
 
-			if (!s) continue;
+			if (NULL == s) continue;
 
 			array_free(s->indexfiles);
 
@@ -84,6 +84,7 @@ SETDEFAULTS_FUNC(mod_indexfile_set_defaults) {
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
+		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -94,7 +95,7 @@ SETDEFAULTS_FUNC(mod_indexfile_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
 			return HANDLER_ERROR;
 		}
 	}
@@ -141,8 +142,8 @@ URIHANDLER_FUNC(mod_indexfile_subrequest) {
 
 	if (con->mode != DIRECT) return HANDLER_GO_ON;
 
-	if (con->uri.path->used == 0) return HANDLER_GO_ON;
-	if (con->uri.path->ptr[con->uri.path->used - 2] != '/') return HANDLER_GO_ON;
+	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
+	if (con->uri.path->ptr[buffer_string_length(con->uri.path) - 1] != '/') return HANDLER_GO_ON;
 
 	mod_indexfile_patch_connection(srv, con, p);
 
@@ -158,9 +159,9 @@ URIHANDLER_FUNC(mod_indexfile_subrequest) {
 		if (ds->value && ds->value->ptr[0] == '/') {
 			/* if the index-file starts with a prefix as use this file as
 			 * index-generator */
-			buffer_copy_string_buffer(p->tmp_buf, con->physical.doc_root);
+			buffer_copy_buffer(p->tmp_buf, con->physical.doc_root);
 		} else {
-			buffer_copy_string_buffer(p->tmp_buf, con->physical.path);
+			buffer_copy_buffer(p->tmp_buf, con->physical.path);
 		}
 		buffer_append_string_buffer(p->tmp_buf, ds->value);
 
@@ -192,7 +193,7 @@ URIHANDLER_FUNC(mod_indexfile_subrequest) {
 
 		/* rewrite uri.path to the real path (/ -> /index.php) */
 		buffer_append_string_buffer(con->uri.path, ds->value);
-		buffer_copy_string_buffer(con->physical.path, p->tmp_buf);
+		buffer_copy_buffer(con->physical.path, p->tmp_buf);
 
 		/* fce is already set up a few lines above */
 

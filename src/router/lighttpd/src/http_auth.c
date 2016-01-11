@@ -3,6 +3,7 @@
 #include "http_auth.h"
 #include "inet_ntop_cache.h"
 #include "stream.h"
+#include "base64.h"
 
 #ifdef HAVE_CRYPT_H
 # include <crypt.h>
@@ -11,7 +12,8 @@
 # define _XOPEN_SOURCE
 #endif
 
-#ifdef HAVE_LIBCRYPT
+#if defined(HAVE_LIBCRYPT) && !defined(HAVE_CRYPT)
+/* always assume crypt() is present if we have -lcrypt */
 # define HAVE_CRYPT
 #endif
 
@@ -33,19 +35,15 @@
 #include <openssl/sha.h>
 #endif
 
+#include "safe_memclear.h"
+
 #define HASHLEN 16
 #define HASHHEXLEN 32
 typedef unsigned char HASH[HASHLEN];
 typedef char HASHHEX[HASHHEXLEN+1];
 
 static void CvtHex(const HASH Bin, char Hex[33]) {
-	unsigned short i;
-
-	for (i = 0; i < 16; i++) {
-		Hex[i*2] = int2hex((Bin[i] >> 4) & 0xf);
-		Hex[i*2+1] = int2hex(Bin[i] & 0xf);
-	}
-	Hex[32] = '\0';
+	li_tohex(Hex, (const char*) Bin, 16);
 }
 
 /**
@@ -65,114 +63,16 @@ static void CvtHex(const HASH Bin, char Hex[33]) {
 
 handler_t auth_ldap_init(server *srv, mod_auth_plugin_config *s);
 
-static const char base64_pad = '=';
-
-/* "A-Z a-z 0-9 + /" maps to 0-63 */
-static const short base64_reverse_table[256] = {
-/*	 0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0x00 - 0x0F */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0x10 - 0x1F */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, /* 0x20 - 0x2F */
-	52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, /* 0x30 - 0x3F */
-	-1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, /* 0x40 - 0x4F */
-	15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, /* 0x50 - 0x5F */
-	-1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, /* 0x60 - 0x6F */
-	41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1, /* 0x70 - 0x7F */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0x80 - 0x8F */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0x90 - 0x9F */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0xA0 - 0xAF */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0xB0 - 0xBF */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0xC0 - 0xCF */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0xD0 - 0xDF */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0xE0 - 0xEF */
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 0xF0 - 0xFF */
-};
-
-
-static unsigned char * base64_decode(buffer *out, const char *in) {
-	unsigned char *result;
-	unsigned int j = 0; /* current output character (position) that is decoded. can contain partial result */
-	unsigned int group = 0; /* how many base64 digits in the current group were decoded already. each group has up to 4 digits */
-	size_t i;
-
-	size_t in_len = strlen(in);
-
-	buffer_prepare_copy(out, in_len);
-
-	result = (unsigned char *)out->ptr;
-
-	/* run through the whole string, converting as we go */
-	for (i = 0; i < in_len; i++) {
-		unsigned char c = (unsigned char) in[i];
-		short ch;
-
-		if (c == '\0') break;
-
-		if (c == base64_pad) {
-			/* pad character can only come after 2 base64 digits in a group */
-			if (group < 2) return NULL;
-			break;
-		}
-
-		ch = base64_reverse_table[c];
-		if (ch < 0) continue; /* skip invalid characters */
-
-		switch(group) {
-		case 0:
-			result[j] = ch << 2;
-			group = 1;
-			break;
-		case 1:
-			result[j++] |= ch >> 4;
-			result[j] = (ch & 0x0f) << 4;
-			group = 2;
-			break;
-		case 2:
-			result[j++] |= ch >>2;
-			result[j] = (ch & 0x03) << 6;
-			group = 3;
-			break;
-		case 3:
-			result[j++] |= ch;
-			group = 0;
-			break;
-		}
-	}
-
-	switch(group) {
-	case 0:
-		/* ended on boundary */
-		break;
-	case 1:
-		/* need at least 2 base64 digits per group */
-		return NULL;
-	case 2:
-		/* have 2 base64 digits in last group => one real octect, two zeroes padded */
-	case 3:
-		/* have 3 base64 digits in last group => two real octects, one zero padded */
-
-		/* for both cases the current index already is on the first zero padded octet
-		 * - check it really is zero (overlapping bits) */
-		if (0 != result[j]) return NULL;
-		break;
-	}
-
-	result[j] = '\0';
-	out->used = j;
-
-	return result;
-}
-
 static int http_auth_get_password(server *srv, mod_auth_plugin_data *p, buffer *username, buffer *realm, buffer *password) {
 	int ret = -1;
 
-	if (!username->used|| !realm->used) return -1;
+	if (buffer_is_empty(username) || buffer_is_empty(realm)) return -1;
 
 	if (p->conf.auth_backend == AUTH_BACKEND_HTDIGEST) {
 		stream f;
 		char * f_line;
 
-		if (buffer_is_empty(p->conf.auth_htdigest_userfile)) return -1;
+		if (buffer_string_is_empty(p->conf.auth_htdigest_userfile)) return -1;
 
 		if (0 != stream_open(&f, p->conf.auth_htdigest_userfile)) {
 			log_error_write(srv, __FILE__, __LINE__, "sbss", "opening digest-userfile", p->conf.auth_htdigest_userfile, "failed:", strerror(errno));
@@ -226,8 +126,8 @@ static int http_auth_get_password(server *srv, mod_auth_plugin_data *p, buffer *
 				pwd_len = f.size - (f_pwd - f.start);
 			}
 
-			if (username->used - 1 == u_len &&
-			    (realm->used - 1 == r_len) &&
+			if (buffer_string_length(username) == u_len &&
+			    (buffer_string_length(realm) == r_len) &&
 			    (0 == strncmp(username->ptr, f_user, u_len)) &&
 			    (0 == strncmp(realm->ptr, f_realm, r_len))) {
 				/* found */
@@ -253,7 +153,7 @@ static int http_auth_get_password(server *srv, mod_auth_plugin_data *p, buffer *
 
 		auth_fn = (p->conf.auth_backend == AUTH_BACKEND_HTPASSWD) ? p->conf.auth_htpasswd_userfile : p->conf.auth_plain_userfile;
 
-		if (buffer_is_empty(auth_fn)) return -1;
+		if (buffer_string_is_empty(auth_fn)) return -1;
 
 		if (0 != stream_open(&f, auth_fn)) {
 			log_error_write(srv, __FILE__, __LINE__, "sbss",
@@ -296,7 +196,7 @@ static int http_auth_get_password(server *srv, mod_auth_plugin_data *p, buffer *
 				pwd_len = f.size - (f_pwd - f.start);
 			}
 
-			if (username->used - 1 == u_len &&
+			if (buffer_string_length(username) == u_len &&
 			    (0 == strncmp(username->ptr, f_user, u_len))) {
 				/* found */
 
@@ -439,193 +339,183 @@ int http_auth_match_rules(server *srv, array *req, const char *username, const c
 
 static void to64(char *s, unsigned long v, int n)
 {
-    static const unsigned char itoa64[] =         /* 0 ... 63 => ASCII - 64 */
-        "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	static const unsigned char itoa64[] =         /* 0 ... 63 => ASCII - 64 */
+		"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-    while (--n >= 0) {
-        *s++ = itoa64[v&0x3f];
-        v >>= 6;
-    }
+	while (--n >= 0) {
+		*s++ = itoa64[v&0x3f];
+		v >>= 6;
+	}
 }
 
 static void apr_md5_encode(const char *pw, const char *salt, char *result, size_t nbytes) {
-    /*
-     * Minimum size is 8 bytes for salt, plus 1 for the trailing NUL,
-     * plus 4 for the '$' separators, plus the password hash itself.
-     * Let's leave a goodly amount of leeway.
-     */
+	/*
+	 * Minimum size is 8 bytes for salt, plus 1 for the trailing NUL,
+	 * plus 4 for the '$' separators, plus the password hash itself.
+	 * Let's leave a goodly amount of leeway.
+	 */
 
-    char passwd[120], *p;
-    const char *sp, *ep;
-    unsigned char final[APR_MD5_DIGESTSIZE];
-    ssize_t sl, pl, i;
-    li_MD5_CTX ctx, ctx1;
-    unsigned long l;
+	char passwd[120], *p;
+	const char *sp, *ep;
+	unsigned char final[APR_MD5_DIGESTSIZE];
+	ssize_t sl, pl, i;
+	li_MD5_CTX ctx, ctx1;
+	unsigned long l;
 
-    /*
-     * Refine the salt first.  It's possible we were given an already-hashed
-     * string as the salt argument, so extract the actual salt value from it
-     * if so.  Otherwise just use the string up to the first '$' as the salt.
-     */
-    sp = salt;
+	/*
+	 * Refine the salt first.  It's possible we were given an already-hashed
+	 * string as the salt argument, so extract the actual salt value from it
+	 * if so.  Otherwise just use the string up to the first '$' as the salt.
+	 */
+	sp = salt;
 
-    /*
-     * If it starts with the magic string, then skip that.
-     */
-    if (!strncmp(sp, APR1_ID, strlen(APR1_ID))) {
-        sp += strlen(APR1_ID);
-    }
+	/*
+	 * If it starts with the magic string, then skip that.
+	 */
+	if (!strncmp(sp, APR1_ID, strlen(APR1_ID))) {
+		sp += strlen(APR1_ID);
+	}
 
-    /*
-     * It stops at the first '$' or 8 chars, whichever comes first
-     */
-    for (ep = sp; (*ep != '\0') && (*ep != '$') && (ep < (sp + 8)); ep++) {
-        continue;
-    }
+	/*
+	 * It stops at the first '$' or 8 chars, whichever comes first
+	 */
+	for (ep = sp; (*ep != '\0') && (*ep != '$') && (ep < (sp + 8)); ep++) {
+		continue;
+	}
 
-    /*
-     * Get the length of the true salt
-     */
-    sl = ep - sp;
+	/*
+	 * Get the length of the true salt
+	 */
+	sl = ep - sp;
 
-    /*
-     * 'Time to make the doughnuts..'
-     */
-    li_MD5_Init(&ctx);
+	/*
+	 * 'Time to make the doughnuts..'
+	 */
+	li_MD5_Init(&ctx);
 
-    /*
-     * The password first, since that is what is most unknown
-     */
-    li_MD5_Update(&ctx, pw, strlen(pw));
+	/*
+	 * The password first, since that is what is most unknown
+	 */
+	li_MD5_Update(&ctx, pw, strlen(pw));
 
-    /*
-     * Then our magic string
-     */
-    li_MD5_Update(&ctx, APR1_ID, strlen(APR1_ID));
+	/*
+	 * Then our magic string
+	 */
+	li_MD5_Update(&ctx, APR1_ID, strlen(APR1_ID));
 
-    /*
-     * Then the raw salt
-     */
-    li_MD5_Update(&ctx, sp, sl);
+	/*
+	 * Then the raw salt
+	 */
+	li_MD5_Update(&ctx, sp, sl);
 
-    /*
-     * Then just as many characters of the MD5(pw, salt, pw)
-     */
-    li_MD5_Init(&ctx1);
-    li_MD5_Update(&ctx1, pw, strlen(pw));
-    li_MD5_Update(&ctx1, sp, sl);
-    li_MD5_Update(&ctx1, pw, strlen(pw));
-    li_MD5_Final(final, &ctx1);
-    for (pl = strlen(pw); pl > 0; pl -= APR_MD5_DIGESTSIZE) {
-        li_MD5_Update(&ctx, final,
-                      (pl > APR_MD5_DIGESTSIZE) ? APR_MD5_DIGESTSIZE : pl);
-    }
+	/*
+	 * Then just as many characters of the MD5(pw, salt, pw)
+	 */
+	li_MD5_Init(&ctx1);
+	li_MD5_Update(&ctx1, pw, strlen(pw));
+	li_MD5_Update(&ctx1, sp, sl);
+	li_MD5_Update(&ctx1, pw, strlen(pw));
+	li_MD5_Final(final, &ctx1);
+	for (pl = strlen(pw); pl > 0; pl -= APR_MD5_DIGESTSIZE) {
+		li_MD5_Update(
+			&ctx, final,
+			(pl > APR_MD5_DIGESTSIZE) ? APR_MD5_DIGESTSIZE : pl);
+	}
 
-    /*
-     * Don't leave anything around in vm they could use.
-     */
-    memset(final, 0, sizeof(final));
+	/*
+	 * Don't leave anything around in vm they could use.
+	 */
+	memset(final, 0, sizeof(final));
 
-    /*
-     * Then something really weird...
-     */
-    for (i = strlen(pw); i != 0; i >>= 1) {
-        if (i & 1) {
-            li_MD5_Update(&ctx, final, 1);
-        }
-        else {
-            li_MD5_Update(&ctx, pw, 1);
-        }
-    }
+	/*
+	 * Then something really weird...
+	 */
+	for (i = strlen(pw); i != 0; i >>= 1) {
+		if (i & 1) {
+			li_MD5_Update(&ctx, final, 1);
+		}
+		else {
+			li_MD5_Update(&ctx, pw, 1);
+		}
+	}
 
-    /*
-     * Now make the output string.  We know our limitations, so we
-     * can use the string routines without bounds checking.
-     */
-    strcpy(passwd, APR1_ID);
-    strncat(passwd, sp, sl);
-    strcat(passwd, "$");
+	/*
+	 * Now make the output string.  We know our limitations, so we
+	 * can use the string routines without bounds checking.
+	 */
+	strcpy(passwd, APR1_ID);
+	strncat(passwd, sp, sl);
+	strcat(passwd, "$");
 
-    li_MD5_Final(final, &ctx);
+	li_MD5_Final(final, &ctx);
 
-    /*
-     * And now, just to make sure things don't run too fast..
-     * On a 60 Mhz Pentium this takes 34 msec, so you would
-     * need 30 seconds to build a 1000 entry dictionary...
-     */
-    for (i = 0; i < 1000; i++) {
-        li_MD5_Init(&ctx1);
-        if (i & 1) {
-            li_MD5_Update(&ctx1, pw, strlen(pw));
-        }
-        else {
-            li_MD5_Update(&ctx1, final, APR_MD5_DIGESTSIZE);
-        }
-        if (i % 3) {
-            li_MD5_Update(&ctx1, sp, sl);
-        }
+	/*
+	 * And now, just to make sure things don't run too fast..
+	 * On a 60 Mhz Pentium this takes 34 msec, so you would
+	 * need 30 seconds to build a 1000 entry dictionary...
+	 */
+	for (i = 0; i < 1000; i++) {
+		li_MD5_Init(&ctx1);
+		if (i & 1) {
+			li_MD5_Update(&ctx1, pw, strlen(pw));
+		}
+		else {
+			li_MD5_Update(&ctx1, final, APR_MD5_DIGESTSIZE);
+		}
+		if (i % 3) {
+			li_MD5_Update(&ctx1, sp, sl);
+		}
 
-        if (i % 7) {
-            li_MD5_Update(&ctx1, pw, strlen(pw));
-        }
+		if (i % 7) {
+			li_MD5_Update(&ctx1, pw, strlen(pw));
+		}
 
-        if (i & 1) {
-            li_MD5_Update(&ctx1, final, APR_MD5_DIGESTSIZE);
-        }
-        else {
-            li_MD5_Update(&ctx1, pw, strlen(pw));
-        }
-        li_MD5_Final(final,&ctx1);
-    }
+		if (i & 1) {
+			li_MD5_Update(&ctx1, final, APR_MD5_DIGESTSIZE);
+		}
+		else {
+			li_MD5_Update(&ctx1, pw, strlen(pw));
+		}
+		li_MD5_Final(final,&ctx1);
+	}
 
-    p = passwd + strlen(passwd);
+	p = passwd + strlen(passwd);
 
-    l = (final[ 0]<<16) | (final[ 6]<<8) | final[12]; to64(p, l, 4); p += 4;
-    l = (final[ 1]<<16) | (final[ 7]<<8) | final[13]; to64(p, l, 4); p += 4;
-    l = (final[ 2]<<16) | (final[ 8]<<8) | final[14]; to64(p, l, 4); p += 4;
-    l = (final[ 3]<<16) | (final[ 9]<<8) | final[15]; to64(p, l, 4); p += 4;
-    l = (final[ 4]<<16) | (final[10]<<8) | final[ 5]; to64(p, l, 4); p += 4;
-    l =                    final[11]                ; to64(p, l, 2); p += 2;
-    *p = '\0';
+	l = (final[ 0]<<16) | (final[ 6]<<8) | final[12]; to64(p, l, 4); p += 4;
+	l = (final[ 1]<<16) | (final[ 7]<<8) | final[13]; to64(p, l, 4); p += 4;
+	l = (final[ 2]<<16) | (final[ 8]<<8) | final[14]; to64(p, l, 4); p += 4;
+	l = (final[ 3]<<16) | (final[ 9]<<8) | final[15]; to64(p, l, 4); p += 4;
+	l = (final[ 4]<<16) | (final[10]<<8) | final[ 5]; to64(p, l, 4); p += 4;
+	l =                    final[11]                ; to64(p, l, 2); p += 2;
+	*p = '\0';
 
-    /*
-     * Don't leave anything around in vm they could use.
-     */
-    memset(final, 0, sizeof(final));
+	/*
+	 * Don't leave anything around in vm they could use.
+	 */
+	safe_memclear(final, sizeof(final));
 
 	/* FIXME
 	 */
 #define apr_cpystrn strncpy
-    apr_cpystrn(result, passwd, nbytes - 1);
+	apr_cpystrn(result, passwd, nbytes - 1);
 }
 
 #ifdef USE_OPENSSL
 static void apr_sha_encode(const char *pw, char *result, size_t nbytes) {
-	static const unsigned char base64_data[65] =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	unsigned char digest[21]; /* multiple of 3 for base64 encoding */
-	int i;
+	unsigned char digest[20];
+	size_t base64_written;
+
+	SHA1((const unsigned char*) pw, strlen(pw), digest);
 
 	memset(result, 0, nbytes);
 
 	/* need 5 bytes for "{SHA}", 28 for base64 (3 bytes -> 4 bytes) of SHA1 (20 bytes), 1 terminating */
 	if (nbytes < 5 + 28 + 1) return;
 
-	SHA1((const unsigned char*) pw, strlen(pw), digest);
-	digest[20] = 0;
-
-	strcpy(result, "{SHA}");
-	result = result + 5;
-	for (i = 0; i < 21; i += 3) {
-		unsigned int v = (digest[i] << 16) | (digest[i+1] << 8) | digest[i+2];
-		result[3] = base64_data[v & 0x3f]; v >>= 6;
-		result[2] = base64_data[v & 0x3f]; v >>= 6;
-		result[1] = base64_data[v & 0x3f]; v >>= 6;
-		result[0] = base64_data[v & 0x3f];
-		result += 4;
-	}
-	result[-1] = '='; /* last digest character was already end of string, pad it */
-	*result = '\0';
+	memcpy(result, "{SHA}", 5);
+	base64_written = li_to_base64(result + 5, nbytes - 5, digest, 20, BASE64_STANDARD);
+	force_assert(base64_written == 28);
+	result[5 + base64_written] = '\0'; /* terminate string */
 }
 #endif
 
@@ -652,10 +542,10 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 		char a1[256];
 
 		li_MD5_Init(&Md5Ctx);
-		li_MD5_Update(&Md5Ctx, (unsigned char *)username->ptr, username->used - 1);
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
-		li_MD5_Update(&Md5Ctx, (unsigned char *)realm->ptr, realm->used - 1);
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+		li_MD5_Update(&Md5Ctx, CONST_BUF_LEN(username));
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
+		li_MD5_Update(&Md5Ctx, CONST_BUF_LEN(realm));
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 		li_MD5_Update(&Md5Ctx, (unsigned char *)pw, strlen(pw));
 		li_MD5_Final(HA1, &Md5Ctx);
 
@@ -678,15 +568,23 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 			return (strcmp(sample, password->ptr) == 0) ? 0 : 1;
 #endif
 		} else {
-#ifdef HAVE_CRYPT
+#if defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT)
 			char *crypted;
+#if defined(HAVE_CRYPT_R)
+			struct crypt_data crypt_tmp_data;
+			crypt_tmp_data.initialized = 0;
+#endif
 
 			/* a simple DES password is 2 + 11 characters. everything else should be longer. */
-			if (password->used < 13 + 1) {
+			if (buffer_string_length(password) < 13) {
 				return -1;
 			}
 
+#if defined(HAVE_CRYPT_R)
+			if (0 == (crypted = crypt_r(pw, password->ptr, &crypt_tmp_data))) {
+#else
 			if (0 == (crypted = crypt(pw, password->ptr))) {
+#endif
 				/* crypt failed. */
 				return -1;
 			}
@@ -707,7 +605,7 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 		char *dn;
 		int ret;
 		char *attrs[] = { LDAP_NO_ATTRS, NULL };
-		size_t i;
+		size_t i, len;
 
 		/* for now we stay synchronous */
 
@@ -726,7 +624,8 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 		 * a unpleasant way
 		 */
 
-		for (i = 0; i < username->used - 1; i++) {
+		len = buffer_string_length(username);
+		for (i = 0; i < len; i++) {
 			char c = username->ptr[i];
 
 			if (!isalpha(c) &&
@@ -748,7 +647,7 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 			return -1;
 
 		/* build filter */
-		buffer_copy_string_buffer(p->ldap_filter, p->conf.ldap_filter_pre);
+		buffer_copy_buffer(p->ldap_filter, p->conf.ldap_filter_pre);
 		buffer_append_string_buffer(p->ldap_filter, username);
 		buffer_append_string_buffer(p->ldap_filter, p->conf.ldap_filter_post);
 
@@ -848,7 +747,7 @@ int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p,
 
 	username = buffer_init();
 
-	if (!base64_decode(username, realm_str)) {
+	if (!buffer_append_base64_decode(username, realm_str, strlen(realm_str), BASE64_STANDARD)) {
 		log_error_write(srv, __FILE__, __LINE__, "sb", "decodeing base64-string failed", username);
 
 		buffer_free(username);
@@ -863,9 +762,8 @@ int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p,
 		return 0;
 	}
 
-	*pw++ = '\0';
-
-	username->used = pw - username->ptr;
+	buffer_string_set_length(username, pw - username->ptr);
+	pw++;
 
 	password = buffer_init();
 	/* copy password to r1 */
@@ -903,7 +801,7 @@ int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p,
 	}
 
 	/* remember the username */
-	buffer_copy_string_buffer(p->auth_user, username);
+	buffer_copy_buffer(p->auth_user, username);
 
 	buffer_free(username);
 	buffer_free(password);
@@ -1084,10 +982,10 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 		/* generate password from plain-text */
 		li_MD5_Init(&Md5Ctx);
 		li_MD5_Update(&Md5Ctx, (unsigned char *)username, strlen(username));
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 		li_MD5_Update(&Md5Ctx, (unsigned char *)realm, strlen(realm));
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
-		li_MD5_Update(&Md5Ctx, (unsigned char *)password->ptr, password->used - 1);
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
+		li_MD5_Update(&Md5Ctx, CONST_BUF_LEN(password));
 		li_MD5_Final(HA1, &Md5Ctx);
 	} else if (p->conf.auth_backend == AUTH_BACKEND_HTDIGEST) {
 		/* HA1 */
@@ -1109,9 +1007,9 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 		/* Errata ID 1649: http://www.rfc-editor.org/errata_search.php?rfc=2617 */
 		CvtHex(HA1, a1);
 		li_MD5_Update(&Md5Ctx, (unsigned char *)a1, 32);
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 		li_MD5_Update(&Md5Ctx, (unsigned char *)nonce, strlen(nonce));
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 		li_MD5_Update(&Md5Ctx, (unsigned char *)cnonce, strlen(cnonce));
 		li_MD5_Final(HA1, &Md5Ctx);
 	}
@@ -1121,12 +1019,12 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 	/* calculate H(A2) */
 	li_MD5_Init(&Md5Ctx);
 	li_MD5_Update(&Md5Ctx, (unsigned char *)m, strlen(m));
-	li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+	li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 	li_MD5_Update(&Md5Ctx, (unsigned char *)uri, strlen(uri));
 	/* qop=auth-int not supported, already checked above */
 /*
 	if (qop && strcasecmp(qop, "auth-int") == 0) {
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 		li_MD5_Update(&Md5Ctx, (unsigned char *) [body checksum], HASHHEXLEN);
 	}
 */
@@ -1136,16 +1034,16 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 	/* calculate response */
 	li_MD5_Init(&Md5Ctx);
 	li_MD5_Update(&Md5Ctx, (unsigned char *)a1, HASHHEXLEN);
-	li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+	li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 	li_MD5_Update(&Md5Ctx, (unsigned char *)nonce, strlen(nonce));
-	li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+	li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 	if (qop && *qop) {
 		li_MD5_Update(&Md5Ctx, (unsigned char *)nc, strlen(nc));
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 		li_MD5_Update(&Md5Ctx, (unsigned char *)cnonce, strlen(cnonce));
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 		li_MD5_Update(&Md5Ctx, (unsigned char *)qop, strlen(qop));
-		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
+		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 	};
 	li_MD5_Update(&Md5Ctx, (unsigned char *)HA2Hex, HASHHEXLEN);
 	li_MD5_Final(RespHash, &Md5Ctx);
@@ -1192,20 +1090,20 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 int http_auth_digest_generate_nonce(server *srv, mod_auth_plugin_data *p, buffer *fn, char out[33]) {
 	HASH h;
 	li_MD5_CTX Md5Ctx;
-	char hh[32];
+	char hh[LI_ITOSTRING_LENGTH];
 
 	UNUSED(p);
 
 	/* generate shared-secret */
 	li_MD5_Init(&Md5Ctx);
-	li_MD5_Update(&Md5Ctx, (unsigned char *)fn->ptr, fn->used - 1);
-	li_MD5_Update(&Md5Ctx, (unsigned char *)"+", 1);
+	li_MD5_Update(&Md5Ctx, CONST_BUF_LEN(fn));
+	li_MD5_Update(&Md5Ctx, CONST_STR_LEN("+"));
 
 	/* we assume sizeof(time_t) == 4 here, but if not it ain't a problem at all */
-	LI_ltostr(hh, srv->cur_ts);
+	li_itostr(hh, srv->cur_ts);
 	li_MD5_Update(&Md5Ctx, (unsigned char *)hh, strlen(hh));
 	li_MD5_Update(&Md5Ctx, (unsigned char *)srv->entropy, sizeof(srv->entropy));
-	LI_ltostr(hh, rand());
+	li_itostr(hh, rand());
 	li_MD5_Update(&Md5Ctx, (unsigned char *)hh, strlen(hh));
 
 	li_MD5_Final(h, &Md5Ctx);
