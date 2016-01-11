@@ -2557,6 +2557,14 @@ void start_restore_defaults(void)
 			nvram_set("vlan2ports", "4 8u");
 		}
 		break;
+	case ROUTER_NETGEAR_R8500:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "3 2 1 4 5 7 8*");
+			nvram_set("vlan2ports", "0 8u");
+		}
+		break;
 	default:
 		if (!nvram_get("vlan0hwname") || nvram_match("vlan0hwname", ""))
 			nvram_set("vlan0hwname", "et0");
@@ -2589,6 +2597,7 @@ void start_restore_defaults(void)
 			case ROUTER_NETGEAR_R6300V2:
 			case ROUTER_NETGEAR_R7000:
 			case ROUTER_NETGEAR_R8000:
+			case ROUTER_NETGEAR_R8500:  
 				nvram_unset("vlan0hwname");
 				break;
 			case ROUTER_LINKSYS_WTR54GS:
@@ -2654,6 +2663,9 @@ void start_restore_defaults(void)
 				break;
 			case ROUTER_NETGEAR_R8000:
 				nvram_set("vlan2ports", "4 8u");
+				break;
+			case ROUTER_NETGEAR_R8500:
+				nvram_set("vlan2ports", "0 8u");
 				break;
 			case ROUTER_WRT320N:
 				nvram_set("vlan2ports", "0 8");
