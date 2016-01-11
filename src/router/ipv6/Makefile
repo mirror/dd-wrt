@@ -16,4 +16,7 @@ install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/config
 	cp $(MODULE)* $(INSTALLDIR)/etc/config
+ifeq ($(CONFIG_WEBSERVER),y)
+	mv -f $(INSTALLDIR)/etc/config/ipv6.ipv6config-curl $(INSTALLDIR)/etc/config/ipv6.ipv6config
+endif
 
