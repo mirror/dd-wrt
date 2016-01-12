@@ -184,6 +184,9 @@ else
 endif
 ifeq ($(CONFIG_SWAP),y)
 	sed -i 's/\# CONFIG_SWAP is not set/CONFIG_SWAP=y/g' $(LINUXDIR)/.config
+	echo "# CONFIG_FRONTSWAP is not set" >> $(LINUXDIR)/.config
+	echo "# CONFIG_HIBERNATION is not set" >> $(LINUXDIR)/.config
+	echo "# CONFIG_MTD_SWAP is not set" >> $(LINUXDIR)/.config
 else
 	sed -i 's/\CONFIG_SWAP=y/# CONFIG_SWAP is not set/g' $(LINUXDIR)/.config
 endif
