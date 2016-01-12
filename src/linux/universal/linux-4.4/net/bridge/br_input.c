@@ -146,7 +146,7 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 	/* insert into forwarding database after filtering to avoid spoofing */
 	br = p->br;
 	if (p->flags & BR_LEARNING)
-		br_fdb_update(p->br, p, eth_hdr(skb)->h_source, vid, false);
+		br_fdb_update(br, p, eth_hdr(skb)->h_source, vid, false);
 
 	if (!is_broadcast_ether_addr(dest) && is_multicast_ether_addr(dest) &&
 	    br_multicast_rcv(br, p, skb, vid))
@@ -175,7 +175,7 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 	} else if (is_broadcast_ether_addr(dest)) {
 		skb2 = skb;
 		unicast = false;
-	}else if (is_multicast_ether_addr(dest)) {
+	} else if (is_multicast_ether_addr(dest)) {
 		mdst = br_mdb_get(br, skb, vid);
 		if ((mdst || BR_INPUT_SKB_CB_MROUTERS_ONLY(skb)) &&
 		    br_multicast_querier_exists(br, eth_hdr(skb))) {
@@ -191,7 +191,8 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 
 		unicast = false;
 		br->dev->stats.multicast++;
-	} else if ((p->flags & BR_ISOLATE_MODE) || ((dst = __br_fdb_get(br, dest, vid)) && dst->is_local)) {
+	} else if ((p->flags & BR_ISOLATE_MODE) ||
+		   ((dst = __br_fdb_get(br, dest, vid)) && dst->is_local)) {
 		skb2 = skb;
 		/* Do not forward the packet since it's local. */
 		skb = NULL;
@@ -220,7 +221,6 @@ EXPORT_SYMBOL_GPL(br_handle_frame_finish);
 static int br_handle_local_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
 {
 	struct net_bridge_port *p = br_port_get_rcu(skb->dev);
-
 	if (p->state != BR_STATE_DISABLED) {
 		u16 vid = 0;
 
@@ -228,7 +228,6 @@ static int br_handle_local_finish(struct net *net, struct sock *sk, struct sk_bu
 		if (p->flags & BR_LEARNING && br_should_learn(p, skb, &vid))
 			br_fdb_update(p->br, p, eth_hdr(skb)->h_source, vid, false);
 	}
-
 	return 0;	 /* process further */
 }
 

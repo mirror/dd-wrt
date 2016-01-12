@@ -178,7 +178,7 @@ static ssize_t show_isolate_mode(struct net_bridge_port *p, char *buf)
 	int isolate_mode = (p->flags & BR_ISOLATE_MODE) ? 1 : 0;
 	return sprintf(buf, "%d\n", isolate_mode);
 }
-static int store_isolate_mode(struct net_bridge_port *p, unsigned long v)
+static ssize_t store_isolate_mode(struct net_bridge_port *p, unsigned long v)
 {
 	if (v)
 		p->flags |= BR_ISOLATE_MODE;
@@ -228,7 +228,6 @@ static const struct brport_attribute *brport_attrs[] = {
 	&brport_attr_root_block,
 	&brport_attr_learning,
 	&brport_attr_unicast_flood,
-	&brport_attr_isolate_mode,
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 	&brport_attr_multicast_router,
 	&brport_attr_multicast_fast_leave,
@@ -236,6 +235,7 @@ static const struct brport_attribute *brport_attrs[] = {
 #endif
 	&brport_attr_proxyarp,
 	&brport_attr_proxyarp_wifi,
+	&brport_attr_isolate_mode,
 	NULL
 };
 
