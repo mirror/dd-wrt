@@ -68,8 +68,8 @@ void br_port_carrier_check(struct net_bridge_port *p)
 	struct net_device *dev = p->dev;
 	struct net_bridge *br = p->br;
 
-	if (!(p->flags & BR_ADMIN_COST) && 
-	    	netif_running(dev) && netif_oper_up(dev))
+	if (!(p->flags & BR_ADMIN_COST) &&
+	    netif_running(dev) && netif_oper_up(dev))
 		p->path_cost = port_cost(dev);
 
 	if (!netif_running(br->dev))
@@ -290,8 +290,6 @@ void br_dev_delete(struct net_device *dev, struct list_head *head)
 	br_sysfs_delbr(br->dev);
 	unregister_netdevice_queue(br->dev, head);
 }
-
-
 
 /* find an available port number */
 static int find_portno(struct net_bridge *br)

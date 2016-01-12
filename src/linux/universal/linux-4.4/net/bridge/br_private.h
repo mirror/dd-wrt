@@ -14,7 +14,6 @@
 #define _BR_PRIVATE_H
 
 #include <linux/netdevice.h>
-#include <linux/netfilter.h>
 #include <linux/if_bridge.h>
 #include <linux/netpoll.h>
 #include <linux/u64_stats_sync.h>
@@ -784,11 +783,6 @@ static inline struct sk_buff *br_handle_vlan(struct net_bridge *br,
 	return skb;
 }
 
-static inline int nbp_vlan_init(struct net_bridge_port *port)
-{
-	return 0;
-}
-
 static inline int br_vlan_add(struct net_bridge *br, u16 vid, u16 flags)
 {
 	return -EOPNOTSUPP;
@@ -803,15 +797,14 @@ static inline void br_vlan_flush(struct net_bridge *br)
 {
 }
 
-static inline int br_vlan_init(struct net_bridge *br)
-{
-	return 0;
-}
-
 static inline void br_recalculate_fwd_mask(struct net_bridge *br)
 {
 }
 
+static inline int br_vlan_init(struct net_bridge *br)
+{
+	return 0;
+}
 
 static inline int nbp_vlan_add(struct net_bridge_port *port, u16 vid, u16 flags)
 {
@@ -831,6 +824,11 @@ static inline struct net_bridge_vlan *br_vlan_find(struct net_bridge_vlan_group 
 						   u16 vid)
 {
 	return NULL;
+}
+
+static inline int nbp_vlan_init(struct net_bridge_port *port)
+{
+	return 0;
 }
 
 static inline u16 br_vlan_get_tag(const struct sk_buff *skb, u16 *tag)
@@ -915,7 +913,6 @@ BR_HOOK(uint8_t pf, unsigned int hook, struct net *net, struct sock *sk, struct 
 
 	return NF_HOOK(pf, hook, net, sk, skb, in, out, okfn);
 }
-
 
 /* br_stp.c */
 void br_log_state(const struct net_bridge_port *p);

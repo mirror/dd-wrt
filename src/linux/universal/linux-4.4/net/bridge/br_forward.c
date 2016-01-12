@@ -19,7 +19,6 @@
 #include <linux/skbuff.h>
 #include <linux/if_vlan.h>
 #include <linux/netfilter_bridge.h>
-#include <linux/export.h>
 #include "br_private.h"
 
 static int deliver_clone(const struct net_bridge_port *prev,
@@ -200,8 +199,13 @@ static struct net_bridge_port *maybe_deliver_addr(
 			      struct sk_buff *skb))
 {
 	struct net_device *dev = BR_INPUT_SKB_CB(skb)->brdev;
+	const unsigned char *src = eth_hdr(skb)->h_source;
 
 	if (!should_deliver(p, skb))
+		return prev;
+
+	/* Even with hairpin, no soliloquies - prevent breaking IPv6 DAD */
+	if (skb->dev == p->dev && ether_addr_equal(src, addr))
 		return prev;
 
 	skb = skb_copy(skb, GFP_ATOMIC);
@@ -221,7 +225,7 @@ static void br_flood(struct net_bridge *br, struct sk_buff *skb,
 		     struct sk_buff *skb0,
 		     void (*__packet_hook)(const struct net_bridge_port *p,
 					   struct sk_buff *skb),
-		     bool forward, bool unicast)
+		     				bool unicast, bool forward)
 {
 	struct net_bridge_port *p;
 	struct net_bridge_port *prev;
@@ -265,14 +269,14 @@ out:
 /* called with rcu_read_lock */
 void br_flood_deliver(struct net_bridge *br, struct sk_buff *skb, bool unicast)
 {
-	br_flood(br, skb, NULL, __br_deliver, false, unicast);
+	br_flood(br, skb, NULL, __br_deliver, unicast, false);
 }
 
 /* called under bridge lock */
 void br_flood_forward(struct net_bridge *br, struct sk_buff *skb,
 		      struct sk_buff *skb2, bool unicast)
 {
-	br_flood(br, skb, skb2, __br_forward, true, unicast);
+	br_flood(br, skb, skb2, __br_forward, unicast, true);
 }
 
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
