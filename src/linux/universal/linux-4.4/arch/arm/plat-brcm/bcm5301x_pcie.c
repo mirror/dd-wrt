@@ -257,7 +257,7 @@ static soc_pcie_port_t soc_pcie_ports[4] = {
 	 .regs_res = &soc_pcie_regs[1],
 	 .owin_res = &soc_pcie_owin[1],
 	 .irqs = {165, 166, 167, 168, 169, 170},
-		    .domain = 2,
+	.domain = 2,
 	 .hw_pci = {
 		    .swizzle = pci_std_swizzle,
 		    .nr_controllers = 1,
@@ -895,7 +895,6 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port *port, uint3
 	};
 
 	struct pci_bus bus = {
-		.domain_nr = port->domain,
 		.number = 0,
 		.ops = &soc_pcie_ops,
 		.sysdata = &sd,
@@ -977,7 +976,6 @@ static void __init soc_pcie_hw_init(struct soc_pcie_port *port)
 	};
 
 	struct pci_bus bus = {
-		.domain_nr = port->domain,
 		.number = 0,
 		.ops = &soc_pcie_ops,
 		.sysdata = &sd,
@@ -1128,7 +1126,6 @@ static void __init noinline soc_pcie_bridge_init(struct soc_pcie_port *port)
 	};
 
 	struct pci_bus bus = {
-		.domain_nr = port->domain,
 		.number = 0,
 		.ops = &soc_pcie_ops,
 		.sysdata = &sd,
