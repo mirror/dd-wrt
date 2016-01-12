@@ -300,11 +300,11 @@ addEvent(window, "unload", function() {
                                 <% show_qos_aqd(); %>
 								<div class="setting">
 									<div class="label"><% tran("qos.dnlink"); %></div>
-									<input type="text" size="5" class="num" name="wshaper_downlink" value="<% nvg("wshaper_downlink"); %>" />
+									<input type="number" min="100" max="1000000" step="10" class="num" name="wshaper_downlink" value="<% nvg("wshaper_downlink"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("qos.uplink"); %></div>
-									<input type="text" size="5" class="num" name="wshaper_uplink" value="<% nvg("wshaper_uplink"); %>" />
+									<input type="number" min="100" max="1000000" step="10" class="num" name="wshaper_uplink" value="<% nvg("wshaper_uplink"); %>" />
 								</div>
 							</fieldset><br />
                             
