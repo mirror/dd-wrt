@@ -118,7 +118,7 @@ static int soc_pci_write_config(struct pci_bus *bus, unsigned int devfn, int whe
 #error	CONFIG_PCI_DOMAINS is required
 #endif
 
-static int sbpci_read_config_reg(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *value)
+static int sbpci_read_config_reg(struct pci_bus *bus, u32 devfn, int where, int size, u32 *value)
 {
 	unsigned long flags;
 	int ret;
@@ -129,7 +129,7 @@ static int sbpci_read_config_reg(struct pci_bus *bus, unsigned int devfn, int wh
 	return ret ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL;
 }
 
-static int sbpci_write_config_reg(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 value)
+static int sbpci_write_config_reg(struct pci_bus *bus, u32 devfn, int where, int size, u32 value)
 {
 	unsigned long flags;
 	int ret;
@@ -141,8 +141,8 @@ static int sbpci_write_config_reg(struct pci_bus *bus, unsigned int devfn, int w
 }
 
 static struct pci_ops pcibios_ops = {
-	sbpci_read_config_reg,
-	sbpci_write_config_reg
+	.read = sbpci_read_config_reg,
+	.write = sbpci_write_config_reg
 };
 
 /*
@@ -209,6 +209,7 @@ typedef struct soc_pcie_port {
 	struct resource *owin_res;
 	void *__iomem reg_base;
 	unsigned short irqs[6];
+	int domain;
 	struct hw_pci hw_pci;
 
 	bool enable;
@@ -224,6 +225,7 @@ typedef struct soc_pcie_port {
 static soc_pcie_port_t soc_pcie_ports[4] = {
 	{
 	 .irqs = {0, 0, 0, 0, 0, 0},
+	.domain = 0,
 	 .hw_pci = {
 		    .swizzle = NULL,
 		    .nr_controllers = 1,
@@ -238,6 +240,7 @@ static soc_pcie_port_t soc_pcie_ports[4] = {
 	 .regs_res = &soc_pcie_regs[0],
 	 .owin_res = &soc_pcie_owin[0],
 	 .irqs = {159, 160, 161, 162, 163, 164},
+		    .domain = 1,
 	 .hw_pci = {
 		    .swizzle = pci_std_swizzle,
 		    .nr_controllers = 1,
@@ -254,6 +257,7 @@ static soc_pcie_port_t soc_pcie_ports[4] = {
 	 .regs_res = &soc_pcie_regs[1],
 	 .owin_res = &soc_pcie_owin[1],
 	 .irqs = {165, 166, 167, 168, 169, 170},
+		    .domain = 2,
 	 .hw_pci = {
 		    .swizzle = pci_std_swizzle,
 		    .nr_controllers = 1,
@@ -270,6 +274,7 @@ static soc_pcie_port_t soc_pcie_ports[4] = {
 	 .regs_res = &soc_pcie_regs[2],
 	 .owin_res = &soc_pcie_owin[2],
 	 .irqs = {171, 172, 173, 174, 175, 176},
+		    .domain = 3,
 	 .hw_pci = {
 		    .swizzle = pci_std_swizzle,
 		    .nr_controllers = 1,
@@ -288,6 +293,7 @@ static soc_pcie_port_t soc_pcie_ports[4] = {
 static soc_pcie_port_t bcm53573_pcie_ports[2] = {
 	{
 	 .irqs = {0, 0, 0, 0, 0, 0},
+		    .domain = 0,
 	 .hw_pci = {
 		    .swizzle = NULL,
 		    .nr_controllers = 1,
@@ -302,6 +308,7 @@ static soc_pcie_port_t bcm53573_pcie_ports[2] = {
 	 .regs_res = &soc_pcie_regs[0],
 	 .owin_res = &soc_pcie_owin[0],
 	 .irqs = {34, 34, 34, 34, 34, 34},
+		    .domain = 1,
 	 .hw_pci = {
 		    .swizzle = pci_std_swizzle,
 		    .nr_controllers = 1,
@@ -368,7 +375,7 @@ si_bus_irq_map_t si_bus_irq_map_bcm53573[] = {
 
 #define SI_BUS_IRQ_MAP_BCM53573_SIZE (sizeof(si_bus_irq_map_bcm53573) / sizeof(si_bus_irq_map_t))
 
-static int si_bus_map_irq(struct pci_dev *pdev)
+int si_bus_map_irq(struct pci_dev *pdev)
 {
 	int i, irq = 0;
 	si_bus_irq_map_t *irq_map;
@@ -395,31 +402,40 @@ static int si_bus_map_irq(struct pci_dev *pdev)
 	return irq;
 }
 
-static struct soc_pcie_port *soc_pcie_sysdata2port(struct pci_sys_data *sysdata)
+struct soc_pcie_port *soc_pcie_sysdata2port(struct pci_sys_data *sysdata)
 {
 	unsigned port;
-
-	port = pci_domain_nr(sysdata->bus);
+	struct soc_pcie_port *fake;
+	if (!sysdata) {
+		printk(KERN_EMERG "error, no sysdata defined\n");
+		return &pcie_port[0];
+	}
+	if (!sysdata->private_data) {
+		printk(KERN_EMERG "error, no private data defined in sysdata\n");
+		return &pcie_port[0];
+	}
+	fake = (struct soc_pcie_port *)sysdata->private_data;
+	port = fake->domain;
 	BUG_ON(port >= pcie_ports_sz);
 	return &pcie_port[port];
 }
 
-static struct soc_pcie_port *soc_pcie_pdev2port(const struct pci_dev *pdev)
+struct soc_pcie_port *soc_pcie_pdev2port(const struct pci_dev *pdev)
 {
 	return soc_pcie_sysdata2port(pdev->sysdata);
 }
 
-static struct soc_pcie_port *soc_pcie_bus2port(struct pci_bus *bus)
+struct soc_pcie_port *soc_pcie_bus2port(struct pci_bus *bus)
 {
 	return soc_pcie_sysdata2port(bus->sysdata);
 }
 
-static struct pci_bus *soc_pci_scan_bus(int nr, struct pci_sys_data *sys)
+struct pci_bus *soc_pci_scan_bus(int nr, struct pci_sys_data *sys)
 {
 	return pci_scan_root_bus(NULL, sys->busnr, &soc_pcie_ops, sys, &sys->resources);
 }
 
-static int soc_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
+int soc_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
 {
 	struct soc_pcie_port *port = soc_pcie_pdev2port(pdev);
 	int irq;
@@ -431,7 +447,7 @@ static int soc_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
 	return irq;
 }
 
-static void __iomem *soc_pci_cfg_base(struct pci_bus *bus, unsigned int devfn, int where)
+void __iomem *soc_pci_cfg_base(struct pci_bus *bus, unsigned int devfn, int where)
 {
 	struct soc_pcie_port *port = soc_pcie_bus2port(bus);
 	int busno = bus->number;
@@ -441,13 +457,11 @@ static void __iomem *soc_pci_cfg_base(struct pci_bus *bus, unsigned int devfn, i
 	int offset;
 	int type;
 	u32 addr_reg;
-
 	base = port->reg_base;
 
 	/* If there is no link, just show the PCI bridge. */
 	if (!port->link && (busno > 0 || slot > 0))
 		return NULL;
-
 	if (busno == 0) {
 		if (slot >= 1)
 			return NULL;
@@ -471,8 +485,8 @@ static void __iomem *soc_pci_cfg_base(struct pci_bus *bus, unsigned int devfn, i
 static void pcie_switch_retrain_link(struct pci_bus *bus, unsigned int devfn)
 {
 	struct soc_pcie_port *port = soc_pcie_bus2port(bus);
-	u16 pos = PLX_PCIE_CAP_REG_BASE;
-	u16 tmp16;
+	u32 pos = PLX_PCIE_CAP_REG_BASE;
+	u32 tmp16;
 	int wait = 0;
 
 	if (port->switch_id == ASMEDIA_SWITCH_ID) {
@@ -502,7 +516,7 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 {
 	struct soc_pcie_port *port = soc_pcie_bus2port(bus);
 	u32 dRead = 0;
-	u16 bm = 0;
+	u32 bm = 0;
 	int bus_inc = 0;
 	u16 pos = PLX_PCIE_CAP_REG_BASE;
 	if ((port->init_state & (bus->number | devfn)) == (bus->number | devfn)) {
@@ -561,7 +575,7 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 		BUG_ON(((port->owin_res->start + SZ_32M) >> 16) & 0xf);
 		soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_32M - 1) >> 16) & 0xfff0);
 
-		printk("PCIE %04x:%02x:%04x: PLX UpPort mem_base 0x%08x, mem_limit 0x%08x\n", pci_domain_nr(bus), bus->number, devfn, port->owin_res->start, port->owin_res->start + SZ_32M - 1);
+		printk("PCIE %04x:%02x:%04x: PLX UpPort mem_base 0x%08x, mem_limit 0x%08x\n", port->domain, bus->number, devfn, port->owin_res->start, port->owin_res->start + SZ_32M - 1);
 	} else if (bus->number == (bus_inc + 2)) {
 		/* TODO: I need to fix these hard coded addresses. */
 		if (devfn == 0x8) {
@@ -577,7 +591,7 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_48M + SZ_32M - 1) >> 16) & 0xfff0);
 
 			printk("PCIE %04x:%02x:%04x: PLX DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
-			       pci_domain_nr(bus), bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
+			       port->domain, bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
 
 			/* Retrain Link */
 			pcie_switch_retrain_link(bus, devfn);
@@ -585,10 +599,10 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKSTA, 2, &bm);
 			if (bm & PCI_EXP_LNKSTA_DLLLA) {
 				port->port1active = 1;
-				printk("PCIE %04x:%02x:%04x: PLX DownPort Link speed is GEN%d\n", pci_domain_nr(bus), bus->number, devfn, (bm & 0x3));
+				printk("PCIE %04x:%02x:%04x: PLX DownPort Link speed is GEN%d\n", port->domain, bus->number, devfn, (bm & 0x3));
 			}
 
-			printk("PCIE %04x:%02x:%04x: PLX DownPort Link status 0x%04x\n", pci_domain_nr(bus), bus->number, devfn, bm);
+			printk("PCIE %04x:%02x:%04x: PLX DownPort Link status 0x%04x\n", port->domain, bus->number, devfn, bm);
 		} else if (devfn == 0x10) {
 			if (port->port2active == 1)
 				return;
@@ -602,7 +616,7 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1) >> 16) & 0xfff0);
 
 			printk("PCIE %04x:%02x:%04x: PLX DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
-			       pci_domain_nr(bus), bus->number, devfn, port->owin_res->start + (SZ_48M * 2), port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1);
+			       port->domain, bus->number, devfn, port->owin_res->start + (SZ_48M * 2), port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1);
 
 			/* Retrain Link */
 			pcie_switch_retrain_link(bus, devfn);
@@ -610,10 +624,10 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKSTA, 2, &bm);
 			if (bm & PCI_EXP_LNKSTA_DLLLA) {
 				port->port2active = 1;
-				printk("PCIE %04x:%02x:%04x: PLX DownPort Link speed is GEN%d\n", pci_domain_nr(bus), bus->number, devfn, (bm & 0x3));
+				printk("PCIE %04x:%02x:%04x: PLX DownPort Link speed is GEN%d\n", port->domain, bus->number, devfn, (bm & 0x3));
 			}
 
-			printk("PCIE %04x:%02x:%04x: PLX DownPort Link status 0x%04x\n", pci_domain_nr(bus), bus->number, devfn, bm);
+			printk("PCIE %04x:%02x:%04x: PLX DownPort Link status 0x%04x\n", port->domain, bus->number, devfn, bm);
 		}
 	}
 }
@@ -622,10 +636,10 @@ static void asmedia_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 {
 	struct soc_pcie_port *port = soc_pcie_bus2port(bus);
 	u32 dRead = 0;
-	u16 bm = 0;
+	u32 bm = 0;
 	int bus_inc = 0;
-	u16 pos = ASMEDIA_PCIE_CAP_REG_BASE;
-	u16 tmp16;
+	u32 pos = ASMEDIA_PCIE_CAP_REG_BASE;
+	u32 tmp16;
 
 	soc_pci_read_config(bus, devfn, 0x100, 4, &dRead);
 	printk("PCIE: Doing ASMedia switch Init...Test Read = %08x\n", (unsigned int)dRead);
@@ -657,7 +671,7 @@ static void asmedia_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 		BUG_ON(((port->owin_res->start + SZ_32M) >> 16) & 0xf);
 		soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_32M - 1) >> 16) & 0xfff0);
 
-		printk("PCIE %04x:%02x:%04x: ASMedia UpPort mem_base 0x%08x, mem_limit 0x%08x\n", pci_domain_nr(bus), bus->number, devfn, port->owin_res->start, port->owin_res->start + SZ_32M - 1);
+		printk("PCIE %04x:%02x:%04x: ASMedia UpPort mem_base 0x%08x, mem_limit 0x%08x\n", port->domain, bus->number, devfn, port->owin_res->start, port->owin_res->start + SZ_32M - 1);
 	} else if (bus->number == (bus_inc + 2)) {
 		/* Downstream ports */
 		if (devfn == 0x18) {
@@ -673,7 +687,7 @@ static void asmedia_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_48M + SZ_32M - 1) >> 16) & 0xfff0);
 
 			printk("PCIE %04x:%02x:%04x: ASMedia DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
-			       pci_domain_nr(bus), bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
+			       port->domain, bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
 
 			/* Set link speed via Link Control2 reg */
 			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKCTL2, 2, &tmp16);
@@ -687,10 +701,10 @@ static void asmedia_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKSTA, 2, &bm);
 			if (bm & PCI_EXP_LNKSTA_DLLLA) {
 				port->port1active = 1;
-				printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link speed is GEN%d\n", pci_domain_nr(bus), bus->number, devfn, (bm & 0x3));
+				printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link speed is GEN%d\n", port->domain, bus->number, devfn, (bm & 0x3));
 			}
 
-			printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link status 0x%04x\n", pci_domain_nr(bus), bus->number, devfn, bm);
+			printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link status 0x%04x\n", port->domain, bus->number, devfn, bm);
 		} else if (devfn == 0x38) {
 			if (port->port2active == 1)
 				return;
@@ -704,7 +718,7 @@ static void asmedia_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1) >> 16) & 0xfff0);
 
 			printk("PCIE %04x:%02x:%04x: ASMedia DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
-			       pci_domain_nr(bus), bus->number, devfn, port->owin_res->start + (SZ_48M * 2), port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1);
+			       port->domain, bus->number, devfn, port->owin_res->start + (SZ_48M * 2), port->owin_res->start + (SZ_48M * 2) + SZ_32M - 1);
 
 			/* Set link speed via Link Control2 reg */
 			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKCTL2, 2, &tmp16);
@@ -718,11 +732,11 @@ static void asmedia_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKSTA, 2, &bm);
 			if (bm & PCI_EXP_LNKSTA_DLLLA) {
 				port->port2active = 1;
-				printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link speed is GEN%d\n", pci_domain_nr(bus), bus->number, devfn, (bm & 0x3));
+				printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link speed is GEN%d\n", port->domain, bus->number, devfn, (bm & 0x3));
 
 			}
 
-			printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link status 0x%04x\n", pci_domain_nr(bus), bus->number, devfn, bm);
+			printk("PCIE %04x:%02x:%04x: ASMedia DownPort Link status 0x%04x\n", port->domain, bus->number, devfn, bm);
 		}
 	}
 }
@@ -858,8 +872,7 @@ static int soc_pci_write_config(struct pci_bus *bus, unsigned int devfn, int whe
 static int soc_pci_setup(int nr, struct pci_sys_data *sys)
 {
 	struct soc_pcie_port *port = soc_pcie_sysdata2port(sys);
-
-	int err = request_resource(&iomem_resource, port->owin_res);
+	request_resource(&iomem_resource, port->owin_res);
 	pci_add_resource_offset(&sys->resources, port->owin_res, sys->mem_offset);
 	sys->private_data = port;
 	return 1;
@@ -877,11 +890,17 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port *port, uint3
 	u32 tmp32;
 	int wait = 0;
 
-	struct pci_bus bus = {
-		.number = 0,
-		.ops = &soc_pcie_ops,
+	struct pci_sys_data sd = {
+		.private_data = port
 	};
 
+	struct pci_bus bus = {
+		.domain_nr = port->domain,
+		.number = 0,
+		.ops = &soc_pcie_ops,
+		.sysdata = &sd,
+	};
+	sd.bus = &bus;
 	if (!port->enable)
 		return -EINVAL;
 
@@ -910,12 +929,12 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port *port, uint3
 	} while (wait++ < 10);
 
 	if (tmp16 & PCI_EXP_LNKSTA_LT)
-		pr_info("PCIE%d: Retrain link failed\n", pci_domain_nr(&bus));
+		pr_info("PCIE%d: Retrain link failed\n", port->domain);
 
 	/* See if the port is in EP mode, indicated by header type 00 */
 	pci_bus_read_config_byte(&bus, devfn, PCI_HEADER_TYPE, &tmp8);
 	if (tmp8 != PCI_HEADER_TYPE_BRIDGE) {
-		pr_info("PCIe port %d in End-Point mode - ignored\n", pci_domain_nr(&bus));
+		pr_info("PCIe port %d in End-Point mode - ignored\n", port->domain);
 		return -ENODEV;
 	}
 
@@ -924,7 +943,7 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port *port, uint3
 	pci_bus_read_config_word(&bus, devfn, pos + PCI_EXP_LNKSTA, &tmp16);
 
 #ifdef	DEBUG
-	pr_debug("PCIE%d: LINKSTA reg %#x val %#x\n", pci_domain_nr(&bus), pos + PCI_EXP_LNKSTA, tmp16);
+	pr_debug("PCIE%d: LINKSTA reg %#x val %#x\n", port->domain, pos + PCI_EXP_LNKSTA, tmp16);
 #endif
 
 	nlw = (tmp16 & PCI_EXP_LNKSTA_NLW) >> PCI_EXP_LNKSTA_NLW_SHIFT;
@@ -940,7 +959,7 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port *port, uint3
 			pr_debug("reg[%#x]=%#x, ", pos, tmp16);
 	}
 #endif
-	pr_info("PCIE%d link=%d\n", pci_domain_nr(&bus), port->link);
+	pr_info("PCIE%d link=%d\n", port->domain, port->link);
 
 	return ((port->link) ? 0 : -ENOSYS);
 }
@@ -952,16 +971,24 @@ static void __init soc_pcie_hw_init(struct soc_pcie_port *port)
 {
 	u32 devfn = 0;
 	u32 tmp32;
-	struct pci_bus bus = {
-		.number = 0,
-		.ops = &soc_pcie_ops,
+	u16 tmp16;
+	struct pci_sys_data sd = {
+		.private_data = port
 	};
 
+	struct pci_bus bus = {
+		.domain_nr = port->domain,
+		.number = 0,
+		.ops = &soc_pcie_ops,
+		.sysdata = &sd,
+	};
+	sd.bus = &bus;
+
 	/* Change MPS and MRRS to 512 */
-	pci_bus_read_config_word(&bus, devfn, 0x4d4, &tmp32);
-	tmp32 &= ~7;
-	tmp32 |= 2;
-	pci_bus_write_config_word(&bus, devfn, 0x4d4, tmp32);
+	pci_bus_read_config_word(&bus, devfn, 0x4d4, &tmp16);
+	tmp16 &= ~7;
+	tmp16 |= 2;
+	pci_bus_write_config_word(&bus, devfn, 0x4d4, tmp16);
 
 	pci_bus_read_config_dword(&bus, devfn, 0xb4, &tmp32);
 	tmp32 &= ~((7 << 12) | (7 << 5));
@@ -1096,10 +1123,17 @@ static void __init noinline soc_pcie_bridge_init(struct soc_pcie_port *port)
 	u16 tmp16;
 
 	/* Fake <bus> object */
+	struct pci_sys_data sd = {
+		.private_data = port
+	};
+
 	struct pci_bus bus = {
+		.domain_nr = port->domain,
 		.number = 0,
 		.ops = &soc_pcie_ops,
+		.sysdata = &sd,
 	};
+	sd.bus = &bus;
 
 	pci_bus_write_config_byte(&bus, devfn, PCI_PRIMARY_BUS, 0);
 	pci_bus_write_config_byte(&bus, devfn, PCI_SECONDARY_BUS, 1);
@@ -1703,7 +1737,7 @@ bool __devinit plat_fixup_bus(struct pci_bus * b)
 	printk("PCI: Fixing up bus %d\n", b->number);
 
 	/* Fix up SB */
-	if (pci_domain_nr(b) == 0) {
+	if (b->domain_nr == 0) {
 		list_for_each_entry(d, &b->devices, bus_list) {
 			/* Fix up interrupt lines */
 			pci_read_config_byte(d, PCI_INTERRUPT_LINE, &irq);
@@ -1719,7 +1753,8 @@ bool __devinit plat_fixup_bus(struct pci_bus * b)
 static int __init allow_gen2_rc(struct soc_pcie_port *port)
 {
 	uint32 vendorid, devid, chipid, chiprev;
-	uint32 val, bar, base;
+	uint32 val, bar;
+	void *base;
 	int allow = 1;
 	char *p;
 
@@ -1762,7 +1797,7 @@ static int __init allow_gen2_rc(struct soc_pcie_port *port)
 		/* Read CHIP ID */
 		base = (uint32) ioremap(bar, 0x1000);
 		val = __raw_readl(base);
-		iounmap((void *)base);
+		iounmap(base);
 		chipid = val & 0xffff;
 		chiprev = (val >> 16) & 0xf;
 		if ((chipid == BCM4360_CHIP_ID || chipid == BCM43460_CHIP_ID || chipid == BCM4352_CHIP_ID) && (chiprev < 3))
@@ -1977,12 +2012,10 @@ static int __init soc_pcie_init(void)
 	printk(KERN_INFO "PCI: scanning bus %x\n", 0);
 	struct hw_pci *hw = &soc_pcie_ports[0].hw_pci;
 	static struct pci_sys_data sys;
-//#ifdef CONFIG_PCI_DOMAINS
-//	sys.domain = hw->domain;
-//#endif
 	sys.busnr = 0;
 	sys.swizzle = hw->swizzle;
 	sys.map_irq = hw->map_irq;
+	sys.private_data = &soc_pcie_ports[0];
 
 //              .domain         = 0,
 //              .swizzle        = NULL,
@@ -1991,8 +2024,12 @@ static int __init soc_pcie_init(void)
 
 	struct pci_bus *root_bus;
 	root_bus = pci_scan_bus(0, &pcibios_ops, &sys);
-	if (root_bus)
+	if (root_bus) {
+#ifdef CONFIG_PCI_DOMAINS
+    		root_bus->domain_nr = soc_pcie_ports[0].domain;
+#endif
 		pci_bus_add_devices(root_bus);
+	}
 
 //      pci_scan_bus(0, &pcibios_ops, &sys);
 //        pci_common_init( & soc_pcie_ports[0].hw_pci );
@@ -2007,11 +2044,10 @@ static int __init soc_pcie_init(void)
 		/* Check if this port needs to be enabled */
 		if (!port->enable)
 			continue;
-
+		
 		/* Setup PCIe controller registers */
 //              pci_ioremap_io(SZ_64K * (i-1), port->regs_res->start);
 //              port->reg_base = PCI_IO_VIRT_BASE + SZ_64K * (i-1);
-
 		int err = request_resource(&iomem_resource, port->regs_res);
 		port->reg_base = ioremap(port->regs_res->start, resource_size(port->regs_res));
 //              BUG_ON( IS_ERR_OR_NULL(port->reg_base ));
@@ -2033,13 +2069,14 @@ static int __init soc_pcie_init(void)
 			if (allow_gen2 == 0) {
 				if (allow_gen2_rc(port) == 0)
 					break;
-				pr_info("PCIE%d switching to GEN2\n", pci_domain_nr(root_bus));
+				pr_info("PCIE%d switching to GEN2\n", port->domain);
 			}
 		}
 
 		if (linkfail)
 			continue;
-
+		port->hw_pci.private_data = kzalloc(sizeof(port->hw_pci.private_data) *  port->hw_pci.nr_controllers,GFP_KERNEL);
+		port->hw_pci.private_data[0] = port;
 		/* Announce this port to ARM/PCI common code */
 		pci_common_init(&port->hw_pci);
 
