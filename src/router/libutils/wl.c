@@ -2422,7 +2422,7 @@ int getrxantenna(char *ifname)
 void radio_off(int idx)
 {
 	if (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
-		eval("stopservice", "nas");
+		eval("stopservice", "nas", "-f");
 	}
 	if (idx != -1) {
 		fprintf(stderr, "radio_off(%d) interface: %s\n", idx, get_wl_instance_name(idx));
@@ -2448,18 +2448,23 @@ void radio_off(int idx)
 	}
 	//fix ticket 2991
 	eval("startservice", "nas", "-f");
+	
+	
 }
 
 void radio_on(int idx)
 {
 	if (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
-		eval("stopservice", "nas");
+		eval("stopservice", "nas", "-f");
 	}
 	if (idx != -1) {
-		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx))
+		
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx)){
 			fprintf(stderr, "radio_on(%d) interface: %s \n", idx, get_wl_instance_name(idx));
-		eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
-		eval("wl", "-i", get_wl_instance_name(idx), "radio", "on");
+			eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
+			eval("wl", "-i", get_wl_instance_name(idx), "radio", "on");
+		}
+
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_ON);
 		if (idx == 1)
