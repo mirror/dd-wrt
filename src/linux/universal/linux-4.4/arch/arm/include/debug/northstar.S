@@ -27,4 +27,4 @@
 
 
 #define UART_SHIFT	PLAT_LLDEBUG_UART_SH
-#include <asm/hardware/debug-8250.S>
+#include <debug/8250.S>

@@ -9,10 +9,12 @@
  */
 #include <linux/serial_reg.h>
 
+#ifdef CONFIG_DEBUG_UART_PHYS
 		.macro	addruart, rp, rv, tmp
 		ldr	\rp, =CONFIG_DEBUG_UART_PHYS
 		ldr	\rv, =CONFIG_DEBUG_UART_VIRT
 		.endm
+#endif
 
 #ifdef CONFIG_DEBUG_UART_8250_WORD
 		.macro	store, rd, rx:vararg
@@ -35,8 +37,9 @@
 		.endm
 #endif
 
+#ifndef UART_SHIFT
 #define UART_SHIFT CONFIG_DEBUG_UART_8250_SHIFT
-
+#endif
 		.macro	senduart,rd,rx
 		store	\rd, [\rx, #UART_TX << UART_SHIFT]
 		.endm
