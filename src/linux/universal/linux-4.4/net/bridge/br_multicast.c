@@ -42,7 +42,8 @@ static void br_multicast_add_router(struct net_bridge *br,
 static void br_ip4_multicast_leave_group(struct net_bridge *br,
 					 struct net_bridge_port *port,
 					 __be32 group,
-					 __u16 vid, const unsigned char *src);
+					 __u16 vid,
+					 const unsigned char *src);
 #if IS_ENABLED(CONFIG_IPV6)
 static void br_ip6_multicast_leave_group(struct net_bridge *br,
 					 struct net_bridge_port *port,
@@ -438,6 +439,7 @@ static struct sk_buff *br_ip6_multicast_alloc_query(struct net_bridge *br,
 	unsigned long interval;
 	if (!ipv6_dev_get_saddr)
 	    return NULL;
+
 	skb = netdev_alloc_skb_ip_align(br->dev, sizeof(*eth) + sizeof(*ip6h) +
 						 8 + sizeof(*mldq));
 	if (!skb)
@@ -852,7 +854,7 @@ static void __br_multicast_send_query(struct net_bridge *br,
 
 	if (port) {
 		skb->dev = port->dev;
-		BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
+		NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
 			dev_net(port->dev), NULL, skb, NULL, skb->dev,
 			br_dev_queue_push_xmit);
 	} else {
@@ -1059,12 +1061,12 @@ static int br_ip4_multicast_igmp3_report(struct net_bridge *br,
 			continue;
 		}
 
-		src = eth_hdr(skb)->h_source;
 		if ((type == IGMPV3_CHANGE_TO_INCLUDE ||
 		     type == IGMPV3_MODE_IS_INCLUDE) &&
 		    ntohs(grec->grec_nsrcs) == 0) {
 			br_ip4_multicast_leave_group(br, port, group, vid, src);
 		} else {
+			src = eth_hdr(skb)->h_source;
 			err = br_ip4_multicast_add_group(br, port, group, vid, src);
 			if (err)
 				break;
@@ -1080,7 +1082,7 @@ static int br_ip6_multicast_mld2_report(struct net_bridge *br,
 					struct sk_buff *skb,
 					u16 vid)
 {
-	const unsigned char *src;
+	const unsigned char *src = eth_hdr(skb)->h_source;
 	struct icmp6hdr *icmp6h;
 	struct mld2_grec *grec;
 	int i;
@@ -1128,7 +1130,6 @@ static int br_ip6_multicast_mld2_report(struct net_bridge *br,
 			continue;
 		}
 
-		src = eth_hdr(skb)->h_source;
 		if ((grec->grec_type == MLD2_CHANGE_TO_INCLUDE ||
 		     grec->grec_type == MLD2_MODE_IS_INCLUDE) &&
 		    ntohs(*nsrcs) == 0) {
@@ -1619,12 +1620,12 @@ static int br_multicast_ipv4_rcv(struct net_bridge *br,
 
 	BR_INPUT_SKB_CB(skb)->igmp = 1;
 	ih = igmp_hdr(skb);
+	src = eth_hdr(skb)->h_source;
 
 	switch (ih->type) {
 	case IGMP_HOST_MEMBERSHIP_REPORT:
 	case IGMPV2_HOST_MEMBERSHIP_REPORT:
 		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
-		src = eth_hdr(skb)->h_source;
 		err = br_ip4_multicast_add_group(br, port, ih->group, vid, src);
 		break;
 	case IGMPV3_HOST_MEMBERSHIP_REPORT:
@@ -1634,7 +1635,6 @@ static int br_multicast_ipv4_rcv(struct net_bridge *br,
 		err = br_ip4_multicast_query(br, port, skb_trimmed, vid);
 		break;
 	case IGMP_HOST_LEAVE_MESSAGE:
-		src = eth_hdr(skb)->h_source;
 		br_ip4_multicast_leave_group(br, port, ih->group, vid, src);
 		break;
 	}
@@ -1671,10 +1671,9 @@ static int br_multicast_ipv6_rcv(struct net_bridge *br,
 
 	switch (mld->mld_type) {
 	case ICMPV6_MGM_REPORT:
-		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
 		src = eth_hdr(skb)->h_source;
-		err = br_ip6_multicast_add_group(br, port, &mld->mld_mca, vid,
-						 src);
+		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
+		err = br_ip6_multicast_add_group(br, port, &mld->mld_mca, vid, src);
 		break;
 	case ICMPV6_MLD2_REPORT:
 		err = br_ip6_multicast_mld2_report(br, port, skb_trimmed, vid);

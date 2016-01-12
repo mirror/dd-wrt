@@ -239,6 +239,7 @@ err_out5:
 err_out4:
 	unregister_netdevice_notifier(&br_device_notifier);
 err_out3:
+
 err_out2:
 	unregister_pernet_subsys(&br_net_ops);
 err_out1:
@@ -263,10 +264,7 @@ static void __exit br_deinit(void)
 #if IS_ENABLED(CONFIG_ATM_LANE)
 	br_fdb_test_addr_hook = NULL;
 #endif
-
 	br_fdb_fini();
-
-
 }
 
 module_init(br_init)
