@@ -39,6 +39,7 @@ define kernelfeatures
 	echo "CONFIG_IP_VS_LBLCR=m" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_DH=m" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_SH=m" >> $(LINUXDIR)/.config; \
+	echo "CONFIG_IP_VS_OVF=m" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_SED=m" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_NQ=m" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_SH_TAB_BITS=8" >> $(LINUXDIR)/.config; \
