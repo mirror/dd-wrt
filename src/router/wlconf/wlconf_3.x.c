@@ -1814,8 +1814,7 @@ cprintf("disable bss %s\n",name);
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
 			addr = nvram_safe_get(tmp);
 			if (!strcmp(addr, "")) {
-				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1))
-				        | ((max_no_vifs-1) & (vif_addr[5]+1));
+				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-i)) | ((max_no_vifs-i) & (vif_addr[5]+i));
 				fprintf(stderr,"set new addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 				nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
 			}
