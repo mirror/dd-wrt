@@ -440,7 +440,7 @@ static int batadv_write_buffer_text(struct batadv_priv *bat_priv,
 {
 	struct batadv_gw_node *curr_gw;
 	struct batadv_neigh_node *router;
-	int down, up, ret = -1;
+	int down, up;
 
 	batadv_gw_bandwidth_to_kbit(gw_node->orig_node->gw_flags, &down, &up);
 
@@ -450,7 +450,7 @@ static int batadv_write_buffer_text(struct batadv_priv *bat_priv,
 
 	curr_gw = batadv_gw_get_selected_gw_node(bat_priv);
 
-	ret = seq_printf(seq, "%s %pM (%3i) %pM [%10s]: %3i - %i%s/%i%s\n",
+	seq_printf(seq, "%s %pM (%3i) %pM [%10s]: %3i - %i%s/%i%s\n",
 			 (curr_gw == gw_node ? "=>" : "  "),
 			 gw_node->orig_node->orig,
 			 router->tq_avg, router->addr,
@@ -464,8 +464,9 @@ static int batadv_write_buffer_text(struct batadv_priv *bat_priv,
 	batadv_neigh_node_free_ref(router);
 	if (curr_gw)
 		batadv_gw_node_free_ref(curr_gw);
+	return 0;
 out:
-	return ret;
+	return -1;
 }
 
 int batadv_gw_client_seq_print_text(struct seq_file *seq, void *offset)
