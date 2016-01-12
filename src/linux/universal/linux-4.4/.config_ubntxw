@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.0-rc7 Kernel Configuration
+# Linux/mips 4.4.0 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -982,6 +982,7 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_FLASH_16MB is not set
 CONFIG_MTD_FLASH_8MB=y
 CONFIG_DIR825C1=y
+ 
  
  
  

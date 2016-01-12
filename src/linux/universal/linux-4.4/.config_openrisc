@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.4.0-rc7 Kernel Configuration
+# Linux/arm 4.4.0 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -2907,7 +2907,7 @@ CONFIG_CRYPTO_DEFLATE=m
 #
 # CONFIG_OCF_OCF is not set
 CONFIG_ARM_CRYPTO=y
-# CONFIG_CRYPTO_SHA1_ARM is not set
+CONFIG_CRYPTO_SHA1_ARM=y
 CONFIG_CRYPTO_SHA256_ARM=y
 CONFIG_CRYPTO_SHA512_ARM=y
 CONFIG_CRYPTO_AES_ARM=y

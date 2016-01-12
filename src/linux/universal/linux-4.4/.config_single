@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.4.0-rc7 Kernel Configuration
+# Linux/i386 4.4.0 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1169,6 +1169,7 @@ CONFIG_TIFM_CORE=y
 CONFIG_TIFM_7XX1=m
 # CONFIG_ICS932S401 is not set
 # CONFIG_ENCLOSURE_SERVICES is not set
+# CONFIG_CS5535_MFGPT is not set
 # CONFIG_HP_ILO is not set
 # CONFIG_APDS9802ALS is not set
 # CONFIG_ISL29003 is not set
@@ -2231,6 +2232,7 @@ CONFIG_GPIO_SYSFS=y
 #
 # MFD GPIO expanders
 #
+# CONFIG_GPIO_CS5535 is not set
 
 #
 # PCI GPIO expanders

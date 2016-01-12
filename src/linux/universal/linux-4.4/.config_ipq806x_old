@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.4.0-rc7 Kernel Configuration
+# Linux/arm 4.4.0 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -3474,7 +3474,7 @@ CONFIG_CRYPTO_MD5=m
 # CONFIG_CRYPTO_RMD160 is not set
 # CONFIG_CRYPTO_RMD256 is not set
 # CONFIG_CRYPTO_RMD320 is not set
-CONFIG_CRYPTO_SHA1=m
+CONFIG_CRYPTO_SHA1=y
 # CONFIG_CRYPTO_SHA256 is not set
 # CONFIG_CRYPTO_SHA512 is not set
 # CONFIG_CRYPTO_TGR192 is not set
@@ -3532,7 +3532,7 @@ CONFIG_CRYPTO_XZ=y
 #
 # CONFIG_OCF_OCF is not set
 CONFIG_ARM_CRYPTO=y
-# CONFIG_CRYPTO_SHA1_ARM is not set
+CONFIG_CRYPTO_SHA1_ARM=y
 # CONFIG_CRYPTO_SHA1_ARM_NEON is not set
 # CONFIG_CRYPTO_SHA1_ARM_CE is not set
 # CONFIG_CRYPTO_SHA2_ARM_CE is not set
