@@ -27,9 +27,6 @@
 #include <net/switchdev.h>
 #include "br_private.h"
 
-#define BCMFASTPATH
-#define BCMFASTPATH_HOST
-
 static struct kmem_cache *br_fdb_cache __read_mostly;
 static struct net_bridge_fdb_entry *fdb_find(struct hlist_head *head,
 					     const unsigned char *addr,
@@ -372,7 +369,7 @@ void br_fdb_delete_by_port(struct net_bridge *br,
 }
 
 /* No locking or refcounting, assumes caller has rcu_read_lock */
-struct net_bridge_fdb_entry * BCMFASTPATH_HOST __br_fdb_get(struct net_bridge *br,
+struct net_bridge_fdb_entry *__br_fdb_get(struct net_bridge *br,
 					  const unsigned char *addr,
 					  __u16 vid)
 {
