@@ -39,9 +39,10 @@ void start_pptpd(void)
 	FILE *fp;
 
 	if (!nvram_invmatch("pptpd_enable", "0")) {
-		stop_pptpd();
 		return;
 	}
+
+	stop_pptpd();
 
 	if ((nvram_match("usb_enable", "1")
 	     && nvram_match("usb_storage", "1")
