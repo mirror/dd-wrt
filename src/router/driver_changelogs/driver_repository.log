@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r2775 | BrainSlayer | 2016-01-13 16:49:03 +0100 (Wed, 13 Jan 2016) | 1 line
+
+for diagnostics, enable cc gpio access. can be used with "wl -i ifname gpiopout"
+------------------------------------------------------------------------
+r2774 | BrainSlayer | 2016-01-13 16:45:20 +0100 (Wed, 13 Jan 2016) | 1 line
+
+fix ac68 2.4 ghz led issue
+------------------------------------------------------------------------
 r2773 | BrainSlayer | 2016-01-11 22:04:47 +0100 (Mon, 11 Jan 2016) | 1 line
 
 missmatch section fix
