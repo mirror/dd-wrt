@@ -430,10 +430,9 @@ if (nvram_match("boardnum", "4536") && nvram_match("boardtype", "0xf52e")
 	
 	for (i = 0; i < 16; i++)
 	{
-		if (gpios&1) {
+		if (gpios&1<<i) {
 			si_gpioreserve(gpio_sih, 1 << i, GPIO_APP_PRIORITY);
 		}
-		gpios>>=1;
 	}
 
 	return 0;
