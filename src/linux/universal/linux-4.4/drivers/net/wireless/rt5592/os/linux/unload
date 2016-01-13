@@ -1,6 +1,0 @@
-if  ifconfig | grep ra0 ; then
-    ifconfig ra0 down
-fi
-if  lsmod | grep rt5592ap ; then
-    rmmod rt5592ap
-fi
