@@ -45,7 +45,7 @@ MKDIR		= mkdir
 INSTALL		= install
 STATIC_LIBS	= libipvs/libipvs.a
 
-CFLAGS = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libnl-tiny
 
 #####################################
 # No servicable parts below this line
@@ -64,9 +64,9 @@ endif
 
 OBJS		= ipvsadm.o config_stream.o dynamic_array.o popt.o popthelp.o poptparse.o poptint.o
 LIBS		= $(POPT_LIB)
-#ifneq (0,$(HAVE_NL))
-#LIBS		+= -lnl
-#endif
+ifneq (0,$(HAVE_NL))
+LIBS		+= -lnl-tiny
+endif
 DEFINES		= -DVERSION=\"$(VERSION)\" -DSCHEDULERS=\"$(SCHEDULERS)\" \
 		  -DPE_LIST=\"$(PE_LIST)\" $(POPT_DEFINE)
 DEFINES		+= $(shell if [ ! -f ../ip_vs.h ]; then	\
