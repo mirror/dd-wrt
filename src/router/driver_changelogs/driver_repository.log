@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r2777 | BrainSlayer | 2016-01-13 19:05:21 +0100 (Wed, 13 Jan 2016) | 1 line
+
+fix rx_filter_control
+------------------------------------------------------------------------
+r2776 | BrainSlayer | 2016-01-13 18:56:31 +0100 (Wed, 13 Jan 2016) | 1 line
+
+Might reduce some cpu load in ath9k, if CLONED_SKB support is enabled
+------------------------------------------------------------------------
 r2775 | BrainSlayer | 2016-01-13 16:49:03 +0100 (Wed, 13 Jan 2016) | 1 line
 
 for diagnostics, enable cc gpio access. can be used with "wl -i ifname gpiopout"
