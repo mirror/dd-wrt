@@ -874,14 +874,15 @@ static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct
 	/* We do not copy old->sk */
 	new->dev		= old->dev;
 	memcpy(new->cb, old->cb, sizeof(old->cb));
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	new->cb_next = NULL;
-#endif
 	skb_dst_copy(new, old);
 #ifdef CONFIG_XFRM
 	new->sp			= secpath_get(old->sp);
 #endif
 	__nf_copy(new, old, false);
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	new->cb_next = NULL;
+	/*skb_copy_stored_cb(new, old);*/
+#endif
 
 	/* Note : this field could be in headers_start/headers_end section
 	 * It is not yet because we do not want to have a 16 bit hole

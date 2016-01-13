@@ -125,9 +125,9 @@ static void nf_conn_rtcache_dst_obsolete(struct nf_conn_rtcache *rtc,
 	rtc->cached_dst[dir].iif = -1;
 }
 
-static unsigned int nf_rtcache_in(void *priv,
-			       struct sk_buff *skb,
-			       const struct nf_hook_state *state)
+static unsigned int nf_rtcache_in(u_int8_t pf,
+				  struct sk_buff *skb,
+				  const struct nf_hook_state *state)
 {
 	struct nf_conn_rtcache *rtc;
 	enum ip_conntrack_info ctinfo;
@@ -165,7 +165,7 @@ static unsigned int nf_rtcache_in(void *priv,
 	if (dst == NULL)
 		return NF_ACCEPT;
 
-	cookie = nf_rtcache_get_cookie(state->pf, dst);
+	cookie = nf_rtcache_get_cookie(pf, dst);
 
 	dst = dst_check(dst, cookie);
 	pr_debug("obtained dst %p for skb %p, cookie %d\n", dst, skb, cookie);
@@ -177,18 +177,22 @@ static unsigned int nf_rtcache_in(void *priv,
 	return NF_ACCEPT;
 }
 
-static unsigned int nf_rtcache_forward(void *priv,
-			       struct sk_buff *skb,
-			       const struct nf_hook_state *state)
+static unsigned int nf_rtcache_forward(u_int8_t pf,
+				       struct sk_buff *skb,
+				       const struct nf_hook_state *state)
 {
 	struct nf_conn_rtcache *rtc;
 	enum ip_conntrack_info ctinfo;
 	enum ip_conntrack_dir dir;
 	struct nf_conn *ct;
+	struct dst_entry *dst = skb_dst(skb);
 	int iif;
 
 	ct = nf_ct_get(skb, &ctinfo);
 	if (!ct)
+		return NF_ACCEPT;
+
+	if (dst && dst_xfrm(dst))
 		return NF_ACCEPT;
 
 	if (!nf_ct_is_confirmed(ct)) {
@@ -209,9 +213,39 @@ static unsigned int nf_rtcache_forward(void *priv,
 	if (likely(state->in->ifindex == iif))
 		return NF_ACCEPT;
 
-	nf_conn_rtcache_dst_set(state->pf, rtc, skb_dst(skb), dir, state->in->ifindex);
+	nf_conn_rtcache_dst_set(pf, rtc, skb_dst(skb), dir, state->in->ifindex);
 	return NF_ACCEPT;
 }
+
+static unsigned int nf_rtcache_in4(void *priv,
+				  struct sk_buff *skb,
+				  const struct nf_hook_state *state)
+{
+	return nf_rtcache_in(NFPROTO_IPV4, skb, state);
+}
+
+static unsigned int nf_rtcache_forward4(void *priv,
+				       struct sk_buff *skb,
+				       const struct nf_hook_state *state)
+{
+	return nf_rtcache_forward(NFPROTO_IPV4, skb, state);
+}
+
+#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
+static unsigned int nf_rtcache_in6(void *priv,
+				  struct sk_buff *skb,
+				  const struct nf_hook_state *state)
+{
+	return nf_rtcache_in(NFPROTO_IPV6, skb, state);
+}
+
+static unsigned int nf_rtcache_forward6(void *priv,
+				       struct sk_buff *skb,
+				       const struct nf_hook_state *state)
+{
+ 	return nf_rtcache_forward(NFPROTO_IPV6, skb, state);
+}
+#endif
 
 static int nf_rtcache_dst_remove(struct nf_conn *ct, void *data)
 {
@@ -248,26 +282,26 @@ static struct notifier_block nf_rtcache_notifier = {
 
 static struct nf_hook_ops rtcache_ops[] = {
 	{
-		.hook		= nf_rtcache_in,
+		.hook		= nf_rtcache_in4,
 		.pf		= NFPROTO_IPV4,
 		.hooknum	= NF_INET_PRE_ROUTING,
 		.priority       = NF_IP_PRI_LAST,
 	},
 	{
-		.hook           = nf_rtcache_forward,
+		.hook           = nf_rtcache_forward4,
 		.pf             = NFPROTO_IPV4,
 		.hooknum        = NF_INET_FORWARD,
 		.priority       = NF_IP_PRI_LAST,
 	},
 #if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
 	{
-		.hook		= nf_rtcache_in,
+		.hook		= nf_rtcache_in6,
 		.pf		= NFPROTO_IPV6,
 		.hooknum	= NF_INET_PRE_ROUTING,
 		.priority       = NF_IP_PRI_LAST,
 	},
 	{
-		.hook           = nf_rtcache_forward,
+		.hook           = nf_rtcache_forward6,
 		.pf             = NFPROTO_IPV6,
 		.hooknum        = NF_INET_FORWARD,
 		.priority       = NF_IP_PRI_LAST,
