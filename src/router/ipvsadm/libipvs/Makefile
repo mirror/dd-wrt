@@ -1,10 +1,10 @@
 # Makefile for libipvs
 
 #CC		= gcc
-CFLAGS = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections
-#ifneq (0,$(HAVE_NL))
-#CFLAGS		+= -DLIBIPVS_USE_NL
-#endif
+CFLAGS = $(COPTS) $(MIPS16_OPT) -I$(TOP)/libnl-tiny/include -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections
+ifneq (0,$(HAVE_NL))
+CFLAGS		+= -DLIBIPVS_USE_NL
+endif
 
 INCLUDE		+= $(shell if [ -f ../../ip_vs.h ]; then	\
 		     echo "-I../../."; fi;)
