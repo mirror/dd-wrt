@@ -32,7 +32,7 @@ static void* ipvs_func = NULL;
 struct ip_vs_getinfo ipvs_info;
 
 #ifdef LIBIPVS_USE_NL
-static struct nl_handle *sock = NULL;
+static struct nl_sock *sock = NULL;
 static int family, try_nl = 1;
 #endif
 
@@ -73,7 +73,7 @@ int ipvs_nl_send_message(struct nl_msg *msg, nl_recvmsg_msg_cb_t func, void *arg
 {
 	int err = EINVAL;
 
-	sock = nl_handle_alloc();
+	sock = nl_socket_alloc();
 	if (!sock) {
 		nlmsg_free(msg);
 		return -1;
@@ -88,7 +88,7 @@ int ipvs_nl_send_message(struct nl_msg *msg, nl_recvmsg_msg_cb_t func, void *arg
 
 	/* To test connections and set the family */
 	if (msg == NULL) {
-		nl_handle_destroy(sock);
+		nl_socket_free(sock);
 		sock = NULL;
 		return 0;
 	}
@@ -104,12 +104,12 @@ int ipvs_nl_send_message(struct nl_msg *msg, nl_recvmsg_msg_cb_t func, void *arg
 
 	nlmsg_free(msg);
 
-	nl_handle_destroy(sock);
+	nl_socket_free(sock);
 
 	return 0;
 
 fail_genl:
-	nl_handle_destroy(sock);
+	nl_socket_free(sock);
 	sock = NULL;
 	nlmsg_free(msg);
 	errno = err;
