@@ -263,7 +263,7 @@ static int __init gpio_init(void)
 	
 
 	for (i = 0; i < 32; i++) {
-		if (gpios&1) {
+		if (gpios & (1<<i)) {
 			si_gpioreserve(gpio_sih, 1 << i, GPIO_APP_PRIORITY);
 		}
 	}
