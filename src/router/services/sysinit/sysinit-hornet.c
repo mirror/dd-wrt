@@ -214,8 +214,11 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
+#ifndef HAVE_ERC
 	setWirelessLed(0, 0);
-
+#else
+	setWirelessLed(0, 1);
+#endif
 	/*
 	 * Set a sane date 
 	 */
