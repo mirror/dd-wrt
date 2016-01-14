@@ -884,6 +884,9 @@ static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct
 	/*skb_copy_stored_cb(new, old);*/
 #endif
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	new->cb_next = NULL;
+#endif
 	/* Note : this field could be in headers_start/headers_end section
 	 * It is not yet because we do not want to have a 16 bit hole
 	 */
