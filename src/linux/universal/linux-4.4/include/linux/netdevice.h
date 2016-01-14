@@ -3335,6 +3335,19 @@ static inline void netif_tx_unlock_bh(struct net_device *dev)
 	local_bh_enable();
 }
 
+#define HARD_TX_LOCK_BH(dev, txq) {           \
+    if ((dev->features & NETIF_F_LLTX) == 0) {  \
+        __netif_tx_lock_bh(txq);      \
+    }                       \
+}
+
+#define HARD_TX_UNLOCK_BH(dev, txq) {          \
+    if ((dev->features & NETIF_F_LLTX) == 0) {  \
+        __netif_tx_unlock_bh(txq);         \
+    }                       \
+}
+
+
 #define HARD_TX_LOCK(dev, txq, cpu) {			\
 	if ((dev->features & NETIF_F_LLTX) == 0) {	\
 		__netif_tx_lock(txq, cpu);		\
