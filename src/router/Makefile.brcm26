@@ -159,9 +159,6 @@ else
 	echo "# CONFIG_NVRAM_64K" is not set >> $(LINUXDIR)/.config
 endif
 endif
-ifeq ($(CONFIG_IPETH),y)
-	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
-endif
 #ifeq ($(CONFIG_REGISTER),y)
 #	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
 #endif

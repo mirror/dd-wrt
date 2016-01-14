@@ -4,6 +4,19 @@ define kernelfeatures
 	else \
 		echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_HIGH_RES_TIMERS)" = "y" ]; then \
+		sed -i 's/\# CONFIG_HIGH_RES_TIMERS is not set/CONFIG_HIGH_RES_TIMERS=y/g' $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_IPETH)" = "y" ]; then \
+		sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config; \
+	fi
+	
+	if [ "$(CONFIG_USBIP)" = "y" ]; then \
+		sed -i 's/\# CONFIG_USBIP_CORE is not set/CONFIG_USBIP_CORE=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_USBIP_VHCI_HCD=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_USBIP_HOST=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USBIP_DEBUG is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_IPVS)" = "y" ]; then \
 	sed -i 's/\# CONFIG_IP_VS is not set/CONFIG_IP_VS=m/g' $(LINUXDIR)/.config; \
 	echo "CONFIG_NETFILTER_XT_MATCH_IPVS=m" >> $(LINUXDIR)/.config; \
