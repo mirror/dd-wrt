@@ -684,6 +684,7 @@ static int ar933x_uart_probe(struct platform_device *pdev)
 	port->dev = &pdev->dev;
 	port->type = PORT_AR933X;
 	port->iotype = UPIO_MEM32;
+	port->uartclk = pdata->uartclk;
 
 	port->regshift = 2;
 	port->fifosize = AR933X_UART_FIFO_SIZE;
