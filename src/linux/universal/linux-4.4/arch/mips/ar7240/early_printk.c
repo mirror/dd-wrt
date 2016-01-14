@@ -28,7 +28,6 @@ static inline void prom_putchar_wait(void __iomem * reg, u32 mask, u32 val)
 		t = __raw_readl(reg);
 		if ((t & mask) == val)
 			break;
-		udelay(1);
 	} while (cnt--);
 }
 
@@ -95,10 +94,13 @@ static void prom_enable_uart(u32 id)
 	__raw_writel(t, gpio_base + AR71XX_GPIO_REG_FUNC);
 }
 
+void serial_print(char *fmt, ...);
+
 static void prom_putchar_init(void)
 {
 	u32 id;
 #ifdef CONFIG_MACH_HORNET
+	serial_print("init early printk\n");
 	_prom_putchar = prom_putchar_ar933x;
 	id = REV_ID_MAJOR_AR9331;
 #elif CONFIG_WASP_SUPPORT
@@ -140,7 +142,7 @@ static void prom_putchar_init(void)
 		return;
 	}
 #endif
-	prom_enable_uart(id);
+//	prom_enable_uart(id);
 
 }
 
