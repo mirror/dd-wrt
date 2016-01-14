@@ -1764,9 +1764,6 @@ void radio_on_off_ath9k(int idx, int on)
 		sprintf(debugstring, "/sys/class/leds/wireless_generic_1/trigger");
 	else
 		sprintf(debugstring, "/sys/class/leds/wireless_generic_21/trigger");
-#elif defined(HAVE_ERC) || defined(HAVE_CARAMBOLA) 
-	sprintf(debugstring, "/sys/class/leds/generic_1/trigger");
-//	sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", get_ath9k_phy_idx(idx));
 #else
 	sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", get_ath9k_phy_idx(idx));
 #endif
