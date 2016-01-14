@@ -46,7 +46,6 @@ static struct nf_hook_ops imq_ops[] = {
 	{
 	/* imq_ingress_ipv4 */
 		.hook		= imq_nf_hook,
-		.owner		= THIS_MODULE,
 		.pf		= PF_INET,
 		.hooknum	= NF_INET_PRE_ROUTING,
 #if defined(CONFIG_IMQ_BEHAVIOR_BA) || defined(CONFIG_IMQ_BEHAVIOR_BB)
@@ -58,7 +57,6 @@ static struct nf_hook_ops imq_ops[] = {
 	{
 	/* imq_egress_ipv4 */
 		.hook		= imq_nf_hook,
-		.owner		= THIS_MODULE,
 		.pf		= PF_INET,
 		.hooknum	= NF_INET_POST_ROUTING,
 #if defined(CONFIG_IMQ_BEHAVIOR_AA) || defined(CONFIG_IMQ_BEHAVIOR_BA)
@@ -71,7 +69,6 @@ static struct nf_hook_ops imq_ops[] = {
 	{
 	/* imq_ingress_ipv6 */
 		.hook		= imq_nf_hook,
-		.owner		= THIS_MODULE,
 		.pf		= PF_INET6,
 		.hooknum	= NF_INET_PRE_ROUTING,
 #if defined(CONFIG_IMQ_BEHAVIOR_BA) || defined(CONFIG_IMQ_BEHAVIOR_BB)
@@ -83,7 +80,6 @@ static struct nf_hook_ops imq_ops[] = {
 	{
 	/* imq_egress_ipv6 */
 		.hook		= imq_nf_hook,
-		.owner		= THIS_MODULE,
 		.pf		= PF_INET6,
 		.hooknum	= NF_INET_POST_ROUTING,
 #if defined(CONFIG_IMQ_BEHAVIOR_AA) || defined(CONFIG_IMQ_BEHAVIOR_BA)
