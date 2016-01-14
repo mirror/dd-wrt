@@ -114,12 +114,6 @@ include kernel-features.mk
 kernel:
 	cp $(LINUXDIR)/.config_mvebu $(LINUXDIR)/.config
 	$(kernelfeatures)
-ifeq ($(CONFIG_USBIP),y)
-	sed -i 's/\# CONFIG_USBIP_CORE is not set/CONFIG_USBIP_CORE=m/g' $(LINUXDIR)/.config
-	echo "CONFIG_USBIP_VHCI_HCD=m" >> $(LINUXDIR)/.config
-	echo "CONFIG_USBIP_HOST=m" >> $(LINUXDIR)/.config
-	echo "# CONFIG_USBIP_DEBUG is not set" >> $(LINUXDIR)/.config
-endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
