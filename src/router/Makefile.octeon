@@ -189,15 +189,6 @@ ifeq ($(CONFIG_USBBOOT),y)
 	sed -i 's/CONFIG_MMC_OCTEON=y/CONFIG_MMC_OCTEON=m/g' $(LINUXDIR)/.config
 endif
 	$(kernelfeatures)
-ifeq ($(CONFIG_IPETH),y)
-	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
-endif
-ifeq ($(CONFIG_USBIP),y)
-	sed -i 's/\# CONFIG_USBIP_CORE is not set/CONFIG_USBIP_CORE=m/g' $(LINUXDIR)/.config
-	echo "CONFIG_USBIP_VHCI_HCD=m" >> $(LINUXDIR)/.config
-	echo "CONFIG_USBIP_HOST=m" >> $(LINUXDIR)/.config
-	echo "# CONFIG_USBIP_DEBUG is not set" >> $(LINUXDIR)/.config
-endif
 
 
 	rm -f $(LINUXDIR)/symtab.h
