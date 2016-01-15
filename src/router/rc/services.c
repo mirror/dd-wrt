@@ -405,6 +405,9 @@ static void handle_index(void)
 	stop_service_f("bonding");	//
 #endif
 	stop_service_f("lan");	//
+#ifdef HAVE_IPVS
+	stop_service_f("ipvs");	//
+#endif
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridging");	//
 #endif
@@ -416,6 +419,9 @@ static void handle_index(void)
 	start_service("bridging");
 #endif
 	start_service_force("lan");
+#ifdef HAVE_IPVS
+	start_service("ipvs");
+#endif
 #ifdef HAVE_BONDING
 	start_service("bonding");
 #endif
@@ -510,6 +516,9 @@ static void handle_hotspot(void)
 #ifdef HAVE_BONDING
 	stop_service_f("bonding");
 #endif
+#ifdef HAVE_IPVS
+	stop_service_f("ipvs");
+#endif
 	stop_service_f("lan");
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridging");
@@ -535,6 +544,9 @@ static void handle_hotspot(void)
 //      start_service("wlconf");
 #endif
 	start_service("lan");
+#ifdef HAVE_IPVS
+	start_service("ipvs");
+#endif
 #ifdef HAVE_BONDING
 	start_service("bonding");
 #endif
@@ -773,6 +785,9 @@ static void handle_pppoe(void)
 	stop_service_f("bridgesif");
 	stop_service_f("vlantagging");
 #endif
+#ifdef HAVE_IPVS
+	stop_service_f("ipvs");
+#endif
 	stop_service_f("lan");
 #ifdef HAVE_BONDING
 	stop_service_f("bonding");
@@ -789,6 +804,9 @@ static void handle_pppoe(void)
 	start_service("bridging");
 #endif
 	start_service("lan");
+#ifdef HAVE_IPVS
+	start_service("ipvs");
+#endif
 #ifdef HAVE_BONDING
 	start_service("bonding");
 #endif
@@ -1050,6 +1068,9 @@ static void handle_wireless(void)
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridging");
 #endif
+#ifdef HAVE_IPVS
+	stop_service_f("ipvs");
+#endif
 	stop_running_main(0, NULL);
 	stop_service("lan");
 #ifdef HAVE_VLANTAGGING
@@ -1059,6 +1080,9 @@ static void handle_wireless(void)
 //      start_service("wlconf");
 #endif
 	start_service("lan");
+#ifdef HAVE_IPVS
+	start_service("ipvs");
+#endif
 #ifdef HAVE_BONDING
 	start_service("bonding");
 #endif
@@ -1154,6 +1178,9 @@ static void handle_wireless_2(void)
 #ifdef HAVE_BONDING
 	stop_service_f("bonding");
 #endif
+#ifdef HAVE_IPVS
+	stop_service_f("ipvs");
+#endif
 	stop_service_f("lan");
 #ifdef HAVE_VLANTAGGING
 	stop_service_f("bridging");
@@ -1166,6 +1193,9 @@ static void handle_wireless_2(void)
 	start_service("bridging");
 #endif
 	start_service("lan");
+#ifdef HAVE_IPVS
+	start_service("ipvs");
+#endif
 #ifdef HAVE_BONDING
 	start_service("bonding");
 #endif
