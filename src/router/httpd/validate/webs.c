@@ -2622,6 +2622,7 @@ void save_networking(webs_t wp)
 		char *ipvsname;
 		char *ipvsip;
 		char *ipvsport;
+		char *ipvsproto;
 		char *ipvsscheduler;
 		char var[32];
 		sprintf(var, "ipvsname%d", i);
@@ -2643,6 +2644,11 @@ void save_networking(webs_t wp)
 		ipvsscheduler = websGetVar(wp, var, NULL);
 		if (!ipvsscheduler)
 			break;
+
+		sprintf(var, "ipvsproto%d", i);
+		ipvsproto = websGetVar(wp, var, NULL);
+		if (!ipvsproto)
+			break;
 		strcat(buffer, ipvsname);
 		strcat(buffer, ">");
 		strcat(buffer, ipvsip);
@@ -2650,6 +2656,8 @@ void save_networking(webs_t wp)
 		strcat(buffer, ipvsport);
 		strcat(buffer, ">");
 		strcat(buffer, ipvsscheduler);
+		strcat(buffer, ">");
+		strcat(buffer, ipvsproto);
 		if (i < ipvscount - 1)
 			strcat(buffer, " ");
 	}
