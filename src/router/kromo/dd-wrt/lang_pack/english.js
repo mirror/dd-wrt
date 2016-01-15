@@ -1398,7 +1398,19 @@ networking.bond="Bond";
 networking.slave="Slave";
 networking.max="Max";
 networking.leasetime="Leasetime";
-
+networking.ipvs="IP Virtual Server";
+networking.wrr="Weighted Round Robin";
+networking.lc="Least-Connection";
+networking.wlc="Weighted Least-Connection";
+networking.fo="Weighted Failover";
+networking.ovf="Weighted Overflow";
+networking.lblc="Locality-Based Least-Connection";
+networking.lblcr="Locality-Based Least-Connection with Replication";
+networking.dh="Destination Hash";
+networking.sh="Source Hash";
+networking.sed="Shortest Expected Delay";
+networking.qn="Never Queue";
+networking.target="Target";
 //help container
 var hnetworking=new Object();
 hnetworking.right1="Multi DHCPD";
