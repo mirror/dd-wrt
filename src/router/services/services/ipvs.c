@@ -62,9 +62,9 @@ void start_ipvs(void)
 		char source[64];
 		snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
 		if (!strcmp(sourceproto, "tcp"))
-			eval("ivsadm", "-A", "-t", source, "-s", scheduler);
+			eval("ipvsadm", "-A", "-t", source, "-s", scheduler);
 		else if (!strcmp(sourceproto, "udp"))
-			eval("ivsadm", "-A", "-u", source, "-s", scheduler);
+			eval("ipvsadm", "-A", "-u", source, "-s", scheduler);
 		else if (!strcmp(sourceproto, "sip")) {
 			insmod("nf_conntrack_sip");
 			insmod("ip_vs_pe_sip");
