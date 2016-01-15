@@ -912,6 +912,9 @@ endif
 ifeq ($(CONFIG_TMK),y)
 CFLAGS += -DHAVE_TMK
 endif
+ifeq ($(CONFIG_IPVS),y)
+CFLAGS += -DHAVE_IPVS
+endif
 ifeq ($(CONFIG_BKM),y)
 CFLAGS += -DHAVE_BKM
 endif
