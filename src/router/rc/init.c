@@ -725,6 +725,9 @@ int main(int argc, char **argv)
 #ifdef HAVE_EMF
 			stop_service("emf");
 #endif
+#ifdef HAVE_IPVS
+			stop_service("ipvs");
+#endif
 #ifdef HAVE_VLANTAGGING
 			stop_service("bridging");
 #endif
@@ -774,6 +777,9 @@ int main(int argc, char **argv)
 			start_service("bridging");
 #endif
 			start_service_force("lan");
+#ifdef HAVE_IPVS
+			start_service("ipvs");
+#endif
 #ifdef HAVE_BONDING
 			start_service("bonding");
 #endif
