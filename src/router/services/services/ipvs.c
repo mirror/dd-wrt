@@ -37,7 +37,7 @@ void start_ipvs(void)
 
 	char tword[256];
 	char *tnext, *twordlist;
-	char *ipvsname, *sourceip, *sourceport, *scheduler, *targetip, *targetport, *matchname;
+	char *ipvsname, *sourceip, *sourceport, *scheduler, *targetip, *targetport, *matchname, *sourceproto;
 	char *ipvs = nvram_safe_get("ipvs");
 	char *ipvstarget = nvram_safe_get("ipvstarget");
 	if (!strlen(ipvs) || !strlen(ipvstarget))
@@ -52,14 +52,24 @@ void start_ipvs(void)
 		sourceip = strsep(&sourceport, ">");
 		scheduler = sourceport;
 		sourceport = strsep(&scheduler, ">");
-		if (!ipvsname || !sourceport || !sourceip || !scheduler)
+		sourceproto = scheduler;
+		scheduler = strsep(&sourceproto, ">");
+		if (!ipvsname || !sourceport || !sourceip || !scheduler || !sourceproto)
 			break;
 		char modname[32];
 		sprintf(modname, "ip_vs_%s", scheduler);	//build module name for scheduler implementation
 		insmod(modname);
 		char source[64];
 		snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
-		eval("ivsadm", "-A", "-t", source, "-s", scheduler);
+		if (!strcmp(sourceproto, "tcp"))
+			eval("ivsadm", "-A", "-t", source, "-s", scheduler);
+		else if (!strcmp(sourceproto, "udp"))
+			eval("ivsadm", "-A", "-u", source, "-s", scheduler);
+		else if (!strcmp(sourceproto, "sip")) {
+			insmod("nf_conntrack_sip");
+			insmod("ip_vs_pe_sip");
+			eval("ivsadm", "-A", "-u", source, "-p", "60", "-M", "0.0.0.0", "-o", "--pe", "sip", "-s", scheduler);
+		}
 	}
 
 	wordlist = ipvstarget;
@@ -80,7 +90,9 @@ void start_ipvs(void)
 			sourceip = strsep(&sourceport, ">");
 			scheduler = sourceport;
 			sourceport = strsep(&scheduler, ">");
-			if (!ipvsname || !sourceport || !sourceip || !scheduler)
+			sourceproto = scheduler;
+			scheduler = strsep(&sourceproto, ">");
+			if (!ipvsname || !sourceport || !sourceip || !scheduler || !sourceproto)
 				break;
 
 			if (!strcmp(matchname, ipvsname)) {
@@ -92,7 +104,6 @@ void start_ipvs(void)
 		if (found) {
 			char source[64];
 			snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
-
 			char target[64];
 			snprintf(target, sizeof(target), "%s:%s", targetip, targetport);
 			eval("ivsadm", "-a", "-t", source, "-r", target, "-m");

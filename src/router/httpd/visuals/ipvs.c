@@ -121,7 +121,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	int count = 0;
 	char word[256];
 	char *next, *wordlist;
-	char *ipvsname, *sourceip, *sourceport, *scheduler;
+	char *ipvsname, *sourceip, *sourceport, *scheduler, *sourceproto;
 	char ipvs_name[32];
 
 	char *schedulers[] = { "wrr", "lc", "wlc", "fo", "ovf", "lblc", "lblcr", "dh", "sh", "sed", "nq", NULL };
@@ -136,6 +136,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_name"));
 	websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_sourceip"));
 	websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_sourceport"));
+	websWrite(wp, "<th>%s</th>\n", live_translate("share.proto"));
 	websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_scheduler"));
 	websWrite(wp, "<th>&nbsp;</th></tr>\n");
 
@@ -148,6 +149,8 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sourceip = strsep(&sourceport, ">");
 		scheduler = sourceport;
 		sourceport = strsep(&scheduler, ">");
+		sourceproto = scheduler;
+		scheduler = strsep(&sourceproto, ">");
 		if (!ipvsname || !sourceport || !sourceip || !scheduler)
 			break;
 
@@ -158,6 +161,12 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sprintf(ipvs_name, "ipvsport%d", count);
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, sourceport);
 		websWrite(wp, "<td>");
+		sprintf(ipvs_name, "ipvsproto%d", count);
+		showOptions(wp, ipvs_name, "tcp udp sip", sourceproto);
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "<td>");
+
 		sprintf(ipvs_name, "ipvsscheduler%d", count);
 
 		websWrite(wp, "<select name=\"%s\">\n", ipvs_name);
@@ -188,6 +197,10 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"12\" value=\"\" /></td>\n", ipvs_name);
 		sprintf(ipvs_name, "ipvsport%d", i);
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"\" /></td>\n", ipvs_name);
+		websWrite(wp, "<td>");
+		sprintf(ipvs_name, "ipvsproto%d", count);
+		showOptions(wp, ipvs_name, "tcp udp sip", "tcp");
+		websWrite(wp, "</td>");
 		websWrite(wp, "<td>");
 		sprintf(ipvs_name, "ipvsscheduler%d", i);
 
