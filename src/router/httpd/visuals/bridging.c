@@ -24,7 +24,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	char buffer[256];
 	int count = 0;
 	int br0found = 0;
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	char *stp = word;
 	char *bridge, *prio, *mtu, *mcast, *mac;
@@ -237,7 +237,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	char finalbuffer[512];
 	int count = 0;
 	int c = 0;
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 
 	memset(bufferif, 0, 512);

@@ -34,7 +34,7 @@
 static void show_chaps_table(webs_t wp, char *type, int which)
 {
 
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	char *user, *pass, *ip, *enable;
 	static char new_user[200], new_pass[200];

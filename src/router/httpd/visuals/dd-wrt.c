@@ -6735,7 +6735,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 #endif
 		{
 			char nld_enable[32], nld_bridge[32], bufferif[256];
-			static char word[256];
+			char word[256];
 			char *next;
 
 			sprintf(nld_enable, "nld_%s_enable", var);
@@ -6763,7 +6763,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 #endif
 		{
 			char bat_enable[32], bat_bridge[32], bufferif[256];
-			static char word[256];
+			char word[256];
 			char *next;
 
 			sprintf(bat_enable, "bat_%s_enable", var);
