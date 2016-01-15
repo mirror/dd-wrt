@@ -25,13 +25,12 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	wordlist = nvram_safe_get("ipvs");
 
 	foreach(word, wordlist, next) {
-
 		sourceip = word;
 		ipvsname = strsep(&sourceip, ">");
 		sourceport = sourceip;
 		sourceip = strsep(&sourceport, ">");
 		scheduler = sourceport;
-
+		sourceport = strsep(&scheduler, ">");
 		if (!ipvsname || !sourceport || !sourceip || !scheduler)
 			break;
 
@@ -66,14 +65,14 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 
 	for (i = count; i < realcount; i++) {
 
-		sprintf(ipvs_name, "ipvsname%d", count);
+		sprintf(ipvs_name, "ipvsname%d", i);
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\"/></td>\n", ipvs_name);
-		sprintf(ipvs_name, "ipvsip%d", count);
+		sprintf(ipvs_name, "ipvsip%d", i);
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"12\" value=\"\" /></td>\n", ipvs_name);
-		sprintf(ipvs_name, "ipvsport%d", count);
+		sprintf(ipvs_name, "ipvsport%d", i);
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"\" /></td>\n", ipvs_name);
 		websWrite(wp, "<td>");
-		sprintf(ipvs_name, "ipvsscheduler%d", count);
+		sprintf(ipvs_name, "ipvsscheduler%d", i);
 
 		websWrite(wp, "<select name=\"%s\">\n", ipvs_name);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
