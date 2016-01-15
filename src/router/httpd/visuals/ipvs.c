@@ -1,3 +1,102 @@
+void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
+{
+	int count = 0;
+	static char word[256];
+	char *next, *wordlist;
+
+	static char tword[256];
+	char *tnext, *twordlist;
+	char *stp = word;
+	char *ipvsname, *targetip, *targetport;
+	char ipvs_name[32];
+
+	if (strlen(nvram_safe_get("ipvs"))) {
+		int realcount = atoi(nvram_default_get("ipvstarget_count", "0"));
+
+		websWrite(wp, "<fieldset>\n");
+		websWrite(wp, "<legend>%s</legend>\n", live_translate("networking.ipvs_targets"));
+
+		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table center\"><tr>\n");
+		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_name"));
+		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_targetip"));
+		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_targetport"));
+		websWrite(wp, "<th>&nbsp;</th></tr>\n");
+
+		wordlist = nvram_safe_get("ipvstarget");
+
+		foreach(word, wordlist, next) {
+			targetip = word;
+			ipvsname = strsep(&targetip, ">");
+			targetport = targetip;
+			targetip = strsep(&targetport, ">");
+			if (!ipvsname || !targetport || !targetip)
+				break;
+
+			sprintf(ipvs_name, "target_ipvsname%d", count);
+			websWrite(wp, "<td><tr>");
+			websWrite(wp, "<select name=\"%s\">\n", ipvs_name);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			twordlist = nvram_safe_get("ipvs");
+			char *matchname = "";
+			foreach(tword, twordlist, tnext) {
+				char *tword = tword;
+				matchname = strsep(&tword, ">");
+				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname, !strcmp(matchname, ipvsname) ? "selected=\\\"selected\\\"" : "", matchname);
+			}
+			websWrite(wp, "//]]>\n</script>\n</select>\n");
+			websWrite(wp, "</td>");
+
+			sprintf(ipvs_name, "target_ipvsip%d", count);
+			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"12\" value=\"%s\" /></td>\n", ipvs_name, targetip);
+			sprintf(ipvs_name, "target_ipvsport%d", count);
+			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetport);
+			websWrite(wp,
+				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"ipvstarget_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  count);
+			count++;
+		}
+		int i;
+		int totalcount = count;
+
+		for (i = count; i < realcount; i++) {
+
+			sprintf(ipvs_name, "target_ipvsname%d", i);
+			websWrite(wp, "<td><tr>");
+			websWrite(wp, "<select name=\"%s\">\n", ipvs_name);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			twordlist = nvram_safe_get("ipvs");
+			char *matchname = "";
+			foreach(tword, twordlist, tnext) {
+				char *tword = tword;
+				matchname = strsep(&tword, ">");
+				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname, !strcmp(matchname, "") ? "selected=\\\"selected\\\"" : "", matchname);
+			}
+			websWrite(wp, "//]]>\n</script>\n</select>\n");
+			websWrite(wp, "</td>");
+
+			sprintf(ipvs_name, "target_ipvsip%d", i);
+			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" /></td>\n", ipvs_name);
+			sprintf(ipvs_name, "target_ipvsport%d", i);
+			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
+
+			websWrite(wp, "<td>");
+			websWrite(wp,
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"ipvstarget_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  i);
+			totalcount++;
+		}
+		websWrite(wp, "</table>");
+
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvstarget_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+		websWrite(wp, "</fieldset>\n");
+
+		char var[32];
+		sprintf(var, "%d", totalcount);
+		nvram_set("ipvstarget_count", var);
+	}
+}
+
 void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 {
 	int count = 0;
@@ -37,9 +136,9 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sprintf(ipvs_name, "ipvsname%d", count);
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", ipvs_name, ipvsname);
 		sprintf(ipvs_name, "ipvsip%d", count);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"12\" value=\"%s\" /></td>\n", ipvs_name, sourceip);
+		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, sourceip);
 		sprintf(ipvs_name, "ipvsport%d", count);
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", ipvs_name, sourceport);
+		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", ipvs_name, sourceport);
 		websWrite(wp, "<td>");
 		sprintf(ipvs_name, "ipvsscheduler%d", count);
 
@@ -101,4 +200,5 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	char var[32];
 	sprintf(var, "%d", totalcount);
 	nvram_set("ipvs_count", var);
+	ej_show_ipvsassignments(wp, argc, argv);
 }
