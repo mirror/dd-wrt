@@ -1,5 +1,5 @@
 /*
- * dd-wrt.c
+ * olsrd.c
  *
  * Copyright (C) 2005 - 2016 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
