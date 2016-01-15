@@ -68,7 +68,7 @@ void start_ipvs(void)
 		else if (!strcmp(sourceproto, "sip")) {
 			insmod("nf_conntrack_sip");
 			insmod("ip_vs_pe_sip");
-			eval("ivsadm", "-A", "-u", source, "-p", "60", "-M", "0.0.0.0", "-o", "--pe", "sip", "-s", scheduler);
+			eval("ipvsadm", "-A", "-u", source, "-p", "60", "-M", "0.0.0.0", "-o", "--pe", "sip", "-s", scheduler);
 		}
 	}
 
@@ -106,7 +106,7 @@ void start_ipvs(void)
 			snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
 			char target[64];
 			snprintf(target, sizeof(target), "%s:%s", targetip, targetport);
-			eval("ivsadm", "-a", "-t", source, "-r", target, "-m");
+			eval("ipvsadm", "-a", "-t", source, "-r", target, "-m");
 		}
 	}
 	dd_syslog(LOG_INFO, "ipvs : IP Virtual Server successfully started\n");
@@ -115,7 +115,7 @@ void start_ipvs(void)
 
 void stop_ipvs(void)
 {
-	eval("ivsadm", "-C");
+	eval("ipvsadm", "-C");
 	dd_syslog(LOG_INFO, "ipvs : IP Virtual Server successfully stopped\n");
 	return;
 }
