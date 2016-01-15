@@ -12,11 +12,10 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 
 	if (strlen(nvram_safe_get("ipvs"))) {
 		int realcount = atoi(nvram_default_get("ipvstarget_count", "0"));
-
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<legend>%s</legend>\n", live_translate("networking.ipvs_targets"));
 
-		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table center\"><tr>\n");
+		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table center\"><tr>\n");
 		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_name"));
 		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_targetip"));
 		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_targetport"));
@@ -33,14 +32,14 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 				break;
 
 			sprintf(ipvs_name, "target_ipvsname%d", count);
-			websWrite(wp, "<td><tr>");
+			websWrite(wp, "<tr><td>");
 			websWrite(wp, "<select name=\"%s\">\n", ipvs_name);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			twordlist = nvram_safe_get("ipvs");
 			char *matchname = "";
 			foreach(tword, twordlist, tnext) {
-				char *tword = tword;
-				matchname = strsep(&tword, ">");
+				char *tempword = tword;
+				matchname = strsep(&tempword, ">");
 				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname, !strcmp(matchname, ipvsname) ? "selected=\\\"selected\\\"" : "", matchname);
 			}
 			websWrite(wp, "//]]>\n</script>\n</select>\n");
@@ -61,14 +60,14 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 		for (i = count; i < realcount; i++) {
 
 			sprintf(ipvs_name, "target_ipvsname%d", i);
-			websWrite(wp, "<td><tr>");
+			websWrite(wp, "<tr><td>");
 			websWrite(wp, "<select name=\"%s\">\n", ipvs_name);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			twordlist = nvram_safe_get("ipvs");
 			char *matchname = "";
 			foreach(tword, twordlist, tnext) {
-				char *tword = tword;
-				matchname = strsep(&tword, ">");
+				char *tempword = tword;
+				matchname = strsep(&tempword, ">");
 				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname, !strcmp(matchname, "") ? "selected=\\\"selected\\\"" : "", matchname);
 			}
 			websWrite(wp, "//]]>\n</script>\n</select>\n");
