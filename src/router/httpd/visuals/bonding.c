@@ -25,7 +25,7 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	char bufferif[512];
 	char bondnames[256];
 	int count = 0;
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 
 	memset(buffer, 0, 256);

@@ -22,12 +22,11 @@
 void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 {
 	int count = 0;
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 
-	static char tword[256];
+	char tword[256];
 	char *tnext, *twordlist;
-	char *stp = word;
 	char *ipvsname, *targetip, *targetport;
 	char ipvs_name[32];
 
@@ -120,9 +119,8 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 {
 	int count = 0;
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
-	char *stp = word;
 	char *ipvsname, *sourceip, *sourceport, *scheduler;
 	char ipvs_name[32];
 
