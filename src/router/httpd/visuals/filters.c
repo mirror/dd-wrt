@@ -76,7 +76,7 @@ int tod_data_null = 0;
 
 char *filter_ip_get(char *type, int which)
 {
-	static char word[256];
+	char word[256];
 	char *start, *end, *wordlist, *next;
 	int temp;
 	char filter_ip[] = "filter_ip_grpXXX";
@@ -214,7 +214,7 @@ char *filter_ip_get(char *type, int which)
 
 char *filter_dport_get(char *type, int which)
 {
-	static char word[256];
+	char word[256];
 	char *wordlist, *next;
 	char *start, *end, *proto;
 	int temp;
@@ -293,7 +293,7 @@ void ej_filter_dport_get(webs_t wp, int argc, char_t ** argv)
 
 char *filter_port_get(char *type, int which)
 {
-	static char word[256];
+	char word[256];
 	char *wordlist, *next;
 	char *start, *end, *proto;
 	int temp;
@@ -366,7 +366,7 @@ void ej_filter_port_get(webs_t wp, int argc, char_t ** argv)
 
 char *filter_mac_get(int which)
 {
-	static char word[256];
+	char word[256];
 	char *wordlist, *next;
 	char *mac;
 	int temp;

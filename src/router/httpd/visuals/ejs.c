@@ -744,7 +744,7 @@ void ej_nvram_list(webs_t wp, int argc, char_t ** argv)
  */
 int get_dns_ip(char *name, int which, int count)
 {
-	static char word[256];
+	char word[256];
 	char *next;
 	int ip;
 	char *list = nvram_safe_get(name);
