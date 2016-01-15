@@ -159,6 +159,7 @@ addEvent(window, "unload", function() {
 								</table><br />
 							</fieldset>
 							<br />
+							<% show_ipvs(); %>
 							<% show_bondings(); %>
 							<% portsetup(); %>
 							<% show_mdhcp(); %>
