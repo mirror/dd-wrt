@@ -7,7 +7,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	char *ipvsname, *sourceip, *sourceport, *scheduler;
 	char ipvs_name[32];
 
-	char *schedulers[] = { "wrr", "lc", "wlc", "fo", "evf", "lblc", "lblcr", "dh", "sh", "sed", "qn", NULL };
+	char *schedulers[] = { "wrr", "lc", "wlc", "fo", "ovf", "lblc", "lblcr", "dh", "sh", "sed", "nq", NULL };
 
 	int realcount = atoi(nvram_default_get("ipvs_count", "0"));
 
@@ -38,13 +38,9 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sprintf(ipvs_name, "ipvsname%d", count);
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", ipvs_name, ipvsname);
 		sprintf(ipvs_name, "ipvsip%d", count);
-		websWrite(wp, "<td>");
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"12\" value=\"%s\" /></td>\n", ipvs_name, sourceip);
-		websWrite(wp, "</td>");
 		sprintf(ipvs_name, "ipvsport%d", count);
-		websWrite(wp, "<td>");
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", ipvs_name, sourceport);
-		websWrite(wp, "</td>");
 		websWrite(wp, "<td>");
 		sprintf(ipvs_name, "ipvsscheduler%d", count);
 
@@ -73,13 +69,9 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sprintf(ipvs_name, "ipvsname%d", count);
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\"/></td>\n", ipvs_name);
 		sprintf(ipvs_name, "ipvsip%d", count);
-		websWrite(wp, "<td>");
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"12\" value=\"\" /></td>\n", ipvs_name);
-		websWrite(wp, "</td>");
 		sprintf(ipvs_name, "ipvsport%d", count);
-		websWrite(wp, "<td>");
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"\" /></td>\n", ipvs_name);
-		websWrite(wp, "</td>");
 		websWrite(wp, "<td>");
 		sprintf(ipvs_name, "ipvsscheduler%d", count);
 
@@ -88,7 +80,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		int scount = 0;
 		while (schedulers[scount] != NULL) {
 			char translate[32];
-			char *sched = schedulers[scount];
+			char *sched = schedulers[scount++];
 			sprintf(translate, "networking.%s", sched);
 			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", sched, !strcmp(sched, "wrr") ? "selected=\\\"selected\\\"" : "", live_translate(translate));
 		}
