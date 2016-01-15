@@ -151,7 +151,9 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		sourceport = strsep(&scheduler, ">");
 		sourceproto = scheduler;
 		scheduler = strsep(&sourceproto, ">");
-		if (!ipvsname || !sourceport || !sourceip || !scheduler)
+		if (!sourceproto)
+			sourceproto = "tcp";
+		if (!ipvsname || !sourceport || !sourceip || !scheduler || !sourceproto)
 			break;
 
 		sprintf(ipvs_name, "ipvsname%d", count);
