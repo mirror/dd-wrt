@@ -1415,8 +1415,9 @@ networking.dh="Destination Hash";
 networking.sh="Source Hash";
 networking.sed="Shortest Expected Delay";
 networking.nq="Never Queue";
-networking.target_ip="Target IP";
-networking.target_port="Target Port";
+networking.ipvs_targets="Virtual Server Targets";
+networking.ipvs_targetip="Target IP";
+networking.ipvs_targetport="Target Port";
 //help container
 var hnetworking=new Object();
 hnetworking.right1="Multi DHCPD";
