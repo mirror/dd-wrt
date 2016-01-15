@@ -2549,6 +2549,7 @@ void save_networking(webs_t wp)
 	int mdhcpd_count = atoi(nvram_safe_get("mdhcpd_count"));
 #ifdef HAVE_IPVS
 	int ipvscount = atoi(nvram_safe_get("ipvs_count"));
+	int ipvstargetcount = atoi(nvram_safe_get("ipvstarget_count"));
 #endif
 #ifdef HAVE_BONDING
 	int bondcount = atoi(nvram_safe_get("bonding_count"));
@@ -2654,6 +2655,38 @@ void save_networking(webs_t wp)
 	}
 	nvram_set("ipvs", buffer);
 	memset(buffer, 0, 1024);
+
+	for (i = 0; i < ipvstargetcount; i++) {
+		char *ipvsname;
+		char *ipvsip;
+		char *ipvsport;
+		char var[32];
+		sprintf(var, "target_ipvsname%d", i);
+		ipvsname = websGetVar(wp, var, NULL);
+		if (!ipvsname)
+			break;
+
+		sprintf(var, "target_ipvsip%d", i);
+		ipvsip = websGetVar(wp, var, NULL);
+		if (!ipvsip)
+			break;
+
+		sprintf(var, "target_ipvsport%d", i);
+		ipvsport = websGetVar(wp, var, NULL);
+		if (!ipvsport)
+			break;
+
+		strcat(buffer, ipvsname);
+		strcat(buffer, ">");
+		strcat(buffer, ipvsip);
+		strcat(buffer, ">");
+		strcat(buffer, ipvsport);
+		if (i < ipvstargetcount - 1)
+			strcat(buffer, " ");
+	}
+	nvram_set("ipvstarget", buffer);
+	memset(buffer, 0, 1024);
+
 #endif
 
 	// save bridges
@@ -3123,6 +3156,64 @@ void del_ipvs(webs_t wp)
 	sprintf(var, "%d", realcount);
 	nvram_set("ipvs_count", var);
 	nvram_set("ipvs", newwordlist);
+	nvram_commit();
+	free(newwordlist);
+	return;
+}
+
+void add_ipvstarget(webs_t wp)
+{
+	static char word[256];
+	char *next, *wordlist;
+	int count = 0;
+	int realcount = atoi(nvram_safe_get("ipvstarget_count"));
+
+	if (realcount == 0) {
+		wordlist = nvram_safe_get("ipvstarget");
+		foreach(word, wordlist, next) {
+			count++;
+		}
+		realcount = count;
+	}
+	realcount++;
+	char var[32];
+
+	sprintf(var, "%d", realcount);
+	nvram_set("ipvstarget_count", var);
+	nvram_commit();
+	return;
+}
+
+void del_ipvstarget(webs_t wp)
+{
+	static char word[256];
+	int realcount = 0;
+	char *next, *wordlist, *newwordlist;
+	char *val = websGetVar(wp, "del_value", NULL);
+
+	if (val == NULL)
+		return;
+	int todel = atoi(val);
+
+	wordlist = nvram_safe_get("ipvstarget");
+	newwordlist = (char *)safe_malloc(strlen(wordlist));
+	memset(newwordlist, 0, strlen(wordlist));
+	int count = 0;
+
+	foreach(word, wordlist, next) {
+		if (count != todel) {
+			strcat(newwordlist, word);
+			strcat(newwordlist, " ");
+		}
+		count++;
+	}
+
+	realcount = atoi(nvram_safe_get("ipvstarget_count")) - 1;
+	char var[32];
+
+	sprintf(var, "%d", realcount);
+	nvram_set("ipvstarget_count", var);
+	nvram_set("ipvstarget", newwordlist);
 	nvram_commit();
 	free(newwordlist);
 	return;

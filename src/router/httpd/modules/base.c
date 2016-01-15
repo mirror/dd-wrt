@@ -935,6 +935,8 @@ static struct gozila_action gozila_actions[] = {
 #ifdef HAVE_IPVS
 	{"Networking", "add_ipvs", "", 0, REFRESH, "add_ipvs"},
 	{"Networking", "del_ipvs", "", 0, REFRESH, "del_ipvs"},
+	{"Networking", "add_ipvstarget", "", 0, REFRESH, "add_ipvstarget"},
+	{"Networking", "del_ipvstarget", "", 0, REFRESH, "del_ipvstarget"},
 #endif
 	{"Wireless_Basic", "save", "wireless", 1, REFRESH, "wireless_save"},
 #ifdef HAVE_WIVIZ
