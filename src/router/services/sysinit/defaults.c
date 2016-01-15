@@ -2181,7 +2181,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_IPV6
 	{"ipv6_enable", "0"},
 	{"ipv6_pf_len", "64"},
-	{"ipv6_mtu", ""},
+	{"ipv6_mtu", "1452"},
 	{"ipv6_tun_client_addr_pref", "64"},
 	{"ipv6_tun_upd_url", "See tunnelbroker account"},
 	{"radvd_enable", "1"},
