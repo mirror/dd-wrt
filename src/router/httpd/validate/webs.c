@@ -525,8 +525,8 @@ void delete_static_route(webs_t wp)
 	memset(buf_name, 0, 2500);
 	char *cur = buf;
 	char *cur_name = buf_name;
-	static char word[256], *next;
-	static char word_name[256], *next_name;
+	char word[256], *next;
+	char word_name[256], *next_name;
 	char *page = websGetVar(wp, "route_page", NULL);
 	char *value = websGetVar(wp, "action", "");
 	int i = 0;
@@ -2381,7 +2381,7 @@ void remove_vifs(webs_t wp)
 #ifdef HAVE_BONDING
 void add_bond(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int count = 0;
 	int realcount = atoi(nvram_safe_get("bonding_count"));
@@ -2404,7 +2404,7 @@ void add_bond(webs_t wp)
 
 void del_bond(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	char *val = websGetVar(wp, "del_value", NULL);
@@ -2845,7 +2845,7 @@ void save_networking(webs_t wp)
 
 void add_vlan(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int count = 0;
 	int realcount = atoi(nvram_safe_get("vlan_tagcount"));
@@ -2868,7 +2868,7 @@ void add_vlan(webs_t wp)
 
 void del_vlan(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	char *val = websGetVar(wp, "del_value", NULL);
@@ -2915,7 +2915,7 @@ void del_vlan(webs_t wp)
 
 void add_mdhcp(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int count = 0;
 	int realcount = atoi(nvram_safe_get("mdhcpd_count"));
@@ -2938,7 +2938,7 @@ void add_mdhcp(webs_t wp)
 
 void del_mdhcp(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	char *val = websGetVar(wp, "del_value", NULL);
@@ -2974,7 +2974,7 @@ void del_mdhcp(webs_t wp)
 
 void del_bridge(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	char *val = websGetVar(wp, "del_value", NULL);
@@ -3020,7 +3020,7 @@ void del_bridge(webs_t wp)
 
 void add_bridge(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int count = 0;
 	int realcount = atoi(nvram_safe_get("bridges_count"));
@@ -3043,7 +3043,7 @@ void add_bridge(webs_t wp)
 
 void del_bridgeif(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	char *val = websGetVar(wp, "del_value", NULL);
@@ -3080,7 +3080,7 @@ void del_bridgeif(webs_t wp)
 void add_bridgeif(webs_t wp)
 {
 
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int count = 0;
 	int realcount = atoi(nvram_safe_get("bridgesif_count"));
@@ -3105,7 +3105,7 @@ void add_bridgeif(webs_t wp)
 #ifdef HAVE_IPVS
 void add_ipvs(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int count = 0;
 	int realcount = atoi(nvram_safe_get("ipvs_count"));
@@ -3128,7 +3128,7 @@ void add_ipvs(webs_t wp)
 
 void del_ipvs(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	char *val = websGetVar(wp, "del_value", NULL);
@@ -3163,7 +3163,7 @@ void del_ipvs(webs_t wp)
 
 void add_ipvstarget(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int count = 0;
 	int realcount = atoi(nvram_safe_get("ipvstarget_count"));
@@ -3186,7 +3186,7 @@ void add_ipvstarget(webs_t wp)
 
 void del_ipvstarget(webs_t wp)
 {
-	static char word[256];
+	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
 	char *val = websGetVar(wp, "del_value", NULL);

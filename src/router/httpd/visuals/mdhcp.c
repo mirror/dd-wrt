@@ -2,7 +2,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 {
 	char buffer[256];
 	int count = 0;
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 
 	websWrite(wp, "<h2>%s</h2>\n<fieldset>\n", live_translate("networking.h5"));

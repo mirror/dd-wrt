@@ -32,10 +32,10 @@
 
 #include <broadcom.h>
 
-static char word[256];
 void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
+	char word[256];
 	char *next = NULL, *page = NULL;
 	char *ipaddr = NULL, *netmask = NULL, *gateway = NULL, *metric = NULL, *ifname = NULL;
 	static char ifnamecopy[32];
@@ -97,6 +97,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 {
 	char *arg;
 	int which, count;
+	char word[256];
 	char *next, *page;
 	char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname;
 	int temp;
