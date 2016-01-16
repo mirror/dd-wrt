@@ -60,6 +60,10 @@ void start_ipvs(void)
 		sprintf(modname, "ip_vs_%s", scheduler);	//build module name for scheduler implementation
 		insmod(modname);
 		char source[64];
+		if (!strcasecmp(sourceip, "wan"))
+			sourceip = get_wan_ipaddr();
+		if (!strcasecmp(sourceip, "lan"))
+			sourceip = nvram_safe_get("lan_ipaddr");
 		snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
 		if (!strcmp(sourceproto, "tcp"))
 			eval("ipvsadm", "-A", "-t", source, "-s", scheduler);
