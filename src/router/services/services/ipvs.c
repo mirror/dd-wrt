@@ -103,6 +103,10 @@ void start_ipvs(void)
 
 			if (!strcmp(matchname, ipvsname)) {
 				found = 1;
+				if (!strcasecmp(sourceip, "wan"))
+					sourceip = get_wan_ipaddr();
+				if (!strcasecmp(sourceip, "lan"))
+					sourceip = nvram_safe_get("lan_ipaddr");
 				break;
 			}
 
