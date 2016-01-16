@@ -1418,6 +1418,7 @@ networking.nq="Never Queue";
 networking.ipvs_targets="Virtual Server Targets";
 networking.ipvs_targetip="Target IP";
 networking.ipvs_targetport="Target Port";
+networking.ipvs_weight="Weight";
 //help container
 var hnetworking=new Object();
 hnetworking.right1="Multi DHCPD";
