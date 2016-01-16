@@ -38,6 +38,11 @@ extern void start_upnp(void);
 extern void stop_upnp(void);
 #endif
 
+#ifdef HAVE_IPVS
+extern void start_ipvs(void);
+extern void stop_ipvs(void);
+#endif
+
 #ifdef HAVE_QTN
 extern void start_qtn(void);
 extern void stop_qtn(void);
