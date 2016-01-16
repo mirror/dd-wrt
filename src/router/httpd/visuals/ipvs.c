@@ -27,7 +27,7 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 
 	char tword[256];
 	char *tnext, *twordlist;
-	char *ipvsname, *targetip, *targetport;
+	char *ipvsname, *targetip, *targetport, *targetweight;
 	char ipvs_name[32];
 
 	if (strlen(nvram_safe_get("ipvs"))) {
@@ -39,6 +39,7 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_name"));
 		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_targetip"));
 		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_targetport"));
+		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_weight"));
 		websWrite(wp, "<th>&nbsp;</th></tr>\n");
 
 		wordlist = nvram_safe_get("ipvstarget");
@@ -48,7 +49,11 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			ipvsname = strsep(&targetip, ">");
 			targetport = targetip;
 			targetip = strsep(&targetport, ">");
-			if (!ipvsname || !targetport || !targetip)
+			targetweight = targetport;
+			targetport = strsep(&targetweight, ">");
+			if (!targetweight)
+				targetweight = "5";
+			if (!ipvsname || !targetport || !targetip || !targetweight)
 				break;
 
 			sprintf(ipvs_name, "target_ipvsname%d", count);
@@ -69,6 +74,8 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"12\" value=\"%s\" /></td>\n", ipvs_name, targetip);
 			sprintf(ipvs_name, "target_ipvsport%d", count);
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetport);
+			sprintf(ipvs_name, "target_ipvsweight%d", count);
+			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetweight);
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"ipvstarget_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 				  count);
@@ -96,6 +103,8 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			sprintf(ipvs_name, "target_ipvsip%d", i);
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsport%d", i);
+			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
+			sprintf(ipvs_name, "target_ipvsweight%d", i);
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
 
 			websWrite(wp, "<td>");
