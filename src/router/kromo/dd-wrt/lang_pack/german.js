@@ -1209,7 +1209,7 @@ networking.ipvs_scheduler="Scheduler";
 networking.ipvs_targets="Virtueller Server Zieles";
 networking.ipvs_targetip="Ziel IP";
 networking.ipvs_targetport="Ziel Port";
-networking.ipvs_weight="Weight";
+networking.ipvs_weight="Wichtung";
 
 
 //help container
