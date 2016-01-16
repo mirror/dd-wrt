@@ -4720,6 +4720,11 @@ void start_wan_done(char *wan_ifname)
 	start_tor();
 #endif
 
+#ifdef HAVE_IPVS
+	stop_ipvs();
+	start_ipvs();
+#endif
+
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
