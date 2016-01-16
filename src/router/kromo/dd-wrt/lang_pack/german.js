@@ -1200,12 +1200,21 @@ networking.bond="Bond";
 networking.slave="Slave";
 networking.max="Max";
 networking.leasetime="Verfallszeit";
+networking.ipvs="IP Virtueller Server";
+networking.create_ipvs="Erstelle Virtuellen Server";
+networking.ipvs_name="Servername";
+networking.ipvs_sourceip="Quell IP";
+networking.ipvs_sourceport="Quell Port";
+networking.ipvs_scheduler="Scheduler";
+networking.ipvs_targets="Virtueller Server Zieles";
+networking.ipvs_targetip="Ziel IP";
+networking.ipvs_targetport="Ziel Port";
 
 
 //help container
 
-hnetworking.right1="Multi-DHCPD";
-hnetworking.right2="Um Multi-DHCPD zu verwenden, aktiviere DNSMasq als DHCP-Server.";
+hnetworking.right1="Mehrfach-DHCP";
+hnetworking.right2="Aktiviere DNSMasq als DHCP Server Um Mehrfach-DHCP zu nutzen.";
 
 // ** QoS.asp **//
 
