@@ -2686,7 +2686,7 @@ void save_networking(webs_t wp)
 			break;
 
 		sprintf(var, "target_ipvsweight%d", i);
-		ipvsport = websGetVar(wp, var, NULL);
+		ipvsweight = websGetVar(wp, var, NULL);
 		if (!ipvsweight)
 			break;
 
