@@ -66,7 +66,7 @@ void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
 	int mac, which;
-	int dofree = 0;
+	char buf[32];
 
 	ejArgs(argc, argv, "%d", &which);
 
@@ -77,18 +77,11 @@ void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 			if (nvram_match("port_swap", "1"))
 				c = strdup(nvram_safe_get("et1macaddr"));
 			else {
-				if (getRouterBrand() == ROUTER_ASUS_AC87U)
-					c = strdup(nvram_safe_get("et1macaddr"));
-				else if (getRouterBrand() == ROUTER_NETGEAR_R8000)
-					c = strdup(nvram_safe_get("et2macaddr"));
-				else if (getRouterBrand() == ROUTER_NETGEAR_R8500)
-					c = strdup(nvram_safe_get("et2macaddr"));
-				else
-					c = strdup(nvram_safe_get("et0macaddr"));
+				c = &buf[0];
+				getSystemMac(c);
 			}
 			if (c) {
 				MAC_ADD(c);
-				dofree = 1;
 			}
 		} else
 			c = nvram_safe_get("def_hwaddr");
@@ -97,8 +90,6 @@ void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 	if (c) {
 		mac = get_single_mac(c, which);
 		websWrite(wp, "%02X", mac);
-		if (dofree)
-			free(c);
 	} else
 		websWrite(wp, "00");
 }

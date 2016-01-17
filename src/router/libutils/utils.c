@@ -1463,7 +1463,7 @@ int internal_getRouterBrand()
 		setRouter("Netgear R8000");
 		return ROUTER_NETGEAR_R8000;
 	}
-	
+
 	if (boardnum == 32 && nvram_match("boardtype", "0x072F")
 	    && nvram_match("boardrev", "0x1101")) {
 		setRouter("Netgear R8500");
@@ -7645,4 +7645,26 @@ u_int64_t freediskSpace(char *path)
 	}
 
 	return (u_int64_t)sizefs.f_bsize * (u_int64_t)sizefs.f_bfree;
+}
+
+void getSystemMac(char *newmac)
+{
+	int brand = getRouterBrand();
+	switch (brand) {
+	case ROUTER_ASUS_AC87U:
+	case ROUTER_ASUS_AC88U:
+	case ROUTER_ASUS_AC5300:
+		strcpy(newmac, nvram_safe_get("et1macaddr"));
+		break;
+	case ROUTER_NETGEAR_R8000:
+	case ROUTER_NETGEAR_R8500:
+	case ROUTER_TRENDNET_TEW828:
+	case ROUTER_DLINK_DIR885:
+		strcpy(newmac, nvram_safe_get("et2macaddr"));
+		break;
+	default:
+		strcpy(newmac, nvram_safe_get("et0macaddr"));
+		break;
+	}
+
 }

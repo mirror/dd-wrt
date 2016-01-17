@@ -111,8 +111,8 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		if (ht == 3)
 			sprintf(info, "%s160", info);
 		if (wc->ht40intol)
-			sprintf(info, "%sintol",info); //ht40 intolerant
-		
+			sprintf(info, "%sintol", info);	//ht40 intolerant
+
 		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10, wc->rxrate / 10, info, wc->signal + bias, wc->noise + bias,
 			  wc->signal - wc->noise, qual);
 		cnt++;

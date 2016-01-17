@@ -382,4 +382,3 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	sprintf(var, "%d", totalcount);
 	nvram_set("bridgesif_count", var);
 }
-

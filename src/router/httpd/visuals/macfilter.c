@@ -157,4 +157,3 @@ void ej_show_macfilter(webs_t wp, int argc, char_t ** argv)
 
 #endif
 }
-
