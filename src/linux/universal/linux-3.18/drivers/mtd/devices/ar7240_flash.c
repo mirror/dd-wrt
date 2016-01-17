@@ -21,9 +21,17 @@
 
 #define AR7240_SPI_CMD_WRITE_SR		0x01
 
-#define MXIC_JEDEC_ID        0x00c22017
+#define MXIC_JEDEC_ID        0xc2
+#define ATMEL_JEDEC_ID        0x1f
+#define SST_JEDEC_ID        0x20
+#define INTEL_JEDEC_ID        0x89
+
+
 #define MXIC_ENSO            0xb1
 #define MXIC_EXSO            0xc1
+
+
+
 
 //#define ATH_SST_FLASH 1
 /* this is passed in as a boot parameter by bootloader */
@@ -228,13 +236,15 @@ ar7424_flash_spi_reset(void) {
 	mfrid = ar7240_reg_rd(AR7240_SPI_RD_STATUS) & 0x00ffffff;
 	ar7240_spi_go();
 	/* If this is an MXIC flash, be sure we are not in secure area */
+ 	
+ 	mfrid >>=16;
 	if(mfrid == MXIC_JEDEC_ID) {
 		/* Exit secure area of MXIC (in case we're in it) */
 		ar7240_spi_bit_banger(MXIC_EXSO);
 		ar7240_spi_go();
 	}
 	ar7240_spi_poll();
-	if(mfrid == MXIC_JEDEC_ID) {
+	if(mfrid == MXIC_JEDEC_ID || mfrid == ATMEL_JEDEC_ID || mfrid == INTEL_JEDEC_ID || mfrid == SST_JEDEC_ID) {
 		    ar7240_spi_flash_unblock(); // required to unblock software protection mode by ubiquiti (consider that gpl did not release this in theires gpl sources. likelly to fuck up developers)
 	}
 	ar7240_reg_wr(AR7240_SPI_FS, 0);
