@@ -82,7 +82,7 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetport);
 			sprintf(ipvs_name, "target_ipvsweight%d", count);
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", ipvs_name, targetweight);
-			sprintf(ipvs_name, "target_masquerade%d", count);
+			sprintf(ipvs_name, "target_ipvsmasquerade%d", count);
 			websWrite(wp, "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" %s/></td>\n", ipvs_name, !strcmp(targetnat, "1") ? "checked=\"checked\"" : "");
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"ipvstarget_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
@@ -114,6 +114,8 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsweight%d", i);
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
+			sprintf(ipvs_name, "target_ipvsmasquerade%d", i);
+			websWrite(wp, "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" checked=\"checked\"/></td>\n", ipvs_name);
 
 			websWrite(wp, "<td>");
 			websWrite(wp,
