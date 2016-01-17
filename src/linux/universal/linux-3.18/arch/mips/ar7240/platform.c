@@ -820,6 +820,7 @@ return NULL;
 
 void __init ap91_wmac_disable_2ghz(void);
 void __init ap91_wmac_disable_5ghz(void);
+void ap91_set_tx_gain_buffalo(void);
 
 int __init ar7240_platform_init(void)
 {
