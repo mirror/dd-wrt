@@ -113,7 +113,7 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			sprintf(ipvs_name, "target_ipvsport%d", i);
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsweight%d", i);
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" /></td>\n", ipvs_name);
+			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"5\" value=\"5\" /></td>\n", ipvs_name);
 			sprintf(ipvs_name, "target_ipvsmasquerade%d", i);
 			websWrite(wp, "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" checked=\"checked\"/></td>\n", ipvs_name);
 
