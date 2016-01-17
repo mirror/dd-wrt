@@ -185,6 +185,7 @@ int ipdown_main(int argc, char **argv)
 	if (check_action() != ACT_IDLE)
 		return -1;
 	runStartup("/etc/config", ".ipdown");
+	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
