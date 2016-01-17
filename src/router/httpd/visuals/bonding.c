@@ -129,5 +129,3 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bond_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</fieldset><br />\n");
 }
-
-

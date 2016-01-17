@@ -256,4 +256,3 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
-

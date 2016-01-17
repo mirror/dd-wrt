@@ -535,4 +535,3 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #endif
-

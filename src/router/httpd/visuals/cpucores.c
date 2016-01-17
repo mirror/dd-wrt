@@ -236,4 +236,3 @@ void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
 #endif
 	websWrite(wp, "%d", count);
 }
-
