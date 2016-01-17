@@ -278,7 +278,6 @@ void ej_dumpmeminfo(webs_t wp, int argc, char_t ** argv)
 
 #include "cpucores.c"
 
-
 #define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
 #define RSSI_TMP	"/tmp/.rssi"
 #define ASSOCLIST_CMD	"wl assoclist"
@@ -909,7 +908,7 @@ void ej_getWET(webs_t wp, int argc, char_t ** argv)
 {
 	if (getWET())
 		websWrite(wp, "1");
-	    else
+	else
 		websWrite(wp, "0");
 }
 
@@ -1371,25 +1370,25 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				// temp must be replaced with the actual selected country
 				char regdomain[16];
 				char *country;
-				int checkband=255;
+				int checkband = 255;
 				sprintf(regdomain, "%s_regdomain", prefix);
 				country = nvram_default_get(regdomain, "UNITED_STATES");
 				// temp end
 
 				if (nvram_nmatch("ng-only", "%s_net_mode", prefix)
-				        || nvram_nmatch("n2-only", "%s_net_mode", prefix)
-				        || nvram_nmatch("bg-mixed", "%s_net_mode", prefix)
-				        || nvram_nmatch("ng-mixed", "%s_net_mode", prefix)
-				        || nvram_nmatch("b-only", "%s_net_mode", prefix)
-				        || nvram_nmatch("g-only", "%s_net_mode", prefix)) {
-				                checkband=2;
+				    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+				    || nvram_nmatch("bg-mixed", "%s_net_mode", prefix)
+				    || nvram_nmatch("ng-mixed", "%s_net_mode", prefix)
+				    || nvram_nmatch("b-only", "%s_net_mode", prefix)
+				    || nvram_nmatch("g-only", "%s_net_mode", prefix)) {
+					checkband = 2;
 				}
 				if (nvram_nmatch("a-only", "%s_net_mode", prefix)
-				        || nvram_nmatch("na-only", "%s_net_mode", prefix)
-				        || nvram_nmatch("ac-only", "%s_net_mode", prefix)
-				        || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
-				        || nvram_nmatch("n5-only", "%s_net_mode", prefix)) {
-				                checkband=5;
+				    || nvram_nmatch("na-only", "%s_net_mode", prefix)
+				    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+				    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
+				    || nvram_nmatch("n5-only", "%s_net_mode", prefix)) {
+					checkband = 5;
 				}
 				if (nvram_nmatch("80", "%s_channelbw", prefix))
 					channelbw = 80;
@@ -3281,7 +3280,7 @@ if (has_ac(prefix) && has_2ghz(prefix)) {
 	showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 }
 
-if (has_ac(prefix) && nvram_nmatch("15","%s_hw_rxchain",prefix)) {
+if (has_ac(prefix) && nvram_nmatch("15", "%s_hw_rxchain", prefix)) {
 	char wl_nitroqam[16];
 	sprintf(wl_nitroqam, "%s_nitro_qam", prefix);
 	showRadio(wp, "wl_basic.nitroqam", wl_nitroqam);
@@ -4201,10 +4200,10 @@ void show_addconfig(webs_t wp, char *prefix)
 	websWrite(wp, "<textarea cols=\"60\" rows=\"4\" id=\"%s_config\" name=\"%s_config\"></textarea>\n", vvar, vvar);
 	websWrite(wp, "<script type=\"text/javascript\">\n");
 	websWrite(wp, "//<![CDATA[\n");
-	websWrite(wp, "var %s_config = fix_cr( '",vvar);
+	websWrite(wp, "var %s_config = fix_cr( '", vvar);
 	char varname[32];
-	sprintf(varname,"%s_config",prefix);
-	tf_webWriteESCNV(wp, varname);	
+	sprintf(varname, "%s_config", prefix);
+	tf_webWriteESCNV(wp, varname);
 	websWrite(wp, "' );\n");
 	websWrite(wp, "document.getElementById(\"%s_config\").value = %s_config;\n", vvar, vvar);
 	websWrite(wp, "//]]>\n");
@@ -5148,7 +5147,7 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 
 	char *c;
 	int mac, which;
-	int dofree = 0;
+	char buf[32];
 
 	ejArgs(argc, argv, "%d", &which);
 
@@ -5166,17 +5165,10 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 				MAC_ADD(c);	// et0macaddr +3
 			}
 		} else {
-			if (getRouterBrand() == ROUTER_ASUS_AC87U)
-				c = strdup(nvram_safe_get("et1macaddr"));
-			else if (getRouterBrand() == ROUTER_NETGEAR_R8000)
-				c = strdup(nvram_safe_get("et2macaddr"));
-			else if (getRouterBrand() == ROUTER_NETGEAR_R8500)
-				c = strdup(nvram_safe_get("et2macaddr"));
-			else
-				c = strdup(nvram_safe_get("et0macaddr"));
+			c = &buf[0];
+			getSystemMac(c);
 		}
 
-		dofree = 1;
 		if (c) {
 			MAC_ADD(c);
 			MAC_ADD(c);
@@ -5188,15 +5180,12 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 	if (c) {
 		mac = get_single_mac(c, which);
 		websWrite(wp, "%02X", mac);
-		if (dofree)
-			free(c);
 	} else
 		websWrite(wp, "00");
 
 	return;
 #endif
 }
-
 
 #include "switch.c"
 #include "qos.c"

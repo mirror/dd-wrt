@@ -64,7 +64,7 @@ float getfloatrate(int rate, int bw)
 		if (bw == 80)
 			result = 1300.0f;
 		if (bw == 160)
-			result = 2340.0f; // this rate is not specified
+			result = 2340.0f;	// this rate is not specified
 		break;
 	case 600:
 		if (bw == 20)
