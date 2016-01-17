@@ -87,7 +87,7 @@ void start_ipvs(void)
 		targetnat = targetweight;
 		targetweight = strsep(&targetnat, ">");
 
-		if (!ipvsname || !targetport || !targetip || !targetweight || !targetnat)
+		if (!ipvsname || !targetport || !targetip || !targetnat)
 			break;
 		twordlist = ipvs;
 		int found = 0;
@@ -119,10 +119,18 @@ void start_ipvs(void)
 			snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
 			char target[64];
 			snprintf(target, sizeof(target), "%s:%s", targetip, targetport);
-			if (!strcmp(targetnat, "1"))
-				eval("ipvsadm", "-a", "-t", source, "-r", target, "-m", "-w", targetweight);
-			else
-				eval("ipvsadm", "-a", "-t", source, "-r", target, "-g", "-w", targetweight);
+			if (targetweight) {
+				if (!strcmp(targetnat, "1"))
+					eval("ipvsadm", "-a", "-t", source, "-r", target, "-m", "-w", targetweight);
+				else
+					eval("ipvsadm", "-a", "-t", source, "-r", target, "-g", "-w", targetweight);
+			} else {
+				if (!strcmp(targetnat, "1"))
+					eval("ipvsadm", "-a", "-t", source, "-r", target, "-m");
+				else
+					eval("ipvsadm", "-a", "-t", source, "-r", target, "-g");
+
+			}
 		}
 	}
 	dd_syslog(LOG_INFO, "ipvs : IP Virtual Server successfully started\n");
