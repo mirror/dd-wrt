@@ -37,7 +37,7 @@ void start_ipvs(void)
 
 	char tword[256];
 	char *tnext, *twordlist;
-	char *ipvsname, *sourceip, *sourceport, *scheduler, *targetip, *targetport, *matchname, *sourceproto, *targetweight;
+	char *ipvsname, *sourceip, *sourceport, *scheduler, *targetip, *targetport, *matchname, *sourceproto, *targetweight, *tarnetnat;
 	char *ipvs = nvram_safe_get("ipvs");
 	char *ipvstarget = nvram_safe_get("ipvstarget");
 	if (!strlen(ipvs) || !strlen(ipvstarget))
@@ -84,7 +84,10 @@ void start_ipvs(void)
 		targetip = strsep(&targetport, ">");
 		targetweight = targetport;
 		targetport = strsep(&targetweight, ">");
-		if (!ipvsname || !targetport || !targetip || !targetweight)
+		targetnat = targetweight;
+		targetweight = strsep(&targetnat, ">");
+
+		if (!ipvsname || !targetport || !targetip || !targetweight || !targetnat)
 			break;
 		twordlist = ipvs;
 		int found = 0;
@@ -116,7 +119,10 @@ void start_ipvs(void)
 			snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
 			char target[64];
 			snprintf(target, sizeof(target), "%s:%s", targetip, targetport);
-			eval("ipvsadm", "-a", "-t", source, "-r", target, "-m", "-w", targetweight);
+			if (!strcmp(targetnat, "1"))
+				eval("ipvsadm", "-a", "-t", source, "-r", target, "-m", "-w", targetweight);
+			else
+				eval("ipvsadm", "-a", "-t", source, "-r", target, "-g", "-w", targetweight);
 		}
 	}
 	dd_syslog(LOG_INFO, "ipvs : IP Virtual Server successfully started\n");
