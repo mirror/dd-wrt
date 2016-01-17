@@ -133,6 +133,7 @@ void start_ipvs(void)
 			}
 		}
 	}
+	eval("ipvsadm", "--start-daemon", nvram_default_get("ipvs_role", "master"), "--mcast-interface", nvram_safe_get("lan_ifname"));
 	dd_syslog(LOG_INFO, "ipvs : IP Virtual Server successfully started\n");
 	return;
 }

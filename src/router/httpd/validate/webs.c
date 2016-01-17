@@ -2618,6 +2618,18 @@ void save_networking(webs_t wp)
 	memset(buffer, 0, 1024);
 #endif
 #ifdef HAVE_IPVS
+	{
+		char var[32];
+		sprintf(var, "ipvsrole");
+		char *ipvsrole = websGetVar(wp, var, NULL);
+		if (ipvsrole) {
+			if (!strcmp(ipvsrole, "Master"))
+				nvram_set("ipvs_role", "master");
+			else
+				nvram_set("ipvs_role", "backup");
+		}
+
+	}
 	for (i = 0; i < ipvscount; i++) {
 		char *ipvsname;
 		char *ipvsip;
