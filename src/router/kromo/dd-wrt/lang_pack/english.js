@@ -1419,6 +1419,8 @@ networking.ipvs_targets="Virtual Server Targets";
 networking.ipvs_targetip="Target IP";
 networking.ipvs_targetport="Target Port";
 networking.ipvs_weight="Weight";
+networking.ipvs_role="Role";
+networking.ipvs_config="Configuration";
 //help container
 var hnetworking=new Object();
 hnetworking.right1="Multi DHCPD";
