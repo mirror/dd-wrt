@@ -225,4 +225,3 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp, "</fieldset><br />\n");
 }
-
