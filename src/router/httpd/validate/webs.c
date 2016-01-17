@@ -2669,6 +2669,7 @@ void save_networking(webs_t wp)
 		char *ipvsip;
 		char *ipvsport;
 		char *ipvsweight;
+		char *ipvsnat;
 		char var[32];
 		sprintf(var, "target_ipvsname%d", i);
 		ipvsname = websGetVar(wp, var, NULL);
@@ -2690,6 +2691,11 @@ void save_networking(webs_t wp)
 		if (!ipvsweight)
 			break;
 
+		sprintf(var, "target_ipvsmasquerade%d", i);
+		ipvsnat = websGetVar(wp, var, "0");
+		if (!ipvsnat)
+			break;
+
 		strcat(buffer, ipvsname);
 		strcat(buffer, ">");
 		strcat(buffer, ipvsip);
@@ -2697,6 +2703,8 @@ void save_networking(webs_t wp)
 		strcat(buffer, ipvsport);
 		strcat(buffer, ">");
 		strcat(buffer, ipvsweight);
+		strcat(buffer, ">");
+		strcat(buffer, ipvsnat);
 		if (i < ipvstargetcount - 1)
 			strcat(buffer, " ");
 	}
