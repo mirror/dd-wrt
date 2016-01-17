@@ -4292,6 +4292,8 @@ void start_sysinit(void)
 		nvram_commit();
 		break;
 	case ROUTER_TPLINK_ARCHERC9:
+		nvram_set("0:xtalfreq","40000");
+		nvram_set("1:xtalfreq","40000");
 		nvram_set("0:ledbh4", "7");
 		nvram_set("1:ledbh5", "7");
 		nvram_set("0:ledbh1", "11");
