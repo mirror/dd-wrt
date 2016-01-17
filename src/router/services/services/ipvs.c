@@ -37,7 +37,7 @@ void start_ipvs(void)
 
 	char tword[256];
 	char *tnext, *twordlist;
-	char *ipvsname, *sourceip, *sourceport, *scheduler, *targetip, *targetport, *matchname, *sourceproto, *targetweight, *tarnetnat;
+	char *ipvsname, *sourceip, *sourceport, *scheduler, *targetip, *targetport, *matchname, *sourceproto, *targetweight, *targetnat;
 	char *ipvs = nvram_safe_get("ipvs");
 	char *ipvstarget = nvram_safe_get("ipvstarget");
 	if (!strlen(ipvs) || !strlen(ipvstarget))
