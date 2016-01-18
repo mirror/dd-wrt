@@ -65,7 +65,7 @@ void start_ipvs(void)
 			if (strcmp(sourceport, "0")) {
 				char net[32];
 				sprintf(net, "%s/32", sourceip);
-				eval("iptables", "-I", "INPUT", "-p", sourceproto, "--dport", sourceport, "-d", net, "-j ACCEPT");
+				eval("iptables", "-I", "INPUT", "-p", sourceproto, "--dport", sourceport, "-d", net, "-j", "ACCEPT");
 			}
 		}
 		if (!strcasecmp(sourceip, "lan"))
