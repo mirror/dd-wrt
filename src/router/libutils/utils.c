@@ -2336,7 +2336,6 @@ int internal_getRouterBrand()
 		int offset;	// frequency offset
 		int poffset;
 	};
-
 	/* these values are guessed and need to be validated */
 #define M900 (- (2427 - 907))
 #define M365 (- (5540 - 3650))
@@ -2439,7 +2438,7 @@ int internal_getRouterBrand()
 		{"UniFi UAP-AC v2", 0xe912, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{"UniFi UAP v2", 0xe572, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{"UniFi UAP-LR v2", 0xe582, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
-		{NULL, 0, NULL, NULL, 0},	//
+		{NULL, 0, 0, 0, 0, 0,0},	//
 	};
 
 #undef M35
@@ -2502,8 +2501,8 @@ int internal_getRouterBrand()
 				nvram_set("ath0_poweroffset", poff);
 			}
 			static char devicename[64];
-			sprintf(devicename, "Ubiquiti %s", dev[devcnt].dddev);
-			setRouter(dev[devcnt].devicename);
+			sprintf(devicename, "Ubiquiti %s", dev[devcnt].devicename);
+			setRouter(devicename);
 			return devicename;
 		}
 		devcnt++;
