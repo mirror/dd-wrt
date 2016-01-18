@@ -2546,8 +2546,9 @@ static void trunkspaces(char *str)
 	int i;
 	for (i = 0; i < len; i++) {
 		if (str[i] == ' ') {
-			memmove(&str[i], &str[i + 1], (len - 1) - i);
+			memmove(&str[i], &str[i + 1], len - i);
 			i--;
+			len=strlen(str);
 			continue;
 		}
 	}
