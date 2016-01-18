@@ -65,11 +65,17 @@ void start_ipvs(void)
 		if (!strcasecmp(sourceip, "lan"))
 			sourceip = nvram_safe_get("lan_ipaddr");
 		snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
-		if (!strcmp(sourceproto, "tcp"))
-			eval("ipvsadm", "-A", "-t", source, "-s", scheduler);
-		else if (!strcmp(sourceproto, "udp"))
-			eval("ipvsadm", "-A", "-u", source, "-s", scheduler);
-		else if (!strcmp(sourceproto, "sip")) {
+		if (!strcmp(sourceproto, "tcp")) {
+			if (!strcmp(sourceport, "0"))
+				eval("ipvsadm", "-A", "-t", source, "-s", scheduler, "-p");
+			else
+				eval("ipvsadm", "-A", "-t", source, "-s", scheduler);
+		} else if (!strcmp(sourceproto, "udp")) {
+			if (!strcmp(sourceport, "0"))
+				eval("ipvsadm", "-A", "-u", source, "-s", scheduler, "-p");
+			else
+				eval("ipvsadm", "-A", "-u", source, "-s", scheduler);
+		} else if (!strcmp(sourceproto, "sip")) {
 			insmod("nf_conntrack_sip");
 			insmod("ip_vs_pe_sip");
 			eval("ipvsadm", "-A", "-u", source, "-p", "60", "-M", "0.0.0.0", "-o", "--pe", "sip", "-s", scheduler);
