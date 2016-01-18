@@ -2501,9 +2501,9 @@ int internal_getRouterBrand()
 				sprintf(poff, "%d", dev[devcnt].poffset);
 				nvram_set("ath0_poweroffset", poff);
 			}
-			setRouter(dev[devcnt].devicename);
 			static char devicename[64];
 			sprintf(devicename, "Ubiquiti %s", dev[devcnt].dddev);
+			setRouter(dev[devcnt].devicename);
 			return devicename;
 		}
 		devcnt++;
