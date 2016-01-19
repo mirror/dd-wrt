@@ -10,7 +10,15 @@ define kernelfeatures
 	if [ "$(CONFIG_IPETH)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config; \
 	fi
-	
+	if [ "$(CONFIG_IPV6)" != "y" ]; then \
+		sed -i 's/\CONFIG_IPV6=m/# CONFIG_IPV6 is not set/g' $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_JFFS2)" != "y" ]; then \
+		sed -i 's/\CONFIG_JFFS2=m/# CONFIG_JFFS2 is not set/g' $(LINUXDIR)/.config; \
+	fi	
+	if [ "$(CONFIG_SAMBA)" != "y" ]; then \
+		sed -i 's/\CONFIG_CIFS=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
+	fi	
 	if [ "$(CONFIG_USBIP)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USBIP_CORE is not set/CONFIG_USBIP_CORE=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_USBIP_VHCI_HCD=m" >> $(LINUXDIR)/.config; \
