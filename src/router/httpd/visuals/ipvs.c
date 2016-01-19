@@ -251,7 +251,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvs_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
-	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "</fieldset><br />\n");
 
 	char var[32];
 	sprintf(var, "%d", totalcount);
