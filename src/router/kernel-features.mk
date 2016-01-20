@@ -12,6 +12,40 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_IPV6)" != "y" ]; then \
 		sed -i 's/\CONFIG_IPV6=m/# CONFIG_IPV6 is not set/g' $(LINUXDIR)/.config; \
+	else \
+		sed -i 's/\# CONFIG_NF_DEFRAG_IPV6 is not set/CONFIG_NF_DEFRAG_IPV6=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_NF_CONNTRACK_IPV6 is not set/CONFIG_NF_CONNTRACK_IPV6=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_NF_REJECT_IPV6 is not set/CONFIG_NF_REJECT_IPV6=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_IPTABLES is not set/CONFIG_IP6_NF_IPTABLES=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_MATCH_AH is not set/CONFIG_IP6_NF_MATCH_AH=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_MATCH_FRAG is not set/CONFIG_IP6_NF_MATCH_FRAG=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_MATCH_IPV6HEADER is not set/CONFIG_IP6_NF_MATCH_IPV6HEADER=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_MATCH_RPFILTER is not set/CONFIG_IP6_NF_MATCH_RPFILTER=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_MATCH_RT is not set/CONFIG_IP6_NF_MATCH_RT=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_FILTER is not set/CONFIG_IP6_NF_FILTER=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_TARGET_REJECT is not set/CONFIG_IP6_NF_TARGET_REJECT=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_MANGLE is not set/CONFIG_IP6_NF_MANGLE=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_REJECT_IPV6=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_LOG_IPV6=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_NAT_IPV6=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NF_NAT_MASQUERADE_IPV6 is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_IPTABLES=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_MATCH_AH=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_EUI64 is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_MATCH_FRAG=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_OPTS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_HL is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_MATCH_IPV6HEADER=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_MH is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_MATCH_RPFILTER=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_MATCH_RT=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_TARGET_HL is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_FILTER=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_TARGET_REJECT=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_TARGET_SYNPROXY is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_MANGLE=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_RAW is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_NAT is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_JFFS2)" != "y" ]; then \
 		sed -i 's/\CONFIG_JFFS2=m/# CONFIG_JFFS2 is not set/g' $(LINUXDIR)/.config; \
