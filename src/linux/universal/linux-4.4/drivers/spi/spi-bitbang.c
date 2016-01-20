@@ -281,13 +281,6 @@ static int spi_bitbang_transfer_one(struct spi_master *master,
 
 	if (transfer->len) {
 		status = bitbang->txrx_bufs(spi, transfer);
-
-#ifdef CONFIG_SPI_CNS3XXX
-				if (t->transfer_list.next == &m->transfers)
-					t->last_in_message_list = 1;
-				else
-					t->last_in_message_list = 0;
-#endif
 	}
 	if (status == transfer->len)
 		status = 0;
