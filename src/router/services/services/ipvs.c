@@ -34,6 +34,7 @@ void start_ipvs(void)
 {
 	char word[256];
 	char *next, *wordlist;
+	int first = 0;
 
 	char tword[256];
 	char *tnext, *twordlist;
@@ -42,9 +43,7 @@ void start_ipvs(void)
 	char *ipvstarget = nvram_safe_get("ipvstarget");
 	if (!strlen(ipvs) || !strlen(ipvstarget))
 		return;
-	insmod("ipv6 ip_vs ip_ftp ip_pe_sip");
 	wordlist = ipvs;
-
 	foreach(word, wordlist, next) {
 		sourceip = word;
 		ipvsname = strsep(&sourceip, ">");
@@ -56,6 +55,10 @@ void start_ipvs(void)
 		scheduler = strsep(&sourceproto, ">");
 		if (!ipvsname || !sourceport || !sourceip || !scheduler || !sourceproto)
 			break;
+		if (!first) {
+			first = 1;
+			insmod("ipv6 ip_vs ip_ftp ip_pe_sip");
+		}
 		char modname[32];
 		sprintf(modname, "ip_vs_%s", scheduler);	//build module name for scheduler implementation
 		insmod(modname);
@@ -145,8 +148,10 @@ void start_ipvs(void)
 			}
 		}
 	}
-	eval("ipvsadm", "--start-daemon", nvram_default_get("ipvs_role", "master"), "--mcast-interface", nvram_safe_get("lan_ifname"));
-	dd_syslog(LOG_INFO, "ipvs : IP Virtual Server successfully started\n");
+	if (first) {
+		eval("ipvsadm", "--start-daemon", nvram_default_get("ipvs_role", "master"), "--mcast-interface", nvram_safe_get("lan_ifname"));
+		dd_syslog(LOG_INFO, "ipvs : IP Virtual Server successfully started\n");
+	}
 	return;
 }
 
