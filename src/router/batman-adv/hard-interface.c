@@ -83,11 +83,19 @@ static bool batadv_is_on_batman_iface(const struct net_device *net_dev)
 		return true;
 
 	/* no more parents..stop recursion */
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,3,0)
+	if (dev_get_iflink(net_dev) == net_dev->ifindex)
+#else
 	if (net_dev->iflink == net_dev->ifindex)
+#endif
 		return false;
 
 	/* recurse over the parent device */
-	parent_dev = dev_get_by_index(&init_net, net_dev->iflink);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,3,0)
+	parent_dev = dev_get_by_index(&init_net, dev_get_iflink(net_dev));
+#else
+	parent_dev = dev_get_by_index(&init_net, net_dev);
+#endif
 	/* if we got a NULL parent_dev there is something broken.. */
 	if (WARN(!parent_dev, "Cannot find parent device"))
 		return false;
@@ -103,6 +111,7 @@ static int batadv_is_valid_iface(const struct net_device *net_dev)
 {
 	if (net_dev->flags & IFF_LOOPBACK)
 		return 0;
+
 
 	if (net_dev->type != ARPHRD_ETHER)
 		return 0;
