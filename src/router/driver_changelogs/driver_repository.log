@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2782 | BrainSlayer | 2016-01-20 02:17:58 +0100 (Wed, 20 Jan 2016) | 1 line
+
+update laguna toolchain
+------------------------------------------------------------------------
 r2781 | BrainSlayer | 2016-01-18 23:30:41 +0100 (Mon, 18 Jan 2016) | 1 line
 
 fix broken ath9k eeprom code which was introduced in 10-01-2016. this will cause older ar9160 based devices to fail since they dont contain eeprom magics in flash
