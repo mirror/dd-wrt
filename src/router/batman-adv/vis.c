@@ -162,9 +162,9 @@ batadv_vis_data_read_entry(struct seq_file *seq,
 			   const uint8_t *src, bool primary)
 {
 	if (primary && entry->quality == 0)
-		return seq_printf(seq, "TT %pM, ", entry->dest);
+		seq_printf(seq, "TT %pM, ", entry->dest);
 	else if (batadv_compare_eth(entry->src, src))
-		return seq_printf(seq, "TQ %pM %d, ", entry->dest,
+		seq_printf(seq, "TQ %pM %d, ", entry->dest,
 				  entry->quality);
 
 	return 0;
