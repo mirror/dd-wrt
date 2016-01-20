@@ -33,6 +33,7 @@
 #include <linux/seq_file.h>
 #include <linux/poll.h>
 #include <linux/reservation.h>
+#include <linux/module.h>
 
 static inline int is_dma_buf_file(struct file *);
 
@@ -914,4 +915,5 @@ static void __exit dma_buf_deinit(void)
 {
 	dma_buf_uninit_debugfs();
 }
-__exitcall(dma_buf_deinit);
+module_exit(dma_buf_deinit);
+MODULE_LICENSE("GPL");
