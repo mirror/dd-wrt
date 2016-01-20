@@ -234,7 +234,7 @@ static irqreturn_t cns3xxx_timer_interrupt(int irq, void *dev_id)
 
 static struct irqaction cns3xxx_timer_irq = {
 	.name		= "timer",
-	.flags		= IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL,
+	.flags		= IRQF_TIMER | IRQF_IRQPOLL,
 	.handler	= cns3xxx_timer_interrupt,
 };
 
@@ -253,7 +253,6 @@ static struct clocksource clocksource_cns3xxx = {
 	.rating = 200,
 	.read = cns3xxx_get_cycles,
 	.mask = CLOCKSOURCE_MASK(48),
-	.shift  = 16,
 	.flags  = CLOCK_SOURCE_IS_CONTINUOUS,
 };
 
@@ -262,9 +261,7 @@ static void __init cns3xxx_clocksource_init(void)
 	/* Reset the FreeRunning counter */
 	writel((1 << 16), cns3xxx_tmr1 + TIMER_FREERUN_CONTROL_OFFSET);
 
-	clocksource_cns3xxx.mult =
-		clocksource_khz2mult(100, clocksource_cns3xxx.shift);
-	clocksource_register(&clocksource_cns3xxx);
+	clocksource_register_khz(&clocksource_cns3xxx, 100);
 }
 /*
  * Set up the clock source and clock events devices
