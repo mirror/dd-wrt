@@ -146,7 +146,7 @@ static inline int check_master_abort(struct pci_bus *bus, unsigned int devfn, in
 			printk("\n");
 */
 			pr_debug("%s failed port%d sreg=0x%04x\n", __func__,
-				cnspci->hw_pci.domain, sreg);
+				pci_domain_nr(bus), sreg);
 
 			/* make sure the status bits are reset */
 			__raw_writew(sreg, host_base + 6);
@@ -168,6 +168,11 @@ static int cns3xxx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	int shift = (where % 4) * 8;
 
 	ret = pci_generic_config_read32(bus, devfn, where, size, val);
+
+	if (check_master_abort(bus, devfn, where)) {
+		printk(KERN_ERR "pci error: %04d:%02x:%02x.%02x %02x(%d)= master_abort on read\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size);
+		return PCIBIOS_DEVICE_NOT_FOUND;
+	}
 
 	if (ret == PCIBIOS_SUCCESSFUL && !bus->number && !devfn &&
 	    (where & 0xffc) == PCI_CLASS_REVISION)
@@ -231,7 +236,13 @@ static struct cns3xxx_pcie cns3xxx_pcie[] = {
 			.end = CNS3XXX_PCIE0_HOST_BASE - 1, /* 176 MiB */
 			.flags = IORESOURCE_MEM,
 		},
-		.irqs = { IRQ_CNS3XXX_PCIE0_RC, IRQ_CNS3XXX_PCIE0_DEVICE, },
+		.irqs = {
+			IRQ_CNS3XXX_PCIE0_RC,
+			IRQ_CNS3XXX_PCIE0_DEVICE,
+			IRQ_CNS3XXX_PCIE0_DEVICE,
+			IRQ_CNS3XXX_PCIE0_DEVICE,
+			IRQ_CNS3XXX_PCIE0_DEVICE,
+		},
 		.port = 0,
 	},
 	[1] = {
@@ -250,7 +261,13 @@ static struct cns3xxx_pcie cns3xxx_pcie[] = {
 			.end = CNS3XXX_PCIE1_HOST_BASE - 1, /* 176 MiB */
 			.flags = IORESOURCE_MEM,
 		},
-		.irqs = { IRQ_CNS3XXX_PCIE1_RC, IRQ_CNS3XXX_PCIE1_DEVICE, },
+		.irqs = {
+			IRQ_CNS3XXX_PCIE1_RC,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+		},
 		.port = 1,
 	},
 };
