@@ -262,7 +262,7 @@ endif
 ifneq ($(CONFIG_MUSL),y)
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uclibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 else
-	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-arm.so.1
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-armhf.so.1
 endif
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 ifeq ($(CONFIG_LIBDL),y)
