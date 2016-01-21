@@ -430,7 +430,7 @@ CONFIG_ATAGS=y
 # CONFIG_DEPRECATED_PARAM_STRUCT is not set
 CONFIG_ZBOOT_ROM_TEXT=0x0
 CONFIG_ZBOOT_ROM_BSS=0x0
-CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd"
+CONFIG_CMDLINE="console=ttyS0,115200 panic=10 mem=64M root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd"
 CONFIG_CMDLINE_FROM_BOOTLOADER=y
 # CONFIG_CMDLINE_EXTEND is not set
 # CONFIG_CMDLINE_FORCE is not set
