@@ -113,13 +113,13 @@ PUBLIC IxEthAccStatus ixEthAccInit()
   /*
    * Init co-existence services
    */
-  if (ixEthHssAccCoExistInit() != IX_ETH_ACC_SUCCESS)
+/*  if (ixEthHssAccCoExistInit() != IX_ETH_ACC_SUCCESS)
   {
       IX_ETH_ACC_FATAL_LOG("ixEthAccInit: Co-exist features init failed\n", 0, 0, 0, 0, 0, 0);
       
       return IX_ETH_ACC_FAIL;
   }
-
+*/
    /* 
     * Initialize port mapping table
     */
@@ -282,12 +282,12 @@ ixEthAccUninit (void)
        }
    
        /* Check co-existence services can be uninitialized */
-       if (IX_ETH_ACC_SUCCESS != ixEthHssAccCoExistUninit())
+/*       if (IX_ETH_ACC_SUCCESS != ixEthHssAccCoExistUninit())
        {
            IX_ETH_ACC_FATAL_LOG ("Can't Unload co-exists features", 0, 0, 0, 0, 0, 0);
            return IX_ETH_ACC_FAIL;
        }
-
+*/
        /* uninitialize the service */
        ixEthAccServiceInit = FALSE;
     }

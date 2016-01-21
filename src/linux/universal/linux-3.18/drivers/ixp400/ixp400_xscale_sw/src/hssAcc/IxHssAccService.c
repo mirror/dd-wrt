@@ -188,7 +188,7 @@ ixEthHssAccCoExistCheck(void)
      * 0x00910000(HSS channelized + header conversion support)
      */
 
-    if ((functionalityId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(
+/*    if ((functionalityId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(
          IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST) ||
          functionalityId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(
          IX_NPEDL_NPEIMAGE_NPEA_ETH_HDRCONV_HSSCHAN_COEXIST)) &&
@@ -196,7 +196,7 @@ ixEthHssAccCoExistCheck(void)
     {
         ixEthHssAccCoexistEnable = TRUE;
     }
-
+*/
     return IX_SUCCESS;
 
 }
@@ -333,6 +333,7 @@ ixHssAccInit (void)
 			       " for NPE-A. No HSS image has been downloaded\n");
 	status = IX_FAIL;
     }
+#if 0
     else
     {
 	if ((imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_SPHY_1_PORT))
@@ -373,7 +374,7 @@ ixHssAccInit (void)
 	    status = IX_FAIL;
 	}
     }
-
+#endif
     if (status == IX_SUCCESS)
     {
 	if (!qmqsConfigured)
@@ -406,13 +407,13 @@ ixHssAccInit (void)
     /* 
      * Check if the image downloaded is Ethernet HssAcc coexist channelized images 
      */
-    if ( (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST)) 
+/*    if ( (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST)) 
       || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_ETH_HDRCONV_HSSCHAN_COEXIST))
       || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_4_PORT))) 
     {
         ixHssAccServiceType = IX_HSSACC_CHANNELIZED;
     }
-
+*/
 
 /* If ETH-HSS co-exist feature exists we are initializing the common mutex.
  * Care should be taken as to whether this mutex is not already initialized by 
