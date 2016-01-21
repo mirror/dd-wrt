@@ -225,12 +225,13 @@ void ixEthDBNpeMsgAck(IxNpeMhNpeId npeID, IxNpeMhMessage msg)
     portInfo = &ixEthDBPortInfo[portID];
     
     ixOsalMutexUnlock(&portInfo->npeAckLock);
-
+#if 0
     if (ixEthHssAccCoexistEnable)
     {
         /* Clear the common mutex locked during sending NPE messages */
         IX_ETH_HSS_COM_MUT_UNLOCK();
     }
+#endif
 }
 
 /**
