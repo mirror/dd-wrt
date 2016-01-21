@@ -43,6 +43,7 @@
 #include <linux/netfilter_ipv6.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/jhash2.h>
 
 #define NF_CT_FRAG6_HIGH_THRESH 262144 /* == 256*1024 */
 #define NF_CT_FRAG6_LOW_THRESH 196608  /* == 192*1024 */
