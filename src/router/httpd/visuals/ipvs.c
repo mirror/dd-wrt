@@ -150,7 +150,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<h2>%s</h2>\n", live_translate("networking.ipvs"));
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<legend>%s</legend>\n", live_translate("networking.ipvs_config"));
-	showOptionsLabel(wp, "networking.ipvs_role", "ipvsrole", "Master Backup", nvram_match("ipvs_role", "master") ? "Master" : "Backup");
+	showOptionsLabel(wp, "networking.ipvs_role", "ipvsrole", "Master Backup", nvram_default_match("ipvs_role", "master", "master") ? "Master" : "Backup");
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<legend>%s</legend>\n", live_translate("networking.create_ipvs"));
