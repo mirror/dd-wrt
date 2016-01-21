@@ -52,6 +52,8 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_JFFS2)" != "y" ]; then \
 		sed -i 's/\CONFIG_JFFS2=m/# CONFIG_JFFS2 is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_JFFS2_FS=m/# CONFIG_JFFS2_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_JFFS2_FS=y/# CONFIG_JFFS2_FS is not set/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_SAMBA)" != "y" ]; then \
 		sed -i 's/\CONFIG_CIFS=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
