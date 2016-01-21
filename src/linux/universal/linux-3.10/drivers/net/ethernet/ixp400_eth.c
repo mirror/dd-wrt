@@ -83,6 +83,7 @@
 #include <linux/mii.h>
 #include <linux/socket.h>
 #include <linux/cache.h>
+#include <linux/interrupt.h>
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <asm/mach-types.h>
