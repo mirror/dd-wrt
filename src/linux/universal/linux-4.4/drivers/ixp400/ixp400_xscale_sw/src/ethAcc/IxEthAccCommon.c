@@ -1045,6 +1045,7 @@ ixEthAccQMStatusUpdate(IxEthAccPortId portId)
  *
  * @internal
  */
+#if 0
 IX_ETH_ACC_PUBLIC IxEthAccStatus
 ixEthHssAccCoExistInit(void)
 {
@@ -1075,6 +1076,7 @@ ixEthHssAccCoExistInit(void)
      * (HSS channelized + learning/filtering support) or 0x00910000
      * (HSS channelized + header conversion support)
      */
+#if 0
     if ((functionalityId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(
          IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST) ||
          functionalityId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(
@@ -1095,7 +1097,7 @@ ixEthHssAccCoExistInit(void)
 
         ixEthHssAccCoexistEnable = TRUE;
     }
-
+#endif
     return IX_ETH_ACC_SUCCESS;
 }
 
@@ -1108,6 +1110,7 @@ ixEthHssAccCoExistInit(void)
  *
  * @internal
  */
+
 IX_ETH_ACC_PUBLIC IxEthAccStatus
 ixEthHssAccCoExistUninit(void)
 {
@@ -1136,6 +1139,7 @@ ixEthHssAccCoExistUninit(void)
     return IX_ETH_ACC_SUCCESS;
 }
 
+#endif
 
 /**
  * @fn ixEthNpePortMapCreate(void)
