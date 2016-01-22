@@ -157,8 +157,7 @@ void start_ipvs(void)
 
 void stop_ipvs(void)
 {
-	eval("ipvsadm", "-C");
-	dd_syslog(LOG_INFO, "ipvs : IP Virtual Server successfully stopped\n");
+	stop_process("ipvsadm", "ipvs");
 	return;
 }
 
