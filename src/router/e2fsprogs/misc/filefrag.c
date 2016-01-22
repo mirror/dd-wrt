@@ -9,14 +9,15 @@
  * %End-Header%
  */
 
+#include "config.h"
 #ifndef __linux__
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 int main(void) {
-    fputs("This program is only supported on Linux!\n", stderr);
-    exit(EXIT_FAILURE);
+	fputs("This program is only supported on Linux!\n", stderr);
+	exit(EXIT_FAILURE);
 }
 #else
 #define _LARGEFILE64_SOURCE
@@ -39,23 +40,27 @@ extern int optind;
 #include <sys/vfs.h>
 #include <sys/ioctl.h>
 #include <linux/fd.h>
+#include <ext2fs/ext2fs.h>
 #include <ext2fs/ext2_types.h>
 #include <ext2fs/fiemap.h>
 
 int verbose = 0;
-int no_bs = 0;		/* Don't use the files blocksize, use 1K blocksize */
+int blocksize;		/* Use specified blocksize (default 1kB) */
 int sync_file = 0;	/* fsync file before getting the mapping */
 int xattr_map = 0;	/* get xattr mapping */
-int force_bmap = 0;
-int logical_width = 12;
-int physical_width = 14;
-unsigned long long filesize;
+int force_bmap;	/* force use of FIBMAP instead of FIEMAP */
+int force_extent;	/* print output in extent format always */
+int logical_width = 8;
+int physical_width = 10;
+const char *ext_fmt = "%4d: %*llu..%*llu: %*llu..%*llu: %6llu: %s\n";
+const char *hex_fmt = "%4d: %*llx..%*llx: %*llx..%*llx: %6llx: %s\n";
 
 #define FILEFRAG_FIEMAP_FLAGS_COMPAT (FIEMAP_FLAG_SYNC | FIEMAP_FLAG_XATTR)
 
 #define FIBMAP		_IO(0x00, 1)	/* bmap access */
 #define FIGETBSZ	_IO(0x00, 2)	/* get the block size used for bmap */
-#define FS_IOC_FIEMAP	_IOWR('f', 11, struct fiemap)
+
+#define LUSTRE_SUPER_MAGIC 0x0BD00BD0
 
 #define	EXT4_EXTENTS_FL			0x00080000 /* Inode uses extents */
 #define	EXT3_IOC_GETFLAGS		_IOR('f', 1, long)
@@ -98,93 +103,115 @@ static int get_bmap(int fd, unsigned long block, unsigned long *phy_blk)
 
 	b = block;
 	ret = ioctl(fd, FIBMAP, &b); /* FIBMAP takes pointer to integer */
-	if (ret < 0) {
-		if (errno == EPERM) {
-			fprintf(stderr, "No permission to use FIBMAP ioctl; "
-				"must have root privileges\n");
-			exit(1);
-		}
-		perror("FIBMAP");
-	}
+	if (ret < 0)
+		return -errno;
 	*phy_blk = b;
 
 	return ret;
 }
 
-static void print_extent_info(struct fiemap_extent *fm_extent, int cur_ex,
-			      unsigned long long expected, int blk_shift)
+static void print_extent_header(void)
 {
-	__u64 phy_blk;
+	printf(" ext: %*s %*s length: %*s flags:\n",
+	       logical_width * 2 + 3,
+	       "logical_offset:",
+	       physical_width * 2 + 3, "physical_offset:",
+	       physical_width + 1,
+	       "expected:");
+}
+
+static void print_flag(__u32 *flags, __u32 mask, char *buf, const char *name)
+{
+	if ((*flags & mask) == 0)
+		return;
+
+	strcat(buf, name);
+	*flags &= ~mask;
+}
+
+static void print_extent_info(struct fiemap_extent *fm_extent, int cur_ex,
+			      unsigned long long expected, int blk_shift,
+			      ext2fs_struct_stat *st)
+{
+	unsigned long long physical_blk;
 	unsigned long long logical_blk;
-	unsigned long ext_len;
+	unsigned long long ext_len;
+	unsigned long long ext_blks;
+	__u32 fe_flags, mask;
 	char flags[256] = "";
 
-	/* For inline data all offsets should be in terms of bytes, not blocks */
+	/* For inline data all offsets should be in bytes, not blocks */
 	if (fm_extent->fe_flags & FIEMAP_EXTENT_DATA_INLINE)
 		blk_shift = 0;
 
 	ext_len = fm_extent->fe_length >> blk_shift;
+	ext_blks = (fm_extent->fe_length - 1) >> blk_shift;
 	logical_blk = fm_extent->fe_logical >> blk_shift;
-	phy_blk = fm_extent->fe_physical >> blk_shift;
+	if (fm_extent->fe_flags & FIEMAP_EXTENT_UNKNOWN) {
+		physical_blk = 0;
+	} else {
+		physical_blk = fm_extent->fe_physical >> blk_shift;
+	}
 
-	if (fm_extent->fe_flags & FIEMAP_EXTENT_UNKNOWN)
-		strcat(flags, "unknown,");
-	if (fm_extent->fe_flags & FIEMAP_EXTENT_DELALLOC)
-		strcat(flags, "delalloc,");
-	if (fm_extent->fe_flags & FIEMAP_EXTENT_DATA_ENCRYPTED)
-		strcat(flags, "encrypted,");
-	if (fm_extent->fe_flags & FIEMAP_EXTENT_NOT_ALIGNED)
-		strcat(flags, "not_aligned,");
-	if (fm_extent->fe_flags & FIEMAP_EXTENT_DATA_INLINE)
-		strcat(flags, "inline,");
-	if (fm_extent->fe_flags & FIEMAP_EXTENT_DATA_TAIL)
-		strcat(flags, "tail_packed,");
-	if (fm_extent->fe_flags & FIEMAP_EXTENT_UNWRITTEN)
-		strcat(flags, "unwritten,");
-	if (fm_extent->fe_flags & FIEMAP_EXTENT_MERGED)
-		strcat(flags, "merged,");
+	if (expected)
+		sprintf(flags, ext_fmt == hex_fmt ? "%*llx: " : "%*llu: ",
+			physical_width, expected >> blk_shift);
+	else
+		sprintf(flags, "%.*s  ", physical_width, "                   ");
 
-	if (fm_extent->fe_logical + fm_extent->fe_length >= filesize)
+	fe_flags = fm_extent->fe_flags;
+	print_flag(&fe_flags, FIEMAP_EXTENT_LAST, flags, "last,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_UNKNOWN, flags, "unknown_loc,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_DELALLOC, flags, "delalloc,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_ENCODED, flags, "encoded,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_DATA_ENCRYPTED, flags,"encrypted,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_NOT_ALIGNED, flags, "not_aligned,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_DATA_INLINE, flags, "inline,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_DATA_TAIL, flags, "tail_packed,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_UNWRITTEN, flags, "unwritten,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_MERGED, flags, "merged,");
+	print_flag(&fe_flags, FIEMAP_EXTENT_SHARED, flags, "shared,");
+	/* print any unknown flags as hex values */
+	for (mask = 1; fe_flags != 0 && mask != 0; mask <<= 1) {
+		char hex[6];
+
+		if ((fe_flags & mask) == 0)
+			continue;
+		sprintf(hex, "%#04x,", mask);
+		print_flag(&fe_flags, mask, flags, hex);
+	}
+
+	if (fm_extent->fe_logical + fm_extent->fe_length >= st->st_size)
 		strcat(flags, "eof,");
 
 	/* Remove trailing comma, if any */
-	if (flags[0])
-		flags[strlen(flags) - 1] = '\0';
+	if (flags[0] != '\0')
+		flags[strnlen(flags, sizeof(flags)) - 1] = '\0';
 
-	if (expected)
-		printf("%4d %*llu %*llu %*llu %6lu %s\n",
-		       cur_ex, logical_width, logical_blk,
-		       physical_width, phy_blk, physical_width, expected,
-		       ext_len, flags);
-	else
-		printf("%4d %*llu %*llu %*s %6lu %s\n",
-		       cur_ex, logical_width, logical_blk,
-		       physical_width, phy_blk, physical_width, "",
-		       ext_len, flags);
+	printf(ext_fmt, cur_ex, logical_width, logical_blk,
+	       logical_width, logical_blk + ext_blks,
+	       physical_width, physical_blk,
+	       physical_width, physical_blk + ext_blks,
+	       ext_len, flags);
 }
 
-static int filefrag_fiemap(int fd, int blk_shift, int *num_extents)
+static int filefrag_fiemap(int fd, int blk_shift, int *num_extents,
+			   ext2fs_struct_stat *st)
 {
-	char buf[4096] = "";
+	char buf[16384];
 	struct fiemap *fiemap = (struct fiemap *)buf;
 	struct fiemap_extent *fm_ext = &fiemap->fm_extents[0];
 	int count = (sizeof(buf) - sizeof(*fiemap)) /
 			sizeof(struct fiemap_extent);
-	unsigned long long last_blk = 0;
+	unsigned long long expected = 0;
 	unsigned long flags = 0;
 	unsigned int i;
-	static int fiemap_incompat_printed;
 	int fiemap_header_printed = 0;
-	int tot_extents = 1, n = 0;
+	int tot_extents = 0, n = 0;
 	int last = 0;
 	int rc;
 
-	fiemap->fm_length = ~0ULL;
-
 	memset(fiemap, 0, sizeof(struct fiemap));
-
-	if (!verbose)
-		count = 0;
 
 	if (sync_file)
 		flags |= FIEMAP_FLAG_SYNC;
@@ -198,218 +225,348 @@ static int filefrag_fiemap(int fd, int blk_shift, int *num_extents)
 		fiemap->fm_extent_count = count;
 		rc = ioctl(fd, FS_IOC_FIEMAP, (unsigned long) fiemap);
 		if (rc < 0) {
-			if (errno == EBADR && fiemap_incompat_printed == 0) {
-				printf("FIEMAP failed with unsupported "
-				       "flags %x\n", fiemap->fm_flags);
+			static int fiemap_incompat_printed;
+
+			rc = -errno;
+			if (rc == -EBADR && !fiemap_incompat_printed) {
+				fprintf(stderr, "FIEMAP failed with unknown "
+						"flags %x\n",
+				       fiemap->fm_flags);
 				fiemap_incompat_printed = 1;
 			}
 			return rc;
-		}
-
-		if (verbose && !fiemap_header_printed) {
-			printf(" ext %*s %*s %*s length flags\n", logical_width,
-			       "logical", physical_width, "physical",
-			       physical_width, "expected");
-			fiemap_header_printed = 1;
-		}
-
-		if (!verbose) {
-			*num_extents = fiemap->fm_mapped_extents;
-			goto out;
 		}
 
 		/* If 0 extents are returned, then more ioctls are not needed */
 		if (fiemap->fm_mapped_extents == 0)
 			break;
 
+		if (verbose && !fiemap_header_printed) {
+			print_extent_header();
+			fiemap_header_printed = 1;
+		}
+
 		for (i = 0; i < fiemap->fm_mapped_extents; i++) {
-			__u64 phy_blk, logical_blk;
-			unsigned long ext_len;
-
-			phy_blk = fm_ext[i].fe_physical >> blk_shift;
-			ext_len = fm_ext[i].fe_length >> blk_shift;
-			logical_blk = fm_ext[i].fe_logical >> blk_shift;
-
-			if (logical_blk && phy_blk != last_blk + 1)
+			if (fm_ext[i].fe_logical != 0 &&
+			    fm_ext[i].fe_physical != expected) {
 				tot_extents++;
-			else
-				last_blk = 0;
-			print_extent_info(&fm_ext[i], n, last_blk, blk_shift);
+			} else {
+				expected = 0;
+				if (!tot_extents)
+					tot_extents = 1;
+			}
+			if (verbose)
+				print_extent_info(&fm_ext[i], n, expected,
+						  blk_shift, st);
 
-			last_blk = phy_blk + ext_len - 1;
+			expected = fm_ext[i].fe_physical + fm_ext[i].fe_length;
 			if (fm_ext[i].fe_flags & FIEMAP_EXTENT_LAST)
 				last = 1;
 			n++;
 		}
 
-		fiemap->fm_start = (fm_ext[i-1].fe_logical +
-				    fm_ext[i-1].fe_length);
+		fiemap->fm_start = (fm_ext[i - 1].fe_logical +
+				    fm_ext[i - 1].fe_length);
 	} while (last == 0);
 
 	*num_extents = tot_extents;
-out:
+
 	return 0;
 }
 
 #define EXT2_DIRECT	12
 
-static void frag_report(const char *filename)
+static int filefrag_fibmap(int fd, int blk_shift, int *num_extents,
+			   ext2fs_struct_stat *st,
+			   unsigned long numblocks, int is_ext2)
 {
-	struct statfs	fsinfo;
-#ifdef HAVE_FSTAT64
-	struct stat64	fileinfo;
-#else
-	struct stat	fileinfo;
-#endif
-	int		bs;
-	long		fd;
-	unsigned long	block, last_block = 0, numblocks, i, count;
-	long		bpib;	/* Blocks per indirect block */
-	long		cylgroups;
-	int		num_extents = 0, expected;
-	int		is_ext2 = 0;
-	static int	once = 1;
-	unsigned int	flags;
-	int rc;
+	struct fiemap_extent	fm_ext;
+	unsigned long		i, last_block;
+	unsigned long long	logical;
+				/* Blocks per indirect block */
+	const long		bpib = st->st_blksize / 4;
+	int			count;
 
-#ifdef HAVE_OPEN64
+	if (force_extent) {
+		memset(&fm_ext, 0, sizeof(fm_ext));
+		fm_ext.fe_flags = FIEMAP_EXTENT_MERGED;
+	}
+
+	if (sync_file)
+		fsync(fd);
+
+	for (i = 0, logical = 0, *num_extents = 0, count = last_block = 0;
+	     i < numblocks;
+	     i++, logical += st->st_blksize) {
+		unsigned long block = 0;
+		int rc;
+
+		if (is_ext2 && last_block) {
+			if (((i - EXT2_DIRECT) % bpib) == 0)
+				last_block++;
+			if (((i - EXT2_DIRECT - bpib) % (bpib * bpib)) == 0)
+				last_block++;
+			if (((i - EXT2_DIRECT - bpib - bpib * bpib) %
+			     (((unsigned long long)bpib) * bpib * bpib)) == 0)
+				last_block++;
+		}
+		rc = get_bmap(fd, i, &block);
+		if (rc < 0)
+			return rc;
+		if (block == 0)
+			continue;
+		if (*num_extents == 0) {
+			(*num_extents)++;
+			if (force_extent) {
+				print_extent_header();
+				fm_ext.fe_physical = block * st->st_blksize;
+			}
+		}
+		count++;
+		if (force_extent && last_block != 0 &&
+		    (block != last_block + 1 ||
+		     fm_ext.fe_logical + fm_ext.fe_length != logical)) {
+			print_extent_info(&fm_ext, *num_extents - 1,
+					  (last_block + 1) * st->st_blksize,
+					  blk_shift, st);
+			fm_ext.fe_length = 0;
+			(*num_extents)++;
+		} else if (last_block && (block != last_block + 1)) {
+			if (verbose)
+				printf("Discontinuity: Block %ld is at %lu (was "
+				       "%lu)\n", i, block, last_block + 1);
+			fm_ext.fe_length = 0;
+			(*num_extents)++;
+		}
+		fm_ext.fe_logical = logical;
+		fm_ext.fe_physical = block * st->st_blksize;
+		fm_ext.fe_length += st->st_blksize;
+		last_block = block;
+	}
+
+	if (force_extent)
+		print_extent_info(&fm_ext, *num_extents - 1,
+				  last_block * st->st_blksize, blk_shift, st);
+
+	return count;
+}
+
+static int frag_report(const char *filename)
+{
+	static struct statfs fsinfo;
+	static unsigned int blksize;
+	ext2fs_struct_stat st;
+	int		blk_shift;
+	long		fd;
+	unsigned long long	numblocks;
+	int		data_blocks_per_cyl = 1;
+	int		num_extents = 1, expected = ~0;
+	int		is_ext2 = 0;
+	static dev_t	last_device;
+	int		width;
+	int		rc = 0;
+
+#if defined(HAVE_OPEN64) && !defined(__OSX_AVAILABLE_BUT_DEPRECATED)
 	fd = open64(filename, O_RDONLY);
 #else
 	fd = open(filename, O_RDONLY);
 #endif
 	if (fd < 0) {
+		rc = -errno;
 		perror("open");
-		return;
+		return rc;
 	}
 
-	if (statfs(filename, &fsinfo) < 0) {
-		perror("statfs");
-		return;
-	}
-#ifdef HAVE_FSTAT64
-	if (stat64(filename, &fileinfo) < 0) {
+#if defined(HAVE_FSTAT64) && !defined(__OSX_AVAILABLE_BUT_DEPRECATED)
+	if (fstat64(fd, &st) < 0) {
 #else
-	if (stat(filename, &fileinfo) < 0) {
+	if (fstat(fd, &st) < 0) {
 #endif
+		rc = -errno;
 		perror("stat");
-		return;
-	}
-	if (ioctl(fd, EXT3_IOC_GETFLAGS, &flags) < 0)
-		flags = 0;
-	if (!(flags & EXT4_EXTENTS_FL) &&
-	    ((fsinfo.f_type == 0xef51) || (fsinfo.f_type == 0xef52) ||
-	     (fsinfo.f_type == 0xef53)))
-		is_ext2++;
-	if (verbose && once)
-		printf("Filesystem type is: %lx\n",
-		       (unsigned long) fsinfo.f_type);
-
-	cylgroups = div_ceil(fsinfo.f_blocks, fsinfo.f_bsize*8);
-	if (verbose && is_ext2 && once)
-		printf("Filesystem cylinder groups is approximately %ld\n",
-		       cylgroups);
-
-	physical_width = int_log10(fsinfo.f_blocks);
-	if (physical_width < 8)
-		physical_width = 8;
-
-	if (ioctl(fd, FIGETBSZ, &bs) < 0) { /* FIGETBSZ takes an int */
-		perror("FIGETBSZ");
-		close(fd);
-		return;
+		goto out_close;
 	}
 
-	if (no_bs)
-		bs = 1024;
-
-	bpib = bs / 4;
-	numblocks = (fileinfo.st_size + (bs-1)) / bs;
-	logical_width = int_log10(numblocks);
-	if (logical_width < 7)
-		logical_width = 7;
-	filesize = (long long)fileinfo.st_size;
-	if (verbose)
-		printf("File size of %s is %lld (%ld block%s, blocksize %d)\n",
-		       filename, (long long) fileinfo.st_size, numblocks,
-		       numblocks == 1 ? "" : "s", bs);
-	if (force_bmap ||
-	    filefrag_fiemap(fd, int_log2(bs), &num_extents) != 0) {
-		for (i = 0, count = 0; i < numblocks; i++) {
-			if (is_ext2 && last_block) {
-				if (((i-EXT2_DIRECT) % bpib) == 0)
-					last_block++;
-				if (((i-EXT2_DIRECT-bpib) % (bpib*bpib)) == 0)
-					last_block++;
-				if (((i-EXT2_DIRECT-bpib-bpib*bpib) %
-				     (((__u64) bpib)*bpib*bpib)) == 0)
-					last_block++;
-			}
-			rc = get_bmap(fd, i, &block);
-			if (block == 0)
-				continue;
-			if (!num_extents)
-				num_extents++;
-			count++;
-			if (last_block && (block != last_block+1) ) {
-				if (verbose)
-					printf("Discontinuity: Block %ld is at "
-					       "%lu (was %lu)\n",
-					       i, block, last_block+1);
-				num_extents++;
-			}
-			last_block = block;
+	if (last_device != st.st_dev) {
+		if (fstatfs(fd, &fsinfo) < 0) {
+			rc = -errno;
+			perror("fstatfs");
+			goto out_close;
 		}
+		if (ioctl(fd, FIGETBSZ, &blksize) < 0)
+			blksize = fsinfo.f_bsize;
+		if (verbose)
+			printf("Filesystem type is: %lx\n",
+			       (unsigned long)fsinfo.f_type);
 	}
+	st.st_blksize = blksize;
+	if (fsinfo.f_type == 0xef51 || fsinfo.f_type == 0xef52 ||
+	    fsinfo.f_type == 0xef53) {
+		unsigned int	flags;
+
+		if (ioctl(fd, EXT3_IOC_GETFLAGS, &flags) == 0 &&
+		    !(flags & EXT4_EXTENTS_FL))
+			is_ext2 = 1;
+	}
+
+	if (is_ext2) {
+		long cylgroups = div_ceil(fsinfo.f_blocks, blksize * 8);
+
+		if (verbose && last_device != st.st_dev)
+			printf("Filesystem cylinder groups approximately %ld\n",
+			       cylgroups);
+
+		data_blocks_per_cyl = blksize * 8 -
+					(fsinfo.f_files / 8 / cylgroups) - 3;
+	}
+	last_device = st.st_dev;
+
+	width = int_log10(fsinfo.f_blocks);
+	if (width > physical_width)
+		physical_width = width;
+
+	numblocks = (st.st_size + blksize - 1) / blksize;
+	if (blocksize != 0)
+		blk_shift = int_log2(blocksize);
+	else
+		blk_shift = int_log2(blksize);
+
+	width = int_log10(numblocks);
+	if (width > logical_width)
+		logical_width = width;
+	if (verbose)
+		printf("File size of %s is %llu (%llu block%s of %d bytes)\n",
+		       filename, (unsigned long long)st.st_size,
+		       numblocks * blksize >> blk_shift,
+		       numblocks == 1 ? "" : "s", 1 << blk_shift);
+
+	if (!force_bmap) {
+		rc = filefrag_fiemap(fd, blk_shift, &num_extents, &st);
+		expected = 0;
+	}
+
+	if (force_bmap || rc < 0) { /* FIEMAP failed, try FIBMAP instead */
+		expected = filefrag_fibmap(fd, blk_shift, &num_extents,
+					   &st, numblocks, is_ext2);
+		if (expected < 0) {
+			if (expected == -EINVAL || expected == -ENOTTY) {
+				fprintf(stderr, "%s: FIBMAP unsupported\n",
+					filename);
+			} else if (expected == -EPERM) {
+				fprintf(stderr,
+					"%s: FIBMAP requires root privileges\n",
+					filename);
+			} else {
+				fprintf(stderr, "%s: FIBMAP error: %s",
+					filename, strerror(expected));
+			}
+			rc = expected;
+			goto out_close;
+		} else {
+			rc = 0;
+		}
+		expected = expected / data_blocks_per_cyl + 1;
+	}
+
 	if (num_extents == 1)
 		printf("%s: 1 extent found", filename);
 	else
 		printf("%s: %d extents found", filename, num_extents);
-	expected = (count/((bs*8)-(fsinfo.f_files/8/cylgroups)-3))+1;
-	if (is_ext2 && expected < num_extents)
+	/* count, and thus expected, only set for indirect FIBMAP'd files */
+	if (is_ext2 && expected && expected < num_extents)
 		printf(", perfection would be %d extent%s\n", expected,
-			(expected>1) ? "s" : "");
+			(expected > 1) ? "s" : "");
 	else
 		fputc('\n', stdout);
+out_close:
 	close(fd);
-	once = 0;
+
+	return rc;
 }
 
 static void usage(const char *progname)
 {
-	fprintf(stderr, "Usage: %s [-Bbvsx] file ...\n", progname);
+	fprintf(stderr, "Usage: %s [-b{blocksize}] [-BeklsvxX] file ...\n",
+		progname);
 	exit(1);
 }
 
 int main(int argc, char**argv)
 {
 	char **cpp;
-	int c;
+	int rc = 0, c;
 
-	while ((c = getopt(argc, argv, "Bbsvx")) != EOF)
+	while ((c = getopt(argc, argv, "Bb::eksvxX")) != EOF) {
 		switch (c) {
 		case 'B':
 			force_bmap++;
 			break;
 		case 'b':
-			no_bs++;
+			if (optarg) {
+				char *end;
+				blocksize = strtoul(optarg, &end, 0);
+				if (end) {
+					switch (end[0]) {
+					case 'g':
+					case 'G':
+						blocksize *= 1024;
+						/* no break */
+					case 'm':
+					case 'M':
+						blocksize *= 1024;
+						/* no break */
+					case 'k':
+					case 'K':
+						blocksize *= 1024;
+						break;
+					default:
+						break;
+					}
+				}
+			} else { /* Allow -b without argument for compat. Remove
+				  * this eventually so "-b {blocksize}" works */
+				fprintf(stderr, "%s: -b needs a blocksize "
+					"option, assuming 1024-byte blocks.\n",
+					argv[0]);
+				blocksize = 1024;
+			}
 			break;
-		case 'v':
-			verbose++;
+		case 'e':
+			force_extent++;
+			if (!verbose)
+				verbose++;
+			break;
+		case 'k':
+			blocksize = 1024;
 			break;
 		case 's':
 			sync_file++;
 			break;
+		case 'v':
+			verbose++;
+			break;
 		case 'x':
 			xattr_map++;
+			break;
+		case 'X':
+			ext_fmt = hex_fmt;
 			break;
 		default:
 			usage(argv[0]);
 			break;
 		}
+	}
+
 	if (optind == argc)
 		usage(argv[0]);
-	for (cpp=argv+optind; *cpp; cpp++)
-		frag_report(*cpp);
-	return 0;
+
+	for (cpp = argv + optind; *cpp != '\0'; cpp++) {
+		int rc2 = frag_report(*cpp);
+
+		if (rc2 < 0 && rc == 0)
+			rc = rc2;
+	}
+
+	return -rc;
 }
 #endif

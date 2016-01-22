@@ -2,6 +2,7 @@
  * scantest.c - test the speed of the inode scan routine
  */
 
+#include "config.h"
 #include <string.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -11,9 +12,6 @@
 #include <getopt.h>
 #endif
 #include <unistd.h>
-#ifdef HAVE_MNTENT_H
-#include <mntent.h>
-#endif
 #include <sys/ioctl.h>
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
@@ -135,7 +133,7 @@ int main (int argc, char *argv[])
 	}
 
 
-	ext2fs_close(fs);
+	ext2fs_close_free(&fs);
 
 	print_resource_track(&global_rtrack);
 

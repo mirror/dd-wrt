@@ -9,6 +9,7 @@
  * %End-Header%
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #if HAVE_UNISTD_H
@@ -56,43 +57,6 @@ struct test_private_data {
 	void (*write_blk64)(unsigned long long block, int count, errcode_t err);
 };
 
-static errcode_t test_open(const char *name, int flags, io_channel *channel);
-static errcode_t test_close(io_channel channel);
-static errcode_t test_set_blksize(io_channel channel, int blksize);
-static errcode_t test_read_blk(io_channel channel, unsigned long block,
-			       int count, void *data);
-static errcode_t test_write_blk(io_channel channel, unsigned long block,
-				int count, const void *data);
-static errcode_t test_read_blk64(io_channel channel, unsigned long long block,
-			       int count, void *data);
-static errcode_t test_write_blk64(io_channel channel, unsigned long long block,
-				int count, const void *data);
-static errcode_t test_flush(io_channel channel);
-static errcode_t test_write_byte(io_channel channel, unsigned long offset,
-				 int count, const void *buf);
-static errcode_t test_set_option(io_channel channel, const char *option,
-				 const char *arg);
-static errcode_t test_get_stats(io_channel channel, io_stats *stats);
-
-
-static struct struct_io_manager struct_test_manager = {
-	EXT2_ET_MAGIC_IO_MANAGER,
-	"Test I/O Manager",
-	test_open,
-	test_close,
-	test_set_blksize,
-	test_read_blk,
-	test_write_blk,
-	test_flush,
-	test_write_byte,
-	test_set_option,
-	test_get_stats,
-	test_read_blk64,
-	test_write_blk64,
-};
-
-io_manager test_io_manager = &struct_test_manager;
-
 /*
  * These global variable can be set by the test program as
  * necessary *before* calling test_open
@@ -120,6 +84,7 @@ void (*test_io_cb_write_byte)
 #define TEST_FLAG_FLUSH			0x08
 #define TEST_FLAG_DUMP			0x10
 #define TEST_FLAG_SET_OPTION		0x20
+#define TEST_FLAG_DISCARD		0x40
 
 static void test_dump_block(io_channel channel,
 			    struct test_private_data *data,
@@ -139,6 +104,28 @@ static void test_dump_block(io_channel channel,
 			fprintf(f, "%04x: ", i);
 		fprintf(f, "%02x%c", *cp, ((i % 16) == 15) ? '\n' : ' ');
 	}
+}
+
+/*
+ * Flush data buffers to disk.
+ */
+static errcode_t test_flush(io_channel channel)
+{
+	struct test_private_data	*data;
+	errcode_t			retval = 0;
+
+	EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
+	data = (struct test_private_data *)channel->private_data;
+	EXT2_CHECK_MAGIC(data, EXT2_ET_MAGIC_TEST_IO_CHANNEL);
+
+	if (data->real)
+		retval = io_channel_flush(data->real);
+
+	if (data->flags & TEST_FLAG_FLUSH)
+		fprintf(data->outfile, "Test_io: flush() returned %s\n",
+			retval ? error_message(retval) : "OK");
+
+	return retval;
 }
 
 static void test_abort(io_channel channel, unsigned long block)
@@ -169,7 +156,9 @@ static char *safe_getenv(const char *arg)
 #endif
 #endif
 
-#ifdef HAVE___SECURE_GETENV
+#if defined(HAVE_SECURE_GETENV)
+	return secure_getenv(arg);
+#elif defined(HAVE___SECURE_GETENV)
 	return __secure_getenv(arg);
 #else
 	return getenv(arg);
@@ -187,14 +176,12 @@ static errcode_t test_open(const char *name, int flags, io_channel *channel)
 		return EXT2_ET_BAD_DEVICE_NAME;
 	retval = ext2fs_get_mem(sizeof(struct struct_io_channel), &io);
 	if (retval)
-		return retval;
+		goto cleanup;
 	memset(io, 0, sizeof(struct struct_io_channel));
 	io->magic = EXT2_ET_MAGIC_IO_CHANNEL;
 	retval = ext2fs_get_mem(sizeof(struct test_private_data), &data);
-	if (retval) {
-		retval = EXT2_ET_NO_MEMORY;
+	if (retval)
 		goto cleanup;
-	}
 	io->manager = test_io_manager;
 	retval = ext2fs_get_mem(strlen(name)+1, &io->name);
 	if (retval)
@@ -214,14 +201,15 @@ static errcode_t test_open(const char *name, int flags, io_channel *channel)
 						       &data->real);
 		if (retval)
 			goto cleanup;
-	} else
+	} else {
 		data->real = 0;
-	data->read_blk = 	test_io_cb_read_blk;
-	data->write_blk = 	test_io_cb_write_blk;
-	data->set_blksize = 	test_io_cb_set_blksize;
-	data->write_byte = 	test_io_cb_write_byte;
-	data->read_blk64 = 	test_io_cb_read_blk64;
-	data->write_blk64 = 	test_io_cb_write_blk64;
+	}
+	data->read_blk =	test_io_cb_read_blk;
+	data->write_blk =	test_io_cb_write_blk;
+	data->set_blksize =	test_io_cb_set_blksize;
+	data->write_byte =	test_io_cb_write_byte;
+	data->read_blk64 =	test_io_cb_read_blk64;
+	data->write_blk64 =	test_io_cb_write_blk64;
 
 	data->outfile = NULL;
 	if ((value = safe_getenv("TEST_IO_LOGFILE")) != NULL)
@@ -244,6 +232,9 @@ static errcode_t test_open(const char *name, int flags, io_channel *channel)
 	data->write_abort_count = 0;
 	if ((value = safe_getenv("TEST_IO_WRITE_ABORT")) != NULL)
 		data->write_abort_count = strtoul(value, NULL, 0);
+
+	if (data->real)
+		io->align = data->real->align;
 
 	*channel = io;
 	return 0;
@@ -290,8 +281,10 @@ static errcode_t test_set_blksize(io_channel channel, int blksize)
 	data = (struct test_private_data *) channel->private_data;
 	EXT2_CHECK_MAGIC(data, EXT2_ET_MAGIC_TEST_IO_CHANNEL);
 
-	if (data->real)
+	if (data->real) {
 		retval = io_channel_set_blksize(data->real, blksize);
+		channel->align = data->real->align;
+	}
 	if (data->set_blksize)
 		data->set_blksize(blksize, retval);
 	if (data->flags & TEST_FLAG_SET_BLKSIZE)
@@ -432,28 +425,6 @@ static errcode_t test_write_byte(io_channel channel, unsigned long offset,
 	return retval;
 }
 
-/*
- * Flush data buffers to disk.
- */
-static errcode_t test_flush(io_channel channel)
-{
-	struct test_private_data *data;
-	errcode_t	retval = 0;
-
-	EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
-	data = (struct test_private_data *) channel->private_data;
-	EXT2_CHECK_MAGIC(data, EXT2_ET_MAGIC_TEST_IO_CHANNEL);
-
-	if (data->real)
-		retval = io_channel_flush(data->real);
-
-	if (data->flags & TEST_FLAG_FLUSH)
-		fprintf(data->outfile, "Test_io: flush() returned %s\n",
-			retval ? error_message(retval) : "OK");
-
-	return retval;
-}
-
 static errcode_t test_set_option(io_channel channel, const char *option,
 				 const char *arg)
 {
@@ -495,3 +466,41 @@ static errcode_t test_get_stats(io_channel channel, io_stats *stats)
 	}
 	return retval;
 }
+
+static errcode_t test_discard(io_channel channel, unsigned long long block,
+			      unsigned long long count)
+{
+	struct test_private_data *data;
+	errcode_t	retval = 0;
+
+	EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
+	data = (struct test_private_data *) channel->private_data;
+	EXT2_CHECK_MAGIC(data, EXT2_ET_MAGIC_TEST_IO_CHANNEL);
+
+	if (data->real)
+		retval = io_channel_discard(data->real, block, count);
+	if (data->flags & TEST_FLAG_DISCARD)
+		fprintf(data->outfile,
+			"Test_io: discard(%llu, %llu) returned %s\n",
+			block, count, retval ? error_message(retval) : "OK");
+	return retval;
+}
+
+static struct struct_io_manager struct_test_manager = {
+	.magic		= EXT2_ET_MAGIC_IO_MANAGER,
+	.name		= "Test I/O Manager",
+	.open		= test_open,
+	.close		= test_close,
+	.set_blksize	= test_set_blksize,
+	.read_blk	= test_read_blk,
+	.write_blk	= test_write_blk,
+	.flush		= test_flush,
+	.write_byte	= test_write_byte,
+	.set_option	= test_set_option,
+	.get_stats	= test_get_stats,
+	.read_blk64	= test_read_blk64,
+	.write_blk64	= test_write_blk64,
+	.discard	= test_discard,
+};
+
+io_manager test_io_manager = &struct_test_manager;

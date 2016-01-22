@@ -12,7 +12,7 @@
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
 
-/* include this before sys/queues.h! */
+#include "config.h"
 #include "blkidP.h"
 
 #include <stdio.h>
@@ -33,9 +33,6 @@
 #include <sys/disklabel.h>
 #endif
 #ifdef HAVE_SYS_DISK_H
-#ifdef HAVE_SYS_QUEUE_H
-#include <sys/queue.h> /* for LIST_HEAD */
-#endif
 #include <sys/disk.h>
 #endif
 #ifdef __linux__
@@ -74,52 +71,46 @@ static int valid_offset(int fd, blkid_loff_t offset)
  */
 blkid_loff_t blkid_get_dev_size(int fd)
 {
-	int valid_blkgetsize64 = 1;
-#ifdef __linux__
-	struct 		utsname ut;
-#endif
 	unsigned long long size64;
-	unsigned long size;
 	blkid_loff_t high, low;
-#ifdef FDGETPRM
-	struct floppy_struct this_floppy;
-#endif
-#ifdef HAVE_SYS_DISKLABEL_H
-	int part = -1;
-	struct disklabel lab;
-	struct partition *pp;
-	char ch;
-	struct stat st;
-#endif /* HAVE_SYS_DISKLABEL_H */
 
 #ifdef DKIOCGETBLOCKCOUNT	/* For Apple Darwin */
 	if (ioctl(fd, DKIOCGETBLOCKCOUNT, &size64) >= 0) {
-		if ((sizeof(blkid_loff_t) < sizeof(unsigned long long))
-		    && (size64 << 9 > 0xFFFFFFFF))
+		if (sizeof(blkid_loff_t) < sizeof(unsigned long long) &&
+		    (size64 << 9) > 0xFFFFFFFF)
 			return 0; /* EFBIG */
-		return (blkid_loff_t) size64 << 9;
+		return (blkid_loff_t)size64 << 9;
 	}
 #endif
 
 #ifdef BLKGETSIZE64
+	{
+		int valid_blkgetsize64 = 1;
 #ifdef __linux__
-	if ((uname(&ut) == 0) &&
-	    ((ut.release[0] == '2') && (ut.release[1] == '.') &&
-	     (ut.release[2] < '6') && (ut.release[3] == '.')))
-		valid_blkgetsize64 = 0;
+		struct		utsname ut;
+
+		if ((uname(&ut) == 0) &&
+		    ((ut.release[0] == '2') && (ut.release[1] == '.') &&
+		     (ut.release[2] < '6') && (ut.release[3] == '.')))
+			valid_blkgetsize64 = 0;
 #endif
-	if (valid_blkgetsize64 &&
-	    ioctl(fd, BLKGETSIZE64, &size64) >= 0) {
-		if ((sizeof(blkid_loff_t) < sizeof(unsigned long long))
-		    && ((size64) > 0xFFFFFFFF))
-			return 0; /* EFBIG */
-		return size64;
+		if (valid_blkgetsize64 &&
+		    ioctl(fd, BLKGETSIZE64, &size64) >= 0) {
+			if (sizeof(blkid_loff_t) < sizeof(unsigned long long) &&
+			    (size64 > 0xFFFFFFFF))
+				return 0; /* EFBIG */
+			return size64;
+		}
 	}
-#endif
+#endif /* BLKGETSIZE64 */
 
 #ifdef BLKGETSIZE
-	if (ioctl(fd, BLKGETSIZE, &size) >= 0)
-		return (blkid_loff_t)size << 9;
+	{
+		unsigned long size;
+
+		if (ioctl(fd, BLKGETSIZE, &size) >= 0)
+			return (blkid_loff_t)size << 9;
+	}
 #endif
 
 /* tested on FreeBSD 6.1-RELEASE i386 */
@@ -129,29 +120,43 @@ blkid_loff_t blkid_get_dev_size(int fd)
 #endif /* DIOCGMEDIASIZE */
 
 #ifdef FDGETPRM
-	if (ioctl(fd, FDGETPRM, &this_floppy) >= 0)
-		return (blkid_loff_t)this_floppy.size << 9;
+	{
+		struct floppy_struct this_floppy;
+
+		if (ioctl(fd, FDGETPRM, &this_floppy) >= 0)
+			return (blkid_loff_t)this_floppy.size << 9;
+	}
 #endif
 #ifdef HAVE_SYS_DISKLABEL_H
-	/*
-	 * This code works for FreeBSD 4.11 i386, except for the full device
-	 * (such as /dev/ad0). It doesn't work properly for newer FreeBSD
-	 * though. FreeBSD >= 5.0 should be covered by the DIOCGMEDIASIZE
-	 * above however.
-	 *
-	 * Note that FreeBSD >= 4.0 has disk devices as unbuffered (raw,
-	 * character) devices, so we need to check for S_ISCHR, too.
-	 */
-	if ((fstat(fd, &st) >= 0) && (S_ISBLK(st.st_mode) || S_ISCHR(st.st_mode)))
-		part = st.st_rdev & 7;
-	if (part >= 0 && (ioctl(fd, DIOCGDINFO, (char *)&lab) >= 0)) {
-		pp = &lab.d_partitions[part];
-		if (pp->p_size)
-			return pp->p_size << 9;
+	{
+		int part = -1;
+		struct disklabel lab;
+		struct partition *pp;
+		char ch;
+		struct stat st;
+
+		/*
+		 * This code works for FreeBSD 4.11 i386, except for the full
+		 * device (such as /dev/ad0). It doesn't work properly for
+		 * newer FreeBSD though. FreeBSD >= 5.0 should be covered by
+		 * the DIOCGMEDIASIZE above however.
+		 *
+		 * Note that FreeBSD >= 4.0 has disk devices as unbuffered (raw,
+		 * character) devices, so we need to check for S_ISCHR, too.
+		 */
+		if (fstat(fd, &st) >= 0 &&
+		    (S_ISBLK(st.st_mode) || S_ISCHR(st.st_mode)))
+			part = st.st_rdev & 7;
+
+		if (part >= 0 && (ioctl(fd, DIOCGDINFO, (char *)&lab) >= 0)) {
+			pp = &lab.d_partitions[part];
+			if (pp->p_size)
+				return pp->p_size << 9;
+		}
 	}
 #endif /* HAVE_SYS_DISKLABEL_H */
 	{
-#ifdef HAVE_FSTAT64
+#if defined(HAVE_FSTAT64) && !defined(__OSX_AVAILABLE_BUT_DEPRECATED)
 		struct stat64   st;
 		if (fstat64(fd, &st) == 0)
 #else
@@ -162,7 +167,6 @@ blkid_loff_t blkid_get_dev_size(int fd)
 				return st.st_size;
 	}
 
-
 	/*
 	 * OK, we couldn't figure it out by using a specialized ioctl,
 	 * which is generally the best way.  So do binary search to
@@ -171,8 +175,7 @@ blkid_loff_t blkid_get_dev_size(int fd)
 	low = 0;
 	for (high = 1024; valid_offset(fd, high); high *= 2)
 		low = high;
-	while (low < high - 1)
-	{
+	while (low < high - 1) {
 		const blkid_loff_t mid = (low + high) / 2;
 
 		if (valid_offset(fd, mid))
@@ -199,8 +202,8 @@ int main(int argc, char **argv)
 		perror(argv[0]);
 
 	bytes = blkid_get_dev_size(fd);
-	printf("Device %s has %Ld 1k blocks.\n", argv[1],
-	       (unsigned long long) bytes >> 10);
+	printf("Device %s has %lld 1k blocks.\n", argv[1],
+	       (unsigned long long)bytes >> 10);
 
 	return 0;
 }

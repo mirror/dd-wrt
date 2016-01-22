@@ -1,7 +1,7 @@
 debugfs load/dump test
-mke2fs -Fq -b 1024 ./test.img 512
+mke2fs -Fq -b 1024 test.img 512
 Exit status is 0
-debugfs -R ''write test.data test_data'' -w ./test.img
+debugfs -R ''write d_loaddump.tmp test_data'' -w test.img
 Allocated inode: 12
 Exit status is 0
 e2fsck -yf -N test_filesys
@@ -12,7 +12,7 @@ Pass 4: Checking reference counts
 Pass 5: Checking group summary information
 test_filesys: 12/64 files (0.0% non-contiguous), 158/512 blocks
 Exit status is 0
-debugfs -R ''dump test_data test.verify'' ./test.img
+debugfs -R ''dump test_data d_loaddump.ver.tmp'' test.img
 Exit status is 0
-cmp test.data test.verify
+cmp d_loaddump.tmp d_loaddump.ver.tmp
 Exit status is 0

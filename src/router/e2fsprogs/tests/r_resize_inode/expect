@@ -1,7 +1,7 @@
 mke2fs -q -F -O resize_inode -o Linux -b 1024 -g 1024 test.img 16384
 resize2fs test.img 65536
-Resizing the filesystem on ./test.img to 65536 (1k) blocks.
-The filesystem on ./test.img is now 65536 blocks long.
+Resizing the filesystem on test.img to 65536 (1k) blocks.
+The filesystem on test.img is now 65536 (1k) blocks long.
 
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
@@ -11,7 +11,6 @@ Pass 5: Checking group summary information
 test_filesys: 11/16384 files (0.0% non-contiguous), 4513/65536 blocks
 Exit status is 0
 dumpe2fs test.img
-
 Filesystem volume name:   <none>
 Last mounted on:          <not available>
 Filesystem magic number:  0xEF53
@@ -448,8 +447,8 @@ Group 63: (Blocks 64513-65535)
 --------------------------------
 mke2fs -q -F -O resize_inode -o Linux -b 1024 -g 1024 test.img 65536
 resize2fs test.img 16384
-Resizing the filesystem on ./test.img to 16384 (1k) blocks.
-The filesystem on ./test.img is now 16384 blocks long.
+Resizing the filesystem on test.img to 16384 (1k) blocks.
+The filesystem on test.img is now 16384 (1k) blocks long.
 
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
@@ -459,7 +458,6 @@ Pass 5: Checking group summary information
 test_filesys: 11/4096 files (0.0% non-contiguous), 2107/16384 blocks
 Exit status is 0
 dumpe2fs test.img
-
 Filesystem volume name:   <none>
 Last mounted on:          <not available>
 Filesystem magic number:  0xEF53
@@ -601,8 +599,8 @@ Group 15: (Blocks 15361-16383)
   Free inodes: 3841-4096
 --------------------------------
 resize2fs test.img 165536
-Resizing the filesystem on ./test.img to 165536 (1k) blocks.
-The filesystem on ./test.img is now 165536 blocks long.
+Resizing the filesystem on test.img to 165536 (1k) blocks.
+The filesystem on test.img is now 165536 (1k) blocks long.
 
 Filesystem did not have a UUID; generating one.
 
@@ -611,12 +609,9 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-
-test_filesys: ***** FILE SYSTEM WAS MODIFIED *****
 test_filesys: 11/41472 files (0.0% non-contiguous), 8361/165536 blocks
-Exit status is 1
+Exit status is 0
 dumpe2fs test.img
-
 Filesystem volume name:   <none>
 Last mounted on:          <not available>
 Filesystem magic number:  0xEF53

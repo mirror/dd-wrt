@@ -3,6 +3,7 @@
  * anything else)
  */
 
+#include "config.h"
 #include <string.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -14,9 +15,6 @@
 #include <unistd.h>
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
-#endif
-#ifdef HAVE_MNTENT_H
-#include <mntent.h>
 #endif
 #include <sys/ioctl.h>
 #ifdef HAVE_MALLOC_H
@@ -109,7 +107,7 @@ int main (int argc, char *argv[])
 	retval = ext2fs_open(device_name, 0,
 			     0, 0, unix_io_manager, &fs);
 	if (retval) {
-		com_err(program_name, retval, _("while trying to open %s"),
+		com_err(program_name, retval, _("while trying to open '%s'"),
 			device_name);
 		exit(1);
 	}

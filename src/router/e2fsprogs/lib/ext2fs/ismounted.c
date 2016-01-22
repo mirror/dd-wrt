@@ -9,6 +9,7 @@
  * %End-Header%
  */
 
+#include "config.h"
 #include <stdio.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -20,6 +21,13 @@
 #ifdef HAVE_LINUX_FD_H
 #include <linux/fd.h>
 #endif
+#ifdef HAVE_LINUX_LOOP_H
+#include <linux/loop.h>
+#include <sys/ioctl.h>
+#ifdef HAVE_LINUX_MAJOR_H
+#include <linux/major.h>
+#endif /* HAVE_LINUX_MAJOR_H */
+#endif /* HAVE_LINUX_LOOP_H */
 #ifdef HAVE_MNTENT_H
 #include <mntent.h>
 #endif
@@ -34,7 +42,37 @@
 #include "ext2_fs.h"
 #include "ext2fs.h"
 
-#ifdef HAVE_MNTENT_H
+/*
+ * Check to see if a regular file is mounted.
+ * If /etc/mtab/ is a symlink of /proc/mounts, you will need the following check
+ * because the name in /proc/mounts is a loopback device not a regular file.
+ */
+static int check_loop_mounted(const char *mnt_fsname, dev_t mnt_rdev,
+				dev_t file_dev, ino_t file_ino)
+{
+#if defined(HAVE_LINUX_LOOP_H) && defined(HAVE_LINUX_MAJOR_H)
+	struct loop_info64 loopinfo;
+	int loop_fd, ret;
+
+	if (major(mnt_rdev) == LOOP_MAJOR) {
+		loop_fd = open(mnt_fsname, O_RDONLY);
+		if (loop_fd < 0)
+			return -1;
+
+		ret = ioctl(loop_fd, LOOP_GET_STATUS64, &loopinfo);
+		close(loop_fd);
+		if (ret < 0)
+			return -1;
+
+		if (file_dev == loopinfo.lo_device &&
+				file_ino == loopinfo.lo_inode)
+			return 1;
+	}
+#endif /* defined(HAVE_LINUX_LOOP_H) && defined(HAVE_LINUX_MAJOR_H) */
+	return 0;
+}
+
+#ifdef HAVE_SETMNTENT
 /*
  * Helper function which checks a file in /etc/mtab format to see if a
  * filesystem is mounted.  Returns an error if the file doesn't exist
@@ -52,8 +90,15 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 	int		fd;
 
 	*mount_flags = 0;
-	if ((f = setmntent (mtab_file, "r")) == NULL)
-		return (errno == ENOENT ? EXT2_NO_MTAB_FILE : errno);
+	if ((f = setmntent (mtab_file, "r")) == NULL) {
+		if (errno == ENOENT) {
+			if (getenv("EXT2FS_NO_MTAB_OK"))
+				return 0;
+			else
+				return EXT2_ET_NO_MTAB_FILE;
+		}
+		return errno;
+	}
 	if (stat(file, &st_buf) == 0) {
 		if (S_ISBLK(st_buf.st_mode)) {
 #ifndef __GNU__ /* The GNU hurd is broken with respect to stat devices */
@@ -73,6 +118,10 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 			if (S_ISBLK(st_buf.st_mode)) {
 #ifndef __GNU__
 				if (file_rdev && (file_rdev == st_buf.st_rdev))
+					break;
+				if (check_loop_mounted(mnt->mnt_fsname,
+						st_buf.st_rdev, file_dev,
+						file_ino) == 1)
 					break;
 #endif	/* __GNU__ */
 			} else {
@@ -230,7 +279,7 @@ static errcode_t check_getmntinfo(const char *file, int *mount_flags,
 	return 0;
 }
 #endif /* HAVE_GETMNTINFO */
-#endif /* HAVE_MNTENT_H */
+#endif /* HAVE_SETMNTENT */
 
 /*
  * Check to see if we're dealing with the swap device.
@@ -301,15 +350,13 @@ leave:
 errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 				  char *mtpt, int mtlen)
 {
-	struct stat	st_buf;
 	errcode_t	retval = 0;
-	int		fd;
 
 	if (is_swap_device(device)) {
 		*mount_flags = EXT2_MF_MOUNTED | EXT2_MF_SWAP;
 		strncpy(mtpt, "<swap>", mtlen);
 	} else {
-#ifdef HAVE_MNTENT_H
+#ifdef HAVE_SETMNTENT
 		retval = check_mntent(device, mount_flags, mtpt, mtlen);
 #else
 #ifdef HAVE_GETMNTINFO
@@ -320,21 +367,24 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 #endif
 		*mount_flags = 0;
 #endif /* HAVE_GETMNTINFO */
-#endif /* HAVE_MNTENT_H */
+#endif /* HAVE_SETMNTENT */
 	}
 	if (retval)
 		return retval;
 
 #ifdef __linux__ /* This only works on Linux 2.6+ systems */
-	if ((stat(device, &st_buf) != 0) ||
-	    !S_ISBLK(st_buf.st_mode))
-		return 0;
-	fd = open(device, O_RDONLY | O_EXCL);
-	if (fd < 0) {
-		if (errno == EBUSY)
-			*mount_flags |= EXT2_MF_BUSY;
-	} else
-		close(fd);
+	{
+		struct stat st_buf;
+
+		if (stat(device, &st_buf) == 0 && S_ISBLK(st_buf.st_mode)) {
+			int fd = open(device, O_RDONLY | O_EXCL);
+
+			if (fd >= 0)
+				close(fd);
+			else if (errno == EBUSY)
+				*mount_flags |= EXT2_MF_BUSY;
+		}
+	}
 #endif
 
 	return 0;

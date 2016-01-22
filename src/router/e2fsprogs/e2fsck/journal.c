@@ -12,6 +12,7 @@
  * any later version.
  */
 
+#include "config.h"
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/param.h>
 #include <sys/mount.h>
@@ -43,7 +44,7 @@ static int bh_count = 0;
  * to use the recovery.c file virtually unchanged from the kernel, so we
  * don't have to do much to keep kernel and user recovery in sync.
  */
-int journal_bmap(journal_t *journal, blk_t block, unsigned long *phys)
+int journal_bmap(journal_t *journal, blk64_t block, unsigned long long *phys)
 {
 #ifdef USE_INODE_IO
 	*phys = block;
@@ -51,21 +52,21 @@ int journal_bmap(journal_t *journal, blk_t block, unsigned long *phys)
 #else
 	struct inode 	*inode = journal->j_inode;
 	errcode_t	retval;
-	blk_t		pblk;
+	blk64_t		pblk;
 
 	if (!inode) {
 		*phys = block;
 		return 0;
 	}
 
-	retval= ext2fs_bmap(inode->i_ctx->fs, inode->i_ino,
-			    &inode->i_ext2, NULL, 0, block, &pblk);
+	retval= ext2fs_bmap2(inode->i_ctx->fs, inode->i_ino,
+			     &inode->i_ext2, NULL, 0, block, 0, &pblk);
 	*phys = pblk;
-	return (retval);
+	return (int) retval;
 #endif
 }
 
-struct buffer_head *getblk(kdev_t kdev, blk_t blocknr, int blocksize)
+struct buffer_head *getblk(kdev_t kdev, blk64_t blocknr, int blocksize)
 {
 	struct buffer_head *bh;
 	int bufsize = sizeof(*bh) + kdev->k_ctx->fs->blocksize -
@@ -79,8 +80,8 @@ struct buffer_head *getblk(kdev_t kdev, blk_t blocknr, int blocksize)
 	if (journal_enable_debug >= 3)
 		bh_count++;
 #endif
-	jfs_debug(4, "getblk for block %lu (%d bytes)(total %d)\n",
-		  (unsigned long) blocknr, blocksize, bh_count);
+	jfs_debug(4, "getblk for block %llu (%d bytes)(total %d)\n",
+		  (unsigned long long) blocknr, blocksize, bh_count);
 
 	bh->b_ctx = kdev->k_ctx;
 	if (kdev->k_dev == K_DEV_FS)
@@ -107,44 +108,45 @@ void sync_blockdev(kdev_t kdev)
 
 void ll_rw_block(int rw, int nr, struct buffer_head *bhp[])
 {
-	int retval;
+	errcode_t retval;
 	struct buffer_head *bh;
 
 	for (; nr > 0; --nr) {
 		bh = *bhp++;
 		if (rw == READ && !bh->b_uptodate) {
-			jfs_debug(3, "reading block %lu/%p\n",
-				  (unsigned long) bh->b_blocknr, (void *) bh);
-			retval = io_channel_read_blk(bh->b_io,
+			jfs_debug(3, "reading block %llu/%p\n",
+				  bh->b_blocknr, (void *) bh);
+			retval = io_channel_read_blk64(bh->b_io,
 						     bh->b_blocknr,
 						     1, bh->b_data);
 			if (retval) {
 				com_err(bh->b_ctx->device_name, retval,
-					"while reading block %lu\n",
-					(unsigned long) bh->b_blocknr);
-				bh->b_err = retval;
+					"while reading block %llu\n",
+					bh->b_blocknr);
+				bh->b_err = (int) retval;
 				continue;
 			}
 			bh->b_uptodate = 1;
 		} else if (rw == WRITE && bh->b_dirty) {
-			jfs_debug(3, "writing block %lu/%p\n",
-				  (unsigned long) bh->b_blocknr, (void *) bh);
-			retval = io_channel_write_blk(bh->b_io,
+			jfs_debug(3, "writing block %llu/%p\n",
+				  bh->b_blocknr,
+				  (void *) bh);
+			retval = io_channel_write_blk64(bh->b_io,
 						      bh->b_blocknr,
 						      1, bh->b_data);
 			if (retval) {
 				com_err(bh->b_ctx->device_name, retval,
-					"while writing block %lu\n",
-					(unsigned long) bh->b_blocknr);
-				bh->b_err = retval;
+					"while writing block %llu\n",
+					bh->b_blocknr);
+				bh->b_err = (int) retval;
 				continue;
 			}
 			bh->b_dirty = 0;
 			bh->b_uptodate = 1;
 		} else {
-			jfs_debug(3, "no-op %s for block %lu\n",
+			jfs_debug(3, "no-op %s for block %llu\n",
 				  rw == READ ? "read" : "write",
-				  (unsigned long) bh->b_blocknr);
+				  bh->b_blocknr);
 		}
 	}
 }
@@ -163,8 +165,8 @@ void brelse(struct buffer_head *bh)
 {
 	if (bh->b_dirty)
 		ll_rw_block(WRITE, 1, &bh);
-	jfs_debug(3, "freeing block %lu/%p (total %d)\n",
-		  (unsigned long) bh->b_blocknr, (void *) bh, --bh_count);
+	jfs_debug(3, "freeing block %llu/%p (total %d)\n",
+		  bh->b_blocknr, (void *) bh, --bh_count);
 	ext2fs_free_mem(&bh);
 }
 
@@ -203,19 +205,19 @@ struct process_block_struct {
 };
 
 static int process_journal_block(ext2_filsys fs,
-				 blk_t	*block_nr,
+				 blk64_t	*block_nr,
 				 e2_blkcnt_t blockcnt,
-				 blk_t ref_block EXT2FS_ATTR((unused)),
+				 blk64_t ref_block EXT2FS_ATTR((unused)),
 				 int ref_offset EXT2FS_ATTR((unused)),
 				 void *priv_data)
 {
 	struct process_block_struct *p;
-	blk_t	blk = *block_nr;
+	blk64_t	blk = *block_nr;
 
 	p = (struct process_block_struct *) priv_data;
 
 	if (!blk || blk < fs->super->s_first_data_block ||
-	    blk >= fs->super->s_blocks_count)
+	    blk >= ext2fs_blocks_count(fs->super))
 		return BLOCK_ABORT;
 
 	if (blockcnt >= 0)
@@ -236,7 +238,7 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 	journal_t		*journal = NULL;
 	errcode_t		retval = 0;
 	io_manager		io_ptr = 0;
-	unsigned long		start = 0;
+	unsigned long long	start = 0;
 	int			ext_journal = 0;
 	int			tried_backup_jnl = 0;
 
@@ -288,6 +290,7 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 			memset(&j_inode->i_ext2, 0, sizeof(struct ext2_inode));
 			memcpy(&j_inode->i_ext2.i_block[0], sb->s_jnl_blocks,
 			       EXT2_N_BLOCKS*4);
+			j_inode->i_ext2.i_size_high = sb->s_jnl_blocks[15];
 			j_inode->i_ext2.i_size = sb->s_jnl_blocks[16];
 			j_inode->i_ext2.i_links_count = 1;
 			j_inode->i_ext2.i_mode = LINUX_S_IFREG | 0600;
@@ -301,17 +304,17 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 			retval = EXT2_ET_NO_JOURNAL;
 			goto try_backup_journal;
 		}
-		if (j_inode->i_ext2.i_size / journal->j_blocksize <
+		if (EXT2_I_SIZE(&j_inode->i_ext2) / journal->j_blocksize <
 		    JFS_MIN_JOURNAL_BLOCKS) {
 			retval = EXT2_ET_JOURNAL_TOO_SMALL;
 			goto try_backup_journal;
 		}
 		pb.last_block = -1;
-		retval = ext2fs_block_iterate2(ctx->fs, j_inode->i_ino,
+		retval = ext2fs_block_iterate3(ctx->fs, j_inode->i_ino,
 					       BLOCK_FLAG_HOLE, 0,
 					       process_journal_block, &pb);
-		if ((pb.last_block+1) * ctx->fs->blocksize <
-		    j_inode->i_ext2.i_size) {
+		if ((pb.last_block + 1) * ctx->fs->blocksize <
+		    (int) EXT2_I_SIZE(&j_inode->i_ext2)) {
 			retval = EXT2_ET_JOURNAL_TOO_SMALL;
 			goto try_backup_journal;
 		}
@@ -322,7 +325,8 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 				goto errout;
 		}
 
-		journal->j_maxlen = j_inode->i_ext2.i_size / journal->j_blocksize;
+		journal->j_maxlen = EXT2_I_SIZE(&j_inode->i_ext2) /
+			journal->j_blocksize;
 
 #ifdef USE_INODE_IO
 		retval = ext2fs_inode_io_intern2(ctx->fs, sb->s_journal_inum,
@@ -335,7 +339,7 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 #else
 		journal->j_inode = j_inode;
 		ctx->journal_io = ctx->fs->io;
-		if ((retval = journal_bmap(journal, 0, &start)) != 0)
+		if ((retval = (errcode_t) journal_bmap(journal, 0, &start)) != 0)
 			goto errout;
 #endif
 	} else {
@@ -368,17 +372,28 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 #ifndef USE_INODE_IO
 	if (ext_journal)
 #endif
-		retval = io_ptr->open(journal_name,
-				      IO_FLAG_RW | IO_FLAG_EXCLUSIVE,
+	{
+		int flags = IO_FLAG_RW;
+		if (!(ctx->mount_flags & EXT2_MF_ISROOT &&
+		      ctx->mount_flags & EXT2_MF_READONLY))
+			flags |= IO_FLAG_EXCLUSIVE;
+		if ((ctx->mount_flags & EXT2_MF_READONLY) &&
+		    (ctx->options & E2F_OPT_FORCE))
+			flags &= ~IO_FLAG_EXCLUSIVE;
+
+
+		retval = io_ptr->open(journal_name, flags,
 				      &ctx->journal_io);
+	}
 	if (retval)
 		goto errout;
 
 	io_channel_set_blksize(ctx->journal_io, ctx->fs->blocksize);
 
 	if (ext_journal) {
-		if (ctx->fs->blocksize == 1024)
-			start = 1;
+		blk64_t maxlen;
+
+		start = ext2fs_journal_sb_start(ctx->fs->blocksize) - 1;
 		bh = getblk(dev_journal, start, ctx->fs->blocksize);
 		if (!bh) {
 			retval = EXT2_ET_NO_MEMORY;
@@ -389,7 +404,7 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 			brelse(bh);
 			goto errout;
 		}
-		memcpy(&jsuper, start ? bh->b_data :  bh->b_data + 1024,
+		memcpy(&jsuper, start ? bh->b_data :  bh->b_data + SUPERBLOCK_OFFSET,
 		       sizeof(jsuper));
 		brelse(bh);
 #ifdef WORDS_BIGENDIAN
@@ -410,7 +425,8 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 			goto errout;
 		}
 
-		journal->j_maxlen = jsuper.s_blocks_count;
+		maxlen = ext2fs_blocks_count(&jsuper);
+		journal->j_maxlen = (maxlen < 1ULL << 32) ? maxlen : (1ULL << 32) - 1;
 		start++;
 	}
 
@@ -504,7 +520,7 @@ static errcode_t e2fsck_journal_load(journal_t *journal)
 
 	ll_rw_block(READ, 1, &jbh);
 	if (jbh->b_err) {
-		com_err(ctx->device_name, jbh->b_err,
+		com_err(ctx->device_name, jbh->b_err, "%s",
 			_("reading journal superblock\n"));
 		return jbh->b_err;
 	}
@@ -687,7 +703,7 @@ static void e2fsck_journal_release(e2fsck_t ctx, journal_t *journal,
  * This function makes sure that the superblock fields regarding the
  * journal are consistent.
  */
-int e2fsck_check_ext3_journal(e2fsck_t ctx)
+errcode_t e2fsck_check_ext3_journal(e2fsck_t ctx)
 {
 	struct ext2_super_block *sb = ctx->fs->super;
 	journal_t *journal;
@@ -696,7 +712,7 @@ int e2fsck_check_ext3_journal(e2fsck_t ctx)
 	struct problem_context pctx;
 	problem_t problem;
 	int reset = 0, force_fsck = 0;
-	int retval;
+	errcode_t retval;
 
 	/* If we don't have any journal features, don't do anything more */
 	if (!(sb->s_feature_compat & EXT3_FEATURE_COMPAT_HAS_JOURNAL) &&
@@ -742,7 +758,6 @@ int e2fsck_check_ext3_journal(e2fsck_t ctx)
 no_has_journal:
 	if (!(sb->s_feature_compat & EXT3_FEATURE_COMPAT_HAS_JOURNAL)) {
 		recover = sb->s_feature_incompat & EXT3_FEATURE_INCOMPAT_RECOVER;
-		pctx.str = "inode";
 		if (fix_problem(ctx, PR_0_JOURNAL_HAS_JOURNAL, &pctx)) {
 			if (recover &&
 			    !fix_problem(ctx, PR_0_JOURNAL_RECOVER_SET, &pctx))
@@ -799,6 +814,19 @@ no_has_journal:
 		 */
 	}
 
+	/*
+	 * If we don't need to do replay the journal, check to see if
+	 * the journal's errno is set; if so, we need to mark the file
+	 * system as being corrupt and clear the journal's s_errno.
+	 */
+	if (!(sb->s_feature_incompat & EXT3_FEATURE_INCOMPAT_RECOVER) &&
+	    journal->j_superblock->s_errno) {
+		ctx->fs->super->s_state |= EXT2_ERROR_FS;
+		ext2fs_mark_super_dirty(ctx->fs);
+		journal->j_superblock->s_errno = 0;
+		mark_buffer_dirty(journal->j_sb_buffer);
+	}
+
 	e2fsck_journal_release(ctx, journal, reset, 0);
 	return retval;
 }
@@ -807,7 +835,7 @@ static errcode_t recover_ext3_journal(e2fsck_t ctx)
 {
 	struct problem_context	pctx;
 	journal_t *journal;
-	int retval;
+	errcode_t retval;
 
 	clear_problem_context(&pctx);
 
@@ -831,15 +859,7 @@ static errcode_t recover_ext3_journal(e2fsck_t ctx)
 	if (journal->j_failed_commit) {
 		pctx.ino = journal->j_failed_commit;
 		fix_problem(ctx, PR_0_JNL_TXN_CORRUPT, &pctx);
-		ctx->fs->super->s_state |= EXT2_ERROR_FS;
-		ext2fs_mark_super_dirty(ctx->fs);
-	}
-
-
-	if (journal->j_superblock->s_errno) {
-		ctx->fs->super->s_state |= EXT2_ERROR_FS;
-		ext2fs_mark_super_dirty(ctx->fs);
-		journal->j_superblock->s_errno = 0;
+		journal->j_superblock->s_errno = -EINVAL;
 		mark_buffer_dirty(journal->j_sb_buffer);
 	}
 
@@ -850,7 +870,7 @@ errout:
 	return retval;
 }
 
-int e2fsck_run_ext3_journal(e2fsck_t ctx)
+errcode_t e2fsck_run_ext3_journal(e2fsck_t ctx)
 {
 	io_manager io_ptr = ctx->fs->io->manager;
 	int blocksize = ctx->fs->blocksize;
@@ -879,8 +899,10 @@ int e2fsck_run_ext3_journal(e2fsck_t ctx)
 		ctx->fs->io->manager->get_stats(ctx->fs->io, &stats);
 	if (stats && stats->bytes_written)
 		kbytes_written = stats->bytes_written >> 10;
+
+	ext2fs_mmp_stop(ctx->fs);
 	ext2fs_free(ctx->fs);
-	retval = ext2fs_open(ctx->filesystem_name, EXT2_FLAG_RW,
+	retval = ext2fs_open(ctx->filesystem_name, ctx->openfs_flags,
 			     ctx->superblock, blocksize, io_ptr,
 			     &ctx->fs);
 	if (retval) {
@@ -895,8 +917,14 @@ int e2fsck_run_ext3_journal(e2fsck_t ctx)
 	ctx->fs->super->s_kbytes_written += kbytes_written;
 
 	/* Set the superblock flags */
-	e2fsck_clear_recover(ctx, recover_retval);
-	return recover_retval;
+	e2fsck_clear_recover(ctx, recover_retval != 0);
+
+	/*
+	 * Do one last sanity check, and propagate journal->s_errno to
+	 * the EXT2_ERROR_FS flag in the fs superblock if needed.
+	 */
+	retval = e2fsck_check_ext3_journal(ctx);
+	return retval ? retval : recover_retval;
 }
 
 /*
@@ -915,7 +943,8 @@ void e2fsck_move_ext3_journal(e2fsck_t ctx)
 	ext2_ino_t		ino;
 	errcode_t		retval;
 	const char * const *	cpp;
-	int			group, mount_flags;
+	dgrp_t			group;
+	int			mount_flags;
 
 	clear_problem_context(&pctx);
 
@@ -943,6 +972,7 @@ void e2fsck_move_ext3_journal(e2fsck_t ctx)
 		if (fix_problem(ctx, PR_0_BACKUP_JNL, &pctx)) {
 			memcpy(sb->s_jnl_blocks, inode.i_block,
 			       EXT2_N_BLOCKS*4);
+			sb->s_jnl_blocks[15] = inode.i_size_high;
 			sb->s_jnl_blocks[16] = inode.i_size;
 			sb->s_jnl_backup_type = EXT3_JNL_BACKUP_BLOCKS;
 			ext2fs_mark_super_dirty(fs);
@@ -1010,9 +1040,9 @@ void e2fsck_move_ext3_journal(e2fsck_t ctx)
 		goto err_out;
 
 	group = ext2fs_group_of_ino(fs, ino);
-	ext2fs_unmark_inode_bitmap(fs->inode_map, ino);
+	ext2fs_unmark_inode_bitmap2(fs->inode_map, ino);
 	ext2fs_mark_ib_dirty(fs);
-	fs->group_desc[group].bg_free_inodes_count++;
+	ext2fs_bg_free_inodes_count_set(fs, group, ext2fs_bg_free_inodes_count(fs, group) + 1);
 	ext2fs_group_desc_csum_set(fs, group);
 	fs->super->s_free_inodes_count++;
 	return;
@@ -1045,8 +1075,10 @@ int e2fsck_fix_ext3_journal_hint(e2fsck_t ctx)
 	if (!journal_name)
 		return 0;
 
-	if (stat(journal_name, &st) < 0)
+	if (stat(journal_name, &st) < 0) {
+		free(journal_name);
 		return 0;
+	}
 
 	if (st.st_rdev != sb->s_journal_dev) {
 		clear_problem_context(&pctx);
