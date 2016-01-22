@@ -13,7 +13,7 @@ INSTALL = @INSTALL@
 
 MK_CMDS=	_SS_DIR_OVERRIDE=../../lib/ss ../../lib/ss/mk_cmds
 
-PROGS=		test_icount
+PROGS=		test_icount crcsum
 
 TEST_REL_OBJS=	test_rel.o test_rel_cmds.o
 
@@ -21,18 +21,23 @@ TEST_ICOUNT_OBJS=	test_icount.o test_icount_cmds.o
 
 SRCS=	$(srcdir)/test_rel.c 
 
-LIBS= $(LIBEXT2FS) $(LIBSS) $(LIBCOM_ERR)
+LIBS= $(LIBEXT2FS) $(LIBSS) $(LIBCOM_ERR) $(SYSLIBS)
 DEPLIBS= $(LIBEXT2FS) $(DEPLIBSS) $(DEPLIBCOM_ERR)
 
 .c.o:
 	$(E) "	CC $<"
 	$(Q) $(CC) -c $(ALL_CFLAGS) $< -o $@
+	$(Q) $(CHECK_CMD) $(ALL_CFLAGS) $<
 
 all:: $(PROGS)
 
 test_rel: $(TEST_REL_OBJS) $(DEPLIBS)
 	$(E) "	LD $@"
 	$(Q) $(LD) $(ALL_LDFLAGS) -o test_rel $(TEST_REL_OBJS) $(LIBS)
+
+crcsum: crcsum.o $(DEPLIBS)
+	$(E) "	LD $@"
+	$(Q) $(LD) $(ALL_LDFLAGS) -o crcsum crcsum.o $(LIBS)
 
 test_rel_cmds.c: test_rel_cmds.ct
 	$(E) "	MK_CMDS $@"
@@ -46,7 +51,7 @@ test_icount_cmds.c: test_icount_cmds.ct
 	$(E) "	MK_CMDS $@"
 	$(Q) $(MK_CMDS) $(srcdir)/test_icount_cmds.ct
 
-clean:
+clean::
 	$(RM) -f $(PROGS) test_rel_cmds.c test_icount_cmds.c \
 		\#* *.s *.o *.a *~ core
 

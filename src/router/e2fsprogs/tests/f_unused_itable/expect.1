@@ -9,8 +9,8 @@ Fix? yes
 Restarting e2fsck from the beginning...
 One or more block group descriptor checksums are invalid.  Fix? yes
 
-Group descriptor 0 checksum is invalid.  FIXED.
-Group descriptor 1 checksum is invalid.  FIXED.
+Group descriptor 0 checksum is 0x289d, should be 0x788a.  FIXED.
+Group descriptor 1 checksum is 0xfaab, should be 0x3a9a.  FIXED.
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
@@ -20,9 +20,6 @@ Free inodes count wrong for group #0 (53, counted=51).
 Fix? yes
 
 Free inodes count wrong for group #1 (64, counted=58).
-Fix? yes
-
-Free inodes count wrong (117, counted=109).
 Fix? yes
 
 

@@ -13,6 +13,7 @@
  * %End-Header%
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -42,10 +43,8 @@ static int figure_label_len(const unsigned char *label, int len)
 
 	while ((*end == ' ' || *end == 0) && end >= label)
 		--end;
-	if (end >= label) {
-		label = label;
+	if (end >= label)
 		return end - label + 1;
-	}
 	return 0;
 }
 
@@ -244,11 +243,11 @@ static int check_for_modules(const char *fs_name)
 	return (0);
 }
 
-static int linux_version_code()
+static int linux_version_code(void)
 {
 #ifdef __linux__
 	struct utsname	ut;
-	static		version_code = -1;
+	static int	version_code = -1;
 	int		major, minor, rev;
 	char		*endptr;
 	const char 	*cp;
@@ -587,7 +586,7 @@ static int probe_fat(struct blkid_probe *probe,
 			int count;
 
 			next_sect_off = (next - 2) * vs->vs_cluster_size;
-			next_off = (start_data_sect + next_sect_off) *
+			next_off = (__u64) (start_data_sect + next_sect_off) *
 				sector_size;
 
 			dir = (struct vfat_dir_entry *)
@@ -602,7 +601,9 @@ static int probe_fat(struct blkid_probe *probe,
 				break;
 
 			/* get FAT entry */
-			fat_entry_off = (reserved * sector_size) +
+			fat_entry_off =
+				((unsigned int) reserved *
+				 (unsigned int) sector_size) +
 				(next * sizeof(__u32));
 			buf = get_buffer(probe, fat_entry_off, buf_size);
 			if (buf == NULL)
@@ -1004,7 +1005,8 @@ static int probe_udf(struct blkid_probe *probe,
 	   (block sizes larger than 2K will be null padded) */
 	for (bs = 1; bs < 16; bs++) {
 		isosb = (struct iso_volume_descriptor *)
-			get_buffer(probe, bs*2048+32768, sizeof(isosb));
+			get_buffer(probe, (blkid_loff_t) bs*2048+32768,
+				   sizeof(*isosb));
 		if (!isosb)
 			return 1;
 		if (isosb->vd_id[0])
@@ -1016,7 +1018,7 @@ static int probe_udf(struct blkid_probe *probe,
 		if (j > 1) {
 			isosb = (struct iso_volume_descriptor *)
 				get_buffer(probe, j*bs*2048+32768,
-					   sizeof(isosb));
+					   sizeof(*isosb));
 			if (!isosb)
 				return 1;
 		}
@@ -1162,7 +1164,8 @@ static int probe_hfs(struct blkid_probe *probe __BLKID_ATTR((unused)),
 			 struct blkid_magic *id __BLKID_ATTR((unused)),
 			 unsigned char *buf)
 {
-	struct hfs_mdb *hfs = (struct hfs_mdb *) buf;
+	struct hfs_mdb *hfs = (struct hfs_mdb *)buf;
+	unsigned long long *uuid_ptr;
 	char	uuid_str[17];
 	__u64	uuid;
 
@@ -1170,12 +1173,13 @@ static int probe_hfs(struct blkid_probe *probe __BLKID_ATTR((unused)),
 	    (memcmp(hfs->embed_sig, "HX", 2) == 0))
 		return 1;	/* Not hfs, but an embedded HFS+ */
 
-	uuid = blkid_le64(*((unsigned long long *) hfs->finder_info.id));
+	uuid_ptr = (unsigned long long *)hfs->finder_info.id;
+	uuid = blkid_le64(*uuid_ptr);
 	if (uuid) {
 		sprintf(uuid_str, "%016llX", uuid);
 		blkid_set_tag(probe->dev, "UUID", uuid_str, 0);
 	}
-	blkid_set_tag(probe->dev, "LABEL", hfs->label, hfs->label_len);
+	blkid_set_tag(probe->dev, "LABEL", (char *)hfs->label, hfs->label_len);
 	return 0;
 }
 
@@ -1204,9 +1208,10 @@ static int probe_hfsplus(struct blkid_probe *probe,
 	unsigned int leaf_node_size;
 	unsigned int leaf_block;
 	unsigned int label_len;
-	int ext;
+	unsigned long long *uuid_ptr;
 	__u64 leaf_off, uuid;
 	char	uuid_str[17], label[512];
+	int ext;
 
 	/* Check for a HFS+ volume embedded in a HFS volume */
 	if (memcmp(sbd->signature, "BD", 2) == 0) {
@@ -1221,7 +1226,7 @@ static int probe_hfsplus(struct blkid_probe *probe,
 		off = (alloc_first_block * 512) +
 			(embed_first_block * alloc_block_size);
 		buf = get_buffer(probe, off + (id->bim_kboff * 1024),
-				 sizeof(sbd));
+				 sizeof(*sbd));
 		if (!buf)
 			return 1;
 
@@ -1234,7 +1239,8 @@ static int probe_hfsplus(struct blkid_probe *probe,
 	    (memcmp(hfsplus->signature, "HX", 2) != 0))
 		return 1;
 
-	uuid = blkid_le64(*((unsigned long long *) hfsplus->finder_info.id));
+	uuid_ptr = (unsigned long long *)hfsplus->finder_info.id;
+	uuid = blkid_le64(*uuid_ptr);
 	if (uuid) {
 		sprintf(uuid_str, "%016llX", uuid);
 		blkid_set_tag(probe->dev, "UUID", uuid_str, 0);
@@ -1244,7 +1250,7 @@ static int probe_hfsplus(struct blkid_probe *probe,
 	memcpy(extents, hfsplus->cat_file.extents, sizeof(extents));
 	cat_block = blkid_be32(extents[0].start_block);
 
-	buf = get_buffer(probe, off + (cat_block * blocksize), 0x2000);
+	buf = get_buffer(probe, off + ((__u64) cat_block * blocksize), 0x2000);
 	if (!buf)
 		return 0;
 
@@ -1275,7 +1281,7 @@ static int probe_hfsplus(struct blkid_probe *probe,
 	if (ext == HFSPLUS_EXTENT_COUNT)
 		return 0;
 
-	leaf_off = (ext_block_start + leaf_block) * blocksize;
+	leaf_off = (__u64) (ext_block_start + leaf_block) * blocksize;
 
 	buf = get_buffer(probe, off + leaf_off, leaf_node_size);
 	if (!buf)
@@ -1296,7 +1302,8 @@ static int probe_hfsplus(struct blkid_probe *probe,
 		return 0;
 
 	label_len = blkid_be16(key->unicode_len) * 2;
-	unicode_16be_to_utf8(label, sizeof(label), key->unicode, label_len);
+	unicode_16be_to_utf8((unsigned char *)label, sizeof(label),
+			     key->unicode, label_len);
 	blkid_set_tag(probe->dev, "LABEL", label, 0);
 	return 0;
 }
@@ -1356,7 +1363,7 @@ static int probe_lvm2(struct blkid_probe *probe,
 		return 1;
 	}
 
-	for (i=0, b=1, p=uuid, q= (char *) label->pv_uuid; i <= 32;
+	for (i=0, b=1, p=uuid, q= (char *) label->pv_uuid; i < LVM2_ID_LEN;
 	     i++, b <<= 1) {
 		if (b & 0x4444440)
 			*p++ = '-';
@@ -1576,7 +1583,7 @@ try_again:
 			continue;
 
 		idx = id->bim_kboff + (id->bim_sboff >> 10);
-		buf = get_buffer(&probe, idx << 10, 1024);
+		buf = get_buffer(&probe, (__u64) idx << 10, 1024);
 		if (!buf)
 			continue;
 

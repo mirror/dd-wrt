@@ -3,7 +3,11 @@
 	blocksize = 4096
 	inode_size = 256
 	inode_ratio = 16384
+	reserved_ratio = 5.0
+	enable_periodic_fsck = true
 	lazy_itable_init = false
+	no_discard = true
+	default_mntopts = ^acl
 
 [fs_types]
 	ext3 = {

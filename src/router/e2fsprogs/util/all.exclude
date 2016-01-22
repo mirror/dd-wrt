@@ -5,7 +5,7 @@
 patches
 README.subset
 build
-build.static
+build[^/]*
 rpm.log
 TODO
 powerquest

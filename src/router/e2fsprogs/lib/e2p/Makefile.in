@@ -50,13 +50,12 @@ BSDLIB_INSTALL_DIR = $(root_libdir)
 @MAKEFILE_ELF@
 @MAKEFILE_BSDLIB@
 @MAKEFILE_PROFILE@
-@MAKEFILE_CHECKER@
 
 .c.o:
 	$(E) "	CC $<"
 	$(Q) $(CC) $(ALL_CFLAGS) -c $< -o $@
+	$(Q) $(CHECK_CMD) $(ALL_CFLAGS) $<
 @PROFILE_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -g -pg -o profiled/$*.o -c $<
-@CHECKER_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -checker -g -o checker/$*.o -c $<
 @ELF_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -fPIC -o elfshared/$*.o -c $<
 @BSDLIB_CMT@	$(Q) $(CC) $(ALL_CFLAGS) $(BSDLIB_PIC_FLAG) -o pic/$*.o -c $<
 
@@ -81,7 +80,7 @@ check::	tst_ostype tst_feature
 installdirs::
 	$(E) "	MKINSTALLDIRS $(libdir) $(includedir)/e2p"
 	$(Q) $(MKINSTALLDIRS) $(DESTDIR)$(libdir) \
-		$(DESTDIR)$(includedir)/e2p $(DESTDIR)$(libdir)/pkgconfig
+		$(DESTDIR)$(includedir)/e2p $(DESTDIR)$(pkgconfigdir)
 
 install:: all installdirs 
 	$(E) "	INSTALL_DATA $(libdir)/libe2p.a"
@@ -92,16 +91,16 @@ install:: all installdirs
 	  echo "	INSTALL_DATA $(includedir)/e2p/$$i"; \
 	  $(INSTALL_DATA) $(srcdir)/$$i $(DESTDIR)$(includedir)/e2p/$$i; \
 	done
-	$(E) "	INSTALL_DATA $(libdir)/pkgconfig/e2p.pc"
-	$(Q) $(INSTALL_DATA) e2p.pc $(DESTDIR)$(libdir)/pkgconfig/e2p.pc
+	$(E) "	INSTALL_DATA $(pkgconfigdir)/e2p.pc"
+	$(Q) $(INSTALL_DATA) e2p.pc $(DESTDIR)$(pkgconfigdir)/e2p.pc
 
 uninstall::
 	$(RM) -f $(DESTDIR)$(libdir)/libe2p.a \
-		$(DESTDIR)$(libdir)/pkgconfig/e2p.pc
+		$(DESTDIR)$(pkgconfigdir)/e2p.pc
 	$(RM) -rf $(DESTDIR)$(includedir)/e2p
 
 clean::
-	$(RM) -f \#* *.s *.o *.a *~ *.bak core profiled/* checker/*
+	$(RM) -f \#* *.s *.o *.a *~ *.bak core profiled/*
 	$(RM) -f ../libe2p.a ../libe2p_p.a tst_ostype tst_feature
 
 mostlyclean:: clean
@@ -116,7 +115,8 @@ $(OBJS): subdirs
 # Makefile dependencies follow.  This must be the last section in
 # the Makefile.in file
 #
-feature.o: $(srcdir)/feature.c $(srcdir)/e2p.h \
+feature.o: $(srcdir)/feature.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h \
  $(top_srcdir)/lib/ext2fs/ext2fs.h $(top_srcdir)/lib/ext2fs/ext3_extents.h \
  $(top_srcdir)/lib/et/com_err.h $(top_srcdir)/lib/ext2fs/ext2_io.h \
@@ -124,41 +124,60 @@ feature.o: $(srcdir)/feature.c $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/bitops.h \
  $(top_srcdir)/lib/ext2fs/jfs_user.h $(top_srcdir)/lib/ext2fs/kernel-jbd.h \
  $(top_srcdir)/lib/ext2fs/jfs_compat.h $(top_srcdir)/lib/ext2fs/kernel-list.h
-fgetflags.o: $(srcdir)/fgetflags.c $(srcdir)/e2p.h \
+fgetflags.o: $(srcdir)/fgetflags.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-fsetflags.o: $(srcdir)/fsetflags.c $(srcdir)/e2p.h \
+fsetflags.o: $(srcdir)/fsetflags.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-fgetversion.o: $(srcdir)/fgetversion.c $(srcdir)/e2p.h \
+fgetversion.o: $(srcdir)/fgetversion.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-fsetversion.o: $(srcdir)/fsetversion.c $(srcdir)/e2p.h \
+fsetversion.o: $(srcdir)/fsetversion.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-getflags.o: $(srcdir)/getflags.c $(srcdir)/e2p.h \
+getflags.o: $(srcdir)/getflags.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-getversion.o: $(srcdir)/getversion.c $(srcdir)/e2p.h \
+getversion.o: $(srcdir)/getversion.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-hashstr.o: $(srcdir)/hashstr.c $(srcdir)/e2p.h \
+hashstr.o: $(srcdir)/hashstr.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-iod.o: $(srcdir)/iod.c $(srcdir)/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
- $(top_builddir)/lib/ext2fs/ext2_types.h
-ls.o: $(srcdir)/ls.c $(srcdir)/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
- $(top_builddir)/lib/ext2fs/ext2_types.h
-mntopts.o: $(srcdir)/mntopts.c $(srcdir)/e2p.h \
+iod.o: $(srcdir)/iod.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-parse_num.o: $(srcdir)/parse_num.c $(srcdir)/e2p.h \
+ls.o: $(srcdir)/ls.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-pe.o: $(srcdir)/pe.c $(srcdir)/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
- $(top_builddir)/lib/ext2fs/ext2_types.h
-pf.o: $(srcdir)/pf.c $(srcdir)/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
- $(top_builddir)/lib/ext2fs/ext2_types.h
-ps.o: $(srcdir)/ps.c $(srcdir)/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
- $(top_builddir)/lib/ext2fs/ext2_types.h
-setflags.o: $(srcdir)/setflags.c $(srcdir)/e2p.h \
+mntopts.o: $(srcdir)/mntopts.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-setversion.o: $(srcdir)/setversion.c $(srcdir)/e2p.h \
+parse_num.o: $(srcdir)/parse_num.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-uuid.o: $(srcdir)/uuid.c $(top_builddir)/lib/ext2fs/ext2_types.h \
+pe.o: $(srcdir)/pe.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
+pf.o: $(srcdir)/pf.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
+ps.o: $(srcdir)/ps.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
+setflags.o: $(srcdir)/setflags.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
+setversion.o: $(srcdir)/setversion.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
+uuid.o: $(srcdir)/uuid.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(top_builddir)/lib/ext2fs/ext2_types.h \
  $(srcdir)/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h
-ostype.o: $(srcdir)/ostype.c $(srcdir)/e2p.h \
+ostype.o: $(srcdir)/ostype.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h
-percent.o: $(srcdir)/percent.c $(srcdir)/e2p.h \
+percent.o: $(srcdir)/percent.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/e2p.h \
  $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_builddir)/lib/ext2fs/ext2_types.h

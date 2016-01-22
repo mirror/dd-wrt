@@ -11,6 +11,7 @@
  * express or implied warranty.
  */
 
+#include "config.h"
 #include "com_err.h"
 #include "error_table.h"
 #include "internal.h"
@@ -20,8 +21,7 @@ static const char char_set[] =
 
 static char buf[6];
 
-const char * error_table_name(num)
-    errcode_t num;
+const char * error_table_name(errcode_t num)
 {
     int ch;
     int i;

@@ -13,6 +13,7 @@
  * 93/04/22	- Creation
  */
 
+#include "config.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -46,7 +47,7 @@ int main (int argc, char ** argv)
 		 E2FSPROGS_DATE);
 	if (argc != 1) {
 		(void)argv; /* avoid unused argument warning */
-		fprintf (stderr, _("Usage: mklost+found\n"));
+		fprintf (stderr, "%s", _("Usage: mklost+found\n"));
 		exit(1);
 	}
 	if (mkdir (LPF, 0700) == -1) {

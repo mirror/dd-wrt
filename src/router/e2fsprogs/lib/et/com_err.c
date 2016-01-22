@@ -11,6 +11,7 @@
  * express or implied warranty.
  */
 
+#include "config.h"
 #include <stdio.h>
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
@@ -84,8 +85,7 @@ void com_err (const char *whoami,
     va_end(pvar);
 }
 
-errf set_com_err_hook (new_proc)
-    errf new_proc;
+errf set_com_err_hook(errf new_proc)
 {
     errf x = com_err_hook;
 
@@ -97,7 +97,7 @@ errf set_com_err_hook (new_proc)
     return x;
 }
 
-errf reset_com_err_hook () {
+errf reset_com_err_hook(void) {
     errf x = com_err_hook;
     com_err_hook = default_com_err_proc;
     return x;
