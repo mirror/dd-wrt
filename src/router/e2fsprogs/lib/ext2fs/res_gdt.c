@@ -10,6 +10,7 @@
  * %End-Header%
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -30,6 +31,19 @@ static unsigned int list_backups(ext2_filsys fs, unsigned int *three,
 	int mult = 3;
 	unsigned int ret;
 
+	if (fs->super->s_feature_compat & EXT4_FEATURE_COMPAT_SPARSE_SUPER2) {
+		if (*min == 1) {
+			*min += 1;
+			if (fs->super->s_backup_bgs[0])
+				return fs->super->s_backup_bgs[0];
+		}
+		if (*min == 2) {
+			*min += 1;
+			if (fs->super->s_backup_bgs[1])
+				return fs->super->s_backup_bgs[1];
+		}
+		return fs->group_desc_count;
+	}
 	if (!(fs->super->s_feature_ro_compat &
 	      EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER)) {
 		ret = *min;
@@ -65,8 +79,9 @@ errcode_t ext2fs_create_resize_inode(ext2_filsys fs)
 	struct ext2_inode	inode;
 	__u32			*dindir_buf, *gdt_buf;
 	unsigned long long	apb, inode_size;
+	/* FIXME-64 - can't deal with extents */
 	blk_t			dindir_blk, rsv_off, gdt_off, gdt_blk;
-	int			dindir_dirty = 0, inode_dirty = 0;
+	int			dindir_dirty = 0, inode_dirty = 0, sb_blk = 0;
 
 	EXT2_CHECK_MAGIC(fs, EXT2_ET_MAGIC_EXT2FS_FILSYS);
 
@@ -74,12 +89,21 @@ errcode_t ext2fs_create_resize_inode(ext2_filsys fs)
 
 	retval = ext2fs_get_array(2, fs->blocksize, &dindir_buf);
 	if (retval)
-		goto out_free;
+		return retval;
 	gdt_buf = (__u32 *)((char *)dindir_buf + fs->blocksize);
 
 	retval = ext2fs_read_inode(fs, EXT2_RESIZE_INO, &inode);
 	if (retval)
 		goto out_free;
+
+	/*
+	 * File systems with a blocksize of 1024 and bigalloc have
+	 * sb->s_first_data_block of 0; yet the superblock is still at
+	 * block #1.  We compensate for it here.
+	 */
+	sb_blk = sb->s_first_data_block;
+	if (fs->blocksize == 1024 && sb_blk == 0)
+		sb_blk = 1;
 
 	/* Maximum possible file size (we donly use the dindirect blocks) */
 	apb = EXT2_ADDR_PER_BLOCK(sb);
@@ -91,7 +115,7 @@ errcode_t ext2fs_create_resize_inode(ext2_filsys fs)
 		if (retval)
 			goto out_inode;
 	} else {
-		blk_t goal = sb->s_first_data_block + fs->desc_blocks +
+		blk_t goal = sb_blk + fs->desc_blocks +
 			sb->s_reserved_gdt_blocks + 2 +
 			fs->inode_blocks_per_group;
 
@@ -109,17 +133,14 @@ errcode_t ext2fs_create_resize_inode(ext2_filsys fs)
 		dindir_dirty = inode_dirty = 1;
 		inode_size = apb*apb + apb + EXT2_NDIR_BLOCKS;
 		inode_size *= fs->blocksize;
-		inode.i_size = inode_size & 0xFFFFFFFF;
-		inode.i_size_high = (inode_size >> 32) & 0xFFFFFFFF;
-		if(inode.i_size_high) {
-			sb->s_feature_ro_compat |=
-				EXT2_FEATURE_RO_COMPAT_LARGE_FILE;
-		}
+		retval = ext2fs_inode_size_set(fs, &inode, inode_size);
+		if (retval)
+			goto out_free;
 		inode.i_ctime = fs->now ? fs->now : time(0);
 	}
 
 	for (rsv_off = 0, gdt_off = fs->desc_blocks,
-	     gdt_blk = sb->s_first_data_block + 1 + fs->desc_blocks;
+	     gdt_blk = sb_blk + 1 + fs->desc_blocks;
 	     rsv_off < sb->s_reserved_gdt_blocks;
 	     rsv_off++, gdt_off++, gdt_blk++) {
 		unsigned int three = 1, five = 5, seven = 7;

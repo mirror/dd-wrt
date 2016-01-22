@@ -164,6 +164,9 @@ typedef struct journal_revoke_header_s
 #define JFS_FLAG_LAST_TAG	8	/* last tag in this descriptor block */
 
 
+#define UUID_SIZE 16
+#define JFS_USERS_MAX 48
+#define JFS_USERS_SIZE (UUID_SIZE * JFS_USERS_MAX)
 /*
  * The journal superblock.  All fields are in big-endian byte order.
  */
@@ -208,19 +211,20 @@ typedef struct journal_superblock_s
 	__u32	s_padding[44];
 
 /* 0x0100 */
-	__u8	s_users[16*48];		/* ids of all fs'es sharing the log */
+	__u8	s_users[JFS_USERS_SIZE];		/* ids of all fs'es sharing the log */
+
 /* 0x0400 */
 } journal_superblock_t;
 
 #define JFS_HAS_COMPAT_FEATURE(j,mask)					\
 	((j)->j_format_version >= 2 &&					\
-	 ((j)->j_superblock->s_feature_compat & cpu_to_be32((mask))))
+	 ((j)->j_superblock->s_feature_compat & ext2fs_cpu_to_be32((mask))))
 #define JFS_HAS_RO_COMPAT_FEATURE(j,mask)				\
 	((j)->j_format_version >= 2 &&					\
-	 ((j)->j_superblock->s_feature_ro_compat & cpu_to_be32((mask))))
+	 ((j)->j_superblock->s_feature_ro_compat & ext2fs_cpu_to_be32((mask))))
 #define JFS_HAS_INCOMPAT_FEATURE(j,mask)				\
 	((j)->j_format_version >= 2 &&					\
-	 ((j)->j_superblock->s_feature_incompat & cpu_to_be32((mask))))
+	 ((j)->j_superblock->s_feature_incompat & ext2fs_cpu_to_be32((mask))))
 
 #define JFS_FEATURE_COMPAT_CHECKSUM	0x00000001
 
@@ -234,7 +238,8 @@ typedef struct journal_superblock_s
 #define JFS_KNOWN_COMPAT_FEATURES	0
 #define JFS_KNOWN_ROCOMPAT_FEATURES	0
 #define JFS_KNOWN_INCOMPAT_FEATURES	(JFS_FEATURE_INCOMPAT_REVOKE|\
-					 JFS_FEATURE_INCOMPAT_ASYNC_COMMIT)
+					 JFS_FEATURE_INCOMPAT_ASYNC_COMMIT|\
+					 JFS_FEATURE_INCOMPAT_64BIT)
 
 #ifdef __KERNEL__
 

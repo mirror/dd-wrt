@@ -9,6 +9,7 @@
  * %End-Header%
  */
 
+#include "config.h"
 #include <stdio.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -31,18 +32,20 @@ errcode_t ext2fs_iblk_add_blocks(ext2_filsys fs, struct ext2_inode *inode,
 {
 	unsigned long long b = inode->i_blocks;
 
+	if (fs->super->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_HUGE_FILE)
+		b += ((long long) inode->osd2.linux2.l_i_blocks_hi) << 32;
+
 	if (!(fs->super->s_feature_ro_compat &
 	      EXT4_FEATURE_RO_COMPAT_HUGE_FILE) ||
 	    !(inode->i_flags & EXT4_HUGE_FILE_FL))
 	    num_blocks *= fs->blocksize / 512;
+	num_blocks *= EXT2FS_CLUSTER_RATIO(fs);
 
 	b += num_blocks;
 
-	if (fs->super->s_feature_ro_compat &
-	    EXT4_FEATURE_RO_COMPAT_HUGE_FILE) {
-		b += ((long long) inode->osd2.linux2.l_i_blocks_hi) << 32;
+	if (fs->super->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_HUGE_FILE)
 		inode->osd2.linux2.l_i_blocks_hi = b >> 32;
-	} else if (b > 0xFFFFFFFF)
+	else if (b > 0xFFFFFFFF)
 		return EOVERFLOW;
 	inode->i_blocks = b & 0xFFFFFFFF;
 	return 0;
@@ -53,21 +56,22 @@ errcode_t ext2fs_iblk_sub_blocks(ext2_filsys fs, struct ext2_inode *inode,
 {
 	unsigned long long b = inode->i_blocks;
 
+	if (fs->super->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_HUGE_FILE)
+		b += ((long long) inode->osd2.linux2.l_i_blocks_hi) << 32;
+
 	if (!(fs->super->s_feature_ro_compat &
 	      EXT4_FEATURE_RO_COMPAT_HUGE_FILE) ||
 	    !(inode->i_flags & EXT4_HUGE_FILE_FL))
 	    num_blocks *= fs->blocksize / 512;
+	num_blocks *= EXT2FS_CLUSTER_RATIO(fs);
 
 	if (num_blocks > b)
 		return EOVERFLOW;
 
 	b -= num_blocks;
 
-	if (fs->super->s_feature_ro_compat &
-	    EXT4_FEATURE_RO_COMPAT_HUGE_FILE) {
-		b += ((long long) inode->osd2.linux2.l_i_blocks_hi) << 32;
+	if (fs->super->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_HUGE_FILE)
 		inode->osd2.linux2.l_i_blocks_hi = b >> 32;
-	}
 	inode->i_blocks = b & 0xFFFFFFFF;
 	return 0;
 }
@@ -78,6 +82,7 @@ errcode_t ext2fs_iblk_set(ext2_filsys fs, struct ext2_inode *inode, blk64_t b)
 	      EXT4_FEATURE_RO_COMPAT_HUGE_FILE) ||
 	    !(inode->i_flags & EXT4_HUGE_FILE_FL))
 		b *= fs->blocksize / 512;
+	b *= EXT2FS_CLUSTER_RATIO(fs);
 
 	inode->i_blocks = b & 0xFFFFFFFF;
 	if (fs->super->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_HUGE_FILE)

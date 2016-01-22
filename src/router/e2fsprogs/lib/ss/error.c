@@ -12,15 +12,15 @@
  * express or implied warranty.
  */
 
+#include "config.h"
 #include <stdio.h>
 
-#include <com_err.h>
+#include "et/com_err.h"
 #include "ss_internal.h"
 
 #include <stdarg.h>
 
-char * ss_name(sci_idx)
-    int sci_idx;
+char *ss_name(int sci_idx)
 {
     register char *ret_val;
     register ss_data *infop;
@@ -69,10 +69,7 @@ void ss_error (int sci_idx, long code, const char * fmt, ...)
     va_end(pvar);
 }
 
-void ss_perror (sci_idx, code, msg) /* for compatibility */
-    int sci_idx;
-    long code;
-    char const *msg;
+void ss_perror(int sci_idx, long code, char const *msg) /* for compatibility */
 {
     ss_error (sci_idx, code, "%s", msg);
 }

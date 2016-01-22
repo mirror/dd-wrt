@@ -77,6 +77,10 @@ tune2fs \- adjust tunable filesystem parameters on ext2/ext3/ext4 filesystems
 .RI [^] feature [,...]
 ]
 [
+.B \-Q
+.I quota-options
+]
+[
 .B \-T
 .I time-last-checked
 ]
@@ -99,8 +103,8 @@ program.
 .PP
 The
 .I device
-specifer can either be a filename (i.e., /dev/sda1), or a LABEL or UUID
-specifer: "\fBLABEL=\fIvolume-name\fR" or "\fBUUID=\fIuuid\fR".  (i.e.,
+specifier can either be a filename (i.e., /dev/sda1), or a LABEL or UUID
+specifier: "\fBLABEL=\fIvolume-name\fR" or "\fBUUID=\fIuuid\fR".  (i.e.,
 LABEL=home or UUID=e40486c6-84d5-4f2f-b99c-032281799c9d).
 .SH OPTIONS
 .TP
@@ -167,6 +171,21 @@ separated, and may take an argument using the equals ('=') sign.
 The following extended options are supported:
 .RS 1.2i
 .TP
+.B clear_mmp
+Reset the MMP block (if any) back to the clean state.  Use only if
+absolutely certain the device is not currently mounted or being
+fscked, or major filesystem corruption can result.  Needs '-f'.
+.TP
+.BI mmp_update_interval= interval
+Adjust the initial MMP update interval to
+.I interval
+seconds.  Specifying an
+.I interval
+of 0 means to use the default interval.  The specified interval must
+be less than 300 seconds.  Requires that the
+.B mmp
+feature be enabled.
+.TP
 .BI stride= stride-size
 Configure the filesystem for a RAID array with
 .I stride-size
@@ -229,7 +248,10 @@ option is useful when removing the
 filesystem feature from a filesystem which has 
 an external journal (or is corrupted
 such that it appears to have an external journal), but that 
-external journal is not available.   
+external journal is not available.   If the filesystem appears to require
+journal replay, the
+.B \-f
+flag must be specified twice to proceed.
 .sp
 .B WARNING:
 Removing an external journal from a filesystem which was not cleanly unmounted
@@ -314,6 +336,13 @@ megabytes.   The size of the journal must be at least 1024 filesystem blocks
 and may be no more than 102,400 filesystem blocks.
 There must be enough free space in the filesystem to create a journal of
 that size.
+.TP
+.BI location =journal-location
+Specify the location of the journal.  The argument
+.I journal-location
+can either be specified as a block number, or if the number has a units
+suffix (e.g., 'M', 'G', etc.) interpret it as the offset from the
+beginning of the file system.
 @JDEV@.TP
 @JDEV@.BI device= external-journal
 @JDEV@Attach the filesystem to the journal block device located on
@@ -413,8 +442,8 @@ The following mount options can be set or cleared using
 Enable debugging code for this filesystem.
 .TP
 .B bsdgroups
-Emulate BSD behaviour when creating new files: they will take the group-id
-of the directory in which they were created.  The standard System V behaviour
+Emulate BSD behavior when creating new files: they will take the group-id
+of the directory in which they were created.  The standard System V behavior
 is the default, where newly created files take on the fsgid of the current
 process, unless the directory has the setgid bit set, in which case it takes 
 the gid from the parent directory, and also gets the setgid bit set if it is 
@@ -462,7 +491,7 @@ currently only supported by the ext4 file system driver in 2.6.35+
 kernels.)
 .TP
 .B discard
-The file system will be mouinted with the discard mount option.  This will
+The file system will be mounted with the discard mount option.  This will
 cause the file system driver to attempt to use the trim/discard feature
 of some storage devices (such as SSD's and thin-provisioned drives
 available in some enterprise storage arrays) to inform the storage
@@ -482,14 +511,25 @@ More than one filesystem feature can be cleared or set by separating
 features with commas.  Filesystem features prefixed with a 
 caret character ('^') will be cleared in the filesystem's superblock; 
 filesystem features without a prefix character or prefixed with a plus 
-character ('+') will be added to the filesystem.
+character ('+') will be added to the filesystem.  For a detailed
+description of the file system features, please see the man page
+.BR ext4 (5).
 .IP
 The following filesystem features can be set or cleared using
 .BR tune2fs :
 .RS 1.2i
 .TP
 .B dir_index
-Use hashed b-trees to speed up lookups in large directories.
+Use hashed b-trees to speed up lookups for large directories.
+.TP
+.B dir_nlink
+Allow more than 65000 subdirectories per directory.
+.TP
+.B extent
+Enable the use of extent trees to store the location of data blocks in inodes.
+.TP
+.B extra_isize
+Enable the extended inode fields used by ext4.
 .TP
 .B filetype
 Store file type information in directory entries.
@@ -499,7 +539,7 @@ Allow bitmaps and inode tables for a block group to be placed
 anywhere on the storage media.  \fBTune2fs\fR will not reorganize
 the location of the inode tables and allocation bitmaps, as
 .BR mke2fs (8)
-will do when it creates a freshly formated file system with
+will do when it creates a freshly formatted file system with
 .B flex_bg
 enabled.
 .TP
@@ -509,9 +549,11 @@ Setting the filesystem feature is equivalent to using the
 .B \-j
 option.
 .TP
+.B huge_file
+Support files larger than 2 terabytes in size.
+.TP
 .B large_file
-Filesystem can contain files that are greater than 2GB.  (Modern kernels
-set this feature automatically when a file > 2GB is created.)
+Filesystem can contain files that are greater than 2GB.
 .TP
 .B resize_inode
 Reserve space so the block group descriptor table may grow in the
@@ -519,12 +561,18 @@ future.
 .B Tune2fs 
 only supports clearing this filesystem feature.
 .TP
+.B mmp
+Enable or disable multiple mount protection (MMP) feature.
+@QUOTA_MAN_COMMENT@.TP
+@QUOTA_MAN_COMMENT@.B quota
+@QUOTA_MAN_COMMENT@Enable internal file system quota inodes.
+.TP
 .B sparse_super
 Limit the number of backup superblocks to save space on large filesystems.
 .TP
 .B uninit_bg
-Allow the kernel to initialize bitmaps and inode tables and keep a high
-watermark for the unused inodes in a filesystem, to reduce
+Allow the kernel to initialize bitmaps and inode tables lazily, and to
+keep a high watermark for the unused inodes in a filesystem, to reduce
 .BR e2fsck (8)
 time.  This first e2fsck run after enabling this feature will take the
 full time, but subsequent e2fsck runs will take only a fraction of the
@@ -555,8 +603,23 @@ and
 .BR flex_bg
 features are only supported by the ext4 filesystem.
 .TP
+.BI \-p " mmp_check_interval"
+Set the desired MMP check interval in seconds. It is 5 seconds by default.
+.TP
 .BI \-r " reserved-blocks-count"
 Set the number of reserved filesystem blocks.
+.TP
+.BI \-Q " quota-options"
+Sets 'quota' feature on the superblock and works on the quota files for the
+given quota type. Quota options could be one or more of the following:
+.RS 1.2i
+.TP
+.BR [^]usrquota
+Sets/clears user quota inode in the superblock.
+.TP
+.BR [^]grpquota
+Sets/clears group quota inode in the superblock.
+.RE
 .TP
 .BI \-T " time-last-checked"
 Set the time the filesystem was last checked using
@@ -639,4 +702,5 @@ http://e2fsprogs.sourceforge.net.
 .BR debugfs (8),
 .BR dumpe2fs (8),
 .BR e2fsck (8),
-.BR mke2fs (8)
+.BR mke2fs (8),
+.BR ext4 (5)
