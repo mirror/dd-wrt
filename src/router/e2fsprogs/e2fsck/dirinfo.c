@@ -7,6 +7,7 @@
 
 #undef DIRINFO_DEBUG
 
+#include "config.h"
 #include "e2fsck.h"
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -41,6 +42,7 @@ static void setup_tdb(e2fsck_t ctx, ext2_ino_t num_dirs)
 	struct dir_info_db	*db = ctx->dir_info;
 	unsigned int		threshold;
 	errcode_t		retval;
+	mode_t			save_umask;
 	char			*tdb_dir, uuid[40];
 	int			fd, enable;
 
@@ -61,8 +63,18 @@ static void setup_tdb(e2fsck_t ctx, ext2_ino_t num_dirs)
 
 	uuid_unparse(ctx->fs->super->s_uuid, uuid);
 	sprintf(db->tdb_fn, "%s/%s-dirinfo-XXXXXX", tdb_dir, uuid);
+	save_umask = umask(077);
 	fd = mkstemp(db->tdb_fn);
-	db->tdb = tdb_open(db->tdb_fn, 0, TDB_CLEAR_IF_FIRST,
+	umask(save_umask);
+	if (fd < 0) {
+		db->tdb = NULL;
+		return;
+	}
+
+	if (num_dirs < 99991)
+		num_dirs = 99991; /* largest 5 digit prime */
+
+	db->tdb = tdb_open(db->tdb_fn, num_dirs, TDB_NOLOCK | TDB_NOSYNC,
 			   O_RDWR | O_CREAT | O_TRUNC, 0600);
 	close(fd);
 }
@@ -109,7 +121,7 @@ static void setup_db(e2fsck_t ctx)
 void e2fsck_add_dir_info(e2fsck_t ctx, ext2_ino_t ino, ext2_ino_t parent)
 {
 	struct dir_info_db 	*db;
-	struct dir_info 	*dir, ent;
+	struct dir_info		*dir, ent, *old_array;
 	int			i, j;
 	errcode_t		retval;
 	unsigned long		old_size;
@@ -124,13 +136,20 @@ void e2fsck_add_dir_info(e2fsck_t ctx, ext2_ino_t ino, ext2_ino_t parent)
 	if (ctx->dir_info->count >= ctx->dir_info->size) {
 		old_size = ctx->dir_info->size * sizeof(struct dir_info);
 		ctx->dir_info->size += 10;
+		old_array = ctx->dir_info->array;
 		retval = ext2fs_resize_mem(old_size, ctx->dir_info->size *
 					   sizeof(struct dir_info),
 					   &ctx->dir_info->array);
 		if (retval) {
+			fprintf(stderr, "Couldn't reallocate dir_info "
+				"structure to %d entries\n",
+				ctx->dir_info->size);
+			fatal_error(ctx, 0);
 			ctx->dir_info->size -= 10;
 			return;
 		}
+		if (old_array != ctx->dir_info->array)
+			ctx->dir_info->last_lookup = NULL;
 	}
 
 	ent.ino = ino;
@@ -311,14 +330,13 @@ int e2fsck_get_num_dirinfo(e2fsck_t ctx)
 	return ctx->dir_info ? ctx->dir_info->count : 0;
 }
 
-extern struct dir_info_iter *e2fsck_dir_info_iter_begin(e2fsck_t ctx)
+struct dir_info_iter *e2fsck_dir_info_iter_begin(e2fsck_t ctx)
 {
 	struct dir_info_iter *iter;
 	struct dir_info_db *db = ctx->dir_info;
 
 	iter = e2fsck_allocate_memory(ctx, sizeof(struct dir_info_iter),
 				      "dir_info iterator");
-	memset(iter, 0, sizeof(iter));
 
 	if (db->tdb)
 		iter->tdb_iter = tdb_firstkey(db->tdb);
@@ -326,8 +344,8 @@ extern struct dir_info_iter *e2fsck_dir_info_iter_begin(e2fsck_t ctx)
 	return iter;
 }
 
-extern void e2fsck_dir_info_iter_end(e2fsck_t ctx EXT2FS_ATTR((unused)),
-				     struct dir_info_iter *iter)
+void e2fsck_dir_info_iter_end(e2fsck_t ctx EXT2FS_ATTR((unused)),
+			      struct dir_info_iter *iter)
 {
 	free(iter->tdb_iter.dptr);
 	ext2fs_free_mem(&iter);

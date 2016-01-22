@@ -5,6 +5,7 @@
  * under the terms of the GNU Public License.
  */
 
+#include "config.h"
 #include "e2fsck.h"
 #ifdef ENABLE_HTREE
 
@@ -39,6 +40,10 @@ void e2fsck_add_dx_dir(e2fsck_t ctx, ext2_ino_t ino, int num_blocks)
 					   sizeof(struct dx_dir_info),
 					   &ctx->dx_dir_info);
 		if (retval) {
+			fprintf(stderr, "Couldn't reallocate dx_dir_info "
+				"structure to %d entries\n",
+				ctx->dx_dir_info_size);
+			fatal_error(ctx, 0);
 			ctx->dx_dir_info_size -= 10;
 			return;
 		}

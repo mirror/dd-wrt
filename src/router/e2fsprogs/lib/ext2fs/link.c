@@ -9,6 +9,7 @@
  * %End-Header%
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #if HAVE_UNISTD_H
@@ -41,6 +42,9 @@ static int link_proc(struct ext2_dir_entry *dirent,
 	unsigned int rec_len, min_rec_len, curr_rec_len;
 	int ret = 0;
 
+	if (ls->done)
+		return DIRENT_ABORT;
+
 	rec_len = EXT2_DIR_REC_LEN(ls->namelen);
 
 	ls->err = ext2fs_get_rec_len(ls->fs, dirent, &curr_rec_len);
@@ -52,9 +56,9 @@ static int link_proc(struct ext2_dir_entry *dirent,
 	 * if so, absorb it into this one.
 	 */
 	next = (struct ext2_dir_entry *) (buf + offset + curr_rec_len);
-	if ((offset + curr_rec_len < blocksize - 8) &&
+	if ((offset + (int) curr_rec_len < blocksize - 8) &&
 	    (next->inode == 0) &&
-	    (offset + curr_rec_len + next->rec_len <= blocksize)) {
+	    (offset + (int) curr_rec_len + (int) next->rec_len <= blocksize)) {
 		curr_rec_len += next->rec_len;
 		ls->err = ext2fs_set_rec_len(ls->fs, curr_rec_len, dirent);
 		if (ls->err)

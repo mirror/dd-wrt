@@ -34,6 +34,10 @@ struct fiemap {
 	struct fiemap_extent fm_extents[0]; /* array of mapped extents (out) */
 };
 
+#ifndef FS_IOC_FIEMAP
+#define FS_IOC_FIEMAP	_IOWR('f', 11, struct fiemap)
+#endif
+
 #define FIEMAP_MAX_OFFSET	(~0ULL)
 
 #define FIEMAP_FLAG_SYNC	0x00000001 /* sync file data before map */
@@ -60,5 +64,7 @@ struct fiemap {
 #define FIEMAP_EXTENT_MERGED		0x00001000 /* File does not natively
 						    * support extents. Result
 						    * merged for efficiency. */
+#define FIEMAP_EXTENT_SHARED		0x00002000 /* Space shared with other
+						    * files. */
 
 #endif /* _LINUX_FIEMAP_H */

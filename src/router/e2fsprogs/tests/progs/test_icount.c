@@ -9,6 +9,7 @@
  * %End-Header%
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -289,6 +290,8 @@ static int source_file(const char *cmd_file, int sci_idx)
 			exit_status++;
 		}
 	}
+	if (f != stdin)
+		fclose(f);
 	return exit_status;
 }
 
@@ -308,7 +311,7 @@ int main(int argc, char **argv)
 	 * Create a sample filesystem structure
 	 */
 	memset(&param, 0, sizeof(struct ext2_super_block));
-	param.s_blocks_count = 80000;
+	ext2fs_blocks_count_set(&param, 80000);
 	param.s_inodes_count = 20000;
 	retval = ext2fs_initialize("/dev/null", 0, &param,
 				   unix_io_manager, &test_fs);

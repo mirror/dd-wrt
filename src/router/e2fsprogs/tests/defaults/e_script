@@ -37,10 +37,10 @@ status=$?
 rm -f $test_name.failed $test_name.ok
 
 if [ "$status" = 0 ] ; then
-    echo "ok"
+    echo "$test_name: $test_description: ok"
     touch $test_name.ok
 else
-    echo "failed"
+    echo "$test_name: $test_description: failed"
     diff $DIFF_OPTS $EXPECT $OUT > $test_name.failed
 fi
 

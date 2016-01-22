@@ -14,6 +14,7 @@
  * express or implied warranty.
  */
 
+#include "config.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -38,7 +39,6 @@ extern int errno;
 #endif
 
 static char MORE[] = "more";
-extern char *_ss_pager_name;
 extern char *getenv PROTOTYPE((const char *));
 
 char *ss_safe_getenv(const char *arg)
@@ -55,7 +55,9 @@ char *ss_safe_getenv(const char *arg)
 #endif
 #endif
 
-#ifdef HAVE___SECURE_GETENV
+#if defined(HAVE_SECURE_GETENV)
+	return secure_getenv(arg);
+#elif defined(HAVE___SECURE_GETENV)
 	return __secure_getenv(arg);
 #else
 	return getenv(arg);
@@ -125,7 +127,7 @@ static int write_all(int fd, char *buf, size_t count)
 	return c;
 }
 
-void ss_page_stdin()
+void ss_page_stdin(void)
 {
 	int i;
 	sigset_t mask;
