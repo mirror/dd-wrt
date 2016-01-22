@@ -37,7 +37,10 @@
 	.set	mips3
 
 LEAF(_save_fp_context)
+	.set	push
+	SET_HARDFLOAT
 	cfc1	t1, fcr31
+	.set	pop
 
 #ifdef CONFIG_64BIT
 	/* Store the 16 odd double precision registers */
