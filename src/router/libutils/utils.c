@@ -1677,7 +1677,6 @@ int internal_getRouterBrand()
 	int reg2 = data->val_out;
 
 	close(s);
-	fprintf(stderr, "phy id %X:%X\n", reg1, reg2);
 	if (reg1 == 0x2000 && reg2 == 0x5c90) {
 		setRouter("Avila GW2347");
 		return ROUTER_BOARD_GATEWORX_SWAP;
