@@ -105,6 +105,17 @@ config I2C_I801
 	    Panther Point (PCH)
 	    Lynx Point (PCH)
 	    Lynx Point-LP (PCH)
+	    Avoton (SOC)
+	    Wellsburg (PCH)
+	    Coleto Creek (PCH)
+	    Wildcat Point (PCH)
+	    Wildcat Point-LP (PCH)
+	    BayTrail (SOC)
+	    Sunrise Point-H (PCH)
+	    Sunrise Point-LP (PCH)
+	    DNV (SOC)
+	    Broxton (SOC)
+	    Lewisburg (PCH)
 
 	  This driver can also be built as a module.  If so, the module
 	  will be called i2c-i801.
