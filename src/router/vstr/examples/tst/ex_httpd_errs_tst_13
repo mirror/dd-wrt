@@ -1,4 +1,0 @@
-GET / HTTP/2.1
-
-GET / HTTP/1.0
-

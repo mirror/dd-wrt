@@ -1,5 +1,0 @@
-HEAD http://default/README HTTP/1.1
-
-GET http://default/README HTTP/1.1
-COnnection: close
-

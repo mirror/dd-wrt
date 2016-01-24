@@ -1,3 +1,0 @@
-GET http://:/noprivs.html HTTP/1.1
-ConnectioN: close
-

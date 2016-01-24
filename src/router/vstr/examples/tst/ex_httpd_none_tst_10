@@ -1,6 +1,0 @@
-GET /README HTTP/1.0
-Accept: foo/bar
-
-GET / HTTP/1.0
-Accept: foo/bar
-
