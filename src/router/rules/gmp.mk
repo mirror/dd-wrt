@@ -3,12 +3,11 @@ gmp-configure:
 		--build=$(ARCH)-linux \
 		--host=$(ARCH)-linux-gnu \
 		--prefix=/usr \
-		
-		#CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
+		CFLAGS="$(COPTS) -fPIC -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
 
 
 gmp:
-	$(MAKE) -C gmp CFLAGS="$(COPTS) -DNEED_PRINTF"
+	$(MAKE) -C gmp CFLAGS="$(COPTS) -fPIC"
 
 gmp-install:
 	$(MAKE) -C gmp install DESTDIR=$(INSTALLDIR)/gmp
