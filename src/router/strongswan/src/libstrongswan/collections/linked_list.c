@@ -138,7 +138,10 @@ METHOD(enumerator_t, enumerate, bool,
 		this->finished = TRUE;
 		return FALSE;
 	}
-	*item = this->current->value;
+	if (item)
+	{
+		*item = this->current->value;
+	}
 	return TRUE;
 }
 
@@ -163,16 +166,6 @@ METHOD(linked_list_t, reset_enumerator, void,
 {
 	enumerator->current = NULL;
 	enumerator->finished = FALSE;
-}
-
-METHOD(linked_list_t, has_more, bool,
-	private_linked_list_t *this, private_enumerator_t *enumerator)
-{
-	if (enumerator->current)
-	{
-		return enumerator->current->next != NULL;
-	}
-	return !enumerator->finished && this->first != NULL;
 }
 
 METHOD(linked_list_t, get_count, int,
@@ -316,20 +309,6 @@ METHOD(linked_list_t, insert_before, void,
 	this->count++;
 }
 
-METHOD(linked_list_t, replace, void*,
-	private_linked_list_t *this, private_enumerator_t *enumerator,
-	void *item)
-{
-	void *old = NULL;
-
-	if (enumerator->current)
-	{
-		old = enumerator->current->value;
-		enumerator->current->value = item;
-	}
-	return old;
-}
-
 METHOD(linked_list_t, get_last, status_t,
 	private_linked_list_t *this, void **item)
 {
@@ -409,28 +388,6 @@ METHOD(linked_list_t, find_first, status_t,
 	return NOT_FOUND;
 }
 
-METHOD(linked_list_t, find_last, status_t,
-	private_linked_list_t *this, linked_list_match_t match,
-	void **item, void *d1, void *d2, void *d3, void *d4, void *d5)
-{
-	element_t *current = this->last;
-
-	while (current)
-	{
-		if ((match && match(current->value, d1, d2, d3, d4, d5)) ||
-			(!match && item && current->value == *item))
-		{
-			if (item != NULL)
-			{
-				*item = current->value;
-			}
-			return SUCCESS;
-		}
-		current = current->previous;
-	}
-	return NOT_FOUND;
-}
-
 METHOD(linked_list_t, invoke_offset, void,
 	private_linked_list_t *this, size_t offset,
 	void *d1, void *d2, void *d3, void *d4, void *d5)
@@ -473,21 +430,6 @@ METHOD(linked_list_t, clone_offset, linked_list_t*,
 		current = current->next;
 	}
 
-	return clone;
-}
-
-METHOD(linked_list_t, clone_function, linked_list_t*,
-	private_linked_list_t *this, void* (*fn)(void*))
-{
-	element_t *current = this->first;
-	linked_list_t *clone;
-
-	clone = linked_list_create();
-	while (current)
-	{
-		clone->insert_last(clone, fn(current->value));
-		current = current->next;
-	}
 	return clone;
 }
 
@@ -548,15 +490,12 @@ linked_list_t *linked_list_create()
 			.get_count = _get_count,
 			.create_enumerator = _create_enumerator,
 			.reset_enumerator = (void*)_reset_enumerator,
-			.has_more = (void*)_has_more,
 			.get_first = _get_first,
 			.get_last = _get_last,
 			.find_first = (void*)_find_first,
-			.find_last = (void*)_find_last,
 			.insert_first = _insert_first,
 			.insert_last = _insert_last,
 			.insert_before = (void*)_insert_before,
-			.replace = (void*)_replace,
 			.remove_first = _remove_first,
 			.remove_last = _remove_last,
 			.remove = _remove_,
@@ -564,7 +503,6 @@ linked_list_t *linked_list_create()
 			.invoke_offset = (void*)_invoke_offset,
 			.invoke_function = (void*)_invoke_function,
 			.clone_offset = _clone_offset,
-			.clone_function = _clone_function,
 			.destroy = _destroy,
 			.destroy_offset = _destroy_offset,
 			.destroy_function = _destroy_function,

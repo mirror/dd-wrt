@@ -31,7 +31,8 @@ ENUM(cert_policy_names, CERT_ALWAYS_SEND, CERT_NEVER_SEND,
 	"CERT_NEVER_SEND",
 );
 
-ENUM(unique_policy_names, UNIQUE_NO, UNIQUE_KEEP,
+ENUM(unique_policy_names, UNIQUE_NEVER, UNIQUE_KEEP,
+	"UNIQUE_NEVER",
 	"UNIQUE_NO",
 	"UNIQUE_REPLACE",
 	"UNIQUE_KEEP",
@@ -98,6 +99,11 @@ struct private_peer_cfg_t {
 	 * Use aggressive mode?
 	 */
 	bool aggressive;
+
+	/**
+	 * Use pull or push in mode config?
+	 */
+	bool pull_mode;
 
 	/**
 	 * Time before starting rekeying
@@ -249,7 +255,7 @@ static int get_ts_match(child_cfg_t *cfg, bool local,
 {
 	linked_list_t *cfg_list;
 	enumerator_t *sup_enum, *cfg_enum;
-	traffic_selector_t *sup_ts, *cfg_ts;
+	traffic_selector_t *sup_ts, *cfg_ts, *subset;
 	int match = 0, round;
 
 	/* fetch configured TS list, narrowing dynamic TS */
@@ -268,10 +274,14 @@ static int get_ts_match(child_cfg_t *cfg, bool local,
 			{	/* equality is honored better than matches */
 				match += round * 5;
 			}
-			else if (cfg_ts->is_contained_in(cfg_ts, sup_ts) ||
-					 sup_ts->is_contained_in(sup_ts, cfg_ts))
+			else
 			{
-				match += round * 1;
+				subset = cfg_ts->get_subset(cfg_ts, sup_ts);
+				if (subset)
+				{
+					subset->destroy(subset);
+					match += round * 1;
+				}
 			}
 		}
 		cfg_enum->destroy(cfg_enum);
@@ -292,7 +302,7 @@ METHOD(peer_cfg_t, select_child_cfg, child_cfg_t*,
 	enumerator_t *enumerator;
 	int best = 0;
 
-	DBG2(DBG_CFG, "looking for a child config for %#R=== %#R", my_ts, other_ts);
+	DBG2(DBG_CFG, "looking for a child config for %#R === %#R", my_ts, other_ts);
 	enumerator = create_child_cfg_enumerator(this);
 	while (enumerator->enumerate(enumerator, &current))
 	{
@@ -384,6 +394,12 @@ METHOD(peer_cfg_t, use_aggressive, bool,
 	private_peer_cfg_t *this)
 {
 	return this->aggressive;
+}
+
+METHOD(peer_cfg_t, use_pull_mode, bool,
+	private_peer_cfg_t *this)
+{
+	return this->pull_mode;
 }
 
 METHOD(peer_cfg_t, get_dpd, u_int32_t,
@@ -584,6 +600,7 @@ METHOD(peer_cfg_t, equals, bool,
 		this->over_time == other->over_time &&
 		this->dpd == other->dpd &&
 		this->aggressive == other->aggressive &&
+		this->pull_mode == other->pull_mode &&
 		auth_cfg_equal(this, other)
 #ifdef ME
 		&& this->mediation == other->mediation &&
@@ -634,8 +651,8 @@ peer_cfg_t *peer_cfg_create(char *name,
 							unique_policy_t unique, u_int32_t keyingtries,
 							u_int32_t rekey_time, u_int32_t reauth_time,
 							u_int32_t jitter_time, u_int32_t over_time,
-							bool mobike, bool aggressive, u_int32_t dpd,
-							u_int32_t dpd_timeout,
+							bool mobike, bool aggressive, bool pull_mode,
+							u_int32_t dpd, u_int32_t dpd_timeout,
 							bool mediation, peer_cfg_t *mediated_by,
 							identification_t *peer_id)
 {
@@ -667,6 +684,7 @@ peer_cfg_t *peer_cfg_create(char *name,
 			.get_over_time = _get_over_time,
 			.use_mobike = _use_mobike,
 			.use_aggressive = _use_aggressive,
+			.use_pull_mode = _use_pull_mode,
 			.get_dpd = _get_dpd,
 			.get_dpd_timeout = _get_dpd_timeout,
 			.add_virtual_ip = _add_virtual_ip,
@@ -697,6 +715,7 @@ peer_cfg_t *peer_cfg_create(char *name,
 		.over_time = over_time,
 		.use_mobike = mobike,
 		.aggressive = aggressive,
+		.pull_mode = pull_mode,
 		.dpd = dpd,
 		.dpd_timeout = dpd_timeout,
 		.vips = linked_list_create(),

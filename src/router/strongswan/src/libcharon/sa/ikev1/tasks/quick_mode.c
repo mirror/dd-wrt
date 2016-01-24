@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Tobias Brunner
+ * Copyright (C) 2012-2015 Tobias Brunner
  * Hochschule fuer Technik Rapperswil
  *
  * Copyright (C) 2011 Martin Willi
@@ -156,6 +156,16 @@ struct private_quick_mode_t {
 	u_int32_t reqid;
 
 	/**
+	 * Explicit inbound mark value to use, if any
+	 */
+	u_int mark_in;
+
+	/**
+	 * Explicit inbound mark value to use, if any
+	 */
+	u_int mark_out;
+
+	/**
 	 * SPI of SA we rekey
 	 */
 	u_int32_t rekey;
@@ -165,10 +175,20 @@ struct private_quick_mode_t {
 	 */
 	ipsec_mode_t mode;
 
+	/*
+	 * SA protocol (ESP|AH) negotiated
+	 */
+	protocol_id_t proto;
+
 	/**
 	 * Use UDP encapsulation
 	 */
 	bool udp;
+
+	/**
+	 * Message ID of handled quick mode exchange
+	 */
+	u_int32_t mid;
 
 	/** states of quick mode */
 	enum {
@@ -189,10 +209,10 @@ static void schedule_inactivity_timeout(private_quick_mode_t *this)
 	if (timeout)
 	{
 		close_ike = lib->settings->get_bool(lib->settings,
-								"%s.inactivity_close_ike", FALSE, charon->name);
+									"%s.inactivity_close_ike", FALSE, lib->ns);
 		lib->scheduler->schedule_job(lib->scheduler, (job_t*)
-				inactivity_job_create(this->child_sa->get_reqid(this->child_sa),
-									  timeout, close_ike), timeout);
+			inactivity_job_create(this->child_sa->get_unique_id(this->child_sa),
+								  timeout, close_ike), timeout);
 	}
 }
 
@@ -259,7 +279,7 @@ static bool install(private_quick_mode_t *this)
 {
 	status_t status, status_i, status_o;
 	chunk_t encr_i, encr_r, integ_i, integ_r;
-	linked_list_t *tsi, *tsr;
+	linked_list_t *tsi, *tsr, *my_ts, *other_ts;
 	child_sa_t *old = NULL;
 
 	this->child_sa->set_proposal(this->child_sa, this->proposal);
@@ -306,17 +326,21 @@ static bool install(private_quick_mode_t *this)
 	{
 		if (this->initiator)
 		{
-			status_i = this->child_sa->install(this->child_sa, encr_r, integ_r,
-							this->spi_i, this->cpi_i, TRUE, FALSE, tsi, tsr);
-			status_o = this->child_sa->install(this->child_sa, encr_i, integ_i,
-							this->spi_r, this->cpi_r, FALSE, FALSE, tsi, tsr);
+			status_i = this->child_sa->install(this->child_sa,
+									encr_r, integ_r, this->spi_i, this->cpi_i,
+									this->initiator, TRUE, FALSE, tsi, tsr);
+			status_o = this->child_sa->install(this->child_sa,
+									encr_i, integ_i, this->spi_r, this->cpi_r,
+									this->initiator, FALSE, FALSE, tsi, tsr);
 		}
 		else
 		{
-			status_i = this->child_sa->install(this->child_sa, encr_i, integ_i,
-							this->spi_r, this->cpi_r, TRUE, FALSE, tsr, tsi);
-			status_o = this->child_sa->install(this->child_sa, encr_r, integ_r,
-							this->spi_i, this->cpi_i, FALSE, FALSE, tsr, tsi);
+			status_i = this->child_sa->install(this->child_sa,
+									encr_i, integ_i, this->spi_r, this->cpi_r,
+									this->initiator, TRUE, FALSE, tsr, tsi);
+			status_o = this->child_sa->install(this->child_sa,
+									encr_r, integ_r, this->spi_i, this->cpi_i,
+									this->initiator, FALSE, FALSE, tsr, tsi);
 		}
 	}
 	chunk_clear(&integ_i);
@@ -358,14 +382,20 @@ static bool install(private_quick_mode_t *this)
 	this->child_sa->set_state(this->child_sa, CHILD_INSTALLED);
 	this->ike_sa->add_child_sa(this->ike_sa, this->child_sa);
 
+	my_ts = linked_list_create_from_enumerator(
+				this->child_sa->create_ts_enumerator(this->child_sa, TRUE));
+	other_ts = linked_list_create_from_enumerator(
+				this->child_sa->create_ts_enumerator(this->child_sa, FALSE));
+
 	DBG0(DBG_IKE, "CHILD_SA %s{%d} established "
-		 "with SPIs %.8x_i %.8x_o and TS %#R=== %#R",
+		 "with SPIs %.8x_i %.8x_o and TS %#R === %#R",
 		 this->child_sa->get_name(this->child_sa),
-		 this->child_sa->get_reqid(this->child_sa),
+		 this->child_sa->get_unique_id(this->child_sa),
 		 ntohl(this->child_sa->get_spi(this->child_sa, TRUE)),
-		 ntohl(this->child_sa->get_spi(this->child_sa, FALSE)),
-		 this->child_sa->get_traffic_selectors(this->child_sa, TRUE),
-		 this->child_sa->get_traffic_selectors(this->child_sa, FALSE));
+		 ntohl(this->child_sa->get_spi(this->child_sa, FALSE)), my_ts, other_ts);
+
+	my_ts->destroy(my_ts);
+	other_ts->destroy(other_ts);
 
 	if (this->rekey)
 	{
@@ -376,15 +406,14 @@ static bool install(private_quick_mode_t *this)
 	if (old)
 	{
 		charon->bus->child_rekey(charon->bus, old, this->child_sa);
+		/* rekeyed CHILD_SAs stay installed until they expire */
+		old->set_state(old, CHILD_REKEYED);
 	}
 	else
 	{
 		charon->bus->child_updown(charon->bus, this->child_sa, TRUE);
 	}
-	if (!this->rekey)
-	{
-		schedule_inactivity_timeout(this);
-	}
+	schedule_inactivity_timeout(this);
 	this->child_sa = NULL;
 	return TRUE;
 }
@@ -412,7 +441,7 @@ static bool add_nonce(private_quick_mode_t *this, chunk_t *nonce,
 	}
 	nonceg->destroy(nonceg);
 
-	nonce_payload = nonce_payload_create(NONCE_V1);
+	nonce_payload = nonce_payload_create(PLV1_NONCE);
 	nonce_payload->set_nonce(nonce_payload, *nonce);
 	message->add_payload(message, &nonce_payload->payload_interface);
 
@@ -427,7 +456,7 @@ static bool get_nonce(private_quick_mode_t *this, chunk_t *nonce,
 {
 	nonce_payload_t *nonce_payload;
 
-	nonce_payload = (nonce_payload_t*)message->get_payload(message, NONCE_V1);
+	nonce_payload = (nonce_payload_t*)message->get_payload(message, PLV1_NONCE);
 	if (!nonce_payload)
 	{
 		DBG1(DBG_IKE, "NONCE payload missing in message");
@@ -441,12 +470,19 @@ static bool get_nonce(private_quick_mode_t *this, chunk_t *nonce,
 /**
  * Add KE payload to message
  */
-static void add_ke(private_quick_mode_t *this, message_t *message)
+static bool add_ke(private_quick_mode_t *this, message_t *message)
 {
 	ke_payload_t *ke_payload;
 
-	ke_payload = ke_payload_create_from_diffie_hellman(KEY_EXCHANGE_V1, this->dh);
+	ke_payload = ke_payload_create_from_diffie_hellman(PLV1_KEY_EXCHANGE,
+													   this->dh);
+	if (!ke_payload)
+	{
+		DBG1(DBG_IKE, "creating KE payload failed");
+		return FALSE;
+	}
 	message->add_payload(message, &ke_payload->payload_interface);
+	return TRUE;
 }
 
 /**
@@ -456,14 +492,18 @@ static bool get_ke(private_quick_mode_t *this, message_t *message)
 {
 	ke_payload_t *ke_payload;
 
-	ke_payload = (ke_payload_t*)message->get_payload(message, KEY_EXCHANGE_V1);
+	ke_payload = (ke_payload_t*)message->get_payload(message, PLV1_KEY_EXCHANGE);
 	if (!ke_payload)
 	{
 		DBG1(DBG_IKE, "KE payload missing");
 		return FALSE;
 	}
-	this->dh->set_other_public_value(this->dh,
-								ke_payload->get_key_exchange_data(ke_payload));
+	if (!this->dh->set_other_public_value(this->dh,
+								ke_payload->get_key_exchange_data(ke_payload)))
+	{
+		DBG1(DBG_IKE, "unable to apply received KE value");
+		return FALSE;
+	}
 	return TRUE;
 }
 
@@ -487,7 +527,7 @@ static traffic_selector_t* select_ts(private_quick_mode_t *this, bool local,
 	else
 	{
 		DBG1(DBG_IKE, "%s traffic selector missing in configuration",
-			 local ? "local" : "local");
+			 local ? "local" : "remote");
 		ts = NULL;
 	}
 	list->destroy_offset(list, offsetof(traffic_selector_t, destroy));
@@ -500,33 +540,11 @@ static traffic_selector_t* select_ts(private_quick_mode_t *this, bool local,
 static void add_ts(private_quick_mode_t *this, message_t *message)
 {
 	id_payload_t *id_payload;
-	host_t *hsi, *hsr;
 
-	if (this->initiator)
-	{
-		hsi = this->ike_sa->get_my_host(this->ike_sa);
-		hsr = this->ike_sa->get_other_host(this->ike_sa);
-	}
-	else
-	{
-		hsr = this->ike_sa->get_my_host(this->ike_sa);
-		hsi = this->ike_sa->get_other_host(this->ike_sa);
-	}
-	/* add ID payload only if negotiating non host2host tunnels */
-	if (!this->tsi->is_host(this->tsi, hsi) ||
-		!this->tsr->is_host(this->tsr, hsr) ||
-		this->tsi->get_protocol(this->tsi) ||
-		this->tsr->get_protocol(this->tsr) ||
-		this->tsi->get_from_port(this->tsi) ||
-		this->tsr->get_from_port(this->tsr) ||
-		this->tsi->get_to_port(this->tsi) != 65535 ||
-		this->tsr->get_to_port(this->tsr) != 65535)
-	{
-		id_payload = id_payload_create_from_ts(this->tsi);
-		message->add_payload(message, &id_payload->payload_interface);
-		id_payload = id_payload_create_from_ts(this->tsr);
-		message->add_payload(message, &id_payload->payload_interface);
-	}
+	id_payload = id_payload_create_from_ts(this->tsi);
+	message->add_payload(message, &id_payload->payload_interface);
+	id_payload = id_payload_create_from_ts(this->tsr);
+	message->add_payload(message, &id_payload->payload_interface);
 }
 
 /**
@@ -544,7 +562,7 @@ static bool get_ts(private_quick_mode_t *this, message_t *message)
 	enumerator = message->create_payload_enumerator(message);
 	while (enumerator->enumerate(enumerator, &payload))
 	{
-		if (payload->get_type(payload) == ID_V1)
+		if (payload->get_type(payload) == PLV1_ID)
 		{
 			id_payload = (id_payload_t*)payload;
 
@@ -647,9 +665,9 @@ static payload_type_t get_nat_oa_payload_type(ike_sa_t *ike_sa)
 {
 	if (ike_sa->supports_extension(ike_sa, EXT_NATT_DRAFT_02_03))
 	{
-		return NAT_OA_DRAFT_00_03_V1;
+		return PLV1_NAT_OA_DRAFT_00_03;
 	}
-	return NAT_OA_V1;
+	return PLV1_NAT_OA;
 }
 
 /**
@@ -733,8 +751,8 @@ static status_t send_notify(private_quick_mode_t *this, notify_type_t type)
 {
 	notify_payload_t *notify;
 
-	notify = notify_payload_create_from_protocol_and_type(NOTIFY_V1,
-														  PROTO_ESP, type);
+	notify = notify_payload_create_from_protocol_and_type(PLV1_NOTIFY,
+														  this->proto, type);
 	notify->set_spi(notify, this->spi_i);
 
 	this->ike_sa->queue_task(this->ike_sa,
@@ -745,6 +763,38 @@ static status_t send_notify(private_quick_mode_t *this, notify_type_t type)
 	return ALREADY_DONE;
 }
 
+/**
+ * Prepare a list of proposals from child_config containing only the specified
+ * DH group, unless it is set to MODP_NONE.
+ */
+static linked_list_t *get_proposals(private_quick_mode_t *this,
+									diffie_hellman_group_t group)
+{
+	linked_list_t *list;
+	proposal_t *proposal;
+	enumerator_t *enumerator;
+
+	list = this->config->get_proposals(this->config, FALSE);
+	enumerator = list->create_enumerator(list);
+	while (enumerator->enumerate(enumerator, &proposal))
+	{
+		if (group != MODP_NONE)
+		{
+			if (!proposal->has_dh_group(proposal, group))
+			{
+				list->remove_at(list, enumerator);
+				proposal->destroy(proposal);
+				continue;
+			}
+			proposal->strip_dh(proposal, group);
+		}
+		proposal->set_spi(proposal, this->spi_i);
+	}
+	enumerator->destroy(enumerator);
+
+	return list;
+}
+
 METHOD(task_t, build_i, status_t,
 	private_quick_mode_t *this, message_t *message)
 {
@@ -752,7 +802,6 @@ METHOD(task_t, build_i, status_t,
 	{
 		case QM_INIT:
 		{
-			enumerator_t *enumerator;
 			sa_payload_t *sa_payload;
 			linked_list_t *list, *tsi, *tsr;
 			proposal_t *proposal;
@@ -764,7 +813,8 @@ METHOD(task_t, build_i, status_t,
 			this->child_sa = child_sa_create(
 									this->ike_sa->get_my_host(this->ike_sa),
 									this->ike_sa->get_other_host(this->ike_sa),
-									this->config, this->reqid, this->udp);
+									this->config, this->reqid, this->udp,
+									this->mark_in, this->mark_out);
 
 			if (this->udp && this->mode == MODE_TRANSPORT)
 			{
@@ -774,58 +824,63 @@ METHOD(task_t, build_i, status_t,
 
 			if (this->config->use_ipcomp(this->config))
 			{
-				if (this->udp)
+				this->cpi_i = this->child_sa->alloc_cpi(this->child_sa);
+				if (!this->cpi_i)
 				{
-					DBG1(DBG_IKE, "IPComp is not supported if either peer is "
-						 "natted, IPComp disabled");
-				}
-				else
-				{
-					this->cpi_i = this->child_sa->alloc_cpi(this->child_sa);
-					if (!this->cpi_i)
-					{
-						DBG1(DBG_IKE, "unable to allocate a CPI from kernel, "
-							 "IPComp disabled");
-					}
+					DBG1(DBG_IKE, "unable to allocate a CPI from kernel, "
+						 "IPComp disabled");
 				}
 			}
 
-			this->spi_i = this->child_sa->alloc_spi(this->child_sa, PROTO_ESP);
+			list = this->config->get_proposals(this->config, MODP_NONE);
+			if (list->get_first(list, (void**)&proposal) == SUCCESS)
+			{
+				this->proto = proposal->get_protocol(proposal);
+			}
+			list->destroy_offset(list, offsetof(proposal_t, destroy));
+			this->spi_i = this->child_sa->alloc_spi(this->child_sa, this->proto);
 			if (!this->spi_i)
 			{
 				DBG1(DBG_IKE, "allocating SPI from kernel failed");
 				return FAILED;
 			}
+
 			group = this->config->get_dh_group(this->config);
 			if (group != MODP_NONE)
 			{
+				proposal_t *proposal;
+				u_int16_t preferred_group;
+
+				proposal = this->ike_sa->get_proposal(this->ike_sa);
+				proposal->get_algorithm(proposal, DIFFIE_HELLMAN_GROUP,
+										&preferred_group, NULL);
+				/* try the negotiated DH group from IKE_SA */
+				list = get_proposals(this, preferred_group);
+				if (list->get_count(list))
+				{
+					group = preferred_group;
+				}
+				else
+				{
+					/* fall back to the first configured DH group */
+					list->destroy(list);
+					list = get_proposals(this, group);
+				}
+
 				this->dh = this->keymat->keymat.create_dh(&this->keymat->keymat,
 														  group);
 				if (!this->dh)
 				{
 					DBG1(DBG_IKE, "configured DH group %N not supported",
 						 diffie_hellman_group_names, group);
+					list->destroy_offset(list, offsetof(proposal_t, destroy));
 					return FAILED;
 				}
 			}
-
-			list = this->config->get_proposals(this->config, FALSE);
-			enumerator = list->create_enumerator(list);
-			while (enumerator->enumerate(enumerator, &proposal))
+			else
 			{
-				if (group != MODP_NONE)
-				{
-					if (!proposal->has_dh_group(proposal, group))
-					{
-						list->remove_at(list, enumerator);
-						proposal->destroy(proposal);
-						continue;
-					}
-					proposal->strip_dh(proposal, group);
-				}
-				proposal->set_spi(proposal, this->spi_i);
+				list = get_proposals(this, MODP_NONE);
 			}
-			enumerator->destroy(enumerator);
 
 			get_lifetimes(this);
 			encap = get_encap(this->ike_sa, this->udp);
@@ -841,7 +896,10 @@ METHOD(task_t, build_i, status_t,
 			}
 			if (group != MODP_NONE)
 			{
-				add_ke(this, message);
+				if (!add_ke(this, message))
+				{
+					return FAILED;
+				}
 			}
 			if (!this->tsi)
 			{
@@ -888,7 +946,7 @@ static bool has_notify_errors(private_quick_mode_t *this, message_t *message)
 	enumerator = message->create_payload_enumerator(message);
 	while (enumerator->enumerate(enumerator, &payload))
 	{
-		if (payload->get_type(payload) == NOTIFY_V1)
+		if (payload->get_type(payload) == PLV1_NOTIFY)
 		{
 			notify_payload_t *notify;
 			notify_type_t type;
@@ -935,6 +993,7 @@ static void check_for_rekeyed_child(private_quick_mode_t *this)
 			{
 				case CHILD_INSTALLED:
 				case CHILD_REKEYING:
+				case CHILD_REKEYED:
 					policies = child_sa->create_policy_enumerator(child_sa);
 					if (policies->enumerate(policies, &local, &remote) &&
 						local->equals(local, this->tsr) &&
@@ -943,9 +1002,14 @@ static void check_for_rekeyed_child(private_quick_mode_t *this)
 					{
 						this->reqid = child_sa->get_reqid(child_sa);
 						this->rekey = child_sa->get_spi(child_sa, TRUE);
+						this->mark_in = child_sa->get_mark(child_sa,
+															TRUE).value;
+						this->mark_out = child_sa->get_mark(child_sa,
+															FALSE).value;
 						child_sa->set_state(child_sa, CHILD_REKEYING);
 						DBG1(DBG_IKE, "detected rekeying of CHILD_SA %s{%u}",
-							 child_sa->get_name(child_sa), this->reqid);
+							 child_sa->get_name(child_sa),
+							 child_sa->get_unique_id(child_sa));
 					}
 					policies->destroy(policies);
 				break;
@@ -960,6 +1024,11 @@ static void check_for_rekeyed_child(private_quick_mode_t *this)
 METHOD(task_t, process_r, status_t,
 	private_quick_mode_t *this, message_t *message)
 {
+	if (this->mid && this->mid != message->get_message_id(message))
+	{	/* not responsible for this quick mode exchange */
+		return INVALID_ARG;
+	}
+
 	switch (this->state)
 	{
 		case QM_INIT:
@@ -971,7 +1040,7 @@ METHOD(task_t, process_r, status_t,
 			bool private;
 
 			sa_payload = (sa_payload_t*)message->get_payload(message,
-													SECURITY_ASSOCIATION_V1);
+													PLV1_SECURITY_ASSOCIATION);
 			if (!sa_payload)
 			{
 				DBG1(DBG_IKE, "sa payload missing");
@@ -1001,7 +1070,8 @@ METHOD(task_t, process_r, status_t,
 			}
 			tsi->destroy_offset(tsi, offsetof(traffic_selector_t, destroy));
 			tsr->destroy_offset(tsr, offsetof(traffic_selector_t, destroy));
-			if (!this->config || !this->tsi || !this->tsr)
+			if (!this->config || !this->tsi || !this->tsr ||
+				this->mode != this->config->get_mode(this->config))
 			{
 				DBG1(DBG_IKE, "no matching CHILD_SA config found");
 				return send_notify(this, INVALID_ID_INFORMATION);
@@ -1009,21 +1079,13 @@ METHOD(task_t, process_r, status_t,
 
 			if (this->config->use_ipcomp(this->config))
 			{
-				if (this->ike_sa->has_condition(this->ike_sa, COND_NAT_ANY))
+				list = sa_payload->get_ipcomp_proposals(sa_payload,
+														&this->cpi_i);
+				if (!list->get_count(list))
 				{
-					DBG1(DBG_IKE, "IPComp is not supported if either peer is "
-						 "natted, IPComp disabled");
-				}
-				else
-				{
-					list = sa_payload->get_ipcomp_proposals(sa_payload,
-															&this->cpi_i);
-					if (!list->get_count(list))
-					{
-						DBG1(DBG_IKE, "expected IPComp proposal but peer did "
-							 "not send one, IPComp disabled");
-						this->cpi_i = 0;
-					}
+					DBG1(DBG_IKE, "expected IPComp proposal but peer did "
+						 "not send one, IPComp disabled");
+					this->cpi_i = 0;
 				}
 			}
 			if (!list || !list->get_count(list))
@@ -1075,7 +1137,8 @@ METHOD(task_t, process_r, status_t,
 			this->child_sa = child_sa_create(
 									this->ike_sa->get_my_host(this->ike_sa),
 									this->ike_sa->get_other_host(this->ike_sa),
-									this->config, this->reqid, this->udp);
+									this->config, this->reqid, this->udp,
+									this->mark_in, this->mark_out);
 
 			tsi = linked_list_create_with_items(this->tsi, NULL);
 			tsr = linked_list_create_with_items(this->tsr, NULL);
@@ -1096,9 +1159,20 @@ METHOD(task_t, process_r, status_t,
 		}
 		case QM_NEGOTIATED:
 		{
-			if (message->get_exchange_type(message) == INFORMATIONAL_V1 ||
-				has_notify_errors(this, message))
+			if (has_notify_errors(this, message))
 			{
+				return SUCCESS;
+			}
+			if (message->get_exchange_type(message) == INFORMATIONAL_V1)
+			{
+				if (message->get_payload(message, PLV1_DELETE))
+				{
+					/* If the DELETE for a Quick Mode follows immediately
+					 * after rekeying, we might receive it before the
+					 * third completing Quick Mode message. Ignore it, as
+					 * it gets handled by a separately queued delete task. */
+					return NEED_MORE;
+				}
 				return SUCCESS;
 			}
 			if (!install(this))
@@ -1124,6 +1198,11 @@ METHOD(task_t, process_r, status_t,
 METHOD(task_t, build_r, status_t,
 	private_quick_mode_t *this, message_t *message)
 {
+	if (this->mid && this->mid != message->get_message_id(message))
+	{	/* not responsible for this quick mode exchange */
+		return INVALID_ARG;
+	}
+
 	switch (this->state)
 	{
 		case QM_INIT:
@@ -1131,7 +1210,8 @@ METHOD(task_t, build_r, status_t,
 			sa_payload_t *sa_payload;
 			encap_t encap;
 
-			this->spi_r = this->child_sa->alloc_spi(this->child_sa, PROTO_ESP);
+			this->proto = this->proposal->get_protocol(this->proposal);
+			this->spi_r = this->child_sa->alloc_spi(this->child_sa, this->proto);
 			if (!this->spi_r)
 			{
 				DBG1(DBG_IKE, "allocating SPI from kernel failed");
@@ -1168,14 +1248,26 @@ METHOD(task_t, build_r, status_t,
 			}
 			if (this->dh)
 			{
-				add_ke(this, message);
+				if (!add_ke(this, message))
+				{
+					return FAILED;
+				}
 			}
 
 			add_ts(this, message);
 
 			this->state = QM_NEGOTIATED;
+			this->mid = message->get_message_id(message);
 			return NEED_MORE;
 		}
+		case QM_NEGOTIATED:
+			if (message->get_exchange_type(message) == INFORMATIONAL_V1)
+			{
+				/* skip INFORMATIONAL response if we received a INFORMATIONAL
+				 * delete, see process_r() */
+				return ALREADY_DONE;
+			}
+			/* fall */
 		default:
 			return FAILED;
 	}
@@ -1193,7 +1285,7 @@ METHOD(task_t, process_i, status_t,
 			bool private;
 
 			sa_payload = (sa_payload_t*)message->get_payload(message,
-													SECURITY_ASSOCIATION_V1);
+													PLV1_SECURITY_ASSOCIATION);
 			if (!sa_payload)
 			{
 				DBG1(DBG_IKE, "sa payload missing");
@@ -1259,10 +1351,23 @@ METHOD(task_t, get_type, task_type_t,
 	return TASK_QUICK_MODE;
 }
 
+METHOD(quick_mode_t, get_mid, u_int32_t,
+	private_quick_mode_t *this)
+{
+	return this->mid;
+}
+
 METHOD(quick_mode_t, use_reqid, void,
 	private_quick_mode_t *this, u_int32_t reqid)
 {
 	this->reqid = reqid;
+}
+
+METHOD(quick_mode_t, use_marks, void,
+	private_quick_mode_t *this, u_int in, u_int out)
+{
+	this->mark_in = in;
+	this->mark_out = out;
 }
 
 METHOD(quick_mode_t, rekey, void,
@@ -1285,6 +1390,7 @@ METHOD(task_t, migrate, void,
 	this->ike_sa = ike_sa;
 	this->keymat = (keymat_v1_t*)ike_sa->get_keymat(ike_sa);
 	this->state = QM_INIT;
+	this->mid = 0;
 	this->tsi = NULL;
 	this->tsr = NULL;
 	this->proposal = NULL;
@@ -1292,6 +1398,8 @@ METHOD(task_t, migrate, void,
 	this->dh = NULL;
 	this->spi_i = 0;
 	this->spi_r = 0;
+	this->mark_in = 0;
+	this->mark_out = 0;
 
 	if (!this->initiator)
 	{
@@ -1329,7 +1437,9 @@ quick_mode_t *quick_mode_create(ike_sa_t *ike_sa, child_cfg_t *config,
 				.migrate = _migrate,
 				.destroy = _destroy,
 			},
+			.get_mid = _get_mid,
 			.use_reqid = _use_reqid,
+			.use_marks = _use_marks,
 			.rekey = _rekey,
 		},
 		.ike_sa = ike_sa,
@@ -1339,6 +1449,7 @@ quick_mode_t *quick_mode_create(ike_sa_t *ike_sa, child_cfg_t *config,
 		.state = QM_INIT,
 		.tsi = tsi ? tsi->clone(tsi) : NULL,
 		.tsr = tsr ? tsr->clone(tsr) : NULL,
+		.proto = PROTO_ESP,
 	);
 
 	if (config)

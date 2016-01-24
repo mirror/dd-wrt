@@ -110,7 +110,36 @@ struct ipsec_sa_t {
 	esp_context_t *(*get_esp_context)(ipsec_sa_t *this);
 
 	/**
+	 * Get usage statistics for this SA.
+	 *
+	 * @param bytes		receives number of processed bytes, or NULL
+	 * @param packets	receives number of processed packets, or NULL
+	 * @param time		receives last use time of this SA, or NULL
+	 */
+	void (*get_usestats)(ipsec_sa_t *this, u_int64_t *bytes, u_int64_t *packets,
+						 time_t *time);
+
+	/**
+	 * Record en/decryption of a packet to update usage statistics.
+	 *
+	 * @param bytes		length of packet processed
+	 */
+	void (*update_usestats)(ipsec_sa_t *this, u_int32_t bytes);
+
+	/**
+	 * Expire this SA, soft or hard.
+	 *
+	 * A soft expire triggers a rekey, a hard expire blocks the SA and
+	 * triggers a delete for the SA.
+	 *
+	 * @param hard		TRUE for hard, FALSE for soft
+	 */
+	void (*expire)(ipsec_sa_t *this, bool hard);
+
+	/**
 	 * Check if this SA matches all given parameters
+	 *
+	 * Only matches if the SA has not yet expired.
 	 *
 	 * @param spi		SPI
 	 * @param dst		destination address
@@ -131,6 +160,8 @@ struct ipsec_sa_t {
 
 	/**
 	 * Check if this SA matches all given parameters
+	 *
+	 * Only matches if the SA has not yet expired.
 	 *
 	 * @param reqid		reqid
 	 * @param inbound	TRUE for inbound SA, FALSE for outbound
@@ -166,8 +197,6 @@ struct ipsec_sa_t {
  * @param encap			enable UDP encapsulation (must be TRUE)
  * @param esn			Extended Sequence Numbers (currently not supported)
  * @param inbound		TRUE if this is an inbound SA, FALSE otherwise
- * @param src_ts		source traffic selector
- * @param dst_ts		destination traffic selector
  * @return				the IPsec SA, or NULL if the creation failed
  */
 ipsec_sa_t *ipsec_sa_create(u_int32_t spi, host_t *src, host_t *dst,
@@ -176,8 +205,6 @@ ipsec_sa_t *ipsec_sa_create(u_int32_t spi, host_t *src, host_t *dst,
 							u_int16_t enc_alg, chunk_t enc_key,
 							u_int16_t int_alg, chunk_t int_key,
 							ipsec_mode_t mode, u_int16_t ipcomp, u_int16_t cpi,
-							bool encap, bool esn, bool inbound,
-							traffic_selector_t *src_ts,
-							traffic_selector_t *dst_ts);
+							bool encap, bool esn, bool inbound);
 
 #endif /** IPSEC_SA_H_ @}*/

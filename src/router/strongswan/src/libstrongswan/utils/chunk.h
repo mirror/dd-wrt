@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2009 Tobias Brunner
+ * Copyright (C) 2008-2013 Tobias Brunner
  * Copyright (C) 2005-2008 Martin Willi
  * Copyright (C) 2005 Jan Hutter
  * Hochschule fuer Technik Rapperswil
@@ -29,6 +29,8 @@
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
+
+#include <utils/utils.h>
 
 typedef struct chunk_t chunk_t;
 
@@ -90,14 +92,52 @@ void chunk_split(chunk_t chunk, const char *mode, ...);
 /**
  * Write the binary contents of a chunk_t to a file
  *
+ * If the write fails, errno is set appropriately.
+ *
  * @param chunk			contents to write to file
  * @param path			path where file is written to
- * @param label			label specifying file type
  * @param mask			file mode creation mask
  * @param force			overwrite existing file by force
  * @return				TRUE if write operation was successful
  */
-bool chunk_write(chunk_t chunk, char *path, char *label, mode_t mask, bool force);
+bool chunk_write(chunk_t chunk, char *path, mode_t mask, bool force);
+
+/**
+ * Store data read from FD into a chunk
+ *
+ * On error, errno is set appropriately.
+ *
+ * @param fd			file descriptor to read from
+ * @param chunk			chunk receiving allocated buffer
+ * @return				TRUE if successful, FALSE on failure
+ */
+bool chunk_from_fd(int fd, chunk_t *chunk);
+
+/**
+ * mmap() a file to a chunk
+ *
+ * The returned chunk structure is allocated from heap, but it must be freed
+ * through chunk_unmap(). A user may alter the chunk ptr or len, but must pass
+ * the chunk pointer returned from chunk_map() to chunk_unmap() after use.
+ *
+ * On error, errno is set appropriately.
+ *
+ * @param path			path of file to map
+ * @param wr			TRUE to sync writes to disk
+ * @return				mapped chunk, NULL on error
+ */
+chunk_t *chunk_map(char *path, bool wr);
+
+/**
+ * munmap() a chunk previously mapped with chunk_map()
+ *
+ * When unmapping a writeable map, the return value should be checked to
+ * ensure changes landed on disk.
+ *
+ * @param chunk			pointer returned from chunk_map()
+ * @return				TRUE of changes written back to file
+ */
+bool chunk_unmap(chunk_t *chunk);
 
 /**
  * Convert a chunk of data to hex encoding.
@@ -183,17 +223,17 @@ static inline void chunk_clear(chunk_t *chunk)
 /**
  * Initialize a chunk using a char array
  */
-#define chunk_from_chars(...) ((chunk_t){(char[]){__VA_ARGS__}, sizeof((char[]){__VA_ARGS__})})
+#define chunk_from_chars(...) ((chunk_t){(u_char[]){__VA_ARGS__}, sizeof((u_char[]){__VA_ARGS__})})
 
 /**
  * Initialize a chunk to point to a thing
  */
-#define chunk_from_thing(thing) chunk_create((char*)&(thing), sizeof(thing))
+#define chunk_from_thing(thing) chunk_create((u_char*)&(thing), sizeof(thing))
 
 /**
- * Initialize a chunk from a static string, not containing 0-terminator
+ * Initialize a chunk from a string, not containing 0-terminator
  */
-#define chunk_from_str(str) chunk_create(str, strlen(str))
+#define chunk_from_str(str) ({char *x = (str); chunk_create((u_char*)x, strlen(x));})
 
 /**
  * Allocate a chunk on the heap
@@ -270,6 +310,19 @@ static inline bool chunk_equals(chunk_t a, chunk_t b)
 }
 
 /**
+ * Compare two chunks for equality, constant time for cryptographic purposes.
+ *
+ * Note that this function is constant time only for chunks with the same
+ * length, i.e. it does not protect against guessing the length of one of the
+ * chunks.
+ */
+static inline bool chunk_equals_const(chunk_t a, chunk_t b)
+{
+	return a.ptr != NULL  && b.ptr != NULL &&
+			a.len == b.len && memeq_const(a.ptr, b.ptr, a.len);
+}
+
+/**
  * Compare two chunks (given as pointers) for equality (useful as callback),
  * NULL chunks are never equal.
  */
@@ -300,15 +353,101 @@ bool chunk_increment(chunk_t chunk);
 bool chunk_printable(chunk_t chunk, chunk_t *sane, char replace);
 
 /**
+ * Seed initial key for chunk_hash().
+ *
+ * This call should get invoked once during startup. This is usually done
+ * by calling library_init(). Calling it multiple times is safe, it gets
+ * executed just once.
+ */
+void chunk_hash_seed();
+
+/**
  * Computes a 32 bit hash of the given chunk.
- * Note: This hash is only intended for hash tables not for cryptographic purposes.
+ *
+ * @note The output of this function is randomized, that is, it will only
+ * produce the same output for the same input when calling it from the same
+ * process.  For a more predictable hash function use chunk_hash_static()
+ * instead.
+ *
+ * @note This hash is only intended for hash tables not for cryptographic
+ * purposes.
+ *
+ * @param chunk			data to hash
+ * @return				hash value
  */
 u_int32_t chunk_hash(chunk_t chunk);
 
 /**
  * Incremental version of chunk_hash. Use this to hash two or more chunks.
+ *
+ * @param chunk			data to hash
+ * @param hash			previous hash value
+ * @return				hash value
  */
 u_int32_t chunk_hash_inc(chunk_t chunk, u_int32_t hash);
+
+/**
+ * Computes a 32 bit hash of the given chunk.
+ *
+ * Compared to chunk_hash() this will always calculate the same output for the
+ * same input.  Therefore, it should not be used for hash tables (to prevent
+ * hash flooding).
+ *
+ * @note This hash is not intended for cryptographic purposes.
+ *
+ * @param chunk			data to hash
+ * @return				hash value
+ */
+u_int32_t chunk_hash_static(chunk_t chunk);
+
+/**
+ * Incremental version of chunk_hash_static(). Use this to hash two or more
+ * chunks in a predictable way.
+ *
+ * @param chunk			data to hash
+ * @param hash			previous hash value
+ * @return				hash value
+ */
+u_int32_t chunk_hash_static_inc(chunk_t chunk, u_int32_t hash);
+
+/**
+ * Computes a quick MAC from the given chunk and key using SipHash.
+ *
+ * The key must have a length of 128-bit (16 bytes).
+ *
+ * @note While SipHash has strong features using it for cryptographic purposes
+ * is not recommended (in particular because of the rather short output size).
+ *
+ * @param chunk			data to process
+ * @param key			key to use
+ * @return				MAC for given input and key
+ */
+u_int64_t chunk_mac(chunk_t chunk, u_char *key);
+
+/**
+ * Calculate the Internet Checksum according to RFC 1071 for the given chunk.
+ *
+ * If the result is used with chunk_internet_checksum_inc() and the data length
+ * is not a multiple of 16 bit the checksum bytes have to be swapped to
+ * compensate the even/odd alignment.
+ *
+ * @param data			data to process
+ * @return				checksum (one's complement, network order)
+ */
+u_int16_t chunk_internet_checksum(chunk_t data);
+
+/**
+ * Extend the given Internet Checksum (one's complement, in network byte order)
+ * with the given data.
+ *
+ * If data is not a multiple of 16 bits the checksum may have to be swapped to
+ * compensate even/odd alignment (see chunk_internet_checksum()).
+ *
+ * @param data			data to process
+ * @param checksum		previous checksum (one's complement, network order)
+ * @return				checksum (one's complement, network order)
+ */
+u_int16_t chunk_internet_checksum_inc(chunk_t data, u_int16_t checksum);
 
 /**
  * printf hook function for chunk_t.
@@ -316,6 +455,7 @@ u_int32_t chunk_hash_inc(chunk_t chunk, u_int32_t hash);
  * Arguments are:
  *	chunk_t *chunk
  * Use #-modifier to print a compact version
+ * Use +-modifier to print a compact version without separator
  */
 int chunk_printf_hook(printf_hook_data_t *data, printf_hook_spec_t *spec,
 					  const void *const *args);

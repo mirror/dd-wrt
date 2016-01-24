@@ -42,7 +42,7 @@ struct private_gmp_diffie_hellman_t {
 	/**
 	 * Diffie Hellman group number.
 	 */
-	u_int16_t group;
+	diffie_hellman_group_t group;
 
 	/*
 	 * Generator value.
@@ -85,10 +85,15 @@ struct private_gmp_diffie_hellman_t {
 	bool computed;
 };
 
-METHOD(diffie_hellman_t, set_other_public_value, void,
+METHOD(diffie_hellman_t, set_other_public_value, bool,
 	private_gmp_diffie_hellman_t *this, chunk_t value)
 {
 	mpz_t p_min_1;
+
+	if (!diffie_hellman_verify_value(this->group, value))
+	{
+		return FALSE;
+	}
 
 	mpz_init(p_min_1);
 	mpz_sub_ui(p_min_1, this->p, 1);
@@ -142,9 +147,10 @@ METHOD(diffie_hellman_t, set_other_public_value, void,
 			 " y < 2 || y > p - 1 ");
 	}
 	mpz_clear(p_min_1);
+	return this->computed;
 }
 
-METHOD(diffie_hellman_t, get_my_public_value, void,
+METHOD(diffie_hellman_t, get_my_public_value, bool,
 	private_gmp_diffie_hellman_t *this,chunk_t *value)
 {
 	value->len = this->p_len;
@@ -153,22 +159,32 @@ METHOD(diffie_hellman_t, get_my_public_value, void,
 	{
 		value->len = 0;
 	}
+	return TRUE;
 }
 
-METHOD(diffie_hellman_t, get_shared_secret, status_t,
+METHOD(diffie_hellman_t, set_private_value, bool,
+	private_gmp_diffie_hellman_t *this, chunk_t value)
+{
+	mpz_import(this->xa, value.len, 1, 1, 1, 0, value.ptr);
+	mpz_powm(this->ya, this->g, this->xa, this->p);
+	this->computed = FALSE;
+	return TRUE;
+}
+
+METHOD(diffie_hellman_t, get_shared_secret, bool,
 	private_gmp_diffie_hellman_t *this, chunk_t *secret)
 {
 	if (!this->computed)
 	{
-		return FAILED;
+		return FALSE;
 	}
 	secret->len = this->p_len;
 	secret->ptr = mpz_export(NULL, NULL, 1, secret->len, 1, 0, this->zz);
 	if (secret->ptr == NULL)
 	{
-		return FAILED;
+		return FALSE;
 	}
-	return SUCCESS;
+	return TRUE;
 }
 
 METHOD(diffie_hellman_t, get_dh_group, diffie_hellman_group_t,
@@ -205,6 +221,7 @@ static gmp_diffie_hellman_t *create_generic(diffie_hellman_group_t group,
 				.get_shared_secret = _get_shared_secret,
 				.set_other_public_value = _set_other_public_value,
 				.get_my_public_value = _get_my_public_value,
+				.set_private_value = _set_private_value,
 				.get_dh_group = _get_dh_group,
 				.destroy = _destroy,
 			},
@@ -245,7 +262,7 @@ static gmp_diffie_hellman_t *create_generic(diffie_hellman_group_t group,
 		*random.ptr &= 0x7F;
 	}
 	mpz_import(this->xa, random.len, 1, 1, 1, 0, random.ptr);
-	chunk_free(&random);
+	chunk_clear(&random);
 	DBG2(DBG_LIB, "size of DH secret exponent: %u bits",
 		 mpz_sizeinbase(this->xa, 2));
 

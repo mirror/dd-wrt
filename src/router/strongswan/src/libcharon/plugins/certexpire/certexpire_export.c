@@ -88,6 +88,11 @@ struct private_certexpire_export_t {
 	 * String to use in empty fields, if using fixed_fields
 	 */
 	char *empty_string;
+
+	/**
+	 * Force export of all trustchains we have a private key for
+	 */
+	bool force;
 };
 
 /**
@@ -181,21 +186,6 @@ static void export_csv(private_certexpire_export_t *this, char *path,
 	else
 	{
 		DBG1(DBG_CFG, "opening CSV file '%s' failed: %s", buf, strerror(errno));
-	}
-}
-
-/**
- * Export cached trustchain expiration dates to CSV files
- */
-static void cron_export(private_certexpire_export_t *this)
-{
-	if (this->local_path)
-	{
-		export_csv(this, this->local_path, this->local);
-	}
-	if (this->remote_path)
-	{
-		export_csv(this, this->remote_path, this->remote);
 	}
 }
 
@@ -320,6 +310,81 @@ METHOD(certexpire_export_t, add, void,
 	enumerator->destroy(enumerator);
 }
 
+/**
+ * Add trustchains we have a private key for to the list
+ */
+static void add_local_certs(private_certexpire_export_t *this)
+{
+	enumerator_t *enumerator;
+	certificate_t *cert;
+
+	enumerator = lib->credmgr->create_cert_enumerator(lib->credmgr,
+											CERT_X509, KEY_ANY, NULL, FALSE);
+	while (enumerator->enumerate(enumerator, &cert))
+	{
+		linked_list_t *trustchain;
+		private_key_t *private;
+		public_key_t *public;
+		identification_t *keyid;
+		chunk_t chunk;
+		x509_t *x509 = (x509_t*)cert;
+
+		trustchain = linked_list_create();
+
+		public = cert->get_public_key(cert);
+		if (public)
+		{
+			if (public->get_fingerprint(public, KEYID_PUBKEY_INFO_SHA1, &chunk))
+			{
+				keyid = identification_create_from_encoding(ID_KEY_ID, chunk);
+				private = lib->credmgr->get_private(lib->credmgr,
+										public->get_type(public), keyid, NULL);
+				keyid->destroy(keyid);
+				if (private)
+				{
+					trustchain->insert_last(trustchain, cert->get_ref(cert));
+
+					while (!(x509->get_flags(x509) & X509_SELF_SIGNED))
+					{
+						cert = lib->credmgr->get_cert(lib->credmgr, CERT_X509,
+										KEY_ANY, cert->get_issuer(cert), FALSE);
+						if (!cert)
+						{
+							break;
+						}
+						x509 = (x509_t*)cert;
+						trustchain->insert_last(trustchain, cert);
+					}
+					private->destroy(private);
+				}
+			}
+			public->destroy(public);
+		}
+		add(this, trustchain, TRUE);
+		trustchain->destroy_offset(trustchain, offsetof(certificate_t, destroy));
+	}
+	enumerator->destroy(enumerator);
+}
+
+/**
+ * Export cached trustchain expiration dates to CSV files
+ */
+static void cron_export(private_certexpire_export_t *this)
+{
+	if (this->local_path)
+	{
+		if (this->force)
+		{
+			add_local_certs(this);
+		}
+		export_csv(this, this->local_path, this->local);
+	}
+	if (this->remote_path)
+	{
+		export_csv(this, this->remote_path, this->remote);
+	}
+}
+
 METHOD(certexpire_export_t, destroy, void,
 	private_certexpire_export_t *this)
 {
@@ -365,28 +430,31 @@ certexpire_export_t *certexpire_export_create()
 								   (hashtable_equals_t)equals, 32),
 		.mutex = mutex_create(MUTEX_TYPE_DEFAULT),
 		.local_path = lib->settings->get_str(lib->settings,
-								"%s.plugins.certexpire.csv.local",
-								NULL, charon->name),
+									"%s.plugins.certexpire.csv.local",
+									NULL, lib->ns),
 		.remote_path = lib->settings->get_str(lib->settings,
-								"%s.plugins.certexpire.csv.remote",
-								NULL, charon->name),
+									"%s.plugins.certexpire.csv.remote",
+									NULL, lib->ns),
 		.separator = lib->settings->get_str(lib->settings,
-								"%s.plugins.certexpire.csv.separator",
-								",", charon->name),
+									"%s.plugins.certexpire.csv.separator",
+									",", lib->ns),
 		.format = lib->settings->get_str(lib->settings,
-								"%s.plugins.certexpire.csv.format",
-								"%d:%m:%Y", charon->name),
+									"%s.plugins.certexpire.csv.format",
+									"%d:%m:%Y", lib->ns),
 		.fixed_fields = lib->settings->get_bool(lib->settings,
-								"%s.plugins.certexpire.csv.fixed_fields",
-								TRUE, charon->name),
+									"%s.plugins.certexpire.csv.fixed_fields",
+									TRUE, lib->ns),
 		.empty_string = lib->settings->get_str(lib->settings,
-								"%s.plugins.certexpire.csv.empty_string",
-								"", charon->name),
+									"%s.plugins.certexpire.csv.empty_string",
+									"", lib->ns),
+		.force = lib->settings->get_bool(lib->settings,
+									"%s.plugins.certexpire.csv.force",
+									TRUE, lib->ns),
 	);
 
 	cron = lib->settings->get_str(lib->settings,
 								  "%s.plugins.certexpire.csv.cron",
-								  NULL, charon->name);
+								  NULL, lib->ns);
 	if (cron)
 	{
 		this->cron = certexpire_cron_create(cron,

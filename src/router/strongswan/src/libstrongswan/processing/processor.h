@@ -23,6 +23,8 @@
 #ifndef PROCESSOR_H_
 #define PROCESSOR_H_
 
+#include <utils/utils.h>
+
 typedef struct processor_t processor_t;
 
 #include <stdlib.h>
@@ -73,6 +75,16 @@ struct processor_t {
 	 * @param job			job to add to the queue
 	 */
 	void (*queue_job) (processor_t *this, job_t *job);
+
+	/**
+	 * Directly execute a job with an idle worker thread.
+	 *
+	 * If no idle thread is available, the job gets executed by the calling
+	 * thread.
+	 *
+	 * @param job			job, gets destroyed
+	 */
+	void (*execute_job)(processor_t *this, job_t *job);
 
 	/**
 	 * Set the number of threads to use in the processor.

@@ -21,11 +21,6 @@
 typedef struct private_tnc_pdp_plugin_t private_tnc_pdp_plugin_t;
 
 /**
- * Default RADIUS port, when not configured
- */
-#define RADIUS_PORT 1812
-
-/**
  * private data of tnc_pdp plugin
  */
 struct private_tnc_pdp_plugin_t {
@@ -48,12 +43,37 @@ METHOD(plugin_t, get_name, char*,
 	return "tnc-pdp";
 }
 
+/**
+ * Register listener
+ */
+static bool plugin_cb(private_tnc_pdp_plugin_t *this,
+					  plugin_feature_t *feature, bool reg, void *cb_data)
+{
+	if (reg)
+	{
+		this->pdp = tnc_pdp_create();
+		if (!this->pdp)
+		{
+			return FALSE;
+		}
+	}
+	else
+	{
+		DESTROY_IF(this->pdp);
+	}
+	return TRUE;
+}
+
 METHOD(plugin_t, get_features, int,
 	private_tnc_pdp_plugin_t *this, plugin_feature_t *features[])
 {
 	static plugin_feature_t f[] = {
+		PLUGIN_CALLBACK((plugin_feature_callback_t)plugin_cb, NULL),
 			PLUGIN_PROVIDE(CUSTOM, "tnc-pdp"),
 				PLUGIN_DEPENDS(CUSTOM, "imv-manager"),
+				PLUGIN_DEPENDS(HASHER, HASH_MD5),
+				PLUGIN_DEPENDS(SIGNER, AUTH_HMAC_MD5_128),
+				PLUGIN_DEPENDS(NONCE_GEN),
 	};
 	*features = f;
 	return countof(f);
@@ -62,7 +82,6 @@ METHOD(plugin_t, get_features, int,
 METHOD(plugin_t, destroy, void,
 	private_tnc_pdp_plugin_t *this)
 {
-	DESTROY_IF(this->pdp);
 	free(this);
 }
 
@@ -72,10 +91,6 @@ METHOD(plugin_t, destroy, void,
 plugin_t *tnc_pdp_plugin_create()
 {
 	private_tnc_pdp_plugin_t *this;
-	int port;
-
-	port = lib->settings->get_int(lib->settings,
-						"%s.plugins.tnc_pdp.port", RADIUS_PORT, charon->name);
 
 	INIT(this,
 		.public = {
@@ -85,7 +100,6 @@ plugin_t *tnc_pdp_plugin_create()
 				.destroy = _destroy,
 			},
 		},
-		.pdp = tnc_pdp_create(port),
 	);
 
 	return &this->public.plugin;

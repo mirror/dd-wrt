@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Tobias Brunner
+ * Copyright (C) 2012-2013 Tobias Brunner
  * Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -90,7 +90,9 @@ enum policy_type_t {
  * High-level priority of a policy.
  */
 enum policy_priority_t {
-	/** Default priority */
+	/** Priority for passthrough policies */
+	POLICY_PRIORITY_PASS,
+	/** Priority for regular IPsec policies */
 	POLICY_PRIORITY_DEFAULT,
 	/** Priority for trap policies */
 	POLICY_PRIORITY_ROUTED,
@@ -122,6 +124,8 @@ struct ipsec_sa_cfg_t {
 	ipsec_mode_t mode;
 	/** unique ID */
 	u_int32_t reqid;
+	/** number of policies of the same kind (in/out/fwd) attached to SA */
+	u_int32_t policy_count;
 	/** details about ESP/AH */
 	struct {
 		/** TRUE if this protocol is used */
@@ -165,8 +169,17 @@ struct mark_t {
 };
 
 /**
- * Special mark value that uses the reqid of the CHILD_SA as mark
+ * Special mark value that uses a unique mark for each CHILD_SA
  */
-#define MARK_REQID (0xFFFFFFFF)
+#define MARK_UNIQUE (0xFFFFFFFF)
+
+/**
+ * Try to parse a mark_t from the given string of the form mark[/mask].
+ *
+ * @param value		string to parse
+ * @param mark		mark to fill
+ * @return			TRUE if parsing was successful
+ */
+bool mark_from_string(const char *value, mark_t *mark);
 
 #endif /** IPSEC_TYPES_H_ @}*/

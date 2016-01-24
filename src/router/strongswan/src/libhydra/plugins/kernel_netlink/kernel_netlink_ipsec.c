@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2012 Tobias Brunner
+ * Copyright (C) 2006-2015 Tobias Brunner
  * Copyright (C) 2005-2009 Martin Willi
  * Copyright (C) 2008 Andreas Steffen
  * Copyright (C) 2006-2007 Fabian Hartmann, Noah Heusser
@@ -37,11 +37,10 @@
 
 #include <hydra.h>
 #include <utils/debug.h>
-#include <threading/thread.h>
 #include <threading/mutex.h>
+#include <collections/array.h>
 #include <collections/hashtable.h>
 #include <collections/linked_list.h>
-#include <processing/jobs/callback_job.h>
 
 /** Required for Linux 2.6.26 kernel and later */
 #ifndef XFRM_STATE_AF_UNSPEC
@@ -72,11 +71,11 @@
 #define SOL_UDP IPPROTO_UDP
 #endif
 
-/** Default priority of installed policies */
-#define PRIO_BASE 512
+/** Base priority for installed policies */
+#define PRIO_BASE 384
 
-/** Default replay window size, if not set using charon.replay_window */
-#define DEFAULT_REPLAY_WINDOW 32
+/** Default lifetime of an acquire XFRM state (in seconds) */
+#define DEFAULT_ACQUIRE_LIFETIME 165
 
 /**
  * Map the limit for bytes and packets to XFRM_INF by default
@@ -179,7 +178,7 @@ static kernel_algorithm_t encryption_algs[] = {
 	{ENCR_3DES,					"des3_ede"			},
 /*	{ENCR_RC5,					"***"				}, */
 /*	{ENCR_IDEA,					"***"				}, */
-	{ENCR_CAST,					"cast128"			},
+	{ENCR_CAST,					"cast5"				},
 	{ENCR_BLOWFISH,				"blowfish"			},
 /*	{ENCR_3IDEA,				"***"				}, */
 /*	{ENCR_DES_IV32,				"***"				}, */
@@ -200,6 +199,7 @@ static kernel_algorithm_t encryption_algs[] = {
 /*	{ENCR_CAMELLIA_CCM_ICV16,	"***"				}, */
 	{ENCR_SERPENT_CBC,			"serpent"			},
 	{ENCR_TWOFISH_CBC,			"twofish"			},
+	{ENCR_CHACHA20_POLY1305,	"rfc7539esp(chacha20,poly1305)"},
 };
 
 /**
@@ -312,19 +312,20 @@ struct private_kernel_netlink_ipsec_t {
 	bool install_routes;
 
 	/**
-	 * Whether to track the history of a policy
+	 * Whether to set protocol and ports on selector installed with transport
+	 * mode IPsec SAs
 	 */
-	bool policy_history;
+	bool proto_port_transport;
 
 	/**
-	 * Size of the replay window, in packets (= bits)
+	 * Whether to always use UPDATE to install policies
 	 */
-	u_int32_t replay_window;
+	bool policy_update;
 
 	/**
-	 * Size of the replay window bitmap, in number of __u32 blocks
+	 * Installed port based IKE bypass policies, as bypass_t
 	 */
-	u_int32_t replay_bmp;
+	array_t *bypass;
 };
 
 typedef struct route_entry_t route_entry_t;
@@ -558,6 +559,9 @@ struct policy_entry_t {
 
 	/** List of SAs this policy is used by, ordered by priority */
 	linked_list_t *used_by;
+
+	/** reqid for this policy */
+	u_int32_t reqid;
 };
 
 /**
@@ -615,6 +619,9 @@ static inline u_int32_t get_priority(policy_entry_t *policy,
 			priority <<= 1;
 			/* fall-through */
 		case POLICY_PRIORITY_DEFAULT:
+			priority <<= 1;
+			/* fall-through */
+		case POLICY_PRIORITY_PASS:
 			break;
 	}
 	/* calculate priority based on selector size, small size = high prio */
@@ -723,6 +730,7 @@ static struct xfrm_selector ts2selector(traffic_selector_t *src,
 										traffic_selector_t *dst)
 {
 	struct xfrm_selector sel;
+	u_int16_t port;
 
 	memset(&sel, 0, sizeof(sel));
 	sel.family = (src->get_type(src) == TS_IPV4_ADDR_RANGE) ? AF_INET : AF_INET6;
@@ -732,6 +740,17 @@ static struct xfrm_selector ts2selector(traffic_selector_t *src,
 	ts2subnet(src, &sel.saddr, &sel.prefixlen_s);
 	ts2ports(dst, &sel.dport, &sel.dport_mask);
 	ts2ports(src, &sel.sport, &sel.sport_mask);
+	if ((sel.proto == IPPROTO_ICMP || sel.proto == IPPROTO_ICMPV6) &&
+		(sel.dport || sel.sport))
+	{
+		/* the kernel expects the ICMP type and code in the source and
+		 * destination port fields, respectively. */
+		port = ntohs(max(sel.dport, sel.sport));
+		sel.sport = htons(traffic_selector_icmp_type(port));
+		sel.sport_mask = sel.sport ? ~0 : 0;
+		sel.dport = htons(traffic_selector_icmp_code(port));
+		sel.dport_mask = sel.dport ? ~0 : 0;
+	}
 	sel.ifindex = 0;
 	sel.user = 0;
 
@@ -754,7 +773,7 @@ static traffic_selector_t* selector2ts(struct xfrm_selector *sel, bool src)
 		prefixlen = sel->prefixlen_s;
 		if (sel->sport_mask)
 		{
-			port = htons(sel->sport);
+			port = ntohs(sel->sport);
 		}
 	}
 	else
@@ -763,10 +782,15 @@ static traffic_selector_t* selector2ts(struct xfrm_selector *sel, bool src)
 		prefixlen = sel->prefixlen_d;
 		if (sel->dport_mask)
 		{
-			port = htons(sel->dport);
+			port = ntohs(sel->dport);
 		}
 	}
-
+	if (sel->proto == IPPROTO_ICMP || sel->proto == IPPROTO_ICMPV6)
+	{	/* convert ICMP[v6] message type and code as supplied by the kernel in
+		 * source and destination ports (both in network order) */
+		port = (sel->sport >> 8) | (sel->dport & 0xff00);
+		port = ntohs(port);
+	}
 	/* The Linux 2.6 kernel does not set the selector's family field,
 	 * so as a kludge we additionally test the prefix length.
 	 */
@@ -800,7 +824,7 @@ static void process_acquire(private_kernel_netlink_ipsec_t *this,
 	u_int32_t reqid = 0;
 	int proto = 0;
 
-	acquire = (struct xfrm_user_acquire*)NLMSG_DATA(hdr);
+	acquire = NLMSG_DATA(hdr);
 	rta = XFRM_RTA(hdr, struct xfrm_user_acquire);
 	rtasize = XFRM_PAYLOAD(hdr, struct xfrm_user_acquire);
 
@@ -843,25 +867,26 @@ static void process_expire(private_kernel_netlink_ipsec_t *this,
 						   struct nlmsghdr *hdr)
 {
 	struct xfrm_user_expire *expire;
-	u_int32_t spi, reqid;
+	u_int32_t spi;
 	u_int8_t protocol;
+	host_t *dst;
 
-	expire = (struct xfrm_user_expire*)NLMSG_DATA(hdr);
+	expire = NLMSG_DATA(hdr);
 	protocol = expire->state.id.proto;
 	spi = expire->state.id.spi;
-	reqid = expire->state.reqid;
 
 	DBG2(DBG_KNL, "received a XFRM_MSG_EXPIRE");
 
-	if (protocol != IPPROTO_ESP && protocol != IPPROTO_AH)
+	if (protocol == IPPROTO_ESP || protocol == IPPROTO_AH)
 	{
-		DBG2(DBG_KNL, "ignoring XFRM_MSG_EXPIRE for SA with SPI %.8x and "
-					  "reqid {%u} which is not a CHILD_SA", ntohl(spi), reqid);
-		return;
+		dst = xfrm2host(expire->state.family, &expire->state.id.daddr, 0);
+		if (dst)
+		{
+			hydra->kernel_interface->expire(hydra->kernel_interface, protocol,
+											spi, dst, expire->hard != 0);
+			dst->destroy(dst);
+		}
 	}
-
-	hydra->kernel_interface->expire(hydra->kernel_interface, reqid, protocol,
-									spi, expire->hard != 0);
 }
 
 /**
@@ -880,7 +905,7 @@ static void process_migrate(private_kernel_netlink_ipsec_t *this,
 	u_int32_t reqid = 0;
 	policy_dir_t dir;
 
-	policy_id = (struct xfrm_userpolicy_id*)NLMSG_DATA(hdr);
+	policy_id = NLMSG_DATA(hdr);
 	rta     = XFRM_RTA(hdr, struct xfrm_userpolicy_id);
 	rtasize = XFRM_PAYLOAD(hdr, struct xfrm_userpolicy_id);
 
@@ -945,23 +970,29 @@ static void process_mapping(private_kernel_netlink_ipsec_t *this,
 							struct nlmsghdr *hdr)
 {
 	struct xfrm_user_mapping *mapping;
-	u_int32_t spi, reqid;
+	u_int32_t spi;
 
-	mapping = (struct xfrm_user_mapping*)NLMSG_DATA(hdr);
+	mapping = NLMSG_DATA(hdr);
 	spi = mapping->id.spi;
-	reqid = mapping->reqid;
 
 	DBG2(DBG_KNL, "received a XFRM_MSG_MAPPING");
 
 	if (mapping->id.proto == IPPROTO_ESP)
 	{
-		host_t *host;
-		host = xfrm2host(mapping->id.family, &mapping->new_saddr,
-						 mapping->new_sport);
-		if (host)
+		host_t *dst, *new;
+
+		dst = xfrm2host(mapping->id.family, &mapping->id.daddr, 0);
+		if (dst)
 		{
-			hydra->kernel_interface->mapping(hydra->kernel_interface, reqid,
-											 spi, host);
+			new = xfrm2host(mapping->id.family, &mapping->new_saddr,
+							mapping->new_sport);
+			if (new)
+			{
+				hydra->kernel_interface->mapping(hydra->kernel_interface,
+												 IPPROTO_ESP, spi, dst, new);
+				new->destroy(new);
+			}
+			dst->destroy(dst);
 		}
 	}
 }
@@ -969,40 +1000,37 @@ static void process_mapping(private_kernel_netlink_ipsec_t *this,
 /**
  * Receives events from kernel
  */
-static job_requeue_t receive_events(private_kernel_netlink_ipsec_t *this)
+static bool receive_events(private_kernel_netlink_ipsec_t *this, int fd,
+						   watcher_event_t event)
 {
 	char response[1024];
 	struct nlmsghdr *hdr = (struct nlmsghdr*)response;
 	struct sockaddr_nl addr;
 	socklen_t addr_len = sizeof(addr);
 	int len;
-	bool oldstate;
 
-	oldstate = thread_cancelability(TRUE);
-	len = recvfrom(this->socket_xfrm_events, response, sizeof(response), 0,
-				   (struct sockaddr*)&addr, &addr_len);
-	thread_cancelability(oldstate);
-
+	len = recvfrom(this->socket_xfrm_events, response, sizeof(response),
+				   MSG_DONTWAIT, (struct sockaddr*)&addr, &addr_len);
 	if (len < 0)
 	{
 		switch (errno)
 		{
 			case EINTR:
 				/* interrupted, try again */
-				return JOB_REQUEUE_DIRECT;
+				return TRUE;
 			case EAGAIN:
 				/* no data ready, select again */
-				return JOB_REQUEUE_DIRECT;
+				return TRUE;
 			default:
 				DBG1(DBG_KNL, "unable to receive from xfrm event socket");
 				sleep(1);
-				return JOB_REQUEUE_FAIR;
+				return TRUE;
 		}
 	}
 
 	if (addr.nl_pid != 0)
 	{	/* not from kernel. not interested, try another one */
-		return JOB_REQUEUE_DIRECT;
+		return TRUE;
 	}
 
 	while (NLMSG_OK(hdr, len))
@@ -1028,7 +1056,7 @@ static job_requeue_t receive_events(private_kernel_netlink_ipsec_t *this)
 		}
 		hdr = NLMSG_NEXT(hdr, len);
 	}
-	return JOB_REQUEUE_DIRECT;
+	return TRUE;
 }
 
 METHOD(kernel_ipsec_t, get_features, kernel_feature_t,
@@ -1042,7 +1070,7 @@ METHOD(kernel_ipsec_t, get_features, kernel_feature_t,
  */
 static status_t get_spi_internal(private_kernel_netlink_ipsec_t *this,
 	host_t *src, host_t *dst, u_int8_t proto, u_int32_t min, u_int32_t max,
-	u_int32_t reqid, u_int32_t *spi)
+	u_int32_t *spi)
 {
 	netlink_buf_t request;
 	struct nlmsghdr *hdr, *out;
@@ -1052,17 +1080,16 @@ static status_t get_spi_internal(private_kernel_netlink_ipsec_t *this,
 
 	memset(&request, 0, sizeof(request));
 
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST;
 	hdr->nlmsg_type = XFRM_MSG_ALLOCSPI;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_userspi_info));
 
-	userspi = (struct xfrm_userspi_info*)NLMSG_DATA(hdr);
+	userspi = NLMSG_DATA(hdr);
 	host2xfrm(src, &userspi->info.saddr);
 	host2xfrm(dst, &userspi->info.id.daddr);
 	userspi->info.id.proto = proto;
 	userspi->info.mode = XFRM_MODE_TUNNEL;
-	userspi->info.reqid = reqid;
 	userspi->info.family = src->get_family(src);
 	userspi->min = min;
 	userspi->max = max;
@@ -1109,39 +1136,35 @@ static status_t get_spi_internal(private_kernel_netlink_ipsec_t *this,
 
 METHOD(kernel_ipsec_t, get_spi, status_t,
 	private_kernel_netlink_ipsec_t *this, host_t *src, host_t *dst,
-	u_int8_t protocol, u_int32_t reqid, u_int32_t *spi)
+	u_int8_t protocol, u_int32_t *spi)
 {
-	DBG2(DBG_KNL, "getting SPI for reqid {%u}", reqid);
-
 	if (get_spi_internal(this, src, dst, protocol,
-						 0xc0000000, 0xcFFFFFFF, reqid, spi) != SUCCESS)
+						 0xc0000000, 0xcFFFFFFF, spi) != SUCCESS)
 	{
-		DBG1(DBG_KNL, "unable to get SPI for reqid {%u}", reqid);
+		DBG1(DBG_KNL, "unable to get SPI");
 		return FAILED;
 	}
 
-	DBG2(DBG_KNL, "got SPI %.8x for reqid {%u}", ntohl(*spi), reqid);
+	DBG2(DBG_KNL, "got SPI %.8x", ntohl(*spi));
 	return SUCCESS;
 }
 
 METHOD(kernel_ipsec_t, get_cpi, status_t,
 	private_kernel_netlink_ipsec_t *this, host_t *src, host_t *dst,
-	u_int32_t reqid, u_int16_t *cpi)
+	u_int16_t *cpi)
 {
 	u_int32_t received_spi = 0;
 
-	DBG2(DBG_KNL, "getting CPI for reqid {%u}", reqid);
-
 	if (get_spi_internal(this, src, dst, IPPROTO_COMP,
-						 0x100, 0xEFFF, reqid, &received_spi) != SUCCESS)
+						 0x100, 0xEFFF, &received_spi) != SUCCESS)
 	{
-		DBG1(DBG_KNL, "unable to get CPI for reqid {%u}", reqid);
+		DBG1(DBG_KNL, "unable to get CPI");
 		return FAILED;
 	}
 
 	*cpi = htons((u_int16_t)ntohl(received_spi));
 
-	DBG2(DBG_KNL, "got CPI %.4x for reqid {%u}", ntohs(*cpi), reqid);
+	DBG2(DBG_KNL, "got CPI %.4x", ntohs(*cpi));
 	return SUCCESS;
 }
 
@@ -1169,15 +1192,18 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 	private_kernel_netlink_ipsec_t *this, host_t *src, host_t *dst,
 	u_int32_t spi, u_int8_t protocol, u_int32_t reqid, mark_t mark,
 	u_int32_t tfc, lifetime_cfg_t *lifetime, u_int16_t enc_alg, chunk_t enc_key,
-	u_int16_t int_alg, chunk_t int_key, ipsec_mode_t mode, u_int16_t ipcomp,
-	u_int16_t cpi, bool encap, bool esn, bool inbound,
-	traffic_selector_t* src_ts, traffic_selector_t* dst_ts)
+	u_int16_t int_alg, chunk_t int_key, ipsec_mode_t mode,
+	u_int16_t ipcomp, u_int16_t cpi, u_int32_t replay_window,
+	bool initiator, bool encap, bool esn, bool inbound, bool update,
+	linked_list_t* src_ts, linked_list_t* dst_ts)
 {
 	netlink_buf_t request;
 	char *alg_name;
 	struct nlmsghdr *hdr;
 	struct xfrm_usersa_info *sa;
 	u_int16_t icv_size = 64;
+	ipsec_mode_t original_mode = mode;
+	traffic_selector_t *first_src_ts, *first_dst_ts;
 	status_t status = FAILED;
 
 	/* if IPComp is used, we install an additional IPComp SA. if the cpi is 0
@@ -1187,7 +1213,8 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 		lifetime_cfg_t lft = {{0,0,0},{0,0,0},{0,0,0}};
 		add_sa(this, src, dst, htonl(ntohs(cpi)), IPPROTO_COMP, reqid, mark,
 			   tfc, &lft, ENCR_UNDEFINED, chunk_empty, AUTH_UNDEFINED,
-			   chunk_empty, mode, ipcomp, 0, FALSE, FALSE, inbound, NULL, NULL);
+			   chunk_empty, mode, ipcomp, 0, 0, initiator, FALSE, FALSE,
+			   inbound, update, src_ts, dst_ts);
 		ipcomp = IPCOMP_NONE;
 		/* use transport mode ESP SA, IPComp uses tunnel mode */
 		mode = MODE_TRANSPORT;
@@ -1198,12 +1225,12 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 	DBG2(DBG_KNL, "adding SAD entry with SPI %.8x and reqid {%u}  (mark "
 				  "%u/0x%08x)", ntohl(spi), reqid, mark.value, mark.mask);
 
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
-	hdr->nlmsg_type = inbound ? XFRM_MSG_UPDSA : XFRM_MSG_NEWSA;
+	hdr->nlmsg_type = update ? XFRM_MSG_UPDSA : XFRM_MSG_NEWSA;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_usersa_info));
 
-	sa = (struct xfrm_usersa_info*)NLMSG_DATA(hdr);
+	sa = NLMSG_DATA(hdr);
 	host2xfrm(src, &sa->saddr);
 	host2xfrm(dst, &sa->id.daddr);
 	sa->id.spi = spi;
@@ -1217,9 +1244,24 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 			break;
 		case MODE_BEET:
 		case MODE_TRANSPORT:
-			if(src_ts && dst_ts)
+			if (original_mode == MODE_TUNNEL)
+			{	/* don't install selectors for switched SAs.  because only one
+				 * selector can be installed other traffic would get dropped */
+				break;
+			}
+			if (src_ts->get_first(src_ts, (void**)&first_src_ts) == SUCCESS &&
+				dst_ts->get_first(dst_ts, (void**)&first_dst_ts) == SUCCESS)
 			{
-				sa->sel = ts2selector(src_ts, dst_ts);
+				sa->sel = ts2selector(first_src_ts, first_dst_ts);
+				if (!this->proto_port_transport)
+				{
+					/* don't install proto/port on SA. This would break
+					 * potential secondary SAs for the same address using a
+					 * different prot/port. */
+					sa->sel.proto = 0;
+					sa->sel.dport = sa->sel.dport_mask = 0;
+					sa->sel.sport = sa->sel.sport_mask = 0;
+				}
 			}
 			break;
 		default:
@@ -1246,6 +1288,7 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 		case ENCR_AES_GCM_ICV16:
 		case ENCR_NULL_AUTH_AES_GMAC:
 		case ENCR_CAMELLIA_CCM_ICV16:
+		case ENCR_CHACHA20_POLY1305:
 			icv_size += 32;
 			/* FALL */
 		case ENCR_AES_CCM_ICV12:
@@ -1427,8 +1470,8 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 		goto failed;
 	}
 
-	if (tfc)
-	{
+	if (tfc && protocol == IPPROTO_ESP && mode == MODE_TUNNEL)
+	{	/* the kernel supports TFC padding only for tunnel mode ESP SAs */
 		u_int32_t *tfcpad;
 
 		tfcpad = netlink_reserve(hdr, sizeof(request), XFRMA_TFCPAD,
@@ -1442,23 +1485,24 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 
 	if (protocol != IPPROTO_COMP)
 	{
-		if (esn || this->replay_window > DEFAULT_REPLAY_WINDOW)
+		if (replay_window != 0 && (esn || replay_window > 32))
 		{
 			/* for ESN or larger replay windows we need the new
 			 * XFRMA_REPLAY_ESN_VAL attribute to configure a bitmap */
 			struct xfrm_replay_state_esn *replay;
+			u_int32_t bmp_size;
 
+			bmp_size = round_up(replay_window, sizeof(u_int32_t) * 8) / 8;
 			replay = netlink_reserve(hdr, sizeof(request), XFRMA_REPLAY_ESN_VAL,
-							sizeof(*replay) + (this->replay_window + 7) / 8);
+									 sizeof(*replay) + bmp_size);
 			if (!replay)
 			{
 				goto failed;
 			}
 			/* bmp_len contains number uf __u32's */
-			replay->bmp_len = this->replay_bmp;
-			replay->replay_window = this->replay_window;
-			DBG2(DBG_KNL, "  using replay window of %u packets",
-				 this->replay_window);
+			replay->bmp_len = bmp_size / sizeof(u_int32_t);
+			replay->replay_window = replay_window;
+			DBG2(DBG_KNL, "  using replay window of %u packets", replay_window);
 
 			if (esn)
 			{
@@ -1468,9 +1512,8 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 		}
 		else
 		{
-			DBG2(DBG_KNL, "  using replay window of %u packets",
-				 this->replay_window);
-			sa->replay_window = this->replay_window;
+			DBG2(DBG_KNL, "  using replay window of %u packets", replay_window);
+			sa->replay_window = replay_window;
 		}
 	}
 
@@ -1491,7 +1534,7 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 	status = SUCCESS;
 
 failed:
-	memwipe(request, sizeof(request));
+	memwipe(&request, sizeof(request));
 	return status;
 }
 
@@ -1504,7 +1547,9 @@ static void get_replay_state(private_kernel_netlink_ipsec_t *this,
 							 u_int32_t spi, u_int8_t protocol,
 							 host_t *dst, mark_t mark,
 							 struct xfrm_replay_state_esn **replay_esn,
-							 struct xfrm_replay_state **replay)
+							 u_int32_t *replay_esn_len,
+							 struct xfrm_replay_state **replay,
+							 struct xfrm_lifetime_cur **lifetime)
 {
 	netlink_buf_t request;
 	struct nlmsghdr *hdr, *out = NULL;
@@ -1518,12 +1563,12 @@ static void get_replay_state(private_kernel_netlink_ipsec_t *this,
 	DBG2(DBG_KNL, "querying replay state from SAD entry with SPI %.8x",
 				   ntohl(spi));
 
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST;
 	hdr->nlmsg_type = XFRM_MSG_GETAE;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_aevent_id));
 
-	aevent_id = (struct xfrm_aevent_id*)NLMSG_DATA(hdr);
+	aevent_id = NLMSG_DATA(hdr);
 	aevent_id->flags = XFRM_AE_RVAL;
 
 	host2xfrm(dst, &aevent_id->sa_id.daddr);
@@ -1572,19 +1617,27 @@ static void get_replay_state(private_kernel_netlink_ipsec_t *this,
 		rtasize = XFRM_PAYLOAD(out, struct xfrm_aevent_id);
 		while (RTA_OK(rta, rtasize))
 		{
+			if (rta->rta_type == XFRMA_LTIME_VAL &&
+				RTA_PAYLOAD(rta) == sizeof(**lifetime))
+			{
+				free(*lifetime);
+				*lifetime = malloc(RTA_PAYLOAD(rta));
+				memcpy(*lifetime, RTA_DATA(rta), RTA_PAYLOAD(rta));
+			}
 			if (rta->rta_type == XFRMA_REPLAY_VAL &&
 				RTA_PAYLOAD(rta) == sizeof(**replay))
 			{
+				free(*replay);
 				*replay = malloc(RTA_PAYLOAD(rta));
 				memcpy(*replay, RTA_DATA(rta), RTA_PAYLOAD(rta));
-				break;
 			}
 			if (rta->rta_type == XFRMA_REPLAY_ESN_VAL &&
-				RTA_PAYLOAD(rta) >= sizeof(**replay_esn) + this->replay_bmp)
+				RTA_PAYLOAD(rta) >= sizeof(**replay_esn))
 			{
+				free(*replay_esn);
 				*replay_esn = malloc(RTA_PAYLOAD(rta));
+				*replay_esn_len = RTA_PAYLOAD(rta);
 				memcpy(*replay_esn, RTA_DATA(rta), RTA_PAYLOAD(rta));
-				break;
 			}
 			rta = RTA_NEXT(rta, rtasize);
 		}
@@ -1595,7 +1648,7 @@ static void get_replay_state(private_kernel_netlink_ipsec_t *this,
 METHOD(kernel_ipsec_t, query_sa, status_t,
 	private_kernel_netlink_ipsec_t *this, host_t *src, host_t *dst,
 	u_int32_t spi, u_int8_t protocol, mark_t mark,
-	u_int64_t *bytes, u_int64_t *packets)
+	u_int64_t *bytes, u_int64_t *packets, time_t *time)
 {
 	netlink_buf_t request;
 	struct nlmsghdr *out = NULL, *hdr;
@@ -1609,12 +1662,12 @@ METHOD(kernel_ipsec_t, query_sa, status_t,
 	DBG2(DBG_KNL, "querying SAD entry with SPI %.8x  (mark %u/0x%08x)",
 				   ntohl(spi), mark.value, mark.mask);
 
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST;
 	hdr->nlmsg_type = XFRM_MSG_GETSA;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_usersa_id));
 
-	sa_id = (struct xfrm_usersa_id*)NLMSG_DATA(hdr);
+	sa_id = NLMSG_DATA(hdr);
 	host2xfrm(dst, &sa_id->daddr);
 	sa_id->spi = spi;
 	sa_id->proto = protocol;
@@ -1634,7 +1687,7 @@ METHOD(kernel_ipsec_t, query_sa, status_t,
 			{
 				case XFRM_MSG_NEWSA:
 				{
-					sa = (struct xfrm_usersa_info*)NLMSG_DATA(hdr);
+					sa = NLMSG_DATA(hdr);
 					break;
 				}
 				case NLMSG_ERROR:
@@ -1680,6 +1733,12 @@ METHOD(kernel_ipsec_t, query_sa, status_t,
 		{
 			*packets = sa->curlft.packets;
 		}
+		if (time)
+		{	/* curlft contains an "use" time, but that contains a timestamp
+			 * of the first use, not the last. Last use time must be queried
+			 * on the policy on Linux */
+			*time = 0;
+		}
 		status = SUCCESS;
 	}
 	memwipe(out, len);
@@ -1706,12 +1765,12 @@ METHOD(kernel_ipsec_t, del_sa, status_t,
 	DBG2(DBG_KNL, "deleting SAD entry with SPI %.8x  (mark %u/0x%08x)",
 				   ntohl(spi), mark.value, mark.mask);
 
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
 	hdr->nlmsg_type = XFRM_MSG_DELSA;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_usersa_id));
 
-	sa_id = (struct xfrm_usersa_id*)NLMSG_DATA(hdr);
+	sa_id = NLMSG_DATA(hdr);
 	host2xfrm(dst, &sa_id->daddr);
 	sa_id->spi = spi;
 	sa_id->proto = protocol;
@@ -1760,6 +1819,8 @@ METHOD(kernel_ipsec_t, update_sa, status_t,
 	struct xfrm_encap_tmpl* tmpl = NULL;
 	struct xfrm_replay_state *replay = NULL;
 	struct xfrm_replay_state_esn *replay_esn = NULL;
+	struct xfrm_lifetime_cur *lifetime = NULL;
+	u_int32_t replay_esn_len = 0;
 	status_t status = FAILED;
 
 	/* if IPComp is used, we first update the IPComp SA */
@@ -1774,12 +1835,12 @@ METHOD(kernel_ipsec_t, update_sa, status_t,
 	DBG2(DBG_KNL, "querying SAD entry with SPI %.8x for update", ntohl(spi));
 
 	/* query the existing SA first */
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST;
 	hdr->nlmsg_type = XFRM_MSG_GETSA;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_usersa_id));
 
-	sa_id = (struct xfrm_usersa_id*)NLMSG_DATA(hdr);
+	sa_id = NLMSG_DATA(hdr);
 	host2xfrm(dst, &sa_id->daddr);
 	sa_id->spi = spi;
 	sa_id->proto = protocol;
@@ -1824,7 +1885,8 @@ METHOD(kernel_ipsec_t, update_sa, status_t,
 		goto failed;
 	}
 
-	get_replay_state(this, spi, protocol, dst, mark, &replay_esn, &replay);
+	get_replay_state(this, spi, protocol, dst, mark, &replay_esn,
+					 &replay_esn_len, &replay, &lifetime);
 
 	/* delete the old SA (without affecting the IPComp SA) */
 	if (del_sa(this, src, dst, spi, protocol, 0, mark) != SUCCESS)
@@ -1837,7 +1899,7 @@ METHOD(kernel_ipsec_t, update_sa, status_t,
 	DBG2(DBG_KNL, "updating SAD entry with SPI %.8x from %#H..%#H to %#H..%#H",
 				   ntohl(spi), src, dst, new_src, new_dst);
 	/* copy over the SA from out to request */
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
 	hdr->nlmsg_type = XFRM_MSG_NEWSA;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_usersa_info));
@@ -1892,12 +1954,12 @@ METHOD(kernel_ipsec_t, update_sa, status_t,
 		struct xfrm_replay_state_esn *state;
 
 		state = netlink_reserve(hdr, sizeof(request), XFRMA_REPLAY_ESN_VAL,
-								sizeof(*state) + this->replay_bmp);
+								replay_esn_len);
 		if (!state)
 		{
 			goto failed;
 		}
-		memcpy(state, replay_esn, sizeof(*state) + this->replay_bmp);
+		memcpy(state, replay_esn, replay_esn_len);
 	}
 	else if (replay)
 	{
@@ -1913,8 +1975,25 @@ METHOD(kernel_ipsec_t, update_sa, status_t,
 	}
 	else
 	{
-		DBG1(DBG_KNL, "unable to copy replay state from old SAD entry "
-					  "with SPI %.8x", ntohl(spi));
+		DBG1(DBG_KNL, "unable to copy replay state from old SAD entry with "
+			 "SPI %.8x", ntohl(spi));
+	}
+	if (lifetime)
+	{
+		struct xfrm_lifetime_cur *state;
+
+		state = netlink_reserve(hdr, sizeof(request), XFRMA_LTIME_VAL,
+								sizeof(*state));
+		if (!state)
+		{
+			goto failed;
+		}
+		memcpy(state, lifetime, sizeof(*state));
+	}
+	else
+	{
+		DBG1(DBG_KNL, "unable to copy usage stats from old SAD entry with "
+			 "SPI %.8x", ntohl(spi));
 	}
 
 	if (this->socket_xfrm->send_ack(this->socket_xfrm, hdr) != SUCCESS)
@@ -1927,8 +2006,9 @@ METHOD(kernel_ipsec_t, update_sa, status_t,
 failed:
 	free(replay);
 	free(replay_esn);
+	free(lifetime);
 	memwipe(out, len);
-	memwipe(request, sizeof(request));
+	memwipe(&request, sizeof(request));
 	free(out);
 
 	return status;
@@ -1940,23 +2020,36 @@ METHOD(kernel_ipsec_t, flush_sas, status_t,
 	netlink_buf_t request;
 	struct nlmsghdr *hdr;
 	struct xfrm_usersa_flush *flush;
+	struct {
+		u_int8_t proto;
+		char *name;
+	} protos[] = {
+		{ IPPROTO_AH, "AH" },
+		{ IPPROTO_ESP, "ESP" },
+		{ IPPROTO_COMP, "IPComp" },
+	};
+	int i;
 
 	memset(&request, 0, sizeof(request));
 
-	DBG2(DBG_KNL, "flushing all SAD entries");
-
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
 	hdr->nlmsg_type = XFRM_MSG_FLUSHSA;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_usersa_flush));
 
-	flush = (struct xfrm_usersa_flush*)NLMSG_DATA(hdr);
-	flush->proto = IPSEC_PROTO_ANY;
+	flush = NLMSG_DATA(hdr);
 
-	if (this->socket_xfrm->send_ack(this->socket_xfrm, hdr) != SUCCESS)
+	for (i = 0; i < countof(protos); i++)
 	{
-		DBG1(DBG_KNL, "unable to flush SAD entries");
-		return FAILED;
+		DBG2(DBG_KNL, "flushing all %s SAD entries", protos[i].name);
+
+		flush->proto = protos[i].proto;
+
+		if (this->socket_xfrm->send_ack(this->socket_xfrm, hdr) != SUCCESS)
+		{
+			DBG1(DBG_KNL, "unable to flush %s SAD entries", protos[i].name);
+			return FAILED;
+		}
 	}
 	return SUCCESS;
 }
@@ -1975,18 +2068,19 @@ static status_t add_policy_internal(private_kernel_netlink_ipsec_t *this,
 	ipsec_sa_t *ipsec = mapping->sa;
 	struct xfrm_userpolicy_info *policy_info;
 	struct nlmsghdr *hdr;
+	status_t status;
 	int i;
 
 	/* clone the policy so we are able to check it out again later */
 	memcpy(&clone, policy, sizeof(policy_entry_t));
 
 	memset(&request, 0, sizeof(request));
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
 	hdr->nlmsg_type = update ? XFRM_MSG_UPDPOLICY : XFRM_MSG_NEWPOLICY;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_userpolicy_info));
 
-	policy_info = (struct xfrm_userpolicy_info*)NLMSG_DATA(hdr);
+	policy_info = NLMSG_DATA(hdr);
 	policy_info->sel = policy->sel;
 	policy_info->dir = policy->direction;
 
@@ -2049,7 +2143,7 @@ static status_t add_policy_internal(private_kernel_netlink_ipsec_t *this,
 							 policy->direction != POLICY_OUT;
 			tmpl->family = ipsec->src->get_family(ipsec->src);
 
-			if (proto_mode == MODE_TUNNEL)
+			if (proto_mode == MODE_TUNNEL || proto_mode == MODE_BEET)
 			{	/* only for tunnel mode */
 				host2xfrm(ipsec->src, &tmpl->saddr);
 				host2xfrm(ipsec->dst, &tmpl->id.daddr);
@@ -2069,7 +2163,14 @@ static status_t add_policy_internal(private_kernel_netlink_ipsec_t *this,
 	}
 	this->mutex->unlock(this->mutex);
 
-	if (this->socket_xfrm->send_ack(this->socket_xfrm, hdr) != SUCCESS)
+	status = this->socket_xfrm->send_ack(this->socket_xfrm, hdr);
+	if (status == ALREADY_DONE && !update)
+	{
+		DBG1(DBG_KNL, "policy already exists, try to update it");
+		hdr->nlmsg_type = XFRM_MSG_UPDPOLICY;
+		status = this->socket_xfrm->send_ack(this->socket_xfrm, hdr);
+	}
+	if (status != SUCCESS)
 	{
 		return FAILED;
 	}
@@ -2102,12 +2203,23 @@ static status_t add_policy_internal(private_kernel_netlink_ipsec_t *this,
 		);
 
 		if (hydra->kernel_interface->get_address_by_ts(hydra->kernel_interface,
-				fwd->dst_ts, &route->src_ip) == SUCCESS)
+				fwd->dst_ts, &route->src_ip, NULL) == SUCCESS)
 		{
 			/* get the nexthop to src (src as we are in POLICY_FWD) */
-			route->gateway = hydra->kernel_interface->get_nexthop(
+			if (!ipsec->src->is_anyaddr(ipsec->src))
+			{
+				route->gateway = hydra->kernel_interface->get_nexthop(
 											hydra->kernel_interface, ipsec->src,
-											ipsec->dst);
+											-1, ipsec->dst);
+			}
+			else
+			{	/* for shunt policies */
+				iface = xfrm2host(policy->sel.family, &policy->sel.saddr, 0);
+				route->gateway = hydra->kernel_interface->get_nexthop(
+										hydra->kernel_interface, iface,
+										policy->sel.prefixlen_s, route->src_ip);
+				iface->destroy(iface);
+			}
 			route->dst_net = chunk_alloc(policy->sel.family == AF_INET ? 4 : 16);
 			memcpy(route->dst_net.ptr, &policy->sel.saddr, route->dst_net.len);
 
@@ -2197,6 +2309,7 @@ METHOD(kernel_ipsec_t, add_policy, status_t,
 		.sel = ts2selector(src_ts, dst_ts),
 		.mark = mark.value & mark.mask,
 		.direction = direction,
+		.reqid = sa->reqid,
 	);
 
 	/* find the policy, which matches EXACTLY */
@@ -2204,6 +2317,16 @@ METHOD(kernel_ipsec_t, add_policy, status_t,
 	current = this->policies->get(this->policies, policy);
 	if (current)
 	{
+		if (current->reqid && sa->reqid && current->reqid != sa->reqid)
+		{
+			DBG1(DBG_CFG, "unable to install policy %R === %R %N (mark "
+				 "%u/0x%08x) for reqid %u, the same policy for reqid %u exists",
+				 src_ts, dst_ts, policy_dir_names, direction,
+				 mark.value, mark.mask, sa->reqid, current->reqid);
+			policy_entry_destroy(this, policy);
+			this->mutex->unlock(this->mutex);
+			return INVALID_STATE;
+		}
 		/* use existing policy */
 		DBG2(DBG_KNL, "policy %R === %R %N  (mark %u/0x%08x) "
 					  "already exists, increasing refcount",
@@ -2224,32 +2347,30 @@ METHOD(kernel_ipsec_t, add_policy, status_t,
 								   dst_ts, mark, sa);
 	assigned_sa->priority = get_priority(policy, priority);
 
-	if (this->policy_history)
-	{	/* insert the SA according to its priority */
-		enumerator = policy->used_by->create_enumerator(policy->used_by);
-		while (enumerator->enumerate(enumerator, (void**)&current_sa))
+	/* insert the SA according to its priority */
+	enumerator = policy->used_by->create_enumerator(policy->used_by);
+	while (enumerator->enumerate(enumerator, (void**)&current_sa))
+	{
+		if (current_sa->priority >= assigned_sa->priority)
 		{
-			if (current_sa->priority >= assigned_sa->priority)
-			{
-				break;
-			}
-			update = FALSE;
+			break;
 		}
-		policy->used_by->insert_before(policy->used_by, enumerator,
-									   assigned_sa);
-		enumerator->destroy(enumerator);
+		update = FALSE;
 	}
-	else
-	{	/* simply insert it last and only update if it is not installed yet */
-		policy->used_by->insert_last(policy->used_by, assigned_sa);
-		update = !found;
-	}
+	policy->used_by->insert_before(policy->used_by, enumerator,
+								   assigned_sa);
+	enumerator->destroy(enumerator);
 
 	if (!update)
 	{	/* we don't update the policy if the priority is lower than that of
 		 * the currently installed one */
 		this->mutex->unlock(this->mutex);
 		return SUCCESS;
+	}
+
+	if (this->policy_update)
+	{
+		found = TRUE;
 	}
 
 	DBG2(DBG_KNL, "%s policy %R === %R %N  (mark %u/0x%08x)",
@@ -2269,7 +2390,7 @@ METHOD(kernel_ipsec_t, add_policy, status_t,
 METHOD(kernel_ipsec_t, query_policy, status_t,
 	private_kernel_netlink_ipsec_t *this, traffic_selector_t *src_ts,
 	traffic_selector_t *dst_ts, policy_dir_t direction, mark_t mark,
-	u_int32_t *use_time)
+	time_t *use_time)
 {
 	netlink_buf_t request;
 	struct nlmsghdr *out = NULL, *hdr;
@@ -2283,12 +2404,12 @@ METHOD(kernel_ipsec_t, query_policy, status_t,
 				   src_ts, dst_ts, policy_dir_names, direction,
 				   mark.value, mark.mask);
 
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST;
 	hdr->nlmsg_type = XFRM_MSG_GETPOLICY;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_userpolicy_id));
 
-	policy_id = (struct xfrm_userpolicy_id*)NLMSG_DATA(hdr);
+	policy_id = NLMSG_DATA(hdr);
 	policy_id->sel = ts2selector(src_ts, dst_ts);
 	policy_id->dir = direction;
 
@@ -2306,7 +2427,7 @@ METHOD(kernel_ipsec_t, query_policy, status_t,
 			{
 				case XFRM_MSG_NEWPOLICY:
 				{
-					policy = (struct xfrm_userpolicy_info*)NLMSG_DATA(hdr);
+					policy = NLMSG_DATA(hdr);
 					break;
 				}
 				case NLMSG_ERROR:
@@ -2349,8 +2470,9 @@ METHOD(kernel_ipsec_t, query_policy, status_t,
 }
 
 METHOD(kernel_ipsec_t, del_policy, status_t,
-	private_kernel_netlink_ipsec_t *this, traffic_selector_t *src_ts,
-	traffic_selector_t *dst_ts, policy_dir_t direction, u_int32_t reqid,
+	private_kernel_netlink_ipsec_t *this, host_t *src, host_t *dst,
+	traffic_selector_t *src_ts, traffic_selector_t *dst_ts,
+	policy_dir_t direction, policy_type_t type, ipsec_sa_cfg_t *sa,
 	mark_t mark, policy_priority_t prio)
 {
 	policy_entry_t *current, policy;
@@ -2361,6 +2483,12 @@ METHOD(kernel_ipsec_t, del_policy, status_t,
 	struct xfrm_userpolicy_id *policy_id;
 	bool is_installed = TRUE;
 	u_int32_t priority;
+	ipsec_sa_t assigned_sa = {
+		.src = src,
+		.dst = dst,
+		.mark = mark,
+		.cfg = *sa,
+	};
 
 	DBG2(DBG_KNL, "deleting policy %R === %R %N  (mark %u/0x%08x)",
 				   src_ts, dst_ts, policy_dir_names, direction,
@@ -2392,29 +2520,21 @@ METHOD(kernel_ipsec_t, del_policy, status_t,
 		return NOT_FOUND;
 	}
 
-	if (this->policy_history)
-	{	/* remove mapping to SA by reqid and priority */
-		priority = get_priority(current, prio);
-		enumerator = current->used_by->create_enumerator(current->used_by);
-		while (enumerator->enumerate(enumerator, (void**)&mapping))
+	/* remove mapping to SA by reqid and priority */
+	priority = get_priority(current, prio);
+	enumerator = current->used_by->create_enumerator(current->used_by);
+	while (enumerator->enumerate(enumerator, (void**)&mapping))
+	{
+		if (priority == mapping->priority && type == mapping->type &&
+			ipsec_sa_equals(mapping->sa, &assigned_sa))
 		{
-			if (reqid == mapping->sa->cfg.reqid &&
-				priority == mapping->priority)
-			{
-				current->used_by->remove_at(current->used_by, enumerator);
-				policy_sa_destroy(mapping, &direction, this);
-				break;
-			}
-			is_installed = FALSE;
+			current->used_by->remove_at(current->used_by, enumerator);
+			policy_sa_destroy(mapping, &direction, this);
+			break;
 		}
-		enumerator->destroy(enumerator);
-	}
-	else
-	{	/* remove one of the SAs but don't update the policy */
-		current->used_by->remove_last(current->used_by, (void**)&mapping);
-		policy_sa_destroy(mapping, &direction, this);
 		is_installed = FALSE;
 	}
+	enumerator->destroy(enumerator);
 
 	if (current->used_by->get_count(current->used_by) > 0)
 	{	/* policy is used by more SAs, keep in kernel */
@@ -2441,17 +2561,18 @@ METHOD(kernel_ipsec_t, del_policy, status_t,
 
 	memset(&request, 0, sizeof(request));
 
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
 	hdr->nlmsg_type = XFRM_MSG_DELPOLICY;
 	hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_userpolicy_id));
 
-	policy_id = (struct xfrm_userpolicy_id*)NLMSG_DATA(hdr);
+	policy_id = NLMSG_DATA(hdr);
 	policy_id->sel = current->sel;
 	policy_id->dir = direction;
 
 	if (!add_mark(hdr, sizeof(request), mark))
 	{
+		this->mutex->unlock(this->mutex);
 		return FAILED;
 	}
 
@@ -2500,7 +2621,7 @@ METHOD(kernel_ipsec_t, flush_policies, status_t,
 
 	DBG2(DBG_KNL, "flushing all policies from SPD");
 
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
 	hdr->nlmsg_type = XFRM_MSG_FLUSHPOLICY;
 	hdr->nlmsg_len = NLMSG_LENGTH(0); /* no data associated */
@@ -2516,9 +2637,11 @@ METHOD(kernel_ipsec_t, flush_policies, status_t,
 	return SUCCESS;
 }
 
-
-METHOD(kernel_ipsec_t, bypass_socket, bool,
-	private_kernel_netlink_ipsec_t *this, int fd, int family)
+/**
+ * Bypass socket using a per-socket policy
+ */
+static bool add_socket_bypass(private_kernel_netlink_ipsec_t *this,
+							  int fd, int family)
 {
 	struct xfrm_userpolicy_info policy;
 	u_int sol, ipsec_policy;
@@ -2558,6 +2681,154 @@ METHOD(kernel_ipsec_t, bypass_socket, bool,
 	return TRUE;
 }
 
+/**
+ * Port based IKE bypass policy
+ */
+typedef struct {
+	/** address family */
+	int family;
+	/** layer 4 protocol */
+	int proto;
+	/** port number, network order */
+	u_int16_t port;
+} bypass_t;
+
+/**
+ * Add or remove a bypass policy from/to kernel
+ */
+static bool manage_bypass(private_kernel_netlink_ipsec_t *this,
+						  int type, policy_dir_t dir, bypass_t *bypass)
+{
+	netlink_buf_t request;
+	struct xfrm_selector *sel;
+	struct nlmsghdr *hdr;
+
+	memset(&request, 0, sizeof(request));
+	hdr = &request.hdr;
+	hdr->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+	hdr->nlmsg_type = type;
+
+	if (type == XFRM_MSG_NEWPOLICY)
+	{
+		struct xfrm_userpolicy_info *policy;
+
+		hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_userpolicy_info));
+
+		policy = NLMSG_DATA(hdr);
+		policy->dir = dir;
+		policy->priority = 32;
+		policy->action = XFRM_POLICY_ALLOW;
+		policy->share = XFRM_SHARE_ANY;
+
+		policy->lft.soft_byte_limit = XFRM_INF;
+		policy->lft.soft_packet_limit = XFRM_INF;
+		policy->lft.hard_byte_limit = XFRM_INF;
+		policy->lft.hard_packet_limit = XFRM_INF;
+
+		sel = &policy->sel;
+	}
+	else /* XFRM_MSG_DELPOLICY */
+	{
+		struct xfrm_userpolicy_id *policy;
+
+		hdr->nlmsg_len = NLMSG_LENGTH(sizeof(struct xfrm_userpolicy_id));
+
+		policy = NLMSG_DATA(hdr);
+		policy->dir = dir;
+
+		sel = &policy->sel;
+	}
+
+	sel->family = bypass->family;
+	sel->proto = bypass->proto;
+	if (dir == POLICY_IN)
+	{
+		sel->dport = bypass->port;
+		sel->dport_mask = 0xffff;
+	}
+	else
+	{
+		sel->sport = bypass->port;
+		sel->sport_mask = 0xffff;
+	}
+	return this->socket_xfrm->send_ack(this->socket_xfrm, hdr) == SUCCESS;
+}
+
+/**
+ * Bypass socket using a port-based bypass policy
+ */
+static bool add_port_bypass(private_kernel_netlink_ipsec_t *this,
+							int fd, int family)
+{
+	union {
+		struct sockaddr sa;
+		struct sockaddr_in in;
+		struct sockaddr_in6 in6;
+	} saddr;
+	socklen_t len;
+	bypass_t bypass = {
+		.family = family,
+	};
+
+	len = sizeof(saddr);
+	if (getsockname(fd, &saddr.sa, &len) != 0)
+	{
+		return FALSE;
+	}
+#ifdef SO_PROTOCOL /* since 2.6.32 */
+	len = sizeof(bypass.proto);
+	if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL, &bypass.proto, &len) != 0)
+#endif
+	{	/* assume UDP if SO_PROTOCOL not supported */
+		bypass.proto = IPPROTO_UDP;
+	}
+	switch (family)
+	{
+		case AF_INET:
+			bypass.port = saddr.in.sin_port;
+			break;
+		case AF_INET6:
+			bypass.port = saddr.in6.sin6_port;
+			break;
+		default:
+			return FALSE;
+	}
+
+	if (!manage_bypass(this, XFRM_MSG_NEWPOLICY, POLICY_IN, &bypass))
+	{
+		return FALSE;
+	}
+	if (!manage_bypass(this, XFRM_MSG_NEWPOLICY, POLICY_OUT, &bypass))
+	{
+		manage_bypass(this, XFRM_MSG_DELPOLICY, POLICY_IN, &bypass);
+		return FALSE;
+	}
+	array_insert(this->bypass, ARRAY_TAIL, &bypass);
+
+	return TRUE;
+}
+
+/**
+ * Remove installed port based bypass policy
+ */
+static void remove_port_bypass(bypass_t *bypass, int idx,
+							   private_kernel_netlink_ipsec_t *this)
+{
+	manage_bypass(this, XFRM_MSG_DELPOLICY, POLICY_OUT, bypass);
+	manage_bypass(this, XFRM_MSG_DELPOLICY, POLICY_IN, bypass);
+}
+
+METHOD(kernel_ipsec_t, bypass_socket, bool,
+	private_kernel_netlink_ipsec_t *this, int fd, int family)
+{
+	if (lib->settings->get_bool(lib->settings,
+					"%s.plugins.kernel-netlink.port_bypass", FALSE, lib->ns))
+	{
+		return add_port_bypass(this, fd, family);
+	}
+	return add_socket_bypass(this, fd, family);
+}
+
 METHOD(kernel_ipsec_t, enable_udp_decap, bool,
 	private_kernel_netlink_ipsec_t *this, int fd, int family, u_int16_t port)
 {
@@ -2577,8 +2848,11 @@ METHOD(kernel_ipsec_t, destroy, void,
 	enumerator_t *enumerator;
 	policy_entry_t *policy;
 
+	array_destroy_function(this->bypass,
+						   (array_callback_t)remove_port_bypass, this);
 	if (this->socket_xfrm_events > 0)
 	{
+		lib->watcher->remove(lib->watcher, this->socket_xfrm_events);
 		close(this->socket_xfrm_events);
 	}
 	DESTROY_IF(this->socket_xfrm);
@@ -2601,7 +2875,7 @@ kernel_netlink_ipsec_t *kernel_netlink_ipsec_create()
 {
 	private_kernel_netlink_ipsec_t *this;
 	bool register_for_events = TRUE;
-	int fd;
+	FILE *f;
 
 	INIT(this,
 		.public = {
@@ -2627,37 +2901,34 @@ kernel_netlink_ipsec_t *kernel_netlink_ipsec_create()
 									 (hashtable_equals_t)policy_equals, 32),
 		.sas = hashtable_create((hashtable_hash_t)ipsec_sa_hash,
 								(hashtable_equals_t)ipsec_sa_equals, 32),
+		.bypass = array_create(sizeof(bypass_t), 0),
 		.mutex = mutex_create(MUTEX_TYPE_DEFAULT),
-		.policy_history = TRUE,
+		.policy_update = lib->settings->get_bool(lib->settings,
+					"%s.plugins.kernel-netlink.policy_update", FALSE, lib->ns),
 		.install_routes = lib->settings->get_bool(lib->settings,
-					"%s.install_routes", TRUE, hydra->daemon),
-		.replay_window = lib->settings->get_int(lib->settings,
-					"%s.replay_window", DEFAULT_REPLAY_WINDOW, hydra->daemon),
+							"%s.install_routes", TRUE, lib->ns),
+		.proto_port_transport = lib->settings->get_bool(lib->settings,
+						"%s.plugins.kernel-netlink.set_proto_port_transport_sa",
+						FALSE, lib->ns),
 	);
 
-	this->replay_bmp = (this->replay_window + sizeof(u_int32_t) * 8 - 1) /
-													(sizeof(u_int32_t) * 8);
-
-	if (streq(hydra->daemon, "pluto"))
-	{	/* no routes for pluto, they are installed via updown script */
-		this->install_routes = FALSE;
-		/* no policy history for pluto */
-		this->policy_history = FALSE;
-	}
-	else if (streq(hydra->daemon, "starter"))
+	if (streq(lib->ns, "starter"))
 	{	/* starter has no threads, so we do not register for kernel events */
 		register_for_events = FALSE;
 	}
 
-	/* disable lifetimes for allocated SPIs in kernel */
-	fd = open("/proc/sys/net/core/xfrm_acq_expires", O_WRONLY);
-	if (fd > 0)
+	f = fopen("/proc/sys/net/core/xfrm_acq_expires", "w");
+	if (f)
 	{
-		ignore_result(write(fd, "165", 3));
-		close(fd);
+		fprintf(f, "%u", lib->settings->get_int(lib->settings,
+								"%s.plugins.kernel-netlink.xfrm_acq_expires",
+								DEFAULT_ACQUIRE_LIFETIME, lib->ns));
+		fclose(f);
 	}
 
-	this->socket_xfrm = netlink_socket_create(NETLINK_XFRM);
+	this->socket_xfrm = netlink_socket_create(NETLINK_XFRM, xfrm_msg_names,
+				lib->settings->get_bool(lib->settings,
+					"%s.plugins.kernel-netlink.parallel_xfrm", FALSE, lib->ns));
 	if (!this->socket_xfrm)
 	{
 		destroy(this);
@@ -2687,10 +2958,8 @@ kernel_netlink_ipsec_t *kernel_netlink_ipsec_create()
 			destroy(this);
 			return NULL;
 		}
-		lib->processor->queue_job(lib->processor,
-			(job_t*)callback_job_create_with_prio(
-					(callback_job_cb_t)receive_events, this, NULL,
-					(callback_job_cancel_t)return_false, JOB_PRIO_CRITICAL));
+		lib->watcher->add(lib->watcher, this->socket_xfrm_events, WATCHER_READ,
+						  (watcher_cb_t)receive_events, this);
 	}
 
 	return &this->public;

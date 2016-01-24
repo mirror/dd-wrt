@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Andreas Steffen
+ * Copyright (C) 2011-2015 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 static const char imc_name[] = "Scanner";
 
 static pen_type_t msg_types[] = {
-	{ PEN_IETF, PA_SUBTYPE_IETF_VPN }
+	{ PEN_IETF, PA_SUBTYPE_IETF_FIREWALL }
 };
 
 static imc_agent_t *imc_scanner;
@@ -241,7 +241,8 @@ static TNC_Result add_port_filter(imc_msg_t *msg)
 	pa_tnc_attr_t *attr;
 	ietf_attr_port_filter_t *attr_port_filter;
 
-	attr = ietf_attr_port_filter_create();
+	attr = ietf_attr_port_filter_create(pen_type_create(PEN_IETF,
+										IETF_ATTR_PORT_FILTER));
 	attr->set_noskip_flag(attr, TRUE);
 	attr_port_filter = (ietf_attr_port_filter_t*)attr;
 	if (!do_netstat(attr_port_filter))
@@ -274,7 +275,7 @@ TNC_Result TNC_IMC_BeginHandshake(TNC_IMCID imc_id,
 		return TNC_RESULT_FATAL;
 	}
 	if (lib->settings->get_bool(lib->settings,
-								"libimcv.plugins.imc-scanner.push_info", TRUE))
+							"%s.plugins.imc-scanner.push_info", TRUE, lib->ns))
 	{
 		out_msg = imc_msg_create(imc_scanner, state, connection_id, imc_id,
 								 TNC_IMVID_ANY, msg_types[0]);
@@ -299,13 +300,16 @@ static TNC_Result receive_message(imc_msg_t *in_msg)
 	TNC_Result result = TNC_RESULT_SUCCESS;
 	bool fatal_error = FALSE;
 
+	/* generate an outgoing PA-TNC message - we might need it */
+	out_msg = imc_msg_create_as_reply(in_msg);
+
 	/* parse received PA-TNC message and handle local and remote errors */
-	result = in_msg->receive(in_msg, &fatal_error);
+	result = in_msg->receive(in_msg, out_msg, &fatal_error);
 	if (result != TNC_RESULT_SUCCESS)
 	{
+		out_msg->destroy(out_msg);
 		return result;
 	}
-	out_msg = imc_msg_create_as_reply(in_msg);
 
 	/* analyze PA-TNC attributes */
 	enumerator = in_msg->create_attribute_enumerator(in_msg);
@@ -352,6 +356,7 @@ static TNC_Result receive_message(imc_msg_t *in_msg)
 	}
 	else if (result == TNC_RESULT_SUCCESS)
 	{
+		/* send PA-TNC message with the EXCL flag set */
 		result = out_msg->send(out_msg, TRUE);
 	}
 	out_msg->destroy(out_msg);

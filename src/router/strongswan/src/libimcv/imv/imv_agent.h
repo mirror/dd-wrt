@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013 Andreas Steffen
+ * Copyright (C) 2011-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 #define IMV_AGENT_H_
 
 #include "imv_state.h"
+#include "imv_database.h"
 #include "pa_tnc/pa_tnc_msg.h"
 
 #include <tncifimv.h>
@@ -188,6 +189,16 @@ struct imv_agent_t {
 	TNC_Result (*provide_recommendation)(imv_agent_t *this, imv_state_t* state);
 
 	/**
+	 * Add an item to the list of non-fatal unsupported PA-TNC attribute types
+	 */
+	void (*add_non_fatal_attr_type)(imv_agent_t *this, pen_type_t type);
+
+	/**
+	 * Get a list of non-fatal unsupported PA-TNC attribute types
+	 */
+	linked_list_t* (*get_non_fatal_attr_types)(imv_agent_t *this);
+
+	/**
 	 * Destroys an imv_agent_t object
 	 */
 	void (*destroy)(imv_agent_t *this);
@@ -204,7 +215,7 @@ struct imv_agent_t {
  *
  */
 imv_agent_t *imv_agent_create(const char *name,
-							  pen_type_t *supported_types, u_int32_t type_count,
+							  pen_type_t *supported_types, uint32_t type_count,
 							  TNC_IMVID id, TNC_Version *actual_version);
 
 #endif /** IMV_AGENT_H_ @}*/

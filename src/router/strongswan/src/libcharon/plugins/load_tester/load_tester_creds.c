@@ -68,6 +68,11 @@ struct private_load_tester_creds_t {
 	 * Password for EAP
 	 */
 	shared_key_t *pwd;
+
+	/**
+	 * List of certificate distribution points to include in generated certs
+	 */
+	linked_list_t *cdps;
 };
 
 /**
@@ -202,7 +207,7 @@ static private_key_t *load_issuer_key()
 	char *path;
 
 	path = lib->settings->get_str(lib->settings,
-					"%s.plugins.load-tester.issuer_key", NULL, charon->name);
+						"%s.plugins.load-tester.issuer_key", NULL, lib->ns);
 	if (!path)
 	{
 		return lib->creds->create(lib->creds, CRED_PRIVATE_KEY, KEY_RSA,
@@ -222,7 +227,7 @@ static certificate_t *load_issuer_cert()
 	char *path;
 
 	path = lib->settings->get_str(lib->settings,
-					"%s.plugins.load-tester.issuer_cert", NULL, charon->name);
+						"%s.plugins.load-tester.issuer_cert", NULL, lib->ns);
 	if (!path)
 	{
 		return lib->creds->create(lib->creds, CRED_CERTIFICATE, CERT_X509,
@@ -246,7 +251,7 @@ static void load_ca_certs(private_load_tester_creds_t *this)
 	char *path;
 
 	path = lib->settings->get_str(lib->settings,
-						"%s.plugins.load-tester.ca_dir", NULL, charon->name);
+							"%s.plugins.load-tester.ca_dir", NULL, lib->ns);
 	if (path)
 	{
 		enumerator = enumerator_create_directory(path);
@@ -342,7 +347,7 @@ METHOD(credential_set_t, create_cert_enumerator, enumerator_t*,
 	}
 	enumerator->destroy(enumerator);
 
-	if (!trusted)
+	if (!trusted && this->private)
 	{
 		/* peer certificate, generate on demand */
 		serial = htonl(++this->serial);
@@ -377,6 +382,7 @@ METHOD(credential_set_t, create_cert_enumerator, enumerator_t*,
 									BUILD_NOT_BEFORE_TIME, now - 60 * 60 * 24,
 									BUILD_NOT_AFTER_TIME, now + 60 * 60 * 24,
 									BUILD_SERIAL, chunk_from_thing(serial),
+									BUILD_CRL_DISTRIBUTION_POINTS, this->cdps,
 									BUILD_END);
 		peer_key->destroy(peer_key);
 		sans->destroy(sans);
@@ -436,20 +442,23 @@ METHOD(load_tester_creds_t, destroy, void,
 	DESTROY_IF(this->ca);
 	this->psk->destroy(this->psk);
 	this->pwd->destroy(this->pwd);
+	this->cdps->destroy_function(this->cdps, free);
 	free(this);
 }
 
 load_tester_creds_t *load_tester_creds_create()
 {
 	private_load_tester_creds_t *this;
-	char *pwd, *psk, *digest;
+	char *pwd, *psk, *digest, *crl;
 
 	psk = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.preshared_key", default_psk, charon->name);
+				"%s.plugins.load-tester.preshared_key", default_psk, lib->ns);
 	pwd = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.eap_password", default_pwd, charon->name);
+				"%s.plugins.load-tester.eap_password", default_pwd, lib->ns);
 	digest = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.digest", "sha1", charon->name);
+				"%s.plugins.load-tester.digest", "sha1", lib->ns);
+	crl = lib->settings->get_str(lib->settings,
+				"%s.plugins.load-tester.crl", NULL, lib->ns);
 
 	INIT(this,
 		.public = {
@@ -465,7 +474,7 @@ load_tester_creds_t *load_tester_creds_create()
 		.private = load_issuer_key(),
 		.ca = load_issuer_cert(),
 		.cas = linked_list_create(),
-		.digest = enum_from_name(hash_algorithm_short_names, digest),
+		.cdps = linked_list_create(),
 		.psk = shared_key_create(SHARED_IKE,
 								 chunk_clone(chunk_create(psk, strlen(psk)))),
 		.pwd = shared_key_create(SHARED_EAP,
@@ -477,14 +486,23 @@ load_tester_creds_t *load_tester_creds_create()
 		this->cas->insert_last(this->cas, this->ca->get_ref(this->ca));
 	}
 
-	if (this->digest == -1)
+	if (!enum_from_name(hash_algorithm_short_names, digest, &this->digest))
 	{
 		DBG1(DBG_CFG, "invalid load-tester digest: '%s', using sha1", digest);
 		this->digest = HASH_SHA1;
+	}
+
+	if (crl)
+	{
+		x509_cdp_t *cdp;
+
+		INIT(cdp,
+			.uri = crl,
+		);
+		this->cdps->insert_last(this->cdps, cdp);
 	}
 
 	load_ca_certs(this);
 
 	return &this->public;
 }
-

@@ -320,9 +320,12 @@ static bool parse(private_x509_crl_t *this)
 						}
 						this->baseCrlNumber = object;
 						break;
+					case OID_ISSUING_DIST_POINT:
+						/* TODO support of IssuingDistributionPoints */
+						break;
 					default:
 						if (critical && lib->settings->get_bool(lib->settings,
-							"libstrongswan.x509.enforce_critical", TRUE))
+							"%s.x509.enforce_critical", TRUE, lib->ns))
 						{
 							DBG1(DBG_ASN, "critical '%s' extension not supported",
 								 (extn_oid == OID_UNKNOWN) ? "unknown" :
@@ -344,7 +347,7 @@ static bool parse(private_x509_crl_t *this)
 				break;
 			}
 			case CRL_OBJ_SIGNATURE:
-				this->signature = object;
+				this->signature = chunk_skip(object, 1);
 				break;
 			default:
 				break;
@@ -448,6 +451,7 @@ METHOD(certificate_t, issued_by, bool,
 	signature_scheme_t scheme;
 	bool valid;
 	x509_t *x509 = (x509_t*)issuer;
+	chunk_t keyid = chunk_empty;
 
 	/* check if issuer is an X.509 CA certificate */
 	if (issuer->get_type(issuer) != CERT_X509)
@@ -459,21 +463,16 @@ METHOD(certificate_t, issued_by, bool,
 		return FALSE;
 	}
 
-	/* get the public key of the issuer */
-	key = issuer->get_public_key(issuer);
-
 	/* compare keyIdentifiers if available, otherwise use DNs */
-	if (this->authKeyIdentifier.ptr && key)
+	if (this->authKeyIdentifier.ptr)
 	{
-		chunk_t fingerprint;
-
-		if (!key->get_fingerprint(key, KEYID_PUBKEY_SHA1, &fingerprint) ||
-			!chunk_equals(fingerprint, this->authKeyIdentifier))
+		keyid = x509->get_subjectKeyIdentifier(x509);
+		if (keyid.len && !chunk_equals(keyid, this->authKeyIdentifier))
 		{
 			return FALSE;
 		}
 	}
-	else
+	if (!keyid.len)
 	{
 		if (!this->issuer->equals(this->issuer, issuer->get_subject(issuer)))
 		{
@@ -481,10 +480,13 @@ METHOD(certificate_t, issued_by, bool,
 		}
 	}
 
-	/* determine signature scheme */
 	scheme = signature_scheme_from_oid(this->algorithm);
-
-	if (scheme == SIGN_UNKNOWN || key == NULL)
+	if (scheme == SIGN_UNKNOWN)
+	{
+		return FALSE;
+	}
+	key = issuer->get_public_key(issuer);
+	if (!key)
 	{
 		return FALSE;
 	}

@@ -22,6 +22,12 @@
 #define OPENSSL_UTIL_H_
 
 #include <library.h>
+
+#ifdef X509_NAME
+/* from <wincrypt.h> */
+# undef X509_NAME
+#endif
+
 #include <openssl/bn.h>
 #include <openssl/asn1.h>
 
@@ -66,6 +72,15 @@ bool openssl_bn_cat(int len, BIGNUM *a, BIGNUM *b, chunk_t *chunk);
  */
 bool openssl_bn_split(chunk_t chunk, BIGNUM *a, BIGNUM *b);
 
+/**
+ * Exports the given bignum (assumed to be a positive number) to a chunk in
+ * two's complement format (i.e. a zero byte is added if the MSB is set).
+ *
+ * @param bn		the BIGNUM to export
+ * @param chunk		the chunk (data gets allocated)
+ * @return			TRUE on success, FALSE otherwise
+ */
+bool openssl_bn2chunk(BIGNUM *bn, chunk_t *chunk);
 
 /**
  * Allocate a chunk using the i2d function of a given object

@@ -1,4 +1,7 @@
 /*
+ * Copyright (C) 2015 Tobias Brunner
+ * Hochschule fuer Technik Rapperswil
+ *
  * Copyright (C) 2011 Martin Willi
  * Copyright (C) 2011 revosec AG
  *
@@ -38,11 +41,27 @@ struct quick_mode_t {
 	task_t task;
 
 	/**
+	 * Get the message ID of the quick mode exchange handled by this task as
+	 * responder.
+	 *
+	 * @return				message ID, or 0 (not defined yet or as initiator)
+	 */
+	u_int32_t (*get_mid)(quick_mode_t *this);
+
+	/**
 	 * Use a specific reqid to install this CHILD_SA.
 	 *
 	 * @param reqid			reqid to use
 	 */
 	void (*use_reqid)(quick_mode_t *this, u_int32_t reqid);
+
+	/**
+	 * Use specific mark values, overriding configuration.
+	 *
+	 * @param in			inbound mark value
+	 * @param out			outbound mark value
+	 */
+	void (*use_marks)(quick_mode_t *this, u_int in, u_int out);
 
 	/**
 	 * Set the SPI of the old SA, if rekeying.

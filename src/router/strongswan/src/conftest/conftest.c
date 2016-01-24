@@ -81,7 +81,7 @@ static bool load_configs(char *suite_file, char *test_file)
 	}
 	conftest->test = settings_create(suite_file);
 	conftest->test->load_files(conftest->test, test_file, TRUE);
-	conftest->suite_dir = strdup(dirname(suite_file));
+	conftest->suite_dir = path_dirname(suite_file);
 	return TRUE;
 }
 
@@ -382,15 +382,17 @@ static void load_log_levels(file_logger_t *logger, char *section)
  */
 static void load_logger_options(file_logger_t *logger, char *section)
 {
-	bool ike_name;
 	char *time_format;
+	bool add_ms, ike_name;
 
 	time_format = conftest->test->get_str(conftest->test,
 					"log.%s.time_format", NULL, section);
+	add_ms = conftest->test->get_bool(conftest->test,
+					"log.%s.time_add_ms", FALSE, section);
 	ike_name = conftest->test->get_bool(conftest->test,
 					"log.%s.ike_name", FALSE, section);
 
-	logger->set_options(logger, time_format, ike_name);
+	logger->set_options(logger, time_format, add_ms, ike_name);
 }
 
 /**
@@ -432,21 +434,21 @@ int main(int argc, char *argv[])
 	int status = 0;
 	sigset_t set;
 	int sig;
-	char *suite_file = "suite.conf", *test_file = NULL;
+	char *suite_file = "suite.conf", *test_file = NULL, *preload, *plugins;
 	file_logger_t *logger;
 
-	if (!library_init(NULL))
+	if (!library_init(NULL, "conftest"))
 	{
 		library_deinit();
 		return SS_RC_LIBSTRONGSWAN_INTEGRITY;
 	}
-	if (!libhydra_init("conftest"))
+	if (!libhydra_init())
 	{
 		libhydra_deinit();
 		library_deinit();
 		return SS_RC_INITIALIZATION_FAILED;
 	}
-	if (!libcharon_init("conftest"))
+	if (!libcharon_init())
 	{
 		libcharon_deinit();
 		libhydra_deinit();
@@ -463,7 +465,7 @@ int main(int argc, char *argv[])
 	lib->credmgr->add_set(lib->credmgr, &conftest->creds->set);
 
 	logger = file_logger_create("stdout");
-	logger->set_options(logger, NULL, FALSE);
+	logger->set_options(logger, NULL, FALSE, FALSE);
 	logger->open(logger, FALSE, FALSE);
 	logger->set_level(logger, DBG_ANY, LEVEL_CTRL);
 	charon->bus->add_logger(charon->bus, &logger->logger);
@@ -509,15 +511,19 @@ int main(int argc, char *argv[])
 	}
 	load_loggers(logger);
 
-	if (!lib->plugins->load(lib->plugins, NULL,
-			conftest->test->get_str(conftest->test, "preload", "")))
+	preload = conftest->test->get_str(conftest->test, "preload", "");
+	if (asprintf(&plugins, "%s %s", preload, PLUGINS) < 0)
 	{
 		return 1;
 	}
-	if (!charon->initialize(charon, PLUGINS))
+	if (!charon->initialize(charon, plugins))
 	{
+		free(plugins);
 		return 1;
 	}
+	lib->plugins->status(lib->plugins, LEVEL_CTRL);
+	free(plugins);
+
 	if (!load_certs(conftest->test, conftest->suite_dir))
 	{
 		return 1;
@@ -559,7 +565,7 @@ int main(int argc, char *argv[])
 	sigaddset(&set, SIGTERM);
 	sigprocmask(SIG_BLOCK, &set, NULL);
 
-	while (sigwait(&set, &sig) == 0)
+	while ((sig = sigwaitinfo(&set, NULL)) != -1 || errno == EINTR)
 	{
 		switch (sig)
 		{

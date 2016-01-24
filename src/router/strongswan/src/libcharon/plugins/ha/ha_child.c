@@ -97,24 +97,28 @@ METHOD(listener_t, child_keys, bool,
 	}
 	m->add_attribute(m, HA_NONCE_I, nonce_i);
 	m->add_attribute(m, HA_NONCE_R, nonce_r);
-	if (dh && dh->get_shared_secret(dh, &secret) == SUCCESS)
+	if (dh && dh->get_shared_secret(dh, &secret))
 	{
 		m->add_attribute(m, HA_SECRET, secret);
 		chunk_clear(&secret);
 	}
 
-	local_ts = child_sa->get_traffic_selectors(child_sa, TRUE);
-	enumerator = local_ts->create_enumerator(local_ts);
+	local_ts = linked_list_create();
+	remote_ts = linked_list_create();
+
+	enumerator = child_sa->create_ts_enumerator(child_sa, TRUE);
 	while (enumerator->enumerate(enumerator, &ts))
 	{
 		m->add_attribute(m, HA_LOCAL_TS, ts);
+		local_ts->insert_last(local_ts, ts);
 	}
 	enumerator->destroy(enumerator);
-	remote_ts = child_sa->get_traffic_selectors(child_sa, FALSE);
-	enumerator = remote_ts->create_enumerator(remote_ts);
+
+	enumerator = child_sa->create_ts_enumerator(child_sa, FALSE);
 	while (enumerator->enumerate(enumerator, &ts))
 	{
 		m->add_attribute(m, HA_REMOTE_TS, ts);
+		remote_ts->insert_last(remote_ts, ts);
 	}
 	enumerator->destroy(enumerator);
 
@@ -122,11 +126,14 @@ METHOD(listener_t, child_keys, bool,
 			ike_sa->get_my_host(ike_sa), child_sa->get_spi(child_sa, TRUE));
 	seg_o = this->kernel->get_segment_spi(this->kernel,
 			ike_sa->get_other_host(ike_sa), child_sa->get_spi(child_sa, FALSE));
-	DBG1(DBG_CFG, "handling HA CHILD_SA %s{%d} %#R=== %#R "
+	DBG1(DBG_CFG, "handling HA CHILD_SA %s{%d} %#R === %#R "
 		"(segment in: %d%s, out: %d%s)", child_sa->get_name(child_sa),
-		child_sa->get_reqid(child_sa), local_ts, remote_ts,
+		child_sa->get_unique_id(child_sa), local_ts, remote_ts,
 		seg_i, this->segments->is_active(this->segments, seg_i) ? "*" : "",
 		seg_o, this->segments->is_active(this->segments, seg_o) ? "*" : "");
+
+	local_ts->destroy(local_ts);
+	remote_ts->destroy(remote_ts);
 
 	this->socket->push(this->socket, m);
 	m->destroy(m);
@@ -195,4 +202,3 @@ ha_child_t *ha_child_create(ha_socket_t *socket, ha_tunnel_t *tunnel,
 
 	return &this->public;
 }
-

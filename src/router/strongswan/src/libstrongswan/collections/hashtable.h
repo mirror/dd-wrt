@@ -31,7 +31,23 @@ typedef struct hashtable_t hashtable_t;
  * @param key			key to hash
  * @return				hash code
  */
-typedef u_int (*hashtable_hash_t)(void *key);
+typedef u_int (*hashtable_hash_t)(const void *key);
+
+/**
+ * Hashtable hash function calculation the hash solely based on the key pointer.
+ *
+ * @param key			key to hash
+ * @return				hash of key
+ */
+u_int hashtable_hash_ptr(const void *key);
+
+/**
+ * Hashtable hash function calculation the hash for char* keys.
+ *
+ * @param key			key to hash, a char*
+ * @return				hash of key
+ */
+u_int hashtable_hash_str(const void *key);
 
 /**
  * Prototype for a function that compares the two keys for equality.
@@ -40,7 +56,25 @@ typedef u_int (*hashtable_hash_t)(void *key);
  * @param other_key		second key
  * @return				TRUE if the keys are equal
  */
-typedef bool (*hashtable_equals_t)(void *key, void *other_key);
+typedef bool (*hashtable_equals_t)(const void *key, const void *other_key);
+
+/**
+ * Hashtable equals function comparing pointers.
+ *
+ * @param key			key to compare
+ * @param other_key		other key to compare
+ * @return				TRUE if key == other_key
+ */
+bool hashtable_equals_ptr(const void *key, const void *other_key);
+
+/**
+ * Hashtable equals function comparing char* keys.
+ *
+ * @param key			key to compare
+ * @param other_key		other key to compare
+ * @return				TRUE if streq(key, other_key)
+ */
+bool hashtable_equals_str(const void *key, const void *other_key);
 
 /**
  * Class implementing a hash table.
@@ -66,7 +100,7 @@ struct hashtable_t {
 	 * @param value		the value to store
 	 * @return			NULL if no item was replaced, the old value otherwise
 	 */
-	void *(*put) (hashtable_t *this, void *key, void *value);
+	void *(*put) (hashtable_t *this, const void *key, void *value);
 
 	/**
 	 * Returns the value with the given key, if the hash table contains such an
@@ -75,7 +109,7 @@ struct hashtable_t {
 	 * @param key		the key of the requested value
 	 * @return			the value, NULL if not found
 	 */
-	void *(*get) (hashtable_t *this, void *key);
+	void *(*get) (hashtable_t *this, const void *key);
 
 	/**
 	 * Returns the value with a matching key, if the hash table contains such an
@@ -91,7 +125,8 @@ struct hashtable_t {
 	 * @param match		match function to be used when comparing keys
 	 * @return			the value, NULL if not found
 	 */
-	void *(*get_match) (hashtable_t *this, void *key, hashtable_equals_t match);
+	void *(*get_match) (hashtable_t *this, const void *key,
+						hashtable_equals_t match);
 
 	/**
 	 * Removes the value with the given key from the hash table and returns the
@@ -100,7 +135,7 @@ struct hashtable_t {
 	 * @param key		the key of the value to remove
 	 * @return			the removed value, NULL if not found
 	 */
-	void *(*remove) (hashtable_t *this, void *key);
+	void *(*remove) (hashtable_t *this, const void *key);
 
 	/**
 	 * Removes the key and value pair from the hash table at which the given
@@ -122,6 +157,14 @@ struct hashtable_t {
 	 */
 	void (*destroy) (hashtable_t *this);
 
+	/**
+	 * Destroys a hash table object and calls the given function for each
+	 * item and its key in the hash table.
+	 *
+	 * @param function	function to call on each item and key
+	 */
+	void (*destroy_function)(hashtable_t *this,
+							 void (*)(void *val, const void *key));
 };
 
 /**

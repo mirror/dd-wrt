@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 Tobias Brunner
+ * Copyright (C) 2008-2015 Tobias Brunner
  * Copyright (C) 2008 Andreas Steffen
  * Hochschule fuer Technik Rapperswil
  *
@@ -13,7 +13,29 @@
  * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * for more details.
  */
+/*
+ * Copyright (C) 2014 Nanoteq Pty Ltd
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -24,7 +46,6 @@
 #ifdef HAVE_NET_PFKEYV2_H
 #include <net/pfkeyv2.h>
 #else
-#include <stdint.h>
 #include <linux/pfkeyv2.h>
 #endif
 
@@ -62,9 +83,7 @@
 #include <networking/host.h>
 #include <collections/linked_list.h>
 #include <collections/hashtable.h>
-#include <threading/thread.h>
 #include <threading/mutex.h>
-#include <processing/jobs/callback_job.h>
 
 /** non linux specific */
 #ifndef IPPROTO_COMP
@@ -85,6 +104,12 @@
 
 #ifndef SADB_X_EALG_CASTCBC
 #define SADB_X_EALG_CASTCBC SADB_X_EALG_CAST128CBC
+#endif
+
+#if !defined(SADB_X_EALG_AES_GCM_ICV8) && defined(SADB_X_EALG_AESGCM8)
+#define SADB_X_EALG_AES_GCM_ICV8 SADB_X_EALG_AESGCM8
+#define SADB_X_EALG_AES_GCM_ICV12 SADB_X_EALG_AESGCM12
+#define SADB_X_EALG_AES_GCM_ICV16 SADB_X_EALG_AESGCM16
 #endif
 
 #ifndef SOL_IP
@@ -116,8 +141,8 @@
 #define SOL_UDP IPPROTO_UDP
 #endif
 
-/** default priority of installed policies */
-#define PRIO_BASE 512
+/** base priority for installed policies */
+#define PRIO_BASE 384
 
 #ifdef __APPLE__
 /** from xnu/bsd/net/pfkeyv2.h */
@@ -180,6 +205,11 @@ struct private_kernel_pfkey_ipsec_t
 	linked_list_t *policies;
 
 	/**
+	 * List of exclude routes (exclude_route_t)
+	 */
+	linked_list_t *excludes;
+
+	/**
 	 * Hash table of IPsec SAs using policies (ipsec_sa_t)
 	 */
 	hashtable_t *sas;
@@ -210,6 +240,33 @@ struct private_kernel_pfkey_ipsec_t
 	int seq;
 };
 
+typedef struct exclude_route_t exclude_route_t;
+
+/**
+ * Exclude route definition
+ */
+struct exclude_route_t {
+	/** destination address of exclude */
+	host_t *dst;
+	/** source address for route */
+	host_t *src;
+	/** nexthop exclude has been installed */
+	host_t *gtw;
+	/** references to this route */
+	int refs;
+};
+
+/**
+ * clean up a route exclude entry
+ */
+static void exclude_route_destroy(exclude_route_t *this)
+{
+	this->dst->destroy(this->dst);
+	this->src->destroy(this->src);
+	this->gtw->destroy(this->gtw);
+	free(this);
+}
+
 typedef struct route_entry_t route_entry_t;
 
 /**
@@ -230,6 +287,9 @@ struct route_entry_t {
 
 	/** destination net prefixlen */
 	u_int8_t prefixlen;
+
+	/** reference to exclude route, if any */
+	exclude_route_t *exclude;
 };
 
 /**
@@ -251,6 +311,7 @@ static bool route_entry_equals(route_entry_t *a, route_entry_t *b)
 {
 	return a->if_name && b->if_name && streq(a->if_name, b->if_name) &&
 		   a->src_ip->ip_equals(a->src_ip, b->src_ip) &&
+		   a->gateway && b->gateway &&
 		   a->gateway->ip_equals(a->gateway, b->gateway) &&
 		   chunk_equals(a->dst_net, b->dst_net) && a->prefixlen == b->prefixlen;
 }
@@ -339,7 +400,7 @@ static void ipsec_sa_destroy(private_kernel_pfkey_ipsec_t *this,
 }
 
 typedef struct policy_sa_t policy_sa_t;
-typedef struct policy_sa_fwd_t policy_sa_fwd_t;
+typedef struct policy_sa_in_t policy_sa_in_t;
 
 /**
  * Mapping between a policy and an IPsec SA.
@@ -356,10 +417,10 @@ struct policy_sa_t {
 };
 
 /**
- * For forward policies we also cache the traffic selectors in order to install
+ * For input policies we also cache the traffic selectors in order to install
  * the route.
  */
-struct policy_sa_fwd_t {
+struct policy_sa_in_t {
 	/** Generic interface */
 	policy_sa_t generic;
 
@@ -371,7 +432,7 @@ struct policy_sa_fwd_t {
 };
 
 /**
- * Create a policy_sa(_fwd)_t object
+ * Create a policy_sa(_in)_t object
  */
 static policy_sa_t *policy_sa_create(private_kernel_pfkey_ipsec_t *this,
 	policy_dir_t dir, policy_type_t type, host_t *src, host_t *dst,
@@ -379,14 +440,14 @@ static policy_sa_t *policy_sa_create(private_kernel_pfkey_ipsec_t *this,
 {
 	policy_sa_t *policy;
 
-	if (dir == POLICY_FWD)
+	if (dir == POLICY_IN)
 	{
-		policy_sa_fwd_t *fwd;
-		INIT(fwd,
+		policy_sa_in_t *in;
+		INIT(in,
 			.src_ts = src_ts->clone(src_ts),
 			.dst_ts = dst_ts->clone(dst_ts),
 		);
-		policy = &fwd->generic;
+		policy = &in->generic;
 	}
 	else
 	{
@@ -398,16 +459,16 @@ static policy_sa_t *policy_sa_create(private_kernel_pfkey_ipsec_t *this,
 }
 
 /**
- * Destroy a policy_sa(_fwd)_t object
+ * Destroy a policy_sa(_in)_t object
  */
 static void policy_sa_destroy(policy_sa_t *policy, policy_dir_t *dir,
 							  private_kernel_pfkey_ipsec_t *this)
 {
-	if (*dir == POLICY_FWD)
+	if (*dir == POLICY_IN)
 	{
-		policy_sa_fwd_t *fwd = (policy_sa_fwd_t*)policy;
-		fwd->src_ts->destroy(fwd->src_ts);
-		fwd->dst_ts->destroy(fwd->dst_ts);
+		policy_sa_in_t *in = (policy_sa_in_t*)policy;
+		in->src_ts->destroy(in->src_ts);
+		in->dst_ts->destroy(in->dst_ts);
 	}
 	ipsec_sa_destroy(this, policy->sa);
 	free(policy);
@@ -453,15 +514,30 @@ static policy_entry_t *create_policy_entry(traffic_selector_t *src_ts,
 	INIT(policy,
 		.direction = dir,
 	);
+	u_int16_t port;
+	u_int8_t proto;
 
 	src_ts->to_subnet(src_ts, &policy->src.net, &policy->src.mask);
 	dst_ts->to_subnet(dst_ts, &policy->dst.net, &policy->dst.mask);
 
 	/* src or dest proto may be "any" (0), use more restrictive one */
-	policy->src.proto = max(src_ts->get_protocol(src_ts),
-							dst_ts->get_protocol(dst_ts));
-	policy->src.proto = policy->src.proto ? policy->src.proto : IPSEC_PROTO_ANY;
-	policy->dst.proto = policy->src.proto;
+	proto = max(src_ts->get_protocol(src_ts), dst_ts->get_protocol(dst_ts));
+	/* map the ports to ICMP type/code how the Linux kernel expects them, that
+	 * is, type in src, code in dst */
+	if (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6)
+	{
+		port = max(policy->src.net->get_port(policy->src.net),
+				   policy->dst.net->get_port(policy->dst.net));
+		policy->src.net->set_port(policy->src.net,
+								  traffic_selector_icmp_type(port));
+		policy->dst.net->set_port(policy->dst.net,
+								  traffic_selector_icmp_code(port));
+	}
+	else if (!proto)
+	{
+		proto = IPSEC_PROTO_ANY;
+	}
+	policy->src.proto = policy->dst.proto = proto;
 
 	return policy;
 }
@@ -528,6 +604,9 @@ static inline u_int32_t get_priority(policy_entry_t *policy,
 			priority <<= 1;
 			/* fall-through */
 		case POLICY_PRIORITY_DEFAULT:
+			priority <<= 1;
+			/* fall-trough */
+		case POLICY_PRIORITY_PASS:
 			break;
 	}
 	/* calculate priority based on selector size, small size = high prio */
@@ -764,13 +843,20 @@ static kernel_algorithm_t encryption_algs[] = {
 /*	{ENCR_DES_IV32,				0							}, */
 	{ENCR_NULL,					SADB_EALG_NULL				},
 	{ENCR_AES_CBC,				SADB_X_EALG_AESCBC			},
-/*	{ENCR_AES_CTR,				SADB_X_EALG_AESCTR			}, */
+#ifdef SADB_X_EALG_AESCTR
+	{ENCR_AES_CTR,				SADB_X_EALG_AESCTR			},
+#endif
 /*  {ENCR_AES_CCM_ICV8,			SADB_X_EALG_AES_CCM_ICV8	}, */
 /*	{ENCR_AES_CCM_ICV12,		SADB_X_EALG_AES_CCM_ICV12	}, */
 /*	{ENCR_AES_CCM_ICV16,		SADB_X_EALG_AES_CCM_ICV16	}, */
-/*	{ENCR_AES_GCM_ICV8,			SADB_X_EALG_AES_GCM_ICV8	}, */
-/*	{ENCR_AES_GCM_ICV12,		SADB_X_EALG_AES_GCM_ICV12	}, */
-/*	{ENCR_AES_GCM_ICV16,		SADB_X_EALG_AES_GCM_ICV16	}, */
+#ifdef SADB_X_EALG_AES_GCM_ICV8 /* assume the others are defined too */
+	{ENCR_AES_GCM_ICV8,			SADB_X_EALG_AES_GCM_ICV8	},
+	{ENCR_AES_GCM_ICV12,		SADB_X_EALG_AES_GCM_ICV12	},
+	{ENCR_AES_GCM_ICV16,		SADB_X_EALG_AES_GCM_ICV16	},
+#endif
+#ifdef SADB_X_EALG_CAMELLIACBC
+	{ENCR_CAMELLIA_CBC,			SADB_X_EALG_CAMELLIACBC		},
+#endif
 	{END_OF_LIST,				0							},
 };
 
@@ -791,18 +877,20 @@ static kernel_algorithm_t integrity_algs[] = {
 	{END_OF_LIST,				0,							},
 };
 
-#if 0
 /**
  * Algorithms for IPComp, unused yet
  */
 static kernel_algorithm_t compression_algs[] = {
 /*	{IPCOMP_OUI,				0							}, */
 	{IPCOMP_DEFLATE,			SADB_X_CALG_DEFLATE			},
+#ifdef SADB_X_CALG_LZS
 	{IPCOMP_LZS,				SADB_X_CALG_LZS				},
+#endif
+#ifdef SADB_X_CALG_LZJH
 	{IPCOMP_LZJH,				SADB_X_CALG_LZJH			},
+#endif
 	{END_OF_LIST,				0							},
 };
-#endif
 
 /**
  * Look up a kernel algorithm ID and its key size
@@ -819,6 +907,9 @@ static int lookup_algorithm(transform_type_t type, int ikev2)
 			break;
 		case INTEGRITY_ALGORITHM:
 			list = integrity_algs;
+			break;
+		case COMPRESSION_ALGORITHM:
+			list = compression_algs;
 			break;
 		default:
 			return 0;
@@ -837,6 +928,28 @@ static int lookup_algorithm(transform_type_t type, int ikev2)
 }
 
 /**
+ * Helper to set a port in a sockaddr_t, the port has to be in host order
+ */
+static void set_port(sockaddr_t *addr, u_int16_t port)
+{
+	switch (addr->sa_family)
+	{
+		case AF_INET:
+		{
+			struct sockaddr_in *sin = (struct sockaddr_in*)addr;
+			sin->sin_port = htons(port);
+			break;
+		}
+		case AF_INET6:
+		{
+			struct sockaddr_in6 *sin6 = (struct sockaddr_in6*)addr;
+			sin6->sin6_port = htons(port);
+			break;
+		}
+	}
+}
+
+/**
  * Copy a host_t as sockaddr_t to the given memory location.
  * @return		the number of bytes copied
  */
@@ -844,37 +957,16 @@ static size_t hostcpy(void *dest, host_t *host, bool include_port)
 {
 	sockaddr_t *addr = host->get_sockaddr(host), *dest_addr = dest;
 	socklen_t *len = host->get_sockaddr_len(host);
-	u_int16_t port = htons(host->get_port(host));
 
 	memcpy(dest, addr, *len);
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 	dest_addr->sa_len = *len;
 #endif
-	switch (dest_addr->sa_family)
+	if (!include_port)
 	{
-		case AF_INET:
-		{
-			struct sockaddr_in *sin = dest;
-			sin->sin_port = include_port ? port : 0;
-			break;
-		}
-		case AF_INET6:
-		{
-			struct sockaddr_in6 *sin6 = dest;
-			sin6->sin6_port = include_port ? port : 0;
-			break;
-		}
+		set_port(dest_addr, 0);
 	}
 	return *len;
-}
-
-/**
- * add a host behind an sadb_address extension
- */
-static void host2ext(host_t *host, struct sadb_address *ext, bool include_port)
-{
-	size_t len = hostcpy(ext + 1, host, include_port);
-	ext->sadb_address_len = PFKEY_LEN(sizeof(*ext) + len);
 }
 
 /**
@@ -884,10 +976,13 @@ static void add_addr_ext(struct sadb_msg *msg, host_t *host, u_int16_t type,
 						 u_int8_t proto, u_int8_t prefixlen, bool include_port)
 {
 	struct sadb_address *addr = (struct sadb_address*)PFKEY_EXT_ADD_NEXT(msg);
+	size_t len;
+
 	addr->sadb_address_exttype = type;
 	addr->sadb_address_proto = proto;
 	addr->sadb_address_prefixlen = prefixlen;
-	host2ext(host, addr, include_port);
+	len = hostcpy(addr + 1, host, include_port);
+	addr->sadb_address_len = PFKEY_LEN(sizeof(*addr) + len);
 	PFKEY_EXT_ADD(msg, addr);
 }
 
@@ -945,6 +1040,10 @@ static traffic_selector_t* sadb_address2ts(struct sadb_address *address)
 {
 	traffic_selector_t *ts;
 	host_t *host;
+	u_int8_t proto;
+
+	proto = address->sadb_address_proto;
+	proto = proto == IPSEC_PROTO_ANY ? 0 : proto;
 
 	/* The Linux 2.6 kernel does not set the protocol and port information
 	 * in the src and dst sadb_address extensions of the SADB_ACQUIRE message.
@@ -952,8 +1051,7 @@ static traffic_selector_t* sadb_address2ts(struct sadb_address *address)
 	host = host_create_from_sockaddr((sockaddr_t*)&address[1]);
 	ts = traffic_selector_create_from_subnet(host,
 											 address->sadb_address_prefixlen,
-											 address->sadb_address_proto,
-											 host->get_port(host),
+											 proto, host->get_port(host),
 											 host->get_port(host) ?: 65535);
 	return ts;
 }
@@ -1090,7 +1188,7 @@ static status_t pfkey_send_socket(private_kernel_pfkey_ipsec_t *this, int socket
 		}
 		if (msg->sadb_msg_seq != this->seq)
 		{
-			DBG1(DBG_KNL, "received PF_KEY message with unexpected sequence "
+			DBG2(DBG_KNL, "received PF_KEY message with unexpected sequence "
 						  "number, was %d expected %d", msg->sadb_msg_seq,
 						  this->seq);
 			if (msg->sadb_msg_seq == 0)
@@ -1197,7 +1295,8 @@ static void process_expire(private_kernel_pfkey_ipsec_t *this,
 {
 	pfkey_msg_t response;
 	u_int8_t protocol;
-	u_int32_t spi, reqid;
+	u_int32_t spi;
+	host_t *dst;
 	bool hard;
 
 	DBG2(DBG_KNL, "received an SADB_EXPIRE");
@@ -1210,18 +1309,18 @@ static void process_expire(private_kernel_pfkey_ipsec_t *this,
 
 	protocol = satype2proto(msg->sadb_msg_satype);
 	spi = response.sa->sadb_sa_spi;
-	reqid = response.x_sa2->sadb_x_sa2_reqid;
 	hard = response.lft_hard != NULL;
 
-	if (protocol != IPPROTO_ESP && protocol != IPPROTO_AH)
+	if (protocol == IPPROTO_ESP || protocol == IPPROTO_AH)
 	{
-		DBG2(DBG_KNL, "ignoring SADB_EXPIRE for SA with SPI %.8x and "
-					  "reqid {%u} which is not a CHILD_SA", ntohl(spi), reqid);
-		return;
+		dst = host_create_from_sockaddr((sockaddr_t*)(response.dst + 1));
+		if (dst)
+		{
+			hydra->kernel_interface->expire(hydra->kernel_interface, protocol,
+											spi, dst, hard);
+			dst->destroy(dst);
+		}
 	}
-
-	hydra->kernel_interface->expire(hydra->kernel_interface, reqid, protocol,
-									spi, hard);
 }
 
 #ifdef SADB_X_MIGRATE
@@ -1288,9 +1387,9 @@ static void process_mapping(private_kernel_pfkey_ipsec_t *this,
 							struct sadb_msg* msg)
 {
 	pfkey_msg_t response;
-	u_int32_t spi, reqid;
+	u_int32_t spi;
 	sockaddr_t *sa;
-	host_t *host;
+	host_t *dst, *new;
 
 	DBG2(DBG_KNL, "received an SADB_X_NAT_T_NEW_MAPPING");
 
@@ -1308,7 +1407,6 @@ static void process_mapping(private_kernel_pfkey_ipsec_t *this,
 	}
 
 	spi = response.sa->sadb_sa_spi;
-	reqid = response.x_sa2->sadb_x_sa2_reqid;
 
 	if (satype2proto(msg->sadb_msg_satype) != IPPROTO_ESP)
 	{
@@ -1316,6 +1414,7 @@ static void process_mapping(private_kernel_pfkey_ipsec_t *this,
 	}
 
 	sa = (sockaddr_t*)(response.dst + 1);
+	dst = host_create_from_sockaddr(sa);
 	switch (sa->sa_family)
 	{
 		case AF_INET:
@@ -1333,12 +1432,16 @@ static void process_mapping(private_kernel_pfkey_ipsec_t *this,
 		default:
 			break;
 	}
-
-	host = host_create_from_sockaddr(sa);
-	if (host)
+	if (dst)
 	{
-		hydra->kernel_interface->mapping(hydra->kernel_interface, reqid,
-										 spi, host);
+		new = host_create_from_sockaddr(sa);
+		if (new)
+		{
+			hydra->kernel_interface->mapping(hydra->kernel_interface,
+											 IPPROTO_ESP, spi, dst, new);
+			new->destroy(new);
+		}
+		dst->destroy(dst);
 	}
 }
 #endif /*SADB_X_NAT_T_NEW_MAPPING*/
@@ -1346,31 +1449,28 @@ static void process_mapping(private_kernel_pfkey_ipsec_t *this,
 /**
  * Receives events from kernel
  */
-static job_requeue_t receive_events(private_kernel_pfkey_ipsec_t *this)
+static bool receive_events(private_kernel_pfkey_ipsec_t *this, int fd,
+						   watcher_event_t event)
 {
 	unsigned char buf[PFKEY_BUFFER_SIZE];
 	struct sadb_msg *msg = (struct sadb_msg*)buf;
-	bool oldstate;
 	int len;
 
-	oldstate = thread_cancelability(TRUE);
-	len = recvfrom(this->socket_events, buf, sizeof(buf), 0, NULL, 0);
-	thread_cancelability(oldstate);
-
+	len = recvfrom(this->socket_events, buf, sizeof(buf), MSG_DONTWAIT, NULL, 0);
 	if (len < 0)
 	{
 		switch (errno)
 		{
 			case EINTR:
 				/* interrupted, try again */
-				return JOB_REQUEUE_DIRECT;
+				return TRUE;
 			case EAGAIN:
 				/* no data ready, select again */
-				return JOB_REQUEUE_DIRECT;
+				return TRUE;
 			default:
 				DBG1(DBG_KNL, "unable to receive from PF_KEY event socket");
 				sleep(1);
-				return JOB_REQUEUE_FAIR;
+				return TRUE;
 		}
 	}
 
@@ -1378,17 +1478,17 @@ static job_requeue_t receive_events(private_kernel_pfkey_ipsec_t *this)
 		msg->sadb_msg_len < PFKEY_LEN(sizeof(struct sadb_msg)))
 	{
 		DBG2(DBG_KNL, "received corrupted PF_KEY message");
-		return JOB_REQUEUE_DIRECT;
+		return TRUE;
 	}
 	if (msg->sadb_msg_pid != 0)
 	{	/* not from kernel. not interested, try another one */
-		return JOB_REQUEUE_DIRECT;
+		return TRUE;
 	}
 	if (msg->sadb_msg_len > len / PFKEY_ALIGNMENT)
 	{
 		DBG1(DBG_KNL, "buffer was too small to receive the complete "
 					  "PF_KEY message");
-		return JOB_REQUEUE_DIRECT;
+		return TRUE;
 	}
 
 	switch (msg->sadb_msg_type)
@@ -1413,16 +1513,19 @@ static job_requeue_t receive_events(private_kernel_pfkey_ipsec_t *this)
 			break;
 	}
 
-	return JOB_REQUEUE_DIRECT;
+	return TRUE;
 }
 
-METHOD(kernel_ipsec_t, get_spi, status_t,
-	private_kernel_pfkey_ipsec_t *this, host_t *src, host_t *dst,
-	u_int8_t protocol, u_int32_t reqid, u_int32_t *spi)
+/**
+ * Get an SPI for a specific protocol from the kernel.
+ */
+
+static status_t get_spi_internal(private_kernel_pfkey_ipsec_t *this,
+	host_t *src, host_t *dst, u_int8_t proto, u_int32_t min, u_int32_t max,
+	u_int32_t *spi)
 {
 	unsigned char request[PFKEY_BUFFER_SIZE];
 	struct sadb_msg *msg, *out;
-	struct sadb_x_sa2 *sa2;
 	struct sadb_spirange *range;
 	pfkey_msg_t response;
 	u_int32_t received_spi = 0;
@@ -1433,14 +1536,8 @@ METHOD(kernel_ipsec_t, get_spi, status_t,
 	msg = (struct sadb_msg*)request;
 	msg->sadb_msg_version = PF_KEY_V2;
 	msg->sadb_msg_type = SADB_GETSPI;
-	msg->sadb_msg_satype = proto2satype(protocol);
+	msg->sadb_msg_satype = proto2satype(proto);
 	msg->sadb_msg_len = PFKEY_LEN(sizeof(struct sadb_msg));
-
-	sa2 = (struct sadb_x_sa2*)PFKEY_EXT_ADD_NEXT(msg);
-	sa2->sadb_x_sa2_exttype = SADB_X_EXT_SA2;
-	sa2->sadb_x_sa2_len = PFKEY_LEN(sizeof(struct sadb_spirange));
-	sa2->sadb_x_sa2_reqid = reqid;
-	PFKEY_EXT_ADD(msg, sa2);
 
 	add_addr_ext(msg, src, SADB_EXT_ADDRESS_SRC, 0, 0, FALSE);
 	add_addr_ext(msg, dst, SADB_EXT_ADDRESS_DST, 0, 0, FALSE);
@@ -1448,8 +1545,8 @@ METHOD(kernel_ipsec_t, get_spi, status_t,
 	range = (struct sadb_spirange*)PFKEY_EXT_ADD_NEXT(msg);
 	range->sadb_spirange_exttype = SADB_EXT_SPIRANGE;
 	range->sadb_spirange_len = PFKEY_LEN(sizeof(struct sadb_spirange));
-	range->sadb_spirange_min = 0xc0000000;
-	range->sadb_spirange_max = 0xcFFFFFFF;
+	range->sadb_spirange_min = min;
+	range->sadb_spirange_max = max;
 	PFKEY_EXT_ADD(msg, range);
 
 	if (pfkey_send(this, msg, &out, &len) == SUCCESS)
@@ -1475,11 +1572,40 @@ METHOD(kernel_ipsec_t, get_spi, status_t,
 	return SUCCESS;
 }
 
+METHOD(kernel_ipsec_t, get_spi, status_t,
+	private_kernel_pfkey_ipsec_t *this, host_t *src, host_t *dst,
+	u_int8_t protocol, u_int32_t *spi)
+{
+	if (get_spi_internal(this, src, dst, protocol,
+						 0xc0000000, 0xcFFFFFFF, spi) != SUCCESS)
+	{
+		DBG1(DBG_KNL, "unable to get SPI");
+		return FAILED;
+	}
+
+	DBG2(DBG_KNL, "got SPI %.8x", ntohl(*spi));
+	return SUCCESS;
+}
+
 METHOD(kernel_ipsec_t, get_cpi, status_t,
 	private_kernel_pfkey_ipsec_t *this, host_t *src, host_t *dst,
-	u_int32_t reqid, u_int16_t *cpi)
+	u_int16_t *cpi)
 {
-	return FAILED;
+	u_int32_t received_spi = 0;
+
+	DBG2(DBG_KNL, "getting CPI");
+
+	if (get_spi_internal(this, src, dst, IPPROTO_COMP,
+						 0x100, 0xEFFF, &received_spi) != SUCCESS)
+	{
+		DBG1(DBG_KNL, "unable to get CPI");
+		return FAILED;
+	}
+
+	*cpi = htons((u_int16_t)ntohl(received_spi));
+
+	DBG2(DBG_KNL, "got CPI %.4x", ntohs(*cpi));
+	return SUCCESS;
 }
 
 METHOD(kernel_ipsec_t, add_sa, status_t,
@@ -1487,8 +1613,9 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 	u_int8_t protocol, u_int32_t reqid, mark_t mark, u_int32_t tfc,
 	lifetime_cfg_t *lifetime, u_int16_t enc_alg, chunk_t enc_key,
 	u_int16_t int_alg, chunk_t int_key, ipsec_mode_t mode,
-	u_int16_t ipcomp, u_int16_t cpi, bool encap, bool esn, bool inbound,
-	traffic_selector_t *src_ts, traffic_selector_t *dst_ts)
+	u_int16_t ipcomp, u_int16_t cpi, u_int32_t replay_window,
+	bool initiator, bool encap, bool esn, bool inbound, bool update,
+	linked_list_t *src_ts, linked_list_t *dst_ts)
 {
 	unsigned char request[PFKEY_BUFFER_SIZE];
 	struct sadb_msg *msg, *out;
@@ -1498,6 +1625,37 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 	struct sadb_key *key;
 	size_t len;
 
+	/* if IPComp is used, we install an additional IPComp SA. if the cpi is 0
+	 * we are in the recursive call below */
+	if (ipcomp != IPCOMP_NONE && cpi != 0)
+	{
+		lifetime_cfg_t lft = {{0,0,0},{0,0,0},{0,0,0}};
+		add_sa(this, src, dst, htonl(ntohs(cpi)), IPPROTO_COMP, reqid, mark,
+			   tfc, &lft, ENCR_UNDEFINED, chunk_empty, AUTH_UNDEFINED,
+			   chunk_empty, mode, ipcomp, 0, 0, FALSE, FALSE, FALSE, inbound,
+			   update, NULL, NULL);
+		ipcomp = IPCOMP_NONE;
+		/* use transport mode ESP SA, IPComp uses tunnel mode */
+		mode = MODE_TRANSPORT;
+	}
+
+	if (update)
+	{
+		/* As we didn't know the reqid during SPI allocation, we used reqid
+		 * zero. Unfortunately we can't SADB_UPDATE to the new reqid, hence we
+		 * have to delete the SPI allocation state manually. The reqid
+		 * selector does not count for that, therefore we have to delete
+		 * that state before installing the new SA to avoid deleting the
+		 * the new state after installing it. */
+		mark_t zeromark = {0, 0};
+
+		if (this->public.interface.del_sa(&this->public.interface,
+					src, dst, spi, protocol, 0, zeromark) != SUCCESS)
+		{
+			DBG1(DBG_KNL, "deleting SPI allocation SA failed");
+		}
+	}
+
 	memset(&request, 0, sizeof(request));
 
 	DBG2(DBG_KNL, "adding SAD entry with SPI %.8x and reqid {%u}",
@@ -1505,7 +1663,7 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 
 	msg = (struct sadb_msg*)request;
 	msg->sadb_msg_version = PF_KEY_V2;
-	msg->sadb_msg_type = inbound ? SADB_UPDATE : SADB_ADD;
+	msg->sadb_msg_type = SADB_ADD;
 	msg->sadb_msg_satype = proto2satype(protocol);
 	msg->sadb_msg_len = PFKEY_LEN(sizeof(struct sadb_msg));
 
@@ -1528,9 +1686,22 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 	sa->sadb_sa_exttype = SADB_EXT_SA;
 	sa->sadb_sa_len = PFKEY_LEN(len);
 	sa->sadb_sa_spi = spi;
-	sa->sadb_sa_replay = (protocol == IPPROTO_COMP) ? 0 : 32;
-	sa->sadb_sa_auth = lookup_algorithm(INTEGRITY_ALGORITHM, int_alg);
-	sa->sadb_sa_encrypt = lookup_algorithm(ENCRYPTION_ALGORITHM, enc_alg);
+	if (protocol == IPPROTO_COMP)
+	{
+		sa->sadb_sa_encrypt = lookup_algorithm(COMPRESSION_ALGORITHM, ipcomp);
+	}
+	else
+	{
+		/* Linux interprets sadb_sa_replay as number of packets/bits in the
+		 * replay window, whereas on BSD it's the size of the window in bytes */
+#ifdef __linux__
+		sa->sadb_sa_replay = min(replay_window, 32);
+#else
+		sa->sadb_sa_replay = (replay_window + 7) / 8;
+#endif
+		sa->sadb_sa_auth = lookup_algorithm(INTEGRITY_ALGORITHM, int_alg);
+		sa->sadb_sa_encrypt = lookup_algorithm(ENCRYPTION_ALGORITHM, enc_alg);
+	}
 	PFKEY_EXT_ADD(msg, sa);
 
 	sa2 = (struct sadb_x_sa2*)PFKEY_EXT_ADD_NEXT(msg);
@@ -1601,11 +1772,6 @@ METHOD(kernel_ipsec_t, add_sa, status_t,
 		PFKEY_EXT_ADD(msg, key);
 	}
 
-	if (ipcomp != IPCOMP_NONE)
-	{
-		/*TODO*/
-	}
-
 #ifdef HAVE_NATT
 	if (encap)
 	{
@@ -1650,6 +1816,13 @@ METHOD(kernel_ipsec_t, update_sa, status_t,
 		DBG1(DBG_KNL, "unable to update SAD entry with SPI %.8x: address "
 					  "changes are not supported", ntohl(spi));
 		return NOT_SUPPORTED;
+	}
+
+	/* if IPComp is used, we first update the IPComp SA */
+	if (cpi)
+	{
+		update_sa(this, htonl(ntohs(cpi)), IPPROTO_COMP, 0,
+				  src, dst, new_src, new_dst, FALSE, FALSE, mark);
 	}
 
 	memset(&request, 0, sizeof(request));
@@ -1768,7 +1941,7 @@ METHOD(kernel_ipsec_t, update_sa, status_t,
 METHOD(kernel_ipsec_t, query_sa, status_t,
 	private_kernel_pfkey_ipsec_t *this, host_t *src, host_t *dst,
 	u_int32_t spi, u_int8_t protocol, mark_t mark,
-	u_int64_t *bytes, u_int64_t *packets)
+	u_int64_t *bytes, u_int64_t *packets, time_t *time)
 {
 	unsigned char request[PFKEY_BUFFER_SIZE];
 	struct sadb_msg *msg, *out;
@@ -1823,8 +1996,20 @@ METHOD(kernel_ipsec_t, query_sa, status_t,
 	}
 	if (packets)
 	{
-		/* not supported by PF_KEY */
-		*packets = 0;
+		/* at least on Linux and FreeBSD this contains the number of packets */
+		*packets = response.lft_current->sadb_lifetime_allocations;
+	}
+	if (time)
+	{
+#ifdef __APPLE__
+		/* OS X uses the "last" time of use in usetime */
+		*time = response.lft_current->sadb_lifetime_usetime;
+#else /* !__APPLE__ */
+		/* on Linux, sadb_lifetime_usetime is set to the "first" time of use,
+		 * which is actually correct according to PF_KEY. We have to query
+		 * policies for the last usetime. */
+		*time = 0;
+#endif /* !__APPLE__ */
 	}
 
 	free(out);
@@ -1839,6 +2024,12 @@ METHOD(kernel_ipsec_t, del_sa, status_t,
 	struct sadb_msg *msg, *out;
 	struct sadb_sa *sa;
 	size_t len;
+
+	/* if IPComp was used, we first delete the additional IPComp SA */
+	if (cpi)
+	{
+		del_sa(this, src, dst, htonl(ntohs(cpi)), IPPROTO_COMP, 0, mark);
+	}
 
 	memset(&request, 0, sizeof(request));
 
@@ -1886,32 +2077,280 @@ METHOD(kernel_ipsec_t, flush_sas, status_t,
 {
 	unsigned char request[PFKEY_BUFFER_SIZE];
 	struct sadb_msg *msg, *out;
+	struct {
+		u_int8_t proto;
+		char *name;
+	} protos[] = {
+		{ SADB_SATYPE_AH, "AH" },
+		{ SADB_SATYPE_ESP, "ESP" },
+		{ SADB_X_SATYPE_IPCOMP, "IPComp" },
+	};
 	size_t len;
+	int i;
 
 	memset(&request, 0, sizeof(request));
-
-	DBG2(DBG_KNL, "flushing all SAD entries");
 
 	msg = (struct sadb_msg*)request;
 	msg->sadb_msg_version = PF_KEY_V2;
 	msg->sadb_msg_type = SADB_FLUSH;
-	msg->sadb_msg_satype = SADB_SATYPE_UNSPEC;
 	msg->sadb_msg_len = PFKEY_LEN(sizeof(struct sadb_msg));
 
-	if (pfkey_send(this, msg, &out, &len) != SUCCESS)
+	for (i = 0; i < countof(protos); i++)
 	{
-		DBG1(DBG_KNL, "unable to flush SAD entries");
-		return FAILED;
-	}
-	else if (out->sadb_msg_errno)
-	{
-		DBG1(DBG_KNL, "unable to flush SAD entries: %s (%d)",
-					   strerror(out->sadb_msg_errno), out->sadb_msg_errno);
+		DBG2(DBG_KNL, "flushing all %s SAD entries", protos[i].name);
+
+		msg->sadb_msg_satype = protos[i].proto;
+		if (pfkey_send(this, msg, &out, &len) != SUCCESS)
+		{
+			DBG1(DBG_KNL, "unable to flush %s SAD entries", protos[i].name);
+			return FAILED;
+		}
+		else if (out->sadb_msg_errno)
+		{
+			DBG1(DBG_KNL, "unable to flush %s SAD entries: %s (%d)",
+				 protos[i].name, strerror(out->sadb_msg_errno),
+				 out->sadb_msg_errno);
+			free(out);
+			return FAILED;
+		}
 		free(out);
-		return FAILED;
 	}
-	free(out);
 	return SUCCESS;
+}
+
+/**
+ * Add an explicit exclude route to a routing entry
+ */
+static void add_exclude_route(private_kernel_pfkey_ipsec_t *this,
+							  route_entry_t *route, host_t *src, host_t *dst)
+{
+	enumerator_t *enumerator;
+	exclude_route_t *exclude;
+	host_t *gtw;
+
+	enumerator = this->excludes->create_enumerator(this->excludes);
+	while (enumerator->enumerate(enumerator, &exclude))
+	{
+		if (dst->ip_equals(dst, exclude->dst))
+		{
+			route->exclude = exclude;
+			exclude->refs++;
+		}
+	}
+	enumerator->destroy(enumerator);
+
+	if (!route->exclude)
+	{
+		DBG2(DBG_KNL, "installing new exclude route for %H src %H", dst, src);
+		gtw = hydra->kernel_interface->get_nexthop(hydra->kernel_interface,
+												   dst, -1, NULL);
+		if (gtw)
+		{
+			char *if_name = NULL;
+
+			if (hydra->kernel_interface->get_interface(
+									hydra->kernel_interface, src, &if_name) &&
+				hydra->kernel_interface->add_route(hydra->kernel_interface,
+									dst->get_address(dst),
+									dst->get_family(dst) == AF_INET ? 32 : 128,
+									gtw, src, if_name) == SUCCESS)
+			{
+				INIT(exclude,
+					.dst = dst->clone(dst),
+					.src = src->clone(src),
+					.gtw = gtw->clone(gtw),
+					.refs = 1,
+				);
+				route->exclude = exclude;
+				this->excludes->insert_last(this->excludes, exclude);
+			}
+			else
+			{
+				DBG1(DBG_KNL, "installing exclude route for %H failed", dst);
+			}
+			gtw->destroy(gtw);
+			free(if_name);
+		}
+		else
+		{
+			DBG1(DBG_KNL, "gateway lookup for for %H failed", dst);
+		}
+	}
+}
+
+/**
+ * Remove an exclude route attached to a routing entry
+ */
+static void remove_exclude_route(private_kernel_pfkey_ipsec_t *this,
+								 route_entry_t *route)
+{
+	if (route->exclude)
+	{
+		enumerator_t *enumerator;
+		exclude_route_t *exclude;
+		bool removed = FALSE;
+		host_t *dst;
+
+		enumerator = this->excludes->create_enumerator(this->excludes);
+		while (enumerator->enumerate(enumerator, &exclude))
+		{
+			if (route->exclude == exclude)
+			{
+				if (--exclude->refs == 0)
+				{
+					this->excludes->remove_at(this->excludes, enumerator);
+					removed = TRUE;
+					break;
+				}
+			}
+		}
+		enumerator->destroy(enumerator);
+
+		if (removed)
+		{
+			char *if_name = NULL;
+
+			dst = route->exclude->dst;
+			DBG2(DBG_KNL, "uninstalling exclude route for %H src %H",
+				 dst, route->exclude->src);
+			if (hydra->kernel_interface->get_interface(
+									hydra->kernel_interface,
+									route->exclude->src, &if_name) &&
+				hydra->kernel_interface->del_route(hydra->kernel_interface,
+									dst->get_address(dst),
+									dst->get_family(dst) == AF_INET ? 32 : 128,
+									route->exclude->gtw, route->exclude->src,
+									if_name) != SUCCESS)
+			{
+				DBG1(DBG_KNL, "uninstalling exclude route for %H failed", dst);
+			}
+			exclude_route_destroy(route->exclude);
+			free(if_name);
+		}
+		route->exclude = NULL;
+	}
+}
+
+/**
+ * Try to install a route to the given inbound policy
+ */
+static bool install_route(private_kernel_pfkey_ipsec_t *this,
+						  policy_entry_t *policy, policy_sa_in_t *in)
+{
+	route_entry_t *route, *old;
+	host_t *host, *src, *dst;
+	bool is_virtual;
+
+	if (hydra->kernel_interface->get_address_by_ts(hydra->kernel_interface,
+									in->dst_ts, &host, &is_virtual) != SUCCESS)
+	{
+		return FALSE;
+	}
+
+	/* switch src/dst, as we handle an IN policy */
+	src = in->generic.sa->dst;
+	dst = in->generic.sa->src;
+
+	INIT(route,
+		.prefixlen = policy->src.mask,
+		.src_ip = host,
+		.dst_net = chunk_clone(policy->src.net->get_address(policy->src.net)),
+	);
+
+	if (!dst->is_anyaddr(dst))
+	{
+		route->gateway = hydra->kernel_interface->get_nexthop(
+									hydra->kernel_interface, dst, -1, src);
+
+		/* if the IP is virtual, we install the route over the interface it has
+		 * been installed on. Otherwise we use the interface we use for IKE, as
+		 * this is required for example on Linux. */
+		if (is_virtual)
+		{
+			src = route->src_ip;
+		}
+	}
+	else
+	{	/* for shunt policies */
+		route->gateway = hydra->kernel_interface->get_nexthop(
+									hydra->kernel_interface, policy->src.net,
+									policy->src.mask, route->src_ip);
+
+		/* we don't have a source address, use the address we found */
+		src = route->src_ip;
+	}
+
+	/* get interface for route, using source address */
+	if (!hydra->kernel_interface->get_interface(hydra->kernel_interface,
+												src, &route->if_name))
+	{
+		route_entry_destroy(route);
+		return FALSE;
+	}
+
+	if (policy->route)
+	{
+		old = policy->route;
+
+		if (route_entry_equals(old, route))
+		{	/* such a route already exists */
+			route_entry_destroy(route);
+			return TRUE;
+		}
+		/* uninstall previously installed route */
+		if (hydra->kernel_interface->del_route(hydra->kernel_interface,
+									old->dst_net, old->prefixlen, old->gateway,
+									old->src_ip, old->if_name) != SUCCESS)
+		{
+			DBG1(DBG_KNL, "error uninstalling route installed with policy "
+				 "%R === %R %N", in->src_ts, in->dst_ts,
+				policy_dir_names, policy->direction);
+		}
+		route_entry_destroy(old);
+		policy->route = NULL;
+	}
+
+	/* if remote traffic selector covers the IKE peer, add an exclude route */
+	if (hydra->kernel_interface->get_features(
+					hydra->kernel_interface) & KERNEL_REQUIRE_EXCLUDE_ROUTE)
+	{
+		if (in->src_ts->is_host(in->src_ts, dst))
+		{
+			DBG1(DBG_KNL, "can't install route for %R === %R %N, conflicts "
+				 "with IKE traffic", in->src_ts, in->dst_ts, policy_dir_names,
+				 policy->direction);
+			route_entry_destroy(route);
+			return FALSE;
+		}
+		if (in->src_ts->includes(in->src_ts, dst))
+		{
+			add_exclude_route(this, route, in->generic.sa->dst, dst);
+		}
+	}
+
+	DBG2(DBG_KNL, "installing route: %R via %H src %H dev %s",
+		 in->src_ts, route->gateway, route->src_ip, route->if_name);
+
+	switch (hydra->kernel_interface->add_route(hydra->kernel_interface,
+							route->dst_net, route->prefixlen, route->gateway,
+							route->src_ip, route->if_name))
+	{
+		case ALREADY_DONE:
+			/* route exists, do not uninstall */
+			remove_exclude_route(this, route);
+			route_entry_destroy(route);
+			return TRUE;
+		case SUCCESS:
+			/* cache the installed route */
+			policy->route = route;
+			return TRUE;
+		default:
+			DBG1(DBG_KNL, "installing route failed: %R via %H src %H dev %s",
+				 in->src_ts, route->gateway, route->src_ip, route->if_name);
+			remove_exclude_route(this, route);
+			route_entry_destroy(route);
+			return FALSE;
+	}
 }
 
 /**
@@ -1929,6 +2368,8 @@ static status_t add_policy_internal(private_kernel_pfkey_ipsec_t *this,
 	ipsec_sa_t *ipsec = mapping->sa;
 	pfkey_msg_t response;
 	size_t len;
+	ipsec_mode_t proto_mode;
+	status_t status;
 
 	memset(&request, 0, sizeof(request));
 
@@ -1950,15 +2391,43 @@ static status_t add_policy_internal(private_kernel_pfkey_ipsec_t *this,
 
 	/* one or more sadb_x_ipsecrequest extensions are added to the
 	 * sadb_x_policy extension */
+	proto_mode = ipsec->cfg.mode;
+
 	req = (struct sadb_x_ipsecrequest*)(pol + 1);
+
+	if (ipsec->cfg.ipcomp.transform != IPCOMP_NONE)
+	{
+		req->sadb_x_ipsecrequest_proto = IPPROTO_COMP;
+
+		/* !!! the length here MUST be in octets instead of 64 bit words */
+		req->sadb_x_ipsecrequest_len = sizeof(struct sadb_x_ipsecrequest);
+		req->sadb_x_ipsecrequest_mode = mode2kernel(ipsec->cfg.mode);
+		req->sadb_x_ipsecrequest_reqid = ipsec->cfg.reqid;
+		req->sadb_x_ipsecrequest_level = (policy->direction == POLICY_OUT) ?
+										  IPSEC_LEVEL_UNIQUE : IPSEC_LEVEL_USE;
+		if (ipsec->cfg.mode == MODE_TUNNEL)
+		{
+			len = hostcpy(req + 1, ipsec->src, FALSE);
+			req->sadb_x_ipsecrequest_len += len;
+			len = hostcpy((char*)(req + 1) + len, ipsec->dst, FALSE);
+			req->sadb_x_ipsecrequest_len += len;
+			/* use transport mode for other SAs */
+			proto_mode = MODE_TRANSPORT;
+		}
+
+		pol->sadb_x_policy_len += PFKEY_LEN(req->sadb_x_ipsecrequest_len);
+		req = (struct sadb_x_ipsecrequest*)((char*)(req) +
+											req->sadb_x_ipsecrequest_len);
+	}
+
 	req->sadb_x_ipsecrequest_proto = ipsec->cfg.esp.use ? IPPROTO_ESP
 														: IPPROTO_AH;
 	/* !!! the length here MUST be in octets instead of 64 bit words */
 	req->sadb_x_ipsecrequest_len = sizeof(struct sadb_x_ipsecrequest);
-	req->sadb_x_ipsecrequest_mode = mode2kernel(ipsec->cfg.mode);
+	req->sadb_x_ipsecrequest_mode = mode2kernel(proto_mode);
 	req->sadb_x_ipsecrequest_reqid = ipsec->cfg.reqid;
 	req->sadb_x_ipsecrequest_level = IPSEC_LEVEL_UNIQUE;
-	if (ipsec->cfg.mode == MODE_TUNNEL)
+	if (proto_mode == MODE_TUNNEL)
 	{
 		len = hostcpy(req + 1, ipsec->src, FALSE);
 		req->sadb_x_ipsecrequest_len += len;
@@ -1988,7 +2457,15 @@ static status_t add_policy_internal(private_kernel_pfkey_ipsec_t *this,
 
 	this->mutex->unlock(this->mutex);
 
-	if (pfkey_send(this, msg, &out, &len) != SUCCESS)
+	status = pfkey_send(this, msg, &out, &len);
+	if (status == SUCCESS && !update && out->sadb_msg_errno == EEXIST)
+	{
+		DBG1(DBG_KNL, "policy already exists, try to update it");
+		free(out);
+		msg->sadb_msg_type = SADB_X_SPDUPDATE;
+		status = pfkey_send(this, msg, &out, &len);
+	}
+	if (status != SUCCESS)
 	{
 		return FAILED;
 	}
@@ -2010,8 +2487,8 @@ static status_t add_policy_internal(private_kernel_pfkey_ipsec_t *this,
 
 	/* we try to find the policy again and update the kernel index */
 	this->mutex->lock(this->mutex);
-	if (this->policies->find_last(this->policies, NULL,
-								 (void**)&policy) != SUCCESS)
+	if (this->policies->find_first(this->policies, NULL,
+								  (void**)&policy) != SUCCESS)
 	{
 		DBG2(DBG_KNL, "unable to update index, the policy is already gone, "
 					  "ignoring");
@@ -2023,87 +2500,14 @@ static status_t add_policy_internal(private_kernel_pfkey_ipsec_t *this,
 	free(out);
 
 	/* install a route, if:
-	 * - this is a forward policy (to just get one for each child)
-	 * - we are in tunnel mode
+	 * - this is an inbound policy (to just get one for each child)
+	 * - we are in tunnel mode or install a bypass policy
 	 * - routing is not disabled via strongswan.conf
 	 */
-	if (policy->direction == POLICY_FWD &&
-		ipsec->cfg.mode != MODE_TRANSPORT && this->install_routes)
+	if (policy->direction == POLICY_IN && this->install_routes &&
+		(mapping->type != POLICY_IPSEC || ipsec->cfg.mode != MODE_TRANSPORT))
 	{
-		policy_sa_fwd_t *fwd = (policy_sa_fwd_t*)mapping;
-		route_entry_t *route;
-
-		INIT(route,
-			.prefixlen = policy->src.mask,
-		);
-
-		if (hydra->kernel_interface->get_address_by_ts(hydra->kernel_interface,
-				fwd->dst_ts, &route->src_ip) == SUCCESS)
-		{
-			/* get the nexthop to src (src as we are in POLICY_FWD).*/
-			route->gateway = hydra->kernel_interface->get_nexthop(
-											hydra->kernel_interface, ipsec->src,
-											ipsec->dst);
-			route->dst_net = chunk_clone(policy->src.net->get_address(
-											policy->src.net));
-
-			/* install route via outgoing interface */
-			if (!hydra->kernel_interface->get_interface(hydra->kernel_interface,
-												ipsec->dst, &route->if_name))
-			{
-				this->mutex->unlock(this->mutex);
-				route_entry_destroy(route);
-				return SUCCESS;
-			}
-
-			if (policy->route)
-			{
-				route_entry_t *old = policy->route;
-				if (route_entry_equals(old, route))
-				{
-					this->mutex->unlock(this->mutex);
-					route_entry_destroy(route);
-					return SUCCESS;
-				}
-				/* uninstall previously installed route */
-				if (hydra->kernel_interface->del_route(hydra->kernel_interface,
-						old->dst_net, old->prefixlen, old->gateway,
-						old->src_ip, old->if_name) != SUCCESS)
-				{
-					DBG1(DBG_KNL, "error uninstalling route installed with "
-								  "policy %R === %R %N", fwd->src_ts,
-								   fwd->dst_ts, policy_dir_names,
-								   policy->direction);
-				}
-				route_entry_destroy(old);
-				policy->route = NULL;
-			}
-
-			DBG2(DBG_KNL, "installing route: %R via %H src %H dev %s",
-				 fwd->src_ts, route->gateway, route->src_ip, route->if_name);
-			switch (hydra->kernel_interface->add_route(
-								hydra->kernel_interface, route->dst_net,
-								route->prefixlen, route->gateway,
-								route->src_ip, route->if_name))
-			{
-				default:
-					DBG1(DBG_KNL, "unable to install source route for %H",
-								   route->src_ip);
-					/* FALL */
-				case ALREADY_DONE:
-					/* route exists, do not uninstall */
-					route_entry_destroy(route);
-					break;
-				case SUCCESS:
-					/* cache the installed route */
-					policy->route = route;
-					break;
-			}
-		}
-		else
-		{
-			free(route);
-		}
+		install_route(this, policy, (policy_sa_in_t*)mapping);
 	}
 	this->mutex->unlock(this->mutex);
 	return SUCCESS;
@@ -2141,7 +2545,7 @@ METHOD(kernel_ipsec_t, add_policy, status_t,
 	}
 	else
 	{	/* use the new one, if we have no such policy */
-		this->policies->insert_last(this->policies, policy);
+		this->policies->insert_first(this->policies, policy);
 		policy->used_by = linked_list_create();
 	}
 
@@ -2187,7 +2591,7 @@ METHOD(kernel_ipsec_t, add_policy, status_t,
 METHOD(kernel_ipsec_t, query_policy, status_t,
 	private_kernel_pfkey_ipsec_t *this, traffic_selector_t *src_ts,
 	traffic_selector_t *dst_ts, policy_dir_t direction, mark_t mark,
-	u_int32_t *use_time)
+	time_t *use_time)
 {
 	unsigned char request[PFKEY_BUFFER_SIZE];
 	struct sadb_msg *msg, *out;
@@ -2269,7 +2673,7 @@ METHOD(kernel_ipsec_t, query_policy, status_t,
 	}
 	else if (response.lft_current == NULL)
 	{
-		DBG1(DBG_KNL, "unable to query policy %R === %R %N: kernel reports no "
+		DBG2(DBG_KNL, "unable to query policy %R === %R %N: kernel reports no "
 					  "use time", src_ts, dst_ts, policy_dir_names, direction);
 		free(out);
 		return FAILED;
@@ -2290,19 +2694,25 @@ METHOD(kernel_ipsec_t, query_policy, status_t,
 }
 
 METHOD(kernel_ipsec_t, del_policy, status_t,
-	private_kernel_pfkey_ipsec_t *this, traffic_selector_t *src_ts,
-	traffic_selector_t *dst_ts, policy_dir_t direction, u_int32_t reqid,
+	private_kernel_pfkey_ipsec_t *this, host_t *src, host_t *dst,
+	traffic_selector_t *src_ts, traffic_selector_t *dst_ts,
+	policy_dir_t direction, policy_type_t type, ipsec_sa_cfg_t *sa,
 	mark_t mark, policy_priority_t prio)
 {
 	unsigned char request[PFKEY_BUFFER_SIZE];
 	struct sadb_msg *msg, *out;
 	struct sadb_x_policy *pol;
 	policy_entry_t *policy, *found = NULL;
-	policy_sa_t *mapping;
+	policy_sa_t *mapping, *to_remove = NULL;
 	enumerator_t *enumerator;
-	bool is_installed = TRUE;
+	bool first = TRUE, is_installed = TRUE;
 	u_int32_t priority;
 	size_t len;
+	ipsec_sa_t assigned_sa = {
+		.src = src,
+		.dst = dst,
+		.cfg = *sa,
+	};
 
 	if (dir2kernel(direction) == IPSEC_DIR_INVALID)
 	{	/* FWD policies are not supported on all platforms */
@@ -2330,19 +2740,32 @@ METHOD(kernel_ipsec_t, del_policy, status_t,
 	policy_entry_destroy(policy, this);
 	policy = found;
 
-	/* remove mapping to SA by reqid and priority */
+	/* remove mapping to SA by reqid and priority, if multiple match, which
+	 * could happen when rekeying due to an address change, remove the oldest */
 	priority = get_priority(policy, prio);
 	enumerator = policy->used_by->create_enumerator(policy->used_by);
 	while (enumerator->enumerate(enumerator, (void**)&mapping))
 	{
-		if (reqid == mapping->sa->cfg.reqid && priority == mapping->priority)
+		if (priority == mapping->priority &&
+			ipsec_sa_equals(mapping->sa, &assigned_sa))
 		{
-			policy->used_by->remove_at(policy->used_by, enumerator);
+			to_remove = mapping;
+			is_installed = first;
+		}
+		else if (priority < mapping->priority)
+		{
 			break;
 		}
-		is_installed = FALSE;
+		first = FALSE;
 	}
 	enumerator->destroy(enumerator);
+	if (!to_remove)
+	{	/* sanity check */
+		this->mutex->unlock(this->mutex);
+		return SUCCESS;
+	}
+	policy->used_by->remove(policy->used_by, to_remove, NULL);
+	mapping = to_remove;
 
 	if (policy->used_by->get_count(policy->used_by) > 0)
 	{	/* policy is used by more SAs, keep in kernel */
@@ -2398,6 +2821,7 @@ METHOD(kernel_ipsec_t, del_policy, status_t,
 						  "policy %R === %R %N", src_ts, dst_ts,
 						   policy_dir_names, direction);
 		}
+		remove_exclude_route(this, route);
 	}
 
 	this->policies->remove(this->policies, found, NULL);
@@ -2548,8 +2972,10 @@ METHOD(kernel_ipsec_t, enable_udp_decap, bool,
 		return FALSE;
 	}
 #else /* __APPLE__ */
-	if (sysctlbyname("net.inet.ipsec.esp_port", NULL, NULL, &port,
-					 sizeof(port)) != 0)
+	int intport = port;
+
+	if (sysctlbyname("net.inet.ipsec.esp_port", NULL, NULL, &intport,
+					 sizeof(intport)) != 0)
 	{
 		DBG1(DBG_KNL, "could not set net.inet.ipsec.esp_port to %d: %s",
 			 port, strerror(errno));
@@ -2569,12 +2995,14 @@ METHOD(kernel_ipsec_t, destroy, void,
 	}
 	if (this->socket_events > 0)
 	{
+		lib->watcher->remove(lib->watcher, this->socket_events);
 		close(this->socket_events);
 	}
 	this->policies->invoke_function(this->policies,
 								   (linked_list_invoke_t)policy_entry_destroy,
 									this);
 	this->policies->destroy(this->policies);
+	this->excludes->destroy(this->excludes);
 	this->sas->destroy(this->sas);
 	this->mutex->destroy(this->mutex);
 	this->mutex_pfkey->destroy(this->mutex_pfkey);
@@ -2588,6 +3016,7 @@ kernel_pfkey_ipsec_t *kernel_pfkey_ipsec_create()
 {
 	private_kernel_pfkey_ipsec_t *this;
 	bool register_for_events = TRUE;
+	int rcv_buffer;
 
 	INIT(this,
 		.public = {
@@ -2609,20 +3038,17 @@ kernel_pfkey_ipsec_t *kernel_pfkey_ipsec_create()
 			},
 		},
 		.policies = linked_list_create(),
+		.excludes = linked_list_create(),
 		.sas = hashtable_create((hashtable_hash_t)ipsec_sa_hash,
 								(hashtable_equals_t)ipsec_sa_equals, 32),
 		.mutex = mutex_create(MUTEX_TYPE_DEFAULT),
 		.mutex_pfkey = mutex_create(MUTEX_TYPE_DEFAULT),
 		.install_routes = lib->settings->get_bool(lib->settings,
 												  "%s.install_routes", TRUE,
-												  hydra->daemon),
+												  lib->ns),
 	);
 
-	if (streq(hydra->daemon, "pluto"))
-	{	/* no routes for pluto, they are installed via updown script */
-		this->install_routes = FALSE;
-	}
-	else if (streq(hydra->daemon, "starter"))
+	if (streq(lib->ns, "starter"))
 	{	/* starter has no threads, so we do not register for kernel events */
 		register_for_events = FALSE;
 	}
@@ -2647,6 +3073,18 @@ kernel_pfkey_ipsec_t *kernel_pfkey_ipsec_create()
 			return NULL;
 		}
 
+		rcv_buffer = lib->settings->get_int(lib->settings,
+					"%s.plugins.kernel-pfkey.events_buffer_size", 0, lib->ns);
+		if (rcv_buffer > 0)
+		{
+			if (setsockopt(this->socket_events, SOL_SOCKET, SO_RCVBUF,
+						   &rcv_buffer, sizeof(rcv_buffer)) == -1)
+			{
+				DBG1(DBG_KNL, "unable to set receive buffer size on PF_KEY "
+					 "event socket: %s", strerror(errno));
+			}
+		}
+
 		/* register the event socket */
 		if (register_pfkey_socket(this, SADB_SATYPE_ESP) != SUCCESS ||
 			register_pfkey_socket(this, SADB_SATYPE_AH) != SUCCESS)
@@ -2656,10 +3094,8 @@ kernel_pfkey_ipsec_t *kernel_pfkey_ipsec_create()
 			return NULL;
 		}
 
-		lib->processor->queue_job(lib->processor,
-			(job_t*)callback_job_create_with_prio(
-					(callback_job_cb_t)receive_events, this, NULL,
-					(callback_job_cancel_t)return_false, JOB_PRIO_CRITICAL));
+		lib->watcher->add(lib->watcher, this->socket_events, WATCHER_READ,
+						  (watcher_cb_t)receive_events, this);
 	}
 
 	return &this->public;

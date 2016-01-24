@@ -35,17 +35,17 @@ typedef enum kernel_address_type_t kernel_address_type_t;
  */
 enum kernel_address_type_t {
 	/** normal addresses (on regular, up, non-ignored) interfaces */
-	ADDR_TYPE_REGULAR = 0,
+	ADDR_TYPE_REGULAR = (1 << 0),
 	/** addresses on down interfaces */
-	ADDR_TYPE_DOWN =  (1 << 0),
+	ADDR_TYPE_DOWN =  (1 << 1),
 	/** addresses on ignored interfaces */
-	ADDR_TYPE_IGNORED = (1 << 1),
+	ADDR_TYPE_IGNORED = (1 << 2),
 	/** addresses on loopback interfaces */
-	ADDR_TYPE_LOOPBACK = (1 << 2),
+	ADDR_TYPE_LOOPBACK = (1 << 3),
 	/** virtual IP addresses */
-	ADDR_TYPE_VIRTUAL = (1 << 3),
+	ADDR_TYPE_VIRTUAL = (1 << 4),
 	/** to enumerate all available addresses */
-	ADDR_TYPE_ALL = (1 << 4) - 1,
+	ADDR_TYPE_ALL = (1 << 5) - 1,
 };
 
 /**
@@ -86,10 +86,12 @@ struct kernel_net_t {
 	 * for the given source to dest.
 	 *
 	 * @param dest			target destination address
+	 * @param prefix		prefix length if dest is a subnet, -1 for auto
 	 * @param src			source address to check, or NULL
 	 * @return				next hop address, NULL if unreachable
 	 */
-	host_t* (*get_nexthop)(kernel_net_t *this, host_t *dest, host_t *src);
+	host_t* (*get_nexthop)(kernel_net_t *this, host_t *dest, int prefix,
+						   host_t *src);
 
 	/**
 	 * Get the interface name of a local address. Interfaces that are down or
@@ -134,7 +136,7 @@ struct kernel_net_t {
 	 *
 	 * The kernel interface uses refcounting, see add_ip().
 	 *
-	 * @param virtual_ip	virtual ip address to assign
+	 * @param virtual_ip	virtual ip address to remove
 	 * @param prefix		prefix length of the IP to uninstall, -1 for auto
 	 * @param wait			TRUE to wait until IP is gone
 	 * @return				SUCCESS if operation completed
@@ -148,7 +150,7 @@ struct kernel_net_t {
 	 * @param dst_net		destination net
 	 * @param prefixlen		destination net prefix length
 	 * @param gateway		gateway for this route
-	 * @param src_ip		sourc ip of the route
+	 * @param src_ip		source ip of the route
 	 * @param if_name		name of the interface the route is bound to
 	 * @return				SUCCESS if operation completed
 	 *						ALREADY_DONE if the route already exists
@@ -163,7 +165,7 @@ struct kernel_net_t {
 	 * @param dst_net		destination net
 	 * @param prefixlen		destination net prefix length
 	 * @param gateway		gateway for this route
-	 * @param src_ip		sourc ip of the route
+	 * @param src_ip		source ip of the route
 	 * @param if_name		name of the interface the route is bound to
 	 * @return				SUCCESS if operation completed
 	 */

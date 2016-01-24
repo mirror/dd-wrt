@@ -17,15 +17,15 @@
  */
 
 #include <stdio.h>
-#define _POSIX_PTHREAD_SEMANTICS /* for two param sigwait on OpenSolaris */
 #include <signal.h>
-#undef _POSIX_PTHREAD_SEMANTICS
 #include <pthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include <hydra.h>
 #include <daemon.h>
@@ -42,6 +42,17 @@
  * PID file, in which charon stores its process id
  */
 #define PID_FILE IPSEC_PIDDIR "/charon.pid"
+
+/**
+ * Default user and group
+ */
+#ifndef IPSEC_USER
+#define IPSEC_USER NULL
+#endif
+
+#ifndef IPSEC_GROUP
+#define IPSEC_GROUP NULL
+#endif
 
 /**
  * Global reference to PID file (required to truncate, if undeletable)
@@ -87,7 +98,7 @@ static void run()
 {
 	sigset_t set;
 
-	/* handle SIGINT, SIGHUP ans SIGTERM in this handler */
+	/* handle SIGINT, SIGHUP and SIGTERM in this handler */
 	sigemptyset(&set);
 	sigaddset(&set, SIGINT);
 	sigaddset(&set, SIGHUP);
@@ -97,12 +108,15 @@ static void run()
 	while (TRUE)
 	{
 		int sig;
-		int error;
 
-		error = sigwait(&set, &sig);
-		if (error)
+		sig = sigwaitinfo(&set, NULL);
+		if (sig == -1)
 		{
-			DBG1(DBG_DMN, "error %d while waiting for a signal", error);
+			if (errno == EINTR)
+			{	/* ignore signals we didn't wait for */
+				continue;
+			}
+			DBG1(DBG_DMN, "waiting for signal failed: %s", strerror(errno));
 			return;
 		}
 		switch (sig)
@@ -111,7 +125,7 @@ static void run()
 			{
 				DBG1(DBG_DMN, "signal of type SIGHUP received. Reloading "
 					 "configuration");
-				if (lib->settings->load_files(lib->settings, NULL, FALSE))
+				if (lib->settings->load_files(lib->settings, lib->conf, FALSE))
 				{
 					charon->load_loggers(charon, levels, !use_syslog);
 					lib->plugins->reload(lib->plugins, NULL);
@@ -134,11 +148,6 @@ static void run()
 				charon->bus->alert(charon->bus, ALERT_SHUTDOWN_SIGNAL, sig);
 				return;
 			}
-			default:
-			{
-				DBG1(DBG_DMN, "unknown signal %d received. Ignored", sig);
-				break;
-			}
 		}
 	}
 }
@@ -148,20 +157,20 @@ static void run()
  */
 static bool lookup_uid_gid()
 {
-#ifdef IPSEC_USER
-	if (!charon->caps->resolve_uid(charon->caps, IPSEC_USER))
+	char *name;
+
+	name = lib->settings->get_str(lib->settings, "charon.user", IPSEC_USER);
+	if (name && !lib->caps->resolve_uid(lib->caps, name))
 	{
 		return FALSE;
 	}
-#endif
-#ifdef IPSEC_GROUP
-	if (!charon->caps->resolve_gid(charon->caps, IPSEC_GROUP))
+	name = lib->settings->get_str(lib->settings, "charon.group", IPSEC_GROUP);
+	if (name && !lib->caps->resolve_gid(lib->caps, name))
 	{
 		return FALSE;
 	}
-#endif
 #ifdef ANDROID
-	charon->caps->set_uid(charon->caps, AID_VPN);
+	lib->caps->set_uid(lib->caps, AID_VPN);
 #endif
 	return TRUE;
 }
@@ -218,9 +227,17 @@ static bool check_pidfile()
 	pidfile = fopen(PID_FILE, "w");
 	if (pidfile)
 	{
+		int fd;
+
+		fd = fileno(pidfile);
+		if (fd == -1 || fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
+		{
+			DBG1(DBG_LIB, "setting FD_CLOEXEC for '"PID_FILE"' failed: %s",
+				 strerror(errno));
+		}
 		ignore_result(fchown(fileno(pidfile),
-							 charon->caps->get_uid(charon->caps),
-							 charon->caps->get_gid(charon->caps)));
+							 lib->caps->get_uid(lib->caps),
+							 lib->caps->get_gid(lib->caps)));
 		fprintf(pidfile, "%d\n", getpid());
 		fflush(pidfile);
 	}
@@ -278,7 +295,7 @@ int main(int argc, char *argv[])
 	dbg = dbg_stderr;
 
 	/* initialize library */
-	if (!library_init(NULL))
+	if (!library_init(NULL, "charon"))
 	{
 		library_deinit();
 		exit(SS_RC_LIBSTRONGSWAN_INTEGRITY);
@@ -292,7 +309,7 @@ int main(int argc, char *argv[])
 		exit(SS_RC_DAEMON_INTEGRITY);
 	}
 
-	if (!libhydra_init("charon"))
+	if (!libhydra_init())
 	{
 		dbg_stderr(DBG_DMN, 1, "initialization failed - aborting charon");
 		libhydra_deinit();
@@ -300,7 +317,7 @@ int main(int argc, char *argv[])
 		exit(SS_RC_INITIALIZATION_FAILED);
 	}
 
-	if (!libcharon_init("charon"))
+	if (!libcharon_init())
 	{
 		dbg_stderr(DBG_DMN, 1, "initialization failed - aborting charon");
 		goto deinit;
@@ -398,6 +415,7 @@ int main(int argc, char *argv[])
 		DBG1(DBG_DMN, "initialization failed - aborting charon");
 		goto deinit;
 	}
+	lib->plugins->status(lib->plugins, LEVEL_CTRL);
 
 	if (check_pidfile())
 	{
@@ -405,14 +423,14 @@ int main(int argc, char *argv[])
 		goto deinit;
 	}
 
-	if (!charon->caps->drop(charon->caps))
+	if (!lib->caps->drop(lib->caps))
 	{
 		DBG1(DBG_DMN, "capability dropping failed - aborting charon");
 		goto deinit;
 	}
 
 	/* add handler for SEGV and ILL,
-	 * INT, TERM and HUP are handled by sigwait() in run() */
+	 * INT, TERM and HUP are handled by sigwaitinfo() in run() */
 	action.sa_handler = segv_handler;
 	action.sa_flags = 0;
 	sigemptyset(&action.sa_mask);
@@ -443,4 +461,3 @@ deinit:
 	library_deinit();
 	return status;
 }
-

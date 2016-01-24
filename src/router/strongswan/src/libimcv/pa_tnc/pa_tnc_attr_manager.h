@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Andreas Steffen
+ * Copyright (C) 2011-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@ typedef struct pa_tnc_attr_manager_t pa_tnc_attr_manager_t;
 #include "pa_tnc_attr.h"
 
 #include <library.h>
+#include <bio/bio_reader.h>
 
-typedef pa_tnc_attr_t* (*pa_tnc_attr_create_t)(u_int32_t type, chunk_t value);
+typedef pa_tnc_attr_t* (*pa_tnc_attr_create_t)(u_int32_t type, size_t length,
+											   chunk_t value);
 
 /**
  * Manages PA-TNC attributes for arbitrary PENs
@@ -61,15 +63,29 @@ struct pa_tnc_attr_manager_t {
 	enum_name_t* (*get_names)(pa_tnc_attr_manager_t *this, pen_t vendor_id);
 
 	/**
-	 * Create a PA-TNC attribute object from data for a given vendor ID and type
+	 * Create and pre-parse a PA-TNC attribute object from data
+	 *
+	 * @param reader		PA-TNC attribute as encoded data
+	 * @param segmented		TRUE if attribute is segmented
+	 * @param offset		Offset in bytes where an error has been found
+	 * @param msg_info		Message info added to an error attribute
+	 * @param error			Error attribute if an error occurred
+	 * @return				PA-TNC attribute object if supported, NULL else
+	 */
+	pa_tnc_attr_t* (*create)(pa_tnc_attr_manager_t *this, bio_reader_t *reader,
+							 bool segmented, uint32_t *offset, chunk_t msg_info,
+							 pa_tnc_attr_t **error);
+
+	/**
+	 * Generically construct a PA-TNC attribute from type and data
 	 *
 	 * @param vendor_id		Private Enterprise Number (PEN)
 	 * @param type			PA-TNC attribute type
 	 * @param value			PA-TNC attribute value as encoded data
 	 * @return				PA-TNC attribute object if supported, NULL else
 	 */
-	pa_tnc_attr_t* (*create)(pa_tnc_attr_manager_t *this, pen_t vendor_id,
-							 u_int32_t type, chunk_t value);
+	pa_tnc_attr_t* (*construct)(pa_tnc_attr_manager_t *this, pen_t vendor_id,
+								uint32_t type, chunk_t value);
 
 	/**
 	 * Destroys a pa_tnc_attr_manager_t object.

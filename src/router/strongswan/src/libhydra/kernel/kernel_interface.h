@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2012 Tobias Brunner
+ * Copyright (C) 2006-2015 Tobias Brunner
  * Copyright (C) 2006 Daniel Roethlisberger
  * Copyright (C) 2005-2006 Martin Willi
  * Copyright (C) 2005 Jan Hutter
@@ -65,6 +65,12 @@ typedef enum kernel_feature_t kernel_feature_t;
 enum kernel_feature_t {
 	/** IPsec can process ESPv3 (RFC 4303) TFC padded packets */
 	KERNEL_ESP_V3_TFC = (1<<0),
+	/** Networking requires an "exclude" route for IKE/ESP packets */
+	KERNEL_REQUIRE_EXCLUDE_ROUTE = (1<<1),
+	/** IPsec implementation requires UDP encapsulation of ESP packets */
+	KERNEL_REQUIRE_UDP_ENCAPSULATION = (1<<2),
+	/** IPsec backend does not require a policy reinstall on SA updates */
+	KERNEL_NO_POLICY_UPDATES = (1<<3),
 };
 
 /**
@@ -98,39 +104,67 @@ struct kernel_interface_t {
 	 * @param src		source address of SA
 	 * @param dst		destination address of SA
 	 * @param protocol	protocol for SA (ESP/AH)
-	 * @param reqid		unique ID for this SA
 	 * @param spi		allocated spi
-	 * @return				SUCCESS if operation completed
+	 * @return			SUCCESS if operation completed
 	 */
 	status_t (*get_spi)(kernel_interface_t *this, host_t *src, host_t *dst,
-						u_int8_t protocol, u_int32_t reqid, u_int32_t *spi);
+						u_int8_t protocol, u_int32_t *spi);
 
 	/**
 	 * Get a Compression Parameter Index (CPI) from the kernel.
 	 *
 	 * @param src		source address of SA
 	 * @param dst		destination address of SA
-	 * @param reqid		unique ID for the corresponding SA
 	 * @param cpi		allocated cpi
-	 * @return				SUCCESS if operation completed
+	 * @return			SUCCESS if operation completed
 	 */
 	status_t (*get_cpi)(kernel_interface_t *this, host_t *src, host_t *dst,
-						u_int32_t reqid, u_int16_t *cpi);
+						u_int16_t *cpi);
+
+	/**
+	 * Allocate or confirm a reqid to use for a given SA pair.
+	 *
+	 * Each returned reqid by a successful call to alloc_reqid() must be
+	 * released using release_reqid().
+	 *
+	 * The reqid parameter is an in/out parameter. If it points to non-zero,
+	 * the reqid is confirmed and registered for use. If it points to zero,
+	 * a reqid is allocated for the given selectors, and returned to reqid.
+	 *
+	 * @param local_ts	traffic selectors of local side for SA
+	 * @param remote_ts	traffic selectors of remote side for SA
+	 * @param mark_in	inbound mark on SA
+	 * @param mark_out	outbound mark on SA
+	 * @param reqid		allocated reqid
+	 * @return			SUCCESS if reqid allocated
+	 */
+	status_t (*alloc_reqid)(kernel_interface_t *this,
+							linked_list_t *local_ts, linked_list_t *remote_ts,
+							mark_t mark_in, mark_t mark_out,
+							u_int32_t *reqid);
+
+	/**
+	 * Release a previously allocated reqid.
+	 *
+	 * @param reqid		reqid to release
+	 * @param mark_in	inbound mark on SA
+	 * @param mark_out	outbound mark on SA
+	 * @return			SUCCESS if reqid released
+	 */
+	status_t (*release_reqid)(kernel_interface_t *this, u_int32_t reqid,
+							  mark_t mark_in, mark_t mark_out);
 
 	/**
 	 * Add an SA to the SAD.
 	 *
-	 * add_sa() may update an already allocated
-	 * SPI (via get_spi). In this case, the replace
-	 * flag must be set.
-	 * This function does install a single SA for a
-	 * single protocol in one direction.
+	 * This function does install a single SA for a single protocol in one
+	 * direction.
 	 *
 	 * @param src			source address for this SA
 	 * @param dst			destination address for this SA
 	 * @param spi			SPI allocated by us or remote peer
 	 * @param protocol		protocol for this SA (ESP/AH)
-	 * @param reqid			unique ID for this SA
+	 * @param reqid			reqid for this SA
 	 * @param mark			optional mark for this SA
 	 * @param tfc			Traffic Flow Confidentiality padding for this SA
 	 * @param lifetime		lifetime_cfg_t for this SA
@@ -141,11 +175,14 @@ struct kernel_interface_t {
 	 * @param mode			mode of the SA (tunnel, transport)
 	 * @param ipcomp		IPComp transform to use
 	 * @param cpi			CPI for IPComp
+	 * @param replay_window	anti-replay window size
+	 * @param initiator		TRUE if initiator of the exchange creating this SA
 	 * @param encap			enable UDP encapsulation for NAT traversal
 	 * @param esn			TRUE to use Extended Sequence Numbers
 	 * @param inbound		TRUE if this is an inbound SA
-	 * @param src_ts		traffic selector with BEET source address
-	 * @param dst_ts		traffic selector with BEET destination address
+	 * @param update		TRUE if an SPI has already been allocated for SA
+	 * @param src_ts		list of source traffic selectors
+	 * @param dst_ts		list of destination traffic selectors
 	 * @return				SUCCESS if operation completed
 	 */
 	status_t (*add_sa) (kernel_interface_t *this,
@@ -155,8 +192,9 @@ struct kernel_interface_t {
 						u_int16_t enc_alg, chunk_t enc_key,
 						u_int16_t int_alg, chunk_t int_key,
 						ipsec_mode_t mode, u_int16_t ipcomp, u_int16_t cpi,
-						bool encap, bool esn, bool inbound,
-						traffic_selector_t *src_ts, traffic_selector_t *dst_ts);
+						u_int32_t replay_window, bool initiator, bool encap,
+						bool esn, bool inbound, bool update,
+						linked_list_t *src_ts, linked_list_t *dst_ts);
 
 	/**
 	 * Update the hosts on an installed SA.
@@ -195,11 +233,12 @@ struct kernel_interface_t {
 	 * @param mark			optional mark for this SA
 	 * @param[out] bytes	the number of bytes processed by SA
 	 * @param[out] packets	number of packets processed by SA
+	 * @param[out] time		last (monotonic) time of SA use
 	 * @return				SUCCESS if operation completed
 	 */
 	status_t (*query_sa) (kernel_interface_t *this, host_t *src, host_t *dst,
 						  u_int32_t spi, u_int8_t protocol, mark_t mark,
-						  u_int64_t *bytes, u_int64_t *packets);
+						  u_int64_t *bytes, u_int64_t *packets, time_t *time);
 
 	/**
 	 * Delete a previously installed SA from the SAD.
@@ -225,9 +264,6 @@ struct kernel_interface_t {
 
 	/**
 	 * Add a policy to the SPD.
-	 *
-	 * A policy is always associated to an SA. Traffic which matches a
-	 * policy is handled by the SA with the same reqid.
 	 *
 	 * @param src			source address of SA
 	 * @param dst			dest address of SA
@@ -258,36 +294,36 @@ struct kernel_interface_t {
 	 * @param dst_ts		traffic selector to match traffic dest
 	 * @param direction		direction of traffic, POLICY_(IN|OUT|FWD)
 	 * @param mark			optional mark
-	 * @param[out] use_time	the time of this SA's last use
+	 * @param[out] use_time	the (monotonic) time of this SA's last use
 	 * @return				SUCCESS if operation completed
 	 */
 	status_t (*query_policy) (kernel_interface_t *this,
 							  traffic_selector_t *src_ts,
 							  traffic_selector_t *dst_ts,
 							  policy_dir_t direction, mark_t mark,
-							  u_int32_t *use_time);
+							  time_t *use_time);
 
 	/**
 	 * Remove a policy from the SPD.
 	 *
-	 * The kernel interface implements reference counting for policies.
-	 * If the same policy is installed multiple times (in the case of rekeying),
-	 * the reference counter is increased. del_policy() decreases the ref counter
-	 * and removes the policy only when no more references are available.
-	 *
+	 * @param src			source address of SA
+	 * @param dst			dest address of SA
 	 * @param src_ts		traffic selector to match traffic source
 	 * @param dst_ts		traffic selector to match traffic dest
 	 * @param direction		direction of traffic, POLICY_(IN|OUT|FWD)
-	 * @param reqid			unique ID of the associated SA
-	 * @param mark			optional mark
+	 * @param type			type of policy, POLICY_(IPSEC|PASS|DROP)
+	 * @param sa			details about the SA(s) tied to this policy
+	 * @param mark			mark for this policy
 	 * @param priority		priority of the policy
 	 * @return				SUCCESS if operation completed
 	 */
 	status_t (*del_policy) (kernel_interface_t *this,
+							host_t *src, host_t *dst,
 							traffic_selector_t *src_ts,
 							traffic_selector_t *dst_ts,
-							policy_dir_t direction, u_int32_t reqid,
-							mark_t mark, policy_priority_t priority);
+							policy_dir_t direction, policy_type_t type,
+							ipsec_sa_cfg_t *sa, mark_t mark,
+							policy_priority_t priority);
 
 	/**
 	 * Flush all policies from the SPD.
@@ -320,9 +356,12 @@ struct kernel_interface_t {
 	 * for the given source to dest.
 	 *
 	 * @param dest			target destination address
+	 * @param prefix		prefix length if dest is a subnet, -1 for auto
+	 * @param src			source address to check, or NULL
 	 * @return				next hop address, NULL if unreachable
 	 */
-	host_t* (*get_nexthop)(kernel_interface_t *this, host_t *dest, host_t *src);
+	host_t* (*get_nexthop)(kernel_interface_t *this, host_t *dest,
+						   int prefix, host_t *src);
 
 	/**
 	 * Get the interface name of a local address. Interfaces that are down or
@@ -367,7 +406,7 @@ struct kernel_interface_t {
 	 *
 	 * The kernel interface uses refcounting, see add_ip().
 	 *
-	 * @param virtual_ip	virtual ip address to assign
+	 * @param virtual_ip	virtual ip address to remove
 	 * @param prefix		prefix length of the IP to uninstall, -1 for auto
 	 * @param wait			TRUE to wait untily IP is gone
 	 * @return				SUCCESS if operation completed
@@ -381,7 +420,7 @@ struct kernel_interface_t {
 	 * @param dst_net		destination net
 	 * @param prefixlen		destination net prefix length
 	 * @param gateway		gateway for this route
-	 * @param src_ip		sourc ip of the route
+	 * @param src_ip		source ip of the route
 	 * @param if_name		name of the interface the route is bound to
 	 * @return				SUCCESS if operation completed
 	 *						ALREADY_DONE if the route already exists
@@ -396,7 +435,7 @@ struct kernel_interface_t {
 	 * @param dst_net		destination net
 	 * @param prefixlen		destination net prefix length
 	 * @param gateway		gateway for this route
-	 * @param src_ip		sourc ip of the route
+	 * @param src_ip		source ip of the route
 	 * @param if_name		name of the interface the route is bound to
 	 * @return				SUCCESS if operation completed
 	 */
@@ -451,47 +490,58 @@ struct kernel_interface_t {
 	 *
 	 * @param ts			traffic selector
 	 * @param ip			returned IP address (has to be destroyed)
+	 * @param vip			set to TRUE if returned address is a virtual IP
 	 * @return				SUCCESS if address found
 	 */
 	status_t (*get_address_by_ts)(kernel_interface_t *this,
-								  traffic_selector_t *ts, host_t **ip);
+								  traffic_selector_t *ts, host_t **ip, bool *vip);
 
 	/**
 	 * Register an ipsec kernel interface constructor on the manager.
 	 *
-	 * @param create			constructor to register
+	 * @param create		constructor to register
+	 * @return				TRUE if the ipsec kernel interface was registered
+	 *						successfully, FALSE if an interface was already
+	 *						registered or the registration failed
 	 */
-	void (*add_ipsec_interface)(kernel_interface_t *this,
+	bool (*add_ipsec_interface)(kernel_interface_t *this,
 								kernel_ipsec_constructor_t create);
 
 	/**
 	 * Unregister an ipsec kernel interface constructor.
 	 *
-	 * @param create			constructor to unregister
+	 * @param create		constructor to unregister
+	 * @return				TRUE if the ipsec kernel interface was unregistered
+	 *						successfully, FALSE otherwise
 	 */
-	void (*remove_ipsec_interface)(kernel_interface_t *this,
+	bool (*remove_ipsec_interface)(kernel_interface_t *this,
 								   kernel_ipsec_constructor_t create);
 
 	/**
 	 * Register a network kernel interface constructor on the manager.
 	 *
-	 * @param create			constructor to register
+	 * @param create		constructor to register
+	 * @return				TRUE if the kernel net interface was registered
+	 *						successfully, FALSE if an interface was already
+	 *						registered or the registration failed
 	 */
-	void (*add_net_interface)(kernel_interface_t *this,
+	bool (*add_net_interface)(kernel_interface_t *this,
 							  kernel_net_constructor_t create);
 
 	/**
 	 * Unregister a network kernel interface constructor.
 	 *
-	 * @param create			constructor to unregister
+	 * @param create		constructor to unregister
+	 * @return				TRUE if the kernel net interface was unregistered
+	 *						successfully, FALSE otherwise
 	 */
-	void (*remove_net_interface)(kernel_interface_t *this,
+	bool (*remove_net_interface)(kernel_interface_t *this,
 								 kernel_net_constructor_t create);
 
 	/**
 	 * Add a listener to the kernel interface.
 	 *
-	 * @param listener			listener to add
+	 * @param listener		listener to add
 	 */
 	void (*add_listener)(kernel_interface_t *this,
 						 kernel_listener_t *listener);
@@ -499,7 +549,7 @@ struct kernel_interface_t {
 	/**
 	 * Remove a listener from the kernel interface.
 	 *
-	 * @param listener			listener to remove
+	 * @param listener		listener to remove
 	 */
 	void (*remove_listener)(kernel_interface_t *this,
 							kernel_listener_t *listener);
@@ -517,23 +567,24 @@ struct kernel_interface_t {
 	/**
 	 * Raise an expire event.
 	 *
-	 * @param reqid			reqid of the expired SA
 	 * @param protocol		protocol of the expired SA
 	 * @param spi			spi of the expired SA
+	 * @param dst			destination address of expired SA
 	 * @param hard			TRUE if it is a hard expire, FALSE otherwise
 	 */
-	void (*expire)(kernel_interface_t *this, u_int32_t reqid,
-				   u_int8_t protocol, u_int32_t spi, bool hard);
+	void (*expire)(kernel_interface_t *this, u_int8_t protocol, u_int32_t spi,
+				   host_t *dst, bool hard);
 
 	/**
 	 * Raise a mapping event.
 	 *
-	 * @param reqid			reqid of the SA
+	 * @param protocol		protocol of affected SA
 	 * @param spi			spi of the SA
+	 * @param dst			original destination address of SA
 	 * @param remote		new remote host
 	 */
-	void (*mapping)(kernel_interface_t *this, u_int32_t reqid, u_int32_t spi,
-					host_t *remote);
+	void (*mapping)(kernel_interface_t *this, u_int8_t protocol, u_int32_t spi,
+					host_t *dst, host_t *remote);
 
 	/**
 	 * Raise a migrate event.
@@ -555,6 +606,14 @@ struct kernel_interface_t {
 	 * @param address		TRUE if address list, FALSE if routing changed
 	 */
 	void (*roam)(kernel_interface_t *this, bool address);
+
+	/**
+	 * Raise a tun event.
+	 *
+	 * @param tun			TUN device
+	 * @param created		TRUE if created, FALSE if going to be destroyed
+	 */
+	void (*tun)(kernel_interface_t *this, tun_device_t *tun, bool created);
 
 	/**
 	 * Register a new algorithm with the kernel interface.
@@ -583,7 +642,7 @@ struct kernel_interface_t {
 							 char **kernel_name);
 
 	/**
-	 * Destroys a kernel_interface_manager_t object.
+	 * Destroys a kernel_interface_t object.
 	 */
 	void (*destroy) (kernel_interface_t *this);
 };

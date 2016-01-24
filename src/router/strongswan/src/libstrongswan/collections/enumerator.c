@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Tobias Brunner
+ * Copyright (C) 2008-2013 Tobias Brunner
  * Copyright (C) 2007 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
@@ -24,6 +24,10 @@
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+
+#ifdef HAVE_GLOB_H
+#include <glob.h>
+#endif /* HAVE_GLOB_H */
 
 #include <utils/debug.h>
 
@@ -157,8 +161,103 @@ enumerator_t* enumerator_create_directory(const char *path)
 	return &this->public;
 }
 
+#ifdef HAVE_GLOB_H
+
 /**
- * Enumerator implementation for directory enumerator
+ * Enumerator implementation for glob enumerator
+ */
+typedef struct {
+	/** implements enumerator_t */
+	enumerator_t public;
+	/** glob data */
+	glob_t glob;
+	/** iteration count */
+	u_int pos;
+	/** absolute path of current file */
+	char full[PATH_MAX];
+} glob_enum_t;
+
+/**
+ * Implementation of enumerator_create_glob().destroy
+ */
+static void destroy_glob_enum(glob_enum_t *this)
+{
+	globfree(&this->glob);
+	free(this);
+}
+
+/**
+ * Implementation of enumerator_create_glob().enumerate
+ */
+static bool enumerate_glob_enum(glob_enum_t *this, char **file, struct stat *st)
+{
+	char *match;
+
+	if (this->pos >= this->glob.gl_pathc)
+	{
+		return FALSE;
+	}
+	match = this->glob.gl_pathv[this->pos++];
+	if (file)
+	{
+		*file = match;
+	}
+	if (st)
+	{
+		if (stat(match, st))
+		{
+			DBG1(DBG_LIB, "stat() on '%s' failed: %s", match,
+				 strerror(errno));
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+/**
+ * See header
+ */
+enumerator_t* enumerator_create_glob(const char *pattern)
+{
+	glob_enum_t *this;
+	int status;
+
+	if (!pattern)
+	{
+		return enumerator_create_empty();
+	}
+
+	INIT(this,
+		.public = {
+			.enumerate = (void*)enumerate_glob_enum,
+			.destroy = (void*)destroy_glob_enum,
+		},
+	);
+
+	status = glob(pattern, GLOB_ERR, NULL, &this->glob);
+	if (status == GLOB_NOMATCH)
+	{
+		DBG1(DBG_LIB, "no files found matching '%s'", pattern);
+	}
+	else if (status != 0)
+	{
+		DBG1(DBG_LIB, "expanding file pattern '%s' failed: %s", pattern,
+			 strerror(errno));
+	}
+	return &this->public;
+}
+
+#else /* HAVE_GLOB_H */
+
+enumerator_t* enumerator_create_glob(const char *pattern)
+{
+	return NULL;
+}
+
+#endif /* HAVE_GLOB_H */
+
+/**
+ * Enumerator implementation for token enumerator
  */
 typedef struct {
 	/** implements enumerator_t */
@@ -264,7 +363,7 @@ static bool enumerate_token_enum(token_enum_t *this, char **token)
 		}
 	}
 
-	/* trim trailing characters/separators */
+	/* trim trailing characters */
 	pos--;
 	while (pos >= *token)
 	{
@@ -278,17 +377,7 @@ static bool enumerate_token_enum(token_enum_t *this, char **token)
 			}
 			trim++;
 		}
-		sep = this->sep;
-		while (*sep)
-		{
-			if (*sep == *pos)
-			{
-				*(pos--) = '\0';
-				break;
-			}
-			sep++;
-		}
-		if (!*trim && !*sep)
+		if (!*trim)
 		{
 			break;
 		}

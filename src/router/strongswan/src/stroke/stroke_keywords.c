@@ -1,4 +1,4 @@
-/* C code produced by gperf version 3.0.3 */
+/* C code produced by gperf version 3.0.4 */
 /* Command-line: /usr/bin/gperf -m 10 -D -C -G -t  */
 /* Computed positions: -k'1,5,7' */
 
@@ -54,12 +54,12 @@ struct stroke_token {
     stroke_keyword_t kw;
 };
 
-#define TOTAL_KEYWORDS 43
+#define TOTAL_KEYWORDS 48
 #define MIN_WORD_LENGTH 2
 #define MAX_WORD_LENGTH 15
-#define MIN_HASH_VALUE 4
-#define MAX_HASH_VALUE 50
-/* maximum key range = 47, duplicates = 0 */
+#define MIN_HASH_VALUE 3
+#define MAX_HASH_VALUE 59
+/* maximum key range = 57, duplicates = 0 */
 
 #ifdef __GNUC__
 __inline
@@ -75,32 +75,32 @@ hash (str, len)
 {
   static const unsigned char asso_values[] =
     {
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 19, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51,  1, 29,  2,
-       2, 16, 51, 21, 51, 11, 51, 16,  1,  1,
-      51, 18,  7, 51,  6, 12,  6, 11, 51, 51,
-       4, 13, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
-      51, 51, 51, 51, 51, 51
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 25, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60,  0, 18,  1,
+       1, 15, 60, 23, 60, 23, 60, 11,  0,  7,
+      60, 24, 14, 60,  6,  9, 16,  9, 60, 60,
+       2,  3, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60, 60, 60, 60, 60,
+      60, 60, 60, 60, 60, 60
     };
   register int hval = len;
 
@@ -131,9 +131,9 @@ static const struct stroke_token wordlist[] =
     {"listall",         STROKE_LIST_ALL},
     {"listcrls",        STROKE_LIST_CRLS},
     {"up",              STROKE_UP},
-    {"delete",          STROKE_DELETE},
     {"listaacerts",     STROKE_LIST_AACERTS},
     {"listcacerts",     STROKE_LIST_CACERTS},
+    {"rekey",           STROKE_REKEY},
     {"rereadall",       STROKE_REREAD_ALL},
     {"listcerts",       STROKE_LIST_CERTS},
     {"rereadcrls",      STROKE_REREAD_CRLS},
@@ -141,46 +141,52 @@ static const struct stroke_token wordlist[] =
     {"rereadaacerts",   STROKE_REREAD_AACERTS},
     {"rereadcacerts",   STROKE_REREAD_CACERTS},
     {"leases",          STROKE_LEASES},
-    {"rekey",           STROKE_REKEY},
-    {"listcainfos",     STROKE_LIST_CAINFOS},
     {"listcounters",    STROKE_COUNTERS},
-    {"route",           STROKE_ROUTE},
-    {"listacerts",      STROKE_LIST_ACERTS},
+    {"delete",          STROKE_DELETE},
     {"status",          STROKE_STATUS},
-    {"listplugins",     STROKE_LIST_PLUGINS},
-    {"listalgs",        STROKE_LIST_ALGS},
-    {"rereadsecrets",   STROKE_REREAD_SECRETS},
+    {"listacerts",      STROKE_LIST_ACERTS},
+    {"route",           STROKE_ROUTE},
     {"statusall",       STROKE_STATUSALL},
-    {"purgeocsp",       STROKE_PURGE_OCSP},
+    {"rereadsecrets",   STROKE_REREAD_SECRETS},
     {"statusallnb",     STROKE_STATUSALL_NOBLK},
+    {"statusall-nb",    STROKE_STATUSALL_NOBLK},
+    {"listalgs",        STROKE_LIST_ALGS},
+    {"up-nb",           STROKE_UP_NOBLK},
     {"exportx509",      STROKE_EXPORT_X509},
-    {"down-srcip",      STROKE_DOWN_SRCIP},
-    {"purgecrls",       STROKE_PURGE_CRLS},
-    {"listocsp",        STROKE_LIST_OCSP},
-    {"rereadocspcerts", STROKE_REREAD_OCSPCERTS},
+    {"listplugins",     STROKE_LIST_PLUGINS},
+    {"listcainfos",     STROKE_LIST_CAINFOS},
+    {"exportconncert",  STROKE_EXPORT_CONN_CERT},
+    {"exportconnchain", STROKE_EXPORT_CONN_CHAIN},
     {"loglevel",        STROKE_LOGLEVEL},
-    {"memusage",        STROKE_MEMUSAGE},
-    {"resetcounters",   STROKE_COUNTERS_RESET},
-    {"listocspcerts",   STROKE_LIST_OCSPCERTS},
+    {"purgeocsp",       STROKE_PURGE_OCSP},
     {"unroute",         STROKE_UNROUTE},
-    {"user-creds",      STROKE_USER_CREDS},
-    {"purgeike",        STROKE_PURGE_IKE},
+    {"listocsp",        STROKE_LIST_OCSP},
+    {"down-srcip",      STROKE_DOWN_SRCIP},
     {"listpubkeys",     STROKE_LIST_PUBKEYS},
+    {"purgecrls",       STROKE_PURGE_CRLS},
+    {"rereadocspcerts", STROKE_REREAD_OCSPCERTS},
+    {"listocspcerts",   STROKE_LIST_OCSPCERTS},
+    {"memusage",        STROKE_MEMUSAGE},
+    {"purgeike",        STROKE_PURGE_IKE},
+    {"user-creds",      STROKE_USER_CREDS},
+    {"down-nb",         STROKE_DOWN_NOBLK},
     {"purgecerts",      STROKE_PURGE_CERTS},
-    {"listgroups",      STROKE_LIST_GROUPS}
+    {"listgroups",      STROKE_LIST_GROUPS},
+    {"resetcounters",   STROKE_COUNTERS_RESET}
   };
 
 static const short lookup[] =
   {
-    -1, -1, -1, -1,  0,  1,  2, -1, -1, -1,  3, -1,  4,  5,
-     6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-    20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
-    34, 35, 36, 37, 38, 39, 40, 41, 42
+    -1, -1, -1,  0,  1,  2, -1,  3, -1,  4, -1,  5,  6,  7,
+     8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+    36, 37, 38, 39, 40, 41, 42, -1, 43, 44, -1, -1, 45, -1,
+    -1, 46, -1, 47
   };
 
 #ifdef __GNUC__
 __inline
-#ifdef __GNUC_STDC_INLINE__
+#if defined __GNUC_STDC_INLINE__ || defined __GNUC_GNU_INLINE__
 __attribute__ ((__gnu_inline__))
 #endif
 #endif

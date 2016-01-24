@@ -1,7 +1,9 @@
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/libstrongswan
 
-INCLUDES = -I$(top_srcdir)/src/libstrongswan ${soup_CFLAGS}
-
-AM_CFLAGS = -rdynamic
+AM_CFLAGS = \
+	 ${soup_CFLAGS} \
+	$(PLUGIN_CFLAGS)
 
 if MONOLITHIC
 noinst_LTLIBRARIES = libstrongswan-soup.la

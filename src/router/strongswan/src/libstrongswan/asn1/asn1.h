@@ -171,6 +171,15 @@ bool asn1_parse_simple_object(chunk_t *object, asn1_t type, u_int level0,
 							  const char* name);
 
 /**
+ * Converts an ASN.1 INTEGER object to an u_int64_t. If the INTEGER is longer
+ * than 8 bytes only the 8 LSBs are returned.
+ *
+ * @param blob		body of an ASN.1 coded integer object
+ * @return			converted integer
+ */
+u_int64_t asn1_parse_integer_uint64(chunk_t blob);
+
+/**
  * Print the value of an ASN.1 simple object
  *
  * @param object	ASN.1 object to be printed
@@ -181,6 +190,13 @@ void asn1_debug_simple_object(chunk_t object, asn1_t type, bool private);
 
 /**
  * Converts an ASN.1 UTCTIME or GENERALIZEDTIME string to time_t
+ *
+ * On systems where sizeof(time_t) == 4 there will be an overflow
+ * for dates
+ *   > Tue, 19 Jan 2038 03:14:07 UTC (0x7fffffff)
+ * and
+ *   < Fri, 13 Dec 1901 20:45:52 UTC (0x80000000)
+ * in both cases TIME_32_BIT_SIGNED_MAX is returned.
  *
  * @param utctime	body of an ASN.1 coded time object
  * @param type		ASN1_UTCTIME or ASN1_GENERALIZEDTIME

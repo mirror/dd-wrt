@@ -20,6 +20,7 @@
 #include "openssl_gcm.h"
 
 #include <openssl/evp.h>
+#include <crypto/iv/iv_gen_seq.h>
 
 /** as defined in RFC 4106 */
 #define IV_LEN		8
@@ -52,6 +53,11 @@ struct private_aead_t {
 	 * Size of the integrity check value
 	 */
 	size_t icv_size;
+
+	/**
+	 * IV generator
+	 */
+	iv_gen_t *iv_gen;
 
 	/**
 	 * The cipher to use
@@ -161,6 +167,12 @@ METHOD(aead_t, get_iv_size, size_t,
 	return IV_LEN;
 }
 
+METHOD(aead_t, get_iv_gen, iv_gen_t*,
+	private_aead_t *this)
+{
+	return this->iv_gen;
+}
+
 METHOD(aead_t, get_key_size, size_t,
 	private_aead_t *this)
 {
@@ -183,13 +195,15 @@ METHOD(aead_t, destroy, void,
 	private_aead_t *this)
 {
 	chunk_clear(&this->key);
+	this->iv_gen->destroy(this->iv_gen);
 	free(this);
 }
 
 /*
  * Described in header
  */
-aead_t *openssl_gcm_create(encryption_algorithm_t algo, size_t key_size)
+aead_t *openssl_gcm_create(encryption_algorithm_t algo,
+						   size_t key_size, size_t salt_size)
 {
 	private_aead_t *this;
 
@@ -200,6 +214,7 @@ aead_t *openssl_gcm_create(encryption_algorithm_t algo, size_t key_size)
 			.get_block_size = _get_block_size,
 			.get_icv_size = _get_icv_size,
 			.get_iv_size = _get_iv_size,
+			.get_iv_gen = _get_iv_gen,
 			.get_key_size = _get_key_size,
 			.set_key = _set_key,
 			.destroy = _destroy,
@@ -220,6 +235,13 @@ aead_t *openssl_gcm_create(encryption_algorithm_t algo, size_t key_size)
 		default:
 			free(this);
 			return NULL;
+	}
+
+	if (salt_size && salt_size != SALT_LEN)
+	{
+		/* currently not supported */
+		free(this);
+		return NULL;
 	}
 
 	switch (algo)
@@ -258,6 +280,7 @@ aead_t *openssl_gcm_create(encryption_algorithm_t algo, size_t key_size)
 	}
 
 	this->key = chunk_alloc(key_size);
+	this->iv_gen = iv_gen_seq_create();
 
 	return &this->public;
 }

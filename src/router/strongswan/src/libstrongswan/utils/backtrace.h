@@ -21,11 +21,11 @@
 #ifndef BACKTRACE_H_
 #define BACKTRACE_H_
 
+typedef struct backtrace_t backtrace_t;
+
 #include <stdio.h>
 
 #include <library.h>
-
-typedef struct backtrace_t backtrace_t;
 
 /**
  * A backtrace registers the frames on the stack during creation.
@@ -59,6 +59,14 @@ struct backtrace_t {
 	 * @return		TRUE if backtraces are equal
 	 */
 	bool (*equals)(backtrace_t *this, backtrace_t *other);
+
+	/**
+	 * Create a copy of this backtrace.
+	 *
+	 * @return		cloned copy
+	 */
+	backtrace_t* (*clone)(backtrace_t *this);
+
 	/**
 	 * Create an enumerator over the stack frame addresses.
 	 *

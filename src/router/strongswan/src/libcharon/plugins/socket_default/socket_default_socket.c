@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2012 Tobias Brunner
+ * Copyright (C) 2006-2013 Tobias Brunner
  * Copyright (C) 2006 Daniel Roethlisberger
  * Copyright (C) 2005-2010 Martin Willi
  * Copyright (C) 2005 Jan Hutter
@@ -44,9 +44,6 @@
 #include <hydra.h>
 #include <daemon.h>
 #include <threading/thread.h>
-
-/* Maximum size of a packet */
-#define MAX_PACKET 10000
 
 /* these are not defined on some platforms */
 #ifndef SOL_IP
@@ -144,7 +141,97 @@ struct private_socket_default_socket_t {
 	 * TRUE if the source address should be set on outbound packets
 	 */
 	bool set_source;
+
+	/**
+	 * A counter to implement round-robin selection of read sockets
+	 */
+	u_int rr_counter;
 };
+
+/**
+ * Get the destination IPv4 address of a received packet, depending on the
+ * available mechanism.
+ */
+#ifdef IP_PKTINFO
+
+static host_t *get_dst_v4(struct cmsghdr *cmsgptr, u_int16_t port)
+{
+	struct sockaddr_in dst = {
+		.sin_family = AF_INET,
+		.sin_port = htons(port),
+	};
+	struct in_pktinfo *pktinfo;
+	struct in_addr *addr;
+
+	if (cmsgptr->cmsg_type == IP_PKTINFO)
+	{
+		pktinfo = (struct in_pktinfo*)CMSG_DATA(cmsgptr);
+		addr = &pktinfo->ipi_addr;
+		memcpy(&dst.sin_addr, addr, sizeof(dst.sin_addr));
+		return host_create_from_sockaddr((sockaddr_t*)&dst);
+	}
+	return NULL;
+}
+
+#elif defined(IP_RECVDSTADDR)
+
+static host_t *get_dst_v4(struct cmsghdr *cmsgptr, u_int16_t port)
+{
+	struct sockaddr_in dst = {
+		.sin_family = AF_INET,
+		.sin_port = htons(port),
+	};
+	struct in_addr *addr;
+
+	if (cmsgptr->cmsg_type == IP_RECVDSTADDR)
+	{
+		addr = (struct in_addr*)CMSG_DATA(cmsgptr);
+		memcpy(&dst.sin_addr, addr, sizeof(dst.sin_addr));
+		return host_create_from_sockaddr((sockaddr_t*)&dst);
+	}
+	return NULL;
+}
+
+#else /* IP_PKTINFO || IP_RECVDSTADDR */
+
+static host_t *get_dst_v4(struct cmsghdr *cmsgptr, u_int16_t port)
+{
+	return NULL;
+}
+
+#endif /* IP_PKTINFO || IP_RECVDSTADDR */
+
+/**
+ * Get the destination IPv6 address of a received packet, depending on the
+ * available mechanism.
+ */
+#ifdef HAVE_IN6_PKTINFO
+
+static host_t *get_dst_v6(struct cmsghdr *cmsgptr, u_int16_t port)
+{
+	struct in6_pktinfo *pktinfo;
+	struct sockaddr_in6 dst = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(port),
+	};
+
+	if (cmsgptr->cmsg_type == IPV6_PKTINFO)
+	{
+		pktinfo = (struct in6_pktinfo*)CMSG_DATA(cmsgptr);
+		memcpy(&dst.sin6_addr, &pktinfo->ipi6_addr, sizeof(dst.sin6_addr));
+		return host_create_from_sockaddr((sockaddr_t*)&dst);
+	}
+	return NULL;
+}
+
+#else /* HAVE_IN6_PKTINFO */
+
+static host_t *get_dst_v6(struct cmsghdr *cmsgptr, u_int16_t port)
+{
+	return NULL;
+}
+
+#endif /* HAVE_IN6_PKTINFO */
 
 METHOD(socket_t, receiver, status_t,
 	private_socket_default_socket_t *this, packet_t **packet)
@@ -153,63 +240,43 @@ METHOD(socket_t, receiver, status_t,
 	chunk_t data;
 	packet_t *pkt;
 	host_t *source = NULL, *dest = NULL;
-	int bytes_read = 0;
+	int i, rr, index, bytes_read = 0, selected = -1;
 	bool oldstate;
-
-	fd_set rfds;
-	int max_fd = 0, selected = 0;
 	u_int16_t port = 0;
-
-	FD_ZERO(&rfds);
-
-	if (this->ipv4)
-	{
-		FD_SET(this->ipv4, &rfds);
-	}
-	if (this->ipv4_natt)
-	{
-		FD_SET(this->ipv4_natt, &rfds);
-	}
-	if (this->ipv6)
-	{
-		FD_SET(this->ipv6, &rfds);
-	}
-	if (this->ipv6_natt)
-	{
-		FD_SET(this->ipv6_natt, &rfds);
-	}
-	max_fd = max(max(this->ipv4, this->ipv4_natt), max(this->ipv6, this->ipv6_natt));
+	struct pollfd pfd[] = {
+		{ .fd = this->ipv4,			.events = POLLIN },
+		{ .fd = this->ipv4_natt,	.events = POLLIN },
+		{ .fd = this->ipv6,			.events = POLLIN },
+		{ .fd = this->ipv6_natt,	.events = POLLIN },
+	};
+	int ports[] = {
+		/* port numbers associated to pollfds */
+		this->port, this->natt, this->port, this->natt,
+	};
 
 	DBG2(DBG_NET, "waiting for data on sockets");
 	oldstate = thread_cancelability(TRUE);
-	if (select(max_fd + 1, &rfds, NULL, NULL, NULL) <= 0)
+	if (poll(pfd, countof(pfd), -1) <= 0)
 	{
 		thread_cancelability(oldstate);
 		return FAILED;
 	}
 	thread_cancelability(oldstate);
 
-	if (FD_ISSET(this->ipv4, &rfds))
+	rr = this->rr_counter++;
+	for (i = 0; i < countof(pfd); i++)
 	{
-		port = this->port;
-		selected = this->ipv4;
+		/* To serve all ports with equal priority, we use a round-robin
+		 * scheme to choose the one to process in this invocation */
+		index = (rr + i) % countof(pfd);
+		if (pfd[index].revents & POLLIN)
+		{
+			selected = pfd[index].fd;
+			port = ports[index];
+			break;
+		}
 	}
-	if (FD_ISSET(this->ipv4_natt, &rfds))
-	{
-		port = this->natt;
-		selected = this->ipv4_natt;
-	}
-	if (FD_ISSET(this->ipv6, &rfds))
-	{
-		port = this->port;
-		selected = this->ipv6;
-	}
-	if (FD_ISSET(this->ipv6_natt, &rfds))
-	{
-		port = this->natt;
-		selected = this->ipv6_natt;
-	}
-	if (selected)
+	if (selected != -1)
 	{
 		struct msghdr msg;
 		struct cmsghdr *cmsgptr;
@@ -251,48 +318,13 @@ METHOD(socket_t, receiver, status_t,
 				DBG1(DBG_NET, "error reading ancillary data");
 				return FAILED;
 			}
-
-#ifdef HAVE_IN6_PKTINFO
-			if (cmsgptr->cmsg_level == SOL_IPV6 &&
-				cmsgptr->cmsg_type == IPV6_PKTINFO)
+			if (cmsgptr->cmsg_level == SOL_IP)
 			{
-				struct in6_pktinfo *pktinfo;
-				pktinfo = (struct in6_pktinfo*)CMSG_DATA(cmsgptr);
-				struct sockaddr_in6 dst;
-
-				memset(&dst, 0, sizeof(dst));
-				memcpy(&dst.sin6_addr, &pktinfo->ipi6_addr, sizeof(dst.sin6_addr));
-				dst.sin6_family = AF_INET6;
-				dst.sin6_port = htons(port);
-				dest = host_create_from_sockaddr((sockaddr_t*)&dst);
+				dest = get_dst_v4(cmsgptr, port);
 			}
-#endif /* HAVE_IN6_PKTINFO */
-			if (cmsgptr->cmsg_level == SOL_IP &&
-#ifdef IP_PKTINFO
-				cmsgptr->cmsg_type == IP_PKTINFO
-#elif defined(IP_RECVDSTADDR)
-				cmsgptr->cmsg_type == IP_RECVDSTADDR
-#else
-				FALSE
-#endif
-				)
+			else if (cmsgptr->cmsg_level == SOL_IPV6)
 			{
-				struct in_addr *addr;
-				struct sockaddr_in dst;
-
-#ifdef IP_PKTINFO
-				struct in_pktinfo *pktinfo;
-				pktinfo = (struct in_pktinfo*)CMSG_DATA(cmsgptr);
-				addr = &pktinfo->ipi_addr;
-#elif defined(IP_RECVDSTADDR)
-				addr = (struct in_addr*)CMSG_DATA(cmsgptr);
-#endif
-				memset(&dst, 0, sizeof(dst));
-				memcpy(&dst.sin_addr, addr, sizeof(dst.sin_addr));
-
-				dst.sin_family = AF_INET;
-				dst.sin_port = htons(port);
-				dest = host_create_from_sockaddr((sockaddr_t*)&dst);
+				dest = get_dst_v6(cmsgptr, port);
 			}
 			if (dest)
 			{
@@ -323,15 +355,115 @@ METHOD(socket_t, receiver, status_t,
 	return SUCCESS;
 }
 
+/**
+ * Generic function to send a message.
+ */
+static ssize_t send_msg_generic(int skt, struct msghdr *msg)
+{
+	return sendmsg(skt, msg, 0);
+}
+
+/**
+ * Send a message with the IPv4 source address set, if possible.
+ */
+#ifdef IP_PKTINFO
+
+static ssize_t send_msg_v4(int skt, struct msghdr *msg, host_t *src)
+{
+	char buf[CMSG_SPACE(sizeof(struct in_pktinfo))] = {};
+	struct cmsghdr *cmsg;
+	struct in_addr *addr;
+	struct in_pktinfo *pktinfo;
+	struct sockaddr_in *sin;
+
+	msg->msg_control = buf;
+	msg->msg_controllen = sizeof(buf);
+	cmsg = CMSG_FIRSTHDR(msg);
+	cmsg->cmsg_level = SOL_IP;
+	cmsg->cmsg_type = IP_PKTINFO;
+	cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
+
+	pktinfo = (struct in_pktinfo*)CMSG_DATA(cmsg);
+	addr = &pktinfo->ipi_spec_dst;
+
+	sin = (struct sockaddr_in*)src->get_sockaddr(src);
+	memcpy(addr, &sin->sin_addr, sizeof(struct in_addr));
+	return send_msg_generic(skt, msg);
+}
+
+#elif defined(IP_SENDSRCADDR)
+
+static ssize_t send_msg_v4(int skt, struct msghdr *msg, host_t *src)
+{
+	char buf[CMSG_SPACE(sizeof(struct in_addr))] = {};
+	struct cmsghdr *cmsg;
+	struct in_addr *addr;
+	struct sockaddr_in *sin;
+
+	msg->msg_control = buf;
+	msg->msg_controllen = sizeof(buf);
+	cmsg = CMSG_FIRSTHDR(msg);
+	cmsg->cmsg_level = SOL_IP;
+	cmsg->cmsg_type = IP_SENDSRCADDR;
+	cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_addr));
+
+	addr = (struct in_addr*)CMSG_DATA(cmsg);
+
+	sin = (struct sockaddr_in*)src->get_sockaddr(src);
+	memcpy(addr, &sin->sin_addr, sizeof(struct in_addr));
+	return send_msg_generic(skt, msg);
+}
+
+#else /* IP_PKTINFO || IP_RECVDSTADDR */
+
+static ssize_t send_msg_v4(int skt, struct msghdr *msg, host_t *src)
+{
+	return send_msg_generic(skt, msg);
+}
+
+#endif /* IP_PKTINFO || IP_RECVDSTADDR */
+
+/**
+ * Send a message with the IPv6 source address set, if possible.
+ */
+#ifdef HAVE_IN6_PKTINFO
+
+static ssize_t send_msg_v6(int skt, struct msghdr *msg, host_t *src)
+{
+	char buf[CMSG_SPACE(sizeof(struct in6_pktinfo))] = {};
+	struct cmsghdr *cmsg;
+	struct in6_pktinfo *pktinfo;
+	struct sockaddr_in6 *sin;
+
+	msg->msg_control = buf;
+	msg->msg_controllen = sizeof(buf);
+	cmsg = CMSG_FIRSTHDR(msg);
+	cmsg->cmsg_level = SOL_IPV6;
+	cmsg->cmsg_type = IPV6_PKTINFO;
+	cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
+	pktinfo = (struct in6_pktinfo*)CMSG_DATA(cmsg);
+	sin = (struct sockaddr_in6*)src->get_sockaddr(src);
+	memcpy(&pktinfo->ipi6_addr, &sin->sin6_addr, sizeof(struct in6_addr));
+	return send_msg_generic(skt, msg);
+}
+
+#else /* HAVE_IN6_PKTINFO */
+
+static ssize_t send_msg_v6(int skt, struct msghdr *msg, host_t *src)
+{
+	return send_msg_generic(skt, msg);
+}
+
+#endif /* HAVE_IN6_PKTINFO */
+
 METHOD(socket_t, sender, status_t,
 	private_socket_default_socket_t *this, packet_t *packet)
 {
-	int sport, skt, family;
+	int sport, skt = -1, family;
 	ssize_t bytes_sent;
 	chunk_t data;
 	host_t *src, *dst;
 	struct msghdr msg;
-	struct cmsghdr *cmsg;
 	struct iovec iov;
 	u_int8_t *dscp;
 
@@ -376,9 +508,10 @@ METHOD(socket_t, sender, status_t,
 				return FAILED;
 		}
 	}
-	else
+	if (skt == -1)
 	{
-		DBG1(DBG_NET, "unable to locate a send socket for port %d", sport);
+		DBG1(DBG_NET, "no socket found to send IPv%d packet from port %d",
+			 family == AF_INET ? 4 : 6, sport);
 		return FAILED;
 	}
 
@@ -432,56 +565,17 @@ METHOD(socket_t, sender, status_t,
 	{
 		if (family == AF_INET)
 		{
-#if defined(IP_PKTINFO) || defined(IP_SENDSRCADDR)
-			struct in_addr *addr;
-			struct sockaddr_in *sin;
-#ifdef IP_PKTINFO
-			char buf[CMSG_SPACE(sizeof(struct in_pktinfo))];
-			struct in_pktinfo *pktinfo;
-#elif defined(IP_SENDSRCADDR)
-			char buf[CMSG_SPACE(sizeof(struct in_addr))];
-#endif
-			msg.msg_control = buf;
-			msg.msg_controllen = sizeof(buf);
-			cmsg = CMSG_FIRSTHDR(&msg);
-			cmsg->cmsg_level = SOL_IP;
-#ifdef IP_PKTINFO
-			cmsg->cmsg_type = IP_PKTINFO;
-			cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
-			pktinfo = (struct in_pktinfo*)CMSG_DATA(cmsg);
-			memset(pktinfo, 0, sizeof(struct in_pktinfo));
-			addr = &pktinfo->ipi_spec_dst;
-#elif defined(IP_SENDSRCADDR)
-			cmsg->cmsg_type = IP_SENDSRCADDR;
-			cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_addr));
-			addr = (struct in_addr*)CMSG_DATA(cmsg);
-#endif
-			sin = (struct sockaddr_in*)src->get_sockaddr(src);
-			memcpy(addr, &sin->sin_addr, sizeof(struct in_addr));
-#endif /* IP_PKTINFO || IP_SENDSRCADDR */
+			bytes_sent = send_msg_v4(skt, &msg, src);
 		}
-#ifdef HAVE_IN6_PKTINFO
 		else
 		{
-			char buf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
-			struct in6_pktinfo *pktinfo;
-			struct sockaddr_in6 *sin;
-
-			msg.msg_control = buf;
-			msg.msg_controllen = sizeof(buf);
-			cmsg = CMSG_FIRSTHDR(&msg);
-			cmsg->cmsg_level = SOL_IPV6;
-			cmsg->cmsg_type = IPV6_PKTINFO;
-			cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
-			pktinfo = (struct in6_pktinfo*)CMSG_DATA(cmsg);
-			memset(pktinfo, 0, sizeof(struct in6_pktinfo));
-			sin = (struct sockaddr_in6*)src->get_sockaddr(src);
-			memcpy(&pktinfo->ipi6_addr, &sin->sin6_addr, sizeof(struct in6_addr));
+			bytes_sent = send_msg_v6(skt, &msg, src);
 		}
-#endif /* HAVE_IN6_PKTINFO */
 	}
-
-	bytes_sent = sendmsg(skt, &msg, 0);
+	else
+	{
+		bytes_sent = send_msg_generic(skt, &msg);
+	}
 
 	if (bytes_sent != data.len)
 	{
@@ -495,6 +589,22 @@ METHOD(socket_t, get_port, u_int16_t,
 	private_socket_default_socket_t *this, bool nat_t)
 {
 	return nat_t ? this->natt : this->port;
+}
+
+METHOD(socket_t, supported_families, socket_family_t,
+	private_socket_default_socket_t *this)
+{
+	socket_family_t families = SOCKET_FAMILY_NONE;
+
+	if (this->ipv4 != -1 || this->ipv4_natt != -1)
+	{
+		families |= SOCKET_FAMILY_IPV4;
+	}
+	if (this->ipv6 != -1 || this->ipv6_natt != -1)
+	{
+		families |= SOCKET_FAMILY_IPV6;
+	}
+	return families;
 }
 
 /**
@@ -537,20 +647,20 @@ static int open_socket(private_socket_default_socket_t *this,
 			pktinfo = IPV6_RECVPKTINFO;
 			break;
 		default:
-			return 0;
+			return -1;
 	}
 
 	skt = socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	if (skt < 0)
 	{
 		DBG1(DBG_NET, "could not open socket: %s", strerror(errno));
-		return 0;
+		return -1;
 	}
 	if (setsockopt(skt, SOL_SOCKET, SO_REUSEADDR, (void*)&on, sizeof(on)) < 0)
 	{
 		DBG1(DBG_NET, "unable to set SO_REUSEADDR on socket: %s", strerror(errno));
 		close(skt);
-		return 0;
+		return -1;
 	}
 
 	/* bind the socket */
@@ -558,7 +668,7 @@ static int open_socket(private_socket_default_socket_t *this,
 	{
 		DBG1(DBG_NET, "unable to bind socket: %s", strerror(errno));
 		close(skt);
-		return 0;
+		return -1;
 	}
 
 	/* retrieve randomly allocated port if needed */
@@ -568,7 +678,7 @@ static int open_socket(private_socket_default_socket_t *this,
 		{
 			DBG1(DBG_NET, "unable to determine port: %s", strerror(errno));
 			close(skt);
-			return 0;
+			return -1;
 		}
 		switch (family)
 		{
@@ -588,9 +698,27 @@ static int open_socket(private_socket_default_socket_t *this,
 		{
 			DBG1(DBG_NET, "unable to set IP_PKTINFO on socket: %s", strerror(errno));
 			close(skt);
-			return 0;
+			return -1;
 		}
 	}
+#ifdef SO_MARK
+	{	/* set optional MARK on socket (requires CAP_NET_ADMIN) */
+		char *fwmark;
+		mark_t mark;
+
+		fwmark = lib->settings->get_str(lib->settings,
+							"%s.plugins.socket-default.fwmark", NULL, lib->ns);
+		if (fwmark && mark_from_string(fwmark, &mark))
+		{
+			if (setsockopt(skt, SOL_SOCKET, SO_MARK, &mark.value,
+						   sizeof(mark.value)) < 0)
+			{
+				DBG1(DBG_NET, "unable to set SO_MARK on socket: %s",
+					 strerror(errno));
+			}
+		}
+	}
+#endif
 
 	if (!hydra->kernel_interface->bypass_socket(hydra->kernel_interface,
 												skt, family))
@@ -610,22 +738,69 @@ static int open_socket(private_socket_default_socket_t *this,
 	return skt;
 }
 
+/**
+ * Check if we should use the given family
+ */
+static bool use_family(int family)
+{
+	switch (family)
+	{
+		case AF_INET:
+			return lib->settings->get_bool(lib->settings,
+						"%s.plugins.socket-default.use_ipv4", TRUE, lib->ns);
+		case AF_INET6:
+			return lib->settings->get_bool(lib->settings,
+						"%s.plugins.socket-default.use_ipv6", TRUE, lib->ns);
+		default:
+			return FALSE;
+	}
+}
+
+/**
+ * Open a socket pair (normal and NAT traversal) for a given address family
+ */
+static void open_socketpair(private_socket_default_socket_t *this, int family,
+							int *skt, int *skt_natt, char *label)
+{
+	if (!use_family(family))
+	{
+		*skt = -1;
+		*skt_natt = -1;
+		return;
+	}
+
+	*skt = open_socket(this, family, &this->port);
+	if (*skt == -1)
+	{
+		*skt_natt = -1;
+		DBG1(DBG_NET, "could not open %s socket, %s disabled", label, label);
+	}
+	else
+	{
+		*skt_natt = open_socket(this, family, &this->natt);
+		if (*skt_natt == -1)
+		{
+			DBG1(DBG_NET, "could not open %s NAT-T socket", label);
+		}
+	}
+}
+
 METHOD(socket_t, destroy, void,
 	private_socket_default_socket_t *this)
 {
-	if (this->ipv4)
+	if (this->ipv4 != -1)
 	{
 		close(this->ipv4);
 	}
-	if (this->ipv4_natt)
+	if (this->ipv4_natt != -1)
 	{
 		close(this->ipv4_natt);
 	}
-	if (this->ipv6)
+	if (this->ipv6 != -1)
 	{
 		close(this->ipv6);
 	}
-	if (this->ipv6_natt)
+	if (this->ipv6_natt != -1)
 	{
 		close(this->ipv6_natt);
 	}
@@ -645,18 +820,19 @@ socket_default_socket_t *socket_default_socket_create()
 				.send = _sender,
 				.receive = _receiver,
 				.get_port = _get_port,
+				.supported_families = _supported_families,
 				.destroy = _destroy,
 			},
 		},
 		.port = lib->settings->get_int(lib->settings,
-							"%s.port", CHARON_UDP_PORT, charon->name),
+							"%s.port", CHARON_UDP_PORT, lib->ns),
 		.natt = lib->settings->get_int(lib->settings,
-							"%s.port_nat_t", CHARON_NATT_PORT, charon->name),
+							"%s.port_nat_t", CHARON_NATT_PORT, lib->ns),
 		.max_packet = lib->settings->get_int(lib->settings,
-							"%s.max_packet", MAX_PACKET, charon->name),
+							"%s.max_packet", PACKET_MAX_DEFAULT, lib->ns),
 		.set_source = lib->settings->get_bool(lib->settings,
 							"%s.plugins.socket-default.set_source", TRUE,
-							charon->name),
+							lib->ns),
 	);
 
 	if (this->port && this->port == this->natt)
@@ -666,37 +842,30 @@ socket_default_socket_t *socket_default_socket_create()
 		this->natt = 0;
 	}
 
+	if ((this->port && this->port < 1024) || (this->natt && this->natt < 1024))
+	{
+		if (!lib->caps->check(lib->caps, CAP_NET_BIND_SERVICE))
+		{
+			/* required to bind ports < 1024 */
+			DBG1(DBG_NET, "socket-default plugin requires CAP_NET_BIND_SERVICE "
+				 "capability");
+			destroy(this);
+			return NULL;
+		}
+	}
+
 	/* we allocate IPv6 sockets first as that will reserve randomly allocated
-	 * ports also for IPv4 */
-	this->ipv6 = open_socket(this, AF_INET6, &this->port);
-	if (this->ipv6 == 0)
-	{
-		DBG1(DBG_NET, "could not open IPv6 socket, IPv6 disabled");
-	}
-	else
-	{
-		this->ipv6_natt = open_socket(this, AF_INET6, &this->natt);
-		if (this->ipv6_natt == 0)
-		{
-			DBG1(DBG_NET, "could not open IPv6 NAT-T socket");
-		}
-	}
+	 * ports also for IPv4. On OS X, we have to do it the other way round
+	 * for the same effect. */
+#ifdef __APPLE__
+	open_socketpair(this, AF_INET, &this->ipv4, &this->ipv4_natt, "IPv4");
+	open_socketpair(this, AF_INET6, &this->ipv6, &this->ipv6_natt, "IPv6");
+#else /* !__APPLE__ */
+	open_socketpair(this, AF_INET6, &this->ipv6, &this->ipv6_natt, "IPv6");
+	open_socketpair(this, AF_INET, &this->ipv4, &this->ipv4_natt, "IPv4");
+#endif /* __APPLE__ */
 
-	this->ipv4 = open_socket(this, AF_INET, &this->port);
-	if (this->ipv4 == 0)
-	{
-		DBG1(DBG_NET, "could not open IPv4 socket, IPv4 disabled");
-	}
-	else
-	{
-		this->ipv4_natt = open_socket(this, AF_INET, &this->natt);
-		if (this->ipv4_natt == 0)
-		{
-			DBG1(DBG_NET, "could not open IPv4 NAT-T socket");
-		}
-	}
-
-	if (!this->ipv4 && !this->ipv6)
+	if (this->ipv4 == -1 && this->ipv6 == -1)
 	{
 		DBG1(DBG_NET, "could not create any sockets");
 		destroy(this);

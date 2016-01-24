@@ -15,11 +15,15 @@
 
 #include "load_tester_config.h"
 
+#include <netdb.h>
+
 #include <daemon.h>
 #include <hydra.h>
 #include <attributes/mem_pool.h>
 #include <collections/hashtable.h>
 #include <threading/mutex.h>
+
+#define UNIQUE_PORT_START 1025
 
 typedef struct private_load_tester_config_t private_load_tester_config_t;
 
@@ -94,6 +98,11 @@ struct private_load_tester_config_t {
 	char *responder_id;
 
 	/**
+	 * IPsec mode, tunnel|transport|beet
+	 */
+	char *mode;
+
+	/**
 	 * Traffic Selector on initiator side, as proposed from initiator
 	 */
 	char *initiator_tsi;
@@ -112,6 +121,11 @@ struct private_load_tester_config_t {
 	 * Traffic Selector on responder side, as narrowed by responder
 	 */
 	char *responder_tsr;
+
+	/**
+	 * Current port for unique initiator ports
+	 */
+	u_int16_t unique_port;
 
 	/**
 	 * IKE_SA rekeying delay
@@ -136,7 +150,7 @@ struct private_load_tester_config_t {
 	/**
 	 * incremental numbering of generated configs
 	 */
-	u_int num;
+	refcount_t num;
 
 	/**
 	 * Dynamic source port, if used
@@ -222,11 +236,11 @@ static void load_addrs(private_load_tester_config_t *this)
 	mem_pool_t *pool;
 
 	this->keep = lib->settings->get_bool(lib->settings,
-						"%s.plugins.load-tester.addrs_keep", FALSE, charon->name);
+						"%s.plugins.load-tester.addrs_keep", FALSE, lib->ns);
 	this->prefix = lib->settings->get_int(lib->settings,
-						"%s.plugins.load-tester.addrs_prefix", 16, charon->name);
+						"%s.plugins.load-tester.addrs_prefix", 16, lib->ns);
 	enumerator = lib->settings->create_key_value_enumerator(lib->settings,
-						"%s.plugins.load-tester.addrs", charon->name);
+						"%s.plugins.load-tester.addrs", lib->ns);
 	while (enumerator->enumerate(enumerator, &iface, &token))
 	{
 		tokens = enumerator_create_token(token, ",", " ");
@@ -355,7 +369,7 @@ static void generate_auth_cfg(private_load_tester_config_t *this, char *str,
 				}
 			}
 		}
-		else if (strneq(str, "eap", strlen("eap")))
+		else if (strpfx(str, "eap"))
 		{	/* EAP authentication, use a NAI */
 			class = AUTH_CLASS_EAP;
 			if (*(str + strlen("eap")) == '-')
@@ -379,6 +393,28 @@ static void generate_auth_cfg(private_load_tester_config_t *this, char *str,
 					id = identification_create_from_encoding(ID_ANY, chunk_empty);
 				}
 			}
+		}
+		else if (strpfx(str, "xauth"))
+		{	/* XAuth, use a username */
+			class = AUTH_CLASS_XAUTH;
+			if (*(str + strlen("xauth")) == '-')
+			{
+				auth->add(auth, AUTH_RULE_XAUTH_BACKEND, str + strlen("xauth-"));
+			}
+			if (!id)
+			{
+				if (local && num)
+				{
+					snprintf(buf, sizeof(buf), "cli-%.6d-%.2d", num, rnd);
+					id = identification_create_from_string(buf);
+				}
+				else
+				{
+					id = identification_create_from_encoding(ID_ANY, chunk_empty);
+				}
+			}
+			/* additionally set the ID as XAuth identity */
+			auth->add(auth, AUTH_RULE_XAUTH_IDENTITY, id->clone(id));
 		}
 		else
 		{
@@ -417,27 +453,172 @@ static void generate_auth_cfg(private_load_tester_config_t *this, char *str,
 }
 
 /**
+ * Parse a protoport specifier
+ */
+static bool parse_protoport(char *token, u_int16_t *from_port,
+							u_int16_t *to_port, u_int8_t *protocol)
+{
+	char *sep, *port = "", *endptr;
+	struct protoent *proto;
+	struct servent *svc;
+	long int p;
+
+	sep = strrchr(token, ']');
+	if (!sep)
+	{
+		return FALSE;
+	}
+	*sep = '\0';
+
+	sep = strchr(token, '/');
+	if (sep)
+	{	/* protocol/port */
+		*sep = '\0';
+		port = sep + 1;
+	}
+
+	if (streq(token, "%any"))
+	{
+		*protocol = 0;
+	}
+	else
+	{
+		proto = getprotobyname(token);
+		if (proto)
+		{
+			*protocol = proto->p_proto;
+		}
+		else
+		{
+			p = strtol(token, &endptr, 0);
+			if ((*token && *endptr) || p < 0 || p > 0xff)
+			{
+				return FALSE;
+			}
+			*protocol = (u_int8_t)p;
+		}
+	}
+	if (streq(port, "%any"))
+	{
+		*from_port = 0;
+		*to_port = 0xffff;
+	}
+	else if (streq(port, "%opaque"))
+	{
+		*from_port = 0xffff;
+		*to_port = 0;
+	}
+	else if (streq(port, "%unique"))
+	{
+		*from_port = *to_port = 0;
+	}
+	else if (*port)
+	{
+		svc = getservbyname(port, NULL);
+		if (svc)
+		{
+			*from_port = *to_port = ntohs(svc->s_port);
+		}
+		else
+		{
+			p = strtol(port, &endptr, 0);
+			if (p < 0 || p > 0xffff)
+			{
+				return FALSE;
+			}
+			*from_port = p;
+			if (*endptr == '-')
+			{
+				port = endptr + 1;
+				p = strtol(port, &endptr, 0);
+				if (p < 0 || p > 0xffff)
+				{
+					return FALSE;
+				}
+			}
+			*to_port = p;
+			if (*endptr)
+			{
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
+/**
  * Add a TS from a string to a child_cfg
  */
-static void add_ts(char *string, child_cfg_t *cfg, bool local)
+static void add_ts(private_load_tester_config_t *this,
+				   char *string, child_cfg_t *cfg, bool local, bool initiator)
 {
 	traffic_selector_t *ts;
 
 	if (string)
 	{
-		ts = traffic_selector_create_from_cidr(string, 0, 0, 65535);
-		if (!ts)
+		enumerator_t *enumerator;
+		char *subnet, *pos;
+		u_int16_t from_port, to_port;
+		u_int8_t proto;
+
+		enumerator = enumerator_create_token(string, ",", " ");
+		while (enumerator->enumerate(enumerator, &subnet))
 		{
-			DBG1(DBG_CFG, "parsing TS string '%s' failed", string);
+			proto = 0;
+			from_port = 0;
+			to_port = 65535;
+
+			pos = strchr(subnet, '[');
+			if (pos)
+			{
+				*(pos++) = '\0';
+				if (!parse_protoport(pos, &from_port, &to_port, &proto))
+				{
+					DBG1(DBG_CFG, "invalid proto/port: %s, skipped subnet",
+						 pos);
+					continue;
+				}
+			}
+			if (from_port == 0 && to_port == 0)
+			{	/* %unique */
+				if (initiator)
+				{
+					from_port = this->unique_port++;
+					from_port = to_port = max(from_port, UNIQUE_PORT_START);
+				}
+				else
+				{	/* not supported as responder, use %any */
+					to_port = 65535;
+				}
+			}
+			if (streq(subnet, "%dynamic"))
+			{
+				ts = traffic_selector_create_dynamic(proto,
+													 from_port, to_port);
+			}
+			else
+			{
+				ts = traffic_selector_create_from_cidr(subnet, proto,
+													   from_port, to_port);
+			}
+			if (ts)
+			{
+				cfg->add_traffic_selector(cfg, local, ts);
+			}
+			else
+			{
+				DBG1(DBG_CFG, "invalid subnet: %s, skipped", subnet);
+			}
 		}
+		enumerator->destroy(enumerator);
 	}
 	else
 	{
 		ts = traffic_selector_create_dynamic(0, 0, 65535);
-	}
-	if (ts)
-	{
-		cfg->add_traffic_selector(cfg, local, ts);
+		if (ts)
+		{
+			cfg->add_traffic_selector(cfg, local, ts);
+		}
 	}
 }
 
@@ -459,7 +640,7 @@ static host_t *allocate_addr(private_load_tester_config_t *this, uint num)
 	enumerator = this->pools->create_enumerator(this->pools);
 	while (enumerator->enumerate(enumerator, &pool))
 	{
-		found = pool->acquire_address(pool, id, requested, MEM_POOL_NEW);
+		found = pool->acquire_address(pool, id, requested, MEM_POOL_NEW, NULL);
 		if (found)
 		{
 			iface = (char*)pool->get_name(pool);
@@ -508,6 +689,7 @@ static peer_cfg_t* generate_config(private_load_tester_config_t *this, uint num)
 	peer_cfg_t *peer_cfg;
 	char local[32], *remote;
 	host_t *addr;
+	ipsec_mode_t mode = MODE_TUNNEL;
 	lifetime_cfg_t lifetime = {
 		.time = {
 			.life = this->child_rekey * 2,
@@ -544,16 +726,15 @@ static peer_cfg_t* generate_config(private_load_tester_config_t *this, uint num)
 	if (this->port && num)
 	{
 		ike_cfg = ike_cfg_create(this->version, TRUE, FALSE,
-								 local, FALSE, this->port + num - 1,
-								 remote, FALSE, IKEV2_NATT_PORT,
+								 local, this->port + num - 1,
+								 remote, IKEV2_NATT_PORT,
 								 FRAGMENTATION_NO, 0);
 	}
 	else
 	{
-		ike_cfg = ike_cfg_create(this->version, TRUE, FALSE,
-								 local, FALSE,
+		ike_cfg = ike_cfg_create(this->version, TRUE, FALSE, local,
 								 charon->socket->get_port(charon->socket, FALSE),
-								 remote, FALSE, IKEV2_UDP_PORT,
+								 remote, IKEV2_UDP_PORT,
 								 FRAGMENTATION_NO, 0);
 	}
 	ike_cfg->add_proposal(ike_cfg, this->proposal->clone(this->proposal));
@@ -561,7 +742,7 @@ static peer_cfg_t* generate_config(private_load_tester_config_t *this, uint num)
 							   CERT_SEND_IF_ASKED, UNIQUE_NO, 1, /* keytries */
 							   this->ike_rekey, 0, /* rekey, reauth */
 							   0, this->ike_rekey, /* jitter, overtime */
-							   FALSE, FALSE, /* mobike, aggressive mode */
+							   FALSE, FALSE, TRUE, /* mobike, aggressive, pull */
 							   this->dpd_delay,   /* dpd_delay */
 							   this->dpd_timeout, /* dpd_timeout */
 							   FALSE, NULL, NULL);
@@ -584,7 +765,19 @@ static peer_cfg_t* generate_config(private_load_tester_config_t *this, uint num)
 		generate_auth_cfg(this, this->initiator_auth, peer_cfg, FALSE, num);
 	}
 
-	child_cfg = child_cfg_create("load-test", &lifetime, NULL, TRUE, MODE_TUNNEL,
+	if (this->mode)
+	{
+		if (streq(this->mode, "transport"))
+		{
+			mode = MODE_TRANSPORT;
+		}
+		else if (streq(this->mode, "beet"))
+		{
+			mode = MODE_BEET;
+		}
+	}
+
+	child_cfg = child_cfg_create("load-test", &lifetime, NULL, TRUE, mode,
 								 ACTION_NONE, ACTION_NONE, ACTION_NONE, FALSE,
 								 0, 0, NULL, NULL, 0);
 	child_cfg->add_proposal(child_cfg, this->esp->clone(this->esp));
@@ -593,18 +786,18 @@ static peer_cfg_t* generate_config(private_load_tester_config_t *this, uint num)
 	{	/* initiator */
 		if (this->vip)
 		{
-			add_ts(NULL, child_cfg, TRUE);
+			add_ts(this, NULL, child_cfg, TRUE, TRUE);
 		}
 		else
 		{
-			add_ts(this->initiator_tsi, child_cfg, TRUE);
+			add_ts(this, this->initiator_tsi, child_cfg, TRUE, TRUE);
 		}
-		add_ts(this->initiator_tsr, child_cfg, FALSE);
+		add_ts(this, this->initiator_tsr, child_cfg, FALSE, TRUE);
 	}
 	else
 	{	/* responder */
-		add_ts(this->responder_tsr, child_cfg, TRUE);
-		add_ts(this->responder_tsi, child_cfg, FALSE);
+		add_ts(this, this->responder_tsr, child_cfg, TRUE, FALSE);
+		add_ts(this, this->responder_tsi, child_cfg, FALSE, FALSE);
 	}
 	peer_cfg->add_child_cfg(peer_cfg, child_cfg);
 	return peer_cfg;
@@ -631,7 +824,7 @@ METHOD(backend_t, get_peer_cfg_by_name, peer_cfg_t*,
 {
 	if (streq(name, "load-test"))
 	{
-		return generate_config(this, this->num++);
+		return generate_config(this, (u_int)ref_get(&this->num));
 	}
 	return NULL;
 }
@@ -742,73 +935,75 @@ load_tester_config_t *load_tester_config_create()
 								   (hashtable_equals_t)equals, 256),
 		.mutex = mutex_create(MUTEX_TYPE_DEFAULT),
 		.num = 1,
+		.unique_port = UNIQUE_PORT_START,
 	);
 
 	if (lib->settings->get_bool(lib->settings,
-			"%s.plugins.load-tester.request_virtual_ip", FALSE, charon->name))
+				"%s.plugins.load-tester.request_virtual_ip", FALSE, lib->ns))
 	{
 		this->vip = host_create_from_string("0.0.0.0", 0);
 	}
 	this->pool = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.pool", NULL, charon->name);
+					"%s.plugins.load-tester.pool", NULL, lib->ns);
 	this->initiator = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.initiator", "0.0.0.0", charon->name);
+					"%s.plugins.load-tester.initiator", "0.0.0.0", lib->ns);
 	this->responder = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.responder", "127.0.0.1", charon->name);
+					"%s.plugins.load-tester.responder", "127.0.0.1", lib->ns);
 
 	this->proposal = proposal_create_from_string(PROTO_IKE,
 				lib->settings->get_str(lib->settings,
 					"%s.plugins.load-tester.proposal", "aes128-sha1-modp768",
-					charon->name));
+					lib->ns));
 	if (!this->proposal)
 	{	/* fallback */
 		this->proposal = proposal_create_from_string(PROTO_IKE,
 													 "aes128-sha1-modp768");
 	}
 	this->esp = proposal_create_from_string(PROTO_ESP,
-			lib->settings->get_str(lib->settings,
-				"%s.plugins.load-tester.esp", "aes128-sha1",
-				charon->name));
+				lib->settings->get_str(lib->settings,
+					"%s.plugins.load-tester.esp", "aes128-sha1", lib->ns));
 	if (!this->esp)
 	{	/* fallback */
 		this->esp = proposal_create_from_string(PROTO_ESP, "aes128-sha1");
 	}
 
 	this->ike_rekey = lib->settings->get_int(lib->settings,
-			"%s.plugins.load-tester.ike_rekey", 0, charon->name);
+				"%s.plugins.load-tester.ike_rekey", 0, lib->ns);
 	this->child_rekey = lib->settings->get_int(lib->settings,
-			"%s.plugins.load-tester.child_rekey", 600, charon->name);
+				"%s.plugins.load-tester.child_rekey", 600, lib->ns);
 	this->dpd_delay = lib->settings->get_int(lib->settings,
-			"%s.plugins.load-tester.dpd_delay", 0, charon->name);
+				"%s.plugins.load-tester.dpd_delay", 0, lib->ns);
 	this->dpd_timeout = lib->settings->get_int(lib->settings,
-			"%s.plugins.load-tester.dpd_timeout", 0, charon->name);
+				"%s.plugins.load-tester.dpd_timeout", 0, lib->ns);
 
 	this->initiator_auth = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.initiator_auth", "pubkey", charon->name);
+				"%s.plugins.load-tester.initiator_auth", "pubkey", lib->ns);
 	this->responder_auth = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.responder_auth", "pubkey", charon->name);
+				"%s.plugins.load-tester.responder_auth", "pubkey", lib->ns);
 	this->initiator_id = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.initiator_id", NULL, charon->name);
+				"%s.plugins.load-tester.initiator_id", NULL, lib->ns);
 	this->initiator_match = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.initiator_match", NULL, charon->name);
+				"%s.plugins.load-tester.initiator_match", NULL, lib->ns);
 	this->responder_id = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.responder_id", NULL, charon->name);
+				"%s.plugins.load-tester.responder_id", NULL, lib->ns);
 
+	this->mode = lib->settings->get_str(lib->settings,
+				"%s.plugins.load-tester.mode", NULL, lib->ns);
 	this->initiator_tsi = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.initiator_tsi", NULL, charon->name);
+				"%s.plugins.load-tester.initiator_tsi", NULL, lib->ns);
 	this->responder_tsi =lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.responder_tsi",
-			this->initiator_tsi, charon->name);
+				"%s.plugins.load-tester.responder_tsi",
+				this->initiator_tsi, lib->ns);
 	this->initiator_tsr = lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.initiator_tsr", NULL, charon->name);
+				"%s.plugins.load-tester.initiator_tsr", NULL, lib->ns);
 	this->responder_tsr =lib->settings->get_str(lib->settings,
-			"%s.plugins.load-tester.responder_tsr",
-			this->initiator_tsr, charon->name);
+				"%s.plugins.load-tester.responder_tsr",
+				this->initiator_tsr, lib->ns);
 
 	this->port = lib->settings->get_int(lib->settings,
-			"%s.plugins.load-tester.dynamic_port", 0, charon->name);
+				"%s.plugins.load-tester.dynamic_port", 0, lib->ns);
 	this->version = lib->settings->get_int(lib->settings,
-			"%s.plugins.load-tester.version", IKE_ANY, charon->name);
+				"%s.plugins.load-tester.version", IKE_ANY, lib->ns);
 
 	load_addrs(this);
 

@@ -30,8 +30,8 @@ int main(int argc, char *argv[])
 	char buf[8096];
 	int read, n;
 
-	library_init(NULL);
-	lib->plugins->load(lib->plugins, NULL, PLUGINS);
+	library_init(NULL, "keyid2sql");
+	lib->plugins->load(lib->plugins, PLUGINS);
 	atexit(library_deinit);
 
 	read = fread(buf, 1, sizeof(buf), stdin);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2013 Tobias Brunner
+ * Copyright (C) 2010-2015 Tobias Brunner
  * Hochschule fuer Technik Rapperswil
  * Copyright (C) 2010 Martin Willi
  * Copyright (C) 2010 revosec AG
@@ -59,6 +59,18 @@ struct mem_cred_t {
 								   certificate_t *cert);
 
 	/**
+	 * Get an existing reference to the same certificate.
+	 *
+	 * Searches for the same certficate in the set, and returns a reference
+	 * to it, destroying the passed certificate. If the passed certificate
+	 * is not found, it is just returned.
+	 *
+	 * @param cert			certificate to look up
+	 * @return				the same certificate, potentially different instance
+	 */
+	certificate_t* (*get_cert_ref)(mem_cred_t *this, certificate_t *cert);
+
+	/**
 	 * Add an X.509 CRL to the credential set.
 	 *
 	 * @param crl			CRL, gets owned by set
@@ -90,6 +102,7 @@ struct mem_cred_t {
 	 */
 	void (*add_shared_list)(mem_cred_t *this, shared_key_t *shared,
 							linked_list_t *owners);
+
 	/**
 	 * Add a certificate distribution point to the set.
 	 *
@@ -99,6 +112,15 @@ struct mem_cred_t {
 	 */
 	void (*add_cdp)(mem_cred_t *this, certificate_type_t type,
 					identification_t *id, char *uri);
+
+	/**
+	 * Replace all certificates in this credential set with those of another.
+	 *
+	 * @param other			credential set to get certificates from
+	 * @param clone			TRUE to clone certs, FALSE to adopt them (they
+	 *						get removed from the other set)
+	 */
+	void (*replace_certs)(mem_cred_t *this, mem_cred_t *other, bool clone);
 
 	/**
 	 * Replace all secrets (private and shared keys) in this credential set

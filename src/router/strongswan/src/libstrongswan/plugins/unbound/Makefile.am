@@ -1,8 +1,9 @@
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/libstrongswan \
+	-DIPSEC_CONFDIR=\"${sysconfdir}\"
 
-INCLUDES = -I$(top_srcdir)/src/libstrongswan
-
-AM_CFLAGS = -rdynamic -DIPSEC_CONFDIR=\"${sysconfdir}\"
-
+AM_CFLAGS = \
+	$(PLUGIN_CFLAGS)
 
 if MONOLITHIC
 noinst_LTLIBRARIES = libstrongswan-unbound.la

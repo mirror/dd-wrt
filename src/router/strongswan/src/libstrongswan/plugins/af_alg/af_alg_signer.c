@@ -64,6 +64,7 @@ static struct {
 	{AUTH_HMAC_SHA2_384_192,	"hmac(sha384)",		24,		48,	},
 	{AUTH_HMAC_SHA2_384_384,	"hmac(sha384)",		48,		48,	},
 	{AUTH_HMAC_SHA2_512_256,	"hmac(sha512)",		32,		64,	},
+	{AUTH_HMAC_SHA2_512_512,	"hmac(sha512)",		64,		64,	},
 	{AUTH_AES_XCBC_96,			"xcbc(aes)",		12,		16,	},
 	{AUTH_CAMELLIA_XCBC_96,		"xcbc(camellia)",	12,		16,	},
 };
@@ -137,7 +138,7 @@ METHOD(signer_t, verify_signature, bool,
 	{
 		return FALSE;
 	}
-	return memeq(signature.ptr, sig, signature.len);
+	return memeq_const(signature.ptr, sig, signature.len);
 }
 
 METHOD(signer_t, get_key_size, size_t,
@@ -155,6 +156,7 @@ METHOD(signer_t, get_block_size, size_t,
 METHOD(signer_t, set_key, bool,
 	private_af_alg_signer_t *this, chunk_t key)
 {
+	this->ops->reset(this->ops);
 	return this->ops->set_key(this->ops, key);
 }
 

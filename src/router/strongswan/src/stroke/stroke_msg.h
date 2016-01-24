@@ -1,11 +1,5 @@
-/**
- * @file stroke_msg.h
- *
- * @brief Definition of stroke_msg_t.
- *
- */
-
 /*
+ * Copyright (C) 2015 Tobias Brunner
  * Copyright (C) 2006 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
@@ -32,7 +26,10 @@
  */
 #define STROKE_SOCKET IPSEC_PIDDIR "/charon.ctl"
 
-#define STROKE_BUF_LEN		2048
+/**
+ * Number of bytes by which the buffer is increased as needed
+ */
+#define STROKE_BUF_LEN_INC     1024
 
 typedef enum list_flag_t list_flag_t;
 
@@ -123,6 +120,10 @@ typedef enum export_flag_t export_flag_t;
 enum export_flag_t {
 	/** export an X509 certificate */
 	EXPORT_X509 =		0x0001,
+	/** export an X509 end entity certificate for a connection */
+	EXPORT_CONN_CERT =	0x0002,
+	/** export the complete trust chain of a connection */
+	EXPORT_CONN_CHAIN =	0x0004,
 };
 
 /**
@@ -254,6 +255,7 @@ struct stroke_msg_t {
 			int mode;
 			int mobike;
 			int aggressive;
+			int pushmode;
 			int force_encap;
 			int fragmentation;
 			int ipcomp;
@@ -270,6 +272,7 @@ struct stroke_msg_t {
 			struct {
 				char *ike;
 				char *esp;
+				char *ah;
 			} algorithms;
 			struct {
 				int reauth;
@@ -298,6 +301,7 @@ struct stroke_msg_t {
 				u_int32_t mask;
 			} mark_in, mark_out;
 			stroke_end_t me, other;
+			u_int32_t replay_window;
 		} add_conn;
 
 		/* data for STR_ADD_CA */
@@ -364,7 +368,10 @@ struct stroke_msg_t {
 			char *name;
 		} counters;
 	};
-	char buffer[STROKE_BUF_LEN];
+	/* length of the string buffer */
+	u_int16_t buflen;
+	/* string buffer */
+	char buffer[];
 };
 
 #endif /* STROKE_MSG_H_ */

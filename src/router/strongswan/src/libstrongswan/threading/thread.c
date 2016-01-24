@@ -16,7 +16,6 @@
 #define _GNU_SOURCE
 #include <pthread.h>
 #include <signal.h>
-#include <semaphore.h>
 
 #ifdef HAVE_GETTID
 #include <sys/types.h>
@@ -77,11 +76,6 @@ struct private_thread_t {
 	 * Mutex to make modifying thread properties safe.
 	 */
 	mutex_t *mutex;
-
-	/**
-	 * Semaphore used to sync the creation/start of the thread.
-	 */
-	sem_t created;
 
 	/**
 	 * TRUE if this thread has been detached or joined, i.e. can be cleaned
@@ -160,7 +154,6 @@ static void thread_destroy(private_thread_t *this)
 	this->cleanup_handlers->destroy(this->cleanup_handlers);
 	this->mutex->unlock(this->mutex);
 	this->mutex->destroy(this->mutex);
-	sem_destroy(&this->created);
 	free(this);
 }
 
@@ -263,7 +256,6 @@ static private_thread_t *thread_create_internal()
 		.cleanup_handlers = linked_list_create(),
 		.mutex = mutex_create(MUTEX_TYPE_DEFAULT),
 	);
-	sem_init(&this->created, FALSE, 0);
 
 	return this;
 }
@@ -292,7 +284,6 @@ static void *thread_main(private_thread_t *this)
 {
 	void *res;
 
-	sem_wait(&this->created);
 	current_thread->set(current_thread, this);
 	pthread_cleanup_push((thread_cleanup_t)thread_cleanup, this);
 
@@ -301,6 +292,9 @@ static void *thread_main(private_thread_t *this)
 #ifdef HAVE_GETTID
 	DBG2(DBG_LIB, "created thread %.2d [%u]",
 		 this->id, gettid());
+#elif defined(WIN32)
+	DBG2(DBG_LIB, "created thread %.2d [%p]",
+		 this->id, this->thread_id.p);
 #else
 	DBG2(DBG_LIB, "created thread %.2d [%lx]",
 		 this->id, (u_long)this->thread_id);
@@ -321,6 +315,10 @@ thread_t *thread_create(thread_main_t main, void *arg)
 
 	this->main = main;
 	this->arg = arg;
+	id_mutex->lock(id_mutex);
+	this->id = next_id++;
+	id_mutex->unlock(id_mutex);
+
 	if (pthread_create(&this->thread_id, NULL, (void*)thread_main, this) != 0)
 	{
 		DBG1(DBG_LIB, "failed to create thread!");
@@ -328,10 +326,6 @@ thread_t *thread_create(thread_main_t main, void *arg)
 		thread_destroy(this);
 		return NULL;
 	}
-	id_mutex->lock(id_mutex);
-	this->id = next_id++;
-	id_mutex->unlock(id_mutex);
-	sem_post(&this->created);
 
 	return &this->public;
 }
@@ -341,7 +335,20 @@ thread_t *thread_create(thread_main_t main, void *arg)
  */
 thread_t *thread_current()
 {
-	return current_thread->get(current_thread);
+	private_thread_t *this;
+
+	this = (private_thread_t*)current_thread->get(current_thread);
+	if (!this)
+	{
+		this = thread_create_internal();
+
+		id_mutex->lock(id_mutex);
+		this->id = next_id++;
+		id_mutex->unlock(id_mutex);
+
+		current_thread->set(current_thread, (void*)this);
+	}
+	return &this->public;
 }
 
 /**
@@ -367,9 +374,7 @@ void thread_cleanup_push(thread_cleanup_t cleanup, void *arg)
 		.arg = arg,
 	);
 
-	this->mutex->lock(this->mutex);
 	this->cleanup_handlers->insert_last(this->cleanup_handlers, handler);
-	this->mutex->unlock(this->mutex);
 }
 
 /**
@@ -380,21 +385,35 @@ void thread_cleanup_pop(bool execute)
 	private_thread_t *this = (private_thread_t*)thread_current();
 	cleanup_handler_t *handler;
 
-	this->mutex->lock(this->mutex);
 	if (this->cleanup_handlers->remove_last(this->cleanup_handlers,
 											(void**)&handler) != SUCCESS)
 	{
-		this->mutex->unlock(this->mutex);
 		DBG1(DBG_LIB, "!!! THREAD CLEANUP ERROR !!!");
 		return;
 	}
-	this->mutex->unlock(this->mutex);
 
 	if (execute)
 	{
 		handler->cleanup(handler->arg);
 	}
 	free(handler);
+}
+
+/**
+ * Described in header.
+ */
+void thread_cleanup_popall()
+{
+	private_thread_t *this = (private_thread_t*)thread_current();
+	cleanup_handler_t *handler;
+
+	while (this->cleanup_handlers->get_count(this->cleanup_handlers))
+	{
+		this->cleanup_handlers->remove_last(this->cleanup_handlers,
+											(void**)&handler);
+		handler->cleanup(handler->arg);
+		free(handler);
+	}
 }
 
 /**
@@ -483,6 +502,8 @@ void threads_deinit()
 	dummy1->destroy(dummy1);
 
 	main_thread->mutex->lock(main_thread->mutex);
+	main_thread->terminated = TRUE;
+	main_thread->detached_or_joined = TRUE;
 	thread_destroy(main_thread);
 	current_thread->destroy(current_thread);
 	id_mutex->destroy(id_mutex);

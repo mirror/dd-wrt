@@ -172,14 +172,14 @@ struct private_tls_t {
 	size_t outpos;
 
 	/**
-	 * Partial TLS record header received
-	 */
-	tls_record_t head;
-
-	/**
 	 * Position in partially received record header
 	 */
 	size_t headpos;
+
+	/**
+	 * Partial TLS record header received
+	 */
+	tls_record_t head;
 };
 
 /**
@@ -218,14 +218,7 @@ METHOD(tls_t, process, status_t,
 	{
 		if (this->input.len == 0)
 		{
-			if (buflen < sizeof(tls_record_t))
-			{
-				DBG2(DBG_TLS, "received incomplete TLS record header");
-				memcpy(&this->head, buf, buflen);
-				this->headpos = buflen;
-				break;
-			}
-			while (TRUE)
+			while (buflen >= sizeof(tls_record_t))
 			{
 				/* try to process records inline */
 				record = buf;
@@ -251,6 +244,13 @@ METHOD(tls_t, process, status_t,
 				{
 					return NEED_MORE;
 				}
+			}
+			if (buflen < sizeof(tls_record_t))
+			{
+				DBG2(DBG_TLS, "received incomplete TLS record header");
+				memcpy(&this->head, buf, buflen);
+				this->headpos = buflen;
+				break;
 			}
 		}
 		len = min(buflen, this->input.len - this->inpos);
@@ -415,6 +415,12 @@ METHOD(tls_t, get_eap_msk, chunk_t,
 	return this->crypto->get_eap_msk(this->crypto);
 }
 
+METHOD(tls_t, get_auth, auth_cfg_t*,
+	private_tls_t *this)
+{
+	return this->handshake->get_auth(this->handshake);
+}
+
 METHOD(tls_t, destroy, void,
 	private_tls_t *this)
 {
@@ -447,6 +453,7 @@ tls_t *tls_create(bool is_server, identification_t *server,
 		case TLS_PURPOSE_EAP_TTLS:
 		case TLS_PURPOSE_EAP_PEAP:
 		case TLS_PURPOSE_GENERIC:
+		case TLS_PURPOSE_GENERIC_NULLOK:
 			break;
 		default:
 			return NULL;
@@ -464,6 +471,7 @@ tls_t *tls_create(bool is_server, identification_t *server,
 			.get_purpose = _get_purpose,
 			.is_complete = _is_complete,
 			.get_eap_msk = _get_eap_msk,
+			.get_auth = _get_auth,
 			.destroy = _destroy,
 		},
 		.is_server = is_server,
@@ -471,6 +479,7 @@ tls_t *tls_create(bool is_server, identification_t *server,
 		.application = application,
 		.purpose = purpose,
 	);
+	lib->settings->add_fallback(lib->settings, "%s.tls", "libtls", lib->ns);
 
 	this->crypto = tls_crypto_create(&this->public, cache);
 	this->alert = tls_alert_create();
@@ -485,7 +494,7 @@ tls_t *tls_create(bool is_server, identification_t *server,
 										this->alert, peer, server)->handshake;
 	}
 	this->fragmentation = tls_fragmentation_create(this->handshake, this->alert,
-												   this->application);
+												   this->application, purpose);
 	this->compression = tls_compression_create(this->fragmentation, this->alert);
 	this->protection = tls_protection_create(this->compression, this->alert);
 	this->crypto->set_protection(this->crypto, this->protection);

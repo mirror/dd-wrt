@@ -23,9 +23,6 @@
 #include <daemon.h>
 #include <collections/enumerator.h>
 
-/* we need to fake the pluto symbol to dlopen() the xauth plugin */
-void *pluto;
-
 /**
  * Integrity checker
  */
@@ -139,7 +136,7 @@ int main(int argc, char* argv[])
 	/* avoid confusing leak reports in build process */
 	setenv("LEAK_DETECTIVE_DISABLE", "1", 0);
 	/* don't use a strongswan.conf, forces integrity check to disabled */
-	library_init("");
+	library_init("", "checksum_builder");
 	atexit(library_deinit);
 
 	integrity = integrity_checker_create(NULL);
@@ -165,8 +162,8 @@ int main(int argc, char* argv[])
 #ifdef H_PLUGINS
 	build_plugin_checksums(H_PLUGINS);
 #endif
-#ifdef P_PLUGINS
-	build_plugin_checksums(P_PLUGINS);
+#ifdef T_PLUGINS
+	build_plugin_checksums(T_PLUGINS);
 #endif
 #ifdef C_PLUGINS
 	build_plugin_checksums(C_PLUGINS);

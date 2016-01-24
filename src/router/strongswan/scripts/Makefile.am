@@ -1,10 +1,11 @@
-INCLUDES = -I$(top_srcdir)/src/libstrongswan -I$(top_srcdir)/src/libtls
-AM_CFLAGS = \
--DPLUGINS="\"${scripts_plugins}\""
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/libstrongswan \
+	-I$(top_srcdir)/src/libtls \
+	-DPLUGINS="\"${scripts_plugins}\""
 
 noinst_PROGRAMS = bin2array bin2sql id2sql key2keyid keyid2sql oid2der \
 	thread_analysis dh_speed pubkey_speed crypt_burn hash_burn fetch \
-	dnssec
+	dnssec malloc_speed aes-test settings-test timeattack
 
 if USE_TLS
   noinst_PROGRAMS += tls_test
@@ -24,18 +25,24 @@ dh_speed_SOURCES = dh_speed.c
 pubkey_speed_SOURCES = pubkey_speed.c
 crypt_burn_SOURCES = crypt_burn.c
 hash_burn_SOURCES = hash_burn.c
+malloc_speed_SOURCES = malloc_speed.c
 fetch_SOURCES = fetch.c
 dnssec_SOURCES = dnssec.c
+timeattack_SOURCES = timeattack.c
 id2sql_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
 key2keyid_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
 keyid2sql_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
 oid2der_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
-dh_speed_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la -lrt
-pubkey_speed_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la -lrt
+dh_speed_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la $(RTLIB)
+pubkey_speed_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la $(RTLIB)
 crypt_burn_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
 hash_burn_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
+malloc_speed_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la $(RTLIB)
 fetch_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
 dnssec_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
+aes_test_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
+settings_test_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la
+timeattack_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la $(RTLIB)
 
 key2keyid.o :	$(top_builddir)/config.status
 

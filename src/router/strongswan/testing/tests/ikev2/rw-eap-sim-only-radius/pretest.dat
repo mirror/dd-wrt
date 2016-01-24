@@ -5,11 +5,13 @@ moon::rm /etc/ipsec.d/cacerts/*
 carol::rm /etc/ipsec.d/cacerts/*
 dave::rm /etc/ipsec.d/cacerts/*
 alice::cat /etc/freeradius/triplets.dat
+carol::cat /etc/ipsec.d/triplets.dat
+dave::cat /etc/ipsec.d/triplets.dat
 alice::radiusd
 moon::ipsec start
 carol::ipsec start
 dave::ipsec start
-carol::sleep 1
+carol::expect-connection home
 carol::ipsec up home
+dave::expect-connection home
 dave::ipsec up home
-dave::sleep 1

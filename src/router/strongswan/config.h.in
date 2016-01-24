@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
@@ -55,14 +55,23 @@
    don't. */
 #undef HAVE_DECL_STRERROR_R
 
+/* Define to 1 if you have the `dirfd' function. */
+#undef HAVE_DIRFD
+
 /* have dladdr() */
 #undef HAVE_DLADDR
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* have GCC __sync_* atomic operations */
-#undef HAVE_GCC_ATOMIC_OPERATIONS
+/* Define to 1 if you have the `fmemopen' function. */
+#undef HAVE_FMEMOPEN
+
+/* Define to 1 if you have the `funopen' function. */
+#undef HAVE_FUNOPEN
+
+/* have GCC __sync_* operations */
+#undef HAVE_GCC_SYNC_OPERATIONS
 
 /* have GCRY_CIPHER_CAMELLIA128 */
 #undef HAVE_GCRY_CIPHER_CAMELLIA
@@ -91,6 +100,9 @@
 /* have struct in6_pktinfo.ipi6_ifindex */
 #undef HAVE_IN6_PKTINFO
 
+/* have __int128 type support */
+#undef HAVE_INT128
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -103,6 +115,12 @@
 /* Define to 1 if you have the `gmp' library (-lgmp). */
 #undef HAVE_LIBGMP
 
+/* have libunwind.h */
+#undef HAVE_LIBUNWIND_H
+
+/* Define to 1 if you have the <linux/fib_rules.h> header file. */
+#undef HAVE_LINUX_FIB_RULES_H
+
 /* Define to 1 if you have the <linux/udp.h> header file. */
 #undef HAVE_LINUX_UDP_H
 
@@ -111,6 +129,12 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `memrchr' function. */
+#undef HAVE_MEMRCHR
+
+/* Define to 1 if you have the `mmap' function. */
+#undef HAVE_MMAP
 
 /* have mpz_mown_sec() */
 #undef HAVE_MPZ_POWM_SEC
@@ -123,6 +147,9 @@
 
 /* Define to 1 if you have the <netipsec/ipsec.h> header file. */
 #undef HAVE_NETIPSEC_IPSEC_H
+
+/* Define to 1 if you have the <net/if_tun.h> header file. */
+#undef HAVE_NET_IF_TUN_H
 
 /* Define to 1 if you have the <net/pfkeyv2.h> header file. */
 #undef HAVE_NET_PFKEYV2_H
@@ -154,14 +181,32 @@
 /* Define to 1 if you have the `pthread_spin_init' function. */
 #undef HAVE_PTHREAD_SPIN_INIT
 
+/* have qsort_r() */
+#undef HAVE_QSORT_R
+
+/* have BSD-style qsort_r() */
+#undef HAVE_QSORT_R_BSD
+
+/* have GNU-style qsort_r() */
+#undef HAVE_QSORT_R_GNU
+
 /* Define to 1 if you have the `rb_errinfo' function. */
 #undef HAVE_RB_ERRINFO
 
 /* have netlink RTA_TABLE defined */
 #undef HAVE_RTA_TABLE
 
+/* have PF_ROUTE RTM_IFANNOUNCE defined */
+#undef HAVE_RTM_IFANNOUNCE
+
 /* Define to 1 if you have the `sem_timedwait' function. */
 #undef HAVE_SEM_TIMEDWAIT
+
+/* Define to 1 if you have the `setlinebuf' function. */
+#undef HAVE_SETLINEBUF
+
+/* Define to 1 if you have the `sigwaitinfo' function. */
+#undef HAVE_SIGWAITINFO
 
 /* have sqlite3_prepare_v2() */
 #undef HAVE_SQLITE3_PREPARE_V2
@@ -184,12 +229,18 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if you have the `strptime' function. */
+#undef HAVE_STRPTIME
+
 /* Define to 1 if `sadb_x_policy_priority' is a member of `struct
    sadb_x_policy'. */
 #undef HAVE_STRUCT_SADB_X_POLICY_SADB_X_POLICY_PRIORITY
 
 /* Define to 1 if `sa_len' is a member of `struct sockaddr'. */
 #undef HAVE_STRUCT_SOCKADDR_SA_LEN
+
+/* have syslog(3) and friends */
+#undef HAVE_SYSLOG
 
 /* have sys/capability.h */
 #undef HAVE_SYS_CAPABILITY_H
@@ -202,6 +253,9 @@
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/syscall.h> header file. */
+#undef HAVE_SYS_SYSCALL_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
@@ -227,9 +281,6 @@
 
 /* monolithic build embedding plugins */
 #undef MONOLITHIC
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -269,13 +320,16 @@
 /* use TrouSerS library libtspi as TSS implementation */
 #undef TSS_TROUSERS
 
+/* using builtin printf for printf hooks */
+#undef USE_BUILTIN_PRINTF
+
 /* support for IKEv1 protocol */
 #undef USE_IKEV1
 
 /* support for IKEv2 protocol */
 #undef USE_IKEV2
 
-/* use vstring library for printf hooks */
+/* use Vstr string library for printf hooks */
 #undef USE_VSTR
 
 /* Version number of package */

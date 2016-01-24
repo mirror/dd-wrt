@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2009 Martin Willi
- * Hochschule fuer Technik Rapperswil
+ * Copyright (C) 2015 Andreas Steffen
+ * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -12,6 +13,8 @@
  * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * for more details.
  */
+
+#include <errno.h>
 
 #include "pki.h"
 
@@ -50,6 +53,16 @@ static int pub()
 				{
 					type = CRED_PRIVATE_KEY;
 					subtype = KEY_ECDSA;
+				}
+				else if (streq(arg, "bliss"))
+				{
+					type = CRED_PRIVATE_KEY;
+					subtype = KEY_BLISS;
+				}
+				else if (streq(arg, "pub"))
+				{
+					type = CRED_PUBLIC_KEY;
+					subtype = KEY_ANY;
 				}
 				else if (streq(arg, "pkcs10"))
 				{
@@ -96,13 +109,22 @@ static int pub()
 
 		chunk = chunk_from_hex(chunk_create(keyid, strlen(keyid)), NULL);
 		cred = lib->creds->create(lib->creds, CRED_PRIVATE_KEY, KEY_ANY,
-									 BUILD_PKCS11_KEYID, chunk, BUILD_END);
+								  BUILD_PKCS11_KEYID, chunk, BUILD_END);
 		free(chunk.ptr);
 	}
 	else
 	{
+		chunk_t chunk;
+
+		set_file_mode(stdin, CERT_ASN1_DER);
+		if (!chunk_from_fd(0, &chunk))
+		{
+			fprintf(stderr, "reading input failed: %s\n", strerror(errno));
+			return 1;
+		}
 		cred = lib->creds->create(lib->creds, type, subtype,
-									 BUILD_FROM_FD, 0, BUILD_END);
+								  BUILD_BLOB, chunk, BUILD_END);
+		free(chunk.ptr);
 	}
 
 	if (type == CRED_PRIVATE_KEY)
@@ -115,6 +137,15 @@ static int pub()
 		}
 		public = private->get_public_key(private);
 		private->destroy(private);
+	}
+	else if (type == CRED_PUBLIC_KEY)
+	{
+		public = cred;
+		if (!public)
+		{
+			fprintf(stderr, "parsing public key failed\n");
+			return 1;
+		}
 	}
 	else
 	{
@@ -139,6 +170,7 @@ static int pub()
 		return 1;
 	}
 	public->destroy(public);
+	set_file_mode(stdout, form);
 	if (fwrite(encoding.ptr, encoding.len, 1, stdout) != 1)
 	{
 		fprintf(stderr, "writing public key failed\n");
@@ -157,15 +189,14 @@ static void __attribute__ ((constructor))reg()
 	command_register((command_t) {
 		pub, 'p', "pub",
 		"extract the public key from a private key/certificate",
-		{"[--in file|--keyid hex] [--type rsa|ecdsa|pkcs10|x509]",
-		 "[--outform der|pem|pgp|dnskey]"},
+		{"[--in file|--keyid hex] [--type rsa|ecdsa|bliss|pub|pkcs10|x509]",
+		 "[--outform der|pem|dnskey|sshkey]"},
 		{
 			{"help",	'h', 0, "show usage information"},
 			{"in",		'i', 1, "input file, default: stdin"},
 			{"keyid",	'x', 1, "keyid on smartcard of private key"},
 			{"type",	't', 1, "type of credential, default: rsa"},
-			{"outform",	'f', 1, "encoding of extracted public key"},
+			{"outform",	'f', 1, "encoding of extracted public key, default: der"},
 		}
 	});
 }
-

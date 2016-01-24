@@ -30,13 +30,16 @@ delete,          STROKE_DELETE
 route,           STROKE_ROUTE
 unroute,         STROKE_UNROUTE
 up,              STROKE_UP
+up-nb,           STROKE_UP_NOBLK
 down,            STROKE_DOWN
+down-nb,         STROKE_DOWN_NOBLK
 down-srcip,      STROKE_DOWN_SRCIP
 rekey,           STROKE_REKEY
 loglevel,        STROKE_LOGLEVEL
 status,          STROKE_STATUS
 statusall,       STROKE_STATUSALL
 statusallnb,     STROKE_STATUSALL_NOBLK
+statusall-nb,    STROKE_STATUSALL_NOBLK
 listpubkeys,     STROKE_LIST_PUBKEYS
 listcerts,       STROKE_LIST_CERTS
 listcacerts,     STROKE_LIST_CACERTS
@@ -62,6 +65,8 @@ purgecrls,       STROKE_PURGE_CRLS
 purgecerts,      STROKE_PURGE_CERTS
 purgeike,        STROKE_PURGE_IKE
 exportx509,      STROKE_EXPORT_X509
+exportconncert,  STROKE_EXPORT_CONN_CERT
+exportconnchain, STROKE_EXPORT_CONN_CHAIN
 leases,          STROKE_LEASES
 memusage,        STROKE_MEMUSAGE
 user-creds,      STROKE_USER_CREDS

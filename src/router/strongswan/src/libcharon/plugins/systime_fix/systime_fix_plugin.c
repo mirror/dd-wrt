@@ -1,4 +1,7 @@
 /*
+ * Copyright (C) 2013 Tobias Brunner
+ * Hochschule fuer Technik Rapperswil
+ *
  * Copyright (C) 2013 Martin Willi
  * Copyright (C) 2013 revosec AG
  *
@@ -66,17 +69,6 @@ METHOD(plugin_t, get_name, char*,
 	private_systime_fix_plugin_t *this)
 {
 	return "systime-fix";
-}
-
-METHOD(plugin_t, destroy, void,
-	private_systime_fix_plugin_t *this)
-{
-	if (this->validator)
-	{
-		lib->credmgr->remove_validator(lib->credmgr, &this->validator->validator);
-		this->validator->destroy(this->validator);
-	}
-	free(this);
 }
 
 /**
@@ -186,9 +178,9 @@ static bool load_validator(private_systime_fix_plugin_t *this)
 	char *str, *fmt;
 
 	fmt = lib->settings->get_str(lib->settings,
-			"%s.plugins.%s.threshold_format", "%Y", charon->name, get_name(this));
+			"%s.plugins.%s.threshold_format", "%Y", lib->ns, get_name(this));
 	str = lib->settings->get_str(lib->settings,
-			"%s.plugins.%s.threshold", NULL, charon->name, get_name(this));
+			"%s.plugins.%s.threshold", NULL, lib->ns, get_name(this));
 	if (!str)
 	{
 		DBG1(DBG_CFG, "no threshold configured for %s, disabled",
@@ -215,9 +207,55 @@ static bool load_validator(private_systime_fix_plugin_t *this)
 
 	DBG1(DBG_CFG, "enabling %s, threshold: %s", get_name(this), asctime(&tm));
 	this->validator = systime_fix_validator_create(this->threshold);
-	lib->credmgr->add_validator(lib->credmgr, &this->validator->validator);
-
 	return TRUE;
+}
+
+/**
+ * Load validator
+ */
+static bool plugin_cb(private_systime_fix_plugin_t *this,
+					  plugin_feature_t *feature, bool reg, void *cb_data)
+{
+	if (reg)
+	{
+		if (!load_validator(this))
+		{
+			return FALSE;
+		}
+		lib->credmgr->add_validator(lib->credmgr, &this->validator->validator);
+		if (this->interval != 0)
+		{
+			DBG1(DBG_CFG, "starting systime check, interval: %ds",
+				 this->interval);
+			lib->scheduler->schedule_job(lib->scheduler, (job_t*)
+					callback_job_create((callback_job_cb_t)check_systime,
+										this, NULL, NULL), this->interval);
+		}
+	}
+	else
+	{
+		lib->credmgr->remove_validator(lib->credmgr,
+									   &this->validator->validator);
+		this->validator->destroy(this->validator);
+	}
+	return TRUE;
+}
+
+METHOD(plugin_t, get_features, int,
+	private_systime_fix_plugin_t *this, plugin_feature_t *features[])
+{
+	static plugin_feature_t f[] = {
+		PLUGIN_CALLBACK((plugin_feature_callback_t)plugin_cb, NULL),
+			PLUGIN_PROVIDE(CUSTOM, "systime-fix"),
+	};
+	*features = f;
+	return countof(f);
+}
+
+METHOD(plugin_t, destroy, void,
+	private_systime_fix_plugin_t *this)
+{
+	free(this);
 }
 
 /**
@@ -231,26 +269,15 @@ plugin_t *systime_fix_plugin_create()
 		.public = {
 			.plugin = {
 				.get_name = _get_name,
-				.reload = (void*)return_false,
+				.get_features = _get_features,
 				.destroy = _destroy,
 			},
 		},
 		.interval = lib->settings->get_int(lib->settings,
-				"%s.plugins.%s.interval", 0, charon->name, get_name(this)),
+						"%s.plugins.%s.interval", 0, lib->ns, get_name(this)),
 		.reauth = lib->settings->get_bool(lib->settings,
-				"%s.plugins.%s.reauth", FALSE, charon->name, get_name(this)),
+						"%s.plugins.%s.reauth", FALSE, lib->ns, get_name(this)),
 	);
 
-	if (load_validator(this))
-	{
-		if (this->interval != 0)
-		{
-			DBG1(DBG_CFG, "starting systime check, interval: %ds",
-				 this->interval);
-			lib->scheduler->schedule_job(lib->scheduler, (job_t*)
-					callback_job_create((callback_job_cb_t)check_systime, this,
-										NULL, NULL), this->interval);
-		}
-	}
 	return &this->public.plugin;
 }

@@ -135,7 +135,7 @@ METHOD(crypter_t, get_block_size, size_t,
 METHOD(crypter_t, get_iv_size, size_t,
 	private_openssl_crypter_t *this)
 {
-	return this->cipher->block_size;
+	return this->cipher->iv_len;
 }
 
 METHOD(crypter_t, get_key_size, size_t,
@@ -226,10 +226,12 @@ openssl_crypter_t *openssl_crypter_create(encryption_algorithm_t algo,
 					return NULL;
 			}
 			break;
+#ifndef OPENSSL_NO_DES
 		case ENCR_DES_ECB:
 			key_size = 8;
 			this->cipher = EVP_des_ecb();
 			break;
+#endif
 		default:
 		{
 			char* name;
