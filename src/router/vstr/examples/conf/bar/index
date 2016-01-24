@@ -1,3 +1,0 @@
-(org.and.jhttpd-conf-req-1.0
-  (Location: [(limit <path>-end /bar/)] /)
-  (return 301))

@@ -1,4 +1,0 @@
-# load packet len into A
-{ ldl },
-# return A
-{ reta },
