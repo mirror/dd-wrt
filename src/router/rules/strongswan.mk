@@ -85,7 +85,7 @@ CONFIGURE_ARGS=\
 
 #	--with-linux-headers=$(LINUXDIR)/include 
 
-strongswan-configure: gmp
+strongswan-configure: gmp sqlite
 	export CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/gmp -I$(TOP)/openssl/include -I$(TOP)/sqlite" \
 	export CPPFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/gmp -I$(TOP)/openssl/include -I$(TOP)/sqlite" ;\
 	export LDFLAGS="-L$(TOP)/gmp/.libs -L$(TOP)/openssl -L$(TOP)/sqlite/.libs" ; \
