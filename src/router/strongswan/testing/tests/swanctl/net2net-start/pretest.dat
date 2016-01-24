@@ -1,0 +1,5 @@
+sun::iptables-restore < /etc/iptables.rules
+moon::iptables-restore < /etc/iptables.rules
+sun::service charon start 2> /dev/null
+moon::service charon start 2> /dev/null
+moon::sleep 1
