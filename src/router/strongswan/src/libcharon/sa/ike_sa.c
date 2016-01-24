@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2012 Tobias Brunner
+ * Copyright (C) 2006-2015 Tobias Brunner
  * Copyright (C) 2006 Daniel Roethlisberger
  * Copyright (C) 2005-2009 Martin Willi
  * Copyright (C) 2005 Jan Hutter
@@ -16,6 +16,28 @@
  * for more details.
  */
 
+/*
+ * Copyright (c) 2014 Volker Rümelin
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 #include <string.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -26,7 +48,7 @@
 #include <library.h>
 #include <hydra.h>
 #include <daemon.h>
-#include <collections/linked_list.h>
+#include <collections/array.h>
 #include <utils/lexparser.h>
 #include <processing/jobs/retransmit_job.h>
 #include <processing/jobs/delete_ike_sa_job.h>
@@ -95,24 +117,24 @@ struct private_ike_sa_t {
 	peer_cfg_t *peer_cfg;
 
 	/**
-	 * currently used authentication ruleset, local (as auth_cfg_t)
+	 * currently used authentication ruleset, local
 	 */
 	auth_cfg_t *my_auth;
 
 	/**
-	 * list of completed local authentication rounds
-	 */
-	linked_list_t *my_auths;
-
-	/**
-	 * list of completed remote authentication rounds
-	 */
-	linked_list_t *other_auths;
-
-	/**
-	 * currently used authentication constraints, remote (as auth_cfg_t)
+	 * currently used authentication constraints, remote
 	 */
 	auth_cfg_t *other_auth;
+
+	/**
+	 * Array of completed local authentication rounds (as auth_cfg_t)
+	 */
+	array_t *my_auths;
+
+	/**
+	 * Array of completed remote authentication rounds (as auth_cfg_t)
+	 */
+	array_t *other_auths;
 
 	/**
 	 * Selected IKE proposal
@@ -172,9 +194,9 @@ struct private_ike_sa_t {
 	ike_condition_t conditions;
 
 	/**
-	 * Linked List containing the child sa's of the current IKE_SA.
+	 * Array containing the child sa's of the current IKE_SA.
 	 */
-	linked_list_t *child_sas;
+	array_t *child_sas;
 
 	/**
 	 * keymat of this IKE_SA
@@ -184,22 +206,22 @@ struct private_ike_sa_t {
 	/**
 	 * Virtual IPs on local host
 	 */
-	linked_list_t *my_vips;
+	array_t *my_vips;
 
 	/**
 	 * Virtual IPs on remote host
 	 */
-	linked_list_t *other_vips;
+	array_t *other_vips;
 
 	/**
 	 * List of configuration attributes (attribute_entry_t)
 	 */
-	linked_list_t *attributes;
+	array_t *attributes;
 
 	/**
 	 * list of peer's addresses, additional ones transmitted via MOBIKE
 	 */
-	linked_list_t *peer_addresses;
+	array_t *peer_addresses;
 
 	/**
 	 * previously value of received DESTINATION_IP hash
@@ -251,6 +273,11 @@ struct private_ike_sa_t {
 	 * Flush auth configs once established?
 	 */
 	bool flush_auth_cfg;
+
+	/**
+	 * Maximum length of a single fragment, 0 for address-specific defaults
+	 */
+	size_t fragment_size;
 };
 
 /**
@@ -282,7 +309,8 @@ static time_t get_use_time(private_ike_sa_t* this, bool inbound)
 	{
 		use_time = this->stats[STAT_OUTBOUND];
 	}
-	enumerator = this->child_sas->create_enumerator(this->child_sas);
+
+	enumerator = array_create_enumerator(this->child_sas);
 	while (enumerator->enumerate(enumerator, &child_sa))
 	{
 		child_sa->get_usestats(child_sa, inbound, &current, NULL, NULL);
@@ -389,11 +417,11 @@ METHOD(ike_sa_t, add_auth_cfg, void,
 {
 	if (local)
 	{
-		this->my_auths->insert_last(this->my_auths, cfg);
+		array_insert(this->my_auths, ARRAY_TAIL, cfg);
 	}
 	else
 	{
-		this->other_auths->insert_last(this->other_auths, cfg);
+		array_insert(this->other_auths, ARRAY_TAIL, cfg);
 	}
 }
 
@@ -402,9 +430,9 @@ METHOD(ike_sa_t, create_auth_cfg_enumerator, enumerator_t*,
 {
 	if (local)
 	{
-		return this->my_auths->create_enumerator(this->my_auths);
+		return array_create_enumerator(this->my_auths);
 	}
-	return this->other_auths->create_enumerator(this->other_auths);
+	return array_create_enumerator(this->other_auths);
 }
 
 /**
@@ -417,13 +445,11 @@ static void flush_auth_cfgs(private_ike_sa_t *this)
 	this->my_auth->purge(this->my_auth, FALSE);
 	this->other_auth->purge(this->other_auth, FALSE);
 
-	while (this->my_auths->remove_last(this->my_auths,
-									   (void**)&cfg) == SUCCESS)
+	while (array_remove(this->my_auths, ARRAY_TAIL, &cfg))
 	{
 		cfg->destroy(cfg);
 	}
-	while (this->other_auths->remove_last(this->other_auths,
-										  (void**)&cfg) == SUCCESS)
+	while (array_remove(this->other_auths, ARRAY_TAIL, &cfg))
 	{
 		cfg->destroy(cfg);
 	}
@@ -461,8 +487,9 @@ METHOD(ike_sa_t, send_keepalive, void,
 	send_keepalive_job_t *job;
 	time_t last_out, now, diff;
 
-	if (!(this->conditions & COND_NAT_HERE) || this->keepalive_interval == 0)
-	{	/* disable keep alives if we are not NATed anymore */
+	if (!(this->conditions & COND_NAT_HERE) || this->keepalive_interval == 0 ||
+		this->state == IKE_PASSIVE)
+	{	/* disable keep alives if we are not NATed anymore, or we are passive */
 		return;
 	}
 
@@ -625,7 +652,7 @@ METHOD(ike_sa_t, get_state, ike_sa_state_t,
 METHOD(ike_sa_t, set_state, void,
 	private_ike_sa_t *this, ike_sa_state_t state)
 {
-	bool trigger_dpd = FALSE;
+	bool trigger_dpd = FALSE, keepalives = FALSE;
 
 	DBG2(DBG_IKE, "IKE_SA %s[%d] state change: %N => %N",
 		 get_name(this), this->unique_id,
@@ -688,6 +715,18 @@ METHOD(ike_sa_t, set_state, void,
 					DBG1(DBG_IKE, "maximum IKE_SA lifetime %ds", t);
 				}
 				trigger_dpd = this->peer_cfg->get_dpd(this->peer_cfg);
+				if (trigger_dpd)
+				{
+					/* Some peers delay the DELETE after rekeying an IKE_SA.
+					 * If this delay is longer than our DPD delay, we would
+					 * send a DPD request here. The IKE_SA is not ready to do
+					 * so yet, so prevent that. */
+					this->stats[STAT_INBOUND] = this->stats[STAT_ESTABLISHED];
+				}
+				if (this->state == IKE_PASSIVE)
+				{
+					keepalives = TRUE;
+				}
 			}
 			break;
 		}
@@ -707,6 +746,10 @@ METHOD(ike_sa_t, set_state, void,
 		{
 			DBG1(DBG_IKE, "DPD not supported by peer, disabled");
 		}
+	}
+	if (keepalives)
+	{
+		send_keepalive(this);
 	}
 }
 
@@ -750,7 +793,7 @@ METHOD(ike_sa_t, add_virtual_ip, void,
 			if (hydra->kernel_interface->add_ip(hydra->kernel_interface,
 												ip, -1, iface) == SUCCESS)
 			{
-				this->my_vips->insert_last(this->my_vips, ip->clone(ip));
+				array_insert_create(&this->my_vips, ARRAY_TAIL, ip->clone(ip));
 			}
 			else
 			{
@@ -765,7 +808,7 @@ METHOD(ike_sa_t, add_virtual_ip, void,
 	}
 	else
 	{
-		this->other_vips->insert_last(this->other_vips, ip->clone(ip));
+		array_insert_create(&this->other_vips, ARRAY_TAIL, ip->clone(ip));
 	}
 }
 
@@ -773,14 +816,15 @@ METHOD(ike_sa_t, add_virtual_ip, void,
 METHOD(ike_sa_t, clear_virtual_ips, void,
 	private_ike_sa_t *this, bool local)
 {
-	linked_list_t *vips = local ? this->my_vips : this->other_vips;
+	array_t *vips;
 	host_t *vip;
 
-	if (!local && vips->get_count(vips))
+	vips = local ? this->my_vips : this->other_vips;
+	if (!local && array_count(vips))
 	{
 		charon->bus->assign_vips(charon->bus, &this->public, FALSE);
 	}
-	while (vips->remove_first(vips, (void**)&vip) == SUCCESS)
+	while (array_remove(vips, ARRAY_HEAD, &vip))
 	{
 		if (local)
 		{
@@ -796,23 +840,23 @@ METHOD(ike_sa_t, create_virtual_ip_enumerator, enumerator_t*,
 {
 	if (local)
 	{
-		return this->my_vips->create_enumerator(this->my_vips);
+		return array_create_enumerator(this->my_vips);
 	}
-	return this->other_vips->create_enumerator(this->other_vips);
+	return array_create_enumerator(this->other_vips);
 }
 
 METHOD(ike_sa_t, add_peer_address, void,
 	private_ike_sa_t *this, host_t *host)
 {
-	this->peer_addresses->insert_last(this->peer_addresses, host);
+	array_insert_create(&this->peer_addresses, ARRAY_TAIL, host);
 }
 
 METHOD(ike_sa_t, create_peer_address_enumerator, enumerator_t*,
 	private_ike_sa_t *this)
 {
-	if (this->peer_addresses->get_count(this->peer_addresses))
+	if (this->peer_addresses)
 	{
-		return this->peer_addresses->create_enumerator(this->peer_addresses);
+		return array_create_enumerator(this->peer_addresses);
 	}
 	/* in case we don't have MOBIKE */
 	return enumerator_create_single(this->other_host, NULL);
@@ -821,17 +865,8 @@ METHOD(ike_sa_t, create_peer_address_enumerator, enumerator_t*,
 METHOD(ike_sa_t, clear_peer_addresses, void,
 	private_ike_sa_t *this)
 {
-	enumerator_t *enumerator;
-	host_t *host;
-
-	enumerator = this->peer_addresses->create_enumerator(this->peer_addresses);
-	while (enumerator->enumerate(enumerator, (void**)&host))
-	{
-		this->peer_addresses->remove_at(this->peer_addresses,
-										enumerator);
-		host->destroy(host);
-	}
-	enumerator->destroy(enumerator);
+	array_destroy_offset(this->peer_addresses, offsetof(host_t, destroy));
+	this->peer_addresses = NULL;
 }
 
 METHOD(ike_sa_t, has_mapping_changed, bool,
@@ -906,16 +941,21 @@ METHOD(ike_sa_t, update_hosts, void,
 		/* update our address in any case */
 		if (force && !me->equals(me, this->my_host))
 		{
+			charon->bus->ike_update(charon->bus, &this->public, TRUE, me);
 			set_my_host(this, me->clone(me));
 			update = TRUE;
 		}
 
-		if (!other->equals(other, this->other_host))
+		if (!other->equals(other, this->other_host) &&
+			(force || has_condition(this, COND_NAT_THERE)))
 		{
-			/* update others address if we are NOT NATed */
-			if ((has_condition(this, COND_NAT_THERE) &&
-				 !has_condition(this, COND_NAT_HERE)) || force )
+			/* only update other's address if we are behind a static NAT,
+			 * which we assume is the case if we are not initiator */
+			if (force ||
+				(!has_condition(this, COND_NAT_HERE) ||
+				 !has_condition(this, COND_ORIGINAL_INITIATOR)))
 			{
+				charon->bus->ike_update(charon->bus, &this->public, FALSE, other);
 				set_other_host(this, other->clone(other));
 				update = TRUE;
 			}
@@ -927,20 +967,30 @@ METHOD(ike_sa_t, update_hosts, void,
 	{
 		enumerator_t *enumerator;
 		child_sa_t *child_sa;
+		linked_list_t *vips;
 
-		enumerator = this->child_sas->create_enumerator(this->child_sas);
-		while (enumerator->enumerate(enumerator, (void**)&child_sa))
+		vips = linked_list_create_from_enumerator(
+									array_create_enumerator(this->my_vips));
+
+		enumerator = array_create_enumerator(this->child_sas);
+		while (enumerator->enumerate(enumerator, &child_sa))
 		{
-			if (child_sa->update(child_sa, this->my_host,
-						this->other_host, this->my_vips,
-						has_condition(this, COND_NAT_ANY)) == NOT_SUPPORTED)
+			charon->child_sa_manager->remove(charon->child_sa_manager, child_sa);
+			charon->child_sa_manager->add(charon->child_sa_manager,
+										  child_sa, &this->public);
+
+			if (child_sa->update(child_sa, this->my_host, this->other_host,
+					vips, has_condition(this, COND_NAT_ANY)) == NOT_SUPPORTED)
 			{
 				this->public.rekey_child_sa(&this->public,
 						child_sa->get_protocol(child_sa),
 						child_sa->get_spi(child_sa, TRUE));
 			}
+
 		}
 		enumerator->destroy(enumerator);
+
+		vips->destroy(vips);
 	}
 }
 
@@ -986,6 +1036,69 @@ METHOD(ike_sa_t, generate_message, status_t,
 	{
 		set_dscp(this, *packet);
 		charon->bus->message(charon->bus, message, FALSE, FALSE);
+	}
+	return status;
+}
+
+static bool filter_fragments(private_ike_sa_t *this, packet_t **fragment,
+							 packet_t **packet)
+{
+	*packet = (*fragment)->clone(*fragment);
+	set_dscp(this, *packet);
+	return TRUE;
+}
+
+METHOD(ike_sa_t, generate_message_fragmented, status_t,
+	private_ike_sa_t *this, message_t *message, enumerator_t **packets)
+{
+	enumerator_t *fragments;
+	packet_t *packet;
+	status_t status;
+	bool use_frags = FALSE;
+
+	if (this->ike_cfg)
+	{
+		switch (this->ike_cfg->fragmentation(this->ike_cfg))
+		{
+			case FRAGMENTATION_FORCE:
+				use_frags = TRUE;
+				break;
+			case FRAGMENTATION_YES:
+				use_frags = supports_extension(this, EXT_IKE_FRAGMENTATION);
+				if (use_frags && this->version == IKEV1 &&
+					supports_extension(this, EXT_MS_WINDOWS))
+				{
+					/* It seems Windows 7 and 8 peers only accept proprietary
+					 * fragmented messages if they expect certificates. */
+					use_frags = message->get_payload(message,
+													 PLV1_CERTIFICATE) != NULL;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	if (!use_frags)
+	{
+		status = generate_message(this, message, &packet);
+		if (status != SUCCESS)
+		{
+			return status;
+		}
+		*packets = enumerator_create_single(packet, NULL);
+		return SUCCESS;
+	}
+
+	this->stats[STAT_OUTBOUND] = time_monotonic(NULL);
+	message->set_ike_sa_id(message, this->ike_sa_id);
+	charon->bus->message(charon->bus, message, FALSE, TRUE);
+	status = message->fragment(message, this->keymat, this->fragment_size,
+							   &fragments);
+	if (status == SUCCESS)
+	{
+		charon->bus->message(charon->bus, message, FALSE, FALSE);
+		*packets = enumerator_create_filter(fragments, (void*)filter_fragments,
+											this, NULL);
 	}
 	return status;
 }
@@ -1081,6 +1194,33 @@ METHOD(ike_sa_t, initiate_mediated, status_t,
 static void resolve_hosts(private_ike_sa_t *this)
 {
 	host_t *host;
+	int family = AF_UNSPEC;
+
+	switch (charon->socket->supported_families(charon->socket))
+	{
+		case SOCKET_FAMILY_IPV4:
+			family = AF_INET;
+			break;
+		case SOCKET_FAMILY_IPV6:
+			family = AF_INET6;
+			break;
+		case SOCKET_FAMILY_BOTH:
+		case SOCKET_FAMILY_NONE:
+			break;
+	}
+
+	/* if an IP address is set locally, use the same family to resolve remote */
+	if (family == AF_UNSPEC && !this->remote_host)
+	{
+		if (this->local_host)
+		{
+			family = this->local_host->get_family(this->local_host);
+		}
+		else
+		{
+			family = ike_cfg_get_family(this->ike_cfg, TRUE);
+		}
+	}
 
 	if (this->remote_host)
 	{
@@ -1089,16 +1229,22 @@ static void resolve_hosts(private_ike_sa_t *this)
 	}
 	else
 	{
-		char *other_addr;
-		u_int16_t other_port;
-
-		other_addr = this->ike_cfg->get_other_addr(this->ike_cfg, NULL);
-		other_port = this->ike_cfg->get_other_port(this->ike_cfg);
-		host = host_create_from_dns(other_addr, 0, other_port);
+		host = this->ike_cfg->resolve_other(this->ike_cfg, family);
 	}
 	if (host)
 	{
-		set_other_host(this, host);
+		if (!host->is_anyaddr(host) ||
+			this->other_host->is_anyaddr(this->other_host))
+		{	/* don't set to %any if we currently have an address, but the
+			 * address family might have changed */
+			set_other_host(this, host);
+		}
+		else
+		{	/* reuse the original port as some implementations might not like
+			 * initial IKE messages on other ports */
+			this->other_host->set_port(this->other_host, host->get_port(host));
+			host->destroy(host);
+		}
 	}
 
 	if (this->local_host)
@@ -1108,18 +1254,12 @@ static void resolve_hosts(private_ike_sa_t *this)
 	}
 	else
 	{
-		char *my_addr;
-		u_int16_t my_port;
-		int family = 0;
-
 		/* use same address family as for other */
 		if (!this->other_host->is_anyaddr(this->other_host))
 		{
 			family = this->other_host->get_family(this->other_host);
 		}
-		my_addr = this->ike_cfg->get_my_addr(this->ike_cfg, NULL);
-		my_port = this->ike_cfg->get_my_port(this->ike_cfg);
-		host = host_create_from_dns(my_addr, family, my_port);
+		host = this->ike_cfg->resolve_me(this->ike_cfg, family);
 
 		if (host && host->is_anyaddr(host) &&
 			!this->other_host->is_anyaddr(this->other_host))
@@ -1133,7 +1273,7 @@ static void resolve_hosts(private_ike_sa_t *this)
 			}
 			else
 			{	/* fallback to address family specific %any(6), if configured */
-				host = host_create_from_dns(my_addr, 0, my_port);
+				host = this->ike_cfg->resolve_me(this->ike_cfg, family);
 			}
 		}
 	}
@@ -1163,20 +1303,13 @@ METHOD(ike_sa_t, initiate, status_t,
 #endif /* ME */
 			)
 		{
-			char *addr = this->ike_cfg->get_other_addr(this->ike_cfg, NULL);
-			bool is_anyaddr = streq(addr, "%any") || streq(addr, "%any6");
+			char *addr;
 
-			if (is_anyaddr || !this->retry_initiate_interval)
+			addr = this->ike_cfg->get_other_addr(this->ike_cfg);
+			if (!this->retry_initiate_interval)
 			{
-				if (is_anyaddr)
-				{
-					DBG1(DBG_IKE, "unable to initiate to %s", addr);
-				}
-				else
-				{
-					DBG1(DBG_IKE, "unable to resolve %s, initiate aborted",
-						 addr);
-				}
+				DBG1(DBG_IKE, "unable to resolve %s, initiate aborted",
+					 addr);
 				DESTROY_IF(child_cfg);
 				charon->bus->alert(charon->bus, ALERT_PEER_ADDR_FAILED);
 				return DESTROY_ME;
@@ -1313,7 +1446,7 @@ METHOD(ike_sa_t, get_other_eap_id, identification_t*,
 	enumerator_t *enumerator;
 	auth_cfg_t *cfg;
 
-	enumerator = this->other_auths->create_enumerator(this->other_auths);
+	enumerator = array_create_enumerator(this->other_auths);
 	while (enumerator->enumerate(enumerator, &cfg))
 	{
 		/* prefer EAP-Identity of last round */
@@ -1350,7 +1483,9 @@ METHOD(ike_sa_t, set_other_id, void,
 METHOD(ike_sa_t, add_child_sa, void,
 	private_ike_sa_t *this, child_sa_t *child_sa)
 {
-	this->child_sas->insert_last(this->child_sas, child_sa);
+	array_insert_create(&this->child_sas, ARRAY_TAIL, child_sa);
+	charon->child_sa_manager->add(charon->child_sa_manager,
+								  child_sa, &this->public);
 }
 
 METHOD(ike_sa_t, get_child_sa, child_sa_t*,
@@ -1359,7 +1494,7 @@ METHOD(ike_sa_t, get_child_sa, child_sa_t*,
 	enumerator_t *enumerator;
 	child_sa_t *current, *found = NULL;
 
-	enumerator = this->child_sas->create_enumerator(this->child_sas);
+	enumerator = array_create_enumerator(this->child_sas);
 	while (enumerator->enumerate(enumerator, (void**)&current))
 	{
 		if (current->get_spi(current, inbound) == spi &&
@@ -1375,19 +1510,61 @@ METHOD(ike_sa_t, get_child_sa, child_sa_t*,
 METHOD(ike_sa_t, get_child_count, int,
 	private_ike_sa_t *this)
 {
-	return this->child_sas->get_count(this->child_sas);
+	return array_count(this->child_sas);
+}
+
+/**
+ * Private data of a create_child_sa_enumerator()
+ */
+typedef struct {
+	/** implements enumerator */
+	enumerator_t public;
+	/** inner array enumerator */
+	enumerator_t *inner;
+	/** current item */
+	child_sa_t *current;
+} child_enumerator_t;
+
+METHOD(enumerator_t, child_enumerate, bool,
+	child_enumerator_t *this, child_sa_t **child_sa)
+{
+	if (this->inner->enumerate(this->inner, &this->current))
+	{
+		*child_sa = this->current;
+		return TRUE;
+	}
+	return FALSE;
+}
+
+METHOD(enumerator_t, child_enumerator_destroy, void,
+	child_enumerator_t *this)
+{
+	this->inner->destroy(this->inner);
+	free(this);
 }
 
 METHOD(ike_sa_t, create_child_sa_enumerator, enumerator_t*,
 	private_ike_sa_t *this)
 {
-	return this->child_sas->create_enumerator(this->child_sas);
+	child_enumerator_t *enumerator;
+
+	INIT(enumerator,
+		.public = {
+			.enumerate = (void*)_child_enumerate,
+			.destroy = _child_enumerator_destroy,
+		},
+		.inner = array_create_enumerator(this->child_sas),
+	);
+	return &enumerator->public;
 }
 
 METHOD(ike_sa_t, remove_child_sa, void,
 	private_ike_sa_t *this, enumerator_t *enumerator)
 {
-	this->child_sas->remove_at(this->child_sas, enumerator);
+	child_enumerator_t *ce = (child_enumerator_t*)enumerator;
+
+	charon->child_sa_manager->remove(charon->child_sa_manager, ce->current);
+	array_remove_at(this->child_sas, ce->inner);
 }
 
 METHOD(ike_sa_t, rekey_child_sa, status_t,
@@ -1420,13 +1597,13 @@ METHOD(ike_sa_t, destroy_child_sa, status_t,
 	child_sa_t *child_sa;
 	status_t status = NOT_FOUND;
 
-	enumerator = this->child_sas->create_enumerator(this->child_sas);
+	enumerator = create_child_sa_enumerator(this);
 	while (enumerator->enumerate(enumerator, (void**)&child_sa))
 	{
 		if (child_sa->get_protocol(child_sa) == protocol &&
 			child_sa->get_spi(child_sa, TRUE) == spi)
 		{
-			this->child_sas->remove_at(this->child_sas, enumerator);
+			remove_child_sa(this, enumerator);
 			child_sa->destroy(child_sa);
 			status = SUCCESS;
 			break;
@@ -1487,13 +1664,21 @@ METHOD(ike_sa_t, reauth, status_t,
 	{
 		return INVALID_STATE;
 	}
+	if (this->state == IKE_CONNECTING)
+	{
+		DBG0(DBG_IKE, "reinitiating IKE_SA %s[%d]",
+			 get_name(this), this->unique_id);
+		reset(this);
+		this->task_manager->queue_ike(this->task_manager);
+		return this->task_manager->initiate(this->task_manager);
+	}
 	/* we can't reauthenticate as responder when we use EAP or virtual IPs.
 	 * If the peer does not support RFC4478, there is no way to keep the
 	 * IKE_SA up. */
 	if (!has_condition(this, COND_ORIGINAL_INITIATOR))
 	{
 		DBG1(DBG_IKE, "initiator did not reauthenticate as requested");
-		if (this->other_vips->get_count(this->other_vips) != 0 ||
+		if (array_count(this->other_vips) != 0 ||
 			has_condition(this, COND_XAUTH_AUTHENTICATED) ||
 			has_condition(this, COND_EAP_AUTHENTICATED)
 #ifdef ME
@@ -1526,6 +1711,30 @@ METHOD(ike_sa_t, reauth, status_t,
 	return this->task_manager->initiate(this->task_manager);
 }
 
+/**
+ * Check if tasks to create CHILD_SAs are queued in the given queue
+ */
+static bool is_child_queued(private_ike_sa_t *this, task_queue_t queue)
+{
+	enumerator_t *enumerator;
+	task_t *task;
+	bool found = FALSE;
+
+	enumerator = this->task_manager->create_task_enumerator(this->task_manager,
+															queue);
+	while (enumerator->enumerate(enumerator, &task))
+	{
+		if (task->get_type(task) == TASK_CHILD_CREATE ||
+			task->get_type(task) == TASK_QUICK_MODE)
+		{
+			found = TRUE;
+			break;
+		}
+	}
+	enumerator->destroy(enumerator);
+	return found;
+}
+
 METHOD(ike_sa_t, reestablish, status_t,
 	private_ike_sa_t *this)
 {
@@ -1540,7 +1749,7 @@ METHOD(ike_sa_t, reestablish, status_t,
 
 	if (has_condition(this, COND_REAUTHENTICATING))
 	{	/* only reauthenticate if we have children */
-		if (this->child_sas->get_count(this->child_sas) == 0
+		if (array_count(this->child_sas) == 0
 #ifdef ME
 			/* allow reauth of mediation connections without CHILD_SAs */
 			&& !this->peer_cfg->is_mediation(this->peer_cfg)
@@ -1557,7 +1766,7 @@ METHOD(ike_sa_t, reestablish, status_t,
 	}
 	else
 	{	/* check if we have children to keep up at all */
-		enumerator = this->child_sas->create_enumerator(this->child_sas);
+		enumerator = array_create_enumerator(this->child_sas);
 		while (enumerator->enumerate(enumerator, (void**)&child_sa))
 		{
 			if (this->state == IKE_DELETING)
@@ -1575,13 +1784,20 @@ METHOD(ike_sa_t, reestablish, status_t,
 					break;
 				case ACTION_ROUTE:
 					charon->traps->install(charon->traps, this->peer_cfg,
-										   child_sa->get_config(child_sa));
+										   child_sa->get_config(child_sa),
+										   child_sa->get_reqid(child_sa));
 					break;
 				default:
 					break;
 			}
 		}
 		enumerator->destroy(enumerator);
+		/* check if we have tasks that recreate children */
+		if (!restart)
+		{
+			restart = is_child_queued(this, TASK_QUEUE_ACTIVE) ||
+					  is_child_queued(this, TASK_QUEUE_QUEUED);
+		}
 #ifdef ME
 		/* mediation connections have no children, keep them up anyway */
 		if (this->peer_cfg->is_mediation(this->peer_cfg))
@@ -1597,7 +1813,7 @@ METHOD(ike_sa_t, reestablish, status_t,
 
 	/* check if we are able to reestablish this IKE_SA */
 	if (!has_condition(this, COND_ORIGINAL_INITIATOR) &&
-		(this->other_vips->get_count(this->other_vips) != 0 ||
+		(array_count(this->other_vips) != 0 ||
 		 has_condition(this, COND_EAP_AUTHENTICATED)
 #ifdef ME
 		 || this->is_mediation_server
@@ -1619,8 +1835,11 @@ METHOD(ike_sa_t, reestablish, status_t,
 	new->set_other_host(new, host->clone(host));
 	host = this->my_host;
 	new->set_my_host(new, host->clone(host));
+	charon->bus->ike_reestablish_pre(charon->bus, &this->public, new);
+	/* resolve hosts but use the old addresses above as fallback */
+	resolve_hosts((private_ike_sa_t*)new);
 	/* if we already have a virtual IP, we reuse it */
-	enumerator = this->my_vips->create_enumerator(this->my_vips);
+	enumerator = array_create_enumerator(this->my_vips);
 	while (enumerator->enumerate(enumerator, &host))
 	{
 		new->add_virtual_ip(new, TRUE, host);
@@ -1635,7 +1854,8 @@ METHOD(ike_sa_t, reestablish, status_t,
 	else
 #endif /* ME */
 	{
-		enumerator = this->child_sas->create_enumerator(this->child_sas);
+		/* handle existing CHILD_SAs */
+		enumerator = create_child_sa_enumerator(this);
 		while (enumerator->enumerate(enumerator, (void**)&child_sa))
 		{
 			if (has_condition(this, COND_REAUTHENTICATING))
@@ -1644,7 +1864,7 @@ METHOD(ike_sa_t, reestablish, status_t,
 				{
 					case CHILD_ROUTED:
 					{	/* move routed child directly */
-						this->child_sas->remove_at(this->child_sas, enumerator);
+						remove_child_sa(this, enumerator);
 						new->add_child_sa(new, child_sa);
 						action = ACTION_NONE;
 						break;
@@ -1674,7 +1894,8 @@ METHOD(ike_sa_t, reestablish, status_t,
 					DBG1(DBG_IKE, "restarting CHILD_SA %s",
 						 child_cfg->get_name(child_cfg));
 					child_cfg->get_ref(child_cfg);
-					status = new->initiate(new, child_cfg, 0, NULL, NULL);
+					status = new->initiate(new, child_cfg,
+									child_sa->get_reqid(child_sa), NULL, NULL);
 					break;
 				default:
 					continue;
@@ -1685,16 +1906,29 @@ METHOD(ike_sa_t, reestablish, status_t,
 			}
 		}
 		enumerator->destroy(enumerator);
+		/* adopt any active or queued CHILD-creating tasks */
+		if (status != DESTROY_ME)
+		{
+			task_manager_t *other_tasks = ((private_ike_sa_t*)new)->task_manager;
+			other_tasks->adopt_child_tasks(other_tasks, this->task_manager);
+			if (new->get_state(new) == IKE_CREATED)
+			{
+				status = new->initiate(new, NULL, 0, NULL, NULL);
+			}
+		}
 	}
 
 	if (status == DESTROY_ME)
 	{
+		charon->bus->ike_reestablish_post(charon->bus, &this->public, new,
+										  FALSE);
 		charon->ike_sa_manager->checkin_and_destroy(charon->ike_sa_manager, new);
 		status = FAILED;
 	}
 	else
 	{
-		charon->bus->ike_reestablish(charon->bus, &this->public, new);
+		charon->bus->ike_reestablish_post(charon->bus, &this->public, new,
+										  TRUE);
 		charon->ike_sa_manager->checkin(charon->ike_sa_manager, new);
 		status = SUCCESS;
 	}
@@ -1774,7 +2008,7 @@ METHOD(ike_sa_t, set_auth_lifetime, status_t,
 	 * We send the notify in IKE_AUTH if not yet ESTABLISHED. */
 	send_update = this->state == IKE_ESTABLISHED && this->version == IKEV2 &&
 				  !has_condition(this, COND_ORIGINAL_INITIATOR) &&
-				  (this->other_vips->get_count(this->other_vips) != 0 ||
+				  (array_count(this->other_vips) != 0 ||
 				  has_condition(this, COND_EAP_AUTHENTICATED));
 
 	if (lifetime < diff)
@@ -1854,11 +2088,29 @@ static bool is_any_path_valid(private_ike_sa_t *this)
 	bool valid = FALSE;
 	enumerator_t *enumerator;
 	host_t *src = NULL, *addr;
+	int family = AF_UNSPEC;
+
+	switch (charon->socket->supported_families(charon->socket))
+	{
+		case SOCKET_FAMILY_IPV4:
+			family = AF_INET;
+			break;
+		case SOCKET_FAMILY_IPV6:
+			family = AF_INET6;
+			break;
+		case SOCKET_FAMILY_BOTH:
+		case SOCKET_FAMILY_NONE:
+			break;
+	}
 
 	DBG1(DBG_IKE, "old path is not available anymore, try to find another");
 	enumerator = create_peer_address_enumerator(this);
 	while (enumerator->enumerate(enumerator, &addr))
 	{
+		if (family != AF_UNSPEC && addr->get_family(addr) != family)
+		{
+			continue;
+		}
 		DBG1(DBG_IKE, "looking for a route to %H ...", addr);
 		src = hydra->kernel_interface->get_source_addr(
 										hydra->kernel_interface, addr, NULL);
@@ -1948,13 +2200,32 @@ METHOD(ike_sa_t, add_configuration_attribute, void,
 	private_ike_sa_t *this, attribute_handler_t *handler,
 	configuration_attribute_type_t type, chunk_t data)
 {
-	attribute_entry_t *entry = malloc_thing(attribute_entry_t);
+	attribute_entry_t entry = {
+		.handler = handler,
+		.type = type,
+		.data = chunk_clone(data),
+	};
+	array_insert(this->attributes, ARRAY_TAIL, &entry);
+}
 
-	entry->handler = handler;
-	entry->type = type;
-	entry->data = chunk_clone(data);
+/**
+ * Enumerator filter for attributes
+ */
+static bool filter_attribute(void *null, attribute_entry_t **in,
+							 configuration_attribute_type_t *type, void *in2,
+							 chunk_t *data, void *in3, bool *handled)
+{
+	*type = (*in)->type;
+	*data = (*in)->data;
+	*handled = (*in)->handler != NULL;
+	return TRUE;
+}
 
-	this->attributes->insert_last(this->attributes, entry);
+METHOD(ike_sa_t, create_attribute_enumerator, enumerator_t*,
+	private_ike_sa_t *this)
+{
+	return enumerator_create_filter(array_create_enumerator(this->attributes),
+									(void*)filter_attribute, NULL, NULL);
 }
 
 METHOD(ike_sa_t, create_task_enumerator, enumerator_t*,
@@ -1975,13 +2246,30 @@ METHOD(ike_sa_t, queue_task, void,
 	this->task_manager->queue_task(this->task_manager, task);
 }
 
-METHOD(ike_sa_t, inherit, void,
+METHOD(ike_sa_t, inherit_pre, void,
+	private_ike_sa_t *this, ike_sa_t *other_public)
+{
+	private_ike_sa_t *other = (private_ike_sa_t*)other_public;
+
+	/* apply config and hosts */
+	set_peer_cfg(this, other->peer_cfg);
+	set_my_host(this, other->my_host->clone(other->my_host));
+	set_other_host(this, other->other_host->clone(other->other_host));
+
+	/* apply extensions and conditions with a few exceptions */
+	this->extensions = other->extensions;
+	this->conditions = other->conditions;
+	this->conditions &= ~COND_STALE;
+	this->conditions &= ~COND_REAUTHENTICATING;
+}
+
+METHOD(ike_sa_t, inherit_post, void,
 	private_ike_sa_t *this, ike_sa_t *other_public)
 {
 	private_ike_sa_t *other = (private_ike_sa_t*)other_public;
 	child_sa_t *child_sa;
-	attribute_entry_t *entry;
 	enumerator_t *enumerator;
+	attribute_entry_t entry;
 	auth_cfg_t *cfg;
 	host_t *vip;
 
@@ -1996,35 +2284,39 @@ METHOD(ike_sa_t, inherit, void,
 	this->other_id = other->other_id->clone(other->other_id);
 
 	/* apply assigned virtual IPs... */
-	while (other->my_vips->remove_last(other->my_vips, (void**)&vip) == SUCCESS)
+	while (array_remove(other->my_vips, ARRAY_HEAD, &vip))
 	{
-		this->my_vips->insert_first(this->my_vips, vip);
+		array_insert_create(&this->my_vips, ARRAY_TAIL, vip);
 	}
-	while (other->other_vips->remove_last(other->other_vips,
-										  (void**)&vip) == SUCCESS)
+	while (array_remove(other->other_vips, ARRAY_HEAD, &vip))
 	{
-		this->other_vips->insert_first(this->other_vips, vip);
+		array_insert_create(&this->other_vips, ARRAY_TAIL, vip);
+	}
+
+	/* MOBIKE additional addresses */
+	while (array_remove(other->peer_addresses, ARRAY_HEAD, &vip))
+	{
+		array_insert_create(&this->peer_addresses, ARRAY_TAIL, vip);
 	}
 
 	/* authentication information */
-	enumerator = other->my_auths->create_enumerator(other->my_auths);
+	enumerator = array_create_enumerator(other->my_auths);
 	while (enumerator->enumerate(enumerator, &cfg))
 	{
-		this->my_auths->insert_last(this->my_auths, cfg->clone(cfg));
+		array_insert(this->my_auths, ARRAY_TAIL, cfg->clone(cfg));
 	}
 	enumerator->destroy(enumerator);
-	enumerator = other->other_auths->create_enumerator(other->other_auths);
+	enumerator = array_create_enumerator(other->other_auths);
 	while (enumerator->enumerate(enumerator, &cfg))
 	{
-		this->other_auths->insert_last(this->other_auths, cfg->clone(cfg));
+		array_insert(this->other_auths, ARRAY_TAIL, cfg->clone(cfg));
 	}
 	enumerator->destroy(enumerator);
 
 	/* ... and configuration attributes */
-	while (other->attributes->remove_last(other->attributes,
-										  (void**)&entry) == SUCCESS)
+	while (array_remove(other->attributes, ARRAY_HEAD, &entry))
 	{
-		this->attributes->insert_first(this->attributes, entry);
+		array_insert(this->attributes, ARRAY_TAIL, &entry);
 	}
 
 	/* inherit all conditions */
@@ -2047,10 +2339,10 @@ METHOD(ike_sa_t, inherit, void,
 #endif /* ME */
 
 	/* adopt all children */
-	while (other->child_sas->remove_last(other->child_sas,
-										 (void**)&child_sa) == SUCCESS)
+	while (array_remove(other->child_sas, ARRAY_HEAD, &child_sa))
 	{
-		this->child_sas->insert_first(this->child_sas, (void*)child_sa);
+		charon->child_sa_manager->remove(charon->child_sa_manager, child_sa);
+		add_child_sa(this, child_sa);
 	}
 
 	/* move pending tasks to the new IKE_SA */
@@ -2077,61 +2369,70 @@ METHOD(ike_sa_t, inherit, void,
 METHOD(ike_sa_t, destroy, void,
 	private_ike_sa_t *this)
 {
-	attribute_entry_t *entry;
+	attribute_entry_t entry;
+	child_sa_t *child_sa;
 	host_t *vip;
 
 	charon->bus->set_sa(charon->bus, &this->public);
 
 	set_state(this, IKE_DESTROYING);
-	DESTROY_IF(this->task_manager);
+	if (this->task_manager)
+	{
+		this->task_manager->flush(this->task_manager);
+	}
 
 	/* remove attributes first, as we pass the IKE_SA to the handler */
-	while (this->attributes->remove_last(this->attributes,
-										 (void**)&entry) == SUCCESS)
+	charon->bus->handle_vips(charon->bus, &this->public, FALSE);
+	while (array_remove(this->attributes, ARRAY_TAIL, &entry))
 	{
-		hydra->attributes->release(hydra->attributes, entry->handler,
-								   this->other_id, entry->type, entry->data);
-		free(entry->data.ptr);
-		free(entry);
+		if (entry.handler)
+		{
+			charon->attributes->release(charon->attributes, entry.handler,
+										&this->public, entry.type, entry.data);
+		}
+		free(entry.data.ptr);
 	}
-	this->attributes->destroy(this->attributes);
-
-	this->child_sas->destroy_offset(this->child_sas, offsetof(child_sa_t, destroy));
-
-	/* unset SA after here to avoid usage by the listeners */
-	charon->bus->set_sa(charon->bus, NULL);
-
-	DESTROY_IF(this->keymat);
-
-	while (this->my_vips->remove_last(this->my_vips, (void**)&vip) == SUCCESS)
+	/* uninstall CHILD_SAs before virtual IPs, otherwise we might kill
+	 * routes that the CHILD_SA tries to uninstall. */
+	while (array_remove(this->child_sas, ARRAY_TAIL, &child_sa))
+	{
+		charon->child_sa_manager->remove(charon->child_sa_manager, child_sa);
+		child_sa->destroy(child_sa);
+	}
+	while (array_remove(this->my_vips, ARRAY_TAIL, &vip))
 	{
 		hydra->kernel_interface->del_ip(hydra->kernel_interface, vip, -1, TRUE);
 		vip->destroy(vip);
 	}
-	this->my_vips->destroy(this->my_vips);
-	if (this->other_vips->get_count(this->other_vips))
+	if (array_count(this->other_vips))
 	{
 		charon->bus->assign_vips(charon->bus, &this->public, FALSE);
 	}
-	while (this->other_vips->remove_last(this->other_vips,
-										 (void**)&vip) == SUCCESS)
+	while (array_remove(this->other_vips, ARRAY_TAIL, &vip))
 	{
 		if (this->peer_cfg)
 		{
 			linked_list_t *pools;
-			identification_t *id;
 
-			id = get_other_eap_id(this);
 			pools = linked_list_create_from_enumerator(
 						this->peer_cfg->create_pool_enumerator(this->peer_cfg));
-			hydra->attributes->release_address(hydra->attributes, pools, vip, id);
+			charon->attributes->release_address(charon->attributes,
+												pools, vip, &this->public);
 			pools->destroy(pools);
 		}
 		vip->destroy(vip);
 	}
-	this->other_vips->destroy(this->other_vips);
-	this->peer_addresses->destroy_offset(this->peer_addresses,
-										 offsetof(host_t, destroy));
+
+	/* unset SA after here to avoid usage by the listeners */
+	charon->bus->set_sa(charon->bus, NULL);
+
+	array_destroy(this->child_sas);
+	DESTROY_IF(this->task_manager);
+	DESTROY_IF(this->keymat);
+	array_destroy(this->attributes);
+	array_destroy(this->my_vips);
+	array_destroy(this->other_vips);
+	array_destroy_offset(this->peer_addresses, offsetof(host_t, destroy));
 #ifdef ME
 	if (this->is_mediation_server)
 	{
@@ -2155,10 +2456,8 @@ METHOD(ike_sa_t, destroy, void,
 	DESTROY_IF(this->proposal);
 	this->my_auth->destroy(this->my_auth);
 	this->other_auth->destroy(this->other_auth);
-	this->my_auths->destroy_offset(this->my_auths,
-								   offsetof(auth_cfg_t, destroy));
-	this->other_auths->destroy_offset(this->other_auths,
-									  offsetof(auth_cfg_t, destroy));
+	array_destroy_offset(this->my_auths, offsetof(auth_cfg_t, destroy));
+	array_destroy_offset(this->other_auths, offsetof(auth_cfg_t, destroy));
 
 	this->ike_sa_id->destroy(this->ike_sa_id);
 	free(this);
@@ -2171,7 +2470,7 @@ ike_sa_t * ike_sa_create(ike_sa_id_t *ike_sa_id, bool initiator,
 						 ike_version_t version)
 {
 	private_ike_sa_t *this;
-	static u_int32_t unique_id = 0;
+	static refcount_t unique_id = 0;
 
 	if (version == IKE_ANY)
 	{	/* prefer IKEv2 if protocol not specified */
@@ -2244,14 +2543,17 @@ ike_sa_t * ike_sa_create(ike_sa_id_t *ike_sa_id, bool initiator,
 			.reestablish = _reestablish,
 			.set_auth_lifetime = _set_auth_lifetime,
 			.roam = _roam,
-			.inherit = _inherit,
+			.inherit_pre = _inherit_pre,
+			.inherit_post = _inherit_post,
 			.generate_message = _generate_message,
+			.generate_message_fragmented = _generate_message_fragmented,
 			.reset = _reset,
 			.get_unique_id = _get_unique_id,
 			.add_virtual_ip = _add_virtual_ip,
 			.clear_virtual_ips = _clear_virtual_ips,
 			.create_virtual_ip_enumerator = _create_virtual_ip_enumerator,
 			.add_configuration_attribute = _add_configuration_attribute,
+			.create_attribute_enumerator = _create_attribute_enumerator,
 			.set_kmaddress = _set_kmaddress,
 			.create_task_enumerator = _create_task_enumerator,
 			.flush_queue = _flush_queue,
@@ -2270,7 +2572,6 @@ ike_sa_t * ike_sa_create(ike_sa_id_t *ike_sa_id, bool initiator,
 		},
 		.ike_sa_id = ike_sa_id->clone(ike_sa_id),
 		.version = version,
-		.child_sas = linked_list_create(),
 		.my_host = host_create_any(AF_INET),
 		.other_host = host_create_any(AF_INET),
 		.my_id = identification_create_from_encoding(ID_ANY, chunk_empty),
@@ -2281,19 +2582,18 @@ ike_sa_t * ike_sa_create(ike_sa_id_t *ike_sa_id, bool initiator,
 		.stats[STAT_OUTBOUND] = time_monotonic(NULL),
 		.my_auth = auth_cfg_create(),
 		.other_auth = auth_cfg_create(),
-		.my_auths = linked_list_create(),
-		.other_auths = linked_list_create(),
-		.unique_id = ++unique_id,
-		.peer_addresses = linked_list_create(),
-		.my_vips = linked_list_create(),
-		.other_vips = linked_list_create(),
-		.attributes = linked_list_create(),
+		.my_auths = array_create(0, 0),
+		.other_auths = array_create(0, 0),
+		.attributes = array_create(sizeof(attribute_entry_t), 0),
+		.unique_id = ref_get(&unique_id),
 		.keepalive_interval = lib->settings->get_time(lib->settings,
-							"%s.keep_alive", KEEPALIVE_INTERVAL, charon->name),
+								"%s.keep_alive", KEEPALIVE_INTERVAL, lib->ns),
 		.retry_initiate_interval = lib->settings->get_time(lib->settings,
-							"%s.retry_initiate_interval", 0, charon->name),
+								"%s.retry_initiate_interval", 0, lib->ns),
 		.flush_auth_cfg = lib->settings->get_bool(lib->settings,
-							"%s.flush_auth_cfg", FALSE, charon->name),
+								"%s.flush_auth_cfg", FALSE, lib->ns),
+		.fragment_size = lib->settings->get_int(lib->settings,
+								"%s.fragment_size", 0, lib->ns),
 	);
 
 	if (version == IKEV2)

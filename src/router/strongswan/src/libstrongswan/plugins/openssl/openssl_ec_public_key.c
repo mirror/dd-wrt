@@ -179,17 +179,7 @@ METHOD(public_key_t, encrypt, bool,
 METHOD(public_key_t, get_keysize, int,
 	private_openssl_ec_public_key_t *this)
 {
-	switch (EC_GROUP_get_curve_name(EC_KEY_get0_group(this->ec)))
-	{
-		case NID_X9_62_prime256v1:
-			return 256;
-		case NID_secp384r1:
-			return 384;
-		case NID_secp521r1:
-			return 521;
-		default:
-			return 0;
-	}
+	return EC_GROUP_get_degree(EC_KEY_get0_group(this->ec));
 }
 
 /**
@@ -245,33 +235,23 @@ METHOD(public_key_t, get_encoding, bool,
 	private_openssl_ec_public_key_t *this, cred_encoding_type_t type,
 	chunk_t *encoding)
 {
+	bool success = TRUE;
 	u_char *p;
 
-	switch (type)
+	*encoding = chunk_alloc(i2d_EC_PUBKEY(this->ec, NULL));
+	p = encoding->ptr;
+	i2d_EC_PUBKEY(this->ec, &p);
+
+	if (type != PUBKEY_SPKI_ASN1_DER)
 	{
-		case PUBKEY_SPKI_ASN1_DER:
-		case PUBKEY_PEM:
-		{
-			bool success = TRUE;
+		chunk_t asn1_encoding = *encoding;
 
-			*encoding = chunk_alloc(i2d_EC_PUBKEY(this->ec, NULL));
-			p = encoding->ptr;
-			i2d_EC_PUBKEY(this->ec, &p);
-
-			if (type == PUBKEY_PEM)
-			{
-				chunk_t asn1_encoding = *encoding;
-
-				success = lib->encoding->encode(lib->encoding, PUBKEY_PEM,
-								NULL, encoding, CRED_PART_ECDSA_PUB_ASN1_DER,
-								asn1_encoding, CRED_PART_END);
-				chunk_clear(&asn1_encoding);
-			}
-			return success;
-		}
-		default:
-			return FALSE;
+		success = lib->encoding->encode(lib->encoding, type,
+						NULL, encoding, CRED_PART_ECDSA_PUB_ASN1_DER,
+						asn1_encoding, CRED_PART_END);
+		chunk_clear(&asn1_encoding);
 	}
+	return success;
 }
 
 METHOD(public_key_t, get_ref, public_key_t*,

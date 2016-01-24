@@ -20,13 +20,13 @@
 
 #define _GNU_SOURCE
 
-#include "x509_cert.h"
-
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "x509_cert.h"
 
 #include <library.h>
 #include <utils/debug.h>
@@ -216,10 +216,6 @@ struct private_x509_cert_t {
 	 */
 	refcount_t ref;
 };
-
-static const chunk_t ASN1_subjectAltName_oid = chunk_from_chars(
-	0x06, 0x03, 0x55, 0x1D, 0x11
-);
 
 /**
  * Destroy a CertificateDistributionPoint
@@ -757,6 +753,9 @@ static void parse_extendedKeyUsage(chunk_t blob, int level0,
 					break;
 				case OID_OCSP_SIGNING:
 					this->flags |= X509_OCSP_SIGNER;
+					break;
+				case OID_MS_SMARTCARD_LOGON:
+					this->flags |= X509_MS_SMARTCARD_LOGON;
 					break;
 				default:
 					break;
@@ -1446,7 +1445,7 @@ static bool parse_certificate(private_x509_cert_t *this)
 						break;
 					default:
 						if (critical && lib->settings->get_bool(lib->settings,
-							"libstrongswan.x509.enforce_critical", TRUE))
+							"%s.x509.enforce_critical", TRUE, lib->ns))
 						{
 							DBG1(DBG_ASN, "critical '%s' extension not supported",
 								 (extn_oid == OID_UNKNOWN) ? "unknown" :
@@ -1466,7 +1465,7 @@ static bool parse_certificate(private_x509_cert_t *this)
 				}
 				break;
 			case X509_OBJ_SIGNATURE:
-				this->signature = object;
+				this->signature = chunk_skip(object, 1);
 				break;
 			default:
 				break;
@@ -2008,7 +2007,7 @@ static bool generate(private_x509_cert_t *cert, certificate_t *sign_cert,
 	chunk_t subjectKeyIdentifier = chunk_empty, authKeyIdentifier = chunk_empty;
 	chunk_t crlDistributionPoints = chunk_empty, authorityInfoAccess = chunk_empty;
 	chunk_t policyConstraints = chunk_empty, inhibitAnyPolicy = chunk_empty;
-	chunk_t ikeIntermediate = chunk_empty;
+	chunk_t ikeIntermediate = chunk_empty, msSmartcardLogon = chunk_empty;
 	identification_t *issuer, *subject;
 	chunk_t key_info;
 	signature_scheme_t scheme;
@@ -2139,6 +2138,10 @@ static bool generate(private_x509_cert_t *cert, certificate_t *sign_cert,
 	{
 		ocspSigning = asn1_build_known_oid(OID_OCSP_SIGNING);
 	}
+	if (cert->flags & X509_MS_SMARTCARD_LOGON)
+	{
+		msSmartcardLogon = asn1_build_known_oid(OID_MS_SMARTCARD_LOGON);
+	}
 
 	if (serverAuth.ptr || clientAuth.ptr || ikeIntermediate.ptr ||
 		ocspSigning.ptr)
@@ -2146,9 +2149,9 @@ static bool generate(private_x509_cert_t *cert, certificate_t *sign_cert,
 		extendedKeyUsage = asn1_wrap(ASN1_SEQUENCE, "mm",
 								asn1_build_known_oid(OID_EXTENDED_KEY_USAGE),
 								asn1_wrap(ASN1_OCTET_STRING, "m",
-									asn1_wrap(ASN1_SEQUENCE, "mmmm",
+									asn1_wrap(ASN1_SEQUENCE, "mmmmm",
 										serverAuth, clientAuth, ikeIntermediate,
-										ocspSigning)));
+										ocspSigning, msSmartcardLogon)));
 	}
 
 	/* add subjectKeyIdentifier to CA and OCSP signer certificates */
@@ -2167,7 +2170,7 @@ static bool generate(private_x509_cert_t *cert, certificate_t *sign_cert,
 	}
 
 	/* add the keyid authKeyIdentifier for non self-signed certificates */
-	if (sign_key)
+	if (sign_cert)
 	{
 		chunk_t keyid;
 
@@ -2604,4 +2607,3 @@ x509_cert_t *x509_cert_gen(certificate_type_t type, va_list args)
 	destroy(cert);
 	return NULL;
 }
-

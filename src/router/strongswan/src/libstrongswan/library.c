@@ -22,11 +22,16 @@
 #include <threading/thread.h>
 #include <utils/identification.h>
 #include <networking/host.h>
+#include <collections/array.h>
 #include <collections/hashtable.h>
 #include <utils/backtrace.h>
 #include <selectors/traffic_selector.h>
 
 #define CHECKSUM_LIBRARY IPSEC_LIB_DIR"/libchecksum.so"
+
+#ifndef STRONGSWAN_CONF
+#define STRONGSWAN_CONF NULL
+#endif
 
 typedef struct private_library_t private_library_t;
 
@@ -61,6 +66,39 @@ struct private_library_t {
  */
 library_t *lib = NULL;
 
+#ifdef LEAK_DETECTIVE
+/**
+ * Default leak report callback
+ */
+static void report_leaks(void *user, int count, size_t bytes,
+						 backtrace_t *bt, bool detailed)
+{
+	fprintf(stderr, "%zu bytes total, %d allocations, %zu bytes average:\n",
+			bytes, count, bytes / count);
+	bt->log(bt, stderr, detailed);
+}
+
+/**
+ * Default leak report summary callback
+ */
+static void sum_leaks(void* user, int count, size_t bytes, int whitelisted)
+{
+	switch (count)
+	{
+		case 0:
+			fprintf(stderr, "No leaks detected");
+			break;
+		case 1:
+			fprintf(stderr, "One leak detected");
+			break;
+		default:
+			fprintf(stderr, "%d leaks detected, %zu bytes", count, bytes);
+			break;
+	}
+	fprintf(stderr, ", %d suppressed by whitelist\n", whitelisted);
+}
+#endif /* LEAK_DETECTIVE */
+
 /**
  * Deinitialize library
  */
@@ -75,11 +113,13 @@ void library_deinit()
 	}
 
 	detailed = lib->settings->get_bool(lib->settings,
-								"libstrongswan.leak_detective.detailed", TRUE);
+								"%s.leak_detective.detailed", TRUE, lib->ns);
 
 	/* make sure the cache is clear before unloading plugins */
 	lib->credmgr->flush_cache(lib->credmgr, CERT_ANY);
 
+	this->public.streams->destroy(this->public.streams);
+	this->public.watcher->destroy(this->public.watcher);
 	this->public.scheduler->destroy(this->public.scheduler);
 	this->public.processor->destroy(this->public.processor);
 	this->public.plugins->destroy(this->public.plugins);
@@ -89,6 +129,7 @@ void library_deinit()
 	this->public.creds->destroy(this->public.creds);
 	this->public.encoding->destroy(this->public.encoding);
 	this->public.crypto->destroy(this->public.crypto);
+	this->public.caps->destroy(this->public.caps);
 	this->public.proposal->destroy(this->public.proposal);
 	this->public.fetcher->destroy(this->public.fetcher);
 	this->public.resolver->destroy(this->public.resolver);
@@ -104,11 +145,16 @@ void library_deinit()
 	{
 		lib->leak_detective->report(lib->leak_detective, detailed);
 		lib->leak_detective->destroy(lib->leak_detective);
+		lib->leak_detective = NULL;
 	}
 
-	threads_deinit();
 	backtrace_deinit();
+	arrays_deinit();
+	utils_deinit();
+	threads_deinit();
 
+	free(this->public.conf);
+	free((void*)this->public.ns);
 	free(this);
 	lib = NULL;
 }
@@ -151,18 +197,22 @@ static bool equals(char *a, char *b)
 }
 
 /**
+ * Number of words we write and memwipe() in memwipe check
+ */
+#define MEMWIPE_WIPE_WORDS 16
+
+/**
  * Write magic to memory, and try to clear it with memwipe()
  */
 __attribute__((noinline))
-static void do_magic(int magic, int **stack)
+static void do_magic(int *magic, int **out)
 {
-	int buf[32], i;
+	int buf[MEMWIPE_WIPE_WORDS], i;
 
-	/* tell caller where callee stack is (but don't point to buf) */
-	*stack = &i;
+	*out = buf;
 	for (i = 0; i < countof(buf); i++)
 	{
-		buf[i] = magic;
+		buf[i] = *magic;
 	}
 	/* passing buf to dbg should make sure the compiler can't optimize out buf.
 	 * we use directly dbg(3), as DBG3() might be stripped with DEBUG_LEVEL. */
@@ -175,20 +225,16 @@ static void do_magic(int magic, int **stack)
  */
 static bool check_memwipe()
 {
-	int magic = 0xCAFEBABE, *ptr, *deeper, i, stackdir = 1;
+	int magic = 0xCAFEBABE, *buf, i;
 
-	do_magic(magic, &deeper);
+	do_magic(&magic, &buf);
 
-	ptr = &magic;
-	if (deeper < ptr)
-	{	/* stack grows down */
-		stackdir = -1;
-	}
-	for (i = 0; i < 128; i++)
+	for (i = 0; i < MEMWIPE_WIPE_WORDS; i++)
 	{
-		ptr = ptr + stackdir;
-		if (*ptr == magic)
+		if (buf[i] == magic)
 		{
+			DBG1(DBG_LIB, "memwipe() check failed: stackdir: %b",
+				 buf, MEMWIPE_WIPE_WORDS * sizeof(int));
 			return FALSE;
 		}
 	}
@@ -198,7 +244,7 @@ static bool check_memwipe()
 /*
  * see header file
  */
-bool library_init(char *settings)
+bool library_init(char *settings, const char *namespace)
 {
 	private_library_t *this;
 	printf_hook_t *pfh;
@@ -210,20 +256,31 @@ bool library_init(char *settings)
 		return !this->integrity_failed;
 	}
 
+	chunk_hash_seed();
+
 	INIT(this,
 		.public = {
 			.get = _get,
 			.set = _set,
+			.ns = strdup(namespace ?: "libstrongswan"),
+			.conf = strdupnull(settings ?: (getenv("STRONGSWAN_CONF") ?: STRONGSWAN_CONF)),
 		},
 		.ref = 1,
 	);
 	lib = &this->public;
 
-	backtrace_init();
 	threads_init();
+	utils_init();
+	arrays_init();
+	backtrace_init();
 
 #ifdef LEAK_DETECTIVE
 	lib->leak_detective = leak_detective_create();
+	if (lib->leak_detective)
+	{
+		lib->leak_detective->set_report_cb(lib->leak_detective,
+										   report_leaks, sum_leaks, NULL);
+	}
 #endif /* LEAK_DETECTIVE */
 
 	pfh = printf_hook_create();
@@ -252,9 +309,14 @@ bool library_init(char *settings)
 
 	this->objects = hashtable_create((hashtable_hash_t)hash,
 									 (hashtable_equals_t)equals, 4);
-	this->public.settings = settings_create(settings);
+
+	this->public.settings = settings_create(this->public.conf);
+	/* all namespace settings may fall back to libstrongswan */
+	lib->settings->add_fallback(lib->settings, lib->ns, "libstrongswan");
+
 	this->public.hosts = host_resolver_create();
 	this->public.proposal = proposal_keywords_create();
+	this->public.caps = capabilities_create();
 	this->public.crypto = crypto_factory_create();
 	this->public.creds = credential_factory_create();
 	this->public.credmgr = credential_manager_create();
@@ -264,16 +326,17 @@ bool library_init(char *settings)
 	this->public.db = database_factory_create();
 	this->public.processor = processor_create();
 	this->public.scheduler = scheduler_create();
+	this->public.watcher = watcher_create();
+	this->public.streams = stream_manager_create();
 	this->public.plugins = plugin_loader_create();
 
 	if (!check_memwipe())
 	{
-		DBG1(DBG_LIB, "memwipe() check failed");
 		return FALSE;
 	}
 
 	if (lib->settings->get_bool(lib->settings,
-								"libstrongswan.integrity_test", FALSE))
+								"%s.integrity_test", FALSE, lib->ns))
 	{
 #ifdef INTEGRITY_TEST
 		this->public.integrity = integrity_checker_create(CHECKSUM_LIBRARY);
@@ -287,6 +350,8 @@ bool library_init(char *settings)
 		this->integrity_failed = TRUE;
 #endif /* INTEGRITY_TEST */
 	}
+
+	diffie_hellman_init();
 
 	return !this->integrity_failed;
 }

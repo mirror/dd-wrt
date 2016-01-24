@@ -73,10 +73,10 @@ struct child_cfg_t {
 	 * Add a proposal to the list.
 	 *
 	 * The proposals are stored by priority, first added
-	 * is the most preferred.
-	 * After add, proposal is owned by child_cfg.
+	 * is the most preferred. It is safe to add NULL as proposal, which has no
+	 * effect. After add, proposal is owned by child_cfg.
 	 *
-	 * @param proposal		proposal to add
+	 * @param proposal		proposal to add, or NULL
 	 */
 	void (*add_proposal) (child_cfg_t *this, proposal_t *proposal);
 
@@ -213,14 +213,14 @@ struct child_cfg_t {
 	u_int32_t (*get_inactivity)(child_cfg_t *this);
 
 	/**
-	 * Specific reqid to use for CHILD_SA
+	 * Specific reqid to use for CHILD_SA.
 	 *
 	 * @return				reqid
 	 */
 	u_int32_t (*get_reqid)(child_cfg_t *this);
 
 	/**
-	 * Optional mark for CHILD_SA
+	 * Optional mark for CHILD_SA.
 	 *
 	 * @param inbound		TRUE for inbound, FALSE for outbound
 	 * @return				mark
@@ -235,7 +235,21 @@ struct child_cfg_t {
 	u_int32_t (*get_tfc)(child_cfg_t *this);
 
 	/**
-	 * Sets two options needed for Mobile IPv6 interoperability
+	 * Get anti-replay window size
+	 *
+	 * @return				anti-replay window size
+	 */
+	u_int32_t (*get_replay_window)(child_cfg_t *this);
+
+	/**
+	 * Set anti-replay window size
+	 *
+	 * @param window		anti-replay window size
+	 */
+	void (*set_replay_window)(child_cfg_t *this, u_int32_t window);
+
+	/**
+	 * Sets two options needed for Mobile IPv6 interoperability.
 	 *
 	 * @param proxy_mode	use IPsec transport proxy mode (default FALSE)
 	 * @param install_policy install IPsec kernel policies (default TRUE)
@@ -244,7 +258,7 @@ struct child_cfg_t {
 												 bool install_policy);
 
 	/**
-	 * Check whether IPsec transport SA should be set up in proxy mode
+	 * Check whether IPsec transport SA should be set up in proxy mode.
 	 *
 	 * @return				TRUE, if proxy mode should be used
 	 *						FALSE, otherwise
@@ -252,7 +266,7 @@ struct child_cfg_t {
 	bool (*use_proxy_mode)(child_cfg_t *this);
 
 	/**
-	 * Check whether IPsec policies should be installed in the kernel
+	 * Check whether IPsec policies should be installed in the kernel.
 	 *
 	 * @return				TRUE, if IPsec kernel policies should be installed
 	 *						FALSE, otherwise

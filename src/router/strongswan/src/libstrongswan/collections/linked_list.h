@@ -78,14 +78,6 @@ struct linked_list_t {
 	void (*reset_enumerator)(linked_list_t *this, enumerator_t *enumerator);
 
 	/**
-	 * Checks if there are more elements following after the enumerator's
-	 * current position.
-	 *
-	 * @param enumerator	enumerator to check
-	 */
-	bool (*has_more)(linked_list_t *this, enumerator_t *enumerator);
-
-	/**
 	 * Inserts a new item at the beginning of the list.
 	 *
 	 * @param item		item value to insert in list
@@ -115,16 +107,6 @@ struct linked_list_t {
 	 */
 	void (*insert_before)(linked_list_t *this, enumerator_t *enumerator,
 						  void *item);
-
-	/**
-	 * Replaces the item the enumerator currently points to with the given item.
-	 *
-	 * @param enumerator	enumerator with position
-	 * @param item			item value to replace current item with
-	 * @return				current item or NULL if the enumerator is at an
-	 *						invalid position
-	 */
-	void *(*replace)(linked_list_t *this, enumerator_t *enumerator, void *item);
 
 	/**
 	 * Remove an item from the list where the enumerator points to.
@@ -180,7 +162,8 @@ struct linked_list_t {
 	 */
 	status_t (*get_last) (linked_list_t *this, void **item);
 
-	/** Find the first matching element in the list.
+	/**
+	 * Find the first matching element in the list.
 	 *
 	 * The first object passed to the match function is the current list item,
 	 * followed by the user supplied data.
@@ -199,26 +182,6 @@ struct linked_list_t {
 	 */
 	status_t (*find_first) (linked_list_t *this, linked_list_match_t match,
 							void **item, ...);
-
-	/** Find the last matching element in the list.
-	 *
-	 * The first object passed to the match function is the current list item,
-	 * followed by the user supplied data.
-	 * If the supplied function returns TRUE this function returns SUCCESS, and
-	 * the current object is returned in the third parameter, otherwise,
-	 * the next item is checked.
-	 *
-	 * If match is NULL, *item and the current object are compared.
-	 *
-	 * @warning Only use pointers as user supplied data.
-	 *
-	 * @param match			comparison function to call on each object, or NULL
-	 * @param item			the list item, if found
-	 * @param ...			user data to supply to match function (limited to 5 arguments)
-	 * @return				SUCCESS if found, NOT_FOUND otherwise
-	 */
-	status_t (*find_last) (linked_list_t *this, linked_list_match_t match,
-						   void **item, ...);
 
 	/**
 	 * Invoke a method on all of the contained objects.
@@ -253,14 +216,6 @@ struct linked_list_t {
 	 * @return			cloned list
 	 */
 	linked_list_t *(*clone_offset) (linked_list_t *this, size_t offset);
-
-	/**
-	 * Clones a list and its objects using a given function.
-	 *
-	 * @param function	function that clones an object
-	 * @return			cloned list
-	 */
-	linked_list_t *(*clone_function) (linked_list_t *this, void*(*)(void*));
 
 	/**
 	 * Destroys a linked_list object.

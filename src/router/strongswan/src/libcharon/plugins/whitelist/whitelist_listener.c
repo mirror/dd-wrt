@@ -52,7 +52,7 @@ struct private_whitelist_listener_t {
  */
 static u_int hash(identification_t *key)
 {
-	return chunk_hash(key->get_encoding(key));
+	return key->hash(key, 0);
 }
 
 /**
@@ -206,7 +206,7 @@ whitelist_listener_t *whitelist_listener_create()
 		.ids = hashtable_create((hashtable_hash_t)hash,
 								(hashtable_equals_t)equals, 32),
 		.enabled = lib->settings->get_bool(lib->settings,
-								"%s.plugins.whitelist.enable", FALSE, charon->name),
+								"%s.plugins.whitelist.enable", FALSE, lib->ns),
 	);
 
 	return &this->public;

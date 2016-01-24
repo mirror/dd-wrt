@@ -97,15 +97,29 @@ struct private_isakmp_natd_t {
 };
 
 /**
+ * Check if UDP encapsulation has to be forced either by config or required
+ * by the kernel interface
+ */
+static bool force_encap(ike_cfg_t *ike_cfg)
+{
+	if (!ike_cfg->force_encap(ike_cfg))
+	{
+		return hydra->kernel_interface->get_features(hydra->kernel_interface) &
+					KERNEL_REQUIRE_UDP_ENCAPSULATION;
+	}
+	return TRUE;
+}
+
+/**
  * Get NAT-D payload type (RFC 3947 or RFC 3947 drafts).
  */
 static payload_type_t get_nat_d_payload_type(ike_sa_t *ike_sa)
 {
 	if (ike_sa->supports_extension(ike_sa, EXT_NATT_DRAFT_02_03))
 	{
-		return NAT_D_DRAFT_00_03_V1;
+		return PLV1_NAT_D_DRAFT_00_03;
 	}
-	return NAT_D_V1;
+	return PLV1_NAT_D;
 }
 
 /**
@@ -183,7 +197,7 @@ static hash_payload_t *build_natd_payload(private_isakmp_natd_t *this, bool src,
 	chunk_t hash;
 
 	config = this->ike_sa->get_ike_cfg(this->ike_sa);
-	if (src && config->force_encap(config))
+	if (src && force_encap(config))
 	{
 		hash = generate_natd_hash_faked(this);
 	}
@@ -255,8 +269,8 @@ static void process_payloads(private_isakmp_natd_t *this, message_t *message)
 	enumerator = message->create_payload_enumerator(message);
 	while (enumerator->enumerate(enumerator, &payload))
 	{
-		if (payload->get_type(payload) != NAT_D_V1 &&
-			payload->get_type(payload) != NAT_D_DRAFT_00_03_V1)
+		if (payload->get_type(payload) != PLV1_NAT_D &&
+			payload->get_type(payload) != PLV1_NAT_D_DRAFT_00_03)
 		{
 			continue;
 		}
@@ -297,7 +311,7 @@ static void process_payloads(private_isakmp_natd_t *this, message_t *message)
 									!this->src_matched);
 		config = this->ike_sa->get_ike_cfg(this->ike_sa);
 		if (this->dst_matched && this->src_matched &&
-			config->force_encap(config))
+			force_encap(config))
 		{
 			this->ike_sa->set_condition(this->ike_sa, COND_NAT_FAKE, TRUE);
 		}
@@ -320,7 +334,7 @@ METHOD(task_t, build_i, status_t,
 		case ID_PROT:
 		{	/* add NAT-D payloads to the second request, need to process
 			 * those by the responder contained in the second response */
-			if (message->get_payload(message, SECURITY_ASSOCIATION_V1))
+			if (message->get_payload(message, PLV1_SECURITY_ASSOCIATION))
 			{	/* wait for the second exchange */
 				return NEED_MORE;
 			}
@@ -348,7 +362,7 @@ METHOD(task_t, process_i, status_t,
 		case ID_PROT:
 		{	/* process NAT-D payloads in the second response, added them in the
 			 * second request already, so we're done afterwards */
-			if (message->get_payload(message, SECURITY_ASSOCIATION_V1))
+			if (message->get_payload(message, PLV1_SECURITY_ASSOCIATION))
 			{	/* wait for the second exchange */
 				return NEED_MORE;
 			}
@@ -393,7 +407,7 @@ METHOD(task_t, process_r, status_t,
 		case ID_PROT:
 		{	/* process NAT-D payloads in the second request, need to add ours
 			 * to the second response */
-			if (message->get_payload(message, SECURITY_ASSOCIATION_V1))
+			if (message->get_payload(message, PLV1_SECURITY_ASSOCIATION))
 			{	/* wait for the second exchange */
 				return NEED_MORE;
 			}
@@ -414,7 +428,7 @@ METHOD(task_t, build_r, status_t,
 		case ID_PROT:
 		{	/* add NAT-D payloads to second response, already processed those
 			 * contained in the second request */
-			if (message->get_payload(message, SECURITY_ASSOCIATION_V1))
+			if (message->get_payload(message, PLV1_SECURITY_ASSOCIATION))
 			{	/* wait for the second exchange */
 				return NEED_MORE;
 			}

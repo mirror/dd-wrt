@@ -14,7 +14,7 @@ cd $BUILDDIR
 
 if [ ! -f "$KERNELTARBALL" ]
 then
-	url=ftp://ftp.kernel.org/pub/linux/kernel/v3.x/$KERNELTARBALL
+	url=ftp://ftp.kernel.org/pub/linux/kernel/v${KERNELVERSION:0:1}.x/$KERNELTARBALL
 	log_action "Downloading $url"
 	execute "wget -q $url"
 fi
@@ -26,21 +26,27 @@ then
 	execute "wget -q $url"
 fi
 
-log_action "Unpacking kernel"
-execute "tar xjf $KERNELTARBALL"
-
 KERNELDIR=$BUILDDIR/$KERNEL
+
+if [ ! -d "$KERNELDIR" ]
+then
+	log_action "Unpacking kernel"
+	execute "tar xJf $KERNELTARBALL"
+
+	if [ $KERNELPATCH ]
+	then
+		log_action "Applying kernel patch"
+		bzcat $KERNELPATCH | patch -d $KERNELDIR -p1 >>$LOGFILE 2>&1
+		log_status $?
+		[ $? -eq 0 ] || exit 1
+	fi
+fi
 cd $KERNELDIR
 
-if [ $KERNELPATCH ]
+if [ ! -f .config ]
 then
-	log_action "Applying kernel patch"
-	bzcat ../$KERNELPATCH | patch -p1 >>$LOGFILE 2>&1
-	log_status $?
-	[ $? -eq 0 ] || exit 1
+	execute "cp $KERNELCONFIG .config" 0
 fi
-
-execute "cp $KERNELCONFIG .config" 0
 
 echo "Creating kernel configuration, you might get prompted for new parameters"
 make oldconfig 2>&1 | tee -a $LOGFILE

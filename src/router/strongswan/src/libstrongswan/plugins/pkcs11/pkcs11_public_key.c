@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Tobias Brunner
+ * Copyright (C) 2011-2015 Tobias Brunner
  * Hochschule fuer Technik Rapperswil
  *
  * Copyright (C) 2010 Martin Willi
@@ -135,6 +135,7 @@ static const asn1Object_t pkinfoObjects[] = {
 /**
  * Extract the DER encoded Parameters and ECPoint from the given DER encoded
  * subjectPublicKeyInfo.
+ * Memory for ecpoint is allocated.
  */
 static bool parse_ecdsa_public_key(chunk_t blob, chunk_t *ecparams,
 								   chunk_t *ecpoint, size_t *keylen)
@@ -173,7 +174,9 @@ static bool parse_ecdsa_public_key(chunk_t blob, chunk_t *ecparams,
 				{	/* skip initial bit string octet defining 0 unused bits */
 					object = chunk_skip(object, 1);
 				}
-				*ecpoint = object;
+				/* the correct way to encode an EC_POINT in PKCS#11 is as
+				 * ASN.1 octet string */
+				*ecpoint = asn1_wrap(ASN1_OCTET_STRING, "c", object);
 				break;
 			}
 		}
@@ -205,7 +208,8 @@ METHOD(public_key_t, verify, bool,
 	CK_SESSION_HANDLE session;
 	CK_RV rv;
 	hash_algorithm_t hash_alg;
-	chunk_t hash = chunk_empty;
+	chunk_t hash = chunk_empty, parse, r, s;
+	size_t len;
 
 	mechanism = pkcs11_signature_scheme_to_mech(scheme, this->type, this->k,
 												&hash_alg);
@@ -215,9 +219,37 @@ METHOD(public_key_t, verify, bool,
 			 signature_scheme_names, scheme);
 		return FALSE;
 	}
-	if (sig.len && sig.ptr[0] == 0)
-	{	/* trim leading zero byte in sig */
-		sig = chunk_skip(sig, 1);
+	switch (scheme)
+	{
+		case SIGN_ECDSA_WITH_SHA1_DER:
+		case SIGN_ECDSA_WITH_SHA256_DER:
+		case SIGN_ECDSA_WITH_SHA384_DER:
+		case SIGN_ECDSA_WITH_SHA512_DER:
+			/* PKCS#11 expects the ECDSA signatures as simple concatenation of
+			 * r and s, so unwrap the ASN.1 encoded sequence */
+			parse = sig;
+			if (asn1_unwrap(&parse, &parse) != ASN1_SEQUENCE ||
+				asn1_unwrap(&parse, &r) != ASN1_INTEGER ||
+				asn1_unwrap(&parse, &s) != ASN1_INTEGER)
+			{
+				return FALSE;
+			}
+			r = chunk_skip_zero(r);
+			s = chunk_skip_zero(s);
+			len = (get_keysize(this) + 7) / 8;
+			if (r.len > len || s.len > len)
+			{
+				return FALSE;
+			}
+			/* concatenate r and s (forced to the defined length) */
+			sig = chunk_alloca(2*len);
+			memset(sig.ptr, 0, sig.len);
+			memcpy(sig.ptr + (len - r.len), r.ptr, r.len);
+			memcpy(sig.ptr + len + (len - s.len), s.ptr, s.len);
+			break;
+		default:
+			sig = chunk_skip_zero(sig);
+			break;
 	}
 	rv = this->lib->f->C_OpenSession(this->slot, CKF_SERIAL_SESSION, NULL, NULL,
 									 &session);
@@ -407,12 +439,17 @@ static bool encode_rsa(private_pkcs11_public_key_t *this,
 		attr[0].ulValueLen > 0 && attr[1].ulValueLen > 0)
 	{
 		chunk_t n, e;
-		n = chunk_create(attr[0].pValue, attr[0].ulValueLen);
+		/* some tokens/libraries add unnecessary 0x00 prefixes */
+		n = chunk_skip_zero(chunk_create(attr[0].pValue, attr[0].ulValueLen));
 		if (n.ptr[0] & 0x80)
-		{	/* add leading 0x00, encoders expect it already like this */
+		{	/* add leading 0x00, encoders might expect it in two's complement */
 			n = chunk_cata("cc", chunk_from_chars(0x00), n);
 		}
-		e = chunk_create(attr[1].pValue, attr[1].ulValueLen);
+		e = chunk_skip_zero(chunk_create(attr[1].pValue, attr[1].ulValueLen));
+		if (e.ptr[0] & 0x80)
+		{
+			e = chunk_cata("cc", chunk_from_chars(0x00), e);
+		}
 		success = lib->encoding->encode(lib->encoding, type, cache, encoding,
 			CRED_PART_RSA_MODULUS, n, CRED_PART_RSA_PUB_EXP, e, CRED_PART_END);
 	}
@@ -776,11 +813,11 @@ pkcs11_public_key_t *pkcs11_public_key_load(key_type_t type, va_list args)
 		if (parse_ecdsa_public_key(blob, &ecparams, &ecpoint, &keylen))
 		{
 			this = find_ecdsa_key(ecparams, ecpoint, keylen);
-			if (this)
+			if (!this)
 			{
-				return &this->public;
+				this = create_ecdsa_key(ecparams, ecpoint, keylen);
 			}
-			this = create_ecdsa_key(ecparams, ecpoint, keylen);
+			chunk_free(&ecpoint);
 			if (this)
 			{
 				return &this->public;

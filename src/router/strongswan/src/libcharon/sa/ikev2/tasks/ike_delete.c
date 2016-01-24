@@ -65,7 +65,7 @@ METHOD(task_t, build_i, status_t,
 		 this->ike_sa->get_other_host(this->ike_sa),
 		 this->ike_sa->get_other_id(this->ike_sa));
 
-	delete_payload = delete_payload_create(DELETE, PROTO_IKE);
+	delete_payload = delete_payload_create(PLV2_DELETE, PROTO_IKE);
 	message->add_payload(message, (payload_t*)delete_payload);
 
 	if (this->ike_sa->get_state(this->ike_sa) == IKE_REKEYING)
@@ -108,6 +108,14 @@ METHOD(task_t, process_r, status_t,
 		 this->ike_sa->get_my_id(this->ike_sa),
 		 this->ike_sa->get_other_host(this->ike_sa),
 		 this->ike_sa->get_other_id(this->ike_sa));
+
+	if (message->get_exchange_type(message) == INFORMATIONAL &&
+		message->get_notify(message, AUTHENTICATION_FAILED))
+	{
+		/* a late AUTHENTICATION_FAILED notify from the initiator after
+		 * we have established the IKE_SA: signal auth failure */
+		charon->bus->alert(charon->bus, ALERT_LOCAL_AUTH_FAILED);
+	}
 
 	switch (this->ike_sa->get_state(this->ike_sa))
 	{

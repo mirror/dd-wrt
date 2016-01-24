@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2012 Tobias Brunner
+ * Copyright (C) 2006-2015 Tobias Brunner
  * Copyright (C) 2006 Daniel Roethlisberger
  * Copyright (C) 2005-2006 Martin Willi
  * Copyright (C) 2005 Jan Hutter
@@ -58,33 +58,28 @@ struct kernel_ipsec_t {
 	 * @param src		source address of SA
 	 * @param dst		destination address of SA
 	 * @param protocol	protocol for SA (ESP/AH)
-	 * @param reqid		unique ID for this SA
 	 * @param spi		allocated spi
-	 * @return				SUCCESS if operation completed
+	 * @return			SUCCESS if operation completed
 	 */
 	status_t (*get_spi)(kernel_ipsec_t *this, host_t *src, host_t *dst,
-						u_int8_t protocol, u_int32_t reqid, u_int32_t *spi);
+						u_int8_t protocol, u_int32_t *spi);
 
 	/**
 	 * Get a Compression Parameter Index (CPI) from the kernel.
 	 *
 	 * @param src		source address of SA
 	 * @param dst		destination address of SA
-	 * @param reqid		unique ID for the corresponding SA
 	 * @param cpi		allocated cpi
-	 * @return				SUCCESS if operation completed
+	 * @return			SUCCESS if operation completed
 	 */
 	status_t (*get_cpi)(kernel_ipsec_t *this, host_t *src, host_t *dst,
-						u_int32_t reqid, u_int16_t *cpi);
+						u_int16_t *cpi);
 
 	/**
 	 * Add an SA to the SAD.
 	 *
-	 * add_sa() may update an already allocated
-	 * SPI (via get_spi). In this case, the replace
-	 * flag must be set.
-	 * This function does install a single SA for a
-	 * single protocol in one direction.
+	 * This function does install a single SA for a single protocol in one
+	 * direction.
 	 *
 	 * @param src			source address for this SA
 	 * @param dst			destination address for this SA
@@ -101,11 +96,14 @@ struct kernel_ipsec_t {
 	 * @param mode			mode of the SA (tunnel, transport)
 	 * @param ipcomp		IPComp transform to use
 	 * @param cpi			CPI for IPComp
+	 * @param replay_window	anti-replay window size
+	 * @param initiator		TRUE if initiator of the exchange creating this SA
 	 * @param encap			enable UDP encapsulation for NAT traversal
 	 * @param esn			TRUE to use Extended Sequence Numbers
 	 * @param inbound		TRUE if this is an inbound SA
-	 * @param src_ts		traffic selector with BEET source address
-	 * @param dst_ts		traffic selector with BEET destination address
+	 * @param update		TRUE if an SPI has already been allocated for SA
+	 * @param src_ts		list of source traffic selectors
+	 * @param dst_ts		list of destination traffic selectors
 	 * @return				SUCCESS if operation completed
 	 */
 	status_t (*add_sa) (kernel_ipsec_t *this,
@@ -115,8 +113,9 @@ struct kernel_ipsec_t {
 						u_int16_t enc_alg, chunk_t enc_key,
 						u_int16_t int_alg, chunk_t int_key,
 						ipsec_mode_t mode, u_int16_t ipcomp, u_int16_t cpi,
-						bool encap, bool esn, bool inbound,
-						traffic_selector_t *src_ts, traffic_selector_t *dst_ts);
+						u_int32_t replay_window, bool initiator, bool encap,
+						bool esn, bool inbound, bool update,
+						linked_list_t *src_ts, linked_list_t *dst_ts);
 
 	/**
 	 * Update the hosts on an installed SA.
@@ -155,11 +154,12 @@ struct kernel_ipsec_t {
 	 * @param mark			optional mark for this SA
 	 * @param[out] bytes	the number of bytes processed by SA
 	 * @param[out] packets	number of packets processed by SA
+	 * @param[out] time		last (monotonic) time of SA use
 	 * @return				SUCCESS if operation completed
 	 */
 	status_t (*query_sa) (kernel_ipsec_t *this, host_t *src, host_t *dst,
 						  u_int32_t spi, u_int8_t protocol, mark_t mark,
-						  u_int64_t *bytes, u_int64_t *packets);
+						  u_int64_t *bytes, u_int64_t *packets, time_t *time);
 
 	/**
 	 * Delete a previusly installed SA from the SAD.
@@ -185,9 +185,6 @@ struct kernel_ipsec_t {
 
 	/**
 	 * Add a policy to the SPD.
-	 *
-	 * A policy is always associated to an SA. Traffic which matches a
-	 * policy is handled by the SA with the same reqid.
 	 *
 	 * @param src			source address of SA
 	 * @param dst			dest address of SA
@@ -226,29 +223,29 @@ struct kernel_ipsec_t {
 							  traffic_selector_t *src_ts,
 							  traffic_selector_t *dst_ts,
 							  policy_dir_t direction, mark_t mark,
-							  u_int32_t *use_time);
+							  time_t *use_time);
 
 	/**
 	 * Remove a policy from the SPD.
 	 *
-	 * The kernel interface implements reference counting for policies.
-	 * If the same policy is installed multiple times (in the case of rekeying),
-	 * the reference counter is increased. del_policy() decreases the ref counter
-	 * and removes the policy only when no more references are available.
-	 *
+	 * @param src			source address of SA
+	 * @param dst			dest address of SA
 	 * @param src_ts		traffic selector to match traffic source
 	 * @param dst_ts		traffic selector to match traffic dest
 	 * @param direction		direction of traffic, POLICY_(IN|OUT|FWD)
-	 * @param reqid			unique ID of the associated SA
-	 * @param mark			optional mark
+	 * @param type			type of policy, POLICY_(IPSEC|PASS|DROP)
+	 * @param sa			details about the SA(s) tied to this policy
+	 * @param mark			mark for this policy
 	 * @param priority		priority of the policy
 	 * @return				SUCCESS if operation completed
 	 */
 	status_t (*del_policy) (kernel_ipsec_t *this,
+							host_t *src, host_t *dst,
 							traffic_selector_t *src_ts,
 							traffic_selector_t *dst_ts,
-							policy_dir_t direction, u_int32_t reqid,
-							mark_t mark, policy_priority_t priority);
+							policy_dir_t direction, policy_type_t type,
+							ipsec_sa_cfg_t *sa, mark_t mark,
+							policy_priority_t priority);
 
 	/**
 	 * Flush all policies from the SPD.

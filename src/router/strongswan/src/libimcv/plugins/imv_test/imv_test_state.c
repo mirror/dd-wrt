@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013 Andreas Steffen
+ * Copyright (C) 2011-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -16,6 +16,8 @@
 #include "imv_test_state.h"
 #include "imv/imv_lang_string.h"
 #include "imv/imv_reason_string.h"
+
+#include <tncif_policy.h>
 
 #include <utils/lexparser.h>
 #include <collections/linked_list.h>
@@ -56,17 +58,17 @@ struct private_imv_test_state_t {
 	/**
 	 * Maximum PA-TNC message size for this TNCCS connection
 	 */
-	u_int32_t max_msg_len;
+	uint32_t max_msg_len;
 
 	/**
-	 * Access Requestor ID Type
+	 * IMV database session associated with TNCCS connection
 	 */
-	u_int32_t ar_id_type;
+	imv_session_t *session;
 
 	/**
-	 * Access Requestor ID Value
+	 * PA-TNC attribute segmentation contracts associated with TNCCS connection
 	 */
-	chunk_t ar_id_value;
+	seg_contract_manager_t *contracts;
 
 	/**
 	 * IMV action recommendation
@@ -142,32 +144,33 @@ METHOD(imv_state_t, set_flags, void,
 }
 
 METHOD(imv_state_t, set_max_msg_len, void,
-	private_imv_test_state_t *this, u_int32_t max_msg_len)
+	private_imv_test_state_t *this, uint32_t max_msg_len)
 {
 	this->max_msg_len = max_msg_len;
 }
 
-METHOD(imv_state_t, get_max_msg_len, u_int32_t,
+METHOD(imv_state_t, get_max_msg_len, uint32_t,
 	private_imv_test_state_t *this)
 {
 	return this->max_msg_len;
 }
 
-METHOD(imv_state_t, set_ar_id, void,
-	private_imv_test_state_t *this, u_int32_t id_type, chunk_t id_value)
+METHOD(imv_state_t, set_session, void,
+	private_imv_test_state_t *this, imv_session_t *session)
 {
-	this->ar_id_type = id_type;
-	this->ar_id_value = chunk_clone(id_value);
+	this->session = session;
 }
 
-METHOD(imv_state_t, get_ar_id, chunk_t,
-	private_imv_test_state_t *this, u_int32_t *id_type)
+METHOD(imv_state_t, get_session, imv_session_t*,
+	private_imv_test_state_t *this)
 {
-	if (id_type)
-	{
-		*id_type = this->ar_id_type;
-	}
-	return this->ar_id_value;
+	return this->session;
+}
+
+METHOD(imv_state_t, get_contracts, seg_contract_manager_t*,
+	private_imv_test_state_t *this)
+{
+	return this->contracts;
 }
 
 METHOD(imv_state_t, change_state, void,
@@ -192,6 +195,14 @@ METHOD(imv_state_t, set_recommendation, void,
 	this->eval = eval;
 }
 
+METHOD(imv_state_t, update_recommendation, void,
+	private_imv_test_state_t *this, TNC_IMV_Action_Recommendation rec,
+									TNC_IMV_Evaluation_Result eval)
+{
+	this->rec  = tncif_policy_update_recommendation(this->rec, rec);
+	this->eval = tncif_policy_update_evaluation(this->eval, eval);
+}
+
 METHOD(imv_state_t, get_reason_string, bool,
 	private_imv_test_state_t *this, enumerator_t *language_enumerator,
 	chunk_t *reason_string, char **reason_language)
@@ -201,7 +212,7 @@ METHOD(imv_state_t, get_reason_string, bool,
 
 	/* Instantiate a TNC Reason String object */
 	DESTROY_IF(this->reason_string);
-	this->reason_string = imv_reason_string_create(*reason_language);
+	this->reason_string = imv_reason_string_create(*reason_language, "\n");
 	this->reason_string->add_reason(this->reason_string, reasons);
 	*reason_string = this->reason_string->get_encoding(this->reason_string);
 
@@ -218,9 +229,10 @@ METHOD(imv_state_t, get_remediation_instructions, bool,
 METHOD(imv_state_t, destroy, void,
 	private_imv_test_state_t *this)
 {
+	DESTROY_IF(this->session);
 	DESTROY_IF(this->reason_string);
+	this->contracts->destroy(this->contracts);
 	this->imcs->destroy_function(this->imcs, free);
-	free(this->ar_id_value.ptr);
 	free(this);
 }
 
@@ -305,11 +317,13 @@ imv_state_t *imv_test_state_create(TNC_ConnectionID connection_id)
 				.set_flags = _set_flags,
 				.set_max_msg_len = _set_max_msg_len,
 				.get_max_msg_len = _get_max_msg_len,
-				.set_ar_id = _set_ar_id,
-				.get_ar_id = _get_ar_id,
+				.set_session = _set_session,
+				.get_session = _get_session,
+				.get_contracts = _get_contracts,
 				.change_state = _change_state,
 				.get_recommendation = _get_recommendation,
 				.set_recommendation = _set_recommendation,
+				.update_recommendation = _update_recommendation,
 				.get_reason_string = _get_reason_string,
 				.get_remediation_instructions = _get_remediation_instructions,
 				.destroy = _destroy,
@@ -322,6 +336,7 @@ imv_state_t *imv_test_state_create(TNC_ConnectionID connection_id)
 		.rec = TNC_IMV_ACTION_RECOMMENDATION_NO_RECOMMENDATION,
 		.eval = TNC_IMV_EVALUATION_RESULT_DONT_KNOW,
 		.connection_id = connection_id,
+		.contracts = seg_contract_manager_create(),
 		.imcs = linked_list_create(),
 	);
 

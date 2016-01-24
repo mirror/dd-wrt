@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 Tobias Brunner
  * Copyright (C) 2005-2006 Martin Willi
  * Copyright (C) 2005 Jan Hutter
  * Hochschule fuer Technik Rapperswil
@@ -61,6 +62,15 @@ struct delete_payload_t {
 	void (*set_ike_spi)(delete_payload_t *this, u_int64_t spi_i, u_int64_t spi_r);
 
 	/**
+	 * Get the IKE SPIs from an IKEv1 delete.
+	 *
+	 * @param spi_i			initiator SPI
+	 * @param spi_r			responder SPI
+	 * @return				TRUE if SPIs extracted successfully
+	 */
+	bool (*get_ike_spi)(delete_payload_t *this, u_int64_t *spi_i, u_int64_t *spi_r);
+
+	/**
 	 * Get an enumerator over the SPIs in network order.
 	 *
 	 * @return				enumerator over SPIs, u_int32_t
@@ -76,7 +86,7 @@ struct delete_payload_t {
 /**
  * Creates an empty delete_payload_t object.
  *
- * @param type			DELETE or DELETE_V1
+ * @param type			PLV2_DELETE or PLV1_DELETE
  * @param protocol_id	protocol, such as AH|ESP
  * @return 				delete_payload_t object
  */

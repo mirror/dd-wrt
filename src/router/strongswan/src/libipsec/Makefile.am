@@ -13,19 +13,15 @@ ipsec_processor.c ipsec_processor.h \
 ipsec_sa.c ipsec_sa.h \
 ipsec_sa_mgr.c ipsec_sa_mgr.h
 
-libipsec_la_LIBADD =
+libipsec_la_LIBADD = \
+	$(top_builddir)/src/libstrongswan/libstrongswan.la
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/libstrongswan
+
+AM_LDFLAGS = \
+	-no-undefined
 
 EXTRA_DIST = Android.mk
 
-# build optional plugins
-########################
-
-if MONOLITHIC
-SUBDIRS =
-else
-SUBDIRS = .
-endif
-
+SUBDIRS = . tests

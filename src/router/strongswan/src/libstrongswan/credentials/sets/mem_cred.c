@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2013 Tobias Brunner
+ * Copyright (C) 2010-2015 Tobias Brunner
  * Hochschule fuer Technik Rapperwsil
  * Copyright (C) 2010 Martin Willi
  * Copyright (C) 2010 revosec AG
@@ -192,6 +192,24 @@ METHOD(mem_cred_t, add_cert_ref, certificate_t*,
 	return add_cert_internal(this, trusted, cert);
 }
 
+METHOD(mem_cred_t, get_cert_ref, certificate_t*,
+	private_mem_cred_t *this, certificate_t *cert)
+{
+	certificate_t *cached;
+
+	this->lock->read_lock(this->lock);
+	if (this->untrusted->find_first(this->untrusted,
+									(linked_list_match_t)certificate_equals,
+									(void**)&cached, cert) == SUCCESS)
+	{
+		cert->destroy(cert);
+		cert = cached->get_ref(cached);
+	}
+	this->lock->unlock(this->lock);
+
+	return cert;
+}
+
 METHOD(mem_cred_t, add_crl, bool,
 	private_mem_cred_t *this, crl_t *crl)
 {
@@ -307,8 +325,25 @@ METHOD(credential_set_t, create_private_enumerator, enumerator_t*,
 METHOD(mem_cred_t, add_key, void,
 	private_mem_cred_t *this, private_key_t *key)
 {
+	enumerator_t *enumerator;
+	private_key_t *current;
+
 	this->lock->write_lock(this->lock);
+
+	enumerator = this->keys->create_enumerator(this->keys);
+	while (enumerator->enumerate(enumerator, &current))
+	{
+		if (current->equals(current, key))
+		{
+			this->keys->remove_at(this->keys, enumerator);
+			current->destroy(current);
+			break;
+		}
+	}
+	enumerator->destroy(enumerator);
+
 	this->keys->insert_first(this->keys, key);
+
 	this->lock->unlock(this->lock);
 }
 
@@ -331,6 +366,44 @@ static void shared_entry_destroy(shared_entry_t *entry)
 								  offsetof(identification_t, destroy));
 	entry->shared->destroy(entry->shared);
 	free(entry);
+}
+
+/**
+ * Check if two shared key entries equal
+ */
+static bool shared_entry_equals(shared_entry_t *a, shared_entry_t *b)
+{
+	enumerator_t *e1, *e2;
+	identification_t *id1, *id2;
+	bool equals = TRUE;
+
+	if (a->shared->get_type(a->shared) != b->shared->get_type(b->shared))
+	{
+		return FALSE;
+	}
+	if (!chunk_equals(a->shared->get_key(a->shared),
+					  b->shared->get_key(b->shared)))
+	{
+		return FALSE;
+	}
+	if (a->owners->get_count(a->owners) != b->owners->get_count(b->owners))
+	{
+		return FALSE;
+	}
+	e1 = a->owners->create_enumerator(a->owners);
+	e2 = b->owners->create_enumerator(b->owners);
+	while (e1->enumerate(e1, &id1) && e2->enumerate(e2, &id2))
+	{
+		if (!id1->equals(id1, id2))
+		{
+			equals = FALSE;
+			break;
+		}
+	}
+	e1->destroy(e1);
+	e2->destroy(e2);
+
+	return equals;
 }
 
 /**
@@ -435,15 +508,30 @@ METHOD(credential_set_t, create_shared_enumerator, enumerator_t*,
 METHOD(mem_cred_t, add_shared_list, void,
 	private_mem_cred_t *this, shared_key_t *shared, linked_list_t* owners)
 {
-	shared_entry_t *entry;
+	shared_entry_t *current, *new;
+	enumerator_t *enumerator;
 
-	INIT(entry,
+	INIT(new,
 		.shared = shared,
 		.owners = owners,
 	);
 
 	this->lock->write_lock(this->lock);
-	this->shared->insert_first(this->shared, entry);
+
+	enumerator = this->shared->create_enumerator(this->shared);
+	while (enumerator->enumerate(enumerator, &current))
+	{
+		if (shared_entry_equals(current, new))
+		{
+			this->shared->remove_at(this->shared, enumerator);
+			shared_entry_destroy(current);
+			break;
+		}
+	}
+	enumerator->destroy(enumerator);
+
+	this->shared->insert_first(this->shared, new);
+
 	this->lock->unlock(this->lock);
 }
 
@@ -555,6 +643,49 @@ METHOD(credential_set_t, create_cdp_enumerator, enumerator_t*,
 
 }
 
+static void reset_certs(private_mem_cred_t *this)
+{
+	this->trusted->destroy_offset(this->trusted,
+								  offsetof(certificate_t, destroy));
+	this->untrusted->destroy_offset(this->untrusted,
+									offsetof(certificate_t, destroy));
+	this->trusted = linked_list_create();
+	this->untrusted = linked_list_create();
+}
+
+static void copy_certs(linked_list_t *dst, linked_list_t *src, bool clone)
+{
+	enumerator_t *enumerator;
+	certificate_t *cert;
+
+	enumerator = src->create_enumerator(src);
+	while (enumerator->enumerate(enumerator, &cert))
+	{
+		if (clone)
+		{
+			cert = cert->get_ref(cert);
+		}
+		else
+		{
+			src->remove_at(src, enumerator);
+		}
+		dst->insert_last(dst, cert);
+	}
+	enumerator->destroy(enumerator);
+}
+
+METHOD(mem_cred_t, replace_certs, void,
+	private_mem_cred_t *this, mem_cred_t *other_set, bool clone)
+{
+	private_mem_cred_t *other = (private_mem_cred_t*)other_set;
+
+	this->lock->write_lock(this->lock);
+	reset_certs(this);
+	copy_certs(this->untrusted, other->untrusted, clone);
+	copy_certs(this->trusted, other->trusted, clone);
+	this->lock->unlock(this->lock);
+}
+
 static void reset_secrets(private_mem_cred_t *this)
 {
 	this->keys->destroy_offset(this->keys, offsetof(private_key_t, destroy));
@@ -622,17 +753,11 @@ METHOD(mem_cred_t, clear_, void,
 	private_mem_cred_t *this)
 {
 	this->lock->write_lock(this->lock);
-	this->trusted->destroy_offset(this->trusted,
-								  offsetof(certificate_t, destroy));
-	this->untrusted->destroy_offset(this->untrusted,
-									offsetof(certificate_t, destroy));
 	this->cdps->destroy_function(this->cdps, (void*)cdp_destroy);
-	this->trusted = linked_list_create();
-	this->untrusted = linked_list_create();
 	this->cdps = linked_list_create();
+	reset_certs(this);
+	reset_secrets(this);
 	this->lock->unlock(this->lock);
-
-	clear_secrets(this);
 }
 
 METHOD(mem_cred_t, destroy, void,
@@ -666,11 +791,13 @@ mem_cred_t *mem_cred_create()
 			},
 			.add_cert = _add_cert,
 			.add_cert_ref = _add_cert_ref,
+			.get_cert_ref = _get_cert_ref,
 			.add_crl = _add_crl,
 			.add_key = _add_key,
 			.add_shared = _add_shared,
 			.add_shared_list = _add_shared_list,
 			.add_cdp = _add_cdp,
+			.replace_certs = _replace_certs,
 			.replace_secrets = _replace_secrets,
 			.clear = _clear_,
 			.clear_secrets = _clear_secrets,

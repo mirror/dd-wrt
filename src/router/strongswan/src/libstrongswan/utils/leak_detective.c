@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2006-2008 Martin Willi
+ * Copyright (C) 2013-2014 Tobias Brunner
+ * Copyright (C) 2006-2013 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -14,27 +15,36 @@
  */
 
 #define _GNU_SOURCE
-#include <sched.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <signal.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
-#include <syslog.h>
-#include <pthread.h>
-#include <netdb.h>
 #include <locale.h>
+#ifdef HAVE_DLADDR
+#include <dlfcn.h>
+#endif
+#include <time.h>
+#include <errno.h>
+
+#ifdef __APPLE__
+#include <sys/mman.h>
+#include <malloc/malloc.h>
+/* overload some of our types clashing with mach */
+#define host_t strongswan_host_t
+#define processor_t strongswan_processor_t
+#define thread_t strongswan_thread_t
+#endif /* __APPLE__ */
 
 #include "leak_detective.h"
 
 #include <library.h>
+#include <utils/utils.h>
 #include <utils/debug.h>
 #include <utils/backtrace.h>
 #include <collections/hashtable.h>
+#include <threading/thread_value.h>
+#include <threading/spinlock.h>
 
 typedef struct private_leak_detective_t private_leak_detective_t;
 
@@ -47,6 +57,21 @@ struct private_leak_detective_t {
 	 * public functions
 	 */
 	leak_detective_t public;
+
+	/**
+	 * Registered report() function
+	 */
+	leak_detective_report_cb_t report_cb;
+
+	/**
+	 * Registered report() summary function
+	 */
+	leak_detective_summary_cb_t report_scb;
+
+	/**
+	 * Registered user data for callbacks
+	 */
+	void *report_data;
 };
 
 /**
@@ -68,21 +93,6 @@ struct private_leak_detective_t {
  * Pattern which is filled in newly allocated memory
  */
 #define MEMORY_ALLOC_PATTERN 0xEE
-
-
-static void install_hooks(void);
-static void uninstall_hooks(void);
-static void *malloc_hook(size_t, const void *);
-static void *realloc_hook(void *, size_t, const void *);
-static void free_hook(void*, const void *);
-
-void *(*old_malloc_hook)(size_t, const void *);
-void *(*old_realloc_hook)(void *, size_t, const void *);
-void (*old_free_hook)(void*, const void *);
-
-static u_int count_malloc = 0;
-static u_int count_free = 0;
-static u_int count_realloc = 0;
 
 typedef struct memory_header_t memory_header_t;
 typedef struct memory_tail_t memory_tail_t;
@@ -106,6 +116,11 @@ struct memory_header_t {
 	 * backtrace taken during (re-)allocation
 	 */
 	backtrace_t *backtrace;
+
+	/**
+	 * Padding to make sizeof(memory_header_t) == 32
+	 */
+	u_int32_t padding[sizeof(void*) == sizeof(u_int32_t) ? 3 : 0];
 
 	/**
 	 * Number of bytes following after the header
@@ -136,48 +151,342 @@ struct memory_tail_t {
  * the others on it...
  */
 static memory_header_t first_header = {
-	magic: MEMORY_HEADER_MAGIC,
-	bytes: 0,
-	backtrace: NULL,
-	previous: NULL,
-	next: NULL
+	.magic = MEMORY_HEADER_MAGIC,
 };
 
 /**
- * are the hooks currently installed?
+ * Spinlock to access header linked list
  */
-static bool installed = FALSE;
+static spinlock_t *lock;
+
+/**
+ * Is leak detection currently enabled?
+ */
+static bool enabled = FALSE;
+
+/**
+ * Is leak detection disabled for the current thread?
+ */
+static thread_value_t *thread_disabled;
 
 /**
  * Installs the malloc hooks, enables leak detection
  */
-static void install_hooks()
+static void enable_leak_detective()
 {
-	if (!installed)
-	{
-		old_malloc_hook = __malloc_hook;
-		old_realloc_hook = __realloc_hook;
-		old_free_hook = __free_hook;
-		__malloc_hook = malloc_hook;
-		__realloc_hook = realloc_hook;
-		__free_hook = free_hook;
-		installed = TRUE;
-	}
+	enabled = TRUE;
 }
 
 /**
  * Uninstalls the malloc hooks, disables leak detection
  */
-static void uninstall_hooks()
+static void disable_leak_detective()
 {
-	if (installed)
-	{
-		__malloc_hook = old_malloc_hook;
-		__free_hook = old_free_hook;
-		__realloc_hook = old_realloc_hook;
-		installed = FALSE;
-	}
+	enabled = FALSE;
 }
+
+/**
+ * Enable/Disable leak detective for the current thread
+ *
+ * @return Previous value
+ */
+static bool enable_thread(bool enable)
+{
+	bool before;
+
+	before = thread_disabled->get(thread_disabled) == NULL;
+	thread_disabled->set(thread_disabled, enable ? NULL : (void*)TRUE);
+	return before;
+}
+
+/**
+ * Add a header to the beginning of the list
+ */
+static void add_hdr(memory_header_t *hdr)
+{
+	lock->lock(lock);
+	hdr->next = first_header.next;
+	if (hdr->next)
+	{
+		hdr->next->previous = hdr;
+	}
+	hdr->previous = &first_header;
+	first_header.next = hdr;
+	lock->unlock(lock);
+}
+
+/**
+ * Remove a header from the list
+ */
+static void remove_hdr(memory_header_t *hdr)
+{
+	lock->lock(lock);
+	if (hdr->next)
+	{
+		hdr->next->previous = hdr->previous;
+	}
+	hdr->previous->next = hdr->next;
+	lock->unlock(lock);
+}
+
+/**
+ * Check if a header is in the list
+ */
+static bool has_hdr(memory_header_t *hdr)
+{
+	memory_header_t *current;
+	bool found = FALSE;
+
+	lock->lock(lock);
+	for (current = &first_header; current != NULL; current = current->next)
+	{
+		if (current == hdr)
+		{
+			found = TRUE;
+			break;
+		}
+	}
+	lock->unlock(lock);
+
+	return found;
+}
+
+#ifdef __APPLE__
+
+/**
+ * Copy of original default zone, with functions we call in hooks
+ */
+static malloc_zone_t original;
+
+/**
+ * Call original malloc()
+ */
+static void* real_malloc(size_t size)
+{
+	return original.malloc(malloc_default_zone(), size);
+}
+
+/**
+ * Call original free()
+ */
+static void real_free(void *ptr)
+{
+	original.free(malloc_default_zone(), ptr);
+}
+
+/**
+ * Call original realloc()
+ */
+static void* real_realloc(void *ptr, size_t size)
+{
+	return original.realloc(malloc_default_zone(), ptr, size);
+}
+
+/**
+ * Hook definition: static function with _hook suffix, takes additional zone
+ */
+#define HOOK(ret, name, ...) \
+	static ret name ## _hook(malloc_zone_t *_z, __VA_ARGS__)
+
+/**
+ * forward declaration of hooks
+ */
+HOOK(void*, malloc, size_t bytes);
+HOOK(void*, calloc, size_t nmemb, size_t size);
+HOOK(void*, valloc, size_t size);
+HOOK(void, free, void *ptr);
+HOOK(void*, realloc, void *old, size_t bytes);
+
+/**
+ * malloc zone size(), must consider the memory header prepended
+ */
+HOOK(size_t, size, const void *ptr)
+{
+	bool before;
+	size_t size;
+
+	if (enabled)
+	{
+		before = enable_thread(FALSE);
+		if (before)
+		{
+			ptr -= sizeof(memory_header_t);
+		}
+	}
+	size = original.size(malloc_default_zone(), ptr);
+	if (enabled)
+	{
+		enable_thread(before);
+	}
+	return size;
+}
+
+/**
+ * Version of malloc zones we currently support
+ */
+#define MALLOC_ZONE_VERSION 8 /* Snow Leopard */
+
+/**
+ * Hook-in our malloc functions into the default zone
+ */
+static bool register_hooks()
+{
+	static bool once = FALSE;
+	malloc_zone_t *zone;
+	void *page;
+
+	if (once)
+	{
+		return TRUE;
+	}
+	once = TRUE;
+
+	zone = malloc_default_zone();
+	if (zone->version != MALLOC_ZONE_VERSION)
+	{
+		DBG1(DBG_CFG, "malloc zone version %d unsupported (requiring %d)",
+			 zone->version, MALLOC_ZONE_VERSION);
+		return FALSE;
+	}
+
+	original = *zone;
+
+	page = (void*)((uintptr_t)zone / getpagesize() * getpagesize());
+	if (mprotect(page, getpagesize(), PROT_WRITE | PROT_READ) != 0)
+	{
+		DBG1(DBG_CFG, "malloc zone unprotection failed: %s", strerror(errno));
+		return FALSE;
+	}
+
+	zone->size = size_hook;
+	zone->malloc = malloc_hook;
+	zone->calloc = calloc_hook;
+	zone->valloc = valloc_hook;
+	zone->free = free_hook;
+	zone->realloc = realloc_hook;
+
+	/* those other functions can be NULLed out to not use them */
+	zone->batch_malloc = NULL;
+	zone->batch_free = NULL;
+	zone->memalign = NULL;
+	zone->free_definite_size = NULL;
+
+	return TRUE;
+}
+
+#else /* !__APPLE__ */
+
+/**
+ * dlsym() might do a malloc(), but we can't do one before we get the malloc()
+ * function pointer. Use this minimalistic malloc implementation instead.
+ */
+static void* malloc_for_dlsym(size_t size)
+{
+	static char buf[1024] = {};
+	static size_t used = 0;
+	char *ptr;
+
+	/* roundup to a multiple of 32 */
+	size = (size - 1) / 32 * 32 + 32;
+
+	if (used + size > sizeof(buf))
+	{
+		return NULL;
+	}
+	ptr = buf + used;
+	used += size;
+	return ptr;
+}
+
+/**
+ * Lookup a malloc function, while disabling wrappers
+ */
+static void* get_malloc_fn(char *name)
+{
+	bool before = FALSE;
+	void *fn;
+
+	if (enabled)
+	{
+		before = enable_thread(FALSE);
+	}
+	fn = dlsym(RTLD_NEXT, name);
+	if (enabled)
+	{
+		enable_thread(before);
+	}
+	return fn;
+}
+
+/**
+ * Call original malloc()
+ */
+static void* real_malloc(size_t size)
+{
+	static void* (*fn)(size_t size);
+	static int recursive = 0;
+
+	if (!fn)
+	{
+		/* checking recursiveness should actually be thread-specific. But as
+		 * it is very likely that the first allocation is done before we go
+		 * multi-threaded, we keep it simple. */
+		if (recursive)
+		{
+			return malloc_for_dlsym(size);
+		}
+		recursive++;
+		fn = get_malloc_fn("malloc");
+		recursive--;
+	}
+	return fn(size);
+}
+
+/**
+ * Call original free()
+ */
+static void real_free(void *ptr)
+{
+	static void (*fn)(void *ptr);
+
+	if (!fn)
+	{
+		fn = get_malloc_fn("free");
+	}
+	return fn(ptr);
+}
+
+/**
+ * Call original realloc()
+ */
+static void* real_realloc(void *ptr, size_t size)
+{
+	static void* (*fn)(void *ptr, size_t size);
+
+	if (!fn)
+	{
+		fn = get_malloc_fn("realloc");
+	}
+	return fn(ptr, size);
+}
+
+/**
+ * Hook definition: plain function overloading existing malloc calls
+ */
+#define HOOK(ret, name, ...) ret name(__VA_ARGS__)
+
+/**
+ * Hook initialization when not using hooks, resolve functions.
+ */
+static bool register_hooks()
+{
+	void *buf = real_malloc(8);
+	buf = real_realloc(buf, 16);
+	real_free(buf);
+	return TRUE;
+}
+
+#endif /* !__APPLE__ */
 
 /**
  * Leak report white list
@@ -188,18 +497,12 @@ static void uninstall_hooks()
 char *whitelist[] = {
 	/* backtraces, including own */
 	"backtrace_create",
-	"safe_strerror",
+	"strerror_safe",
 	/* pthread stuff */
 	"pthread_create",
 	"pthread_setspecific",
 	"__pthread_setspecific",
 	/* glibc functions */
-	"mktime",
-	"ctime",
-	"__gmtime_r",
-	"localtime_r",
-	"tzset",
-	"time_printf_hook",
 	"inet_ntoa",
 	"strerror",
 	"getprotobyname",
@@ -228,6 +531,7 @@ char *whitelist[] = {
 	"getspnam_r",
 	"getpwuid_r",
 	"initgroups",
+	"tzset",
 	/* ignore dlopen, as we do not dlclose to get proper leak reports */
 	"dlopen",
 	"dlerror",
@@ -247,18 +551,19 @@ char *whitelist[] = {
 	"Curl_client_write",
 	/* ClearSilver */
 	"nerr_init",
-	/* OpenSSL */
-	"RSA_new_method",
-	"DH_new_method",
-	"ENGINE_load_builtin_engines",
-	"OPENSSL_config",
-	"ecdsa_check",
-	"ERR_put_error",
 	/* libgcrypt */
+	"gcrypt_plugin_create",
 	"gcry_control",
 	"gcry_check_version",
 	"gcry_randomize",
 	"gcry_create_nonce",
+	/* OpenSSL: These are needed for unit-tests only, the openssl plugin
+	 * does properly clean up any memory during destroy(). */
+	"ECDSA_do_sign_ex",
+	"ECDSA_verify",
+	"RSA_new_method",
+	/* OpenSSL libssl */
+	"SSL_COMP_get_compression_methods",
 	/* NSPR */
 	"PR_CallOnce",
 	/* libapr */
@@ -277,6 +582,19 @@ char *whitelist[] = {
 	"gnutls_global_init",
 };
 
+/**
+ * Some functions are hard to whitelist, as they don't use a symbol directly.
+ * Use some static initialization to suppress them on leak reports
+ */
+static void init_static_allocations()
+{
+	struct tm tm;
+	time_t t = 0;
+
+	tzset();
+	gmtime_r(&t, &tm);
+	localtime_r(&t, &tm);
+}
 
 /**
  * Hashtable hash function
@@ -309,7 +627,9 @@ static bool equals(backtrace_t *a, backtrace_t *b)
  * Summarize and print backtraces
  */
 static int print_traces(private_leak_detective_t *this,
-						FILE *out, int thresh, bool detailed, int *whitelisted)
+						leak_detective_report_cb_t cb, void *user,
+						int thresh, int thresh_count,
+						bool detailed, int *whitelisted, size_t *sum)
 {
 	int leaks = 0;
 	memory_header_t *hdr;
@@ -323,11 +643,13 @@ static int print_traces(private_leak_detective_t *this,
 		/** number of allocations */
 		u_int count;
 	} *entry;
+	bool before;
 
-	uninstall_hooks();
+	before = enable_thread(FALSE);
 
 	entries = hashtable_create((hashtable_hash_t)hash,
 							   (hashtable_equals_t)equals, 1024);
+	lock->lock(lock);
 	for (hdr = first_header.next; hdr != NULL; hdr = hdr->next)
 	{
 		if (whitelisted &&
@@ -346,29 +668,41 @@ static int print_traces(private_leak_detective_t *this,
 		else
 		{
 			INIT(entry,
-				.backtrace = hdr->backtrace,
+				.backtrace = hdr->backtrace->clone(hdr->backtrace),
 				.bytes = hdr->bytes,
 				.count = 1,
 			);
-			entries->put(entries, hdr->backtrace, entry);
+			entries->put(entries, entry->backtrace, entry);
+		}
+		if (sum)
+		{
+			*sum += hdr->bytes;
 		}
 		leaks++;
 	}
+	lock->unlock(lock);
+
 	enumerator = entries->create_enumerator(entries);
 	while (enumerator->enumerate(enumerator, NULL, &entry))
 	{
-		if (!thresh || entry->bytes >= thresh)
+		if (cb)
 		{
-			fprintf(out, "%d bytes total, %d allocations, %d bytes average:\n",
-					entry->bytes, entry->count, entry->bytes / entry->count);
-			entry->backtrace->log(entry->backtrace, out, detailed);
+			if (!thresh || entry->bytes >= thresh)
+			{
+				if (!thresh_count || entry->count >= thresh_count)
+				{
+					cb(user, entry->count, entry->bytes, entry->backtrace,
+					   detailed);
+				}
+			}
 		}
+		entry->backtrace->destroy(entry->backtrace);
 		free(entry);
 	}
 	enumerator->destroy(enumerator);
 	entries->destroy(entries);
 
-	install_hooks();
+	enable_thread(before);
 	return leaks;
 }
 
@@ -377,137 +711,135 @@ METHOD(leak_detective_t, report, void,
 {
 	if (lib->leak_detective)
 	{
-		int leaks = 0, whitelisted = 0;
+		int leaks, whitelisted = 0;
+		size_t sum = 0;
 
-		leaks = print_traces(this, stderr, 0, detailed, &whitelisted);
-		switch (leaks)
+		leaks = print_traces(this, this->report_cb, this->report_data,
+							 0, 0, detailed, &whitelisted, &sum);
+		if (this->report_scb)
 		{
-			case 0:
-				fprintf(stderr, "No leaks detected");
-				break;
-			case 1:
-				fprintf(stderr, "One leak detected");
-				break;
-			default:
-				fprintf(stderr, "%d leaks detected", leaks);
-				break;
+			this->report_scb(this->report_data, leaks, sum, whitelisted);
 		}
-		fprintf(stderr, ", %d suppressed by whitelist\n", whitelisted);
 	}
-	else
-	{
-		fprintf(stderr, "Leak detective disabled\n");
-	}
+}
+
+METHOD(leak_detective_t, set_report_cb, void,
+	private_leak_detective_t *this, leak_detective_report_cb_t cb,
+	leak_detective_summary_cb_t scb, void *user)
+{
+	this->report_cb = cb;
+	this->report_scb = scb;
+	this->report_data = user;
+}
+
+METHOD(leak_detective_t, leaks, int,
+	private_leak_detective_t *this)
+{
+	int whitelisted = 0;
+
+	return print_traces(this, NULL, NULL, 0, 0, FALSE, &whitelisted, NULL);
 }
 
 METHOD(leak_detective_t, set_state, bool,
 	private_leak_detective_t *this, bool enable)
 {
-	static struct sched_param oldparams;
-	static int oldpolicy;
-	struct sched_param params;
-	pthread_t thread_id;
-
-	if (enable == installed)
-	{
-		return installed;
-	}
-	thread_id = pthread_self();
-	if (enable)
-	{
-		install_hooks();
-		pthread_setschedparam(thread_id, oldpolicy, &oldparams);
-	}
-	else
-	{
-		pthread_getschedparam(thread_id, &oldpolicy, &oldparams);
-		params.__sched_priority = sched_get_priority_max(SCHED_FIFO);
-		pthread_setschedparam(thread_id, SCHED_FIFO, &params);
-		uninstall_hooks();
-	}
-	installed = enable;
-	return !installed;
+	return enable_thread(enable);
 }
 
 METHOD(leak_detective_t, usage, void,
-	private_leak_detective_t *this, FILE *out)
+	private_leak_detective_t *this, leak_detective_report_cb_t cb,
+	leak_detective_summary_cb_t scb, void *user)
 {
-	int oldpolicy, thresh;
 	bool detailed;
-	pthread_t thread_id = pthread_self();
-	struct sched_param oldparams, params;
+	int thresh, thresh_count, leaks, whitelisted = 0;
+	size_t sum = 0;
 
 	thresh = lib->settings->get_int(lib->settings,
-					"libstrongswan.leak_detective.usage_threshold", 10240);
+						"%s.leak_detective.usage_threshold", 10240, lib->ns);
+	thresh_count = lib->settings->get_int(lib->settings,
+						"%s.leak_detective.usage_threshold_count", 0, lib->ns);
 	detailed = lib->settings->get_bool(lib->settings,
-					"libstrongswan.leak_detective.detailed", TRUE);
+						"%s.leak_detective.detailed", TRUE, lib->ns);
 
-	pthread_getschedparam(thread_id, &oldpolicy, &oldparams);
-	params.__sched_priority = sched_get_priority_max(SCHED_FIFO);
-	pthread_setschedparam(thread_id, SCHED_FIFO, &params);
-
-	print_traces(this, out, thresh, detailed, NULL);
-
-	pthread_setschedparam(thread_id, oldpolicy, &oldparams);
+	leaks = print_traces(this, cb, user, thresh, thresh_count,
+						 detailed, &whitelisted, &sum);
+	if (scb)
+	{
+		scb(user, leaks, sum, whitelisted);
+	}
 }
 
 /**
- * Hook function for malloc()
+ * Wrapped malloc() function
  */
-void *malloc_hook(size_t bytes, const void *caller)
+HOOK(void*, malloc, size_t bytes)
 {
 	memory_header_t *hdr;
 	memory_tail_t *tail;
-	pthread_t thread_id = pthread_self();
-	int oldpolicy;
-	struct sched_param oldparams, params;
+	bool before;
 
-	pthread_getschedparam(thread_id, &oldpolicy, &oldparams);
+	if (!enabled || thread_disabled->get(thread_disabled))
+	{
+		return real_malloc(bytes);
+	}
 
-	params.__sched_priority = sched_get_priority_max(SCHED_FIFO);
-	pthread_setschedparam(thread_id, SCHED_FIFO, &params);
-
-	count_malloc++;
-	uninstall_hooks();
-	hdr = malloc(sizeof(memory_header_t) + bytes + sizeof(memory_tail_t));
+	hdr = real_malloc(sizeof(memory_header_t) + bytes + sizeof(memory_tail_t));
 	tail = ((void*)hdr) + bytes + sizeof(memory_header_t);
 	/* set to something which causes crashes */
 	memset(hdr, MEMORY_ALLOC_PATTERN,
 		   sizeof(memory_header_t) + bytes + sizeof(memory_tail_t));
 
+	before = enable_thread(FALSE);
+	hdr->backtrace = backtrace_create(2);
+	enable_thread(before);
+
 	hdr->magic = MEMORY_HEADER_MAGIC;
 	hdr->bytes = bytes;
-	hdr->backtrace = backtrace_create(2);
 	tail->magic = MEMORY_TAIL_MAGIC;
-	install_hooks();
 
-	/* insert at the beginning of the list */
-	hdr->next = first_header.next;
-	if (hdr->next)
-	{
-		hdr->next->previous = hdr;
-	}
-	hdr->previous = &first_header;
-	first_header.next = hdr;
-
-	pthread_setschedparam(thread_id, oldpolicy, &oldparams);
+	add_hdr(hdr);
 
 	return hdr + 1;
 }
 
 /**
- * Hook function for free()
+ * Wrapped calloc() function
  */
-void free_hook(void *ptr, const void *caller)
+HOOK(void*, calloc, size_t nmemb, size_t size)
 {
-	memory_header_t *hdr, *current;
+	void *ptr;
+
+	size *= nmemb;
+	ptr = malloc(size);
+	memset(ptr, 0, size);
+
+	return ptr;
+}
+
+/**
+ * Wrapped valloc(), TODO: currently not supported
+ */
+HOOK(void*, valloc, size_t size)
+{
+	DBG1(DBG_LIB, "valloc() used, but leak-detective hook missing");
+	return NULL;
+}
+
+/**
+ * Wrapped free() function
+ */
+HOOK(void, free, void *ptr)
+{
+	memory_header_t *hdr;
 	memory_tail_t *tail;
 	backtrace_t *backtrace;
-	pthread_t thread_id = pthread_self();
-	int oldpolicy;
-	struct sched_param oldparams, params;
-	bool found = FALSE;
+	bool before;
 
+	if (!enabled || thread_disabled->get(thread_disabled))
+	{
+		real_free(ptr);
+		return;
+	}
 	/* allow freeing of NULL */
 	if (ptr == NULL)
 	{
@@ -516,25 +848,11 @@ void free_hook(void *ptr, const void *caller)
 	hdr = ptr - sizeof(memory_header_t);
 	tail = ptr + hdr->bytes;
 
-	pthread_getschedparam(thread_id, &oldpolicy, &oldparams);
-
-	params.__sched_priority = sched_get_priority_max(SCHED_FIFO);
-	pthread_setschedparam(thread_id, SCHED_FIFO, &params);
-
-	count_free++;
-	uninstall_hooks();
+	before = enable_thread(FALSE);
 	if (hdr->magic != MEMORY_HEADER_MAGIC ||
 		tail->magic != MEMORY_TAIL_MAGIC)
 	{
-		for (current = &first_header; current != NULL; current = current->next)
-		{
-			if (current == hdr)
-			{
-				found = TRUE;
-				break;
-			}
-		}
-		if (found)
+		if (has_hdr(hdr))
 		{
 			/* memory was allocated by our hooks but is corrupted */
 			fprintf(stderr, "freeing corrupted memory (%p): "
@@ -544,7 +862,7 @@ void free_hook(void *ptr, const void *caller)
 		else
 		{
 			/* memory was not allocated by our hooks */
-			fprintf(stderr, "freeing invalid memory (%p)", ptr);
+			fprintf(stderr, "freeing invalid memory (%p)\n", ptr);
 		}
 		backtrace = backtrace_create(2);
 		backtrace->log(backtrace, stderr, TRUE);
@@ -552,53 +870,50 @@ void free_hook(void *ptr, const void *caller)
 	}
 	else
 	{
-		/* remove item from list */
-		if (hdr->next)
-		{
-			hdr->next->previous = hdr->previous;
-		}
-		hdr->previous->next = hdr->next;
+		remove_hdr(hdr);
+
 		hdr->backtrace->destroy(hdr->backtrace);
 
 		/* clear MAGIC, set mem to something remarkable */
 		memset(hdr, MEMORY_FREE_PATTERN,
 			   sizeof(memory_header_t) + hdr->bytes + sizeof(memory_tail_t));
 
-		free(hdr);
+		real_free(hdr);
 	}
-
-	install_hooks();
-	pthread_setschedparam(thread_id, oldpolicy, &oldparams);
+	enable_thread(before);
 }
 
 /**
- * Hook function for realloc()
+ * Wrapped realloc() function
  */
-void *realloc_hook(void *old, size_t bytes, const void *caller)
+HOOK(void*, realloc, void *old, size_t bytes)
 {
 	memory_header_t *hdr;
 	memory_tail_t *tail;
 	backtrace_t *backtrace;
-	pthread_t thread_id = pthread_self();
-	int oldpolicy;
-	struct sched_param oldparams, params;
+	bool before;
 
+	if (!enabled || thread_disabled->get(thread_disabled))
+	{
+		return real_realloc(old, bytes);
+	}
 	/* allow reallocation of NULL */
 	if (old == NULL)
 	{
-		return malloc_hook(bytes, caller);
+		return malloc(bytes);
+	}
+	/* handle zero size as a free() */
+	if (bytes == 0)
+	{
+		free(old);
+		return NULL;
 	}
 
 	hdr = old - sizeof(memory_header_t);
 	tail = old + hdr->bytes;
 
-	pthread_getschedparam(thread_id, &oldpolicy, &oldparams);
+	remove_hdr(hdr);
 
-	params.__sched_priority = sched_get_priority_max(SCHED_FIFO);
-	pthread_setschedparam(thread_id, SCHED_FIFO, &params);
-
-	count_realloc++;
-	uninstall_hooks();
 	if (hdr->magic != MEMORY_HEADER_MAGIC ||
 		tail->magic != MEMORY_TAIL_MAGIC)
 	{
@@ -613,34 +928,32 @@ void *realloc_hook(void *old, size_t bytes, const void *caller)
 		/* clear tail magic, allocate, set tail magic */
 		memset(&tail->magic, MEMORY_ALLOC_PATTERN, sizeof(tail->magic));
 	}
-	hdr = realloc(hdr, sizeof(memory_header_t) + bytes + sizeof(memory_tail_t));
+	hdr = real_realloc(hdr,
+					   sizeof(memory_header_t) + bytes + sizeof(memory_tail_t));
 	tail = ((void*)hdr) + bytes + sizeof(memory_header_t);
 	tail->magic = MEMORY_TAIL_MAGIC;
 
 	/* update statistics */
 	hdr->bytes = bytes;
+
+	before = enable_thread(FALSE);
 	hdr->backtrace->destroy(hdr->backtrace);
 	hdr->backtrace = backtrace_create(2);
+	enable_thread(before);
 
-	/* update header of linked list neighbours */
-	if (hdr->next)
-	{
-		hdr->next->previous = hdr;
-	}
-	hdr->previous->next = hdr;
-	install_hooks();
-	pthread_setschedparam(thread_id, oldpolicy, &oldparams);
+	add_hdr(hdr);
+
 	return hdr + 1;
 }
 
 METHOD(leak_detective_t, destroy, void,
 	private_leak_detective_t *this)
 {
-	if (installed)
-	{
-		uninstall_hooks();
-	}
+	disable_leak_detective();
+	lock->destroy(lock);
+	thread_disabled->destroy(thread_disabled);
 	free(this);
+	first_header.next = NULL;
 }
 
 /*
@@ -653,26 +966,28 @@ leak_detective_t *leak_detective_create()
 	INIT(this,
 		.public = {
 			.report = _report,
+			.set_report_cb = _set_report_cb,
 			.usage = _usage,
+			.leaks = _leaks,
 			.set_state = _set_state,
 			.destroy = _destroy,
 		},
 	);
 
-	if (getenv("LEAK_DETECTIVE_DISABLE") == NULL)
+	if (getenv("LEAK_DETECTIVE_DISABLE") != NULL)
 	{
-		cpu_set_t mask;
+		free(this);
+		return NULL;
+	}
 
-		CPU_ZERO(&mask);
-		CPU_SET(0, &mask);
+	lock = spinlock_create();
+	thread_disabled = thread_value_create(NULL);
 
-		if (sched_setaffinity(0, sizeof(cpu_set_t), &mask) != 0)
-		{
-			fprintf(stderr, "setting CPU affinity failed: %m");
-		}
+	init_static_allocations();
 
-		install_hooks();
+	if (register_hooks())
+	{
+		enable_leak_detective();
 	}
 	return &this->public;
 }
-

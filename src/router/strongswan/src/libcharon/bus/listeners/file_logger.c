@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Tobias Brunner
+ * Copyright (C) 2012-2015 Tobias Brunner
  * Copyright (C) 2006 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
@@ -50,6 +50,11 @@ struct private_file_logger_t {
 	FILE *out;
 
 	/**
+	 * Flush after writing a line?
+	 */
+	bool flush_line;
+
+	/**
 	 * Maximum level to log, for each group
 	 */
 	level_t levels[DBG_MAX];
@@ -58,6 +63,11 @@ struct private_file_logger_t {
 	 * strftime() format of time prefix, if any
 	 */
 	char *time_format;
+
+	/**
+	 * Add milliseconds after the time string
+	 */
+	bool add_ms;
 
 	/**
 	 * Print the name/# of the IKE_SA?
@@ -82,7 +92,9 @@ METHOD(logger_t, log_, void,
 	char timestr[128], namestr[128] = "";
 	const char *current = message, *next;
 	struct tm tm;
-	time_t t;
+	timeval_t tv;
+	time_t s;
+	u_int ms = 0;
 
 	this->lock->read_lock(this->lock);
 	if (!this->out)
@@ -92,8 +104,10 @@ METHOD(logger_t, log_, void,
 	}
 	if (this->time_format)
 	{
-		t = time(NULL);
-		localtime_r(&t, &tm);
+		gettimeofday(&tv, NULL);
+		s = tv.tv_sec;
+		ms = tv.tv_usec / 1000;
+		localtime_r(&s, &tm);
 		strftime(timestr, sizeof(timestr), this->time_format, &tm);
 	}
 	if (this->ike_name && ike_sa)
@@ -121,8 +135,16 @@ METHOD(logger_t, log_, void,
 		next = strchr(current, '\n');
 		if (this->time_format)
 		{
-			fprintf(this->out, "%s %.2d[%N]%s ",
-					timestr, thread, debug_names, group, namestr);
+			if (this->add_ms)
+			{
+				fprintf(this->out, "%s.%03u %.2d[%N]%s ",
+						timestr, ms, thread, debug_names, group, namestr);
+			}
+			else
+			{
+				fprintf(this->out, "%s %.2d[%N]%s ",
+						timestr, thread, debug_names, group, namestr);
+			}
 		}
 		else
 		{
@@ -137,6 +159,12 @@ METHOD(logger_t, log_, void,
 		fprintf(this->out, "%.*s\n", (int)(next - current), current);
 		current = next + 1;
 	}
+#ifndef HAVE_SETLINEBUF
+	if (this->flush_line)
+	{
+		fflush(this->out);
+	}
+#endif /* !HAVE_SETLINEBUF */
 	this->mutex->unlock(this->mutex);
 	this->lock->unlock(this->lock);
 }
@@ -171,11 +199,12 @@ METHOD(file_logger_t, set_level, void,
 }
 
 METHOD(file_logger_t, set_options, void,
-	private_file_logger_t *this, char *time_format, bool ike_name)
+	private_file_logger_t *this, char *time_format, bool add_ms, bool ike_name)
 {
 	this->lock->write_lock(this->lock);
 	free(this->time_format);
 	this->time_format = strdupnull(time_format);
+	this->add_ms = add_ms;
 	this->ike_name = ike_name;
 	this->lock->unlock(this->lock);
 }
@@ -214,14 +243,17 @@ METHOD(file_logger_t, open_, void,
 				 this->filename, strerror(errno));
 			return;
 		}
+#ifdef HAVE_SETLINEBUF
 		if (flush_line)
 		{
 			setlinebuf(file);
 		}
+#endif /* HAVE_SETLINEBUF */
 	}
 	this->lock->write_lock(this->lock);
 	close_file(this);
 	this->out = file;
+	this->flush_line = flush_line;
 	this->lock->unlock(this->lock);
 }
 

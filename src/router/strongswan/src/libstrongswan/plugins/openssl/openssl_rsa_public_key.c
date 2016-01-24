@@ -19,9 +19,11 @@
 #ifndef OPENSSL_NO_RSA
 
 #include "openssl_rsa_public_key.h"
+#include "openssl_util.h"
 
 #include <utils/debug.h>
 
+#include <openssl/bn.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
@@ -73,7 +75,7 @@ static bool verify_emsa_pkcs1_signature(private_openssl_rsa_public_key_t *this,
 								 RSA_PKCS1_PADDING);
 		if (len != -1)
 		{
-			valid = chunk_equals(data, chunk_create(buf, len));
+			valid = chunk_equals_const(data, chunk_create(buf, len));
 		}
 		free(buf);
 	}
@@ -221,7 +223,21 @@ bool openssl_rsa_fingerprint(RSA *rsa, cred_encoding_type_t type, chunk_t *fp)
 			i2d_RSA_PUBKEY(rsa, &p);
 			break;
 		default:
-			return FALSE;
+		{
+			chunk_t n = chunk_empty, e = chunk_empty;
+			bool success = FALSE;
+
+			if (openssl_bn2chunk(rsa->n, &n) &&
+				openssl_bn2chunk(rsa->e, &e))
+			{
+				success = lib->encoding->encode(lib->encoding, type, rsa, fp,
+									CRED_PART_RSA_MODULUS, n,
+									CRED_PART_RSA_PUB_EXP, e, CRED_PART_END);
+			}
+			chunk_free(&n);
+			chunk_free(&e);
+			return success;
+		}
 	}
 	hasher = lib->crypto->create_hasher(lib->crypto, HASH_SHA1);
 	if (!hasher || !hasher->allocate_hash(hasher, key, fp))
@@ -248,6 +264,7 @@ METHOD(public_key_t, get_encoding, bool,
 	private_openssl_rsa_public_key_t *this, cred_encoding_type_t type,
 	chunk_t *encoding)
 {
+	bool success = FALSE;
 	u_char *p;
 
 	switch (type)
@@ -255,11 +272,10 @@ METHOD(public_key_t, get_encoding, bool,
 		case PUBKEY_SPKI_ASN1_DER:
 		case PUBKEY_PEM:
 		{
-			bool success = TRUE;
-
 			*encoding = chunk_alloc(i2d_RSA_PUBKEY(this->rsa, NULL));
 			p = encoding->ptr;
 			i2d_RSA_PUBKEY(this->rsa, &p);
+			success = TRUE;
 
 			if (type == PUBKEY_PEM)
 			{
@@ -280,7 +296,20 @@ METHOD(public_key_t, get_encoding, bool,
 			return TRUE;
 		}
 		default:
-			return FALSE;
+		{
+			chunk_t n = chunk_empty, e = chunk_empty;
+
+			if (openssl_bn2chunk(this->rsa->n, &n) &&
+				openssl_bn2chunk(this->rsa->e, &e))
+			{
+				success = lib->encoding->encode(lib->encoding, type, NULL,
+									encoding, CRED_PART_RSA_MODULUS, n,
+									CRED_PART_RSA_PUB_EXP, e, CRED_PART_END);
+			}
+			chunk_free(&n);
+			chunk_free(&e);
+			return success;
+		}
 	}
 }
 

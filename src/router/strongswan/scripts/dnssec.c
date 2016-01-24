@@ -45,12 +45,12 @@ int main(int argc, char *argv[])
 	rr_set_t *rrset;
 	rr_t *rr;
 
-	library_init(NULL);
+	library_init(NULL, "dnssec");
 	atexit(library_deinit);
 
 	dbg = dbg_dnssec;
 
-	if (!lib->plugins->load(lib->plugins, NULL, PLUGINS))
+	if (!lib->plugins->load(lib->plugins, PLUGINS))
 	{
 		return 1;
 	}

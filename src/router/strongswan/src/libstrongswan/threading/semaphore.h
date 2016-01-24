@@ -21,6 +21,8 @@
 #ifndef THREADING_SEMAPHORE_H_
 #define THREADING_SEMAPHORE_H_
 
+#include <utils/utils.h>
+
 typedef struct semaphore_t semaphore_t;
 
 /**
@@ -82,4 +84,3 @@ struct semaphore_t {
 semaphore_t *semaphore_create(u_int value);
 
 #endif /** THREADING_SEMAPHORE_H_ @} */
-

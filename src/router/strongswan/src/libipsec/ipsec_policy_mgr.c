@@ -22,7 +22,7 @@
 #include <collections/linked_list.h>
 
 /** Base priority for installed policies */
-#define PRIO_BASE 512
+#define PRIO_BASE 384
 
 typedef struct private_ipsec_policy_mgr_t private_ipsec_policy_mgr_t;
 
@@ -88,6 +88,9 @@ static u_int32_t calculate_priority(policy_priority_t policy_priority,
 			priority <<= 1;
 			/* fall-through */
 		case POLICY_PRIORITY_DEFAULT:
+			priority <<= 1;
+			/* fall-through */
+		case POLICY_PRIORITY_PASS:
 			break;
 	}
 	/* calculate priority based on selector size, small size = high prio */
@@ -230,7 +233,8 @@ METHOD(ipsec_policy_mgr_t, flush_policies, status_t,
 }
 
 METHOD(ipsec_policy_mgr_t, find_by_packet, ipsec_policy_t*,
-	private_ipsec_policy_mgr_t *this, ip_packet_t *packet, bool inbound)
+	private_ipsec_policy_mgr_t *this, ip_packet_t *packet, bool inbound,
+	u_int32_t reqid)
 {
 	enumerator_t *enumerator;
 	ipsec_policy_entry_t *current;
@@ -245,8 +249,11 @@ METHOD(ipsec_policy_mgr_t, find_by_packet, ipsec_policy_t*,
 		if ((inbound == (policy->get_direction(policy) == POLICY_IN)) &&
 			 policy->match_packet(policy, packet))
 		{
-			found = policy->get_ref(policy);
-			break;
+			if (reqid == 0 || reqid == policy->get_reqid(policy))
+			{
+				found = policy->get_ref(policy);
+				break;
+			}
 		}
 	}
 	enumerator->destroy(enumerator);

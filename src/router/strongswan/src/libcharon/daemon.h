@@ -19,6 +19,9 @@
 /**
  * @defgroup libcharon libcharon
  *
+ * @defgroup attributes attributes
+ * @ingroup libcharon
+ *
  * @defgroup bus bus
  * @ingroup libcharon
  *
@@ -152,18 +155,19 @@
 
 typedef struct daemon_t daemon_t;
 
+#include <attributes/attribute_manager.h>
 #include <network/sender.h>
 #include <network/receiver.h>
 #include <network/socket_manager.h>
 #include <control/controller.h>
 #include <bus/bus.h>
 #include <sa/ike_sa_manager.h>
+#include <sa/child_sa_manager.h>
 #include <sa/trap_manager.h>
 #include <sa/shunt_manager.h>
 #include <config/backend_manager.h>
 #include <sa/eap/eap_manager.h>
 #include <sa/xauth/xauth_manager.h>
-#include <utils/capabilities.h>
 
 #ifdef ME
 #include <sa/ikev2/connect_manager.h>
@@ -216,6 +220,11 @@ struct daemon_t {
 	ike_sa_manager_t *ike_sa_manager;
 
 	/**
+	 * A child_sa_manager_t instance.
+	 */
+	child_sa_manager_t *child_sa_manager;
+
+	/**
 	 * Manager for triggering policies, called traps
 	 */
 	trap_manager_t *traps;
@@ -239,6 +248,11 @@ struct daemon_t {
 	 * The Receiver-Thread.
 	 */
 	receiver_t *receiver;
+
+	/**
+	 * Manager for IKE configuration attributes
+	 */
+	attribute_manager_t *attributes;
 
 	/**
 	 * The signaling bus.
@@ -271,16 +285,6 @@ struct daemon_t {
 	 */
 	mediation_manager_t *mediation_manager;
 #endif /* ME */
-
-	/**
-	 * POSIX capability dropping
-	 */
-	capabilities_t *caps;
-
-	/**
-	 * Name of the binary that uses the library (used for settings etc.)
-	 */
-	const char *name;
 
 	/**
 	 * Initialize the daemon.
@@ -330,12 +334,11 @@ extern daemon_t *charon;
  * calling initialize().
  *
  * libcharon_init() may be called multiple times in a single process, but each
- * caller should call libcharon_deinit() for each call to libcharon_init().
+ * caller must call libcharon_deinit() for each call to libcharon_init().
  *
- * @param name	name of the binary that uses the library
  * @return		FALSE if integrity check failed
  */
-bool libcharon_init(const char *name);
+bool libcharon_init();
 
 /**
  * Deinitialize libcharon and destroy the "charon" instance of daemon_t.

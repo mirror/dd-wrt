@@ -105,7 +105,7 @@ static int run_client(host_t *host, identification_t *server,
 			close(fd);
 			return 1;
 		}
-		tls = tls_socket_create(FALSE, server, client, fd, cache);
+		tls = tls_socket_create(FALSE, server, client, fd, cache, TLS_1_2, TRUE);
 		if (!tls)
 		{
 			close(fd);
@@ -162,7 +162,7 @@ static int serve(host_t *host, identification_t *server,
 		}
 		DBG1(DBG_TLS, "%#H connected", host);
 
-		tls = tls_socket_create(TRUE, server, NULL, cfd, cache);
+		tls = tls_socket_create(TRUE, server, NULL, cfd, cache, TLS_1_2, TRUE);
 		if (!tls)
 		{
 			close(fd);
@@ -251,11 +251,11 @@ static void cleanup()
  */
 static void init()
 {
-	library_init(NULL);
+	library_init(NULL, "tls_test");
 
 	dbg = dbg_tls;
 
-	lib->plugins->load(lib->plugins, NULL, PLUGINS);
+	lib->plugins->load(lib->plugins, PLUGINS);
 
 	creds = mem_cred_create();
 	lib->credmgr->add_set(lib->credmgr, &creds->set);

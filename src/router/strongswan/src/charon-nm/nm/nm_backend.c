@@ -18,13 +18,8 @@
 #include "nm_creds.h"
 #include "nm_handler.h"
 
-#include <hydra.h>
 #include <daemon.h>
 #include <processing/jobs/callback_job.h>
-
-#ifndef CAP_DAC_OVERRIDE
-#define CAP_DAC_OVERRIDE 1
-#endif
 
 typedef struct nm_backend_t nm_backend_t;
 
@@ -101,7 +96,8 @@ static void nm_backend_deinit()
 		g_object_unref(this->plugin);
 	}
 	lib->credmgr->remove_set(lib->credmgr, &this->creds->set);
-	hydra->attributes->remove_handler(hydra->attributes, &this->handler->handler);
+	charon->attributes->remove_handler(charon->attributes,
+									   &this->handler->handler);
 	this->creds->destroy(this->creds);
 	this->handler->destroy(this->handler);
 	free(this);
@@ -116,7 +112,9 @@ static bool nm_backend_init()
 {
 	nm_backend_t *this;
 
+#if !GLIB_CHECK_VERSION(2,36,0)
 	g_type_init ();
+#endif
 
 #if !GLIB_CHECK_VERSION(2,23,0)
 	if (!g_thread_supported())
@@ -132,7 +130,7 @@ static bool nm_backend_init()
 	this->plugin = nm_strongswan_plugin_new(this->creds, this->handler);
 	nm_backend = this;
 
-	hydra->attributes->add_handler(hydra->attributes, &this->handler->handler);
+	charon->attributes->add_handler(charon->attributes, &this->handler->handler);
 	lib->credmgr->add_set(lib->credmgr, &this->creds->set);
 	if (!this->plugin)
 	{
@@ -140,9 +138,6 @@ static bool nm_backend_init()
 		nm_backend_deinit();
 		return FALSE;
 	}
-
-	/* bypass file permissions to read from users ssh-agent */
-	charon->caps->keep(charon->caps, CAP_DAC_OVERRIDE);
 
 	lib->processor->queue_job(lib->processor,
 		(job_t*)callback_job_create_with_prio((callback_job_cb_t)run, this,
@@ -179,5 +174,5 @@ void nm_backend_register()
 				PLUGIN_SDEPEND(CERT_DECODE, CERT_X509),
 	};
 	lib->plugins->add_static_features(lib->plugins, "nm-backend", features,
-									  countof(features), TRUE);
+									  countof(features), TRUE, NULL, NULL);
 }

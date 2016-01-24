@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Andreas Steffen
+ * Copyright (C) 2012-2015 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -51,14 +51,19 @@ struct ietf_attr_fwd_enabled_t {
  * Creates an ietf_attr_fwd_enabled_t object
  *
  * @param fwd_status		Forwarding Enabled status
+ * @param type				Vendor ID / Attribute Type
  */
-pa_tnc_attr_t* ietf_attr_fwd_enabled_create(os_fwd_status_t fwd_status);
+pa_tnc_attr_t* ietf_attr_fwd_enabled_create(os_fwd_status_t fwd_status,
+											pen_type_t type);
 
 /**
  * Creates an ietf_attr_fwd_enabled_t object from received data
  *
- * @param value				unparsed attribute value
+ * @param length			Total length of attribute value
+ * @param value				Unparsed attribute value (might be a segment)
+ * @param type				Vendor ID / Attribute Type
  */
-pa_tnc_attr_t* ietf_attr_fwd_enabled_create_from_data(chunk_t value);
+pa_tnc_attr_t* ietf_attr_fwd_enabled_create_from_data(size_t length,
+										chunk_t value, pen_type_t type);
 
 #endif /** IETF_ATTR_FWD_ENABLED_H_ @}*/

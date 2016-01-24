@@ -103,7 +103,7 @@ METHOD(authenticator_t, process, status_t,
 	int keys_found = 0;
 	keymat_v2_t *keymat;
 
-	auth_payload = (auth_payload_t*)message->get_payload(message, AUTHENTICATION);
+	auth_payload = (auth_payload_t*)message->get_payload(message, PLV2_AUTH);
 	if (!auth_payload)
 	{
 		return FAILED;
@@ -123,7 +123,7 @@ METHOD(authenticator_t, process, status_t,
 		{
 			continue;
 		}
-		if (auth_data.len && chunk_equals(auth_data, recv_auth_data))
+		if (auth_data.len && chunk_equals_const(auth_data, recv_auth_data))
 		{
 			DBG1(DBG_IKE, "authentication of '%Y' with %N successful",
 				 other_id, auth_method_names, AUTH_PSK);
