@@ -14,6 +14,7 @@
 #include <linux/sched.h>
 #include <linux/syscalls.h>
 #include <linux/mm.h>
+#include <linux/highmem.h>
 
 #include <asm/cacheflush.h>
 #include <asm/processor.h>
@@ -82,6 +83,15 @@ SYSCALL_DEFINE3(cacheflush, unsigned long, addr, unsigned long, bytes,
 	return 0;
 }
 
+static void
+flush_highmem_page(struct page *page)
+{
+	void *addr = kmap_atomic(page);
+	flush_data_cache_page((unsigned long)addr);
+	kunmap_atomic(addr);
+}
+
+
 void __flush_dcache_page(struct page *page)
 {
 	void *addr;
@@ -97,9 +107,7 @@ void __flush_dcache_page(struct page *page)
 	 * get faulted into the tlb (and thus flushed) anyways.
 	 */
 	if (PageHighMem(page)) {
-		addr = kmap_atomic(page);
-		flush_data_cache_page((unsigned long)addr);
-		kunmap_atomic(addr);
+		flush_highmem_page(page)
 	} else {
 		addr = (void *) page_address(page);
 		flush_data_cache_page((unsigned long)addr);
@@ -154,8 +162,10 @@ void __flush_icache_page(struct vm_area_struct *vma, struct page *page)
 {
 	unsigned long addr;
 
-	if (PageHighMem(page))
+	if (PageHighMem(page)) {
+		flush_highmem_page(page);
 		return;
+	}
 
 	addr = (unsigned long) page_address(page);
 	flush_data_cache_page(addr);
