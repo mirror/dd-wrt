@@ -973,6 +973,8 @@ USE_AESNI_FALSE
 USE_AESNI_TRUE
 USE_RDRAND_FALSE
 USE_RDRAND_TRUE
+USE_GMPDH_FALSE
+USE_GMPDH_TRUE
 USE_GMP_FALSE
 USE_GMP_TRUE
 USE_FIPS_PRF_FALSE
@@ -1288,6 +1290,7 @@ enable_fips_prf
 enable_gcm
 enable_gcrypt
 enable_gmp
+enable_gmpdh
 enable_hmac
 enable_md4
 enable_md5
@@ -2126,6 +2129,8 @@ Optional Features:
   --enable-gcrypt         enables the libgcrypt plugin.
   --disable-gmp           disable GNU MP (libgmp) based crypto implementation
                           plugin.
+  --disable-gmpdh         disable GNU MP (libgmp) based static-linked crypto
+                          DH minimal implementation plugin.
   --disable-hmac          disable HMAC crypto implementation plugin.
   --enable-md4            enable MD4 software implementation plugin.
   --disable-md5           disable MD5 software implementation plugin.
@@ -3415,7 +3420,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-am__api_version='1.14'
+am__api_version='1.13'
 
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
@@ -4097,47 +4102,6 @@ $as_echo "$am_cv_prog_tar_ustar" >&6; }
 
 
 
-# POSIX will say in a future version that running "rm -f" with no argument
-# is OK; and we want to be able to make that assumption in our Makefile
-# recipes.  So use an aggressive probe to check that the usage we want is
-# actually supported "in the wild" to an acceptable degree.
-# See automake bug#10828.
-# To make any issue more visible, cause the running configure to be aborted
-# by default if the 'rm' program in use doesn't match our expectations; the
-# user can still override this though.
-if rm -f && rm -fr && rm -rf; then : OK; else
-  cat >&2 <<'END'
-Oops!
-
-Your 'rm' program seems unable to run without file operands specified
-on the command line, even when the '-f' option is present.  This is contrary
-to the behaviour of most rm programs out there, and not conforming with
-the upcoming POSIX standard: <http://austingroupbugs.net/view.php?id=542>
-
-Please tell bug-automake@gnu.org about your system, including the value
-of your $PATH and any error possibly output before this message.  This
-can help us improve future automake versions.
-
-END
-  if test x"$ACCEPT_INFERIOR_RM_PROGRAM" = x"yes"; then
-    echo 'Configuration will proceed anyway, since you have set the' >&2
-    echo 'ACCEPT_INFERIOR_RM_PROGRAM variable to "yes"' >&2
-    echo >&2
-  else
-    cat >&2 <<'END'
-Aborting the configuration process, to ensure you take notice of the issue.
-
-You can download and install GNU coreutils to get an 'rm' implementation
-that behaves properly: <http://www.gnu.org/software/coreutils/>.
-
-If you want to complete the configuration process using your problematic
-'rm' anyway, export the environment variable ACCEPT_INFERIOR_RM_PROGRAM
-to "yes", and re-run configure.
-
-END
-    as_fn_error $? "Your 'rm' program is bad, sorry." "$LINENO" 5
-  fi
-fi
 # Check whether --enable-silent-rules was given.
 if test "${enable_silent_rules+set}" = set; then :
   enableval=$enable_silent_rules;
@@ -4990,6 +4954,22 @@ else
 fi
 
 	enabled_by_default=${enabled_by_default}" gmp"
+
+# Check whether --enable-gmpdh was given.
+if test "${enable_gmpdh+set}" = set; then :
+  enableval=$enable_gmpdh; gmpdh_given=true
+		if test x$enableval = xyes; then
+			gmpdh=true
+		 else
+			gmpdh=false
+		fi
+else
+  gmpdh=true
+		gmpdh_given=false
+
+fi
+
+	enabled_by_default=${enabled_by_default}" gmpdh"
 
 # Check whether --enable-hmac was given.
 if test "${enable_hmac+set}" = set; then :
@@ -8367,65 +8347,6 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC understands -c and -o together" >&5
-$as_echo_n "checking whether $CC understands -c and -o together... " >&6; }
-if ${am_cv_prog_cc_c_o+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-  # Make sure it works both with $CC and with simple cc.
-  # Following AC_PROG_CC_C_O, we do the test twice because some
-  # compilers refuse to overwrite an existing .o file with -o,
-  # though they will create one.
-  am_cv_prog_cc_c_o=yes
-  for am_i in 1 2; do
-    if { echo "$as_me:$LINENO: $CC -c conftest.$ac_ext -o conftest2.$ac_objext" >&5
-   ($CC -c conftest.$ac_ext -o conftest2.$ac_objext) >&5 2>&5
-   ac_status=$?
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } \
-         && test -f conftest2.$ac_objext; then
-      : OK
-    else
-      am_cv_prog_cc_c_o=no
-      break
-    fi
-  done
-  rm -f core conftest*
-  unset am_i
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_prog_cc_c_o" >&5
-$as_echo "$am_cv_prog_cc_c_o" >&6; }
-if test "$am_cv_prog_cc_c_o" != yes; then
-   # Losing compiler, so override with the script.
-   # FIXME: It is wrong to rewrite CC.
-   # But if we don't then we get into trouble of one sort or another.
-   # A longer-term fix would be to have automake use am__CC in this case,
-   # and then we could set am__CC="\$(top_srcdir)/compile \$(CC)"
-   CC="$am_aux_dir/compile $CC"
-fi
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
 DEPDIR="${am__leading_dot}deps"
 
 ac_config_commands="$ac_config_commands depfiles"
@@ -8617,6 +8538,131 @@ else
   am__fastdepCC_FALSE=
 fi
 
+
+if test "x$CC" != xcc; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC and cc understand -c and -o together" >&5
+$as_echo_n "checking whether $CC and cc understand -c and -o together... " >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether cc understands -c and -o together" >&5
+$as_echo_n "checking whether cc understands -c and -o together... " >&6; }
+fi
+set dummy $CC; ac_cc=`$as_echo "$2" |
+		      sed 's/[^a-zA-Z0-9_]/_/g;s/^[0-9]/_/'`
+if eval \${ac_cv_prog_cc_${ac_cc}_c_o+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+# Make sure it works both with $CC and with simple cc.
+# We do the test twice because some compilers refuse to overwrite an
+# existing .o file with -o, though they will create one.
+ac_try='$CC -c conftest.$ac_ext -o conftest2.$ac_objext >&5'
+rm -f conftest2.*
+if { { case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } &&
+   test -f conftest2.$ac_objext && { { case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; };
+then
+  eval ac_cv_prog_cc_${ac_cc}_c_o=yes
+  if test "x$CC" != xcc; then
+    # Test first that cc exists at all.
+    if { ac_try='cc -c conftest.$ac_ext >&5'
+  { { case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; }; then
+      ac_try='cc -c conftest.$ac_ext -o conftest2.$ac_objext >&5'
+      rm -f conftest2.*
+      if { { case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } &&
+	 test -f conftest2.$ac_objext && { { case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; };
+      then
+	# cc works too.
+	:
+      else
+	# cc exists but doesn't like -o.
+	eval ac_cv_prog_cc_${ac_cc}_c_o=no
+      fi
+    fi
+  fi
+else
+  eval ac_cv_prog_cc_${ac_cc}_c_o=no
+fi
+rm -f core conftest*
+
+fi
+if eval test \$ac_cv_prog_cc_${ac_cc}_c_o = yes; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+$as_echo "#define NO_MINUS_C_MINUS_O 1" >>confdefs.h
+
+fi
+
+# FIXME: we rely on the cache variable name because
+# there is no other way.
+set dummy $CC
+am_cc=`echo $2 | sed 's/[^a-zA-Z0-9_]/_/g;s/^[0-9]/_/'`
+eval am_t=\$ac_cv_prog_cc_${am_cc}_c_o
+if test "$am_t" != yes; then
+   # Losing compiler, so override with the script.
+   # FIXME: It is wrong to rewrite CC.
+   # But if we don't then we get into trouble of one sort or another.
+   # A longer-term fix would be to have automake use am__CC in this case,
+   # and then we could set am__CC="\$(top_srcdir)/compile \$(CC)"
+   CC="$am_aux_dir/compile $CC"
+fi
 
 
 
@@ -22304,6 +22350,21 @@ if test x$gmp = xtrue; then
 
 	fi
 
+if test x$gmpdh = xtrue; then
+		s_plugins=${s_plugins}" gmpdh"
+		charon_plugins=${charon_plugins}" gmpdh"
+		scepclient_plugins=${scepclient_plugins}" gmpdh"
+		pki_plugins=${pki_plugins}" gmpdh"
+		scripts_plugins=${scripts_plugins}" gmpdh"
+		manager_plugins=${manager_plugins}" gmpdh"
+		medsrv_plugins=${medsrv_plugins}" gmpdh"
+		attest_plugins=${attest_plugins}" gmpdh"
+		nm_plugins=${nm_plugins}" gmpdh"
+		cmd_plugins=${cmd_plugins}" gmpdh"
+		aikgen_plugins=${aikgen_plugins}" gmpdh"
+
+	fi
+
 if test x$agent = xtrue; then
 		s_plugins=${s_plugins}" agent"
 		charon_plugins=${charon_plugins}" agent"
@@ -23089,6 +23150,14 @@ fi
 else
   USE_GMP_TRUE='#'
   USE_GMP_FALSE=
+fi
+
+ if test x$gmpdh = xtrue; then
+  USE_GMPDH_TRUE=
+  USE_GMPDH_FALSE='#'
+else
+  USE_GMPDH_TRUE='#'
+  USE_GMPDH_FALSE=
 fi
 
  if test x$rdrand = xtrue; then
@@ -24543,7 +24612,7 @@ fi
 #  build Makefiles
 # =================
 
-ac_config_files="$ac_config_files Makefile conf/Makefile man/Makefile init/Makefile init/systemd/Makefile init/systemd-swanctl/Makefile src/Makefile src/include/Makefile src/libstrongswan/Makefile src/libstrongswan/plugins/aes/Makefile src/libstrongswan/plugins/cmac/Makefile src/libstrongswan/plugins/des/Makefile src/libstrongswan/plugins/blowfish/Makefile src/libstrongswan/plugins/rc2/Makefile src/libstrongswan/plugins/md4/Makefile src/libstrongswan/plugins/md5/Makefile src/libstrongswan/plugins/sha1/Makefile src/libstrongswan/plugins/sha2/Makefile src/libstrongswan/plugins/sha3/Makefile src/libstrongswan/plugins/fips_prf/Makefile src/libstrongswan/plugins/gmp/Makefile src/libstrongswan/plugins/rdrand/Makefile src/libstrongswan/plugins/aesni/Makefile src/libstrongswan/plugins/random/Makefile src/libstrongswan/plugins/nonce/Makefile src/libstrongswan/plugins/hmac/Makefile src/libstrongswan/plugins/xcbc/Makefile src/libstrongswan/plugins/x509/Makefile src/libstrongswan/plugins/revocation/Makefile src/libstrongswan/plugins/constraints/Makefile src/libstrongswan/plugins/acert/Makefile src/libstrongswan/plugins/pubkey/Makefile src/libstrongswan/plugins/pkcs1/Makefile src/libstrongswan/plugins/pkcs7/Makefile src/libstrongswan/plugins/pkcs8/Makefile src/libstrongswan/plugins/pkcs12/Makefile src/libstrongswan/plugins/pgp/Makefile src/libstrongswan/plugins/dnskey/Makefile src/libstrongswan/plugins/sshkey/Makefile src/libstrongswan/plugins/pem/Makefile src/libstrongswan/plugins/curl/Makefile src/libstrongswan/plugins/files/Makefile src/libstrongswan/plugins/winhttp/Makefile src/libstrongswan/plugins/unbound/Makefile src/libstrongswan/plugins/soup/Makefile src/libstrongswan/plugins/ldap/Makefile src/libstrongswan/plugins/mysql/Makefile src/libstrongswan/plugins/sqlite/Makefile src/libstrongswan/plugins/padlock/Makefile src/libstrongswan/plugins/openssl/Makefile src/libstrongswan/plugins/gcrypt/Makefile src/libstrongswan/plugins/agent/Makefile src/libstrongswan/plugins/keychain/Makefile src/libstrongswan/plugins/pkcs11/Makefile src/libstrongswan/plugins/chapoly/Makefile src/libstrongswan/plugins/ctr/Makefile src/libstrongswan/plugins/ccm/Makefile src/libstrongswan/plugins/gcm/Makefile src/libstrongswan/plugins/af_alg/Makefile src/libstrongswan/plugins/ntru/Makefile src/libstrongswan/plugins/bliss/Makefile src/libstrongswan/plugins/bliss/tests/Makefile src/libstrongswan/plugins/test_vectors/Makefile src/libstrongswan/tests/Makefile src/libhydra/Makefile src/libhydra/plugins/kernel_netlink/Makefile src/libhydra/plugins/kernel_pfkey/Makefile src/libhydra/plugins/kernel_pfroute/Makefile src/libhydra/tests/Makefile src/libipsec/Makefile src/libipsec/tests/Makefile src/libsimaka/Makefile src/libtls/Makefile src/libtls/tests/Makefile src/libradius/Makefile src/libtncif/Makefile src/libtnccs/Makefile src/libtnccs/plugins/tnc_tnccs/Makefile src/libtnccs/plugins/tnc_imc/Makefile src/libtnccs/plugins/tnc_imv/Makefile src/libtnccs/plugins/tnccs_11/Makefile src/libtnccs/plugins/tnccs_20/Makefile src/libtnccs/plugins/tnccs_dynamic/Makefile src/libpttls/Makefile src/libimcv/Makefile src/libimcv/plugins/imc_test/Makefile src/libimcv/plugins/imv_test/Makefile src/libimcv/plugins/imc_scanner/Makefile src/libimcv/plugins/imv_scanner/Makefile src/libimcv/plugins/imc_os/Makefile src/libimcv/plugins/imv_os/Makefile src/libimcv/plugins/imc_attestation/Makefile src/libimcv/plugins/imv_attestation/Makefile src/libimcv/plugins/imc_swid/Makefile src/libimcv/plugins/imv_swid/Makefile src/libimcv/plugins/imc_hcd/Makefile src/libimcv/plugins/imv_hcd/Makefile src/charon/Makefile src/charon-nm/Makefile src/charon-tkm/Makefile src/charon-cmd/Makefile src/charon-svc/Makefile src/charon-systemd/Makefile src/libcharon/Makefile src/libcharon/plugins/eap_aka/Makefile src/libcharon/plugins/eap_aka_3gpp2/Makefile src/libcharon/plugins/eap_dynamic/Makefile src/libcharon/plugins/eap_identity/Makefile src/libcharon/plugins/eap_md5/Makefile src/libcharon/plugins/eap_gtc/Makefile src/libcharon/plugins/eap_sim/Makefile src/libcharon/plugins/eap_sim_file/Makefile src/libcharon/plugins/eap_sim_pcsc/Makefile src/libcharon/plugins/eap_simaka_sql/Makefile src/libcharon/plugins/eap_simaka_pseudonym/Makefile src/libcharon/plugins/eap_simaka_reauth/Makefile src/libcharon/plugins/eap_mschapv2/Makefile src/libcharon/plugins/eap_tls/Makefile src/libcharon/plugins/eap_ttls/Makefile src/libcharon/plugins/eap_peap/Makefile src/libcharon/plugins/eap_tnc/Makefile src/libcharon/plugins/eap_radius/Makefile src/libcharon/plugins/xauth_generic/Makefile src/libcharon/plugins/xauth_eap/Makefile src/libcharon/plugins/xauth_pam/Makefile src/libcharon/plugins/xauth_noauth/Makefile src/libcharon/plugins/tnc_ifmap/Makefile src/libcharon/plugins/tnc_pdp/Makefile src/libcharon/plugins/socket_default/Makefile src/libcharon/plugins/socket_dynamic/Makefile src/libcharon/plugins/socket_win/Makefile src/libcharon/plugins/connmark/Makefile src/libcharon/plugins/forecast/Makefile src/libcharon/plugins/farp/Makefile src/libcharon/plugins/smp/Makefile src/libcharon/plugins/sql/Makefile src/libcharon/plugins/dnscert/Makefile src/libcharon/plugins/ipseckey/Makefile src/libcharon/plugins/medsrv/Makefile src/libcharon/plugins/medcli/Makefile src/libcharon/plugins/addrblock/Makefile src/libcharon/plugins/unity/Makefile src/libcharon/plugins/uci/Makefile src/libcharon/plugins/ha/Makefile src/libcharon/plugins/kernel_libipsec/Makefile src/libcharon/plugins/kernel_wfp/Makefile src/libcharon/plugins/kernel_iph/Makefile src/libcharon/plugins/whitelist/Makefile src/libcharon/plugins/ext_auth/Makefile src/libcharon/plugins/lookip/Makefile src/libcharon/plugins/error_notify/Makefile src/libcharon/plugins/certexpire/Makefile src/libcharon/plugins/systime_fix/Makefile src/libcharon/plugins/led/Makefile src/libcharon/plugins/duplicheck/Makefile src/libcharon/plugins/coupling/Makefile src/libcharon/plugins/radattr/Makefile src/libcharon/plugins/osx_attr/Makefile src/libcharon/plugins/android_dns/Makefile src/libcharon/plugins/android_log/Makefile src/libcharon/plugins/maemo/Makefile src/libcharon/plugins/stroke/Makefile src/libcharon/plugins/vici/Makefile src/libcharon/plugins/vici/ruby/Makefile src/libcharon/plugins/vici/python/Makefile src/libcharon/plugins/updown/Makefile src/libcharon/plugins/dhcp/Makefile src/libcharon/plugins/load_tester/Makefile src/libcharon/plugins/resolve/Makefile src/libcharon/plugins/attr/Makefile src/libcharon/plugins/attr_sql/Makefile src/libcharon/tests/Makefile src/stroke/Makefile src/ipsec/Makefile src/starter/Makefile src/starter/tests/Makefile src/_updown/Makefile src/_copyright/Makefile src/scepclient/Makefile src/aikgen/Makefile src/pki/Makefile src/pki/man/Makefile src/pool/Makefile src/dumm/Makefile src/dumm/ext/extconf.rb src/libfast/Makefile src/manager/Makefile src/medsrv/Makefile src/checksum/Makefile src/conftest/Makefile src/pt-tls-client/Makefile src/swanctl/Makefile scripts/Makefile testing/Makefile"
+ac_config_files="$ac_config_files Makefile conf/Makefile man/Makefile init/Makefile init/systemd/Makefile init/systemd-swanctl/Makefile src/Makefile src/include/Makefile src/libstrongswan/Makefile src/libstrongswan/plugins/aes/Makefile src/libstrongswan/plugins/cmac/Makefile src/libstrongswan/plugins/des/Makefile src/libstrongswan/plugins/blowfish/Makefile src/libstrongswan/plugins/rc2/Makefile src/libstrongswan/plugins/md4/Makefile src/libstrongswan/plugins/md5/Makefile src/libstrongswan/plugins/sha1/Makefile src/libstrongswan/plugins/sha2/Makefile src/libstrongswan/plugins/sha3/Makefile src/libstrongswan/plugins/fips_prf/Makefile src/libstrongswan/plugins/gmp/Makefile src/libstrongswan/plugins/gmpdh/Makefile src/libstrongswan/plugins/rdrand/Makefile src/libstrongswan/plugins/aesni/Makefile src/libstrongswan/plugins/random/Makefile src/libstrongswan/plugins/nonce/Makefile src/libstrongswan/plugins/hmac/Makefile src/libstrongswan/plugins/xcbc/Makefile src/libstrongswan/plugins/x509/Makefile src/libstrongswan/plugins/revocation/Makefile src/libstrongswan/plugins/constraints/Makefile src/libstrongswan/plugins/acert/Makefile src/libstrongswan/plugins/pubkey/Makefile src/libstrongswan/plugins/pkcs1/Makefile src/libstrongswan/plugins/pkcs7/Makefile src/libstrongswan/plugins/pkcs8/Makefile src/libstrongswan/plugins/pkcs12/Makefile src/libstrongswan/plugins/pgp/Makefile src/libstrongswan/plugins/dnskey/Makefile src/libstrongswan/plugins/sshkey/Makefile src/libstrongswan/plugins/pem/Makefile src/libstrongswan/plugins/curl/Makefile src/libstrongswan/plugins/files/Makefile src/libstrongswan/plugins/winhttp/Makefile src/libstrongswan/plugins/unbound/Makefile src/libstrongswan/plugins/soup/Makefile src/libstrongswan/plugins/ldap/Makefile src/libstrongswan/plugins/mysql/Makefile src/libstrongswan/plugins/sqlite/Makefile src/libstrongswan/plugins/padlock/Makefile src/libstrongswan/plugins/openssl/Makefile src/libstrongswan/plugins/gcrypt/Makefile src/libstrongswan/plugins/agent/Makefile src/libstrongswan/plugins/keychain/Makefile src/libstrongswan/plugins/pkcs11/Makefile src/libstrongswan/plugins/chapoly/Makefile src/libstrongswan/plugins/ctr/Makefile src/libstrongswan/plugins/ccm/Makefile src/libstrongswan/plugins/gcm/Makefile src/libstrongswan/plugins/af_alg/Makefile src/libstrongswan/plugins/ntru/Makefile src/libstrongswan/plugins/bliss/Makefile src/libstrongswan/plugins/bliss/tests/Makefile src/libstrongswan/plugins/test_vectors/Makefile src/libstrongswan/tests/Makefile src/libhydra/Makefile src/libhydra/plugins/kernel_netlink/Makefile src/libhydra/plugins/kernel_pfkey/Makefile src/libhydra/plugins/kernel_pfroute/Makefile src/libhydra/tests/Makefile src/libipsec/Makefile src/libipsec/tests/Makefile src/libsimaka/Makefile src/libtls/Makefile src/libtls/tests/Makefile src/libradius/Makefile src/libtncif/Makefile src/libtnccs/Makefile src/libtnccs/plugins/tnc_tnccs/Makefile src/libtnccs/plugins/tnc_imc/Makefile src/libtnccs/plugins/tnc_imv/Makefile src/libtnccs/plugins/tnccs_11/Makefile src/libtnccs/plugins/tnccs_20/Makefile src/libtnccs/plugins/tnccs_dynamic/Makefile src/libpttls/Makefile src/libimcv/Makefile src/libimcv/plugins/imc_test/Makefile src/libimcv/plugins/imv_test/Makefile src/libimcv/plugins/imc_scanner/Makefile src/libimcv/plugins/imv_scanner/Makefile src/libimcv/plugins/imc_os/Makefile src/libimcv/plugins/imv_os/Makefile src/libimcv/plugins/imc_attestation/Makefile src/libimcv/plugins/imv_attestation/Makefile src/libimcv/plugins/imc_swid/Makefile src/libimcv/plugins/imv_swid/Makefile src/libimcv/plugins/imc_hcd/Makefile src/libimcv/plugins/imv_hcd/Makefile src/charon/Makefile src/charon-nm/Makefile src/charon-tkm/Makefile src/charon-cmd/Makefile src/charon-svc/Makefile src/charon-systemd/Makefile src/libcharon/Makefile src/libcharon/plugins/eap_aka/Makefile src/libcharon/plugins/eap_aka_3gpp2/Makefile src/libcharon/plugins/eap_dynamic/Makefile src/libcharon/plugins/eap_identity/Makefile src/libcharon/plugins/eap_md5/Makefile src/libcharon/plugins/eap_gtc/Makefile src/libcharon/plugins/eap_sim/Makefile src/libcharon/plugins/eap_sim_file/Makefile src/libcharon/plugins/eap_sim_pcsc/Makefile src/libcharon/plugins/eap_simaka_sql/Makefile src/libcharon/plugins/eap_simaka_pseudonym/Makefile src/libcharon/plugins/eap_simaka_reauth/Makefile src/libcharon/plugins/eap_mschapv2/Makefile src/libcharon/plugins/eap_tls/Makefile src/libcharon/plugins/eap_ttls/Makefile src/libcharon/plugins/eap_peap/Makefile src/libcharon/plugins/eap_tnc/Makefile src/libcharon/plugins/eap_radius/Makefile src/libcharon/plugins/xauth_generic/Makefile src/libcharon/plugins/xauth_eap/Makefile src/libcharon/plugins/xauth_pam/Makefile src/libcharon/plugins/xauth_noauth/Makefile src/libcharon/plugins/tnc_ifmap/Makefile src/libcharon/plugins/tnc_pdp/Makefile src/libcharon/plugins/socket_default/Makefile src/libcharon/plugins/socket_dynamic/Makefile src/libcharon/plugins/socket_win/Makefile src/libcharon/plugins/connmark/Makefile src/libcharon/plugins/forecast/Makefile src/libcharon/plugins/farp/Makefile src/libcharon/plugins/smp/Makefile src/libcharon/plugins/sql/Makefile src/libcharon/plugins/dnscert/Makefile src/libcharon/plugins/ipseckey/Makefile src/libcharon/plugins/medsrv/Makefile src/libcharon/plugins/medcli/Makefile src/libcharon/plugins/addrblock/Makefile src/libcharon/plugins/unity/Makefile src/libcharon/plugins/uci/Makefile src/libcharon/plugins/ha/Makefile src/libcharon/plugins/kernel_libipsec/Makefile src/libcharon/plugins/kernel_wfp/Makefile src/libcharon/plugins/kernel_iph/Makefile src/libcharon/plugins/whitelist/Makefile src/libcharon/plugins/ext_auth/Makefile src/libcharon/plugins/lookip/Makefile src/libcharon/plugins/error_notify/Makefile src/libcharon/plugins/certexpire/Makefile src/libcharon/plugins/systime_fix/Makefile src/libcharon/plugins/led/Makefile src/libcharon/plugins/duplicheck/Makefile src/libcharon/plugins/coupling/Makefile src/libcharon/plugins/radattr/Makefile src/libcharon/plugins/osx_attr/Makefile src/libcharon/plugins/android_dns/Makefile src/libcharon/plugins/android_log/Makefile src/libcharon/plugins/maemo/Makefile src/libcharon/plugins/stroke/Makefile src/libcharon/plugins/vici/Makefile src/libcharon/plugins/vici/ruby/Makefile src/libcharon/plugins/vici/python/Makefile src/libcharon/plugins/updown/Makefile src/libcharon/plugins/dhcp/Makefile src/libcharon/plugins/load_tester/Makefile src/libcharon/plugins/resolve/Makefile src/libcharon/plugins/attr/Makefile src/libcharon/plugins/attr_sql/Makefile src/libcharon/tests/Makefile src/stroke/Makefile src/ipsec/Makefile src/starter/Makefile src/starter/tests/Makefile src/_updown/Makefile src/_copyright/Makefile src/scepclient/Makefile src/aikgen/Makefile src/pki/Makefile src/pki/man/Makefile src/pool/Makefile src/dumm/Makefile src/dumm/ext/extconf.rb src/libfast/Makefile src/manager/Makefile src/medsrv/Makefile src/checksum/Makefile src/conftest/Makefile src/pt-tls-client/Makefile src/swanctl/Makefile scripts/Makefile testing/Makefile"
 
 
 # =================
@@ -24781,6 +24850,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_GMP_TRUE}" && test -z "${USE_GMP_FALSE}"; then
   as_fn_error $? "conditional \"USE_GMP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_GMPDH_TRUE}" && test -z "${USE_GMPDH_FALSE}"; then
+  as_fn_error $? "conditional \"USE_GMPDH\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_RDRAND_TRUE}" && test -z "${USE_RDRAND_FALSE}"; then
@@ -26356,6 +26429,7 @@ do
     "src/libstrongswan/plugins/sha3/Makefile") CONFIG_FILES="$CONFIG_FILES src/libstrongswan/plugins/sha3/Makefile" ;;
     "src/libstrongswan/plugins/fips_prf/Makefile") CONFIG_FILES="$CONFIG_FILES src/libstrongswan/plugins/fips_prf/Makefile" ;;
     "src/libstrongswan/plugins/gmp/Makefile") CONFIG_FILES="$CONFIG_FILES src/libstrongswan/plugins/gmp/Makefile" ;;
+    "src/libstrongswan/plugins/gmpdh/Makefile") CONFIG_FILES="$CONFIG_FILES src/libstrongswan/plugins/gmpdh/Makefile" ;;
     "src/libstrongswan/plugins/rdrand/Makefile") CONFIG_FILES="$CONFIG_FILES src/libstrongswan/plugins/rdrand/Makefile" ;;
     "src/libstrongswan/plugins/aesni/Makefile") CONFIG_FILES="$CONFIG_FILES src/libstrongswan/plugins/aesni/Makefile" ;;
     "src/libstrongswan/plugins/random/Makefile") CONFIG_FILES="$CONFIG_FILES src/libstrongswan/plugins/random/Makefile" ;;
