@@ -84,7 +84,8 @@ static bool make_connection(private_pt_tls_client_t *this)
 		return FALSE;
 	}
 
-	this->tls = tls_socket_create(FALSE, this->server, this->client, fd, NULL);
+	this->tls = tls_socket_create(FALSE, this->server, this->client, fd,
+								  NULL, TLS_1_2, FALSE);
 	if (!this->tls)
 	{
 		close(fd);
@@ -102,6 +103,7 @@ static bool negotiate_version(private_pt_tls_client_t *this)
 	bio_reader_t *reader;
 	u_int32_t type, vendor, identifier, reserved;
 	u_int8_t version;
+	bool res;
 
 	DBG1(DBG_TNC, "sending offer for PT-TLS version %d", PT_TLS_VERSION);
 
@@ -110,8 +112,10 @@ static bool negotiate_version(private_pt_tls_client_t *this)
 	writer->write_uint8(writer, PT_TLS_VERSION);
 	writer->write_uint8(writer, PT_TLS_VERSION);
 	writer->write_uint8(writer, PT_TLS_VERSION);
-	if (!pt_tls_write(this->tls, writer, PT_TLS_VERSION_REQUEST,
-					  this->identifier++))
+	res = pt_tls_write(this->tls, PT_TLS_VERSION_REQUEST, this->identifier++,
+					   writer->get_buf(writer));
+	writer->destroy(writer);
+	if (!res)
 	{
 		return FALSE;
 	}
@@ -144,6 +148,7 @@ static status_t do_sasl(private_pt_tls_client_t *this, sasl_mechanism_t *sasl)
 	bio_reader_t *reader;
 	bio_writer_t *writer;
 	chunk_t data;
+	bool res;
 
 	writer = bio_writer_create(32);
 	writer->write_data8(writer, chunk_from_str(sasl->get_name(sasl)));
@@ -164,8 +169,10 @@ static status_t do_sasl(private_pt_tls_client_t *this, sasl_mechanism_t *sasl)
 			writer->destroy(writer);
 			return FAILED;
 	}
-	if (!pt_tls_write(this->tls, writer, PT_TLS_SASL_MECH_SELECTION,
-					  this->identifier++))
+	res = pt_tls_write(this->tls, PT_TLS_SASL_MECH_SELECTION,
+					   this->identifier++, writer->get_buf(writer));
+	writer->destroy(writer);
+	if (!res)
 	{
 		return FAILED;
 	}
@@ -203,14 +210,15 @@ static status_t do_sasl(private_pt_tls_client_t *this, sasl_mechanism_t *sasl)
 					reader->destroy(reader);
 					return FAILED;
 				}
+				DBG1(DBG_TNC, "received SASL %N result",
+					 pt_tls_sasl_result_names, result);
+
 				switch (result)
 				{
 					case PT_TLS_SASL_RESULT_ABORT:
-						DBG1(DBG_TNC, "received SASL abort result");
 						reader->destroy(reader);
 						return FAILED;
 					case PT_TLS_SASL_RESULT_SUCCESS:
-						DBG1(DBG_TNC, "received SASL success result");
 						switch (sasl->process(sasl, reader->peek(reader)))
 						{
 							case SUCCESS:
@@ -226,7 +234,6 @@ static status_t do_sasl(private_pt_tls_client_t *this, sasl_mechanism_t *sasl)
 						break;
 					case PT_TLS_SASL_RESULT_MECH_FAILURE:
 					case PT_TLS_SASL_RESULT_FAILURE:
-						DBG1(DBG_TNC, "received SASL failure result");
 						/* non-fatal failure, try again */
 						reader->destroy(reader);
 						return NEED_MORE;
@@ -253,8 +260,10 @@ static status_t do_sasl(private_pt_tls_client_t *this, sasl_mechanism_t *sasl)
 				writer->destroy(writer);
 				return FAILED;
 		}
-		if (!pt_tls_write(this->tls, writer, PT_TLS_SASL_AUTH_DATA,
-						  this->identifier++))
+		res = pt_tls_write(this->tls, PT_TLS_SASL_AUTH_DATA,
+						   this->identifier++, writer->get_buf(writer));
+		writer->destroy(writer);
+		if (!res)
 		{
 			return FAILED;
 		}
@@ -351,44 +360,30 @@ static bool assess(private_pt_tls_client_t *this, tls_t *tnccs)
 {
 	while (TRUE)
 	{
-		bio_writer_t *writer;
+		size_t msglen;
+		size_t buflen = PT_TLS_MAX_MESSAGE_LEN;
+		char buf[buflen];
 		bio_reader_t *reader;
 		u_int32_t vendor, type, identifier;
 		chunk_t data;
 
-		writer = bio_writer_create(32);
-		while (TRUE)
+		switch (tnccs->build(tnccs, buf, &buflen, &msglen))
 		{
-			char buf[2048];
-			size_t buflen, msglen;
-
-			buflen = sizeof(buf);
-			switch (tnccs->build(tnccs, buf, &buflen, &msglen))
-			{
-				case SUCCESS:
-					writer->destroy(writer);
-					return tnccs->is_complete(tnccs);
-				case FAILED:
-				default:
-					writer->destroy(writer);
+			case SUCCESS:
+				return tnccs->is_complete(tnccs);
+			case ALREADY_DONE:
+				data = chunk_create(buf, buflen);
+				if (!pt_tls_write(this->tls, PT_TLS_PB_TNC_BATCH,
+								  this->identifier++, data))
+				{
 					return FALSE;
-				case INVALID_STATE:
-					writer->destroy(writer);
-					break;
-				case NEED_MORE:
-					writer->write_data(writer, chunk_create(buf, buflen));
-					continue;
-				case ALREADY_DONE:
-					writer->write_data(writer, chunk_create(buf, buflen));
-					if (!pt_tls_write(this->tls, writer, PT_TLS_PB_TNC_BATCH,
-									  this->identifier++))
-					{
-						return FALSE;
-					}
-					writer = bio_writer_create(32);
-					continue;
-			}
-			break;
+				}
+				break;
+			case INVALID_STATE:
+				break;
+			case FAILED:
+			default:
+				return FALSE;
 		}
 
 		reader = pt_tls_read(this->tls, &vendor, &type, &identifier);
@@ -437,19 +432,27 @@ METHOD(pt_tls_client_t, run_assessment, status_t,
 {
 	if (!this->tls)
 	{
+		DBG1(DBG_TNC, "entering PT-TLS setup phase");
 		if (!make_connection(this))
 		{
 			return FAILED;
 		}
 	}
+
+	DBG1(DBG_TNC, "entering PT-TLS negotiation phase");
 	if (!negotiate_version(this))
 	{
 		return FAILED;
 	}
+
+	DBG1(DBG_TNC, "doing SASL client authentication");
 	if (!authenticate(this))
 	{
 		return FAILED;
 	}
+	tnccs->set_auth_type(tnccs, TNC_AUTH_X509_CERT);
+
+	DBG1(DBG_TNC, "entering PT-TLS data transport phase");
 	if (!assess(this, (tls_t*)tnccs))
 	{
 		return FAILED;

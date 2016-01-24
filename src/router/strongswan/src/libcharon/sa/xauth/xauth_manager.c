@@ -13,6 +13,9 @@
  * for more details.
  */
 
+#define _GNU_SOURCE /* for stdndup() */
+#include <string.h>
+
 #include "xauth_manager.h"
 
 #include <collections/linked_list.h>
@@ -107,6 +110,17 @@ METHOD(xauth_manager_t, create_instance, xauth_method_t*,
 	enumerator_t *enumerator;
 	xauth_entry_t *entry;
 	xauth_method_t *method = NULL;
+	char *profile = NULL;
+
+	if (name)
+	{
+		profile = strchr(name, ':');
+		if (profile)
+		{
+			name = strndup(name, profile - name);
+			profile++;
+		}
+	}
 
 	this->lock->read_lock(this->lock);
 	enumerator = this->methods->create_enumerator(this->methods);
@@ -118,7 +132,7 @@ METHOD(xauth_manager_t, create_instance, xauth_method_t*,
 		}
 		if (role == entry->role && (!name || streq(name, entry->name)))
 		{
-			method = entry->constructor(server, peer);
+			method = entry->constructor(server, peer, profile);
 			if (method)
 			{
 				break;
@@ -127,6 +141,10 @@ METHOD(xauth_manager_t, create_instance, xauth_method_t*,
 	}
 	enumerator->destroy(enumerator);
 	this->lock->unlock(this->lock);
+	if (profile)
+	{
+		free(name);
+	}
 	return method;
 }
 

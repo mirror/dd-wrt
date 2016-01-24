@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Tobias Brunner
+ * Copyright (C) 2012-2015 Tobias Brunner
  * Hochschule fuer Technik Rapperswil
  *
  * Copyright (C) 2011 Martin Willi
@@ -150,6 +150,8 @@ struct plugin_feature_t {
 		FEATURE_DATABASE,
 		/** fetcher_t */
 		FEATURE_FETCHER,
+		/** resolver_t */
+		FEATURE_RESOLVER,
 		/** custom feature, described with a string */
 		FEATURE_CUSTOM,
 	} type;
@@ -194,7 +196,7 @@ struct plugin_feature_t {
 		/** FEATURE_CONTAINER_DECODE/ENCODE */
 		container_type_t container;
 		/** FEATURE_EAP_SERVER/CLIENT */
-		eap_type_t eap;
+		eap_vendor_type_t eap;
 		/** FEATURE_DATABASE */
 		db_driver_t database;
 		/** FEATURE_FETCHER */
@@ -290,10 +292,13 @@ struct plugin_feature_t {
 #define _PLUGIN_FEATURE_CERT_ENCODE(kind, type)				__PLUGIN_FEATURE(kind, CERT_ENCODE, .cert = type)
 #define _PLUGIN_FEATURE_CONTAINER_DECODE(kind, type)		__PLUGIN_FEATURE(kind, CONTAINER_DECODE, .container = type)
 #define _PLUGIN_FEATURE_CONTAINER_ENCODE(kind, type)		__PLUGIN_FEATURE(kind, CONTAINER_ENCODE, .container = type)
-#define _PLUGIN_FEATURE_EAP_SERVER(kind, type)				__PLUGIN_FEATURE(kind, EAP_SERVER, .eap = type)
-#define _PLUGIN_FEATURE_EAP_PEER(kind, type)				__PLUGIN_FEATURE(kind, EAP_PEER, .eap = type)
+#define _PLUGIN_FEATURE_EAP_SERVER(kind, type)				_PLUGIN_FEATURE_EAP_SERVER_VENDOR(kind, type, 0)
+#define _PLUGIN_FEATURE_EAP_PEER(kind, type)				_PLUGIN_FEATURE_EAP_PEER_VENDOR(kind, type, 0)
+#define _PLUGIN_FEATURE_EAP_SERVER_VENDOR(kind, type, vendor)__PLUGIN_FEATURE(kind, EAP_SERVER, .eap = { type, vendor })
+#define _PLUGIN_FEATURE_EAP_PEER_VENDOR(kind, type, vendor)	__PLUGIN_FEATURE(kind, EAP_PEER, .eap = { type, vendor })
 #define _PLUGIN_FEATURE_DATABASE(kind, type)				__PLUGIN_FEATURE(kind, DATABASE, .database = type)
 #define _PLUGIN_FEATURE_FETCHER(kind, type)					__PLUGIN_FEATURE(kind, FETCHER, .fetcher = type)
+#define _PLUGIN_FEATURE_RESOLVER(kind, ...)					__PLUGIN_FEATURE(kind, RESOLVER, .custom = NULL)
 #define _PLUGIN_FEATURE_CUSTOM(kind, name)					__PLUGIN_FEATURE(kind, CUSTOM, .custom = name)
 #define _PLUGIN_FEATURE_XAUTH_SERVER(kind, name)			__PLUGIN_FEATURE(kind, XAUTH_SERVER, .xauth = name)
 #define _PLUGIN_FEATURE_XAUTH_PEER(kind, name)				__PLUGIN_FEATURE(kind, XAUTH_PEER, .xauth = name)
@@ -317,6 +322,7 @@ struct plugin_feature_t {
 #define _PLUGIN_FEATURE_REGISTER_CONTAINER_ENCODE(type, f, final)__PLUGIN_FEATURE_REGISTER_BUILDER(type, f, final)
 #define _PLUGIN_FEATURE_REGISTER_DATABASE(type, f)			__PLUGIN_FEATURE_REGISTER(type, f)
 #define _PLUGIN_FEATURE_REGISTER_FETCHER(type, f)			__PLUGIN_FEATURE_REGISTER(type, f)
+#define _PLUGIN_FEATURE_REGISTER_RESOLVER(type, f)			__PLUGIN_FEATURE_REGISTER(type, f)
 
 #define _PLUGIN_FEATURE_CALLBACK(_cb, _data) (plugin_feature_t){ FEATURE_CALLBACK, FEATURE_NONE, .arg.cb = { .f = _cb, .data = _data } }
 
@@ -324,6 +330,27 @@ struct plugin_feature_t {
  * Names for plugin_feature_t types.
  */
 extern enum_name_t *plugin_feature_names;
+
+/**
+ * Add a set of plugin features to the given array, which must have enough space
+ * to store the added features.
+ *
+ * @param features		the array of plugin features to extend
+ * @param to_add		the features to add
+ * @param count			number of features to add
+ * @param pos			current position in the features array, gets advanced
+ */
+static inline void plugin_features_add(plugin_feature_t *features,
+									   plugin_feature_t *to_add,
+									   int count, int *pos)
+{
+	int i;
+
+	for (i = 0; i < count; i++)
+	{
+		features[(*pos)++] = to_add[i];
+	}
+}
 
 /**
  * Calculates a hash value for the given feature.
@@ -340,11 +367,24 @@ u_int32_t plugin_feature_hash(plugin_feature_t *feature);
 /**
  * Check if feature a matches to feature b.
  *
+ * This is no check for equality.  For instance, for FEATURE_RNG a matches b if
+ * a's strength is at least the strength of b.  Or for FEATURE_SQL if a is
+ * DB_ANY it will match b if it is of the same type.
+ *
  * @param a			feature to check
  * @param b			feature to match against
  * @return			TRUE if a matches b
  */
 bool plugin_feature_matches(plugin_feature_t *a, plugin_feature_t *b);
+
+/**
+ * Check if feature a equals feature b.
+ *
+ * @param a			feature
+ * @param b			feature to compare
+ * @return			TRUE if a equals b
+ */
+bool plugin_feature_equals(plugin_feature_t *a, plugin_feature_t *b);
 
 /**
  * Get a string describing feature.

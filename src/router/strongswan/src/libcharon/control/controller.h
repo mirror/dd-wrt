@@ -82,15 +82,18 @@ struct controller_t {
 	 * @param cb			logging callback
 	 * @param param			parameter to include in each call of cb
 	 * @param timeout		timeout in ms to wait for callbacks, 0 to disable
+	 * @param limits		whether to check limits regarding IKE_SA initiation
 	 * @return
 	 *						- SUCCESS, if CHILD_SA established
 	 *						- FAILED, if setup failed
 	 *						- NEED_MORE, if callback returned FALSE
 	 *						- OUT_OF_RES if timed out
+	 *						- INVALID_STATE if limits prevented initiation
 	 */
 	status_t (*initiate)(controller_t *this,
 						 peer_cfg_t *peer_cfg, child_cfg_t *child_cfg,
-						 controller_cb_t callback, void *param, u_int timeout);
+						 controller_cb_t callback, void *param, u_int timeout,
+						 bool limits);
 
 	/**
 	 * Terminate an IKE_SA and all of its CHILD_SAs.
@@ -118,7 +121,7 @@ struct controller_t {
 	 * If a callback is provided the function is synchronous and thus blocks
 	 * until the CHILD_SA is properly deleted, or the call timed out.
 	 *
-	 * @param reqid			reqid of the CHILD_SA to terminate
+	 * @param unique_id		CHILD_SA unique ID to terminate
 	 * @param cb			logging callback
 	 * @param param			parameter to include in each call of cb
 	 * @param timeout		timeout in ms to wait for callbacks, 0 to disable
@@ -128,7 +131,7 @@ struct controller_t {
 	 *						- NEED_MORE, if callback returned FALSE
 	 *						- OUT_OF_RES if timed out
 	 */
-	status_t (*terminate_child)(controller_t *this, u_int32_t reqid,
+	status_t (*terminate_child)(controller_t *this, u_int32_t unique_id,
 								controller_cb_t callback, void *param,
 								u_int timeout);
 

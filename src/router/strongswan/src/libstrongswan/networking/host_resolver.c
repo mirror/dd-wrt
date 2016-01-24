@@ -14,8 +14,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
 
 #include "host_resolver.h"
 
@@ -165,20 +163,25 @@ static void *resolve_hosts(private_host_resolver_t *this)
 	int error;
 	bool old, timed_out;
 
+	/* default resolver threads to non-cancellable */
+	thread_cancelability(FALSE);
+
 	while (TRUE)
 	{
 		this->mutex->lock(this->mutex);
-		thread_cleanup_push((thread_cleanup_t)this->mutex->unlock, this->mutex);
 		while (this->queue->remove_first(this->queue,
 										(void**)&query) != SUCCESS)
 		{
-			old = thread_cancelability(TRUE);
-			timed_out = this->new_query->timed_wait(this->new_query,
-									this->mutex, NEW_QUERY_WAIT_TIMEOUT * 1000);
-			thread_cancelability(old);
 			if (this->disabled)
 			{
-				thread_cleanup_pop(TRUE);
+				this->mutex->unlock(this->mutex);
+				return NULL;
+			}
+			timed_out = this->new_query->timed_wait(this->new_query,
+									this->mutex, NEW_QUERY_WAIT_TIMEOUT * 1000);
+			if (this->disabled)
+			{
+				this->mutex->unlock(this->mutex);
 				return NULL;
 			}
 			else if (timed_out && (this->threads > this->min_threads))
@@ -187,13 +190,13 @@ static void *resolve_hosts(private_host_resolver_t *this)
 
 				this->threads--;
 				this->pool->remove(this->pool, thread, NULL);
-				thread_cleanup_pop(TRUE);
+				this->mutex->unlock(this->mutex);
 				thread->detach(thread);
 				return NULL;
 			}
 		}
 		this->busy_threads++;
-		thread_cleanup_pop(TRUE);
+		this->mutex->unlock(this->mutex);
 
 		memset(&hints, 0, sizeof(hints));
 		hints.ai_family = query->family;
@@ -233,10 +236,24 @@ METHOD(host_resolver_t, resolve, host_t*,
 		.family = family,
 	};
 	host_t *result;
+	struct in_addr addr;
 
-	if (family == AF_INET && strchr(name, ':'))
-	{	/* do not try to convert v6 addresses for v4 family */
-		return NULL;
+	switch (family)
+	{
+		case AF_INET:
+			/* do not try to convert v6 addresses for v4 family */
+			if (strchr(name, ':'))
+			{
+				return NULL;
+			}
+			break;
+		case AF_INET6:
+			/* do not try to convert v4 addresses for v6 family */
+			if (inet_pton(AF_INET, name, &addr) == 1)
+			{
+				return NULL;
+			}
+			break;
 	}
 	this->mutex->lock(this->mutex);
 	if (this->disabled)
@@ -341,11 +358,11 @@ host_resolver_t *host_resolver_create()
 	);
 
 	this->min_threads = max(0, lib->settings->get_int(lib->settings,
-									"libstrongswan.host_resolver.min_threads",
-									 MIN_THREADS_DEFAULT));
+												"%s.host_resolver.min_threads",
+												MIN_THREADS_DEFAULT, lib->ns));
 	this->max_threads = max(this->min_threads ?: 1,
 							lib->settings->get_int(lib->settings,
-									"libstrongswan.host_resolver.max_threads",
-									 MAX_THREADS_DEFAULT));
+												"%s.host_resolver.max_threads",
+												MAX_THREADS_DEFAULT, lib->ns));
 	return &this->public;
 }

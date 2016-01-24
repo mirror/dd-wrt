@@ -1,6 +1,6 @@
 /**
  * Copyright (C) 2008-2009 Martin Willi
- * Copyright (C) 2007 Andreas Steffen
+ * Copyright (C) 2007-2014 Andreas Steffen
  * Hochschule fuer Technik Rapperswil
  * Copyright (C) 2003 Christoph Gysin, Simon Zwahlen
  *
@@ -34,6 +34,11 @@
  * how long do we use an OCSP response without a nextUpdate
  */
 #define OCSP_DEFAULT_LIFETIME 30
+
+/* defined in wincrypt.h */
+#ifdef OCSP_RESPONSE
+# undef OCSP_RESPONSE
+#endif
 
 typedef struct private_x509_ocsp_response_t private_x509_ocsp_response_t;
 
@@ -128,25 +133,6 @@ typedef struct {
 
 /* our OCSP response version implementation */
 #define OCSP_BASIC_RESPONSE_VERSION 1
-
-/* some OCSP specific prefabricated ASN.1 constants */
-static const chunk_t ASN1_nonce_oid = chunk_from_chars(
-	0x06, 0x09,
-		  0x2B, 0x06,
-				0x01, 0x05, 0x05, 0x07, 0x30, 0x01, 0x02
-);
-static const chunk_t ASN1_response_oid = chunk_from_chars(
-	0x06, 0x09,
-		  0x2B, 0x06,
-				0x01, 0x05, 0x05, 0x07, 0x30, 0x01, 0x04
-);
-static const chunk_t ASN1_response_content = chunk_from_chars(
-	0x04, 0x0D,
-		  0x30, 0x0B,
-				0x06, 0x09,
-				0x2B, 0x06,
-				0x01, 0x05, 0x05, 0x07, 0x30, 0x01, 0x01
-);
 
 METHOD(ocsp_response_t, get_status, cert_validation_t,
 	private_x509_ocsp_response_t *this, x509_t *subject, x509_t *issuer,
@@ -551,7 +537,7 @@ static bool parse_basicOCSPResponse(private_x509_ocsp_response_t *this,
 												parser->get_level(parser)+1, NULL);
 				break;
 			case BASIC_RESPONSE_SIGNATURE:
-				this->signature = object;
+				this->signature = chunk_skip(object, 1);
 				break;
 			case BASIC_RESPONSE_CERTIFICATE:
 			{
@@ -889,4 +875,3 @@ x509_ocsp_response_t *x509_ocsp_response_load(certificate_type_t type,
 	}
 	return NULL;
 }
-

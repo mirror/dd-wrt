@@ -43,11 +43,11 @@ METHOD(xauth_method_t, initiate, status_t,
 {
 	cp_payload_t *cp;
 
-	cp = cp_payload_create_type(CONFIGURATION_V1, CFG_REQUEST);
+	cp = cp_payload_create_type(PLV1_CONFIGURATION, CFG_REQUEST);
 	cp->add_attribute(cp, configuration_attribute_create_chunk(
-				CONFIGURATION_ATTRIBUTE_V1, XAUTH_USER_NAME, chunk_empty));
+				PLV1_CONFIGURATION_ATTRIBUTE, XAUTH_USER_NAME, chunk_empty));
 	cp->add_attribute(cp, configuration_attribute_create_chunk(
-				CONFIGURATION_ATTRIBUTE_V1, XAUTH_USER_PASSWORD, chunk_empty));
+				PLV1_CONFIGURATION_ATTRIBUTE, XAUTH_USER_PASSWORD, chunk_empty));
 	*out = cp;
 	return NEED_MORE;
 }
@@ -116,7 +116,11 @@ static void attr2string(char *buf, size_t len, chunk_t chunk)
 {
 	if (chunk.len && chunk.len < len)
 	{
-		snprintf(buf, len, "%.*s", (int)chunk.len, chunk.ptr);
+		chunk_t sane;
+
+		chunk_printable(chunk, &sane, '?');
+		snprintf(buf, len, "%.*s", (int)sane.len, sane.ptr);
+		chunk_clear(&sane);
 	}
 }
 
@@ -134,17 +138,27 @@ METHOD(xauth_method_t, process, status_t,
 		switch (attr->get_type(attr))
 		{
 			case XAUTH_USER_NAME:
-				/* trim to username part if email address given */
 				chunk = attr->get_chunk(attr);
-				pos = memchr(chunk.ptr, '@', chunk.len);
-				if (pos)
+				/* trim to username part if email address given */
+				if (lib->settings->get_bool(lib->settings,
+											"%s.plugins.xauth-pam.trim_email",
+											TRUE, lib->ns))
 				{
-					chunk.len = (u_char*)pos - chunk.ptr;
+					pos = memchr(chunk.ptr, '@', chunk.len);
+					if (pos)
+					{
+						chunk.len = (u_char*)pos - chunk.ptr;
+					}
 				}
 				attr2string(user, sizeof(user), chunk);
 				break;
 			case XAUTH_USER_PASSWORD:
-				attr2string(pass, sizeof(pass), attr->get_chunk(attr));
+				chunk = attr->get_chunk(attr);
+				if (chunk.len && chunk.ptr[chunk.len - 1] == 0)
+				{	/* fix null-terminated passwords (Android etc.) */
+					chunk.len -= 1;
+				}
+				attr2string(pass, sizeof(pass), chunk);
 				break;
 			default:
 				break;
@@ -166,9 +180,8 @@ METHOD(xauth_method_t, process, status_t,
 	service = lib->settings->get_str(lib->settings,
 				"%s.plugins.xauth-pam.pam_service",
 					lib->settings->get_str(lib->settings,
-						"%s.plugins.eap-gtc.pam_service",
-						"login", charon->name),
-				charon->name);
+						"%s.plugins.eap-gtc.pam_service", "login", lib->ns),
+				lib->ns);
 
 	if (authenticate(service, user, pass))
 	{
@@ -195,7 +208,7 @@ METHOD(xauth_method_t, destroy, void,
  * Described in header.
  */
 xauth_pam_t *xauth_pam_create_server(identification_t *server,
-									 identification_t *peer)
+									 identification_t *peer, char *profile)
 {
 	private_xauth_pam_t *this;
 

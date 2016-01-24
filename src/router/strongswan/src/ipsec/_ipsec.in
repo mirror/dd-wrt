@@ -1,7 +1,7 @@
 #! @IPSEC_SHELL@
 # prefix command to run stuff from our programs directory
 # Copyright (C) 1998-2002  Henry Spencer.
-# Copyright (C) 2006 Andreas Steffen
+# Copyright (C) 2006-2014 Andreas Steffen
 # Copyright (C) 2006 Martin Willi
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -15,7 +15,7 @@
 # for more details.
 
 # define a minimum PATH environment in case it is not set
-PATH="/sbin:/bin:/usr/sbin:/usr/bin:@IPSEC_SBINDIR@"
+PATH=${PATH:-"/sbin:/bin:/usr/sbin:/usr/bin"}
 export PATH
 
 # set daemon name
@@ -28,6 +28,7 @@ IPSEC_VERSION="U@IPSEC_VERSION@/K`uname -r`"
 
 # where the private directory and the config files are
 IPSEC_DIR="@IPSEC_DIR@"
+IPSEC_BINDIR="@IPSEC_BINDIR@"
 IPSEC_SBINDIR="@IPSEC_SBINDIR@"
 IPSEC_CONFDIR="@IPSEC_CONFDIR@"
 IPSEC_PIDDIR="@IPSEC_PIDDIR@"
@@ -39,44 +40,42 @@ IPSEC_CHARON_PID="${IPSEC_PIDDIR}/${DAEMON_NAME}.pid"
 IPSEC_STROKE="${IPSEC_DIR}/stroke"
 IPSEC_STARTER="${IPSEC_DIR}/starter"
 
-export IPSEC_DIR IPSEC_SBINDIR IPSEC_CONFDIR IPSEC_PIDDIR IPSEC_SCRIPT IPSEC_VERSION IPSEC_NAME IPSEC_STARTER_PID IPSEC_CHARON_PID
+export IPSEC_DIR IPSEC_BINDIR IPSEC_SBINDIR IPSEC_CONFDIR IPSEC_PIDDIR IPSEC_SCRIPT IPSEC_VERSION IPSEC_NAME IPSEC_STARTER_PID IPSEC_CHARON_PID
 
 IPSEC_DISTRO="Institute for Internet Technologies and Applications\nUniversity of Applied Sciences Rapperswil, Switzerland"
 
 case "$1" in
 '')
-	echo "Usage: $IPSEC_SCRIPT command argument ..."
-	echo "Use --help for list of commands, or see $IPSEC_SCRIPT(8) manual "
-	echo "page or the $IPSEC_NAME documentation for names of the common "
-	echo "ones."
-	echo "See <http://www.strongswan.org> for more general info."
+	echo "$IPSEC_SCRIPT command [arguments]"
+	echo
+	echo "Use --help for a list of commands, or refer to the $IPSEC_SCRIPT(8) man page."
+	echo "See <http://www.strongswan.org> for more general information."
 	exit 0
 	;;
 --help)
-	echo "Usage: $IPSEC_SCRIPT command argument ..."
-	echo "where command is one of:"
-	echo "	start|restart  arguments..."
+	echo "$IPSEC_SCRIPT command [arguments]"
+	echo
+	echo "Commands:"
+	echo "	start|restart [arguments]"
 	echo "	update|reload|stop"
 	echo "	up|down|route|unroute <connectionname>"
+	echo "	down-srcip <start> [<end>]"
 	echo "	status|statusall [<connectionname>]"
 	echo "	listalgs|listpubkeys|listcerts [--utc]"
 	echo "	listcacerts|listaacerts|listocspcerts [--utc]"
 	echo "	listacerts|listgroups|listcainfos [--utc]"
-	echo "	listcrls|listocsp|listcards|listplugins|listall [--utc]"
+	echo "	listcrls|listocsp|listplugins|listall [--utc]"
 	echo "	listcounters|resetcounters [name]"
 	echo "	leases [<poolname> [<address>]]"
-	echo "	rereadsecrets|rereadgroups"
-	echo "	rereadcacerts|rereadaacerts|rereadocspcerts"
-	echo "	rereadacerts|rereadcrls|rereadall"
-	echo "	purgeocsp|purgecrls|purgecerts|purgeike"
-	echo "	openac"
-	echo "	scepclient"
-	echo "	secrets"
-	echo "	starter"
+	echo "	rereadsecrets|rereadcacerts|rereadaacerts"
+	echo "	rereadocspcerts|rereadacerts|rereadcrls|rereadall"
+	echo "	purgecerts|purgecrls|purgeike|purgeocsp"
+	echo "	scepclient|pki"
+	echo "	starter|stroke"
 	echo "	version"
-	echo "	stroke"
 	echo
-	echo "Some of these functions have their own manual pages, e.g. ipsec_scepclient(8)."
+	echo "Refer to the $IPSEC_SCRIPT(8) man page for details."
+	echo "Some commands have their own man pages, e.g. pki(1) or scepclient(8)."
 	exit 0
 	;;
 --versioncode)
@@ -89,6 +88,10 @@ case "$1" in
 	;;
 --confdir)
 	echo "$IPSEC_CONFDIR"
+	exit 0
+	;;
+--piddir)
+	echo "$IPSEC_PIDDIR"
 	exit 0
 	;;
 copyright|--copyright)
@@ -124,16 +127,6 @@ down-srcip)
 		rc="$?"
 	fi
 	exit "$rc"
-	;;
-listcards|rereadgroups)
-	op="$1"
-	shift
-	if [ -e $IPSEC_CHARON_PID ]
-	then
-		exit 3
-	else
-		exit 7
-	fi
 	;;
 leases)
 	op="$1"
@@ -263,10 +256,10 @@ stop)
 		if [ -n "$spid" ]
 		then
 			kill $spid 2>/dev/null
-			loop=11
+			loop=110
 			while [ $loop -gt 0 ] ; do
 				kill -0 $spid 2>/dev/null || break
-				sleep 1
+				sleep 0.1
 				loop=$(($loop - 1))
 			done
 			if [ $loop -eq 0 ]
@@ -309,6 +302,14 @@ update)
 		exit 7
 	fi
 	;;
+pki)
+	shift
+	exec $IPSEC_BINDIR/pki "$@"
+	;;
+aikgen)
+	shift
+	exec $IPSEC_BINDIR/aikgen "$@"
+	;;
 version|--version)
 	printf "$OS_NAME $IPSEC_NAME $IPSEC_VERSION\n"
 	printf "$IPSEC_DISTRO\n"
@@ -328,12 +329,8 @@ path="$IPSEC_DIR/$cmd"
 
 if [ ! -x "$path" ]
 then
-    path="$IPSEC_DIR/$cmd"
-    if [ ! -x "$path" ]
-    then
 	echo "$0: unknown IPsec command \`$cmd' (\`$IPSEC_SCRIPT --help' for list)" >&2
 	exit 2
-    fi
 fi
 
 exec $path "$@"

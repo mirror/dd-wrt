@@ -22,6 +22,8 @@
 #ifndef TASK_H_
 #define TASK_H_
 
+#include <utils/utils.h>
+
 typedef enum task_type_t task_type_t;
 typedef struct task_t task_t;
 
@@ -51,8 +53,10 @@ enum task_type_t {
 	TASK_IKE_CONFIG,
 	/** rekey an IKE_SA */
 	TASK_IKE_REKEY,
-	/** reestablish a complete IKE_SA */
+	/** reestablish a complete IKE_SA, break-before-make */
 	TASK_IKE_REAUTH,
+	/** completion task for make-before-break IKE_SA re-authentication */
+	TASK_IKE_REAUTH_COMPLETE,
 	/** delete an IKE_SA */
 	TASK_IKE_DELETE,
 	/** liveness check */
@@ -67,7 +71,7 @@ enum task_type_t {
 	TASK_CHILD_CREATE,
 	/** delete an established CHILD_SA */
 	TASK_CHILD_DELETE,
-	/** rekey an CHILD_SA */
+	/** rekey a CHILD_SA */
 	TASK_CHILD_REKEY,
 	/** IKEv1 main mode */
 	TASK_MAIN_MODE,

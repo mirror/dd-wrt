@@ -65,7 +65,7 @@ ENUM_NEXT(notify_type_names, ME_CONNECT_FAILED, ME_CONNECT_FAILED, CHILD_SA_NOT_
 	"ME_CONNECT_FAILED");
 ENUM_NEXT(notify_type_names, MS_NOTIFY_STATUS, MS_NOTIFY_STATUS, ME_CONNECT_FAILED,
 	"MS_NOTIFY_STATUS");
-ENUM_NEXT(notify_type_names, INITIAL_CONTACT, ERX_SUPPORTED, MS_NOTIFY_STATUS,
+ENUM_NEXT(notify_type_names, INITIAL_CONTACT, SIGNATURE_HASH_ALGORITHMS, MS_NOTIFY_STATUS,
 	"INITIAL_CONTACT",
 	"SET_WINDOW_SIZE",
 	"ADDITIONAL_TS_POSSIBLE",
@@ -109,8 +109,12 @@ ENUM_NEXT(notify_type_names, INITIAL_CONTACT, ERX_SUPPORTED, MS_NOTIFY_STATUS,
 	"SECURE PASSWORD_METHOD",
 	"PSK_PERSIST",
 	"PSK_CONFIRM",
-	"ERX_SUPPORTED");
-ENUM_NEXT(notify_type_names, INITIAL_CONTACT_IKEV1, INITIAL_CONTACT_IKEV1, ERX_SUPPORTED,
+	"ERX_SUPPORTED",
+	"IFOM_CAPABILITY",
+	"SENDER_REQUEST_ID",
+	"FRAGMENTATION_SUPPORTED",
+	"SIGNATURE_HASH_ALGORITHMS");
+ENUM_NEXT(notify_type_names, INITIAL_CONTACT_IKEV1, INITIAL_CONTACT_IKEV1, SIGNATURE_HASH_ALGORITHMS,
 	"INITIAL_CONTACT");
 ENUM_NEXT(notify_type_names, DPD_R_U_THERE, DPD_R_U_THERE_ACK, INITIAL_CONTACT_IKEV1,
 	"DPD_R_U_THERE",
@@ -127,7 +131,7 @@ ENUM_NEXT(notify_type_names, ME_MEDIATION, RADIUS_ATTRIBUTE, USE_BEET_MODE,
 	"ME_CONNECTKEY",
 	"ME_CONNECTAUTH",
 	"ME_RESPONSE",
-	"RADIUS_ATTRIBUTE",);
+	"RADIUS_ATTRIBUTE");
 ENUM_END(notify_type_names, RADIUS_ATTRIBUTE);
 
 
@@ -171,7 +175,7 @@ ENUM_NEXT(notify_type_short_names, ME_CONNECT_FAILED, ME_CONNECT_FAILED, CHILD_S
 	"ME_CONN_FAIL");
 ENUM_NEXT(notify_type_short_names, MS_NOTIFY_STATUS, MS_NOTIFY_STATUS, ME_CONNECT_FAILED,
 	"MS_STATUS");
-ENUM_NEXT(notify_type_short_names, INITIAL_CONTACT, ERX_SUPPORTED, MS_NOTIFY_STATUS,
+ENUM_NEXT(notify_type_short_names, INITIAL_CONTACT, SIGNATURE_HASH_ALGORITHMS, MS_NOTIFY_STATUS,
 	"INIT_CONTACT",
 	"SET_WINSIZE",
 	"ADD_TS_POSS",
@@ -215,8 +219,12 @@ ENUM_NEXT(notify_type_short_names, INITIAL_CONTACT, ERX_SUPPORTED, MS_NOTIFY_STA
 	"SEC_PASSWD",
 	"PSK_PST",
 	"PSK_CFM",
-	"ERX_SUP");
-ENUM_NEXT(notify_type_short_names, INITIAL_CONTACT_IKEV1, INITIAL_CONTACT_IKEV1, ERX_SUPPORTED,
+	"ERX_SUP",
+	"IFOM_CAP",
+	"SENDER_REQ_ID",
+	"FRAG_SUP",
+	"HASH_ALG");
+ENUM_NEXT(notify_type_short_names, INITIAL_CONTACT_IKEV1, INITIAL_CONTACT_IKEV1, SIGNATURE_HASH_ALGORITHMS,
 	"INITIAL_CONTACT");
 ENUM_NEXT(notify_type_short_names, DPD_R_U_THERE, DPD_R_U_THERE_ACK, INITIAL_CONTACT_IKEV1,
 	"DPD",
@@ -300,7 +308,7 @@ struct private_notify_payload_t {
 	chunk_t notify_data;
 
 	/**
-	 * Type of payload, NOTIFY or NOTIFY_V1
+	 * Type of payload, PLV2_NOTIFY or PLV1_NOTIFY
 	 */
 	payload_type_t type;
 };
@@ -425,7 +433,7 @@ METHOD(payload_t, verify, status_t,
 	{
 		case INVALID_KE_PAYLOAD:
 		{
-			if (this->type == NOTIFY && this->notify_data.len != 2)
+			if (this->type == PLV2_NOTIFY && this->notify_data.len != 2)
 			{
 				bad_length = TRUE;
 			}
@@ -445,7 +453,7 @@ METHOD(payload_t, verify, status_t,
 		case INVALID_MAJOR_VERSION:
 		case NO_PROPOSAL_CHOSEN:
 		{
-			if (this->type == NOTIFY && this->notify_data.len != 0)
+			if (this->type == PLV2_NOTIFY && this->notify_data.len != 0)
 			{
 				bad_length = TRUE;
 			}
@@ -462,6 +470,14 @@ METHOD(payload_t, verify, status_t,
 		case ADDITIONAL_IP6_ADDRESS:
 		{
 			if (this->notify_data.len != 16)
+			{
+				bad_length = TRUE;
+			}
+			break;
+		}
+		case SIGNATURE_HASH_ALGORITHMS:
+		{
+			if (this->notify_data.len % 2)
 			{
 				bad_length = TRUE;
 			}
@@ -529,7 +545,7 @@ METHOD(payload_t, verify, status_t,
 METHOD(payload_t, get_encoding_rules, int,
 	private_notify_payload_t *this, encoding_rule_t **rules)
 {
-	if (this->type == NOTIFY)
+	if (this->type == PLV2_NOTIFY)
 	{
 		*rules = encodings_v2;
 		return countof(encodings_v2);
@@ -541,7 +557,7 @@ METHOD(payload_t, get_encoding_rules, int,
 METHOD(payload_t, get_header_length, int,
 	private_notify_payload_t *this)
 {
-	if (this->type == NOTIFY)
+	if (this->type == PLV2_NOTIFY)
 	{
 		return 8 + this->spi_size;
 	}
@@ -724,7 +740,7 @@ notify_payload_t *notify_payload_create(payload_type_t type)
 			.destroy = _destroy,
 		},
 		.doi = IKEV1_DOI_IPSEC,
-		.next_payload = NO_PAYLOAD,
+		.next_payload = PL_NONE,
 		.type = type,
 	);
 	compute_length(this);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Tobias Brunner
+ * Copyright (C) 2012-2015 Tobias Brunner
  * Copyright (C) 2005-2006 Martin Willi
  * Copyright (C) 2005 Jan Hutter
  * Hochschule fuer Technik Rapperswil
@@ -32,21 +32,23 @@ typedef struct hasher_t hasher_t;
 #include <credentials/keys/public_key.h>
 
 /**
- * Algorithms to use for hashing.
+ * Hash algorithms as defined for IKEv2 by RFC 7427
  */
 enum hash_algorithm_t {
-	/** not specified hash function */
-	HASH_UNKNOWN 		= 0,
-	/** preferred hash function, general purpose */
-	HASH_PREFERRED		= 1,
-	HASH_MD2 			= 2,
-	HASH_MD4			= 3,
-	HASH_MD5 			= 4,
-	HASH_SHA1 			= 5,
-	HASH_SHA224			= 6,
-	HASH_SHA256 		= 7,
-	HASH_SHA384 		= 8,
-	HASH_SHA512 		= 9
+	HASH_SHA1 			= 1,
+	HASH_SHA256			= 2,
+	HASH_SHA384			= 3,
+	HASH_SHA512			= 4,
+	/* use private use range for algorithms not defined/permitted by RFC 7427 */
+	HASH_UNKNOWN 		= 1024,
+	HASH_MD2 			= 1025,
+	HASH_MD4			= 1026,
+	HASH_MD5 			= 1027,
+	HASH_SHA224			= 1028,
+	HASH_SHA3_224		= 1029,
+	HASH_SHA3_256		= 1030,
+	HASH_SHA3_384		= 1031,
+	HASH_SHA3_512		= 1032
 };
 
 #define HASH_SIZE_MD2		16
@@ -154,6 +156,25 @@ hash_algorithm_t hasher_algorithm_from_integrity(integrity_algorithm_t alg,
 												 size_t *length);
 
 /**
+ * Conversion of hash algorithm to integrity algorithm (if based on a hash).
+ *
+ * @param alg			hash algorithm
+ * @param length		length of the signature
+ * @return				integrity algorithm, AUTH_UNDEFINED if none is known
+ * 						based on the given hash function
+ */
+integrity_algorithm_t hasher_algorithm_to_integrity(hash_algorithm_t alg,
+													size_t length);
+
+/**
+ * Check if the given algorithm may be used for IKEv2 signature authentication.
+ *
+ * @param alg			hash algorithm
+ * @return				TRUE if algorithm may be used, FALSE otherwise
+ */
+bool hasher_algorithm_for_ikev2(hash_algorithm_t alg);
+
+/**
  * Conversion of hash algorithm into ASN.1 OID.
  *
  * @param alg			hash algorithm
@@ -169,5 +190,13 @@ int hasher_algorithm_to_oid(hash_algorithm_t alg);
  * @return				ASN.1 OID if, or OID_UNKNOW
  */
 int hasher_signature_algorithm_to_oid(hash_algorithm_t alg, key_type_t key);
+
+/**
+ * Determine the hash algorithm associated with a given signature scheme.
+ *
+ * @param scheme		signature scheme
+ * @return				hash algorithm (could be HASH_UNKNOWN)
+ */
+hash_algorithm_t hasher_from_signature_scheme(signature_scheme_t scheme);
 
 #endif /** HASHER_H_ @}*/

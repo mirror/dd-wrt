@@ -329,7 +329,6 @@ static gboolean connect_(NMVPNPlugin *plugin, NMConnection *connection,
 	{
 		g_set_error(err, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,
 					"Failed to create dummy TUN device.");
-		gateway->destroy(gateway);
 		return FALSE;
 	}
 	address = nm_setting_vpn_get_data_item(vpn, "address");
@@ -412,9 +411,10 @@ static gboolean connect_(NMVPNPlugin *plugin, NMConnection *connection,
 		loose_gateway_id = TRUE;
 	}
 
-	if (auth_class == AUTH_CLASS_EAP)
+	if (auth_class == AUTH_CLASS_EAP ||
+		auth_class == AUTH_CLASS_PSK)
 	{
-		/* username/password authentication ... */
+		/* username/password or PSK authentication ... */
 		str = nm_setting_vpn_get_data_item(vpn, "user");
 		if (str)
 		{
@@ -527,16 +527,17 @@ static gboolean connect_(NMVPNPlugin *plugin, NMConnection *connection,
 	/**
 	 * Set up configurations
 	 */
-	ike_cfg = ike_cfg_create(IKEV2, TRUE, encap, "0.0.0.0", FALSE,
+	ike_cfg = ike_cfg_create(IKEV2, TRUE, encap, "0.0.0.0",
 							 charon->socket->get_port(charon->socket, FALSE),
-							(char*)address, FALSE, IKEV2_UDP_PORT,
+							(char*)address, IKEV2_UDP_PORT,
 							 FRAGMENTATION_NO, 0);
 	ike_cfg->add_proposal(ike_cfg, proposal_create_default(PROTO_IKE));
+	ike_cfg->add_proposal(ike_cfg, proposal_create_default_aead(PROTO_IKE));
 	peer_cfg = peer_cfg_create(priv->name, ike_cfg,
 					CERT_SEND_IF_ASKED, UNIQUE_REPLACE, 1, /* keyingtries */
 					36000, 0, /* rekey 10h, reauth none */
 					600, 600, /* jitter, over 10min */
-					TRUE, FALSE, /* mobike, aggressive */
+					TRUE, FALSE, TRUE, /* mobike, aggressive, pull */
 					0, 0, /* DPD delay, timeout */
 					FALSE, NULL, NULL); /* mediation */
 	if (virtual)
@@ -548,7 +549,14 @@ static gboolean connect_(NMVPNPlugin *plugin, NMConnection *connection,
 	auth->add(auth, AUTH_RULE_IDENTITY, user);
 	peer_cfg->add_auth_cfg(peer_cfg, auth, TRUE);
 	auth = auth_cfg_create();
-	auth->add(auth, AUTH_RULE_AUTH_CLASS, AUTH_CLASS_PUBKEY);
+	if (auth_class == AUTH_CLASS_PSK)
+	{
+		auth->add(auth, AUTH_RULE_AUTH_CLASS, AUTH_CLASS_PSK);
+	}
+	else
+	{
+		auth->add(auth, AUTH_RULE_AUTH_CLASS, AUTH_CLASS_PUBKEY);
+	}
 	auth->add(auth, AUTH_RULE_IDENTITY, gateway);
 	auth->add(auth, AUTH_RULE_IDENTITY_LOOSE, loose_gateway_id);
 	peer_cfg->add_auth_cfg(peer_cfg, auth, FALSE);
@@ -558,6 +566,7 @@ static gboolean connect_(NMVPNPlugin *plugin, NMConnection *connection,
 								 ACTION_NONE, ACTION_NONE, ACTION_NONE, ipcomp,
 								 0, 0, NULL, NULL, 0);
 	child_cfg->add_proposal(child_cfg, proposal_create_default(PROTO_ESP));
+	child_cfg->add_proposal(child_cfg, proposal_create_default_aead(PROTO_ESP));
 	ts = traffic_selector_create_dynamic(0, 0, 65535);
 	child_cfg->add_traffic_selector(child_cfg, TRUE, ts);
 	ts = traffic_selector_create_from_string(0, TS_IPV4_ADDR_RANGE,
@@ -623,7 +632,7 @@ static gboolean need_secrets(NMVPNPlugin *plugin, NMConnection *connection,
 	method = nm_setting_vpn_get_data_item(settings, "method");
 	if (method)
 	{
-		if (streq(method, "eap"))
+		if (streq(method, "eap") || streq(method, "psk"))
 		{
 			if (nm_setting_vpn_get_secret(settings, "password"))
 			{
@@ -650,6 +659,10 @@ static gboolean need_secrets(NMVPNPlugin *plugin, NMConnection *connection,
 				if (key)
 				{
 					key->destroy(key);
+					return FALSE;
+				}
+				else if (nm_setting_vpn_get_secret(settings, "password"))
+				{
 					return FALSE;
 				}
 			}

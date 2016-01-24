@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Tobias Brunner
+ * Copyright (C) 2012-2013 Tobias Brunner
  * Copyright (C) 2012 Giuliano Grassi
  * Copyright (C) 2012 Ralf Sager
  * Hochschule fuer Technik Rapperswil
@@ -115,7 +115,7 @@ METHOD(packet_t, skip_bytes, void,
 	return this->packet->skip_bytes(this->packet, bytes);
 }
 
-METHOD(packet_t, clone, packet_t*,
+METHOD(packet_t, clone_, packet_t*,
 	private_esp_packet_t *this)
 {
 	private_esp_packet_t *pkt;
@@ -212,23 +212,21 @@ METHOD(esp_packet_t, decrypt, status_t,
 {
 	bio_reader_t *reader;
 	u_int32_t spi, seq;
-	chunk_t data, iv, icv, ciphertext, plaintext;
-	crypter_t *crypter;
-	signer_t *signer;
+	chunk_t data, iv, icv, aad, ciphertext, plaintext;
+	aead_t *aead;
 
 	DESTROY_IF(this->payload);
 	this->payload = NULL;
 
 	data = this->packet->get_data(this->packet);
-	crypter = esp_context->get_crypter(esp_context);
-	signer = esp_context->get_signer(esp_context);
+	aead = esp_context->get_aead(esp_context);
 
 	reader = bio_reader_create(data);
 	if (!reader->read_uint32(reader, &spi) ||
 		!reader->read_uint32(reader, &seq) ||
-		!reader->read_data(reader, crypter->get_iv_size(crypter), &iv) ||
-		!reader->read_data_end(reader, signer->get_block_size(signer), &icv) ||
-		reader->remaining(reader) % crypter->get_block_size(crypter))
+		!reader->read_data(reader, aead->get_iv_size(aead), &iv) ||
+		!reader->read_data_end(reader, aead->get_icv_size(aead), &icv) ||
+		reader->remaining(reader) % aead->get_block_size(aead))
 	{
 		DBG1(DBG_ESP, "ESP decryption failed: invalid length");
 		return PARSE_ERROR;
@@ -246,20 +244,17 @@ METHOD(esp_packet_t, decrypt, status_t,
 	DBG3(DBG_ESP, "ESP decryption:\n  SPI %.8x [seq %u]\n  IV %B\n  "
 		 "encrypted %B\n  ICV %B", spi, seq, &iv, &ciphertext, &icv);
 
-	if (!signer->get_signature(signer, chunk_create(data.ptr, 8), NULL) ||
-		!signer->get_signature(signer, iv, NULL) ||
-		!signer->verify_signature(signer, ciphertext, icv))
+	/* include ICV in ciphertext for decryption/verification */
+	ciphertext.len += icv.len;
+	/* aad = spi + seq */
+	aad = chunk_create(data.ptr, 8);
+
+	if (!aead->decrypt(aead, ciphertext, aad, iv, &plaintext))
 	{
-		DBG1(DBG_ESP, "ICV verification failed!");
+		DBG1(DBG_ESP, "ESP decryption or ICV verification failed");
 		return FAILED;
 	}
 	esp_context->set_authenticated_seqno(esp_context, seq);
-
-	if (!crypter->decrypt(crypter, ciphertext, iv, &plaintext))
-	{
-		DBG1(DBG_ESP, "ESP decryption failed");
-		return FAILED;
-	}
 
 	if (!remove_padding(this, plaintext))
 	{
@@ -284,13 +279,12 @@ static void generate_padding(chunk_t padding)
 METHOD(esp_packet_t, encrypt, status_t,
 	private_esp_packet_t *this, esp_context_t *esp_context, u_int32_t spi)
 {
-	chunk_t iv, icv, padding, payload, ciphertext, auth_data;
+	chunk_t iv, icv, aad, padding, payload, ciphertext;
 	bio_writer_t *writer;
 	u_int32_t next_seqno;
 	size_t blocksize, plainlen;
-	crypter_t *crypter;
-	signer_t *signer;
-	rng_t *rng;
+	aead_t *aead;
+	iv_gen_t *iv_gen;
 
 	this->packet->set_data(this->packet, chunk_empty);
 
@@ -300,24 +294,25 @@ METHOD(esp_packet_t, encrypt, status_t,
 		return FAILED;
 	}
 
-	rng = lib->crypto->create_rng(lib->crypto, RNG_WEAK);
-	if (!rng)
+	aead = esp_context->get_aead(esp_context);
+	iv_gen = aead->get_iv_gen(aead);
+	if (!iv_gen)
 	{
-		DBG1(DBG_ESP, "ESP encryption failed: could not find RNG");
+		DBG1(DBG_ESP, "ESP encryption failed: no IV generator");
 		return NOT_FOUND;
 	}
-	crypter = esp_context->get_crypter(esp_context);
-	signer = esp_context->get_signer(esp_context);
 
-	blocksize = crypter->get_block_size(crypter);
-	iv.len = crypter->get_iv_size(crypter);
-	icv.len = signer->get_block_size(signer);
+	blocksize = aead->get_block_size(aead);
+	iv.len = aead->get_iv_size(aead);
+	icv.len = aead->get_icv_size(aead);
 
 	/* plaintext = payload, padding, pad_length, next_header */
 	payload = this->payload ? this->payload->get_encoding(this->payload)
 							: chunk_empty;
 	plainlen = payload.len + 2;
-	padding.len = blocksize - (plainlen % blocksize);
+	padding.len = pad_len(plainlen, blocksize);
+	/* ICV must be on a 4-byte boundary */
+	padding.len += pad_len(iv.len + plainlen + padding.len, 4);
 	plainlen += padding.len;
 
 	/* len = spi, seq, IV, plaintext, ICV */
@@ -327,14 +322,12 @@ METHOD(esp_packet_t, encrypt, status_t,
 	writer->write_uint32(writer, next_seqno);
 
 	iv = writer->skip(writer, iv.len);
-	if (!rng->get_bytes(rng, iv.len, iv.ptr))
+	if (!iv_gen->get_iv(iv_gen, next_seqno, iv.len, iv.ptr))
 	{
 		DBG1(DBG_ESP, "ESP encryption failed: could not generate IV");
 		writer->destroy(writer);
-		rng->destroy(rng);
 		return FAILED;
 	}
-	rng->destroy(rng);
 
 	/* plain-/ciphertext will start here */
 	ciphertext = writer->get_buf(writer);
@@ -349,24 +342,19 @@ METHOD(esp_packet_t, encrypt, status_t,
 	writer->write_uint8(writer, padding.len);
 	writer->write_uint8(writer, this->next_header);
 
+	/* aad = spi + seq */
+	aad = writer->get_buf(writer);
+	aad.len = 8;
+	icv = writer->skip(writer, icv.len);
+
 	DBG3(DBG_ESP, "ESP before encryption:\n  payload = %B\n  padding = %B\n  "
 		 "padding length = %hhu, next header = %hhu", &payload, &padding,
 		 (u_int8_t)padding.len, this->next_header);
 
-	/* encrypt the content inline */
-	if (!crypter->encrypt(crypter, ciphertext, iv, NULL))
+	/* encrypt/authenticate the content inline */
+	if (!aead->encrypt(aead, ciphertext, aad, iv, NULL))
 	{
-		DBG1(DBG_ESP, "ESP encryption failed");
-		writer->destroy(writer);
-		return FAILED;
-	}
-
-	/* calculate signature */
-	auth_data = writer->get_buf(writer);
-	icv = writer->skip(writer, icv.len);
-	if (!signer->get_signature(signer, auth_data, icv.ptr))
-	{
-		DBG1(DBG_ESP, "ESP encryption failed: signature generation failed");
+		DBG1(DBG_ESP, "ESP encryption or ICV generation failed");
 		writer->destroy(writer);
 		return FAILED;
 	}
@@ -426,7 +414,7 @@ static private_esp_packet_t *esp_packet_create_internal(packet_t *packet)
 				.get_dscp = _get_dscp,
 				.set_dscp = _set_dscp,
 				.skip_bytes = _skip_bytes,
-				.clone = _clone,
+				.clone = _clone_,
 				.destroy = _destroy,
 			},
 			.get_source = _get_source,

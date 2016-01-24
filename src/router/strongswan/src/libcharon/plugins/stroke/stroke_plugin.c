@@ -51,12 +51,13 @@ static bool register_stroke(private_stroke_plugin_t *this,
 	if (reg)
 	{
 		this->socket = stroke_socket_create();
+		return this->socket != NULL;
 	}
 	else
 	{
 		DESTROY_IF(this->socket);
+		return TRUE;
 	}
-	return TRUE;
 }
 
 METHOD(plugin_t, get_features, int,
@@ -68,6 +69,7 @@ METHOD(plugin_t, get_features, int,
 				PLUGIN_SDEPEND(PRIVKEY, KEY_RSA),
 				PLUGIN_SDEPEND(PRIVKEY, KEY_ECDSA),
 				PLUGIN_SDEPEND(PRIVKEY, KEY_DSA),
+				PLUGIN_SDEPEND(PRIVKEY, KEY_BLISS),
 				PLUGIN_SDEPEND(CERT_DECODE, CERT_ANY),
 				PLUGIN_SDEPEND(CERT_DECODE, CERT_X509),
 				PLUGIN_SDEPEND(CERT_DECODE, CERT_X509_CRL),
@@ -104,4 +106,3 @@ plugin_t *stroke_plugin_create()
 
 	return &this->public.plugin;
 }
-

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 Tobias Brunner
  * Copyright (C) 2008 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
@@ -17,6 +18,7 @@
 
 #include <daemon.h>
 #include <crypto/prf_plus.h>
+#include <crypto/hashers/hash_algorithm_set.h>
 
 typedef struct private_keymat_v2_t private_keymat_v2_t;
 
@@ -69,6 +71,11 @@ struct private_keymat_v2_t {
 	 * Key to verify incoming authentication data (SKp)
 	 */
 	chunk_t skp_verify;
+
+	/**
+	 * Set of hash algorithms supported by peer for signature authentication
+	 */
+	hash_algorithm_set_t *hash_algorithms;
 };
 
 METHOD(keymat_t, get_version, ike_version_t,
@@ -97,10 +104,36 @@ static bool derive_ike_aead(private_keymat_v2_t *this, u_int16_t alg,
 {
 	aead_t *aead_i, *aead_r;
 	chunk_t key = chunk_empty;
+	u_int salt_size;
+
+	switch (alg)
+	{
+		case ENCR_AES_GCM_ICV8:
+		case ENCR_AES_GCM_ICV12:
+		case ENCR_AES_GCM_ICV16:
+			/* RFC 4106 */
+		case ENCR_CHACHA20_POLY1305:
+			salt_size = 4;
+			break;
+		case ENCR_AES_CCM_ICV8:
+		case ENCR_AES_CCM_ICV12:
+		case ENCR_AES_CCM_ICV16:
+			/* RFC 4309 */
+		case ENCR_CAMELLIA_CCM_ICV8:
+		case ENCR_CAMELLIA_CCM_ICV12:
+		case ENCR_CAMELLIA_CCM_ICV16:
+			/* RFC 5529 */
+			salt_size = 3;
+			break;
+		default:
+			DBG1(DBG_IKE, "nonce size for %N unknown!",
+				 encryption_algorithm_names, alg);
+			return FALSE;
+	}
 
 	/* SK_ei/SK_er used for encryption */
-	aead_i = lib->crypto->create_aead(lib->crypto, alg, key_size / 8);
-	aead_r = lib->crypto->create_aead(lib->crypto, alg, key_size / 8);
+	aead_i = lib->crypto->create_aead(lib->crypto, alg, key_size / 8, salt_size);
+	aead_r = lib->crypto->create_aead(lib->crypto, alg, key_size / 8, salt_size);
 	if (aead_i == NULL || aead_r == NULL)
 	{
 		DBG1(DBG_IKE, "%N %N (key size %d) not supported!",
@@ -161,6 +194,7 @@ static bool derive_ike_traditional(private_keymat_v2_t *this, u_int16_t enc_alg,
 {
 	crypter_t *crypter_i = NULL, *crypter_r = NULL;
 	signer_t *signer_i, *signer_r;
+	iv_gen_t *ivg_i, *ivg_r;
 	size_t key_size;
 	chunk_t key = chunk_empty;
 
@@ -232,15 +266,21 @@ static bool derive_ike_traditional(private_keymat_v2_t *this, u_int16_t enc_alg,
 		goto failure;
 	}
 
+	ivg_i = iv_gen_create_for_alg(enc_alg);
+	ivg_r = iv_gen_create_for_alg(enc_alg);
+	if (!ivg_i || !ivg_r)
+	{
+		goto failure;
+	}
 	if (this->initiator)
 	{
-		this->aead_in = aead_create(crypter_r, signer_r);
-		this->aead_out = aead_create(crypter_i, signer_i);
+		this->aead_in = aead_create(crypter_r, signer_r, ivg_r);
+		this->aead_out = aead_create(crypter_i, signer_i, ivg_i);
 	}
 	else
 	{
-		this->aead_in = aead_create(crypter_i, signer_i);
-		this->aead_out = aead_create(crypter_r, signer_r);
+		this->aead_in = aead_create(crypter_i, signer_i, ivg_i);
+		this->aead_out = aead_create(crypter_r, signer_r, ivg_r);
 	}
 	signer_i = signer_r = NULL;
 	crypter_i = crypter_r = NULL;
@@ -268,7 +308,7 @@ METHOD(keymat_v2_t, derive_ike_keys, bool,
 	spi_i = chunk_alloca(sizeof(u_int64_t));
 	spi_r = chunk_alloca(sizeof(u_int64_t));
 
-	if (dh->get_shared_secret(dh, &secret) != SUCCESS)
+	if (!dh->get_shared_secret(dh, &secret))
 	{
 		return FALSE;
 	}
@@ -278,6 +318,7 @@ METHOD(keymat_v2_t, derive_ike_keys, bool,
 	{
 		DBG1(DBG_IKE, "no %N selected",
 			 transform_type_names, PSEUDO_RANDOM_FUNCTION);
+		chunk_clear(&secret);
 		return FALSE;
 	}
 	this->prf_alg = alg;
@@ -287,6 +328,7 @@ METHOD(keymat_v2_t, derive_ike_keys, bool,
 		DBG1(DBG_IKE, "%N %N not supported!",
 			 transform_type_names, PSEUDO_RANDOM_FUNCTION,
 			 pseudo_random_function_names, alg);
+		chunk_clear(&secret);
 		return FALSE;
 	}
 	DBG4(DBG_IKE, "shared Diffie Hellman secret %B", &secret);
@@ -339,6 +381,7 @@ METHOD(keymat_v2_t, derive_ike_keys, bool,
 		{
 			DBG1(DBG_IKE, "PRF of old SA %N not supported!",
 				 pseudo_random_function_names, rekey_function);
+			chunk_clear(&secret);
 			chunk_free(&full_nonce);
 			chunk_free(&fixed_nonce);
 			chunk_clear(&prf_plus_seed);
@@ -450,17 +493,6 @@ METHOD(keymat_v2_t, derive_child_keys, bool,
 	chunk_t seed, secret = chunk_empty;
 	prf_plus_t *prf_plus;
 
-	if (dh)
-	{
-		if (dh->get_shared_secret(dh, &secret) != SUCCESS)
-		{
-			return FALSE;
-		}
-		DBG4(DBG_CHD, "DH secret %B", &secret);
-	}
-	seed = chunk_cata("mcc", secret, nonce_i, nonce_r);
-	DBG4(DBG_CHD, "seed %B", &seed);
-
 	if (proposal->get_algorithm(proposal, ENCRYPTION_ALGORITHM,
 								&enc_alg, &enc_size))
 	{
@@ -495,7 +527,9 @@ METHOD(keymat_v2_t, derive_child_keys, bool,
 			case ENCR_AES_GCM_ICV12:
 			case ENCR_AES_GCM_ICV16:
 			case ENCR_AES_CTR:
+			case ENCR_CAMELLIA_CTR:
 			case ENCR_NULL_AUTH_AES_GMAC:
+			case ENCR_CHACHA20_POLY1305:
 				enc_size += 4;
 				break;
 			default:
@@ -527,7 +561,21 @@ METHOD(keymat_v2_t, derive_child_keys, bool,
 	{
 		return FALSE;
 	}
+
+	if (dh)
+	{
+		if (!dh->get_shared_secret(dh, &secret))
+		{
+			return FALSE;
+		}
+		DBG4(DBG_CHD, "DH secret %B", &secret);
+	}
+	seed = chunk_cata("scc", secret, nonce_i, nonce_r);
+	DBG4(DBG_CHD, "seed %B", &seed);
+
 	prf_plus = prf_plus_create(this->prf, TRUE, seed);
+	memwipe(seed.ptr, seed.len);
+
 	if (!prf_plus)
 	{
 		return FALSE;
@@ -590,7 +638,7 @@ METHOD(keymat_v2_t, get_auth_octets, bool,
 	idx = chunk_cata("cc", chunk, id->get_encoding(id));
 
 	DBG3(DBG_IKE, "IDx' %B", &idx);
-	DBG3(DBG_IKE, "SK_p %B", &skp);
+	DBG4(DBG_IKE, "SK_p %B", &skp);
 	if (!this->prf->set_key(this->prf, skp) ||
 		!this->prf->allocate_bytes(this->prf, idx, &chunk))
 	{
@@ -645,6 +693,26 @@ METHOD(keymat_v2_t, get_psk_sig, bool,
 	return TRUE;
 }
 
+METHOD(keymat_v2_t, hash_algorithm_supported, bool,
+	private_keymat_v2_t *this, hash_algorithm_t hash)
+{
+	if (!this->hash_algorithms)
+	{
+		return FALSE;
+	}
+	return this->hash_algorithms->contains(this->hash_algorithms, hash);
+}
+
+METHOD(keymat_v2_t, add_hash_algorithm, void,
+	private_keymat_v2_t *this, hash_algorithm_t hash)
+{
+	if (!this->hash_algorithms)
+	{
+		this->hash_algorithms = hash_algorithm_set_create();
+	}
+	this->hash_algorithms->add(this->hash_algorithms, hash);
+}
+
 METHOD(keymat_t, destroy, void,
 	private_keymat_v2_t *this)
 {
@@ -654,6 +722,7 @@ METHOD(keymat_t, destroy, void,
 	chunk_clear(&this->skd);
 	chunk_clear(&this->skp_verify);
 	chunk_clear(&this->skp_build);
+	DESTROY_IF(this->hash_algorithms);
 	free(this);
 }
 
@@ -678,6 +747,9 @@ keymat_v2_t *keymat_v2_create(bool initiator)
 			.get_skd = _get_skd,
 			.get_auth_octets = _get_auth_octets,
 			.get_psk_sig = _get_psk_sig,
+			.add_hash_algorithm = _add_hash_algorithm,
+			.hash_algorithm_supported = _hash_algorithm_supported,
+
 		},
 		.initiator = initiator,
 		.prf_alg = PRF_UNDEFINED,

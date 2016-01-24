@@ -22,9 +22,14 @@
 #ifndef ENUM_H_
 #define ENUM_H_
 
-#include "printf_hook.h"
+#include <utils/printf_hook/printf_hook.h>
 
 typedef struct enum_name_t enum_name_t;
+
+/**
+ * Magic enum_name_t pointer indicating this is an enum name for flags
+ */
+#define ENUM_FLAG_MAGIC ((enum_name_t*)~(uintptr_t)0)
 
 /**
  * Struct to store names for enums.
@@ -58,7 +63,7 @@ struct enum_name_t {
 	int first;
 	/** value of the last enum string */
 	int last;
-	/** next enum_name_t in list */
+	/** next enum_name_t in list, or ENUM_FLAG_MAGIC */
 	enum_name_t *next;
 	/** array of strings containing names from first to last */
 	char *names[];
@@ -107,6 +112,23 @@ struct enum_name_t {
 #define ENUM(name, first, last, ...) ENUM_BEGIN(name, first, last, __VA_ARGS__); ENUM_END(name, last)
 
 /**
+ * Define a enum name with only one range for flags.
+ *
+ * Using an enum list for flags would be overkill. Hence we use a single
+ * range with all values in range. The next pointer is abused to mark
+ * that the enum name is for flags only. Use NULL if a particular flag
+ * is not meant to be printed.
+ *
+ * @param name	name of the enum_name list
+ * @param first	enum value of the first enum string
+ * @param last	enum value of the last enum string
+ * @param ...	a list of strings
+ */
+#define ENUM_FLAGS(name, first, last, ...) \
+	static enum_name_t name##last = {first, last, ENUM_FLAG_MAGIC, { __VA_ARGS__ }}; \
+	ENUM_END(name, last)
+
+/**
  * Convert a enum value to its string representation.
  *
  * @param e		enum names for this enum value
@@ -120,9 +142,41 @@ char *enum_to_name(enum_name_t *e, int val);
  *
  * @param e		enum names for this enum value
  * @param name	name to get enum value for
- * @return		enum value, -1 if not found
+ * @param valp	variable sized pointer receiving value
+ * @return		TRUE if enum name found, FALSE otherwise
  */
-int enum_from_name(enum_name_t *e, char *name);
+#define enum_from_name(e, name, valp) ({ \
+	int _val; \
+	int _found = enum_from_name_as_int(e, name, &_val); \
+	if (_found) \
+	{ \
+		*(valp) = _val; \
+	} \
+	_found; })
+
+/**
+ * Convert a enum string back to its enum value, integer pointer variant.
+ *
+ * This variant takes integer pointer only, use enum_from_name() to pass
+ * enum type pointers for the result.
+ *
+ * @param e		enum names for this enum value
+ * @param name	name to get enum value for
+ * @param val	integer pointer receiving value
+ * @return		TRUE if enum name found, FALSE otherwise
+ */
+bool enum_from_name_as_int(enum_name_t *e, const char *name, int *val);
+
+/**
+ * Convert a enum value containing flags to its string representation.
+ *
+ * @param e		enum names for this enum value suitable for flags
+ * @param val	enum value to get string for
+ * @param buf	buffer to write flag string to
+ * @param len	buffer size
+ * @return		buf, NULL if buffer too small
+ */
+char *enum_flags_to_string(enum_name_t *e, u_int val, char *buf, size_t len);
 
 /**
  * printf hook function for enum_names_t.

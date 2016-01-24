@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013 Andreas Steffen
+ * Copyright (C) 2011-2015 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -15,6 +15,8 @@
 
 #include "imcv.h"
 #include "imv_agent.h"
+#include "imv_session.h"
+
 #include "ietf/ietf_attr_assess_result.h"
 
 #include <tncif_names.h>
@@ -50,7 +52,7 @@ struct private_imv_agent_t {
 	/**
 	 * number of message types registered by IMV
 	 */
-	u_int32_t type_count;
+	uint32_t type_count;
 
 	/**
 	 * ID of IMV as assigned by TNCS
@@ -61,6 +63,11 @@ struct private_imv_agent_t {
 	 * List of additional IMV IDs assigned by TNCS
 	 */
 	linked_list_t *additional_ids;
+
+	/**
+	 * list of non-fatal unsupported PA-TNC attribute types
+	 */
+	linked_list_t *non_fatal_attr_types;
 
 	/**
 	 * list of TNCS connection entries
@@ -283,6 +290,7 @@ static bool delete_connection(private_imv_agent_t *this, TNC_ConnectionID id)
 {
 	enumerator_t *enumerator;
 	imv_state_t *state;
+	imv_session_t *session;
 	bool found = FALSE;
 
 	this->connection_lock->write_lock(this->connection_lock);
@@ -292,6 +300,8 @@ static bool delete_connection(private_imv_agent_t *this, TNC_ConnectionID id)
 		if (id == state->get_connection_id(state))
 		{
 			found = TRUE;
+			session = state->get_session(state);
+			imcv_sessions->remove_session(imcv_sessions, session);
 			state->destroy(state);
 			this->connections->remove_at(this->connections, enumerator);
 			break;
@@ -338,7 +348,7 @@ static char* get_str_attribute(private_imv_agent_t *this, TNC_ConnectionID id,
 /**
  * Read an UInt32 attribute
  */
-static u_int32_t get_uint_attribute(private_imv_agent_t *this, TNC_ConnectionID id,
+static uint32_t get_uint_attribute(private_imv_agent_t *this, TNC_ConnectionID id,
 									TNC_AttributeID attribute_id)
 {
 	TNC_UInt32 len;
@@ -362,7 +372,7 @@ static linked_list_t* get_identity_attribute(private_imv_agent_t *this,
 {
 	TNC_UInt32 len;
 	char buf[2048];
-	u_int32_t count;
+	uint32_t count;
 	tncif_identity_t *tnc_id;
 	bio_reader_t *reader;
 	linked_list_t *list;
@@ -404,9 +414,8 @@ METHOD(imv_agent_t, create_state, TNC_Result,
 	char *tnccs_p = NULL, *tnccs_v = NULL, *t_p = NULL, *t_v = NULL;
 	bool has_long = FALSE, has_excl = FALSE, has_soh = FALSE;
 	linked_list_t *ar_identities;
-	enumerator_t *enumerator;
-	tncif_identity_t *tnc_id;
-	u_int32_t max_msg_len;
+	imv_session_t *session;
+	uint32_t max_msg_len;
 
 	conn_id = state->get_connection_id(state);
 	if (find_connection(this, conn_id))
@@ -418,15 +427,24 @@ METHOD(imv_agent_t, create_state, TNC_Result,
 	}
 
 	/* Get and display attributes from TNCS via IF-IMV */
-	has_long = get_bool_attribute(this, conn_id, TNC_ATTRIBUTEID_HAS_LONG_TYPES);
-	has_excl = get_bool_attribute(this, conn_id, TNC_ATTRIBUTEID_HAS_EXCLUSIVE);
-	has_soh  = get_bool_attribute(this, conn_id, TNC_ATTRIBUTEID_HAS_SOH);
-	tnccs_p = get_str_attribute(this, conn_id, TNC_ATTRIBUTEID_IFTNCCS_PROTOCOL);
-	tnccs_v = get_str_attribute(this, conn_id, TNC_ATTRIBUTEID_IFTNCCS_VERSION);
-	t_p = get_str_attribute(this, conn_id, TNC_ATTRIBUTEID_IFT_PROTOCOL);
-	t_v = get_str_attribute(this, conn_id, TNC_ATTRIBUTEID_IFT_VERSION);
-	max_msg_len = get_uint_attribute(this, conn_id, TNC_ATTRIBUTEID_MAX_MESSAGE_SIZE);
-	ar_identities = get_identity_attribute(this, conn_id, TNC_ATTRIBUTEID_AR_IDENTITIES);
+	has_long = get_bool_attribute(this, conn_id,
+									TNC_ATTRIBUTEID_HAS_LONG_TYPES);
+	has_excl = get_bool_attribute(this, conn_id,
+									TNC_ATTRIBUTEID_HAS_EXCLUSIVE);
+	has_soh  = get_bool_attribute(this, conn_id,
+									TNC_ATTRIBUTEID_HAS_SOH);
+	tnccs_p = get_str_attribute(this, conn_id,
+									TNC_ATTRIBUTEID_IFTNCCS_PROTOCOL);
+	tnccs_v = get_str_attribute(this, conn_id,
+									TNC_ATTRIBUTEID_IFTNCCS_VERSION);
+	t_p = get_str_attribute(this, conn_id,
+									TNC_ATTRIBUTEID_IFT_PROTOCOL);
+	t_v = get_str_attribute(this, conn_id,
+									TNC_ATTRIBUTEID_IFT_VERSION);
+	max_msg_len = get_uint_attribute(this, conn_id,
+									TNC_ATTRIBUTEID_MAX_MESSAGE_SIZE);
+	ar_identities = get_identity_attribute(this, conn_id,
+									TNC_ATTRIBUTEID_AR_IDENTITIES);
 
 	state->set_flags(state, has_long, has_excl);
 	state->set_max_msg_len(state, max_msg_len);
@@ -438,44 +456,19 @@ METHOD(imv_agent_t, create_state, TNC_Result,
 	DBG2(DBG_IMV, "  over %s %s with maximum PA-TNC message size of %u bytes",
 				  t_p ? t_p:"?", t_v ? t_v :"?", max_msg_len);
 
-	enumerator = ar_identities->create_enumerator(ar_identities);
-	while (enumerator->enumerate(enumerator, &tnc_id))
-	{
-		pen_type_t id_type, subject_type, auth_type;
-		u_int32_t tcg_id_type, tcg_subject_type, tcg_auth_type;
-		chunk_t id_value;
+	session = imcv_sessions->add_session(imcv_sessions, conn_id, ar_identities);
+	state->set_session(state, session);
 
-		id_type = tnc_id->get_identity_type(tnc_id);
-		id_value = tnc_id->get_identity_value(tnc_id);
-		subject_type = tnc_id->get_subject_type(tnc_id);
-		auth_type = tnc_id->get_auth_type(tnc_id);
-
-		tcg_id_type =      (id_type.vendor_id == PEN_TCG) ?
-							id_type.type : TNC_ID_UNKNOWN;
-		tcg_subject_type = (subject_type.vendor_id == PEN_TCG) ?
-							subject_type.type : TNC_SUBJECT_UNKNOWN;
-		tcg_auth_type =    (auth_type.vendor_id == PEN_TCG) ?
-							auth_type.type : TNC_AUTH_UNKNOWN;
-
-
-		DBG2(DBG_IMV, "  %N AR identity '%.*s' authenticated by %N",
-			 TNC_Subject_names, tcg_subject_type,
-			 id_value.len, id_value.ptr,
-			 TNC_Authentication_names, tcg_auth_type);
-		state->set_ar_id(state, tcg_id_type, id_value);
-	}
-	enumerator->destroy(enumerator);
-
-	ar_identities->destroy_offset(ar_identities,
-						   offsetof(tncif_identity_t, destroy));
 	free(tnccs_p);
 	free(tnccs_v);
 	free(t_p);
 	free(t_v);
 
+	/* insert state in connection list */
 	this->connection_lock->write_lock(this->connection_lock);
 	this->connections->insert_last(this->connections, state);
 	this->connection_lock->unlock(this->connection_lock);
+
 	return TNC_RESULT_SUCCESS;
 }
 
@@ -590,7 +583,7 @@ METHOD(imv_agent_t, reserve_additional_ids, TNC_Result,
 		count--;
 
 		/* store the scalar value in the pointer */
-		pointer = (void*)id;
+		pointer = (void*)(uintptr_t)id;
 		this->additional_ids->insert_last(this->additional_ids, pointer);
 		DBG2(DBG_IMV, "IMV %u \"%s\" reserved additional ID %u",
 					  this->id, this->name, id);
@@ -750,11 +743,29 @@ METHOD(imv_agent_t, provide_recommendation, TNC_Result,
 	return this->provide_recommendation(this->id, connection_id, rec, eval);
 }
 
+METHOD(imv_agent_t, add_non_fatal_attr_type, void,
+	private_imv_agent_t *this, pen_type_t type)
+{
+	pen_type_t *type_p;
+
+	type_p = malloc_thing(pen_type_t);
+	*type_p = type;
+	this->non_fatal_attr_types->insert_last(this->non_fatal_attr_types, type_p);
+}
+
+METHOD(imv_agent_t, get_non_fatal_attr_types, linked_list_t*,
+	private_imv_agent_t *this)
+{
+	return this->non_fatal_attr_types;
+}
+
 METHOD(imv_agent_t, destroy, void,
 	private_imv_agent_t *this)
 {
 	DBG1(DBG_IMV, "IMV %u \"%s\" terminated", this->id, this->name);
 	this->additional_ids->destroy(this->additional_ids);
+	this->non_fatal_attr_types->destroy_function(this->non_fatal_attr_types,
+												 free);
 	this->connections->destroy_offset(this->connections,
 									  offsetof(imv_state_t, destroy));
 	this->connection_lock->destroy(this->connection_lock);
@@ -768,13 +779,13 @@ METHOD(imv_agent_t, destroy, void,
  * Described in header.
  */
 imv_agent_t *imv_agent_create(const char *name,
-							  pen_type_t *supported_types, u_int32_t type_count,
+							  pen_type_t *supported_types, uint32_t type_count,
 							  TNC_IMVID id, TNC_Version *actual_version)
 {
 	private_imv_agent_t *this;
 
 	/* initialize  or increase the reference count */
-	if (!libimcv_init())
+	if (!libimcv_init(TRUE))
 	{
 		return NULL;
 	}
@@ -793,6 +804,8 @@ imv_agent_t *imv_agent_create(const char *name,
 			.create_id_enumerator = _create_id_enumerator,
 			.create_language_enumerator = _create_language_enumerator,
 			.provide_recommendation = _provide_recommendation,
+			.add_non_fatal_attr_type = _add_non_fatal_attr_type,
+			.get_non_fatal_attr_types = _get_non_fatal_attr_types,
 			.destroy = _destroy,
 		},
 		.name = name,
@@ -800,6 +813,7 @@ imv_agent_t *imv_agent_create(const char *name,
 		.type_count = type_count,
 		.id = id,
 		.additional_ids = linked_list_create(),
+		.non_fatal_attr_types = linked_list_create(),
 		.connections = linked_list_create(),
 		.connection_lock = rwlock_create(RWLOCK_TYPE_DEFAULT),
 	);
@@ -809,5 +823,3 @@ imv_agent_t *imv_agent_create(const char *name,
 
 	return &this->public;
 }
-
-

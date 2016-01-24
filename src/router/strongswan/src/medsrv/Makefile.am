@@ -10,11 +10,15 @@ controller/peer_controller.c controller/peer_controller.h
 medsrv_fcgi_LDADD = $(top_builddir)/src/libstrongswan/libstrongswan.la $(top_builddir)/src/libfast/libfast.la
 main.o :	$(top_builddir)/config.status
 
-INCLUDES = -I$(top_srcdir)/src/libstrongswan -I$(top_srcdir)/src/libfast
-AM_CFLAGS = -rdynamic \
-  -DIPSECDIR=\"${ipsecdir}\" \
-  -DIPSEC_PIDDIR=\"${piddir}\" \
-  -DPLUGINS=\""${medsrv_plugins}\""
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/libstrongswan \
+	-I$(top_srcdir)/src/libfast \
+	-DIPSECDIR=\"${ipsecdir}\" \
+	-DIPSEC_PIDDIR=\"${piddir}\" \
+	-DPLUGINS=\""${medsrv_plugins}\""
+
+AM_CFLAGS = \
+	$(PLUGIN_CFLAGS)
 
 # Don't forget to add templates to EXTRA_DIST !!! How to automate?
 medsrv_templatesdir = ${medsrvdir}/templates
@@ -31,11 +35,11 @@ templates/peer/list.cs
 medsrv_templates_staticdir = ${medsrv_templatesdir}/static
 medsrv_templates_static_DATA = templates/header.cs templates/footer.cs \
 templates/static/style.css templates/static/strongswan.png \
-templates/static/favicon.ico templates/static/mootools.js templates/static/script.js
+templates/static/favicon.ico
 
 EXTRA_DIST = templates/header.cs templates/footer.cs \
 templates/static/style.css templates/static/strongswan.png \
-templates/static/favicon.ico templates/static/mootools.js templates/static/script.js \
+templates/static/favicon.ico \
 templates/peer/add.cs templates/peer/edit.cs templates/peer/list.cs \
 templates/user/login.cs templates/user/add.cs templates/user/edit.cs \
 templates/user/help.cs

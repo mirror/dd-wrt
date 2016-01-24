@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Andreas Steffen
+ * Copyright (C) 2012-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -29,12 +29,27 @@
 #include <library.h>
 
 typedef struct imv_os_state_t imv_os_state_t;
+typedef enum imv_os_handshake_state_t imv_os_handshake_state_t;
 typedef enum os_settings_t os_settings_t;
 
+/**
+ * IMV OS Handshake States (state machine)
+ */
+enum imv_os_handshake_state_t {
+	IMV_OS_STATE_INIT,
+	IMV_OS_STATE_ATTR_REQ,
+	IMV_OS_STATE_POLICY_START,
+	IMV_OS_STATE_WORKITEMS,
+	IMV_OS_STATE_END
+};
+
+/**
+ * Flags for detected OS Settings
+ */
 enum os_settings_t {
-	OS_SETTINGS_FWD_ENABLED =         1,
-	OS_SETTINGS_DEFAULT_PWD_ENABLED = 2,
-	OS_SETTINGS_NON_MARKET_APPS =     4
+	OS_SETTINGS_FWD_ENABLED =         (1<<0),
+	OS_SETTINGS_DEFAULT_PWD_ENABLED = (1<<1),
+	OS_SETTINGS_UNKNOWN_SOURCE =      (1<<2)
 };
 
 /**
@@ -48,25 +63,19 @@ struct imv_os_state_t {
 	imv_state_t interface;
 
 	/**
-	 * Set OS Product Information
+	 * Set state of the handshake
 	 *
-	 * @param type			OS type (enumerated)
-	 * @param name			OS name (string)
-	 * @param version		OS version
+	 * @param new_state			the handshake state of IMV
 	 */
-	void (*set_info)(imv_os_state_t *this, os_type_t os_type,
-					 chunk_t name, chunk_t version);
+	void (*set_handshake_state)(imv_os_state_t *this,
+								imv_os_handshake_state_t new_state);
 
 	/**
-	 * Get OS Product Information
+	 * Get state of the handshake
 	 *
-	 * @param type			OS type (enumerated)
-	 * @param name			OS name (string)
-	 * @param version		OS version
-	 * @return				OS name & version as a concatenated string
+	 * @return					the handshake state of IMV
 	 */
-	char* (*get_info)(imv_os_state_t *this, os_type_t *os_type,
-					  chunk_t *name, chunk_t *version);
+	imv_os_handshake_state_t (*get_handshake_state)(imv_os_state_t *this);
 
 	/**
 	 * Set [or with multiple attributes increment] package counters
@@ -91,48 +100,6 @@ struct imv_os_state_t {
 					  int *count_blacklist, int *count_ok);
 
 	/**
-	 * Set/reset attribute request status
-	 *
-	 * @param set			TRUE to set, FALSE to clear
-	 */
-	void (*set_attribute_request)(imv_os_state_t *this, bool set);
-
-	/**
-	 * Get attribute request status
-	 *
-	 * @return				TRUE if set, FALSE if unset
-	 */
-	bool (*get_attribute_request)(imv_os_state_t *this);
-
-	/**
-	 * Set/reset OS Installed Packages request status
-	 *
-	 * @param set			TRUE to set, FALSE to clear
-	 */
-	void (*set_package_request)(imv_os_state_t *this, bool set);
-
-	/**
-	 * Get OS Installed Packages request status
-	 *
-	 * @return				TRUE if set, FALSE if unset
-	 */
-	bool (*get_package_request)(imv_os_state_t *this);
-
-	/**
-	 * Set device ID
-	 *
-	 * @param device_id		Device ID primary database key
-	 */
-	void (*set_device_id)(imv_os_state_t *this, int id);
-
-	/**
-	 * Get device ID
-	 *
-	 * @return				Device ID primary database key
-	 */
-	int (*get_device_id)(imv_os_state_t *this);
-
-	/**
 	 * Set OS settings
 	 *
 	 * @param settings		OS settings
@@ -147,18 +114,18 @@ struct imv_os_state_t {
 	u_int (*get_os_settings)(imv_os_state_t *this);
 
 	/**
-	 * Increase/Decrease the ITA Angel count
+	 * Set number of installed packages still missing
 	 *
-	 * @param start			TRUE increases and FALSE decreases count by one
+	 * @param missing		Number of missing installed packages
 	 */
-	void (*set_angel_count)(imv_os_state_t *this, bool start);
+	void (*set_missing)(imv_os_state_t *this, uint16_t missing);
 
 	/**
-	 * Get the ITA Angel count
+	 * Get number of installed packages still missing
 	 *
-	 * @return				ITA Angel count
+	 * @return				Number of missing installed packages
 	 */
-	int (*get_angel_count)(imv_os_state_t *this);
+	uint16_t (*get_missing)(imv_os_state_t *this);
 
 	/**
 	 * Store a bad package that has to be updated or removed

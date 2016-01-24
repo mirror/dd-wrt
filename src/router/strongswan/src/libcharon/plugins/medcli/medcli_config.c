@@ -102,17 +102,17 @@ METHOD(backend_t, get_peer_cfg_by_name, peer_cfg_t*,
 		DESTROY_IF(e);
 		return NULL;
 	}
-	ike_cfg = ike_cfg_create(IKEV2, FALSE, FALSE,
-							 "0.0.0.0", FALSE,
+	ike_cfg = ike_cfg_create(IKEV2, FALSE, FALSE, "0.0.0.0",
 							 charon->socket->get_port(charon->socket, FALSE),
-							 address, FALSE, IKEV2_UDP_PORT, FRAGMENTATION_NO, 0);
+							 address, IKEV2_UDP_PORT, FRAGMENTATION_NO, 0);
 	ike_cfg->add_proposal(ike_cfg, proposal_create_default(PROTO_IKE));
+	ike_cfg->add_proposal(ike_cfg, proposal_create_default_aead(PROTO_IKE));
 	med_cfg = peer_cfg_create(
 		"mediation", ike_cfg,
 		CERT_NEVER_SEND, UNIQUE_REPLACE,
 		1, this->rekey*60, 0,			/* keytries, rekey, reauth */
 		this->rekey*5, this->rekey*3,	/* jitter, overtime */
-		TRUE, FALSE,					/* mobike, aggressive */
+		TRUE, FALSE, TRUE,				/* mobike, aggressive, pull */
 		this->dpd, 0,					/* DPD delay, timeout */
 		TRUE, NULL, NULL);				/* mediation, med by, peer id */
 	e->destroy(e);
@@ -149,7 +149,7 @@ METHOD(backend_t, get_peer_cfg_by_name, peer_cfg_t*,
 		CERT_NEVER_SEND, UNIQUE_REPLACE,
 		1, this->rekey*60, 0,			/* keytries, rekey, reauth */
 		this->rekey*5, this->rekey*3,	/* jitter, overtime */
-		TRUE, FALSE,					/* mobike, aggressive */
+		TRUE, FALSE, TRUE,				/* mobike, aggressive, pull */
 		this->dpd, 0,					/* DPD delay, timeout */
 		FALSE, med_cfg,					/* mediation, med by */
 		identification_create_from_encoding(ID_KEY_ID, other));
@@ -169,6 +169,7 @@ METHOD(backend_t, get_peer_cfg_by_name, peer_cfg_t*,
 								 ACTION_NONE, ACTION_NONE, ACTION_NONE, FALSE,
 								 0, 0, NULL, NULL, 0);
 	child_cfg->add_proposal(child_cfg, proposal_create_default(PROTO_ESP));
+	child_cfg->add_proposal(child_cfg, proposal_create_default_aead(PROTO_ESP));
 	child_cfg->add_traffic_selector(child_cfg, TRUE, ts_from_string(local_net));
 	child_cfg->add_traffic_selector(child_cfg, FALSE, ts_from_string(remote_net));
 	peer_cfg->add_child_cfg(peer_cfg, child_cfg);
@@ -224,7 +225,7 @@ METHOD(enumerator_t, peer_enumerator_enumerate, bool,
 				CERT_NEVER_SEND, UNIQUE_REPLACE,
 				1, this->rekey*60, 0,			/* keytries, rekey, reauth */
 				this->rekey*5, this->rekey*3,	/* jitter, overtime */
-				TRUE, FALSE,					/* mobike, aggressive */
+				TRUE, FALSE, TRUE,				/* mobike, aggressive, pull */
 				this->dpd, 0,					/* DPD delay, timeout */
 				FALSE, NULL, NULL);				/* mediation, med by, peer id */
 
@@ -243,6 +244,7 @@ METHOD(enumerator_t, peer_enumerator_enumerate, bool,
 								 ACTION_NONE, ACTION_NONE, ACTION_NONE, FALSE,
 								 0, 0, NULL, NULL, 0);
 	child_cfg->add_proposal(child_cfg, proposal_create_default(PROTO_ESP));
+	child_cfg->add_proposal(child_cfg, proposal_create_default_aead(PROTO_ESP));
 	child_cfg->add_traffic_selector(child_cfg, TRUE, ts_from_string(local_net));
 	child_cfg->add_traffic_selector(child_cfg, FALSE, ts_from_string(remote_net));
 	this->current->add_child_cfg(this->current, child_cfg);
@@ -312,7 +314,7 @@ static job_requeue_t initiate_config(peer_cfg_t *peer_cfg)
 		peer_cfg->get_ref(peer_cfg);
 		enumerator->destroy(enumerator);
 		charon->controller->initiate(charon->controller,
-									 peer_cfg, child_cfg, NULL, NULL, 0);
+									 peer_cfg, child_cfg, NULL, NULL, 0, FALSE);
 	}
 	else
 	{
@@ -377,13 +379,13 @@ medcli_config_t *medcli_config_create(database_t *db)
 		.db = db,
 		.rekey = lib->settings->get_time(lib->settings, "medcli.rekey", 1200),
 		.dpd = lib->settings->get_time(lib->settings, "medcli.dpd", 300),
-		.ike = ike_cfg_create(IKEV2, FALSE, FALSE,
-							  "0.0.0.0", FALSE,
+		.ike = ike_cfg_create(IKEV2, FALSE, FALSE, "0.0.0.0",
 							  charon->socket->get_port(charon->socket, FALSE),
-							  "0.0.0.0", FALSE, IKEV2_UDP_PORT,
+							  "0.0.0.0", IKEV2_UDP_PORT,
 							  FRAGMENTATION_NO, 0),
 	);
 	this->ike->add_proposal(this->ike, proposal_create_default(PROTO_IKE));
+	this->ike->add_proposal(this->ike, proposal_create_default_aead(PROTO_IKE));
 
 	schedule_autoinit(this);
 

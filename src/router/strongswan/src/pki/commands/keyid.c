@@ -13,6 +13,8 @@
  * for more details.
  */
 
+#include <errno.h>
+
 #include "pki.h"
 
 #include <credentials/certificates/certificate.h>
@@ -49,6 +51,11 @@ static int keyid()
 				{
 					type = CRED_PRIVATE_KEY;
 					subtype = KEY_ECDSA;
+				}
+				else if (streq(arg, "bliss-priv"))
+				{
+					type = CRED_PRIVATE_KEY;
+					subtype = KEY_BLISS;
 				}
 				else if (streq(arg, "pub"))
 				{
@@ -87,8 +94,17 @@ static int keyid()
 	}
 	else
 	{
+		chunk_t chunk;
+
+		set_file_mode(stdin, CERT_ASN1_DER);
+		if (!chunk_from_fd(0, &chunk))
+		{
+			fprintf(stderr, "reading input failed: %s\n", strerror(errno));
+			return 1;
+		}
 		cred = lib->creds->create(lib->creds, type, subtype,
-								  BUILD_FROM_FD, 0, BUILD_END);
+								  BUILD_BLOB, chunk, BUILD_END);
+		free(chunk.ptr);
 	}
 	if (!cred)
 	{
@@ -153,7 +169,7 @@ static void __attribute__ ((constructor))reg()
 	command_register((command_t)
 		{ keyid, 'k', "keyid",
 		"calculate key identifiers of a key/certificate",
-		{"[--in file] [--type rsa-priv|ecdsa-priv|pub|pkcs10|x509]"},
+		{"[--in file] [--type rsa-priv|ecdsa-priv|bliss-priv|pub|pkcs10|x509]"},
 		{
 			{"help",	'h', 0, "show usage information"},
 			{"in",		'i', 1, "input file, default: stdin"},
@@ -161,4 +177,3 @@ static void __attribute__ ((constructor))reg()
 		}
 	});
 }
-

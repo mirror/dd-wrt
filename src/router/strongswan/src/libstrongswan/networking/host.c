@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2012 Tobias Brunner
+ * Copyright (C) 2006-2014 Tobias Brunner
  * Copyright (C) 2006 Daniel Roethlisberger
  * Copyright (C) 2005-2006 Martin Willi
  * Copyright (C) 2005 Jan Hutter
@@ -54,6 +54,15 @@ struct private_host_t {
 	socklen_t socklen;
 };
 
+/**
+ * Update the sockaddr internal sa_len option, if available
+ */
+static inline void update_sa_len(private_host_t *this)
+{
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+	this->address.sa_len = this->socklen;
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
+}
 
 METHOD(host_t, get_sockaddr, sockaddr_t*,
 	private_host_t *this)
@@ -102,7 +111,7 @@ int host_printf_hook(printf_hook_data_t *data, printf_hook_spec_t *spec,
 	{
 		snprintf(buffer, sizeof(buffer), "(null)");
 	}
-	else if (is_anyaddr(this) && !spec->plus)
+	else if (is_anyaddr(this) && !spec->plus && !spec->hash)
 	{
 		snprintf(buffer, sizeof(buffer), "%%any%s",
 				 this->address.sa_family == AF_INET6 ? "6" : "");
@@ -265,26 +274,6 @@ static bool ip_equals(private_host_t *this, private_host_t *other)
 }
 
 /**
- * Implements host_t.get_differences
- */
-static host_diff_t get_differences(host_t *this, host_t *other)
-{
-	host_diff_t ret = HOST_DIFF_NONE;
-
-	if (!this->ip_equals(this, other))
-	{
-		ret |= HOST_DIFF_ADDR;
-	}
-
-	if (this->get_port(this) != other->get_port(other))
-	{
-		ret |= HOST_DIFF_PORT;
-	}
-
-	return ret;
-}
-
-/**
  * Implements host_t.equals
  */
 static bool equals(private_host_t *this, private_host_t *other)
@@ -332,7 +321,6 @@ static private_host_t *host_create_empty(void)
 			.get_address = _get_address,
 			.get_port = _get_port,
 			.set_port = _set_port,
-			.get_differences = get_differences,
 			.ip_equals = (bool (*)(host_t *,host_t *))ip_equals,
 			.equals = (bool (*)(host_t *,host_t *)) equals,
 			.is_anyaddr = _is_anyaddr,
@@ -366,6 +354,10 @@ host_t *host_create_from_string_and_family(char *string, int family,
 		struct sockaddr_in6 v6;
 	} addr;
 
+	if (!string)
+	{
+		return NULL;
+	}
 	if (streq(string, "%any"))
 	{
 		return host_create_any_port(family ? family : AF_INET, port);
@@ -393,6 +385,7 @@ host_t *host_create_from_string_and_family(char *string, int family,
 			}
 			/* FALL */
 		case AF_INET6:
+			memset(&addr.v6, 0, sizeof(addr.v6));
 			if (inet_pton(AF_INET6, string, &addr.v6.sin6_addr) != 1)
 			{
 				return NULL;
@@ -406,6 +399,7 @@ host_t *host_create_from_string_and_family(char *string, int family,
 				return NULL;
 			}
 		af_inet:
+			memset(&addr.v4, 0, sizeof(addr.v4));
 			if (inet_pton(AF_INET, string, &addr.v4.sin_addr) != 1)
 			{
 				return NULL;
@@ -440,6 +434,7 @@ host_t *host_create_from_sockaddr(sockaddr_t *sockaddr)
 			memcpy(&this->address4, (struct sockaddr_in*)sockaddr,
 				   sizeof(struct sockaddr_in));
 			this->socklen = sizeof(struct sockaddr_in);
+			update_sa_len(this);
 			return &this->public;
 		}
 		case AF_INET6:
@@ -447,6 +442,7 @@ host_t *host_create_from_sockaddr(sockaddr_t *sockaddr)
 			memcpy(&this->address6, (struct sockaddr_in6*)sockaddr,
 				   sizeof(struct sockaddr_in6));
 			this->socklen = sizeof(struct sockaddr_in6);
+			update_sa_len(this);
 			return &this->public;
 		}
 		default:
@@ -529,7 +525,44 @@ host_t *host_create_from_chunk(int family, chunk_t address, u_int16_t port)
 			this->socklen = sizeof(struct sockaddr_in6);
 			break;
 	}
+	update_sa_len(this);
 	return &this->public;
+}
+
+/*
+ * Described in header.
+ */
+bool host_create_from_range(char *string, host_t **from, host_t **to)
+{
+	char *sep, *pos;
+
+	sep = strchr(string, '-');
+	if (!sep)
+	{
+		return FALSE;
+	}
+	for (pos = sep+1; *pos && *pos == ' '; pos++)
+	{
+		/* trim spaces before to address*/
+	}
+	*to = host_create_from_string(pos, 0);
+	if (!*to)
+	{
+		return FALSE;
+	}
+	for (pos = sep-1; pos > string && *pos == ' '; pos--)
+	{
+		/* trim spaces behind from address */
+	}
+	pos = strndup(string, pos - string + 1);
+	*from = host_create_from_string_and_family(pos, (*to)->get_family(*to), 0);
+	free(pos);
+	if (!*from)
+	{
+		(*to)->destroy(*to);
+		return FALSE;
+	}
+	return TRUE;
 }
 
 /*
@@ -568,6 +601,57 @@ host_t *host_create_from_subnet(char *string, int *bits)
 }
 
 /*
+ * See header.
+ */
+host_t *host_create_netmask(int family, int netbits)
+{
+	private_host_t *this;
+	int bits, bytes, len = 0;
+	char *target;
+
+	switch (family)
+	{
+		case AF_INET:
+			if (netbits < 0 || netbits > 32)
+			{
+				return NULL;
+			}
+			this = host_create_empty();
+			this->socklen = sizeof(struct sockaddr_in);
+			target = (char*)&this->address4.sin_addr;
+			len = 4;
+			break;
+		case AF_INET6:
+			if (netbits < 0 || netbits > 128)
+			{
+				return NULL;
+			}
+			this = host_create_empty();
+			this->socklen = sizeof(struct sockaddr_in6);
+			target = (char*)&this->address6.sin6_addr;
+			len = 16;
+			break;
+		default:
+			return NULL;
+	}
+
+	memset(&this->address_max, 0, sizeof(struct sockaddr_storage));
+	this->address.sa_family = family;
+	update_sa_len(this);
+
+	bytes = netbits / 8;
+	bits = 8 - (netbits & 0x07);
+
+	memset(target, 0xff, bytes);
+	if (bytes < len)
+	{
+		memset(target + bytes, 0x00, len - bytes);
+		target[bytes] = (u_int8_t)(0xff << bits);
+	}
+	return &this->public;
+}
+
+/*
  * Described in header.
  */
 host_t *host_create_any(int family)
@@ -582,11 +666,13 @@ host_t *host_create_any(int family)
 		case AF_INET:
 		{
 			this->socklen = sizeof(struct sockaddr_in);
+			update_sa_len(this);
 			return &(this->public);
 		}
 		case AF_INET6:
 		{
 			this->socklen = sizeof(struct sockaddr_in6);
+			update_sa_len(this);
 			return &this->public;
 		}
 		default:

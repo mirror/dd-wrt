@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Andreas Steffen
+ * Copyright (C) 2012-2015 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -18,8 +18,12 @@
 #include "ietf/ietf_attr.h"
 #include "ietf/ietf_attr_assess_result.h"
 #include "ietf/ietf_attr_remediation_instr.h"
+#include "tcg/seg/tcg_seg_attr_max_size.h"
+#include "tcg/seg/tcg_seg_attr_seg_env.h"
+#include "tcg/seg/tcg_seg_attr_next_seg.h"
 
 #include <tncif_names.h>
+#include <tncif_pa_subtypes.h>
 
 #include <pen/pen.h>
 #include <collections/linked_list.h>
@@ -121,19 +125,52 @@ METHOD(imv_msg_t, send_, TNC_Result,
 	pa_tnc_attr_t *attr;
 	TNC_UInt32 msg_flags;
 	TNC_MessageType msg_type;
-	bool attr_added;
+	size_t max_msg_len, min_seg_attr_len, space_left;
+	bool attr_added, oversize;
 	chunk_t msg;
+	seg_contract_t *contract;
+	seg_contract_manager_t *contracts;
 	enumerator_t *enumerator;
 	TNC_Result result = TNC_RESULT_SUCCESS;
 
+	/* Get IF-M segmentation contract for this subtype if any */
+	contracts = this->state->get_contracts(this->state);
+	contract = contracts->get_contract(contracts, this->msg_type,
+									   FALSE, this->dst_id);
+
+	/* Retrieve maximum allowed PA-TNC message size if set */
+	max_msg_len = this->state->get_max_msg_len(this->state);
+
+	/* Minimum size needed for Segmentation Envelope Attribute */
+	min_seg_attr_len = PA_TNC_ATTR_HEADER_SIZE + TCG_SEG_ATTR_SEG_ENV_HEADER +
+					   PA_TNC_ATTR_HEADER_SIZE;
+
 	while (this->attr_list->get_count(this->attr_list))
 	{
-		pa_tnc_msg = pa_tnc_msg_create(this->state->get_max_msg_len(this->state));
+		pa_tnc_msg = pa_tnc_msg_create(max_msg_len);
 		attr_added = FALSE;
 
 		enumerator = this->attr_list->create_enumerator(this->attr_list);
 		while (enumerator->enumerate(enumerator, &attr))
 		{
+			space_left = pa_tnc_msg->get_space(pa_tnc_msg);
+
+			if (contract && contract->check_size(contract, attr, &oversize))
+			{
+				if (oversize)
+				{
+					/* TODO handle oversized attributes */
+				}
+				else if (max_msg_len == 0 || space_left >= min_seg_attr_len)
+				{
+					attr = contract->first_segment(contract, attr, space_left);
+				}
+				else
+				{
+					/* segment attribute in next iteration */
+					break;
+				}
+			}
 			if (pa_tnc_msg->add_attribute(pa_tnc_msg, attr))
 			{
 				attr_added = TRUE;
@@ -142,6 +179,7 @@ METHOD(imv_msg_t, send_, TNC_Result,
 			{
 				if (attr_added)
 				{
+					/* there might be space for attribute in next iteration */
 					break;
 				}
 				else
@@ -208,8 +246,8 @@ METHOD(imv_msg_t, send_assessment, TNC_Result,
 	}
 
 	/* Send an IETF Assessment Result attribute if enabled */
-	if (lib->settings->get_bool(lib->settings, "libimcv.assessment_result",
-								TRUE))
+	if (lib->settings->get_bool(lib->settings, "%s.imcv.assessment_result",
+								TRUE, lib->ns))
 	{
 		this->state->get_recommendation(this->state, &rec, &eval);
 		attr = ietf_attr_assess_result_create(eval);
@@ -246,8 +284,11 @@ METHOD(imv_msg_t, send_assessment, TNC_Result,
 }
 
 METHOD(imv_msg_t, receive, TNC_Result,
-	private_imv_msg_t *this, bool *fatal_error)
+	private_imv_msg_t *this, imv_msg_t *out_msg, bool *fatal_error)
 {
+	TNC_Result result = TNC_RESULT_SUCCESS;
+	TNC_UInt32 target_imv_id;
+	linked_list_t *non_fatal_types;
 	enumerator_t *enumerator;
 	pa_tnc_attr_t *attr;
 	chunk_t msg;
@@ -286,36 +327,215 @@ METHOD(imv_msg_t, receive, TNC_Result,
 			break;
 		case VERIFY_ERROR:
 		{
-			imv_msg_t *error_msg;
-			TNC_Result result;
-
-			error_msg = imv_msg_create_as_reply(&this->public);
-
 			/* extract and copy by reference all error attributes */
 			enumerator = this->pa_msg->create_error_enumerator(this->pa_msg);
 			while (enumerator->enumerate(enumerator, &attr))
 			{
-				error_msg->add_attribute(error_msg, attr->get_ref(attr));
+				out_msg->add_attribute(out_msg, attr->get_ref(attr));
 			}
 			enumerator->destroy(enumerator);
-
-			/*
-			 * send the PA-TNC message containing all error attributes
-			 * with the excl flag set
-			 */
-			result = error_msg->send(error_msg, TRUE);
-			error_msg->destroy(error_msg);
-			return result;
 		}
 		case FAILED:
 		default:
 			return TNC_RESULT_FATAL;
 	}
 
-	/* preprocess any received IETF standard error attributes */
-	*fatal_error = this->pa_msg->process_ietf_std_errors(this->pa_msg);
+	/* determine target IMV ID */
+	target_imv_id = (this->dst_id != TNC_IMVID_ANY) ?
+					 this->dst_id : this->agent->get_id(this->agent);
 
-	return TNC_RESULT_SUCCESS;
+	/* process IF-M segmentation attributes */
+	enumerator = this->pa_msg->create_attribute_enumerator(this->pa_msg);
+	while (enumerator->enumerate(enumerator, &attr))
+	{
+		uint32_t max_attr_size, max_seg_size, my_max_attr_size, my_max_seg_size;
+		seg_contract_manager_t *contracts;
+		seg_contract_t *contract;
+		char buf[BUF_LEN];
+		pen_type_t type;
+
+		type = attr->get_type(attr);
+
+		if (type.vendor_id != PEN_TCG)
+		{
+			continue;
+		}
+
+		contracts = this->state->get_contracts(this->state);
+
+		switch (type.type)
+		{
+			case TCG_SEG_MAX_ATTR_SIZE_REQ:
+			{
+				tcg_seg_attr_max_size_t *attr_cast;
+
+				attr_cast = (tcg_seg_attr_max_size_t*)attr;
+				attr_cast->get_attr_size(attr_cast, &max_attr_size,
+													&max_seg_size);
+				contract = contracts->get_contract(contracts, this->msg_type,
+												   FALSE, this->src_id);
+				if (contract)
+				{
+					contract->set_max_size(contract, max_attr_size,
+													 max_seg_size);
+				}
+				else
+				{
+					contract = seg_contract_create(this->msg_type, max_attr_size,
+									max_seg_size, FALSE, this->src_id, FALSE);
+					contract->set_responder(contract, target_imv_id);
+					contracts->add_contract(contracts, contract);
+				}
+				contract->get_info_string(contract, buf, BUF_LEN, TRUE);
+				DBG2(DBG_IMV, "%s", buf);
+
+				/* Determine maximum PA-TNC attribute segment size */
+				my_max_seg_size = this->state->get_max_msg_len(this->state)
+									- PA_TNC_HEADER_SIZE
+									- PA_TNC_ATTR_HEADER_SIZE
+									- TCG_SEG_ATTR_SEG_ENV_HEADER;
+
+				/* If segmentation is possible select lower segment size */
+				if (max_seg_size != SEG_CONTRACT_NO_FRAGMENTATION &&
+					max_seg_size > my_max_seg_size)
+				{
+					max_seg_size = my_max_seg_size;
+					contract->set_max_size(contract, max_attr_size,
+													 max_seg_size);
+					DBG2(DBG_IMV, "  lowered maximum segment size to %u bytes",
+						 max_seg_size);
+				}
+
+				/* Add Maximum Attribute Size Response attribute */
+				attr = tcg_seg_attr_max_size_create(max_attr_size,
+													max_seg_size, FALSE);
+				out_msg->add_attribute(out_msg, attr);
+				break;
+			}
+			case TCG_SEG_MAX_ATTR_SIZE_RESP:
+			{
+				tcg_seg_attr_max_size_t *attr_cast;
+
+				attr_cast = (tcg_seg_attr_max_size_t*)attr;
+				attr_cast->get_attr_size(attr_cast, &max_attr_size,
+													&max_seg_size);
+				contract = contracts->get_contract(contracts, this->msg_type,
+												   TRUE, this->src_id);
+				if (!contract)
+				{
+					contract = contracts->get_contract(contracts, this->msg_type,
+												   TRUE, TNC_IMCID_ANY);
+					if (contract)
+					{
+						contract = contract->clone(contract);
+						contract->set_responder(contract, this->src_id);
+						contracts->add_contract(contracts, contract);
+					}
+				}
+				if (contract)
+				{
+					contract->get_max_size(contract, &my_max_attr_size,
+													 &my_max_seg_size);
+					if (my_max_seg_size != SEG_CONTRACT_NO_FRAGMENTATION &&
+						my_max_seg_size > max_seg_size)
+					{
+						my_max_seg_size = max_seg_size;
+						contract->set_max_size(contract, my_max_attr_size,
+														 my_max_seg_size);
+					}
+					contract->get_info_string(contract, buf, BUF_LEN, FALSE);
+					DBG2(DBG_IMV, "%s", buf);
+				}
+				else
+				{
+					/* TODO no request pending */
+					DBG1(DBG_IMV, "no contract for this PA message type found");
+				}
+				break;
+			}
+			case TCG_SEG_ATTR_SEG_ENV:
+			{
+				tcg_seg_attr_seg_env_t *seg_env_attr;
+				pa_tnc_attr_t *error;
+				uint32_t base_attr_id;
+				bool more;
+
+				seg_env_attr = (tcg_seg_attr_seg_env_t*)attr;
+				base_attr_id = seg_env_attr->get_base_attr_id(seg_env_attr);
+
+				contract = contracts->get_contract(contracts, this->msg_type,
+												   TRUE, this->src_id);
+				if (!contract)
+				{
+					DBG2(DBG_IMV, "no contract for received attribute segment "
+						 "with base attribute ID %u", base_attr_id);
+					continue;
+				}
+				attr = contract->add_segment(contract, attr, &error, &more);
+				if (error)
+				{
+					out_msg->add_attribute(out_msg, error);
+				}
+				if (attr)
+				{
+					this->pa_msg->add_attribute(this->pa_msg, attr);
+				}
+				if (more)
+				{
+					/* Send Next Segment Request */
+					attr = tcg_seg_attr_next_seg_create(base_attr_id, FALSE);
+					out_msg->add_attribute(out_msg, attr);
+				}
+				break;
+			}
+			case TCG_SEG_NEXT_SEG_REQ:
+			{
+				tcg_seg_attr_next_seg_t *attr_cast;
+				uint32_t base_attr_id;
+
+				attr_cast = (tcg_seg_attr_next_seg_t*)attr;
+				base_attr_id = attr_cast->get_base_attr_id(attr_cast);
+
+				contract = contracts->get_contract(contracts, this->msg_type,
+												   FALSE, this->src_id);
+				if (!contract)
+				{
+					/* TODO no contract - generate error message */
+					DBG1(DBG_IMV, "no contract for received next segment "
+						 "request with base attribute ID %u", base_attr_id);
+					continue;
+				}
+				attr = contract->next_segment(contract, base_attr_id);
+				if (attr)
+				{
+					out_msg->add_attribute(out_msg, attr);
+				}
+				else
+				{
+					/* TODO no more segments - generate error message */
+					DBG1(DBG_IMV, "no more segments found for "
+						 "base attribute ID %u", base_attr_id);
+				}
+				break;
+			}
+			default:
+				break;
+		}
+	}
+	enumerator->destroy(enumerator);
+
+	/* preprocess any received IETF standard error attributes */
+	non_fatal_types = this->agent->get_non_fatal_attr_types(this->agent);
+	*fatal_error = this->pa_msg->process_ietf_std_errors(this->pa_msg,
+														 non_fatal_types);
+
+	return result;
+}
+
+METHOD(imv_msg_t, get_attribute_count, int,
+	private_imv_msg_t *this)
+{
+	return this->attr_list->get_count(this->attr_list);
 }
 
 METHOD(imv_msg_t, create_attribute_enumerator, enumerator_t*,
@@ -363,6 +583,7 @@ imv_msg_t *imv_msg_create(imv_agent_t *agent, imv_state_t *state,
 			.send_assessment = _send_assessment,
 			.receive = _receive,
 			.add_attribute = _add_attribute,
+			.get_attribute_count = _get_attribute_count,
 			.create_attribute_enumerator = _create_attribute_enumerator,
 			.get_encoding = _get_encoding,
 			.destroy = _destroy,

@@ -84,7 +84,7 @@ METHOD(listener_t, ike_keys, bool,
 	{	/* do not sync SA between nodes */
 		return TRUE;
 	}
-	if (dh->get_shared_secret(dh, &secret) != SUCCESS)
+	if (!dh->get_shared_secret(dh, &secret))
 	{
 		return TRUE;
 	}
@@ -127,15 +127,18 @@ METHOD(listener_t, ike_keys, bool,
 	chunk_clear(&secret);
 	if (ike_sa->get_version(ike_sa) == IKEV1)
 	{
-		dh->get_my_public_value(dh, &secret);
-		m->add_attribute(m, HA_LOCAL_DH, secret);
-		chunk_free(&secret);
+		if (dh->get_my_public_value(dh, &secret))
+		{
+			m->add_attribute(m, HA_LOCAL_DH, secret);
+			chunk_free(&secret);
+		}
 		m->add_attribute(m, HA_REMOTE_DH, dh_other);
 		if (shared)
 		{
 			m->add_attribute(m, HA_PSK, shared->get_key(shared));
 		}
 	}
+	m->add_attribute(m, HA_REMOTE_ADDR, ike_sa->get_other_host(ike_sa));
 
 	this->socket->push(this->socket, m);
 	this->cache->cache(this->cache, ike_sa, m);

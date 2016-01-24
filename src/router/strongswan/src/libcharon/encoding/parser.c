@@ -15,7 +15,6 @@
  */
 
 #include <stdlib.h>
-#include <arpa/inet.h>
 #include <string.h>
 
 #include "parser.h"
@@ -33,7 +32,7 @@
 #include <encoding/payloads/nonce_payload.h>
 #include <encoding/payloads/id_payload.h>
 #include <encoding/payloads/notify_payload.h>
-#include <encoding/payloads/encryption_payload.h>
+#include <encoding/payloads/encrypted_payload.h>
 #include <encoding/payloads/auth_payload.h>
 #include <encoding/payloads/cert_payload.h>
 #include <encoding/payloads/certreq_payload.h>
@@ -58,6 +57,11 @@ struct private_parser_t {
 	 * Public members, see parser_t.
 	 */
 	parser_t public;
+
+	/**
+	 * major IKE version
+	 */
+	u_int8_t major_version;
 
 	/**
 	 * Current bit for reading in input data.
@@ -370,7 +374,14 @@ METHOD(parser_t, parse_payload, status_t,
 	encoding_rule_t *rule;
 
 	/* create instance of the payload to parse */
-	pld = payload_create(payload_type);
+	if (payload_is_known(payload_type, this->major_version))
+	{
+		pld = payload_create(payload_type);
+	}
+	else
+	{
+		pld = (payload_t*)unknown_payload_create(payload_type);
+	}
 
 	DBG2(DBG_ENC, "parsing %N payload, %d bytes left",
 		 payload_type_names, payload_type, this->input_roof - this->byte_pos);
@@ -486,15 +497,15 @@ METHOD(parser_t, parse_payload, status_t,
 				}
 				break;
 			}
-			case PAYLOAD_LIST + PROPOSAL_SUBSTRUCTURE:
-			case PAYLOAD_LIST + PROPOSAL_SUBSTRUCTURE_V1:
-			case PAYLOAD_LIST + TRANSFORM_SUBSTRUCTURE:
-			case PAYLOAD_LIST + TRANSFORM_SUBSTRUCTURE_V1:
-			case PAYLOAD_LIST + TRANSFORM_ATTRIBUTE:
-			case PAYLOAD_LIST + TRANSFORM_ATTRIBUTE_V1:
-			case PAYLOAD_LIST + CONFIGURATION_ATTRIBUTE:
-			case PAYLOAD_LIST + CONFIGURATION_ATTRIBUTE_V1:
-			case PAYLOAD_LIST + TRAFFIC_SELECTOR_SUBSTRUCTURE:
+			case PAYLOAD_LIST + PLV2_PROPOSAL_SUBSTRUCTURE:
+			case PAYLOAD_LIST + PLV1_PROPOSAL_SUBSTRUCTURE:
+			case PAYLOAD_LIST + PLV2_TRANSFORM_SUBSTRUCTURE:
+			case PAYLOAD_LIST + PLV1_TRANSFORM_SUBSTRUCTURE:
+			case PAYLOAD_LIST + PLV2_TRANSFORM_ATTRIBUTE:
+			case PAYLOAD_LIST + PLV1_TRANSFORM_ATTRIBUTE:
+			case PAYLOAD_LIST + PLV2_CONFIGURATION_ATTRIBUTE:
+			case PAYLOAD_LIST + PLV1_CONFIGURATION_ATTRIBUTE:
+			case PAYLOAD_LIST + PLV2_TRAFFIC_SELECTOR_SUBSTRUCTURE:
 			{
 				if (payload_length < header_length ||
 					!parse_list(this, rule_number, output + rule->offset,
@@ -630,6 +641,12 @@ METHOD(parser_t, reset_context, void,
 	this->bit_pos = 0;
 }
 
+METHOD(parser_t, set_major_version, void,
+	private_parser_t *this, u_int8_t major_version)
+{
+	this->major_version = major_version;
+}
+
 METHOD(parser_t, destroy, void,
 	private_parser_t *this)
 {
@@ -647,6 +664,7 @@ parser_t *parser_create(chunk_t data)
 		.public = {
 			.parse_payload = _parse_payload,
 			.reset_context = _reset_context,
+			.set_major_version = _set_major_version,
 			.get_remaining_byte_count = _get_remaining_byte_count,
 			.destroy = _destroy,
 		},

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2009 Tobias Brunner
+ * Copyright (C) 2006-2014 Tobias Brunner
  * Copyright (C) 2006 Daniel Roethlisberger
  * Copyright (C) 2005-2008 Martin Willi
  * Copyright (C) 2005 Jan Hutter
@@ -24,27 +24,15 @@
 #ifndef HOST_H_
 #define HOST_H_
 
+#include <utils/utils.h>
+#include <utils/chunk.h>
+
 typedef enum host_diff_t host_diff_t;
 typedef struct host_t host_t;
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <utils/chunk.h>
-
-/**
- * Differences between two hosts. They differ in
- * address, port, or both.
- */
-enum host_diff_t {
-	HOST_DIFF_NONE = 0,
-	HOST_DIFF_ADDR = 1,
-	HOST_DIFF_PORT = 2,
-};
 
 /**
  * Representates a Host
@@ -102,7 +90,7 @@ struct host_t {
 	 *
 	 * Returned chunk points to internal data.
 	 *
-	 * @return		address string,
+	 * @return		address blob
 	 */
 	chunk_t (*get_address) (host_t *this);
 
@@ -116,7 +104,7 @@ struct host_t {
 	/**
 	 * Set the port of this host
 	 *
-	 * @param port	port numer
+	 * @param port	port number
 	 */
 	void (*set_port) (host_t *this, u_int16_t port);
 
@@ -135,14 +123,6 @@ struct host_t {
 	 * @return		TRUE if addresses and ports are equal.
 	 */
 	bool (*equals) (host_t *this, host_t *other);
-
-	/**
-	 * Compare two hosts and return the differences.
-	 *
-	 * @param other	the other to compare
-	 * @return		differences in a combination of host_diff_t's
-	 */
-	host_diff_t (*get_differences) (host_t *this, host_t *other);
 
 	/**
 	 * Destroy this host object.
@@ -201,6 +181,19 @@ host_t *host_create_from_chunk(int family, chunk_t address, u_int16_t port);
 host_t *host_create_from_sockaddr(sockaddr_t *sockaddr);
 
 /**
+ * Parse a range definition (1.2.3.0-1.2.3.5), return the two hosts.
+ *
+ * The two hosts are not ordered, from is simply the first, to is the second,
+ * from is not necessarily smaller.
+ *
+ * @param string		string to parse
+ * @param from			returns the first address (out)
+ * @param to			returns the second address (out)
+ * @return				TRUE if parsed successfully, FALSE otherwise
+ */
+bool host_create_from_range(char *string, host_t **from, host_t **to);
+
+/**
  * Create a host from a CIDR subnet definition (1.2.3.0/24), return bits.
  *
  * @param string		string to parse
@@ -208,6 +201,15 @@ host_t *host_create_from_sockaddr(sockaddr_t *sockaddr);
  * @return				network start address, NULL on error
  */
 host_t *host_create_from_subnet(char *string, int *bits);
+
+/**
+ * Create a netmask host having the first netbits bits set.
+ *
+ * @param family		family of the netmask host
+ * @param netbits		number of leading bits set in the host
+ * @return				netmask host
+ */
+host_t *host_create_netmask(int family, int netbits);
 
 /**
  * Create a host without an address, a "any" host.

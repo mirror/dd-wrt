@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Andreas Steffen
+ * Copyright (C) 2011-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -113,7 +113,12 @@ struct private_ietf_attr_pa_tnc_error_t {
 	pen_type_t type;
 
 	/**
-	 * Attribute value
+	 * Length of attribute value
+	 */
+	size_t length;
+
+	/**
+	 * Attribute value or segment
 	 */
 	chunk_t value;
 
@@ -133,14 +138,19 @@ struct private_ietf_attr_pa_tnc_error_t {
 	chunk_t msg_info;
 
 	/**
-	 * First 8 bytes of unsupported PA-TNC attribute
+	 * Flags of unsupported PA-TNC attribute
 	 */
-	chunk_t attr_info;
+	uint8_t flags;
+
+	/**
+	 * Vendor ID and type of unsupported PA-TNC attribute
+	 */
+	pen_type_t unsupported_type;
 
 	/**
 	 * PA-TNC error offset
 	 */
-	u_int32_t error_offset;
+	uint32_t error_offset;
 
 	/**
 	 * Reference count
@@ -200,26 +210,35 @@ METHOD(pa_tnc_attr_t, build, void,
 				writer->write_uint16(writer, PA_ERROR_VERSION_RESERVED);
 				break;
 			case PA_ERROR_ATTR_TYPE_NOT_SUPPORTED:
-				writer->write_data(writer, this->attr_info);
+				writer->write_uint8 (writer, this->flags);
+				writer->write_uint24(writer, this->unsupported_type.vendor_id);
+				writer->write_uint32(writer, this->unsupported_type.type);
 				break;
 			default:
 				break;
 		}
 	}
 	this->value = writer->extract_buf(writer);
+	this->length = this->value.len;
 	writer->destroy(writer);
 }
 
 METHOD(pa_tnc_attr_t, process, status_t,
-	private_ietf_attr_pa_tnc_error_t *this, u_int32_t *offset)
+	private_ietf_attr_pa_tnc_error_t *this, uint32_t *offset)
 {
 	bio_reader_t *reader;
-	u_int8_t reserved;
+	uint8_t reserved;
+	uint32_t vendor_id, type;
 
+	*offset = 0;
+
+	if (this->value.len < this->length)
+	{
+		return NEED_MORE;
+	}
 	if (this->value.len < PA_ERROR_HEADER_SIZE)
 	{
 		DBG1(DBG_TNC, "insufficient data for PA-TNC error header");
-		*offset = 0;
 		return FAILED;
 	}
 	reader = bio_reader_create(this->value);
@@ -250,8 +269,7 @@ METHOD(pa_tnc_attr_t, process, status_t,
 				}
 				break;
 			case PA_ERROR_ATTR_TYPE_NOT_SUPPORTED:
-				if (!reader->read_data(reader, PA_ERROR_ATTR_INFO_SIZE,
-											   &this->attr_info))
+				if (reader->remaining(reader) < PA_ERROR_ATTR_INFO_SIZE)
 				{
 					reader->destroy(reader);
 					DBG1(DBG_TNC, "insufficient data for unsupported attribute "
@@ -259,7 +277,10 @@ METHOD(pa_tnc_attr_t, process, status_t,
 					*offset = PA_ERROR_HEADER_SIZE + PA_ERROR_MSG_INFO_SIZE;
 					return FAILED;
 				}
-				this->attr_info = chunk_clone(this->attr_info);
+				reader->read_uint8 (reader, &this->flags);
+				reader->read_uint24(reader, &vendor_id);
+				reader->read_uint32(reader, &type);
+				this->unsupported_type = pen_type_create(vendor_id, type);
 				break;
 			default:
 				break;
@@ -273,6 +294,12 @@ METHOD(pa_tnc_attr_t, process, status_t,
 	reader->destroy(reader);
 
 	return SUCCESS;
+}
+
+METHOD(pa_tnc_attr_t, add_segment, void,
+	private_ietf_attr_pa_tnc_error_t *this, chunk_t segment)
+{
+	this->value = chunk_cat("mc", this->value, segment);
 }
 
 METHOD(pa_tnc_attr_t, get_ref, pa_tnc_attr_t*,
@@ -289,7 +316,6 @@ METHOD(pa_tnc_attr_t, destroy, void,
 	{
 		free(this->value.ptr);
 		free(this->msg_info.ptr);
-		free(this->attr_info.ptr);
 		free(this);
 	}
 }
@@ -306,19 +332,24 @@ METHOD(ietf_attr_pa_tnc_error_t, get_msg_info, chunk_t,
 	return this->msg_info;
 }
 
-METHOD(ietf_attr_pa_tnc_error_t, get_attr_info, chunk_t,
-	private_ietf_attr_pa_tnc_error_t *this)
+METHOD(ietf_attr_pa_tnc_error_t, get_unsupported_attr, pen_type_t,
+	private_ietf_attr_pa_tnc_error_t *this, uint8_t *flags)
 {
-	return this->attr_info;
+	if (flags)
+	{
+		*flags = this->flags;
+	}
+	return this->unsupported_type;
 }
 
-METHOD(ietf_attr_pa_tnc_error_t, set_attr_info, void,
-	private_ietf_attr_pa_tnc_error_t *this, chunk_t attr_info)
+METHOD(ietf_attr_pa_tnc_error_t, set_unsupported_attr, void,
+	private_ietf_attr_pa_tnc_error_t *this, uint8_t flags, pen_type_t type)
 {
-	this->attr_info = chunk_clone(attr_info);
+	this->flags = flags;
+	this->unsupported_type = type;
 }
 
-METHOD(ietf_attr_pa_tnc_error_t, get_offset, u_int32_t,
+METHOD(ietf_attr_pa_tnc_error_t, get_offset, uint32_t,
 	private_ietf_attr_pa_tnc_error_t *this)
 {
 	return this->error_offset;
@@ -340,13 +371,14 @@ static private_ietf_attr_pa_tnc_error_t* create_generic()
 				.set_noskip_flag = _set_noskip_flag,
 				.build = _build,
 				.process = _process,
+				.add_segment = _add_segment,
 				.get_ref = _get_ref,
 				.destroy = _destroy,
 			},
 			.get_error_code = _get_error_code,
 			.get_msg_info = _get_msg_info,
-			.get_attr_info = _get_attr_info,
-			.set_attr_info = _set_attr_info,
+			.get_unsupported_attr = _get_unsupported_attr,
+			.set_unsupported_attr = _set_unsupported_attr,
 			.get_offset = _get_offset,
 		},
 		.type = { PEN_IETF, IETF_ATTR_PA_TNC_ERROR },
@@ -385,7 +417,7 @@ pa_tnc_attr_t *ietf_attr_pa_tnc_error_create(pen_type_t error_code,
  */
 pa_tnc_attr_t *ietf_attr_pa_tnc_error_create_with_offset(pen_type_t error_code,
 														 chunk_t msg_info,
-														 u_int32_t error_offset)
+														 uint32_t error_offset)
 {
 	private_ietf_attr_pa_tnc_error_t *this;
 
@@ -403,11 +435,13 @@ pa_tnc_attr_t *ietf_attr_pa_tnc_error_create_with_offset(pen_type_t error_code,
 /**
  * Described in header.
  */
-pa_tnc_attr_t *ietf_attr_pa_tnc_error_create_from_data(chunk_t data)
+pa_tnc_attr_t *ietf_attr_pa_tnc_error_create_from_data(size_t length,
+													   chunk_t data)
 {
 	private_ietf_attr_pa_tnc_error_t *this;
 
 	this = create_generic();
+	this->length = length;
 	this->value = chunk_clone(data);
 
 	return &this->public.pa_tnc_attribute;

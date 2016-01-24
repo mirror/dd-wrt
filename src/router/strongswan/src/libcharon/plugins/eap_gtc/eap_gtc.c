@@ -149,7 +149,7 @@ METHOD(eap_method_t, process_server, status_t,
 	/* get XAuth backend to use for credential verification. Default to PAM
 	 * to support legacy EAP-GTC configurations */
 	backend = lib->settings->get_str(lib->settings,
-							"%s.plugins.eap-gtc.backend", "pam", charon->name);
+								"%s.plugins.eap-gtc.backend", "pam", lib->ns);
 	xauth = charon->xauth->create_instance(charon->xauth, backend, XAUTH_SERVER,
 										   this->server, this->peer);
 	if (!xauth)
@@ -161,11 +161,11 @@ METHOD(eap_method_t, process_server, status_t,
 	{
 		/* assume that "out" contains username/password attributes */
 		co->destroy(co);
-		ci = cp_payload_create_type(CONFIGURATION_V1, CFG_REPLY);
+		ci = cp_payload_create_type(PLV1_CONFIGURATION, CFG_REPLY);
 		ci->add_attribute(ci, configuration_attribute_create_chunk(
-					CONFIGURATION_ATTRIBUTE_V1, XAUTH_USER_NAME, user));
+					PLV1_CONFIGURATION_ATTRIBUTE, XAUTH_USER_NAME, user));
 		ci->add_attribute(ci, configuration_attribute_create_chunk(
-					CONFIGURATION_ATTRIBUTE_V1, XAUTH_USER_PASSWORD, pass));
+					PLV1_CONFIGURATION_ATTRIBUTE, XAUTH_USER_PASSWORD, pass));
 		switch (xauth->process(xauth, ci, &co))
 		{
 			case SUCCESS:
@@ -280,4 +280,3 @@ eap_gtc_t *eap_gtc_create_peer(identification_t *server, identification_t *peer)
 
 	return &this->public;
 }
-

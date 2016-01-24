@@ -4,22 +4,25 @@ ipseclib_LTLIBRARIES = $(LIBCHECKSUM_LIBS)
 nodist_libchecksum_la_SOURCES = checksum.c
 libchecksum_la_LDFLAGS = -module -avoid-version -rpath '$(ipseclibdir)'
 
-noinst_PROGRAMS = checksum_builder
+EXTRA_PROGRAMS = checksum_builder
 checksum_builder_SOURCES = checksum_builder.c
 checksum_builder_LDADD = \
 	$(top_builddir)/src/libstrongswan/libstrongswan.la \
 	$(top_builddir)/src/libhydra/libhydra.la \
 	$(top_builddir)/src/libcharon/libcharon.la \
 	$(DLLIB)
+checksum_builder_LDFLAGS = -rpath '$(DESTDIR)$(ipseclibdir)'
 
-CLEANFILES = checksum.c
-INCLUDES = \
+CLEANFILES = checksum.c $(EXTRA_PROGRAMS)
+
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/libstrongswan \
 	-I$(top_srcdir)/src/libhydra \
-	-I$(top_srcdir)/src/libcharon
+	-I$(top_srcdir)/src/libcharon \
+	-DPLUGINDIR=\"${DESTDIR}${plugindir}\"
+
 AM_CFLAGS = \
-	-DPLUGINDIR=\"${DESTDIR}${plugindir}\" \
-	-rdynamic
+	$(PLUGIN_CFLAGS)
 
 # we keep track of build dependencies in deps and use libs to store the paths
 # to the installed libraries. for executables we use the built files directly
@@ -29,14 +32,14 @@ libs = $(DESTDIR)$(ipseclibdir)/libstrongswan.so
 exes =
 
 if !MONOLITHIC
-  AM_CFLAGS += -DS_PLUGINS=\""${s_plugins}\""
+  AM_CPPFLAGS += -DS_PLUGINS=\""${s_plugins}\""
 endif
 
 if USE_LIBHYDRA
   deps += $(top_builddir)/src/libhydra/libhydra.la
   libs += $(DESTDIR)$(ipseclibdir)/libhydra.so
 if !MONOLITHIC
-  AM_CFLAGS += -DH_PLUGINS=\""${h_plugins}\""
+  AM_CPPFLAGS += -DH_PLUGINS=\""${h_plugins}\""
 endif
 endif
 
@@ -55,9 +58,17 @@ if USE_RADIUS
   libs += $(DESTDIR)$(ipseclibdir)/libradius.so
 endif
 
+if USE_LIBPTTLS
+  deps += $(top_builddir)/src/libpttls/libpttls.la
+  libs += $(DESTDIR)$(ipseclibdir)/libpttls.so
+endif
+
 if USE_LIBTNCCS
   deps += $(top_builddir)/src/libtnccs/libtnccs.la
   libs += $(DESTDIR)$(ipseclibdir)/libtnccs.so
+if !MONOLITHIC
+  AM_CPPFLAGS += -DT_PLUGINS=\""${t_plugins}\""
+endif
 endif
 
 if USE_SIMAKA
@@ -70,32 +81,37 @@ if USE_IMCV
   libs += $(DESTDIR)$(ipseclibdir)/libimcv.so
 endif
 
-if USE_PTS
-  deps += $(top_builddir)/src/libpts/libpts.la
-  libs += $(DESTDIR)$(ipseclibdir)/libpts.so
-endif
-
 if USE_CHARON
   deps += $(top_builddir)/src/libcharon/libcharon.la
   libs += $(DESTDIR)$(ipseclibdir)/libcharon.so
-  exes += $(top_builddir)/src/charon/.libs/charon
+  exes += $(DESTDIR)$(ipsecdir)/charon
 if !MONOLITHIC
-  AM_CFLAGS += -DC_PLUGINS=\""${c_plugins}\""
+  AM_CPPFLAGS += -DC_PLUGINS=\""${c_plugins}\""
 endif
 endif
 
-if USE_TOOLS
-  exes += $(top_builddir)/src/openac/.libs/openac
-  exes += $(top_builddir)/src/pki/.libs/pki
-  exes += $(top_builddir)/src/scepclient/.libs/scepclient
+if USE_CMD
+  exes += $(DESTDIR)$(sbindir)/charon-cmd
+endif
+
+if USE_SCEPCLIENT
+  exes += $(DESTDIR)$(ipsecdir)/scepclient
+endif
+
+if USE_PKI
+  exes += $(DESTDIR)$(bindir)/pki
+endif
+
+if USE_SWANCTL
+  exes += $(DESTDIR)$(sbindir)/swanctl
 endif
 
 if USE_ATTR_SQL
-  exes += $(top_builddir)/src/libhydra/plugins/attr_sql/.libs/pool
+  exes += $(DESTDIR)$(ipsecdir)/pool
 endif
 
 if USE_IMV_ATTESTATION
-  exes += $(top_builddir)/src/libpts/plugins/imv_attestation/.libs/attest
+  exes += $(DESTDIR)$(ipsecdir)/attest
 endif
 
 checksum.c : checksum_builder $(deps) $(exes)

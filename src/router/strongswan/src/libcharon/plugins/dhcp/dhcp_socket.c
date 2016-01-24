@@ -227,7 +227,7 @@ static int prepare_dhcp(private_dhcp_socket_t *this,
 	/* with ID specific postfix */
 	if (this->identity_lease)
 	{
-		id = htonl(chunk_hash(chunk));
+		id = htonl(chunk_hash_static(chunk));
 	}
 	else
 	{
@@ -562,7 +562,8 @@ static void handle_ack(private_dhcp_socket_t *this, dhcp_t *dhcp, int optlen)
 /**
  * Receive DHCP responses
  */
-static job_requeue_t receive_dhcp(private_dhcp_socket_t *this)
+static bool receive_dhcp(private_dhcp_socket_t *this, int fd,
+						 watcher_event_t event)
 {
 	struct sockaddr_ll addr;
 	socklen_t addr_len = sizeof(addr);
@@ -571,14 +572,12 @@ static job_requeue_t receive_dhcp(private_dhcp_socket_t *this)
 		struct udphdr udp;
 		dhcp_t dhcp;
 	} packet;
-	int oldstate, optlen, origoptlen, optsize, optpos = 0;
+	int optlen, origoptlen, optsize, optpos = 0;
 	ssize_t len;
 	dhcp_option_t *option;
 
-	oldstate = thread_cancelability(TRUE);
-	len = recvfrom(this->receive, &packet, sizeof(packet), 0,
+	len = recvfrom(fd, &packet, sizeof(packet), MSG_DONTWAIT,
 					(struct sockaddr*)&addr, &addr_len);
-	thread_cancelability(oldstate);
 
 	if (len >= sizeof(struct iphdr) + sizeof(struct udphdr) +
 		offsetof(dhcp_t, options))
@@ -611,7 +610,7 @@ static job_requeue_t receive_dhcp(private_dhcp_socket_t *this)
 			optpos += optsize;
 		}
 	}
-	return JOB_REQUEUE_DIRECT;
+	return TRUE;
 }
 
 METHOD(dhcp_socket_t, destroy, void,
@@ -627,6 +626,7 @@ METHOD(dhcp_socket_t, destroy, void,
 	}
 	if (this->receive > 0)
 	{
+		lib->watcher->remove(lib->watcher, this->receive);
 		close(this->receive);
 	}
 	this->mutex->destroy(this->mutex);
@@ -643,6 +643,28 @@ METHOD(dhcp_socket_t, destroy, void,
 }
 
 /**
+ * Bind a socket to a particular interface name
+ */
+static bool bind_to_device(int fd, char *iface)
+{
+	struct ifreq ifreq;
+
+	if (strlen(iface) > sizeof(ifreq.ifr_name))
+	{
+		DBG1(DBG_CFG, "name for DHCP interface too long: '%s'", iface);
+		return FALSE;
+	}
+	memcpy(ifreq.ifr_name, iface, sizeof(ifreq.ifr_name));
+	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof(ifreq)))
+	{
+		DBG1(DBG_CFG, "binding DHCP socket to '%s' failed: %s",
+			 iface, strerror(errno));
+		return FALSE;
+	}
+	return TRUE;
+}
+
+/**
  * See header
  */
 dhcp_socket_t *dhcp_socket_create()
@@ -655,6 +677,7 @@ dhcp_socket_t *dhcp_socket_create()
 			.s_addr = INADDR_ANY,
 		},
 	};
+	char *iface;
 	int on = 1;
 	struct sock_filter dhcp_filter_code[] = {
 		BPF_STMT(BPF_LD+BPF_B+BPF_ABS,
@@ -711,13 +734,15 @@ dhcp_socket_t *dhcp_socket_create()
 	}
 	this->identity_lease = lib->settings->get_bool(lib->settings,
 								"%s.plugins.dhcp.identity_lease", FALSE,
-								charon->name);
+								lib->ns);
 	this->force_dst = lib->settings->get_str(lib->settings,
 								"%s.plugins.dhcp.force_server_address", FALSE,
-								charon->name);
+								lib->ns);
 	this->dst = host_create_from_string(lib->settings->get_str(lib->settings,
 								"%s.plugins.dhcp.server", "255.255.255.255",
-								charon->name), DHCP_SERVER_PORT);
+								lib->ns), DHCP_SERVER_PORT);
+	iface = lib->settings->get_str(lib->settings, "%s.plugins.dhcp.interface",
+								   NULL, lib->ns);
 	if (!this->dst)
 	{
 		DBG1(DBG_CFG, "configured DHCP server address invalid");
@@ -766,11 +791,18 @@ dhcp_socket_t *dhcp_socket_create()
 		destroy(this);
 		return NULL;
 	}
+	if (iface)
+	{
+		if (!bind_to_device(this->send, iface) ||
+			!bind_to_device(this->receive, iface))
+		{
+			destroy(this);
+			return NULL;
+		}
+	}
 
-	lib->processor->queue_job(lib->processor,
-		(job_t*)callback_job_create_with_prio((callback_job_cb_t)receive_dhcp,
-			this, NULL, (callback_job_cancel_t)return_false, JOB_PRIO_CRITICAL));
+	lib->watcher->add(lib->watcher, this->receive, WATCHER_READ,
+					  (watcher_cb_t)receive_dhcp, this);
 
 	return &this->public;
 }
-

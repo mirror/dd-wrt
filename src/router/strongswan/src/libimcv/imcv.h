@@ -15,6 +15,9 @@
 /**
  * @defgroup libimcv libimcv
  *
+ * @defgroup generic_attr generic_attr
+ * @ingroup libimcv
+ *
  * @defgroup libimcv_imc imc
  * @ingroup libimcv
  *
@@ -27,6 +30,12 @@
  * @defgroup libimcv_plugins plugins
  * @ingroup libimcv
  *
+ * @defgroup libimcv_seg seg
+ * @ingroup libimcv
+ *
+ * @defgroup libimcv_swid swid
+ * @ingroup libimcv
+ *
  * @addtogroup libimcv
  * @{
  */
@@ -35,15 +44,19 @@
 #define IMCV_H_
 
 #include "pa_tnc/pa_tnc_attr_manager.h"
+#include "imv/imv_database.h"
+#include "imv/imv_session_manager.h"
+#include "pts/components/pts_component_manager.h"
 
 #include <library.h>
 
 /**
  * Initialize libimcv.
  *
+ * @param is_imv		TRUE if called by IMV, FALSE if by IMC
  * @return				FALSE if initialization failed
  */
-bool libimcv_init(void);
+bool libimcv_init(bool is_imv);
 
 /**
  * Deinitialize libimcv.
@@ -54,5 +67,20 @@ void libimcv_deinit(void);
  * PA-TNC attribute manager
  */
 extern pa_tnc_attr_manager_t* imcv_pa_tnc_attributes;
+
+/**
+ * Global IMV database object
+ */
+extern imv_database_t* imcv_db;
+
+/**
+ * Global IMV session manager
+ */
+extern imv_session_manager_t* imcv_sessions;
+
+/**
+ * PTS Functional Component manager
+ */
+extern pts_component_manager_t* imcv_pts_components;
 
 #endif /** IMCV_H_ @}*/

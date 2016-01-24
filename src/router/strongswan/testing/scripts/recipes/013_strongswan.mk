@@ -5,10 +5,20 @@ PKG = strongswan-$(PV)
 TAR = $(PKG).tar.bz2
 SRC = http://download.strongswan.org/$(TAR)
 
+# can be passed to load sources from a directory instead of a tarball
+ifneq ($(origin SRCDIR), undefined)
+DIR = $(SRCDIR)
+BUILDDIR ?= $(SRCDIR)
+endif
+DIR ?= .
+# can be passed if not building in the source directory
+BUILDDIR ?= $(PKG)
+
 NUM_CPUS := $(shell getconf _NPROCESSORS_ONLN)
 
 CONFIG_OPTS = \
 	--sysconfdir=/etc \
+	--with-strongswan-conf=/etc/strongswan.conf.testing \
 	--with-random-device=/dev/urandom \
 	--disable-load-warning \
 	--enable-curl \
@@ -43,6 +53,10 @@ CONFIG_OPTS = \
 	--enable-imv-os \
 	--enable-imc-attestation \
 	--enable-imv-attestation \
+	--enable-imc-swid \
+	--enable-imv-swid \
+	--enable-imc-hcd \
+	--enable-imv-hcd \
 	--enable-sql \
 	--enable-sqlite \
 	--enable-attr-sql \
@@ -59,11 +73,14 @@ CONFIG_OPTS = \
 	--enable-socket-dynamic \
 	--enable-dhcp \
 	--enable-farp \
+	--enable-connmark \
+	--enable-forecast \
 	--enable-addrblock \
 	--enable-ctr \
 	--enable-ccm \
 	--enable-gcm \
 	--enable-cmac \
+	--enable-chapoly \
 	--enable-ha \
 	--enable-af-alg \
 	--enable-whitelist \
@@ -73,7 +90,17 @@ CONFIG_OPTS = \
 	--enable-unity \
 	--enable-unbound \
 	--enable-ipseckey \
-	--enable-tkm
+	--enable-dnscert \
+	--enable-acert \
+	--enable-cmd \
+	--enable-libipsec \
+	--enable-kernel-libipsec \
+	--enable-tkm \
+	--enable-ntru \
+	--enable-lookip \
+	--enable-swanctl \
+	--enable-bliss \
+	--enable-sha3
 
 export ADA_PROJECT_PATH=/usr/local/ada/lib/gnat
 
@@ -84,12 +111,13 @@ $(TAR):
 
 $(PKG): $(TAR)
 	tar xfj $(TAR)
+	echo "$(SWANVERSION)" > /root/shared/.strongswan-version
 
-configure: $(PKG)
-	cd $(PKG) && ./configure $(CONFIG_OPTS)
+configure: $(BUILDDIR)
+	cd $(BUILDDIR) && $(DIR)/configure $(CONFIG_OPTS)
 
 build: configure
-	cd $(PKG) && make -j $(NUM_CPUS)
+	cd $(BUILDDIR) && make -j $(NUM_CPUS)
 
 install: build
-	cd $(PKG) && make install
+	cd $(BUILDDIR) && make -j install

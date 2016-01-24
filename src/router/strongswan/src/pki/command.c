@@ -29,7 +29,7 @@
 /**
  * Registered commands.
  */
-command_t cmds[MAX_COMMANDS];
+static command_t cmds[MAX_COMMANDS];
 
 /**
  * active command.
@@ -55,12 +55,12 @@ static options_t *options;
 /**
  * Global options used by all subcommands
  */
-static struct option command_opts[MAX_COMMANDS > MAX_OPTIONS ?: MAX_OPTIONS];
+static struct option command_opts[MAX_COMMANDS > MAX_OPTIONS ? MAX_COMMANDS : MAX_OPTIONS];
 
 /**
  * Global optstring used by all subcommands
  */
-static char command_optstring[(MAX_COMMANDS > MAX_OPTIONS ?: MAX_OPTIONS) * 3];
+static char command_optstring[(MAX_COMMANDS > MAX_OPTIONS ? MAX_COMMANDS : MAX_OPTIONS) * 3];
 
 /**
  * Build command_opts/command_optstr for the active command
@@ -73,7 +73,7 @@ static void build_opts()
 	memset(command_optstring, 0, sizeof(command_optstring));
 	if (active == help_idx)
 	{
-		for (i = 0; cmds[i].cmd; i++)
+		for (i = 0; i < MAX_COMMANDS && cmds[i].cmd; i++)
 		{
 			command_opts[i].name = cmds[i].cmd;
 			command_opts[i].val = cmds[i].op;
@@ -140,23 +140,37 @@ void command_register(command_t command)
 {
 	int i;
 
+	if (registered == MAX_COMMANDS)
+	{
+		fprintf(stderr, "unable to register command, please increase "
+				"MAX_COMMANDS\n");
+		return;
+	}
+
 	cmds[registered] = command;
 	/* append default options, but not to --help */
 	if (!active)
 	{
 		for (i = 0; i < countof(cmds[registered].options) - 1; i++)
 		{
-			if (cmds[registered].options[i].name)
+			if (!cmds[registered].options[i].name)
 			{
-				continue;
+				break;
 			}
+		}
+		if (i > countof(cmds[registered].options) - 3)
+		{
+			fprintf(stderr, "command '%s' registered too many options, please "
+					"increase MAX_OPTIONS\n", command.cmd);
+		}
+		else
+		{
 			cmds[registered].options[i++] = (command_option_t) {
 				"debug",	'v', 1, "set debug level, default: 1"
 			};
 			cmds[registered].options[i++] = (command_option_t) {
 				"options",	'+', 1, "read command line options from file"
 			};
-			break;
 		}
 	}
 	registered++;
@@ -186,7 +200,7 @@ int command_usage(char *error)
 	fprintf(out, "usage:\n");
 	if (active == help_idx)
 	{
-		for (i = 0; cmds[i].cmd; i++)
+		for (i = 0; i < MAX_COMMANDS && cmds[i].cmd; i++)
 		{
 			fprintf(out, "  pki --%-7s (-%c)  %s\n",
 					cmds[i].cmd, cmds[i].op, cmds[i].description);
@@ -249,7 +263,7 @@ int command_dispatch(int c, char *v[])
 
 	build_opts();
 	op = getopt_long(c, v, command_optstring, command_opts, NULL);
-	for (i = 0; cmds[i].cmd; i++)
+	for (i = 0; i < MAX_COMMANDS && cmds[i].cmd; i++)
 	{
 		if (cmds[i].op == op)
 		{
@@ -258,6 +272,5 @@ int command_dispatch(int c, char *v[])
 			return cmds[i].call();
 		}
 	}
-	return command_usage("invalid operation");
+	return command_usage(c > 1 ? "invalid operation" : NULL);
 }
-

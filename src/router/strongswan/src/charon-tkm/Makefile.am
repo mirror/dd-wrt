@@ -1,25 +1,29 @@
-SRC = $(top_builddir)/src
+SRC = $(abs_top_srcdir)/src
+OBJ = $(abs_top_builddir)/src
 
-# includes relative to obj directory
-INCLUDES = \
-	-include $(top_builddir)/config.h \
-	-I../$(SRC)/libstrongswan \
-	-I../$(SRC)/libhydra \
-	-I../$(SRC)/libcharon
+AM_CPPFLAGS = \
+	-include $(abs_top_builddir)/config.h \
+	-I$(SRC)/libstrongswan \
+	-I$(SRC)/libhydra \
+	-I$(SRC)/libcharon
 
 LIBLD = \
-	-L$(SRC)/libstrongswan/.libs \
-	-L$(SRC)/libhydra/.libs \
-	-L$(SRC)/libcharon/.libs
-LIBPT = $(SRC)/libstrongswan/.libs:$(SRC)/libhydra/.libs:$(SRC)/libcharon/.libs
+	-L$(OBJ)/libstrongswan/.libs \
+	-L$(OBJ)/libhydra/.libs \
+	-L$(OBJ)/libcharon/.libs
+LIBPT = $(OBJ)/libstrongswan/.libs:$(OBJ)/libhydra/.libs:$(OBJ)/libcharon/.libs
 LIBFL = -lstrongswan -lhydra -lcharon
 
 DEFS += -DPLUGINS=\""$(PLUGINS)\"" -DIPSEC_PIDDIR=\"${piddir}\"
 
 BUILD_OPTS = \
-	-XOBJ_DIR=$(CURDIR)/obj \
-	-cargs $(INCLUDES) $(DEFS) \
+	-XOBJ_DIR=$(abs_builddir)/obj \
+	-cargs $(AM_CPPFLAGS) $(DEFS) \
 	-largs $(LIBLD) $(LIBFL)
+
+TEST_OPTS = \
+	-cargs -DBUILDDIR=\"${abs_top_builddir}\" \
+	-largs -L$(OBJ)/libstrongswan/tests/.libs -ltest
 
 # plugins to enable
 PLUGINS = \
@@ -35,15 +39,15 @@ build_charon: build_charon.gpr src/charon-tkm.c
 	@$(GPRBUILD) -p $< $(BUILD_OPTS)
 
 build_tests: build_tests.gpr
-	@$(GPRBUILD) -p $< $(BUILD_OPTS) -cargs @CHECK_CFLAGS@ -largs @CHECK_LIBS@
+	@$(GPRBUILD) -p $< $(BUILD_OPTS) $(TEST_OPTS)
 
-if UNITTESTS
-check: build_tests
-	@LD_LIBRARY_PATH=$(LIBPT) obj/test_runner
-else
+check-tkm: build_tests
+	@LD_LIBRARY_PATH=$(LIBPT) obj/tests
+
 check:
-	@echo "reconfigure with --enable-unit-tests"
-endif
+	@echo "TKM tests are not run automatically because they have to be run as root" >&2
+	@echo "and require a properly configured TKM daemon to be running." >&2
+	@echo "They can be run from '$(abs_builddir)' with 'make check-tkm'" >&2
 
 install: build_charon
 	$(INSTALL) -m 755 obj/charon-tkm $(DESTDIR)$(ipsecdir)

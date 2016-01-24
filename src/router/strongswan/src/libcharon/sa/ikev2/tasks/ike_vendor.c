@@ -42,24 +42,70 @@ struct private_ike_vendor_t {
 };
 
 /**
- * strongSwan specific vendor ID without version, MD5("strongSwan")
+ * Vendor ID database entry
  */
-static chunk_t strongswan_vid = chunk_from_chars(
-	0x88,0x2f,0xe5,0x6d,0x6f,0xd2,0x0d,0xbc,
-	0x22,0x51,0x61,0x3b,0x2e,0xbe,0x5b,0xeb
-);
+typedef struct {
+	/* Description */
+	char *desc;
+	/* extension flag negotiated with vendor ID, if any */
+	ike_extension_t extension;
+	/* length of vendor ID string, 0 for NULL terminated */
+	int len;
+	/* vendor ID string */
+	char *id;
+} vid_data_t;
+
+/**
+ * Get the data of a vendor ID as a chunk
+ */
+static chunk_t get_vid_data(vid_data_t *data)
+{
+	return chunk_create(data->id, data->len ?: strlen(data->id));
+}
+
+/**
+ * IKEv2 Vendor ID database entry
+ */
+static vid_data_t vids[] = {
+	/* strongSwan MD5("strongSwan") */
+	{ "strongSwan", EXT_STRONGSWAN, 16,
+	  "\x88\x2f\xe5\x6d\x6f\xd2\x0d\xbc\x22\x51\x61\x3b\x2e\xbe\x5b\xeb"},
+	{ "Cisco Delete Reason", 0, 0,
+	  "CISCO-DELETE-REASON" },
+	{ "Cisco Copyright (c) 2009", 0, 0,
+	  "CISCO(COPYRIGHT)&Copyright (c) 2009 Cisco Systems, Inc." },
+	{ "FRAGMENTATION", 0, 16,
+	  "\x40\x48\xb7\xd5\x6e\xbc\xe8\x85\x25\xe7\xde\x7f\x00\xd6\xc2\xd3"},
+	{ "MS NT5 ISAKMPOAKLEY v7", 0, 20,
+	  "\x1e\x2b\x51\x69\x05\x99\x1c\x7d\x7c\x96\xfc\xbf\xb5\x87\xe4\x61\x00\x00\x00\x07"},
+	{ "MS NT5 ISAKMPOAKLEY v8", 0, 20,
+	  "\x1e\x2b\x51\x69\x05\x99\x1c\x7d\x7c\x96\xfc\xbf\xb5\x87\xe4\x61\x00\x00\x00\x08"},
+	{ "MS NT5 ISAKMPOAKLEY v9", 0, 20,
+	  "\x1e\x2b\x51\x69\x05\x99\x1c\x7d\x7c\x96\xfc\xbf\xb5\x87\xe4\x61\x00\x00\x00\x09"},
+	{ "MS-Negotiation Discovery Capable", 0, 16,
+	  "\xfb\x1d\xe3\xcd\xf3\x41\xb7\xea\x16\xb7\xe5\xbe\x08\x55\xf1\x20"},
+	{ "Vid-Initial-Contact", 0, 16,
+	  "\x26\x24\x4d\x38\xed\xdb\x61\xb3\x17\x2a\x36\xe3\xd0\xcf\xb8\x19"},
+};
 
 METHOD(task_t, build, status_t,
 	private_ike_vendor_t *this, message_t *message)
 {
-	if (lib->settings->get_bool(lib->settings,
-								"%s.send_vendor_id", FALSE, charon->name))
-	{
-		vendor_id_payload_t *vid;
+	vendor_id_payload_t *vid;
+	bool strongswan;
+	int i;
 
-		vid = vendor_id_payload_create_data(VENDOR_ID,
-											chunk_clone(strongswan_vid));
-		message->add_payload(message, &vid->payload_interface);
+	strongswan = lib->settings->get_bool(lib->settings,
+							"%s.send_vendor_id", FALSE, lib->ns);
+	for (i = 0; i < countof(vids); i++)
+	{
+		if (vids[i].extension == EXT_STRONGSWAN && strongswan)
+		{
+			DBG2(DBG_IKE, "sending %s vendor ID", vids[i].desc);
+			vid = vendor_id_payload_create_data(PLV2_VENDOR_ID,
+										chunk_clone(get_vid_data(&vids[i])));
+			message->add_payload(message, &vid->payload_interface);
+		}
 	}
 
 	return this->initiator ? NEED_MORE : SUCCESS;
@@ -70,24 +116,35 @@ METHOD(task_t, process, status_t,
 {
 	enumerator_t *enumerator;
 	payload_t *payload;
+	int i;
 
 	enumerator = message->create_payload_enumerator(message);
 	while (enumerator->enumerate(enumerator, &payload))
 	{
-		if (payload->get_type(payload) == VENDOR_ID)
+		if (payload->get_type(payload) == PLV2_VENDOR_ID)
 		{
 			vendor_id_payload_t *vid;
 			chunk_t data;
+			bool found = FALSE;
 
 			vid = (vendor_id_payload_t*)payload;
 			data = vid->get_data(vid);
 
-			if (chunk_equals(data, strongswan_vid))
+			for (i = 0; i < countof(vids); i++)
 			{
-				DBG1(DBG_IKE, "received strongSwan vendor ID");
-				this->ike_sa->enable_extension(this->ike_sa, EXT_STRONGSWAN);
+				if (chunk_equals(get_vid_data(&vids[i]), data))
+				{
+					DBG1(DBG_IKE, "received %s vendor ID", vids[i].desc);
+					if (vids[i].extension)
+					{
+						this->ike_sa->enable_extension(this->ike_sa,
+													   vids[i].extension);
+					}
+					found = TRUE;
+					break;
+				}
 			}
-			else
+			if (!found)
 			{
 				DBG1(DBG_ENC, "received unknown vendor ID: %#B", &data);
 			}

@@ -3,11 +3,14 @@ include $(CLEAR_VARS)
 
 # copy-n-paste from Makefile.am
 libcharon_la_SOURCES := \
+attributes/attributes.c attributes/attributes.h \
+attributes/attribute_provider.h attributes/attribute_handler.h \
+attributes/attribute_manager.c attributes/attribute_manager.h \
+attributes/mem_pool.c attributes/mem_pool.h \
 bus/bus.c bus/bus.h \
 bus/listeners/listener.h \
 bus/listeners/logger.h \
 bus/listeners/file_logger.c bus/listeners/file_logger.h \
-bus/listeners/sys_logger.c bus/listeners/sys_logger.h \
 config/backend_manager.c config/backend_manager.h config/backend.h \
 config/child_cfg.c config/child_cfg.h \
 config/ike_cfg.c config/ike_cfg.h \
@@ -26,7 +29,8 @@ encoding/payloads/cp_payload.c encoding/payloads/cp_payload.h \
 encoding/payloads/delete_payload.c encoding/payloads/delete_payload.h \
 encoding/payloads/eap_payload.c encoding/payloads/eap_payload.h \
 encoding/payloads/encodings.c encoding/payloads/encodings.h \
-encoding/payloads/encryption_payload.c encoding/payloads/encryption_payload.h \
+encoding/payloads/encrypted_payload.c encoding/payloads/encrypted_payload.h \
+encoding/payloads/encrypted_fragment_payload.h \
 encoding/payloads/id_payload.c encoding/payloads/id_payload.h \
 encoding/payloads/ike_header.c encoding/payloads/ike_header.h \
 encoding/payloads/ke_payload.c  encoding/payloads/ke_payload.h \
@@ -62,6 +66,7 @@ processing/jobs/start_action_job.c processing/jobs/start_action_job.h \
 processing/jobs/roam_job.c processing/jobs/roam_job.h \
 processing/jobs/update_sa_job.c processing/jobs/update_sa_job.h \
 processing/jobs/inactivity_job.c processing/jobs/inactivity_job.h \
+processing/jobs/initiate_tasks_job.c processing/jobs/initiate_tasks_job.h \
 sa/eap/eap_method.c sa/eap/eap_method.h sa/eap/eap_inner_method.h \
 sa/eap/eap_manager.c sa/eap/eap_manager.h \
 sa/xauth/xauth_method.c sa/xauth/xauth_method.h \
@@ -72,6 +77,7 @@ sa/ike_sa.c sa/ike_sa.h \
 sa/ike_sa_id.c sa/ike_sa_id.h \
 sa/keymat.h sa/keymat.c \
 sa/ike_sa_manager.c sa/ike_sa_manager.h \
+sa/child_sa_manager.c sa/child_sa_manager.h \
 sa/task_manager.h sa/task_manager.c \
 sa/shunt_manager.c sa/shunt_manager.h \
 sa/trap_manager.c sa/trap_manager.h \
@@ -97,6 +103,7 @@ sa/ikev2/tasks/ike_natd.c sa/ikev2/tasks/ike_natd.h \
 sa/ikev2/tasks/ike_mobike.c sa/ikev2/tasks/ike_mobike.h \
 sa/ikev2/tasks/ike_rekey.c sa/ikev2/tasks/ike_rekey.h \
 sa/ikev2/tasks/ike_reauth.c sa/ikev2/tasks/ike_reauth.h \
+sa/ikev2/tasks/ike_reauth_complete.c sa/ikev2/tasks/ike_reauth_complete.h \
 sa/ikev2/tasks/ike_auth_lifetime.c sa/ikev2/tasks/ike_auth_lifetime.h \
 sa/ikev2/tasks/ike_vendor.c sa/ikev2/tasks/ike_vendor.h
 
@@ -122,6 +129,9 @@ sa/ikev1/tasks/quick_delete.c sa/ikev1/tasks/quick_delete.h \
 sa/ikev1/tasks/mode_config.c sa/ikev1/tasks/mode_config.h \
 processing/jobs/dpd_timeout_job.c processing/jobs/dpd_timeout_job.h \
 processing/jobs/adopt_children_job.c processing/jobs/adopt_children_job.h
+
+libcharon_la_SOURCES += \
+    bus/listeners/sys_logger.c bus/listeners/sys_logger.h
 
 LOCAL_SRC_FILES := $(filter %.c,$(libcharon_la_SOURCES))
 
@@ -186,12 +196,20 @@ endif
 
 LOCAL_SRC_FILES += $(call add_plugin, eap-peap)
 
-# adding libtls if any of the three plugins above is enabled
-ifneq ($(or $(call plugin_enabled, eap-tls), $(call plugin_enabled, eap-ttls), $(call plugin_enabled, eap-peap)),)
+LOCAL_SRC_FILES += $(call add_plugin, eap-tnc)
+ifneq ($(call plugin_enabled, eap-tnc),)
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/../libtnccs/ $(LOCAL_PATH)/../libtncif/
+LOCAL_SHARED_LIBRARIES += libtnccs libtncif
+endif
+
+# adding libtls if any of the four plugins above is enabled
+ifneq ($(or $(call plugin_enabled, eap-tls), $(call plugin_enabled, eap-ttls), \
+			$(call plugin_enabled, eap-peap), $(call plugin_enabled, eap-tnc)),)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../libtls/
 LOCAL_SRC_FILES += $(addprefix ../libtls/, \
 		tls_protection.c tls_compression.c tls_fragmentation.c tls_alert.c \
 		tls_crypto.c tls_prf.c tls_socket.c tls_eap.c tls_cache.c tls_peer.c \
+		tls_aead_expl.c tls_aead_impl.c tls_aead_null.c tls_aead.c \
 		tls_server.c tls.c \
 	)
 endif
@@ -207,15 +225,11 @@ ifneq ($(call plugin_enabled, stroke),)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../stroke/
 endif
 
-
 # build libcharon --------------------------------------------------------------
 
 LOCAL_C_INCLUDES += \
-	$(libvstr_PATH) \
-	$(strongswan_PATH)/src/include \
 	$(strongswan_PATH)/src/libhydra \
-	$(strongswan_PATH)/src/libstrongswan \
-	$(strongswan_PATH)/src/libtncif
+	$(strongswan_PATH)/src/libstrongswan
 
 LOCAL_CFLAGS := $(strongswan_CFLAGS)
 
@@ -230,4 +244,3 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES += libstrongswan libhydra
 
 include $(BUILD_SHARED_LIBRARY)
-

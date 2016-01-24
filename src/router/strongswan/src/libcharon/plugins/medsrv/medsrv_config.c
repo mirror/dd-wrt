@@ -92,7 +92,7 @@ METHOD(backend_t, create_peer_cfg_enumerator, enumerator_t*,
 				CERT_NEVER_SEND, UNIQUE_REPLACE,
 				1, this->rekey*60, 0,			/* keytries, rekey, reauth */
 				this->rekey*5, this->rekey*3,	/* jitter, overtime */
-				TRUE, FALSE,					/* mobike, aggressiv */
+				TRUE, FALSE, TRUE,				/* mobike, aggressive, pull */
 				this->dpd, 0,					/* DPD delay, timeout */
 				TRUE, NULL, NULL);				/* mediation, med by, peer id */
 			e->destroy(e);
@@ -139,13 +139,13 @@ medsrv_config_t *medsrv_config_create(database_t *db)
 		.db = db,
 		.rekey = lib->settings->get_time(lib->settings, "medsrv.rekey", 1200),
 		.dpd = lib->settings->get_time(lib->settings, "medsrv.dpd", 300),
-		.ike = ike_cfg_create(IKEV2, FALSE, FALSE,
-							  "0.0.0.0", FALSE,
+		.ike = ike_cfg_create(IKEV2, FALSE, FALSE, "0.0.0.0",
 							  charon->socket->get_port(charon->socket, FALSE),
-							  "0.0.0.0", FALSE, IKEV2_UDP_PORT,
+							  "0.0.0.0", IKEV2_UDP_PORT,
 							  FRAGMENTATION_NO, 0),
 	);
 	this->ike->add_proposal(this->ike, proposal_create_default(PROTO_IKE));
+	this->ike->add_proposal(this->ike, proposal_create_default_aead(PROTO_IKE));
 
 	return &this->public;
 }

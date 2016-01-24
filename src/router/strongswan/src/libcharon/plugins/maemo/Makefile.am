@@ -1,8 +1,11 @@
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/libstrongswan \
+	-I$(top_srcdir)/src/libhydra \
+	-I$(top_srcdir)/src/libcharon
 
-INCLUDES = -I$(top_srcdir)/src/libstrongswan -I$(top_srcdir)/src/libhydra \
-	-I$(top_srcdir)/src/libcharon ${maemo_CFLAGS}
-
-AM_CFLAGS = -rdynamic
+AM_CFLAGS = \
+	${maemo_CFLAGS} \
+	$(PLUGIN_CFLAGS)
 
 if MONOLITHIC
 noinst_LTLIBRARIES = libstrongswan-maemo.la
@@ -20,8 +23,8 @@ libstrongswan_maemo_la_LIBADD  = ${maemo_LIBS}
 dbusservice_DATA = org.strongswan.charon.service
 
 org.strongswan.charon.service: $(srcdir)/org.strongswan.charon.service.in
+	$(AM_V_GEN) \
 	sed -e 's|[@]LIBEXECDIR[@]|$(libexecdir)|' $< >$@
 
 EXTRA_DIST = org.strongswan.charon.service.in
 CLEANFILES = $(dbusservice_DATA)
-

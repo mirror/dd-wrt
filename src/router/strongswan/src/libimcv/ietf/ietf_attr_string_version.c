@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Andreas Steffen
+ * Copyright (C) 2012-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -54,7 +54,12 @@ struct private_ietf_attr_string_version_t {
 	pen_type_t type;
 
 	/**
-	 * Attribute value
+	 * Length of attribute value
+	 */
+	size_t length;
+
+	/**
+	 * Attribute value or segment
 	 */
 	chunk_t value;
 
@@ -124,6 +129,7 @@ METHOD(pa_tnc_attr_t, build, void,
 	writer->write_data8(writer, this->config);
 
 	this->value = writer->extract_buf(writer);
+	this->length = this->value.len;
 	writer->destroy(writer);
 }
 
@@ -137,6 +143,10 @@ METHOD(pa_tnc_attr_t, process, status_t,
 
 	*offset = 0;
 
+	if (this->value.len < this->length)
+	{
+		return NEED_MORE;
+	}
 	if (this->value.len < STRING_VERSION_MIN_SIZE)
 	{
 		DBG1(DBG_TNC, "insufficient data for IETF string version");
@@ -198,6 +208,12 @@ end:
 	return status;
 }
 
+METHOD(pa_tnc_attr_t, add_segment, void,
+	private_ietf_attr_string_version_t *this, chunk_t segment)
+{
+	this->value = chunk_cat("mc", this->value, segment);
+}
+
 METHOD(pa_tnc_attr_t, get_ref, pa_tnc_attr_t*,
 	private_ietf_attr_string_version_t *this)
 {
@@ -254,6 +270,7 @@ pa_tnc_attr_t *ietf_attr_string_version_create(chunk_t version, chunk_t build,
 				.set_noskip_flag = _set_noskip_flag,
 				.build = _build,
 				.process = _process,
+				.add_segment = _add_segment,
 				.get_ref = _get_ref,
 				.destroy = _destroy,
 			},
@@ -272,7 +289,8 @@ pa_tnc_attr_t *ietf_attr_string_version_create(chunk_t version, chunk_t build,
 /**
  * Described in header.
  */
-pa_tnc_attr_t *ietf_attr_string_version_create_from_data(chunk_t data)
+pa_tnc_attr_t *ietf_attr_string_version_create_from_data(size_t length,
+														 chunk_t data)
 {
 	private_ietf_attr_string_version_t *this;
 
@@ -285,12 +303,14 @@ pa_tnc_attr_t *ietf_attr_string_version_create_from_data(chunk_t data)
 				.set_noskip_flag = _set_noskip_flag,
 				.build = _build,
 				.process = _process,
+				.add_segment = _add_segment,
 				.get_ref = _get_ref,
 				.destroy = _destroy,
 			},
 			.get_version = _get_version,
 		},
 		.type = { PEN_IETF, IETF_ATTR_STRING_VERSION },
+		.length = length,
 		.value = chunk_clone(data),
 		.ref = 1,
 	);

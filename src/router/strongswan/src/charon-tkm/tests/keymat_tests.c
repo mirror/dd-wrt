@@ -14,7 +14,8 @@
  * for more details.
  */
 
-#include <check.h>
+#include <tests/test_suite.h>
+
 #include <daemon.h>
 #include <hydra.h>
 #include <config/proposal.h>
@@ -45,15 +46,14 @@ START_TEST(test_derive_ike_keys)
 	fail_if(!ng, "Unable to create nonce generator");
 	fail_unless(ng->nonce_gen.allocate_nonce(&ng->nonce_gen, 32, &nonce),
 			"Unable to allocate nonce");
-	ng->nonce_gen.destroy(&ng->nonce_gen);
 
 	tkm_diffie_hellman_t *dh = tkm_diffie_hellman_create(MODP_4096_BIT);
 	fail_if(!dh, "Unable to create DH");
 
 	/* Use the same pubvalue for both sides */
 	chunk_t pubvalue;
-	dh->dh.get_my_public_value(&dh->dh, &pubvalue);
-	dh->dh.set_other_public_value(&dh->dh, pubvalue);
+	ck_assert(dh->dh.get_my_public_value(&dh->dh, &pubvalue));
+	ck_assert(dh->dh.set_other_public_value(&dh->dh, pubvalue));
 
 	fail_unless(keymat->keymat_v2.derive_ike_keys(&keymat->keymat_v2, proposal,
 				&dh->dh, nonce, nonce, ike_sa_id, PRF_UNDEFINED, chunk_empty),
@@ -68,6 +68,7 @@ START_TEST(test_derive_ike_keys)
 	fail_if(aead->get_block_size(aead) != 16, "Block size mismatch %d",
 			aead->get_block_size(aead));
 
+	ng->nonce_gen.destroy(&ng->nonce_gen);
 	proposal->destroy(proposal);
 	dh->dh.destroy(&dh->dh);
 	ike_sa_id->destroy(ike_sa_id);
@@ -139,11 +140,20 @@ START_TEST(test_derive_child_keys)
 }
 END_TEST
 
-TCase *make_keymat_tests(void)
+Suite *make_keymat_tests()
 {
-	TCase *tc = tcase_create("Keymat tests");
-	tcase_add_test(tc, test_derive_ike_keys);
-	tcase_add_test(tc, test_derive_child_keys);
+	Suite *s;
+	TCase *tc;
 
-	return tc;
+	s = suite_create("keymat");
+
+	tc = tcase_create("derive IKE keys");
+	tcase_add_test(tc, test_derive_ike_keys);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("derive CHILD keys");
+	tcase_add_test(tc, test_derive_child_keys);
+	suite_add_tcase(s, tc);
+
+	return s;
 }

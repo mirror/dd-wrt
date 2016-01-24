@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2009 Martin Willi
- * Copyright (C) 2009 Andreas Steffen
+ * Copyright (C) 2009-2015 Andreas Steffen
+ * HSR Hochschule fuer Technik Rapperswil
  *
  * HSR Hochschule fuer Technik Rapperswil
  *
@@ -16,6 +17,7 @@
  */
 
 #include <time.h>
+#include <errno.h>
 
 #include "pki.h"
 
@@ -29,7 +31,7 @@ static int req()
 {
 	cred_encoding_type_t form = CERT_ASN1_DER;
 	key_type_t type = KEY_RSA;
-	hash_algorithm_t digest = HASH_SHA1;
+	hash_algorithm_t digest = HASH_UNKNOWN;
 	certificate_t *cert = NULL;
 	private_key_t *private = NULL;
 	char *file = NULL, *dn = NULL, *error = NULL;
@@ -56,6 +58,10 @@ static int req()
 				{
 					type = KEY_ECDSA;
 				}
+				else if (streq(arg, "bliss"))
+				{
+					type = KEY_BLISS;
+				}
 				else
 				{
 					error = "invalid input type";
@@ -63,8 +69,7 @@ static int req()
 				}
 				continue;
 			case 'g':
-				digest = enum_from_name(hash_algorithm_short_names, arg);
-				if (digest == -1)
+				if (!enum_from_name(hash_algorithm_short_names, arg, &digest))
 				{
 					error = "invalid --digest type";
 					goto usage;
@@ -116,13 +121,27 @@ static int req()
 	}
 	else
 	{
+		chunk_t chunk;
+
+		set_file_mode(stdin, CERT_ASN1_DER);
+		if (!chunk_from_fd(0, &chunk))
+		{
+			fprintf(stderr, "reading private key failed: %s\n", strerror(errno));
+			error = "";
+			goto end;
+		}
 		private = lib->creds->create(lib->creds, CRED_PRIVATE_KEY, type,
-									 BUILD_FROM_FD, 0, BUILD_END);
+									 BUILD_BLOB, chunk, BUILD_END);
+		free(chunk.ptr);
 	}
 	if (!private)
 	{
 		error = "parsing private key failed";
 		goto end;
+	}
+	if (digest == HASH_UNKNOWN)
+	{
+		digest = get_default_digest(private);
 	}
 	cert = lib->creds->create(lib->creds, CRED_CERTIFICATE, CERT_PKCS10_REQUEST,
 							  BUILD_SIGNING_KEY, private,
@@ -141,6 +160,7 @@ static int req()
 		error = "encoding certificate request failed";
 		goto end;
 	}
+	set_file_mode(stdout, form);
 	if (fwrite(encoding.ptr, encoding.len, 1, stdout) != 1)
 	{
 		error = "writing certificate request failed";
@@ -174,10 +194,10 @@ static void __attribute__ ((constructor))reg()
 	command_register((command_t) {
 		req, 'r', "req",
 		"create a PKCS#10 certificate request",
-		{"[--in file] [--type rsa|ecdsa]",
-		 " --dn distinguished-name [--san subjectAltName]+",
-		 "[--password challengePassword]",
-		 "[--digest md5|sha1|sha224|sha256|sha384|sha512] [--outform der|pem]"},
+		{"  [--in file] [--type rsa|ecdsa|bliss] --dn distinguished-name",
+		 "[--san subjectAltName]+ [--password challengePassword]",
+		 "[--digest md5|sha1|sha224|sha256|sha384|sha512|sha3_224|sha3_256|sha3_384|sha3_512]",
+		 "[--outform der|pem]"},
 		{
 			{"help",	'h', 0, "show usage information"},
 			{"in",		'i', 1, "private key input file, default: stdin"},
@@ -185,7 +205,7 @@ static void __attribute__ ((constructor))reg()
 			{"dn",		'd', 1, "subject distinguished name"},
 			{"san",		'a', 1, "subjectAltName to include in cert request"},
 			{"password",'p', 1, "challengePassword to include in cert request"},
-			{"digest",	'g', 1, "digest for signature creation, default: sha1"},
+			{"digest",	'g', 1, "digest for signature creation, default: key-specific"},
 			{"outform",	'f', 1, "encoding of generated request, default: der"},
 		}
 	});

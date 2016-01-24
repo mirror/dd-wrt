@@ -21,6 +21,7 @@
 
 #include <radius_message.h>
 #include <radius_client.h>
+#include <bio/bio_writer.h>
 
 #include <daemon.h>
 
@@ -75,21 +76,6 @@ struct private_eap_radius_t {
 	 * Prefix to prepend to EAP identity
 	 */
 	char *id_prefix;
-
-	/**
-	 * Handle the Class attribute as group membership information?
-	 */
-	bool class_group;
-
-	/**
-	 * Handle the Filter-Id attribute as IPsec CHILD_SA name?
-	 */
-	bool filter_id;
-
-	/**
-	 * Format string we use for Called/Calling-Station-Id for a host
-	 */
-	char *station_id_fmt;
 };
 
 /**
@@ -163,20 +149,15 @@ static bool radius2ike(private_eap_radius_t *this,
 }
 
 /**
- * Add a set of RADIUS attributes to a request message
+ * See header.
  */
-static void add_radius_request_attrs(private_eap_radius_t *this,
-									 radius_message_t *request)
+void eap_radius_build_attributes(radius_message_t *request)
 {
 	ike_sa_t *ike_sa;
 	host_t *host;
-	char buf[40];
+	char buf[40], *station_id_fmt;;
 	u_int32_t value;
 	chunk_t chunk;
-
-	chunk = chunk_from_str(this->id_prefix);
-	chunk = chunk_cata("cc", chunk, this->peer->get_encoding(this->peer));
-	request->add(request, RAT_USER_NAME, chunk);
 
 	/* virtual NAS-Port-Type */
 	value = htonl(5);
@@ -205,13 +186,37 @@ static void add_radius_request_attrs(private_eap_radius_t *this,
 			default:
 				break;
 		}
-		snprintf(buf, sizeof(buf), this->station_id_fmt, host);
+		if (lib->settings->get_bool(lib->settings,
+									"%s.plugins.eap-radius.station_id_with_port",
+									TRUE, lib->ns))
+		{
+			station_id_fmt = "%#H";
+		}
+		else
+		{
+			station_id_fmt = "%H";
+		}
+		snprintf(buf, sizeof(buf), station_id_fmt, host);
 		request->add(request, RAT_CALLED_STATION_ID, chunk_from_str(buf));
 		host = ike_sa->get_other_host(ike_sa);
-		snprintf(buf, sizeof(buf), this->station_id_fmt, host);
+		snprintf(buf, sizeof(buf), station_id_fmt, host);
 		request->add(request, RAT_CALLING_STATION_ID, chunk_from_str(buf));
 	}
+}
 
+/**
+ * Add a set of RADIUS attributes to a request message
+ */
+static void add_radius_request_attrs(private_eap_radius_t *this,
+									 radius_message_t *request)
+{
+	chunk_t chunk;
+
+	chunk = chunk_from_str(this->id_prefix);
+	chunk = chunk_cata("cc", chunk, this->peer->get_encoding(this->peer));
+	request->add(request, RAT_USER_NAME, chunk);
+
+	eap_radius_build_attributes(request);
 	eap_radius_forward_from_ike(request);
 }
 
@@ -268,7 +273,7 @@ METHOD(eap_method_t, initiate, status_t,
 /**
  * Handle the Class attribute as group membership information
  */
-static void process_class(private_eap_radius_t *this, radius_message_t *msg)
+static void process_class(radius_message_t *msg)
 {
 	enumerator_t *enumerator;
 	chunk_t data;
@@ -305,7 +310,7 @@ static void process_class(private_eap_radius_t *this, radius_message_t *msg)
 /**
  * Handle the Filter-Id attribute as IPsec CHILD_SA name
  */
-static void process_filter_id(private_eap_radius_t *this, radius_message_t *msg)
+static void process_filter_id(radius_message_t *msg)
 {
 	enumerator_t *enumerator;
 	int type;
@@ -361,7 +366,7 @@ static void process_filter_id(private_eap_radius_t *this, radius_message_t *msg)
 /**
  * Handle Session-Timeout attribte and Interim updates
  */
-static void process_timeout(private_eap_radius_t *this, radius_message_t *msg)
+static void process_timeout(radius_message_t *msg)
 {
 	enumerator_t *enumerator;
 	ike_sa_t *ike_sa;
@@ -388,16 +393,122 @@ static void process_timeout(private_eap_radius_t *this, radius_message_t *msg)
 }
 
 /**
+ * Add a Cisco Unity configuration attribute
+ */
+static void add_unity_attribute(eap_radius_provider_t *provider, u_int32_t id,
+								int type, chunk_t data)
+{
+	switch (type)
+	{
+		case 15: /* CVPN3000-IPSec-Banner1 */
+		case 36: /* CVPN3000-IPSec-Banner2 */
+			provider->add_attribute(provider, id, UNITY_BANNER, data);
+			break;
+		case 28: /* CVPN3000-IPSec-Default-Domain */
+			provider->add_attribute(provider, id, UNITY_DEF_DOMAIN, data);
+			break;
+		case 29: /* CVPN3000-IPSec-Split-DNS-Names */
+			provider->add_attribute(provider, id, UNITY_SPLITDNS_NAME, data);
+			break;
+	}
+}
+
+/**
+ * Add a DNS/NBNS configuration attribute
+ */
+static void add_nameserver_attribute(eap_radius_provider_t *provider,
+									 u_int32_t id, int type, chunk_t data)
+{
+	/* these are from different vendors, but there is currently no conflict */
+	switch (type)
+	{
+		case  5: /* CVPN3000-Primary-DNS */
+		case  6: /* CVPN3000-Secondary-DNS */
+		case 28: /* MS-Primary-DNS-Server */
+		case 29: /* MS-Secondary-DNS-Server */
+			provider->add_attribute(provider, id, INTERNAL_IP4_DNS, data);
+			break;
+		case  7: /* CVPN3000-Primary-WINS */
+		case  8: /* CVPN3000-Secondary-WINS */
+		case 30: /* MS-Primary-NBNS-Server */
+		case 31: /* MS-Secondary-NBNS-Server */
+			provider->add_attribute(provider, id, INTERNAL_IP4_NBNS, data);
+			break;
+		case RAT_FRAMED_IPV6_DNS_SERVER:
+			provider->add_attribute(provider, id, INTERNAL_IP6_DNS, data);
+			break;
+	}
+}
+
+/**
+ * Add a UNITY_LOCAL_LAN or UNITY_SPLIT_INCLUDE attribute
+ */
+static void add_unity_split_attribute(eap_radius_provider_t *provider,
+							u_int32_t id, configuration_attribute_type_t type,
+							chunk_t data)
+{
+	enumerator_t *enumerator;
+	bio_writer_t *writer;
+	char buffer[256], *token, *slash;
+
+	if (snprintf(buffer, sizeof(buffer), "%.*s", (int)data.len,
+				 data.ptr) >= sizeof(buffer))
+	{
+		return;
+	}
+	writer = bio_writer_create(16); /* two IPv4 addresses and 6 bytes padding */
+	enumerator = enumerator_create_token(buffer, ",", " ");
+	while (enumerator->enumerate(enumerator, &token))
+	{
+		host_t *net, *mask = NULL;
+		chunk_t padding;
+
+		slash = strchr(token, '/');
+		if (slash)
+		{
+			*slash++ = '\0';
+			mask = host_create_from_string(slash, 0);
+		}
+		if (!mask)
+		{	/* default to /32 */
+			mask = host_create_from_string("255.255.255.255", 0);
+		}
+		net = host_create_from_string(token, 0);
+		if (!net || net->get_family(net) != AF_INET ||
+			 mask->get_family(mask) != AF_INET)
+		{
+			mask->destroy(mask);
+			DESTROY_IF(net);
+			continue;
+		}
+		writer->write_data(writer, net->get_address(net));
+		writer->write_data(writer, mask->get_address(mask));
+		padding = writer->skip(writer, 6); /* 6 bytes pdding */
+		memset(padding.ptr, 0, padding.len);
+		mask->destroy(mask);
+		net->destroy(net);
+	}
+	enumerator->destroy(enumerator);
+
+	data = writer->get_buf(writer);
+	if (data.len)
+	{
+		provider->add_attribute(provider, id, type, data);
+	}
+	writer->destroy(writer);
+}
+
+/**
  * Handle Framed-IP-Address and other IKE configuration attributes
  */
-static void process_cfg_attributes(private_eap_radius_t *this,
-								   radius_message_t *msg)
+static void process_cfg_attributes(radius_message_t *msg)
 {
 	eap_radius_provider_t *provider;
 	enumerator_t *enumerator;
 	ike_sa_t *ike_sa;
 	host_t *host;
 	chunk_t data;
+	configuration_attribute_type_t split_type = 0;
 	int type, vendor;
 
 	ike_sa = charon->bus->get_sa(charon->bus);
@@ -407,13 +518,25 @@ static void process_cfg_attributes(private_eap_radius_t *this,
 		enumerator = msg->create_enumerator(msg);
 		while (enumerator->enumerate(enumerator, &type, &data))
 		{
-			if (type == RAT_FRAMED_IP_ADDRESS && data.len == 4)
+			if ((type == RAT_FRAMED_IP_ADDRESS && data.len == 4) ||
+				(type == RAT_FRAMED_IPV6_ADDRESS && data.len == 16))
 			{
-				host = host_create_from_chunk(AF_INET, data, 0);
+				host = host_create_from_chunk(AF_UNSPEC, data, 0);
 				if (host)
 				{
-					provider->add_framed_ip(provider, this->peer, host);
+					provider->add_framed_ip(provider,
+									ike_sa->get_unique_id(ike_sa), host);
 				}
+			}
+			else if (type == RAT_FRAMED_IP_NETMASK && data.len == 4)
+			{
+				provider->add_attribute(provider, ike_sa->get_unique_id(ike_sa),
+										INTERNAL_IP4_NETMASK, data);
+			}
+			else if (type == RAT_FRAMED_IPV6_DNS_SERVER && data.len == 16)
+			{
+				add_nameserver_attribute(provider,
+									ike_sa->get_unique_id(ike_sa), type, data);
 			}
 		}
 		enumerator->destroy(enumerator);
@@ -425,21 +548,101 @@ static void process_cfg_attributes(private_eap_radius_t *this,
 			{
 				switch (type)
 				{
+					case  5: /* CVPN3000-Primary-DNS */
+					case  6: /* CVPN3000-Secondary-DNS */
+					case  7: /* CVPN3000-Primary-WINS */
+					case  8: /* CVPN3000-Secondary-WINS */
+						if (data.len == 4)
+						{
+							add_nameserver_attribute(provider,
+									ike_sa->get_unique_id(ike_sa), type, data);
+						}
+						break;
 					case 15: /* CVPN3000-IPSec-Banner1 */
+					case 28: /* CVPN3000-IPSec-Default-Domain */
+					case 29: /* CVPN3000-IPSec-Split-DNS-Names */
 					case 36: /* CVPN3000-IPSec-Banner2 */
 						if (ike_sa->supports_extension(ike_sa, EXT_CISCO_UNITY))
 						{
-							provider->add_attribute(provider, this->peer,
-													UNITY_BANNER, data);
+							add_unity_attribute(provider,
+									ike_sa->get_unique_id(ike_sa), type, data);
+						}
+						break;
+					case 55: /* CVPN3000-IPSec-Split-Tunneling-Policy */
+						if (data.len)
+						{
+							switch (data.ptr[data.len - 1])
+							{
+								case 0: /* tunnelall */
+								default:
+									break;
+								case 1: /* tunnelspecified */
+									split_type = UNITY_SPLIT_INCLUDE;
+									break;
+								case 2: /* excludespecified */
+									split_type = UNITY_LOCAL_LAN;
+									break;
+							}
 						}
 						break;
 					default:
 						break;
 				}
 			}
+			if (vendor == PEN_MICROSOFT)
+			{
+				switch (type)
+				{
+					case 28: /* MS-Primary-DNS-Server */
+					case 29: /* MS-Secondary-DNS-Server */
+					case 30: /* MS-Primary-NBNS-Server */
+					case 31: /* MS-Secondary-NBNS-Server */
+						if (data.len == 4)
+						{
+							add_nameserver_attribute(provider,
+									ike_sa->get_unique_id(ike_sa), type, data);
+						}
+						break;
+				}
+			}
 		}
 		enumerator->destroy(enumerator);
+
+		if (split_type != 0 &&
+			ike_sa->supports_extension(ike_sa, EXT_CISCO_UNITY))
+		{
+			enumerator = msg->create_vendor_enumerator(msg);
+			while (enumerator->enumerate(enumerator, &vendor, &type, &data))
+			{
+				if (vendor == PEN_ALTIGA /* aka Cisco VPN3000 */ &&
+					type == 27 /* CVPN3000-IPSec-Split-Tunnel-List */)
+				{
+					add_unity_split_attribute(provider,
+							ike_sa->get_unique_id(ike_sa), split_type, data);
+				}
+			}
+			enumerator->destroy(enumerator);
+		}
 	}
+}
+
+/**
+ * See header.
+ */
+void eap_radius_process_attributes(radius_message_t *message)
+{
+	if (lib->settings->get_bool(lib->settings,
+						"%s.plugins.eap-radius.class_group", FALSE, lib->ns))
+	{
+		process_class(message);
+	}
+	if (lib->settings->get_bool(lib->settings,
+						"%s.plugins.eap-radius.filter_id", FALSE, lib->ns))
+	{
+		process_filter_id(message);
+	}
+	process_timeout(message);
+	process_cfg_attributes(message);
 }
 
 METHOD(eap_method_t, process, status_t,
@@ -479,16 +682,7 @@ METHOD(eap_method_t, process, status_t,
 				status = FAILED;
 				break;
 			case RMC_ACCESS_ACCEPT:
-				if (this->class_group)
-				{
-					process_class(this, response);
-				}
-				if (this->filter_id)
-				{
-					process_filter_id(this, response);
-				}
-				process_timeout(this, response);
-				process_cfg_attributes(this, response);
+				eap_radius_process_attributes(response);
 				DBG1(DBG_IKE, "RADIUS authentication of '%Y' successful",
 					 this->peer);
 				status = SUCCESS;
@@ -585,26 +779,11 @@ eap_radius_t *eap_radius_create(identification_t *server, identification_t *peer
 		.type = EAP_RADIUS,
 		.eap_start = lib->settings->get_bool(lib->settings,
 									"%s.plugins.eap-radius.eap_start", FALSE,
-									charon->name),
+									lib->ns),
 		.id_prefix = lib->settings->get_str(lib->settings,
 									"%s.plugins.eap-radius.id_prefix", "",
-									charon->name),
-		.class_group = lib->settings->get_bool(lib->settings,
-									"%s.plugins.eap-radius.class_group", FALSE,
-									charon->name),
-		.filter_id = lib->settings->get_bool(lib->settings,
-									"%s.plugins.eap-radius.filter_id", FALSE,
-									charon->name),
+									lib->ns),
 	);
-	if (lib->settings->get_bool(lib->settings,
-			"%s.plugins.eap-radius.station_id_with_port", TRUE, charon->name))
-	{
-		this->station_id_fmt = "%#H";
-	}
-	else
-	{
-		this->station_id_fmt = "%H";
-	}
 	this->client = eap_radius_create_client();
 	if (!this->client)
 	{

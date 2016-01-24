@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Andreas Steffen
+ * Copyright (C) 2011-2015 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -17,10 +17,12 @@
 
 #include <imc/imc_agent.h>
 #include <imc/imc_msg.h>
+#include <imc/imc_os_info.h>
+#include <generic/generic_attr_bool.h>
+#include <generic/generic_attr_string.h>
 #include <ietf/ietf_attr.h>
 #include <ietf/ietf_attr_attr_request.h>
-#include <ietf/ietf_attr_default_pwd_enabled.h>
-#include <ietf/ietf_attr_fwd_enabled.h>
+#include "ietf/ietf_attr_fwd_enabled.h"
 #include <ietf/ietf_attr_installed_packages.h>
 #include <ietf/ietf_attr_numeric_version.h>
 #include <ietf/ietf_attr_op_status.h>
@@ -29,8 +31,6 @@
 #include <ita/ita_attr.h>
 #include <ita/ita_attr_get_settings.h>
 #include <ita/ita_attr_settings.h>
-#include <ita/ita_attr_angel.h>
-#include <os_info/os_info.h>
 
 #include <tncif_pa_subtypes.h>
 
@@ -46,15 +46,15 @@ static pen_type_t msg_types[] = {
 };
 
 static imc_agent_t *imc_os;
-static os_info_t *os;
+static imc_os_info_t *os;
 
 /**
  * see section 3.8.1 of TCG TNC IF-IMC Specification 1.3
  */
-TNC_Result TNC_IMC_Initialize(TNC_IMCID imc_id,
-							  TNC_Version min_version,
-							  TNC_Version max_version,
-							  TNC_Version *actual_version)
+TNC_Result TNC_IMC_API TNC_IMC_Initialize(TNC_IMCID imc_id,
+										  TNC_Version min_version,
+										  TNC_Version max_version,
+										  TNC_Version *actual_version)
 {
 	if (imc_os)
 	{
@@ -68,7 +68,7 @@ TNC_Result TNC_IMC_Initialize(TNC_IMCID imc_id,
 		return TNC_RESULT_FATAL;
 	}
 
-	os = os_info_create();
+	os = imc_os_info_create();
 	if (!os)
 	{
 		imc_os->destroy(imc_os);
@@ -88,9 +88,8 @@ TNC_Result TNC_IMC_Initialize(TNC_IMCID imc_id,
 /**
  * see section 3.8.2 of TCG TNC IF-IMC Specification 1.3
  */
-TNC_Result TNC_IMC_NotifyConnectionChange(TNC_IMCID imc_id,
-										  TNC_ConnectionID connection_id,
-										  TNC_ConnectionState new_state)
+TNC_Result TNC_IMC_API TNC_IMC_NotifyConnectionChange(TNC_IMCID imc_id,
+				TNC_ConnectionID connection_id, TNC_ConnectionState new_state)
 {
 	imc_state_t *state;
 
@@ -213,9 +212,9 @@ static void add_fwd_enabled(imc_msg_t *msg)
 	os_fwd_status_t fwd_status;
 
 	fwd_status = os->get_fwd_status(os);
-	DBG1(DBG_IMC, "IPv4 forwarding status: %N",
-				   os_fwd_status_names, fwd_status);
-	attr = ietf_attr_fwd_enabled_create(fwd_status);
+	DBG1(DBG_IMC, "IPv4 forwarding is %N", os_fwd_status_names, fwd_status);
+	attr = ietf_attr_fwd_enabled_create(fwd_status,
+				pen_type_create(PEN_IETF, IETF_ATTR_FORWARDING_ENABLED));
 	msg->add_attribute(msg, attr);
 }
 
@@ -225,10 +224,119 @@ static void add_fwd_enabled(imc_msg_t *msg)
 static void add_default_pwd_enabled(imc_msg_t *msg)
 {
 	pa_tnc_attr_t *attr;
+	bool status;
 
-	DBG1(DBG_IMC, "factory default password: disabled");
-	attr = ietf_attr_default_pwd_enabled_create(FALSE);
+	status = os->get_default_pwd_status(os);
+	DBG1(DBG_IMC, "factory default password is %sabled", status ? "en" : "dis");
+	attr = generic_attr_bool_create(status,
+			pen_type_create(PEN_IETF, IETF_ATTR_FACTORY_DEFAULT_PWD_ENABLED));
 	msg->add_attribute(msg, attr);
+}
+
+/**
+ * Add ITA Device ID attribute to the send queue
+ */
+static void add_device_id(imc_msg_t *msg)
+{
+	pa_tnc_attr_t *attr;
+	chunk_t value = chunk_empty, keyid;
+	char *name, *device_id, *cert_path;
+	certificate_t *cert = NULL;
+	public_key_t *pubkey;
+
+	/* Get the device ID as a character string */
+	device_id = lib->settings->get_str(lib->settings,
+						"%s.plugins.imc-os.device_id", NULL, lib->ns);
+	if (device_id)
+	{
+		value = chunk_clone(chunk_from_str(device_id));
+	}
+
+	if (value.len == 0)
+	{
+		/* Derive the device ID from a raw public key */
+		cert_path = lib->settings->get_str(lib->settings,
+							"%s.plugins.imc-os.device_pubkey", NULL, lib->ns);
+		if (cert_path)
+		{
+			cert = lib->creds->create(lib->creds, CRED_CERTIFICATE,
+									  CERT_TRUSTED_PUBKEY, BUILD_FROM_FILE,
+									  cert_path, BUILD_END);
+			if (cert)
+			{
+				DBG2(DBG_IMC, "loaded device public key from '%s'", cert_path);
+			}
+			else
+			{
+				DBG1(DBG_IMC, "loading device public key from '%s' failed",
+							   cert_path);
+			}
+		}
+
+		if (!cert)
+		{
+			/* Derive the device ID from the public key contained in a certificate */
+			cert_path = lib->settings->get_str(lib->settings,
+								"%s.plugins.imc-os.device_cert", NULL, lib->ns);
+			if (cert_path)
+			{
+				cert = lib->creds->create(lib->creds, CRED_CERTIFICATE,
+										  CERT_X509, BUILD_FROM_FILE,
+										  cert_path, BUILD_END);
+				if (cert)
+				{
+					DBG2(DBG_IMC, "loaded device certificate from '%s'", cert_path);
+				}
+				else
+				{
+					DBG1(DBG_IMC, "loading device certificate from '%s' failed",
+								   cert_path);
+				}
+			}
+		}
+
+		/* Compute the SHA-1 keyid of the retrieved device public key */
+		if (cert)
+		{
+			pubkey = cert->get_public_key(cert);
+			if (pubkey)
+			{
+				if (pubkey->get_fingerprint(pubkey, KEYID_PUBKEY_INFO_SHA1,
+											&keyid))
+				{
+					value = chunk_to_hex(keyid, NULL, FALSE);
+				}
+				pubkey->destroy(pubkey);
+			}
+			cert->destroy(cert);
+		}
+	}
+
+	if (value.len == 0)
+	{
+		/* Derive the device ID from some unique OS settings */
+		name = os->get_type(os) == OS_TYPE_ANDROID ?
+					  "android_id" : "/var/lib/dbus/machine-id";
+		value = os->get_setting(os, name);
+
+		/* Trim trailing newline character */
+		if (value.len > 0 && value.ptr[value.len - 1] == '\n')
+		{
+			value.len--;
+		}
+	}
+
+	if (value.len == 0)
+	{
+		DBG1(DBG_IMC, "no device ID available");
+		return;
+	}
+
+	DBG1(DBG_IMC, "device ID is %.*s", value.len, value.ptr);
+	attr = generic_attr_string_create(value, pen_type_create(PEN_ITA,
+									  ITA_ATTR_DEVICE_ID));
+	msg->add_attribute(msg, attr);
+	free(value.ptr);
 }
 
 /**
@@ -236,67 +344,28 @@ static void add_default_pwd_enabled(imc_msg_t *msg)
  */
 static void add_installed_packages(imc_state_t *state, imc_msg_t *msg)
 {
-	pa_tnc_attr_t *attr = NULL, *attr_angel;
+	pa_tnc_attr_t *attr;
 	ietf_attr_installed_packages_t *attr_cast;
 	enumerator_t *enumerator;
 	chunk_t name, version;
-	size_t max_attr_size, attr_size, entry_size;
-	bool first = TRUE;
-
-	/**
-	 * Compute the maximum IETF Installed Packages attribute size
-	 * leaving space for an additional ITA Angel attribute
-	 */
-	max_attr_size = state->get_max_msg_len(state) - 8 - 12;
-
-	/* At least one IETF Installed Packages attribute is sent */
-	attr = ietf_attr_installed_packages_create();
-	attr_size = 12 + 4;
 
 	enumerator = os->create_package_enumerator(os);
-	if (enumerator)
+	if (!enumerator)
 	{
-		while (enumerator->enumerate(enumerator, &name, &version))
-		{
-			DBG2(DBG_IMC, "package '%.*s' (%.*s)",
-						   name.len, name.ptr, version.len, version.ptr);
-
-			entry_size = 2 + name.len + version.len;
-			if (attr_size + entry_size > max_attr_size)
-			{
-				if (first)
-				{
-					/**
-					 * Send an ITA Start Angel attribute to the IMV signalling
-					 * that multiple ITA Installed Package attributes follow.
-					 */
-					attr_angel = ita_attr_angel_create(TRUE);
-					msg->add_attribute(msg, attr_angel);
-					first = FALSE;
-				}
-				msg->add_attribute(msg, attr);
-
-				/* create the next IETF Installed Packages attribute */
-				attr = ietf_attr_installed_packages_create();
-				attr_size = 12 + 4;
-			}
-			attr_cast = (ietf_attr_installed_packages_t*)attr;
-			attr_cast->add(attr_cast, name, version);
-			attr_size += entry_size;
-		}
-		enumerator->destroy(enumerator);
+		return;
 	}
+	attr = ietf_attr_installed_packages_create();
+
+	while (enumerator->enumerate(enumerator, &name, &version))
+	{
+		DBG2(DBG_IMC, "package '%.*s' (%.*s)",
+					   name.len, name.ptr, version.len, version.ptr);
+		attr_cast = (ietf_attr_installed_packages_t*)attr;
+		attr_cast->add(attr_cast, name, version);
+	}
+	enumerator->destroy(enumerator);
+
 	msg->add_attribute(msg, attr);
-
-	if (!first)
-	{
-		/**
-		 * If we sent an ITA Start Angel attribute in the first place,
-		 * terminate by appending a matching ITA Stop Angel attribute.
-		 */
-		attr_angel = ita_attr_angel_create(FALSE);
-		msg->add_attribute(msg, attr_angel);
-	}
 }
 
 /**
@@ -338,8 +407,8 @@ static void add_settings(enumerator_t *enumerator, imc_msg_t *msg)
 /**
  * see section 3.8.3 of TCG TNC IF-IMC Specification 1.3
  */
-TNC_Result TNC_IMC_BeginHandshake(TNC_IMCID imc_id,
-								  TNC_ConnectionID connection_id)
+TNC_Result TNC_IMC_API TNC_IMC_BeginHandshake(TNC_IMCID imc_id,
+											  TNC_ConnectionID connection_id)
 {
 	imc_state_t *state;
 	imc_msg_t *out_msg;
@@ -355,7 +424,7 @@ TNC_Result TNC_IMC_BeginHandshake(TNC_IMCID imc_id,
 		return TNC_RESULT_FATAL;
 	}
 	if (lib->settings->get_bool(lib->settings,
-								"libimcv.plugins.imc-os.push_info", TRUE))
+								"%s.plugins.imc-os.push_info", TRUE, lib->ns))
 	{
 		out_msg = imc_msg_create(imc_os, state, connection_id, imc_id,
 								 TNC_IMVID_ANY, msg_types[0]);
@@ -365,6 +434,7 @@ TNC_Result TNC_IMC_BeginHandshake(TNC_IMCID imc_id,
 		add_op_status(out_msg);
 		add_fwd_enabled(out_msg);
 		add_default_pwd_enabled(out_msg);
+		add_device_id(out_msg);
 
 		/* send PA-TNC message with the excl flag not set */
 		result = out_msg->send(out_msg, FALSE);
@@ -383,13 +453,16 @@ static TNC_Result receive_message(imc_state_t *state, imc_msg_t *in_msg)
 	TNC_Result result;
 	bool fatal_error = FALSE;
 
+	/* generate an outgoing PA-TNC message - we might need it */
+	out_msg = imc_msg_create_as_reply(in_msg);
+
 	/* parse received PA-TNC message and handle local and remote errors */
-	result = in_msg->receive(in_msg, &fatal_error);
+	result = in_msg->receive(in_msg, out_msg, &fatal_error);
 	if (result != TNC_RESULT_SUCCESS)
 	{
+		out_msg->destroy(out_msg);
 		return result;
 	}
-	out_msg = imc_msg_create_as_reply(in_msg);
 
 	/* analyze PA-TNC attributes */
 	enumerator = in_msg->create_attribute_enumerator(in_msg);
@@ -410,35 +483,45 @@ static TNC_Result receive_message(imc_state_t *state, imc_msg_t *in_msg)
 				e = attr_cast->create_enumerator(attr_cast);
 				while (e->enumerate(e, &entry))
 				{
-					if (entry->vendor_id != PEN_IETF)
+					if (entry->vendor_id == PEN_IETF)
 					{
-						continue;
+						switch (entry->type)
+						{
+							case IETF_ATTR_PRODUCT_INFORMATION:
+								add_product_info(out_msg);
+								break;
+							case IETF_ATTR_STRING_VERSION:
+								add_string_version(out_msg);
+								break;
+							case IETF_ATTR_NUMERIC_VERSION:
+								add_numeric_version(out_msg);
+								break;
+							case IETF_ATTR_OPERATIONAL_STATUS:
+								add_op_status(out_msg);
+								break;
+							case IETF_ATTR_FORWARDING_ENABLED:
+								add_fwd_enabled(out_msg);
+								break;
+							case IETF_ATTR_FACTORY_DEFAULT_PWD_ENABLED:
+								add_default_pwd_enabled(out_msg);
+								break;
+							case IETF_ATTR_INSTALLED_PACKAGES:
+								add_installed_packages(state, out_msg);
+								break;
+							default:
+								break;
+						}
 					}
-					switch (entry->type)
+					else if (entry->vendor_id == PEN_ITA)
 					{
-						case IETF_ATTR_PRODUCT_INFORMATION:
-							add_product_info(out_msg);
-							break;
-						case IETF_ATTR_STRING_VERSION:
-							add_string_version(out_msg);
-							break;
-						case IETF_ATTR_NUMERIC_VERSION:
-							add_numeric_version(out_msg);
-							break;
-						case IETF_ATTR_OPERATIONAL_STATUS:
-							add_op_status(out_msg);
-							break;
-						case IETF_ATTR_FORWARDING_ENABLED:
-							add_fwd_enabled(out_msg);
-							break;
-						case IETF_ATTR_FACTORY_DEFAULT_PWD_ENABLED:
-							add_default_pwd_enabled(out_msg);
-							break;
-						case IETF_ATTR_INSTALLED_PACKAGES:
-							add_installed_packages(state, out_msg);
-							break;
-						default:
-							break;
+						switch (entry->type)
+						{
+							case ITA_ATTR_DEVICE_ID:
+								add_device_id(out_msg);
+								break;
+							default:
+								break;
+						}
 					}
 				}
 				e->destroy(e);
@@ -464,6 +547,7 @@ static TNC_Result receive_message(imc_state_t *state, imc_msg_t *in_msg)
 	}
 	else
 	{
+		/* send PA-TNC message with the EXCL flag set */
 		result = out_msg->send(out_msg, TRUE);
 	}
 	out_msg->destroy(out_msg);
@@ -475,11 +559,11 @@ static TNC_Result receive_message(imc_state_t *state, imc_msg_t *in_msg)
  * see section 3.8.4 of TCG TNC IF-IMC Specification 1.3
 
  */
-TNC_Result TNC_IMC_ReceiveMessage(TNC_IMCID imc_id,
-								  TNC_ConnectionID connection_id,
-								  TNC_BufferReference msg,
-								  TNC_UInt32 msg_len,
-								  TNC_MessageType msg_type)
+TNC_Result TNC_IMC_API TNC_IMC_ReceiveMessage(TNC_IMCID imc_id,
+											  TNC_ConnectionID connection_id,
+											  TNC_BufferReference msg,
+											  TNC_UInt32 msg_len,
+											  TNC_MessageType msg_type)
 {
 	imc_state_t *state;
 	imc_msg_t *in_msg;
@@ -505,15 +589,15 @@ TNC_Result TNC_IMC_ReceiveMessage(TNC_IMCID imc_id,
 /**
  * see section 3.8.6 of TCG TNC IF-IMV Specification 1.3
  */
-TNC_Result TNC_IMC_ReceiveMessageLong(TNC_IMCID imc_id,
-									  TNC_ConnectionID connection_id,
-									  TNC_UInt32 msg_flags,
-									  TNC_BufferReference msg,
-									  TNC_UInt32 msg_len,
-									  TNC_VendorID msg_vid,
-									  TNC_MessageSubtype msg_subtype,
-									  TNC_UInt32 src_imv_id,
-									  TNC_UInt32 dst_imc_id)
+TNC_Result TNC_IMC_API TNC_IMC_ReceiveMessageLong(TNC_IMCID imc_id,
+												  TNC_ConnectionID connection_id,
+												  TNC_UInt32 msg_flags,
+												  TNC_BufferReference msg,
+												  TNC_UInt32 msg_len,
+												  TNC_VendorID msg_vid,
+												  TNC_MessageSubtype msg_subtype,
+												  TNC_UInt32 src_imv_id,
+												  TNC_UInt32 dst_imc_id)
 {
 	imc_state_t *state;
 	imc_msg_t *in_msg;
@@ -540,8 +624,8 @@ TNC_Result TNC_IMC_ReceiveMessageLong(TNC_IMCID imc_id,
 /**
  * see section 3.8.7 of TCG TNC IF-IMC Specification 1.3
  */
-TNC_Result TNC_IMC_BatchEnding(TNC_IMCID imc_id,
-							   TNC_ConnectionID connection_id)
+TNC_Result TNC_IMC_API TNC_IMC_BatchEnding(TNC_IMCID imc_id,
+										   TNC_ConnectionID connection_id)
 {
 	if (!imc_os)
 	{
@@ -554,7 +638,7 @@ TNC_Result TNC_IMC_BatchEnding(TNC_IMCID imc_id,
 /**
  * see section 3.8.8 of TCG TNC IF-IMC Specification 1.3
  */
-TNC_Result TNC_IMC_Terminate(TNC_IMCID imc_id)
+TNC_Result TNC_IMC_API TNC_IMC_Terminate(TNC_IMCID imc_id)
 {
 	if (!imc_os)
 	{
@@ -573,8 +657,8 @@ TNC_Result TNC_IMC_Terminate(TNC_IMCID imc_id)
 /**
  * see section 4.2.8.1 of TCG TNC IF-IMC Specification 1.3
  */
-TNC_Result TNC_IMC_ProvideBindFunction(TNC_IMCID imc_id,
-									   TNC_TNCC_BindFunctionPointer bind_function)
+TNC_Result TNC_IMC_API TNC_IMC_ProvideBindFunction(TNC_IMCID imc_id,
+									TNC_TNCC_BindFunctionPointer bind_function)
 {
 	if (!imc_os)
 	{

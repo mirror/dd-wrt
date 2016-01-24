@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 Tobias Brunner
  * Copyrigth (C) 2012 Reto Buerki
  * Copyright (C) 2012 Adrian-Ken Rueegsegger
  * Hochschule fuer Technik Rapperswil
@@ -17,6 +18,7 @@
 #include <daemon.h>
 #include <tkm/constants.h>
 #include <tkm/client.h>
+#include <crypto/hashers/hash_algorithm_set.h>
 
 #include "tkm.h"
 #include "tkm_types.h"
@@ -71,6 +73,10 @@ struct private_tkm_keymat_t {
 	 */
 	chunk_t other_init_msg;
 
+	/**
+	 * Set of hash algorithms supported by peer for signature authentication
+	 */
+	hash_algorithm_set_t *hash_algorithms;
 };
 
 /**
@@ -96,6 +102,7 @@ static void aead_create_from_keys(aead_t **in, aead_t **out,
 	*in = *out = NULL;
 	signer_t *signer_i, *signer_r;
 	crypter_t *crypter_i, *crypter_r;
+	iv_gen_t *ivg_i, *ivg_r;
 
 	signer_i = lib->crypto->create_signer(lib->crypto, int_alg);
 	signer_r = lib->crypto->create_signer(lib->crypto, int_alg);
@@ -139,15 +146,21 @@ static void aead_create_from_keys(aead_t **in, aead_t **out,
 		return;
 	}
 
+	ivg_i = iv_gen_create_for_alg(enc_alg);
+	ivg_r = iv_gen_create_for_alg(enc_alg);
+	if (!ivg_i || !ivg_r)
+	{
+		return;
+	}
 	if (initiator)
 	{
-		*in = aead_create(crypter_r, signer_r);
-		*out = aead_create(crypter_i, signer_i);
+		*in = aead_create(crypter_r, signer_r, ivg_r);
+		*out = aead_create(crypter_i, signer_i, ivg_i);
 	}
 	else
 	{
-		*in = aead_create(crypter_i, signer_i);
-		*out = aead_create(crypter_r, signer_r);
+		*in = aead_create(crypter_i, signer_i, ivg_i);
+		*out = aead_create(crypter_r, signer_r, ivg_r);
 	}
 }
 
@@ -417,6 +430,26 @@ METHOD(keymat_v2_t, get_psk_sig, bool,
 	return FALSE;
 }
 
+METHOD(keymat_v2_t, hash_algorithm_supported, bool,
+	private_tkm_keymat_t *this, hash_algorithm_t hash)
+{
+	if (!this->hash_algorithms)
+	{
+		return FALSE;
+	}
+	return this->hash_algorithms->contains(this->hash_algorithms, hash);
+}
+
+METHOD(keymat_v2_t, add_hash_algorithm, void,
+	private_tkm_keymat_t *this, hash_algorithm_t hash)
+{
+	if (!this->hash_algorithms)
+	{
+		this->hash_algorithms = hash_algorithm_set_create();
+	}
+	this->hash_algorithms->add(this->hash_algorithms, hash);
+}
+
 METHOD(keymat_t, destroy, void,
 	private_tkm_keymat_t *this)
 {
@@ -435,6 +468,7 @@ METHOD(keymat_t, destroy, void,
 		tkm->idmgr->release_id(tkm->idmgr, TKM_CTX_AE, this->ae_ctx_id);
 	}
 
+	DESTROY_IF(this->hash_algorithms);
 	DESTROY_IF(this->aead_in);
 	DESTROY_IF(this->aead_out);
 	chunk_free(&this->auth_payload);
@@ -488,6 +522,8 @@ tkm_keymat_t *tkm_keymat_create(bool initiator)
 				.get_skd = _get_skd,
 				.get_auth_octets = _get_auth_octets,
 				.get_psk_sig = _get_psk_sig,
+				.add_hash_algorithm = _add_hash_algorithm,
+				.hash_algorithm_supported = _hash_algorithm_supported,
 			},
 			.get_isa_id = _get_isa_id,
 			.set_auth_payload = _set_auth_payload,
